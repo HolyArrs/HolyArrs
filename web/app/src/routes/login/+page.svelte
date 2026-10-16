@@ -25,6 +25,7 @@
 	let ticket = $state('');
 	let otp = $state('');
 	let plexWaiting = $state(false);
+	let ssoFinishing = $state(false);
 	let plexTimer: ReturnType<typeof setInterval> | undefined;
 
 	const mode = $derived(session.s.state === 'needs_setup' ? 'setup' : ticket ? 'code' : 'login');
@@ -41,11 +42,24 @@
 
 	onMount(() => {
 		const t = setInterval(() => (now = Date.now()), 1000);
+		if (page.url.searchParams.get('sso') === 'finish') void finishOIDC();
 		return () => {
 			clearInterval(t);
 			clearInterval(plexTimer);
 		};
 	});
+
+	async function finishOIDC() {
+		error = '';
+		ssoFinishing = true;
+		try {
+			took(await session.oidcFinish());
+		} catch (err) {
+			failed(err);
+		} finally {
+			ssoFinishing = false;
+		}
+	}
 
 	// Right after the owner is made, the first-run step asks which parts to use.
 	let firstRun = false;
@@ -174,6 +188,30 @@
 			failed(err);
 		}
 	}
+
+	async function oidc() {
+		error = '';
+		busy = true;
+		try {
+			const { auth_url } = await session.oidcStart();
+			window.location.assign(auth_url);
+		} catch (err) {
+			failed(err);
+			busy = false;
+		}
+	}
+
+	async function forwardAuth() {
+		error = '';
+		busy = true;
+		try {
+			took(await session.forwardLogin());
+		} catch (err) {
+			failed(err);
+		} finally {
+			busy = false;
+		}
+	}
 </script>
 
 <svelte:head>
@@ -187,8 +225,9 @@
 			<span>HolyArrs</span>
 		</div>
 
-		{#if session.s.state === 'unknown'}
+		{#if session.s.state === 'unknown' || ssoFinishing}
 			<div class="sk" style="height: 260px"></div>
+			{#if ssoFinishing}<p class="small muted" role="status">Finishing your sign-in…</p>{/if}
 		{:else}
 			<h1 class="h2">{mode === 'setup' ? 'Set up HolyArrs' : mode === 'code' ? 'Two-factor sign-in' : 'Sign in'}</h1>
 			<p class="muted small lead">
@@ -272,6 +311,10 @@
 								</button>
 							{:else if (w === 'jellyfin' || w === 'emby') && via !== w}
 								<button class="btn btn-ghost btn-block" type="button" onclick={() => pick(w)}>Sign in with {wayWord[w]}</button>
+							{:else if w === 'oidc'}
+								<button class="btn btn-ghost btn-block" type="button" onclick={oidc} disabled={busy} aria-busy={busy}>Sign in with single sign-on</button>
+							{:else if w === 'forward_auth'}
+								<button class="btn btn-ghost btn-block" type="button" onclick={forwardAuth} disabled={busy} aria-busy={busy}>Sign in through the trusted proxy</button>
 							{/if}
 						{/each}
 						{#if plexWaiting}<p class="xs muted" role="status">Finish signing in on the Plex page that opened, then come back here.</p>{/if}

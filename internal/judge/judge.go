@@ -2,6 +2,7 @@ package judge
 
 import (
 	"fmt"
+	"math"
 	"slices"
 	"sort"
 	"strings"
@@ -296,6 +297,31 @@ var believablePerHour = map[int]float64{2160: 1.5, 1080: 0.5, 720: 0.25}
 
 func gbOf(n int64) float64 { return float64(n) / float64(1<<30) }
 
+func saturatingPositiveMul(n int64, factor int) int64 {
+	if n <= 0 || factor <= 0 {
+		return 0
+	}
+	f := int64(factor)
+	if n > math.MaxInt64/f {
+		return math.MaxInt64
+	}
+	return n * f
+}
+
+func scaledSizeLimit(l domain.SizeLimit, runtime int) (int64, int64) {
+	lo, hi := l.Min, l.Max
+	if !l.PerMinute {
+		return lo, hi
+	}
+	lo = saturatingPositiveMul(lo, runtime)
+	if hi > 0 { // zero means no upper limit
+		hi = saturatingPositiveMul(hi, runtime)
+	}
+	return lo, hi
+}
+
+func sizeMidpoint(lo, hi int64) int64 { return lo + (hi-lo)/2 }
+
 // Judge runs the pipeline of pick-rules.md section 3.1 for one Release.
 // Hard steps all run so every refusal is reported at once.
 func Judge(rel Release, set SlotSet, rules domain.PickRulesBody) Verdict {
@@ -519,11 +545,8 @@ func (v *Verdict) safety(rel Release, rules domain.PickRulesBody, step string, s
 		v.add("hard", "safety:disc_image", "fail", "full disc image", 0)
 	}
 	if l, ok := sizeLimit(rules, step); ok && runtime > 0 && rel.Size > 0 {
-		lo, hi := l.Min, l.Max
-		if l.PerMinute {
-			lo, hi = lo*int64(runtime), hi*int64(runtime)
-		}
-		if rel.Size < lo/5 || (hi > 0 && rel.Size > hi*5) {
+		lo, hi := scaledSizeLimit(l, runtime)
+		if rel.Size < lo/5 || (hi > 0 && rel.Size > saturatingPositiveMul(hi, 5)) {
 			what := fmt.Sprintf("%dp", p.Resolution.Value)
 			if p.Music != nil {
 				what = step
@@ -548,16 +571,13 @@ func (v *Verdict) size(rel Release, rules domain.PickRulesBody, step string, run
 		v.add("hard", "size", "warn", "runtime unknown, size not checked", 0)
 		return
 	}
-	lo, hi := l.Min, l.Max
-	if l.PerMinute {
-		lo, hi = lo*int64(runtime), hi*int64(runtime)
-	}
+	lo, hi := scaledSizeLimit(l, runtime)
 	if rel.Parse.Music != nil {
 		v.musicSize(rel.Size, lo, hi)
 		return
 	}
 	got := gbOf(rel.Size)
-	v.sizeOff = rel.Size - (lo+hi)/2
+	v.sizeOff = rel.Size - sizeMidpoint(lo, hi)
 	if v.sizeOff < 0 {
 		v.sizeOff = -v.sizeOff
 	}

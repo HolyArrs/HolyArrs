@@ -1,6 +1,7 @@
 package lists
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -18,6 +19,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/jobs"
 	"github.com/CoderLuii/holyarrs/internal/library"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/CoderLuii/holyarrs/internal/outside"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
@@ -239,9 +241,22 @@ func (s *Service) record(ctx context.Context, l domain.OutsideList, res Result, 
 }
 
 // get fetches one page and decodes it, with the key only in headers.
-func (s *Service) get(ctx context.Context, what, u string, head map[string]string, into any) (http.Header, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+func (s *Service) get(ctx context.Context, what, endpoint, u string, head map[string]string, into any) (http.Header, error) {
+	identity := []string{what, endpoint}
+	for _, k := range []string{"Authorization", "trakt-api-key", "X-Trakt-Client-Id"} {
+		identity = append(identity, head[k])
+	}
+	op, err := outside.Begin(ctx, outside.Target{Kind: "outside_list", Identity: identity})
 	if err != nil {
+		return nil, err
+	}
+	outcome := outside.Canceled
+	defer func() { op.Finish(outcome) }()
+	rctx, cancel := op.AttemptContext(ctx, 15*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(rctx, http.MethodGet, u, nil)
+	if err != nil {
+		outcome = outside.TerminalFailure
 		return nil, err
 	}
 	req.Header.Set("Accept", "application/json")
@@ -250,9 +265,18 @@ func (s *Service) get(ctx context.Context, what, u string, head map[string]strin
 	}
 	resp, err := s.client().Do(req)
 	if err != nil {
+		outcome = outside.HTTPOutcome(0, err, ctx)
 		return nil, fmt.Errorf("%s did not answer", what)
 	}
-	defer resp.Body.Close()
+	body, readErr := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
+	if closeErr := resp.Body.Close(); readErr == nil {
+		readErr = closeErr
+	}
+	if readErr != nil {
+		outcome = outside.HTTPOutcome(resp.StatusCode, readErr, ctx)
+		return nil, fmt.Errorf("%s sent an answer that could not be read", what)
+	}
+	outcome = outside.HTTPOutcome(resp.StatusCode, nil, ctx)
 	switch {
 	case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
 		return nil, fmt.Errorf("%s refused the key; check it in Settings", what)
@@ -261,9 +285,15 @@ func (s *Service) get(ctx context.Context, what, u string, head map[string]strin
 	case resp.StatusCode != http.StatusOK:
 		return nil, fmt.Errorf("%s answered %d", what, resp.StatusCode)
 	}
-	if err := json.NewDecoder(io.LimitReader(resp.Body, 4<<20)).Decode(into); err != nil {
+	if err := json.NewDecoder(bytes.NewReader(body)).Decode(into); err != nil {
+		if rctx.Err() != nil && ctx.Err() == nil {
+			outcome = outside.TransientFailure
+		} else {
+			outcome = outside.TerminalFailure
+		}
 		return nil, fmt.Errorf("%s sent something that is not a list", what)
 	}
+	outcome = outside.Success
 	return resp.Header, nil
 }
 
@@ -290,7 +320,7 @@ func (s *Service) fetchTMDB(ctx context.Context, ref string) ([]entry, error) {
 			} `json:"items"`
 		}
 		u := base + "/list/" + url.PathEscape(ref) + "?page=" + strconv.Itoa(page)
-		if _, err := s.get(ctx, "TMDB", u, map[string]string{"Authorization": "Bearer " + tok}, &body); err != nil {
+		if _, err := s.get(ctx, "TMDB", base, u, map[string]string{"Authorization": "Bearer " + tok}, &body); err != nil {
 			return nil, err
 		}
 		for _, it := range body.Items {
@@ -336,7 +366,7 @@ func (s *Service) fetchTrakt(ctx context.Context, ref string) ([]entry, error) {
 				} `json:"ids"`
 			} `json:"movie"`
 		}
-		h, err := s.get(ctx, "Trakt", base+path+"?limit=100&page="+strconv.Itoa(page), head, &body)
+		h, err := s.get(ctx, "Trakt", base, base+path+"?limit=100&page="+strconv.Itoa(page), head, &body)
 		if err != nil {
 			return nil, err
 		}

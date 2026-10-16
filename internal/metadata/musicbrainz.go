@@ -14,6 +14,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/CoderLuii/holyarrs/internal/outside"
 )
 
 // Errors from music lookups.
@@ -423,11 +425,17 @@ func (m *MusicBrainz) get(ctx context.Context, path string, q url.Values) ([]byt
 	if ua == "" {
 		ua = UserAgentFor("")
 	}
+	op, err := outside.Begin(ctx, outside.Target{Kind: "metadata_musicbrainz", Identity: []string{base, ua}})
+	if err != nil {
+		return nil, err
+	}
+	outcome := outside.Canceled
+	defer func() { op.Finish(outcome) }()
 	for try := 0; ; try++ {
 		if err := l.Wait(ctx); err != nil {
 			return nil, err
 		}
-		rctx, cancel := context.WithTimeout(ctx, timeout)
+		rctx, cancel := op.AttemptContext(ctx, timeout)
 		req, err := http.NewRequestWithContext(rctx, http.MethodGet, u, nil)
 		if err != nil {
 			cancel()
@@ -437,29 +445,37 @@ func (m *MusicBrainz) get(ctx context.Context, path string, q url.Values) ([]byt
 		req.Header.Set("User-Agent", ua)
 		resp, err := cl.Do(req)
 		if err != nil {
+			outcome = outside.HTTPOutcome(0, err, ctx)
 			cancel()
 			return nil, fmt.Errorf("%w (%w)", ErrMusicUnavailable, stripURL(err))
 		}
 		body, err := io.ReadAll(io.LimitReader(resp.Body, maxAnswer+1))
-		resp.Body.Close()
+		if closeErr := resp.Body.Close(); err == nil {
+			err = closeErr
+		}
 		cancel()
 		if err != nil {
+			outcome = outside.HTTPOutcome(resp.StatusCode, err, ctx)
 			return nil, fmt.Errorf("%w (%w)", ErrMusicUnavailable, stripURL(err))
 		}
 		switch resp.StatusCode {
 		case http.StatusOK:
 			if len(body) > maxAnswer {
+				outcome = outside.TerminalFailure
 				return nil, fmt.Errorf("%w (an answer over 16 MB)", ErrMusicUnavailable)
 			}
 			if !json.Valid(body) {
+				outcome = outside.TerminalFailure
 				return nil, fmt.Errorf("%w (an answer that is not JSON)", ErrMusicUnavailable)
 			}
+			outcome = outside.Success
 			if m.Cache != nil {
 				now := l.now()
 				_ = m.Cache.Put(ctx, key, body, now, now.Add(m.ttl(ctx)))
 			}
 			return body, nil
 		case http.StatusNotFound:
+			outcome = outside.TerminalFailure
 			return nil, ErrArtistNotFound
 		case http.StatusServiceUnavailable, http.StatusTooManyRequests:
 			// Back off: Retry-After when given (at most a minute), else 2, 4,
@@ -470,9 +486,11 @@ func (m *MusicBrainz) get(ctx context.Context, path string, q url.Values) ([]byt
 			}
 			l.Hold(wait)
 			if try+1 >= tries {
+				outcome = outside.TransientFailure
 				return nil, ErrMusicBusy
 			}
 		default:
+			outcome = outside.HTTPOutcome(resp.StatusCode, nil, ctx)
 			return nil, &MusicStatusError{Code: resp.StatusCode}
 		}
 	}

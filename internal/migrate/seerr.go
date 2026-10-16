@@ -221,6 +221,16 @@ func seerrUser(m map[string]any) User {
 	u := User{SourceID: num(m["id"]), Email: str(m["email"]), Kind: userKind(num(m["userType"])),
 		MovieLimit: int(num(m["movieQuotaLimit"])), MovieDays: int(num(m["movieQuotaDays"])),
 		ShowLimit: int(num(m["tvQuotaLimit"])), ShowDays: int(num(m["tvQuotaDays"])), Created: str(m["createdAt"])}
+	_, u.MovieLimitSet = m["movieQuotaLimit"]
+	u.MovieLimitSet = u.MovieLimitSet && m["movieQuotaLimit"] != nil
+	_, u.ShowLimitSet = m["tvQuotaLimit"]
+	u.ShowLimitSet = u.ShowLimitSet && m["tvQuotaLimit"] != nil
+	switch u.Kind {
+	case "plex":
+		u.ExternalID = str(first(m, "plexId", "plexUserId"))
+	case "jellyfin", "emby":
+		u.ExternalID = str(first(m, "jellyfinUserId", "embyUserId"))
+	}
 	for _, k := range []string{"displayName", "username", "plexUsername", "jellyfinUsername", "email"} {
 		if u.Name = str(m[k]); u.Name != "" {
 			break
@@ -240,7 +250,7 @@ func seerrRequest(id, status int64, mediaType string, media map[string]any, by, 
 		return Request{}, false
 	}
 	rq := Request{SourceID: id, State: state, By: by, FourK: fourK, Created: created, Updated: updated, IDs: map[string]string{}}
-	if decided != 0 && decided != by {
+	if decided != 0 {
 		rq.DecidedBy = decided
 	}
 	switch mediaType {
@@ -273,8 +283,12 @@ func seerrDefaults(main map[string]any) map[string]any {
 		if k == nil {
 			continue
 		}
-		out["default_"+key+"_limit"] = num(k["quotaLimit"])
-		out["default_"+key+"_days"] = num(k["quotaDays"])
+		if v, ok := k["quotaLimit"]; ok && v != nil {
+			out["default_"+key+"_limit"] = num(v)
+		}
+		if v, ok := k["quotaDays"]; ok && v != nil {
+			out["default_"+key+"_days"] = num(v)
+		}
 	}
 	for _, k := range []string{"applicationTitle", "localLogin", "newPlexLogin"} {
 		if v, ok := main[k]; ok {
@@ -304,7 +318,7 @@ func (r seerrReader) fromBackup(ctx context.Context, src Source) (*Snapshot, err
 	if k, ok := detect(ctx, t); !ok || k != r.kind {
 		return nil, ErrWrongApp
 	}
-	users, err := t.rows(ctx, "user", "id", "email", "username", "plexUsername", "jellyfinUsername", "displayName",
+	users, err := t.rows(ctx, "user", "id", "email", "username", "plexUsername", "jellyfinUsername", "displayName", "plexId", "jellyfinUserId",
 		"userType", "permissions", "movieQuotaLimit", "movieQuotaDays", "tvQuotaLimit", "tvQuotaDays", "createdAt")
 	if err != nil {
 		return nil, err

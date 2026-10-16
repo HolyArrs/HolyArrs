@@ -12,6 +12,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/CoderLuii/holyarrs/internal/outside"
 )
 
 // Errors from show lookups.
@@ -196,7 +198,7 @@ func (e errStatus) Error() string { return "answered " + strconv.Itoa(e.code) }
 // do sends a request made by mk (called again on a retry) and returns the
 // body of a 200 answer. A GET answer is cached by its URL unless ctx asks
 // for fresh data. 429 is tried once more after Retry-After (at most 10 s).
-func (g *getter) do(ctx context.Context, mk func(ctx context.Context) (*http.Request, error)) ([]byte, error) {
+func (g *getter) do(ctx context.Context, identity []string, mk func(ctx context.Context) (*http.Request, error)) ([]byte, error) {
 	probe, err := mk(ctx)
 	if err != nil {
 		return nil, err
@@ -215,6 +217,12 @@ func (g *getter) do(ctx context.Context, mk func(ctx context.Context) (*http.Req
 		}
 		g.mu.Unlock()
 	}
+	op, err := outside.Begin(ctx, outside.Target{Kind: "metadata_" + strings.ToLower(g.name), Identity: identity})
+	if err != nil {
+		return nil, err
+	}
+	outcome := outside.Canceled
+	defer func() { op.Finish(outcome) }()
 	cl := g.http
 	if cl == nil {
 		cl = http.DefaultClient
@@ -227,7 +235,7 @@ func (g *getter) do(ctx context.Context, mk func(ctx context.Context) (*http.Req
 		if err := g.wait(ctx); err != nil {
 			return nil, err
 		}
-		rctx, cancel := context.WithTimeout(ctx, timeout)
+		rctx, cancel := op.AttemptContext(ctx, timeout)
 		req, err := mk(rctx)
 		if err != nil {
 			cancel()
@@ -236,17 +244,22 @@ func (g *getter) do(ctx context.Context, mk func(ctx context.Context) (*http.Req
 		req.Header.Set("Accept", "application/json")
 		resp, err := cl.Do(req)
 		if err != nil {
+			outcome = outside.HTTPOutcome(0, err, ctx)
 			cancel()
 			return nil, fmt.Errorf("%s: %w", g.name, stripURL(err))
 		}
 		body, err := io.ReadAll(io.LimitReader(resp.Body, 8<<20))
-		resp.Body.Close()
+		if closeErr := resp.Body.Close(); err == nil {
+			err = closeErr
+		}
 		cancel()
 		if err != nil {
+			outcome = outside.HTTPOutcome(resp.StatusCode, err, ctx)
 			return nil, fmt.Errorf("%s: %w", g.name, stripURL(err))
 		}
 		switch {
 		case resp.StatusCode == http.StatusOK:
+			outcome = outside.Success
 			if cacheable {
 				g.mu.Lock()
 				if g.cache == nil || len(g.cache) >= maxCache {
@@ -264,8 +277,10 @@ func (g *getter) do(ctx context.Context, mk func(ctx context.Context) (*http.Req
 			case <-time.After(time.Duration(min(max(d, 0), 10)) * time.Second):
 			}
 		case resp.StatusCode == http.StatusTooManyRequests:
+			outcome = outside.TransientFailure
 			return nil, fmt.Errorf("%s: rate limited; try again shortly", g.name)
 		default:
+			outcome = outside.HTTPOutcome(resp.StatusCode, nil, ctx)
 			return nil, errStatus{resp.StatusCode}
 		}
 	}

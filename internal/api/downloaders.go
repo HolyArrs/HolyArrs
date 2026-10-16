@@ -27,6 +27,8 @@ func (a *API) downloaderRoutes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/downloaders/{id}/test", a.testDownloader)
 	m.HandleFunc("POST /api/v1/downloaders/{id}/pause", a.pauseDownloader)
 	m.HandleFunc("POST /api/v1/downloaders/{id}/resume", a.resumeDownloader)
+	m.HandleFunc("GET /api/v1/downloaders/{id}/attempts", a.listDownloaderAttempts)
+	m.HandleFunc("POST /api/v1/downloaders/{id}/attempts/{attemptID}/abandon", a.abandonDownloaderAttempt)
 	m.HandleFunc("POST /api/v1/downloads/{id}/mark-failed", a.markFailed)
 	m.HandleFunc("GET /api/v1/settings/downloaders", a.getDownloaderSettings)
 	m.HandleFunc("PUT /api/v1/settings/downloaders", a.putDownloaderSettings)
@@ -107,10 +109,16 @@ func (a *API) listDownloaders(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"downloaders": out})
 }
 
-const downloaderHelp = `send name, kind (qbittorrent or sabnzbd), url, and if needed secret (the SABnzbd API key or qBittorrent password), username, category, priority (1 to 50), path_map [{theirs, ours}], allow_local_network`
+const downloaderHelp = `send name, kind (qbittorrent, transmission, deluge, sabnzbd or nzbget), url, and if needed secret (an API key or password), username, category, priority (1 to 50), path_map [{theirs, ours}], allow_local_network`
 
 func downloaderError(w http.ResponseWriter, err error) {
 	switch {
+	case errors.Is(err, downloader.ErrUncertain):
+		fail(w, http.StatusConflict, downloader.ErrUncertain.Error())
+	case errors.Is(err, downloader.ErrAttemptStopped):
+		fail(w, http.StatusConflict, downloader.ErrAttemptStopped.Error())
+	case errors.Is(err, downloader.ErrPendingAttempt):
+		fail(w, http.StatusConflict, downloader.ErrPendingAttempt.Error())
 	case errors.Is(err, downloader.ErrNameUsed), errors.Is(err, downloader.ErrKeyAgain), errors.Is(err, downloader.ErrBusy):
 		fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, downloader.ErrNoVault):
@@ -225,6 +233,67 @@ func (a *API) pauseDownloader(w http.ResponseWriter, r *http.Request) {
 }
 func (a *API) resumeDownloader(w http.ResponseWriter, r *http.Request) {
 	a.setDownloaderPaused(w, r, false)
+}
+
+// DownloaderAttemptView is the deliberately small public form of an attempt.
+// The opaque marker and diagnostic detail stay inside the Downloader manager.
+type DownloaderAttemptView struct {
+	ID           int64  `json:"id"`
+	DownloaderID int64  `json:"downloader_id"`
+	ReleaseID    int64  `json:"release_id"`
+	SlotID       int64  `json:"slot_id"`
+	State        string `json:"state"`
+	CreatedAt    string `json:"created_at"`
+	UpdatedAt    string `json:"updated_at"`
+}
+
+func downloaderAttemptView(attempt downloader.Attempt) DownloaderAttemptView {
+	return DownloaderAttemptView{
+		ID: attempt.ID, DownloaderID: attempt.DownloaderID, ReleaseID: attempt.ReleaseID, SlotID: attempt.SlotID,
+		State: string(attempt.State), CreatedAt: attempt.CreatedAt, UpdatedAt: attempt.UpdatedAt,
+	}
+}
+
+// listDownloaderAttempts shows the durable send journal without its opaque
+// reconciliation marker, Downloader address or internal error details.
+func (a *API) listDownloaderAttempts(w http.ResponseWriter, r *http.Request) {
+	id, ok := idIn(w, r, "Downloader")
+	if !ok {
+		return
+	}
+	attempts, err := a.manager().Attempts(r.Context(), id)
+	if err != nil {
+		downloaderError(w, err)
+		return
+	}
+	out := make([]DownloaderAttemptView, 0, len(attempts))
+	for _, attempt := range attempts {
+		out = append(out, downloaderAttemptView(attempt))
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"attempts": out})
+}
+
+// abandonDownloaderAttempt makes one uncertain send terminal. It never asks
+// the Downloader to remove or cancel anything.
+func (a *API) abandonDownloaderAttempt(w http.ResponseWriter, r *http.Request) {
+	downloaderID, ok := idIn(w, r, "Downloader")
+	if !ok {
+		return
+	}
+	attemptID, err := strconv.ParseInt(r.PathValue("attemptID"), 10, 64)
+	if err != nil || attemptID < 1 {
+		fail(w, http.StatusNotFound, "no such send attempt")
+		return
+	}
+	if err := a.manager().AbandonAttempt(r.Context(), downloaderID, attemptID, actor(r)); err != nil {
+		if errors.Is(err, store.ErrNotFound) || errors.Is(err, sql.ErrNoRows) {
+			fail(w, http.StatusNotFound, "no such send attempt")
+			return
+		}
+		downloaderError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // firstLine keeps one short line of an error for the page.

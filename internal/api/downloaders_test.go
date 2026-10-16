@@ -72,7 +72,7 @@ func TestDownloadersAddTestPauseDelete(t *testing.T) {
 
 	// SABnzbd needs its key.
 	do(t, "POST", srv.URL+"/api/v1/downloaders", `{"name":"Lab SABnzbd","kind":"sabnzbd","url":"`+sab.URL+`","allow_local_network":true}`, 400)
-	do(t, "POST", srv.URL+"/api/v1/downloaders", `{"name":"Bad","kind":"nzbget","url":"http://x"}`, 400)
+	do(t, "POST", srv.URL+"/api/v1/downloaders", `{"name":"Bad","kind":"unsupported","url":"http://x"}`, 400)
 	do(t, "POST", srv.URL+"/api/v1/downloaders", `{"name":"Bad","kind":"sabnzbd","url":"http://user:pw@x","secret":"k"}`, 400)
 
 	var d DownloaderView

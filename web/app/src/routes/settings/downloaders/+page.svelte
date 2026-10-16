@@ -12,6 +12,8 @@
 		formFrom,
 		healthTone,
 		kindWords,
+		pendingAttempts,
+		type DownloaderAttempt,
 		type DownloaderForm,
 		type DownloaderHealth,
 		type DownloaderSettings,
@@ -29,6 +31,9 @@
 	let formError = $state('');
 	let testing = $state(0);
 	let results = $state<Record<number, { ok: boolean; text: string }>>({});
+	let attempts = $state<Record<number, DownloaderAttempt[]>>({});
+	let attemptErrors = $state<Record<number, string>>({});
+	let abandoning = $state(0);
 
 	let set = $state<DownloaderSettings>({
 		stalled_after_hours: 6,
@@ -47,12 +52,23 @@
 
 	async function load() {
 		try {
-			list = (await api.get<{ downloaders: DownloaderView[] }>('/downloaders')).downloaders;
+			const next = (await api.get<{ downloaders: DownloaderView[] }>('/downloaders')).downloaders;
+			list = next;
 			error = '';
+			await Promise.all(next.map(loadAttempts));
 		} catch (e) {
 			error = message(e);
 		} finally {
 			loaded = true;
+		}
+	}
+
+	async function loadAttempts(d: DownloaderView) {
+		try {
+			attempts[d.id] = (await api.get<{ attempts: DownloaderAttempt[] }>(`/downloaders/${d.id}/attempts`)).attempts;
+			attemptErrors[d.id] = '';
+		} catch (err) {
+			attemptErrors[d.id] = message(err);
 		}
 	}
 	onMount(() => {
@@ -79,6 +95,33 @@
 	function pickKind(k: DownloaderForm['kind']) {
 		const fresh = emptyForm(k);
 		form = { ...fresh, url: form.url !== 'http://' ? form.url : fresh.url, allow_local_network: form.allow_local_network };
+	}
+
+	function hasUsername(kind: DownloaderForm['kind']): boolean {
+		return kind === 'qbittorrent' || kind === 'transmission' || kind === 'nzbget';
+	}
+
+	function addressPlaceholder(kind: DownloaderForm['kind']): string {
+		switch (kind) {
+			case 'sabnzbd':
+				return 'http://192.168.1.10:8080';
+			case 'transmission':
+				return 'http://192.168.1.10:9091';
+			case 'nzbget':
+				return 'http://192.168.1.10:6789';
+			case 'deluge':
+				return 'http://192.168.1.10:8112';
+			default:
+				return 'http://192.168.1.10:8090';
+		}
+	}
+
+	function categoryHint(kind: DownloaderForm['kind']): string {
+		if (kind === 'sabnzbd') return 'Must already exist in SABnzbd.';
+		if (kind === 'transmission') return 'Stored as a Transmission label; Transmission 4 or newer is required.';
+		if (kind === 'deluge') return 'Stored as a Deluge label; the connected daemon needs the Label plugin.';
+		if (kind === 'nzbget') return 'Sent as the NZBGet category.';
+		return 'Made in qBittorrent if missing.';
 	}
 
 	async function save(e: SubmitEvent) {
@@ -131,6 +174,25 @@
 		}
 	}
 
+	async function abandonAttempt(d: DownloaderView, attempt: DownloaderAttempt) {
+		if (
+			!confirm(
+				`Stop HolyArrs from sending Release ${attempt.release_id} to Slot ${attempt.slot_id} and its covered Slots through ${d.name}? This does not cancel anything in ${kindWords[d.kind]}. Inspect that app before choosing a different Release.`
+			)
+		)
+			return;
+		abandoning = attempt.id;
+		try {
+			await api.post(`/downloaders/${d.id}/attempts/${attempt.id}/abandon`);
+			toasts.push('The uncertain send was abandoned. Inspect the Downloader before choosing another Release.', 'ok');
+			await loadAttempts(d);
+		} catch (err) {
+			toasts.push(message(err), 'fail');
+		} finally {
+			abandoning = 0;
+		}
+	}
+
 	async function saveSettings(e: SubmitEvent) {
 		e.preventDefault();
 		setError = '';
@@ -161,7 +223,7 @@
 <header class="page-head">
 	<div>
 		<h1>Downloaders</h1>
-		<p>The apps that download for HolyArrs: qBittorrent for torrents, SABnzbd for Usenet.</p>
+		<p>The apps that download torrents or Usenet releases for HolyArrs.</p>
 	</div>
 	{#if !editing}<button class="btn btn-red" type="button" onclick={startAdd}><Icon name="plus" size={18} /> Add a Downloader</button>{/if}
 </header>
@@ -179,7 +241,10 @@
 				<legend class="label">Which app</legend>
 				<div class="row kinds">
 					<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'qbittorrent'} onchange={() => pickKind('qbittorrent')} /><span><b>qBittorrent</b> (torrents)</span></label>
+					<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'transmission'} onchange={() => pickKind('transmission')} /><span><b>Transmission</b> (torrents)</span></label>
+					<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'deluge'} onchange={() => pickKind('deluge')} /><span><b>Deluge</b> (torrents)</span></label>
 					<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'sabnzbd'} onchange={() => pickKind('sabnzbd')} /><span><b>SABnzbd</b> (Usenet)</span></label>
+					<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'nzbget'} onchange={() => pickKind('nzbget')} /><span><b>NZBGet</b> (Usenet)</span></label>
 				</div>
 			</fieldset>
 		{/if}
@@ -189,15 +254,15 @@
 		</div>
 		<div class="field">
 			<label for="dl-url">Address</label>
-			<input id="dl-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" required placeholder={form.kind === 'sabnzbd' ? 'http://192.168.1.10:8080' : 'http://192.168.1.10:8090'} />
+			<input id="dl-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" required placeholder={addressPlaceholder(form.kind)} />
 			<span class="hint">The address of its web page. For SABnzbd use the IP address, or add HolyArrs' name to its list of allowed host names.</span>
 		</div>
-		{#if form.kind === 'qbittorrent'}
+		{#if hasUsername(form.kind)}
 			<div class="two">
 				<div class="field">
 					<label for="dl-user">Sign-in name</label>
 					<input id="dl-user" class="input" bind:value={form.username} autocomplete="off" />
-					<span class="hint">Leave empty when qBittorrent skips sign-in for your network.</span>
+					<span class="hint">Leave empty when {kindWords[form.kind]} does not require it from this network.</span>
 				</div>
 				<div class="field">
 					<label for="dl-secret">Password</label>
@@ -207,16 +272,19 @@
 			</div>
 		{:else}
 			<div class="field">
-				<label for="dl-secret">API key</label>
-				<input id="dl-secret" class="input mono" type="password" bind:value={form.secret} autocomplete="new-password" spellcheck="false" required={isNew} />
-				<span class="hint">In SABnzbd under Config, General. Kept encrypted. Moving the address to another host needs the key again.</span>
+				<label for="dl-secret">{form.kind === 'sabnzbd' ? 'API key' : 'Password'}</label>
+				<input id="dl-secret" class="input" class:mono={form.kind === 'sabnzbd'} type="password" bind:value={form.secret} autocomplete="new-password" spellcheck="false" required={isNew} />
+				<span class="hint">{form.kind === 'sabnzbd' ? 'In SABnzbd under Config, General.' : 'The Deluge Web UI password.'} Kept encrypted. Moving the address to another host needs it again.</span>
 			</div>
+		{/if}
+		{#if form.kind === 'deluge'}
+			<p class="notice">The Deluge Web UI must already be connected to the intended daemon, and that daemon must have the Label plugin enabled.</p>
 		{/if}
 		<div class="two">
 			<div class="field">
 				<label for="dl-cat">Category</label>
 				<input id="dl-cat" class="input" bind:value={form.category} maxlength="64" required />
-				<span class="hint">{form.kind === 'sabnzbd' ? 'Must already exist in SABnzbd.' : 'Made in qBittorrent if missing.'} HolyArrs only follows downloads in it.</span>
+				<span class="hint">{categoryHint(form.kind)} HolyArrs only follows downloads in it.</span>
 			</div>
 			<div class="field">
 				<label for="dl-prio">Priority</label>
@@ -259,7 +327,7 @@
 	<p class="notice bad" role="alert">{error}</p>
 {:else if list.length === 0 && !editing}
 	<EmptyState icon="downloader" title="No Downloader yet">
-		<p>HolyArrs needs a Downloader to fetch what it chooses. Add qBittorrent for torrents or SABnzbd for Usenet.</p>
+		<p>HolyArrs needs a Downloader to fetch what it chooses. Add a torrent or Usenet app.</p>
 	</EmptyState>
 {:else}
 	<ul class="list">
@@ -283,6 +351,21 @@
 				</p>
 				{#if results[d.id]}
 					<p class="small" class:bad-text={!results[d.id].ok} class:ok-text={results[d.id].ok} role="status" data-testid="downloader-test">{results[d.id].text}</p>
+				{/if}
+				{#if pendingAttempts(attempts[d.id]).length > 0}
+					<section class="notice bad attempt-review" aria-label="Uncertain sends" data-testid="downloader-attempts">
+						<h3 class="h4">A send needs review</h3>
+						<p class="small">HolyArrs could not confirm whether {kindWords[d.kind]} accepted it. Inspect {kindWords[d.kind]} before choosing a different Release.</p>
+						{#each pendingAttempts(attempts[d.id]) as attempt (attempt.id)}
+							<div class="attempt-row">
+								<p class="small">Release {attempt.release_id} · Slot {attempt.slot_id} · started {ago(attempt.created_at)}</p>
+								<button class="btn btn-quiet" type="button" disabled={abandoning === attempt.id} aria-busy={abandoning === attempt.id} onclick={() => abandonAttempt(d, attempt)}>Abandon this send</button>
+							</div>
+						{/each}
+						<p class="xs muted">Abandoning stops HolyArrs from retrying this exact Release and Slot, including covered Slots in the same Version. It does not cancel anything in {kindWords[d.kind]}.</p>
+					</section>
+				{:else if attemptErrors[d.id]}
+					<p class="small bad-text" role="status">Could not check uncertain sends: {attemptErrors[d.id]}</p>
 				{/if}
 				<div class="row actions">
 					<button class="btn btn-ghost" type="button" disabled={testing === d.id} aria-busy={testing === d.id} onclick={() => test(d)}>Test</button>
@@ -397,6 +480,17 @@
 		margin-top: var(--s-3);
 		flex-wrap: wrap;
 	}
+	.attempt-review {
+		display: block;
+		margin-top: var(--s-3);
+	}
+	.attempt-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--s-3);
+		margin-top: var(--s-2);
+	}
 	.kinds {
 		flex-wrap: wrap;
 		gap: var(--s-4);
@@ -431,6 +525,10 @@
 	@media (max-width: 600px) {
 		.two {
 			grid-template-columns: 1fr;
+		}
+		.attempt-row {
+			align-items: stretch;
+			flex-direction: column;
 		}
 	}
 </style>

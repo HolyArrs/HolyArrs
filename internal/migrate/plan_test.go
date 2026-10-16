@@ -84,6 +84,11 @@ func planOf(t *testing.T, ch Choices) *Plan {
 // accounted says whether something from `from` is an item or a not-moved entry.
 func accounted(p *Plan, from string) bool {
 	match := func(f string) bool { return f == from || strings.HasPrefix(f, from+".") }
+	for _, f := range p.Mapped {
+		if match(f) {
+			return true
+		}
+	}
 	for _, g := range p.Groups {
 		for _, it := range g.Items {
 			if match(it.From) {
@@ -303,13 +308,19 @@ func TestPlanMapsEachGroup(t *testing.T) {
 	if n, ok := notMoved(p, "bazarr subtitles.providers[2]"); !ok || !strings.Contains(n.Why, "Gestdown") {
 		t.Fatalf("addic7ed %+v", n)
 	}
-	// People: the owner maps to us; others are placeholders with mapped permissions and limits.
+	// People: the owner maps to us; others are placeholders. Non-seven-day
+	// source windows stay explicit in NotMoved rather than widening access.
 	if o := item(t, p, GroupPeople, "person:seerr:1"); o.Person.Role != "owner" || o.Needs != "" {
 		t.Fatalf("owner %+v", o)
 	}
 	ana := item(t, p, GroupPeople, "person:seerr:2").Person
-	if ana.Role != "member" || !slices.Equal(ana.Perms, []string{"ask", "auto_approve"}) || *ana.PerWeek != 5 {
+	if ana.Role != "member" || !slices.Equal(ana.Perms, []string{"ask"}) || ana.MoviesPerWeek != nil || ana.ShowsPerWeek != nil {
 		t.Fatalf("ana %+v", ana)
+	}
+	for _, from := range []string{"seerr users[1].movie_quota", "seerr users[1].show_quota"} {
+		if _, ok := notMoved(p, from); !ok {
+			t.Fatalf("quota window loss not reported: %s", from)
+		}
 	}
 	if n, ok := notMoved(p, "seerr users[1].permissions"); !ok || !strings.Contains(n.What, "REQUEST_4K") {
 		t.Fatalf("perms %+v", n)

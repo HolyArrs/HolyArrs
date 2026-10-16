@@ -24,7 +24,7 @@ func TestControlsNeedAPasswordSignIn(t *testing.T) {
 		"/api/v1/app/restart", "/api/v1/app/safe-mode", "/api/v1/app/shutdown",
 	} {
 		for _, body := range []string{"", `{"confirm":"abc"}`} {
-			if b := bare.call("POST", p, body, 403); !strings.Contains(string(b), "sign in with your password") {
+			if b := bare.call("POST", p, body, 403); !strings.Contains(string(b), "confirm your local password") {
 				t.Errorf("%s %s: %s", p, body, b)
 			}
 		}

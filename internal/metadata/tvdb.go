@@ -65,7 +65,7 @@ func (d *TVDB) session(ctx context.Context, fresh bool) (string, error) {
 	}
 	d.mu.Unlock()
 	body, _ := json.Marshal(map[string]string{"apikey": key})
-	b, err := d.getter().do(ctx, func(ctx context.Context) (*http.Request, error) {
+	b, err := d.getter().do(ctx, []string{d.base(), key}, func(ctx context.Context) (*http.Request, error) {
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, d.base()+"/login", bytes.NewReader(body))
 		if err == nil {
 			req.Header.Set("Content-Type", "application/json")
@@ -111,7 +111,10 @@ func (d *TVDB) get(ctx context.Context, path string, q url.Values) ([]byte, erro
 		if err != nil {
 			return nil, err
 		}
-		b, err := d.getter().do(ctx, func(ctx context.Context) (*http.Request, error) {
+		d.mu.Lock()
+		key := d.keyAt
+		d.mu.Unlock()
+		b, err := d.getter().do(ctx, []string{d.base(), key}, func(ctx context.Context) (*http.Request, error) {
 			req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 			if err == nil {
 				req.Header.Set("Authorization", "Bearer "+tok)

@@ -21,6 +21,8 @@ import (
 	"syscall"
 	"time"
 	"unicode"
+
+	"github.com/CoderLuii/holyarrs/internal/outside"
 )
 
 // Error kinds match the Source pause reasons in model.md section 2.9.
@@ -38,9 +40,12 @@ type Error struct {
 	Kind       string
 	RetryAfter time.Duration
 	Msg        string
+	cause      error
 }
 
 func (e *Error) Error() string { return "source " + e.Kind + ": " + e.Msg }
+
+func (e *Error) Unwrap() error { return e.cause }
 
 // Code lets the jobs queue record the kind.
 func (e *Error) Code() string { return "source_" + e.Kind }
@@ -444,12 +449,29 @@ func (c *Client) getWithObserver(ctx context.Context, op string, q url.Values, o
 }
 
 func (c *Client) fetch(ctx context.Context, raw string) ([]byte, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, raw, nil)
+	identity := []string{c.cfg.URL, c.cfg.APIKey}
+	if c.cfg.Proxy != nil {
+		identity = append(identity, c.cfg.Proxy.String())
+	}
+	op, err := outside.Begin(ctx, outside.Target{Kind: "source", Identity: identity})
 	if err != nil {
+		if errors.Is(err, outside.ErrSuppressed) {
+			return nil, &Error{Kind: KindDown, Msg: err.Error(), cause: err}
+		}
+		return nil, err
+	}
+	outcome := outside.Canceled
+	defer func() { op.Finish(outcome) }()
+	rctx, cancel := op.AttemptContext(ctx, c.cfg.Timeout)
+	defer cancel()
+	req, err := http.NewRequestWithContext(rctx, http.MethodGet, raw, nil)
+	if err != nil {
+		outcome = outside.TerminalFailure
 		return nil, &Error{Kind: KindBroken, Msg: "bad Source address"}
 	}
 	resp, err := c.http.Do(req)
 	if err != nil {
+		outcome = outside.HTTPOutcome(0, err, ctx)
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
 		}
@@ -466,11 +488,15 @@ func (c *Client) fetch(ctx context.Context, raw string) ([]byte, error) {
 		}
 		return nil, &Error{Kind: KindDown, Msg: c.scrub(err.Error())}
 	}
-	defer resp.Body.Close()
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 16<<20))
+	if closeErr := resp.Body.Close(); err == nil {
+		err = closeErr
+	}
 	if err != nil {
+		outcome = outside.HTTPOutcome(resp.StatusCode, err, ctx)
 		return nil, &Error{Kind: KindDown, Msg: "reading the answer failed"}
 	}
+	outcome = outside.HTTPOutcome(resp.StatusCode, nil, ctx)
 	switch {
 	case resp.StatusCode == http.StatusTooManyRequests:
 		e := &Error{Kind: KindRateLimited, Msg: "the Source asked us to slow down", RetryAfter: Backoff(1)}

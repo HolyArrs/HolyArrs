@@ -13,3 +13,55 @@ Settings > Sign-in > Passwords sets the shortest password HolyArrs takes. Only t
 Short passwords are easy to guess. HolyArrs slows down repeated wrong sign-ins from the same place and for the same name, which helps, but it does not make a short password safe. When HolyArrs can be reached from outside your home, raise the minimum to 12 or more.
 
 API: `GET /api/v1/auth/settings` shows `min_password_length`; `PUT /api/v1/auth/settings` with `{"min_password_length": 12}` changes it (owner only, 4 to 64, anything else answers 400).
+
+## Single sign-on and trusted proxy sign-in
+
+HolyArrs can offer an OpenID Connect provider or sign-in through a trusted reverse proxy. Both are optional. When enabled, each appears as an explicit button on the sign-in page; merely visiting HolyArrs never signs someone in from proxy headers.
+
+A new outside identity joins as a member only when the owner has allowed new members for that provider. It never becomes an owner or admin automatically. HolyArrs identifies an OpenID Connect account by the provider's stable issuer and subject values. It does not join accounts because their email addresses match.
+
+To add either method to an existing account:
+
+1. Sign in to that HolyArrs account.
+2. Open **My account**.
+3. Confirm the account's HolyArrs password. If two-factor sign-in is on, enter a current app or backup code too.
+4. Choose **Link single sign-on** or **Link trusted proxy sign-in**.
+
+The local confirmation makes a fresh session before linking. A session created through another provider, an older session without sign-in assurance, or a local session whose confirmation is no longer recent must complete this step. Provider configuration cannot skip it.
+
+OpenID Connect sends the browser to the configured provider and back to HolyArrs. HolyArrs checks the provider, audience, signature, expiry, callback state, nonce and proof key before making a session. A failed or expired callback leaves the person signed out and shows a safe error without provider tokens or raw provider responses.
+
+Trusted proxy sign-in accepts identity headers only when the request comes directly from an explicitly trusted proxy address. Forwarded client-address headers do not make an untrusted peer trusted. Keep HolyArrs unreachable except through that proxy when this method is enabled.
+
+Signing out ends the HolyArrs session. It does not sign out the provider's own browser session, so a provider may be able to sign the same person in again without asking for a password. Use the provider's sign-out control too when that matters on a shared device.
+
+## Recovery
+
+Keep a working local owner password even when everyone normally uses an outside provider. If the provider or proxy is unavailable, the owner can still sign in locally. If the owner password is lost, run `holyarrs reset-owner` on the machine that runs HolyArrs. It sets a new local owner name and password, turns off two-factor sign-in for that owner, and signs out every device and API key.
+
+Outside-only accounts cannot make a local password or confirm local sign-in in this version. Create and keep the local owner first, then link its provider identity from My account. An existing local account keeps its password and recovery path after linking.
+
+## Deployment settings
+
+Set these before starting HolyArrs. Both methods are off unless explicitly enabled. Boolean values are `true` or `false`. Invalid enabled configuration prevents startup; a provider outage leaves local sign-in available.
+
+| Variable | Meaning |
+| --- | --- |
+| `HOLYARRS_OIDC_ENABLED` | Enable OpenID Connect. Default `false`. |
+| `HOLYARRS_OIDC_ISSUER` | Exact HTTPS issuer published by the provider. |
+| `HOLYARRS_OIDC_CLIENT_ID` | Registered application client id. |
+| `HOLYARRS_OIDC_CLIENT_SECRET_FILE` | Optional file holding the client secret, at most 4096 bytes. Omit for a public client. Keep it outside tracked files. |
+| `HOLYARRS_OIDC_REDIRECT_URL` | Exact browser-facing HTTPS callback: the app origin, its URL base if any, then `/api/v1/auth/oidc/callback`. Register this same value at the provider. |
+| `HOLYARRS_OIDC_ALLOW_JOIN` | Allow unlinked identities to make member accounts with only the ability to ask. Default `false`. |
+| `HOLYARRS_OIDC_ALLOW_LOCAL_NETWORK` | Permit provider endpoints on private networks. Default `false`; cloud metadata and unsafe destination addresses remain blocked. |
+| `HOLYARRS_OIDC_ALLOW_LOOPBACK_HTTP` | Allow HTTP on loopback for isolated testing only. Default `false`. |
+| `HOLYARRS_FORWARD_AUTH_ENABLED` | Enable trusted proxy sign-in. Default `false`. |
+| `HOLYARRS_FORWARD_AUTH_ISSUER` | A stable HTTPS identifier for this proxy identity source. Changing it makes a different identity source. |
+| `HOLYARRS_FORWARD_AUTH_TRUSTED_PEERS` | Comma-separated direct peer IP addresses or CIDRs. Required; an all-address range is refused. |
+| `HOLYARRS_FORWARD_AUTH_ALLOW_JOIN` | Allow unlinked proxy identities to make member accounts with only the ability to ask. Default `false`. |
+
+The OIDC provider must support authorization code sign-in with PKCE S256 and RS256 identity tokens. Discovery, authorization, token and signing-key endpoints must share the issuer's origin. HolyArrs does not request refresh tokens or use provider roles or groups. It supports one configured OIDC provider and one proxy identity source.
+
+The proxy must remove incoming `Remote-User` and `Remote-Name` headers and write its own values after authenticating the person. `Remote-User` must contain one stable, nonempty subject, at most 255 bytes. Optional `Remote-Name` is a display name of at most 200 bytes. Repeated, comma-joined or control-character values are refused. Role headers are ignored. Allow only the proxy to reach the app listener: trusting a proxy address also trusts identities it supplies.
+
+Changes that manage accounts, credentials, settings or app controls require a local password confirmation from the last ten minutes for browser sessions. Two-factor sign-in, when enrolled, is part of that confirmation. Outside sign-in and local-network bypass do not count as local confirmation. API keys retain their existing scopes. Logout and device-session revocation remain available without confirmation.

@@ -303,6 +303,20 @@ func busyErr(st domain.SlotState) error {
 // arrow (model.md section 4: every pick passes through searching). A chosen
 // Slot stays chosen only for the same Release (releaseID already chosen).
 func moveSlotTx(tx *sql.Tx, slotID int64, to domain.SlotState, reason string, by domain.Actor, releaseID int64) error {
+	if to == domain.SlotChosen {
+		// Abandonment is terminal for this Release in this Version. Refuse
+		// the choice before it can strand a Slot behind a stopped grab job.
+		var abandoned bool
+		if err := tx.QueryRow(`SELECT EXISTS (SELECT 1 FROM downloader_attempts a
+			JOIN releases r ON r.id = a.release_id AND r.created_at = a.release_created_at
+			JOIN versions v ON v.id = a.version_id AND v.created_at = a.version_created_at
+			JOIN slots s ON s.version_id = v.id WHERE s.id = ? AND r.id = ? AND a.state = 'abandoned')`, slotID, releaseID).Scan(&abandoned); err != nil {
+			return err
+		}
+		if abandoned {
+			return fmt.Errorf("%w: this Release's send was abandoned; choose a different Release", ErrBusy)
+		}
+	}
 	from, err := slotStateTx(tx, slotID)
 	if err != nil {
 		return err

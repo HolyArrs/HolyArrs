@@ -73,6 +73,7 @@ func normBackup(c string) string {
 type ticket struct {
 	userID  int64
 	name    string
+	method  string
 	expires time.Time
 	tries   int
 }
@@ -80,6 +81,12 @@ type ticket struct {
 // passed finishes a sign-in whose first step was right: straight to a
 // session, or a ticket when two-factor sign-in is on.
 func (a *Auth) passed(w http.ResponseWriter, r *http.Request, userID int64, name string) {
+	a.passedAs(w, r, userID, name, AuthMethodLocalPassword)
+}
+
+// passedAs finishes a sign-in while preserving how its first factor was
+// checked across an optional two-factor ticket.
+func (a *Auth) passedAs(w http.ResponseWriter, r *http.Request, userID int64, name, method string) {
 	var on bool
 	if err := a.s.Read().QueryRowContext(r.Context(), "SELECT totp_secret_id IS NOT NULL FROM users WHERE id = ?", userID).Scan(&on); err != nil {
 		log.Printf("auth: sign-in: %v", err)
@@ -87,7 +94,7 @@ func (a *Auth) passed(w http.ResponseWriter, r *http.Request, userID int64, name
 		return
 	}
 	if !on {
-		a.startSession(w, r, userID, name, http.StatusOK)
+		a.startSessionAs(w, r, userID, name, http.StatusOK, method)
 		return
 	}
 	t := token(32)
@@ -98,7 +105,7 @@ func (a *Auth) passed(w http.ResponseWriter, r *http.Request, userID int64, name
 			delete(a.tickets, k)
 		}
 	}
-	a.tickets[sum(t)] = &ticket{userID: userID, name: name, expires: now.Add(ticketLife)}
+	a.tickets[sum(t)] = &ticket{userID: userID, name: name, method: method, expires: now.Add(ticketLife)}
 	a.mu.Unlock()
 	writeJSON(w, http.StatusOK, map[string]any{"two_factor": true, "ticket": t})
 }
@@ -220,7 +227,7 @@ func (a *Auth) loginTwoFactor(w http.ResponseWriter, r *http.Request) {
 	delete(a.fails, ipKey)
 	delete(a.fails, "name:"+strings.ToLower(t.name))
 	a.mu.Unlock()
-	a.startSession(w, r, t.userID, t.name, http.StatusOK)
+	a.startSessionAs(w, r, t.userID, t.name, http.StatusOK, t.method)
 }
 
 func (a *Auth) twoFactorSetup(w http.ResponseWriter, r *http.Request) {

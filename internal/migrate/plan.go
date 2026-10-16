@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 )
 
@@ -72,6 +73,10 @@ type Choices struct {
 	// the old app's owner and is me), "admin" (keep their admin role),
 	// "merge" (the same person as the one here with that name), "skip".
 	People map[string]string `json:"people,omitempty"`
+	// ApprovedHash is written only by Start after it verifies the owner's
+	// preview. A queued move must reproduce this exact canonical plan before
+	// it may change domain data.
+	ApprovedHash string `json:"approved_hash,omitempty"`
 }
 
 // Person choices on the move screen.
@@ -99,6 +104,8 @@ type Plan struct {
 	NeedsInput []string `json:"needs_input"`
 	// Notes are the readers' notes, kept for the report.
 	Notes []string `json:"notes,omitempty"`
+	// Mapped names source fields folded into a combined plan item.
+	Mapped []string `json:"mapped,omitempty"`
 	// Paths are the old library folders the path rules must cover.
 	Paths []string `json:"old_paths"`
 	// covered names the Snapshot fields the plan looked at ("titles").
@@ -116,8 +123,9 @@ type Group struct {
 // Item is one thing the move would create or change.
 type Item struct {
 	// Key names it across moves, so a second move adds nothing twice.
-	Key  string `json:"key"`
-	Name string `json:"name"`
+	Key        string   `json:"key"`
+	LegacyKeys []string `json:"legacy_keys,omitempty"`
+	Name       string   `json:"name"`
 	// From says where it came from ("radarr titles[3]").
 	From   string `json:"from"`
 	Detail string `json:"detail,omitempty"`
@@ -126,17 +134,18 @@ type Item struct {
 	// Needs says what the owner must give after the move ("your key").
 	Needs string `json:"needs,omitempty"`
 
-	Folder     *FolderPlan       `json:"folder,omitempty"`
-	Rules      *RulesPlan        `json:"rules,omitempty"`
-	Title      *TitlePlan        `json:"title,omitempty"`
-	NeverAdd   *NeverAddPlan     `json:"never_add,omitempty"`
-	Source     *SourcePlan       `json:"source,omitempty"`
-	Downloader *DownloaderPlan   `json:"downloader,omitempty"`
-	Naming     map[string]string `json:"naming,omitempty"`
-	Subtitles  *SubtitlePlan     `json:"subtitles,omitempty"`
-	Person     *PersonPlan       `json:"person,omitempty"`
-	Ask        *AskPlan          `json:"ask,omitempty"`
-	Alert      *AlertPlan        `json:"alert,omitempty"`
+	Folder      *FolderPlan       `json:"folder,omitempty"`
+	Rules       *RulesPlan        `json:"rules,omitempty"`
+	Title       *TitlePlan        `json:"title,omitempty"`
+	NeverAdd    *NeverAddPlan     `json:"never_add,omitempty"`
+	Source      *SourcePlan       `json:"source,omitempty"`
+	Downloader  *DownloaderPlan   `json:"downloader,omitempty"`
+	Naming      map[string]string `json:"naming,omitempty"`
+	Subtitles   *SubtitlePlan     `json:"subtitles,omitempty"`
+	Person      *PersonPlan       `json:"person,omitempty"`
+	AskSettings *AskSettingsPlan  `json:"ask_settings,omitempty"`
+	Ask         *AskPlan          `json:"ask,omitempty"`
+	Alert       *AlertPlan        `json:"alert,omitempty"`
 }
 
 // NotMoved is one setting the move leaves behind, and why.
@@ -176,7 +185,24 @@ type TitlePlan struct {
 	// Seasons left off (shows): season numbers not kept up to date.
 	SeasonsOff []int `json:"seasons_off,omitempty"`
 	// Unresolved says why the folder could not be placed ("" when it can).
-	Unresolved string `json:"unresolved,omitempty"`
+	Unresolved string           `json:"unresolved,omitempty"`
+	Music      *MusicPolicyPlan `json:"music,omitempty"`
+}
+
+// MusicPolicyPlan is the supported part of an artist's Lidarr monitoring
+// policy, including explicit per-album and pressing choices.
+type MusicPolicyPlan struct {
+	NewAlbums       *string          `json:"new_albums,omitempty"`
+	AlbumTypes      []string         `json:"album_types,omitempty"`
+	SecondaryTypes  []string         `json:"secondary_types,omitempty"`
+	ReleaseStatuses []string         `json:"release_statuses,omitempty"`
+	Albums          []MusicAlbumPlan `json:"albums,omitempty"`
+}
+
+type MusicAlbumPlan struct {
+	MBID         string `json:"mbid"`
+	KeepUpToDate bool   `json:"keep_up_to_date"`
+	PressingMBID string `json:"pressing_mbid,omitempty"`
 }
 
 // NeverAddPlan is one entry for the Never-add list.
@@ -226,12 +252,18 @@ type SubtitleWant struct {
 
 // PersonPlan is one person from Seerr or Overseerr.
 type PersonPlan struct {
-	App      string   `json:"app"`
-	SourceID int64    `json:"source_id"`
-	Email    string   `json:"email,omitempty"`
-	Role     string   `json:"role"` // member; admin or owner only when the owner confirmed it
-	Perms    []string `json:"perms"`
-	PerWeek  *int     `json:"per_week,omitempty"`
+	App      string `json:"app"`
+	SourceID int64  `json:"source_id"`
+	// StableIdentity says the source supplied a provider-scoped identity that
+	// survives numeric source-id reuse. Numeric-only identities are safe to
+	// repeat within one move, but require an explicit owner choice across moves.
+	StableIdentity bool     `json:"stable_identity,omitempty"`
+	Email          string   `json:"email,omitempty"`
+	Role           string   `json:"role"` // member; admin or owner only when the owner confirmed it
+	Perms          []string `json:"perms"`
+	PerWeek        *int     `json:"per_week,omitempty"`
+	MoviesPerWeek  *int     `json:"movies_per_week,omitempty"`
+	ShowsPerWeek   *int     `json:"shows_per_week,omitempty"`
 	// WasAdmin and WasOwner say what they were in the old app; the move
 	// screen asks the owner to confirm each.
 	WasAdmin bool `json:"was_admin,omitempty"`
@@ -250,11 +282,19 @@ type AskPlan struct {
 	Seasons  []int             `json:"seasons,omitempty"`
 	Approved bool              `json:"approved"`
 	// By is the asker's Person key; ByName their name there.
-	By      string `json:"by"`
-	ByName  string `json:"by_name,omitempty"`
-	Decider string `json:"decided_by,omitempty"`
-	AskedAt string `json:"asked_at,omitempty"`
-	Note    string `json:"note,omitempty"`
+	By        string `json:"by"`
+	ByName    string `json:"by_name,omitempty"`
+	Decider   string `json:"decided_by,omitempty"`
+	AskedAt   string `json:"asked_at,omitempty"`
+	DecidedAt string `json:"decided_at,omitempty"`
+	Note      string `json:"note,omitempty"`
+}
+
+// AskSettingsPlan is the subset of the old app's default quotas represented
+// by HolyArrs without widening one media kind into another.
+type AskSettingsPlan struct {
+	MoviesPerWeek *int `json:"movies_per_week,omitempty"`
+	ShowsPerWeek  *int `json:"shows_per_week,omitempty"`
 }
 
 // AlertPlan is an Alert to add (always off until its secret is typed).
@@ -289,18 +329,19 @@ func (p *Plan) Counts() map[string]int {
 
 // builder carries a plan being built.
 type builder struct {
-	p       *Plan
-	rules   []PathRule
-	skip    map[string]bool
-	items   map[string]*Group
-	keys    map[string]bool
-	folders []FolderPlan      // every folder planned (for title placement)
-	presets map[string]string // app + profile id -> preset
-	titles  map[string]string // kind:id -> name (asks take names from here)
-	planned map[string]bool   // person keys planned
-	choices map[string]string // the owner's choices per person key
-	app     Kind
-	snapID  int64
+	p          *Plan
+	rules      []PathRule
+	skip       map[string]bool
+	items      map[string]*Group
+	keys       map[string]bool
+	folders    []FolderPlan      // every folder planned (for title placement)
+	presets    map[string]string // app + profile id -> preset
+	titles     map[string]string // kind:id -> name (asks take names from here)
+	planned    map[string]bool   // person keys planned
+	personRefs map[string]string // app/source id -> stable person key
+	choices    map[string]string // the owner's choices per person key
+	app        Kind
+	snapID     int64
 }
 
 // clip cleans a name from an old app: no control characters, trimmed,
@@ -407,7 +448,7 @@ func (e *RuleError) Error() string { return e.Text }
 func BuildPlan(in []Input, ch Choices) *Plan {
 	p := &Plan{covered: map[string]bool{}, Snapshots: []int64{}, Apps: []string{}, NotMoved: []NotMoved{}, NeedsInput: []string{}, Paths: []string{}}
 	b := &builder{p: p, rules: ch.PathRules, skip: map[string]bool{}, items: map[string]*Group{}, keys: map[string]bool{},
-		presets: map[string]string{}, titles: map[string]string{}, planned: map[string]bool{}, choices: ch.People}
+		presets: map[string]string{}, titles: map[string]string{}, planned: map[string]bool{}, personRefs: map[string]string{}, choices: ch.People}
 	for _, s := range ch.Skip {
 		b.skip[s] = true
 	}
@@ -609,9 +650,107 @@ func (b *builder) profiles(s *Snapshot) {
 	for i, n := range s.LanguageProfiles {
 		b.not(GroupRules, b.from("language_profiles", i), n.Name, "language profiles are not moved; Pick rules set the languages")
 	}
-	for i, n := range s.MetadataProfiles {
-		b.not(GroupRules, b.from("metadata_profiles", i), n.Name, "album kinds are chosen per artist here (Settings > Music)")
+	// Lidarr metadata profiles are accounted where a moved artist actually
+	// consumes their individual fields in titleList.
+}
+
+func allowedMusicValues(v any, names map[string]string) (out, unsupported []string) {
+	for _, raw := range list(v) {
+		m := lower(obj(raw))
+		if !boolean(m["allowed"]) {
+			continue
+		}
+		name := str(m["name"])
+		if n := names[strings.ToLower(name)]; n != "" {
+			out = append(out, n)
+		} else {
+			unsupported = append(unsupported, name)
+		}
 	}
+	return out, unsupported
+}
+
+type musicIssue struct{ field, what, why string }
+
+func musicPolicy(s *Snapshot, t Title) (*MusicPolicyPlan, []musicIssue) {
+	if s.Kind != Lidarr {
+		return nil, nil
+	}
+	p := &MusicPolicyPlan{Albums: []MusicAlbumPlan{}}
+	var issues []musicIssue
+	switch strings.ToLower(str(anyKey(t.Extra, "new_albums"))) {
+	case "new":
+		v := "future_only"
+		p.NewAlbums = &v
+	case "none":
+		v := "none"
+		p.NewAlbums = &v
+	case "all":
+		v := "all"
+		p.NewAlbums = &v
+	case "":
+		issues = append(issues, musicIssue{"new_albums", "(missing)", "the source did not provide a new-album policy, so it is left unchanged"})
+	default:
+		issues = append(issues, musicIssue{"new_albums", str(anyKey(t.Extra, "new_albums")), "the new-album policy is unknown, so it is left unchanged"})
+	}
+	profileID := num(anyKey(t.Extra, "metadata_profile_id"))
+	found := false
+	if profileID == 0 {
+		issues = append(issues, musicIssue{"metadata_profile_id", "(missing)", "the source did not identify a metadata profile, so its album filters are left unchanged"})
+	}
+	for _, mp := range s.MetadataProfiles {
+		if mp.ID != profileID {
+			continue
+		}
+		found = true
+		var bad []string
+		p.AlbumTypes, bad = allowedMusicValues(anyKey(mp.Settings, "primaryalbumtypes"), map[string]string{
+			"album": "album", "ep": "ep", "single": "single", "broadcast": "broadcast", "other": "other",
+		})
+		for _, v := range bad {
+			issues = append(issues, musicIssue{"metadata_profile.primaryalbumtypes", v, "this allowed album kind has no exact HolyArrs match"})
+		}
+		if len(p.AlbumTypes) == 0 {
+			issues = append(issues, musicIssue{"metadata_profile.primaryalbumtypes", "(none supported)", "no supported allowed album kind was provided, so this filter is left unchanged"})
+		}
+		p.SecondaryTypes, bad = allowedMusicValues(anyKey(mp.Settings, "secondaryalbumtypes"), map[string]string{
+			"studio": "studio", "live": "live", "compilation": "compilation", "remix": "remix", "soundtrack": "soundtrack", "spokenword": "spokenword", "audiobook": "audiobook", "interview": "interview", "demo": "demo",
+		})
+		for _, v := range bad {
+			issues = append(issues, musicIssue{"metadata_profile.secondaryalbumtypes", v, "this allowed extra album kind has no exact HolyArrs match"})
+		}
+		if len(p.SecondaryTypes) == 0 {
+			issues = append(issues, musicIssue{"metadata_profile.secondaryalbumtypes", "(none supported)", "no supported allowed extra album kind was provided, so this filter is left unchanged"})
+		}
+		p.ReleaseStatuses, bad = allowedMusicValues(anyKey(mp.Settings, "releasestatuses"), map[string]string{
+			"official": "official", "promotion": "promotion", "bootleg": "bootleg", "pseudo-release": "pseudo-release", "pseudorelease": "pseudo-release",
+		})
+		for _, v := range bad {
+			issues = append(issues, musicIssue{"metadata_profile.releasestatuses", v, "this allowed release status has no exact HolyArrs match"})
+		}
+		if len(p.ReleaseStatuses) == 0 {
+			issues = append(issues, musicIssue{"metadata_profile.releasestatuses", "(none supported)", "no supported allowed release status was provided, so this filter is left unchanged"})
+		}
+		break
+	}
+	if profileID != 0 && !found {
+		issues = append(issues, musicIssue{"metadata_profile_id", strconv.FormatInt(profileID, 10), "the referenced metadata profile was not read, so its filters are left unchanged"})
+	}
+	for i, a := range t.MusicAlbums {
+		if !isMBID(a.MBID) {
+			issues = append(issues, musicIssue{fmt.Sprintf("music_albums[%d].mbid", i), a.MBID, "the album id is invalid, so its monitoring choice is left unchanged"})
+			continue
+		}
+		ap := MusicAlbumPlan{MBID: strings.ToLower(a.MBID), KeepUpToDate: a.Monitored}
+		if isMBID(a.WatchedEdition) {
+			ap.PressingMBID = strings.ToLower(a.WatchedEdition)
+		} else if a.WatchedEdition != "" {
+			issues = append(issues, musicIssue{fmt.Sprintf("music_albums[%d].watched_edition", i), a.WatchedEdition, "the pressing id is invalid, so the watched pressing is left unchanged"})
+		}
+		p.Albums = append(p.Albums, ap)
+	}
+	sort.Slice(p.Albums, func(i, j int) bool { return p.Albums[i].MBID < p.Albums[j].MBID })
+	return p, issues
 }
 
 // idFor picks the id a title is added by.
@@ -699,6 +838,7 @@ func (b *builder) titleList(s *Snapshot) {
 	b.cover("titles")
 	extras := map[string]int{}
 	tags := 0
+	usedMetadata := map[int64]bool{}
 	for i, t := range s.Titles {
 		from := b.from("titles", i)
 		kind, id := idFor(s.Kind, t)
@@ -717,8 +857,12 @@ func (b *builder) titleList(s *Snapshot) {
 				ids[k] = clip(v, 60)
 			}
 		}
+		music, issues := musicPolicy(s, t)
+		for _, issue := range issues {
+			b.not(GroupTitles, from+"."+issue.field, issue.what, issue.why)
+		}
 		tp := &TitlePlan{Kind: kind, ID: id, IDs: ids, Year: t.Year, KeepUpToDate: t.Monitored,
-			Preset: b.presets[string(s.Kind)+":"+strconv.FormatInt(t.ProfileID, 10)]}
+			Preset: b.presets[string(s.Kind)+":"+strconv.FormatInt(t.ProfileID, 10)], Music: music}
 		if tp.Preset == "" && kind != "artist" {
 			tp.Preset = "Good everyday"
 		}
@@ -745,8 +889,47 @@ func (b *builder) titleList(s *Snapshot) {
 		if t.Year > 0 {
 			name = fmt.Sprintf("%s (%d)", name, t.Year)
 		}
-		b.add(GroupTitles, Item{Key: "title:" + kind + ":" + id, Name: name, From: from, Detail: detail, Title: tp})
+		key := "title:" + kind + ":" + id
+		before := len(b.items[GroupTitles].Items)
+		b.add(GroupTitles, Item{Key: key, Name: name, From: from, Detail: detail, Title: tp})
+		if s.Kind == Lidarr && len(b.items[GroupTitles].Items) > before {
+			profileID := num(anyKey(t.Extra, "metadata_profile_id"))
+			for j, mp := range s.MetadataProfiles {
+				if mp.ID != profileID {
+					continue
+				}
+				usedMetadata[profileID] = true
+				fields := []struct {
+					name   string
+					values []string
+				}{{"primaryalbumtypes", tp.Music.AlbumTypes}, {"secondaryalbumtypes", tp.Music.SecondaryTypes}, {"releasestatuses", tp.Music.ReleaseStatuses}}
+				known := map[string]bool{}
+				for _, field := range fields {
+					known[field.name] = true
+					fromProfile := b.from("metadata_profiles", j) + "." + field.name
+					if len(field.values) > 0 {
+						b.p.Mapped = append(b.p.Mapped, fromProfile)
+					} else {
+						b.not(GroupRules, fromProfile, mp.Name+" "+field.name, "no supported allowed value was represented on the moved artist")
+					}
+				}
+				settingKeys := make([]string, 0, len(mp.Settings))
+				for field := range mp.Settings {
+					settingKeys = append(settingKeys, field)
+				}
+				sort.Strings(settingKeys)
+				for _, field := range settingKeys {
+					if !known[field] {
+						b.not(GroupRules, b.from("metadata_profiles", j)+"."+field, mp.Name+" "+field, "this metadata profile field has no HolyArrs match")
+					}
+				}
+				break
+			}
+		}
 		for k := range t.Extra {
+			if s.Kind == Lidarr && (k == "new_albums" || k == "metadata_profile_id") {
+				continue
+			}
 			extras[k]++
 		}
 		tags += len(t.Tags)
@@ -761,6 +944,13 @@ func (b *builder) titleList(s *Snapshot) {
 	}
 	if tags > 0 {
 		b.not(GroupTitles, b.from("titles", -1)+".tags", fmt.Sprintf("tags on titles (%d)", tags), "HolyArrs has no tags")
+	}
+	if s.Kind == Lidarr {
+		for i, mp := range s.MetadataProfiles {
+			if !usedMetadata[mp.ID] {
+				b.not(GroupRules, b.from("metadata_profiles", i), mp.Name, "no moved artist uses this metadata profile")
+			}
+		}
 	}
 }
 
@@ -1247,6 +1437,49 @@ func (b *builder) subtitles(s *Snapshot) {
 // personKey names a person from an app.
 func personKey(app Kind, id int64) string { return fmt.Sprintf("person:%s:%d", app, id) }
 
+func stablePersonKey(app Kind, u User) string {
+	kind := strings.ToLower(clip(u.Kind, 20))
+	external := clip(u.ExternalID, 100)
+	if external == "" || kind == "" || strings.ContainsAny(kind+external, ":/\\") {
+		return personKey(app, u.SourceID)
+	}
+	return fmt.Sprintf("person:%s:%s:%s", app, kind, external)
+}
+
+func weekly(limit, days int) *int {
+	if limit <= 0 || limit > 1000 {
+		return nil
+	}
+	if days != 7 {
+		return nil
+	}
+	w := limit
+	return &w
+}
+
+// defaultWeekly differs from a person's quota: an explicit zero in the old
+// app means unlimited, while a missing value means there is no setting to move.
+func defaultWeekly(settings map[string]any, kind string) *int {
+	limit, ok := settings["default_"+kind+"_limit"]
+	if !ok {
+		return nil
+	}
+	n := int(num(limit))
+	if n == 0 {
+		return &n
+	}
+	return weekly(n, int(num(settings["default_"+kind+"_days"])))
+}
+
+func sourceTime(v string) (time.Time, bool) {
+	for _, layout := range []string{time.RFC3339Nano, "2006-01-02 15:04:05.999999999Z07:00", "2006-01-02 15:04:05", "2006-01-02"} {
+		if t, err := time.Parse(layout, v); err == nil {
+			return t.UTC(), true
+		}
+	}
+	return time.Time{}, false
+}
+
 func (b *builder) people(s *Snapshot) {
 	b.cover("users", "settings")
 	for i, u := range s.Users {
@@ -1259,8 +1492,10 @@ func (b *builder) people(s *Snapshot) {
 			b.not(GroupPeople, from, "(no name)", "a person needs a name")
 			continue
 		}
-		key := personKey(s.Kind, u.SourceID)
-		pp := &PersonPlan{App: string(s.Kind), SourceID: u.SourceID, Email: clip(u.Email, 200), Role: "member", Perms: []string{}}
+		key := stablePersonKey(s.Kind, u)
+		legacyKey := personKey(s.Kind, u.SourceID)
+		b.personRefs[legacyKey] = key
+		pp := &PersonPlan{App: string(s.Kind), SourceID: u.SourceID, StableIdentity: key != legacyKey, Email: clip(u.Email, 200), Role: "member", Perms: []string{}}
 		has := func(n ...string) bool { return hasField(u.Permissions, n...) }
 		// Roles cap at member: the owner confirms an admin, or that the old
 		// app's owner is them, person by person on the move screen.
@@ -1274,6 +1509,9 @@ func (b *builder) people(s *Snapshot) {
 		case pp.WasAdmin && choice == PersonAdmin:
 			pp.Role = "admin"
 		}
+		if pp.WasAdmin && pp.Role == "admin" {
+			b.not(GroupPeople, from+".permissions", name+": ADMIN", "the confirmed HolyArrs admin role keeps account administration; other source-admin capabilities are not granted automatically")
+		}
 		if choice == PersonMerge || choice == PersonSkip {
 			pp.Choice = choice
 		}
@@ -1282,14 +1520,17 @@ func (b *builder) people(s *Snapshot) {
 				pp.Perms = append(pp.Perms, p)
 			}
 		}
-		add("ask", has("REQUEST", "REQUEST_MOVIE", "REQUEST_TV") || pp.Role != "member")
-		add("auto_approve", has("AUTO_APPROVE", "AUTO_APPROVE_MOVIE", "AUTO_APPROVE_TV"))
+		add("ask", has("REQUEST") || pp.Role != "member")
+		add("auto_approve", has("AUTO_APPROVE"))
 		add("approve", has("MANAGE_REQUESTS"))
 		add("settings", has("MANAGE_SETTINGS") && pp.Role == "admin")
+		if has("MANAGE_SETTINGS") && pp.Role != "admin" {
+			b.not(GroupPeople, from+".permissions", name+": MANAGE_SETTINGS", "settings access requires a confirmed HolyArrs admin role, so it is not granted")
+		}
 		var dropped []string
 		for _, p := range u.Permissions {
 			switch p {
-			case "ADMIN", "REQUEST", "REQUEST_MOVIE", "REQUEST_TV", "AUTO_APPROVE", "AUTO_APPROVE_MOVIE", "AUTO_APPROVE_TV", "MANAGE_REQUESTS", "MANAGE_SETTINGS":
+			case "ADMIN", "REQUEST", "AUTO_APPROVE", "MANAGE_REQUESTS", "MANAGE_SETTINGS":
 				continue
 			}
 			dropped = append(dropped, clip(p, 40))
@@ -1297,17 +1538,21 @@ func (b *builder) people(s *Snapshot) {
 		if len(dropped) > 0 {
 			b.not(GroupPeople, from+".permissions", name+": "+strings.Join(dropped, ", "), "no HolyArrs permission matches these")
 		}
-		if u.MovieLimit > 0 {
-			days := u.MovieDays
-			if days <= 0 {
-				days = 7
-			}
-			w := (u.MovieLimit*7 + days - 1) / days
-			w = min(max(w, 1), 1000)
-			pp.PerWeek = &w
+		pp.MoviesPerWeek = weekly(u.MovieLimit, u.MovieDays)
+		pp.ShowsPerWeek = weekly(u.ShowLimit, u.ShowDays)
+		if u.MovieLimit < 0 || u.MovieLimit > 1000 {
+			b.not(GroupPeople, from+".movie_quota", name, "the per-person quota is outside HolyArrs' supported range of 1 to 1000, so it is not approximated")
+		} else if u.MovieLimitSet && u.MovieLimit == 0 {
+			b.not(GroupPeople, from+".movie_quota", name, "an explicit zero per-person quota has no established source meaning, so it is left at the HolyArrs default")
+		} else if u.MovieLimit > 0 && pp.MoviesPerWeek == nil {
+			b.not(GroupPeople, from+".movie_quota", name, "only an exact seven-day quota can be moved without changing its access window")
 		}
-		if u.ShowLimit > 0 {
-			b.not(GroupPeople, from+".show_limit", name+": show limit", "HolyArrs has one weekly limit per person; shows count inside it when that setting is on")
+		if u.ShowLimit < 0 || u.ShowLimit > 1000 {
+			b.not(GroupPeople, from+".show_quota", name, "the per-person quota is outside HolyArrs' supported range of 1 to 1000, so it is not approximated")
+		} else if u.ShowLimitSet && u.ShowLimit == 0 {
+			b.not(GroupPeople, from+".show_quota", name, "an explicit zero per-person quota has no established source meaning, so it is left at the HolyArrs default")
+		} else if u.ShowLimit > 0 && pp.ShowsPerWeek == nil {
+			b.not(GroupPeople, from+".show_quota", name, "only an exact seven-day quota can be moved without changing its access window")
 		}
 		detail := "a " + pp.Role + " placeholder, turned off until you invite them; no password comes over"
 		why := ""
@@ -1322,12 +1567,65 @@ func (b *builder) people(s *Snapshot) {
 		case pp.WasAdmin:
 			why = "an admin in " + string(s.Kind) + "; comes over as a member unless you confirm the admin role"
 		}
-		if pp.PerWeek != nil {
-			detail += fmt.Sprintf("; %d asks a week", *pp.PerWeek)
+		if pp.MoviesPerWeek != nil {
+			detail += fmt.Sprintf("; %d movie asks a week", *pp.MoviesPerWeek)
+		}
+		if pp.ShowsPerWeek != nil {
+			detail += fmt.Sprintf("; %d show asks a week", *pp.ShowsPerWeek)
 		}
 		b.planned[key] = true
-		b.add(GroupPeople, Item{Key: key, Name: name, From: from, Detail: detail, Why: why, Person: pp,
+		var legacy []string
+		if legacyKey != key {
+			legacy = []string{legacyKey}
+		}
+		b.add(GroupPeople, Item{Key: key, LegacyKeys: legacy, Name: name, From: from, Detail: detail, Why: why, Person: pp,
 			Needs: map[bool]string{true: "", false: "an invite"}[owner]})
+	}
+	recognized := map[string]bool{}
+	movies := defaultWeekly(s.Settings, "movie")
+	shows := defaultWeekly(s.Settings, "show")
+	accountDefault := func(kind string, planned *int) {
+		limitKey := "default_" + kind + "_limit"
+		daysKey := "default_" + kind + "_days"
+		limitRaw, hasLimit := s.Settings[limitKey]
+		_, hasDays := s.Settings[daysKey]
+		for _, key := range []string{limitKey, daysKey} {
+			if _, ok := s.Settings[key]; ok {
+				recognized[key] = true
+			}
+		}
+		from := b.from("settings", -1)
+		if planned != nil {
+			b.p.Mapped = append(b.p.Mapped, from+"."+limitKey)
+			if *planned > 0 && hasDays {
+				b.p.Mapped = append(b.p.Mapped, from+"."+daysKey)
+			} else if hasDays {
+				b.not(GroupWishlist, from+"."+daysKey, kind+" default", "the quota is unlimited, so its old access-window length is not used")
+			}
+			return
+		}
+		if hasLimit {
+			n := int(num(limitRaw))
+			reason := "only an exact seven-day quota can be moved without changing its access window"
+			if n < 0 || n > 1000 {
+				reason = "the default quota is outside HolyArrs' supported range of 0 to 1000, so it is not approximated"
+			}
+			b.not(GroupWishlist, from+"."+limitKey, kind+" default", reason)
+		}
+		if hasDays {
+			reason := "the access-window length has no matching default quota to move"
+			if hasLimit {
+				reason = "the default quota pair cannot be moved without changing its meaning"
+			}
+			b.not(GroupWishlist, from+"."+daysKey, kind+" default", reason)
+		}
+	}
+	accountDefault("movie", movies)
+	accountDefault("show", shows)
+	if movies != nil || shows != nil {
+		as := &AskSettingsPlan{MoviesPerWeek: movies, ShowsPerWeek: shows}
+		b.add(GroupWishlist, Item{Key: "wishlist_defaults", Name: "Wishlist defaults", From: b.from("settings", -1),
+			Detail: "default weekly limits", AskSettings: as})
 	}
 	keys := make([]string, 0, len(s.Settings))
 	for k := range s.Settings {
@@ -1335,6 +1633,9 @@ func (b *builder) people(s *Snapshot) {
 	}
 	sort.Strings(keys)
 	for _, k := range keys {
+		if recognized[k] {
+			continue
+		}
 		b.not(GroupPeople, b.from("settings", -1)+"."+k, k, "app-wide settings of the old app are not moved; set the Wishlist defaults under Settings > Wishlist")
 	}
 }
@@ -1379,13 +1680,42 @@ func (b *builder) asks(s *Snapshot) {
 		if name == "" {
 			name = strings.ToUpper(ref[:strings.IndexByte(ref, ':')]) + " " + ref[strings.IndexByte(ref, ':')+1:]
 		}
+		byKey := b.personRefs[personKey(s.Kind, r.By)]
 		ap := &AskPlan{App: string(s.Kind), Kind: kind, Ref: ref, IDs: ids, Approved: r.State == "approved",
-			By: personKey(s.Kind, r.By), ByName: clip(r.ByName, 64), AskedAt: clip(r.Created, 40)}
+			By: byKey, ByName: clip(r.ByName, 64), AskedAt: clip(r.Created, 40), DecidedAt: clip(r.Updated, 40)}
+		if ap.AskedAt != "" {
+			if asked, ok := sourceTime(ap.AskedAt); !ok {
+				b.not(GroupWishlist, from+".created", ap.AskedAt, "the source timestamp format is invalid, so the move cannot preserve it")
+				ap.AskedAt = ""
+			} else if s.ReadAt.IsZero() {
+				b.not(GroupWishlist, from+".created", ap.AskedAt, "this kept read has no capture time, so the source timestamp cannot be verified")
+				ap.AskedAt = ""
+			} else if asked.After(s.ReadAt) {
+				b.not(GroupWishlist, from+".created", ap.AskedAt, "the source timestamp is after this kept read, so the move cannot preserve it")
+				ap.AskedAt = ""
+			}
+		} else {
+			b.not(GroupWishlist, from+".created", "(missing)", "the source has no request timestamp, so the move cannot preserve it")
+		}
+		if ap.Approved && ap.DecidedAt == "" {
+			b.not(GroupWishlist, from+".updated", "(missing)", "the source has no decision timestamp, so the move cannot preserve it")
+		} else if ap.DecidedAt != "" {
+			if decided, ok := sourceTime(ap.DecidedAt); !ok {
+				b.not(GroupWishlist, from+".updated", ap.DecidedAt, "the source decision timestamp format is invalid, so the move cannot preserve it")
+				ap.DecidedAt = ""
+			} else if s.ReadAt.IsZero() {
+				b.not(GroupWishlist, from+".updated", ap.DecidedAt, "this kept read has no capture time, so the source decision timestamp cannot be verified")
+				ap.DecidedAt = ""
+			} else if decided.After(s.ReadAt) {
+				b.not(GroupWishlist, from+".updated", ap.DecidedAt, "the source decision timestamp is after this kept read, so the move cannot preserve it")
+				ap.DecidedAt = ""
+			}
+		}
 		if !b.planned[ap.By] {
 			ap.By = ""
 		}
-		if r.DecidedBy != 0 && b.planned[personKey(s.Kind, r.DecidedBy)] {
-			ap.Decider = personKey(s.Kind, r.DecidedBy)
+		if k := b.personRefs[personKey(s.Kind, r.DecidedBy)]; r.DecidedBy != 0 && b.planned[k] {
+			ap.Decider = k
 		}
 		for _, n := range r.Seasons {
 			if n >= 0 && n < 10000 && len(ap.Seasons) < 200 {

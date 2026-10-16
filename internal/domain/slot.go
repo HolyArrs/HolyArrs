@@ -40,8 +40,10 @@ var slotMoves = map[SlotState][]SlotState{
 	SlotSearching: {SlotChosen, SlotHeld, SlotWanted, SlotBetterWanted, SlotNotOutYet, SlotNeedsADecision},
 	// held -> searching: a hand search or hand choice; held -> wanted or
 	// better_wanted: the Held Release was removed by hand.
-	SlotHeld:        {SlotChosen, SlotSearching, SlotWanted, SlotBetterWanted},
-	SlotChosen:      {SlotDownloading, SlotWanted},
+	SlotHeld: {SlotChosen, SlotSearching, SlotWanted, SlotBetterWanted},
+	// An abandoned send with an unknown outcome needs a person's decision;
+	// returning it to wanted would let automation choose it again.
+	SlotChosen:      {SlotDownloading, SlotWanted, SlotNeedsADecision},
 	SlotDownloading: {SlotStalled, SlotFailed, SlotImporting},
 	// stalled -> failed: marked failed by hand, or acted on after the
 	// act-after time (stage 4.0.4).

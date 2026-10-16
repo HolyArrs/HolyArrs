@@ -401,10 +401,14 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	q.Handle(downloader.KindGrab, dm.HandleGrab)
 	q.Handle(importer.KindImport, im.HandleJob)
 	md, fromFile := metadataProvider(vault)
+	md, showMD, artistMD, err := metadataServiceProviders(vault, md, showSources(vault), musicSource(s, version))
+	if err != nil {
+		return fmt.Errorf("optional metadata service: %w", err)
+	}
 	lib := &library.Service{Store: s, Queue: q, Metadata: md, Live: hub, SavePath: c.SavePath,
 		Artwork: &library.ArtworkCache{Dir: filepath.Join(c.ConfigDir, "artwork"), Allowed: []string{metadata.ImageBase + "/"}}}
-	lib.Shows = showSources(vault)
-	lib.Artists = musicSource(s, version)
+	lib.Shows = showMD
+	lib.Artists = artistMD
 	lib.Register(q)
 	// Moves from the old apps: each part that is off is left out, and safe
 	// mode refuses moves at the API.
@@ -501,7 +505,12 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		}
 	})
 
-	au := auth.New(s, auth.Options{Vault: vault, SafeMode: c.SafeMode})
+	sso, err := auth.SSOFromEnv(c.URLBase)
+	if err != nil {
+		return err
+	}
+	au := auth.New(s, auth.Options{Vault: vault, SafeMode: c.SafeMode, SSO: sso})
+	defer au.Close()
 	loop(supervisor.Loop{Name: "sessions", Label: "Session clean-up", Every: time.Hour, Run: au.Cleanup})
 	var restarting atomic.Bool
 	restart := func() {

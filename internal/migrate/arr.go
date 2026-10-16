@@ -112,6 +112,8 @@ func (r arrReader) sets() []arrSet {
 		{name: "notifications", api: []string{"/notification", "/connection"}, table: "Notifications"},
 		{name: "metadata", api: []string{"/metadata"}, table: "Metadata"},
 		{name: "metaprofiles", api: []string{"/metadataprofile"}, table: "MetadataProfiles", only: []Kind{Lidarr}},
+		{name: "albums", api: []string{"/album"}, table: "Albums", only: []Kind{Lidarr}},
+		{name: "albumreleases", table: "AlbumReleases", only: []Kind{Lidarr}},
 		{name: "langprofiles", api: []string{"/languageprofile"}, table: "LanguageProfiles", only: []Kind{Sonarr}},
 	}
 }
@@ -447,6 +449,19 @@ func (r arrReader) build(in *arrRows) *Snapshot {
 		return out
 	}
 	s.MetadataProfiles = named(in.sets["metaprofiles"])
+	for i, m := range in.sets["metaprofiles"] {
+		if i >= len(s.MetadataProfiles) {
+			break
+		}
+		if s.MetadataProfiles[i].Settings == nil {
+			s.MetadataProfiles[i].Settings = map[string]any{}
+		}
+		for _, key := range []string{"primaryalbumtypes", "secondaryalbumtypes", "releasestatuses"} {
+			if v, ok := m[key]; ok {
+				s.MetadataProfiles[i].Settings[key] = metadataSelections(v)
+			}
+		}
+	}
 	s.LanguageProfiles = named(in.sets["langprofiles"])
 	prov := func(rows []map[string]any) []Provider {
 		var out []Provider
@@ -475,6 +490,44 @@ func (r arrReader) build(in *arrRows) *Snapshot {
 		}
 		s.Titles = append(s.Titles, t)
 	}
+	if r.kind == Lidarr {
+		byArtist := map[int64]int{}
+		for i := range s.Titles {
+			byArtist[s.Titles[i].SourceID] = i
+			if id := num(s.Titles[i].Extra["artist_metadata_id"]); id != 0 {
+				byArtist[id] = i
+			}
+		}
+		releases := map[int64][]map[string]any{}
+		for _, rel := range in.sets["albumreleases"] {
+			releases[num(rel["albumid"])] = append(releases[num(rel["albumid"])], rel)
+		}
+		for _, m := range in.sets["albums"] {
+			i, ok := byArtist[num(first(m, "artistid", "artistmetadataid"))]
+			mbid := str(first(m, "foreignalbumid"))
+			if !ok || !isMBID(mbid) {
+				continue
+			}
+			a := MusicAlbum{MBID: strings.ToLower(mbid), Monitored: boolean(m["monitored"])}
+			rawReleases := list(m["releases"])
+			if len(rawReleases) == 0 {
+				for _, rel := range releases[num(m["id"])] {
+					rawReleases = append(rawReleases, rel)
+				}
+			}
+			for _, raw := range rawReleases {
+				rel := lower(obj(raw))
+				if !boolean(rel["monitored"]) {
+					continue
+				}
+				if id := str(first(rel, "foreignreleaseid")); isMBID(id) {
+					a.WatchedEdition = strings.ToLower(id)
+					break
+				}
+			}
+			s.Titles[i].MusicAlbums = append(s.Titles[i].MusicAlbums, a)
+		}
+	}
 	for _, m := range in.sets["exclusions"] {
 		e := Exclusion{IDs: map[string]string{}, Name: str(first(m, "movietitle", "title", "name")), Year: int(num(first(m, "movieyear", "year")))}
 		for k, id := range map[string]string{"tmdbid": "tmdb", "tvdbid": "tvdb", "foreignid": "musicbrainz"} {
@@ -485,6 +538,28 @@ func (r arrReader) build(in *arrRows) *Snapshot {
 		s.Exclusions = append(s.Exclusions, e)
 	}
 	return s
+}
+
+// metadataSelections keeps only the bounded policy fields used by the move.
+// It deliberately does not retain arbitrary fields from upstream objects.
+func metadataSelections(v any) []any {
+	rows := list(v)
+	if len(rows) > 100 {
+		rows = rows[:100]
+	}
+	out := make([]any, 0, len(rows))
+	for _, row := range rows {
+		m := obj(row)
+		if m == nil {
+			continue
+		}
+		name := clip(str(m["name"]), 100)
+		if name == "" {
+			continue
+		}
+		out = append(out, map[string]any{"name": name, "allowed": boolean(m["allowed"])})
+	}
+	return out
 }
 
 // title builds one Title from a movie, series or artist row.
@@ -524,6 +599,9 @@ func (r arrReader) title(m map[string]any, profileName map[int64]string, labels 
 			t.Extra["new_albums"] = v
 		}
 		t.Extra["metadata_profile_id"] = num(m["metadataprofileid"])
+		if v := num(m["artistmetadataid"]); v != 0 {
+			t.Extra["artist_metadata_id"] = v
+		}
 	}
 	t.Extra, _ = plainSettings(t.Extra)
 	if len(t.IDs) == 0 {

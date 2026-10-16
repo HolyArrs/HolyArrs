@@ -76,9 +76,19 @@ type Title struct {
 	Added     string   `json:"added,omitempty"`
 	Tags      []string `json:"tags,omitempty"`
 	Seasons   []Season `json:"seasons,omitempty"`
+	// MusicAlbums keeps per-album monitoring and the selected pressing for
+	// Lidarr artists. It contains public MusicBrainz identifiers only.
+	MusicAlbums []MusicAlbum `json:"music_albums,omitempty"`
 	// Extra holds app-specific plain settings (minimum availability,
 	// show type, new-item rule, metadata profile).
 	Extra map[string]any `json:"extra,omitempty"`
+}
+
+// MusicAlbum is one Lidarr album belonging to an artist.
+type MusicAlbum struct {
+	MBID           string `json:"mbid"`
+	Monitored      bool   `json:"monitored"`
+	WatchedEdition string `json:"watched_edition,omitempty"`
 }
 
 // Season is one season of a show and whether it is watched.
@@ -205,20 +215,27 @@ type Category struct {
 // User is one Seerr or Overseerr person: name, email, role and limits
 // only (no avatar, no sign-in tokens or hashes).
 type User struct {
-	SourceID int64  `json:"source_id"`
-	Name     string `json:"name"`
-	Email    string `json:"email,omitempty"`
-	Kind     string `json:"kind,omitempty"` // plex, jellyfin, local, emby
-	Admin    bool   `json:"admin"`
+	SourceID int64 `json:"source_id"`
+	// ExternalID is the stable identity supplied by the person's sign-in
+	// provider. It is used only to keep move references stable; a move never
+	// creates a sign-in link or grants access.
+	ExternalID string `json:"external_id,omitempty"`
+	Name       string `json:"name"`
+	Email      string `json:"email,omitempty"`
+	Kind       string `json:"kind,omitempty"` // plex, jellyfin, local, emby
+	Admin      bool   `json:"admin"`
 	// Owner says the app marks this person as its owner.
 	Owner       bool     `json:"owner,omitempty"`
 	Permissions []string `json:"permissions,omitempty"`
-	// Limits: asks per Days (zero Limit means the app's default).
-	MovieLimit int    `json:"movie_limit,omitempty"`
-	MovieDays  int    `json:"movie_days,omitempty"`
-	ShowLimit  int    `json:"show_limit,omitempty"`
-	ShowDays   int    `json:"show_days,omitempty"`
-	Created    string `json:"created,omitempty"`
+	// Limits: asks per Days. LimitSet distinguishes an explicit source zero,
+	// whose semantics are not assumed, from an absent/inherited limit.
+	MovieLimit    int    `json:"movie_limit,omitempty"`
+	MovieDays     int    `json:"movie_days,omitempty"`
+	MovieLimitSet bool   `json:"movie_limit_set,omitempty"`
+	ShowLimit     int    `json:"show_limit,omitempty"`
+	ShowDays      int    `json:"show_days,omitempty"`
+	ShowLimitSet  bool   `json:"show_limit_set,omitempty"`
+	Created       string `json:"created,omitempty"`
 }
 
 // Request is one Seerr or Overseerr ask.
@@ -262,7 +279,7 @@ func (s *Snapshot) Counts() map[string]int {
 // finish gathers the per-link secrets into NeedsReentry and sorts notes.
 func (s *Snapshot) finish() {
 	if s.ReadAt.IsZero() {
-		s.ReadAt = time.Now().UTC().Truncate(time.Second)
+		s.ReadAt = time.Now().UTC()
 	}
 	add := func(what string, ps []Provider) {
 		for _, p := range ps {

@@ -27,6 +27,7 @@ if [[ -n "${QEMU_AARCH64_STATIC:-}" ]]; then
 FROM scratch
 COPY --chmod=0755 qemu-aarch64-static /qemu-aarch64-static
 COPY --chmod=0755 holyarrs-scale.test /holyarrs-scale.test
+ENV HOLYARRS_TEST_EXEC=/qemu-aarch64-static
 WORKDIR /tmp
 ENTRYPOINT ["/qemu-aarch64-static", "/holyarrs-scale.test"]
 EOF

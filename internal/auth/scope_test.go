@@ -78,7 +78,9 @@ func TestEveryRouteChecksItsScope(t *testing.T) {
 			}
 		}
 		// A session holds every scope.
-		req := httptest.NewRequest(method, path, nil).WithContext(context.WithValue(context.Background(), ctxKey{}, Who{UserID: 1, Role: RoleOwner, Via: "session"}))
+		req := httptest.NewRequest(method, path, nil).WithContext(context.WithValue(context.Background(), ctxKey{}, Who{
+			UserID: 1, Role: RoleOwner, Via: "session", AuthMethod: AuthMethodLocalPassword, LocalRecent: true,
+		}))
 		rec := httptest.NewRecorder()
 		gate.ServeHTTP(rec, req)
 		if rec.Code != http.StatusTeapot {

@@ -103,6 +103,12 @@ func (w Who) Effective() []Perm {
 // RoutePerms says what each route needs. Routes missing here are for the
 // owner only, so a new route is closed until someone decides who may use it.
 var RoutePerms = map[string]Perm{
+	"GET /api/v1/data-packs":                            needOwner,
+	"GET /api/v1/data-packs/{id}":                       needOwner,
+	"GET /api/v1/data-packs/{id}/preview":               needOwner,
+	"POST /api/v1/data-packs/validate":                  needOwner,
+	"POST /api/v1/data-packs":                           needOwner,
+	"POST /api/v1/data-packs/{id}/apply":                needOwner,
 	"GET /api/v1/titles/{id}/copies":                    PermManageLibrary,
 	"POST /api/v1/titles/{id}/versions/{vid}/adopt":     PermManageLibrary,
 	"GET /api/v1/people/search":                         needSignedIn,
@@ -124,9 +130,19 @@ var RoutePerms = map[string]Perm{
 	"GET /":      needSelf,
 	"GET /login": needSelf,
 
+	// Optional outside sign-in. These routes validate their own bounded flow.
+	"POST /api/v1/auth/oidc/start":    NeedPublic,
+	"GET /api/v1/auth/oidc/callback":  NeedPublic,
+	"POST /api/v1/auth/oidc/finish":   NeedPublic,
+	"POST /api/v1/auth/forward/login": NeedPublic,
+
 	// My account.
 	"GET /api/v1/auth/me":                       needSelf,
 	"POST /api/v1/auth/logout":                  needSelf,
+	"POST /api/v1/auth/reauth":                  needSelf,
+	"POST /api/v1/auth/oidc/link":               needSelf,
+	"POST /api/v1/auth/oidc/link-finish":        needSelf,
+	"POST /api/v1/auth/forward/link":            needSelf,
 	"POST /api/v1/auth/password":                needSelf,
 	"POST /api/v1/auth/two-factor/setup":        needSelf,
 	"POST /api/v1/auth/two-factor/enable":       needSelf,
@@ -258,48 +274,50 @@ var RoutePerms = map[string]Perm{
 	"POST /api/v1/calendar/feed-key":       PermSettings,
 	"DELETE /api/v1/calendar/feed-key":     PermSettings,
 	// The iCal feed is public (phones cannot sign in) and checks its own key.
-	"GET /api/v1/calendar/feed.ics":           NeedPublic,
-	"GET /api/v1/library-folders":             PermManageLibrary,
-	"GET /api/v1/pick-rules":                  PermManageLibrary,
-	"GET /api/v1/never-add":                   PermManageLibrary,
-	"POST /api/v1/never-add":                  PermManageLibrary,
-	"DELETE /api/v1/never-add/{id}":           PermManageLibrary,
-	"GET /api/v1/settings/release-gate":       PermManageLibrary,
-	"GET /api/v1/settings/shows":              PermManageLibrary,
-	"GET /api/v1/downloads":                   PermManageLibrary,
-	"GET /api/v1/imports":                     PermManageLibrary,
-	"GET /api/v1/events":                      PermManageLibrary,
-	"GET /api/v1/jobs":                        PermManageLibrary,
-	"GET /api/v1/sources":                     PermManageLibrary,
-	"GET /api/v1/sources/{id}/stats":          PermManageLibrary,
-	"POST /api/v1/sources":                    PermSettings,
-	"PUT /api/v1/sources/{id}":                PermSettings,
-	"DELETE /api/v1/sources/{id}":             PermSettings,
-	"POST /api/v1/sources/{id}/test":          PermSettings,
-	"POST /api/v1/sources/{id}/pause":         PermSettings,
-	"POST /api/v1/sources/{id}/resume":        PermSettings,
-	"GET /api/v1/downloaders":                 PermManageLibrary,
-	"POST /api/v1/downloaders":                PermSettings,
-	"PUT /api/v1/downloaders/{id}":            PermSettings,
-	"DELETE /api/v1/downloaders/{id}":         PermSettings,
-	"POST /api/v1/downloaders/{id}/test":      PermSettings,
-	"POST /api/v1/downloaders/{id}/pause":     PermSettings,
-	"POST /api/v1/downloaders/{id}/resume":    PermSettings,
-	"POST /api/v1/downloads/{id}/mark-failed": PermManageLibrary,
-	"GET /api/v1/downloads/view":              PermManageLibrary,
-	"POST /api/v1/downloads/{id}/remove":      PermManageLibrary,
-	"GET /api/v1/needs-decision":              PermManageLibrary,
-	"POST /api/v1/needs-decision/{id}/decide": PermManageLibrary,
-	"GET /api/v1/settings/downloaders":        PermSettings,
-	"PUT /api/v1/settings/downloaders":        PermSettings,
-	"GET /api/v1/health":                      PermManageLibrary,
-	"GET /api/v1/health/checks":               PermManageLibrary,
-	"POST /api/v1/health/checks/run":          PermManageLibrary,
-	"GET /api/v1/health/states":               PermManageLibrary,
-	"GET /api/v1/settings/health":             PermSettings,
-	"PUT /api/v1/settings/health":             PermSettings,
-	"GET /live":                               PermManageLibrary,
-	"POST /api/v1/library-folders/{id}/check": PermManageLibrary,
+	"GET /api/v1/calendar/feed.ics":                              NeedPublic,
+	"GET /api/v1/library-folders":                                PermManageLibrary,
+	"GET /api/v1/pick-rules":                                     PermManageLibrary,
+	"GET /api/v1/never-add":                                      PermManageLibrary,
+	"POST /api/v1/never-add":                                     PermManageLibrary,
+	"DELETE /api/v1/never-add/{id}":                              PermManageLibrary,
+	"GET /api/v1/settings/release-gate":                          PermManageLibrary,
+	"GET /api/v1/settings/shows":                                 PermManageLibrary,
+	"GET /api/v1/downloads":                                      PermManageLibrary,
+	"GET /api/v1/imports":                                        PermManageLibrary,
+	"GET /api/v1/events":                                         PermManageLibrary,
+	"GET /api/v1/jobs":                                           PermManageLibrary,
+	"GET /api/v1/sources":                                        PermManageLibrary,
+	"GET /api/v1/sources/{id}/stats":                             PermManageLibrary,
+	"POST /api/v1/sources":                                       PermSettings,
+	"PUT /api/v1/sources/{id}":                                   PermSettings,
+	"DELETE /api/v1/sources/{id}":                                PermSettings,
+	"POST /api/v1/sources/{id}/test":                             PermSettings,
+	"POST /api/v1/sources/{id}/pause":                            PermSettings,
+	"POST /api/v1/sources/{id}/resume":                           PermSettings,
+	"GET /api/v1/downloaders":                                    PermManageLibrary,
+	"POST /api/v1/downloaders":                                   PermSettings,
+	"PUT /api/v1/downloaders/{id}":                               PermSettings,
+	"DELETE /api/v1/downloaders/{id}":                            PermSettings,
+	"POST /api/v1/downloaders/{id}/test":                         PermSettings,
+	"POST /api/v1/downloaders/{id}/pause":                        PermSettings,
+	"POST /api/v1/downloaders/{id}/resume":                       PermSettings,
+	"GET /api/v1/downloaders/{id}/attempts":                      PermSettings,
+	"POST /api/v1/downloaders/{id}/attempts/{attemptID}/abandon": PermSettings,
+	"POST /api/v1/downloads/{id}/mark-failed":                    PermManageLibrary,
+	"GET /api/v1/downloads/view":                                 PermManageLibrary,
+	"POST /api/v1/downloads/{id}/remove":                         PermManageLibrary,
+	"GET /api/v1/needs-decision":                                 PermManageLibrary,
+	"POST /api/v1/needs-decision/{id}/decide":                    PermManageLibrary,
+	"GET /api/v1/settings/downloaders":                           PermSettings,
+	"PUT /api/v1/settings/downloaders":                           PermSettings,
+	"GET /api/v1/health":                                         PermManageLibrary,
+	"GET /api/v1/health/checks":                                  PermManageLibrary,
+	"POST /api/v1/health/checks/run":                             PermManageLibrary,
+	"GET /api/v1/health/states":                                  PermManageLibrary,
+	"GET /api/v1/settings/health":                                PermSettings,
+	"PUT /api/v1/settings/health":                                PermSettings,
+	"GET /live":                                                  PermManageLibrary,
+	"POST /api/v1/library-folders/{id}/check":                    PermManageLibrary,
 
 	// Settings.
 	"POST /api/v1/library-folders":         PermSettings,
@@ -397,46 +415,61 @@ var RoutePerms = map[string]Perm{
 // Every route needs exactly one scope (RouteScope), so the route table
 // decides it and the OpenAPI spec publishes it (x-holyarrs-scope).
 const (
-	ScopeRead    = "read"    // look: the GET routes in ReadRoutes
-	ScopeWrite   = "write"   // change: every other route but the admin ones and the controls
-	ScopeAdmin   = "admin"   // people, invites, ask limits, API keys, password and two-factor, sign-in settings, restore
-	ScopeControl = "control" // the controls: part switches, stages, linked apps, whole-app restart and shut down
+	ScopeHealthRead = "health_read" // only the health state feed; intended for monitoring companions
+	ScopeRead       = "read"        // look: the GET routes in ReadRoutes, including the health state feed
+	ScopeWrite      = "write"       // change: every other route but the admin ones and the controls
+	ScopeAdmin      = "admin"       // people, invites, ask limits, API keys, password and two-factor, sign-in settings, restore
+	ScopeControl    = "control"     // the controls: part switches, stages, linked apps, whole-app restart and shut down
 	// ScopeAll is what every key made before scopes holds: read, write
 	// and admin together (every route but the controls).
 	ScopeAll = "all"
 )
 
 // Scopes lists the scopes a key may be given.
-var Scopes = []string{ScopeRead, ScopeWrite, ScopeAdmin, ScopeControl, ScopeAll}
+var Scopes = []string{ScopeHealthRead, ScopeRead, ScopeWrite, ScopeAdmin, ScopeControl, ScopeAll}
 
 // ScopeNotes says in plain words what each scope reaches; the OpenAPI
 // spec publishes it.
 var ScopeNotes = map[string]string{
-	ScopeRead:    "Look: the GET routes that hand out no secrets (backups, keys, tokens, sign-in settings and the people list need admin).",
-	ScopeWrite:   "Change: every route that is not a GET, except the admin ones and the controls.",
-	ScopeAdmin:   "People, invites, ask limits, API keys, password and two-factor sign-in, sign-in settings, backups (list, download, restore) and the outside-service key settings: every route only the owner or an admin may use, the key and sign-in routes of My account, and every GET route not marked read. Making or promoting an admin also needs the control scope.",
-	ScopeControl: "The controls: part switches, stage pause, resume and restart, reconnecting one linked app, whole-app restart, restart in safe mode and shut down.",
-	ScopeAll:     "Read, write and admin together (every route but the controls). Every key made before scopes existed holds this one.",
+	ScopeHealthRead: "Health states only, for monitoring companions.",
+	ScopeRead:       "Look: the GET routes that hand out no secrets (backups, keys, tokens, sign-in settings and the people list need admin).",
+	ScopeWrite:      "Change: every route that is not a GET, except the admin ones and the controls.",
+	ScopeAdmin:      "People, invites, ask limits, API keys, password and two-factor sign-in, sign-in settings, backups (list, download, restore) and the outside-service key settings: every route only the owner or an admin may use, the key and sign-in routes of My account, and every GET route not marked read. Making or promoting an admin also needs the control scope.",
+	ScopeControl:    "The controls: part switches, stage pause, resume and restart, reconnecting one linked app, whole-app restart, restart in safe mode and shut down.",
+	ScopeAll:        "Read, write and admin together (every route but the controls). Every key made before scopes existed holds this one.",
 }
 
 // RouteScopes names routes whose scope is not the one the method and
 // RoutePerms give them (see RouteScope).
 var RouteScopes = map[string]string{
-	"POST /api/v1/people/{id}/movies/review": ScopeRead,
-	"POST /api/v1/parts/{part}/on":           ScopeControl,
-	"POST /api/v1/parts/{part}/off":          ScopeControl,
-	"POST /api/v1/parts/{part}/restart":      ScopeControl,
-	"POST /api/v1/stages/{name}/pause":       ScopeControl,
-	"POST /api/v1/stages/{name}/resume":      ScopeControl,
-	"POST /api/v1/stages/{name}/restart":     ScopeControl,
-	"POST /api/v1/links/{kind}/{id}/restart": ScopeControl,
-	"POST /api/v1/app/restart":               ScopeControl,
-	"POST /api/v1/app/safe-mode":             ScopeControl,
-	"POST /api/v1/app/shutdown":              ScopeControl,
+	"GET /api/v1/downloaders/{id}/attempts":                      ScopeAdmin,
+	"POST /api/v1/downloaders/{id}/attempts/{attemptID}/abandon": ScopeAdmin,
+	"POST /api/v1/auth/oidc/start":                               ScopeAdmin,
+	"POST /api/v1/auth/oidc/finish":                              ScopeAdmin,
+	"POST /api/v1/auth/forward/login":                            ScopeAdmin,
+	"POST /api/v1/people/{id}/movies/review":                     ScopeRead,
+	"GET /api/v1/health/states":                                  ScopeHealthRead,
+	"GET /api/v1/data-packs":                                     ScopeAdmin,
+	"GET /api/v1/data-packs/{id}":                                ScopeAdmin,
+	"GET /api/v1/data-packs/{id}/preview":                        ScopeAdmin,
+	"POST /api/v1/parts/{part}/on":                               ScopeControl,
+	"POST /api/v1/parts/{part}/off":                              ScopeControl,
+	"POST /api/v1/parts/{part}/restart":                          ScopeControl,
+	"POST /api/v1/stages/{name}/pause":                           ScopeControl,
+	"POST /api/v1/stages/{name}/resume":                          ScopeControl,
+	"POST /api/v1/stages/{name}/restart":                         ScopeControl,
+	"POST /api/v1/links/{kind}/{id}/restart":                     ScopeControl,
+	"POST /api/v1/app/restart":                                   ScopeControl,
+	"POST /api/v1/app/safe-mode":                                 ScopeControl,
+	"POST /api/v1/app/shutdown":                                  ScopeControl,
 
 	// My account's sign-in and the keys themselves.
 	"GET /api/v1/auth/keys":                     ScopeAdmin,
 	"POST /api/v1/auth/keys":                    ScopeAdmin,
+	"POST /api/v1/auth/reauth":                  ScopeAdmin,
+	"POST /api/v1/auth/oidc/link":               ScopeAdmin,
+	"POST /api/v1/auth/oidc/link-finish":        ScopeAdmin,
+	"POST /api/v1/auth/forward/link":            ScopeAdmin,
 	"DELETE /api/v1/auth/keys/{id}":             ScopeAdmin,
 	"POST /api/v1/auth/password":                ScopeAdmin,
 	"POST /api/v1/auth/two-factor/setup":        ScopeAdmin,
@@ -465,6 +498,7 @@ var RouteScopes = map[string]string{
 	"GET /api/v1/ask-limits":           ScopeAdmin,
 	"GET /api/v1/auth/state":           ScopeAdmin, // public; a key never needs it
 	"GET /api/v1/auth/invites/{token}": ScopeAdmin, // public; a key never needs it
+	"GET /api/v1/auth/oidc/callback":   ScopeAdmin, // public; a key never needs it
 
 	// The move tool: what old apps hold (people, emails, links) is admin.
 	"POST /api/v1/migrate/probe":            ScopeAdmin,
@@ -506,7 +540,7 @@ func init() {
 		"GET /api/v1/asks/limit", "GET /api/v1/asks/{id}", "GET /api/v1/auth/me",
 		"GET /api/v1/calendar", "GET /api/v1/calendar/feed.ics", "GET /api/v1/downloaders",
 		"GET /api/v1/downloads", "GET /api/v1/downloads/view", "GET /api/v1/events",
-		"GET /api/v1/health", "GET /api/v1/health/checks", "GET /api/v1/health/states",
+		"GET /api/v1/health", "GET /api/v1/health/checks",
 		"GET /api/v1/held", "GET /api/v1/imports", "GET /api/v1/jobs", "GET /api/v1/jobs/{id}",
 		"GET /api/v1/library-folders", "GET /api/v1/library-summary", "GET /api/v1/media-servers", "GET /api/v1/messages",
 		"GET /api/v1/metadata/search", "GET /api/v1/my/alerts", "GET /api/v1/needs-decision",
@@ -540,6 +574,9 @@ func (w Who) HasScope(scope string) bool {
 // ScopesCover reports whether a key holding held may use scope.
 func ScopesCover(held []string, scope string) bool {
 	if slices.Contains(held, scope) {
+		return true
+	}
+	if scope == ScopeHealthRead && slices.Contains(held, ScopeRead) {
 		return true
 	}
 	return scope != ScopeControl && slices.Contains(held, ScopeAll)
@@ -590,6 +627,11 @@ func Gate(m *http.ServeMux) http.Handler {
 		}
 		if scope := RouteScope(pattern); !who.HasScope(scope) {
 			fail(w, http.StatusForbidden, "this API key's scope does not cover this route; make a key with the "+scope+" scope")
+			return
+		}
+		if who.Via != "api_key" && (RouteScope(pattern) == ScopeAdmin || RouteScope(pattern) == ScopeControl) &&
+			!RecentLocal(r) && !recentLocalExempt(pattern, who) {
+			fail(w, http.StatusForbidden, "confirm your local password again before using this route")
 			return
 		}
 		if !who.Has(need) {

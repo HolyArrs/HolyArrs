@@ -5,6 +5,9 @@ ARG TARGETOS=linux
 ARG TARGETARCH
 ARG TARGETVARIANT
 ARG VERSION
+# Optional build-only resource controls; omitted values keep Go's defaults.
+ARG GOMAXPROCS
+ARG GOFLAGS
 WORKDIR /src
 COPY go.mod go.sum* ./
 RUN go mod download

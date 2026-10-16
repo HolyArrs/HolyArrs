@@ -296,7 +296,9 @@ func TestM1MigrationsAreAddOnly(t *testing.T) {
 		// TestSettingsKeptByAlertsGroupMigration proves no row is lost.
 		// 0025 rebuilds asks again to add the artist kind;
 		// TestMusicAsksMigrationKeepsAsks proves no row is lost.
-		if m.version < 7 || m.version == 8 || m.version == 19 || m.version == 21 || m.version == 23 || m.version == 25 {
+		// 0042 rebuilds downloaders to widen its adapter check;
+		// TestOptionalDownloadersMigrationKeepsData proves no row is lost.
+		if m.version < 7 || m.version == 8 || m.version == 19 || m.version == 21 || m.version == 23 || m.version == 25 || m.version == 42 {
 			continue
 		}
 		up := strings.ToUpper(m.sql)

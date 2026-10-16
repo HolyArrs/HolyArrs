@@ -30,6 +30,9 @@ func decode(w http.ResponseWriter, r *http.Request, v any, help string) bool {
 
 // libraryError answers the library's refusals with a status and a reason.
 func libraryError(w http.ResponseWriter, err error) {
+	if metadataServiceError(w, err) {
+		return
+	}
 	var dup *library.AlreadyAddedError
 	var fe *library.FolderError
 	switch {
@@ -55,6 +58,30 @@ func libraryError(w http.ResponseWriter, err error) {
 	default:
 		internal(w, err)
 	}
+}
+
+// metadataServiceError keeps service failures useful without exposing transport
+// or credential details. Direct provider errors retain their existing answers.
+func metadataServiceError(w http.ResponseWriter, err error) bool {
+	var message string
+	status := http.StatusServiceUnavailable
+	switch {
+	case errors.Is(err, metadata.ErrServiceAccess):
+		message = metadata.ErrServiceAccess.Error()
+	case errors.Is(err, metadata.ErrServiceUnavailable):
+		message = metadata.ErrServiceUnavailable.Error()
+	case errors.Is(err, metadata.ErrServiceBusy):
+		message = metadata.ErrServiceBusy.Error()
+	case errors.Is(err, metadata.ErrServiceIncomplete):
+		message = metadata.ErrServiceIncomplete.Error()
+	case errors.Is(err, metadata.ErrServiceInvalid):
+		status = http.StatusBadGateway
+		message = metadata.ErrServiceInvalid.Error()
+	default:
+		return false
+	}
+	fail(w, status, message)
+	return true
 }
 
 func (a *API) addTitle(w http.ResponseWriter, r *http.Request) {

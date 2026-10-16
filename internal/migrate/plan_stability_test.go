@@ -75,3 +75,33 @@ func TestPlanHashStableAcrossFolderExtras(t *testing.T) {
 		}
 	}
 }
+
+func TestPlanHashStableAcrossUnknownMetadataProfileFields(t *testing.T) {
+	snapshot := &Snapshot{Kind: Lidarr,
+		Folders: []Folder{{Path: "/music"}},
+		MetadataProfiles: []Named{{ID: 7, Name: "Profile", Settings: map[string]any{
+			"primaryalbumtypes":   []any{map[string]any{"name": "Album", "allowed": true}},
+			"secondaryalbumtypes": []any{map[string]any{"name": "Studio", "allowed": true}},
+			"releasestatuses":     []any{map[string]any{"name": "Official", "allowed": true}},
+			"zeta":                "last", "alpha": "first",
+		}}},
+		Titles: []Title{{SourceID: 1, Kind: "artist", Name: "Artist", Path: "/music/Artist", Monitored: true,
+			IDs:   map[string]string{"musicbrainz": "056e4f3e-d505-4dad-8ec1-d04f521cbb56"},
+			Extra: map[string]any{"new_albums": "new", "metadata_profile_id": int64(7)}}},
+	}
+	data, err := json.Marshal(snapshot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	choices := Choices{PathRules: []PathRule{{From: "/music", To: "C:/music"}}}
+	want := PlanHash(BuildPlan([]Input{{ID: 1, Snap: snapshot}}, choices))
+	for i := 0; i < 100; i++ {
+		var restored Snapshot
+		if err := json.Unmarshal(data, &restored); err != nil {
+			t.Fatal(err)
+		}
+		if got := PlanHash(BuildPlan([]Input{{ID: 1, Snap: &restored}}, choices)); got != want {
+			t.Fatalf("metadata settings changed the approval hash: %s != %s", got, want)
+		}
+	}
+}

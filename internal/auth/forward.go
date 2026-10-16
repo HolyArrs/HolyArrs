@@ -1,0 +1,157 @@
+package auth
+
+import (
+	"errors"
+	"net"
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+)
+
+// ForwardAuthOptions trusts only direct proxy peers, independently of forwarded-IP settings.
+type ForwardAuthOptions struct {
+	Issuer       string
+	TrustedPeers []string
+	AllowJoin    bool
+}
+
+type forwardRuntime struct {
+	opt   ForwardAuthOptions
+	peers []*net.IPNet
+}
+
+func newForwardRuntime(opt ForwardAuthOptions) (*forwardRuntime, error) {
+	u, err := url.Parse(opt.Issuer)
+	if err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || len(opt.Issuer) > 1000 {
+		return nil, errors.New("invalid forward-auth issuer")
+	}
+	f := &forwardRuntime{opt: opt}
+	if len(opt.TrustedPeers) > 64 {
+		return nil, errors.New("too many forward-auth peers")
+	}
+	for _, peer := range opt.TrustedPeers {
+		peer = strings.TrimSpace(peer)
+		if !strings.Contains(peer, "/") {
+			ip := net.ParseIP(peer)
+			if ip == nil {
+				return nil, errors.New("forward-auth peers must be IP addresses or CIDRs")
+			}
+			if ip.To4() != nil {
+				peer += "/32"
+			} else {
+				peer += "/128"
+			}
+		}
+		_, n, err := net.ParseCIDR(peer)
+		if err != nil {
+			return nil, errors.New("invalid forward-auth peer")
+		}
+		bits, _ := n.Mask.Size()
+		if bits == 0 {
+			return nil, errors.New("forward-auth peers cannot trust every address")
+		}
+		f.peers = append(f.peers, n)
+	}
+	if len(f.peers) == 0 {
+		return nil, errors.New("forward-auth requires explicit trusted peers")
+	}
+	return f, nil
+}
+
+func (a *Auth) forwardIdentity(r *http.Request) (string, string, bool) {
+	if a.sso == nil || a.sso.forward == nil {
+		return "", "", false
+	}
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return "", "", false
+	}
+	ip := net.ParseIP(host)
+	trusted := false
+	for _, peer := range a.sso.forward.peers {
+		trusted = trusted || peer.Contains(ip)
+	}
+	if !trusted {
+		return "", "", false
+	}
+	values, names := r.Header.Values("Remote-User"), r.Header.Values("Remote-Name")
+	if len(values) != 1 || len(names) > 1 || !ssoText(values[0], 255) || strings.Contains(values[0], ",") {
+		return "", "", false
+	}
+	name := values[0]
+	if len(names) == 1 {
+		if !ssoText(names[0], 200) || strings.Contains(names[0], ",") {
+			return "", "", false
+		}
+		name = names[0]
+	}
+	return values[0], name, true
+}
+
+func (a *Auth) ssoAttempt(w http.ResponseWriter, r *http.Request) bool {
+	key := "sso:" + a.clientKey(r)
+	a.mu.Lock()
+	wait := a.waitFor(key, freeTries)
+	if wait == 0 {
+		a.noteFail(key)
+	}
+	a.mu.Unlock()
+	if wait > 0 {
+		w.Header().Set("Retry-After", strconv.Itoa(int(wait.Seconds())+1))
+		fail(w, http.StatusTooManyRequests, "too many sign-in attempts; wait a little and try again")
+		return false
+	}
+	return true
+}
+
+func (a *Auth) ssoPassed(r *http.Request) {
+	a.mu.Lock()
+	delete(a.fails, "sso:"+a.clientKey(r))
+	a.mu.Unlock()
+}
+
+func (a *Auth) forwardLogin(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	if a.sso == nil || a.sso.forward == nil {
+		fail(w, http.StatusNotFound, "this sign-in method is off")
+		return
+	}
+	if !a.ssoAttempt(w, r) {
+		return
+	}
+	subject, display, ok := a.forwardIdentity(r)
+	if !ok {
+		fail(w, http.StatusForbidden, "trusted proxy identity required")
+		return
+	}
+	id, name, err := a.ssoIdentity(r.Context(), "forward_auth", a.sso.forward.opt.Issuer, subject, display, a.sso.forward.opt.AllowJoin, 0)
+	if err != nil {
+		fail(w, http.StatusForbidden, "this identity is not allowed to sign in")
+		return
+	}
+	a.ssoPassed(r)
+	a.passedAs(w, r, id, name, "forward_auth")
+}
+
+func (a *Auth) forwardLink(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	if a.sso == nil || a.sso.forward == nil {
+		fail(w, http.StatusNotFound, "this sign-in method is off")
+		return
+	}
+	who, ok := a.requireSSOLink(w, r)
+	if !ok {
+		return
+	}
+	subject, display, ok := a.forwardIdentity(r)
+	if !ok {
+		fail(w, http.StatusForbidden, "trusted proxy identity required")
+		return
+	}
+	if _, _, err := a.ssoLinkIdentity(r, "forward_auth", a.sso.forward.opt.Issuer, subject, display, who.UserID, a.currentFamily(r)); err != nil {
+		fail(w, http.StatusForbidden, "this identity cannot be linked")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]bool{"linked": true})
+}

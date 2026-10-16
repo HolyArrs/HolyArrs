@@ -5,13 +5,18 @@
 	import Icon from './Icon.svelte';
 	import Sessions from './Sessions.svelte';
 	import { onMount } from 'svelte';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
+	import { to } from './paths.ts';
 
 	// Where Alerts reach this person (email, Discord).
 	let targets = $state({ email: '', discord_id: '' });
 	let tgBusy = $state(false);
 	let tgError = $state('');
 	onMount(() => {
-		void session.loadMinPassword();
+		void session.loadWays().then(() => {
+			if (page.url.searchParams.get('sso') === 'finish') void finishOIDCLink();
+		});
 		api
 			.get<{ email: string; discord_id: string }>('/my/alerts')
 			.then((r) => (targets = r))
@@ -37,6 +42,13 @@
 		api_key: 'with an API key',
 		local_network: 'from your local network, without a password'
 	};
+	function authMethodWord(method: string): string {
+		if (method === 'local_password' || method === 'local_setup') return 'HolyArrs password';
+		if (method === 'oidc' || method.startsWith('oidc:')) return 'single sign-on';
+		if (method === 'forward_auth' || method.startsWith('forward_auth:')) return 'trusted proxy';
+		if (method === 'legacy') return 'an older session';
+		return method;
+	}
 	const roleWord: Record<string, string> = { owner: 'Owner', admin: 'Admin', member: 'Member' };
 
 	// Password
@@ -53,6 +65,16 @@
 	let tfError = $state('');
 	let tfBusy = $state(false);
 	let codes = $state<string[]>([]);
+
+	// A linked identity changes how this account can sign in, so it first
+	// requires a recent proof with this account's HolyArrs password.
+	let reauthPassword: string = $state('');
+	let reauthCode = $state('');
+	let reauthError = $state('');
+	let reauthBusy = $state(false);
+	let linkError = $state('');
+	let linkBusy = $state(false);
+	const hasLinkWay = $derived(session.s.ways.includes('oidc') || session.s.ways.includes('forward_auth'));
 
 	function strong(e: unknown): string {
 		return e instanceof ApiError && e.status === 403 && session.s.via === 'local_network'
@@ -139,6 +161,63 @@
 			toasts.push('Copy did not work here; write the codes down by hand.', 'fail');
 		}
 	}
+
+	async function reauthenticate(e: SubmitEvent) {
+		e.preventDefault();
+		reauthError = '';
+		reauthBusy = true;
+		try {
+			await session.reauth(reauthPassword, reauthCode.trim() || undefined);
+			reauthPassword = '';
+			reauthCode = '';
+			toasts.push('Your local sign-in was confirmed.', 'ok');
+		} catch (err) {
+			reauthError = message(err);
+			reauthPassword = '';
+			reauthCode = '';
+		} finally {
+			reauthBusy = false;
+		}
+	}
+
+	async function startOIDCLink() {
+		linkError = '';
+		linkBusy = true;
+		try {
+			const { auth_url } = await session.oidcLink();
+			window.location.assign(auth_url);
+		} catch (err) {
+			linkError = message(err);
+			linkBusy = false;
+		}
+	}
+
+	async function finishOIDCLink() {
+		linkError = '';
+		linkBusy = true;
+		try {
+			await session.oidcLinkFinish();
+			toasts.push('Single sign-on linked.', 'ok');
+			await goto(to('/account'), { replace: true });
+		} catch (err) {
+			linkError = message(err);
+		} finally {
+			linkBusy = false;
+		}
+	}
+
+	async function linkForwardAuth() {
+		linkError = '';
+		linkBusy = true;
+		try {
+			await session.forwardLink();
+			toasts.push('Trusted proxy sign-in linked.', 'ok');
+		} catch (err) {
+			linkError = message(err);
+		} finally {
+			linkBusy = false;
+		}
+	}
 </script>
 
 <header class="page-head">
@@ -161,8 +240,64 @@
 		<dd>{roleWord[session.s.role] ?? session.s.role}</dd>
 		<dt>How</dt>
 		<dd>{via[session.s.via] ?? session.s.via}</dd>
+		{#if session.s.authMethod}
+			<dt>Sign-in method</dt>
+			<dd>{authMethodWord(session.s.authMethod)}</dd>
+		{/if}
 	</dl>
 </section>
+
+<section class="card" aria-labelledby="h-confirm-local">
+	<h2 id="h-confirm-local" class="h2">Confirm local sign-in</h2>
+	<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">
+		{#if session.s.localRecent}
+			Your local sign-in was confirmed recently. Confirm it again here if a sensitive action says that confirmation expired.
+		{:else}
+			Confirm your HolyArrs password before linking a sign-in method or making sensitive account changes.
+		{/if}
+		This replaces the current session with a freshly confirmed one.
+	</p>
+	<form class="pw" onsubmit={reauthenticate} novalidate>
+		<input type="text" name="username" autocomplete="username" value={session.s.name} hidden readonly />
+		<div class="field">
+			<label for="reauth-password">HolyArrs password</label>
+			<input id="reauth-password" class="input" type="password" bind:value={reauthPassword} autocomplete="current-password" required />
+		</div>
+		{#if session.s.twoFactor}
+			<div class="field">
+				<label for="reauth-code">Two-factor code</label>
+				<input id="reauth-code" class="input mono" bind:value={reauthCode} autocomplete="one-time-code" maxlength="11" required />
+			</div>
+		{/if}
+		{#if reauthError}<p class="form-error" role="alert">{reauthError}</p>{/if}
+		<button class="btn btn-red" type="submit" disabled={reauthBusy || !reauthPassword || (session.s.twoFactor && !reauthCode.trim())} aria-busy={reauthBusy}>
+			Confirm local sign-in
+		</button>
+	</form>
+</section>
+
+{#if hasLinkWay}
+	<section class="card" aria-labelledby="h-linked-signin">
+		<h2 id="h-linked-signin" class="h2">Linked sign-in</h2>
+		<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">
+			Link another sign-in only while you are already signed in. HolyArrs matches the provider's stable account id and never links accounts by email address.
+		</p>
+
+		{#if !session.s.localRecent}
+			<p class="notice warn small">Confirm your local sign-in above before linking another sign-in method.</p>
+		{:else}
+			<div class="row">
+				{#if session.s.ways.includes('oidc')}
+					<button class="btn btn-ghost" type="button" onclick={startOIDCLink} disabled={linkBusy} aria-busy={linkBusy}>Link single sign-on</button>
+				{/if}
+				{#if session.s.ways.includes('forward_auth')}
+					<button class="btn btn-ghost" type="button" onclick={linkForwardAuth} disabled={linkBusy} aria-busy={linkBusy}>Link trusted proxy sign-in</button>
+				{/if}
+			</div>
+		{/if}
+		{#if linkError}<p class="form-error" role="alert">{linkError}</p>{/if}
+	</section>
+{/if}
 
 <section class="card" aria-labelledby="h-tf">
 	<h2 id="h-tf" class="h2">Two-factor sign-in</h2>
@@ -247,7 +382,7 @@
 		<div class="field">
 			<label for="pw-current">Current password</label>
 			<input id="pw-current" class="input" type="password" bind:value={current} autocomplete="current-password" />
-			<span class="hint">Leave empty if you have only signed in through Plex, Jellyfin or Emby so far.</span>
+			<span class="hint">Confirm your local sign-in above before changing this password.</span>
 		</div>
 		<div class="field">
 			<label for="pw-new">New password</label>
@@ -259,7 +394,7 @@
 			<input id="pw-again" class="input" type="password" bind:value={again} autocomplete="new-password" />
 		</div>
 		{#if pwError}<p class="form-error" role="alert">{pwError}</p>{/if}
-		<button class="btn btn-red" type="submit" disabled={pwBusy || !next} aria-busy={pwBusy}>Change password</button>
+		<button class="btn btn-red" type="submit" disabled={pwBusy || !next || !session.s.localRecent} aria-busy={pwBusy}>Change password</button>
 	</form>
 	{#if session.s.role === 'owner'}
 		<p class="small muted" style="margin-top: var(--s-4)">

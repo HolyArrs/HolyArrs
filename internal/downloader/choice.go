@@ -213,7 +213,11 @@ func (m *Manager) Check(ctx context.Context, d domain.Downloader) (Health, error
 	}
 	h, err := e.Health(ctx)
 	if err == nil {
-		if s, ok := e.(*Sabnzbd); ok && d.Category != "" && d.Category != "*" {
+		raw := e
+		if guarded, ok := e.(*guardedEngine); ok {
+			raw = guarded.Engine
+		}
+		if s, ok := raw.(*Sabnzbd); ok && d.Category != "" && d.Category != "*" {
 			if has, cerr := s.HasCategory(ctx, d.Category); cerr == nil && !has {
 				err = fmt.Errorf("%w (%s)", ErrNoCategory, d.Category)
 			}

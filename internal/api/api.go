@@ -241,6 +241,7 @@ func (a *API) Handler() http.Handler {
 	a.subtitleRoutes(m)
 	a.importSecretsRoutes(m)
 	a.thisAppRoutes(m)
+	a.dataPackRoutes(m)
 	a.scheduleRoutes(m)
 	m.HandleFunc("GET /api/v1/metadata/search", a.searchMetadata)
 	if a.s.Secrets != nil {
@@ -855,6 +856,9 @@ func (a *API) searchMetadata(w http.ResponseWriter, r *http.Request) {
 	}
 	year, _ := strconv.Atoi(r.URL.Query().Get("year"))
 	ms, err := a.s.Metadata.Search(r.Context(), q, year)
+	if metadataServiceError(w, err) {
+		return
+	}
 	if errors.Is(err, metadata.ErrNoAccess) {
 		fail(w, http.StatusServiceUnavailable, err.Error())
 		return

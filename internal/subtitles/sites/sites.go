@@ -17,6 +17,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/CoderLuii/holyarrs/internal/outside"
 	"github.com/CoderLuii/holyarrs/internal/source"
 )
 
@@ -366,12 +367,21 @@ func (c *client) do(ctx context.Context, method, raw string, body []byte, hdr ma
 	if err := c.wait(ctx); err != nil {
 		return nil, err
 	}
+	op, err := outside.Begin(ctx, outside.Target{Kind: "subtitle_site", Identity: []string{c.cfg.URL, c.cfg.Key, c.cfg.Username, c.cfg.Password}})
+	if err != nil {
+		return nil, &Error{Kind: KindDown, Msg: err.Error()}
+	}
+	outcome := outside.Canceled
+	defer func() { op.Finish(outcome) }()
+	rctx, cancel := op.AttemptContext(ctx, c.cfg.Timeout)
+	defer cancel()
 	var rd io.Reader
 	if body != nil {
 		rd = strings.NewReader(string(body))
 	}
-	req, err := http.NewRequestWithContext(ctx, method, raw, rd)
+	req, err := http.NewRequestWithContext(rctx, method, raw, rd)
 	if err != nil {
+		outcome = outside.TerminalFailure
 		return nil, &Error{Kind: KindUnreadable, Msg: "bad site address"}
 	}
 	req.Header.Set("User-Agent", c.agent())
@@ -395,6 +405,7 @@ func (c *client) do(ctx context.Context, method, raw string, body []byte, hdr ma
 	}
 	resp, err := c.http.Do(req)
 	if err != nil {
+		outcome = outside.HTTPOutcome(0, err, ctx)
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
 		}
@@ -411,16 +422,24 @@ func (c *client) do(ctx context.Context, method, raw string, body []byte, hdr ma
 		}
 		return nil, &Error{Kind: KindDown, Msg: c.scrub(err.Error())}
 	}
-	defer resp.Body.Close()
 	out, err := io.ReadAll(io.LimitReader(resp.Body, limit+1))
+	if closeErr := resp.Body.Close(); err == nil {
+		err = closeErr
+	}
 	if err != nil {
+		outcome = outside.HTTPOutcome(resp.StatusCode, err, ctx)
 		return nil, &Error{Kind: KindDown, Msg: "reading the answer failed"}
 	}
+	outcome = outside.HTTPOutcome(resp.StatusCode, nil, ctx)
 	if int64(len(out)) > limit {
+		outcome = outside.TerminalFailure
 		return nil, &Error{Kind: KindUnreadable, Msg: fmt.Sprintf("the answer is over %d bytes", limit)}
 	}
 	if c.status != nil {
 		if e := c.status(resp, out); e != nil {
+			if outcome != outside.TransientFailure {
+				outcome = outside.TerminalFailure
+			}
 			return nil, e
 		}
 	}

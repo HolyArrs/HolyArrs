@@ -1,0 +1,17 @@
+services:
+  health-companion:
+    build:
+      context: ../..
+      dockerfile: examples/health-companion/Dockerfile
+    environment:
+      HOLYARRS_URL: ${HOLYARRS_URL:?set the app address}
+    secrets:
+      - source: holyarrs-key
+        target: holyarrs-key
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: "no"
+secrets:
+  holyarrs-key:
+    file: ${HOLYARRS_KEY_FILE:?set the private key-file path}

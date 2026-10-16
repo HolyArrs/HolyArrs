@@ -47,6 +47,7 @@ func setup(t *testing.T, opt Options) *fixture {
 	}
 	opt.fastHash = true
 	a := New(s, opt)
+	t.Cleanup(a.Close)
 	m := http.NewServeMux()
 	m.HandleFunc("GET /{$}", okHandler)
 	m.HandleFunc("GET /api/v1/strong", func(w http.ResponseWriter, r *http.Request) {

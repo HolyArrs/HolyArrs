@@ -19,17 +19,26 @@ const (
 
 // Errors every engine uses.
 var (
-	ErrNotFound = errors.New("download not found in the Downloader")
-	ErrAuth     = errors.New("the Downloader wants a sign-in")
+	ErrNotFound  = errors.New("download not found in the Downloader")
+	ErrAuth      = errors.New("the Downloader wants a sign-in")
+	ErrUncertain = errors.New("the Downloader send outcome is unknown; inspect it before choosing another Release")
 )
 
 // AddRequest is one Release to send.
 type AddRequest struct {
-	URL      string // link to the torrent or nzb
-	Name     string // the Release name; Usenet jobs are found again by it
-	Category string
-	SavePath string
-	InfoHash string // when known, it becomes the external id
+	URL        string // link to the torrent or nzb
+	Name       string // the Release name; Usenet jobs are found again by it
+	Category   string
+	SavePath   string
+	InfoHash   string // when known, it becomes the external id
+	AllowLocal bool   // the Source may fetch Release files on the local network
+	// OperationKey identifies the original grab across an uncertain response.
+	OperationKey string
+	// AttemptMarker is a durable, opaque identity claimed before sending.
+	// NZBGet stores it remotely; torrent clients reconcile by InfoHash.
+	// ReconcileOnly never sends another add or changes a category.
+	AttemptMarker string
+	ReconcileOnly bool
 	// Skip are ids an engine must not take as this Release when it finds a
 	// job again by name: they belong to other Download rows.
 	Skip map[string]bool

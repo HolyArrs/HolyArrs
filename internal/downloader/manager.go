@@ -14,6 +14,7 @@ import (
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/jobs"
+	"github.com/CoderLuii/holyarrs/internal/outside"
 	"github.com/CoderLuii/holyarrs/internal/source"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
@@ -53,12 +54,13 @@ type Manager struct {
 	// FromVault reads a Downloader's key or password from the vault.
 	FromVault func(ctx context.Context, id int64) (string, error)
 
-	mu       sync.Mutex
-	engines  map[int64]Engine
-	wake     chan struct{}
-	rr       map[string]int           // round robin turn per protocol and priority
-	hosts    map[string]chan struct{} // one send at a time per host (a slot of one)
-	lastSend map[string]time.Time
+	mu               sync.Mutex
+	engines          map[int64]Engine
+	engineGeneration map[int64]uint64
+	wake             chan struct{}
+	rr               map[string]int           // round robin turn per protocol and priority
+	hosts            map[string]chan struct{} // one send at a time per host (a slot of one)
+	lastSend         map[string]time.Time
 }
 
 func (m *Manager) now() time.Time {
@@ -78,6 +80,10 @@ func (m *Manager) publish(topic string, data any) {
 func (m *Manager) Forget(id int64) {
 	m.mu.Lock()
 	delete(m.engines, id)
+	if m.engineGeneration == nil {
+		m.engineGeneration = map[int64]uint64{}
+	}
+	m.engineGeneration[id]++
 	m.mu.Unlock()
 }
 
@@ -87,6 +93,7 @@ func (m *Manager) engine(ctx context.Context, d domain.Downloader) (Engine, erro
 		m.mu.Unlock()
 		return e, nil
 	}
+	generation := m.engineGeneration[d.ID]
 	m.mu.Unlock()
 	var e Engine
 	var err error
@@ -94,13 +101,28 @@ func (m *Manager) engine(ctx context.Context, d domain.Downloader) (Engine, erro
 		e, err = m.Engine(d)
 	} else {
 		e, err = m.EngineFor(ctx, d)
+		if err == nil {
+			instance := fmt.Sprintf("%p", m)
+			if m.Store != nil {
+				instance = m.Store.Dir()
+			}
+			e = protectEngine(e, d, instance)
+		}
 	}
 	if err != nil {
 		return nil, err
 	}
 	m.mu.Lock()
+	if generation != m.engineGeneration[d.ID] {
+		m.mu.Unlock()
+		return nil, errors.New("the Downloader changed while connecting; try again")
+	}
 	if m.engines == nil {
 		m.engines = map[int64]Engine{}
+	}
+	if existing := m.engines[d.ID]; existing != nil {
+		m.mu.Unlock()
+		return existing, nil
 	}
 	m.engines[d.ID] = e
 	m.mu.Unlock()
@@ -127,6 +149,18 @@ func (m *Manager) EngineFor(ctx context.Context, d domain.Downloader) (Engine, e
 		return NewQbittorrentLogin(d.URL, d.Username, secret, h), nil
 	case "sabnzbd":
 		return NewSabnzbd(d.URL, secret, h), nil
+	case "transmission":
+		e := NewTransmission(d.URL, d.Username, secret, h)
+		e.category = d.Category
+		return e, nil
+	case "nzbget":
+		e := NewNZBGet(d.URL, d.Username, secret, h)
+		e.Category = d.Category
+		return e, nil
+	case "deluge":
+		e := NewDeluge(d.URL, secret, h)
+		e.Category = d.Category
+		return e, nil
 	}
 	return nil, fmt.Errorf("no engine for adapter %q", d.Adapter)
 }
@@ -158,8 +192,26 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 	if err := store.Get(ctx, db, "slots", slotID, &sl); err != nil {
 		return 0, fmt.Errorf("slot %d: %w", slotID, err)
 	}
+	// A stopped semantic pair remains terminal even after abandonment has
+	// returned its Slot to a state where a person can choose another Release.
+	attempt, err := unfinishedAttempt(ctx, db, releaseID, slotID)
+	if err != nil {
+		return 0, err
+	}
+	if attempt != nil && attempt.State == "abandoned" {
+		return 0, ErrAttemptStopped
+	}
 	if sl.State != domain.SlotChosen {
+		if sl.ActiveDownloadID != nil && sl.State == domain.SlotDownloading {
+			var prior domain.Download
+			if err := store.Get(ctx, db, "downloads", *sl.ActiveDownloadID, &prior); err == nil && prior.ReleaseID != nil && *prior.ReleaseID == releaseID && slices.Contains(prior.SlotIDs, slotID) && isActive(prior.State) {
+				return prior.ID, nil
+			}
+		}
 		return 0, fmt.Errorf("slot %d is %s, not chosen", slotID, sl.State)
+	}
+	if sl.ChosenReleaseID == nil || *sl.ChosenReleaseID != releaseID {
+		return 0, errors.New("the Slot is no longer chosen for this Release")
 	}
 	all, err := store.Select[domain.Downloader](ctx, db, "downloaders", "protocol = ? AND removed = 0 ORDER BY priority, id", rel.Protocol)
 	if err != nil {
@@ -170,6 +222,8 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 		hash = strings.ToLower(*rel.InfoHash)
 	}
 	now := m.now()
+	// Unknown outcomes pin the original Downloader before ordering or backoff.
+	// An empty lookup after a restart never permits a failover append.
 	// A retry after a kill finds the Download the first try wrote, or the
 	// torrent already in the Downloader: it must not add a second one.
 	var dl *domain.Download
@@ -187,7 +241,18 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 			return 0, err
 		}
 	} else {
-		dls, skipped := m.order(all, now)
+		var dls []domain.Downloader
+		var skipped []string
+		if attempt != nil {
+			var original domain.Downloader
+			if err := store.Get(ctx, db, "downloaders", attempt.DownloaderID, &original); err != nil {
+				return 0, errors.Join(ErrUncertain, err)
+			}
+			original.Category = attempt.category
+			dls = []domain.Downloader{original}
+		} else {
+			dls, skipped = m.order(all, now)
+		}
 		if len(dls) == 0 {
 			if len(skipped) > 0 {
 				return 0, fmt.Errorf("no %s Downloader can take it now: %s", rel.Protocol, strings.Join(skipped, "; "))
@@ -210,6 +275,9 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 			d = dls[i]
 			ext, err := m.send(ctx, d, rel, slotID, hash)
 			if err != nil {
+				if errors.Is(err, ErrUncertain) || errors.Is(err, ErrAttemptStopped) {
+					return 0, err
+				}
 				fails = append(fails, err.Error())
 				continue
 			}
@@ -223,7 +291,64 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 	// The Download row and the Slot move are one write, so a kill cannot
 	// leave a Download with the Slot still chosen.
 	moved := []int64{slotID}
+	adopted := false
 	err = m.Store.Write(ctx, func(tx *sql.Tx) error {
+		// Another caller can reconcile an accepted send before its original
+		// caller returns. Adopt that committed pair instead of resetting it.
+		if dl.ID == 0 {
+			prior, err := store.Select[domain.Download](ctx, tx, "downloads", `downloader_id = ? AND external_id = ? AND release_id = ?
+				AND state IN (`+activeStates+`, 'finished') AND EXISTS (SELECT 1 FROM json_each(slot_ids) WHERE value = ?)
+				AND NOT EXISTS (SELECT 1 FROM imports i WHERE i.download_id = downloads.id AND i.state = 'rejected') LIMIT 1`, d.ID, dl.ExternalID, rel.ID, slotID)
+			if err != nil {
+				return err
+			}
+			if len(prior) == 1 {
+				var active sql.NullInt64
+				var state string
+				if err := tx.QueryRowContext(ctx, "SELECT active_download_id, state FROM slots WHERE id = ?", slotID).Scan(&active, &state); err != nil {
+					return err
+				}
+				if active.Valid && active.Int64 == prior[0].ID && state == string(domain.SlotDownloading) {
+					dl = &prior[0]
+					adopted = true
+					return nil
+				}
+			}
+		}
+		// Resolve the intent in this same transaction as the Download and Slot.
+		// If an owner abandoned it while the request was in flight, roll back.
+		var intentID int64
+		if journalAdapter(d.Adapter) {
+			a, err := unfinishedAttempt(ctx, tx, rel.ID, slotID)
+			if err != nil {
+				return err
+			}
+			if a == nil && dl.ID == 0 {
+				// A changed Release or Version snapshot cannot adopt the
+				// response of the original send by reusing its numeric id.
+				return ErrUncertain
+			}
+			if a != nil {
+				intentID = a.ID
+				if a.State != "pending" {
+					return ErrAttemptStopped
+				}
+				if a.DownloaderID != d.ID || d.Adapter == "nzbget" && a.marker != dl.ExternalID || d.Adapter != "nzbget" && a.expectedID != "" && !strings.EqualFold(a.expectedID, dl.ExternalID) {
+					return ErrUncertain
+				}
+				if _, err := tx.ExecContext(ctx, "UPDATE downloader_attempts SET state = 'resolved', updated_at = ? WHERE id = ? AND state = 'pending'", m.now().Format(time.RFC3339Nano), a.ID); err != nil {
+					return err
+				}
+			}
+		}
+		var current domain.Slot
+		if err := store.Get(ctx, tx, "slots", slotID, &current); err != nil {
+			return err
+		}
+		if current.State != domain.SlotChosen || current.ChosenReleaseID == nil || *current.ChosenReleaseID != rel.ID ||
+			!current.CreatedAt.Equal(sl.CreatedAt) || current.VersionID != sl.VersionID {
+			return errors.New("the Slot changed while sending this Release")
+		}
 		// A season pack or multi-episode Release chosen for several Slots is
 		// one Download for all of them (the other Slots still chosen for
 		// this same Release: an old pick list can name a Slot chosen since
@@ -238,7 +363,11 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 			for _, id := range many {
 				var st string
 				var chosenFor, versionOf sql.NullInt64
-				if id == slotID || tx.QueryRow("SELECT state, chosen_release_id, version_id FROM slots WHERE id = ?", id).Scan(&st, &chosenFor, &versionOf) != nil ||
+				// A late response may only attach the identities covered by
+				// its intent, even when SQLite has reused a Slot's numeric id.
+				if id == slotID || tx.QueryRow(`SELECT state, chosen_release_id, version_id FROM slots s WHERE id = ?
+					AND (? = 0 OR EXISTS (SELECT 1 FROM downloader_attempts a, json_each(a.slot_snapshots) j
+					WHERE a.id = ? AND json_extract(j.value, '$.id') = s.id AND json_extract(j.value, '$.created_at') = s.created_at))`, id, intentID, intentID).Scan(&st, &chosenFor, &versionOf) != nil ||
 					st != string(domain.SlotChosen) || chosenFor.Int64 != rel.ID || versionOf.Int64 != version {
 					continue
 				}
@@ -284,6 +413,9 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 	if err != nil {
 		return 0, err
 	}
+	if adopted {
+		return dl.ID, nil // The caller that committed it owns its notifications.
+	}
 	m.event(ctx, dl, "download_sent", fmt.Sprintf("Sent %s to %s", rel.Name, d.Name))
 	for _, id := range moved {
 		m.publish("slot", map[string]any{"id": id, "state": domain.SlotDownloading})
@@ -294,7 +426,42 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 }
 
 // send hands a Release to one Downloader and returns its id there.
-func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Release, slotID int64, hash string) (string, error) {
+func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Release, slotID int64, hash string) (ext string, err error) {
+	a, err := m.claimAttempt(ctx, d, rel.ID, slotID)
+	if err != nil {
+		return "", err
+	}
+	if a != nil {
+		if a.State == "resolved" {
+			return a.marker, nil
+		}
+		d.Category = a.category
+		defer func() {
+			if err == nil {
+				return // Grab resolves it atomically with the Download row.
+			}
+			if !a.created || errors.Is(err, ErrUncertain) {
+				err = errors.Join(ErrUncertain, err)
+				return
+			}
+			// A definite pre-append refusal may be retried. Failed cleanup is
+			// conservative: retain the intent and suppress failover.
+			cleanupErr := m.Store.Write(ctx, func(tx *sql.Tx) error {
+				res, e := tx.ExecContext(ctx, "UPDATE downloader_attempts SET state = 'resolved', updated_at = ? WHERE id = ? AND state = 'pending'", m.now().Format(time.RFC3339Nano), a.ID)
+				if e != nil {
+					return e
+				}
+				n, e := res.RowsAffected()
+				if e == nil && n != 1 {
+					return ErrAttemptStopped
+				}
+				return e
+			})
+			if cleanupErr != nil {
+				err = errors.Join(ErrUncertain, err, cleanupErr)
+			}
+		}()
+	}
 	e, err := m.engine(ctx, d)
 	if err != nil {
 		return "", fmt.Errorf("%s: %w", d.Name, err)
@@ -318,8 +485,27 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 	if err := rows.Err(); err != nil {
 		return "", err
 	}
+	if a != nil && !a.created {
+		// A recovery is only a lookup. It needs neither the original Source
+		// nor a send-spacing reservation, and may never fetch or append.
+		ext, err = e.Add(ctx, AddRequest{Name: rel.Name, Category: a.category, Skip: skip, AttemptMarker: a.marker, InfoHash: a.expectedID, ReconcileOnly: true})
+		if err != nil {
+			if unreachable(err) {
+				m.downloaderFailed(ctx, d, err)
+			}
+			return "", err
+		}
+		if ext == "" {
+			return "", ErrUncertain
+		}
+		m.downloaderOK(ctx, d)
+		return ext, nil
+	}
 	if hash != "" {
 		if j, err := e.Get(ctx, hash); err == nil {
+			if skip[j.ID] || (d.Adapter == "transmission" || d.Adapter == "deluge") && j.Category != d.Category {
+				return "", errors.New("the torrent belongs to another download or category")
+			}
 			if j.ID != "" {
 				return j.ID, nil
 			}
@@ -332,11 +518,27 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 			return "", err
 		}
 	}
+	allowLocal := false
+	if d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "nzbget" {
+		var src domain.Source
+		if err := store.Get(ctx, m.Store.Read(), "sources", rel.SourceID, &src); err != nil {
+			return "", errors.New("the Release's Source could not be read")
+		}
+		allowLocal = src.AllowLocal
+		if !strings.HasPrefix(link, "magnet:") && src.ProxyURL != "" {
+			return "", errors.New("this Downloader cannot yet fetch Release files through a Source proxy")
+		}
+	}
 	done, err := m.space(ctx, d.URL)
 	if err != nil {
 		return "", err
 	}
-	ext, err := e.Add(ctx, AddRequest{URL: link, Name: rel.Name, Category: d.Category, SavePath: m.SavePath, InfoHash: hash, Skip: skip})
+	req := AddRequest{URL: link, Name: rel.Name, Category: d.Category, SavePath: m.SavePath, InfoHash: hash, Skip: skip,
+		AllowLocal: allowLocal, OperationKey: fmt.Sprintf("%d:%d:%d", d.ID, rel.ID, slotID)}
+	if a != nil {
+		req.AttemptMarker, req.ReconcileOnly = a.marker, !a.created
+	}
+	ext, err = e.Add(ctx, req)
 	done()
 	if err != nil {
 		// Only a Downloader that did not answer, or turned down the
@@ -348,6 +550,9 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 		return "", fmt.Errorf("sending to %s: %w", d.Name, err)
 	}
 	if ext == "" {
+		if a != nil {
+			return "", ErrUncertain
+		}
 		return "", fmt.Errorf("%s gave no id for the Release (no info hash)", d.Name)
 	}
 	m.downloaderOK(ctx, d)
@@ -694,7 +899,10 @@ func strPtr(s string) *string { return &s }
 // the sign-in.
 func unreachable(err error) bool {
 	var ne net.Error
-	return errors.Is(err, ErrAuth) || errors.Is(err, source.ErrAddressRefused) || errors.Is(err, context.DeadlineExceeded) || errors.As(err, &ne)
+	var status adapterHTTPError
+	return errors.Is(err, ErrAuth) || errors.Is(err, outside.ErrSuppressed) || errors.Is(err, errDownloaderUnavailable) ||
+		errors.As(err, &status) && (status.status == 408 || status.status == 429 || status.status >= 500) ||
+		errors.Is(err, source.ErrAddressRefused) || errors.Is(err, context.DeadlineExceeded) || errors.As(err, &ne)
 }
 
 func eqPtr(a, b *int64) bool {

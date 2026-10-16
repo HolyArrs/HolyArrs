@@ -18,7 +18,7 @@ import (
 var (
 	ErrName     = errors.New("give the Downloader a name of 1 to 80 characters")
 	ErrNameUsed = errors.New("another Downloader has that name")
-	ErrAdapter  = errors.New("the kind must be qbittorrent or sabnzbd")
+	ErrAdapter  = errors.New("choose a supported Downloader kind")
 	ErrURL      = errors.New("the address must start with http:// or https:// and name a host, with no name or password in it")
 	ErrCategory = errors.New("the category must be 1 to 64 characters with no slashes")
 	ErrPriority = errors.New("priority must be 1 to 50 (1 is used first)")
@@ -30,8 +30,8 @@ var (
 	ErrBusy     = errors.New("this Downloader still has active downloads; pause it and let them finish first (its category and address cannot change, and it cannot be removed, while they run)")
 )
 
-// Input is what a person sets on a Downloader. Secret is the SABnzbd key
-// or the qBittorrent password; empty keeps the stored one, ClearSecret
+// Input is what a person sets on a Downloader. Secret is the SABnzbd API key
+// or the qBittorrent, Transmission, NZBGet or Deluge password; empty keeps the stored one, ClearSecret
 // removes it. Nil fields keep what is stored (or the default when new).
 type Input struct {
 	Name        string           `json:"name"`
@@ -66,9 +66,9 @@ func fill(in Input, d *domain.Downloader, isNew bool) error {
 	d.Name = name
 	if isNew || in.Adapter != "" {
 		switch in.Adapter {
-		case "qbittorrent":
+		case "qbittorrent", "transmission", "deluge":
 			d.Protocol = "torrent"
-		case "sabnzbd":
+		case "sabnzbd", "nzbget":
 			d.Protocol = "usenet"
 		default:
 			return ErrAdapter
@@ -205,6 +205,11 @@ func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in 
 		if d.Removed {
 			return store.ErrNotFound
 		}
+		if n, err := pendingAttemptCount(tx, id); err != nil {
+			return err
+		} else if n > 0 {
+			return ErrPendingAttempt
+		}
 		oldHost, oldCat := hostOf(d.URL), d.Category
 		if err := fill(in, &d, false); err != nil {
 			return err
@@ -265,8 +270,13 @@ func Remove(ctx context.Context, s *store.Store, id int64, by domain.Actor) erro
 		if d.Removed {
 			return store.ErrNotFound
 		}
+		if n, err := pendingAttemptCount(tx, id); err != nil {
+			return err
+		} else if n > 0 {
+			return ErrPendingAttempt
+		}
 		var all int
-		if err := tx.QueryRow("SELECT count(*) FROM downloads WHERE downloader_id = ?", id).Scan(&all); err != nil {
+		if err := tx.QueryRow("SELECT (SELECT count(*) FROM downloads WHERE downloader_id = ?) + (SELECT count(*) FROM downloader_attempts WHERE downloader_id = ?)", id, id).Scan(&all); err != nil {
 			return err
 		}
 		active, err := activeCount(tx, id)

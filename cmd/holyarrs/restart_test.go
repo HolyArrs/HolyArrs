@@ -46,7 +46,7 @@ func TestCrashRestartTime(t *testing.T) {
 	ln.Close()
 	cfg := filepath.Join(dir, "config")
 	start := func() *exec.Cmd {
-		cmd := exec.Command(bin, "-config", cfg, "-addr", addr)
+		cmd := testCommand(bin, "-config", cfg, "-addr", addr)
 		if err := cmd.Start(); err != nil {
 			t.Fatal(err)
 		}

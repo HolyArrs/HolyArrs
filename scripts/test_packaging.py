@@ -1,0 +1,181 @@
+import argparse
+import importlib.util
+import json
+from pathlib import Path
+import tempfile
+import unittest
+from unittest.mock import patch
+import xml.etree.ElementTree as ET
+import zipfile
+
+
+def module(name, filename):
+    spec = importlib.util.spec_from_file_location(name, Path(__file__).with_name(filename))
+    result = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(result)
+    return result
+
+
+package = module("package", "package.py")
+nas = module("nas_template", "nas-template.py")
+
+
+class PackagingTests(unittest.TestCase):
+    def test_low_resource_profile_caps_containers_and_preserves_fixture_archives(self):
+        commit = "a" * 40
+        version = "0.0.0-candidate.1+g" + commit[:12]
+        commands = []
+
+        def snapshot(ref, destination):
+            (destination / "LICENSE").write_bytes(b"project license\n")
+            return commit, 1700000000, {"LICENSE": 0o644}
+
+        def docker(command):
+            if command[:2] == ["git", "rev-parse"]:
+                return ("b" * 40 + "\n").encode()
+            commands.append(command)
+            source = Path(command[command.index("-v") + 1].removesuffix(":/src"))
+            go_args = command[command.index(package.GO_IMAGE) + 1:]
+            if go_args == ["go", "version"]:
+                return b"go version go1.27.2 linux/amd64\n"
+            if go_args[:2] == ["go", "build"]:
+                executable = Path(go_args[go_args.index("-o") + 1]).name
+                (source / executable).write_bytes(b"fixture executable " + version.encode())
+            if go_args == ["cat", "/usr/local/go/LICENSE"]:
+                return b"Go license\n"
+            return b""
+
+        with tempfile.TemporaryDirectory() as directory:
+            outputs = []
+            profiles = []
+            for low_resource in (False, True):
+                commands.clear()
+                output = Path(directory) / str(low_resource)
+                args = argparse.Namespace(ref=commit, version="0.0.0-candidate.1", output=str(output),
+                                          targets=",".join(package.TARGETS), module_cache="existing-cache",
+                                          web_node_modules="existing-modules", low_resource=low_resource)
+                with patch.object(package, "snapshot", side_effect=snapshot), \
+                     patch.object(package, "web_notices", return_value=b"web notices\n"), \
+                     patch.object(package, "run", side_effect=docker):
+                    package.build(args)
+                self.assertEqual(len(commands), 14)
+                normalized = []
+                for command in commands:
+                    plain = command.copy()
+                    image_index = command.index(package.GO_IMAGE)
+                    for flag, value in (("--cpus", "1"), ("--memory", "2g"),
+                                        ("--memory-swap", "2g"), ("--pids-limit", "256")):
+                        self.assertEqual(command.count(flag), int(low_resource))
+                        if low_resource:
+                            index = command.index(flag)
+                            self.assertLess(index + 1, image_index)
+                            self.assertEqual(command[index + 1], value)
+                            index = plain.index(flag)
+                            del plain[index:index + 2]
+                    for value in ("GOMAXPROCS=1", "GOMEMLIMIT=768MiB", "GOGC=50", "GOFLAGS=-p=1"):
+                        self.assertEqual(command.count(value), int(low_resource))
+                        if low_resource:
+                            index = command.index(value)
+                            self.assertLess(index, image_index)
+                            self.assertEqual(command[index - 1], "-e")
+                            index = plain.index(value)
+                            del plain[index - 1:index + 1]
+                    plain[plain.index("-v") + 1] = "<source>:/src"
+                    normalized.append(plain)
+                profiles.append(normalized)
+                outputs.append({p.name: p.read_bytes() for p in output.iterdir()})
+            self.assertEqual(profiles[0], profiles[1])
+            self.assertEqual(outputs[0], outputs[1])
+            for low_resource in (False, True):
+                argv = ["package.py", "--ref", commit, "--version", "0.0.0-candidate.1",
+                        "--output", "new-output", "--module-cache", "existing-cache",
+                        "--web-node-modules", "existing-modules"]
+                if low_resource:
+                    argv.append("--low-resource")
+                with patch("sys.argv", argv), patch.object(package, "build") as build:
+                    package.main()
+                    self.assertIs(build.call_args.args[0].low_resource, low_resource)
+
+    def test_rejects_unsafe_versions(self):
+        for version in ("../bad", "1.2.3/other", "1.2.3\n", "v1.2.3", "1.2.3;echo", "1.2.3-a..b", ""):
+            with self.subTest(version=version), self.assertRaises(ValueError):
+                package.checked_version(version)
+        self.assertEqual(package.checked_version("0.0.0-candidate.1+gabcdef0"), "0.0.0-candidate.1+gabcdef0")
+
+    def test_archive_bytes_are_reproducible_and_modes_survive(self):
+        files = {"docs/install.md": (b"instructions\n", 0o644), "holyarrs": (b"binary", 0o755)}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for suffix in ("tar.gz", "zip"):
+                a, b = root / ("a." + suffix), root / ("b." + suffix)
+                package.archive(a, files, 1700000000)
+                package.archive(b, dict(reversed(list(files.items()))), 1700000000)
+                self.assertEqual(a.read_bytes(), b.read_bytes())
+            with zipfile.ZipFile(root / "a.zip") as archive:
+                self.assertEqual(archive.getinfo("holyarrs").external_attr >> 16 & 0o777, 0o755)
+
+    def test_all_selected_targets_have_exact_tuples(self):
+        self.assertEqual(package.TARGETS["linux-armv7"], ("linux", "arm", "7"))
+        self.assertEqual(set(package.TARGETS), {"linux-amd64", "linux-arm64", "linux-armv7", "linux-386", "windows-amd64"})
+
+    def test_archive_rejects_absolute_and_traversal_members(self):
+        with tempfile.TemporaryDirectory() as directory:
+            for name in ("/etc/config", "../config", "docs/../../config", "C:/config", "docs\\file"):
+                with self.subTest(name=name), self.assertRaises(ValueError):
+                    package.archive(Path(directory) / "a.zip", {name: (b"data", 0o644)}, 1700000000)
+
+    def test_notice_version_mismatch_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "web/app").mkdir(parents=True)
+            (root / "web/app/package-lock.json").write_text(json.dumps({"packages": {"node_modules/svelte": {"version": "1"}}}))
+            modules = root / "modules"
+            (modules / "svelte").mkdir(parents=True)
+            (modules / "svelte/package.json").write_text('{"version":"2"}')
+            # The module root normally has the literal node_modules name.
+            modules.rename(root / "node_modules")
+            with self.assertRaises(ValueError):
+                package.web_notices(root, root / "node_modules")
+
+    def test_missing_nonoptional_web_package_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "web/app").mkdir(parents=True)
+            (root / "web/app/package-lock.json").write_text(json.dumps({"packages": {"node_modules/other": {"version": "1"}}}))
+            (root / "node_modules").mkdir()
+            with self.assertRaises(ValueError):
+                package.web_notices(root, root / "node_modules")
+
+    def test_linked_module_root_and_license_are_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "web/app").mkdir(parents=True)
+            (root / "web/app/package-lock.json").write_text(json.dumps({"packages": {"node_modules/svelte": {"version": "1"}}}))
+            modules = root / "node_modules"
+            (modules / "svelte").mkdir(parents=True)
+            (modules / "svelte/package.json").write_text('{"version":"1"}')
+            (modules / "svelte/LICENSE").write_text('license')
+            for linked in (modules, modules / "svelte/LICENSE"):
+                with self.subTest(linked=linked), patch.object(Path, "is_symlink", lambda p: p == linked), self.assertRaises(ValueError):
+                    package.web_notices(root, modules)
+
+    def test_nas_requires_immutable_image_local_config_and_separate_data(self):
+        image = "ghcr.io/coderluii/holyarrs@sha256:" + "a" * 64
+        for bad in ("holyarrs:latest", "https://host/image", "owner:password@host/image"):
+            with self.assertRaises(ValueError):
+                nas.render(bad, "/mnt/cache/appdata/holyarrs", "/mnt/user/media", 18730)
+        for bad in ("/mnt/user/appdata/holyarrs", "/mnt/user0/appdata/holyarrs", "/mnt/remotes/appdata/holyarrs", "/mnt/cache/../appdata/holyarrs", "/mnt/cache"):
+            with self.assertRaises(ValueError):
+                nas.render(image, bad, "/mnt/user/media", 18730)
+        with self.assertRaises(ValueError):
+            nas.render(image, "/mnt/cache/appdata/holyarrs", "/mnt/cache/appdata", 18730)
+        doc = ET.fromstring(nas.render(image, "/mnt/cache/appdata/holyarrs", "/mnt/user/media", 18744))
+        self.assertEqual(doc.findtext("Repository"), image)
+        self.assertEqual(doc.findtext("Privileged"), "false")
+        self.assertEqual(doc.findtext("ExtraParams"), "--user=1000:1000")
+        self.assertEqual([(c.attrib["Target"], c.text) for c in doc.findall("Config") if c.attrib["Type"] == "Path"],
+                         [("/config", "/mnt/cache/appdata/holyarrs"), ("/data", "/mnt/user/media")])
+
+
+if __name__ == "__main__":
+    unittest.main()

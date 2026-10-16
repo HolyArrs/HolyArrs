@@ -204,6 +204,9 @@ func TestGrabsToOneHostAreSpaced(t *testing.T) {
 		if _, err := store.Insert(tx, "releases", r, domain.System); err != nil {
 			return err
 		}
+		if _, err := tx.Exec("UPDATE slots SET chosen_release_id = ? WHERE id = ?", r.ID, s2.ID); err != nil {
+			return err
+		}
 		slot2, rel2 = s2.ID, r.ID
 		return nil
 	}); err != nil {
@@ -249,8 +252,11 @@ func TestSabnzbdThroughTheManager(t *testing.T) {
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		r := &domain.Release{SourceID: 1, Name: "Lab.Usenet.Movie.2024.1080p.WEB.H264-HOLYARRS", LinkRef: "http://fake-indexer/good.nzb", Protocol: "usenet",
 			Size: 1238952, Flags: []string{}, Parsed: map[string]any{}, MatchedSlotIDs: []int64{w.slotID}, Verdict: map[string]any{}, FoundBy: "auto_search", State: "chosen"}
-		_, err := store.Insert(tx, "releases", r, domain.System)
+		if _, err := store.Insert(tx, "releases", r, domain.System); err != nil {
+			return err
+		}
 		relID = r.ID
+		_, err := tx.Exec("UPDATE slots SET chosen_release_id = ? WHERE id = ?", r.ID, w.slotID)
 		return err
 	}); err != nil {
 		t.Fatal(err)

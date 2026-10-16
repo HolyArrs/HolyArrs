@@ -147,6 +147,19 @@ func TestInviteEndsAndTakenNames(t *testing.T) {
 		t.Fatalf("ended invite worked: %d", resp.StatusCode)
 	}
 	resp, _ = own.do(t, f, "POST", "/api/v1/users/invites", `{"days":90}`)
+	if resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("stale local proof reached invite settings: %d", resp.StatusCode)
+	}
+	resp, out := own.do(t, f, "POST", "/api/v1/auth/reauth", `{"password":"`+pw+`"}`)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("reauth: %d %s", resp.StatusCode, out)
+	}
+	var fresh struct {
+		CSRF string `json:"csrf"`
+	}
+	jsonOf(t, out, &fresh)
+	own.csrf = fresh.CSRF
+	resp, _ = own.do(t, f, "POST", "/api/v1/users/invites", `{"days":90}`)
 	if resp.StatusCode != 400 {
 		t.Fatalf("90-day invite: %d", resp.StatusCode)
 	}

@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"sort"
@@ -132,7 +131,7 @@ func TestScaleAcceptance(t *testing.T) {
 		}
 		t.Run(spec.Name, func(t *testing.T) {
 			t.Parallel()
-			cmd := exec.Command(os.Args[0], "-test.run=^TestScaleAcceptanceChild$", "-test.v", "-test.count=1", "-test.timeout="+scaleChildTimeout(spec))
+			cmd := testCommand(os.Args[0], "-test.run=^TestScaleAcceptanceChild$", "-test.v", "-test.count=1", "-test.timeout="+scaleChildTimeout(spec))
 			cmd.Env = append(os.Environ(), envScaleChild+"="+spec.Name)
 			out, err := cmd.CombinedOutput()
 			if err != nil {
@@ -203,7 +202,7 @@ func TestScaleAcceptanceChild(t *testing.T) {
 	if spec.Name == "combined" {
 		seedTimeout = "30m"
 	}
-	seedCmd := exec.Command(os.Args[0], "-test.run=^TestScaleSeedChild$", "-test.v", "-test.count=1", "-test.timeout="+seedTimeout)
+	seedCmd := testCommand(os.Args[0], "-test.run=^TestScaleSeedChild$", "-test.v", "-test.count=1", "-test.timeout="+seedTimeout)
 	seedCmd.Env = append(os.Environ(), envScaleSeedChild+"="+spec.Name, envScaleDir+"="+dir, envScaleFeed+"="+feed.URL, envScaleMedia+"="+mediaRoot)
 	seedOut, err := seedCmd.CombinedOutput()
 	if err != nil {

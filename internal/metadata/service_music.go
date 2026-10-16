@@ -1,0 +1,419 @@
+package metadata
+
+import (
+	"context"
+	"errors"
+	"strings"
+)
+
+const (
+	serviceMusicSearchLimit = 25
+	serviceReleaseLimit     = 100
+	serviceTrackLimit       = 10000
+)
+
+type serviceMusic struct {
+	service *Service
+	direct  ArtistProvider
+}
+
+// Artists uses the optional standalone service while retaining the direct
+// provider for complete catalog reads and eligible fallbacks.
+func (s *Service) Artists(direct ArtistProvider) ArtistProvider {
+	return &serviceMusic{service: s, direct: direct}
+}
+
+type serviceArtistData struct {
+	ID             string `json:"id"`
+	Name           string `json:"name"`
+	SortName       string `json:"sort-name"`
+	Type           string `json:"type"`
+	Disambiguation string `json:"disambiguation"`
+	Country        string `json:"country"`
+	Score          int    `json:"score"`
+	LifeSpan       struct {
+		Ended bool `json:"ended"`
+	} `json:"life-span"`
+	ReleaseGroups *[]serviceAlbumData `json:"release-groups"`
+}
+
+type serviceAlbumData struct {
+	ID             string   `json:"id"`
+	Title          string   `json:"title"`
+	PrimaryType    string   `json:"primary-type"`
+	SecondaryTypes []string `json:"secondary-types"`
+	FirstRelease   string   `json:"first-release-date"`
+	Disambiguation string   `json:"disambiguation"`
+}
+
+func (m *serviceMusic) SearchArtists(ctx context.Context, query string) ([]Artist, error) {
+	query = strings.TrimSpace(query)
+	if query == "" {
+		return []Artist{}, nil
+	}
+	ctx, cancel := serviceContext(ctx)
+	defer cancel()
+	directQuery := query
+	serviceQuery := luceneSpecial.ReplaceAllString(query, `\$1`)
+	result, err := m.service.search(ctx, "musicbrainz", "artist", serviceQuery, 1, serviceMusicSearchLimit)
+	if err != nil {
+		if m.direct != nil && serviceFallback(ctx, err) {
+			return m.direct.SearchArtists(ctx, directQuery)
+		}
+		return nil, serviceMusicError(err)
+	}
+	out := make([]Artist, 0, len(result.Items))
+	for _, item := range result.Items {
+		artist, err := parseServiceArtist(item, false)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, artist)
+	}
+	return out, nil
+}
+
+func (m *serviceMusic) Artist(ctx context.Context, mbid string) (Artist, error) {
+	if !ValidMBID(mbid) {
+		return Artist{}, ErrArtistNotFound
+	}
+	mbid = strings.ToLower(mbid)
+	ctx, cancel := serviceContext(ctx)
+	defer cancel()
+	item, err := m.service.detail(ctx, "musicbrainz", "artist", mbid)
+	if err != nil {
+		if m.direct != nil && serviceFallback(ctx, err) {
+			return m.directArtist(ctx, mbid)
+		}
+		return Artist{}, serviceMusicError(err)
+	}
+	artist, err := parseServiceArtist(item, true)
+	if err != nil {
+		if m.direct != nil && serviceFallback(ctx, err) {
+			return m.directArtist(ctx, mbid)
+		}
+		return Artist{}, err
+	}
+	artist.Partial = true
+	if m.direct == nil {
+		return artist, nil
+	}
+	direct, directErr := m.direct.Artist(ctx, mbid)
+	if ctx.Err() != nil {
+		return Artist{}, ctx.Err()
+	}
+	if directErr == nil && !direct.Partial && validDirectArtist(direct, mbid) {
+		return direct, nil
+	}
+	return artist, nil
+}
+
+func (m *serviceMusic) directArtist(ctx context.Context, mbid string) (Artist, error) {
+	artist, err := m.direct.Artist(ctx, mbid)
+	if err != nil {
+		return Artist{}, err
+	}
+	if !validDirectArtist(artist, mbid) {
+		return Artist{}, ErrServiceInvalid
+	}
+	return artist, nil
+}
+
+func parseServiceArtist(item serviceItem, albums bool) (Artist, error) {
+	if item.Source != "musicbrainz" || item.Kind != "artist" || !ValidMBID(item.SourceID) {
+		return Artist{}, ErrServiceInvalid
+	}
+	var data serviceArtistData
+	if err := item.decode(&data); err != nil || !ValidMBID(data.ID) || strings.TrimSpace(data.Name) == "" || data.Score < 0 || data.Score > 100 {
+		return Artist{}, ErrServiceInvalid
+	}
+	out := Artist{MBID: strings.ToLower(data.ID), Name: data.Name, SortName: data.SortName, Type: strings.ToLower(data.Type),
+		Disambiguation: data.Disambiguation, Country: data.Country, Score: data.Score, Status: "running"}
+	if data.LifeSpan.Ended {
+		out.Status = "ended"
+	}
+	if !albums {
+		return out, nil
+	}
+	if data.ReleaseGroups == nil {
+		return Artist{}, ErrServiceIncomplete
+	}
+	if len(*data.ReleaseGroups) > serviceReleaseLimit {
+		return Artist{}, ErrServiceIncomplete
+	}
+	seen := make(map[string]bool, len(*data.ReleaseGroups))
+	out.Albums = make([]Album, 0, len(*data.ReleaseGroups))
+	for _, group := range *data.ReleaseGroups {
+		id := strings.ToLower(group.ID)
+		if !ValidMBID(id) || seen[id] || strings.TrimSpace(group.Title) == "" {
+			return Artist{}, ErrServiceInvalid
+		}
+		seen[id] = true
+		album := Album{MBID: id, Name: group.Title, PrimaryType: strings.ToLower(group.PrimaryType), ReleaseDate: group.FirstRelease,
+			Disambiguation: group.Disambiguation, SecondaryTypes: make([]string, 0, len(group.SecondaryTypes))}
+		for _, secondary := range group.SecondaryTypes {
+			album.SecondaryTypes = append(album.SecondaryTypes, strings.ToLower(secondary))
+		}
+		out.Albums = append(out.Albums, album)
+	}
+	return out, nil
+}
+
+func validDirectArtist(artist Artist, mbid string) bool {
+	if !strings.EqualFold(artist.MBID, mbid) || strings.TrimSpace(artist.Name) == "" {
+		return false
+	}
+	seen := make(map[string]bool, len(artist.Albums))
+	for _, album := range artist.Albums {
+		id := strings.ToLower(album.MBID)
+		if !ValidMBID(id) || seen[id] {
+			return false
+		}
+		seen[id] = true
+	}
+	return true
+}
+
+type serviceReleaseGroupData struct {
+	ID       string                `json:"id"`
+	Releases *[]serviceReleaseLink `json:"releases"`
+}
+
+type serviceReleaseLink struct {
+	ID string `json:"id"`
+}
+
+type serviceReleaseData struct {
+	ID             string `json:"id"`
+	Title          string `json:"title"`
+	Status         string `json:"status"`
+	Country        string `json:"country"`
+	Date           string `json:"date"`
+	Disambiguation string `json:"disambiguation"`
+	ReleaseGroup   struct {
+		ID string `json:"id"`
+	} `json:"release-group"`
+	Media *[]serviceMediumData `json:"media"`
+}
+
+type serviceMediumData struct {
+	Position   int                 `json:"position"`
+	Format     string              `json:"format"`
+	TrackCount *int                `json:"track-count"`
+	Tracks     *[]serviceTrackData `json:"tracks"`
+}
+
+type serviceTrackData struct {
+	ID        string `json:"id"`
+	Position  int    `json:"position"`
+	Title     string `json:"title"`
+	Length    *int   `json:"length"`
+	Recording struct {
+		ID     string `json:"id"`
+		Title  string `json:"title"`
+		Length *int   `json:"length"`
+	} `json:"recording"`
+}
+
+type serviceRecordingData struct {
+	ID     string `json:"id"`
+	Title  string `json:"title"`
+	Length *int   `json:"length"`
+}
+
+func (m *serviceMusic) Pressings(ctx context.Context, albumMBID string) ([]Pressing, error) {
+	if !ValidMBID(albumMBID) {
+		return nil, ErrArtistNotFound
+	}
+	albumMBID = strings.ToLower(albumMBID)
+	ctx, cancel := serviceContext(ctx)
+	defer cancel()
+	item, err := m.service.detail(ctx, "musicbrainz", "release-group", albumMBID)
+	if err != nil {
+		return m.fallbackPressings(ctx, albumMBID, nil, err)
+	}
+	releaseIDs, err := parseServiceReleaseIDs(item)
+	if err != nil {
+		return m.fallbackPressings(ctx, albumMBID, nil, err)
+	}
+	out := make([]Pressing, 0, len(releaseIDs))
+	totalTracks := 0
+	for _, id := range releaseIDs {
+		release, err := m.service.detail(ctx, "musicbrainz", "release", id)
+		if err != nil {
+			return m.fallbackPressings(ctx, albumMBID, out, err)
+		}
+		pressing, err := parseServicePressingItem(ctx, m.service, albumMBID, release, &totalTracks)
+		if err != nil {
+			return m.fallbackPressings(ctx, albumMBID, out, err)
+		}
+		out = append(out, pressing)
+	}
+	if m.direct != nil {
+		direct, directErr := m.direct.Pressings(ctx, albumMBID)
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+		if directErr == nil && validDirectPressings(direct) {
+			return direct, nil
+		}
+	}
+	return out, ErrListCut
+}
+
+func (m *serviceMusic) fallbackPressings(ctx context.Context, albumMBID string, partial []Pressing, err error) ([]Pressing, error) {
+	if m.direct == nil || !serviceFallback(ctx, err) {
+		return partial, serviceMusicError(err)
+	}
+	direct, directErr := m.direct.Pressings(ctx, albumMBID)
+	if directErr != nil {
+		return direct, directErr
+	}
+	if !validDirectPressings(direct) {
+		return nil, ErrServiceInvalid
+	}
+	return direct, nil
+}
+
+func serviceMusicError(err error) error {
+	if errors.Is(err, ErrNotFound) {
+		return ErrArtistNotFound
+	}
+	return err
+}
+
+func parseServiceReleaseIDs(item serviceItem) ([]string, error) {
+	if item.Source != "musicbrainz" || item.Kind != "release-group" || !ValidMBID(item.SourceID) {
+		return nil, ErrServiceInvalid
+	}
+	var data serviceReleaseGroupData
+	if err := item.decode(&data); err != nil {
+		return nil, err
+	}
+	if data.Releases == nil {
+		return nil, ErrServiceIncomplete
+	}
+	if len(*data.Releases) > serviceReleaseLimit {
+		return nil, ErrServiceIncomplete
+	}
+	seen := make(map[string]bool, len(*data.Releases))
+	out := make([]string, 0, len(*data.Releases))
+	for _, release := range *data.Releases {
+		id := strings.ToLower(release.ID)
+		if !ValidMBID(id) || seen[id] {
+			return nil, ErrServiceInvalid
+		}
+		seen[id] = true
+		out = append(out, id)
+	}
+	return out, nil
+}
+
+func parseServicePressingItem(ctx context.Context, service *Service, albumMBID string, item serviceItem, totalTracks *int) (Pressing, error) {
+	if item.Source != "musicbrainz" || item.Kind != "release" || !ValidMBID(item.SourceID) {
+		return Pressing{}, ErrServiceInvalid
+	}
+	var data serviceReleaseData
+	if err := item.decode(&data); err != nil {
+		return Pressing{}, err
+	}
+	if !strings.EqualFold(data.ReleaseGroup.ID, albumMBID) || data.Media == nil || strings.TrimSpace(data.Title) == "" {
+		return Pressing{}, ErrServiceInvalid
+	}
+	out := Pressing{MBID: strings.ToLower(data.ID), Name: data.Title, Status: strings.ToLower(data.Status), Country: data.Country,
+		Date: data.Date, Disambiguation: data.Disambiguation, Formats: make([]string, 0, len(*data.Media)), Tracks: []Track{}}
+	position := 0
+	seenDiscs := make(map[int]bool, len(*data.Media))
+	for mediumIndex, medium := range *data.Media {
+		if medium.Tracks == nil {
+			return Pressing{}, ErrServiceIncomplete
+		}
+		if medium.TrackCount != nil && (*medium.TrackCount < 0 || *medium.TrackCount != len(*medium.Tracks)) {
+			return Pressing{}, ErrServiceIncomplete
+		}
+		disc := medium.Position
+		if disc <= 0 {
+			disc = mediumIndex + 1
+		}
+		if disc > len(*data.Media) || seenDiscs[disc] {
+			return Pressing{}, ErrServiceInvalid
+		}
+		seenDiscs[disc] = true
+		out.Formats = append(out.Formats, medium.Format)
+		seenTrackPositions := make(map[int]bool, len(*medium.Tracks))
+		for trackIndex, raw := range *medium.Tracks {
+			(*totalTracks)++
+			if *totalTracks > serviceTrackLimit {
+				return Pressing{}, ErrServiceIncomplete
+			}
+			if !ValidMBID(raw.ID) || !ValidMBID(raw.Recording.ID) {
+				return Pressing{}, ErrServiceInvalid
+			}
+			position++
+			trackPosition := raw.Position
+			if trackPosition <= 0 {
+				trackPosition = trackIndex + 1
+			}
+			if trackPosition > len(*medium.Tracks) || seenTrackPositions[trackPosition] {
+				return Pressing{}, ErrServiceInvalid
+			}
+			seenTrackPositions[trackPosition] = true
+			track := Track{ID: strings.ToLower(raw.ID), RecordingID: strings.ToLower(raw.Recording.ID), Disc: disc,
+				Number: trackPosition, Position: position, Name: raw.Title}
+			if track.Name == "" {
+				track.Name = raw.Recording.Title
+			}
+			if raw.Length != nil {
+				track.LengthMS = *raw.Length
+			} else if raw.Recording.Length != nil {
+				track.LengthMS = *raw.Recording.Length
+			}
+			if track.LengthMS < 0 {
+				return Pressing{}, ErrServiceInvalid
+			}
+			if track.Name == "" || track.LengthMS == 0 {
+				if service == nil {
+					return Pressing{}, ErrServiceIncomplete
+				}
+				recordingItem, err := service.detail(ctx, "musicbrainz", "recording", track.RecordingID)
+				if err != nil {
+					return Pressing{}, err
+				}
+				var recording serviceRecordingData
+				if recordingItem.Kind != "recording" || recordingItem.decode(&recording) != nil || !strings.EqualFold(recording.ID, track.RecordingID) {
+					return Pressing{}, ErrServiceInvalid
+				}
+				if track.Name == "" {
+					track.Name = recording.Title
+				}
+				if track.LengthMS == 0 && recording.Length != nil {
+					track.LengthMS = *recording.Length
+				}
+			}
+			if strings.TrimSpace(track.Name) == "" || track.LengthMS < 0 {
+				return Pressing{}, ErrServiceIncomplete
+			}
+			out.Tracks = append(out.Tracks, track)
+		}
+	}
+	return out, nil
+}
+
+func validDirectPressings(pressings []Pressing) bool {
+	seen := make(map[string]bool, len(pressings))
+	for _, pressing := range pressings {
+		id := strings.ToLower(pressing.MBID)
+		if !ValidMBID(id) || seen[id] {
+			return false
+		}
+		seen[id] = true
+		for _, track := range pressing.Tracks {
+			if !ValidMBID(track.ID) || !ValidMBID(track.RecordingID) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+var _ ArtistProvider = (*serviceMusic)(nil)

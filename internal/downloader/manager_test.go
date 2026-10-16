@@ -93,6 +93,9 @@ func setup(t *testing.T) (*world, *Manager) {
 		if _, err := store.Insert(tx, "releases", rel, domain.System); err != nil {
 			return err
 		}
+		if _, err := tx.Exec("UPDATE slots SET chosen_release_id = ? WHERE id = ?", rel.ID, sl.ID); err != nil {
+			return err
+		}
 		d := &domain.Downloader{Name: "Lab qBittorrent", Adapter: "qbittorrent", Protocol: "torrent", URL: u, Category: "holyarrs", Priority: 1,
 			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}
 		if _, err := store.Insert(tx, "downloaders", d, domain.System); err != nil {

@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/outside"
 	"github.com/CoderLuii/holyarrs/internal/secrets"
 	"github.com/CoderLuii/holyarrs/internal/source"
 	"github.com/CoderLuii/holyarrs/internal/store"
@@ -504,6 +505,9 @@ func (l *Linker) token(ctx context.Context, m domain.MediaServer) (string, error
 	}
 	t, err := l.Vault.Get(ctx, *m.TokenSecretID)
 	if err != nil {
+		if ctx.Err() != nil {
+			return "", ctx.Err()
+		}
 		return "", errors.New("the token could not be read")
 	}
 	return t, nil
@@ -535,8 +539,17 @@ func (l *Linker) do(ctx context.Context, m domain.MediaServer, method, path stri
 	if body != nil {
 		rd = bytes.NewReader(body)
 	}
-	req, err := http.NewRequestWithContext(ctx, method, m.URL+path, rd)
+	op, err := outside.Begin(ctx, outside.Target{Kind: "media_server", Identity: []string{strconv.FormatInt(m.ID, 10), m.Kind, m.URL, tok}})
 	if err != nil {
+		return nil, err
+	}
+	outcome := outside.Canceled
+	defer func() { op.Finish(outcome) }()
+	rctx, cancel := op.AttemptContext(ctx, 20*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(rctx, method, m.URL+path, rd)
+	if err != nil {
+		outcome = outside.TerminalFailure
 		return nil, ErrURL
 	}
 	req.Header.Set("Accept", "application/json")
@@ -555,6 +568,7 @@ func (l *Linker) do(ctx context.Context, m domain.MediaServer, method, path stri
 	}
 	resp, err := client(m).Do(req)
 	if err != nil {
+		outcome = outside.HTTPOutcome(0, err, ctx)
 		var ue *url.Error
 		if errors.As(err, &ue) {
 			err = ue.Err
@@ -564,8 +578,15 @@ func (l *Linker) do(ctx context.Context, m domain.MediaServer, method, path stri
 		}
 		return nil, errors.New("the server did not answer")
 	}
-	defer resp.Body.Close()
-	b, _ := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
+	b, readErr := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
+	if closeErr := resp.Body.Close(); readErr == nil {
+		readErr = closeErr
+	}
+	if readErr != nil {
+		outcome = outside.HTTPOutcome(resp.StatusCode, readErr, ctx)
+		return nil, errors.New("reading the server answer failed")
+	}
+	outcome = outside.HTTPOutcome(resp.StatusCode, nil, ctx)
 	switch {
 	case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
 		return nil, errors.New("the server turned down the token")

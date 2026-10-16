@@ -6,7 +6,8 @@ import { api as defaultClient, type Client } from './api';
 export type SessionState = 'unknown' | 'signed_out' | 'needs_setup' | 'signed_in';
 export type Role = 'owner' | 'admin' | 'member';
 export type Perm = 'ask' | 'auto_approve' | 'approve' | 'manage_library' | 'settings';
-export type Way = 'password' | 'plex' | 'jellyfin' | 'emby';
+export type Way = 'password' | 'plex' | 'jellyfin' | 'emby' | 'oidc' | 'forward_auth';
+export type AuthMethod = string;
 
 export interface Me {
 	id?: number;
@@ -18,6 +19,8 @@ export interface Me {
 	two_factor?: boolean;
 	must_two_factor?: boolean;
 	safe_mode?: boolean;
+	auth_method?: AuthMethod;
+	local_recent?: boolean;
 }
 
 /** A sign-in step answers with a session, or asks for a two-factor code. */
@@ -31,6 +34,10 @@ interface SignInAnswer {
 }
 
 export function createSession(client: Client = defaultClient) {
+	// Async reads may finish out of order. Authentication completions, logout,
+	// and lost-session notices advance this value so an older load cannot
+	// replace a newer identity.
+	let generation = 0;
 	const s = $state<{
 		state: SessionState;
 		name: string;
@@ -39,12 +46,27 @@ export function createSession(client: Client = defaultClient) {
 		perms: Perm[];
 		twoFactor: boolean;
 		mustTwoFactor: boolean;
+		authMethod: AuthMethod;
+		localRecent: boolean;
 		ways: Way[];
 		/** The server started in safe mode: only the core runs. */
 		safeMode: boolean;
 		/** The shortest password the owner allows (a setting; 4 at least). */
 		minPassword: number;
-	}>({ state: 'unknown', name: '', via: '', role: 'member', perms: [], twoFactor: false, mustTwoFactor: false, ways: ['password'], safeMode: false, minPassword: 4 });
+	}>({
+		state: 'unknown',
+		name: '',
+		via: '',
+		role: 'member',
+		perms: [],
+		twoFactor: false,
+		mustTwoFactor: false,
+		authMethod: '',
+		localRecent: false,
+		ways: ['password'],
+		safeMode: false,
+		minPassword: 4
+	});
 
 	interface AuthState {
 		needs_setup: boolean;
@@ -54,6 +76,8 @@ export function createSession(client: Client = defaultClient) {
 	}
 	function tookState(st: AuthState) {
 		s.minPassword = Math.max(4, st.min_password_length ?? 4);
+		if (st.ways) s.ways = st.ways;
+		if (st.safe_mode !== undefined) s.safeMode = !!st.safe_mode;
 	}
 
 	/** loadMinPassword reads the owner's shortest-password setting again. */
@@ -66,6 +90,16 @@ export function createSession(client: Client = defaultClient) {
 		return s.minPassword;
 	}
 
+	/** loadWays refreshes which sign-in providers are currently offered. */
+	async function loadWays(): Promise<Way[]> {
+		try {
+			tookState(await client.get<AuthState>('/auth/state'));
+		} catch {
+			// Keep the last known choices; individual actions still fail closed.
+		}
+		return s.ways;
+	}
+
 	function apply(me: Me) {
 		client.setCsrf(me.csrf ?? '');
 		s.name = me.name;
@@ -74,32 +108,40 @@ export function createSession(client: Client = defaultClient) {
 		s.perms = me.perms ?? [];
 		s.twoFactor = !!me.two_factor;
 		s.mustTwoFactor = !!me.must_two_factor;
+		s.authMethod = me.auth_method ?? '';
+		s.localRecent = !!me.local_recent;
 		s.safeMode = !!me.safe_mode;
 		s.state = 'signed_in';
 	}
 
-	async function signedOutState() {
+	async function signedOutState(expected: number) {
+		if (expected !== generation) return;
 		client.setCsrf('');
 		s.name = '';
 		s.via = '';
 		s.perms = [];
+		s.authMethod = '';
+		s.localRecent = false;
 		try {
 			const st = await client.get<AuthState>('/auth/state');
+			if (expected !== generation) return;
 			tookState(st);
 			s.ways = st.ways ?? ['password'];
 			s.safeMode = !!st.safe_mode;
 			s.state = st.needs_setup ? 'needs_setup' : 'signed_out';
 		} catch {
-			s.state = 'signed_out';
+			if (expected === generation) s.state = 'signed_out';
 		}
 	}
 
 	/** load asks the server who this is. */
 	async function load(): Promise<SessionState> {
+		const expected = generation;
 		try {
-			apply(await client.get<Me>('/auth/me'));
+			const me = await client.get<Me>('/auth/me');
+			if (expected === generation) apply(me);
 		} catch {
-			await signedOutState();
+			await signedOutState(expected);
 		}
 		return s.state;
 	}
@@ -107,14 +149,16 @@ export function createSession(client: Client = defaultClient) {
 	/** finish takes a sign-in answer: a session, or a two-factor ticket. */
 	async function finish(r: SignInAnswer): Promise<SignInResult> {
 		if (r.two_factor && r.ticket) return { done: false, ticket: r.ticket };
+		const expected = ++generation;
 		// The sign-in answer carries only the name; ask for the role and
 		// permissions before showing anything. If that canonical read fails,
 		// fail closed instead of making an identity from the login response.
 		client.setCsrf(r.csrf ?? '');
 		try {
-			apply(await client.get<Me>('/auth/me'));
+			const me = await client.get<Me>('/auth/me');
+			if (expected === generation) apply(me);
 		} catch (err) {
-			client.setCsrf('');
+			await signedOutState(expected);
 			throw err;
 		}
 		return { done: true };
@@ -130,6 +174,34 @@ export function createSession(client: Client = defaultClient) {
 
 	async function mediaServer(kind: 'jellyfin' | 'emby', name: string, password: string): Promise<SignInResult> {
 		return finish(await client.post<SignInAnswer>(`/auth/media-server/${kind}`, { name, password }));
+	}
+
+	async function oidcStart(): Promise<{ auth_url: string }> {
+		return client.post('/auth/oidc/start');
+	}
+
+	async function oidcFinish(): Promise<SignInResult> {
+		return finish(await client.post<SignInAnswer>('/auth/oidc/finish'));
+	}
+
+	async function forwardLogin(): Promise<SignInResult> {
+		return finish(await client.post<SignInAnswer>('/auth/forward/login'));
+	}
+
+	async function reauth(password: string, code?: string): Promise<SignInResult> {
+		return finish(await client.post<SignInAnswer>('/auth/reauth', { password, ...(code ? { code } : {}) }));
+	}
+
+	async function oidcLink(): Promise<{ auth_url: string }> {
+		return client.post('/auth/oidc/link');
+	}
+
+	async function oidcLinkFinish(): Promise<{ linked: boolean }> {
+		return client.post('/auth/oidc/link-finish');
+	}
+
+	async function forwardLink(): Promise<{ linked: boolean }> {
+		return client.post('/auth/forward/link');
 	}
 
 	async function plexStart(): Promise<{ id: number; auth_url: string }> {
@@ -152,16 +224,17 @@ export function createSession(client: Client = defaultClient) {
 	}
 
 	async function logout() {
+		const expected = ++generation;
 		try {
 			await client.post('/auth/logout');
 		} finally {
-			await signedOutState();
+			await signedOutState(expected);
 		}
 	}
 
 	/** lost is called when any call answers 401. */
 	function lost() {
-		if (s.state === 'signed_in') void signedOutState();
+		if (s.state === 'signed_in') void signedOutState(++generation);
 	}
 
 	/** can says whether the signed-in person may do p. */
@@ -173,7 +246,29 @@ export function createSession(client: Client = defaultClient) {
 
 	client.onSignedOut(lost);
 
-	return { s, load, login, loginCode, mediaServer, plexStart, plexFinish, acceptInvite, setup, logout, lost, can, loadMinPassword };
+	return {
+		s,
+		load,
+		login,
+		loginCode,
+		mediaServer,
+		oidcStart,
+		oidcFinish,
+		forwardLogin,
+		reauth,
+		oidcLink,
+		oidcLinkFinish,
+		forwardLink,
+		plexStart,
+		plexFinish,
+		acceptInvite,
+		setup,
+		logout,
+		lost,
+		can,
+		loadMinPassword,
+		loadWays
+	};
 }
 
 export const session = createSession();

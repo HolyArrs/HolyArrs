@@ -59,6 +59,9 @@ describe('api client', () => {
 		await c.get('/titles').catch(() => {});
 		expect(lost).toHaveBeenCalledTimes(1);
 		await c.post('/auth/login', {}).catch(() => {});
+		await c.post('/auth/oidc/finish', {}).catch(() => {});
+		await c.post('/auth/forward/login', {}).catch(() => {});
+		await c.post('/auth/reauth', {}).catch(() => {});
 		await c.get('/auth/me').catch(() => {});
 		expect(lost).toHaveBeenCalledTimes(1);
 	});

@@ -91,7 +91,7 @@ func mbOf(n int64) float64 { return float64(n) / float64(1<<20) }
 // musicSize checks an album's size against the step's band (per minute of
 // the tracks it fills).
 func (v *Verdict) musicSize(size, lo, hi int64) {
-	v.sizeOff = size - (lo+hi)/2
+	v.sizeOff = size - sizeMidpoint(lo, hi)
 	if v.sizeOff < 0 {
 		v.sizeOff = -v.sizeOff
 	}

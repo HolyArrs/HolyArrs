@@ -1739,6 +1739,53 @@
         },
         "type": "object"
       },
+      "DownloaderAttempt": {
+        "description": "A durable record for a send whose result was uncertain. Opaque reconciliation markers, Downloader addresses and internal errors are never returned.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "downloader_id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "release_id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "slot_id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "state": {
+            "enum": [
+              "pending",
+              "resolved",
+              "abandoned"
+            ],
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "downloader_id",
+          "release_id",
+          "slot_id",
+          "state",
+          "created_at",
+          "updated_at"
+        ],
+        "type": "object"
+      },
       "DownloaderHealth": {
         "description": "How a Downloader is doing, in plain words.",
         "properties": {
@@ -1778,7 +1825,10 @@
             "description": "required when adding; cannot change",
             "enum": [
               "qbittorrent",
-              "sabnzbd"
+              "sabnzbd",
+              "transmission",
+              "nzbget",
+              "deluge"
             ],
             "type": "string"
           },
@@ -1800,7 +1850,7 @@
             "type": "integer"
           },
           "secret": {
-            "description": "the SABnzbd API key or the qBittorrent password; the masked value or empty keeps the stored one. Needed again when the address moves to another host.",
+            "description": "the SABnzbd API key or the qBittorrent, Transmission, Deluge or NZBGet password; the masked value or empty keeps the stored one. Needed again when the address moves to another host.",
             "type": "string"
           },
           "url": {
@@ -1808,7 +1858,7 @@
             "type": "string"
           },
           "username": {
-            "description": "qBittorrent sign-in name (empty uses its trusted-subnet setting)",
+            "description": "qBittorrent, Transmission or NZBGet sign-in name; empty uses the app's trusted-network setting when supported",
             "type": "string"
           }
         },
@@ -7701,6 +7751,65 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/auth/forward/link": {
+      "post": {
+        "description": "Explicitly links a trusted direct-peer identity to the current local account after recent local password assurance. Requires browser session and CSRF; the live session is rechecked atomically.",
+        "responses": {
+          "200": {
+            "description": "Accepted."
+          },
+          "400": {
+            "description": "Invalid or expired input."
+          },
+          "403": {
+            "description": "Required trust, CSRF, local assurance or identity permission was not satisfied."
+          },
+          "404": {
+            "description": "Sign-in method is disabled."
+          },
+          "429": {
+            "description": "Too many attempts; honor Retry-After."
+          }
+        },
+        "summary": "Link trusted proxy sign-in",
+        "tags": [
+          "My account"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "self",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/auth/forward/login": {
+      "post": {
+        "description": "Accepts one stable Remote-User from an explicitly trusted direct peer. Forwarded client addresses and role headers cannot establish trust or grant permissions. New-member policy is opt-in; enrolled two-factor sign-in still applies.",
+        "responses": {
+          "200": {
+            "description": "Accepted."
+          },
+          "400": {
+            "description": "Invalid or expired input."
+          },
+          "403": {
+            "description": "Required trust, CSRF, local assurance or identity permission was not satisfied."
+          },
+          "404": {
+            "description": "Sign-in method is disabled."
+          },
+          "429": {
+            "description": "Too many attempts; honor Retry-After."
+          }
+        },
+        "security": [],
+        "summary": "Sign in through a trusted proxy",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "public",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/auth/invites/{token}": {
       "get": {
         "description": "What an invite link offers; open without sign-in.",
@@ -8185,6 +8294,154 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/auth/oidc/callback": {
+      "get": {
+        "description": "Checks the fixed callback origin and path, browser state and verified identity token. Stores a one-use result and redirects to a fixed app page; this GET never creates accounts, links or sessions.",
+        "responses": {
+          "303": {
+            "description": "Accepted."
+          },
+          "400": {
+            "description": "Invalid or expired input."
+          },
+          "403": {
+            "description": "Required trust, CSRF, local assurance or identity permission was not satisfied."
+          },
+          "404": {
+            "description": "Sign-in method is disabled."
+          },
+          "429": {
+            "description": "Too many attempts; honor Retry-After."
+          }
+        },
+        "security": [],
+        "summary": "Receive single sign-on callback",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "public",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/auth/oidc/finish": {
+      "post": {
+        "description": "Consumes the browser-bound one-use result. Uses exact issuer and subject, never email matching. A permitted new account is a member with ask permission; enrolled local two-factor sign-in still applies.",
+        "responses": {
+          "200": {
+            "description": "Accepted."
+          },
+          "400": {
+            "description": "Invalid or expired input."
+          },
+          "403": {
+            "description": "Required trust, CSRF, local assurance or identity permission was not satisfied."
+          },
+          "404": {
+            "description": "Sign-in method is disabled."
+          },
+          "429": {
+            "description": "Too many attempts; honor Retry-After."
+          }
+        },
+        "security": [],
+        "summary": "Finish single sign-on",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "public",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/auth/oidc/link": {
+      "post": {
+        "description": "Starts a provider flow bound to this account and session family. Requires a browser session, CSRF and recent local password assurance.",
+        "responses": {
+          "200": {
+            "description": "Accepted."
+          },
+          "400": {
+            "description": "Invalid or expired input."
+          },
+          "403": {
+            "description": "Required trust, CSRF, local assurance or identity permission was not satisfied."
+          },
+          "404": {
+            "description": "Sign-in method is disabled."
+          },
+          "429": {
+            "description": "Too many attempts; honor Retry-After."
+          }
+        },
+        "summary": "Start linking single sign-on",
+        "tags": [
+          "My account"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "self",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/auth/oidc/link-finish": {
+      "post": {
+        "description": "Consumes a completed link result and rechecks the exact active session, initiating family, account and recent local assurance in the insertion transaction. Requires CSRF.",
+        "responses": {
+          "200": {
+            "description": "Accepted."
+          },
+          "400": {
+            "description": "Invalid or expired input."
+          },
+          "403": {
+            "description": "Required trust, CSRF, local assurance or identity permission was not satisfied."
+          },
+          "404": {
+            "description": "Sign-in method is disabled."
+          },
+          "429": {
+            "description": "Too many attempts; honor Retry-After."
+          }
+        },
+        "summary": "Finish linking single sign-on",
+        "tags": [
+          "My account"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "self",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/auth/oidc/start": {
+      "post": {
+        "description": "Starts one bounded browser-bound authorization-code flow with state, nonce and PKCE S256. Returns the fixed provider authorization URL.",
+        "responses": {
+          "200": {
+            "description": "Accepted."
+          },
+          "400": {
+            "description": "Invalid or expired input."
+          },
+          "403": {
+            "description": "Required trust, CSRF, local assurance or identity permission was not satisfied."
+          },
+          "404": {
+            "description": "Sign-in method is disabled."
+          },
+          "429": {
+            "description": "Too many attempts; honor Retry-After."
+          }
+        },
+        "security": [],
+        "summary": "Start single sign-on",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "public",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/auth/password": {
       "post": {
         "description": "Needs the current password; other sessions end.",
@@ -8315,6 +8572,56 @@
         ],
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/auth/reauth": {
+      "post": {
+        "description": "Checks the current local password and any enrolled two-factor or backup code. Requires browser session and CSRF; replaces the entire session family and records ten-minute local assurance.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "password"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Accepted."
+          },
+          "400": {
+            "description": "Invalid or expired input."
+          },
+          "403": {
+            "description": "Required trust, CSRF, local assurance or identity permission was not satisfied."
+          },
+          "404": {
+            "description": "Sign-in method is disabled."
+          },
+          "429": {
+            "description": "Too many attempts; honor Retry-After."
+          }
+        },
+        "summary": "Confirm local sign-in",
+        "tags": [
+          "My account"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "self",
         "x-holyarrs-scope": "admin"
       }
     },
@@ -9384,6 +9691,271 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/data-packs": {
+      "get": {
+        "description": "Owner only. Packs are size-capped original JSON definitions; import does not apply settings. Selected apply requires a current preview approval and rejects conflicts atomically.",
+        "responses": {
+          "200": {
+            "description": "The result of this data-pack operation"
+          },
+          "400": {
+            "description": "The pack, selection or approval is invalid"
+          },
+          "403": {
+            "description": "The owner role and admin token scope are required"
+          },
+          "409": {
+            "description": "A pack or rule already exists, or the preview is stale"
+          },
+          "413": {
+            "description": "The pack is too large"
+          }
+        },
+        "summary": "List inactive data packs",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "post": {
+        "description": "Owner only. Packs are size-capped original JSON definitions; import does not apply settings. Selected apply requires a current preview approval and rejects conflicts atomically.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The result of this data-pack operation"
+          },
+          "201": {
+            "description": "The validated pack was saved inactive"
+          },
+          "400": {
+            "description": "The pack, selection or approval is invalid"
+          },
+          "403": {
+            "description": "The owner role and admin token scope are required"
+          },
+          "409": {
+            "description": "A pack or rule already exists, or the preview is stale"
+          },
+          "413": {
+            "description": "The pack is too large"
+          }
+        },
+        "summary": "Import a validated inactive data pack",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/data-packs/validate": {
+      "post": {
+        "description": "Owner only. Packs are size-capped original JSON definitions; import does not apply settings. Selected apply requires a current preview approval and rejects conflicts atomically.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The result of this data-pack operation"
+          },
+          "400": {
+            "description": "The pack, selection or approval is invalid"
+          },
+          "403": {
+            "description": "The owner role and admin token scope are required"
+          },
+          "409": {
+            "description": "A pack or rule already exists, or the preview is stale"
+          },
+          "413": {
+            "description": "The pack is too large"
+          }
+        },
+        "summary": "Validate a code-free data pack without saving it",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/data-packs/{id}": {
+      "get": {
+        "description": "Owner only. Packs are size-capped original JSON definitions; import does not apply settings. Selected apply requires a current preview approval and rejects conflicts atomically.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The result of this data-pack operation"
+          },
+          "400": {
+            "description": "The pack, selection or approval is invalid"
+          },
+          "403": {
+            "description": "The owner role and admin token scope are required"
+          },
+          "404": {
+            "description": "No stored pack has that id"
+          },
+          "409": {
+            "description": "A pack or rule already exists, or the preview is stale"
+          },
+          "413": {
+            "description": "The pack is too large"
+          }
+        },
+        "summary": "Export one validated data pack",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/data-packs/{id}/apply": {
+      "post": {
+        "description": "Owner only. Packs are size-capped original JSON definitions; import does not apply settings. Selected apply requires a current preview approval and rejects conflicts atomically.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "approval_hash": {
+                    "type": "string"
+                  },
+                  "naming_id": {
+                    "type": "string"
+                  },
+                  "pick_rule_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "pick_rule_ids",
+                  "approval_hash"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The result of this data-pack operation"
+          },
+          "400": {
+            "description": "The pack, selection or approval is invalid"
+          },
+          "403": {
+            "description": "The owner role and admin token scope are required"
+          },
+          "404": {
+            "description": "No stored pack has that id"
+          },
+          "409": {
+            "description": "A pack or rule already exists, or the preview is stale"
+          },
+          "413": {
+            "description": "The pack is too large"
+          }
+        },
+        "summary": "Apply explicitly selected definitions after preview",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/data-packs/{id}/preview": {
+      "get": {
+        "description": "Owner only. Packs are size-capped original JSON definitions; import does not apply settings. Selected apply requires a current preview approval and rejects conflicts atomically.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Repeat for each selected stable pack rule id",
+            "explode": true,
+            "in": "query",
+            "name": "pick_rule_id",
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "At most one stable pack naming id",
+            "in": "query",
+            "name": "naming_id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The result of this data-pack operation"
+          },
+          "400": {
+            "description": "The pack, selection or approval is invalid"
+          },
+          "403": {
+            "description": "The owner role and admin token scope are required"
+          },
+          "404": {
+            "description": "No stored pack has that id"
+          },
+          "409": {
+            "description": "A pack or rule already exists, or the preview is stale"
+          },
+          "413": {
+            "description": "The pack is too large"
+          }
+        },
+        "summary": "Preview selected data-pack definitions",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/downloaders": {
       "get": {
         "description": "Every Downloader with its health in plain words and how many active downloads it has. Keys and passwords are masked.",
@@ -9417,7 +9989,7 @@
         "x-holyarrs-scope": "read"
       },
       "post": {
-        "description": "qBittorrent or SABnzbd. The key or password goes to the vault. Needs a recent sign-in.",
+        "description": "Adds qBittorrent, Transmission or Deluge for torrents, or SABnzbd or NZBGet for Usenet. The key or password goes to the vault. Needs a recent sign-in.",
         "operationId": "addDownloader",
         "requestBody": {
           "content": {
@@ -9601,6 +10173,108 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/downloaders/{id}/attempts": {
+      "get": {
+        "description": "Lists the durable send records for one Downloader. The answer contains only public IDs, state and times; it never contains the opaque reconciliation marker, Downloader address or an internal error.",
+        "operationId": "listDownloaderAttempts",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "attempts": {
+                      "items": {
+                        "$ref": "#/components/schemas/DownloaderAttempt"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "attempts"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Send records, newest first."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such Downloader."
+          }
+        },
+        "summary": "List uncertain send records",
+        "tags": [
+          "Downloaders"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/downloaders/{id}/attempts/{attemptID}/abandon": {
+      "post": {
+        "description": "Makes one uncertain send terminal so HolyArrs never retries the same Release and Slot. This does not cancel or remove anything in the Downloader.",
+        "operationId": "abandonDownloaderAttempt",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "attemptID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Abandoned, or already abandoned."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such Downloader or send record."
+          }
+        },
+        "summary": "Abandon an uncertain send",
+        "tags": [
+          "Downloaders"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/downloaders/{id}/pause": {
       "post": {
         "description": "HolyArrs sends nothing new to it; downloads already there are still followed.",
@@ -9693,7 +10367,7 @@
     },
     "/api/v1/downloaders/{id}/test": {
       "post": {
-        "description": "Asks it for its version (SABnzbd: also checks the key and the category) and says the result in plain words. A working answer ends a rest.",
+        "description": "Asks it for its version and validates the configured sign-in and category or label where the app supports them. A working answer ends a rest.",
         "operationId": "testDownloader",
         "parameters": [
           {
@@ -10480,7 +11154,7 @@
         ],
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "manage_library",
-        "x-holyarrs-scope": "read"
+        "x-holyarrs-scope": "health_read"
       }
     },
     "/api/v1/held": {
@@ -19834,6 +20508,7 @@
     "admin": "People, invites, ask limits, API keys, password and two-factor sign-in, sign-in settings, backups (list, download, restore) and the outside-service key settings: every route only the owner or an admin may use, the key and sign-in routes of My account, and every GET route not marked read. Making or promoting an admin also needs the control scope.",
     "all": "Read, write and admin together (every route but the controls). Every key made before scopes existed holds this one.",
     "control": "The controls: part switches, stage pause, resume and restart, reconnecting one linked app, whole-app restart, restart in safe mode and shut down.",
+    "health_read": "Health states only, for monitoring companions.",
     "read": "Look: the GET routes that hand out no secrets (backups, keys, tokens, sign-in settings and the people list need admin).",
     "write": "Change: every route that is not a GET, except the admin ones and the controls."
   }

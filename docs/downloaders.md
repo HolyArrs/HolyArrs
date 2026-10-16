@@ -1,18 +1,21 @@
 # Downloaders
 
-HolyArrs does not download by itself. When it chooses a Release, it hands it to a **Downloader**: qBittorrent for torrents, SABnzbd for Usenet. It then watches the download until the files are ready and puts them in your Library. This page covers adding Downloaders, how HolyArrs picks one, and what happens when a download goes wrong. Only the owner and admins see any of this.
+HolyArrs does not download by itself. When it chooses a Release, it hands it to a **Downloader**: qBittorrent, Transmission or Deluge for torrents; SABnzbd or NZBGet for Usenet. It then watches the download until the files are ready and puts them in your Library. This page covers adding Downloaders, how HolyArrs picks one, and what happens when a download goes wrong. Only the owner and admins see any of this.
 
 ## Adding a Downloader
 
 Open **Settings**, then **Downloaders**, and press **Add a Downloader**.
 
-1. Pick the app: **qBittorrent** or **SABnzbd**.
+1. Pick the app: **qBittorrent**, **Transmission**, **Deluge**, **SABnzbd** or **NZBGet**.
 2. **Name**: any name you like.
 3. **Address**: the address of its web page, such as `http://192.168.1.10:8090`.
 4. The sign-in:
    - **qBittorrent**: its sign-in name and password. Leave both empty when qBittorrent skips sign-in for your network.
+   - **Transmission**: its HTTP sign-in name and password. Leave them empty when Transmission does not require them from HolyArrs.
+   - **Deluge**: the Deluge Web UI password. It has no sign-in name.
    - **SABnzbd**: its API key, found in SABnzbd under Config, General.
-5. **Category**: HolyArrs puts its downloads in this category and only ever looks at that category. qBittorrent makes it if it is missing. In SABnzbd the category must already exist (Config, Categories); `movies` exists out of the box.
+   - **NZBGet**: its control sign-in name and password. Leave them empty only when NZBGet accepts HolyArrs without sign-in.
+5. **Category**: HolyArrs puts its downloads in this category and only ever looks at that category. qBittorrent makes it if it is missing. In SABnzbd the category must already exist (Config, Categories); `movies` exists out of the box. Transmission and Deluge store it as a label. NZBGet receives it as the download category.
 6. **Priority**: 1 to 50. 1 is used first.
 7. **Different folder names**: only when the Downloader sees the download folder under another name than HolyArrs does, for example when they run in different containers. Give both names, such as `/data/downloads` (the Downloader's) and `/downloads` (HolyArrs').
 8. **May reach the local network**: on by default, because Downloaders usually run at home. Turn it off for a Downloader on the internet.
@@ -24,6 +27,30 @@ Keys and passwords are kept encrypted and always shown masked. To keep the store
 ### SABnzbd and host names
 
 SABnzbd refuses calls that use a host name it does not know. Use its IP address in the **Address**, or add the name HolyArrs uses to SABnzbd's list of allowed host names (Config, Special, `host_whitelist`). The test says so when this is the problem.
+
+### Transmission labels
+
+HolyArrs supports Transmission 4 or newer. It uses Transmission labels to keep its downloads apart from other work, so the configured **Category** becomes the label HolyArrs follows.
+
+### Deluge daemon and labels
+
+Before adding Deluge, connect its Web UI to the intended daemon yourself and enable the daemon's Label plugin. HolyArrs does not pick a daemon from Deluge's discovered-host list. The configured **Category** becomes the label HolyArrs follows.
+
+### Release files from a Source proxy
+
+Transmission, Deluge and NZBGet cannot yet take a `.torrent` or `.nzb` Release from a Source that uses a proxy. HolyArrs refuses that send instead of fetching around the Source's proxy. The Source's own **May reach the local network** setting controls this file read; the Downloader's switch controls calls to the Downloader. Magnet Releases are unaffected.
+
+### Keeping files in NZBGet
+
+NZBGet removes files when it removes a download or its history record. HolyArrs therefore refuses an NZBGet removal that asks to keep the files. Leave completed downloads in NZBGet when you need their original files preserved.
+
+### When a send is uncertain
+
+If the connection ends while Transmission, Deluge or NZBGet is accepting a Release, HolyArrs cannot safely assume that the send failed. It records the attempt before sending and keeps later checks on that same Downloader. Settings > Downloaders then shows **A send needs review**. The Downloader cannot be edited or removed while its send remains pending.
+
+Inspect the Downloader first. Retrying the original grab Job only looks for the saved identity; it does not send again or change a label. NZBGet uses its saved marker. Torrent clients use the info hash saved before sending. If that hash was unavailable, the pending send needs your decision. A Deluge torrent whose label was not confirmed also stays pending until its correct label is visible.
+
+To move on, press **Abandon this send** after inspecting the Downloader. Abandoning suppresses that Release for the Slot and its covered Slots in the same Version; it does not cancel anything in the Downloader. Its current choices move to **Needs a decision**, where you can choose a different Release by hand. A pack shares one send record within a Version. Different Versions keep separate records. An empty lookup never proves that the original request stopped.
 
 ## What the states mean
 
@@ -90,4 +117,4 @@ Under **When downloads go wrong** on the same page:
 
 ## For developers
 
-Every route is in the OpenAPI file (`/api/v1/openapi.json`, tag Downloaders): listing, adding, changing, testing, pausing and removing Downloaders, `POST /api/v1/downloads/{id}/mark-failed`, and `GET`/`PUT /api/v1/settings/downloaders`.
+Every route is in the OpenAPI file (`/api/v1/openapi.json`, tag Downloaders): listing, adding, changing, testing, pausing and removing Downloaders, reviewing and abandoning uncertain sends, `POST /api/v1/downloads/{id}/mark-failed`, and `GET`/`PUT /api/v1/settings/downloaders`.

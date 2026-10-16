@@ -26,7 +26,20 @@ type FetchFn = (input: string, init?: RequestInit) => Promise<Response>;
 
 // Calls that answer 401 as part of their normal job; a 401 there is not a
 // lost session.
-const quiet401 = ['/auth/login', '/auth/state', '/auth/me', '/auth/setup', '/auth/media-server', '/auth/plex', '/auth/invites', '/auth/two-factor', '/auth/password'];
+const quiet401 = [
+	'/auth/login',
+	'/auth/state',
+	'/auth/me',
+	'/auth/setup',
+	'/auth/media-server',
+	'/auth/plex',
+	'/auth/invites',
+	'/auth/two-factor',
+	'/auth/password',
+	'/auth/oidc',
+	'/auth/forward',
+	'/auth/reauth'
+];
 
 export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o)) {
 	let csrf = '';

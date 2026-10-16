@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/outside"
 	"github.com/CoderLuii/holyarrs/internal/source"
 	"github.com/CoderLuii/holyarrs/internal/store"
 	"github.com/CoderLuii/holyarrs/internal/supervisor"
@@ -114,6 +115,10 @@ func (e *Engine) Links(ctx context.Context) ([]supervisor.Status, error) {
 		default:
 			add("media_server", m.ID, m.Name, supervisor.Running, "")
 		}
+	}
+	for _, s := range outside.States() {
+		add("outside_call", 0, s.Kind+" "+s.ID, supervisor.Retrying, s.Reason)
+		out[len(out)-1].Key = "outside:" + s.ID
 	}
 	return out, nil
 }

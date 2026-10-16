@@ -429,8 +429,19 @@ func TestLabBrokenEpisodeNextGrabbed(t *testing.T) {
 	labRemove(t, m, qb, bh, nh)
 	var nextDL int64
 	m.OnFailed = func(ctx context.Context, slotID int64) {
-		_ = x.s.MoveSlot(ctx, slotID, domain.SlotSearching, "searching", domain.System)
-		_ = x.s.MoveSlot(ctx, slotID, domain.SlotChosen, "chose the next", domain.System)
+		if err := x.s.Write(ctx, func(tx *sql.Tx) error {
+			if err := store.MoveSlotTx(tx, slotID, domain.SlotSearching, "searching", domain.System); err != nil {
+				return err
+			}
+			if err := store.MoveSlotTx(tx, slotID, domain.SlotChosen, "chose the next", domain.System); err != nil {
+				return err
+			}
+			_, err := tx.Exec("UPDATE slots SET chosen_release_id = ? WHERE id = ?", nextID, slotID)
+			return err
+		}); err != nil {
+			t.Errorf("choose next Release: %v", err)
+			return
+		}
 		id, err := m.Grab(ctx, slotID, nextID, domain.System)
 		if err != nil {
 			t.Errorf("next grab: %v", err)

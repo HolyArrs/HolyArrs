@@ -32,7 +32,7 @@ type conformance struct {
 var ourStates = []string{StateQueued, StateDownloading, StatePaused, StateFinished, StateFailed}
 
 func TestDownloaderConformance(t *testing.T) {
-	for _, h := range []func(*testing.T) conformance{qbitHarness, sabHarness, relayHarness} {
+	for _, h := range []func(*testing.T) conformance{qbitHarness, sabHarness, relayHarness, transmissionHarness, nzbgetHarness, delugeHarness} {
 		c := h(t)
 		t.Run(c.name, func(t *testing.T) { runConformance(t, c) })
 	}

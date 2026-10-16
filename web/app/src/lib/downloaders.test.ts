@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { decisionName, episodeStateWords, groupDecisions, manyWords, phaseTone, removeBody, removeStart, rowName, split, whyWords, type Decision, type DownloadRow } from './downloaders.ts';
-import { downloadTone, emptyForm, formBody, formFrom, healthTone, percent, timeLeft, type DownloaderView } from './downloaders.ts';
+import { downloadTone, emptyForm, formBody, formFrom, healthTone, pendingAttempts, percent, timeLeft, type DownloaderAttempt, type DownloaderView } from './downloaders.ts';
 
 const saved: DownloaderView = {
 	id: 2,
@@ -45,6 +45,30 @@ describe('downloaders', () => {
 		expect(emptyForm().allow_local_network).toBe(true);
 		expect(emptyForm('sabnzbd').category).toBe('movies');
 		expect(emptyForm('qbittorrent').category).toBe('holyarrs');
+	});
+
+	it('preserves optional Downloader sign-in names and labels', () => {
+		for (const [kind, name] of [['transmission', 'Transmission'], ['nzbget', 'NZBGet'], ['deluge', 'Deluge']] as const) {
+			const form = emptyForm(kind);
+			expect(form.name).toBe(name);
+			expect(form.category).toBe('holyarrs');
+			form.username = 'task-user';
+			form.secret = '••••••••';
+			const body = formBody(form);
+			expect(body.username).toBe(kind === 'deluge' ? '' : 'task-user');
+			expect(body.secret).toBe('••••••••');
+		}
+	});
+
+	it('shows only uncertain sends that still need review', () => {
+		const base = { downloader_id: 4, release_id: 9, slot_id: 12, created_at: '2026-10-15T20:00:00Z', updated_at: '2026-10-15T20:00:00Z' };
+		const attempts: DownloaderAttempt[] = [
+			{ ...base, id: 1, state: 'resolved' },
+			{ ...base, id: 2, state: 'pending' },
+			{ ...base, id: 3, state: 'abandoned' }
+		];
+		expect(pendingAttempts(attempts).map((attempt) => attempt.id)).toEqual([2]);
+		expect(pendingAttempts(undefined)).toEqual([]);
 	});
 
 	it('round trips a saved Downloader and keeps the masked key', () => {

@@ -104,6 +104,12 @@ func (a *Auth) ways(ctx context.Context) []string {
 			out = append(out, p)
 		}
 	}
+	if a.sso != nil && a.sso.oidc != nil {
+		out = append(out, "oidc")
+	}
+	if a.sso != nil && a.sso.forward != nil {
+		out = append(out, "forward_auth")
+	}
 	return out
 }
 
@@ -295,7 +301,7 @@ func (a *Auth) outsideDone(w http.ResponseWriter, r *http.Request, provider stri
 	case err != nil:
 		serverError(w, provider+" sign-in", err)
 	default:
-		a.passed(w, r, id, name)
+		a.passedAs(w, r, id, name, provider)
 	}
 }
 

@@ -1,0 +1,69 @@
+{
+  "format": "holyarrs-data-pack",
+  "version": 1,
+  "id": "home-cinema",
+  "name": "Synthetic home cinema",
+  "pick_rules": [
+    {
+      "id": "balanced-web",
+      "name": "Balanced web",
+      "kinds": ["movie", "show"],
+      "rules": {
+        "steps": [{"quality": "1080p_web", "allowed": true}],
+        "good_enough_at": "1080p_web",
+        "traits": [{"trait": "hevc", "points": 10}],
+        "must_have": [],
+        "never": ["executable"],
+        "min_points": 0,
+        "size_limits": {"1080p_web": {"min": 1000000, "max": 120000000, "per_minute": true}},
+        "protocol": {"prefer": "either", "wait_minutes_torrent": 0, "wait_minutes_usenet": 0, "skip_wait_at_good_enough": false},
+        "language": {"wanted": ["en"], "original_ok": true},
+        "order": "quality_then_points",
+        "upgrade_min_points": 10,
+        "proper_policy": {"mode": "take_any", "max_age_days": 0}
+      }
+    }
+  ],
+  "naming": [
+    {
+      "id": "readable",
+      "name": "Readable names",
+      "patterns": {
+        "file_pattern": "{title} ({year}) {quality}",
+        "folder_pattern": "{title} ({year})",
+        "show_folder_pattern": "{title} ({year})",
+        "season_folder_pattern": "Season {season}",
+        "specials_folder": "Specials",
+        "episode_pattern": "{title} - {episode} - {episode_title} {quality}",
+        "daily_pattern": "{title} - {air_date} - {episode_title} {quality}",
+        "anime_pattern": "{title} - {episode} - {absolute} - {episode_title} {quality}",
+        "artist_folder_pattern": "{artist}",
+        "album_folder_pattern": "{album} ({year})",
+        "track_pattern": "{track} - {track_title}",
+        "multi_disc_track_pattern": "{disc}-{track} - {track_title}",
+        "disc_folder_pattern": "Disc {disc}",
+        "colon": "smart",
+        "illegal": "replace",
+        "multi_episode_style": "range",
+        "air_date_style": "dash",
+        "absolute_digits": 3
+      }
+    }
+  ],
+  "release_tests": [
+    {
+      "id": "synthetic-web",
+      "name": "Synthetic web release",
+      "release_name": "Example.Movie.2025.1080p.WEB-DL.H265-TEST",
+      "hints": {"show": false, "music": false},
+      "expected": {
+        "kind": "movie",
+        "quality": "1080p_web",
+        "resolution": 1080,
+        "source": "web_dl",
+        "codec": "h265",
+        "flags": []
+      }
+    }
+  ]
+}

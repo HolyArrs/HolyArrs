@@ -15,7 +15,7 @@ export interface PathMap {
 export interface DownloaderView {
 	id: number;
 	name: string;
-	kind: 'qbittorrent' | 'sabnzbd';
+	kind: 'qbittorrent' | 'sabnzbd' | 'transmission' | 'nzbget' | 'deluge';
 	protocol: 'torrent' | 'usenet';
 	url: string;
 	username: string;
@@ -42,6 +42,23 @@ export interface DownloaderSettings {
 	remove_search_again: boolean;
 }
 
+/** DownloaderAttempt is the public recovery record for one uncertain send.
+ * It intentionally has no Downloader address, request marker or error text. */
+export interface DownloaderAttempt {
+	id: number;
+	downloader_id: number;
+	release_id: number;
+	slot_id: number;
+	state: 'pending' | 'resolved' | 'abandoned';
+	created_at: string;
+	updated_at: string;
+}
+
+/** pendingAttempts returns only sends that still need the owner's decision. */
+export function pendingAttempts(attempts: DownloaderAttempt[] | undefined): DownloaderAttempt[] {
+	return (attempts ?? []).filter((attempt) => attempt.state === 'pending');
+}
+
 /** DownloadView is a Download in plain words (the movie page). */
 export interface DownloadView {
 	id: number;
@@ -54,7 +71,13 @@ export interface DownloadView {
 	active: boolean;
 }
 
-export const kindWords: Record<DownloaderView['kind'], string> = { qbittorrent: 'qBittorrent', sabnzbd: 'SABnzbd' };
+export const kindWords: Record<DownloaderView['kind'], string> = {
+	qbittorrent: 'qBittorrent',
+	sabnzbd: 'SABnzbd',
+	transmission: 'Transmission',
+	nzbget: 'NZBGet',
+	deluge: 'Deluge'
+};
 
 /** healthTone colours a Downloader's health chip. */
 export function healthTone(state: DownloaderHealth['state']): Tone {
@@ -103,7 +126,7 @@ export interface DownloaderForm {
  * the local-network switch starts on (decision log 4.0.2). */
 export function emptyForm(kind: DownloaderView['kind'] = 'qbittorrent'): DownloaderForm {
 	return {
-		name: kind === 'sabnzbd' ? 'SABnzbd' : 'qBittorrent',
+		name: kindWords[kind],
 		kind,
 		url: kind === 'sabnzbd' ? 'http://' : 'http://',
 		username: '',
@@ -136,7 +159,7 @@ export function formBody(f: DownloaderForm): Record<string, unknown> {
 		name: f.name.trim(),
 		kind: f.kind,
 		url: f.url.trim(),
-		username: f.kind === 'qbittorrent' ? f.username.trim() : '',
+		username: f.kind === 'qbittorrent' || f.kind === 'transmission' || f.kind === 'nzbget' ? f.username.trim() : '',
 		secret: f.secret,
 		category: f.category.trim(),
 		priority: Number(f.priority) || 1,

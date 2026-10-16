@@ -125,7 +125,7 @@ func TestMigratePermissions(t *testing.T) {
 	jar, _ := cookiejar.New(nil)
 	bare := &signedIn{t: t, base: r.srv.URL, c: &http.Client{Jar: jar}}
 	for _, rt := range routes {
-		if b := bare.call(rt.method, rt.path, rt.body, 403); !strings.Contains(string(b), "sign in with your password") {
+		if b := bare.call(rt.method, rt.path, rt.body, 403); !strings.Contains(string(b), "confirm your local password") {
 			t.Errorf("%s %s: %s", rt.method, rt.path, b)
 		}
 	}

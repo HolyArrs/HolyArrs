@@ -234,6 +234,140 @@ describe('session', () => {
 		expect(s.s.ways).toEqual(['password', 'jellyfin']);
 	});
 
+	it('reads SSO ways and assurance while signed in', async () => {
+		const c = server({
+			'GET /auth/me': json(200, {
+				name: 'ana',
+				via: 'session',
+				csrf: 'c4',
+				auth_method: 'oidc',
+				local_recent: false
+			}),
+			'GET /auth/state': json(200, { needs_setup: false, ways: ['password', 'oidc', 'forward_auth'] })
+		});
+		const s = createSession(c);
+		await s.load();
+		await s.loadWays();
+		expect(s.s.authMethod).toBe('oidc');
+		expect(s.s.localRecent).toBe(false);
+		expect(s.s.ways).toEqual(['password', 'oidc', 'forward_auth']);
+	});
+
+	it('starts and finishes OIDC sign-in through the canonical session read', async () => {
+		const c = server({
+			'POST /auth/oidc/start': json(200, { auth_url: 'https://id.example.test/authorize' }),
+			'POST /auth/oidc/finish': json(200, { name: 'uncanonical', csrf: 'temporary' }),
+			'GET /auth/me': json(200, { name: 'ana', via: 'session', csrf: 'oidc-csrf', auth_method: 'oidc', role: 'member', perms: ['ask'] })
+		});
+		const s = createSession(c);
+		expect(await s.oidcStart()).toEqual({ auth_url: 'https://id.example.test/authorize' });
+		expect(await s.oidcFinish()).toEqual({ done: true });
+		expect(s.s.name).toBe('ana');
+		expect(s.s.authMethod).toBe('oidc');
+		expect(c.csrf()).toBe('oidc-csrf');
+	});
+
+	it('does not let a stale initial load overwrite a finished OIDC sign-in', async () => {
+		let answerInitial!: (response: Response) => void;
+		const initialMe = new Promise<Response>((resolve) => (answerInitial = resolve));
+		let meCalls = 0;
+		let stateCalls = 0;
+		const c = createClient(async (url: string) => {
+			if (url.endsWith('/auth/oidc/finish')) return new Response(JSON.stringify({ name: 'uncanonical', csrf: 'temporary' }));
+			if (url.endsWith('/auth/me')) {
+				meCalls++;
+				if (meCalls === 1) return initialMe;
+				return new Response(JSON.stringify({ name: 'ana', via: 'session', csrf: 'oidc-csrf', auth_method: 'oidc', role: 'member' }));
+			}
+			if (url.endsWith('/auth/state')) {
+				stateCalls++;
+				return new Response(JSON.stringify({ needs_setup: false, ways: ['password', 'oidc'] }));
+			}
+			return new Response(JSON.stringify({ error: 'no route' }), { status: 404 });
+		});
+		const s = createSession(c);
+		const initialLoad = s.load();
+		expect(meCalls).toBe(1);
+		expect(await s.oidcFinish()).toEqual({ done: true });
+		answerInitial(new Response(JSON.stringify({ error: 'sign in first' }), { status: 401 }));
+		await initialLoad;
+		expect(s.s.state).toBe('signed_in');
+		expect(s.s.name).toBe('ana');
+		expect(c.csrf()).toBe('oidc-csrf');
+		expect(stateCalls).toBe(0);
+	});
+
+	it('settles signed out when OIDC finishes but its canonical identity read fails', async () => {
+		let answerInitial!: (response: Response) => void;
+		const initialMe = new Promise<Response>((resolve) => (answerInitial = resolve));
+		let meCalls = 0;
+		let stateCalls = 0;
+		const c = createClient(async (url: string) => {
+			if (url.endsWith('/auth/oidc/finish')) return new Response(JSON.stringify({ name: 'uncanonical', csrf: 'temporary' }));
+			if (url.endsWith('/auth/me')) {
+				meCalls++;
+				if (meCalls === 1) return initialMe;
+				return new Response(JSON.stringify({ error: 'canonical identity unavailable' }), { status: 500 });
+			}
+			if (url.endsWith('/auth/state')) {
+				stateCalls++;
+				return new Response(JSON.stringify({ needs_setup: false, ways: ['password', 'oidc'] }));
+			}
+			return new Response(JSON.stringify({ error: 'no route' }), { status: 404 });
+		});
+		const s = createSession(c);
+		const initialLoad = s.load();
+		await expect(s.oidcFinish()).rejects.toMatchObject({ status: 500 });
+		expect(s.s.state).toBe('signed_out');
+		expect(c.csrf()).toBe('');
+		expect(stateCalls).toBe(1);
+		answerInitial(new Response(JSON.stringify({ error: 'sign in first' }), { status: 401 }));
+		await initialLoad;
+		expect(s.s.state).toBe('signed_out');
+	});
+
+	it('uses an explicit forward-auth action and still canonicalizes the session', async () => {
+		const c = server({
+			'POST /auth/forward/login': json(200, { name: 'uncanonical', csrf: 'temporary' }),
+			'GET /auth/me': json(200, { name: 'proxy-user', via: 'session', csrf: 'forward-csrf', auth_method: 'forward_auth', role: 'member' })
+		});
+		const s = createSession(c);
+		expect(await s.forwardLogin()).toEqual({ done: true });
+		expect(s.s.name).toBe('proxy-user');
+		expect(s.s.authMethod).toBe('forward_auth');
+	});
+
+	it('reauthenticates with local credentials and replaces the current session assurance', async () => {
+		let sent: unknown;
+		const c = createClient(async (url: string, init?: RequestInit) => {
+			if (url.endsWith('/auth/reauth')) {
+				sent = JSON.parse(String(init?.body));
+				return new Response(JSON.stringify({ name: 'ana', csrf: 'fresh' }));
+			}
+			return new Response(JSON.stringify({
+				name: 'ana', via: 'session', csrf: 'fresh', auth_method: 'password', local_recent: true, role: 'member'
+			}));
+		});
+		const s = createSession(c);
+		await s.reauth('<local-password>', '123456');
+		expect(sent).toEqual({ password: '<local-password>', code: '123456' });
+		expect(s.s.localRecent).toBe(true);
+		expect(s.s.authMethod).toBe('password');
+		expect(c.csrf()).toBe('fresh');
+	});
+
+	it('starts and finishes OIDC linking and links forward auth explicitly', async () => {
+		const c = server({
+			'POST /auth/oidc/link': json(200, { auth_url: 'https://id.example.test/link' }),
+			'POST /auth/oidc/link-finish': json(200, { linked: true }),
+			'POST /auth/forward/link': json(200, { linked: true })
+		});
+		const s = createSession(c);
+		expect(await s.oidcLink()).toEqual({ auth_url: 'https://id.example.test/link' });
+		expect(await s.oidcLinkFinish()).toEqual({ linked: true });
+		expect(await s.forwardLink()).toEqual({ linked: true });
+	});
+
 	it('notices a lost session from any call', async () => {
 		const c = server({
 			'GET /auth/me': json(200, { name: 'luis', via: 'session', csrf: 'x' }),

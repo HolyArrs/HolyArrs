@@ -43,7 +43,7 @@ func (m *TVMaze) get(ctx context.Context, path string, q url.Values) ([]byte, er
 	if len(q) > 0 {
 		u += "?" + q.Encode()
 	}
-	b, err := m.getter().do(ctx, func(ctx context.Context) (*http.Request, error) {
+	b, err := m.getter().do(ctx, []string{m.base()}, func(ctx context.Context) (*http.Request, error) {
 		return http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 	})
 	var es errStatus

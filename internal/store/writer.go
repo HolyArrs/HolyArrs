@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"log"
@@ -48,6 +49,9 @@ type writeReq struct {
 	enq  time.Time
 	// limit caps the transaction (0: no cap, for migrations).
 	limit time.Duration
+	// rebuild permits a migration to replace a referenced table. It disables
+	// foreign keys only on the pinned connection, outside its transaction.
+	rebuild bool
 	// after holds what AfterCommit asked for, run by the caller once the
 	// transaction committed.
 	after *[]func()
@@ -176,10 +180,49 @@ func (w *writer) run(r writeReq) (err error) {
 	}
 	ctx, cancel := context.WithCancel(r.ctx)
 	defer cancel()
-	tx, err := w.db.BeginTx(ctx, nil)
+	var tx *sql.Tx
+	if r.rebuild {
+		conn, e := w.db.Conn(ctx)
+		if e != nil {
+			return e
+		}
+		defer func() {
+			// Restoration must survive cancellation of the migration. Never
+			// return a connection with enforcement disabled to the pool.
+			restoreCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
+			defer stop()
+			_, restoreErr := conn.ExecContext(restoreCtx, "PRAGMA foreign_keys = ON")
+			var enabled int
+			if restoreErr == nil {
+				restoreErr = conn.QueryRowContext(restoreCtx, "PRAGMA foreign_keys").Scan(&enabled)
+				if restoreErr == nil && enabled != 1 {
+					restoreErr = errors.New("foreign key enforcement was not restored")
+				}
+			}
+			if restoreErr != nil {
+				_ = conn.Raw(func(any) error { return driver.ErrBadConn })
+				err = errors.Join(err, fmt.Errorf("restore migration foreign keys: %w", restoreErr))
+			}
+			_ = conn.Close()
+		}()
+		if _, err = conn.ExecContext(ctx, "PRAGMA foreign_keys = OFF"); err != nil {
+			return err
+		}
+		var enabled int
+		if err = conn.QueryRowContext(ctx, "PRAGMA foreign_keys").Scan(&enabled); err != nil {
+			return err
+		}
+		if enabled != 0 {
+			return errors.New("migration requires foreign keys disabled outside a transaction")
+		}
+		tx, err = conn.BeginTx(ctx, nil)
+	} else {
+		tx, err = w.db.BeginTx(ctx, nil)
+	}
 	if err != nil {
 		return err
 	}
+	defer tx.Rollback()
 	afterCommit.Store(tx, txAfter{s: w.owner, fns: r.after})
 	defer afterCommit.Delete(tx)
 	// The function runs on its own goroutine so the writer can give up on
@@ -216,6 +259,21 @@ func (w *writer) run(r writeReq) (err error) {
 		*r.after = nil
 		return err
 	}
+	if r.rebuild {
+		rows, checkErr := tx.QueryContext(ctx, "PRAGMA foreign_key_check")
+		if checkErr == nil {
+			if rows.Next() {
+				checkErr = errors.New("migration would violate a foreign key")
+			} else {
+				checkErr = rows.Err()
+			}
+			checkErr = errors.Join(checkErr, rows.Close())
+		}
+		if checkErr != nil {
+			*r.after = nil
+			return checkErr
+		}
+	}
 	if err := tx.Commit(); err != nil {
 		*r.after = nil
 		return err
@@ -225,24 +283,29 @@ func (w *writer) run(r writeReq) (err error) {
 }
 
 func (w *writer) do(ctx context.Context, fn func(*sql.Tx) error) error {
-	return w.send(ctx, fn, w.reqs, w.limit)
+	return w.send(ctx, fn, w.reqs, w.limit, false)
 }
 
 // doCore is do on the core lane.
 func (w *writer) doCore(ctx context.Context, fn func(*sql.Tx) error) error {
-	return w.send(ctx, fn, w.core, w.limit)
+	return w.send(ctx, fn, w.core, w.limit, false)
 }
 
 // doUncapped is do without a time cap (migrations).
 func (w *writer) doUncapped(ctx context.Context, fn func(*sql.Tx) error) error {
-	return w.send(ctx, fn, w.reqs, 0)
+	return w.send(ctx, fn, w.reqs, 0, false)
 }
 
-func (w *writer) send(ctx context.Context, fn func(*sql.Tx) error, lane chan writeReq, limit time.Duration) error {
+// doRebuild is reserved for migrations that rebuild a referenced table.
+func (w *writer) doRebuild(ctx context.Context, fn func(*sql.Tx) error) error {
+	return w.send(ctx, fn, w.reqs, 0, true)
+}
+
+func (w *writer) send(ctx context.Context, fn func(*sql.Tx) error, lane chan writeReq, limit time.Duration, rebuild bool) error {
 	if id := w.fnID.Load(); id != 0 && id == goid() {
 		return ErrNestedWrite
 	}
-	r := writeReq{ctx: ctx, fn: fn, done: make(chan error, 1), enq: time.Now(), after: new([]func()), limit: limit}
+	r := writeReq{ctx: ctx, fn: fn, done: make(chan error, 1), enq: time.Now(), after: new([]func()), limit: limit, rebuild: rebuild}
 	select {
 	case lane <- r:
 	case <-w.quit:

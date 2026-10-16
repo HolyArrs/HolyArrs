@@ -4,6 +4,10 @@ HolyArrs v1 is Docker-only. The image is not published yet, so the commands
 on this page build `holyarrs:local` from the current checkout. There is no
 public registry tag or signed release to pull yet.
 
+Development [portable candidates](portable.md) and an unpublished
+[NAS template](nas-packages.md) can be prepared separately. Their build and
+native acceptance receipts do not establish NAS platform support.
+
 ## Plan the two host locations
 
 Keep the config folder on a local disk. HolyArrs uses SQLite in WAL mode and

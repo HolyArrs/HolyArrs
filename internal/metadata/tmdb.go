@@ -13,6 +13,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/CoderLuii/holyarrs/internal/outside"
 )
 
 // ErrNoAccess means TMDB refused the token, or no token is set.
@@ -120,6 +122,12 @@ func (t *TMDB) get(ctx context.Context, path string, q url.Values) ([]byte, erro
 	if tok == "" {
 		return nil, ErrNoAccess
 	}
+	op, err := outside.Begin(ctx, outside.Target{Kind: "metadata_tmdb", Identity: []string{t.base(), tok}})
+	if err != nil {
+		return nil, err
+	}
+	outcome := outside.Canceled
+	defer func() { op.Finish(outcome) }()
 	cl := t.HTTP
 	if cl == nil {
 		cl = http.DefaultClient
@@ -132,23 +140,28 @@ func (t *TMDB) get(ctx context.Context, path string, q url.Values) ([]byte, erro
 		if err := t.wait(ctx); err != nil {
 			return nil, err
 		}
-		rctx, cancel := context.WithTimeout(ctx, timeout)
+		rctx, cancel := op.AttemptContext(ctx, timeout)
 		req, _ := http.NewRequestWithContext(rctx, http.MethodGet, u, nil)
 		req.Header.Set("Authorization", "Bearer "+tok)
 		req.Header.Set("Accept", "application/json")
 		resp, err := cl.Do(req)
 		if err != nil {
+			outcome = outside.HTTPOutcome(0, err, ctx)
 			cancel()
 			return nil, fmt.Errorf("TMDB: %w", stripURL(err))
 		}
 		body, err := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
-		resp.Body.Close()
+		if closeErr := resp.Body.Close(); err == nil {
+			err = closeErr
+		}
 		cancel()
 		if err != nil {
+			outcome = outside.HTTPOutcome(resp.StatusCode, err, ctx)
 			return nil, fmt.Errorf("TMDB: %w", stripURL(err))
 		}
 		switch {
 		case resp.StatusCode == http.StatusOK:
+			outcome = outside.Success
 			t.mu.Lock()
 			if t.cache == nil || len(t.cache) >= maxCache {
 				t.cache = map[string]cached{}
@@ -157,8 +170,10 @@ func (t *TMDB) get(ctx context.Context, path string, q url.Values) ([]byte, erro
 			t.mu.Unlock()
 			return body, nil
 		case resp.StatusCode == http.StatusNotFound:
+			outcome = outside.TerminalFailure
 			return nil, ErrNotFound
 		case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
+			outcome = outside.TerminalFailure
 			return nil, ErrNoAccess
 		case resp.StatusCode == http.StatusTooManyRequests && try == 0:
 			d, _ := strconv.Atoi(resp.Header.Get("Retry-After"))
@@ -168,8 +183,10 @@ func (t *TMDB) get(ctx context.Context, path string, q url.Values) ([]byte, erro
 			case <-time.After(time.Duration(min(max(d, 0), 10)) * time.Second):
 			}
 		case resp.StatusCode == http.StatusTooManyRequests:
+			outcome = outside.TransientFailure
 			return nil, errors.New("TMDB: rate limited; try again shortly")
 		default:
+			outcome = outside.HTTPOutcome(resp.StatusCode, nil, ctx)
 			return nil, fmt.Errorf("TMDB answered %d", resp.StatusCode)
 		}
 	}

@@ -325,7 +325,7 @@ func (s *Searcher) RemoveTurnedDown(ctx context.Context, id int64, by domain.Act
 		}
 		forgot, _ := res.RowsAffected()
 		n += int(forgot)
-		used := " AND EXISTS (SELECT 1 FROM downloads d WHERE d.release_id = releases.id)"
+		used := " AND (EXISTS (SELECT 1 FROM downloads d WHERE d.release_id = releases.id) OR EXISTS (SELECT 1 FROM downloader_attempts a WHERE a.release_id = releases.id))"
 		res, err = tx.Exec(`UPDATE releases SET state = 'passed_over', verdict = json_set(COALESCE(verdict, '{}'), '$.taken_off_turned_down', json('true')),
 			updated_at = ?, updated_by = ? WHERE `+where+used, append([]any{store.FormatTime(time.Now()), actorText(by)}, args...)...)
 		if err != nil {

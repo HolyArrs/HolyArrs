@@ -149,6 +149,9 @@ func TestSabnzbdFailedJobNotAdoptedAgain(t *testing.T) {
 			return err
 		}
 		relID = r.ID
+		if _, err := tx.Exec("UPDATE slots SET chosen_release_id = ? WHERE id = ?", r.ID, w.slotID); err != nil {
+			return err
+		}
 		// The same job stalled earlier and was failed; its row remembers it.
 		old := &domain.Download{DownloaderID: did, ReleaseID: &relID, SlotIDs: []int64{w.slotID}, ExternalID: sabGood, State: "failed",
 			FilesSeen: []domain.SeenFile{}, StartedBy: domain.System}

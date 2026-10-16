@@ -14,9 +14,9 @@ import (
 // skip, pageInfo, results), 100 at a time; 130 people prove the paging.
 func seerrAPI(t *testing.T, key string) string {
 	var users []any
-	users = append(users, map[string]any{"id": 1, "email": "luis@example.com", "username": "", "plexUsername": "luis", "userType": 1,
+	users = append(users, map[string]any{"id": 1, "email": "luis@example.com", "username": "", "plexUsername": "luis", "plexId": "plex-9", "userType": 1,
 		"permissions": 2, "avatar": "https://plex.example/avatar/1", "createdAt": "2024-01-01T00:00:00.000Z", "plexToken": "S3CR3T_PLEX"})
-	users = append(users, map[string]any{"id": 2, "email": "ana@example.com", "displayName": "Ana", "userType": 3,
+	users = append(users, map[string]any{"id": 2, "email": "ana@example.com", "displayName": "Ana", "jellyfinUserId": "jellyfin-2", "userType": 3,
 		"permissions": 32 | 128, "movieQuotaLimit": 5, "movieQuotaDays": 7, "tvQuotaLimit": 2, "tvQuotaDays": 14})
 	for i := 3; i <= 130; i++ {
 		users = append(users, map[string]any{"id": i, "email": "u" + strconv.Itoa(i) + "@example.com", "username": "u" + strconv.Itoa(i), "userType": 2, "permissions": 32})
@@ -57,10 +57,10 @@ func TestSeerrAPI(t *testing.T) {
 		t.Fatalf("users %d (paging)", len(s.Users))
 	}
 	luis, ana := s.Users[0], s.Users[1]
-	if luis.Name != "luis" || !luis.Admin || luis.Kind != "plex" || luis.Email != "luis@example.com" || !slices.Contains(luis.Permissions, "ADMIN") {
+	if luis.Name != "luis" || !luis.Admin || luis.Kind != "plex" || luis.ExternalID != "plex-9" || luis.Email != "luis@example.com" || !slices.Contains(luis.Permissions, "ADMIN") {
 		t.Fatalf("luis %+v", luis)
 	}
-	if ana.Name != "Ana" || ana.Admin || ana.Kind != "jellyfin" || ana.MovieLimit != 5 || ana.MovieDays != 7 || ana.ShowLimit != 2 || ana.ShowDays != 14 ||
+	if ana.Name != "Ana" || ana.Admin || ana.Kind != "jellyfin" || ana.ExternalID != "jellyfin-2" || ana.MovieLimit != 5 || ana.MovieDays != 7 || ana.ShowLimit != 2 || ana.ShowDays != 14 ||
 		!slices.Equal(ana.Permissions, []string{"REQUEST", "AUTO_APPROVE"}) {
 		t.Fatalf("ana %+v", ana)
 	}
@@ -77,14 +77,37 @@ func TestSeerrAPI(t *testing.T) {
 	if s.Settings["default_movie_limit"] != int64(3) || s.Settings["applicationTitle"] != "Ask here" {
 		t.Fatalf("defaults %+v", s.Settings)
 	}
+	if _, ok := s.Settings["default_show_limit"]; ok {
+		t.Fatalf("empty show quota became explicit: %+v", s.Settings)
+	}
+}
+
+func TestSeerrDefaultQuotaPresenceSurvivesReaderAndPlan(t *testing.T) {
+	missing := seerrDefaults(map[string]any{"defaultQuotas": map[string]any{"movie": map[string]any{}, "tv": map[string]any{}}})
+	for _, key := range []string{"default_movie_limit", "default_movie_days", "default_show_limit", "default_show_days"} {
+		if _, ok := missing[key]; ok {
+			t.Fatalf("missing quota became explicit %s: %+v", key, missing)
+		}
+	}
+	zero := seerrDefaults(map[string]any{"defaultQuotas": map[string]any{"movie": map[string]any{"quotaLimit": 0, "quotaDays": 7}}})
+	p := BuildPlan([]Input{{ID: 1, Snap: &Snapshot{Kind: Seerr, Settings: zero}}}, Choices{})
+	it := item(t, p, GroupWishlist, "wishlist_defaults")
+	if it.AskSettings == nil || it.AskSettings.MoviesPerWeek == nil || *it.AskSettings.MoviesPerWeek != 0 || it.AskSettings.ShowsPerWeek != nil {
+		t.Fatalf("explicit unlimited/default presence lost: %+v", it.AskSettings)
+	}
+	u := seerrUser(map[string]any{"id": 2, "username": "zero", "movieQuotaLimit": 0, "movieQuotaDays": 7})
+	up := BuildPlan([]Input{{ID: 2, Snap: &Snapshot{Kind: Seerr, Users: []User{u}}}}, Choices{})
+	if _, ok := notMoved(up, "seerr users[0].movie_quota"); !ok {
+		t.Fatal("explicit per-person zero was silently treated as inherited")
+	}
 }
 
 // seerrDB is a Seerr or Overseerr database as the manual lists it.
 func seerrDB(seerr bool) []string {
 	out := []string{
-		`CREATE TABLE "user" (id INTEGER PRIMARY KEY, email TEXT, username TEXT, plexUsername TEXT, jellyfinUsername TEXT, userType INTEGER, plexId INTEGER, permissions INTEGER, avatar TEXT, movieQuotaLimit INTEGER, movieQuotaDays INTEGER, tvQuotaLimit INTEGER, tvQuotaDays INTEGER, password TEXT, resetPasswordGuid TEXT, plexToken TEXT, createdAt TEXT)`,
-		`INSERT INTO "user" VALUES (1, 'luis@example.com', NULL, 'luis', NULL, 1, 9, 2, '/avatar', NULL, NULL, NULL, NULL, 'S3CR3T_HASH', 'S3CR3T_GUID', 'S3CR3T_PLEX', '2024-01-01 00:00:00')`,
-		`INSERT INTO "user" VALUES (2, 'bo@example.com', 'bo', NULL, NULL, 2, NULL, 32, NULL, 1, 7, NULL, NULL, 'S3CR3T_HASH2', NULL, NULL, '2024-02-01 00:00:00')`,
+		`CREATE TABLE "user" (id INTEGER PRIMARY KEY, email TEXT, username TEXT, plexUsername TEXT, jellyfinUsername TEXT, userType INTEGER, plexId INTEGER, jellyfinUserId TEXT, permissions INTEGER, avatar TEXT, movieQuotaLimit INTEGER, movieQuotaDays INTEGER, tvQuotaLimit INTEGER, tvQuotaDays INTEGER, password TEXT, resetPasswordGuid TEXT, plexToken TEXT, createdAt TEXT)`,
+		`INSERT INTO "user" VALUES (1, 'luis@example.com', NULL, 'luis', NULL, 1, 9, NULL, 2, '/avatar', NULL, NULL, NULL, NULL, 'S3CR3T_HASH', 'S3CR3T_GUID', 'S3CR3T_PLEX', '2024-01-01 00:00:00')`,
+		`INSERT INTO "user" VALUES (2, 'bo@example.com', 'bo', NULL, NULL, 2, NULL, NULL, 32, NULL, 1, 7, NULL, NULL, 'S3CR3T_HASH2', NULL, NULL, '2024-02-01 00:00:00')`,
 		`CREATE TABLE user_settings (id INTEGER PRIMARY KEY, pgpKey TEXT, pushbulletAccessToken TEXT)`,
 		`INSERT INTO user_settings VALUES (1, 'S3CR3T_PGP', 'S3CR3T_PB')`,
 		`CREATE TABLE media (id INTEGER PRIMARY KEY, mediaType TEXT, tmdbId INTEGER, tvdbId INTEGER, imdbId TEXT, status INTEGER)`,
@@ -123,7 +146,7 @@ func TestSeerrBackup(t *testing.T) {
 			t.Fatalf("%s read as %s: %v", kind, other, err)
 		}
 		s := read(t, file(kind, zp))
-		if len(s.Users) != 2 || s.Users[0].Name != "luis" || !s.Users[0].Admin || s.Users[1].Name != "bo" || s.Users[1].MovieLimit != 1 || s.Users[1].MovieDays != 7 {
+		if len(s.Users) != 2 || s.Users[0].Name != "luis" || !s.Users[0].Admin || s.Users[0].ExternalID != "9" || s.Users[1].Name != "bo" || s.Users[1].MovieLimit != 1 || s.Users[1].MovieDays != 7 {
 			t.Fatalf("%s users %+v", kind, s.Users)
 		}
 		if len(s.Requests) != 2 || s.Requests[1].State != "approved" || !s.Requests[1].FourK || !slices.Equal(s.Requests[1].Seasons, []int{1, 3}) ||

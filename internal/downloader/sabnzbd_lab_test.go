@@ -230,10 +230,27 @@ func labReplace(t *testing.T, base, key, nzbBase string) {
 		}
 		rels[n] = r.ID
 	}
+	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE slots SET chosen_release_id = ? WHERE id = ?", rels[labDead], w.slotID)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
 	var next int64
 	m.OnFailed = func(ctx context.Context, slotID int64) {
-		_ = w.s.MoveSlot(ctx, slotID, domain.SlotSearching, "searching", domain.System)
-		_ = w.s.MoveSlot(ctx, slotID, domain.SlotChosen, "chose the next", domain.System)
+		if err := w.s.Write(ctx, func(tx *sql.Tx) error {
+			if err := store.MoveSlotTx(tx, slotID, domain.SlotSearching, "searching", domain.System); err != nil {
+				return err
+			}
+			if err := store.MoveSlotTx(tx, slotID, domain.SlotChosen, "chose the next", domain.System); err != nil {
+				return err
+			}
+			_, err := tx.Exec("UPDATE slots SET chosen_release_id = ? WHERE id = ?", rels[labNext], slotID)
+			return err
+		}); err != nil {
+			t.Errorf("choose next Release: %v", err)
+			return
+		}
 		id, err := m.Grab(ctx, slotID, rels[labNext], domain.System)
 		if err != nil {
 			t.Errorf("next grab: %v", err)

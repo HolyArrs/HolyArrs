@@ -10,7 +10,7 @@ func TestSlotTransitionsAllowed(t *testing.T) {
 		{SlotWanted, SlotSearching}, {SlotWanted, SlotNotOutYet},
 		{SlotSearching, SlotChosen}, {SlotSearching, SlotHeld}, {SlotSearching, SlotWanted},
 		{SlotHeld, SlotChosen},
-		{SlotChosen, SlotDownloading}, {SlotChosen, SlotWanted},
+		{SlotChosen, SlotDownloading}, {SlotChosen, SlotWanted}, {SlotChosen, SlotNeedsADecision},
 		{SlotDownloading, SlotStalled}, {SlotDownloading, SlotFailed}, {SlotDownloading, SlotImporting},
 		{SlotStalled, SlotDownloading}, {SlotStalled, SlotSearching}, {SlotStalled, SlotFailed}, {SlotSearching, SlotNeedsADecision},
 		{SlotFailed, SlotSearching}, {SlotFailed, SlotNeedsADecision},

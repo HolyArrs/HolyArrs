@@ -83,14 +83,15 @@ jobs:
         if: matrix.test_exec == ''
         run: |
           set -o pipefail
-          go test ./... 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
+          go test -timeout 60m ./... 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
       - name: Test ${{ matrix.goarch }} with userspace QEMU
         if: matrix.test_exec != ''
         env:
           TEST_EXEC: ${{ matrix.test_exec }}
+          HOLYARRS_TEST_EXEC: ${{ matrix.test_exec }}
         run: |
           set -o pipefail
-          go test -exec "$TEST_EXEC" ./... 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
+          go test -timeout 60m -exec "$TEST_EXEC" ./... 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
 
   image-version:
     runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
@@ -105,7 +106,7 @@ jobs:
       - name: Set the development version for this source
         run: echo "CANDIDATE_VERSION=0.0.0-dev+g${GITHUB_SHA::12}" >> "$GITHUB_ENV"
       - name: Build the reviewed development image
-        run: docker build --build-arg VERSION="$CANDIDATE_VERSION" --tag "$IMAGE" .
+        run: docker build --build-arg VERSION="$CANDIDATE_VERSION" --build-arg GOMAXPROCS=1 --build-arg GOFLAGS=-p=1 --tag "$IMAGE" .
       - name: Verify the image label and running binary version
         run: |
           set -o pipefail
@@ -195,6 +196,16 @@ jobs:
           set -o pipefail
           go test -count=1 -run '^TestMemoryPartsRuns$' -v -timeout 30m ./cmd/holyarrs 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
           { echo "### Memory"; cat "$HOLYARRS_MEMORY_OUT"; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Preserve bounded local fault and memory evidence
+        if: always()
+        run: |
+          evidence_dir="$(dirname "$GITHUB_WORKSPACE")/ci-evidence"
+          mkdir -p "$evidence_dir"
+          for report in faults.md restart.txt memory.md; do
+            if [[ -f "$RUNNER_TEMP/$report" ]]; then
+              cp "$RUNNER_TEMP/$report" "$evidence_dir/$report"
+            fi
+          done
 
   combined-scale:
     # Decision 0002's complete workload on the arm64 stand-in: 5,000
@@ -253,6 +264,16 @@ jobs:
             echo "The combined scale check exited with status $status."
             exit "$status"
           fi
+      - name: Preserve bounded local scale evidence
+        if: always()
+        run: |
+          evidence_dir="$(dirname "$GITHUB_WORKSPACE")/ci-evidence/scale-combined"
+          mkdir -p "$evidence_dir"
+          for report in scale-combined.log scale-results.jsonl scale-exit-code.txt; do
+            if [[ -f "$RUNNER_TEMP/scale-combined/$report" ]]; then
+              cp "$RUNNER_TEMP/scale-combined/$report" "$evidence_dir/$report"
+            fi
+          done
 
   race:
     runs-on: [self-hosted, Linux, X64, holyarrs-continuation]

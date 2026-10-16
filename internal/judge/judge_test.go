@@ -1,6 +1,7 @@
 package judge
 
 import (
+	"math"
 	"slices"
 	"strings"
 	"testing"
@@ -9,6 +10,35 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/parse"
 )
+
+func TestPerMinuteSizeLimitArithmeticSaturates(t *testing.T) {
+	tests := []struct {
+		name    string
+		release string
+		hints   parse.Hints
+		title   TitleRef
+		rules   domain.PickRulesBody
+		step    string
+	}{
+		{name: "video", release: "Example.Movie.2025.1080p.WEB-DL.H265-TEST", title: TitleRef{ID: 1, Name: "Example Movie", Year: 2025}, rules: domain.GoodEveryday(), step: "1080p_web"},
+		{name: "music", release: musicCase(t, "U01"), hints: parse.Hints{Music: true}, title: TitleRef{ID: 2, Name: "Velvet Cartography", Kind: "artist"}, rules: domain.LosslessFirst(), step: "lossless"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			tc.rules.SizeLimits = map[string]domain.SizeLimit{tc.step: {Min: 1 << 50, Max: 1 << 50, PerMinute: true}}
+			p := parse.Parse(tc.release, tc.hints)
+			v := Judge(Release{Name: tc.release, Parse: p, Size: 1 << 30}, SlotSet{
+				Match: Match{Title: &tc.title, Conf: parse.Sure, Detail: "test match"}, SlotIDs: []int64{1}, RuntimeMinutes: 9000, Out: true,
+			}, tc.rules)
+			if !hasFail(v, "hard", "size") {
+				t.Fatalf("overflowed lower bound did not fail size: %+v", v.Reasons)
+			}
+			if want := int64(math.MaxInt64) - 1<<30; v.sizeOff != want {
+				t.Fatalf("size distance = %d, want saturated %d", v.sizeOff, want)
+			}
+		})
+	}
+}
 
 const (
 	mb = int64(1) << 20

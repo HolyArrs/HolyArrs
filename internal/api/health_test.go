@@ -30,7 +30,15 @@ func TestHealthChecksOverHTTP(t *testing.T) {
 	if err := json.Unmarshal(b, &got); err != nil {
 		t.Fatal(err)
 	}
-	if got.Worst != "warning" || len(got.Checks) == 0 || got.Checks[0].Key != "downloader:1" || got.Checks[0].Message == "" {
+	// Other checks, including free disk space, depend on the test host. Find
+	// this fixture's Downloader by identity rather than assuming it sorts first.
+	downloaderWarning := false
+	for _, check := range got.Checks {
+		if check.Key == "downloader:1" && check.State == "warning" && check.Message != "" {
+			downloaderWarning = true
+		}
+	}
+	if got.Worst != "warning" || !downloaderWarning {
 		t.Fatalf("after a run: %s", b)
 	}
 	if b := do(t, "GET", srv.URL+"/api/v1/health/checks", "", 200); !strings.Contains(string(b), "Lab qBittorrent does not answer") {

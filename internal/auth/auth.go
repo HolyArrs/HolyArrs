@@ -80,6 +80,7 @@ type Options struct {
 	// SafeMode is told to the sign-in page and every signed-in page, which
 	// show a banner.
 	SafeMode bool
+	SSO      SSOOptions
 	fastHash bool
 }
 
@@ -120,6 +121,7 @@ type Auth struct {
 	proxies         []*net.IPNet
 	checks          chan struct{}
 	safeMode        bool
+	sso             *ssoState
 
 	mu        sync.Mutex
 	fails     map[string]*failure
@@ -196,6 +198,7 @@ func New(s *store.Store, opt Options) *Auth {
 		a.skipLocal.Store(v == "true")
 	}
 	a.requireAdmin2FA.Store(a.signInSetting(context.Background(), keyRequireAdmin2FA) == "true")
+	a.initSSO(opt.SSO)
 	return a
 }
 
@@ -214,6 +217,10 @@ type Who struct {
 	// MustTwoFactor is set for an admin without two-factor sign-in when the
 	// owner requires it; they may only reach My account until they turn it on.
 	MustTwoFactor bool
+	// AuthMethod records how the browser session was established. LocalRecent
+	// is true only for a non-future local proof less than ten minutes old.
+	AuthMethod  string `json:"auth_method"`
+	LocalRecent bool   `json:"local_recent"`
 	// Scopes are an API key's scopes (see Scopes); empty for
 	// a session, which holds every scope.
 	Scopes []string
@@ -279,6 +286,8 @@ func public(r *http.Request) bool {
 	switch r.Method + " " + r.URL.Path {
 	case "GET /healthz", "HEAD /healthz", "GET /login", "GET /api/v1/auth/state",
 		"POST /api/v1/auth/login", "POST /api/v1/auth/setup", "POST /api/v1/auth/login/two-factor",
+		"POST /api/v1/auth/oidc/start", "GET /api/v1/auth/oidc/callback", "POST /api/v1/auth/oidc/finish",
+		"POST /api/v1/auth/forward/login",
 		"POST /api/v1/auth/plex/start", "POST /api/v1/auth/plex/finish",
 		"POST /api/v1/auth/media-server/jellyfin", "POST /api/v1/auth/media-server/emby",
 		// The calendar feed checks its own key (phones cannot sign in).
@@ -303,7 +312,7 @@ func unsafeMethod(m string) bool {
 
 // sameOrigin refuses a request a browser sent from another site. Requests
 // without Origin and Sec-Fetch-Site come from scripts, not browsers.
-func sameOrigin(r *http.Request) bool {
+func (a *Auth) sameOrigin(r *http.Request) bool {
 	if sfs := r.Header.Get("Sec-Fetch-Site"); sfs != "" && sfs != "same-origin" && sfs != "none" {
 		return false
 	}
@@ -312,7 +321,49 @@ func sameOrigin(r *http.Request) bool {
 		return true
 	}
 	u, err := url.Parse(o)
-	return err == nil && strings.EqualFold(u.Host, r.Host)
+	if err != nil || u.User != nil || u.Host == "" || u.Path != "" || u.RawQuery != "" || u.Fragment != "" {
+		return false
+	}
+	scheme := "http"
+	if a.behindHTTPS(r) {
+		scheme = "https"
+	}
+	if !strings.EqualFold(u.Scheme, scheme) {
+		return false
+	}
+	originHost, ok := canonicalHostPort(u.Host, scheme)
+	if !ok {
+		return false
+	}
+	requestHost, ok := canonicalHostPort(r.Host, scheme)
+	return ok && originHost == requestHost
+}
+
+func canonicalHostPort(authority, scheme string) (string, bool) {
+	u, err := url.Parse("//" + authority)
+	if err != nil || u.User != nil || u.Host == "" || u.Path != "" || u.RawQuery != "" || u.Fragment != "" {
+		return "", false
+	}
+	host := strings.ToLower(strings.TrimSuffix(u.Hostname(), "."))
+	if host == "" {
+		return "", false
+	}
+	port := u.Port()
+	if port == "" {
+		switch scheme {
+		case "http":
+			port = "80"
+		case "https":
+			port = "443"
+		default:
+			return "", false
+		}
+	}
+	n, err := strconv.Atoi(port)
+	if err != nil || n < 1 || n > 65535 {
+		return "", false
+	}
+	return net.JoinHostPort(host, strconv.Itoa(n)), true
 }
 
 // isLocal reports whether the peer address is on a private network or this
@@ -339,7 +390,7 @@ func (a *Auth) hostAllowed(r *http.Request) bool {
 }
 
 // guarded is what every state-changing browser request must pass.
-func (a *Auth) guarded(r *http.Request) bool { return a.hostAllowed(r) && sameOrigin(r) }
+func (a *Auth) guarded(r *http.Request) bool { return a.hostAllowed(r) && a.sameOrigin(r) }
 
 func (a *Auth) trustedProxy(ip net.IP) bool {
 	for _, n := range a.proxies {
@@ -374,8 +425,10 @@ func (a *Auth) localPeer(r *http.Request) bool {
 	return isLocal(client)
 }
 
-// Strong reports whether the request was signed in with a password session
-// or an API key. Requests let in by the local-network skip are not strong:
+// Strong reports whether the request uses a browser session or an API key.
+// It is kept for compatibility at handler boundaries; sensitive browser
+// routes separately require RecentLocal in Gate. Requests let in by the
+// local-network skip are not strong:
 // they may not make API keys, change sign-in or security settings, read or
 // replace secrets, or restore backups.
 func Strong(ctx context.Context) bool {
@@ -477,6 +530,7 @@ func (a *Auth) Routes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/auth/setup", a.setup)
 	m.HandleFunc("POST /api/v1/auth/login", a.login)
 	m.HandleFunc("POST /api/v1/auth/logout", a.logout)
+	m.HandleFunc("POST /api/v1/auth/reauth", a.reauth)
 	m.HandleFunc("GET /api/v1/auth/me", a.me)
 	m.HandleFunc("GET /api/v1/auth/keys", a.listKeys)
 	m.HandleFunc("POST /api/v1/auth/keys", a.makeKey)
@@ -487,6 +541,7 @@ func (a *Auth) Routes(m *http.ServeMux) {
 	a.userRoutes(m)
 	a.sessionRoutes(m)
 	a.outsideRoutes(m)
+	a.ssoRoutes(m)
 }
 
 func (a *Auth) state(w http.ResponseWriter, r *http.Request) {
@@ -697,18 +752,29 @@ func (a *Auth) setCookie(w http.ResponseWriter, r *http.Request, value string, m
 // startSession drops the session the request came with (so a planted id
 // never survives a sign-in) and starts a fresh one.
 func (a *Auth) startSession(w http.ResponseWriter, r *http.Request, userID int64, name string, code int) {
+	a.startSessionAs(w, r, userID, name, code, AuthMethodLocalSetup)
+}
+
+// startSessionAs starts a fresh session with its authentication method. If
+// the request presents an existing session, its complete rotation family is
+// deleted before the replacement is made.
+func (a *Auth) startSessionAs(w http.ResponseWriter, r *http.Request, userID int64, name string, code int, method string) {
 	now := a.now()
 	tok, csrf := token(32), token(32)
 	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 		if ck, err := r.Cookie(CookieName); err == nil {
-			if _, err := tx.Exec("DELETE FROM sessions WHERE hash = ?", sum(ck.Value)); err != nil {
+			if err := deletePresentedFamily(tx, ck.Value); err != nil {
 				return err
 			}
 		}
 		t := store.FormatTime(now)
-		_, err := tx.Exec(`INSERT INTO sessions(hash, user_id, csrf, created_at, rotated_at, last_seen_at, expires_at, user_agent, family)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, sum(tok), userID, csrf, t, t, t, store.FormatTime(now.Add(AbsoluteTimeout)),
-			truncate(r.UserAgent(), 200), newFamily())
+		localAt := ""
+		if method == AuthMethodLocalPassword || method == AuthMethodLocalSetup {
+			localAt = t
+		}
+		_, err := tx.Exec(`INSERT INTO sessions(hash, user_id, csrf, created_at, rotated_at, last_seen_at, expires_at, user_agent, family, auth_method, local_auth_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, sum(tok), userID, csrf, t, t, t, store.FormatTime(now.Add(AbsoluteTimeout)),
+			truncate(r.UserAgent(), 200), newFamily(), method, localAt)
 		return err
 	})
 	if err != nil {
@@ -741,15 +807,18 @@ func (a *Auth) session(w http.ResponseWriter, r *http.Request) (Who, bool) {
 	}
 	h := sum(ck.Value)
 	var who Who
-	var created, rotated, seen, expires, perms string
-	err = a.s.Read().QueryRowContext(r.Context(), `SELECT `+userCols+`, s.csrf, s.created_at, s.rotated_at, s.last_seen_at, s.expires_at
+	var created, rotated, seen, expires, perms, localAuthAt string
+	err = a.s.Read().QueryRowContext(r.Context(), `SELECT `+userCols+`, s.csrf, s.created_at, s.rotated_at, s.last_seen_at, s.expires_at, s.auth_method, s.local_auth_at
 		FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.hash = ? AND u.state = 'active'`, h).
-		Scan(&who.UserID, &who.Name, &who.Role, &perms, &who.TwoFactor, &who.CSRF, &created, &rotated, &seen, &expires)
+		Scan(&who.UserID, &who.Name, &who.Role, &perms, &who.TwoFactor, &who.CSRF, &created, &rotated, &seen, &expires, &who.AuthMethod, &localAuthAt)
 	if err != nil {
 		return Who{}, false
 	}
 	a.fill(&who, perms)
 	now := a.now()
+	localAt := parseTime(localAuthAt)
+	localMethod := who.AuthMethod == AuthMethodLocalPassword || who.AuthMethod == AuthMethodLocalSetup
+	who.LocalRecent = localMethod && !localAt.IsZero() && !localAt.After(now) && now.Sub(localAt) < localRecentFor
 	if !now.Before(parseTime(expires)) || now.Sub(parseTime(seen)) > IdleTimeout {
 		_ = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 			_, err := tx.Exec("DELETE FROM sessions WHERE hash = ?", h)
@@ -765,8 +834,8 @@ func (a *Auth) session(w http.ResponseWriter, r *http.Request) (Who, bool) {
 		tok := token(32)
 		abs := parseTime(created).Add(AbsoluteTimeout)
 		err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-			if _, err := tx.Exec(`INSERT INTO sessions(hash, user_id, csrf, created_at, rotated_at, last_seen_at, expires_at, user_agent, family)
-				SELECT ?, user_id, csrf, created_at, ?, ?, expires_at, user_agent, family FROM sessions WHERE hash = ?`, sum(tok), t, t, h); err != nil {
+			if _, err := tx.Exec(`INSERT INTO sessions(hash, user_id, csrf, created_at, rotated_at, last_seen_at, expires_at, user_agent, family, auth_method, local_auth_at)
+				SELECT ?, user_id, csrf, created_at, ?, ?, expires_at, user_agent, family, auth_method, local_auth_at FROM sessions WHERE hash = ?`, sum(tok), t, t, h); err != nil {
 				return err
 			}
 			// The old id lives on briefly for requests already in flight.
@@ -792,8 +861,7 @@ func (a *Auth) session(w http.ResponseWriter, r *http.Request) (Who, bool) {
 func (a *Auth) logout(w http.ResponseWriter, r *http.Request) {
 	if ck, err := r.Cookie(CookieName); err == nil {
 		_ = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-			_, err := tx.Exec("DELETE FROM sessions WHERE hash = ?", sum(ck.Value))
-			return err
+			return deletePresentedFamily(tx, ck.Value)
 		})
 	}
 	a.setCookie(w, r, "", -1)
@@ -803,7 +871,8 @@ func (a *Auth) logout(w http.ResponseWriter, r *http.Request) {
 func (a *Auth) me(w http.ResponseWriter, r *http.Request) {
 	who, _ := From(r.Context())
 	writeJSON(w, http.StatusOK, map[string]any{"id": who.UserID, "name": who.Name, "via": who.Via, "csrf": who.CSRF, "role": who.Role,
-		"perms": who.Effective(), "two_factor": who.TwoFactor, "must_two_factor": who.MustTwoFactor, "safe_mode": a.safeMode})
+		"perms": who.Effective(), "two_factor": who.TwoFactor, "must_two_factor": who.MustTwoFactor, "auth_method": who.AuthMethod,
+		"local_recent": who.LocalRecent, "safe_mode": a.safeMode})
 }
 
 // Cleanup drops ended sessions.
@@ -876,7 +945,7 @@ func (a *Auth) makeKey(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, sc := range body.Scopes {
 		if !slices.Contains(Scopes, sc) {
-			fail(w, http.StatusBadRequest, "scopes are read, write, admin, control and all (read, write and admin together)")
+			fail(w, http.StatusBadRequest, "scopes are "+strings.Join(Scopes, ", ")+" (all includes read, write and admin)")
 			return
 		}
 		if !who.HasScope(sc) {

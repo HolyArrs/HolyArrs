@@ -264,7 +264,7 @@ func TestMoveAppliesOnceAndUndoes(t *testing.T) {
 	if err := l.st.Read().QueryRow("SELECT id FROM users WHERE name = 'Ana' AND state = 'disabled' AND password_hash = '' AND role = 'member'").Scan(&ana); err != nil {
 		t.Fatal(err)
 	}
-	if n := l.count(t, "SELECT count(*) FROM user_ask_settings WHERE user_id = ? AND per_week = 3", ana); n != 1 {
+	if n := l.count(t, "SELECT count(*) FROM user_ask_settings WHERE user_id = ? AND per_week IS NULL AND movies_per_week = 3", ana); n != 1 {
 		t.Fatal("limit not moved")
 	}
 	if n := l.count(t, "SELECT count(*) FROM asks a JOIN ask_people p ON p.ask_id = a.id WHERE a.asked_by = ? AND a.state = 'asked' AND p.counted = 0", ana); n != 1 {

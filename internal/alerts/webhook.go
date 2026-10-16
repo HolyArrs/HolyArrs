@@ -177,8 +177,13 @@ func (s *Sender) webhook(ctx context.Context, a domain.Alert, m Message) error {
 		}
 		return again("the webhook server did not answer", err)
 	}
-	defer resp.Body.Close()
-	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4096))
+	_, readErr := io.Copy(io.Discard, io.LimitReader(resp.Body, 4096))
+	if closeErr := resp.Body.Close(); readErr == nil {
+		readErr = closeErr
+	}
+	if readErr != nil {
+		return again("the webhook server's answer could not be read", readErr)
+	}
 	if resp.StatusCode/100 != 2 {
 		return statusFailure("the webhook server", resp.StatusCode)
 	}

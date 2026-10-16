@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"runtime/metrics"
@@ -80,7 +79,7 @@ func TestMemoryPartsRuns(t *testing.T) {
 	all := map[string][]memResult{}
 	for round := range 3 {
 		for _, mode := range []string{"all", "movies-shows"} {
-			cmd := exec.Command(os.Args[0], "-test.run=^TestMemoryChild$", "-test.v", "-test.count=1", "-test.timeout=10m")
+			cmd := testCommand(os.Args[0], "-test.run=^TestMemoryChild$", "-test.v", "-test.count=1", "-test.timeout=10m")
 			cmd.Env = append(os.Environ(), envMemoryChild+"="+mode)
 			out, err := cmd.CombinedOutput()
 			if err != nil {

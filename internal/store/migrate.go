@@ -17,6 +17,7 @@ type migration struct {
 	version int
 	name    string
 	sql     string
+	rebuild bool
 }
 
 func loadMigrations(src fs.FS) ([]migration, error) {
@@ -43,7 +44,9 @@ func loadMigrations(src fs.FS) ([]migration, error) {
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, migration{version: v, name: e.Name(), sql: string(b)})
+		sql := string(b)
+		out = append(out, migration{version: v, name: e.Name(), sql: sql,
+			rebuild: strings.HasPrefix(sql, "-- holyarrs:foreign-key-rebuild\n") || strings.HasPrefix(sql, "-- holyarrs:foreign-key-rebuild\r\n")})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].version < out[j].version })
 	return out, nil
@@ -89,7 +92,11 @@ func migrate(w *writer, src fs.FS, backupDir, label string) error {
 				return fmt.Errorf("backup before migration %s: %w", m.name, err)
 			}
 		}
-		err := w.doUncapped(context.Background(), func(tx *sql.Tx) error {
+		apply := w.doUncapped
+		if m.rebuild {
+			apply = w.doRebuild
+		}
+		err := apply(context.Background(), func(tx *sql.Tx) error {
 			if _, err := tx.Exec(m.sql); err != nil {
 				return err
 			}

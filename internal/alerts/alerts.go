@@ -33,6 +33,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/outside"
 	"github.com/CoderLuii/holyarrs/internal/secrets"
 	"github.com/CoderLuii/holyarrs/internal/source"
 	"github.com/CoderLuii/holyarrs/internal/store"
@@ -145,13 +146,13 @@ func retryable(err error) bool {
 	return errors.As(err, &f) && f.retry
 }
 
-// statusFailure turns an HTTP answer into a failure: 429 and 5xx are worth
-// trying again, a redirect is never followed.
+// statusFailure turns an HTTP answer into a failure: 408, 429 and 5xx are
+// worth trying again, a redirect is never followed.
 func statusFailure(who string, code int) error {
 	if code/100 == 3 {
 		return fail(fmt.Sprintf("%s answered %d (a redirect, not followed)", who, code), nil)
 	}
-	return &failure{public: fmt.Sprintf("%s answered %d", who, code), retry: code == http.StatusTooManyRequests || code >= 500}
+	return &failure{public: fmt.Sprintf("%s answered %d", who, code), retry: code == http.StatusRequestTimeout || code == http.StatusTooManyRequests || code >= 500}
 }
 
 // DefaultBackoff is how long a Sender waits before each new try.
@@ -213,11 +214,17 @@ func (s *Sender) Send(ctx context.Context, m Message) error {
 // SendOne sends m through one Alert, trying again after each Backoff wait
 // while the failure is worth it, and records the result on the Alert.
 func (s *Sender) SendOne(ctx context.Context, a domain.Alert, m Message) error {
+	op, err := outside.Begin(ctx, alertTarget(a))
+	if err != nil {
+		return err
+	}
+	outcome := outside.Canceled
+	defer func() { op.Finish(outcome) }()
 	waits := s.Backoff
 	if waits == nil {
 		waits = DefaultBackoff
 	}
-	err := s.attempt(ctx, a, m)
+	err = s.attempt(ctx, op, a, m)
 	for i := 0; err != nil && retryable(err) && i < len(waits); i++ {
 		t := time.NewTimer(waits[i])
 		select {
@@ -227,29 +234,74 @@ func (s *Sender) SendOne(ctx context.Context, a domain.Alert, m Message) error {
 			return err
 		case <-t.C:
 		}
-		err = s.attempt(ctx, a, m)
+		err = s.attempt(ctx, op, a, m)
 	}
+	outcome = alertOutcome(ctx, err)
 	s.record(ctx, a, m, err)
 	return err
 }
 
 // TestOne sends m once, with no new tries (the Send a test button).
 func (s *Sender) TestOne(ctx context.Context, a domain.Alert, m Message) error {
-	err := s.attempt(ctx, a, m)
+	op, err := outside.Begin(ctx, alertTarget(a))
+	if err != nil {
+		return err
+	}
+	outcome := outside.Canceled
+	defer func() { op.Finish(outcome) }()
+	err = s.attempt(ctx, op, a, m)
+	outcome = alertOutcome(ctx, err)
 	s.record(ctx, a, m, err)
 	return err
 }
 
-func (s *Sender) attempt(ctx context.Context, a domain.Alert, m Message) error {
+func (s *Sender) attempt(ctx context.Context, op *outside.Operation, a domain.Alert, m Message) error {
+	caller := ctx
+	ctx, cancel := op.AttemptContext(ctx, 30*time.Second)
+	defer cancel()
+	var err error
 	switch a.Kind {
 	case "discord":
-		return s.discord(ctx, a, m)
+		err = s.discord(ctx, a, m)
 	case "email":
-		return s.email(ctx, a, m)
+		err = s.email(ctx, a, m)
 	case "webhook":
-		return s.webhook(ctx, a, m)
+		err = s.webhook(ctx, a, m)
+	default:
+		return ErrKind
 	}
-	return ErrKind
+	if caller.Err() != nil {
+		return caller.Err()
+	}
+	if ctx.Err() != nil {
+		return again("the outside service did not answer in time", ctx.Err())
+	}
+	return err
+}
+
+func alertTarget(a domain.Alert) outside.Target {
+	ids := []string{strconv.FormatInt(a.ID, 10), a.Kind, a.SMTPHost, strconv.Itoa(a.SMTPPort), a.SMTPSecurity, a.SMTPUser}
+	for _, id := range []*int64{a.URLSecretID, a.PasswordSecretID} {
+		if id == nil {
+			ids = append(ids, "")
+		} else {
+			ids = append(ids, strconv.FormatInt(*id, 10))
+		}
+	}
+	return outside.Target{Kind: "alert", Identity: ids}
+}
+
+func alertOutcome(ctx context.Context, err error) outside.Outcome {
+	if ctx.Err() != nil {
+		return outside.Canceled
+	}
+	if err == nil {
+		return outside.Success
+	}
+	if retryable(err) {
+		return outside.TransientFailure
+	}
+	return outside.TerminalFailure
 }
 
 func (s *Sender) record(ctx context.Context, a domain.Alert, m Message, sendErr error) {
@@ -358,8 +410,13 @@ func (s *Sender) discord(ctx context.Context, a domain.Alert, m Message) error {
 		}
 		return again("Discord did not answer", err)
 	}
-	defer resp.Body.Close()
-	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4096))
+	_, readErr := io.Copy(io.Discard, io.LimitReader(resp.Body, 4096))
+	if closeErr := resp.Body.Close(); readErr == nil {
+		readErr = closeErr
+	}
+	if readErr != nil {
+		return again("Discord's answer could not be read", readErr)
+	}
 	if resp.StatusCode/100 != 2 {
 		return statusFailure("Discord", resp.StatusCode)
 	}
@@ -490,7 +547,13 @@ func (s *Sender) email(ctx context.Context, a domain.Alert, m Message) error {
 		}
 		return again("mail server did not answer", err)
 	}
-	_ = conn.SetDeadline(time.Now().Add(30 * time.Second))
+	deadline := time.Now().Add(30 * time.Second)
+	if d, ok := ctx.Deadline(); ok && d.Before(deadline) {
+		deadline = d
+	}
+	_ = conn.SetDeadline(deadline)
+	stopCancel := context.AfterFunc(ctx, func() { _ = conn.Close() })
+	defer stopCancel()
 	c, err := smtp.NewClient(conn, a.SMTPHost)
 	if err != nil {
 		conn.Close()

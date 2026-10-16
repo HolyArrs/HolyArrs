@@ -3,6 +3,7 @@ package migrate
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -20,13 +21,24 @@ func TestLidarrAPIAndBackup(t *testing.T) {
 			"metadataProfileId": 2, "added": "2024-01-01T00:00:00Z", "tags": []int{}}},
 		"/api/v1/rootfolder":      []any{map[string]any{"id": 1, "name": "Music", "path": "/music", "defaultQualityProfileId": 1, "defaultMonitorOption": "all"}},
 		"/api/v1/qualityprofile":  []any{map[string]any{"id": 1, "name": "Lossless", "cutoff": 6, "items": []any{map[string]any{"quality": map[string]any{"id": 6, "name": "FLAC"}, "allowed": true}}}},
-		"/api/v1/metadataprofile": []any{map[string]any{"id": 2, "name": "Standard", "primaryAlbumTypes": []any{}}},
-		"/api/v1/indexer":         []any{map[string]any{"id": 1, "name": "Headphones", "implementation": "Headphones", "enableRss": true, "fields": []any{map[string]any{"name": "username", "value": "me"}, map[string]any{"name": "password", "value": "********", "privacy": "password"}}}},
+		"/api/v1/metadataprofile": []any{map[string]any{"id": 2, "name": "Standard", "primaryAlbumTypes": []any{map[string]any{"name": "Album", "allowed": true, "apiKey": "S3CR3T_PROFILE"}}, "secondaryAlbumTypes": []any{map[string]any{"name": "Live", "allowed": true}}, "releaseStatuses": []any{map[string]any{"name": "Official", "allowed": true}}}},
+		"/api/v1/album": []any{map[string]any{"id": 8, "artistId": 3, "foreignAlbumId": "11111111-1111-1111-1111-111111111111", "monitored": false,
+			"releases": []any{map[string]any{"foreignReleaseId": "22222222-2222-2222-2222-222222222222", "monitored": true}}}},
+		"/api/v1/indexer": []any{map[string]any{"id": 1, "name": "Headphones", "implementation": "Headphones", "enableRss": true, "fields": []any{map[string]any{"name": "username", "value": "me"}, map[string]any{"name": "password", "value": "********", "privacy": "password"}}}},
 	})
 	s := read(t, api(Lidarr, srv.URL, key))
 	dp := findTitle(t, s, "Daft Punk")
 	if dp.Kind != "artist" || dp.IDs["musicbrainz"] != "056e4f3e-d505-4dad-8ec1-d04f521cbb56" || dp.Profile != "Lossless" || dp.Extra["new_albums"] != "all" || dp.Extra["metadata_profile_id"] != int64(2) {
 		t.Fatalf("artist %+v", dp)
+	}
+	if len(dp.MusicAlbums) != 1 || dp.MusicAlbums[0].Monitored || dp.MusicAlbums[0].WatchedEdition != "22222222-2222-2222-2222-222222222222" {
+		t.Fatalf("artist albums %+v", dp.MusicAlbums)
+	}
+	if p, _ := musicPolicy(s, dp); p == nil || !slices.Equal(p.AlbumTypes, []string{"album"}) || !slices.Equal(p.SecondaryTypes, []string{"live"}) || !slices.Equal(p.ReleaseStatuses, []string{"official"}) {
+		t.Fatalf("api metadata policy %+v", p)
+	}
+	if got := s.MetadataProfiles[0].Settings["primaryalbumtypes"]; strings.Contains(strings.ToLower(fmt.Sprint(got)), "secret") || strings.Contains(strings.ToLower(fmt.Sprint(got)), "apikey") {
+		t.Fatalf("metadata profile retained arbitrary fields: %+v", got)
 	}
 	if len(s.MetadataProfiles) != 1 || s.Folders[0].Extra["name"] != "Music" || s.QualityProfiles[0].Cutoff != "FLAC" || !hasReentry(s, `indexer "Headphones": password`) {
 		t.Fatalf("lidarr %+v %+v %+v", s.MetadataProfiles, s.Folders, s.NeedsReentry)
@@ -42,18 +54,28 @@ func TestLidarrAPIAndBackup(t *testing.T) {
 		`INSERT INTO ArtistMetadata VALUES (7, '056e4f3e-d505-4dad-8ec1-d04f521cbb56', 'Daft Punk', '')`,
 		`CREATE TABLE Artists (Id INTEGER PRIMARY KEY, ArtistMetadataId INTEGER, CleanName TEXT, Path TEXT, Monitored INTEGER, MonitorNewItems INTEGER, QualityProfileId INTEGER, MetadataProfileId INTEGER, Tags TEXT, Added TEXT)`,
 		`INSERT INTO Artists VALUES (3, 7, 'daftpunk', '/music/Daft Punk', 1, 0, 1, 2, '[]', '2024-01-01')`,
+		`CREATE TABLE Albums (Id INTEGER PRIMARY KEY, ArtistMetadataId INTEGER, ForeignAlbumId TEXT, Monitored INTEGER)`,
+		`INSERT INTO Albums VALUES (8, 7, '11111111-1111-1111-1111-111111111111', 0)`,
+		`CREATE TABLE AlbumReleases (Id INTEGER PRIMARY KEY, AlbumId INTEGER, ForeignReleaseId TEXT, Monitored INTEGER)`,
+		`INSERT INTO AlbumReleases VALUES (9, 8, '22222222-2222-2222-2222-222222222222', 1)`,
 		`CREATE TABLE RootFolders (Id INTEGER PRIMARY KEY, Name TEXT, Path TEXT, DefaultMetadataProfileId INTEGER, DefaultQualityProfileId INTEGER)`,
 		`INSERT INTO RootFolders VALUES (1, 'Music', '/music', 2, 1)`,
-		`CREATE TABLE MetadataProfiles (Id INTEGER PRIMARY KEY, Name TEXT, PrimaryAlbumTypes TEXT)`, `INSERT INTO MetadataProfiles VALUES (2, 'Standard', '[]')`,
+		`CREATE TABLE MetadataProfiles (Id INTEGER PRIMARY KEY, Name TEXT, PrimaryAlbumTypes TEXT, SecondaryAlbumTypes TEXT, ReleaseStatuses TEXT)`, `INSERT INTO MetadataProfiles VALUES (2, 'Standard', '[{"name":"Album","allowed":true}]', '[{"name":"Live","allowed":true}]', '[{"name":"Official","allowed":true}]')`,
 		`CREATE TABLE DownloadClients (Id INTEGER PRIMARY KEY, Name TEXT, Implementation TEXT, Settings TEXT, Enable INTEGER, Priority INTEGER, Tags TEXT)`,
 		`INSERT INTO DownloadClients VALUES (1, 'SAB', 'Sabnzbd', '{"host":"sab","port":8080,"apiKey":"S3CR3T_SABKEY","musicCategory":"music"}', 1, 1, '[]')`,
 	)})
 	b := read(t, file(Lidarr, zp))
-	if d := findTitle(t, b, "Daft Punk"); d.IDs["musicbrainz"] == "" || d.Folder != "/music" || !d.Monitored {
+	if d := findTitle(t, b, "Daft Punk"); d.IDs["musicbrainz"] == "" || d.Folder != "/music" || !d.Monitored || len(d.MusicAlbums) != 1 || d.MusicAlbums[0].WatchedEdition == "" {
 		t.Fatalf("backup artist %+v", d)
 	}
 	if !hasReentry(b, `download client "SAB": apiKey`) || b.DownloadClients[0].Settings["musicCategory"] != "music" {
 		t.Fatalf("backup client %+v %v", b.DownloadClients, b.NeedsReentry)
+	}
+	if d := findTitle(t, b, "Daft Punk"); func() bool {
+		p, _ := musicPolicy(b, d)
+		return p != nil && slices.Equal(p.AlbumTypes, []string{"album"}) && slices.Equal(p.SecondaryTypes, []string{"live"}) && slices.Equal(p.ReleaseStatuses, []string{"official"})
+	}() == false {
+		t.Fatal("backup metadata policy was not retained")
 	}
 }
 
