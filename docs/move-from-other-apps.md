@@ -1,0 +1,152 @@
+# Move from other apps
+
+HolyArrs can bring your setup over from the apps it replaces: Radarr,
+Sonarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent and
+SABnzbd. You find it under **Settings > Move from other apps** (the owner
+and admins only).
+
+The move works in four steps on one page:
+
+1. **Read your apps.** Through each app's address and API key, or from a
+   backup file on the HolyArrs server. See
+   [Moving from the old apps: reading their setup](move-reading.md) for what
+   is read and how keys are kept out.
+2. **See the plan.** Pick the apps you read. HolyArrs groups what it would
+   bring over, with counts, and lists every setting it cannot bring over
+   and why. Here you set **path rules** and leave out whole groups.
+3. **Try it.** The dry run checks the plan against this server and shows,
+   line by line, what would be added, adopted, changed, left out, not
+   found or already here. Nothing changes.
+4. **Move.** Approve, and the move runs in the background with a progress
+   bar. It runs exactly the plan the dry run showed: change a rule, a
+   group or a choice for a person and you try it again first. When it is
+   done you get a report on the page and as a file to download.
+
+Nothing in the old apps changes at any step. After the read, HolyArrs never
+talks to them again, and it never writes to them.
+
+## Path rules
+
+The old apps often run in other containers and see your folders under
+other names. If Radarr kept movies in `/movies` and HolyArrs sees the same
+folder as `/data/movies`, add the rule `/movies` to `/data/movies`. The
+longest matching rule wins. When an old folder is not on this server and a
+Library folder with the same last name is, the plan suggests that rule for
+you.
+
+Titles whose folder is not found are listed with the reason. Fix the rule
+and move again: nothing is added twice.
+
+## What moves
+
+| From | Becomes in HolyArrs |
+| --- | --- |
+| Library folders (Radarr, Sonarr, Lidarr) | Library folders for movies, shows and music. |
+| Movies, shows and artists | Titles, found by their TMDB, TVDB or MusicBrainz id and **adopted in place**: each title's folder and files stay exactly where they are. Its watch flag becomes **Keep up to date**; seasons that were not watched stay off. Nothing is searched for during the move. |
+| Quality profiles | Each one is matched to the closest **Pick rules** preset (Good everyday, 4K, Lossless first, Lossy 320 or V0, Any music), with the reason shown in the plan. Titles use the preset of their profile. |
+| Exclusions | The **Never-add** list. |
+| Torznab, Newznab and RSS indexers (Radarr, Sonarr, Lidarr, Prowlarr) | **Sources**, always added paused and unable to reach your home network, with or without a key. An address is cut to its host and API path; an RSS feed address, extra parameters and anything that looks like a key in the path are typed again. |
+| qBittorrent and SABnzbd | **Downloaders**, always added paused and unable to reach your home network, even without a password. They use HolyArrs's own `holyarrs` category, so they never pick up the old apps' downloads. |
+| Naming | HolyArrs naming settings, where a pattern word has a match. Nothing on disk is renamed. |
+| Bazarr's default language profile, Podnapisi and Gestdown | Default subtitle languages and Subtitle sites. |
+| Seerr and Overseerr people | Turned-off **placeholder** people, as **members**, with the permissions that match and their weekly ask limit. No password comes over. An admin there stays an admin only if you tick **Keep (name) an admin here** in the plan; the Seerr owner is you only if you tick **This is me**. An email that is not one plain address is left out. |
+| Their open asks (waiting or approved) | **Wishlist** asks, with the right person. They do not count against anyone's weekly limit. An approved ask whose title did not come over waits for approval again. |
+| Discord, webhook and email notifications | **Alerts**, turned off until you type the link, address or mail password. Links in notification settings (webhook addresses, servers, topics) never come over. |
+
+## What never moves
+
+- **Media files.** The move never moves, renames, copies or deletes a
+  file. Titles are adopted where they are.
+- **Keys, passwords, tokens and cookies.** They are never read into
+  HolyArrs. The plan and the report list each one under **needs your
+  input** so you can type it again.
+- **Settings with no HolyArrs match.** Custom formats, wait-before-grab
+  rules, language and metadata profiles, tags, import lists, metadata
+  writers, Prowlarr's app links and sync profiles, download categories and
+  usenet servers, Bazarr's other profiles and sites HolyArrs does not have
+  yet, and notification kinds other than Discord, webhook and email. Each
+  one is on the **not moved** list with its reason.
+
+## Needs your input afterwards
+
+After the move, type again:
+
+- each Source's key (**Settings > Sources**), then resume it;
+- each Downloader's password or key (**Settings > Downloaders**), then
+  resume it;
+- each Alert's link or mail password (**Settings > Alerts**), then turn it on;
+- invites for the people who came over (**Settings > Users**).
+
+Sources and Downloaders come over paused even when they need no key, and
+their **reach the local network** switch is off. Check each one, turn the
+switch on only for one that lives on your home network (link-local and
+cloud metadata addresses stay blocked either way), then resume it.
+
+## People with the same name
+
+When someone here already has the name of a person from Seerr, the move
+never joins them on its own. The dry run lists that person as left out
+with **Same person: merge** and **Leave out**. Merge makes their asks
+belong to the person here; leave out brings their asks over as yours. Try
+it again after choosing.
+
+## Moving twice
+
+A move remembers what it added: each thing and its mark are written
+together, so nothing is added without one. Moving again (for example after
+adding a path rule) adds only what is new and says **already here** for
+the rest. Only one move or undo runs at a time. A move cut off by a stop
+of HolyArrs is marked failed at the next start (or resumed when its Job is
+still there), so it never blocks the next one.
+
+## Undo a move
+
+**Undo this move** (on the report, or next to the move under **Earlier
+moves**) runs in the background like the move, with its own progress, and
+removes only what that move added, newest first:
+
+- titles leave the Library, and **their files stay where they are**;
+- Sources, Downloaders, Alerts, subtitle sites, people, asks and Never-add
+  entries it added are removed;
+- naming and the default subtitle languages go back to what they were,
+  unless you changed them after the move.
+
+Things you set up or changed after the move stay, and the undo report
+says so: a Source, Downloader or Alert whose secret you typed, a person you
+turned on, naming or languages you changed. A row is removed only while it
+is still the one the move made (its creation time and name): if you
+removed a moved thing and made your own, which got the same number, yours
+stays. Remove what stays by hand if you want. Library folders that held
+titles stay too, because the removed titles keep their History.
+
+## Parts and safe mode
+
+A part that is off is left out of the move: with Movies off, no movie
+folder or movie comes over; with Subtitles off, no subtitle setting; with
+the Wishlist off, no asks. HolyArrs started in safe mode refuses to move or
+undo (reading, the plan and the dry run still work).
+
+## Who may move
+
+The owner and admins, signed in with their password. API keys need the
+**admin** scope.
+
+## API
+
+| Route | What it does |
+| --- | --- |
+| `POST /api/v1/migrate/plan` | The plan for the picked snapshots, with counts and suggested path rules. |
+| `POST /api/v1/migrate/dry-run` | The dry run's report and its `plan_hash`. Nothing changes. |
+| `POST /api/v1/migrate/moves` | Approves and starts a move (a Job); needs the dry run's `plan_hash` (409 "dry run again" when the plan changed). |
+| `GET /api/v1/migrate/moves` | Lists moves, newest first. |
+| `GET /api/v1/migrate/moves/{id}` | One move, its report and its progress. |
+| `GET /api/v1/migrate/moves/{id}/report` | The report as a Markdown file. |
+| `POST /api/v1/migrate/moves/{id}/undo` | Queues the undo of a move (a Job; 202). Follow it with `GET /api/v1/migrate/moves/{id}`. |
+
+The body of plan, dry-run and moves is
+`{"snapshots": [1, 2], "path_rules": [{"from": "/movies", "to": "/data/movies"}], "skip": ["alerts"], "people": {"person:seerr:1": "owner", "person:seerr:3": "admin", "person:seerr:2": "merge"}}`,
+plus `"plan_hash"` for moves. A person choice is `owner` (only for the
+person the old app marks as its owner), `admin`, `merge` or `skip`.
+The groups you can skip are `folders`, `pick_rules`, `titles`,
+`never_add`, `sources`, `downloaders`, `naming`, `subtitles`, `people`,
+`wishlist` and `alerts`.

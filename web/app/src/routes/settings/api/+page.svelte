@@ -1,0 +1,205 @@
+<script lang="ts">
+	import { to } from '#lib/paths.ts';
+	import { onMount } from 'svelte';
+	import { api, message } from '#lib/api.ts';
+	import { toasts } from '#lib/toasts.svelte.ts';
+	import Icon from '#lib/Icon.svelte';
+	import { curl, filterOps, groups, operations, type ApiOp, type Spec } from '#lib/apidocs.ts';
+
+	let spec = $state<Spec | null>(null);
+	let ops = $state<ApiOp[]>([]);
+	let q = $state('');
+	let error = $state('');
+	let open = $state<string | null>(null);
+	const shown = $derived(groups(filterOps(ops, q)));
+	const base = $derived(typeof location === 'undefined' ? to('/api/v1') : `${location.origin}${to('/api/v1')}`);
+	const examples = $derived([
+		{ what: 'Is HolyArrs up, and which version', cmd: curl(base, 'GET', '/health') },
+		{ what: 'Every movie, show and artist in the Library', cmd: curl(base, 'GET', '/titles') },
+		{ what: 'What is downloading now', cmd: curl(base, 'GET', '/downloads/view') },
+		{ what: 'Run the feed check now', cmd: curl(base, 'POST', '/schedules/feed_check/run') }
+	]);
+
+	async function copy(text: string) {
+		try {
+			await navigator.clipboard.writeText(text);
+			toasts.push('Copied.', 'ok');
+		} catch {
+			toasts.push('Copying is not allowed here; select the text instead.', 'fail');
+		}
+	}
+
+	onMount(async () => {
+		try {
+			spec = await api.get<Spec>('/openapi.json');
+			ops = operations(spec);
+		} catch (e) {
+			error = message(e);
+		}
+	});
+</script>
+
+<svelte:head><title>API for other apps · HolyArrs</title></svelte:head>
+
+<header class="page-head">
+	<div>
+		<h1>API for other apps</h1>
+		<p>Scripts, dashboards and other apps talk to HolyArrs through its API with a key of their own.</p>
+	</div>
+	<a class="btn btn-ghost" href={to(`/api/v1/openapi.json`)} target="_blank" rel="noopener">The OpenAPI file</a>
+</header>
+
+<section class="card" aria-labelledby="h-start">
+	<h2 id="h-start" class="h2">Start here</h2>
+	<ol class="steps small">
+		<li>Make a key in <a href={to(`/settings/sign-in`)}>Settings > Sign-in > API keys</a>. Give it only the scopes it needs. The key is shown once; copy it then.</li>
+		<li>Send it in the <code>X-Api-Key</code> header with every call, never in the address.</li>
+		<li>
+			The base address is <code data-testid="api-base">{base}</code>
+			<button class="btn btn-quiet" type="button" onclick={() => copy(base)} aria-label="Copy the base address"><Icon name="copy" size={16} /></button>
+		</li>
+	</ol>
+</section>
+
+{#if spec?.['x-holyarrs-scopes']}
+	<section class="card" aria-labelledby="h-scopes" data-testid="api-scopes">
+		<h2 id="h-scopes" class="h2">Scopes</h2>
+		<dl class="facts">
+			{#each Object.entries(spec['x-holyarrs-scopes']) as [name, note] (name)}
+				<dt><code>{name}</code></dt>
+				<dd class="small">{note}</dd>
+			{/each}
+		</dl>
+	</section>
+{/if}
+
+<section class="card" aria-labelledby="h-ex">
+	<h2 id="h-ex" class="h2">Example calls</h2>
+	<p class="small muted">Set <code>HOLYARRS_KEY</code> to your key in your shell first.</p>
+	<ul class="examples">
+		{#each examples as e (e.cmd)}
+			<li>
+				<span class="small">{e.what}</span>
+				<div class="cmd">
+					<code class="mono xs">{e.cmd}</code>
+					<button class="btn btn-quiet" type="button" onclick={() => copy(e.cmd)} aria-label="Copy: {e.what}"><Icon name="copy" size={16} /></button>
+				</div>
+			</li>
+		{/each}
+	</ul>
+</section>
+
+<section class="card" aria-labelledby="h-routes" data-testid="api-routes">
+	<h2 id="h-routes" class="h2">Every route</h2>
+	{#if error}
+		<p class="form-error" role="alert">{error}</p>
+	{:else if !spec}
+		<div class="sk" style="height: 200px"></div>
+	{:else}
+		<div class="field">
+			<label for="api-q">Find a route</label>
+			<input id="api-q" class="input" type="search" bind:value={q} placeholder="For example downloads" autocomplete="off" />
+		</div>
+		<p class="xs muted" role="status">{filterOps(ops, q).length} of {ops.length} routes</p>
+		{#each shown as g (g.tag)}
+			<h3 class="tag">{g.tag}</h3>
+			<ul class="ops">
+				{#each g.ops as o (o.method + o.path)}
+					{@const id = o.method + ' ' + o.path}
+					<li data-testid="api-op">
+						<button class="op" type="button" aria-expanded={open === id} onclick={() => (open = open === id ? null : id)}>
+							<span class="m m-{o.method.toLowerCase()}">{o.method}</span>
+							<code class="p">{o.path}</code>
+							<span class="s small">{o.summary}</span>
+						</button>
+						{#if open === id}
+							<div class="more small">
+								<p>{o.description}</p>
+								<p class="xs muted">Scope <code>{o.scope}</code> · needs <code>{o.permission}</code></p>
+							</div>
+						{/if}
+					</li>
+				{/each}
+			</ul>
+		{/each}
+	{/if}
+</section>
+
+<style>
+	.steps {
+		margin: var(--s-3) 0 0;
+		padding-left: 1.2em;
+		display: grid;
+		gap: var(--s-2);
+		overflow-wrap: anywhere;
+	}
+	.examples {
+		list-style: none;
+		padding: 0;
+		margin: var(--s-3) 0 0;
+		display: grid;
+		gap: var(--s-3);
+	}
+	.cmd {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--s-2);
+		background: var(--surface-2);
+		border-radius: var(--r-btn);
+		padding: var(--s-2) var(--s-3);
+	}
+	.cmd code {
+		flex: 1;
+		min-width: 0;
+		overflow-wrap: anywhere;
+		white-space: pre-wrap;
+	}
+	.tag {
+		font-size: 0.9375rem;
+		margin: var(--s-4) 0 var(--s-2);
+	}
+	.ops {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+	.ops li {
+		border-top: 1px solid var(--line);
+	}
+	.op {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--s-2);
+		align-items: baseline;
+		width: 100%;
+		text-align: left;
+		background: none;
+		border: 0;
+		color: var(--text);
+		padding: var(--s-2) 0;
+		cursor: pointer;
+		font: inherit;
+	}
+	.m {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		font-weight: 600;
+		min-width: 4.5em;
+	}
+	.p {
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		overflow-wrap: anywhere;
+		min-width: 0;
+	}
+	.s {
+		color: var(--text-muted, var(--text));
+	}
+	.more {
+		padding: 0 0 var(--s-3);
+		overflow-wrap: anywhere;
+	}
+	code {
+		font-family: var(--font-mono);
+	}
+</style>

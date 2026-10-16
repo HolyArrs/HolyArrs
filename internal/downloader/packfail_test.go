@@ -1,0 +1,104 @@
+package downloader
+
+import (
+	"context"
+	"database/sql"
+	"slices"
+	"testing"
+	"time"
+
+	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/store"
+)
+
+// packWorld turns the world's Release into a pack chosen for two more
+// Slots and grabs it as one Download.
+func packWorld(t *testing.T) (*world, *Manager, int64, []int64) {
+	t.Helper()
+	w, m := setup(t)
+	ctx := context.Background()
+	ids := []int64{w.slotID}
+	err := w.s.Write(ctx, func(tx *sql.Tx) error {
+		var sl domain.Slot
+		if err := tx.QueryRow("SELECT item_id, version_id FROM slots WHERE id = ?", w.slotID).Scan(&sl.ItemID, &sl.VersionID); err != nil {
+			return err
+		}
+		for i := 0; i < 2; i++ {
+			it := &domain.Item{Kind: "movie"}
+			if err := tx.QueryRow("SELECT title_id FROM items WHERE id = ?", sl.ItemID).Scan(&it.TitleID); err != nil {
+				return err
+			}
+			if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+				return err
+			}
+			o := &domain.Slot{ItemID: it.ID, VersionID: sl.VersionID, State: domain.SlotChosen, ChosenReleaseID: &w.relID}
+			if _, err := store.Insert(tx, "slots", o, domain.System); err != nil {
+				return err
+			}
+			ids = append(ids, o.ID)
+		}
+		_, err := tx.Exec(`UPDATE releases SET verdict = json_set(verdict, '$.pick_slot_ids', json(?)), matched_slot_ids = json(?) WHERE id = ?`,
+			jsonIDs(ids), jsonIDs(ids), w.relID)
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := grabbed(t, w, m)
+	if d := w.download(t, id); !slices.Equal(d.SlotIDs, ids) {
+		t.Fatalf("pack slots %v", d.SlotIDs)
+	}
+	return w, m, id, ids
+}
+
+func slotStates(t *testing.T, w *world, ids []int64) []string {
+	t.Helper()
+	var out []string
+	for _, id := range ids {
+		var st string
+		_ = w.s.Read().QueryRow("SELECT state FROM slots WHERE id = ?", id).Scan(&st)
+		out = append(out, st)
+	}
+	return out
+}
+
+// 4.2.2: a pack follows the movie rules for all its Slots at once: it
+// stalls, is acted on, fails; the Release is turned down for every Slot,
+// each Slot fails and is handed on to be searched again.
+func TestPackStallsAndFailsForEverySlot(t *testing.T) {
+	w, m, id, ids := packWorld(t)
+	ctx := context.Background()
+	w.clock = w.clock.Add(11 * time.Minute)
+	_, _ = m.SyncOnce(ctx)
+	if got := slotStates(t, w, ids); !slices.Equal(got, []string{"stalled", "stalled", "stalled"}) {
+		t.Fatalf("after the stall time %v", got)
+	}
+	w.clock = w.clock.Add(24 * time.Hour)
+	_, _ = m.SyncOnce(ctx)
+	if got := slotStates(t, w, ids); !slices.Equal(got, []string{"failed", "failed", "failed"}) {
+		t.Fatalf("after the act time %v", got)
+	}
+	if r := w.release(t); r.State != "turned_down" {
+		t.Fatalf("release %s", r.State)
+	}
+	if d := w.download(t, id); d.State != "failed" {
+		t.Fatalf("download %s", d.State)
+	}
+	if !slices.Equal(w.failedSlots, ids) {
+		t.Fatalf("searched again %v, want %v", w.failedSlots, ids)
+	}
+}
+
+// 4.2.2: Mark failed on a pack fails every Slot it was filling.
+func TestMarkFailedOnAPack(t *testing.T) {
+	w, m, id, ids := packWorld(t)
+	if err := m.MarkFailed(context.Background(), id, domain.Actor{Kind: "user", ID: 1}, "luis"); err != nil {
+		t.Fatal(err)
+	}
+	if got := slotStates(t, w, ids); !slices.Equal(got, []string{"failed", "failed", "failed"}) || !slices.Equal(w.failedSlots, ids) {
+		t.Fatalf("slots %v, searched %v", got, w.failedSlots)
+	}
+	if r := w.release(t); r.State != "turned_down" {
+		t.Fatalf("release %s", r.State)
+	}
+}

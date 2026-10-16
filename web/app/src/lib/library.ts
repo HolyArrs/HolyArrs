@@ -1,0 +1,161 @@
+// Library filters and the remembered add choices, kept apart from the pages
+// so they can be tested.
+import type { TitleView } from './types.ts';
+
+export type Filter = 'all' | 'missing' | 'not_out_yet' | 'better' | 'have';
+
+export const filters: [Filter, string][] = [
+	['all', 'All'],
+	['missing', 'Missing'],
+	['not_out_yet', 'Not out yet'],
+	['better', 'Better copy wanted'],
+	['have', 'In library']
+];
+
+const haveStates = ['in_library', 'better_wanted'];
+const busyStates = ['searching', 'held', 'chosen', 'downloading', 'stalled', 'failed', 'importing', 'needs_a_decision', 'rejected'];
+
+export type Kind = 'all' | 'movie' | 'show' | 'artist';
+
+export const kinds: [Kind, string][] = [
+	['all', 'Everything'],
+	['movie', 'Movies'],
+	['show', 'Shows'],
+	['artist', 'Music']
+];
+
+/** ofKind says whether a title is of the kind picked. */
+export function ofKind(t: Pick<TitleView, 'kind'>, k: Kind): boolean {
+	return k === 'all' || t.kind === k;
+}
+
+/**
+ * matches says whether a title shows under a filter. A movie counts when
+ * any of its Slots does; a show when any of its kept episodes does, an
+ * artist when any of its tracks does.
+ */
+export function matches(t: TitleView, f: Filter): boolean {
+	if (t.kind === 'show' || t.kind === 'artist') {
+		const s = t.kind === 'show' ? t.show : t.artist;
+		if (!s) return f === 'all';
+		switch (f) {
+			case 'all':
+				return true;
+			case 'have':
+				return s.in_library > 0;
+			case 'better':
+				return s.better_wanted > 0;
+			case 'not_out_yet':
+				return s.not_out_yet > 0;
+			case 'missing':
+				return s.missing > 0;
+		}
+	}
+	const states = t.slots.map((s) => s.state);
+	switch (f) {
+		case 'all':
+			return true;
+		case 'have':
+			return states.some((s) => haveStates.includes(s));
+		case 'better':
+			return states.includes('better_wanted');
+		case 'not_out_yet':
+			return states.includes('not_out_yet');
+		case 'missing':
+			// Out (or gate open) but no copy yet: waiting to be found or on its way.
+			return states.some((s) => s === 'wanted' || busyStates.includes(s));
+	}
+}
+
+/** counts how many titles each filter shows. */
+export function counts(ts: TitleView[]): Record<Filter, number> {
+	const out = { all: 0, missing: 0, not_out_yet: 0, better: 0, have: 0 } as Record<Filter, number>;
+	for (const t of ts) for (const [f] of filters) if (matches(t, f)) out[f]++;
+	return out;
+}
+
+/** byName keeps titles whose name holds every word of q. */
+export function byName(t: TitleView, q: string): boolean {
+	const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+	const name = t.name.toLowerCase();
+	return words.every((w) => name.includes(w) || String(t.year ?? '') === w);
+}
+
+/** titleQuery applies the title-list endpoint's character and word bounds. */
+export function titleQuery(q: string): string {
+	return q.slice(0, 256).trim().split(/\s+/).filter(Boolean).slice(0, 16).join(' ');
+}
+
+/** matchesTitleQuery keeps the existing local matches beside indexed aliases. */
+export function matchesTitleQuery(t: TitleView, q: string, indexed: ReadonlySet<number>): boolean {
+	return !q || byName(t, q) || indexed.has(t.id);
+}
+
+export interface AddChoices {
+	library_folder_id: number;
+	pick_rules_id: number;
+	keep_up_to_date: boolean;
+	release_gate: string;
+	search_on_add: boolean;
+}
+
+const key = 'holyarrs.add-choices';
+
+/** loadChoices reads the last add choices this browser used, if any. */
+export function loadChoices(store: Pick<Storage, 'getItem'> | undefined = globalThis.localStorage): Partial<AddChoices> {
+	try {
+		const v = JSON.parse(store?.getItem(key) ?? '{}');
+		return v && typeof v === 'object' ? v : {};
+	} catch {
+		return {};
+	}
+}
+
+/** saveChoices remembers add choices for next time. */
+export function saveChoices(c: AddChoices, store: Pick<Storage, 'setItem'> | undefined = globalThis.localStorage) {
+	try {
+		store?.setItem(key, JSON.stringify(c));
+	} catch {
+		// Private windows may refuse; the defaults still work.
+	}
+}
+
+/** pickId keeps a remembered id only while it is still offered. */
+export function pickId(remembered: number | undefined, offered: { id: number }[], fallback: number): number {
+	return remembered && offered.some((o) => o.id === remembered) ? remembered : fallback;
+}
+
+export interface SecondVersion {
+	label: string;
+	pick_rules_id: number;
+	library_folder_id: number;
+}
+
+/**
+ * secondVersion suggests a 4K copy next to the main one: the 4K Pick rules
+ * when there are some, and a Library folder whose name or path says 4K or
+ * UHD, else the main folder (the copy then gets its own folder inside it).
+ */
+export function secondVersion(
+	rules: { id: number; name: string }[],
+	folders: { id: number; label: string; path: string }[],
+	mainFolder: number
+): SecondVersion {
+	const fourK = rules.find((r) => r.name.toLowerCase() === '4k') ?? rules.find((r) => /4k|2160|uhd/i.test(r.name));
+	const folder = folders.find((f) => f.id !== mainFolder && /4k|2160|uhd/i.test(`${f.label} ${f.path}`));
+	return { label: '4K', pick_rules_id: fourK?.id ?? rules[0]?.id ?? 0, library_folder_id: folder?.id ?? mainFolder };
+}
+
+/** slotNotes are the Versions' notes worth showing under the Why line: once each, without the gate notes the Why line already gives. */
+export function slotNotes(slots: { reason?: string | null }[]): string[] {
+	return [...new Set(slots.map((s) => s.reason ?? '').filter((r) => r && !r.startsWith('release gate:')))];
+}
+
+/** inLibraryWord says which copies of an episode are in the Library: "" when none; " · in the Library" with one Version; the Version names when it has several. */
+export function inLibraryWord(state: string | undefined, versions?: { label: string; state: string }[]): string {
+	if (versions && versions.length > 1) {
+		const have = versions.filter((v) => v.state === 'in_library').map((v) => v.label);
+		return have.length ? ` · in the Library: ${have.join(', ')}` : '';
+	}
+	return state === 'in_library' ? ' · in the Library' : '';
+}

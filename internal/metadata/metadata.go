@@ -1,0 +1,110 @@
+// Package metadata looks up Titles. Every lookup goes through Provider, so
+// the real online provider drops in later without touching callers.
+package metadata
+
+import (
+	"context"
+	"errors"
+	"strings"
+	"time"
+
+	"github.com/CoderLuii/holyarrs/internal/parse"
+)
+
+// ErrNotFound is returned when no movie has the id.
+var ErrNotFound = errors.New("no such movie")
+
+// Movie is one looked-up movie.
+type Movie struct {
+	Name             string            `json:"name"`
+	Year             int               `json:"year"`
+	Overview         string            `json:"overview"`
+	OriginalLanguage string            `json:"original_language"`
+	Runtime          int               `json:"runtime,omitempty"` // minutes, 0 when unknown
+	IDs              map[string]string `json:"ids"`               // tmdb, imdb
+	Poster           string            `json:"poster,omitempty"`  // full picture URL, "" when none
+	// Release dates (UTC midnight), nil when the source does not know them.
+	CinemaDate   *time.Time `json:"cinema_date,omitempty"`
+	DigitalDate  *time.Time `json:"digital_date,omitempty"`
+	PhysicalDate *time.Time `json:"physical_date,omitempty"`
+	// CollectionKnown distinguishes a confirmed "not in a collection" detail
+	// response from search data, where collection membership is unknown.
+	CollectionKnown bool             `json:"collection_known,omitempty"`
+	Collection      *MovieCollection `json:"collection,omitempty"`
+}
+
+// MovieCollection is a provider's stable identity for a movie series.
+type MovieCollection struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// ChangeLister is a Provider that can list the movies changed since a time.
+type ChangeLister interface {
+	// Changed returns "<source>:<id>" for every movie changed since since.
+	Changed(ctx context.Context, since time.Time) ([]string, error)
+}
+
+type noCacheKey struct{}
+
+// NoCache asks providers to skip their cache for lookups made with ctx (a
+// details refresh must see fresh data).
+func NoCache(ctx context.Context) context.Context { return context.WithValue(ctx, noCacheKey{}, true) }
+
+func noCache(ctx context.Context) bool { v, _ := ctx.Value(noCacheKey{}).(bool); return v }
+
+// Fresh reports whether ctx asks for fresh data (NoCache).
+func Fresh(ctx context.Context) bool { return noCache(ctx) }
+
+func day(y int, m time.Month, d int) *time.Time {
+	t := time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
+	return &t
+}
+
+// Provider finds movies.
+type Provider interface {
+	Search(ctx context.Context, query string, year int) ([]Movie, error)
+	// Movie takes "<source>:<id>", such as "tmdb:693134".
+	Movie(ctx context.Context, id string) (Movie, error)
+}
+
+// Static is a Provider over a fixed list.
+type Static struct{ Movies []Movie }
+
+// Lab is the fixed local record for the lab movie. Its runtime is left out
+// on purpose: the lab file is a short test encode, so size limits per minute
+// cannot apply to it.
+func Lab() *Static {
+	return &Static{Movies: []Movie{{
+		Name: "Dune: Part Two", Year: 2024, OriginalLanguage: "en",
+		Overview:   "Paul Atreides unites with the Fremen while seeking revenge against those who destroyed his family.",
+		IDs:        map[string]string{"tmdb": "693134", "imdb": "tt15239678"},
+		CinemaDate: day(2024, time.March, 1), DigitalDate: day(2024, time.April, 16), PhysicalDate: day(2024, time.May, 14),
+	}}}
+}
+
+// Search matches by clean name, and by year when year is not 0.
+func (s *Static) Search(_ context.Context, query string, year int) ([]Movie, error) {
+	q := parse.CleanName(query)
+	var out []Movie
+	for _, m := range s.Movies {
+		if (q == "" || strings.Contains(parse.CleanName(m.Name), q)) && (year == 0 || m.Year == year) {
+			out = append(out, m)
+		}
+	}
+	return out, nil
+}
+
+// Movie finds one movie by "<source>:<id>".
+func (s *Static) Movie(_ context.Context, id string) (Movie, error) {
+	src, v, ok := strings.Cut(id, ":")
+	if !ok {
+		return Movie{}, ErrNotFound
+	}
+	for _, m := range s.Movies {
+		if m.IDs[src] == v {
+			return m, nil
+		}
+	}
+	return Movie{}, ErrNotFound
+}

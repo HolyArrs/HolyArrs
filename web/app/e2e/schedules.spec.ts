@@ -1,0 +1,58 @@
+import AxeBuilder from '@axe-core/playwright';
+import { expect, test } from '@playwright/test';
+import { moviesDir, newOwner, noSidewaysScroll, owner, setupCode, signIn } from './helpers.ts';
+
+test.describe.configure({ mode: 'serial' });
+
+async function enterFreshApp(page: import('@playwright/test').Page) {
+	await page.goto('/login');
+	const setupHeading = page.getByRole('heading', { name: 'Set up HolyArrs' });
+	const signInHeading = page.getByRole('heading', { name: 'Sign in' });
+	await expect(setupHeading.or(signInHeading)).toBeVisible();
+	if (await signInHeading.isVisible()) {
+		await signIn(page, owner());
+		return;
+	}
+	const o = newOwner();
+	await page.getByLabel('Setup code').fill(setupCode());
+	await page.getByLabel('Name').fill(o.name);
+	await page.getByLabel('Password', { exact: true }).fill(o.password);
+	await page.getByLabel('Password again').fill(o.password);
+	await page.getByRole('button', { name: 'Make the owner and sign in' }).click();
+	await page.getByLabel('Music', { exact: true }).check();
+	await page.getByLabel('Subtitles', { exact: true }).check();
+	await page.getByLabel('Yes', { exact: true }).check();
+	await page.getByRole('button', { name: 'Continue' }).click();
+	await page.getByLabel('Paste the key').fill('stand-in-for-tests');
+	await page.getByRole('button', { name: 'Save and continue' }).click();
+	await page.getByLabel('Folder path').fill(moviesDir);
+	await page.getByLabel(/^Name/).fill('Movies');
+	await page.getByRole('button', { name: 'Add folder and open Home' }).click();
+}
+
+test('movie detail refresh can be turned off, survives reload, and can be run by hand', async ({ page }) => {
+	await enterFreshApp(page);
+	await page.goto('/settings/schedules');
+	const movie = page.getByTestId('schedule').filter({ has: page.getByText('Refresh movie details', { exact: true }) });
+	await expect(movie).toBeVisible();
+	await movie.getByRole('button', { name: 'Turn off automatic refresh' }).click();
+	await expect(movie).toHaveAttribute('data-state', 'off');
+	await expect(movie.getByTestId('movie-refresh-off-note')).toContainText('can become stale');
+	await expect(movie.getByRole('button', { name: 'Run Refresh movie details now' })).toBeVisible();
+
+	await page.reload();
+	await expect(movie).toHaveAttribute('data-state', 'off');
+	await movie.getByRole('button', { name: 'Turn on automatic refresh' }).click();
+	await expect(movie).toHaveAttribute('data-state', 'waiting');
+	await expect(movie.getByTestId('next')).not.toContainText('turned off');
+});
+
+test('movie refresh control works at phone width and is accessible', async ({ page }) => {
+	await page.setViewportSize({ width: 412, height: 915 });
+	await signIn(page, owner());
+	await page.goto('/settings/schedules');
+	await expect(page.getByRole('button', { name: 'Turn off automatic refresh' })).toBeVisible();
+	await noSidewaysScroll(page);
+	const a11y = await new AxeBuilder({ page }).include('main').analyze();
+	expect(a11y.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(' ')}`)).toEqual([]);
+});

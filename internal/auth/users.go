@@ -1,0 +1,625 @@
+package auth
+
+import (
+	"context"
+	"database/sql"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"log"
+	"net/http"
+	"slices"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/store"
+)
+
+// Invites.
+const (
+	InviteDays    = 7  // default life of an invite link
+	maxInviteDays = 30 // longest an invite may last
+	invitePath    = "/invite/"
+)
+
+// Sign-in settings live in the this_app group with keys starting sign_in_.
+const (
+	settingsGroup = "this_app"
+	signInPrefix  = "sign_in_"
+)
+
+// signInSetting reads one sign-in setting; "" when unset.
+func (a *Auth) signInSetting(ctx context.Context, key string) string {
+	var v string
+	_ = a.s.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = ? AND key = ?", settingsGroup, signInPrefix+key).Scan(&v)
+	return v
+}
+
+func putSetting(tx *sql.Tx, grp, key, value string, by domain.Actor, now time.Time) error {
+	actor, _ := json.Marshal(by)
+	t := store.FormatTime(now)
+	_, err := tx.Exec(`INSERT INTO settings(grp, key, value, created_at, created_by, updated_at, updated_by)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
+		grp, key, value, t, string(actor), t, string(actor))
+	return err
+}
+
+// UserView is a user as the Users screen shows them.
+type UserView struct {
+	ID        int64      `json:"id"`
+	Name      string     `json:"name"`
+	Role      string     `json:"role"`
+	State     string     `json:"state"`
+	Perms     []Perm     `json:"perms"`
+	TwoFactor bool       `json:"two_factor"`
+	Password  bool       `json:"password"` // signs in with a HolyArrs password
+	Links     []LinkView `json:"links"`
+	CreatedAt string     `json:"created_at"`
+	LastSeen  *string    `json:"last_seen_at,omitempty"`
+}
+
+// LinkView is an outside account linked to a user.
+type LinkView struct {
+	Provider string `json:"provider"`
+	Name     string `json:"name"`
+}
+
+func (a *Auth) userRoutes(m *http.ServeMux) {
+	m.HandleFunc("GET /api/v1/users", a.listUsers)
+	m.HandleFunc("PUT /api/v1/users/{id}", a.editUser)
+	m.HandleFunc("POST /api/v1/users/{id}/two-factor/reset", a.resetUserTwoFactor)
+	m.HandleFunc("GET /api/v1/users/invites", a.listInvites)
+	m.HandleFunc("POST /api/v1/users/invites", a.makeInvite)
+	m.HandleFunc("DELETE /api/v1/users/invites/{id}", a.deleteInvite)
+	m.HandleFunc("GET /api/v1/auth/invites/{token}", a.lookInvite)
+	m.HandleFunc("POST /api/v1/auth/invites/{token}", a.acceptInvite)
+	m.HandleFunc("POST /api/v1/auth/password", a.changePassword)
+}
+
+func serverError(w http.ResponseWriter, what string, err error) {
+	log.Printf("auth: %s: %v", what, err)
+	fail(w, http.StatusInternalServerError, "something went wrong; see the log")
+}
+
+func (a *Auth) listUsers(w http.ResponseWriter, r *http.Request) {
+	rows, err := a.s.Read().QueryContext(r.Context(), `SELECT u.id, u.name, u.role, u.state, u.perms, u.totp_secret_id IS NOT NULL,
+		u.password_hash != '', u.created_at, (SELECT max(last_seen_at) FROM sessions WHERE user_id = u.id)
+		FROM users u ORDER BY CASE u.role WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 ELSE 2 END, u.name`)
+	if err != nil {
+		serverError(w, "users", err)
+		return
+	}
+	out := []UserView{}
+	byID := map[int64]int{}
+	for rows.Next() {
+		var u UserView
+		var perms string
+		var seen sql.NullString
+		if err := rows.Scan(&u.ID, &u.Name, &u.Role, &u.State, &perms, &u.TwoFactor, &u.Password, &u.CreatedAt, &seen); err != nil {
+			rows.Close()
+			serverError(w, "users", err)
+			return
+		}
+		u.Perms = Who{Role: u.Role, Perms: parsePerms(perms)}.Effective()
+		u.Links = []LinkView{}
+		if seen.Valid {
+			u.LastSeen = &seen.String
+		}
+		byID[u.ID] = len(out)
+		out = append(out, u)
+	}
+	rows.Close()
+	links, err := a.s.Read().QueryContext(r.Context(), "SELECT user_id, provider, external_name FROM user_links ORDER BY provider")
+	if err != nil {
+		serverError(w, "users", err)
+		return
+	}
+	defer links.Close()
+	for links.Next() {
+		var id int64
+		var l LinkView
+		if links.Scan(&id, &l.Provider, &l.Name) == nil {
+			if i, ok := byID[id]; ok {
+				out[i].Links = append(out[i].Links, l)
+			}
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"users": out, "perms": AllPerms})
+}
+
+// mayGrant checks the permissions an owner or admin hands out: an admin may
+// only give what they hold, and only to members.
+func mayGrant(by Who, role string, perms []Perm) error {
+	if by.Role == RoleOwner {
+		return nil
+	}
+	if role != RoleMember {
+		return errors.New("only the owner can make admins")
+	}
+	for _, p := range perms {
+		if !by.Has(p) {
+			return fmt.Errorf("you cannot give a permission you do not have (%s)", p)
+		}
+	}
+	return nil
+}
+
+func readPerms(raw []string) ([]Perm, error) {
+	out := []Perm{}
+	for _, s := range raw {
+		p := Perm(s)
+		if !validPerm(p) {
+			return nil, fmt.Errorf("unknown permission %q", s)
+		}
+		if !slices.Contains(out, p) {
+			out = append(out, p)
+		}
+	}
+	return out, nil
+}
+
+// mayMakeAdmin: an admin signs in to a session holding every scope, the
+// control scope included, so an API key may invite or promote an admin
+// only when it holds the control scope itself. The admin scope does not
+// imply control. It writes 403 and returns false otherwise.
+func mayMakeAdmin(w http.ResponseWriter, by Who) bool {
+	if by.Via == "api_key" && !ScopesCover(by.Scopes, ScopeControl) {
+		fail(w, http.StatusForbidden, "making an admin with an API key needs the control scope")
+		return false
+	}
+	return true
+}
+
+func (a *Auth) editUser(w http.ResponseWriter, r *http.Request) {
+	if !RequireStrong(w, r) {
+		return
+	}
+	by, _ := From(r.Context())
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		fail(w, http.StatusNotFound, "no such user")
+		return
+	}
+	var body struct {
+		Role  *string   `json:"role"`
+		Perms *[]string `json:"perms"`
+		State *string   `json:"state"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8<<10)).Decode(&body); err != nil {
+		fail(w, http.StatusBadRequest, `send {"role": "...", "perms": [...], "state": "active|disabled"}`)
+		return
+	}
+	var role, state, permsRaw string
+	err = a.s.Read().QueryRowContext(r.Context(), "SELECT role, state, perms FROM users WHERE id = ?", id).Scan(&role, &state, &permsRaw)
+	if errors.Is(err, sql.ErrNoRows) {
+		fail(w, http.StatusNotFound, "no such user")
+		return
+	}
+	if err != nil {
+		serverError(w, "edit user", err)
+		return
+	}
+	if role == RoleOwner {
+		fail(w, http.StatusForbidden, "the owner cannot be changed here; use the reset-owner command to change the owner")
+		return
+	}
+	if by.Role != RoleOwner && role != RoleMember {
+		fail(w, http.StatusForbidden, "only the owner can change an admin")
+		return
+	}
+	if id == by.UserID {
+		fail(w, http.StatusForbidden, "you cannot change your own role or permissions")
+		return
+	}
+	newRole, newState, perms := role, state, parsePerms(permsRaw)
+	if body.Role != nil {
+		if *body.Role != RoleAdmin && *body.Role != RoleMember {
+			fail(w, http.StatusBadRequest, "role must be admin or member")
+			return
+		}
+		if *body.Role != role {
+			perms = DefaultPerms(*body.Role)
+		}
+		newRole = *body.Role
+	}
+	if body.Perms != nil {
+		if perms, err = readPerms(*body.Perms); err != nil {
+			fail(w, http.StatusBadRequest, err.Error())
+			return
+		}
+	}
+	if body.State != nil {
+		if *body.State != "active" && *body.State != "disabled" {
+			fail(w, http.StatusBadRequest, "state must be active or disabled")
+			return
+		}
+		newState = *body.State
+	}
+	if newRole == RoleAdmin && role != RoleAdmin && !mayMakeAdmin(w, by) {
+		return
+	}
+	if err := mayGrant(by, newRole, perms); err != nil {
+		fail(w, http.StatusForbidden, err.Error())
+		return
+	}
+	actor, _ := json.Marshal(Actor(r.Context()))
+	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
+		if _, err := tx.Exec("UPDATE users SET role = ?, perms = ?, state = ?, updated_at = ?, updated_by = ? WHERE id = ?",
+			newRole, permsJSON(perms), newState, store.FormatTime(a.now()), string(actor), id); err != nil {
+			return err
+		}
+		if newState != "active" {
+			// A disabled person is signed out everywhere and their keys stop.
+			if _, err := tx.Exec("DELETE FROM sessions WHERE user_id = ?", id); err != nil {
+				return err
+			}
+			_, err := tx.Exec("DELETE FROM api_keys WHERE owner_user_id = ?", id)
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		serverError(w, "edit user", err)
+		return
+	}
+	log.Printf("auth: user %d changed by user %d: role %s, state %s", id, by.UserID, newRole, newState)
+	writeJSON(w, http.StatusOK, map[string]any{"id": id, "role": newRole, "state": newState,
+		"perms": Who{Role: newRole, Perms: perms}.Effective()})
+}
+
+func (a *Auth) resetUserTwoFactor(w http.ResponseWriter, r *http.Request) {
+	if !RequireStrong(w, r) {
+		return
+	}
+	by, _ := From(r.Context())
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		fail(w, http.StatusNotFound, "no such user")
+		return
+	}
+	var role string
+	if err := a.s.Read().QueryRowContext(r.Context(), "SELECT role FROM users WHERE id = ?", id).Scan(&role); err != nil {
+		fail(w, http.StatusNotFound, "no such user")
+		return
+	}
+	if role == RoleOwner || (by.Role != RoleOwner && role != RoleMember) {
+		fail(w, http.StatusForbidden, "you may reset two-factor sign-in only for people below you; the owner uses the reset-owner command")
+		return
+	}
+	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
+		if err := clearTwoFactor(tx, id); err != nil {
+			return err
+		}
+		_, err := tx.Exec("DELETE FROM sessions WHERE user_id = ?", id)
+		return err
+	})
+	if err != nil {
+		serverError(w, "reset two-factor", err)
+		return
+	}
+	log.Printf("auth: two-factor sign-in for user %d reset by user %d", id, by.UserID)
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// InviteView is an invite without its link.
+type InviteView struct {
+	ID        string  `json:"id"`
+	Role      string  `json:"role"`
+	Perms     []Perm  `json:"perms"`
+	Note      string  `json:"note"`
+	CreatedBy string  `json:"created_by"`
+	CreatedAt string  `json:"created_at"`
+	ExpiresAt string  `json:"expires_at"`
+	UsedAt    *string `json:"used_at,omitempty"`
+	UsedBy    *string `json:"used_by,omitempty"`
+}
+
+func (a *Auth) listInvites(w http.ResponseWriter, r *http.Request) {
+	rows, err := a.s.Read().QueryContext(r.Context(), `SELECT i.hash, i.role, i.perms, i.note, c.name, i.created_at, i.expires_at, i.used_at, u.name
+		FROM invites i JOIN users c ON c.id = i.created_by LEFT JOIN users u ON u.id = i.used_by ORDER BY i.created_at DESC LIMIT 200`)
+	if err != nil {
+		serverError(w, "invites", err)
+		return
+	}
+	defer rows.Close()
+	out := []InviteView{}
+	for rows.Next() {
+		var v InviteView
+		var perms string
+		var usedAt, usedBy sql.NullString
+		if err := rows.Scan(&v.ID, &v.Role, &perms, &v.Note, &v.CreatedBy, &v.CreatedAt, &v.ExpiresAt, &usedAt, &usedBy); err != nil {
+			serverError(w, "invites", err)
+			return
+		}
+		v.Perms = parsePerms(perms)
+		if usedAt.Valid {
+			v.UsedAt = &usedAt.String
+		}
+		if usedBy.Valid {
+			v.UsedBy = &usedBy.String
+		}
+		out = append(out, v)
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"invites": out})
+}
+
+func (a *Auth) makeInvite(w http.ResponseWriter, r *http.Request) {
+	if !RequireStrong(w, r) {
+		return
+	}
+	by, _ := From(r.Context())
+	var body struct {
+		Role  string    `json:"role"`
+		Perms *[]string `json:"perms"`
+		Note  string    `json:"note"`
+		Days  int       `json:"days"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8<<10)).Decode(&body); err != nil {
+		fail(w, http.StatusBadRequest, `send {"role": "member", "perms": [...], "note": "...", "days": 7}`)
+		return
+	}
+	if body.Role == "" {
+		body.Role = RoleMember
+	}
+	if body.Role != RoleAdmin && body.Role != RoleMember {
+		fail(w, http.StatusBadRequest, "role must be admin or member")
+		return
+	}
+	perms := DefaultPerms(body.Role)
+	if body.Perms != nil {
+		var err error
+		if perms, err = readPerms(*body.Perms); err != nil {
+			fail(w, http.StatusBadRequest, err.Error())
+			return
+		}
+	}
+	if body.Role == RoleAdmin && !mayMakeAdmin(w, by) {
+		return
+	}
+	if err := mayGrant(by, body.Role, perms); err != nil {
+		fail(w, http.StatusForbidden, err.Error())
+		return
+	}
+	if body.Days == 0 {
+		body.Days = InviteDays
+	}
+	if body.Days < 1 || body.Days > maxInviteDays {
+		fail(w, http.StatusBadRequest, fmt.Sprintf("an invite lasts 1 to %d days", maxInviteDays))
+		return
+	}
+	body.Note = truncate(strings.TrimSpace(body.Note), 100)
+	tok := token(32)
+	now := a.now()
+	expires := now.Add(time.Duration(body.Days) * 24 * time.Hour)
+	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
+		_, err := tx.Exec("INSERT INTO invites(hash, created_at, created_by, role, perms, note, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+			sum(tok), store.FormatTime(now), by.UserID, body.Role, permsJSON(perms), body.Note, store.FormatTime(expires))
+		return err
+	})
+	if err != nil {
+		serverError(w, "invite", err)
+		return
+	}
+	log.Printf("auth: user %d made a %s invite", by.UserID, body.Role)
+	writeJSON(w, http.StatusCreated, map[string]any{"id": sum(tok), "path": invitePath + tok, "role": body.Role, "perms": perms,
+		"expires_at": store.FormatTime(expires), "note": "This link is shown only now and works once."})
+}
+
+func (a *Auth) deleteInvite(w http.ResponseWriter, r *http.Request) {
+	if !RequireStrong(w, r) {
+		return
+	}
+	by, _ := From(r.Context())
+	var n int64
+	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
+		// Admins may take back only their own invites.
+		res, err := tx.Exec("DELETE FROM invites WHERE hash = ? AND used_at IS NULL AND (? OR created_by = ?)",
+			r.PathValue("id"), by.Role == RoleOwner, by.UserID)
+		if err == nil {
+			n, err = res.RowsAffected()
+		}
+		return err
+	})
+	if err != nil {
+		serverError(w, "invite", err)
+		return
+	}
+	if n == 0 {
+		fail(w, http.StatusNotFound, "no such open invite")
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// inviteGate applies the sign-in back-off to invite tokens, so links cannot
+// be guessed. It returns false after writing 429.
+func (a *Auth) inviteGate(w http.ResponseWriter, r *http.Request) (string, bool) {
+	key := a.clientKey(r)
+	a.mu.Lock()
+	wait := a.waitFor(key, freeTries)
+	a.mu.Unlock()
+	if wait > 0 {
+		w.Header().Set("Retry-After", strconv.Itoa(int(wait.Seconds())+1))
+		fail(w, http.StatusTooManyRequests, "too many tries; wait a little and try again")
+		return key, false
+	}
+	return key, true
+}
+
+func (a *Auth) openInvite(ctx context.Context, q interface {
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+}, tok string) (role, perms, note string, ok bool) {
+	var expires string
+	// The person who made the invite must still be an active owner or admin.
+	err := q.QueryRowContext(ctx, `SELECT i.role, i.perms, i.note, i.expires_at FROM invites i JOIN users c ON c.id = i.created_by
+		WHERE i.hash = ? AND i.used_at IS NULL AND c.state = 'active' AND c.role IN ('owner', 'admin')`, sum(tok)).
+		Scan(&role, &perms, &note, &expires)
+	if err != nil || !a.now().Before(parseTime(expires)) {
+		return "", "", "", false
+	}
+	return role, perms, note, true
+}
+
+func (a *Auth) lookInvite(w http.ResponseWriter, r *http.Request) {
+	key, ok := a.inviteGate(w, r)
+	if !ok {
+		return
+	}
+	role, _, note, ok := a.openInvite(r.Context(), a.s.Read(), r.PathValue("token"))
+	if !ok {
+		a.mu.Lock()
+		a.noteFail(key)
+		a.mu.Unlock()
+		fail(w, http.StatusNotFound, "this invite link is used up, ended or wrong; ask for a new one")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"role": role, "note": note})
+}
+
+var errInviteGone = errors.New("invite gone")
+var errNameTaken = errors.New("name taken")
+
+func (a *Auth) acceptInvite(w http.ResponseWriter, r *http.Request) {
+	key, ok := a.inviteGate(w, r)
+	if !ok {
+		return
+	}
+	c, ok := readCreds(w, r)
+	if !ok {
+		return
+	}
+	if c.Name == "" || len(c.Name) > 64 {
+		fail(w, http.StatusBadRequest, "pick a name of 1 to 64 characters")
+		return
+	}
+	if msg := passwordProblem(c.Password, MinPasswordLength(r.Context(), a.s.Read())); msg != "" {
+		fail(w, http.StatusBadRequest, msg)
+		return
+	}
+	tok := r.PathValue("token")
+	if _, _, _, ok := a.openInvite(r.Context(), a.s.Read(), tok); !ok {
+		a.mu.Lock()
+		a.noteFail(key)
+		a.mu.Unlock()
+		fail(w, http.StatusNotFound, "this invite link is used up, ended or wrong; ask for a new one")
+		return
+	}
+	h, err := hashPassword(c.Password, a.hash)
+	if err != nil {
+		serverError(w, "invite", err)
+		return
+	}
+	var id int64
+	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
+		var role, perms, expires string
+		err := tx.QueryRow(`SELECT i.role, i.perms, i.expires_at FROM invites i JOIN users c ON c.id = i.created_by
+			WHERE i.hash = ? AND i.used_at IS NULL AND c.state = 'active' AND c.role IN ('owner', 'admin')`, sum(tok)).Scan(&role, &perms, &expires)
+		if err != nil || !a.now().Before(parseTime(expires)) {
+			return errInviteGone
+		}
+		var n int
+		if err := tx.QueryRow("SELECT count(*) FROM users WHERE name = ?", c.Name).Scan(&n); err != nil {
+			return err
+		}
+		if n > 0 {
+			return errNameTaken
+		}
+		id, err = store.Insert(tx, "users", &domain.User{Name: c.Name, Role: role, PasswordHash: h, State: "active", Perms: perms}, domain.System)
+		if err != nil {
+			return err
+		}
+		res, err := tx.Exec("UPDATE invites SET used_at = ?, used_by = ? WHERE hash = ? AND used_at IS NULL", store.FormatTime(a.now()), id, sum(tok))
+		if err != nil {
+			return err
+		}
+		if n, _ := res.RowsAffected(); n != 1 {
+			return errInviteGone
+		}
+		return nil
+	})
+	switch {
+	case errors.Is(err, errInviteGone):
+		fail(w, http.StatusNotFound, "this invite link is used up, ended or wrong; ask for a new one")
+		return
+	case errors.Is(err, errNameTaken):
+		fail(w, http.StatusConflict, "that name is taken; pick another")
+		return
+	case err != nil:
+		serverError(w, "invite", err)
+		return
+	}
+	log.Printf("auth: invite used by new user %q (%d) from %s", c.Name, id, r.RemoteAddr)
+	a.startSession(w, r, id, c.Name, http.StatusCreated)
+}
+
+// changePassword sets a new password for the signed-in person after checking
+// the current one; every other session of theirs ends.
+func (a *Auth) changePassword(w http.ResponseWriter, r *http.Request) {
+	if !RequireStrong(w, r) {
+		return
+	}
+	who, _ := From(r.Context())
+	var body struct {
+		Current string `json:"current"`
+		New     string `json:"new"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8<<10)).Decode(&body); err != nil {
+		fail(w, http.StatusBadRequest, `send {"current": "...", "new": "..."}`)
+		return
+	}
+	if msg := passwordProblem(body.New, MinPasswordLength(r.Context(), a.s.Read())); msg != "" {
+		fail(w, http.StatusBadRequest, msg)
+		return
+	}
+	key := "pw:" + itoa(who.UserID)
+	a.mu.Lock()
+	wait := a.waitFor(key, freeTries)
+	if wait == 0 {
+		a.noteFail(key)
+	}
+	a.mu.Unlock()
+	if wait > 0 {
+		w.Header().Set("Retry-After", strconv.Itoa(int(wait.Seconds())+1))
+		fail(w, http.StatusTooManyRequests, "too many wrong passwords; wait a little and try again")
+		return
+	}
+	var cur string
+	if err := a.s.Read().QueryRowContext(r.Context(), "SELECT password_hash FROM users WHERE id = ?", who.UserID).Scan(&cur); err != nil {
+		serverError(w, "password", err)
+		return
+	}
+	// People who only sign in through a media server have no password yet
+	// and may set one.
+	if cur != "" && !CheckPassword(cur, body.Current) {
+		fail(w, http.StatusUnauthorized, "the current password is wrong")
+		return
+	}
+	a.mu.Lock()
+	delete(a.fails, key)
+	a.mu.Unlock()
+	h, err := hashPassword(body.New, a.hash)
+	if err != nil {
+		serverError(w, "password", err)
+		return
+	}
+	keep := ""
+	if ck, err := r.Cookie(CookieName); err == nil {
+		keep = sum(ck.Value)
+	}
+	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
+		if _, err := tx.Exec("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?", h, store.FormatTime(a.now()), who.UserID); err != nil {
+			return err
+		}
+		_, err := tx.Exec("DELETE FROM sessions WHERE user_id = ? AND hash != ?", who.UserID, keep)
+		return err
+	})
+	if err != nil {
+		serverError(w, "password", err)
+		return
+	}
+	log.Printf("auth: user %d changed their password", who.UserID)
+	w.WriteHeader(http.StatusNoContent)
+}

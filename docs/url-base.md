@@ -1,0 +1,67 @@
+# Running under a path (URL base) behind a reverse proxy
+
+HolyArrs can live at a path such as `http://home.example/holyarrs` instead of its own host or port.
+
+## Turn it on
+
+Set the base when HolyArrs starts, either way:
+
+- environment: `HOLYARRS_URL_BASE=/holyarrs`
+- flag: `-url-base /holyarrs`
+
+The base is a plain path (letters, digits, `-`, `_`, `.` and `/`; no `..` or `//`). `holyarrs`, `/holyarrs` and `/holyarrs/` all mean `/holyarrs`. Settings > This app shows the base in use.
+
+With a base set, everything is under it: the pages, scripts and styles, the API (`/holyarrs/api/v1/...`), the live stream (`/holyarrs/live`), the health check (`/holyarrs/healthz`, which the image's own health check follows), downloads, the sign-in cookie (its path is the base) and sign-in redirects. `/holyarrs` alone goes to `/holyarrs/`. Any address outside the base answers 404. Redirects only ever point inside the app, never to another site. The OpenAPI file names the base as its server, and links the app builds (invite links, the calendar feed, the API page's base address) carry it.
+
+The proxy must pass the path on unchanged (do not strip `/holyarrs`), keep the `Host` header, and not buffer the live stream. If the proxy adds `X-Forwarded-For`, add its address to `HOLYARRS_TRUSTED_PROXIES`; if people reach HolyArrs by a host name, add it to `HOLYARRS_ALLOWED_HOSTS`.
+
+## nginx-proxy-manager
+
+Proxy host for your domain, then Custom locations > Add location:
+
+- Location: `/holyarrs`
+- Forward hostname / IP: `holyarrs` (the container), port `18730`
+- In the gear (advanced) box of that location:
+
+```
+proxy_set_header Host $host;
+proxy_buffering off;
+proxy_read_timeout 1h;
+```
+
+Do not add a trailing slash to the forward address (that would strip the path).
+
+## Traefik (Docker labels)
+
+```
+labels:
+  - traefik.enable=true
+  - traefik.http.routers.holyarrs.rule=Host(`home.example`) && PathPrefix(`/holyarrs`)
+  - traefik.http.services.holyarrs.loadbalancer.server.port=18730
+```
+
+No StripPrefix middleware: HolyArrs expects the base in the path. Traefik streams by default.
+
+## Caddy
+
+```
+home.example {
+	handle /holyarrs* {
+		reverse_proxy holyarrs:18730 {
+			flush_interval -1
+		}
+	}
+}
+```
+
+Use `handle`, not `handle_path` (which strips the path).
+
+## Docker compose
+
+```
+services:
+  holyarrs:
+    image: holyarrs
+    environment:
+      - HOLYARRS_URL_BASE=/holyarrs
+```

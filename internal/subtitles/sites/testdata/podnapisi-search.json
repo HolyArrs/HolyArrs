@@ -1,0 +1,7 @@
+{"data":[
+{"id":"pN1","language":"en","flags":[],"releases":["The.Lantern.2010.1080p.BluRay.x264-GRP"],"download":"/subtitles/pN1/download","fps":23.976,
+ "movie":{"title":"The Lantern","year":2010,"type":"movie","providers":["imdb:tt0101"]},"stats":{"downloads":500},"author":{"name":"anna","trusted":true}},
+{"id":"pN2","language":"en","flags":["hearing_impaired"],"releases":["The.Lantern.2010.720p.WEB.x264-OTHER"],"download":"/subtitles/pN2/download","fps":25,
+ "movie":{"title":"The Lantern","year":2010,"type":"movie","providers":[]},"stats":{"downloads":20},"author":{"name":"bob","trusted":false}},
+{"id":"pN3","language":"fr","flags":["foreign_only"],"releases":[],"download":"/subtitles/pN3/download",
+ "movie":{"title":"The Lantern","year":2010,"type":"movie"},"stats":{"downloads":2},"author":{"name":"c"}}]}

@@ -1,0 +1,1492 @@
+package migrate
+
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"net"
+	"net/url"
+	"path"
+	"sort"
+	"strconv"
+	"strings"
+	"unicode"
+)
+
+// A Plan says what a move would bring over from one or more Snapshots:
+// grouped items HolyArrs would create or change, and every setting that
+// has no HolyArrs match, with the reason (NotMoved). BuildPlan is pure: it
+// looks at no disk and no database. The dry run and the move itself
+// (Mover) check the Plan against this server.
+
+// Groups of a Plan, in the order the move screen shows them.
+const (
+	GroupFolders     = "folders"
+	GroupRules       = "pick_rules"
+	GroupTitles      = "titles"
+	GroupNeverAdd    = "never_add"
+	GroupSources     = "sources"
+	GroupDownloaders = "downloaders"
+	GroupNaming      = "naming"
+	GroupSubtitles   = "subtitles"
+	GroupPeople      = "people"
+	GroupWishlist    = "wishlist"
+	GroupAlerts      = "alerts"
+	// GroupOther holds only not-moved entries (tags, lists, app links).
+	GroupOther = "other"
+)
+
+// GroupOrder lists the groups in the order they are shown and moved.
+var GroupOrder = []string{GroupFolders, GroupRules, GroupTitles, GroupNeverAdd, GroupSources, GroupDownloaders,
+	GroupNaming, GroupSubtitles, GroupPeople, GroupWishlist, GroupAlerts}
+
+// GroupLabels are the groups' names on the move screen.
+var GroupLabels = map[string]string{
+	GroupFolders: "Library folders", GroupRules: "Pick rules", GroupTitles: "Titles", GroupNeverAdd: "Never-add list",
+	GroupSources: "Sources", GroupDownloaders: "Downloaders", GroupNaming: "Naming", GroupSubtitles: "Subtitles",
+	GroupPeople: "People", GroupWishlist: "Wishlist asks", GroupAlerts: "Alerts", GroupOther: "Other settings",
+}
+
+// Caps on what one Plan holds; anything past them is listed as not moved.
+const (
+	MaxPlanTitles = 50000
+	MaxPlanOthers = 2000
+	maxName       = 200
+	maxPath       = 1024
+)
+
+// PathRule maps a folder as the old app saw it (From) to the same folder
+// as HolyArrs sees it (To).
+type PathRule struct {
+	From string `json:"from"`
+	To   string `json:"to"`
+}
+
+// Choices are what the owner changes on the move screen.
+type Choices struct {
+	PathRules []PathRule `json:"path_rules"`
+	// Skip names groups left out of the move.
+	Skip []string `json:"skip"`
+	// People are the owner's choices per person key: "owner" (this was
+	// the old app's owner and is me), "admin" (keep their admin role),
+	// "merge" (the same person as the one here with that name), "skip".
+	People map[string]string `json:"people,omitempty"`
+}
+
+// Person choices on the move screen.
+const (
+	PersonOwner = "owner"
+	PersonAdmin = "admin"
+	PersonMerge = "merge"
+	PersonSkip  = "skip"
+)
+
+// Input is one kept Snapshot to plan from.
+type Input struct {
+	ID   int64
+	Snap *Snapshot
+}
+
+// Plan is the move, before it runs.
+type Plan struct {
+	Snapshots []int64  `json:"snapshots"`
+	Apps      []string `json:"apps"`
+	Groups    []Group  `json:"groups"`
+	// NotMoved lists every setting with no HolyArrs match and why.
+	NotMoved []NotMoved `json:"not_moved"`
+	// NeedsInput lists the keys and passwords to type again afterwards.
+	NeedsInput []string `json:"needs_input"`
+	// Notes are the readers' notes, kept for the report.
+	Notes []string `json:"notes,omitempty"`
+	// Paths are the old library folders the path rules must cover.
+	Paths []string `json:"old_paths"`
+	// covered names the Snapshot fields the plan looked at ("titles").
+	covered map[string]bool
+}
+
+// Group is one kind of thing the move brings.
+type Group struct {
+	Name    string `json:"name"`
+	Label   string `json:"label"`
+	Skipped bool   `json:"skipped"`
+	Items   []Item `json:"items"`
+}
+
+// Item is one thing the move would create or change.
+type Item struct {
+	// Key names it across moves, so a second move adds nothing twice.
+	Key  string `json:"key"`
+	Name string `json:"name"`
+	// From says where it came from ("radarr titles[3]").
+	From   string `json:"from"`
+	Detail string `json:"detail,omitempty"`
+	// Why explains a match (which Pick rules and why).
+	Why string `json:"why,omitempty"`
+	// Needs says what the owner must give after the move ("your key").
+	Needs string `json:"needs,omitempty"`
+
+	Folder     *FolderPlan       `json:"folder,omitempty"`
+	Rules      *RulesPlan        `json:"rules,omitempty"`
+	Title      *TitlePlan        `json:"title,omitempty"`
+	NeverAdd   *NeverAddPlan     `json:"never_add,omitempty"`
+	Source     *SourcePlan       `json:"source,omitempty"`
+	Downloader *DownloaderPlan   `json:"downloader,omitempty"`
+	Naming     map[string]string `json:"naming,omitempty"`
+	Subtitles  *SubtitlePlan     `json:"subtitles,omitempty"`
+	Person     *PersonPlan       `json:"person,omitempty"`
+	Ask        *AskPlan          `json:"ask,omitempty"`
+	Alert      *AlertPlan        `json:"alert,omitempty"`
+}
+
+// NotMoved is one setting the move leaves behind, and why.
+type NotMoved struct {
+	Group string `json:"group"`
+	From  string `json:"from"`
+	What  string `json:"what"`
+	Why   string `json:"why"`
+}
+
+// FolderPlan is a Library folder to add.
+type FolderPlan struct {
+	OldPath string `json:"old_path"`
+	Path    string `json:"path"`
+	Kind    string `json:"kind"` // movie, show, music
+	Label   string `json:"label"`
+}
+
+// RulesPlan matches one of their profiles to our Pick rules.
+type RulesPlan struct {
+	App     string `json:"app"`
+	Profile string `json:"profile"`
+	Preset  string `json:"preset"`
+}
+
+// TitlePlan is a movie, show or artist to add, adopting its folder.
+type TitlePlan struct {
+	Kind string            `json:"kind"` // movie, show, artist
+	ID   string            `json:"id"`   // tmdb:603, tvdb:81189, mbid:<id>
+	IDs  map[string]string `json:"ids"`
+	Year int               `json:"year,omitempty"`
+	// Library is the Library folder's path here; Folder its folder in it.
+	Library      string `json:"library"`
+	Folder       string `json:"folder"`
+	KeepUpToDate bool   `json:"keep_up_to_date"`
+	Preset       string `json:"pick_rules,omitempty"`
+	// Seasons left off (shows): season numbers not kept up to date.
+	SeasonsOff []int `json:"seasons_off,omitempty"`
+	// Unresolved says why the folder could not be placed ("" when it can).
+	Unresolved string `json:"unresolved,omitempty"`
+}
+
+// NeverAddPlan is one entry for the Never-add list.
+type NeverAddPlan struct {
+	Kind string            `json:"kind"`
+	IDs  map[string]string `json:"ids"`
+}
+
+// SourcePlan is a Source to add.
+type SourcePlan struct {
+	Format     string           `json:"format"`   // torznab, newznab, rss
+	Protocol   string           `json:"protocol"` // torrent, usenet
+	URL        string           `json:"url"`
+	Kinds      []string         `json:"kinds"`
+	Categories map[string][]int `json:"categories,omitempty"`
+	MinSeeders *int             `json:"min_seeders,omitempty"`
+	Priority   int              `json:"priority"`
+	NeedsKey   bool             `json:"needs_key"`
+	On         bool             `json:"on"`
+}
+
+// DownloaderPlan is a Downloader to add.
+type DownloaderPlan struct {
+	Adapter    string `json:"kind"` // qbittorrent, sabnzbd
+	URL        string `json:"url"`
+	Username   string `json:"username,omitempty"`
+	Category   string `json:"category,omitempty"`
+	Priority   int    `json:"priority"`
+	NeedsInput bool   `json:"needs_input"`
+}
+
+// SubtitlePlan is the default subtitle languages or one Subtitle site.
+type SubtitlePlan struct {
+	Languages []SubtitleWant `json:"languages,omitempty"`
+	SiteKind  string         `json:"site_kind,omitempty"`
+	SiteURL   string         `json:"site_url,omitempty"`
+	// NeedsAccount says the site needs your account before it is used.
+	NeedsAccount bool `json:"needs_account,omitempty"`
+}
+
+// SubtitleWant is one wanted language (hearing impaired: normal, hi, either).
+type SubtitleWant struct {
+	Language        string `json:"language"`
+	HearingImpaired string `json:"hearing_impaired"`
+	Forced          bool   `json:"forced"`
+}
+
+// PersonPlan is one person from Seerr or Overseerr.
+type PersonPlan struct {
+	App      string   `json:"app"`
+	SourceID int64    `json:"source_id"`
+	Email    string   `json:"email,omitempty"`
+	Role     string   `json:"role"` // member; admin or owner only when the owner confirmed it
+	Perms    []string `json:"perms"`
+	PerWeek  *int     `json:"per_week,omitempty"`
+	// WasAdmin and WasOwner say what they were in the old app; the move
+	// screen asks the owner to confirm each.
+	WasAdmin bool `json:"was_admin,omitempty"`
+	WasOwner bool `json:"was_owner,omitempty"`
+	// Choice is the owner's choice for them (merge or skip when a person
+	// with the same name is here).
+	Choice string `json:"choice,omitempty"`
+}
+
+// AskPlan is one open Wishlist ask.
+type AskPlan struct {
+	App      string            `json:"app"`
+	Kind     string            `json:"kind"` // movie, show
+	Ref      string            `json:"ref"`
+	IDs      map[string]string `json:"ids"`
+	Seasons  []int             `json:"seasons,omitempty"`
+	Approved bool              `json:"approved"`
+	// By is the asker's Person key; ByName their name there.
+	By      string `json:"by"`
+	ByName  string `json:"by_name,omitempty"`
+	Decider string `json:"decided_by,omitempty"`
+	AskedAt string `json:"asked_at,omitempty"`
+	Note    string `json:"note,omitempty"`
+}
+
+// AlertPlan is an Alert to add (always off until its secret is typed).
+type AlertPlan struct {
+	Kind         string `json:"kind"` // discord, webhook, email
+	SMTPHost     string `json:"smtp_host,omitempty"`
+	SMTPPort     int    `json:"smtp_port,omitempty"`
+	SMTPSecurity string `json:"smtp_security,omitempty"`
+	SMTPFrom     string `json:"smtp_from,omitempty"`
+	SMTPUser     string `json:"smtp_user,omitempty"`
+	StaffTo      string `json:"staff_to,omitempty"`
+}
+
+// Group returns the named group (nil when there is none).
+func (p *Plan) Group(name string) *Group {
+	for i := range p.Groups {
+		if p.Groups[i].Name == name {
+			return &p.Groups[i]
+		}
+	}
+	return nil
+}
+
+// Counts sums items per group and the not-moved and needs-input lists.
+func (p *Plan) Counts() map[string]int {
+	c := map[string]int{"not_moved": len(p.NotMoved), "needs_input": len(p.NeedsInput)}
+	for _, g := range p.Groups {
+		c[g.Name] = len(g.Items)
+	}
+	return c
+}
+
+// builder carries a plan being built.
+type builder struct {
+	p       *Plan
+	rules   []PathRule
+	skip    map[string]bool
+	items   map[string]*Group
+	keys    map[string]bool
+	folders []FolderPlan      // every folder planned (for title placement)
+	presets map[string]string // app + profile id -> preset
+	titles  map[string]string // kind:id -> name (asks take names from here)
+	planned map[string]bool   // person keys planned
+	choices map[string]string // the owner's choices per person key
+	app     Kind
+	snapID  int64
+}
+
+// clip cleans a name from an old app: no control characters, trimmed,
+// at most n runes.
+func clip(s string, n int) string {
+	s = strings.Map(func(r rune) rune {
+		if unicode.IsControl(r) || r == unicode.ReplacementChar {
+			return -1
+		}
+		return r
+	}, s)
+	s = strings.TrimSpace(s)
+	if r := []rune(s); len(r) > n {
+		s = strings.TrimSpace(string(r[:n]))
+	}
+	return s
+}
+
+// oldPath cleans a path as the old app saw it into slash form; "" when it
+// is not an absolute path or climbs out of itself.
+func oldPath(p string) string {
+	p = clip(p, maxPath)
+	if p == "" {
+		return ""
+	}
+	if strings.Contains(p, `\`) || (len(p) >= 2 && p[1] == ':') {
+		p = strings.ReplaceAll(p, `\`, "/")
+	}
+	if !strings.HasPrefix(p, "/") && !(len(p) >= 3 && p[1] == ':' && p[2] == '/') {
+		return ""
+	}
+	for _, part := range strings.Split(p, "/") {
+		if part == ".." {
+			return ""
+		}
+	}
+	c := path.Clean(p)
+	if len(c) > 1 {
+		c = strings.TrimSuffix(c, "/")
+	}
+	return c
+}
+
+// under says whether p is base or inside it.
+func under(p, base string) bool {
+	if p == base {
+		return true
+	}
+	if base == "/" {
+		return strings.HasPrefix(p, "/")
+	}
+	return strings.HasPrefix(p, base+"/")
+}
+
+// MapPath maps an old path through the rules (the longest matching From
+// wins); without a match the path stays as it is. ok is false when the
+// path is not usable (relative, or climbing out of itself).
+func MapPath(rules []PathRule, p string) (string, bool) {
+	op := oldPath(p)
+	if op == "" {
+		return "", false
+	}
+	best, bestLen := -1, -1
+	for i, r := range rules {
+		from := oldPath(r.From)
+		if from == "" || oldPath(r.To) == "" {
+			continue
+		}
+		if under(op, from) && len(from) > bestLen {
+			best, bestLen = i, len(from)
+		}
+	}
+	if best < 0 {
+		return op, true
+	}
+	from, to := oldPath(rules[best].From), oldPath(rules[best].To)
+	rest := strings.TrimPrefix(op, from)
+	if from == "/" {
+		rest = op
+	}
+	return path.Clean(to + "/" + strings.TrimPrefix(rest, "/")), true
+}
+
+// ValidRules checks the owner's path rules: both sides absolute paths
+// that never climb out of themselves, at most 100 rules.
+func ValidRules(rules []PathRule) error {
+	if len(rules) > 100 {
+		return &RuleError{"at most 100 path rules"}
+	}
+	for _, r := range rules {
+		if oldPath(r.From) == "" || oldPath(r.To) == "" {
+			return &RuleError{fmt.Sprintf("path rule %q to %q: both sides must be full paths without ..", clip(r.From, 100), clip(r.To, 100))}
+		}
+	}
+	return nil
+}
+
+// RuleError is a path rule the move cannot use; its text is safe to show.
+type RuleError struct{ Text string }
+
+func (e *RuleError) Error() string { return e.Text }
+
+// BuildPlan turns Snapshots into a Plan.
+func BuildPlan(in []Input, ch Choices) *Plan {
+	p := &Plan{covered: map[string]bool{}, Snapshots: []int64{}, Apps: []string{}, NotMoved: []NotMoved{}, NeedsInput: []string{}, Paths: []string{}}
+	b := &builder{p: p, rules: ch.PathRules, skip: map[string]bool{}, items: map[string]*Group{}, keys: map[string]bool{},
+		presets: map[string]string{}, titles: map[string]string{}, planned: map[string]bool{}, choices: ch.People}
+	for _, s := range ch.Skip {
+		b.skip[s] = true
+	}
+	for _, name := range GroupOrder {
+		p.Groups = append(p.Groups, Group{Name: name, Label: GroupLabels[name], Skipped: b.skip[name], Items: []Item{}})
+	}
+	for i := range p.Groups {
+		b.items[p.Groups[i].Name] = &p.Groups[i]
+	}
+	// Order: rules and folders before titles; titles before asks; people before asks.
+	order := func(k Kind) int {
+		switch k {
+		case Seerr, Overseerr:
+			return 2
+		case Prowlarr, Bazarr, QBittorrent, SABnzbd:
+			return 1
+		}
+		return 0
+	}
+	sorted := append([]Input(nil), in...)
+	sort.SliceStable(sorted, func(i, j int) bool { return order(sorted[i].Snap.Kind) < order(sorted[j].Snap.Kind) })
+	for _, x := range sorted {
+		if x.Snap == nil {
+			continue
+		}
+		b.app, b.snapID = x.Snap.Kind, x.ID
+		p.Snapshots = append(p.Snapshots, x.ID)
+		p.Apps = append(p.Apps, string(x.Snap.Kind))
+		b.snapshot(x.Snap)
+	}
+	p.NeedsInput = noteList(p.NeedsInput)
+	p.Notes = noteList(p.Notes)
+	p.Paths = noteList(p.Paths)
+	return p
+}
+
+func (b *builder) from(field string, i int) string {
+	if i < 0 {
+		return string(b.app) + " " + field
+	}
+	return fmt.Sprintf("%s %s[%d]", b.app, field, i)
+}
+
+func (b *builder) not(group, from, what, why string) {
+	b.p.NotMoved = append(b.p.NotMoved, NotMoved{Group: group, From: from, What: clip(what, maxName), Why: why})
+}
+
+// add puts an item in its group once; a second item with the same key is
+// listed as not moved (the first one wins).
+func (b *builder) add(group string, it Item) {
+	it.Name = clip(it.Name, maxName)
+	if it.Name == "" {
+		it.Name = "(no name)"
+	}
+	g := b.items[group]
+	limit := MaxPlanOthers
+	if group == GroupTitles {
+		limit = MaxPlanTitles
+	}
+	switch {
+	case b.keys[it.Key]:
+		b.not(group, it.From, it.Name, "the same thing came from another app or twice from this one; it is moved once")
+		return
+	case len(g.Items) >= limit:
+		b.not(group, it.From, it.Name, fmt.Sprintf("more than %d in one move; move again after this one", limit))
+		return
+	}
+	b.keys[it.Key] = true
+	g.Items = append(g.Items, it)
+}
+
+func (b *builder) cover(fields ...string) {
+	for _, f := range fields {
+		b.p.covered[f] = true
+	}
+}
+
+func (b *builder) snapshot(s *Snapshot) {
+	// The read's own facts are not settings.
+	b.cover("kind", "via", "version", "schema", "read_at")
+	b.p.NeedsInput = append(b.p.NeedsInput, prefix(string(s.Kind), s.NeedsReentry)...)
+	b.cover("needs_reentry")
+	b.p.Notes = append(b.p.Notes, prefix(string(s.Kind), s.Notes)...)
+	b.cover("notes")
+
+	b.folderList(s)
+	b.profiles(s)
+	b.titleList(s)
+	b.exclusions(s)
+	b.indexers(s)
+	b.downloaders(s)
+	b.naming(s)
+	b.subtitles(s)
+	b.people(s)
+	b.asks(s)
+	b.alerts(s)
+	b.leftBehind(s)
+}
+
+func prefix(app string, in []string) []string {
+	out := make([]string, 0, len(in))
+	for _, x := range in {
+		out = append(out, app+": "+clip(x, 300))
+	}
+	return out
+}
+
+// libraryKind is what kind of Library folder an app's folders are.
+func libraryKind(k Kind) string {
+	switch k {
+	case Radarr:
+		return "movie"
+	case Sonarr:
+		return "show"
+	case Lidarr:
+		return "music"
+	}
+	return ""
+}
+
+func (b *builder) folderList(s *Snapshot) {
+	b.cover("folders")
+	kind := libraryKind(s.Kind)
+	for i, f := range s.Folders {
+		from := b.from("folders", i)
+		op := oldPath(f.Path)
+		if kind == "" || op == "" {
+			b.not(GroupFolders, from, f.Path, "not a full path to a library folder")
+			continue
+		}
+		np, _ := MapPath(b.rules, op)
+		b.p.Paths = append(b.p.Paths, op)
+		label := path.Base(np)
+		b.folders = append(b.folders, FolderPlan{OldPath: op, Path: np, Kind: kind, Label: label})
+		detail := "at " + np
+		if np != op {
+			detail = op + " becomes " + np
+		}
+		b.add(GroupFolders, Item{Key: "folder:" + np, Name: label, From: from, Detail: detail,
+			Folder: &FolderPlan{OldPath: op, Path: np, Kind: kind, Label: clip(label, 100)}})
+		keys := make([]string, 0, len(f.Extra))
+		for k := range f.Extra {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, k := range keys {
+			b.not(GroupFolders, from+"."+k, k, "a library folder here has a path, a kind and default Pick rules only")
+		}
+	}
+}
+
+// matchPreset finds the closest Pick rules preset for one of their
+// profiles and says why.
+func matchPreset(k Kind, p Profile) (string, string) {
+	all := strings.ToLower(p.Cutoff + " " + strings.Join(p.Allowed, " "))
+	scores := ""
+	if len(p.Scores) > 0 {
+		scores = fmt.Sprintf("; its %d custom format scores are not moved (Pick rules score releases their own way)", len(p.Scores))
+	}
+	if k == Lidarr {
+		lossless := strings.Contains(all, "flac") || strings.Contains(all, "alac") || strings.Contains(all, "wav") || strings.Contains(all, "lossless")
+		lossy := strings.Contains(all, "mp3") || strings.Contains(all, "aac") || strings.Contains(all, "ogg") || strings.Contains(all, "v0") || strings.Contains(all, "320")
+		switch {
+		case lossless && strings.Contains(strings.ToLower(p.Cutoff), "flac") || lossless && !lossy:
+			return "Lossless first", "it wants lossless audio first (" + clip(p.Cutoff, 60) + ")" + scores
+		case lossy && (strings.Contains(all, "320") || strings.Contains(all, "v0")) && !lossless:
+			return "Lossy 320 or V0", "it allows only good lossy audio (" + clip(p.Cutoff, 60) + ")" + scores
+		}
+		return "Any music", "it allows a mix of audio kinds" + scores
+	}
+	cut := strings.ToLower(p.Cutoff)
+	if strings.Contains(cut, "2160") || strings.Contains(cut, "4k") || strings.Contains(cut, "uhd") {
+		return "4K", "it aims for 2160p (" + clip(p.Cutoff, 60) + ")" + scores
+	}
+	why := "it aims for " + clip(p.Cutoff, 60) + " or lower; Good everyday picks the best copy up to 1080p"
+	if p.Cutoff == "" {
+		why = "it names no top quality; Good everyday picks the best copy up to 1080p"
+	}
+	if !p.UpgradeAllowed {
+		why += "; it never looked for better copies, Good everyday does until the top step"
+	}
+	return "Good everyday", why + scores
+}
+
+func (b *builder) profiles(s *Snapshot) {
+	b.cover("quality_profiles", "custom_formats", "delay_profiles", "language_profiles", "metadata_profiles")
+	for i, p := range s.QualityProfiles {
+		preset, why := matchPreset(s.Kind, p)
+		b.presets[string(s.Kind)+":"+strconv.FormatInt(p.ID, 10)] = preset
+		b.add(GroupRules, Item{Key: fmt.Sprintf("pick_rules:%d:%s:%d", b.snapID, s.Kind, p.ID), Name: p.Name, From: b.from("quality_profiles", i),
+			Detail: "becomes " + preset, Why: why, Rules: &RulesPlan{App: string(s.Kind), Profile: clip(p.Name, maxName), Preset: preset}})
+	}
+	for i, f := range s.CustomFormats {
+		b.not(GroupRules, b.from("custom_formats", i), f.Name, "Pick rules have no custom formats; their steps and words cover the common cases")
+	}
+	for i := range s.DelayProfiles {
+		b.not(GroupRules, b.from("delay_profiles", i), "wait before grabbing", "a wait before grabbing is not part of HolyArrs yet; releases are chosen as soon as they pass the Pick rules")
+	}
+	for i, n := range s.LanguageProfiles {
+		b.not(GroupRules, b.from("language_profiles", i), n.Name, "language profiles are not moved; Pick rules set the languages")
+	}
+	for i, n := range s.MetadataProfiles {
+		b.not(GroupRules, b.from("metadata_profiles", i), n.Name, "album kinds are chosen per artist here (Settings > Music)")
+	}
+}
+
+// idFor picks the id a title is added by.
+func idFor(k Kind, t Title) (kind, id string) {
+	switch k {
+	case Radarr:
+		if v := clip(t.IDs["tmdb"], 20); v != "" && isDigits(v) {
+			return "movie", "tmdb:" + v
+		}
+		return "movie", ""
+	case Sonarr:
+		for _, src := range []string{"tvdb", "tmdb"} {
+			if v := clip(t.IDs[src], 20); v != "" && isDigits(v) {
+				return "show", src + ":" + v
+			}
+		}
+		return "show", ""
+	case Lidarr:
+		if v := clip(t.IDs["musicbrainz"], 40); v != "" && isMBID(v) {
+			return "artist", "mbid:" + strings.ToLower(v)
+		}
+		return "artist", ""
+	}
+	return "", ""
+}
+
+func isDigits(s string) bool {
+	if s == "" || s == "0" {
+		return false
+	}
+	for _, r := range s {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+func isMBID(s string) bool {
+	if len(s) != 36 {
+		return false
+	}
+	for i, r := range strings.ToLower(s) {
+		if i == 8 || i == 13 || i == 18 || i == 23 {
+			if r != '-' {
+				return false
+			}
+			continue
+		}
+		if !(r >= '0' && r <= '9' || r >= 'a' && r <= 'f') {
+			return false
+		}
+	}
+	return true
+}
+
+// place finds the Library folder (here) and the one folder in it that hold
+// a title's old path.
+func (b *builder) place(t Title) (lib, folder, why string) {
+	op := oldPath(t.Path)
+	if op == "" {
+		return "", "", "its folder is not a full path"
+	}
+	best := -1
+	for i, f := range b.folders {
+		if under(op, f.OldPath) && op != f.OldPath && (best < 0 || len(f.OldPath) > len(b.folders[best].OldPath)) {
+			best = i
+		}
+	}
+	if best < 0 {
+		return "", "", "its folder " + op + " is in none of the library folders read"
+	}
+	f := b.folders[best]
+	rest := strings.TrimPrefix(strings.TrimPrefix(op, f.OldPath), "/")
+	if f.OldPath == "/" {
+		rest = strings.TrimPrefix(op, "/")
+	}
+	if rest == "" || strings.Contains(rest, "/") || strings.HasPrefix(rest, ".") {
+		return "", "", "its folder is not directly in its library folder"
+	}
+	return f.Path, rest, ""
+}
+
+func (b *builder) titleList(s *Snapshot) {
+	b.cover("titles")
+	extras := map[string]int{}
+	tags := 0
+	for i, t := range s.Titles {
+		from := b.from("titles", i)
+		kind, id := idFor(s.Kind, t)
+		if kind == "" {
+			b.not(GroupTitles, from, t.Name, "this app has no library")
+			continue
+		}
+		name := clip(t.Name, maxName)
+		if id == "" {
+			b.not(GroupTitles, from, name, "no "+map[string]string{"movie": "TMDB", "show": "TVDB or TMDB", "artist": "MusicBrainz"}[kind]+" id is known for it")
+			continue
+		}
+		ids := map[string]string{}
+		for k, v := range t.IDs {
+			if k = clip(k, 20); k != "" && len(ids) < 10 {
+				ids[k] = clip(v, 60)
+			}
+		}
+		tp := &TitlePlan{Kind: kind, ID: id, IDs: ids, Year: t.Year, KeepUpToDate: t.Monitored,
+			Preset: b.presets[string(s.Kind)+":"+strconv.FormatInt(t.ProfileID, 10)]}
+		if tp.Preset == "" && kind != "artist" {
+			tp.Preset = "Good everyday"
+		}
+		for _, se := range t.Seasons {
+			if !se.Monitored && se.Number >= 0 && se.Number < 10000 {
+				tp.SeasonsOff = append(tp.SeasonsOff, se.Number)
+			}
+		}
+		tp.Library, tp.Folder, tp.Unresolved = b.place(t)
+		b.titles[kind+":"+id] = name
+		for _, v := range t.IDs {
+			if v != "" {
+				b.titles[kind+":ids:"+clip(v, 60)] = name
+			}
+		}
+		if tp.Unresolved != "" {
+			b.not(GroupTitles, from, name, "not placed: "+tp.Unresolved+"; add a path rule and plan again")
+			continue
+		}
+		detail := "adopted in place from " + path.Join(tp.Library, tp.Folder)
+		if !t.Monitored {
+			detail += "; Keep up to date off"
+		}
+		if t.Year > 0 {
+			name = fmt.Sprintf("%s (%d)", name, t.Year)
+		}
+		b.add(GroupTitles, Item{Key: "title:" + kind + ":" + id, Name: name, From: from, Detail: detail, Title: tp})
+		for k := range t.Extra {
+			extras[k]++
+		}
+		tags += len(t.Tags)
+	}
+	keys := make([]string, 0, len(extras))
+	for k := range extras {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		b.not(GroupTitles, b.from("titles", -1)+"."+k, fmt.Sprintf("%s (on %d titles)", k, extras[k]), "no HolyArrs setting matches it; titles take HolyArrs's own defaults")
+	}
+	if tags > 0 {
+		b.not(GroupTitles, b.from("titles", -1)+".tags", fmt.Sprintf("tags on titles (%d)", tags), "HolyArrs has no tags")
+	}
+}
+
+func (b *builder) exclusions(s *Snapshot) {
+	b.cover("exclusions")
+	kind := map[Kind]string{Radarr: "movie", Sonarr: "show", Lidarr: "artist"}[s.Kind]
+	for i, e := range s.Exclusions {
+		from := b.from("exclusions", i)
+		ids := map[string]string{}
+		var key string
+		for _, src := range []string{"tmdb", "tvdb", "musicbrainz", "imdb"} {
+			if v := clip(e.IDs[src], 60); v != "" {
+				ids[src] = v
+				if key == "" {
+					key = src + ":" + v
+				}
+			}
+		}
+		if kind == "" || key == "" || (kind == "movie" && ids["tmdb"] == "") {
+			b.not(GroupNeverAdd, from, e.Name, "no id HolyArrs can match")
+			continue
+		}
+		b.add(GroupNeverAdd, Item{Key: "never_add:" + kind + ":" + key, Name: e.Name, From: from, Detail: "kept off the Library",
+			NeverAdd: &NeverAddPlan{Kind: kind, IDs: ids}})
+	}
+}
+
+// sourceKinds are the media kinds a Source from an app serves.
+func sourceKinds(k Kind) []string {
+	switch k {
+	case Radarr:
+		return []string{"movie"}
+	case Sonarr:
+		return []string{"tv"}
+	case Lidarr:
+		return []string{"music"}
+	}
+	return []string{"movie", "tv", "music"}
+}
+
+func setStr(m map[string]any, keys ...string) string {
+	for _, k := range keys {
+		for mk, v := range m {
+			if strings.EqualFold(mk, k) {
+				if s := str(v); s != "" {
+					return s
+				}
+			}
+		}
+	}
+	return ""
+}
+
+func setNum(m map[string]any, keys ...string) (int64, bool) {
+	for _, k := range keys {
+		for mk, v := range m {
+			if strings.EqualFold(mk, k) && v != nil {
+				return num(v), true
+			}
+		}
+	}
+	return 0, false
+}
+
+func hasField(fields []string, names ...string) bool {
+	for _, f := range fields {
+		for _, n := range names {
+			if strings.EqualFold(f, n) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// webURL checks an address: http or https with a host, no user part.
+func webURL(raw string) string {
+	raw = clip(raw, 500)
+	low := strings.ToLower(raw)
+	if !strings.HasPrefix(low, "http://") && !strings.HasPrefix(low, "https://") {
+		return ""
+	}
+	rest := raw[strings.Index(raw, "://")+3:]
+	host := rest
+	if i := strings.IndexAny(rest, "/?#"); i >= 0 {
+		host = rest[:i]
+	}
+	if host == "" || strings.Contains(host, "@") || strings.ContainsAny(raw, " \t") {
+		return ""
+	}
+	return raw
+}
+
+func (b *builder) indexers(s *Snapshot) {
+	b.cover("indexers")
+	for i, ix := range s.Indexers {
+		from := b.from("indexers", i)
+		kind := strings.ToLower(ix.Kind)
+		var format string
+		switch kind {
+		case "torznab":
+			format = "torznab"
+		case "newznab":
+			format = "newznab"
+		case "torrentrssindexer":
+			format = "rss"
+		}
+		if format == "" {
+			why := "HolyArrs reads Torznab, Newznab and RSS Sources; add this one through the Sources bridge"
+			if s.Kind == Prowlarr {
+				why = "a Prowlarr site definition; HolyArrs reaches such sites through the Sources bridge (Settings > Sources)"
+			}
+			b.not(GroupSources, from, ix.Name, why)
+			continue
+		}
+		u := webURL(setStr(ix.Settings, "baseUrl", "feedUrl", "url"))
+		if u == "" {
+			b.not(GroupSources, from, ix.Name, "no usable address (http or https)")
+			continue
+		}
+		if metadataHost(u) {
+			b.not(GroupSources, from, ix.Name, "a link-local or cloud metadata address; HolyArrs never reaches those")
+			continue
+		}
+		if p := setStr(ix.Settings, "apiPath"); format != "rss" && p != "" && p != "/api" {
+			u = strings.TrimSuffix(u, "/") + "/" + strings.TrimPrefix(clip(p, 100), "/")
+		}
+		protocol := "torrent"
+		if format == "newznab" || ix.Protocol == "usenet" {
+			protocol = "usenet"
+		}
+		sp := &SourcePlan{Format: format, Protocol: protocol, URL: u, Kinds: sourceKinds(s.Kind), On: ix.Enabled}
+		if ix.Priority >= 1 && ix.Priority <= 50 {
+			sp.Priority = ix.Priority
+		} else {
+			sp.Priority = 25
+		}
+		if n, ok := setNum(ix.Settings, "minimumSeeders"); ok && n >= 0 && n < 10000 && protocol == "torrent" {
+			v := int(n)
+			sp.MinSeeders = &v
+		}
+		if cats := list(anyKey(ix.Settings, "categories")); len(cats) > 0 && len(sp.Kinds) == 1 {
+			var cs []int
+			for _, c := range cats {
+				if n := num(c); n > 0 && n < 1000000 && len(cs) < 50 {
+					cs = append(cs, int(n))
+				}
+			}
+			if len(cs) > 0 {
+				sp.Categories = map[string][]int{sp.Kinds[0]: cs}
+			}
+		}
+		sp.NeedsKey = hasField(ix.NeedsReentry, "apiKey", "passkey", "cookie")
+		it := Item{Key: "source:" + strings.ToLower(clip(ix.Name, 80)), Name: clip(ix.Name, 80), From: from, Source: sp,
+			Detail: format + " at " + u}
+		it.Detail += "; added paused: check it and resume it yourself"
+		if sp.NeedsKey {
+			it.Needs = "your key"
+			it.Detail = format + " at " + u + "; added paused until you type its key and resume it"
+		}
+		b.add(GroupSources, it)
+		keys := make([]string, 0, len(ix.Settings))
+		for k := range ix.Settings {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, k := range keys {
+			switch strings.ToLower(k) {
+			case "baseurl", "feedurl", "url", "apipath", "minimumseeders", "categories":
+				continue
+			}
+			if strings.HasPrefix(k, "link.") {
+				continue
+			}
+			b.not(GroupSources, from+"."+k, ix.Name+": "+k, "no Source setting matches it")
+		}
+	}
+}
+
+func anyKey(m map[string]any, key string) any {
+	for k, v := range m {
+		if strings.EqualFold(k, key) {
+			return v
+		}
+	}
+	return nil
+}
+
+func hostURL(host string, port int, tls bool, base string) string {
+	host = clip(host, 200)
+	if host == "" || strings.ContainsAny(host, "/@?# ") {
+		return ""
+	}
+	scheme := "http"
+	if tls {
+		scheme = "https"
+	}
+	u := scheme + "://" + host
+	if port > 0 && port < 65536 {
+		u += ":" + strconv.Itoa(port)
+	}
+	if base = strings.Trim(clip(base, 100), "/"); base != "" && !strings.Contains(base, "..") {
+		u += "/" + base
+	}
+	return webURL(u)
+}
+
+func (b *builder) downloaders(s *Snapshot) {
+	b.cover("download_clients", "downloader")
+	for i, d := range s.DownloadClients {
+		from := b.from("download_clients", i)
+		var adapter string
+		switch strings.ToLower(d.Kind) {
+		case "qbittorrent":
+			adapter = "qbittorrent"
+		case "sabnzbd":
+			adapter = "sabnzbd"
+		}
+		if adapter == "" {
+			b.not(GroupDownloaders, from, d.Name, "HolyArrs talks to qBittorrent and SABnzbd only")
+			continue
+		}
+		port, _ := setNum(d.Settings, "port")
+		tls := strings.EqualFold(setStr(d.Settings, "useSsl"), "true")
+		u := hostURL(setStr(d.Settings, "host"), int(port), tls, setStr(d.Settings, "urlBase"))
+		if u == "" || metadataHost(u) {
+			b.not(GroupDownloaders, from, d.Name, "no usable address")
+			continue
+		}
+		cat := setStr(d.Settings, "movieCategory", "tvCategory", "musicCategory", "category")
+		locked := hasField(d.NeedsReentry, "password", "apiKey")
+		b.addDownloader(from, d.Name, &DownloaderPlan{Adapter: adapter, URL: u, Username: clip(setStr(d.Settings, "username"), 100),
+			Category: clean64(cat), Priority: d.Priority, NeedsInput: locked})
+	}
+	if d := s.Downloader; d != nil {
+		adapter := map[Kind]string{QBittorrent: "qbittorrent", SABnzbd: "sabnzbd"}[s.Kind]
+		from := b.from("downloader", -1)
+		u := hostURL(d.Host, d.Port, d.TLS, d.URLBase)
+		if u == "" || adapter == "" || metadataHost(u) {
+			b.not(GroupDownloaders, from, string(s.Kind), "no usable address")
+		} else {
+			b.addDownloader(from, map[string]string{"qbittorrent": "qBittorrent", "sabnzbd": "SABnzbd"}[adapter],
+				&DownloaderPlan{Adapter: adapter, URL: u, Username: clip(d.Username, 100), NeedsInput: d.NeedsPassword || adapter == "sabnzbd"})
+		}
+		if d.SavePath != "" || d.CompletePath != "" {
+			b.not(GroupDownloaders, from+".save_path", "download folders", "the Downloader keeps its own folders; HolyArrs reads where each download lands")
+		}
+		for i, c := range d.Categories {
+			b.not(GroupDownloaders, b.from("downloader.categories", i), c.Name, "HolyArrs uses one category of its own per Downloader (holyarrs)")
+		}
+		for i, sv := range d.Servers {
+			b.not(GroupDownloaders, b.from("downloader.servers", i), sv.Name, "usenet servers stay set up in SABnzbd")
+		}
+	}
+}
+
+func clean64(s string) string {
+	s = clip(s, 64)
+	if strings.ContainsAny(s, `/\`) {
+		return ""
+	}
+	return s
+}
+
+func (b *builder) addDownloader(from, name string, d *DownloaderPlan) {
+	if d.Priority < 1 || d.Priority > 50 {
+		d.Priority = 1
+	}
+	it := Item{Key: "downloader:" + d.URL, Name: clip(name, 80), From: from, Downloader: d, Detail: d.Adapter + " at " + d.URL}
+	it.Detail += "; added paused: check it and resume it yourself"
+	if d.NeedsInput {
+		it.Needs = "your password"
+		if d.Adapter == "sabnzbd" {
+			it.Needs = "your key"
+		}
+		it.Detail = d.Adapter + " at " + d.URL + "; added paused until you type " + it.Needs + " and resume it"
+	}
+	b.add(GroupDownloaders, it)
+}
+
+// namingKeys maps their naming settings (lower case) to ours.
+var namingKeys = map[string]string{
+	"renamemovies": "rename_on_import", "renameepisodes": "rename_on_import", "renametracks": "rename_on_import",
+	"colonreplacementformat": "colon", "replaceillegalcharacters": "illegal",
+	"standardmovieformat": "file_pattern", "moviefolderformat": "folder_pattern",
+	"seriesfolderformat": "show_folder_pattern", "seasonfolderformat": "season_folder_pattern",
+	"standardepisodeformat": "episode_pattern", "dailyepisodeformat": "daily_pattern", "animeepisodeformat": "anime_pattern",
+	"multiepisodestyle": "multi_episode_style",
+}
+
+// patternWords maps their pattern words to ours, longest first.
+var patternWords = [][2]string{
+	{"S{season:00}E{episode:00}", "{episode}"}, {"s{season:00}e{episode:00}", "{episode}"},
+	{"{Movie TitleThe}", "{sort_title}"}, {"{Movie Title}", "{title}"}, {"{Movie CleanTitle}", "{title}"},
+	{"{Series TitleThe}", "{sort_title}"}, {"{Series TitleYear}", "{title} ({year})"}, {"{Series Title}", "{title}"}, {"{Series CleanTitle}", "{title}"},
+	{"{Release Year}", "{year}"}, {"{Series Year}", "{year}"}, {"{Quality Full}", "{quality}"}, {"{Quality Title}", "{quality}"},
+	{"{Edition Tags}", "{edition}"}, {"{Release Group}", "{group}"}, {"{TmdbId}", "{tmdb}"}, {"{ImdbId}", "{imdb}"},
+	{"{Original Title}", "{release}"}, {"{Episode Title}", "{episode_title}"}, {"{Episode CleanTitle}", "{episode_title}"},
+	{"{Air-Date}", "{air_date}"}, {"{Air Date}", "{air_date}"}, {"{absolute:000}", "{absolute}"}, {"{absolute:00}", "{absolute}"},
+	{"{season:00}", "{season_padded}"}, {"{season:0}", "{season}"},
+}
+
+// translatePattern rewrites one of their patterns in our words; ok is
+// false when a word has no match.
+func translatePattern(p string) (string, string, bool) {
+	out := clip(p, 200)
+	for _, w := range patternWords {
+		out = strings.ReplaceAll(out, w[0], w[1])
+	}
+	// Every word left must be one of ours.
+	for rest := out; ; {
+		i := strings.IndexByte(rest, '{')
+		if i < 0 {
+			break
+		}
+		j := strings.IndexByte(rest[i:], '}')
+		if j < 0 {
+			return "", "an unclosed {", false
+		}
+		w := rest[i+1 : i+j]
+		if !ourWord(w) {
+			return "", "uses {" + clip(w, 40) + "}, which has no HolyArrs word", false
+		}
+		rest = rest[i+j+1:]
+	}
+	return out, "", true
+}
+
+var ourWords = map[string]bool{"title": true, "sort_title": true, "year": true, "quality": true, "resolution": true, "source": true,
+	"edition": true, "group": true, "tmdb": true, "imdb": true, "release": true, "season": true, "episode": true,
+	"episode_title": true, "air_date": true, "absolute": true, "season_padded": true}
+
+func ourWord(w string) bool { return ourWords[w] }
+
+func (b *builder) naming(s *Snapshot) {
+	b.cover("naming")
+	if len(s.Naming) == 0 {
+		return
+	}
+	keys := make([]string, 0, len(s.Naming))
+	for k := range s.Naming {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	out := map[string]string{}
+	var froms []string
+	for _, k := range keys {
+		v := s.Naming[k]
+		from := b.from("naming", -1) + "." + k
+		ours, ok := namingKeys[strings.ToLower(k)]
+		if !ok {
+			b.not(GroupNaming, from, k, "no HolyArrs naming setting matches it")
+			continue
+		}
+		switch ours {
+		case "rename_on_import":
+			out[ours] = strconv.FormatBool(boolean(v))
+		case "illegal":
+			out[ours] = map[bool]string{true: "replace", false: "remove"}[boolean(v)]
+		case "colon":
+			c := map[string]string{"0": "remove", "delete": "remove", "1": "dash", "dash": "dash", "2": "space_dash", "spacedash": "space_dash",
+				"3": "space_dash_space", "spacedashspace": "space_dash_space", "4": "smart", "smart": "smart"}[strings.ToLower(str(v))]
+			if c == "" {
+				b.not(GroupNaming, from, k, "this colon choice has no HolyArrs match")
+				continue
+			}
+			out[ours] = c
+		case "multi_episode_style":
+			m := map[string]string{"0": "each", "extend": "each", "1": "each_dash", "duplicate": "each_dash", "2": "each", "repeat": "each",
+				"3": "each_dash", "scene": "each_dash", "4": "range", "range": "range", "5": "short_range", "prefixedrange": "range"}[strings.ToLower(str(v))]
+			if m == "" {
+				b.not(GroupNaming, from, k, "this style has no HolyArrs match")
+				continue
+			}
+			out[ours] = m
+		default:
+			pat, why, ok := translatePattern(str(v))
+			if !ok || pat == "" || strings.ContainsAny(pat, `/\`) {
+				if why == "" {
+					why = "it names more than one folder"
+				}
+				b.not(GroupNaming, from, k, why)
+				continue
+			}
+			out[ours] = pat
+		}
+		froms = append(froms, k)
+	}
+	if len(out) == 0 {
+		return
+	}
+	b.add(GroupNaming, Item{Key: fmt.Sprintf("naming:%s", s.Kind), Name: GroupLabels[GroupNaming] + " from " + string(s.Kind), From: b.from("naming", -1),
+		Detail: fmt.Sprintf("%d settings: %s", len(out), strings.Join(froms, ", ")), Why: "only settings with a HolyArrs match; nothing on disk is renamed", Naming: out})
+}
+
+// subtitleSiteKinds maps their subtitle site names to ours.
+var subtitleSiteKinds = map[string]string{"podnapisi": "podnapisi", "gestdown": "gestdown"}
+
+func (b *builder) subtitles(s *Snapshot) {
+	b.cover("subtitles")
+	sub := s.Subtitles
+	if sub == nil {
+		return
+	}
+	// The default profile's languages become the default wishes.
+	def := num(sub.Defaults["movie_default_profile"])
+	if def == 0 {
+		def = num(sub.Defaults["serie_default_profile"])
+	}
+	var wants []SubtitleWant
+	used := -1
+	for i, p := range sub.Profiles {
+		if p.ID == def && def != 0 {
+			used = i
+			for _, l := range p.Languages {
+				if code := clip(l.Language, 8); code != "" && len(wants) < 20 {
+					hi := "normal"
+					if l.HI {
+						hi = "hi"
+					}
+					wants = append(wants, SubtitleWant{Language: code, HearingImpaired: hi, Forced: l.Forced})
+				}
+			}
+		}
+	}
+	langFrom := b.from("subtitles.languages", -1)
+	if used < 0 {
+		for _, l := range sub.Languages {
+			if code := clip(l, 8); code != "" && len(wants) < 20 {
+				wants = append(wants, SubtitleWant{Language: code, HearingImpaired: "normal"})
+			}
+		}
+	} else {
+		langFrom = b.from("subtitles.profiles", used)
+		if len(sub.Languages) > 0 {
+			b.not(GroupSubtitles, b.from("subtitles.languages", -1), strings.Join(sub.Languages, ", "), "the default profile's languages were moved; the other enabled languages are only choices in Bazarr")
+		}
+	}
+	if len(wants) > 0 {
+		var names []string
+		for _, w := range wants {
+			names = append(names, w.Language)
+		}
+		b.add(GroupSubtitles, Item{Key: "subtitles:languages", Name: "Default subtitle languages", From: langFrom,
+			Detail: strings.Join(names, ", "), Why: "new movies and shows wish for these languages", Subtitles: &SubtitlePlan{Languages: wants}})
+	}
+	for i, p := range sub.Profiles {
+		if i == used {
+			continue
+		}
+		b.not(GroupSubtitles, b.from("subtitles.profiles", i), p.Name, "HolyArrs has one default list of languages and a list per title; set this one on the titles that used it")
+	}
+	for i, pr := range sub.Providers {
+		from := b.from("subtitles.providers", i)
+		kind := subtitleSiteKinds[strings.ToLower(pr.Kind)]
+		if kind == "" {
+			why := "HolyArrs has no subtitle site of this kind yet"
+			if strings.EqualFold(pr.Kind, "addic7ed") {
+				why = "HolyArrs reaches Addic7ed subtitles through Gestdown, with no account; add Gestdown under Settings > Subtitles"
+			}
+			b.not(GroupSubtitles, from, pr.Name, why)
+			continue
+		}
+		b.add(GroupSubtitles, Item{Key: "subtitle_site:" + kind, Name: clip(pr.Name, 100), From: from, Detail: "subtitle site " + kind,
+			Subtitles: &SubtitlePlan{SiteKind: kind}})
+	}
+	keys := make([]string, 0, len(sub.Defaults))
+	for k := range sub.Defaults {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		from := b.from("subtitles.defaults", -1) + "." + k
+		switch k {
+		case "movie_default_profile", "serie_default_profile":
+			if used >= 0 {
+				continue
+			}
+		}
+		b.not(GroupSubtitles, from, k, "no HolyArrs subtitle setting matches it")
+	}
+}
+
+// personKey names a person from an app.
+func personKey(app Kind, id int64) string { return fmt.Sprintf("person:%s:%d", app, id) }
+
+func (b *builder) people(s *Snapshot) {
+	b.cover("users", "settings")
+	for i, u := range s.Users {
+		from := b.from("users", i)
+		name := clip(u.Name, 64)
+		if name == "" {
+			name = clip(u.Email, 64)
+		}
+		if name == "" {
+			b.not(GroupPeople, from, "(no name)", "a person needs a name")
+			continue
+		}
+		key := personKey(s.Kind, u.SourceID)
+		pp := &PersonPlan{App: string(s.Kind), SourceID: u.SourceID, Email: clip(u.Email, 200), Role: "member", Perms: []string{}}
+		has := func(n ...string) bool { return hasField(u.Permissions, n...) }
+		// Roles cap at member: the owner confirms an admin, or that the old
+		// app's owner is them, person by person on the move screen.
+		pp.WasOwner = u.Owner
+		pp.WasAdmin = !u.Owner && (u.Admin || has("ADMIN"))
+		choice := b.choices[key]
+		owner := pp.WasOwner && choice == PersonOwner
+		switch {
+		case owner:
+			pp.Role = "owner"
+		case pp.WasAdmin && choice == PersonAdmin:
+			pp.Role = "admin"
+		}
+		if choice == PersonMerge || choice == PersonSkip {
+			pp.Choice = choice
+		}
+		add := func(p string, ok bool) {
+			if ok {
+				pp.Perms = append(pp.Perms, p)
+			}
+		}
+		add("ask", has("REQUEST", "REQUEST_MOVIE", "REQUEST_TV") || pp.Role != "member")
+		add("auto_approve", has("AUTO_APPROVE", "AUTO_APPROVE_MOVIE", "AUTO_APPROVE_TV"))
+		add("approve", has("MANAGE_REQUESTS"))
+		add("settings", has("MANAGE_SETTINGS") && pp.Role == "admin")
+		var dropped []string
+		for _, p := range u.Permissions {
+			switch p {
+			case "ADMIN", "REQUEST", "REQUEST_MOVIE", "REQUEST_TV", "AUTO_APPROVE", "AUTO_APPROVE_MOVIE", "AUTO_APPROVE_TV", "MANAGE_REQUESTS", "MANAGE_SETTINGS":
+				continue
+			}
+			dropped = append(dropped, clip(p, 40))
+		}
+		if len(dropped) > 0 {
+			b.not(GroupPeople, from+".permissions", name+": "+strings.Join(dropped, ", "), "no HolyArrs permission matches these")
+		}
+		if u.MovieLimit > 0 {
+			days := u.MovieDays
+			if days <= 0 {
+				days = 7
+			}
+			w := (u.MovieLimit*7 + days - 1) / days
+			w = min(max(w, 1), 1000)
+			pp.PerWeek = &w
+		}
+		if u.ShowLimit > 0 {
+			b.not(GroupPeople, from+".show_limit", name+": show limit", "HolyArrs has one weekly limit per person; shows count inside it when that setting is on")
+		}
+		detail := "a " + pp.Role + " placeholder, turned off until you invite them; no password comes over"
+		why := ""
+		switch {
+		case owner:
+			detail = "is you: their asks are yours"
+			why = "you confirmed they are you (the owner in " + string(s.Kind) + ")"
+		case pp.WasOwner:
+			why = "the owner in " + string(s.Kind) + ": confirm on the move screen if this is you"
+		case pp.WasAdmin && pp.Role == "admin":
+			why = "an admin in " + string(s.Kind) + "; you confirmed the admin role"
+		case pp.WasAdmin:
+			why = "an admin in " + string(s.Kind) + "; comes over as a member unless you confirm the admin role"
+		}
+		if pp.PerWeek != nil {
+			detail += fmt.Sprintf("; %d asks a week", *pp.PerWeek)
+		}
+		b.planned[key] = true
+		b.add(GroupPeople, Item{Key: key, Name: name, From: from, Detail: detail, Why: why, Person: pp,
+			Needs: map[bool]string{true: "", false: "an invite"}[owner]})
+	}
+	keys := make([]string, 0, len(s.Settings))
+	for k := range s.Settings {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		b.not(GroupPeople, b.from("settings", -1)+"."+k, k, "app-wide settings of the old app are not moved; set the Wishlist defaults under Settings > Wishlist")
+	}
+}
+
+func (b *builder) asks(s *Snapshot) {
+	b.cover("requests")
+	for i, r := range s.Requests {
+		from := b.from("requests", i)
+		var kind, ref string
+		ids := map[string]string{}
+		for _, src := range []string{"tmdb", "tvdb", "imdb"} {
+			if v := clip(r.IDs[src], 20); v != "" && (src == "imdb" || isDigits(v)) {
+				ids[src] = v
+			}
+		}
+		switch r.Kind {
+		case "movie":
+			kind = "movie"
+			if ids["tmdb"] != "" {
+				ref = "tmdb:" + ids["tmdb"]
+			}
+		case "show":
+			kind = "show"
+			for _, src := range []string{"tvdb", "tmdb"} {
+				if ids[src] != "" && ref == "" {
+					ref = src + ":" + ids[src]
+				}
+			}
+		}
+		if ref == "" {
+			b.not(GroupWishlist, from, "ask "+strconv.FormatInt(r.SourceID, 10), "no id HolyArrs can find it by")
+			continue
+		}
+		name := b.titles[kind+":"+ref]
+		if name == "" {
+			for _, v := range ids {
+				if n := b.titles[kind+":ids:"+v]; n != "" {
+					name = n
+				}
+			}
+		}
+		if name == "" {
+			name = strings.ToUpper(ref[:strings.IndexByte(ref, ':')]) + " " + ref[strings.IndexByte(ref, ':')+1:]
+		}
+		ap := &AskPlan{App: string(s.Kind), Kind: kind, Ref: ref, IDs: ids, Approved: r.State == "approved",
+			By: personKey(s.Kind, r.By), ByName: clip(r.ByName, 64), AskedAt: clip(r.Created, 40)}
+		if !b.planned[ap.By] {
+			ap.By = ""
+		}
+		if r.DecidedBy != 0 && b.planned[personKey(s.Kind, r.DecidedBy)] {
+			ap.Decider = personKey(s.Kind, r.DecidedBy)
+		}
+		for _, n := range r.Seasons {
+			if n >= 0 && n < 10000 && len(ap.Seasons) < 200 {
+				ap.Seasons = append(ap.Seasons, n)
+			}
+		}
+		if r.FourK {
+			ap.Note = "asked for 4K in " + string(s.Kind)
+		}
+		state := "waiting"
+		if ap.Approved {
+			state = "approved"
+		}
+		by := ap.ByName
+		if by == "" {
+			by = "someone"
+		}
+		b.add(GroupWishlist, Item{Key: fmt.Sprintf("ask:%s:%d", s.Kind, r.SourceID), Name: name, From: from,
+			Detail: state + ", asked by " + by, Ask: ap})
+	}
+}
+
+func (b *builder) alerts(s *Snapshot) {
+	b.cover("notifications")
+	for i, n := range s.Notifications {
+		from := b.from("notifications", i)
+		var ap *AlertPlan
+		switch strings.ToLower(n.Kind) {
+		case "discord":
+			ap = &AlertPlan{Kind: "discord"}
+		case "webhook":
+			ap = &AlertPlan{Kind: "webhook"}
+		case "email":
+			port, _ := setNum(n.Settings, "port")
+			sec := "starttls"
+			switch strings.ToLower(setStr(n.Settings, "useEncryption", "requireEncryption")) {
+			case "2", "never", "false":
+				sec = "none"
+			case "1", "always":
+				sec = "tls"
+			}
+			if port <= 0 || port > 65535 {
+				port = 587
+			}
+			to := setStr(n.Settings, "to")
+			if v := list(anyKey(n.Settings, "to")); len(v) > 0 {
+				to = str(v[0])
+			}
+			ap = &AlertPlan{Kind: "email", SMTPHost: clip(setStr(n.Settings, "server", "host"), 200), SMTPPort: int(port), SMTPSecurity: sec,
+				SMTPFrom: clip(setStr(n.Settings, "from"), 200), SMTPUser: clip(setStr(n.Settings, "username", "user"), 200), StaffTo: clip(to, 200)}
+		}
+		if ap == nil {
+			b.not(GroupAlerts, from, n.Name, "HolyArrs Alerts go to Discord, a webhook or email only")
+			continue
+		}
+		needs := map[string]string{"discord": "its Discord link", "webhook": "its address", "email": "the mail password"}[ap.Kind]
+		b.add(GroupAlerts, Item{Key: "alert:" + strings.ToLower(clip(n.Name, 80)), Name: clip(n.Name, 80), From: from, Alert: ap,
+			Detail: ap.Kind + "; added off until you type " + needs, Needs: needs,
+			Why: "Alerts speak for every moment at first; pick the moments again"})
+	}
+}
+
+// leftBehind lists the parts of a Snapshot the move never brings.
+func (b *builder) leftBehind(s *Snapshot) {
+	b.cover("tags", "import_lists", "metadata", "app_links", "app_profiles")
+	for i, t := range s.Tags {
+		b.not(GroupOther, b.from("tags", i), t.Label, "HolyArrs has no tags")
+	}
+	for i, l := range s.ImportLists {
+		b.not(GroupOther, b.from("import_lists", i), l.Name, "add it again under Settings > Outside lists (its sign-in cannot come over)")
+	}
+	for i, m := range s.Metadata {
+		b.not(GroupOther, b.from("metadata", i), m.Name, "HolyArrs writes no metadata files for media players")
+	}
+	for i, l := range s.AppLinks {
+		b.not(GroupOther, b.from("app_links", i), l.Name, "HolyArrs is one app; it needs no links between its parts")
+	}
+	for i := range s.AppProfiles {
+		b.not(GroupOther, b.from("app_profiles", i), "sync profile", "HolyArrs is one app; nothing is synced between apps")
+	}
+}
+
+// metadataHost says an address names a link-local or cloud metadata
+// address (the list source.NotMetadata refuses), which no Source or
+// Downloader may reach.
+func metadataHost(raw string) bool {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return true
+	}
+	h := strings.TrimSuffix(strings.ToLower(u.Hostname()), ".")
+	if ip := net.ParseIP(h); ip != nil {
+		return ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.Equal(net.ParseIP("fd00:ec2::254")) || ip.Equal(net.ParseIP("100.100.100.200"))
+	}
+	return h == "metadata" || strings.HasPrefix(h, "metadata.") || strings.HasPrefix(h, "instance-data")
+}
+
+// PlanHash names a Plan exactly: a move starts only from the plan its dry
+// run showed, and another one is refused (ErrPlanChanged).
+func PlanHash(p *Plan) string {
+	b, _ := json.Marshal(p)
+	h := sha256.Sum256(b)
+	return hex.EncodeToString(h[:])
+}

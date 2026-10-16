@@ -1,0 +1,18 @@
+bin/
+/config/
+*.db
+*.db-wal
+*.db-shm
+
+# Local agent state and publication-only private material.
+/.omc/
+/.omx/
+/.claude/
+/.codex/
+/.env
+/.env.*
+!/.env.example
+!/.env.template
+/private-config/
+/exports/
+/captures/

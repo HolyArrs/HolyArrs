@@ -1,0 +1,177 @@
+package api
+
+import (
+	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/hex"
+	"errors"
+	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
+
+	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/source"
+	"github.com/CoderLuii/holyarrs/internal/store"
+)
+
+type libraryCopySearchIn struct {
+	Selections  []store.LibraryCopySelection `json:"selections"`
+	ReviewToken string                       `json:"review_token,omitempty"`
+}
+
+type libraryCopySearchPreview struct {
+	Copies      []store.LibraryCopy `json:"copies"`
+	SlotCount   int                 `json:"slot_count"`
+	ReviewToken string              `json:"review_token"`
+}
+
+type libraryCopySearchItem struct {
+	FileID    int64   `json:"file_id"`
+	VersionID int64   `json:"version_id"`
+	SlotIDs   []int64 `json:"slot_ids"`
+	JobIDs    []int64 `json:"job_ids"`
+}
+
+type libraryCopySearchResult struct {
+	Items  []libraryCopySearchItem `json:"items"`
+	JobIDs []int64                 `json:"job_ids"`
+}
+
+func (a *API) listLibraryCopies(w http.ResponseWriter, r *http.Request) {
+	limit, err := libraryCopyInt(r, "limit", 50)
+	if err != nil {
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	offset, err := libraryCopyInt(r, "offset", 0)
+	if err != nil {
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	page, err := a.s.Store.LibraryCopies(r.Context(), store.LibraryCopyFilter{Query: r.URL.Query().Get("q"), Codec: r.URL.Query().Get("codec"), Sort: r.URL.Query().Get("sort"), Limit: limit, Offset: offset})
+	if errors.Is(err, store.ErrLibraryCopyFilter) || errors.Is(err, store.ErrTitleSearchQuery) {
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, page)
+}
+
+func libraryCopyInt(r *http.Request, name string, def int) (int, error) {
+	raw := r.URL.Query().Get(name)
+	if raw == "" {
+		return def, nil
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil || n < 0 {
+		return 0, fmt.Errorf("%s must be a non-negative number", name)
+	}
+	return n, nil
+}
+
+func (a *API) previewLibraryCopySearch(w http.ResponseWriter, r *http.Request) {
+	var in libraryCopySearchIn
+	if !decode(w, r, &in, `body is {"selections":[{"file_id":1,"version_id":2}]}`) {
+		return
+	}
+	preview, err := a.libraryCopyPreview(r, in.Selections)
+	if errors.Is(err, store.ErrLibraryCopyFilter) {
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if errors.Is(err, store.ErrLibraryCopyStale) || errors.Is(err, errProtectedLibraryCopy) {
+		fail(w, http.StatusConflict, err.Error())
+		return
+	}
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, preview)
+}
+
+var errProtectedLibraryCopy = errors.New("a selected Library copy is protected")
+
+func (a *API) libraryCopyPreview(r *http.Request, selections []store.LibraryCopySelection) (libraryCopySearchPreview, error) {
+	copies, err := a.s.Store.SelectedLibraryCopies(r.Context(), selections)
+	if err != nil {
+		return libraryCopySearchPreview{}, err
+	}
+	count := 0
+	for _, copy := range copies {
+		if copy.Protected {
+			return libraryCopySearchPreview{}, errProtectedLibraryCopy
+		}
+		slots, err := a.s.Store.LibraryCopySlots(r.Context(), store.LibraryCopySelection{FileID: copy.FileID, VersionID: copy.VersionID})
+		if err != nil {
+			return libraryCopySearchPreview{}, err
+		}
+		count += len(slots)
+	}
+	return libraryCopySearchPreview{Copies: copies, SlotCount: count, ReviewToken: libraryCopyReviewToken(copies)}, nil
+}
+
+func libraryCopyReviewToken(copies []store.LibraryCopy) string {
+	h := sha256.New()
+	for _, c := range copies {
+		_, _ = fmt.Fprintf(h, "%d\x00%d\x00%d\x00%d\x00%d\x00%s\x00%s\x00%s\x00%t\n", c.FileID, c.VersionID, c.TitleID, c.PickRulesID, c.AudioTracks, c.FileUpdatedAt.UTC().Format(store.TimeLayout), c.VersionUpdatedAt.UTC().Format(store.TimeLayout), c.Codec, c.Protected)
+	}
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+func (a *API) searchLibraryCopies(w http.ResponseWriter, r *http.Request) {
+	var in libraryCopySearchIn
+	if !decode(w, r, &in, `body is {"selections":[{"file_id":1,"version_id":2}],"review_token":"..."}`) {
+		return
+	}
+	if len(in.ReviewToken) != sha256.Size*2 {
+		fail(w, http.StatusBadRequest, "review_token is required")
+		return
+	}
+	preview, err := a.libraryCopyPreview(r, in.Selections)
+	if errors.Is(err, store.ErrLibraryCopyFilter) {
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if errors.Is(err, store.ErrLibraryCopyStale) || errors.Is(err, errProtectedLibraryCopy) {
+		fail(w, http.StatusConflict, err.Error())
+		return
+	}
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	if subtle.ConstantTimeCompare([]byte(strings.ToLower(in.ReviewToken)), []byte(preview.ReviewToken)) != 1 {
+		fail(w, http.StatusConflict, "the reviewed Library copies changed; review them again")
+		return
+	}
+	if a.s.Queue == nil {
+		internal(w, errors.New("Library copy search queue is unavailable"))
+		return
+	}
+	result := libraryCopySearchResult{Items: make([]libraryCopySearchItem, 0, len(preview.Copies)), JobIDs: []int64{}}
+	for _, copy := range preview.Copies {
+		sel := store.LibraryCopySelection{FileID: copy.FileID, VersionID: copy.VersionID}
+		slots, err := a.s.Store.LibraryCopySlots(r.Context(), sel)
+		if err != nil {
+			fail(w, http.StatusConflict, store.ErrLibraryCopyStale.Error())
+			return
+		}
+		item := libraryCopySearchItem{FileID: copy.FileID, VersionID: copy.VersionID, SlotIDs: slots, JobIDs: []int64{}}
+		for _, slotID := range slots {
+			jobID, _, err := a.s.Queue.Enqueue(r.Context(), source.KindSearchSlot, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"by_hand": true, "choose": false}, "show_slot:"+itoa(slotID), actor(r))
+			if err != nil {
+				internal(w, err)
+				return
+			}
+			item.JobIDs = append(item.JobIDs, jobID)
+			result.JobIDs = append(result.JobIDs, jobID)
+		}
+		result.Items = append(result.Items, item)
+	}
+	writeJSON(w, http.StatusAccepted, result)
+}

@@ -1,0 +1,97 @@
+/* HolyArrs design tokens, v0.1 (2026-10-12).
+   Source: logo pack, Mobbin study (references/mobbin.md), motion study (references/motion-study.md),
+   Codex concepts (generated/). Dark theme is the default; light theme follows the same names. */
+
+:root {
+  /* Brand */
+  --ha-red: #F23A2E;          /* the one accent: primary actions, progress, now-line, focus */
+  --ha-red-hover: #FF4A3D;
+  --ha-red-press: #D92E23;
+  --ha-red-deep: #C4271D;     /* red buttons on hover: white text stays above 4.5:1 (5.7:1) */
+  --ha-red-soft: rgba(242, 58, 46, .14); /* tinted backgrounds for red states */
+  --ha-steel: #55585E;        /* logo left half; secondary marks */
+  --ha-charcoal: #1C1D21;     /* logo middle */
+
+  /* Surfaces (dark) */
+  --bg: #0E1013;              /* page */
+  --surface-1: #16181D;       /* cards, sidebar */
+  --surface-2: #1C1F25;       /* raised: menus, modals, inputs */
+  --surface-3: #23262D;       /* hover on surface-2 */
+  --line: #272B32;            /* hairlines */
+  --line-strong: #3A3D44;     /* hover borders, focus outlines on dark */
+  --scrim: rgba(8, 9, 11, .72);
+
+  /* Text */
+  --text: #ECE8E2;
+  --text-muted: #9D988F;      /* 6.2:1 on --bg, passes AA */
+  --text-faint: #6F6B65;      /* labels only, never body copy */
+  --text-on-red: #FFFFFF;
+
+  /* Status (used only for real state) */
+  --ok: #3ECF8E;              /* done, ready, connected */
+  --wait: #E8C547;            /* queued, slow, not aired soon */
+  --fail: #FF6B5E;            /* failed, stalled (outline or text, not big fills) */
+  --info: #8DA2FF;            /* rare: informational notices */
+
+  /* Type */
+  --font-display: "Sora", ui-sans-serif, system-ui, sans-serif;  /* headings, numbers, brand */
+  --font-ui: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; /* everything else */
+  --font-mono: "Geist Mono", ui-monospace, "Cascadia Code", monospace; /* sizes, speeds, codes */
+  --text-xs: 12px;  --text-sm: 13px;  --text-base: 15px;  --text-md: 17px;
+  --text-lg: 20px;  --text-xl: 26px;  --text-2xl: 34px;  --text-3xl: 44px;
+  --leading-tight: 1.15; --leading: 1.5;
+  --weight-regular: 400; --weight-medium: 500; --weight-semibold: 600; --weight-bold: 700;
+  --tracking-display: -0.02em;
+
+  /* Space (4px base) */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px;
+  --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-12: 48px; --s-16: 64px;
+
+  /* Radius: one system. Buttons 10, cards 12, modals 16, chips and toggles pill */
+  --r-sm: 6px; --r-btn: 10px; --r-card: 12px; --r-modal: 16px; --r-pill: 999px;
+
+  /* Size */
+  --tap: 44px;                /* minimum touch target */
+  --sidebar: 232px;
+  --topbar: 60px;
+  --poster-ratio: 2 / 3;
+  --wide-ratio: 16 / 9;
+
+  /* Elevation: borders first, shadows only for things that float */
+  --shadow-float: 0 12px 32px rgba(0, 0, 0, .45), 0 0 0 1px var(--line);
+  --shadow-modal: 0 24px 64px rgba(0, 0, 0, .6), 0 0 0 1px var(--line);
+
+  /* Motion (from the motion study: 150-300ms wins; native scroll only) */
+  --dur-instant: 80ms;        /* press feedback */
+  --dur-fast: 120ms;          /* colour, opacity */
+  --dur: 200ms;               /* hover lifts, chips, tabs */
+  --dur-slow: 320ms;          /* panels, modals, sheet slides */
+  --dur-page: 260ms;          /* view transitions */
+  --ease-out: cubic-bezier(.22, 1, .36, 1);     /* things arriving */
+  --ease-in-out: cubic-bezier(.65, 0, .35, 1);  /* things moving place to place */
+  --ease-in: cubic-bezier(.4, 0, 1, 1);         /* things leaving (shorter than arriving) */
+  --stagger: 30ms;            /* list reveal step, max 8 items then stop staggering */
+  --lift: -2px;               /* hover lift for cards */
+  --press: .98;               /* scale on press */
+
+  /* Focus: always visible, never removed */
+  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--ha-red);
+
+  color-scheme: dark;
+}
+
+/* Light theme: same names, swapped values */
+:root[data-theme="light"] {
+  --bg: #F6F5F3; --surface-1: #FFFFFF; --surface-2: #FFFFFF; --surface-3: #F0EEEA;
+  --line: #E4E1DB; --line-strong: #CFCBC3; --scrim: rgba(20, 20, 24, .45);
+  --text: #16181D; --text-muted: #5F5B55; --text-faint: #8A857D;
+  --ha-red-soft: rgba(242, 58, 46, .10);
+  --shadow-float: 0 12px 32px rgba(20, 20, 24, .12), 0 0 0 1px var(--line);
+  --shadow-modal: 0 24px 64px rgba(20, 20, 24, .18), 0 0 0 1px var(--line);
+  color-scheme: light;
+}
+
+/* Reduced motion: keep feedback, drop travel */
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur: 1ms; --dur-slow: 1ms; --dur-page: 1ms; --stagger: 0ms; --lift: 0px; --press: 1; }
+}

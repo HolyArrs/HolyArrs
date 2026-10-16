@@ -1,0 +1,122 @@
+{
+ "history": {
+  "total_size": "1.8 M",
+  "month_size": "1.8 M",
+  "week_size": "1.8 M",
+  "day_size": "1.8 M",
+  "slots": [
+   {
+    "completed": 1791897286,
+    "name": "Lab.Usenet.Broken.2024.1080p.WEB.H264-HOLYARRS",
+    "nzb_name": "bad.nzb",
+    "category": "movies",
+    "pp": "D",
+    "script": "None",
+    "report": "",
+    "url": "http://172.18.0.7:18799/bad.nzb",
+    "status": "Failed",
+    "nzo_id": "6d1eae1a-3a5b-44ed-af8c-8fcee4d43d6b",
+    "storage": "/data/downloads/usenet/incomplete/Lab.Usenet.Broken.2024.1080p.WEB.H264-HOLYARRS",
+    "path": "/data/downloads/usenet/incomplete/Lab.Usenet.Broken.2024.1080p.WEB.H264-HOLYARRS",
+    "script_line": "",
+    "download_time": 0,
+    "postproc_time": 0,
+    "stage_log": [
+     {
+      "name": "Source",
+      "actions": [
+       "http://172.18.0.7:18799/bad.nzb"
+      ]
+     },
+     {
+      "name": "Download",
+      "actions": [
+       "2 articles were missing",
+       "Download failed - Not on your server(s) - https://sabnzbd.org/not-complete"
+      ]
+     }
+    ],
+    "downloaded": 0,
+    "completeness": null,
+    "fail_message": "Download failed - Not on your server(s) - https://sabnzbd.org/not-complete",
+    "url_info": "",
+    "bytes": 0,
+    "meta": null,
+    "series": null,
+    "md5sum": "2a8897c03a0b7c6d1c5744a2fb0d0024",
+    "password": null,
+    "duplicate_key": "lab usenet broken",
+    "archive": false,
+    "time_added": 1791897279,
+    "size": "0 B",
+    "action_line": "",
+    "loaded": false,
+    "retry": true
+   },
+   {
+    "completed": 1791897284,
+    "name": "Lab.Usenet.Movie.2024.1080p.WEB.H264-HOLYARRS",
+    "nzb_name": "good.nzb",
+    "category": "movies",
+    "pp": "D",
+    "script": "None",
+    "report": "",
+    "url": "http://172.18.0.7:18799/good.nzb",
+    "status": "Completed",
+    "nzo_id": "ed7d10cb-a608-4f83-92f0-f78e38f07a0e",
+    "storage": "/data/downloads/usenet/complete/movies/Lab.Usenet.Movie.2024.1080p.WEB.H264-HOLYARRS.1/Lab.Usenet.Movie.2024.1080p.WEB.H264-HOLYARRS.mkv",
+    "path": "/data/downloads/usenet/incomplete/Lab.Usenet.Movie.2024.1080p.WEB.H264-HOLYARRS",
+    "script_line": "",
+    "download_time": 10,
+    "postproc_time": 0,
+    "stage_log": [
+     {
+      "name": "Source",
+      "actions": [
+       "http://172.18.0.7:18799/good.nzb"
+      ]
+     },
+     {
+      "name": "Download",
+      "actions": [
+       "Downloaded in 10 seconds at an average of 115 KB/s<br/>Age: 1063d"
+      ]
+     },
+     {
+      "name": "Servers",
+      "actions": [
+       "holyarrs-lab-fake-news=1.2 MB"
+      ]
+     },
+     {
+      "name": "Repair",
+      "actions": [
+       "Trying RAR renamer",
+       "[Lab.Usenet.Movie.2024.1080p.WEB.H264-HOLYARRS] No par2 sets"
+      ]
+     }
+    ],
+    "downloaded": 1238952,
+    "completeness": null,
+    "fail_message": "",
+    "url_info": "",
+    "bytes": 1238952,
+    "meta": null,
+    "series": null,
+    "md5sum": "ee488dd00a074098853dc60610369f9d",
+    "password": null,
+    "duplicate_key": "lab usenet movie",
+    "archive": false,
+    "time_added": 1791897279,
+    "size": "1.2 MB",
+    "action_line": "",
+    "loaded": false,
+    "retry": false
+   }
+  ],
+  "ppslots": 0,
+  "noofslots": 2,
+  "last_history_update": 25,
+  "version": "5.1.3"
+ }
+}

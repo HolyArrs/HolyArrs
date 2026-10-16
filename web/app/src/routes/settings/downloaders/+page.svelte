@@ -1,0 +1,436 @@
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import { api, message } from '#lib/api.ts';
+	import { ago } from '#lib/format.ts';
+	import Icon from '#lib/Icon.svelte';
+	import EmptyState from '#lib/EmptyState.svelte';
+	import { toasts } from '#lib/toasts.svelte.ts';
+	import { live } from '#lib/live.svelte.ts';
+	import {
+		emptyForm,
+		formBody,
+		formFrom,
+		healthTone,
+		kindWords,
+		type DownloaderForm,
+		type DownloaderHealth,
+		type DownloaderSettings,
+		type DownloaderView
+	} from '#lib/downloaders.ts';
+
+	let list = $state<DownloaderView[]>([]);
+	let loaded = $state(false);
+	let error = $state('');
+
+	let editing = $state<DownloaderView | null>(null);
+	let isNew = $state(false);
+	let form = $state<DownloaderForm>(emptyForm());
+	let busy = $state(false);
+	let formError = $state('');
+	let testing = $state(0);
+	let results = $state<Record<number, { ok: boolean; text: string }>>({});
+
+	let set = $state<DownloaderSettings>({
+		stalled_after_hours: 6,
+		stalled_act_hours: 24,
+		remove_failed: true,
+		fail_dangerous: true,
+		replace_vanished: true,
+		grab_spacing_seconds: 2,
+		try_next_downloader: true,
+		remove_delete_files: true,
+		remove_turn_down: false,
+		remove_search_again: true
+	});
+	let setBusy = $state(false);
+	let setError = $state('');
+
+	async function load() {
+		try {
+			list = (await api.get<{ downloaders: DownloaderView[] }>('/downloaders')).downloaders;
+			error = '';
+		} catch (e) {
+			error = message(e);
+		} finally {
+			loaded = true;
+		}
+	}
+	onMount(() => {
+		void load();
+		api.get<DownloaderSettings>('/settings/downloaders').then((s) => (set = s), (e) => (setError = message(e)));
+		const off = live.on('downloader', () => load());
+		return off;
+	});
+
+	function startAdd() {
+		isNew = true;
+		editing = { id: 0, name: '' } as DownloaderView;
+		form = emptyForm();
+		formError = '';
+	}
+
+	function startChange(d: DownloaderView) {
+		isNew = false;
+		editing = d;
+		form = formFrom(d);
+		formError = '';
+	}
+
+	function pickKind(k: DownloaderForm['kind']) {
+		const fresh = emptyForm(k);
+		form = { ...fresh, url: form.url !== 'http://' ? form.url : fresh.url, allow_local_network: form.allow_local_network };
+	}
+
+	async function save(e: SubmitEvent) {
+		e.preventDefault();
+		busy = true;
+		formError = '';
+		try {
+			const body = formBody(form);
+			const saved = isNew ? await api.post<DownloaderView>('/downloaders', body) : await api.put<DownloaderView>(`/downloaders/${editing!.id}`, body);
+			toasts.push(`Downloader ${saved.name} saved.`, 'ok');
+			editing = null;
+			await load();
+			await test(saved);
+		} catch (err) {
+			formError = message(err);
+		} finally {
+			busy = false;
+		}
+	}
+
+	async function test(d: DownloaderView) {
+		testing = d.id;
+		try {
+			const r = await api.post<{ ok: boolean; text: string; health: DownloaderHealth }>(`/downloaders/${d.id}/test`);
+			results[d.id] = { ok: r.ok, text: r.text };
+		} catch (err) {
+			results[d.id] = { ok: false, text: message(err) };
+		} finally {
+			testing = 0;
+			await load();
+		}
+	}
+
+	async function setPaused(d: DownloaderView, paused: boolean) {
+		try {
+			await api.post(`/downloaders/${d.id}/${paused ? 'pause' : 'resume'}`);
+			await load();
+		} catch (err) {
+			toasts.push(message(err), 'fail');
+		}
+	}
+
+	async function remove(d: DownloaderView) {
+		if (!confirm(`Remove the Downloader ${d.name}? Downloads already in it stay there; HolyArrs stops following them.`)) return;
+		try {
+			await api.del(`/downloaders/${d.id}`);
+			await load();
+		} catch (err) {
+			toasts.push(message(err), 'fail');
+		}
+	}
+
+	async function saveSettings(e: SubmitEvent) {
+		e.preventDefault();
+		setError = '';
+		const body = {
+			...set,
+			stalled_after_hours: Number(set.stalled_after_hours),
+			stalled_act_hours: Number(set.stalled_act_hours),
+			grab_spacing_seconds: Number(set.grab_spacing_seconds)
+		};
+		if (body.stalled_act_hours < body.stalled_after_hours) {
+			setError = 'Act on a stalled download no sooner than it counts as stalled.';
+			return;
+		}
+		setBusy = true;
+		try {
+			set = await api.put<DownloaderSettings>('/settings/downloaders', body);
+			toasts.push('Downloader settings saved.', 'ok');
+		} catch (err) {
+			setError = message(err);
+		} finally {
+			setBusy = false;
+		}
+	}
+</script>
+
+<svelte:head><title>Downloaders · HolyArrs</title></svelte:head>
+
+<header class="page-head">
+	<div>
+		<h1>Downloaders</h1>
+		<p>The apps that download for HolyArrs: qBittorrent for torrents, SABnzbd for Usenet.</p>
+	</div>
+	{#if !editing}<button class="btn btn-red" type="button" onclick={startAdd}><Icon name="plus" size={18} /> Add a Downloader</button>{/if}
+</header>
+
+<p class="small muted lead">
+	A Release goes to a Downloader of its kind, priority 1 first; Downloaders with the same priority take turns. One that does not answer rests for a while
+	(one minute, then twice as long each time, up to 30 minutes) and the next one is used. Every Downloader is checked once a minute.
+</p>
+
+{#if editing}
+	<form class="card" onsubmit={save} aria-labelledby="h-form">
+		<h2 id="h-form" class="h2">{isNew ? 'Add a Downloader' : `Change ${editing.name}`}</h2>
+		{#if isNew}
+			<fieldset class="group">
+				<legend class="label">Which app</legend>
+				<div class="row kinds">
+					<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'qbittorrent'} onchange={() => pickKind('qbittorrent')} /><span><b>qBittorrent</b> (torrents)</span></label>
+					<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'sabnzbd'} onchange={() => pickKind('sabnzbd')} /><span><b>SABnzbd</b> (Usenet)</span></label>
+				</div>
+			</fieldset>
+		{/if}
+		<div class="field" style="margin-top: var(--s-4)">
+			<label for="dl-name">Name</label>
+			<input id="dl-name" class="input" bind:value={form.name} maxlength="80" required />
+		</div>
+		<div class="field">
+			<label for="dl-url">Address</label>
+			<input id="dl-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" required placeholder={form.kind === 'sabnzbd' ? 'http://192.168.1.10:8080' : 'http://192.168.1.10:8090'} />
+			<span class="hint">The address of its web page. For SABnzbd use the IP address, or add HolyArrs' name to its list of allowed host names.</span>
+		</div>
+		{#if form.kind === 'qbittorrent'}
+			<div class="two">
+				<div class="field">
+					<label for="dl-user">Sign-in name</label>
+					<input id="dl-user" class="input" bind:value={form.username} autocomplete="off" />
+					<span class="hint">Leave empty when qBittorrent skips sign-in for your network.</span>
+				</div>
+				<div class="field">
+					<label for="dl-secret">Password</label>
+					<input id="dl-secret" class="input" type="password" bind:value={form.secret} autocomplete="new-password" />
+					<span class="hint">Kept encrypted. Leave as it is to keep the stored one.</span>
+				</div>
+			</div>
+		{:else}
+			<div class="field">
+				<label for="dl-secret">API key</label>
+				<input id="dl-secret" class="input mono" type="password" bind:value={form.secret} autocomplete="new-password" spellcheck="false" required={isNew} />
+				<span class="hint">In SABnzbd under Config, General. Kept encrypted. Moving the address to another host needs the key again.</span>
+			</div>
+		{/if}
+		<div class="two">
+			<div class="field">
+				<label for="dl-cat">Category</label>
+				<input id="dl-cat" class="input" bind:value={form.category} maxlength="64" required />
+				<span class="hint">{form.kind === 'sabnzbd' ? 'Must already exist in SABnzbd.' : 'Made in qBittorrent if missing.'} HolyArrs only follows downloads in it.</span>
+			</div>
+			<div class="field">
+				<label for="dl-prio">Priority</label>
+				<input id="dl-prio" class="input" type="number" min="1" max="50" bind:value={form.priority} />
+				<span class="hint">1 to 50; 1 is used first.</span>
+			</div>
+		</div>
+		<details class="more" open={form.path_map.length > 0}>
+			<summary>Different folder names</summary>
+			<p class="hint">When the Downloader sees the download folder under another name (another container), say both names.</p>
+			{#each form.path_map as p, i (i)}
+				<div class="two">
+					<div class="field">
+						<label for="pm-theirs-{i}">Downloader's path</label>
+						<input id="pm-theirs-{i}" class="input mono" bind:value={p.theirs} placeholder="/data/downloads" />
+					</div>
+					<div class="field">
+						<label for="pm-ours-{i}">HolyArrs' path</label>
+						<input id="pm-ours-{i}" class="input mono" bind:value={p.ours} placeholder="/downloads" />
+					</div>
+				</div>
+			{/each}
+			<button class="btn btn-quiet" type="button" style="margin-top: var(--s-3)" onclick={() => form.path_map.push({ theirs: '', ours: '' })}>Add a path pair</button>
+		</details>
+		<label class="checkline">
+			<input type="checkbox" bind:checked={form.allow_local_network} />
+			<span><b>May reach the local network</b><br /><span class="hint">On: it may run on this machine or your home network (the usual case). Off: only addresses on the internet.</span></span>
+		</label>
+		{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
+		<div class="row" style="margin-top: var(--s-5)">
+			<button class="btn btn-quiet" type="button" onclick={() => (editing = null)}>Cancel</button>
+			<button class="btn btn-red" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>Save Downloader</button>
+		</div>
+	</form>
+{/if}
+
+{#if !loaded}
+	<div class="sk" style="height: 100px"></div>
+{:else if error}
+	<p class="notice bad" role="alert">{error}</p>
+{:else if list.length === 0 && !editing}
+	<EmptyState icon="downloader" title="No Downloader yet">
+		<p>HolyArrs needs a Downloader to fetch what it chooses. Add qBittorrent for torrents or SABnzbd for Usenet.</p>
+	</EmptyState>
+{:else}
+	<ul class="list">
+		{#each list as d (d.id)}
+			<li class="card" data-testid="downloader">
+				<div class="head">
+					<span class="ic"><Icon name="downloader" /></span>
+					<div class="grow">
+						<h2 class="h3">{d.name}</h2>
+						<div class="mono xs muted ellipsis">{d.url}</div>
+					</div>
+					<span class="chip {healthTone(d.health.state)}" data-testid="downloader-state">{d.health.label}</span>
+				</div>
+				<p class="small" class:bad-text={d.health.state !== 'working' && d.health.state !== 'paused'} data-testid="downloader-text">{d.health.text}</p>
+				<p class="xs muted">
+					{kindWords[d.kind]} · {d.protocol === 'usenet' ? 'Usenet' : 'torrents'} · priority {d.priority} · category {d.category}
+					{#if d.secret} · {d.kind === 'sabnzbd' ? 'key' : 'password'} {d.secret}{/if}
+					{#if d.allow_local_network} · may reach the local network{/if}
+					· {d.active_downloads} active {d.active_downloads === 1 ? 'download' : 'downloads'}
+					{#if d.checked_at} · checked {ago(d.checked_at)}{/if}
+				</p>
+				{#if results[d.id]}
+					<p class="small" class:bad-text={!results[d.id].ok} class:ok-text={results[d.id].ok} role="status" data-testid="downloader-test">{results[d.id].text}</p>
+				{/if}
+				<div class="row actions">
+					<button class="btn btn-ghost" type="button" disabled={testing === d.id} aria-busy={testing === d.id} onclick={() => test(d)}>Test</button>
+					{#if d.health.state === 'paused'}
+						<button class="btn btn-quiet" type="button" onclick={() => setPaused(d, false)}>Resume</button>
+					{:else}
+						<button class="btn btn-quiet" type="button" onclick={() => setPaused(d, true)}>Pause</button>
+					{/if}
+					<button class="btn btn-quiet" type="button" onclick={() => startChange(d)}>Change</button>
+					<button class="btn btn-quiet" type="button" onclick={() => remove(d)} aria-label="Remove {d.name}">Remove</button>
+				</div>
+			</li>
+		{/each}
+	</ul>
+{/if}
+
+<form class="card settings" onsubmit={saveSettings} aria-labelledby="h-wrong">
+	<h2 id="h-wrong" class="h2">When downloads go wrong</h2>
+	<div class="two">
+		<div class="field">
+			<label for="st-stall">Stalled after (hours without progress)</label>
+			<input id="st-stall" class="input" type="number" min="1" max="168" step="0.5" bind:value={set.stalled_after_hours} />
+			<span class="hint">Waiting its turn or paused never counts.</span>
+		</div>
+		<div class="field">
+			<label for="st-act">Give up and try the next Release after (hours)</label>
+			<input id="st-act" class="input" type="number" min="1" max="720" step="0.5" bind:value={set.stalled_act_hours} />
+			<span class="hint">Counted from the last progress.</span>
+		</div>
+	</div>
+	<label class="checkline">
+		<input type="checkbox" bind:checked={set.remove_failed} />
+		<span><b>Remove failed downloads from the Downloader</b><br /><span class="hint">With their files. Off: they stay there for you to look at.</span></span>
+	</label>
+	<label class="checkline">
+		<input type="checkbox" bind:checked={set.fail_dangerous} />
+		<span
+			><b>Fail downloads that hold programs or fakes</b><br /><span class="hint"
+				>Files such as .exe, .bat, .scr or .lnk, also hidden as movie.mkv.exe; a password note or a web shortcut; a torrent with only archives and no video or audio. Checked as soon as the Downloader lists the files.</span
+			></span
+		>
+	</label>
+	<label class="checkline">
+		<input type="checkbox" bind:checked={set.replace_vanished} />
+		<span><b>Replace downloads removed outside HolyArrs</b><br /><span class="hint">Off: the movie waits for your decision instead.</span></span>
+	</label>
+	<p class="small muted">When you remove a download on the Downloads screen, the choices start as:</p>
+	<label class="checkline">
+		<input type="checkbox" bind:checked={set.remove_delete_files} />
+		<span><b>Delete its files</b><br /><span class="hint">Off: the Downloader keeps the files.</span></span>
+	</label>
+	<label class="checkline">
+		<input type="checkbox" bind:checked={set.remove_turn_down} />
+		<span><b>Add its Release to Turned down</b><br /><span class="hint">HolyArrs never picks that Release again for the movie.</span></span>
+	</label>
+	<label class="checkline">
+		<input type="checkbox" bind:checked={set.remove_search_again} />
+		<span><b>Search again</b><br /><span class="hint">Only with Turned down: look for the next Release straight away.</span></span>
+	</label>
+	<label class="checkline">
+		<input type="checkbox" bind:checked={set.try_next_downloader} />
+		<span><b>Try the next Downloader</b><br /><span class="hint">When the first one cannot take a Release, send it to the next one of the same kind.</span></span>
+	</label>
+	<div class="field">
+		<label for="st-gap">Seconds between sends to one Downloader</label>
+		<input id="st-gap" class="input narrow" type="number" min="0" max="60" step="0.5" bind:value={set.grab_spacing_seconds} />
+	</div>
+	{#if setError}<p class="form-error" role="alert">{setError}</p>{/if}
+	<div class="row" style="margin-top: var(--s-5)">
+		<button class="btn btn-red" type="submit" disabled={setBusy} aria-busy={setBusy}>Save settings</button>
+	</div>
+</form>
+
+<style>
+	.lead {
+		margin-bottom: var(--s-5);
+	}
+	.list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--s-3);
+		margin-top: var(--s-4);
+	}
+	.list .card + .card {
+		margin-top: 0;
+	}
+	.settings {
+		margin-top: var(--s-6, 32px);
+	}
+	.head {
+		display: flex;
+		align-items: center;
+		gap: var(--s-3);
+	}
+	.ic {
+		width: 40px;
+		height: 40px;
+		display: grid;
+		place-items: center;
+		border-radius: var(--r-btn);
+		background: var(--surface-3);
+		flex: none;
+	}
+	.grow {
+		min-width: 0;
+		flex: 1;
+	}
+	.card p {
+		margin-top: var(--s-2);
+	}
+	.actions {
+		margin-top: var(--s-3);
+		flex-wrap: wrap;
+	}
+	.kinds {
+		flex-wrap: wrap;
+		gap: var(--s-4);
+	}
+	.two {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--s-3);
+		margin-top: var(--s-4);
+	}
+	.two .field + .field {
+		margin-top: 0;
+	}
+	.group {
+		border: 0;
+		padding: 0;
+		margin: var(--s-4) 0 0;
+	}
+	.more {
+		margin-top: var(--s-5);
+	}
+	.more summary {
+		cursor: pointer;
+		font-weight: var(--weight-semibold);
+	}
+	.bad-text {
+		color: var(--fail-text);
+	}
+	.ok-text {
+		color: var(--ok-text, inherit);
+	}
+	@media (max-width: 600px) {
+		.two {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

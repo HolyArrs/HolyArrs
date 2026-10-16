@@ -1,0 +1,450 @@
+package source
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+	"net"
+	"net/url"
+	"slices"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/secrets"
+	"github.com/CoderLuii/holyarrs/internal/store"
+)
+
+// Reasons a Source is not saved; each is said to the person as it is.
+var (
+	ErrName       = errors.New("give the Source a name of 1 to 80 characters")
+	ErrNameUsed   = errors.New("another Source has that name")
+	ErrFormat     = errors.New("format must be torznab, newznab or rss")
+	ErrProtocol   = errors.New("protocol must be torrent or usenet")
+	ErrURL        = errors.New("the address must start with http:// or https:// and name a host")
+	ErrPriority   = errors.New("priority must be 1 to 50 (1 is asked first)")
+	ErrLimits     = errors.New("limits must be 0 or more: searches_per_window up to 10000, window_seconds up to 7 days, gap_ms up to 10 minutes, timeout_ms up to 5 minutes")
+	ErrKinds      = errors.New("kinds may be movie, tv and music")
+	ErrUse        = errors.New("an rss Source can only be used for the feed; it cannot search")
+	ErrProxy      = errors.New("the proxy must look like http://host:port, https://host:port or socks5://host:port")
+	ErrKeyAgain   = errors.New("the address changed to another host; type the key again so it is never sent to a new host by itself")
+	ErrProxyAgain = errors.New("the proxy changed to another host or name; type its password again")
+	// ErrKeyAgainProxy is ErrKeyAgain for a plain http Source whose proxy
+	// changed: the new proxy would see the key.
+	ErrKeyAgainProxy = errors.New("the proxy changed and the Source address is plain http, so the new proxy would see the key; type the key again")
+	ErrNoVault       = errors.New("keys cannot be stored: the secrets vault is not open")
+	ErrSeeders       = errors.New("min_seeders must be 0 or more")
+)
+
+// AllKinds are the media types a Source may serve.
+var AllKinds = []string{"movie", "tv", "music"}
+
+// DefaultCategories are the Torznab/Newznab category numbers for each kind.
+var DefaultCategories = map[string][]int{"movie": {2000}, "tv": {5000}, "music": {3000}}
+
+// Input is what a person sets on a Source. APIKey and ProxyPassword are only
+// changed when sent; empty keeps what is stored. Nil fields keep what is
+// stored (or the default for a new Source).
+type Input struct {
+	Name            string               `json:"name"`
+	Format          string               `json:"format"`
+	Protocol        string               `json:"protocol"`
+	URL             string               `json:"url"`
+	APIKey          string               `json:"api_key"`
+	ClearKey        bool                 `json:"clear_key"`
+	UseFor          *domain.SourceUse    `json:"use_for"`
+	Kinds           []string             `json:"kinds"`
+	Categories      map[string][]int     `json:"categories"`
+	MinSeeders      *int                 `json:"min_seeders"`
+	Limits          *domain.SourceLimits `json:"limits"`
+	Priority        *int                 `json:"priority"`
+	AllowLocal      *bool                `json:"allow_local_network"`
+	Proxy           *string              `json:"proxy"`
+	ProxyPassword   string               `json:"proxy_password"`
+	ProxyAllowLocal *bool                `json:"proxy_allow_local_network"`
+}
+
+// splitRSS moves an rss address's query (where feeds keep their passkey)
+// out of the address, to be stored as the Source's key.
+func splitRSS(raw string) (base, query string) {
+	base, query, _ = strings.Cut(raw, "?")
+	return base, query
+}
+
+func checkURL(raw string) (*url.URL, error) {
+	u, err := url.Parse(raw)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.User != nil {
+		return nil, ErrURL
+	}
+	return u, nil
+}
+
+// parseProxy reads a proxy address; a password in it is returned apart.
+func parseProxy(raw string) (clean string, pass string, err error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "", "", nil
+	}
+	u, err := url.Parse(raw)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https" && u.Scheme != "socks5") || u.Port() == "" || u.Hostname() == "" ||
+		(u.Path != "" && u.Path != "/") || u.RawQuery != "" {
+		return "", "", ErrProxy
+	}
+	if n, err := strconv.Atoi(u.Port()); err != nil || n < 1 || n > 65535 {
+		return "", "", ErrProxy
+	}
+	out := url.URL{Scheme: u.Scheme, Host: u.Host}
+	if u.User != nil {
+		pass, _ = u.User.Password()
+		out.User = url.User(u.User.Username())
+	}
+	return out.String(), pass, nil
+}
+
+func hostOf(raw string) string {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return raw
+	}
+	return u.Scheme + "://" + u.Host
+}
+
+// fill checks in and copies it onto src. It returns the key and proxy
+// password to store (empty keeps the stored ones).
+func fill(in Input, src *domain.Source, isNew bool) (key, proxyPass string, err error) {
+	name := strings.TrimSpace(in.Name)
+	if name == "" || len(name) > 80 {
+		return "", "", ErrName
+	}
+	src.Name = name
+	if isNew || in.Format != "" {
+		if !slices.Contains([]string{"torznab", "newznab", "rss"}, in.Format) {
+			return "", "", ErrFormat
+		}
+		src.Format = in.Format
+	}
+	proto := in.Protocol
+	if proto == "" && isNew {
+		proto = "torrent"
+		if src.Format == "newznab" {
+			proto = "usenet"
+		}
+	}
+	if proto != "" {
+		if proto != "torrent" && proto != "usenet" {
+			return "", "", ErrProtocol
+		}
+		src.Protocol = proto
+	}
+	key = in.APIKey
+	if raw := strings.TrimSpace(in.URL); raw != "" || isNew {
+		if src.Format == "rss" {
+			var q string
+			raw, q = splitRSS(raw)
+			if q != "" {
+				key = q
+			}
+		}
+		if _, err := checkURL(raw); err != nil {
+			return "", "", err
+		}
+		src.URL = raw
+	}
+	if in.UseFor != nil {
+		src.UseFor = *in.UseFor
+	} else if isNew {
+		src.UseFor = domain.SourceUse{Feed: true, AutoSearch: src.Format != "rss", HandSearch: src.Format != "rss"}
+	}
+	if src.Format == "rss" && (src.UseFor.AutoSearch || src.UseFor.HandSearch) {
+		return "", "", ErrUse
+	}
+	if in.Kinds != nil {
+		for _, k := range in.Kinds {
+			if !slices.Contains(AllKinds, k) {
+				return "", "", ErrKinds
+			}
+		}
+		src.Kinds = slices.Clone(in.Kinds)
+	} else if isNew {
+		src.Kinds = slices.Clone(AllKinds)
+	}
+	if in.Categories != nil {
+		src.Categories = in.Categories
+	} else if isNew {
+		src.Categories = map[string][]int{}
+		for k, v := range DefaultCategories {
+			src.Categories[k] = slices.Clone(v)
+		}
+	}
+	if in.MinSeeders != nil {
+		if *in.MinSeeders < 0 {
+			return "", "", ErrSeeders
+		}
+		src.MinSeeders = in.MinSeeders
+	} else if isNew && src.Protocol == "torrent" {
+		one := 1
+		src.MinSeeders = &one
+	}
+	if in.Limits != nil {
+		l := *in.Limits
+		if l.SearchesPerWindow < 0 || l.SearchesPerWindow > 10000 || l.GrabsPerWindow < 0 || l.GrabsPerWindow > 10000 ||
+			l.WindowSeconds < 0 || l.WindowSeconds > 7*86400 || l.GapMS < 0 || l.GapMS > 600000 || l.TimeoutMS < 0 || l.TimeoutMS > 300000 {
+			return "", "", ErrLimits
+		}
+		src.Limits = l
+	}
+	if in.Priority != nil {
+		if *in.Priority < 1 || *in.Priority > 50 {
+			return "", "", ErrPriority
+		}
+		src.Priority = *in.Priority
+	} else if isNew {
+		src.Priority = 25
+	}
+	if in.AllowLocal != nil {
+		src.AllowLocal = *in.AllowLocal
+	}
+	if in.ProxyAllowLocal != nil {
+		src.ProxyAllowLocal = *in.ProxyAllowLocal
+	}
+	proxyPass = in.ProxyPassword
+	if in.Proxy != nil {
+		clean, pass, err := parseProxy(*in.Proxy)
+		if err != nil {
+			return "", "", err
+		}
+		if pass != "" {
+			proxyPass = pass
+		}
+		src.ProxyURL = clean
+	}
+	if isNew {
+		src.State = "enabled"
+		src.Extra = map[string]string{}
+	}
+	return key, proxyPass, nil
+}
+
+func nameUsed(tx *sql.Tx, name string, id int64) error {
+	var n int
+	if err := tx.QueryRow("SELECT count(*) FROM sources WHERE name = ? COLLATE NOCASE AND id != ?", name, id).Scan(&n); err != nil {
+		return err
+	}
+	if n > 0 {
+		return ErrNameUsed
+	}
+	return nil
+}
+
+// putSecret replaces the secret at ref with plain (nothing when plain is empty).
+func putSecret(tx *sql.Tx, v *secrets.Vault, ref **int64, kind, plain string, by domain.Actor) error {
+	if plain == "" {
+		return nil
+	}
+	if v == nil {
+		return ErrNoVault
+	}
+	if *ref != nil {
+		if _, err := tx.Exec("DELETE FROM secrets WHERE id = ?", **ref); err != nil {
+			return err
+		}
+	}
+	id, err := v.PutTx(tx, kind, plain, by)
+	*ref = &id
+	return err
+}
+
+func dropSecret(tx *sql.Tx, ref **int64) error {
+	if *ref == nil {
+		return nil
+	}
+	_, err := tx.Exec("DELETE FROM secrets WHERE id = ?", **ref)
+	*ref = nil
+	return err
+}
+
+// Add stores a new Source; its key and proxy password go to the vault.
+// then, when given, runs in the same transaction with the new id.
+func Add(ctx context.Context, s *store.Store, v *secrets.Vault, in Input, by domain.Actor, then ...func(tx *sql.Tx, id int64) error) (domain.Source, error) {
+	var src domain.Source
+	key, pass, err := fill(in, &src, true)
+	if err != nil {
+		return src, err
+	}
+	err = s.Write(ctx, func(tx *sql.Tx) error {
+		if err := nameUsed(tx, src.Name, 0); err != nil {
+			return err
+		}
+		if err := putSecret(tx, v, &src.SecretRef, "source_api_key", key, by); err != nil {
+			return err
+		}
+		if err := putSecret(tx, v, &src.ProxySecretRef, "source_proxy_password", pass, by); err != nil {
+			return err
+		}
+		id, err := store.Insert(tx, "sources", &src, by)
+		if err != nil {
+			return err
+		}
+		for _, f := range then {
+			if err := f(tx, id); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	return src, err
+}
+
+// Change saves a Source. A stored key is never sent to a new host on its
+// own: when the address's host changes, the key must be typed again (the
+// same for the proxy password).
+func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in Input, by domain.Actor) (domain.Source, error) {
+	var src domain.Source
+	if err := store.Get(ctx, s.Read(), "sources", id, &src); err != nil {
+		return src, err
+	}
+	old := src
+	key, pass, err := fill(in, &src, false)
+	if err != nil {
+		return old, err
+	}
+	if src.SecretRef != nil && key == "" && !in.ClearKey && hostOf(src.URL) != hostOf(old.URL) {
+		return old, ErrKeyAgain
+	}
+	// The stored proxy address holds no password: scheme, name and host.
+	if src.ProxySecretRef != nil && pass == "" && src.ProxyURL != "" && src.ProxyURL != old.ProxyURL {
+		return old, ErrProxyAgain
+	}
+	// An http Source sends its key in the clear to whatever proxy carries it.
+	if src.SecretRef != nil && key == "" && !in.ClearKey && strings.HasPrefix(src.URL, "http://") &&
+		src.ProxyURL != "" && src.ProxyURL != old.ProxyURL {
+		return old, ErrKeyAgainProxy
+	}
+	err = s.Write(ctx, func(tx *sql.Tx) error {
+		if err := nameUsed(tx, src.Name, src.ID); err != nil {
+			return err
+		}
+		if in.ClearKey && key == "" {
+			if err := dropSecret(tx, &src.SecretRef); err != nil {
+				return err
+			}
+		}
+		if err := putSecret(tx, v, &src.SecretRef, "source_api_key", key, by); err != nil {
+			return err
+		}
+		if src.ProxyURL == "" {
+			if err := dropSecret(tx, &src.ProxySecretRef); err != nil {
+				return err
+			}
+		} else if err := putSecret(tx, v, &src.ProxySecretRef, "source_proxy_password", pass, by); err != nil {
+			return err
+		}
+		return store.Update(tx, "sources", &src, by)
+	})
+	if err != nil {
+		return old, err
+	}
+	return src, nil
+}
+
+// Remove deletes a Source, its secrets, its Releases and its call record.
+func Remove(ctx context.Context, s *store.Store, id int64) error {
+	return s.Write(ctx, func(tx *sql.Tx) error {
+		var src domain.Source
+		if err := store.Get(ctx, tx, "sources", id, &src); err != nil {
+			return err
+		}
+		if err := dropSecret(tx, &src.SecretRef); err != nil {
+			return err
+		}
+		if err := dropSecret(tx, &src.ProxySecretRef); err != nil {
+			return err
+		}
+		_, err := tx.Exec("DELETE FROM sources WHERE id = ?", id)
+		return err
+	})
+}
+
+// SetPaused pauses a Source by hand, or resumes it. Resuming also ends a
+// back-off pause, so it is tried again at once.
+func SetPaused(ctx context.Context, s *store.Store, id int64, paused bool, by domain.Actor) (domain.Source, error) {
+	var src domain.Source
+	err := s.Write(ctx, func(tx *sql.Tx) error {
+		if err := store.Get(ctx, tx, "sources", id, &src); err != nil {
+			return err
+		}
+		if paused {
+			src.State = "disabled"
+		} else {
+			src.State = "enabled"
+			if src.Extra != nil {
+				delete(src.Extra, "failures")
+			}
+		}
+		src.PauseReason, src.PausedUntil = nil, nil
+		return store.Update(tx, "sources", &src, by)
+	})
+	return src, err
+}
+
+// ConfigFor builds the Client settings for a Source, opening its key and
+// proxy password.
+func ConfigFor(ctx context.Context, src domain.Source, sec SecretReader) (Config, error) {
+	cfg := Config{URL: src.URL, AllowLocal: src.AllowLocal, Protocol: src.Protocol, Format: src.Format,
+		GapMS: src.Limits.GapMS, PerWindow: src.Limits.SearchesPerWindow, ProxyAllowLocal: src.ProxyAllowLocal,
+		Window: time.Duration(src.Limits.WindowSeconds) * time.Second, Timeout: time.Duration(src.Limits.TimeoutMS) * time.Millisecond}
+	open := func(ref *int64) (string, error) {
+		if ref == nil || sec == nil {
+			return "", nil
+		}
+		return sec.Get(ctx, *ref)
+	}
+	var err error
+	if cfg.APIKey, err = open(src.SecretRef); err != nil {
+		return cfg, fmt.Errorf("reading the Source key: %w", err)
+	}
+	if src.ProxyURL != "" {
+		p, err := url.Parse(src.ProxyURL)
+		if err != nil {
+			return cfg, ErrProxy
+		}
+		pass, err := open(src.ProxySecretRef)
+		if err != nil {
+			return cfg, fmt.Errorf("reading the proxy password: %w", err)
+		}
+		if pass != "" {
+			p.User = url.UserPassword(p.User.Username(), pass)
+		}
+		cfg.Proxy = p
+	}
+	return cfg, nil
+}
+
+// Explain turns a failed call into plain words for the person. It never
+// holds the address or key.
+func Explain(err error) string {
+	var se *Error
+	if !errors.As(err, &se) {
+		var ne net.Error
+		if errors.As(err, &ne) && ne.Timeout() {
+			return "The Source took too long to answer."
+		}
+		return "HolyArrs could not reach the Source."
+	}
+	switch se.Kind {
+	case KindLoginRefused:
+		return "The Source turned down the key (" + se.Msg + "). Check the key."
+	case KindRateLimited:
+		return "The Source asked HolyArrs to slow down. Try again later."
+	case KindBlocked:
+		if strings.Contains(se.Msg, "looked up") {
+			return "HolyArrs could not look up the Source's name, so it cannot check where it leads; the proxy was not asked."
+		}
+		return "The address is on the local network. Tick \"May reach the local network\" if that is meant."
+	case KindBroken:
+		return "The Source answered, but not with a feed HolyArrs can read (" + se.Msg + ")."
+	}
+	return "HolyArrs could not reach the Source (" + se.Msg + ")."
+}

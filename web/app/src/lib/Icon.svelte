@@ -1,0 +1,68 @@
+<script lang="ts" module>
+	// Our own line icons on a 24px grid, 1.75 stroke. No icon font, no CDN.
+	const paths = {
+		home: 'M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z',
+		library: 'M5 4h3v16H5zM10.5 4h3v16h-3zM16 5.2l2.9-.8 3 15.4-2.9.8z',
+		search: 'M10.5 4a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13zM15.3 15.3 20 20',
+		download: 'M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19.5h14',
+		calendar: 'M4.5 6.5h15v13h-15zM4.5 10.5h15M8.5 4v4M15.5 4v4',
+		settings:
+			'M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.6-2-3.4-2.4 1a7.5 7.5 0 0 0-2.6-1.5L14 2.5h-4l-.4 2.5A7.5 7.5 0 0 0 7 6.5l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 3l-2 1.6 2 3.4 2.4-1a7.5 7.5 0 0 0 2.6 1.5l.4 2.5h4l.4-2.5a7.5 7.5 0 0 0 2.6-1.5l2.4 1 2-3.4z',
+		sun: 'M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8zM12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4',
+		moon: 'M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z',
+		signout: 'M14 4.5H6a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h8M16 8l4 4-4 4M20 12H10',
+		plus: 'M12 5v14M5 12h14',
+		trash: 'M5 7h14M10 7V4.5h4V7M7 7l1 13h8l1-13M10.5 11v5.5M13.5 11v5.5',
+		check: 'M5 12.5 10 17.5 19 7',
+		x: 'M6 6l12 12M18 6 6 18',
+		refresh: 'M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4.5v4.5H15',
+		key: 'M8.5 11a4 4 0 1 1 0 .1zM12 12.5h8.5M17.5 12.5v3M20 12.5v2.5',
+		folder: 'M3.5 6.5a1 1 0 0 1 1-1h5l2 2h8a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1z',
+		source: 'M4 6.5h16M4 12h16M4 17.5h10M18 16l2 2-2 2',
+		downloader: 'M4 14.5h16v5H4zM12 4v7M8.5 7.5 12 11l3.5-3.5M7 17h.01',
+		archive: 'M3.5 4.5h17v4h-17zM5 8.5v11h14v-11M10 12h4',
+		shield: 'M12 3.5 19 6v5.5c0 4.4-3 7.7-7 9-4-1.3-7-4.6-7-9V6z',
+		film: 'M4 4.5h16v15H4zM8 4.5v15M16 4.5v15M4 9.5h4M16 9.5h4M4 14.5h4M16 14.5h4',
+		tv: 'M3.5 6.5h17v11h-17zM8.5 20.5h7M12 17.5v3M8 2.5l4 4 4-4',
+		info: 'M12 3.5a8.5 8.5 0 1 1 0 17 8.5 8.5 0 0 1 0-17zM12 11v5.5M12 7.8v.1',
+		arrow: 'M5 12h14M13 6l6 6-6 6',
+		back: 'M19 12H5M11 6l-6 6 6 6',
+		user: 'M12 4a4 4 0 1 1 0 8 4 4 0 0 1 0-8zM4.5 20.5c1-3.6 4-5.5 7.5-5.5s6.5 1.9 7.5 5.5',
+		upload: 'M12 15V4M7.5 8.5 12 4l4.5 4.5M5 19.5h14',
+		copy: 'M8.5 8.5h11v11h-11zM15.5 8.5v-4h-11v11h4',
+		wish: 'M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z',
+		subtitle: 'M3.5 5.5h17v13h-17zM7 11.5h4M13 11.5h4M7 14.5h6.5M16 14.5h1',
+		bell: 'M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15zM10 20.5h4',
+		music: 'M9 18V5.5l11-2V16M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z',
+		people: 'M9 4.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zM2.5 19.5c.8-3.2 3.3-5 6.5-5s5.7 1.8 6.5 5M16 5a3 3 0 0 1 0 6M18 14.6c1.8.6 3 2.2 3.5 4.9'
+	} as const;
+	export type IconName = keyof typeof paths;
+</script>
+
+<script lang="ts">
+	let { name, size = 20, label }: { name: IconName; size?: number; label?: string } = $props();
+</script>
+
+<svg
+	class="icon"
+	width={size}
+	height={size}
+	viewBox="0 0 24 24"
+	fill="none"
+	stroke="currentColor"
+	stroke-width="1.75"
+	stroke-linecap="round"
+	stroke-linejoin="round"
+	role={label ? 'img' : undefined}
+	aria-label={label}
+	aria-hidden={label ? undefined : 'true'}
+>
+	<path d={paths[name]} />
+</svg>
+
+<style>
+	.icon {
+		flex: none;
+		display: block;
+	}
+</style>

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+		<meta name="color-scheme" content="dark light" />
+		<meta name="referrer" content="no-referrer" />
+		<link rel="icon" href="/brand/favicon.svg" type="image/svg+xml" />
+		<link rel="icon" href="/favicon.ico" sizes="any" />
+		<link rel="apple-touch-icon" href="/brand/apple-touch-icon-180.png" />
+		<title>HolyArrs</title>
+		<script>
+			try {
+				var t = localStorage.getItem('holyarrs-theme');
+				if (!t) t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+				document.documentElement.dataset.theme = t;
+			} catch (e) {}
+		</script>
+		%sveltekit.head%
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<noscript>HolyArrs needs JavaScript. Movie data from TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB.</noscript>
+		<div style="display: contents">%sveltekit.body%</div>
+	</body>
+</html>

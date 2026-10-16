@@ -1,0 +1,128 @@
+package store
+
+import (
+	"context"
+	"database/sql"
+	"testing"
+	"time"
+
+	"github.com/CoderLuii/holyarrs/internal/domain"
+)
+
+func addMovieCopy(t *testing.T, s *Store, name, codec, inspection string, protected bool) (domain.Title, domain.Version, domain.File, domain.Slot) {
+	t.Helper()
+	var title domain.Title
+	var version domain.Version
+	var file domain.File
+	var slot domain.Slot
+	err := s.Write(context.Background(), func(tx *sql.Tx) error {
+		var folderID, rulesID int64
+		if err := tx.QueryRow("SELECT id FROM library_folders ORDER BY id LIMIT 1").Scan(&folderID); err != nil {
+			folder := &domain.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: name, Health: "ok", SameDiskAs: []int64{}}
+			var err error
+			folderID, err = Insert(tx, "library_folders", folder, domain.System)
+			if err != nil {
+				return err
+			}
+		}
+		if err := tx.QueryRow("SELECT id FROM pick_rules ORDER BY id LIMIT 1").Scan(&rulesID); err != nil {
+			rules := &domain.PickRules{Name: name, Kinds: []string{"movie"}, Revision: 1, Body: domain.PickRulesBody{}}
+			var err error
+			rulesID, err = Insert(tx, "pick_rules", rules, domain.System)
+			if err != nil {
+				return err
+			}
+		}
+		title = domain.Title{Kind: "movie", Name: name, SortName: name, Aliases: []string{}, SourceIDs: map[string]string{}, MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released", GateDriver: "none", WhyAdded: "by_hand", Artwork: []string{}, State: "active", Status: "released", MusicTypes: []string{}}
+		if _, err := Insert(tx, "titles", &title, domain.System); err != nil {
+			return err
+		}
+		item := &domain.Item{TitleID: title.ID, Kind: "movie", Numbers: domain.Numbers{}, KeepUpToDate: true, SourceIDs: map[string]string{}}
+		if _, err := Insert(tx, "items", item, domain.System); err != nil {
+			return err
+		}
+		version = domain.Version{TitleID: title.ID, Label: "4K", PickRulesID: rulesID, LibraryFolderID: folderID, FolderName: name, KeepUpToDate: true, IsMain: true, Edition: "Director's cut", AudioLanguages: []string{"en"}}
+		if _, err := Insert(tx, "versions", &version, domain.System); err != nil {
+			return err
+		}
+		file = domain.File{VersionID: version.ID, Protected: protected, SlotIDs: []int64{}, RelativePath: name + ".mkv", Size: 42, AddedAt: time.Now().UTC(), Quality: domain.Quality{Codec: "av1"}, Languages: []string{}, MediaInfo: map[string]any{"inspection_status": inspection, "container": "matroska", "video_codec": codec, "audio_languages": []string{"ja", "en"}, "audio_tracks": 2, "audio_unknown": false}, Origin: "imported", PlacedBy: "move", Role: "main", State: "present"}
+		if _, err := Insert(tx, "files", &file, domain.System); err != nil {
+			return err
+		}
+		slot = domain.Slot{ItemID: item.ID, VersionID: version.ID, State: domain.SlotInLibrary, FileID: &file.ID}
+		if _, err := Insert(tx, "slots", &slot, domain.System); err != nil {
+			return err
+		}
+		_, err := tx.Exec("UPDATE files SET slot_ids = json_array(?) WHERE id = ?", slot.ID, file.ID)
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return title, version, file, slot
+}
+
+func TestLibraryCopiesUsesOnlySuccessfulInspectedCodec(t *testing.T) {
+	s, _ := openTest(t, Options{})
+	addMovieCopy(t, s, "Arrival", "hevc", "complete", false)
+	addMovieCopy(t, s, "Error Film", "h264", "error", false)
+	addMovieCopy(t, s, "Parsed Only", "", "complete", false)
+
+	page, err := s.LibraryCopies(context.Background(), LibraryCopyFilter{Sort: "codec", Limit: 50})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if page.Total != 3 || len(page.Copies) != 3 {
+		t.Fatalf("page %+v", page)
+	}
+	if page.Copies[0].Codec != "hevc" || page.Copies[0].TitleName != "Arrival" {
+		t.Fatalf("first %+v", page.Copies[0])
+	}
+	if page.Copies[1].Codec != "unknown" || page.Copies[2].Codec != "unknown" {
+		t.Fatalf("unknown codecs %+v", page.Copies)
+	}
+	if got := page.Codecs["unknown"]; got != 2 {
+		t.Fatalf("unknown count %d", got)
+	}
+	if got := page.Copies[0].AudioLanguages; len(got) != 2 || got[0] != "ja" || got[1] != "en" {
+		t.Fatalf("audio languages %#v", got)
+	}
+}
+
+func TestLibraryCopiesFiltersSearchesAndPagesDeterministically(t *testing.T) {
+	s, _ := openTest(t, Options{})
+	_, v1, f1, _ := addMovieCopy(t, s, "Alien", "h264", "partial", false)
+	addMovieCopy(t, s, "Aliens", "hevc", "complete", false)
+	addMovieCopy(t, s, "Dune", "hevc", "complete", false)
+
+	page, err := s.LibraryCopies(context.Background(), LibraryCopyFilter{Query: "Ali", Codec: "h264", Sort: "title", Limit: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if page.Total != 1 || len(page.Copies) != 1 || page.Copies[0].FileID != f1.ID {
+		t.Fatalf("page %+v", page)
+	}
+	got, err := s.SelectedLibraryCopies(context.Background(), []LibraryCopySelection{{FileID: f1.ID, VersionID: v1.ID}})
+	if err != nil || len(got) != 1 || got[0].FileID != f1.ID {
+		t.Fatalf("selected %+v err %v", got, err)
+	}
+	if _, err := s.SelectedLibraryCopies(context.Background(), []LibraryCopySelection{{FileID: f1.ID, VersionID: v1.ID + 99}}); err == nil {
+		t.Fatal("mismatched Version accepted")
+	}
+
+	if _, err := s.LibraryCopies(context.Background(), LibraryCopyFilter{Codec: "h265"}); err == nil {
+		t.Fatal("invalid codec accepted")
+	}
+	if _, err := s.LibraryCopies(context.Background(), LibraryCopyFilter{Sort: "size"}); err == nil {
+		t.Fatal("invalid sort accepted")
+	}
+}
+
+func TestLibraryCopySlotsAreExactMovieVersion(t *testing.T) {
+	s, _ := openTest(t, Options{})
+	_, v, f, slot := addMovieCopy(t, s, "Heat", "h264", "complete", false)
+	ids, err := s.LibraryCopySlots(context.Background(), LibraryCopySelection{FileID: f.ID, VersionID: v.ID})
+	if err != nil || len(ids) != 1 || ids[0] != slot.ID {
+		t.Fatalf("slots %#v err %v", ids, err)
+	}
+}

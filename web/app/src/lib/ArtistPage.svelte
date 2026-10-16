@@ -1,0 +1,625 @@
+<script lang="ts">
+	import { to } from './paths.ts';
+	// One artist: its albums with their kinds, dates and state, Keep up to
+	// date per artist and album, the album kinds it includes, and who asked.
+	// Search now looks for every missing album; each album has its own
+	// Search now, and its page a Choose a release list.
+	import { api, message } from './api.ts';
+	import { live } from './live.svelte.ts';
+	import { ago, date, dateTime } from './format.ts';
+	import Icon from './Icon.svelte';
+	import Poster from './Poster.svelte';
+	import { session } from './session.svelte.ts';
+	import { toasts } from './toasts.svelte.ts';
+	import { decided, names } from './wishlist.ts';
+	import { groupLabel, kindTone } from './history.ts';
+	import AskArtistDialog from './AskArtistDialog.svelte';
+	import RenamePreview from './RenamePreview.svelte';
+	import ShowDeleteDialog from './ShowDeleteDialog.svelte';
+	import { goto } from '$app/navigation';
+	import {
+		albumChoices,
+		albumKind,
+		albumLine,
+		albumStateOf,
+		albumWords,
+		albumYear,
+		artistProgress,
+		artistSearchToast,
+		extraKinds,
+		mainKinds,
+		newAlbumChoices,
+		pressingStatuses,
+		toggle,
+		word
+	} from './music.ts';
+	import type { AlbumSummary, Ask, EventPage, EventRecord, LookupArtist, TitleView } from './types.ts';
+
+	let { title, onchange }: { title: TitleView; onchange: (t: TitleView) => void } = $props();
+
+	const staff = $derived(session.can('manage_library'));
+	const artist = $derived(title.artist);
+	let albums = $state<AlbumSummary[] | null>(null);
+	let show = $state<'included' | 'left_out' | 'all'>('included');
+	let busy = $state('');
+	let refreshing = $state(false);
+	let history = $state<EventRecord[]>([]);
+	let historyTotal = $state(0);
+	let asker: ReturnType<typeof AskArtistDialog> | undefined = $state();
+
+	// Rename files and delete (4.15.4): the rename preview for this artist,
+	// and the delete dialog for the artist.
+	let renameDialog: HTMLDialogElement | undefined = $state();
+	let renameOpen = $state(false);
+	let deleter: ReturnType<typeof ShowDeleteDialog> | undefined = $state();
+
+	function openRename() {
+		renameOpen = true;
+		renameDialog?.showModal();
+	}
+
+	async function deleted() {
+		await goto(to('/library'));
+	}
+
+	const shown = $derived(
+		(albums ?? []).filter((a) => (show === 'all' ? true : show === 'included' ? a.included : !a.included))
+	);
+	const leftOut = $derived((albums ?? []).filter((a) => !a.included).length);
+
+	async function loadAlbums() {
+		try {
+			albums = (await api.get<{ albums: AlbumSummary[] }>(`/titles/${title.id}/albums`)).albums;
+		} catch (e) {
+			albums = [];
+			toasts.push(message(e), 'fail');
+		}
+	}
+
+	async function loadHistory() {
+		if (!staff) return;
+		try {
+			const h = await api.get<EventPage>(`/events?title=${title.id}&limit=8`);
+			history = h.events;
+			historyTotal = h.total;
+		} catch {
+			// History is a side card; the page works without it.
+		}
+	}
+
+	async function reload() {
+		onchange(await api.get<TitleView>(`/titles/${title.id}`));
+		await loadAlbums();
+		void loadHistory();
+	}
+
+	$effect(() => {
+		void title.id;
+		void loadAlbums();
+		void loadHistory();
+	});
+
+	// Albums, Pressings and tracks arrive with the refresh after adding:
+	// read again when this artist's Events come in, and every few seconds
+	// while included albums have no tracks yet.
+	let again: ReturnType<typeof setTimeout> | undefined;
+	$effect(() => {
+		const soon = (e?: unknown) => {
+			const ev = e as { TitleID?: number } | undefined;
+			if (ev && typeof ev === 'object' && 'TitleID' in ev && ev.TitleID !== title.id) return;
+			clearTimeout(again);
+			again = setTimeout(() => void reload(), 400);
+		};
+		const offs = [live.on('event', soon), live.on('slot', () => soon())];
+		return () => {
+			clearTimeout(again);
+			offs.forEach((off) => off());
+		};
+	});
+	let polls = 0;
+	$effect(() => {
+		const waiting = !!artist && artist.included > 0 && artist.tracks === 0 && polls < 30;
+		if (!waiting) return;
+		const t = setTimeout(() => {
+			polls++;
+			void reload().catch(() => {});
+		}, 3000);
+		return () => clearTimeout(t);
+	});
+
+	async function setAlbum(a: AlbumSummary, keep: boolean) {
+		busy = `a${a.id}`;
+		try {
+			const r = await api.put<AlbumSummary>(`/albums/${a.id}`, { keep_up_to_date: keep });
+			if (albums) {
+				const i = albums.findIndex((x) => x.id === a.id);
+				if (i >= 0) albums[i] = r;
+			}
+			toasts.push(`${a.name}: ${keep ? 'HolyArrs keeps it up to date.' : 'HolyArrs stops looking after it.'}`, 'ok');
+			onchange(await api.get<TitleView>(`/titles/${title.id}`));
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		} finally {
+			busy = '';
+		}
+	}
+
+	// Search now: every album with a track kept up to date and missing, or one album.
+	async function search(a?: AlbumSummary) {
+		busy = a ? `s${a.id}` : 'search';
+		try {
+			const r = await api.post<{ job_ids: number[]; left_out?: number }>(`/titles/${title.id}/search`, a ? { album_id: a.id } : {});
+			const n = r.job_ids.length;
+			toasts.push(a ? `Searching for ${a.name}. Home shows what it finds.` : artistSearchToast(n, r.left_out), n ? 'ok' : 'info');
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		} finally {
+			busy = '';
+		}
+	}
+
+	async function setKeep(v: boolean) {
+		busy = 'artist';
+		try {
+			onchange((await api.put<{ title: TitleView }>(`/titles/${title.id}`, { keep_up_to_date: v })).title);
+			toasts.push(v ? 'HolyArrs keeps this artist up to date.' : 'HolyArrs stops looking after this artist.', 'ok');
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		} finally {
+			busy = '';
+		}
+	}
+
+	async function refresh() {
+		refreshing = true;
+		try {
+			await api.post(`/titles/${title.id}/refresh`);
+			polls = 0;
+			toasts.push('Refreshing albums, Pressings and tracks from MusicBrainz.', 'ok');
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		} finally {
+			setTimeout(() => (refreshing = false), 1500);
+		}
+	}
+
+	// The edit dialog: new albums and album kinds.
+	let editDialog: HTMLDialogElement | undefined = $state();
+	let eNew = $state('all');
+	let eTypes = $state<string[]>([]);
+	let eExtras = $state<string[]>([]);
+	let eStatuses = $state<string[]>([]);
+	let editError = $state('');
+	let saving = $state(false);
+
+	function openEdit() {
+		editError = '';
+		eNew = artist?.new_albums ?? 'all';
+		eTypes = [...(artist?.album_types ?? [])];
+		eExtras = [...(artist?.secondary_types ?? [])];
+		eStatuses = [...(artist?.release_statuses ?? [])];
+		editDialog?.showModal();
+	}
+
+	async function saveEdit(e: SubmitEvent) {
+		e.preventDefault();
+		saving = true;
+		editError = '';
+		try {
+			onchange(
+				(
+					await api.put<{ title: TitleView }>(`/titles/${title.id}/artist`, {
+						new_albums: eNew,
+						album_types: eTypes,
+						secondary_types: eExtras,
+						release_statuses: eStatuses
+					})
+				).title
+			);
+			editDialog?.close();
+			polls = 0;
+			toasts.push('Saved. A refresh brings in the albums the new kinds include.', 'ok');
+		} catch (err) {
+			editError = message(err);
+		} finally {
+			saving = false;
+		}
+	}
+
+	function askMore() {
+		if (!artist) return;
+		const a: LookupArtist = { mbid: artist.mbid, name: title.name, status: artist.status, title_id: title.id, disambiguation: artist.disambiguation };
+		void asker?.open(a);
+	}
+
+	function asked(_a: LookupArtist, r: { ask: Ask; joined: boolean }) {
+		const what = `${title.name} (${albumWords(r.ask.albums)})`;
+		if (r.ask.state === 'approved') toasts.push(`${what} is approved; HolyArrs keeps it up to date.`, 'ok');
+		else if (r.joined) toasts.push(`Someone asked for ${what} already; you are on the ask too.`, 'ok');
+		else toasts.push(`Asked for ${what}. You will hear when it is approved.`, 'ok');
+		void reload();
+	}
+</script>
+
+<section class="hero">
+	<div class="art"><Poster src={title.artwork[0]} name={title.name} /></div>
+	<div class="info">
+		<h1 class="title">{title.name}</h1>
+		{#if artist?.disambiguation}<p class="overview">{artist.disambiguation}</p>{/if}
+		<div class="row chips">
+			<span class="chip">Artist</span>
+			{#if artist?.type}<span class="chip">{artist.type.charAt(0).toUpperCase() + artist.type.slice(1)}</span>{/if}
+			{#if artist}<span class="chip {artist.status === 'ended' ? '' : 'ok'}">{artist.status === 'ended' ? 'No longer active' : 'Still active'}</span>{/if}
+			{#if artist?.missing}<span class="chip wait">{artist.missing} missing</span>{/if}
+		</div>
+		<p class="small" data-testid="artist-progress">{artistProgress(artist)}</p>
+		<p class="why small" data-testid="gate-reason"><b>Why:</b> {title.gate_reason}</p>
+		{#if staff}
+			<div class="row actions">
+				<button class="btn btn-red" type="button" onclick={() => search()} disabled={busy === 'search'} aria-busy={busy === 'search'} data-testid="artist-search"
+					><Icon name="search" size={16} /> Search now</button
+				>
+				<button class="btn btn-ghost" type="button" onclick={refresh} disabled={refreshing} aria-busy={refreshing}><Icon name="refresh" size={16} /> Refresh</button>
+				<button class="btn btn-ghost" type="button" onclick={openEdit}>Edit album kinds</button>
+				<button class="btn btn-ghost" type="button" onclick={openRename} data-testid="rename-artist">Rename files</button>
+				<button class="btn btn-quiet" type="button" onclick={() => deleter?.open()} data-testid="delete-artist"><Icon name="trash" size={16} /> Delete</button>
+				<label class="switch">
+					<input type="checkbox" checked={title.keep_up_to_date} disabled={busy === 'artist'} onchange={(e) => setKeep(e.currentTarget.checked)} />
+					<span class="sw" aria-hidden="true"></span>
+					<span class="small">Keep up to date</span>
+				</label>
+			</div>
+		{:else if session.can('ask')}
+			<div class="row actions">
+				<button class="btn btn-red" type="button" onclick={askMore} data-testid="ask-albums"><Icon name="wish" size={16} /> Ask for albums</button>
+			</div>
+		{/if}
+	</div>
+</section>
+
+<div class="cols">
+	<div class="side">
+		<section class="card" aria-labelledby="h-artist-facts">
+			<h2 id="h-artist-facts" class="h2 card-title">About</h2>
+			<dl class="facts">
+				<dt>Albums</dt>
+				<dd>{artist?.included ?? 0} included of {artist?.albums ?? 0}</dd>
+				{#if artist?.next_release}<dt>Next album</dt>
+					<dd>{date(artist.next_release)}</dd>{/if}
+				{#if artist?.album_choice}<dt>Picked when added</dt>
+					<dd>{word(albumChoices, artist.album_choice)}</dd>{/if}
+				<dt>New albums</dt>
+				<dd>{word(newAlbumChoices, artist?.new_albums)}</dd>
+				<dt>Album kinds</dt>
+				<dd>{(artist?.album_types ?? []).map((k) => word(mainKinds, k)).join(', ')}</dd>
+				<dt>Extra kinds</dt>
+				<dd>{(artist?.secondary_types ?? []).map((k) => word(extraKinds, k)).join(', ')}</dd>
+				<dt>Pressings that count</dt>
+				<dd>{(artist?.release_statuses ?? []).map((k) => word(pressingStatuses, k)).join(', ')}</dd>
+				{#if title.pick_rules_name}<dt>Pick rules</dt>
+					<dd>{title.pick_rules_name}</dd>{/if}
+				{#if title.refreshed_at}<dt>Refreshed</dt>
+					<dd>{date(title.refreshed_at)}</dd>{/if}
+			</dl>
+			{#if staff && title.folder_path}<p class="xs muted path">In {title.folder_path}</p>{/if}
+		</section>
+
+		{#if title.asks?.length}
+			<section class="card" aria-labelledby="h-artist-asks" data-testid="title-asks">
+				<h2 id="h-artist-asks" class="h2 card-title">Wishlist</h2>
+				{#each title.asks as a (a.id)}
+					<dl class="facts">
+						<dt>Asked by</dt>
+						<dd>{names(a.people.map((p) => p.name))} · {date(a.asked_at)}</dd>
+						<dt>For</dt>
+						<dd>{a.album_words ?? albumWords(a.albums)}</dd>
+						{#if decided(a)}<dt>Decided</dt>
+							<dd>{decided(a)}{a.decided_at ? ` · ${date(a.decided_at)}` : ''}</dd>{/if}
+						<dt>Now</dt>
+						<dd>{a.state_label}</dd>
+						{#if a.note}<dt>Note</dt>
+							<dd>{a.note}</dd>{/if}
+					</dl>
+				{/each}
+			</section>
+		{/if}
+
+		{#if staff}
+			<section class="card" aria-labelledby="h-artist-history" data-testid="title-history">
+				<div class="card-head">
+					<h2 id="h-artist-history" class="h2">History</h2>
+					{#if historyTotal > 0}<a class="btn btn-quiet" href={to(`/downloads/history?title=${title.id}`)}>All {historyTotal} rows</a>{/if}
+				</div>
+				{#if history.length === 0}
+					<p class="small muted">Nothing yet.</p>
+				{:else}
+					<ol class="rows hist">
+						{#each history as e (e.ID)}
+							<li>
+								<span class="chip {kindTone(e.Kind)}">{groupLabel(e.Kind)}</span>
+								<span class="grow small">{e.Summary}</span>
+								<time class="mono xs muted" datetime={e.At} title={dateTime(e.At)}>{ago(e.At)}</time>
+							</li>
+						{/each}
+					</ol>
+				{/if}
+			</section>
+		{/if}
+	</div>
+
+	<div class="main">
+		<section class="card" aria-labelledby="h-albums">
+			<div class="card-head">
+				<h2 id="h-albums" class="h2">Albums</h2>
+				{#if leftOut}
+					<div class="pills" role="group" aria-label="Albums shown">
+						<button type="button" class="pill" aria-pressed={show === 'included'} onclick={() => (show = 'included')}>Included</button>
+						<button type="button" class="pill" aria-pressed={show === 'left_out'} onclick={() => (show = 'left_out')}>Not included <span class="n">{leftOut}</span></button>
+						<button type="button" class="pill" aria-pressed={show === 'all'} onclick={() => (show = 'all')}>All</button>
+					</div>
+				{/if}
+			</div>
+			{#if albums === null}
+				<div class="sk" style="height: 120px"></div>
+			{:else if albums.length === 0}
+				<p class="small muted">No albums yet. A refresh adds them once MusicBrainz lists them.</p>
+			{:else if shown.length === 0}
+				<p class="small muted">Nothing here.</p>
+			{:else}
+				<ul class="albums">
+					{#each shown as a (a.id)}
+						{@const st = albumStateOf(a)}
+						<li class="album" data-testid="album">
+							<div class="grow">
+								<a class="album-name" href={to(`/library/${title.id}/albums/${a.id}`)}><b>{a.name}</b></a>
+								{#if a.disambiguation}<span class="xs muted"> ({a.disambiguation})</span>{/if}
+								<p class="xs muted">{[albumYear(a.release_date), albumKind(a), a.dropped ? 'no longer listed' : ''].filter(Boolean).join(' · ')}</p>
+								<p class="xs muted" data-testid="album-line">{albumLine(a)}</p>
+							</div>
+							<span class="chip {st.tone}" data-testid="album-state">{st.label}</span>
+							{#if staff}
+								<button class="btn btn-quiet sm" type="button" onclick={() => search(a)} disabled={busy === `s${a.id}`} aria-label="Search now for {a.name}" data-testid="album-search"
+									><Icon name="search" size={16} /></button
+								>
+								<label class="switch" title={a.included ? '' : 'Not included by the album kinds'}>
+									<input type="checkbox" checked={a.keep_up_to_date} disabled={busy === `a${a.id}` || !a.included} onchange={(e) => setAlbum(a, e.currentTarget.checked)} />
+									<span class="sw" aria-hidden="true"></span>
+									<span class="sr-only">Keep {a.name} up to date</span>
+								</label>
+							{/if}
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</section>
+	</div>
+</div>
+
+{#if !staff && session.can('ask')}
+	<AskArtistDialog bind:this={asker} onasked={asked} />
+{/if}
+
+{#if staff}
+	<ShowDeleteDialog bind:this={deleter} titleId={title.id} name={title.name} kind="artist" ondone={deleted} />
+{/if}
+
+<dialog bind:this={renameDialog} aria-labelledby="rename-artist-title" class="modal wide" onclose={() => (renameOpen = false)}>
+	{#if renameOpen}
+		<h2 id="rename-artist-title" class="h2">Rename the files of {title.name}</h2>
+		<p class="small muted">The names now and the names they get from the artist, album and track patterns. Nothing changes until you press Rename.</p>
+		<RenamePreview titleId={title.id} onDone={() => void reload()} />
+		<div class="row modal-actions">
+			<button class="btn btn-quiet" type="button" onclick={() => renameDialog?.close()}>Close</button>
+		</div>
+	{/if}
+</dialog>
+
+<dialog bind:this={editDialog} aria-labelledby="edit-artist-title" class="modal">
+	<form onsubmit={saveEdit}>
+		<h2 id="edit-artist-title" class="h2">Edit {title.name}</h2>
+		<div class="field" style="margin-top: var(--s-5)">
+			<label for="e-new">New albums</label>
+			<select id="e-new" class="input" bind:value={eNew}>
+				{#each newAlbumChoices as [v, l] (v)}<option value={v}>{l}</option>{/each}
+			</select>
+		</div>
+		<fieldset class="kinds">
+			<legend class="small"><b>Album kinds</b></legend>
+			<div class="boxes">
+				{#each mainKinds as [v, l] (v)}
+					<label class="box"><input type="checkbox" checked={eTypes.includes(v)} onchange={(e) => (eTypes = toggle(eTypes, v, e.currentTarget.checked, mainKinds))} /> {l}</label>
+				{/each}
+			</div>
+		</fieldset>
+		<fieldset class="kinds">
+			<legend class="small"><b>Extra kinds</b></legend>
+			<div class="boxes">
+				{#each extraKinds as [v, l] (v)}
+					<label class="box"><input type="checkbox" checked={eExtras.includes(v)} onchange={(e) => (eExtras = toggle(eExtras, v, e.currentTarget.checked, extraKinds))} /> {l}</label>
+				{/each}
+			</div>
+		</fieldset>
+		<fieldset class="kinds">
+			<legend class="small"><b>Pressings that count</b></legend>
+			<div class="boxes">
+				{#each pressingStatuses as [v, l] (v)}
+					<label class="box"><input type="checkbox" checked={eStatuses.includes(v)} onchange={(e) => (eStatuses = toggle(eStatuses, v, e.currentTarget.checked, pressingStatuses))} /> {l}</label>
+				{/each}
+			</div>
+		</fieldset>
+		<p class="hint" style="margin-top: var(--s-3)">Albums the new kinds leave out stay listed under Not included; their files stay where they are.</p>
+		{#if editError}<p class="form-error" role="alert">{editError}</p>{/if}
+		<div class="row modal-actions">
+			<button class="btn btn-quiet" type="button" onclick={() => editDialog?.close()}>Cancel</button>
+			<button class="btn btn-red" type="submit" disabled={saving || !eTypes.length || !eExtras.length || !eStatuses.length} aria-busy={saving}>Save</button>
+		</div>
+	</form>
+</dialog>
+
+<style>
+	.hero {
+		display: grid;
+		grid-template-columns: 180px 1fr;
+		gap: var(--s-6);
+		margin-bottom: var(--s-6);
+	}
+	.title {
+		font: var(--weight-semibold) var(--text-2xl) / var(--leading-tight) var(--font-display);
+		letter-spacing: var(--tracking-display);
+		overflow-wrap: anywhere;
+	}
+	.overview {
+		margin-top: var(--s-2);
+		color: var(--text-muted);
+	}
+	.chips {
+		margin: var(--s-4) 0 var(--s-2);
+		flex-wrap: wrap;
+	}
+	.why {
+		margin: var(--s-2) 0;
+		padding: var(--s-2) var(--s-3);
+		border-left: 3px solid var(--ok);
+		background: var(--surface-1);
+		border-radius: var(--r-sm);
+		max-width: 70ch;
+	}
+	.actions {
+		margin-top: var(--s-4);
+		gap: var(--s-4);
+		flex-wrap: wrap;
+	}
+	.cols {
+		display: grid;
+		grid-template-columns: 320px minmax(0, 1fr);
+		gap: var(--s-4);
+		align-items: start;
+	}
+	.side,
+	.main {
+		display: flex;
+		flex-direction: column;
+		gap: var(--s-4);
+		min-width: 0;
+	}
+	.side .card + .card,
+	.main :global(.card + .card) {
+		margin-top: 0;
+	}
+	.card-title {
+		margin-bottom: var(--s-4);
+	}
+	.card-head {
+		flex-wrap: wrap;
+		gap: var(--s-3);
+		margin-bottom: var(--s-3);
+	}
+	.path {
+		overflow-wrap: anywhere;
+	}
+	.pills {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--s-2);
+	}
+	.pill {
+		min-height: 36px;
+		padding: 0 var(--s-3);
+		border-radius: var(--r-pill);
+		border: 1px solid var(--line-strong);
+		color: var(--text-muted);
+		font-size: var(--text-sm);
+	}
+	.pill[aria-pressed='true'] {
+		background: var(--ha-red-soft);
+		border-color: var(--ha-red);
+		color: var(--text);
+	}
+	.n {
+		margin-left: 4px;
+		opacity: 0.75;
+	}
+	.albums {
+		display: flex;
+		flex-direction: column;
+	}
+	.album {
+		display: flex;
+		align-items: center;
+		gap: var(--s-3);
+		padding: var(--s-3) 0;
+	}
+	.album + .album {
+		border-top: 1px solid var(--line);
+	}
+	.album .grow {
+		min-width: 0;
+		flex: 1;
+		overflow-wrap: anywhere;
+	}
+	.album-name {
+		display: inline-flex;
+		align-items: center;
+		min-height: var(--tap);
+		text-decoration: underline;
+		text-decoration-color: var(--line-strong);
+	}
+	.modal {
+		width: min(520px, calc(100vw - 32px));
+		max-height: calc(100dvh - 32px);
+		overflow: auto;
+		padding: var(--s-6);
+		border: 0;
+		border-radius: var(--r-modal);
+		background: var(--surface-1);
+		color: var(--text);
+		box-shadow: var(--shadow-modal);
+	}
+	.modal::backdrop {
+		background: var(--scrim);
+	}
+	.modal-actions {
+		justify-content: flex-end;
+		margin-top: var(--s-6);
+	}
+	.kinds {
+		border: 0;
+		padding: 0;
+		margin: var(--s-4) 0 0;
+	}
+	.kinds legend {
+		margin-bottom: var(--s-2);
+	}
+	.boxes {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+		gap: var(--s-2);
+	}
+	.box {
+		display: flex;
+		align-items: center;
+		gap: var(--s-2);
+		min-height: var(--tap);
+		font-size: var(--text-sm);
+	}
+	@media (max-width: 900px) {
+		.cols {
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.main {
+			grid-row: 1;
+		}
+	}
+	@media (max-width: 600px) {
+		.hero {
+			grid-template-columns: 96px 1fr;
+			gap: var(--s-4);
+		}
+		.title {
+			font-size: var(--text-xl);
+		}
+		.album {
+			flex-wrap: wrap;
+		}
+	}
+</style>

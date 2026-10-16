@@ -1,0 +1,330 @@
+<script lang="ts">
+	// Choose a release for an episode or a season of a show: every Release
+	// the newest search found, with its verdict and plain reasons; choose one
+	// (a season pack fills every episode it holds) or turn it down.
+	import { api, ApiError, message } from './api.ts';
+	import { bytes } from './format.ts';
+	import { live } from './live.svelte.ts';
+	import { chooseWarnings, facts, keyReasons, pager, verdict, verdictTone } from './releases.ts';
+	import { toasts } from './toasts.svelte.ts';
+	import type { ReleaseScope as Scope } from './shows.ts';
+	import type { Choice, ReleasePage, ReleaseView } from './types.ts';
+
+	let {
+		titleId,
+		scope,
+		jobs = [],
+		music = false,
+		onclose,
+		onchange
+	}: { titleId: number; scope: Scope; jobs?: number[]; music?: boolean; onclose: () => void; onchange: () => void } = $props();
+	/** Music lists are for an album: one Release fills its tracks. */
+	const noun = $derived(music ? 'tracks' : 'episodes');
+
+	let releases = $state<ReleaseView[]>([]);
+	let total = $state(0);
+	let offset = $state(0);
+	const limit = 25;
+	let running = $state<number[]>([]);
+	let loaded = $state(false);
+	const pages = $derived(pager(total, limit, offset));
+
+	async function load() {
+		try {
+			const p = await api.get<ReleasePage>(`/titles/${titleId}/releases?${scope.query}&limit=${limit}&offset=${offset}`);
+			releases = p.releases;
+			total = p.total;
+			const still = p.running_job_ids ?? [];
+			running = running.filter((j) => still.includes(j));
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		} finally {
+			loaded = true;
+		}
+	}
+
+	$effect(() => {
+		void scope.query;
+		offset = 0;
+		running = [...jobs];
+		void load();
+	});
+
+	$effect(() => {
+		const offs = [
+			live.on('releases', () => load()),
+			live.on('job', (d) => {
+				const j = d as { id?: number; state?: string };
+				if (j?.id && running.includes(j.id) && j.state !== 'running' && j.state !== 'queued') {
+					running = running.filter((x) => x !== j.id);
+					void load();
+				}
+			}),
+			live.on('resync', () => load())
+		];
+		return () => offs.forEach((off) => off());
+	});
+
+	function go(off: number | null) {
+		if (off === null) return;
+		offset = off;
+		void load();
+	}
+
+	// Choose and turn down.
+	let chooseDialog: HTMLDialogElement | undefined = $state();
+	let turnDialog: HTMLDialogElement | undefined = $state();
+	let target = $state<ReleaseView | null>(null);
+	let forceReasons = $state<string[]>([]);
+	let chooseError = $state('');
+	let choosing = $state(false);
+	let turnReason = $state('');
+	/** A season pack in a season list fills every episode; elsewhere one episode is chosen. */
+	const fillsMany = $derived(!!target && !scope.slotId && (target.slot_ids?.length ?? 0) > 1);
+	const warnings = $derived(target ? chooseWarnings(target, scope.slotState, true, music) : []);
+	const needsForce = $derived(!!target && (target.needs_force || forceReasons.length > 0));
+
+	function askChoose(r: ReleaseView) {
+		target = r;
+		forceReasons = [];
+		chooseError = '';
+		chooseDialog?.showModal();
+	}
+
+	async function choose() {
+		if (!target) return;
+		choosing = true;
+		chooseError = '';
+		try {
+			const body: Record<string, unknown> = { force: needsForce };
+			if (scope.slotId) body.slot_id = scope.slotId;
+			const ch = await api.post<Choice>(`/releases/${target.id}/choose`, body);
+			chooseDialog?.close();
+			const n = ch.slot_ids?.length ?? 1;
+			toasts.push(`Chosen: ${target.name}${n > 1 ? ` for ${n} ${noun}` : ''}. HolyArrs sends it to a Downloader now.`, 'ok');
+			for (const w of ch.warnings) toasts.push(w, 'info');
+			onchange();
+			await load();
+		} catch (e) {
+			if (e instanceof ApiError && e.status === 409 && e.body.needs_force) {
+				forceReasons = (e.body.reasons as string[] | undefined) ?? ['it did not pass'];
+			} else {
+				chooseError = message(e);
+			}
+		} finally {
+			choosing = false;
+		}
+	}
+
+	function askTurnDown(r: ReleaseView) {
+		target = r;
+		turnReason = '';
+		chooseError = '';
+		turnDialog?.showModal();
+	}
+
+	async function turnDown(e: SubmitEvent) {
+		e.preventDefault();
+		if (!target) return;
+		choosing = true;
+		try {
+			const body: Record<string, unknown> = {};
+			if (turnReason.trim()) body.reason = turnReason.trim();
+			if (scope.slotId) body.slot_id = scope.slotId;
+			await api.post(`/releases/${target.id}/turn-down`, body);
+			turnDialog?.close();
+			toasts.push(`Turned down: ${target.name}. HolyArrs never picks it again for ${scope.slotId || music ? scope.label : 'these episodes'}.`, 'ok');
+			await load();
+		} catch (err) {
+			chooseError = message(err);
+		} finally {
+			choosing = false;
+		}
+	}
+</script>
+
+<section class="card rel-card" aria-labelledby="h-show-rel" data-testid="show-releases">
+	<div class="card-head">
+		<h2 id="h-show-rel" class="h2">Choose a release: {scope.label}</h2>
+		<button class="btn btn-quiet" type="button" onclick={onclose}>Close</button>
+	</div>
+	{#if total}<p class="xs muted">{total} found in the last search</p>{/if}
+	<p class="small muted" aria-live="polite" data-testid="search-running">
+		{running.length ? 'Searching your Sources. The list fills in once they answer.' : ''}
+	</p>
+	{#if loaded && releases.length === 0 && !running.length}
+		<p class="small muted">No Releases yet. A search lists every Release found, with why each one would be chosen or not.</p>
+	{:else if releases.length}
+		<ul class="rels">
+			{#each releases as r (r.id)}
+				{@const key = keyReasons(r.reasons)}
+				<li class="rel" data-testid="release">
+					<div class="rel-top">
+						<span class="rel-name mono">{r.name}</span>
+						<span class="chip {verdictTone(r)}" data-testid="verdict">{verdict(r)}</span>
+					</div>
+					<div class="xs muted">{facts(r, bytes)}{r.episode ? ` · ${r.episode}` : ''}{music && r.slot_ids?.length ? ` · ${r.slot_ids.length} tracks` : ''}{r.version && r.version !== 'Main' ? ` · ${r.version}` : ''}</div>
+					{#if key.length}
+						<ul class="reasons">
+							{#each key as x, i (i)}<li class={x.effect}>{x.text}</li>{/each}
+						</ul>
+					{/if}
+					{#if r.reasons.length}
+						<details>
+							<summary class="xs muted">All {r.reasons.length} reasons</summary>
+							<ul class="reasons">
+								{#each r.reasons as x, i (i)}<li class={x.effect}>{x.text}</li>{/each}
+							</ul>
+						</details>
+					{/if}
+					{#if r.state !== 'chosen'}
+						<div class="row rel-actions">
+							<button class="btn btn-ghost" type="button" onclick={() => askChoose(r)} aria-label="Choose {r.name}">Choose</button>
+							{#if r.state !== 'turned_down'}
+								<button class="btn btn-quiet" type="button" onclick={() => askTurnDown(r)} aria-label="Turn down {r.name}">Turn down</button>
+							{/if}
+						</div>
+					{/if}
+				</li>
+			{/each}
+		</ul>
+		{#if pages.prev !== null || pages.next !== null}
+			<nav class="row pager" aria-label="Release pages">
+				<button class="btn btn-quiet" type="button" disabled={pages.prev === null} onclick={() => go(pages.prev)}>Back</button>
+				<span class="xs muted">{pages.from} to {pages.to} of {total}</span>
+				<button class="btn btn-quiet" type="button" disabled={pages.next === null} onclick={() => go(pages.next)}>More</button>
+			</nav>
+		{/if}
+	{/if}
+</section>
+
+<dialog bind:this={chooseDialog} aria-labelledby="show-choose-title" class="modal">
+	{#if target}
+		<h2 id="show-choose-title" class="h2">{needsForce ? 'Choose it anyway?' : 'Choose this Release?'}</h2>
+		<p class="mono small path" style="margin-top: var(--s-3)">{target.name}</p>
+		<p class="small muted">{facts(target, bytes)}</p>
+		<p class="small">{music ? `For ${scope.label}.` : fillsMany ? `For ${target.episode}.` : `For ${scope.slotId ? scope.label : (target.episode ?? scope.label)}.`}</p>
+		{#if warnings.length || forceReasons.length}
+			<ul class="warns" data-testid="choose-warnings">
+				{#each warnings as w (w)}<li>{w}</li>{/each}
+				{#each forceReasons as w (w)}<li>It did not pass: {w}.</li>{/each}
+			</ul>
+		{/if}
+		{#if chooseError}<p class="form-error" role="alert">{chooseError}</p>{/if}
+		<div class="row modal-actions">
+			<button class="btn btn-quiet" type="button" onclick={() => chooseDialog?.close()}>Cancel</button>
+			<button class="btn btn-red" type="button" onclick={choose} disabled={choosing} aria-busy={choosing}>{needsForce ? 'Choose anyway' : 'Choose'}</button>
+		</div>
+	{/if}
+</dialog>
+
+<dialog bind:this={turnDialog} aria-labelledby="show-turn-title" class="modal">
+	{#if target}
+		<form onsubmit={turnDown}>
+			<h2 id="show-turn-title" class="h2">Turn down this Release?</h2>
+			<p class="mono small path" style="margin-top: var(--s-3)">{target.name}</p>
+			<p class="small muted">
+				{scope.slotId
+					? `HolyArrs never picks it again for ${scope.label}; for other episodes it is still judged.`
+					: `HolyArrs never picks it again for these ${noun}.`} You can take it off the Turned down list later.
+			</p>
+			<div class="field" style="margin-top: var(--s-4)">
+				<label for="show-turn-reason">Why (optional)</label>
+				<input id="show-turn-reason" class="input" bind:value={turnReason} maxlength="500" />
+			</div>
+			{#if chooseError}<p class="form-error" role="alert">{chooseError}</p>{/if}
+			<div class="row modal-actions">
+				<button class="btn btn-quiet" type="button" onclick={() => turnDialog?.close()}>Cancel</button>
+				<button class="btn btn-red" type="submit" disabled={choosing} aria-busy={choosing}>Turn down</button>
+			</div>
+		</form>
+	{/if}
+</dialog>
+
+<style>
+	.card-head {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: var(--s-3);
+		flex-wrap: wrap;
+	}
+	.rels {
+		margin-top: var(--s-3);
+	}
+	.rel {
+		padding: var(--s-3) 0;
+	}
+	.rel + .rel {
+		border-top: 1px solid var(--line);
+	}
+	.rel-top {
+		display: flex;
+		justify-content: space-between;
+		gap: var(--s-3);
+		align-items: flex-start;
+		margin-bottom: 4px;
+	}
+	.rel-name {
+		font-size: var(--text-sm);
+		overflow-wrap: anywhere;
+		min-width: 0;
+	}
+	.reasons {
+		margin-top: var(--s-2);
+		font-size: var(--text-xs);
+		color: var(--text-muted);
+	}
+	.reasons li {
+		padding: 2px 0 2px var(--s-3);
+		border-left: 2px solid var(--line-strong);
+	}
+	.reasons li.fail {
+		border-left-color: var(--fail);
+	}
+	.reasons li.hold,
+	.reasons li.warn {
+		border-left-color: var(--wait);
+	}
+	.rel-actions {
+		margin-top: var(--s-2);
+		gap: var(--s-2);
+	}
+	.pager {
+		justify-content: space-between;
+		margin-top: var(--s-3);
+	}
+	.path {
+		overflow-wrap: anywhere;
+	}
+	.warns {
+		margin-top: var(--s-3);
+		padding-left: var(--s-4);
+		list-style: disc;
+		font-size: var(--text-sm);
+		color: var(--wait);
+	}
+	.modal {
+		width: min(480px, calc(100vw - 32px));
+		max-height: calc(100dvh - 32px);
+		overflow: auto;
+		padding: var(--s-6);
+		border: 0;
+		border-radius: var(--r-modal);
+		background: var(--surface-1);
+		color: var(--text);
+		box-shadow: var(--shadow-modal);
+	}
+	.modal::backdrop {
+		background: var(--scrim);
+	}
+	.modal-actions {
+		justify-content: flex-end;
+		margin-top: var(--s-6);
+	}
+	@media (max-width: 600px) {
+		.rel-top {
+			flex-direction: column;
+		}
+	}
+</style>

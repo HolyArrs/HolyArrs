@@ -1,0 +1,101 @@
+package web
+
+import (
+	"github.com/CoderLuii/holyarrs/internal/urlbase"
+	"io/fs"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+)
+
+func get(t *testing.T, p string) *httptest.ResponseRecorder {
+	t.Helper()
+	w := httptest.NewRecorder()
+	Handler().ServeHTTP(w, httptest.NewRequest(http.MethodGet, p, nil))
+	return w
+}
+
+func TestServesBuiltFilesAndFallsBack(t *testing.T) {
+	root := get(t, "/")
+	if root.Code != 200 || !strings.Contains(root.Body.String(), "/_app/immutable/") {
+		t.Fatalf("/: %d", root.Code)
+	}
+	for _, p := range []string{"/library", "/settings/sign-in", "/library/12"} {
+		if w := get(t, p); w.Code != 200 || w.Body.String() != root.Body.String() {
+			t.Errorf("%s: %d, want the app page", p, w.Code)
+		}
+	}
+	for _, p := range []string{"/missing.css", "/_app/immutable/nope.js", "/api/v1/nope", "/live"} {
+		if w := get(t, p); w.Code != 404 {
+			t.Errorf("%s: %d, want 404", p, w.Code)
+		}
+	}
+	var asset string
+	_ = fs.WalkDir(Files, "_app/immutable", func(p string, d fs.DirEntry, err error) error {
+		if err == nil && !d.IsDir() && asset == "" {
+			asset = "/" + p
+		}
+		return nil
+	})
+	if asset == "" {
+		t.Fatal("no built assets; run npm run build in web/app")
+	}
+	if w := get(t, asset); w.Code != 200 || !strings.Contains(w.Header().Get("Cache-Control"), "immutable") {
+		t.Fatalf("%s: %d %q", asset, w.Code, w.Header().Get("Cache-Control"))
+	}
+	if w := get(t, "/"); w.Header().Get("Cache-Control") != "no-cache" {
+		t.Fatalf("page cache: %q", w.Header().Get("Cache-Control"))
+	}
+}
+
+// TestNoBannedWords keeps upstream coined words out of everything the app ships.
+func TestNoBannedWords(t *testing.T) {
+	banned := []string{"Monitored", "Activity", "Wanted", "Cutoff", "Quality Profile", "Root Folder", "Download Client",
+		"Interactive Search", "Manual Import", "Grabbed", "Connections", "Discover", "Requests", "Collections"}
+	n := 0
+	_ = fs.WalkDir(Files, ".", func(p string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() || !(strings.HasSuffix(p, ".html") || strings.HasSuffix(p, ".js")) {
+			return nil
+		}
+		b, _ := fs.ReadFile(Files, p)
+		n++
+		for _, w := range banned {
+			if strings.Contains(string(b), w) {
+				t.Errorf("%s uses the word %q", p, w)
+			}
+		}
+		return nil
+	})
+	if n == 0 {
+		t.Fatal("no app files checked")
+	}
+}
+
+func TestServesUnderAURLBase(t *testing.T) {
+	h := urlbase.Handler("/holyarrs", Handler())
+	get := func(p string) *httptest.ResponseRecorder {
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, p, nil))
+		return w
+	}
+	page := get("/holyarrs/library/12").Body.String()
+	if !strings.Contains(page, `"/holyarrs/_app/immutable/`) || strings.Contains(page, `"/_app/`) || !strings.Contains(page, `base: "/holyarrs"`) ||
+		!strings.Contains(page, `href="/holyarrs/brand/`) {
+		t.Fatalf("page links not under the base:\n%s", page)
+	}
+	var css string
+	_ = fs.WalkDir(Files, "_app/immutable/assets", func(p string, d fs.DirEntry, err error) error {
+		if err == nil && strings.HasSuffix(p, ".css") {
+			css = "/" + p
+		}
+		return nil
+	})
+	w := get("/holyarrs" + css)
+	if w.Code != 200 || strings.Contains(w.Body.String(), "url(/_app/") || !strings.HasPrefix(w.Header().Get("Content-Type"), "text/css") {
+		t.Fatalf("css %d %s", w.Code, w.Header().Get("Content-Type"))
+	}
+	if get("/library").Code != 404 {
+		t.Fatal("outside the base served")
+	}
+}

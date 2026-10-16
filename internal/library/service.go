@@ -1,0 +1,295 @@
+package library
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+	"log"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/jobs"
+	"github.com/CoderLuii/holyarrs/internal/live"
+	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/CoderLuii/holyarrs/internal/store"
+)
+
+// Job kinds run by the library.
+const (
+	KindRefreshTitle = "refresh_title"         // one Title's details
+	KindScanTitle    = "scan_title"            // look at a Title's Version folders
+	KindMoveTitle    = "move_title"            // move a Version to another Library folder (dry run first)
+	KindCheckFolders = "check_library_folders" // health of every Library folder
+	// KindSearchSlot is the Source search for one Slot (internal/source).
+	KindSearchSlot = "search_slot"
+)
+
+// Service runs the library's Jobs and the work behind the API.
+type Service struct {
+	Store    *store.Store
+	Queue    *jobs.Queue
+	Metadata metadata.Provider
+	// Shows are the show details sources (tmdb, tvmaze, tvdb); nil has none.
+	Shows metadata.ShowSources
+	// Artists is MusicBrainz (or a mirror); nil has no music details.
+	Artists metadata.ArtistProvider
+	Live    *live.Hub
+	// Artwork caches posters; nil keeps no pictures.
+	Artwork *ArtworkCache
+	// SavePath is the Downloader save folder named at start, for health checks.
+	SavePath string
+	// Now is the clock (time.Now when nil).
+	Now func() time.Time
+}
+
+func (s *Service) now() time.Time {
+	if s.Now != nil {
+		return s.Now().UTC()
+	}
+	return time.Now().UTC()
+}
+
+// Register adds the library's Job handlers to the queue.
+func (s *Service) Register(q *jobs.Queue) {
+	q.Handle(KindRefreshTitle, s.handleRefreshTitle)
+	q.Handle(KindRefreshTitles, s.handleRefreshTitles)
+	q.Handle(KindRefreshShows, s.handleRefreshShows)
+	q.Handle(KindRefreshArtists, s.handleRefreshArtists)
+	q.Handle(KindScanTitle, s.handleScan)
+	q.Handle(KindMoveTitle, s.handleMove)
+	q.Handle(KindCheckFolders, s.handleCheckFolders)
+	q.Handle(KindRename, s.handleRename)
+	q.Handle(KindCleanHolding, s.handleCleanHolding)
+	q.Handle(KindScanLibrary, s.handleScanLibrary)
+	q.Handle(KindAdopt, s.handleAdopt)
+	q.Handle(KindRescan, s.handleRescan)
+}
+
+func (s *Service) publish(topic string, v any) {
+	if s.Live != nil {
+		s.Live.Publish(topic, v)
+	}
+}
+
+func (s *Service) event(ctx context.Context, e *domain.Event) {
+	if err := s.Store.AddEvent(ctx, e); err != nil {
+		log.Printf("library: event %s: %v", e.Kind, err)
+		return
+	}
+	s.publish("event", e)
+}
+
+func jobActor(r *jobs.Run) domain.Actor { return domain.Actor{Kind: "job", ID: r.Job.ID} }
+
+// downloadPaths lists the Downloader folders for hardlink checks.
+func (s *Service) downloadPaths(ctx context.Context) []string {
+	ps, err := DownloadPaths(ctx, s.Store.Read(), s.SavePath)
+	if err != nil {
+		log.Printf("library: downloader paths: %v", err)
+	}
+	return ps
+}
+
+// Add adds a movie and queues its details refresh, which is followed by a
+// folder scan and, when asked, a search (Radarr's order for a new movie).
+func (s *Service) Add(ctx context.Context, m metadata.Movie, opt AddOptions, by domain.Actor) (int64, int64, error) {
+	id, err := AddMovie(ctx, s.Store, m, opt, s.downloadPaths(ctx), s.now(), by)
+	if err != nil {
+		return 0, 0, err
+	}
+	var t domain.Title
+	_ = store.Get(ctx, s.Store.Read(), "titles", id, &t)
+	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleAdded, TitleID: &id, Summary: "Added " + t.Name,
+		Data: map[string]any{"why_added": t.WhyAdded, "release_gate": t.ReleaseGate, "gate_delay_days": t.GateDelayDays,
+			"gate_driver": t.GateDriver, "search_on_add": opt.SearchOnAdd}, GroupKey: "title:" + strconv.FormatInt(id, 10)})
+	then := []any{KindScanTitle}
+	if opt.SearchOnAdd {
+		then = append(then, KindSearchSlot)
+	}
+	jobID, _, err := s.Queue.Enqueue(ctx, KindRefreshTitle, &domain.Subject{Type: "title", ID: id},
+		map[string]any{"then": then, "new": true}, "refresh_title:"+strconv.FormatInt(id, 10), by)
+	return id, jobID, err
+}
+
+// next queues the step after this one in a chain: refresh, then scan, then search.
+func (s *Service) next(ctx context.Context, r *jobs.Run, titleID int64) error {
+	raw, _ := r.Job.Params["then"].([]any)
+	if len(raw) == 0 {
+		return nil
+	}
+	kind, _ := raw[0].(string)
+	rest := raw[1:]
+	by := jobActor(r)
+	switch kind {
+	case KindScanTitle:
+		_, _, err := s.Queue.Enqueue(ctx, KindScanTitle, &domain.Subject{Type: "title", ID: titleID},
+			map[string]any{"then": rest}, "scan_title:"+strconv.FormatInt(titleID, 10), by)
+		return err
+	case KindSearchSlot:
+		return s.searchTitle(ctx, titleID, by)
+	}
+	return fmt.Errorf("unknown next step %q", kind)
+}
+
+// searchTitle queues a search for each of the Title's Slots that is past its
+// gate and looking (wanted or better_wanted). Slots not out yet are skipped.
+func (s *Service) searchTitle(ctx context.Context, titleID int64, by domain.Actor) error {
+	var kind string
+	if err := s.Store.Read().QueryRowContext(ctx, "SELECT kind FROM titles WHERE id = ?", titleID).Scan(&kind); err != nil {
+		return err
+	}
+	if kind == "artist" {
+		return nil // albums are searched from stage 3.3
+	}
+	slots, err := store.Select[domain.Slot](ctx, s.Store.Read(), "slots",
+		"item_id IN (SELECT id FROM items WHERE title_id = ?) AND state IN ('wanted', 'better_wanted') ORDER BY id", titleID)
+	if err != nil {
+		return err
+	}
+	for _, sl := range slots {
+		if _, _, err := s.Queue.Enqueue(ctx, KindSearchSlot, &domain.Subject{Type: "slot", ID: sl.ID}, nil,
+			"search_slot:"+strconv.FormatInt(sl.ID, 10), by); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// versionFolder is a Version's folder on disk.
+func versionFolder(ctx context.Context, db store.Querier, v domain.Version) (string, domain.LibraryFolder, error) {
+	var lf domain.LibraryFolder
+	if err := store.Get(ctx, db, "library_folders", v.LibraryFolderID, &lf); err != nil {
+		return "", lf, err
+	}
+	return filepath.Join(lf.Path, v.FolderName), lf, nil
+}
+
+var videoExt = map[string]bool{".mkv": true, ".mp4": true, ".m4v": true, ".avi": true, ".ts": true, ".m2ts": true, ".wmv": true, ".mov": true, ".webm": true}
+
+// handleScan looks at each Version folder of a Title and reports what is
+// there: whether the folder exists, the video files in it, and which known
+// Files are present or absent. It reads only; matching unknown files to the
+// Title (adopting them) is the Library scan's work.
+func (s *Service) handleScan(ctx context.Context, r *jobs.Run) error {
+	if r.Job.Subject == nil || r.Job.Subject.Type != "title" {
+		return errors.New("scan_title needs a title subject")
+	}
+	titleID := r.Job.Subject.ID
+	db := s.Store.Read()
+	vs, err := store.Select[domain.Version](ctx, db, "versions", "title_id = ? ORDER BY id", titleID)
+	if err != nil {
+		return err
+	}
+	var out []map[string]any
+	for _, v := range vs {
+		dir, lf, err := versionFolder(ctx, db, v)
+		if err != nil {
+			return err
+		}
+		res := map[string]any{"version": v.Label, "folder": dir, "exists": false}
+		var videos []string
+		if lf.Health == "missing" {
+			res["note"] = "the Library folder is missing; nothing was looked at"
+		} else if st, err := os.Stat(dir); err == nil && st.IsDir() {
+			res["exists"] = true
+			_ = filepath.WalkDir(dir, func(p string, d os.DirEntry, err error) error {
+				if err == nil && !d.IsDir() && videoExt[strings.ToLower(filepath.Ext(p))] {
+					rel, _ := filepath.Rel(dir, p)
+					videos = append(videos, filepath.ToSlash(rel))
+				}
+				return nil
+			})
+		}
+		files, err := store.Select[domain.File](ctx, db, "files", "version_id = ? AND state = 'present' AND role = 'main'", v.ID)
+		if err != nil {
+			return err
+		}
+		present, absent := 0, 0
+		for _, f := range files {
+			// A File's path is relative to its Library folder, Version folder included.
+			if _, err := os.Stat(filepath.Join(lf.Path, filepath.FromSlash(f.RelativePath))); err == nil {
+				present++
+			} else {
+				absent++
+			}
+		}
+		res["video_files"], res["known_present"], res["known_absent"] = len(videos), present, absent
+		out = append(out, res)
+	}
+	r.SetResult(map[string]any{"versions": out})
+	s.event(ctx, &domain.Event{Actor: jobActor(r), Kind: domain.EventFolderScanned, TitleID: &titleID, JobID: &r.Job.ID,
+		Summary: "Looked at the movie folder", Data: map[string]any{"versions": out}, GroupKey: "title:" + strconv.FormatInt(titleID, 10)})
+	return s.next(ctx, r, titleID)
+}
+
+// handleCheckFolders checks every Library folder and records changes.
+func (s *Service) handleCheckFolders(ctx context.Context, r *jobs.Run) error {
+	fs, err := store.Select[domain.LibraryFolder](ctx, s.Store.Read(), "library_folders", "1=1 ORDER BY id")
+	if err != nil {
+		return err
+	}
+	paths := s.downloadPaths(ctx)
+	bad := 0
+	for i, f := range fs {
+		_ = r.Progress(ctx, float64(i)/float64(len(fs)), "checking "+f.Label)
+		lf, changed, err := RecheckFolder(ctx, s.Store, f.ID, paths, jobActor(r))
+		if err != nil {
+			return err
+		}
+		if lf.Health != "ok" {
+			bad++
+		}
+		if changed {
+			s.event(ctx, &domain.Event{Actor: jobActor(r), Kind: domain.EventFolderHealth, JobID: &r.Job.ID,
+				Summary: fmt.Sprintf("Library folder %s: %s", lf.Label, lf.Health),
+				Data:    map[string]any{"library_folder_id": lf.ID, "health": lf.Health, "reason": lf.HealthReason, "was": f.Health}})
+			s.publish("library_folder", lf)
+		}
+	}
+	r.SetResult(map[string]any{"checked": len(fs), "not_ok": bad})
+	return nil
+}
+
+// NeverAddList returns the Never-add list, newest first.
+func NeverAddList(ctx context.Context, db store.Lister) ([]domain.NeverAdd, error) {
+	out, err := store.Select[domain.NeverAdd](ctx, db, "never_add", "1=1 ORDER BY id DESC")
+	if out == nil {
+		out = []domain.NeverAdd{}
+	}
+	return out, err
+}
+
+// AddNeverAdd puts a movie on the Never-add list.
+func AddNeverAdd(ctx context.Context, s *store.Store, n domain.NeverAdd, by domain.Actor) (domain.NeverAdd, error) {
+	if n.SourceIDs["tmdb"] == "" {
+		return n, ErrNoMetadataIDs
+	}
+	n.Kind = "movie"
+	err := s.Write(ctx, func(tx *sql.Tx) error {
+		if on, err := OnNeverAdd(ctx, tx, n.SourceIDs["tmdb"]); err != nil || on {
+			return err
+		}
+		_, err := store.Insert(tx, "never_add", &n, by)
+		return err
+	})
+	return n, err
+}
+
+// RemoveNeverAdd takes one entry off the Never-add list.
+func RemoveNeverAdd(ctx context.Context, s *store.Store, id int64) error {
+	return s.Write(ctx, func(tx *sql.Tx) error {
+		res, err := tx.Exec("DELETE FROM never_add WHERE id = ?", id)
+		if err != nil {
+			return err
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			return store.ErrNotFound
+		}
+		return nil
+	})
+}
