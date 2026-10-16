@@ -4,13 +4,16 @@ FROM --platform=$BUILDPLATFORM golang:1.27.2@sha256:007a316059246276cb214df93950
 ARG TARGETOS=linux
 ARG TARGETARCH
 ARG TARGETVARIANT
-ARG VERSION=dev
+ARG VERSION
 WORKDIR /src
 COPY go.mod go.sum* ./
 RUN go mod download
 COPY . .
-RUN GOARM="${TARGETVARIANT#v}" CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
-    go build -trimpath -ldflags="-s -w" -o /out/holyarrs ./cmd/holyarrs
+RUN set -eu; \
+    ldflags="-s -w"; \
+    if [ -n "${VERSION:-}" ]; then ldflags="$ldflags -X main.version=$VERSION"; fi; \
+    GOARM="${TARGETVARIANT#v}" CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
+    go build -trimpath -ldflags="$ldflags" -o /out/holyarrs ./cmd/holyarrs
 RUN mkdir -p /out/config && chown 1000:1000 /out/config
 
 # Final stage

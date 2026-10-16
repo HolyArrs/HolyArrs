@@ -45,7 +45,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/urlbase"
 )
 
-const version = "0.0.0-skeleton"
+var version = "0.0.0-skeleton"
 
 type config struct {
 	ConfigDir string

@@ -92,6 +92,55 @@ jobs:
           set -o pipefail
           go test -exec "$TEST_EXEC" ./... 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
 
+  image-version:
+    runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
+    timeout-minutes: 30
+    env:
+      IMAGE: holyarrs-ci-version:${{ github.run_id }}-${{ github.run_attempt }}
+      CONTAINER: holyarrs-ci-version-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: Set the development version for this source
+        run: echo "CANDIDATE_VERSION=0.0.0-dev+g${GITHUB_SHA::12}" >> "$GITHUB_ENV"
+      - name: Build the reviewed development image
+        run: docker build --build-arg VERSION="$CANDIDATE_VERSION" --tag "$IMAGE" .
+      - name: Verify the image label and running binary version
+        run: |
+          set -o pipefail
+          label="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.version" }}' "$IMAGE")"
+          if [[ "$label" != "$CANDIDATE_VERSION" ]]; then
+            echo "OCI version label mismatch: got $label"
+            exit 1
+          fi
+
+          docker run --detach --name "$CONTAINER" --network none "$IMAGE" >/dev/null
+          log_file="$RUNNER_TEMP/image-version.log"
+          found=0
+          for _ in {1..60}; do
+            docker logs "$CONTAINER" 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g' > "$log_file"
+            if grep -Fq "holyarrs $CANDIDATE_VERSION:" "$log_file"; then
+              found=1
+              break
+            fi
+            if [[ "$(docker inspect --format '{{.State.Running}}' "$CONTAINER")" != "true" ]]; then
+              break
+            fi
+            sleep 1
+          done
+          if [[ "$found" != "1" ]]; then
+            echo "The running image did not report the reviewed development version."
+            cat "$log_file"
+            exit 1
+          fi
+          echo "OCI label and running binary report $CANDIDATE_VERSION."
+      - name: Remove the version-check image and container
+        if: always()
+        run: |
+          docker rm --force --volumes "$CONTAINER" 2>/dev/null || true
+          docker image rm "$IMAGE" 2>/dev/null || true
+
   faults-and-memory:
     # 3.7.10 to 3.7.12: the fault runs, the crash-to-sign-in time, the
     # memory runs (all parts on next to Movies and Shows only), the API
