@@ -5,6 +5,10 @@ import { fileURLToPath } from 'node:url';
 const root = new URL('./', import.meta.url);
 const allowed = new Map([
 	['/', ['index.html', 'text/html; charset=utf-8']],
+	['/concepts/one.html', ['concepts/one.html', 'text/html; charset=utf-8']],
+	['/concepts/two.html', ['concepts/two.html', 'text/html; charset=utf-8']],
+	['/concepts/three.html', ['concepts/three.html', 'text/html; charset=utf-8']],
+	['/assets/artwork.png', ['assets/artwork.png', 'image/png']],
 	['/assets/mark.svg', ['assets/mark.svg', 'image/svg+xml']],
 	['/assets/geist.woff2', ['assets/geist.woff2', 'font/woff2']],
 	['/assets/sora.woff2', ['assets/sora.woff2', 'font/woff2']]

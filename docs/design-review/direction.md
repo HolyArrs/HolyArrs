@@ -1,19 +1,20 @@
-# HolyArrs app redesign: direction review
+# HolyArrs app redesign: three-direction review
 
 Owner: redesign chat `01a146e0-0468-7e42-a35b-dab4c289493a`.
-State: direction preparation; Luis review required before product rollout.
-Source: `4b660863ab8c73977e9e2a58aa24811a4d64660b`.
-Working copy: `worktrees/app-redesign-review`, branch `codex/app-redesign-review`.
+State: Luis rejected direction v1 (red/charcoal) and requested three materially different, polished iOS-clean designs. No direction is approved and no product rollout has started.
+Source base: `4b660863ab8c73977e9e2a58aa24811a4d64660b`.
+Own working copy: `worktrees/app-redesign-review`, branch `codex/app-redesign-review`.
+Rejected v1 remains reviewable in commit `72076f66c59c192b639472b15e83b7ede65ddef8`.
 
-## Scope and stop condition
+## Scope and review boundary
 
-Prompt 2 owns app frontend across desktop, tablet and phone. This first milestone produces a source-based screen inventory, design choices, responsive review artifact and screenshots. It does not change the implemented product. The installed app and its data stay untouched. Review examples are fictional disposable fixtures and never enter production flows.
+Prompt 2 owns the implemented app frontend across desktop, tablet and phone. This milestone supplies a source-based screen inventory and three interactive review prototypes. Every title, download and address is a fictional disposable example. No implemented Svelte product, backend, API, database, installed container, credentials or real media has changed. Luis selects or revises a concrete direction before rollout. Ordinary implementation proceeds autonomously after that decision.
 
 ## Inventory
 
 | Family | Implemented screens and functions | Design checks |
 | --- | --- | --- |
-| App shell | Capability-filtered navigation, parts, live connection state, safe mode, account, theme, sign out | Desktop groups; tablet rail; five phone destinations with More; skip link; focused menu return |
+| App shell | Capability-filtered navigation, parts, live connection state, safe mode, account, theme, sign out | Three alternative navigation models under review; preserve capability filtering, skip link and focus return |
 | Home | Setup steps, downloads, searches, missing titles, events and health | Prioritize decisions and failures; setup replaces empty content; keep real status visible |
 | Library | Kind/state filters, name search, poster/list view; held, turned down, subtitles, import, rename, file codecs, movie series and people | Group tools; retain direct actions; long names; large library; grid/list parity |
 | Title | Movie/show/artist; versions, seasons, episodes, albums, releases, subtitles, files, edit/remove | Clear identity and current state; reveal detailed actions without losing them; preserve confirmation scope |
@@ -28,37 +29,45 @@ Prompt 2 owns app frontend across desktop, tablet and phone. This first mileston
 
 Source inspection identifies a 232px desktop sidebar and a seven-item possible phone bar; settings section navigation disappears below 900px. These are source findings, not live-browser failure claims.
 
-## Direction choices
+## Three independent concepts
 
-1. **Media workbench (recommended).** Keep the established red mark, charcoal surfaces, Sora headings and Geist body. Put media identity first, with disciplined operational rows and restrained state color. A narrow tablet rail and five-destination phone bar protect useful space. Fits both browsing and frequent administration.
-2. **Cinema-led.** Larger artwork, prominent title backdrops and fewer visible details. More atmospheric, but slower to scan decisions, paths, downloads and large libraries. Would need a distinct compact operations treatment.
-3. **Compact utility.** Smaller type, mostly tables and little artwork. Efficient for mouse and keyboard administration, but weak for family browsing and touch use. Would need a roomier touch mode.
+| Concept | Desktop | Tablet | Phone | Interaction thesis |
+| --- | --- | --- | --- | --- |
+| 01 Library | Open warm-white canvas, large title, artwork grid, floating four-destination dock | Four-column grid, same dock; roomy side inspector | Two-column posters, horizontal groups, dock; bottom title sheet | Browse freely; keep your place while opening a title; full-page Menu index |
+| 02 Focus | Sources / task list / detail in three panes | Two panes with navigation drawer | Grouped index -> list -> detail with Back, no bottom bar | Work through decisions and operational detail; arrow-key row navigation; compact artwork |
+| 03 Cinema | Minimal horizontal navigation, feature artwork canvas, horizontal shelves | Artwork-led browse, shelves, full title page | Stacked shelves, compact three-destination capsule, full title page | Stories lead; activity is a temporary overlay rather than a permanent workspace |
 
-## Proposed system
+These differ in information hierarchy, menus, content density, title transitions, activity placement and responsive structure. They are not recolours of v1. Each demonstrates Library/title, Downloads and settings navigation using the same review collection. Proposed visual groupings and appearance ideas are labelled as proposals, not existing product capabilities. The app is not a media player; Cinema offers title management, not playback.
 
-- Color: charcoal canvas `#111316`, panels `#191c20`, warm-white text `#f0eee9`, readable secondary text `#b1b2b5`, red action `#cc342b`. Green/amber/red indicate actual state alongside words/icons. No decorative gradient panels.
-- Type: existing bundled Sora for title identity, Geist for controls/body, tabular figures for progress and counts. Headings 28–36px desktop, 26px phone. Controls/body 14–16px, supporting text at least 12px.
-- Shape and space: 4px rhythm, 6px controls, 10px surfaces; borders for grouping; shadows reserved for popovers/dialogs. Avoid putting every fact inside a card.
-- Desktop from 1180px: 216px grouped sidebar; 64px context header; content follows screen purpose, allowing dense tables to use width and forms to stay readable.
-- Tablet 720–1179px: labelled 80px rail and full section selector; two-column details only when both columns fit. No desktop sidebar squeezed into tablet content.
-- Phone below 720px: compact header, five bottom destinations (Home, Library, Search, Downloads, More for staff); More contains Calendar, Wishlist, History, Decisions, Alerts and Settings/account as allowed. Member destinations remain capability-derived. A labelled menu shows the current location when it lives under More.
-- Forms: visible labels, help next to the field, validation next to the cause, bounded form width, explicit save/test outcomes respecting the existing save-then-test sequence and retained input on error. Settings section selector remains present at every size.
-- Lists/tables: poster/list parity; consistent sorting/filter placement. Wide comparison tables keep headers and get a named local scroll region; phone tasks use stacked rows where relationships survive. Do not hide meaningful columns without an accessible detail path.
-- Media: preserve the existing poster assets in actual implementation. Review art is original geometric cover placeholders, labelled fictional fixtures; no artwork downloads or real library access.
-- States: skeleton matches content; empty state distinguishes no library from no filter matches; error retains previous data and offers retry; stale/live state stays readable. Disabled part and safe mode remain explicit.
-- Input: minimum 44px hit targets; visible focus; native scroll; reduced motion; Escape and focus return for dialogs/menus; no hover-only actions. Current capability checks, part checks and URL-base handling remain authoritative.
+## Reference study
 
-## Review artifact and validation
+Luis explicitly requested Mobbin. Nine high-resolution reference stills were inspected and retained only under `releases/app-redesign-20261016/references/`, with source URLs in `mobbin.json`. No personal browser or login was used; no reference UI asset ships in the prototypes. This is a still-screen study, not a recorded video.
 
-Review artifact: `worktrees/app-redesign-review/docs/design-review/index.html`. It demonstrates Library, title detail, Downloads and settings with an explicit fixture label and local-only navigation/filter/theme controls. Product network calls are absent. Planned review snapshots cover desktop 1440px, tablet 834px and phone 390px; narrow 320px and text/keyboard/error variants are checked when the bounded browser slot is available.
+- Library: [Apple Music](https://mobbin.com/screens/98264793-0d40-4f0f-93c9-c5ca32a2cb78): large native headings, open light surfaces, artwork rhythm and floating navigation.
+- Focus: [Things 3](https://mobbin.com/screens/97952802-d1f3-4324-8a5b-fab1bc02c29e): grouped lists, quiet dividers, compact hierarchy and forward/back navigation.
+- Cinema: [Apple TV](https://mobbin.com/screens/c58760da-44bb-489d-bb3b-a19c060dfa8f): feature artwork, horizontal shelves and restrained overlay controls.
 
-Use a single isolated headless browser and one page, no build or simulation in parallel. Preview port 18744 was free at intake; check again before binding. Disposable assets and captures belong to this milestone. This is design validation only; no product build, product interaction regression or combined-source acceptance is implied.
+Geist and the existing HolyArrs mark are reused. The six-panel artwork is original fictional review art. It is never injected into production flows. No dependency was added.
+
+## Functional and input contracts
+
+Retain session.can authorization, hidden-part handling, safe mode, base-path routing and live state in the eventual implementation. Actual download actions are Mark failed and Remove; there is no per-job pause. Keep the existing consequence confirmations. The downloader connection test uses saved configuration; preserve save-then-test order. A prototype explanation or local state change is not evidence of backend operation.
+
+Use at least 44px primary touch controls, visible focus, native dialogs with accessible names and focus return, inert off-screen panes, keyboard alternatives and reduced motion. Preserve long-title access, narrow 320px layouts, filtering recovery, pagination/large-library operations and real loading/empty/error paths during product rollout. Prototype fixtures do not certify those product workflows.
+
+## Preview and verification
+
+Comparison: `http://10.10.25.25:18744` (Tailscale `http://100.87.70.86:18744`). Own static GET-only allowlist server; no API proxy. Port ownership verified before initial bind and exact owned process restart. Current server serves eight allowlisted resources (gallery, three concepts, artwork, mark and two bundled fonts).
+
+Source checks: all inline scripts parse; HTTP responses match exact concept source; gallery/art/font/mark return 200; API/unlisted paths and POST are rejected; diff whitespace checks pass. Independent source review identified and fixed dialog naming, disclosure semantics, Music fixture content, download removal confirmation, inactive responsive panes and focus return. Source-only review cannot certify rendering or accessibility.
+
+Headless browser, responsive/keyboard checks, axe and screenshots remain queued while the backend race diagnostic owns the sole heavy-work slot. Proposed next capture is one isolated headless Chromium, one page, no build/simulation, 180-second outer deadline. Do not silently launch it before explicit slot release. Capture exact final concept hashes at 1440/834/390/320 widths; test dialogs/navigation/search/settings; store fresh receipts. Never use checks against an older version to certify this set or the final product.
 
 ## Integration milestones
 
-1. Direction review: this artifact and source inventory; stop for Luis's decision.
-2. After approval: implement tokens/shell and representative real routes; run targeted role/part/base-path/keyboard checks; provide exact commit for backend integration.
-3. Roll through remaining screen families; preserve real contracts and test state variants; record exact frontend commits and backend needs.
-4. Backend combines completed source and reruns final packages, affected workflows and installation. The uninterrupted 24-hour run remains last and belongs to the backend chat.
+1. Three-direction review: this inventory and prototypes; Luis chooses/revises before product rollout.
+2. Approved direction: implement tokens/shell and representative real routes; targeted role/part/base-path/keyboard verification; exact commit handoff.
+3. Apply consistently across every inventory family; real state/large-library/error recovery checks; exact frontend commit and backend needs.
+4. Backend integrates final source, reruns affected workflows/packages and preservation checks; its uninterrupted 24-hour endurance run remains last.
 
-No API or schema change is currently requested. A new backend need must name endpoint, fields, compatibility and owner in the shared interfaces file. No backend files belong to this redesign branch.
+No API/schema change is currently requested. Any concrete need must name endpoint, fields, compatibility, owner and delivering commit in the shared interfaces file. Website may not use review prototypes as integrated product screenshots.

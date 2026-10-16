@@ -1,33 +1,33 @@
-# App direction review
+# Three-direction review
 
-Review-only HTML for Luis's desktop, tablet and phone design decision. This does not change the Svelte app or its real data. All titles, downloads, activity, addresses and account fields are explicitly fictional. Actions explain the retained product behavior or update this preview tab only.
+Luis rejected v1 and requested three materially different polished, iOS-clean alternatives. Open the comparison at [home-network preview](http://10.10.25.25:18744) or [Tailscale preview](http://100.87.70.86:18744).
 
-## View
+- `concepts/one.html`: Library, an open light canvas with floating dock and title inspector/sheet.
+- `concepts/two.html`: Focus, a three-pane organiser becoming forward/back navigation on phone.
+- `concepts/three.html`: Cinema, feature artwork and horizontal shelves with full title pages and temporary activity overlay.
 
-After checking port 18744 is free, run from this working copy:
+All are review-only HTML. Titles, addresses, progress and local actions are fictional. No app API, real media or database is contacted. Proposed visual groupings and appearance controls are identified as proposals. No product rollout is approved. The source inventory and decision record are in `direction.md`; shared project files remain authoritative for coordination.
 
-```powershell
-node docs/design-review/serve.mjs
-```
+## Serve
 
-Open `http://10.10.25.25:18744` on the home network or `http://100.87.70.86:18744` over Tailscale. The server is a standalone static preview with four allowlisted GET assets. It does not proxy or contact the installed app. Keep its process while the direction review is open; the redesign owner stops that exact process when the preview is retired.
-
-Use the Review screens links for Library, title detail, Downloads and settings. Library includes state examples, filtering, name search and poster/list layouts. Theme changes are local to the tab. More opens the phone menu. Home, Search, Wishlist, Calendar and History labels in the shell are context for the proposed navigation; the review does not claim those screens are implemented here.
+Check port 18744 ownership before launch. Run `node docs/design-review/serve.mjs` from this isolated working copy. The server binds the network interface and serves eight allowlisted GET resources. It does not proxy the installed app. Keep the exact owned process available during review; stop only that process when retiring it.
 
 ## Verify
 
-Do not launch capture while another chat holds the shared heavy-work slot. Reserve a bounded allocation in the shared interfaces file first. Reuse cached Playwright and axe; no dependency install, browser download or personal profile is needed.
+All three inline scripts parse, HTTP content matches the saved concept source, and method/path isolation checks pass. Independent source review led to dialog naming, focus restoration, inactive-pane, removal confirmation and fixture accuracy fixes. These source checks do not prove rendering or accessibility.
+
+Headless capture remains queued behind the backend's heavy-work reservation in `plans/active/2026-10-16-shared-interfaces.md`. Do not launch until explicitly released and allocated. Use cached Playwright/axe, one isolated Chromium and one page, with a 180-second outer process-tree deadline:
 
 ```powershell
-node docs/design-review/capture.cjs <absolute-cached-web-app-tooling-directory> <absolute-fresh-capture-directory>
+node docs/design-review/capture-concepts.cjs <absolute-cached-web-app-tooling-directory> <absolute-new-output-directory>
 ```
 
-The script runs one isolated headless Chromium with one page, permits only the review origin, closes its browser, and records screenshot dimensions, artifact hash, errors, automated accessibility findings and interaction assertions in `receipt.json`. It has a 150-second internal deadline; use an external process-tree deadline of 180 seconds too. Output directories should be new for every attempt so failed evidence remains intact.
+The script has a 150-second internal deadline, blocks other origins, captures 1440/834/390/320px and representative title/download/settings states, checks selected keyboard/dialog interactions and axe, records final source hashes, and closes its browser. Inspect `receipt.json`; nonzero exit or violations are failures. The output directory must be fresh. No personal profile, browser download or dependency install is needed. `capture.cjs` targets the rejected v1 and must not be used to certify these concepts.
 
-Screens are exercised at 1440, 834, 390 and 320px. This proves only the review artifact. Automated checks do not establish assistive technology usability or certify the eventual integrated app. Product builds, route regressions, real artwork, role/part variants and final combined acceptance belong to the later implementation milestones.
+No browser capture has run for this revision yet. Automated checks also cannot establish screen-reader usability or final product acceptance. The approved design must subsequently be implemented on real routes with permission/part/base-path variants, long text, large libraries, loading/empty/error states and recovery checks, followed by combined-source verification.
 
-## Ownership
+## References and ownership
 
-Branch: `codex/app-redesign-review`. Base: `4b660863ab8c73977e9e2a58aa24811a4d64660b`. Only `docs/design-review` is changed at this milestone. Existing bundled fonts and the existing HolyArrs mark are reused, with font licenses retained. No new dependency, artwork download, backend/API/schema change or installed-app action is involved.
+Mobbin study: [Apple Music](https://mobbin.com/screens/98264793-0d40-4f0f-93c9-c5ca32a2cb78), [Things 3](https://mobbin.com/screens/97952802-d1f3-4324-8a5b-fab1bc02c29e), [Apple TV](https://mobbin.com/screens/c58760da-44bb-489d-bb3b-a19c060dfa8f). Nine high-resolution reference stills and their URLs are retained outside this repo under `releases/app-redesign-20261016/references`. Reference screenshots are not shipped assets. The six-title artwork sheet is original fictional review art; Geist and the HolyArrs mark come from existing project assets, with font licenses retained.
 
-The shared plan is `plans/active/2026-10-16-app-redesign-direction.md` at the project root. Integration notes are in `plans/active/2026-10-16-shared-interfaces.md`. Stop at Luis's direction review; after approval, implement actual frontend screens consistently and provide exact source commits to the backend chat.
+Own branch `codex/app-redesign-review`, base `4b660863ab8c73977e9e2a58aa24811a4d64660b`. Rejected v1 commit `72076f66c59c192b639472b15e83b7ede65ddef8`. No product, backend, API, schema, installed app, credential, media, release or publishing change is included. Backend dependencies: none currently. Luis's direction review precedes autonomous implementation across the real app.
