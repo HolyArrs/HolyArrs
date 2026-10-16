@@ -196,6 +196,7 @@ func TestImportRefusesClaimMismatch(t *testing.T) {
 
 // 4.3.5 review: a web shortcut beside a good video does not stop the import.
 func TestImportWithShortcutBeside(t *testing.T) {
+	fakeDisk(t, 1<<40)
 	w, _ := floorWorld(t, 200<<20, 210<<20, 166, "Downloaded from X.url")
 	imp, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)
 	if err != nil || imp.State != "done" {
