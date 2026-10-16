@@ -209,6 +209,9 @@ const squash = (/** @type {string} */ s) => s.toLowerCase().replace(/[^a-z0-9]+/
 /** How long the fake Source takes to answer a movie search. */
 export const searchDelayMs = 2500;
 
+/** @param {number} tmdbId @param {number} releaseNumber */
+export const movieReleaseHash = (tmdbId, releaseNumber) => `${tmdbId}`.padStart(8, '0') + `${releaseNumber}`.repeat(32);
+
 /** @param {typeof tmdbMovies[number]} m */
 function releasesFor(m) {
 	const dotted = `${m.title.replace(/[^A-Za-z0-9]+/g, '.')}.${m.release_date.slice(0, 4)}`;
@@ -216,10 +219,9 @@ function releasesFor(m) {
 		`<item><title>${name}</title><guid>${name}</guid><pubDate>Mon, 01 Jan 2024 00:00:00 +0000</pubDate>` +
 		`<enclosure url="http://127.0.0.1:${indexerPort}/dl/${hash}.torrent" length="${size}" type="application/x-bittorrent"/>` +
 		`<torznab:attr name="seeders" value="${seeders}"/><torznab:attr name="peers" value="${seeders + 5}"/><torznab:attr name="infohash" value="${hash}"/></item>`;
-	const h = (/** @type {number} */ n) => `${m.id}`.padStart(8, '0') + `${n}`.repeat(32);
-	return one(`${dotted}.1080p.WEB-DL.H264-HOLYARRS`, 4_000_000_000, 50, h(1)) +
-		one(`${dotted}.720p.WEB.H264-HOLYARRS`, 1_500_000_000, 20, h(2)) +
-		one(`${dotted}.HDCAM.x264-NOPE`, 1_000_000_000, 5, h(3));
+	return one(`${dotted}.1080p.WEB-DL.H264-HOLYARRS`, 4_000_000_000, 50, movieReleaseHash(m.id, 1)) +
+		one(`${dotted}.720p.WEB.H264-HOLYARRS`, 1_500_000_000, 20, movieReleaseHash(m.id, 2)) +
+		one(`${dotted}.HDCAM.x264-NOPE`, 1_000_000_000, 5, movieReleaseHash(m.id, 3));
 }
 
 /**

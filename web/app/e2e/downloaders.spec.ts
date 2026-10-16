@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { devices, expect, test, type Page } from '@playwright/test';
 import { noSidewaysScroll, owner, signIn } from './helpers.ts';
-import { qbitPort, sabKey, sabPort } from './fakes.mjs';
+import { movieReleaseHash, qbitPort, sabKey, sabPort } from './fakes.mjs';
 
 // Settings > Downloaders against the fake qBittorrent and SABnzbd in
 // fakes.mjs, then a movie whose download is marked failed: the next
@@ -105,18 +105,30 @@ test('a movie downloads through qBittorrent; Mark failed sends the next Release 
 	await expect(dl.getByTestId('download-state')).toHaveText('Downloading', { timeout: 30_000 });
 	await expect(dl).toContainText('40%');
 	await expect(dl.getByTestId('download-text')).toHaveText('40% done.');
+	const first = movieReleaseHash(900011, 1);
+	const second = movieReleaseHash(900011, 2);
+	await expect.poll(async () => {
+		const state = await (await fetch(`${qbit}/state`)).json();
+		return state.added.filter((hash: string) => hash === first).length;
+	}, { timeout: 30_000 }).toBe(1);
 	let state = await (await fetch(`${qbit}/state`)).json();
-	expect(state.added).toHaveLength(1);
-	const first = state.added[0];
+	expect(state.added.filter((hash: string) => hash === first)).toHaveLength(1);
 
 	page.once('dialog', (d) => d.accept());
 	await dl.getByRole('button', { name: 'Mark failed' }).click();
 	await expect(page.getByText('Marked failed. HolyArrs looks for the next Release.')).toBeVisible();
 	// The failed one leaves qBittorrent and the 720p copy is sent instead.
-	await expect.poll(async () => (await (await fetch(`${qbit}/state`)).json()).added.length, { timeout: 30_000 }).toBe(2);
+	await expect.poll(async () => {
+		const state = await (await fetch(`${qbit}/state`)).json();
+		return {
+			first: state.added.filter((hash: string) => hash === first).length,
+			second: state.added.filter((hash: string) => hash === second).length
+		};
+	}, { timeout: 30_000 }).toEqual({ first: 1, second: 1 });
 	state = await (await fetch(`${qbit}/state`)).json();
+	expect(state.added.filter((hash: string) => hash === first)).toHaveLength(1);
+	expect(state.added.filter((hash: string) => hash === second)).toHaveLength(1);
 	expect(state.deleted).toContain(first);
-	expect(state.added[1]).not.toBe(first);
 	await expect(dl.getByTestId('download-state')).toHaveText('Downloading', { timeout: 30_000 });
 
 	// The failed Release is on the Turned down list with the reason.
