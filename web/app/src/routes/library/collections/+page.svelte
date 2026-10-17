@@ -41,7 +41,8 @@
 {/if}
 
 <style>
-	.collection { display: flex; align-items: center; justify-content: space-between; gap: 1rem; color: inherit; text-decoration: none; }
+	.collection { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); padding: var(--s-3); color: inherit; text-decoration: none; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-1); transition: border-color var(--dur-fast), background var(--dur-fast); }
+	.collection:hover { border-color: var(--line-strong); background: var(--surface-2); }
 	.collection span:first-child { display: grid; gap: .2rem; }
 	.empty { text-align: center; padding: 3rem 1rem; }
 </style>

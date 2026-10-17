@@ -50,8 +50,8 @@
 		border-left-color: var(--fail);
 	}
 	.x {
-		width: 32px;
-		height: 32px;
+		width: 44px;
+		height: 44px;
 		display: grid;
 		place-items: center;
 		border-radius: var(--r-sm);

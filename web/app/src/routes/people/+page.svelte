@@ -69,11 +69,11 @@
 
 <style>
 	.searchbar { display: grid; grid-template-columns: 1fr auto; gap: var(--s-3); max-width: 760px; margin-bottom: var(--s-5); }
-	.searchbar input { min-width: 0; }
-	.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: var(--s-4); }
+	.searchbar input { min-width: 0; min-height: var(--tap); border-color: var(--line-strong); background: var(--surface-1); }
+	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: var(--s-3); }
 	.sk { min-height: 112px; }
 	.count { margin-bottom: var(--s-3); }
 	.attribution { margin-top: var(--s-5); }
-	.pages { display: flex; align-items: center; justify-content: center; gap: var(--s-3); margin-top: var(--s-5); }
-	@media (max-width: 520px) { .searchbar { grid-template-columns: 1fr; } .searchbar button { width: 100%; } }
+	.pages { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); margin-top: var(--s-5); padding-top: var(--s-3); border-top: 1px solid var(--line); }
+	@media (max-width: 520px) { .searchbar { grid-template-columns: 1fr; } .searchbar button { width: 100%; min-height: var(--tap); } .pages { justify-content: center; flex-wrap: wrap; } }
 </style>

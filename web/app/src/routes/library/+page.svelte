@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { to } from '#lib/paths.ts';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { api, message } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { page } from '$app/state';
@@ -27,10 +27,18 @@
 	let filter = $state<Filter>(startFilter && filters.some(([f]) => f === startFilter) ? startFilter : 'all');
 	const startKind = page.url.searchParams.get('kind') as Kind | null;
 	let kind = $state<Kind>(startKind && kinds.some(([k]) => k === startKind) ? startKind : 'all');
+	$effect(() => { const selected = page.url.searchParams.get('kind') as Kind | null; kind = selected && kinds.some(([k]) => k === selected) ? selected : 'all'; });
 	let q = $state('');
+	let sort = $state('name');
 	const query = $derived(titleQuery(q));
 	const moviesOn = $derived(partsNow.answer?.parts.find((part) => part.part === 'movies')?.on !== false);
 	let view = $state<'grid' | 'list'>(readView());
+	let previewId = $state<number | null>(null);
+	let previewReturn = $state<HTMLButtonElement | null>(null);
+	let previewHeading = $state<HTMLHeadingElement | null>(null);
+	let findInput = $state<HTMLInputElement | null>(null);
+	const preview = $derived(previewId === null ? null : (titles.find((title) => title.id === previewId) ?? null));
+	const kindLabel: Record<string, string> = { movie: 'Movie', show: 'Show', artist: 'Artist' };
 
 	function readView(): 'grid' | 'list' {
 		try {
@@ -46,6 +54,23 @@
 		} catch {
 			// Not remembered in a private window; still works.
 		}
+	}
+	async function openPreview(title: TitleView, event: MouseEvent) {
+		previewId = title.id;
+		previewReturn = event.currentTarget as HTMLButtonElement;
+		await tick();
+		previewHeading?.focus();
+	}
+	async function closePreview() {
+		previewId = null;
+		await tick();
+		if (previewReturn?.isConnected) previewReturn.focus();
+		else findInput?.focus();
+	}
+	function progressOf(title: TitleView): string {
+		if (title.kind === 'show') return showProgress(title.show);
+		if (title.kind === 'artist') return artistProgress(title.artist);
+		return `${title.slots.length} Version${title.slots.length === 1 ? '' : 's'}`;
 	}
 	function setFilter(f: Filter) {
 		filter = f;
@@ -72,7 +97,7 @@
 		artist: titles.filter((t) => t.kind === 'artist').length
 	});
 	const kindWord: Record<string, string> = { show: ' · Show', artist: ' · Artist' };
-	const shown = $derived(ofThisKind.filter((t) => matches(t, filter) && matchesTitleQuery(t, query, indexedIds)));
+	const shown = $derived(ofThisKind.filter((t) => matches(t, filter) && matchesTitleQuery(t, query, indexedIds)).toSorted((a, b) => sort === 'year' ? (b.year ?? 0) - (a.year ?? 0) || a.name.localeCompare(b.name) : a.name.localeCompare(b.name)));
 
 	$effect(() => {
 		loadRevision;
@@ -120,6 +145,10 @@
 			loaded = true;
 		}
 	}
+	async function retryLoad() {
+		loaded = false;
+		await load();
+	}
 
 	onMount(() => {
 		mounted = true;
@@ -131,59 +160,45 @@
 
 <svelte:head><title>Library · HolyArrs</title></svelte:head>
 
-<header class="page-head">
-	<div>
-		<h1>Library</h1>
-		{#if moviesOn}<p class="small"><a href={to('/people')}>People and their movies</a> · <a href={to('/library/collections')}>Movie series</a>{#if session.can('manage_library')} · <a href={to('/library/copies')}>Movie file codecs</a>{/if}</p>{/if}
-		<p>Every movie, show and artist HolyArrs looks after.</p>
-	</div>
-	{#if session.can('manage_library')}
-		<div class="row head-actions">
-			<a class="btn btn-quiet" href={to(`/library/held`)}>Held</a>
-			<a class="btn btn-quiet" href={to(`/library/turned-down`)}>Turned down</a>
-			<a class="btn btn-quiet" href={to(`/library/missing-subtitles`)}>Missing subtitles</a>
-			<a class="btn btn-quiet" href={to(`/library/rename`)}>Rename files</a>
-			<a class="btn btn-quiet" href={to(`/library/import`)}>Import a library</a>
-			<a class="btn btn-ghost" href={to(`/search?kind=show`)}>Add a show</a>
-			<a class="btn btn-ghost" href={to(`/search?kind=music`)}>Add an artist</a>
-			<a class="btn btn-red" href={to(`/search`)}>Add a movie</a>
-		</div>
-	{/if}
-</header>
-
-{#if loaded && titles.length > 0}
-	<div class="seg kinds" role="group" aria-label="Kind">
-		{#each kinds as [key, label] (key)}
-			<button type="button" aria-pressed={kind === key} onclick={() => setKind(key)}>{label} <span class="n">{kindTally[key]}</span></button>
-		{/each}
-	</div>
-	<div class="tools">
-		<div class="pills" role="group" aria-label="Show">
-			{#each filters as [key, label] (key)}
-				<button class="pill" type="button" aria-pressed={filter === key} onclick={() => setFilter(key)}>{label} <span class="n">{tally[key]}</span></button>
-			{/each}
-		</div>
-		<div class="row tools-end">
-			<label class="sr-only" for="find">Find in the Library</label>
-			<input id="find" class="input find" type="search" bind:value={q} placeholder="Find by name" autocomplete="off" maxlength="256" />
-			<div class="seg" role="group" aria-label="Layout">
-				<button type="button" aria-pressed={view === 'grid'} onclick={() => setView('grid')}>Posters</button>
-				<button type="button" aria-pressed={view === 'list'} onclick={() => setView('list')}>List</button>
-			</div>
-		</div>
-	</div>
-{/if}
-
+<div class="library-search-band"><div class="library-search-box"><label class="sr-only" for="find">Find in the Library</label><input id="find" class="input find" type="search" bind:this={findInput} bind:value={q} placeholder="Search Library" autocomplete="off" maxlength="256" /><button class="clear-search" type="button" onclick={() => { q = ''; setFilter('all'); }}>Clear search and status</button></div>	{#if session.can('manage_library')}
+		<details class="library-tools">
+			<summary class="btn btn-red">+ Add</summary>
+			<nav class="tools-menu" aria-label="Library tools">
+				<a href={to(`/search`)}>Add a movie</a>
+				<a href={to(`/search?kind=show`)}>Add a show</a>
+				<a href={to(`/search?kind=music`)}>Add an artist</a>
+				<span class="menu-rule"></span>
+				<a href={to(`/library/held`)}>Held files</a>
+				<a href={to(`/library/turned-down`)}>Turned down releases</a>
+				<a href={to(`/library/missing-subtitles`)}>Missing subtitles</a>
+				<a href={to(`/library/rename`)}>Rename files</a>
+				<a href={to(`/library/import`)}>Import a library</a>
+			</nav>
+		</details>
+	{/if}</div>
+<div class="filter-toolbar">
+<details class="filter-menu"><summary class="filter-trigger">Type</summary><div class="filter-popover" role="group" aria-label="Kind">{#each kinds as [key,label] (key)}<button type="button" aria-pressed={kind===key} onclick={() => setKind(key)}>{label}<span>{kindTally[key]}</span></button>{/each}</div></details>
+<details class="filter-menu status-filter"><summary class="filter-trigger" class:has-filter={filter!=='all'}>Status</summary><div class="filter-popover status-popover"><label for="status-value">Show titles matching</label><select id="status-value" class="input" value={filter} onchange={(event) => setFilter(event.currentTarget.value as Filter)}>{#each filters as [key,label] (key)}<option value={key}>{label} ({tally[key]})</option>{/each}</select></div></details>
+{#if moviesOn}<a class="filter-trigger" href={to('/library/collections')}>Movie series</a><a class="filter-trigger" href={to('/people')}>People</a>{#if session.can('manage_library')}<a class="filter-trigger" href={to('/library/missing-subtitles')}>Subtitles</a><a class="filter-trigger" href={to('/library/copies')}>File codecs</a>{/if}{/if}
+</div>
+<header class="library-heading"><h1>Library</h1><div class="library-view-tools"><label class="sr-only" for="library-sort">Sort titles</label><select id="library-sort" class="sort-select" bind:value={sort}><option value="name">Name</option><option value="year">Newest year</option></select><div class="seg" role="group" aria-label="Layout"><button type="button" aria-pressed={view==='grid'} onclick={() => setView('grid')}>Posters</button><button type="button" aria-pressed={view==='list'} onclick={() => setView('list')}>List</button></div></div></header>
+<p class="asset-count">{shown.length} {shown.length===1?'TITLE':'TITLES'}</p>
 {#if searchError && !error}<p class="notice bad" role="alert">{searchError}</p>{/if}
 
-{#if !loaded}
-	<div class="grid">
-		{#each Array(6) as _, i (i)}<div class="sk" style="aspect-ratio: 2 / 3"></div>{/each}
-	</div>
-{:else if error}
-	<p class="notice bad" role="alert">{error}</p>
-{:else if titles.length === 0}
-	<EmptyState icon="library" title="Your Library is empty">
+
+<div class:with-preview={preview} class="library-workspace">
+	<div class="library-content">
+	{#if !loaded}
+		<div class="grid">
+			{#each Array(6) as _, i (i)}<div class="sk" style="aspect-ratio: 2 / 3"></div>{/each}
+		</div>
+	{:else if error}
+		<div class="error-state">
+			<p class="notice bad" role="alert">{error}</p>
+			<button class="btn btn-ghost" type="button" onclick={retryLoad}>Try again</button>
+		</div>
+	{:else if titles.length === 0}
+		<EmptyState icon="library" title="Your Library is empty">
 		{#if session.can('manage_library')}
 			<p>Find a movie, a show or an artist on the Search page and add it. HolyArrs then keeps it up to date.</p>
 		{:else}
@@ -196,19 +211,22 @@
 			{#if session.can('manage_library')}<a class="btn btn-ghost" href={to(`/library/import`)}>Import a library</a>{/if}
 			{#if session.can('settings')}<a class="btn btn-ghost" href={to(`/settings/library-folders`)}>Library folders</a>{/if}
 		{/snippet}
-	</EmptyState>
-{:else if shown.length === 0}
-	<p class="muted">Nothing matches this filter.</p>
-{:else if view === 'list'}
-	<table class="list-table">
+		</EmptyState>
+	{:else if shown.length === 0}
+		<p class="muted">Nothing matches this filter.</p>
+	{:else if view === 'list'}
+		<!-- Keyboard access lets this region scroll without a pointer. -->
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+		<div class="list-scroll" role="region" aria-label="Library titles" tabindex="0">
+		<table class="list-table">
 		<caption class="sr-only">Titles in the Library</caption>
 		<thead>
 			<tr><th scope="col">Title</th><th scope="col">State</th><th scope="col" class="wide">Out on</th><th scope="col" class="wide">Keep up to date</th></tr>
 		</thead>
 		<tbody>
 			{#each shown as t (t.id)}
-				<tr data-testid="library-row">
-					<td><a class="row-link" href={to(`/library/${t.id}`)}><span class="thumb"><Poster src={t.artwork[0]} name={t.name} /></span><span><b>{t.name}</b> <span class="muted xs">{t.year ?? ''}{kindWord[t.kind] ?? ''}</span></span></a></td>
+				<tr data-testid="library-row" class:selected={preview?.id === t.id}>
+					<td class="title-cell"><a class="row-link" href={to(`/library/${t.id}`)}><span class="thumb"><Poster src={t.artwork[0]} name={t.name} /></span><span><b>{t.name}</b> <span class="muted xs">{t.year ?? ''}{kindWord[t.kind] ?? ''}</span></span></a><button class="preview-button list-preview" type="button" aria-label={`Preview ${t.name}`} aria-pressed={preview?.id === t.id} onclick={(event) => openPreview(t, event)}>Preview</button></td>
 					{#if t.kind === 'artist'}
 						{@const c = chipOf(t)}
 						<td>{#if c}<span class="chip {tone(c.state)}">{c.label}</span>{/if}<span class="xs muted block">{artistProgress(t.artist)}</span></td>
@@ -225,12 +243,13 @@
 				</tr>
 			{/each}
 		</tbody>
-	</table>
-{:else}
-	<ul class="grid">
+		</table>
+		</div>
+	{:else}
+		<ul class="grid">
 		{#each shown as t, i (t.id)}
 			{@const c = chipOf(t)}
-			<li class="rise" style="--i: {i}">
+			<li class:selected={preview?.id === t.id} class="rise" style="--i: {i}">
 				<a class="item" href={to(`/library/${t.id}`)} data-testid="library-card">
 					<Poster src={t.artwork[0]} name={t.name} />
 					<span class="name">{t.name}</span>
@@ -239,53 +258,115 @@
 						{#if c}<span class="chip {tone(c.state)}">{c.label}</span>{/if}
 					</span>
 				</a>
+				<button class="preview-button" type="button" aria-label={`Preview ${t.name}`} aria-pressed={preview?.id === t.id} onclick={(event) => openPreview(t, event)}>Preview</button>
 			</li>
 		{/each}
-	</ul>
-{/if}
+		</ul>
+	{/if}
+	</div>
+	{#if preview}
+		{@const previewChip = chipOf(preview)}
+		<aside class="preview" aria-labelledby="preview-title">
+			<div class="preview-head">
+				<span class="small muted">Title preview</span>
+				<button class="preview-close" type="button" onclick={closePreview}>Close</button>
+			</div>
+			<div class="preview-art"><Poster src={preview.artwork[0]} name={preview.name} /></div>
+			<p class="preview-kind">{kindLabel[preview.kind] ?? preview.kind}{preview.year ? ` · ${preview.year}` : ''}</p>
+			<h2 id="preview-title" bind:this={previewHeading} tabindex="-1">{preview.name}</h2>
+			{#if previewChip}<span class="chip {tone(previewChip.state)}">{previewChip.label}</span>{/if}
+			<p class="small muted preview-progress">{progressOf(preview)}</p>
+			{#if preview.slots.length}
+				<div class="preview-section">
+					<h3>Versions</h3>
+					<ul>
+						{#each preview.slots as slot (slot.id)}
+							<li><span>{slot.version || 'Main'}</span><span class="chip {tone(slot.state)}">{slot.state_label}</span></li>
+						{/each}
+					</ul>
+				</div>
+			{/if}
+			<a class="btn btn-red preview-open" href={to(`/library/${preview.id}`)}>Open title</a>
+		</aside>
+	{/if}
+</div>
 
 <style>
-	.kinds {
-		margin-bottom: var(--s-4);
-	}
-	.kinds button {
-		min-height: 40px;
-		padding: 0 var(--s-4);
-	}
-	.kinds .n {
-		opacity: 1;
-	}
-	.kinds button[aria-pressed='true'] {
-		background: var(--ha-red-soft);
-	}
 	.block {
 		display: block;
 		margin-top: 2px;
 	}
-	.head-actions {
-		gap: var(--s-2);
-		flex-wrap: wrap;
+	.library-tools {
+		position: relative;
+		flex: none;
 	}
-	.tools {
+	.library-tools summary {
+		list-style: none;
+		cursor: pointer;
+	}
+	.library-tools summary::-webkit-details-marker { display: none; }
+	.tools-menu {
+		position: absolute;
+		top: calc(100% + var(--s-2));
+		right: 0;
+		z-index: 10;
+		display: grid;
+		min-width: 230px;
+		padding: var(--s-2);
+		border: 1px solid var(--line-strong);
+		border-radius: 6px;
+		background: var(--surface-2);
+		box-shadow: var(--shadow-modal);
+	}
+	.tools-menu a {
 		display: flex;
-		flex-wrap: wrap;
-		gap: var(--s-3);
-		justify-content: space-between;
 		align-items: center;
-		margin-bottom: var(--s-5);
+		min-height: 38px;
+		padding: 0 var(--s-3);
+		border-radius: 4px;
+		color: var(--text-muted);
+		font-size: var(--text-sm);
 	}
-	.tools-end {
-		gap: var(--s-3);
-		flex-wrap: wrap;
+	.tools-menu a:hover,
+	.tools-menu a:focus-visible { color: var(--text); background: var(--surface-3); }
+	.menu-rule { height: 1px; margin: var(--s-2); background: var(--line); }
+	.library-workspace,
+	.library-content { min-width: 0; }
+	.error-state { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
+	.error-state .notice { flex: 1 1 320px; margin: 0; }
+	.preview { display: none; }
+	.preview-button { display: none; }
+	.grid > li { position: relative; min-width: 0; }
+	.grid > li.selected .item { border-color: color-mix(in srgb, var(--ha-red) 60%, var(--line)); background: var(--surface-1); }
+	.list-table tr.selected { background: var(--surface-2); }
+	.title-cell { min-width: 250px; }
+	.title-cell .row-link { display: inline-flex; }
+	.preview-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
+	.preview-close {
+		min-height: 34px;
+		padding: 0 var(--s-2);
+		color: var(--text-muted);
+		font-size: var(--text-xs);
 	}
-	.find {
-		width: 200px;
-		max-width: 100%;
-	}
-	.pills {
-		display: flex;
-		gap: var(--s-2);
-		flex-wrap: wrap;
+	.preview-close:hover { color: var(--text); }
+	.preview-art { width: min(150px, 58%); margin: var(--s-3) auto var(--s-4); }
+	.preview-kind { color: var(--text-muted); font-size: var(--text-xs); }
+	.preview h2 { margin: 3px 0 var(--s-3); font: var(--weight-semibold) var(--text-lg) / var(--leading-tight) var(--font-display); overflow-wrap: anywhere; }
+	.preview-progress { margin-top: var(--s-2); }
+	.preview-section { margin-top: var(--s-5); padding-top: var(--s-3); border-top: 1px solid var(--line); }
+	.preview-section h3 { margin-bottom: var(--s-2); color: var(--text-muted); font-size: var(--text-xs); font-weight: var(--weight-medium); }
+	.preview-section ul { display: grid; gap: var(--s-2); }
+	.preview-section li { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); min-width: 0; font-size: var(--text-sm); }
+	.preview-open { width: 100%; margin-top: var(--s-5); }
+	@media (min-width: 1280px) {
+		.library-workspace.with-preview { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--s-4); align-items: start; }
+		.preview { display: block; position: sticky; top: var(--s-3); padding: var(--s-4); border: 1px solid var(--line); border-radius: 6px; background: var(--surface-1); }
+		.preview-button { display: inline-flex; align-items: center; justify-content: center; min-height: 32px; padding: 0 var(--s-2); border: 1px solid var(--line-strong); border-radius: 5px; background: color-mix(in srgb, var(--surface-1) 92%, transparent); color: var(--text-muted); font-size: var(--text-xs); }
+		.preview-button:hover, .preview-button[aria-pressed='true'] { border-color: color-mix(in srgb, var(--ha-red) 60%, var(--line-strong)); color: var(--text); background: var(--surface-2); }
+		.grid > li > .preview-button { position: absolute; top: 12px; right: 12px; opacity: 0; transition: opacity var(--dur-fast); }
+		.grid > li:hover > .preview-button, .grid > li:focus-within > .preview-button, .grid > li > .preview-button[aria-pressed='true'] { opacity: 1; }
+		.title-cell { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
+		.list-preview { flex: none; }
 	}
 	.n {
 		margin-left: 4px;
@@ -294,7 +375,7 @@
 	.seg {
 		display: inline-flex;
 		border: 1px solid var(--line-strong);
-		border-radius: var(--r-pill);
+		border-radius: 5px;
 		overflow: hidden;
 	}
 	.seg button {
@@ -310,6 +391,8 @@
 	.list-table {
 		width: 100%;
 		border-collapse: collapse;
+		border: 1px solid var(--line);
+		background: var(--surface-1);
 	}
 	.list-table th {
 		text-align: left;
@@ -320,10 +403,11 @@
 		border-bottom: 1px solid var(--line);
 	}
 	.list-table td {
-		padding: var(--s-2);
+		padding: 7px var(--s-2);
 		border-bottom: 1px solid var(--line);
 		vertical-align: middle;
 	}
+	.list-table tbody tr:hover { background: var(--surface-2); }
 	.row-link {
 		display: flex;
 		align-items: center;
@@ -331,63 +415,37 @@
 		border-radius: var(--r-sm);
 	}
 	.thumb {
-		width: 36px;
+		width: 40px;
 		flex: none;
 	}
 	@media (max-width: 600px) {
 		.wide {
 			display: none;
 		}
-		.tools-end,
-		.find {
-			width: 100%;
-		}
-		.find {
-			flex: 1;
-		}
-	}
-	.pill {
-		min-height: 36px;
-		padding: 0 var(--s-4);
-		border-radius: var(--r-pill);
-		border: 1px solid var(--line-strong);
-		color: var(--text-muted);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		transition:
-			background var(--dur-fast),
-			color var(--dur-fast),
-			border-color var(--dur);
-	}
-	.pill:hover {
-		color: var(--text);
-		background: var(--surface-3);
-	}
-	.pill[aria-pressed='true'] {
-		background: var(--ha-red-soft);
-		border-color: var(--ha-red);
-		color: var(--text);
+
 	}
 	.grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-		gap: var(--s-5) var(--s-4);
+		grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+		gap: var(--s-3);
 	}
 	.item {
 		display: flex;
 		flex-direction: column;
 		gap: var(--s-2);
-		border-radius: var(--r-btn);
+		height: 100%;
+		padding: 0;
+		border: 1px solid transparent;
+		border-radius: 6px;
+		transition: border-color var(--dur-fast), background var(--dur-fast), transform var(--dur-fast);
 	}
 	.item :global(.poster) {
 		transition:
 			transform var(--dur) var(--ease-out),
 			border-color var(--dur);
 	}
-	.item:hover :global(.poster) {
-		transform: translateY(var(--lift));
-		border-color: var(--line-strong);
-	}
+	.item:hover { transform: translateY(-1px); border-color: var(--line); background: var(--surface-1); }
+	.item:hover :global(.poster) { border-color: color-mix(in srgb, var(--ha-red) 42%, var(--line-strong)); }
 	.name {
 		font-weight: var(--weight-semibold);
 		font-size: var(--text-sm);
@@ -405,9 +463,51 @@
 		gap: var(--s-2);
 	}
 	@media (max-width: 767px) {
+		.library-tools { width: 100%; }
+		.library-tools summary { width: 100%; min-height: var(--tap); }
+		.tools-menu { position: static; margin-top: var(--s-2); box-shadow: none; }
+		.tools-menu a { min-height: var(--tap); }
+
 		.grid {
-			grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+			grid-template-columns: repeat(auto-fill, minmax(116px, 1fr));
 			gap: var(--s-4) var(--s-3);
 		}
 	}
+	@media (pointer: coarse) {
+		.seg button,
+		.preview-button,
+		.preview-close,
+		.library-tools summary,
+		.tools-menu a { min-height: 44px; }
+	}
+
+.library-search-band{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:20px}
+.library-search-box{display:flex;align-items:center;min-width:0;width:min(760px,100%);background:var(--surface-1);border:1px solid var(--line);border-radius:9px;padding:5px 8px}
+.find{flex:1;min-width:0;width:100%;background:transparent;border:0}
+.clear-search{flex:none;border:1px solid var(--line);border-radius:4px;padding:4px 10px;font-size:var(--text-sm)}
+.filter-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-bottom:24px}
+.filter-menu{position:relative}
+.filter-trigger{display:flex;align-items:center;gap:18px;min-height:32px;padding:4px 10px;border:1px solid var(--line);border-radius:5px;font-size:var(--text-sm);font-weight:500;cursor:pointer;background:var(--surface-1);list-style:none}
+.filter-trigger::-webkit-details-marker{display:none}
+.filter-menu[open]>.filter-trigger,.has-filter{color:var(--accent);border-color:var(--accent)}
+.filter-popover{position:absolute;z-index:12;top:calc(100% + 8px);left:0;width:260px;padding:10px;background:var(--surface-1);border:1px solid var(--line);border-radius:6px;box-shadow:var(--shadow-float)}
+.filter-popover button{display:flex;justify-content:space-between;align-items:center;gap:20px;width:100%;min-height:38px;padding:6px 10px;text-align:left;border-radius:4px}
+.filter-popover button:hover{background:var(--surface-2)}
+.filter-popover button[aria-pressed='true']{background:var(--accent-soft);color:var(--accent)}
+.library-heading{display:flex;justify-content:space-between;align-items:center;gap:16px;padding-bottom:20px;border-bottom:1px solid var(--line);margin-bottom:24px}
+.library-heading h1{font-size:16px;font-weight:500;letter-spacing:0}
+.asset-count{font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:20px}
+.grid .item :global(.poster){border-radius:12px}
+@media(min-width:1024px){.library-search-band{position:absolute;top:-72px;left:0;right:10px;height:52px;margin:0}.library-search-box{position:absolute;left:max(0px,calc(50vw - var(--sidebar) - 380px));width:min(760px,calc(100% - 130px))}.library-search-band>.library-tools{margin-left:auto}}
+@media(max-width:767px){.library-search-band{flex-wrap:wrap}.clear-search{font-size:12px;padding-inline:6px}.filter-trigger{min-height:44px}.filter-popover{width:min(260px,calc(100vw - 48px))}}
+@media(pointer:coarse){.filter-popover button,.clear-search{min-height:44px}}
+
+.status-popover{width:400px;padding:18px 16px;display:grid;gap:12px}
+.status-popover label{font-size:14px;font-weight:500;padding-inline:8px}
+.status-popover .input{min-height:48px;border-color:var(--line);background:var(--surface-1)}
+.library-view-tools{display:flex;align-items:center;gap:20px}
+.sort-select{background:transparent;border:0;color:var(--text-muted);font:inherit;font-size:13px;min-height:36px;max-width:140px}
+.list-scroll{max-width:100%;overflow-x:auto}
+@media(min-width:1400px){.grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:24px 20px}}
+@media(max-width:767px){.status-popover{width:min(400px,calc(100vw - 100px))}.library-view-tools{gap:8px}}
 </style>

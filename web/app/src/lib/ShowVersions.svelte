@@ -169,10 +169,12 @@
 
 <style>
 	.versions .version {
-		padding: var(--s-3) 0;
+		padding: var(--s-3);
+		border-radius: 5px;
+		background: var(--surface-2);
 	}
 	.versions .version + .version {
-		border-top: 1px solid var(--line);
+		margin-top: var(--s-2);
 	}
 	.path {
 		overflow-wrap: anywhere;

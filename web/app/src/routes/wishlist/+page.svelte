@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { to } from '#lib/paths.ts';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { api, message } from '#lib/api.ts';
 	import EmptyState from '#lib/EmptyState.svelte';
 	import Icon from '#lib/Icon.svelte';
@@ -33,6 +33,22 @@
 	// The kind chips show once asks of more than one kind are listed.
 	const bothKinds = $derived(new Set(asks.map((a) => a.kind)).size > 1);
 	const waiting = $derived(asks.filter((a) => a.state === 'asked').length);
+	let selectedId = $state(0);
+	const selected = $derived(shown.find((a) => a.id === selectedId) ?? shown[0] ?? null);
+	let reviewHeading: HTMLHeadingElement | undefined = $state();
+
+	async function selectAsk(id: number) {
+		selectedId = id;
+		await tick();
+		if (!reviewHeading) return;
+		reviewHeading.focus({ preventScroll: true });
+		if (window.matchMedia('(min-width: 601px) and (max-width: 980px)').matches) {
+			const rect = reviewHeading.getBoundingClientRect();
+			if (rect.top < 72 || rect.bottom > window.innerHeight) {
+				reviewHeading.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			}
+		}
+	}
 
 	// Approve and turn down dialogs.
 	let dialog: HTMLDialogElement | undefined = $state();
@@ -211,9 +227,12 @@
 {/if}
 
 {#if error}
-	<p class="notice bad" role="alert">{error}</p>
+	<div class="notice bad load-error" role="alert">
+		<div><b>Wishlist could not be loaded.</b><br /><span class="small">{error}</span></div>
+		<button class="btn btn-ghost" type="button" onclick={load}>Try again</button>
+	</div>
 {:else if !loaded}
-	{#each Array(2) as _, i (i)}<div class="sk" style="height: 120px; margin-bottom: 12px"></div>{/each}
+	<div class="loading-grid" aria-label="Loading Wishlist"><div class="sk" style="height: 320px"></div><div class="sk" style="height: 240px"></div></div>
 {:else if asks.length === 0}
 	<EmptyState icon="wish" title="Nothing on the Wishlist yet">
 		<p>
@@ -226,44 +245,74 @@
 {:else if shown.length === 0}
 	<p class="quiet card">{show === 'waiting' ? 'Nothing waits for approval.' : 'Nothing here.'}</p>
 {:else}
-	<ul class="asks">
-		{#each shown as a, i (a.id)}
-			<li class="ask card rise" style="--i: {i}" data-testid="ask">
-				<div class="art"><Poster src={a.poster} name={a.name} /></div>
-				<div class="grow body">
-					<div class="top">
-						<h2 class="h3">
-							{#if a.title_id}<a href={to(`/library/${a.title_id}`)}>{a.name}<span class="muted">{year(a)}</span></a>
-							{:else}{a.name}<span class="muted">{year(a)}</span>{/if}
-						</h2>
-						<span class="chip {askTone(a.state)}" data-testid="ask-state">{a.state_label}</span>
-						{#if a.kind === 'show'}<span class="chip" data-testid="ask-kind">Show</span>{/if}
-						{#if a.kind === 'artist'}<span class="chip" data-testid="ask-kind">Music</span>{/if}
-					</div>
-					{#if what(a)}<p class="small" data-testid={a.kind === 'artist' ? 'ask-albums' : 'ask-seasons'}>Asked for {what(a)}</p>{/if}
-					<p class="small muted" data-testid="asked-by">
-						{askedBy(a)} · <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{ago(a.asked_at)}</time>
-					</p>
-					{#if decided(a)}
-						<p class="small muted" data-testid="decided-by">
-							{decided(a)}{#if a.decided_at}{' '}· <time datetime={a.decided_at} title={dateTime(a.decided_at)}>{ago(a.decided_at)}</time>{/if}
+	<div class="wishlist-workspace">
+		<ul class="asks">
+			{#each shown as a, i (a.id)}
+				<li class="ask rise" class:selected={selected?.id === a.id} style="--i: {i}" data-testid="ask">
+					<div class="art"><Poster src={a.poster} name={a.name} /></div>
+					<div class="grow body">
+						<div class="top">
+							<h2 class="h3">
+								{#if a.title_id}<a href={to(`/library/${a.title_id}`)}>{a.name}<span class="muted">{year(a)}</span></a>
+								{:else}{a.name}<span class="muted">{year(a)}</span>{/if}
+							</h2>
+							<span class="chip {askTone(a.state)}" data-testid="ask-state">{a.state_label}</span>
+							{#if a.kind === 'show'}<span class="chip" data-testid="ask-kind">Show</span>{/if}
+							{#if a.kind === 'artist'}<span class="chip" data-testid="ask-kind">Music</span>{/if}
+						</div>
+						{#if what(a)}<p class="small" data-testid={a.kind === 'artist' ? 'ask-albums' : 'ask-seasons'}>Asked for {what(a)}</p>{/if}
+						<p class="small muted" data-testid="asked-by">
+							{askedBy(a)} · <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{ago(a.asked_at)}</time>
 						</p>
-					{/if}
-					{#if a.note}<p class="small note">“{a.note}”</p>{/if}
-					{#if a.state === 'approved'}<p class="xs muted">{approvedLine(a)}</p>{/if}
-					<div class="row actions">
-						{#if approver && a.state === 'asked'}
-							<button class="btn btn-red" type="button" onclick={() => open(a, 'approve')}><Icon name="check" size={18} /> Approve</button>
-							<button class="btn btn-ghost" type="button" onclick={() => open(a, 'turn_down')}><Icon name="x" size={18} /> Turn down</button>
+						{#if decided(a)}
+							<p class="small muted" data-testid="decided-by">
+								{decided(a)}{#if a.decided_at}{' '}· <time datetime={a.decided_at} title={dateTime(a.decided_at)}>{ago(a.decided_at)}</time>{/if}
+							</p>
 						{/if}
-						{#if a.mine && a.state === 'asked'}
-							<button class="btn btn-quiet" type="button" onclick={() => takeBack(a)}>Take back</button>
-						{/if}
+						{#if a.note}<p class="small note">“{a.note}”</p>{/if}
+						{#if a.state === 'approved'}<p class="xs muted">{approvedLine(a)}</p>{/if}
+						<div class="row actions">
+							<button class="btn btn-quiet inspect" type="button" aria-label="Review {a.name}" aria-pressed={selected?.id === a.id} onclick={() => void selectAsk(a.id)}>Review</button>
+							{#if approver && a.state === 'asked'}
+								<button class="btn btn-red" type="button" onclick={() => open(a, 'approve')}><Icon name="check" size={18} /> Approve</button>
+								<button class="btn btn-ghost" type="button" onclick={() => open(a, 'turn_down')}><Icon name="x" size={18} /> Turn down</button>
+							{/if}
+							{#if a.mine && a.state === 'asked'}
+								<button class="btn btn-quiet" type="button" onclick={() => takeBack(a)}>Take back</button>
+							{/if}
+						</div>
 					</div>
+				</li>
+			{/each}
+		</ul>
+
+		<aside class="review card" aria-label="Selected Wishlist item">
+			{#if selected}
+				<div class="review-art"><Poster src={selected.poster} name={selected.name} /></div>
+				<div class="review-head">
+					<div>
+						<p class="eyebrow">Wishlist review</p>
+						<h2 class="h2 review-title" bind:this={reviewHeading} tabindex="-1">{selected.name}<span class="muted">{year(selected)}</span></h2>
+					</div>
+					<span class="chip {askTone(selected.state)}">{selected.state_label}</span>
 				</div>
-			</li>
-		{/each}
-	</ul>
+				<dl class="review-facts">
+					<dt>Asked by</dt><dd>{askedBy(selected)}</dd>
+					<dt>Asked</dt><dd>{ago(selected.asked_at)}</dd>
+					{#if what(selected)}<dt>For</dt><dd>{what(selected)}</dd>{/if}
+					{#if decided(selected)}<dt>Decision</dt><dd>{decided(selected)}</dd>{/if}
+				</dl>
+				{#if selected.note}<p class="review-note">“{selected.note}”</p>{/if}
+				{#if selected.state === 'approved'}<p class="small muted">{approvedLine(selected)}</p>{/if}
+				{#if approver && selected.state === 'asked'}
+					<div class="review-actions">
+						<button class="btn btn-red" type="button" onclick={() => open(selected, 'approve')}><Icon name="check" size={18} /> Approve</button>
+						<button class="btn btn-ghost" type="button" onclick={() => open(selected, 'turn_down')}><Icon name="x" size={18} /> Turn down</button>
+					</div>
+				{/if}
+			{/if}
+		</aside>
+	</div>
 {/if}
 
 <dialog bind:this={dialog} aria-labelledby="decide-title" class="modal">
@@ -350,9 +399,9 @@
 		margin-bottom: var(--s-4);
 	}
 	.pill {
-		min-height: 40px;
+		min-height: 36px;
 		padding: 0 var(--s-4);
-		border-radius: var(--r-pill);
+		border-radius: var(--r-sm);
 		border: 1px solid var(--line-strong);
 		background: var(--surface-1);
 		color: var(--text-muted);
@@ -360,27 +409,45 @@
 		cursor: pointer;
 	}
 	.pill[aria-pressed='true'] {
-		background: var(--ha-red-soft);
-		border-color: var(--ha-red);
+		background: var(--surface-3);
+		border-color: var(--info);
 		color: var(--text);
 	}
 	.pill .n {
 		margin-left: 4px;
 		color: var(--text-faint);
 	}
+	.loading-grid,
+	.wishlist-workspace {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+		gap: var(--s-4);
+		align-items: start;
+	}
 	.asks {
 		display: flex;
 		flex-direction: column;
-		gap: var(--s-3);
-		max-width: 900px;
+		gap: 0;
+		min-width: 0;
+		border: 1px solid var(--line);
+		border-radius: var(--r-card);
+		background: var(--surface-1);
+		overflow: hidden;
 	}
 	.ask {
 		display: flex;
 		gap: var(--s-4);
 		align-items: flex-start;
+		padding: var(--s-4);
+		border-left: 2px solid transparent;
+		transition: background var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out);
 	}
 	.ask + .ask {
-		margin-top: 0;
+		border-top: 1px solid var(--line);
+	}
+	.ask.selected {
+		background: var(--surface-2);
+		border-left-color: var(--info);
 	}
 	.art {
 		width: 72px;
@@ -407,6 +474,90 @@
 	}
 	.actions:empty {
 		display: none;
+	}
+	.inspect[aria-pressed='true'] {
+		background: var(--surface-3);
+		color: var(--text);
+	}
+	.review {
+		position: sticky;
+		top: calc(var(--topbar) + var(--s-4));
+		overflow: hidden;
+	}
+	.review-art {
+		margin: calc(var(--s-5) * -1) calc(var(--s-5) * -1) var(--s-4);
+		max-height: 180px;
+		overflow: hidden;
+		background: var(--surface-2);
+	}
+	.review-art :global(img) {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		object-position: center 28%;
+	}
+	.review-head {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: var(--s-3);
+	}
+	.review-head .h2 {
+		margin-top: 3px;
+		overflow-wrap: anywhere;
+	}
+	.review-title {
+		scroll-margin-top: calc(var(--topbar) + var(--s-4));
+	}
+	.review-title:focus-visible {
+		outline: 2px solid var(--info);
+		outline-offset: 4px;
+		border-radius: var(--r-sm);
+	}
+	.eyebrow {
+		margin: 0;
+		font-size: var(--text-xs);
+		font-weight: var(--weight-semibold);
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--text-muted);
+	}
+	.review-facts {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr);
+		gap: var(--s-2) var(--s-3);
+		margin-top: var(--s-5);
+		padding-top: var(--s-4);
+		border-top: 1px solid var(--line);
+		font-size: var(--text-sm);
+	}
+	.review-facts dt {
+		color: var(--text-muted);
+	}
+	.review-facts dd {
+		margin: 0;
+		text-align: right;
+		overflow-wrap: anywhere;
+	}
+	.review-note {
+		margin-top: var(--s-4);
+		padding: var(--s-3);
+		border-left: 2px solid var(--info);
+		background: var(--surface-2);
+		font-size: var(--text-sm);
+		overflow-wrap: anywhere;
+	}
+	.review-actions {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--s-2);
+		margin-top: var(--s-5);
+	}
+	.load-error {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--s-4);
 	}
 	.quiet {
 		color: var(--text-muted);
@@ -435,11 +586,39 @@
 		resize: vertical;
 	}
 	@media (max-width: 600px) {
+		.review,
+		.inspect {
+			display: none;
+		}
 		.art {
 			width: 56px;
 		}
 		.actions :global(.btn) {
 			flex: 1 1 auto;
+			min-height: 44px;
+		}
+		.pill {
+			min-height: 44px;
+		}
+		.ask {
+			padding: var(--s-3);
+		}
+		.load-error {
+			align-items: stretch;
+			flex-direction: column;
+		}
+		.review-actions {
+			grid-template-columns: 1fr;
+		}
+	}
+	@media (max-width: 980px) {
+		.loading-grid,
+		.wishlist-workspace {
+			grid-template-columns: 1fr;
+		}
+		.review {
+			position: static;
+			grid-row: 1;
 		}
 	}
 </style>

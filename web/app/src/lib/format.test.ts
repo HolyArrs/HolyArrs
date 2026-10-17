@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ago, bytes, date, duration, folderHealth, greeting, percent, tone, words } from './format.ts';
 
@@ -50,32 +50,41 @@ describe('format', () => {
 	});
 });
 
-// The app's tokens.css must be the design system's file, unchanged. The
-// design folder lives next to the repo in the HolyArrs workspace; a plain
-// clone of the repo has only the app's copy, so the check compares when the
-// design folder is there and otherwise checks the copy is the v0.1 file.
+// The app owns its approved tokens. Check their shared component contract and
+// accessibility without depending on an unrelated working copy's design file.
 describe('tokens.css', () => {
 	const here = dirname(fileURLToPath(import.meta.url));
 	const ours = readFileSync(join(here, 'tokens.css'), 'utf8');
+	const dark = ours.match(/:root\s*\{([^}]+)\}/)?.[1] ?? '';
+	const light = ours.match(/:root\[data-theme=['"]light['"]\]\s*\{([^}]+)\}/)?.[1] ?? '';
+	const declarations = (css: string) => Object.fromEntries([...css.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]));
+	const base = declarations(dark);
 
-	function findDesign(): string | null {
-		let dir = here;
-		for (let i = 0; i < 8; i++) {
-			const p = join(dir, 'design', 'system', 'tokens.css');
-			if (existsSync(p)) return p;
-			const up = resolve(dir, '..');
-			if (up === dir) break;
-			dir = up;
-		}
-		return null;
+	function luminance(hex: string) {
+		if (!/^#[\da-f]{6}$/i.test(hex)) throw Error(`Expected an opaque color: ${hex}`);
+		const rgb = [1, 3, 5].map((start) => parseInt(hex.slice(start, start + 2), 16) / 255).map((value) => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+		return rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722;
 	}
 
-	it('equals design/system/tokens.css', () => {
-		const design = findDesign();
-		if (design) expect(ours.replace(/\r\n/g, '\n')).toBe(readFileSync(design, 'utf8').replace(/\r\n/g, '\n'));
-		else expect(ours).toContain('HolyArrs design tokens, v0.1');
-		expect(ours).toContain('--ha-red: #F23A2E');
-		expect(ours).toContain(':root[data-theme="light"]');
-		expect(ours).toContain('prefers-reduced-motion');
+	it('retains shared component tokens and touch sizing', () => {
+		for (const token of ['--ha-red', '--ha-red-hover', '--ha-red-press', '--ha-red-deep', '--ha-red-soft', '--font-ui', '--font-display', '--font-mono', '--focus-ring', '--sidebar', '--topbar', '--ok', '--wait', '--fail', '--info']) expect(base[token], token).toBeTruthy();
+		expect(parseFloat(base['--tap'])).toBeGreaterThanOrEqual(44);
+	});
+	it('keeps normal text readable on every shared surface in both themes', () => {
+		expect(light).not.toBe('');
+		for (const colors of [base, { ...base, ...declarations(light) }]) {
+			for (const foreground of ['--text', '--text-muted', '--text-faint', '--ok', '--wait', '--fail', '--info']) {
+				for (const background of ['--bg', '--sidebar-bg', '--surface-1', '--surface-2', '--surface-3']) {
+					const values = [luminance(colors[foreground]), luminance(colors[background])].sort((a, b) => b - a);
+					expect((values[0] + 0.05) / (values[1] + 0.05), `${foreground} on ${background}`).toBeGreaterThanOrEqual(4.5);
+				}
+			}
+		}
+	});
+	it('removes travel and entry staggering for reduced motion', () => {
+		const reduced = ours.slice(ours.indexOf('@media (prefers-reduced-motion: reduce)'));
+		expect(reduced).toMatch(/--lift:\s*0px/);
+		expect(reduced).toMatch(/--stagger:\s*0ms/);
+		expect(reduced).toMatch(/--dur-page:\s*0ms/);
 	});
 });

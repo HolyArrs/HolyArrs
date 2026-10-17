@@ -171,10 +171,13 @@
 		margin-bottom: var(--s-3);
 	}
 	.rel {
-		padding: var(--s-3) 0;
+		padding: var(--s-3);
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		background: var(--surface-1);
 	}
 	.rel + .rel {
-		border-top: 1px solid var(--line);
+		margin-top: var(--s-2);
 	}
 	.rel-top {
 		display: flex;

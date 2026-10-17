@@ -306,7 +306,7 @@
 	}
 	.cols {
 		display: grid;
-		grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+		grid-template-columns: minmax(0, 1fr) 320px;
 		gap: var(--s-4);
 		align-items: start;
 	}
@@ -329,6 +329,7 @@
 		gap: var(--s-2) var(--s-3);
 		padding: var(--s-2) 0;
 	}
+	.track:hover, .pressings li:hover { background: var(--surface-2); }
 	.track + .track,
 	.pressings li + li {
 		border-top: 1px solid var(--line);

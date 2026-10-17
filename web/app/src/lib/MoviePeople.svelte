@@ -41,6 +41,9 @@
 </section>
 
 <style>
-	ul { padding-left: var(--s-5); }
-	li { margin-top: var(--s-3); overflow-wrap: anywhere; }
+	.card { border-radius: 6px; }
+	.card > .btn { margin-top: var(--s-4); }
+	ul { list-style: none; padding: 0; margin-top: var(--s-3); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+	li { min-width: 0; padding: var(--s-3); overflow-wrap: anywhere; background: var(--surface-1); }
+	li a { font-weight: var(--weight-semibold); }
 </style>

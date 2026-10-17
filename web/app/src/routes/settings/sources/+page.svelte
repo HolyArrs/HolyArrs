@@ -355,7 +355,7 @@
 		font-family: var(--font-mono);
 	}
 	.bad-text {
-		color: var(--fail-text);
+		color: var(--fail);
 	}
 	.ok-text {
 		color: var(--ok-text, inherit);

@@ -95,8 +95,9 @@
 <style>
 	.title { display: flex; align-items: center; gap: .8rem; }
 	.title small { display: block; margin-top: .2rem; }
-	.choices { display: grid; gap: .8rem; margin-top: 1rem; }
-	.choices label { display: flex; align-items: flex-start; gap: .6rem; }
-	.danger, .warn-text { color: var(--warning-text, #8a4b00); }
-	.bad-text { color: var(--danger, #b42318); }
+	.choices { display: grid; gap: var(--s-2); margin-top: var(--s-4); }
+	.choices label { display: flex; align-items: flex-start; gap: var(--s-3); min-height: var(--tap); padding: var(--s-3); border: 1px solid var(--line); border-radius: 6px; background: var(--surface-1); }
+	.choices input { width: 20px; height: 20px; flex: none; accent-color: var(--ha-red); }
+	.danger, .warn-text { color: var(--wait); }
+	.bad-text { color: var(--fail); }
 </style>

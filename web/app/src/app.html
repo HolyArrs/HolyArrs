@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -11,8 +11,10 @@
 		<title>HolyArrs</title>
 		<script>
 			try {
-				var t = localStorage.getItem('holyarrs-theme');
-				if (!t) t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+				var requested = new URLSearchParams(location.search).get('theme');
+				var t = requested === 'light' || requested === 'dark' ? requested : localStorage.getItem('holyarrs-theme');
+				if (t !== 'dark' && t !== 'light') t = 'light';
+				if (requested === 'light' || requested === 'dark') localStorage.setItem('holyarrs-theme', t);
 				document.documentElement.dataset.theme = t;
 			} catch (e) {}
 		</script>

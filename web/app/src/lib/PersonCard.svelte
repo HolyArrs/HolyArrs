@@ -19,18 +19,29 @@
 <style>
 	.person-card {
 		display: grid;
-		grid-template-columns: 72px 1fr;
-		gap: var(--s-4);
+		grid-template-columns: 84px minmax(0, 1fr);
+		gap: var(--s-3);
 		align-items: center;
-		padding: var(--s-4);
+		min-height: 112px;
+		padding: var(--s-3);
 		border: 1px solid var(--line);
-		border-radius: var(--r-card);
-		background: var(--surface-1);
+		border-radius: 6px;
+		background: color-mix(in srgb, var(--surface-1) 88%, transparent);
 		color: inherit;
 		text-decoration: none;
+		transition: border-color var(--dur-fast), background var(--dur-fast), transform var(--dur-fast);
 	}
-	.person-card:hover { border-color: var(--line-strong); }
-	.portrait { width: 72px; }
+	.person-card:hover {
+		border-color: color-mix(in srgb, var(--ha-red) 55%, var(--line-strong));
+		background: var(--surface-2);
+		transform: translateY(-1px);
+	}
+	.person-card:active { transform: translateY(0); }
+	.portrait { width: 84px; }
 	h2 { font: var(--weight-semibold) var(--text-md) / var(--leading-tight) var(--font-display); }
-	p { margin-top: var(--s-1); }
+	p { margin-top: var(--s-1); overflow-wrap: anywhere; }
+	@media (max-width: 520px) {
+		.person-card { grid-template-columns: 68px minmax(0, 1fr); min-height: 96px; }
+		.portrait { width: 68px; }
+	}
 </style>

@@ -516,7 +516,7 @@
 		padding: var(--s-6);
 	}
 	.dlg::backdrop {
-		background: rgb(0 0 0 / 0.5);
+		background: var(--scrim);
 	}
 	.dlg h2 {
 		margin-bottom: var(--s-4);
@@ -526,7 +526,7 @@
 		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: var(--s-2);
 	}
-	@media (max-width: 420px) {
+	@media (max-width: 600px) {
 		.limit-row {
 			grid-template-columns: 1fr;
 		}

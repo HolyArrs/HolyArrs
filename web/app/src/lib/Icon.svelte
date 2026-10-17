@@ -1,6 +1,7 @@
 <script lang="ts" module>
 	// Our own line icons on a 24px grid, 1.75 stroke. No icon font, no CDN.
 	const paths = {
+		menu: 'M4 6h16M4 12h16M4 18h16',
 		home: 'M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z',
 		library: 'M5 4h3v16H5zM10.5 4h3v16h-3zM16 5.2l2.9-.8 3 15.4-2.9.8z',
 		search: 'M10.5 4a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13zM15.3 15.3 20 20',

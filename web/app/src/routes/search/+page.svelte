@@ -566,12 +566,12 @@
 
 <style>
 	.kind {
-		margin-bottom: var(--s-4);
+		margin-bottom: var(--s-3);
 	}
 	.seg {
 		display: inline-flex;
 		border: 1px solid var(--line-strong);
-		border-radius: var(--r-pill);
+		border-radius: 6px;
 		overflow: hidden;
 	}
 	.seg button {
@@ -595,8 +595,8 @@
 		padding: 6px 6px 6px var(--s-4);
 		background: var(--surface-1);
 		border: 1px solid var(--line-strong);
-		border-radius: var(--r-card);
-		max-width: 720px;
+		border-radius: 6px;
+		max-width: 820px;
 		color: var(--text-muted);
 		transition: border-color var(--dur-fast);
 	}
@@ -617,22 +617,32 @@
 		outline: none;
 	}
 	.results {
-		margin-top: var(--s-6);
-		max-width: 900px;
+		margin-top: var(--s-5);
+		max-width: 1180px;
+	}
+	.list {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
+		gap: var(--s-3);
 	}
 	.hit {
-		display: flex;
-		gap: var(--s-4);
+		display: grid;
+		grid-template-columns: 76px minmax(0, 1fr) auto;
+		gap: var(--s-3);
 		align-items: flex-start;
-		padding: var(--s-4) 0;
+		min-width: 0;
+		padding: var(--s-3);
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		background: var(--surface-1);
+		transition: border-color var(--dur-fast), background var(--dur-fast), transform var(--dur-fast);
 	}
-	.hit + .hit {
-		border-top: 1px solid var(--line);
-	}
+	.hit:hover { border-color: var(--line-strong); background: var(--surface-2); transform: translateY(-1px); }
 	.art {
-		width: 72px;
+		width: 76px;
 		flex: none;
 	}
+	.grow { min-width: 0; }
 	.overview {
 		margin-top: 4px;
 		display: -webkit-box;
@@ -643,6 +653,8 @@
 	}
 	.act {
 		flex: none;
+		max-width: 190px;
+		text-align: right;
 	}
 	.limit {
 		margin-top: var(--s-4);
@@ -665,7 +677,7 @@
 		overflow: auto;
 		padding: var(--s-6);
 		border: 0;
-		border-radius: var(--r-modal);
+		border-radius: 8px;
 		background: var(--surface-1);
 		color: var(--text);
 		box-shadow: var(--shadow-modal);
@@ -688,16 +700,23 @@
 	}
 	@media (max-width: 600px) {
 		.hit {
-			flex-wrap: wrap;
+			grid-template-columns: 60px minmax(0, 1fr);
 		}
 		.art {
-			width: 56px;
+			width: 60px;
 		}
 		.act {
+			grid-column: 1 / -1;
 			width: 100%;
+			max-width: none;
+			text-align: left;
 		}
 		.act :global(.btn) {
 			width: 100%;
+			min-height: var(--tap);
 		}
+		.searchbar { align-items: stretch; flex-wrap: wrap; padding: var(--s-2); }
+		.searchbar > :global(svg) { margin-top: 12px; }
+		.searchbar .btn { width: 100%; min-height: var(--tap); }
 	}
 </style>

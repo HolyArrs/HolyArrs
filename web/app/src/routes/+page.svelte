@@ -115,7 +115,17 @@
 			{/if}
 		</p>
 	</div>
+	<a class="btn btn-ghost home-search" href={to(`/search`)}><Icon name="search" size={17} /> Search</a>
 </header>
+
+<nav class="status-strip" aria-label="Library overview" aria-live="polite">
+	<a href={to(`/library`)}><span class="status-value">{loaded ? titleCount : '—'}</span><span class="status-label">Library titles</span></a>
+	<a href={to(`/downloads`)}><span class="status-value">{loaded ? active.length : '—'}</span><span class="status-label">Downloading</span></a>
+	<a href={to('/library?show=missing')}><span class="status-value">{loaded ? missing.length : '—'}</span><span class="status-label">Missing shown</span></a>
+	{#if session.can('settings')}
+		<a href={to(`/settings/this-app`)}><span class="status-value">{loaded ? issues.length : '—'}</span><span class="status-label">Health issues</span></a>
+	{/if}
+</nav>
 
 <div class="home">
 	<div class="main-col">
@@ -297,10 +307,44 @@
 </div>
 
 <style>
+	.home-search {
+		align-self: flex-start;
+	}
+	.status-strip {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+		margin-bottom: var(--s-6);
+		border: 1px solid var(--line);
+		border-radius: var(--r-card);
+		background: var(--surface-1);
+		overflow: hidden;
+	}
+	.status-strip a {
+		display: grid;
+		gap: 2px;
+		min-width: 0;
+		padding: var(--s-3) var(--s-4);
+		transition: background var(--dur) var(--ease-out);
+	}
+	.status-strip a + a {
+		border-left: 1px solid var(--line);
+	}
+	.status-strip a:hover {
+		background: var(--surface-2);
+	}
+	.status-value {
+		font: var(--weight-semibold) var(--text-lg) / 1.15 var(--font-display);
+		font-variant-numeric: tabular-nums;
+		letter-spacing: -0.02em;
+	}
+	.status-label {
+		font-size: var(--text-xs);
+		color: var(--text-muted);
+	}
 	.home {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) 320px;
-		gap: var(--s-8);
+		grid-template-columns: minmax(0, 1fr) 300px;
+		gap: var(--s-5);
 		align-items: start;
 	}
 	.side-col {
@@ -314,7 +358,7 @@
 		margin-top: 0;
 	}
 	.block + .block {
-		margin-top: var(--s-8);
+		margin-top: var(--s-5);
 	}
 	.block-head {
 		display: flex;
@@ -337,11 +381,17 @@
 		font-size: var(--text-sm);
 	}
 	.rows {
-		padding-top: var(--s-1);
-		padding-bottom: var(--s-1);
+		padding: 0;
+		overflow: hidden;
 	}
 	.rows a:hover {
-		color: var(--ha-red);
+		color: var(--info);
+	}
+	.rows > li {
+		padding-inline: var(--s-4);
+	}
+	.rows > li:hover {
+		background: var(--surface-2);
 	}
 	.nums {
 		white-space: nowrap;
@@ -358,7 +408,7 @@
 		background: var(--line-strong);
 	}
 	.segs i.on {
-		background: var(--ha-red);
+		background: var(--info);
 	}
 	.checks li {
 		min-height: var(--tap);
@@ -391,7 +441,7 @@
 	}
 	.checks a:hover :global(.icon) {
 		transform: translateX(3px);
-		color: var(--ha-red);
+		color: var(--info);
 	}
 	.issues {
 		display: flex;
@@ -420,6 +470,23 @@
 		overflow-wrap: anywhere;
 	}
 	@media (max-width: 600px) {
+		.home-search {
+			width: 100%;
+			min-height: 44px;
+		}
+		.status-strip {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+		.status-strip a {
+			min-height: 64px;
+		}
+		.status-strip a:nth-child(3) {
+			border-left: 0;
+			border-top: 1px solid var(--line);
+		}
+		.status-strip a:nth-child(4) {
+			border-top: 1px solid var(--line);
+		}
 		.block-head {
 			flex-wrap: wrap;
 			gap: var(--s-2);

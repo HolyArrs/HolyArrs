@@ -197,10 +197,24 @@
 
 <style>
 	.welcome {
-		width: min(760px, calc(100% - 32px));
-		min-height: 100vh;
+		display: grid;
+		grid-template-columns: minmax(220px, 280px) minmax(0, 680px);
+		align-items: start;
+		gap: clamp(var(--s-6), 6vw, var(--s-10));
+		width: min(1040px, calc(100% - 32px));
+		min-height: 100dvh;
 		margin: 0 auto;
 		padding: var(--s-10) 0;
+	}
+	.welcome > :global(.page-head) {
+		position: sticky;
+		top: var(--s-8);
+		padding-top: var(--s-4);
+		border-top: 2px solid var(--ha-red);
+	}
+	.welcome > :global(.card),
+	.welcome > :global(.notice) {
+		grid-column: 2;
 	}
 	fieldset {
 		border: 0;
@@ -223,9 +237,21 @@
 	.notice-line {
 		margin-top: var(--s-5);
 	}
-	@media (max-width: 600px) {
+	@media (max-width: 800px) {
 		.welcome {
+			display: block;
+			width: min(680px, calc(100% - 32px));
 			padding: var(--s-6) 0;
+		}
+		.welcome > :global(.page-head) {
+			position: static;
+			padding-top: var(--s-3);
+		}
+	}
+	@media (max-width: 480px) {
+		.acts > :global(.btn) {
+			width: 100%;
+			min-height: 44px;
 		}
 	}
 </style>

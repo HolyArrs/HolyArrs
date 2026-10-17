@@ -42,15 +42,15 @@
 	}
 	.subnav a[aria-current='page'] {
 		color: var(--text);
-		border-bottom-color: var(--ha-red);
+		border-bottom-color: var(--info);
 	}
 	.count {
 		min-width: 20px;
 		height: 20px;
 		padding: 0 6px;
-		border-radius: var(--r-pill);
-		background: var(--ha-red-press);
-		color: var(--text-on-red);
+		border-radius: var(--r-sm);
+		background: var(--info);
+		color: var(--bg);
 		font: var(--weight-semibold) var(--text-xs) / 20px var(--font-ui);
 		text-align: center;
 	}

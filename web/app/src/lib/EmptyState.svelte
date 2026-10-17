@@ -24,7 +24,7 @@
 		align-items: flex-start;
 		gap: var(--s-3);
 		padding: var(--s-8);
-		border: 1px dashed var(--line-strong);
+		border: 1px solid var(--line);
 		border-radius: var(--r-card);
 		background: var(--surface-1);
 	}
@@ -34,8 +34,8 @@
 		display: grid;
 		place-items: center;
 		border-radius: var(--r-btn);
-		background: var(--ha-red-soft);
-		color: var(--ha-red);
+		background: var(--surface-3);
+		color: var(--text-muted);
 	}
 	.text {
 		color: var(--text-muted);

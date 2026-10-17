@@ -47,6 +47,8 @@
 
 	// The phone calendar feed.
 	let feed = $state<{ set: boolean; created_at?: string } | null>(null);
+	let feedLoaded = $state(false);
+	let feedError = $state('');
 	let newLink = $state('');
 	let feedBusy = $state(false);
 
@@ -88,8 +90,11 @@
 	async function loadFeed() {
 		try {
 			feed = await api.get<{ set: boolean; created_at?: string }>('/calendar/feed-key');
-		} catch {
-			feed = null;
+			feedError = '';
+		} catch (e) {
+			feedError = message(e);
+		} finally {
+			feedLoaded = true;
 		}
 	}
 
@@ -128,6 +133,7 @@
 	}
 
 	onMount(() => {
+		if (window.matchMedia('(max-width: 700px)').matches) view = 'list';
 		void load();
 		void loadFeed();
 		const offs = [live.on('title', load), live.on('resync', load)];
@@ -147,6 +153,7 @@
 	</div>
 </header>
 
+<section class="calendar-tools" aria-label="Calendar controls">
 <div class="bar-row">
 	<div class="row nav-month">
 		<button class="btn btn-ghost icon-btn" type="button" onclick={() => go(-1)} aria-label="Month before"><Icon name="back" size={18} /></button>
@@ -174,17 +181,23 @@
 		</fieldset>
 	{/if}
 </div>
+</section>
 
 {#if !loaded}
-	<div class="sk" style="height: 320px"></div>
+	<div class="sk calendar-skeleton" style="height: 420px"></div>
 {:else if error}
-	<p class="notice bad" role="alert">{error}</p>
+	<div class="notice bad load-error" role="alert">
+		<div><b>Calendar could not be loaded.</b><br /><span class="small">{error}</span></div>
+		<button class="btn btn-ghost" type="button" onclick={load}>Try again</button>
+	</div>
 {:else if libraryEmpty}
 	<EmptyState icon="calendar" title="Nothing coming up">
 		<p>Add movies, shows and artists to your Library and their dates, episodes and albums show up here.</p>
 		{#snippet actions()}<a class="btn btn-red" href={to(`/search`)}>Add a movie or show</a>{/snippet}
 	</EmptyState>
 {:else if view === 'month'}
+	<!-- svelte-ignore a11y_no_noninteractive_tabindex (keyboard users need to focus and scroll this region) -->
+	<div class="month-scroll" role="region" tabindex="0" aria-label="{monthName} month calendar; scroll horizontally to see every day">
 	<div class="grid card" data-testid="cal-grid">
 		<div class="wk head" aria-hidden="true">
 			{#each weekdays as w (w)}<span class="xs muted mono">{w}</span>{/each}
@@ -203,6 +216,7 @@
 				{/each}
 			</div>
 		{/each}
+	</div>
 	</div>
 {:else if list.length === 0}
 	<p class="card small muted">No dates in {monthName}.</p>
@@ -229,6 +243,13 @@
 			</li>
 		{/each}
 	</ol>
+{/if}
+
+{#if feedLoaded && feedError}
+	<div class="notice bad feed-error" role="alert">
+		<div><b>Phone calendar could not be loaded.</b><br /><span class="small">{feedError}</span></div>
+		<button class="btn btn-ghost" type="button" onclick={loadFeed}>Try again</button>
+	</div>
 {/if}
 
 {#if feed}
@@ -265,13 +286,20 @@
 {/if}
 
 <style>
+	.calendar-tools {
+		margin-bottom: var(--s-4);
+		padding: var(--s-3);
+		border: 1px solid var(--line);
+		border-radius: var(--r-card);
+		background: var(--surface-1);
+	}
 	.bar-row {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--s-3);
 		flex-wrap: wrap;
-		margin-bottom: var(--s-3);
+		margin-bottom: var(--s-2);
 	}
 	.nav-month {
 		align-items: center;
@@ -283,7 +311,7 @@
 		text-transform: capitalize;
 	}
 	.icon-btn {
-		width: 40px;
+		width: 36px;
 		padding: 0;
 		justify-content: center;
 	}
@@ -308,7 +336,7 @@
 		min-height: 36px;
 		padding: 0 var(--s-3);
 		border: 1px solid var(--line-strong);
-		border-radius: var(--r-pill);
+		border-radius: var(--r-sm);
 		font-size: var(--text-sm);
 		cursor: pointer;
 	}
@@ -320,7 +348,7 @@
 		display: inline-block;
 	}
 	.k-cinema .dot {
-		background: var(--ha-red);
+		background: var(--info);
 	}
 	.k-digital .dot {
 		background: var(--info);
@@ -338,7 +366,7 @@
 		gap: var(--s-3);
 		flex-wrap: wrap;
 		align-items: center;
-		margin-bottom: var(--s-4);
+		margin-bottom: 0;
 	}
 	.filters-row .kinds {
 		margin: 0;
@@ -346,6 +374,17 @@
 	.grid {
 		padding: 0;
 		overflow: hidden;
+		border-radius: var(--r-card);
+	}
+	.month-scroll {
+		max-width: 100%;
+		overflow-x: auto;
+		overscroll-behavior-inline: contain;
+		-webkit-overflow-scrolling: touch;
+	}
+	.month-scroll:focus-visible {
+		outline: 2px solid var(--info);
+		outline-offset: 3px;
 	}
 	.wk {
 		display: grid;
@@ -356,7 +395,7 @@
 		text-transform: uppercase;
 	}
 	.cell {
-		min-height: 96px;
+		min-height: 112px;
 		padding: var(--s-2);
 		border-top: 1px solid var(--line);
 		border-left: 1px solid var(--line);
@@ -369,7 +408,7 @@
 		border-left: 0;
 	}
 	.cell.out {
-		background: var(--bg);
+		background: color-mix(in srgb, var(--bg) 68%, transparent);
 	}
 	.cell.out .num {
 		color: var(--text-muted);
@@ -382,9 +421,14 @@
 	.cell.today .num {
 		color: var(--text);
 		font-weight: var(--weight-semibold);
-		text-decoration: underline;
-		text-decoration-color: var(--ha-red);
-		text-underline-offset: 3px;
+		display: grid;
+		place-items: center;
+		width: 24px;
+		height: 24px;
+		margin: -3px 0 -1px -4px;
+		border-radius: var(--r-sm);
+		background: var(--info);
+		color: var(--bg);
 	}
 	.ev {
 		display: flex;
@@ -392,11 +436,14 @@
 		gap: 4px;
 		min-height: 24px;
 		font-size: var(--text-xs);
-		border-radius: var(--r-sm);
+		border-radius: 3px;
 		min-width: 0;
+		padding: 2px 4px;
+		transition: background var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
 	}
 	.ev:hover {
-		color: var(--ha-red);
+		color: var(--text);
+		background: var(--surface-3);
 	}
 	.ev-name {
 		overflow: hidden;
@@ -440,7 +487,7 @@
 		font-weight: var(--weight-semibold);
 	}
 	.item a:hover {
-		color: var(--ha-red);
+		color: var(--info);
 	}
 	.item .xs {
 		display: inline-flex;
@@ -451,13 +498,52 @@
 		margin-top: var(--s-6);
 		max-width: 720px;
 	}
+	.load-error {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--s-4);
+	}
+	.feed-error {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--s-4);
+		margin-top: var(--s-6);
+		max-width: 720px;
+	}
 	.actions {
 		margin-top: var(--s-3);
 		flex-wrap: wrap;
 	}
 	@media (max-width: 700px) {
+		.calendar-tools {
+			padding: var(--s-2);
+		}
+		.nav-month {
+			width: 100%;
+		}
+		.month {
+			flex: 1;
+		}
+		.icon-btn,
+		.seg :global(.btn),
+		.pick {
+			min-height: 44px;
+		}
+		.filters-row,
+		.filters-row > * {
+			width: 100%;
+		}
+		.filters-row .seg {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+		.grid {
+			min-width: 336px;
+		}
 		.cell {
-			min-height: 64px;
+			min-height: 72px;
 			padding: 2px;
 		}
 		/* Phones show a dot per date; the name stays for screen readers. */
@@ -470,13 +556,32 @@
 			white-space: nowrap;
 		}
 		.ev {
-			min-height: 24px;
-			min-width: 24px;
+			min-height: 44px;
+			min-width: 44px;
 			justify-content: center;
 		}
 		.ev .dot {
 			width: 10px;
 			height: 10px;
+		}
+		.item a {
+			display: flex;
+			align-items: center;
+			min-height: 44px;
+		}
+		.load-error {
+			align-items: stretch;
+			flex-direction: column;
+		}
+		.feed-error {
+			align-items: stretch;
+			flex-direction: column;
+		}
+	}
+	@media (pointer: coarse) {
+		.ev {
+			min-width: 44px;
+			min-height: 44px;
 		}
 	}
 </style>

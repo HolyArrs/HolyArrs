@@ -5,7 +5,7 @@ export type Theme = 'light' | 'dark';
 const KEY = 'holyarrs-theme';
 
 function current(): Theme {
-	if (typeof document === 'undefined') return 'dark';
+	if (typeof document === 'undefined') return 'light';
 	return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
 }
 

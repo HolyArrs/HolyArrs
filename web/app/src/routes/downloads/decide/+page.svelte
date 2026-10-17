@@ -100,9 +100,12 @@
 {/snippet}
 
 {#if !loaded}
-	<div class="sk" style="height: 160px"></div>
+	<div class="decision-loading"><div class="sk" style="height: 220px"></div><div class="sk" style="height: 220px"></div></div>
 {:else if error}
-	<p class="notice bad" role="alert">{error}</p>
+	<div class="notice bad load-error" role="alert">
+		<div><b>Decisions could not be loaded.</b><br /><span class="small">{error}</span></div>
+		<button class="btn btn-ghost" type="button" onclick={load}>Try again</button>
+	</div>
 {:else if decisions.items.length === 0}
 	<EmptyState icon="check" title="Nothing needs you">
 		<p>When HolyArrs runs out of Releases for a movie, an episode or a track, or an import cannot finish, it waits here for you.</p>
@@ -170,8 +173,10 @@
 {/if}
 
 <style>
+	.decision-loading,
 	.cards {
 		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
 		gap: var(--s-4);
 		list-style: none;
 		padding: 0;
@@ -182,6 +187,8 @@
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--s-2);
 		min-width: 0;
+		align-content: start;
+		border-left: 2px solid var(--info);
 	}
 	.names {
 		display: grid;
@@ -200,6 +207,12 @@
 		flex-wrap: wrap;
 		gap: var(--s-2);
 		margin-top: var(--s-2);
+	}
+	.load-error {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--s-4);
 	}
 	.eplist {
 		list-style: none;
@@ -228,5 +241,25 @@
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--s-1);
 		min-width: 0;
+	}
+	@media (max-width: 620px) {
+		.acts,
+		.acts :global(.btn) {
+			width: 100%;
+		}
+		.acts :global(.btn) {
+			min-height: 44px;
+		}
+		.load-error {
+			align-items: stretch;
+			flex-direction: column;
+		}
+		.eplist li {
+			grid-template-columns: auto minmax(0, 1fr);
+		}
+		.eplist .chip {
+			grid-column: 2;
+			justify-self: start;
+		}
 	}
 </style>

@@ -73,6 +73,7 @@
 	</div>
 </header>
 
+<div class="history-workspace">
 <form class="card filters" aria-label="Filter the history" onsubmit={(e) => e.preventDefault()}>
 	<div class="row-fields">
 		<div class="field">
@@ -111,8 +112,12 @@
 	{#if filtered}<button class="btn btn-quiet" type="button" onclick={clear}>Show everything</button>{/if}
 </form>
 
+<div class="history-results">
 {#if error}
-	<p class="notice bad" role="alert">{error}</p>
+	<div class="notice bad load-error" role="alert">
+		<div><b>History could not be loaded.</b><br /><span class="small">{error}</span></div>
+		<button class="btn btn-ghost" type="button" onclick={load}>Try again</button>
+	</div>
 {:else if !loaded}
 	<div class="sk" style="height: 240px"></div>
 {:else if events.length === 0}
@@ -152,10 +157,23 @@
 		<button class="btn btn-ghost" type="button" disabled={filter.offset + events.length >= total} onclick={() => apply({ offset: filter.offset + limit })}>Older</button>
 	</nav>
 {/if}
+</div>
+</div>
 
 <style>
+	.history-workspace {
+		display: grid;
+		grid-template-columns: 280px minmax(0, 1fr);
+		gap: var(--s-4);
+		align-items: start;
+	}
+	.history-results {
+		min-width: 0;
+	}
 	.filters {
-		margin-bottom: var(--s-4);
+		position: sticky;
+		top: calc(var(--topbar) + var(--s-4));
+		margin: 0;
 	}
 	.episode-filter {
 		margin-top: var(--s-3);
@@ -169,7 +187,7 @@
 	}
 	.row-fields {
 		display: grid;
-		grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+		grid-template-columns: 1fr;
 		gap: var(--s-3);
 	}
 	.row-fields .field + .field {
@@ -197,13 +215,13 @@
 		min-height: 36px;
 		padding: 0 var(--s-3);
 		border: 1px solid var(--line-strong);
-		border-radius: var(--r-pill);
+		border-radius: var(--r-sm);
 		font-size: var(--text-sm);
 		cursor: pointer;
 	}
 	.pick:has(input:checked) {
-		background: var(--ha-red-soft);
-		border-color: var(--ha-red);
+		background: var(--surface-3);
+		border-color: var(--info);
 	}
 	.count {
 		margin-bottom: var(--s-2);
@@ -226,7 +244,7 @@
 		font-weight: var(--weight-semibold);
 	}
 	.line a:hover {
-		color: var(--ha-red);
+		color: var(--info);
 	}
 	.more {
 		align-self: flex-start;
@@ -241,6 +259,23 @@
 		margin-top: var(--s-3);
 		justify-content: flex-end;
 	}
+	.load-error {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--s-4);
+	}
+	@media (max-width: 960px) {
+		.history-workspace {
+			grid-template-columns: 1fr;
+		}
+		.filters {
+			position: static;
+		}
+		.row-fields {
+			grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+		}
+	}
 	@media (max-width: 700px) {
 		.row-fields {
 			grid-template-columns: 1fr;
@@ -250,6 +285,14 @@
 		}
 		.line {
 			flex-wrap: wrap;
+		}
+		.pick,
+		.pages :global(.btn) {
+			min-height: 44px;
+		}
+		.load-error {
+			align-items: stretch;
+			flex-direction: column;
 		}
 	}
 </style>

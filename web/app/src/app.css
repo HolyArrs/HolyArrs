@@ -1,12 +1,10 @@
 /* HolyArrs app styles. Every value comes from tokens.css; this file holds
    layout and shared parts only. */
-@import '@fontsource-variable/sora/wght.css';
 @import '@fontsource-variable/geist/wght.css';
 @import '@fontsource-variable/geist-mono/wght.css';
 @import './lib/tokens.css';
 
 :root {
-	--font-display: 'Sora Variable', 'Sora', ui-sans-serif, system-ui, sans-serif;
 	--font-ui: 'Geist Variable', 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 	--font-mono: 'Geist Mono Variable', 'Geist Mono', ui-monospace, 'Cascadia Code', monospace;
 	--ok-text: var(--ok);
@@ -31,10 +29,11 @@ html {
 }
 body {
 	margin: 0;
-	min-height: 100vh;
+	min-height: 100dvh;
 	background: var(--bg);
 	color: var(--text);
 	font: var(--weight-regular) var(--text-base) / var(--leading) var(--font-ui);
+	font-variant-numeric: tabular-nums;
 	-webkit-font-smoothing: antialiased;
 }
 h1,
@@ -279,8 +278,8 @@ dl.facts dd {
 	gap: 6px;
 	height: 26px;
 	padding: 0 10px;
-	border-radius: var(--r-pill);
-	font: var(--weight-semibold) var(--text-xs) / 1 var(--font-ui);
+	border-radius: var(--r-sm);
+	font: var(--weight-medium) var(--text-xs) / 1 var(--font-ui);
 	white-space: nowrap;
 	background: var(--surface-3);
 	color: var(--text-muted);
@@ -332,7 +331,7 @@ select.input {
 	width: 100%;
 	min-height: var(--tap);
 	padding: 0 var(--s-3);
-	background: var(--surface-2);
+	background: var(--bg);
 	border: 1px solid var(--line-strong);
 	border-radius: var(--r-btn);
 	color: var(--text);
@@ -345,8 +344,8 @@ select.input {
 	border-color: var(--text-faint);
 }
 .input:focus-visible {
-	border-color: var(--ha-red);
-	box-shadow: none;
+	border-color: var(--accent);
+	box-shadow: var(--focus-ring);
 }
 .input[aria-invalid='true'] {
 	border-color: var(--fail);
@@ -519,3 +518,24 @@ select.input {
 		margin-bottom: var(--s-2);
 	}
 }
+
+/* Common workspace safeguards for every screen and form. */
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+button, a { touch-action: manipulation; }
+input, select, textarea { min-width: 0; }
+textarea.input { min-height: 7rem; padding-block: var(--s-3); resize: vertical; }
+input[type='checkbox'], input[type='radio'], progress { accent-color: var(--accent-fill); }
+:where(h1, h2, h3, p, label, dd, .notice, .form-error, .hint) { overflow-wrap: anywhere; }
+:where(.row, .page-head, .card-head) > * { min-width: 0; }
+.notice > .icon { flex: none; }
+.btn { white-space: normal; text-align: center; }
+:where(button, input, select, textarea):disabled { opacity: .6; }
+:where(dialog) { max-width: calc(100vw - 2rem); max-height: calc(100dvh - 2rem); overflow: auto; }
+:where(dialog)::backdrop { background: var(--scrim); }
+:where(table) { font-variant-numeric: tabular-nums; }
+:where(th) { color: var(--text-muted); font-size: var(--text-xs); font-weight: var(--weight-medium); }
+@media (pointer: coarse) { .btn, .icon-btn, .input { min-height: 44px; } }
+
+/* Consistent hierarchy across browsing and management screens. */
+.page-head h1 { font-weight: 600; font-size: clamp(26px, 2.3vw, 32px); letter-spacing: -.025em; }
+.h2 { font-weight: 600; font-size: 22px; letter-spacing: -.025em; }

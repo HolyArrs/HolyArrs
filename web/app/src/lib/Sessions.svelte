@@ -57,7 +57,10 @@
 	{:else if !rows}
 		<div class="sk" style="height: 64px"></div>
 	{:else if rows.length === 0}
-		<p class="small muted">{mine ? 'No devices are signed in.' : `${name || 'This person'} is not signed in anywhere.`}</p>
+		<div class="empty-state">
+			<p>No signed-in devices</p>
+			<span class="small muted">{mine ? 'There are no active sessions to manage.' : `${name || 'This person'} is not signed in anywhere.`}</span>
+		</div>
 	{:else}
 		<ul class="rows">
 			{#each rows as s (s.id)}
@@ -89,8 +92,12 @@
 
 <style>
 	.sessions li {
+		display: flex;
 		align-items: center;
 		gap: var(--s-3);
+		min-height: 64px;
+		padding: var(--s-3) 0;
+		border-bottom: 1px solid var(--line);
 	}
 	.sessions .grow {
 		min-width: 0;
@@ -98,5 +105,24 @@
 	}
 	.chip {
 		margin-left: var(--s-2);
+	}
+	.empty-state {
+		padding: var(--s-4);
+		border: 1px dashed var(--line-strong);
+		border-radius: var(--r-btn);
+		background: var(--surface-2);
+	}
+	.empty-state p {
+		font-weight: var(--weight-semibold);
+	}
+	@media (max-width: 600px) {
+		.sessions li {
+			align-items: flex-start;
+			flex-direction: column;
+		}
+		.sessions li .btn {
+			width: 100%;
+			min-height: 44px;
+		}
 	}
 </style>

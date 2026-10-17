@@ -49,6 +49,11 @@
 <svelte:head><title>Join HolyArrs</title></svelte:head>
 
 <div class="wrap">
+	<aside class="context" aria-hidden="true">
+		<p class="eyebrow">Invitation</p>
+		<p class="context-title">Join one shared home for every title.</p>
+		<p class="context-copy">Use the Wishlist, follow progress and keep your alerts attached to your own account.</p>
+	</aside>
 	<div class="panel rise">
 		<div class="brand">
 			<img src={to(mark)} alt="" width="44" height="44" />
@@ -85,21 +90,48 @@
 
 <style>
 	.wrap {
-		min-height: 100vh;
+		min-height: 100dvh;
 		display: grid;
-		place-items: center;
-		padding: var(--s-6) var(--s-4);
-		background:
-			radial-gradient(60rem 30rem at 50% -10%, var(--ha-red-soft), transparent 70%),
-			var(--bg);
+		grid-template-columns: minmax(280px, 1fr) minmax(360px, 440px);
+		align-items: center;
+		gap: clamp(var(--s-8), 8vw, 8rem);
+		width: min(1120px, 100%);
+		margin: 0 auto;
+		padding: clamp(var(--s-6), 6vw, var(--s-10));
+		background: var(--bg);
 	}
 	.panel {
-		width: min(400px, 100%);
+		width: 100%;
 		background: var(--surface-1);
 		border: 1px solid var(--line);
-		border-radius: var(--r-modal);
+		border-radius: var(--r-card);
 		padding: var(--s-8);
-		box-shadow: var(--shadow-float);
+		box-shadow: none;
+	}
+	.context {
+		max-width: 560px;
+		padding-left: var(--s-5);
+		border-left: 2px solid var(--ha-red);
+	}
+	.eyebrow {
+		margin-bottom: var(--s-4);
+		color: var(--ha-red);
+		font-size: var(--text-xs);
+		font-weight: var(--weight-semibold);
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+	.context-title {
+		max-width: 15ch;
+		font: var(--weight-semibold) clamp(2rem, 4vw, 3.75rem) / 1.03 var(--font-display);
+		letter-spacing: var(--tracking-display);
+		text-wrap: balance;
+	}
+	.context-copy {
+		max-width: 46ch;
+		margin-top: var(--s-5);
+		color: var(--text-muted);
+		line-height: 1.6;
 	}
 	.brand {
 		display: flex;
@@ -115,9 +147,22 @@
 	.submit {
 		margin-top: var(--s-6);
 	}
+	@media (max-width: 800px) {
+		.wrap {
+			grid-template-columns: minmax(0, 1fr);
+			width: min(500px, 100%);
+		}
+		.context {
+			display: none;
+		}
+	}
 	@media (max-width: 480px) {
+		.wrap {
+			align-items: start;
+			padding: var(--s-4);
+		}
 		.panel {
-			padding: var(--s-6) var(--s-5);
+			padding: var(--s-6) var(--s-4);
 		}
 	}
 </style>

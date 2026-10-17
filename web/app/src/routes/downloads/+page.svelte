@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { to } from '#lib/paths.ts';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { api, message } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
@@ -15,6 +15,22 @@
 	let error = $state('');
 	let settings = $state<DownloaderSettings | null>(null);
 	const parts = $derived(split(rows));
+	let selectedId = $state(0);
+	const selected = $derived(rows.find((r) => r.id === selectedId) ?? parts.now[0] ?? parts.past[0] ?? null);
+	let detailHeading: HTMLHeadingElement | undefined = $state();
+
+	async function selectDownload(id: number) {
+		selectedId = id;
+		await tick();
+		if (!detailHeading) return;
+		detailHeading.focus({ preventScroll: true });
+		if (window.matchMedia('(max-width: 980px)').matches) {
+			const rect = detailHeading.getBoundingClientRect();
+			if (rect.top < 72 || rect.bottom > window.innerHeight) {
+				detailHeading.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			}
+		}
+	}
 
 	async function load() {
 		try {
@@ -112,7 +128,7 @@
 
 {#snippet dlRow(r: DownloadRow)}
 	{@const pct = percent(r.progress)}
-	<li class="dl" data-testid="download-row" data-phase={r.phase}>
+	<li class="dl" class:selected={selected?.id === r.id} data-testid="download-row" data-phase={r.phase}>
 		<div class="grow">
 			<div class="top">
 				<div class="names">
@@ -161,17 +177,26 @@
 		</div>
 		{#if r.can_act}
 			<div class="acts">
+				<button class="btn btn-quiet inspect" type="button" aria-label="Details for {who(r)}" aria-pressed={selected?.id === r.id} onclick={() => void selectDownload(r.id)}>Details</button>
 				<button class="btn btn-quiet" type="button" onclick={() => markFailed(r)} disabled={busy === r.id}>Mark failed</button>
 				<button class="btn btn-ghost" type="button" onclick={() => askRemove(r)} disabled={busy === r.id}>Remove</button>
 			</div>
+		{:else}
+			<button class="btn btn-quiet inspect" type="button" aria-label="Details for {who(r)}" aria-pressed={selected?.id === r.id} onclick={() => void selectDownload(r.id)}>Details</button>
 		{/if}
 	</li>
 {/snippet}
 
 {#if !loaded}
-	<div class="sk" style="height: 160px"></div>
+	<div class="loading-grid" aria-label="Loading downloads">
+		<div class="sk" style="height: 320px"></div>
+		<div class="sk" style="height: 220px"></div>
+	</div>
 {:else if error}
-	<p class="notice bad" role="alert">{error}</p>
+	<div class="notice bad load-error" role="alert">
+		<div><b>Downloads could not be loaded.</b><br /><span class="small">{error}</span></div>
+		<button class="btn btn-ghost" type="button" onclick={load}>Try again</button>
+	</div>
 {:else if rows.length === 0 && imports.length === 0}
 	<EmptyState icon="download" title="No downloads yet">
 		<p>When HolyArrs chooses a Release for a movie or an episode, it sends it to a Downloader and you can watch it here, live.</p>
@@ -181,46 +206,79 @@
 		{/snippet}
 	</EmptyState>
 {:else}
-	<section class="card" aria-labelledby="h-d">
-		<div class="card-head"><h2 id="h-d" class="h2">Now</h2><span class="xs muted">{parts.now.length}</span></div>
-		{#if parts.now.length === 0}
-			<p class="small muted">Nothing is downloading.</p>
-		{:else}
-			<ul class="rows">
-				{#each parts.now as r (r.id)}{@render dlRow(r)}{/each}
-			</ul>
-		{/if}
-	</section>
+	<div class="download-workspace">
+		<div class="download-main">
+			<section class="card queue" aria-labelledby="h-d">
+				<div class="card-head"><h2 id="h-d" class="h2">Now</h2><span class="count">{parts.now.length}</span></div>
+				{#if parts.now.length === 0}
+					<p class="small muted empty-line">Nothing is downloading.</p>
+				{:else}
+					<ul class="rows">
+						{#each parts.now as r (r.id)}{@render dlRow(r)}{/each}
+					</ul>
+				{/if}
+			</section>
 
-	{#if parts.past.length}
-		<section class="card" aria-labelledby="h-p">
-			<div class="card-head"><h2 id="h-p" class="h2">Finished and stopped</h2><span class="xs muted">{parts.past.length}</span></div>
-			<ul class="rows">
-				{#each parts.past as r (r.id)}{@render dlRow(r)}{/each}
-			</ul>
-		</section>
-	{/if}
+			{#if parts.past.length}
+				<section class="card queue" aria-labelledby="h-p">
+					<div class="card-head"><h2 id="h-p" class="h2">Finished and stopped</h2><span class="count">{parts.past.length}</span></div>
+					<ul class="rows">
+						{#each parts.past as r (r.id)}{@render dlRow(r)}{/each}
+					</ul>
+				</section>
+			{/if}
 
-	<section class="card" aria-labelledby="h-i">
-		<div class="card-head"><h2 id="h-i" class="h2">Imports</h2><span class="xs muted">{imports.length}</span></div>
-		{#if imports.length === 0}
-			<p class="small muted">No imports yet. A finished download is moved into the Library here.</p>
-		{:else}
-			<ul class="rows">
-				{#each imports as im (im.ID)}
-					{@const placed = im.Result?.find((r) => r.outcome === 'placed')}
-					<li>
-						<div class="grow">
-							<div class="ellipsis small mono">{placed?.source_file ?? im.Plan?.[0]?.source_file ?? `Import ${im.ID}`}</div>
-							{#if placed?.placed_by}<div class="xs muted">Placed by {placed.placed_by}</div>{/if}
-						</div>
-						<span class="xs muted">{ago(im.CreatedAt)}</span>
-						<span class="chip {tone(im.State)}">{words(im.State)}</span>
-					</li>
-				{/each}
-			</ul>
-		{/if}
-	</section>
+			<section class="card queue" aria-labelledby="h-i">
+				<div class="card-head"><h2 id="h-i" class="h2">Imports</h2><span class="count">{imports.length}</span></div>
+				{#if imports.length === 0}
+					<p class="small muted empty-line">No imports yet. A finished download is moved into the Library here.</p>
+				{:else}
+					<ul class="rows imports">
+						{#each imports as im (im.ID)}
+							{@const placed = im.Result?.find((r) => r.outcome === 'placed')}
+							<li>
+								<div class="grow">
+									<div class="ellipsis small mono">{placed?.source_file ?? im.Plan?.[0]?.source_file ?? `Import ${im.ID}`}</div>
+									{#if placed?.placed_by}<div class="xs muted">Placed by {placed.placed_by}</div>{/if}
+								</div>
+								<span class="xs muted">{ago(im.CreatedAt)}</span>
+								<span class="chip {tone(im.State)}">{words(im.State)}</span>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			</section>
+		</div>
+
+		<aside class="detail card" aria-label="Selected download details">
+			{#if selected}
+				<div class="detail-head">
+					<p class="eyebrow">Selected download</p>
+					<span class="chip {phaseTone(selected.phase)}">{selected.label}</span>
+				</div>
+				<h2 class="h2 detail-title" bind:this={detailHeading} tabindex="-1">{rowName(selected)}</h2>
+				{#if manyWords(selected.kind) && selected.covers}<p class="small">{selected.covers}</p>{/if}
+				<p class="mono xs muted detail-path">{selected.name}</p>
+				<dl class="detail-facts">
+					<dt>Progress</dt><dd>{percent(selected.progress)}%</dd>
+					{#if selected.size}<dt>Size</dt><dd>{bytes(selected.size)}</dd>{/if}
+					{#if selected.active && selected.speed}<dt>Speed</dt><dd>{bytes(selected.speed)}/s</dd>{/if}
+					{#if selected.active && selected.eta}<dt>Time left</dt><dd>{duration(selected.eta)}</dd>{/if}
+					{#if selected.downloader}<dt>Downloader</dt><dd>{selected.downloader}</dd>{/if}
+					{#if selected.version}<dt>Version</dt><dd>{selected.version}</dd>{/if}
+				</dl>
+				{#if selected.text}<p class="small detail-note">{selected.text}</p>{/if}
+				{#if selected.can_act}
+					<div class="detail-actions">
+						<button class="btn btn-ghost" type="button" onclick={() => markFailed(selected)} disabled={busy === selected.id}>Mark failed</button>
+						<button class="btn btn-quiet" type="button" onclick={() => askRemove(selected)} disabled={busy === selected.id}>Remove</button>
+					</div>
+				{/if}
+			{:else}
+				<p class="small muted">Choose a download to inspect its state and available actions.</p>
+			{/if}
+		</aside>
+	</div>
 {/if}
 
 <dialog bind:this={removeDialog} aria-labelledby="remove-title" class="modal">
@@ -251,9 +309,52 @@
 </dialog>
 
 <style>
+	.loading-grid,
+	.download-workspace {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+		gap: var(--s-4);
+		align-items: start;
+	}
+	.download-main {
+		min-width: 0;
+	}
+	.queue {
+		padding: 0;
+		overflow: hidden;
+	}
+	.queue + .queue {
+		margin-top: var(--s-4);
+	}
+	.queue .card-head {
+		padding: var(--s-4);
+		margin: 0;
+		border-bottom: 1px solid var(--line);
+	}
+	.count {
+		display: grid;
+		place-items: center;
+		min-width: 24px;
+		height: 24px;
+		padding: 0 7px;
+		border: 1px solid var(--line);
+		border-radius: var(--r-sm);
+		font: var(--weight-medium) var(--text-xs) / 1 var(--font-mono);
+		color: var(--text-muted);
+	}
+	.empty-line {
+		padding: var(--s-4);
+	}
 	.dl {
 		align-items: flex-start;
 		flex-wrap: wrap;
+		padding: var(--s-4);
+		border-left: 2px solid transparent;
+		transition: background var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out);
+	}
+	.dl.selected {
+		background: var(--surface-2);
+		border-left-color: var(--info);
 	}
 	.dl .top {
 		display: flex;
@@ -308,6 +409,84 @@
 		gap: var(--s-2);
 		flex-wrap: wrap;
 	}
+	.inspect[aria-pressed='true'] {
+		color: var(--text);
+		background: var(--surface-3);
+	}
+	.imports li {
+		padding-inline: var(--s-4);
+	}
+	.detail {
+		position: sticky;
+		top: calc(var(--topbar) + var(--s-4));
+		min-width: 0;
+	}
+	.detail-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--s-2);
+		margin-bottom: var(--s-3);
+	}
+	.eyebrow {
+		margin: 0;
+		font-size: var(--text-xs);
+		font-weight: var(--weight-semibold);
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--text-muted);
+	}
+	.detail-title {
+		overflow-wrap: anywhere;
+		scroll-margin-top: calc(var(--topbar) + var(--s-4));
+	}
+	.detail-title:focus-visible {
+		outline: 2px solid var(--info);
+		outline-offset: 4px;
+		border-radius: var(--r-sm);
+	}
+	.detail-path {
+		margin-top: var(--s-3);
+		overflow-wrap: anywhere;
+	}
+	.detail-facts {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: var(--s-2) var(--s-3);
+		margin-top: var(--s-5);
+		padding-top: var(--s-4);
+		border-top: 1px solid var(--line);
+		font-size: var(--text-sm);
+	}
+	.detail-facts dt {
+		color: var(--text-muted);
+	}
+	.detail-facts dd {
+		margin: 0;
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+		overflow-wrap: anywhere;
+	}
+	.detail-note {
+		margin-top: var(--s-4);
+		padding: var(--s-3);
+		border: 1px solid var(--line);
+		border-radius: var(--r-sm);
+		background: var(--surface-2);
+		overflow-wrap: anywhere;
+	}
+	.detail-actions {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--s-2);
+		margin-top: var(--s-4);
+	}
+	.load-error {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--s-4);
+	}
 	.path {
 		overflow-wrap: anywhere;
 		margin-bottom: var(--s-4);
@@ -332,5 +511,34 @@
 	.modal-actions {
 		justify-content: flex-end;
 		margin-top: var(--s-6);
+	}
+	@media (max-width: 980px) {
+		.loading-grid,
+		.download-workspace {
+			grid-template-columns: 1fr;
+		}
+		.detail {
+			position: static;
+			grid-row: 1;
+		}
+	}
+	@media (max-width: 620px) {
+		.dl {
+			padding: var(--s-3);
+		}
+		.acts,
+		.acts :global(.btn) {
+			width: 100%;
+		}
+		.acts :global(.btn) {
+			min-height: 44px;
+		}
+		.load-error {
+			align-items: stretch;
+			flex-direction: column;
+		}
+		.detail-actions {
+			grid-template-columns: 1fr;
+		}
 	}
 </style>

@@ -446,7 +446,7 @@
 	.tf-form,
 	.pw {
 		margin-top: var(--s-4);
-		max-width: 420px;
+		width: min(100%, 420px);
 	}
 	fieldset {
 		border: 0;
@@ -456,5 +456,22 @@
 	.pw button,
 	.tf-form button {
 		margin-top: var(--s-4);
+	}
+	.fresh .row,
+	form.row {
+		flex-wrap: wrap;
+	}
+	@media (max-width: 600px) {
+		section.card {
+			padding-inline: var(--s-4);
+		}
+		form.row > .input {
+			flex: 1 1 100%;
+			max-width: none !important;
+		}
+		form.row > .btn,
+		.fresh .btn {
+			min-height: 44px;
+		}
 	}
 </style>

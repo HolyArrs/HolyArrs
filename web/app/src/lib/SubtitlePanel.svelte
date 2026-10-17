@@ -469,7 +469,8 @@
 	.inline {
 		margin-top: var(--s-3);
 		padding: var(--s-4);
-		border-radius: var(--r-btn);
+		border: 1px solid var(--line);
+		border-radius: 6px;
 		background: var(--surface-2, var(--surface-3));
 	}
 	.group {
@@ -487,8 +488,10 @@
 	}
 	.file {
 		margin-top: var(--s-4);
-		padding-top: var(--s-3);
-		border-top: 1px solid var(--line);
+		padding: var(--s-3);
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		background: var(--surface-2);
 	}
 	.path {
 		overflow-wrap: anywhere;
@@ -516,6 +519,7 @@
 	}
 	.sub-actions {
 		gap: var(--s-1);
+		flex-wrap: wrap;
 	}
 	.lack {
 		margin-top: var(--s-2);
@@ -556,5 +560,11 @@
 	}
 	.reasons li.fail {
 		border-left-color: var(--fail);
+	}
+	@media (max-width: 600px) {
+		.subs .card-head, .wish { align-items: flex-start; flex-direction: column; }
+		.sub-actions, .file-actions { width: 100%; }
+		.sub-actions :global(.btn), .file-actions :global(.btn) { min-height: var(--tap); }
+		.narrow { max-width: none; width: 100%; }
 	}
 </style>

@@ -26,7 +26,7 @@
 </script>
 
 <form class="edition-decision" onsubmit={submit} data-testid="edition-decision">
-	<p class="small"><b>Check this movie's edition</b></p>
+	<div class="decision-title"><span aria-hidden="true">01</span><p class="small"><b>Check this movie's edition</b></p></div>
 	<p class="xs muted">Enter the edition shown by the download, such as Theatrical or Director cut. HolyArrs repeats every protection, audio and placement check before importing.</p>
 	<div class="field">
 		<label for="download-edition-{downloadId}">Edition</label>
@@ -42,8 +42,31 @@
 		display: grid;
 		gap: var(--s-2);
 		margin-top: var(--s-3);
-		padding-top: var(--s-3);
-		border-top: 1px solid var(--line);
+		padding: var(--s-4);
+		border: 1px solid var(--line);
+		border-radius: var(--r-sm);
+		background: var(--surface-2);
 	}
 	.edition-decision p { margin: 0; }
+	.decision-title {
+		display: flex;
+		align-items: center;
+		gap: var(--s-2);
+	}
+	.decision-title > span {
+		display: grid;
+		place-items: center;
+		width: 24px;
+		height: 24px;
+		border-radius: var(--r-sm);
+		background: var(--info);
+		color: var(--bg);
+		font: var(--weight-semibold) var(--text-xs) / 1 var(--font-mono);
+	}
+	@media (max-width: 600px) {
+		.edition-decision :global(.btn) {
+			width: 100%;
+			min-height: 44px;
+		}
+	}
 </style>

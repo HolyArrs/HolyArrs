@@ -230,6 +230,10 @@
 		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: var(--s-3);
 		margin-bottom: var(--s-4);
+		padding: var(--s-3);
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		background: var(--surface-1);
 	}
 	.filters .field + .field {
 		margin-top: 0;
@@ -244,10 +248,13 @@
 		display: flex;
 		align-items: center;
 		gap: var(--s-3);
-		padding: var(--s-3) 0;
+		padding: var(--s-3);
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		background: var(--surface-1);
 	}
 	.row-item + .row-item {
-		border-top: 1px solid var(--line);
+		margin-top: var(--s-2);
 	}
 	.grow {
 		flex: 1;

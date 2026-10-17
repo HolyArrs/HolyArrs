@@ -40,14 +40,15 @@
 </ul>
 
 <style>
-	.films { list-style: none; display: grid; gap: var(--s-3); }
-	li { display: grid; grid-template-columns: 64px 1fr; gap: var(--s-4); padding: var(--s-3); border: 1px solid var(--line); border-radius: var(--r-card); background: var(--surface-1); }
-	.poster { width: 64px; }
+	.films { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: var(--s-3); }
+	li { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: var(--s-3); padding: var(--s-3); border: 1px solid var(--line); border-radius: 6px; background: var(--surface-1); min-width: 0; }
+	.poster { width: 72px; }
+	.grow { min-width: 0; }
 	.line { display: flex; gap: var(--s-3); align-items: start; }
-	input { margin-top: 4px; width: 18px; height: 18px; }
-	h3 { font-size: var(--text-md); }
+	input { margin-top: 2px; width: 20px; height: 20px; flex: none; accent-color: var(--ha-red); }
+	h3 { font-size: var(--text-sm); overflow-wrap: anywhere; }
 	h3 span { color: var(--text-muted); font-weight: var(--weight-regular); }
 	.state { display: inline-block; margin-top: var(--s-2); font-size: var(--text-sm); color: var(--text-muted); }
 	.state.missing { color: var(--wait); }
-	@media (max-width: 560px) { li { grid-template-columns: 52px 1fr; padding: var(--s-3); } .poster { width: 52px; } }
+	@media (max-width: 560px) { li { grid-template-columns: 56px minmax(0, 1fr); padding: var(--s-3); } .poster { width: 56px; } }
 </style>

@@ -58,12 +58,18 @@
 		grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.4fr) auto auto;
 		gap: var(--s-3);
 		align-items: end;
+		padding: var(--s-3);
+		border: 1px solid var(--line);
+		border-radius: var(--r-sm);
+		background: var(--surface-1);
 	}
 	.want .field {
 		margin-top: 0;
 	}
 	.forced {
-		margin: 0 0 10px;
+		min-height: 40px;
+		margin: 0;
+		padding-bottom: 1px;
 		white-space: nowrap;
 	}
 	.add {
@@ -72,11 +78,18 @@
 	@media (max-width: 600px) {
 		.want {
 			grid-template-columns: 1fr auto;
-			padding-bottom: var(--s-3);
-			border-bottom: 1px solid var(--line);
+			padding: var(--s-3);
 		}
 		.want .field {
 			grid-column: 1 / -1;
+		}
+		.want :global(.input),
+		.want :global(.btn),
+		.add {
+			min-height: 44px;
+		}
+		.add {
+			width: 100%;
 		}
 	}
 </style>

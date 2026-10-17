@@ -913,9 +913,13 @@
 	}
 	.hero {
 		display: grid;
-		grid-template-columns: 180px 1fr;
-		gap: var(--s-6);
-		margin-bottom: var(--s-6);
+		grid-template-columns: 168px minmax(0, 1fr);
+		gap: var(--s-5);
+		margin-bottom: var(--s-5);
+		padding: var(--s-4);
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		background: var(--surface-1);
 	}
 	.title {
 		font: var(--weight-semibold) var(--text-2xl) / var(--leading-tight) var(--font-display);
@@ -924,7 +928,9 @@
 	.overview {
 		margin-top: var(--s-3);
 		color: var(--text-muted);
-		max-width: 70ch;
+		max-width: 78ch;
+		line-height: 1.6;
+		text-wrap: pretty;
 	}
 	.chips {
 		margin: var(--s-4) 0 var(--s-2);
@@ -935,14 +941,15 @@
 	}
 	.cols {
 		display: grid;
-		grid-template-columns: 320px minmax(0, 1fr);
+		grid-template-columns: minmax(0, 1fr) 320px;
 		gap: var(--s-4);
 		align-items: start;
 	}
 	.rel-card {
-		grid-column: 2;
-		grid-row: 1 / span 2;
+		grid-column: 1;
+		grid-row: 1 / span 20;
 	}
+	.cols > :not(.rel-card) { grid-column: 2; }
 	.cols .card + .card {
 		margin-top: 0;
 	}
@@ -1046,11 +1053,13 @@
 			grid-column: auto;
 			grid-row: auto;
 		}
+		.cols > :not(.rel-card) { grid-column: auto; }
 	}
 	@media (max-width: 600px) {
 		.hero {
-			grid-template-columns: 96px 1fr;
-			gap: var(--s-4);
+			grid-template-columns: 92px minmax(0, 1fr);
+			gap: var(--s-3);
+			padding: var(--s-3);
 		}
 		.title {
 			font-size: var(--text-xl);

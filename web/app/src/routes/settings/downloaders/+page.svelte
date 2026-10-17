@@ -517,7 +517,7 @@
 		font-weight: var(--weight-semibold);
 	}
 	.bad-text {
-		color: var(--fail-text);
+		color: var(--fail);
 	}
 	.ok-text {
 		color: var(--ok-text, inherit);

@@ -422,6 +422,10 @@
 		align-items: flex-end;
 		gap: var(--s-3);
 		flex-wrap: wrap;
+		padding: var(--s-3);
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		background: var(--surface-1);
 	}
 	.grow {
 		flex: 1 1 240px;
@@ -441,13 +445,16 @@
 		margin: var(--s-2) 0 0;
 	}
 	.list > li {
-		padding: var(--s-3) 0;
+		padding: var(--s-3);
 		display: flex;
 		flex-direction: column;
 		gap: var(--s-1);
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		background: var(--surface-1);
 	}
 	.list > li + li {
-		border-top: 1px solid var(--line);
+		margin-top: var(--s-2);
 	}
 	.top {
 		display: flex;
@@ -524,5 +531,9 @@
 	}
 	.albums > li + li {
 		border-top: 1px solid var(--line);
+	}
+	@media (max-width: 600px) {
+		.pick > :global(.btn), .look > :global(.btn), .end > :global(.btn) { width: 100%; min-height: var(--tap); }
+		.top, .found li { align-items: flex-start; flex-direction: column; }
 	}
 </style>

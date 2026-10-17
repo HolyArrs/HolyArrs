@@ -253,7 +253,7 @@
 		margin-top: 0;
 	}
 	.bad-text {
-		color: var(--fail-text);
+		color: var(--fail);
 	}
 	@media (max-width: 600px) {
 		.two {

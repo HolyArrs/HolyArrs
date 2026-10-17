@@ -118,19 +118,21 @@
 		{#if recent.length === 0}
 			<p class="small muted">No calls yet. Test the Source from the Sources page.</p>
 		{:else}
-			<table class="calls-table">
-				<thead><tr><th>When</th><th>What</th><th>Result</th><th>Time</th></tr></thead>
-				<tbody>
-					{#each recent as c, i (i)}
-						<tr data-testid="call">
-							<td>{ago(c.at)}</td>
-							<td>{opWords[c.op] ?? c.op}</td>
-							<td class:bad-text={!c.ok}>{c.ok ? 'Answered' : words(c.error_kind || 'failed')}</td>
-							<td>{ms(c.ms)}</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
+			<div class="table-scroll">
+				<table class="calls-table">
+					<thead><tr><th>When</th><th>What</th><th>Result</th><th>Time</th></tr></thead>
+					<tbody>
+						{#each recent as c, i (i)}
+							<tr data-testid="call">
+								<td>{ago(c.at)}</td>
+								<td>{opWords[c.op] ?? c.op}</td>
+								<td class:bad-text={!c.ok}>{c.ok ? 'Answered' : words(c.error_kind || 'failed')}</td>
+								<td>{ms(c.ms)}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
 		{/if}
 	</section>
 {/if}
@@ -207,14 +209,14 @@
 	}
 	.calls,
 	.bar.calls {
-		background: var(--ok, #3fa46a);
+		background: var(--ok);
 	}
 	.fails,
 	.bar.fails {
-		background: var(--fail, #d4483b);
+		background: var(--fail);
 	}
 	.grabs {
-		background: var(--accent, #c03);
+		background: var(--accent);
 	}
 	.bar.time {
 		background: var(--text-muted);
@@ -227,9 +229,9 @@
 		line-height: 14px;
 		min-width: 14px;
 		text-align: center;
-		border-radius: 7px;
-		background: var(--accent, #c03);
-		color: #fff;
+		border-radius: var(--r-pill);
+		background: var(--accent-fill);
+		color: var(--text-on-red);
 	}
 	.ends {
 		display: flex;
@@ -238,6 +240,7 @@
 	}
 	.calls-table {
 		width: 100%;
+		min-width: 30rem;
 		border-collapse: collapse;
 		margin-top: var(--s-3);
 		font-size: 0.9rem;
@@ -246,10 +249,15 @@
 	.calls-table td {
 		text-align: left;
 		padding: var(--s-2) var(--s-2);
-		border-bottom: 1px solid var(--border);
+		border-bottom: 1px solid var(--line);
 	}
 	.bad-text {
-		color: var(--fail-text);
+		color: var(--fail);
+	}
+	.table-scroll {
+		max-width: 100%;
+		overflow-x: auto;
+		overscroll-behavior-inline: contain;
 	}
 	.sr-only {
 		position: absolute;
