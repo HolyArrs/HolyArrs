@@ -48,6 +48,7 @@
 	let previewReturn = $state<HTMLButtonElement | null>(null);
 	let previewHeading = $state<HTMLHeadingElement | null>(null);
 	let findInput = $state<HTMLInputElement | null>(null);
+	let activeFilters = $state<HTMLDivElement | null>(null);
 	const preview = $derived(previewId === null ? null : (titles.find((title) => title.id === previewId) ?? null));
 	const kindLabel: Record<string, string> = { movie: 'Movie', show: 'Show', artist: 'Artist' };
 
@@ -85,17 +86,19 @@
 	}
 	function setFilter(f: Filter) {
 		filter = f;
-		const url = new URL(page.url.href);
-		if (f === 'all') url.searchParams.delete('show');
-		else url.searchParams.set('show', f);
-		void goto(url, { replace: true, shallow: true });
+		syncFilterUrl();
 	}
 
 	function setKind(k: Kind) {
 		kind = k;
+		syncFilterUrl();
+	}
+	function syncFilterUrl() {
 		const url = new URL(page.url.href);
-		if (k === 'all') url.searchParams.delete('kind');
-		else url.searchParams.set('kind', k);
+		if (kind === 'all') url.searchParams.delete('kind');
+		else url.searchParams.set('kind', kind);
+		if (filter === 'all') url.searchParams.delete('show');
+		else url.searchParams.set('show', filter);
 		void goto(url, { replace: true, shallow: true });
 	}
 	function clearFilters() {
@@ -107,6 +110,16 @@
 		url.searchParams.delete('kind');
 		url.searchParams.delete('show');
 		void goto(url, { replace: true, shallow: true });
+	}
+	async function removeFilter(which: 'type' | 'status' | 'requester' | 'search') {
+		if (which === 'type') setKind('all');
+		else if (which === 'status') setFilter('all');
+		else if (which === 'requester') requesterFilter = 'anyone';
+		else q = '';
+		await tick();
+		const next = activeFilters?.querySelector('button');
+		if (next) next.focus();
+		else findInput?.focus();
 	}
 
 	const requestedTitles = $derived(titles.filter((t) => requesterFilter === 'anyone' || linkedPeople(t).some((p) => p.id === (requesterFilter === 'me' ? myId : Number(requesterFilter)))));
@@ -231,6 +244,14 @@
 	</div>
 	<p class="asset-count">{shown.length} {shown.length===1?'TITLE':'TITLES'}</p>
 </div>
+{#if kind !== 'all' || filter !== 'all' || requesterFilter !== 'anyone' || q}
+	<div class="active-filters" role="group" aria-label="Active filters" bind:this={activeFilters}>
+		{#if kind !== 'all'}<button type="button" class="active-filter" aria-label="Remove type filter" onclick={() => removeFilter('type')}>Type: {kinds.find(([key]) => key === kind)?.[1]} <span aria-hidden="true">×</span></button>{/if}
+		{#if filter !== 'all'}<button type="button" class="active-filter" aria-label="Remove status filter" onclick={() => removeFilter('status')}>Status: {filters.find(([key]) => key === filter)?.[1]} <span aria-hidden="true">×</span></button>{/if}
+		{#if requesterFilter !== 'anyone'}<button type="button" class="active-filter" aria-label="Remove requester filter" onclick={() => removeFilter('requester')}>Requested by: {requesterFilter === 'me' ? 'Me' : requesters.find((p) => String(p.id) === requesterFilter)?.name ?? 'Person'} <span aria-hidden="true">×</span></button>{/if}
+		{#if q}<button type="button" class="active-filter" aria-label="Remove search filter" onclick={() => removeFilter('search')}>Search: {q} <span aria-hidden="true">×</span></button>{/if}
+	</div>
+{/if}
 {#if searchError && !error}<p class="notice bad" role="alert">{searchError}</p>{/if}
 
 
@@ -540,6 +561,9 @@
 	}
 	.meta > .muted { flex-basis: 100%; }
 	.requester { display: block; overflow-wrap: anywhere; white-space: normal; }
+	.active-filters { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-bottom: var(--s-4); }
+	.active-filter { display: inline-flex; align-items: center; gap: var(--s-2); min-height: 44px; max-width: 100%; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); color: var(--text); font-size: var(--text-sm); text-align: left; overflow-wrap: anywhere; cursor: pointer; }
+	.active-filter > span { flex: none; font-size: 18px; }
 	@media (max-width: 767px) {
 		.library-tools { width: 100%; }
 		.library-tools summary { width: 100%; min-height: var(--tap); }
