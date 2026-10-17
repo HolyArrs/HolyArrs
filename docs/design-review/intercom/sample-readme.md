@@ -43,7 +43,7 @@ Restart the frontend after regenerating the catalog because the preview-only art
 npm --prefix web/app run dev -- --config vite.intercom-preview.config.ts
 ```
 
-`vite.intercom-preview.config.ts` enriches only `GET /api/v1/titles` and `GET /api/v1/titles/{id}` responses on this preview. It maps a catalog picture by media kind and exact title name. Production responses, backend storage, and the installed app are unchanged.
+`vite.intercom-preview.config.ts` enriches only title and request list/detail GET responses on this preview. It maps a catalog picture by media kind and exact title name. Production responses, backend storage, and the installed app are unchanged.
 
 ## Verification
 

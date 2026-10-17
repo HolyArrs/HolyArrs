@@ -18,6 +18,7 @@ export const discordPort = Number(process.env.HOLYARRS_E2E_DISCORD_PORT ?? 18746
 /** A fake Torznab Source and a plain rss feed (test-only key). */
 export const indexerPort = Number(process.env.HOLYARRS_E2E_INDEXER_PORT ?? 18747);
 export const indexerKey = ['stand', 'in', 'source'].join('-');
+const allowKeylessIndexer = process.env.HOLYARRS_E2E_INDEXER_NO_KEY === '1';
 /** The only Trakt key the fake Trakt takes (test-only). */
 export const traktKey = ['stand', 'in', 'trakt'].join('-');
 /** A fake qBittorrent and a fake SABnzbd (test-only key) for the Downloader tests. */
@@ -478,7 +479,7 @@ export function startFakes() {
 				'</channel></rss>');
 			return;
 		}
-		if (url.searchParams.get('apikey') !== indexerKey) {
+		if (!allowKeylessIndexer && url.searchParams.get('apikey') !== indexerKey) {
 			res.statusCode = 401;
 			res.end('<error code="100" description="wrong key"/>');
 			return;

@@ -73,7 +73,9 @@ function sampleArtwork() {
 			server.middlewares.use(async (req: IncomingMessage, res: any, next: (error?: unknown) => void) => {
 				if (req.method !== 'GET' || pictures.size === 0) return next();
 				const url = new URL(req.url ?? '/', target);
-				if (url.pathname !== '/api/v1/titles' && !/^\/api\/v1\/titles\/\d+$/.test(url.pathname)) return next();
+				const titlePath = url.pathname === '/api/v1/titles' || /^\/api\/v1\/titles\/\d+$/.test(url.pathname);
+				const askPath = url.pathname === '/api/v1/asks' || /^\/api\/v1\/asks\/\d+$/.test(url.pathname);
+				if (!titlePath && !askPath) return next();
 				try {
 					const headers = new Headers();
 					for (const [name, value] of Object.entries(req.headers)) {
@@ -86,9 +88,14 @@ function sampleArtwork() {
 					const data = await response.json();
 					const enrich = (title: any) => {
 						const picture = pictures.get(`${title?.kind}\u0000${String(title?.name ?? '').toLocaleLowerCase()}`);
-						if (picture) title.artwork = [picture];
+						if (picture) {
+							if (askPath) title.poster = picture;
+							else title.artwork = [picture];
+						}
 					};
 					if (Array.isArray(data.titles)) data.titles.forEach(enrich);
+					if (Array.isArray(data.asks)) data.asks.forEach(enrich);
+					if (data.ask) enrich(data.ask);
 					if (data.title) enrich(data.title);
 					else if (data.kind && data.name) enrich(data);
 					res.statusCode = response.status;

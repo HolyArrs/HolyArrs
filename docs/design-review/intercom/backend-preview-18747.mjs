@@ -39,6 +39,7 @@ const movies = join(runtime, 'movies');
 const downloads = join(runtime, 'downloads');
 
 for (const [name, port] of Object.entries(ports)) process.env[name] = String(port);
+process.env.HOLYARRS_E2E_INDEXER_NO_KEY = '1';
 
 function assertFile(path, label) {
 	if (!existsSync(path)) throw new Error(`${label} was not found at ${path}`);
@@ -96,7 +97,14 @@ const { startFakes, mbPort, plexPort, tmdbPort, traktPort, tvmazePort } = fakes;
 const stopFakes = startFakes();
 const subs = spawn(subsBin, ['-addr', `127.0.0.1:${ports.HOLYARRS_E2E_SUBS_PORT}`], { cwd: runtime, stdio: 'inherit' });
 const plex = `http://127.0.0.1:${plexPort}`;
-const backend = spawn(bin, ['-config', config, '-addr', `127.0.0.1:${backendPort}`, '-movies', movies, '-save-path', downloads], {
+const backend = spawn(bin, [
+	'-config', config,
+	'-addr', `127.0.0.1:${backendPort}`,
+	'-movies', movies,
+	'-save-path', downloads,
+	'-source-url', `http://127.0.0.1:${ports.HOLYARRS_E2E_INDEXER_PORT}`,
+	'-qbittorrent-url', `http://127.0.0.1:${ports.HOLYARRS_E2E_QBIT_PORT}`
+], {
 	cwd: runtime,
 	stdio: 'inherit',
 	env: {
