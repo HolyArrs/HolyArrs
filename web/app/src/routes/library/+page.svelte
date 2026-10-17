@@ -121,6 +121,17 @@
 		};
 	});
 
+	function requestedBy(t: TitleView): string {
+		const people = new Map<number, string>();
+		for (const ask of t.asks ?? []) {
+			if (ask.title_id !== t.id) continue;
+			for (const person of [ask.asked_by, ...ask.people]) {
+				if (person.name.trim()) people.set(person.id, person.name);
+			}
+		}
+		return [...people.values()].join(', ');
+	}
+
 	/** chipOf is one state chip for a title: its first Slot, or a show's sum. */
 	function chipOf(t: TitleView): { state: string; label: string } | null {
 		if (t.kind === 'show') {
@@ -234,8 +245,9 @@
 		</thead>
 		<tbody>
 			{#each shown as t (t.id)}
+				{@const requester = requestedBy(t)}
 				<tr data-testid="library-row" class:selected={preview?.id === t.id}>
-					<td class="title-cell"><a class="row-link" href={to(`/library/${t.id}`)}><span class="thumb"><Poster src={t.artwork[0]} name={t.name} /></span><span><b>{t.name}</b> <span class="muted xs">{t.year ?? ''}{kindWord[t.kind] ?? ''}</span></span></a><button class="preview-button list-preview" type="button" aria-label={`Preview ${t.name}`} aria-pressed={preview?.id === t.id} onclick={(event) => openPreview(t, event)}>Preview</button></td>
+					<td class="title-cell"><a class="row-link" href={to(`/library/${t.id}`)}><span class="thumb"><Poster src={t.artwork[0]} name={t.name} /></span><span><b>{t.name}</b> <span class="muted xs">{t.year ?? ''}{kindWord[t.kind] ?? ''}</span></span></a><button class="preview-button list-preview" type="button" aria-label={`Preview ${t.name}`} aria-pressed={preview?.id === t.id} onclick={(event) => openPreview(t, event)}>Preview</button>{#if requester}<span class="requester xs muted" data-testid="requested-by">Requested by {requester}</span>{/if}</td>
 					{#if t.kind === 'artist'}
 						{@const c = chipOf(t)}
 						<td>{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}<span class="chip" data-testid="request-approved" title="Requested and approved">Approved</span>{/if}{#if c}<span class="chip {tone(c.state)}">{c.label}</span>{/if}<span class="xs muted block">{artistProgress(t.artist)}</span></td>
@@ -258,6 +270,7 @@
 		<ul class="grid">
 		{#each shown as t, i (t.id)}
 			{@const c = chipOf(t)}
+			{@const requester = requestedBy(t)}
 			<li class:selected={preview?.id === t.id} class="rise" style="--i: {i}">
 				<a class="item" href={to(`/library/${t.id}`)} data-testid="library-card">
 					<Poster src={t.artwork[0]} name={t.name} />
@@ -269,6 +282,7 @@
 						{/if}
 						{#if c}<span class="chip {tone(c.state)}">{c.label}</span>{/if}
 					</span>
+					{#if requester}<span class="requester xs muted" data-testid="requested-by">Requested by {requester}</span>{/if}
 				</a>
 				<button class="preview-button" type="button" aria-label={`Preview ${t.name}`} aria-pressed={preview?.id === t.id} onclick={(event) => openPreview(t, event)}>Preview</button>
 			</li>
@@ -497,6 +511,7 @@
 		gap: var(--s-2);
 	}
 	.meta > .muted { flex-basis: 100%; }
+	.requester { display: block; overflow-wrap: anywhere; white-space: normal; }
 	@media (max-width: 767px) {
 		.library-tools { width: 100%; }
 		.library-tools summary { width: 100%; min-height: var(--tap); }
