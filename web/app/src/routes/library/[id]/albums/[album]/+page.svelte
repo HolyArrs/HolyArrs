@@ -139,6 +139,7 @@
 <a class="back small muted" href={to(`/library/${titleId}`)}><Icon name="back" size={16} /> {artist?.name ?? 'Artist'}</a>
 
 {#if notFound}
+	<h1 class="sr-only">Album</h1>
 	<EmptyState icon="music" title="This album is not in your Library">
 		<p>MusicBrainz may no longer list it.</p>
 		{#snippet actions()}<a class="btn btn-ghost" href={to(`/library/${titleId}`)}>Back to the artist</a>{/snippet}
@@ -149,6 +150,7 @@
 	<div class="sk" style="height: 220px"></div>
 {:else}
 	{@const st = albumStateOf(album)}
+	<div class="detail-workspace">
 	<header class="page-head">
 		<div>
 			<h1 class="name">{album.name}{#if album.disambiguation}{' '}<span class="muted small">({album.disambiguation})</span>{/if}</h1>
@@ -287,9 +289,12 @@
 			{/if}
 		</dialog>
 	{/if}
+	</div>
 {/if}
 
 <style>
+	.detail-workspace { overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--surface-1); }
+	.detail-workspace .page-head { margin: 0; padding: var(--s-5); border-bottom: 1px solid var(--line); }
 	.back {
 		display: inline-flex;
 		align-items: center;
@@ -306,10 +311,12 @@
 	}
 	.cols {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) 320px;
-		gap: var(--s-4);
+		grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
+		gap: 0;
 		align-items: start;
 	}
+	.cols > .card { margin: 0; border: 0; border-radius: 0; box-shadow: none; }
+	.cols > .card + .card { border-left: 1px solid var(--line); }
 	.cols :global(.card + .card) {
 		margin-top: 0;
 	}
@@ -327,7 +334,7 @@
 		align-items: center;
 		flex-wrap: wrap;
 		gap: var(--s-2) var(--s-3);
-		padding: var(--s-2) 0;
+		padding: var(--s-3) 0;
 	}
 	.track:hover, .pressings li:hover { background: var(--surface-2); }
 	.track + .track,
@@ -358,6 +365,7 @@
 		.cols {
 			grid-template-columns: minmax(0, 1fr);
 		}
+		.cols > .card + .card { border-left: 0; border-top: 1px solid var(--line); }
 	}
 	.head-actions {
 		display: flex;
@@ -370,7 +378,11 @@
 		flex-wrap: wrap;
 	}
 	.hist {
-		margin-top: var(--s-4);
+		margin: 0;
+		border: 0;
+		border-top: 1px solid var(--line);
+		border-radius: 0;
+		box-shadow: none;
 	}
 	.between {
 		justify-content: space-between;

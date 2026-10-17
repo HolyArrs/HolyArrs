@@ -1,0 +1,24 @@
+{
+  "surface": "Home / setup readiness",
+  "baseline": "architect review of the intermediate Home implementation",
+  "observed": [
+    "Home requests the admin-scoped TMDB token endpoint for every signed-in person, including sessions without settings permission or recent local-password proof.",
+    "Every failed TMDB token read is currently treated as configured, so permission, assurance, route, and server failures all create a false completed setup step.",
+    "The setup workspace and its settings links are rendered to household members who cannot open those settings pages."
+  ],
+  "target": [
+    "Read the masked TMDB setup state only when the current person has settings permission and the session meets the server's admin-route assurance rule.",
+    "Treat an unavailable protected read as unknown and label it Check TMDB connection; never count it as complete.",
+    "Show the administrative setup workspace only to people with settings permission, while keeping the normal Home activity and empty-library experience available to household members."
+  ],
+  "contract_findings": [
+    "GET /health and GET /health/checks do not include TMDB credential readiness.",
+    "GET /settings/tmdb-token is the existing frontend contract for masked readiness, but it is admin-scoped and protected by recent local-password assurance for browser sessions.",
+    "No backend or API contract change is required for the safe frontend behavior."
+  ],
+  "boundaries": [
+    "Do not read, log, capture, or expose token or configuration values.",
+    "Preserve the existing Home composition, operational data, and non-settings navigation.",
+    "Frontend only."
+  ]
+}

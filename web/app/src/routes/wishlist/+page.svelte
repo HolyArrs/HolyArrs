@@ -173,6 +173,7 @@
 
 <header class="page-head">
 	<div>
+		<p class="section-kicker">Requests</p>
 		<h1>Wishlist</h1>
 		<p>{approver ? 'What people asked for. Approve to add, or turn down with a note.' : 'The movies, shows and music you asked for, and where each one is.'}</p>
 	</div>
@@ -209,6 +210,8 @@
 	</ul>
 {/if}
 
+{#if bothKinds || asks.length}
+<div class="wishlist-toolbar">
 {#if bothKinds}
 	<div class="pills" role="group" aria-label="Kind">
 		<button type="button" class="pill" aria-pressed={kind === 'all'} onclick={() => (kind = 'all')}>Everything</button>
@@ -224,6 +227,9 @@
 		<button type="button" class="pill" aria-pressed={show === 'all'} onclick={() => (show = 'all')}>Everyone's <span class="n">{asks.length}</span></button>
 		<button type="button" class="pill" aria-pressed={show === 'mine'} onclick={() => (show = 'mine')}>Mine</button>
 	</div>
+{/if}
+	{#if asks.length}<p class="queue-count">{shown.length} {shown.length === 1 ? 'request' : 'requests'}</p>{/if}
+</div>
 {/if}
 
 {#if error}
@@ -246,7 +252,7 @@
 	<p class="quiet card">{show === 'waiting' ? 'Nothing waits for approval.' : 'Nothing here.'}</p>
 {:else}
 	<div class="wishlist-workspace">
-		<ul class="asks">
+		<ul class="asks" aria-label="Wishlist requests">
 			{#each shown as a, i (a.id)}
 				<li class="ask rise" class:selected={selected?.id === a.id} style="--i: {i}" data-testid="ask">
 					<div class="art"><Poster src={a.poster} name={a.name} /></div>
@@ -286,7 +292,7 @@
 			{/each}
 		</ul>
 
-		<aside class="review card" aria-label="Selected Wishlist item">
+		<aside class="review" aria-label="Selected Wishlist item">
 			{#if selected}
 				<div class="review-art"><Poster src={selected.poster} name={selected.name} /></div>
 				<div class="review-head">
@@ -369,6 +375,14 @@
 		gap: var(--s-2);
 		flex-wrap: wrap;
 	}
+	.section-kicker {
+		margin-bottom: 5px;
+		color: var(--text-muted);
+		font-size: var(--text-xs);
+		font-weight: var(--weight-semibold);
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+	}
 	.messages {
 		margin-bottom: var(--s-5);
 	}
@@ -390,67 +404,95 @@
 		font-weight: var(--weight-medium);
 	}
 	.limit {
+		margin: 0 0 var(--s-4);
+		padding: var(--s-3) var(--s-4);
+		border: 1px solid var(--line);
+		border-radius: 12px;
+		background: var(--surface-2);
+	}
+	.wishlist-toolbar {
+		display: flex;
+		align-items: center;
+		gap: var(--s-3);
+		min-height: 58px;
 		margin-bottom: var(--s-4);
+		padding: 9px 0;
+		border-block: 1px solid var(--line);
 	}
 	.pills {
-		display: flex;
+		display: inline-flex;
 		flex-wrap: wrap;
-		gap: var(--s-2);
-		margin-bottom: var(--s-4);
+		gap: 3px;
+		margin: 0;
+		padding: 3px;
+		border: 1px solid var(--line);
+		border-radius: 11px;
+		background: var(--surface-2);
 	}
 	.pill {
-		min-height: 36px;
-		padding: 0 var(--s-4);
-		border-radius: var(--r-sm);
-		border: 1px solid var(--line-strong);
-		background: var(--surface-1);
+		min-height: 34px;
+		padding: 0 var(--s-3);
+		border: 0;
+		border-radius: 8px;
+		background: transparent;
 		color: var(--text-muted);
 		font-weight: var(--weight-medium);
 		cursor: pointer;
 	}
 	.pill[aria-pressed='true'] {
-		background: var(--surface-3);
-		border-color: var(--info);
+		background: var(--surface-1);
 		color: var(--text);
+		box-shadow: 0 1px 2px rgb(20 24 18 / 10%);
 	}
 	.pill .n {
 		margin-left: 4px;
 		color: var(--text-faint);
 	}
+	.queue-count {
+		margin-left: auto;
+		color: var(--text-muted);
+		font-size: var(--text-xs);
+		font-weight: var(--weight-semibold);
+		font-variant-numeric: tabular-nums;
+		text-transform: uppercase;
+	}
 	.loading-grid,
 	.wishlist-workspace {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
-		gap: var(--s-4);
+		grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+		gap: 0;
 		align-items: start;
+		border: 1px solid var(--line);
+		border-radius: 14px;
+		overflow: clip;
 	}
 	.asks {
 		display: flex;
 		flex-direction: column;
 		gap: 0;
 		min-width: 0;
-		border: 1px solid var(--line);
-		border-radius: var(--r-card);
+		border: 0;
+		border-radius: 0;
 		background: var(--surface-1);
 		overflow: hidden;
 	}
 	.ask {
 		display: flex;
-		gap: var(--s-4);
-		align-items: flex-start;
-		padding: var(--s-4);
-		border-left: 2px solid transparent;
+		gap: var(--s-3);
+		align-items: center;
+		padding: 12px 14px;
+		border-left: 3px solid transparent;
 		transition: background var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out);
 	}
 	.ask + .ask {
 		border-top: 1px solid var(--line);
 	}
 	.ask.selected {
-		background: var(--surface-2);
-		border-left-color: var(--info);
+		background: color-mix(in srgb, var(--info) 7%, var(--surface-1));
+		border-left-color: color-mix(in srgb, var(--info) 65%, var(--line));
 	}
 	.art {
-		width: 72px;
+		width: 58px;
 		flex: none;
 	}
 	.body {
@@ -469,7 +511,7 @@
 		color: var(--text);
 	}
 	.actions {
-		margin-top: var(--s-2);
+		margin-top: 4px;
 		flex-wrap: wrap;
 	}
 	.actions:empty {
@@ -482,11 +524,17 @@
 	.review {
 		position: sticky;
 		top: calc(var(--topbar) + var(--s-4));
+		min-height: 100%;
+		padding: var(--s-5);
+		border-left: 1px solid var(--line);
+		background: var(--surface-1);
 		overflow: hidden;
 	}
 	.review-art {
-		margin: calc(var(--s-5) * -1) calc(var(--s-5) * -1) var(--s-4);
-		max-height: 180px;
+		width: min(180px, 62%);
+		margin: 0 auto var(--s-5);
+		max-height: 260px;
+		border-radius: 12px;
 		overflow: hidden;
 		background: var(--surface-2);
 	}
@@ -542,7 +590,9 @@
 	.review-note {
 		margin-top: var(--s-4);
 		padding: var(--s-3);
-		border-left: 2px solid var(--info);
+		border: 1px solid var(--line);
+		border-left: 3px solid var(--info);
+		border-radius: 10px;
 		background: var(--surface-2);
 		font-size: var(--text-sm);
 		overflow-wrap: anywhere;
@@ -568,7 +618,7 @@
 		overflow: auto;
 		padding: var(--s-6);
 		border: 0;
-		border-radius: var(--r-modal);
+		border-radius: 16px;
 		background: var(--surface-1);
 		color: var(--text);
 		box-shadow: var(--shadow-modal);
@@ -600,6 +650,11 @@
 		.pill {
 			min-height: 44px;
 		}
+		.wishlist-toolbar {
+			align-items: flex-start;
+			flex-direction: column;
+		}
+		.queue-count { order: -1; margin-left: 0; }
 		.ask {
 			padding: var(--s-3);
 		}
@@ -619,6 +674,8 @@
 		.review {
 			position: static;
 			grid-row: 1;
+			border-left: 0;
+			border-bottom: 1px solid var(--line);
 		}
 	}
 </style>

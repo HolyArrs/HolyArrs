@@ -3,7 +3,7 @@
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import { api, message } from '#lib/api.ts';
+	import { api, message, ApiError } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
@@ -49,6 +49,7 @@
 	let feed = $state<{ set: boolean; created_at?: string } | null>(null);
 	let feedLoaded = $state(false);
 	let feedError = $state('');
+	let feedNeedsProof = $state(false);
 	let newLink = $state('');
 	let feedBusy = $state(false);
 
@@ -88,17 +89,38 @@
 	}
 
 	async function loadFeed() {
+		if (!session.can('manage_library')) {
+			feedLoaded = true;
+			return;
+		}
+		if (session.s.via !== 'api_key' && !session.s.localRecent) {
+			feed = null;
+			feedError = '';
+			feedNeedsProof = true;
+			feedLoaded = true;
+			return;
+		}
 		try {
 			feed = await api.get<{ set: boolean; created_at?: string }>('/calendar/feed-key');
 			feedError = '';
+			feedNeedsProof = false;
 		} catch (e) {
-			feedError = message(e);
+			if (e instanceof ApiError && e.status === 403) {
+				feed = null;
+				feedError = '';
+				feedNeedsProof = true;
+			} else feedError = message(e);
 		} finally {
 			feedLoaded = true;
 		}
 	}
 
 	async function makeKey() {
+		if (session.s.via !== 'api_key' && !session.s.localRecent) {
+			feedNeedsProof = true;
+			feed = null;
+			return;
+		}
 		if (feed?.set && !confirm('Make a new feed link? The old link stops working on every phone that uses it.')) return;
 		feedBusy = true;
 		try {
@@ -106,20 +128,31 @@
 			newLink = feedLink(location.origin + getBase(), r.path);
 			await loadFeed();
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			if (e instanceof ApiError && e.status === 403) {
+				feedNeedsProof = true;
+				feed = null;
+			} else toasts.push(message(e), 'fail');
 		} finally {
 			feedBusy = false;
 		}
 	}
 
 	async function turnOff() {
+		if (session.s.via !== 'api_key' && !session.s.localRecent) {
+			feedNeedsProof = true;
+			feed = null;
+			return;
+		}
 		if (!confirm('Turn the phone calendar feed off? Every phone that uses the link stops getting dates.')) return;
 		try {
 			await api.del('/calendar/feed-key');
 			newLink = '';
 			await loadFeed();
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			if (e instanceof ApiError && e.status === 403) {
+				feedNeedsProof = true;
+				feed = null;
+			} else toasts.push(message(e), 'fail');
 		}
 	}
 
@@ -145,6 +178,7 @@
 
 <header class="page-head">
 	<div>
+		<p class="eyebrow">Schedule</p>
 		<h1>Calendar</h1>
 		<p>
 			Cinema, digital and disc dates for the movies in your Library, when the episodes of your shows air, in your own time zone, and the days your artists'
@@ -193,7 +227,7 @@
 {:else if libraryEmpty}
 	<EmptyState icon="calendar" title="Nothing coming up">
 		<p>Add movies, shows and artists to your Library and their dates, episodes and albums show up here.</p>
-		{#snippet actions()}<a class="btn btn-red" href={to(`/search`)}>Add a movie or show</a>{/snippet}
+		{#snippet actions()}<a class="btn btn-dark" href={to(`/search`)}>Add media</a>{/snippet}
 	</EmptyState>
 {:else if view === 'month'}
 	<!-- svelte-ignore a11y_no_noninteractive_tabindex (keyboard users need to focus and scroll this region) -->
@@ -206,7 +240,7 @@
 			<div class="wk">
 				{#each week as d (d.day)}
 					<div class="cell" class:out={!d.inMonth} class:today={d.today} data-day={d.day}>
-						<span class="num mono" aria-label={date(d.day + 'T12:00:00')}>{d.date}</span>
+						<span class="num mono"><span aria-hidden="true">{d.date}</span><span class="sr-only">{date(d.day + 'T12:00:00')}. </span></span>
 						{#each d.items as e (entryKey(e))}
 							<a class="ev k-{e.kind}" href={to(entryHref(e))} data-testid="cal-entry" title="{entryName(e)}: {kindWord[e.kind]}{entryTime(e) ? ` at ${entryTime(e)}` : ''}">
 								<span class="dot" aria-hidden="true"></span><span class="ev-name">{#if entryTime(e)}<span class="mono">{entryTime(e)}</span> {/if}{entryName(e)}</span><span class="sr-only">, {kindWord[e.kind]}</span>
@@ -252,6 +286,14 @@
 	</div>
 {/if}
 
+{#if feedLoaded && feedNeedsProof}
+	<section class="card phone" aria-labelledby="h-feed-proof">
+		<h2 id="h-feed-proof" class="h2">Confirm your password to manage the phone calendar</h2>
+		<p class="small muted">The feed status and its controls are protected. Confirm your HolyArrs password in My account, then return here.</p>
+		<a class="btn btn-ghost" href={to('/settings/account')} style="margin-top: var(--s-3)">Open My account</a>
+	</section>
+{/if}
+
 {#if feed}
 	<section class="card phone" aria-labelledby="h-feed" data-testid="cal-feed">
 		<h2 id="h-feed" class="h2">Phone calendar</h2>
@@ -266,7 +308,7 @@
 				<span class="hint">Copy it now: HolyArrs keeps only a fingerprint of the key and cannot show it again. Making a new link ends this one.</span>
 			</div>
 			<div class="row actions">
-				<button class="btn btn-red" type="button" onclick={copy}><Icon name="copy" size={16} /> Copy link</button>
+				<button class="btn btn-dark" type="button" onclick={copy}><Icon name="copy" size={16} /> Copy link</button>
 				<a class="btn btn-ghost" href={webcalLink(newLink)}>Open in a calendar app</a>
 			</div>
 		{:else if feed.set}
@@ -276,7 +318,7 @@
 		{/if}
 		{#if session.can('settings')}
 			<div class="row actions">
-				<button class="btn {feed.set ? 'btn-ghost' : 'btn-red'}" type="button" onclick={makeKey} disabled={feedBusy} aria-busy={feedBusy}>
+				<button class="btn {feed.set ? 'btn-ghost' : 'btn-dark'}" type="button" onclick={makeKey} disabled={feedBusy} aria-busy={feedBusy}>
 					{feed.set ? 'Make a new link' : 'Make a feed link'}
 				</button>
 				{#if feed.set}<button class="btn btn-quiet" type="button" onclick={turnOff}>Turn the feed off</button>{/if}
@@ -286,12 +328,21 @@
 {/if}
 
 <style>
+	.eyebrow {
+		margin: 0 0 var(--s-2);
+		font-size: 11px;
+		font-weight: var(--weight-semibold);
+		letter-spacing: 0.09em;
+		text-transform: uppercase;
+		color: var(--text-muted);
+	}
 	.calendar-tools {
 		margin-bottom: var(--s-4);
-		padding: var(--s-3);
+		padding: var(--s-3) var(--s-4);
 		border: 1px solid var(--line);
 		border-radius: var(--r-card);
 		background: var(--surface-1);
+		box-shadow: none;
 	}
 	.bar-row {
 		display: flex;
@@ -311,7 +362,8 @@
 		text-transform: capitalize;
 	}
 	.icon-btn {
-		width: 36px;
+		width: 40px;
+		min-height: 40px;
 		padding: 0;
 		justify-content: center;
 	}
@@ -319,7 +371,8 @@
 		transform: scaleX(-1);
 	}
 	.seg .on {
-		background: var(--surface-3);
+		background: var(--text);
+		color: var(--surface-1);
 	}
 	.kinds {
 		border: 0;
@@ -333,7 +386,7 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
-		min-height: 36px;
+		min-height: 40px;
 		padding: 0 var(--s-3);
 		border: 1px solid var(--line-strong);
 		border-radius: var(--r-sm);
@@ -375,6 +428,7 @@
 		padding: 0;
 		overflow: hidden;
 		border-radius: var(--r-card);
+		box-shadow: none;
 	}
 	.month-scroll {
 		max-width: 100%;
@@ -391,7 +445,8 @@
 		grid-template-columns: repeat(7, minmax(0, 1fr));
 	}
 	.wk.head span {
-		padding: var(--s-2);
+		padding: var(--s-3) var(--s-2);
+		background: var(--surface-2);
 		text-transform: uppercase;
 	}
 	.cell {
@@ -497,6 +552,7 @@
 	.phone {
 		margin-top: var(--s-6);
 		max-width: 720px;
+		box-shadow: none;
 	}
 	.load-error {
 		display: flex;

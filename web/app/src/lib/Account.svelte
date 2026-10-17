@@ -417,8 +417,8 @@
 	}
 	.fresh {
 		padding: var(--s-4);
-		border: 1px solid var(--ha-red);
-		background: var(--ha-red-soft);
+		border: 1px solid var(--line);
+		background: var(--surface-2);
 		border-radius: var(--r-btn);
 		margin-bottom: var(--s-4);
 	}

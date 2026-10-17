@@ -115,7 +115,7 @@
 
 	<div class="selection-bar">
 		<span><b>{selected.length}</b> selected across all pages</span>
-		<button class="btn btn-red" type="button" disabled={selected.length === 0 || busy} onclick={review}>Review searches</button>
+		<button class="btn btn-dark" type="button" disabled={selected.length === 0 || busy} onclick={review}>Review searches</button>
 	</div>
 
 	{#if preview}
@@ -123,7 +123,7 @@
 			<h2 id="review-title">Review {preview.copies.length} {preview.copies.length === 1 ? 'copy' : 'copies'}</h2>
 			<p>This starts {preview.slot_count} search{preview.slot_count === 1 ? '' : 'es'} for the exact selected Versions. Each search applies the current Pick rules and saves candidates for review. It does not guarantee a replacement or download anything automatically.</p>
 			<ul>{#each preview.copies as copy (copyKey(copy))}<li><b>{copy.title}</b> · {copy.version} · {codecLabel(copy.codec)}</li>{/each}</ul>
-			<div class="row"><button class="btn btn-red" type="button" disabled={busy} onclick={search}>Start searches</button><button class="btn btn-quiet" type="button" onclick={() => preview = null}>Cancel</button></div>
+			<div class="row"><button class="btn btn-dark" type="button" disabled={busy} onclick={search}>Start searches</button><button class="btn btn-quiet" type="button" onclick={() => preview = null}>Cancel</button></div>
 		</section>
 	{/if}
 
@@ -158,14 +158,19 @@
 {/if}
 
 <style>
-	.eyebrow { margin: 0 0 var(--s-1); font-size: var(--text-xs); color: var(--text-muted); }
-	.tools { display: flex; align-items: end; gap: var(--s-3); flex-wrap: wrap; margin-bottom: var(--s-4); padding: var(--s-3); border: 1px solid var(--line); border-radius: 6px; background: var(--surface-1); }
+	.eyebrow { margin: 0 0 var(--s-2); font-size: 11px; font-weight: var(--weight-semibold); letter-spacing: .09em; text-transform: uppercase; color: var(--text-muted); }
+	.tools { display: flex; align-items: end; gap: var(--s-3); flex-wrap: wrap; margin-bottom: 0; padding: var(--s-4); border: 1px solid var(--line); border-radius: var(--r-card) var(--r-card) 0 0; background: var(--surface-1); }
 	.tools label { display: grid; gap: var(--s-1); font-size: var(--text-xs); color: var(--text-muted); }
-	.selection-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); padding: var(--s-3) 0; }
-	.review { border: 1px solid var(--line); border-radius: 6px; padding: var(--s-4); margin: var(--s-2) 0 var(--s-4); background: var(--surface-1); }
+	.selection-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); min-height: 64px; padding: var(--s-2) var(--s-4); border: 1px solid var(--line); border-top: 0; background: var(--surface-2); }
+	.review { border: 1px solid var(--line); border-radius: var(--r-card); padding: var(--s-5); margin: var(--s-4) 0; background: var(--surface-1); }
 	.review h2 { margin-top: 0; }
 	.review ul { margin: .75rem 0; padding-left: 1.25rem; }
-	.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-1); }
+	.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-card); background: var(--surface-1); }
+	.list-table { width: 100%; border-collapse: collapse; }
+	.list-table th { padding-inline: var(--s-3); text-align: left; background: var(--surface-2); }
+	.list-table td { padding: var(--s-3); vertical-align: top; }
+	.list-table tbody tr + tr { border-top: 1px solid var(--line); }
+	.list-table tbody tr:hover { background: var(--surface-2); }
 	.path { max-width: 24rem; overflow-wrap: anywhere; color: var(--text-muted); font-size: var(--text-sm); }
 	.codec { font-weight: 700; }
 	.block { display: block; }
@@ -174,6 +179,7 @@
 		.tools, .tools label { width: 100%; }
 		.tools .input, .tools button { width: 100%; }
 		.selection-bar { align-items: stretch; flex-direction: column; }
+		.selection-bar :global(.btn), .pager :global(.btn) { min-height: 44px; }
 		.list-table th:nth-child(4), .list-table td:nth-child(4), .list-table th:nth-child(5), .list-table td:nth-child(5) { display: none; }
 	}
 </style>

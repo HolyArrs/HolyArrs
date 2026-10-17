@@ -277,6 +277,7 @@
 	}
 </script>
 
+<div class="detail-workspace">
 <section class="hero">
 	<div class="art"><Poster src={title.artwork[0]} name={title.name} /></div>
 	<div class="info">
@@ -525,6 +526,7 @@
 	</section>
 	</div>
 </div>
+</div>
 
 {#if staff}
 	<ShowDeleteDialog bind:this={deleter} titleId={title.id} name={title.name} ondone={deleted} />
@@ -589,14 +591,19 @@
 </dialog>
 
 <style>
+	.detail-workspace {
+		overflow: hidden;
+		border: 1px solid var(--line);
+		border-radius: 16px;
+		background: var(--surface-1);
+	}
 	.hero {
 		display: grid;
-		grid-template-columns: 168px minmax(0, 1fr);
+		grid-template-columns: 144px minmax(0, 1fr);
 		gap: var(--s-5);
-		margin-bottom: var(--s-5);
-		padding: var(--s-4);
-		border: 1px solid var(--line);
-		border-radius: 6px;
+		margin: 0;
+		padding: var(--s-5);
+		border-bottom: 1px solid var(--line);
 		background: var(--surface-1);
 	}
 	.title {
@@ -624,13 +631,13 @@
 	}
 	.actions {
 		margin-top: var(--s-4);
-		gap: var(--s-4);
+		gap: var(--s-2);
 		flex-wrap: wrap;
 	}
 	.cols {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) 320px;
-		gap: var(--s-4);
+		grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
+		gap: 0;
 		align-items: start;
 	}
 	.side {
@@ -639,8 +646,17 @@
 		gap: var(--s-4);
 		grid-column: 2;
 		position: sticky;
-		top: var(--s-3);
+		top: 0;
+		border-left: 1px solid var(--line);
 	}
+	.side :global(.card),
+	.main :global(.card) {
+		margin: 0;
+		border: 0;
+		border-radius: 0;
+		box-shadow: none;
+	}
+	.side :global(.card + .card) { border-top: 1px solid var(--line); }
 	.side .card + .card {
 		margin-top: 0;
 	}
@@ -661,7 +677,7 @@
 		display: flex;
 		align-items: flex-start;
 		gap: var(--s-3);
-		padding: var(--s-2) 0;
+		padding: var(--s-3) 0;
 	}
 	.season-head details {
 		flex: 1;
@@ -686,7 +702,7 @@
 		margin: var(--s-1) 0 var(--s-2);
 	}
 	.episode {
-		padding: var(--s-2) 0 var(--s-2) var(--s-3);
+		padding: var(--s-3) 0 var(--s-3) var(--s-4);
 		border-left: 2px solid var(--line);
 	}
 	.ep-main {
@@ -761,13 +777,13 @@
 		.main {
 			grid-row: 1;
 		}
-		.side { grid-column: auto; position: static; }
+		.side { grid-column: auto; position: static; border-left: 0; border-top: 1px solid var(--line); }
 	}
 	@media (max-width: 600px) {
 		.hero {
 			grid-template-columns: 92px minmax(0, 1fr);
 			gap: var(--s-3);
-			padding: var(--s-3);
+			padding: var(--s-4);
 		}
 		.title {
 			font-size: var(--text-xl);

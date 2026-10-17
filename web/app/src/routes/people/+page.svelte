@@ -37,6 +37,7 @@
 
 <svelte:head><title>People · HolyArrs</title></svelte:head>
 
+<section class="workspace">
 <header class="page-head">
 	<div>
 		<h1>People</h1>
@@ -66,14 +67,20 @@
 		</nav>
 	<p class="small muted attribution">{result.attribution}</p>
 {/if}
+</section>
 
 <style>
-	.searchbar { display: grid; grid-template-columns: 1fr auto; gap: var(--s-3); max-width: 760px; margin-bottom: var(--s-5); }
-	.searchbar input { min-width: 0; min-height: var(--tap); border-color: var(--line-strong); background: var(--surface-1); }
-	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: var(--s-3); }
+	.workspace { overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--surface-1); }
+	.workspace .page-head { margin: 0; padding: var(--s-5); border-bottom: 1px solid var(--line); }
+	.searchbar { display: grid; grid-template-columns: 1fr auto; gap: var(--s-3); max-width: none; margin: 0; padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--line); }
+	.searchbar input { min-width: 0; min-height: var(--tap); padding: 0 var(--s-3); border: 1px solid var(--line-strong); border-radius: 10px; background: var(--surface-1); }
+	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 0; }
+	.grid :global(.person-card) { border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); border-radius: 0; background: var(--surface-1); transform: none; }
+	.grid :global(.person-card:hover) { background: var(--surface-2); transform: none; }
 	.sk { min-height: 112px; }
-	.count { margin-bottom: var(--s-3); }
-	.attribution { margin-top: var(--s-5); }
-	.pages { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); margin-top: var(--s-5); padding-top: var(--s-3); border-top: 1px solid var(--line); }
+	.count { margin: 0; padding: var(--s-3) var(--s-5); border-bottom: 1px solid var(--line); }
+	.attribution { margin: 0; padding: var(--s-4) var(--s-5); }
+	.pages { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); margin: 0; padding: var(--s-4) var(--s-5); border-top: 1px solid var(--line); }
+	.workspace > :global(.notice) { margin: var(--s-4) var(--s-5); }
 	@media (max-width: 520px) { .searchbar { grid-template-columns: 1fr; } .searchbar button { width: 100%; min-height: var(--tap); } .pages { justify-content: center; flex-wrap: wrap; } }
 </style>

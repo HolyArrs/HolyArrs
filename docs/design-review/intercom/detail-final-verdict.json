@@ -1,0 +1,25 @@
+{
+  "score": 91,
+  "verdict": "pass_with_documented_limits",
+  "category_match": {
+    "detail_header": 92,
+    "workspace_structure": 94,
+    "inspector_hierarchy": 93,
+    "dense_lists": 91,
+    "controls_and_states": 90,
+    "responsive_behavior": 88
+  },
+  "differences": [
+    "HolyArrs keeps poster art, release decisions, subtitle controls, season and episode actions, albums, request history, and media status in place of Intercom's conversation and knowledge content.",
+    "The 390px layout uses a single continuous reading order instead of a side sheet; releases, seasons, or albums lead before the metadata inspector sections.",
+    "Only the movie detail had disposable preview data for a fresh rendered comparison. Show and artist details passed Svelte diagnostics and use the same verified local workspace geometry, but their data-rich states remain source-verified rather than screenshot-verified.",
+    "The remaining mobile color-contrast finding belongs to the global selected Library tab outside this slice.",
+    "Exact animation timing remains unverified because the downloaded evidence contains still frames rather than a recorded Intercom flow."
+  ],
+  "suggestions": [
+    "Capture populated show and artist records when disposable fixtures are available and compare season, episode, and album row wrapping at desktop and phone widths.",
+    "Fix the global mobile selected-tab contrast in the shell ownership lane.",
+    "Keep future media-detail additions inside the primary-pane or inspector hierarchy instead of reintroducing floating card grids."
+  ],
+  "reasoning": "The movie detail now reads as one Intercom-derived workspace: a compact bounded header, a shared utility band, a flexible releases pane, and a 340px divider-based inspector. The same structure is applied to show and artist details, with seasons and albums as dense primary rows and operational facts, subtitles, versions, requests, and history retained in the inspector. All API-backed actions, role gates, dialogs, loading and error behavior, status chips, and media imagery remain functional. A fresh headless desktop and 390px render confirmed the workspace, primary-first mobile order, and absence of horizontal overflow. Axe reported no desktop violations and only the pre-existing global mobile Library-tab contrast issue."
+}

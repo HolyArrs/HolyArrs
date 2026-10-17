@@ -199,6 +199,7 @@
 
 <header class="page-head">
 	<div>
+		<p class="eyebrow">Library management</p>
 		<h1>Import a library</h1>
 		<p>
 			Bring movies, shows and music you already have into HolyArrs. It reads a Library folder, works out which movie, show or artist each folder holds (for
@@ -218,7 +219,7 @@
 	<EmptyState icon="folder" title="No Library folder yet">
 		<p>Add the folder that holds your movies, shows or music first.</p>
 		{#snippet actions()}
-			{#if session.can('settings')}<a class="btn btn-red" href={to(`/settings/library-folders`)}>Library folders</a>{/if}
+			{#if session.can('settings')}<a class="btn btn-dark" href={to(`/settings/library-folders`)}>Library folders</a>{/if}
 		{/snippet}
 	</EmptyState>
 {:else}
@@ -233,7 +234,7 @@
 						>{/each}
 				</select>
 			</div>
-			<button class="btn btn-red" type="button" onclick={() => scan()} disabled={scanning || adopting || !folderId} aria-busy={scanning}>
+			<button class="btn btn-dark" type="button" onclick={() => scan()} disabled={scanning || adopting || !folderId} aria-busy={scanning}>
 				<Icon name="search" size={18} /> Scan (nothing is moved)
 			</button>
 		</div>
@@ -402,7 +403,7 @@
 			{/each}
 			<div class="row end">
 				<span class="small muted">{picks.length} ticked</span>
-				<button class="btn btn-red" type="button" onclick={adopt} disabled={adopting || !picks.length} aria-busy={adopting}>
+				<button class="btn btn-dark" type="button" onclick={adopt} disabled={adopting || !picks.length} aria-busy={adopting}>
 					{picks.length === 1 ? `Adopt 1 ${word}` : `Adopt ${picks.length} ${word}s`}
 				</button>
 			</div>
@@ -411,6 +412,7 @@
 {/if}
 
 <style>
+	.eyebrow { margin: 0 0 var(--s-2); font-size: 11px; font-weight: var(--weight-semibold); letter-spacing: .09em; text-transform: uppercase; color: var(--text-muted); }
 	.back {
 		display: inline-flex;
 		align-items: center;
@@ -424,7 +426,7 @@
 		flex-wrap: wrap;
 		padding: var(--s-3);
 		border: 1px solid var(--line);
-		border-radius: 6px;
+		border-radius: var(--r-btn);
 		background: var(--surface-1);
 	}
 	.grow {
@@ -444,17 +446,19 @@
 		padding: 0;
 		margin: var(--s-2) 0 0;
 	}
+	.list { border: 1px solid var(--line); border-radius: var(--r-btn); background: var(--surface-1); overflow: hidden; }
 	.list > li {
-		padding: var(--s-3);
+		padding: var(--s-3) var(--s-4);
 		display: flex;
 		flex-direction: column;
 		gap: var(--s-1);
-		border: 1px solid var(--line);
-		border-radius: 6px;
-		background: var(--surface-1);
+		border: 0;
+		border-radius: 0;
+		background: transparent;
 	}
 	.list > li + li {
-		margin-top: var(--s-2);
+		margin-top: 0;
+		border-top: 1px solid var(--line);
 	}
 	.top {
 		display: flex;
@@ -535,5 +539,6 @@
 	@media (max-width: 600px) {
 		.pick > :global(.btn), .look > :global(.btn), .end > :global(.btn) { width: 100%; min-height: var(--tap); }
 		.top, .found li { align-items: flex-start; flex-direction: column; }
+		.back { min-height: 44px; }
 	}
 </style>

@@ -1,0 +1,23 @@
+{
+  "score": 90,
+  "verdict": "pass_with_documented_limits",
+  "category_match": {
+    "workspace_headers": 92,
+    "list_density": 90,
+    "detail_structure": 91,
+    "controls_and_filters": 90,
+    "responsive_behavior": 89
+  },
+  "differences": [
+    "HolyArrs keeps its provider-specific search guidance, library review safeguards, filmography selection, pressing controls, and media status vocabulary.",
+    "The disposable preview contains no collections, people, or albums, and its lookup providers returned no populated results, so dense populated states were source-verified rather than screenshot-verified.",
+    "The mobile shell occasionally hides the HolyArrs wordmark on the People query URL; that behavior belongs to the shared shell outside these route files.",
+    "Exact motion timing remains unverified because the approved reference evidence is composed of still frames."
+  ],
+  "suggestions": [
+    "Capture populated collection, person, search, and album states when disposable provider fixtures are available.",
+    "Keep future rows divider-based and retain trailing status and actions instead of adding independent cards.",
+    "Review the shared mobile header wordmark behavior in the shell lane."
+  ],
+  "reasoning": "The six routes now share the Intercom-derived workspace model: compact headers, bordered canvases, neutral segmented controls, shared divider rows, and stable action areas. Album detail uses a primary tracks pane with pressings and history integrated into the same surface. Collections, people, filmography, and search results use dense row systems rather than floating dashboard cards. Existing API calls, role gates, selection and confirmation flows, pagination, dialogs, provider errors, and empty states remain unchanged. Fresh desktop and 390px headless renders showed no horizontal overflow; Axe reported no violations for the rendered search, people, collections, and album-not-found states."
+}

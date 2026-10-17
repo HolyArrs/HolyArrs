@@ -11,6 +11,7 @@
 
 <header class="page-head">
 	<div>
+		<p class="eyebrow">Library management</p>
 		<h1>Rename files</h1>
 		<p>
 			Every file in the Library whose name does not follow the naming pattern, with its name now and the name it gets. Nothing changes until you press
@@ -19,7 +20,7 @@
 	</div>
 </header>
 
-<section class="card">
+<section class="card rename-workspace" aria-label="Rename preview">
 	<RenamePreview />
 </section>
 
@@ -30,5 +31,12 @@
 		gap: 6px;
 		min-height: 40px;
 		margin-bottom: var(--s-2);
+	}
+	.eyebrow { margin: 0 0 var(--s-2); font-size: 11px; font-weight: var(--weight-semibold); letter-spacing: .09em; text-transform: uppercase; color: var(--text-muted); }
+	.rename-workspace { padding: 0; overflow: hidden; box-shadow: none; }
+	.rename-workspace :global(.btn) { min-height: 40px; }
+	@media (max-width: 600px) {
+		.back { min-height: 44px; }
+		.rename-workspace :global(.btn) { min-height: 44px; }
 	}
 </style>

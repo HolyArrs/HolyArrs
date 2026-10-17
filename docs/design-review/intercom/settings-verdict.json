@@ -1,0 +1,25 @@
+{
+  "score": 43,
+  "verdict": "needs_changes",
+  "category_match": "functional settings index, but its composition does not yet match the approved Intercom settings workspace",
+  "reference_evidence": [
+    ".omx/artifacts/visual-ralph/intercom/full-export/Intercom web Nov 2025 470.png",
+    ".omx/artifacts/visual-ralph/intercom/full-export/Intercom web Nov 2025 480.png",
+    ".omx/artifacts/visual-ralph/intercom/full-export/Intercom web Nov 2025 500.png",
+    ".omx/artifacts/visual-ralph/intercom/full-export/Intercom web Nov 2025 520.png"
+  ],
+  "differences": [
+    "The existing 208 px navigation is a flat route list; the references use a roughly 290 px contextual settings sidebar with named groups, indented children, a quiet selected well and thin nested guides.",
+    "The settings index is a loose stack of headings and rows; the references establish a white workspace with a 72-80 px header, restrained section dividers and wide list rows.",
+    "The current selected route uses a saturated red tint and red icon; the references use a neutral white or warm-grey well with a fine border and soft shadow.",
+    "Appearance is rendered as a generic card with two radios; the reference treatment is a compact segmented control inside a settings row or grouped surface.",
+    "Desktop density and hierarchy are too card-like while the reference relies on shared dividers, quiet icons and aligned trailing actions."
+  ],
+  "suggestions": [
+    "Group the real HolyArrs settings routes into Library, Connections, Access and System sections while retaining permission and part filtering.",
+    "Use an Intercom-like contextual settings sidebar and keep the global product rail owned by the root shell.",
+    "Turn the overview into a white workspace with a compact heading, divided setting rows and a small appearance segmented control.",
+    "Keep the existing accessible mobile select so every visible route remains keyboard and touch reachable."
+  ],
+  "reasoning": "This baseline compares the current source with the approved 1920 by 1320 Intercom exports. It is intentionally below the pass threshold. The exact font, motion timing and responsive Intercom behavior remain unverified by the still-image corpus."
+}

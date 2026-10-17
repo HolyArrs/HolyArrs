@@ -22,6 +22,7 @@
 <svelte:head><title>Movie series · HolyArrs</title></svelte:head>
 
 <a class="back small muted" href={to('/library')}>Library</a>
+<section class="workspace">
 <div class="page-head">
 	<div><p class="eyebrow">Library</p><h1>Movie series</h1><p class="muted">Review owned movies together without changing the series grouping by accident.</p></div>
 </div>
@@ -39,10 +40,16 @@
 		{/each}
 	</div>
 {/if}
+</section>
 
 <style>
-	.collection { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); padding: var(--s-3); color: inherit; text-decoration: none; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-1); transition: border-color var(--dur-fast), background var(--dur-fast); }
-	.collection:hover { border-color: var(--line-strong); background: var(--surface-2); }
+	.workspace { overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--surface-1); }
+	.workspace .page-head { margin: 0; padding: var(--s-5); border-bottom: 1px solid var(--line); }
+	.workspace .stack { gap: 0; }
+	.collection { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); min-height: 72px; padding: var(--s-4) var(--s-5); color: inherit; text-decoration: none; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: var(--surface-1); transition: background var(--dur-fast); }
+	.collection:last-child { border-bottom: 0; }
+	.collection:hover { background: var(--surface-2); }
 	.collection span:first-child { display: grid; gap: .2rem; }
-	.empty { text-align: center; padding: 3rem 1rem; }
+	.empty { text-align: center; padding: 3rem 1rem; border: 0; border-radius: 0; box-shadow: none; }
+	.workspace :global(.notice) { margin: var(--s-4); }
 </style>

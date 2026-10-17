@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
-	import { api } from '#lib/api.ts';
+	import { api, ApiError } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { ago, bytes, duration, greeting, percent } from '#lib/format.ts';
@@ -23,28 +23,36 @@
 	let health = $state<Health | null>(null);
 	let checks = $state<HealthChecks | null>(null);
 	const issues = $derived(problems(checks?.checks));
-	let tmdbSet = $state(false);
+	let tmdbStatus = $state<'unknown' | 'ready' | 'missing'>('unknown');
+	let tmdbNeedsProof = $state(false);
 	let searching = $state<SearchView[]>([]);
 	let found = $state<SearchView[]>([]);
 
 	const steps = $derived([
-		{ done: tmdbSet, text: 'Add your TMDB key', href: '/settings/tmdb' },
-		{ done: folders.length > 0, text: 'Add a Library folder', href: '/settings/library-folders' },
-		{ done: (health?.sources?.length ?? 0) > 0, text: 'Add a Source', href: '/settings/sources' },
-		{ done: (health?.downloaders?.length ?? 0) > 0, text: 'Add a Downloader', href: '/settings/downloaders' },
-		{ done: titleCount > 0, text: 'Add your first movie', href: '/search' }
+		{
+			done: tmdbStatus === 'ready',
+			text: tmdbStatus === 'unknown' ? 'Check TMDB connection' : 'Connect TMDB',
+			detail: tmdbStatus === 'unknown' ? 'Confirm the protected connection state before marking TMDB ready.' : 'Use TMDB artwork and metadata when you add media.',
+			href: '/settings/tmdb'
+		},
+		{ done: folders.length > 0, text: 'Choose a Library folder', detail: 'Tell HolyArrs where completed media should live.', href: '/settings/library-folders' },
+		{ done: (health?.sources?.length ?? 0) > 0, text: 'Add a Source', detail: 'Connect a place where HolyArrs can find Releases.', href: '/settings/sources' },
+		{ done: (health?.downloaders?.length ?? 0) > 0, text: 'Add a Downloader', detail: 'Connect the app that will fetch chosen Releases.', href: '/settings/downloaders' },
+		{ done: titleCount > 0, text: 'Add your first movie', detail: 'Search for a movie and begin your Library.', href: '/search' }
 	]);
 	const doneCount = $derived(steps.filter((s) => s.done).length);
+	const nextStep = $derived(steps.find((s) => !s.done));
 	const active = $derived(downloads.filter((d) => d.State === 'downloading' || d.State === 'queued' || d.State === 'stalled'));
 
 	async function loadAll() {
+		const mayReadTMDB = session.can('settings') && !tmdbNeedsProof && (session.s.via === 'api_key' || session.s.localRecent);
 		const results = await Promise.allSettled([
 			api.get<{ total: number; missing: MissingTitle[] }>('/library-summary'),
 			api.get<{ library_folders: LibraryFolder[] }>('/library-folders'),
 			api.get<{ downloads: Download[] }>('/downloads?limit=20'),
 			api.get<{ events: EventRecord[] }>('/events?limit=12'),
 			api.get<Health>('/health'),
-			api.get<{ token: string }>('/settings/tmdb-token'),
+			mayReadTMDB ? api.get<{ token: string }>('/settings/tmdb-token') : Promise.resolve(null),
 			api.get<{ running: SearchView[]; recent: SearchView[] }>('/searches?limit=6'),
 			api.get<HealthChecks>('/health/checks')
 		]);
@@ -62,8 +70,12 @@
 		if (d.status === 'fulfilled') downloads = d.value.downloads;
 		if (e.status === 'fulfilled') events = e.value.events;
 		if (h.status === 'fulfilled') health = h.value;
-		// Without the token route (the token comes from a file), TMDB counts as set.
-		tmdbSet = k.status === 'fulfilled' ? !!k.value.token : true;
+		if (mayReadTMDB) {
+			if (k.status === 'rejected' && k.reason instanceof ApiError && k.reason.status === 403) tmdbNeedsProof = true;
+			tmdbStatus = k.status === 'fulfilled' && k.value ? (k.value.token ? 'ready' : 'missing') : 'unknown';
+		} else {
+			tmdbStatus = 'unknown';
+		}
 		loaded = true;
 	}
 
@@ -102,8 +114,9 @@
 
 <svelte:head><title>Home · HolyArrs</title></svelte:head>
 
-<header class="page-head rise">
+<header class="page-head home-hero rise">
 	<div>
+		<p class="eyebrow">Workspace overview</p>
 		<h1>{greeting()}{session.s.name ? `, ${session.s.name}` : ''}</h1>
 		<p>
 			{#if !loaded}
@@ -115,10 +128,10 @@
 			{/if}
 		</p>
 	</div>
-	<a class="btn btn-ghost home-search" href={to(`/search`)}><Icon name="search" size={17} /> Search</a>
+	<a class="btn btn-dark home-search" href={to(`/search`)}><Icon name="search" size={17} /> Search media</a>
 </header>
 
-<nav class="status-strip" aria-label="Library overview" aria-live="polite">
+<nav class="metric-band" aria-label="Library overview" aria-live="polite">
 	<a href={to(`/library`)}><span class="status-value">{loaded ? titleCount : '—'}</span><span class="status-label">Library titles</span></a>
 	<a href={to(`/downloads`)}><span class="status-value">{loaded ? active.length : '—'}</span><span class="status-label">Downloading</span></a>
 	<a href={to('/library?show=missing')}><span class="status-value">{loaded ? missing.length : '—'}</span><span class="status-label">Missing shown</span></a>
@@ -127,8 +140,78 @@
 	{/if}
 </nav>
 
+{#if session.can('settings') && loaded && doneCount < steps.length && nextStep}
+	<section class="setup-workspace rise" aria-labelledby="h-setup">
+		<div class="setup-heading">
+			<div>
+				<p class="eyebrow">Set up your workspace</p>
+				<h2 id="h-setup">Finish setting up HolyArrs</h2>
+			</div>
+			<span class="progress-count">{doneCount} of {steps.length} complete</span>
+		</div>
+		<div class="segs" aria-hidden="true">
+			{#each steps as s, i (i)}<i class:on={s.done}></i>{/each}
+		</div>
+		<div class="setup-grid">
+			<div class="setup-primary">
+				<span class="step-number">Next step</span>
+				<h3>{nextStep.text}</h3>
+				<p>{nextStep.detail}</p>
+				<a class="btn btn-dark" href={to(nextStep.href)}>Continue setup <Icon name="arrow" size={16} /></a>
+				<ul class="setup-list">
+					{#each steps as s, i (i)}
+						{#if s.text !== nextStep.text}
+							<li class:done={s.done}>
+								{#if s.done}
+									<span class="step-state"><Icon name="check" size={16} /></span>
+									<span>{s.text}</span>
+									<span class="step-meta">Complete</span>
+								{:else}
+									<a href={to(s.href)}>
+										<span class="step-state">{i + 1}</span>
+										<span>{s.text}</span>
+										<Icon name="arrow" size={15} />
+									</a>
+								{/if}
+							</li>
+						{/if}
+					{/each}
+				</ul>
+			</div>
+			<aside class="readiness" aria-label="Workspace readiness">
+				<div class="readiness-head">
+					<span>Workspace readiness</span>
+					<strong>{Math.round((doneCount / steps.length) * 100)}%</strong>
+				</div>
+				<div class="readiness-ring" style={`--progress: ${(doneCount / steps.length) * 360}deg`}>
+					<span>{doneCount}/{steps.length}</span>
+				</div>
+				<dl class="readiness-facts">
+					<div><dt>Library folders</dt><dd>{folders.length}</dd></div>
+					<div><dt>Sources</dt><dd>{health?.sources?.length ?? 0}</dd></div>
+					<div><dt>Downloaders</dt><dd>{health?.downloaders?.length ?? 0}</dd></div>
+					<div><dt>Health issues</dt><dd>{issues.length}</dd></div>
+				</dl>
+			</aside>
+		</div>
+	</section>
+{:else if loaded && titleCount === 0}
+	<EmptyState icon="search" title="Add your first movie">
+		<p>{session.can('settings') ? 'Everything is set up. Find a movie and add it to your Library.' : 'Your Library is empty. Find a movie to get started.'}</p>
+		{#snippet actions()}<a class="btn btn-dark" href={to(`/search`)}>Search media</a>{/snippet}
+	</EmptyState>
+{/if}
+
+<div class="section-heading">
+	<div>
+		<p class="eyebrow">Live operations</p>
+		<h2>Activity</h2>
+	</div>
+	<a class="link small muted" href={to(`/downloads/history`)}>View all history</a>
+</div>
+
 <div class="home">
-	<div class="main-col">
+	<div class="main-col activity-grid">
 		<section class="block" aria-labelledby="h-dl">
 			<div class="block-head">
 				<h2 id="h-dl" class="h2">Downloading now</h2>
@@ -137,9 +220,9 @@
 			{#if !loaded}
 				<div class="sk" style="height: 96px"></div>
 			{:else if active.length === 0}
-				<p class="quiet card">Nothing is downloading. When HolyArrs picks a Release, it shows up here with its progress.</p>
+				<p class="quiet empty-row">Nothing is downloading. When HolyArrs picks a Release, it shows up here with its progress.</p>
 			{:else}
-				<ul class="card rows">
+				<ul class="rows">
 					{#each active as d (d.ID)}
 						<li>
 							<div class="grow">
@@ -165,9 +248,9 @@
 			{#if !loaded}
 				<div class="sk" style="height: 64px"></div>
 			{:else if searching.length === 0 && found.length === 0}
-				<p class="quiet card">No searches yet. When HolyArrs looks for a movie, you see it here as it happens and what it found.</p>
+				<p class="quiet empty-row">No searches yet. When HolyArrs looks for a movie, you see it here as it happens and what it found.</p>
 			{:else}
-				<ul class="card rows" aria-live="polite">
+				<ul class="rows" aria-live="polite">
 					{#each searching as x (x.job_id)}
 						<li data-testid="search-running">
 							<div class="grow">
@@ -199,11 +282,11 @@
 			{#if !loaded}
 				<div class="sk" style="height: 64px"></div>
 			{:else if missing.length === 0}
-				<p class="quiet card">
+				<p class="quiet empty-row">
 					{titleCount ? 'Every title you keep up to date has a file. Nice.' : 'Movies you add but do not have yet show up here.'}
 				</p>
 			{:else}
-				<ul class="card rows">
+				<ul class="rows">
 					{#each missing as t (t.id)}
 						<li>
 							<a class="grow ellipsis" href={to(`/library/${t.id}`)}>{t.name}{t.year ? ` (${t.year})` : ''}</a>
@@ -222,9 +305,9 @@
 			{#if !loaded}
 				<div class="sk" style="height: 120px"></div>
 			{:else if events.length === 0}
-				<p class="quiet card">No Events yet. Every search, download and import writes one here.</p>
+				<p class="quiet empty-row">No Events yet. Every search, download and import writes one here.</p>
 			{:else}
-				<ul class="card rows events">
+				<ul class="rows events">
 					{#each events as e (e.ID)}
 						<li>
 							<span class="chip {kindTone(e.Kind)}">{groupLabel(e.Kind)}</span>
@@ -237,34 +320,7 @@
 		</section>
 	</div>
 
-	<aside class="side-col" aria-label="Getting started">
-		{#if loaded && doneCount < steps.length}
-			<section class="card setup rise" style="--i: 1" aria-labelledby="h-setup">
-				<div class="card-head">
-					<h2 id="h-setup" class="h2">Get started</h2>
-					<span class="mono xs muted">{doneCount} of {steps.length} done</span>
-				</div>
-				<div class="segs" aria-hidden="true">
-					{#each steps as s, i (i)}<i class:on={s.done}></i>{/each}
-				</div>
-				<ul class="checks">
-					{#each steps as s (s.text)}
-						<li class:done={s.done}>
-							{#if s.done}
-								<Icon name="check" size={18} /><span>{s.text}</span>
-							{:else}
-								<a href={to(s.href)}><span class="dot" aria-hidden="true"></span><span>{s.text}</span><Icon name="arrow" size={16} /></a>
-							{/if}
-						</li>
-					{/each}
-				</ul>
-			</section>
-		{:else if loaded && titleCount === 0}
-			<EmptyState icon="search" title="Add your first movie">
-				<p>Everything is set up. Find a movie and add it to your Library.</p>
-				{#snippet actions()}<a class="btn btn-red" href={to(`/search`)}>Search</a>{/snippet}
-			</EmptyState>
-		{/if}
+	<aside class="side-col" aria-label="System status">
 		{#if loaded && checks}
 			<section class="card" aria-labelledby="h-health" data-testid="home-health">
 				<div class="card-head">
@@ -307,45 +363,259 @@
 </div>
 
 <style>
+	.home-hero {
+		margin-bottom: var(--s-5);
+	}
+	.eyebrow {
+		margin: 0 0 var(--s-2);
+		color: var(--text-muted);
+		font-size: 11px;
+		font-weight: var(--weight-semibold);
+		letter-spacing: 0.09em;
+		text-transform: uppercase;
+	}
 	.home-search {
 		align-self: flex-start;
 	}
-	.status-strip {
+	.metric-band {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-		margin-bottom: var(--s-6);
+		margin-bottom: 32px;
 		border: 1px solid var(--line);
 		border-radius: var(--r-card);
 		background: var(--surface-1);
 		overflow: hidden;
 	}
-	.status-strip a {
-		display: grid;
-		gap: 2px;
+	.metric-band a {
+		display: flex;
+		flex-direction: column-reverse;
+		gap: var(--s-2);
 		min-width: 0;
-		padding: var(--s-3) var(--s-4);
+		padding: 20px 24px;
 		transition: background var(--dur) var(--ease-out);
 	}
-	.status-strip a + a {
+	.metric-band a + a {
 		border-left: 1px solid var(--line);
 	}
-	.status-strip a:hover {
+	.metric-band a:hover {
 		background: var(--surface-2);
 	}
 	.status-value {
-		font: var(--weight-semibold) var(--text-lg) / 1.15 var(--font-display);
+		font: var(--weight-semibold) 34px / 1 var(--font-display);
 		font-variant-numeric: tabular-nums;
-		letter-spacing: -0.02em;
+		letter-spacing: -0.04em;
 	}
 	.status-label {
-		font-size: var(--text-xs);
+		font-size: 13px;
 		color: var(--text-muted);
+	}
+	.setup-workspace {
+		margin-bottom: 36px;
+	}
+	.setup-heading,
+	.section-heading {
+		display: flex;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: var(--s-4);
+		margin-bottom: var(--s-4);
+	}
+	.setup-heading h2,
+	.section-heading h2 {
+		margin: 0;
+		font-size: clamp(20px, 2vw, 24px);
+		letter-spacing: -0.025em;
+	}
+	.progress-count {
+		color: var(--text-muted);
+		font-size: 13px;
+		white-space: nowrap;
+	}
+	.segs {
+		display: grid;
+		grid-template-columns: repeat(5, 1fr);
+		gap: 4px;
+		margin-bottom: var(--s-3);
+	}
+	.segs i {
+		height: 3px;
+		border-radius: 3px;
+		background: var(--line-strong);
+	}
+	.segs i.on {
+		background: var(--text);
+	}
+	.setup-grid {
+		display: grid;
+		grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.75fr);
+		min-height: 330px;
+		border: 1px solid var(--line);
+		border-radius: var(--r-card);
+		background: var(--surface-1);
+		overflow: hidden;
+	}
+	.setup-primary {
+		padding: 28px 32px 0;
+	}
+	.step-number {
+		display: block;
+		margin-bottom: var(--s-3);
+		color: var(--text-muted);
+		font-size: 13px;
+		font-weight: var(--weight-medium);
+	}
+	.setup-primary h3 {
+		margin: 0 0 var(--s-2);
+		font-size: clamp(22px, 2.4vw, 30px);
+		letter-spacing: -0.035em;
+	}
+	.setup-primary > p {
+		max-width: 54ch;
+		margin: 0 0 20px;
+		color: var(--text-muted);
+		font-size: 15px;
+	}
+	.setup-primary > .btn {
+		margin-bottom: 28px;
+	}
+	.setup-list {
+		border-top: 1px solid var(--line);
+	}
+	.setup-list li {
+		display: flex;
+		align-items: center;
+		gap: var(--s-3);
+		min-height: 48px;
+		border-bottom: 1px solid var(--line);
+		font-size: 14px;
+		font-weight: var(--weight-medium);
+	}
+	.setup-list li:last-child {
+		border-bottom: 0;
+	}
+	.setup-list li.done {
+		color: var(--text-muted);
+	}
+	.setup-list li > a {
+		display: flex;
+		align-items: center;
+		gap: var(--s-3);
+		width: 100%;
+		min-height: 48px;
+	}
+	.setup-list li > a :global(.icon) {
+		margin-left: auto;
+		color: var(--text-muted);
+	}
+	.step-state {
+		display: grid;
+		place-items: center;
+		width: 24px;
+		height: 24px;
+		border: 1px solid var(--line-strong);
+		border-radius: 50%;
+		font-size: 11px;
+		font-variant-numeric: tabular-nums;
+		flex: none;
+	}
+	.step-meta {
+		margin-left: auto;
+		font-size: 12px;
+		font-weight: var(--weight-regular);
+	}
+	.readiness {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		padding: 28px;
+		border-left: 1px solid var(--line);
+		background: var(--surface-2);
+	}
+	.readiness-head {
+		display: flex;
+		justify-content: space-between;
+		gap: var(--s-3);
+		margin-bottom: 24px;
+		font-size: 13px;
+	}
+	.readiness-head span {
+		color: var(--text-muted);
+	}
+	.readiness-ring {
+		display: grid;
+		place-items: center;
+		width: 120px;
+		height: 120px;
+		margin: 0 auto 28px;
+		border-radius: 50%;
+		background: conic-gradient(var(--text) var(--progress), var(--line-strong) 0);
+		position: relative;
+	}
+	.readiness-ring::after {
+		content: '';
+		position: absolute;
+		inset: 8px;
+		border-radius: inherit;
+		background: var(--surface-2);
+	}
+	.readiness-ring span {
+		position: relative;
+		z-index: 1;
+		font-size: 24px;
+		font-weight: var(--weight-semibold);
+		letter-spacing: -0.04em;
+	}
+	.readiness-facts {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		border: 1px solid var(--line);
+		border-radius: var(--r-sm);
+		background: var(--surface-1);
+	}
+	.readiness-facts div {
+		padding: var(--s-3);
+	}
+	.readiness-facts div:nth-child(even) {
+		border-left: 1px solid var(--line);
+	}
+	.readiness-facts div:nth-child(n + 3) {
+		border-top: 1px solid var(--line);
+	}
+	.readiness-facts dt {
+		color: var(--text-muted);
+		font-size: 11px;
+	}
+	.readiness-facts dd {
+		margin: 4px 0 0;
+		font-size: 17px;
+		font-weight: var(--weight-semibold);
+	}
+	.section-heading {
+		margin-bottom: var(--s-3);
 	}
 	.home {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) 300px;
-		gap: var(--s-5);
+		gap: var(--s-4);
 		align-items: start;
+	}
+	.activity-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		border: 1px solid var(--line);
+		border-radius: var(--r-card);
+		background: var(--surface-1);
+		overflow: hidden;
+	}
+	.block {
+		min-width: 0;
+		padding: 20px;
+	}
+	.block:nth-child(even) {
+		border-left: 1px solid var(--line);
+	}
+	.block:nth-child(n + 3) {
+		border-top: 1px solid var(--line);
 	}
 	.side-col {
 		display: flex;
@@ -357,14 +627,11 @@
 	.side-col :global(.card + .card) {
 		margin-top: 0;
 	}
-	.block + .block {
-		margin-top: var(--s-5);
-	}
 	.block-head {
 		display: flex;
 		align-items: baseline;
 		justify-content: space-between;
-		margin-bottom: var(--s-3);
+		margin-bottom: var(--s-2);
 	}
 	.link {
 		min-height: 32px;
@@ -380,68 +647,28 @@
 		color: var(--text-muted);
 		font-size: var(--text-sm);
 	}
+	.empty-row {
+		min-height: 88px;
+		margin: 0;
+		padding: var(--s-4);
+		border: 1px dashed var(--line-strong);
+		border-radius: var(--r-sm);
+	}
 	.rows {
 		padding: 0;
-		overflow: hidden;
+		border-top: 1px solid var(--line);
 	}
 	.rows a:hover {
 		color: var(--info);
 	}
 	.rows > li {
-		padding-inline: var(--s-4);
+		padding-inline: var(--s-2);
 	}
 	.rows > li:hover {
 		background: var(--surface-2);
 	}
 	.nums {
 		white-space: nowrap;
-	}
-	.segs {
-		display: grid;
-		grid-template-columns: repeat(5, 1fr);
-		gap: 4px;
-		margin-bottom: var(--s-3);
-	}
-	.segs i {
-		height: 4px;
-		border-radius: 4px;
-		background: var(--line-strong);
-	}
-	.segs i.on {
-		background: var(--info);
-	}
-	.checks li {
-		min-height: var(--tap);
-		display: flex;
-		align-items: center;
-		gap: var(--s-3);
-		color: var(--text-muted);
-		font-size: var(--text-sm);
-	}
-	.checks li.done {
-		color: var(--text);
-	}
-	.checks li.done :global(.icon) {
-		color: var(--ok-text);
-	}
-	.checks a {
-		display: flex;
-		align-items: center;
-		gap: var(--s-3);
-		width: 100%;
-		min-height: var(--tap);
-		border-radius: var(--r-sm);
-		color: var(--text);
-		font-weight: var(--weight-medium);
-	}
-	.checks a :global(.icon) {
-		margin-left: auto;
-		color: var(--text-muted);
-		transition: transform var(--dur) var(--ease-out);
-	}
-	.checks a:hover :global(.icon) {
-		transform: translateX(3px);
-		color: var(--info);
 	}
 	.issues {
 		display: flex;
@@ -455,13 +682,6 @@
 		gap: var(--s-2);
 		overflow-wrap: anywhere;
 	}
-	.dot {
-		width: 18px;
-		height: 18px;
-		border-radius: 50%;
-		border: 1.75px solid var(--line-strong);
-		flex: none;
-	}
 	.rows li {
 		min-width: 0;
 	}
@@ -474,18 +694,35 @@
 			width: 100%;
 			min-height: 44px;
 		}
-		.status-strip {
+		.metric-band {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
 		}
-		.status-strip a {
-			min-height: 64px;
+		.metric-band a {
+			min-height: 88px;
+			padding: var(--s-4);
 		}
-		.status-strip a:nth-child(3) {
+		.metric-band a:nth-child(3) {
 			border-left: 0;
 			border-top: 1px solid var(--line);
 		}
-		.status-strip a:nth-child(4) {
+		.metric-band a:nth-child(4) {
 			border-top: 1px solid var(--line);
+		}
+		.status-value {
+			font-size: 30px;
+		}
+		.setup-heading,
+		.section-heading {
+			align-items: flex-start;
+			flex-direction: column;
+		}
+		.setup-primary,
+		.readiness {
+			padding: 20px;
+		}
+		.setup-primary > .btn {
+			width: 100%;
+			min-height: 44px;
 		}
 		.block-head {
 			flex-wrap: wrap;
@@ -499,12 +736,29 @@
 		}
 	}
 	@media (max-width: 1100px) {
+		.setup-grid {
+			grid-template-columns: 1fr;
+		}
+		.readiness {
+			border-top: 1px solid var(--line);
+			border-left: 0;
+		}
 		.home {
 			grid-template-columns: 1fr;
 		}
 		.side-col {
 			position: static;
-			order: -1;
+		}
+	}
+	@media (max-width: 760px) {
+		.activity-grid {
+			grid-template-columns: 1fr;
+		}
+		.block:nth-child(even) {
+			border-left: 0;
+		}
+		.block:nth-child(n + 2) {
+			border-top: 1px solid var(--line);
 		}
 	}
 </style>

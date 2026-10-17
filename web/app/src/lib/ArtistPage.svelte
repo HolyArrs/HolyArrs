@@ -241,6 +241,7 @@
 	}
 </script>
 
+<div class="detail-workspace">
 <section class="hero">
 	<div class="art"><Poster src={title.artwork[0]} name={title.name} /></div>
 	<div class="info">
@@ -394,6 +395,7 @@
 		</section>
 	</div>
 </div>
+</div>
 
 {#if !staff && session.can('ask')}
 	<AskArtistDialog bind:this={asker} onasked={asked} />
@@ -457,11 +459,19 @@
 </dialog>
 
 <style>
+	.detail-workspace {
+		overflow: hidden;
+		border: 1px solid var(--line);
+		border-radius: 16px;
+		background: var(--surface-1);
+	}
 	.hero {
 		display: grid;
-		grid-template-columns: 180px 1fr;
+		grid-template-columns: 144px minmax(0, 1fr);
 		gap: var(--s-6);
-		margin-bottom: var(--s-6);
+		margin: 0;
+		padding: var(--s-5);
+		border-bottom: 1px solid var(--line);
 	}
 	.title {
 		font: var(--weight-semibold) var(--text-2xl) / var(--leading-tight) var(--font-display);
@@ -486,22 +496,32 @@
 	}
 	.actions {
 		margin-top: var(--s-4);
-		gap: var(--s-4);
+		gap: var(--s-2);
 		flex-wrap: wrap;
 	}
 	.cols {
 		display: grid;
-		grid-template-columns: 320px minmax(0, 1fr);
-		gap: var(--s-4);
+		grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
+		gap: 0;
 		align-items: start;
 	}
 	.side,
 	.main {
 		display: flex;
 		flex-direction: column;
-		gap: var(--s-4);
+		gap: 0;
 		min-width: 0;
 	}
+	.main { grid-column: 1; grid-row: 1; }
+	.side { grid-column: 2; grid-row: 1; border-left: 1px solid var(--line); }
+	.side :global(.card),
+	.main :global(.card) {
+		margin: 0;
+		border: 0;
+		border-radius: 0;
+		box-shadow: none;
+	}
+	.side :global(.card + .card) { border-top: 1px solid var(--line); }
 	.side .card + .card,
 	.main :global(.card + .card) {
 		margin-top: 0;
@@ -531,9 +551,10 @@
 		font-size: var(--text-sm);
 	}
 	.pill[aria-pressed='true'] {
-		background: var(--ha-red-soft);
-		border-color: var(--ha-red);
+		background: var(--surface-1);
+		border-color: var(--line-strong);
 		color: var(--text);
+		box-shadow: var(--shadow-panel);
 	}
 	.n {
 		margin-left: 4px;
@@ -547,7 +568,7 @@
 		display: flex;
 		align-items: center;
 		gap: var(--s-3);
-		padding: var(--s-3) 0;
+		padding: var(--s-4) 0;
 	}
 	.album + .album {
 		border-top: 1px solid var(--line);
@@ -609,11 +630,14 @@
 		.main {
 			grid-row: 1;
 		}
+		.main, .side { grid-column: auto; }
+		.side { grid-row: auto; border-left: 0; border-top: 1px solid var(--line); }
 	}
 	@media (max-width: 600px) {
 		.hero {
-			grid-template-columns: 96px 1fr;
+			grid-template-columns: 92px minmax(0, 1fr);
 			gap: var(--s-4);
+			padding: var(--s-4);
 		}
 		.title {
 			font-size: var(--text-xl);

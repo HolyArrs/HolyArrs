@@ -79,15 +79,17 @@
 
 <header class="page-head">
 	<div>
+		<p class="eyebrow">Operations</p>
 		<h1>Needs a decision</h1>
 		<p>Movies, episodes and tracks HolyArrs cannot finish on its own: it ran out of Releases, or an import hit a conflict. Pick what happens next.</p>
 	</div>
+	<a class="btn btn-ghost" href={to(`/downloads`)}>Back to downloads</a>
 </header>
 
 {#snippet choices(d: Decision, key: string)}
 	{#if d.kind === 'movie' && d.download_id}<EditionDecision downloadId={d.download_id} onchange={refreshDecisions} />{/if}
 	<div class="acts">
-		<button class="btn btn-red" type="button" onclick={() => act(d, 'search', false, key)} disabled={busy === key}>Search again</button>
+		<button class="btn btn-dark" type="button" onclick={() => act(d, 'search', false, key)} disabled={busy === key}>Search again</button>
 		<a class="btn btn-ghost" href={to(`/library/${d.title_id}#h-rel`)}>Choose a release by hand</a>
 		{#if !manyWords(d.kind)}
 			<a class="btn btn-ghost" href={to(`/library/${d.title_id}#h-versions`)}>{d.versions > 1 ? 'Try another Version' : 'Add another Version'}</a>
@@ -114,6 +116,11 @@
 		{/snippet}
 	</EmptyState>
 {:else}
+	<section class="decision-workspace" aria-labelledby="decision-queue-title">
+		<div class="queue-head">
+			<div><p class="eyebrow">Decision queue</p><h2 id="decision-queue-title" class="h2">Waiting for you</h2></div>
+			<span class="count">{decisions.items.length}</span>
+		</div>
 	<ul class="cards">
 		{#each groups as g (g.key)}
 			{@const d = g.lead}
@@ -136,7 +143,7 @@
 						{/each}
 					</ul>
 					<div class="acts">
-						<button class="btn btn-red" type="button" onclick={() => act(d, 'search', true, g.key)} disabled={busy === g.key}>Search again for these {w?.many}</button>
+						<button class="btn btn-dark" type="button" onclick={() => act(d, 'search', true, g.key)} disabled={busy === g.key}>Search again for these {w?.many}</button>
 						{#if d.release_id}
 							<button class="btn btn-ghost" type="button" onclick={() => act(d, 'turn_down', true, g.key)} disabled={busy === g.key}>Add the {w?.pack === 'album' ? 'album' : 'pack'} to Turned down</button>
 						{/if}
@@ -170,14 +177,54 @@
 			{/if}
 		{/each}
 	</ul>
+	</section>
 {/if}
 
 <style>
-	.decision-loading,
-	.cards {
+	.eyebrow {
+		margin: 0 0 var(--s-2);
+		font-size: 11px;
+		font-weight: var(--weight-semibold);
+		letter-spacing: 0.09em;
+		text-transform: uppercase;
+		color: var(--text-muted);
+	}
+	.decision-loading {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
 		gap: var(--s-4);
+	}
+	.decision-workspace {
+		border: 1px solid var(--line);
+		border-radius: var(--r-card);
+		background: var(--surface-1);
+		overflow: hidden;
+	}
+	.queue-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--s-4);
+		min-height: 64px;
+		padding: var(--s-3) var(--s-5);
+		border-bottom: 1px solid var(--line);
+	}
+	.queue-head .eyebrow {
+		margin-bottom: 2px;
+	}
+	.count {
+		display: grid;
+		place-items: center;
+		min-width: 28px;
+		height: 28px;
+		padding: 0 var(--s-2);
+		border: 1px solid var(--line);
+		border-radius: var(--r-sm);
+		font: var(--weight-semibold) var(--text-xs) / 1 var(--font-mono);
+		color: var(--text-muted);
+	}
+	.cards {
+		display: block;
 		list-style: none;
 		padding: 0;
 		margin: 0;
@@ -188,7 +235,14 @@
 		gap: var(--s-2);
 		min-width: 0;
 		align-content: start;
-		border-left: 2px solid var(--info);
+		padding: 20px 24px;
+		border: 0;
+		border-radius: 0;
+		box-shadow: none;
+	}
+	.dec + .dec {
+		margin-top: 0;
+		border-top: 1px solid var(--line);
 	}
 	.names {
 		display: grid;
@@ -207,6 +261,9 @@
 		flex-wrap: wrap;
 		gap: var(--s-2);
 		margin-top: var(--s-2);
+	}
+	.acts :global(.btn) {
+		min-height: 40px;
 	}
 	.load-error {
 		display: flex;
@@ -243,6 +300,14 @@
 		min-width: 0;
 	}
 	@media (max-width: 620px) {
+		.page-head > :global(.btn) {
+			width: 100%;
+			min-height: 44px;
+		}
+		.queue-head,
+		.dec {
+			padding-inline: var(--s-4);
+		}
 		.acts,
 		.acts :global(.btn) {
 			width: 100%;

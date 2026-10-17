@@ -200,7 +200,7 @@
 		display: grid;
 		grid-template-columns: minmax(220px, 280px) minmax(0, 680px);
 		align-items: start;
-		gap: clamp(var(--s-6), 6vw, var(--s-10));
+		gap: var(--s-8);
 		width: min(1040px, calc(100% - 32px));
 		min-height: 100dvh;
 		margin: 0 auto;
@@ -210,7 +210,7 @@
 		position: sticky;
 		top: var(--s-8);
 		padding-top: var(--s-4);
-		border-top: 2px solid var(--ha-red);
+		border-top: 1px solid var(--line);
 	}
 	.welcome > :global(.card),
 	.welcome > :global(.notice) {

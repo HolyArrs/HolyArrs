@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
-	import { api, message } from '#lib/api.ts';
+	import { api, message, ApiError } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { ago, bytes, duration, words } from '#lib/format.ts';
 	import { session } from '#lib/session.svelte.ts';
@@ -35,11 +35,35 @@
 		}
 	}
 	let storage = $state<{ app: PathInfo[]; library_folders: PathInfo[]; save_path: string } | null>(null);
+	let storageNeedsProof = $state(false);
+	let storageError = $state('');
 	const freeWords = (n: number) => (n < 0 ? 'free space unknown' : `${bytes(n)} free`);
 	let error = $state('');
 	let running = $state(false);
 	let saving = $state(false);
 	let settingsError = $state('');
+
+	async function loadStorage() {
+		if (!session.can('settings')) return;
+		if (storageNeedsProof) return;
+		if (session.s.via !== 'api_key' && !session.s.localRecent) {
+			storage = null;
+			storageError = '';
+			storageNeedsProof = true;
+			return;
+		}
+		try {
+			storage = await api.get('/app/storage');
+			storageError = '';
+			storageNeedsProof = false;
+		} catch (e) {
+			storage = null;
+			if (e instanceof ApiError && e.status === 403) {
+				storageError = '';
+				storageNeedsProof = true;
+			} else storageError = message(e);
+		}
+	}
 
 	async function load() {
 		try {
@@ -49,7 +73,7 @@
 				api.get<HealthStates>('/health/states')
 			]);
 			if (!settings && session.can('settings')) settings = await api.get<HealthSettings>('/settings/health');
-			if (session.can('settings')) storage = await api.get('/app/storage');
+			await loadStorage();
 			update = await api.get<UpdateInfo>('/app/update');
 			error = '';
 		} catch (e) {
@@ -287,6 +311,11 @@
 					</li>
 				{/if}
 			</ul>
+		{:else if storageNeedsProof}
+			<p class="small muted" style="margin-top: var(--s-2)">Storage paths are protected. Confirm your HolyArrs password in My account, then return here.</p>
+			<a class="btn btn-ghost" href={to('/settings/account')} style="margin-top: var(--s-3)">Open My account</a>
+		{:else if storageError}
+			<p class="notice bad small" role="alert" style="margin-top: var(--s-3)">{storageError}</p>
 		{:else}
 			<p class="small muted" style="margin-top: var(--s-2)">Paths are shown to people who may change settings.</p>
 		{/if}

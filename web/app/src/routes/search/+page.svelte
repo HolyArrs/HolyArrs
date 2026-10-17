@@ -295,6 +295,7 @@
 
 <svelte:head><title>Search · HolyArrs</title></svelte:head>
 
+<section class="search-workspace">
 <header class="page-head">
 	<div>
 		<h1>Search</h1>
@@ -475,6 +476,7 @@
 		{#if attribution}<p class="xs muted attribution">{attribution}</p>{/if}
 	{/if}
 </div>
+</section>
 
 <dialog bind:this={dialog} aria-labelledby="add-title" class="modal">
 	{#if picked}
@@ -565,8 +567,10 @@
 <AskArtistDialog bind:this={askArtist} onasked={artistAsked} onrefused={artistRefused} />
 
 <style>
+	.search-workspace { overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--surface-1); }
+	.search-workspace .page-head { margin: 0; padding: var(--s-5); border-bottom: 1px solid var(--line); }
 	.kind {
-		margin-bottom: var(--s-3);
+		margin: var(--s-4) var(--s-5) var(--s-3);
 	}
 	.seg {
 		display: inline-flex;
@@ -585,7 +589,7 @@
 		color: var(--text-muted);
 	}
 	.seg button[aria-pressed='true'] {
-		background: var(--ha-red-soft);
+		background: var(--surface-2);
 		color: var(--text);
 	}
 	.searchbar {
@@ -596,7 +600,8 @@
 		background: var(--surface-1);
 		border: 1px solid var(--line-strong);
 		border-radius: 6px;
-		max-width: 820px;
+		max-width: none;
+		margin: 0 var(--s-5) var(--s-4);
 		color: var(--text-muted);
 		transition: border-color var(--dur-fast);
 	}
@@ -617,13 +622,14 @@
 		outline: none;
 	}
 	.results {
-		margin-top: var(--s-5);
-		max-width: 1180px;
+		margin-top: 0;
+		max-width: none;
+		border-top: 1px solid var(--line);
 	}
 	.list {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
-		gap: var(--s-3);
+		display: flex;
+		flex-direction: column;
+		gap: 0;
 	}
 	.hit {
 		display: grid;
@@ -631,13 +637,15 @@
 		gap: var(--s-3);
 		align-items: flex-start;
 		min-width: 0;
-		padding: var(--s-3);
-		border: 1px solid var(--line);
-		border-radius: 6px;
+		min-height: 104px;
+		padding: var(--s-4) var(--s-5);
+		border: 0;
+		border-bottom: 1px solid var(--line);
+		border-radius: 0;
 		background: var(--surface-1);
 		transition: border-color var(--dur-fast), background var(--dur-fast), transform var(--dur-fast);
 	}
-	.hit:hover { border-color: var(--line-strong); background: var(--surface-2); transform: translateY(-1px); }
+	.hit:hover { background: var(--surface-2); transform: none; }
 	.art {
 		width: 76px;
 		flex: none;
@@ -657,10 +665,10 @@
 		text-align: right;
 	}
 	.limit {
-		margin-top: var(--s-4);
+		margin: var(--s-3) var(--s-5);
 	}
 	.ask-problem {
-		margin-top: var(--s-4);
+		margin: var(--s-3) var(--s-5);
 		max-width: 720px;
 	}
 	.asked-already {
@@ -669,8 +677,10 @@
 		text-align: right;
 	}
 	.attribution {
-		margin-top: var(--s-6);
+		margin: 0;
+		padding: var(--s-4) var(--s-5);
 	}
+	.results > :global(.empty), .results > :global(.notice) { margin: 0; border: 0; border-radius: 0; box-shadow: none; }
 	.modal {
 		width: min(480px, calc(100vw - 32px));
 		max-height: calc(100dvh - 32px);

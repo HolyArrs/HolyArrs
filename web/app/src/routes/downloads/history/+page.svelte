@@ -68,9 +68,11 @@
 
 <header class="page-head">
 	<div>
+		<p class="eyebrow">Operations</p>
 		<h1>History</h1>
 		<p>Everything HolyArrs did, newest first: what it added, searched, held, chose, sent, imported, renamed and deleted, and why.</p>
 	</div>
+	<a class="btn btn-ghost" href={to(`/downloads`)}>Back to downloads</a>
 </header>
 
 <div class="history-workspace">
@@ -125,10 +127,14 @@
 		<p>{filtered ? 'No Event matches these filters.' : 'Every search, download, import, rename and delete writes a row here.'}</p>
 	</EmptyState>
 {:else}
-	<p class="small muted count" aria-live="polite" data-testid="history-count">
-		{pageLine(total, filter.offset, events.length)}{movieName ? ` for ${movieName}` : ''}
-	</p>
-	<ol class="card rows events" data-testid="history">
+	<section class="results-surface" aria-labelledby="history-results-title">
+	<div class="results-head">
+		<div><p class="eyebrow">Event log</p><h2 id="history-results-title" class="h2">Activity</h2></div>
+		<p class="small muted count" aria-live="polite" data-testid="history-count">
+			{pageLine(total, filter.offset, events.length)}{movieName ? ` for ${movieName}` : ''}
+		</p>
+	</div>
+	<ol class="rows events" data-testid="history">
 		{#each events as e (e.ID)}
 			{@const extra = details(e)}
 			<li class="event" data-testid="history-row" data-kind={e.Kind}>
@@ -156,11 +162,20 @@
 		<button class="btn btn-ghost" type="button" disabled={filter.offset === 0} onclick={() => apply({ offset: Math.max(0, filter.offset - limit) })}>Newer</button>
 		<button class="btn btn-ghost" type="button" disabled={filter.offset + events.length >= total} onclick={() => apply({ offset: filter.offset + limit })}>Older</button>
 	</nav>
+	</section>
 {/if}
 </div>
 </div>
 
 <style>
+	.eyebrow {
+		margin: 0 0 var(--s-2);
+		font-size: 11px;
+		font-weight: var(--weight-semibold);
+		letter-spacing: 0.09em;
+		text-transform: uppercase;
+		color: var(--text-muted);
+	}
 	.history-workspace {
 		display: grid;
 		grid-template-columns: 280px minmax(0, 1fr);
@@ -174,6 +189,8 @@
 		position: sticky;
 		top: calc(var(--topbar) + var(--s-4));
 		margin: 0;
+		padding: var(--s-4);
+		box-shadow: none;
 	}
 	.episode-filter {
 		margin-top: var(--s-3);
@@ -212,7 +229,7 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
-		min-height: 36px;
+		min-height: 40px;
 		padding: 0 var(--s-3);
 		border: 1px solid var(--line-strong);
 		border-radius: var(--r-sm);
@@ -220,15 +237,42 @@
 		cursor: pointer;
 	}
 	.pick:has(input:checked) {
-		background: var(--surface-3);
-		border-color: var(--info);
+		background: var(--text);
+		border-color: var(--text);
+		color: var(--surface-1);
+	}
+	.results-surface {
+		border: 1px solid var(--line);
+		border-radius: var(--r-card);
+		background: var(--surface-1);
+		overflow: hidden;
+	}
+	.results-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--s-4);
+		min-height: 64px;
+		padding: var(--s-3) var(--s-4);
+		border-bottom: 1px solid var(--line);
+	}
+	.results-head .eyebrow {
+		margin-bottom: 2px;
 	}
 	.count {
-		margin-bottom: var(--s-2);
+		margin: 0;
+		text-align: right;
+	}
+	.results-surface .rows {
+		padding: 0;
+		border: 0;
+		border-radius: 0;
+		box-shadow: none;
 	}
 	.event {
 		flex-direction: column;
 		align-items: stretch;
+		padding: var(--s-3) var(--s-4);
 	}
 	.line {
 		display: flex;
@@ -256,7 +300,9 @@
 		overflow-wrap: anywhere;
 	}
 	.pages {
-		margin-top: var(--s-3);
+		margin: 0;
+		padding: var(--s-3) var(--s-4);
+		border-top: 1px solid var(--line);
 		justify-content: flex-end;
 	}
 	.load-error {
@@ -277,6 +323,10 @@
 		}
 	}
 	@media (max-width: 700px) {
+		.page-head > :global(.btn) {
+			width: 100%;
+			min-height: 44px;
+		}
 		.row-fields {
 			grid-template-columns: 1fr;
 		}
@@ -285,6 +335,13 @@
 		}
 		.line {
 			flex-wrap: wrap;
+		}
+		.results-head {
+			align-items: flex-start;
+			flex-direction: column;
+		}
+		.count {
+			text-align: left;
 		}
 		.pick,
 		.pages :global(.btn) {

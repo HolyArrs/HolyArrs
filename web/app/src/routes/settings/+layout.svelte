@@ -8,10 +8,28 @@
 	import { session } from '#lib/session.svelte.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { offPartName } from '#lib/parts.ts';
+
 	const sections = $derived(visible(all, session.can).filter((section) => !offPartName(partsNow.answer, section.href)));
+	const groups = [
+		{
+			label: 'Library',
+			hrefs: ['/settings/library-folders', '/settings/naming', '/settings/search', '/settings/subtitles', '/settings/music', '/settings/wishlist', '/settings/schedules']
+		},
+		{
+			label: 'Connections',
+			hrefs: ['/settings/sources', '/settings/downloaders', '/settings/outside-lists', '/settings/media-servers', '/settings/tmdb', '/settings/alerts']
+		},
+		{
+			label: 'Access',
+			hrefs: ['/settings/users', '/settings/account', '/settings/sign-in', '/settings/api']
+		},
+		{
+			label: 'System',
+			hrefs: ['/settings/backups', '/settings/move', '/settings/parts', '/settings/this-app', '/settings/logs']
+		}
+	];
 
 	let { children }: { children: Snippet } = $props();
-	const atIndex = $derived(appPath(page.url.pathname) === '/settings');
 	const current = $derived(appPath(page.url.pathname));
 	const currentSection = $derived(sections.find((section) => section.href === current || current.startsWith(section.href + '/')));
 
@@ -21,16 +39,34 @@
 	}
 </script>
 
-<div class="settings" class:at-index={atIndex}>
-	<nav class="subnav" aria-label="Settings sections">
-		<p class="label xs muted">Settings</p>
-		{#each sections as s (s.href)}
-			<a href={to(s.href)} aria-current={currentSection?.href === s.href ? 'page' : undefined}>
-				<Icon name={s.icon} size={18} />{s.label}
-			</a>
+<div class="settings-shell">
+	<nav class="settings-nav" aria-label="Settings sections">
+		<div class="nav-heading"><h1>Settings</h1></div>
+
+		<a class="overview-link" href={to('/settings')} aria-current={current === '/settings' ? 'page' : undefined}>
+			<Icon name="home" size={18} />
+			<span>Home</span>
+		</a>
+
+		{#each groups as group (group.label)}
+			{@const items = sections.filter((section) => group.hrefs.includes(section.href))}
+			{#if items.length}
+				<section class="nav-group" aria-labelledby="settings-nav-{group.label.toLowerCase()}">
+					<h2 id="settings-nav-{group.label.toLowerCase()}">{group.label}</h2>
+					<div class="nav-items">
+						{#each items as section (section.href)}
+							<a href={to(section.href)} aria-current={currentSection?.href === section.href ? 'page' : undefined}>
+								<Icon name={section.icon} size={17} />
+								<span>{section.label}</span>
+							</a>
+						{/each}
+					</div>
+				</section>
+			{/if}
 		{/each}
 	</nav>
-	<div class="body">
+
+	<main class="settings-workspace">
 		<div class="section-picker">
 			<label for="settings-section">Settings section</label>
 			<div class="select-wrap">
@@ -43,67 +79,98 @@
 				</select>
 			</div>
 		</div>
-		{@render children()}
-	</div>
+		<div class:overview-content={current === '/settings'} class="settings-content">{@render children()}</div>
+	</main>
 </div>
 
 <style>
-	.settings {
+	.settings-shell {
 		display: grid;
-		grid-template-columns: 208px minmax(0, 1fr);
-		gap: clamp(var(--s-6), 4vw, var(--s-10));
-		align-items: start;
+		grid-template-columns: 288px minmax(0, 1fr);
+		gap: 10px;
+		min-height: calc(100dvh - var(--topbar) - var(--s-8));
+		margin: calc(var(--s-4) * -1);
+		background: var(--surface-3);
 	}
-	.subnav {
+	.settings-nav,
+	.settings-workspace {
+		border: 1px solid var(--line);
+		background: var(--surface-1);
+	}
+	.settings-nav {
 		position: sticky;
-		top: calc(var(--topbar) + var(--s-6));
-		display: flex;
-		flex-direction: column;
-		gap: 1px;
-		max-height: calc(100dvh - var(--topbar) - var(--s-10));
+		top: var(--topbar);
+		align-self: start;
+		height: calc(100dvh - var(--topbar) - var(--s-8));
 		overflow-y: auto;
-		padding-right: var(--s-2);
+		padding: var(--s-5) var(--s-3) var(--s-8);
+		border-radius: var(--r-panel);
 		scrollbar-width: thin;
 	}
-	.label {
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
-		padding: 0 var(--s-3) var(--s-2);
+	.nav-heading { padding: 0 var(--s-2) var(--s-4); }
+	.nav-heading h1 {
+		font-size: var(--text-xl);
+		line-height: 1.2;
+		letter-spacing: -0.025em;
 	}
-	.subnav a {
+	.overview-link,
+	.nav-items a {
 		display: flex;
 		align-items: center;
 		gap: var(--s-3);
-		min-height: 36px;
+		min-height: 40px;
 		padding: 0 var(--s-3);
+		border: 1px solid transparent;
 		border-radius: var(--r-btn);
-		color: var(--text-muted);
+		color: var(--text);
 		font-size: var(--text-sm);
 		font-weight: var(--weight-medium);
-		transition:
-			background var(--dur-fast),
-			color var(--dur-fast);
+		transition: background var(--dur-fast), border-color var(--dur-fast), box-shadow var(--dur-fast);
 	}
-	.subnav a:hover {
-		background: var(--surface-3);
-		color: var(--text);
+	.overview-link:hover,
+	.nav-items a:hover { background: var(--surface-2); }
+	.overview-link[aria-current='page'],
+	.nav-items a[aria-current='page'] {
+		border-color: var(--line);
+		background: var(--surface-1);
+		box-shadow: 0 1px 3px rgb(24 24 21 / 8%);
+		font-weight: var(--weight-semibold);
 	}
-	.subnav a[aria-current='page'] {
-		background: var(--ha-red-soft);
-		color: var(--text);
-		box-shadow: inset 2px 0 0 var(--ha-red);
+	.nav-group { margin-top: var(--s-4); }
+	.nav-group h2 {
+		padding: 0 var(--s-3) var(--s-1);
+		font-size: var(--text-xs);
+		font-weight: var(--weight-semibold);
+		color: var(--text-muted);
+		letter-spacing: 0.01em;
 	}
-	.subnav a[aria-current='page'] :global(.icon) {
-		color: var(--ha-red);
+	.nav-items {
+		position: relative;
+		padding-left: var(--s-2);
 	}
-	.body {
-		width: 100%;
-		max-width: 960px;
+	.nav-items::before {
+		content: '';
+		position: absolute;
+		inset-block: 6px;
+		left: 4px;
+		width: 1px;
+		background: var(--line);
+	}
+	.nav-items a { position: relative; z-index: 1; }
+	.settings-workspace {
 		min-width: 0;
+		border-radius: var(--r-panel);
+		overflow: hidden;
 	}
+	.settings-content {
+		width: 100%;
+		min-width: 0;
+		padding: var(--s-6);
+	}
+	.settings-content.overview-content { padding: 0; }
 	.section-picker {
 		display: none;
-		margin-bottom: var(--s-5);
+		padding: var(--s-4) var(--s-5) 0;
 	}
 	.section-picker label {
 		display: block;
@@ -112,11 +179,7 @@
 		font-weight: var(--weight-semibold);
 		color: var(--text-muted);
 	}
-	.select-wrap {
-		position: relative;
-		display: flex;
-		align-items: center;
-	}
+	.select-wrap { position: relative; display: flex; align-items: center; }
 	.select-wrap > :global(.icon) {
 		position: absolute;
 		left: var(--s-3);
@@ -135,15 +198,21 @@
 		font: inherit;
 		font-weight: var(--weight-medium);
 	}
-	@media (max-width: 900px) {
-		.settings {
+	@media (max-width: 1000px) {
+		.settings-shell {
 			grid-template-columns: minmax(0, 1fr);
+			margin: 0;
+			min-height: 0;
+			background: transparent;
 		}
-		.subnav {
-			display: none;
-		}
-		.section-picker {
-			display: block;
-		}
+		.settings-nav { display: none; }
+		.settings-workspace { border-radius: var(--r-panel); }
+		.section-picker { display: block; }
+	}
+	@media (max-width: 600px) {
+		.settings-workspace { border: 0; border-radius: 0; }
+		.section-picker { padding: var(--s-3) var(--s-4) 0; }
+		.settings-content { padding: var(--s-4); }
+		.settings-content.overview-content { padding: 0; }
 	}
 </style>

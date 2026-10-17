@@ -427,6 +427,7 @@
 {:else if title.kind === 'artist'}
 	<ArtistPage {title} onchange={(t) => (title = t)} />
 {:else}
+	<div class="detail-workspace">
 	<section class="hero">
 		<div class="art"><Poster src={title.artwork[0]} name={title.name} /></div>
 		<div class="info">
@@ -478,8 +479,10 @@
 		</div>
 	</section>
 
-	<CopyControls {title} onchange={() => load('title')} />
-	<MoviePeople titleId={title.id} />
+	<div class="detail-tools">
+		<CopyControls {title} onchange={() => load('title')} />
+		<MoviePeople titleId={title.id} />
+	</div>
 	<div class="cols">
 		<section class="card" aria-labelledby="h-dates">
 			<h2 id="h-dates" class="h2 card-title">Dates</h2>
@@ -670,6 +673,7 @@
 			{/if}
 		</section>
 		{/if}
+	</div>
 	</div>
 {/if}
 
@@ -911,14 +915,19 @@
 	.back:hover {
 		color: var(--text);
 	}
+	.detail-workspace {
+		overflow: hidden;
+		border: 1px solid var(--line);
+		border-radius: 16px;
+		background: var(--surface-1);
+	}
 	.hero {
 		display: grid;
-		grid-template-columns: 168px minmax(0, 1fr);
+		grid-template-columns: 144px minmax(0, 1fr);
 		gap: var(--s-5);
-		margin-bottom: var(--s-5);
-		padding: var(--s-4);
-		border: 1px solid var(--line);
-		border-radius: 6px;
+		margin: 0;
+		padding: var(--s-5);
+		border-bottom: 1px solid var(--line);
 		background: var(--surface-1);
 	}
 	.title {
@@ -937,12 +946,29 @@
 	}
 	.actions {
 		margin-top: var(--s-4);
-		gap: var(--s-5);
+		gap: var(--s-2);
+		flex-wrap: wrap;
+	}
+	.detail-tools {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		border-bottom: 1px solid var(--line);
+		background: var(--surface-1);
+	}
+	.detail-tools :global(.card) {
+		margin: 0;
+		border: 0;
+		border-radius: 0;
+		box-shadow: none;
+	}
+	.detail-tools :global(.card + .card),
+	.detail-tools > :global(* + *) {
+		border-left: 1px solid var(--line);
 	}
 	.cols {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) 320px;
-		gap: var(--s-4);
+		grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
+		gap: 0;
 		align-items: start;
 	}
 	.rel-card {
@@ -950,6 +976,16 @@
 		grid-row: 1 / span 20;
 	}
 	.cols > :not(.rel-card) { grid-column: 2; }
+	.cols .card {
+		margin: 0;
+		border: 0;
+		border-radius: 0;
+		box-shadow: none;
+	}
+	.cols > :not(.rel-card) {
+		border-left: 1px solid var(--line);
+		border-bottom: 1px solid var(--line);
+	}
 	.cols .card + .card {
 		margin-top: 0;
 	}
@@ -957,7 +993,7 @@
 		margin-bottom: var(--s-4);
 	}
 	.rel {
-		padding: var(--s-3) 0;
+		padding: var(--s-4) 0;
 	}
 	.rel + .rel {
 		border-top: 1px solid var(--line);
@@ -1046,21 +1082,66 @@
 		align-items: center;
 	}
 	@media (max-width: 900px) {
+		.detail-workspace {
+			border-radius: 14px;
+		}
 		.cols {
 			grid-template-columns: 1fr;
 		}
 		.rel-card {
 			grid-column: auto;
 			grid-row: auto;
+			order: -1;
 		}
-		.cols > :not(.rel-card) { grid-column: auto; }
+		.cols > :not(.rel-card) { grid-column: auto; border-left: 0; }
 	}
 	@media (max-width: 600px) {
 		.hero {
 			grid-template-columns: 92px minmax(0, 1fr);
 			gap: var(--s-3);
-			padding: var(--s-3);
+			padding: var(--s-4);
 		}
+		.hero > .art {
+			grid-column: 1;
+			grid-row: 1 / span 2;
+		}
+		.info {
+			display: contents;
+		}
+		.info > * {
+			grid-column: 1 / -1;
+		}
+		.info > .title {
+			grid-column: 2;
+			grid-row: 1;
+			align-self: end;
+		}
+		.info > .chips {
+			grid-column: 2;
+			grid-row: 2;
+			align-self: start;
+			margin: 0;
+		}
+		.hero .actions {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			align-items: stretch;
+			width: 100%;
+		}
+		.hero .actions > .btn {
+			width: 100%;
+			min-width: 0;
+			justify-content: center;
+		}
+		.hero .actions > .btn:first-child,
+		.hero .actions > .switch {
+			grid-column: 1 / -1;
+		}
+		.hero .actions > .switch {
+			min-height: 44px;
+		}
+		.detail-tools { grid-template-columns: 1fr; }
+		.detail-tools > :global(* + *) { border-left: 0; border-top: 1px solid var(--line); }
 		.title {
 			font-size: var(--text-xl);
 		}

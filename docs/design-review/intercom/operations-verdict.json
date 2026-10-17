@@ -1,0 +1,33 @@
+{
+  "score": 63,
+  "verdict": "needs_changes",
+  "category_match": "The operations routes expose the correct live information and actions, but their visual language still mixes dashboard cards, form cards and calendar utilities instead of one compact Intercom-derived operations system.",
+  "routes": [
+    "http://10.10.25.25:18746/downloads",
+    "http://10.10.25.25:18746/downloads/decide",
+    "http://10.10.25.25:18746/downloads/history",
+    "http://10.10.25.25:18746/calendar"
+  ],
+  "reference_patterns": [
+    "Intercom Inbox multi-pane queue",
+    "Intercom Contacts and Content dense tables",
+    "Intercom Reports filter header and canvas"
+  ],
+  "differences": [
+    "Queue sections and decision items rely on repeated standalone cards rather than continuous bordered work surfaces with shared dividers.",
+    "Filters occupy large vertical blocks and do not read as compact operational toolbars.",
+    "Status, metadata and row actions are not aligned consistently across downloads, decisions and history.",
+    "History is a sidebar form beside a card list instead of a table-like result workspace with a clear sticky filter region.",
+    "Calendar controls are functional but have weaker grouping and density than the Reports-derived reference pattern.",
+    "Phone behavior is already functional, but several secondary controls need consistently sized 44px targets."
+  ],
+  "suggestions": [
+    "Use one bordered workspace per queue or table and separate rows with 1px dividers.",
+    "Give each route a compact eyebrow, count and operational header before its live content.",
+    "Align status and actions at the trailing edge while keeping titles and explanations visually strongest.",
+    "Convert history filters into a compact sticky filter panel and its results into a dense table-like list.",
+    "Treat calendar controls as a reports toolbar and keep the calendar canvas visually continuous.",
+    "Retain existing dialogs, confirmations, URL filters, polling, permissions and error recovery without decorative controls."
+  ],
+  "reasoning": "The data and workflows are already real and complete. The redesign should improve hierarchy, density and cross-route consistency while leaving the behavior and recovery paths intact. Exact motion remains provisional because the available reference evidence is still imagery rather than recorded flows."
+}

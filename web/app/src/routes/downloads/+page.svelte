@@ -121,9 +121,14 @@
 
 <header class="page-head">
 	<div>
+		<p class="eyebrow">Operations</p>
 		<h1>Downloads</h1>
 		<p>What your Downloaders are fetching right now, live, and what HolyArrs moved into the Library.</p>
 	</div>
+	<nav class="page-actions" aria-label="Download views">
+		<a class="btn btn-ghost" href={to(`/downloads/decide`)}>Needs a decision</a>
+		<a class="btn btn-ghost" href={to(`/downloads/history`)}>History</a>
+	</nav>
 </header>
 
 {#snippet dlRow(r: DownloadRow)}
@@ -201,7 +206,7 @@
 	<EmptyState icon="download" title="No downloads yet">
 		<p>When HolyArrs chooses a Release for a movie or an episode, it sends it to a Downloader and you can watch it here, live.</p>
 		{#snippet actions()}
-			<a class="btn btn-red" href={to(`/search`)}>Add a movie</a>
+			<a class="btn btn-dark" href={to(`/search`)}>Add media</a>
 			<a class="btn btn-ghost" href={to(`/settings/downloaders`)}>Downloaders</a>
 		{/snippet}
 	</EmptyState>
@@ -309,6 +314,20 @@
 </dialog>
 
 <style>
+	.page-actions {
+		display: flex;
+		align-items: center;
+		gap: var(--s-2);
+		flex-wrap: wrap;
+	}
+	.eyebrow {
+		margin: 0 0 var(--s-2);
+		font-size: 11px;
+		font-weight: var(--weight-semibold);
+		letter-spacing: 0.09em;
+		text-transform: uppercase;
+		color: var(--text-muted);
+	}
 	.loading-grid,
 	.download-workspace {
 		display: grid;
@@ -322,12 +341,14 @@
 	.queue {
 		padding: 0;
 		overflow: hidden;
+		box-shadow: none;
 	}
 	.queue + .queue {
 		margin-top: var(--s-4);
 	}
 	.queue .card-head {
-		padding: var(--s-4);
+		min-height: 56px;
+		padding: var(--s-3) var(--s-4);
 		margin: 0;
 		border-bottom: 1px solid var(--line);
 	}
@@ -348,13 +369,13 @@
 	.dl {
 		align-items: flex-start;
 		flex-wrap: wrap;
-		padding: var(--s-4);
-		border-left: 2px solid transparent;
+		padding: var(--s-3) var(--s-4);
+		border-left: 3px solid transparent;
 		transition: background var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out);
 	}
 	.dl.selected {
 		background: var(--surface-2);
-		border-left-color: var(--info);
+		border-left-color: var(--text);
 	}
 	.dl .top {
 		display: flex;
@@ -420,6 +441,7 @@
 		position: sticky;
 		top: calc(var(--topbar) + var(--s-4));
 		min-width: 0;
+		box-shadow: none;
 	}
 	.detail-head {
 		display: flex;
@@ -428,13 +450,8 @@
 		gap: var(--s-2);
 		margin-bottom: var(--s-3);
 	}
-	.eyebrow {
+	.detail-head .eyebrow {
 		margin: 0;
-		font-size: var(--text-xs);
-		font-weight: var(--weight-semibold);
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		color: var(--text-muted);
 	}
 	.detail-title {
 		overflow-wrap: anywhere;
@@ -523,6 +540,13 @@
 		}
 	}
 	@media (max-width: 620px) {
+		.page-actions,
+		.page-actions :global(.btn) {
+			width: 100%;
+		}
+		.page-actions :global(.btn) {
+			min-height: 44px;
+		}
 		.dl {
 			padding: var(--s-3);
 		}

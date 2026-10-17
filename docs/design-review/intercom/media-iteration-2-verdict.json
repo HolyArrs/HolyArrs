@@ -1,0 +1,22 @@
+{
+  "score": 84,
+  "verdict": "The Library now carries the Intercom content-table and inspector pattern, but opening the inspector compresses four columns enough to collide at the tested desktop width. Wishlist hierarchy and the Library command bar match the intended system more closely.",
+  "category_match": {
+    "workspace_header": "strong",
+    "filters": "strong",
+    "table": "needs one responsive correction",
+    "inspector": "strong",
+    "wishlist_empty_state": "strong"
+  },
+  "differences": [
+    "The Library Out on and Keep up to date headers collide when the 360px inspector is open.",
+    "The inspector does not yet repeat the two facts that must disappear from the compressed table.",
+    "A populated Wishlist could not be rendered without mutating disposable test data, so queue-row validation remains source and layout based."
+  ],
+  "suggestions": [
+    "Hide the two wide operational columns only while the inspector is open and expose the same values in the inspector facts.",
+    "Keep all four columns when the inspector is closed and retain the existing mobile column removal.",
+    "Run Svelte diagnostics and recapture the inspector state after the correction."
+  ],
+  "reasoning": "Fresh 18746 capture at the available desktop viewport showed the intended list-detail composition and a concrete responsive table defect. The next edit is limited to that collision and preservation of its information in the inspector."
+}

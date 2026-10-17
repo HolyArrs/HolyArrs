@@ -50,6 +50,7 @@
 
 <svelte:head><title>{detail?.name ?? 'Movie collection'} · HolyArrs</title></svelte:head>
 <a class="back small muted" href={to('/library/collections')}>Movie series</a>
+<section class="workspace">
 
 {#if error}<div class="notice bad" role="alert">{error}</div>{/if}
 {#if detail}
@@ -91,13 +92,19 @@
 		<section class="panel stack" aria-live="polite"><h2>Movie series removal finished</h2>{#each review.results ?? [] as result}<p class:bad-text={result.status === 'failed'}>{collectionResultLine(result)}</p>{/each}<div class="row"><button class="btn btn-ghost" onclick={retry}>Review remaining movies</button><a class="btn btn-ghost" href={to('/library/collections')}>Back to movie series</a></div></section>
 	{/if}
 {/if}
+</section>
 
 <style>
-	.title { display: flex; align-items: center; gap: .8rem; }
+	.workspace { overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--surface-1); }
+	.workspace .page-head { margin: 0; padding: var(--s-5); border-bottom: 1px solid var(--line); }
+	.workspace > .stack { gap: 0; }
+	.title { display: flex; align-items: center; gap: .8rem; min-height: 72px; padding: var(--s-4) var(--s-5); border: 0; border-bottom: 1px solid var(--line); border-radius: 0; box-shadow: none; }
 	.title small { display: block; margin-top: .2rem; }
-	.choices { display: grid; gap: var(--s-2); margin-top: var(--s-4); }
-	.choices label { display: flex; align-items: flex-start; gap: var(--s-3); min-height: var(--tap); padding: var(--s-3); border: 1px solid var(--line); border-radius: 6px; background: var(--surface-1); }
+	.choices { display: grid; gap: var(--s-2); margin: 0; padding: var(--s-5); border: 0; border-top: 1px solid var(--line); border-radius: 0; box-shadow: none; }
+	.choices label { display: flex; align-items: flex-start; gap: var(--s-3); min-height: var(--tap); padding: var(--s-3); border: 1px solid var(--line); border-radius: 10px; background: var(--surface-1); }
 	.choices input { width: 20px; height: 20px; flex: none; accent-color: var(--ha-red); }
+	.workspace > .panel.stack { margin: 0; padding: var(--s-5); border: 0; border-top: 1px solid var(--line); border-radius: 0; box-shadow: none; }
+	.workspace > :global(.notice) { margin: var(--s-4); }
 	.danger, .warn-text { color: var(--wait); }
 	.bad-text { color: var(--fail); }
 </style>

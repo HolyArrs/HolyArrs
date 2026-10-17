@@ -140,10 +140,11 @@
 
 <header class="page-head">
 	<div>
+		<p class="eyebrow">Library management</p>
 		<h1>Missing subtitles</h1>
 		<p>Every movie and episode without a subtitle it should have. HolyArrs keeps looking on its own; search now to look at once.</p>
 	</div>
-	<button class="btn btn-red" type="button" onclick={searchAll} disabled={running || total === 0} aria-busy={running} data-testid="search-all-subtitles">
+	<button class="btn btn-dark" type="button" onclick={searchAll} disabled={running || total === 0} aria-busy={running} data-testid="search-all-subtitles">
 		<Icon name="search" size={18} /> Search all
 	</button>
 </header>
@@ -225,6 +226,7 @@
 {/if}
 
 <style>
+	.eyebrow { margin: 0 0 var(--s-2); font-size: 11px; font-weight: var(--weight-semibold); letter-spacing: .09em; text-transform: uppercase; color: var(--text-muted); }
 	.filters {
 		display: grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -232,7 +234,7 @@
 		margin-bottom: var(--s-4);
 		padding: var(--s-3);
 		border: 1px solid var(--line);
-		border-radius: 6px;
+		border-radius: var(--r-card);
 		background: var(--surface-1);
 	}
 	.filters .field + .field {
@@ -242,19 +244,34 @@
 		margin-bottom: var(--s-4);
 	}
 	.count {
-		margin-bottom: var(--s-2);
+		min-height: 52px;
+		margin: 0;
+		padding: var(--s-3) var(--s-4);
+		border: 1px solid var(--line);
+		border-bottom: 0;
+		border-radius: var(--r-card) var(--r-card) 0 0;
+		background: var(--surface-2);
+		display: flex;
+		align-items: center;
+	}
+	.rows-list {
+		padding: 0;
+		border-radius: 0 0 var(--r-card) var(--r-card);
+		overflow: hidden;
+		box-shadow: none;
 	}
 	.row-item {
 		display: flex;
 		align-items: center;
 		gap: var(--s-3);
-		padding: var(--s-3);
-		border: 1px solid var(--line);
-		border-radius: 6px;
-		background: var(--surface-1);
+		padding: var(--s-3) var(--s-4);
+		border: 0;
+		border-radius: 0;
+		background: transparent;
 	}
 	.row-item + .row-item {
-		margin-top: var(--s-2);
+		margin-top: 0;
+		border-top: 1px solid var(--line);
 	}
 	.grow {
 		flex: 1;
@@ -273,5 +290,9 @@
 		.filters {
 			grid-template-columns: 1fr;
 		}
+		.page-head > :global(.btn), .row-item :global(.btn), .pager :global(.btn) { min-height: 44px; }
+		.page-head > :global(.btn) { width: 100%; }
+		.row-item { align-items: flex-start; flex-direction: column; }
+		.row-item :global(.btn) { width: 100%; }
 	}
 </style>
