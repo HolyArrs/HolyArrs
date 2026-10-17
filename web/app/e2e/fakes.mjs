@@ -102,7 +102,7 @@ function send(res, code, obj, type = 'application/json') {
 
 // A few made-up movies for the fake TMDB. Dates use TMDB release types:
 // 3 cinema, 4 digital, 5 disc.
-const tmdbMovies = [
+export const tmdbMovies = [
 	{ id: 900017, title: 'Driftwood Moon', release_date: '2024-01-01', imdb_id: 'tt9000170', overview: 'A moon carved from the wood that washes ashore.', dates: [[3, '2024-01-01'], [4, '2024-03-01']] },
 	{ id: 900001, title: 'The Lantern Keepers', release_date: '2031-02-01', imdb_id: 'tt9000010', overview: 'Keepers of a lighthouse that is not on any map.', dates: [[3, '2031-02-01']] },
 	{ id: 900002, title: 'Paper Harbour', release_date: '2023-05-05', imdb_id: 'tt9000020', overview: 'A harbour town folds itself away each winter.', dates: [[3, '2023-05-05'], [4, '2023-07-01']] },
@@ -128,7 +128,7 @@ const tmdbMovies = [
 
 // A few made-up shows, known to the fake TMDB and the fake TVMaze by the
 // same ids. Episodes: [season, number, name, air day]; 2099 is not out yet.
-const fakeShows = [
+export const fakeShows = [
 	{
 		tmdb: 800001, tvdb: 810001, tvmaze: 820001, imdb: 'tt8000010', name: 'Harbour Lights', first: '2024-01-07', status: 'Returning Series', network: 'Lab TV',
 		overview: 'A harbour town where the lights tell the tides what to do.',

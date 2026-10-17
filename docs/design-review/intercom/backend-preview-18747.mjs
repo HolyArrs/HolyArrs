@@ -89,7 +89,10 @@ mkdirSync(config, { recursive: true });
 mkdirSync(movies, { recursive: true });
 mkdirSync(downloads, { recursive: true });
 
-const { startFakes, mbPort, plexPort, tmdbPort, traktPort, tvmazePort } = await import('../../../web/app/e2e/fakes.mjs');
+const fakes = await import('../../../web/app/e2e/fakes.mjs');
+const { addCatalogToFakes } = await import('./sample-preview.mjs');
+addCatalogToFakes(fakes);
+const { startFakes, mbPort, plexPort, tmdbPort, traktPort, tvmazePort } = fakes;
 const stopFakes = startFakes();
 const subs = spawn(subsBin, ['-addr', `127.0.0.1:${ports.HOLYARRS_E2E_SUBS_PORT}`], { cwd: runtime, stdio: 'inherit' });
 const plex = `http://127.0.0.1:${plexPort}`;
