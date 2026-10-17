@@ -238,14 +238,14 @@
 					<td class="title-cell"><a class="row-link" href={to(`/library/${t.id}`)}><span class="thumb"><Poster src={t.artwork[0]} name={t.name} /></span><span><b>{t.name}</b> <span class="muted xs">{t.year ?? ''}{kindWord[t.kind] ?? ''}</span></span></a><button class="preview-button list-preview" type="button" aria-label={`Preview ${t.name}`} aria-pressed={preview?.id === t.id} onclick={(event) => openPreview(t, event)}>Preview</button></td>
 					{#if t.kind === 'artist'}
 						{@const c = chipOf(t)}
-						<td>{#if c}<span class="chip {tone(c.state)}">{c.label}</span>{/if}<span class="xs muted block">{artistProgress(t.artist)}</span></td>
+						<td>{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}<span class="chip" data-testid="request-approved" title="Requested and approved">Approved</span>{/if}{#if c}<span class="chip {tone(c.state)}">{c.label}</span>{/if}<span class="xs muted block">{artistProgress(t.artist)}</span></td>
 						<td class="wide small muted">{t.artist?.next_release ? `Next album ${date(t.artist.next_release)}` : t.artist?.status === 'ended' ? 'No longer active' : 'No date yet'}</td>
 					{:else if t.kind === 'show'}
 						{@const c = chipOf(t)}
-						<td>{#if c}<span class="chip {tone(c.state)}">{c.label}</span>{/if}<span class="xs muted block">{showProgress(t.show)}</span></td>
+						<td>{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}<span class="chip" data-testid="request-approved" title="Requested and approved">Approved</span>{/if}{#if c}<span class="chip {tone(c.state)}">{c.label}</span>{/if}<span class="xs muted block">{showProgress(t.show)}</span></td>
 						<td class="wide small muted">{t.show?.next_air_date ? `Next episode ${date(t.show.next_air_date)}` : t.show?.status === 'ended' ? 'Ended' : 'No date yet'}</td>
 					{:else}
-						<td>{#each t.slots as s (s.id)}<span class="chip {tone(s.state)}">{s.state_label}</span>{/each}</td>
+						<td>{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}<span class="chip" data-testid="request-approved" title="Requested and approved">Approved</span>{/if}{#each t.slots as s (s.id)}<span class="chip {tone(s.state)}">{s.state_label}</span>{/each}</td>
 						<td class="wide small muted">{date(t.digital_date ?? t.physical_date ?? t.cinema_date) || 'Not known'}</td>
 					{/if}
 					<td class="wide small">{t.keep_up_to_date ? 'Yes' : 'No'}</td>
