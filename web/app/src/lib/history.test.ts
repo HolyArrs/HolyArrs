@@ -1,7 +1,39 @@
 import { describe, expect, it } from 'vitest';
-import { details, filterParams, groupLabel, historyQuery, kindGroups, kindTone, pageLine, readFilter } from './history.ts';
+import { createLatestOnly, dateRangeProblem, details, filterParams, groupLabel, historyQuery, kindGroups, kindTone, pageLine, readFilter } from './history.ts';
 
 describe('history', () => {
+	it('rejects a date range whose end is before its start', () => {
+		expect(dateRangeProblem({ from: '2026-10-17', to: '2026-10-01' })).toBe('From date must be on or before To date.');
+		expect(dateRangeProblem({ from: '2026-10-01', to: '2026-10-17' })).toBe('');
+		expect(() => historyQuery({ groups: [], from: '2026-10-17', to: '2026-10-01', limit: 50, offset: 0 })).toThrow(
+			'From date must be on or before To date.'
+		);
+	});
+
+	it('lets only the newest overlapping request update history', async () => {
+		const begin = createLatestOnly();
+		let shown = '';
+		const deferred = () => {
+			let resolve!: (value: string) => void;
+			const promise = new Promise<string>((done) => (resolve = done));
+			return { promise, resolve };
+		};
+		const finish = async (request: Promise<string>) => {
+			const isLatest = begin();
+			const value = await request;
+			if (isLatest()) shown = value;
+		};
+		const first = deferred();
+		const second = deferred();
+		const firstDone = finish(first.promise);
+		const secondDone = finish(second.promise);
+		second.resolve('newest');
+		await secondDone;
+		first.resolve('stale');
+		await firstDone;
+		expect(shown).toBe('newest');
+	});
+
 	it('names the group of every kind the loop writes', () => {
 		for (const [kind, label] of [
 			['title_added', 'Added'],
@@ -53,6 +85,9 @@ describe('history', () => {
 		expect(f).toEqual({ title: 3, groups: ['grab', 'import'], from: '2026-10-01', to: undefined, limit: 50, offset: 50 });
 		expect(filterParams(f)).toBe('?title=3&kinds=grab%2Cimport&from=2026-10-01&offset=50');
 		expect(filterParams(readFilter(new URLSearchParams('title=-1')))).toBe('');
+		expect(readFilter(new URLSearchParams('from=2026-99-99&to=2026-02-30')).from).toBeUndefined();
+		expect(readFilter(new URLSearchParams('from=2026-99-99&to=2026-02-30')).to).toBeUndefined();
+		expect(readFilter(new URLSearchParams('from=2024-02-29')).from).toBe('2024-02-29');
 	});
 
 	it('shows reasons and paths', () => {

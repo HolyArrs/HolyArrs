@@ -665,7 +665,7 @@
 .library-summary{margin-top:7px;color:var(--text-muted);font-size:14px}
 .asset-count{flex:none;font-size:12px;font-weight:600;color:var(--text-muted);font-variant-numeric:tabular-nums}
 .grid .item :global(.poster){border-radius:12px}
-@media(min-width:1024px){.library-search-band{position:absolute;top:-72px;left:0;right:10px;height:52px;margin:0}.library-search-box{position:absolute;left:max(0px,calc(50vw - var(--sidebar) - 380px));width:min(760px,calc(100% - 130px))}.library-search-band>.library-tools{margin-left:auto}}
+@media(min-width:1024px){.library-search-box{width:min(760px,calc(100% - 130px))}.library-search-band>.library-tools{margin-left:auto}}
 @media(max-width:767px){.library-commandbar{position:relative}.requester-menu{position:static;max-width:100%}.requester-menu .filter-popover{top:100%;left:0}.library-search-band{flex-wrap:wrap}.clear-search{font-size:12px;padding-inline:6px}.filter-trigger{min-height:44px}.filter-popover{width:min(260px,calc(100vw - 48px))}}
 @media(pointer:coarse){.filter-popover button,.clear-search{min-height:44px}}
 

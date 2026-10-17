@@ -36,18 +36,30 @@
 	let selectedId = $state(0);
 	const selected = $derived(shown.find((a) => a.id === selectedId) ?? shown[0] ?? null);
 	let reviewHeading: HTMLHeadingElement | undefined = $state();
+	let reviewOpen = $state(false);
+	let reviewTrigger: HTMLButtonElement | undefined = $state();
+	let compactReview = $state(false);
 
-	async function selectAsk(id: number) {
+	async function selectAsk(id: number, trigger?: HTMLButtonElement) {
 		selectedId = id;
+		reviewTrigger = trigger;
+		reviewOpen = true;
 		await tick();
 		if (!reviewHeading) return;
 		reviewHeading.focus({ preventScroll: true });
-		if (window.matchMedia('(min-width: 601px) and (max-width: 980px)').matches) {
+		if (window.matchMedia('(max-width: 980px)').matches) {
 			const rect = reviewHeading.getBoundingClientRect();
 			if (rect.top < 72 || rect.bottom > window.innerHeight) {
-				reviewHeading.scrollIntoView({ behavior: 'smooth', block: 'start' });
+				const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+				reviewHeading.scrollIntoView({ behavior, block: 'start' });
 			}
 		}
+	}
+
+	async function closeReview() {
+		reviewOpen = false;
+		await tick();
+		reviewTrigger?.focus();
 	}
 
 	// Approve and turn down dialogs.
@@ -99,8 +111,15 @@
 				.then((r) => (rules = r.pick_rules))
 				.catch(() => {});
 		}
+		const compactQuery = window.matchMedia('(max-width: 600px)');
+		const syncCompactReview = () => (compactReview = compactQuery.matches);
+		syncCompactReview();
+		compactQuery.addEventListener('change', syncCompactReview);
 		const offs = [live.on('ask', () => void load()), live.on('ask_removed', () => void load())];
-		return () => offs.forEach((off) => off());
+		return () => {
+			compactQuery.removeEventListener('change', syncCompactReview);
+			offs.forEach((off) => off());
+		};
 	});
 
 	function open(a: Ask, m: 'approve' | 'turn_down') {
@@ -278,7 +297,16 @@
 						{#if a.note}<p class="small note">“{a.note}”</p>{/if}
 						{#if a.state === 'approved'}<p class="xs muted">{approvedLine(a)}</p>{/if}
 						<div class="row actions">
-							<button class="btn btn-quiet inspect" type="button" aria-label="Review {a.name}" aria-pressed={selected?.id === a.id} onclick={() => void selectAsk(a.id)}>Review</button>
+							<button
+								class="btn btn-quiet inspect"
+								class:selected={selected?.id === a.id}
+								type="button"
+								aria-label="Review {a.name}"
+								aria-pressed={selected?.id === a.id}
+								aria-expanded={compactReview ? reviewOpen && selected?.id === a.id : undefined}
+								aria-controls="wishlist-review"
+								onclick={(event) => void selectAsk(a.id, event.currentTarget)}>Review</button
+							>
 							{#if approver && a.state === 'asked'}
 								<button class="btn btn-red" type="button" onclick={() => open(a, 'approve')}><Icon name="check" size={18} /> Approve</button>
 								<button class="btn btn-ghost" type="button" onclick={() => open(a, 'turn_down')}><Icon name="x" size={18} /> Turn down</button>
@@ -292,8 +320,9 @@
 			{/each}
 		</ul>
 
-		<aside class="review" aria-label="Selected Wishlist item">
+		<aside id="wishlist-review" class="review" class:mobile-open={reviewOpen} aria-label="Selected Wishlist item">
 			{#if selected}
+				<button class="review-close btn btn-quiet" type="button" aria-label="Close review" onclick={() => void closeReview()}><Icon name="x" size={18} /> Close</button>
 				<div class="review-art"><Poster src={selected.poster} name={selected.name} /></div>
 				<div class="review-head">
 					<div>
@@ -517,7 +546,7 @@
 	.actions:empty {
 		display: none;
 	}
-	.inspect[aria-pressed='true'] {
+	.inspect.selected {
 		background: var(--surface-3);
 		color: var(--text);
 	}
@@ -529,6 +558,9 @@
 		border-left: 1px solid var(--line);
 		background: var(--surface-1);
 		overflow: hidden;
+	}
+	.review-close {
+		display: none;
 	}
 	.review-art {
 		width: min(180px, 62%);
@@ -636,12 +668,94 @@
 		resize: vertical;
 	}
 	@media (max-width: 600px) {
-		.review,
-		.inspect {
+		.head-actions {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			width: 100%;
+		}
+		.head-actions .btn {
+			width: 100%;
+			justify-content: center;
+		}
+		.head-actions .btn:last-child:nth-child(odd) {
+			grid-column: 1 / -1;
+		}
+		.messages .card-head {
+			gap: var(--s-3);
+		}
+		.messages .card-head .h3 {
+			display: flex;
+			align-items: center;
+			flex-wrap: wrap;
+			gap: var(--s-2);
+		}
+		.review:not(.mobile-open) {
 			display: none;
 		}
+		.review.mobile-open {
+			display: block;
+			padding: var(--s-4);
+		}
+		.review-close {
+			display: inline-flex;
+			margin: 0 0 var(--s-4) auto;
+		}
+		.review-art {
+			width: min(132px, 44%);
+			margin-bottom: var(--s-4);
+		}
+		.review-head {
+			flex-direction: column;
+			gap: var(--s-2);
+		}
+		.review-facts {
+			grid-template-columns: minmax(88px, auto) minmax(0, 1fr);
+		}
+		.msg-list {
+			gap: 0;
+		}
+		.msg-list li {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) auto;
+			align-items: center;
+			gap: var(--s-2) var(--s-3);
+			padding: var(--s-3) 0;
+		}
+		.msg-list li + li {
+			border-top: 1px solid var(--line);
+		}
+		.msg-list li > .chip {
+			justify-self: start;
+		}
+		.msg-list li > .grow {
+			grid-column: 1 / -1;
+			grid-row: 2;
+			min-width: 0;
+			line-height: 1.45;
+			overflow-wrap: anywhere;
+		}
+		.msg-list li > time {
+			grid-column: 2;
+			grid-row: 1;
+			white-space: nowrap;
+		}
 		.art {
-			width: 56px;
+			width: 64px;
+			align-self: start;
+		}
+		.ask {
+			align-items: flex-start;
+			gap: var(--s-3);
+		}
+		.top .h3 {
+			flex: 1 0 100%;
+			min-width: 0;
+			line-height: 1.3;
+		}
+		.body > .small,
+		.body > .xs {
+			line-height: 1.45;
+			overflow-wrap: anywhere;
 		}
 		.actions :global(.btn) {
 			flex: 1 1 auto;

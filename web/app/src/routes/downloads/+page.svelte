@@ -340,6 +340,7 @@
 		grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
 		gap: var(--s-4);
 		align-items: start;
+		max-width: 1600px;
 	}
 	.download-main {
 		min-width: 0;

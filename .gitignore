@@ -16,3 +16,4 @@ bin/
 /private-config/
 /exports/
 /captures/
+/web/app/static/preview-audit/

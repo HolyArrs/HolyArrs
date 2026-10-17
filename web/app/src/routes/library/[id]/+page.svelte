@@ -46,6 +46,13 @@
 	let searching = $state(false);
 	let saving = $state(false);
 	let refreshing = $state(false);
+	let overviewExpanded = $state(false);
+	const overviewLong = $derived((title?.overview?.length ?? 0) > 280);
+
+	$effect(() => {
+		id;
+		overviewExpanded = false;
+	});
 
 	// The edit dialog
 	let editDialog: HTMLDialogElement | undefined = $state();
@@ -436,13 +443,28 @@
 	<section class="hero">
 		<div class="art"><Poster src={title.artwork[0]} name={title.name} /></div>
 		<div class="info">
-			<h1 class="title">{title.name}{#if title.year}{" "}<span class="muted">({title.year})</span>{/if}</h1>
-			{#if title.overview}<p class="overview">{title.overview}</p>{/if}
+			<h1 class="title">{title.name}{#if title.year}{" "}<span class="year muted">({title.year})</span>{/if}</h1>
 			<div class="row chips">
 				{#each title.slots as s (s.id)}
 					<span class="chip {tone(s.state)}">{s.version ? `${s.version}: ` : ''}{s.state_label}</span>
 				{/each}
 			</div>
+			{#if title.overview}
+				<div class="overview-wrap">
+					<p id="title-overview-{title.id}" class="overview" class:clamped={overviewLong && !overviewExpanded}>{title.overview}</p>
+					{#if overviewLong}
+						<button
+							class="overview-toggle"
+							type="button"
+							aria-controls="title-overview-{title.id}"
+							aria-expanded={overviewExpanded}
+							onclick={() => (overviewExpanded = !overviewExpanded)}
+						>
+							{overviewExpanded ? 'Show less' : 'Read more'}
+						</button>
+					{/if}
+				</div>
+			{/if}
 			<p class="why small" class:open={title.gate_open} data-testid="gate-reason"><b>Why:</b> {title.gate_reason}</p>
 			{#each slotNotes(title.slots) as note (note)}<p class="small muted">{note}</p>{/each}
 			{#each title.slots.filter((s) => s.download) as s (s.id)}
@@ -940,11 +962,17 @@
 		letter-spacing: var(--tracking-display);
 	}
 	.overview {
-		margin-top: var(--s-3);
+		margin: 0;
 		color: var(--text-muted);
 		max-width: 78ch;
 		line-height: 1.6;
 		text-wrap: pretty;
+	}
+	.overview-wrap {
+		margin-top: var(--s-3);
+	}
+	.overview-toggle {
+		display: none;
 	}
 	.chips {
 		margin: var(--s-4) 0 var(--s-2);
@@ -1102,7 +1130,7 @@
 	}
 	@media (max-width: 600px) {
 		.hero {
-			grid-template-columns: 92px minmax(0, 1fr);
+			grid-template-columns: 88px minmax(0, 1fr);
 			gap: var(--s-3);
 			padding: var(--s-4);
 		}
@@ -1119,13 +1147,46 @@
 		.info > .title {
 			grid-column: 2;
 			grid-row: 1;
-			align-self: end;
+			align-self: start;
 		}
 		.info > .chips {
 			grid-column: 2;
 			grid-row: 2;
 			align-self: start;
 			margin: 0;
+		}
+		.info > .overview-wrap {
+			grid-row: 3;
+			margin-top: var(--s-1);
+		}
+		.overview.clamped {
+			display: -webkit-box;
+			overflow: hidden;
+			-webkit-box-orient: vertical;
+			-webkit-line-clamp: 5;
+			line-clamp: 5;
+		}
+		.overview-toggle {
+			display: inline-flex;
+			align-items: center;
+			min-height: 44px;
+			margin-top: var(--s-1);
+			padding: 0;
+			border: 0;
+			background: transparent;
+			color: var(--text);
+			font: inherit;
+			font-size: var(--text-sm);
+			font-weight: var(--weight-semibold);
+			cursor: pointer;
+		}
+		.overview-toggle:hover {
+			text-decoration: underline;
+		}
+		.overview-toggle:focus-visible {
+			outline: 2px solid var(--focus, currentColor);
+			outline-offset: 3px;
+			border-radius: 2px;
 		}
 		.hero .actions {
 			display: grid;
@@ -1149,6 +1210,13 @@
 		.detail-tools > :global(* + *) { border-left: 0; border-top: 1px solid var(--line); }
 		.title {
 			font-size: var(--text-xl);
+			line-height: 1.15;
+		}
+		.title .year {
+			display: block;
+			margin-top: 2px;
+			font-size: var(--text-base);
+			font-weight: var(--weight-medium);
 		}
 	}
 	.hist li {

@@ -1,0 +1,12 @@
+{
+  "score": 91,
+  "status": "core_visual_pass",
+  "reviewer": "independent visual review",
+  "sourceHash": "12bd5828d7bd4e1c3fa49157b63835d42abd7704915504eb4e94ffe175a7e00d",
+  "evidence": ["final-complete/390-_wishlist.png", "final-responsive/360-_wishlist.png", "final-responsive/360-_library_141.png"],
+  "verdict": "No serious reflow, clipping, collision or surface-alignment defect is visible in the fresh core mobile captures. Intercom-adapted surfaces and responsive grouping are coherent.",
+  "correction": "The earlier claim that Messages protruded outside its card was withdrawn after reopening the exact image. Recorded geometry independently confirms heading and rows align at x33 inside the x16 card.",
+  "minorPolish": ["At360 request labels have unequal line counts", "At360 unread badge and bulk action wrap, remaining readable"],
+  "limits": ["Qualitative score, not pixel similarity", "Exact reference font identity unknown", "Animation timing and easing not evidenced by stills", "Native reference mobile layouts not available"],
+  "clearance": "Separate browser assertions pass at360/390/834; see clearance/receipt.json"
+}

@@ -46,6 +46,16 @@
 	let history = $state<EventRecord[]>([]);
 	let historyTotal = $state(0);
 	let asker: ReturnType<typeof AskArtistDialog> | undefined = $state();
+	let overviewExpanded = $state(false);
+	let overviewTitleId = $state(0);
+	const visibleDisambiguation = $derived(artist?.disambiguation?.trim() ?? '');
+	const overviewLong = $derived(visibleDisambiguation.length > 280);
+
+	$effect(() => {
+		if (title.id === overviewTitleId) return;
+		overviewTitleId = title.id;
+		overviewExpanded = false;
+	});
 
 	// Rename files and delete (4.15.4): the rename preview for this artist,
 	// and the delete dialog for the artist.
@@ -246,13 +256,28 @@
 	<div class="art"><Poster src={title.artwork[0]} name={title.name} /></div>
 	<div class="info">
 		<h1 class="title">{title.name}</h1>
-		{#if artist?.disambiguation}<p class="overview">{artist.disambiguation}</p>{/if}
 		<div class="row chips">
 			<span class="chip">Artist</span>
 			{#if artist?.type}<span class="chip">{artist.type.charAt(0).toUpperCase() + artist.type.slice(1)}</span>{/if}
 			{#if artist}<span class="chip {artist.status === 'ended' ? '' : 'ok'}">{artist.status === 'ended' ? 'No longer active' : 'Still active'}</span>{/if}
 			{#if artist?.missing}<span class="chip wait">{artist.missing} missing</span>{/if}
 		</div>
+		{#if visibleDisambiguation}
+			<div class="overview-wrap">
+				<p id="artist-overview-{title.id}" class="overview" class:clamped={overviewLong && !overviewExpanded}>{visibleDisambiguation}</p>
+				{#if overviewLong}
+					<button
+						class="overview-toggle"
+						type="button"
+						aria-controls="artist-overview-{title.id}"
+						aria-expanded={overviewExpanded}
+						onclick={() => (overviewExpanded = !overviewExpanded)}
+					>
+						{overviewExpanded ? 'Show less' : 'Read more'}
+					</button>
+				{/if}
+			</div>
+		{/if}
 		<p class="small" data-testid="artist-progress">{artistProgress(artist)}</p>
 		<p class="why small" data-testid="gate-reason"><b>Why:</b> {title.gate_reason}</p>
 		{#if staff}
@@ -371,22 +396,25 @@
 					{#each shown as a (a.id)}
 						{@const st = albumStateOf(a)}
 						<li class="album" data-testid="album">
-							<div class="grow">
+							<div class="grow album-copy">
 								<a class="album-name" href={to(`/library/${title.id}/albums/${a.id}`)}><b>{a.name}</b></a>
 								{#if a.disambiguation}<span class="xs muted"> ({a.disambiguation})</span>{/if}
-								<p class="xs muted">{[albumYear(a.release_date), albumKind(a), a.dropped ? 'no longer listed' : ''].filter(Boolean).join(' · ')}</p>
-								<p class="xs muted" data-testid="album-line">{albumLine(a)}</p>
+								<p class="xs muted album-meta">{[albumYear(a.release_date), albumKind(a), a.dropped ? 'no longer listed' : ''].filter(Boolean).join(' · ')}</p>
+								<p class="xs muted album-availability" data-testid="album-line">{albumLine(a)}</p>
 							</div>
 							<span class="chip {st.tone}" data-testid="album-state">{st.label}</span>
 							{#if staff}
-								<button class="btn btn-quiet sm" type="button" onclick={() => search(a)} disabled={busy === `s${a.id}`} aria-label="Search now for {a.name}" data-testid="album-search"
-									><Icon name="search" size={16} /></button
-								>
-								<label class="switch" title={a.included ? '' : 'Not included by the album kinds'}>
-									<input type="checkbox" checked={a.keep_up_to_date} disabled={busy === `a${a.id}` || !a.included} onchange={(e) => setAlbum(a, e.currentTarget.checked)} />
-									<span class="sw" aria-hidden="true"></span>
-									<span class="sr-only">Keep {a.name} up to date</span>
-								</label>
+								<div class="album-actions">
+									<button class="btn btn-quiet sm" type="button" onclick={() => search(a)} disabled={busy === `s${a.id}`} aria-label="Search now for {a.name}" data-testid="album-search"
+										><Icon name="search" size={16} /><span class="album-action-label" aria-hidden="true">Search</span></button
+									>
+									<label class="switch" title={a.included ? '' : 'Not included by the album kinds'}>
+										<input type="checkbox" checked={a.keep_up_to_date} disabled={busy === `a${a.id}` || !a.included} onchange={(e) => setAlbum(a, e.currentTarget.checked)} />
+										<span class="sw" aria-hidden="true"></span>
+									<span class="sr-only">Keep up to date: {a.name}</span>
+									<span class="album-action-label" aria-hidden="true">Keep up to date</span>
+									</label>
+								</div>
 							{/if}
 						</li>
 					{/each}
@@ -479,8 +507,16 @@
 		overflow-wrap: anywhere;
 	}
 	.overview {
-		margin-top: var(--s-2);
+		margin: 0;
 		color: var(--text-muted);
+		line-height: 1.6;
+		text-wrap: pretty;
+	}
+	.overview-wrap {
+		margin-top: var(--s-2);
+	}
+	.overview-toggle {
+		display: none;
 	}
 	.chips {
 		margin: var(--s-4) 0 var(--s-2);
@@ -578,6 +614,14 @@
 		flex: 1;
 		overflow-wrap: anywhere;
 	}
+	.album-actions {
+		display: flex;
+		align-items: center;
+		gap: var(--s-2);
+	}
+	.album-action-label {
+		display: none;
+	}
 	.album-name {
 		display: inline-flex;
 		align-items: center;
@@ -635,15 +679,118 @@
 	}
 	@media (max-width: 600px) {
 		.hero {
-			grid-template-columns: 92px minmax(0, 1fr);
-			gap: var(--s-4);
+			grid-template-columns: 88px minmax(0, 1fr);
+			gap: var(--s-3);
 			padding: var(--s-4);
+		}
+		.hero > .art {
+			grid-column: 1;
+			grid-row: 1 / span 2;
+		}
+		.info {
+			display: contents;
+		}
+		.info > * {
+			grid-column: 1 / -1;
+		}
+		.info > .title {
+			grid-column: 2;
+			grid-row: 1;
+			align-self: start;
+		}
+		.info > .chips {
+			grid-column: 2;
+			grid-row: 2;
+			align-self: start;
+			margin: 0;
+		}
+		.info > .overview-wrap {
+			grid-row: 3;
+			margin-top: var(--s-1);
+		}
+		.overview.clamped {
+			display: -webkit-box;
+			overflow: hidden;
+			-webkit-box-orient: vertical;
+			-webkit-line-clamp: 5;
+			line-clamp: 5;
+		}
+		.overview-toggle {
+			display: inline-flex;
+			align-items: center;
+			min-height: 44px;
+			margin-top: var(--s-1);
+			padding: 0;
+			border: 0;
+			background: transparent;
+			color: var(--text);
+			font: inherit;
+			font-size: var(--text-sm);
+			font-weight: var(--weight-semibold);
+			cursor: pointer;
+		}
+		.overview-toggle:hover {
+			text-decoration: underline;
+		}
+		.overview-toggle:focus-visible {
+			outline: 2px solid var(--focus, currentColor);
+			outline-offset: 3px;
+			border-radius: 2px;
 		}
 		.title {
 			font-size: var(--text-xl);
+			line-height: 1.15;
 		}
 		.album {
-			flex-wrap: wrap;
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) auto;
+			align-items: center;
+			gap: var(--s-2) var(--s-3);
+			padding: var(--s-4) 0;
+		}
+		.album-copy {
+			grid-column: 1 / -1;
+		}
+		.album-name {
+			min-height: 36px;
+		}
+		.album-meta,
+		.album-availability {
+			max-width: 42ch;
+			line-height: 1.45;
+		}
+		.album-availability {
+			margin-top: 2px;
+		}
+		.album > .chip {
+			grid-column: 1;
+			justify-self: start;
+		}
+		.album-actions {
+			grid-column: 1 / -1;
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			justify-self: stretch;
+		}
+		.album-actions .btn,
+		.album-actions .switch {
+			width: 100%;
+			min-width: 44px;
+			min-height: 44px;
+		}
+		.album-actions .btn {
+			justify-content: center;
+			gap: var(--s-2);
+			padding: 0 var(--s-3);
+		}
+		.album-actions .switch {
+			justify-content: center;
+			gap: var(--s-2);
+		}
+		.album-action-label {
+			display: inline;
+			font-size: var(--text-sm);
+			font-weight: var(--weight-medium);
 		}
 	}
 </style>

@@ -13,9 +13,9 @@
 	--tabbar: 60px;
 }
 :root[data-theme='light'] {
-	--ok-text: #0b7048;
+	--ok-text: #085f3c;
 	--wait-text: #755700;
-	--fail-text: #c0291d;
+	--fail-text: #a92319;
 }
 
 *,

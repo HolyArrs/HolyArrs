@@ -64,8 +64,24 @@ export interface HistoryFilter {
 	offset: number;
 }
 
+/** createLatestOnly lets an async caller ignore work superseded by a newer request. */
+export function createLatestOnly(): () => () => boolean {
+	let latest = 0;
+	return () => {
+		const request = ++latest;
+		return () => request === latest;
+	};
+}
+
+/** dateRangeProblem explains an invalid inclusive date range. */
+export function dateRangeProblem(f: Pick<HistoryFilter, 'from' | 'to'>): string {
+	return f.from && f.to && f.from > f.to ? 'From date must be on or before To date.' : '';
+}
+
 /** historyQuery turns the filters into the /events query string. */
 export function historyQuery(f: HistoryFilter): string {
+	const problem = dateRangeProblem(f);
+	if (problem) throw new Error(problem);
 	const q = new URLSearchParams();
 	if (f.episode) q.set('episode', String(f.episode));
 	else if (f.title) q.set('title', String(f.title));
@@ -82,7 +98,11 @@ export function historyQuery(f: HistoryFilter): string {
 export function readFilter(params: { get(name: string): string | null }, limit = 50): HistoryFilter {
 	const title = Number(params.get('title'));
 	const episode = Number(params.get('episode'));
-	const day = (v: string | null) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined);
+	const day = (v: string | null) => {
+		if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return undefined;
+		const parsed = new Date(v + 'T00:00:00Z');
+		return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === v ? v : undefined;
+	};
 	const groups = (params.get('kinds') ?? '').split(',').filter((k) => kindGroups.some((g) => g.key === k));
 	const offset = Math.max(0, Number(params.get('offset')) || 0);
 	return {

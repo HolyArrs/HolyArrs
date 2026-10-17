@@ -1,5 +1,13 @@
 # AI SLOP CLEANUP REPORT
 
+## Full-audit follow-up
+
+Scope: only the current full-audit application changes. The existing cleanup plan applies. Unit behavior is locked by 225 passing tests, including deferred History response ordering, reversed ranges and URL parsing; responsive disclosure/focus behavior has a persisted browser receipt at `full-audit/repair-interactions/receipt.json`.
+
+Removed one newly introduced fixture-specific display branch from ArtistPage: real artist descriptions now use the normal rendering path regardless of seed text. No stored fixture data changed. Calendar-date URL parsing now rejects impossible days, with a regression assertion demonstrated failing before the repair. No new dependency or speculative abstraction was added. Similar media-summary CSS stays route-local because each component has a different DOM and lifecycle. Existing network-error handling remains explicit; no new swallowed-error or silent-success path was introduced.
+
+The historical report below describes the earlier redesign pass; its test counts are not the final full-audit results. Current diagnostics and final capture receipts are recorded in `full-audit.md`.
+
 ## Scope
 
 Read-only standard review of the current Git changed files in `mobbin-product-review`. The visual capture source is frozen, so this pass does not edit application source, preview configuration, capture scripts, or tests.

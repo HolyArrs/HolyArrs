@@ -8,7 +8,7 @@
 	import { ago, dateTime } from '#lib/format.ts';
 	import EmptyState from '#lib/EmptyState.svelte';
 	import Poster from '#lib/Poster.svelte';
-	import { details, filterParams, groupLabel, historyQuery, kindGroups, kindTone, pageLine, readFilter, type HistoryFilter } from '#lib/history.ts';
+	import { createLatestOnly, dateRangeProblem, details, filterParams, groupLabel, historyQuery, kindGroups, kindTone, pageLine, readFilter, type HistoryFilter } from '#lib/history.ts';
 	import type { EventPage, EventRecord, TitleView } from '#lib/types.ts';
 
 	const limit = 50;
@@ -19,18 +19,27 @@
 	let loaded = $state(false);
 	let error = $state('');
 	let open = $state<number | null>(null);
+	const beginLoad = createLatestOnly();
 
 	async function load() {
+		const isLatest = beginLoad();
+		if (dateRangeProblem(filter)) {
+			error = '';
+			loaded = true;
+			return;
+		}
 		try {
 			const p = await api.get<EventPage>('/events?' + historyQuery(filter));
+			if (!isLatest()) return;
 			events = p.events;
 			total = p.total;
 			episodeName = p.episode || 'one episode';
 			error = '';
 		} catch (e) {
+			if (!isLatest()) return;
 			error = message(e);
 		} finally {
-			loaded = true;
+			if (isLatest()) loaded = true;
 		}
 	}
 
@@ -52,6 +61,7 @@
 	const movieName = $derived(titles.find((t) => t.id === filter.title)?.name);
 	const titleById = $derived(new Map(titles.map((title) => [title.id, title])));
 	const filtered = $derived(!!(filter.title || filter.episode || filter.groups.length || filter.from || filter.to));
+	const dateProblem = $derived(dateRangeProblem(filter));
 	/** The episode the rows are filtered to, named from the rows themselves. */
 	let episodeName = $state('');
 
@@ -81,21 +91,22 @@
 <form class="card filters" aria-label="Filter the history" onsubmit={(e) => e.preventDefault()}>
 	<div class="row-fields">
 		<div class="field">
-			<label for="h-movie">Movie or show</label>
+			<label for="h-movie">Movie, show or artist</label>
 			<select id="h-movie" class="input" value={filter.title ?? ''} onchange={(e) => apply({ title: Number(e.currentTarget.value) || undefined, episode: undefined })}>
-				<option value="">Every movie and show</option>
+				<option value="">Every movie, show and artist</option>
 				{#each titles as t (t.id)}<option value={t.id}>{t.name}{t.year ? ` (${t.year})` : ''}</option>{/each}
 			</select>
 		</div>
 		<div class="field">
 			<label for="h-from">From</label>
-			<input id="h-from" class="input" type="date" value={filter.from ?? ''} onchange={(e) => apply({ from: e.currentTarget.value || undefined })} />
+			<input id="h-from" class="input" type="date" value={filter.from ?? ''} aria-invalid={dateProblem ? 'true' : undefined} aria-describedby={dateProblem ? 'history-date-error' : undefined} onchange={(e) => apply({ from: e.currentTarget.value || undefined })} />
 		</div>
 		<div class="field">
 			<label for="h-to">To</label>
-			<input id="h-to" class="input" type="date" value={filter.to ?? ''} onchange={(e) => apply({ to: e.currentTarget.value || undefined })} />
+			<input id="h-to" class="input" type="date" value={filter.to ?? ''} aria-invalid={dateProblem ? 'true' : undefined} aria-describedby={dateProblem ? 'history-date-error' : undefined} onchange={(e) => apply({ to: e.currentTarget.value || undefined })} />
 		</div>
 	</div>
+	{#if dateProblem}<p id="history-date-error" class="small field-error" role="alert">{dateProblem}</p>{/if}
 	<fieldset class="kinds">
 		<legend class="label xs muted">What happened</legend>
 		<div class="chips">
@@ -117,6 +128,7 @@
 </form>
 
 <div class="history-results">
+{#if !dateProblem}
 {#if error}
 	<div class="notice bad load-error" role="alert">
 		<div><b>History could not be loaded.</b><br /><span class="small">{error}</span></div>
@@ -168,6 +180,7 @@
 	</nav>
 	</section>
 {/if}
+{/if}
 </div>
 </div>
 
@@ -213,6 +226,10 @@
 	}
 	.row-fields .field + .field {
 		margin-top: 0;
+	}
+	.field-error {
+		margin: var(--s-2) 0 0;
+		color: var(--fail);
 	}
 	.kinds {
 		border: 0;
