@@ -1,0 +1,13 @@
+{
+  "score": 90,
+  "verdict": "Strong typography hierarchy match in the reviewed Library screenshot; no objective regression observed.",
+  "scope": "Qualitative still-image typography review, not pixel, licensed-font or timed-motion parity.",
+  "category_match": { "density": 91, "weight": 91, "control_emphasis": 92, "tracking_and_case": 94, "hierarchy": 92, "font_identity": null, "motion_timing": null },
+  "differences": ["Product-specific poster and status density is retained.", "Exact licensed typeface and reference motion timing are unavailable."],
+  "suggestions": [],
+  "reasoning": "Independent vision review inspected actual1440px Library captures against Intercom120.png. Medium poster titles, regular inactive controls, sentence-case counts and consistent28px title hierarchy resolve the prior weight and control-emphasis differences. Prior typography scores72 and88 describe earlier passes, not this result.",
+  "reference": ".omx/artifacts/visual-ralph/intercom/full-export/Intercom web Nov 2025 120.png",
+  "capture": ".omx/artifacts/visual-ralph/intercom/typography-motion/final/1440-no-preference-library.png",
+  "architecture": "CLEAR after duplicate heading policy and audit assertion fixes",
+  "unknowns": ["Authenticated November2025 workspace font identity and licensed files", "Exact durations and easing", "Cross-platform font rasterization"]
+}

@@ -1,14 +1,28 @@
 <script lang="ts">
-	import { fly } from 'svelte/transition';
+	import { fade } from 'svelte/transition';
 	import { toasts } from './toasts.svelte';
 	import Icon from './Icon.svelte';
 
-	const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+	function fastDuration(node: Element) {
+		if (typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches) {
+			return 0;
+		}
+
+		const durationValue = getComputedStyle(node).getPropertyValue('--dur-fast').trim();
+		if (!durationValue.endsWith('ms')) return 0;
+
+		const duration = Number.parseFloat(durationValue);
+		return Number.isFinite(duration) && duration >= 0 ? duration : 0;
+	}
+
+	function toastFade(node: Element) {
+		return fade(node, { duration: fastDuration(node) });
+	}
 </script>
 
 <div class="toasts" role="status" aria-live="polite">
 	{#each toasts.list as t (t.id)}
-		<div class="toast {t.tone}" transition:fly={{ y: reduce ? 0 : 12, opacity: 1, duration: reduce ? 0 : 200 }}>
+		<div class="toast {t.tone}" in:toastFade out:toastFade>
 			<span class="grow">{t.text}</span>
 			<button class="x" type="button" aria-label="Close message" onclick={() => toasts.dismiss(t.id)}>
 				<Icon name="x" size={16} />

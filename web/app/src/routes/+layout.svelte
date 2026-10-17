@@ -335,7 +335,7 @@
 	.library-parent { border-radius: var(--r-btn); transition: background var(--dur) var(--ease-out); }
 	.library-parent:hover { background: var(--surface-2); color: var(--text); }
 	.library-parent.library-active { background: var(--surface-3); color: var(--text); }
-	.library-reveal { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 180ms ease, opacity 140ms ease; }
+	.library-reveal { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows var(--dur) var(--ease-out), opacity var(--dur-fast) var(--ease-out); }
 	.library-reveal.is-open { grid-template-rows: 1fr; opacity: 1; }
 	.library-children { min-height: 0; overflow: hidden; margin-left: 21px; padding-left: 12px; position: relative; }
 	.library-children::before { content: ''; position: absolute; left: 0; top: 6px; bottom: 8px; width: 1px; background: var(--line); }
@@ -381,10 +381,10 @@
 		.app { --rail: 56px; }
 		.context-sidebar { position: fixed; inset: 8px auto 8px var(--rail); z-index: 31; display: flex; flex-direction: column; width: var(--context-sidebar); padding: 18px 12px 12px; background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--r-panel); box-shadow: var(--shadow-panel); overflow-y: auto; }
 		.context-head { padding: 0 8px 18px; }
-		.context-brand { display: block; margin-bottom: 20px; color: var(--text-muted); font-size: var(--text-xs); font-weight: var(--weight-semibold); letter-spacing: .04em; text-transform: uppercase; }
+		.context-brand { display: block; margin-bottom: 20px; color: var(--text-muted); font-size: var(--text-sm); font-weight: var(--weight-medium); }
 		.context-head h2 { font-size: 22px; line-height: 1.2; letter-spacing: -.025em; }
-		.context-sidebar .nav-item { min-height: 38px; padding: 7px 10px; gap: 10px; border-radius: var(--r-btn); font-size: 14px; font-weight: var(--weight-medium); }
-		.context-sidebar .library-child { min-height: 34px; font-size: 13px; }
+		.context-sidebar .nav-item { min-height: 38px; padding: 7px 10px; gap: 10px; border-radius: var(--r-btn); font-size: var(--text-base); font-weight: var(--weight-medium); }
+		.context-sidebar .library-child { min-height: 34px; font-size: var(--text-sm); }
 		.context-sidebar .library-children { margin-left: 18px; }
 		.context-footer { display: flex; align-items: center; gap: 8px; margin-top: auto; padding: 14px 6px 0; border-top: 1px solid var(--line); }
 		.who { display: flex; align-items: center; gap: 9px; min-width: 0; min-height: 38px; color: var(--text-muted); font-size: var(--text-sm); }

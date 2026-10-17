@@ -299,7 +299,7 @@
 		<details class="filter-menu status-filter requester-menu"><summary class="filter-trigger requester-trigger" class:has-filter={requesterFilter !== 'anyone'}>Requested by{requesterFilter === 'me' ? ': Me' : requesterFilter !== 'anyone' ? `: ${requesters.find((p) => String(p.id) === requesterFilter)?.name ?? 'Person'}` : ''}</summary><div class="filter-popover status-popover"><label for="requester-value">Requested by</label><select id="requester-value" class="input" bind:value={requesterFilter} onchange={(event) => { requesterFilter = event.currentTarget.value; syncFilterUrl(); }}><option value="anyone">Anyone ({requesterScope.length})</option><option value="me" disabled={!myId}>Me ({myId ? requesterCounts.get(myId) ?? 0 : 0})</option>{#each requesters as person (person.id)}<option value={String(person.id)}>{person.name} ({requesterCounts.get(person.id) ?? 0})</option>{/each}</select></div></details>
 		{#if moviesOn}<a class="filter-trigger" href={to('/library/collections')}>Movie series</a><a class="filter-trigger" href={to('/people')}>People</a>{#if session.can('manage_library')}<a class="filter-trigger" href={to('/library/missing-subtitles')}>Subtitles</a><a class="filter-trigger" href={to('/library/copies')}>File codecs</a>{/if}{/if}
 	</div>
-	<p class="asset-count">{shown.length} {shown.length===1?'TITLE':'TITLES'}</p>
+	<p class="asset-count">{shown.length} {shown.length===1?'title':'titles'}</p>
 </div>
 {#if kind !== 'all' || filter !== 'all' || requesterFilter !== 'anyone' || q}
 	<div class="active-filters" role="group" aria-label="Active filters" bind:this={activeFilters}>
@@ -461,6 +461,7 @@
 		border-radius: 12px;
 		background: var(--surface-1);
 		box-shadow: var(--shadow-modal);
+		animation: rise var(--dur-fast) var(--ease-out);
 	}
 	.tools-menu a {
 		display: flex;
@@ -599,10 +600,10 @@
 			transform var(--dur) var(--ease-out),
 			border-color var(--dur);
 	}
-	.item:hover { transform: translateY(-1px); border-color: var(--line-strong); background: var(--surface-1); box-shadow: 0 3px 12px rgb(20 24 18 / 7%); }
+	.item:hover { border-color: var(--line-strong); background: var(--surface-1); box-shadow: var(--shadow-panel); }
 	.item:hover :global(.poster) { border-color: color-mix(in srgb, var(--ha-red) 42%, var(--line-strong)); }
 	.name {
-		font-weight: var(--weight-semibold);
+		font-weight: var(--weight-medium);
 		font-size: var(--text-sm);
 		line-height: 1.3;
 		display: -webkit-box;
@@ -651,19 +652,19 @@
 .library-commandbar{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:64px;padding:10px 0 14px;border-bottom:1px solid var(--line);margin-bottom:20px}
 .filter-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .filter-menu{position:relative}
-.filter-trigger{display:flex;align-items:center;gap:18px;min-height:38px;padding:4px 12px;border:1px solid var(--line);border-radius:10px;font-size:var(--text-sm);font-weight:500;cursor:pointer;background:var(--surface-1);list-style:none}
+.filter-trigger{display:flex;align-items:center;gap:18px;min-height:38px;padding:4px 12px;border:1px solid var(--line);border-radius:10px;font-size:var(--text-sm);font-weight:var(--weight-regular);cursor:pointer;background:var(--surface-1);list-style:none}
 .filter-menu[open] > .filter-trigger.requester-trigger, .filter-trigger.requester-trigger.has-filter, .filter-trigger.requester-trigger { color: var(--text); max-width: 100%; overflow-wrap: anywhere; }
 .filter-trigger::-webkit-details-marker{display:none}
-.filter-menu[open]>.filter-trigger,.has-filter{color:var(--text);border-color:var(--accent)}
+.filter-menu[open]>.filter-trigger,.has-filter{color:var(--text);border-color:var(--accent);font-weight:var(--weight-medium)}
 .filter-popover{position:absolute;z-index:12;top:calc(100% + 8px);left:0;width:260px;padding:10px;background:var(--surface-1);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-float)}
 .filter-popover button{display:flex;justify-content:space-between;align-items:center;gap:20px;width:100%;min-height:38px;padding:6px 10px;text-align:left;border-radius:4px}
 .filter-popover button:hover{background:var(--surface-2)}
 .filter-popover button[aria-pressed='true']{background:var(--accent-soft);color:var(--accent)}
 .library-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;padding:6px 0 18px;border-bottom:1px solid var(--line)}
-.library-heading h1{font-size:28px;font-weight:620;line-height:1.15;letter-spacing:-.025em}
-.section-kicker{margin-bottom:5px;color:var(--text-muted);font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.library-heading h1{font-size:var(--text-2xl);font-weight:var(--weight-semibold);line-height:var(--leading-tight);letter-spacing:var(--tracking-display)}
+.section-kicker{margin-bottom:5px;color:var(--text-muted);font-size:var(--text-sm);font-weight:var(--weight-medium)}
 .library-summary{margin-top:7px;color:var(--text-muted);font-size:14px}
-.asset-count{flex:none;font-size:12px;font-weight:600;color:var(--text-muted);font-variant-numeric:tabular-nums}
+.asset-count{flex:none;font-size:var(--text-xs);font-weight:var(--weight-medium);color:var(--text-muted);font-variant-numeric:tabular-nums}
 .grid .item :global(.poster){border-radius:12px}
 @media(min-width:1024px){.library-search-box{width:min(760px,calc(100% - 130px))}.library-search-band>.library-tools{margin-left:auto}}
 @media(max-width:767px){.library-commandbar{position:relative}.requester-menu{position:static;max-width:100%}.requester-menu .filter-popover{top:100%;left:0}.library-search-band{flex-wrap:wrap}.clear-search{font-size:12px;padding-inline:6px}.filter-trigger{min-height:44px}.filter-popover{width:min(260px,calc(100vw - 48px))}}

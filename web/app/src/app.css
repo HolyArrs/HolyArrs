@@ -5,8 +5,6 @@
 @import './lib/tokens.css';
 
 :root {
-	--font-ui: 'Geist Variable', 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-	--font-mono: 'Geist Mono Variable', 'Geist Mono', ui-monospace, 'Cascadia Code', monospace;
 	--ok-text: var(--ok);
 	--wait-text: var(--wait);
 	--fail-text: var(--fail);
@@ -124,7 +122,7 @@ img {
 	max-width: 62ch;
 }
 .h2 {
-	font: var(--weight-semibold) var(--text-lg) / var(--leading-tight) var(--font-display);
+	font: var(--weight-semibold) 22px / var(--leading-tight) var(--font-display);
 	letter-spacing: var(--tracking-display);
 }
 .h3 {
@@ -482,12 +480,18 @@ select.input {
 @keyframes rise {
 	from {
 		opacity: 0;
-		transform: translateY(10px);
 	}
 }
 .rise {
-	animation: rise var(--dur-slow) var(--ease-out) backwards;
-	animation-delay: calc(min(var(--i, 0), 8) * var(--stagger));
+	animation: rise var(--dur-fast) var(--ease-out) backwards;
+}
+
+/* Native close remains immediate, preserving Escape and focus restoration even
+   when a component clears its form in onclose. Entrance never moves the page. */
+dialog[open] { animation: dialog-enter var(--dur) var(--ease-out); }
+dialog[open]::backdrop { animation: rise var(--dur-fast) var(--ease-out); }
+@keyframes dialog-enter {
+	from { opacity: 0; transform: translateY(4px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -497,6 +501,7 @@ select.input {
 	.rise {
 		animation: none;
 	}
+	dialog[open], dialog[open]::backdrop { animation: none; }
 	.bar > i {
 		transition: none;
 	}
@@ -508,12 +513,10 @@ select.input {
 }
 
 @media (max-width: 767px) {
-	.page-head h1 {
-		font-size: var(--text-xl);
-	}
 	.card {
 		padding: var(--s-4);
 	}
+	.input { font-size: 16px; }
 	dl.facts {
 		grid-template-columns: 1fr;
 		gap: 2px;
@@ -542,7 +545,3 @@ input[type='checkbox'], input[type='radio'], progress { accent-color: var(--acce
 :where(tbody tr + tr) { border-top: 1px solid var(--line); }
 :where(td, th) { padding-block: 12px; }
 @media (pointer: coarse) { .btn, .icon-btn, .input { min-height: 44px; } }
-
-/* Consistent hierarchy across browsing and management screens. */
-.page-head h1 { font-weight: 600; font-size: clamp(26px, 2.3vw, 32px); letter-spacing: -.025em; }
-.h2 { font-weight: 600; font-size: 22px; letter-spacing: -.025em; }

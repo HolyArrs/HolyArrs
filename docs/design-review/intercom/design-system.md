@@ -88,7 +88,7 @@ Desktop navigation and data screens are intentionally dense. Density comes from 
 
 The exact Intercom font family is not established by the exported raster images. Do not claim a font-name match. The observed form is a compact neutral grotesk with a high x-height, restrained tracking, and clear weight contrast.
 
-Until font evidence is acquired, HolyArrs can continue using its installed Geist Variable as the temporary metric-compatible choice. Re-evaluate line breaks and control widths if the verified font changes.
+The public Intercom sign-in CSS currently declares Graphik Regular, Semibold and Bold. That is a current public-shell signal, not proof of the authenticated November2025 workspace font. HolyArrs retains its bundled Geist Variable; no proprietary font files are shipped. The preview type pass uses15px/1.5 body,14px controls/secondary copy,12px captions,28px page titles, and16px phone inputs. Re-evaluate line breaks and control widths if licensed, verified font files become available. See `type-motion.md` for evidence and limitations.
 
 | Role | Target size / line height | Weight | Notes |
 | --- | --- | --- | --- |
@@ -324,7 +324,7 @@ The approved Mobbin set is desktop-only. Responsive behavior below preserves Hol
 
 ## Open evidence gaps
 
-- Exact Intercom font family, variable axes, tracking, and rendered font metrics.
+- Exact authenticated November2025 Intercom font family, licensed files, axes, tracking, and rendered metrics; current public app CSS declares Graphik.
 - Exact animation durations, easing functions, stagger, sheet transitions, and focus choreography.
 - Native tablet and phone behavior for this Intercom web version.
 - Computed focus ring colors/offsets and high-contrast mode behavior.

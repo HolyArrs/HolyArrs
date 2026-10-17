@@ -407,10 +407,8 @@
 	.section-kicker {
 		margin-bottom: 5px;
 		color: var(--text-muted);
-		font-size: var(--text-xs);
-		font-weight: var(--weight-semibold);
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
 	}
 	.messages {
 		margin-bottom: var(--s-5);
@@ -483,7 +481,6 @@
 		font-size: var(--text-xs);
 		font-weight: var(--weight-semibold);
 		font-variant-numeric: tabular-nums;
-		text-transform: uppercase;
 	}
 	.loading-grid,
 	.wishlist-workspace {
@@ -596,10 +593,8 @@
 	}
 	.eyebrow {
 		margin: 0;
-		font-size: var(--text-xs);
-		font-weight: var(--weight-semibold);
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
 		color: var(--text-muted);
 	}
 	.review-facts {

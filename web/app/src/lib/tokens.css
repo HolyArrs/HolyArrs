@@ -31,11 +31,11 @@
   --font-display: 'Geist Variable', 'Geist', ui-sans-serif, system-ui, sans-serif;
   --font-ui: 'Geist Variable', 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'Geist Mono Variable', 'Geist Mono', ui-monospace, 'Cascadia Code', monospace;
-  --text-xs: 12px; --text-sm: 13px; --text-base: 14px; --text-md: 16px;
+  --text-xs: 12px; --text-sm: 14px; --text-base: 15px; --text-md: 16px;
   --text-lg: 18px; --text-xl: 23px; --text-2xl: 28px; --text-3xl: 34px;
-  --leading-tight: 1.16; --leading: 1.45;
+  --leading-tight: 1.2; --leading: 1.5;
   --weight-regular: 400; --weight-medium: 500; --weight-semibold: 600; --weight-bold: 700;
-  --tracking-display: -0.025em;
+  --tracking-display: -0.02em;
   --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px;
   --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-12: 48px; --s-16: 64px;
   --r-sm: 5px; --r-btn: 8px; --r-card: 10px; --r-panel: 14px; --r-modal: 14px; --r-pill: 999px;
