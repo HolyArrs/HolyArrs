@@ -30,6 +30,9 @@
 	$effect(() => { const selected = page.url.searchParams.get('kind') as Kind | null; kind = selected && kinds.some(([k]) => k === selected) ? selected : 'all'; });
 	let q = $state('');
 	let sort = $state('name');
+	let requesterFilter = $state('anyone');
+	let myId = $state<number | undefined>();
+	const requesters = $derived([...new Map(titles.flatMap((t) => linkedPeople(t)).map((p) => [p.id, p])).values()].sort((a, b) => a.name.localeCompare(b.name)));
 	const query = $derived(titleQuery(q));
 	const moviesOn = $derived(partsNow.answer?.parts.find((part) => part.part === 'movies')?.on !== false);
 	let view = $state<'grid' | 'list'>(readView());
@@ -88,13 +91,14 @@
 		void goto(url, { replace: true, shallow: true });
 	}
 
-	const ofThisKind = $derived(titles.filter((t) => ofKind(t, kind)));
+	const requestedTitles = $derived(titles.filter((t) => requesterFilter === 'anyone' || linkedPeople(t).some((p) => p.id === (requesterFilter === 'me' ? myId : Number(requesterFilter)))));
+	const ofThisKind = $derived(requestedTitles.filter((t) => ofKind(t, kind)));
 	const tally = $derived(counts(ofThisKind));
 	const kindTally = $derived({
-		all: titles.length,
-		movie: titles.filter((t) => t.kind === 'movie').length,
-		show: titles.filter((t) => t.kind === 'show').length,
-		artist: titles.filter((t) => t.kind === 'artist').length
+		all: requestedTitles.length,
+		movie: requestedTitles.filter((t) => t.kind === 'movie').length,
+		show: requestedTitles.filter((t) => t.kind === 'show').length,
+		artist: requestedTitles.filter((t) => t.kind === 'artist').length
 	});
 	const kindWord: Record<string, string> = { show: ' · Show', artist: ' · Artist' };
 	const shown = $derived(ofThisKind.filter((t) => matches(t, filter) && matchesTitleQuery(t, query, indexedIds)).toSorted((a, b) => sort === 'year' ? (b.year ?? 0) - (a.year ?? 0) || a.name.localeCompare(b.name) : a.name.localeCompare(b.name)));
@@ -121,15 +125,18 @@
 		};
 	});
 
-	function requestedBy(t: TitleView): string {
-		const people = new Map<number, string>();
+	function linkedPeople(t: TitleView) {
+		const people = new Map<number, { id: number; name: string }>();
 		for (const ask of t.asks ?? []) {
 			if (ask.title_id !== t.id) continue;
 			for (const person of [ask.asked_by, ...ask.people]) {
-				if (person.name.trim()) people.set(person.id, person.name);
+				if (person.name.trim()) people.set(person.id, person);
 			}
 		}
-		return [...people.values()].join(', ');
+		return [...people.values()];
+	}
+	function requestedBy(t: TitleView): string {
+		return linkedPeople(t).map((p) => p.name).join(', ');
 	}
 
 	/** chipOf is one state chip for a title: its first Slot, or a show's sum. */
@@ -147,7 +154,9 @@
 
 	async function load() {
 		try {
-			titles = (await api.get<{ titles: TitleView[] }>('/titles')).titles;
+			const [library, me] = await Promise.all([api.get<{ titles: TitleView[] }>('/titles'), api.get<{ id?: number }>('/auth/me')]);
+			titles = library.titles;
+			myId = me.id;
 			error = '';
 			loadRevision++;
 		} catch (e) {
@@ -199,6 +208,7 @@
 	<div class="filter-toolbar">
 		<details class="filter-menu"><summary class="filter-trigger">Type</summary><div class="filter-popover" role="group" aria-label="Kind">{#each kinds as [key,label] (key)}<button type="button" aria-pressed={kind===key} onclick={() => setKind(key)}>{label}<span>{kindTally[key]}</span></button>{/each}</div></details>
 		<details class="filter-menu status-filter"><summary class="filter-trigger" class:has-filter={filter!=='all'}>Status</summary><div class="filter-popover status-popover"><label for="status-value">Show titles matching</label><select id="status-value" class="input" value={filter} onchange={(event) => setFilter(event.currentTarget.value as Filter)}>{#each filters as [key,label] (key)}<option value={key}>{label} ({tally[key]})</option>{/each}</select></div></details>
+		<details class="filter-menu status-filter requester-menu"><summary class="filter-trigger requester-trigger" class:has-filter={requesterFilter !== 'anyone'}>Requested by{requesterFilter === 'me' ? ': Me' : requesterFilter !== 'anyone' ? `: ${requesters.find((p) => String(p.id) === requesterFilter)?.name ?? 'Person'}` : ''}</summary><div class="filter-popover status-popover"><label for="requester-value">Requested by</label><select id="requester-value" class="input" bind:value={requesterFilter}><option value="anyone">Anyone</option><option value="me" disabled={!myId}>Me</option>{#each requesters as person (person.id)}<option value={String(person.id)}>{person.name}</option>{/each}</select></div></details>
 		{#if moviesOn}<a class="filter-trigger" href={to('/library/collections')}>Movie series</a><a class="filter-trigger" href={to('/people')}>People</a>{#if session.can('manage_library')}<a class="filter-trigger" href={to('/library/missing-subtitles')}>Subtitles</a><a class="filter-trigger" href={to('/library/copies')}>File codecs</a>{/if}{/if}
 	</div>
 	<p class="asset-count">{shown.length} {shown.length===1?'TITLE':'TITLES'}</p>
@@ -539,6 +549,7 @@
 .filter-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .filter-menu{position:relative}
 .filter-trigger{display:flex;align-items:center;gap:18px;min-height:38px;padding:4px 12px;border:1px solid var(--line);border-radius:10px;font-size:var(--text-sm);font-weight:500;cursor:pointer;background:var(--surface-1);list-style:none}
+.filter-menu[open] > .filter-trigger.requester-trigger, .filter-trigger.requester-trigger.has-filter, .filter-trigger.requester-trigger { color: var(--text); max-width: 100%; overflow-wrap: anywhere; }
 .filter-trigger::-webkit-details-marker{display:none}
 .filter-menu[open]>.filter-trigger,.has-filter{color:var(--accent);border-color:var(--accent)}
 .filter-popover{position:absolute;z-index:12;top:calc(100% + 8px);left:0;width:260px;padding:10px;background:var(--surface-1);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-float)}
@@ -552,7 +563,7 @@
 .asset-count{flex:none;font-size:12px;font-weight:600;color:var(--text-muted);font-variant-numeric:tabular-nums}
 .grid .item :global(.poster){border-radius:12px}
 @media(min-width:1024px){.library-search-band{position:absolute;top:-72px;left:0;right:10px;height:52px;margin:0}.library-search-box{position:absolute;left:max(0px,calc(50vw - var(--sidebar) - 380px));width:min(760px,calc(100% - 130px))}.library-search-band>.library-tools{margin-left:auto}}
-@media(max-width:767px){.library-search-band{flex-wrap:wrap}.clear-search{font-size:12px;padding-inline:6px}.filter-trigger{min-height:44px}.filter-popover{width:min(260px,calc(100vw - 48px))}}
+@media(max-width:767px){.library-commandbar{position:relative}.requester-menu{position:static;max-width:100%}.requester-menu .filter-popover{top:100%;left:0}.library-search-band{flex-wrap:wrap}.clear-search{font-size:12px;padding-inline:6px}.filter-trigger{min-height:44px}.filter-popover{width:min(260px,calc(100vw - 48px))}}
 @media(pointer:coarse){.filter-popover button,.clear-search{min-height:44px}}
 
 .status-popover{width:400px;padding:18px 16px;display:grid;gap:12px}
