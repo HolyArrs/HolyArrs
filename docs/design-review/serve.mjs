@@ -13,6 +13,9 @@ const allowed = new Map([
 	['/assets/geist.woff2', ['assets/geist.woff2', 'font/woff2']],
 	['/assets/sora.woff2', ['assets/sora.woff2', 'font/woff2']]
 ]);
+for (const name of ['dune', 'interstellar', 'blade-runner', 'arrival', 'breaking-bad', 'dark']) {
+	allowed.set(`/assets/${name}.jpg`, [`assets/${name}.jpg`, 'image/jpeg']);
+}
 const server = http.createServer(async (req, res) => {
 	const path = new URL(req.url, 'http://preview.invalid').pathname;
 	const asset = allowed.get(path);
