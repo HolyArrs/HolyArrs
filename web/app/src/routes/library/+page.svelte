@@ -32,9 +32,10 @@
 	let sort = $state('name');
 	let requesterFilter = $state('anyone');
 	let myId = $state<number | undefined>();
+	const requesterScope = $derived(titles.filter((t) => ofKind(t, kind) && matches(t, filter) && matchesTitleQuery(t, query, indexedIds)));
 	const requesterCounts = $derived.by(() => {
 		const counts = new Map<number, number>();
-		for (const title of titles) {
+		for (const title of requesterScope) {
 			for (const person of linkedPeople(title)) counts.set(person.id, (counts.get(person.id) ?? 0) + 1);
 		}
 		return counts;
@@ -215,7 +216,7 @@
 	<div class="filter-toolbar">
 		<details class="filter-menu"><summary class="filter-trigger">Type</summary><div class="filter-popover" role="group" aria-label="Kind">{#each kinds as [key,label] (key)}<button type="button" aria-pressed={kind===key} onclick={() => setKind(key)}>{label}<span>{kindTally[key]}</span></button>{/each}</div></details>
 		<details class="filter-menu status-filter"><summary class="filter-trigger" class:has-filter={filter!=='all'}>Status</summary><div class="filter-popover status-popover"><label for="status-value">Show titles matching</label><select id="status-value" class="input" value={filter} onchange={(event) => setFilter(event.currentTarget.value as Filter)}>{#each filters as [key,label] (key)}<option value={key}>{label} ({tally[key]})</option>{/each}</select></div></details>
-		<details class="filter-menu status-filter requester-menu"><summary class="filter-trigger requester-trigger" class:has-filter={requesterFilter !== 'anyone'}>Requested by{requesterFilter === 'me' ? ': Me' : requesterFilter !== 'anyone' ? `: ${requesters.find((p) => String(p.id) === requesterFilter)?.name ?? 'Person'}` : ''}</summary><div class="filter-popover status-popover"><label for="requester-value">Requested by</label><select id="requester-value" class="input" bind:value={requesterFilter}><option value="anyone">Anyone ({titles.length})</option><option value="me" disabled={!myId}>Me ({myId ? requesterCounts.get(myId) ?? 0 : 0})</option>{#each requesters as person (person.id)}<option value={String(person.id)}>{person.name} ({requesterCounts.get(person.id) ?? 0})</option>{/each}</select></div></details>
+		<details class="filter-menu status-filter requester-menu"><summary class="filter-trigger requester-trigger" class:has-filter={requesterFilter !== 'anyone'}>Requested by{requesterFilter === 'me' ? ': Me' : requesterFilter !== 'anyone' ? `: ${requesters.find((p) => String(p.id) === requesterFilter)?.name ?? 'Person'}` : ''}</summary><div class="filter-popover status-popover"><label for="requester-value">Requested by</label><select id="requester-value" class="input" bind:value={requesterFilter}><option value="anyone">Anyone ({requesterScope.length})</option><option value="me" disabled={!myId}>Me ({myId ? requesterCounts.get(myId) ?? 0 : 0})</option>{#each requesters as person (person.id)}<option value={String(person.id)}>{person.name} ({requesterCounts.get(person.id) ?? 0})</option>{/each}</select></div></details>
 		{#if moviesOn}<a class="filter-trigger" href={to('/library/collections')}>Movie series</a><a class="filter-trigger" href={to('/people')}>People</a>{#if session.can('manage_library')}<a class="filter-trigger" href={to('/library/missing-subtitles')}>Subtitles</a><a class="filter-trigger" href={to('/library/copies')}>File codecs</a>{/if}{/if}
 	</div>
 	<p class="asset-count">{shown.length} {shown.length===1?'TITLE':'TITLES'}</p>
@@ -558,7 +559,7 @@
 .filter-trigger{display:flex;align-items:center;gap:18px;min-height:38px;padding:4px 12px;border:1px solid var(--line);border-radius:10px;font-size:var(--text-sm);font-weight:500;cursor:pointer;background:var(--surface-1);list-style:none}
 .filter-menu[open] > .filter-trigger.requester-trigger, .filter-trigger.requester-trigger.has-filter, .filter-trigger.requester-trigger { color: var(--text); max-width: 100%; overflow-wrap: anywhere; }
 .filter-trigger::-webkit-details-marker{display:none}
-.filter-menu[open]>.filter-trigger,.has-filter{color:var(--accent);border-color:var(--accent)}
+.filter-menu[open]>.filter-trigger,.has-filter{color:var(--text);border-color:var(--accent)}
 .filter-popover{position:absolute;z-index:12;top:calc(100% + 8px);left:0;width:260px;padding:10px;background:var(--surface-1);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-float)}
 .filter-popover button{display:flex;justify-content:space-between;align-items:center;gap:20px;width:100%;min-height:38px;padding:6px 10px;text-align:left;border-radius:4px}
 .filter-popover button:hover{background:var(--surface-2)}
