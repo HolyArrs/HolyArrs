@@ -34,7 +34,7 @@
 		if (!target || target.url.pathname === page.url.pathname) return;
 		try {
 			const suffix = target.url.pathname.slice(page.url.pathname.length + 1);
-			const titleId = target.url.pathname.startsWith(`${page.url.pathname}/`) && /^\d+$/.test(suffix) ? Number(suffix) : null;
+			const titleId = target.url.pathname.startsWith(`${page.url.pathname}/`) && /^\d+$/.test(suffix) ? Number(suffix) : lastOpenedId;
 			const saved = { key: scrollKey(), x: window.scrollX, y: window.scrollY, titleId };
 			sessionStorage.setItem('holyarrs.preview.library-scroll', JSON.stringify(saved));
 			const url = page.shallow?.url ?? page.url;

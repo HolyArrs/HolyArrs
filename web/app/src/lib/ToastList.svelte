@@ -45,7 +45,7 @@
 		pointer-events: none;
 	}
 	.toast {
-		pointer-events: auto;
+		pointer-events: none;
 		display: flex;
 		align-items: center;
 		gap: var(--s-3);
@@ -64,6 +64,7 @@
 		border-left-color: var(--fail);
 	}
 	.x {
+		pointer-events: auto;
 		width: 44px;
 		height: 44px;
 		display: grid;

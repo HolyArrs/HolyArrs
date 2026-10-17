@@ -23,6 +23,7 @@
 	let missing = $state(false);
 	let error = $state('');
 	let making = $state(false);
+	let savingPreset = $state(false);
 	let restoring = $state(false);
 	let fileInput: HTMLInputElement | undefined = $state();
 
@@ -44,14 +45,18 @@
 	onMount(load);
 
 	async function choose(p: Preset) {
+		if (savingPreset) return;
 		const before = preset;
 		preset = p;
+		savingPreset = true;
 		try {
 			await api.put('/backups/settings', { preset: p });
 			toasts.push(`Backups: ${presets.find((x) => x.key === p)?.name}.`, 'ok');
 		} catch (e) {
 			preset = before;
 			toasts.push(message(e), 'fail');
+		} finally {
+			savingPreset = false;
 		}
 	}
 
@@ -129,10 +134,10 @@
 
 	<section class="card" aria-labelledby="h-plan">
 		<h2 id="h-plan" class="h2">How often</h2>
-		<div class="presets" role="radiogroup" aria-labelledby="h-plan">
+		<div class="presets" role="radiogroup" aria-labelledby="h-plan" aria-busy={savingPreset}>
 			{#each presets as p (p.key)}
 				<label class="preset" class:on={preset === p.key}>
-					<input type="radio" name="preset" value={p.key} checked={preset === p.key} onchange={() => choose(p.key)} />
+					<input type="radio" name="preset" value={p.key} checked={preset === p.key} disabled={savingPreset} onchange={() => choose(p.key)} />
 					<span class="pn">{p.name}</span>
 					<span class="xs muted">{p.about}</span>
 				</label>

@@ -32,8 +32,10 @@
 	// Search all: the Jobs it queued and how far they are.
 	let jobIds = $state<number[]>([]);
 	let jobStates = $state<Record<number, string>>({});
+	let searchAllPending = $state(false);
 	const done = $derived(jobsDone(jobIds, jobStates));
 	const running = $derived(jobIds.length > 0 && done < jobIds.length);
+	const searchAllBusy = $derived(searchAllPending || running);
 
 	async function load() {
 		try {
@@ -102,6 +104,8 @@
 	});
 
 	async function searchAll() {
+		if (searchAllBusy) return;
+		searchAllPending = true;
 		try {
 			const body: Record<string, unknown> = {};
 			if (language) body.language = language;
@@ -113,6 +117,8 @@
 			toasts.push(r.queued === 1 ? 'Looking for 1 file now.' : `Looking for ${r.queued} files now.`, 'ok');
 		} catch (e) {
 			toasts.push(message(e), 'fail');
+		} finally {
+			searchAllPending = false;
 		}
 	}
 
@@ -144,7 +150,7 @@
 		<h1>Missing subtitles</h1>
 		<p>Every movie and episode without a subtitle it should have. HolyArrs keeps looking on its own; search now to look at once.</p>
 	</div>
-	<button class="btn btn-dark" type="button" onclick={searchAll} disabled={running || total === 0} aria-busy={running} data-testid="search-all-subtitles">
+	<button class="btn btn-dark" type="button" onclick={searchAll} disabled={searchAllBusy || total === 0} aria-busy={searchAllBusy} data-testid="search-all-subtitles">
 		<Icon name="search" size={18} /> Search all
 	</button>
 </header>

@@ -15,10 +15,11 @@
 	let error = $state('');
 
 	onMount(load);
-	async function load() {
+	async function load(preserveError = false) {
 		try {
 			detail = await api.get<CollectionDetail>(`/collections/${id}`);
 			selected = detail.titles.map((t) => t.id);
+			if (!preserveError) error = '';
 		} catch (e) { error = message(e); }
 	}
 	function toggle(titleId: number) {
@@ -35,7 +36,7 @@
 		if (!review) return;
 		busy = true; error = '';
 		try { review = await api.post<CollectionReview>(`/collections/${id}/remove`, collectionBody(selected, choice, review.review_token)); }
-		catch (e) { error = message(e); review = null; await load(); }
+		catch (e) { error = message(e); review = null; await load(true); }
 		finally { busy = false; }
 	}
 	function fileChoiceChanged() {
@@ -44,7 +45,9 @@
 	}
 	async function retry() {
 		review = null;
-		await load();
+		busy = true;
+		try { await load(); }
+		finally { busy = false; }
 	}
 </script>
 
@@ -52,7 +55,12 @@
 <a class="back small muted" href={to('/library/collections')}>Movie series</a>
 <section class="workspace">
 
-{#if error}<div class="notice bad" role="alert">{error}</div>{/if}
+{#if error}
+	<div class="error-recovery">
+		<div class="notice bad" role="alert">{error}</div>
+		{#if !detail}<button class="btn btn-ghost" type="button" onclick={retry} disabled={busy} aria-busy={busy}>Try again</button>{/if}
+	</div>
+{/if}
 {#if detail}
 	<div class="page-head"><div><p class="eyebrow">Movie collection</p><h1>{detail.name}</h1><p class="muted">Removing a movie removes its Library entry even when it belongs to another collection.</p></div></div>
 	<div class="stack">
@@ -104,7 +112,8 @@
 	.choices label { display: flex; align-items: flex-start; gap: var(--s-3); min-height: var(--tap); padding: var(--s-3); border: 1px solid var(--line); border-radius: 10px; background: var(--surface-1); }
 	.choices input { width: 20px; height: 20px; flex: none; accent-color: var(--ha-red); }
 	.workspace > .panel.stack { margin: 0; padding: var(--s-5); border: 0; border-top: 1px solid var(--line); border-radius: 0; box-shadow: none; }
-	.workspace > :global(.notice) { margin: var(--s-4); }
+	.error-recovery { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s-3); padding: var(--s-4); }
+	.error-recovery .notice { flex: 1 1 320px; margin: 0; }
 	.danger, .warn-text { color: var(--wait); }
 	.bad-text { color: var(--fail); }
 	@media (max-width: 560px) {

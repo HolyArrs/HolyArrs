@@ -35,7 +35,7 @@
 	let attemptErrors = $state<Record<number, string>>({});
 	let abandoning = $state(0);
 
-	let set = $state<DownloaderSettings>({
+	let settings = $state<DownloaderSettings>({
 		stalled_after_hours: 6,
 		stalled_act_hours: 24,
 		remove_failed: true,
@@ -73,7 +73,7 @@
 	}
 	onMount(() => {
 		void load();
-		api.get<DownloaderSettings>('/settings/downloaders').then((s) => (set = s), (e) => (setError = message(e)));
+		api.get<DownloaderSettings>('/settings/downloaders').then((s) => (settings = s), (e) => (setError = message(e)));
 		const off = live.on('downloader', () => load());
 		return off;
 	});
@@ -197,10 +197,10 @@
 		e.preventDefault();
 		setError = '';
 		const body = {
-			...set,
-			stalled_after_hours: Number(set.stalled_after_hours),
-			stalled_act_hours: Number(set.stalled_act_hours),
-			grab_spacing_seconds: Number(set.grab_spacing_seconds)
+			...settings,
+			stalled_after_hours: Number(settings.stalled_after_hours),
+			stalled_act_hours: Number(settings.stalled_act_hours),
+			grab_spacing_seconds: Number(settings.grab_spacing_seconds)
 		};
 		if (body.stalled_act_hours < body.stalled_after_hours) {
 			setError = 'Act on a stalled download no sooner than it counts as stalled.';
@@ -208,7 +208,7 @@
 		}
 		setBusy = true;
 		try {
-			set = await api.put<DownloaderSettings>('/settings/downloaders', body);
+			settings = await api.put<DownloaderSettings>('/settings/downloaders', body);
 			toasts.push('Downloader settings saved.', 'ok');
 		} catch (err) {
 			setError = message(err);
@@ -387,21 +387,21 @@
 	<div class="two">
 		<div class="field">
 			<label for="st-stall">Stalled after (hours without progress)</label>
-			<input id="st-stall" class="input" type="number" min="1" max="168" step="0.5" bind:value={set.stalled_after_hours} />
+			<input id="st-stall" class="input" type="number" min="1" max="168" step="0.5" bind:value={settings.stalled_after_hours} />
 			<span class="hint">Waiting its turn or paused never counts.</span>
 		</div>
 		<div class="field">
 			<label for="st-act">Give up and try the next Release after (hours)</label>
-			<input id="st-act" class="input" type="number" min="1" max="720" step="0.5" bind:value={set.stalled_act_hours} />
+			<input id="st-act" class="input" type="number" min="1" max="720" step="0.5" bind:value={settings.stalled_act_hours} />
 			<span class="hint">Counted from the last progress.</span>
 		</div>
 	</div>
 	<label class="checkline">
-		<input type="checkbox" bind:checked={set.remove_failed} />
+		<input type="checkbox" bind:checked={settings.remove_failed} />
 		<span><b>Remove failed downloads from the Downloader</b><br /><span class="hint">With their files. Off: they stay there for you to look at.</span></span>
 	</label>
 	<label class="checkline">
-		<input type="checkbox" bind:checked={set.fail_dangerous} />
+		<input type="checkbox" bind:checked={settings.fail_dangerous} />
 		<span
 			><b>Fail downloads that hold programs or fakes</b><br /><span class="hint"
 				>Files such as .exe, .bat, .scr or .lnk, also hidden as movie.mkv.exe; a password note or a web shortcut; a torrent with only archives and no video or audio. Checked as soon as the Downloader lists the files.</span
@@ -409,29 +409,29 @@
 		>
 	</label>
 	<label class="checkline">
-		<input type="checkbox" bind:checked={set.replace_vanished} />
+		<input type="checkbox" bind:checked={settings.replace_vanished} />
 		<span><b>Replace downloads removed outside HolyArrs</b><br /><span class="hint">Off: the movie waits for your decision instead.</span></span>
 	</label>
 	<p class="small muted">When you remove a download on the Downloads screen, the choices start as:</p>
 	<label class="checkline">
-		<input type="checkbox" bind:checked={set.remove_delete_files} />
+		<input type="checkbox" bind:checked={settings.remove_delete_files} />
 		<span><b>Delete its files</b><br /><span class="hint">Off: the Downloader keeps the files.</span></span>
 	</label>
 	<label class="checkline">
-		<input type="checkbox" bind:checked={set.remove_turn_down} />
+		<input type="checkbox" bind:checked={settings.remove_turn_down} />
 		<span><b>Add its Release to Turned down</b><br /><span class="hint">HolyArrs never picks that Release again for the movie.</span></span>
 	</label>
 	<label class="checkline">
-		<input type="checkbox" bind:checked={set.remove_search_again} />
+		<input type="checkbox" bind:checked={settings.remove_search_again} />
 		<span><b>Search again</b><br /><span class="hint">Only with Turned down: look for the next Release straight away.</span></span>
 	</label>
 	<label class="checkline">
-		<input type="checkbox" bind:checked={set.try_next_downloader} />
+		<input type="checkbox" bind:checked={settings.try_next_downloader} />
 		<span><b>Try the next Downloader</b><br /><span class="hint">When the first one cannot take a Release, send it to the next one of the same kind.</span></span>
 	</label>
 	<div class="field">
 		<label for="st-gap">Seconds between sends to one Downloader</label>
-		<input id="st-gap" class="input narrow" type="number" min="0" max="60" step="0.5" bind:value={set.grab_spacing_seconds} />
+		<input id="st-gap" class="input narrow" type="number" min="0" max="60" step="0.5" bind:value={settings.grab_spacing_seconds} />
 	</div>
 	{#if setError}<p class="form-error" role="alert">{setError}</p>{/if}
 	<div class="row" style="margin-top: var(--s-5)">

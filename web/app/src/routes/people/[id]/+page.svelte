@@ -19,19 +19,23 @@
 	let busy = $state(false);
 	let submitting = $state(false);
 	let error = $state('');
+	let loadRevision = 0;
 	const canSubmit = $derived(session.can('manage_library') || session.can('ask'));
 	const action = $derived(session.can('manage_library') ? 'add' : 'ask');
 
 	async function load(pageNumber = current) {
+		const revision = ++loadRevision;
 		busy = true;
 		error = '';
 		try {
-			data = await api.get<FilmographyPage>(`/people/${encodeURIComponent(id)}?role=${role}&page=${pageNumber}&page_size=24`);
+			const next = await api.get<FilmographyPage>(`/people/${encodeURIComponent(id)}?role=${role}&page=${pageNumber}&page_size=24`);
+			if (revision !== loadRevision) return;
+			data = next;
 			current = pageNumber;
 		} catch (err) {
-			error = message(err);
+			if (revision === loadRevision) error = message(err);
 		} finally {
-			busy = false;
+			if (revision === loadRevision) busy = false;
 		}
 	}
 

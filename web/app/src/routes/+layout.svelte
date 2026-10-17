@@ -184,8 +184,12 @@
 	});
 
 	async function signOut() {
-		await session.logout();
-		toasts.push('Signed out.');
+		try {
+			await session.logout();
+			toasts.push('Signed out.');
+		} catch {
+			toasts.push('Could not confirm sign-out with the server.', 'fail');
+		}
 	}
 
 	const liveWord = $derived(
@@ -239,6 +243,7 @@
 			</nav>
 			<div class="rail-footer">
 				{#if allowed('manage_library')}<span class="rail-live {live.status.state}" role="status" aria-label={liveWord} title={liveWord}><i aria-hidden="true"></i></span>{/if}
+				<button class="rail-item rail-theme" type="button" onclick={toggleTheme} aria-label={theme.value === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'} title={theme.value === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}><Icon name={theme.value === 'dark' ? 'sun' : 'moon'} size={20} /></button>
 				{#if staff}<a class="rail-item" href={to('/settings')} title="Settings" aria-label="Settings" aria-current={appPath(page.url.pathname).startsWith('/settings') ? 'page' : undefined}><Icon name="settings" size={20} /></a>{/if}
 				<a class="rail-item" href={to('/account')} title="My account" aria-label="My account" aria-current={appPath(page.url.pathname) === '/account' ? 'page' : undefined}><Icon name="user" size={20} /></a>
 			</div>
@@ -379,6 +384,8 @@
 	}
 	@media (min-width: 1024px) {
 		.app { --rail: 56px; }
+		.rail-theme { display: none; }
+		.settings-section .rail-theme { display: grid; }
 		.context-sidebar { position: fixed; inset: 8px auto 8px var(--rail); z-index: 31; display: flex; flex-direction: column; width: var(--context-sidebar); padding: 18px 12px 12px; background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--r-panel); box-shadow: var(--shadow-panel); overflow-y: auto; }
 		.context-head { padding: 0 8px 18px; }
 		.context-brand { display: block; margin-bottom: 20px; color: var(--text-muted); font-size: var(--text-sm); font-weight: var(--weight-medium); }

@@ -22,7 +22,7 @@
 		type SubtitleSettings
 	} from '#lib/subtitles.ts';
 
-	let set = $state<SubtitleSettings | null>(null);
+	let settings = $state<SubtitleSettings | null>(null);
 	let langs = $state<Language[]>([]);
 	let kinds = $state<SiteKind[]>([]);
 	let sites = $state<SiteView[]>([]);
@@ -53,7 +53,7 @@
 
 	onMount(() => {
 		Promise.all([
-			api.get<SubtitleSettings>('/settings/subtitles').then((s) => (set = s)),
+			api.get<SubtitleSettings>('/settings/subtitles').then((s) => (settings = s)),
 			api.get<{ languages: Language[] }>('/subtitles/languages').then((r) => (langs = r.languages)),
 			api.get<{ kinds: SiteKind[] }>('/subtitle-sites/kinds').then((r) => (kinds = r.kinds)),
 			loadSites()
@@ -71,14 +71,14 @@
 
 	async function saveSettings(e: SubmitEvent) {
 		e.preventDefault();
-		if (!set) return;
-		setError = wishProblem(set.languages);
+		if (!settings) return;
+		setError = wishProblem(settings.languages);
 		if (setError) return;
 		setBusy = true;
 		try {
-			const body = { ...set };
+			const body = { ...settings };
 			for (const k of ['pass_mark_movie', 'pass_mark_episode', 'search_hours', 'better_hours', 'better_days', 'batch', 'sync_from_fps', 'sync_to_fps', 'sync_step_ms'] as const) body[k] = Number(body[k]);
-			set = await api.put<SubtitleSettings>('/settings/subtitles', body);
+			settings = await api.put<SubtitleSettings>('/settings/subtitles', body);
 			toasts.push('Subtitle settings saved.', 'ok');
 		} catch (err) {
 			setError = message(err);
@@ -180,15 +180,15 @@
 
 {#if !loaded}
 	<div class="sk" style="height: 200px"></div>
-{:else if error && !set}
+{:else if error && !settings}
 	<p class="notice bad" role="alert">{error}</p>
-{:else if set}
+{:else if settings}
 	<form class="card" onsubmit={saveSettings} aria-labelledby="h-langs">
 		<h2 id="h-langs" class="h2">Default languages</h2>
 		<p class="small muted">
 			Every movie and show without languages of its own gets these. Change a title's own languages on its page. With no languages, nothing is looked for.
 		</p>
-		<WishEditor bind:wants={set.languages} {langs} id="def" />
+		<WishEditor bind:wants={settings.languages} {langs} id="def" />
 		<p class="xs muted hint-block">
 			<b>Hearing-impaired:</b> Normal also counts a hearing-impaired subtitle as there; Hearing-impaired only waits for one with sound descriptions; Either takes any.
 			<b>Forced only</b> means only the lines for foreign speech or signs.
@@ -198,11 +198,11 @@
 		<div class="two">
 			<div class="field">
 				<label for="pm-ep">Episodes</label>
-				<input id="pm-ep" class="input narrow" type="number" min="0" max="100" bind:value={set.pass_mark_episode} />
+				<input id="pm-ep" class="input narrow" type="number" min="0" max="100" bind:value={settings.pass_mark_episode} />
 			</div>
 			<div class="field">
 				<label for="pm-mov">Movies</label>
-				<input id="pm-mov" class="input narrow" type="number" min="0" max="100" bind:value={set.pass_mark_movie} />
+				<input id="pm-mov" class="input narrow" type="number" min="0" max="100" bind:value={settings.pass_mark_movie} />
 			</div>
 		</div>
 		<details class="more" data-testid="pass-mark-help">
@@ -221,16 +221,16 @@
 
 		<h2 class="h2 sec">Inside the video</h2>
 		<label class="checkline">
-			<input type="checkbox" bind:checked={set.use_built_in} />
+			<input type="checkbox" bind:checked={settings.use_built_in} />
 			<span><b>Count subtitles inside the video</b><br /><span class="hint">A language already inside the file is not looked for again.</span></span>
 		</label>
 		<label class="checkline">
-			<input type="checkbox" bind:checked={set.ignore_picture_tracks} disabled={!set.use_built_in} />
+			<input type="checkbox" bind:checked={settings.ignore_picture_tracks} disabled={!settings.use_built_in} />
 			<span><b>Leave out picture subtitles</b><br /><span class="hint">Picture tracks (from discs) do not count, since many players cannot show them.</span></span>
 		</label>
 		<div class="field">
 			<label for="hi-suffix">Hearing-impaired files are named</label>
-			<select id="hi-suffix" class="input narrow" bind:value={set.hi_suffix}>
+			<select id="hi-suffix" class="input narrow" bind:value={settings.hi_suffix}>
 				<option value="hi">.hi (Movie.en.hi.srt)</option>
 				<option value="cc">.cc (Movie.en.cc.srt)</option>
 				<option value="sdh">.sdh (Movie.en.sdh.srt)</option>
@@ -242,31 +242,31 @@
 		<div class="two">
 			<div class="field">
 				<label for="s-hours">Look for missing subtitles every (hours)</label>
-				<input id="s-hours" class="input narrow" type="number" min="1" max="168" bind:value={set.search_hours} />
+				<input id="s-hours" class="input narrow" type="number" min="1" max="168" bind:value={settings.search_hours} />
 			</div>
 			<div class="field">
 				<label for="s-batch">Files per run, at most</label>
-				<input id="s-batch" class="input narrow" type="number" min="1" max="1000" bind:value={set.batch} />
+				<input id="s-batch" class="input narrow" type="number" min="1" max="1000" bind:value={settings.batch} />
 				<span class="hint">Keeps the Subtitle sites from being asked too much at once.</span>
 			</div>
 		</div>
 		<label class="checkline">
-			<input type="checkbox" bind:checked={set.adaptive} />
+			<input type="checkbox" bind:checked={settings.adaptive} />
 			<span><b>Slow down after three weeks</b><br /><span class="hint">A subtitle not found for three weeks is then looked for once a week.</span></span>
 		</label>
 		<label class="checkline">
-			<input type="checkbox" bind:checked={set.better} />
+			<input type="checkbox" bind:checked={settings.better} />
 			<span><b>Look for better subtitles</b><br /><span class="hint">Subtitles saved lately that scored under 99 are searched again; a new one must score higher.</span></span>
 		</label>
-		{#if set.better}
+		{#if settings.better}
 			<div class="two">
 				<div class="field">
 					<label for="b-hours">Every (hours)</label>
-					<input id="b-hours" class="input narrow" type="number" min="6" max="168" bind:value={set.better_hours} />
+					<input id="b-hours" class="input narrow" type="number" min="6" max="168" bind:value={settings.better_hours} />
 				</div>
 				<div class="field">
 					<label for="b-days">For subtitles saved in the last (days)</label>
-					<input id="b-days" class="input narrow" type="number" min="0" max="30" bind:value={set.better_days} />
+					<input id="b-days" class="input narrow" type="number" min="0" max="30" bind:value={settings.better_days} />
 				</div>
 			</div>
 		{/if}
@@ -279,15 +279,15 @@
 		<div class="three">
 			<div class="field">
 				<label for="sy-step">Shift buttons move (ms)</label>
-				<input id="sy-step" class="input narrow" type="number" min="10" max="60000" bind:value={set.sync_step_ms} />
+				<input id="sy-step" class="input narrow" type="number" min="10" max="60000" bind:value={settings.sync_step_ms} />
 			</div>
 			<div class="field">
 				<label for="sy-from">Frame rate from</label>
-				<input id="sy-from" class="input narrow" type="number" min="1" max="120" step="0.001" bind:value={set.sync_from_fps} />
+				<input id="sy-from" class="input narrow" type="number" min="1" max="120" step="0.001" bind:value={settings.sync_from_fps} />
 			</div>
 			<div class="field">
 				<label for="sy-to">Frame rate to</label>
-				<input id="sy-to" class="input narrow" type="number" min="1" max="120" step="0.001" bind:value={set.sync_to_fps} />
+				<input id="sy-to" class="input narrow" type="number" min="1" max="120" step="0.001" bind:value={settings.sync_to_fps} />
 			</div>
 		</div>
 		{#if setError}<p class="form-error" role="alert">{setError}</p>{/if}

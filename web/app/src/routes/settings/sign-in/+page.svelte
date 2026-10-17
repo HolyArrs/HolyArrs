@@ -11,6 +11,7 @@
 	let loaded = $state(false);
 	let error = $state('');
 	let savingSkip = $state(false);
+	let savingRequire = $state(false);
 
 	let keys = $state<ApiKey[]>([]);
 	let keysNote = $state('');
@@ -68,11 +69,18 @@
 	}
 
 	async function setRequire(v: boolean) {
+		if (savingRequire) return;
+		const before = requireAdmins;
+		requireAdmins = v;
+		savingRequire = true;
 		try {
 			took(await api.put<SignInSettings>('/auth/settings', { require_two_factor_admins: v }));
 			toasts.push(v ? 'Admins must use two-factor sign-in.' : 'Two-factor sign-in is up to each admin.', 'ok');
 		} catch (err) {
+			requireAdmins = before;
 			toasts.push(strongNote(err), 'fail');
+		} finally {
+			savingRequire = false;
 		}
 	}
 
@@ -100,12 +108,16 @@
 	});
 
 	async function setSkip(v: boolean) {
+		if (savingSkip) return;
+		const before = skipLocal;
+		skipLocal = v;
 		savingSkip = true;
 		try {
 			const r = await api.put<{ skip_login_local_network: boolean }>('/auth/settings', { skip_login_local_network: v });
 			skipLocal = r.skip_login_local_network;
 			toasts.push(skipLocal ? 'No sign-in needed on your local network.' : 'Sign-in needed everywhere.', 'ok');
 		} catch (e) {
+			skipLocal = before;
 			toasts.push(strongNote(e), 'fail');
 		} finally {
 			savingSkip = false;
@@ -168,7 +180,7 @@
 			<p class="notice bad" role="alert" style="margin-top: var(--s-3)">{error}</p>
 		{:else}
 			<label class="switch" style="margin-top: var(--s-3)">
-				<input type="checkbox" checked={skipLocal} disabled={savingSkip} onchange={(e) => setSkip(e.currentTarget.checked)} />
+				<input type="checkbox" checked={skipLocal} disabled={savingSkip} aria-busy={savingSkip} onchange={(e) => setSkip(e.currentTarget.checked)} />
 				<span class="sw" aria-hidden="true"></span>
 				<span>Skip sign-in on my local network</span>
 			</label>
@@ -183,7 +195,7 @@
 	<section class="card" aria-labelledby="h-tf">
 		<h2 id="h-tf" class="h2">Two-factor sign-in</h2>
 		<label class="switch" style="margin-top: var(--s-3)">
-			<input type="checkbox" checked={requireAdmins} disabled={!isOwner} onchange={(e) => setRequire(e.currentTarget.checked)} />
+			<input type="checkbox" checked={requireAdmins} disabled={!isOwner || savingRequire} aria-busy={savingRequire} onchange={(e) => setRequire(e.currentTarget.checked)} />
 			<span class="sw" aria-hidden="true"></span>
 			<span>Admins must use two-factor sign-in</span>
 		</label>

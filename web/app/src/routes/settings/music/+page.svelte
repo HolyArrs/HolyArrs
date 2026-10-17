@@ -7,7 +7,7 @@
 	import { albumChoices, extraKinds, mainKinds, newAlbumChoices, pressingRules, pressingStatuses, toggle } from '#lib/music.ts';
 	import type { MusicSettings } from '#lib/types.ts';
 
-	let set = $state<MusicSettings>({
+	let settings = $state<MusicSettings>({
 		album_choice: 'all',
 		new_albums: 'all',
 		album_types: ['album', 'ep'],
@@ -23,7 +23,7 @@
 
 	onMount(async () => {
 		try {
-			set = await api.get<MusicSettings>('/settings/music');
+			settings = await api.get<MusicSettings>('/settings/music');
 		} catch (e) {
 			error = message(e);
 		} finally {
@@ -36,7 +36,7 @@
 		busy = true;
 		error = '';
 		try {
-			set = await api.put<MusicSettings>('/settings/music', { ...set, musicbrainz_url: set.musicbrainz_url.trim(), cache_hours: Number(set.cache_hours) });
+			settings = await api.put<MusicSettings>('/settings/music', { ...settings, musicbrainz_url: settings.musicbrainz_url.trim(), cache_hours: Number(settings.cache_hours) });
 			toasts.push('Music settings saved.', 'ok');
 		} catch (err) {
 			error = message(err);
@@ -62,14 +62,14 @@
 		<h2 class="h3">A new artist</h2>
 		<div class="field" style="margin-top: var(--s-4)">
 			<label for="m-albums">Albums to keep up to date</label>
-			<select id="m-albums" class="input" bind:value={set.album_choice}>
+			<select id="m-albums" class="input" bind:value={settings.album_choice}>
 				{#each albumChoices as [v, l] (v)}<option value={v}>{l}</option>{/each}
 			</select>
-			<span class="hint">{albumChoices.find(([v]) => v === set.album_choice)?.[2]}</span>
+			<span class="hint">{albumChoices.find(([v]) => v === settings.album_choice)?.[2]}</span>
 		</div>
 		<div class="field">
 			<label for="m-new">New albums</label>
-			<select id="m-new" class="input" bind:value={set.new_albums}>
+			<select id="m-new" class="input" bind:value={settings.new_albums}>
 				{#each newAlbumChoices as [v, l] (v)}<option value={v}>{l}</option>{/each}
 			</select>
 		</div>
@@ -77,7 +77,7 @@
 			<legend class="small"><b>Album kinds</b> <span class="hint">Albums of other kinds are listed but left out.</span></legend>
 			<div class="boxes">
 				{#each mainKinds as [v, l] (v)}
-					<label class="box"><input type="checkbox" checked={set.album_types.includes(v)} onchange={(e) => (set.album_types = toggle(set.album_types, v, e.currentTarget.checked, mainKinds))} /> {l}</label>
+					<label class="box"><input type="checkbox" checked={settings.album_types.includes(v)} onchange={(e) => (settings.album_types = toggle(settings.album_types, v, e.currentTarget.checked, mainKinds))} /> {l}</label>
 				{/each}
 			</div>
 		</fieldset>
@@ -85,7 +85,7 @@
 			<legend class="small"><b>Extra kinds</b> <span class="hint">An album with an extra kind, such as Live, needs it ticked.</span></legend>
 			<div class="boxes">
 				{#each extraKinds as [v, l] (v)}
-					<label class="box"><input type="checkbox" checked={set.secondary_types.includes(v)} onchange={(e) => (set.secondary_types = toggle(set.secondary_types, v, e.currentTarget.checked, extraKinds))} /> {l}</label>
+					<label class="box"><input type="checkbox" checked={settings.secondary_types.includes(v)} onchange={(e) => (settings.secondary_types = toggle(settings.secondary_types, v, e.currentTarget.checked, extraKinds))} /> {l}</label>
 				{/each}
 			</div>
 		</fieldset>
@@ -93,7 +93,7 @@
 			<legend class="small"><b>Pressings that count</b></legend>
 			<div class="boxes">
 				{#each pressingStatuses as [v, l] (v)}
-					<label class="box"><input type="checkbox" checked={set.release_statuses.includes(v)} onchange={(e) => (set.release_statuses = toggle(set.release_statuses, v, e.currentTarget.checked, pressingStatuses))} /> {l}</label>
+					<label class="box"><input type="checkbox" checked={settings.release_statuses.includes(v)} onchange={(e) => (settings.release_statuses = toggle(settings.release_statuses, v, e.currentTarget.checked, pressingStatuses))} /> {l}</label>
 				{/each}
 			</div>
 		</fieldset>
@@ -101,25 +101,25 @@
 		<h2 class="h3 gap">Pressings</h2>
 		<div class="field" style="margin-top: var(--s-4)">
 			<label for="m-rule">Which Pressing an album follows</label>
-			<select id="m-rule" class="input" bind:value={set.pressing_rule}>
+			<select id="m-rule" class="input" bind:value={settings.pressing_rule}>
 				{#each pressingRules as [v, l] (v)}<option value={v}>{l}</option>{/each}
 			</select>
-			<span class="hint">{pressingRules.find(([v]) => v === set.pressing_rule)?.[2]} A Pressing picked by hand on the album page stays.</span>
+			<span class="hint">{pressingRules.find(([v]) => v === settings.pressing_rule)?.[2]} A Pressing picked by hand on the album page stays.</span>
 		</div>
 
 		<h2 class="h3 gap">MusicBrainz</h2>
 		<div class="field" style="margin-top: var(--s-4)">
 			<label for="m-url">MusicBrainz address <span class="muted">(optional)</span></label>
-			<input id="m-url" class="input mono" bind:value={set.musicbrainz_url} placeholder="https://musicbrainz.org" autocomplete="off" spellcheck="false" />
+			<input id="m-url" class="input mono" bind:value={settings.musicbrainz_url} placeholder="https://musicbrainz.org" autocomplete="off" spellcheck="false" />
 			<span class="hint">Leave empty for musicbrainz.org. A mirror of your own works too. HolyArrs asks at most once a second.</span>
 		</div>
 		<div class="field">
 			<label for="m-hours">Keep answers for (hours)</label>
-			<input id="m-hours" class="input narrow" type="number" min="1" max="720" bind:value={set.cache_hours} />
+			<input id="m-hours" class="input narrow" type="number" min="1" max="720" bind:value={settings.cache_hours} />
 		</div>
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 		<div class="row" style="margin-top: var(--s-5)">
-			<button class="btn btn-red" type="submit" disabled={busy || !set.album_types.length || !set.secondary_types.length || !set.release_statuses.length} aria-busy={busy}>Save</button>
+			<button class="btn btn-red" type="submit" disabled={busy || !settings.album_types.length || !settings.secondary_types.length || !settings.release_statuses.length} aria-busy={busy}>Save</button>
 		</div>
 	</form>
 {/if}

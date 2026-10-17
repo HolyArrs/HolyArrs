@@ -39,6 +39,8 @@
 	let reviewOpen = $state(false);
 	let reviewTrigger: HTMLButtonElement | undefined = $state();
 	let compactReview = $state(false);
+	let markingRead = $state(false);
+	let takingBack = $state<Set<number>>(new Set());
 
 	async function selectAsk(id: number, trigger?: HTMLButtonElement) {
 		selectedId = id;
@@ -160,13 +162,29 @@
 	}
 
 	async function takeBack(a: Ask) {
+		if (takingBack.has(a.id)) return;
 		if (!confirm(`Take back your ask for ${a.name}?`)) return;
+		takingBack = new Set([...takingBack, a.id]);
 		try {
 			await api.del(`/asks/${a.id}`);
 			toasts.push(`Took back the ask for ${a.name}.`);
 			await load();
 		} catch (err) {
 			toasts.push(message(err), 'fail');
+		} finally {
+			takingBack = new Set([...takingBack].filter((id) => id !== a.id));
+		}
+	}
+
+	async function readAllMessages() {
+		if (markingRead) return;
+		markingRead = true;
+		try {
+			await markRead();
+		} catch (err) {
+			toasts.push(message(err), 'fail');
+		} finally {
+			markingRead = false;
 		}
 	}
 
@@ -209,7 +227,7 @@
 	<section class="card messages" aria-labelledby="h-msg">
 		<div class="card-head">
 			<h2 id="h-msg" class="h3">Messages{#if inbox.unread}{' '}<span class="chip red">{inbox.unread} new</span>{/if}</h2>
-			{#if inbox.unread}<button class="btn btn-quiet" type="button" onclick={() => void markRead()}>Mark all read</button>{/if}
+			{#if inbox.unread}<button class="btn btn-quiet" type="button" disabled={markingRead} aria-busy={markingRead} onclick={() => void readAllMessages()}>Mark all read</button>{/if}
 		</div>
 		<ul class="msg-list">
 			{#each inbox.messages.slice(0, 5) as m (m.id)}
@@ -312,7 +330,7 @@
 								<button class="btn btn-ghost" type="button" onclick={() => open(a, 'turn_down')}><Icon name="x" size={18} /> Turn down</button>
 							{/if}
 							{#if a.mine && a.state === 'asked'}
-								<button class="btn btn-quiet" type="button" onclick={() => takeBack(a)}>Take back</button>
+								<button class="btn btn-quiet" type="button" disabled={takingBack.has(a.id)} aria-busy={takingBack.has(a.id)} onclick={() => takeBack(a)}>Take back</button>
 							{/if}
 						</div>
 					</div>
@@ -752,8 +770,13 @@
 			line-height: 1.45;
 			overflow-wrap: anywhere;
 		}
+		.actions {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			width: 100%;
+		}
 		.actions :global(.btn) {
-			flex: 1 1 auto;
+			width: 100%;
 			min-height: 44px;
 		}
 		.pill {

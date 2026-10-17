@@ -6,7 +6,7 @@
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import type { AskSettings, LibraryFolder, PickRulesView } from '#lib/types.ts';
 
-	let set = $state<AskSettings>({
+	let settings = $state<AskSettings>({
 		movies_per_week: 10,
 		shows_per_week: 10,
 		music_per_week: 10,
@@ -38,7 +38,7 @@
 
 	onMount(async () => {
 		try {
-			set = await api.get<AskSettings>('/settings/asks');
+			settings = await api.get<AskSettings>('/settings/asks');
 		} catch (e) {
 			error = message(e);
 		} finally {
@@ -59,11 +59,11 @@
 		busy = true;
 		error = '';
 		try {
-			set = await api.put<AskSettings>('/settings/asks', {
-				...set,
-				movies_per_week: Number(set.movies_per_week),
-				shows_per_week: Number(set.shows_per_week),
-				music_per_week: Number(set.music_per_week)
+			settings = await api.put<AskSettings>('/settings/asks', {
+				...settings,
+				movies_per_week: Number(settings.movies_per_week),
+				shows_per_week: Number(settings.shows_per_week),
+				music_per_week: Number(settings.music_per_week)
 			});
 			toasts.push('Wishlist settings saved.', 'ok');
 		} catch (err) {
@@ -93,7 +93,7 @@
 				{#each kinds as k (k.key)}
 					<div class="field">
 						<label for={k.id}>{k.label}</label>
-						<input id={k.id} class="input narrow" type="number" min="0" max="1000" required bind:value={set[k.key]} aria-describedby="{k.id}-hint" />
+						<input id={k.id} class="input narrow" type="number" min="0" max="1000" required bind:value={settings[k.key]} aria-describedby="{k.id}-hint" />
 						<span id="{k.id}-hint" class="hint">{k.hint}</span>
 					</div>
 				{/each}
@@ -106,7 +106,7 @@
 		</fieldset>
 		<div class="field">
 			<label for="ask-folder">Library folder for approved movie asks</label>
-			<select id="ask-folder" class="input" bind:value={set.library_folder_id}>
+			<select id="ask-folder" class="input" bind:value={settings.library_folder_id}>
 				<option value={0}>The first movie folder</option>
 				{#each movieFolders as f (f.id)}
 					<option value={f.id}>{f.label || f.path} ({f.path})</option>
@@ -115,7 +115,7 @@
 		</div>
 		<div class="field">
 			<label for="ask-rules">Pick rules for approved movie asks</label>
-			<select id="ask-rules" class="input" bind:value={set.pick_rules_id}>
+			<select id="ask-rules" class="input" bind:value={settings.pick_rules_id}>
 				<option value={0}>The folder's own Pick rules</option>
 				{#each movieRules as r (r.id)}
 					<option value={r.id}>{r.name}</option>
@@ -124,7 +124,7 @@
 		</div>
 		<div class="field">
 			<label for="ask-show-folder">Library folder for approved show asks</label>
-			<select id="ask-show-folder" class="input" bind:value={set.show_library_folder_id}>
+			<select id="ask-show-folder" class="input" bind:value={settings.show_library_folder_id}>
 				<option value={0}>The first show folder</option>
 				{#each showFolders as f (f.id)}
 					<option value={f.id}>{f.label || f.path} ({f.path})</option>
@@ -133,7 +133,7 @@
 		</div>
 		<div class="field">
 			<label for="ask-show-rules">Pick rules for approved show asks</label>
-			<select id="ask-show-rules" class="input" bind:value={set.show_pick_rules_id}>
+			<select id="ask-show-rules" class="input" bind:value={settings.show_pick_rules_id}>
 				<option value={0}>The folder's own Pick rules</option>
 				{#each showRules as r (r.id)}
 					<option value={r.id}>{r.name}</option>
@@ -142,7 +142,7 @@
 		</div>
 		<div class="field">
 			<label for="ask-music-folder">Library folder for approved music asks</label>
-			<select id="ask-music-folder" class="input" bind:value={set.music_library_folder_id}>
+			<select id="ask-music-folder" class="input" bind:value={settings.music_library_folder_id}>
 				<option value={0}>The first music folder</option>
 				{#each musicFolders as f (f.id)}
 					<option value={f.id}>{f.label || f.path} ({f.path})</option>
@@ -151,7 +151,7 @@
 		</div>
 		<div class="field">
 			<label for="ask-music-rules">Pick rules for approved music asks</label>
-			<select id="ask-music-rules" class="input" bind:value={set.music_pick_rules_id}>
+			<select id="ask-music-rules" class="input" bind:value={settings.music_pick_rules_id}>
 				<option value={0}>The folder's own Pick rules</option>
 				{#each musicRules as r (r.id)}
 					<option value={r.id}>{r.name}</option>
@@ -160,7 +160,7 @@
 			<span class="hint">Whoever approves can pick another folder and Pick rules for one ask. An approved music ask adds the artist with only the albums asked for kept up to date.</span>
 		</div>
 		<label class="checkline">
-			<input type="checkbox" bind:checked={set.search_on_approve} />
+			<input type="checkbox" bind:checked={settings.search_on_approve} />
 			<span><b>Search when approved</b><br /><span class="hint">Start looking for a Release as soon as a movie ask is approved. Approved shows are looked for at the next feed check and each night.</span></span>
 		</label>
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}

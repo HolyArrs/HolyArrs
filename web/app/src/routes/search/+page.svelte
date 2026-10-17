@@ -20,8 +20,9 @@
 	import AddArtistDialog from '#lib/AddArtistDialog.svelte';
 	import AskArtistDialog from '#lib/AskArtistDialog.svelte';
 	import { albumWords } from '#lib/music.ts';
+	import { createLatestOnly } from '#lib/history.ts';
+	import { searchAddress, type SearchKind } from '#lib/search.ts';
 
-	type SearchKind = 'movie' | 'show' | 'music';
 	// Movies, shows or music; kept in the page address (?kind=show, ?kind=music).
 	const startKind = page.url.searchParams.get('kind');
 	let kind = $state<SearchKind>(startKind === 'show' || startKind === 'music' ? startKind : 'movie');
@@ -29,6 +30,7 @@
 	let musicDefaults = $state<MusicSettings | null>(null);
 	let addArtist: ReturnType<typeof AddArtistDialog> | undefined = $state();
 	let askArtist: ReturnType<typeof AskArtistDialog> | undefined = $state();
+	const beginSearch = createLatestOnly();
 
 	function patchArtist(a: LookupArtist, change: Partial<LookupArtist>) {
 		if (!artists) return;
@@ -62,6 +64,8 @@
 
 	function setKind(k: SearchKind) {
 		if (k === kind) return;
+		beginSearch();
+		busy = false;
 		kind = k;
 		results = null;
 		shows = null;
@@ -69,9 +73,7 @@
 		error = '';
 		noTMDB = false;
 		askProblem = '';
-		const url = new URL(page.url.href);
-		if (k !== 'movie') url.searchParams.set('kind', k);
-		else url.searchParams.delete('kind');
+		const url = searchAddress(page.url, k, term);
 		void goto(url, { replace: true, shallow: true });
 		if (term.trim()) void run();
 	}
@@ -208,34 +210,39 @@
 		e?.preventDefault();
 		const q = term.trim();
 		if (!q) return;
+		const searchKind = kind;
+		const isLatest = beginSearch();
 		busy = true;
 		error = '';
 		noTMDB = false;
-		const url = new URL(page.url.href);
-		url.searchParams.set('q', q);
+		const url = searchAddress(page.url, searchKind, q);
 		void goto(url, { replace: true, shallow: true });
 		try {
-			if (kind === 'music') {
+			if (searchKind === 'music') {
 				const r = await api.get<{ artists: LookupArtist[] }>(`/artists/lookup?term=${encodeURIComponent(q)}`);
+				if (!isLatest()) return;
 				artists = r.artists;
 				attribution = 'Artist and album details from MusicBrainz.';
-			} else if (kind === 'show') {
+			} else if (searchKind === 'show') {
 				const r = await api.get<{ shows: LookupShow[]; attribution?: string }>(`/shows/lookup?term=${encodeURIComponent(q)}`);
+				if (!isLatest()) return;
 				shows = r.shows;
 				attribution = r.attribution ?? '';
 			} else {
 				const r = await api.get<{ movies: LookupMovie[]; attribution: string }>(`/titles/lookup?term=${encodeURIComponent(q)}`);
+				if (!isLatest()) return;
 				results = r.movies;
 				attribution = r.attribution;
 			}
 		} catch (err) {
+			if (!isLatest()) return;
 			results = null;
 			shows = null;
 			artists = null;
-			if (err instanceof ApiError && err.status === 503 && kind !== 'music') noTMDB = true;
+			if (err instanceof ApiError && err.status === 503 && searchKind !== 'music') noTMDB = true;
 			else error = message(err);
 		} finally {
-			busy = false;
+			if (isLatest()) busy = false;
 		}
 	}
 
