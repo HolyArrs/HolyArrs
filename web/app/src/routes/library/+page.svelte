@@ -264,6 +264,9 @@
 					<span class="name">{t.name}</span>
 					<span class="meta">
 						<span class="muted xs">{t.year ?? ''}{kindWord[t.kind] ?? ''}</span>
+						{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}
+							<span class="chip" data-testid="request-approved" title="Requested and approved">Approved</span>
+						{/if}
 						{#if c}<span class="chip {tone(c.state)}">{c.label}</span>{/if}
 					</span>
 				</a>
@@ -489,10 +492,11 @@
 	}
 	.meta {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
-		justify-content: space-between;
 		gap: var(--s-2);
 	}
+	.meta > .muted { flex-basis: 100%; }
 	@media (max-width: 767px) {
 		.library-tools { width: 100%; }
 		.library-tools summary { width: 100%; min-height: var(--tap); }
