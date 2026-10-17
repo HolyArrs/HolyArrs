@@ -27,10 +27,22 @@
 	let filter = $state<Filter>(startFilter && filters.some(([f]) => f === startFilter) ? startFilter : 'all');
 	const startKind = page.url.searchParams.get('kind') as Kind | null;
 	let kind = $state<Kind>(startKind && kinds.some(([k]) => k === startKind) ? startKind : 'all');
-	$effect(() => { const selected = page.url.searchParams.get('kind') as Kind | null; kind = selected && kinds.some(([k]) => k === selected) ? selected : 'all'; });
-	let q = $state('');
-	let sort = $state('name');
-	let requesterFilter = $state('anyone');
+	let q = $state(page.url.searchParams.get('q')?.slice(0, 256) ?? '');
+	let sort = $state(page.url.searchParams.get('sort') === 'year' ? 'year' : 'name');
+	let requesterFilter = $state(readRequester(page.url.searchParams.get('requester')));
+	function readRequester(value: string | null): string {
+		return value === 'me' || (value && /^[1-9]\d*$/.test(value)) ? value : 'anyone';
+	}
+	$effect(() => {
+		const params = (page.shallow?.url ?? page.url).searchParams;
+		const selectedKind = params.get('kind') as Kind;
+		const selectedStatus = params.get('show') as Filter;
+		kind = kinds.some(([k]) => k === selectedKind) ? selectedKind : 'all';
+		filter = filters.some(([f]) => f === selectedStatus) ? selectedStatus : 'all';
+		q = params.get('q')?.slice(0, 256) ?? '';
+		requesterFilter = readRequester(params.get('requester'));
+		sort = params.get('sort') === 'year' ? 'year' : 'name';
+	});
 	let myId = $state<number | undefined>();
 	const requesterScope = $derived(titles.filter((t) => ofKind(t, kind) && matches(t, filter) && matchesTitleQuery(t, query, indexedIds)));
 	const requesterCounts = $derived.by(() => {
@@ -58,6 +70,10 @@
 		} catch {
 			return 'grid';
 		}
+	}
+	function titleLink(id: number): string {
+		const url = page.shallow?.url ?? page.url;
+		return to(`/library/${id}?returnTo=${encodeURIComponent(url.pathname + url.search)}`);
 	}
 	function setView(v: 'grid' | 'list') {
 		view = v;
@@ -94,28 +110,32 @@
 		syncFilterUrl();
 	}
 	function syncFilterUrl() {
-		const url = new URL(page.url.href);
+		const url = new URL((page.shallow?.url ?? page.url).href);
 		if (kind === 'all') url.searchParams.delete('kind');
 		else url.searchParams.set('kind', kind);
 		if (filter === 'all') url.searchParams.delete('show');
 		else url.searchParams.set('show', filter);
-		void goto(url, { replace: true, shallow: true });
+		if (q) url.searchParams.set('q', q);
+		else url.searchParams.delete('q');
+		if (requesterFilter !== 'anyone') url.searchParams.set('requester', requesterFilter);
+		else url.searchParams.delete('requester');
+		if (sort !== 'name') url.searchParams.set('sort', sort);
+		else url.searchParams.delete('sort');
+		void goto(url, { replace: true, shallow: true, reset: false });
 	}
 	function clearFilters() {
 		q = '';
 		requesterFilter = 'anyone';
 		filter = 'all';
 		kind = 'all';
-		const url = new URL(page.url.href);
-		url.searchParams.delete('kind');
-		url.searchParams.delete('show');
-		void goto(url, { replace: true, shallow: true });
+		syncFilterUrl();
 	}
 	async function removeFilter(which: 'type' | 'status' | 'requester' | 'search') {
 		if (which === 'type') setKind('all');
 		else if (which === 'status') setFilter('all');
 		else if (which === 'requester') requesterFilter = 'anyone';
 		else q = '';
+		if (which === 'requester' || which === 'search') syncFilterUrl();
 		await tick();
 		const next = activeFilters?.querySelector('button');
 		if (next) next.focus();
@@ -211,7 +231,7 @@
 
 <svelte:head><title>Library · HolyArrs</title></svelte:head>
 
-<div class="library-search-band"><div class="library-search-box"><label class="sr-only" for="find">Find in the Library</label><input id="find" class="input find" type="search" bind:this={findInput} bind:value={q} placeholder="Search Library" autocomplete="off" maxlength="256" /><button class="clear-search" type="button" onclick={clearFilters}>Clear filters</button></div>	{#if session.can('manage_library')}
+<div class="library-search-band"><div class="library-search-box"><label class="sr-only" for="find">Find in the Library</label><input id="find" class="input find" type="search" bind:this={findInput} bind:value={q} oninput={(event) => { q = event.currentTarget.value; syncFilterUrl(); }} placeholder="Search Library" autocomplete="off" maxlength="256" /><button class="clear-search" type="button" onclick={clearFilters}>Clear filters</button></div>	{#if session.can('manage_library')}
 		<details class="library-tools">
 			<summary class="btn btn-red">+ Add</summary>
 			<nav class="tools-menu" aria-label="Library tools">
@@ -233,13 +253,13 @@
 		<h1>Library</h1>
 		<p class="library-summary">{shown.length} {shown.length === 1 ? 'title' : 'titles'} in this view</p>
 	</div>
-	<div class="library-view-tools"><label class="sr-only" for="library-sort">Sort titles</label><select id="library-sort" class="sort-select" bind:value={sort}><option value="name">Name</option><option value="year">Newest year</option></select><div class="seg" role="group" aria-label="Layout"><button type="button" aria-pressed={view==='grid'} onclick={() => setView('grid')}>Posters</button><button type="button" aria-pressed={view==='list'} onclick={() => setView('list')}>List</button></div></div>
+	<div class="library-view-tools"><label class="sr-only" for="library-sort">Sort titles</label><select id="library-sort" class="sort-select" bind:value={sort} onchange={(event) => { sort = event.currentTarget.value; syncFilterUrl(); }}><option value="name">Name</option><option value="year">Newest year</option></select><div class="seg" role="group" aria-label="Layout"><button type="button" aria-pressed={view==='grid'} onclick={() => setView('grid')}>Posters</button><button type="button" aria-pressed={view==='list'} onclick={() => setView('list')}>List</button></div></div>
 </header>
 <div class="library-commandbar">
 	<div class="filter-toolbar">
 		<details class="filter-menu"><summary class="filter-trigger">Type</summary><div class="filter-popover" role="group" aria-label="Kind">{#each kinds as [key,label] (key)}<button type="button" aria-pressed={kind===key} onclick={() => setKind(key)}>{label}<span>{kindTally[key]}</span></button>{/each}</div></details>
 		<details class="filter-menu status-filter"><summary class="filter-trigger" class:has-filter={filter!=='all'}>Status</summary><div class="filter-popover status-popover"><label for="status-value">Show titles matching</label><select id="status-value" class="input" value={filter} onchange={(event) => setFilter(event.currentTarget.value as Filter)}>{#each filters as [key,label] (key)}<option value={key}>{label} ({tally[key]})</option>{/each}</select></div></details>
-		<details class="filter-menu status-filter requester-menu"><summary class="filter-trigger requester-trigger" class:has-filter={requesterFilter !== 'anyone'}>Requested by{requesterFilter === 'me' ? ': Me' : requesterFilter !== 'anyone' ? `: ${requesters.find((p) => String(p.id) === requesterFilter)?.name ?? 'Person'}` : ''}</summary><div class="filter-popover status-popover"><label for="requester-value">Requested by</label><select id="requester-value" class="input" bind:value={requesterFilter}><option value="anyone">Anyone ({requesterScope.length})</option><option value="me" disabled={!myId}>Me ({myId ? requesterCounts.get(myId) ?? 0 : 0})</option>{#each requesters as person (person.id)}<option value={String(person.id)}>{person.name} ({requesterCounts.get(person.id) ?? 0})</option>{/each}</select></div></details>
+		<details class="filter-menu status-filter requester-menu"><summary class="filter-trigger requester-trigger" class:has-filter={requesterFilter !== 'anyone'}>Requested by{requesterFilter === 'me' ? ': Me' : requesterFilter !== 'anyone' ? `: ${requesters.find((p) => String(p.id) === requesterFilter)?.name ?? 'Person'}` : ''}</summary><div class="filter-popover status-popover"><label for="requester-value">Requested by</label><select id="requester-value" class="input" bind:value={requesterFilter} onchange={(event) => { requesterFilter = event.currentTarget.value; syncFilterUrl(); }}><option value="anyone">Anyone ({requesterScope.length})</option><option value="me" disabled={!myId}>Me ({myId ? requesterCounts.get(myId) ?? 0 : 0})</option>{#each requesters as person (person.id)}<option value={String(person.id)}>{person.name} ({requesterCounts.get(person.id) ?? 0})</option>{/each}</select></div></details>
 		{#if moviesOn}<a class="filter-trigger" href={to('/library/collections')}>Movie series</a><a class="filter-trigger" href={to('/people')}>People</a>{#if session.can('manage_library')}<a class="filter-trigger" href={to('/library/missing-subtitles')}>Subtitles</a><a class="filter-trigger" href={to('/library/copies')}>File codecs</a>{/if}{/if}
 	</div>
 	<p class="asset-count">{shown.length} {shown.length===1?'TITLE':'TITLES'}</p>
@@ -296,7 +316,7 @@
 			{#each shown as t (t.id)}
 				{@const requester = requestedBy(t)}
 				<tr data-testid="library-row" class:selected={preview?.id === t.id}>
-					<td class="title-cell"><a class="row-link" href={to(`/library/${t.id}`)}><span class="thumb"><Poster src={t.artwork[0]} name={t.name} /></span><span><b>{t.name}</b> <span class="muted xs">{t.year ?? ''}{kindWord[t.kind] ?? ''}</span></span></a><button class="preview-button list-preview" type="button" aria-label={`Preview ${t.name}`} aria-pressed={preview?.id === t.id} onclick={(event) => openPreview(t, event)}>Preview</button>{#if requester}<span class="requester xs muted" data-testid="requested-by">Requested by {requester}</span>{/if}</td>
+					<td class="title-cell"><a class="row-link" href={titleLink(t.id)}><span class="thumb"><Poster src={t.artwork[0]} name={t.name} /></span><span><b>{t.name}</b> <span class="muted xs">{t.year ?? ''}{kindWord[t.kind] ?? ''}</span></span></a><button class="preview-button list-preview" type="button" aria-label={`Preview ${t.name}`} aria-pressed={preview?.id === t.id} onclick={(event) => openPreview(t, event)}>Preview</button>{#if requester}<span class="requester xs muted" data-testid="requested-by">Requested by {requester}</span>{/if}</td>
 					{#if t.kind === 'artist'}
 						{@const c = chipOf(t)}
 						<td>{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}<span class="chip" data-testid="request-approved" title="Requested and approved">Approved</span>{/if}{#if c}<span class="chip {tone(c.state)}">{c.label}</span>{/if}<span class="xs muted block">{artistProgress(t.artist)}</span></td>
@@ -321,7 +341,7 @@
 			{@const c = chipOf(t)}
 			{@const requester = requestedBy(t)}
 			<li class:selected={preview?.id === t.id} class="rise" style="--i: {i}">
-				<a class="item" href={to(`/library/${t.id}`)} data-testid="library-card">
+				<a class="item" href={titleLink(t.id)} data-testid="library-card">
 					<Poster src={t.artwork[0]} name={t.name} />
 					<span class="name">{t.name}</span>
 					<span class="meta">
@@ -372,7 +392,7 @@
 					</ul>
 				</div>
 			{/if}
-			<a class="btn btn-red preview-open" href={to(`/library/${preview.id}`)}>Open title</a>
+			<a class="btn btn-red preview-open" href={titleLink(preview.id)}>Open title</a>
 		</aside>
 	{/if}
 </div>

@@ -25,6 +25,11 @@
 	import type { Choice, EventPage, EventRecord, LibraryFolder, PickRulesView, ReleasePage, ReleaseView, TitleView, VersionView } from '#lib/types.ts';
 
 	const id = $derived(Number(page.params.id));
+	const libraryBack = $derived.by(() => {
+		const target = page.url.searchParams.get('returnTo');
+		const library = to('/library');
+		return target && (target === library || target.startsWith(`${library}?`)) ? target : library;
+	});
 	let title = $state<TitleView | null>(null);
 	let history = $state<EventRecord[]>([]);
 	let historyTotal = $state(0);
@@ -411,12 +416,12 @@
 
 <svelte:head><title>{title?.name ?? 'Title'} · HolyArrs</title></svelte:head>
 
-<a class="back small muted" href={to(`/library`)}><Icon name="back" size={16} /> Library</a>
+<a class="back small muted" href={libraryBack}><Icon name="back" size={16} /> Library</a>
 
 {#if notFound}
 	<EmptyState icon="library" title="This title is not in your Library">
 		<p>It may have been removed.</p>
-		{#snippet actions()}<a class="btn btn-ghost" href={to(`/library`)}>Back to the Library</a>{/snippet}
+		{#snippet actions()}<a class="btn btn-ghost" href={libraryBack}>Back to the Library</a>{/snippet}
 	</EmptyState>
 {:else if error}
 	<p class="notice bad" role="alert">{error}</p>
