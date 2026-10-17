@@ -610,6 +610,8 @@ export interface EventRecord {
 	episode?: string;
 	/** The Version (such as 4K) it is about, when the title has more than one. */
 	version?: string;
+	/** Optional title artwork supplied with an Event row. */
+	artwork?: string;
 }
 
 export interface EventPage {

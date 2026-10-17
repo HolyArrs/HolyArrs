@@ -7,16 +7,19 @@
 	import { ago, bytes, duration, percent, tone, words } from '#lib/format.ts';
 	import { episodeStateWords, manyWords, phaseTone, removeBody, removeStart, rowName, split, type DownloaderSettings, type DownloadRow, type RemoveChoice } from '#lib/downloaders.ts';
 	import EmptyState from '#lib/EmptyState.svelte';
-	import type { ImportRecord } from '#lib/types.ts';
+	import Poster from '#lib/Poster.svelte';
+	import type { ImportRecord, TitleView } from '#lib/types.ts';
 
 	let rows = $state<DownloadRow[]>([]);
 	let imports = $state<ImportRecord[]>([]);
+	let titles = $state<TitleView[]>([]);
 	let loaded = $state(false);
 	let error = $state('');
 	let settings = $state<DownloaderSettings | null>(null);
 	const parts = $derived(split(rows));
 	let selectedId = $state(0);
 	const selected = $derived(rows.find((r) => r.id === selectedId) ?? parts.now[0] ?? parts.past[0] ?? null);
+	const titleById = $derived(new Map(titles.map((title) => [title.id, title])));
 	let detailHeading: HTMLHeadingElement | undefined = $state();
 
 	async function selectDownload(id: number) {
@@ -61,6 +64,7 @@
 
 	onMount(() => {
 		void load();
+		void api.get<{ titles: TitleView[] }>('/titles').then((r) => (titles = r.titles)).catch(() => {});
 		api.get<DownloaderSettings>('/settings/downloaders').then((s) => (settings = s)).catch(() => {});
 		const offs = ['download', 'slot', 'import', 'resync'].map((t) => live.on(t, soon));
 		return () => {
@@ -134,6 +138,7 @@
 {#snippet dlRow(r: DownloadRow)}
 	{@const pct = percent(r.progress)}
 	<li class="dl" class:selected={selected?.id === r.id} data-testid="download-row" data-phase={r.phase}>
+		<span class="media-art" class:square={r.kind === 'artist'} aria-hidden="true"><Poster src={r.artwork ?? titleById.get(r.title_id ?? 0)?.artwork[0]} name={r.title || r.name} /></span>
 		<div class="grow">
 			<div class="top">
 				<div class="names">
@@ -257,6 +262,7 @@
 
 		<aside class="detail card" aria-label="Selected download details">
 			{#if selected}
+				<div class="detail-art" class:square={selected.kind === 'artist'} aria-hidden="true"><Poster src={selected.artwork ?? titleById.get(selected.title_id ?? 0)?.artwork[0]} name={selected.title || selected.name} /></div>
 				<div class="detail-head">
 					<p class="eyebrow">Selected download</p>
 					<span class="chip {phaseTone(selected.phase)}">{selected.label}</span>
@@ -373,6 +379,15 @@
 		border-left: 3px solid transparent;
 		transition: background var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out);
 	}
+	.media-art {
+		flex: 0 0 44px;
+		width: 44px;
+		--poster-ratio: 2 / 3;
+	}
+	.media-art.square,
+	.detail-art.square {
+		--poster-ratio: 1;
+	}
 	.dl.selected {
 		background: var(--surface-2);
 		border-left-color: var(--text);
@@ -442,6 +457,11 @@
 		top: calc(var(--topbar) + var(--s-4));
 		min-width: 0;
 		box-shadow: none;
+	}
+	.detail-art {
+		width: 76px;
+		margin-bottom: var(--s-4);
+		--poster-ratio: 2 / 3;
 	}
 	.detail-head {
 		display: flex;
@@ -549,6 +569,10 @@
 		}
 		.dl {
 			padding: var(--s-3);
+		}
+		.media-art {
+			flex-basis: 40px;
+			width: 40px;
 		}
 		.acts,
 		.acts :global(.btn) {

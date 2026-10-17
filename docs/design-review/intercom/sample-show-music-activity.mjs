@@ -110,7 +110,8 @@ async function preflight() {
 
 async function titleByName(kind, name) {
 	const titles = (await get('/api/v1/titles?limit=500')).titles ?? [];
-	const title = titles.find((item) => item.kind === kind && item.name === name);
+	const realNames = { 'Harbour Lights': 'Severance', 'Lantern Street': 'The Bear', 'Tin Lanterns': 'Daft Punk', 'Moss Choir': 'The Weeknd' };
+	const title = titles.find((item) => item.kind === kind && (item.name === name || item.name === realNames[name]));
 	if (!title) throw new Error(`Disposable ${kind} title is missing: ${name}.`);
 	previewLibraryFolder(title.folder_path, kind);
 	return title;
@@ -119,7 +120,8 @@ async function titleByName(kind, name) {
 async function showTarget(spec) {
 	const title = await titleByName('show', spec.title);
 	const episodes = (await get(`/api/v1/titles/${title.id}/episodes`)).episodes ?? [];
-	const episode = episodes.find((item) => item.name === spec.episode);
+	const realEpisodes = { 'First Light': 'Good News About Hell', 'Low Tide': 'Half Loop', 'Return of the Fog': 'Hello, Ms. Cobel', 'The First Lantern': 'System', 'Wick': 'Hands' };
+	const episode = episodes.find((item) => item.name === spec.episode || item.name === realEpisodes[spec.episode]);
 	const slot = episode?.slots?.find((item) => ['wanted', 'searching', 'chosen', 'downloading', 'stalled', 'needs_a_decision', 'in_library', 'better_wanted'].includes(item.state));
 	if (!episode || !slot) throw new Error(`Wanted episode is missing: ${spec.title} / ${spec.episode}.`);
 	return { ...spec, kind: 'show', title, item: episode, slots: [slot.id] };
@@ -128,7 +130,8 @@ async function showTarget(spec) {
 async function artistTarget(spec) {
 	const title = await titleByName('artist', spec.title);
 	const albums = (await get(`/api/v1/titles/${title.id}/albums`)).albums ?? [];
-	const album = albums.find((item) => item.name === spec.album);
+	const realAlbums = { 'Harbour Songs': 'Discovery', 'Night Ferry': 'Random Access Memories', 'Slow Green': 'Dawn FM' };
+	const album = albums.find((item) => item.name === spec.album || item.name === realAlbums[spec.album]);
 	if (!album) throw new Error(`Disposable album is missing: ${spec.title} / ${spec.album}.`);
 	const tracks = (await get(`/api/v1/albums/${album.id}/tracks`)).tracks ?? [];
 	const slots = tracks.flatMap((track) => track.slots ?? []).map((slot) => slot.id);

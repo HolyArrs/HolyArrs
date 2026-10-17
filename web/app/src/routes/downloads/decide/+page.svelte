@@ -9,10 +9,14 @@
 	import { decisions, refreshDecisions } from '#lib/decisions.svelte.ts';
 	import EmptyState from '#lib/EmptyState.svelte';
 	import EditionDecision from '#lib/EditionDecision.svelte';
+	import Poster from '#lib/Poster.svelte';
+	import type { TitleView } from '#lib/types.ts';
 
 	let loaded = $state(false);
 	let error = $state('');
+	let titles = $state<TitleView[]>([]);
 	const groups = $derived(groupDecisions(decisions.items));
+	const titleById = $derived(new Map(titles.map((title) => [title.id, title])));
 
 	async function load() {
 		try {
@@ -29,6 +33,7 @@
 
 	onMount(() => {
 		void load();
+		void api.get<{ titles: TitleView[] }>('/titles').then((r) => (titles = r.titles)).catch(() => {});
 		const offs = ['slot', 'releases', 'resync'].map((t) => live.on(t, () => void refreshDecisions()));
 		return () => offs.forEach((off) => off());
 	});
@@ -127,6 +132,7 @@
 			{#if g.pack}
 				{@const w = manyWords(d.kind)}
 				<li class="card dec" data-testid="decision-pack">
+					<span class="media-art" class:square={d.kind === 'artist'} aria-hidden="true"><Poster src={d.artwork ?? titleById.get(d.title_id)?.artwork[0]} name={d.title} /></span>
 					<div class="names">
 						<a class="nm" href={to(`/library/${d.title_id}`)}>{d.album ? `${d.title} – ${d.album}` : d.title}</a>
 						<span class="xs muted">{d.kind === 'artist' ? 'Album' : 'Season pack'} · {packLine(g)} · waiting {ago(d.since)}</span>
@@ -162,6 +168,7 @@
 				</li>
 			{:else}
 				<li class="card dec" data-testid="decision">
+					<span class="media-art" class:square={d.kind === 'artist'} aria-hidden="true"><Poster src={d.artwork ?? titleById.get(d.title_id)?.artwork[0]} name={d.title} /></span>
 					<div class="head">
 						<div class="names">
 							<a class="nm" href={to(`/library/${d.title_id}`)}>{decisionName(d)}</a>
@@ -231,7 +238,7 @@
 	}
 	.dec {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr);
+		grid-template-columns: 52px minmax(0, 1fr);
 		gap: var(--s-2);
 		min-width: 0;
 		align-content: start;
@@ -239,6 +246,18 @@
 		border: 0;
 		border-radius: 0;
 		box-shadow: none;
+	}
+	.dec > :not(.media-art) {
+		grid-column: 2;
+	}
+	.media-art {
+		grid-column: 1;
+		grid-row: 1 / span 8;
+		width: 52px;
+		--poster-ratio: 2 / 3;
+	}
+	.media-art.square {
+		--poster-ratio: 1;
 	}
 	.dec + .dec {
 		margin-top: 0;
@@ -307,6 +326,13 @@
 		.queue-head,
 		.dec {
 			padding-inline: var(--s-4);
+		}
+		.dec {
+			grid-template-columns: 44px minmax(0, 1fr);
+			gap: var(--s-3);
+		}
+		.media-art {
+			width: 44px;
 		}
 		.acts,
 		.acts :global(.btn) {

@@ -7,6 +7,7 @@
 	import { live } from '#lib/live.svelte.ts';
 	import { ago, dateTime } from '#lib/format.ts';
 	import EmptyState from '#lib/EmptyState.svelte';
+	import Poster from '#lib/Poster.svelte';
 	import { details, filterParams, groupLabel, historyQuery, kindGroups, kindTone, pageLine, readFilter, type HistoryFilter } from '#lib/history.ts';
 	import type { EventPage, EventRecord, TitleView } from '#lib/types.ts';
 
@@ -49,6 +50,7 @@
 	}
 
 	const movieName = $derived(titles.find((t) => t.id === filter.title)?.name);
+	const titleById = $derived(new Map(titles.map((title) => [title.id, title])));
 	const filtered = $derived(!!(filter.title || filter.episode || filter.groups.length || filter.from || filter.to));
 	/** The episode the rows are filtered to, named from the rows themselves. */
 	let episodeName = $state('');
@@ -137,8 +139,10 @@
 	<ol class="rows events" data-testid="history">
 		{#each events as e (e.ID)}
 			{@const extra = details(e)}
+			{@const eventTitle = titleById.get(e.TitleID ?? 0)}
 			<li class="event" data-testid="history-row" data-kind={e.Kind}>
 				<div class="line">
+					{#if eventTitle}<span class="event-art" class:square={eventTitle.kind === 'artist'} aria-hidden="true"><Poster src={e.artwork ?? eventTitle.artwork[0]} name={eventTitle.name} /></span>{/if}
 					<span class="chip {kindTone(e.Kind)}">{groupLabel(e.Kind)}</span>
 					<span class="grow small">
 						{#if e.TitleID && e.title_name}<a href={to(`/library/${e.TitleID}`)}>{e.title_name}</a>{#if e.episode}{' '}<span class="mono xs ep" data-testid="history-episode">{e.episode}</span>{/if}{#if e.version}{' '}<span class="chip" data-testid="history-version">{e.version}</span>{/if}: {/if}{e.Summary}
@@ -279,6 +283,15 @@
 		align-items: baseline;
 		gap: var(--s-3);
 		min-width: 0;
+	}
+	.event-art {
+		flex: 0 0 36px;
+		width: 36px;
+		align-self: flex-start;
+		--poster-ratio: 2 / 3;
+	}
+	.event-art.square {
+		--poster-ratio: 1;
 	}
 	.line .grow {
 		min-width: 0;

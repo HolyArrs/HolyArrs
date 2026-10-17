@@ -187,6 +187,8 @@ export interface DownloadRow extends DownloadView {
 	episodes?: EpisodeLine[];
 	covers?: string;
 	album?: string;
+	/** Optional artwork supplied with an activity row; Library metadata remains the fallback. */
+	artwork?: string;
 }
 
 /** EpisodeLine is one episode (or track) a download covers, with where its
@@ -304,6 +306,8 @@ export interface Decision {
 	download_id?: number;
 	pack_slot_ids?: number[];
 	pack?: EpisodeLine[];
+	/** Optional artwork supplied with a decision; Library metadata remains the fallback. */
+	artwork?: string;
 }
 
 /** decisionName names what waits: the movie (and year) or the show and episode. */
