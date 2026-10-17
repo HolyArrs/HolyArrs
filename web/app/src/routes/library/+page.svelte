@@ -98,6 +98,16 @@
 		else url.searchParams.set('kind', k);
 		void goto(url, { replace: true, shallow: true });
 	}
+	function clearFilters() {
+		q = '';
+		requesterFilter = 'anyone';
+		filter = 'all';
+		kind = 'all';
+		const url = new URL(page.url.href);
+		url.searchParams.delete('kind');
+		url.searchParams.delete('show');
+		void goto(url, { replace: true, shallow: true });
+	}
 
 	const requestedTitles = $derived(titles.filter((t) => requesterFilter === 'anyone' || linkedPeople(t).some((p) => p.id === (requesterFilter === 'me' ? myId : Number(requesterFilter)))));
 	const ofThisKind = $derived(requestedTitles.filter((t) => ofKind(t, kind)));
@@ -188,7 +198,7 @@
 
 <svelte:head><title>Library · HolyArrs</title></svelte:head>
 
-<div class="library-search-band"><div class="library-search-box"><label class="sr-only" for="find">Find in the Library</label><input id="find" class="input find" type="search" bind:this={findInput} bind:value={q} placeholder="Search Library" autocomplete="off" maxlength="256" /><button class="clear-search" type="button" onclick={() => { q = ''; setFilter('all'); }}>Clear search and status</button></div>	{#if session.can('manage_library')}
+<div class="library-search-band"><div class="library-search-box"><label class="sr-only" for="find">Find in the Library</label><input id="find" class="input find" type="search" bind:this={findInput} bind:value={q} placeholder="Search Library" autocomplete="off" maxlength="256" /><button class="clear-search" type="button" onclick={clearFilters}>Clear filters</button></div>	{#if session.can('manage_library')}
 		<details class="library-tools">
 			<summary class="btn btn-red">+ Add</summary>
 			<nav class="tools-menu" aria-label="Library tools">
