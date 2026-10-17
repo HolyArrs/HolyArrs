@@ -51,10 +51,23 @@ async function capture(page, label) {
 		const page = await context.newPage();
 		page.setDefaultTimeout(5000);
 		page.on('pageerror', error => receipt.errors.push(error.message));
+		for (const [device, width, height] of [['desktop', 1440, 1050], ['tablet', 834, 1112], ['phone', 390, 844], ['narrow', 320, 740]]) {
+			await page.setViewportSize({ width, height });
+			await page.goto(origin);
+			await capture(page, `comparison-${device}`);
+		}
 		for (const concept of ['one', 'two', 'three']) {
 			for (const [device, width, height] of [['desktop', 1440, 1050], ['tablet', 834, 1112], ['phone', 390, 844], ['narrow', 320, 740]]) {
 				await page.setViewportSize({ width, height });
 				await page.goto(`${origin}/concepts/${concept}.html`);
+				if (concept === 'two' && width > 700) {
+					assert(await page.evaluate(() => {
+						const list = document.querySelector('.list-pane').getBoundingClientRect();
+						const detail = document.querySelector('.detail-pane').getBoundingClientRect();
+						return Math.abs(list.top - detail.top) < 1 && Math.abs(list.right - detail.left) < 1 && list.width >= 300 && detail.width >= 300 && list.height > innerHeight * 0.8;
+					}), `two-${device}: adjacent full-height list/detail panes`);
+					receipt.checks.push(`two-${device}: pane geometry asserted`);
+				}
 				await capture(page, `${concept}-${device}`);
 			}
 		}

@@ -16,7 +16,7 @@ Check port 18744 ownership before launch. Run `node docs/design-review/serve.mjs
 
 All three inline scripts parse, HTTP content matches the saved concept source, and method/path isolation checks pass. Independent source review led to dialog naming, focus restoration, inactive-pane, removal confirmation and fixture accuracy fixes. These source checks do not prove rendering or accessibility.
 
-Headless capture remains queued behind the backend's heavy-work reservation in `plans/active/2026-10-16-shared-interfaces.md`. Do not launch until explicitly released and allocated. Use cached Playwright/axe, one isolated Chromium and one page, with a 180-second outer process-tree deadline:
+A first bounded headless run at commit `36b1b25` captured 21 screenshots and completed 24 checks with no script/network/overflow/interaction errors, but failed axe with contrast and selection-semantics findings. Visual review also found a desktop grid defect in Focus. Source fixes are applied; a fresh capture is queued behind the backend's heavy-work reservation in `plans/active/2026-10-16-shared-interfaces.md`. Do not launch until explicitly released and allocated. Use cached Playwright/axe, one isolated Chromium and one page, with a 180-second outer process-tree deadline:
 
 ```powershell
 node docs/design-review/capture-concepts.cjs <absolute-cached-web-app-tooling-directory> <absolute-new-output-directory>
@@ -24,7 +24,7 @@ node docs/design-review/capture-concepts.cjs <absolute-cached-web-app-tooling-di
 
 The script has a 150-second internal deadline, blocks other origins, captures 1440/834/390/320px and representative title/download/settings states, checks selected keyboard/dialog interactions and axe, records final source hashes, and closes its browser. Inspect `receipt.json`; nonzero exit or violations are failures. The output directory must be fresh. No personal profile, browser download or dependency install is needed. `capture.cjs` targets the rejected v1 and must not be used to certify these concepts.
 
-No browser capture has run for this revision yet. Automated checks also cannot establish screen-reader usability or final product acceptance. The approved design must subsequently be implemented on real routes with permission/part/base-path variants, long text, large libraries, loading/empty/error states and recovery checks, followed by combined-source verification.
+The first capture applies only to `36b1b25`, not the source fixes. The new capture adds comparison-page audits and desktop/tablet pane geometry assertions. Revised source is not browser-certified yet. Automated checks also cannot establish screen-reader usability or final product acceptance. The approved design must subsequently be implemented on real routes with permission/part/base-path variants, long text, large libraries, loading/empty/error states and recovery checks, followed by combined-source verification.
 
 ## References and ownership
 
