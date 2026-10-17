@@ -49,6 +49,20 @@
 	const desktopPlaces = $derived([...places, ...secondaryPlaces]);
 	const mobilePlaces = $derived(places.filter((p) => ['/library', '/search', '/wishlist', '/downloads'].includes(p.href)));
 	let libraryExpanded = $state(true);
+	let libraryResumeLinks = $state<Record<string, string>>({});
+	function readLibraryResumeLinks() {
+		try {
+			const views = JSON.parse(sessionStorage.getItem('holyarrs.preview.library-views') ?? '{}');
+			const links: Record<string, string> = {};
+			for (const kind of ['movie', 'show', 'artist']) {
+				const href = views[kind]?.href;
+				if (typeof href !== 'string') continue;
+				const url = new URL(href, window.location.origin);
+				if (url.origin === window.location.origin && url.pathname === to('/library') && url.searchParams.get('kind') === kind) links[kind] = url.pathname + url.search;
+			}
+			libraryResumeLinks = links;
+		} catch { libraryResumeLinks = {}; }
+	}
 	const libraryKinds = $derived([
 		{ kind: 'movie', part: 'movies', label: 'Movies' },
 		{ kind: 'show', part: 'shows', label: 'TV Shows' },
@@ -61,7 +75,7 @@
 		if (onlyLibrary) libraryExpanded = true;
 		menu?.showModal();
 	}
-	afterNavigate(() => menu?.close());
+	afterNavigate(() => { menu?.close(); readLibraryResumeLinks(); });
 	// A direct link to a page of a part that is off says so instead.
 	const offHere = $derived(offPartName(partsNow.answer, appPath(page.url.pathname)));
 	const staff = $derived(allowed('staff'));
@@ -187,7 +201,7 @@
 		<div class="library-reveal" class:is-open={libraryExpanded} inert={!libraryExpanded}>
 			<div class="library-children">
 				{#each libraryKinds as item (item.kind)}
-					<a class="nav-item library-child" href={to(`/library?kind=${item.kind}`)} onclick={() => menu?.close()} title={item.label} aria-current={current('/library') && page.url.searchParams.get('kind') === item.kind ? 'page' : undefined}><span>{item.label}</span></a>
+					<a class="nav-item library-child" href={libraryResumeLinks[item.kind] ?? to(`/library?kind=${item.kind}`)} onclick={() => menu?.close()} title={item.label} aria-current={current('/library') && (page.shallow?.url ?? page.url).searchParams.get('kind') === item.kind ? 'page' : undefined}><span>{item.label}</span></a>
 				{/each}
 			</div>
 		</div>

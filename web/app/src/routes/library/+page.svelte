@@ -35,7 +35,12 @@
 		try {
 			const suffix = target.url.pathname.slice(page.url.pathname.length + 1);
 			const titleId = target.url.pathname.startsWith(`${page.url.pathname}/`) && /^\d+$/.test(suffix) ? Number(suffix) : null;
-			sessionStorage.setItem('holyarrs.preview.library-scroll', JSON.stringify({ key: scrollKey(), x: window.scrollX, y: window.scrollY, titleId }));
+			const saved = { key: scrollKey(), x: window.scrollX, y: window.scrollY, titleId };
+			sessionStorage.setItem('holyarrs.preview.library-scroll', JSON.stringify(saved));
+			const url = page.shallow?.url ?? page.url;
+			const views = JSON.parse(sessionStorage.getItem('holyarrs.preview.library-views') ?? '{}');
+			views[kind] = { ...saved, href: url.pathname + url.search };
+			sessionStorage.setItem('holyarrs.preview.library-views', JSON.stringify(views));
 		} catch { /* Scroll memory is optional when storage is unavailable. */ }
 	});
 	$effect(() => {
@@ -248,7 +253,8 @@
 	onMount(() => {
 		mounted = true;
 		try {
-			const saved = JSON.parse(sessionStorage.getItem('holyarrs.preview.library-scroll') ?? 'null');
+			const views = JSON.parse(sessionStorage.getItem('holyarrs.preview.library-views') ?? '{}');
+			const saved = views[kind] ?? JSON.parse(sessionStorage.getItem('holyarrs.preview.library-scroll') ?? 'null');
 			if (saved?.key === scrollKey() && Number.isFinite(saved.x) && Number.isFinite(saved.y) && saved.x >= 0 && saved.y >= 0) {
 				restoreScroll = { x: saved.x, y: saved.y };
 				lastOpenedId = Number.isSafeInteger(saved.titleId) && saved.titleId > 0 ? saved.titleId : null;
