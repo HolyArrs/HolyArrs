@@ -1,0 +1,536 @@
+{
+  "reviewedMobbinCount": 30,
+  "mediaAppCount": 26,
+  "media": [
+    {
+      "app": "Sonarr",
+      "image": "/references/images/media-a-sonarr-qualityprofile.png",
+      "mime": "image/png",
+      "source": "https://sonarr.tv/img/slider/qualityprofile.png",
+      "repo": "https://github.com/Sonarr/Sonarr",
+      "description": "Quality profile settings, notifications, and update/status screens",
+      "category": "Management and configuration",
+      "id": "M01"
+    },
+    {
+      "app": "Sonarr",
+      "image": "/references/images/media-a-sonarr-notifications.png",
+      "mime": "image/png",
+      "source": "https://sonarr.tv/img/slider/notifications.png",
+      "repo": "https://github.com/Sonarr/Sonarr",
+      "description": "Quality profile settings, notifications, and update/status screens",
+      "category": "Management and configuration",
+      "id": "M02"
+    },
+    {
+      "app": "Sonarr",
+      "image": "/references/images/media-a-sonarr-updates.png",
+      "mime": "image/png",
+      "source": "https://sonarr.tv/img/slider/updates2.png",
+      "repo": "https://github.com/Sonarr/Sonarr",
+      "description": "Quality profile settings, notifications, and update/status screens",
+      "category": "Management and configuration",
+      "id": "M03"
+    },
+    {
+      "app": "Sonarr",
+      "image": "/references/images/media-a-sonarr-posters.png",
+      "mime": "image/png",
+      "source": "https://sonarr.tv/img/slider/posters.png",
+      "repo": "https://github.com/Sonarr/Sonarr",
+      "description": "Poster library, series detail, table/list density, and overview dashboard",
+      "category": "Management and configuration",
+      "id": "M04"
+    },
+    {
+      "app": "Sonarr",
+      "image": "/references/images/media-a-sonarr-seriesdetails.png",
+      "mime": "image/png",
+      "source": "https://sonarr.tv/img/slider/seriesdetails.png",
+      "repo": "https://github.com/Sonarr/Sonarr",
+      "description": "Poster library, series detail, table/list density, and overview dashboard",
+      "category": "Management and configuration",
+      "id": "M05"
+    },
+    {
+      "app": "Sonarr",
+      "image": "/references/images/media-a-sonarr-table.png",
+      "mime": "image/png",
+      "source": "https://sonarr.tv/img/slider/table.png",
+      "repo": "https://github.com/Sonarr/Sonarr",
+      "description": "Poster library, series detail, table/list density, and overview dashboard",
+      "category": "Management and configuration",
+      "id": "M06"
+    },
+    {
+      "app": "Sonarr",
+      "image": "/references/images/media-a-sonarr-overview.png",
+      "mime": "image/png",
+      "source": "https://sonarr.tv/img/slider/overview.png",
+      "repo": "https://github.com/Sonarr/Sonarr",
+      "description": "Poster library, series detail, table/list density, and overview dashboard",
+      "category": "Management and configuration",
+      "id": "M07"
+    },
+    {
+      "app": "Radarr",
+      "image": "/references/images/media-a-radarr-movies.png",
+      "mime": "image/png",
+      "source": "https://raw.githubusercontent.com/Servarr/Wiki/master/assets/radarr/Radarr-movies.png",
+      "repo": "https://github.com/Radarr/Radarr",
+      "description": "Official Servarr Wiki screens: empty Movies library, existing-library import, and download-client settings",
+      "category": "Management and configuration",
+      "id": "M08"
+    },
+    {
+      "app": "Radarr",
+      "image": "/references/images/media-a-radarr-import.png",
+      "mime": "image/png",
+      "source": "https://raw.githubusercontent.com/Servarr/Wiki/master/assets/radarr/Radarr-movies-import.png",
+      "repo": "https://github.com/Radarr/Radarr",
+      "description": "Official Servarr Wiki screens: empty Movies library, existing-library import, and download-client settings",
+      "category": "Management and configuration",
+      "id": "M09"
+    },
+    {
+      "app": "Radarr",
+      "image": "/references/images/media-a-radarr-downloaders.png",
+      "mime": "image/png",
+      "source": "https://raw.githubusercontent.com/Servarr/Wiki/master/assets/radarr/Radarr-settings-download-clients.png",
+      "repo": "https://github.com/Radarr/Radarr",
+      "description": "Official Servarr Wiki screens: empty Movies library, existing-library import, and download-client settings",
+      "category": "Management and configuration",
+      "id": "M10"
+    },
+    {
+      "app": "Radarr",
+      "image": "/references/images/media-a-radarr-movie-detail.png",
+      "mime": "image/png",
+      "source": "https://raw.githubusercontent.com/Servarr/Wiki/master/assets/radarr/searchmovie-movie-page.png",
+      "repo": "https://github.com/Radarr/Radarr",
+      "description": "Movie detail hero with poster, metadata, downloaded status, quality profile, size, and action toolbar",
+      "category": "Management and configuration",
+      "id": "M11"
+    },
+    {
+      "app": "Radarr",
+      "image": "/references/images/media-a-radarr-posters.png",
+      "mime": "image/png",
+      "source": "https://radarr.video/img/slider/posters.png",
+      "repo": "https://github.com/Radarr/Radarr",
+      "description": "Poster library, movie detail, and table/list density",
+      "category": "Management and configuration",
+      "id": "M12"
+    },
+    {
+      "app": "Radarr",
+      "image": "/references/images/media-a-radarr-moviedetails.png",
+      "mime": "image/png",
+      "source": "https://radarr.video/img/slider/moviedetails.png",
+      "repo": "https://github.com/Radarr/Radarr",
+      "description": "Poster library, movie detail, and table/list density",
+      "category": "Management and configuration",
+      "id": "M13"
+    },
+    {
+      "app": "Radarr",
+      "image": "/references/images/media-a-radarr-table.png",
+      "mime": "image/png",
+      "source": "https://radarr.video/img/slider/table.png",
+      "repo": "https://github.com/Radarr/Radarr",
+      "description": "Poster library, movie detail, and table/list density",
+      "category": "Management and configuration",
+      "id": "M14"
+    },
+    {
+      "app": "Seerr",
+      "image": "/references/images/media-a-seerr-main.png",
+      "mime": "image/jpeg",
+      "source": "https://seerr.dev/screenshots/screen_main.jpg",
+      "repo": "https://github.com/Seerr-Team/Seerr",
+      "description": "Discover/home, title detail/request, filtering, and request workflow screens",
+      "category": "Discovery and requests",
+      "id": "M15"
+    },
+    {
+      "app": "Seerr",
+      "image": "/references/images/media-a-seerr-feature-1.png",
+      "mime": "image/png",
+      "source": "https://seerr.dev/screenshots/screen_feature_1.png",
+      "repo": "https://github.com/Seerr-Team/Seerr",
+      "description": "Discover/home, title detail/request, filtering, and request workflow screens",
+      "category": "Discovery and requests",
+      "id": "M16"
+    },
+    {
+      "app": "Seerr",
+      "image": "/references/images/media-a-seerr-filters.png",
+      "mime": "image/png",
+      "source": "https://seerr.dev/screenshots/screen_feature_filters.png",
+      "repo": "https://github.com/Seerr-Team/Seerr",
+      "description": "Discover/home, title detail/request, filtering, and request workflow screens",
+      "category": "Discovery and requests",
+      "id": "M17"
+    },
+    {
+      "app": "Seerr",
+      "image": "/references/images/media-a-seerr-feature-2.png",
+      "mime": "image/png",
+      "source": "https://seerr.dev/screenshots/screen_feature_2.png",
+      "repo": "https://github.com/Seerr-Team/Seerr",
+      "description": "Discover/home, title detail/request, filtering, and request workflow screens",
+      "category": "Discovery and requests",
+      "id": "M18"
+    },
+    {
+      "app": "Lidarr",
+      "image": "/references/images/media-a-lidarr-addnew.png",
+      "mime": "image/png",
+      "source": "https://raw.githubusercontent.com/Servarr/Wiki/master/assets/lidarr/quick-start-guide/lidarr_qs_addnew.png",
+      "repo": "https://github.com/Lidarr/Lidarr",
+      "description": "Official Servarr Wiki add-new music screen",
+      "category": "Management and configuration",
+      "id": "M19"
+    },
+    {
+      "app": "Bazarr",
+      "image": "/references/images/media-a-bazarr.png",
+      "mime": "image/png",
+      "source": "https://raw.githubusercontent.com/morpheus65535/bazarr/master/screenshot/bazarr-screenshot.png?raw=true",
+      "repo": "https://github.com/morpheus65535/bazarr",
+      "description": "Series detail with poster, subtitle status columns, manual search/upload/tools, and left navigation",
+      "category": "Management and configuration",
+      "id": "M20"
+    },
+    {
+      "app": "Prowlarr",
+      "image": "/references/images/media-a-prowlarr-search.png",
+      "mime": "image/png",
+      "source": "https://raw.githubusercontent.com/Servarr/Wiki/master/assets/prowlarr/search_1_searchscreen.png",
+      "repo": "https://github.com/Prowlarr/Prowlarr",
+      "description": "Official Servarr Wiki search screen and add-indexer configuration",
+      "category": "Management and configuration",
+      "id": "M21"
+    },
+    {
+      "app": "Prowlarr",
+      "image": "/references/images/media-a-prowlarr-indexer.png",
+      "mime": "image/png",
+      "source": "https://raw.githubusercontent.com/Servarr/Wiki/master/assets/prowlarr/ind_1_addindexer.png",
+      "repo": "https://github.com/Prowlarr/Prowlarr",
+      "description": "Official Servarr Wiki search screen and add-indexer configuration",
+      "category": "Management and configuration",
+      "id": "M22"
+    },
+    {
+      "app": "Readarr",
+      "image": "/references/images/media-a-readarr-bookshelf.png",
+      "mime": "image/png",
+      "source": "https://raw.githubusercontent.com/Servarr/Wiki/master/assets/readarr/bookshelf.png",
+      "repo": "https://github.com/Readarr/Readarr",
+      "description": "Official Servarr Wiki bookshelf view",
+      "category": "Management and configuration",
+      "id": "M23"
+    },
+    {
+      "app": "SABnzbd",
+      "image": "/references/images/media-a-sabnzbd-interface.png",
+      "mime": "image/png",
+      "source": "https://sabnzbd.org/images/landing/screenshots/interface.png",
+      "repo": "https://github.com/sabnzbd/sabnzbd",
+      "description": "Main download interface and dashboard/connection overview",
+      "category": "Downloads and operations",
+      "id": "M24"
+    },
+    {
+      "app": "SABnzbd",
+      "image": "/references/images/media-a-sabnzbd-dashboard.png",
+      "mime": "image/png",
+      "source": "https://sabnzbd.org/images/landing/screenshots/dashboard.png",
+      "repo": "https://github.com/sabnzbd/sabnzbd",
+      "description": "Main download interface and dashboard/connection overview",
+      "category": "Downloads and operations",
+      "id": "M25"
+    },
+    {
+      "app": "Transmission",
+      "image": "/references/images/media-a-transmission-web-main.png",
+      "mime": "image/png",
+      "source": "https://raw.githubusercontent.com/transmission/transmission/main/docs/resources/WI-main-screen.png",
+      "repo": "https://github.com/transmission/transmission",
+      "description": "Official Web Interface main torrent-management screen",
+      "category": "Downloads and operations",
+      "id": "M26"
+    },
+    {
+      "app": "Audiobookshelf",
+      "image": "/references/images/media-b-audiobookshelf-library.png",
+      "mime": "image/png",
+      "source": "https://github.com/advplyr/audiobookshelf#readme",
+      "repo": "https://github.com/advplyr/audiobookshelf",
+      "description": "Audiobook cover library with persistent section navigation, global search, sort controls, reading progress, and a full-width player bar.",
+      "category": "Libraries and media",
+      "id": "M27"
+    },
+    {
+      "app": "Calibre-Web",
+      "image": "/references/images/media-b-calibre-web-main.png",
+      "mime": "image/png",
+      "source": "https://github.com/janeczku/calibre-web#readme",
+      "repo": "https://github.com/janeczku/calibre-web",
+      "description": "Light book-library grid with broad taxonomy navigation, search, utility actions, view and sort controls, ratings, and long-title handling.",
+      "category": "Libraries and media",
+      "id": "M28"
+    },
+    {
+      "app": "Cleanuparr",
+      "image": "/references/images/media-b-cleanuparr-dashboard.webp",
+      "mime": "image/webp",
+      "source": "https://github.com/Cleanuparr/Cleanuparr#readme",
+      "repo": "https://github.com/Cleanuparr/Cleanuparr",
+      "description": "Dark operational dashboard with a prominent recoverable alert, cleanup statistics and trend chart, recent strikes, and grouped settings navigation.",
+      "category": "Downloads and operations",
+      "id": "M29"
+    },
+    {
+      "app": "Dispatcharr",
+      "image": "/references/images/media-b-dispatcharr-stats.png",
+      "mime": "image/png",
+      "source": "https://github.com/Dispatcharr/Dispatcharr#readme",
+      "repo": "https://github.com/Dispatcharr/Dispatcharr",
+      "description": "Dark live-stream operations screen with grouped product navigation, connection status, elapsed progress, codec facts, client details, and refresh controls.",
+      "category": "Downloads and operations",
+      "id": "M30"
+    },
+    {
+      "app": "Emby",
+      "image": "/references/images/media-b-emby-dashboard.png",
+      "mime": "image/png",
+      "source": "https://emby.media/emby-web-client.html",
+      "repo": null,
+      "description": "Light server dashboard with grouped settings navigation, server health and address summary, alerts, activity, and device sections.",
+      "category": "Libraries and media",
+      "id": "M31"
+    },
+    {
+      "app": "FileFlows",
+      "image": "/references/images/media-b-fileflows-dashboard.webp",
+      "mime": "image/webp",
+      "source": "https://fileflows.com/docs/webconsole/dashboard",
+      "repo": null,
+      "description": "Full desktop operations dashboard combining throughput and resource trends, processed-file rows, state filters, and detailed worker-node status.",
+      "category": "Downloads and operations",
+      "id": "M32"
+    },
+    {
+      "app": "Immich",
+      "image": "/references/images/media-b-immich-screens.png",
+      "mime": "image/png",
+      "source": "https://github.com/immich-app/immich#readme",
+      "repo": "https://github.com/immich-app/immich",
+      "description": "Official responsive UI collage covering desktop timeline and map views plus phone photos, search, albums, item detail, and backup progress.",
+      "category": "Libraries and media",
+      "id": "M33"
+    },
+    {
+      "app": "Jellyfin",
+      "image": "/references/images/media-b-jellyfin-library.png",
+      "mime": "image/png",
+      "source": "https://jellyfin.org/",
+      "repo": "https://github.com/jellyfin/jellyfin-web",
+      "description": "Dark movie-library poster grid with a primary header, secondary content navigation, layout and sort controls, selection states, and an A-Z jump rail.",
+      "category": "Libraries and media",
+      "id": "M34"
+    },
+    {
+      "app": "Komga",
+      "image": "/references/images/media-b-komga-duplicate-pages.png",
+      "mime": "image/png",
+      "source": "https://komga.org/docs/guides/duplicate-pages/",
+      "repo": "https://github.com/gotson/komga",
+      "description": "Duplicate-page cleanup review with image previews, match and size facts, sorting, pagination, and ignore/manual/automatic decision actions.",
+      "category": "Libraries and media",
+      "id": "M35"
+    },
+    {
+      "app": "Maintainerr",
+      "image": "/references/images/media-b-maintainerr-rules.png",
+      "mime": "image/png",
+      "source": "https://github.com/Maintainerr/Maintainerr#readme",
+      "repo": "https://github.com/Maintainerr/Maintainerr",
+      "description": "Cleanup rule gallery with global search and filtering, concise condition summaries, state and library facts, and direct run/edit/delete actions.",
+      "category": "Downloads and operations",
+      "id": "M36"
+    },
+    {
+      "app": "Navidrome",
+      "image": "/references/images/media-b-navidrome-desktop-player.png",
+      "mime": "image/png",
+      "source": "https://github.com/navidrome/navidrome/blob/master/README.md",
+      "repo": "https://github.com/navidrome/navidrome",
+      "description": "Desktop album library with source navigation, search and filters, dense artwork grid, queue overlay, and persistent playback controls.",
+      "category": "Libraries and media",
+      "id": "M37"
+    },
+    {
+      "app": "Ombi",
+      "image": "/references/images/media-b-ombi-readme.png",
+      "mime": "image/png",
+      "source": "https://github.com/Ombi-app/Ombi#readme",
+      "repo": "https://github.com/Ombi-app/Ombi",
+      "description": "Wide discovery and request screen with persistent account navigation, global search, media-type toggles, horizontal poster rails, and visible availability states.",
+      "category": "Discovery and requests",
+      "id": "M38"
+    },
+    {
+      "app": "Profilarr",
+      "image": "/references/images/media-b-profilarr-hero.png",
+      "mime": "image/png",
+      "source": "https://github.com/Dictionarry-Hub/profilarr#readme",
+      "repo": "https://github.com/Dictionarry-Hub/profilarr",
+      "description": "Official responsive collage showing dense desktop profile cards and rule editing alongside focused phone selection and title-detail screens.",
+      "category": "Management and configuration",
+      "id": "M39"
+    },
+    {
+      "app": "Reiverr",
+      "image": "/references/images/media-b-reiverr-home.png",
+      "mime": "image/png",
+      "source": "https://github.com/aleksilassila/reiverr#readme",
+      "repo": "https://github.com/aleksilassila/reiverr",
+      "description": "Cinematic desktop title detail with edge navigation, backdrop-led hierarchy, concise metadata, direct playback destinations, and episode previews.",
+      "category": "Libraries and media",
+      "id": "M40"
+    },
+    {
+      "app": "Stash",
+      "image": "/references/images/media-b-stash-library.png",
+      "mime": "image/png",
+      "source": "https://github.com/stashapp/stash#readme",
+      "repo": "https://github.com/stashapp/stash",
+      "description": "Desktop scene library showing top-level media categories, search and filtering, result density controls, and metadata-rich thumbnail cards.",
+      "category": "Libraries and media",
+      "id": "M41"
+    },
+    {
+      "app": "Streamyfin",
+      "image": "/references/images/media-b-streamyfin-home.png",
+      "mime": "image/png",
+      "source": "https://github.com/streamyfin/streamyfin#readme",
+      "repo": "https://github.com/streamyfin/streamyfin",
+      "description": "Polished phone home screen with a large swipeable feature card, progress-rich continue-watching rows, floating utilities, and a compact bottom navigation island.",
+      "category": "Libraries and media",
+      "id": "M42"
+    },
+    {
+      "app": "Tdarr",
+      "image": "/references/images/media-b-tdarr-node.png",
+      "mime": "image/png",
+      "source": "https://github.com/HaveAGitGat/Tdarr#readme",
+      "repo": "https://github.com/HaveAGitGat/Tdarr",
+      "description": "Transcoding status dashboard with large distribution charts for queue health, codecs, containers, and resolutions.",
+      "category": "Downloads and operations",
+      "id": "M43"
+    }
+  ],
+  "mobbin": [
+    {
+      "id": "B01",
+      "app": "Frame.io",
+      "image": "/references/images/mobbin-7110628d-a251-451d-a84a-c9eead8fb074.jpg",
+      "mime": "image/jpeg",
+      "source": "https://mobbin.com/screens/7110628d-a251-451d-a84a-c9eead8fb074",
+      "description": "Desktop structure: a permanent navigation rail, a contextual sidebar and media cards carrying useful metadata. Strong foundation for a multifunction web workspace.",
+      "platform": "web"
+    },
+    {
+      "id": "B02",
+      "app": "Linear",
+      "image": "/references/images/mobbin-a6f3c2e2-cbe0-4559-bda7-54ee9d405692.jpg",
+      "mime": "image/jpeg",
+      "source": "https://mobbin.com/screens/a6f3c2e2-cbe0-4559-bda7-54ee9d405692",
+      "description": "Operational clarity: compact grouped navigation, visible work states and a detail inspector that preserves the wider workspace.",
+      "platform": "web"
+    },
+    {
+      "id": "B03",
+      "app": "Spotify",
+      "image": "/references/images/mobbin-32594b50-67bd-4b51-9083-a587c9cd977c.jpg",
+      "mime": "image/jpeg",
+      "source": "https://mobbin.com/screens/32594b50-67bd-4b51-9083-a587c9cd977c",
+      "description": "Media hierarchy: persistent desktop navigation, artwork shelves and deliberate contrast. Useful for browsing inside a broader management app.",
+      "platform": "web"
+    },
+    {
+      "id": "B04",
+      "app": "Apple Music",
+      "image": "/references/images/mobbin-98264793-0d40-4f0f-93c9-c5ca32a2cb78.jpg",
+      "mime": "image/jpeg",
+      "source": "https://mobbin.com/screens/98264793-0d40-4f0f-93c9-c5ca32a2cb78",
+      "description": "Mobile finish: restrained typography, generous touch spacing and consistent artwork treatment. Borrow the finish while keeping desktop layouts spacious and useful.",
+      "platform": "ios"
+    },
+    {
+      "id": "B05",
+      "app": "Things 3",
+      "image": "/references/images/mobbin-c89b824c-7ad7-4fb4-9e0c-44f8af421629.jpg",
+      "mime": "image/jpeg",
+      "source": "https://mobbin.com/screens/c89b824c-7ad7-4fb4-9e0c-44f8af421629",
+      "description": "Contextual actions on phones: a clear selection state, readable action menu and a reachable bottom action bar.",
+      "platform": "ios"
+    }
+  ],
+  "github": [
+    {
+      "app": "Seerr",
+      "image": "/references/images/media-a-seerr-main.png",
+      "mime": "image/jpeg",
+      "source": "https://seerr.dev/screenshots/screen_main.jpg",
+      "repo": "https://github.com/Seerr-Team/Seerr",
+      "description": "Discovery and title browsing: strong artwork hierarchy, clear request state and a familiar desktop media layout.",
+      "category": "Discovery and requests",
+      "id": "G01"
+    },
+    {
+      "app": "Reiverr",
+      "image": "/references/images/media-b-reiverr-home.png",
+      "mime": "image/png",
+      "source": "https://github.com/aleksilassila/reiverr#readme",
+      "repo": "https://github.com/aleksilassila/reiverr",
+      "description": "A more cinematic desktop direction: full-width media presentation, quieter chrome and concentrated contextual actions.",
+      "category": "Libraries and media",
+      "id": "G02"
+    },
+    {
+      "app": "Cleanuparr",
+      "image": "/references/images/media-b-cleanuparr-dashboard.webp",
+      "mime": "image/webp",
+      "source": "https://github.com/Cleanuparr/Cleanuparr#readme",
+      "repo": "https://github.com/Cleanuparr/Cleanuparr",
+      "description": "Operational clarity: state summaries, service failures, recovery actions and recent events arranged in a useful desktop dashboard.",
+      "category": "Downloads and operations",
+      "id": "G03"
+    },
+    {
+      "app": "Immich",
+      "image": "/references/images/media-b-immich-screens.png",
+      "mime": "image/png",
+      "source": "https://github.com/immich-app/immich#readme",
+      "repo": "https://github.com/immich-app/immich",
+      "description": "A consistent visual system across desktop and mobile, with strong search, media density and coherent detail views.",
+      "category": "Libraries and media",
+      "id": "G04"
+    },
+    {
+      "app": "Profilarr",
+      "image": "/references/images/media-b-profilarr-hero.png",
+      "mime": "image/png",
+      "source": "https://github.com/Dictionarry-Hub/profilarr#readme",
+      "repo": "https://github.com/Dictionarry-Hub/profilarr",
+      "description": "Configuration depth: compact rule and settings structures that show how a polished app can still support serious management.",
+      "category": "Management and configuration",
+      "id": "G05"
+    }
+  ],
+  "scope": "Public reference screenshots, including historical official documentation. Reference ranking expresses design usefulness only; not product maintenance or quality."
+}

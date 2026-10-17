@@ -1,0 +1,216 @@
+{
+  "reviewedCount": 30,
+  "basis": "Thirty distinct screen previews visually inspected through Mobbin. Five selected for relevance to HolyArrs desktop management and mobile finish.",
+  "screens": [
+    {
+      "id": "7110628d-a251-451d-a84a-c9eead8fb074",
+      "source": "https://mobbin.com/screens/7110628d-a251-451d-a84a-c9eead8fb074",
+      "app": "Frame.io",
+      "platform": "web",
+      "selected": true
+    },
+    {
+      "id": "a1d6dd05-728c-470d-90c1-0677a7d09fca",
+      "source": "https://mobbin.com/screens/a1d6dd05-728c-470d-90c1-0677a7d09fca",
+      "app": "Frame.io",
+      "platform": "web",
+      "selected": false
+    },
+    {
+      "id": "2a5f2acf-82f8-4ba0-8742-84b73b29a415",
+      "source": "https://mobbin.com/screens/2a5f2acf-82f8-4ba0-8742-84b73b29a415",
+      "app": "Frame.io",
+      "platform": "web",
+      "selected": false
+    },
+    {
+      "id": "a6f3c2e2-cbe0-4559-bda7-54ee9d405692",
+      "source": "https://mobbin.com/screens/a6f3c2e2-cbe0-4559-bda7-54ee9d405692",
+      "app": "Linear",
+      "platform": "web",
+      "selected": true
+    },
+    {
+      "id": "7ec1420c-57d6-4790-ad03-f23e95ce811e",
+      "source": "https://mobbin.com/screens/7ec1420c-57d6-4790-ad03-f23e95ce811e",
+      "app": "ClickUp",
+      "platform": "web",
+      "selected": false
+    },
+    {
+      "id": "4da1ccac-3d97-4b47-9399-296086983c30",
+      "source": "https://mobbin.com/screens/4da1ccac-3d97-4b47-9399-296086983c30",
+      "app": "Height",
+      "platform": "web",
+      "selected": false
+    },
+    {
+      "id": "fb8f8f02-e80a-45a3-a66d-0a1a0ee2bc0b",
+      "source": "https://mobbin.com/screens/fb8f8f02-e80a-45a3-a66d-0a1a0ee2bc0b",
+      "app": "Airtable",
+      "platform": "web",
+      "selected": false
+    },
+    {
+      "id": "8b3756c6-5b8f-48d8-9471-4d70bedb7d29",
+      "source": "https://mobbin.com/screens/8b3756c6-5b8f-48d8-9471-4d70bedb7d29",
+      "app": "Airtable",
+      "platform": "web",
+      "selected": false
+    },
+    {
+      "id": "26f062a5-7774-4801-b8a7-73b837599be2",
+      "source": "https://mobbin.com/screens/26f062a5-7774-4801-b8a7-73b837599be2",
+      "app": "Airtable",
+      "platform": "web",
+      "selected": false
+    },
+    {
+      "id": "bf329d7a-b735-478f-8de3-df83f03ba567",
+      "source": "https://mobbin.com/screens/bf329d7a-b735-478f-8de3-df83f03ba567",
+      "app": "Dropbox",
+      "platform": "web",
+      "selected": false
+    },
+    {
+      "id": "abab9fac-1be5-4382-9893-4f7600379bf5",
+      "source": "https://mobbin.com/screens/abab9fac-1be5-4382-9893-4f7600379bf5",
+      "app": "Dropbox",
+      "platform": "web",
+      "selected": false
+    },
+    {
+      "id": "78f806eb-ba0c-4693-abda-330ff1c3390a",
+      "source": "https://mobbin.com/screens/78f806eb-ba0c-4693-abda-330ff1c3390a",
+      "app": "Dropbox",
+      "platform": "web",
+      "selected": false
+    },
+    {
+      "id": "98264793-0d40-4f0f-93c9-c5ca32a2cb78",
+      "source": "https://mobbin.com/screens/98264793-0d40-4f0f-93c9-c5ca32a2cb78",
+      "app": "Apple Music",
+      "platform": "ios",
+      "selected": true
+    },
+    {
+      "id": "aadc852e-e6cb-450d-a36f-7401a06f39b8",
+      "source": "https://mobbin.com/screens/aadc852e-e6cb-450d-a36f-7401a06f39b8",
+      "app": "Apple Music",
+      "platform": "ios",
+      "selected": false
+    },
+    {
+      "id": "eabdf610-5137-47b6-a550-8c2d32ff659d",
+      "source": "https://mobbin.com/screens/eabdf610-5137-47b6-a550-8c2d32ff659d",
+      "app": "Apple Music",
+      "platform": "ios",
+      "selected": false
+    },
+    {
+      "id": "498977f2-0ad5-4653-953e-a4241cc0fb56",
+      "source": "https://mobbin.com/screens/498977f2-0ad5-4653-953e-a4241cc0fb56",
+      "app": "Spotify",
+      "platform": "web",
+      "selected": false
+    },
+    {
+      "id": "32594b50-67bd-4b51-9083-a587c9cd977c",
+      "source": "https://mobbin.com/screens/32594b50-67bd-4b51-9083-a587c9cd977c",
+      "app": "Spotify",
+      "platform": "web",
+      "selected": true
+    },
+    {
+      "id": "a7adf97f-e6f4-4588-ab83-ed3d930b4fbf",
+      "source": "https://mobbin.com/screens/a7adf97f-e6f4-4588-ab83-ed3d930b4fbf",
+      "app": "Spotify",
+      "platform": "web",
+      "selected": false
+    },
+    {
+      "id": "ac4f5d5f-a314-4c92-b905-2792ca12683b",
+      "source": "https://mobbin.com/screens/ac4f5d5f-a314-4c92-b905-2792ca12683b",
+      "app": "Airtable",
+      "platform": "web",
+      "selected": false
+    },
+    {
+      "id": "b21d0b5b-8c25-4095-917a-526476a30280",
+      "source": "https://mobbin.com/screens/b21d0b5b-8c25-4095-917a-526476a30280",
+      "app": "Recraft",
+      "platform": "web",
+      "selected": false
+    },
+    {
+      "id": "cee6f904-cae2-4f1a-aca9-e3c6ea4d0f1c",
+      "source": "https://mobbin.com/screens/cee6f904-cae2-4f1a-aca9-e3c6ea4d0f1c",
+      "app": "Lovable",
+      "platform": "web",
+      "selected": false
+    },
+    {
+      "id": "ea26ce70-0ddb-4cbb-8edb-00469b5e82dc",
+      "source": "https://mobbin.com/screens/ea26ce70-0ddb-4cbb-8edb-00469b5e82dc",
+      "app": "ElevenLabs",
+      "platform": "web",
+      "selected": false
+    },
+    {
+      "id": "a9efc0c0-7c44-4922-b1de-21f3abc01304",
+      "source": "https://mobbin.com/screens/a9efc0c0-7c44-4922-b1de-21f3abc01304",
+      "app": "Bloom",
+      "platform": "web",
+      "selected": false
+    },
+    {
+      "id": "1f96449f-566c-4dd0-8de7-7baedb230743",
+      "source": "https://mobbin.com/screens/1f96449f-566c-4dd0-8de7-7baedb230743",
+      "app": "Arcade",
+      "platform": "web",
+      "selected": false
+    },
+    {
+      "id": "e90634cd-7e0b-4852-9fc6-f57a017276b6",
+      "source": "https://mobbin.com/screens/e90634cd-7e0b-4852-9fc6-f57a017276b6",
+      "app": "Things 3",
+      "platform": "ios",
+      "selected": false
+    },
+    {
+      "id": "c89b824c-7ad7-4fb4-9e0c-44f8af421629",
+      "source": "https://mobbin.com/screens/c89b824c-7ad7-4fb4-9e0c-44f8af421629",
+      "app": "Things 3",
+      "platform": "ios",
+      "selected": true
+    },
+    {
+      "id": "235f4304-13e7-4535-a7b3-351960034493",
+      "source": "https://mobbin.com/screens/235f4304-13e7-4535-a7b3-351960034493",
+      "app": "Things 3",
+      "platform": "ios",
+      "selected": false
+    },
+    {
+      "id": "0f8ab0bf-89aa-4bcc-a82b-2dc65123b953",
+      "source": "https://mobbin.com/screens/0f8ab0bf-89aa-4bcc-a82b-2dc65123b953",
+      "app": "Apple TV",
+      "platform": "ios",
+      "selected": false
+    },
+    {
+      "id": "10c71435-b1c1-4eb1-8dd2-953a5f09a8f8",
+      "source": "https://mobbin.com/screens/10c71435-b1c1-4eb1-8dd2-953a5f09a8f8",
+      "app": "Apple TV",
+      "platform": "ios",
+      "selected": false
+    },
+    {
+      "id": "55b0734f-dd93-4bc3-8904-6812184dc4c7",
+      "source": "https://mobbin.com/screens/55b0734f-dd93-4bc3-8904-6812184dc4c7",
+      "app": "Apple TV",
+      "platform": "ios",
+      "selected": false
+    }
+  ]
+}

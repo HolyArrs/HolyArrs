@@ -1,0 +1,16 @@
+{
+  "checkedAt": "2026-10-17T01:36:05.326Z",
+  "preview": "http://10.10.25.25:18744",
+  "mediaApps": 26,
+  "mediaScreens": 43,
+  "mobbinReviewed": 30,
+  "mobbinShown": 5,
+  "githubShown": 5,
+  "uniqueImages": 48,
+  "bytes": 33085427,
+  "syntax": "passed",
+  "imageByteAndMIME": "passed",
+  "unlistedRoutes": "rejected",
+  "nonGET": "rejected",
+  "browserAccessibility": "not run; source review only"
+}

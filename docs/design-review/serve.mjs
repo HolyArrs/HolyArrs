@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 const root = new URL('./', import.meta.url);
 const allowed = new Map([
 	['/', ['index.html', 'text/html; charset=utf-8']],
+	['/references.html', ['references.html', 'text/html; charset=utf-8']],
+	['/references/data.json', ['references/data.json', 'application/json; charset=utf-8']],
 	['/concepts/one.html', ['concepts/one.html', 'text/html; charset=utf-8']],
 	['/concepts/two.html', ['concepts/two.html', 'text/html; charset=utf-8']],
 	['/concepts/three.html', ['concepts/three.html', 'text/html; charset=utf-8']],
@@ -15,6 +17,14 @@ const allowed = new Map([
 ]);
 for (const name of ['dune', 'interstellar', 'blade-runner', 'arrival', 'breaking-bad', 'dark']) {
 	allowed.set(`/assets/${name}.jpg`, [`assets/${name}.jpg`, 'image/jpeg']);
+}
+const references = JSON.parse(await readFile(new URL('references/data.json', root), 'utf8'));
+for (const item of [...references.media, ...references.mobbin, ...references.github]) {
+	if (!/^\/references\/images\/[a-zA-Z0-9.-]+$/.test(item.image) ||
+		!['image/jpeg', 'image/png', 'image/webp'].includes(item.mime)) {
+		throw new Error('Invalid reference asset in review index');
+	}
+	allowed.set(item.image, [item.image.slice(1), item.mime]);
 }
 const server = http.createServer(async (req, res) => {
 	const path = new URL(req.url, 'http://preview.invalid').pathname;
