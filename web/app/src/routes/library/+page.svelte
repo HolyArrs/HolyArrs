@@ -4,7 +4,7 @@
 	import { api, message } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
+	import { beforeNavigate, goto } from '$app/navigation';
 	import { date, tone } from '#lib/format.ts';
 	import { counts, filters, kinds, matches, matchesTitleQuery, ofKind, titleQuery, type Filter, type Kind } from '#lib/library.ts';
 	import { showProgress, showState } from '#lib/shows.ts';
@@ -23,6 +23,27 @@
 	let mounted = $state(false);
 	let loadRevision = $state(0);
 	let searchRun = 0;
+	let searchPending = $state(false);
+	let restoreScroll = $state<{ x: number; y: number } | null>(null);
+	let lastOpenedId = $state<number | null>(null);
+	function scrollKey() {
+		const url = page.shallow?.url ?? page.url;
+		return `${url.pathname}${url.search}|${view}`;
+	}
+	beforeNavigate(({ to: target }) => {
+		if (!target || target.url.pathname === page.url.pathname) return;
+		try {
+			const suffix = target.url.pathname.slice(page.url.pathname.length + 1);
+			const titleId = target.url.pathname.startsWith(`${page.url.pathname}/`) && /^\d+$/.test(suffix) ? Number(suffix) : null;
+			sessionStorage.setItem('holyarrs.preview.library-scroll', JSON.stringify({ key: scrollKey(), x: window.scrollX, y: window.scrollY, titleId }));
+		} catch { /* Scroll memory is optional when storage is unavailable. */ }
+	});
+	$effect(() => {
+		if (!loaded || searchPending || !restoreScroll) return;
+		const position = restoreScroll;
+		restoreScroll = null;
+		void tick().then(() => requestAnimationFrame(() => window.scrollTo({ left: position.x, top: position.y, behavior: 'instant' })));
+	});
 	const startFilter = page.url.searchParams.get('show') as Filter | null;
 	let filter = $state<Filter>(startFilter && filters.some(([f]) => f === startFilter) ? startFilter : 'all');
 	const startKind = page.url.searchParams.get('kind') as Kind | null;
@@ -160,6 +181,7 @@
 		const run = ++searchRun;
 		indexedIds = new Set();
 		searchError = '';
+		searchPending = !!query;
 		if (!query) return;
 		const controller = new AbortController();
 		const timer = setTimeout(async () => {
@@ -168,6 +190,8 @@
 				if (run === searchRun) indexedIds = new Set(found.titles.map((t) => t.id));
 			} catch (e) {
 				if (!controller.signal.aborted && run === searchRun) searchError = message(e);
+			} finally {
+				if (run === searchRun) searchPending = false;
 			}
 		}, 200);
 		return () => {
@@ -223,6 +247,13 @@
 
 	onMount(() => {
 		mounted = true;
+		try {
+			const saved = JSON.parse(sessionStorage.getItem('holyarrs.preview.library-scroll') ?? 'null');
+			if (saved?.key === scrollKey() && Number.isFinite(saved.x) && Number.isFinite(saved.y) && saved.x >= 0 && saved.y >= 0) {
+				restoreScroll = { x: saved.x, y: saved.y };
+				lastOpenedId = Number.isSafeInteger(saved.titleId) && saved.titleId > 0 ? saved.titleId : null;
+			}
+		} catch { /* Start normally if a saved position is unavailable. */ }
 		void load();
 		const offs = [live.on('title', load), live.on('slot', load), live.on('resync', load)];
 		return () => offs.forEach((off) => off());
@@ -315,8 +346,8 @@
 		<tbody>
 			{#each shown as t (t.id)}
 				{@const requester = requestedBy(t)}
-				<tr data-testid="library-row" class:selected={preview?.id === t.id}>
-					<td class="title-cell"><a class="row-link" href={titleLink(t.id)}><span class="thumb"><Poster src={t.artwork[0]} name={t.name} /></span><span><b>{t.name}</b> <span class="muted xs">{t.year ?? ''}{kindWord[t.kind] ?? ''}</span></span></a><button class="preview-button list-preview" type="button" aria-label={`Preview ${t.name}`} aria-pressed={preview?.id === t.id} onclick={(event) => openPreview(t, event)}>Preview</button>{#if requester}<span class="requester xs muted" data-testid="requested-by">Requested by {requester}</span>{/if}</td>
+				<tr data-testid="library-row" class:selected={preview?.id === t.id} class:last-opened={lastOpenedId === t.id}>
+					<td class="title-cell">{#if lastOpenedId === t.id}<span class="last-opened-label" data-testid="last-opened">Last opened</span>{/if}<a class="row-link" href={titleLink(t.id)}><span class="thumb"><Poster src={t.artwork[0]} name={t.name} /></span><span><b>{t.name}</b> <span class="muted xs">{t.year ?? ''}{kindWord[t.kind] ?? ''}</span></span></a><button class="preview-button list-preview" type="button" aria-label={`Preview ${t.name}`} aria-pressed={preview?.id === t.id} onclick={(event) => openPreview(t, event)}>Preview</button>{#if requester}<span class="requester xs muted" data-testid="requested-by">Requested by {requester}</span>{/if}</td>
 					{#if t.kind === 'artist'}
 						{@const c = chipOf(t)}
 						<td>{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}<span class="chip" data-testid="request-approved" title="Requested and approved">Approved</span>{/if}{#if c}<span class="chip {tone(c.state)}">{c.label}</span>{/if}<span class="xs muted block">{artistProgress(t.artist)}</span></td>
@@ -340,10 +371,11 @@
 		{#each shown as t, i (t.id)}
 			{@const c = chipOf(t)}
 			{@const requester = requestedBy(t)}
-			<li class:selected={preview?.id === t.id} class="rise" style="--i: {i}">
+			<li class:selected={preview?.id === t.id} class:last-opened={lastOpenedId === t.id} class="rise" style="--i: {i}">
 				<a class="item" href={titleLink(t.id)} data-testid="library-card">
 					<Poster src={t.artwork[0]} name={t.name} />
 					<span class="name">{t.name}</span>
+					{#if lastOpenedId === t.id}<span class="last-opened-label" data-testid="last-opened">Last opened</span>{/if}
 					<span class="meta">
 						<span class="muted xs">{t.year ?? ''}{kindWord[t.kind] ?? ''}</span>
 						{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}
@@ -581,6 +613,9 @@
 	}
 	.meta > .muted { flex-basis: 100%; }
 	.requester { display: block; overflow-wrap: anywhere; white-space: normal; }
+	.grid > .last-opened { outline: 2px solid var(--text-muted); outline-offset: 4px; border-radius: 10px; }
+	.list-table tr.last-opened { background: var(--surface-2); outline: 2px solid var(--text-muted); outline-offset: -2px; }
+	.last-opened-label { display: block; font-size: var(--text-xs); font-weight: 600; color: var(--text); }
 	.active-filters { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-bottom: var(--s-4); }
 	.active-filter { display: inline-flex; align-items: center; gap: var(--s-2); min-height: 44px; max-width: 100%; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); color: var(--text); font-size: var(--text-sm); text-align: left; overflow-wrap: anywhere; cursor: pointer; }
 	.active-filter > span { flex: none; font-size: 18px; }
