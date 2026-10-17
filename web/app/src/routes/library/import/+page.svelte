@@ -537,6 +537,13 @@
 		border-top: 1px solid var(--line);
 	}
 	@media (max-width: 600px) {
+		.notice[data-testid='nothing-moved'] {
+			display: block;
+		}
+		.notice[data-testid='nothing-moved'] b {
+			display: block;
+			margin-bottom: var(--s-1);
+		}
 		.pick > :global(.btn), .look > :global(.btn), .end > :global(.btn) { width: 100%; min-height: var(--tap); }
 		.top, .found li { align-items: flex-start; flex-direction: column; }
 		.back { min-height: 44px; }

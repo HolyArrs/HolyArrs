@@ -33,7 +33,7 @@
 		margin-bottom: var(--s-2);
 	}
 	.eyebrow { margin: 0 0 var(--s-2); font-size: 11px; font-weight: var(--weight-semibold); letter-spacing: .09em; text-transform: uppercase; color: var(--text-muted); }
-	.rename-workspace { padding: 0; overflow: hidden; box-shadow: none; }
+	.rename-workspace { overflow: hidden; box-shadow: none; }
 	.rename-workspace :global(.btn) { min-height: 40px; }
 	@media (max-width: 600px) {
 		.back { min-height: 44px; }

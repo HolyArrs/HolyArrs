@@ -305,6 +305,20 @@
 		margin-top: var(--s-3);
 		flex-wrap: wrap;
 	}
+	@media (max-width: 600px) {
+		.list li {
+			align-items: stretch;
+			flex-direction: column;
+			gap: var(--s-2);
+		}
+		.list .grow,
+		.list .acts {
+			width: 100%;
+		}
+		.list .acts > :global(.btn) {
+			min-height: var(--tap);
+		}
+	}
 	code {
 		font-family: var(--font-mono);
 	}

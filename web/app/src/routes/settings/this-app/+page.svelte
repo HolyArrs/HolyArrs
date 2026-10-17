@@ -360,9 +360,22 @@
 		.two {
 			grid-template-columns: 1fr;
 		}
+		.checks li {
+			align-items: stretch;
+			flex-direction: column;
+			gap: var(--s-2);
+		}
+		.checks .grow {
+			width: 100%;
+		}
+		.checks li > :global(.chip),
+		.checks li > time {
+			align-self: flex-start;
+		}
 	}
 	code {
 		font-family: var(--font-mono);
 		color: var(--text);
+		overflow-wrap: anywhere;
 	}
 </style>

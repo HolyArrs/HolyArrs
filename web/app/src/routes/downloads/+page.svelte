@@ -569,16 +569,34 @@
 			min-height: 44px;
 		}
 		.dl {
+			display: grid;
+			grid-template-columns: 40px minmax(0, 1fr);
+			align-items: start;
 			padding: var(--s-3);
 		}
 		.media-art {
-			flex-basis: 40px;
 			width: 40px;
 		}
+		.dl > .grow {
+			min-width: 0;
+		}
+		.dl .top {
+			flex-direction: column;
+			gap: var(--s-2);
+		}
+		.names {
+			width: 100%;
+		}
+		.dl > .inspect,
 		.acts,
 		.acts :global(.btn) {
 			width: 100%;
 		}
+		.dl > .inspect,
+		.acts {
+			grid-column: 1 / -1;
+		}
+		.dl > .inspect,
 		.acts :global(.btn) {
 			min-height: 44px;
 		}

@@ -21,7 +21,7 @@
 						<input aria-label={`Select ${movie.name}`} type="checkbox" checked={selected.includes(movie.ids.tmdb)} onchange={(e) => onselect(movie.ids.tmdb, e.currentTarget.checked)} />
 					{/if}
 					<div>
-						<h3>{movie.name}{#if movie.year} <span>({movie.year})</span>{/if}</h3>
+						<h3>{movie.name}{#if movie.year}{' '}<span>({movie.year})</span>{/if}</h3>
 						<p class="small muted">{movie.roles?.join(' · ')}{#if movie.characters?.length} · {movie.characters.join(', ')}{/if}</p>
 					</div>
 				</div>

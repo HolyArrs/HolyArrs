@@ -365,6 +365,14 @@
 		}
 		.line {
 			flex-wrap: wrap;
+			align-items: center;
+		}
+		.line .grow {
+			flex: 0 0 100%;
+			order: 4;
+		}
+		.line time {
+			margin-left: auto;
 		}
 		.results-head {
 			align-items: flex-start;

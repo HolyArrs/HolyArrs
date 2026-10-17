@@ -55,8 +55,11 @@
 		<li>Make a key in <a href={to(`/settings/sign-in`)}>Settings > Sign-in > API keys</a>. Give it only the scopes it needs. The key is shown once; copy it then.</li>
 		<li>Send it in the <code>X-Api-Key</code> header with every call, never in the address.</li>
 		<li>
-			The base address is <code data-testid="api-base">{base}</code>
-			<button class="btn btn-quiet" type="button" onclick={() => copy(base)} aria-label="Copy the base address"><Icon name="copy" size={16} /></button>
+			The base address is
+			<div class="cmd address">
+				<code data-testid="api-base">{base}</code>
+				<button class="btn btn-quiet" type="button" onclick={() => copy(base)} aria-label="Copy the base address"><Icon name="copy" size={16} /></button>
+			</div>
 		</li>
 	</ol>
 </section>
@@ -154,6 +157,8 @@
 		overflow-wrap: anywhere;
 		white-space: pre-wrap;
 	}
+	.address { align-items: center; margin-top: var(--s-2); }
+	.cmd button { flex: none; min-width: var(--tap); min-height: var(--tap); }
 	.tag {
 		font-size: 0.9375rem;
 		margin: var(--s-4) 0 var(--s-2);

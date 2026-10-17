@@ -107,4 +107,8 @@
 	.workspace > :global(.notice) { margin: var(--s-4); }
 	.danger, .warn-text { color: var(--wait); }
 	.bad-text { color: var(--fail); }
+	@media (max-width: 560px) {
+		.title { display: grid; grid-template-columns: 20px minmax(0, 1fr); align-items: start; gap: var(--s-2) var(--s-3); padding: var(--s-4); }
+		.title > .chip { grid-column: 2; justify-self: start; }
+	}
 </style>

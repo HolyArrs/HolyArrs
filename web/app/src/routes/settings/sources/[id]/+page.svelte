@@ -92,6 +92,9 @@
 				</select>
 			</label>
 		</div>
+		{#if days.length === 0}
+			<p class="small muted empty-chart">No calls recorded in this period. Activity will appear after this Source answers a call.</p>
+		{:else}
 		<p class="xs muted legend"><span class="key calls"></span> answered <span class="key fails"></span> failed <span class="key grabs"></span> picked · days in UTC</p>
 		<div class="bars" role="img" aria-label="Calls, failures and picks per day">
 			{#each days as d (d.day)}
@@ -111,6 +114,7 @@
 			{/each}
 		</div>
 		<div class="ends xs muted"><span>{days.length ? dayLabel(days[0].day) : ''}</span><span>{days.length ? dayLabel(days[days.length - 1].day) : ''}</span></div>
+		{/if}
 	</section>
 
 	<section class="card" aria-labelledby="h-recent">
@@ -168,6 +172,9 @@
 	}
 	.legend {
 		margin-top: var(--s-2);
+	}
+	.empty-chart {
+		margin-top: var(--s-4);
 	}
 	.key {
 		display: inline-block;

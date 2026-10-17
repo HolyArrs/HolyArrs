@@ -195,9 +195,9 @@
 
 	<section class="card" aria-labelledby="h-pw">
 		<h2 id="h-pw" class="h2">Passwords</h2>
-		<form onsubmit={saveMin}>
+		<form class="passwords" onsubmit={saveMin}>
 			<fieldset disabled={!isOwner}>
-				<div class="field" style="margin-top: var(--s-3)">
+				<div class="field">
 					<label for="min-pw">Shortest password allowed</label>
 					<input id="min-pw" class="input" style="max-width: 120px" type="number" min="4" max="64" step="1" required bind:value={minLength} aria-describedby="min-pw-hint min-pw-warn" />
 					<span id="min-pw-hint" class="hint">4 to 64 characters. It counts for new passwords: first setup, invites, password changes and reset-owner. Passwords people already have keep working.</span>
@@ -319,6 +319,14 @@
 {/if}
 
 <style>
+	.passwords fieldset {
+		border: 0;
+		padding: 0;
+		margin: var(--s-3) 0 0;
+		min-width: 0;
+		display: grid;
+		gap: var(--s-3);
+	}
 	.way fieldset {
 		border: 0;
 		padding: 0;
@@ -327,7 +335,8 @@
 		gap: var(--s-3);
 		max-width: 520px;
 	}
-	.way button {
+	.way button,
+	.passwords button {
 		justify-self: start;
 	}
 	textarea.input {

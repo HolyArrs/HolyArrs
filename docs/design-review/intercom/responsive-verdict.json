@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "verdict": "pass",
+  "scope": "Preview responsive legibility, layout integrity and existing typography/motion regression checks; exact Intercom parity excluded.",
+  "branch": "codex/mobbin-product-review",
+  "baselineCommit": "38c467483531161df3d42a93c7cf0b4c3b4e6ce6",
+  "appSourceSha256": "e9f30b71717cacee71fc51443ba8a18f0b1ad3e7b483443c99f66566f3daf526",
+  "previewPort": 18746,
+  "appFilesChanged": 13,
+  "backendDependencies": [],
+  "responsive": {
+    "routeTemplates": 48,
+    "routeStateVariants": 62,
+    "matrixWidths": [360, 834, 1440, 3440],
+    "matrixContexts": 248,
+    "independentlyVisuallyReviewed": 248,
+    "focusedCardFormContexts": 12,
+    "breakpointContexts": 32,
+    "breakpointWidths": [320, 768, 1024, 3840],
+    "fourKViewport": [3840, 2160],
+    "darkContexts": 8,
+    "totalFinalSourceContexts": 300,
+    "recordedFailures": 0,
+    "recordedHorizontalOverflow": 0,
+    "recordedUnintendedClipping": 0,
+    "recordedOutsideElements": 0,
+    "recordedSiblingOverlaps": 0,
+    "recordedAxeViolations": 0,
+    "recordedPageErrors": 0,
+    "stableSource": true
+  },
+  "motion": {
+    "contexts": 6,
+    "widths": [390, 834, 1440],
+    "preferences": ["no-preference", "reduce"],
+    "assertions": ["type roles", "Library expansion", "dialog entry", "native close occupies no layout space", "Escape and focus return", "toast entry and dismissal", "live reduced-motion preference", "invalid duration token"],
+    "pageErrors": 0,
+    "stableSource": true
+  },
+  "sourceChecks": {
+    "svelteErrors": 0,
+    "svelteWarnings": 0,
+    "unitFilesPassed": 32,
+    "unitTestsPassed": 225,
+    "independentCodeReview": "approved",
+    "separateLintScript": false,
+    "heavyProductionBuildRun": false
+  },
+  "evidence": {
+    "responsiveRoot": ".omx/artifacts/visual-ralph/intercom/responsive-pass/",
+    "finalReceipt": "final/receipt.json",
+    "phoneReview": "final/phone-final-verdict.json",
+    "tabletReview": "final/tablet-final-verdict.json",
+    "wideReview": "final/wide-final-verdict.json",
+    "focusedReceipt": "card-form-repairs/receipt.json",
+    "breakpointReceipt": "breakpoints/receipt.json",
+    "darkReceipt": "dark/receipt.json",
+    "motionReceipt": ".omx/artifacts/visual-ralph/intercom/typography-motion/responsive-final/receipt.json",
+    "gallery": "http://10.10.25.25:18746/preview-audit/responsive-pass/final/index.html",
+    "tailscaleGallery": "http://100.87.70.86:18746/preview-audit/responsive-pass/final/index.html"
+  },
+  "limitations": [
+    "Some nested and privileged states use explicitly marked browser-only fixtures; these prove rendering, not API acceptance.",
+    "All browser contexts block non-GET requests; credentials and data are unchanged.",
+    "Dark theme and extra breakpoints are targeted samples, not additional complete route matrices.",
+    "Intentional bounded horizontal scrolling and explicit text truncation are excluded from accidental clipping diagnostics.",
+    "No native phone or TV input, every possible dataset, provider mutation, production bundle or combined backend acceptance is claimed.",
+    "Exact licensed Intercom font identity and recorded motion timing remain unverified; see type-motion.md.",
+    "Delivered commit and post-commit smoke are recorded separately in the shared integration handoff."
+  ]
+}

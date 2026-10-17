@@ -54,4 +54,12 @@
 		font: var(--weight-semibold) var(--text-xs) / 20px var(--font-ui);
 		text-align: center;
 	}
+	@media (max-width: 700px) {
+		.subnav {
+			gap: 0;
+		}
+		.subnav a {
+			padding-inline: var(--s-2);
+		}
+	}
 </style>

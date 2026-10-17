@@ -88,8 +88,8 @@
 		<div>
 			<h1>{data.person.name}</h1>
 			<p>{data.person.department || 'Department unavailable'}{#if data.person.birthplace} · {data.person.birthplace}{/if}</p>
-			{#if data.person.biography}<p class="bio">{data.person.biography}</p>{/if}
 		</div>
+		{#if data.person.biography}<p class="bio">{data.person.biography}</p>{/if}
 	</header>
 
 	<div class="toolbar">
@@ -136,10 +136,13 @@
 <style>
 	.workspace { overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--surface-1); }
 	.person-head { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: var(--s-5); align-items: start; margin: 0; padding: var(--s-5); border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: var(--surface-1); }
-	.portrait { width: 132px; }
+	.portrait { grid-row: 1 / 3; width: 132px; }
 	h1 { font: var(--weight-semibold) var(--text-2xl) / var(--leading-tight) var(--font-display); }
 	.person-head p { margin-top: var(--s-2); color: var(--text-muted); }
-	.bio { max-width: 76ch; line-height: 1.6; text-wrap: pretty; }
+	.bio { grid-column: 2; max-width: 76ch; line-height: 1.6; text-wrap: pretty; }
+	.seg { display: flex; flex-wrap: wrap; gap: var(--s-1); padding: var(--s-1); border: 1px solid var(--line); border-radius: var(--r-btn); background: var(--surface-2); }
+	.seg button { min-height: var(--tap); padding: var(--s-2) var(--s-4); border: 1px solid transparent; border-radius: var(--r-btn); background: transparent; color: var(--text-muted); font: inherit; cursor: pointer; }
+	.seg button[aria-pressed='true'] { border-color: var(--line); background: var(--surface-1); color: var(--text); }
 	.toolbar, .pages { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--s-3); margin: 0; padding: var(--s-3) var(--s-5); border-bottom: 1px solid var(--line); }
 	.toolbar { position: sticky; top: 0; z-index: 3; background: color-mix(in srgb, var(--surface-1) 96%, transparent); backdrop-filter: blur(10px); }
 	.workspace :global(.films) { grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: 0; }
@@ -152,5 +155,5 @@
 	.workspace > .card:not(.review) { margin: 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; box-shadow: none; }
 	.workspace > :global(.notice), .workspace > .small.muted { margin: var(--s-3) var(--s-5); }
 	.hero { min-height: 220px; }
-	@media (max-width: 560px) { .person-head { grid-template-columns: 88px minmax(0, 1fr); gap: var(--s-3); padding: var(--s-4); } .portrait { width: 88px; } .toolbar { position: static; } .toolbar > .btn { width: 100%; min-height: var(--tap); } .pages { justify-content: center; } }
+	@media (max-width: 560px) { .person-head { grid-template-columns: 88px minmax(0, 1fr); gap: var(--s-3); padding: var(--s-4); } .portrait { grid-row: auto; width: 88px; } .bio { grid-column: 1 / -1; } .toolbar { position: static; } .toolbar > .btn { width: 100%; min-height: var(--tap); } .pages { justify-content: center; } }
 </style>
