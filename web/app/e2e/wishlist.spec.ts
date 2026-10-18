@@ -75,6 +75,15 @@ test('a member asks for a movie from a phone and sees it on the Wishlist', async
 	const hit = kim.locator('li.hit', { hasText: 'Copper Lighthouse' });
 	await expect(kim.getByTestId('ask-limit')).toContainText('You have 10 movie asks left this week');
 	await hit.getByRole('button', { name: 'Ask', exact: true }).click();
+	// Ask never fires in one click: a confirm sheet opens with focus inside.
+	const confirmAsk = kim.getByRole('dialog', { name: /^Ask for Copper Lighthouse/ });
+	await expect(confirmAsk).toBeVisible();
+	await expect(confirmAsk.locator(':focus')).toHaveCount(1);
+	await kim.keyboard.press('Escape');
+	await expect(confirmAsk).toBeHidden();
+	await expect(hit.getByRole('button', { name: 'Ask', exact: true })).toBeFocused();
+	await hit.getByRole('button', { name: 'Ask', exact: true }).click();
+	await confirmAsk.getByRole('button', { name: 'Ask for Copper Lighthouse' }).click();
 	await expect(hit.getByRole('link', { name: /You asked · Waiting for approval/ })).toBeVisible();
 	await expect(kim.getByTestId('ask-limit')).toContainText('You have 9 movie asks left this week');
 	await noSidewaysScroll(kim);
@@ -145,6 +154,7 @@ test('the owner approves from a phone: the movie is added and kim is told', asyn
 test('turned down with a note; over the weekly limit kim is told when to try again', async () => {
 	await search(kim, 'velvet');
 	await kim.locator('li.hit', { hasText: 'Velvet Tide' }).getByRole('button', { name: 'Ask', exact: true }).click();
+	await kim.getByRole('dialog', { name: /^Ask for Velvet Tide/ }).getByRole('button', { name: 'Ask for Velvet Tide' }).click();
 	await expect(kim.locator('li.hit', { hasText: 'Velvet Tide' }).getByRole('link', { name: /You asked/ })).toBeVisible();
 
 	await own.goto('/wishlist');
@@ -177,6 +187,7 @@ test('turned down with a note; over the weekly limit kim is told when to try aga
 	await search(kim, 'salt choir');
 	await expect(kim.getByTestId('ask-limit')).toContainText('Try again in 7 days');
 	await kim.locator('li.hit', { hasText: 'Salt Choir' }).getByRole('button', { name: 'Ask', exact: true }).click();
+	await kim.getByRole('dialog', { name: /^Ask for Salt Choir/ }).getByRole('button', { name: 'Ask for Salt Choir' }).click();
 	await expect(kim.getByRole('alert')).toContainText('try again in 7 days');
 	await noSidewaysScroll(kim);
 });

@@ -20,6 +20,7 @@
 	import AddMovieDialog from '#lib/AddMovieDialog.svelte';
 	import AddShowDialog from '#lib/AddShowDialog.svelte';
 	import AskShowDialog from '#lib/AskShowDialog.svelte';
+	import AskMovieDialog from '#lib/AskMovieDialog.svelte';
 	import '#lib/title-page.css';
 
 	// A movie or show that is not in the Library yet: the same hero as a
@@ -45,7 +46,7 @@
 	let addMovie: ReturnType<typeof AddMovieDialog> | undefined = $state();
 	let addShow: ReturnType<typeof AddShowDialog> | undefined = $state();
 	let askShow: ReturnType<typeof AskShowDialog> | undefined = $state();
-	let asking = $state(false);
+	let askMovieDialog: ReturnType<typeof AskMovieDialog> | undefined = $state();
 	let loadedSettings = false;
 
 	async function load(k: string, id: string) {
@@ -101,21 +102,12 @@
 		void goto(to(`/library/${t.id}`));
 	}
 
-	async function askMovie(d: TitleDetails) {
-		asking = true;
-		try {
-			const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', { id: `tmdb:${d.tmdb}` });
-			details = { ...d, ask: { id: r.ask.id, state: r.ask.state, state_label: r.ask.state_label, mine: true, people: r.ask.people.length } };
-			if (r.ask.state === 'approved') toasts.push(`${r.ask.name} is approved; HolyArrs is looking for it.`, 'ok');
-			else if (r.joined) toasts.push(`Someone asked for ${r.ask.name} already; you are on the ask too and will hear when it is ready.`, 'ok');
-			else toasts.push(`Asked for ${r.ask.name}. You will hear when it is approved.`, 'ok');
-			void refreshInbox();
-		} catch (err) {
-			if (err instanceof ApiError && err.status === 409 && typeof err.body.title_id === 'number') return void goto(to(`/library/${err.body.title_id}`));
-			toasts.push(message(err), 'fail');
-		} finally {
-			asking = false;
-		}
+	function movieAsked(r: { ask: Ask; joined: boolean; already: boolean }) {
+		if (details) details = { ...details, ask: { id: r.ask.id, state: r.ask.state, state_label: r.ask.state_label, mine: true, people: r.ask.people.length } };
+		if (r.ask.state === 'approved') toasts.push(`${r.ask.name} is approved; HolyArrs is looking for it.`, 'ok');
+		else if (r.joined) toasts.push(`Someone asked for ${r.ask.name} already; you are on the ask too and will hear when it is ready.`, 'ok');
+		else toasts.push(`Asked for ${r.ask.name}. You will hear when it is approved.`, 'ok');
+		void refreshInbox();
 	}
 
 	function showAsked(s: LookupShow, r: { ask: Ask; joined: boolean; already: boolean }) {
@@ -183,7 +175,7 @@
 					{/if}
 				{:else if mayAsk && !d.neverAdd}
 					{#if d.kind === 'movie'}
-						<ActionButton icon="wish" label={d.ask ? `Ask for ${d.name} too` : `Ask for ${d.name}`} caption={d.ask?.mine ? 'Asked' : d.ask ? 'Ask too' : 'Ask'} primary disabled={asking || !!d.ask?.mine} busy={asking} onclick={() => void askMovie(d)} />
+						<ActionButton icon="wish" label={d.ask ? `Ask for ${d.name} too` : `Ask for ${d.name}`} caption={d.ask?.mine ? 'Asked' : d.ask ? 'Ask too' : 'Ask'} primary disabled={!!d.ask?.mine} onclick={() => askMovieDialog?.open({ tmdb: d.tmdb, name: d.name, year: d.year, ask: d.ask })} />
 					{:else if d.show}
 						<ActionButton icon="wish" label={d.ask ? `Ask for ${d.name} too` : `Ask for ${d.name}`} caption={d.ask ? 'Ask too' : 'Ask'} primary onclick={() => askShow?.open(d.show as LookupShow)} />
 					{/if}
@@ -217,6 +209,7 @@
 	<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} {titleDefaults} onadded={(_s, t) => added(t)} />
 {/if}
 {#if mayAsk}
+	<AskMovieDialog bind:this={askMovieDialog} onasked={(_m, r) => movieAsked(r)} onrefused={(_m, body) => typeof body.title_id === 'number' && void goto(to(`/library/${body.title_id}`))} />
 	<AskShowDialog bind:this={askShow} onasked={showAsked} onrefused={(_s, body) => typeof body.title_id === 'number' && void goto(to(`/library/${body.title_id}`))} />
 {/if}
 

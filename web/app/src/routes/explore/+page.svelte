@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { to } from '#lib/paths.ts';
-	import { detailPath, remember } from '#lib/title-details.ts';
+	import { detailPath, loadDetails, remember } from '#lib/title-details.ts';
 	import { api, message } from '#lib/api.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
@@ -10,6 +10,7 @@
 	import {
 		becauseYouHave,
 		cardAction,
+		cardTmdb,
 		comingSoon,
 		discoverCard,
 		discoverTitles,
@@ -31,7 +32,12 @@
 		type Facets
 	} from '#lib/explore.ts';
 	import type { PersonSummary } from '#lib/people.ts';
-	import type { Ask, CalendarEntry, TitleView } from '#lib/types.ts';
+	import type { Ask, CalendarEntry, GateDefaults, LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleDefaults, TitleView } from '#lib/types.ts';
+	import { seasonWords } from '#lib/shows.ts';
+	import AddMovieDialog from '#lib/AddMovieDialog.svelte';
+	import AddShowDialog from '#lib/AddShowDialog.svelte';
+	import AskShowDialog from '#lib/AskShowDialog.svelte';
+	import AskMovieDialog from '#lib/AskMovieDialog.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
@@ -104,22 +110,61 @@
 		return to(`/search?q=${encodeURIComponent(c.name)}${kind}`);
 	}
 
-	async function ask(c: ExploreCard) {
-		if (!c.ref) return;
+	// The round + never adds or asks in one click: it opens a confirm sheet
+	// (seasons for shows; Library folder and Pick rules for people who manage).
+	let folders = $state<LibraryFolder[]>([]);
+	let rules = $state<PickRulesView[]>([]);
+	let gateDefault = $state('released');
+	let showDefaults = $state<ShowSettings | null>(null);
+	let titleDefaults = $state<TitleDefaults | null>(null);
+	let addMovie: ReturnType<typeof AddMovieDialog> | undefined = $state();
+	let addShow: ReturnType<typeof AddShowDialog> | undefined = $state();
+	let askShow: ReturnType<typeof AskShowDialog> | undefined = $state();
+	let askMovie: ReturnType<typeof AskMovieDialog> | undefined = $state();
+	/** Which card the sheet is for, so the card updates once it is asked or added. */
+	let current: ExploreCard | null = null;
+
+	async function quick(c: ExploreCard, act: 'add' | 'ask') {
+		const tmdb = cardTmdb(c);
+		if (!tmdb || asking) return;
+		current = c;
+		if (act === 'ask' && c.kind === 'movie') return askMovie?.open({ tmdb, name: c.name, year: c.year });
 		asking = c.key;
 		try {
-			const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', { id: c.ref });
-			askedHere = new Set([...askedHere, c.key]);
-			if (r.ask.state === 'approved') toasts.push(`${r.ask.name} is approved; HolyArrs is looking for it.`, 'ok');
-			else if (r.joined) toasts.push(`Someone asked for ${r.ask.name} already; you are on the ask too.`, 'ok');
-			else toasts.push(`Asked for ${r.ask.name}. You will hear when it is approved.`, 'ok');
-			void refreshInbox();
+			const d = await loadDetails(api.get, c.kind as 'movie' | 'show', tmdb);
+			if (!d) return void toasts.push(`Could not find ${c.name}. Try Search.`, 'fail');
+			if (d.titleId) return void toasts.push(`${c.name} is in your Library already.`, 'ok');
+			if (act === 'add' && d.movie) addMovie?.open(d.movie);
+			else if (act === 'add' && d.show) addShow?.open(d.show);
+			else if (d.show) askShow?.open(d.show);
 		} catch (e) {
 			toasts.push(message(e), 'fail');
 		} finally {
 			asking = '';
 		}
 	}
+
+	function askedToast(r: { ask: Ask; joined: boolean }, what: string) {
+		if (current) askedHere = new Set([...askedHere, current.key]);
+		if (r.ask.state === 'approved') toasts.push(`${what} is approved; HolyArrs is looking for it.`, 'ok');
+		else if (r.joined) toasts.push(`Someone asked for ${what} already; you are on the ask too.`, 'ok');
+		else toasts.push(`Asked for ${what}. You will hear when it is approved.`, 'ok');
+		void refreshInbox();
+	}
+
+	function added(t: TitleView) {
+		toasts.push(`${t.name} is in your Library.`, 'ok');
+		void load();
+	}
+
+	$effect(() => {
+		if (!manage) return;
+		api.get<{ library_folders: LibraryFolder[] }>('/library-folders').then((r) => (folders = r.library_folders)).catch(() => {});
+		api.get<{ pick_rules: PickRulesView[] }>('/pick-rules').then((r) => (rules = r.pick_rules)).catch(() => {});
+		api.get<GateDefaults>('/settings/release-gate').then((r) => (gateDefault = r.release_gate)).catch(() => {});
+		api.get<ShowSettings>('/settings/shows').then((r) => (showDefaults = r)).catch(() => {});
+		api.get<TitleDefaults>('/settings/title-defaults').then((r) => (titleDefaults = r)).catch(() => {});
+	});
 
 	async function loadPeople(list: TitleView[]) {
 		// A few of the newest movies only: each one asks TMDB.
@@ -219,12 +264,10 @@
 							vtName={c.vtName}
 						>
 							{#snippet action()}
-								{#if act === 'add'}
-									<IconButton icon="plus" label="Add {c.name}" variant="glass" size="lg" href={searchHref(c)} />
-								{:else if act === 'ask' && c.kind === 'movie' && c.ref?.startsWith('tmdb:')}
-									<IconButton icon="plus" label="Ask for {c.name}" variant="glass" size="lg" disabled={asking === c.key} onclick={() => ask(c)} />
-								{:else if act === 'ask'}
-									<IconButton icon="plus" label="Ask for {c.name}" variant="glass" size="lg" href={searchHref(c)} />
+								{#if act && cardTmdb(c)}
+									<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={asking === c.key || undefined} onclick={() => void quick(c, act)} />
+								{:else if act}
+									<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" href={searchHref(c)} />
 								{/if}
 							{/snippet}
 						</PosterCard>
@@ -234,6 +277,14 @@
 		{/if}
 	{/if}
 </div>
+
+{#if manage}
+	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} {titleDefaults} onadded={(_m, t) => added(t)} />
+	<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} {titleDefaults} onadded={(_s, t) => added(t)} />
+{:else if mayAsk}
+	<AskMovieDialog bind:this={askMovie} onasked={(_m, r) => askedToast(r, r.ask.name)} />
+	<AskShowDialog bind:this={askShow} onasked={(_s: LookupShow, r) => askedToast(r, `${r.ask.name} (${seasonWords(r.ask.seasons)})`)} />
+{/if}
 
 <style>
 	.explore { --explore-item: 168px; display: flex; flex-direction: column; gap: 32px; padding-bottom: 48px; }

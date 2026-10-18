@@ -3,6 +3,7 @@ import { ApiError } from './api.ts';
 import {
 	becauseYouHave,
 	cardAction,
+	cardTmdb,
 	comingSoon,
 	orderRecent,
 	discoverCard,
@@ -215,6 +216,14 @@ describe('rows on a page', () => {
 		expect(cardAction({ ...out, mine: true }, { manage: false, ask: true })).toBeNull();
 		expect(cardAction({ ...out, titleId: 3 }, { manage: true, ask: true })).toBeNull();
 		expect(cardAction(out, { manage: false, ask: false })).toBeNull();
+	});
+	it('finds the TMDB id a card can open a confirm sheet with', () => {
+		const out = { key: 'k', kind: 'movie' as const, name: 'K', badges: [], ref: 'tmdb:12' };
+		expect(cardTmdb(out)).toBe('12');
+		expect(cardTmdb({ ...out, kind: 'show' })).toBe('12');
+		expect(cardTmdb({ ...out, kind: 'artist', ref: 'mbid:x' })).toBe('');
+		expect(cardTmdb({ ...out, ref: 'tvdb:4' })).toBe('');
+		expect(cardTmdb({ ...out, ref: undefined })).toBe('');
 	});
 });
 

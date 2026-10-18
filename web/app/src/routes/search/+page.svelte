@@ -22,6 +22,7 @@
 	import AddShowDialog from '#lib/AddShowDialog.svelte';
 	import AddMovieDialog from '#lib/AddMovieDialog.svelte';
 	import AskShowDialog from '#lib/AskShowDialog.svelte';
+	import AskMovieDialog, { type AskMovie } from '#lib/AskMovieDialog.svelte';
 	import { seasonWords } from '#lib/shows.ts';
 	import AddArtistDialog from '#lib/AddArtistDialog.svelte';
 	import AskArtistDialog from '#lib/AskArtistDialog.svelte';
@@ -128,8 +129,8 @@
 	let askLimit = $state<AskLimit | null>(null);
 	// The line under the search box is for the kind being searched.
 	const limitKindOf: Record<SearchKind, LimitKind> = { movie: 'movies', show: 'shows', music: 'music' };
-	let asking = $state('');
 	let askProblem = $state('');
+	let askMovie: ReturnType<typeof AskMovieDialog> | undefined = $state();
 
 	function loadLimit() {
 		api
@@ -138,33 +139,24 @@
 			.catch(() => {});
 	}
 
-	async function ask(m: LookupMovie) {
-		const tmdb = m.ids.tmdb;
-		if (!tmdb) return;
-		asking = tmdb;
+	function movieAsked(m: AskMovie, r: { ask: Ask; joined: boolean; already: boolean }) {
 		askProblem = '';
-		try {
-			const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', { id: `tmdb:${tmdb}` });
-			const i = results?.findIndex((x) => x.ids.tmdb === tmdb) ?? -1;
-			if (results && i >= 0) {
-				results[i] = { ...results[i], ask: { id: r.ask.id, state: r.ask.state, state_label: r.ask.state_label, mine: true, people: r.ask.people.length } };
-			}
-			if (r.ask.state === 'approved') toasts.push(`${r.ask.name} is approved; HolyArrs is looking for it.`, 'ok');
-			else if (r.joined) toasts.push(`Someone asked for ${r.ask.name} already; you are on the ask too and will hear when it is ready.`, 'ok');
-			else toasts.push(`Asked for ${r.ask.name}. You will hear when it is approved.`, 'ok');
-			loadLimit();
-			void refreshInbox();
-		} catch (err) {
-			if (err instanceof ApiError && err.status === 409 && typeof err.body.title_id === 'number' && results) {
-				const i = results.findIndex((x) => x.ids.tmdb === tmdb);
-				if (i >= 0) results[i] = { ...results[i], title_id: err.body.title_id as number };
-			}
-			askProblem = message(err);
-		} finally {
-			asking = '';
+		const i = results?.findIndex((x) => x.ids.tmdb === m.tmdb) ?? -1;
+		if (results && i >= 0) {
+			results[i] = { ...results[i], ask: { id: r.ask.id, state: r.ask.state, state_label: r.ask.state_label, mine: true, people: r.ask.people.length } };
 		}
+		if (r.ask.state === 'approved') toasts.push(`${r.ask.name} is approved; HolyArrs is looking for it.`, 'ok');
+		else if (r.joined) toasts.push(`Someone asked for ${r.ask.name} already; you are on the ask too and will hear when it is ready.`, 'ok');
+		else toasts.push(`Asked for ${r.ask.name}. You will hear when it is approved.`, 'ok');
+		loadLimit();
+		void refreshInbox();
 	}
 
+	function movieRefused(m: AskMovie, body: Record<string, unknown>) {
+		if (typeof body.title_id !== 'number' || !results) return;
+		const i = results.findIndex((x) => x.ids.tmdb === m.tmdb);
+		if (i >= 0) results[i] = { ...results[i], title_id: body.title_id };
+	}
 
 	onMount(() => {
 		if (session.can('manage_library')) {
@@ -413,7 +405,7 @@
 						{:else if m.ask?.mine}
 							<Button href={to(`/wishlist`)} icon="wish">You asked · {m.ask.state_label}</Button>
 						{:else if session.can('ask')}
-							<Button variant="primary" icon="wish" busy={asking === m.ids.tmdb} onclick={() => ask(m)}>{m.ask ? 'Ask too' : 'Ask'}</Button>
+							<Button variant="primary" icon="wish" onclick={() => m.ids.tmdb && askMovie?.open({ tmdb: m.ids.tmdb, name: m.name, year: m.year, ask: m.ask })}>{m.ask ? 'Ask too' : 'Ask'}</Button>
 							{#if m.ask}<span class="xs muted asked-already">Someone asked already · {m.ask.state_label}</span>{/if}
 						{:else}
 							<span class="xs muted">Your account may not ask for movies; ask the owner.</span>
@@ -431,6 +423,7 @@
 
 
 <AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} {titleDefaults} onadded={showAdded} />
+<AskMovieDialog bind:this={askMovie} onasked={movieAsked} onrefused={movieRefused} />
 <AskShowDialog bind:this={askShow} onasked={showAsked} onrefused={showRefused} />
 <AddArtistDialog bind:this={addArtist} {folders} {rules} defaults={musicDefaults} onadded={artistAdded} />
 <AskArtistDialog bind:this={askArtist} onasked={artistAsked} onrefused={artistRefused} />

@@ -333,6 +333,12 @@ export function cardAction(c: ExploreCard, can: { manage: boolean; ask: boolean 
 	return null;
 }
 
+/** cardTmdb is the TMDB id of a movie or show card not in the Library, or ''. */
+export function cardTmdb(c: Pick<ExploreCard, 'kind' | 'ref'>): string {
+	if ((c.kind !== 'movie' && c.kind !== 'show') || !c.ref?.startsWith('tmdb:')) return '';
+	return c.ref.slice(5);
+}
+
 // ---- Rows from the discover endpoint (not built yet; see backend-needs.md) ----
 
 export type ProviderRowName = 'trending' | 'popular' | 'upcoming' | 'similar' | 'genre';
