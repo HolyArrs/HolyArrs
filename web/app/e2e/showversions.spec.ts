@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { devices, expect, test, type Browser, type Page } from '@playwright/test';
-import { noSidewaysScroll, owner, signIn } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn, openSeasonNamed } from './helpers.ts';
 
 // Several Versions per show (4.8.11): Tidal Atlas is added with a second
 // 4K Version from the add dialog; the show page lists both Versions and
@@ -31,8 +31,7 @@ async function openShow(p: Page) {
 }
 
 async function openSeason(p: Page) {
-	const s = p.getByTestId('season').filter({ has: p.locator('summary', { hasText: 'Season 1' }) });
-	if ((await s.locator('details').getAttribute('open')) === null) await s.locator('summary').click();
+	const s = await openSeasonNamed(p, 'Season 1');
 	await expect(s.getByTestId('episode').first()).toBeVisible();
 	return s;
 }
@@ -65,7 +64,7 @@ test('add Tidal Atlas with a second 4K Version', async () => {
 	await expect(versions.nth(1)).toContainText('Pick rules: 4K');
 	await expect(versions.nth(1)).toContainText('[4K]');
 	const s1 = await openSeason(page);
-	await expect(s1.getByTestId('episode').first().getByTestId('episode-state')).toHaveText(['Main: Missing', '4K: Missing']);
+	await expect(s1.getByTestId('episode').first().getByTestId('episode-state')).toHaveText('Main: Missing · 4K: Missing');
 });
 
 test('Search now on the season fills each Version with its own pack; History names the Version', async () => {
@@ -73,8 +72,9 @@ test('Search now on the season fills each Version with its own pack; History nam
 	const s1 = await openSeason(page);
 	await s1.getByTestId('search-season').click();
 	const first = s1.getByTestId('episode').first().getByTestId('episode-state');
-	await expect(first.nth(0)).not.toContainText('Missing', { timeout: 30_000 });
-	await expect(first.nth(1)).not.toContainText('Missing', { timeout: 30_000 });
+	// One pill names both Versions: neither may still be missing.
+	await expect(first).not.toContainText('Main: Missing', { timeout: 30_000 });
+	await expect(first).not.toContainText('4K: Missing', { timeout: 30_000 });
 	await page.reload();
 	await expect(page.getByTestId('title-history').getByTestId('event-version').filter({ hasText: '4K' }).first()).toBeVisible({ timeout: 20_000 });
 	await page.goto('/downloads/history');

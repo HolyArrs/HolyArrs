@@ -30,7 +30,7 @@ async function confirm(label: RegExp) {
 
 test('turn a part off and on, a refused switch, and the Events', async () => {
 	await page.goto('/settings');
-	await page.locator('a.tile', { hasText: 'Parts and controls' }).click();
+	await page.locator('.settings-group a', { hasText: 'Parts and controls' }).click();
 	await expect(page.getByRole('heading', { name: 'Parts and controls', level: 1 })).toBeVisible();
 	await expect(page.getByTestId('part')).toHaveCount(5);
 	await expect(part('Music')).toContainText('When off: Artist and album pages');

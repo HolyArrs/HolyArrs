@@ -3,7 +3,7 @@ import { expect, test, type Browser, type Page } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { subsPort } from './fakes.mjs';
-import { moviesDir, noSidewaysScroll, owner, signIn, libraryTool, titleAction } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, libraryTool, titleAction, openSeasonNamed, episodeAction } from './helpers.ts';
 
 // Subtitles (4.16): the owner sets English and Spanish as the default
 // languages, reads what the Pass mark means, adds the lab's fake Subtitle
@@ -223,8 +223,8 @@ test('Show page: the show follows the default languages; one episode gets its ow
 	const showCard = page.getByTestId('subtitles');
 	await expect(showCard.getByTestId('subtitle-wish')).toContainText('English · Spanish (the default languages)');
 	await expect(showCard.getByTestId('subtitle-missing-link')).toContainText('2 subtitles missing');
-	await page.getByTestId('season').first().locator('summary').click();
-	await page.getByRole('button', { name: 'Subtitles of S01E01' }).click();
+	await openSeasonNamed(page, 'Season 1');
+	await episodeAction(page, 'S01E01', 'Subtitles');
 	const dialog = page.getByTestId('episode-subtitles-dialog');
 	await expect(dialog.getByRole('heading', { name: 'Subtitles of S01E01' })).toBeVisible();
 	await expect(dialog.getByTestId('subtitle-missing')).toHaveCount(2);
@@ -275,6 +275,7 @@ test('members see none of it', async ({ browser }) => {
 	await uma.getByLabel('Password again').fill(pw);
 	await uma.getByRole('button', { name: 'Join and sign in' }).click();
 	await expect(uma).toHaveURL(/\/$/);
+	await uma.goto('/library');
 	await expect(uma.getByRole('link', { name: 'Missing subtitles' })).toHaveCount(0);
 	await uma.getByRole('link', { name: /Quill Atlas/ }).first().click();
 	await expect(uma.getByRole('heading', { level: 1 })).toContainText('Quill Atlas');

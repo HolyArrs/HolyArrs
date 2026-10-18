@@ -41,7 +41,7 @@ async function readApp(app: string, port: number) {
 
 test("read two old apps, see the plan, try it and move", async () => {
   await page.goto("/settings");
-  await page.locator("a.tile", { hasText: "Move from other apps" }).click();
+  await page.locator(".settings-group a", { hasText: "Move from other apps" }).click();
   await expect(
     page.getByRole("heading", { name: "Move from other apps", level: 1 }),
   ).toBeVisible();

@@ -43,7 +43,7 @@ test('the app works under /holyarrs behind a proxy', async ({ page }) => {
 
 	await page.goto(`${root}/settings`);
 	await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
-	await page.locator('a.tile', { hasText: 'This app' }).click();
+	await page.locator('.settings-group a', { hasText: 'This app' }).click();
 	await expect(page).toHaveURL(`${root}/settings/this-app`);
 	await expect(page.getByRole('link', { name: 'Download the log' }).first()).toHaveAttribute('href', '/holyarrs/api/v1/logs/download');
 	await expect(page.getByTestId('url-base')).toContainText('/holyarrs');

@@ -34,13 +34,15 @@ test.afterAll(async () => {
 
 test('a part that is off hides its pages and says so on a direct link', async () => {
 	const main = page.getByRole('navigation', { name: 'Main' }).first();
-	await expect(main.getByRole('link', { name: 'Wishlist' })).toBeVisible();
+	// The owner approves, so the Wishlist is Approvals in the Manage section.
+	await expect(main.getByRole('link', { name: /^Approvals/ })).toBeVisible();
 	expect(await control(page, '/parts/wishlist/off')).toBe(200);
 	expect(await control(page, '/parts/music/off')).toBe(200);
 
 	await page.goto('/library');
-	await expect(main.getByRole('link', { name: 'Library' })).toBeVisible();
-	await expect(main.getByRole('link', { name: 'Wishlist' })).toHaveCount(0);
+	await expect(main.getByRole('link', { name: 'Movies' })).toBeVisible();
+	await expect(main.getByRole('link', { name: /^Approvals/ })).toHaveCount(0);
+	await expect(main.getByRole('link', { name: 'Music' })).toHaveCount(0);
 
 	await page.goto('/wishlist');
 	const off = page.getByTestId('part-off');
@@ -53,9 +55,9 @@ test('a part that is off hides its pages and says so on a direct link', async ()
 	expect(((await r.json()) as { error: string }).error).toBe('this part is off');
 
 	await page.goto('/settings');
-	await expect(page.locator('a.tile', { hasText: 'Sources' })).toBeVisible();
-	await expect(page.locator('a.tile', { hasText: 'MusicBrainz' })).toHaveCount(0);
-	await expect(page.locator('a.tile', { hasText: 'Weekly limits' })).toHaveCount(0);
+	await expect(page.locator('.settings-group a', { hasText: 'Sources' })).toBeVisible();
+	await expect(page.locator('.settings-group a', { hasText: 'MusicBrainz' })).toHaveCount(0);
+	await expect(page.locator('.settings-group a', { hasText: 'Weekly limits' })).toHaveCount(0);
 
 	await page.goto('/wishlist');
 	await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));

@@ -85,7 +85,7 @@ test('This app shows where things are kept, and the log', async () => {
 
 test('Schedules: next feed check, run it now, change how often', async () => {
 	await page.goto('/settings');
-	await page.locator('a.tile', { hasText: 'Schedules' }).click();
+	await page.locator('.settings-group a', { hasText: 'Schedules' }).click();
 	await expect(page.getByRole('heading', { name: 'Schedules', level: 1 })).toBeVisible();
 	const feed = page.locator('[data-testid="schedule"][data-kind="feed_check"]');
 	await expect(feed).toContainText('Feed check');
@@ -122,7 +122,7 @@ test('a newer release shows a notice; off asks nothing', async () => {
 
 test('the API page: key, scopes, base address, examples and every route', async () => {
 	await page.goto('/settings');
-	await page.locator('a.tile', { hasText: 'API for other apps' }).click();
+	await page.locator('.settings-group a', { hasText: 'API for other apps' }).click();
 	await expect(page.getByRole('heading', { name: 'API for other apps', level: 1 })).toBeVisible();
 	await expect(page.getByRole('link', { name: 'Settings > Sign-in > API keys' })).toHaveAttribute('href', '/settings/sign-in');
 	await expect(page.getByTestId('api-base')).toHaveText(/^http:\/\/127\.0\.0\.1:\d+\/api\/v1$/);
