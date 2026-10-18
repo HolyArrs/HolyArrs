@@ -21,7 +21,8 @@
 	let leaving = false;
 
 	beforeNavigate((nav) => {
-		if (!dirty || leaving) return;
+		// A save on its way counts as kept.
+		if (!dirty || leaving || saving) return;
 		if (nav.type === 'leave') {
 			// Closing or reloading the tab: the browser asks in its own words.
 			nav.cancel();

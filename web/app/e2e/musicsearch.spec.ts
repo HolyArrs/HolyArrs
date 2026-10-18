@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Locator, type Page } from '@playwright/test';
-import { noSidewaysScroll, owner, signIn } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn, openAdvanced } from './helpers.ts';
 
 // Searching albums (3.3.3, 3.3.4) against the fake Torznab Source in
 // fakes.mjs: an album search answers with a FLAC copy, an MP3 320 copy and
@@ -97,6 +97,7 @@ test('the artist page searches every missing album, or one', async () => {
 test('Settings > Search has the music choices', async () => {
 	await page.goto('/settings/search');
 	await expect(page.getByTestId('missing-music')).toBeChecked();
+	await openAdvanced(page.locator('#music-search'));
 	await page.getByLabel('Tracks an album Release may lack').fill('1');
 	await page.getByRole('button', { name: 'Save' }).click();
 	await expect(page.getByRole('status')).toContainText('Search settings saved.');

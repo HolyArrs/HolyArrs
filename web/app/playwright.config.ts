@@ -86,6 +86,8 @@ export default defineConfig({
 		{ name: 'schedules', testMatch: 'schedules.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['controls'] },
 		{ name: 'copychoices', testMatch: 'copy-choices.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['controls'] },
 		{ name: 'communitybrowse', testMatch: 'community-browse.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['desktop'] },
-		{ name: 'appframe', testMatch: 'appframe.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['controls'] }
+		{ name: 'appframe', testMatch: 'appframe.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['controls'] },
+		// Settings: the seven groups, setting search with a deep link and highlight, the save bar and its leave guard, Advanced kept per person, Danger zone, a phone and accessibility.
+		{ name: 'settings', testMatch: 'settings.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['appframe'] }
 	]
 });

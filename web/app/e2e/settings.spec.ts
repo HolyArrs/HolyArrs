@@ -1,0 +1,173 @@
+import AxeBuilder from '@axe-core/playwright';
+import { expect, test, type Page } from '@playwright/test';
+import { noSidewaysScroll, owner, signIn } from './helpers.ts';
+
+// Settings: the seven groups, setting search with a deep link that scrolls to
+// and highlights the field, the save bar and its leave guard, and Advanced
+// disclosures that stay as each person left them.
+test.describe.configure({ mode: 'serial' });
+
+let page: Page;
+test.beforeAll(async ({ browser }) => {
+	page = await (await browser.newContext()).newPage();
+	await signIn(page, owner());
+});
+test.afterAll(async () => {
+	await page.context().close();
+});
+
+test('Settings home: seven groups, each with its pages and My account on its own', async () => {
+	await page.goto('/settings');
+	await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
+	const groups = page.getByTestId('settings-group');
+	await expect(groups.getByRole('heading', { level: 2 })).toHaveText([
+		'General',
+		'Library',
+		'Getting copies',
+		'Wishlist and people',
+		'Sign-in and security',
+		'Linked apps',
+		'Maintenance',
+		'My account'
+	]);
+	const maintenance = groups.filter({ has: page.getByRole('heading', { name: 'Maintenance' }) });
+	await expect(maintenance.getByRole('link').last()).toContainText('Danger zone');
+	const nav = page.getByRole('navigation', { name: 'Settings sections' });
+	await expect(nav.getByRole('heading', { name: 'Getting copies' })).toBeVisible();
+	await expect(nav.getByRole('link', { name: 'Pick rules' })).toBeVisible();
+});
+
+test('search finds one setting, and its link scrolls to it, opens Advanced and highlights it', async () => {
+	await page.goto('/settings');
+	await page.getByLabel('Search settings').fill('free space');
+	const result = page.getByTestId('setting-result').filter({ hasText: 'Always leave this much free space' });
+	await expect(result).toContainText('Library › Naming and files › Advanced');
+	await result.click();
+	await expect(page).toHaveURL(/\/settings\/naming#min-free$/);
+	const field = page.locator('#min-free');
+	await expect(field).toBeVisible();
+	await expect(field).toBeInViewport();
+	await expect(field).toBeFocused();
+	await expect(page.locator('.flash-target')).toContainText('Always leave this much free space');
+	// The Advanced it sits in is open now.
+	await expect(page.locator('#where-files-go details.advanced')).toHaveAttribute('open', '');
+});
+
+test('search by another word, and the keyboard reaches the result', async () => {
+	await page.goto('/settings');
+	const box = page.getByLabel('Search settings');
+	await box.fill('dark mode');
+	await expect(page.getByTestId('setting-result').first()).toContainText('Theme');
+	await box.press('Tab');
+	await expect(page.getByTestId('setting-result').first()).toBeFocused();
+	await page.keyboard.press('Enter');
+	await expect(page).toHaveURL(/\/settings\/appearance#theme$/);
+	await expect(page.getByRole('radiogroup', { name: 'Theme' })).toBeVisible();
+	await page.goto('/settings');
+	await page.getByLabel('Search settings').fill('zebra crossing');
+	await expect(page.getByText('No settings match')).toBeVisible();
+});
+
+test('the save bar shows only with a change; Discard puts it back', async () => {
+	await page.goto('/settings/music');
+	await expect(page.getByRole('heading', { name: 'Music defaults', level: 1 })).toBeVisible();
+	const bar = page.getByTestId('savebar');
+	await expect(bar).toHaveCount(0);
+	const before = await page.getByLabel('New albums').inputValue();
+	const other = await page.getByLabel('New albums').locator('option').evaluateAll((os, b) => (os as HTMLOptionElement[]).map((o) => o.value).find((v) => v !== b)!, before);
+	await page.getByLabel('New albums').selectOption(other);
+	await expect(bar).toContainText('Unsaved changes');
+	await bar.getByRole('button', { name: 'Discard' }).click();
+	await expect(bar).toHaveCount(0);
+	await expect(page.getByLabel('New albums')).toHaveValue(before);
+});
+
+test('leaving with unsaved changes asks first; Stay keeps them, Leave goes', async () => {
+	await page.goto('/settings/wishlist');
+	await page.getByLabel('Movie asks', { exact: true }).fill('7');
+	await expect(page.getByTestId('savebar')).toBeVisible();
+	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Sources' }).click();
+	const ask = page.getByRole('dialog', { name: 'Leave without saving?' });
+	await expect(ask).toBeVisible();
+	await ask.getByRole('button', { name: 'Stay' }).click();
+	await expect(ask).toBeHidden();
+	await expect(page).toHaveURL(/\/settings\/wishlist$/);
+	await expect(page.getByLabel('Movie asks', { exact: true })).toHaveValue('7');
+
+	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Sources' }).click();
+	await page.getByRole('dialog', { name: 'Leave without saving?' }).getByRole('button', { name: 'Leave without saving' }).click();
+	await expect(page.getByRole('heading', { name: 'Sources', level: 1 })).toBeVisible();
+	await page.goto('/settings/wishlist');
+	await expect(page.getByLabel('Movie asks', { exact: true })).not.toHaveValue('7');
+});
+
+test('Save in the bar saves through the page form, with a toast', async () => {
+	await page.goto('/settings/wishlist');
+	const field = page.getByLabel('Movie asks', { exact: true });
+	const before = await field.inputValue();
+	await field.fill(String(Number(before) + 1));
+	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
+	await expect(page.getByText('Wishlist settings saved.')).toBeVisible();
+	await expect(page.getByTestId('savebar')).toHaveCount(0);
+	await page.reload();
+	await expect(field).toHaveValue(String(Number(before) + 1));
+	await field.fill(before);
+	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
+	await expect(page.getByText('Wishlist settings saved.').first()).toBeVisible();
+});
+
+test('Advanced starts closed and stays as the person left it', async () => {
+	await page.goto('/settings/search');
+	const card = page.locator('#early-fake');
+	const advanced = card.locator('details.advanced');
+	await expect(advanced).not.toHaveAttribute('open', '');
+	await expect(page.getByLabel('Hours a Release may be early')).toBeHidden();
+	const kept = () => page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith('holyarrs.settings.advanced.') && k.endsWith('.early-fake')).length);
+	await advanced.getByText('Advanced').click();
+	await expect(page.getByLabel('Hours a Release may be early')).toBeVisible();
+	await expect.poll(kept).toBe(1);
+	await page.reload();
+	await expect(page.getByLabel('Hours a Release may be early')).toBeVisible();
+	// Other cards keep their own state.
+	await expect(page.locator('#season-packs details.advanced')).not.toHaveAttribute('open', '');
+	await advanced.getByText('Advanced').click();
+	await expect.poll(kept).toBe(0);
+	await page.reload();
+	await expect(page.getByLabel('Hours a Release may be early')).toBeHidden();
+});
+
+test('Danger zone is last, outlined, and asks before a restart', async () => {
+	await page.goto('/settings/danger');
+	await page.getByTestId('control-app').getByRole('button', { name: 'Restart HolyArrs' }).click();
+	const box = page.getByTestId('confirm');
+	await expect(box).toContainText('restart HolyArrs');
+	await box.getByRole('button', { name: 'Cancel' }).click();
+	await expect(box).toHaveCount(0);
+});
+
+test('a phone: Settings home is the index, a page opens with a back link, no sideways scroll', async () => {
+	await page.setViewportSize({ width: 320, height: 720 });
+	await page.goto('/settings');
+	await noSidewaysScroll(page);
+	await page.getByTestId('settings-group').first().getByRole('link').first().click();
+	const back = page.getByRole('link', { name: 'Settings', exact: true });
+	await expect(back).toBeVisible();
+	await noSidewaysScroll(page);
+	await back.click();
+	await expect(page).toHaveURL(/\/settings$/);
+	await page.setViewportSize({ width: 1280, height: 720 });
+});
+
+test('accessibility: Settings home, a search and a page with the save bar', async () => {
+	await page.goto('/settings');
+	expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+	await page.getByLabel('Search settings').fill('password');
+	expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+	await page.goto('/settings/naming');
+	await page.getByLabel('Keep deleted files for (days)').fill('8');
+	await expect(page.getByTestId('savebar')).toBeVisible();
+	// Scan the bar once it has finished rising in, not halfway through its fade.
+	await page.getByTestId('savebar').evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((x) => x.finished)));
+	expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+	await page.getByTestId('savebar').getByRole('button', { name: 'Discard' }).click();
+});

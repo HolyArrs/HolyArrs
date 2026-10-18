@@ -90,6 +90,9 @@ test('pause and resume a stage, reconnect a linked app', async () => {
 });
 
 test('the whole-app restart asks first and can be cancelled', async () => {
+	// It moved from Parts and controls to Maintenance > Danger zone; Parts links there.
+	await page.getByRole('link', { name: 'Open the Danger zone' }).click();
+	await expect(page.getByRole('heading', { name: 'Danger zone', level: 1 })).toBeVisible();
 	const app = page.getByTestId('control-app');
 	await expect(app).toContainText("Docker's restart policy");
 	await app.getByRole('button', { name: 'Restart HolyArrs' }).click();
@@ -100,7 +103,7 @@ test('the whole-app restart asks first and can be cancelled', async () => {
 	await expect(box).toHaveCount(0);
 	// Still running.
 	await page.reload();
-	await expect(page.getByRole('heading', { name: 'Parts and controls', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Danger zone', level: 1 })).toBeVisible();
 });
 
 test('"Just movies" on the first-run step is one click, and everything comes back', async () => {

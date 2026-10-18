@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { discordPort, jellyKey, jellyfinPort } from './fakes.mjs';
-import { noSidewaysScroll, owner, signIn } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn, openAdvanced } from './helpers.ts';
 
 // History, health, the calendar with its phone feed, webhook Alerts and
 // media servers (5.1.10 to 5.1.17). Runs after the Organise tests, so the
@@ -80,13 +80,17 @@ test('history on the movie page links to the movie in History', async () => {
 	await expect(page.getByTestId('history-count')).toContainText('for Cinder Waltz');
 });
 
-test('health: checks run on This app, show on Home, and their settings are saved', async () => {
+test('health: checks run on Health checks, show on Home, and their settings are saved', async () => {
 	await page.goto('/settings/this-app');
+	await expect(page.getByTestId('health-summary')).toBeVisible();
+	await page.getByRole('link', { name: 'See the health checks' }).click();
+	await expect(page.getByRole('heading', { name: 'Health checks', level: 1 })).toBeVisible();
 	await page.getByRole('button', { name: 'Check again' }).click();
 	const checks = page.getByTestId('health-check');
 	await expect(checks.first()).toBeVisible();
 	await expect(page.getByTestId('health-checks')).toContainText('Library folder');
 	await expect(page.getByTestId('health-checks')).toContainText('Free space');
+	await openAdvanced(page);
 	await page.getByLabel('Alert after this many runs in a row').fill('3');
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(page.getByText('Health check settings saved.')).toBeVisible();

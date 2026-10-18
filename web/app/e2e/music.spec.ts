@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { join } from 'node:path';
-import { moviesDir, noSidewaysScroll, owner, signIn, openApprovals, libraryKind, libraryStatus, titleAction } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, openApprovals, libraryKind, libraryStatus, titleAction, openAdvanced } from './helpers.ts';
 
 // Music (2.3.4 to 2.3.8): the owner adds a music folder, looks at Settings >
 // Music, adds Tin Lanterns from Search (the fake MusicBrainz knows it and
@@ -56,6 +56,7 @@ test('the owner adds a music folder and looks at Settings > Music', async () => 
 	await expect(own.getByLabel('Albums to keep up to date')).toHaveValue('all');
 	await expect(own.getByRole('checkbox', { name: 'Album', exact: true })).toBeChecked();
 	await expect(own.getByRole('checkbox', { name: 'EP', exact: true })).toBeChecked();
+	await openAdvanced(own);
 	await expect(own.getByRole('checkbox', { name: 'Live', exact: true })).not.toBeChecked();
 	await expect(own.getByLabel('Which Pressing an album follows')).toHaveValue('common');
 	await own.getByLabel('Keep answers for (hours)').fill('48');

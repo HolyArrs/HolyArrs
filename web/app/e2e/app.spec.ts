@@ -142,7 +142,7 @@ test('settings pages render their forms', async () => {
 		['/settings/library-folders', 'Library folders'],
 		['/settings/sources', 'Sources'],
 		['/settings/downloaders', 'Downloaders'],
-		['/settings/tmdb', 'TMDB key'],
+		['/settings/tmdb', 'Metadata'],
 		['/settings/backups', 'Backups'],
 		['/settings/sign-in', 'Sign-in'],
 		['/settings/account', 'My account'],

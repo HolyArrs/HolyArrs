@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
-import { noSidewaysScroll, owner, signIn } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn, openAdvanced } from './helpers.ts';
 
 // Search for movies against the fake Torznab Source in fakes.mjs (added by
 // sources.spec.ts): Choose a release on the Movie page, the Held and
@@ -145,6 +145,7 @@ test('Home shows a search running and then what it found, live', async ({ browse
 test('Settings > Search: the four settings are saved and a wrong interval is refused', async () => {
 	await page.goto('/settings/search');
 	await expect(page.getByRole('heading', { level: 1, name: 'Search' })).toBeVisible();
+	await openAdvanced(page);
 	await expect(page.getByLabel('Check Source feeds every (minutes)')).toHaveValue('15');
 	await page.getByLabel('Check Source feeds every (minutes)').fill('5');
 	await page.getByRole('button', { name: 'Save' }).click();
@@ -168,6 +169,7 @@ test('Settings > Search: the early and fake switches are saved', async () => {
 	await expect(page.getByTestId('refuse-early')).toBeChecked();
 	await expect(page.getByTestId('refuse-tiny')).toBeChecked();
 	await expect(page.getByTestId('import-floors')).toBeChecked();
+	await openAdvanced(page);
 	await expect(page.getByTestId('hold-unknown')).not.toBeChecked();
 	await page.getByLabel('Hours a Release may be early').fill('48');
 	await page.getByLabel('Smallest video file to place (MB)').fill('0');

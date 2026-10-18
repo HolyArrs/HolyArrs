@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { noSidewaysScroll, owner, signIn } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn, openAdvanced } from './helpers.ts';
 
 // The rest of the app frame (3.4.3, 3.5.7-3.5.12): signed-in devices, This
 // app (storage, log download, update notice), Schedules, the log viewer and
@@ -106,19 +106,31 @@ test('Schedules: next feed check, run it now, change how often', async () => {
 });
 
 test('a newer release shows a notice; off asks nothing', async () => {
-	await page.goto('/settings/this-app');
+	// The update check settings moved to Maintenance > Health checks; the notice stays on This app.
+	const saved = async () => {
+		await page.getByRole('button', { name: 'Save' }).click();
+		await expect(page.getByTestId('savebar')).toHaveCount(0);
+	};
+	await page.goto('/settings/health');
+	await openAdvanced(page);
 	await page.getByLabel('The release feed may be on the local network').check();
-	await page.getByRole('button', { name: 'Save' }).click();
+	await saved();
+	await page.goto('/settings/this-app');
 	await page.getByRole('button', { name: 'Check for updates now' }).click();
 	await expect(page.getByTestId('update-words')).toContainText('HolyArrs v9.9.9 is out');
 	await expect(page.getByRole('link', { name: 'What is new in v9.9.9' })).toHaveAttribute('href', 'https://github.com/CoderLuii/holyarrs/releases/tag/v9.9.9');
+	await page.goto('/settings/health');
 	await expect(page.getByTestId('update-privacy')).toContainText('api.github.com');
 	await page.getByLabel('Check once a day for a newer HolyArrs').uncheck();
-	await page.getByRole('button', { name: 'Save' }).click();
+	await saved();
+	await page.goto('/settings/this-app');
 	await expect(page.getByTestId('update-words')).toContainText('The update check is off');
 	await expect(page.getByRole('button', { name: 'Check for updates now' })).toHaveCount(0);
+	await page.goto('/settings/health');
 	await page.getByLabel('Check once a day for a newer HolyArrs').check();
-	await page.getByRole('button', { name: 'Save' }).click();
+	await saved();
+	await axe(page, '/settings/health');
+	await page.goto('/settings/this-app');
 	await axe(page, '/settings/this-app');
 });
 

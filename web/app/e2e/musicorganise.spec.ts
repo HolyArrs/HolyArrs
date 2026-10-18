@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { moviesDir, noSidewaysScroll, owner, signIn, titleAction } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, titleAction, openAdvanced } from './helpers.ts';
 
 // Organise for music (4.15.4): runs after musicdownloads.spec.ts, so Tin
 // Lanterns – Harbour Songs (2019) has three tracks in the music Library
@@ -61,6 +61,7 @@ test('Settings > Naming has music patterns with a live example', async () => {
 	await card.getByRole('textbox', { name: 'Artist folder pattern', exact: true }).fill('{artist}');
 	await card.getByRole('textbox', { name: 'Album folder pattern', exact: true }).fill('{year} - {album}');
 	await expect(ex).toContainText('The Lab Lanterns/2025 - Small Hours/03 - Harbour Light.flac');
+	await openAdvanced(card);
 	await card.getByRole('checkbox', { name: /A folder for each disc/ }).check();
 	await expect(ex).toContainText('2025 - Long Night/Disc 2/04 - Second Wind.flac');
 	await card.getByRole('checkbox', { name: /A folder for each disc/ }).uncheck();

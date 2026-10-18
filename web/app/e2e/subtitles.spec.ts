@@ -3,7 +3,7 @@ import { expect, test, type Browser, type Page } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { subsPort } from './fakes.mjs';
-import { moviesDir, noSidewaysScroll, owner, signIn, libraryTool, titleAction, openSeasonNamed, episodeAction } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, libraryTool, titleAction, openSeasonNamed, episodeAction, openAdvanced } from './helpers.ts';
 
 // Subtitles (4.16): the owner sets English and Spanish as the default
 // languages, reads what the Pass mark means, adds the lab's fake Subtitle
@@ -74,13 +74,14 @@ test('Settings > Subtitles: English and Spanish become the default languages; th
 	await expect(editor.getByTestId('wish-row')).toHaveCount(2);
 	await page.locator('#def-lang-0').selectOption('en');
 	await page.locator('#def-lang-1').selectOption('es');
-	await expect(page.getByLabel('Episodes')).toHaveValue('90');
-	await expect(page.getByLabel('Movies')).toHaveValue('70');
+	await openAdvanced(page);
+	await expect(page.getByLabel('Pass mark for episodes')).toHaveValue('90');
+	await expect(page.getByLabel('Pass mark for movies')).toHaveValue('70');
 	await page.getByTestId('pass-mark-help').locator('summary').click();
 	await expect(page.getByTestId('pass-mark-help')).toContainText('match score from 0 to 100');
 	await expect(page.getByLabel('Frame rate from')).toHaveValue('25');
 	await expect(page.getByLabel('Frame rate to')).toHaveValue('23.976');
-	await page.getByRole('button', { name: 'Save settings' }).click();
+	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
 	await expect(page.getByText('Subtitle settings saved.')).toBeVisible();
 	await page.reload();
 	await expect(page.locator('#def-lang-0')).toHaveValue('en');

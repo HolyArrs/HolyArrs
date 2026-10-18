@@ -145,3 +145,9 @@ export async function noSidewaysScroll(page: Page) {
 	});
 	expect(sw, `${page.url()} is ${sw}px wide on a ${cw}px screen (${wide.join(', ')})`).toBeLessThanOrEqual(cw);
 }
+
+/** openAdvanced opens every closed Advanced disclosure on a settings page (they start closed and are kept per person). */
+export async function openAdvanced(scope: Page | Locator) {
+	const closed = scope.locator('details.advanced:not([open]) > summary');
+	while ((await closed.count()) > 0) await closed.first().click();
+}

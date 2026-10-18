@@ -118,7 +118,7 @@ test('episode subtitle dialog chooses from the fake site and saves the exact fil
 	await page.goto('/settings/subtitles');
 	await page.getByRole('button', { name: 'Add a language' }).click();
 	await page.locator('#def-lang-0').selectOption('en');
-	await page.getByRole('button', { name: 'Save settings' }).click();
+	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
 	await expect(page.getByText('Subtitle settings saved.')).toBeVisible();
 
 	await page.getByRole('button', { name: 'Add a Subtitle site' }).click();

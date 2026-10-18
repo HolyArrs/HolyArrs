@@ -80,14 +80,14 @@
 		</a>
 
 		{#each groups as { group, items } (group.id)}
-			<section class="nav-group" aria-labelledby="settings-nav-{group.id}">
+			<div class="nav-group" role="group" aria-labelledby="settings-nav-{group.id}">
 				<h2 id="settings-nav-{group.id}"><Icon name={group.icon} size={14} />{group.label}</h2>
 				{#each items as section (section.href)}
 					<a class="nav-row" href={to(section.href)} aria-current={currentSection?.href === section.href ? 'page' : undefined}>
 						<span>{section.label}</span>
 					</a>
 				{/each}
-			</section>
+			</div>
 		{/each}
 	</nav>
 

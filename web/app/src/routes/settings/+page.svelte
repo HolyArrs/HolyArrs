@@ -36,7 +36,7 @@
 <div class="find">
 	<Icon name="search" size={17} />
 	<label class="sr-only" for="settings-find">Search settings</label>
-	<input id="settings-find" class="input" type="search" placeholder="Search settings, like free space or password" autocomplete="off" bind:value={query} aria-controls="settings-results" />
+	<input id="settings-find" class="input" type="search" placeholder="Search settings, like free space or password" autocomplete="off" bind:value={query} aria-controls={query.trim() ? 'settings-results' : undefined} />
 </div>
 
 {#if query.trim()}

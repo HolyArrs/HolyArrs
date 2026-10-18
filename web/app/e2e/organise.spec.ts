@@ -4,7 +4,7 @@ import { existsSync, readdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { makeOldLibrary } from './fakes.mjs';
-import { noSidewaysScroll, owner, signIn, titleAction, libraryTool } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn, titleAction, libraryTool, openAdvanced } from './helpers.ts';
 
 // Organise (stage 5.1): import an existing library from the screen, rename
 // files after seeing the preview, delete a movie after seeing the plan, and
@@ -148,6 +148,7 @@ test('settings: patterns show a live example, a bad word is caught, and the choi
 	await expect(ex).toContainText('Dune - Part Two (2024)/Dune - Part Two (2024) 1080p BluRay.mkv');
 	await page.getByLabel('File name pattern', { exact: true }).fill('{title} [{year}]');
 	await expect(ex).toContainText('Dune - Part Two [2024].mkv');
+	await openAdvanced(page);
 	await page.getByLabel('A colon in a name becomes').selectOption('remove');
 	await expect(ex).toContainText('Dune Part Two [2024].mkv');
 	await page.getByLabel('File name pattern', { exact: true }).fill('{title} {nope}');
@@ -169,6 +170,8 @@ test('settings: patterns show a live example, a bad word is caught, and the choi
 	await page.getByRole('button', { name: 'Save' }).click();
 	// The browser holds the form back: under 10 is not a valid number here.
 	expect(await page.getByLabel('Folders read per Import a library scan').evaluate((e) => (e as HTMLInputElement).validity.valid)).toBe(false);
+	// Nothing was saved; put the change back so leaving does not ask first.
+	await page.getByTestId('savebar').getByRole('button', { name: 'Discard' }).click();
 	await page.reload();
 	await expect(page.getByLabel('Folders read per Import a library scan')).toHaveValue('5000');
 	await page.getByRole('button', { name: 'Empty old holding days now' }).click();
