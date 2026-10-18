@@ -171,6 +171,17 @@
 </dialog>
 
 <style>
+	details > summary {
+		display: inline-flex;
+		align-items: center;
+		min-height: 24px;
+		min-width: 24px;
+		padding: 2px 4px;
+		cursor: pointer;
+	}
+	@media (pointer: coarse) {
+		details > summary { min-height: 44px; }
+	}
 	.versions .version {
 		padding: var(--s-3);
 		border-radius: 5px;
