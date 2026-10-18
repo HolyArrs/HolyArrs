@@ -9,6 +9,7 @@
 	import { ago, date, dateTime } from './format.ts';
 	import Icon from './Icon.svelte';
 	import TitleHero from './ui/TitleHero.svelte';
+	import LoadError from './ui/LoadError.svelte';
 	import ActionButton from './ui/ActionButton.svelte';
 	import ActionMenu from './ui/ActionMenu.svelte';
 	import type { MenuItem } from './ui/Menu.svelte';
@@ -41,7 +42,25 @@
 	} from './music.ts';
 	import type { AlbumSummary, Ask, EventPage, EventRecord, LookupArtist, TitleView } from './types.ts';
 
-	let { title, onchange }: { title: TitleView; onchange: (t: TitleView) => void } = $props();
+	let {
+		title,
+		onchange,
+		error = '',
+		onretry
+	}: { title: TitleView; onchange: (t: TitleView) => void; error?: string; onretry?: () => Promise<void> | void } = $props();
+
+	// A failed refresh keeps what is shown and says so above it.
+	let loadErr = $state('');
+	let retrying = $state(false);
+	async function retry() {
+		retrying = true;
+		try {
+			await onretry?.();
+			await reload();
+		} finally {
+			retrying = false;
+		}
+	}
 
 	const staff = $derived(session.can('manage_library'));
 	const artist = $derived(title.artist);
@@ -88,9 +107,10 @@
 	async function loadAlbums() {
 		try {
 			albums = (await api.get<{ albums: AlbumSummary[] }>(`/titles/${title.id}/albums`)).albums;
+			loadErr = '';
 		} catch (e) {
-			albums = [];
-			toasts.push(message(e), 'fail');
+			albums ??= [];
+			loadErr = message(e);
 		}
 	}
 
@@ -106,7 +126,12 @@
 	}
 
 	async function reload() {
-		onchange(await api.get<TitleView>(`/titles/${title.id}`));
+		try {
+			onchange(await api.get<TitleView>(`/titles/${title.id}`));
+		} catch (e) {
+			loadErr = message(e);
+			return;
+		}
 		await loadAlbums();
 		void loadHistory();
 	}
@@ -294,6 +319,8 @@
 		<p class="small" data-testid="artist-progress">{artistProgress(artist)}</p>
 	{/snippet}
 </TitleHero>
+
+{#if loadErr || error}<LoadError hasData message={loadErr || error} onretry={() => void retry()} busy={retrying} />{/if}
 
 <p class="tp-why" data-testid="gate-reason"><b>Why:</b> {title.gate_reason}</p>
 

@@ -14,14 +14,11 @@
 .tp-row-end { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; flex: none; }
 .tp-why { margin: 0; padding: 10px 14px; border-left: 3px solid var(--wait); background: var(--surface-1); border-radius: var(--r-sm); max-width: 78ch; font-size: var(--text-sm); box-shadow: 0 0 0 1px var(--line); }
 .tp-why.open { border-left-color: var(--ok); }
-.tp-dl { padding: 12px 14px; border-radius: 14px; background: rgb(0 0 0 / 35%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 14%); max-width: 520px; color: #fff; }
-.tp-dl .chip { background: rgb(255 255 255 / 16%); color: #fff; }
+.tp-dl { padding: 12px 14px; border-radius: 14px; background: var(--on-art-scrim-mid); box-shadow: inset 0 0 0 1px var(--on-art-ring); max-width: 520px; color: var(--on-art); }
 .tp-dl-head { gap: 8px; flex-wrap: wrap; }
 .tp-dl p { margin-top: 6px; }
-.tp-bar { width: 100%; height: 6px; margin-top: 8px; accent-color: #fff; }
-.tp-glass-btn { margin-top: 8px; min-height: 44px; padding: 0 16px; border-radius: 999px; background: rgb(255 255 255 / 16%); color: #fff; font: var(--t-subhead); font-weight: 600; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 22%); }
-.tp-glass-btn:hover { background: rgb(255 255 255 / 26%); }
-.tp-glass-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px #111, 0 0 0 4px #fff; }
+.tp-bar { margin-top: 8px; }
+.tp-dl .tp-dl-btn { margin-top: 8px; }
 .tp-member { display: flex; align-items: center; min-height: 44px; }
 .tp-start { margin-top: 8px; }
 @media (max-width: 1023px) {

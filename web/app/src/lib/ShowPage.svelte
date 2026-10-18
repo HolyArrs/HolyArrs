@@ -4,6 +4,8 @@
 	// and episode, air dates and why each episode is or is not looked for;
 	// Search now and Choose a release for the show, a season or an episode.
 	import { goto } from '$app/navigation';
+	import { tick } from 'svelte';
+	import { reducedMotion } from './motion.ts';
 	import { api, message } from './api.ts';
 	import RenamePreview from './RenamePreview.svelte';
 	import ShowDeleteDialog from './ShowDeleteDialog.svelte';
@@ -15,6 +17,7 @@
 	import { ago, date, dateTime, tone } from './format.ts';
 	import Icon from './Icon.svelte';
 	import TitleHero from './ui/TitleHero.svelte';
+	import LoadError from './ui/LoadError.svelte';
 	import ActionButton from './ui/ActionButton.svelte';
 	import ActionMenu from './ui/ActionMenu.svelte';
 	import Menu, { type MenuItem } from './ui/Menu.svelte';
@@ -48,7 +51,25 @@
 	} from './shows.ts';
 	import type { EpisodeView, EventPage, EventRecord, PickRulesView, TitleView } from './types.ts';
 
-	let { title, onchange }: { title: TitleView; onchange: (t: TitleView) => void } = $props();
+	let {
+		title,
+		onchange,
+		error = '',
+		onretry
+	}: { title: TitleView; onchange: (t: TitleView) => void; error?: string; onretry?: () => Promise<void> | void } = $props();
+
+	// A failed refresh keeps what is shown and says so above it.
+	let loadErr = $state('');
+	let retrying = $state(false);
+	async function retry() {
+		retrying = true;
+		try {
+			await onretry?.();
+			await reload();
+		} finally {
+			retrying = false;
+		}
+	}
 
 	const staff = $derived(session.can('manage_library'));
 	const show = $derived(title.show);
@@ -106,6 +127,9 @@
 			if (list) {
 				scope = list;
 				scopeJobs = r.job_ids;
+				// The list opens above Seasons: bring it into view from an episode card.
+				await tick();
+				document.querySelector('[data-testid="show-releases"]')?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
 			}
 			toasts.push(r.job_ids.length ? done : 'Nothing here is looking for a copy right now.', r.job_ids.length ? 'ok' : 'info');
 		} catch (e) {
@@ -157,7 +181,13 @@
 	});
 
 	async function reload() {
-		onchange(await api.get<TitleView>(`/titles/${title.id}`));
+		try {
+			onchange(await api.get<TitleView>(`/titles/${title.id}`));
+		} catch (e) {
+			loadErr = message(e);
+			return;
+		}
+		loadErr = '';
 		for (const n of Object.keys(open).map(Number)) if (open[n]) await loadSeason(n);
 	}
 
@@ -182,7 +212,7 @@
 			const r = await api.get<{ episodes: EpisodeView[] }>(`/titles/${title.id}/episodes?season=${n}`);
 			episodes[n] = r.episodes;
 		} catch (e) {
-			toasts.push(message(e), 'fail');
+			loadErr = message(e);
 		}
 	}
 
@@ -357,6 +387,8 @@
 		<p class="small" data-testid="show-progress">{showProgress(show)}</p>
 	{/snippet}
 </TitleHero>
+
+{#if loadErr || error}<LoadError hasData message={loadErr || error} onretry={() => void retry()} busy={retrying} />{/if}
 
 <p class="tp-why open" data-testid="gate-reason"><b>Why:</b> {title.gate_reason}</p>
 

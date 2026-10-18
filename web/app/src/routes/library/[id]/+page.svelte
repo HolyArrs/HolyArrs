@@ -22,10 +22,13 @@
 	import { groupLabel, kindTone } from '#lib/history.ts';
 	import TitleHero from '#lib/ui/TitleHero.svelte';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
+	import { reducedMotion } from '#lib/motion.ts';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
-	import StatusPill from '#lib/ui/StatusPill.svelte';
+	import StatusPill, { type StatusKind } from '#lib/ui/StatusPill.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import ProgressBar from '#lib/ui/ProgressBar.svelte';
 	import TitleCast from '#lib/TitleCast.svelte';
 	import SimilarShelf from '#lib/SimilarShelf.svelte';
 	import { artName, crumbFor, heroStatus, qualityBadges } from '#lib/title-page.ts';
@@ -360,6 +363,22 @@
 		}
 	}
 
+	// More › Choose a release: bring the Releases section into view and start
+	// the same pick-it-yourself search as its own button.
+	function chooseRelease() {
+		const h = document.getElementById('h-rel');
+		h?.closest('section')?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
+		h?.focus({ preventScroll: true });
+		void searchNow(false);
+	}
+
+	/** dlKind maps a download state to the pill that says it. */
+	function dlKind(state: string, active: boolean): StatusKind {
+		if (active) return 'downloading';
+		const t = downloadTone(state);
+		return t === 'ok' ? 'in_library' : t === 'fail' ? 'failed' : t === 'idle' ? 'requested' : 'missing';
+	}
+
 	async function refresh() {
 		refreshing = true;
 		try {
@@ -422,7 +441,7 @@
 		{ label: 'Delete movie', icon: 'trash', destructive: true, onselect: openDelete }
 	]);
 	const moreItems = $derived<MenuItem[]>([
-		{ label: 'Choose a release', icon: 'grid', onselect: () => searchNow(false), disabled: searching },
+		{ label: 'Choose a release', icon: 'grid', onselect: chooseRelease, disabled: searching },
 		{ label: 'Refresh from TMDB', icon: 'refresh', onselect: refresh, disabled: refreshing },
 		{ kind: 'separator' },
 		{ label: 'All history', icon: 'clock', href: to(`/downloads/history?title=${id}`) }
@@ -448,7 +467,7 @@
 {#if notFound}
 	<EmptyState icon="library" title="This title is not in your Library">
 		<p>It may have been removed.</p>
-		{#snippet actions()}<a class="btn btn-ghost" href={libraryBack}>Back to the Library</a>{/snippet}
+		{#snippet actions()}<Button href={libraryBack}>Back to the Library</Button>{/snippet}
 	</EmptyState>
 {:else if error && !title}
 	<LoadError hasData={false} message={error} onretry={() => load()} />
@@ -458,9 +477,9 @@
 		<Skeleton lines={3} />
 	</div>
 {:else if title.kind === 'show'}
-	<ShowPage {title} onchange={(t) => (title = t)} />
+	<ShowPage {title} onchange={(t) => (title = t)} {error} onretry={() => load('title')} />
 {:else if title.kind === 'artist'}
-	<ArtistPage {title} onchange={(t) => (title = t)} />
+	<ArtistPage {title} onchange={(t) => (title = t)} {error} onretry={() => load('title')} />
 {:else}
 	<div class="tp">
 		<TitleHero
@@ -498,13 +517,13 @@
 					{@const d = s.download!}
 					<div class="tp-dl" data-testid="download">
 						<div class="row tp-dl-head">
-							<span class="chip {downloadTone(d.state)}" data-testid="download-state">{s.version && title!.slots.length > 1 ? `${s.version}: ` : ''}{d.label}</span>
+							<StatusPill kind={dlKind(d.state, d.active)} on="art" testid="download-state" label="{s.version && title!.slots.length > 1 ? `${s.version}: ` : ''}{d.label}" />
 							{#if d.active}<span class="small">{percent(d.progress)}{#if d.speed > 0} · {bytes(d.speed)}/s{/if}{#if timeLeft(d.eta)} · {timeLeft(d.eta)}{/if}</span>{/if}
 						</div>
-						{#if d.active}<progress class="tp-bar" max="1" value={d.progress} aria-label="Download progress">{percent(d.progress)}</progress>{/if}
+						{#if d.active}<div class="tp-bar"><ProgressBar value={d.progress * 100} label="Download progress" on="art" /></div>{/if}
 						<p class="small" data-testid="download-text">{d.text}</p>
 						{#if d.active && session.can('manage_library')}
-							<button class="tp-glass-btn" type="button" onclick={() => markFailed(d.id)} disabled={failing === d.id} aria-busy={failing === d.id}>Mark failed</button>
+							<Button class="tp-dl-btn" size="sm" onclick={() => markFailed(d.id)} busy={failing === d.id}>Mark failed</Button>
 						{/if}
 					</div>
 				{/each}
@@ -561,7 +580,7 @@
 				{#if session.can('manage_library')}
 					<section class="tp-section" aria-labelledby="h-rel" data-testid="releases">
 						<div class="tp-head">
-							<h2 id="h-rel" class="tp-h2">Releases</h2>
+							<h2 id="h-rel" class="tp-h2" tabindex="-1">Releases</h2>
 							{#if relTotal}<span class="xs muted">{relTotal} found in the last search</span>{/if}
 						</div>
 						{#if title.slots.length > 1}
@@ -580,7 +599,7 @@
 						{#if releases.length === 0}
 							{#if !running.length}
 								<p class="small muted">No search yet. Choose a release shows every Release HolyArrs finds, with why each one would be chosen or not, so you can pick one yourself.</p>
-								<button class="btn btn-ghost tp-start" type="button" onclick={() => searchNow(false)} disabled={searching}>Choose a release</button>
+								<Button class="tp-start" icon="grid" onclick={() => searchNow(false)} disabled={searching}>Choose a release</Button>
 							{/if}
 						{:else}
 							<ul class="rels">
@@ -679,7 +698,7 @@
 					<section class="tp-section" aria-labelledby="h-history" data-testid="title-history">
 						<div class="tp-head">
 							<h2 id="h-history" class="tp-h2">History</h2>
-							{#if historyTotal > 0}<a class="btn btn-quiet" href={to(`/downloads/history?title=${id}`)}>All {historyTotal} rows</a>{/if}
+							{#if historyTotal > 0}<Button variant="plain" size="sm" href={to(`/downloads/history?title=${id}`)}>All {historyTotal} rows</Button>{/if}
 						</div>
 						{#if history.length === 0}
 							<p class="small muted">Nothing yet. Every search, download, import, rename and delete of this movie writes a row here.</p>
