@@ -743,6 +743,8 @@
 			border-top: 1px solid var(--line);
 			border-left: 0;
 		}
+	}
+	@media (max-width: 1600px) {
 		.home {
 			grid-template-columns: 1fr;
 		}
@@ -750,7 +752,7 @@
 			position: static;
 		}
 	}
-	@media (max-width: 760px) {
+	@media (max-width: 1100px) {
 		.activity-grid {
 			grid-template-columns: 1fr;
 		}
