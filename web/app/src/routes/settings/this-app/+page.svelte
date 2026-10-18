@@ -123,7 +123,7 @@
 	</section>
 
 	{#if update}
-		<section class="card" aria-labelledby="h-update" data-testid="update">
+		<section class="card" id="update-card" tabindex="-1" aria-labelledby="h-update" data-testid="update">
 			<div class="card-head">
 				<h2 id="h-update" class="h2">Updates</h2>
 				{#if update.newer}<span class="chip wait">New version</span>{/if}

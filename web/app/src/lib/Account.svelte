@@ -224,7 +224,7 @@
 	}
 </script>
 
-<PageHeader title="My account" subtitle="Your password and two-factor sign-in." />
+<PageHeader title="My account" subtitle="Your password, two-factor sign-in and the devices you are signed in on." />
 <div class="acct">
 
 {#if session.s.mustTwoFactor}
@@ -296,7 +296,7 @@
 	</SettingsCard>
 {/if}
 
-<SettingsCard title="Two-factor sign-in">
+<SettingsCard id="twofactor-me" title="Two-factor sign-in">
 	<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">
 		After your password, HolyArrs asks for a six-digit code from an authenticator app on your phone.
 	</p>
@@ -352,7 +352,7 @@
 	{#if tfError}<p class="form-error" role="alert">{tfError}</p>{/if}
 </SettingsCard>
 
-<SettingsCard title="Alerts for you" description="You always see news about your asks on your Wishlist. Add these to also hear by email or in Discord, when the owner has set those up.">
+<SettingsCard id="alerts-me" title="Alerts for you" description="You always see news about your asks on your Wishlist. Add these to also hear by email or in Discord, when the owner has set those up.">
 	<form class="pw" onsubmit={saveTargets} novalidate>
 		<div class="field">
 			<label for="tg-email">Email address</label>
@@ -396,7 +396,7 @@
 	{/if}
 </SettingsCard>
 
-<SettingsCard title="Signed-in devices">
+<SettingsCard id="sessions-me" title="Signed-in devices">
 	<p class="small muted" style="margin-bottom: var(--s-3)">Every browser or phone where you are signed in. Sign out one you do not know, or all but this one.</p>
 	<Sessions path="/auth/sessions" />
 </SettingsCard>

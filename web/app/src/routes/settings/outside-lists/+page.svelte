@@ -299,7 +299,7 @@
 		</ul>
 	{/if}
 
-	<section class="card" aria-labelledby="h-trakt">
+	<section class="card" id="trakt-card" aria-labelledby="h-trakt">
 		<div class="card-head">
 			<h2 id="h-trakt" class="h2">Trakt key</h2>
 			<span class="chip {traktMasked ? 'ok' : ''}">{traktMasked ? 'Saved' : 'Not set'}</span>
@@ -316,7 +316,7 @@
 		</form>
 	</section>
 
-	<SettingsCard title="Never-add list" description="Outside lists skip these movies, and they cannot be added by hand until taken off.">
+	<SettingsCard id="never-card" title="Never-add list" description="Outside lists skip these movies, and they cannot be added by hand until taken off.">
 		<form class="never-form" onsubmit={addNever}>
 			<Field id="na-id" label="TMDB number">
 				<input id="na-id" class="input mono" bind:value={naId} inputmode="numeric" autocomplete="off" />

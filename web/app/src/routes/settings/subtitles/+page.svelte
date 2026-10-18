@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { onMount } from 'svelte';
@@ -31,6 +32,8 @@
 	let kinds = $state<SiteKind[]>([]);
 	let sites = $state<SiteView[]>([]);
 	let loaded = $state(false);
+	let saved = $state('');
+	const dirty = $derived(!!settings && !!saved && JSON.stringify(settings) !== saved);
 	let error = $state('');
 	let setBusy = $state(false);
 	let setError = $state('');
@@ -57,7 +60,10 @@
 
 	onMount(() => {
 		Promise.all([
-			api.get<SubtitleSettings>('/settings/subtitles').then((s) => (settings = s)),
+			api.get<SubtitleSettings>('/settings/subtitles').then((s) => {
+				settings = s;
+				saved = JSON.stringify(s);
+			}),
 			api.get<{ languages: Language[] }>('/subtitles/languages').then((r) => (langs = r.languages)),
 			api.get<{ kinds: SiteKind[] }>('/subtitle-sites/kinds').then((r) => (kinds = r.kinds)),
 			loadSites()
@@ -83,6 +89,7 @@
 			const body = { ...settings };
 			for (const k of ['pass_mark_movie', 'pass_mark_episode', 'search_hours', 'better_hours', 'better_days', 'batch', 'sync_from_fps', 'sync_to_fps', 'sync_step_ms'] as const) body[k] = Number(body[k]);
 			settings = await api.put<SubtitleSettings>('/settings/subtitles', body);
+			saved = JSON.stringify(settings);
 			toasts.push('Subtitle settings saved.', 'ok');
 		} catch (err) {
 			setError = message(err);
@@ -182,107 +189,112 @@
 {:else if error && !settings}
 	<p class="notice bad" role="alert">{error}</p>
 {:else if settings}
-	<form class="sc-form" onsubmit={saveSettings} aria-label="Default languages">
-		<SettingsCard title="Default languages" description="Every movie and show without languages of its own gets these. Change a title's own languages on its page. With no languages, nothing is looked for.">
+	<form class="sc-form" id="subtitle-form" onsubmit={saveSettings} aria-label="Default languages">
+		<SettingsCard id="lang-card" title="Default languages" description="Every movie and show without languages of its own gets these. Change a title's own languages on its page. With no languages, nothing is looked for.">
 			<WishEditor bind:wants={settings.languages} {langs} id="def" />
 			<p class="xs muted hint-block">
 				<b>Hearing-impaired:</b> Normal also counts a hearing-impaired subtitle as there; Hearing-impaired only waits for one with sound descriptions; Either takes any.
 				<b>Forced only</b> means only the lines for foreign speech or signs.
 			</p>
 	
-			<h2 id="h-pass" class="h2 sec">Pass marks</h2>
-			<div class="two">
-				<Field id="pm-ep" label="Episodes">
-					<input id="pm-ep" class="input narrow" type="number" min="0" max="100" bind:value={settings.pass_mark_episode} />
-				</Field>
-				<Field id="pm-mov" label="Movies">
-					<input id="pm-mov" class="input narrow" type="number" min="0" max="100" bind:value={settings.pass_mark_movie} />
-				</Field>
-			</div>
-			<details class="more" data-testid="pass-mark-help">
-				<summary>What the Pass mark means</summary>
-				<p class="small">
-					Every subtitle a site offers gets a match score from 0 to 100: points for the right name, year, season and episode, the same release group, source,
-					resolution and codec as your file, the hearing-impaired and forced choice you asked for, a trusted uploader and a matching frame rate. A subtitle for
-					another title, year or episode scores 0.
-				</p>
-				<p class="small">
-					A search saves a subtitle on its own only when it scores the Pass mark or more. 90 for episodes means the show, year, season and episode must match; 70
-					for movies means the name, year and some of the release details must. Lower marks take looser matches (more often out of sync); higher marks wait for a
-					closer one. Choosing a subtitle by hand on a movie or show page may take any score.
-				</p>
-			</details>
-	
-			<h2 class="h2 sec">Inside the video</h2>
-			<label class="checkline">
-				<input type="checkbox" bind:checked={settings.use_built_in} />
-				<span><b>Count subtitles inside the video</b><br /><span class="hint">A language already inside the file is not looked for again.</span></span>
-			</label>
-			<label class="checkline">
-				<input type="checkbox" bind:checked={settings.ignore_picture_tracks} disabled={!settings.use_built_in} />
-				<span><b>Leave out picture subtitles</b><br /><span class="hint">Picture tracks (from discs) do not count, since many players cannot show them.</span></span>
-			</label>
-			<Field id="hi-suffix" label="Hearing-impaired files are named">
-				<select id="hi-suffix" class="input narrow" bind:value={settings.hi_suffix}>
-					<option value="hi">.hi (Movie.en.hi.srt)</option>
-					<option value="cc">.cc (Movie.en.cc.srt)</option>
-					<option value="sdh">.sdh (Movie.en.sdh.srt)</option>
-				</select>
-			</Field>
-	
-			<h2 class="h2 sec">When to look</h2>
-			<p class="small muted">A new file is searched at once. After that:</p>
-			<div class="two">
-				<Field id="s-hours" label="Look for missing subtitles every (hours)">
-					<input id="s-hours" class="input narrow" type="number" min="1" max="168" bind:value={settings.search_hours} />
-				</Field>
-				<Field id="s-batch" label="Files per run, at most" hint="Keeps the Subtitle sites from being asked too much at once.">
-					<input id="s-batch" class="input narrow" type="number" min="1" max="1000" bind:value={settings.batch} />
-				</Field>
-			</div>
-			<label class="checkline">
-				<input type="checkbox" bind:checked={settings.adaptive} />
-				<span><b>Slow down after three weeks</b><br /><span class="hint">A subtitle not found for three weeks is then looked for once a week.</span></span>
-			</label>
-			<label class="checkline">
-				<input type="checkbox" bind:checked={settings.better} />
-				<span><b>Look for better subtitles</b><br /><span class="hint">Subtitles saved lately that scored under 99 are searched again; a new one must score higher.</span></span>
-			</label>
-			{#if settings.better}
+			{#snippet advanced()}
 				<div class="two">
-					<Field id="b-hours" label="Every (hours)">
-						<input id="b-hours" class="input narrow" type="number" min="6" max="168" bind:value={settings.better_hours} />
+					<Field id="pm-ep" label="Pass mark for episodes" hint="A subtitle is saved on its own only when it scores this or more.">
+						<input id="pm-ep" class="input narrow" type="number" min="0" max="100" bind:value={settings!.pass_mark_episode} />
 					</Field>
-					<Field id="b-days" label="For subtitles saved in the last (days)">
-						<input id="b-days" class="input narrow" type="number" min="0" max="30" bind:value={settings.better_days} />
+					<Field id="pm-mov" label="Pass mark for movies" hint="The same for movies.">
+						<input id="pm-mov" class="input narrow" type="number" min="0" max="100" bind:value={settings!.pass_mark_movie} />
 					</Field>
 				</div>
-			{/if}
+				<details class="more" data-testid="pass-mark-help">
+					<summary>What the Pass mark means</summary>
+					<p class="small">
+						Every subtitle a site offers gets a match score from 0 to 100: points for the right name, year, season and episode, the same release group, source,
+						resolution and codec as your file, the hearing-impaired and forced choice you asked for, a trusted uploader and a matching frame rate. A subtitle for
+						another title, year or episode scores 0.
+					</p>
+					<p class="small">
+						A search saves a subtitle on its own only when it scores the Pass mark or more. 90 for episodes means the show, year, season and episode must match; 70
+						for movies means the name, year and some of the release details must. Lower marks take looser matches (more often out of sync); higher marks wait for a
+						closer one. Choosing a subtitle by hand on a movie or show page may take any score.
+					</p>
+				</details>
 	
-			<h2 class="h2 sec">Sync fix</h2>
+			{/snippet}
+		</SettingsCard>
+		<SettingsCard id="inside-video" title="Inside the video" description="Subtitles that come inside the video file.">
+			<label class="checkline">
+				<input id="embedded" type="checkbox" bind:checked={settings.use_built_in} />
+				<span><b>Count subtitles inside the video</b><br /><span class="hint">A language already inside the file is not looked for again.</span></span>
+			</label>
+			{#snippet advanced()}
+				<label class="checkline">
+					<input id="no-picture" type="checkbox" bind:checked={settings!.ignore_picture_tracks} disabled={!settings!.use_built_in} />
+					<span><b>Leave out picture subtitles</b><br /><span class="hint">Picture tracks (from discs) do not count, since many players cannot show them.</span></span>
+				</label>
+				<Field id="hi-suffix" label="Hearing-impaired files are named" hint="The ending a hearing-impaired subtitle file gets, so players can tell it apart.">
+					<select id="hi-suffix" class="input narrow" bind:value={settings!.hi_suffix}>
+						<option value="hi">.hi (Movie.en.hi.srt)</option>
+						<option value="cc">.cc (Movie.en.cc.srt)</option>
+						<option value="sdh">.sdh (Movie.en.sdh.srt)</option>
+					</select>
+				</Field>
+			{/snippet}
+		</SettingsCard>
+		<SettingsCard id="when-to-look" title="When to look" description="A new file is searched at once. After that, HolyArrs looks again on a timer.">
+			<label class="checkline">
+				<input id="better-subs" type="checkbox" bind:checked={settings.better} />
+				<span><b>Look for better subtitles</b><br /><span class="hint">Subtitles saved lately that scored under 99 are searched again; a new one must score higher.</span></span>
+			</label>
+			{#snippet advanced()}
+			<div class="two">
+				<Field id="s-hours" label="Look for missing subtitles every (hours)" hint="Files still missing a language are searched again after this many hours.">
+					<input id="s-hours" class="input narrow" type="number" min="1" max="168" bind:value={settings!.search_hours} />
+				</Field>
+				<Field id="s-batch" label="Files per run, at most" hint="Keeps the Subtitle sites from being asked too much at once.">
+					<input id="s-batch" class="input narrow" type="number" min="1" max="1000" bind:value={settings!.batch} />
+				</Field>
+			</div>
+				<label class="checkline">
+					<input id="slow-down" type="checkbox" bind:checked={settings!.adaptive} />
+					<span><b>Slow down after three weeks</b><br /><span class="hint">A subtitle not found for three weeks is then looked for once a week.</span></span>
+				</label>
+				{#if settings!.better}
+					<div class="two">
+						<Field id="b-hours" label="Every (hours)" hint="How often better subtitles are looked for.">
+							<input id="b-hours" class="input narrow" type="number" min="6" max="168" bind:value={settings!.better_hours} />
+						</Field>
+						<Field id="b-days" label="For subtitles saved in the last (days)" hint="Older subtitles are left as they are.">
+							<input id="b-days" class="input narrow" type="number" min="0" max="30" bind:value={settings!.better_days} />
+						</Field>
+					</div>
+				{/if}
+			{/snippet}
+		</SettingsCard>
+		<SettingsCard id="sync-fix" title="Sync fix" description="Where the by-hand fix for a subtitle out of time starts.">
 			<p class="small muted">
 				A subtitle out of time is fixed by hand on its movie or episode: shift every line, or change the frame rate. These are where the fix starts. HolyArrs does
 				not listen to the sound to line subtitles up.
 			</p>
-			<div class="three">
-				<Field id="sy-step" label="Shift buttons move (ms)">
-					<input id="sy-step" class="input narrow" type="number" min="10" max="60000" bind:value={settings.sync_step_ms} />
-				</Field>
-				<Field id="sy-from" label="Frame rate from">
-					<input id="sy-from" class="input narrow" type="number" min="1" max="120" step="0.001" bind:value={settings.sync_from_fps} />
-				</Field>
-				<Field id="sy-to" label="Frame rate to">
-					<input id="sy-to" class="input narrow" type="number" min="1" max="120" step="0.001" bind:value={settings.sync_to_fps} />
-				</Field>
-			</div>
-			{#if setError}<p class="form-error" role="alert">{setError}</p>{/if}
-			<div class="row" style="margin-top: var(--s-5)">
-				<Button variant="primary" type="submit" disabled={setBusy} aria-busy={setBusy}>Save settings</Button>
-			</div>
+			{#snippet advanced()}
+				<div class="three">
+					<Field id="sy-step" label="Shift buttons move (ms)" hint="One press of a shift button moves every line this far.">
+						<input id="sy-step" class="input narrow" type="number" min="10" max="60000" bind:value={settings!.sync_step_ms} />
+					</Field>
+					<Field id="sy-from" label="Frame rate from" hint="The rate the fix starts from.">
+						<input id="sy-from" class="input narrow" type="number" min="1" max="120" step="0.001" bind:value={settings!.sync_from_fps} />
+					</Field>
+					<Field id="sy-to" label="Frame rate to" hint="The rate the fix changes to.">
+						<input id="sy-to" class="input narrow" type="number" min="1" max="120" step="0.001" bind:value={settings!.sync_to_fps} />
+					</Field>
+				</div>
+			{/snippet}
 		</SettingsCard>
+		{#if setError}<p class="form-error" role="alert">{setError}</p>{/if}
 	</form>
+	<SaveBar {dirty} form="subtitle-form" saving={setBusy} ondiscard={() => (settings = JSON.parse(saved))} />
 
-	<section class="sites-sec" aria-labelledby="h-sites">
+	<section class="sites-sec" id="sites-card" aria-labelledby="h-sites" tabindex="-1">
 		<div class="sites-head">
 			<div>
 				<h2 id="h-sites" class="h2">Subtitle sites</h2>

@@ -3,6 +3,7 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
 	import { ago } from '#lib/format.ts';
@@ -52,6 +53,8 @@
 		remove_search_again: true
 	});
 	let setBusy = $state(false);
+	let saved = $state('');
+	const dirty = $derived(!!saved && JSON.stringify(settings) !== saved);
 	let setError = $state('');
 
 	async function load() {
@@ -77,7 +80,13 @@
 	}
 	onMount(() => {
 		void load();
-		api.get<DownloaderSettings>('/settings/downloaders').then((s) => (settings = s), (e) => (setError = message(e)));
+		api.get<DownloaderSettings>('/settings/downloaders').then(
+			(s) => {
+				settings = s;
+				saved = JSON.stringify(s);
+			},
+			(e) => (setError = message(e))
+		);
 		const off = live.on('downloader', () => load());
 		return off;
 	});
@@ -213,6 +222,7 @@
 		setBusy = true;
 		try {
 			settings = await api.put<DownloaderSettings>('/settings/downloaders', body);
+			saved = JSON.stringify(settings);
 			toasts.push('Downloader settings saved.', 'ok');
 		} catch (err) {
 			setError = message(err);
@@ -230,7 +240,7 @@
 	{/snippet}
 </PageHeader>
 
-<p class="small muted lead">
+<p class="small muted lead" id="downloaders-card" tabindex="-1">
 	A Release goes to a Downloader of its kind, priority 1 first; Downloaders with the same priority take turns. One that does not answer rests for a while
 	(one minute, then twice as long each time, up to 30 minutes) and the next one is used. Every Downloader is checked once a minute.
 </p>
@@ -373,57 +383,61 @@
 	</ul>
 {/if}
 
-<form class="card settings" onsubmit={saveSettings} aria-labelledby="h-wrong">
-	<h2 id="h-wrong" class="h2">When downloads go wrong</h2>
-	<div class="two">
-		<Field id="st-stall" label="Stalled after (hours without progress)" hint="Waiting its turn or paused never counts.">
-			<input id="st-stall" class="input" type="number" min="1" max="168" step="0.5" bind:value={settings.stalled_after_hours} />
-		</Field>
-		<Field id="st-act" label="Give up and try the next Release after (hours)" hint="Counted from the last progress.">
-			<input id="st-act" class="input" type="number" min="1" max="720" step="0.5" bind:value={settings.stalled_act_hours} />
-		</Field>
-	</div>
-	<label class="checkline">
-		<input type="checkbox" bind:checked={settings.remove_failed} />
-		<span><b>Remove failed downloads from the Downloader</b><br /><span class="hint">With their files. Off: they stay there for you to look at.</span></span>
-	</label>
-	<label class="checkline">
-		<input type="checkbox" bind:checked={settings.fail_dangerous} />
-		<span
-			><b>Fail downloads that hold programs or fakes</b><br /><span class="hint"
-				>Files such as .exe, .bat, .scr or .lnk, also hidden as movie.mkv.exe; a password note or a web shortcut; a torrent with only archives and no video or audio. Checked as soon as the Downloader lists the files.</span
-			></span
-		>
-	</label>
-	<label class="checkline">
-		<input type="checkbox" bind:checked={settings.replace_vanished} />
-		<span><b>Replace downloads removed outside HolyArrs</b><br /><span class="hint">Off: the movie waits for your decision instead.</span></span>
-	</label>
-	<p class="small muted">When you remove a download on the Downloads screen, the choices start as:</p>
-	<label class="checkline">
-		<input type="checkbox" bind:checked={settings.remove_delete_files} />
-		<span><b>Delete its files</b><br /><span class="hint">Off: the Downloader keeps the files.</span></span>
-	</label>
-	<label class="checkline">
-		<input type="checkbox" bind:checked={settings.remove_turn_down} />
-		<span><b>Add its Release to Turned down</b><br /><span class="hint">HolyArrs never picks that Release again for the movie.</span></span>
-	</label>
-	<label class="checkline">
-		<input type="checkbox" bind:checked={settings.remove_search_again} />
-		<span><b>Search again</b><br /><span class="hint">Only with Turned down: look for the next Release straight away.</span></span>
-	</label>
-	<label class="checkline">
-		<input type="checkbox" bind:checked={settings.try_next_downloader} />
-		<span><b>Try the next Downloader</b><br /><span class="hint">When the first one cannot take a Release, send it to the next one of the same kind.</span></span>
-	</label>
-	<Field id="st-gap" label="Seconds between sends to one Downloader">
-		<input id="st-gap" class="input narrow" type="number" min="0" max="60" step="0.5" bind:value={settings.grab_spacing_seconds} />
-	</Field>
+<form class="sc-form settings" id="wrong-form" onsubmit={saveSettings} aria-labelledby="h-wrong">
+	<SettingsCard id="wrong-card" title="When downloads go wrong" description="What HolyArrs does with a download that stalls, fails or holds something it should not.">
+		<span id="h-wrong" class="sr-only">When downloads go wrong</span>
+		<label class="checkline">
+			<input id="remove-failed" type="checkbox" bind:checked={settings.remove_failed} />
+			<span><b>Remove failed downloads from the Downloader</b><br /><span class="hint">With their files. Off: they stay there for you to look at.</span></span>
+		</label>
+		<fieldset class="defaults" id="remove-defaults" tabindex="-1">
+			<legend class="small muted">When you remove a download on the Downloads screen, the choices start as:</legend>
+		<label class="checkline">
+			<input type="checkbox" bind:checked={settings.remove_delete_files} />
+			<span><b>Delete its files</b><br /><span class="hint">Off: the Downloader keeps the files.</span></span>
+		</label>
+		<label class="checkline">
+			<input type="checkbox" bind:checked={settings.remove_turn_down} />
+			<span><b>Add its Release to Turned down</b><br /><span class="hint">HolyArrs never picks that Release again for the movie.</span></span>
+		</label>
+		<label class="checkline">
+			<input type="checkbox" bind:checked={settings.remove_search_again} />
+			<span><b>Search again</b><br /><span class="hint">Only with Turned down: look for the next Release straight away.</span></span>
+		</label>
+		</fieldset>
+		{#snippet advanced()}
+			<div class="two">
+				<Field id="st-stall" label="Stalled after (hours without progress)" hint="Waiting its turn or paused never counts.">
+					<input id="st-stall" class="input" type="number" min="1" max="168" step="0.5" bind:value={settings.stalled_after_hours} />
+				</Field>
+				<Field id="st-act" label="Give up and try the next Release after (hours)" hint="Counted from the last progress.">
+					<input id="st-act" class="input" type="number" min="1" max="720" step="0.5" bind:value={settings.stalled_act_hours} />
+				</Field>
+			</div>
+			<label class="checkline">
+				<input id="fail-programs" type="checkbox" bind:checked={settings.fail_dangerous} />
+				<span
+					><b>Fail downloads that hold programs or fakes</b><br /><span class="hint"
+						>Files such as .exe, .bat, .scr or .lnk, also hidden as movie.mkv.exe; a password note or a web shortcut; a torrent with only archives and no video or audio. Checked as soon as the Downloader lists the files.</span
+					></span
+				>
+			</label>
+			<label class="checkline">
+				<input id="replace-removed" type="checkbox" bind:checked={settings.replace_vanished} />
+				<span><b>Replace downloads removed outside HolyArrs</b><br /><span class="hint">Off: the movie waits for your decision instead.</span></span>
+			</label>
+			<label class="checkline">
+				<input id="try-next-dl" type="checkbox" bind:checked={settings.try_next_downloader} />
+				<span><b>Try the next Downloader</b><br /><span class="hint">When the first one cannot take a Release, send it to the next one of the same kind.</span></span>
+			</label>
+			<Field id="st-gap" label="Seconds between sends to one Downloader" hint="A short wait between Releases sent to the same Downloader, so it is not flooded.">
+				<input id="st-gap" class="input narrow" type="number" min="0" max="60" step="0.5" bind:value={settings.grab_spacing_seconds} />
+			</Field>
+		{/snippet}
+	</SettingsCard>
 	{#if setError}<p class="form-error" role="alert">{setError}</p>{/if}
-	<div class="row" style="margin-top: var(--s-5)">
-		<Button variant="primary" type="submit" disabled={setBusy} aria-busy={setBusy}>Save settings</Button>
-	</div>
 </form>
+<SaveBar {dirty} form="wrong-form" saving={setBusy} ondiscard={() => (settings = JSON.parse(saved))} />
 
 <style>
 	.lead {
@@ -440,6 +454,11 @@
 	}
 	.settings {
 		margin-top: var(--s-6, 32px);
+	}
+	.defaults {
+		border: 0;
+		padding: 0;
+		margin: var(--s-3) 0 0;
 	}
 	.head {
 		display: flex;

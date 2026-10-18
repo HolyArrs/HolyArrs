@@ -168,12 +168,12 @@
 
 <svelte:head><title>Sign-in · HolyArrs</title></svelte:head>
 
-<PageHeader title="Sign-in" subtitle="Who can open HolyArrs, and keys for scripts and other apps." />
+<PageHeader title="Sign-in and security" subtitle="Who can open HolyArrs, how they sign in, and keys for scripts and other apps." />
 
 {#if !loaded}
 	<div class="sk" style="height: 240px"></div>
 {:else}
-	<SettingsCard title="Local network">
+	<SettingsCard id="local-card" title="Local network">
 		{#if error}
 			<p class="notice bad" role="alert" style="margin-top: var(--s-3)">{error}</p>
 		{:else}
@@ -190,7 +190,7 @@
 		{/if}
 	</SettingsCard>
 
-	<SettingsCard title="Two-factor sign-in">
+	<SettingsCard id="twofactor-card" title="Two-factor sign-in">
 		<label class="switch" style="margin-top: var(--s-3)">
 			<input type="checkbox" checked={requireAdmins} disabled={!isOwner || savingRequire} aria-busy={savingRequire} onchange={(e) => setRequire(e.currentTarget.checked)} />
 			<span class="sw" aria-hidden="true"></span>
@@ -202,7 +202,7 @@
 		</p>
 	</SettingsCard>
 
-	<SettingsCard title="Passwords">
+	<SettingsCard id="passwords-card" title="Passwords">
 		<form class="passwords" onsubmit={saveMin}>
 			<fieldset disabled={!isOwner}>
 				<Field id="min-pw" label="Shortest password allowed">
@@ -223,7 +223,7 @@
 	</SettingsCard>
 
 	{#each ['plex', 'jellyfin', 'emby'] as const as w (w)}
-		<SettingsCard title={`Sign in with ${wayWord[w]}`}>
+		<SettingsCard id="{w}-card" title={`Sign in with ${wayWord[w]}`}>
 			<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">
 				{#if w === 'plex'}
 					People sign in with their Plex account on Plex's own page; HolyArrs never sees their Plex password.
@@ -267,14 +267,14 @@
 		</SettingsCard>
 	{/each}
 
-	<SettingsCard title="Trusted proxies">
+	<SettingsCard id="proxy-card" title="Trusted proxies">
 		<p class="small muted" style="margin-top: var(--s-2)">
 			If HolyArrs sits behind a reverse proxy, list the proxy addresses in <code>HOLYARRS_TRUSTED_PROXIES</code> and extra host
 			names in <code>HOLYARRS_ALLOWED_HOSTS</code> when you start it. Editing them here comes in a later stage.
 		</p>
 	</SettingsCard>
 
-	<SettingsCard title="API keys">
+	<SettingsCard id="keys-card" title="API keys">
 		<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">For scripts and other apps. Send the key in the <code>X-Api-Key</code> header, never in an address.</p>
 
 		{#if keysNote}

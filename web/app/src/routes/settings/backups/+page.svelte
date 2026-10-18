@@ -112,7 +112,7 @@
 
 <svelte:head><title>Backups · HolyArrs</title></svelte:head>
 
-<PageHeader title="Backups" subtitle="HolyArrs saves both of its databases on a schedule, and before every update. Media files are never in a backup.">
+<PageHeader title="Backups and restore" subtitle="HolyArrs saves both of its databases on a schedule, and before every update. Media files are never in a backup.">
 	{#snippet actions()}
 		{#if loaded && !missing}
 		<Button icon="archive" variant="primary" type="button" onclick={makeNow} disabled={making} aria-busy={making}>Make a backup now</Button>
@@ -135,7 +135,7 @@
 		</p>
 	{/if}
 
-	<SettingsCard title="How often">
+	<SettingsCard id="backup-often" title="How often">
 		<div class="presets" role="radiogroup" aria-labelledby="h-plan" aria-busy={savingPreset}>
 			{#each presets as p (p.key)}
 				<label class="preset" class:on={preset === p.key}>
@@ -147,7 +147,7 @@
 		</div>
 	</SettingsCard>
 
-	<section class="card" aria-labelledby="h-list">
+	<section class="card" id="backup-list" tabindex="-1" aria-labelledby="h-list">
 		<div class="card-head">
 			<h2 id="h-list" class="h2">Saved backups</h2>
 			<label class="restore" aria-busy={restoring}>

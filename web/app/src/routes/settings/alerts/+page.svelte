@@ -294,7 +294,7 @@
 	</ul>
 {/if}
 
-<section class="card packs" aria-labelledby="h-packs" data-testid="pack-alerts">
+<section class="card packs" id="pack-alerts" tabindex="-1" aria-labelledby="h-packs" data-testid="pack-alerts">
 	<h2 id="h-packs" class="h2">Season packs</h2>
 	<p class="small muted">When one download brings several episodes of a show into the Library.</p>
 	<fieldset class="pack-choice" disabled={packBusy}>

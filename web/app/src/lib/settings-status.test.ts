@@ -110,3 +110,21 @@ describe('searchSettings', () => {
 		for (const e of settingIndex) expect(hrefs.has(e.href), e.href).toBe(true);
 	});
 });
+
+describe('every setting a search finds is on its page', () => {
+	it('each anchor is an id in that page (or My account)', async () => {
+		const { readFileSync } = await import('node:fs');
+		const { join } = await import('node:path');
+		const root = join(process.cwd(), 'src');
+		const missing: string[] = [];
+		for (const e of settingIndex) {
+			if (!e.anchor) continue;
+			const file = e.href === '/settings/account' ? join(root, 'lib', 'Account.svelte') : join(root, 'routes', ...e.href.split('/').filter(Boolean), '+page.svelte');
+			const text = readFileSync(file, 'utf8');
+			const way = e.anchor.match(/^(plex|jellyfin|emby)-card$/);
+			const found = text.includes(`id="${e.anchor}"`) || text.includes(`id: '${e.anchor}'`) || (way && text.includes('id="{w}-card"'));
+			if (!found) missing.push(`${e.href}#${e.anchor}`);
+		}
+		expect(missing).toEqual([]);
+	});
+});

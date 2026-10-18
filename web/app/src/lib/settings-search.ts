@@ -17,16 +17,16 @@ const e = (href: string, anchor: string, label: string, words = '', advanced = f
 export const settingIndex: SettingEntry[] = [
 	// General
 	e('/settings/appearance', 'theme', 'Theme', 'appearance light dark automatic mode colours colors night'),
-	e('/settings/this-app', 'h-about', 'Version', 'about holyarrs build database schema uptime url base'),
-	e('/settings/this-app', 'h-update', 'Updates', 'update new version release check for updates'),
+	e('/settings/this-app', 'h-about-card', 'Version', 'about holyarrs build database schema uptime url base'),
+	e('/settings/this-app', 'update-card', 'Updates', 'update new version release check for updates'),
 	e('/settings/this-app', 'storage-card', 'Storage', 'paths config folder disk free space where things are stored'),
 	e('/settings/parts', 'parts-card', 'Turn parts on or off', 'parts movies shows music subtitles wishlist switch off disable enable'),
 	e('/settings/parts', 'stages-card', 'Pause or restart a stage', 'stages background work stuck restart pause resume'),
 	e('/settings/parts', 'links-card', 'Reconnect a linked app', 'reconnect downloader test source media server subtitle site'),
-	e('/settings/schedules', 'schedules-card', 'Schedules', 'timer every run now how often refresh jobs tasks interval'),
+	e('/settings/schedules', '', 'Schedules', 'timer every run now how often refresh jobs tasks interval'),
 
 	// Library
-	e('/settings/library-folders', 'folders-card', 'Library folders', 'root folder path movies folder shows folder music folder where files live add folder'),
+	e('/settings/library-folders', '', 'Library folders', 'root folder path movies folder shows folder music folder where files live add folder'),
 	e('/settings/naming', 'file-pattern', 'Movie file name pattern', 'naming rename format movie file'),
 	e('/settings/naming', 'folder-pattern', 'Movie folder name pattern', 'naming folder format movie'),
 	e('/settings/naming', 'colon', 'A colon in a name becomes', 'colon character replace', true),
@@ -75,12 +75,12 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/subtitles', 'sy-step', 'Sync fix shift', 'subtitles sync timing offset ms', true),
 	e('/settings/subtitles', 'sites-card', 'Subtitle sites', 'subtitles opensubtitles provider site add'),
 	e('/settings/tmdb', 'tmdb-card', 'TMDB key', 'metadata tmdb token key posters names api key'),
-	e('/settings/outside-lists', 'lists-card', 'Outside lists', 'tmdb list trakt list import list auto add'),
-	e('/settings/outside-lists', 'h-trakt', 'Trakt key', 'trakt key client id', true),
+	e('/settings/outside-lists', '', 'Outside lists', 'tmdb list trakt list import list auto add'),
+	e('/settings/outside-lists', 'trakt-card', 'Trakt key', 'trakt key client id', true),
 	e('/settings/outside-lists', 'never-card', 'Never-add list', 'never add exclusion block list'),
 
 	// Getting copies
-	e('/settings/sources', 'sources-card', 'Sources', 'indexer torznab newznab rss tracker usenet add source'),
+	e('/settings/sources', '', 'Sources', 'indexer torznab newznab rss tracker usenet add source'),
 	e('/settings/search', 'feed-minutes', 'Check Source feeds every', 'rss feed minutes interval', true),
 	e('/settings/search', 'missing-count', 'Movies to search for each night', 'nightly search missing'),
 	e('/settings/search', 'better-nightly', 'Find a better copy each night', 'upgrade better copy nightly'),
@@ -133,16 +133,16 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/sign-in', 'keys-card', 'API keys', 'api key token make revoke', true),
 
 	// Linked apps
-	e('/settings/media-servers', 'servers-card', 'Media servers', 'plex jellyfin emby library update notify'),
-	e('/settings/alerts', 'alerts-card', 'Alerts', 'notifications discord email webhook notify'),
+	e('/settings/media-servers', '', 'Media servers', 'plex jellyfin emby library update notify'),
+	e('/settings/alerts', '', 'Alerts', 'notifications discord email webhook notify'),
 	e('/settings/alerts', 'pack-alerts', 'Season pack Alerts', 'season pack one alert per episode'),
 	e('/settings/api', 'api-start', 'API base address', 'api address url base openapi'),
 	e('/settings/api', 'api-routes', 'Every API route', 'api routes endpoints openapi'),
-	e('/settings/move', 'move-card', 'Move from other apps', 'import migrate radarr sonarr lidarr prowlarr bazarr seerr overseerr'),
+	e('/settings/move', '', 'Move from other apps', 'import migrate radarr sonarr lidarr prowlarr bazarr seerr overseerr'),
 
 	// Maintenance
 	e('/settings/backups', 'backup-often', 'How often backups are made', 'backup schedule'),
-	e('/settings/backups', 'h-list', 'Restore from a backup', 'restore backup download delete', true),
+	e('/settings/backups', 'backup-list', 'Restore from a backup', 'restore backup download delete', true),
 	e('/settings/logs', 'lg-level', 'Logs', 'log level errors warnings debug download log'),
 	e('/settings/health', 'health-checks-card', 'Health check results', 'health checks problems check again'),
 	e('/settings/health', 'hs-every', 'Check health every', 'health minutes interval', true),

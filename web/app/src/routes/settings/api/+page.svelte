@@ -52,7 +52,7 @@
 	{/snippet}
 </PageHeader>
 
-<SettingsCard title="Start here">
+<SettingsCard id="api-start" title="Start here">
 	<ol class="steps small">
 		<li>Make a key in <a href={to(`/settings/sign-in`)}>Settings > Sign-in > API keys</a>. Give it only the scopes it needs. The key is shown once; copy it then.</li>
 		<li>Send it in the <code>X-Api-Key</code> header with every call, never in the address.</li>
@@ -95,7 +95,7 @@
 </SettingsCard>
 
 <div data-testid="api-routes">
-	<SettingsCard title="Every route">
+	<SettingsCard id="api-routes" title="Every route">
 		{#if error}
 			<p class="form-error" role="alert">{error}</p>
 		{:else if !spec}

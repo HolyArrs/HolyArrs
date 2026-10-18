@@ -70,7 +70,7 @@
 
 <svelte:head><title>TMDB key · HolyArrs</title></svelte:head>
 
-<PageHeader title="TMDB key" subtitle="HolyArrs looks up movie names, dates and posters on TMDB, with your own read access token. It is stored encrypted and never shown again in full." />
+<PageHeader title="Metadata" subtitle="HolyArrs looks up movie names, dates and posters on TMDB, with your own read access token. It is stored encrypted and never shown again in full." />
 
 {#if !loaded}
 	<div class="sk" style="height: 160px"></div>
@@ -87,7 +87,7 @@
 		<p>This HolyArrs reads its TMDB token from the file named by <code>HOLYARRS_TMDB_TOKEN_FILE</code>. Change the file to change the key.</p>
 	</EmptyState>
 {:else}
-	<section class="card" aria-labelledby="h-key">
+	<section class="card" id="tmdb-card" tabindex="-1" aria-labelledby="h-key">
 		<div class="card-head">
 			<h2 id="h-key" class="h2">Read access token</h2>
 			<span class="chip {masked ? 'ok' : ''}">{masked ? 'Saved' : 'Not set'}</span>

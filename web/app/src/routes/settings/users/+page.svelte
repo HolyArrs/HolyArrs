@@ -277,14 +277,14 @@
 
 <svelte:head><title>Users · HolyArrs</title></svelte:head>
 
-<PageHeader title="Users" subtitle="Invite family and friends, and choose what each one may do." />
+<PageHeader title="Users and roles" subtitle="Invite family and friends, and choose what each one may do." />
 
 {#if !loaded}
 	<div class="sk" style="height: 240px"></div>
 {:else if error}
 	<p class="notice bad" role="alert">{error}</p>
 {:else}
-	<SettingsCard title="Invite someone">
+	<SettingsCard id="invite-card" title="Invite someone">
 		<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">Send them a one-time link. They pick their own name and password.</p>
 
 		{#if link}
@@ -331,7 +331,7 @@
 		</form>
 	</SettingsCard>
 
-	<SettingsCard title="People">
+	<SettingsCard id="people-card" title="People">
 		<ul class="rows" style="margin-top: var(--s-3)">
 			{#each users as u (u.id)}
 				<li class="person">
@@ -377,7 +377,7 @@
 		</ul>
 	</SettingsCard>
 
-	<SettingsCard title="Invite links">
+	<SettingsCard id="invites-card" title="Invite links">
 		{#if invites.length === 0}
 			<p class="small muted" style="margin-top: var(--s-3)">No invites yet.</p>
 		{:else}
