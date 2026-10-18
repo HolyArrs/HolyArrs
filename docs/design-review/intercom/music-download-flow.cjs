@@ -31,7 +31,8 @@ function safeAncestors(p) {
     if (fs.existsSync(q)) assert(!fs.lstatSync(q).isSymbolicLink(), 'Linked storage ancestor');
   }
 }
-let browser, proxy, originalDownloader, restoreDownloader, session;
+let browser, proxy, originalDownloader, restoreDownloader, session, temporaryDownloader;
+const temporaryConfig={name:'Disposable music size proxy',kind:'qbittorrent',url:'http://127.0.0.1:28775',username:'',secret:'',category:'holyarrs',priority:1,path_map:[],allow_local_network:true};
 const sessionName='music-download-'+crypto.randomBytes(4).toString('hex');
 function sessionAction(action,extra={}) { return JSON.parse(execFileSync('python',[path.join(__dirname,'music-download-session.py')],{input:JSON.stringify({action,name:sessionName,...extra}),encoding:'utf8'})); }
 (async () => {
@@ -59,8 +60,10 @@ function sessionAction(action,extra={}) { return JSON.parse(execFileSync('python
     const req=route.request(), u=new URL(req.url()), p=u.pathname;
     if (['GET','HEAD','OPTIONS'].includes(req.method())) return route.continue();
     let body={}; try {body=req.postDataJSON() || {};} catch {}
-    const configWrite=req.method()==='PUT' && p==='/api/v1/downloaders/1' && originalDownloader &&
-      JSON.stringify(body)===JSON.stringify({...originalDownloader,url:restoreDownloader?originalDownloader.url:'http://127.0.0.1:28775'});
+    const configWrite=(req.method()==='PUT' && p==='/api/v1/downloaders/1' && originalDownloader &&
+      [JSON.stringify(originalDownloader),JSON.stringify({...originalDownloader,priority:2})].includes(JSON.stringify(body))) ||
+      (req.method()==='POST'&&p==='/api/v1/downloaders'&&JSON.stringify(body)===JSON.stringify(temporaryConfig)) ||
+      (req.method()==='DELETE'&&temporaryDownloader&&p===`/api/v1/downloaders/${temporaryDownloader}`);
     const allowed=u.origin===base && (configWrite || (req.method()==='POST' && (
       (p==='/api/v1/titles/166/search' && body.album_id===144 && body.choose===false && Object.keys(body).length===2) ||
       (allowedRelease && p===`/api/v1/releases/${allowedRelease}/choose` && body.force===true && Object.keys(body).length===1))));
@@ -85,11 +88,12 @@ function sessionAction(action,extra={}) { return JSON.parse(execFileSync('python
   await new Promise((resolve,reject)=>{proxy.once('error',reject);proxy.listen(28775,'127.0.0.1',resolve);});
   const d=(await get('/downloaders')).downloaders.find(d=>d.id===1);assert.equal(d.url,'http://127.0.0.1:28768');
   originalDownloader=Object.fromEntries(['name','kind','url','username','secret','category','priority','path_map','allow_local_network'].map(k=>[k,d[k]]));
-  async function setConfig(url){await page.evaluate(async ({body,csrf})=>{const {api}=await import('/src/lib/api.ts');api.setCsrf(csrf);await api.put('/downloaders/1',body);},{body:{...originalDownloader,url},csrf});}
-  restoreDownloader=async()=>{await setConfig(originalDownloader.url);};
-  // Set only the disposable fake service URL; credentials are retained masked.
-  const restore=restoreDownloader;restoreDownloader=null;
-  await setConfig('http://127.0.0.1:28775');restoreDownloader=restore;
+  async function configCall(method,p,body){return page.evaluate(async ({method,p,body,csrf})=>{const {api}=await import('/src/lib/api.ts');api.setCsrf(csrf);return api.request(p,{method,body});},{method,p,body,csrf});}
+  // The active existing Downloader keeps its URL/category and credentials.
+  temporaryDownloader=(await configCall('POST','/downloaders',temporaryConfig)).id;
+  receipt.temporaryDownloader=temporaryDownloader;
+  restoreDownloader=async()=>{await configCall('PUT','/downloaders/1',originalDownloader);await configCall('DELETE',`/downloaders/${temporaryDownloader}`);};
+  await configCall('PUT','/downloaders/1',{...originalDownloader,priority:2});
   await page.getByTestId('album-choose').click();
   const release=await poll(async()=> (await get('/titles/166/releases?album_id=144&limit=25&offset=0')).releases.find(r=>r.name===releaseName), 'scoped album search');
   assert.deepEqual(release.slot_ids,[1183,1184,1185]); allowedRelease=release.id; receipt.releaseId=release.id;save();
@@ -98,6 +102,7 @@ function sessionAction(action,extra={}) { return JSON.parse(execFileSync('python
   const dialog=page.getByRole('dialog'); await expect(dialog).toContainText('posted');
   await dialog.getByRole('button',{name:'Choose anyway',exact:true}).click();
   const dl=await poll(async()=> (await get('/downloads')).downloads.find(d=>d.ReleaseID===release.id&&d.ExternalID===hash), 'real download creation');
+  assert.equal(dl.DownloaderID,temporaryDownloader,'Must use the disposable size-aware connection');
   receipt.downloadId=dl.ID;
   await poll(async()=> (await get('/albums/144/tracks')).tracks.every(t=>t.slots.every(s=>s.state==='downloading')), 'three downloading slots');
   receipt.checks.push('Real choose created a hash-scoped download and three downloading slots');
