@@ -4,105 +4,179 @@
 	import { api, ApiError } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
-	import { ago, bytes, duration, greeting, percent } from '#lib/format.ts';
-	import Icon from '#lib/Icon.svelte';
-	import EmptyState from '#lib/EmptyState.svelte';
+	import { ago, greeting } from '#lib/format.ts';
 	import { searchLine } from '#lib/releases.ts';
-	import { checkLabel, problems, stateWord } from '#lib/health.ts';
-	import { groupLabel, kindTone } from '#lib/history.ts';
-	import type { Download, EventRecord, Health, HealthChecks, LibraryFolder, SearchView } from '#lib/types.ts';
+	import { problems } from '#lib/health.ts';
+	import { groupLabel } from '#lib/history.ts';
+	import { comingSoon, markTransitions, recentlyAdded, titleCard, type ExploreCard } from '#lib/explore.ts';
+	import { attention, downloadLine, downloadSubtitle, greetName, isActive } from '#lib/home.ts';
+	import { ymd } from '#lib/calendar.ts';
+	import type { DownloadRow, Decision } from '#lib/downloaders.ts';
+	import type { Ask, CalendarEntry, EventRecord, Health, HealthChecks, LibraryFolder, SearchView, TitleView } from '#lib/types.ts';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import Shelf from '#lib/ui/Shelf.svelte';
+	import PosterCard from '#lib/ui/PosterCard.svelte';
+	import WideCard from '#lib/ui/WideCard.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import ListRow from '#lib/ui/ListRow.svelte';
+	import StatusPill from '#lib/ui/StatusPill.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
+	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import Icon from '#lib/Icon.svelte';
 
 	interface MissingTitle { id: number; name: string; year?: number; state_label: string }
 
 	let loaded = $state(false);
-	let titleCount = $state(0);
+	let failed = $state(false);
+	let retrying = $state(false);
+	let titles = $state<TitleView[]>([]);
 	let missing = $state<MissingTitle[]>([]);
 	let folders = $state<LibraryFolder[]>([]);
-	let downloads = $state<Download[]>([]);
+	let downloads = $state<DownloadRow[]>([]);
 	let events = $state<EventRecord[]>([]);
+	let dates = $state<CalendarEntry[]>([]);
+	let asks = $state<Ask[]>([]);
+	let decisionItems = $state<Decision[]>([]);
 	let health = $state<Health | null>(null);
 	let checks = $state<HealthChecks | null>(null);
-	const issues = $derived(problems(checks?.checks));
 	let tmdbStatus = $state<'unknown' | 'ready' | 'missing'>('unknown');
 	let tmdbNeedsProof = $state(false);
 	let searching = $state<SearchView[]>([]);
 	let found = $state<SearchView[]>([]);
 
+	const admin = $derived(session.can('settings'));
+	const manager = $derived(session.can('manage_library'));
+	const approver = $derived(session.can('approve'));
+	const name = $derived(greetName(session.s.name));
+	const issues = $derived(problems(checks?.checks));
+
 	const steps = $derived([
 		{
 			done: tmdbStatus === 'ready',
-			text: tmdbStatus === 'unknown' ? 'Check TMDB connection' : 'Connect TMDB',
-			detail: tmdbStatus === 'unknown' ? 'Confirm the protected connection state before marking TMDB ready.' : 'Use TMDB artwork and metadata when you add media.',
+			text: tmdbStatus === 'unknown' ? 'Check the TMDB connection' : 'Connect TMDB',
+			detail: tmdbStatus === 'unknown' ? 'Confirm the connection before HolyArrs marks TMDB ready.' : 'Use TMDB artwork and details when you add media.',
 			href: '/settings/tmdb'
 		},
-		{ done: folders.length > 0, text: 'Choose a Library folder', detail: 'Tell HolyArrs where completed media should live.', href: '/settings/library-folders' },
+		{ done: folders.length > 0, text: 'Choose a Library folder', detail: 'Tell HolyArrs where finished media should live.', href: '/settings/library-folders' },
 		{ done: (health?.sources?.length ?? 0) > 0, text: 'Add a Source', detail: 'Connect a place where HolyArrs can find Releases.', href: '/settings/sources' },
-		{ done: (health?.downloaders?.length ?? 0) > 0, text: 'Add a Downloader', detail: 'Connect the app that will fetch chosen Releases.', href: '/settings/downloaders' },
-		{ done: titleCount > 0, text: 'Add your first movie', detail: 'Search for a movie and begin your Library.', href: '/search' }
+		{ done: (health?.downloaders?.length ?? 0) > 0, text: 'Add a Downloader', detail: 'Connect the app that fetches chosen Releases.', href: '/settings/downloaders' },
+		{ done: titles.length > 0, text: 'Add your first title', detail: 'Search for a movie, show or artist to begin your Library.', href: '/search' }
 	]);
 	const doneCount = $derived(steps.filter((s) => s.done).length);
 	const nextStep = $derived(steps.find((s) => !s.done));
-	const active = $derived(downloads.filter((d) => d.State === 'downloading' || d.State === 'queued' || d.State === 'stalled'));
+	const showSetup = $derived(admin && loaded && !!nextStep);
+
+	const active = $derived(downloads.filter(isActive));
+	const failedDownloads = $derived(downloads.filter((d) => d.state === 'failed'));
+	const byId = $derived(new Map(titles.map((t) => [t.id, t])));
+	const recent = $derived(recentlyAdded(titles, 20).map((t) => titleCard(t)));
+	const soon = $derived(comingSoon(dates, titles, new Date(), 20));
+	const waiting = $derived(asks.filter((a) => a.state === 'asked'));
+	const mine = $derived(asks.filter((a) => a.mine && a.state !== 'available').slice(0, 20));
+	const fixes = $derived(manager || admin ? attention({ failed: failedDownloads, decisions: decisionItems, health: admin ? (checks?.checks ?? []) : [] }) : []);
+	const missingCards = $derived(
+		missing.slice(0, 20).map((m): ExploreCard => {
+			const t = byId.get(m.id);
+			return t ? { ...titleCard(t, m.state_label, `m${m.id}`), status: 'missing', statusLabel: m.state_label } : { key: `m${m.id}`, kind: 'movie', name: m.name, year: m.year, titleId: m.id, subtitle: m.state_label, status: 'missing', statusLabel: m.state_label, badges: [] };
+		})
+	);
+	// One view-transition name per title on the page: the first poster wins.
+	const rows = $derived(
+		markTransitions([
+			{ id: 'soon', title: '', cards: soon },
+			{ id: 'recent', title: '', cards: recent },
+			{ id: 'missing', title: '', cards: missingCards }
+		])
+	);
+	let hasData = $state(false);
+
+	function summary(): string {
+		if (!loaded) return 'Looking at your Library…';
+		if (titles.length === 0) return 'Your Library is empty. Here is how to get going.';
+		const n = titles.length;
+		const parts = [`${n} ${n === 1 ? 'title' : 'titles'} in your Library`];
+		if (active.length) parts.push(`${active.length} downloading now`);
+		return parts.join(', ') + '.';
+	}
+
+	function titleHref(id: number): string {
+		return to(`/library/${id}`);
+	}
 
 	async function loadAll() {
-		const mayReadTMDB = session.can('settings') && !tmdbNeedsProof && (session.s.via === 'api_key' || session.s.localRecent);
-		const results = await Promise.allSettled([
+		const mayReadTMDB = admin && !tmdbNeedsProof && (session.s.via === 'api_key' || session.s.localRecent);
+		const from = ymd(new Date());
+		const until = ymd(new Date(Date.now() + 30 * 86400000));
+		const [ti, su, fo, dl, ev, he, tk, se, ch, ca, as, de] = await Promise.allSettled([
+			api.get<{ titles: TitleView[] }>('/titles'),
 			api.get<{ total: number; missing: MissingTitle[] }>('/library-summary'),
-			api.get<{ library_folders: LibraryFolder[] }>('/library-folders'),
-			api.get<{ downloads: Download[] }>('/downloads?limit=20'),
-			api.get<{ events: EventRecord[] }>('/events?limit=12'),
+			admin ? api.get<{ library_folders: LibraryFolder[] }>('/library-folders') : Promise.resolve(null),
+			api.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=50'),
+			api.get<{ events: EventRecord[] }>('/events?limit=5'),
 			api.get<Health>('/health'),
 			mayReadTMDB ? api.get<{ token: string }>('/settings/tmdb-token') : Promise.resolve(null),
 			api.get<{ running: SearchView[]; recent: SearchView[] }>('/searches?limit=6'),
-			api.get<HealthChecks>('/health/checks')
+			admin ? api.get<HealthChecks>('/health/checks') : Promise.resolve(null),
+			api.get<{ dates: CalendarEntry[] | null }>(`/calendar?from=${from}&to=${until}`),
+			session.can('ask') || approver ? api.get<{ asks: Ask[] }>('/asks') : Promise.resolve(null),
+			manager ? api.get<{ items: Decision[]; count: number }>('/needs-decision') : Promise.resolve(null)
 		]);
-		const [t, f, d, e, h, k, s, c] = results;
-		if (c.status === 'fulfilled') checks = c.value;
-		if (s.status === 'fulfilled') {
-			searching = s.value.running;
-			found = s.value.recent;
+		// A failed refresh keeps what was shown before; only the Library list decides the error banner.
+		failed = ti.status === 'rejected';
+		if (ti.status === 'fulfilled') {
+			titles = ti.value.titles ?? [];
+			hasData = true;
 		}
-		if (t.status === 'fulfilled') {
-			titleCount = t.value.total;
-			missing = t.value.missing;
+		if (su.status === 'fulfilled') missing = su.value.missing ?? [];
+		if (fo.status === 'fulfilled' && fo.value) folders = fo.value.library_folders;
+		if (dl.status === 'fulfilled') downloads = dl.value.downloads ?? [];
+		if (ev.status === 'fulfilled') events = ev.value.events ?? [];
+		if (he.status === 'fulfilled') health = he.value;
+		if (se.status === 'fulfilled') {
+			searching = se.value.running ?? [];
+			found = se.value.recent ?? [];
 		}
-		if (f.status === 'fulfilled') folders = f.value.library_folders;
-		if (d.status === 'fulfilled') downloads = d.value.downloads;
-		if (e.status === 'fulfilled') events = e.value.events;
-		if (h.status === 'fulfilled') health = h.value;
+		if (ch.status === 'fulfilled' && ch.value) checks = ch.value;
+		if (ca.status === 'fulfilled') dates = ca.value.dates ?? [];
+		if (as.status === 'fulfilled' && as.value) asks = as.value.asks ?? [];
+		if (de.status === 'fulfilled' && de.value) decisionItems = de.value.items ?? [];
 		if (mayReadTMDB) {
-			if (k.status === 'rejected' && k.reason instanceof ApiError && k.reason.status === 403) tmdbNeedsProof = true;
-			tmdbStatus = k.status === 'fulfilled' && k.value ? (k.value.token ? 'ready' : 'missing') : 'unknown';
+			if (tk.status === 'rejected' && tk.reason instanceof ApiError && tk.reason.status === 403) tmdbNeedsProof = true;
+			tmdbStatus = tk.status === 'fulfilled' && tk.value ? (tk.value.token ? 'ready' : 'missing') : 'unknown';
 		} else {
 			tmdbStatus = 'unknown';
 		}
 		loaded = true;
 	}
 
+	async function retry() {
+		retrying = true;
+		try {
+			await loadAll();
+		} finally {
+			retrying = false;
+		}
+	}
+
 	onMount(() => {
 		void loadAll();
 		let timer: ReturnType<typeof setTimeout> | undefined;
-		const soon = () => {
+		const soonLoad = () => {
 			clearTimeout(timer);
 			timer = setTimeout(loadAll, 250);
 		};
 		const offs = [
-			live.on('title', soon),
-			live.on('event', soon),
-			live.on('import', soon),
-			live.on('resync', soon),
-			live.on('releases', soon),
-			live.on('health', soon),
+			live.on('title', soonLoad),
+			live.on('event', soonLoad),
+			live.on('import', soonLoad),
+			live.on('resync', soonLoad),
+			live.on('releases', soonLoad),
+			live.on('health', soonLoad),
+			live.on('download', soonLoad),
 			live.on('job', (data) => {
 				const j = data as { kind?: string };
-				if (j?.kind === 'search_slot' || j?.kind === 'search_missing' || j?.kind === 'feed_check' || j?.kind === 'search_season') soon();
-			}),
-			live.on('download', (data) => {
-				const d = data as Download;
-				if (!d || typeof d.ID !== 'number') return soon();
-				const i = downloads.findIndex((x) => x.ID === d.ID);
-				if (i >= 0) downloads[i] = d;
-				else downloads = [d, ...downloads];
+				if (j?.kind === 'search_slot' || j?.kind === 'search_missing' || j?.kind === 'feed_check' || j?.kind === 'search_season') soonLoad();
 			})
 		];
 		return () => {
@@ -114,653 +188,224 @@
 
 <svelte:head><title>Home · HolyArrs</title></svelte:head>
 
-<header class="page-head home-hero rise">
-	<div>
-		<p class="eyebrow">Workspace overview</p>
-		<h1>{greeting()}{session.s.name ? `, ${session.s.name}` : ''}</h1>
-		<p>
-			{#if !loaded}
-				Looking at your Library…
-			{:else if titleCount === 0}
-				Your Library is empty. Here is how to get going.
-			{:else}
-				{titleCount} {titleCount === 1 ? 'title' : 'titles'} in your Library, {active.length} downloading now.
-			{/if}
-		</p>
-	</div>
-	<a class="btn btn-dark home-search" href={to(`/search`)}><Icon name="search" size={17} /> Search media</a>
-</header>
-
-<nav class="metric-band" aria-label="Library overview" aria-live="polite">
-	<a href={to(`/library`)}><span class="status-value">{loaded ? titleCount : '—'}</span><span class="status-label">Library titles</span></a>
-	<a href={to(`/downloads`)}><span class="status-value">{loaded ? active.length : '—'}</span><span class="status-label">Downloading</span></a>
-	<a href={to('/library?show=missing')}><span class="status-value">{loaded ? missing.length : '—'}</span><span class="status-label">Missing shown</span></a>
-	{#if session.can('settings')}
-		<a href={to(`/settings/this-app`)}><span class="status-value">{loaded ? issues.length : '—'}</span><span class="status-label">Health issues</span></a>
-	{/if}
-</nav>
-
-{#if session.can('settings') && loaded && doneCount < steps.length && nextStep}
-	<section class="setup-workspace rise" aria-labelledby="h-setup">
-		<div class="setup-heading">
-			<div>
-				<p class="eyebrow">Set up your workspace</p>
-				<h2 id="h-setup">Finish setting up HolyArrs</h2>
-			</div>
-			<span class="progress-count">{doneCount} of {steps.length} complete</span>
-		</div>
-		<div class="segs" aria-hidden="true">
-			{#each steps as s, i (i)}<i class:on={s.done}></i>{/each}
-		</div>
-		<div class="setup-grid">
-			<div class="setup-primary">
-				<span class="step-number">Next step</span>
-				<h3>{nextStep.text}</h3>
-				<p>{nextStep.detail}</p>
-				<a class="btn btn-dark" href={to(nextStep.href)}>Continue setup <Icon name="arrow" size={16} /></a>
-				<ul class="setup-list">
-					{#each steps as s, i (i)}
-						{#if s.text !== nextStep.text}
-							<li class:done={s.done}>
-								{#if s.done}
-									<span class="step-state"><Icon name="check" size={16} /></span>
-									<span>{s.text}</span>
-									<span class="step-meta">Complete</span>
-								{:else}
-									<a href={to(s.href)}>
-										<span class="step-state">{i + 1}</span>
-										<span>{s.text}</span>
-										<Icon name="arrow" size={15} />
-									</a>
-								{/if}
-							</li>
-						{/if}
-					{/each}
-				</ul>
-			</div>
-			<aside class="readiness" aria-label="Workspace readiness">
-				<div class="readiness-head">
-					<span>Workspace readiness</span>
-					<strong>{Math.round((doneCount / steps.length) * 100)}%</strong>
-				</div>
-				<div class="readiness-ring" style={`--progress: ${(doneCount / steps.length) * 360}deg`}>
-					<span>{doneCount}/{steps.length}</span>
-				</div>
-				<dl class="readiness-facts">
-					<div><dt>Library folders</dt><dd>{folders.length}</dd></div>
-					<div><dt>Sources</dt><dd>{health?.sources?.length ?? 0}</dd></div>
-					<div><dt>Downloaders</dt><dd>{health?.downloaders?.length ?? 0}</dd></div>
-					<div><dt>Health issues</dt><dd>{issues.length}</dd></div>
-				</dl>
-			</aside>
-		</div>
-	</section>
-{:else if loaded && titleCount === 0}
-	<EmptyState icon="search" title="Add your first movie">
-		<p>{session.can('settings') ? 'Everything is set up. Find a movie and add it to your Library.' : 'Your Library is empty. Find a movie to get started.'}</p>
-		{#snippet actions()}<a class="btn btn-dark" href={to(`/search`)}>Search media</a>{/snippet}
-	</EmptyState>
-{/if}
-
-<div class="section-heading">
-	<div>
-		<p class="eyebrow">Live operations</p>
-		<h2>Activity</h2>
-	</div>
-	<a class="link small muted" href={to(`/downloads/history`)}>View all history</a>
-</div>
-
 <div class="home">
-	<div class="main-col activity-grid">
-		<section class="block" aria-labelledby="h-dl">
-			<div class="block-head">
-				<h2 id="h-dl" class="h2">Downloading now</h2>
-				<a class="link small muted" href={to(`/downloads`)}>All downloads</a>
-			</div>
-			{#if !loaded}
-				<div class="sk" style="height: 96px"></div>
-			{:else if active.length === 0}
-				<p class="quiet empty-row">Nothing is downloading. When HolyArrs picks a Release, it shows up here with its progress.</p>
-			{:else}
-				<ul class="rows">
-					{#each active as d (d.ID)}
-						<li>
-							<div class="grow">
-								<div class="ellipsis small">{d.FilesSeen?.[0]?.name ?? d.ExternalID}</div>
-								<div class="bar" style="margin-top: 8px">
-									<i style="transform: scaleX({percent(d.Progress) / 100})"></i>
-								</div>
-							</div>
-							<span class="mono xs muted nums">
-								{percent(d.Progress)}% · {bytes(d.Speed)}/s{d.ETA ? ` · ${duration(d.ETA)}` : ''}
-							</span>
-						</li>
-					{/each}
-				</ul>
-			{/if}
-		</section>
+	<PageHeader title="Home" subtitle="{greeting()}{name ? `, ${name}` : ''}. {summary()}">
+		{#snippet actions()}
+			<Button variant="secondary" icon="search" href={to('/search')}>Search</Button>
+			<Button variant="secondary" icon="compass" href={to('/explore')}>Explore</Button>
+		{/snippet}
+	</PageHeader>
 
-		<section class="block" aria-labelledby="h-search" data-testid="home-searches">
-			<div class="block-head">
-				<h2 id="h-search" class="h2">Searches</h2>
-				<a class="link small muted" href={to(`/library/held`)}>Held and Turned down</a>
-			</div>
-			{#if !loaded}
-				<div class="sk" style="height: 64px"></div>
-			{:else if searching.length === 0 && found.length === 0}
-				<p class="quiet empty-row">No searches yet. When HolyArrs looks for a movie, you see it here as it happens and what it found.</p>
-			{:else}
-				<ul class="rows" aria-live="polite">
-					{#each searching as x (x.job_id)}
-						<li data-testid="search-running">
-							<div class="grow">
-								<div class="small">{searchLine(x)}</div>
-								<div class="bar" style="margin-top: 8px"><i style="transform: scaleX({percent(x.progress) / 100})"></i></div>
-							</div>
-							<span class="chip wait">{x.state === 'queued' ? 'Waiting' : 'Searching'}</span>
-						</li>
-					{/each}
-					{#each found as x (x.job_id)}
-						<li data-testid="search-found">
-							{#if x.title_id}
-								<a class="grow small" href={to(`/library/${x.title_id}`)}>{searchLine(x)}</a>
-							{:else}
-								<span class="grow small">{searchLine(x)}</span>
-							{/if}
-							<time class="mono xs muted" datetime={x.ended_at}>{ago(x.ended_at)}</time>
-						</li>
-					{/each}
-				</ul>
-			{/if}
-		</section>
+	{#if failed && !hasData}
+		<LoadError hasData={false} message="Could not load your Library." onretry={retry} busy={retrying} />
+	{:else}
+		{#if failed}<div class="banner"><LoadError hasData={true} message="Could not refresh Home." onretry={retry} busy={retrying} /></div>{/if}
 
-		<section class="block" aria-labelledby="h-mis">
-			<div class="block-head">
-				<h2 id="h-mis" class="h2">Missing</h2>
-				<a class="link small muted" href={to(`/library`)}>Library</a>
-			</div>
-			{#if !loaded}
-				<div class="sk" style="height: 64px"></div>
-			{:else if missing.length === 0}
-				<p class="quiet empty-row">
-					{titleCount ? 'Every title you keep up to date has a file. Nice.' : 'Movies you add but do not have yet show up here.'}
-				</p>
-			{:else}
-				<ul class="rows">
-					{#each missing as t (t.id)}
-						<li>
-							<a class="grow ellipsis" href={to(`/library/${t.id}`)}>{t.name}{t.year ? ` (${t.year})` : ''}</a>
-							<span class="chip wait">{t.state_label}</span>
-						</li>
-					{/each}
-				</ul>
-			{/if}
-		</section>
+		{#if !loaded}
+			<section class="loading" aria-label="Loading" aria-busy="true">
+				<Skeleton width="180px" />
+				<div class="sk-row">{#each Array.from({ length: 6 }, (_, i) => i) as i (i)}<Skeleton shape="poster" />{/each}</div>
+			</section>
+		{/if}
 
-		<section class="block" aria-labelledby="h-ev">
-			<div class="block-head">
-				<h2 id="h-ev" class="h2">Latest Events</h2>
-				<a class="link small muted" href={to(`/downloads/history`)}>All history</a>
-			</div>
-			{#if !loaded}
-				<div class="sk" style="height: 120px"></div>
-			{:else if events.length === 0}
-				<p class="quiet empty-row">No Events yet. Every search, download and import writes one here.</p>
-			{:else}
-				<ul class="rows events">
-					{#each events as e (e.ID)}
-						<li>
-							<span class="chip {kindTone(e.Kind)}">{groupLabel(e.Kind)}</span>
-							<span class="grow small">{e.Summary}</span>
-							<time class="mono xs muted" datetime={e.At}>{ago(e.At)}</time>
-						</li>
-					{/each}
-				</ul>
-			{/if}
-		</section>
-	</div>
-
-	<aside class="side-col" aria-label="System status">
-		{#if loaded && checks}
-			<section class="card" aria-labelledby="h-health" data-testid="home-health">
-				<div class="card-head">
-					<h2 id="h-health" class="h2">Health</h2>
-					<span class="chip {issues.length === 0 ? 'ok' : checks.worst === 'error' ? 'fail' : 'wait'}">
-						{issues.length === 0 ? 'All fine' : `${issues.length} to look at`}
-					</span>
+		{#if showSetup && nextStep}
+			<section class="setup" aria-labelledby="h-setup">
+				<div class="setup-main">
+					<p class="kicker">{doneCount} of {steps.length} done</p>
+					<h2 id="h-setup">Finish setting up HolyArrs</h2>
+					<div class="segs" aria-hidden="true">{#each steps as s, i (i)}<i class:on={s.done}></i>{/each}</div>
+					<h3>{nextStep.text}</h3>
+					<p>{nextStep.detail}</p>
+					<Button variant="primary" size="lg" href={to(nextStep.href)} iconAfter="chevronRight">Continue setup</Button>
 				</div>
-				{#if issues.length === 0}
-					<p class="small muted">{checks.checks.length ? 'Every health check passes.' : 'The health checks have not run yet.'}</p>
-				{:else}
-					<ul class="issues">
-						{#each issues.slice(0, 5) as c (c.key)}
-							<li data-testid="home-health-issue">
-								<span class="chip {c.state === 'error' ? 'fail' : 'wait'}">{stateWord(c.state)}</span>
-								<span class="small">{c.message || `${checkLabel(c.kind)} ${c.subject}`}</span>
-							</li>
-						{/each}
-					</ul>
+				<ol class="steps">
+					{#each steps as s, i (i)}
+						<li class:done={s.done}>
+							<a href={to(s.href)}>
+								<span class="dot">{#if s.done}<Icon name="check" size={14} />{:else}{i + 1}{/if}</span>
+								<span class="grow">{s.text}</span>
+								<span class="sr-only">{s.done ? '(done)' : '(to do)'}</span>
+								<Icon name="chevronRight" size={15} />
+							</a>
+						</li>
+					{/each}
+				</ol>
+			</section>
+		{:else if loaded && titles.length === 0}
+			<EmptyState
+				icon="search"
+				title="Add your first title"
+				text={admin || manager ? 'Everything is set up. Find a movie, show or artist and add it to your Library.' : 'The Library is empty. Find a movie or show and ask for it.'}
+				action={{ label: 'Search', href: to('/search'), icon: 'search' }}
+			/>
+		{/if}
+
+		{#if fixes.length}
+			<section class="attention" aria-labelledby="h-fix">
+				<header>
+					<h2 id="h-fix">Needs attention</h2>
+					<span class="count">{fixes.length}</span>
+				</header>
+				<div class="list">
+					{#each fixes.slice(0, 6) as f (f.key)}
+						<ListRow title={f.text} href={to(f.href)} icon={f.tone === 'fail' ? 'alert' : 'clock'}>
+							{#snippet trailing()}
+								<StatusPill kind={f.tone === 'fail' ? 'failed' : 'missing'} label={f.word} />
+								<span class="go">{f.action}<Icon name="chevronRight" size={14} /></span>
+							{/snippet}
+						</ListRow>
+					{/each}
+				</div>
+				{#if fixes.length > 6}<a class="more" href={to('/downloads')}>{fixes.length - 6} more in Downloads</a>{/if}
+			</section>
+		{/if}
+
+		{#if active.length}
+			<Shelf title="Downloading now" subtitle="{active.length} {active.length === 1 ? 'download' : 'downloads'}" href={to('/downloads')} item="300px">
+				{#each active.slice(0, 20) as d (d.id)}
+					<WideCard
+						title={d.title || d.name}
+						href={d.title_id ? titleHref(d.title_id) : to('/downloads')}
+						image={d.artwork || byId.get(d.title_id ?? -1)?.artwork?.[0]}
+						subtitle={downloadSubtitle(d)}
+						meta={downloadLine(d)}
+						progress={Math.round(d.progress * 100)}
+						status={d.state === 'stalled' ? 'missing' : 'downloading'}
+						statusLabel={d.state === 'stalled' ? 'Stalled' : d.state === 'queued' ? 'Waiting' : undefined}
+					/>
+				{/each}
+			</Shelf>
+		{/if}
+
+		{#if rows[0].cards.length}
+			<Shelf title="Coming soon" subtitle="The next 30 days" href={to('/calendar')}>
+				{#each rows[0].cards as c (c.key)}
+					<PosterCard title={c.name} href={c.titleId ? titleHref(c.titleId) : undefined} image={c.image} subtitle={c.subtitle} status={c.status} statusLabel={c.statusLabel} vtName={c.vtName} />
+				{/each}
+			</Shelf>
+		{/if}
+
+		{#if rows[1].cards.length}
+			<Shelf title="Recently added" href={to('/library')}>
+				{#each rows[1].cards as c (c.key)}
+					<PosterCard title={c.name} href={titleHref(c.titleId!)} image={c.image} subtitle={c.subtitle} badges={c.badges} status={c.status === 'in_library' ? undefined : c.status} statusLabel={c.statusLabel} vtName={c.vtName} />
+				{/each}
+			</Shelf>
+		{/if}
+
+		{#if approver && waiting.length}
+			<Shelf title="Waiting for approval" subtitle="{waiting.length} {waiting.length === 1 ? 'ask' : 'asks'} on the Wishlist" href={to('/wishlist')}>
+				{#each waiting.slice(0, 20) as a (a.id)}
+					<PosterCard title={a.name} href={to('/wishlist')} image={a.poster} subtitle="Asked by {greetName(a.asked_by?.name) || 'someone'}" status="requested" statusLabel="Waiting" />
+				{/each}
+			</Shelf>
+		{:else if !approver && mine.length}
+			<Shelf title="Your Wishlist" href={to('/wishlist')}>
+				{#each mine as a (a.id)}
+					<PosterCard
+						title={a.name}
+						href={a.title_id ? titleHref(a.title_id) : to('/wishlist')}
+						image={a.poster}
+						subtitle={a.season_words || a.album_words || (a.year ? String(a.year) : undefined)}
+						status={a.state === 'approved' ? 'approved' : a.state === 'turned_down' ? 'turned_down' : 'requested'}
+						statusLabel={a.state === 'asked' ? 'Requested' : undefined}
+					/>
+				{/each}
+			</Shelf>
+		{/if}
+
+		{#if rows[2].cards.length}
+			<Shelf title="Missing" subtitle="Titles you keep up to date that have no file yet" href={to('/library?show=missing')}>
+				{#each rows[2].cards as c (c.key)}
+					<PosterCard title={c.name} href={titleHref(c.titleId!)} image={c.image} subtitle={c.subtitle} status={c.status} statusLabel={c.statusLabel} vtName={c.vtName} />
+				{/each}
+			</Shelf>
+		{/if}
+
+		{#if loaded && (searching.length || found.length || events.length || (admin && health))}
+			<div class="lately">
+				{#if searching.length || found.length}
+					<section class="panel" aria-labelledby="h-search" data-testid="home-searches">
+						<header><h2 id="h-search">Searches</h2><a href={to('/library/held')}>Held and Turned down</a></header>
+						<div class="list" aria-live="polite">
+							{#each searching as x (x.job_id)}
+								<div data-testid="search-running"><ListRow title={searchLine(x)} icon="search">{#snippet trailing()}<StatusPill kind="downloading" label={x.state === 'queued' ? 'Waiting' : 'Searching'} />{/snippet}</ListRow></div>
+							{/each}
+							{#each found as x (x.job_id)}
+								<div data-testid="search-found"><ListRow title={searchLine(x)} icon="search" meta={ago(x.ended_at)} href={x.title_id ? titleHref(x.title_id) : undefined} /></div>
+							{/each}
+						</div>
+					</section>
 				{/if}
-				{#if session.can('settings')}<a class="link small muted" href={to(`/settings/this-app`)}>All health checks</a>{/if}
-			</section>
+				{#if events.length}
+					<section class="panel" aria-labelledby="h-ev">
+						<header><h2 id="h-ev">Latest Events</h2><a href={to('/downloads/history')}>History</a></header>
+						<div class="list">
+							{#each events as e (e.ID)}
+								<ListRow title={e.Summary} subtitle={groupLabel(e.Kind)} meta={ago(e.At)} icon="clock" />
+							{/each}
+						</div>
+					</section>
+				{/if}
+				{#if admin && health}
+					<section class="panel" aria-labelledby="h-state" data-testid="home-health">
+						<header><h2 id="h-state">This HolyArrs</h2><a href={to('/settings/this-app')}>All health checks</a></header>
+						<dl class="facts">
+							<div><dt>Health</dt><dd>{#if checks}<StatusPill kind={issues.length === 0 ? 'in_library' : checks.worst === 'error' ? 'failed' : 'missing'} label={issues.length === 0 ? 'All fine' : `${issues.length} to look at`} />{:else}—{/if}</dd></div>
+							<div><dt>Version</dt><dd>{health.version}</dd></div>
+							<div><dt>Sources</dt><dd>{health.sources?.length ?? 0}</dd></div>
+							<div><dt>Downloaders</dt><dd>{health.downloaders?.length ?? 0}</dd></div>
+						</dl>
+					</section>
+				{/if}
+			</div>
 		{/if}
-		{#if loaded && health}
-			<section class="card" aria-labelledby="h-state">
-				<h2 id="h-state" class="h2" style="margin-bottom: var(--s-3)">This HolyArrs</h2>
-				<dl class="facts">
-					<dt>Version</dt>
-					<dd>{health.version}</dd>
-					<dt>Running for</dt>
-					<dd>{duration(health.uptime_s)}</dd>
-					<dt>Sources</dt>
-					<dd>{health.sources?.length ?? 0}</dd>
-					<dt>Downloaders</dt>
-					<dd>{health.downloaders?.length ?? 0}</dd>
-				</dl>
-			</section>
-		{/if}
-	</aside>
+	{/if}
 </div>
 
 <style>
-	.home-hero {
-		margin-bottom: var(--s-5);
-	}
-	.eyebrow {
-		margin: 0 0 var(--s-2);
-		color: var(--text-muted);
-		font-size: 11px;
-		font-weight: var(--weight-semibold);
-		letter-spacing: 0.09em;
-		text-transform: uppercase;
-	}
-	.home-search {
-		align-self: flex-start;
-	}
-	.metric-band {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-		margin-bottom: 32px;
-		border: 1px solid var(--line);
-		border-radius: var(--r-card);
-		background: var(--surface-1);
-		overflow: hidden;
-	}
-	.metric-band a {
-		display: flex;
-		flex-direction: column-reverse;
-		gap: var(--s-2);
-		min-width: 0;
-		padding: 20px 24px;
-		transition: background var(--dur) var(--ease-out);
-	}
-	.metric-band a + a {
-		border-left: 1px solid var(--line);
-	}
-	.metric-band a:hover {
-		background: var(--surface-2);
-	}
-	.status-value {
-		font: var(--weight-semibold) 34px / 1 var(--font-display);
-		font-variant-numeric: tabular-nums;
-		letter-spacing: -0.04em;
-	}
-	.status-label {
-		font-size: 13px;
-		color: var(--text-muted);
-	}
-	.setup-workspace {
-		margin-bottom: 36px;
-	}
-	.setup-heading,
-	.section-heading {
-		display: flex;
-		align-items: flex-end;
-		justify-content: space-between;
-		gap: var(--s-4);
-		margin-bottom: var(--s-4);
-	}
-	.setup-heading h2,
-	.section-heading h2 {
-		margin: 0;
-		font-size: clamp(20px, 2vw, 24px);
-		letter-spacing: -0.025em;
-	}
-	.progress-count {
-		color: var(--text-muted);
-		font-size: 13px;
-		white-space: nowrap;
-	}
-	.segs {
-		display: grid;
-		grid-template-columns: repeat(5, 1fr);
-		gap: 4px;
-		margin-bottom: var(--s-3);
-	}
-	.segs i {
-		height: 3px;
-		border-radius: 3px;
-		background: var(--line-strong);
-	}
-	.segs i.on {
-		background: var(--text);
-	}
-	.setup-grid {
-		display: grid;
-		grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.75fr);
-		min-height: 330px;
-		border: 1px solid var(--line);
-		border-radius: var(--r-card);
-		background: var(--surface-1);
-		overflow: hidden;
-	}
-	.setup-primary {
-		padding: 28px 32px 0;
-	}
-	.step-number {
-		display: block;
-		margin-bottom: var(--s-3);
-		color: var(--text-muted);
-		font-size: 13px;
-		font-weight: var(--weight-medium);
-	}
-	.setup-primary h3 {
-		margin: 0 0 var(--s-2);
-		font-size: clamp(22px, 2.4vw, 30px);
-		letter-spacing: -0.035em;
-	}
-	.setup-primary > p {
-		max-width: 54ch;
-		margin: 0 0 20px;
-		color: var(--text-muted);
-		font-size: 15px;
-	}
-	.setup-primary > .btn {
-		margin-bottom: 28px;
-	}
-	.setup-list {
-		border-top: 1px solid var(--line);
-	}
-	.setup-list li {
-		display: flex;
-		align-items: center;
-		gap: var(--s-3);
-		min-height: 48px;
-		border-bottom: 1px solid var(--line);
-		font-size: 14px;
-		font-weight: var(--weight-medium);
-	}
-	.setup-list li:last-child {
-		border-bottom: 0;
-	}
-	.setup-list li.done {
-		color: var(--text-muted);
-	}
-	.setup-list li > a {
-		display: flex;
-		align-items: center;
-		gap: var(--s-3);
-		width: 100%;
-		min-height: 48px;
-	}
-	.setup-list li > a :global(.icon) {
-		margin-left: auto;
-		color: var(--text-muted);
-	}
-	.step-state {
-		display: grid;
-		place-items: center;
-		width: 24px;
-		height: 24px;
-		border: 1px solid var(--line-strong);
-		border-radius: 50%;
-		font-size: 11px;
-		font-variant-numeric: tabular-nums;
-		flex: none;
-	}
-	.step-meta {
-		margin-left: auto;
-		font-size: 12px;
-		font-weight: var(--weight-regular);
-	}
-	.readiness {
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		padding: 28px;
-		border-left: 1px solid var(--line);
-		background: var(--surface-2);
-	}
-	.readiness-head {
-		display: flex;
-		justify-content: space-between;
-		gap: var(--s-3);
-		margin-bottom: 24px;
-		font-size: 13px;
-	}
-	.readiness-head span {
-		color: var(--text-muted);
-	}
-	.readiness-ring {
-		display: grid;
-		place-items: center;
-		width: 120px;
-		height: 120px;
-		margin: 0 auto 28px;
-		border-radius: 50%;
-		background: conic-gradient(var(--text) var(--progress), var(--line-strong) 0);
-		position: relative;
-	}
-	.readiness-ring::after {
-		content: '';
-		position: absolute;
-		inset: 8px;
-		border-radius: inherit;
-		background: var(--surface-2);
-	}
-	.readiness-ring span {
-		position: relative;
-		z-index: 1;
-		font-size: 24px;
-		font-weight: var(--weight-semibold);
-		letter-spacing: -0.04em;
-	}
-	.readiness-facts {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		border: 1px solid var(--line);
-		border-radius: var(--r-sm);
-		background: var(--surface-1);
-	}
-	.readiness-facts div {
-		padding: var(--s-3);
-	}
-	.readiness-facts div:nth-child(even) {
-		border-left: 1px solid var(--line);
-	}
-	.readiness-facts div:nth-child(n + 3) {
-		border-top: 1px solid var(--line);
-	}
-	.readiness-facts dt {
-		color: var(--text-muted);
-		font-size: 11px;
-	}
-	.readiness-facts dd {
-		margin: 4px 0 0;
-		font-size: 17px;
-		font-weight: var(--weight-semibold);
-	}
-	.section-heading {
-		margin-bottom: var(--s-3);
-	}
-	.home {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) 300px;
-		gap: var(--s-4);
-		align-items: start;
-	}
-	.activity-grid {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		border: 1px solid var(--line);
-		border-radius: var(--r-card);
-		background: var(--surface-1);
-		overflow: hidden;
-	}
-	.block {
-		min-width: 0;
-		padding: 20px;
-	}
-	.block:nth-child(even) {
-		border-left: 1px solid var(--line);
-	}
-	.block:nth-child(n + 3) {
-		border-top: 1px solid var(--line);
-	}
-	.side-col {
-		display: flex;
-		flex-direction: column;
-		gap: var(--s-4);
-		position: sticky;
-		top: calc(var(--topbar) + var(--s-6));
-	}
-	.side-col :global(.card + .card) {
-		margin-top: 0;
-	}
-	.block-head {
-		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
-		margin-bottom: var(--s-2);
-	}
-	.link {
-		min-height: 32px;
-		display: inline-flex;
-		align-items: center;
-		padding: 0 var(--s-2);
-		border-radius: var(--r-sm);
-	}
-	.link:hover {
-		color: var(--text);
-	}
-	.quiet {
-		color: var(--text-muted);
-		font-size: var(--text-sm);
-	}
-	.empty-row {
-		min-height: 88px;
-		margin: 0;
-		padding: var(--s-4);
-		border: 1px dashed var(--line-strong);
-		border-radius: var(--r-sm);
-	}
-	.rows {
-		padding: 0;
-		border-top: 1px solid var(--line);
-	}
-	.rows a:hover {
-		color: var(--info);
-	}
-	.rows > li {
-		padding-inline: var(--s-2);
-	}
-	.rows > li:hover {
-		background: var(--surface-2);
-	}
-	.nums {
-		white-space: nowrap;
-	}
-	.issues {
-		display: flex;
-		flex-direction: column;
-		gap: var(--s-2);
-		margin-bottom: var(--s-2);
-	}
-	.issues li {
-		display: flex;
-		align-items: flex-start;
-		gap: var(--s-2);
-		overflow-wrap: anywhere;
-	}
-	.rows li {
-		min-width: 0;
-	}
-	.rows .grow {
-		min-width: 0;
-		overflow-wrap: anywhere;
-	}
-	@media (max-width: 600px) {
-		.home-search {
-			width: 100%;
-			min-height: 44px;
-		}
-		.metric-band {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-		}
-		.metric-band a {
-			min-height: 88px;
-			padding: var(--s-4);
-		}
-		.metric-band a:nth-child(3) {
-			border-left: 0;
-			border-top: 1px solid var(--line);
-		}
-		.metric-band a:nth-child(4) {
-			border-top: 1px solid var(--line);
-		}
-		.status-value {
-			font-size: 30px;
-		}
-		.setup-heading,
-		.section-heading {
-			align-items: flex-start;
-			flex-direction: column;
-		}
-		.setup-primary,
-		.readiness {
-			padding: 20px;
-		}
-		.setup-primary > .btn {
-			width: 100%;
-			min-height: 44px;
-		}
-		.block-head {
-			flex-wrap: wrap;
-			gap: var(--s-2);
-		}
-		.rows li {
-			flex-wrap: wrap;
-		}
-		.nums {
-			white-space: normal;
-		}
-	}
-	@media (max-width: 1100px) {
-		.setup-grid {
-			grid-template-columns: 1fr;
-		}
-		.readiness {
-			border-top: 1px solid var(--line);
-			border-left: 0;
-		}
-	}
-	@media (max-width: 1600px) {
-		.home {
-			grid-template-columns: 1fr;
-		}
-		.side-col {
-			position: static;
-		}
-	}
-	@media (max-width: 1100px) {
-		.activity-grid {
-			grid-template-columns: 1fr;
-		}
-		.block:nth-child(even) {
-			border-left: 0;
-		}
-		.block:nth-child(n + 2) {
-			border-top: 1px solid var(--line);
-		}
-	}
+	.home { display: flex; flex-direction: column; gap: 36px; padding-bottom: 48px; }
+	.home > :global(.ui-head) { margin-bottom: -12px; }
+	.banner { margin-bottom: -16px; }
+	.loading { display: flex; flex-direction: column; gap: 14px; }
+	.sk-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--shelf-gap); max-height: 260px; overflow: hidden; }
+
+	.setup { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(260px, 1fr); gap: 0; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card); outline: 1px solid var(--line); overflow: hidden; }
+	.setup-main { padding: clamp(20px, 3vw, 32px); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+	.kicker { color: var(--text-muted); font: var(--t-subhead); font-variant-numeric: tabular-nums; }
+	.setup h2 { font: var(--t-title2); letter-spacing: var(--t-title2-track); }
+	.setup h3 { font: var(--t-headline); margin-top: 8px; }
+	.setup-main > p:not(.kicker) { color: var(--text-muted); max-width: 52ch; margin-bottom: 8px; }
+	.segs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; width: min(320px, 100%); margin: 4px 0; }
+	.segs i { height: 4px; border-radius: 2px; background: var(--surface-3); }
+	.segs i.on { background: var(--ok); }
+	.steps { list-style: none; margin: 0; padding: 12px; background: var(--surface-2); display: flex; flex-direction: column; justify-content: center; }
+	.steps a { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 10px; border-radius: var(--r-btn); color: var(--text); font: var(--t-callout); font-weight: 500; }
+	.steps a:hover { background: var(--surface-3); }
+	.steps a:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.steps a > :global(.icon) { color: var(--text-muted); }
+	.steps .done a { color: var(--text-muted); }
+	.dot { width: 26px; height: 26px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--surface-1); outline: 1px solid var(--line-strong); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
+	.done .dot { background: var(--ok); color: #fff; outline: none; }
+	.grow { flex: 1; min-width: 0; }
+
+	.attention header, .panel header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+	.attention header { justify-content: flex-start; }
+	.attention h2, .panel h2 { font: var(--t-title2); letter-spacing: var(--t-title2-track); }
+	.panel h2 { font: var(--t-title3); }
+	.count { min-width: 24px; height: 24px; padding: 0 8px; display: inline-grid; place-items: center; border-radius: 999px; background: var(--accent-soft); color: var(--accent-text); font: var(--t-subhead); font-weight: 600; font-variant-numeric: tabular-nums; }
+	.attention .list { border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); padding: 6px; }
+	.go { display: inline-flex; align-items: center; gap: 2px; color: var(--accent-text); font: var(--t-subhead); font-weight: 600; }
+	.more, .panel header a { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent-text); font: var(--t-callout); font-weight: 500; }
+	.more:hover, .panel header a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+	.lately { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 20px; align-items: start; }
+	.panel { min-width: 0; padding: 16px 16px 10px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
+	.panel .list { margin: 0 -8px; }
+	.facts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 4px 0 8px; }
+	.facts dt { color: var(--text-muted); font: var(--t-footnote); margin-bottom: 4px; }
+	.facts dd { margin: 0; font: var(--t-headline); font-variant-numeric: tabular-nums; }
+
+	@media (max-width: 900px) { .setup { grid-template-columns: 1fr; } }
+	@media (max-width: 767px) { .home { gap: 28px; } }
 </style>
