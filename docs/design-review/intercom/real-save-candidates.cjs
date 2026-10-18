@@ -28,17 +28,10 @@ const candidateProfiles = Object.freeze({
 	}),
 	audit20261017: freezeProfile({
 		name: 'audit20261017',
+		musicUnavailable: 'All three fake artist identities are already occupied by preserved samples; a fresh music lifecycle needs another disposable provider identity.',
 		references: {
 			movie: { kind: 'movie', reference: 'tmdb:900002', name: 'Paper Harbour' },
 			show: { kind: 'show', reference: 'tmdb:800004', name: 'Quarry Bells', seasons: [1] },
-			music: {
-				kind: 'artist',
-				reference: 'mbid:a2222222-0000-4000-8000-000000000002',
-				name: 'Moss Choir',
-				albums: ['b2222222-0000-4000-8000-000000000001'],
-				albumName: 'Slow Green',
-				unselectedAlbumName: 'Fern Hymns'
-			},
 			denied: { kind: 'movie', reference: 'tmdb:900005', name: 'Salt Choir' },
 			withdrawn: { kind: 'movie', reference: 'tmdb:900007', name: 'Northern Kettle' }
 		}

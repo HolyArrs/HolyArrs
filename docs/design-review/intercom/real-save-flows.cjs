@@ -383,17 +383,21 @@ module.exports = async function run(ctx) {
 		await verifyLibraryAtWidths(ctx, title, references.show, [ctx.names.member]);
 	});
 
-	await ctx.step('music album request approves with its requested scope', async () => {
-		await ctx.member.setViewportSize({ width: 1440, height: 900 });
-		const request = await createMusicAsk(ctx, ctx.member, references.music);
-		await wishlistRow(ctx.member, ctx.base, references.music);
-		await ctx.capture(ctx.member, `music-album-${request.state}`);
-		const approved = await approve(ctx, references.music);
-		assert.deepEqual(approved.albums.map((album) => album.mbid), references.music.albums, `approved artist keeps only ${references.music.albumName}`);
-		const title = await freshTitle(ctx, approved, references.music);
-		await verifyMusicScope(ctx, title, references.music);
-		await verifyLibraryAtWidths(ctx, title, references.music, [ctx.names.member], { requireStatus: false });
-	});
+	if (references.music) {
+		await ctx.step('music album request approves with its requested scope', async () => {
+			await ctx.member.setViewportSize({ width: 1440, height: 900 });
+			const request = await createMusicAsk(ctx, ctx.member, references.music);
+			await wishlistRow(ctx.member, ctx.base, references.music);
+			await ctx.capture(ctx.member, `music-album-${request.state}`);
+			const approved = await approve(ctx, references.music);
+			assert.deepEqual(approved.albums.map((album) => album.mbid), references.music.albums, `approved artist keeps only ${references.music.albumName}`);
+			const title = await freshTitle(ctx, approved, references.music);
+			await verifyMusicScope(ctx, title, references.music);
+			await verifyLibraryAtWidths(ctx, title, references.music, [ctx.names.member], { requireStatus: false });
+		});
+	} else {
+		assert.equal(typeof ctx.results.musicUnavailable, 'string', 'omitted music lifecycle records why it is unavailable');
+	}
 
 	await ctx.step('turned-down movie persists its note without entering Library', async () => {
 		await ctx.member.setViewportSize({ width: 360, height: 900 });
@@ -444,5 +448,6 @@ module.exports = async function run(ctx) {
 		await markMemberMessagesRead(ctx);
 	});
 
-	assert.equal(ctx.results.requests.length, 5, 'results record all five genuine request lifecycles');
+	const expectedLifecycleCount = references.music ? 5 : 4;
+	assert.equal(ctx.results.requests.length, expectedLifecycleCount, `results record all ${expectedLifecycleCount} genuine request lifecycles`);
 };

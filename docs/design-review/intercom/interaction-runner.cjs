@@ -12,7 +12,7 @@ const batch = process.env.INTERACTION_BATCH || 'baseline';
 if (!/^[a-z0-9][a-z0-9._-]*$/i.test(batch)) throw Error('Invalid evidence batch');
 const out = path.join(root, '.omx/artifacts/visual-ralph/intercom/interaction-pass', batch);
 const widths = (process.env.INTERACTION_WIDTHS || '360,834,1440').split(',').map(Number);
-const modules = ['navigation', 'library', 'management', 'activity', 'settings', 'extra-settings', 'account', 'forms', 'stress'];
+const modules = ['navigation', 'library', 'management', 'activity', 'settings', 'extra-settings', 'account', 'forms', 'stress', 'album', 'subtitles', 'roles'];
 const scenarios = modules.flatMap(group => {
   const file = path.join(__dirname, `interaction-${group}.cjs`);
   if (!fs.existsSync(file)) throw Error(`Missing required scenario module: ${group}`);
@@ -98,7 +98,10 @@ async function screenshot(page, file) {
               fixtureResponses++;
               fixtures.push({ method, path: apiPath, status: response.status || 200 });
               if (response.delay) await new Promise(resolve => setTimeout(resolve, response.delay));
-              try { await route.fulfill({ status: response.status || 200, json: response.json ?? {} }); } catch (error) { if (!page.isClosed() && !/closed|handled|cancel/i.test(error.message)) throw error; }
+              const payload = response.status === 204 || response.emptyBody
+                ? { status: response.status || 204, body: '' }
+                : { status: response.status || 200, json: response.json ?? {} };
+              try { await route.fulfill(payload); } catch (error) { if (!page.isClosed() && !/closed|handled|cancel/i.test(error.message)) throw error; }
               return;
             }
           }

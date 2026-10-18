@@ -29,7 +29,8 @@ const names = { member: `${namePrefix}one`, second: `${namePrefix}two` };
 const askIDs = new Set();
 const originalAskIDs = new Set();
 const titleIDs = new Set();
-let results = { runId, base, profile: profileName, started: new Date().toISOString(), checks: [], screenshots: [], requests: [], writes: [], blocked: [], pageErrors: [] };
+let results = { runId, base, profile: profileName, musicUnavailable: candidateProfile.musicUnavailable || null,
+  started: new Date().toISOString(), checks: [], screenshots: [], requests: [], writes: [], blocked: [], pageErrors: [] };
 let browser;
 const pages = [];
 let fixtureCreated = false;
@@ -221,6 +222,10 @@ async function join(page, who, index) {
 async function main() {
   if (process.env.HOLYARRS_REAL_SAVE_ALLOW !== 'preview-18746') throw new Error('Explicit disposable preview opt-in is required');
   if (path.resolve(process.cwd()) !== repo) throw new Error('Run only from the owned preview worktree');
+  if (!resuming) {
+    fs.mkdirSync(evidenceDir, { recursive: true });
+    saveReceipt();
+  }
   if (resuming) {
     results = JSON.parse(fs.readFileSync(path.join(evidenceDir, 'receipt.json'), 'utf8'));
     if ((results.profile || 'default') !== profileName) throw new Error('Continuation candidate profile does not match the recorded run');
@@ -263,7 +268,6 @@ async function main() {
   }
   for (const ask of pending.filter(ask => !ownedRefs.has(ask.ref))) originalAskIDs.add(ask.id);
   if (pending.filter(ask => !ownedRefs.has(ask.ref)).some(ask => candidates.some(candidate => matchesCandidate(ask, candidate)))) throw new Error('Lifecycle candidate already has a request');
-  fs.mkdirSync(evidenceDir, { recursive: true });
   if (resuming) {
     results.continuation = data('resume', { sessionTokens, csrfTokens, expectedRequests: results.requests, allowPartial: true });
     originalAskIDs.clear();

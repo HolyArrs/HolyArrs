@@ -6,9 +6,9 @@ const destination = path.join(root, 'web/app/static/preview-audit/consolidated-2
 const artifactRoot = path.join(root, '.omx/artifacts/visual-ralph/intercom');
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const sources = [
-  ['Responsive', 'responsive-pass/consolidated-final-20261017'],
+  ['Responsive', 'responsive-pass/consolidated-final-v2-20261017'],
   ['Interaction', 'interaction-pass/consolidated-20261017'],
-  ['Touch', 'interaction-pass/consolidated-touch-20261017'],
+  ['Touch', 'interaction-pass/touch'],
   ['Environment', 'audit20261017/env'],
   ['Comparison', 'audit20261017/comparison']
 ];
@@ -18,6 +18,9 @@ for (const [group, folder] of sources) {
   const directory = path.join(artifactRoot, folder), receiptFile = path.join(directory, 'receipt.json');
   if (!fs.existsSync(receiptFile)) throw Error('Missing required receipt: ' + receiptFile);
   const receipt = JSON.parse(fs.readFileSync(receiptFile, 'utf8'));
+  if(group === 'Comparison' && receipt.captureComplete !== true) throw Error('Comparison captures are incomplete');
+  if(receipt.before?.sourceHash !== receipt.after?.sourceHash) throw Error('Source changed during '+group);
+  if((receipt.checks||[]).some(c=>c.failure||c.errors?.length||c.overflow||c.violations?.length)) throw Error('Failed required checks in '+group);
   if (!(receipt.checks || []).some(check => check.screenshot)) throw Error('No screenshots in required receipt: ' + receiptFile);
   receipts.push({ group, before: receipt.before, after: receipt.after, count: receipt.checks?.length });
   for (const [index, check] of (receipt.checks || []).entries()) {
