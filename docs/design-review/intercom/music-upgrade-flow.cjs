@@ -109,7 +109,7 @@ function sessionAction(action,extra={}) { return JSON.parse(execFileSync('python
   assert.deepEqual(release.slot_ids,[1183,1184,1185]); allowedRelease=release.id; receipt.releaseId=release.id;save();
   const row=page.getByTestId('release').filter({hasText:releaseName});
   await row.getByRole('button',{name:'Choose '+releaseName,exact:true}).click();
-  const dialog=page.getByRole('dialog'); await expect(dialog).toContainText('posted');
+  const dialog=page.getByRole('dialog'); await expect(dialog).toContainText('this Release was turned down for this Slot before');
   await dialog.getByRole('button',{name:'Choose anyway',exact:true}).click();
   dl=await poll(async()=> (await get('/downloads')).downloads.find(d=>d.ReleaseID===release.id&&d.ExternalID===hash), 'real download creation');
   }else{dl=(await get('/downloads')).downloads.find(d=>d.ID===35&&d.ExternalID===hash);assert(dl);release={id:prior.releaseId};receipt.releaseId=release.id;}
