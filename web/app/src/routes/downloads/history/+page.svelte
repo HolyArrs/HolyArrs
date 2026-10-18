@@ -6,7 +6,15 @@
 	import { api, message } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { ago, dateTime } from '#lib/format.ts';
-	import EmptyState from '#lib/EmptyState.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import OpsDownloadsTabs from '#lib/ui/OpsDownloadsTabs.svelte';
+	import OpsCheckChip from '#lib/ui/OpsCheckChip.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import StatusPill, { type StatusKind } from '#lib/ui/StatusPill.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
+	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import Poster from '#lib/Poster.svelte';
 	import { createLatestOnly, dateRangeProblem, details, filterParams, groupLabel, historyQuery, kindGroups, kindTone, pageLine, readFilter, type HistoryFilter } from '#lib/history.ts';
 	import type { EventPage, EventRecord, TitleView } from '#lib/types.ts';
@@ -65,329 +73,180 @@
 	/** The episode the rows are filtered to, named from the rows themselves. */
 	let episodeName = $state('');
 
+	// On phones the filters live in a Sheet behind one button.
+	let phone = $state(false);
+	let filtersOpen = $state(false);
+	const activeFilters = $derived((filter.title ? 1 : 0) + (filter.episode ? 1 : 0) + filter.groups.length + (filter.from ? 1 : 0) + (filter.to ? 1 : 0));
+	function toneKind(t: string): StatusKind {
+		return t === 'ok' ? 'in_library' : t === 'fail' ? 'failed' : t === 'wait' ? 'missing' : 'turned_down';
+	}
+
 	onMount(() => {
+		const mq = window.matchMedia('(max-width: 767px)');
+		const fit = () => (phone = mq.matches);
+		fit();
+		mq.addEventListener('change', fit);
 		void load();
 		void api
 			.get<{ titles: TitleView[] }>('/titles')
 			.then((r) => (titles = r.titles))
 			.catch(() => {});
 		const offs = [live.on('event', () => filter.offset === 0 && load()), live.on('resync', load)];
-		return () => offs.forEach((off) => off());
+		return () => {
+			offs.forEach((off) => off());
+			mq.removeEventListener('change', fit);
+		};
 	});
 </script>
 
 <svelte:head><title>History · HolyArrs</title></svelte:head>
 
-<header class="page-head">
-	<div>
-		<p class="eyebrow">Operations</p>
-		<h1>History</h1>
-		<p>Everything HolyArrs did, newest first: what it added, searched, held, chose, sent, imported, renamed and deleted, and why.</p>
-	</div>
-	<a class="btn btn-ghost" href={to(`/downloads`)}>Back to downloads</a>
-</header>
+<PageHeader title="History" subtitle="Everything HolyArrs did, newest first: what it added, searched, chose, sent, imported, renamed and deleted, and why." />
+<OpsDownloadsTabs />
 
-<div class="history-workspace">
-<form class="card filters" aria-label="Filter the history" onsubmit={(e) => e.preventDefault()}>
-	<div class="row-fields">
-		<div class="field">
-			<label for="h-movie">Movie, show or artist</label>
-			<select id="h-movie" class="input" value={filter.title ?? ''} onchange={(e) => apply({ title: Number(e.currentTarget.value) || undefined, episode: undefined })}>
-				<option value="">Every movie, show and artist</option>
-				{#each titles as t (t.id)}<option value={t.id}>{t.name}{t.year ? ` (${t.year})` : ''}</option>{/each}
-			</select>
+{#snippet filterForm()}
+	<form class="filters" aria-label="Filter the history" onsubmit={(e) => e.preventDefault()}>
+		<div class="fields">
+			<div class="field grow">
+				<label for="h-movie">Movie, show or artist</label>
+				<select id="h-movie" class="input" value={filter.title ?? ''} onchange={(e) => apply({ title: Number(e.currentTarget.value) || undefined, episode: undefined })}>
+					<option value="">Every movie, show and artist</option>
+					{#each titles as t (t.id)}<option value={t.id}>{t.name}{t.year ? ` (${t.year})` : ''}</option>{/each}
+				</select>
+			</div>
+			<div class="field">
+				<label for="h-from">From</label>
+				<input id="h-from" class="input" type="date" value={filter.from ?? ''} aria-invalid={dateProblem ? 'true' : undefined} aria-describedby={dateProblem ? 'history-date-error' : undefined} onchange={(e) => apply({ from: e.currentTarget.value || undefined })} />
+			</div>
+			<div class="field">
+				<label for="h-to">To</label>
+				<input id="h-to" class="input" type="date" value={filter.to ?? ''} aria-invalid={dateProblem ? 'true' : undefined} aria-describedby={dateProblem ? 'history-date-error' : undefined} onchange={(e) => apply({ to: e.currentTarget.value || undefined })} />
+			</div>
 		</div>
-		<div class="field">
-			<label for="h-from">From</label>
-			<input id="h-from" class="input" type="date" value={filter.from ?? ''} aria-invalid={dateProblem ? 'true' : undefined} aria-describedby={dateProblem ? 'history-date-error' : undefined} onchange={(e) => apply({ from: e.currentTarget.value || undefined })} />
-		</div>
-		<div class="field">
-			<label for="h-to">To</label>
-			<input id="h-to" class="input" type="date" value={filter.to ?? ''} aria-invalid={dateProblem ? 'true' : undefined} aria-describedby={dateProblem ? 'history-date-error' : undefined} onchange={(e) => apply({ to: e.currentTarget.value || undefined })} />
-		</div>
-	</div>
-	{#if dateProblem}<p id="history-date-error" class="small field-error" role="alert">{dateProblem}</p>{/if}
-	<fieldset class="kinds">
-		<legend class="label xs muted">What happened</legend>
-		<div class="chips">
-			{#each kindGroups as g (g.key)}
-				<label class="pick">
-					<input type="checkbox" checked={filter.groups.includes(g.key)} onchange={(e) => toggleGroup(g.key, e.currentTarget.checked)} />
-					<span>{g.label}</span>
-				</label>
-			{/each}
-		</div>
-	</fieldset>
-	{#if filter.episode}
-		<p class="small episode-filter" data-testid="episode-filter">
-			Only {episodeName}{movieName ? ` of ${movieName}` : ''}.
-			<button class="btn btn-quiet" type="button" onclick={() => apply({ episode: undefined })}>All of the show</button>
-		</p>
-	{/if}
-	{#if filtered}<button class="btn btn-quiet" type="button" onclick={clear}>Show everything</button>{/if}
-</form>
+		{#if dateProblem}<p id="history-date-error" class="field-error" role="alert">{dateProblem}</p>{/if}
+		<fieldset class="kinds">
+			<legend>What happened</legend>
+			<div class="chips">
+				{#each kindGroups as g (g.key)}
+					<OpsCheckChip label={g.label} checked={filter.groups.includes(g.key)} onchange={(on) => toggleGroup(g.key, on)} />
+				{/each}
+			</div>
+		</fieldset>
+		{#if filter.episode}
+			<p class="episode-filter" data-testid="episode-filter">
+				Only {episodeName}{movieName ? ` of ${movieName}` : ''}.
+				<Button variant="plain" size="sm" onclick={() => apply({ episode: undefined })}>All of the show</Button>
+			</p>
+		{/if}
+		{#if filtered}<div><Button variant="plain" icon="x" onclick={clear}>Show everything</Button></div>{/if}
+	</form>
+{/snippet}
 
-<div class="history-results">
-{#if !dateProblem}
-{#if error}
-	<div class="notice bad load-error" role="alert">
-		<div><b>History could not be loaded.</b><br /><span class="small">{error}</span></div>
-		<button class="btn btn-ghost" type="button" onclick={load}>Try again</button>
+{#if phone}
+	<div class="phone-bar">
+		<Button variant="secondary" icon="grid" onclick={() => (filtersOpen = true)}>Filters{activeFilters ? ` (${activeFilters})` : ''}</Button>
+		{#if filtered}<Button variant="plain" onclick={clear}>Show everything</Button>{/if}
 	</div>
-{:else if !loaded}
-	<div class="sk" style="height: 240px"></div>
-{:else if events.length === 0}
-	<EmptyState icon="calendar" title={filtered ? 'Nothing matches' : 'No history yet'}>
-		<p>{filtered ? 'No Event matches these filters.' : 'Every search, download, import, rename and delete writes a row here.'}</p>
-	</EmptyState>
+	<Sheet bind:open={filtersOpen} title="Filter the history" size="md">
+		{@render filterForm()}
+		{#snippet footer()}<Button variant="primary" onclick={() => (filtersOpen = false)}>Done</Button>{/snippet}
+	</Sheet>
 {:else}
-	<section class="results-surface" aria-labelledby="history-results-title">
-	<div class="results-head">
-		<div><p class="eyebrow">Event log</p><h2 id="history-results-title" class="h2">Events</h2></div>
-		<p class="small muted count" aria-live="polite" data-testid="history-count">
-			{pageLine(total, filter.offset, events.length)}{movieName ? ` for ${movieName}` : ''}
-		</p>
-	</div>
-	<ol class="rows events" data-testid="history">
-		{#each events as e (e.ID)}
-			{@const extra = details(e)}
-			{@const eventTitle = titleById.get(e.TitleID ?? 0)}
-			<li class="event" data-testid="history-row" data-kind={e.Kind}>
-				<div class="line">
-					{#if eventTitle}<span class="event-art" class:square={eventTitle.kind === 'artist'} aria-hidden="true"><Poster src={e.artwork ?? eventTitle.artwork[0]} name={eventTitle.name} /></span>{/if}
-					<span class="chip {kindTone(e.Kind)}">{groupLabel(e.Kind)}</span>
-					<span class="grow small">
-						{#if e.TitleID && e.title_name}<a href={to(`/library/${e.TitleID}`)}>{e.title_name}</a>{#if e.episode}{' '}<span class="mono xs ep" data-testid="history-episode">{e.episode}</span>{/if}{#if e.version}{' '}<span class="chip" data-testid="history-version">{e.version}</span>{/if}: {/if}{e.Summary}
-					</span>
-					<time class="mono xs muted" datetime={e.At} title={dateTime(e.At)}>{ago(e.At)}</time>
-				</div>
-				{#if extra.length}
-					<button class="btn btn-quiet more" type="button" aria-expanded={open === e.ID} onclick={() => (open = open === e.ID ? null : e.ID)}>
-						{open === e.ID ? 'Hide why' : 'Why and where'}
-					</button>
-					{#if open === e.ID}
-						<dl class="facts why">
-							{#each extra as [k, v], i (i)}<dt>{k}</dt><dd class="mono xs">{v}</dd>{/each}
-						</dl>
-					{/if}
-				{/if}
-			</li>
-		{/each}
-	</ol>
-	<nav class="row pages" aria-label="Pages">
-		<button class="btn btn-ghost" type="button" disabled={filter.offset === 0} onclick={() => apply({ offset: Math.max(0, filter.offset - limit) })}>Newer</button>
-		<button class="btn btn-ghost" type="button" disabled={filter.offset + events.length >= total} onclick={() => apply({ offset: filter.offset + limit })}>Older</button>
-	</nav>
-	</section>
+	<div class="filterbar">{@render filterForm()}</div>
 {/if}
+
+{#if !dateProblem}
+	{#if error && events.length === 0}
+		<LoadError hasData={false} message="History could not be loaded." onretry={load} />
+	{:else if !loaded}
+		<div class="loading" aria-label="Loading history"><Skeleton shape="block" height="56px" /><Skeleton shape="block" height="56px" /><Skeleton shape="block" height="56px" /></div>
+	{:else if events.length === 0}
+		<EmptyState icon="clock" title={filtered ? 'Nothing matches' : 'No history yet'} text={filtered ? 'No Event matches these filters.' : 'Every search, download, import, rename and delete writes a row here.'} />
+	{:else}
+		{#if error}<LoadError hasData message="History could not be loaded." onretry={load} />{/if}
+		<section aria-labelledby="history-results-title">
+			<header class="sec">
+				<h2 id="history-results-title">Events</h2>
+				<p class="count" aria-live="polite" data-testid="history-count">{pageLine(total, filter.offset, events.length)}{movieName ? ` for ${movieName}` : ''}</p>
+			</header>
+			<ol class="panel events" data-testid="history">
+				{#each events as e (e.ID)}
+					{@const extra = details(e)}
+					{@const eventTitle = titleById.get(e.TitleID ?? 0)}
+					<li class="event" data-testid="history-row" data-kind={e.Kind}>
+						<div class="line">
+							{#if eventTitle}<span class="art" class:square={eventTitle.kind === 'artist'} aria-hidden="true"><Poster src={e.artwork ?? eventTitle.artwork[0]} name={eventTitle.name} /></span>{:else}<span class="art blank" aria-hidden="true"></span>{/if}
+							<div class="what">
+								<p class="sum">
+									{#if e.TitleID && e.title_name}<a href={to(`/library/${e.TitleID}`)}>{e.title_name}</a>{#if e.episode}{' '}<span class="ep" data-testid="history-episode">{e.episode}</span>{/if}{#if e.version}{' '}<span class="ver" data-testid="history-version">{e.version}</span>{/if}{': '}{/if}{e.Summary}
+								</p>
+								<div class="sub">
+									<StatusPill kind={toneKind(kindTone(e.Kind))} label={groupLabel(e.Kind)} />
+									<time datetime={e.At} title={dateTime(e.At)}>{ago(e.At)}</time>
+								</div>
+							</div>
+							{#if extra.length}
+								<Button variant="plain" size="md" class="more" aria-expanded={open === e.ID} onclick={() => (open = open === e.ID ? null : e.ID)}>{open === e.ID ? 'Hide why' : 'Why and where'}</Button>
+							{/if}
+						</div>
+						{#if extra.length && open === e.ID}
+							<dl class="why">
+								{#each extra as [k, v], i (i)}<dt>{k}</dt><dd>{v}</dd>{/each}
+							</dl>
+						{/if}
+					</li>
+				{/each}
+			</ol>
+			<nav class="pages" aria-label="Pages">
+				<Button variant="secondary" icon="chevronLeft" disabled={filter.offset === 0} onclick={() => apply({ offset: Math.max(0, filter.offset - limit) })}>Newer</Button>
+				<Button variant="secondary" iconAfter="chevronRight" disabled={filter.offset + events.length >= total} onclick={() => apply({ offset: filter.offset + limit })}>Older</Button>
+			</nav>
+		</section>
+	{/if}
 {/if}
-</div>
-</div>
 
 <style>
-	.eyebrow {
-		margin: 0 0 var(--s-2);
-		font-size: 11px;
-		font-weight: var(--weight-semibold);
-		letter-spacing: 0.09em;
-		text-transform: uppercase;
-		color: var(--text-muted);
-	}
-	.history-workspace {
-		display: grid;
-		grid-template-columns: 280px minmax(0, 1fr);
-		gap: var(--s-4);
-		align-items: start;
-	}
-	.history-results {
-		min-width: 0;
-	}
-	.filters {
-		position: sticky;
-		top: calc(var(--topbar) + var(--s-4));
-		margin: 0;
-		padding: var(--s-4);
-		box-shadow: none;
-	}
-	.episode-filter {
-		margin-top: var(--s-3);
-		display: flex;
-		align-items: center;
-		flex-wrap: wrap;
-		gap: var(--s-2);
-	}
-	.ep {
-		color: var(--text-muted);
-	}
-	.row-fields {
-		display: grid;
-		grid-template-columns: 1fr;
-		gap: var(--s-3);
-	}
-	.row-fields .field + .field {
-		margin-top: 0;
-	}
-	.field-error {
-		margin: var(--s-2) 0 0;
-		color: var(--fail);
-	}
-	.kinds {
-		border: 0;
-		padding: 0;
-		margin: var(--s-4) 0 0;
-	}
-	.label {
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
-		margin-bottom: var(--s-2);
-	}
-	.chips {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--s-2);
-	}
-	.pick {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-		min-height: 40px;
-		padding: 0 var(--s-3);
-		border: 1px solid var(--line-strong);
-		border-radius: var(--r-sm);
-		font-size: var(--text-sm);
-		cursor: pointer;
-	}
-	.pick:has(input:checked) {
-		background: var(--text);
-		border-color: var(--text);
-		color: var(--surface-1);
-	}
-	.results-surface {
-		border: 1px solid var(--line);
-		border-radius: var(--r-card);
-		background: var(--surface-1);
-		overflow: hidden;
-	}
-	.results-head {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--s-4);
-		min-height: 64px;
-		padding: var(--s-3) var(--s-4);
-		border-bottom: 1px solid var(--line);
-	}
-	.results-head .eyebrow {
-		margin-bottom: 2px;
-	}
-	.count {
-		margin: 0;
-		text-align: right;
-	}
-	.results-surface .rows {
-		padding: 0;
-		border: 0;
-		border-radius: 0;
-		box-shadow: none;
-	}
-	.event {
-		flex-direction: column;
-		align-items: stretch;
-		padding: var(--s-3) var(--s-4);
-	}
-	.line {
-		display: flex;
-		align-items: baseline;
-		gap: var(--s-3);
-		min-width: 0;
-	}
-	.event-art {
-		flex: 0 0 36px;
-		width: 36px;
-		align-self: flex-start;
-		--poster-ratio: 2 / 3;
-	}
-	.event-art.square {
-		--poster-ratio: 1;
-	}
-	.line .grow {
-		min-width: 0;
-		overflow-wrap: anywhere;
-	}
-	.line a {
-		font-weight: var(--weight-semibold);
-	}
-	.line a:hover {
-		color: var(--info);
-	}
-	.more {
-		align-self: flex-start;
-		min-height: 32px;
-		padding: 0 var(--s-2);
-		font-size: var(--text-xs);
-	}
-	.why dd {
-		overflow-wrap: anywhere;
-	}
-	.pages {
-		margin: 0;
-		padding: var(--s-3) var(--s-4);
-		border-top: 1px solid var(--line);
-		justify-content: flex-end;
-	}
-	.load-error {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--s-4);
-	}
-	@media (max-width: 960px) {
-		.history-workspace {
-			grid-template-columns: 1fr;
-		}
-		.filters {
-			position: static;
-		}
-		.row-fields {
-			grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
-		}
-	}
-	@media (max-width: 700px) {
-		.page-head > :global(.btn) {
-			width: 100%;
-			min-height: 44px;
-		}
-		.row-fields {
-			grid-template-columns: 1fr;
-		}
-		.row-fields .field + .field {
-			margin-top: var(--s-3);
-		}
-		.line {
-			flex-wrap: wrap;
-			align-items: center;
-		}
-		.line .grow {
-			flex: 0 0 100%;
-			order: 4;
-		}
-		.line time {
-			margin-left: auto;
-		}
-		.results-head {
-			align-items: flex-start;
-			flex-direction: column;
-		}
-		.count {
-			text-align: left;
-		}
-		.pick,
-		.pages :global(.btn) {
-			min-height: 44px;
-		}
-		.load-error {
-			align-items: stretch;
-			flex-direction: column;
-		}
+	.filterbar { margin-bottom: 24px; padding: 16px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
+	.phone-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+	.filters { display: flex; flex-direction: column; gap: 14px; }
+	.fields { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+	.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 0 1 180px; }
+	.field.grow { flex: 1 1 260px; }
+	.field label, legend { color: var(--text-muted); font: var(--t-subhead); }
+	.field-error { color: var(--fail); font: var(--t-callout); }
+	.kinds { border: 0; margin: 0; padding: 0; min-width: 0; }
+	legend { padding: 0; margin-bottom: 8px; }
+	.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+	.episode-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font: var(--t-callout); }
+	.loading { display: grid; gap: 8px; }
+	.sec { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin-bottom: 8px; }
+	.sec h2 { font: var(--t-title3); letter-spacing: var(--t-title3-track); }
+	.count { color: var(--text-muted); font: var(--t-subhead); font-weight: 400; font-variant-numeric: tabular-nums; }
+	.panel { margin: 0; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
+	.events { list-style: none; padding: 6px; }
+	.event { padding: 10px; border-radius: var(--r-btn); }
+	.event + .event { box-shadow: 0 -1px 0 var(--line); }
+	.line { display: flex; align-items: center; gap: 12px; min-width: 0; }
+	.art { flex: none; width: 32px; --poster-ratio: 2 / 3; }
+	.art.square { --poster-ratio: 1; }
+	.art.blank { height: 1px; }
+	.what { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+	.sum { font: var(--t-callout); overflow-wrap: anywhere; }
+	.sum a { color: var(--text); font-weight: 600; }
+	.sum a:hover { text-decoration: underline; text-underline-offset: 3px; }
+	.ep { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+	.ver { display: inline-block; padding: 0 6px; border-radius: var(--r-sm); background: var(--surface-2); font: var(--t-footnote); }
+	.sub { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; color: var(--text-muted); font: var(--t-subhead); font-weight: 400; }
+	.why { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; margin: 10px 0 2px 44px; padding: 12px; border-radius: var(--r-btn); background: var(--surface-2); font: var(--t-footnote); }
+	.why dt { color: var(--text-muted); }
+	.why dd { margin: 0; font-family: var(--font-mono); overflow-wrap: anywhere; }
+	.line > :global(.more) { color: var(--text-muted); font-weight: 500; }
+	.line > :global(.more:hover) { color: var(--text); }
+	.pages { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+	@media (max-width: 640px) {
+		.line { flex-wrap: wrap; }
+		.line > :global(.more) { margin-left: 44px; }
+		.why { margin-left: 0; grid-template-columns: minmax(0, 1fr); }
+		.pages > :global(*) { flex: 1; min-height: 44px; }
 	}
 </style>

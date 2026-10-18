@@ -9,8 +9,14 @@
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { date } from '#lib/format.ts';
 	import { inLibraryWord } from '#lib/library.ts';
-	import EmptyState from '#lib/EmptyState.svelte';
-	import Icon from '#lib/Icon.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import OpsSegments from '#lib/ui/OpsSegments.svelte';
+	import OpsCheckChip from '#lib/ui/OpsCheckChip.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import IconButton from '#lib/ui/IconButton.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
+	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import {
 		byDay,
 		entryDay,
@@ -166,7 +172,7 @@
 	}
 
 	onMount(() => {
-		if (window.matchMedia('(max-width: 700px)').matches) view = 'list';
+		if (window.matchMedia('(max-width: 767px)').matches) view = 'list';
 		void load();
 		void loadFeed();
 		const offs = [live.on('title', load), live.on('resync', load)];
@@ -176,130 +182,121 @@
 
 <svelte:head><title>Calendar · HolyArrs</title></svelte:head>
 
-<header class="page-head">
-	<div>
-		<p class="eyebrow">Schedule</p>
-		<h1>Calendar</h1>
-		<p>
-			Cinema, digital and disc dates for the movies in your Library, when the episodes of your shows air, in your own time zone, and the days your artists'
-			albums come out.
-		</p>
-	</div>
-</header>
+<PageHeader title="Calendar" subtitle="Cinema, digital and disc dates for your movies, when your episodes air in your own time zone, and the days your artists' albums come out.">
+	{#snippet actions()}<Button variant="secondary" icon="calendar" onclick={thisMonth}>Today</Button>{/snippet}
+</PageHeader>
 
-<section class="calendar-tools" aria-label="Calendar controls">
-<div class="bar-row">
-	<div class="row nav-month">
-		<button class="btn btn-ghost icon-btn" type="button" onclick={() => go(-1)} aria-label="Month before"><Icon name="back" size={18} /></button>
-		<h2 class="h2 month" aria-live="polite" data-testid="cal-month">{monthName}</h2>
-		<button class="btn btn-ghost icon-btn flip" type="button" onclick={() => go(1)} aria-label="Month after"><Icon name="back" size={18} /></button>
-		<button class="btn btn-quiet" type="button" onclick={thisMonth}>Today</button>
+<section class="tools" aria-label="Calendar controls">
+	<div class="month-nav">
+		<IconButton icon="chevronLeft" label="Month before" variant="tinted" onclick={() => go(-1)} />
+		<h2 class="month" aria-live="polite" data-testid="cal-month">{monthName}</h2>
+		<IconButton icon="chevronRight" label="Month after" variant="tinted" onclick={() => go(1)} />
 	</div>
-	<div class="row seg" role="group" aria-label="View">
-		<button class="btn {view === 'month' ? 'btn-ghost on' : 'btn-quiet'}" type="button" aria-pressed={view === 'month'} onclick={() => (view = 'month')}>Month</button>
-		<button class="btn {view === 'list' ? 'btn-ghost on' : 'btn-quiet'}" type="button" aria-pressed={view === 'list'} onclick={() => (view = 'list')}>List</button>
-	</div>
-</div>
-<div class="row filters-row">
-	<div class="row seg" role="group" aria-label="Movies, shows or music" data-testid="cal-titles">
-		{#each [['all', 'Everything'], ['movies', 'Movies'], ['shows', 'Shows'], ['music', 'Music']] as [v, l] (v)}
-			<button class="btn {which === v ? 'btn-ghost on' : 'btn-quiet'}" type="button" aria-pressed={which === v} onclick={() => (which = v as TitlesShown)}>{l}</button>
-		{/each}
+	<div class="segs">
+		<OpsSegments
+			label="Movies, shows or music"
+			testid="cal-titles"
+			value={which}
+			onchange={(v) => (which = v as TitlesShown)}
+			options={[
+				{ value: 'all', label: 'Everything' },
+				{ value: 'movies', label: 'Movies' },
+				{ value: 'shows', label: 'Shows' },
+				{ value: 'music', label: 'Music' }
+			]}
+		/>
+		<OpsSegments label="View" value={view} onchange={(v) => (view = v as 'month' | 'list')} options={[{ value: 'month', label: 'Month' }, { value: 'list', label: 'List' }]} />
 	</div>
 	{#if which === 'all' || which === 'movies'}
 		<fieldset class="kinds">
 			<legend class="sr-only">Which movie dates</legend>
 			{#each ['cinema', 'digital', 'physical'] as const as k (k)}
-				<label class="pick k-{k}"><input type="checkbox" bind:checked={kinds[k]} /><span class="dot" aria-hidden="true"></span>{kindWord[k]}</label>
+				<OpsCheckChip label={kindWord[k]} bind:checked={kinds[k]} dot={k === 'physical' ? 'var(--wait)' : 'var(--info)'} />
 			{/each}
 		</fieldset>
 	{/if}
-</div>
 </section>
 
 {#if !loaded}
-	<div class="sk calendar-skeleton" style="height: 420px"></div>
-{:else if error}
-	<div class="notice bad load-error" role="alert">
-		<div><b>Calendar could not be loaded.</b><br /><span class="small">{error}</span></div>
-		<button class="btn btn-ghost" type="button" onclick={load}>Try again</button>
-	</div>
+	<Skeleton shape="block" height="420px" />
+{:else if error && entries.length === 0}
+	<LoadError hasData={false} message="Calendar could not be loaded." onretry={load} />
 {:else if libraryEmpty}
-	<EmptyState icon="calendar" title="Nothing coming up">
-		<p>Add movies, shows and artists to your Library and their dates, episodes and albums show up here.</p>
-		{#snippet actions()}<a class="btn btn-dark" href={to(`/search`)}>Add media</a>{/snippet}
-	</EmptyState>
-{:else if view === 'month'}
-	<!-- svelte-ignore a11y_no_noninteractive_tabindex (keyboard users need to focus and scroll this region) -->
-	<div class="month-scroll" role="region" tabindex="0" aria-label="{monthName} month calendar; scroll horizontally to see every day">
-	<div class="grid card" data-testid="cal-grid">
-		<div class="wk head" aria-hidden="true">
-			{#each weekdays as w (w)}<span class="xs muted mono">{w}</span>{/each}
-		</div>
-		{#each weeks as week, i (i)}
-			<div class="wk">
-				{#each week as d (d.day)}
-					<div class="cell" class:out={!d.inMonth} class:today={d.today} data-day={d.day}>
-						<span class="num mono"><span aria-hidden="true">{d.date}</span><span class="sr-only">{date(d.day + 'T12:00:00')}. </span></span>
-						{#each d.items as e (entryKey(e))}
-							<a class="ev k-{e.kind}" href={to(entryHref(e))} data-testid="cal-entry" title="{entryName(e)}: {kindWord[e.kind]}{entryTime(e) ? ` at ${entryTime(e)}` : ''}">
-								<span class="dot" aria-hidden="true"></span><span class="ev-name">{#if entryTime(e)}<span class="mono">{entryTime(e)}</span> {/if}{entryName(e)}</span><span class="sr-only">, {kindWord[e.kind]}</span>
-							</a>
+	<EmptyState icon="calendar" title="Nothing coming up" text="Add movies, shows and artists to your Library and their dates, episodes and albums show up here." action={{ label: 'Add media', href: to('/search'), icon: 'search' }} />
+{:else}
+	{#if error}<LoadError hasData message="Calendar could not be loaded." onretry={load} />{/if}
+	{#if view === 'month'}
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex (keyboard users need to focus and scroll this region) -->
+		<div class="month-scroll" role="region" tabindex="0" aria-label="{monthName} month calendar; scroll horizontally to see every day">
+			<div class="grid" data-testid="cal-grid">
+				<div class="wk head" aria-hidden="true">
+					{#each weekdays as w (w)}<span>{w}</span>{/each}
+				</div>
+				{#each weeks as week, i (i)}
+					<div class="wk">
+						{#each week as d (d.day)}
+							<div class="cell" class:out={!d.inMonth} class:today={d.today} data-day={d.day}>
+								<span class="num"><span aria-hidden="true">{d.date}</span><span class="sr-only">{date(d.day + 'T12:00:00')}. </span></span>
+								{#each d.items as e (entryKey(e))}
+									<a class="ev k-{e.kind}" href={to(entryHref(e))} data-testid="cal-entry" title="{entryName(e)}: {kindWord[e.kind]}{entryTime(e) ? ` at ${entryTime(e)}` : ''}">
+										<span class="dot" aria-hidden="true"></span><span class="ev-name">{#if entryTime(e)}<span class="t">{entryTime(e)}</span>{' '}{/if}{entryName(e)}</span><span class="sr-only">, {kindWord[e.kind]}</span>
+									</a>
+								{/each}
+							</div>
 						{/each}
 					</div>
 				{/each}
 			</div>
-		{/each}
-	</div>
-	</div>
-{:else if list.length === 0}
-	<p class="card small muted">No dates in {monthName}.</p>
-{:else}
-	<ol class="days" data-testid="cal-list">
-		{#each list as d (d.day)}
-			{@const at = new Date(d.day + 'T00:00:00')}
-			<li class="day card">
-				<div class="when">
-					<span class="dow mono">{at.toLocaleDateString(undefined, { weekday: 'short' })}</span>
-					<b>{at.getDate()}</b>
-					<span class="mon mono">{at.toLocaleDateString(undefined, { month: 'short' })}</span>
-				</div>
-				<ul class="grow">
-					{#each d.items as e (entryKey(e))}
-						<li class="item" data-testid="cal-item">
-							<a href={to(entryHref(e))}>{entryName(e)}</a>
-							<span class="xs muted k-{e.kind}"
-								><span class="dot" aria-hidden="true"></span>{kindWord[e.kind]}{#if entryTime(e)}{' at '}{entryTime(e)}{/if}{#if e.network}{' on '}{e.network}{/if}{inLibraryWord(e.state, e.versions)}{#if e.kind === 'album' && albumHave(e)}{' · '}{albumHave(e)}{/if}</span
-							>
-						</li>
-					{/each}
-				</ul>
-			</li>
-		{/each}
-	</ol>
+		</div>
+	{:else if list.length === 0}
+		<EmptyState compact icon="calendar" title="No dates in {monthName}" />
+	{:else}
+		<ol class="days" data-testid="cal-list">
+			{#each list as d (d.day)}
+				{@const at = new Date(d.day + 'T00:00:00')}
+				<li class="day">
+					<div class="when" aria-hidden="true">
+						<span class="dow">{at.toLocaleDateString(undefined, { weekday: 'short' })}</span>
+						<b>{at.getDate()}</b>
+					</div>
+					<div class="items">
+						<p class="sr-only">{date(d.day + 'T12:00:00')}</p>
+						<ul>
+							{#each d.items as e (entryKey(e))}
+								<li class="item k-{e.kind}" data-testid="cal-item">
+									<span class="dot" aria-hidden="true"></span>
+									<div class="it">
+										<a href={to(entryHref(e))}>{entryName(e)}</a>
+										<span class="sub">{kindWord[e.kind]}{#if entryTime(e)}{' at '}{entryTime(e)}{/if}{#if e.network}{' on '}{e.network}{/if}{inLibraryWord(e.state, e.versions)}{#if e.kind === 'album' && albumHave(e)}{' · '}{albumHave(e)}{/if}</span>
+									</div>
+								</li>
+							{/each}
+						</ul>
+					</div>
+				</li>
+			{/each}
+		</ol>
+	{/if}
 {/if}
 
 {#if feedLoaded && feedError}
-	<div class="notice bad feed-error" role="alert">
-		<div><b>Phone calendar could not be loaded.</b><br /><span class="small">{feedError}</span></div>
-		<button class="btn btn-ghost" type="button" onclick={loadFeed}>Try again</button>
-	</div>
+	<div class="feed-gap"><LoadError hasData message="Phone calendar could not be loaded." onretry={loadFeed} /></div>
 {/if}
 
 {#if feedLoaded && feedNeedsProof}
-	<section class="card phone" aria-labelledby="h-feed-proof">
-		<h2 id="h-feed-proof" class="h2">Confirm your password to manage the phone calendar</h2>
-		<p class="small muted">The feed status and its controls are protected. Confirm your HolyArrs password in My account, then return here.</p>
-		<a class="btn btn-ghost" href={to('/settings/account')} style="margin-top: var(--s-3)">Open My account</a>
+	<section class="feed" aria-labelledby="h-feed-proof">
+		<h2 id="h-feed-proof">Confirm your password to manage the phone calendar</h2>
+		<p class="muted">The feed status and its controls are protected. Confirm your HolyArrs password in My account, then return here.</p>
+		<div><Button variant="secondary" href={to('/settings/account')}>Open My account</Button></div>
 	</section>
 {/if}
 
 {#if feed}
-	<section class="card phone" aria-labelledby="h-feed" data-testid="cal-feed">
-		<h2 id="h-feed" class="h2">Phone calendar</h2>
-		<p class="small muted">
-			Add these dates and episodes to your phone's calendar with a feed link. The link has its own key: it can only read this calendar, not sign in.
-			Your phone asks for the last week and the next four weeks, and shows each episode at its air time in your time zone.
+	<section class="feed" aria-labelledby="h-feed" data-testid="cal-feed">
+		<h2 id="h-feed">Phone calendar</h2>
+		<p class="muted">
+			Add these dates and episodes to your phone's calendar with a feed link. The link has its own key: it can only read this calendar, not sign in. Your phone asks for the
+			last week and the next four weeks, and shows each episode at its air time in your time zone.
 		</p>
 		{#if newLink}
 			<div class="field">
@@ -307,337 +304,80 @@
 				<input id="feed-link" class="input mono" readonly value={newLink} onfocus={(e) => e.currentTarget.select()} />
 				<span class="hint">Copy it now: HolyArrs keeps only a fingerprint of the key and cannot show it again. Making a new link ends this one.</span>
 			</div>
-			<div class="row actions">
-				<button class="btn btn-dark" type="button" onclick={copy}><Icon name="copy" size={16} /> Copy link</button>
-				<a class="btn btn-ghost" href={webcalLink(newLink)}>Open in a calendar app</a>
+			<div class="acts">
+				<Button variant="primary" icon="copy" onclick={copy}>Copy link</Button>
+				<Button variant="secondary" href={webcalLink(newLink)}>Open in a calendar app</Button>
 			</div>
 		{:else if feed.set}
-			<p class="small" data-testid="feed-state">A feed link is on{feed.created_at ? `, made ${date(feed.created_at)}` : ''}.</p>
+			<p data-testid="feed-state">A feed link is on{feed.created_at ? `, made ${date(feed.created_at)}` : ''}.</p>
 		{:else}
-			<p class="small" data-testid="feed-state">The feed is off.</p>
+			<p data-testid="feed-state">The feed is off.</p>
 		{/if}
 		{#if session.can('settings')}
-			<div class="row actions">
-				<button class="btn {feed.set ? 'btn-ghost' : 'btn-dark'}" type="button" onclick={makeKey} disabled={feedBusy} aria-busy={feedBusy}>
-					{feed.set ? 'Make a new link' : 'Make a feed link'}
-				</button>
-				{#if feed.set}<button class="btn btn-quiet" type="button" onclick={turnOff}>Turn the feed off</button>{/if}
+			<div class="acts">
+				<Button variant={feed.set ? 'secondary' : 'primary'} onclick={makeKey} disabled={feedBusy} busy={feedBusy}>{feed.set ? 'Make a new link' : 'Make a feed link'}</Button>
+				{#if feed.set}<Button variant="plain" onclick={turnOff}>Turn the feed off</Button>{/if}
 			</div>
 		{/if}
 	</section>
 {/if}
 
 <style>
-	.eyebrow {
-		margin: 0 0 var(--s-2);
-		font-size: 11px;
-		font-weight: var(--weight-semibold);
-		letter-spacing: 0.09em;
-		text-transform: uppercase;
-		color: var(--text-muted);
-	}
-	.calendar-tools {
-		margin-bottom: var(--s-4);
-		padding: var(--s-3) var(--s-4);
-		border: 1px solid var(--line);
-		border-radius: var(--r-card);
-		background: var(--surface-1);
-		box-shadow: none;
-	}
-	.bar-row {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--s-3);
-		flex-wrap: wrap;
-		margin-bottom: var(--s-2);
-	}
-	.nav-month {
-		align-items: center;
-		gap: var(--s-2);
-	}
-	.month {
-		min-width: 10ch;
-		text-align: center;
-		text-transform: capitalize;
-	}
-	.icon-btn {
-		width: 40px;
-		min-height: 40px;
-		padding: 0;
-		justify-content: center;
-	}
-	.flip :global(.icon) {
-		transform: scaleX(-1);
-	}
-	.seg .on {
-		background: var(--text);
-		color: var(--surface-1);
-	}
-	.kinds {
-		border: 0;
-		padding: 0;
-		margin: 0 0 var(--s-4);
-		display: flex;
-		gap: var(--s-2);
-		flex-wrap: wrap;
-	}
-	.pick {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-		min-height: 40px;
-		padding: 0 var(--s-3);
-		border: 1px solid var(--line-strong);
-		border-radius: var(--r-sm);
-		font-size: var(--text-sm);
-		cursor: pointer;
-	}
-	.dot {
-		width: 8px;
-		height: 8px;
-		border-radius: 50%;
-		flex: none;
-		display: inline-block;
-	}
-	.k-cinema .dot {
-		background: var(--info);
-	}
-	.k-digital .dot {
-		background: var(--info);
-	}
-	.k-physical .dot {
-		background: var(--wait);
-	}
-	.k-episode .dot {
-		background: var(--ok);
-	}
-	.k-album .dot {
-		background: var(--text-muted);
-	}
-	.filters-row {
-		gap: var(--s-3);
-		flex-wrap: wrap;
-		align-items: center;
-		margin-bottom: 0;
-	}
-	.filters-row .kinds {
-		margin: 0;
-	}
-	.grid {
-		padding: 0;
-		overflow: hidden;
-		border-radius: var(--r-card);
-		box-shadow: none;
-	}
-	.month-scroll {
-		max-width: 100%;
-		overflow-x: auto;
-		overscroll-behavior-inline: contain;
-		-webkit-overflow-scrolling: touch;
-	}
-	.month-scroll:focus-visible {
-		outline: 2px solid var(--info);
-		outline-offset: 3px;
-	}
-	.wk {
-		display: grid;
-		grid-template-columns: repeat(7, minmax(0, 1fr));
-	}
-	.wk.head span {
-		padding: var(--s-3) var(--s-2);
-		background: var(--surface-2);
-		text-transform: uppercase;
-	}
-	.cell {
-		min-height: 112px;
-		padding: var(--s-2);
-		border-top: 1px solid var(--line);
-		border-left: 1px solid var(--line);
-		display: flex;
-		flex-direction: column;
-		gap: 4px;
-		min-width: 0;
-	}
-	.cell:first-child {
-		border-left: 0;
-	}
-	.cell.out {
-		background: color-mix(in srgb, var(--bg) 68%, transparent);
-	}
-	.cell.out .num {
-		color: var(--text-muted);
-		font-style: italic;
-	}
-	.num {
-		font-size: var(--text-xs);
-		color: var(--text-muted);
-	}
-	.cell.today .num {
-		color: var(--text);
-		font-weight: var(--weight-semibold);
-		display: grid;
-		place-items: center;
-		width: 24px;
-		height: 24px;
-		margin: -3px 0 -1px -4px;
-		border-radius: var(--r-sm);
-		background: var(--info);
-		color: var(--bg);
-	}
-	.ev {
-		display: flex;
-		align-items: center;
-		gap: 4px;
-		min-height: 24px;
-		font-size: var(--text-xs);
-		border-radius: 3px;
-		min-width: 0;
-		padding: 2px 4px;
-		transition: background var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
-	}
-	.ev:hover {
-		color: var(--text);
-		background: var(--surface-3);
-	}
-	.ev-name {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	.days {
-		display: flex;
-		flex-direction: column;
-		gap: var(--s-3);
-		max-width: 720px;
-	}
-	.day {
-		display: flex;
-		gap: var(--s-5);
-		align-items: flex-start;
-	}
-	.day.card + .day.card {
-		margin-top: 0;
-	}
-	.when {
-		width: 52px;
-		flex: none;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		text-transform: uppercase;
-		font-size: var(--text-xs);
-		color: var(--text-muted);
-	}
-	.when b {
-		font: var(--weight-semibold) var(--text-xl) / 1.1 var(--font-display);
-		color: var(--text);
-	}
-	.item {
-		display: flex;
-		flex-direction: column;
-		padding: var(--s-1) 0;
-	}
-	.item a {
-		font-weight: var(--weight-semibold);
-	}
-	.item a:hover {
-		color: var(--info);
-	}
-	.item .xs {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-	}
-	.phone {
-		margin-top: var(--s-6);
-		max-width: 720px;
-		box-shadow: none;
-	}
-	.load-error {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--s-4);
-	}
-	.feed-error {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--s-4);
-		margin-top: var(--s-6);
-		max-width: 720px;
-	}
-	.actions {
-		margin-top: var(--s-3);
-		flex-wrap: wrap;
-	}
-	@media (max-width: 700px) {
-		.calendar-tools {
-			padding: var(--s-2);
-		}
-		.nav-month {
-			width: 100%;
-		}
-		.month {
-			flex: 1;
-		}
-		.icon-btn,
-		.seg :global(.btn),
-		.pick {
-			min-height: 44px;
-		}
-		.filters-row,
-		.filters-row > * {
-			width: 100%;
-		}
-		.filters-row .seg {
-			display: grid;
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-		}
-		.grid {
-			min-width: 336px;
-		}
-		.cell {
-			min-height: 72px;
-			padding: 2px;
-		}
-		/* Phones show a dot per date; the name stays for screen readers. */
-		.ev-name {
-			position: absolute;
-			width: 1px;
-			height: 1px;
-			overflow: hidden;
-			clip: rect(0 0 0 0);
-			white-space: nowrap;
-		}
-		.ev {
-			min-height: 44px;
-			min-width: 44px;
-			justify-content: center;
-		}
-		.ev .dot {
-			width: 10px;
-			height: 10px;
-		}
-		.item a {
-			display: flex;
-			align-items: center;
-			min-height: 44px;
-		}
-		.load-error {
-			align-items: stretch;
-			flex-direction: column;
-		}
-		.feed-error {
-			align-items: stretch;
-			flex-direction: column;
-		}
-	}
-	@media (pointer: coarse) {
-		.ev {
-			min-width: 44px;
-			min-height: 44px;
-		}
+	.tools { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-bottom: 18px; }
+	.month-nav { display: flex; align-items: center; gap: 8px; margin-right: auto; }
+	.month { min-width: 9.5ch; font: var(--t-title2); letter-spacing: var(--t-title2-track); text-align: center; }
+	.segs { display: flex; flex-wrap: wrap; gap: 10px; max-width: 100%; }
+	.kinds { display: flex; flex-wrap: wrap; gap: 8px; border: 0; margin: 0; padding: 0; min-width: 0; flex-basis: 100%; }
+	.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; display: inline-block; }
+	.k-cinema .dot, .k-digital .dot { background: var(--info); }
+	.k-physical .dot { background: var(--wait); }
+	.k-episode .dot { background: var(--ok); }
+	.k-album .dot { background: var(--text-muted); }
+
+	.month-scroll { overflow-x: auto; border-radius: var(--r-panel); }
+	.month-scroll:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.grid { min-width: 760px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); outline-offset: -1px; box-shadow: var(--shadow-card); overflow: hidden; }
+	.wk { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+	.wk + .wk { border-top: 1px solid var(--line); }
+	.head span { padding: 10px 10px 8px; color: var(--text-muted); font: var(--t-footnote); }
+	.cell { min-height: 112px; padding: 6px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+	.cell + .cell { border-left: 1px solid var(--line); }
+	.cell.out { background: transparent; }
+	.cell.out .num { color: var(--text-muted); }
+	.num { align-self: flex-start; display: inline-grid; place-items: center; min-width: 26px; height: 26px; padding: 0 4px; border-radius: 999px; color: var(--text-muted); font: var(--t-subhead); font-variant-numeric: tabular-nums; }
+	.today .num { background: var(--text); color: var(--bg); font-weight: 700; }
+	.ev { display: flex; align-items: center; gap: 6px; min-height: 26px; padding: 2px 6px; border-radius: 6px; background: var(--surface-2); color: var(--text); font: var(--t-footnote); font-weight: 500; min-width: 0; transition: background var(--dur-fast); }
+	.ev:hover { background: var(--surface-3); }
+	.ev:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.ev-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.ev .t { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+	.days { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; max-width: 860px; }
+	.day { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 14px; padding: 12px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
+	.when { display: flex; flex-direction: column; align-items: center; padding-top: 2px; }
+	.dow { color: var(--accent-text); font: var(--t-caption); text-transform: none; }
+	.when b { font: var(--t-title2); font-variant-numeric: tabular-nums; }
+	.items ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+	.item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; min-width: 0; }
+	.item + .item { border-top: 1px solid var(--line); }
+	.item .dot { margin-top: 7px; }
+	.it { display: flex; flex-direction: column; min-width: 0; }
+	.it a { color: var(--text); font: var(--t-headline); font-size: 15px; overflow-wrap: anywhere; }
+	.it a:hover { text-decoration: underline; text-underline-offset: 3px; }
+	.sub { color: var(--text-muted); font: var(--t-subhead); font-weight: 400; overflow-wrap: anywhere; }
+
+	.feed-gap { margin-top: 24px; }
+	.feed { margin-top: 28px; max-width: 860px; padding: 18px; display: flex; flex-direction: column; gap: 12px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
+	.feed h2 { font: var(--t-title3); letter-spacing: var(--t-title3-track); }
+	.feed p { font: var(--t-callout); }
+	.muted { color: var(--text-muted); }
+	.field { display: flex; flex-direction: column; gap: 6px; }
+	.field label { font: var(--t-subhead); color: var(--text-muted); }
+	.hint { color: var(--text-muted); font: var(--t-footnote); }
+	.acts { display: flex; flex-wrap: wrap; gap: 8px; }
+	@media (max-width: 640px) {
+		.month-nav { width: 100%; justify-content: space-between; margin-right: 0; }
+		.segs, .segs > :global(.ops-seg) { width: 100%; }
+		.acts > :global(*) { flex: 1 1 100%; }
 	}
 </style>
