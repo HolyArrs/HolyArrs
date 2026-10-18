@@ -43,6 +43,7 @@ export const sections: Section[] = [
 	{ href: '/settings/schedules', group: 'general', label: 'Schedules', icon: 'calendar', about: 'Everything that runs on a timer: last and next run, Run now, and how often.' },
 
 	{ href: '/settings/library-folders', group: 'library', label: 'Library folders', icon: 'folder', about: 'Where finished movies, shows and music live, and their health.' },
+	{ href: '/settings/title-defaults', group: 'library', label: 'Movies and TV defaults', icon: 'plus', about: 'What a new movie or show gets: folder, Pick rules, Keep up to date and Search when added.' },
 	{ href: '/settings/naming', group: 'library', label: 'Naming and files', icon: 'film', about: 'How files and folders are named, the holding folder and free space.' },
 	{ href: '/settings/music', group: 'library', label: 'Music defaults', icon: 'music', about: 'What a new artist gets, which Pressing an album follows, and MusicBrainz.' },
 	{ href: '/settings/subtitles', group: 'library', label: 'Subtitles', icon: 'subtitle', about: 'Default languages, Pass marks, when to look, Sync fix and Subtitle sites.' },

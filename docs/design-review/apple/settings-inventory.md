@@ -287,6 +287,7 @@ Restore, shut down and safe mode are advanced and also risky. They live in Dange
 | System › Parts and controls › The whole app (restart, safe mode, shut down) | **Maintenance › Danger zone** (new page `/settings/danger`, always last, red outline, every action asks first) |
 | Library › Schedules | **General › Schedules** |
 | Library › Library folders | **Library › Library folders** |
+| (no page; chosen in the add dialog, and remembered per browser) | **Library › Movies and TV defaults** (new page `/settings/title-defaults`, added later) |
 | Library › Naming and files | **Library › Naming and files**. Edge cases move under Advanced. |
 | Library › Music | **Library › Music defaults** (what a new artist gets, Pressings, MusicBrainz) |
 | Library › Subtitles | **Library › Subtitles** |
@@ -295,7 +296,7 @@ Restore, shut down and safe mode are advanced and also risky. They live in Dange
 | Linked apps › Sources | **Getting copies › Sources** |
 | Library › Search | **Getting copies › Search** |
 | Linked apps › Downloaders | **Getting copies › Downloaders** |
-| (no page; Pick rules were only picked from lists) | **Getting copies › Pick rules** (new read-only page `/settings/pick-rules`) |
+| (no page; Pick rules were only picked from lists) | **Getting copies › Pick rules** (new page `/settings/pick-rules`; at first read-only, later with an editor for one set at `/settings/pick-rules/{id}`) |
 | Library › Wishlist | **Wishlist and people › Wishlist rules** |
 | Access › Users (invites, people, invite links) | **Wishlist and people › Users and roles**. Invites stay on that page as their own cards, and the search finds them. |
 | Access › Sign-in (methods, two-factor rule, local network, passwords, API keys) | **Sign-in and security › Sign-in and security** |
@@ -309,11 +310,11 @@ Restore, shut down and safe mode are advanced and also risky. They live in Dange
 | Access › My account | **My account**. It stays open to everyone, sits on its own below the groups, and also opens from the account menu (`/account`). |
 
 ### What could not be placed as asked
-- **Movies and TV shows defaults.** No setting says what a new movie or show gets. That is chosen per Library folder and in the add dialog, so these pages are not made. Music defaults exist and keep their page.
+- **Movies and TV shows defaults.** Placed later, once the server kept them: **Library › Movies and TV defaults** (`/settings/title-defaults`) sets the Library folder, Pick rules, Keep up to date and Search when added for a new movie and a new show, with the Release gate and extra days (movies) and the seasons, new seasons, episode order and details source (shows) behind Advanced. The add dialogs start from it; the browser now remembers only the Release gate. Music defaults keep their own page.
 - **Appearance: density and reduced motion.** The app has no density setting. Reduced motion follows the operating system only. The Appearance page holds Theme alone; adding the others needs a decision (see backend-needs.md).
 - **Sessions in Sign-in and security.** No setting covers all sessions. People sign out their own devices in My account, and admins see each person's devices in Users and roles. The search finds both.
 - **Reset in Danger zone.** HolyArrs has no reset action in the app; the owner reset is a command-line tool. Danger zone holds Restart, Restart in safe mode and Shut down.
-- **Editing Pick rules.** The app can only list them (`GET /api/v1/pick-rules`), so the new page lists them and says where each one is used.
+- **Editing Pick rules.** Placed later, once the server could change them: the Pick rules page has New Pick rules, and per set Change, Make a copy and Remove (asked first; the server refuses a set something uses and says what). Change opens the editor (`/settings/pick-rules/{id}`): Name and kinds, Quality steps with Good enough, Traits and points, Must have and Never, Size (GB per hour for every step), Waiting and Language, with which wins, upgrade points, fewest points and fixed copies behind Advanced. Ready-made sets keep their name and kinds and cannot be removed.
 
 ## 4. Before and after (counted after the move)
 
@@ -322,17 +323,17 @@ A card is a SettingsCard or a card section. Settings are fields; actions and rea
 | | Before | After |
 |---|---|---|
 | Groups | 4, plus Appearance on the home | 7, plus My account |
-| Pages | 22 | 26 (new: Appearance, Pick rules, Health checks, Danger zone) |
-| Cards | about 70 | 85 (big forms are split into cards with a heading and a hint) |
-| Settings behind Advanced | 0 | about 60 |
+| Pages | 22 | 28 (new: Appearance, Pick rules, Health checks, Danger zone; later Movies and TV defaults and the Pick rules editor) |
+| Cards | about 70 | 94 (big forms are split into cards with a heading and a hint) |
+| Settings behind Advanced | 0 | about 71 |
 
 Pages, cards and settings per group, after the move:
 
 | Group | Pages | Cards | Settings |
 |---|---|---|---|
 | General | 4 | 16 | Theme, plus one interval per timed job |
-| Library | 6 | 19 | 79 |
-| Getting copies | 4 | 13 | 58 |
+| Library | 7 | 21 | 93 |
+| Getting copies | 5 | 20 | 78 |
 | Wishlist and people | 2 | 5 | 19 |
 | Sign-in and security | 1 | 6 | 11 |
 | Linked apps | 4 | 12 | 38 |

@@ -3,8 +3,9 @@ import { expect, test, type Page } from '@playwright/test';
 import { noSidewaysScroll, owner, signIn } from './helpers.ts';
 
 // Settings: the seven groups, setting search with a deep link that scrolls to
-// and highlights the field, the save bar and its leave guard, and Advanced
-// disclosures that stay as each person left them.
+// and highlights the field, the save bar and its leave guard, Advanced
+// disclosures that stay as each person left them, and Movies and TV defaults
+// that the add dialog starts from.
 test.describe.configure({ mode: 'serial' });
 
 let page: Page;
@@ -134,6 +135,55 @@ test('Advanced starts closed and stays as the person left it', async () => {
 	await expect.poll(kept).toBe(0);
 	await page.reload();
 	await expect(page.getByLabel('Hours a Release may be early')).toBeHidden();
+});
+
+test('Movies and TV defaults: saved choices are where the add movie dialog starts', async () => {
+	await page.goto('/settings/title-defaults');
+	await expect(page.getByRole('heading', { name: 'Movies and TV defaults', level: 1 })).toBeVisible();
+	const movies = page.locator('#movie-defaults');
+	const folder = movies.getByLabel('Library folder');
+	await expect(folder).toHaveValue('0');
+	await expect(movies.getByLabel('Search when added')).toBeChecked();
+	await expect(page.locator('#show-defaults').getByLabel('Search when added')).not.toBeChecked();
+
+	// A folder and Pick rules of its own, Keep up to date and Search when added off.
+	const first = (await folder.locator('option').nth(1).getAttribute('value'))!;
+	await folder.selectOption(first);
+	await movies.getByLabel('Pick rules').selectOption({ label: '4K' });
+	await movies.getByLabel('Keep up to date').uncheck();
+	await movies.getByLabel('Search when added').uncheck();
+	const bar = page.getByTestId('savebar');
+	await bar.getByRole('button', { name: 'Save' }).click();
+	await expect(page.getByText('Movies and TV defaults saved.')).toBeVisible();
+	await expect(bar).toHaveCount(0);
+	await page.reload();
+	await expect(movies.getByLabel('Library folder')).toHaveValue(first);
+	await expect(movies.getByLabel('Pick rules').locator('option:checked')).toHaveText('4K');
+	await expect(movies.getByLabel('Keep up to date')).not.toBeChecked();
+	await expect(movies.getByLabel('Search when added')).not.toBeChecked();
+
+	// The add dialog starts from them (Salt Choir is never added by the earlier tests).
+	await page.goto('/search');
+	await page.getByLabel('Movie name or id').fill('salt choir');
+	await page.getByRole('button', { name: 'Search', exact: true }).click();
+	await page.locator('li.hit', { hasText: 'Salt Choir' }).getByRole('button', { name: 'Add' }).click();
+	const dialog = page.getByRole('dialog');
+	await expect(dialog.getByLabel('Library folder')).toHaveValue(first);
+	await expect(dialog.getByLabel('Pick rules').locator('option:checked')).toHaveText('4K');
+	await expect(dialog.getByLabel('Keep up to date')).not.toBeChecked();
+	await expect(dialog.getByLabel('Search now')).not.toBeChecked();
+	await dialog.getByRole('button', { name: 'Cancel' }).click();
+	await expect(dialog).toBeHidden();
+
+	// Back to the built-in choices for the tests after this one.
+	await page.goto('/settings/title-defaults');
+	await movies.getByLabel('Library folder').selectOption('0');
+	await movies.getByLabel('Pick rules').selectOption('0');
+	await movies.getByLabel('Keep up to date').check();
+	await movies.getByLabel('Search when added').check();
+	await bar.getByRole('button', { name: 'Save' }).click();
+	await expect(page.getByText('Movies and TV defaults saved.').first()).toBeVisible();
+	await expect(bar).toHaveCount(0);
 });
 
 test('Danger zone is last, outlined, and asks before a restart', async () => {

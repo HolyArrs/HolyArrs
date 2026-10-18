@@ -91,12 +91,11 @@ export function matchesTitleQuery(t: TitleView, q: string, indexed: ReadonlySet<
 	return !q || byName(t, q) || indexed.has(t.id);
 }
 
+/** AddChoices is what this browser remembers from the last add. Folder, Pick
+ * rules, Keep up to date and Search when added come from Movies and TV
+ * defaults instead (title-defaults.ts). */
 export interface AddChoices {
-	library_folder_id: number;
-	pick_rules_id: number;
-	keep_up_to_date: boolean;
 	release_gate: string;
-	search_on_add: boolean;
 }
 
 const key = 'holyarrs.add-choices';
@@ -105,7 +104,7 @@ const key = 'holyarrs.add-choices';
 export function loadChoices(store: Pick<Storage, 'getItem'> | undefined = globalThis.localStorage): Partial<AddChoices> {
 	try {
 		const v = JSON.parse(store?.getItem(key) ?? '{}');
-		return v && typeof v === 'object' ? v : {};
+		return v && typeof v === 'object' && typeof v.release_gate === 'string' ? { release_gate: v.release_gate } : {};
 	} catch {
 		return {};
 	}

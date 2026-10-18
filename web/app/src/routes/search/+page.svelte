@@ -15,7 +15,7 @@
 	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import StatusPill from '#lib/ui/StatusPill.svelte';
 	import { plainReason } from '#lib/plain.ts';
-	import type { Ask, AskLimit, GateDefaults, LibraryFolder, LookupArtist, LookupMovie, LookupShow, MusicSettings, PickRulesView, ShowSettings, TitleView } from '#lib/types.ts';
+	import type { Ask, AskLimit, GateDefaults, LibraryFolder, LookupArtist, LookupMovie, LookupShow, MusicSettings, PickRulesView, ShowSettings, TitleDefaults, TitleView } from '#lib/types.ts';
 	import { limitLine } from '#lib/wishlist.ts';
 	import type { LimitKind } from '#lib/types.ts';
 	import { refreshInbox } from '#lib/wishlist.svelte.ts';
@@ -119,6 +119,7 @@
 	let folders = $state<LibraryFolder[]>([]);
 	let rules = $state<PickRulesView[]>([]);
 	let gateDefault = $state('released');
+	let titleDefaults = $state<TitleDefaults | null>(null);
 
 	let addMovie: ReturnType<typeof AddMovieDialog> | undefined = $state();
 
@@ -182,6 +183,10 @@
 			api
 				.get<ShowSettings>('/settings/shows')
 				.then((r) => (showDefaults = r))
+				.catch(() => {});
+			api
+				.get<TitleDefaults>('/settings/title-defaults')
+				.then((r) => (titleDefaults = r))
 				.catch(() => {});
 			api
 				.get<MusicSettings>('/settings/music')
@@ -422,10 +427,10 @@
 </div>
 </section>
 
-<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} onadded={movieAdded} />
+<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} {titleDefaults} onadded={movieAdded} />
 
 
-<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} onadded={showAdded} />
+<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} {titleDefaults} onadded={showAdded} />
 <AskShowDialog bind:this={askShow} onasked={showAsked} onrefused={showRefused} />
 <AddArtistDialog bind:this={addArtist} {folders} {rules} defaults={musicDefaults} onadded={artistAdded} />
 <AskArtistDialog bind:this={askArtist} onasked={artistAsked} onrefused={artistRefused} />

@@ -3,21 +3,25 @@
 	import Button from './ui/Button.svelte';
 	import { to } from './paths.ts';
 	// The add-a-show dialog: Library folder, Pick rules, which seasons to
-	// keep up to date, new seasons, episode order and details source.
+	// keep up to date, new seasons, episode order and details source. It
+	// starts from the Movies and TV defaults and the show settings.
 	import { api, message } from './api.ts';
-	import { pickId, secondVersion } from './library.ts';
+	import { secondVersion } from './library.ts';
 	import { detailsSources, episodeOrders, seasonChoices } from './shows.ts';
-	import type { LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleView } from './types.ts';
+	import { builtInDefaults, startChoices } from './title-defaults.ts';
+	import type { LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleDefaults, TitleView } from './types.ts';
 
 	let {
 		folders,
 		rules,
 		defaults,
+		titleDefaults = null,
 		onadded
 	}: {
 		folders: LibraryFolder[];
 		rules: PickRulesView[];
 		defaults: ShowSettings | null;
+		titleDefaults?: TitleDefaults | null;
 		onadded: (show: LookupShow, title: TitleView) => void;
 	} = $props();
 
@@ -30,6 +34,7 @@
 	let order = $state('aired');
 	let source = $state('tmdb');
 	let keep = $state(true);
+	let searchOnAdd = $state(false);
 	// A second Version, such as 4K, next to the main one (4.8.11).
 	let more = $state(false);
 	let moreLabel = $state('4K');
@@ -45,13 +50,15 @@
 	export function open(s: LookupShow) {
 		picked = s;
 		error = '';
-		folderId = showFolders.find((f) => f.health === 'ok')?.id ?? showFolders[0]?.id ?? 0;
-		chooseRules(folderId);
+		const start = startChoices(titleDefaults, folders, rules, 'show');
+		folderId = start.folderId;
+		rulesId = start.rulesId;
+		keep = start.keep;
+		searchOnAdd = start.searchOnAdd;
 		seasons = defaults?.season_choice ?? 'all';
 		newSeasons = defaults?.new_seasons ?? 'all';
 		order = defaults?.episode_order ?? 'aired';
 		source = s.source || defaults?.details_source || 'tmdb';
-		keep = true;
 		more = false;
 		const sv = secondVersion(showRules, showFolders, folderId);
 		moreLabel = sv.label;
@@ -60,9 +67,10 @@
 		sheetOpen = true;
 	}
 
+	// Another folder: the saved default Pick rules, else that folder's own, else the first offered.
 	function chooseRules(fid: number) {
-		const own = showFolders.find((f) => f.id === fid)?.default_pick_rules_id ?? 0;
-		rulesId = pickId(own, showRules, showRules[0]?.id ?? 0);
+		const d = titleDefaults ?? builtInDefaults;
+		rulesId = startChoices({ ...d, show: { ...d.show, library_folder_id: fid } }, folders, rules, 'show').rulesId;
 	}
 
 	/** idOf picks the id to add by: the source's own id first. */
@@ -82,6 +90,7 @@
 				library_folder_id: folderId,
 				pick_rules_id: rulesId,
 				keep_up_to_date: keep,
+				search_on_add: searchOnAdd,
 				seasons,
 				new_seasons: newSeasons,
 				episode_order: order,
@@ -157,6 +166,10 @@
 					<span><b>Keep up to date</b><br /><span class="hint">HolyArrs looks after the seasons picked above.</span></span>
 				</label>
 				<label class="checkline">
+					<input type="checkbox" bind:checked={searchOnAdd} />
+					<span><b>Search when added</b><br /><span class="hint">Look for missing episodes as soon as the show is added.</span></span>
+				</label>
+				<label class="checkline">
 					<input type="checkbox" bind:checked={more} />
 					<span><b>Also keep a second Version</b><br /><span class="hint">For example every episode in 4K next to the HD one, with its own Pick rules and folder.</span></span>
 				</label>
@@ -182,7 +195,7 @@
 						</div>
 					</fieldset>
 				{/if}
-				<p class="hint" data-testid="no-show-search">HolyArrs looks for missing episodes at the next feed check and each night. To look at once, use Search now on the show page.</p>
+				{#if !searchOnAdd}<p class="hint" data-testid="no-show-search">HolyArrs looks for missing episodes at the next feed check and each night. To look at once, tick Search when added, or use Search now on the show page.</p>{/if}
 			{/if}
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 		</form>

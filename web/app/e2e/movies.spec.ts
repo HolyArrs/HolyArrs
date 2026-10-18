@@ -51,7 +51,7 @@ test('add a movie by name with folder, Pick rules and Release gate in under a mi
 	await expect(page.getByText('Not out yet').first()).toBeVisible();
 });
 
-test('add by tmdb: and imdb: id; the last choices are remembered', async () => {
+test('add by tmdb: and imdb: id; the last Release gate is remembered, the rest start from the Movies and TV defaults', async () => {
 	await page.goto('/search');
 	await page.getByLabel('Movie name or id').fill('tmdb:900002');
 	await page.getByRole('button', { name: 'Search', exact: true }).click();
@@ -59,7 +59,9 @@ test('add by tmdb: and imdb: id; the last choices are remembered', async () => {
 	await hit.getByRole('button', { name: 'Add' }).click();
 	const dialog = page.getByRole('dialog');
 	await expect(dialog.getByLabel('Release gate')).toHaveValue('in_cinemas');
-	await expect(dialog.getByLabel('Search now')).not.toBeChecked();
+	// Search now is not remembered: it starts from the defaults (on for movies when nothing is saved).
+	await expect(dialog.getByLabel('Search now')).toBeChecked();
+	await dialog.getByLabel('Search now').uncheck();
 	await dialog.getByLabel('Release gate').selectOption('released');
 	await dialog.getByRole('button', { name: 'Add to Library' }).click();
 	await expect(hit.getByRole('link', { name: 'In your Library' })).toBeVisible();
@@ -70,6 +72,7 @@ test('add by tmdb: and imdb: id; the last choices are remembered', async () => {
 	await page.getByRole('button', { name: 'Search', exact: true }).click();
 	const orchard = page.locator('li.hit', { hasText: 'Quiet Orchard' });
 	await orchard.getByRole('button', { name: 'Add' }).click();
+	await page.getByRole('dialog').getByLabel('Search now').uncheck();
 	await page.getByRole('dialog').getByRole('button', { name: 'Add to Library' }).click();
 	await expect(orchard.getByRole('link', { name: 'In your Library' })).toBeVisible();
 });

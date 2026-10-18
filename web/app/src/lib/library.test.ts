@@ -54,11 +54,18 @@ describe('add choices', () => {
 	it('round-trips and survives bad storage', () => {
 		const m = new Map<string, string>();
 		const store = { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v) };
-		saveChoices({ library_folder_id: 2, pick_rules_id: 3, keep_up_to_date: false, release_gate: 'in_cinemas', search_on_add: false }, store);
-		expect(loadChoices(store)).toMatchObject({ library_folder_id: 2, release_gate: 'in_cinemas' });
+		saveChoices({ release_gate: 'in_cinemas' }, store);
+		expect(loadChoices(store)).toEqual({ release_gate: 'in_cinemas' });
 		m.set('holyarrs.add-choices', '{nope');
 		expect(loadChoices(store)).toEqual({});
 		expect(loadChoices(undefined)).toEqual({});
+	});
+	it('remembers only the Release gate; folder, Pick rules and the switches come from Movies and TV defaults', () => {
+		const m = new Map<string, string>([['holyarrs.add-choices', JSON.stringify({ library_folder_id: 2, pick_rules_id: 3, keep_up_to_date: false, release_gate: 'announced', search_on_add: false })]]);
+		const store = { getItem: (k: string) => m.get(k) ?? null };
+		expect(loadChoices(store)).toEqual({ release_gate: 'announced' });
+		m.set('holyarrs.add-choices', JSON.stringify({ library_folder_id: 2 }));
+		expect(loadChoices(store)).toEqual({});
 	});
 	it('keeps a remembered id only when offered', () => {
 		expect(pickId(2, [{ id: 1 }, { id: 2 }], 1)).toBe(2);

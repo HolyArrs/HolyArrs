@@ -4,18 +4,27 @@
 	import { to } from './paths.ts';
 	import { api, message } from './api.ts';
 	import { plainReason } from './plain.ts';
-	import { loadChoices, pickId, saveChoices, secondVersion } from './library.ts';
-	import type { LibraryFolder, LookupMovie, PickRulesView, TitleView } from './types.ts';
+	import { loadChoices, saveChoices, secondVersion } from './library.ts';
+	import { builtInDefaults, gateChoices as gates, startChoices } from './title-defaults.ts';
+	import type { LibraryFolder, LookupMovie, PickRulesView, TitleDefaults, TitleView } from './types.ts';
 
 	// Add a movie to the Library: folder, Pick rules, Release gate, Keep up
 	// to date, Search now and an optional second Version. Used by Search and
-	// the title detail page; open(movie) shows it.
+	// the title detail page; open(movie) shows it. It starts from the Movies
+	// and TV defaults; only the Release gate is remembered from the last add.
 	let {
 		folders,
 		rules,
 		gateDefault = 'released',
+		titleDefaults = null,
 		onadded
-	}: { folders: LibraryFolder[]; rules: PickRulesView[]; gateDefault?: string; onadded: (movie: LookupMovie, title: TitleView) => void } = $props();
+	}: {
+		folders: LibraryFolder[];
+		rules: PickRulesView[];
+		gateDefault?: string;
+		titleDefaults?: TitleDefaults | null;
+		onadded: (movie: LookupMovie, title: TitleView) => void;
+	} = $props();
 
 	let addOpen = $state(false);
 	let picked = $state<LookupMovie | null>(null);
@@ -34,22 +43,18 @@
 
 	const movieFolders = $derived(folders.filter((f) => f.kind === 'movie'));
 	const movieRules = $derived(rules.filter((r) => !r.kinds.length || r.kinds.includes('movie')));
-	const gates: [string, string, string][] = [
-		['announced', 'As soon as it is announced', 'Look even before it is in cinemas.'],
-		['in_cinemas', 'Once it is in cinemas', 'Look from the cinema date.'],
-		['released', 'Once it is out on digital or disc', 'Look from the first digital or disc date.']
-	];
 
 	export function open(m: LookupMovie) {
 		picked = m;
 		addError = '';
-		// The last choices this browser made, while they are still offered.
+		const start = startChoices(titleDefaults, folders, rules, 'movie');
+		folderId = start.folderId;
+		rulesId = start.rulesId;
+		keep = start.keep;
+		searchOnAdd = start.searchOnAdd;
+		// The Release gate this browser picked last, while it is still offered.
 		const last = loadChoices();
-		folderId = pickId(last.library_folder_id, movieFolders, movieFolders.find((f) => f.health === 'ok')?.id ?? movieFolders[0]?.id ?? 0);
-		chooseRulesFor(folderId, last.pick_rules_id);
 		gate = last.release_gate && gates.some(([g]) => g === last.release_gate) ? last.release_gate : gateDefault;
-		keep = last.keep_up_to_date ?? true;
-		searchOnAdd = last.search_on_add ?? true;
 		more = false;
 		const sv = secondVersion(movieRules, movieFolders, folderId);
 		moreLabel = sv.label;
@@ -58,10 +63,10 @@
 		addOpen = true;
 	}
 
-	// A folder's own Pick rules come first, then the remembered ones, then the first offered.
-	function chooseRulesFor(fid: number, remembered?: number) {
-		const own = movieFolders.find((f) => f.id === fid)?.default_pick_rules_id ?? 0;
-		rulesId = pickId(remembered, movieRules, pickId(own, movieRules, movieRules[0]?.id ?? 0));
+	// Another folder: the saved default Pick rules, else that folder's own, else the first offered.
+	function chooseRulesFor(fid: number) {
+		const d = titleDefaults ?? builtInDefaults;
+		rulesId = startChoices({ ...d, movie: { ...d.movie, library_folder_id: fid } }, folders, rules, 'movie').rulesId;
 	}
 
 	async function add(e: SubmitEvent) {
@@ -79,7 +84,7 @@
 				search_on_add: searchOnAdd,
 				more_versions: more ? [{ label: moreLabel.trim(), pick_rules_id: moreRules, library_folder_id: moreFolder }] : []
 			});
-			saveChoices({ library_folder_id: folderId, pick_rules_id: rulesId, keep_up_to_date: keep, release_gate: gate, search_on_add: searchOnAdd });
+			saveChoices({ release_gate: gate });
 			addOpen = false;
 			onadded(picked, r.title);
 		} catch (err) {
