@@ -9956,6 +9956,42 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/discover": {
+      "get": {
+        "description": "Returns up to 20 movies or shows for one Explore row (row=trending, popular, upcoming, similar with id=<Library title id>, or genre with g=<genre name>; kind=movie or show, both when absent). Each item carries tmdb_id, kind, name, year, poster, backdrop, overview, genres, in_library, title_id and the open ask (or null). Never-add items and kinds whose part is off are left out. Rows are cached (trending 6 h, popular and upcoming 12 h, similar and genre 24 h); the Library and ask joins are fresh. Each person may ask 30 times a minute.",
+        "operationId": "discoverRow",
+        "responses": {
+          "200": {
+            "description": "row, title and items."
+          },
+          "400": {
+            "description": "Unknown row or kind, or a missing id or g."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          },
+          "404": {
+            "description": "No such Library title (similar)."
+          },
+          "429": {
+            "description": "Over 30 requests a minute; see Retry-After."
+          },
+          "501": {
+            "description": "TMDB is not set up."
+          },
+          "502": {
+            "description": "TMDB did not answer."
+          },
+          "503": {
+            "description": "TMDB is rate limited and nothing is cached; see Retry-After."
+          }
+        },
+        "summary": "An Explore row from TMDB",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/downloaders": {
       "get": {
         "description": "Every Downloader with its health in plain words and how many active downloads it has. Keys and passwords are masked.",
@@ -11893,11 +11929,11 @@
     },
     "/api/v1/library-summary": {
       "get": {
-        "description": "Returns the enabled Library title count and at most eight missing movie rows in Library order for Home. Removed titles are excluded. Safe mode includes every media kind.",
+        "description": "Returns the enabled Library title count and at most eight missing movie rows in Library order for Home. Removed titles are excluded. Safe mode includes every media kind. recent holds the 20 newest titles by date added, in the same view as GET /titles.",
         "operationId": "homeLibrarySummary",
         "responses": {
           "200": {
-            "description": "Visible title total and bounded missing movie rows with id, name, year and state_label."
+            "description": "Visible title total, bounded missing movie rows with id, name, year and state_label, and recent titles."
           },
           "401": {
             "description": "Sign-in is required."
@@ -12668,6 +12704,60 @@
           "Library"
         ],
         "x-holyarrs-part": "movies",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/metadata/{kind}/{tmdb_id}": {
+      "get": {
+        "description": "Returns a movie or show page from TMDB whether or not it is in the Library: tmdb_id, kind, name, year, overview, poster, backdrop, logo, genres, runtime_minutes, rating (US), people (name, role actor/director/creator, character, profile), seasons for shows (number, episode_count, year), similar (up to 12, same items as discover), in_library, title_id, ask and never_add. Cached 24 h.",
+        "operationId": "metadataDetails",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tmdb_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The details page."
+          },
+          "400": {
+            "description": "kind is not movie or show, or tmdb_id is not a number."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          },
+          "404": {
+            "description": "TMDB does not know it."
+          },
+          "409": {
+            "description": "The kind's part is off."
+          },
+          "501": {
+            "description": "TMDB is not set up."
+          },
+          "502": {
+            "description": "TMDB did not answer."
+          },
+          "503": {
+            "description": "TMDB is rate limited; see Retry-After."
+          }
+        },
+        "summary": "Details of a movie or show from TMDB",
+        "x-holyarrs-part": "media",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "read"
       }

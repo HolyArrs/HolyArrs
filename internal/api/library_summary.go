@@ -6,6 +6,7 @@ import (
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/parts"
+	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
 type libraryMissingView struct {
@@ -14,6 +15,9 @@ type libraryMissingView struct {
 	Year       *int   `json:"year"`
 	StateLabel string `json:"state_label"`
 }
+
+// recentMax is how many newest titles the summary carries.
+const recentMax = 20
 
 // librarySummary reads only the count and eight rows displayed on Home.
 func (a *API) librarySummary(w http.ResponseWriter, r *http.Request) {
@@ -71,5 +75,21 @@ func (a *API) librarySummary(w http.ResponseWriter, r *http.Request) {
 		}
 		missing[i].StateLabel = StateLabels[state]
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"total": total, "missing": missing})
+	// Recent: the newest titles by date added, for Home's Recently added.
+	recentWhere := strings.ReplaceAll(where, "t.", "") + " ORDER BY created_at DESC, id DESC LIMIT ?"
+	newest, err := store.Select[domain.Title](ctx, db, "titles", recentWhere, append(args, recentMax)...)
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	recent := []TitleView{}
+	for _, t := range newest {
+		v, err := a.titleView(ctx, t)
+		if err != nil {
+			internal(w, err)
+			return
+		}
+		recent = append(recent, v)
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"total": total, "missing": missing, "recent": recent})
 }
