@@ -54,7 +54,7 @@ print(json.dumps({'originalUsers':digest(sorted(users,key=lambda r:json.dumps(r,
       if(name==='completed'){const row=page.getByTestId('download-row').filter({hasText:'[MP3 320]'}).filter({hasText:'Evening Signals'});await expect(row.getByTestId('row-state')).toHaveText('Done');await expect(row.getByTestId('row-text')).toHaveText('3 of 3 tracks in the library.');}
       if(name==='album'){await expect(page.getByTestId('album-state')).toHaveText('In library');await expect(page.getByTestId('track-state')).toHaveCount(3);await expect(page.getByTestId('track-state').first()).toHaveText('Better copy sought');}
       if(name==='library')await expect(page.locator('main').getByText('Amber Satellites',{exact:true}).first()).toBeVisible();
-      if(name==='request')await expect(page.locator('main').getByText('Ready to listen',{exact:true}).first()).toBeVisible();
+      if(name==='request'){await page.getByRole('button',{name:/^Everyone's/}).click();const ask=page.getByTestId('ask').filter({hasText:'Amber Satellites'});await expect(ask.getByTestId('ask-state')).toHaveText('Ready to listen');}
       await page.waitForTimeout(300);assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),name+' overflow '+width);
       const file=`${name}-${width}.png`;await page.screenshot({path:path.join(out,file),fullPage:true});receipt.screenshots.push(file);
     }
