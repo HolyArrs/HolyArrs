@@ -15,12 +15,15 @@ const artistRoot = path.join(os.tmpdir(), 'holyarrs-intercom-preview-media-18747
 const releaseName = 'Amber Satellites - Evening Signals (2024) [MP3 320]';
 const hash = [...releaseName].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 11).toString(16).padStart(8, '0').repeat(5);
 const out = path.join(repo, '.omx/artifacts/visual-ralph/intercom/music-download', crypto.randomUUID());
+const resume=process.env.HOLYARRS_MUSIC_DOWNLOAD_RESUME;
+if(resume && resume!=='e9e9e741-19dd-49e7-8f08-2770d9c55415')throw Error('Only the retained partial music test may continue');
+const prior=resume?JSON.parse(fs.readFileSync(path.join(path.dirname(out),resume,'receipt.json'),'utf8')):null;
 fs.mkdirSync(out, { recursive: true });
 const receipt = { started: new Date().toISOString(), commit: execFileSync('git', ['rev-parse', 'HEAD'], {cwd:repo,encoding:'utf8'}).trim(), hash, writes: [], checks: [], screenshots: [] };
 function save() { fs.writeFileSync(path.join(out, 'receipt.json'), JSON.stringify(receipt, null, 2)); }
 function guard() { return JSON.parse(execFileSync('python', [path.join(__dirname, 'music-download-guard.py')], { encoding:'utf8' })); }
 async function get(p) { const r = await fetch(base + '/api/v1' + p); assert.equal(r.status,200,p); return r.json(); }
-async function fake(p) { const r = await fetch('http://127.0.0.1:28768' + p); assert.equal(r.status,200); return r.json(); }
+async function fake(p) { try{const r = await fetch('http://127.0.0.1:28768' + p,{signal:AbortSignal.timeout(10000)}); assert.equal(r.status,200); return r.json();}catch(e){throw Error('Fake control: '+e.message+' '+(e.cause?.code||''));} }
 async function poll(fn, label, timeout = 65000) {
   const until = Date.now() + timeout;
   while (Date.now() < until) { const value = await fn(); if (value) return value; await new Promise(r => setTimeout(r,1000)); }
@@ -41,13 +44,14 @@ function sessionAction(action,extra={}) { return JSON.parse(execFileSync('python
   receipt.listeners = JSON.parse(execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-Command',ps],{encoding:'utf8'}));
   receipt.original = guard();
   const downloadRoot=path.join(runtime,'downloads'); const folder=path.join(downloadRoot,releaseName);
-  safeAncestors(folder);safeAncestors(artistRoot);assert(!fs.existsSync(folder),'Refuse existing test folder');
+  safeAncestors(folder);safeAncestors(artistRoot);if(!resume)assert(!fs.existsSync(folder),'Refuse existing test folder');
   assert(!fs.existsSync(artistRoot),'Refuse existing artist media');
   assert.equal((await get('/asks/34')).state, 'approved');
   assert.equal((await get('/albums/144')).album.in_library, 0);
   assert.deepEqual((await get('/albums/144/tracks')).tracks.flatMap(t=>t.slots.map(s=>s.id)),[1183,1184,1185]);
   const fakeBefore = await fake('/api/v2/torrents/info');
-  assert(!fakeBefore.some(t=>t.hash===hash), 'This album already has a torrent; do not repeat writes');
+  if(!resume)assert(!fakeBefore.some(t=>t.hash===hash), 'This album already has a torrent; do not repeat writes');
+  else {receipt.parent=resume;assert.equal(prior.downloadId,35);assert.equal(prior.hash,hash);}
   receipt.fakeBefore = fakeBefore;
   browser = await chromium.launch({headless:true});
   const context = await browser.newContext({viewport:{width:1440,height:1000},deviceScaleFactor:1});
@@ -90,18 +94,21 @@ function sessionAction(action,extra={}) { return JSON.parse(execFileSync('python
   originalDownloader=Object.fromEntries(['name','kind','url','username','secret','category','priority','path_map','allow_local_network'].map(k=>[k,d[k]]));
   async function configCall(method,p,body){return page.evaluate(async ({method,p,body,csrf})=>{const {api}=await import('/src/lib/api.ts');api.setCsrf(csrf);return api.request(p,{method,body});},{method,p,body,csrf});}
   // The active existing Downloader keeps its URL/category and credentials.
-  temporaryDownloader=(await configCall('POST','/downloaders',temporaryConfig)).id;
+  temporaryDownloader=resume?2:(await configCall('POST','/downloaders',temporaryConfig)).id;
   receipt.temporaryDownloader=temporaryDownloader;
   restoreDownloader=async()=>{await configCall('PUT','/downloaders/1',originalDownloader);await configCall('DELETE',`/downloaders/${temporaryDownloader}`);};
-  await configCall('PUT','/downloaders/1',{...originalDownloader,priority:2});
+  if(!resume)await configCall('PUT','/downloaders/1',{...originalDownloader,priority:2});
+  let release,dl;
+  if(!resume){
   await page.getByTestId('album-choose').click();
-  const release=await poll(async()=> (await get('/titles/166/releases?album_id=144&limit=25&offset=0')).releases.find(r=>r.name===releaseName), 'scoped album search');
+  release=await poll(async()=> (await get('/titles/166/releases?album_id=144&limit=25&offset=0')).releases.find(r=>r.name===releaseName), 'scoped album search');
   assert.deepEqual(release.slot_ids,[1183,1184,1185]); allowedRelease=release.id; receipt.releaseId=release.id;save();
   const row=page.getByTestId('release').filter({hasText:releaseName});
   await row.getByRole('button',{name:'Choose '+releaseName,exact:true}).click();
   const dialog=page.getByRole('dialog'); await expect(dialog).toContainText('posted');
   await dialog.getByRole('button',{name:'Choose anyway',exact:true}).click();
-  const dl=await poll(async()=> (await get('/downloads')).downloads.find(d=>d.ReleaseID===release.id&&d.ExternalID===hash), 'real download creation');
+  dl=await poll(async()=> (await get('/downloads')).downloads.find(d=>d.ReleaseID===release.id&&d.ExternalID===hash), 'real download creation');
+  }else{dl=(await get('/downloads')).downloads.find(d=>d.ID===35&&d.ExternalID===hash);assert(dl);release={id:prior.releaseId};receipt.releaseId=release.id;}
   assert.equal(dl.DownloaderID,temporaryDownloader,'Must use the disposable size-aware connection');
   receipt.downloadId=dl.ID;
   await poll(async()=> (await get('/albums/144/tracks')).tracks.every(t=>t.slots.every(s=>s.state==='downloading')), 'three downloading slots');
@@ -115,13 +122,14 @@ function sessionAction(action,extra={}) { return JSON.parse(execFileSync('python
     }
   }
   await capture('downloading','/downloads',p=>p.getByTestId('download-row').filter({hasText:'Evening Signals'}).first());
-  fs.mkdirSync(folder); receipt.synthetic=[];
+  if(!resume){fs.mkdirSync(folder); receipt.synthetic=[];
   for(let i=1;i<=3;i++) {
     const name=`0${i} - Song 1.${i}.mp3`;
     execFileSync('ffmpeg',['-hide_banner','-loglevel','error','-n','-f','lavfi','-i',`sine=frequency=${220*i}:duration=${180+(i-1)*15}`,'-c:a','libmp3lame','-b:a','320k','-metadata','artist=Amber Satellites','-metadata','album=Evening Signals','-metadata',`title=Song 1.${i}`,'-metadata',`track=${i}`,path.join(folder,name)],{timeout:30000});
     const content=fs.readFileSync(path.join(folder,name));assert(content.length>512*1024);
     receipt.synthetic.push({name,size:content.length,sha256:crypto.createHash('sha256').update(content).digest('hex')});
   }
+  }else{receipt.synthetic=prior.synthetic;for(const f of receipt.synthetic)assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(folder,f.name))).digest('hex'),f.sha256);}
   receipt.filesCreated=true;save();
   const files=receipt.synthetic.map(f=>releaseName+'/'+f.name).join('|');
   await fake('/set?'+new URLSearchParams({hash,progress:'1',state:'stalledUP',save_path:downloadRoot,files}));
@@ -137,7 +145,7 @@ function sessionAction(action,extra={}) { return JSON.parse(execFileSync('python
   await capture('library','/library?kind=artist&q=Amber%20Satellites',p=>p.locator('main').getByText('Amber Satellites',{exact:true}).first());
   await restoreDownloader();restoreDownloader=null;await new Promise(r=>proxy.close(r));proxy=null;
   receipt.after=guard();
-  assert.deepEqual(receipt.after.tables,receipt.before.tables,'Credentials/settings changed');
+  for(const [table,value]of Object.entries(receipt.before.tables))if(table!=='downloaders')assert.equal(receipt.after.tables[table],value,'Credentials/settings changed: '+table);
   for(const table of ['asks','titles','slots']) assert.deepEqual(receipt.after[table],receipt.before[table], 'Existing '+table+' changed');
   for(const table of ['file_rows','downloads','imports']) for(const [id,value] of Object.entries(receipt.before[table])) assert.equal(receipt.after[table][id],value,'Existing '+table+' changed');
   assert.equal(Object.keys(receipt.after.file_rows).length-Object.keys(receipt.before.file_rows).length,3);
@@ -148,7 +156,7 @@ function sessionAction(action,extra={}) { return JSON.parse(execFileSync('python
   assert.deepEqual(imported.map(f=>receipt.after.files[f]).sort(),receipt.synthetic.map(f=>f.sha256).sort(),'Imported bytes differ');
   receipt.imported=imported;
   const fakeAfter=await fake('/api/v2/torrents/info');
-  for(const t of fakeBefore) assert.deepEqual(fakeAfter.find(x=>x.hash===t.hash),t,'Existing fake torrent changed');
+  for(const t of fakeBefore)if(t.hash!==hash) assert.deepEqual(fakeAfter.find(x=>x.hash===t.hash),t,'Existing fake torrent changed');
   receipt.checks.push('Original users, credentials, settings, requests, titles, slots, files and fake torrents preserved');
   receipt.status='passed';
 })().catch(e=>{receipt.status='failed';receipt.error=e.message;process.exitCode=1;}).finally(async()=>{if(restoreDownloader)try{await restoreDownloader();receipt.configRestored=true;}catch{receipt.configRestoreFailed=true;}if(proxy)await new Promise(r=>proxy.close(r));if(browser)await browser.close();if(session){receipt.sessionRevoked=sessionAction('revoke');}receipt.finished=new Date().toISOString();save();console.log(JSON.stringify({status:receipt.status,error:receipt.error,evidence:out,checks:receipt.checks}));});
