@@ -11,6 +11,9 @@ import {
 	genreRows,
 	genresOf,
 	keepFull,
+	kindShelf,
+	readyToWatch,
+	stillLooking,
 	markTransitions,
 	missingEpisodes,
 	overlap,
@@ -200,5 +203,27 @@ describe('discover', () => {
 	it('turns items into cards', () => {
 		expect(discoverCard({ tmdb_id: '5', kind: 'movie', name: 'M', in_library: true, title_id: 9 }, 'trending')).toMatchObject({ titleId: 9, status: 'in_library', ref: 'tmdb:5' });
 		expect(discoverCard({ tmdb_id: '5', kind: 'show', name: 'S', in_library: false, ask: { id: 1, state: 'asked', state_label: '', mine: true, people: 1 } }, 'p')).toMatchObject({ titleId: undefined, status: 'requested', mine: true });
+	});
+});
+
+describe('library shelves', () => {
+	const list = [
+		t(1, { slots: [slot('in_library')] }),
+		t(2, { slots: [slot('wanted')] }),
+		t(3, { kind: 'show', slots: [slot('in_library')], show: { missing: 2 } as TitleView['show'] }),
+		t(4, { kind: 'show', slots: [slot('in_library')], show: { missing: 0 } as TitleView['show'] }),
+		t(5, { kind: 'artist', slots: [slot('wanted')] })
+	];
+	it('splits the Library by kind, newest first', () => {
+		expect(kindShelf(list, 'show').map((c) => c.titleId)).toEqual([4, 3]);
+		expect(kindShelf(list, 'artist').map((c) => c.titleId)).toEqual([5]);
+	});
+	it('ready to watch needs every copy and no missing episode', () => {
+		expect(readyToWatch(list).map((c) => c.titleId)).toEqual([4, 1]);
+	});
+	it('still looking lists movies and artists still looking, marked missing', () => {
+		const w = stillLooking(list);
+		expect(w.map((c) => c.titleId)).toEqual([5, 2]);
+		expect(w[0].status).toBe('missing');
 	});
 });

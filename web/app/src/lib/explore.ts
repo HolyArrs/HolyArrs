@@ -149,6 +149,33 @@ export function missingEpisodes(titles: TitleView[], n = ROW_MAX): ExploreCard[]
 		});
 }
 
+/** kindShelf: the newest titles of one kind, for the Movies, TV shows and Music rows. */
+export function kindShelf(titles: TitleView[], kind: CardKind, n = ROW_MAX): ExploreCard[] {
+	return recentlyAdded(titles.filter((t) => kindOf(t.kind) === kind), n).map((t) => titleCard(t, undefined, `${kind[0]}${t.id}`));
+}
+
+const have = (state: string) => state === 'in_library' || state === 'better_wanted';
+
+/** readyToWatch: movies and shows with every copy in the Library and no episode missing. */
+export function readyToWatch(titles: TitleView[], n = ROW_MAX): ExploreCard[] {
+	return recentlyAdded(
+		titles.filter((t) => kindOf(t.kind) !== 'artist' && (t.slots ?? []).length > 0 && t.slots.every((s) => have(s.state)) && !(t.show?.missing ?? 0)),
+		n
+	).map((t) => titleCard(t, undefined, `r${t.id}`));
+}
+
+/** stillLooking: movies and artists still looking for a copy (shows have Missing episodes). */
+export function stillLooking(titles: TitleView[], n = ROW_MAX): ExploreCard[] {
+	return recentlyAdded(titles.filter((t) => kindOf(t.kind) !== 'show' && (t.slots ?? []).some((s) => s.state === 'wanted')), n).map((t) => {
+		const c = titleCard(t, undefined, `w${t.id}`);
+		if (c.status === 'in_library') {
+			c.status = 'missing';
+			c.statusLabel = 'Missing';
+		}
+		return c;
+	});
+}
+
 /** askKey groups asks for the same thing (the same title, or the same add id). */
 function askKey(a: Pick<Ask, 'title_id' | 'ref' | 'kind' | 'tmdb_id' | 'name'>): string {
 	if (a.title_id) return `t${a.title_id}`;

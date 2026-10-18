@@ -17,6 +17,9 @@
 		genreRows,
 		genresOf,
 		keepFull,
+		kindShelf,
+		readyToWatch,
+		stillLooking,
 		markTransitions,
 		missingEpisodes,
 		popularInHousehold,
@@ -62,12 +65,17 @@
 			keepFull([
 				{ id: 'recent', title: 'Recently added', href: to('/library'), cards: recentlyAdded(titles).map((t) => titleCard(t)) },
 				trending,
+				{ id: 'ready', title: 'Ready to watch', subtitle: 'Every copy is in your Library', cards: readyToWatch(titles) },
 				{ id: 'soon', title: 'Coming soon', subtitle: 'From your calendar', href: to('/calendar'), cards: comingSoon(dates, titles) },
 				because && { id: 'because', title: `Because you have ${because.seed.name}`, cards: because.cards },
 				similar,
+				{ id: 'movies', title: 'Movies', href: to('/library?kind=movie'), cards: kindShelf(titles, 'movie') },
+				{ id: 'shows', title: 'TV shows', href: to('/library?kind=show'), cards: kindShelf(titles, 'show') },
 				...genreRows(titles, facets),
 				popular,
 				{ id: 'missing', title: 'Missing episodes', subtitle: 'Shows with aired episodes that have no file', cards: missingEpisodes(titles) },
+				{ id: 'looking', title: 'Still looking', subtitle: 'No copy in your Library yet', cards: stillLooking(titles) },
+				{ id: 'music', title: 'Music', href: to('/library?kind=artist'), cards: kindShelf(titles, 'artist') },
 				{ id: 'household', title: 'Popular in your household', subtitle: 'What people here asked for most', href: to('/wishlist'), cards: popularInHousehold(asks, titles) },
 				person && { id: 'person', title: `From ${person.person}`, cards: person.cards },
 				upcoming
@@ -120,7 +128,11 @@
 			{ row: 'upcoming' as const },
 			...(seed ? [{ row: 'similar' as const, id: seed.id }] : [])
 		];
-		const got = await Promise.allSettled(asks.map((q) => fetchProviderRow(q)));
+		// Ask one row first: a server without discover rows answers 404, and
+		// then the rest are not worth asking.
+		const first = await fetchProviderRow(asks[0]).catch(() => null);
+		if (!first) return;
+		const got = [{ status: 'fulfilled' as const, value: first }, ...(await Promise.allSettled(asks.slice(1).map((q) => fetchProviderRow(q))))];
 		const out: ExploreRow[] = [];
 		got.forEach((g, i) => {
 			if (g.status !== 'fulfilled' || !g.value) return;
@@ -187,6 +199,7 @@
 							title={c.name}
 							href={c.titleId !== undefined ? to(`/library/${c.titleId}`) : c.status === 'requested' ? to('/wishlist') : undefined}
 							image={c.image}
+							kind={c.kind}
 							subtitle={c.subtitle}
 							badges={c.badges}
 							status={c.status}
