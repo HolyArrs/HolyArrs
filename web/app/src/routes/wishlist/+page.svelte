@@ -7,6 +7,7 @@
 	import Chip from '#lib/ui/Chip.svelte';
 	import StatusPill, { type StatusKind } from '#lib/ui/StatusPill.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
+	import Menu from '#lib/ui/Menu.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
@@ -168,9 +169,17 @@
 		}
 	}
 
+	// Take back asks first in a confirm sheet.
+	let takeBackOpen = $state(false);
+	let takeBackAsk = $state<Ask | null>(null);
+	function askTakeBack(a: Ask) {
+		takeBackAsk = a;
+		takeBackOpen = true;
+	}
+
 	async function takeBack(a: Ask) {
 		if (takingBack.has(a.id)) return;
-		if (!confirm(`Take back your ask for ${a.name}?`)) return;
+		takeBackOpen = false;
 		takingBack = new Set([...takingBack, a.id]);
 		try {
 			await api.del(`/asks/${a.id}`);
@@ -311,9 +320,6 @@
 									<Button variant="primary" size="sm" icon="check" type="button" onclick={() => open(a, 'approve')}>Approve</Button>
 									<Button size="sm" icon="x" type="button" onclick={() => open(a, 'turn_down')}>Turn down</Button>
 								{/if}
-								{#if a.mine && a.state === 'asked'}
-									<Button variant="destructive" size="sm" type="button" disabled={takingBack.has(a.id)} aria-busy={takingBack.has(a.id)} onclick={() => takeBack(a)}>Take back</Button>
-								{/if}
 								<button
 									class="inspect"
 									class:on={selected?.id === a.id}
@@ -324,6 +330,15 @@
 									aria-controls="wishlist-review"
 									onclick={(event) => void selectAsk(a.id, event.currentTarget)}>Review</button
 								>
+								{#if a.mine && a.state === 'asked'}
+									<span class="row-menu" data-testid="ask-menu">
+										<Menu
+											label="More for {a.name}"
+											width={220}
+											items={[{ label: 'Take back', icon: 'trash', destructive: true, disabled: takingBack.has(a.id), onselect: () => askTakeBack(a) }]}
+										/>
+									</span>
+								{/if}
 							</div>
 						</div>
 					</li>
@@ -434,6 +449,15 @@
 	{/if}
 </Sheet>
 
+<Sheet bind:open={takeBackOpen} size="sm" title={takeBackAsk ? `Take back ${takeBackAsk.name}${year(takeBackAsk)}?` : 'Take back'} description="It leaves the Wishlist. You can ask again later.">
+	{#if takeBackAsk}
+		<div class="decide-actions">
+			<Button variant="plain" type="button" onclick={() => (takeBackOpen = false)}>Keep it</Button>
+			<Button variant="destructive" type="button" busy={takingBack.has(takeBackAsk.id)} onclick={() => takeBackAsk && void takeBack(takeBackAsk)}>Take back</Button>
+		</div>
+	{/if}
+</Sheet>
+
 <style>
 	.limit { margin: 0 0 16px; padding: 12px 16px; border-radius: var(--r-card); background: var(--surface-2); color: var(--text-muted); font: var(--t-callout); }
 	.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 16px; }
@@ -458,6 +482,7 @@
 	.note { color: var(--text); }
 	.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
 	.inspect { min-height: 30px; padding: 0 12px; border-radius: 8px; color: var(--accent-text); font: var(--t-subhead); font-weight: 600; transition: background var(--dur-fast) var(--ease-out); }
+	.row-menu { margin-left: auto; }
 	.inspect:hover { background: var(--accent-soft); }
 	.inspect.on { background: var(--surface-3); color: var(--text); }
 	.inspect:focus-visible { outline: none; box-shadow: var(--focus-ring); }
@@ -496,7 +521,7 @@
 		.count { order: -1; width: 100%; margin-left: 0; }
 		.ask { padding: 12px; gap: 12px; }
 		.art { width: 44px; }
-		.actions > :global(*) { flex: 1 1 auto; }
+		.actions > :global(*):not(.row-menu) { flex: 1 1 auto; }
 		.review-actions { grid-template-columns: 1fr; }
 	}
 </style>

@@ -86,7 +86,16 @@ test('a member asks for a movie from a phone and sees it on the Wishlist', async
 	const ask = kim.getByTestId('ask').filter({ hasText: 'Copper Lighthouse' });
 	await expect(ask.getByTestId('ask-state')).toHaveText('Waiting for approval');
 	await expect(ask.getByTestId('asked-by')).toContainText('Asked by kim');
-	await expect(ask.getByRole('button', { name: 'Take back' })).toBeVisible();
+	// Take back lives only in the row's ⋯ menu, as a destructive item with a confirm sheet.
+	await expect(ask.getByRole('button', { name: 'Take back' })).toHaveCount(0);
+	await ask.getByRole('button', { name: 'More for Copper Lighthouse' }).click();
+	await expect(ask.getByRole('menuitem', { name: 'Take back' })).toBeVisible();
+	await ask.getByRole('menuitem', { name: 'Take back' }).click();
+	const confirmTakeBack = kim.getByRole('dialog', { name: /^Take back Copper Lighthouse/ });
+	await expect(confirmTakeBack.getByRole('button', { name: 'Take back' })).toBeVisible();
+	await confirmTakeBack.getByRole('button', { name: 'Keep it' }).click();
+	await expect(confirmTakeBack).toBeHidden();
+	await expect(ask.getByTestId('ask-state')).toHaveText('Waiting for approval');
 	await expect(ask.getByRole('button', { name: 'Approve' })).toHaveCount(0);
 	await noSidewaysScroll(kim);
 	expect((await posts()).some((c) => c.includes('kim asked for Copper Lighthouse'))).toBe(true);
