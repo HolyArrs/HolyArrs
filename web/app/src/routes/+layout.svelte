@@ -4,51 +4,83 @@
 	setBase(resolve('/'));
 	import { to, appPath } from '#lib/paths.ts';
 	import '../app.css';
-	import { onMount, type Snippet } from 'svelte';
+	import { onMount, tick, type Snippet } from 'svelte';
 	import { page } from '$app/state';
-	import { afterNavigate, goto } from '$app/navigation';
-	import Icon, { type IconName } from '#lib/Icon.svelte';
+	import { afterNavigate, goto, onNavigate } from '$app/navigation';
+	import Icon from '#lib/Icon.svelte';
 	import ToastList from '#lib/ToastList.svelte';
 	import { session } from '#lib/session.svelte.ts';
 	import { live } from '#lib/live.svelte.ts';
-	import { theme, toggleTheme } from '#lib/theme.svelte.ts';
+	import { theme, setTheme, type ThemeChoice } from '#lib/theme.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { inbox, refreshInbox } from '#lib/wishlist.svelte.ts';
 	import { decisions, refreshDecisions } from '#lib/decisions.svelte.ts';
 	import { partsNow, refreshParts } from '#lib/parts.svelte.ts';
 	import { offPartName } from '#lib/parts.ts';
+	import { navigateWithTransition } from '#lib/motion.ts';
+	import AppShell from '#lib/ui/AppShell.svelte';
+	import Sidebar from '#lib/ui/Sidebar.svelte';
+	import SidebarItem from '#lib/ui/SidebarItem.svelte';
+	import TopBar from '#lib/ui/TopBar.svelte';
+	import TabBar, { type Tab } from '#lib/ui/TabBar.svelte';
+	import CommandPalette from '#lib/ui/CommandPalette.svelte';
+	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
+	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import {
+		buildNav,
+		currentHref,
+		destinations,
+		homeHref,
+		readSidebarPref,
+		shellMode,
+		writeSidebarPref,
+		type Need,
+		type ShellMode,
+		type SidebarPref
+	} from '#lib/ui/nav.ts';
 
 	let { children }: { children: Snippet } = $props();
-
-	type Need = 'manage_library' | 'settings' | 'wishlist' | 'staff' | null;
-	const allPlaces: { href: string; label: string; icon: IconName; need: Need }[] = [
-		{ href: '/', label: 'Home', icon: 'home', need: 'manage_library' },
-		{ href: '/library', label: 'Library', icon: 'library', need: null },
-		{ href: '/search', label: 'Search', icon: 'search', need: null },
-		{ href: '/wishlist', label: 'Wishlist', icon: 'wish', need: 'wishlist' },
-		{ href: '/downloads', label: 'Downloads', icon: 'download', need: 'manage_library' },
-		{ href: '/calendar', label: 'Calendar', icon: 'calendar', need: 'manage_library' }
-	];
-	const extraDesktopPlaces: { href: string; label: string; icon: IconName; need: Need }[] = [
-		{ href: '/downloads/history', label: 'History', icon: 'archive', need: 'manage_library' },
-		{ href: '/downloads/decide', label: 'Needs a decision', icon: 'info', need: 'manage_library' },
-		{ href: '/settings/alerts', label: 'Alerts', icon: 'bell', need: 'settings' }
-	];
 
 	function allowed(need: Need): boolean {
 		if (need === null) return true;
 		if (need === 'wishlist') return session.can('ask') || session.can('approve');
 		if (need === 'staff') return session.can('settings') || session.can('users');
+		if (need === 'manage') return session.can('manage_library') || session.can('approve') || session.can('settings');
 		if (need === 'settings') return session.can('settings');
 		return session.can(need);
 	}
 
-	// A part that is off hides its pages from the menu.
-	const places = $derived(allPlaces.filter((p) => allowed(p.need) && !offPartName(partsNow.answer, p.href)));
-	const secondaryPlaces = $derived(extraDesktopPlaces.filter((p) => allowed(p.need) && !offPartName(partsNow.answer, p.href)));
-	const desktopPlaces = $derived([...places, ...secondaryPlaces]);
-	const mobilePlaces = $derived(places.filter((p) => ['/library', '/search', '/wishlist', '/downloads'].includes(p.href)));
-	let libraryExpanded = $state(true);
+	// ── Places ────────────────────────────────────────────────────────────
+	const kinds = $derived(
+		(
+			[
+				['movie', 'movies'],
+				['show', 'shows'],
+				['artist', 'music']
+			] as const
+		)
+			.filter(([, part]) => partsNow.answer?.parts.find((p) => p.part === part)?.on !== false)
+			.map(([k]) => k)
+	);
+	const sections = $derived(
+		buildNav({
+			allowed: (n) => allowed(n),
+			off: (href) => !!offPartName(partsNow.answer, href),
+			kinds,
+			approvals: inbox.waiting,
+			decisions: decisions.count,
+			unread: inbox.unread
+		})
+	);
+	const allItems = $derived(sections.flatMap((s) => s.items));
+	const path = $derived(appPath(page.url.pathname));
+	const here = $derived(currentHref(allItems, path, (page.shallow?.url ?? page.url).searchParams));
+	const canHome = $derived(allowed('manage_library'));
+	const brandHref = $derived(to(homeHref(canHome)));
+
+	// The Library remembers the last view per kind for this tab.
 	let libraryResumeLinks = $state<Record<string, string>>({});
 	function readLibraryResumeLinks() {
 		try {
@@ -61,51 +93,149 @@
 				if (url.origin === window.location.origin && url.pathname === to('/library') && url.searchParams.get('kind') === kind) links[kind] = url.pathname + url.search;
 			}
 			libraryResumeLinks = links;
-		} catch { libraryResumeLinks = {}; }
+		} catch {
+			libraryResumeLinks = {};
+		}
 	}
-	const libraryKinds = $derived([
-		{ kind: 'movie', part: 'movies', label: 'Movies' },
-		{ kind: 'show', part: 'shows', label: 'TV Shows' },
-		{ kind: 'artist', part: 'music', label: 'Music' }
-	].filter((item) => partsNow.answer?.parts.find((part) => part.part === item.part)?.on !== false));
-	let menu = $state<HTMLDialogElement>();
-	let libraryChooser = $state(false);
-	function openNavigation(onlyLibrary = false) {
-		libraryChooser = onlyLibrary;
-		if (onlyLibrary) libraryExpanded = true;
-		menu?.showModal();
+	function link(href: string): string {
+		const kind = href.startsWith('/library?kind=') ? href.slice('/library?kind='.length) : null;
+		return (kind && libraryResumeLinks[kind]) || to(href);
 	}
-	afterNavigate(() => { menu?.close(); readLibraryResumeLinks(); });
-	// A direct link to a page of a part that is off says so instead.
-	const offHere = $derived(offPartName(partsNow.answer, appPath(page.url.pathname)));
-	const staff = $derived(allowed('staff'));
-	// Members reach their account from the bottom menu instead of Settings.
-	const settingsPlace = $derived(
-		staff ? { href: '/settings', label: 'Settings', icon: 'settings' as IconName } : { href: '/account', label: 'My account', icon: 'user' as IconName }
-	);
-	const sectionKey = $derived.by(() => {
-		const p = appPath(page.url.pathname);
-		if (p.startsWith('/library')) return 'library';
-		if (p.startsWith('/downloads')) return 'downloads';
-		if (p.startsWith('/search') || p.startsWith('/wishlist')) return 'discover';
-		if (p.startsWith('/calendar')) return 'calendar';
-		if (p.startsWith('/settings') || p.startsWith('/account')) return 'settings';
-		return 'home';
-	});
-	const sectionTitle = $derived(
-		({ home: 'Home', library: 'Library', discover: 'Discover', downloads: 'Downloads', calendar: 'Calendar', settings: settingsPlace.label } as const)[sectionKey]
-	);
-	const contextPlaces = $derived.by(() => {
-		if (sectionKey === 'downloads') return desktopPlaces.filter((p) => p.href.startsWith('/downloads'));
-		if (sectionKey === 'discover') return desktopPlaces.filter((p) => p.href === '/search' || p.href === '/wishlist');
-		if (sectionKey === 'calendar') return desktopPlaces.filter((p) => p.href === '/calendar');
-		if (sectionKey === 'settings') return [settingsPlace];
-		return desktopPlaces.filter((p) => p.href === '/');
+
+	// ── Sidebar state ─────────────────────────────────────────────────────
+	function storage(): Storage | undefined {
+		try {
+			return localStorage;
+		} catch {
+			return undefined;
+		}
+	}
+	let pref = $state<SidebarPref>(readSidebarPref(storage()));
+	let mode = $state<ShellMode>(typeof window === 'undefined' ? 'desktop' : shellMode(window.innerWidth));
+	let overlayOpen = $state(false);
+	let sidebarToggle = $state<HTMLElement>();
+	let topToggle = $state<HTMLElement>();
+	const collapsed = $derived(mode === 'desktop' ? pref === 'collapsed' : mode === 'tablet' ? !overlayOpen : false);
+	const overlay = $derived(mode === 'tablet' && overlayOpen);
+
+	async function closeOverlay(returnFocus = true) {
+		if (!overlayOpen) return;
+		overlayOpen = false;
+		if (returnFocus) {
+			await tick();
+			(topToggle ?? sidebarToggle)?.focus();
+		}
+	}
+	async function toggleSidebar() {
+		if (mode === 'tablet') {
+			if (overlayOpen) return closeOverlay();
+			overlayOpen = true;
+			await tick();
+			sidebarToggle?.focus();
+			return;
+		}
+		if (mode !== 'desktop') return;
+		const wasCollapsed = pref === 'collapsed';
+		pref = wasCollapsed ? 'expanded' : 'collapsed';
+		writeSidebarPref(storage(), pref);
+		await tick();
+		(wasCollapsed ? sidebarToggle : (topToggle ?? sidebarToggle))?.focus();
+	}
+
+	onMount(() => {
+		void session.load();
+		readLibraryResumeLinks();
+		const mq = [matchMedia('(min-width: 768px)'), matchMedia('(min-width: 1024px)')];
+		const sync = () => {
+			mode = shellMode(window.innerWidth);
+			if (mode !== 'tablet') overlayOpen = false;
+		};
+		mq.forEach((m) => m.addEventListener('change', sync));
+		return () => mq.forEach((m) => m.removeEventListener('change', sync));
 	});
 
+	// ⌘\ / Ctrl+\ toggles the sidebar; ⌘K / Ctrl+K opens the palette; Escape closes the overlay.
+	const mac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+	const searchKey = mac ? '⌘K' : 'Ctrl K';
+	let paletteOpen = $state(false);
+	function keys(e: KeyboardEvent) {
+		if (!ready || bare) return;
+		const mod = mac ? e.metaKey : e.ctrlKey;
+		if (mod && e.key === '\\') {
+			e.preventDefault();
+			void toggleSidebar();
+		} else if (mod && (e.key === 'k' || e.key === 'K')) {
+			e.preventDefault();
+			paletteOpen = !paletteOpen;
+		} else if (e.key === 'Escape' && overlayOpen) {
+			void closeOverlay();
+		}
+	}
+
+	// Page changes cross-fade and rise (View Transitions, where supported).
+	onNavigate((navigation) => navigateWithTransition(navigation));
+	afterNavigate(() => {
+		readLibraryResumeLinks();
+		moreOpen = false;
+		void closeOverlay(false);
+	});
+
+	// ── Phone ─────────────────────────────────────────────────────────────
+	let moreOpen = $state(false);
+	const manager = $derived(allowed('manage'));
+	const tabs = $derived.by<Tab[]>(() => {
+		const t: Tab[] = [];
+		const add = (href: string, label: string, icon: Tab['icon']) => t.push({ href: to(href), label, icon, current: here === href || (href === '/library' && !!here?.startsWith('/library?')) || (href === '/search' && path.startsWith('/search')) });
+		if (canHome) add('/', 'Home', 'home');
+		add('/explore', 'Explore', 'compass');
+		add('/library', 'Library', 'library');
+		add('/search', 'Search', 'search');
+		if (!manager && allowed('wishlist') && !offPartName(partsNow.answer, '/wishlist')) {
+			t.push({ href: to('/wishlist'), label: 'Wishlist', icon: 'wish', current: path.startsWith('/wishlist'), badge: inbox.unread || undefined });
+		}
+		const tabbed = ['/', '/explore', '/library', '/search', '/wishlist'];
+		const elsewhere = !tabbed.some((h) => (h === '/' ? path === '/' : path === h || path.startsWith(h + '/')));
+		t.push({ label: manager ? 'Manage' : 'More', icon: manager ? 'inbox' : 'more', current: elsewhere, dot: inbox.waiting + decisions.count > 0 && manager, onclick: () => (moreOpen = true) });
+		return t;
+	});
+
+	// ── Account ───────────────────────────────────────────────────────────
+	const roleWord = $derived({ owner: 'Owner', admin: 'Admin', member: 'Member' }[session.s.role] ?? 'Member');
+	const initials = $derived(session.s.name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('') || '?');
+	const accountItems = $derived<MenuItem[]>([
+		{ label: 'Account', icon: 'user', href: to('/account') },
+		{ kind: 'separator' },
+		{ kind: 'heading', label: 'Appearance' },
+		{ label: 'Light', checked: theme.choice === 'light', onselect: () => setTheme('light') },
+		{ label: 'Dark', checked: theme.choice === 'dark', onselect: () => setTheme('dark') },
+		{ label: 'System', checked: theme.choice === 'system', onselect: () => setTheme('system') },
+		{ kind: 'separator' },
+		{ label: 'Sign out', icon: 'signout', onselect: () => void signOut() }
+	]);
+	const themeOptions: { value: ThemeChoice; label: string }[] = [
+		{ value: 'light', label: 'Light' },
+		{ value: 'dark', label: 'Dark' },
+		{ value: 'system', label: 'System' }
+	];
+	let themeChoice = $state<ThemeChoice>(theme.choice);
+	$effect(() => {
+		themeChoice = theme.choice;
+	});
+
+	const paletteItems = $derived(
+		destinations(sections, [
+			{ href: '/search', label: 'Search titles', icon: 'search', section: 'Go to' },
+			{ href: '/account', label: 'Account', icon: 'user', section: 'You' },
+			...(allowed('wishlist') && allowed('approve') && !offPartName(partsNow.answer, '/wishlist') ? [{ href: '/wishlist', label: 'Wishlist', icon: 'wish' as const, section: 'Manage' }] : [])
+		])
+	);
+
+	// ── Session, permissions and live data (unchanged rules) ──────────────
+	const offHere = $derived(offPartName(partsNow.answer, path));
+	const staff = $derived(allowed('staff'));
 	const mark = $derived(theme.value === 'light' ? '/brand/mark-color.svg' : '/brand/mark-color-on-dark.svg');
-	const bare = $derived(appPath(page.url.pathname) === '/login' || appPath(page.url.pathname).startsWith('/invite/'));
-	const firstRunWelcome = $derived(appPath(page.url.pathname) === '/welcome' && page.url.searchParams.get('first') === '1');
+	const bare = $derived(path === '/login' || path.startsWith('/invite/'));
+	const firstRunWelcome = $derived(path === '/welcome' && page.url.searchParams.get('first') === '1');
 	const ready = $derived(session.s.state === 'signed_in');
 
 	// Pages a person may not use send them somewhere they may.
@@ -121,30 +251,16 @@
 		return true;
 	}
 
-	function current(href: string): boolean {
-		const p = appPath(page.url.pathname);
-		return href === '/' ? p === '/' : p === href || p.startsWith(href + '/');
-	}
-
-	function desktopCurrent(href: string): boolean {
-		const peers = [...desktopPlaces, settingsPlace].filter((p) => current(p.href));
-		return peers.sort((a, b) => b.href.length - a.href.length)[0]?.href === href;
-	}
-
-	onMount(() => {
-		void session.load();
-	});
-
 	// Send anyone who is not signed in to the sign-in page, and start or stop
 	// the live stream with the session.
 	$effect(() => {
 		const st = session.s.state;
 		if ((st === 'signed_out' || st === 'needs_setup') && !bare) {
-			const back = appPath(page.url.pathname) + page.url.search;
+			const back = path + page.url.search;
 			void goto(to(back && back !== '/' ? `/login?next=${encodeURIComponent(back)}` : '/login'), { replace: true });
 		}
-		if (st === 'signed_in' && !bare && !pageAllowed(appPath(page.url.pathname))) {
-			void goto(to(session.s.mustTwoFactor ? '/account' : allowed('manage_library') ? '/' : '/library'), { replace: true });
+		if (st === 'signed_in' && !bare && !pageAllowed(path)) {
+			void goto(to(session.s.mustTwoFactor ? '/account' : homeHref(allowed('manage_library'))), { replace: true });
 		}
 		// The live stream carries Library and download news for staff.
 		if (st === 'signed_in' && allowed('manage_library')) live.start();
@@ -153,26 +269,25 @@
 
 	// Which parts are on: asked on page changes and every minute.
 	$effect(() => {
-		void appPath(page.url.pathname);
+		void path;
 		if (session.s.state !== 'signed_in') return;
 		void refreshParts();
 		const t = setInterval(() => void refreshParts(), 60_000);
 		return () => clearInterval(t);
 	});
 
-	// The Wishlist badge: asks waiting for people who approve, else unread messages.
-	const badge = $derived(session.can('approve') ? inbox.waiting : inbox.unread);
+	// Wishlist counts: asks waiting for people who approve, else unread messages.
 	$effect(() => {
-		void appPath(page.url.pathname);
+		void path;
 		if (session.s.state !== 'signed_in' || !allowed('wishlist') || offPartName(partsNow.answer, '/wishlist')) return;
 		void refreshInbox();
 		const t = setInterval(() => void refreshInbox(), 60_000);
 		return () => clearInterval(t);
 	});
 
-	// The Downloads badge: movies that need a decision (staff only).
+	// Movies that need a decision (staff only), shown on Downloads.
 	$effect(() => {
-		void appPath(page.url.pathname);
+		void path;
 		if (session.s.state !== 'signed_in' || !allowed('manage_library')) return;
 		void refreshDecisions();
 		const off = live.on('slot', () => void refreshDecisions());
@@ -192,24 +307,24 @@
 		}
 	}
 
-	const liveWord = $derived(
-		{ off: 'Live updates off', connecting: 'Connecting', live: 'Live', reconnecting: 'Reconnecting' }[live.status.state]
-	);
+	const liveWord = $derived({ off: 'Live updates off', connecting: 'Connecting', live: 'Live', reconnecting: 'Reconnecting' }[live.status.state]);
+	const detail = $derived(path.split('/').filter(Boolean).length >= 2);
 </script>
 
-{#snippet libraryMenu()}
-	<div class="library-group">
-		<button class="nav-item library-parent" class:library-active={current('/library')} type="button" title="Library" aria-label="Library" aria-expanded={libraryExpanded} onclick={() => libraryExpanded = !libraryExpanded}>
-			<Icon name="library" size={19} /><span class="nav-label">Library</span>
-		</button>
-		<div class="library-reveal" class:is-open={libraryExpanded} inert={!libraryExpanded}>
-			<div class="library-children">
-				{#each libraryKinds as item (item.kind)}
-					<a class="nav-item library-child" href={libraryResumeLinks[item.kind] ?? to(`/library?kind=${item.kind}`)} onclick={() => menu?.close()} title={item.label} aria-current={current('/library') && (page.shallow?.url ?? page.url).searchParams.get('kind') === item.kind ? 'page' : undefined}><span>{item.label}</span></a>
-				{/each}
-			</div>
-		</div>
-	</div>
+<svelte:window onkeydown={keys} />
+
+{#snippet account()}
+	<Menu label="Account and appearance" items={accountItems} variant="row" align="start" placement="above" width={240}>
+		{#snippet trigger()}
+			<span class="who" class:only={collapsed}>
+				<span class="avatar" aria-hidden="true">{initials}</span>
+				{#if !collapsed}
+					<span class="who-text"><span class="who-name">{session.s.name}</span><span class="who-role">{roleWord}</span></span>
+					<Icon name="chevronUpDown" size={15} />
+				{/if}
+			</span>
+		{/snippet}
+	</Menu>
 {/snippet}
 
 {#if session.s.safeMode}
@@ -226,183 +341,93 @@
 	<main id="main">{@render children()}</main>
 {:else}
 	<a class="skip" href="#main">Skip to content</a>
-	<div class="app" class:settings-section={sectionKey === 'settings'}>
-		<aside class="global-rail" aria-label="Main">
-			<a class="rail-brand" href={to('/')} aria-label="HolyArrs home"><img src={to(mark)} alt="" width="30" height="30" /></a>
-			<nav class="rail-nav">
-				{#each places as p (p.href)}
-					{#if p.href === '/library'}
-						<button class="rail-item" type="button" title="Library" aria-label="Library" aria-haspopup="dialog" aria-current={sectionKey === 'library' ? 'page' : undefined} onclick={() => openNavigation(true)}><Icon name={p.icon} size={20} /></button>
-					{:else}
-					<a class="rail-item" href={to(p.href)} title={p.label} aria-label={p.label} aria-current={desktopCurrent(p.href) ? 'page' : undefined}>
-						<Icon name={p.icon} size={20} />
-						{#if p.href === '/wishlist' && badge > 0}<b class="rail-badge" aria-label="{badge} new">{badge}</b>{/if}
-					</a>
-					{/if}
-				{/each}
-			</nav>
-			<div class="rail-footer">
-				{#if allowed('manage_library')}<span class="rail-live {live.status.state}" role="status" aria-label={liveWord} title={liveWord}><i aria-hidden="true"></i></span>{/if}
-				<button class="rail-item rail-theme" type="button" onclick={toggleTheme} aria-label={theme.value === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'} title={theme.value === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}><Icon name={theme.value === 'dark' ? 'sun' : 'moon'} size={20} /></button>
-				{#if staff}<a class="rail-item" href={to('/settings')} title="Settings" aria-label="Settings" aria-current={appPath(page.url.pathname).startsWith('/settings') ? 'page' : undefined}><Icon name="settings" size={20} /></a>{/if}
-				<a class="rail-item" href={to('/account')} title="My account" aria-label="My account" aria-current={appPath(page.url.pathname) === '/account' ? 'page' : undefined}><Icon name="user" size={20} /></a>
-			</div>
-		</aside>
-		<aside class="context-sidebar" aria-label={`${sectionTitle} navigation`}>
-			<div class="context-head">
-				<a class="context-brand" href={to('/')} aria-label="HolyArrs home"><span>HolyArrs</span></a>
-				<h2>{sectionTitle}</h2>
-			</div>
-			<nav class="nav" aria-label={sectionTitle}>
-				{#if sectionKey === 'library'}
-					{@render libraryMenu()}
-				{:else}
-					{#each contextPlaces as p (p.href)}
-						<a class="nav-item" href={to(p.href)} aria-current={desktopCurrent(p.href) ? 'page' : undefined}>
-							<Icon name={p.icon} size={18} /><span class="nav-label">{p.label}</span>
-							{#if p.href === '/wishlist' && badge > 0}<b class="badge" aria-label="{badge} new">{badge}</b>{/if}
-							{#if p.href === '/downloads/decide' && decisions.count > 0}<b class="badge" data-testid="nav-decide" aria-label="{decisions.count} need a decision">{decisions.count}</b>{/if}
-						</a>
-					{/each}
-				{/if}
-			</nav>
-			<div class="context-footer">
-				<a class="who" href={to('/account')} title="My account"><span class="account-avatar"><Icon name="user" size={17} /></span><span class="nav-label">{session.s.name}</span></a>
-				<div class="account-actions">
-					<button class="icon-btn" type="button" onclick={toggleTheme} aria-label={theme.value === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}><Icon name={theme.value === 'dark' ? 'sun' : 'moon'} size={17} /></button>
-					<button class="icon-btn" type="button" onclick={signOut} aria-label="Sign out"><Icon name="signout" size={17} /></button>
+	<AppShell {collapsed} {overlay} onscrim={() => closeOverlay()}>
+		{#snippet sidebar()}
+			<Sidebar
+				id="sidebar"
+				{sections}
+				{collapsed}
+				{overlay}
+				currentHref={here}
+				{link}
+				{brandHref}
+				markSrc={to(mark)}
+				{searchKey}
+				bind:toggle={sidebarToggle}
+				ontoggle={toggleSidebar}
+				onsearch={() => (paletteOpen = true)}
+				onpick={() => void closeOverlay(false)}
+				footer={account}
+			/>
+		{/snippet}
+		{#snippet topbar()}
+			<TopBar
+				showToggle={collapsed}
+				controls="sidebar"
+				bind:toggle={topToggle}
+				ontoggle={toggleSidebar}
+				history={detail}
+				onsearch={() => (paletteOpen = true)}
+				{searchKey}
+				live={allowed('manage_library') ? { state: live.status.state, word: liveWord } : undefined}
+				downloads={allowed('manage_library') && !offPartName(partsNow.answer, '/downloads') ? { count: 0, href: to('/downloads') } : undefined}
+			/>
+		{/snippet}
+		{#snippet tabbar()}<TabBar items={tabs} />{/snippet}
+		<main id="main" tabindex="-1">
+			{#if offHere}
+				<section class="part-off" role="status" data-testid="part-off"><h1>This part is off</h1><p>{offHere} {offHere.includes(' and ') ? 'are' : 'is'} turned off, so this page is hidden. Nothing is deleted: everything comes back when it is turned on again.</p><p class="muted">The owner or an admin can turn it on again.</p></section>
+			{:else}{@render children()}{/if}
+		</main>
+	</AppShell>
+
+	<CommandPalette bind:open={paletteOpen} items={paletteItems} go={(href) => void goto(link(href))} onsearch={(q) => void goto(to(`/search?q=${encodeURIComponent(q)}`))} />
+
+	<Sheet bind:open={moreOpen} title={manager ? 'Manage' : 'More'} size="sm">
+		<nav class="more" aria-label="All places">
+			{#each sections as s (s.id)}
+				<div class="more-sec">
+					{#if s.label}<h3>{s.label}</h3>{/if}
+					<ul>
+						{#each s.items as item (item.href + item.label)}
+							<li><SidebarItem href={link(item.href)} label={item.label} icon={item.icon} current={here === item.href} badge={item.badge} badgeLabel={item.badgeLabel} onclick={() => (moreOpen = false)} /></li>
+						{/each}
+					</ul>
 				</div>
-			</div>
-		</aside>
-		<div class="shell">
-			<header class="topbar">
-				<a class="brand" href={to('/')} aria-label="HolyArrs home"><img src={to(mark)} alt="" width="26" height="26" /><span>HolyArrs</span></a>
-				<div class="top-actions">
-					{#if allowed('manage_library')}<span class="live {live.status.state}" role="status" aria-label={liveWord} title={liveWord}><i aria-hidden="true"></i><span class="sr-only">{liveWord}</span></span>{/if}
-					<button class="icon-btn" type="button" onclick={() => openNavigation()} aria-label="Open navigation"><Icon name="menu" /></button>
-				</div>
-			</header>
-			<main id="main" tabindex="-1">
-				{#if offHere}
-					<section class="part-off" role="status" data-testid="part-off"><h1>This part is off</h1><p>{offHere} {offHere.includes(' and ') ? 'are' : 'is'} turned off, so this page is hidden. Nothing is deleted: everything comes back when it is turned on again.</p><p class="muted">The owner or an admin can turn it on again.</p></section>
-				{:else}{@render children()}{/if}
-			</main>
-		</div>
-		<nav class="tabbar" aria-label="Main">
-			{#each mobilePlaces as p (p.href)}
-				{#if p.href === '/library'}
-					<button class="tab" class:active={desktopCurrent('/library')} type="button" aria-haspopup="dialog" onclick={() => openNavigation(true)}><Icon name={p.icon} size={21} /><span>{p.label}</span></button>
-				{:else}
-				<a class="tab" href={to(p.href)} aria-current={desktopCurrent(p.href) ? 'page' : undefined}><Icon name={p.icon} size={21} /><span>{p.label}</span>{#if p.href === '/wishlist' && badge > 0}<b class="badge" aria-label="{badge} new">{badge}</b>{/if}</a>
-				{/if}
 			{/each}
-			<button class="tab" class:active={!mobilePlaces.some((p) => desktopCurrent(p.href))} type="button" onclick={() => openNavigation()} aria-haspopup="dialog"><Icon name="menu" size={21} /><span>More</span>{#if badge + decisions.count > 0}<span class="attention-dot" aria-label="Items need attention"></span>{/if}</button>
+			<div class="more-sec">
+				<h3>You</h3>
+				<ul><li><SidebarItem href={to('/account')} label="Account · {session.s.name}" icon="user" current={path === '/account'} onclick={() => (moreOpen = false)} /></li></ul>
+				<div class="more-theme"><SegmentedControl label="Appearance" options={themeOptions} bind:value={themeChoice} onchange={(v) => setTheme(v)} /></div>
+				<Button variant="destructive" icon="signout" full onclick={() => { moreOpen = false; void signOut(); }}>Sign out</Button>
+			</div>
 		</nav>
-		<dialog class="navigation-dialog" bind:this={menu} aria-labelledby="navigation-title">
-			<div class="menu-head"><h2 id="navigation-title" class="h2">{libraryChooser ? 'Library' : 'Your workspace'}</h2><button class="icon-btn" type="button" onclick={() => menu?.close()} aria-label="Close navigation"><Icon name="x" /></button></div>
-			<nav class="nav" aria-label="All destinations">
-				{#if libraryChooser}
-					{@render libraryMenu()}
-				{:else}
-				{#each [...desktopPlaces, settingsPlace] as p (p.href)}
-					{#if p.href === '/library'}
-						{@render libraryMenu()}
-					{:else}
-					<a class="nav-item" href={to(p.href)} onclick={() => menu?.close()} aria-current={desktopCurrent(p.href) ? 'page' : undefined}><Icon name={p.icon} size={20} /><span>{p.label}</span>{#if p.href === '/wishlist' && badge > 0}<b class="badge" aria-label="{badge} new">{badge}</b>{/if}{#if p.href === '/downloads/decide' && decisions.count > 0}<b class="badge" aria-label="{decisions.count} need a decision">{decisions.count}</b>{/if}</a>
-					{/if}
-				{/each}
-				{/if}
-			</nav>
-			<div class="menu-account"><a class="nav-item" href={to('/account')} onclick={() => menu?.close()}><Icon name="user" /><span class="grow">{session.s.name}</span></a><button class="nav-item" type="button" onclick={toggleTheme}><Icon name={theme.value === 'dark' ? 'sun' : 'moon'} /><span>{theme.value === 'dark' ? 'Use light theme' : 'Use dark theme'}</span></button><button class="nav-item" type="button" onclick={() => { menu?.close(); void signOut(); }}><Icon name="signout" /><span>Sign out</span></button></div>
-		</dialog>
-	</div>
+	</Sheet>
 {/if}
 <ToastList />
 
 <style>
-	.app { min-height: 100dvh; }
 	.boot { min-height: 100dvh; display: grid; place-items: center; }
 	.safe-banner { position: relative; z-index: 50; padding: var(--s-3) var(--s-4); background: var(--surface-2); color: var(--wait-text); border-bottom: 1px solid var(--line); font-size: var(--text-sm); overflow-wrap: anywhere; }
 	.skip { position: fixed; left: 12px; top: -80px; z-index: 100; background: var(--accent-fill); color: var(--text-on-red); padding: 12px 16px; border-radius: var(--r-btn); }
 	.skip:focus-visible { top: 12px; }
-	.global-rail, .context-sidebar { display: none; }
-	.brand { display: flex; align-items: center; gap: 10px; min-width: 0; font: var(--weight-semibold) 20px/1.2 var(--font-ui); letter-spacing: -.03em; }
-	.brand img { flex: none; }
-	.shell { min-height: 100dvh; min-width: 0; }
-	.topbar { position: sticky; top: 0; z-index: 20; height: var(--topbar); display: flex; align-items: center; justify-content: space-between; padding-inline: var(--s-4); background: var(--sidebar-bg); border-bottom: 1px solid var(--line); }
-	.top-actions { display: flex; align-items: center; gap: var(--s-2); }
-	main { min-width: 0; padding: var(--s-6) var(--s-4) calc(var(--tabbar) + var(--s-8) + env(safe-area-inset-bottom)); outline: none; }
-	.nav { display: flex; flex-direction: column; gap: 2px; }
-	.nav-item { position: relative; display: flex; align-items: center; gap: 12px; min-height: 44px; width: 100%; padding: 8px 12px; border-radius: var(--r-btn); color: var(--text-muted); text-align: left; transition: background var(--dur-fast), color var(--dur-fast); }
-	.nav-item:hover { background: var(--surface-2); color: var(--text); }
-	.nav-item[aria-current='page'] { background: var(--surface-3); color: var(--text); font-weight: var(--weight-semibold); }
-	.nav-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.library-parent { border-radius: var(--r-btn); transition: background var(--dur) var(--ease-out); }
-	.library-parent:hover { background: var(--surface-2); color: var(--text); }
-	.library-parent.library-active { background: var(--surface-3); color: var(--text); }
-	.library-reveal { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows var(--dur) var(--ease-out), opacity var(--dur-fast) var(--ease-out); }
-	.library-reveal.is-open { grid-template-rows: 1fr; opacity: 1; }
-	.library-children { min-height: 0; overflow: hidden; margin-left: 21px; padding-left: 12px; position: relative; }
-	.library-children::before { content: ''; position: absolute; left: 0; top: 6px; bottom: 8px; width: 1px; background: var(--line); }
-	.library-child { position: relative; margin-block: 3px; padding-left: 13px; font-size: var(--text-sm); border-radius: 7px; }
-	.library-child[aria-current='page'] { background: var(--surface-2); color: var(--text); font-weight: var(--weight-medium); }
-
-	@media (prefers-reduced-motion: reduce) { .library-reveal { transition: none; } }
-	.badge { min-width: 22px; height: 22px; margin-left: auto; padding: 0 6px; display: grid; place-items: center; border-radius: var(--r-pill); background: var(--surface-3); color: var(--text); font-size: var(--text-xs); font-weight: var(--weight-medium); }
-	.live { font-family: var(--font-mono); letter-spacing: .025em; display: inline-flex; align-items: center; gap: 9px; color: var(--text-muted); font-size: var(--text-xs); }
-	.live i { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); flex: none; }
-	.live.live i { background: var(--ok); }
-	.live.reconnecting i, .live.connecting i { background: var(--wait); }
-	.tabbar { position: fixed; inset: auto 0 0; z-index: 30; display: flex; padding: 4px 8px env(safe-area-inset-bottom); background: var(--sidebar-bg); border-top: 1px solid var(--line); }
-	.tab { position: relative; display: flex; flex: 1; min-width: 0; min-height: var(--tabbar); flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-radius: var(--r-btn); color: var(--text-muted); font-size: 11px; }
-	.tab[aria-current='page'], .tab.active { color: var(--nav-active); }
-	.tab .badge { position: absolute; top: 4px; left: calc(50% + 8px); min-width: 16px; height: 16px; padding-inline: 4px; font-size: 10px; }
-	.attention-dot { position: absolute; top: 9px; left: calc(50% + 12px); width: 6px; height: 6px; border-radius: 50%; background: var(--wait); }
-	.navigation-dialog { width: min(420px, calc(100vw - 24px)); max-height: calc(100dvh - 32px); padding: var(--s-4); border: 1px solid var(--line-strong); border-radius: var(--r-modal); color: var(--text); background: var(--sidebar-bg); box-shadow: var(--shadow-modal); }
-	.menu-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); margin-bottom: var(--s-3); }
-	.menu-account { margin-top: var(--s-4); padding-top: var(--s-3); border-top: 1px solid var(--line); }
+	main { min-width: 0; padding: var(--s-6) var(--gutter) var(--s-16); outline: none; view-transition-name: page; }
 	.part-off { max-width: 40rem; margin: var(--s-8) auto; padding: var(--s-6); border: 1px solid var(--line); border-radius: var(--r-card); }
 	.part-off p { margin-top: var(--s-3); }
-	@media (min-width: 768px) {
-		.app { --rail: 64px; }
-		.global-rail { position: fixed; inset: 0 auto 0 0; z-index: 32; display: flex; flex-direction: column; width: var(--rail); padding: 10px 7px; background: var(--bg); border-right: 1px solid var(--line); }
-		.rail-brand { width: 42px; height: 42px; margin: 0 auto 12px; display: grid; place-items: center; border-radius: var(--r-btn); }
-		.rail-nav, .rail-footer { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-		.rail-footer { margin-top: auto; }
-		.rail-item { position: relative; width: 44px; height: 44px; display: grid; place-items: center; border-radius: var(--r-btn); color: var(--text-muted); transition: background var(--dur-fast), color var(--dur-fast), transform var(--dur-instant); }
-		.rail-item:hover { background: var(--surface-2); color: var(--text); }
-		.rail-item[aria-current='page'] { background: var(--surface-1); color: var(--text); box-shadow: var(--shadow-control); }
-		.rail-item:active { transform: scale(var(--press)); }
-		.rail-badge { position: absolute; right: -1px; top: -2px; min-width: 17px; height: 17px; display: grid; place-items: center; padding-inline: 4px; border: 2px solid var(--bg); border-radius: var(--r-pill); background: var(--accent-fill); color: var(--text-on-red); font-size: 9px; line-height: 1; }
-		.rail-live { width: 42px; height: 30px; display: grid; place-items: center; }
-		.rail-live i { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); }
-		.rail-live.live i { background: var(--ok); }
-		.rail-live.connecting i, .rail-live.reconnecting i { background: var(--wait); }
-		.shell { margin-left: var(--rail); }
-		.topbar, .tabbar { display: none; }
-		main { padding: var(--s-6) var(--s-5) var(--s-12); }
+	.who { display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0; color: var(--text-muted); }
+	.who.only { justify-content: center; }
+	.avatar { width: 32px; height: 32px; flex: none; display: grid; place-items: center; border-radius: 50%; background: linear-gradient(150deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #000)); color: #fff; font: 600 13px/1 var(--font-ui); }
+	.who-text { flex: 1; min-width: 0; display: flex; flex-direction: column; text-align: left; }
+	.who-name { color: var(--text); font: var(--t-subhead); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.who-role { font: var(--t-footnote); color: var(--text-muted); }
+	:global(.ui-sidebar .foot .ui-pop) { display: flex; width: 100%; }
+	.more { display: flex; flex-direction: column; gap: 16px; }
+	.more h3 { padding: 0 12px 4px; color: var(--text-muted); font: 600 12px/1.3 var(--font-ui); }
+	.more ul { display: flex; flex-direction: column; gap: 2px; }
+	.more :global(.ui-sbi.current) { background: var(--surface-3); }
+	.more-theme { padding: 10px 4px 14px; }
+	.more-theme :global(.ui-seg) { width: 100%; }
+	@media (max-width: 767px) {
+		main { padding: var(--s-4) var(--gutter) calc(var(--tabbar) + var(--s-8) + env(safe-area-inset-bottom)); }
 	}
-	@media (min-width: 1024px) {
-		.app { --rail: 56px; }
-		.rail-theme { display: none; }
-		.settings-section .rail-theme { display: grid; }
-		.context-sidebar { position: fixed; inset: 8px auto 8px var(--rail); z-index: 31; display: flex; flex-direction: column; width: var(--context-sidebar); padding: 18px 12px 12px; background: var(--sidebar-bg); border: 1px solid var(--line); border-radius: var(--r-panel); box-shadow: var(--shadow-panel); overflow-y: auto; }
-		.context-head { padding: 0 8px 18px; }
-		.context-brand { display: block; margin-bottom: 20px; color: var(--text-muted); font-size: var(--text-sm); font-weight: var(--weight-medium); }
-		.context-head h2 { font-size: 22px; line-height: 1.2; letter-spacing: -.025em; }
-		.context-sidebar .nav-item { min-height: 38px; padding: 7px 10px; gap: 10px; border-radius: var(--r-btn); font-size: var(--text-base); font-weight: var(--weight-medium); }
-		.context-sidebar .library-child { min-height: 34px; font-size: var(--text-sm); }
-		.context-sidebar .library-children { margin-left: 18px; }
-		.context-footer { display: flex; align-items: center; gap: 8px; margin-top: auto; padding: 14px 6px 0; border-top: 1px solid var(--line); }
-		.who { display: flex; align-items: center; gap: 9px; min-width: 0; min-height: 38px; color: var(--text-muted); font-size: var(--text-sm); }
-		.account-avatar { width: 28px; height: 28px; display: grid; place-items: center; flex: none; border-radius: 50%; background: var(--surface-2); color: var(--text); }
-		.context-footer .who { flex: 1; }
-		.account-actions { display: flex; }
-		.context-footer .icon-btn { width: 36px; height: 36px; }
-		.shell { position: relative; margin: 8px 8px 8px calc(var(--rail) + var(--context-sidebar) + 8px); min-height: calc(100dvh - 16px); background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--r-panel); box-shadow: var(--shadow-panel); overflow: clip; }
-		.settings-section .context-sidebar { display: none; }
-		.settings-section .shell { margin-left: calc(var(--rail) + 8px); }
-		main { padding: 24px 28px var(--s-16); }
-	}
-	@media (pointer: coarse) { .rail-item, .context-sidebar .nav-item { min-height: 44px; } }
 </style>
