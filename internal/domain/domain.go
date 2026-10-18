@@ -508,6 +508,11 @@ type User struct {
 	PasswordHash string `db:"password_hash"` // empty when they sign in only through Plex, Jellyfin or Emby
 	State        string `db:"state"`         // active, locked, disabled
 	Perms        string `db:"perms"`         // JSON list; the owner has every permission
+	// Kid limit: the highest age rating a member may see and ask for (""
+	// means no limit) and the country whose ratings apply (only US for now;
+	// "" reads as US).
+	MaxRating     string `db:"max_rating"`
+	RatingCountry string `db:"rating_country"`
 }
 
 // Setting is one typed key-value entry in a setting group.

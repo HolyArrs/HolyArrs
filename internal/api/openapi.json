@@ -5989,7 +5989,15 @@
           "id": {
             "type": "integer"
           },
+          "max_rating": {
+            "description": "The age-rating limit; empty for no limit.",
+            "type": "string"
+          },
           "name": {
+            "type": "string"
+          },
+          "rating_country": {
+            "description": "The country whose ratings apply; US for now.",
             "type": "string"
           }
         },
@@ -7812,7 +7820,7 @@
     },
     "/api/v1/auth/invites/{token}": {
       "get": {
-        "description": "What an invite link offers; open without sign-in.",
+        "description": "What an invite link offers (role, note and age-rating limit: max_rating, rating_country); open without sign-in.",
         "operationId": "lookInvite",
         "parameters": [
           {
@@ -8192,7 +8200,7 @@
     },
     "/api/v1/auth/me": {
       "get": {
-        "description": "The signed-in person, their role and permissions.",
+        "description": "The signed-in person, their role and permissions, and their age-rating limit (max_rating, empty for no limit; rating_country, US). The limit is read on every request, so a change holds without signing out.",
         "operationId": "me",
         "responses": {
           "200": {
@@ -20172,7 +20180,7 @@
     },
     "/api/v1/users": {
       "get": {
-        "description": "Every account with role, state and permissions.",
+        "description": "Every account with role, state, permissions and age-rating limit (max_rating, rating_country).",
         "operationId": "listUsers",
         "responses": {
           "200": {
@@ -20197,7 +20205,7 @@
     },
     "/api/v1/users/invites": {
       "get": {
-        "description": "Open and used invites, newest first.",
+        "description": "Open and used invites, newest first, each with the age-rating limit the new person gets.",
         "operationId": "listInvites",
         "responses": {
           "200": {
@@ -20220,12 +20228,35 @@
         "x-holyarrs-scope": "admin"
       },
       "post": {
-        "description": "Answers the invite link once; it ends after its days (1 to 30).",
+        "description": "Answers the invite link once; it ends after its days (1 to 30). max_rating is a Kid's age-rating limit: one value from G, PG, PG-13, R, NC-17 or TV-Y, TV-Y7, TV-G, TV-PG, TV-14, TV-MA, or empty for no limit. rating_country is US (only US ratings are known for now). The person who joins gets the invite's limit. Only member invites can carry a limit; an unknown rating, a country other than US, or a limit on an admin invite answers 400.",
         "operationId": "makeInvite",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
+                "properties": {
+                  "days": {
+                    "type": "integer"
+                  },
+                  "max_rating": {
+                    "type": "string"
+                  },
+                  "note": {
+                    "type": "string"
+                  },
+                  "perms": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "rating_country": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string"
+                  }
+                },
                 "type": "object"
               }
             }
@@ -20305,7 +20336,7 @@
     },
     "/api/v1/users/{id}": {
       "put": {
-        "description": "Role, permissions and state; the owner cannot be changed here.",
+        "description": "Role, permissions, state and age-rating limit; the owner cannot be changed here. max_rating is a Kid's age-rating limit: one value from G, PG, PG-13, R, NC-17 or TV-Y, TV-Y7, TV-G, TV-PG, TV-14, TV-MA, or empty for no limit. rating_country is US (only US ratings are known for now). An empty max_rating clears the limit and a left-out one keeps it. Only members can have a limit; making someone an admin clears it. An unknown rating, a country other than US, or a limit on an admin answers 400.",
         "operationId": "editUser",
         "parameters": [
           {
@@ -20323,6 +20354,26 @@
           "content": {
             "application/json": {
               "schema": {
+                "properties": {
+                  "max_rating": {
+                    "type": "string"
+                  },
+                  "perms": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "rating_country": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string"
+                  },
+                  "state": {
+                    "type": "string"
+                  }
+                },
                 "type": "object"
               }
             }
