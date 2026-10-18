@@ -93,7 +93,7 @@
 			</label>
 		</div>
 		{#if days.length === 0}
-			<p class="small muted empty-chart">No calls recorded in this period. Activity will appear after this Source answers a call.</p>
+			<p class="small muted empty-chart">No calls recorded in this period. Calls will show here after this Source answers a call.</p>
 		{:else}
 		<p class="xs muted legend"><span class="key calls"></span> answered <span class="key fails"></span> failed <span class="key grabs"></span> picked · days in UTC</p>
 		<div class="bars" role="img" aria-label="Calls, failures and picks per day">

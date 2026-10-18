@@ -143,7 +143,7 @@
 {:else}
 	<section class="results-surface" aria-labelledby="history-results-title">
 	<div class="results-head">
-		<div><p class="eyebrow">Event log</p><h2 id="history-results-title" class="h2">Activity</h2></div>
+		<div><p class="eyebrow">Event log</p><h2 id="history-results-title" class="h2">Events</h2></div>
 		<p class="small muted count" aria-live="polite" data-testid="history-count">
 			{pageLine(total, filter.offset, events.length)}{movieName ? ` for ${movieName}` : ''}
 		</p>

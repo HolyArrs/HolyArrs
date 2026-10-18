@@ -210,7 +210,7 @@
 
 <header class="page-head">
 	<div>
-		<p class="section-kicker">Requests</p>
+		<p class="section-kicker">Asks</p>
 		<h1>Wishlist</h1>
 		<p>{approver ? 'What people asked for. Approve to add, or turn down with a note.' : 'The movies, shows and music you asked for, and where each one is.'}</p>
 	</div>

@@ -15,7 +15,7 @@
 			hrefs: ['/settings/library-folders', '/settings/naming', '/settings/search', '/settings/subtitles', '/settings/music', '/settings/wishlist', '/settings/schedules']
 		},
 		{
-			label: 'Connections',
+			label: 'Linked apps',
 			description: 'Connect the services that find, download and publish media.',
 			hrefs: ['/settings/sources', '/settings/downloaders', '/settings/outside-lists', '/settings/media-servers', '/settings/tmdb', '/settings/alerts']
 		},
