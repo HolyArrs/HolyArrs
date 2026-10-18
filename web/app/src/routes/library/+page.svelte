@@ -394,7 +394,7 @@
 		{:else if shown.length === 0}
 			<EmptyState compact icon="search" title="Nothing matches this filter." action={filtersActive ? { label: 'Clear', onclick: clearFilters } : undefined} />
 		{:else if view === 'list'}
-			<ul class="rows list-table" aria-label="Library titles">
+			<ul class="rows" aria-label="Library titles">
 				{#each shown as t (t.id)}
 					{@const c = chipOf(t)}
 					{@const requester = requestedBy(t)}

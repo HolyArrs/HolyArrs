@@ -326,9 +326,9 @@
 				<label for="off-code">Code</label>
 				<input id="off-code" class="input mono" bind:value={offCode} autocomplete="one-time-code" inputmode="text" maxlength="11" />
 			</div>
-			<button class="btn {offMode === 'off' ? 'btn-danger' : 'btn-ghost'}" type="submit" disabled={tfBusy || !offCode.trim()} aria-busy={tfBusy}>
+			<Button variant={offMode === 'off' ? 'destructive' : 'secondary'} type="submit" disabled={tfBusy || !offCode.trim()} busy={tfBusy}>
 				{offMode === 'off' ? 'Turn off' : 'Make new codes'}
-			</button>
+			</Button>
 		</form>
 	{:else if setup}
 		<ol class="steps small">

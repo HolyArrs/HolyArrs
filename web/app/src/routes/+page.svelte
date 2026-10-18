@@ -403,7 +403,7 @@
 	.steps a > :global(.icon) { color: var(--text-muted); }
 	.steps .done a { color: var(--text-muted); }
 	.dot { width: 26px; height: 26px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--surface-1); outline: 1px solid var(--line-strong); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
-	.done .dot { background: var(--ok); color: #fff; outline: none; }
+	.done .dot { background: var(--ok); color: var(--on-art); outline: none; }
 	.grow { flex: 1; min-width: 0; }
 
 	.attention header, .panel header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 8px; }

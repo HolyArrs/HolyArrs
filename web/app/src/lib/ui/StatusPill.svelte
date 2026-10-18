@@ -42,5 +42,5 @@
 	.info i { background: var(--info); }
 	.ok { color: var(--ok-text); }
 	.fail { color: var(--fail-text); }
-	.art { background: rgb(0 0 0 / 46%); color: #fff; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+	.art { background: rgb(0 0 0 / 46%); color: var(--on-art); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 </style>

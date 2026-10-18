@@ -314,7 +314,7 @@
 		.list .acts {
 			width: 100%;
 		}
-		.list .acts > :global(.btn) {
+		.list .acts > :global(.ui-btn) {
 			min-height: var(--tap);
 		}
 	}

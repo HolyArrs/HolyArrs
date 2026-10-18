@@ -185,124 +185,34 @@ dl.facts dd {
 	overflow-wrap: anywhere;
 }
 
-/* Buttons */
-.btn {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: var(--s-2);
-	min-height: var(--tap);
-	padding: 0 var(--s-4);
-	border-radius: var(--r-pill);
-	font-weight: var(--weight-semibold);
-	font-size: var(--text-sm);
-	border: 1px solid transparent;
-	white-space: nowrap;
-	transition:
-		background var(--dur-fast),
-		border-color var(--dur),
-		color var(--dur-fast),
-		transform var(--dur-instant);
-}
-.btn:active:not(:disabled) {
-	transform: scale(var(--press));
-}
-.btn:disabled,
-.btn[aria-busy='true'] {
-	opacity: 0.6;
-}
-.btn-red {
-	background: var(--ha-red-press);
-	color: var(--text-on-red);
-	box-shadow: var(--shadow-control);
-}
-.btn-red:hover:not(:disabled) {
-	background: var(--ha-red-deep);
-}
-.btn-ghost {
-	border-color: var(--line);
-	color: var(--text);
-	background: var(--surface-1);
-}
-.btn-ghost:hover:not(:disabled) {
-	background: var(--surface-2);
-}
-.btn-quiet {
-	color: var(--text-muted);
-}
-.btn-quiet:hover:not(:disabled) {
-	color: var(--text);
-	background: var(--surface-3);
-}
-.btn-danger {
-	border-color: color-mix(in srgb, var(--fail) 50%, transparent);
-	color: var(--fail-text);
-}
-.btn-danger:hover:not(:disabled) {
-	background: color-mix(in srgb, var(--fail) 12%, transparent);
-}
-.btn-block {
-	width: 100%;
-}
-.icon-btn {
-	width: var(--tap);
-	height: var(--tap);
-	display: grid;
-	place-items: center;
-	border-radius: var(--r-pill);
-	color: var(--text-muted);
-	border: 1px solid transparent;
-	transition:
-		background var(--dur-fast),
-		color var(--dur-fast),
-		border-color var(--dur),
-		transform var(--dur-instant);
-}
-.icon-btn:hover {
-	background: var(--surface-2);
-	color: var(--text);
-	border-color: var(--line);
-}
-.icon-btn:active {
-	transform: scale(var(--press));
-}
-
-/* Chips */
+/* Status words (.chip ok|wait|fail|red): the kit StatusPill look, dot plus a word. */
 .chip {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	height: 26px;
-	padding: 0 10px;
-	border-radius: var(--r-sm);
-	font: var(--weight-medium) var(--text-xs) / 1 var(--font-ui);
+	height: 24px;
+	padding: 0 10px 0 8px;
+	border-radius: var(--r-pill);
+	font: var(--t-subhead);
 	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
 	background: var(--surface-2);
-	color: var(--text-muted);
+	color: var(--text);
 }
 .chip::before {
 	content: '';
-	width: 6px;
-	height: 6px;
+	width: 7px;
+	height: 7px;
+	flex: none;
 	border-radius: 50%;
-	background: currentColor;
+	background: var(--text-faint);
 }
-.chip.ok {
-	color: var(--ok-text);
-	background: color-mix(in srgb, var(--ok) 14%, transparent);
-}
-.chip.wait {
-	color: var(--wait-text);
-	background: color-mix(in srgb, var(--wait) 14%, transparent);
-}
-.chip.fail {
-	color: var(--fail-text);
-	background: color-mix(in srgb, var(--fail) 14%, transparent);
-}
-.chip.red {
-	color: var(--text-on-red);
-	background: var(--ha-red-press);
-}
+.chip.ok { color: var(--ok-text); }
+.chip.ok::before { background: var(--ok); }
+.chip.wait::before { background: var(--wait); }
+.chip.fail { color: var(--fail-text); }
+.chip.fail::before { background: var(--fail); }
+.chip.red::before { background: var(--accent); }
 
 /* Forms */
 .field {
@@ -532,7 +442,6 @@ input[type='checkbox'], input[type='radio'], progress { accent-color: var(--acce
 :where(h1, h2, h3, p, label, dd, .notice, .form-error, .hint) { overflow-wrap: anywhere; }
 :where(.row, .page-head, .card-head) > * { min-width: 0; }
 .notice > .icon { flex: none; }
-.btn { white-space: normal; text-align: center; }
 :where(button, input, select, textarea):disabled { opacity: .6; }
 :where(dialog) { max-width: calc(100vw - 2rem); max-height: calc(100dvh - 2rem); overflow: auto; }
 :where(dialog)::backdrop { background: var(--scrim); }
@@ -541,4 +450,4 @@ input[type='checkbox'], input[type='radio'], progress { accent-color: var(--acce
 :where(thead) { border-bottom: 1px solid var(--line); }
 :where(tbody tr + tr) { border-top: 1px solid var(--line); }
 :where(td, th) { padding-block: 12px; }
-@media (pointer: coarse) { .btn, .icon-btn, .input { min-height: 44px; } }
+@media (pointer: coarse) { .input { min-height: 44px; } }

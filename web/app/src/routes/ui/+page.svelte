@@ -9,6 +9,7 @@
 	import StatusPill, { type StatusKind } from '#lib/ui/StatusPill.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
+	import Field from '#lib/ui/Field.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
 	import Popover from '#lib/ui/Popover.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
@@ -241,6 +242,19 @@
 			<SegmentedControl label="Appearance ({theme})" value="system" options={[{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }, { value: 'system', label: 'System' }]} />
 			{#snippet footer()}<Button variant="primary" size="sm">Save</Button>{/snippet}
 		</SettingsCard>
+	</section>
+
+	<section class="block">
+		<h2 class="bh">Fields</h2>
+		<Field id="ui-name-{theme}" label="Name" hint="Shown to everyone in your household." required>
+			<input id="ui-name-{theme}" class="input" value="Living room" />
+		</Field>
+		<Field id="ui-kind-{theme}" label="Kind">
+			<select id="ui-kind-{theme}" class="input"><option>Movies</option><option>Shows</option></select>
+		</Field>
+		<Field id="ui-url-{theme}" label="Address" error="That address does not answer.">
+			<input id="ui-url-{theme}" class="input mono" value="http://10.0.0.5:8080" aria-invalid="true" aria-describedby="ui-url-{theme}-error" />
+		</Field>
 	</section>
 
 	<section class="block">

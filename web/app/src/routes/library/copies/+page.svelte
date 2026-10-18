@@ -135,7 +135,7 @@
 		<EmptyState compact icon="film" title="No movie files match these filters." />
 	{:else}
 		<div class="table-wrap">
-			<table class="list-table">
+			<table class="copies">
 				<caption class="sr-only">Inspected movie files and video codecs</caption>
 				<thead><tr><th scope="col"><span class="sr-only">Select</span></th><th scope="col">Movie and Version</th><th scope="col">Codec</th><th scope="col">Audio</th><th scope="col">File</th></tr></thead>
 				<tbody>
@@ -175,13 +175,13 @@
 	.actions { display: flex; flex-wrap: wrap; gap: 8px; }
 	.count { color: var(--text-muted); font: var(--t-subhead); font-variant-numeric: tabular-nums; }
 	.table-wrap { overflow-x: auto; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card); }
-	.list-table { width: 100%; border-collapse: collapse; font: var(--t-callout); font-variant-numeric: tabular-nums; }
-	.list-table th { position: sticky; top: 0; padding: 10px 12px; text-align: left; background: var(--surface-1); color: var(--text-muted); font: var(--t-footnote); border-bottom: 1px solid var(--line); }
-	.list-table input[type='checkbox'] { width: 20px; height: 20px; accent-color: var(--accent); }
-	.list-table a { color: var(--text); }
-	.list-table td { padding: var(--s-3); vertical-align: top; }
-	.list-table tbody tr + tr { border-top: 1px solid var(--line); }
-	.list-table tbody tr:hover { background: var(--surface-2); }
+	.copies { width: 100%; border-collapse: collapse; font: var(--t-callout); font-variant-numeric: tabular-nums; }
+	.copies th { position: sticky; top: 0; padding: 10px 12px; text-align: left; background: var(--surface-1); color: var(--text-muted); font: var(--t-footnote); border-bottom: 1px solid var(--line); }
+	.copies input[type='checkbox'] { width: 20px; height: 20px; accent-color: var(--accent); }
+	.copies a { color: var(--text); }
+	.copies td { padding: var(--s-3); vertical-align: top; }
+	.copies tbody tr + tr { border-top: 1px solid var(--line); }
+	.copies tbody tr:hover { background: var(--surface-2); }
 	.path { max-width: 24rem; overflow-wrap: anywhere; color: var(--text-muted); font: var(--t-footnote); }
 	.codec { font-weight: 700; }
 	.block { display: block; }
@@ -192,6 +192,6 @@
 		.selection-bar { align-items: stretch; flex-direction: column; }
 		.selection-bar { padding: 12px; }
 
-		.list-table th:nth-child(4), .list-table td:nth-child(4), .list-table th:nth-child(5), .list-table td:nth-child(5) { display: none; }
+		.copies th:nth-child(4), .copies td:nth-child(4), .copies th:nth-child(5), .copies td:nth-child(5) { display: none; }
 	}
 </style>

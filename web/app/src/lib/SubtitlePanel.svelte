@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '#lib/ui/Button.svelte';
 	import { to } from './paths.ts';
 	// Subtitles of a movie, a show or one episode (staff only): the subtitle
 	// wish (inherit or its own languages), the subtitles each File has with
@@ -254,9 +255,9 @@
 <section class="card subs" aria-labelledby="{idp}-h" data-testid="subtitles">
 	<div class="card-head">
 		<h2 id="{idp}-h" class="h2">{label ? `Subtitles of ${label}` : 'Subtitles'}</h2>
-		<button class="btn btn-ghost btn-sm" type="button" onclick={search} disabled={searching} aria-busy={searching} data-testid="subtitle-search">
-			<Icon name="search" size={16} /> Look for subtitles
-		</button>
+		<Button size="sm" icon="search" onclick={search} disabled={searching} busy={searching} data-testid="subtitle-search">
+			Look for subtitles
+		</Button>
 	</div>
 	{#if error}
 		<p class="notice bad" role="alert">{error}</p>
@@ -270,7 +271,7 @@
 					{shown ? wishLine(shown.languages, langs) : '…'}
 					{#if shown}<span class="muted"> ({fromWords(shown.from, movie)})</span>{/if}
 				</p>
-				<button class="btn btn-quiet btn-sm" type="button" onclick={startWish} aria-label="Change the subtitle languages" data-testid="subtitle-wish-change">Change</button>
+				<Button variant="plain" size="sm" onclick={startWish} aria-label="Change the subtitle languages" data-testid="subtitle-wish-change">Change</Button>
 			</div>
 		{:else}
 			<form class="wish-form" onsubmit={saveWish} aria-label="Subtitle languages">
@@ -288,8 +289,8 @@
 				{#if own}<WishEditor bind:wants={draft} {langs} id="{idp}-w" />{/if}
 				{#if wishError}<p class="form-error" role="alert">{wishError}</p>{/if}
 				<div class="row actions">
-					<button class="btn btn-quiet" type="button" onclick={() => (editing = false)}>Cancel</button>
-					<button class="btn btn-red" type="submit" disabled={wishBusy} aria-busy={wishBusy}>Save languages</button>
+					<Button variant="plain" onclick={() => (editing = false)}>Cancel</Button>
+					<Button variant="primary" type="submit" disabled={wishBusy} busy={wishBusy}>Save languages</Button>
 				</div>
 			</form>
 		{/if}
@@ -323,8 +324,8 @@
 										</span>
 										{#if ours(s)}
 											<span class="row sub-actions">
-												<button class="btn btn-quiet btn-sm" type="button" onclick={() => openSync(s)} aria-label="Sync fix for {langName(s.language, langs)}" data-testid="subtitle-sync">Sync fix</button>
-												<button class="btn btn-quiet btn-sm" type="button" onclick={() => openTurn(s)} aria-label="Turn down {langName(s.language, langs)}" data-testid="subtitle-turn-down">Turn down</button>
+												<Button variant="plain" size="sm" onclick={() => openSync(s)} aria-label="Sync fix for {langName(s.language, langs)}" data-testid="subtitle-sync">Sync fix</Button>
+												<Button variant="plain" size="sm" onclick={() => openTurn(s)} aria-label="Turn down {langName(s.language, langs)}" data-testid="subtitle-turn-down">Turn down</Button>
 											</span>
 										{/if}
 									</div>
@@ -337,9 +338,9 @@
 											<div class="field">
 												<label for="{idp}-off-{s.ID}">Shift (milliseconds; below zero is earlier)</label>
 												<div class="row">
-													<button class="btn btn-quiet btn-sm" type="button" onclick={() => (offset = Number(offset) - step)}>{step} ms earlier</button>
+													<Button variant="plain" size="sm" onclick={() => (offset = Number(offset) - step)}>{step} ms earlier</Button>
 													<input id="{idp}-off-{s.ID}" class="input narrow" type="number" min="-600000" max="600000" step="10" bind:value={offset} />
-													<button class="btn btn-quiet btn-sm" type="button" onclick={() => (offset = Number(offset) + step)}>{step} ms later</button>
+													<Button variant="plain" size="sm" onclick={() => (offset = Number(offset) + step)}>{step} ms later</Button>
 												</div>
 												<span class="hint" aria-live="polite">{offsetWords(Number(offset))}. At most 10 minutes either way.</span>
 											</div>
@@ -361,8 +362,8 @@
 											{/if}
 											{#if syncError}<p class="form-error" role="alert">{syncError}</p>{/if}
 											<div class="row actions">
-												<button class="btn btn-quiet" type="button" onclick={() => (syncing = 0)}>Cancel</button>
-												<button class="btn btn-red" type="submit" disabled={busy} aria-busy={busy}>Fix the timing</button>
+												<Button variant="plain" onclick={() => (syncing = 0)}>Cancel</Button>
+												<Button variant="primary" type="submit" disabled={busy} busy={busy}>Fix the timing</Button>
 											</div>
 										</form>
 									{/if}
@@ -375,8 +376,8 @@
 											</div>
 											{#if turnError}<p class="form-error" role="alert">{turnError}</p>{/if}
 											<div class="row actions">
-												<button class="btn btn-quiet" type="button" onclick={() => (turning = 0)}>Cancel</button>
-												<button class="btn btn-red" type="submit" disabled={busy} aria-busy={busy} data-testid="subtitle-turn-down-yes">Turn it down</button>
+												<Button variant="plain" onclick={() => (turning = 0)}>Cancel</Button>
+												<Button variant="primary" type="submit" disabled={busy} busy={busy} data-testid="subtitle-turn-down-yes">Turn it down</Button>
 											</div>
 										</form>
 									{/if}
@@ -392,9 +393,9 @@
 						</ul>
 					{/if}
 					<div class="row file-actions">
-						<button class="btn btn-ghost btn-sm" type="button" onclick={() => (choosing === f.file_id ? (choosing = 0) : openChoose(f.file_id))} aria-expanded={choosing === f.file_id} data-testid="subtitle-choose">
+						<Button size="sm" onclick={() => (choosing === f.file_id ? (choosing = 0) : openChoose(f.file_id))} aria-expanded={choosing === f.file_id} data-testid="subtitle-choose">
 							Choose a subtitle
-						</button>
+						</Button>
 					</div>
 					{#if choosing === f.file_id}
 						<div class="choices" aria-live="polite" data-testid="subtitle-choices">
@@ -424,7 +425,7 @@
 															<span class="xs muted">{c.site}{#if c.hearing_impaired} · hearing-impaired{/if}{#if c.forced} · forced{/if}{#if c.trusted} · trusted uploader{/if}{#if c.downloads} · {c.downloads} downloads{/if}</span>
 														</span>
 														<span class="chip {c.score.refused ? 'fail' : passes(c.score.total, passMark) ? 'ok' : 'wait'}" data-testid="subtitle-choice-score">{c.score.total}/100</span>
-														<button class="btn btn-quiet btn-sm" type="button" disabled={!!choosingKey} aria-busy={choosingKey === c.key} onclick={() => choose(f.file_id, c.site, c.key)} aria-label="Choose {c.release_names?.[0] ?? c.key} from {c.site}">Choose</button>
+														<Button variant="plain" size="sm" disabled={!!choosingKey} busy={choosingKey === c.key} onclick={() => choose(f.file_id, c.site, c.key)} aria-label="Choose {c.release_names?.[0] ?? c.key} from {c.site}">Choose</Button>
 													</div>
 													<ul class="reasons">
 														{#if c.score.refused}<li class="fail">Scores 0: {c.score.refused}</li>{/if}
@@ -452,11 +453,6 @@
 		justify-content: space-between;
 		align-items: center;
 		gap: var(--s-3);
-	}
-	.btn-sm {
-		min-height: var(--tap);
-		padding-inline: var(--s-3);
-		font-size: var(--text-xs);
 	}
 	.wish {
 		display: flex;
@@ -564,7 +560,7 @@
 	@media (max-width: 600px) {
 		.subs .card-head, .wish { align-items: flex-start; flex-direction: column; }
 		.sub-actions, .file-actions { width: 100%; }
-		.sub-actions :global(.btn), .file-actions :global(.btn) { min-height: var(--tap); }
+		.sub-actions :global(.ui-btn), .file-actions :global(.ui-btn) { min-height: var(--tap); }
 		.narrow { max-width: none; width: 100%; }
 	}
 </style>

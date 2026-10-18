@@ -33,9 +33,9 @@
 	i { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: var(--accent); transition: width var(--dur-slow) var(--ease-out), background var(--dur); }
 	i.info { background: var(--info); }
 	i.ok { background: var(--ok); }
-	.tick { width: 18px; height: 18px; display: grid; place-items: center; border-radius: 50%; background: var(--ok); color: #fff; animation: pulse var(--dur-slow) var(--ease-out) 1; }
+	.tick { width: 18px; height: 18px; display: grid; place-items: center; border-radius: 50%; background: var(--ok); color: var(--on-art); animation: pulse var(--dur-slow) var(--ease-out) 1; }
 	.sm .tick { width: 15px; height: 15px; }
 	.val { min-width: 3.2ch; text-align: right; color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
-	.art .val { color: #fff; }
+	.art .val { color: var(--on-art); }
 	@keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
 </style>

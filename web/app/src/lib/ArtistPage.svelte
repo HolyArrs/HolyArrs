@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '#lib/ui/Button.svelte';
 	import { peopleNames } from './plain.ts';
 	import { to } from './paths.ts';
 	// One artist: its albums with their kinds, dates and state, Keep up to
@@ -376,7 +377,7 @@
 			<section class="card" aria-labelledby="h-artist-history" data-testid="title-history">
 				<div class="card-head">
 					<h2 id="h-artist-history" class="h2">History</h2>
-					{#if historyTotal > 0}<a class="btn btn-quiet" href={to(`/downloads/history?title=${title.id}`)}>All {historyTotal} rows</a>{/if}
+					{#if historyTotal > 0}<Button variant="plain" href={to(`/downloads/history?title=${title.id}`)}>All {historyTotal} rows</Button>{/if}
 				</div>
 				{#if history.length === 0}
 					<p class="small muted">Nothing yet.</p>
@@ -427,9 +428,7 @@
 							<span class="chip {st.tone}" data-testid="album-state">{st.label}</span>
 							{#if staff}
 								<div class="album-actions">
-									<button class="btn btn-quiet sm" type="button" onclick={() => search(a)} disabled={busy === `s${a.id}`} aria-label="Search now for {a.name}" data-testid="album-search"
-										><Icon name="search" size={16} /><span class="album-action-label" aria-hidden="true">Search</span></button
-									>
+									<Button variant="plain" size="sm" icon="search" onclick={() => search(a)} disabled={busy === `s${a.id}`} aria-label="Search now for {a.name}" data-testid="album-search"><span class="album-action-label" aria-hidden="true">Search</span></Button>
 									<label class="switch" title={a.included ? '' : 'Not included by the album kinds'}>
 										<input type="checkbox" checked={a.keep_up_to_date} disabled={busy === `a${a.id}` || !a.included} onchange={(e) => setAlbum(a, e.currentTarget.checked)} />
 										<span class="sw" aria-hidden="true"></span>
@@ -463,7 +462,7 @@
 		<p class="small muted">The names now and the names they get from the artist, album and track patterns. Nothing changes until you press Rename.</p>
 		<RenamePreview titleId={title.id} onDone={() => void reload()} />
 		<div class="row modal-actions">
-			<button class="btn btn-quiet" type="button" onclick={() => renameDialog?.close()}>Close</button>
+			<Button variant="plain" onclick={() => renameDialog?.close()}>Close</Button>
 		</div>
 	{/if}
 </dialog>
@@ -504,8 +503,8 @@
 		<p class="hint" style="margin-top: var(--s-3)">Albums the new kinds leave out stay listed under Not included; their files stay where they are.</p>
 		{#if editError}<p class="form-error" role="alert">{editError}</p>{/if}
 		<div class="row modal-actions">
-			<button class="btn btn-quiet" type="button" onclick={() => editDialog?.close()}>Cancel</button>
-			<button class="btn btn-red" type="submit" disabled={saving || !eTypes.length || !eExtras.length || !eStatuses.length} aria-busy={saving}>Save</button>
+			<Button variant="plain" onclick={() => editDialog?.close()}>Cancel</Button>
+			<Button variant="primary" type="submit" disabled={saving || !eTypes.length || !eExtras.length || !eStatuses.length} busy={saving}>Save</Button>
 		</div>
 	</form>
 </dialog>
@@ -648,13 +647,13 @@
 			grid-template-columns: repeat(2, minmax(0, 1fr));
 			justify-self: stretch;
 		}
-		.album-actions .btn,
+		.album-actions :global(.ui-btn),
 		.album-actions .switch {
 			width: 100%;
 			min-width: 44px;
 			min-height: 44px;
 		}
-		.album-actions .btn {
+		.album-actions :global(.ui-btn) {
 			justify-content: center;
 			gap: var(--s-2);
 			padding: 0 var(--s-3);

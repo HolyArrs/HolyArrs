@@ -15,8 +15,8 @@
 <style>
 	.ui-toast { pointer-events: auto; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 6px 6px 6px 12px; border-radius: 14px; background: var(--surface-1); color: var(--text); box-shadow: var(--shadow-lift), 0 0 0 1px var(--line); font: var(--t-callout); font-weight: 500; }
 	.ic { width: 24px; height: 24px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--surface-3); color: var(--text); }
-	.ok .ic { background: var(--ok); color: #fff; }
-	.fail .ic { background: var(--fail); color: #fff; }
+	.ok .ic { background: var(--ok); color: var(--on-art); }
+	.fail .ic { background: var(--fail); color: var(--on-art); }
 	.grow { flex: 1; min-width: 0; }
 	.x { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 50%; color: var(--text-muted); }
 	.x:hover { background: var(--surface-3); color: var(--text); }

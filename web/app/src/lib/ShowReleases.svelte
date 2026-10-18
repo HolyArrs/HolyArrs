@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '#lib/ui/Button.svelte';
 	// Choose a release for an episode or a season of a show: every Release
 	// the newest search found, with its verdict and plain reasons; choose one
 	// (a season pack fills every episode it holds) or turn it down.
@@ -146,7 +147,7 @@
 <section class="card rel-card" aria-labelledby="h-show-rel" data-testid="show-releases">
 	<div class="card-head">
 		<h2 id="h-show-rel" class="h2">Choose a release: {scope.label}</h2>
-		<button class="btn btn-quiet" type="button" onclick={onclose}>Close</button>
+		<Button variant="plain" onclick={onclose}>Close</Button>
 	</div>
 	{#if total}<p class="xs muted">{total} found in the last search</p>{/if}
 	<p class="small muted" aria-live="polite" data-testid="search-running">
@@ -179,9 +180,9 @@
 					{/if}
 					{#if r.state !== 'chosen'}
 						<div class="row rel-actions">
-							<button class="btn btn-ghost" type="button" onclick={() => askChoose(r)} aria-label="Choose {r.name}">Choose</button>
+							<Button onclick={() => askChoose(r)} aria-label="Choose {r.name}">Choose</Button>
 							{#if r.state !== 'turned_down'}
-								<button class="btn btn-quiet" type="button" onclick={() => askTurnDown(r)} aria-label="Turn down {r.name}">Turn down</button>
+								<Button variant="plain" onclick={() => askTurnDown(r)} aria-label="Turn down {r.name}">Turn down</Button>
 							{/if}
 						</div>
 					{/if}
@@ -190,9 +191,9 @@
 		</ul>
 		{#if pages.prev !== null || pages.next !== null}
 			<nav class="row pager" aria-label="Release pages">
-				<button class="btn btn-quiet" type="button" disabled={pages.prev === null} onclick={() => go(pages.prev)}>Back</button>
+				<Button variant="plain" disabled={pages.prev === null} onclick={() => go(pages.prev)}>Back</Button>
 				<span class="xs muted">{pages.from} to {pages.to} of {total}</span>
-				<button class="btn btn-quiet" type="button" disabled={pages.next === null} onclick={() => go(pages.next)}>More</button>
+				<Button variant="plain" disabled={pages.next === null} onclick={() => go(pages.next)}>More</Button>
 			</nav>
 		{/if}
 	{/if}
@@ -212,8 +213,8 @@
 		{/if}
 		{#if chooseError}<p class="form-error" role="alert">{chooseError}</p>{/if}
 		<div class="row modal-actions">
-			<button class="btn btn-quiet" type="button" onclick={() => chooseDialog?.close()}>Cancel</button>
-			<button class="btn btn-red" type="button" onclick={choose} disabled={choosing} aria-busy={choosing}>{needsForce ? 'Choose anyway' : 'Choose'}</button>
+			<Button variant="plain" onclick={() => chooseDialog?.close()}>Cancel</Button>
+			<Button variant="primary" onclick={choose} disabled={choosing} busy={choosing}>{needsForce ? 'Choose anyway' : 'Choose'}</Button>
 		</div>
 	{/if}
 </dialog>
@@ -234,8 +235,8 @@
 			</div>
 			{#if chooseError}<p class="form-error" role="alert">{chooseError}</p>{/if}
 			<div class="row modal-actions">
-				<button class="btn btn-quiet" type="button" onclick={() => turnDialog?.close()}>Cancel</button>
-				<button class="btn btn-red" type="submit" disabled={choosing} aria-busy={choosing}>Turn down</button>
+				<Button variant="plain" onclick={() => turnDialog?.close()}>Cancel</Button>
+				<Button variant="primary" type="submit" disabled={choosing} busy={choosing}>Turn down</Button>
 			</div>
 		</form>
 	{/if}
@@ -293,7 +294,7 @@
 		margin-top: var(--s-2);
 		gap: var(--s-2);
 	}
-	.rel-actions :global(.btn) { min-height: 36px; }
+	.rel-actions :global(.ui-btn) { min-height: 36px; }
 	.pager {
 		justify-content: space-between;
 		margin-top: var(--s-3);

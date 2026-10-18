@@ -421,7 +421,7 @@
 	.part-off p { margin-top: var(--s-3); }
 	.who { display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0; color: var(--text-muted); }
 	.who.only { justify-content: center; }
-	.avatar { width: 32px; height: 32px; flex: none; display: grid; place-items: center; border-radius: 50%; background: linear-gradient(150deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #000)); color: #fff; font: 600 13px/1 var(--font-ui); }
+	.avatar { width: 32px; height: 32px; flex: none; display: grid; place-items: center; border-radius: 50%; background: linear-gradient(150deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #000)); color: var(--text-on-red); font: 600 13px/1 var(--font-ui); }
 	.who-text { flex: 1; min-width: 0; display: flex; flex-direction: column; text-align: left; }
 	.who-name { color: var(--text); font: var(--t-subhead); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.who-role { font: var(--t-footnote); color: var(--text-muted); }

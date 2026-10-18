@@ -544,7 +544,7 @@
 					<div class="tp-head">
 						<h2 id="h-versions" class="tp-h2">Versions and files</h2>
 						{#if session.can('manage_library')}
-							<button class="btn btn-ghost" type="button" onclick={openVersion}><Icon name="plus" size={16} /> Add a Version</button>
+							<Button icon="plus" onclick={openVersion}>Add a Version</Button>
 						{/if}
 					</div>
 					<ul class="tp-list">
@@ -568,7 +568,7 @@
 								<div class="tp-row-end">
 									{#if s}<span class="chip {tone(s.state)}">{s.state_label}</span>{/if}
 									{#if session.can('manage_library') && !v.main}
-										<button class="btn btn-quiet" type="button" onclick={() => removeVersion(v)}>Remove {v.label}</button>
+										<Button variant="plain" onclick={() => removeVersion(v)}>Remove {v.label}</Button>
 									{/if}
 								</div>
 							</li>
@@ -627,9 +627,9 @@
 										{/if}
 										{#if r.state !== 'chosen'}
 											<div class="row rel-actions">
-												<button class="btn btn-ghost" type="button" onclick={() => askChoose(r)} aria-label="Choose {r.name}">Choose</button>
+												<Button onclick={() => askChoose(r)} aria-label="Choose {r.name}">Choose</Button>
 												{#if r.state !== 'turned_down'}
-													<button class="btn btn-quiet" type="button" onclick={() => askTurnDown(r)} aria-label="Turn down {r.name}">Turn down</button>
+													<Button variant="plain" onclick={() => askTurnDown(r)} aria-label="Turn down {r.name}">Turn down</Button>
 												{/if}
 											</div>
 										{/if}
@@ -638,9 +638,9 @@
 							</ul>
 							{#if pages.prev !== null || pages.next !== null}
 								<nav class="row pager" aria-label="Release pages">
-									<button class="btn btn-quiet" type="button" disabled={pages.prev === null} onclick={() => goPage(pages.prev)}>Back</button>
+									<Button variant="plain" disabled={pages.prev === null} onclick={() => goPage(pages.prev)}>Back</Button>
 									<span class="xs muted">{pages.from} to {pages.to} of {relTotal}</span>
-									<button class="btn btn-quiet" type="button" disabled={pages.next === null} onclick={() => goPage(pages.next)}>More</button>
+									<Button variant="plain" disabled={pages.next === null} onclick={() => goPage(pages.next)}>More</Button>
 								</nav>
 							{/if}
 						{/if}
@@ -736,8 +736,8 @@
 		{/if}
 		{#if chooseError}<p class="form-error" role="alert">{chooseError}</p>{/if}
 		<div class="row modal-actions">
-			<button class="btn btn-quiet" type="button" onclick={() => chooseDialog?.close()}>Cancel</button>
-			<button class="btn btn-red" type="button" onclick={choose} disabled={choosing} aria-busy={choosing}>{needsForce ? 'Choose anyway' : 'Choose'}</button>
+			<Button variant="plain" onclick={() => chooseDialog?.close()}>Cancel</Button>
+			<Button variant="primary" onclick={choose} disabled={choosing} busy={choosing}>{needsForce ? 'Choose anyway' : 'Choose'}</Button>
 		</div>
 	{/if}
 </dialog>
@@ -754,8 +754,8 @@
 			</div>
 			{#if chooseError}<p class="form-error" role="alert">{chooseError}</p>{/if}
 			<div class="row modal-actions">
-				<button class="btn btn-quiet" type="button" onclick={() => turnDialog?.close()}>Cancel</button>
-				<button class="btn btn-red" type="submit" disabled={choosing} aria-busy={choosing}>Turn down</button>
+				<Button variant="plain" onclick={() => turnDialog?.close()}>Cancel</Button>
+				<Button variant="primary" type="submit" disabled={choosing} busy={choosing}>Turn down</Button>
 			</div>
 		</form>
 	{/if}
@@ -788,8 +788,8 @@
 			</label>
 			{#if editError}<p class="form-error" role="alert">{editError}</p>{/if}
 			<div class="row modal-actions">
-				<button class="btn btn-quiet" type="button" onclick={() => editDialog?.close()}>Cancel</button>
-				<button class="btn btn-red" type="submit" disabled={saving} aria-busy={saving}>Save</button>
+				<Button variant="plain" onclick={() => editDialog?.close()}>Cancel</Button>
+				<Button variant="primary" type="submit" disabled={saving} busy={saving}>Save</Button>
 			</div>
 		</form>
 	{/if}
@@ -801,7 +801,7 @@
 		<p class="small muted">The names now and the names they get from the naming pattern. Nothing changes until you press Rename.</p>
 		<RenamePreview titleId={id} onDone={() => load('title')} />
 		<div class="row modal-actions">
-			<button class="btn btn-quiet" type="button" onclick={() => renameDialog?.close()}>Close</button>
+			<Button variant="plain" onclick={() => renameDialog?.close()}>Close</Button>
 		</div>
 	{/if}
 </dialog>
@@ -849,8 +849,8 @@
 		</section>
 		{#if delError}<p class="form-error" role="alert">{delError}</p>{/if}
 		<div class="row modal-actions">
-			<button class="btn btn-quiet" type="button" onclick={() => deleteDialog?.close()}>Cancel</button>
-			<button class="btn btn-danger" type="button" onclick={doDelete} disabled={delBusy || !delPlan} aria-busy={delBusy}>Delete movie</button>
+			<Button variant="plain" onclick={() => deleteDialog?.close()}>Cancel</Button>
+			<Button variant="destructive" onclick={doDelete} disabled={delBusy || !delPlan} busy={delBusy}>Delete movie</Button>
 		</div>
 	{/if}
 </dialog>
@@ -893,8 +893,8 @@
 			</div>
 			{#if vError}<p class="form-error" role="alert">{vError}</p>{/if}
 			<div class="row modal-actions">
-				<button class="btn btn-quiet" type="button" onclick={() => versionDialog?.close()}>Cancel</button>
-				<button class="btn btn-red" type="submit" disabled={vBusy || !vLabel.trim()} aria-busy={vBusy}>Add Version</button>
+				<Button variant="plain" onclick={() => versionDialog?.close()}>Cancel</Button>
+				<Button variant="primary" type="submit" disabled={vBusy || !vLabel.trim()} busy={vBusy}>Add Version</Button>
 			</div>
 		</form>
 	{/if}

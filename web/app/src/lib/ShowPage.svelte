@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '#lib/ui/Button.svelte';
 	import { peopleNames } from './plain.ts';
 	import { to } from './paths.ts';
 	// One show: its seasons and episodes, Keep up to date per show, season
@@ -416,9 +417,9 @@
 			<p class="xs muted" data-testid="season-line">{seasonLine(s)}{s.dropped ? ' · no longer listed' : ''}</p>
 			{#if staff}
 				<div class="row season-actions">
-					<button class="btn btn-ghost" type="button" onclick={() => searchSeason(s.number)} disabled={searching === `s${s.number}`} aria-label="Search now: {seasonName(s.number)}" data-testid="search-season"><Icon name="search" size={16} /> Search now</button>
-					<button class="btn btn-quiet" type="button" onclick={() => searchSeason(s.number, true)} disabled={searching === `s${s.number}l`} aria-label="Choose a release for {seasonName(s.number)}" data-testid="choose-season">Choose a release</button>
-					<button class="btn btn-quiet" type="button" onclick={() => deleter?.open({ season: s.number, label: seasonName(s.number) })} aria-label="Delete {seasonName(s.number)}" data-testid="delete-season">Delete season</button>
+					<Button icon="search" onclick={() => searchSeason(s.number)} disabled={searching === `s${s.number}`} aria-label="Search now: {seasonName(s.number)}" data-testid="search-season">Search now</Button>
+					<Button variant="plain" onclick={() => searchSeason(s.number, true)} disabled={searching === `s${s.number}l`} aria-label="Choose a release for {seasonName(s.number)}" data-testid="choose-season">Choose a release</Button>
+					<Button variant="plain" onclick={() => deleter?.open({ season: s.number, label: seasonName(s.number) })} aria-label="Delete {seasonName(s.number)}" data-testid="delete-season">Delete season</Button>
 					<label class="switch">
 						<input type="checkbox" checked={s.keep_up_to_date} disabled={busy === `s${s.number}`} onchange={(e) => setSeason(s.number, e.currentTarget.checked)} />
 						<span class="sw" aria-hidden="true"></span>
@@ -526,7 +527,7 @@
 			<section class="card" aria-labelledby="h-show-history" data-testid="title-history">
 				<div class="card-head">
 					<h2 id="h-show-history" class="h2">History</h2>
-					{#if historyTotal > 0}<a class="btn btn-quiet" href={to(`/downloads/history?title=${title.id}`)}>All {historyTotal} rows</a>{/if}
+					{#if historyTotal > 0}<Button variant="plain" href={to(`/downloads/history?title=${title.id}`)}>All {historyTotal} rows</Button>{/if}
 				</div>
 				{#if history.length === 0}
 					<p class="small muted">Nothing yet.</p>
@@ -557,7 +558,7 @@
 	{#if subEpisode}
 		<SubtitlePanel titleId={title.id} movie={false} itemId={subEpisode.id} label={episodeLabel(subEpisode, order)} />
 		<div class="row modal-actions">
-			<button class="btn btn-quiet" type="button" onclick={() => subDialog?.close()}>Close</button>
+			<Button variant="plain" onclick={() => subDialog?.close()}>Close</Button>
 		</div>
 	{/if}
 </dialog>
@@ -568,7 +569,7 @@
 		<p class="small muted">The names now and the names they get from the show, season and episode patterns. Nothing changes until you press Rename.</p>
 		<RenamePreview titleId={title.id} onDone={() => void reload()} />
 		<div class="row modal-actions">
-			<button class="btn btn-quiet" type="button" onclick={() => renameDialog?.close()}>Close</button>
+			<Button variant="plain" onclick={() => renameDialog?.close()}>Close</Button>
 		</div>
 	{/if}
 </dialog>
@@ -605,8 +606,8 @@
 		</div>
 		{#if editError}<p class="form-error" role="alert">{editError}</p>{/if}
 		<div class="row modal-actions">
-			<button class="btn btn-quiet" type="button" onclick={() => editDialog?.close()}>Cancel</button>
-			<button class="btn btn-red" type="submit" disabled={saving} aria-busy={saving}>Save</button>
+			<Button variant="plain" onclick={() => editDialog?.close()}>Cancel</Button>
+			<Button variant="primary" type="submit" disabled={saving} busy={saving}>Save</Button>
 		</div>
 	</form>
 </dialog>
@@ -618,8 +619,8 @@
 	.episode { min-width: 0; }
 	@media (max-width: 600px) { .episodes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 10px; } }
 	.ep-why { margin-top: 2px; }
-	.ep-menu :global(.ui-pop > .trigger) { background: rgb(0 0 0 / 45%); color: #fff; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-	.ep-menu :global(.ui-pop > .trigger:hover), .ep-menu :global(.ui-pop > .trigger[aria-expanded='true']) { background: rgb(0 0 0 / 65%); color: #fff; }
+	.ep-menu :global(.ui-pop > .trigger) { background: var(--on-art-scrim-mid); color: var(--on-art); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+	.ep-menu :global(.ui-pop > .trigger:hover), .ep-menu :global(.ui-pop > .trigger[aria-expanded='true']) { background: rgb(0 0 0 / 65%); color: var(--on-art); }
 	.modal { width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; padding: var(--s-6); border: 0; border-radius: var(--r-modal); background: var(--surface-1); color: var(--text); box-shadow: var(--shadow-modal); }
 	.modal.wide { width: min(640px, calc(100vw - 32px)); }
 	.modal::backdrop { background: var(--scrim); }

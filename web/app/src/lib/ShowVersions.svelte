@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '#lib/ui/Button.svelte';
 	// The Versions card of a show (4.8.11): every wanted copy, such as HD and
 	// 4K, with its Pick rules and folder; staff add, change and remove them.
 	import { api, message } from './api.ts';
@@ -101,7 +102,7 @@
 	<div class="card-head">
 		<h2 id="h-show-versions" class="h2">Versions</h2>
 		{#if staff}
-			<button class="btn btn-ghost" type="button" onclick={openAdd}><Icon name="plus" size={16} /> Add a Version</button>
+			<Button icon="plus" onclick={openAdd}>Add a Version</Button>
 		{/if}
 	</div>
 	<ul class="versions">
@@ -113,9 +114,9 @@
 				{#if staff}
 					<div class="xs muted path">In {v.folder_path}</div>
 					<div class="row">
-						<button class="btn btn-quiet" type="button" onclick={() => openEdit(v)} aria-label="Change the {v.label} Version">Change</button>
+						<Button variant="plain" onclick={() => openEdit(v)} aria-label="Change the {v.label} Version">Change</Button>
 						{#if !v.main}
-							<button class="btn btn-quiet" type="button" onclick={() => remove(v)}>Remove {v.label}</button>
+							<Button variant="plain" onclick={() => remove(v)}>Remove {v.label}</Button>
 						{/if}
 					</div>
 				{/if}
@@ -161,8 +162,8 @@
 		</label>
 		{#if vError}<p class="form-error" role="alert">{vError}</p>{/if}
 		<div class="row modal-actions">
-			<button class="btn btn-quiet" type="button" onclick={() => dialog?.close()}>Cancel</button>
-			<button class="btn btn-red" type="submit" disabled={vBusy || !vLabel.trim()} aria-busy={vBusy}>{editing ? 'Save' : 'Add Version'}</button>
+			<Button variant="plain" onclick={() => dialog?.close()}>Cancel</Button>
+			<Button variant="primary" type="submit" disabled={vBusy || !vLabel.trim()} busy={vBusy}>{editing ? 'Save' : 'Add Version'}</Button>
 		</div>
 	</form>
 </dialog>

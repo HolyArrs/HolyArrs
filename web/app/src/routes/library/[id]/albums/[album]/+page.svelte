@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Button from '#lib/ui/Button.svelte';
+	import IconButton from '#lib/ui/IconButton.svelte';
 	import { to } from '#lib/paths.ts';
 	// One album: its tracks with their state, every Pressing MusicBrainz
 	// lists, its History, and for the staff Keep up to date, which Pressing
@@ -142,7 +144,7 @@
 	<h1 class="sr-only">Album</h1>
 	<EmptyState icon="music" title="This album is not in your Library">
 		<p>MusicBrainz may no longer list it.</p>
-		{#snippet actions()}<a class="btn btn-ghost" href={to(`/library/${titleId}`)}>Back to the artist</a>{/snippet}
+		{#snippet actions()}<Button href={to(`/library/${titleId}`)}>Back to the artist</Button>{/snippet}
 	</EmptyState>
 {:else if error}
 	<p class="notice bad" role="alert">{error}</p>
@@ -164,18 +166,12 @@
 		{#if staff}
 			<div class="head-actions">
 				<div class="row">
-					<button class="btn btn-red" type="button" onclick={() => search(true)} disabled={busy === 'search'} aria-busy={busy === 'search'} data-testid="album-search-now"
-						><Icon name="search" size={16} /> {album.state === 'better_wanted' ? 'Find a better copy' : 'Search now'}</button
-					>
-					<button class="btn btn-ghost" type="button" onclick={() => search(false)} disabled={busy === 'list'} aria-busy={busy === 'list'} data-testid="album-choose"
-						>Choose a release</button
-					>
+					<Button variant="primary" icon="search" onclick={() => search(true)} disabled={busy === 'search'} busy={busy === 'search'} data-testid="album-search-now">{album.state === 'better_wanted' ? 'Find a better copy' : 'Search now'}</Button>
+					<Button onclick={() => search(false)} disabled={busy === 'list'} busy={busy === 'list'} data-testid="album-choose">Choose a release</Button>
 				</div>
 				<div class="row">
-					<button class="btn btn-ghost" type="button" onclick={openRename} data-testid="rename-album">Rename files</button>
-					<button class="btn btn-quiet" type="button" onclick={() => deleter?.open({ albumId, label: album?.name ?? 'Album' })} data-testid="delete-album"
-						><Icon name="trash" size={16} /> Delete album</button
-					>
+					<Button onclick={openRename} data-testid="rename-album">Rename files</Button>
+					<Button variant="plain" icon="trash" onclick={() => deleter?.open({ albumId, label: album?.name ?? 'Album' })} data-testid="delete-album">Delete album</Button>
 				</div>
 				<label class="switch">
 					<input type="checkbox" checked={album.keep_up_to_date} disabled={busy === 'keep' || !album.included} onchange={(e) => setKeep(e.currentTarget.checked)} />
@@ -206,13 +202,7 @@
 								<span class="chip {tone(sl.state)}" data-testid="track-state">{t.slots.length > 1 ? `${sl.version}: ` : ''}{sl.state_label}</span>
 							{/each}
 							{#if staff}
-								<button
-									class="btn btn-quiet icon-btn"
-									type="button"
-									onclick={() => deleter?.open({ trackIds: [t.id], label: trackLabel(t) })}
-									aria-label="Delete {trackLabel(t)}"
-									data-testid="delete-track"><Icon name="trash" size={16} /></button
-								>
+								<IconButton icon="trash" size="sm" label="Delete {trackLabel(t)}" onclick={() => deleter?.open({ trackIds: [t.id], label: trackLabel(t) })} data-testid="delete-track" />
 							{/if}
 						</li>
 					{/each}
@@ -238,7 +228,7 @@
 								<option value={p.id}>{pressingLabel(p)}</option>
 							{/each}
 						</select>
-						<button class="btn btn-ghost" type="submit" disabled={busy === 'pressing' || chosen === current?.id} aria-busy={busy === 'pressing'}>Use this Pressing</button>
+						<Button type="submit" disabled={busy === 'pressing' || chosen === current?.id} busy={busy === 'pressing'}>Use this Pressing</Button>
 					</form>
 					<p class="hint">Tracks on both Pressings keep their files; tracks the new one lacks are removed unless a file holds them.</p>
 				{/if}
@@ -259,7 +249,7 @@
 		<section class="card hist" aria-labelledby="h-album-history" data-testid="album-history">
 			<div class="row between">
 				<h2 id="h-album-history" class="h2">History</h2>
-				{#if historyTotal > 0}<a class="btn btn-quiet" href={to(`/downloads/history?title=${titleId}`)}>All rows for the artist</a>{/if}
+				{#if historyTotal > 0}<Button variant="plain" href={to(`/downloads/history?title=${titleId}`)}>All rows for the artist</Button>{/if}
 			</div>
 			{#if history.length === 0}
 				<p class="small muted">Nothing has happened to this album yet.</p>
@@ -284,7 +274,7 @@
 				<p class="small muted">The names now and the names they get from the album and track patterns. Nothing changes until you press Rename.</p>
 				<RenamePreview {titleId} {albumId} onDone={() => void afterDelete()} />
 				<div class="row modal-actions">
-					<button class="btn btn-quiet" type="button" onclick={() => renameDialog?.close()}>Close</button>
+					<Button variant="plain" onclick={() => renameDialog?.close()}>Close</Button>
 				</div>
 			{/if}
 		</dialog>

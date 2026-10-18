@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '#lib/ui/Button.svelte';
 	// Delete a show, a season or one episode (5.2.3), or an artist, an album
 	// or some tracks (4.15.4). The plan below is what the delete does: it is
 	// asked again whenever a choice changes, and the delete carries out that
@@ -114,10 +115,10 @@
 	</section>
 	{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 	<div class="row modal-actions">
-		<button class="btn btn-quiet" type="button" onclick={() => dialog?.close()}>Cancel</button>
-		<button class="btn btn-danger" type="button" onclick={go} disabled={busy || !plan} aria-busy={busy}>
+		<Button variant="plain" onclick={() => dialog?.close()}>Cancel</Button>
+		<Button variant="destructive" onclick={go} disabled={busy || !plan} busy={busy}>
 			{whole ? `Delete ${kind}` : 'Delete ' + (scope.label || (kind === 'artist' ? 'these tracks' : 'these episodes'))}
-		</button>
+		</Button>
 	</div>
 </dialog>
 

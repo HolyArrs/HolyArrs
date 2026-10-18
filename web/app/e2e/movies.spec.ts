@@ -95,7 +95,9 @@ test('Library filters, find by name, posters and list', async () => {
 	await page.getByRole('radio', { name: 'List', exact: true }).click();
 	await expect(page.getByTestId('library-row')).toHaveCount(4);
 	await page.reload();
-	await expect(page.locator('.list-table')).toBeVisible(); // remembered
+	// remembered
+	await expect(page.getByRole('radio', { name: 'List', exact: true })).toHaveAttribute('aria-checked', 'true');
+	await expect(page.getByTestId('library-row')).toHaveCount(4);
 	await page.getByRole('radio', { name: 'Posters' }).click();
 	await expect(grid).toHaveCount(4);
 });
