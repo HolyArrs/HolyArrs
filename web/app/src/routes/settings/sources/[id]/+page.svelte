@@ -118,7 +118,7 @@
 		{#if recent.length === 0}
 			<p class="small muted">No calls yet. Test the Source from the Sources page.</p>
 		{:else}
-			<div class="table-scroll">
+			<div class="table-scroll" tabindex="0" role="region" aria-label="Recent calls">
 				<table class="calls-table">
 					<thead><tr><th>When</th><th>What</th><th>Result</th><th>Time</th></tr></thead>
 					<tbody>

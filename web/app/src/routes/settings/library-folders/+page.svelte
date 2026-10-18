@@ -173,9 +173,9 @@
 					</div>
 				</div>
 				<div class="acts">
-					<IconButton icon="refresh" label="Check {f.path} again" type="button" title="Check again" disabled={busyId === f.id} onclick={() => recheck(f)} />
+					<IconButton icon="refresh" label="Check {f.path} again" type="button" tooltip={false} disabled={busyId === f.id} onclick={() => recheck(f)} />
 					<Button variant="plain" type="button" onclick={() => ((editing = f.id), (editLabel = f.label))}>Rename</Button>
-					<IconButton icon="trash" label="Remove {f.path}" type="button" title="Remove" disabled={busyId === f.id} onclick={() => remove(f)} />
+					<IconButton icon="trash" label="Remove {f.path}" type="button" tooltip={false} disabled={busyId === f.id} onclick={() => remove(f)} />
 				</div>
 			</li>
 		{/each}
