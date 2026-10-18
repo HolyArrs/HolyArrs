@@ -197,6 +197,8 @@ type Item struct {
 	DroppedAt *time.Time        `db:"dropped_at"`
 	// Tracks: the length in milliseconds.
 	LengthMS *int `db:"length_ms"`
+	// Episodes: the still picture URL from the metadata source.
+	Still string `db:"still"`
 }
 
 // Version is one wanted copy of a Title, such as "HD" or "4K".

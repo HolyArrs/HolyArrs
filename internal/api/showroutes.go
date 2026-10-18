@@ -246,22 +246,25 @@ type EpisodeSlot struct {
 
 // EpisodeView is one episode with its Slots.
 type EpisodeView struct {
-	ID           int64             `json:"id"`
-	Season       int               `json:"season"`
-	Episode      int               `json:"episode"`
-	Absolute     *int              `json:"absolute,omitempty"`
-	Name         string            `json:"name,omitempty"`
-	AirDate      *time.Time        `json:"air_date,omitempty"`
-	AirDay       string            `json:"air_day,omitempty"`
-	Runtime      *int              `json:"runtime,omitempty"`
-	KeepUpToDate bool              `json:"keep_up_to_date"`
-	Dropped      bool              `json:"dropped,omitempty"`
-	IDs          map[string]string `json:"ids"`
-	Slots        []EpisodeSlot     `json:"slots"`
+	ID       int64      `json:"id"`
+	Season   int        `json:"season"`
+	Episode  int        `json:"episode"`
+	Absolute *int       `json:"absolute,omitempty"`
+	Name     string     `json:"name,omitempty"`
+	AirDate  *time.Time `json:"air_date,omitempty"`
+	AirDay   string     `json:"air_day,omitempty"`
+	Runtime  *int       `json:"runtime,omitempty"`
+	// RuntimeMinutes repeats Runtime under the name title views use.
+	RuntimeMinutes *int              `json:"runtime_minutes,omitempty"`
+	Still          string            `json:"still,omitempty"` // still picture URL (w780)
+	KeepUpToDate   bool              `json:"keep_up_to_date"`
+	Dropped        bool              `json:"dropped,omitempty"`
+	IDs            map[string]string `json:"ids"`
+	Slots          []EpisodeSlot     `json:"slots"`
 }
 
 func episodeView(it domain.Item) EpisodeView {
-	v := EpisodeView{ID: it.ID, Absolute: it.Numbers.Absolute, AirDate: it.AirDate, Runtime: it.Runtime, KeepUpToDate: it.KeepUpToDate,
+	v := EpisodeView{ID: it.ID, Absolute: it.Numbers.Absolute, AirDate: it.AirDate, Runtime: it.Runtime, RuntimeMinutes: it.Runtime, Still: it.Still, KeepUpToDate: it.KeepUpToDate,
 		Dropped: it.DroppedAt != nil, IDs: it.SourceIDs, Slots: []EpisodeSlot{}}
 	if it.Numbers.Season != nil {
 		v.Season = *it.Numbers.Season

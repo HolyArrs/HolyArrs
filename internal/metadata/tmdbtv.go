@@ -157,6 +157,7 @@ func (t *TMDB) Show(ctx context.Context, id string) (Show, error) {
 				Name    string  `json:"name"`
 				AirDate *string `json:"air_date"`
 				Runtime int     `json:"runtime"`
+				Still   string  `json:"still_path"`
 			} `json:"episodes"`
 		}
 		if err := json.Unmarshal(b, &res); err != nil {
@@ -164,6 +165,9 @@ func (t *TMDB) Show(ctx context.Context, id string) (Show, error) {
 		}
 		for _, e := range res.Episodes {
 			ep := Episode{Season: e.Season, Number: e.Number, Name: e.Name, Runtime: e.Runtime, ID: strconv.FormatInt(e.ID, 10)}
+			if e.Still != "" {
+				ep.Still = t.images() + "/w780" + e.Still
+			}
 			if e.AirDate != nil {
 				ep.AirDate, ep.AirDay = dayEnd(*e.AirDate)
 			}

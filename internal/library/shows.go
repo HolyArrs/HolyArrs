@@ -494,7 +494,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Sho
 				ids[sh.Source] = e.ID
 			}
 			changed := !eqStr(it.Name, name) || !eqTime(it.AirDate, e.AirDate) || !eqStr(it.AirDay, day) || !eqInt(it.Runtime, runtime) ||
-				!eqInt(it.Numbers.Absolute, absolute) || it.DroppedAt != nil || len(ids) != len(it.SourceIDs) || ids[sh.Source] != it.SourceIDs[sh.Source] ||
+				!eqInt(it.Numbers.Absolute, absolute) || it.Still != e.Still || it.DroppedAt != nil || len(ids) != len(it.SourceIDs) || ids[sh.Source] != it.SourceIDs[sh.Source] ||
 				it.PartID == nil || *it.PartID != p.ID || *it.Numbers.Season != e.Season || *it.Numbers.Episode != e.Number
 			if !changed {
 				continue
@@ -502,6 +502,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Sho
 			season, number := e.Season, e.Number
 			it.Numbers.Season, it.Numbers.Episode = &season, &number
 			it.Name, it.AirDate, it.AirDay, it.Runtime, it.Numbers.Absolute, it.DroppedAt, it.SourceIDs, it.PartID = name, e.AirDate, day, runtime, absolute, nil, ids, &p.ID
+			it.Still = e.Still
 			if err := store.Update(tx, "items", it, by); err != nil {
 				return out, err
 			}
@@ -514,7 +515,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Sho
 			keep = false // future: only episodes still to air
 		}
 		it := &domain.Item{TitleID: t.ID, PartID: &p.ID, Kind: "episode", Numbers: domain.Numbers{Season: &season, Episode: &number, Absolute: absolute},
-			Name: name, AirDate: e.AirDate, AirDay: day, Runtime: runtime, KeepUpToDate: keep, SourceIDs: map[string]string{}}
+			Name: name, AirDate: e.AirDate, AirDay: day, Runtime: runtime, KeepUpToDate: keep, SourceIDs: map[string]string{}, Still: e.Still}
 		if e.ID != "" {
 			it.SourceIDs[sh.Source] = e.ID
 		}

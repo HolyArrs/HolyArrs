@@ -67,7 +67,8 @@ type Episode struct {
 	AirDate  *time.Time `json:"air_date,omitempty"`
 	AirDay   string     `json:"air_day,omitempty"`
 	Runtime  int        `json:"runtime,omitempty"`
-	ID       string     `json:"id,omitempty"` // the source's episode id
+	ID       string     `json:"id,omitempty"`    // the source's episode id
+	Still    string     `json:"still,omitempty"` // still picture URL (w780), "" when none
 }
 
 // ShowProvider finds shows. Show takes "<kind>:<id>": the source's own id
