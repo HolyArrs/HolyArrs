@@ -314,3 +314,46 @@ Restore, shut down and safe mode are advanced and also risky. They live in Dange
 - **Sessions in Sign-in and security.** No setting covers all sessions. People sign out their own devices in My account, and admins see each person's devices in Users and roles. The search finds both.
 - **Reset in Danger zone.** HolyArrs has no reset action in the app; the owner reset is a command-line tool. Danger zone holds Restart, Restart in safe mode and Shut down.
 - **Editing Pick rules.** The app can only list them (`GET /api/v1/pick-rules`), so the new page lists them and says where each one is used.
+
+## 4. Before and after (counted after the move)
+
+A card is a SettingsCard or a card section. Settings are fields; actions and read-only facts are not counted.
+
+| | Before | After |
+|---|---|---|
+| Groups | 4, plus Appearance on the home | 7, plus My account |
+| Pages | 22 | 26 (new: Appearance, Pick rules, Health checks, Danger zone) |
+| Cards | about 70 | 85 (big forms are split into cards with a heading and a hint) |
+| Settings behind Advanced | 0 | about 60 |
+
+Pages, cards and settings per group, after the move:
+
+| Group | Pages | Cards | Settings |
+|---|---|---|---|
+| General | 4 | 16 | Theme, plus one interval per timed job |
+| Library | 6 | 19 | 79 |
+| Getting copies | 4 | 13 | 58 |
+| Wishlist and people | 2 | 5 | 19 |
+| Sign-in and security | 1 | 6 | 11 |
+| Linked apps | 4 | 12 | 38 |
+| Maintenance | 4 | 7 | 9 |
+| My account | 1 | 7 | 11 |
+
+The same settings per group before the move: Library 95, Linked apps 79, Access 31, System 21, and the home 1 (Theme).
+
+**Clicks from Settings home to the 10 most-used settings.** Each search result goes straight to its field.
+
+| Setting | Before | After (browse) | After (search) |
+|---|---|---|---|
+| Invite someone | 1 | 1 | type + 1 |
+| Weekly ask limits | 1 | 1 | type + 1 |
+| Add a Library folder | 2 | 2 | type + 1 |
+| Keep deleted files for | 1, then scroll past three cards | 1 | type + 1, lands on the field |
+| Movies to search each night | 1 | 1 | type + 1 |
+| Look for better subtitles | 1, then scroll | 1 | type + 1 |
+| Add a Source | 2 | 2 | type + 1 |
+| Add a Downloader | 2 | 2 | type + 1 |
+| How often backups are made | 1 | 1 | type + 1 |
+| Theme | 0 (on the home) | 1 | type + 1 |
+
+Advanced settings, such as feed check minutes or free space, take one more click (Advanced) when browsing. From search they still take type + 1, because the link opens Advanced by itself.
