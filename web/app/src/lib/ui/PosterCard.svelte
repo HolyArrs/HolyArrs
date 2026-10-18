@@ -3,6 +3,7 @@
 	import Badge from './Badge.svelte';
 	import StatusPill, { type StatusKind } from './StatusPill.svelte';
 	import ProgressBar from './ProgressBar.svelte';
+	import Icon, { type IconName } from '../Icon.svelte';
 	import { press, viewTransitionName } from '../motion.ts';
 
 	// 2:3 poster with title below. Lifts on hover; artwork zooms inside its frame.
@@ -18,6 +19,7 @@
 		progress,
 		vtName,
 		width,
+		kind,
 		action
 	}: {
 		title: string;
@@ -31,10 +33,12 @@
 		/** view-transition-name, e.g. `title-art-<id>`, so the poster grows into the hero. */
 		vtName?: string;
 		width?: string;
+		/** What it is, for the artwork fallback's icon. */
+		kind?: 'movie' | 'show' | 'artist' | 'episode';
 		action?: Snippet;
 	} = $props();
-	const initials = $derived(title.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join(''));
 	let failed = $state(false);
+	const kindIcon = $derived<IconName>(kind === 'show' || kind === 'episode' ? 'tv' : kind === 'artist' ? 'music' : 'film');
 </script>
 
 <div class="ui-poster" style:width>
@@ -43,7 +47,7 @@
 			{#if image && !failed}
 				<img src={image} alt="" loading="lazy" decoding="async" onerror={() => (failed = true)} />
 			{:else}
-				<span class="ph" aria-hidden="true">{initials}</span>
+				<span class="ph" aria-hidden="true"><span class="ph-ic"><Icon name={kindIcon} size={22} /></span><span class="ph-t">{title}</span></span>
 			{/if}
 			{#if badges.length || status}
 				<span class="over">
@@ -66,14 +70,18 @@
 	.hit:focus-visible .art { box-shadow: var(--focus-ring); }
 	.art { position: relative; display: block; aspect-ratio: var(--poster-ratio); margin-bottom: 8px; border-radius: var(--r-card); overflow: hidden; background: var(--surface-2); box-shadow: var(--shadow-card); transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out); }
 	img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--dur-slow) var(--ease-out); }
-	a.hit:hover .art { transform: translateY(var(--lift)); box-shadow: var(--shadow-lift); }
-	a.hit:hover img { transform: scale(1.03); }
-	.ph { position: absolute; inset: 0; display: grid; place-items: center; color: var(--text-muted); font: var(--t-title1); background: linear-gradient(160deg, var(--surface-2), var(--surface-3)); }
+	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+		a.hit:hover .art { transform: translateY(var(--lift)); box-shadow: var(--shadow-lift); }
+		a.hit:hover img, a.hit:hover .ph { transform: scale(1.03); }
+	}
+	.ph { transition: transform var(--dur-slow) var(--ease-out); }
+	.ph { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 10px; padding: 14px; color: var(--text); background: radial-gradient(120% 90% at 0% 0%, var(--accent-soft), transparent 60%), linear-gradient(160deg, var(--surface-2), var(--surface-3)); }
+	.ph-ic { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: var(--surface-1); color: var(--text-muted); box-shadow: var(--shadow-card); }
+	.ph-t { font: var(--t-headline); letter-spacing: -0.01em; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 	.over { position: absolute; left: 8px; right: 8px; top: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
 	.prog { position: absolute; left: 8px; right: 8px; bottom: 8px; }
 	.t { font: var(--t-subhead); font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.s { color: var(--text-muted); font: var(--t-footnote); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.act-layer { position: absolute; inset: 0 0 auto; aspect-ratio: var(--poster-ratio); pointer-events: none; }
 	.act { position: absolute; right: 8px; bottom: 8px; pointer-events: auto; }
-	@media (prefers-reduced-motion: reduce) { a.hit:hover img { transform: none; } }
 </style>
