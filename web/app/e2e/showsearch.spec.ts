@@ -32,11 +32,33 @@ async function openShow(p: Page, name: string) {
 	await expect(p.getByRole('heading', { level: 1 })).toContainText(name);
 }
 
+// One season shows at a time: pick it in the Season control.
 async function openSeason(p: Page, name: string) {
-	const s = p.getByTestId('season').filter({ has: p.locator('summary', { hasText: name }) });
-	if (!(await s.locator('details').getAttribute('open') !== null)) await s.locator('summary').click();
+	await expect(p.getByTestId('season')).toBeVisible();
+	const radio = p.getByRole('radiogroup', { name: 'Season' }).getByRole('radio', { name, exact: true });
+	await radio.click();
+	await expect(radio).toHaveAttribute('aria-checked', 'true');
+	const s = p.getByTestId('season');
 	await expect(s.getByTestId('episode').first()).toBeVisible();
 	return s;
+}
+
+// Each episode card keeps its searches in its menu.
+async function episodeMenu(ep: Locator) {
+	await ep.getByRole('button', { name: /^Actions for/ }).click();
+	return ep.page().getByRole('menu', { name: /^Actions for/ });
+}
+
+async function searchItems(s: Locator): Promise<string[]> {
+	const out: string[] = [];
+	const eps = s.getByTestId('episode');
+	for (let i = 0; i < (await eps.count()); i++) {
+		const menu = await episodeMenu(eps.nth(i));
+		const item = menu.getByRole('menuitem', { name: /^(Search now|Find a better copy)$/ });
+		out.push((await item.count()) ? (await item.innerText()).trim() : '');
+		await s.page().keyboard.press('Escape');
+	}
+	return out;
 }
 
 test.beforeAll(async ({ browser }) => {
@@ -62,7 +84,7 @@ test('the owner adds Moss Parade with every season kept', async () => {
 	await openShow(page, 'Moss Parade');
 	const s1 = await openSeason(page, 'Season 1');
 	await expect(s1.getByTestId('episode-state')).toHaveText(['Missing', 'Missing']);
-	await expect(s1.getByTestId('search-episode')).toHaveText(['Search now', 'Search now']);
+	expect(await searchItems(s1)).toEqual(['Search now', 'Search now']);
 });
 
 test('Choose a release for a season: the season pack fills both episodes with one download', async () => {
@@ -90,7 +112,7 @@ test('Choose a release for a season: the season pack fills both episodes with on
 	await expect(page.getByRole('status')).toContainText('for 2 episodes');
 	// Both episodes go to the one download.
 	await expect(s1.getByTestId('episode-state')).toHaveText([/Chosen|Downloading/, /Chosen|Downloading/], { timeout: 15_000 });
-	await expect(s1.getByTestId('search-episode')).toHaveCount(0);
+	expect(await searchItems(s1)).toEqual(['', '']);
 });
 
 test('a Release turned down for an episode is never picked again for it; Search now takes the next one', async () => {
@@ -98,7 +120,7 @@ test('a Release turned down for an episode is never picked again for it; Search 
 	const s2 = await openSeason(page, 'Season 2');
 	const ep = s2.getByTestId('episode').filter({ hasText: 'S02E01' });
 	await expect(ep.getByTestId('episode-state')).toHaveText('Missing');
-	await ep.getByTestId('choose-episode').click();
+	await (await episodeMenu(ep)).getByRole('menuitem', { name: 'Choose a release' }).click();
 	const panel = page.getByTestId('show-releases');
 	await expect(panel.getByRole('heading', { level: 2 })).toHaveText('Choose a release: S02E01');
 	await expect(panel.getByTestId('release')).toHaveCount(2, { timeout: 20_000 });
@@ -113,7 +135,7 @@ test('a Release turned down for an episode is never picked again for it; Search 
 	await expect(best.getByTestId('verdict')).toHaveText('Turned down');
 
 	// Search now looks again: the turned-down copy is refused, the 720p is taken.
-	await ep.getByTestId('search-episode').click();
+	await (await episodeMenu(ep)).getByRole('menuitem', { name: 'Search now' }).click();
 	await expect(ep.getByTestId('episode-state')).toHaveText(/Chosen|Downloading/, { timeout: 20_000 });
 
 	// Home names the show and the episode.

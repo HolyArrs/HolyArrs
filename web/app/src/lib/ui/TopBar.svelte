@@ -41,7 +41,7 @@
 	</button>
 	<div class="trail">
 		{#if live}
-			<span class="live {live.state}" role="status" title={live.word}><i aria-hidden="true"></i><span class="sr-only">{live.word}</span></span>
+			<span class="live {live.state}" title={live.word}><i aria-hidden="true"></i><span class="sr-only">{live.word}</span></span>
 		{/if}
 		{#if downloads}
 			<IconButton icon="download" href={downloads.href} label={downloads.count > 0 ? `Downloads, ${downloads.count} active` : 'Downloads'} badge={downloads.count} />

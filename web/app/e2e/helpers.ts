@@ -41,6 +41,8 @@ export async function libraryStatus(scope: Page | Locator, value: 'all' | 'missi
 	const menu = scope.locator('details.status-filter:not(.requester-menu)');
 	if (!(await menu.evaluate((d) => (d as HTMLDetailsElement).open))) await menu.locator('summary').click();
 	await menu.getByLabel('Show titles matching').selectOption(value);
+	// Close it again, as a person would, so it does not cover the other menus.
+	if (await menu.evaluate((d) => (d as HTMLDetailsElement).open)) await menu.locator('summary').click();
 }
 
 /** openApprovals reaches the Wishlist as an approver on a phone: Manage tab, then Approvals. */
@@ -60,6 +62,53 @@ export async function titleAction(page: Page, menu: 'Library' | 'More actions', 
 export async function libraryTool(page: Page, name: string) {
 	await page.locator('details.library-tools summary').click();
 	await page.getByRole('navigation', { name: 'Library tools' }).getByRole('link', { name }).click();
+}
+
+/** openSeason shows one season on a show page (the picker holds them all) and returns its card. */
+export async function openSeason(page: Page, index: number): Promise<Locator> {
+	await expect(page.getByTestId('season')).toBeVisible();
+	const seg = page.getByRole('radiogroup', { name: 'Season' });
+	if (await seg.count()) {
+		await seg.getByRole('radio').nth(index).click();
+		await expect(seg.getByRole('radio').nth(index)).toHaveAttribute('aria-checked', 'true');
+	} else {
+		await page.getByRole('button', { name: 'Pick a season' }).click();
+		await page.getByRole('menu', { name: 'Pick a season' }).getByRole('menuitemradio').nth(index).click();
+	}
+	return page.getByTestId('season');
+}
+
+/** seasonCount counts the seasons in a show page's season picker. */
+export async function seasonCount(page: Page): Promise<number> {
+	await expect(page.getByTestId('season')).toBeVisible();
+	const seg = page.getByRole('radiogroup', { name: 'Season' });
+	if (await seg.count()) return seg.getByRole('radio').count();
+	await page.getByRole('button', { name: 'Pick a season' }).click();
+	const n = await page.getByRole('menu', { name: 'Pick a season' }).getByRole('menuitemradio').count();
+	await page.keyboard.press('Escape');
+	return n;
+}
+
+/** episodeAction picks an item from an episode card's menu. */
+export async function episodeAction(page: Page, code: string, item: string) {
+	await page.getByRole('button', { name: `Actions for ${code}` }).click();
+	await page.getByRole('menu', { name: `Actions for ${code}` }).locator('[role^="menuitem"]').filter({ has: page.getByText(item, { exact: true }) }).click();
+}
+
+/** episodeKept says whether an episode's Keep item is checked (opens and closes its menu). */
+export async function episodeKept(page: Page, code: string): Promise<boolean> {
+	await page.getByRole('button', { name: `Actions for ${code}` }).click();
+	const v = await page.getByRole('menu', { name: `Actions for ${code}` }).getByRole('menuitemradio', { name: `Keep ${code} up to date` }).getAttribute('aria-checked');
+	await page.keyboard.press('Escape');
+	return v === 'true';
+}
+
+/** libraryKind picks a kind from the Library page's Type menu. */
+export async function libraryKind(page: Page, name: RegExp) {
+	const menu = page.locator('details.filter-menu:has([aria-label="Kind"])');
+	if (!(await menu.evaluate((d) => (d as HTMLDetailsElement).open))) await menu.locator('summary').click();
+	await page.getByRole('group', { name: 'Kind' }).getByRole('button', { name }).click();
+	if (await menu.evaluate((d) => (d as HTMLDetailsElement).open)) await menu.locator('summary').click();
 }
 
 /** signOut uses the account menu (sidebar) or, on a phone, the More sheet. */

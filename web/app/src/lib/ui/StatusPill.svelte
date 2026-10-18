@@ -28,10 +28,10 @@
 
 <script lang="ts">
 	// Dot plus a word, never colour alone (spec §2).
-	let { kind, percent, label, on = 'surface' }: { kind: StatusKind; percent?: number; label?: string; on?: 'surface' | 'art' } = $props();
+	let { kind, percent, label, on = 'surface', testid }: { kind: StatusKind; percent?: number; label?: string; on?: 'surface' | 'art'; testid?: string } = $props();
 </script>
 
-<span class="ui-pill {tones[kind]} {on}"><i aria-hidden="true"></i>{label ?? statusWord(kind, percent)}</span>
+<span class="ui-pill {tones[kind]} {on}" data-testid={testid}><i aria-hidden="true"></i>{label ?? statusWord(kind, percent)}</span>
 
 <style>
 	.ui-pill { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px 0 8px; border-radius: 999px; background: var(--surface-2); color: var(--text); font: var(--t-subhead); white-space: nowrap; font-variant-numeric: tabular-nums; }

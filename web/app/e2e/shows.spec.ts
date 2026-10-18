@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { join } from 'node:path';
-import { moviesDir, noSidewaysScroll, owner, signIn, libraryStatus, openApprovals } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, libraryStatus, openApprovals, openSeason, seasonCount, episodeAction, episodeKept, libraryKind } from './helpers.ts';
 
 // Shows (2.2.5 to 2.2.10): the owner adds a show folder and a show from
 // Search (the fake TMDB knows Harbour Lights, Lantern Street and Moss
@@ -80,42 +80,45 @@ test('the owner finds a show and adds it with only the latest season kept', asyn
 	// The show page: seasons and their switches; Search now is there (3.2).
 	await expect(own.getByRole('heading', { level: 1, name: /Harbour Lights/ })).toBeVisible();
 	await expect(own.getByTestId('search-show')).toBeVisible();
-	const seasons = own.getByTestId('season');
-	await expect(seasons).toHaveCount(3);
+	// One season shows at a time; the Season picker holds all three.
+	expect(await seasonCount(own)).toBe(3);
+	await openSeason(own, 0);
 	await expect(own.getByRole('checkbox', { name: 'Keep Specials up to date' })).not.toBeChecked();
+	await openSeason(own, 1);
 	await expect(own.getByRole('checkbox', { name: 'Keep Season 1 up to date' })).not.toBeChecked();
+	const s2 = await openSeason(own, 2);
 	await expect(own.getByRole('checkbox', { name: 'Keep Season 2 up to date' })).toBeChecked();
-	await expect(seasons.nth(2).getByTestId('season-line')).toContainText('0 of 1 aired in the Library · 1 missing · 1 not out yet');
+	await expect(s2.getByTestId('season-line')).toContainText('0 of 1 aired in the Library · 1 missing · 1 not out yet');
 	await axe(own, 'show page');
 });
 
 test('seasons and episodes turn on and off; each episode says its state and why', async () => {
-	await own.getByRole('checkbox', { name: 'Keep Season 1 up to date' }).check({ force: true });
+	await openSeason(own, 1);
+	await own.getByText('Keep Season 1 up to date', { exact: true }).click();
 	await expect(own.getByRole('status')).toContainText('Season 1: HolyArrs keeps it up to date.');
 	await expect(own.getByRole('checkbox', { name: 'Keep Season 1 up to date' })).toBeChecked();
-	await expect(own.getByTestId('season').nth(1).getByTestId('season-line')).toContainText('2 missing');
+	await expect(own.getByTestId('season').getByTestId('season-line')).toContainText('2 missing');
 
-	await own.getByTestId('season').nth(2).locator('summary').click();
-	const eps = own.getByTestId('season').nth(2).getByTestId('episode');
+	const eps = (await openSeason(own, 2)).getByTestId('episode');
 	await expect(eps).toHaveCount(2);
 	await expect(eps.nth(0)).toContainText('S02E01');
 	await expect(eps.nth(0)).toContainText('Return of the Fog');
-	await expect(eps.nth(0).getByTestId('episode-state')).toHaveText('Missing');
-	await expect(eps.nth(1).getByTestId('episode-state')).toHaveText('Not out yet');
+	await expect(eps.nth(0)).toContainText('Missing');
+	await expect(eps.nth(1)).toContainText('Not out yet');
 	await expect(eps.nth(1).getByTestId('episode-why')).toContainText('Counts as missing once it airs');
-	await own.getByRole('checkbox', { name: 'Keep S02E01 up to date' }).uncheck({ force: true });
-	await expect(own.getByRole('checkbox', { name: 'Keep S02E01 up to date' })).not.toBeChecked();
+	await episodeAction(own, 'S02E01', 'Keep S02E01 up to date');
+	await expect.poll(() => episodeKept(own, 'S02E01')).toBe(false);
 	await own.reload();
-	await own.getByTestId('season').nth(2).locator('summary').click();
-	await expect(own.getByRole('checkbox', { name: 'Keep S02E01 up to date' })).not.toBeChecked();
-	await expect(own.getByTestId('season').nth(2).getByTestId('episode').nth(0).getByTestId('episode-why')).toContainText('Keep up to date is off for this episode.');
-	await own.getByRole('checkbox', { name: 'Keep S02E01 up to date' }).check({ force: true });
-	await expect(own.getByRole('checkbox', { name: 'Keep S02E01 up to date' })).toBeChecked();
+	await openSeason(own, 2);
+	expect(await episodeKept(own, 'S02E01')).toBe(false);
+	await expect(own.getByTestId('season').getByTestId('episode').nth(0).getByTestId('episode-why')).toContainText('Keep up to date is off for this episode.');
+	await episodeAction(own, 'S02E01', 'Keep S02E01 up to date');
+	await expect.poll(() => episodeKept(own, 'S02E01')).toBe(true);
 });
 
 test('shows sit in the Library next to movies, with kinds and state filters', async () => {
 	await own.goto('/library');
-	await own.getByRole('group', { name: 'Kind' }).getByRole('button', { name: /^Shows/ }).click();
+	await libraryKind(own, /^Shows/);
 	await expect(own).toHaveURL(/kind=show/);
 	const card = own.getByTestId('library-card').filter({ hasText: 'Harbour Lights' });
 	await expect(card).toContainText('Show');
@@ -123,18 +126,18 @@ test('shows sit in the Library next to movies, with kinds and state filters', as
 	await expect(own.getByTestId('library-card').filter({ hasText: 'Quiet Orchard' })).toHaveCount(0);
 	await libraryStatus(own, 'missing');
 	await expect(card).toBeVisible();
-	await own.getByRole('button', { name: /^Not out yet/ }).click();
+	await libraryStatus(own, 'not_out_yet');
 	await expect(card).toBeVisible();
-	await own.getByRole('button', { name: /^Better copy wanted/ }).click();
+	await libraryStatus(own, 'better');
 	await expect(card).toHaveCount(0);
 	await libraryStatus(own, 'all');
 	await own.getByRole('group', { name: 'Layout' }).getByRole('button', { name: 'List' }).click();
 	await expect(own.getByTestId('library-row').filter({ hasText: 'Harbour Lights' })).toContainText('aired episodes in the Library');
 	await own.getByRole('group', { name: 'Layout' }).getByRole('button', { name: 'Posters' }).click();
-	await own.getByRole('group', { name: 'Kind' }).getByRole('button', { name: /^Movies/ }).click();
+	await libraryKind(own, /^Movies/);
 	await expect(card).toHaveCount(0);
 	await expect(own.getByTestId('library-card').filter({ hasText: 'Quiet Orchard' })).toBeVisible();
-	await own.getByRole('group', { name: 'Kind' }).getByRole('button', { name: /^Everything/ }).click();
+	await libraryKind(own, /^Everything/);
 	await axe(own, 'library with shows');
 });
 
@@ -205,8 +208,11 @@ test('the owner approves from a phone: the show is added with those seasons and 
 	await ask.getByRole('link', { name: /Lantern Street/ }).click();
 	await expect(phone.getByTestId('title-asks')).toContainText('max');
 	await expect(phone.getByTestId('title-asks')).toContainText('seasons 1 and 2');
+	await openSeason(phone, 0);
 	await expect(phone.getByRole('checkbox', { name: 'Keep Season 1 up to date' })).toBeChecked();
+	await openSeason(phone, 1);
 	await expect(phone.getByRole('checkbox', { name: 'Keep Season 2 up to date' })).toBeChecked();
+	await openSeason(phone, 2);
 	await expect(phone.getByRole('checkbox', { name: 'Keep Season 3 up to date' })).not.toBeChecked();
 	await noSidewaysScroll(phone);
 	await axe(phone, 'show page phone');
@@ -221,8 +227,9 @@ test('the owner approves from a phone: the show is added with those seasons and 
 	await expect(max.getByTestId('message').first()).toContainText('Lantern Street (2023), seasons 1 and 2 was approved by luis');
 	await expect(max.getByTestId('message').first()).toContainText('Seasons 1 and 2 coming up');
 	await max.getByTestId('ask').filter({ hasText: 'Lantern Street' }).getByRole('link', { name: /Lantern Street/ }).click();
-	await expect(max.getByTestId('season')).toHaveCount(3);
+	expect(await seasonCount(max)).toBe(3);
 	await expect(max.getByRole('checkbox')).toHaveCount(0);
+	await expect(max.getByRole('button', { name: /^Actions for/ })).toHaveCount(0);
 	await expect(max.getByRole('button', { name: 'Edit' })).toHaveCount(0);
 	await noSidewaysScroll(max);
 });

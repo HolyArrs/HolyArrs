@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { join } from 'node:path';
-import { moviesDir, noSidewaysScroll, owner, signIn, openApprovals } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, openApprovals, libraryKind, libraryStatus, titleAction } from './helpers.ts';
 
 // Music (2.3.4 to 2.3.8): the owner adds a music folder, looks at Settings >
 // Music, adds Tin Lanterns from Search (the fake MusicBrainz knows it and
@@ -143,7 +143,7 @@ test('the album page lists tracks and Pressings, and the owner picks another Pre
 
 test('artists sit in the Library with a Music kind', async () => {
 	await own.goto('/library');
-	await own.getByRole('group', { name: 'Kind' }).getByRole('button', { name: /^Music/ }).click();
+	await libraryKind(own, /^Music/);
 	await expect(own).toHaveURL(/kind=artist/);
 	const card = own.getByTestId('library-card').filter({ hasText: 'Tin Lanterns' });
 	await expect(card).toContainText('Artist');
@@ -152,7 +152,7 @@ test('artists sit in the Library with a Music kind', async () => {
 	await own.getByRole('group', { name: 'Layout' }).getByRole('button', { name: 'List' }).click();
 	await expect(own.getByTestId('library-row').filter({ hasText: 'Tin Lanterns' })).toContainText('tracks in the Library');
 	await own.getByRole('group', { name: 'Layout' }).getByRole('button', { name: 'Posters' }).click();
-	await own.getByRole('group', { name: 'Kind' }).getByRole('button', { name: /^Everything/ }).click();
+	await libraryKind(own, /^Everything/);
 	await axe(own, 'library with music');
 });
 

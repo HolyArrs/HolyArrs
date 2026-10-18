@@ -410,6 +410,7 @@
 								subtitle={ep.air_date ? date(ep.air_date) : 'No air date yet'}
 								status={main ? slotKind(main.state) : undefined}
 								statusLabel={ep.slots.length > 1 ? ep.slots.map((x) => `${x.version}: ${x.state_label}`).join(' · ') : main?.state_label}
+								statusTestid="episode-state"
 							>
 								{#snippet action()}
 									{#if staff}<span class="ep-menu"><Menu label="Actions for {episodeLabel(ep, order)}" items={episodeItems(ep)} width={250} /></span>{/if}

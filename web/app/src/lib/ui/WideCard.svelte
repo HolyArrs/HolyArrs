@@ -18,7 +18,8 @@
 		progress,
 		vtName,
 		width,
-		action
+		action,
+		statusTestid
 	}: {
 		title: string;
 		href?: string;
@@ -33,6 +34,8 @@
 		vtName?: string;
 		width?: string;
 		action?: Snippet;
+		/** Test id on the status pill. */
+		statusTestid?: string;
 	} = $props();
 	let failed = $state(false);
 	const pct = $derived(progress === undefined ? undefined : Math.max(0, Math.min(100, progress)));
@@ -44,7 +47,7 @@
 			{#if image && !failed}<img src={image} alt="" loading="lazy" decoding="async" onerror={() => (failed = true)} />{:else}<span class="ph" aria-hidden="true"></span>{/if}
 			{#if badges.length || status}
 				<span class="over">
-					{#if status}<StatusPill kind={status} label={statusLabel} percent={pct} on="art" />{/if}
+					{#if status}<StatusPill kind={status} label={statusLabel} percent={pct} on="art" testid={statusTestid} />{/if}
 					{#each badges as b (b)}<Badge label={b} on="art" />{/each}
 				</span>
 			{/if}
