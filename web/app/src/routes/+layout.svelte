@@ -160,6 +160,7 @@
 	const mac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 	const searchKey = mac ? '⌘K' : 'Ctrl K';
 	let paletteOpen = $state(false);
+	let paletteInitial = $state('');
 	function keys(e: KeyboardEvent) {
 		if (!ready || bare) return;
 		const mod = mac ? e.metaKey : e.ctrlKey;
@@ -168,6 +169,7 @@
 			void toggleSidebar();
 		} else if (mod && (e.key === 'k' || e.key === 'K')) {
 			e.preventDefault();
+			paletteInitial = '';
 			paletteOpen = !paletteOpen;
 		} else if (e.key === 'Escape' && overlayOpen) {
 			void closeOverlay();
@@ -371,7 +373,14 @@
 				bind:toggle={topToggle}
 				ontoggle={toggleSidebar}
 				history={detail}
-				onsearch={() => (paletteOpen = true)}
+				onsearch={() => {
+					paletteInitial = '';
+					paletteOpen = true;
+				}}
+				ontype={(t) => {
+					paletteInitial = t;
+					paletteOpen = true;
+				}}
 				{searchKey}
 				live={allowed('manage_library') ? { state: live.status.state, word: liveWord } : undefined}
 				downloads={allowed('manage_library') && !offPartName(partsNow.answer, '/downloads') ? { count: 0, href: to('/downloads') } : undefined}
@@ -385,7 +394,7 @@
 		</main>
 	</AppShell>
 
-	<CommandPalette bind:open={paletteOpen} items={paletteItems} go={(href) => void goto(link(href))} onsearch={(q) => void goto(to(`/search?q=${encodeURIComponent(q)}`))} />
+	<CommandPalette bind:open={paletteOpen} initial={paletteInitial} items={paletteItems} go={(href) => void goto(link(href))} onsearch={(q) => void goto(to(`/search?q=${encodeURIComponent(q)}`))} />
 
 	<Sheet bind:open={moreOpen} title={manager ? 'Manage' : 'More'} size="sm">
 		<!-- Only while open, so a closed sheet adds no second copy of every place to the page. -->

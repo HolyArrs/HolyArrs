@@ -23,7 +23,7 @@
 		title: string;
 		description?: string;
 		size?: 'sm' | 'md' | 'lg';
-		placement?: 'auto' | 'center' | 'bottom' | 'top' | 'side';
+		placement?: 'auto' | 'center' | 'bottom' | 'top' | 'side' | 'full';
 		hideTitle?: boolean;
 		closeLabel?: string;
 		children: Snippet;
@@ -122,7 +122,7 @@
 	.ui-sheet[open]::backdrop { animation: fade-in var(--dur-fast) ease both; }
 	.ui-sheet.closing { animation: sheet-out var(--dur-fast) var(--ease-in) both; }
 	.ui-sheet.closing::backdrop { animation: fade-out var(--dur-fast) ease both; }
-	.at-top { margin-top: min(12vh, 120px); }
+	.at-top, .at-full { margin-top: min(12vh, 120px); }
 	@keyframes sheet-in { from { opacity: 0; transform: scale(.96); } }
 	@keyframes sheet-out { to { opacity: 0; transform: scale(.97); } }
 	@keyframes fade-in { from { opacity: 0; } }
@@ -137,6 +137,10 @@
 		.at-auto.closing, .at-bottom.closing { animation: sink-out var(--dur-fast) var(--ease-in) both; }
 		.at-auto .inner::before, .at-bottom .inner::before { content: ''; align-self: center; width: 36px; height: 5px; margin-top: 8px; border-radius: 3px; background: var(--line-strong); }
 		.at-top { margin-top: 12px; }
+		/* Full screen on phones (the search palette). */
+		.at-full { width: 100%; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0; padding-top: env(safe-area-inset-top); }
+		.at-full .inner { height: 100%; }
+		.at-full .body { flex: 1; display: flex; flex-direction: column; }
 	}
 	.at-side { margin: 0 auto 0 0; height: 100dvh; max-height: 100dvh; width: min(300px, 86vw); border-radius: 0 var(--r-panel) var(--r-panel) 0; }
 	.at-side[open] { animation: slide-in var(--dur) var(--ease-out) both; }

@@ -1,4 +1,5 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 import { owner, signIn, libraryStatus } from './helpers.ts';
 
 // Add-movie screen, Library screen and Movie page against the fake TMDB in
@@ -187,4 +188,31 @@ test('add a movie with a second 4K Version; the Movie page shows both and can ad
 	await page.getByRole('button', { name: 'Remove Small' }).click();
 	await expect(versions).toHaveCount(2);
 	await expect(page.getByRole('button', { name: 'Remove Main' })).toHaveCount(0);
+});
+
+test('the search palette shows Library and movie results; a movie not in the Library opens its details with Add', async () => {
+	await page.goto('/');
+	await page.keyboard.press('Control+k');
+	const box = page.getByRole('combobox', { name: 'Search titles or go to a place' });
+	await box.fill('Paper Harbour');
+	const library = page.getByTestId('palette-library');
+	await expect(library.getByRole('option', { name: /Paper Harbour/ })).toContainText('In Library');
+	await expect(page.getByRole('option', { name: 'See all results for “Paper Harbour”' })).toBeVisible();
+	await box.press('ArrowDown');
+	await box.press('Enter');
+	await expect(page).toHaveURL(/\/library\/\d+$/);
+
+	// Iron Lullaby is not in the Library yet (downloaders.spec adds it later).
+	await page.goto('/title/movie/900011');
+	const detail = page.getByTestId('title-detail');
+	await expect(detail.getByRole('heading', { level: 1, name: 'Iron Lullaby' })).toBeVisible();
+	await expect(detail).toContainText('A lullaby forged for a sleeping city.');
+	await detail.getByRole('button', { name: 'Add Iron Lullaby' }).click();
+	const dialog = page.getByRole('dialog', { name: 'Add Iron Lullaby' });
+	await expect(dialog.getByLabel('Library folder')).toBeVisible();
+	await dialog.getByRole('button', { name: 'Cancel' }).click();
+	await expect(dialog).toBeHidden();
+	await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
+	const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
+	expect(r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id), 'title details').toEqual([]);
 });

@@ -11,6 +11,7 @@
 		ontoggle,
 		history = false,
 		onsearch,
+		ontype,
 		searchKey,
 		live,
 		downloads,
@@ -21,6 +22,8 @@
 		ontoggle: () => void;
 		history?: boolean;
 		onsearch: () => void;
+		/** A letter typed on the search field opens the palette with it. */
+		ontype?: (text: string) => void;
 		searchKey: string;
 		live?: { state: 'off' | 'connecting' | 'live' | 'reconnecting'; word: string };
 		downloads?: { count: number; href: string };
@@ -36,7 +39,7 @@
 			<IconButton icon="chevronRight" label="Forward" onclick={() => window.history.forward()} />
 		{/if}
 	</div>
-	<button class="search" type="button" onclick={onsearch} aria-haspopup="dialog" aria-keyshortcuts={searchKey === '⌘K' ? 'Meta+K' : 'Control+K'}>
+	<button class="search" type="button" onclick={onsearch} onkeydown={(e) => { if (ontype && e.key.length === 1 && e.key !== ' ' && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); ontype(e.key); } }} aria-haspopup="dialog" aria-keyshortcuts={searchKey === '⌘K' ? 'Meta+K' : 'Control+K'}>
 		<Icon name="search" size={16} /><span class="ph">Search…</span><kbd>{searchKey}</kbd>
 	</button>
 	<div class="trail">
