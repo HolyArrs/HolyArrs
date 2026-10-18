@@ -152,9 +152,13 @@
 		border-color: var(--ha-red);
 		background: var(--ha-red-soft);
 	}
+	/* Muted grey on the tint, or faded further, falls below the contrast floor. */
+	.album:has(input:checked) .muted {
+		color: var(--text);
+	}
 	.album.off {
 		cursor: default;
-		opacity: 0.75;
+		color: var(--text-muted);
 	}
 	.block {
 		display: block;

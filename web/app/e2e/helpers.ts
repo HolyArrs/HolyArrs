@@ -78,6 +78,21 @@ export async function openSeason(page: Page, index: number): Promise<Locator> {
 	return page.getByTestId('season');
 }
 
+/** openSeasonNamed shows the season with this name ("Season 1", "Specials") and returns its card. */
+export async function openSeasonNamed(page: Page, name: string): Promise<Locator> {
+	await expect(page.getByTestId('season')).toBeVisible();
+	const seg = page.getByRole('radiogroup', { name: 'Season' });
+	if (await seg.count()) {
+		const radio = seg.getByRole('radio', { name, exact: true });
+		await radio.click();
+		await expect(radio).toHaveAttribute('aria-checked', 'true');
+	} else {
+		await page.getByRole('button', { name: 'Pick a season' }).click();
+		await page.getByRole('menu', { name: 'Pick a season' }).getByRole('menuitemradio', { name, exact: true }).click();
+	}
+	return page.getByTestId('season');
+}
+
 /** seasonCount counts the seasons in a show page's season picker. */
 export async function seasonCount(page: Page): Promise<number> {
 	await expect(page.getByTestId('season')).toBeVisible();

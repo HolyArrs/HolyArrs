@@ -405,7 +405,7 @@
 									<label class="switch" title={a.included ? '' : 'Not included by the album kinds'}>
 										<input type="checkbox" checked={a.keep_up_to_date} disabled={busy === `a${a.id}` || !a.included} onchange={(e) => setAlbum(a, e.currentTarget.checked)} />
 										<span class="sw" aria-hidden="true"></span>
-									<span class="sr-only">Keep up to date: {a.name}</span>
+									<span class="sr-only">Keep {a.name} up to date</span>
 									<span class="album-action-label" aria-hidden="true">Keep up to date</span>
 									</label>
 								</div>

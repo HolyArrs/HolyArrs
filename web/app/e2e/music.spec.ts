@@ -244,6 +244,7 @@ test('the owner approves from a phone: the artist is added with that single and 
 	await expect(ivy.getByRole('checkbox')).toHaveCount(0);
 	await expect(ivy.getByRole('button', { name: 'Refresh' })).toHaveCount(0);
 	await expect(ivy.getByRole('button', { name: 'Edit album kinds' })).toHaveCount(0);
+	await expect(ivy.getByRole('button', { name: 'More actions' })).toHaveCount(0);
 	await expect(ivy.getByTestId('ask-albums')).toBeVisible();
 	await noSidewaysScroll(ivy);
 	await ivy.getByRole('link', { name: 'Fern Hymns' }).click();

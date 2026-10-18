@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { moviesDir, noSidewaysScroll, owner, signIn } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, titleAction } from './helpers.ts';
 
 // Organise for music (4.15.4): runs after musicdownloads.spec.ts, so Tin
 // Lanterns – Harbour Songs (2019) has three tracks in the music Library
@@ -87,7 +87,7 @@ test('Rename files on the album page renames its tracks into the new album folde
 	expect(readdirSync(folder).sort()).toEqual(['01 - Song 1.1.flac', '02 - Song 1.2.flac', '03 - Song 1.3.flac']);
 	// The artist page has the whole artist's rename: nothing left.
 	await page.getByRole('link', { name: 'Tin Lanterns' }).first().click();
-	await page.getByTestId('rename-artist').click();
+	await titleAction(page, 'Library', 'Rename files');
 	await expect(page.getByRole('dialog', { name: 'Rename the files of Tin Lanterns' }).getByTestId('rename-none')).toBeVisible();
 	await page.getByRole('dialog', { name: 'Rename the files of Tin Lanterns' }).getByRole('button', { name: 'Close' }).click();
 	// Back to the default album folder pattern for the tests after this one.
@@ -185,7 +185,7 @@ test('the album page, import and delete work at phone width', async ({ browser }
 test('deleting the whole artist with Never-add keeps files it only found and leaves the Library', async () => {
 	await page.goto('/library');
 	await page.getByRole('link', { name: /Copper Wren/ }).first().click();
-	await page.getByTestId('delete-artist').click();
+	await titleAction(page, 'Library', 'Delete artist');
 	const dialog = page.getByTestId('show-delete');
 	await dialog.getByRole('checkbox', { name: /Never-add/ }).check();
 	await expect(dialog.getByTestId('delete-plan')).toContainText('The artist leaves the Library');

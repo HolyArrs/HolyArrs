@@ -46,7 +46,7 @@ async function openSeason(p: Page, name: string) {
 // Each episode card keeps its searches in its menu.
 async function episodeMenu(ep: Locator) {
 	await ep.getByRole('button', { name: /^Actions for/ }).click();
-	return ep.page().getByRole('menu', { name: /^Actions for/ });
+	return ep.getByRole('menu', { name: /^Actions for/ });
 }
 
 async function searchItems(s: Locator): Promise<string[]> {

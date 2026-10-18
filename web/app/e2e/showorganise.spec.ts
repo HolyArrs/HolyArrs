@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { moviesDir, noSidewaysScroll, owner, signIn } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, titleAction, openSeasonNamed, episodeAction } from './helpers.ts';
 
 // Organise for shows (5.2): Quarry Bells sits on disk before HolyArrs knows
 // it. The owner imports it from the show Library folder (nothing moves),
@@ -70,7 +70,7 @@ test('Import a library scans the show folder, lists each file with its episodes,
 });
 
 test('Rename files on the show page renames the adopted episodes to the episode pattern', async () => {
-	await page.getByTestId('rename-show').click();
+	await titleAction(page, 'Library', 'Rename files');
 	const dialog = page.getByRole('dialog', { name: /Rename the files of Quarry Bells/ });
 	await expect(dialog.getByTestId('rename-step')).toHaveCount(2);
 	await expect(dialog).toContainText('Quarry Bells - S01E01 - Echo 1080p WEB.mkv');
@@ -86,10 +86,9 @@ test('Rename files on the show page renames the adopted episodes to the episode 
 });
 
 test('deleting one episode of a multi-episode file keeps the file; deleting the season holds its files', async () => {
-	const s1 = page.getByTestId('season').filter({ hasText: 'Season 1' });
-	await s1.locator('summary').click();
-	const ep2 = s1.getByTestId('episode').filter({ hasText: 'S01E02' });
-	await ep2.getByRole('button', { name: 'Delete S01E02' }).click();
+	const s1 = await openSeasonNamed(page, 'Season 1');
+	await expect(s1.getByTestId('episode').filter({ hasText: 'S01E02' })).toBeVisible();
+	await episodeAction(page, 'S01E02', 'Delete S01E02');
 	const dialog = page.getByTestId('show-delete');
 	await expect(dialog.getByRole('heading', { level: 2 })).toHaveText('Delete Quarry Bells S01E02?');
 	await expect(dialog.getByRole('checkbox', { name: /Never-add/ })).toHaveCount(0);
@@ -117,10 +116,9 @@ test('deleting one episode of a multi-episode file keeps the file; deleting the 
 });
 
 test('an episode History link lists only that episode, named on each row', async () => {
-	const s1 = page.getByTestId('season').filter({ hasText: 'Season 1' });
-	const open = await s1.locator('summary').first().evaluate((el) => (el.parentElement as HTMLDetailsElement).open);
-	if (!open) await s1.locator('summary').first().click();
-	await s1.getByTestId('episode').filter({ hasText: 'S01E02' }).getByRole('link', { name: 'History of S01E02' }).click();
+	const s1 = await openSeasonNamed(page, 'Season 1');
+	await expect(s1.getByTestId('episode').filter({ hasText: 'S01E02' })).toBeVisible();
+	await episodeAction(page, 'S01E02', 'History');
 	await expect(page).toHaveURL(/episode=\d+/);
 	await expect(page.getByTestId('episode-filter')).toContainText('Only S01E02 Dust of Quarry Bells');
 	const rows = page.getByTestId('history-row');
@@ -173,9 +171,9 @@ test('the show page, import, history and calendar work at phone width', async ({
 	await signIn(phone, owner());
 	await phone.goto('/library');
 	await phone.getByRole('link', { name: /Quarry Bells/ }).first().click();
-	await expect(phone.getByTestId('delete-show')).toBeVisible();
+	await expect(phone.getByRole('button', { name: 'Library', exact: true })).toBeVisible();
 	await noSidewaysScroll(phone);
-	await phone.getByTestId('delete-show').click();
+	await titleAction(phone, 'Library', 'Delete show');
 	await expect(phone.getByTestId('show-delete').getByRole('checkbox', { name: /Never-add/ })).toBeVisible();
 	await noSidewaysScroll(phone);
 	await axe(phone, 'delete a show on a phone');
@@ -191,7 +189,7 @@ test('the show page, import, history and calendar work at phone width', async ({
 test('deleting the whole show with Never-add keeps its files and leaves the Library', async () => {
 	await page.goto('/library');
 	await page.getByRole('link', { name: /Quarry Bells/ }).first().click();
-	await page.getByTestId('delete-show').click();
+	await titleAction(page, 'Library', 'Delete show');
 	const dialog = page.getByTestId('show-delete');
 	await dialog.getByRole('checkbox', { name: /Never-add/ }).check();
 	await expect(dialog.getByTestId('delete-plan')).toContainText('The show leaves the Library');
