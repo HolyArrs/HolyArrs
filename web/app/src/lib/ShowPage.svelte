@@ -582,6 +582,7 @@
 	.season-actions { gap: var(--s-2); flex-wrap: wrap; align-items: center; margin: var(--s-3) 0 var(--s-4); }
 	.episodes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 20px 16px; }
 	.episode { min-width: 0; }
+	@media (max-width: 600px) { .episodes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 10px; } }
 	.ep-why { margin-top: 2px; }
 	.ep-menu :global(.ui-pop > .trigger) { background: rgb(0 0 0 / 45%); color: #fff; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 	.ep-menu :global(.ui-pop > .trigger:hover), .ep-menu :global(.ui-pop > .trigger[aria-expanded='true']) { background: rgb(0 0 0 / 65%); color: #fff; }
