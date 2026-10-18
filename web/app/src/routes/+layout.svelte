@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { personName } from '#lib/plain.ts';
 	import { resolve } from '$app/paths';
 	import { setBase } from '#lib/paths.ts';
 	setBase(resolve('/'));
@@ -200,7 +201,9 @@
 
 	// ── Account ───────────────────────────────────────────────────────────
 	const roleWord = $derived({ owner: 'Owner', admin: 'Admin', member: 'Member' }[session.s.role] ?? 'Member');
-	const initials = $derived(session.s.name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('') || '?');
+	// An id-like account name (preview-…, e2e-…) reads as "You".
+	const shownName = $derived(personName(session.s.name, 'You'));
+	const initials = $derived(shownName.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('') || '?');
 	const accountItems = $derived<MenuItem[]>([
 		{ label: 'Account', icon: 'user', href: to('/account') },
 		{ kind: 'separator' },
@@ -318,7 +321,7 @@
 			<span class="who" class:only={collapsed}>
 				<span class="avatar" aria-hidden="true">{initials}</span>
 				{#if !collapsed}
-					<span class="who-text"><span class="who-name">{session.s.name}</span><span class="who-role">{roleWord}</span></span>
+					<span class="who-text"><span class="who-name">{shownName}</span><span class="who-role">{roleWord}</span></span>
 					<Icon name="chevronUpDown" size={15} />
 				{/if}
 			</span>

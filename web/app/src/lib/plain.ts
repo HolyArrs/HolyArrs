@@ -40,3 +40,21 @@ export function peopleNames(list: (string | null | undefined)[]): string {
 	if (real.length <= 1) return real[0] ?? '';
 	return `${real.slice(0, -1).join(', ')} and ${real[real.length - 1]}`;
 }
+
+// Signs that the rest of a message is for a developer: paths, system calls, network errors.
+const technical = /([A-Za-z]:\\|(^|\s)\/[\w.-]+|GetFile\w+|CreateFile|errno|syscall|dial tcp|EACCES|ENOENT|ENOSPC|0x[0-9a-f]{4,}|\bno such file\b|\bpermission denied\b|\bi\/o timeout\b|\bconnection refused\b|\bx509\b)/i;
+
+/**
+ * plainReason keeps the human part of a message and moves the technical
+ * rest to detail: "The file could not be placed: GetFileAttributesEx C:\…"
+ * reads "The file could not be placed." with the raw text as detail.
+ */
+export function plainReason(text: string): { text: string; detail?: string } {
+	const t = text.trim();
+	if (!technical.test(t)) return { text: t };
+	let cut = t.indexOf(': ');
+	while (cut > 0 && !technical.test(t.slice(cut + 2))) cut = t.indexOf(': ', cut + 2);
+	const head = cut > 0 ? t.slice(0, cut).trim() : '';
+	if (!head || technical.test(head)) return { text: 'Something went wrong with the files.', detail: t };
+	return { text: /[.!?]$/.test(head) ? head : `${head}.`, detail: t };
+}

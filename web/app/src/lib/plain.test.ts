@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { healthSentence, looksLikeId, peopleNames, personName } from './plain.ts';
+import { healthSentence, looksLikeId, peopleNames, personName, plainReason } from './plain.ts';
 
 describe('plain words', () => {
 	it('spots internal ids', () => {
@@ -16,6 +16,12 @@ describe('plain words', () => {
 		expect(peopleNames(['e2e-1'])).toBe('Someone in your household');
 		expect(peopleNames(['e2e-1', 'preview-2'])).toBe('2 people in your household');
 		expect(peopleNames(['Ana', 'e2e-1'])).toBe('Ana and one other in your household');
+	});
+	it('moves technical text out of reasons', () => {
+		const raw = 'The file could not be placed: GetFileAttributesEx C:\\Temp\\x.mkv: The system cannot find the file specified.';
+		expect(plainReason(raw)).toEqual({ text: 'The file could not be placed.', detail: raw });
+		expect(plainReason('The download failed and no other Release passed the Pick rules.')).toEqual({ text: 'The download failed and no other Release passed the Pick rules.' });
+		expect(plainReason('open /data/x: permission denied').text).toBe('Something went wrong with the files.');
 	});
 	it('says health problems without raw text', () => {
 		expect(healthSentence({ kind: 'library_folder', state: 'error' })).toBe('HolyArrs cannot reach a Library folder.');
