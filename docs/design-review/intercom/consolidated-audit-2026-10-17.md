@@ -77,3 +77,8 @@ Fresh music persistence is **unavailable**: all three fake artist identities alr
 4. A settings-only shell can expose Music while `GET /api/v1/settings/music` requires `manage_library`; PUT uses settings permission. Resolve that authorization contract with the backend partner. Frontend role fixtures are not server-authorization certification.
 5. External metadata, artwork availability, indexer/downloader/subtitle/notification delivery and filesystem operations remain fake-provider or fixture bounded. No homelab/installed-app validation or combined backend release is claimed.
 6. Any unresolved findings or incomplete suites in the executed JSON remain open, even if older screenshots look correct. Final acceptance follows the frozen-source receipts, scoped visual verdict and final preview smoke.
+
+
+## Music lifecycle follow-up
+
+The fresh music persistence gap above was subsequently closed on the same preview using a fourth additive fake artist, without resetting earlier samples. See `music-lifecycle-2026-10-17.md` for the genuine selected-album request34 → approved Library artist166, preserved initial readiness failure, successful continuation, cleanup and exact committed-checkout verification. Other limitations in this report remain unchanged.

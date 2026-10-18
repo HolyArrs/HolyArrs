@@ -9,6 +9,13 @@ function freezeProfile(profile) {
 }
 
 const candidateProfiles = Object.freeze({
+	music20261017: freezeProfile({
+		name: 'music20261017', musicOnly: true,
+		references: {
+			music: { kind: 'artist', reference: 'mbid:a4444444-0000-4000-8000-000000000004', name: 'Amber Satellites',
+				albums: ['b4444444-0000-4000-8000-000000000001'], albumName: 'Evening Signals', unselectedAlbumName: 'Quiet Orbit' }
+		}
+	}),
 	default: freezeProfile({
 		name: 'default',
 		references: {

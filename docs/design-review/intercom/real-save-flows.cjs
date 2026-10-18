@@ -346,6 +346,30 @@ async function markMemberMessagesRead(ctx) {
 module.exports = async function run(ctx) {
 	const references = candidateProfiles[ctx.profileName]?.references;
 	assert.ok(references, `real-save candidate profile exists: ${ctx.profileName}`);
+	if (candidateProfiles[ctx.profileName].musicOnly) {
+		await ctx.step('fresh music album request approves and persists in Library', async () => {
+			await ctx.member.setViewportSize({ width: 390, height: 900 });
+			const request = await createMusicAsk(ctx, ctx.member, references.music);
+			const memberRow = await wishlistRow(ctx.member, ctx.base, references.music);
+			await ctx.expect(memberRow.getByRole('button', { name: 'Approve', exact: true })).toHaveCount(0);
+			await ctx.capture(ctx.member, `music-album-${request.state}`);
+			const approved = await approve(ctx, references.music);
+			assert.deepEqual(approved.albums.map(album => album.mbid), references.music.albums);
+			const title = await freshTitle(ctx, approved, references.music);
+			await verifyMusicScope(ctx, title, references.music);
+			// Approval creates the artist before background track metadata is ready.
+			await ctx.expect.poll(async () => {
+				const fresh = apiItems(await ctx.get(ctx.owner, '/titles'), 'titles').find(item => item.id === title.id);
+				return fresh?.artist?.missing ?? 0;
+			}).toBeGreaterThan(0);
+			await verifyLibraryAtWidths(ctx, title, references.music, [ctx.names.member]);
+			await ctx.owner.reload({ waitUntil: 'domcontentloaded' });
+			await freshTitle(ctx, approved, references.music);
+			await ctx.capture(ctx.owner, 'music-library-refreshed');
+		});
+		assert.equal(ctx.results.requests.length, 1);
+		return;
+	}
 	await ctx.step('member alert destination saves, reloads, and restores cleanly', async () => {
 		await saveAndRestoreMemberAlerts(ctx);
 	});
