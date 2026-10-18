@@ -12,16 +12,15 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
-	import Sheet from '#lib/ui/Sheet.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import StatusPill from '#lib/ui/StatusPill.svelte';
 	import { plainReason } from '#lib/plain.ts';
-	import { loadChoices, pickId, saveChoices, secondVersion } from '#lib/library.ts';
 	import type { Ask, AskLimit, GateDefaults, LibraryFolder, LookupArtist, LookupMovie, LookupShow, MusicSettings, PickRulesView, ShowSettings, TitleView } from '#lib/types.ts';
 	import { limitLine } from '#lib/wishlist.ts';
 	import type { LimitKind } from '#lib/types.ts';
 	import { refreshInbox } from '#lib/wishlist.svelte.ts';
 	import AddShowDialog from '#lib/AddShowDialog.svelte';
+	import AddMovieDialog from '#lib/AddMovieDialog.svelte';
 	import AskShowDialog from '#lib/AskShowDialog.svelte';
 	import { seasonWords } from '#lib/shows.ts';
 	import AddArtistDialog from '#lib/AddArtistDialog.svelte';
@@ -121,21 +120,7 @@
 	let rules = $state<PickRulesView[]>([]);
 	let gateDefault = $state('released');
 
-	// The add dialog
-	let addOpen = $state(false);
-	let picked = $state<LookupMovie | null>(null);
-	let folderId = $state(0);
-	let rulesId = $state(0);
-	let gate = $state('released');
-	let keep = $state(true);
-	let searchOnAdd = $state(true);
-	// A second Version, such as 4K, next to the main one.
-	let more = $state(false);
-	let moreLabel = $state('4K');
-	let moreRules = $state(0);
-	let moreFolder = $state(0);
-	let adding = $state(false);
-	let addError = $state('');
+	let addMovie: ReturnType<typeof AddMovieDialog> | undefined = $state();
 
 	// Members ask instead of adding.
 	const asker = $derived(session.can('ask') && !session.can('manage_library'));
@@ -179,13 +164,6 @@
 		}
 	}
 
-	const movieFolders = $derived(folders.filter((f) => f.kind === 'movie'));
-	const movieRules = $derived(rules.filter((r) => !r.kinds.length || r.kinds.includes('movie')));
-	const gates: [string, string, string][] = [
-		['announced', 'As soon as it is announced', 'Look even before it is in cinemas.'],
-		['in_cinemas', 'Once it is in cinemas', 'Look from the cinema date.'],
-		['released', 'Once it is out on digital or disc', 'Look from the first digital or disc date.']
-	];
 
 	onMount(() => {
 		if (session.can('manage_library')) {
@@ -279,58 +257,14 @@
 		}
 	}
 
-	function openAdd(m: LookupMovie) {
-		picked = m;
-		addError = '';
-		// The last choices this browser made, while they are still offered.
-		const last = loadChoices();
-		folderId = pickId(last.library_folder_id, movieFolders, movieFolders.find((f) => f.health === 'ok')?.id ?? movieFolders[0]?.id ?? 0);
-		chooseRulesFor(folderId, last.pick_rules_id);
-		gate = last.release_gate && gates.some(([g]) => g === last.release_gate) ? last.release_gate : gateDefault;
-		keep = last.keep_up_to_date ?? true;
-		searchOnAdd = last.search_on_add ?? true;
-		more = false;
-		const sv = secondVersion(movieRules, movieFolders, folderId);
-		moreLabel = sv.label;
-		moreRules = sv.pick_rules_id;
-		moreFolder = sv.library_folder_id;
-		addOpen = true;
-	}
-
-	// A folder's own Pick rules come first, then the remembered ones, then the first offered.
-	function chooseRulesFor(fid: number, remembered?: number) {
-		const own = movieFolders.find((f) => f.id === fid)?.default_pick_rules_id ?? 0;
-		rulesId = pickId(remembered, movieRules, pickId(own, movieRules, movieRules[0]?.id ?? 0));
-	}
-
-	async function add(e: SubmitEvent) {
-		e.preventDefault();
-		if (!picked) return;
-		adding = true;
-		addError = '';
-		try {
-			const r = await api.post<{ title: TitleView }>('/titles', {
-				id: `tmdb:${picked.ids.tmdb}`,
-				library_folder_id: folderId,
-				pick_rules_id: rulesId,
-				release_gate: gate,
-				keep_up_to_date: keep,
-				search_on_add: searchOnAdd,
-				more_versions: more ? [{ label: moreLabel.trim(), pick_rules_id: moreRules, library_folder_id: moreFolder }] : []
-			});
-			saveChoices({ library_folder_id: folderId, pick_rules_id: rulesId, keep_up_to_date: keep, release_gate: gate, search_on_add: searchOnAdd });
-			if (results) {
-				const i = results.findIndex((x) => x.ids.tmdb === picked?.ids.tmdb);
-				if (i >= 0) results[i] = { ...results[i], title_id: r.title.id };
-			}
-			addOpen = false;
-			toasts.push(`${r.title.name} is in your Library.`, 'ok');
-		} catch (err) {
-			addError = message(err);
-		} finally {
-			adding = false;
+	function movieAdded(m: LookupMovie, t: TitleView) {
+		if (results) {
+			const i = results.findIndex((x) => x.ids.tmdb === m.ids.tmdb);
+			if (i >= 0) results[i] = { ...results[i], title_id: t.id };
 		}
+		toasts.push(`${t.name} is in your Library.`, 'ok');
 	}
+
 </script>
 
 <svelte:head><title>Search · HolyArrs</title></svelte:head>
@@ -470,7 +404,7 @@
 						{:else if m.never_add}
 							<StatusPill kind="turned_down" label="On the Never-add list" />
 						{:else if session.can('manage_library')}
-							<Button variant="primary" icon="plus" onclick={() => openAdd(m)}>Add</Button>
+							<Button variant="primary" icon="plus" onclick={() => addMovie?.open(m)}>Add</Button>
 						{:else if m.ask?.mine}
 							<Button href={to(`/wishlist`)} icon="wish">You asked · {m.ask.state_label}</Button>
 						{:else if session.can('ask')}
@@ -488,87 +422,7 @@
 </div>
 </section>
 
-<Sheet bind:open={addOpen} title={picked ? `Add ${picked.name}` : 'Add a movie'}>
-	{#if picked}
-		<form id="add-movie" class="sheet-form" onsubmit={add}>
-			{#if movieFolders.length === 0}
-				<p class="notice warn">
-					There is no Library folder for movies yet. <a href={to(`/settings/library-folders`)} class="ul">Add one</a> first.
-				</p>
-			{:else}
-				<div class="field">
-					<label for="folder">Library folder</label>
-					<select id="folder" class="input" bind:value={folderId} onchange={() => chooseRulesFor(folderId)}>
-						{#each movieFolders as f (f.id)}
-							<option value={f.id}>{f.label || f.path} ({f.path})</option>
-						{/each}
-					</select>
-				</div>
-				<div class="field">
-					<label for="rules">Pick rules</label>
-					<select id="rules" class="input" bind:value={rulesId}>
-						{#each movieRules as r (r.id)}
-							<option value={r.id}>{r.name}</option>
-						{/each}
-					</select>
-					<span class="hint">Which Releases count, and which one is best.</span>
-				</div>
-				<div class="field">
-					<label for="gate">Release gate</label>
-					<select id="gate" class="input" bind:value={gate}>
-						{#each gates as [g, label] (g)}
-							<option value={g}>{label}</option>
-						{/each}
-					</select>
-					<span class="hint">{gates.find(([g]) => g === gate)?.[2]}</span>
-				</div>
-				<label class="checkline">
-					<input type="checkbox" bind:checked={keep} />
-					<span><b>Keep up to date</b><br /><span class="hint">HolyArrs looks for it and for a better copy later.</span></span>
-				</label>
-				<label class="checkline">
-					<input type="checkbox" bind:checked={searchOnAdd} />
-					<span><b>Search now</b><br /><span class="hint">Start looking for a Release straight away.</span></span>
-				</label>
-				<label class="checkline">
-					<input type="checkbox" bind:checked={more} />
-					<span><b>Also keep a second Version</b><br /><span class="hint">For example a 4K copy next to the HD one, with its own Pick rules and folder.</span></span>
-				</label>
-				{#if more}
-					<fieldset class="more">
-						<legend class="sr-only">Second Version</legend>
-						<div class="field">
-							<label for="more-label">Version name</label>
-							<input id="more-label" class="input" bind:value={moreLabel} maxlength="40" required />
-						</div>
-						<div class="field">
-							<label for="more-rules">Pick rules for this Version</label>
-							<select id="more-rules" class="input" bind:value={moreRules}>
-								{#each movieRules as r (r.id)}
-									<option value={r.id}>{r.name}</option>
-								{/each}
-							</select>
-						</div>
-						<div class="field">
-							<label for="more-folder">Library folder for this Version</label>
-							<select id="more-folder" class="input" bind:value={moreFolder}>
-								{#each movieFolders as f (f.id)}
-									<option value={f.id}>{f.label || f.path} ({f.path})</option>
-								{/each}
-							</select>
-							{#if moreFolder === folderId}<span class="hint">Same folder as the main copy: it gets its own folder named with “[{moreLabel.trim() || '4K'}]”.</span>{/if}
-						</div>
-					</fieldset>
-				{/if}
-			{/if}
-			{#if addError}<p class="form-error" role="alert">{plainReason(addError).text}</p>{/if}
-		</form>
-	{/if}
-	{#snippet footer()}
-		<Button variant="plain" onclick={() => (addOpen = false)}>Cancel</Button>
-		<Button variant="primary" type="submit" form="add-movie" disabled={movieFolders.length === 0} busy={adding}>Add to Library</Button>
-	{/snippet}
-</Sheet>
+<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} onadded={movieAdded} />
 
 
 <AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} onadded={showAdded} />
@@ -601,11 +455,6 @@
 	.asked-already { display: block; color: var(--text-muted); font: var(--t-footnote); }
 	.act > .xs { color: var(--text-muted); font: var(--t-footnote); }
 	.attribution { margin: 8px 0 0; color: var(--text-muted); font: var(--t-footnote); }
-	.sheet-form { display: flex; flex-direction: column; gap: 4px; }
-	.sheet-form .notice.warn { color: var(--text); }
-	.form-error { margin: 8px 0 0; color: var(--fail); font: var(--t-callout); }
-	.ul { text-decoration: underline; color: var(--text); }
-	.more { margin: 12px 0 0; padding: 12px 0 0 16px; border: 0; border-left: 2px solid var(--line-strong); }
 	@media (max-width: 600px) {
 		.hit { grid-template-columns: 60px minmax(0, 1fr); }
 		.art { width: 60px; }
