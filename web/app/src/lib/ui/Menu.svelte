@@ -40,9 +40,25 @@
 	function entries(panel: HTMLElement) {
 		return [...panel.querySelectorAll<HTMLElement>('[role^="menuitem"]:not([aria-disabled="true"])')];
 	}
+	// Opened with ArrowUp: start on the last item.
+	let startAtEnd = false;
 	function focusFirst(panel: HTMLElement) {
 		const list = entries(panel);
-		(list.find((e) => e.getAttribute('aria-checked') === 'true') ?? list[0])?.focus();
+		const first = startAtEnd ? list[list.length - 1] : (list.find((e) => e.getAttribute('aria-checked') === 'true') ?? list[0]);
+		startAtEnd = false;
+		first?.focus();
+	}
+	function triggerKey(e: KeyboardEvent) {
+		if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+		e.preventDefault();
+		const panel = document.getElementById((e.currentTarget as HTMLElement).getAttribute('aria-controls') ?? '');
+		if (open && panel) {
+			const list = entries(panel);
+			(e.key === 'ArrowUp' ? list[list.length - 1] : list[0])?.focus();
+			return;
+		}
+		startAtEnd = e.key === 'ArrowUp';
+		open = true;
 	}
 	function nav(e: KeyboardEvent) {
 		const panel = e.currentTarget as HTMLElement;
@@ -66,7 +82,7 @@
 	}
 </script>
 
-<Popover {label} {icon} {text} {trigger} {variant} {align} {placement} {width} bind:open haspopup="menu" panelRole="none" onopen={focusFirst}>
+<Popover {label} {icon} {text} {trigger} {variant} {align} {placement} {width} bind:open haspopup="menu" panelRole="none" onopen={focusFirst} ontriggerkey={triggerKey}>
 	{#snippet children(close)}
 		<div class="ui-menu" role="menu" aria-label={label} tabindex="-1" onkeydown={nav}>
 			{#each items as item, i (i)}

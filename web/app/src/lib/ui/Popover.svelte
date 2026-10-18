@@ -20,7 +20,8 @@
 		panelRole = 'dialog',
 		width = 240,
 		children,
-		onopen
+		onopen,
+		ontriggerkey
 	}: {
 		/** Accessible name of the trigger. */
 		label: string;
@@ -38,6 +39,8 @@
 		width?: number;
 		children: Snippet<[() => void]>;
 		onopen?: (panel: HTMLElement) => void;
+		/** Keys pressed on the trigger (a Menu opens on the arrow keys). */
+		ontriggerkey?: (e: KeyboardEvent) => void;
 	} = $props();
 
 	const id = $props.id();
@@ -61,16 +64,18 @@
 		};
 		const esc = (e: KeyboardEvent) => {
 			if (e.key === 'Escape') {
+				// Caught first, so a Sheet behind the panel stays open.
+				e.preventDefault();
 				e.stopPropagation();
 				close();
 			}
 		};
 		document.addEventListener('pointerdown', outside, true);
-		root?.addEventListener('keydown', esc);
+		document.addEventListener('keydown', esc, true);
 		queueMicrotask(() => panel && onopen?.(panel));
 		return () => {
 			document.removeEventListener('pointerdown', outside, true);
-			root?.removeEventListener('keydown', esc);
+			document.removeEventListener('keydown', esc, true);
 		};
 	});
 
@@ -105,6 +110,7 @@
 		aria-expanded={open}
 		aria-controls={id}
 		onclick={toggle}
+		onkeydown={ontriggerkey}
 		use:press={variant === 'icon' ? 'round' : 'button'}
 	>
 		{#if trigger}{@render trigger()}{:else}

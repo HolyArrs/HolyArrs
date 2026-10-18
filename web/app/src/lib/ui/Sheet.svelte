@@ -34,10 +34,15 @@
 
 	const id = $props.id();
 	let closing = $state(false);
+	let shutTimer: ReturnType<typeof setTimeout> | undefined;
 
 	$effect(() => {
 		if (!dialog) return;
-		if (open && !dialog.open) {
+		if (open && closing) {
+			// Reopened during the close animation: keep it open.
+			clearTimeout(shutTimer);
+			closing = false;
+		} else if (open && !dialog.open) {
 			closing = false;
 			dialog.showModal();
 		} else if (!open && dialog.open && !closing) {
@@ -49,10 +54,13 @@
 		if (!dialog?.open) return;
 		if (reducedMotion()) return finish();
 		closing = true;
-		setTimeout(finish, 160);
+		clearTimeout(shutTimer);
+		shutTimer = setTimeout(finish, 160);
 	}
 	function finish() {
+		clearTimeout(shutTimer);
 		closing = false;
+		if (open) return;
 		dialog?.close();
 	}
 	function closed() {
