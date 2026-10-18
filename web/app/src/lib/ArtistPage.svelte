@@ -8,7 +8,13 @@
 	import { live } from './live.svelte.ts';
 	import { ago, date, dateTime } from './format.ts';
 	import Icon from './Icon.svelte';
-	import Poster from './Poster.svelte';
+	import TitleHero from './ui/TitleHero.svelte';
+	import ActionButton from './ui/ActionButton.svelte';
+	import ActionMenu from './ui/ActionMenu.svelte';
+	import type { MenuItem } from './ui/Menu.svelte';
+	import SimilarShelf from './SimilarShelf.svelte';
+	import { artName, crumbFor } from './title-page.ts';
+	import './title-page.css';
 	import { session } from './session.svelte.ts';
 	import { toasts } from './toasts.svelte.ts';
 	import { decided, names } from './wishlist.ts';
@@ -46,16 +52,18 @@
 	let history = $state<EventRecord[]>([]);
 	let historyTotal = $state(0);
 	let asker: ReturnType<typeof AskArtistDialog> | undefined = $state();
-	let overviewExpanded = $state(false);
-	let overviewTitleId = $state(0);
 	const visibleDisambiguation = $derived(artist?.disambiguation?.trim() ?? '');
-	const overviewLong = $derived(visibleDisambiguation.length > 280);
-
-	$effect(() => {
-		if (title.id === overviewTitleId) return;
-		overviewTitleId = title.id;
-		overviewExpanded = false;
-	});
+	const heroMeta = $derived(['Artist', artist?.type ? artist.type.charAt(0).toUpperCase() + artist.type.slice(1) : '', artist ? (artist.status === 'ended' ? 'No longer active' : 'Still active') : ''].filter(Boolean));
+	const heroKind = $derived(artist?.missing ? 'missing' : 'in_library');
+	const libraryItems = $derived<MenuItem[]>([
+		{ label: 'Rename files', icon: 'copy', onselect: () => openRename() },
+		{ kind: 'separator' },
+		{ label: 'Delete artist', icon: 'trash', destructive: true, onselect: () => deleter?.open() }
+	]);
+	const moreItems = $derived<MenuItem[]>([
+		{ label: 'Refresh albums', icon: 'refresh', onselect: () => refresh(), disabled: refreshing },
+		{ label: 'All history', icon: 'clock', href: to(`/downloads/history?title=${title.id}`) }
+	]);
 
 	// Rename files and delete (4.15.4): the rename preview for this artist,
 	// and the delete dialog for the artist.
@@ -251,60 +259,46 @@
 	}
 </script>
 
-<div class="detail-workspace">
-<section class="hero">
-	<div class="art"><Poster src={title.artwork[0]} name={title.name} /></div>
-	<div class="info">
-		<h1 class="title">{title.name}</h1>
-		<div class="row chips">
-			<span class="chip">Artist</span>
-			{#if artist?.type}<span class="chip">{artist.type.charAt(0).toUpperCase() + artist.type.slice(1)}</span>{/if}
-			{#if artist}<span class="chip {artist.status === 'ended' ? '' : 'ok'}">{artist.status === 'ended' ? 'No longer active' : 'Still active'}</span>{/if}
-			{#if artist?.missing}<span class="chip wait">{artist.missing} missing</span>{/if}
-		</div>
-		{#if visibleDisambiguation}
-			<div class="overview-wrap">
-				<p id="artist-overview-{title.id}" class="overview" class:clamped={overviewLong && !overviewExpanded}>{visibleDisambiguation}</p>
-				{#if overviewLong}
-					<button
-						class="overview-toggle"
-						type="button"
-						aria-controls="artist-overview-{title.id}"
-						aria-expanded={overviewExpanded}
-						onclick={() => (overviewExpanded = !overviewExpanded)}
-					>
-						{overviewExpanded ? 'Show less' : 'Read more'}
-					</button>
-				{/if}
-			</div>
-		{/if}
-		<p class="small" data-testid="artist-progress">{artistProgress(artist)}</p>
-		<p class="why small" data-testid="gate-reason"><b>Why:</b> {title.gate_reason}</p>
+<div class="tp">
+<TitleHero
+	title={title.name}
+	poster={title.artwork[0]}
+	backdrop={title.artwork[1]}
+	square
+	breadcrumb={[{ href: to(crumbFor('artist').path), label: crumbFor('artist').label }, { href: to(`/library/${title.id}`), label: title.name }]}
+	meta={heroMeta}
+	status={heroKind}
+	statusLabel={artist?.missing ? `${artist.missing} missing` : undefined}
+	description={visibleDisambiguation}
+	vtName={artName(title.id)}
+>
+	{#snippet actions()}
 		{#if staff}
-			<div class="row actions">
-				<button class="btn btn-red" type="button" onclick={() => search()} disabled={busy === 'search'} aria-busy={busy === 'search'} data-testid="artist-search"
-					><Icon name="search" size={16} /> Search now</button
-				>
-				<button class="btn btn-ghost" type="button" onclick={refresh} disabled={refreshing} aria-busy={refreshing}><Icon name="refresh" size={16} /> Refresh</button>
-				<button class="btn btn-ghost" type="button" onclick={openEdit}>Edit album kinds</button>
-				<button class="btn btn-ghost" type="button" onclick={openRename} data-testid="rename-artist">Rename files</button>
-				<button class="btn btn-quiet" type="button" onclick={() => deleter?.open()} data-testid="delete-artist"><Icon name="trash" size={16} /> Delete</button>
-				<label class="switch">
-					<input type="checkbox" checked={title.keep_up_to_date} disabled={busy === 'artist'} onchange={(e) => setKeep(e.currentTarget.checked)} />
-					<span class="sw" aria-hidden="true"></span>
-					<span class="small">Keep up to date</span>
-				</label>
-			</div>
+			<ActionButton icon="search" label="Search now" primary onclick={() => search()} disabled={busy === 'search'} busy={busy === 'search'} data-testid="artist-search" />
+			<ActionButton
+				icon={title.keep_up_to_date ? 'check' : 'plus'}
+				label="Keep up to date"
+				caption={title.keep_up_to_date ? 'Kept up to date' : 'Keep up to date'}
+				pressed={title.keep_up_to_date}
+				disabled={busy === 'artist'}
+				onclick={() => setKeep(!title.keep_up_to_date)}
+			/>
+			<ActionButton icon="tools" label="Edit album kinds" caption="Edit" onclick={openEdit} />
+			<ActionMenu label="Library" icon="library" items={libraryItems} />
+			<ActionMenu label="More actions" caption="More" icon="more" items={moreItems} />
 		{:else if session.can('ask')}
-			<div class="row actions">
-				<button class="btn btn-red" type="button" onclick={askMore} data-testid="ask-albums"><Icon name="wish" size={16} /> Ask for albums</button>
-			</div>
+			<ActionButton icon="wish" label="Ask for albums" primary onclick={askMore} data-testid="ask-albums" />
 		{/if}
-	</div>
-</section>
+	{/snippet}
+	{#snippet extra()}
+		<p class="small" data-testid="artist-progress">{artistProgress(artist)}</p>
+	{/snippet}
+</TitleHero>
 
-<div class="cols">
-	<div class="side">
+<p class="tp-why" data-testid="gate-reason"><b>Why:</b> {title.gate_reason}</p>
+
+<div class="tp-body tp-artist">
+	<aside class="tp-side" aria-label="About this artist">
 		<section class="card" aria-labelledby="h-artist-facts">
 			<h2 id="h-artist-facts" class="h2 card-title">About</h2>
 			<dl class="facts">
@@ -371,9 +365,9 @@
 				{/if}
 			</section>
 		{/if}
-	</div>
+	</aside>
 
-	<div class="main">
+	<div class="tp-main">
 		<section class="card" aria-labelledby="h-albums">
 			<div class="card-head">
 				<h2 id="h-albums" class="h2">Albums</h2>
@@ -423,6 +417,8 @@
 		</section>
 	</div>
 </div>
+
+<SimilarShelf {title} />
 </div>
 
 {#if !staff && session.can('ask')}
@@ -487,81 +483,6 @@
 </dialog>
 
 <style>
-	.detail-workspace {
-		overflow: hidden;
-		border: 1px solid var(--line);
-		border-radius: 16px;
-		background: var(--surface-1);
-	}
-	.hero {
-		display: grid;
-		grid-template-columns: 144px minmax(0, 1fr);
-		gap: var(--s-6);
-		margin: 0;
-		padding: var(--s-5);
-		border-bottom: 1px solid var(--line);
-	}
-	.title {
-		font: var(--weight-semibold) var(--text-2xl) / var(--leading-tight) var(--font-display);
-		letter-spacing: var(--tracking-display);
-		overflow-wrap: anywhere;
-	}
-	.overview {
-		margin: 0;
-		color: var(--text-muted);
-		line-height: 1.6;
-		text-wrap: pretty;
-	}
-	.overview-wrap {
-		margin-top: var(--s-2);
-	}
-	.overview-toggle {
-		display: none;
-	}
-	.chips {
-		margin: var(--s-4) 0 var(--s-2);
-		flex-wrap: wrap;
-	}
-	.why {
-		margin: var(--s-2) 0;
-		padding: var(--s-2) var(--s-3);
-		border-left: 3px solid var(--ok);
-		background: var(--surface-1);
-		border-radius: var(--r-sm);
-		max-width: 70ch;
-	}
-	.actions {
-		margin-top: var(--s-4);
-		gap: var(--s-2);
-		flex-wrap: wrap;
-	}
-	.cols {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
-		gap: 0;
-		align-items: start;
-	}
-	.side,
-	.main {
-		display: flex;
-		flex-direction: column;
-		gap: 0;
-		min-width: 0;
-	}
-	.main { grid-column: 1; grid-row: 1; }
-	.side { grid-column: 2; grid-row: 1; border-left: 1px solid var(--line); }
-	.side :global(.card),
-	.main :global(.card) {
-		margin: 0;
-		border: 0;
-		border-radius: 0;
-		box-shadow: none;
-	}
-	.side :global(.card + .card) { border-top: 1px solid var(--line); }
-	.side .card + .card,
-	.main :global(.card + .card) {
-		margin-top: 0;
-	}
 	.card-title {
 		margin-bottom: var(--s-4);
 	}
@@ -667,80 +588,7 @@
 		min-height: var(--tap);
 		font-size: var(--text-sm);
 	}
-	@media (max-width: 900px) {
-		.cols {
-			grid-template-columns: minmax(0, 1fr);
-		}
-		.main {
-			grid-row: 1;
-		}
-		.main, .side { grid-column: auto; }
-		.side { grid-row: auto; border-left: 0; border-top: 1px solid var(--line); }
-	}
 	@media (max-width: 600px) {
-		.hero {
-			grid-template-columns: 88px minmax(0, 1fr);
-			gap: var(--s-3);
-			padding: var(--s-4);
-		}
-		.hero > .art {
-			grid-column: 1;
-			grid-row: 1 / span 2;
-		}
-		.info {
-			display: contents;
-		}
-		.info > * {
-			grid-column: 1 / -1;
-		}
-		.info > .title {
-			grid-column: 2;
-			grid-row: 1;
-			align-self: start;
-		}
-		.info > .chips {
-			grid-column: 2;
-			grid-row: 2;
-			align-self: start;
-			margin: 0;
-		}
-		.info > .overview-wrap {
-			grid-row: 3;
-			margin-top: var(--s-1);
-		}
-		.overview.clamped {
-			display: -webkit-box;
-			overflow: hidden;
-			-webkit-box-orient: vertical;
-			-webkit-line-clamp: 5;
-			line-clamp: 5;
-		}
-		.overview-toggle {
-			display: inline-flex;
-			align-items: center;
-			min-height: 44px;
-			margin-top: var(--s-1);
-			padding: 0;
-			border: 0;
-			background: transparent;
-			color: var(--text);
-			font: inherit;
-			font-size: var(--text-sm);
-			font-weight: var(--weight-semibold);
-			cursor: pointer;
-		}
-		.overview-toggle:hover {
-			text-decoration: underline;
-		}
-		.overview-toggle:focus-visible {
-			outline: 2px solid var(--focus, currentColor);
-			outline-offset: 3px;
-			border-radius: 2px;
-		}
-		.title {
-			font-size: var(--text-xl);
-			line-height: 1.15;
-		}
 		.album {
 			display: grid;
 			grid-template-columns: minmax(0, 1fr) auto;
@@ -793,4 +641,5 @@
 			font-weight: var(--weight-medium);
 		}
 	}
+	.tp-artist > .tp-side { order: 2; }
 </style>

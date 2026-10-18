@@ -14,7 +14,18 @@
 	import SubtitlePanel from './SubtitlePanel.svelte';
 	import { ago, date, dateTime, tone } from './format.ts';
 	import Icon from './Icon.svelte';
-	import Poster from './Poster.svelte';
+	import TitleHero from './ui/TitleHero.svelte';
+	import ActionButton from './ui/ActionButton.svelte';
+	import ActionMenu from './ui/ActionMenu.svelte';
+	import Menu, { type MenuItem } from './ui/Menu.svelte';
+	import SegmentedControl from './ui/SegmentedControl.svelte';
+	import StatusPill from './ui/StatusPill.svelte';
+	import WideCard from './ui/WideCard.svelte';
+	import Skeleton from './ui/Skeleton.svelte';
+	import TitleCast from './TitleCast.svelte';
+	import SimilarShelf from './SimilarShelf.svelte';
+	import { artName, crumbFor, slotKind } from './title-page.ts';
+	import './title-page.css';
 	import { session } from './session.svelte.ts';
 	import { toasts } from './toasts.svelte.ts';
 	import { decided, names } from './wishlist.ts';
@@ -48,15 +59,6 @@
 	let history = $state<EventRecord[]>([]);
 	let historyTotal = $state(0);
 	let refreshing = $state(false);
-	let overviewExpanded = $state(false);
-	let overviewTitleId = $state(0);
-	const overviewLong = $derived((title.overview?.length ?? 0) > 280);
-
-	$effect(() => {
-		if (title.id === overviewTitleId) return;
-		overviewTitleId = title.id;
-		overviewExpanded = false;
-	});
 
 	const statusWord: Record<string, string> = { running: 'Still running', ended: 'Ended', announced: 'Announced' };
 
@@ -184,10 +186,45 @@
 		}
 	}
 
-	function toggle(n: number, e: Event) {
-		open[n] = (e.currentTarget as HTMLDetailsElement).open;
-		if (open[n] && !episodes[n]) void loadSeason(n);
+	// The season on screen: the first regular season until one is picked.
+	let picked = $state<number | null>(null);
+	const cur = $derived(picked ?? show?.seasons.find((x) => x.number > 0)?.number ?? show?.seasons[0]?.number ?? 0);
+	const curSeason = $derived(show?.seasons.find((x) => x.number === cur));
+	$effect(() => {
+		const n = cur;
+		if (!curSeason) return;
+		open[n] = true;
+		if (!episodes[n]) void loadSeason(n);
+	});
+	function pickSeason(n: number) {
+		picked = n;
 	}
+	const seasonItems = $derived<MenuItem[]>((show?.seasons ?? []).map((x) => ({ label: x.name || seasonName(x.number), checked: x.number === cur, onselect: () => pickSeason(x.number) })));
+
+	function episodeItems(ep: EpisodeView): MenuItem[] {
+		const code = episodeLabel(ep, order);
+		const word = searchWord(mainSlot(ep)?.state);
+		const items: MenuItem[] = [];
+		if (word) items.push({ label: word, icon: 'search', onselect: () => searchEpisode(ep), disabled: searching === `e${ep.id}` });
+		if (mainSlot(ep)) items.push({ label: 'Choose a release', icon: 'grid', onselect: () => searchEpisode(ep, true), disabled: searching === `e${ep.id}l` });
+		if (ep.slots.some((x) => x.file_id)) items.push({ label: 'Subtitles', icon: 'subtitle', onselect: () => openSubtitles(ep) });
+		items.push({ label: 'History', icon: 'clock', href: to(`/downloads/history?title=${title.id}&episode=${ep.id}`) });
+		items.push({ label: `Keep ${code} up to date`, checked: ep.keep_up_to_date, disabled: busy === `e${ep.id}`, onselect: () => setEpisode(ep, !ep.keep_up_to_date) });
+		items.push({ kind: 'separator' }, { label: `Delete ${code}`, icon: 'trash', destructive: true, onselect: () => deleter?.open({ episodeIds: [ep.id], label: code }) });
+		return items;
+	}
+
+	const heroMeta = $derived([title.year ? String(title.year) : '', show ? (statusWord[show.status] ?? show.status) : '', show?.network ?? '', show?.seasons.length ? `${show.seasons.length} ${show.seasons.length === 1 ? 'season' : 'seasons'}` : ''].filter(Boolean));
+	const heroKind = $derived(show?.missing ? 'missing' : show?.in_library ? 'in_library' : show?.not_out_yet ? 'coming_soon' : 'missing');
+	const libraryItems = $derived<MenuItem[]>([
+		{ label: 'Rename files', icon: 'copy', onselect: openRename },
+		{ kind: 'separator' },
+		{ label: 'Delete show', icon: 'trash', destructive: true, onselect: () => deleter?.open() }
+	]);
+	const moreItems = $derived<MenuItem[]>([
+		{ label: 'Refresh seasons and episodes', icon: 'refresh', onselect: refresh, disabled: refreshing },
+		{ label: 'All history', icon: 'clock', href: to(`/downloads/history?title=${title.id}`) }
+	]);
 
 	async function setSeason(n: number, keep: boolean) {
 		busy = `s${n}`;
@@ -286,56 +323,126 @@
 	}
 </script>
 
-<div class="detail-workspace">
-<section class="hero">
-	<div class="art"><Poster src={title.artwork[0]} name={title.name} /></div>
-	<div class="info">
-		<h1 class="title">{title.name}{#if title.year}{' '}<span class="year muted">({title.year})</span>{/if}</h1>
-		<div class="row chips">
-			<span class="chip">Show</span>
-			{#if show}<span class="chip {show.status === 'ended' ? '' : 'ok'}">{statusWord[show.status] ?? show.status}</span>{/if}
-			{#if show?.network}<span class="chip">{show.network}</span>{/if}
-			{#if show?.missing}<span class="chip {tone('wanted')}">{show.missing} missing</span>{/if}
-		</div>
-		{#if title.overview}
-			<div class="overview-wrap">
-				<p id="show-overview-{title.id}" class="overview" class:clamped={overviewLong && !overviewExpanded}>{title.overview}</p>
-				{#if overviewLong}
-					<button
-						class="overview-toggle"
-						type="button"
-						aria-controls="show-overview-{title.id}"
-						aria-expanded={overviewExpanded}
-						onclick={() => (overviewExpanded = !overviewExpanded)}
-					>
-						{overviewExpanded ? 'Show less' : 'Read more'}
-					</button>
-				{/if}
-			</div>
-		{/if}
-		<p class="small" data-testid="show-progress">{showProgress(show)}</p>
-		<p class="why small open" data-testid="gate-reason"><b>Why:</b> {title.gate_reason}</p>
+<div class="tp">
+<TitleHero
+	title={title.name}
+	poster={title.artwork[0]}
+	backdrop={title.artwork[1]}
+	breadcrumb={[{ href: to(crumbFor('show').path), label: crumbFor('show').label }, { href: to(`/library/${title.id}`), label: title.year ? `${title.name} (${title.year})` : title.name }]}
+	meta={heroMeta}
+	status={heroKind}
+	statusLabel={show?.missing ? `${show.missing} missing` : undefined}
+	description={title.overview}
+	vtName={artName(title.id)}
+>
+	{#snippet actions()}
 		{#if staff}
-			<div class="row actions">
-				<button class="btn btn-red" type="button" onclick={searchShow} disabled={searching === 'show'} aria-busy={searching === 'show'} data-testid="search-show"
-					><Icon name="search" size={16} /> Search now</button
-				>
-				<button class="btn btn-ghost" type="button" onclick={refresh} disabled={refreshing} aria-busy={refreshing}><Icon name="refresh" size={16} /> Refresh</button>
-				<button class="btn btn-ghost" type="button" onclick={openEdit}>Edit</button>
-				<button class="btn btn-ghost" type="button" onclick={openRename} data-testid="rename-show">Rename files</button>
-				<button class="btn btn-quiet" type="button" onclick={() => deleter?.open()} data-testid="delete-show"><Icon name="trash" size={16} /> Delete</button>
-				<label class="switch">
-					<input type="checkbox" checked={title.keep_up_to_date} disabled={busy === 'show'} onchange={(e) => setKeep(e.currentTarget.checked)} />
-					<span class="sw" aria-hidden="true"></span>
-					<span class="small">Keep up to date</span>
-				</label>
-			</div>
+			<ActionButton icon="search" label="Search now" primary onclick={searchShow} disabled={searching === 'show'} busy={searching === 'show'} data-testid="search-show" />
+			<ActionButton
+				icon={title.keep_up_to_date ? 'check' : 'plus'}
+				label="Keep up to date"
+				caption={title.keep_up_to_date ? 'Kept up to date' : 'Keep up to date'}
+				pressed={title.keep_up_to_date}
+				disabled={busy === 'show'}
+				onclick={() => setKeep(!title.keep_up_to_date)}
+			/>
+			<ActionButton icon="tools" label="Edit" onclick={openEdit} />
+			<ActionMenu label="Library" icon="library" items={libraryItems} />
+			<ActionMenu label="More actions" caption="More" icon="more" items={moreItems} />
+		{:else}
+			<div class="tp-member"><StatusPill kind={heroKind} label={heroKind === 'in_library' ? 'Ready to watch' : undefined} on="art" /></div>
+		{/if}
+	{/snippet}
+	{#snippet extra()}
+		<p class="small" data-testid="show-progress">{showProgress(show)}</p>
+	{/snippet}
+</TitleHero>
+
+<p class="tp-why open" data-testid="gate-reason"><b>Why:</b> {title.gate_reason}</p>
+
+{#if scope && staff}
+	<ShowReleases titleId={title.id} {scope} jobs={scopeJobs} onclose={() => (scope = null)} onchange={() => void reload()} />
+{/if}
+
+<section class="tp-section" aria-labelledby="h-seasons">
+	<div class="tp-head">
+		<h2 id="h-seasons" class="tp-h2">Seasons</h2>
+		{#if show?.seasons.length}
+			{#if show.seasons.length <= 4}
+				<SegmentedControl label="Season" options={show.seasons.map((s) => ({ value: String(s.number), label: s.name || seasonName(s.number) }))} value={String(cur)} onchange={(v) => pickSeason(Number(v))} />
+			{:else}
+				<Menu label="Pick a season" variant="button" icon="tv" text={curSeason ? curSeason.name || seasonName(curSeason.number) : 'Season'} align="end" items={seasonItems} />
+			{/if}
 		{/if}
 	</div>
+	{#if !show?.seasons.length}
+		<p class="small muted">No seasons yet. A refresh adds them once the details source lists them.</p>
+	{:else if curSeason}
+		{@const s = curSeason}
+		<div class="season" data-testid="season">
+			<p class="xs muted" data-testid="season-line">{seasonLine(s)}{s.dropped ? ' · no longer listed' : ''}</p>
+			{#if staff}
+				<div class="row season-actions">
+					<button class="btn btn-ghost" type="button" onclick={() => searchSeason(s.number)} disabled={searching === `s${s.number}`} aria-label="Search now: {seasonName(s.number)}" data-testid="search-season"><Icon name="search" size={16} /> Search now</button>
+					<button class="btn btn-quiet" type="button" onclick={() => searchSeason(s.number, true)} disabled={searching === `s${s.number}l`} aria-label="Choose a release for {seasonName(s.number)}" data-testid="choose-season">Choose a release</button>
+					<button class="btn btn-quiet" type="button" onclick={() => deleter?.open({ season: s.number, label: seasonName(s.number) })} aria-label="Delete {seasonName(s.number)}" data-testid="delete-season">Delete season</button>
+					<label class="switch">
+						<input type="checkbox" checked={s.keep_up_to_date} disabled={busy === `s${s.number}`} onchange={(e) => setSeason(s.number, e.currentTarget.checked)} />
+						<span class="sw" aria-hidden="true"></span>
+						<span class="small">Keep {seasonName(s.number)} up to date</span>
+					</label>
+					{#if episodes[s.number] && seasonLooking(episodes[s.number])}
+						<span class="xs muted">{seasonLooking(episodes[s.number])} looking for a copy</span>
+					{/if}
+				</div>
+			{:else if !s.keep_up_to_date}
+				<p class="xs muted">Not kept</p>
+			{/if}
+			{#if episodes[s.number]}
+				<ul class="episodes">
+					{#each episodes[s.number] as ep (ep.id)}
+						{@const why = episodeWhy(ep, s.keep_up_to_date, title.keep_up_to_date)}
+						{@const main = mainSlot(ep)}
+						<li class="episode" data-testid="episode">
+							<WideCard
+								title="{episodeLabel(ep, order)} · {ep.name || 'Name not known yet'}"
+								image={title.artwork[1] ?? title.artwork[0]}
+								subtitle={ep.air_date ? date(ep.air_date) : 'No air date yet'}
+								status={main ? slotKind(main.state) : undefined}
+								statusLabel={ep.slots.length > 1 ? ep.slots.map((x) => `${x.version}: ${x.state_label}`).join(' · ') : main?.state_label}
+							>
+								{#snippet action()}
+									{#if staff}<span class="ep-menu"><Menu label="Actions for {episodeLabel(ep, order)}" items={episodeItems(ep)} width={250} /></span>{/if}
+								{/snippet}
+							</WideCard>
+							{#if why}<p class="xs muted ep-why" data-testid="episode-why">{why}</p>{/if}
+							{#each ep.slots.filter((x) => x.reason && ep.slots.length > 1) as sl (sl.id)}
+								<p class="xs muted ep-why">{sl.version}: {sl.reason}</p>
+							{/each}
+						</li>
+					{:else}
+						<li class="small muted">No episodes listed yet.</li>
+					{/each}
+				</ul>
+			{:else}
+				<div class="episodes" aria-busy="true">{#each [0, 1, 2] as i (i)}<Skeleton shape="wide" />{/each}</div>
+			{/if}
+		</div>
+	{/if}
 </section>
 
-<div class="cols">
-	<div class="side">
+{#key title.id}<TitleCast titleId={title.id} />{/key}
+
+<div class="tp-body">
+	<div class="tp-main">
+		<ShowVersions {title} {staff} onchange={reload} />
+		<CopyControls {title} onchange={reload} />
+		{#if staff}
+			{#key title.id}<SubtitlePanel titleId={title.id} movie={false} files={false} />{/key}
+		{/if}
+	</div>
+	<aside class="tp-side" aria-label="About this show">
+
 		<section class="card" aria-labelledby="h-show-facts">
 			<h2 id="h-show-facts" class="h2 card-title">About</h2>
 			<dl class="facts">
@@ -361,9 +468,6 @@
 			{#if staff && title.folder_path}<p class="xs muted path">In {title.folder_path}</p>{/if}
 		</section>
 
-		<ShowVersions {title} {staff} onchange={reload} />
-		<CopyControls {title} onchange={reload} />
-
 		{#if title.asks?.length}
 			<section class="card" aria-labelledby="h-show-asks" data-testid="title-asks">
 				<h2 id="h-show-asks" class="h2 card-title">Wishlist</h2>
@@ -382,10 +486,6 @@
 					</dl>
 				{/each}
 			</section>
-		{/if}
-
-		{#if staff}
-			{#key title.id}<SubtitlePanel titleId={title.id} movie={false} files={false} />{/key}
 		{/if}
 
 		{#if staff}
@@ -409,147 +509,10 @@
 				{/if}
 			</section>
 		{/if}
-	</div>
-
-	<div class="main">
-	{#if scope && staff}
-		<ShowReleases titleId={title.id} {scope} jobs={scopeJobs} onclose={() => (scope = null)} onchange={() => void reload()} />
-	{/if}
-	<section class="card seasons-card" aria-labelledby="h-seasons">
-		<h2 id="h-seasons" class="h2 card-title">Seasons</h2>
-		{#if !show?.seasons.length}
-			<p class="small muted">No seasons yet. A refresh adds them once the details source lists them.</p>
-		{:else}
-			<ul class="seasons">
-				{#each show.seasons as s (s.number)}
-					<li class="season" data-testid="season">
-						<div class="season-head">
-							<details open={open[s.number] ?? false} ontoggle={(e) => toggle(s.number, e)}>
-								<summary>
-									<b>{s.name || seasonName(s.number)}</b>
-									<span class="xs muted" data-testid="season-line">{seasonLine(s)}{s.dropped ? ' · no longer listed' : ''}</span>
-								</summary>
-								{#if staff}
-									<div class="row season-actions">
-										<button
-											class="btn btn-ghost btn-sm"
-											type="button"
-											onclick={() => searchSeason(s.number)}
-											disabled={searching === `s${s.number}`}
-											aria-label="Search now: {seasonName(s.number)}"
-											data-testid="search-season">Search now</button
-										>
-										<button
-											class="btn btn-quiet btn-sm"
-											type="button"
-											onclick={() => searchSeason(s.number, true)}
-											disabled={searching === `s${s.number}l`}
-											aria-label="Choose a release for {seasonName(s.number)}"
-											data-testid="choose-season">Choose a release</button
-										>
-										<button
-											class="btn btn-quiet btn-sm"
-											type="button"
-											onclick={() => deleter?.open({ season: s.number, label: seasonName(s.number) })}
-											aria-label="Delete {seasonName(s.number)}"
-											data-testid="delete-season">Delete season</button
-										>
-										{#if episodes[s.number] && seasonLooking(episodes[s.number])}
-											<span class="xs muted">{seasonLooking(episodes[s.number])} looking for a copy</span>
-										{/if}
-									</div>
-								{/if}
-								{#if episodes[s.number]}
-									<ul class="episodes">
-										{#each episodes[s.number] as ep (ep.id)}
-											{@const why = episodeWhy(ep, s.keep_up_to_date, title.keep_up_to_date)}
-											<li class="episode" data-testid="episode">
-												<div class="ep-main">
-													<span class="mono xs code">{episodeLabel(ep, order)}</span>
-													<span class="ep-name small">{ep.name || 'Name not known yet'}</span>
-													<span class="xs muted">{ep.air_date ? date(ep.air_date) : 'No air date yet'}</span>
-												</div>
-												<div class="ep-state">
-													{#each ep.slots as sl (sl.id)}
-														<span class="chip {tone(sl.state)}" data-testid="episode-state">{ep.slots.length > 1 ? `${sl.version}: ` : ''}{sl.state_label}</span>
-													{/each}
-													{#if staff && searchWord(mainSlot(ep)?.state)}
-														<button
-															class="btn btn-quiet btn-sm"
-															type="button"
-															onclick={() => searchEpisode(ep)}
-															disabled={searching === `e${ep.id}`}
-															aria-label="{searchWord(mainSlot(ep)?.state)}: {episodeLabel(ep, order)}"
-															data-testid="search-episode">{searchWord(mainSlot(ep)?.state)}</button
-														>
-													{/if}
-													{#if staff && mainSlot(ep)}
-														<button
-															class="btn btn-quiet btn-sm"
-															type="button"
-															onclick={() => searchEpisode(ep, true)}
-															disabled={searching === `e${ep.id}l`}
-															aria-label="Choose a release for {episodeLabel(ep, order)}"
-															data-testid="choose-episode">Choose a release</button
-														>
-													{/if}
-													{#if staff}
-														{#if ep.slots.some((x) => x.file_id)}
-															<button
-																class="btn btn-quiet btn-sm"
-																type="button"
-																onclick={() => openSubtitles(ep)}
-																aria-label="Subtitles of {episodeLabel(ep, order)}"
-																data-testid="episode-subtitles">Subtitles</button
-															>
-														{/if}
-														<a class="btn btn-quiet btn-sm" href={to(`/downloads/history?title=${title.id}&episode=${ep.id}`)} aria-label="History of {episodeLabel(ep, order)}"
-															data-testid="episode-history">History</a
-														>
-														<button
-															class="btn btn-quiet btn-sm"
-															type="button"
-															onclick={() => deleter?.open({ episodeIds: [ep.id], label: episodeLabel(ep, order) })}
-															aria-label="Delete {episodeLabel(ep, order)}"
-															data-testid="delete-episode">Delete</button
-														>
-														<label class="switch">
-															<input type="checkbox" checked={ep.keep_up_to_date} disabled={busy === `e${ep.id}`} onchange={(e) => setEpisode(ep, e.currentTarget.checked)} />
-															<span class="sw" aria-hidden="true"></span>
-															<span class="sr-only">Keep {episodeLabel(ep, order)} up to date</span>
-														</label>
-													{/if}
-												</div>
-												{#if why}<p class="xs muted ep-why" data-testid="episode-why">{why}</p>{/if}
-												{#each ep.slots.filter((x) => x.reason && ep.slots.length > 1) as sl (sl.id)}
-													<p class="xs muted ep-why">{sl.version}: {sl.reason}</p>
-												{/each}
-											</li>
-										{:else}
-											<li class="small muted">No episodes listed yet.</li>
-										{/each}
-									</ul>
-								{:else if open[s.number]}
-									<div class="sk" style="height: 80px; margin-top: 8px"></div>
-								{/if}
-							</details>
-							{#if staff}
-								<label class="switch season-switch">
-									<input type="checkbox" checked={s.keep_up_to_date} disabled={busy === `s${s.number}`} onchange={(e) => setSeason(s.number, e.currentTarget.checked)} />
-									<span class="sw" aria-hidden="true"></span>
-									<span class="sr-only">Keep {seasonName(s.number)} up to date</span>
-								</label>
-							{:else if !s.keep_up_to_date}
-								<span class="xs muted">Not kept</span>
-							{/if}
-						</div>
-					</li>
-				{/each}
-			</ul>
-		{/if}
-	</section>
-	</div>
+	</aside>
 </div>
+
+<SimilarShelf {title} />
 </div>
 
 {#if staff}
@@ -615,269 +578,17 @@
 </dialog>
 
 <style>
-	.detail-workspace {
-		overflow: hidden;
-		border: 1px solid var(--line);
-		border-radius: 16px;
-		background: var(--surface-1);
-	}
-	.hero {
-		display: grid;
-		grid-template-columns: 144px minmax(0, 1fr);
-		gap: var(--s-5);
-		margin: 0;
-		padding: var(--s-5);
-		border-bottom: 1px solid var(--line);
-		background: var(--surface-1);
-	}
-	.title {
-		font: var(--weight-semibold) var(--text-2xl) / var(--leading-tight) var(--font-display);
-		letter-spacing: var(--tracking-display);
-	}
-	.overview {
-		margin: 0;
-		color: var(--text-muted);
-		max-width: 78ch;
-		line-height: 1.6;
-		text-wrap: pretty;
-	}
-	.overview-wrap {
-		margin-top: var(--s-3);
-	}
-	.overview-toggle {
-		display: none;
-	}
-	.chips {
-		margin: var(--s-4) 0 var(--s-2);
-		flex-wrap: wrap;
-	}
-	.why {
-		margin: var(--s-2) 0;
-		padding: var(--s-2) var(--s-3);
-		border-left: 3px solid var(--ok);
-		background: var(--surface-1);
-		border-radius: var(--r-sm);
-		max-width: 70ch;
-	}
-	.actions {
-		margin-top: var(--s-4);
-		gap: var(--s-2);
-		flex-wrap: wrap;
-	}
-	.cols {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
-		gap: 0;
-		align-items: start;
-	}
-	.side {
-		display: flex;
-		flex-direction: column;
-		gap: var(--s-4);
-		grid-column: 2;
-		position: sticky;
-		top: 0;
-		border-left: 1px solid var(--line);
-	}
-	.side :global(.card),
-	.main :global(.card) {
-		margin: 0;
-		border: 0;
-		border-radius: 0;
-		box-shadow: none;
-	}
-	.side :global(.card + .card) { border-top: 1px solid var(--line); }
-	.side .card + .card {
-		margin-top: 0;
-	}
-	.card-title {
-		margin-bottom: var(--s-4);
-	}
-	.path {
-		overflow-wrap: anywhere;
-	}
-	.seasons {
-		display: flex;
-		flex-direction: column;
-	}
-	.season + .season {
-		border-top: 1px solid var(--line);
-	}
-	.season-head {
-		display: flex;
-		align-items: flex-start;
-		gap: var(--s-3);
-		padding: var(--s-3) 0;
-	}
-	.season-head details {
-		flex: 1;
-		min-width: 0;
-	}
-	summary {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: 4px var(--s-3);
-		min-height: var(--tap);
-		padding: var(--s-2) 0;
-		cursor: pointer;
-		border-radius: var(--r-sm);
-	}
-	.season-switch {
-		flex: none;
-	}
-	.episodes {
-		display: flex;
-		flex-direction: column;
-		margin: var(--s-1) 0 var(--s-2);
-	}
-	.episode {
-		padding: var(--s-3) 0 var(--s-3) var(--s-4);
-		border-left: 2px solid var(--line);
-	}
-	.ep-main {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: 2px var(--s-3);
-	}
-	.ep-name {
-		min-width: 0;
-		overflow-wrap: anywhere;
-	}
-	.code {
-		color: var(--text-muted);
-	}
-	.ep-state {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--s-2);
-	}
-	.ep-why {
-		margin-top: 2px;
-	}
-	.main {
-		display: flex;
-		flex-direction: column;
-		gap: var(--s-4);
-		min-width: 0;
-		grid-column: 1;
-		grid-row: 1;
-	}
-	.main :global(.card + .card) {
-		margin-top: 0;
-	}
-	.season-actions {
-		gap: var(--s-2);
-		flex-wrap: wrap;
-		align-items: center;
-		margin: var(--s-1) 0 var(--s-2);
-	}
-	.btn-sm {
-		min-height: var(--tap);
-		padding-inline: var(--s-3);
-		font-size: var(--text-xs);
-	}
-	.modal {
-		width: min(480px, calc(100vw - 32px));
-		max-height: calc(100dvh - 32px);
-		overflow: auto;
-		padding: var(--s-6);
-		border: 0;
-		border-radius: var(--r-modal);
-		background: var(--surface-1);
-		color: var(--text);
-		box-shadow: var(--shadow-modal);
-	}
-	.modal::backdrop {
-		background: var(--scrim);
-	}
-	.modal.wide {
-		width: min(720px, calc(100vw - 32px));
-	}
-	.modal-actions {
-		justify-content: flex-end;
-		margin-top: var(--s-6);
-	}
-	@media (max-width: 900px) {
-		.cols {
-			grid-template-columns: minmax(0, 1fr);
-		}
-		.main {
-			grid-row: 1;
-		}
-		.side { grid-column: auto; position: static; border-left: 0; border-top: 1px solid var(--line); }
-	}
-	@media (max-width: 600px) {
-		.hero {
-			grid-template-columns: 88px minmax(0, 1fr);
-			gap: var(--s-3);
-			padding: var(--s-4);
-		}
-		.hero > .art {
-			grid-column: 1;
-			grid-row: 1 / span 2;
-		}
-		.info {
-			display: contents;
-		}
-		.info > * {
-			grid-column: 1 / -1;
-		}
-		.info > .title {
-			grid-column: 2;
-			grid-row: 1;
-			align-self: start;
-		}
-		.info > .chips {
-			grid-column: 2;
-			grid-row: 2;
-			align-self: start;
-			margin: 0;
-		}
-		.info > .overview-wrap {
-			grid-row: 3;
-			margin-top: var(--s-1);
-		}
-		.overview.clamped {
-			display: -webkit-box;
-			overflow: hidden;
-			-webkit-box-orient: vertical;
-			-webkit-line-clamp: 5;
-			line-clamp: 5;
-		}
-		.overview-toggle {
-			display: inline-flex;
-			align-items: center;
-			min-height: 44px;
-			margin-top: var(--s-1);
-			padding: 0;
-			border: 0;
-			background: transparent;
-			color: var(--text);
-			font: inherit;
-			font-size: var(--text-sm);
-			font-weight: var(--weight-semibold);
-			cursor: pointer;
-		}
-		.overview-toggle:hover {
-			text-decoration: underline;
-		}
-		.overview-toggle:focus-visible {
-			outline: 2px solid var(--focus, currentColor);
-			outline-offset: 3px;
-			border-radius: 2px;
-		}
-		.title {
-			font-size: var(--text-xl);
-			line-height: 1.15;
-		}
-		.title .year {
-			display: block;
-			margin-top: 2px;
-			font-size: var(--text-base);
-			font-weight: var(--weight-medium);
-		}
-	}
+	.path { overflow-wrap: anywhere; }
+	.season-actions { gap: var(--s-2); flex-wrap: wrap; align-items: center; margin: var(--s-3) 0 var(--s-4); }
+	.episodes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 20px 16px; }
+	.episode { min-width: 0; }
+	.ep-why { margin-top: 2px; }
+	.ep-menu :global(.ui-pop > .trigger) { background: rgb(0 0 0 / 45%); color: #fff; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+	.ep-menu :global(.ui-pop > .trigger:hover), .ep-menu :global(.ui-pop > .trigger[aria-expanded='true']) { background: rgb(0 0 0 / 65%); color: #fff; }
+	.modal { width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; padding: var(--s-6); border: 0; border-radius: var(--r-modal); background: var(--surface-1); color: var(--text); box-shadow: var(--shadow-modal); }
+	.modal.wide { width: min(640px, calc(100vw - 32px)); }
+	.modal::backdrop { background: var(--scrim); }
+	.modal-actions { justify-content: flex-end; margin-top: var(--s-6); }
+	.hist li { flex-wrap: wrap; gap: var(--s-2) var(--s-3); }
+	.hist .grow { min-width: 0; overflow-wrap: anywhere; }
 </style>

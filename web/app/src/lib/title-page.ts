@@ -74,3 +74,22 @@ export function similarTitles<T extends Similar>(current: Similar, all: T[], lim
 
 /** The view-transition-name shared by a poster and this title's hero art. */
 export const artName = (id: number) => `title-art-${id}`;
+
+/** The status kind for a slot or episode state word. */
+export function slotKind(state: string | undefined): StatusKind {
+	switch (state) {
+		case 'in_library':
+		case 'better_wanted':
+		case 'no_hardlink':
+			return 'in_library';
+		case 'downloading':
+		case 'importing':
+			return 'downloading';
+		case 'failed':
+			return 'failed';
+		case 'not_out_yet':
+			return 'coming_soon';
+		default:
+			return 'missing';
+	}
+}
