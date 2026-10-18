@@ -19,7 +19,7 @@ actor = json.dumps({'kind':'system'})
 with c:
     if v['action'] == 'create':
         assert c.execute('SELECT count(*) FROM users WHERE name=?',(name,)).fetchone()[0] == 0
-        cur=c.execute("INSERT INTO users(created_at,created_by,updated_at,updated_by,name,role,password_hash,state,perms) VALUES(?,?,?,?,?,'admin','','active','[]')", (stamp(now),actor,stamp(now),actor,name))
+        cur=c.execute("INSERT INTO users(created_at,created_by,updated_at,updated_by,name,role,password_hash,state,perms) VALUES(?,?,?,?,?,'admin','','active',?)", (stamp(now),actor,stamp(now),actor,name,json.dumps(['manage_library','settings','downloads','search','ask'])))
         uid=cur.lastrowid
         c.execute("INSERT INTO sessions(hash,user_id,csrf,created_at,rotated_at,last_seen_at,expires_at,user_agent,family,auth_method,local_auth_at) VALUES(?,?,?,?,?,?,?,?,?,'local_password',?)",(hashlib.sha256(v['token'].encode()).hexdigest(),uid,v['csrf'],stamp(now),stamp(now),stamp(now),stamp(now+timedelta(minutes=20)),'Disposable music import check',name,stamp(now)))
     elif v['action'] == 'revoke':

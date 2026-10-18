@@ -52,7 +52,7 @@ function sessionAction(action,extra={}) { return JSON.parse(execFileSync('python
   const context = await browser.newContext({viewport:{width:1440,height:1000},deviceScaleFactor:1});
   const token=crypto.randomBytes(32).toString('base64url'),csrf=crypto.randomBytes(32).toString('base64url');
   session=sessionAction('create',{token,csrf}); receipt.disposableAdmin=session.id;
-  await context.addCookies([{name:'holyarrs_session',value:token,url:base,httpOnly:true,sameSite:'Lax'}]);
+  await context.addCookies([{name:'holyarrs_intercom_preview_session',value:token,url:base,httpOnly:true,sameSite:'Lax'}]);
   receipt.before=guard();
   let allowedRelease = 0;
   await context.route('**/*', async route => {
