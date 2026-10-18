@@ -1,5 +1,7 @@
 <script lang="ts">
 	// A member asks for a show: the whole show, or the seasons they pick.
+	import Sheet from './ui/Sheet.svelte';
+	import Button from './ui/Button.svelte';
 	import { api, message, ApiError } from './api.ts';
 	import { seasonName, seasonWords } from './shows.ts';
 	import type { Ask, LookupShow } from './types.ts';
@@ -12,7 +14,7 @@
 		onrefused?: (show: LookupShow, body: Record<string, unknown>) => void;
 	} = $props();
 
-	let dialog: HTMLDialogElement | undefined = $state();
+	let sheetOpen = $state(false);
 	let picked = $state<LookupShow | null>(null);
 	let whole = $state(true);
 	let chosen = $state<number[]>([]);
@@ -27,7 +29,7 @@
 		whole = true;
 		chosen = [];
 		error = '';
-		dialog?.showModal();
+		sheetOpen = true;
 	}
 
 	function idOf(s: LookupShow): string {
@@ -46,7 +48,7 @@
 		error = '';
 		try {
 			const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', { kind: 'show', id: idOf(picked), seasons: whole ? [] : chosen });
-			dialog?.close();
+			(sheetOpen = false);
 			onasked(picked, r);
 		} catch (err) {
 			error = message(err);
@@ -57,10 +59,9 @@
 	}
 </script>
 
-<dialog bind:this={dialog} aria-labelledby="ask-show-title" class="modal">
+<Sheet bind:open={sheetOpen} title={picked ? `Ask for ${picked.name}` : 'Ask for'}>
 	{#if picked}
-		<form onsubmit={ask}>
-			<h2 id="ask-show-title" class="h2">Ask for {picked.name}</h2>
+		<form id="ask-show-title" class="sheet-form" onsubmit={ask}>
 			{#if picked.ask}
 				<p class="small muted" style="margin-top: var(--s-2)">Someone asked for {seasonWords(picked.ask.seasons)} already ({picked.ask.state_label}). Asking for the same joins their ask.</p>
 			{/if}
@@ -87,36 +88,19 @@
 				</fieldset>
 			{/if}
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
-			<div class="row modal-actions">
-				<button class="btn btn-quiet" type="button" onclick={() => dialog?.close()}>Cancel</button>
-				<button class="btn btn-red" type="submit" disabled={busy || (!whole && chosen.length === 0)} aria-busy={busy}>
-					{whole ? 'Ask for the whole show' : chosen.length ? `Ask for ${seasonWords(chosen)}` : 'Pick a season'}
-				</button>
-			</div>
 		</form>
 	{/if}
-</dialog>
+	{#snippet footer()}
+				<Button variant="plain" onclick={() => (sheetOpen = false)}>Cancel</Button>
+				<Button variant="primary" type="submit" form="ask-show-title" disabled={(!whole && chosen.length === 0)} busy={busy}>
+					{whole ? 'Ask for the whole show' : chosen.length ? `Ask for ${seasonWords(chosen)}` : 'Pick a season'}
+				</Button>
+	{/snippet}
+</Sheet>
 
 <style>
-	.modal {
-		width: min(480px, calc(100vw - 32px));
-		max-height: calc(100dvh - 32px);
-		overflow: auto;
-		padding: var(--s-6);
-		border: 0;
-		border-radius: var(--r-modal);
-		background: var(--surface-1);
-		color: var(--text);
-		box-shadow: var(--shadow-modal);
-	}
-	.modal::backdrop {
-		background: var(--scrim);
-	}
-	.modal-actions {
-		justify-content: flex-end;
-		margin-top: var(--s-6);
-		flex-wrap: wrap;
-	}
+	.sheet-form { display: flex; flex-direction: column; gap: 4px; }
+	.form-error { margin: 8px 0 0; color: var(--fail); font: var(--t-callout); }
 	.pick,
 	.seasons {
 		border: 0;
@@ -139,7 +123,7 @@
 		cursor: pointer;
 	}
 	.season:has(input:checked) {
-		border-color: var(--ha-red);
-		background: var(--ha-red-soft);
+		border-color: var(--accent);
+		background: var(--accent-soft);
 	}
 </style>

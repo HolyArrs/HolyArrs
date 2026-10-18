@@ -1,5 +1,7 @@
 <script lang="ts">
 	// A member asks for an artist: the whole artist, or the albums they pick.
+	import Sheet from './ui/Sheet.svelte';
+	import Button from './ui/Button.svelte';
 	import { api, message, ApiError } from './api.ts';
 	import { albumKind, albumWords, albumYear } from './music.ts';
 	import type { Ask, AskableAlbum, LookupArtist } from './types.ts';
@@ -12,7 +14,7 @@
 		onrefused?: (artist: LookupArtist, body: Record<string, unknown>) => void;
 	} = $props();
 
-	let dialog: HTMLDialogElement | undefined = $state();
+	let sheetOpen = $state(false);
 	let picked = $state<LookupArtist | null>(null);
 	let albums = $state<AskableAlbum[] | null>(null);
 	let whole = $state(true);
@@ -27,7 +29,7 @@
 		whole = true;
 		chosen = [];
 		error = '';
-		dialog?.showModal();
+		sheetOpen = true;
 		try {
 			const r = await api.get<{ artists: LookupArtist[] }>(`/artists/lookup?term=${encodeURIComponent(`mbid:${a.mbid}`)}&albums=true`);
 			albums = r.artists[0]?.ask_albums ?? [];
@@ -51,7 +53,7 @@
 		error = '';
 		try {
 			const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', { kind: 'artist', id: `mbid:${picked.mbid}`, albums: whole ? [] : chosen });
-			dialog?.close();
+			(sheetOpen = false);
 			onasked(picked, r);
 		} catch (err) {
 			error = message(err);
@@ -62,10 +64,9 @@
 	}
 </script>
 
-<dialog bind:this={dialog} aria-labelledby="ask-artist-title" class="modal">
+<Sheet bind:open={sheetOpen} title={picked ? `Ask for ${picked.name}` : 'Ask for'}>
 	{#if picked}
-		<form onsubmit={ask}>
-			<h2 id="ask-artist-title" class="h2">Ask for {picked.name}</h2>
+		<form id="ask-artist-title" class="sheet-form" onsubmit={ask}>
 			{#if picked.ask}
 				<p class="small muted" style="margin-top: var(--s-2)">Someone asked for {albumWords(picked.ask.albums)} already ({picked.ask.state_label}). Asking for the same joins their ask.</p>
 			{/if}
@@ -97,36 +98,19 @@
 				<div class="sk" style="height: 60px; margin-top: var(--s-3)"></div>
 			{/if}
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
-			<div class="row modal-actions">
-				<button class="btn btn-quiet" type="button" onclick={() => dialog?.close()}>Cancel</button>
-				<button class="btn btn-red" type="submit" disabled={busy || (!whole && chosen.length === 0)} aria-busy={busy}>
-					{whole ? 'Ask for every album' : chosen.length ? `Ask for ${albumWords(chosenNames)}` : 'Pick an album'}
-				</button>
-			</div>
 		</form>
 	{/if}
-</dialog>
+	{#snippet footer()}
+				<Button variant="plain" onclick={() => (sheetOpen = false)}>Cancel</Button>
+				<Button variant="primary" type="submit" form="ask-artist-title" disabled={(!whole && chosen.length === 0)} busy={busy}>
+					{whole ? 'Ask for every album' : chosen.length ? `Ask for ${albumWords(chosenNames)}` : 'Pick an album'}
+				</Button>
+	{/snippet}
+</Sheet>
 
 <style>
-	.modal {
-		width: min(520px, calc(100vw - 32px));
-		max-height: calc(100dvh - 32px);
-		overflow: auto;
-		padding: var(--s-6);
-		border: 0;
-		border-radius: var(--r-modal);
-		background: var(--surface-1);
-		color: var(--text);
-		box-shadow: var(--shadow-modal);
-	}
-	.modal::backdrop {
-		background: var(--scrim);
-	}
-	.modal-actions {
-		justify-content: flex-end;
-		margin-top: var(--s-6);
-		flex-wrap: wrap;
-	}
+	.sheet-form { display: flex; flex-direction: column; gap: 4px; }
+	.form-error { margin: 8px 0 0; color: var(--fail); font: var(--t-callout); }
 	.pick,
 	.albums {
 		border: 0;
@@ -149,8 +133,8 @@
 		cursor: pointer;
 	}
 	.album:has(input:checked) {
-		border-color: var(--ha-red);
-		background: var(--ha-red-soft);
+		border-color: var(--accent);
+		background: var(--accent-soft);
 	}
 	/* Muted grey on the tint, or faded further, falls below the contrast floor. */
 	.album:has(input:checked) .muted {

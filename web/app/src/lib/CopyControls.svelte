@@ -4,6 +4,11 @@
 	import { copyEdition, inspectedAudio, languageList, versionCriteria } from './copy-controls.ts';
 	import { session } from './session.svelte.ts';
 	import { toasts } from './toasts.svelte.ts';
+	import Sheet from './ui/Sheet.svelte';
+	import Button from './ui/Button.svelte';
+	import Badge from './ui/Badge.svelte';
+	import Skeleton from './ui/Skeleton.svelte';
+	import { plainReason } from './plain.ts';
 	import type { CopyFile, LibraryFolder, PickRulesView, TitleView, VersionView } from './types.ts';
 
 	let { title, onchange = () => {} }: { title: TitleView; onchange?: () => void | Promise<void> } = $props();
@@ -23,7 +28,7 @@
 	let checkedEdition = $state<Record<number, boolean>>({});
 	let acknowledge = $state<Record<number, boolean>>({});
 
-	let addDialog: HTMLDialogElement | undefined = $state();
+	let addOpen = $state(false);
 	let addFile = $state<CopyFile | null>(null);
 	let addLabel = $state('4K');
 	let addRules = $state(0);
@@ -32,7 +37,7 @@
 	let addAudio = $state('');
 	let addKeep = $state(true);
 
-	let adoptDialog: HTMLDialogElement | undefined = $state();
+	let adoptOpen = $state(false);
 	let adoptVersion = $state<VersionView | null>(null);
 	let adoptPath = $state('');
 	let adoptEdition = $state('');
@@ -103,7 +108,7 @@
 			await choices();
 			addRules = rules[0]?.id ?? 0;
 			addFolder = folders[0]?.id ?? 0;
-			addDialog?.showModal();
+			addOpen = true;
 		} catch (e) {
 			toasts.push(message(e), 'fail');
 		}
@@ -122,7 +127,7 @@
 				edition: addEdition.trim(),
 				audio_languages: languageList(addAudio)
 			});
-			addDialog?.close();
+			addOpen = false;
 			await changed(`The existing copy is protected and the ${addLabel.trim()} Version is added.`);
 		} catch (e) {
 			formError = message(e);
@@ -137,7 +142,7 @@
 		adoptPath = '';
 		adoptEdition = version.edition ?? '';
 		adoptChecked = false;
-		adoptDialog?.showModal();
+		adoptOpen = true;
 	}
 
 	async function adopt(e: SubmitEvent) {
@@ -149,7 +154,7 @@
 				relative_path: adoptPath.trim(),
 				...(adoptChecked && adoptEdition.trim() ? { confirmed_edition: adoptEdition.trim() } : {})
 			});
-			adoptDialog?.close();
+			adoptOpen = false;
 			await changed(`The existing file now belongs to the ${adoptVersion.label} Version.`);
 		} catch (e) {
 			formError = message(e);
@@ -169,9 +174,9 @@
 		</div>
 	</div>
 	{#if !loaded}
-		<div class="sk" style="height: 100px"></div>
+		<Skeleton lines={3} />
 	{:else if error}
-		<p class="notice bad" role="alert">{error}</p>
+		<p class="form-error" role="alert">{plainReason(error).text}</p>
 	{:else}
 		<ul class="copy-list">
 			{#each versions as version (version.id)}
@@ -180,7 +185,7 @@
 				<li class="copy" data-testid="copy-version">
 					<div class="copy-head">
 						<div><b>{version.label}{version.main ? ' (main)' : ''}</b><div class="xs muted">{criteria.join(' · ')}</div></div>
-						{#if file?.Protected}<span class="chip warn">Protected</span>{/if}
+						{#if file?.Protected}<Badge label="Protected" />{/if}
 					</div>
 					{#if file}
 						<p class="mono xs path">{file.RelativePath}</p>
@@ -191,22 +196,22 @@
 									<label for="copy-edition-{file.ID}">Checked edition</label>
 									<input id="copy-edition-{file.ID}" class="input" value={copyEdition(file)} bind:this={editionInputs[file.ID]} maxlength="80" />
 									<label class="checkline small"><input type="checkbox" bind:checked={checkedEdition[file.ID]} /> I checked this file's edition</label>
-									<button class="btn btn-quiet" type="button" onclick={() => saveEdition(file)} disabled={!checkedEdition[file.ID] || busy !== ''}>Save edition</button>
+									<Button onclick={() => saveEdition(file)} disabled={!checkedEdition[file.ID] || busy !== ''}>Save edition</Button>
 								</div>
 								<div class="protect">
 									{#if file.Protected}
 										<label class="checkline small"><input type="checkbox" bind:checked={acknowledge[file.ID]} /> I understand this removes the copy's protection</label>
-										<button class="btn btn-quiet" type="button" onclick={() => setProtection(file, false)} disabled={!acknowledge[file.ID] || busy !== ''}>Remove protection</button>
+										<Button onclick={() => setProtection(file, false)} disabled={!acknowledge[file.ID] || busy !== ''}>Remove protection</Button>
 									{:else}
-										<button class="btn btn-quiet" type="button" onclick={() => setProtection(file, true)} disabled={busy !== ''}>Protect this copy</button>
+										<Button onclick={() => setProtection(file, true)} disabled={busy !== ''}>Protect this copy</Button>
 									{/if}
-									<button class="btn btn-ghost" type="button" onclick={() => openAdd(file)} disabled={busy !== ''}>Keep this copy and add another Version</button>
+									<Button onclick={() => openAdd(file)} disabled={busy !== ''}>Keep this copy and add another Version</Button>
 								</div>
 							</div>
 						{/if}
 					{:else}
 						<p class="small muted">No copy is recorded for this Version.</p>
-						{#if staff && kind === 'movie'}<button class="btn btn-ghost" type="button" onclick={() => openAdopt(version)}>Use an existing video in this Version folder</button>{/if}
+						{#if staff && kind === 'movie'}<Button onclick={() => openAdopt(version)}>Use an existing video in this Version folder</Button>{/if}
 					{/if}
 				</li>
 			{/each}
@@ -214,9 +219,8 @@
 	{/if}
 </section>
 
-<dialog bind:this={addDialog} aria-labelledby="keep-add-title" class="modal">
-	<form onsubmit={keepAndAdd}>
-		<h2 id="keep-add-title" class="h2">Keep this copy and add another Version</h2>
+<Sheet bind:open={addOpen} title="Keep this copy and add another Version">
+	<form id="keep-add-form" class="sheet-form" onsubmit={keepAndAdd}>
 		<p class="small muted">The current copy becomes protected. The new Version has its own edition and audio criteria.</p>
 		<div class="field"><label for="copy-new-label">Version name</label><input id="copy-new-label" class="input" bind:value={addLabel} maxlength="40" required /></div>
 		<div class="field"><label for="copy-new-rules">Pick rules</label><select id="copy-new-rules" class="input" bind:value={addRules}>{#each rules as rule (rule.id)}<option value={rule.id}>{rule.name}</option>{/each}</select></div>
@@ -225,23 +229,30 @@
 		<div class="field"><label for="copy-new-audio">Audio languages wanted <span class="muted">(optional, comma-separated codes)</span></label><input id="copy-new-audio" class="input" bind:value={addAudio} placeholder="en, fr" /></div>
 		<label class="checkline"><input type="checkbox" bind:checked={addKeep} /> <span><b>Find this Version and better copies</b><br /><span class="hint">Look for this Version and better copies later.</span></span></label>
 		{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
-		<div class="row modal-actions"><button class="btn btn-quiet" type="button" onclick={() => addDialog?.close()}>Cancel</button><button class="btn btn-red" type="submit" disabled={busy !== '' || !addLabel.trim() || !addRules || !addFolder}>Protect and add Version</button></div>
 	</form>
-</dialog>
+	{#snippet footer()}
+		<Button variant="plain" onclick={() => (addOpen = false)}>Cancel</Button>
+		<Button variant="primary" type="submit" form="keep-add-form" disabled={busy !== '' || !addLabel.trim() || !addRules || !addFolder}>Protect and add Version</Button>
+	{/snippet}
+</Sheet>
 
-<dialog bind:this={adoptDialog} aria-labelledby="adopt-copy-title" class="modal">
-	<form onsubmit={adopt}>
-		<h2 id="adopt-copy-title" class="h2">Use an existing video for {adoptVersion?.label}</h2>
+<Sheet bind:open={adoptOpen} title="Use an existing video for {adoptVersion?.label ?? 'this Version'}">
+	<form id="adopt-copy-form" class="sheet-form" onsubmit={adopt}>
 		<p class="small muted">The file must already be inside <span class="mono">{adoptVersion?.folder_path}</span>. HolyArrs checks its actual audio and edition, then records it without moving or rewriting it.</p>
 		<div class="field"><label for="adopt-path">Path relative to the Library folder</label><input id="adopt-path" class="input" bind:value={adoptPath} required /></div>
 		<div class="field"><label for="adopt-edition">Checked edition <span class="muted">(only when the filename needs correction)</span></label><input id="adopt-edition" class="input" bind:value={adoptEdition} maxlength="80" /></div>
 		<label class="checkline small"><input type="checkbox" bind:checked={adoptChecked} /> I checked the file and want to use this edition correction</label>
 		{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
-		<div class="row modal-actions"><button class="btn btn-quiet" type="button" onclick={() => adoptDialog?.close()}>Cancel</button><button class="btn btn-red" type="submit" disabled={busy !== '' || !adoptPath.trim()}>Check and use file</button></div>
 	</form>
-</dialog>
+	{#snippet footer()}
+		<Button variant="plain" onclick={() => (adoptOpen = false)}>Cancel</Button>
+		<Button variant="primary" type="submit" form="adopt-copy-form" disabled={busy !== '' || !adoptPath.trim()}>Check and use file</Button>
+	{/snippet}
+</Sheet>
 
 <style>
+	.sheet-form { display: flex; flex-direction: column; gap: 4px; }
+	.form-error { margin: 8px 0 0; color: var(--fail); font: var(--t-callout); }
 	.copy-list { list-style: none; padding: 0; margin: 0; display: grid; }
 	.copy { padding: var(--s-4) 0; min-width: 0; }
 	.copy + .copy { border-top: 1px solid var(--line); }

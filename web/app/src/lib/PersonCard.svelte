@@ -1,47 +1,48 @@
 <script lang="ts">
 	import Poster from './Poster.svelte';
 	import { to } from './paths.ts';
+	import { press } from './motion.ts';
 	import type { PersonSummary } from './people.ts';
 
 	let { person }: { person: PersonSummary } = $props();
 	const known = $derived(person.known_for.map((m) => (m.year ? `${m.name} (${m.year})` : m.name)).slice(0, 3).join(', '));
 </script>
 
-<a class="person-card" href={to(`/people/${person.id}`)}>
+<a class="person-card" href={to(`/people/${person.id}`)} use:press={'card'}>
 	<div class="portrait"><Poster src={person.profile} name={person.name} /></div>
-	<div>
+	<div class="text">
 		<h2>{person.name}</h2>
 		<p class="muted">{person.department || 'Department unavailable'}</p>
-		{#if known}<p class="small">Known for {known}</p>{/if}
+		{#if known}<p class="known">Known for {known}</p>{/if}
 	</div>
 </a>
 
 <style>
 	.person-card {
 		display: grid;
-		grid-template-columns: 84px minmax(0, 1fr);
-		gap: var(--s-3);
+		grid-template-columns: 72px minmax(0, 1fr);
+		gap: 14px;
 		align-items: center;
-		min-height: 112px;
-		padding: var(--s-3);
-		border: 1px solid var(--line);
-		border-radius: 6px;
-		background: color-mix(in srgb, var(--surface-1) 88%, transparent);
-		color: inherit;
+		min-height: 108px;
+		padding: 12px;
+		border-radius: var(--r-card);
+		background: var(--surface-1);
+		box-shadow: var(--shadow-card);
+		color: var(--text);
 		text-decoration: none;
-		transition: border-color var(--dur-fast), background var(--dur-fast), transform var(--dur-fast);
+		transition: box-shadow var(--dur) var(--ease-out), transform var(--dur) var(--ease-out);
 	}
-	.person-card:hover {
-		border-color: color-mix(in srgb, var(--ha-red) 55%, var(--line-strong));
-		background: var(--surface-2);
-		transform: translateY(-1px);
+	.person-card:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+		.person-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lift); }
 	}
-	.person-card:active { transform: translateY(0); }
-	.portrait { width: 84px; }
-	h2 { font: var(--weight-semibold) var(--text-md) / var(--leading-tight) var(--font-display); }
-	p { margin-top: var(--s-1); overflow-wrap: anywhere; }
+	.portrait { width: 72px; border-radius: 8px; overflow: hidden; }
+	.text { min-width: 0; }
+	h2 { margin: 0; font: var(--t-headline); overflow-wrap: anywhere; }
+	p { margin: 2px 0 0; overflow-wrap: anywhere; font: var(--t-subhead); font-weight: 400; }
+	.muted { color: var(--text-muted); }
 	@media (max-width: 520px) {
-		.person-card { grid-template-columns: 68px minmax(0, 1fr); min-height: 96px; }
-		.portrait { width: 68px; }
+		.person-card { grid-template-columns: 60px minmax(0, 1fr); min-height: 96px; }
+		.portrait { width: 60px; }
 	}
 </style>

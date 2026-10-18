@@ -4,6 +4,13 @@
 	import { page } from '$app/state';
 	import { api, message } from '#lib/api.ts';
 	import PersonCard from '#lib/PersonCard.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import Icon from '#lib/Icon.svelte';
+	import { to } from '#lib/paths.ts';
+	import { plainReason } from '#lib/plain.ts';
 	import type { PersonSearchPage } from '#lib/people.ts';
 
 	let query = $state(page.url.searchParams.get('q') ?? '');
@@ -38,49 +45,50 @@
 <svelte:head><title>People · HolyArrs</title></svelte:head>
 
 <section class="workspace">
-<header class="page-head">
-	<div>
-		<h1>People</h1>
-		<p>Find an actor or director, then see their movies and which ones are already in your Library.</p>
-	</div>
-</header>
+<PageHeader title="People" subtitle="Find an actor or director, then see their movies and which ones are already in your Library." back={{ href: to('/library'), label: 'Library' }} />
 
 <form class="searchbar" role="search" onsubmit={search}>
+	<span class="search-ic" aria-hidden="true"><Icon name="search" size={18} /></span>
 	<label class="sr-only" for="person-query">Person name</label>
 	<input id="person-query" type="search" bind:value={query} placeholder="Actor or director name" autocomplete="off" spellcheck="false" />
-	<button class="btn btn-red" type="submit" disabled={busy || !query.trim()} aria-busy={busy}>Search</button>
+	<Button variant="primary" type="submit" disabled={!query.trim()} {busy}>Search</Button>
 </form>
 
-{#if error}<p class="notice bad" role="alert">{error}</p>{/if}
+{#if error}<p class="notice bad" role="alert"><Icon name="alert" size={17} /><span>{plainReason(error).text}</span></p>{/if}
 {#if busy && !result}
-	<div class="grid" aria-busy="true">{#each Array(4) as _}<div class="sk"></div>{/each}</div>
+	<div class="grid" aria-busy="true">{#each Array(4) as _, i (i)}<div class="sk-card"><Skeleton shape="poster" /><Skeleton lines={3} /></div>{/each}</div>
 {:else if result}
-	<p class="small muted count">{result.total_results} provider result{result.total_results === 1 ? '' : 's'}. Pick the matching identity by department and known movies.</p>
-	<div class="grid">
-		{#each result.people as person (person.id)}<PersonCard {person} />{/each}
-	</div>
-	{#if !result.people.length}<p class="notice">No matching people were returned.</p>{/if}
-		<nav class="pages" aria-label="People search pages">
-			<button class="btn btn-ghost" type="button" disabled={busy || current <= 1} onclick={() => search(undefined, current - 1)}>Previous</button>
-			<span>Page {current}{#if result.total_pages} of {result.total_pages}{/if}</span>
-			<button class="btn btn-ghost" type="button" disabled={busy || current >= result.total_pages} onclick={() => search(undefined, current + 1)}>Next</button>
-		</nav>
-	<p class="small muted attribution">{result.attribution}</p>
+	<p class="count">{result.total_results} {result.total_results === 1 ? 'person' : 'people'} found. Pick the right one by what they do and the movies they are known for.</p>
+	{#if result.people.length}
+		<div class="grid">
+			{#each result.people as person (person.id)}<PersonCard {person} />{/each}
+		</div>
+	{:else}
+		<EmptyState compact icon="people" title="No matching people were returned." />
+	{/if}
+	<nav class="pages" aria-label="People search pages">
+		<Button icon="chevronLeft" disabled={busy || current <= 1} onclick={() => search(undefined, current - 1)}>Previous</Button>
+		<span class="count">Page {current}{#if result.total_pages} of {result.total_pages}{/if}</span>
+		<Button iconAfter="chevronRight" disabled={busy || current >= result.total_pages} onclick={() => search(undefined, current + 1)}>Next</Button>
+	</nav>
+	<p class="attribution">{result.attribution}</p>
+{:else if !error}
+	<EmptyState icon="people" title="Look for a person" text="Type a name above to see their movies." />
 {/if}
 </section>
 
 <style>
-	.workspace { overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--surface-1); }
-	.workspace .page-head { margin: 0; padding: var(--s-5); border-bottom: 1px solid var(--line); }
-	.searchbar { display: grid; grid-template-columns: 1fr auto; gap: var(--s-3); max-width: none; margin: 0; padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--line); }
-	.searchbar input { min-width: 0; min-height: var(--tap); padding: 0 var(--s-3); border: 1px solid var(--line-strong); border-radius: 10px; background: var(--surface-1); }
-	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 0; }
-	.grid :global(.person-card) { border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); border-radius: 0; background: var(--surface-1); transform: none; }
-	.grid :global(.person-card:hover) { background: var(--surface-2); transform: none; }
-	.sk { min-height: 112px; }
-	.count { margin: 0; padding: var(--s-3) var(--s-5); border-bottom: 1px solid var(--line); }
-	.attribution { margin: 0; padding: var(--s-4) var(--s-5); }
-	.pages { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); margin: 0; padding: var(--s-4) var(--s-5); border-top: 1px solid var(--line); }
-	.workspace > :global(.notice) { margin: var(--s-4) var(--s-5); }
-	@media (max-width: 520px) { .searchbar { grid-template-columns: 1fr; } .searchbar button { width: 100%; min-height: var(--tap); } .pages { justify-content: center; flex-wrap: wrap; } }
+	.workspace { display: flex; flex-direction: column; gap: 16px; padding-bottom: 48px; min-width: 0; }
+	.searchbar { position: relative; display: flex; align-items: center; gap: 8px; max-width: 720px; }
+	.search-ic { position: absolute; left: 14px; top: 50%; translate: 0 -50%; display: grid; color: var(--text-muted); pointer-events: none; }
+	.searchbar input { flex: 1; min-width: 0; height: 44px; padding: 0 12px 0 40px; border: 1px solid transparent; border-radius: var(--r-btn); background: var(--surface-2); color: var(--text); font: var(--t-body); }
+	.searchbar input:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.notice { display: flex; align-items: center; gap: 8px; margin: 0; padding: 10px 12px; border-radius: var(--r-btn); background: var(--surface-2); font: var(--t-callout); }
+	.notice.bad { color: var(--fail); }
+	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 12px; }
+	.sk-card { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; padding: 12px; border-radius: var(--r-card); background: var(--surface-1); box-shadow: var(--shadow-card); }
+	.count { margin: 0; color: var(--text-muted); font: var(--t-subhead); font-weight: 400; font-variant-numeric: tabular-nums; }
+	.attribution { margin: 0; color: var(--text-muted); font: var(--t-footnote); }
+	.pages { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+	@media (max-width: 520px) { .searchbar { flex-wrap: wrap; } .searchbar :global(.ui-btn) { width: 100%; } }
 </style>

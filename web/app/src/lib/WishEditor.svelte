@@ -3,6 +3,8 @@
 	// forced-only switch. Used by Settings > Subtitles (the default) and the
 	// subtitle panel of movies, shows and episodes.
 	import Icon from './Icon.svelte';
+	import Button from './ui/Button.svelte';
+	import IconButton from './ui/IconButton.svelte';
 	import { hiWords, langName, type HI, type Language, type Want } from './subtitles.ts';
 
 	let { wants = $bindable(), langs, id }: { wants: Want[]; langs: Language[]; id: string } = $props();
@@ -34,16 +36,14 @@
 				<input type="checkbox" bind:checked={w.forced} />
 				<span>Forced only</span>
 			</label>
-			<button class="btn btn-quiet btn-sm" type="button" onclick={() => wants.splice(i, 1)} aria-label="Take {langName(w.language, langs) || 'this language'} off">
-				<Icon name="x" size={16} />
-			</button>
+			<IconButton icon="x" variant="tinted" tooltip={false} onclick={() => wants.splice(i, 1)} label="Take {langName(w.language, langs) || 'this language'} off" />
 		</li>
 	{:else}
 		<li class="small muted">No languages: no subtitles are looked for.</li>
 	{/each}
 </ul>
 {#if wants.length < 10}
-	<button class="btn btn-quiet btn-sm add" type="button" onclick={add}><Icon name="plus" size={16} /> Add a language</button>
+	<div class="add"><Button icon="plus" onclick={add}>Add a language</Button></div>
 {/if}
 
 <style>
@@ -58,11 +58,13 @@
 		grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.4fr) auto auto;
 		gap: var(--s-3);
 		align-items: end;
-		padding: var(--s-3);
-		border: 1px solid var(--line);
-		border-radius: var(--r-sm);
-		background: var(--surface-1);
+		padding: 12px;
+		border: 0;
+		border-radius: var(--r-card);
+		background: var(--surface-2);
 	}
+	.wants { padding: 0; list-style: none; }
+	.wants > li.small { color: var(--text-muted); font: var(--t-callout); }
 	.want .field {
 		margin-top: 0;
 	}
@@ -83,13 +85,12 @@
 		.want .field {
 			grid-column: 1 / -1;
 		}
-		.want :global(.input),
-		.want :global(.btn),
-		.add {
+		.want :global(.input) {
 			min-height: 44px;
 		}
-		.add {
+		.add :global(.ui-btn) {
 			width: 100%;
 		}
+
 	}
 </style>

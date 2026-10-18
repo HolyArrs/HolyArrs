@@ -8,7 +8,14 @@
 	import Icon from '#lib/Icon.svelte';
 	import Poster from '#lib/Poster.svelte';
 	import { session } from '#lib/session.svelte.ts';
-	import EmptyState from '#lib/EmptyState.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import Chip from '#lib/ui/Chip.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
+	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import StatusPill from '#lib/ui/StatusPill.svelte';
+	import { plainReason } from '#lib/plain.ts';
 	import { loadChoices, pickId, saveChoices, secondVersion } from '#lib/library.ts';
 	import type { Ask, AskLimit, GateDefaults, LibraryFolder, LookupArtist, LookupMovie, LookupShow, MusicSettings, PickRulesView, ShowSettings, TitleView } from '#lib/types.ts';
 	import { limitLine } from '#lib/wishlist.ts';
@@ -114,7 +121,7 @@
 	let gateDefault = $state('released');
 
 	// The add dialog
-	let dialog: HTMLDialogElement | undefined = $state();
+	let addOpen = $state(false);
 	let picked = $state<LookupMovie | null>(null);
 	let folderId = $state(0);
 	let rulesId = $state(0);
@@ -261,7 +268,7 @@
 		moreLabel = sv.label;
 		moreRules = sv.pick_rules_id;
 		moreFolder = sv.library_folder_id;
-		dialog?.showModal();
+		addOpen = true;
 	}
 
 	// A folder's own Pick rules come first, then the remembered ones, then the first offered.
@@ -290,7 +297,7 @@
 				const i = results.findIndex((x) => x.ids.tmdb === picked?.ids.tmdb);
 				if (i >= 0) results[i] = { ...results[i], title_id: r.title.id };
 			}
-			dialog?.close();
+			addOpen = false;
 			toasts.push(`${r.title.name} is in your Library.`, 'ok');
 		} catch (err) {
 			addError = message(err);
@@ -303,53 +310,45 @@
 <svelte:head><title>Search · HolyArrs</title></svelte:head>
 
 <section class="search-workspace">
-<header class="page-head">
-	<div>
-		<h1>Search</h1>
-		{#if kind === 'music'}
-			<p>Find an artist by name, or paste <span class="mono">mbid:</span> with its MusicBrainz id.</p>
-		{:else if kind === 'show'}
-			<p>Find a show by name, or paste <span class="mono">tmdb:</span>, <span class="mono">tvdb:</span>, <span class="mono">tvmaze:</span> or <span class="mono">imdb:</span> with its id.</p>
-		{:else}
-			<p>Find a movie by name, or paste <span class="mono">tmdb:</span> or <span class="mono">imdb:</span> with its id.</p>
-		{/if}
-	</div>
-</header>
+<PageHeader
+	title="Search"
+	subtitle={kind === 'music'
+		? 'Find an artist by name, or paste mbid: with its MusicBrainz id.'
+		: kind === 'show'
+			? 'Find a show by name, or paste tmdb:, tvdb:, tvmaze: or imdb: with its id.'
+			: 'Find a movie by name, or paste tmdb: or imdb: with its id.'}
+/>
 
-<div class="seg kind" role="group" aria-label="Look for">
-	<button type="button" aria-pressed={kind === 'movie'} onclick={() => setKind('movie')}><Icon name="film" size={16} /> Movies</button>
-	<button type="button" aria-pressed={kind === 'show'} onclick={() => setKind('show')}><Icon name="tv" size={16} /> Shows</button>
-	<button type="button" aria-pressed={kind === 'music'} onclick={() => setKind('music')}><Icon name="music" size={16} /> Music</button>
+<div class="kind" role="group" aria-label="Look for">
+	<Chip icon="film" label="Movies" selected={kind === 'movie'} onclick={() => setKind('movie')} />
+	<Chip icon="tv" label="Shows" selected={kind === 'show'} onclick={() => setKind('show')} />
+	<Chip icon="music" label="Music" selected={kind === 'music'} onclick={() => setKind('music')} />
 </div>
 
 <form class="searchbar" role="search" onsubmit={run}>
-	<Icon name="search" />
+	<span class="search-ic" aria-hidden="true"><Icon name="search" size={18} /></span>
 	<label class="sr-only" for="q">{kind === 'music' ? 'Artist name or id' : kind === 'show' ? 'Show name or id' : 'Movie name or id'}</label>
 	<input id="q" type="search" bind:value={term} placeholder={kind === 'music' ? 'Tin Lanterns, mbid:…' : kind === 'show' ? 'Harbour Lights, tvmaze:82 …' : 'Dune Part Two, tmdb:693134 …'} autocomplete="off" spellcheck="false" />
-	<button class="btn btn-red" type="submit" disabled={busy || !term.trim()} aria-busy={busy}>Search</button>
+	<Button variant="primary" type="submit" disabled={!term.trim()} {busy}>Search</Button>
 </form>
 
 {#if asker && limitLine(askLimit, limitKindOf[kind])}
 	<p class="small muted limit" data-testid="ask-limit">{limitLine(askLimit, limitKindOf[kind])}</p>
 {/if}
 {#if askProblem}
-	<p class="notice warn ask-problem" role="alert">{askProblem}</p>
+	<p class="notice warn ask-problem" role="alert">{plainReason(askProblem).text}</p>
 {/if}
 
 <div class="results" aria-live="polite" aria-busy={busy}>
 	{#if kind === 'music'}
 		{#if error}
-			<p class="notice bad" role="alert">{error}</p>
+			<p class="notice bad" role="alert">{plainReason(error).text}</p>
 		{:else if busy && !artists}
-			{#each Array(3) as _, i (i)}<div class="sk" style="height: 96px; margin-bottom: 12px"></div>{/each}
+			<ul class="list" aria-hidden="true">{#each Array(3) as _, i (i)}<li class="hit"><Skeleton shape="poster" /><Skeleton lines={2} /></li>{/each}</ul>
 		{:else if artists === null}
-			<EmptyState icon="music" title="Look for an artist">
-				<p>Type a name above. Details come from MusicBrainz; {asker ? 'ask for every album or a few, and it lands on your Wishlist' : 'pick one to add it to your Library'}.</p>
-			</EmptyState>
+			<EmptyState icon="music" title="Look for an artist" text="Type a name above. Details come from MusicBrainz; {asker ? 'ask for every album or a few, and it lands on your Wishlist' : 'pick one to add it to your Library'}." />
 		{:else if artists.length === 0}
-			<EmptyState icon="search" title="Nothing found">
-				<p>No artist matches “{term}”. Check the spelling, or try a MusicBrainz id such as mbid:5b11f4ce-a62d-471e-81fc-a69a8278c7da.</p>
-			</EmptyState>
+			<EmptyState icon="search" title="Nothing found" text="No artist matches “{term}”. Check the spelling, or try a MusicBrainz id such as mbid:5b11f4ce-a62d-471e-81fc-a69a8278c7da." />
 		{:else}
 			<ul class="list">
 				{#each artists as a, i (a.mbid)}
@@ -361,18 +360,15 @@
 						</div>
 						<div class="act">
 							{#if a.title_id && !asker}
-								<a class="btn btn-ghost" href={to(`/library/${a.title_id}`)}><Icon name="check" size={18} /> In your Library</a>
+								<Button href={to(`/library/${a.title_id}`)} icon="check">In your Library</Button>
 							{:else if a.never_add}
-								<span class="chip">On the Never-add list</span>
+								<StatusPill kind="turned_down" label="On the Never-add list" />
 							{:else if session.can('manage_library')}
-								<button class="btn btn-red" type="button" onclick={() => addArtist?.open(a)}><Icon name="plus" size={18} /> Add</button>
+								<Button variant="primary" icon="plus" onclick={() => addArtist?.open(a)}>Add</Button>
 							{:else if a.ask?.mine}
-								<a class="btn btn-ghost" href={to(`/wishlist`)}><Icon name="wish" size={18} /> You asked · {a.ask.state_label}</a>
+								<Button href={to(`/wishlist`)} icon="wish">You asked · {a.ask.state_label}</Button>
 							{:else if session.can('ask')}
-								<button class="btn btn-red" type="button" onclick={() => askArtist?.open(a)}>
-									<Icon name="wish" size={18} />
-									{a.ask ? 'Ask too' : a.title_id ? 'Ask for more' : 'Ask'}
-								</button>
+								<Button variant="primary" icon="wish" onclick={() => askArtist?.open(a)}>{a.ask ? 'Ask too' : a.title_id ? 'Ask for more' : 'Ask'}</Button>
 								{#if a.ask}<span class="xs muted asked-already">Someone asked for {albumWords(a.ask.albums)} · {a.ask.state_label}</span>
 								{:else if a.title_id}<span class="xs muted asked-already">In the Library; ask for albums it does not have yet.</span>{/if}
 							{:else}
@@ -385,23 +381,16 @@
 			{#if attribution}<p class="xs muted attribution">{attribution}</p>{/if}
 		{/if}
 	{:else if noTMDB}
-		<EmptyState icon="key" title="Add your TMDB key first">
-			<p>HolyArrs looks {kind === 'show' ? 'shows' : 'movies'} up on TMDB. Add your TMDB read access token in Settings, then search again.</p>
-			{#snippet actions()}<a class="btn btn-red" href={to(`/settings/tmdb`)}>Add the TMDB key</a>{/snippet}
-		</EmptyState>
+		<EmptyState icon="key" title="Add your TMDB key first" text="HolyArrs looks {kind === 'show' ? 'shows' : 'movies'} up on TMDB. Add your TMDB read access token in Settings, then search again." action={{ label: 'Add the TMDB key', href: to('/settings/tmdb') }} />
 	{:else if kind === 'show'}
 		{#if error}
-			<p class="notice bad" role="alert">{error}</p>
+			<p class="notice bad" role="alert">{plainReason(error).text}</p>
 		{:else if busy && !shows}
-			{#each Array(3) as _, i (i)}<div class="sk" style="height: 120px; margin-bottom: 12px"></div>{/each}
+			<ul class="list" aria-hidden="true">{#each Array(3) as _, i (i)}<li class="hit"><Skeleton shape="poster" /><Skeleton lines={3} /></li>{/each}</ul>
 		{:else if shows === null}
-			<EmptyState icon="tv" title="Look for a show">
-				<p>Type a name above. {asker ? 'Ask for the whole show or a few seasons, and it lands on your Wishlist' : 'Pick one to add it to your Library'}.</p>
-			</EmptyState>
+			<EmptyState icon="tv" title="Look for a show" text="Type a name above. {asker ? 'Ask for the whole show or a few seasons, and it lands on your Wishlist' : 'Pick one to add it to your Library'}." />
 		{:else if shows.length === 0}
-			<EmptyState icon="search" title="Nothing found">
-				<p>No show matches “{term}”. Check the spelling, or try an id such as tvmaze:82.</p>
-			</EmptyState>
+			<EmptyState icon="search" title="Nothing found" text="No show matches “{term}”. Check the spelling, or try an id such as tvmaze:82." />
 		{:else}
 			<ul class="list">
 				{#each shows as s, i (showKey(s) + i)}
@@ -414,18 +403,15 @@
 						</div>
 						<div class="act">
 							{#if s.title_id && !asker}
-								<a class="btn btn-ghost" href={to(`/library/${s.title_id}`)}><Icon name="check" size={18} /> In your Library</a>
+								<Button href={to(`/library/${s.title_id}`)} icon="check">In your Library</Button>
 							{:else if s.never_add}
-								<span class="chip">On the Never-add list</span>
+								<StatusPill kind="turned_down" label="On the Never-add list" />
 							{:else if session.can('manage_library')}
-								<button class="btn btn-red" type="button" onclick={() => addShow?.open(s)}><Icon name="plus" size={18} /> Add</button>
+								<Button variant="primary" icon="plus" onclick={() => addShow?.open(s)}>Add</Button>
 							{:else if s.ask?.mine}
-								<a class="btn btn-ghost" href={to(`/wishlist`)}><Icon name="wish" size={18} /> You asked · {s.ask.state_label}</a>
+								<Button href={to(`/wishlist`)} icon="wish">You asked · {s.ask.state_label}</Button>
 							{:else if session.can('ask')}
-								<button class="btn btn-red" type="button" onclick={() => askShow?.open(s)}>
-									<Icon name="wish" size={18} />
-									{s.ask ? 'Ask too' : s.title_id ? 'Ask for more' : 'Ask'}
-								</button>
+								<Button variant="primary" icon="wish" onclick={() => askShow?.open(s)}>{s.ask ? 'Ask too' : s.title_id ? 'Ask for more' : 'Ask'}</Button>
 								{#if s.ask}<span class="xs muted asked-already">Someone asked for {seasonWords(s.ask.seasons)} · {s.ask.state_label}</span>
 								{:else if s.title_id}<span class="xs muted asked-already">In the Library; ask for seasons it does not have yet.</span>{/if}
 							{:else}
@@ -438,17 +424,13 @@
 			{#if attribution}<p class="xs muted attribution">{attribution}</p>{/if}
 		{/if}
 	{:else if error}
-		<p class="notice bad" role="alert">{error}</p>
+		<p class="notice bad" role="alert">{plainReason(error).text}</p>
 	{:else if busy && !results}
-		{#each Array(3) as _, i (i)}<div class="sk" style="height: 120px; margin-bottom: 12px"></div>{/each}
+		<ul class="list" aria-hidden="true">{#each Array(3) as _, i (i)}<li class="hit"><Skeleton shape="poster" /><Skeleton lines={3} /></li>{/each}</ul>
 	{:else if results === null}
-		<EmptyState icon="film" title="Look for a movie">
-			<p>Type a name above. Results come from TMDB; {asker ? 'ask for one and it lands on your Wishlist' : 'pick one to add it to your Library'}.</p>
-		</EmptyState>
+		<EmptyState icon="film" title="Look for a movie" text="Type a name above. Results come from TMDB; {asker ? 'ask for one and it lands on your Wishlist' : 'pick one to add it to your Library'}." />
 	{:else if results.length === 0}
-		<EmptyState icon="search" title="Nothing found">
-			<p>No movie matches “{term}”. Check the spelling, or try the year or a TMDB id.</p>
-		</EmptyState>
+		<EmptyState icon="search" title="Nothing found" text="No movie matches “{term}”. Check the spelling, or try the year or a TMDB id." />
 	{:else}
 		<ul class="list">
 			{#each results as m, i (m.ids.tmdb ?? i)}
@@ -460,18 +442,15 @@
 					</div>
 					<div class="act">
 						{#if m.title_id}
-							<a class="btn btn-ghost" href={to(`/library/${m.title_id}`)}><Icon name="check" size={18} /> In your Library</a>
+							<Button href={to(`/library/${m.title_id}`)} icon="check">In your Library</Button>
 						{:else if m.never_add}
-							<span class="chip">On the Never-add list</span>
+							<StatusPill kind="turned_down" label="On the Never-add list" />
 						{:else if session.can('manage_library')}
-							<button class="btn btn-red" type="button" onclick={() => openAdd(m)}><Icon name="plus" size={18} /> Add</button>
+							<Button variant="primary" icon="plus" onclick={() => openAdd(m)}>Add</Button>
 						{:else if m.ask?.mine}
-							<a class="btn btn-ghost" href={to(`/wishlist`)}><Icon name="wish" size={18} /> You asked · {m.ask.state_label}</a>
+							<Button href={to(`/wishlist`)} icon="wish">You asked · {m.ask.state_label}</Button>
 						{:else if session.can('ask')}
-							<button class="btn btn-red" type="button" disabled={asking === m.ids.tmdb} aria-busy={asking === m.ids.tmdb} onclick={() => ask(m)}>
-								<Icon name="wish" size={18} />
-								{m.ask ? 'Ask too' : 'Ask'}
-							</button>
+							<Button variant="primary" icon="wish" busy={asking === m.ids.tmdb} onclick={() => ask(m)}>{m.ask ? 'Ask too' : 'Ask'}</Button>
 							{#if m.ask}<span class="xs muted asked-already">Someone asked already · {m.ask.state_label}</span>{/if}
 						{:else}
 							<span class="xs muted">Your account may not ask for movies; ask the owner.</span>
@@ -485,16 +464,15 @@
 </div>
 </section>
 
-<dialog bind:this={dialog} aria-labelledby="add-title" class="modal">
+<Sheet bind:open={addOpen} title={picked ? `Add ${picked.name}` : 'Add a movie'}>
 	{#if picked}
-		<form onsubmit={add}>
-			<h2 id="add-title" class="h2">Add {picked.name}</h2>
+		<form id="add-movie" class="sheet-form" onsubmit={add}>
 			{#if movieFolders.length === 0}
-				<p class="notice warn" style="margin-top: var(--s-4)">
+				<p class="notice warn">
 					There is no Library folder for movies yet. <a href={to(`/settings/library-folders`)} class="ul">Add one</a> first.
 				</p>
 			{:else}
-				<div class="field" style="margin-top: var(--s-5)">
+				<div class="field">
 					<label for="folder">Library folder</label>
 					<select id="folder" class="input" bind:value={folderId} onchange={() => chooseRulesFor(folderId)}>
 						{#each movieFolders as f (f.id)}
@@ -559,14 +537,15 @@
 					</fieldset>
 				{/if}
 			{/if}
-			{#if addError}<p class="form-error" role="alert">{addError}</p>{/if}
-			<div class="row modal-actions">
-				<button class="btn btn-quiet" type="button" onclick={() => dialog?.close()}>Cancel</button>
-				<button class="btn btn-red" type="submit" disabled={adding || movieFolders.length === 0} aria-busy={adding}>Add to Library</button>
-			</div>
+			{#if addError}<p class="form-error" role="alert">{plainReason(addError).text}</p>{/if}
 		</form>
 	{/if}
-</dialog>
+	{#snippet footer()}
+		<Button variant="plain" onclick={() => (addOpen = false)}>Cancel</Button>
+		<Button variant="primary" type="submit" form="add-movie" disabled={movieFolders.length === 0} busy={adding}>Add to Library</Button>
+	{/snippet}
+</Sheet>
+
 
 <AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} onadded={showAdded} />
 <AskShowDialog bind:this={askShow} onasked={showAsked} onrefused={showRefused} />
@@ -574,166 +553,41 @@
 <AskArtistDialog bind:this={askArtist} onasked={artistAsked} onrefused={artistRefused} />
 
 <style>
-	.search-workspace { overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--surface-1); }
-	.search-workspace .page-head { margin: 0; padding: var(--s-5); border-bottom: 1px solid var(--line); }
-	.kind {
-		margin: var(--s-4) var(--s-5) var(--s-3);
-	}
-	.seg {
-		display: inline-flex;
-		border: 1px solid var(--line-strong);
-		border-radius: 6px;
-		overflow: hidden;
-	}
-	.seg button {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-		min-height: 40px;
-		padding: 0 var(--s-4);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		color: var(--text-muted);
-	}
-	.seg button[aria-pressed='true'] {
-		background: var(--surface-2);
-		color: var(--text);
-	}
-	.searchbar {
-		display: flex;
-		align-items: center;
-		gap: var(--s-3);
-		padding: 6px 6px 6px var(--s-4);
-		background: var(--surface-1);
-		border: 1px solid var(--line-strong);
-		border-radius: 6px;
-		max-width: none;
-		margin: 0 var(--s-5) var(--s-4);
-		color: var(--text-muted);
-		transition: border-color var(--dur-fast);
-	}
-	.searchbar:focus-within {
-		border-color: var(--ha-red);
-	}
-	.searchbar input {
-		flex: 1;
-		min-width: 0;
-		height: 44px;
-		background: transparent;
-		border: 0;
-		color: var(--text);
-		font-size: var(--text-md);
-	}
-	.searchbar input:focus-visible {
-		box-shadow: none;
-		outline: none;
-	}
-	.results {
-		margin-top: 0;
-		max-width: none;
-		border-top: 1px solid var(--line);
-	}
-	.list {
-		display: flex;
-		flex-direction: column;
-		gap: 0;
-	}
-	.hit {
-		display: grid;
-		grid-template-columns: 76px minmax(0, 1fr) auto;
-		gap: var(--s-3);
-		align-items: flex-start;
-		min-width: 0;
-		min-height: 104px;
-		padding: var(--s-4) var(--s-5);
-		border: 0;
-		border-bottom: 1px solid var(--line);
-		border-radius: 0;
-		background: var(--surface-1);
-		transition: border-color var(--dur-fast), background var(--dur-fast), transform var(--dur-fast);
-	}
-	.hit:hover { background: var(--surface-2); transform: none; }
-	.art {
-		width: 76px;
-		flex: none;
-	}
+	.search-workspace { display: flex; flex-direction: column; gap: 16px; padding-bottom: 48px; min-width: 0; }
+	.kind { display: flex; flex-wrap: wrap; gap: 8px; }
+	.searchbar { position: relative; display: flex; align-items: center; gap: 8px; max-width: 720px; }
+	.search-ic { position: absolute; left: 14px; top: 50%; translate: 0 -50%; display: grid; color: var(--text-muted); pointer-events: none; }
+	.searchbar input { flex: 1; min-width: 0; height: 44px; padding: 0 12px 0 40px; border: 1px solid transparent; border-radius: var(--r-btn); background: var(--surface-2); color: var(--text); font: var(--t-body); }
+	.searchbar input:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.notice { display: flex; gap: 8px; margin: 0; padding: 10px 12px; border: 0; border-radius: var(--r-btn); background: var(--surface-2); font: var(--t-callout); }
+	.notice.bad { color: var(--fail); }
+	.limit { margin: 0; color: var(--text-muted); font: var(--t-callout); }
+	.ask-problem { max-width: 720px; }
+	.results { min-width: 0; }
+	.list { display: flex; flex-direction: column; margin: 0; padding: 4px; list-style: none; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card); }
+	.hit { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; gap: 14px; align-items: start; min-width: 0; padding: 12px; border-radius: var(--r-btn); }
+	.hit + .hit { border-top: 1px solid var(--line); border-radius: 0; }
+	.art { width: 72px; flex: none; border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-card); }
 	.grow { min-width: 0; }
-	.overview {
-		margin-top: 4px;
-		display: -webkit-box;
-		-webkit-line-clamp: 3;
-		line-clamp: 3;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-	}
-	.act {
-		flex: none;
-		max-width: 190px;
-		text-align: right;
-	}
-	.limit {
-		margin: var(--s-3) var(--s-5);
-	}
-	.ask-problem {
-		margin: var(--s-3) var(--s-5);
-		max-width: 720px;
-	}
-	.asked-already {
-		display: block;
-		margin-top: 6px;
-		text-align: right;
-	}
-	.attribution {
-		margin: 0;
-		padding: var(--s-4) var(--s-5);
-	}
-	.results > :global(.empty), .results > :global(.notice) { margin: 0; border: 0; border-radius: 0; box-shadow: none; }
-	.modal {
-		width: min(480px, calc(100vw - 32px));
-		max-height: calc(100dvh - 32px);
-		overflow: auto;
-		padding: var(--s-6);
-		border: 0;
-		border-radius: 8px;
-		background: var(--surface-1);
-		color: var(--text);
-		box-shadow: var(--shadow-modal);
-	}
-	.modal::backdrop {
-		background: var(--scrim);
-	}
-	.modal-actions {
-		justify-content: flex-end;
-		margin-top: var(--s-6);
-	}
-	.ul {
-		text-decoration: underline;
-	}
-	.more {
-		margin: var(--s-3) 0 0;
-		padding: var(--s-3) 0 0 var(--s-4);
-		border: 0;
-		border-left: 2px solid var(--line-strong);
-	}
+	.grow :global(.h3) { margin: 0; font: var(--t-headline); }
+	.grow .muted { color: var(--text-muted); font-weight: 400; }
+	.grow p { margin: 2px 0 0; color: var(--text-muted); font: var(--t-subhead); font-weight: 400; }
+	.overview { margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+	.act { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: none; max-width: 220px; text-align: right; }
+	.asked-already { display: block; color: var(--text-muted); font: var(--t-footnote); }
+	.act > .xs { color: var(--text-muted); font: var(--t-footnote); }
+	.attribution { margin: 8px 0 0; color: var(--text-muted); font: var(--t-footnote); }
+	.sheet-form { display: flex; flex-direction: column; gap: 4px; }
+	.sheet-form .notice.warn { color: var(--text); }
+	.form-error { margin: 8px 0 0; color: var(--fail); font: var(--t-callout); }
+	.ul { text-decoration: underline; color: var(--text); }
+	.more { margin: 12px 0 0; padding: 12px 0 0 16px; border: 0; border-left: 2px solid var(--line-strong); }
 	@media (max-width: 600px) {
-		.hit {
-			grid-template-columns: 60px minmax(0, 1fr);
-		}
-		.art {
-			width: 60px;
-		}
-		.act {
-			grid-column: 1 / -1;
-			width: 100%;
-			max-width: none;
-			text-align: left;
-		}
-		.act :global(.btn) {
-			width: 100%;
-			min-height: var(--tap);
-		}
-		.searchbar { align-items: stretch; flex-wrap: wrap; padding: var(--s-2); }
-		.searchbar > :global(svg) { margin-top: 12px; }
-		.searchbar .btn { width: 100%; min-height: var(--tap); }
+		.hit { grid-template-columns: 60px minmax(0, 1fr); }
+		.art { width: 60px; }
+		.act { grid-column: 1 / -1; align-items: stretch; max-width: none; text-align: left; }
+		.act :global(.ui-btn) { width: 100%; }
+		.asked-already { text-align: left; }
+		.act > :global(.ui-pill) { align-self: flex-start; }
 	}
 </style>

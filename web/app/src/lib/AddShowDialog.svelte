@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Sheet from './ui/Sheet.svelte';
+	import Button from './ui/Button.svelte';
 	import { to } from './paths.ts';
 	// The add-a-show dialog: Library folder, Pick rules, which seasons to
 	// keep up to date, new seasons, episode order and details source.
@@ -19,7 +21,7 @@
 		onadded: (show: LookupShow, title: TitleView) => void;
 	} = $props();
 
-	let dialog: HTMLDialogElement | undefined = $state();
+	let sheetOpen = $state(false);
 	let picked = $state<LookupShow | null>(null);
 	let folderId = $state(0);
 	let rulesId = $state(0);
@@ -55,7 +57,7 @@
 		moreLabel = sv.label;
 		moreRules = sv.pick_rules_id;
 		moreFolder = sv.library_folder_id;
-		dialog?.showModal();
+		sheetOpen = true;
 	}
 
 	function chooseRules(fid: number) {
@@ -86,7 +88,7 @@
 				details_source: source,
 				more_versions: more ? [{ label: moreLabel.trim(), pick_rules_id: moreRules, library_folder_id: moreFolder }] : []
 			});
-			dialog?.close();
+			(sheetOpen = false);
 			onadded(picked, r.title);
 		} catch (err) {
 			error = message(err);
@@ -96,16 +98,15 @@
 	}
 </script>
 
-<dialog bind:this={dialog} aria-labelledby="add-show-title" class="modal">
+<Sheet bind:open={sheetOpen} title={picked ? `Add ${picked.name}` : 'Add'}>
 	{#if picked}
-		<form onsubmit={add}>
-			<h2 id="add-show-title" class="h2">Add {picked.name}</h2>
+		<form id="add-show-title" class="sheet-form" onsubmit={add}>
 			{#if showFolders.length === 0}
-				<p class="notice warn" style="margin-top: var(--s-4)">
+				<p class="notice warn" >
 					There is no Library folder for shows yet. <a href={to(`/settings/library-folders`)} class="ul">Add one</a> first.
 				</p>
 			{:else}
-				<div class="field" style="margin-top: var(--s-5)">
+				<div class="field">
 					<label for="show-folder">Library folder</label>
 					<select id="show-folder" class="input" bind:value={folderId} onchange={() => chooseRules(folderId)}>
 						{#each showFolders as f (f.id)}
@@ -184,34 +185,19 @@
 				<p class="hint" data-testid="no-show-search">HolyArrs looks for missing episodes at the next feed check and each night. To look at once, use Search now on the show page.</p>
 			{/if}
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
-			<div class="row modal-actions">
-				<button class="btn btn-quiet" type="button" onclick={() => dialog?.close()}>Cancel</button>
-				<button class="btn btn-red" type="submit" disabled={adding || showFolders.length === 0} aria-busy={adding}>Add to Library</button>
-			</div>
 		</form>
 	{/if}
-</dialog>
+	{#snippet footer()}
+				<Button variant="plain" onclick={() => (sheetOpen = false)}>Cancel</Button>
+				<Button variant="primary" type="submit" form="add-show-title" disabled={showFolders.length === 0} busy={adding}>Add to Library</Button>
+	{/snippet}
+</Sheet>
 
 <style>
-	.modal {
-		width: min(480px, calc(100vw - 32px));
-		max-height: calc(100dvh - 32px);
-		overflow: auto;
-		padding: var(--s-6);
-		border: 0;
-		border-radius: var(--r-modal);
-		background: var(--surface-1);
-		color: var(--text);
-		box-shadow: var(--shadow-modal);
-	}
-	.modal::backdrop {
-		background: var(--scrim);
-	}
-	.modal-actions {
-		justify-content: flex-end;
-		margin-top: var(--s-6);
-	}
+	.sheet-form { display: flex; flex-direction: column; gap: 4px; }
+	.form-error { margin: 8px 0 0; color: var(--fail); font: var(--t-callout); }
 	.ul {
+		color: var(--text);
 		text-decoration: underline;
 	}
 	.more {

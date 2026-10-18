@@ -5,6 +5,15 @@
 	import { session } from '#lib/session.svelte.ts';
 	import FilmographyList from '#lib/FilmographyList.svelte';
 	import Poster from '#lib/Poster.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import Icon from '#lib/Icon.svelte';
+	import { to } from '#lib/paths.ts';
+	import { plainReason } from '#lib/plain.ts';
 	import { actionableSelection, normalizeSelection, runReviewed, type FilmographyPage, type PersonMovie, type PersonRole, type ReviewedResult } from '#lib/people.ts';
 	import type { AskLimit } from '#lib/types.ts';
 
@@ -83,40 +92,37 @@
 
 <svelte:head><title>{data?.person.name ?? 'Person'} · HolyArrs</title></svelte:head>
 
-{#if error}<p class="notice bad" role="alert">{error}</p>{/if}
-{#if busy && !data}<div class="sk hero" aria-busy="true"></div>{/if}
+<div class="workspace">
+<PageHeader title={data?.person.name ?? 'Person'} subtitle={data ? `${data.person.department || 'Department unavailable'}${data.person.birthplace ? ` · ${data.person.birthplace}` : ''}` : undefined} back={{ href: to('/people'), label: 'People' }} />
+{#if error && !data}<LoadError hasData={false} message={plainReason(error).text} onretry={() => load(current)} {busy} />
+{:else if error}<p class="notice bad" role="alert"><Icon name="alert" size={17} /><span>{plainReason(error).text}</span></p>{/if}
+{#if busy && !data}<div class="person-head" aria-busy="true"><Skeleton shape="poster" /><Skeleton lines={4} /></div>{/if}
 {#if data}
-	<section class="workspace">
-	<header class="person-head">
+	<div class="person-head">
 		<div class="portrait"><Poster src={data.person.profile} name={data.person.name} /></div>
-		<div>
-			<h1>{data.person.name}</h1>
-			<p>{data.person.department || 'Department unavailable'}{#if data.person.birthplace} · {data.person.birthplace}{/if}</p>
+		<div class="who">
+			{#if data.person.biography}<p class="bio">{data.person.biography}</p>{/if}
 		</div>
-		{#if data.person.biography}<p class="bio">{data.person.biography}</p>{/if}
-	</header>
+	</div>
 
 	<div class="toolbar">
-		<div class="seg" role="group" aria-label="Credit role">
-			{#each [['all', 'All'], ['actor', 'Actor'], ['director', 'Director']] as option}
-				<button type="button" aria-pressed={role === option[0]} onclick={() => changeRole(option[0] as PersonRole)}>{option[1]}</button>
-			{/each}
-		</div>
-		{#if selected.length}<button class="btn btn-red" type="button" onclick={review} disabled={busy}>Review {selected.length} selected</button>{/if}
+		<SegmentedControl label="Credit role" value={role} options={[{ value: 'all', label: 'All' }, { value: 'actor', label: 'Actor' }, { value: 'director', label: 'Director' }]} onchange={(v) => changeRole(v as PersonRole)} />
+		{#if selected.length}<Button variant="primary" onclick={review} disabled={busy}>Review {selected.length} selected</Button>{/if}
 	</div>
 
 	{#if !data.complete}<p class="notice">The provider returns this filmography as one unpaged list and does not promise it is complete.</p>{/if}
 	{#if limit && action === 'ask' && !limit.no_limit && !limit.movies.no_limit}
-		<p class="small muted">Movie asks this rolling week: {limit.movies.used} used, {limit.movies.left} left.</p>
+		<p class="note">Movie asks this rolling week: {limit.movies.used} used, {limit.movies.left} left.</p>
 	{/if}
 
+	<h2 class="sr-only">Movies</h2>
 	<FilmographyList movies={data.movies} {selected} selectable={canSubmit} onselect={select} />
-	{#if !data.movies.length}<p class="notice">No movies match this role on this page.</p>{/if}
+	{#if !data.movies.length}<EmptyState compact icon="film" title="No movies match this role on this page." />{/if}
 
 	<nav class="pages" aria-label="Filmography pages">
-		<button class="btn btn-ghost" type="button" disabled={busy || current <= 1} onclick={() => load(current - 1)}>Previous</button>
-		<span>Page {current}{#if data.total_pages} of {data.total_pages}{/if}</span>
-		<button class="btn btn-ghost" type="button" disabled={busy || current >= data.total_pages} onclick={() => load(current + 1)}>Next</button>
+		<Button icon="chevronLeft" disabled={busy || current <= 1} onclick={() => load(current - 1)}>Previous</Button>
+		<span class="note">Page {current}{#if data.total_pages} of {data.total_pages}{/if}</span>
+		<Button iconAfter="chevronRight" disabled={busy || current >= data.total_pages} onclick={() => load(current + 1)}>Next</Button>
 	</nav>
 
 	{#if reviewed}
@@ -124,7 +130,7 @@
 			<h2 id="review-title">Review {reviewed.length} movie{reviewed.length === 1 ? '' : 's'}</h2>
 			<p>Only these movies will be {action === 'add' ? 'added' : 'asked for'}. Future credits are not followed automatically.</p>
 			<ul>{#each reviewed as movie (movie.ids.tmdb)}<li>{movie.name}{#if movie.year} ({movie.year}){/if}</li>{/each}</ul>
-			<button class="btn btn-red" type="button" disabled={submitting || !actionableSelection(reviewed).length} aria-busy={submitting} onclick={submitReviewed}>{action === 'add' ? 'Add reviewed movies' : 'Ask for reviewed movies'}</button>
+			<Button variant="primary" disabled={!actionableSelection(reviewed).length} busy={submitting} onclick={submitReviewed}>{action === 'add' ? 'Add reviewed movies' : 'Ask for reviewed movies'}</Button>
 		</section>
 	{/if}
 	{#if results.length}
@@ -133,31 +139,31 @@
 			<ul class="results">{#each results as result}<li class:failed={!result.ok}>{result.tmdb_id}: {result.ok ? 'Submitted' : result.error}</li>{/each}</ul>
 		</section>
 	{/if}
-	<p class="small muted attribution">{data.attribution}</p>
-	</section>
+	<p class="attribution">{data.attribution}</p>
 {/if}
+</div>
 
 <style>
-	.workspace { overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--surface-1); }
-	.person-head { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: var(--s-5); align-items: start; margin: 0; padding: var(--s-5); border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: var(--surface-1); }
-	.portrait { grid-row: 1 / 3; width: 132px; }
-	h1 { font: var(--weight-semibold) var(--text-2xl) / var(--leading-tight) var(--font-display); }
-	.person-head p { margin-top: var(--s-2); color: var(--text-muted); }
-	.bio { grid-column: 2; max-width: 76ch; line-height: 1.6; text-wrap: pretty; }
-	.seg { display: flex; flex-wrap: wrap; gap: var(--s-1); padding: var(--s-1); border: 1px solid var(--line); border-radius: var(--r-btn); background: var(--surface-2); }
-	.seg button { min-height: var(--tap); padding: var(--s-2) var(--s-4); border: 1px solid transparent; border-radius: var(--r-btn); background: transparent; color: var(--text-muted); font: inherit; cursor: pointer; }
-	.seg button[aria-pressed='true'] { border-color: var(--line); background: var(--surface-1); color: var(--text); }
-	.toolbar, .pages { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--s-3); margin: 0; padding: var(--s-3) var(--s-5); border-bottom: 1px solid var(--line); }
-	.toolbar { position: sticky; top: 0; z-index: 3; background: color-mix(in srgb, var(--surface-1) 96%, transparent); backdrop-filter: blur(10px); }
-	.workspace :global(.films) { grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: 0; }
-	.workspace :global(.films > li) { border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); border-radius: 0; }
-	.review { margin: 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; box-shadow: none; }
-	.review p, .review ul, .review button, .results { margin-top: var(--s-3); }
-	.review ul, .results { padding-left: var(--s-5); }
+	.workspace { display: flex; flex-direction: column; gap: 16px; padding-bottom: 48px; min-width: 0; }
+	.person-head { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 24px; align-items: start; }
+	.portrait { width: 140px; border-radius: var(--r-card); overflow: hidden; box-shadow: var(--shadow-card); }
+	.who { min-width: 0; }
+	.bio { margin: 0; max-width: 76ch; font: var(--t-body); line-height: 1.6; text-wrap: pretty; }
+	.toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+	.pages { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+	.note { margin: 0; color: var(--text-muted); font: var(--t-subhead); font-weight: 400; font-variant-numeric: tabular-nums; }
+	.notice { display: flex; align-items: center; gap: 8px; margin: 0; padding: 10px 12px; border-radius: var(--r-btn); background: var(--surface-2); font: var(--t-callout); }
+	.notice.bad { color: var(--fail); }
+	.card { margin: 0; padding: 16px 20px 20px; border: 0; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card); font: var(--t-callout); }
+	.card h2 { margin: 0 0 8px; font: var(--t-title3); }
+	.card p, .card ul { margin: 0 0 12px; }
+	.card ul { padding-left: 20px; }
 	.failed { color: var(--fail); }
-	.attribution { margin: 0; padding: var(--s-4) var(--s-5); }
-	.workspace > .card:not(.review) { margin: 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; box-shadow: none; }
-	.workspace > :global(.notice), .workspace > .small.muted { margin: var(--s-3) var(--s-5); }
-	.hero { min-height: 220px; }
-	@media (max-width: 560px) { .person-head { grid-template-columns: 88px minmax(0, 1fr); gap: var(--s-3); padding: var(--s-4); } .portrait { grid-row: auto; width: 88px; } .bio { grid-column: 1 / -1; } .toolbar { position: static; } .toolbar > .btn { width: 100%; min-height: var(--tap); } .pages { justify-content: center; } }
+	.attribution { margin: 0; color: var(--text-muted); font: var(--t-footnote); }
+	@media (max-width: 560px) {
+		.person-head { grid-template-columns: 96px minmax(0, 1fr); gap: 14px; }
+		.portrait { width: 96px; }
+
+		.toolbar :global(.ui-btn) { width: 100%; }
+	}
 </style>

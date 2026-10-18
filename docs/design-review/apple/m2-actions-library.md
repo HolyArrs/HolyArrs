@@ -42,3 +42,33 @@ Kept testids: `library-card` (now on the card `li.item` inside `ul.grid`), `libr
 | Missing subtitles: filters (language/kind/title, URL), **Search all**, search one, pager, progress | eyebrow + `.btn` + `<progress>` | `PageHeader` with Search all in actions, kit `Button`s, `ProgressBar`, `EmptyState`, `LoadError`; testids kept |
 | Rename files: preview, **Rename N files** | eyebrow + back link | `PageHeader` with back; `RenamePreview` uses kit `Button`/`ProgressBar`/`Skeleton`; testids kept |
 | Video codecs: find/codec/sort, select across pages, **Review searches → Start searches / Cancel**, pager | eyebrow + `.btn` | `PageHeader` with back, kit `Button`s, `Badge` Protected, `EmptyState`, `Skeleton`; staged review unchanged |
+
+## Search (`routes/search/+page.svelte`) and its dialogs
+
+| Action | Before | After |
+|---|---|---|
+| Page title + how-to line per kind | `.page-head` with mono id hints | `PageHeader` "Search", subtitle per kind |
+| Look for Movies / Shows / Music (URL `kind`) | `.seg` group "Look for" (aria-pressed) | `Chip`s with icons in group "Look for" (aria-pressed kept) |
+| Search field (labels "Movie name or id" / "Show name or id" / "Artist name or id") + Search | custom bar + `.btn` | same input and labels, kit `Button` primary (busy) |
+| Ask limit line, ask problem alert | unchanged | unchanged (`ask-limit` testid kept; problem text via `plainReason`) |
+| Result rows `li.hit` (`show-hit`, `artist-hit` testids): In your Library link, Never-add, Add (manage_library), You asked · state link, Ask / Ask too / Ask for more (ask), no-permission line | `.btn` / `.chip` | kit `Button`s (same names), `StatusPill` "On the Never-add list"; same permission order |
+| Add a movie: folder, Pick rules, Release gate, Keep up to date, Search now, second Version, Cancel / **Add to Library** | hand-made `<dialog class="modal">` | kit `Sheet` titled "Add <name>"; buttons in the Sheet footer submit the same form |
+| AddShowDialog, AddArtistDialog, AskShowDialog, AskArtistDialog (`open()` API unchanged, all fields and checks unchanged) | hand-made `<dialog>` | kit `Sheet` (native dialog, Escape/backdrop close), kit `Button`s in the footer; `no-show-search` and other testids kept |
+| Loading / empty / no TMDB key | grey blocks, old EmptyState | `Skeleton` rows, kit `EmptyState` (TMDB key action keeps the settings link) |
+| CopyControls: save checked edition, protect / remove protection (acknowledge), **Keep this copy and add another Version**, **Use an existing video** | `.btn` + two `<dialog>`s | kit `Button`s, `Badge` Protected, both dialogs are kit `Sheet`s with the same titles and forms |
+| WishEditor: add / take off a language | `.btn` | kit `Button` "Add a language", `IconButton` "Take … off"; `wish-editor`, `wish-row` kept |
+| EditionDecision: edition, confirm checkbox, Save edition and try import again | `.btn` + "01" badge | kit `Button` (busy), icon heading; `edition-decision` kept |
+| RenamePreview: Rename N files, progress | `.btn` + `<progress>` | kit `Button`, `ProgressBar`, `Skeleton`; tracked-caps "Now/New" labels are sentence case |
+
+WishEditor and EditionDecision stay inline forms: they live inside pages and sheets owned by other areas (Settings > Subtitles, the subtitle panel, Decide), so turning them into their own sheets would change those flows.
+
+## People
+
+| Action | Before | After |
+|---|---|---|
+| Person search (URL `q`), pager, attribution | `.page-head`, `.btn` | `PageHeader` with back to Library, search field with icon, kit `Button`s, `Skeleton`, `EmptyState` |
+| Person cards (`a.person-card`, Known for …) | bordered tiles | token card with lift on hover (press action), same link |
+| Person page: role filter (All / Actor / Director) | `.seg` group "Credit role" | `SegmentedControl` "Credit role" |
+| Select missing movies, **Review N selected → Add/Ask for reviewed movies**, results list, ask limit | `.btn` | kit `Button`s; same staged review; results text unchanged |
+| Filmography states: In Library (link), Never-add, ask state, Missing | coloured text | `StatusPill`s with the same words (In Library stays a link) |
+| Load error | notice | `LoadError` (full) or inline alert once data exists |

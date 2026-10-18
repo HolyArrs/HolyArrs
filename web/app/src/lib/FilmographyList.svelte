@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Poster from './Poster.svelte';
 	import { to } from './paths.ts';
+	import StatusPill from './ui/StatusPill.svelte';
 	import type { PersonMovie } from './people.ts';
 
 	let {
@@ -26,13 +27,13 @@
 					</div>
 				</div>
 				{#if movie.title_id}
-					<a class="state" href={to(`/library/${movie.title_id}`)}>In Library</a>
+					<a class="state" href={to(`/library/${movie.title_id}`)}><StatusPill kind="in_library" label="In Library" /></a>
 				{:else if movie.never_add}
-					<span class="state">Never-add</span>
+					<span class="state"><StatusPill kind="turned_down" label="Never-add" /></span>
 				{:else if movie.ask}
-					<span class="state">{movie.ask.state_label}</span>
+					<span class="state"><StatusPill kind="requested" label={movie.ask.state_label} /></span>
 				{:else}
-					<span class="state missing">Missing</span>
+					<span class="state"><StatusPill kind="missing" label="Missing" /></span>
 				{/if}
 			</div>
 		</li>
@@ -40,15 +41,16 @@
 </ul>
 
 <style>
-	.films { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: var(--s-3); }
-	li { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: var(--s-3); padding: var(--s-3); border: 1px solid var(--line); border-radius: 6px; background: var(--surface-1); min-width: 0; }
-	.poster { width: 72px; }
+	.films { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 12px; }
+	li { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; padding: 12px; border-radius: var(--r-card); background: var(--surface-1); box-shadow: var(--shadow-card); min-width: 0; }
+	.poster { width: 64px; border-radius: 8px; overflow: hidden; }
 	.grow { min-width: 0; }
-	.line { display: flex; gap: var(--s-3); align-items: start; }
-	input { margin-top: 2px; width: 20px; height: 20px; flex: none; accent-color: var(--ha-red); }
-	h3 { font-size: var(--text-sm); overflow-wrap: anywhere; }
-	h3 span { color: var(--text-muted); font-weight: var(--weight-regular); }
-	.state { display: inline-block; margin-top: var(--s-2); font-size: var(--text-sm); color: var(--text-muted); }
-	.state.missing { color: var(--wait); }
-	@media (max-width: 560px) { li { grid-template-columns: 56px minmax(0, 1fr); padding: var(--s-3); } .poster { width: 56px; } }
+	.line { display: flex; gap: 12px; align-items: start; }
+	input { margin-top: 2px; width: 20px; height: 20px; flex: none; accent-color: var(--accent); }
+	h3 { margin: 0; font: var(--t-headline); overflow-wrap: anywhere; }
+	h3 span { color: var(--text-muted); font-weight: 400; }
+	p { margin: 2px 0 0; color: var(--text-muted); font: var(--t-subhead); font-weight: 400; }
+	.state { display: inline-flex; align-items: center; min-height: 32px; margin-top: 8px; border-radius: 999px; }
+	a.state:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	@media (max-width: 560px) { li { grid-template-columns: 56px minmax(0, 1fr); } .poster { width: 56px; } }
 </style>

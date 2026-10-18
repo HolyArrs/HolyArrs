@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Sheet from './ui/Sheet.svelte';
+	import Button from './ui/Button.svelte';
 	import { to } from './paths.ts';
 	// The add-an-artist dialog: Library folder, Pick rules, which albums to
 	// keep up to date, new albums, album kinds and Pressing statuses.
@@ -19,7 +21,7 @@
 		onadded: (artist: LookupArtist, title: TitleView) => void;
 	} = $props();
 
-	let dialog: HTMLDialogElement | undefined = $state();
+	let sheetOpen = $state(false);
 	let picked = $state<LookupArtist | null>(null);
 	let folderId = $state(0);
 	let rulesId = $state(0);
@@ -47,7 +49,7 @@
 		extras = [...(defaults?.secondary_types ?? ['studio'])];
 		statuses = [...(defaults?.release_statuses ?? ['official'])];
 		keep = true;
-		dialog?.showModal();
+		sheetOpen = true;
 	}
 
 	function chooseRules(fid: number) {
@@ -72,7 +74,7 @@
 				secondary_types: extras,
 				release_statuses: statuses
 			});
-			dialog?.close();
+			(sheetOpen = false);
 			onadded(picked, r.title);
 		} catch (err) {
 			error = message(err);
@@ -82,17 +84,16 @@
 	}
 </script>
 
-<dialog bind:this={dialog} aria-labelledby="add-artist-title" class="modal">
+<Sheet bind:open={sheetOpen} title={picked ? `Add ${picked.name}` : 'Add'}>
 	{#if picked}
-		<form onsubmit={add}>
-			<h2 id="add-artist-title" class="h2">Add {picked.name}</h2>
+		<form id="add-artist-title" class="sheet-form" onsubmit={add}>
 			{#if picked.disambiguation}<p class="small muted">{picked.disambiguation}</p>{/if}
 			{#if musicFolders.length === 0}
-				<p class="notice warn" style="margin-top: var(--s-4)">
+				<p class="notice warn" >
 					There is no Library folder for music yet. <a href={to(`/settings/library-folders`)} class="ul">Add one</a> first.
 				</p>
 			{:else}
-				<div class="field" style="margin-top: var(--s-5)">
+				<div class="field">
 					<label for="artist-folder">Library folder</label>
 					<select id="artist-folder" class="input" bind:value={folderId} onchange={() => chooseRules(folderId)}>
 						{#each musicFolders as f (f.id)}
@@ -154,34 +155,19 @@
 				<p class="hint note" data-testid="music-search-note">HolyArrs looks for the albums you keep up to date once their tracks are filled in, one Release per album.</p>
 			{/if}
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
-			<div class="row modal-actions">
-				<button class="btn btn-quiet" type="button" onclick={() => dialog?.close()}>Cancel</button>
-				<button class="btn btn-red" type="submit" disabled={adding || musicFolders.length === 0 || !types.length || !extras.length || !statuses.length} aria-busy={adding}>Add to Library</button>
-			</div>
 		</form>
 	{/if}
-</dialog>
+	{#snippet footer()}
+				<Button variant="plain" onclick={() => (sheetOpen = false)}>Cancel</Button>
+				<Button variant="primary" type="submit" form="add-artist-title" disabled={musicFolders.length === 0 || !types.length || !extras.length || !statuses.length} busy={adding}>Add to Library</Button>
+	{/snippet}
+</Sheet>
 
 <style>
-	.modal {
-		width: min(520px, calc(100vw - 32px));
-		max-height: calc(100dvh - 32px);
-		overflow: auto;
-		padding: var(--s-6);
-		border: 0;
-		border-radius: var(--r-modal);
-		background: var(--surface-1);
-		color: var(--text);
-		box-shadow: var(--shadow-modal);
-	}
-	.modal::backdrop {
-		background: var(--scrim);
-	}
-	.modal-actions {
-		justify-content: flex-end;
-		margin-top: var(--s-6);
-	}
+	.sheet-form { display: flex; flex-direction: column; gap: 4px; }
+	.form-error { margin: 8px 0 0; color: var(--fail); font: var(--t-callout); }
 	.ul {
+		color: var(--text);
 		text-decoration: underline;
 	}
 	.kinds {
