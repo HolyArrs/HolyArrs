@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { defineConfig, mergeConfig } from 'vite';
 import appConfig from './vite.config.ts';
 
-const target = 'http://127.0.0.1:18747';
+const target = 'http://127.0.0.1:18728';
 const catalogPath = resolve('../../docs/design-review/intercom/sample-catalog.json');
 const activityPath = resolve('../../docs/design-review/intercom/sample-real-activity.json');
 const cookieNames = [
@@ -151,7 +151,7 @@ function sampleArtwork() {
 }
 
 export default mergeConfig(appConfig, defineConfig({
-	plugins: [sampleArtwork()],
+	plugins: [],
 	server: {
 		host: '0.0.0.0',
 		port: 18749,
