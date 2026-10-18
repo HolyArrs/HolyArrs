@@ -41,7 +41,7 @@ async function paperHarbour(page: import('@playwright/test').Page): Promise<stri
 		await page.getByRole('button', { name: 'Search', exact: true }).click();
 		const hit = page.locator('li.hit', { hasText: 'Paper Harbour' });
 		await hit.getByRole('button', { name: 'Add' }).click();
-		await page.getByRole('dialog').getByLabel('Search now').uncheck();
+		await page.getByRole('dialog').getByLabel('Search when added').uncheck();
 		await page.getByRole('dialog').getByRole('button', { name: 'Add to Library' }).click();
 		movie = hit.getByRole('link', { name: 'In your Library' });
 	}

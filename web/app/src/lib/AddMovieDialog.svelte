@@ -9,7 +9,7 @@
 	import type { LibraryFolder, LookupMovie, PickRulesView, TitleDefaults, TitleView } from './types.ts';
 
 	// Add a movie to the Library: folder, Pick rules, Release gate, Keep up
-	// to date, Search now and an optional second Version. Used by Search and
+	// to date, Search when added and an optional second Version. Used by Search and
 	// the title detail page; open(movie) shows it. It starts from the Movies
 	// and TV defaults; only the Release gate is remembered from the last add.
 	let {
@@ -135,7 +135,7 @@
 				</label>
 				<label class="checkline">
 					<input type="checkbox" bind:checked={searchOnAdd} />
-					<span><b>Search now</b><br /><span class="hint">Start looking for a Release straight away.</span></span>
+					<span><b>Search when added</b><br /><span class="hint">Start looking for a Release straight away.</span></span>
 				</label>
 				<label class="checkline">
 					<input type="checkbox" bind:checked={more} />

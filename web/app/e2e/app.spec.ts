@@ -209,7 +209,7 @@ test('search, add a movie, and the Library updates live', async ({ browser }) =>
 	const hit = page.locator('li.hit').first();
 	await expect(hit).toBeVisible();
 	await hit.getByRole('button', { name: 'Add' }).click();
-	await page.getByLabel('Search now').uncheck();
+	await page.getByLabel('Search when added').uncheck();
 	await page.getByRole('button', { name: 'Add to Library' }).click();
 	await expect(hit.getByRole('link', { name: 'In your Library' })).toBeVisible();
 

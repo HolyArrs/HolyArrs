@@ -39,7 +39,7 @@ test('add a movie by name with folder, Pick rules and Release gate in under a mi
 	await expect(dialog.getByLabel('Pick rules').locator('option')).not.toHaveCount(0);
 	await dialog.getByLabel('Release gate').selectOption('in_cinemas');
 	await expect(dialog.getByText('Look from the cinema date.')).toBeVisible();
-	await dialog.getByLabel('Search now').uncheck();
+	await dialog.getByLabel('Search when added').uncheck();
 	await dialog.getByRole('button', { name: 'Add to Library' }).click();
 	await expect(hit.getByRole('link', { name: 'In your Library' })).toBeVisible();
 	expect(Date.now() - started).toBeLessThan(60_000);
@@ -59,9 +59,9 @@ test('add by tmdb: and imdb: id; the last Release gate is remembered, the rest s
 	await hit.getByRole('button', { name: 'Add' }).click();
 	const dialog = page.getByRole('dialog');
 	await expect(dialog.getByLabel('Release gate')).toHaveValue('in_cinemas');
-	// Search now is not remembered: it starts from the defaults (on for movies when nothing is saved).
-	await expect(dialog.getByLabel('Search now')).toBeChecked();
-	await dialog.getByLabel('Search now').uncheck();
+	// Search when added is not remembered: it starts from the defaults (on for movies when nothing is saved).
+	await expect(dialog.getByLabel('Search when added')).toBeChecked();
+	await dialog.getByLabel('Search when added').uncheck();
 	await dialog.getByLabel('Release gate').selectOption('released');
 	await dialog.getByRole('button', { name: 'Add to Library' }).click();
 	await expect(hit.getByRole('link', { name: 'In your Library' })).toBeVisible();
@@ -72,7 +72,7 @@ test('add by tmdb: and imdb: id; the last Release gate is remembered, the rest s
 	await page.getByRole('button', { name: 'Search', exact: true }).click();
 	const orchard = page.locator('li.hit', { hasText: 'Quiet Orchard' });
 	await orchard.getByRole('button', { name: 'Add' }).click();
-	await page.getByRole('dialog').getByLabel('Search now').uncheck();
+	await page.getByRole('dialog').getByLabel('Search when added').uncheck();
 	await page.getByRole('dialog').getByRole('button', { name: 'Add to Library' }).click();
 	await expect(orchard.getByRole('link', { name: 'In your Library' })).toBeVisible();
 });
@@ -170,7 +170,7 @@ test('add a movie with a second 4K Version; the Movie page shows both and can ad
 	await expect(dialog.getByLabel('Version name')).toHaveValue('4K');
 	await expect(dialog.getByLabel('Pick rules for this Version').locator('option:checked')).toHaveText('4K');
 	await expect(dialog.getByText('it gets its own folder named with')).toBeVisible();
-	await dialog.getByLabel('Search now').uncheck();
+	await dialog.getByLabel('Search when added').uncheck();
 	await dialog.getByRole('button', { name: 'Add to Library' }).click();
 	await hit.getByRole('link', { name: 'In your Library' }).click();
 

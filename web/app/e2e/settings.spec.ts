@@ -171,7 +171,7 @@ test('Movies and TV defaults: saved choices are where the add movie dialog start
 	await expect(dialog.getByLabel('Library folder')).toHaveValue(first);
 	await expect(dialog.getByLabel('Pick rules').locator('option:checked')).toHaveText('4K');
 	await expect(dialog.getByLabel('Keep up to date')).not.toBeChecked();
-	await expect(dialog.getByLabel('Search now')).not.toBeChecked();
+	await expect(dialog.getByLabel('Search when added')).not.toBeChecked();
 	await dialog.getByRole('button', { name: 'Cancel' }).click();
 	await expect(dialog).toBeHidden();
 

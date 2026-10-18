@@ -97,7 +97,7 @@ test('a movie downloads through qBittorrent; Mark failed sends the next Release 
 	const hit = page.locator('li.hit', { hasText: 'Iron Lullaby' });
 	await hit.getByRole('button', { name: 'Add' }).click();
 	const dialog = page.getByRole('dialog');
-	await dialog.getByLabel('Search now').check();
+	await dialog.getByLabel('Search when added').check();
 	await dialog.getByRole('button', { name: 'Add to Library' }).click();
 	await hit.getByRole('link', { name: 'In your Library' }).click();
 	await expect(page.getByRole('heading', { level: 1 })).toContainText('Iron Lullaby');
