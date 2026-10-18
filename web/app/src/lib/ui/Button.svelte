@@ -47,7 +47,7 @@
 	.secondary { background: var(--surface-2); color: var(--text); }
 	.secondary:hover:not(:disabled) { background: var(--surface-3); }
 	.plain { background: transparent; color: var(--accent-text); }
-	.plain:hover:not(:disabled) { background: var(--accent-soft); }
+	.plain:hover:not(:disabled) { background: var(--surface-2); }
 	.destructive { background: color-mix(in srgb, var(--fail) 12%, transparent); color: var(--fail-text); }
 	.destructive:hover:not(:disabled) { background: color-mix(in srgb, var(--fail) 18%, transparent); }
 	.ui-btn:disabled { opacity: .45; cursor: not-allowed; }
