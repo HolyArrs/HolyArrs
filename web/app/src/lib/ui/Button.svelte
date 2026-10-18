@@ -36,6 +36,8 @@
 		cursor: pointer; user-select: none; text-decoration: none;
 	}
 	.ui-btn > span { overflow: hidden; text-overflow: ellipsis; }
+	/* Phones: a long label wraps instead of pushing the page sideways. */
+	@media (max-width: 767px) { .ui-btn { max-width: 100%; white-space: normal; text-align: center; padding-block: 6px; } }
 	.lg { min-height: 44px; padding: 0 20px; font-size: 16px; }
 	.md { min-height: 36px; padding: 0 16px; }
 	.sm { min-height: 30px; padding: 0 12px; font: var(--t-subhead); font-weight: 600; border-radius: 8px; }
