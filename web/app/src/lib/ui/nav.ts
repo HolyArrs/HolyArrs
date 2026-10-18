@@ -74,7 +74,7 @@ export function buildNav(input: NavInput): NavSection[] {
 		{
 			id: 'manage',
 			label: 'Manage',
-			items: input.allowed('manage')
+			items: input.allowed('manage') || input.allowed('staff')
 				? [
 						{ href: '/downloads', label: 'Downloads', icon: 'download', need: 'manage_library', also: ['/downloads/decide'], badge: input.decisions, badgeLabel: `${input.decisions} need a decision` },
 						{ href: '/wishlist', label: 'Approvals', icon: 'inbox', need: 'approve', badge: input.approvals, badgeLabel: `${input.approvals} waiting` },

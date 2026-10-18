@@ -112,7 +112,7 @@
 		const until = ymd(new Date(Date.now() + 30 * 86400000));
 		const [su, fo, dl, ev, he, tk, se, ch, ca, as, de] = await Promise.allSettled([
 			api.get<{ total: number; missing: MissingTitle[]; recent?: TitleView[] }>('/library-summary'),
-			admin ? api.get<{ library_folders: LibraryFolder[] }>('/library-folders') : Promise.resolve(null),
+			manager ? api.get<{ library_folders: LibraryFolder[] }>('/library-folders') : Promise.resolve(null),
 			// Members may only read the Library and their own asks (perms.go); the rest needs manage_library.
 			manager ? api.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=50') : Promise.resolve(null),
 			manager ? api.get<{ events: EventRecord[] }>('/events?limit=12') : Promise.resolve(null),

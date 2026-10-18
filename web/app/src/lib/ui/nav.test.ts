@@ -28,6 +28,11 @@ describe('buildNav', () => {
 		const nav = buildNav({ ...owner, allowed: (n) => approverOnly.has(n) });
 		expect(nav.find((s) => s.id === 'manage')?.items.map((i) => i.label)).toEqual(['Approvals']);
 	});
+	it('shows Settings to someone who only manages users', () => {
+		const usersOnly = new Set(['staff']);
+		const nav = buildNav({ ...owner, allowed: (n) => usersOnly.has(n) });
+		expect(nav.find((s) => s.id === 'manage')?.items.map((i) => i.label)).toEqual(['Settings']);
+	});
 	it('drops places whose part is off', () => {
 		const nav = buildNav({ ...owner, kinds: ['show'], off: (h) => h === '/wishlist' });
 		expect(nav.find((s) => s.id === 'library')?.items.map((i) => i.label)).toEqual(['TV shows']);

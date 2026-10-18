@@ -242,7 +242,7 @@
 		if (p === '/account') return true;
 		if (session.s.mustTwoFactor) return false;
 		if (p.startsWith('/downloads') || p.startsWith('/calendar')) return allowed('manage_library');
-		if (p === '/library/held' || p === '/library/turned-down' || p === '/library/rename' || p === '/library/import' || p === '/library/missing-subtitles') return allowed('manage_library');
+		if (p === '/library/held' || p === '/library/turned-down' || p === '/library/rename' || p === '/library/import' || p === '/library/missing-subtitles' || p === '/library/copies') return allowed('manage_library');
 		if (p.startsWith('/wishlist')) return allowed('wishlist');
 		if (p === '/settings/users') return session.can('users');
 		if (p === '/settings/account') return true;
