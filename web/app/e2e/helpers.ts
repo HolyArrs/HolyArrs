@@ -79,22 +79,10 @@ export async function noSidewaysScroll(page: Page) {
 	const { sw, cw, wide } = await page.evaluate(() => {
 		const cw = document.documentElement.clientWidth;
 		// The deepest elements that stick out, to say what to fix.
-		// Skip what sits inside its own scroller (shelves): that does not widen the page.
-		const scrolled = (el: Element) => {
-			if (['fixed', 'absolute'].includes(getComputedStyle(el).position)) return false;
-			for (let e = el.parentElement; e; e = e.parentElement) if (['auto', 'scroll'].includes(getComputedStyle(e).overflowX)) return true;
-			return false;
-		};
 		const wide = [...document.querySelectorAll('body *')]
-			.filter((el) => el.getBoundingClientRect().right > cw + 1 && !scrolled(el))
-			.slice(0, 6)
-			.map((el) => `${el.tagName.toLowerCase()}.${[...el.classList].join('.')} in ${el.parentElement?.className ?? ''}`);
-		if (document.documentElement.scrollWidth > cw) {
-			// Debug: the outermost elements reaching past the screen, with their overflow.
-			const all = [...document.querySelectorAll('body *')].filter((el) => el.getBoundingClientRect().right > cw + 1);
-			const outer = all.filter((el) => !all.includes(el.parentElement as Element)).slice(0, 6);
-			wide.push(...outer.map((el) => `OUTER ${el.tagName}.${el.className} r=${Math.round(el.getBoundingClientRect().right)} ov=${getComputedStyle(el).overflowX} pos=${getComputedStyle(el).position} parent=${el.parentElement?.tagName}.${el.parentElement?.className} pov=${el.parentElement ? getComputedStyle(el.parentElement).overflowX : ''}`));
-		}
+			.filter((el) => el.getBoundingClientRect().right > cw + 1 && ![...el.children].some((c) => c.getBoundingClientRect().right > cw + 1))
+			.slice(0, 3)
+			.map((el) => `${el.tagName.toLowerCase()}.${[...el.classList].join('.')}`);
 		return { sw: document.documentElement.scrollWidth, cw, wide };
 	});
 	expect(sw, `${page.url()} is ${sw}px wide on a ${cw}px screen (${wide.join(', ')})`).toBeLessThanOrEqual(cw);

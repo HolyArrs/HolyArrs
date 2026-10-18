@@ -129,10 +129,6 @@
 		<h1>Downloads</h1>
 		<p>What your Downloaders are fetching right now, live, and what HolyArrs moved into the Library.</p>
 	</div>
-	<nav class="page-actions" aria-label="Download views">
-		<a class="btn btn-ghost" href={to(`/downloads/decide`)}>Needs a decision</a>
-		<a class="btn btn-ghost" href={to(`/downloads/history`)}>History</a>
-	</nav>
 </header>
 
 {#snippet dlRow(r: DownloadRow)}
@@ -320,12 +316,6 @@
 </dialog>
 
 <style>
-	.page-actions {
-		display: flex;
-		align-items: center;
-		gap: var(--s-2);
-		flex-wrap: wrap;
-	}
 	.eyebrow {
 		margin: 0 0 var(--s-2);
 		font-size: 11px;
@@ -561,13 +551,6 @@
 		}
 	}
 	@media (max-width: 620px) {
-		.page-actions,
-		.page-actions :global(.btn) {
-			width: 100%;
-		}
-		.page-actions :global(.btn) {
-			min-height: 44px;
-		}
 		.dl {
 			display: grid;
 			grid-template-columns: 40px minmax(0, 1fr);

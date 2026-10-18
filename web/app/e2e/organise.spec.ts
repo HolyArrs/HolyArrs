@@ -210,9 +210,9 @@ test('the new screens fit a phone and pass the accessibility scan', async ({ bro
 		await expect(d.getByRole('heading', { name: heading })).toBeVisible();
 		if (button === 'Delete movie') await expect(d.getByTestId('delete-plan')).toContainText('stays where it is');
 		else await expect(d.getByRole('button', { name: 'Rename 1 file' })).toBeVisible();
-		await noSidewaysScroll(ph);
-		// Scan the settled dialog, not its opening animation.
+		// Measure and scan the settled dialog, not the menu closing and the dialog opening.
 		await ph.evaluate(() => Promise.all(document.getAnimations().map((x) => x.finished.catch(() => undefined))));
+		await noSidewaysScroll(ph);
 		const r = await new AxeBuilder({ page: ph }).include('dialog[open]').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
 		expect(r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id), heading).toEqual([]);
 		await ph.keyboard.press('Escape');

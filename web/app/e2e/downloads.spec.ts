@@ -60,7 +60,7 @@ test('Remove asks first, starts from the settings and can turn the Release down 
 });
 
 test('Needs a decision says why and offers every choice; stopping clears the badge', async () => {
-	await page.locator('main').getByRole('link', { name: /Needs a decision/ }).first().click();
+	await page.locator('main').getByRole('link', { name: /Needs a decision/ }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Needs a decision' })).toBeVisible();
 	const card = page.getByTestId('decision').filter({ hasText: 'Iron Lullaby' });
 	await expect(card.getByTestId('decision-why')).toHaveText('HolyArrs ran out of Releases that pass the Pick rules.');

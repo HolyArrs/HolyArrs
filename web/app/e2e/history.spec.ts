@@ -97,9 +97,11 @@ test('health: checks run on This app, show on Home, and their settings are saved
 
 	await page.goto('/');
 	const home = page.getByTestId('home-health');
-	await expect(home.getByRole('heading', { name: 'Health' })).toBeVisible();
+	// Health is a fact in the This HolyArrs panel; History links from Latest Events.
+	await expect(home.getByRole('heading', { name: 'This HolyArrs' })).toBeVisible();
+	await expect(home.getByText('Health', { exact: true })).toBeVisible();
 	await expect(home.getByRole('link', { name: 'All health checks' })).toBeVisible();
-	await expect(page.getByRole('link', { name: 'All history' })).toBeVisible();
+	await expect(page.getByRole('region', { name: 'Latest Events' }).getByRole('link', { name: 'History' })).toBeVisible();
 });
 
 test('calendar: month and list views with cinema, digital and disc dates', async () => {
