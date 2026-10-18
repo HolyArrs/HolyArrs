@@ -44,3 +44,22 @@ Intentional adaptations: HolyArrs branding, terms, artwork, operational states a
 Known deviation: existing licensed Geist Variable is a substitute. Public Intercom sign-in CSS previously referenced Graphik, but that does not identify this authenticated November 2025 UI. No unlicensed font has been acquired.
 
 Missing evidence: authenticated font identity/metrics, source CSS tokens, source viewport/DPR/zoom, timed duration/easing/stagger/exit choreography, computed focus styles, native tablet/phone/TV behavior, drag/resize and keyboard details. Flow still sequences establish order and continuity only. Exact parity stays unclosed for these properties. Current HolyArrs motion tests prove its behavior and reduced-motion handling, not Intercom timing equality.
+
+## Fresh flow inspection and component classifications
+
+Public Sending a message, Filtering and sorting inbox, and Adding a team inbox pages were inspected headlessly on `2026-10-18T00:42:45Z` through `00:42:49Z` (October 17 local time), at **1440×1000 CSS px, DPR 1**. Each returned HTTP 200 and rendered ordered stills. No video/audio element or timed player control was available. The receipt is `audit20261017/flows/receipt.json`; `timedMotionVerified` is false for all three. This is current inspection evidence, not a source animation measurement.
+
+| HolyArrs implementation | Intercom visual counterpart | Classification and boundary |
+| --- | --- | --- |
+| Global rail/context sidebar, Library expansion | Global product rail and expanded Train/Inbox hierarchy (120/40) | Corresponding hierarchy and layered surfaces; HolyArrs destinations and chooser behavior are adaptations |
+| `Icon.svelte` | Navigation/action glyphs (40/120/240) | Own 24px-grid line icons; silhouettes and stroke are an intentional difference, not copied source assets |
+| Shared buttons, textboxes, selects, labels/help/validation | Inbox controls and team-inbox settings forms (40/240/480) | Rounded compact controls and restrained borders correspond; native selects and accessible validation remain platform adaptations |
+| Filter popovers, chips and selected rows | Inbox filtering/sorting flow | Ordered filter/selection continuity corresponds; exact hover/focus/disabled computed styles unavailable |
+| Poster, PersonCard, media cards | Contact avatar/content thumbnail treatment | Artwork, poster proportions, fallback initials and media metadata are intentional media-manager additions |
+| Request and download list/inspector | Inbox list/conversation/details panes (40) | Multi-pane relationship corresponds; progress, approval, file and service states are HolyArrs-specific |
+| Dialogs, release chooser, rename/delete previews | Inbox modal/sheet overlays (40/240) | Surface, corner, divider and action hierarchy correspond; domain actions differ |
+| SubtitlePanel, ShowPage, ArtistPage, album/track views | Grouped details/forms and expandable data sections | Domain-specific capabilities, not one-to-one Intercom screens |
+| EmptyState, loading placeholders, ToastList | Empty work panel, transient feedback (120/240) | Visual grammar corresponds; local loading, success/error/recovery and reduced-motion tests do not establish source timing parity |
+| Sessions, Account, login/invite/welcome | Sign-in/onboarding shell | Functional accessibility tested locally; authenticated Intercom security interactions are unavailable |
+
+Desktop Settings deliberately bounds readable row/form width. Library search deliberately caps at 760 CSS px on wide screens. These differ from some reference compositions and are retained as explicit reading-density adaptations rather than filled with irrelevant controls. Selected request summaries may also appear in their list row and inspector; that repetition preserves the master/detail relationship.

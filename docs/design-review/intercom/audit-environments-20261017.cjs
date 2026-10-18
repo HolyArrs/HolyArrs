@@ -1,10 +1,24 @@
 /* Bounded isolated responsive environment capture; GET-only and preview-scoped. */
 const { chromium } = require('../../../web/app/node_modules/playwright');
 const { createHash } = require('node:crypto'); const { execFileSync } = require('node:child_process'); const fs=require('node:fs'); const path=require('node:path');
-const root=path.resolve(__dirname,'../../..'), origin='http://10.10.25.25:18746', out=path.join(root,'.omx/artifacts/visual-ralph/intercom/audit20261017/env');
-const boundaryWidths=[599,600,601,619,620,621,767,768,769,1023,1024,1025]; const representativeRoutes=['/library','/wishlist','/downloads','/settings','/library/76']; const cases=[...boundaryWidths.flatMap((width)=>representativeRoutes.map((route,i)=>({width,route,theme:i%2?'dark':'light'}))),{width:640,route:'/library',theme:'light',zoomEquivalent:true},{width:1280,route:'/library/76',theme:'dark',dpr:2}];
+const root=path.resolve(__dirname,'../../..'), origin='http://10.10.25.25:18746', out=path.join(root,'.omx/artifacts/visual-ralph/intercom/audit20261017/env-v3');
+const boundaryWidths=[599,600,601,619,620,621,767,768,769,979,980,981,1023,1024,1025,1099,1100,1101,1279,1280,1281,1399,1400,1401,1599,1600,1601]; const representativeRoutes=['/library','/wishlist','/downloads','/settings','/library/76','/']; const cases=[...boundaryWidths.flatMap((width)=>representativeRoutes.map((route,i)=>({width,route,theme:i%2?'dark':'light'}))),{width:640,route:'/library',theme:'light',zoomEquivalent:true},{width:1280,route:'/library/76',theme:'dark',dpr:2}];
 function identity(){const h=createHash('sha256'),walk=d=>fs.readdirSync(d).sort().forEach(n=>{const f=path.join(d,n),s=fs.statSync(f);s.isDirectory()?walk(f):h.update(path.relative(root,f)).update(fs.readFileSync(f));});walk(path.join(root,'web/app/src'));return {commit:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),sourceHash:h.digest('hex')};}
-async function geometry(p){return p.evaluate(()=>{const v=e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&getComputedStyle(e).visibility!=='hidden'},es=[...document.querySelectorAll('button,a,input,select,textarea,h1,h2,h3,label,summary')].filter(v),outside=[],overlaps=[];for(const e of es){const r=e.getBoundingClientRect();if(r.left< -1||r.right>innerWidth+1)outside.push(e.getAttribute('aria-label')||e.textContent?.trim().slice(0,50));}for(let i=0;i<es.length;i++)for(let j=i+1;j<es.length;j++){const a=es[i].getBoundingClientRect(),b=es[j].getBoundingClientRect();if(Math.min(a.right,b.right)>Math.max(a.left,b.left)+3&&Math.min(a.bottom,b.bottom)>Math.max(a.top,b.top)+3&&!es[i].contains(es[j])&&!es[j].contains(es[i]))overlaps.push([es[i].tagName,es[j].tagName]);}return {innerWidth,innerHeight,scrollWidth:document.documentElement.scrollWidth,overflow:document.documentElement.scrollWidth>innerWidth+1,outside:outside.slice(0,20),overlaps:overlaps.slice(0,20)};});}
+async function geometry(p){return p.evaluate(()=>{
+  const v=e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&getComputedStyle(e).visibility!=='hidden'&&Number(getComputedStyle(e).opacity)!==0&&!e.closest('.sr-only,[aria-hidden="true"],details:not([open]) > :not(summary)');};
+  const label=e=>e.getAttribute('aria-label')||e.id||e.textContent?.trim().slice(0,70)||e.tagName;
+  const es=[...document.querySelectorAll('button,a,input,select,textarea,h1,h2,h3,label,summary')].filter(v),outside=[],overlaps=[],fixedNavigationOcclusion=[];
+  for(const e of es){const r=e.getBoundingClientRect();if(r.left< -1||r.right>innerWidth+1)outside.push({element:label(e),left:r.left,right:r.right});}
+  for(let i=0;i<es.length;i++)for(let j=i+1;j<es.length;j++){
+    const x=es[i],y=es[j],a=x.getBoundingClientRect(),b=y.getBoundingClientRect();
+    if(Math.min(a.right,b.right)<=Math.max(a.left,b.left)+3||Math.min(a.bottom,b.bottom)<=Math.max(a.top,b.top)+3||x.contains(y)||y.contains(x))continue;
+    const item={elements:[label(x),label(y)],rects:[a.toJSON(),b.toJSON()]};
+    const nav=x.closest('.tabbar')||y.closest('.tabbar');
+    if(nav&&getComputedStyle(nav).position==='fixed'&&!!x.closest('.tabbar')!==!!y.closest('.tabbar'))fixedNavigationOcclusion.push(item);
+    else overlaps.push(item);
+  }
+  return {innerWidth,innerHeight,scrollWidth:document.documentElement.scrollWidth,overflow:document.documentElement.scrollWidth>innerWidth+1,outside,overlaps,fixedNavigationOcclusion,geometryPolicy:'Exclude non-rendered closed-details content and screen-reader-only boxes. Fixed bottom-navigation occlusion during scrolling is recorded separately; final-row clearance is verified in responsive bottom captures.'};
+});}
 async function main() {
   fs.mkdirSync(out, { recursive: true });
   const before = identity(), checks = [];

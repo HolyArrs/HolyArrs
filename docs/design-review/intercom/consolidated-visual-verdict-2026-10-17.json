@@ -1,0 +1,43 @@
+{
+  "score": 95,
+  "verdict": "pass",
+  "scoreMeaning": "Scoped qualitative visual review, not a measured percentage of pixel or implementation equality",
+  "commit": "d3ac9e3c5fe8055fab8567e1d95e67bafa3c1308",
+  "sourceHash": "45144ef19d962c8cd785e124d352c7f00f42821ea359558b919415073e6f2928",
+  "category_match": {
+    "intercom_derived_visual_system": 95,
+    "desktop_shell_and_navigation": 96,
+    "responsive_layout": 96,
+    "light_and_dark_theme_consistency": 94,
+    "multi_pane_operational_workflows": 95,
+    "media_manager_adaptation": 96
+  },
+  "comparisonRoot": ".omx/artifacts/visual-ralph/intercom/audit20261017/comparison",
+  "comparisonFiles": ["light-library.png", "dark-library.png", "light-wishlist.png", "dark-downloads.png", "light-settings.png"],
+  "responsiveRoot": ".omx/artifacts/visual-ralph/intercom/responsive-pass/consolidated-final-v2-20261017",
+  "responsiveFiles": ["360-_wishlist.png", "360-_wishlist-bottom.png", "360-_downloads.png", "360-_downloads-bottom.png", "360-_library_kind_movie_list.png", "360-_library_kind_movie_list-bottom.png", "768-_.png", "768-_-bottom.png", "834-_.png", "834-_-bottom.png", "1280-_.png", "1280-_-bottom.png", "3440-_.png", "3440-_-bottom.png", "3840-_library.png", "3840-_library-bottom.png", "3840-_downloads.png", "3840-_downloads-bottom.png"],
+  "referenceRoot": ".omx/artifacts/visual-ralph/intercom/full-export",
+  "referenceFiles": ["Intercom web Nov 2025 40.png", "Intercom web Nov 2025 120.png", "Intercom web Nov 2025 240.png", "Intercom web Nov 2025 480.png"],
+  "differences": [
+    {"severity":"none","classification":"verified_phone_fit","finding":"At 360px, titles, badges, request decisions and progress remain visible. Long text wraps or uses intentional path ellipsis; final rows clear bottom navigation."},
+    {"severity":"none","classification":"verified_breakpoint_fix","finding":"Home stacks at 768/834, preserves readable paired regions at 1280 and puts Health below Activity. The compressed event column is resolved."},
+    {"severity":"none","classification":"verified_ultrawide_scaling","finding":"3440 Home and 3840 Library preserve grouping, artwork geometry, metadata and badges. Downloads retains a bounded operational workspace."},
+    {"severity":"informational","classification":"capture_limit","finding":"Deferred offscreen poster regions in the 3840 bottom full-page raster appear as placeholders. Visible artwork renders correctly; this capture alone does not prove offscreen artwork loading."},
+    {"severity":"informational","classification":"intentional_adaptation","finding":"Media artwork, approvals, queue progress, health summaries, own icons and branding, responsive navigation, bounded Settings and Library search widths adapt the reference to actual media management."},
+    {"severity":"none","classification":"superseded_finding_removed","finding":"Fresh dark captures show intact artwork. The earlier unverified poster-sliver observation is excluded."}
+  ],
+  "suggestions": [
+    "Preserve the verified breakpoint behavior and bounded operational reading widths.",
+    "Wait for deferred artwork when producing future full-page visual baselines.",
+    "Repeat final-source captures after subsequent frontend changes."
+  ],
+  "reasoning": "The inspected implementation consistently follows the reference rail/context/workspace hierarchy, compact controls, thin dividers, restrained status color, rounded surfaces and list/inspector composition. Its responsive compositions remain usable for real media duties. No actionable cropping, overlap or unreadable-density defect remains in the named inspected rasters.",
+  "limits": [
+    "Source CSS viewport, DPR and zoom are unknown.",
+    "Authenticated reference font identity and metrics are unmeasured; Geist is a documented substitute.",
+    "Reference motion duration and easing are unmeasured; flow stills establish sequence only.",
+    "Native Intercom phone/tablet/TV behavior is unknown.",
+    "No pixel-identical or implementation-identical claim is made.",
+    "This verdict applies only to the named frozen-source captures; earlier verdicts are historical."
+  ]
+}

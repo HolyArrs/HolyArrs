@@ -67,7 +67,9 @@ async function screenshot(page, file) {
       await context.addInitScript(() => localStorage.setItem('holyarrs-theme', 'light'));
       const page = await context.newPage();
       page.setDefaultTimeout(6000);
-      const attempts = [], steps = [], errors = [], handlers = [], nativeDialogs = [], fixtures = [], visitedRoutes = new Set();
+      const attempts = [], steps = [], errors = [], handlers = [], nativeDialogs = [], fixtures = [], bootstrapFailures = [], visitedRoutes = new Set();
+      page.on('requestfailed', request => { const u = new URL(request.url()); if (u.origin === origin && ['script','document'].includes(request.resourceType())) bootstrapFailures.push({path:u.pathname,error:request.failure()?.errorText}); });
+      page.on('response', response => { const u = new URL(response.url()); if (u.origin === origin && response.status() >= 400 && response.request().resourceType() === 'script') bootstrapFailures.push({path:u.pathname,status:response.status()}); });
       let fixtureResponses = 0, nextConfirmation = false;
       page.on('pageerror', error => errors.push(error.message));
       page.on('framenavigated', frame => {
@@ -153,7 +155,7 @@ async function screenshot(page, file) {
         image = name + '-failed.png';
         try { await screenshot(page, path.join(out, image)); } catch { image = undefined; }
       } finally {
-        checks.push({ name: scenario.name, group: scenario.group, route: scenario.route, width, steps, attempts, fixtureResponses, fixtures, nativeDialogs, controls, visitedRoutes: [...visitedRoutes], errors, screenshot: image, ...(failure ? { failure } : {}) });
+        checks.push({ name: scenario.name, group: scenario.group, route: scenario.route, width, steps, attempts, fixtureResponses, fixtures, nativeDialogs, bootstrapFailures, controls, visitedRoutes: [...visitedRoutes], errors, screenshot: image, ...(failure ? { failure } : {}) });
         await context.close();
         fs.writeFileSync(path.join(out, 'receipt.json'), JSON.stringify({ before, checks, after: identity() }, null, 2));
         console.log(`${width} ${scenario.name}: ${failure ? 'FAIL ' + failure.split('\n')[0] : 'pass'}`);
