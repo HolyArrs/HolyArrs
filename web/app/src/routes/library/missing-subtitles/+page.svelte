@@ -10,7 +10,13 @@
 	import { live } from '#lib/live.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { pager } from '#lib/releases.ts';
-	import EmptyState from '#lib/EmptyState.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
+	import ProgressBar from '#lib/ui/ProgressBar.svelte';
+	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import { plainReason } from '#lib/plain.ts';
 	import Icon from '#lib/Icon.svelte';
 	import { jobsDone, langName, missingName, missingQuery, missingWords, wantLabel, type Language, type MissingRow, type MissingTitle } from '#lib/subtitles.ts';
 
@@ -144,16 +150,12 @@
 
 <svelte:head><title>Missing subtitles · HolyArrs</title></svelte:head>
 
-<header class="page-head">
-	<div>
-		<p class="eyebrow">Library management</p>
-		<h1>Missing subtitles</h1>
-		<p>Every movie and episode without a subtitle it should have. HolyArrs keeps looking on its own; search now to look at once.</p>
-	</div>
-	<button class="btn btn-dark" type="button" onclick={searchAll} disabled={searchAllBusy || total === 0} aria-busy={searchAllBusy} data-testid="search-all-subtitles">
-		<Icon name="search" size={18} /> Search all
-	</button>
-</header>
+<div class="page">
+<PageHeader title="Missing subtitles" subtitle="Every movie and episode without a subtitle it should have. HolyArrs keeps looking on its own; search now to look at once." back={{ href: to('/library'), label: 'Library' }}>
+	{#snippet actions()}
+		<Button variant="primary" icon="search" onclick={searchAll} disabled={total === 0} busy={searchAllBusy} data-testid="search-all-subtitles">Search all</Button>
+	{/snippet}
+</PageHeader>
 
 <form class="filters" onsubmit={(e) => (e.preventDefault(), filter())} aria-label="Filters">
 	<div class="field">
@@ -182,95 +184,85 @@
 
 {#if jobIds.length}
 	<div class="progress" aria-live="polite" data-testid="search-all-progress">
-		<progress class="bar" max={jobIds.length} value={done} aria-label="Subtitle searches done"></progress>
+		<ProgressBar value={(done / jobIds.length) * 100} label="Subtitle searches done" />
 		<p class="xs muted">{running ? `Searched ${done} of ${jobIds.length} files.` : `Done: searched ${jobIds.length} ${jobIds.length === 1 ? 'file' : 'files'}.`}</p>
 	</div>
 {/if}
 
 {#if error}
-	<p class="notice bad" role="alert">{error}</p>
+	<LoadError hasData={false} message={plainReason(error).text} onretry={load} />
 {:else if !loaded}
-	<div class="sk" style="height: 160px"></div>
+	<div class="rows-list"><Skeleton lines={4} /></div>
 {:else if total === 0}
-	<EmptyState icon="subtitle" title={language || kind || title ? 'Nothing missing here' : 'No subtitles missing'}>
-		<p>
-			{language || kind || title
-				? 'Nothing matches these filters.'
-				: 'Every movie and episode has the subtitles it should. Set the languages in Settings > Subtitles or on a movie or show.'}
-		</p>
-	</EmptyState>
+	<EmptyState
+		icon="subtitle"
+		title={language || kind || title ? 'Nothing missing here' : 'No subtitles missing'}
+		text={language || kind || title
+			? 'Nothing matches these filters.'
+			: 'Every movie and episode has the subtitles it should. Set the languages in Settings > Subtitles or on a movie or show.'}
+	/>
 {:else}
 	<p class="small muted count">{total} missing {total === 1 ? 'subtitle' : 'subtitles'}</p>
-	<ul class="card rows-list">
+	<ul class="rows-list">
 		{#each rows as r (r.file_id + r.language + String(r.forced))}
 			<li class="row-item" data-testid="missing-subtitle">
 				<div class="grow">
-					<a class="small" href={to(`/library/${r.title_id}`)}><b>{missingName(r)}</b></a>
-					<div class="xs">
+					<a class="name" href={to(`/library/${r.title_id}`)}>{missingName(r)}</a>
+					<div class="sub">
 						<span data-testid="missing-language">{wantLabel({ language: r.language, hearing_impaired: r.hearing_impaired ? 'hi' : 'normal', forced: r.forced }, langs)}</span>
 						<span class="muted"> · {missingWords(r, dateTime)}</span>
 					</div>
 				</div>
-				<button
-					class="btn btn-quiet btn-sm"
-					type="button"
+				<Button
+					icon="search"
 					onclick={() => searchOne(r)}
 					disabled={searchingRow === r.file_id}
 					aria-label="Search {langName(r.language, langs)} subtitles for {missingName(r)}"
-					data-testid="missing-search">Search</button
+					data-testid="missing-search">Search</Button
 				>
 			</li>
 		{/each}
 	</ul>
 	{#if pages.prev !== null || pages.next !== null}
-		<nav class="row pager" aria-label="Pages">
-			<button class="btn btn-quiet" type="button" disabled={pages.prev === null} onclick={() => go(pages.prev)}>Back</button>
-			<span class="xs muted">{pages.from} to {pages.to} of {total}</span>
-			<button class="btn btn-quiet" type="button" disabled={pages.next === null} onclick={() => go(pages.next)}>More</button>
+		<nav class="pager" aria-label="Pages">
+			<Button icon="chevronLeft" disabled={pages.prev === null} onclick={() => go(pages.prev)}>Back</Button>
+			<span class="sub">{pages.from} to {pages.to} of {total}</span>
+			<Button iconAfter="chevronRight" disabled={pages.next === null} onclick={() => go(pages.next)}>More</Button>
 		</nav>
 	{/if}
 {/if}
+</div>
 
 <style>
-	.eyebrow { margin: 0 0 var(--s-2); font-size: 11px; font-weight: var(--weight-semibold); letter-spacing: .09em; text-transform: uppercase; color: var(--text-muted); }
+	.page { display: flex; flex-direction: column; gap: 16px; padding-bottom: 48px; min-width: 0; }
+	.name { font: var(--t-headline); color: var(--text); overflow-wrap: anywhere; }
+	.sub { margin-top: 2px; font: var(--t-subhead); font-weight: 400; font-variant-numeric: tabular-nums; }
+	.muted { color: var(--text-muted); }
 	.filters {
 		display: grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: var(--s-3);
-		margin-bottom: var(--s-4);
-		padding: var(--s-3);
-		border: 1px solid var(--line);
-		border-radius: var(--r-card);
-		background: var(--surface-1);
+		gap: 12px;
+		margin: 0;
+		padding: 0;
 	}
 	.filters .field + .field {
 		margin-top: 0;
 	}
-	.progress {
-		margin-bottom: var(--s-4);
-	}
-	.count {
-		min-height: 52px;
-		margin: 0;
-		padding: var(--s-3) var(--s-4);
-		border: 1px solid var(--line);
-		border-bottom: 0;
-		border-radius: var(--r-card) var(--r-card) 0 0;
-		background: var(--surface-2);
-		display: flex;
-		align-items: center;
-	}
+	.progress { display: grid; gap: 6px; }
+	.count { margin: 0 0 -8px; color: var(--text-muted); font: var(--t-subhead); font-variant-numeric: tabular-nums; }
 	.rows-list {
-		padding: 0;
-		border-radius: 0 0 var(--r-card) var(--r-card);
-		overflow: hidden;
-		box-shadow: none;
+		margin: 0;
+		padding: 4px;
+		list-style: none;
+		border-radius: var(--r-panel);
+		background: var(--surface-1);
+		box-shadow: var(--shadow-card);
 	}
 	.row-item {
 		display: flex;
 		align-items: center;
 		gap: var(--s-3);
-		padding: var(--s-3) var(--s-4);
+		padding: 10px 12px;
 		border: 0;
 		border-radius: 0;
 		background: transparent;
@@ -283,22 +275,13 @@
 		flex: 1;
 		min-width: 0;
 	}
-	.btn-sm {
-		min-height: var(--tap);
-		padding-inline: var(--s-3);
-		font-size: var(--text-xs);
-	}
-	.pager {
-		justify-content: space-between;
-		margin-top: var(--s-3);
-	}
+	.pager { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 	@media (max-width: 600px) {
 		.filters {
 			grid-template-columns: 1fr;
 		}
-		.page-head > :global(.btn), .row-item :global(.btn), .pager :global(.btn) { min-height: 44px; }
-		.page-head > :global(.btn) { width: 100%; }
 		.row-item { align-items: flex-start; flex-direction: column; }
-		.row-item :global(.btn) { width: 100%; }
+		.row-item :global(.ui-btn) { width: 100%; }
+
 	}
 </style>

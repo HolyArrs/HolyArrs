@@ -5,12 +5,26 @@
 	import { live } from '#lib/live.svelte.ts';
 	import { page } from '$app/state';
 	import { beforeNavigate, goto } from '$app/navigation';
-	import { date, tone } from '#lib/format.ts';
+	import { date } from '#lib/format.ts';
 	import { counts, filters, kinds, matches, matchesTitleQuery, ofKind, titleQuery, type Filter, type Kind } from '#lib/library.ts';
 	import { showProgress, showState } from '#lib/shows.ts';
 	import { artistProgress, artistState } from '#lib/music.ts';
-	import EmptyState from '#lib/EmptyState.svelte';
 	import Poster from '#lib/Poster.svelte';
+	import Icon from '#lib/Icon.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import PosterCard from '#lib/ui/PosterCard.svelte';
+	import ListRow from '#lib/ui/ListRow.svelte';
+	import Chip from '#lib/ui/Chip.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import IconButton from '#lib/ui/IconButton.svelte';
+	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
+	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
+	import StatusPill from '#lib/ui/StatusPill.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
+	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import { artName, slotKind } from '#lib/title-page.ts';
+	import { peopleNames, plainReason } from '#lib/plain.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import type { TitleView } from '#lib/types.ts';
@@ -54,7 +68,7 @@
 	const startKind = page.url.searchParams.get('kind') as Kind | null;
 	let kind = $state<Kind>(startKind && kinds.some(([k]) => k === startKind) ? startKind : 'all');
 	let q = $state(page.url.searchParams.get('q')?.slice(0, 256) ?? '');
-	let sort = $state(page.url.searchParams.get('sort') === 'year' ? 'year' : 'name');
+	let sort = $state<'name' | 'year'>(page.url.searchParams.get('sort') === 'year' ? 'year' : 'name');
 	let requesterFilter = $state(readRequester(page.url.searchParams.get('requester')));
 	function readRequester(value: string | null): string {
 		return value === 'me' || (value && /^[1-9]\d*$/.test(value)) ? value : 'anyone';
@@ -177,7 +191,6 @@
 		show: requestedTitles.filter((t) => t.kind === 'show').length,
 		artist: requestedTitles.filter((t) => t.kind === 'artist').length
 	});
-	const kindWord: Record<string, string> = { show: ' · Show', artist: ' · Artist' };
 	const shown = $derived(ofThisKind.filter((t) => matches(t, filter) && matchesTitleQuery(t, query, indexedIds)).toSorted((a, b) => sort === 'year' ? (b.year ?? 0) - (a.year ?? 0) || a.name.localeCompare(b.name) : a.name.localeCompare(b.name)));
 
 	$effect(() => {
@@ -216,8 +229,64 @@
 		return [...people.values()];
 	}
 	function requestedBy(t: TitleView): string {
-		return linkedPeople(t).map((p) => p.name).join(', ');
+		// Names that look like internal ids read as "someone in your household".
+		return peopleNames(linkedPeople(t).map((p) => p.name));
 	}
+	function outOn(t: TitleView, short = false): string {
+		if (t.kind === 'show') return t.show?.next_air_date ? `${short ? '' : 'Next episode '}${date(t.show.next_air_date)}` : t.show?.status === 'ended' ? 'Ended' : short ? 'Not known' : 'No date yet';
+		if (t.kind === 'artist') return t.artist?.next_release ? `${short ? '' : 'Next album '}${date(t.artist.next_release)}` : t.artist?.status === 'ended' ? 'No longer active' : short ? 'Not known' : 'No date yet';
+		return date(t.digital_date ?? t.physical_date ?? t.cinema_date) || 'Not known';
+	}
+	function previewKind(t: TitleView): string {
+		return `${kindLabel[t.kind] ?? t.kind}${t.year ? ` · ${t.year}` : ''}`;
+	}
+	function setSort(v: 'name' | 'year') {
+		sort = v;
+		syncFilterUrl();
+	}
+	function setRequester(v: string) {
+		requesterFilter = v;
+		syncFilterUrl();
+	}
+	const partOn = (name: string) => partsNow.answer?.parts.find((part) => part.part === name)?.on !== false;
+	const filtersActive = $derived(kind !== 'all' || filter !== 'all' || requesterFilter !== 'anyone' || !!q);
+	const requesterName = $derived(requesterFilter === 'me' ? 'Me' : (requesters.find((p) => String(p.id) === requesterFilter)?.name ?? 'Person'));
+	const requesterText = $derived(requesterFilter === 'anyone' ? 'Requested by' : `Requested by: ${requesterName}`);
+	const requesterItems = $derived<MenuItem[]>([
+		{ label: `Anyone (${requesterScope.length})`, checked: requesterFilter === 'anyone', onselect: () => setRequester('anyone') },
+		{ label: `Me (${myId ? (requesterCounts.get(myId) ?? 0) : 0})`, checked: requesterFilter === 'me', disabled: !myId, onselect: () => setRequester('me') },
+		...requesters.map((person): MenuItem => ({ label: `${person.name} (${requesterCounts.get(person.id) ?? 0})`, checked: requesterFilter === String(person.id), onselect: () => setRequester(String(person.id)) }))
+	]);
+	const sortItems = $derived<MenuItem[]>([
+		{ label: 'Name', checked: sort === 'name', onselect: () => setSort('name') },
+		{ label: 'Newest year', checked: sort === 'year', onselect: () => setSort('year') }
+	]);
+	const browseItems = $derived<MenuItem[]>(
+		moviesOn
+			? [
+					{ label: 'Movie series', icon: 'film', href: to('/library/collections') },
+					{ label: 'People', icon: 'people', href: to('/people') },
+					...(session.can('manage_library')
+						? ([
+								{ label: 'Subtitles', icon: 'subtitle', href: to('/library/missing-subtitles') },
+								{ label: 'File codecs', icon: 'copy', href: to('/library/copies') }
+							] as MenuItem[])
+						: [])
+				]
+			: []
+	);
+	const addItems = $derived<MenuItem[]>([
+		...(partOn('movies') ? ([{ label: 'Add a movie', icon: 'film', href: to('/search') }] as MenuItem[]) : []),
+		...(partOn('shows') ? ([{ label: 'Add a show', icon: 'tv', href: to('/search?kind=show') }] as MenuItem[]) : []),
+		...(partOn('music') ? ([{ label: 'Add an artist', icon: 'music', href: to('/search?kind=music') }] as MenuItem[]) : []),
+		{ kind: 'separator' },
+		{ kind: 'heading', label: 'Library tools' },
+		{ label: 'Held files', href: to('/library/held') },
+		{ label: 'Turned down releases', href: to('/library/turned-down') },
+		...(partOn('subtitles') ? ([{ label: 'Missing subtitles', href: to('/library/missing-subtitles') }] as MenuItem[]) : []),
+		{ label: 'Rename files', href: to('/library/rename') },
+		{ label: 'Import a library', href: to('/library/import') }
+	]);
 
 	/** chipOf is one state chip for a title: its first Slot, or a show's sum. */
 	function chipOf(t: TitleView): { state: string; label: string } | null {
@@ -268,476 +337,189 @@
 
 <svelte:head><title>Library · HolyArrs</title></svelte:head>
 
-<div class="library-search-band"><div class="library-search-box"><label class="sr-only" for="find">Find in the Library</label><input id="find" class="input find" type="search" bind:this={findInput} bind:value={q} oninput={(event) => { q = event.currentTarget.value; syncFilterUrl(); }} placeholder="Search Library" autocomplete="off" maxlength="256" /><button class="clear-search" type="button" onclick={clearFilters}>Clear filters</button></div>	{#if session.can('manage_library')}
-		<details class="library-tools">
-			<summary class="btn btn-red">+ Add</summary>
-			<nav class="tools-menu" aria-label="Library tools">
-				<a href={to(`/search`)}>Add a movie</a>
-				<a href={to(`/search?kind=show`)}>Add a show</a>
-				<a href={to(`/search?kind=music`)}>Add an artist</a>
-				<span class="menu-rule"></span>
-				<a href={to(`/library/held`)}>Held files</a>
-				<a href={to(`/library/turned-down`)}>Turned down releases</a>
-				<a href={to(`/library/missing-subtitles`)}>Missing subtitles</a>
-				<a href={to(`/library/rename`)}>Rename files</a>
-				<a href={to(`/library/import`)}>Import a library</a>
-			</nav>
-		</details>
-	{/if}</div>
-<header class="library-heading">
-	<div>
-		<p class="section-kicker">Media collection</p>
-		<h1>Library</h1>
-		<p class="library-summary">{shown.length} {shown.length === 1 ? 'title' : 'titles'} in this view</p>
-	</div>
-	<div class="library-view-tools"><label class="sr-only" for="library-sort">Sort titles</label><select id="library-sort" class="sort-select" bind:value={sort} onchange={(event) => { sort = event.currentTarget.value; syncFilterUrl(); }}><option value="name">Name</option><option value="year">Newest year</option></select><div class="seg" role="group" aria-label="Layout"><button type="button" aria-pressed={view==='grid'} onclick={() => setView('grid')}>Posters</button><button type="button" aria-pressed={view==='list'} onclick={() => setView('list')}>List</button></div></div>
-</header>
-<div class="library-commandbar">
-	<div class="filter-toolbar">
-		<details class="filter-menu"><summary class="filter-trigger">Type</summary><div class="filter-popover" role="group" aria-label="Kind">{#each kinds as [key,label] (key)}<button type="button" aria-pressed={kind===key} onclick={() => setKind(key)}>{label}<span>{kindTally[key]}</span></button>{/each}</div></details>
-		<details class="filter-menu status-filter"><summary class="filter-trigger" class:has-filter={filter!=='all'}>Status</summary><div class="filter-popover status-popover"><label for="status-value">Show titles matching</label><select id="status-value" class="input" value={filter} onchange={(event) => setFilter(event.currentTarget.value as Filter)}>{#each filters as [key,label] (key)}<option value={key}>{label} ({tally[key]})</option>{/each}</select></div></details>
-		<details class="filter-menu status-filter requester-menu"><summary class="filter-trigger requester-trigger" class:has-filter={requesterFilter !== 'anyone'}>Requested by{requesterFilter === 'me' ? ': Me' : requesterFilter !== 'anyone' ? `: ${requesters.find((p) => String(p.id) === requesterFilter)?.name ?? 'Person'}` : ''}</summary><div class="filter-popover status-popover"><label for="requester-value">Requested by</label><select id="requester-value" class="input" bind:value={requesterFilter} onchange={(event) => { requesterFilter = event.currentTarget.value; syncFilterUrl(); }}><option value="anyone">Anyone ({requesterScope.length})</option><option value="me" disabled={!myId}>Me ({myId ? requesterCounts.get(myId) ?? 0 : 0})</option>{#each requesters as person (person.id)}<option value={String(person.id)}>{person.name} ({requesterCounts.get(person.id) ?? 0})</option>{/each}</select></div></details>
-		{#if moviesOn}<a class="filter-trigger" href={to('/library/collections')}>Movie series</a><a class="filter-trigger" href={to('/people')}>People</a>{#if session.can('manage_library')}<a class="filter-trigger" href={to('/library/missing-subtitles')}>Subtitles</a><a class="filter-trigger" href={to('/library/copies')}>File codecs</a>{/if}{/if}
-	</div>
-	<p class="asset-count">{shown.length} {shown.length===1?'title':'titles'}</p>
-</div>
-{#if kind !== 'all' || filter !== 'all' || requesterFilter !== 'anyone' || q}
-	<div class="active-filters" role="group" aria-label="Active filters" bind:this={activeFilters}>
-		{#if kind !== 'all'}<button type="button" class="active-filter" aria-label="Remove type filter" onclick={() => removeFilter('type')}>Type: {kinds.find(([key]) => key === kind)?.[1]} <span aria-hidden="true">×</span></button>{/if}
-		{#if filter !== 'all'}<button type="button" class="active-filter" aria-label="Remove status filter" onclick={() => removeFilter('status')}>Status: {filters.find(([key]) => key === filter)?.[1]} <span aria-hidden="true">×</span></button>{/if}
-		{#if requesterFilter !== 'anyone'}<button type="button" class="active-filter" aria-label="Remove requester filter" onclick={() => removeFilter('requester')}>Requested by: {requesterFilter === 'me' ? 'Me' : requesters.find((p) => String(p.id) === requesterFilter)?.name ?? 'Person'} <span aria-hidden="true">×</span></button>{/if}
-		{#if q}<button type="button" class="active-filter" aria-label="Remove search filter" onclick={() => removeFilter('search')}>Search: {q} <span aria-hidden="true">×</span></button>{/if}
-	</div>
-{/if}
-{#if searchError && !error}<p class="notice bad" role="alert">{searchError}</p>{/if}
-
-
-<div class:with-preview={preview} class="library-workspace">
-	<div class="library-content">
-	{#if !loaded}
-		<div class="grid">
-			{#each Array(6) as _, i (i)}<div class="sk" style="aspect-ratio: 2 / 3"></div>{/each}
-		</div>
-	{:else if error}
-		<div class="error-state">
-			<p class="notice bad" role="alert">{error}</p>
-			<button class="btn btn-ghost" type="button" onclick={retryLoad}>Try again</button>
-		</div>
-	{:else if titles.length === 0}
-		<EmptyState icon="library" title="Your Library is empty">
-		{#if session.can('manage_library')}
-			<p>Find a movie, a show or an artist on the Search page and add it. HolyArrs then keeps it up to date.</p>
-		{:else}
-			<p>Nothing has been added yet. Look for a movie, a show or an artist on the Search page.</p>
-		{/if}
+<div class="library">
+	<PageHeader title="Library" subtitle={loaded && !error ? `${shown.length} ${shown.length === 1 ? 'title' : 'titles'}${filtersActive ? ' match' : ''}` : undefined}>
 		{#snippet actions()}
-			<a class="btn btn-red" href={to(`/search`)}>Search for a movie</a>
-			<a class="btn btn-ghost" href={to(`/search?kind=show`)}>Search for a show</a>
-			<a class="btn btn-ghost" href={to(`/search?kind=music`)}>Search for an artist</a>
-			{#if session.can('manage_library')}<a class="btn btn-ghost" href={to(`/library/import`)}>Import a library</a>{/if}
-			{#if session.can('settings')}<a class="btn btn-ghost" href={to(`/settings/library-folders`)}>Library folders</a>{/if}
+			{#if browseItems.length}<Menu label="Browse the Library" variant="button" text="Browse" icon="library" items={browseItems} width={240} />{/if}
+			{#if session.can('manage_library')}<Menu label="Add and Library tools" variant="button" text="Add" icon="plus" items={addItems} width={250} />{/if}
 		{/snippet}
-		</EmptyState>
-	{:else if shown.length === 0}
-		<p class="muted">Nothing matches this filter.</p>
-	{:else if view === 'list'}
-		<!-- Keyboard access lets this region scroll without a pointer. -->
-		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-		<div class="list-scroll" role="region" aria-label="Library titles" tabindex="0">
-		<table class="list-table">
-		<caption class="sr-only">Titles in the Library</caption>
-		<thead>
-			<tr><th scope="col" id="library-title">Title</th><th scope="col" id="library-state">State</th><th scope="col" class="wide">Out on</th><th scope="col" class="wide">Keep up to date</th></tr>
-		</thead>
-		<tbody>
-			{#each shown as t (t.id)}
-				{@const requester = requestedBy(t)}
-				<tr data-testid="library-row" class:selected={preview?.id === t.id} class:last-opened={lastOpenedId === t.id}>
-					<td class="title-cell" headers="library-title">{#if lastOpenedId === t.id}<span class="last-opened-label" data-testid="last-opened">Last opened</span>{/if}<a class="row-link" href={titleLink(t.id)}><span class="thumb"><Poster src={t.artwork[0]} name={t.name} /></span><span><b>{t.name}</b> <span class="muted xs">{t.year ?? ''}{kindWord[t.kind] ?? ''}</span></span></a><button class="preview-button list-preview" type="button" aria-label={`Preview ${t.name}`} aria-pressed={preview?.id === t.id} onclick={(event) => openPreview(t, event)}>Preview</button>{#if requester}<span class="requester xs muted" data-testid="requested-by">Requested by {requester}</span>{/if}</td>
-					{#if t.kind === 'artist'}
-						{@const c = chipOf(t)}
-						<td class="state-cell" headers="library-state">{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}<span class="chip" data-testid="request-approved" title="Requested and approved">Approved</span>{/if}{#if c}<span class="chip {tone(c.state)}">{c.label}</span>{/if}<span class="xs muted block">{artistProgress(t.artist)}</span></td>
-						<td class="wide small muted">{t.artist?.next_release ? `Next album ${date(t.artist.next_release)}` : t.artist?.status === 'ended' ? 'No longer active' : 'No date yet'}</td>
-					{:else if t.kind === 'show'}
-						{@const c = chipOf(t)}
-						<td class="state-cell" headers="library-state">{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}<span class="chip" data-testid="request-approved" title="Requested and approved">Approved</span>{/if}{#if c}<span class="chip {tone(c.state)}">{c.label}</span>{/if}<span class="xs muted block">{showProgress(t.show)}</span></td>
-						<td class="wide small muted">{t.show?.next_air_date ? `Next episode ${date(t.show.next_air_date)}` : t.show?.status === 'ended' ? 'Ended' : 'No date yet'}</td>
-					{:else}
-						<td class="state-cell" headers="library-state">{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}<span class="chip" data-testid="request-approved" title="Requested and approved">Approved</span>{/if}{#each t.slots as s (s.id)}<span class="chip {tone(s.state)}">{s.state_label}</span>{/each}</td>
-						<td class="wide small muted">{date(t.digital_date ?? t.physical_date ?? t.cinema_date) || 'Not known'}</td>
-					{/if}
-					<td class="wide small">{t.keep_up_to_date ? 'Yes' : 'No'}</td>
-				</tr>
-			{/each}
-		</tbody>
-		</table>
+	</PageHeader>
+
+	<div class="toolbar">
+		<div class="find-box">
+			<span class="find-ic" aria-hidden="true"><Icon name="search" size={17} /></span>
+			<label class="sr-only" for="find">Find in the Library</label>
+			<input id="find" class="input find" type="search" bind:this={findInput} bind:value={q} oninput={(event) => { q = event.currentTarget.value; syncFilterUrl(); }} placeholder="Search Library" autocomplete="off" maxlength="256" />
 		</div>
-	{:else}
-		<ul class="grid">
-		{#each shown as t, i (t.id)}
-			{@const c = chipOf(t)}
-			{@const requester = requestedBy(t)}
-			<li class:selected={preview?.id === t.id} class:last-opened={lastOpenedId === t.id} class="rise" style="--i: {i}">
-				<a class="item" href={titleLink(t.id)} data-testid="library-card">
-					<Poster src={t.artwork[0]} name={t.name} />
-					<span class="name">{t.name}</span>
-					{#if lastOpenedId === t.id}<span class="last-opened-label" data-testid="last-opened">Last opened</span>{/if}
-					<span class="meta">
-						<span class="muted xs">{t.year ?? ''}{kindWord[t.kind] ?? ''}</span>
-						{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}
-							<span class="chip" data-testid="request-approved" title="Requested and approved">Approved</span>
-						{/if}
-						{#if c}<span class="chip {tone(c.state)}">{c.label}</span>{/if}
-					</span>
-					{#if requester}<span class="requester xs muted" data-testid="requested-by">Requested by {requester}</span>{/if}
-				</a>
-				<button class="preview-button" type="button" aria-label={`Preview ${t.name}`} aria-pressed={preview?.id === t.id} onclick={(event) => openPreview(t, event)}>Preview</button>
-			</li>
-		{/each}
-		</ul>
-	{/if}
+		<div class="view-tools">
+			<Menu label="Sort titles" variant="button" text={sort === 'year' ? 'Newest year' : 'Name'} icon="chevronUpDown" items={sortItems} width={200} />
+			<SegmentedControl label="Layout" value={view} options={[{ value: 'grid', label: 'Posters', icon: 'grid' }, { value: 'list', label: 'List', icon: 'menu' }]} onchange={(v) => setView(v)} />
+		</div>
 	</div>
-	{#if preview}
-		{@const previewChip = chipOf(preview)}
-		<aside class="preview" aria-labelledby="preview-title">
-			<div class="preview-head">
-				<span class="small muted">Title preview</span>
-				<button class="preview-close" type="button" onclick={closePreview}>Close</button>
+
+	<div class="filters">
+		<div class="chips" role="group" aria-label="Kind">
+			{#each kinds as [key, label] (key)}<Chip {label} count={kindTally[key]} selected={kind === key} onclick={() => setKind(key)} />{/each}
+		</div>
+		<div class="chips" role="group" aria-label="Status">
+			{#each filters as [key, label] (key)}<Chip {label} count={tally[key]} selected={filter === key} onclick={() => setFilter(key)} />{/each}
+			<Menu label="Requested by" variant="button" text={requesterText} icon="user" items={requesterItems} width={260} align="start" />
+		</div>
+		{#if requesterFilter !== 'anyone' || q || filtersActive}
+			<div class="chips active" role="group" aria-label="Active filters" bind:this={activeFilters}>
+				{#if requesterFilter !== 'anyone'}<Chip label="Requested by: {requesterName}" selected onclick={() => removeFilter('requester')} onremove={() => removeFilter('requester')} />{/if}
+				{#if q}<Chip label="Search: {q}" selected onclick={() => removeFilter('search')} onremove={() => removeFilter('search')} />{/if}
+				{#if filtersActive}<Button variant="plain" size="md" onclick={clearFilters}>Clear</Button>{/if}
 			</div>
-			<div class="preview-art"><Poster src={preview.artwork[0]} name={preview.name} /></div>
-			<p class="preview-kind">{kindLabel[preview.kind] ?? preview.kind}{preview.year ? ` · ${preview.year}` : ''}</p>
-			<h2 id="preview-title" bind:this={previewHeading} tabindex="-1">{preview.name}</h2>
-			{#if previewChip}<span class="chip {tone(previewChip.state)}">{previewChip.label}</span>{/if}
-			<p class="small muted preview-progress">{progressOf(preview)}</p>
-			<dl class="preview-facts">
-				<dt>Keep up to date</dt><dd>{preview.keep_up_to_date ? 'Yes' : 'No'}</dd>
-				<dt>Out on</dt>
-				<dd>
-					{preview.kind === 'show'
-						? preview.show?.next_air_date ? date(preview.show.next_air_date) : preview.show?.status === 'ended' ? 'Ended' : 'Not known'
-						: preview.kind === 'artist'
-							? preview.artist?.next_release ? date(preview.artist.next_release) : preview.artist?.status === 'ended' ? 'No longer active' : 'Not known'
-							: date(preview.digital_date ?? preview.physical_date ?? preview.cinema_date) || 'Not known'}
-				</dd>
-			</dl>
-			{#if preview.slots.length}
-				<div class="preview-section">
-					<h3>Versions</h3>
-					<ul>
-						{#each preview.slots as slot (slot.id)}
-							<li><span>{slot.version || 'Main'}</span><span class="chip {tone(slot.state)}">{slot.state_label}</span></li>
-						{/each}
-					</ul>
+		{/if}
+	</div>
+	{#if searchError && !error}<p class="search-error" role="alert"><Icon name="alert" size={16} />{plainReason(searchError).text}</p>{/if}
+
+	<div class:with-preview={preview} class="workspace">
+		<div class="content">
+		{#if !loaded}
+			<ul class="grid" aria-hidden="true">
+				{#each Array(10) as _, i (i)}<li><Skeleton shape="poster" /><Skeleton width="70%" /></li>{/each}
+			</ul>
+		{:else if error}
+			<LoadError hasData={false} message={plainReason(error).text} onretry={retryLoad} />
+		{:else if titles.length === 0}
+			<EmptyState icon="library" title="Your Library is empty" text={session.can('manage_library') ? 'Find a movie, a show or an artist on the Search page and add it. HolyArrs then keeps it up to date.' : 'Nothing has been added yet. Look for a movie, a show or an artist on the Search page.'} action={{ label: 'Search for a movie', href: to('/search'), icon: 'search' }} />
+			<div class="empty-more">
+				<Button href={to('/search?kind=show')}>Search for a show</Button>
+				<Button href={to('/search?kind=music')}>Search for an artist</Button>
+				{#if session.can('manage_library')}<Button href={to('/library/import')}>Import a library</Button>{/if}
+				{#if session.can('settings')}<Button href={to('/settings/library-folders')}>Library folders</Button>{/if}
+			</div>
+		{:else if shown.length === 0}
+			<EmptyState compact icon="search" title="Nothing matches this filter." action={filtersActive ? { label: 'Clear', onclick: clearFilters } : undefined} />
+		{:else if view === 'list'}
+			<ul class="rows list-table" aria-label="Library titles">
+				{#each shown as t (t.id)}
+					{@const c = chipOf(t)}
+					{@const requester = requestedBy(t)}
+					<li data-testid="library-row" class:selected={preview?.id === t.id} class:last-opened={lastOpenedId === t.id}>
+						<ListRow title={t.name} subtitle={[t.year, kindLabel[t.kind], t.kind === 'movie' ? '' : progressOf(t)].filter(Boolean).join(' · ')} meta="{outOn(t)} · Keep up to date: {t.keep_up_to_date ? 'Yes' : 'No'}" href={titleLink(t.id)} image={t.artwork[0]}>
+							{#snippet trailing()}
+								{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}<StatusPill kind="approved" testid="request-approved" />{/if}
+								{#if t.kind === 'movie'}
+									{#each t.slots as s (s.id)}<StatusPill kind={slotKind(s.state)} label={s.state_label} />{/each}
+								{:else if c}<StatusPill kind={slotKind(c.state)} label={c.label} />{/if}
+								<span class="preview-only"><IconButton icon="info" tooltip={false} label="Preview {t.name}" aria-pressed={preview?.id === t.id} onclick={(event: MouseEvent) => openPreview(t, event)} /></span>
+							{/snippet}
+						</ListRow>
+						{#if lastOpenedId === t.id || requester}
+							<p class="row-notes">
+								{#if lastOpenedId === t.id}<span class="last-opened-label" data-testid="last-opened">Last opened</span>{/if}
+								{#if requester}<span class="requester" data-testid="requested-by">Requested by {requester}</span>{/if}
+							</p>
+						{/if}
+					</li>
+				{/each}
+			</ul>
+		{:else}
+			<ul class="grid" aria-label="Library titles">
+			{#each shown as t, i (t.id)}
+				{@const c = chipOf(t)}
+				{@const requester = requestedBy(t)}
+				<li class="item rise" data-testid="library-card" class:selected={preview?.id === t.id} class:last-opened={lastOpenedId === t.id} style="--i: {Math.min(i, 8)}">
+					<PosterCard title={t.name} href={titleLink(t.id)} image={t.artwork[0]} subtitle={[t.year, t.kind === 'movie' ? '' : kindLabel[t.kind]].filter(Boolean).join(' · ')} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} status={c ? slotKind(c.state) : undefined} statusLabel={c?.label} vtName={artName(t.id)}>
+						{#snippet action()}<span class="preview-only"><IconButton icon="info" tooltip={false} variant="glass" size="sm" label="Preview {t.name}" aria-pressed={preview?.id === t.id} onclick={(event: MouseEvent) => openPreview(t, event)} /></span>{/snippet}
+					</PosterCard>
+					{#if lastOpenedId === t.id || requester || t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}
+						<div class="card-notes">
+							{#if lastOpenedId === t.id}<span class="last-opened-label" data-testid="last-opened">Last opened</span>{/if}
+							{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}<StatusPill kind="approved" testid="request-approved" />{/if}
+							{#if requester}<span class="requester" data-testid="requested-by">Requested by {requester}</span>{/if}
+						</div>
+					{/if}
+				</li>
+			{/each}
+			</ul>
+		{/if}
+		</div>
+		{#if preview}
+			{@const previewChip = chipOf(preview)}
+			<aside class="preview" aria-labelledby="preview-title">
+				<div class="preview-head">
+					<span class="preview-kind">{previewKind(preview)}</span>
+					<IconButton icon="x" label="Close preview" onclick={closePreview} />
 				</div>
-			{/if}
-			<a class="btn btn-red preview-open" href={titleLink(preview.id)}>Open title</a>
-		</aside>
-	{/if}
+				<div class="preview-art"><Poster src={preview.artwork[0]} name={preview.name} /></div>
+				<h2 id="preview-title" bind:this={previewHeading} tabindex="-1">{preview.name}</h2>
+				{#if previewChip}<StatusPill kind={slotKind(previewChip.state)} label={previewChip.label} />{/if}
+				<p class="preview-progress">{progressOf(preview)}</p>
+				<dl class="preview-facts">
+					<dt>Keep up to date</dt><dd>{preview.keep_up_to_date ? 'Yes' : 'No'}</dd>
+					<dt>Out on</dt><dd>{outOn(preview, true)}</dd>
+				</dl>
+				{#if preview.slots.length}
+					<div class="preview-section">
+						<h3>Versions</h3>
+						<ul>
+							{#each preview.slots as slot (slot.id)}
+								<li><span>{slot.version || 'Main'}</span><StatusPill kind={slotKind(slot.state)} label={slot.state_label} /></li>
+							{/each}
+						</ul>
+					</div>
+				{/if}
+				<Button variant="primary" full href={titleLink(preview.id)}>Open title</Button>
+			</aside>
+		{/if}
+	</div>
 </div>
 
 <style>
-	.block {
-		display: block;
-		margin-top: 2px;
-	}
-	.library-tools {
-		position: relative;
-		flex: none;
-	}
-	.library-tools summary {
-		list-style: none;
-		cursor: pointer;
-	}
-	.library-tools summary::-webkit-details-marker { display: none; }
-	.tools-menu {
-		position: absolute;
-		top: calc(100% + var(--s-2));
-		right: 0;
-		z-index: 10;
-		display: grid;
-		min-width: 230px;
-		padding: var(--s-2);
-		border: 1px solid var(--line-strong);
-		border-radius: 12px;
-		background: var(--surface-1);
-		box-shadow: var(--shadow-modal);
-		animation: rise var(--dur-fast) var(--ease-out);
-	}
-	.tools-menu a {
-		display: flex;
-		align-items: center;
-		min-height: 38px;
-		padding: 0 var(--s-3);
-		border-radius: 4px;
-		color: var(--text-muted);
-		font-size: var(--text-sm);
-	}
-	.tools-menu a:hover,
-	.tools-menu a:focus-visible { color: var(--text); background: var(--surface-3); }
-	.menu-rule { height: 1px; margin: var(--s-2); background: var(--line); }
-	.library-workspace,
-	.library-content { min-width: 0; }
-	.error-state { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
-	.error-state .notice { flex: 1 1 320px; margin: 0; }
+	.library { display: flex; flex-direction: column; gap: 16px; padding-bottom: 48px; min-width: 0; }
+	.toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+	.find-box { position: relative; flex: 1 1 320px; max-width: 560px; min-width: 0; }
+	.find-ic { position: absolute; left: 12px; top: 50%; translate: 0 -50%; color: var(--text-muted); display: grid; pointer-events: none; }
+	.find { width: 100%; min-height: 44px; padding-left: 38px; border-radius: var(--r-btn); background: var(--surface-2); border-color: transparent; }
+	.view-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+	.filters { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+	.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+	.search-error { display: flex; align-items: center; gap: 8px; margin: 0; padding: 10px 12px; border-radius: var(--r-btn); background: var(--surface-2); color: var(--fail); font: var(--t-callout); }
+	.workspace, .content { min-width: 0; }
+	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(164px, 1fr)); gap: 24px 18px; margin: 0; padding: 0; list-style: none; }
+	.grid > li { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+	.card-notes { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+	.requester { color: var(--text-muted); font: var(--t-footnote); overflow-wrap: anywhere; }
+	.last-opened-label { font: var(--t-footnote); font-weight: 600; color: var(--text); }
+	.grid > li.last-opened { outline: 2px solid var(--text-muted); outline-offset: 4px; border-radius: var(--r-card); }
+	.grid > li.selected { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: var(--r-card); }
+	.rows { display: flex; flex-direction: column; margin: 0; padding: 4px; list-style: none; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card); }
+	.rows > li { min-width: 0; border-radius: var(--r-btn); }
+	.rows > li + li { border-top: 1px solid var(--line); }
+	.rows > li.selected, .rows > li.last-opened { background: var(--surface-2); }
+	.rows > li.last-opened { box-shadow: inset 0 0 0 2px var(--text-muted); }
+	.row-notes { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: -4px 0 0; padding: 0 12px 10px 58px; }
+	.empty-more { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+	.preview-only { display: none; }
 	.preview { display: none; }
-	.preview-button { display: none; }
-	.grid > li { position: relative; min-width: 0; }
-	.grid > li.selected .item { border-color: color-mix(in srgb, var(--ha-red) 60%, var(--line)); background: var(--surface-1); }
-	.list-table tr.selected { background: var(--surface-2); }
-	.title-cell { min-width: 250px; }
-	.title-cell .row-link { display: inline-flex; }
-	.preview-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
-	.preview-close {
-		min-height: 34px;
-		padding: 0 var(--s-2);
-		color: var(--text-muted);
-		font-size: var(--text-xs);
-	}
-	.preview-close:hover { color: var(--text); }
-	.preview-art { width: min(168px, 64%); margin: var(--s-4) auto var(--s-5); }
-	.preview-kind { color: var(--text-muted); font-size: var(--text-xs); }
-	.preview h2 { margin: 3px 0 var(--s-3); font: var(--weight-semibold) var(--text-lg) / var(--leading-tight) var(--font-display); overflow-wrap: anywhere; }
-	.preview-progress { margin-top: var(--s-2); }
-	.preview-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--s-2) var(--s-3); margin-top: var(--s-4); padding-top: var(--s-4); border-top: 1px solid var(--line); font-size: var(--text-sm); }
+	.preview-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+	.preview-kind { color: var(--text-muted); font: var(--t-subhead); }
+	.preview-art { width: min(168px, 64%); margin: 8px auto 16px; border-radius: var(--r-card); overflow: hidden; box-shadow: var(--shadow-card); }
+	.preview h2 { margin: 0 0 8px; font: var(--t-title3); overflow-wrap: anywhere; }
+	.preview h2:focus { outline: none; }
+	.preview-progress { margin: 8px 0 0; color: var(--text-muted); font: var(--t-callout); }
+	.preview-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 12px; margin: 16px 0 0; padding-top: 16px; border-top: 1px solid var(--line); font: var(--t-callout); }
 	.preview-facts dt { color: var(--text-muted); }
 	.preview-facts dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
-	.preview-section { margin-top: var(--s-5); padding-top: var(--s-3); border-top: 1px solid var(--line); }
-	.preview-section h3 { margin-bottom: var(--s-2); color: var(--text-muted); font-size: var(--text-xs); font-weight: var(--weight-medium); }
-	.preview-section ul { display: grid; gap: var(--s-2); }
-	.preview-section li { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); min-width: 0; font-size: var(--text-sm); }
-	.preview-open { width: 100%; margin-top: var(--s-5); }
+	.preview-section { margin: 16px 0; padding-top: 12px; border-top: 1px solid var(--line); }
+	.preview-section h3 { margin: 0 0 8px; font: var(--t-subhead); color: var(--text-muted); }
+	.preview-section ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+	.preview-section li { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; font: var(--t-callout); }
 	@media (min-width: 1280px) {
-		.library-workspace.with-preview { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 0; align-items: start; border: 1px solid var(--line); border-radius: 14px; overflow: clip; }
-		.library-workspace.with-preview .library-content { border-right: 1px solid var(--line); }
-		.library-workspace.with-preview .list-table .wide { display: none; }
-		.preview { display: block; position: sticky; top: var(--s-3); padding: var(--s-5); background: var(--surface-1); }
-		.preview-button { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 0 var(--s-3); border: 1px solid var(--line-strong); border-radius: 10px; background: var(--surface-1); color: var(--text-muted); font-size: var(--text-xs); }
-		.preview-button:hover, .preview-button[aria-pressed='true'] { border-color: color-mix(in srgb, var(--ha-red) 60%, var(--line-strong)); color: var(--text); background: var(--surface-2); }
-		.grid > li > .preview-button { position: absolute; top: 12px; right: 12px; opacity: 0; transition: opacity var(--dur-fast); }
-		.grid > li:hover > .preview-button, .grid > li:focus-within > .preview-button, .grid > li > .preview-button[aria-pressed='true'] { opacity: 1; }
-		.title-cell { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
-		.list-preview { flex: none; }
+		.workspace.with-preview { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
+		.preview { display: flex; flex-direction: column; position: sticky; top: 72px; padding: 16px 20px 20px; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card); }
+		.preview-only { display: inline-flex; }
+		.grid > li .preview-only { opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
+		.grid > li:hover .preview-only, .grid > li:focus-within .preview-only, .grid > li.selected .preview-only { opacity: 1; }
 	}
-	.n {
-		margin-left: 4px;
-		font-variant-numeric: tabular-nums;
-	}
-	.seg {
-		display: inline-flex;
-		padding: 3px;
-		border: 1px solid var(--line);
-		border-radius: 11px;
-		background: var(--surface-2);
-		overflow: hidden;
-	}
-	.seg button {
-		min-height: 34px;
-		padding: 0 var(--s-3);
-		border-radius: 8px;
-		font-size: var(--text-sm);
-		color: var(--text-muted);
-	}
-	.seg button[aria-pressed='true'] {
-		background: var(--surface-1);
-		color: var(--text);
-		box-shadow: 0 1px 2px rgb(20 24 18 / 10%);
-	}
-	.list-table {
-		width: 100%;
-		border-collapse: collapse;
-		border: 1px solid var(--line);
-		border-radius: 12px;
-		background: var(--surface-1);
-		overflow: hidden;
-	}
-	.list-table th {
-		text-align: left;
-		font-size: var(--text-xs);
-		color: var(--text-muted);
-		font-weight: var(--weight-medium);
-		padding: 11px var(--s-4);
-		border-bottom: 1px solid var(--line);
-	}
-	.list-table td {
-		padding: 10px var(--s-4);
-		border-bottom: 1px solid var(--line);
-		vertical-align: middle;
-	}
-	.list-table tbody tr:hover { background: var(--surface-2); }
-	.row-link {
-		display: flex;
-		align-items: center;
-		gap: var(--s-3);
-		border-radius: var(--r-sm);
-	}
-	.thumb {
-		width: 44px;
-		flex: none;
-	}
-	@media (max-width: 600px) {
-		.list-table,
-		.list-table tbody {
-			display: block;
-		}
-		/* Keep column headers available to assistive technology in stacked rows. */
-		.list-table thead {
-			position: absolute;
-			width: 1px;
-			height: 1px;
-			margin: -1px;
-			overflow: hidden;
-			clip-path: inset(50%);
-			white-space: nowrap;
-		}
-		.list-table tbody tr {
-			display: grid;
-			grid-template-columns: minmax(0, 1fr);
-		}
-		.list-table tbody tr + tr {
-			border-top: 1px solid var(--line);
-		}
-		.list-table td {
-			border-bottom: 0;
-		}
-		.title-cell {
-			min-width: 0;
-		}
-		.title-cell .row-link {
-			display: flex;
-			width: 100%;
-			min-width: 0;
-		}
-		.row-link > span:last-child {
-			min-width: 0;
-			overflow-wrap: anywhere;
-		}
-		.title-cell .requester {
-			margin-top: var(--s-2);
-		}
-		.state-cell {
-			display: flex;
-			flex-wrap: wrap;
-			align-items: center;
-			gap: var(--s-2);
-			min-width: 0;
-			padding-top: 0;
-		}
-		.state-cell .chip {
-			max-width: 100%;
-			height: auto;
-			min-height: 26px;
-			padding-block: 6px;
-			line-height: 1.25;
-			white-space: normal;
-			overflow-wrap: anywhere;
-		}
-		.state-cell .chip::before {
-			flex: none;
-		}
-		.state-cell .block {
-			flex-basis: 100%;
-			overflow-wrap: anywhere;
-		}
-		.list-table .wide {
-			display: none;
-		}
-	}
-	.grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
-		gap: var(--s-5) var(--s-4);
-	}
-	.item {
-		display: flex;
-		flex-direction: column;
-		gap: var(--s-2);
-		height: 100%;
-		padding: 0;
-		border: 1px solid transparent;
-		border-radius: 13px;
-		transition: border-color var(--dur-fast), background var(--dur-fast), transform var(--dur-fast);
-	}
-	.item :global(.poster) {
-		transition:
-			transform var(--dur) var(--ease-out),
-			border-color var(--dur);
-	}
-	.item:hover { border-color: var(--line-strong); background: var(--surface-1); box-shadow: var(--shadow-panel); }
-	.item:hover :global(.poster) { border-color: color-mix(in srgb, var(--ha-red) 42%, var(--line-strong)); }
-	.name {
-		font-weight: var(--weight-medium);
-		font-size: var(--text-sm);
-		line-height: 1.3;
-		display: -webkit-box;
-		-webkit-line-clamp: 2;
-		line-clamp: 2;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-	}
-	.meta {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--s-2);
-	}
-	.meta > .muted { flex-basis: 100%; }
-	.requester { display: block; overflow-wrap: anywhere; white-space: normal; }
-	.grid > .last-opened { outline: 2px solid var(--text-muted); outline-offset: 4px; border-radius: 10px; }
-	.list-table tr.last-opened { background: var(--surface-2); outline: 2px solid var(--text-muted); outline-offset: -2px; }
-	.last-opened-label { display: block; font-size: var(--text-xs); font-weight: 600; color: var(--text); }
-	.active-filters { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-bottom: var(--s-4); }
-	.active-filter { display: inline-flex; align-items: center; gap: var(--s-2); min-height: 44px; max-width: 100%; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); color: var(--text); font-size: var(--text-sm); text-align: left; overflow-wrap: anywhere; cursor: pointer; }
-	.active-filter > span { flex: none; font-size: 18px; }
+	@media (min-width: 1400px) { .grid { grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); } }
 	@media (max-width: 767px) {
-		.library-tools { width: 100%; }
-		.library-tools summary { width: 100%; min-height: var(--tap); }
-		.tools-menu { position: static; margin-top: var(--s-2); box-shadow: none; }
-		.tools-menu a { min-height: var(--tap); }
-
-		.grid {
-			grid-template-columns: repeat(auto-fill, minmax(116px, 1fr));
-			gap: var(--s-4) var(--s-3);
-		}
+		.grid { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 18px 12px; }
+		.find-box { flex-basis: 100%; max-width: none; }
+		.row-notes { padding-left: 12px; }
 	}
-	@media (pointer: coarse) {
-		.seg button,
-		.preview-button,
-		.preview-close,
-		.library-tools summary,
-		.tools-menu a { min-height: 44px; }
-	}
-
-.library-search-band{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:20px}
-.library-search-box{display:flex;align-items:center;min-width:0;width:min(760px,100%);background:var(--surface-1);border:1px solid var(--line);border-radius:12px;padding:4px 8px;box-shadow:0 1px 2px rgb(20 24 18 / 4%)}
-.find{flex:1;min-width:0;width:100%;background:transparent;border:0}
-.clear-search{flex:none;border:1px solid var(--line);border-radius:9px;padding:4px 10px;font-size:var(--text-sm)}
-.library-commandbar{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:64px;padding:10px 0 14px;border-bottom:1px solid var(--line);margin-bottom:20px}
-.filter-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.filter-menu{position:relative}
-.filter-trigger{display:flex;align-items:center;gap:18px;min-height:38px;padding:4px 12px;border:1px solid var(--line);border-radius:10px;font-size:var(--text-sm);font-weight:var(--weight-regular);cursor:pointer;background:var(--surface-1);list-style:none}
-.filter-menu[open] > .filter-trigger.requester-trigger, .filter-trigger.requester-trigger.has-filter, .filter-trigger.requester-trigger { color: var(--text); max-width: 100%; overflow-wrap: anywhere; }
-.filter-trigger::-webkit-details-marker{display:none}
-.filter-menu[open]>.filter-trigger,.has-filter{color:var(--text);border-color:var(--accent);font-weight:var(--weight-medium)}
-.filter-popover{position:absolute;z-index:12;top:calc(100% + 8px);left:0;width:260px;padding:10px;background:var(--surface-1);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-float)}
-.filter-popover button{display:flex;justify-content:space-between;align-items:center;gap:20px;width:100%;min-height:38px;padding:6px 10px;text-align:left;border-radius:4px}
-.filter-popover button:hover{background:var(--surface-2)}
-.filter-popover button[aria-pressed='true']{background:var(--accent-soft);color:var(--accent)}
-.library-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;padding:6px 0 18px;border-bottom:1px solid var(--line)}
-.library-heading h1{font-size:var(--text-2xl);font-weight:var(--weight-semibold);line-height:var(--leading-tight);letter-spacing:var(--tracking-display)}
-.section-kicker{margin-bottom:5px;color:var(--text-muted);font-size:var(--text-sm);font-weight:var(--weight-medium)}
-.library-summary{margin-top:7px;color:var(--text-muted);font-size:14px}
-.asset-count{flex:none;font-size:var(--text-xs);font-weight:var(--weight-medium);color:var(--text-muted);font-variant-numeric:tabular-nums}
-.grid .item :global(.poster){border-radius:12px}
-@media(min-width:1024px){.library-search-box{width:min(760px,calc(100% - 130px))}.library-search-band>.library-tools{margin-left:auto}}
-@media(max-width:767px){.library-commandbar{position:relative}.requester-menu{position:static;max-width:100%}.requester-menu .filter-popover{top:100%;left:0}.library-search-band{flex-wrap:wrap}.clear-search{font-size:12px;padding-inline:6px}.filter-trigger{min-height:44px}.filter-popover{width:min(260px,calc(100vw - 48px))}}
-@media(pointer:coarse){.filter-popover button,.clear-search{min-height:44px}}
-
-.status-popover{width:400px;padding:18px 16px;display:grid;gap:12px}
-.status-popover label{font-size:14px;font-weight:500;padding-inline:8px}
-.status-popover .input{min-height:48px;border-color:var(--line);background:var(--surface-1)}
-.library-view-tools{display:flex;align-items:center;gap:20px}
-.sort-select{background:transparent;border:0;color:var(--text-muted);font:inherit;font-size:13px;min-height:36px;max-width:140px}
-.list-scroll{max-width:100%;overflow-x:auto}
-@media(min-width:1400px){.grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:24px 20px}}
-@media(max-width:767px){.status-popover{width:min(400px,calc(100vw - 100px))}.library-view-tools{gap:8px}.library-heading{align-items:flex-start;flex-direction:column}.library-commandbar{align-items:flex-start;flex-direction:column}.asset-count{order:-1}}
 </style>

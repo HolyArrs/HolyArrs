@@ -92,11 +92,11 @@ test('Library filters, find by name, posters and list', async () => {
 	await expect(grid).toHaveCount(1);
 	await page.getByLabel('Find in the Library').fill('');
 
-	await page.getByRole('button', { name: 'List', exact: true }).click();
-	await expect(page.locator('table.list-table tbody tr')).toHaveCount(4);
+	await page.getByRole('radio', { name: 'List', exact: true }).click();
+	await expect(page.getByTestId('library-row')).toHaveCount(4);
 	await page.reload();
-	await expect(page.locator('table.list-table')).toBeVisible(); // remembered
-	await page.getByRole('button', { name: 'Posters' }).click();
+	await expect(page.locator('.list-table')).toBeVisible(); // remembered
+	await page.getByRole('radio', { name: 'Posters' }).click();
 	await expect(grid).toHaveCount(4);
 });
 

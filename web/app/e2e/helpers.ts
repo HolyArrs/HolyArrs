@@ -36,13 +36,10 @@ export async function signIn(page: Page, o: Owner) {
 	await expect(page).toHaveURL(/\/$/);
 }
 
-/** libraryStatus picks a Library status filter from the Status menu (all, missing, not_out_yet, better, have). */
+/** libraryStatus picks a Library status filter from the Status chips (all, missing, not_out_yet, better, have). */
 export async function libraryStatus(scope: Page | Locator, value: 'all' | 'missing' | 'not_out_yet' | 'better' | 'have') {
-	const menu = scope.locator('details.status-filter:not(.requester-menu)');
-	if (!(await menu.evaluate((d) => (d as HTMLDetailsElement).open))) await menu.locator('summary').click();
-	await menu.getByLabel('Show titles matching').selectOption(value);
-	// Close it again, as a person would, so it does not cover the other menus.
-	if (await menu.evaluate((d) => (d as HTMLDetailsElement).open)) await menu.locator('summary').click();
+	const names = { all: /^All/, missing: /^Missing/, not_out_yet: /^Not out yet/, better: /^Better copy wanted/, have: /^In library/ };
+	await scope.getByRole('group', { name: 'Status' }).getByRole('button', { name: names[value] }).click();
 }
 
 /** openApprovals reaches the Wishlist as an approver on a phone: Manage tab, then Approvals. */
@@ -58,10 +55,10 @@ export async function titleAction(page: Page, menu: 'Library' | 'More actions', 
 	await page.getByRole('menuitem', { name: item, exact: true }).click();
 }
 
-/** libraryTool opens a Library tool from the Library page's + Add menu. */
+/** libraryTool opens a Library tool from the Library page's Add menu. */
 export async function libraryTool(page: Page, name: string) {
-	await page.locator('details.library-tools summary').click();
-	await page.getByRole('navigation', { name: 'Library tools' }).getByRole('link', { name }).click();
+	await page.getByRole('button', { name: 'Add and Library tools' }).click();
+	await page.getByRole('menu', { name: 'Add and Library tools' }).getByRole('menuitem', { name }).click();
 }
 
 /** openSeason shows one season on a show page (the picker holds them all) and returns its card. */
@@ -118,12 +115,9 @@ export async function episodeKept(page: Page, code: string): Promise<boolean> {
 	return v === 'true';
 }
 
-/** libraryKind picks a kind from the Library page's Type menu. */
+/** libraryKind picks a kind from the Library page's Kind chips. */
 export async function libraryKind(page: Page, name: RegExp) {
-	const menu = page.locator('details.filter-menu:has([aria-label="Kind"])');
-	if (!(await menu.evaluate((d) => (d as HTMLDetailsElement).open))) await menu.locator('summary').click();
 	await page.getByRole('group', { name: 'Kind' }).getByRole('button', { name }).click();
-	if (await menu.evaluate((d) => (d as HTMLDetailsElement).open)) await menu.locator('summary').click();
 }
 
 /** signOut uses the account menu (sidebar) or, on a phone, the More sheet. */

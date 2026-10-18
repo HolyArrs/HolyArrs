@@ -6,7 +6,12 @@
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { bytes } from '#lib/format.ts';
 	import Icon from '#lib/Icon.svelte';
-	import EmptyState from '#lib/EmptyState.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import ProgressBar from '#lib/ui/ProgressBar.svelte';
+	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import Badge from '#lib/ui/Badge.svelte';
 	import { session } from '#lib/session.svelte.ts';
 	import {
 		albumFolderLine,
@@ -195,33 +200,22 @@
 
 <svelte:head><title>Import a library · HolyArrs</title></svelte:head>
 
-<a class="back small muted" href={to(`/library`)}><Icon name="back" size={16} /> Library</a>
+<div class="page">
+<PageHeader
+	title="Import a library"
+	subtitle="Bring movies, shows and music you already have into HolyArrs. It reads a Library folder, works out which movie, show or artist each folder holds (for a show, which episode each file is; for an artist, which album each folder is and which track each file is), and you approve them."
+	back={{ href: to('/library'), label: 'Library' }}
+/>
 
-<header class="page-head">
-	<div>
-		<p class="eyebrow">Library management</p>
-		<h1>Import a library</h1>
-		<p>
-			Bring movies, shows and music you already have into HolyArrs. It reads a Library folder, works out which movie, show or artist each folder holds (for
-			a show, which episode each file is; for an artist, which album each folder is and which track each file is), and you approve them.
-		</p>
-	</div>
-</header>
-
-<p class="notice" data-testid="nothing-moved">
-	<b>Nothing is moved or renamed.</b> Scanning only reads the folder. Adopting adds each movie, show or artist with its folder and files exactly as they
-	are. You can rename them later from Rename files.
+<p class="notice calm" data-testid="nothing-moved">
+	<Icon name="shield" size={18} /><span><b>Nothing is moved or renamed.</b> Scanning only reads the folder. Adopting adds each movie, show or artist with its folder and files exactly as they
+	are. You can rename them later from Rename files.</span>
 </p>
 
 {#if !loaded}
-	<div class="sk" style="height: 160px"></div>
+	<div class="card"><Skeleton lines={4} /></div>
 {:else if !folders.length}
-	<EmptyState icon="folder" title="No Library folder yet">
-		<p>Add the folder that holds your movies, shows or music first.</p>
-		{#snippet actions()}
-			{#if session.can('settings')}<a class="btn btn-dark" href={to(`/settings/library-folders`)}>Library folders</a>{/if}
-		{/snippet}
-	</EmptyState>
+	<EmptyState icon="folder" title="No Library folder yet" text="Add the folder that holds your movies, shows or music first." action={session.can('settings') ? { label: 'Library folders', href: to('/settings/library-folders') } : undefined} />
 {:else}
 	<section class="card" aria-labelledby="h-pick">
 		<h2 id="h-pick" class="h2">1. Pick a folder</h2>
@@ -234,13 +228,11 @@
 						>{/each}
 				</select>
 			</div>
-			<button class="btn btn-dark" type="button" onclick={() => scan()} disabled={scanning || adopting || !folderId} aria-busy={scanning}>
-				<Icon name="search" size={18} /> Scan (nothing is moved)
-			</button>
+			<Button variant="primary" icon="search" onclick={() => scan()} disabled={adopting || !folderId} busy={scanning}>Scan (nothing is moved)</Button>
 		</div>
 		{#if running}
 			<div aria-live="polite">
-				<progress class="bar" max="1" value={job?.Progress ?? 0} aria-label="Progress"></progress>
+				<div class="bar"><ProgressBar value={(job?.Progress ?? 0) * 100} label="Progress" /></div>
 				<p class="xs muted">{job?.ProgressNote || (scanning ? `Reading the folder and looking each ${word} up.` : 'Adopting.')}</p>
 			</div>
 		{/if}
@@ -270,7 +262,7 @@
 					</li>
 				{/each}
 			</ul>
-			<div class="row end"><a class="btn btn-ghost" href={to(`/library`)}>Go to the Library</a></div>
+			<div class="row end"><Button href={to('/library')}>Go to the Library</Button></div>
 		</section>
 	{/if}
 
@@ -286,7 +278,7 @@
 			{#if plan.more}
 				<div class="notice" data-testid="scan-more">
 					{#if plan.partial}<p class="small">The scan was stopped after <span class="mono">{plan.next}</span>; the folders it finished are below.</p>{:else}<p class="small">This scan read the first {plan.limit} folders, up to <span class="mono">{plan.next}</span>. Adopt these first, then read the next part.</p>{/if}
-					<button class="btn" type="button" onclick={() => scan(plan?.next ?? '')} disabled={scanning || adopting}>Scan the rest</button>
+					<Button onclick={() => scan(plan?.next ?? '')} disabled={scanning || adopting}>Scan the rest</Button>
 				</div>
 			{/if}
 			{#each groups as g (g.status)}
@@ -305,7 +297,7 @@
 									{:else}
 										<span class="mono small path">{f.folder}</span>
 									{/if}
-									{#if f.match && canAdopt(f)}<span class="chip {f.status === 'matched' ? 'ok' : 'wait'}">{score(f.match.score)}</span>{/if}
+									{#if f.match && canAdopt(f)}<Badge label={score(f.match.score)} />{/if}
 								</div>
 								{#if canAdopt(f)}
 									<p class="small"><b>{movieLabel(f)}</b></p>
@@ -374,8 +366,8 @@
 												placeholder={kind === 'show' ? 'Name, or tvdb:123' : kind === 'music' ? 'Artist name, or mbid:<id>' : 'Name and year, or tmdb:123'}
 												autocomplete="off"
 											/>
-											<button class="btn btn-ghost" type="submit" disabled={looking} aria-busy={looking}>Look up</button>
-											<button class="btn btn-quiet" type="button" onclick={() => (lookFor = null)}>Close</button>
+											<Button type="submit" busy={looking}>Look up</Button>
+											<Button variant="plain" onclick={() => (lookFor = null)}>Close</Button>
 										</form>
 										{#if lookError}<p class="form-error" role="alert">{lookError}</p>{/if}
 										{#if found.length}
@@ -386,14 +378,14 @@
 														{#if m.title_id}
 															<span class="xs muted">Already in the Library</span>
 														{:else}
-															<button class="btn btn-quiet" type="button" onclick={() => use(f.folder, m)}>Use this</button>
+															<Button variant="plain" onclick={() => use(f.folder, m)}>Use this</Button>
 														{/if}
 													</li>
 												{/each}
 											</ul>
 										{/if}
 									{:else}
-										<button class="btn btn-quiet" type="button" onclick={() => openLookup(f)}>{f.status === 'matched' ? 'Not this one? Look up' : 'Look up'}</button>
+										<div><Button variant="plain" icon="search" onclick={() => openLookup(f)}>{f.status === 'matched' ? 'Not this one? Look up' : 'Look up'}</Button></div>
 									{/if}
 								{/if}
 							</li>
@@ -403,31 +395,31 @@
 			{/each}
 			<div class="row end">
 				<span class="small muted">{picks.length} ticked</span>
-				<button class="btn btn-dark" type="button" onclick={adopt} disabled={adopting || !picks.length} aria-busy={adopting}>
+				<Button variant="primary" onclick={adopt} disabled={!picks.length} busy={adopting}>
 					{picks.length === 1 ? `Adopt 1 ${word}` : `Adopt ${picks.length} ${word}s`}
-				</button>
+				</Button>
 			</div>
 		</section>
 	{/if}
 {/if}
+</div>
 
 <style>
-	.eyebrow { margin: 0 0 var(--s-2); font-size: 11px; font-weight: var(--weight-semibold); letter-spacing: .09em; text-transform: uppercase; color: var(--text-muted); }
-	.back {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-		min-height: 40px;
-		margin-bottom: var(--s-2);
-	}
+	.page { display: flex; flex-direction: column; gap: 16px; padding-bottom: 48px; min-width: 0; }
+	.page :global(.card) { margin: 0; padding: 16px 20px 20px; border: 0; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card); }
+	.page :global(.h2) { margin: 0 0 12px; font: var(--t-title3); }
+	.page :global(.h3) { margin: 0 0 2px; font: var(--t-headline); }
+	.notice { display: flex; gap: 10px; align-items: flex-start; margin: 0; padding: 12px 14px; border: 0; border-radius: var(--r-btn); background: var(--surface-2); color: var(--text); font: var(--t-callout); }
+	.notice.calm :global(svg) { flex: none; margin-top: 1px; color: var(--ok); }
+	.notice.bad { color: var(--fail); }
+	.notice[data-testid='scan-more'] { flex-direction: column; }
 	.pick {
 		align-items: flex-end;
 		gap: var(--s-3);
 		flex-wrap: wrap;
 		padding: var(--s-3);
-		border: 1px solid var(--line);
 		border-radius: var(--r-btn);
-		background: var(--surface-1);
+		background: var(--surface-2);
 	}
 	.grow {
 		flex: 1 1 240px;
@@ -537,15 +529,12 @@
 		border-top: 1px solid var(--line);
 	}
 	@media (max-width: 600px) {
-		.notice[data-testid='nothing-moved'] {
-			display: block;
-		}
 		.notice[data-testid='nothing-moved'] b {
 			display: block;
 			margin-bottom: var(--s-1);
 		}
-		.pick > :global(.btn), .look > :global(.btn), .end > :global(.btn) { width: 100%; min-height: var(--tap); }
+		.pick > :global(.ui-btn), .look > :global(.ui-btn), .end > :global(.ui-btn) { width: 100%; }
 		.top, .found li { align-items: flex-start; flex-direction: column; }
-		.back { min-height: 44px; }
+
 	}
 </style>

@@ -131,9 +131,9 @@ test('shows sit in the Library next to movies, with kinds and state filters', as
 	await libraryStatus(own, 'better');
 	await expect(card).toHaveCount(0);
 	await libraryStatus(own, 'all');
-	await own.getByRole('group', { name: 'Layout' }).getByRole('button', { name: 'List' }).click();
+	await own.getByRole('radiogroup', { name: 'Layout' }).getByRole('radio', { name: 'List' }).click();
 	await expect(own.getByTestId('library-row').filter({ hasText: 'Harbour Lights' })).toContainText('aired episodes in the Library');
-	await own.getByRole('group', { name: 'Layout' }).getByRole('button', { name: 'Posters' }).click();
+	await own.getByRole('radiogroup', { name: 'Layout' }).getByRole('radio', { name: 'Posters' }).click();
 	await libraryKind(own, /^Movies/);
 	await expect(card).toHaveCount(0);
 	await expect(own.getByTestId('library-card').filter({ hasText: 'Quiet Orchard' })).toBeVisible();

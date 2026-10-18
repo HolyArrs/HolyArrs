@@ -8,6 +8,9 @@
 	import { live } from './live.svelte.ts';
 	import { toasts } from './toasts.svelte.ts';
 	import { albumSteps, fileName, followJob, renamePair, splitSteps, type JobView, type RenameStep } from './organise.ts';
+	import Button from './ui/Button.svelte';
+	import ProgressBar from './ui/ProgressBar.svelte';
+	import Skeleton from './ui/Skeleton.svelte';
 
 	let { titleId, albumId, onDone }: { titleId?: number; albumId?: number; onDone?: () => void } = $props();
 
@@ -73,7 +76,7 @@
 
 <div class="rename" data-testid="rename-preview">
 	{#if !loaded}
-		<div class="sk" style="height: 120px"></div>
+		<Skeleton lines={4} />
 	{:else}
 		<p class="small muted">
 			Only files HolyArrs imported or adopted are renamed, inside the folder they are in now. Files it found on its own are never touched.
@@ -118,16 +121,16 @@
 		{#if parts.same}<p class="xs muted">{parts.same} already named right.</p>{/if}
 		{#if job && !['done', 'failed', 'cancelled'].includes(job.State)}
 			<div aria-live="polite">
-				<progress class="bar" max="1" value={job.Progress} aria-label="Rename progress"></progress>
+				<ProgressBar value={job.Progress * 100} label="Rename progress" />
 				<p class="xs muted">{job.ProgressNote || (job.State === 'queued' ? 'Waiting to start.' : 'Renaming.')}</p>
 			</div>
 		{/if}
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 		{#if parts.change.length}
 			<div class="row go">
-				<button class="btn btn-red" type="button" onclick={apply} disabled={applying} aria-busy={applying}>
+				<Button variant="primary" onclick={apply} busy={applying}>
 					{parts.change.length === 1 ? 'Rename 1 file' : `Rename ${parts.change.length} files`}
-				</button>
+				</Button>
 			</div>
 		{/if}
 	{/if}
@@ -162,14 +165,16 @@
 		color: var(--text-muted);
 	}
 	.lab {
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
+		font-weight: 600;
 	}
+	.rename { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+	.rename :global(.notice) { margin: 0; padding: 12px 14px; border: 0; border-radius: var(--r-btn); background: var(--surface-2); font: var(--t-callout); }
+	.rename :global(.h3) { margin: 8px 0 0; font: var(--t-headline); }
+	.skipped summary { min-height: 44px; display: inline-flex; align-items: center; cursor: pointer; }
+	.form-error { margin: 0; color: var(--fail); font: var(--t-callout); }
+
 	.skipped {
 		margin-top: var(--s-3);
-	}
-	.bar {
-		width: 100%;
 	}
 	.go {
 		justify-content: flex-end;

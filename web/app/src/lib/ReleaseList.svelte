@@ -7,8 +7,12 @@
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { bytes, date, dateTime } from '#lib/format.ts';
 	import { facts, keyReasons, listedName, pager } from '#lib/releases.ts';
-	import EmptyState from '#lib/EmptyState.svelte';
-	import Icon from '#lib/Icon.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
+	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import { plainReason } from '#lib/plain.ts';
 	import type { ReleasePage, ReleaseView } from '#lib/types.ts';
 
 	let { list }: { list: 'held' | 'turned-down' } = $props();
@@ -87,54 +91,55 @@
 	}
 </script>
 
-<header class="page-head">
-	<div>
-		<h1>{held ? 'Held' : 'Turned down'}</h1>
-		<p>
-			{held
-				? 'Releases HolyArrs picked that are waiting out their wait. A better one found meanwhile takes their place.'
-				: 'Releases HolyArrs never picks again for their movie or episode. Take one off the list to let it be picked again.'}
-		</p>
-	</div>
-	<nav class="row switch-list" aria-label="Release lists">
-		<a class="btn btn-quiet" href={to(`/library/held`)} aria-current={held ? 'page' : undefined}>Held</a>
-		<a class="btn btn-quiet" href={to(`/library/turned-down`)} aria-current={held ? undefined : 'page'}>Turned down</a>
-	</nav>
-</header>
+<div class="page">
+<PageHeader
+	title={held ? 'Held' : 'Turned down'}
+	subtitle={held
+		? 'Releases HolyArrs picked that are waiting out their wait. A better one found meanwhile takes their place.'
+		: 'Releases HolyArrs never picks again for their movie or episode. Take one off the list to let it be picked again.'}
+	back={{ href: to('/library'), label: 'Library' }}
+>
+	{#snippet actions()}
+		<nav class="switch-list" aria-label="Release lists">
+			<a href={to(`/library/held`)} aria-current={held ? 'page' : undefined}>Held</a>
+			<a href={to(`/library/turned-down`)} aria-current={held ? undefined : 'page'}>Turned down</a>
+		</nav>
+	{/snippet}
+</PageHeader>
 
 {#if error}
-	<p class="notice bad" role="alert">{error}</p>
+	<LoadError hasData={false} message={plainReason(error).text} onretry={load} />
 {:else if !loaded}
-	<div class="sk" style="height: 160px"></div>
+	<ul class="rels" aria-hidden="true">{#each Array(3) as _, i (i)}<li class="rel"><Skeleton lines={3} /></li>{/each}</ul>
 {:else if total === 0}
-	<EmptyState icon={held ? 'calendar' : 'shield'} title={held ? 'Nothing is held' : 'Nothing is turned down'}>
-		<p>
-			{held
-				? 'When Pick rules ask HolyArrs to wait before sending a Release, it waits here.'
-				: 'Turn a Release down from a movie or show page, or HolyArrs does it when a download turns out wrong.'}
-		</p>
-	</EmptyState>
+	<EmptyState
+		icon={held ? 'clock' : 'shield'}
+		title={held ? 'Nothing is held' : 'Nothing is turned down'}
+		text={held
+			? 'When Pick rules ask HolyArrs to wait before sending a Release, it waits here.'
+			: 'Turn a Release down from a movie or show page, or HolyArrs does it when a download turns out wrong.'}
+	/>
 {:else}
 	<div class="list-head">
-		<span class="small muted">{total} {total === 1 ? 'Release' : 'Releases'}</span>
-		<button class="btn btn-ghost" type="button" onclick={clearAll} disabled={busy}>Clear all</button>
+		<span class="count">{total} {total === 1 ? 'Release' : 'Releases'}</span>
+		<Button variant="plain" onclick={clearAll} disabled={busy}>Clear all</Button>
 	</div>
-	<ul class="card rels">
+	<ul class="rels">
 		{#each rows as r (r.id)}
 			{@const key = keyReasons(r.reasons)}
 			<li class="rel" data-testid="listed-release">
 				<div class="rel-top">
 					<div class="grow">
 						{#if r.title_id}
-							<a class="small" href={to(`/library/${r.title_id}`)} data-testid="listed-for">{listedName(r)}{r.version && r.version !== 'Main' ? ` · ${r.version}` : ''}</a>
+							<a class="for" href={to(`/library/${r.title_id}`)} data-testid="listed-for">{listedName(r)}{r.version && r.version !== 'Main' ? ` · ${r.version}` : ''}</a>
 						{/if}
-						<div class="rel-name mono">{r.name}</div>
+						<div class="rel-name">{r.name}</div>
 					</div>
-					<button class="btn btn-quiet" type="button" onclick={() => removeOne(r)} disabled={busy} aria-label="{held ? 'Stop holding' : 'Take off the list'} {r.name}">
-						<Icon name="x" size={16} />{held ? 'Stop holding' : 'Take off the list'}
-					</button>
+					<Button variant="secondary" icon="x" onclick={() => removeOne(r)} disabled={busy} aria-label="{held ? 'Stop holding' : 'Take off the list'} {r.name}">
+						{held ? 'Stop holding' : 'Take off the list'}
+					</Button>
 				</div>
-				<div class="xs muted">
+				<div class="facts">
 					{facts(r, bytes)}
 					{#if held && r.hold_until} · sent {dateTime(r.hold_until)}{/if}
 					{#if !held} · since {date(r.created_at)}{/if}
@@ -148,75 +153,37 @@
 		{/each}
 	</ul>
 	{#if pages.prev !== null || pages.next !== null}
-		<nav class="row pager" aria-label="Pages">
-			<button class="btn btn-quiet" type="button" disabled={pages.prev === null} onclick={() => go(pages.prev)}>Back</button>
-			<span class="xs muted">{pages.from} to {pages.to} of {total}</span>
-			<button class="btn btn-quiet" type="button" disabled={pages.next === null} onclick={() => go(pages.next)}>More</button>
+		<nav class="pager" aria-label="Pages">
+			<Button variant="secondary" icon="chevronLeft" disabled={pages.prev === null} onclick={() => go(pages.prev)}>Back</Button>
+			<span class="count">{pages.from} to {pages.to} of {total}</span>
+			<Button variant="secondary" iconAfter="chevronRight" disabled={pages.next === null} onclick={() => go(pages.next)}>More</Button>
 		</nav>
 	{/if}
 {/if}
+</div>
 
 <style>
-	.switch-list {
-		gap: var(--s-2);
-	}
-	.switch-list a[aria-current='page'] {
-		color: var(--text);
-		background: var(--surface-2, var(--surface-1));
-	}
-	.list-head {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: var(--s-3);
-	}
-	.rel {
-		padding: var(--s-3);
-		border: 1px solid var(--line);
-		border-radius: 6px;
-		background: var(--surface-1);
-	}
-	.rel + .rel {
-		margin-top: var(--s-2);
-	}
-	.rel-top {
-		display: flex;
-		justify-content: space-between;
-		gap: var(--s-3);
-		align-items: flex-start;
-		margin-bottom: 4px;
-	}
-	.grow {
-		min-width: 0;
-		flex: 1;
-	}
-	.rel-name {
-		font-size: var(--text-sm);
-		overflow-wrap: anywhere;
-	}
-	.reasons {
-		margin-top: var(--s-2);
-		font-size: var(--text-xs);
-		color: var(--text-muted);
-	}
-	.reasons li {
-		padding: 2px 0 2px var(--s-3);
-		border-left: 2px solid var(--line-strong);
-	}
-	.reasons li.fail {
-		border-left-color: var(--fail);
-	}
-	.reasons li.hold,
-	.reasons li.warn {
-		border-left-color: var(--wait);
-	}
-	.pager {
-		justify-content: space-between;
-		margin-top: var(--s-3);
-	}
-	@media (max-width: 600px) {
-		.rel-top {
-			flex-direction: column;
-		}
-	}
+	.page { display: flex; flex-direction: column; gap: 16px; padding-bottom: 48px; min-width: 0; }
+	.switch-list { display: flex; gap: 2px; padding: 3px; border-radius: var(--r-btn); background: var(--surface-2); }
+	.switch-list a { display: inline-flex; align-items: center; min-height: 38px; padding: 0 14px; border-radius: 8px; color: var(--text-muted); font: var(--t-subhead); font-size: 14px; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+	.switch-list a:hover { color: var(--text); }
+	.switch-list a:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.switch-list a[aria-current='page'] { background: var(--surface-1); color: var(--text); font-weight: 600; box-shadow: var(--shadow-card); }
+	@media (pointer: coarse) { .switch-list a { min-height: 44px; } }
+	.list-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+	.count { color: var(--text-muted); font: var(--t-subhead); font-variant-numeric: tabular-nums; }
+	.rels { margin: 0; padding: 4px; list-style: none; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card); }
+	.rel { padding: 12px 14px; }
+	.rel + .rel { border-top: 1px solid var(--line); }
+	.rel-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 4px; }
+	.grow { min-width: 0; flex: 1; }
+	.for { font: var(--t-headline); color: var(--text); }
+	.rel-name { margin-top: 2px; color: var(--text-muted); font: var(--t-callout); overflow-wrap: anywhere; }
+	.facts { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
+	.reasons { margin: 8px 0 0; padding: 0; list-style: none; font: var(--t-footnote); color: var(--text-muted); }
+	.reasons li { padding: 2px 0 2px 10px; border-left: 2px solid var(--line-strong); }
+	.reasons li.fail { border-left-color: var(--fail); }
+	.reasons li.hold, .reasons li.warn { border-left-color: var(--wait); }
+	.pager { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+	@media (max-width: 600px) { .rel-top { flex-direction: column; } }
 </style>

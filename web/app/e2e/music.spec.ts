@@ -149,9 +149,9 @@ test('artists sit in the Library with a Music kind', async () => {
 	await expect(card).toContainText('Artist');
 	await expect(card).toContainText('missing');
 	await expect(own.getByTestId('library-card').filter({ hasText: 'Harbour Lights' })).toHaveCount(0);
-	await own.getByRole('group', { name: 'Layout' }).getByRole('button', { name: 'List' }).click();
+	await own.getByRole('radiogroup', { name: 'Layout' }).getByRole('radio', { name: 'List' }).click();
 	await expect(own.getByTestId('library-row').filter({ hasText: 'Tin Lanterns' })).toContainText('tracks in the Library');
-	await own.getByRole('group', { name: 'Layout' }).getByRole('button', { name: 'Posters' }).click();
+	await own.getByRole('radiogroup', { name: 'Layout' }).getByRole('radio', { name: 'Posters' }).click();
 	await libraryKind(own, /^Everything/);
 	await axe(own, 'library with music');
 });

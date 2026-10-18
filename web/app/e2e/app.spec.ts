@@ -300,10 +300,9 @@ test('Library search debounces the indexed query and ignores stale results', asy
 
 	await find.fill('broken');
 	await expect(page.getByRole('alert')).toContainText('Library search failed.');
-	// The Kind filter sits in the Type menu; it stays usable after a failed search.
-	await page.locator('details.filter-menu summary', { hasText: 'Type' }).click();
+	// The Kind chips and the layout switch stay usable after a failed search.
 	await expect(page.getByRole('group', { name: 'Kind' })).toBeVisible();
-	await expect(page.getByRole('group', { name: 'Layout' })).toBeVisible();
+	await expect(page.getByRole('radiogroup', { name: 'Layout' })).toBeVisible();
 	await page.unroute('**/api/v1/titles?*');
 });
 

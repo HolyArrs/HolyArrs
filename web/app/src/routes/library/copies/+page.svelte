@@ -3,6 +3,13 @@
 	import { api, message } from '#lib/api.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { to } from '#lib/paths.ts';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import Badge from '#lib/ui/Badge.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import Icon from '#lib/Icon.svelte';
+	import { plainReason } from '#lib/plain.ts';
 	import { codecLabel, copiesQuery, copyCodecs, copyKey, copySorts, toggleCopy, type CopyCodec, type CopySearchPreview, type CopySearchResult, type CopySelection, type CopySort, type LibraryCopyPage } from '#lib/library-copies.ts';
 
 	const pageSize = 50;
@@ -84,16 +91,11 @@
 
 <svelte:head><title>Video codecs · HolyArrs</title></svelte:head>
 
-<header class="page-head">
-	<div>
-		<p class="eyebrow"><a href={to('/library')}>Library</a></p>
-		<h1>Video codecs</h1>
-		<p>See the codec read from each movie file and search selected Versions for alternatives.</p>
-	</div>
-</header>
+<div class="page">
+<PageHeader title="Video codecs" subtitle="See the codec read from each movie file and search selected Versions for alternatives." back={{ href: to('/library'), label: 'Library' }} />
 
 {#if !session.can('manage_library')}
-	<p class="notice bad" role="alert">You do not have permission to manage the Library.</p>
+	<EmptyState icon="shield" title="You do not have permission to manage the Library." />
 {:else}
 	<form class="tools" onsubmit={(event) => { event.preventDefault(); applyFilters(); }}>
 		<label>Find by title <input class="input" type="search" bind:value={q} maxlength="256" /></label>
@@ -107,15 +109,15 @@
 				{#each copySorts as value}<option {value}>{value === 'title' ? 'Title' : value === 'codec' ? 'Codec' : 'Recently added'}</option>{/each}
 			</select>
 		</label>
-		<button class="btn btn-ghost" type="submit">Apply</button>
+		<Button type="submit">Apply</Button>
 	</form>
 
-	{#if error}<p class="notice bad" role="alert">{error}</p>{/if}
-	{#if result}<p class="notice good" role="status">Started {result.job_ids.length} search{result.job_ids.length === 1 ? '' : 'es'}. Results will use the current Pick rules.</p>{/if}
+	{#if error}<p class="notice bad" role="alert"><Icon name="alert" size={17} /><span>{plainReason(error).text}</span></p>{/if}
+	{#if result}<p class="notice good" role="status"><Icon name="check" size={17} />Started {result.job_ids.length} search{result.job_ids.length === 1 ? '' : 'es'}. Results will use the current Pick rules.</p>{/if}
 
 	<div class="selection-bar">
 		<span><b>{selected.length}</b> selected across all pages</span>
-		<button class="btn btn-dark" type="button" disabled={selected.length === 0 || busy} onclick={review}>Review searches</button>
+		<Button variant="primary" disabled={selected.length === 0 || busy} onclick={review}>Review searches</Button>
 	</div>
 
 	{#if preview}
@@ -123,14 +125,14 @@
 			<h2 id="review-title">Review {preview.copies.length} {preview.copies.length === 1 ? 'copy' : 'copies'}</h2>
 			<p>This starts {preview.slot_count} search{preview.slot_count === 1 ? '' : 'es'} for the exact selected Versions. Each search applies the current Pick rules and saves candidates for review. It does not guarantee a replacement or download anything automatically.</p>
 			<ul>{#each preview.copies as copy (copyKey(copy))}<li><b>{copy.title}</b> · {copy.version} · {codecLabel(copy.codec)}</li>{/each}</ul>
-			<div class="row"><button class="btn btn-dark" type="button" disabled={busy} onclick={search}>Start searches</button><button class="btn btn-quiet" type="button" onclick={() => preview = null}>Cancel</button></div>
+			<div class="actions"><Button variant="primary" disabled={busy} onclick={search}>Start searches</Button><Button variant="plain" onclick={() => preview = null}>Cancel</Button></div>
 		</section>
 	{/if}
 
 	{#if !loaded}
-		<p class="muted">Reading inspected movie files…</p>
+		<div class="table-wrap"><Skeleton lines={5} /></div>
 	{:else if page.copies.length === 0}
-		<p class="muted">No movie files match these filters.</p>
+		<EmptyState compact icon="film" title="No movie files match these filters." />
 	{:else}
 		<div class="table-wrap">
 			<table class="list-table">
@@ -140,7 +142,7 @@
 					{#each page.copies as copy (copyKey(copy))}
 						<tr>
 							<td><input type="checkbox" aria-label={`Select ${copy.title}, ${copy.version}`} checked={selectedKeys.has(copyKey(copy))} disabled={copy.protected} onchange={() => toggle(copy)} /></td>
-							<td><a href={to(`/library/${copy.title_id}`)}><b>{copy.title}</b>{#if copy.year} <span class="muted">({copy.year})</span>{/if}</a><span class="block small">{copy.version}{copy.edition ? ` · ${copy.edition}` : ''}</span>{#if copy.protected}<span class="chip">Protected</span>{/if}</td>
+							<td><a href={to(`/library/${copy.title_id}`)}><b>{copy.title}</b>{#if copy.year} <span class="muted">({copy.year})</span>{/if}</a><span class="block small">{copy.version}{copy.edition ? ` · ${copy.edition}` : ''}</span>{#if copy.protected}<Badge label="Protected" />{/if}</td>
 							<td><span class="codec">{codecLabel(copy.codec)}</span><span class="block xs muted">{copy.container || 'Container unknown'} · {copy.inspection_status || 'not inspected'}</span></td>
 							<td>{copy.audio_languages.length ? copy.audio_languages.join(', ') : 'Unknown'}<span class="block xs muted">{copy.audio_tracks} track{copy.audio_tracks === 1 ? '' : 's'}{copy.audio_unknown ? ' · some unknown' : ''}</span></td>
 							<td class="path">{copy.relative_path}</td>
@@ -150,36 +152,46 @@
 			</table>
 		</div>
 		<nav class="pager" aria-label="Codec pages">
-			<button class="btn btn-quiet" type="button" disabled={page.offset === 0 || busy} onclick={() => move(-pageSize)}>Previous</button>
-			<span>{page.offset + 1}–{last} of {page.total}</span>
-			<button class="btn btn-quiet" type="button" disabled={last >= page.total || busy} onclick={() => move(pageSize)}>Next</button>
+			<Button icon="chevronLeft" disabled={page.offset === 0 || busy} onclick={() => move(-pageSize)}>Previous</Button>
+			<span class="count">{page.offset + 1}–{last} of {page.total}</span>
+			<Button iconAfter="chevronRight" disabled={last >= page.total || busy} onclick={() => move(pageSize)}>Next</Button>
 		</nav>
 	{/if}
 {/if}
+</div>
 
 <style>
-	.eyebrow { margin: 0 0 var(--s-2); font-size: 11px; font-weight: var(--weight-semibold); letter-spacing: .09em; text-transform: uppercase; color: var(--text-muted); }
-	.tools { display: flex; align-items: end; gap: var(--s-3); flex-wrap: wrap; margin-bottom: 0; padding: var(--s-4); border: 1px solid var(--line); border-radius: var(--r-card) var(--r-card) 0 0; background: var(--surface-1); }
-	.tools label { display: grid; gap: var(--s-1); font-size: var(--text-xs); color: var(--text-muted); }
-	.selection-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); min-height: 64px; padding: var(--s-2) var(--s-4); border: 1px solid var(--line); border-top: 0; background: var(--surface-2); }
-	.review { border: 1px solid var(--line); border-radius: var(--r-card); padding: var(--s-5); margin: var(--s-4) 0; background: var(--surface-1); }
-	.review h2 { margin-top: 0; }
+	.page { display: flex; flex-direction: column; gap: 16px; padding-bottom: 48px; min-width: 0; }
+	.tools { display: flex; align-items: end; gap: 12px; flex-wrap: wrap; margin: 0; }
+	.tools label { display: grid; gap: 4px; font: var(--t-subhead); color: var(--text-muted); }
+	.selection-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 60px; padding: 8px 8px 8px 16px; border-radius: var(--r-panel); background: var(--surface-2); font: var(--t-callout); }
+	.notice { display: flex; align-items: center; gap: 8px; margin: 0; padding: 10px 12px; border: 0; border-radius: var(--r-btn); background: var(--surface-2); font: var(--t-callout); }
+	.notice.bad { color: var(--fail); }
+	.notice.good { color: var(--text); }
+	.notice.good :global(svg) { color: var(--ok); }
+	.review { border-radius: var(--r-panel); padding: 16px 20px 20px; margin: 0; background: var(--surface-1); box-shadow: var(--shadow-card); font: var(--t-callout); }
+	.review h2 { margin: 0 0 8px; font: var(--t-title3); }
 	.review ul { margin: .75rem 0; padding-left: 1.25rem; }
-	.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-card); background: var(--surface-1); }
-	.list-table { width: 100%; border-collapse: collapse; }
-	.list-table th { padding-inline: var(--s-3); text-align: left; background: var(--surface-2); }
+	.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+	.count { color: var(--text-muted); font: var(--t-subhead); font-variant-numeric: tabular-nums; }
+	.table-wrap { overflow-x: auto; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card); }
+	.list-table { width: 100%; border-collapse: collapse; font: var(--t-callout); font-variant-numeric: tabular-nums; }
+	.list-table th { position: sticky; top: 0; padding: 10px 12px; text-align: left; background: var(--surface-1); color: var(--text-muted); font: var(--t-footnote); border-bottom: 1px solid var(--line); }
+	.list-table input[type='checkbox'] { width: 20px; height: 20px; accent-color: var(--accent); }
+	.list-table a { color: var(--text); }
 	.list-table td { padding: var(--s-3); vertical-align: top; }
 	.list-table tbody tr + tr { border-top: 1px solid var(--line); }
 	.list-table tbody tr:hover { background: var(--surface-2); }
-	.path { max-width: 24rem; overflow-wrap: anywhere; color: var(--text-muted); font-size: var(--text-sm); }
+	.path { max-width: 24rem; overflow-wrap: anywhere; color: var(--text-muted); font: var(--t-footnote); }
 	.codec { font-weight: 700; }
 	.block { display: block; }
 	.pager { display: flex; justify-content: space-between; align-items: center; gap: var(--s-4); margin-top: var(--s-4); }
 	@media (max-width: 700px) {
 		.tools, .tools label { width: 100%; }
-		.tools .input, .tools button { width: 100%; }
+		.tools .input, .tools :global(.ui-btn) { width: 100%; }
 		.selection-bar { align-items: stretch; flex-direction: column; }
-		.selection-bar :global(.btn), .pager :global(.btn) { min-height: 44px; }
+		.selection-bar { padding: 12px; }
+
 		.list-table th:nth-child(4), .list-table td:nth-child(4), .list-table th:nth-child(5), .list-table td:nth-child(5) { display: none; }
 	}
 </style>
