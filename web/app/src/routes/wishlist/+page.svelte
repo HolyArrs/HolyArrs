@@ -199,7 +199,7 @@
 	const msgKind = (k: string): StatusKind => (k === 'ready' ? 'in_library' : k === 'turned_down' ? 'turned_down' : 'approved');
 
 	// Id-like account names read as a person, never a raw id.
-	const plain = (t: string) => t.replace(/[\w.-]+/g, (w) => (/\d/.test(w) && looksLikeId(w) ? 'someone in your household' : w));
+	const plain = (t: string) => t.replace(/[\w.-]+/g, (w) => (/\d/.test(w) && /\p{L}/u.test(w) && looksLikeId(w) ? 'someone in your household' : w));
 	const askedBy = (a: Ask) => plain(askedByRaw(a));
 	const decided = (a: Ask) => plain(decidedRaw(a) ?? '');
 
