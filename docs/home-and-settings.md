@@ -55,6 +55,55 @@ Part is on and the current person may open it:
 
 The complete screen-to-guide map is in the [documentation index](index.md).
 
+### What needs attention
+
+`GET /api/v1/settings/status` (Change settings) gives the Settings home one
+answer: `{"items": [{"group", "page", "text", "severity"}], "unset": {"<group>":
+["<page>"]}, "known": ["<page>"], "tmdb_key_set": bool}`. Groups are
+`general`, `library`, `copies`, `people`, `security`, `linked`, `maintenance`
+and `account`. Severity follows what was found:
+
+- a health check: its own state (`warning` or `error`);
+- a failed stage, media server or subtitle site: `error`; a stuck one: `warning`;
+- a Source or Downloader not answering: `error`;
+- no TMDB key, no backup, or no backup in the last 7 days: `warning`;
+- a newer HolyArrs: `info`;
+- a saved Movies and TV default whose Library folder or Pick rules are gone:
+  `warning`, on `/settings/title-defaults` in `library`.
+
+Pages with no Library folders, Sources or Downloaders are listed under
+`unset`. The answer is kept for 30 seconds for everyone. `tmdb_key_set` only
+says whether a key is saved; the key never appears in the answer.
+
+### Movies and TV defaults
+
+`GET /api/v1/settings/title-defaults` (Run the Library) and `PUT` (Change
+settings) hold what a new movie or show gets when an add leaves a field out:
+`{"movie": {"library_folder_id", "pick_rules_id", "keep_up_to_date",
+"search_on_add"}, "show": {...}}`. `0` means the first folder of that kind and
+the folder's own Pick rules. Built-in values are Keep up to date on for both,
+Search when added on for movies and off for shows.
+
+`POST /titles` and `POST /shows` use a saved value only for a field the
+request leaves out, and only once that value has been saved; with nothing
+saved, adds behave as before. A saved folder or Pick rules that are removed
+later are skipped (the add uses the built-in choice) and Settings flags them.
+`POST /shows` also takes `search_on_add`: after the folder look, the whole
+show is searched the same way **Search** on a show does. Outside lists and
+approved asks keep their own settings.
+
+### Pick rules editing
+
+`POST /api/v1/pick-rules`, `GET`/`PUT`/`DELETE /api/v1/pick-rules/{id}` make,
+read, change and remove Pick rules (reading needs Run the Library, the rest
+Change settings). A change bumps `revision`. Ready-made rules keep their name
+and kinds and cannot be removed; their rules may change. Rules in use (by a
+Version, a Library folder, an Outside list, a Wishlist setting or a Movies and
+TV default; `in_use` counts each) cannot be removed, drop a kind in use, or
+switch between video and music: those answer 409 with `in_use`. A wrong field
+answers 400 `{"error", "field"}` where `field` is a dotted path such as
+`body.good_enough_at`.
+
 ## Appearance
 
 The Settings landing page offers **Dark** and **Light**. The choice is kept in

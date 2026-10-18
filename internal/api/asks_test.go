@@ -58,6 +58,7 @@ type askRig struct {
 	owner *signedIn
 	ana   *signedIn
 	bo    *signedIn
+	api   *API
 }
 
 // newAskRig runs the real API with sign-in: the owner luis and the members
@@ -86,7 +87,7 @@ func newAskRig(t *testing.T) *askRig {
 	a := New(Server{Store: st, Queue: q, Metadata: md, Version: "test", Auth: au, Secrets: v, Live: live.NewHub(live.Options{})})
 	srv := httptest.NewServer(a.Handler())
 	t.Cleanup(srv.Close)
-	r := &askRig{srv: srv, st: st, asks: a.s.Asks}
+	r := &askRig{srv: srv, st: st, asks: a.s.Asks, api: a}
 
 	browser := func() *signedIn {
 		jar, _ := cookiejar.New(nil)

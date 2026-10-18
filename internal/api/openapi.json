@@ -4454,6 +4454,68 @@
         },
         "type": "object"
       },
+      "SettingsStatus": {
+        "properties": {
+          "items": {
+            "items": {
+              "properties": {
+                "group": {
+                  "enum": [
+                    "general",
+                    "library",
+                    "copies",
+                    "people",
+                    "security",
+                    "linked",
+                    "maintenance",
+                    "account"
+                  ],
+                  "type": "string"
+                },
+                "page": {
+                  "description": "The Settings page to fix it on, such as /settings/downloaders.",
+                  "type": "string"
+                },
+                "severity": {
+                  "enum": [
+                    "info",
+                    "warning",
+                    "error"
+                  ],
+                  "type": "string"
+                },
+                "text": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "known": {
+            "description": "Pages whose status is known.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "tmdb_key_set": {
+            "description": "A TMDB key is saved or read from a file. The key itself is never in the answer.",
+            "type": "boolean"
+          },
+          "unset": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "description": "Per group, the pages not set up yet (no Library folders, Sources or Downloaders).",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
       "ShowInfo": {
         "properties": {
           "air_time": {
@@ -16596,6 +16658,31 @@
         "x-holyarrs-part": "shows",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/settings/status": {
+      "get": {
+        "description": "One answer for the Settings home: health checks (warning or error as the check says), failed (error) or stuck (warning) stages, media servers and subtitle sites, Sources and Downloaders not answering (error), no TMDB key, no backup or none in 7 days (warning), a newer HolyArrs (info), and saved Movies and TV defaults whose folder or Pick rules are gone (warning, page /settings/title-defaults, group library). The answer is kept 30 seconds for everyone.",
+        "operationId": "getSettingsStatus",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsStatus"
+                }
+              }
+            },
+            "description": "The status."
+          }
+        },
+        "summary": "What needs attention in Settings",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "read"
       }
     },
     "/api/v1/settings/subtitles": {

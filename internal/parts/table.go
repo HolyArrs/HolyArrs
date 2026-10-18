@@ -284,6 +284,7 @@ var Routes = map[string]Owner{
 	"DELETE /api/v1/calendar/feed-key":        Media,
 	"GET /api/v1/calendar/feed.ics":           Media,
 	"GET /api/v1/pick-rules":                  Media,
+	"GET /api/v1/settings/status":             Core,
 	"GET /api/v1/settings/title-defaults":     Media,
 	"PUT /api/v1/settings/title-defaults":     Media,
 	"GET /api/v1/pick-rules/{id}":             Media,

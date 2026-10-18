@@ -111,6 +111,8 @@ type API struct {
 	confirm confirms
 	// discover caches Explore rows and details pages and limits each person.
 	discover discoverState
+	// status keeps the Settings status answer for 30 seconds.
+	status statusCache
 }
 
 // New makes the API.
@@ -187,6 +189,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("POST /api/v1/titles/refresh", a.refreshTitles)
 	m.HandleFunc("GET /api/v1/calendar", a.calendar)
 	m.HandleFunc("GET /api/v1/artwork/{name}", a.artwork)
+	m.HandleFunc("GET /api/v1/settings/status", a.settingsStatusRoute)
 	m.HandleFunc("GET /api/v1/settings/title-defaults", a.getTitleDefaults)
 	m.HandleFunc("PUT /api/v1/settings/title-defaults", a.putTitleDefaults)
 	m.HandleFunc("GET /api/v1/pick-rules", a.listPickRules)
