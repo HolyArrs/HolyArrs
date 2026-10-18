@@ -277,7 +277,7 @@ dl.facts dd {
 	border-radius: var(--r-sm);
 	font: var(--weight-medium) var(--text-xs) / 1 var(--font-ui);
 	white-space: nowrap;
-	background: var(--surface-3);
+	background: var(--surface-2);
 	color: var(--text-muted);
 }
 .chip::before {

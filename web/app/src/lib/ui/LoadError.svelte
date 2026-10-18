@@ -31,6 +31,7 @@
 	.inline { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 4px 6px 4px 14px; border-radius: var(--r-btn); background: color-mix(in srgb, var(--wait) 12%, var(--surface-1)); color: var(--text); font: var(--t-callout); }
 	.inline > :global(.icon) { color: var(--wait-text); }
 	.grow { flex: 1; min-width: 0; }
+	.inline :global(.ui-btn.plain) { color: var(--text); text-decoration: underline; }
 	.full { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 48px 24px; }
 	.ic { width: 60px; height: 60px; display: grid; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--fail) 12%, transparent); color: var(--fail-text); margin-bottom: 6px; }
 	h2 { font: var(--t-title3); }

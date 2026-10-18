@@ -41,7 +41,7 @@
 	}
 </script>
 
-<section class="ui-shelf" aria-labelledby="{id}-t" style="--item: {item}">
+<section class="ui-shelf" style="--item: {item}">
 	<header>
 		<div>
 			<h2 id="{id}-t">{#if href}<a href={href}>{title}</a>{:else}{title}{/if}</h2>
@@ -50,8 +50,8 @@
 		{#if href}<a class="all" {href}>{seeAll}<Icon name="chevronRight" size={15} /><span class="sr-only"> {title}</span></a>{/if}
 	</header>
 	<div class="wrap">
-		<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
-		<div class="row" bind:this={scroller} onscroll={measure} onkeydown={key} tabindex="0" role="region" aria-label="{title}, scrolls sideways">
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
+		<div class="row" bind:this={scroller} onscroll={measure} onkeydown={key} tabindex="0" role="group" aria-labelledby="{id}-t">
 			{@render children()}
 		</div>
 		<span class="arrow left" class:hide={atStart}><IconButton icon="chevronLeft" label="Scroll {title} back" variant="tinted" tabindex={-1} tooltip={false} onclick={() => page(-1)} /></span>

@@ -7,7 +7,7 @@
 	const id = $props.id();
 </script>
 
-<section class="ui-settings" aria-labelledby="{id}-t">
+<section class="ui-settings">
 	<header>
 		{#if icon}<span class="ic"><Icon name={icon} size={18} /></span>{/if}
 		<div>

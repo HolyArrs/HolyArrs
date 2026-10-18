@@ -117,6 +117,7 @@
 	.collapsed .word { opacity: 0; }
 	.collapsed .top { flex-direction: column; align-items: center; padding: 0; gap: 4px; }
 	.collapsed .brand { width: 40px; justify-content: center; }
+	.collapsed .tog { display: none; }
 	.collapsed .brand .word { display: none; }
 	.search { margin-bottom: 8px; }
 	.scroll { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; margin: 0 -4px; padding: 0 4px; scrollbar-width: thin; }

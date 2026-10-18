@@ -92,7 +92,7 @@
   --accent-fill-hover: #c42a21;
   --text-on-red: #ffffff;
   --ok: #248a3d; --wait: #b25000; --fail: #d70015; --info: #0071e3;
-  --ok-text: #1e7b34; --wait-text: #b25000; --fail-text: #d70015; --info-text: #0068d1;
+  --ok-text: #1a6e2e; --wait-text: #8f4000; --fail-text: #b3000f; --info-text: #0068d1;
   --scrim: rgb(0 0 0 / 40%);
   --shadow-card: 0 1px 2px rgb(0 0 0 / 6%), 0 4px 12px rgb(0 0 0 / 6%);
   --shadow-lift: 0 2px 4px rgb(0 0 0 / 8%), 0 12px 28px rgb(0 0 0 / 14%);

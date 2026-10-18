@@ -19,6 +19,7 @@
 		description,
 		breadcrumb = [],
 		vtName,
+		crumbLabel = 'Breadcrumb',
 		actions
 	}: {
 		title: string;
@@ -32,6 +33,7 @@
 		description?: string;
 		breadcrumb?: { href: string; label: string }[];
 		vtName?: string;
+		crumbLabel?: string;
 		actions?: Snippet;
 	} = $props();
 
@@ -50,15 +52,15 @@
 	const art = $derived(backdrop || poster || null);
 </script>
 
-<section class="ui-hero" aria-label={title}>
+<div class="ui-hero">
 	<div class="bg" class:blur={!backdrop && !!poster} use:viewTransitionName={vtName}>
 		{#if art}<img src={art} alt="" decoding="async" />{/if}
 	</div>
 	<div class="shade" aria-hidden="true"></div>
 	<div class="content">
 		{#if breadcrumb.length}
-			<nav class="crumbs" aria-label="Breadcrumb">
-				{#each breadcrumb as c, i (c.href)}
+			<nav class="crumbs" aria-label={crumbLabel}>
+				{#each breadcrumb as c, i (i)}
 					{#if i > 0}<span aria-hidden="true">›</span>{/if}
 					<a href={c.href} aria-current={i === breadcrumb.length - 1 ? 'page' : undefined}>{c.label}</a>
 				{/each}
@@ -78,10 +80,10 @@
 		{/if}
 		{#if actions}<div class="actions">{@render actions()}</div>{/if}
 	</div>
-</section>
+</div>
 
 <style>
-	.ui-hero { position: relative; isolation: isolate; min-height: clamp(380px, 56vw, 620px); display: flex; align-items: flex-end; overflow: hidden; border-radius: var(--r-panel); background: #111; color: #fff; }
+	.ui-hero { position: relative; isolation: isolate; min-height: clamp(360px, 40vw, 600px); display: flex; align-items: flex-end; overflow: hidden; border-radius: var(--r-panel); background: #111; color: #fff; }
 	.bg { position: absolute; inset: 0; z-index: -2; }
 	.bg img { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
 	.bg.blur img { filter: blur(40px) saturate(140%); transform: scale(1.2); }
