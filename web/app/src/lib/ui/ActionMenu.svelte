@@ -26,14 +26,14 @@
 
 <style>
 	.ui-actmenu { display: inline-flex; }
-	.ui-actmenu :global(.ui-pop > .trigger) { width: auto; height: auto; min-width: 64px; max-width: 84px; padding: 2px; flex-direction: column; gap: 6px; border-radius: 14px; background: none; color: #fff; }
-	.ui-actmenu :global(.ui-pop > .trigger:hover), .ui-actmenu :global(.ui-pop > .trigger[aria-expanded='true']) { background: none; color: #fff; }
+	.ui-actmenu :global(.ui-pop > .trigger) { width: auto; height: auto; min-width: 64px; max-width: 84px; padding: 2px; flex-direction: column; gap: 6px; border-radius: 14px; background: none; color: var(--on-art); }
+	.ui-actmenu :global(.ui-pop > .trigger:hover), .ui-actmenu :global(.ui-pop > .trigger[aria-expanded='true']) { background: none; color: var(--on-art); }
 	.ui-actmenu :global(.ui-pop > .trigger:focus-visible) { box-shadow: none; }
-	.ui-actmenu :global(.ui-pop > .trigger:focus-visible .dot) { box-shadow: 0 0 0 2px #111, 0 0 0 4px #fff; }
-	.ui-actmenu :global(.ui-pop > .trigger[aria-expanded='true'] .dot) { background: #fff; color: #111; }
+	.ui-actmenu :global(.ui-pop > .trigger:focus-visible .dot) { box-shadow: 0 0 0 2px var(--on-art-ink), 0 0 0 4px var(--on-art); }
+	.ui-actmenu :global(.ui-pop > .trigger[aria-expanded='true'] .dot) { background: var(--on-art); color: var(--on-art-ink); }
 	.ui-actmenu :global(.panel) { color: var(--text); }
-	.dot { width: 52px; height: 52px; display: grid; place-items: center; border-radius: 50%; background: rgb(255 255 255 / 16%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 22%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); transition: background var(--dur-fast) var(--ease-out); }
-	.ui-actmenu :global(.ui-pop > .trigger:hover .dot) { background: rgb(255 255 255 / 28%); }
-	.cap { font: var(--t-footnote); font-size: 12px; font-weight: 600; line-height: 1.2; text-align: center; color: rgb(255 255 255 / 92%); }
+	.dot { width: 52px; height: 52px; display: grid; place-items: center; border-radius: 50%; background: var(--on-art-fill); box-shadow: inset 0 0 0 1px var(--on-art-ring); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); transition: background var(--dur-fast) var(--ease-out); }
+	.ui-actmenu :global(.ui-pop > .trigger:hover .dot) { background: var(--on-art-fill-hover); }
+	.cap { font: var(--t-footnote); font-size: 12px; font-weight: 600; line-height: 1.2; text-align: center; color: var(--on-art-soft); }
 	@media (max-width: 400px) { .ui-actmenu :global(.ui-pop > .trigger) { min-width: 56px; } .dot { width: 48px; height: 48px; } }
 </style>

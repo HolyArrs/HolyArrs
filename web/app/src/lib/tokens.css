@@ -10,6 +10,20 @@
   --font-features: 'ss01' 0, 'cv11' 0;
   --tracking-body: -0.006em;
 
+  /* On artwork: controls and text over a poster or backdrop look the same in
+     light and dark, because the art under them is always darkened. */
+  --on-art: #fff;
+  --on-art-ink: #111;
+  --on-art-soft: rgb(255 255 255 / 90%);
+  --on-art-muted: rgb(255 255 255 / 84%);
+  --on-art-fill: rgb(255 255 255 / 16%);
+  --on-art-fill-hover: rgb(255 255 255 / 28%);
+  --on-art-fill-strong: rgb(255 255 255 / 86%);
+  --on-art-ring: rgb(255 255 255 / 22%);
+  --on-art-scrim: rgb(0 0 0 / 86%);
+  --on-art-scrim-mid: rgb(0 0 0 / 55%);
+  --on-art-scrim-none: rgb(0 0 0 / 0%);
+
   /* Type scale (spec). Each is a font shorthand; pair with its tracking. */
   --t-large-title: 700 34px / 1.12 var(--font-display);
   --t-large-title-track: -0.022em;

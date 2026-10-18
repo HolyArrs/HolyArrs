@@ -41,8 +41,8 @@
 	.tinted:hover { background: var(--surface-3); }
 	.filled { background: var(--accent-fill); color: var(--text-on-red); }
 	.filled:hover { background: var(--accent-fill-hover); }
-	.glass { background: rgb(255 255 255 / 18%); color: #fff; backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 22%); }
-	.glass:hover { background: rgb(255 255 255 / 28%); }
+	.glass { background: var(--on-art-fill); color: var(--on-art); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); box-shadow: inset 0 0 0 1px var(--on-art-ring); }
+	.glass:hover { background: var(--on-art-fill-hover); }
 	.ui-ibtn:disabled { opacity: .45; cursor: not-allowed; }
 	.ui-ibtn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.ui-ibtn[aria-pressed='true'], .ui-ibtn[aria-expanded='true'] { background: var(--surface-3); color: var(--text); }
