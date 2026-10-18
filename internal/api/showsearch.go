@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/library"
 	"github.com/CoderLuii/holyarrs/internal/source"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
@@ -128,31 +129,16 @@ func (a *API) searchShow(w http.ResponseWriter, r *http.Request, t domain.Title,
 	default:
 		// The whole show: every season with an episode kept up to date
 		// that is looking for a copy, in a show and Version kept up to date.
-		rows, err := db.QueryContext(ctx, `SELECT DISTINCT p.id, s.version_id FROM parts p JOIN items i ON i.part_id = p.id JOIN slots s ON s.item_id = i.id
-			JOIN titles t ON t.id = p.title_id JOIN versions v ON v.id = s.version_id
-			WHERE p.title_id = ? AND t.keep_up_to_date = 1 AND v.keep_up_to_date = 1 AND p.keep_up_to_date = 1 AND i.keep_up_to_date = 1 AND i.dropped_at IS NULL
-			AND s.state IN ('wanted', 'better_wanted', 'failed', 'rejected', 'stalled') ORDER BY p.number, s.version_id`, t.ID)
+		list, err := library.ShowSeasonsToSearch(ctx, db, t.ID)
 		if err != nil {
 			internal(w, err)
 			return
 		}
-		type pv struct{ part, ver int64 }
-		var list []pv
-		for rows.Next() {
-			var x pv
-			if err := rows.Scan(&x.part, &x.ver); err != nil {
-				rows.Close()
-				internal(w, err)
-				return
-			}
-			list = append(list, x)
-		}
-		rows.Close()
 		for _, x := range list {
-			if !verOK(x.ver) {
+			if !verOK(x.VersionID) {
 				continue
 			}
-			if err := season(x.part, x.ver, true); err != nil {
+			if err := season(x.PartID, x.VersionID, true); err != nil {
 				internal(w, err)
 				return
 			}

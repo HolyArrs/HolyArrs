@@ -135,14 +135,20 @@ func (a *API) showSource(name string) (metadata.ShowProvider, error) {
 	return a.s.Library.Shows.Get(name)
 }
 
-const addShowHelp = `send {"id": "tmdb:<number>"} (or tvdb:, tvmaze:, imdb:) with optional library_folder_id, pick_rules_id, keep_up_to_date, seasons (all, future, latest, none), new_seasons (all, none), episode_order (aired, daily, absolute), details_source (tmdb, tvmaze, tvdb), more_versions ([{"label": "4K", "pick_rules_id": <id>, "library_folder_id": <id>}])`
+const addShowHelp = `send {"id": "tmdb:<number>"} (or tvdb:, tvmaze:, imdb:) with optional library_folder_id, pick_rules_id, keep_up_to_date, seasons (all, future, latest, none), new_seasons (all, none), episode_order (aired, daily, absolute), details_source (tmdb, tvmaze, tvdb), search_on_add, more_versions ([{"label": "4K", "pick_rules_id": <id>, "library_folder_id": <id>}])`
 
 func (a *API) addShow(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		ID string `json:"id"`
 		library.ShowAddOptions
 	}
-	if !decode(w, r, &body, addShowHelp) {
+	sent, ok := decodeKeys(w, r, &body, addShowHelp)
+	if !ok {
+		return
+	}
+	o := &body.ShowAddOptions
+	if err := a.kindDefaultsFor(r.Context(), "show", sent, &o.LibraryFolderID, &o.PickRulesID, &o.KeepUpToDate, &o.SearchOnAdd); err != nil {
+		internal(w, err)
 		return
 	}
 	if strings.TrimSpace(body.ID) == "" {

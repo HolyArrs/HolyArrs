@@ -132,6 +132,8 @@ func (s *Service) next(ctx context.Context, r *jobs.Run, titleID int64) error {
 		return err
 	case KindSearchSlot:
 		return s.searchTitle(ctx, titleID, by)
+	case stepSearchShow:
+		return s.searchShow(ctx, titleID, by)
 	}
 	return fmt.Errorf("unknown next step %q", kind)
 }

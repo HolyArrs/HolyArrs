@@ -89,7 +89,13 @@ func (a *API) addTitle(w http.ResponseWriter, r *http.Request) {
 		ID string `json:"id"` // "tmdb:693134" or "imdb:tt15239678"
 		library.AddOptions
 	}
-	if !decode(w, r, &body, `send {"id": "tmdb:<number>"} with optional library_folder_id, pick_rules_id, keep_up_to_date, release_gate, gate_delay_days, search_on_add, more_versions`) {
+	sent, ok := decodeKeys(w, r, &body, `send {"id": "tmdb:<number>"} with optional library_folder_id, pick_rules_id, keep_up_to_date, release_gate, gate_delay_days, search_on_add, more_versions`)
+	if !ok {
+		return
+	}
+	o := &body.AddOptions
+	if err := a.kindDefaultsFor(r.Context(), "movie", sent, &o.LibraryFolderID, &o.PickRulesID, &o.KeepUpToDate, &o.SearchOnAdd); err != nil {
+		internal(w, err)
 		return
 	}
 	if body.ID == "" {

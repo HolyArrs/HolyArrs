@@ -145,6 +145,10 @@
             "format": "int64",
             "type": "integer"
           },
+          "search_on_add": {
+            "description": "Search the whole show after the folder look (left out: the saved Movies and TV default, else off).",
+            "type": "boolean"
+          },
           "seasons": {
             "description": "Which seasons are kept up to date: all (specials only when the setting says so), only episodes still to air, the latest season, or none. Default from the show settings.",
             "enum": [
@@ -2372,6 +2376,27 @@
               "type": "integer"
             },
             "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "KindDefaults": {
+        "properties": {
+          "keep_up_to_date": {
+            "type": "boolean"
+          },
+          "library_folder_id": {
+            "description": "0 means the first folder of that kind.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "pick_rules_id": {
+            "description": "0 means the folder's own Pick rules.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "search_on_add": {
+            "type": "boolean"
           }
         },
         "type": "object"
@@ -5795,6 +5820,18 @@
           },
           "release_gate": {
             "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "TitleDefaults": {
+        "description": "Movies and TV defaults: what a new movie or show gets for each field the add leaves out.",
+        "properties": {
+          "movie": {
+            "$ref": "#/components/schemas/KindDefaults"
+          },
+          "show": {
+            "$ref": "#/components/schemas/KindDefaults"
           }
         },
         "type": "object"
@@ -16629,6 +16666,74 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/settings/title-defaults": {
+      "get": {
+        "description": "What a new movie or show gets when POST /titles or POST /shows leaves a field out. Built-in values: keep_up_to_date on for both, search_on_add on for movies and off for shows, folder and Pick rules 0. A built-in value is only shown; adds use a default only after it has been saved.",
+        "operationId": "getTitleDefaults",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TitleDefaults"
+                }
+              }
+            },
+            "description": "The defaults."
+          }
+        },
+        "summary": "Movies and TV defaults",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "read"
+      },
+      "put": {
+        "description": "Any field left out keeps its value; a save stores all eight values. A folder must exist and be of that kind; Pick rules must exist and be for movies and shows (music Pick rules answer 400). A saved folder or Pick rules removed later are skipped by adds, which then use the built-in choice.",
+        "operationId": "putTitleDefaults",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TitleDefaults"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TitleDefaults"
+                }
+              }
+            },
+            "description": "Saved."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "A value is not valid."
+          }
+        },
+        "summary": "Change the Movies and TV defaults",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/settings/tmdb-token": {
       "get": {
         "description": "Masked, and whether it comes from a file.",
@@ -16876,7 +16981,7 @@
     },
     "/api/v1/shows": {
       "post": {
-        "description": "Adds a show with which seasons to keep up to date, what happens to new seasons, its episode order and details source. Seasons, episodes and one Slot per episode are written at once; each episode is not out yet until it airs, then missing. A folder look follows as a Job. Episodes are not searched yet (stage 3.2). With more_versions, each extra Version (such as 4K) gets one Slot per episode too.",
+        "description": "Adds a show with which seasons to keep up to date, what happens to new seasons, its episode order and details source. Seasons, episodes and one Slot per episode are written at once; each episode is not out yet until it airs, then missing. A folder look follows as a Job. With search_on_add, the whole show is searched after the folder look, the same search POST /titles/{id}/search starts for a show. With more_versions, each extra Version (such as 4K) gets one Slot per episode too. A field the request leaves out (library_folder_id, pick_rules_id, keep_up_to_date, search_on_add) takes the saved Movies and TV default for shows, only when that default has been saved.",
         "operationId": "addShow",
         "requestBody": {
           "content": {
@@ -18479,7 +18584,7 @@
         "x-holyarrs-scope": "read"
       },
       "post": {
-        "description": "Looks the movie up, adds it with a main Version and any more Versions, then queues a details refresh, a folder look and, when asked, a search.",
+        "description": "Looks the movie up, adds it with a main Version and any more Versions, then queues a details refresh, a folder look and, when asked, a search. A field the request leaves out (library_folder_id, pick_rules_id, keep_up_to_date, search_on_add) takes the saved Movies and TV default for movies, only when that default has been saved (GET /settings/title-defaults); with nothing saved the add behaves as before.",
         "operationId": "addTitle",
         "requestBody": {
           "content": {
