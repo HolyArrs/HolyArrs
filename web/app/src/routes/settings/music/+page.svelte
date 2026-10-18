@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Field from '#lib/ui/Field.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	// Settings > Music: what a new artist gets by default, which Pressing is
@@ -57,19 +58,17 @@
 {:else}
 	<form class="card" onsubmit={save}>
 		<h2 class="h3">A new artist</h2>
-		<div class="field" style="margin-top: var(--s-4)">
-			<label for="m-albums">Albums to keep up to date</label>
+		<Field id="m-albums" label="Albums to keep up to date" style="margin-top: var(--s-4)">
 			<select id="m-albums" class="input" bind:value={settings.album_choice}>
 				{#each albumChoices as [v, l] (v)}<option value={v}>{l}</option>{/each}
 			</select>
 			<span class="hint">{albumChoices.find(([v]) => v === settings.album_choice)?.[2]}</span>
-		</div>
-		<div class="field">
-			<label for="m-new">New albums</label>
+		</Field>
+		<Field id="m-new" label="New albums">
 			<select id="m-new" class="input" bind:value={settings.new_albums}>
 				{#each newAlbumChoices as [v, l] (v)}<option value={v}>{l}</option>{/each}
 			</select>
-		</div>
+		</Field>
 		<fieldset class="kinds">
 			<legend class="small"><b>Album kinds</b> <span class="hint">Albums of other kinds are listed but left out.</span></legend>
 			<div class="boxes">
@@ -96,13 +95,12 @@
 		</fieldset>
 
 		<h2 class="h3 gap">Pressings</h2>
-		<div class="field" style="margin-top: var(--s-4)">
-			<label for="m-rule">Which Pressing an album follows</label>
+		<Field id="m-rule" label="Which Pressing an album follows" style="margin-top: var(--s-4)">
 			<select id="m-rule" class="input" bind:value={settings.pressing_rule}>
 				{#each pressingRules as [v, l] (v)}<option value={v}>{l}</option>{/each}
 			</select>
 			<span class="hint">{pressingRules.find(([v]) => v === settings.pressing_rule)?.[2]} A Pressing picked by hand on the album page stays.</span>
-		</div>
+		</Field>
 
 		<h2 class="h3 gap">MusicBrainz</h2>
 		<div class="field" style="margin-top: var(--s-4)">
@@ -110,10 +108,9 @@
 			<input id="m-url" class="input mono" bind:value={settings.musicbrainz_url} placeholder="https://musicbrainz.org" autocomplete="off" spellcheck="false" />
 			<span class="hint">Leave empty for musicbrainz.org. A mirror of your own works too. HolyArrs asks at most once a second.</span>
 		</div>
-		<div class="field">
-			<label for="m-hours">Keep answers for (hours)</label>
+		<Field id="m-hours" label="Keep answers for (hours)">
 			<input id="m-hours" class="input narrow" type="number" min="1" max="720" bind:value={settings.cache_hours} />
-		</div>
+		</Field>
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 		<div class="row" style="margin-top: var(--s-5)">
 			<Button variant="primary" type="submit" disabled={busy || !settings.album_types.length || !settings.secondary_types.length || !settings.release_statuses.length} aria-busy={busy}>Save</Button>

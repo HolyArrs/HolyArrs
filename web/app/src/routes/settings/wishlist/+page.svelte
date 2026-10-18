@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Field from '#lib/ui/Field.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { to } from '#lib/paths.ts';
@@ -101,61 +102,54 @@
 				have no limit. Taking an ask back or a turned down ask frees it up; joining someone else's ask costs nothing.
 			</span>
 		</fieldset>
-		<div class="field">
-			<label for="ask-folder">Library folder for approved movie asks</label>
+		<Field id="ask-folder" label="Library folder for approved movie asks">
 			<select id="ask-folder" class="input" bind:value={settings.library_folder_id}>
 				<option value={0}>The first movie folder</option>
 				{#each movieFolders as f (f.id)}
 					<option value={f.id}>{f.label || f.path} ({f.path})</option>
 				{/each}
 			</select>
-		</div>
-		<div class="field">
-			<label for="ask-rules">Pick rules for approved movie asks</label>
+		</Field>
+		<Field id="ask-rules" label="Pick rules for approved movie asks">
 			<select id="ask-rules" class="input" bind:value={settings.pick_rules_id}>
 				<option value={0}>The folder's own Pick rules</option>
 				{#each movieRules as r (r.id)}
 					<option value={r.id}>{r.name}</option>
 				{/each}
 			</select>
-		</div>
-		<div class="field">
-			<label for="ask-show-folder">Library folder for approved show asks</label>
+		</Field>
+		<Field id="ask-show-folder" label="Library folder for approved show asks">
 			<select id="ask-show-folder" class="input" bind:value={settings.show_library_folder_id}>
 				<option value={0}>The first show folder</option>
 				{#each showFolders as f (f.id)}
 					<option value={f.id}>{f.label || f.path} ({f.path})</option>
 				{/each}
 			</select>
-		</div>
-		<div class="field">
-			<label for="ask-show-rules">Pick rules for approved show asks</label>
+		</Field>
+		<Field id="ask-show-rules" label="Pick rules for approved show asks">
 			<select id="ask-show-rules" class="input" bind:value={settings.show_pick_rules_id}>
 				<option value={0}>The folder's own Pick rules</option>
 				{#each showRules as r (r.id)}
 					<option value={r.id}>{r.name}</option>
 				{/each}
 			</select>
-		</div>
-		<div class="field">
-			<label for="ask-music-folder">Library folder for approved music asks</label>
+		</Field>
+		<Field id="ask-music-folder" label="Library folder for approved music asks">
 			<select id="ask-music-folder" class="input" bind:value={settings.music_library_folder_id}>
 				<option value={0}>The first music folder</option>
 				{#each musicFolders as f (f.id)}
 					<option value={f.id}>{f.label || f.path} ({f.path})</option>
 				{/each}
 			</select>
-		</div>
-		<div class="field">
-			<label for="ask-music-rules">Pick rules for approved music asks</label>
+		</Field>
+		<Field id="ask-music-rules" label="Pick rules for approved music asks" hint="Whoever approves can pick another folder and Pick rules for one ask. An approved music ask adds the artist with only the albums asked for kept up to date.">
 			<select id="ask-music-rules" class="input" bind:value={settings.music_pick_rules_id}>
 				<option value={0}>The folder's own Pick rules</option>
 				{#each musicRules as r (r.id)}
 					<option value={r.id}>{r.name}</option>
 				{/each}
 			</select>
-			<span class="hint">Whoever approves can pick another folder and Pick rules for one ask. An approved music ask adds the artist with only the albums asked for kept up to date.</span>
-		</div>
+		</Field>
 		<label class="checkline">
 			<input type="checkbox" bind:checked={settings.search_on_approve} />
 			<span><b>Search when approved</b><br /><span class="hint">Start looking for a Release as soon as a movie ask is approved. Approved shows are looked for at the next feed check and each night.</span></span>

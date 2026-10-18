@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -249,63 +250,51 @@
 					</div>
 				</fieldset>
 			{/if}
-			<div class="field" style="margin-top: var(--s-4)">
-				<label for="dl-name">Name</label>
+			<Field id="dl-name" label="Name" style="margin-top: var(--s-4)">
 				<input id="dl-name" class="input" bind:value={form.name} maxlength="80" required />
-			</div>
-			<div class="field">
-				<label for="dl-url">Address</label>
+			</Field>
+			<Field id="dl-url" label="Address" hint="The address of its web page. For SABnzbd use the IP address, or add HolyArrs' name to its list of allowed host names.">
 				<input id="dl-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" required placeholder={addressPlaceholder(form.kind)} />
-				<span class="hint">The address of its web page. For SABnzbd use the IP address, or add HolyArrs' name to its list of allowed host names.</span>
-			</div>
+			</Field>
 			{#if hasUsername(form.kind)}
 				<div class="two">
-					<div class="field">
-						<label for="dl-user">Sign-in name</label>
+					<Field id="dl-user" label="Sign-in name">
 						<input id="dl-user" class="input" bind:value={form.username} autocomplete="off" />
 						<span class="hint">Leave empty when {kindWords[form.kind]} does not require it from this network.</span>
-					</div>
-					<div class="field">
-						<label for="dl-secret">Password</label>
+					</Field>
+					<Field id="dl-secret" label="Password" hint="Kept encrypted. Leave as it is to keep the stored one.">
 						<input id="dl-secret" class="input" type="password" bind:value={form.secret} autocomplete="new-password" />
-						<span class="hint">Kept encrypted. Leave as it is to keep the stored one.</span>
-					</div>
+					</Field>
 				</div>
 			{:else}
-				<div class="field">
-					<label for="dl-secret">{form.kind === 'sabnzbd' ? 'API key' : 'Password'}</label>
+				<Field id="dl-secret" label={form.kind === 'sabnzbd' ? 'API key' : 'Password'}>
 					<input id="dl-secret" class="input" class:mono={form.kind === 'sabnzbd'} type="password" bind:value={form.secret} autocomplete="new-password" spellcheck="false" required={isNew} />
 					<span class="hint">{form.kind === 'sabnzbd' ? 'In SABnzbd under Config, General.' : 'The Deluge Web UI password.'} Kept encrypted. Moving the address to another host needs it again.</span>
-				</div>
+				</Field>
 			{/if}
 			{#if form.kind === 'deluge'}
 				<p class="notice">The Deluge Web UI must already be connected to the intended daemon, and that daemon must have the Label plugin enabled.</p>
 			{/if}
 			<div class="two">
-				<div class="field">
-					<label for="dl-cat">Category</label>
+				<Field id="dl-cat" label="Category">
 					<input id="dl-cat" class="input" bind:value={form.category} maxlength="64" required />
 					<span class="hint">{categoryHint(form.kind)} HolyArrs only follows downloads in it.</span>
-				</div>
-				<div class="field">
-					<label for="dl-prio">Priority</label>
+				</Field>
+				<Field id="dl-prio" label="Priority" hint="1 to 50; 1 is used first.">
 					<input id="dl-prio" class="input" type="number" min="1" max="50" bind:value={form.priority} />
-					<span class="hint">1 to 50; 1 is used first.</span>
-				</div>
+				</Field>
 			</div>
 			<details class="more" open={form.path_map.length > 0}>
 				<summary>Different folder names</summary>
 				<p class="hint">When the Downloader sees the download folder under another name (another container), say both names.</p>
 				{#each form.path_map as p, i (i)}
 					<div class="two">
-						<div class="field">
-							<label for="pm-theirs-{i}">Downloader's path</label>
+						<Field id="pm-theirs-{i}" label="Downloader's path">
 							<input id="pm-theirs-{i}" class="input mono" bind:value={p.theirs} placeholder="/data/downloads" />
-						</div>
-						<div class="field">
-							<label for="pm-ours-{i}">HolyArrs' path</label>
+						</Field>
+						<Field id="pm-ours-{i}" label="HolyArrs' path">
 							<input id="pm-ours-{i}" class="input mono" bind:value={p.ours} placeholder="/downloads" />
-						</div>
+						</Field>
 					</div>
 				{/each}
 				<Button variant="plain" type="button" style="margin-top: var(--s-3)" onclick={() => form.path_map.push({ theirs: '', ours: '' })}>Add a path pair</Button>
@@ -387,16 +376,12 @@
 <form class="card settings" onsubmit={saveSettings} aria-labelledby="h-wrong">
 	<h2 id="h-wrong" class="h2">When downloads go wrong</h2>
 	<div class="two">
-		<div class="field">
-			<label for="st-stall">Stalled after (hours without progress)</label>
+		<Field id="st-stall" label="Stalled after (hours without progress)" hint="Waiting its turn or paused never counts.">
 			<input id="st-stall" class="input" type="number" min="1" max="168" step="0.5" bind:value={settings.stalled_after_hours} />
-			<span class="hint">Waiting its turn or paused never counts.</span>
-		</div>
-		<div class="field">
-			<label for="st-act">Give up and try the next Release after (hours)</label>
+		</Field>
+		<Field id="st-act" label="Give up and try the next Release after (hours)" hint="Counted from the last progress.">
 			<input id="st-act" class="input" type="number" min="1" max="720" step="0.5" bind:value={settings.stalled_act_hours} />
-			<span class="hint">Counted from the last progress.</span>
-		</div>
+		</Field>
 	</div>
 	<label class="checkline">
 		<input type="checkbox" bind:checked={settings.remove_failed} />
@@ -431,10 +416,9 @@
 		<input type="checkbox" bind:checked={settings.try_next_downloader} />
 		<span><b>Try the next Downloader</b><br /><span class="hint">When the first one cannot take a Release, send it to the next one of the same kind.</span></span>
 	</label>
-	<div class="field">
-		<label for="st-gap">Seconds between sends to one Downloader</label>
+	<Field id="st-gap" label="Seconds between sends to one Downloader">
 		<input id="st-gap" class="input narrow" type="number" min="0" max="60" step="0.5" bind:value={settings.grab_spacing_seconds} />
-	</div>
+	</Field>
 	{#if setError}<p class="form-error" role="alert">{setError}</p>{/if}
 	<div class="row" style="margin-top: var(--s-5)">
 		<Button variant="primary" type="submit" disabled={setBusy} aria-busy={setBusy}>Save settings</Button>
@@ -503,7 +487,7 @@
 		gap: var(--s-3);
 		margin-top: var(--s-4);
 	}
-	.two .field + .field {
+	.two :global(.field + .field) {
 		margin-top: 0;
 	}
 	.group {

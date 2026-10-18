@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -204,11 +205,10 @@
 	<SettingsCard title="Passwords">
 		<form class="passwords" onsubmit={saveMin}>
 			<fieldset disabled={!isOwner}>
-				<div class="field">
-					<label for="min-pw">Shortest password allowed</label>
+				<Field id="min-pw" label="Shortest password allowed">
 					<input id="min-pw" class="input" style="max-width: 120px" type="number" min="4" max="64" step="1" required bind:value={minLength} aria-describedby="min-pw-hint min-pw-warn" />
 					<span id="min-pw-hint" class="hint">4 to 64 characters. It counts for new passwords: first setup, invites, password changes and reset-owner. Passwords people already have keep working.</span>
-				</div>
+				</Field>
 				<p id="min-pw-warn" class="notice warn">
 					Short passwords are easy to guess. HolyArrs slows down repeated wrong sign-ins, which helps, but it does not make a short
 					password safe. If HolyArrs can be reached from outside your home, use 12 or more.
@@ -239,31 +239,25 @@
 						<span>Show the {wayWord[w]} button on the sign-in page</span>
 					</label>
 					{#if w === 'plex'}
-						<div class="field">
-							<label for="{w}-server">Server id people must share (optional)</label>
+						<Field id="{w}-server" label="Server id people must share (optional)" hint="Your Plex server's machine identifier. When set, only people your server is shared with may join.">
 							<input id="{w}-server" class="input mono" bind:value={ways[w].server_id} maxlength="200" spellcheck="false" />
-							<span class="hint">Your Plex server's machine identifier. When set, only people your server is shared with may join.</span>
-						</div>
+						</Field>
 					{:else}
-						<div class="field">
-							<label for="{w}-url">{wayWord[w]} server address</label>
+						<Field id="{w}-url" label="{wayWord[w]} server address">
 							<input id="{w}-url" class="input mono" bind:value={ways[w].url} placeholder="http://192.168.1.10:8096" maxlength="500" spellcheck="false" />
-						</div>
+						</Field>
 					{/if}
-					<div class="field">
-						<label for="{w}-join">Who may join the first time</label>
+					<Field id="{w}-join" label="Who may join the first time" hint="New people join as Members who may ask for titles. Change them on the Users page.">
 						<select id="{w}-join" class="input" bind:value={ways[w].join}>
 							<option value="nobody">Nobody new; only people already linked</option>
 							<option value="list">Only the names or emails below</option>
 							<option value="everyone">Everyone {w === 'plex' ? 'with a Plex account (who shares the server, when set)' : `with an account on the ${wayWord[w]} server`}</option>
 						</select>
-						<span class="hint">New people join as Members who may ask for titles. Change them on the Users page.</span>
-					</div>
+					</Field>
 					{#if ways[w].join === 'list'}
-						<div class="field">
-							<label for="{w}-allow">Names or emails, one per line</label>
+						<Field id="{w}-allow" label="Names or emails, one per line">
 							<textarea id="{w}-allow" class="input" rows="3" bind:value={ways[w].allow} maxlength="4000"></textarea>
-						</div>
+						</Field>
 					{/if}
 					{#if isOwner}
 						<Button variant="primary" type="submit" disabled={savingWay === w} aria-busy={savingWay === w}>Save</Button>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Field from '#lib/ui/Field.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { onMount } from 'svelte';
@@ -93,11 +94,10 @@
 		</div>
 		{#if masked}<p class="small muted">Current key: <span class="mono">{masked}</span></p>{/if}
 		<form onsubmit={save} style="margin-top: var(--s-4)">
-			<div class="field">
-				<label for="tmdb">{masked ? 'Replace the key' : 'Paste the key'}</label>
+			<Field id="tmdb" label={masked ? 'Replace the key' : 'Paste the key'}>
 				<input id="tmdb" class="input mono" type="password" bind:value={newKey} autocomplete="off" spellcheck="false" placeholder="eyJhbGciOi…" />
 				<span class="hint">Find it on themoviedb.org under Settings, API: the long "API Read Access Token", not the short API key.</span>
-			</div>
+			</Field>
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<Button variant="primary" type="submit" disabled={saving} aria-busy={saving} style="margin-top: var(--s-4)">Save the key</Button>
 		</form>

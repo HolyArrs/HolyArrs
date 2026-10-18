@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
@@ -292,12 +293,11 @@
 				<h2 id="h-read" class="h2"><span class="num" aria-hidden="true">1</span> Read your apps</h2>
 				<form onsubmit={read} class="read">
 					<div class="two">
-						<div class="field">
-							<label for="mv-app">App</label>
+						<Field id="mv-app" label="App">
 							<select id="mv-app" class="input" bind:value={kind}>
 								{#each apps as a (a.kind)}<option value={a.kind}>{a.name} ({a.what})</option>{/each}
 							</select>
-						</div>
+						</Field>
 						<fieldset class="field way">
 							<legend class="label">How</legend>
 							<label class="checkline"><input type="radio" name="way" value="api" bind:group={way} /> Through the app (address and key)</label>
@@ -315,41 +315,34 @@
 								>
 							</label>
 						{/if}
-						<div class="field">
-							<label for="mv-url">Address</label>
+						<Field id="mv-url" label="Address">
 							<input id="mv-url" class="input mono" type="url" bind:value={address} placeholder={withSaved ? saved?.address : 'http://10.0.0.5:7878'} required={!withSaved} />
-						</div>
+						</Field>
 						{#if withSaved}
 							<!-- the saved key is used on the server; nothing to type -->
 						{:else if qbit}
 							<div class="two">
-								<div class="field">
-									<label for="mv-user">User name</label>
+								<Field id="mv-user" label="User name">
 									<input id="mv-user" class="input" bind:value={username} autocomplete="off" />
-								</div>
-								<div class="field">
-									<label for="mv-pass">Password</label>
+								</Field>
+								<Field id="mv-pass" label="Password">
 									<input id="mv-pass" class="input" type="password" bind:value={signWord} autocomplete="new-password" />
-								</div>
+								</Field>
 							</div>
 						{/if}
 						{#if !withSaved}
-							<div class="field">
-								<label for="mv-key">{qbit ? 'API key (qBittorrent 5.2 and later, instead of a password)' : 'API key'}</label>
+							<Field id="mv-key" label={qbit ? 'API key (qBittorrent 5.2 and later, instead of a password)' : 'API key'} hint="Used for this one read, then forgotten: never saved, logged or shown.">
 								<input id="mv-key" class="input mono" type="password" bind:value={key} autocomplete="new-password" spellcheck="false" required={!qbit} />
-								<span class="hint">Used for this one read, then forgotten: never saved, logged or shown.</span>
-							</div>
+							</Field>
 						{/if}
 						<label class="checkline">
 							<input type="checkbox" bind:checked={local} />
 							<span><b>The app is on my home network</b><br /><span class="hint">Lets this read reach local addresses.</span></span>
 						</label>
 					{:else}
-						<div class="field">
-							<label for="mv-path">Backup path on this server</label>
+						<Field id="mv-path" label="Backup path on this server" hint="A backup zip, the app's config folder, or one database or settings file.">
 							<input id="mv-path" class="input mono" bind:value={backupPath} placeholder="/backups/radarr_backup.zip" required />
-							<span class="hint">A backup zip, the app's config folder, or one database or settings file.</span>
-						</div>
+						</Field>
 					{/if}
 					{#if readError}<p class="form-error" role="alert">{readError}</p>{/if}
 					<div class="row" style="margin-top: var(--s-4)">
@@ -393,14 +386,12 @@
 					<p class="hint">When the old app saw a folder under another path (another container), say both paths.</p>
 					{#each rules as r, i (i)}
 						<div class="rule">
-							<div class="field">
-								<label for="rule-from-{i}">Old app's path</label>
+							<Field id="rule-from-{i}" label="Old app's path">
 								<input id="rule-from-{i}" class="input mono" bind:value={r.from} placeholder="/movies" aria-invalid={ruleErrors[i] ? 'true' : undefined} oninput={stale} />
-							</div>
-							<div class="field">
-								<label for="rule-to-{i}">Path here</label>
+							</Field>
+							<Field id="rule-to-{i}" label="Path here">
 								<input id="rule-to-{i}" class="input mono" bind:value={r.to} placeholder="/data/movies" aria-invalid={ruleErrors[i] ? 'true' : undefined} oninput={stale} />
-							</div>
+							</Field>
 							<IconButton icon="x" label="Remove path rule {i + 1}" type="button" onclick={() => ((rules = rules.filter((_, j) => j !== i)), stale())} />
 							{#if ruleErrors[i]}<p class="form-error rule-err" role="alert">{ruleErrors[i]}</p>{/if}
 						</div>
@@ -602,7 +593,7 @@
 		padding: 0;
 		margin: 0;
 	}
-	.read .field + .field,
+	.read :global(.field + .field),
 	.read .checkline {
 		margin-top: var(--s-4);
 	}
@@ -693,7 +684,7 @@
 		.rule {
 			grid-template-columns: minmax(0, 1fr) auto;
 		}
-		.rule .field:first-child {
+		.rule :global(.field:first-child) {
 			grid-column: 1 / -1;
 		}
 	}

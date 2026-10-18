@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -165,16 +166,12 @@
 {:else}
 	<form class="stack" onsubmit={save}>
 		<SettingsCard title="Movie names">
-			<div class="field">
-				<label for="file-pattern">File name pattern</label>
+			<Field id="file-pattern" label="File name pattern" hint="Words in braces are filled in for each movie. A word with nothing to fill in is dropped with its brackets.">
 				<input id="file-pattern" class="input mono" bind:value={ns.file_pattern} autocomplete="off" spellcheck="false" />
-				<span class="hint">Words in braces are filled in for each movie. A word with nothing to fill in is dropped with its brackets.</span>
-			</div>
-			<div class="field">
-				<label for="folder-pattern">Folder name pattern</label>
+			</Field>
+			<Field id="folder-pattern" label="Folder name pattern" hint="For movies added from now on. Folders of movies you already have keep their names.">
 				<input id="folder-pattern" class="input mono" bind:value={ns.folder_pattern} autocomplete="off" spellcheck="false" />
-				<span class="hint">For movies added from now on. Folders of movies you already have keep their names.</span>
-			</div>
+			</Field>
 			<div class="example" aria-live="polite" data-testid="naming-example">
 				<p class="xs muted">Example</p>
 				{#if exampleError}
@@ -196,74 +193,60 @@
 					{/each}
 				</dl>
 			</details>
-			<div class="field">
-				<label for="colon">A colon in a name becomes</label>
+			<Field id="colon" label="A colon in a name becomes" hint="Windows and many shares cannot hold a colon in a name.">
 				<select id="colon" class="input" bind:value={ns.colon}>
 					{#each colonChoices as [v, label] (v)}<option value={v}>{label}</option>{/each}
 				</select>
-				<span class="hint">Windows and many shares cannot hold a colon in a name.</span>
-			</div>
-			<div class="field">
-				<label for="illegal">Other characters a disk cannot hold</label>
+			</Field>
+			<Field id="illegal" label="Other characters a disk cannot hold">
 				<select id="illegal" class="input" bind:value={ns.illegal}>
 					{#each illegalChoices as [v, label] (v)}<option value={v}>{label}</option>{/each}
 				</select>
-			</div>
+			</Field>
 		</SettingsCard>
 
 		<SettingsCard title="Show names">
-			<div class="field">
-				<label for="show-folder-pattern">Show folder pattern</label>
+			<Field id="show-folder-pattern" label="Show folder pattern" hint="For shows added from now on. Folders of shows you already have keep their names.">
 				<input id="show-folder-pattern" class="input mono" bind:value={ns.show_folder_pattern} autocomplete="off" spellcheck="false" />
-				<span class="hint">For shows added from now on. Folders of shows you already have keep their names.</span>
-			</div>
+			</Field>
 			<label class="checkline">
 				<input type="checkbox" bind:checked={ns.season_folders} />
 				<span><b>A folder for each season</b><br /><span class="hint">Off puts every episode straight in the show folder.</span></span>
 			</label>
-			<div class="field">
-				<label for="season-folder-pattern">Season folder pattern</label>
+			<Field id="season-folder-pattern" label="Season folder pattern">
 				<input id="season-folder-pattern" class="input mono" bind:value={ns.season_folder_pattern} autocomplete="off" spellcheck="false" disabled={!ns.season_folders} />
 				<span class="hint">Must hold {'{'}season{'}'} (Season 1) or {'{'}season_padded{'}'} (Season 01).</span>
-			</div>
-			<div class="field">
-				<label for="specials-folder">Folder for specials (season 0)</label>
+			</Field>
+			<Field id="specials-folder" label="Folder for specials (season 0)" hint="A plain name, such as Specials or Season 00.">
 				<input id="specials-folder" class="input mono" bind:value={ns.specials_folder} autocomplete="off" spellcheck="false" disabled={!ns.season_folders} />
-				<span class="hint">A plain name, such as Specials or Season 00.</span>
-			</div>
-			<div class="field">
-				<label for="episode-pattern">Episode file name pattern</label>
+			</Field>
+			<Field id="episode-pattern" label="Episode file name pattern">
 				<input id="episode-pattern" class="input mono" bind:value={ns.episode_pattern} autocomplete="off" spellcheck="false" />
 				<span class="hint">{'{'}episode{'}'} gives S01E02, or S01E02-E03 for a file holding two episodes.</span>
-			</div>
-			<div class="field">
-				<label for="daily-pattern">For shows ordered by air day</label>
+			</Field>
+			<Field id="daily-pattern" label="For shows ordered by air day">
 				<input id="daily-pattern" class="input mono" bind:value={ns.daily_pattern} autocomplete="off" spellcheck="false" />
-			</div>
-			<div class="field">
-				<label for="anime-pattern">For shows ordered by running number</label>
+			</Field>
+			<Field id="anime-pattern" label="For shows ordered by running number">
 				<input id="anime-pattern" class="input mono" bind:value={ns.anime_pattern} autocomplete="off" spellcheck="false" />
-			</div>
-			<div class="field">
-				<label for="multi-style">A file holding several episodes</label>
+			</Field>
+			<Field id="multi-style" label="A file holding several episodes">
 				<select id="multi-style" class="input" bind:value={ns.multi_episode_style}>
 					{#each multiEpisodeChoices as [v, label] (v)}<option value={v}>{label}</option>{/each}
 				</select>
-			</div>
-			<div class="field">
-				<label for="air-date-style">Air day</label>
+			</Field>
+			<Field id="air-date-style" label="Air day">
 				<select id="air-date-style" class="input" bind:value={ns.air_date_style}>
 					{#each airDateChoices as [v, label] (v)}<option value={v}>{label}</option>{/each}
 				</select>
-			</div>
-			<div class="field">
-				<label for="absolute-digits">Digits in a running number</label>
+			</Field>
+			<Field id="absolute-digits" label="Digits in a running number">
 				<select id="absolute-digits" class="input" bind:value={ns.absolute_digits}>
 					<option value={2}>2: 07</option>
 					<option value={3}>3: 007</option>
 					<option value={4}>4: 0007</option>
 				</select>
-			</div>
+			</Field>
 			<div class="example" aria-live="polite" data-testid="episode-examples">
 				<p class="xs muted">Examples</p>
 				{#if exampleError}
@@ -295,38 +278,33 @@
 
 		<div data-testid="music-naming">
 			<SettingsCard title="Music names">
-				<div class="field">
-					<label for="artist-folder-pattern">Artist folder pattern</label>
+				<Field id="artist-folder-pattern" label="Artist folder pattern">
 					<input id="artist-folder-pattern" class="input mono" bind:value={ns.artist_folder_pattern} autocomplete="off" spellcheck="false" />
 					<span class="hint"
 						>For artists added from now on. {'{'}artist_sort{'}'} moves a leading The to the end (Beatles, The). Folders of artists you already have keep their
 						names.</span
 					>
-				</div>
-				<div class="field">
-					<label for="album-folder-pattern">Album folder pattern</label>
+				</Field>
+				<Field id="album-folder-pattern" label="Album folder pattern">
 					<input id="album-folder-pattern" class="input mono" bind:value={ns.album_folder_pattern} autocomplete="off" spellcheck="false" />
 					<span class="hint">Must hold {'{'}album{'}'}. {'{'}edition{'}'} gives the Pressing's note, such as deluxe.</span>
-				</div>
-				<div class="field">
-					<label for="track-pattern">Track file name pattern</label>
+				</Field>
+				<Field id="track-pattern" label="Track file name pattern">
 					<input id="track-pattern" class="input mono" bind:value={ns.track_pattern} autocomplete="off" spellcheck="false" />
 					<span class="hint">Must hold {'{'}track{'}'} (03).</span>
-				</div>
-				<div class="field">
-					<label for="multi-disc-pattern">Track file name on an album of more than one disc</label>
+				</Field>
+				<Field id="multi-disc-pattern" label="Track file name on an album of more than one disc">
 					<input id="multi-disc-pattern" class="input mono" bind:value={ns.multi_disc_track_pattern} autocomplete="off" spellcheck="false" disabled={ns.disc_folders} />
 					<span class="hint">Must hold {'{'}disc{'}'} and {'{'}track{'}'} (2-03). With a folder for each disc the track pattern is used inside it.</span>
-				</div>
+				</Field>
 				<label class="checkline">
 					<input type="checkbox" bind:checked={ns.disc_folders} />
 					<span><b>A folder for each disc</b><br /><span class="hint">Only on albums of more than one disc. Off keeps every track in the album folder.</span></span>
 				</label>
-				<div class="field">
-					<label for="disc-folder-pattern">Disc folder pattern</label>
+				<Field id="disc-folder-pattern" label="Disc folder pattern">
 					<input id="disc-folder-pattern" class="input mono" bind:value={ns.disc_folder_pattern} autocomplete="off" spellcheck="false" disabled={!ns.disc_folders} />
 					<span class="hint">Must hold {'{'}disc{'}'} (Disc 2).</span>
-				</div>
+				</Field>
 				<label class="checkline">
 					<input type="checkbox" bind:checked={ns.music_read_tags} />
 					<span
@@ -378,29 +356,22 @@
 		</SettingsCard>
 
 		<SettingsCard title="Where files go">
-			<div class="field">
-				<label for="scan-limit">Folders read per Import a library scan</label>
+			<Field id="scan-limit" label="Folders read per Import a library scan" hint="A bigger library is scanned in parts: the scan offers Scan the rest for the next part.">
 				<input id="scan-limit" class="input narrow" type="number" min="10" max="100000" bind:value={ns.adopt_scan_limit} />
-				<span class="hint">A bigger library is scanned in parts: the scan offers Scan the rest for the next part.</span>
-			</div>
-			<div class="field">
-				<label for="music-scan-limit">Artist folders read per music scan</label>
+			</Field>
+			<Field id="music-scan-limit" label="Artist folders read per music scan" hint="Each artist folder takes a few MusicBrainz lookups, about one a second, so music is scanned in smaller parts.">
 				<input id="music-scan-limit" class="input narrow" type="number" min="10" max="100000" bind:value={ns.music_adopt_scan_limit} />
-				<span class="hint">Each artist folder takes a few MusicBrainz lookups, about one a second, so music is scanned in smaller parts.</span>
-			</div>
-			<div class="field">
-				<label for="holding-days">Keep deleted files for (days)</label>
+			</Field>
+			<Field id="holding-days" label="Keep deleted files for (days)">
 				<input id="holding-days" class="input narrow" type="number" min="0" max="3650" bind:value={fr.holding_days} />
 				<span class="hint"
 					>A deleted or replaced file first goes to the holding folder in its Library folder (.holyarrs-replaced). After this many days it is removed for good. 0
 					keeps them until you empty it yourself.</span
 				>
-			</div>
-			<div class="field">
-				<label for="min-free">Always leave this much free space (MB)</label>
+			</Field>
+			<Field id="min-free" label="Always leave this much free space (MB)" hint="An import that would leave less than this free is refused before anything is written. 100 MB is the lowest.">
 				<input id="min-free" class="input narrow" type="number" min="100" bind:value={fr.min_free_mb} />
-				<span class="hint">An import that would leave less than this free is refused before anything is written. 100 MB is the lowest.</span>
-			</div>
+			</Field>
 			<label class="checkline">
 				<input type="checkbox" bind:checked={fr.skip_free_space_check} />
 				<span><b>Skip the free-space check</b><br /><span class="hint">Only for disks that report their free space wrongly.</span></span>

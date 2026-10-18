@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -126,40 +127,34 @@
 {#if editing}
 	<form class="sc-form" onsubmit={save} aria-label={isNew ? 'Add a Source' : `Change ${editing.name}`}>
 		<SettingsCard title={isNew ? 'Add a Source' : `Change ${editing.name}`}>
-			<div class="field" style="margin-top: var(--s-4)">
-				<label for="so-name">Name</label>
+			<Field id="so-name" label="Name" style="margin-top: var(--s-4)">
 				<input id="so-name" class="input" bind:value={form.name} maxlength="80" required />
-			</div>
+			</Field>
 			<div class="two">
-				<div class="field">
-					<label for="so-format">Kind of feed</label>
+				<Field id="so-format" label="Kind of feed">
 					<select id="so-format" class="input" bind:value={form.format}>
 						<option value="torznab">Torznab (torrents, also Jackett and Prowlarr)</option>
 						<option value="newznab">Newznab (Usenet)</option>
 						<option value="rss">Plain rss feed (newest list only)</option>
 					</select>
-				</div>
-				<div class="field">
-					<label for="so-proto">Downloads</label>
+				</Field>
+				<Field id="so-proto" label="Downloads">
 					<select id="so-proto" class="input" bind:value={form.protocol}>
 						<option value="torrent">Torrents</option>
 						<option value="usenet">Usenet</option>
 					</select>
-				</div>
+				</Field>
 			</div>
-			<div class="field">
-				<label for="so-url">Address</label>
+			<Field id="so-url" label="Address">
 				<input id="so-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" required placeholder={form.format === 'rss' ? 'https://example.org/rss?passkey=…' : 'https://example.org/api'} />
 				<span class="hint">
 					{#if form.format === 'rss'}Anything after the ? (such as a passkey) is kept encrypted and shown masked.{:else}The feed address, with or without /api.{/if}
 				</span>
-			</div>
+			</Field>
 			{#if form.format !== 'rss'}
-				<div class="field">
-					<label for="so-key">Key</label>
+				<Field id="so-key" label="Key" hint="Kept encrypted. Leave as it is to keep the stored one. Moving the address to another host needs the key again.">
 					<input id="so-key" class="input mono" type="password" bind:value={form.api_key} autocomplete="new-password" spellcheck="false" />
-					<span class="hint">Kept encrypted. Leave as it is to keep the stored one. Moving the address to another host needs the key again.</span>
-				</div>
+				</Field>
 			{/if}
 			<fieldset class="group">
 				<legend class="label">Use it for</legend>
@@ -176,52 +171,40 @@
 				{/each}
 			</fieldset>
 			<div class="two">
-				<div class="field">
-					<label for="so-prio">Priority</label>
+				<Field id="so-prio" label="Priority" hint="1 to 50; 1 is asked first and wins a tie.">
 					<input id="so-prio" class="input" type="number" min="1" max="50" bind:value={form.priority} />
-					<span class="hint">1 to 50; 1 is asked first and wins a tie.</span>
-				</div>
+				</Field>
 				{#if form.protocol === 'torrent'}
-					<div class="field">
-						<label for="so-seed">Fewest seeders</label>
+					<Field id="so-seed" label="Fewest seeders">
 						<input id="so-seed" class="input" type="number" min="0" bind:value={form.min_seeders} />
-					</div>
+					</Field>
 				{/if}
 			</div>
 			<details class="more">
 				<summary>Limits</summary>
 				<div class="two">
-					<div class="field">
-						<label for="so-cap">Most searches per window</label>
+					<Field id="so-cap" label="Most searches per window" hint="0 means no cap.">
 						<input id="so-cap" class="input" type="number" min="0" bind:value={form.searches_per_window} />
-						<span class="hint">0 means no cap.</span>
-					</div>
-					<div class="field">
-						<label for="so-win">Window (hours)</label>
+					</Field>
+					<Field id="so-win" label="Window (hours)">
 						<input id="so-win" class="input" type="number" min="0" step="0.5" bind:value={form.window_hours} />
-					</div>
-					<div class="field">
-						<label for="so-gap">Least time between calls (ms)</label>
+					</Field>
+					<Field id="so-gap" label="Least time between calls (ms)">
 						<input id="so-gap" class="input" type="number" min="0" bind:value={form.gap_ms} />
-					</div>
-					<div class="field">
-						<label for="so-timeout">Give up after (seconds)</label>
+					</Field>
+					<Field id="so-timeout" label="Give up after (seconds)">
 						<input id="so-timeout" class="input" type="number" min="1" max="300" bind:value={form.timeout_s} />
-					</div>
+					</Field>
 				</div>
 			</details>
 			<details class="more" open={!!form.proxy}>
 				<summary>Proxy</summary>
-				<div class="field">
-					<label for="so-proxy">Proxy address</label>
+				<Field id="so-proxy" label="Proxy address" hint="Every call to this Source goes through it. Empty means none.">
 					<input id="so-proxy" class="input mono" bind:value={form.proxy} autocomplete="off" spellcheck="false" placeholder="socks5://name@host:1080 or http://host:3128" />
-					<span class="hint">Every call to this Source goes through it. Empty means none.</span>
-				</div>
-				<div class="field">
-					<label for="so-proxy-pw">Proxy password</label>
+				</Field>
+				<Field id="so-proxy-pw" label="Proxy password" hint="Kept encrypted. Leave as it is to keep the stored one.">
 					<input id="so-proxy-pw" class="input" type="password" bind:value={form.proxy_password} autocomplete="new-password" />
-					<span class="hint">Kept encrypted. Leave as it is to keep the stored one.</span>
-				</div>
+				</Field>
 				<label class="checkline">
 					<input type="checkbox" bind:checked={form.proxy_allow_local_network} />
 					<span><b>The proxy may be on the local network</b><br /><span class="hint">Off: only a proxy on the internet.</span></span>
@@ -338,7 +321,7 @@
 		gap: var(--s-3);
 		margin-top: var(--s-4);
 	}
-	.two .field + .field {
+	.two :global(.field + .field) {
 		margin-top: 0;
 	}
 	.group {

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -113,19 +114,16 @@
 {#if adding}
 	<form class="sc-form" onsubmit={add} aria-label="New Library folder">
 		<SettingsCard title="New Library folder">
-			<div class="field">
-				<label for="lf-kind">Holds</label>
+			<Field id="lf-kind" label="Holds" hint="Movies, shows and music each get their own folders.">
 				<select id="lf-kind" class="input" bind:value={kind}>
 					<option value="movie">Movies</option>
 					<option value="show">Shows</option>
 					<option value="music">Music</option>
 				</select>
-				<span class="hint">Movies, shows and music each get their own folders.</span>
-			</div>
-			<div class="field">
-				<label for="lf-path">Folder path</label>
+			</Field>
+			<Field id="lf-path" label="Folder path">
 				<input id="lf-path" class="input mono" bind:value={path} placeholder={kind === 'show' ? '/shows' : kind === 'music' ? '/music' : '/movies'} autocomplete="off" spellcheck="false" />
-			</div>
+			</Field>
 			<div class="field">
 				<label for="lf-label">Name <span class="muted">(optional)</span></label>
 				<input id="lf-label" class="input" bind:value={label} placeholder={kind === 'show' ? 'Shows' : kind === 'music' ? 'Music' : 'Movies'} maxlength="64" />

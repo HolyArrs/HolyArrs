@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -120,32 +121,28 @@
 {#if editing}
 	<form class="sc-form" onsubmit={save} aria-label={isNew ? 'Add a media server' : `Change ${editing.name}`}>
 		<SettingsCard title={isNew ? 'Add a media server' : `Change ${editing.name}`}>
-			<div class="field" style="margin-top: var(--s-4)">
-				<label for="ms-name">Name</label>
+			<Field id="ms-name" label="Name" style="margin-top: var(--s-4)">
 				<input id="ms-name" class="input" bind:value={form.name} maxlength="80" required />
-			</div>
+			</Field>
 			{#if isNew}
-				<div class="field">
-					<label for="ms-kind">Kind</label>
+				<Field id="ms-kind" label="Kind">
 					<select id="ms-kind" class="input" bind:value={form.kind}>
 						<option value="plex">Plex</option>
 						<option value="jellyfin">Jellyfin</option>
 						<option value="emby">Emby</option>
 					</select>
-				</div>
+				</Field>
 			{/if}
-			<div class="field">
-				<label for="ms-url">Address</label>
+			<Field id="ms-url" label="Address">
 				<input id="ms-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" placeholder={portHint[form.kind]} />
-			</div>
-			<div class="field">
-				<label for="ms-token">{form.kind === 'plex' ? 'Plex token' : 'API key'}</label>
+			</Field>
+			<Field id="ms-token" label={form.kind === 'plex' ? 'Plex token' : 'API key'}>
 				<input id="ms-token" class="input mono" type="password" bind:value={form.token} autocomplete="new-password" />
 				<span class="hint">
 					{form.kind === 'plex' ? 'The token of your Plex server.' : 'Make one in the server: Dashboard, API keys.'} Kept encrypted and never shown again;
 					leave empty to keep the stored one. A new address needs it typed again.
 				</span>
-			</div>
+			</Field>
 			<fieldset class="when">
 				<legend class="label">Tell it after</legend>
 				<label class="checkline"><input type="checkbox" bind:checked={form.on_import} /><span><b>An import</b><br /><span class="hint">A new file or a better copy.</span></span></label>
@@ -153,14 +150,12 @@
 				<label class="checkline"><input type="checkbox" bind:checked={form.on_delete} /><span><b>A delete</b><br /><span class="hint">Only when the delete removed files.</span></span></label>
 			</fieldset>
 			<div class="two">
-				<div class="field">
-					<label for="ms-from">HolyArrs path</label>
+				<Field id="ms-from" label="HolyArrs path">
 					<input id="ms-from" class="input mono" bind:value={form.path_from} placeholder="/data/movies" autocomplete="off" />
-				</div>
-				<div class="field">
-					<label for="ms-to">Same folder on the server</label>
+				</Field>
+				<Field id="ms-to" label="Same folder on the server">
 					<input id="ms-to" class="input mono" bind:value={form.path_to} placeholder="/movies" autocomplete="off" />
-				</div>
+				</Field>
 			</div>
 			<p class="hint">Only when the server sees your movies under another path (for example in another container). Leave both empty otherwise.</p>
 			<label class="checkline">
@@ -248,7 +243,7 @@
 		gap: var(--s-3);
 		margin-top: var(--s-4);
 	}
-	.two .field + .field {
+	.two :global(.field + .field) {
 		margin-top: 0;
 	}
 	.bad-text {

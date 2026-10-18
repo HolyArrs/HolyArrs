@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
@@ -211,30 +212,25 @@
 		<form class="sc-form" onsubmit={saveSettings} aria-label="Health check settings">
 			<SettingsCard title="Health check settings">
 				<div class="two">
-					<div class="field">
-						<label for="hs-every">Check every (minutes)</label>
+					<Field id="hs-every" label="Check every (minutes)">
 						<input id="hs-every" class="input" type="number" min="1" max="1440" bind:value={settings.every_minutes} />
-					</div>
-					<div class="field">
-						<label for="hs-guard">Alert after this many runs in a row</label>
+					</Field>
+					<Field id="hs-guard" label="Alert after this many runs in a row">
 						<input id="hs-guard" class="input" type="number" min="1" max="20" bind:value={settings.flap_guard} />
-					</div>
+					</Field>
 				</div>
 				<p class="hint">A break or a fix must hold for that many runs before an Alert goes out, so a Downloader that blips once sends nothing.</p>
-				<div class="field">
-					<label for="hs-low">Warn when free space is under (MB)</label>
+				<Field id="hs-low" label="Warn when free space is under (MB)">
 					<input id="hs-low" class="input" type="number" min="0" bind:value={settings.low_space_mb} />
-				</div>
+				</Field>
 				<label class="checkline" style="margin-top: var(--s-4)"
 					><input type="checkbox" bind:checked={settings.update_check} /> Check once a day for a newer HolyArrs</label
 				>
 				<p class="hint">Off: HolyArrs never asks. On: one small request a day to the release feed below; nothing is ever installed by itself.</p>
 				<p class="hint" data-testid="update-privacy">{updatePrivacy(update?.version ?? 'version')}</p>
-				<div class="field">
-					<label for="hs-upd">Release feed</label>
+				<Field id="hs-upd" label="Release feed" hint="Empty: the HolyArrs project's releases.">
 					<input id="hs-upd" class="input mono" bind:value={settings.update_check_url} placeholder={settings.update_check_default} autocomplete="off" />
-					<span class="hint">Empty: the HolyArrs project's releases.</span>
-				</div>
+				</Field>
 				<label class="checkline"><input type="checkbox" bind:checked={settings.update_check_local} /> The release feed may be on the local network</label>
 				<label class="checkline"><input type="checkbox" bind:checked={settings.update_prerelease} /> Tell me about test versions too (such as v1.2.0-rc1)</label>
 				{#if settingsError}<p class="form-error" role="alert">{settingsError}</p>{/if}
@@ -356,7 +352,7 @@
 		gap: var(--s-3);
 		margin-top: var(--s-4);
 	}
-	.two .field + .field {
+	.two :global(.field + .field) {
 		margin-top: 0;
 	}
 	@media (max-width: 600px) {

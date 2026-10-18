@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -322,10 +323,9 @@
 					<label for="inv-note">Note for yourself</label>
 					<input id="inv-note" class="input" bind:value={note} maxlength="100" placeholder="Who is this for?" />
 				</div>
-				<div class="field">
-					<label for="inv-days">Days the link lasts</label>
+				<Field id="inv-days" label="Days the link lasts">
 					<input id="inv-days" class="input" type="number" min="1" max="30" bind:value={days} style="max-width: 120px" />
-				</div>
+				</Field>
 			</div>
 			<Button icon="plus" variant="primary" type="submit" disabled={making} aria-busy={making}>Make an invite link</Button>
 		</form>
@@ -467,8 +467,7 @@
 					<legend class="label">Weekly asks</legend>
 					<div class="limit-row">
 						{#each limitFields as f (f.kind)}
-							<div class="field">
-								<label for="limit-{f.kind}">{f.label}</label>
+							<Field id="limit-{f.kind}" label={f.label}>
 								<input
 									id="limit-{f.kind}"
 									class="input"
@@ -479,7 +478,7 @@
 									placeholder="Default ({defaultsPerWeek[f.kind] ?? '?'})"
 									bind:value={editLimits[f.kind]}
 								/>
-							</div>
+							</Field>
 						{/each}
 					</div>
 					<span id="limits-hint" class="hint">Empty uses the default from Settings &gt; Wishlist. 0 means no limit. Each kind counts on its own; joining someone else's ask is free.</span>

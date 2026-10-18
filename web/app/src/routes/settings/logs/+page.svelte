@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
@@ -55,26 +56,23 @@
 
 <form class="card filters" aria-label="Filter the log" onsubmit={apply}>
 	<div class="row-fields">
-		<div class="field">
-			<label for="lg-level">Level</label>
+		<Field id="lg-level" label="Level">
 			<select id="lg-level" class="input" bind:value={filter.level} onchange={() => apply()}>
 				<option value="">Every line</option>
 				<option value="warning">Warnings and errors</option>
 				<option value="error">Errors only</option>
 			</select>
-		</div>
+		</Field>
 		<div class="field grow">
 			<label for="lg-q">Text</label>
 			<input id="lg-q" class="input" type="search" bind:value={filter.q} placeholder="For example qbittorrent" autocomplete="off" />
 		</div>
-		<div class="field">
-			<label for="lg-from">From</label>
+		<Field id="lg-from" label="From">
 			<input id="lg-from" class="input" type="date" bind:value={filter.from} onchange={() => apply()} />
-		</div>
-		<div class="field">
-			<label for="lg-to">To</label>
+		</Field>
+		<Field id="lg-to" label="To">
 			<input id="lg-to" class="input" type="date" bind:value={filter.to} onchange={() => apply()} />
-		</div>
+		</Field>
 	</div>
 	<div class="row" style="margin-top: var(--s-3)">
 		<Button variant="primary" type="submit" disabled={busy} aria-busy={busy}>Show</Button>
@@ -116,7 +114,7 @@
 		flex-wrap: wrap;
 		gap: var(--s-3);
 	}
-	.row-fields .field {
+	.row-fields :global(.field) {
 		margin-top: 0;
 		min-width: 140px;
 	}

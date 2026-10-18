@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -208,39 +209,32 @@
 {#if formOpen}
 	<form class="sc-form" onsubmit={save} aria-label={editId === null ? 'New Outside list' : `Change ${name}`}>
 		<SettingsCard title={editId === null ? 'New Outside list' : `Change ${name}`}>
-			<div class="field">
-				<label for="ol-name">Name</label>
+			<Field id="ol-name" label="Name">
 				<input id="ol-name" class="input" bind:value={name} maxlength="80" required placeholder="Family favourites" />
-			</div>
-			<div class="field">
-				<label for="ol-kind">Kind</label>
+			</Field>
+			<Field id="ol-kind" label="Kind">
 				<select id="ol-kind" class="input" bind:value={kind}>
 					{#each listKinds as [k, label] (k)}<option value={k}>{label}</option>{/each}
 				</select>
-			</div>
-			<div class="field">
-				<label for="ol-ref">Which list</label>
+			</Field>
+			<Field id="ol-ref" label="Which list">
 				<input id="ol-ref" class="input mono" bind:value={ref} required autocomplete="off" spellcheck="false" />
 				<span class="hint">{listKinds.find(([k]) => k === kind)?.[2]}</span>
-			</div>
-			<div class="field">
-				<label for="ol-folder">Library folder</label>
+			</Field>
+			<Field id="ol-folder" label="Library folder">
 				<select id="ol-folder" class="input" bind:value={folderId}>
 					{#each movieFolders as f (f.id)}<option value={f.id}>{f.label || f.path} ({f.path})</option>{/each}
 				</select>
-			</div>
-			<div class="field">
-				<label for="ol-rules">Pick rules</label>
+			</Field>
+			<Field id="ol-rules" label="Pick rules">
 				<select id="ol-rules" class="input" bind:value={rulesId}>
 					<option value={0}>The Library folder's own</option>
 					{#each movieRules as r (r.id)}<option value={r.id}>{r.name}</option>{/each}
 				</select>
-			</div>
-			<div class="field">
-				<label for="ol-hours">Read every (hours)</label>
+			</Field>
+			<Field id="ol-hours" label="Read every (hours)" hint="Between 6 hours and a week. Saving reads the list once straight away.">
 				<input id="ol-hours" class="input" type="number" min="6" max="168" bind:value={hours} />
-				<span class="hint">Between 6 hours and a week. Saving reads the list once straight away.</span>
-			</div>
+			</Field>
 			<label class="checkline">
 				<input type="checkbox" bind:checked={keep} />
 				<span><b>Keep up to date</b><br /><span class="hint">Added movies are looked for, and a better copy later.</span></span>
@@ -314,10 +308,9 @@
 			Trakt lists need the Client ID of a Trakt app you make on trakt.tv. It is stored encrypted and never shown again in full.{hasTrakt && !traktMasked ? ' Your Trakt lists cannot be read until it is set.' : ''}
 		</p>
 		<form onsubmit={saveTrakt} style="margin-top: var(--s-4)">
-			<div class="field">
-				<label for="trakt">{traktMasked ? 'Replace the Trakt key' : 'Paste the Trakt key'}</label>
+			<Field id="trakt" label={traktMasked ? 'Replace the Trakt key' : 'Paste the Trakt key'}>
 				<input id="trakt" class="input mono" type="password" bind:value={traktKey} autocomplete="off" spellcheck="false" />
-			</div>
+			</Field>
 			{#if traktError}<p class="form-error" role="alert">{traktError}</p>{/if}
 			<Button type="submit" disabled={traktSaving} aria-busy={traktSaving}>Save the Trakt key</Button>
 		</form>
@@ -325,14 +318,12 @@
 
 	<SettingsCard title="Never-add list" description="Outside lists skip these movies, and they cannot be added by hand until taken off.">
 		<form class="never-form" onsubmit={addNever}>
-			<div class="field">
-				<label for="na-id">TMDB number</label>
+			<Field id="na-id" label="TMDB number">
 				<input id="na-id" class="input mono" bind:value={naId} inputmode="numeric" autocomplete="off" />
-			</div>
-			<div class="field">
-				<label for="na-name">Name</label>
+			</Field>
+			<Field id="na-name" label="Name">
 				<input id="na-name" class="input" bind:value={naName} maxlength="200" />
-			</div>
+			</Field>
 			<div class="field">
 				<label for="na-reason">Why <span class="muted">(optional)</span></label>
 				<input id="na-reason" class="input" bind:value={naReason} maxlength="200" />

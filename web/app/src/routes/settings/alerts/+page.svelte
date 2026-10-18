@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -172,82 +173,64 @@
 {#if editing}
 	<form class="sc-form" onsubmit={save} aria-label={isNew ? 'Add an Alert' : `Change ${editing.name}`}>
 		<SettingsCard title={isNew ? 'Add an Alert' : `Change ${editing.name}`}>
-			<div class="field" style="margin-top: var(--s-4)">
-				<label for="al-name">Name</label>
+			<Field id="al-name" label="Name" style="margin-top: var(--s-4)">
 				<input id="al-name" class="input" bind:value={form.name} maxlength="80" required />
-			</div>
+			</Field>
 			{#if isNew}
-				<div class="field">
-					<label for="al-kind">Kind</label>
+				<Field id="al-kind" label="Kind">
 					<select id="al-kind" class="input" bind:value={form.kind}>
 						<option value="discord">Discord</option>
 						<option value="email">Email</option>
 						<option value="webhook">Webhook (JSON to your own server)</option>
 					</select>
-				</div>
+				</Field>
 			{/if}
 			{#if form.kind === 'webhook'}
-				<div class="field">
-					<label for="al-hook">Webhook link</label>
+				<Field id="al-hook" label="Webhook link" hint="HolyArrs posts JSON here: the moment, the movie, and the reasons and paths. Kept encrypted; shown masked.">
 					<input id="al-hook" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" placeholder="https://example.com/holyarrs" />
-					<span class="hint">HolyArrs posts JSON here: the moment, the movie, and the reasons and paths. Kept encrypted; shown masked.</span>
-				</div>
-				<div class="field">
-					<label for="al-secret">Secret</label>
+				</Field>
+				<Field id="al-secret" label="Secret" hint="Optional. Kept encrypted and never shown again. Leave as it is to keep the stored one; a link to another server needs it typed again.">
 					<input id="al-secret" class="input mono" type="password" bind:value={form.secret} autocomplete="new-password" />
-					<span class="hint">Optional. Kept encrypted and never shown again. Leave as it is to keep the stored one; a link to another server needs it typed again.</span>
-				</div>
-				<div class="field">
-					<label for="al-auth">What the secret does</label>
+				</Field>
+				<Field id="al-auth" label="What the secret does">
 					<select id="al-auth" class="input" bind:value={form.webhook_auth}>
 						<option value="sign">Signs each message (X-HolyArrs-Signature, HMAC-SHA256)</option>
 						<option value="bearer">Is sent as a bearer token (Authorization header)</option>
 						<option value="none">Nothing (no secret is sent)</option>
 					</select>
-				</div>
+				</Field>
 			{:else if form.kind === 'discord'}
-				<div class="field">
-					<label for="al-url">Discord link</label>
+				<Field id="al-url" label="Discord link" hint="In Discord: channel settings, Integrations, Webhooks, Copy link. Kept encrypted; shown masked.">
 					<input id="al-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" placeholder="https://discord.com/api/webhooks/…" />
-					<span class="hint">In Discord: channel settings, Integrations, Webhooks, Copy link. Kept encrypted; shown masked.</span>
-				</div>
+				</Field>
 			{:else}
-				<div class="field">
-					<label for="al-host">Mail server</label>
+				<Field id="al-host" label="Mail server">
 					<input id="al-host" class="input" bind:value={form.smtp_host} placeholder="smtp.example.com" autocomplete="off" />
-				</div>
+				</Field>
 				<div class="two">
-					<div class="field">
-						<label for="al-port">Port</label>
+					<Field id="al-port" label="Port">
 						<input id="al-port" class="input" type="number" min="1" max="65535" bind:value={form.smtp_port} />
-					</div>
-					<div class="field">
-						<label for="al-sec">Security</label>
+					</Field>
+					<Field id="al-sec" label="Security">
 						<select id="al-sec" class="input" bind:value={form.smtp_security}>
 							<option value="starttls">STARTTLS (port 587)</option>
 							<option value="tls">TLS (port 465)</option>
 							<option value="none">None (local mail server only)</option>
 						</select>
-					</div>
+					</Field>
 				</div>
-				<div class="field">
-					<label for="al-from">From address</label>
+				<Field id="al-from" label="From address">
 					<input id="al-from" class="input" type="email" bind:value={form.smtp_from} autocomplete="off" />
-				</div>
-				<div class="field">
-					<label for="al-user">Mail sign-in name</label>
+				</Field>
+				<Field id="al-user" label="Mail sign-in name">
 					<input id="al-user" class="input" bind:value={form.smtp_user} autocomplete="off" />
-				</div>
-				<div class="field">
-					<label for="al-pw">Mail password</label>
+				</Field>
+				<Field id="al-pw" label="Mail password" hint="Kept encrypted. Leave as it is to keep the stored one.">
 					<input id="al-pw" class="input" type="password" bind:value={form.smtp_pass} autocomplete="new-password" />
-					<span class="hint">Kept encrypted. Leave as it is to keep the stored one.</span>
-				</div>
-				<div class="field">
-					<label for="al-staff">Staff addresses</label>
+				</Field>
+				<Field id="al-staff" label="Staff addresses" hint="Who hears when someone asks for a movie. The people who asked get their own messages at their own address.">
 					<input id="al-staff" class="input" bind:value={form.staff_to} placeholder="you@example.com, other@example.com" autocomplete="off" />
-					<span class="hint">Who hears when someone asks for a movie. The people who asked get their own messages at their own address.</span>
-				</div>
+				</Field>
 			{/if}
 			{#each momentGroups as g (g.label)}
 				{@const all = g.moments.every((m) => form.moments.includes(m))}
@@ -365,7 +348,7 @@
 		gap: var(--s-3);
 		margin-top: var(--s-4);
 	}
-	.two .field + .field {
+	.two :global(.field + .field) {
 		margin-top: 0;
 	}
 	.moments {

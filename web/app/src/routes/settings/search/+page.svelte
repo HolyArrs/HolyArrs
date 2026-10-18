@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -92,16 +93,12 @@
 	<div class="sk" style="height: 240px"></div>
 {:else}
 	<form class="card" onsubmit={save}>
-		<div class="field">
-			<label for="feed-minutes">Check Source feeds every (minutes)</label>
+		<Field id="feed-minutes" label="Check Source feeds every (minutes)" hint="10 to 120 minutes; 0 turns feed checks off. Each check reads the newest Releases of every Source with feeds on and picks for movies and episodes that want one.">
 			<input id="feed-minutes" class="input narrow" type="number" min="0" max="120" bind:value={settings.feed_check_minutes} />
-			<span class="hint">10 to 120 minutes; 0 turns feed checks off. Each check reads the newest Releases of every Source with feeds on and picks for movies and episodes that want one.</span>
-		</div>
-		<div class="field">
-			<label for="missing-count">Movies to search for each night</label>
+		</Field>
+		<Field id="missing-count" label="Movies to search for each night" hint="Once a day HolyArrs searches for this many missing movies and episodes, the ones searched longest ago first. 0 turns it off.">
 			<input id="missing-count" class="input narrow" type="number" min="0" max="500" bind:value={settings.missing_search_count} />
-			<span class="hint">Once a day HolyArrs searches for this many missing movies and episodes, the ones searched longest ago first. 0 turns it off.</span>
-		</div>
+		</Field>
 		<label class="checkline">
 			<input type="checkbox" bind:checked={settings.missing_search_better} />
 			<span><b>Also Find a better copy each night</b><br /><span class="hint">The nightly search also looks for better copies of movies below Good enough.</span></span>
@@ -115,21 +112,18 @@
 			>
 		</label>
 		<h2 class="h2 group">Season packs</h2>
-		<div class="field">
-			<label for="pack-upgrade">A season pack is taken when</label>
+		<Field id="pack-upgrade" label="A season pack is taken when" hint="With the second choice a pack fills only the episodes it improves; the copies you have stay.">
 			<select id="pack-upgrade" class="input" bind:value={settings.season_pack_upgrade}>
 				<option value="all">Every episode in it would be new or better</option>
 				<option value="any">At least one episode in it would be new or better</option>
 			</select>
-			<span class="hint">With the second choice a pack fills only the episodes it improves; the copies you have stay.</span>
-		</div>
-		<div class="field">
-			<label for="pack-prefer">Season pack or single episodes</label>
+		</Field>
+		<Field id="pack-prefer" label="Season pack or single episodes">
 			<select id="pack-prefer" class="input" bind:value={settings.season_pack_prefer}>
 				<option value="rank">Best copy first; a season pack wins when they are equal</option>
 				<option value="always">A season pack whenever one passes the Pick rules</option>
 			</select>
-		</div>
+		</Field>
 		<label class="checkline">
 			<input type="checkbox" bind:checked={settings.multi_season_packs} />
 			<span
@@ -153,11 +147,10 @@
 				><b>Take whole discographies</b><br /><span class="hint">Off: a Release holding every album of an artist is turned away. On: it may fill the album searched for.</span></span
 			>
 		</label>
-		<div class="field">
-			<label for="track-tolerance">Tracks an album Release may lack</label>
+		<Field id="track-tolerance" label="Tracks an album Release may lack">
 			<input id="track-tolerance" class="input" type="number" min="-1" max="50" bind:value={settings.album_track_tolerance} />
 			<p class="hint">When a Source says how many files a Release holds: 0 turns away any Release with fewer files than the album has tracks; -1 never checks.</p>
-		</div>
+		</Field>
 		<h2 class="h2 group">Early and fake Releases</h2>
 		<label class="checkline">
 			<input type="checkbox" bind:checked={settings.refuse_early_releases} data-testid="refuse-early" />
@@ -167,11 +160,10 @@
 				></span
 			>
 		</label>
-		<div class="field">
-			<label for="early-grace">Hours a Release may be early</label>
+		<Field id="early-grace" label="Hours a Release may be early">
 			<input id="early-grace" class="input narrow" type="number" min="0" max="720" bind:value={settings.early_release_grace_hours} />
 			<p class="hint">For time zones and early air times. 24 by default.</p>
-		</div>
+		</Field>
 		<label class="checkline">
 			<input type="checkbox" bind:checked={settings.refuse_tiny_releases} data-testid="refuse-tiny" />
 			<span
@@ -188,21 +180,18 @@
 				></span
 			>
 		</label>
-		<div class="field">
-			<label for="min-video">Smallest video file to place (MB)</label>
+		<Field id="min-video" label="Smallest video file to place (MB)">
 			<input id="min-video" class="input narrow" type="number" min="0" max="10000" bind:value={settings.import_min_video_mb} />
 			<p class="hint">0 uses 1 MB a minute of the video's length, or 20 MB when the length is not known.</p>
-		</div>
-		<div class="field">
-			<label for="min-track">Smallest track file to place (KB)</label>
+		</Field>
+		<Field id="min-track" label="Smallest track file to place (KB)">
 			<input id="min-track" class="input narrow" type="number" min="0" max="100000" bind:value={settings.import_min_track_kb} />
 			<p class="hint">0 uses 512 KB.</p>
-		</div>
-		<div class="field">
-			<label for="episode-minutes">Episode length when not known (minutes)</label>
+		</Field>
+		<Field id="episode-minutes" label="Episode length when not known (minutes)">
 			<input id="episode-minutes" class="input narrow" type="number" min="1" max="240" bind:value={settings.episode_default_minutes} />
 			<p class="hint">Used to judge whether a season pack is too small. 20 by default.</p>
-		</div>
+		</Field>
 		<label class="checkline">
 			<input type="checkbox" bind:checked={settings.hold_unknown_releases} data-testid="hold-unknown" />
 			<span

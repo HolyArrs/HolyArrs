@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -191,14 +192,12 @@
 	
 			<h2 id="h-pass" class="h2 sec">Pass marks</h2>
 			<div class="two">
-				<div class="field">
-					<label for="pm-ep">Episodes</label>
+				<Field id="pm-ep" label="Episodes">
 					<input id="pm-ep" class="input narrow" type="number" min="0" max="100" bind:value={settings.pass_mark_episode} />
-				</div>
-				<div class="field">
-					<label for="pm-mov">Movies</label>
+				</Field>
+				<Field id="pm-mov" label="Movies">
 					<input id="pm-mov" class="input narrow" type="number" min="0" max="100" bind:value={settings.pass_mark_movie} />
-				</div>
+				</Field>
 			</div>
 			<details class="more" data-testid="pass-mark-help">
 				<summary>What the Pass mark means</summary>
@@ -223,27 +222,23 @@
 				<input type="checkbox" bind:checked={settings.ignore_picture_tracks} disabled={!settings.use_built_in} />
 				<span><b>Leave out picture subtitles</b><br /><span class="hint">Picture tracks (from discs) do not count, since many players cannot show them.</span></span>
 			</label>
-			<div class="field">
-				<label for="hi-suffix">Hearing-impaired files are named</label>
+			<Field id="hi-suffix" label="Hearing-impaired files are named">
 				<select id="hi-suffix" class="input narrow" bind:value={settings.hi_suffix}>
 					<option value="hi">.hi (Movie.en.hi.srt)</option>
 					<option value="cc">.cc (Movie.en.cc.srt)</option>
 					<option value="sdh">.sdh (Movie.en.sdh.srt)</option>
 				</select>
-			</div>
+			</Field>
 	
 			<h2 class="h2 sec">When to look</h2>
 			<p class="small muted">A new file is searched at once. After that:</p>
 			<div class="two">
-				<div class="field">
-					<label for="s-hours">Look for missing subtitles every (hours)</label>
+				<Field id="s-hours" label="Look for missing subtitles every (hours)">
 					<input id="s-hours" class="input narrow" type="number" min="1" max="168" bind:value={settings.search_hours} />
-				</div>
-				<div class="field">
-					<label for="s-batch">Files per run, at most</label>
+				</Field>
+				<Field id="s-batch" label="Files per run, at most" hint="Keeps the Subtitle sites from being asked too much at once.">
 					<input id="s-batch" class="input narrow" type="number" min="1" max="1000" bind:value={settings.batch} />
-					<span class="hint">Keeps the Subtitle sites from being asked too much at once.</span>
-				</div>
+				</Field>
 			</div>
 			<label class="checkline">
 				<input type="checkbox" bind:checked={settings.adaptive} />
@@ -255,14 +250,12 @@
 			</label>
 			{#if settings.better}
 				<div class="two">
-					<div class="field">
-						<label for="b-hours">Every (hours)</label>
+					<Field id="b-hours" label="Every (hours)">
 						<input id="b-hours" class="input narrow" type="number" min="6" max="168" bind:value={settings.better_hours} />
-					</div>
-					<div class="field">
-						<label for="b-days">For subtitles saved in the last (days)</label>
+					</Field>
+					<Field id="b-days" label="For subtitles saved in the last (days)">
 						<input id="b-days" class="input narrow" type="number" min="0" max="30" bind:value={settings.better_days} />
-					</div>
+					</Field>
 				</div>
 			{/if}
 	
@@ -272,18 +265,15 @@
 				not listen to the sound to line subtitles up.
 			</p>
 			<div class="three">
-				<div class="field">
-					<label for="sy-step">Shift buttons move (ms)</label>
+				<Field id="sy-step" label="Shift buttons move (ms)">
 					<input id="sy-step" class="input narrow" type="number" min="10" max="60000" bind:value={settings.sync_step_ms} />
-				</div>
-				<div class="field">
-					<label for="sy-from">Frame rate from</label>
+				</Field>
+				<Field id="sy-from" label="Frame rate from">
 					<input id="sy-from" class="input narrow" type="number" min="1" max="120" step="0.001" bind:value={settings.sync_from_fps} />
-				</div>
-				<div class="field">
-					<label for="sy-to">Frame rate to</label>
+				</Field>
+				<Field id="sy-to" label="Frame rate to">
 					<input id="sy-to" class="input narrow" type="number" min="1" max="120" step="0.001" bind:value={settings.sync_to_fps} />
-				</div>
+				</Field>
 			</div>
 			{#if setError}<p class="form-error" role="alert">{setError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
@@ -319,20 +309,16 @@
 					</fieldset>
 				{/if}
 				<div class="two">
-					<div class="field">
-						<label for="st-name">Name</label>
+					<Field id="st-name" label="Name">
 						<input id="st-name" class="input" bind:value={form.name} maxlength="100" required />
-					</div>
-					<div class="field">
-						<label for="st-prio">Priority</label>
+					</Field>
+					<Field id="st-prio" label="Priority" hint="1 to 100; lower is asked first.">
 						<input id="st-prio" class="input narrow" type="number" min="1" max="100" bind:value={form.priority} />
-						<span class="hint">1 to 100; lower is asked first.</span>
-					</div>
+					</Field>
 				</div>
-				<div class="field" style="margin-top: var(--s-4)">
-					<label for="st-url">Address</label>
+				<Field id="st-url" label="Address" style="margin-top: var(--s-4)">
 					<input id="st-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" required />
-				</div>
+				</Field>
 				{#if formKind?.needs_account}
 					<fieldset class="group account" data-testid="site-account">
 						<legend class="label">Your account</legend>
@@ -341,8 +327,7 @@
 								Leave them empty to keep the stored ones.{/if}
 						</p>
 						{#each formKind.account ?? [] as a (a)}
-							<div class="field">
-								<label for="st-acct-{a}">{accountWords[a]}</label>
+							<Field id="st-acct-{a}" label={accountWords[a]}>
 								{#if a === 'username'}
 									<input id="st-acct-{a}" class="input" bind:value={form.username} autocomplete="off" />
 								{:else if a === 'password'}
@@ -350,29 +335,25 @@
 								{:else}
 									<input id="st-acct-{a}" class="input mono" type="password" bind:value={form.api_key} autocomplete="new-password" spellcheck="false" />
 								{/if}
-							</div>
+							</Field>
 						{/each}
 					</fieldset>
 				{/if}
 				<details class="more">
 					<summary>Limits</summary>
 					<div class="two">
-						<div class="field">
-							<label for="st-gap">Wait between calls (ms)</label>
+						<Field id="st-gap" label="Wait between calls (ms)">
 							<input id="st-gap" class="input narrow" type="number" min="0" max="60000" bind:value={form.limits.gap_ms} />
-						</div>
-						<div class="field">
-							<label for="st-per">Calls per window, at most</label>
+						</Field>
+						<Field id="st-per" label="Calls per window, at most">
 							<input id="st-per" class="input narrow" type="number" min="1" max="10000" bind:value={form.limits.per_window} />
-						</div>
-						<div class="field">
-							<label for="st-win">Window (seconds)</label>
+						</Field>
+						<Field id="st-win" label="Window (seconds)">
 							<input id="st-win" class="input narrow" type="number" min="60" max="86400" bind:value={form.limits.window_seconds} />
-						</div>
-						<div class="field">
-							<label for="st-day">Downloads a day (0: no cap)</label>
+						</Field>
+						<Field id="st-day" label="Downloads a day (0: no cap)">
 							<input id="st-day" class="input narrow" type="number" min="0" max="100000" bind:value={form.limits.downloads_per_day} />
-						</div>
+						</Field>
 					</div>
 				</details>
 				<label class="checkline">
@@ -453,8 +434,8 @@
 	.three {
 		grid-template-columns: 1fr 1fr 1fr;
 	}
-	.two .field + .field,
-	.three .field + .field {
+	.two :global(.field + .field),
+	.three :global(.field + .field) {
 		margin-top: 0;
 	}
 	.narrow {
@@ -485,7 +466,7 @@
 		padding: 0;
 		margin: var(--s-4) 0 0;
 	}
-	.account .field {
+	.account :global(.field) {
 		margin-top: var(--s-3);
 	}
 	.list {

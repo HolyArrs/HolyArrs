@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
@@ -100,10 +101,9 @@
 		{:else if !spec}
 			<div class="sk" style="height: 200px"></div>
 		{:else}
-			<div class="field">
-				<label for="api-q">Find a route</label>
+			<Field id="api-q" label="Find a route">
 				<input id="api-q" class="input" type="search" bind:value={q} placeholder="For example downloads" autocomplete="off" />
-			</div>
+			</Field>
 			<p class="xs muted" role="status">{filterOps(ops, q).length} of {ops.length} routes</p>
 			{#each shown as g (g.tag)}
 				<h3 class="tag">{g.tag}</h3>
