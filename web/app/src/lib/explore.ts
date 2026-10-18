@@ -47,6 +47,8 @@ export interface Facets {
 
 export const ROW_MAX = 20;
 
+const kindWord: Record<CardKind, string> = { movie: 'Movie', show: 'Show', artist: 'Artist' };
+
 function kindOf(k: string): CardKind {
 	return k === 'show' || k === 'artist' ? k : 'movie';
 }
@@ -83,7 +85,7 @@ export function titleCard(t: TitleView, subtitle?: string, key = `t${t.id}`): Ex
 		name: t.name,
 		year: t.year,
 		image: t.artwork?.[0] ?? null,
-		subtitle: subtitle ?? (t.year ? String(t.year) : undefined),
+		subtitle: subtitle ?? (t.year ? String(t.year) : kindWord[kindOf(t.kind)]),
 		titleId: t.id,
 		status: s.status,
 		statusLabel: s.label,
