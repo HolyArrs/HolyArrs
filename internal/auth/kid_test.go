@@ -230,10 +230,15 @@ func TestKidLimitTakesEffectWithoutSigningOut(t *testing.T) {
 func TestAPIKeyCarriesKidLimit(t *testing.T) {
 	f := gated(t, Options{})
 	own := ownerOf(t, f)
-	kai := join(t, f, invite(t, f, own, `{"role":"member","perms":["ask","settings"],"max_rating":"PG"}`), "kai")
+	// Making a key needs settings, which a Kid may not hold, so the key is
+	// made first and the limit set afterwards (it then narrows the key too).
+	kai := join(t, f, invite(t, f, own, `{"role":"member","perms":["ask","settings"]}`), "kai")
 	resp, out := kai.do(t, f, "POST", "/api/v1/auth/keys", `{"label":"tablet"}`)
 	if resp.StatusCode != 201 {
 		t.Fatalf("make key: %d %s", resp.StatusCode, out)
+	}
+	if r2, o2 := own.do(t, f, "PUT", fmt.Sprintf("/api/v1/users/%d", userID(t, f, "kai")), `{"perms":["ask"],"max_rating":"PG"}`); r2.StatusCode != 200 {
+		t.Fatalf("set limit: %d %s", r2.StatusCode, o2)
 	}
 	var k struct {
 		Key string `json:"key"`
@@ -245,5 +250,35 @@ func TestAPIKeyCarriesKidLimit(t *testing.T) {
 	}
 	if max, country := limitOf(t, out); max != "PG" || country != "US" {
 		t.Fatalf("me with key: %q %q", max, country)
+	}
+}
+
+func TestKidMayOnlyAsk(t *testing.T) {
+	f := gated(t, Options{})
+	own := ownerOf(t, f)
+	const only = "A Kid account can only ask for titles."
+	for _, perms := range []string{`["ask","manage_library"]`, `["ask","approve"]`, `["settings"]`} {
+		resp, out := own.do(t, f, "POST", "/api/v1/users/invites", `{"role":"member","perms":`+perms+`,"max_rating":"PG"}`)
+		if resp.StatusCode != 400 || !strings.Contains(out, only) {
+			t.Fatalf("invite %s: %d %s", perms, resp.StatusCode, out)
+		}
+	}
+	if resp, out := own.do(t, f, "POST", "/api/v1/users/invites", `{"role":"member","perms":["ask","auto_approve"],"max_rating":"PG"}`); resp.StatusCode != 201 {
+		t.Fatalf("ask and auto_approve: %d %s", resp.StatusCode, out)
+	}
+	join(t, f, invite(t, f, own, `{"role":"member","perms":["ask","manage_library"]}`), "ana")
+	anaPath := fmt.Sprintf("/api/v1/users/%d", userID(t, f, "ana"))
+	resp, out := own.do(t, f, "PUT", anaPath, `{"max_rating":"PG"}`)
+	if resp.StatusCode != 400 || !strings.Contains(out, only) {
+		t.Fatalf("limit on a manager: %d %s", resp.StatusCode, out)
+	}
+	join(t, f, invite(t, f, own, `{"role":"member","max_rating":"PG"}`), "kai")
+	kaiPath := fmt.Sprintf("/api/v1/users/%d", userID(t, f, "kai"))
+	resp, out = own.do(t, f, "PUT", kaiPath, `{"perms":["ask","manage_library"]}`)
+	if resp.StatusCode != 400 || !strings.Contains(out, only) {
+		t.Fatalf("manage_library on a Kid: %d %s", resp.StatusCode, out)
+	}
+	if resp, out := own.do(t, f, "PUT", kaiPath, `{"perms":["ask","manage_library"],"max_rating":""}`); resp.StatusCode != 200 {
+		t.Fatalf("clear limit and grant: %d %s", resp.StatusCode, out)
 	}
 }

@@ -476,7 +476,15 @@ func TestKidLibrarySummaryRecent(t *testing.T) {
 
 func TestKidCalendar(t *testing.T) {
 	k := newKidRig(t)
-	k.owner.call("PUT", fmt.Sprintf("/api/v1/users/%d", k.kai.id), `{"perms":["ask","manage_library"]}`, 200)
+	// The API refuses manage_library on a Kid; an account from before that
+	// rule could still hold it, so it is written straight to the row here.
+	k.owner.call("PUT", fmt.Sprintf("/api/v1/users/%d", k.kai.id), `{"perms":["ask","manage_library"]}`, 400)
+	if err := k.st.WriteCore(context.Background(), func(tx *sql.Tx) error {
+		_, err := tx.Exec(`UPDATE users SET perms = '["ask","manage_library"]' WHERE id = ?`, k.kai.id)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
 	b := string(k.kai.call("GET", "/api/v1/calendar", "", 200))
 	if !strings.Contains(b, "Gentle Meadow") || mentionsBlocked(b) != "" {
 		t.Fatalf("kid calendar: %s", b)

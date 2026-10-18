@@ -75,7 +75,7 @@ func countryOr(c string) string {
 
 // kidLimit checks an age-rating limit asked for a person of role and
 // returns it as stored, or an error in plain words for a 400.
-func kidLimit(role, max, country string) (string, string, error) {
+func kidLimit(role, max, country string, perms []Perm) (string, string, error) {
 	max, country = ratings.Norm(max), countryOr(country)
 	if !ratings.Valid(max) {
 		return "", "", fmt.Errorf("unknown age rating %q: pick one of %s, or leave it empty for no limit", max, ratings.Choices())
@@ -85,6 +85,15 @@ func kidLimit(role, max, country string) (string, string, error) {
 	}
 	if max != "" && role != RoleMember {
 		return "", "", errors.New("Only members can have an age-rating limit.")
+	}
+	if max != "" {
+		// A Kid may only ask: any other permission would open routes
+		// (live events, downloads, history, jobs) the limit does not cover.
+		for _, p := range perms {
+			if p != PermAsk && p != PermAutoApprove {
+				return "", "", errors.New("A Kid account can only ask for titles.")
+			}
+		}
 	}
 	return max, country, nil
 }
@@ -278,7 +287,7 @@ func (a *Auth) editUser(w http.ResponseWriter, r *http.Request) {
 	if body.RatingCountry != nil {
 		country = *body.RatingCountry
 	}
-	if maxRating, country, err = kidLimit(newRole, maxRating, country); err != nil {
+	if maxRating, country, err = kidLimit(newRole, maxRating, country, perms); err != nil {
 		fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -427,7 +436,7 @@ func (a *Auth) makeInvite(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	maxRating, country, err := kidLimit(body.Role, body.MaxRating, body.RatingCountry)
+	maxRating, country, err := kidLimit(body.Role, body.MaxRating, body.RatingCountry, perms)
 	if err != nil {
 		fail(w, http.StatusBadRequest, err.Error())
 		return

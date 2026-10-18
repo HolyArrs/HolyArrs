@@ -80,9 +80,13 @@ same answer:
   has no age ratings." A Kid also cannot join someone else's ask for a title
   above the limit.
 
-A Kid account is meant to hold only the Ask permission. A Kid who is also
-given Run the Library can open the Library-work screens, such as Downloads
-and History, and the live updates, which still show every title.
+A Kid account may hold only the Ask permission and, if the owner wants, the
+permission to have asks approved without waiting (`ask` and `auto_approve`).
+Any other permission would open Library-work screens such as Downloads,
+History, jobs and the live updates, which the limit does not cover. So an
+invite or a change on `PUT /users/{id}` that combines a limit with any other
+permission answers 400 "A Kid account can only ask for titles." To give such
+a person more, clear the limit in the same change.
 
 ## US ratings only for now
 

@@ -20248,7 +20248,7 @@
         "x-holyarrs-scope": "admin"
       },
       "post": {
-        "description": "Answers the invite link once; it ends after its days (1 to 30). max_rating is a Kid's age-rating limit: one value from G, PG, PG-13, R, NC-17 or TV-Y, TV-Y7, TV-G, TV-PG, TV-14, TV-MA, or empty for no limit. rating_country is US (only US ratings are known for now). The person who joins gets the invite's limit. Only member invites can carry a limit; an unknown rating, a country other than US, or a limit on an admin invite answers 400.",
+        "description": "Answers the invite link once; it ends after its days (1 to 30). max_rating is a Kid's age-rating limit: one value from G, PG, PG-13, R, NC-17 or TV-Y, TV-Y7, TV-G, TV-PG, TV-14, TV-MA, or empty for no limit. rating_country is US (only US ratings are known for now). The person who joins gets the invite's limit. Only member invites can carry a limit; an unknown rating, a country other than US, or a limit on an admin invite answers 400. A person with a limit may hold only the ask and auto_approve permissions; any other permission with a limit answers 400 \"A Kid account can only ask for titles.\"",
         "operationId": "makeInvite",
         "requestBody": {
           "content": {
@@ -20356,7 +20356,7 @@
     },
     "/api/v1/users/{id}": {
       "put": {
-        "description": "Role, permissions, state and age-rating limit; the owner cannot be changed here. max_rating is a Kid's age-rating limit: one value from G, PG, PG-13, R, NC-17 or TV-Y, TV-Y7, TV-G, TV-PG, TV-14, TV-MA, or empty for no limit. rating_country is US (only US ratings are known for now). An empty max_rating clears the limit and a left-out one keeps it. Only members can have a limit; making someone an admin clears it. An unknown rating, a country other than US, or a limit on an admin answers 400.",
+        "description": "Role, permissions, state and age-rating limit; the owner cannot be changed here. max_rating is a Kid's age-rating limit: one value from G, PG, PG-13, R, NC-17 or TV-Y, TV-Y7, TV-G, TV-PG, TV-14, TV-MA, or empty for no limit. rating_country is US (only US ratings are known for now). An empty max_rating clears the limit and a left-out one keeps it. Only members can have a limit; making someone an admin clears it. An unknown rating, a country other than US, or a limit on an admin answers 400. A person with a limit may hold only the ask and auto_approve permissions; any other permission with a limit answers 400 \"A Kid account can only ask for titles.\"",
         "operationId": "editUser",
         "parameters": [
           {
