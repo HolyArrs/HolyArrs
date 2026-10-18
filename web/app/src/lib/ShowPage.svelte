@@ -437,7 +437,7 @@
 			{#if staff}
 				<div class="season-tools">
 					<Button icon="search" size="sm" onclick={() => searchSeason(s.number)} disabled={searching === `s${s.number}`} aria-label="Search now: {seasonName(s.number)}" data-testid="search-season">Search season</Button>
-					<span data-testid="season-menu"><Menu label="More for {seasonName(s.number)}" items={seasonMenu(s.number)} width={240} align="start" /></span>
+					<span data-testid="season-menu"><Menu label="Season actions for {seasonName(s.number)}" variant="button" icon="more" text="Season actions" items={seasonMenu(s.number)} width={240} align="start" /></span>
 					{#if episodes[s.number] && seasonLooking(episodes[s.number])}
 						<span class="xs muted">{seasonLooking(episodes[s.number])} looking for a copy</span>
 					{/if}
@@ -466,7 +466,7 @@
 									statusTestid="episode-state"
 								>
 									{#snippet action()}
-										{#if staff}<span class="ep-menu"><Menu label="Actions for {episodeLabel(ep, order)}" items={episodeItems(ep)} width={250} /></span>{/if}
+										{#if staff}<span class="ep-menu"><Menu label="Episode actions for {episodeLabel(ep, order)}" items={episodeItems(ep)} width={250} /></span>{/if}
 									{/snippet}
 								</WideCard>
 							{:else}
@@ -477,7 +477,7 @@
 										<span class="ep-sub">{ep.air_date ? date(ep.air_date) : 'No air date yet'}{(ep.runtime_minutes ?? ep.runtime) ? ` · ${runtimeWords(ep.runtime_minutes ?? ep.runtime)}` : ''}</span>
 									</div>
 									{#if main}<StatusPill kind={slotKind(main.state)} label={ep.slots.length > 1 ? ep.slots.map((x) => `${x.version}: ${x.state_label}`).join(' · ') : main.state_label} testid="episode-state" />{/if}
-									{#if staff}<Menu label="Actions for {episodeLabel(ep, order)}" items={episodeItems(ep)} width={250} />{/if}
+									{#if staff}<Menu label="Episode actions for {episodeLabel(ep, order)}" items={episodeItems(ep)} width={250} />{/if}
 								</div>
 							{/if}
 							{#if why}<p class="xs muted ep-why" data-testid="episode-why">{why}</p>{/if}

@@ -159,3 +159,45 @@ export function inLibraryWord(state: string | undefined, versions?: { label: str
 	}
 	return state === 'in_library' ? ' · in the Library' : '';
 }
+
+/** The letters of the jump rail, A to Z then # for names that start with a number or sign. */
+export const letters = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '#'];
+
+/** letterOf is the rail letter a name files under ("Élan" under E, "2 Guns" under #). */
+export function letterOf(name: string): string {
+	const c = name.trim().normalize('NFD').replace(/[̀-ͯ]/g, '').charAt(0).toUpperCase();
+	return c >= 'A' && c <= 'Z' ? c : '#';
+}
+
+/** firstOfLetter maps each letter to the id of the first title under it, in the order given. */
+export function firstOfLetter(ts: Pick<TitleView, 'id' | 'name'>[]): Map<string, number> {
+	const out = new Map<string, number>();
+	for (const t of ts) {
+		const l = letterOf(t.name);
+		if (!out.has(l)) out.set(l, t.id);
+	}
+	return out;
+}
+
+const viewDefault: Record<Filter, string[]> = {
+	all: ['in_library'],
+	have: ['in_library'],
+	missing: ['wanted'],
+	not_out_yet: ['not_out_yet'],
+	better: ['better_wanted']
+};
+
+/**
+ * exceptionChip keeps a poster's state only when it says something the view
+ * does not already say: "In library" is dropped in the All and In library
+ * views, but "3 missing" (a count) and any other state stay.
+ */
+export function exceptionChip<T extends { state: string; label: string }>(f: Filter, chip: T | null): T | null {
+	if (!chip) return null;
+	return viewDefault[f].includes(chip.state) && !/\d/.test(chip.label) ? null : chip;
+}
+
+/** missingEpisodes keeps the episodes that are kept, have aired and have no copy yet (wanted or on the way). */
+export function missingEpisodes<E extends { keep_up_to_date: boolean; slots: { state: string }[] }>(eps: E[]): E[] {
+	return eps.filter((e) => e.keep_up_to_date && e.slots.some((s) => s.state === 'wanted' || busyStates.includes(s.state)));
+}

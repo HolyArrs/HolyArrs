@@ -26,6 +26,7 @@
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import { reducedMotion } from '#lib/motion.ts';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
+	import Menu from '#lib/ui/Menu.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import StatusPill, { type StatusKind } from '#lib/ui/StatusPill.svelte';
@@ -588,7 +589,7 @@
 								<div class="tp-row-end">
 									{#if s}<span class="chip {tone(s.state)}">{s.state_label}</span>{/if}
 									{#if session.can('manage_library') && !v.main}
-										<Button variant="plain" onclick={() => removeVersion(v)}>Remove {v.label}</Button>
+										<Menu label="Version actions for {v.label}" items={[{ label: `Remove ${v.label}`, icon: 'trash', destructive: true, onselect: () => removeVersion(v) }]} width={220} />
 									{/if}
 								</div>
 							</li>

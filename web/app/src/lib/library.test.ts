@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { byName, counts, slotNotes, loadChoices, matches, matchesTitleQuery, ofKind, pickId, saveChoices, secondVersion, titleQuery, inLibraryWord } from './library.ts';
+import { byName, counts, slotNotes, loadChoices, matches, matchesTitleQuery, ofKind, pickId, saveChoices, secondVersion, titleQuery, inLibraryWord, letterOf, firstOfLetter, letters, exceptionChip, missingEpisodes } from './library.ts';
 import type { TitleView } from './types.ts';
 
 function title(name: string, ...states: string[]): TitleView {
@@ -106,5 +106,34 @@ describe('inLibraryWord', () => {
 		expect(inLibraryWord('in_library', vs)).toBe(' · in the Library: Main');
 		expect(inLibraryWord('wanted', [{ label: 'Main', state: 'wanted' }, { label: '4K', state: 'in_library' }])).toBe(' · in the Library: 4K');
 		expect(inLibraryWord('wanted', [{ label: 'Main', state: 'wanted' }, { label: '4K', state: 'wanted' }])).toBe('');
+	});
+});
+
+describe('library letters and quiet states', () => {
+	it('files names under a letter, accents and numbers included', () => {
+		expect(letterOf('Élan')).toBe('E');
+		expect(letterOf(' quiet Orchard')).toBe('Q');
+		expect(letterOf('2 Guns')).toBe('#');
+		expect(letterOf('')).toBe('#');
+		const m = firstOfLetter([{ id: 3, name: 'Alpha' }, { id: 1, name: 'Avon' }, { id: 2, name: 'Cinder' }]);
+		expect([...m]).toEqual([['A', 3], ['C', 2]]);
+		expect(letters).toHaveLength(27);
+	});
+
+	it('drops the state a view already says, keeps counts and other states', () => {
+		const have = { state: 'in_library', label: 'In library' };
+		expect(exceptionChip('all', have)).toBeNull();
+		expect(exceptionChip('have', have)).toBeNull();
+		expect(exceptionChip('missing', have)).toBe(have);
+		expect(exceptionChip('all', { state: 'in_library', label: '4 in library' })).not.toBeNull();
+		expect(exceptionChip('missing', { state: 'wanted', label: 'Wanted' })).toBeNull();
+		expect(exceptionChip('missing', { state: 'wanted', label: '3 missing' })).not.toBeNull();
+		expect(exceptionChip('all', { state: 'downloading', label: 'Downloading' })).not.toBeNull();
+		expect(exceptionChip('all', null)).toBeNull();
+	});
+
+	it('lists the missing episodes of a show', () => {
+		const ep = (id: number, keep: boolean, state: string) => ({ id, keep_up_to_date: keep, slots: [{ state }] });
+		expect(missingEpisodes([ep(1, true, 'wanted'), ep(2, true, 'in_library'), ep(3, false, 'wanted'), ep(4, true, 'downloading'), ep(5, true, 'not_out_yet')]).map((e) => e.id)).toEqual([1, 4]);
 	});
 });

@@ -45,8 +45,8 @@ async function openSeason(p: Page, name: string) {
 
 // Each episode card keeps its searches in its menu.
 async function episodeMenu(ep: Locator) {
-	await ep.getByRole('button', { name: /^Actions for/ }).click();
-	return ep.getByRole('menu', { name: /^Actions for/ });
+	await ep.getByRole('button', { name: /^Episode actions for/ }).click();
+	return ep.getByRole('menu', { name: /^Episode actions for/ });
 }
 
 async function searchItems(s: Locator): Promise<string[]> {
@@ -90,7 +90,7 @@ test('the owner adds Moss Parade with every season kept', async () => {
 test('Choose a release for a season: the season pack fills both episodes with one download', async () => {
 	await openShow(page, 'Moss Parade');
 	const s1 = await openSeason(page, 'Season 1');
-	await s1.getByRole('button', { name: 'More for Season 1' }).click();
+	await s1.getByRole('button', { name: 'Season actions', exact: true }).click();
 	await page.getByRole('menuitem', { name: 'Choose a release' }).click();
 	const panel = page.getByTestId('show-releases');
 	await expect(panel.getByRole('heading', { level: 2 })).toHaveText('Choose a release: Season 1');
@@ -175,7 +175,7 @@ test('the show page searches from a phone', async ({ browser }) => {
 	await openShow(phone, 'Lantern Street');
 	await expect(phone.getByTestId('search-show')).toBeVisible();
 	const s1 = await openSeason(phone, 'Season 1');
-	await s1.getByRole('button', { name: 'More for Season 1' }).click();
+	await s1.getByRole('button', { name: 'Season actions', exact: true }).click();
 	await phone.getByRole('menuitem', { name: 'Choose a release' }).click();
 	const panel = phone.getByTestId('show-releases');
 	await expect(panel.getByTestId('release').first()).toBeVisible({ timeout: 20_000 });

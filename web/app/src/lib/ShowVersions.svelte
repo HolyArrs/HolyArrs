@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Button from '#lib/ui/Button.svelte';
+	import Menu from '#lib/ui/Menu.svelte';
 	import { shortFolder } from '#lib/ui/TitleHero.svelte';
 	// The Versions card of a show (4.8.11): every wanted copy, such as HD and
 	// 4K, with its Pick rules and folder; staff add, change and remove them.
@@ -118,7 +119,7 @@
 					<div class="row">
 						<Button variant="plain" onclick={() => openEdit(v)} aria-label="Change the {v.label} Version">Change</Button>
 						{#if !v.main}
-							<Button variant="plain" onclick={() => remove(v)}>Remove {v.label}</Button>
+							<Menu label="Version actions for {v.label}" items={[{ label: `Remove ${v.label}`, icon: 'trash', destructive: true, onselect: () => remove(v) }]} width={220} align="start" />
 						{/if}
 					</div>
 				{/if}

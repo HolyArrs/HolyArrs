@@ -126,6 +126,13 @@ test('shows sit in the Library next to movies, with kinds and state filters', as
 	await expect(own.getByTestId('library-card').filter({ hasText: 'Quiet Orchard' })).toHaveCount(0);
 	await libraryStatus(own, 'missing');
 	await expect(card).toBeVisible();
+	// In the Missing list a show folds its missing episodes under one row.
+	await own.getByRole('radiogroup', { name: 'Layout' }).getByRole('radio', { name: 'List' }).click();
+	const missingRow = own.getByTestId('library-row').filter({ hasText: 'Harbour Lights' });
+	await missingRow.getByTestId('missing-fold').click();
+	await expect(missingRow.getByTestId('missing-fold')).toHaveAttribute('aria-expanded', 'true');
+	await expect(missingRow.getByTestId('missing-episode').first()).toContainText(/S\d\dE\d\d/);
+	await own.getByRole('radiogroup', { name: 'Layout' }).getByRole('radio', { name: 'Posters' }).click();
 	await libraryStatus(own, 'not_out_yet');
 	await expect(card).toBeVisible();
 	await libraryStatus(own, 'better');
@@ -229,7 +236,7 @@ test('the owner approves from a phone: the show is added with those seasons and 
 	await max.getByTestId('ask').filter({ hasText: 'Lantern Street' }).getByRole('link', { name: /Lantern Street/ }).click();
 	expect(await seasonCount(max)).toBe(3);
 	await expect(max.getByRole('checkbox')).toHaveCount(0);
-	await expect(max.getByRole('button', { name: /^Actions for/ })).toHaveCount(0);
+	await expect(max.getByRole('button', { name: /^Episode actions for/ })).toHaveCount(0);
 	await expect(max.getByRole('button', { name: 'Edit' })).toHaveCount(0);
 	await noSidewaysScroll(max);
 });

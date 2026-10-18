@@ -74,7 +74,7 @@
 				{ id: 'shows', title: 'TV shows', href: to('/library?kind=show'), cards: kindShelf(titles, 'show') },
 				...genreRows(titles, facets),
 				popular,
-				{ id: 'missing', title: 'Missing episodes', subtitle: 'Shows with aired episodes that have no file', cards: missingEpisodes(titles) },
+				{ id: 'missing', title: 'Missing episodes', subtitle: 'Shows with aired episodes that have no file', href: to('/library?kind=show&show=missing&layout=list'), cards: missingEpisodes(titles) },
 				{ id: 'looking', title: 'Still looking', subtitle: 'No copy in your Library yet', cards: stillLooking(titles) },
 				{ id: 'music', title: 'Music', href: to('/library?kind=artist'), cards: kindShelf(titles, 'artist') },
 				{ id: 'household', title: 'Popular in your household', subtitle: 'What people here asked for most', href: to('/wishlist'), cards: popularInHousehold(asks, titles) },

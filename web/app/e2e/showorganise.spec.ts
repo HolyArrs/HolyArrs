@@ -97,7 +97,7 @@ test('deleting one episode of a multi-episode file keeps the file; deleting the 
 	await axe(page, 'delete an episode');
 	await dialog.getByRole('button', { name: 'Cancel' }).click();
 
-	await s1.getByRole('button', { name: 'More for Season 1' }).click();
+	await s1.getByRole('button', { name: 'Season actions', exact: true }).click();
 	await page.getByRole('menuitem', { name: 'Delete Season 1' }).click();
 	await expect(dialog.getByRole('heading', { level: 2 })).toHaveText('Delete Quarry Bells Season 1?');
 	await expect(dialog.getByTestId('delete-plan')).toContainText('Season 1 (3 episodes): HolyArrs stops keeping them up to date.');

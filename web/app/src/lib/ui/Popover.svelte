@@ -106,6 +106,7 @@
 		class="trigger {variant}"
 		type="button"
 		aria-label={variant === 'icon' || trigger ? label : undefined}
+		title={variant === 'icon' && !trigger ? label : undefined}
 		aria-haspopup={haspopup}
 		aria-expanded={open}
 		aria-controls={id}

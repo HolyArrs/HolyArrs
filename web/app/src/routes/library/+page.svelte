@@ -6,8 +6,9 @@
 	import { page } from '$app/state';
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { date } from '#lib/format.ts';
-	import { counts, filters, kinds, matches, matchesTitleQuery, ofKind, titleQuery, type Filter, type Kind } from '#lib/library.ts';
-	import { showProgress, showState } from '#lib/shows.ts';
+	import { counts, exceptionChip, filters, firstOfLetter, kinds, letterOf, letters, matches, matchesTitleQuery, missingEpisodes, ofKind, titleQuery, type Filter, type Kind } from '#lib/library.ts';
+	import { reducedMotion } from '#lib/motion.ts';
+	import { episodeLabel, showProgress, showState } from '#lib/shows.ts';
 	import { artistProgress, artistState } from '#lib/music.ts';
 	import Poster from '#lib/Poster.svelte';
 	import Icon from '#lib/Icon.svelte';
@@ -27,7 +28,7 @@
 	import { peopleNames, plainReason } from '#lib/plain.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
-	import type { TitleView } from '#lib/types.ts';
+	import type { EpisodeView, TitleView } from '#lib/types.ts';
 
 	let titles = $state<TitleView[]>([]);
 	let loaded = $state(false);
@@ -105,6 +106,9 @@
 	const kindLabel: Record<string, string> = { movie: 'Movie', show: 'Show', artist: 'Artist' };
 
 	function readView(): 'grid' | 'list' {
+		// ?layout=list (from the Missing shelves) opens the list, where shows fold their missing episodes.
+		const asked = page.url.searchParams.get('layout');
+		if (asked === 'list' || asked === 'grid') return asked;
 		try {
 			return localStorage.getItem('holyarrs.library-view') === 'list' ? 'list' : 'grid';
 		} catch {
@@ -301,6 +305,52 @@
 		return t.slots[0] ? { state: t.slots[0].state, label: t.slots[0].state_label } : null;
 	}
 
+	// The A to Z rail: only while sorted by name.
+	const jumps = $derived(firstOfLetter(shown));
+	const railOn = $derived(sort === 'name' && shown.length > 0);
+	let railFocus = $state('A');
+	let rail = $state<HTMLElement | null>(null);
+	function jump(letter: string) {
+		const id = jumps.get(letter);
+		if (id === undefined) return;
+		railFocus = letter;
+		const item = document.querySelector<HTMLElement>(`[data-title-id="${id}"]`);
+		if (!item) return;
+		item.scrollIntoView({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' });
+		item.querySelector<HTMLElement>('a[href]')?.focus({ preventScroll: true });
+	}
+	function railKey(e: KeyboardEvent) {
+		const on = letters.filter((l) => jumps.has(l));
+		const i = on.indexOf(railFocus);
+		let next = '';
+		if (e.key === 'ArrowDown' || e.key === 'ArrowRight') next = on[Math.min(on.length - 1, i + 1)];
+		else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') next = on[Math.max(0, i - 1)];
+		else if (e.key === 'Home') next = on[0];
+		else if (e.key === 'End') next = on[on.length - 1];
+		if (!next) return;
+		e.preventDefault();
+		railFocus = next;
+		rail?.querySelector<HTMLElement>(`[data-letter="${next === '#' ? 'num' : next}"]`)?.focus();
+	}
+	$effect(() => {
+		if (!jumps.has(railFocus)) railFocus = letters.find((l) => jumps.has(l)) ?? 'A';
+	});
+
+	// Missing view: a show folds its missing episodes under one row.
+	let foldOpen = $state<number | null>(null);
+	let missingOf = $state<Record<number, EpisodeView[] | 'loading' | 'error'>>({});
+	async function toggleMissing(t: TitleView) {
+		foldOpen = foldOpen === t.id ? null : t.id;
+		if (foldOpen !== t.id || Array.isArray(missingOf[t.id])) return;
+		missingOf[t.id] = 'loading';
+		try {
+			const r = await api.get<{ episodes: EpisodeView[] }>(`/titles/${t.id}/episodes`);
+			missingOf[t.id] = missingEpisodes(r.episodes);
+		} catch {
+			missingOf[t.id] = 'error';
+		}
+	}
+
 	async function load() {
 		try {
 			const [library, me] = await Promise.all([api.get<{ titles: TitleView[] }>('/titles'), api.get<{ id?: number }>('/auth/me')]);
@@ -394,21 +444,43 @@
 		{:else if shown.length === 0}
 			<EmptyState compact icon="search" title="Nothing matches this filter." action={filtersActive ? { label: 'Clear', onclick: clearFilters } : undefined} />
 		{:else if view === 'list'}
+			<div class:has-rail={railOn} class="with-rail">
 			<ul class="rows" aria-label="Library titles">
 				{#each shown as t (t.id)}
 					{@const c = chipOf(t)}
 					{@const requester = requestedBy(t)}
-					<li data-testid="library-row" class:selected={preview?.id === t.id} class:last-opened={lastOpenedId === t.id}>
+					{@const fold = filter === 'missing' && t.kind === 'show' && (t.show?.missing ?? 0) > 0}
+					<li data-testid="library-row" data-title-id={t.id} data-letter={letterOf(t.name)} class:selected={preview?.id === t.id} class:last-opened={lastOpenedId === t.id}>
 						<ListRow title={t.name} subtitle={[t.year, kindLabel[t.kind], t.kind === 'movie' ? '' : progressOf(t)].filter(Boolean).join(' · ')} meta="{outOn(t)} · Keep up to date: {t.keep_up_to_date ? 'Yes' : 'No'}" href={titleLink(t.id)} image={t.artwork[0]} icon={t.kind === 'show' ? 'tv' : t.kind === 'artist' ? 'music' : 'film'}>
 							{#snippet trailing()}
 								{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}<StatusPill kind="approved" testid="request-approved" />{/if}
 								{#if t.kind === 'movie'}
-									{#each t.slots as s (s.id)}<StatusPill kind={slotKind(s.state)} label={s.state_label} />{/each}
-								{:else if c}<StatusPill kind={slotKind(c.state)} label={c.label} />{/if}
+									{#each t.slots as s (s.id)}{#if exceptionChip(filter, { state: s.state, label: s.state_label })}<StatusPill kind={slotKind(s.state)} label={s.state_label} />{/if}{/each}
+								{:else if c && exceptionChip(filter, c)}<StatusPill kind={slotKind(c.state)} label={c.label} />{/if}
 								<span class="preview-only"><IconButton icon="info" tooltip={false} label="Preview {t.name}" aria-pressed={preview?.id === t.id} onclick={(event: MouseEvent) => openPreview(t, event)} /></span>
 							{/snippet}
-						</ListRow>
-						{#if lastOpenedId === t.id || requester}
+							</ListRow>
+							{#if fold}
+								{@const eps = missingOf[t.id]}
+								<div class="fold">
+									<Button variant="plain" size="sm" icon={foldOpen === t.id ? 'chevronDown' : 'chevronRight'} aria-expanded={foldOpen === t.id} aria-controls="missing-{t.id}" onclick={() => toggleMissing(t)} data-testid="missing-fold">{t.show?.missing} {t.show?.missing === 1 ? 'episode' : 'episodes'} missing</Button>
+									{#if foldOpen === t.id}
+										<div id="missing-{t.id}" class="fold-body" data-testid="missing-episodes">
+											{#if eps === 'loading' || eps === undefined}<Skeleton lines={2} />
+											{:else if eps === 'error'}<p class="fold-note">The episodes could not be loaded. <a href={titleLink(t.id)}>Open {t.name}</a></p>
+											{:else if eps.length === 0}<p class="fold-note">Nothing missing any more.</p>
+											{:else}
+												<ul>
+													{#each eps as ep (ep.id)}
+														<li data-testid="missing-episode"><span class="ep-code">{episodeLabel(ep, t.show?.episode_order ?? '')}</span> <span class="ep-name">{ep.name || 'Name not known yet'}</span>{#if ep.air_date}<span class="ep-date"> · {date(ep.air_date)}</span>{/if}{#if ep.slots[0] && ep.slots[0].state !== 'wanted'}{' '}<StatusPill kind={slotKind(ep.slots[0].state)} label={ep.slots[0].state_label} />{/if}</li>
+													{/each}
+												</ul>
+											{/if}
+										</div>
+									{/if}
+								</div>
+							{/if}
+							{#if lastOpenedId === t.id || requester}
 							<p class="row-notes">
 								{#if lastOpenedId === t.id}<span class="last-opened-label" data-testid="last-opened">Last opened</span>{/if}
 								{#if requester}<span class="requester" data-testid="requested-by">Requested by {requester}</span>{/if}
@@ -417,13 +489,17 @@
 					</li>
 				{/each}
 			</ul>
+			{#if railOn}{@render letterRail()}{/if}
+			</div>
 		{:else}
+			<div class:has-rail={railOn} class="with-rail">
 			<ul class="grid" aria-label="Library titles">
 			{#each shown as t, i (t.id)}
-				{@const c = chipOf(t)}
-				{@const requester = requestedBy(t)}
-				<li class="item rise" data-testid="library-card" class:selected={preview?.id === t.id} class:last-opened={lastOpenedId === t.id} style="--i: {Math.min(i, 8)}">
-					<PosterCard title={t.name} href={titleLink(t.id)} image={t.artwork[0]} subtitle={[t.year, t.kind === 'movie' ? '' : kindLabel[t.kind]].filter(Boolean).join(' · ')} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} status={c ? slotKind(c.state) : undefined} statusLabel={c?.label} vtName={artName(t.id)}>
+					{@const c = chipOf(t)}
+					{@const q3 = exceptionChip(filter, c)}
+					{@const requester = requestedBy(t)}
+					<li class="item rise" data-testid="library-card" data-title-id={t.id} data-letter={letterOf(t.name)} class:selected={preview?.id === t.id} class:last-opened={lastOpenedId === t.id} style="--i: {Math.min(i, 8)}">
+					<PosterCard title={t.name} href={titleLink(t.id)} image={t.artwork[0]} subtitle={[t.year, t.kind === 'movie' ? '' : kindLabel[t.kind]].filter(Boolean).join(' · ')} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} status={q3 ? slotKind(q3.state) : undefined} statusLabel={q3?.label} vtName={artName(t.id)}>
 						{#snippet action()}<span class="preview-only"><IconButton icon="info" tooltip={false} variant="glass" size="sm" label="Preview {t.name}" aria-pressed={preview?.id === t.id} onclick={(event: MouseEvent) => openPreview(t, event)} /></span>{/snippet}
 					</PosterCard>
 					{#if lastOpenedId === t.id || requester || t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}
@@ -436,6 +512,8 @@
 				</li>
 			{/each}
 			</ul>
+			{#if railOn}{@render letterRail()}{/if}
+			</div>
 		{/if}
 		</div>
 		{#if preview}
@@ -469,6 +547,16 @@
 	</div>
 </div>
 
+{#snippet letterRail()}
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+	<nav class="rail" aria-label="Jump to a letter" data-testid="letter-rail" bind:this={rail} onkeydown={railKey}>
+		{#each letters as l (l)}
+			{@const on = jumps.has(l)}
+			<button type="button" class="rail-l" data-letter={l === '#' ? 'num' : l} disabled={!on} tabindex={on && l === railFocus ? 0 : -1} aria-label={l === '#' ? '# Jump to titles that start with a number or sign' : `${l}, jump to titles under ${l}`} title={l === '#' ? 'Numbers and signs' : l} onclick={() => jump(l)}>{l}</button>
+		{/each}
+	</nav>
+{/snippet}
+
 <style>
 	.library { display: flex; flex-direction: column; gap: 16px; padding-bottom: 48px; min-width: 0; }
 	.toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
@@ -493,6 +581,22 @@
 	.rows > li.selected, .rows > li.last-opened { background: var(--surface-2); }
 	.rows > li.last-opened { box-shadow: inset 0 0 0 2px var(--text-muted); }
 	.row-notes { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: -4px 0 0; padding: 0 12px 10px 58px; }
+	.with-rail { min-width: 0; }
+	.with-rail.has-rail { display: grid; grid-template-columns: minmax(0, 1fr) 28px; gap: 12px; align-items: start; }
+	.grid > li, .rows > li { scroll-margin-top: 88px; }
+	.rail { position: sticky; top: 76px; display: flex; flex-direction: column; align-items: stretch; padding: 4px 0; border-radius: 999px; background: var(--surface-1); box-shadow: var(--shadow-card); }
+	.rail-l { display: grid; place-items: center; min-height: 24px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text); font: 600 12px/1 var(--font-ui); cursor: pointer; }
+	.rail-l:hover:not(:disabled) { background: var(--surface-2); }
+	.rail-l:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.rail-l:disabled { color: var(--text-muted); opacity: .5; cursor: default; }
+	.fold { padding: 0 12px 10px 58px; }
+	.fold-body { margin-top: 6px; padding: 8px 12px; border-radius: var(--r-btn); background: var(--surface-2); }
+	.fold-body ul { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; font: var(--t-callout); }
+	.fold-body li { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; min-width: 0; }
+	.ep-code { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+	.ep-name { overflow-wrap: anywhere; }
+	.ep-date { color: var(--text-muted); }
+	.fold-note { margin: 0; color: var(--text-muted); font: var(--t-callout); }
 	.empty-more { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 	.preview-only { display: none; }
 	.preview { display: none; }
@@ -518,6 +622,10 @@
 	}
 	@media (min-width: 1400px) { .grid { grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); } }
 	@media (max-width: 767px) {
+		.with-rail.has-rail { grid-template-columns: minmax(0, 1fr) 24px; gap: 6px; }
+		.rail { top: 64px; padding: 2px 0; }
+		.rail-l { font-size: 11px; }
+		.fold { padding-left: 12px; }
 		.grid { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 18px 12px; }
 		.find-box { flex-basis: 100%; max-width: none; }
 		.row-notes { padding-left: 58px; }

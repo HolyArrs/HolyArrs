@@ -185,9 +185,11 @@ test('add a movie with a second 4K Version; the Movie page shows both and can ad
 	await vd.getByRole('button', { name: 'Add Version' }).click();
 	await expect(versions).toHaveCount(3);
 	page.once('dialog', (d) => d.accept());
-	await page.getByRole('button', { name: 'Remove Small' }).click();
+	await page.getByRole('button', { name: 'Version actions for Small' }).click();
+	await page.getByRole('menuitem', { name: 'Remove Small' }).click();
 	await expect(versions).toHaveCount(2);
 	await expect(page.getByRole('button', { name: 'Remove Main' })).toHaveCount(0);
+	await expect(page.getByRole('button', { name: /^Version actions for Main/ })).toHaveCount(0);
 });
 
 test('the search palette shows Library and movie results; a movie not in the Library opens its details with Add', async () => {

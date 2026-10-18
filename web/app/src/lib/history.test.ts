@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createLatestOnly, dateRangeProblem, details, filterParams, groupLabel, historyQuery, kindGroups, kindTone, pageLine, readFilter } from './history.ts';
+import { createLatestOnly, dateRangeProblem, details, downloadSteps, filterParams, groupDownloads, groupLabel, historyQuery, isDownloadStep, kindGroups, kindTone, pageLine, readFilter } from './history.ts';
+import type { EventRecord } from './types.ts';
 
 describe('history', () => {
 	it('rejects a date range whose end is before its start', () => {
@@ -104,5 +105,34 @@ describe('history', () => {
 	it('says which rows are shown', () => {
 		expect(pageLine(0, 0, 0)).toBe('No Events');
 		expect(pageLine(120, 50, 50)).toBe('51 to 100 of 120');
+	});
+});
+
+describe('history download rows', () => {
+	const ev = (ID: number, Kind: string, DownloadID?: number): EventRecord => ({ ID, At: `2026-10-1${ID % 10}T10:00:00Z`, Kind, Summary: Kind, TitleID: 1, DownloadID });
+
+	it('folds the steps of one download into one row where its newest Event is', () => {
+		const rows = groupDownloads([ev(9, 'import_done', 4), ev(8, 'renamed'), ev(7, 'download_finished', 4), ev(6, 'download_sent', 4), ev(5, 'download_sent', 5)]);
+		expect(rows.map((r) => r.key)).toEqual(['d4', 'e8', 'd5']);
+		expect(rows[0].head.ID).toBe(9);
+		expect(rows[0].events.map((e) => e.ID)).toEqual([9, 7, 6]);
+		expect(rows[0].steps.map((s) => s.state)).toEqual(['done', 'done', 'done']);
+		expect(rows[1].steps).toEqual([]);
+		expect(rows[2].steps.map((s) => s.state)).toEqual(['done', 'waiting', 'waiting']);
+	});
+
+	it('marks where a download failed', () => {
+		expect(downloadSteps([ev(2, 'download_failed', 1), ev(1, 'download_sent', 1)]).map((s) => s.state)).toEqual(['done', 'failed', 'waiting']);
+		expect(downloadSteps([ev(3, 'import_rejected', 1), ev(2, 'download_finished', 1)]).map((s) => s.state)).toEqual(['done', 'done', 'failed']);
+		// A later import that worked wins over an earlier failed try.
+		expect(downloadSteps([ev(4, 'import_done', 1), ev(3, 'import_failed', 1)]).map((s) => s.state)).toEqual(['done', 'done', 'done']);
+	});
+
+	it('leaves Events without a download, or that are not download steps, alone', () => {
+		expect(isDownloadStep(ev(1, 'download_sent'))).toBe(false);
+		expect(isDownloadStep(ev(1, 'renamed', 3))).toBe(false);
+		expect(isDownloadStep(ev(1, 'download_vanished', 3))).toBe(true);
+		const rows = groupDownloads([ev(2, 'search_done'), ev(1, 'search_done')]);
+		expect(rows).toHaveLength(2);
 	});
 });

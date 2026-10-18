@@ -16,7 +16,7 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import Poster from '#lib/Poster.svelte';
-	import { createLatestOnly, dateRangeProblem, details, filterParams, groupLabel, historyQuery, kindGroups, kindTone, pageLine, readFilter, type HistoryFilter } from '#lib/history.ts';
+	import { createLatestOnly, dateRangeProblem, details, filterParams, groupDownloads, groupLabel, historyQuery, kindGroups, kindTone, pageLine, readFilter, type HistoryFilter } from '#lib/history.ts';
 	import type { EventPage, EventRecord, TitleView } from '#lib/types.ts';
 
 	const limit = 50;
@@ -26,7 +26,8 @@
 	let titles = $state<TitleView[]>([]);
 	let loaded = $state(false);
 	let error = $state('');
-	let open = $state<number | null>(null);
+	let open = $state<string | null>(null);
+	const rows = $derived(groupDownloads(events));
 	const beginLoad = createLatestOnly();
 
 	async function load() {
@@ -170,10 +171,12 @@
 				<p class="count" aria-live="polite" data-testid="history-count">{pageLine(total, filter.offset, events.length)}{movieName ? ` for ${movieName}` : ''}</p>
 			</header>
 			<ol class="panel events" data-testid="history">
-				{#each events as e (e.ID)}
-					{@const extra = details(e)}
+				{#each rows as row (row.key)}
+					{@const e = row.head}
+					{@const extra = row.steps.length ? [] : details(e)}
 					{@const eventTitle = titleById.get(e.TitleID ?? 0)}
-					<li class="event" data-testid="history-row" data-kind={e.Kind}>
+					{@const expandable = row.events.length > 1 || extra.length > 0 || (row.steps.length > 0 && details(e).length > 0)}
+					<li class="event" data-testid="history-row" data-kind={e.Kind} data-steps={row.steps.length ? row.events.length : undefined}>
 						<div class="line">
 							{#if eventTitle}<span class="art" class:square={eventTitle.kind === 'artist'} aria-hidden="true"><Poster src={e.artwork ?? eventTitle.artwork[0]} name={eventTitle.name} /></span>{:else}<span class="art blank" aria-hidden="true"></span>{/if}
 							<div class="what">
@@ -181,18 +184,42 @@
 									{#if e.TitleID && e.title_name}<a href={to(`/library/${e.TitleID}`)}>{e.title_name}</a>{#if e.episode}{' '}<span class="ep" data-testid="history-episode">{e.episode}</span>{/if}{#if e.version}{' '}<span class="ver" data-testid="history-version">{e.version}</span>{/if}{': '}{/if}{e.Summary}
 								</p>
 								<div class="sub">
-									<StatusPill kind={toneKind(kindTone(e.Kind))} label={groupLabel(e.Kind)} />
+									{#if row.steps.length}
+										<ol class="steps" aria-label="Steps of this download" data-testid="history-steps">
+											{#each row.steps as st (st.key)}
+												<li class="step {st.state}" data-state={st.state}><span class="pip" aria-hidden="true"></span>{st.label}<span class="sr-only">: {st.state === 'done' ? 'done' : st.state === 'failed' ? 'failed' : 'not yet'}</span></li>
+											{/each}
+										</ol>
+									{:else}
+										<StatusPill kind={toneKind(kindTone(e.Kind))} label={groupLabel(e.Kind)} />
+									{/if}
 									<time datetime={e.At} title={dateTime(e.At)}>{ago(e.At)}</time>
 								</div>
 							</div>
-							{#if extra.length}
-								<Button variant="plain" size="md" class="more" aria-expanded={open === e.ID} onclick={() => (open = open === e.ID ? null : e.ID)}>{open === e.ID ? 'Hide why' : 'Why and where'}</Button>
+							{#if expandable}
+								<Button variant="plain" size="md" class="more" aria-expanded={open === row.key} onclick={() => (open = open === row.key ? null : row.key)}>{row.steps.length ? (open === row.key ? 'Hide steps' : `Every step (${row.events.length})`) : open === row.key ? 'Hide why' : 'Why and where'}</Button>
 							{/if}
 						</div>
-						{#if extra.length && open === e.ID}
-							<dl class="why">
-								{#each extra as [k, v], i (i)}<dt>{k}</dt><dd>{v}</dd>{/each}
-							</dl>
+						{#if open === row.key}
+							{#if row.steps.length}
+								<ol class="trail" data-testid="history-trail">
+									{#each row.events as step (step.ID)}
+										{@const why = details(step)}
+										<li data-kind={step.Kind}>
+											<div class="trail-line">
+												<StatusPill kind={toneKind(kindTone(step.Kind))} label={groupLabel(step.Kind)} />
+												<span class="trail-sum">{step.Summary}</span>
+												<time datetime={step.At} title={dateTime(step.At)}>{ago(step.At)}</time>
+											</div>
+											{#if why.length}<dl class="why">{#each why as [k, v], i (i)}<dt>{k}</dt><dd>{v}</dd>{/each}</dl>{/if}
+										</li>
+									{/each}
+								</ol>
+							{:else if extra.length}
+								<dl class="why">
+									{#each extra as [k, v], i (i)}<dt>{k}</dt><dd>{v}</dd>{/each}
+								</dl>
+							{/if}
 						{/if}
 					</li>
 				{/each}
@@ -242,11 +269,26 @@
 	.why dd { margin: 0; font-family: var(--font-mono); overflow-wrap: anywhere; }
 	.line > :global(.more) { color: var(--text-muted); font-weight: 500; }
 	.line > :global(.more:hover) { color: var(--text); }
+	.steps { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 0; margin: 0; padding: 0; list-style: none; font: var(--t-footnote); }
+	.step { display: inline-flex; align-items: center; gap: 5px; color: var(--text-muted); }
+	.step + .step::before { content: ''; width: 14px; height: 1px; margin: 0 6px; background: var(--line-strong, var(--line)); }
+	.pip { width: 8px; height: 8px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--text-muted); }
+	.step.done { color: var(--text); }
+	.step.done .pip { background: var(--ok); box-shadow: none; }
+	.step.failed { color: var(--fail); font-weight: 600; }
+	.step.failed .pip { background: var(--fail); box-shadow: none; }
+	.trail { display: flex; flex-direction: column; gap: 10px; margin: 10px 0 2px 44px; padding: 12px; list-style: none; border-radius: var(--r-btn); background: var(--surface-2); }
+	.trail > li + li { padding-top: 10px; box-shadow: 0 -1px 0 var(--line); }
+	.trail-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font: var(--t-footnote); }
+	.trail-sum { flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
+	.trail-line time { color: var(--text-muted); }
+	.trail .why { margin: 8px 0 0; padding: 0; background: none; }
 	.pages { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
 	@media (max-width: 640px) {
 		.line { flex-wrap: wrap; }
 		.line > :global(.more) { margin-left: 44px; }
 		.why { margin-left: 0; grid-template-columns: minmax(0, 1fr); }
+		.trail { margin-left: 0; }
 		.pages > :global(*) { flex: 1; min-height: 44px; }
 	}
 </style>

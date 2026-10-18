@@ -160,3 +160,74 @@ export function pageLine(total: number, offset: number, shown: number): string {
 	if (total === 0) return 'No Events';
 	return `${offset + 1} to ${offset + shown} of ${total}`;
 }
+
+/** The steps of one download, in order. */
+export type StepKey = 'sent' | 'downloaded' | 'imported';
+export type StepState = 'done' | 'failed' | 'waiting';
+export interface Step {
+	key: StepKey;
+	label: string;
+	state: StepState;
+}
+
+/** A History row: one Event, or every step of one download folded together (newest first). */
+export interface HistoryRow {
+	key: string;
+	/** The newest Event; its title, time and kind lead the row. */
+	head: EventRecord;
+	events: EventRecord[];
+	/** The step line of a download; empty for a single Event. */
+	steps: Step[];
+}
+
+const downloadGroups = new Set(['grab', 'download', 'fail', 'import']);
+const groupOfKind = (kind: string) => kindGroups.find((g) => g.kinds.includes(kind))?.key ?? '';
+
+/** isDownloadStep says whether an Event is a step of a download (sent, downloading, failed, imported). */
+export function isDownloadStep(e: Pick<EventRecord, 'Kind' | 'DownloadID'>): boolean {
+	return !!e.DownloadID && downloadGroups.has(groupOfKind(e.Kind));
+}
+
+/** downloadSteps reads which of sent, downloaded and imported a download reached, and where it failed. */
+export function downloadSteps(events: Pick<EventRecord, 'Kind'>[]): Step[] {
+	const kinds = new Set(events.map((e) => e.Kind));
+	const has = (...k: string[]) => k.some((x) => kinds.has(x));
+	const downloadFailed = has('download_failed', 'download_vanished');
+	const importFailed = has('import_failed', 'import_rejected', 'file_hold_failed', 'free_space_low');
+	const imported = has('import_done', 'import_partly_done', 'file_replaced');
+	const downloaded = imported || importFailed || has('download_finished', 'download_seeding');
+	const sent = downloaded || downloadFailed || events.some((e) => groupOfKind(e.Kind) === 'grab' || groupOfKind(e.Kind) === 'download');
+	const state = (done: boolean, failed: boolean): StepState => (failed ? 'failed' : done ? 'done' : 'waiting');
+	return [
+		{ key: 'sent', label: 'Sent', state: state(sent, false) },
+		{ key: 'downloaded', label: 'Downloaded', state: state(downloaded, downloadFailed && !downloaded) },
+		{ key: 'imported', label: 'Imported', state: state(imported, importFailed && !imported) }
+	];
+}
+
+/**
+ * groupDownloads folds the Events of one download (sent, downloading,
+ * finished, imported or failed) into one row, placed where its newest Event
+ * is. Every other Event stays a row of its own. The order is kept.
+ */
+export function groupDownloads(events: EventRecord[]): HistoryRow[] {
+	const rows: HistoryRow[] = [];
+	const byDownload = new Map<number, HistoryRow>();
+	for (const e of events) {
+		if (!isDownloadStep(e)) {
+			rows.push({ key: `e${e.ID}`, head: e, events: [e], steps: [] });
+			continue;
+		}
+		const id = e.DownloadID!;
+		const row = byDownload.get(id);
+		if (row) {
+			row.events.push(e);
+			continue;
+		}
+		const fresh: HistoryRow = { key: `d${id}`, head: e, events: [e], steps: [] };
+		byDownload.set(id, fresh);
+		rows.push(fresh);
+	}
+	for (const row of byDownload.values()) row.steps = downloadSteps(row.events);
+	return rows;
+}

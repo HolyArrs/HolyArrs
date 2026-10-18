@@ -79,6 +79,13 @@ test('Search now on the season fills each Version with its own pack; History nam
 	await expect(page.getByTestId('title-history').getByTestId('event-version').filter({ hasText: '4K' }).first()).toBeVisible({ timeout: 20_000 });
 	await page.goto('/downloads/history');
 	await expect(page.getByTestId('history-version').filter({ hasText: '4K' }).first()).toBeVisible();
+	// A download's steps fold into one row with a step line; expanding lists each step.
+	const grouped = page.getByTestId('history-row').filter({ has: page.getByTestId('history-steps') }).first();
+	await expect(grouped.getByTestId('history-steps').locator('li')).toHaveCount(3);
+	await expect(grouped.getByTestId('history-steps').locator('[data-state="done"]').first()).toBeVisible();
+	await grouped.getByRole('button', { name: /^Every step \(\d+\)$/ }).click();
+	expect(await grouped.getByTestId('history-trail').locator(':scope > li').count()).toBeGreaterThan(1);
+	await expect(grouped.getByRole('button', { name: 'Hide steps' })).toHaveAttribute('aria-expanded', 'true');
 });
 
 test('change, add and remove Versions; a busy Version stays', async () => {
@@ -97,13 +104,16 @@ test('change, add and remove Versions; a busy Version stays', async () => {
 	await ad.getByRole('button', { name: 'Add Version' }).click();
 	await expect(card.getByTestId('version')).toHaveCount(3);
 	page.once('dialog', (d) => d.accept());
-	await card.getByRole('button', { name: 'Remove Small' }).click();
+	await card.getByRole('button', { name: 'Version actions for Small' }).click();
+	await page.getByRole('menuitem', { name: 'Remove Small' }).click();
 	await expect(card.getByTestId('version')).toHaveCount(2);
 	await expect(card.getByRole('button', { name: 'Remove Main' })).toHaveCount(0);
+	await expect(card.getByRole('button', { name: /^Version actions for Main/ })).toHaveCount(0);
 
 	// The 4K pack is downloading or placed: the Version is not removed.
 	page.once('dialog', (d) => d.accept());
-	await card.getByRole('button', { name: 'Remove 4K' }).click();
+	await card.getByRole('button', { name: 'Version actions for 4K' }).click();
+	await page.getByRole('menuitem', { name: 'Remove 4K' }).click();
 	await expect(page.getByText(/download or import under way|still has files/)).toBeVisible();
 	await expect(card.getByTestId('version')).toHaveCount(2);
 	await axe(page, 'show page with two Versions');

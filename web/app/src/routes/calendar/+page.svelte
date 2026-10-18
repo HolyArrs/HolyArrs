@@ -32,6 +32,14 @@
 		entryHref,
 		albumHave,
 		webcalLink,
+		weekStart,
+		weekRange,
+		weekDays,
+		shiftWeek,
+		readView,
+		saveView,
+		startView,
+		type CalendarView,
 		type TitlesShown
 	} from '#lib/calendar.ts';
 	import type { CalendarEntry, TitleView } from '#lib/types.ts';
@@ -41,7 +49,9 @@
 	const asked = /^(\d{4})-(\d{2})$/.exec(page.url.searchParams.get('month') ?? '');
 	let year = $state(asked ? Number(asked[1]) : now.getFullYear());
 	let month = $state(asked && Number(asked[2]) >= 1 && Number(asked[2]) <= 12 ? Number(asked[2]) - 1 : now.getMonth());
-	let view = $state<'month' | 'list'>('month');
+	let view = $state<CalendarView>('month');
+	// The week shown in Week view: this week, or the first week of a linked month.
+	let week = $state(weekStart(asked ? new Date(Number(asked[1]), Number(asked[2]) - 1, 1) : now));
 	let entries = $state<CalendarEntry[]>([]);
 	let libraryEmpty = $state(false);
 	let loaded = $state(false);
@@ -63,12 +73,15 @@
 	const weeks = $derived(monthGrid(year, month, shown));
 	const monthKey = $derived(`${year}-${String(month + 1).padStart(2, '0')}`);
 	const list = $derived(byDay(shown.filter((e) => entryDay(e).startsWith(monthKey))));
+	const days = $derived(weekDays(week, shown));
+	const weekEnd = $derived(shiftWeek(week, 1));
+	const weekName = $derived(`${week.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${new Date(weekEnd.getFullYear(), weekEnd.getMonth(), weekEnd.getDate() - 1).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`);
 	const monthName = $derived(new Date(year, month, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }));
 	const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 	async function load() {
 		try {
-			const r = monthRange(year, month);
+			const r = view === 'week' ? weekRange(week) : monthRange(year, month);
 			const [c, t] = await Promise.all([
 				api.get<{ dates: CalendarEntry[] | null }>(`/calendar?from=${r.from}&to=${r.to}`),
 				api.get<{ titles: TitleView[] }>('/titles')
@@ -84,13 +97,33 @@
 	}
 
 	function go(n: number) {
-		({ year, month } = shiftMonth(year, month, n));
+		if (view === 'week') {
+			week = shiftWeek(week, n);
+			const mid = shiftWeek(week, 0.5);
+			({ year, month } = { year: mid.getFullYear(), month: mid.getMonth() });
+		} else ({ year, month } = shiftMonth(year, month, n));
 		void load();
 	}
 
 	function thisMonth() {
 		year = now.getFullYear();
 		month = now.getMonth();
+		week = weekStart(now);
+		void load();
+	}
+
+	// Week and Month/List load different ranges; the last pick is remembered on this browser.
+	function pickView(v: CalendarView) {
+		const was = view;
+		view = v;
+		saveView(v);
+		if (v === 'week' && was !== 'week') {
+			const t = new Date();
+			week = weekStart(t.getFullYear() === year && t.getMonth() === month ? t : new Date(year, month, 1));
+		} else if (was === 'week' && v !== 'week') {
+			const mid = shiftWeek(week, 0.5);
+			({ year, month } = { year: mid.getFullYear(), month: mid.getMonth() });
+		}
 		void load();
 	}
 
@@ -172,7 +205,7 @@
 	}
 
 	onMount(() => {
-		if (window.matchMedia('(max-width: 767px)').matches) view = 'list';
+		view = startView({ remembered: readView(), which, wide: !window.matchMedia('(max-width: 767px)').matches, monthLink: !!asked });
 		void load();
 		void loadFeed();
 		const offs = [live.on('title', load), live.on('resync', load)];
@@ -188,9 +221,9 @@
 
 <section class="tools" aria-label="Calendar controls">
 	<div class="month-nav">
-		<IconButton icon="chevronLeft" label="Month before" variant="tinted" onclick={() => go(-1)} />
-		<h2 class="month" aria-live="polite" data-testid="cal-month">{monthName}</h2>
-		<IconButton icon="chevronRight" label="Month after" variant="tinted" onclick={() => go(1)} />
+		<IconButton icon="chevronLeft" label={view === 'week' ? 'Week before' : 'Month before'} variant="tinted" onclick={() => go(-1)} />
+		<h2 class="month" aria-live="polite" data-testid="cal-month">{view === 'week' ? weekName : monthName}</h2>
+		<IconButton icon="chevronRight" label={view === 'week' ? 'Week after' : 'Month after'} variant="tinted" onclick={() => go(1)} />
 	</div>
 	<div class="segs">
 		<SegmentedControl
@@ -205,7 +238,7 @@
 				{ value: 'music', label: 'Music' }
 			]}
 		/>
-		<SegmentedControl label="View" value={view} onchange={(v) => (view = v as 'month' | 'list')} options={[{ value: 'month', label: 'Month' }, { value: 'list', label: 'List' }]} />
+		<SegmentedControl label="View" testid="cal-view" value={view} onchange={(v) => pickView(v as CalendarView)} options={[{ value: 'week', label: 'Week' }, { value: 'month', label: 'Month' }, { value: 'list', label: 'List' }]} />
 	</div>
 	{#if which === 'all' || which === 'movies'}
 		<fieldset class="kinds">
@@ -225,7 +258,31 @@
 	<EmptyState icon="calendar" title="Nothing coming up" text="Add movies, shows and artists to your Library and their dates, episodes and albums show up here." action={{ label: 'Add media', href: to('/search'), icon: 'search' }} />
 {:else}
 	{#if error}<LoadError hasData message="Calendar could not be loaded." onretry={load} />{/if}
-	{#if view === 'month'}
+	{#if view === 'week'}
+		<ol class="week" data-testid="cal-week" aria-label="Week of {weekName}">
+			{#each days as d (d.day)}
+				{@const at = new Date(d.day + 'T00:00:00')}
+				<li class="wday" class:today={d.today} data-day={d.day}>
+					<p class="wday-head"><span class="dow">{at.toLocaleDateString(undefined, { weekday: 'short' })}</span> <b class="num">{d.date}</b><span class="sr-only">, {date(d.day + 'T12:00:00')}</span></p>
+					{#if d.items.length}
+						<ul>
+							{#each d.items as e (entryKey(e))}
+								<li class="item k-{e.kind}" data-testid="cal-item">
+									<span class="dot" aria-hidden="true"></span>
+									<div class="it">
+										<a href={to(entryHref(e))}>{#if entryTime(e)}<span class="t">{entryTime(e)}</span>{' '}{/if}{entryName(e)}</a>
+										<span class="sub">{kindWord[e.kind]}{#if e.network}{' on '}{e.network}{/if}{inLibraryWord(e.state, e.versions)}</span>
+									</div>
+								</li>
+							{/each}
+						</ul>
+					{:else}
+						<p class="none">Nothing</p>
+					{/if}
+				</li>
+			{/each}
+		</ol>
+	{:else if view === 'month'}
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex (keyboard users need to focus and scroll this region) -->
 		<div class="month-scroll" role="region" tabindex="0" aria-label="{monthName} month calendar; scroll horizontally to see every day">
 			<div class="grid" data-testid="cal-grid">
@@ -365,6 +422,23 @@
 	.it a { color: var(--text); font: var(--t-headline); font-size: 15px; overflow-wrap: anywhere; }
 	.it a:hover { text-decoration: underline; text-underline-offset: 3px; }
 	.sub { color: var(--text-muted); font: var(--t-subhead); font-weight: 400; overflow-wrap: anywhere; }
+
+	.week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); margin: 0; padding: 0; list-style: none; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); outline-offset: -1px; box-shadow: var(--shadow-card); overflow: hidden; }
+	.wday { min-width: 0; min-height: 220px; padding: 10px 8px; display: flex; flex-direction: column; gap: 6px; }
+	.wday + .wday { border-left: 1px solid var(--line); }
+	.wday-head { display: flex; align-items: center; gap: 6px; margin: 0; }
+	.wday .num { min-width: 26px; height: 26px; }
+	.wday ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+	.wday .it a { font-size: 14px; }
+	.wday .t { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+	.none { color: var(--text-muted); font: var(--t-footnote); }
+	@media (max-width: 1023px) {
+		.week { grid-template-columns: minmax(0, 1fr); }
+		.wday { min-height: 0; flex-direction: row; align-items: flex-start; gap: 14px; }
+		.wday + .wday { border-left: 0; border-top: 1px solid var(--line); }
+		.wday-head { flex: none; width: 64px; }
+		.wday ul, .none { flex: 1; min-width: 0; }
+	}
 
 	.feed-gap { margin-top: 24px; }
 	.feed { margin-top: 28px; max-width: 860px; padding: 18px; display: flex; flex-direction: column; gap: 12px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }

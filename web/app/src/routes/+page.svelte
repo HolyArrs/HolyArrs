@@ -332,7 +332,7 @@
 		{/if}
 
 		{#if manager && rows[2].cards.length}
-			<Shelf title="Missing" subtitle="Titles you keep up to date that have no file yet" href={to('/library?show=missing')}>
+			<Shelf title="Missing" subtitle="Titles you keep up to date that have no file yet" href={to('/library?show=missing&layout=list')}>
 				{#each rows[2].cards as c (c.key)}
 					<PosterCard title={c.name} href={titleHref(c.titleId!)} image={c.image} subtitle={c.subtitle} status={c.status} statusLabel={c.statusLabel} vtName={c.vtName} />
 				{/each}

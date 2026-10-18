@@ -157,3 +157,66 @@ export function feedLink(origin: string, path: string): string {
 export function webcalLink(link: string): string {
 	return link.replace(/^https?:\/\//, 'webcal://');
 }
+
+/** The calendar's three views. */
+export type CalendarView = 'week' | 'month' | 'list';
+
+/** weekStart is the Monday of the week a day falls in (local time). */
+export function weekStart(d: Date): Date {
+	return new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7));
+}
+
+/** weekRange is the first day of a week and the day after its last, for the calendar query. */
+export function weekRange(start: Date): { from: string; to: string } {
+	return { from: ymd(start), to: ymd(new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7)) };
+}
+
+/** weekDays lays one week out, Monday first, with each day's dates. */
+export function weekDays(start: Date, entries: CalendarEntry[], today = ymd(new Date())): GridDay[] {
+	const days: GridDay[] = [];
+	for (let i = 0; i < 7; i++) {
+		const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+		const k = ymd(d);
+		days.push({ day: k, date: d.getDate(), inMonth: true, today: k === today, items: entries.filter((e) => entryDay(e) === k) });
+	}
+	return days;
+}
+
+/** shiftWeek moves a week start by n weeks. */
+export function shiftWeek(start: Date, n: number): Date {
+	return new Date(start.getFullYear(), start.getMonth(), start.getDate() + n * 7);
+}
+
+const viewKey = 'holyarrs.calendar-view';
+
+/** readView is the view this browser last picked, if any. */
+export function readView(store: Pick<Storage, 'getItem'> | undefined = globalThis.localStorage): CalendarView | null {
+	try {
+		const v = store?.getItem(viewKey);
+		return v === 'week' || v === 'month' || v === 'list' ? v : null;
+	} catch {
+		return null;
+	}
+}
+
+/** saveView remembers the view picked; a private window may refuse and that is fine. */
+export function saveView(v: CalendarView, store: Pick<Storage, 'setItem'> | undefined = globalThis.localStorage) {
+	try {
+		store?.setItem(viewKey, v);
+	} catch {
+		// Not remembered; the default still works.
+	}
+}
+
+/**
+ * startView picks the view the calendar opens on: a shared month link opens
+ * that month (as a list on phones, unless Month was picked before); else the
+ * person's last choice; else a week for shows (or everything) on a screen
+ * 768px or wider, a list on phones, a month otherwise.
+ */
+export function startView(o: { remembered: CalendarView | null; which: TitlesShown; wide: boolean; monthLink: boolean }): CalendarView {
+	if (o.monthLink) return o.wide || o.remembered === 'month' ? 'month' : 'list';
+	if (o.remembered) return o.remembered;
+	if (!o.wide) return 'list';
+	return o.which === 'shows' || o.which === 'all' ? 'week' : 'month';
+}
