@@ -31,12 +31,14 @@ function safeAncestors(p) {
     if (fs.existsSync(q)) assert(!fs.lstatSync(q).isSymbolicLink(), 'Linked storage ancestor');
   }
 }
-let browser, proxy, originalDownloader, restoreDownloader;
+let browser, proxy, originalDownloader, restoreDownloader, session;
+const sessionName='music-download-'+crypto.randomBytes(4).toString('hex');
+function sessionAction(action,extra={}) { return JSON.parse(execFileSync('python',[path.join(__dirname,'music-download-session.py')],{input:JSON.stringify({action,name:sessionName,...extra}),encoding:'utf8'})); }
 (async () => {
   // Command lines stay private; only listener identities are recorded.
   const ps = `$ErrorActionPreference='Stop'; $r=@(Get-NetTCPConnection -State Listen | Where-Object { $_.LocalPort -in @(18730,18745,18746,18747,28768) }); foreach($port in @(18746,18747,28768)) { $x=@($r | Where-Object LocalPort -eq $port); if($x.Count -ne 1){throw 'Ambiguous listener'}; $p=Get-CimInstance Win32_Process -Filter ('ProcessId='+$x[0].OwningProcess); if($port -eq 18746 -and -not $p.CommandLine.Contains('vite.intercom-preview.config.ts')){throw 'Unexpected frontend'}; if($port -eq 18747 -and (-not $p.CommandLine.Contains('${runtime.replace(/'/g,"''")}\\config') -or $x[0].LocalAddress -ne '127.0.0.1')){throw 'Unexpected backend'}; if($port -eq 28768 -and $x[0].LocalAddress -ne '127.0.0.1'){throw 'Nonlocal fake'} }; $r | Select-Object LocalAddress,LocalPort,OwningProcess | ConvertTo-Json -Compress`;
   receipt.listeners = JSON.parse(execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-Command',ps],{encoding:'utf8'}));
-  receipt.before = guard();
+  receipt.original = guard();
   const downloadRoot=path.join(runtime,'downloads'); const folder=path.join(downloadRoot,releaseName);
   safeAncestors(folder);safeAncestors(artistRoot);assert(!fs.existsSync(folder),'Refuse existing test folder');
   assert(!fs.existsSync(artistRoot),'Refuse existing artist media');
@@ -48,6 +50,10 @@ let browser, proxy, originalDownloader, restoreDownloader;
   receipt.fakeBefore = fakeBefore;
   browser = await chromium.launch({headless:true});
   const context = await browser.newContext({viewport:{width:1440,height:1000},deviceScaleFactor:1});
+  const token=crypto.randomBytes(32).toString('base64url'),csrf=crypto.randomBytes(32).toString('base64url');
+  session=sessionAction('create',{token,csrf}); receipt.disposableAdmin=session.id;
+  await context.addCookies([{name:'holyarrs_session',value:token,url:base,httpOnly:true,sameSite:'Lax'}]);
+  receipt.before=guard();
   let allowedRelease = 0;
   await context.route('**/*', async route => {
     const req=route.request(), u=new URL(req.url()), p=u.pathname;
@@ -140,4 +146,4 @@ let browser, proxy, originalDownloader, restoreDownloader;
   for(const t of fakeBefore) assert.deepEqual(fakeAfter.find(x=>x.hash===t.hash),t,'Existing fake torrent changed');
   receipt.checks.push('Original users, credentials, settings, requests, titles, slots, files and fake torrents preserved');
   receipt.status='passed';
-})().catch(e=>{receipt.status='failed';receipt.error=e.message;process.exitCode=1;}).finally(async()=>{if(restoreDownloader)try{await restoreDownloader();receipt.configRestored=true;}catch{receipt.configRestoreFailed=true;}if(proxy)await new Promise(r=>proxy.close(r));if(browser)await browser.close();receipt.finished=new Date().toISOString();save();console.log(JSON.stringify({status:receipt.status,error:receipt.error,evidence:out,checks:receipt.checks}));});
+})().catch(e=>{receipt.status='failed';receipt.error=e.message;process.exitCode=1;}).finally(async()=>{if(restoreDownloader)try{await restoreDownloader();receipt.configRestored=true;}catch{receipt.configRestoreFailed=true;}if(proxy)await new Promise(r=>proxy.close(r));if(browser)await browser.close();if(session){receipt.sessionRevoked=sessionAction('revoke');}receipt.finished=new Date().toISOString();save();console.log(JSON.stringify({status:receipt.status,error:receipt.error,evidence:out,checks:receipt.checks}));});
