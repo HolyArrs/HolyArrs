@@ -252,7 +252,7 @@
 		if (p === '/library/held' || p === '/library/turned-down' || p === '/library/rename' || p === '/library/import' || p === '/library/missing-subtitles' || p === '/library/copies') return allowed('manage_library');
 		if (p.startsWith('/wishlist')) return allowed('wishlist');
 		if (p === '/settings/users') return session.can('users');
-		if (p === '/settings/account') return true;
+		if (p === '/settings/account' || p === '/settings/appearance') return true;
 		if (p.startsWith('/settings')) return p === '/settings' ? staff : session.can('settings');
 		return true;
 	}

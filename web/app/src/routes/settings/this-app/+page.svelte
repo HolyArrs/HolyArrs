@@ -1,5 +1,4 @@
 <script lang="ts">
-	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
@@ -11,15 +10,15 @@
 	import { ago, bytes, duration, words } from '#lib/format.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
-	import { checkLabel, linkLabel, runTone, runWord, splitStates, stateWord } from '#lib/health.ts';
-	import type { Health, HealthChecks, HealthSettings, HealthStates, UpdateInfo } from '#lib/types.ts';
-	import { releaseLink, updatePrivacy, updateWords } from '#lib/update.ts';
+	import { linkLabel, problems, runTone, runWord, splitStates, stateWord } from '#lib/health.ts';
+	import type { Health, HealthChecks, HealthStates, UpdateInfo } from '#lib/types.ts';
+	import { releaseLink, updateWords } from '#lib/update.ts';
 
 	let health = $state<Health | null>(null);
 	let checks = $state<HealthChecks | null>(null);
 	let states = $state<HealthStates | null>(null);
 	const split = $derived(splitStates(states?.states));
-	let settings = $state<HealthSettings | null>(null);
+	const bad = $derived(problems(checks?.checks));
 	interface PathInfo {
 		name: string;
 		path: string;
@@ -44,9 +43,6 @@
 	let storageError = $state('');
 	const freeWords = (n: number) => (n < 0 ? 'free space unknown' : `${bytes(n)} free`);
 	let error = $state('');
-	let running = $state(false);
-	let saving = $state(false);
-	let settingsError = $state('');
 
 	async function loadStorage() {
 		if (!session.can('settings')) return;
@@ -77,44 +73,11 @@
 				api.get<HealthChecks>('/health/checks'),
 				api.get<HealthStates>('/health/states')
 			]);
-			if (!settings && session.can('settings')) settings = await api.get<HealthSettings>('/settings/health');
 			await loadStorage();
 			update = await api.get<UpdateInfo>('/app/update');
 			error = '';
 		} catch (e) {
 			error = message(e);
-		}
-	}
-
-	async function runNow() {
-		running = true;
-		try {
-			checks = await api.post<HealthChecks>('/health/checks/run');
-		} catch (e) {
-			toasts.push(message(e), 'fail');
-		} finally {
-			running = false;
-		}
-	}
-
-	async function saveSettings(e: SubmitEvent) {
-		e.preventDefault();
-		if (!settings) return;
-		saving = true;
-		settingsError = '';
-		try {
-			settings = await api.put<HealthSettings>('/settings/health', {
-				...settings,
-				every_minutes: Number(settings.every_minutes),
-				flap_guard: Number(settings.flap_guard),
-				low_space_mb: Number(settings.low_space_mb)
-			});
-			update = await api.get<UpdateInfo>('/app/update');
-			toasts.push('Health check settings saved.', 'ok');
-		} catch (err) {
-			settingsError = message(err);
-		} finally {
-			saving = false;
 		}
 	}
 
@@ -131,18 +94,14 @@
 
 <svelte:head><title>This app · HolyArrs</title></svelte:head>
 
-<PageHeader title="This app" subtitle="Version and health of this HolyArrs.">
-	{#snippet actions()}
-		<Button type="button" onclick={runNow} disabled={running} aria-busy={running}>Check again</Button>
-	{/snippet}
-</PageHeader>
+<PageHeader title="This app" subtitle="Which HolyArrs this is, whether a newer one is out, and where it keeps its files." />
 
 {#if error}
 	<p class="notice bad" role="alert">{error}</p>
 {:else if !health}
 	<div class="sk" style="height: 240px"></div>
 {:else}
-	<section class="card" aria-labelledby="h-about">
+	<section class="card" id="h-about-card" aria-labelledby="h-about">
 		<div class="card-head">
 			<h2 id="h-about" class="h2">HolyArrs</h2>
 			<span class="chip {health.ok ? 'ok' : 'fail'}">{health.ok ? 'Healthy' : 'Database not answering'}</span>
@@ -184,62 +143,16 @@
 		</section>
 	{/if}
 
-	<section class="card" aria-labelledby="h-checks" data-testid="health-checks">
+	<section class="card" aria-labelledby="h-checks" data-testid="health-summary">
 		<div class="card-head">
-			<h2 id="h-checks" class="h2">Health checks</h2>
+			<h2 id="h-checks" class="h2">Health</h2>
 			{#if checks}<span class="chip {checks.worst === 'ok' ? 'ok' : checks.worst === 'warning' ? 'wait' : 'fail'}" data-testid="health-worst">{stateWord(checks.worst)}</span>{/if}
 		</div>
-		<p class="small muted">Library folders, free space, Sources, Downloaders and backups, checked every few minutes. When something breaks or is fixed, the Alerts that speak for health hear of it.</p>
-		{#if !checks || checks.checks.length === 0}
-			<p class="small muted" style="margin-top: var(--s-3)">No results yet. Check again to run them now.</p>
-		{:else}
-			<ul class="rows checks">
-				{#each checks.checks as c (c.key)}
-					<li data-testid="health-check" data-state={c.state}>
-						<span class="chip {c.state === 'ok' ? 'ok' : c.state === 'warning' ? 'wait' : 'fail'}">{stateWord(c.state)}</span>
-						<span class="grow small">
-							<b>{checkLabel(c.kind)}</b> {c.subject}
-							{#if c.message}<br /><span class="muted">{c.message}</span>{/if}
-						</span>
-						<time class="mono xs muted" datetime={c.since} title="Since">{ago(c.since)}</time>
-					</li>
-				{/each}
-			</ul>
-		{/if}
+		<p class="small muted">
+			{#if !checks || checks.checks.length === 0}No health results yet.{:else if bad.length === 0}All {checks.checks.length} checks are fine.{:else}{bad.length} of {checks.checks.length} checks need a look.{/if}
+		</p>
+		<div class="row" style="margin-top: var(--s-3)"><Button href={to('/settings/health')} iconAfter="chevronRight">See the health checks</Button></div>
 	</section>
-
-	{#if settings}
-		<form class="sc-form" onsubmit={saveSettings} aria-label="Health check settings">
-			<SettingsCard title="Health check settings">
-				<div class="two">
-					<Field id="hs-every" label="Check every (minutes)">
-						<input id="hs-every" class="input" type="number" min="1" max="1440" bind:value={settings.every_minutes} />
-					</Field>
-					<Field id="hs-guard" label="Alert after this many runs in a row">
-						<input id="hs-guard" class="input" type="number" min="1" max="20" bind:value={settings.flap_guard} />
-					</Field>
-				</div>
-				<p class="hint">A break or a fix must hold for that many runs before an Alert goes out, so a Downloader that blips once sends nothing.</p>
-				<Field id="hs-low" label="Warn when free space is under (MB)">
-					<input id="hs-low" class="input" type="number" min="0" bind:value={settings.low_space_mb} />
-				</Field>
-				<label class="checkline" style="margin-top: var(--s-4)"
-					><input type="checkbox" bind:checked={settings.update_check} /> Check once a day for a newer HolyArrs</label
-				>
-				<p class="hint">Off: HolyArrs never asks. On: one small request a day to the release feed below; nothing is ever installed by itself.</p>
-				<p class="hint" data-testid="update-privacy">{updatePrivacy(update?.version ?? 'version')}</p>
-				<Field id="hs-upd" label="Release feed" hint="Empty: the HolyArrs project's releases.">
-					<input id="hs-upd" class="input mono" bind:value={settings.update_check_url} placeholder={settings.update_check_default} autocomplete="off" />
-				</Field>
-				<label class="checkline"><input type="checkbox" bind:checked={settings.update_check_local} /> The release feed may be on the local network</label>
-				<label class="checkline"><input type="checkbox" bind:checked={settings.update_prerelease} /> Tell me about test versions too (such as v1.2.0-rc1)</label>
-				{#if settingsError}<p class="form-error" role="alert">{settingsError}</p>{/if}
-				<div class="row" style="margin-top: var(--s-4)">
-					<Button variant="primary" type="submit" disabled={saving} aria-busy={saving}>Save</Button>
-				</div>
-			</SettingsCard>
-		</form>
-	{/if}
 
 	<section class="card" aria-labelledby="h-stages" data-testid="stages">
 		<div class="card-head">
@@ -286,7 +199,7 @@
 	</div>
 
 	<div data-testid="storage">
-		<SettingsCard title="Storage" description="Paths as HolyArrs sees them (inside the container in Docker). Everything HolyArrs keeps lives in the config folder.">
+		<SettingsCard id="storage-card" title="Storage" description="Paths as HolyArrs sees them (inside the container in Docker). Everything HolyArrs keeps lives in the config folder.">
 			{#if storage}
 				<ul class="rows checks">
 					{#each storage.app as p (p.name)}
@@ -346,19 +259,7 @@
 		min-width: 0;
 		overflow-wrap: anywhere;
 	}
-	.two {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: var(--s-3);
-		margin-top: var(--s-4);
-	}
-	.two :global(.field + .field) {
-		margin-top: 0;
-	}
 	@media (max-width: 600px) {
-		.two {
-			grid-template-columns: 1fr;
-		}
 		.checks li {
 			align-items: stretch;
 			flex-direction: column;
@@ -367,8 +268,7 @@
 		.checks .grow {
 			width: 100%;
 		}
-		.checks li > :global(.chip),
-		.checks li > time {
+		.checks li > :global(.chip) {
 			align-self: flex-start;
 		}
 	}

@@ -3,6 +3,7 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { onMount } from 'svelte';
+	import { to } from '#lib/paths.ts';
 	import { api, message } from '#lib/api.ts';
 	import { ago } from '#lib/format.ts';
 	import { live } from '#lib/live.svelte.ts';
@@ -25,8 +26,6 @@
 
 	// The control waiting for its second step: what it does, in the server's words.
 	let asking = $state<{ key: string; label: string; path: string; confirm: Confirm; then: (r: unknown) => void } | null>(null);
-	// The whole app stopped; nothing more can be done from this page.
-	let gone = $state('');
 
 	async function load() {
 		try {
@@ -117,12 +116,6 @@
 		});
 	}
 
-	function app(how: 'restart' | 'safe-mode' | 'shutdown', label: string) {
-		run(`app-${how}`, label, `/app/${how}`, (r) => {
-			gone = (r as { text?: string })?.text ?? 'HolyArrs is stopping.';
-		});
-	}
-
 	const paused = (s: StageState) => s.state === 'off';
 	const pausable = (s: StageState) => !!parts?.stages?.includes(s.key.replace(/^stage:/, ''));
 
@@ -134,12 +127,10 @@
 
 <svelte:head><title>Parts and controls · HolyArrs</title></svelte:head>
 
-<PageHeader title="Parts and controls" subtitle="Turn parts on and off, restart one piece without stopping the rest, and restart HolyArrs." />
+<PageHeader title="Parts and controls" subtitle="Turn parts on and off, and restart one piece without stopping the rest." />
 
 {#if !allowed}
 	<p class="notice warn">Only the owner and admins can use these controls.</p>
-{:else if gone}
-	<p class="notice warn" role="status" data-testid="app-gone">{gone}</p>
 {:else if error}
 	<p class="notice bad" role="alert">{error}</p>
 {:else if !parts}
@@ -148,7 +139,7 @@
 	{#if safeMode}
 		<p class="notice warn" data-testid="parts-safe-mode">
 			HolyArrs runs in safe mode: only the core runs, and part switches and stage controls are refused until a normal start. Use
-			<b>Restart HolyArrs</b> below to leave safe mode.
+			<b>Restart HolyArrs</b> in the <a href={to('/settings/danger')}>Danger zone</a> to leave safe mode.
 		</p>
 	{/if}
 
@@ -165,7 +156,7 @@
 	{/if}
 
 	<div data-testid="parts">
-		<SettingsCard title="Parts" description="A part that is off hides its screens and stops its work. Its data is kept, and turning it on brings everything back.">
+		<SettingsCard id="parts-card" title="Parts" description="A part that is off hides its screens and stops its work. Its data is kept, and turning it on brings everything back.">
 			<ul class="rows list">
 				{#each parts.parts as p (p.part)}
 					<li data-testid="part" data-part={p.part} data-state={p.state}>
@@ -193,7 +184,7 @@
 	</div>
 
 	<div data-testid="control-stages">
-		<SettingsCard title="Stages" description="Background work such as feed checks and imports. Pause one to hold it; restart one that seems stuck. The rest keeps running.">
+		<SettingsCard id="stages-card" title="Stages" description="Background work such as feed checks and imports. Pause one to hold it; restart one that seems stuck. The rest keeps running.">
 			{#if split.stages.length === 0}
 				<p class="small muted">No stages reported.</p>
 			{:else}
@@ -220,7 +211,7 @@
 	</div>
 
 	<div data-testid="control-links">
-		<SettingsCard title="Linked apps" description="Reconnect one Downloader, or test one Source, media server or subtitle site now. Nothing else is interrupted.">
+		<SettingsCard id="links-card" title="Linked apps" description="Reconnect one Downloader, or test one Source, media server or subtitle site now. Nothing else is interrupted.">
 			{#if split.links.length === 0}
 				<p class="small muted">No Sources, Downloaders, subtitle sites or media servers yet.</p>
 			{:else}
@@ -242,20 +233,10 @@
 		</SettingsCard>
 	</div>
 
-	<div data-testid="control-app">
-		<SettingsCard title="The whole app">
-			<p class="small muted">
-				These stop HolyArrs. Docker's restart policy starts it again in a few seconds, unless the policy is <code>no</code>; then start the
-				container yourself. Each one asks first.
-			</p>
-			<div class="row acts" style="margin-top: var(--s-3)">
-				<Button type="button" onclick={() => app('restart', 'Restart HolyArrs')} disabled={!!busy}>Restart HolyArrs</Button>
-				<Button type="button" onclick={() => app('safe-mode', 'Restart in safe mode')} disabled={!!busy}>Restart in safe mode</Button>
-				<Button variant="destructive" type="button" onclick={() => app('shutdown', 'Shut down')} disabled={!!busy}>Shut down</Button>
-			</div>
-			<p class="xs muted">Safe mode starts only the core, once: sign-in, settings and the Library list. Use it when a part keeps breaking the start.</p>
-		</SettingsCard>
-	</div>
+	<SettingsCard id="whole-app-card" title="The whole app">
+		<p class="small muted">Restarting HolyArrs, safe mode and shutting down are in the Danger zone.</p>
+		<div class="row acts" style="margin-top: var(--s-3)"><Button href={to('/settings/danger')} iconAfter="chevronRight">Open the Danger zone</Button></div>
+	</SettingsCard>
 
 	<div data-testid="control-events">
 		<SettingsCard title="Controls used">
@@ -317,8 +298,5 @@
 		.list .acts > :global(.ui-btn) {
 			min-height: var(--tap);
 		}
-	}
-	code {
-		font-family: var(--font-mono);
 	}
 </style>
