@@ -1274,6 +1274,10 @@
             "description": "album, ep, single, broadcast or other.",
             "type": "string"
           },
+          "backdrop": {
+            "description": "The title's wide picture URL; left out when it has none.",
+            "type": "string"
+          },
           "date": {
             "format": "date-time",
             "type": "string"
@@ -1317,6 +1321,10 @@
             "format": "int64",
             "type": "integer"
           },
+          "poster": {
+            "description": "The title's poster link (/api/v1/artwork/<name> or a picture URL); left out when it has none. For an album it is the artist's picture.",
+            "type": "string"
+          },
           "runtime": {
             "description": "Minutes.",
             "type": "integer"
@@ -1326,6 +1334,10 @@
           },
           "state": {
             "description": "The episode's Slot state in the main Version.",
+            "type": "string"
+          },
+          "still": {
+            "description": "An episode's still picture URL, when known.",
             "type": "string"
           },
           "timed": {

@@ -41,6 +41,9 @@ type Service struct {
 	Live    *live.Hub
 	// Artwork caches posters; nil keeps no pictures.
 	Artwork *ArtworkCache
+	// ArtistImages finds artist pictures (music has no TMDB poster); nil
+	// finds none.
+	ArtistImages *metadata.ArtistImages
 	// SavePath is the Downloader save folder named at start, for health checks.
 	SavePath string
 	// Now is the clock (time.Now when nil).

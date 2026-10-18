@@ -593,6 +593,11 @@ func (a *API) calendar(w http.ResponseWriter, r *http.Request) {
 		}
 		es = kept
 	}
+	for i := range es {
+		if es[i].Poster != "" {
+			es[i].Poster = artworkLinks([]string{es[i].Poster})[0]
+		}
+	}
 	writeJSON(w, http.StatusOK, map[string]any{"from": from.Format("2006-01-02"), "to": to.Format("2006-01-02"), "titles": titles, "dates": es})
 }
 

@@ -250,6 +250,19 @@ type CalendarEntry struct {
 	AlbumType string `json:"album_type,omitempty"`
 	Tracks    int    `json:"tracks,omitempty"`
 	Have      int    `json:"have,omitempty"`
+	// Pictures: the title's poster (stored artwork, the API turns it into a
+	// link) and wide backdrop, and an episode's still when known.
+	Poster   string `json:"poster,omitempty"`
+	Backdrop string `json:"backdrop,omitempty"`
+	Still    string `json:"still,omitempty"`
+}
+
+// posterOf is a title's first stored picture ("" when it has none).
+func posterOf(t domain.Title) string {
+	if len(t.Artwork) > 0 {
+		return t.Artwork[0]
+	}
+	return ""
 }
 
 // VersionState is one Version's Slot state of an episode.
@@ -309,7 +322,8 @@ func Calendar(ctx context.Context, db reader, from, to time.Time, titles ...stri
 			at   *time.Time
 		}{{"cinema", ti.CinemaDate}, {"digital", ti.DigitalDate}, {"physical", ti.PhysicalDate}} {
 			if d.at != nil && !d.at.Before(from) && d.at.Before(to) {
-				out = append(out, CalendarEntry{TitleID: ti.ID, Name: ti.Name, Year: ti.Year, Kind: d.kind, Date: *d.at})
+				out = append(out, CalendarEntry{TitleID: ti.ID, Name: ti.Name, Year: ti.Year, Kind: d.kind, Date: *d.at,
+					Poster: posterOf(ti), Backdrop: ti.Backdrop})
 			}
 		}
 	}
@@ -358,7 +372,8 @@ func calendarAlbums(ctx context.Context, db reader, from, to time.Time) ([]Calen
 			}
 			artists[p.TitleID] = t
 		}
-		e := CalendarEntry{TitleID: t.ID, Name: t.Name, Kind: "album", Date: p.ReleaseDate.UTC(), PartID: p.ID, Album: p.Name, KeepUpToDate: p.KeepUpToDate}
+		e := CalendarEntry{TitleID: t.ID, Name: t.Name, Kind: "album", Date: p.ReleaseDate.UTC(), PartID: p.ID, Album: p.Name, KeepUpToDate: p.KeepUpToDate,
+			Poster: posterOf(t), Backdrop: t.Backdrop}
 		if p.ReleaseType != nil {
 			e.AlbumType = *p.ReleaseType
 		}
@@ -431,7 +446,7 @@ func calendarEpisodes(ctx context.Context, db reader, from, to time.Time) ([]Cal
 			return nil, store.ErrNotFound
 		}
 		e := CalendarEntry{TitleID: t.ID, Name: t.Name, Year: t.Year, Kind: "episode", ItemID: it.ID, Season: it.Numbers.Season, Episode: it.Numbers.Episode,
-			KeepUpToDate: it.KeepUpToDate}
+			KeepUpToDate: it.KeepUpToDate, Poster: posterOf(t), Backdrop: t.Backdrop, Still: it.Still}
 		if it.Name != nil && !strings.EqualFold(*it.Name, "TBA") {
 			e.EpisodeName = *it.Name
 		}
