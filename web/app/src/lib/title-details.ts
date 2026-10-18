@@ -79,10 +79,10 @@ export function fromMetadata(kind: DetailKind, tmdb: string, raw: Raw): TitleDet
 		poster: str(raw.poster),
 		backdrop: str(raw.backdrop),
 		genres,
-		runtime: num(raw.runtime),
+		runtime: num(raw.runtime_minutes) ?? num(raw.runtime),
 		rating,
 		network: str(raw.network),
-		cast: list(raw.cast)
+		cast: list(raw.cast ?? raw.people)
 			.map((p) => ({ name: str(p.name) ?? '', role: str(p.character) ?? str(p.role), image: str(p.image) ?? str(p.profile), id: str(p.id) ?? (num(p.id) ? String(p.id) : undefined) }))
 			.filter((p) => p.name),
 		similar: list(raw.similar)

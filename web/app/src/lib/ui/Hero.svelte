@@ -4,7 +4,7 @@
 	import StatusPill, { type StatusKind } from './StatusPill.svelte';
 	import { viewTransitionName } from '../motion.ts';
 
-	// Title page hero: full-bleed backdrop (blurred poster when there is none),
+	// Title page hero: full-bleed backdrop (the darkened poster when there is none),
 	// legibility gradient, title or logo art, meta line, badges, status,
 	// a description clamped to 3 lines with Show more, and an action row.
 	let {
@@ -83,10 +83,10 @@
 </div>
 
 <style>
-	.ui-hero { position: relative; isolation: isolate; min-height: clamp(360px, 40vw, 600px); display: flex; align-items: flex-end; overflow: hidden; border-radius: var(--r-panel); background: var(--on-art-ink); color: var(--on-art); }
+	.ui-hero { position: relative; isolation: isolate; min-height: clamp(360px, 40vw, 600px); display: flex; align-items: flex-end; overflow: hidden; margin: calc(var(--s-6) * -1) calc(var(--gutter) * -1) 0; background: var(--on-art-ink); color: var(--on-art); }
 	.bg { position: absolute; inset: 0; z-index: -2; }
 	.bg img { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
-	.bg.blur img { filter: blur(40px) saturate(140%); transform: scale(1.2); }
+	.bg.blur img { object-position: center 20%; filter: brightness(.8); }
 	.shade { position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, var(--on-art-scrim) 0%, var(--on-art-scrim-mid) 38%, var(--on-art-scrim-none) 72%), linear-gradient(to right, var(--on-art-scrim-mid) 0%, var(--on-art-scrim-none) 60%); }
 	.content { width: min(640px, 100%); padding: clamp(20px, 4vw, 48px); display: flex; flex-direction: column; gap: 10px; }
 	.crumbs { display: flex; flex-wrap: wrap; gap: 6px; font: var(--t-subhead); color: var(--on-art-muted); }
@@ -101,5 +101,5 @@
 	.more { align-self: flex-start; min-height: 32px; padding: 0 2px; color: var(--on-art); font: var(--t-subhead); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 	.more:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--on-art); border-radius: 4px; }
 	.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 6px; }
-	@media (max-width: 767px) { .ui-hero { border-radius: 0; margin-inline: calc(var(--gutter) * -1); min-height: 480px; } }
+	@media (max-width: 767px) { .ui-hero { margin-top: calc(var(--s-4) * -1); min-height: 480px; } }
 </style>

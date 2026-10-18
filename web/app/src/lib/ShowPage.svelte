@@ -18,7 +18,7 @@
 	import SubtitlePanel from './SubtitlePanel.svelte';
 	import { ago, date, dateTime, tone } from './format.ts';
 	import Icon from './Icon.svelte';
-	import TitleHero from './ui/TitleHero.svelte';
+	import TitleHero, { richMetadata, runtimeWords, shortFolder, type RichMeta } from './ui/TitleHero.svelte';
 	import LoadError from './ui/LoadError.svelte';
 	import ActionButton from './ui/ActionButton.svelte';
 	import ActionMenu from './ui/ActionMenu.svelte';
@@ -29,7 +29,7 @@
 	import Skeleton from './ui/Skeleton.svelte';
 	import TitleCast from './TitleCast.svelte';
 	import SimilarShelf from './SimilarShelf.svelte';
-	import { artName, crumbFor, slotKind } from './title-page.ts';
+	import { artName, crumbFor, qualityBadges, slotKind } from './title-page.ts';
 	import './title-page.css';
 	import { session } from './session.svelte.ts';
 	import { toasts } from './toasts.svelte.ts';
@@ -246,7 +246,25 @@
 		return items;
 	}
 
-	const heroMeta = $derived([title.year ? String(title.year) : '', show ? (statusWord[show.status] ?? show.status) : '', show?.network ?? '', show?.seasons.length ? `${show.seasons.length} ${show.seasons.length === 1 ? 'season' : 'seasons'}` : ''].filter(Boolean));
+	// Richer art and facts from the metadata endpoint, when the backend has it.
+	let rich = $state<RichMeta | null>(null);
+	$effect(() => {
+		const tmdb = title.ids?.tmdb;
+		rich = null;
+		if (!tmdb || (title?.backdrop && title?.genres?.length)) return;
+		let live = true;
+		void richMetadata(api.get, 'show', tmdb).then((m) => live && (rich = m));
+		return () => (live = false);
+	});
+	const heroMeta = $derived([title.year ? String(title.year) : '', show?.seasons.length ? `${show.seasons.length} ${show.seasons.length === 1 ? 'season' : 'seasons'}` : '', show?.network ?? '', show ? (statusWord[show.status] ?? show.status) : '', ...(title.genres?.length ? title.genres : (rich?.genres ?? [])).slice(0, 2)].filter(Boolean));
+	const heroBadges = $derived(qualityBadges(title.slots.map((s) => s.file)));
+	const seasonMenu = (n: number): MenuItem[] => [
+		{ label: 'Choose a release', icon: 'grid', onselect: () => searchSeason(n, true), disabled: searching === `s${n}l` },
+		{ kind: 'separator' },
+		{ label: `Delete ${seasonName(n)}`, icon: 'trash', destructive: true, onselect: () => deleter?.open({ season: n, label: seasonName(n) }) }
+	];
+	/** An episode's still, when the backend sends one. */
+	const still = (ep: EpisodeView) => ep.still;
 	const heroKind = $derived(show?.missing ? 'missing' : show?.in_library ? 'in_library' : show?.not_out_yet ? 'coming_soon' : 'missing');
 	const libraryItems = $derived<MenuItem[]>([
 		{ label: 'Rename files', icon: 'copy', onselect: openRename },
@@ -358,13 +376,18 @@
 <div class="tp">
 <TitleHero
 	title={title.name}
-	poster={title.artwork[0]}
-	backdrop={title.artwork[1]}
+	poster={title.artwork[0] ?? rich?.poster}
+	backdrop={title.backdrop ?? rich?.backdrop}
+	logo={title.logo ?? rich?.logo}
+	crumbIcon="tv"
 	breadcrumb={[{ href: to(crumbFor('show').path), label: crumbFor('show').label }, { href: to(`/library/${title.id}`), label: title.year ? `${title.name} (${title.year})` : title.name }]}
 	meta={heroMeta}
+	certification={title.rating ?? rich?.certification}
+	score={rich?.score}
+	badges={heroBadges}
 	status={heroKind}
-	statusLabel={show?.missing ? `${show.missing} missing` : undefined}
-	description={title.overview}
+	statusLabel={show?.missing ? `${show.missing} missing` : !staff && heroKind === 'in_library' ? 'Ready to watch' : undefined}
+	description={title.overview || rich?.overview}
 	vtName={artName(title.id)}
 >
 	{#snippet actions()}
@@ -381,18 +404,14 @@
 			<ActionButton icon="tools" label="Edit" onclick={openEdit} />
 			<ActionMenu label="Library" icon="library" items={libraryItems} />
 			<ActionMenu label="More actions" caption="More" icon="more" items={moreItems} />
-		{:else}
-			<div class="tp-member"><StatusPill kind={heroKind} label={heroKind === 'in_library' ? 'Ready to watch' : undefined} on="art" /></div>
 		{/if}
-	{/snippet}
-	{#snippet extra()}
-		<p class="small" data-testid="show-progress">{showProgress(show)}</p>
 	{/snippet}
 </TitleHero>
 
+<p class="tp-progress" data-testid="show-progress">{showProgress(show)}</p>
+
 {#if loadErr || error}<LoadError hasData message={loadErr || error} onretry={() => void retry()} busy={retrying} />{/if}
 
-<p class="tp-why open" data-testid="gate-reason"><b>Why:</b> {title.gate_reason}</p>
 
 {#if scope && staff}
 	<ShowReleases titleId={title.id} {scope} jobs={scopeJobs} onclose={() => (scope = null)} onchange={() => void reload()} />
@@ -416,19 +435,18 @@
 		<div class="season" data-testid="season">
 			<p class="xs muted" data-testid="season-line">{seasonLine(s)}{s.dropped ? ' · no longer listed' : ''}</p>
 			{#if staff}
-				<div class="row season-actions">
-					<Button icon="search" onclick={() => searchSeason(s.number)} disabled={searching === `s${s.number}`} aria-label="Search now: {seasonName(s.number)}" data-testid="search-season">Search now</Button>
-					<Button variant="plain" onclick={() => searchSeason(s.number, true)} disabled={searching === `s${s.number}l`} aria-label="Choose a release for {seasonName(s.number)}" data-testid="choose-season">Choose a release</Button>
-					<Button variant="plain" onclick={() => deleter?.open({ season: s.number, label: seasonName(s.number) })} aria-label="Delete {seasonName(s.number)}" data-testid="delete-season">Delete season</Button>
-					<label class="switch">
-						<input type="checkbox" checked={s.keep_up_to_date} disabled={busy === `s${s.number}`} onchange={(e) => setSeason(s.number, e.currentTarget.checked)} />
-						<span class="sw" aria-hidden="true"></span>
-						<span class="small">Keep {seasonName(s.number)} up to date</span>
-					</label>
+				<div class="season-tools">
+					<Button icon="search" size="sm" onclick={() => searchSeason(s.number)} disabled={searching === `s${s.number}`} aria-label="Search now: {seasonName(s.number)}" data-testid="search-season">Search season</Button>
+					<span data-testid="season-menu"><Menu label="More for {seasonName(s.number)}" items={seasonMenu(s.number)} width={240} align="start" /></span>
 					{#if episodes[s.number] && seasonLooking(episodes[s.number])}
 						<span class="xs muted">{seasonLooking(episodes[s.number])} looking for a copy</span>
 					{/if}
 				</div>
+				<label class="switch season-keep">
+					<input type="checkbox" checked={s.keep_up_to_date} disabled={busy === `s${s.number}`} onchange={(e) => setSeason(s.number, e.currentTarget.checked)} />
+					<span class="sw" aria-hidden="true"></span>
+					<span class="small">Keep {seasonName(s.number)} up to date</span>
+				</label>
 			{:else if !s.keep_up_to_date}
 				<p class="xs muted">Not kept</p>
 			{/if}
@@ -437,19 +455,31 @@
 					{#each episodes[s.number] as ep (ep.id)}
 						{@const why = episodeWhy(ep, s.keep_up_to_date, title.keep_up_to_date)}
 						{@const main = mainSlot(ep)}
-						<li class="episode" data-testid="episode">
-							<WideCard
-								title="{episodeLabel(ep, order)} · {ep.name || 'Name not known yet'}"
-								image={title.artwork[1] ?? title.artwork[0]}
-								subtitle={ep.air_date ? date(ep.air_date) : 'No air date yet'}
-								status={main ? slotKind(main.state) : undefined}
-								statusLabel={ep.slots.length > 1 ? ep.slots.map((x) => `${x.version}: ${x.state_label}`).join(' · ') : main?.state_label}
-								statusTestid="episode-state"
-							>
-								{#snippet action()}
-									{#if staff}<span class="ep-menu"><Menu label="Actions for {episodeLabel(ep, order)}" items={episodeItems(ep)} width={250} /></span>{/if}
-								{/snippet}
-							</WideCard>
+						<li class="episode" class:card={!!still(ep)} data-testid="episode">
+							{#if still(ep)}
+								<WideCard
+									title="{episodeLabel(ep, order)} · {ep.name || 'Name not known yet'}"
+									image={still(ep)}
+									subtitle={ep.air_date ? date(ep.air_date) : 'No air date yet'}
+									status={main ? slotKind(main.state) : undefined}
+									statusLabel={ep.slots.length > 1 ? ep.slots.map((x) => `${x.version}: ${x.state_label}`).join(' · ') : main?.state_label}
+									statusTestid="episode-state"
+								>
+									{#snippet action()}
+										{#if staff}<span class="ep-menu"><Menu label="Actions for {episodeLabel(ep, order)}" items={episodeItems(ep)} width={250} /></span>{/if}
+									{/snippet}
+								</WideCard>
+							{:else}
+								<div class="ep-row">
+									<span class="ep-num" aria-hidden="true">{ep.episode}</span>
+									<div class="ep-main">
+										<span class="ep-title"><span class="ep-code">{episodeLabel(ep, order)}</span> {ep.name || 'Name not known yet'}</span>
+										<span class="ep-sub">{ep.air_date ? date(ep.air_date) : 'No air date yet'}{(ep.runtime_minutes ?? ep.runtime) ? ` · ${runtimeWords(ep.runtime_minutes ?? ep.runtime)}` : ''}</span>
+									</div>
+									{#if main}<StatusPill kind={slotKind(main.state)} label={ep.slots.length > 1 ? ep.slots.map((x) => `${x.version}: ${x.state_label}`).join(' · ') : main.state_label} testid="episode-state" />{/if}
+									{#if staff}<Menu label="Actions for {episodeLabel(ep, order)}" items={episodeItems(ep)} width={250} />{/if}
+								</div>
+							{/if}
 							{#if why}<p class="xs muted ep-why" data-testid="episode-why">{why}</p>{/if}
 							{#each ep.slots.filter((x) => x.reason && ep.slots.length > 1) as sl (sl.id)}
 								<p class="xs muted ep-why">{sl.version}: {sl.reason}</p>
@@ -460,7 +490,7 @@
 					{/each}
 				</ul>
 			{:else}
-				<div class="episodes" aria-busy="true">{#each [0, 1, 2] as i (i)}<Skeleton shape="wide" />{/each}</div>
+				<div class="episodes" aria-busy="true">{#each [0, 1, 2] as i (i)}<Skeleton lines={2} />{/each}</div>
 			{/if}
 		</div>
 	{/if}
@@ -480,7 +510,7 @@
 
 		<section class="card" aria-labelledby="h-show-facts">
 			<h2 id="h-show-facts" class="h2 card-title">About</h2>
-			<dl class="facts">
+			<dl class="tp-about">
 				<dt>Episodes</dt>
 				<dd>{show?.episodes ?? 0} in {show?.seasons.length ?? 0} seasons</dd>
 				{#if show?.next_air_date}<dt>Next episode</dt>
@@ -500,7 +530,8 @@
 				{#if title.refreshed_at}<dt>Refreshed</dt>
 					<dd>{date(title.refreshed_at)}</dd>{/if}
 			</dl>
-			{#if staff && title.folder_path}<p class="xs muted path">In {title.folder_path}</p>{/if}
+			<p class="tp-why" data-testid="gate-reason">{title.gate_reason}</p>
+			{#if staff && title.folder_path}<details class="tp-details"><summary>Details</summary><ul><li>Folder: {shortFolder(title.folder_path)}</li></ul></details>{/if}
 		</section>
 
 		{#if title.asks?.length}
@@ -614,11 +645,23 @@
 
 <style>
 	.path { overflow-wrap: anywhere; }
-	.season-actions { gap: var(--s-2); flex-wrap: wrap; align-items: center; margin: var(--s-3) 0 var(--s-4); }
-	.episodes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 20px 16px; }
+	.season-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 12px 0 6px; }
+	.season-keep { margin: 0 0 14px; }
+	.episode:not(.card) + .episode:not(.card) { border-top: 1px solid var(--line); }
+	.ep-row { display: flex; align-items: center; gap: 14px; padding: 12px 0; min-width: 0; }
+	.ep-num { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 8px; background: var(--surface-2); color: var(--text-muted); font: 700 14px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
+	.ep-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+	.ep-title { font: 600 15px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.ep-code { color: var(--text-muted); margin-right: 4px; font-variant-numeric: tabular-nums; }
+	.ep-sub { color: var(--text-muted); font: var(--t-footnote); }
+	.tp-progress { margin: calc(clamp(28px, 4vw, 44px) * -0.5) 0 0; color: var(--text-muted); font: var(--t-subhead); }
+	@media (max-width: 600px) { .ep-row { flex-wrap: wrap; gap: 8px 12px; } .ep-main { flex-basis: calc(100% - 100px); } .ep-row :global(.ui-pill) { margin-left: 50px; } }
+	.episodes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+	.episodes:has(.card) { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 20px 16px; }
 	.episode { min-width: 0; }
-	@media (max-width: 600px) { .episodes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 10px; } }
-	.ep-why { margin-top: 2px; }
+	@media (max-width: 600px) { .episodes:has(.card) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 10px; } }
+	.ep-why { margin: -6px 0 10px 50px; }
+	.card .ep-why { margin: 2px 0 0; }
 	.ep-menu :global(.ui-pop > .trigger) { background: var(--on-art-scrim-mid); color: var(--on-art); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 	.ep-menu :global(.ui-pop > .trigger:hover), .ep-menu :global(.ui-pop > .trigger[aria-expanded='true']) { background: rgb(0 0 0 / 65%); color: var(--on-art); }
 	.modal { width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; padding: var(--s-6); border: 0; border-radius: var(--r-modal); background: var(--surface-1); color: var(--text); box-shadow: var(--shadow-modal); }

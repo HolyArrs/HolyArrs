@@ -21,7 +21,8 @@
 	import { goto } from '$app/navigation';
 	import { deleteSummary, type RemovePlan } from '#lib/organise.ts';
 	import { groupLabel, kindTone } from '#lib/history.ts';
-	import TitleHero from '#lib/ui/TitleHero.svelte';
+	import TitleHero, { richMetadata, runtimeWords, shortFolder, type RichMeta } from '#lib/ui/TitleHero.svelte';
+	import { plainReason } from '#lib/plain.ts';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import { reducedMotion } from '#lib/motion.ts';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
@@ -432,7 +433,18 @@
 	const crumbs = $derived(
 		title ? [{ href: to(crumbFor('movie').path), label: crumbFor('movie').label }, { href: to(`/library/${title.id}`), label: title.year ? `${title.name} (${title.year})` : title.name }] : []
 	);
-	const heroMeta = $derived(title ? [title.year ? String(title.year) : '', stageWord[title.stage] ?? words(title.stage), title.original_language ? title.original_language.toUpperCase() : ''].filter(Boolean) : []);
+	// Richer art and facts from the metadata endpoint, when the backend has it.
+	let rich = $state<RichMeta | null>(null);
+	$effect(() => {
+		const tmdb = title?.ids?.tmdb;
+		rich = null;
+		if (!tmdb || (title?.backdrop && title?.genres?.length)) return;
+		let live = true;
+		void richMetadata(api.get, 'movie', tmdb).then((m) => live && (rich = m));
+		return () => (live = false);
+	});
+	const heroMeta = $derived(title ? [title.year ? String(title.year) : '', runtimeWords(title.runtime_minutes ?? rich?.runtime), ...(title.genres?.length ? title.genres : (rich?.genres ?? [])).slice(0, 3)].filter(Boolean) : []);
+	const notes = $derived(title ? slotNotes(title.slots).map((n) => plainReason(n)) : []);
 	const heroBadges = $derived(qualityBadges(files.map((s) => s.file)));
 	const status = $derived(title ? heroStatus(title.slots, !!title.asks?.some((a) => !decided(a))) : { kind: 'missing' as const });
 	const libraryItems = $derived<MenuItem[]>([
@@ -485,14 +497,18 @@
 	<div class="tp">
 		<TitleHero
 			title={title.name}
-			poster={title.artwork[0]}
-			backdrop={title.artwork[1]}
+			poster={title.artwork[0] ?? rich?.poster}
+			backdrop={title.backdrop ?? rich?.backdrop}
+			logo={title.logo ?? rich?.logo}
 			breadcrumb={crumbs}
 			meta={heroMeta}
+			certification={title.rating ?? rich?.certification}
+			score={rich?.score}
 			badges={heroBadges}
 			status={status.kind}
 			percent={status.percent}
-			description={title.overview}
+			statusLabel={!session.can('manage_library') && status.kind === 'in_library' ? 'Ready to watch' : undefined}
+			description={title.overview || rich?.overview}
 			vtName={artName(title.id)}
 		>
 			{#snippet actions()}
@@ -509,32 +525,29 @@
 					<ActionButton icon="tools" label="Edit" onclick={openEdit} />
 					<ActionMenu label="Library" icon="library" items={libraryItems} />
 					<ActionMenu label="More actions" caption="More" icon="more" items={moreItems} />
-				{:else}
-					<div class="tp-member"><StatusPill kind={status.kind} percent={status.percent} label={status.kind === 'in_library' ? 'Ready to watch' : undefined} on="art" /></div>
 				{/if}
-			{/snippet}
-			{#snippet extra()}
-				{#each title!.slots.filter((s) => s.download) as s (s.id)}
-					{@const d = s.download!}
-					<div class="tp-dl" data-testid="download">
-						<div class="row tp-dl-head">
-							<StatusPill kind={dlKind(d.state, d.active)} on="art" testid="download-state" label="{s.version && title!.slots.length > 1 ? `${s.version}: ` : ''}{d.label}" />
-							{#if d.active}<span class="small">{percent(d.progress)}{#if d.speed > 0} · {bytes(d.speed)}/s{/if}{#if timeLeft(d.eta)} · {timeLeft(d.eta)}{/if}</span>{/if}
-						</div>
-						{#if d.active}<div class="tp-bar"><ProgressBar value={d.progress * 100} label="Download progress" on="art" /></div>{/if}
-						<p class="small" data-testid="download-text">{d.text}</p>
-						{#if d.active && session.can('manage_library')}
-							<Button class="tp-dl-btn tp-btn" size="sm" onclick={() => markFailed(d.id)} busy={failing === d.id}>Mark failed</Button>
-						{/if}
-					</div>
-				{/each}
 			{/snippet}
 		</TitleHero>
 
+		{#if title.slots.some((s) => s.download)}
+			<div class="tp-dls">
+				{#each title.slots.filter((s) => s.download) as s (s.id)}
+					{@const d = s.download!}
+					<div class="tp-dl" data-testid="download">
+						<StatusPill kind={dlKind(d.state, d.active)} testid="download-state" label="{s.version && title!.slots.length > 1 ? `${s.version}: ` : ''}{d.label}" />
+						{#if d.active}<div class="tp-bar"><ProgressBar value={d.progress * 100} label="Download progress" /></div>
+							<span class="small muted">{percent(d.progress)}{#if d.speed > 0} · {bytes(d.speed)}/s{/if}{#if timeLeft(d.eta)} · {timeLeft(d.eta)}{/if}</span>{/if}
+						<p class="tp-dl-text" data-testid="download-text">{d.text}</p>
+						{#if d.active && session.can('manage_library')}
+							<Button class="tp-btn" size="sm" variant="plain" onclick={() => markFailed(d.id)} busy={failing === d.id}>Mark failed</Button>
+						{/if}
+					</div>
+				{/each}
+			</div>
+		{/if}
+
 		{#if error}<LoadError hasData message={error} onretry={() => load()} />{/if}
 
-		<p class="tp-why" class:open={title.gate_open} data-testid="gate-reason"><b>Why:</b> {title.gate_reason}</p>
-		{#each slotNotes(title.slots) as note (note)}<p class="small muted">{note}</p>{/each}
 
 		{#key title.id}<TitleCast titleId={title.id} />{/key}
 
@@ -557,13 +570,20 @@
 									<span class="xs muted">Edition: {v.edition || 'Not specified'} · Audio required: {v.audio_languages?.join(', ') || 'Any'}</span>
 									<span class="xs muted">Pick rules: {v.pick_rules_name}{v.keep_up_to_date ? '' : ' · not kept up to date'}</span>
 									{#if f}
-										<span class="xs mono path">{f.RelativePath}</span>
-										<span class="xs muted">{bytes(f.Size)}{#if f.Quality?.resolution} · {f.Quality.resolution}p{f.Quality.source ? ` ${words(String(f.Quality.source))}` : ''}{/if} · Added {date(f.AddedAt)}</span>
-										{#if f.ReleaseName}<span class="xs muted mono path">From {f.ReleaseName}</span>{/if}
-									{:else}
+<span class="xs muted">{bytes(f.Size)}{#if f.Quality?.resolution} · {f.Quality.resolution}p{f.Quality.source ? ` ${words(String(f.Quality.source))}` : ''}{/if} · Added {date(f.AddedAt)}</span>
+{:else}
 										<span class="xs muted">No file yet.</span>
 									{/if}
-									{#if session.can('manage_library')}<span class="xs muted path">In {v.folder_path}</span>{/if}
+									{#if session.can('manage_library') && (f || v.folder_path)}
+										<details class="tp-details">
+											<summary>Details</summary>
+											<ul>
+												{#if f}<li>File: {shortFolder(f.RelativePath)}</li>{/if}
+												{#if f?.ReleaseName}<li>From the release {f.ReleaseName}</li>{/if}
+												{#if v.folder_path}<li>Folder: {shortFolder(v.folder_path)}</li>{/if}
+											</ul>
+										</details>
+									{/if}
 								</div>
 								<div class="tp-row-end">
 									{#if s}<span class="chip {tone(s.state)}">{s.state_label}</span>{/if}
@@ -574,6 +594,12 @@
 							</li>
 						{/each}
 					</ul>
+					{#if session.can('manage_library') && notes.length}
+						<details class="tp-details" data-testid="slot-notes">
+							<summary>Details</summary>
+							<ul>{#each notes as n (n.text + (n.detail ?? ''))}<li>{n.text}</li>{/each}</ul>
+						</details>
+					{/if}
 				</section>
 
 				<CopyControls {title} onchange={() => load('title')} />
@@ -648,14 +674,12 @@
 				{/if}
 
 				{#if session.can('manage_library')}
-					{#key title.id}<SubtitlePanel titleId={title.id} movie />{/key}
+					{#key title.id}					<SubtitlePanel titleId={title.id} movie />{/key}
 				{/if}
-			</div>
 
-			<aside class="tp-side" aria-label="About this movie">
 				<section class="tp-section" aria-labelledby="h-dates">
 					<h2 id="h-dates" class="tp-h2">About</h2>
-					<dl class="facts">
+					<dl class="tp-about">
 						<dt>Now</dt>
 						<dd>{stageWord[title.stage] ?? words(title.stage)}</dd>
 						<dt>In cinemas</dt>
@@ -665,7 +689,7 @@
 						<dt>Disc</dt>
 						<dd>{date(title.physical_date) || 'Not known'}</dd>
 						<dt>Original language</dt>
-						<dd>{title.original_language || 'Not known'}</dd>
+						<dd>{title.original_language ? title.original_language.toUpperCase() : 'Not known'}</dd>
 						<dt>Release gate</dt>
 						<dd>{words(title.release_gate)}{title.gate_delay_days ? ` + ${title.gate_delay_days} days` : ''}</dd>
 						{#if title.gate_opens_at}<dt>Gate opens</dt>
@@ -675,8 +699,11 @@
 						{#if title.refreshed_at}<dt>Refreshed</dt>
 							<dd>{date(title.refreshed_at)}</dd>{/if}
 					</dl>
+					<p class="tp-why" data-testid="gate-reason">{title.gate_reason}</p>
 				</section>
+</div>
 
+			<aside class="tp-side" aria-label="About this movie">
 				{#if title.asks?.length}
 					<section class="tp-section" aria-labelledby="h-asks" data-testid="title-asks">
 						<h2 id="h-asks" class="tp-h2">Wishlist</h2>

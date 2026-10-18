@@ -10,7 +10,7 @@
 	import { live } from './live.svelte.ts';
 	import { ago, date, dateTime } from './format.ts';
 	import Icon from './Icon.svelte';
-	import TitleHero from './ui/TitleHero.svelte';
+	import TitleHero, { shortFolder } from './ui/TitleHero.svelte';
 	import LoadError from './ui/LoadError.svelte';
 	import ActionButton from './ui/ActionButton.svelte';
 	import ActionMenu from './ui/ActionMenu.svelte';
@@ -290,8 +290,10 @@
 <TitleHero
 	title={title.name}
 	poster={title.artwork[0]}
-	backdrop={title.artwork[1]}
+	backdrop={title.backdrop}
+	logo={title.logo}
 	square
+	crumbIcon="music"
 	breadcrumb={[{ href: to(crumbFor('artist').path), label: crumbFor('artist').label }, { href: to(`/library/${title.id}`), label: title.name }]}
 	meta={heroMeta}
 	status={heroKind}
@@ -317,20 +319,18 @@
 			<ActionButton icon="wish" label="Ask for albums" primary onclick={askMore} data-testid="ask-albums" />
 		{/if}
 	{/snippet}
-	{#snippet extra()}
-		<p class="small" data-testid="artist-progress">{artistProgress(artist)}</p>
-	{/snippet}
 </TitleHero>
+
+<p class="tp-progress" data-testid="artist-progress">{artistProgress(artist)}</p>
 
 {#if loadErr || error}<LoadError hasData message={loadErr || error} onretry={() => void retry()} busy={retrying} />{/if}
 
-<p class="tp-why" data-testid="gate-reason"><b>Why:</b> {title.gate_reason}</p>
 
 <div class="tp-body tp-artist">
 	<aside class="tp-side" aria-label="About this artist">
 		<section class="card" aria-labelledby="h-artist-facts">
 			<h2 id="h-artist-facts" class="h2 card-title">About</h2>
-			<dl class="facts">
+			<dl class="tp-about">
 				<dt>Albums</dt>
 				<dd>{artist?.included ?? 0} included of {artist?.albums ?? 0}</dd>
 				{#if artist?.next_release}<dt>Next album</dt>
@@ -350,7 +350,8 @@
 				{#if title.refreshed_at}<dt>Refreshed</dt>
 					<dd>{date(title.refreshed_at)}</dd>{/if}
 			</dl>
-			{#if staff && title.folder_path}<p class="xs muted path">In {title.folder_path}</p>{/if}
+			<p class="tp-why" data-testid="gate-reason">{title.gate_reason}</p>
+			{#if staff && title.folder_path}<details class="tp-details"><summary>Details</summary><ul><li>Folder: {shortFolder(title.folder_path)}</li></ul></details>{/if}
 		</section>
 
 		{#if title.asks?.length}
@@ -510,6 +511,7 @@
 </dialog>
 
 <style>
+	.tp-progress { margin: calc(clamp(28px, 4vw, 44px) * -0.5) 0 0; color: var(--text-muted); font: var(--t-subhead); }
 	.card-title {
 		margin-bottom: var(--s-4);
 	}
@@ -542,7 +544,7 @@
 	}
 	.n {
 		margin-left: 4px;
-		opacity: 0.75;
+		font-variant-numeric: tabular-nums;
 	}
 	.albums {
 		display: flex;

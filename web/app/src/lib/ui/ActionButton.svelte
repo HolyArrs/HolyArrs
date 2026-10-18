@@ -3,55 +3,77 @@
 	import Icon, { type IconName } from '../Icon.svelte';
 	import { press } from '../motion.ts';
 
-	// A round action with its word under it, for title hero action rows
-	// (Apple TV style). `primary` fills it white on artwork; `pressed`
-	// shows an on/off action such as Keep up to date.
+	// A title hero action, 44px tall. `primary` is the filled white pill with
+	// its word inside (Search now, Add, Ask). `pill` is a glass pill with its
+	// word inside. Otherwise it is a round glass icon button: `label` is its
+	// accessible name and a tooltip shows after a short wait. `pressed` makes
+	// it an on/off toggle such as Keep up to date.
 	type Props = Omit<HTMLButtonAttributes, 'children'> & {
 		icon: IconName;
 		label: string;
-		/** Shorter visible word; `label` stays the accessible name. */
+		/** Shorter visible word (pill and primary) or tooltip text (round); `label` stays the accessible name. */
 		caption?: string;
 		href?: string;
 		primary?: boolean;
+		pill?: boolean;
 		pressed?: boolean;
 		busy?: boolean;
 	};
-	let { icon, label, caption, href, primary = false, pressed, busy = false, type = 'button', class: cls = '', ...rest }: Props = $props();
+	let { icon, label, caption, href, primary = false, pill = false, pressed, busy = false, type = 'button', class: cls = '', ...rest }: Props = $props();
+	const round = $derived(!primary && !pill);
+	const word = $derived(caption ?? label);
+	// Pills show their word; the accessible name only differs when the caption is shorter.
+	const aria = $derived(round || (caption && caption !== label) ? label : undefined);
 </script>
 
+{#snippet inner()}
+	<Icon name={icon} size={round ? 20 : 18} />
+	{#if round}<span class="tip" aria-hidden="true">{word}</span>{:else}<span class="cap">{word}</span>{/if}
+{/snippet}
+
 {#if href}
-	<a class="ui-act {cls}" class:primary {href} aria-label={caption && caption !== label ? label : undefined} use:press={'round'}>
-		<span class="dot" aria-hidden="true"><Icon name={icon} size={22} /></span>
-		<span class="cap">{caption ?? label}</span>
-	</a>
+	<a class="ui-act {cls}" class:primary class:round {href} aria-label={aria} use:press={round ? 'round' : 'button'}>{@render inner()}</a>
 {:else}
 	<button
 		class="ui-act {cls}"
 		class:primary
+		class:round
 		{type}
-		aria-label={caption && caption !== label ? label : undefined}
+		aria-label={aria}
 		aria-pressed={pressed}
 		aria-busy={busy || undefined}
-		use:press={'round'}
+		use:press={round ? 'round' : 'button'}
 		{...rest}
 	>
-		<span class="dot" aria-hidden="true"><Icon name={icon} size={22} /></span>
-		<span class="cap">{caption ?? label}</span>
+		{@render inner()}
 	</button>
 {/if}
 
 <style>
-	.ui-act { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; min-width: 64px; max-width: 84px; padding: 2px; color: var(--on-art); border-radius: 14px; background: none; border: 0; cursor: pointer; }
-	.dot { width: 52px; height: 52px; display: grid; place-items: center; border-radius: 50%; background: var(--on-art-fill); box-shadow: inset 0 0 0 1px var(--on-art-ring); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
-	.ui-act:hover .dot { background: var(--on-art-fill-hover); }
-	.primary .dot, .ui-act[aria-pressed='true'] .dot { background: var(--on-art); color: var(--on-art-ink); box-shadow: none; }
-	.primary:hover .dot, .ui-act[aria-pressed='true']:hover .dot { background: var(--on-art-fill-strong); }
-	.cap { font: var(--t-footnote); font-size: 12px; font-weight: 600; line-height: 1.2; text-align: center; color: var(--on-art-soft); text-wrap: balance; }
-	.ui-act:focus-visible { outline: none; }
-	.ui-act:focus-visible .dot { box-shadow: 0 0 0 2px var(--on-art-ink), 0 0 0 4px var(--on-art); }
-	.ui-act:disabled { cursor: not-allowed; opacity: .5; }
-	.ui-act[aria-busy='true'] .dot { animation: ui-act-busy 1.2s var(--ease-in-out) infinite; }
-	@keyframes ui-act-busy { 50% { opacity: .55; } }
-	@media (prefers-reduced-motion: reduce) { .ui-act[aria-busy='true'] .dot { animation: none; opacity: .7; } }
-	@media (max-width: 400px) { .ui-act { min-width: 56px; } .dot { width: 48px; height: 48px; } }
+	.ui-act {
+		position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; min-width: 44px; padding: 0 20px 0 16px;
+		border-radius: 999px; border: 1px solid rgb(255 255 255 / 22%); background: rgb(255 255 255 / 14%); color: #fff;
+		backdrop-filter: blur(20px) saturate(170%); -webkit-backdrop-filter: blur(20px) saturate(170%);
+		font: 600 15px/1 var(--font-ui); letter-spacing: -0.005em; white-space: nowrap; cursor: pointer;
+		transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+	}
+	.ui-act:hover { background: rgb(255 255 255 / 24%); border-color: rgb(255 255 255 / 34%); }
+	.round { width: 44px; padding: 0; }
+	.primary { background: #fff; border-color: #fff; color: #111; padding: 0 24px 0 20px; box-shadow: 0 6px 20px rgb(0 0 0 / 22%); backdrop-filter: none; -webkit-backdrop-filter: none; }
+	.primary:hover { background: rgb(255 255 255 / 88%); border-color: transparent; }
+	.round[aria-pressed='true'] { background: rgb(255 255 255 / 92%); border-color: transparent; color: #111; }
+	.round[aria-pressed='true']:hover { background: #fff; }
+	.cap { overflow: hidden; text-overflow: ellipsis; }
+	.ui-act:focus-visible { outline: none; box-shadow: 0 0 0 2px #111, 0 0 0 4px #fff; }
+	.ui-act:disabled { cursor: not-allowed; opacity: .55; }
+	.ui-act[aria-busy='true'] { animation: ui-act-busy 1.2s var(--ease-in-out) infinite; }
+	.tip {
+		position: absolute; left: 50%; top: calc(100% + 8px); z-index: 5; translate: -50% -4px; padding: 5px 9px; border-radius: 7px;
+		background: rgb(20 20 22 / 92%); color: #fff; font: 600 12px/1.2 var(--font-ui); white-space: nowrap; pointer-events: none;
+		opacity: 0; transition: opacity var(--dur-fast) var(--ease-out), translate var(--dur-fast) var(--ease-out); box-shadow: 0 6px 18px rgb(0 0 0 / 30%);
+	}
+	.round:hover .tip, .round:focus-visible .tip { opacity: 1; translate: -50% 0; transition-delay: 500ms; }
+	@keyframes ui-act-busy { 50% { opacity: .6; } }
+	@media (prefers-reduced-motion: reduce) { .ui-act[aria-busy='true'] { animation: none; opacity: .75; } .tip { transition: none; } }
+	@media (hover: none) { .tip { display: none; } }
 </style>

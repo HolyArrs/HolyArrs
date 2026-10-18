@@ -7,9 +7,9 @@
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { refreshInbox } from '#lib/wishlist.svelte.ts';
 	import { seasonWords } from '#lib/shows.ts';
-	import { detailPath, isDetailKind, loadDetails, metaLine, remembered, type TitleDetails } from '#lib/title-details.ts';
+	import { detailPath, isDetailKind, loadDetails, remembered, type TitleDetails } from '#lib/title-details.ts';
 	import type { Ask, GateDefaults, LibraryFolder, LookupMovie, LookupShow, PickRulesView, ShowSettings, TitleView } from '#lib/types.ts';
-	import TitleHero from '#lib/ui/TitleHero.svelte';
+	import TitleHero, { richMetadata, runtimeWords, type RichMeta } from '#lib/ui/TitleHero.svelte';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
@@ -120,6 +120,19 @@
 	}
 
 	const kindWord = $derived(kind === 'show' ? 'TV shows' : 'Movies');
+	// The logo and age rating, when the metadata endpoint has them (cached, shared with loadDetails' answer).
+	let rich = $state<RichMeta | null>(null);
+	$effect(() => {
+		const k = kind, id = tmdb;
+		rich = null;
+		if (!isDetailKind(k) || !id) return;
+		let live = true;
+		void richMetadata(api.get, k, id).then((m) => live && (rich = m));
+		return () => (live = false);
+	});
+	const scoreOf = (r?: string) => (r && /\/\s*10$/.test(r) ? Number.parseFloat(r) : undefined);
+	const certOf = (r?: string) => (r && !/\/\s*10$/.test(r) ? r : undefined);
+	const heroMeta = (d: TitleDetails) => [d.year ? String(d.year) : '', d.kind === 'show' ? (d.network ?? '') : runtimeWords(d.runtime), ...d.genres.slice(0, 3)].filter(Boolean);
 	const crumbs = $derived(details ? [{ href: to('/explore'), label: 'Explore' }, { href: to(detailPath(details.kind, details.tmdb)), label: details.year ? `${details.name} (${details.year})` : details.name }] : []);
 </script>
 
@@ -141,9 +154,12 @@
 			title={d.name}
 			poster={d.poster}
 			backdrop={d.backdrop}
+			logo={rich?.logo}
+			crumbIcon={d.kind === 'show' ? 'tv' : 'compass'}
 			breadcrumb={crumbs}
-			meta={metaLine(d)}
-			badges={d.rating ? [d.rating] : []}
+			meta={heroMeta(d)}
+			certification={rich?.certification ?? certOf(d.rating)}
+			score={rich?.score ?? scoreOf(d.rating)}
 			status={d.neverAdd ? 'turned_down' : d.ask ? (d.ask.state === 'approved' ? 'approved' : 'requested') : undefined}
 			statusLabel={d.neverAdd ? 'On the Never-add list' : d.ask ? (d.ask.mine ? 'You asked' : d.ask.state_label) : undefined}
 			description={d.overview}
@@ -162,7 +178,7 @@
 						<ActionButton icon="wish" label={d.ask ? `Ask for ${d.name} too` : `Ask for ${d.name}`} caption={d.ask ? 'Ask too' : 'Ask'} primary onclick={() => askShow?.open(d.show as LookupShow)} />
 					{/if}
 				{/if}
-				<ActionButton icon="search" label="Search for {d.name}" caption="Search" href={to(`/search?q=${encodeURIComponent(d.name)}${d.kind === 'show' ? '&kind=show' : ''}`)} />
+				<ActionButton icon="search" label="Search for {d.name}"caption="Search" href={to(`/search?q=${encodeURIComponent(d.name)}${d.kind === 'show' ? '&kind=show' : ''}`)} />
 			{/snippet}
 		</TitleHero>
 

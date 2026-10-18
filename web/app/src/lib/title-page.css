@@ -1,32 +1,46 @@
-/* Title page layout (movie, show, artist): hero, then calm sections. */
-.tp { display: flex; flex-direction: column; gap: clamp(20px, 3vw, 32px); min-width: 0; }
-.tp-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); gap: clamp(20px, 3vw, 32px); align-items: start; }
-.tp-main, .tp-side { display: flex; flex-direction: column; gap: clamp(20px, 3vw, 28px); min-width: 0; }
-.tp-side { position: sticky; top: 16px; }
-.tp-section, .tp-main > .card, .tp-side > .card, .tp-main > section.card { margin: 0; padding: clamp(16px, 2.4vw, 24px); border: 0; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card), 0 0 0 1px var(--line); min-width: 0; }
-.tp-h2 { font: var(--t-title-2, var(--weight-semibold) var(--text-xl) / 1.2 var(--font-display)); letter-spacing: -0.01em; margin: 0 0 12px; }
-.tp-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; margin-bottom: 12px; }
+/* Title page layout (movie, show, artist): a full-bleed hero, then plain
+   sections on the page background, each a heading and its content. */
+.tp { display: flex; flex-direction: column; gap: clamp(28px, 4vw, 44px); min-width: 0; }
+.tp-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 320px); gap: clamp(28px, 4vw, 56px); align-items: start; }
+.tp-main, .tp-side { display: flex; flex-direction: column; gap: clamp(28px, 4vw, 44px); min-width: 0; }
+.tp-section, .tp .card { margin: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; min-width: 0; }
+.tp-h2, .tp .card-title { font: var(--t-title-2, var(--weight-semibold) var(--text-xl) / 1.2 var(--font-display)); font-size: 22px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 14px; }
+.tp-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; margin-bottom: 14px; }
 .tp-head .tp-h2 { margin: 0; }
 .tp-list { list-style: none; margin: 0; padding: 0; }
-.tp-row { display: flex; gap: 12px; justify-content: space-between; align-items: flex-start; padding: 12px 0; min-width: 0; }
+.tp-row { display: flex; gap: 12px; justify-content: space-between; align-items: flex-start; padding: 14px 0; min-width: 0; }
 .tp-row + .tp-row { border-top: 1px solid var(--line); }
 .tp-row-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .tp-row-end { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; flex: none; }
-.tp-why { margin: 0; padding: 10px 14px; border-left: 3px solid var(--wait); background: var(--surface-1); border-radius: var(--r-sm); max-width: 78ch; font-size: var(--text-sm); box-shadow: 0 0 0 1px var(--line); }
-.tp-why.open { border-left-color: var(--ok); }
-.tp-dl { padding: 12px 14px; border-radius: 14px; background: var(--on-art-scrim-mid); box-shadow: inset 0 0 0 1px var(--on-art-ring); max-width: 520px; color: var(--on-art); }
-.tp-dl-head { gap: 8px; flex-wrap: wrap; }
-.tp-dl p { margin-top: 6px; }
-.tp-bar { margin-top: 8px; }
-.tp-dl .tp-dl-btn { margin-top: 8px; }
+
+/* A download in progress or just finished: one slim line under the hero. */
+.tp-dl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 0; border-bottom: 1px solid var(--line); min-width: 0; }
+.tp-dl-text { margin: 0; color: var(--text-muted); font: var(--t-subhead); min-width: 0; overflow-wrap: anywhere; flex: 1 1 240px; }
+.tp-dl .tp-bar { flex: 1 1 160px; max-width: 280px; }
+.tp-dl + .tp-dl { margin-top: -1px; }
+.tp-dls { display: flex; flex-direction: column; margin-top: calc(clamp(28px, 4vw, 44px) * -0.5); }
+
+/* About: a two-column definition list in the normal UI font. */
+.tp-about { display: grid; grid-template-columns: minmax(120px, max-content) minmax(0, 1fr); gap: 10px 28px; margin: 0; font: var(--t-body); }
+.tp-about dt { color: var(--text-muted); }
+.tp-about dd { margin: 0; color: var(--text); overflow-wrap: anywhere; }
+.tp-why { margin: 14px 0 0; color: var(--text); font: var(--t-body); max-width: 70ch; }
+
+/* Admin-only details (file names, folders, import notes). */
+.tp-details { margin-top: 10px; font: var(--t-subhead); color: var(--text-muted); }
+.tp-details summary { cursor: pointer; min-height: 32px; display: inline-flex; align-items: center; color: var(--text-muted); font-weight: 600; }
+.tp-details ul { margin: 6px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.tp-details li { overflow-wrap: anywhere; }
+
 .tp-member { display: flex; align-items: center; min-height: 44px; }
 .tp-start { margin-top: 8px; }
 @media (max-width: 1023px) {
 	.tp-body { grid-template-columns: minmax(0, 1fr); }
-	.tp-side { position: static; }
 }
 @media (max-width: 600px) {
 	.tp-row { flex-direction: column; }
 	.tp-row-end { justify-content: flex-start; }
+	.tp-about { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+	.tp-about dd { margin-bottom: 10px; }
 }
 .tp-btn { max-width: 100%; min-width: 0; }

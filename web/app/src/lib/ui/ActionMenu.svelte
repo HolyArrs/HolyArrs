@@ -2,38 +2,59 @@
 	import Icon, { type IconName } from '../Icon.svelte';
 	import Menu, { type MenuItem } from './Menu.svelte';
 
-	// A Menu whose trigger looks like an ActionButton (round, word under it),
-	// for the Library ▾ and ⋯ menus of a title hero.
+	// A Menu whose trigger matches ActionButton: a glass pill with its word
+	// and a chevron (Library ▾), or with `round` a 44px glass circle (⋯).
 	let {
 		label,
 		caption,
 		icon = 'more',
+		round,
 		items,
 		width = 260,
 		align = 'start',
 		open = $bindable(false)
-	}: { label: string; caption?: string; icon?: IconName; items: MenuItem[]; width?: number; align?: 'start' | 'end'; open?: boolean } = $props();
+	}: { label: string; caption?: string; icon?: IconName; round?: boolean; items: MenuItem[]; width?: number; align?: 'start' | 'end'; open?: boolean } = $props();
+	const isRound = $derived(round ?? icon === 'more');
 </script>
 
-<span class="ui-actmenu">
+<span class="ui-actmenu" class:round={isRound}>
 	<Menu {label} {items} {width} {align} bind:open>
 		{#snippet trigger()}
-			<span class="dot" aria-hidden="true"><Icon name={icon} size={22} /></span>
-			<span class="cap" aria-hidden="true">{caption ?? label}</span>
+			{#if isRound}
+				<Icon name={icon} size={20} />
+				<span class="tip" aria-hidden="true">{caption ?? label}</span>
+			{:else}
+				<Icon name={icon} size={18} />
+				<span class="cap" aria-hidden="true">{caption ?? label}</span>
+				<svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+			{/if}
 		{/snippet}
 	</Menu>
 </span>
 
 <style>
 	.ui-actmenu { display: inline-flex; }
-	.ui-actmenu :global(.ui-pop > .trigger) { width: auto; height: auto; min-width: 64px; max-width: 84px; padding: 2px; flex-direction: column; gap: 6px; border-radius: 14px; background: none; color: var(--on-art); }
-	.ui-actmenu :global(.ui-pop > .trigger:hover), .ui-actmenu :global(.ui-pop > .trigger[aria-expanded='true']) { background: none; color: var(--on-art); }
-	.ui-actmenu :global(.ui-pop > .trigger:focus-visible) { box-shadow: none; }
-	.ui-actmenu :global(.ui-pop > .trigger:focus-visible .dot) { box-shadow: 0 0 0 2px var(--on-art-ink), 0 0 0 4px var(--on-art); }
-	.ui-actmenu :global(.ui-pop > .trigger[aria-expanded='true'] .dot) { background: var(--on-art); color: var(--on-art-ink); }
+	.ui-actmenu :global(.ui-pop > .trigger) {
+		position: relative; width: auto; height: 44px; min-width: 44px; padding: 0 16px 0 16px; gap: 8px; justify-content: center;
+		border-radius: 999px; border: 1px solid rgb(255 255 255 / 22%); background: rgb(255 255 255 / 14%); color: #fff;
+		backdrop-filter: blur(20px) saturate(170%); -webkit-backdrop-filter: blur(20px) saturate(170%);
+		font: 600 15px/1 var(--font-ui); white-space: nowrap;
+		transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), scale var(--dur) var(--ease-spring);
+	}
+	.round :global(.ui-pop > .trigger) { width: 44px; padding: 0; }
+	.ui-actmenu :global(.ui-pop > .trigger:hover) { background: rgb(255 255 255 / 24%); border-color: rgb(255 255 255 / 34%); color: #fff; }
+	.ui-actmenu :global(.ui-pop > .trigger[aria-expanded='true']) { background: rgb(255 255 255 / 92%); border-color: transparent; color: #111; }
+	.ui-actmenu :global(.ui-pop > .trigger:active) { scale: .95; transition-duration: var(--dur-instant); }
+	.ui-actmenu :global(.ui-pop > .trigger:focus-visible) { outline: none; box-shadow: 0 0 0 2px #111, 0 0 0 4px #fff; }
 	.ui-actmenu :global(.panel) { color: var(--text); }
-	.dot { width: 52px; height: 52px; display: grid; place-items: center; border-radius: 50%; background: var(--on-art-fill); box-shadow: inset 0 0 0 1px var(--on-art-ring); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); transition: background var(--dur-fast) var(--ease-out); }
-	.ui-actmenu :global(.ui-pop > .trigger:hover .dot) { background: var(--on-art-fill-hover); }
-	.cap { font: var(--t-footnote); font-size: 12px; font-weight: 600; line-height: 1.2; text-align: center; color: var(--on-art-soft); }
-	@media (max-width: 400px) { .ui-actmenu :global(.ui-pop > .trigger) { min-width: 56px; } .dot { width: 48px; height: 48px; } }
+	.chev { margin-left: -2px; opacity: .8; }
+	.tip {
+		position: absolute; left: 50%; top: calc(100% + 8px); z-index: 5; translate: -50% -4px; padding: 5px 9px; border-radius: 7px;
+		background: rgb(20 20 22 / 92%); color: #fff; font: 600 12px/1.2 var(--font-ui); white-space: nowrap; pointer-events: none;
+		opacity: 0; transition: opacity var(--dur-fast) var(--ease-out), translate var(--dur-fast) var(--ease-out);
+	}
+	.ui-actmenu :global(.ui-pop > .trigger:hover:not([aria-expanded='true']) .tip) { opacity: 1; translate: -50% 0; transition-delay: 500ms; }
+	@media (hover: none) { .tip { display: none; } }
+	@media (max-width: 359px) { .cap { display: none; } .ui-actmenu :global(.ui-pop > .trigger) { padding: 0 12px; } }
+	@media (prefers-reduced-motion: reduce) { .ui-actmenu :global(.ui-pop > .trigger:active) { scale: 1; } }
 </style>

@@ -43,6 +43,14 @@ export interface TitleView {
 	pick_rules_id?: number;
 	pick_rules_name?: string;
 	artwork: string[];
+	/** Wide backdrop art (TMDB w1280), when known. */
+	backdrop?: string;
+	/** Title logo art (transparent PNG), when known. */
+	logo?: string;
+	genres?: string[];
+	runtime_minutes?: number;
+	/** Age rating, e.g. PG-13. */
+	rating?: string;
 	versions: VersionView[];
 	slots: SlotView[];
 	/** Wishlist asks that led to it: who asked and who decided. */
@@ -235,6 +243,9 @@ export interface EpisodeView {
 	air_date?: string;
 	air_day?: string;
 	runtime?: number;
+	runtime_minutes?: number;
+	/** A still from the episode (w780), when known. */
+	still?: string;
 	keep_up_to_date: boolean;
 	dropped?: boolean;
 	ids: Record<string, string>;
