@@ -1,0 +1,363 @@
+// Explore: rows of titles built from data HolyArrs already has (the Library,
+// the calendar and the Wishlist), plus rows from a later discover endpoint.
+// Everything that decides what shows, and in which order, lives here as pure
+// functions so it can be tested and explained.
+import { api, ApiError, type Client } from './api.ts';
+import { episodeCode } from './calendar.ts';
+import type { Ask, CalendarEntry, TitleView } from './types.ts';
+
+export type CardKind = 'movie' | 'show' | 'artist';
+export type CardStatus = 'in_library' | 'downloading' | 'requested' | 'missing' | 'coming_soon';
+
+/** ExploreCard is one poster in a row, whatever it came from. */
+export interface ExploreCard {
+	/** Unique within its row. */
+	key: string;
+	kind: CardKind;
+	name: string;
+	year?: number;
+	image?: string | null;
+	subtitle?: string;
+	/** Set when the title is in the Library. */
+	titleId?: number;
+	/** How it is added or asked for, such as tmdb:693134 (not in the Library). */
+	ref?: string;
+	status?: CardStatus;
+	statusLabel?: string;
+	badges: string[];
+	/** Whether the signed-in person already asked for it. */
+	mine?: boolean;
+	/** view-transition-name; only the first card of a title on a page gets one. */
+	vtName?: string;
+}
+
+export interface ExploreRow {
+	id: string;
+	title: string;
+	subtitle?: string;
+	href?: string;
+	cards: ExploreCard[];
+}
+
+/** Facets are what two titles can share: genres and people. */
+export interface Facets {
+	genres: string[];
+	people: string[];
+}
+
+export const ROW_MAX = 20;
+
+function kindOf(k: string): CardKind {
+	return k === 'show' || k === 'artist' ? k : 'movie';
+}
+
+/** quality is the best file's resolution in plain marks: 4K, 1080p, 720p. */
+export function quality(t: Pick<TitleView, 'slots'>): string | undefined {
+	let best = 0;
+	for (const s of t.slots ?? []) {
+		const r = Number((s.file?.Quality as { resolution?: unknown } | null | undefined)?.resolution ?? 0);
+		if (r > best) best = r;
+	}
+	if (best >= 2000) return '4K';
+	if (best >= 1000) return '1080p';
+	if (best >= 700) return '720p';
+	return best > 0 ? `${best}p` : undefined;
+}
+
+/** titleStatus is the one overlay a Library title shows: downloading beats asked beats in the Library. */
+export function titleStatus(t: Pick<TitleView, 'slots' | 'asks'>): { status: CardStatus; label: string } {
+	if ((t.slots ?? []).some((s) => s.state === 'downloading')) return { status: 'downloading', label: 'Downloading' };
+	const open = (t.asks ?? []).some((a) => a.state === 'asked' || a.state === 'approved');
+	const have = (t.slots ?? []).some((s) => s.state === 'in_library');
+	if (open && !have) return { status: 'requested', label: 'Requested' };
+	return { status: 'in_library', label: 'In Library ✓' };
+}
+
+/** titleCard turns a Library title into a card. */
+export function titleCard(t: TitleView, subtitle?: string, key = `t${t.id}`): ExploreCard {
+	const s = titleStatus(t);
+	const q = quality(t);
+	return {
+		key,
+		kind: kindOf(t.kind),
+		name: t.name,
+		year: t.year,
+		image: t.artwork?.[0] ?? null,
+		subtitle: subtitle ?? (t.year ? String(t.year) : undefined),
+		titleId: t.id,
+		status: s.status,
+		statusLabel: s.label,
+		badges: q ? [q] : []
+	};
+}
+
+/** recentlyAdded: newest first. Title ids only grow, so the highest id is the latest added. */
+export function recentlyAdded(titles: TitleView[], n = ROW_MAX): TitleView[] {
+	return [...titles].sort((a, b) => b.id - a.id).slice(0, n);
+}
+
+function shortDay(iso: string, now: Date): string {
+	const d = new Date(iso);
+	if (Number.isNaN(d.getTime())) return '';
+	const day = (x: Date) => Math.floor(Date.UTC(x.getFullYear(), x.getMonth(), x.getDate()) / 86400000);
+	const diff = day(d) - day(now);
+	if (diff === 0) return 'Today';
+	if (diff === 1) return 'Tomorrow';
+	return d.toLocaleDateString(undefined, diff < 7 && diff > 0 ? { weekday: 'long' } : { day: 'numeric', month: 'short' });
+}
+
+const releaseWord: Record<CalendarEntry['kind'], string> = { cinema: 'In cinemas', digital: 'On digital', physical: 'On disc', episode: '', album: 'New album' };
+
+/** comingSoon keeps each title's next date, soonest first, skipping what already passed. */
+export function comingSoon(entries: CalendarEntry[], titles: TitleView[], now = new Date(), n = ROW_MAX): ExploreCard[] {
+	const byId = new Map(titles.map((t) => [t.id, t]));
+	const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+	const seen = new Set<number>();
+	const out: ExploreCard[] = [];
+	const sorted = [...entries].filter((e) => new Date(e.air_day ?? e.date).getTime() >= start - 86400000).sort((a, b) => a.date.localeCompare(b.date));
+	for (const e of sorted) {
+		if (seen.has(e.title_id)) continue;
+		seen.add(e.title_id);
+		const t = byId.get(e.title_id);
+		const what = e.kind === 'episode' ? episodeCode(e) : e.kind === 'album' ? e.album ?? releaseWord.album : releaseWord[e.kind];
+		const when = shortDay(e.kind === 'episode' && !e.timed && e.air_day ? e.air_day : e.date, now);
+		const subtitle = [what, when].filter(Boolean).join(' · ');
+		const card: ExploreCard = t
+			? titleCard(t, subtitle, `c${e.title_id}`)
+			: { key: `c${e.title_id}`, kind: e.kind === 'episode' ? 'show' : e.kind === 'album' ? 'artist' : 'movie', name: e.name, year: e.year, subtitle, titleId: e.title_id, badges: [] };
+		card.status = 'coming_soon';
+		card.statusLabel = 'Coming soon';
+		out.push(card);
+		if (out.length >= n) break;
+	}
+	return out;
+}
+
+/** missingEpisodes lists shows with aired episodes that have no file, most missing first. */
+export function missingEpisodes(titles: TitleView[], n = ROW_MAX): ExploreCard[] {
+	return titles
+		.filter((t) => (t.show?.missing ?? 0) > 0)
+		.sort((a, b) => (b.show!.missing - a.show!.missing) || a.name.localeCompare(b.name))
+		.slice(0, n)
+		.map((t) => {
+			const m = t.show!.missing;
+			const c = titleCard(t, `${m} ${m === 1 ? 'episode' : 'episodes'} missing`, `m${t.id}`);
+			if (c.status === 'in_library') { c.status = 'missing'; c.statusLabel = 'Missing'; }
+			return c;
+		});
+}
+
+/** askKey groups asks for the same thing (the same title, or the same add id). */
+function askKey(a: Pick<Ask, 'title_id' | 'ref' | 'kind' | 'tmdb_id' | 'name'>): string {
+	if (a.title_id) return `t${a.title_id}`;
+	if (a.ref) return a.ref;
+	if (a.tmdb_id) return `tmdb:${a.tmdb_id}`;
+	return `${a.kind}:${a.name}`;
+}
+
+/**
+ * popularInHousehold: what the most people asked for. Score is the number of
+ * people on the ask; ties go to the latest ask. Turned-down asks do not count.
+ */
+export function popularInHousehold(asks: Ask[], titles: TitleView[], n = ROW_MAX): ExploreCard[] {
+	const byId = new Map(titles.map((t) => [t.id, t]));
+	const groups = new Map<string, { ask: Ask; people: Set<number>; last: string; mine: boolean }>();
+	for (const a of asks) {
+		if (a.state === 'turned_down') continue;
+		const k = askKey(a);
+		const g = groups.get(k) ?? { ask: a, people: new Set<number>(), last: a.asked_at, mine: false };
+		for (const p of a.people?.length ? a.people : [a.asked_by]) if (p) g.people.add(p.id);
+		if (a.asked_at > g.last) g.last = a.asked_at;
+		g.mine ||= !!a.mine;
+		groups.set(k, g);
+	}
+	return [...groups.entries()]
+		.sort(([, x], [, y]) => y.people.size - x.people.size || y.last.localeCompare(x.last))
+		.slice(0, n)
+		.map(([k, g]) => {
+			const who = `${g.people.size} ${g.people.size === 1 ? 'person' : 'people'} asked`;
+			const t = g.ask.title_id ? byId.get(g.ask.title_id) : undefined;
+			if (t) return { ...titleCard(t, who, `p${k}`), mine: g.mine };
+			const done = g.ask.state === 'available';
+			return {
+				key: `p${k}`,
+				kind: kindOf(g.ask.kind),
+				name: g.ask.name,
+				year: g.ask.year,
+				image: g.ask.poster ?? null,
+				subtitle: who,
+				titleId: g.ask.title_id,
+				ref: g.ask.ref || (g.ask.tmdb_id ? `tmdb:${g.ask.tmdb_id}` : undefined),
+				status: done ? 'in_library' : 'requested',
+				statusLabel: done ? 'In Library ✓' : 'Requested',
+				badges: [],
+				mine: g.mine
+			} satisfies ExploreCard;
+		});
+}
+
+/** overlap counts what two titles share; a shared person counts double a shared genre. */
+export function overlap(a: Facets | undefined, b: Facets | undefined): number {
+	if (!a || !b) return 0;
+	const g = a.genres.filter((x) => b.genres.includes(x)).length;
+	const p = a.people.filter((x) => b.people.includes(x)).length;
+	return g + 2 * p;
+}
+
+/**
+ * score ranks a candidate: overlap × recency × household asks. recency is
+ * 1 for the newest title and falls towards 0.5 for the oldest; every person
+ * who asked adds 25%. Zero overlap scores zero, so it never shows.
+ */
+export function score(o: { overlap: number; ageRank: number; total: number; asks: number }): number {
+	const recency = o.total > 1 ? 1 - (0.5 * o.ageRank) / (o.total - 1) : 1;
+	return o.overlap * recency * (1 + 0.25 * o.asks);
+}
+
+function asksOf(t: Pick<TitleView, 'asks'>): number {
+	return (t.asks ?? []).reduce((n, a) => n + Math.max(1, a.people?.length ?? 0), 0);
+}
+
+/**
+ * becauseYouHave picks the newest title that has at least `min` related
+ * titles and returns it with those titles, best first.
+ */
+export function becauseYouHave(titles: TitleView[], facets: Map<number, Facets>, min = 3, n = ROW_MAX): { seed: TitleView; cards: ExploreCard[] } | null {
+	const recent = recentlyAdded(titles, titles.length);
+	const rank = new Map(recent.map((t, i) => [t.id, i]));
+	for (const seed of recent) {
+		const f = facets.get(seed.id);
+		if (!f) continue;
+		const scored = recent
+			.filter((t) => t.id !== seed.id && t.kind === seed.kind)
+			.map((t) => ({ t, s: score({ overlap: overlap(f, facets.get(t.id)), ageRank: rank.get(t.id) ?? 0, total: recent.length, asks: asksOf(t) }) }))
+			.filter((x) => x.s > 0)
+			.sort((a, b) => b.s - a.s || a.t.name.localeCompare(b.t.name));
+		if (scored.length >= min) return { seed, cards: scored.slice(0, n).map((x) => titleCard(x.t, undefined, `b${x.t.id}`)) };
+	}
+	return null;
+}
+
+/** genreRows: the biggest genres in the Library, each with at least `min` titles. */
+export function genreRows(titles: TitleView[], facets: Map<number, Facets>, maxRows = 3, min = 4, n = ROW_MAX): ExploreRow[] {
+	const by = new Map<string, TitleView[]>();
+	for (const t of recentlyAdded(titles, titles.length)) for (const g of facets.get(t.id)?.genres ?? []) by.set(g, [...(by.get(g) ?? []), t]);
+	return [...by.entries()]
+		.filter(([, ts]) => ts.length >= min)
+		.sort(([ga, a], [gb, b]) => b.length - a.length || ga.localeCompare(gb))
+		.slice(0, maxRows)
+		.map(([g, ts]) => ({ id: `genre-${g.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`, title: `${g} in your library`, cards: ts.slice(0, n).map((t) => titleCard(t, undefined, `g${t.id}`)) }));
+}
+
+/** fromPerson: the person in the most Library titles (at least `min`), with those titles. */
+export function fromPerson(titles: TitleView[], facets: Map<number, Facets>, min = 2, n = ROW_MAX): { person: string; cards: ExploreCard[] } | null {
+	const count = new Map<string, TitleView[]>();
+	for (const t of recentlyAdded(titles, titles.length)) for (const p of new Set(facets.get(t.id)?.people ?? [])) count.set(p, [...(count.get(p) ?? []), t]);
+	const best = [...count.entries()].filter(([, ts]) => ts.length >= min).sort(([pa, a], [pb, b]) => b.length - a.length || pa.localeCompare(pb))[0];
+	return best ? { person: best[0], cards: best[1].slice(0, n).map((t) => titleCard(t, undefined, `f${t.id}`)) } : null;
+}
+
+/** genresOf reads genres when the API sends them (it does not yet; see backend-needs.md). */
+export function genresOf(t: TitleView): string[] {
+	const g = (t as TitleView & { genres?: unknown }).genres;
+	return Array.isArray(g) ? g.filter((x): x is string => typeof x === 'string') : [];
+}
+
+/** markTransitions gives each title's first card on the page the view-transition name title-art-<id>. */
+export function markTransitions(rows: ExploreRow[]): ExploreRow[] {
+	const used = new Set<number>();
+	return rows.map((r) => ({
+		...r,
+		cards: r.cards.map((c) => {
+			if (c.titleId === undefined || used.has(c.titleId)) return { ...c, vtName: undefined };
+			used.add(c.titleId);
+			return { ...c, vtName: `title-art-${c.titleId}` };
+		})
+	}));
+}
+
+/** keepFull drops empty rows. */
+export function keepFull(rows: (ExploreRow | null | undefined)[]): ExploreRow[] {
+	return rows.filter((r): r is ExploreRow => !!r && r.cards.length > 0);
+}
+
+/** cardAction says what the round + does for this person on this card. */
+export function cardAction(c: ExploreCard, can: { manage: boolean; ask: boolean }): 'add' | 'ask' | null {
+	if (c.titleId !== undefined || c.status === 'in_library') return null;
+	if (can.manage) return 'add';
+	if (can.ask && !c.mine && c.ref) return 'ask';
+	return null;
+}
+
+// ---- Rows from the discover endpoint (not built yet; see backend-needs.md) ----
+
+export type DiscoverRowName = 'trending' | 'popular' | 'upcoming' | 'similar' | 'genre';
+export interface DiscoverQuery {
+	row: DiscoverRowName;
+	/** similar: the Library title id. */
+	id?: number;
+	/** genre: the genre name. */
+	g?: string;
+	kind?: 'movie' | 'show';
+}
+export interface DiscoverItem {
+	tmdb_id: string;
+	kind: 'movie' | 'show';
+	name: string;
+	year?: number;
+	poster?: string | null;
+	backdrop?: string | null;
+	overview?: string;
+	genres?: string[];
+	in_library: boolean;
+	title_id?: number;
+	ask?: { id: number; state: Ask['state']; state_label: string; mine: boolean; people: number } | null;
+}
+export interface DiscoverAnswer {
+	row: DiscoverRowName;
+	title?: string;
+	items: DiscoverItem[];
+}
+
+export function discoverPath(q: DiscoverQuery): string {
+	const p = new URLSearchParams({ row: q.row });
+	if (q.id !== undefined) p.set('id', String(q.id));
+	if (q.g) p.set('g', q.g);
+	if (q.kind) p.set('kind', q.kind);
+	return `/discover?${p.toString()}`;
+}
+
+/** fetchDiscoverRow asks the server for a discover row; null when the server has none yet (404/501). */
+export async function fetchDiscoverRow(q: DiscoverQuery, client: Pick<Client, 'get'> = api, signal?: AbortSignal): Promise<DiscoverAnswer | null> {
+	try {
+		return await client.get<DiscoverAnswer>(discoverPath(q), signal);
+	} catch (e) {
+		if (e instanceof ApiError && (e.status === 404 || e.status === 501)) return null;
+		throw e;
+	}
+}
+
+/** discoverCard turns a discover item into a card. */
+export function discoverCard(d: DiscoverItem, row: string): ExploreCard {
+	const asked = d.ask && d.ask.state !== 'turned_down';
+	return {
+		key: `${row}-${d.kind}-${d.tmdb_id}`,
+		kind: d.kind,
+		name: d.name,
+		year: d.year,
+		image: d.poster ?? null,
+		subtitle: d.year ? String(d.year) : undefined,
+		titleId: d.in_library ? d.title_id : undefined,
+		ref: `tmdb:${d.tmdb_id}`,
+		status: d.in_library ? 'in_library' : asked ? 'requested' : undefined,
+		statusLabel: d.in_library ? 'In Library ✓' : asked ? 'Requested' : undefined,
+		badges: [],
+		mine: !!d.ask?.mine
+	};
+}
+
+export const discoverTitles: Record<Exclude<DiscoverRowName, 'similar' | 'genre'>, string> = {
+	trending: 'Trending this week',
+	popular: 'Popular right now',
+	upcoming: 'Coming to cinemas'
+};
