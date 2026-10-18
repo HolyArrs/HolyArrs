@@ -1,4 +1,7 @@
 <script lang="ts">
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
 	import EmptyState from '#lib/EmptyState.svelte';
@@ -108,76 +111,72 @@
 
 <svelte:head><title>Media servers · HolyArrs</title></svelte:head>
 
-<header class="page-head">
-	<div>
-		<h1>Media servers</h1>
-		<p>
-			After HolyArrs imports, renames or deletes a movie's files, it tells Plex, Jellyfin or Emby to look at that movie's folder again, so the
-			change shows up without waiting for the server's own scan. Nothing is read back.
-		</p>
-	</div>
-	{#if !editing}<button class="btn btn-red" type="button" onclick={startAdd}><Icon name="plus" size={18} /> Add a media server</button>{/if}
-</header>
+<PageHeader title="Media servers" subtitle="After HolyArrs imports, renames or deletes a movie's files, it tells Plex, Jellyfin or Emby to look at that movie's folder again, so the change shows up without waiting for the server's own scan. Nothing is read back.">
+	{#snippet actions()}
+		{#if !editing}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>Add a media server</Button>{/if}
+	{/snippet}
+</PageHeader>
 
 {#if editing}
-	<form class="card" onsubmit={save} aria-labelledby="h-ms-form">
-		<h2 id="h-ms-form" class="h2">{isNew ? 'Add a media server' : `Change ${editing.name}`}</h2>
-		<div class="field" style="margin-top: var(--s-4)">
-			<label for="ms-name">Name</label>
-			<input id="ms-name" class="input" bind:value={form.name} maxlength="80" required />
-		</div>
-		{#if isNew}
-			<div class="field">
-				<label for="ms-kind">Kind</label>
-				<select id="ms-kind" class="input" bind:value={form.kind}>
-					<option value="plex">Plex</option>
-					<option value="jellyfin">Jellyfin</option>
-					<option value="emby">Emby</option>
-				</select>
+	<form class="sc-form" onsubmit={save} aria-label={isNew ? 'Add a media server' : `Change ${editing.name}`}>
+		<SettingsCard title={isNew ? 'Add a media server' : `Change ${editing.name}`}>
+			<div class="field" style="margin-top: var(--s-4)">
+				<label for="ms-name">Name</label>
+				<input id="ms-name" class="input" bind:value={form.name} maxlength="80" required />
 			</div>
-		{/if}
-		<div class="field">
-			<label for="ms-url">Address</label>
-			<input id="ms-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" placeholder={portHint[form.kind]} />
-		</div>
-		<div class="field">
-			<label for="ms-token">{form.kind === 'plex' ? 'Plex token' : 'API key'}</label>
-			<input id="ms-token" class="input mono" type="password" bind:value={form.token} autocomplete="new-password" />
-			<span class="hint">
-				{form.kind === 'plex' ? 'The token of your Plex server.' : 'Make one in the server: Dashboard, API keys.'} Kept encrypted and never shown again;
-				leave empty to keep the stored one. A new address needs it typed again.
-			</span>
-		</div>
-		<fieldset class="when">
-			<legend class="label">Tell it after</legend>
-			<label class="checkline"><input type="checkbox" bind:checked={form.on_import} /><span><b>An import</b><br /><span class="hint">A new file or a better copy.</span></span></label>
-			<label class="checkline"><input type="checkbox" bind:checked={form.on_rename} /><span><b>A rename</b></span></label>
-			<label class="checkline"><input type="checkbox" bind:checked={form.on_delete} /><span><b>A delete</b><br /><span class="hint">Only when the delete removed files.</span></span></label>
-		</fieldset>
-		<div class="two">
+			{#if isNew}
+				<div class="field">
+					<label for="ms-kind">Kind</label>
+					<select id="ms-kind" class="input" bind:value={form.kind}>
+						<option value="plex">Plex</option>
+						<option value="jellyfin">Jellyfin</option>
+						<option value="emby">Emby</option>
+					</select>
+				</div>
+			{/if}
 			<div class="field">
-				<label for="ms-from">HolyArrs path</label>
-				<input id="ms-from" class="input mono" bind:value={form.path_from} placeholder="/data/movies" autocomplete="off" />
+				<label for="ms-url">Address</label>
+				<input id="ms-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" placeholder={portHint[form.kind]} />
 			</div>
 			<div class="field">
-				<label for="ms-to">Same folder on the server</label>
-				<input id="ms-to" class="input mono" bind:value={form.path_to} placeholder="/movies" autocomplete="off" />
+				<label for="ms-token">{form.kind === 'plex' ? 'Plex token' : 'API key'}</label>
+				<input id="ms-token" class="input mono" type="password" bind:value={form.token} autocomplete="new-password" />
+				<span class="hint">
+					{form.kind === 'plex' ? 'The token of your Plex server.' : 'Make one in the server: Dashboard, API keys.'} Kept encrypted and never shown again;
+					leave empty to keep the stored one. A new address needs it typed again.
+				</span>
 			</div>
-		</div>
-		<p class="hint">Only when the server sees your movies under another path (for example in another container). Leave both empty otherwise.</p>
-		<label class="checkline">
-			<input type="checkbox" bind:checked={form.allow_local_network} />
-			<span><b>May reach the local network</b><br /><span class="hint">On by default: media servers are usually at home.</span></span>
-		</label>
-		<label class="checkline">
-			<input type="checkbox" bind:checked={form.enabled} />
-			<span><b>On</b><br /><span class="hint">Off keeps it but tells it nothing.</span></span>
-		</label>
-		{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
-		<div class="row" style="margin-top: var(--s-5)">
-			<button class="btn btn-quiet" type="button" onclick={() => (editing = null)}>Cancel</button>
-			<button class="btn btn-red" type="submit" disabled={busy || !form.name.trim()} aria-busy={busy}>Save</button>
-		</div>
+			<fieldset class="when">
+				<legend class="label">Tell it after</legend>
+				<label class="checkline"><input type="checkbox" bind:checked={form.on_import} /><span><b>An import</b><br /><span class="hint">A new file or a better copy.</span></span></label>
+				<label class="checkline"><input type="checkbox" bind:checked={form.on_rename} /><span><b>A rename</b></span></label>
+				<label class="checkline"><input type="checkbox" bind:checked={form.on_delete} /><span><b>A delete</b><br /><span class="hint">Only when the delete removed files.</span></span></label>
+			</fieldset>
+			<div class="two">
+				<div class="field">
+					<label for="ms-from">HolyArrs path</label>
+					<input id="ms-from" class="input mono" bind:value={form.path_from} placeholder="/data/movies" autocomplete="off" />
+				</div>
+				<div class="field">
+					<label for="ms-to">Same folder on the server</label>
+					<input id="ms-to" class="input mono" bind:value={form.path_to} placeholder="/movies" autocomplete="off" />
+				</div>
+			</div>
+			<p class="hint">Only when the server sees your movies under another path (for example in another container). Leave both empty otherwise.</p>
+			<label class="checkline">
+				<input type="checkbox" bind:checked={form.allow_local_network} />
+				<span><b>May reach the local network</b><br /><span class="hint">On by default: media servers are usually at home.</span></span>
+			</label>
+			<label class="checkline">
+				<input type="checkbox" bind:checked={form.enabled} />
+				<span><b>On</b><br /><span class="hint">Off keeps it but tells it nothing.</span></span>
+			</label>
+			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
+			<div class="row" style="margin-top: var(--s-5)">
+				<Button variant="plain" type="button" onclick={() => (editing = null)}>Cancel</Button>
+				<Button variant="primary" type="submit" disabled={busy || !form.name.trim()} aria-busy={busy}>Save</Button>
+			</div>
+		</SettingsCard>
 	</form>
 {/if}
 
@@ -206,9 +205,9 @@
 					<p class="small muted" data-testid="media-result">Last answered {ago(m.last_ok_at)}</p>
 				{/if}
 				<div class="row actions">
-					<button class="btn btn-ghost" type="button" disabled={testing === m.id} aria-busy={testing === m.id} onclick={() => test(m)}>Test</button>
-					<button class="btn btn-quiet" type="button" onclick={() => startChange(m)}>Change</button>
-					<button class="btn btn-quiet" type="button" onclick={() => remove(m)} aria-label="Remove {m.name}">Remove</button>
+					<Button type="button" disabled={testing === m.id} aria-busy={testing === m.id} onclick={() => test(m)}>Test</Button>
+					<Button variant="plain" type="button" onclick={() => startChange(m)}>Change</Button>
+					<Button variant="plain" type="button" onclick={() => remove(m)} aria-label="Remove {m.name}">Remove</Button>
 				</div>
 			</li>
 		{/each}

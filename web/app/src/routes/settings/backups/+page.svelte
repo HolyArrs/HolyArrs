@@ -1,4 +1,9 @@
 <script lang="ts">
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import IconButton from '#lib/ui/IconButton.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
 	import { api, message, ApiError } from '#lib/api.ts';
@@ -107,15 +112,13 @@
 
 <svelte:head><title>Backups · HolyArrs</title></svelte:head>
 
-<header class="page-head">
-	<div>
-		<h1>Backups</h1>
-		<p>HolyArrs saves both of its databases on a schedule, and before every update. Media files are never in a backup.</p>
-	</div>
-	{#if loaded && !missing}
-		<button class="btn btn-red" type="button" onclick={makeNow} disabled={making} aria-busy={making}><Icon name="archive" size={18} /> Make a backup now</button>
-	{/if}
-</header>
+<PageHeader title="Backups" subtitle="HolyArrs saves both of its databases on a schedule, and before every update. Media files are never in a backup.">
+	{#snippet actions()}
+		{#if loaded && !missing}
+		<Button icon="archive" variant="primary" type="button" onclick={makeNow} disabled={making} aria-busy={making}>Make a backup now</Button>
+		{/if}
+	{/snippet}
+</PageHeader>
 
 {#if !loaded}
 	<div class="sk" style="height: 200px"></div>
@@ -132,8 +135,7 @@
 		</p>
 	{/if}
 
-	<section class="card" aria-labelledby="h-plan">
-		<h2 id="h-plan" class="h2">How often</h2>
+	<SettingsCard title="How often">
 		<div class="presets" role="radiogroup" aria-labelledby="h-plan" aria-busy={savingPreset}>
 			{#each presets as p (p.key)}
 				<label class="preset" class:on={preset === p.key}>
@@ -143,12 +145,12 @@
 				</label>
 			{/each}
 		</div>
-	</section>
+	</SettingsCard>
 
 	<section class="card" aria-labelledby="h-list">
 		<div class="card-head">
 			<h2 id="h-list" class="h2">Saved backups</h2>
-			<label class="btn btn-ghost" aria-busy={restoring}>
+			<label class="restore" aria-busy={restoring}>
 				<Icon name="upload" size={18} /> Restore from a file
 				<input class="sr-only" type="file" accept=".zip,application/zip" bind:this={fileInput} onchange={restore} disabled={restoring} />
 			</label>
@@ -163,8 +165,8 @@
 							<div class="mono small ellipsis">{b.name}</div>
 							<div class="xs muted">{dateTime(b.created_at)} · {bytes(b.size)} · {words(b.kind)}</div>
 						</div>
-						<a class="btn btn-quiet" href={to(`/api/v1/backups/${encodeURIComponent(b.name)}`)} download>Download</a>
-						<button class="icon-btn" type="button" aria-label="Delete {b.name}" onclick={() => remove(b)}><Icon name="trash" size={18} /></button>
+						<AdminLinkButton variant="plain" href={to(`/api/v1/backups/${encodeURIComponent(b.name)}`)} download>Download</AdminLinkButton>
+						<IconButton icon="trash" label="Delete {b.name}" type="button" onclick={() => remove(b)} />
 					</li>
 				{/each}
 			</ul>
@@ -174,6 +176,12 @@
 {/if}
 
 <style>
+	/* A file picker label, shaped like the kit secondary Button. */
+	.restore { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 16px; border-radius: var(--r-btn); background: var(--surface-2); color: var(--text); font: var(--t-headline); font-size: 15px; cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
+	.restore:hover { background: var(--surface-3); }
+	.restore:has(input:focus-visible) { box-shadow: var(--focus-ring); }
+	.restore[aria-busy='true'] { opacity: .6; }
+	@media (pointer: coarse) { .restore { min-height: 44px; } }
 	.presets {
 		display: grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -216,12 +224,6 @@
 	}
 	.pn {
 		font-weight: var(--weight-semibold);
-	}
-	label.btn {
-		cursor: pointer;
-	}
-	label.btn:has(input:focus-visible) {
-		box-shadow: var(--focus-ring);
 	}
 	.keynote {
 		margin-top: var(--s-4);

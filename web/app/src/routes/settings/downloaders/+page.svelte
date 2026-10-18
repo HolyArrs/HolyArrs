@@ -1,4 +1,7 @@
 <script lang="ts">
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
 	import { ago } from '#lib/format.ts';
@@ -220,13 +223,11 @@
 
 <svelte:head><title>Downloaders · HolyArrs</title></svelte:head>
 
-<header class="page-head">
-	<div>
-		<h1>Downloaders</h1>
-		<p>The apps that download torrents or Usenet releases for HolyArrs.</p>
-	</div>
-	{#if !editing}<button class="btn btn-red" type="button" onclick={startAdd}><Icon name="plus" size={18} /> Add a Downloader</button>{/if}
-</header>
+<PageHeader title="Downloaders" subtitle="The apps that download torrents or Usenet releases for HolyArrs.">
+	{#snippet actions()}
+		{#if !editing}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>Add a Downloader</Button>{/if}
+	{/snippet}
+</PageHeader>
 
 <p class="small muted lead">
 	A Release goes to a Downloader of its kind, priority 1 first; Downloaders with the same priority take turns. One that does not answer rests for a while
@@ -234,90 +235,91 @@
 </p>
 
 {#if editing}
-	<form class="card" onsubmit={save} aria-labelledby="h-form">
-		<h2 id="h-form" class="h2">{isNew ? 'Add a Downloader' : `Change ${editing.name}`}</h2>
-		{#if isNew}
-			<fieldset class="group">
-				<legend class="label">Which app</legend>
-				<div class="row kinds">
-					<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'qbittorrent'} onchange={() => pickKind('qbittorrent')} /><span><b>qBittorrent</b> (torrents)</span></label>
-					<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'transmission'} onchange={() => pickKind('transmission')} /><span><b>Transmission</b> (torrents)</span></label>
-					<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'deluge'} onchange={() => pickKind('deluge')} /><span><b>Deluge</b> (torrents)</span></label>
-					<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'sabnzbd'} onchange={() => pickKind('sabnzbd')} /><span><b>SABnzbd</b> (Usenet)</span></label>
-					<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'nzbget'} onchange={() => pickKind('nzbget')} /><span><b>NZBGet</b> (Usenet)</span></label>
-				</div>
-			</fieldset>
-		{/if}
-		<div class="field" style="margin-top: var(--s-4)">
-			<label for="dl-name">Name</label>
-			<input id="dl-name" class="input" bind:value={form.name} maxlength="80" required />
-		</div>
-		<div class="field">
-			<label for="dl-url">Address</label>
-			<input id="dl-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" required placeholder={addressPlaceholder(form.kind)} />
-			<span class="hint">The address of its web page. For SABnzbd use the IP address, or add HolyArrs' name to its list of allowed host names.</span>
-		</div>
-		{#if hasUsername(form.kind)}
-			<div class="two">
-				<div class="field">
-					<label for="dl-user">Sign-in name</label>
-					<input id="dl-user" class="input" bind:value={form.username} autocomplete="off" />
-					<span class="hint">Leave empty when {kindWords[form.kind]} does not require it from this network.</span>
-				</div>
-				<div class="field">
-					<label for="dl-secret">Password</label>
-					<input id="dl-secret" class="input" type="password" bind:value={form.secret} autocomplete="new-password" />
-					<span class="hint">Kept encrypted. Leave as it is to keep the stored one.</span>
-				</div>
-			</div>
-		{:else}
-			<div class="field">
-				<label for="dl-secret">{form.kind === 'sabnzbd' ? 'API key' : 'Password'}</label>
-				<input id="dl-secret" class="input" class:mono={form.kind === 'sabnzbd'} type="password" bind:value={form.secret} autocomplete="new-password" spellcheck="false" required={isNew} />
-				<span class="hint">{form.kind === 'sabnzbd' ? 'In SABnzbd under Config, General.' : 'The Deluge Web UI password.'} Kept encrypted. Moving the address to another host needs it again.</span>
-			</div>
-		{/if}
-		{#if form.kind === 'deluge'}
-			<p class="notice">The Deluge Web UI must already be connected to the intended daemon, and that daemon must have the Label plugin enabled.</p>
-		{/if}
-		<div class="two">
-			<div class="field">
-				<label for="dl-cat">Category</label>
-				<input id="dl-cat" class="input" bind:value={form.category} maxlength="64" required />
-				<span class="hint">{categoryHint(form.kind)} HolyArrs only follows downloads in it.</span>
+	<form class="sc-form" onsubmit={save} aria-label={isNew ? 'Add a Downloader' : `Change ${editing.name}`}>
+		<SettingsCard title={isNew ? 'Add a Downloader' : `Change ${editing.name}`}>
+			{#if isNew}
+				<fieldset class="group">
+					<legend class="label">Which app</legend>
+					<div class="row kinds">
+						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'qbittorrent'} onchange={() => pickKind('qbittorrent')} /><span><b>qBittorrent</b> (torrents)</span></label>
+						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'transmission'} onchange={() => pickKind('transmission')} /><span><b>Transmission</b> (torrents)</span></label>
+						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'deluge'} onchange={() => pickKind('deluge')} /><span><b>Deluge</b> (torrents)</span></label>
+						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'sabnzbd'} onchange={() => pickKind('sabnzbd')} /><span><b>SABnzbd</b> (Usenet)</span></label>
+						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'nzbget'} onchange={() => pickKind('nzbget')} /><span><b>NZBGet</b> (Usenet)</span></label>
+					</div>
+				</fieldset>
+			{/if}
+			<div class="field" style="margin-top: var(--s-4)">
+				<label for="dl-name">Name</label>
+				<input id="dl-name" class="input" bind:value={form.name} maxlength="80" required />
 			</div>
 			<div class="field">
-				<label for="dl-prio">Priority</label>
-				<input id="dl-prio" class="input" type="number" min="1" max="50" bind:value={form.priority} />
-				<span class="hint">1 to 50; 1 is used first.</span>
+				<label for="dl-url">Address</label>
+				<input id="dl-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" required placeholder={addressPlaceholder(form.kind)} />
+				<span class="hint">The address of its web page. For SABnzbd use the IP address, or add HolyArrs' name to its list of allowed host names.</span>
 			</div>
-		</div>
-		<details class="more" open={form.path_map.length > 0}>
-			<summary>Different folder names</summary>
-			<p class="hint">When the Downloader sees the download folder under another name (another container), say both names.</p>
-			{#each form.path_map as p, i (i)}
+			{#if hasUsername(form.kind)}
 				<div class="two">
 					<div class="field">
-						<label for="pm-theirs-{i}">Downloader's path</label>
-						<input id="pm-theirs-{i}" class="input mono" bind:value={p.theirs} placeholder="/data/downloads" />
+						<label for="dl-user">Sign-in name</label>
+						<input id="dl-user" class="input" bind:value={form.username} autocomplete="off" />
+						<span class="hint">Leave empty when {kindWords[form.kind]} does not require it from this network.</span>
 					</div>
 					<div class="field">
-						<label for="pm-ours-{i}">HolyArrs' path</label>
-						<input id="pm-ours-{i}" class="input mono" bind:value={p.ours} placeholder="/downloads" />
+						<label for="dl-secret">Password</label>
+						<input id="dl-secret" class="input" type="password" bind:value={form.secret} autocomplete="new-password" />
+						<span class="hint">Kept encrypted. Leave as it is to keep the stored one.</span>
 					</div>
 				</div>
-			{/each}
-			<button class="btn btn-quiet" type="button" style="margin-top: var(--s-3)" onclick={() => form.path_map.push({ theirs: '', ours: '' })}>Add a path pair</button>
-		</details>
-		<label class="checkline">
-			<input type="checkbox" bind:checked={form.allow_local_network} />
-			<span><b>May reach the local network</b><br /><span class="hint">On: it may run on this machine or your home network (the usual case). Off: only addresses on the internet.</span></span>
-		</label>
-		{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
-		<div class="row" style="margin-top: var(--s-5)">
-			<button class="btn btn-quiet" type="button" onclick={() => (editing = null)}>Cancel</button>
-			<button class="btn btn-red" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>Save Downloader</button>
-		</div>
+			{:else}
+				<div class="field">
+					<label for="dl-secret">{form.kind === 'sabnzbd' ? 'API key' : 'Password'}</label>
+					<input id="dl-secret" class="input" class:mono={form.kind === 'sabnzbd'} type="password" bind:value={form.secret} autocomplete="new-password" spellcheck="false" required={isNew} />
+					<span class="hint">{form.kind === 'sabnzbd' ? 'In SABnzbd under Config, General.' : 'The Deluge Web UI password.'} Kept encrypted. Moving the address to another host needs it again.</span>
+				</div>
+			{/if}
+			{#if form.kind === 'deluge'}
+				<p class="notice">The Deluge Web UI must already be connected to the intended daemon, and that daemon must have the Label plugin enabled.</p>
+			{/if}
+			<div class="two">
+				<div class="field">
+					<label for="dl-cat">Category</label>
+					<input id="dl-cat" class="input" bind:value={form.category} maxlength="64" required />
+					<span class="hint">{categoryHint(form.kind)} HolyArrs only follows downloads in it.</span>
+				</div>
+				<div class="field">
+					<label for="dl-prio">Priority</label>
+					<input id="dl-prio" class="input" type="number" min="1" max="50" bind:value={form.priority} />
+					<span class="hint">1 to 50; 1 is used first.</span>
+				</div>
+			</div>
+			<details class="more" open={form.path_map.length > 0}>
+				<summary>Different folder names</summary>
+				<p class="hint">When the Downloader sees the download folder under another name (another container), say both names.</p>
+				{#each form.path_map as p, i (i)}
+					<div class="two">
+						<div class="field">
+							<label for="pm-theirs-{i}">Downloader's path</label>
+							<input id="pm-theirs-{i}" class="input mono" bind:value={p.theirs} placeholder="/data/downloads" />
+						</div>
+						<div class="field">
+							<label for="pm-ours-{i}">HolyArrs' path</label>
+							<input id="pm-ours-{i}" class="input mono" bind:value={p.ours} placeholder="/downloads" />
+						</div>
+					</div>
+				{/each}
+				<Button variant="plain" type="button" style="margin-top: var(--s-3)" onclick={() => form.path_map.push({ theirs: '', ours: '' })}>Add a path pair</Button>
+			</details>
+			<label class="checkline">
+				<input type="checkbox" bind:checked={form.allow_local_network} />
+				<span><b>May reach the local network</b><br /><span class="hint">On: it may run on this machine or your home network (the usual case). Off: only addresses on the internet.</span></span>
+			</label>
+			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
+			<div class="row" style="margin-top: var(--s-5)">
+				<Button variant="plain" type="button" onclick={() => (editing = null)}>Cancel</Button>
+				<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>Save Downloader</Button>
+			</div>
+		</SettingsCard>
 	</form>
 {/if}
 
@@ -359,7 +361,7 @@
 						{#each pendingAttempts(attempts[d.id]) as attempt (attempt.id)}
 							<div class="attempt-row">
 								<p class="small">Release {attempt.release_id} · Slot {attempt.slot_id} · started {ago(attempt.created_at)}</p>
-								<button class="btn btn-quiet" type="button" disabled={abandoning === attempt.id} aria-busy={abandoning === attempt.id} onclick={() => abandonAttempt(d, attempt)}>Abandon this send</button>
+								<Button variant="plain" type="button" disabled={abandoning === attempt.id} aria-busy={abandoning === attempt.id} onclick={() => abandonAttempt(d, attempt)}>Abandon this send</Button>
 							</div>
 						{/each}
 						<p class="xs muted">Abandoning stops HolyArrs from retrying this exact Release and Slot, including covered Slots in the same Version. It does not cancel anything in {kindWords[d.kind]}.</p>
@@ -368,14 +370,14 @@
 					<p class="small bad-text" role="status">Could not check uncertain sends: {attemptErrors[d.id]}</p>
 				{/if}
 				<div class="row actions">
-					<button class="btn btn-ghost" type="button" disabled={testing === d.id} aria-busy={testing === d.id} onclick={() => test(d)}>Test</button>
+					<Button type="button" disabled={testing === d.id} aria-busy={testing === d.id} onclick={() => test(d)}>Test</Button>
 					{#if d.health.state === 'paused'}
-						<button class="btn btn-quiet" type="button" onclick={() => setPaused(d, false)}>Resume</button>
+						<Button variant="plain" type="button" onclick={() => setPaused(d, false)}>Resume</Button>
 					{:else}
-						<button class="btn btn-quiet" type="button" onclick={() => setPaused(d, true)}>Pause</button>
+						<Button variant="plain" type="button" onclick={() => setPaused(d, true)}>Pause</Button>
 					{/if}
-					<button class="btn btn-quiet" type="button" onclick={() => startChange(d)}>Change</button>
-					<button class="btn btn-quiet" type="button" onclick={() => remove(d)} aria-label="Remove {d.name}">Remove</button>
+					<Button variant="plain" type="button" onclick={() => startChange(d)}>Change</Button>
+					<Button variant="plain" type="button" onclick={() => remove(d)} aria-label="Remove {d.name}">Remove</Button>
 				</div>
 			</li>
 		{/each}
@@ -435,7 +437,7 @@
 	</div>
 	{#if setError}<p class="form-error" role="alert">{setError}</p>{/if}
 	<div class="row" style="margin-top: var(--s-5)">
-		<button class="btn btn-red" type="submit" disabled={setBusy} aria-busy={setBusy}>Save settings</button>
+		<Button variant="primary" type="submit" disabled={setBusy} aria-busy={setBusy}>Save settings</Button>
 	</div>
 </form>
 

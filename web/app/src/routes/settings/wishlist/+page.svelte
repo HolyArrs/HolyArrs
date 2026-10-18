@@ -1,4 +1,6 @@
 <script lang="ts">
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
@@ -76,12 +78,7 @@
 
 <svelte:head><title>Wishlist settings · HolyArrs</title></svelte:head>
 
-<header class="page-head">
-	<div>
-		<h1>Wishlist</h1>
-		<p>How many movies, shows and albums people may ask for, and what an approved ask gets.</p>
-	</div>
-</header>
+<PageHeader title="Wishlist" subtitle="How many movies, shows and albums people may ask for, and what an approved ask gets." />
 
 {#if !loaded}
 	<div class="sk" style="height: 240px"></div>
@@ -165,7 +162,7 @@
 		</label>
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 		<div class="row" style="margin-top: var(--s-5)">
-			<button class="btn btn-red" type="submit" disabled={busy} aria-busy={busy}>Save</button>
+			<Button variant="primary" type="submit" disabled={busy} aria-busy={busy}>Save</Button>
 		</div>
 	</form>
 {/if}

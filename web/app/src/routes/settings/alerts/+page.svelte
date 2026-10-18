@@ -1,4 +1,7 @@
 <script lang="ts">
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
 	import EmptyState from '#lib/EmptyState.svelte';
@@ -156,129 +159,124 @@
 
 <svelte:head><title>Alerts · HolyArrs</title></svelte:head>
 
-<header class="page-head">
-	<div>
-		<h1>Alerts</h1>
-		<p>
-			Messages sent out of HolyArrs through Discord, email or a webhook: to the people who asked when a movie is approved, turned down or ready,
-			and to the staff when someone asks and when HolyArrs sends, imports, renames, adds or deletes a movie or show, a health check breaks or something needs a
-			decision. Messages about a show name its episodes, such as Copper Valley S01E02.
-		</p>
-	</div>
-	{#if !editing}<button class="btn btn-red" type="button" onclick={startAdd}><Icon name="plus" size={18} /> Add an Alert</button>{/if}
-</header>
+<PageHeader title="Alerts" subtitle="Messages sent out of HolyArrs through Discord, email or a webhook: to the people who asked when a movie is approved, turned down or ready, and to the staff when someone asks and when HolyArrs sends, imports, renames, adds or deletes a movie or show, a health check breaks or something needs a decision. Messages about a show name its episodes, such as Copper Valley S01E02.">
+	{#snippet actions()}
+		{#if !editing}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>Add an Alert</Button>{/if}
+	{/snippet}
+</PageHeader>
 
 <p class="small muted lead">
 	Everyone also gets these messages inside HolyArrs, on their Wishlist. For email and Discord, each person adds their address or Discord user id in My account.
 </p>
 
 {#if editing}
-	<form class="card" onsubmit={save} aria-labelledby="h-form">
-		<h2 id="h-form" class="h2">{isNew ? 'Add an Alert' : `Change ${editing.name}`}</h2>
-		<div class="field" style="margin-top: var(--s-4)">
-			<label for="al-name">Name</label>
-			<input id="al-name" class="input" bind:value={form.name} maxlength="80" required />
-		</div>
-		{#if isNew}
-			<div class="field">
-				<label for="al-kind">Kind</label>
-				<select id="al-kind" class="input" bind:value={form.kind}>
-					<option value="discord">Discord</option>
-					<option value="email">Email</option>
-					<option value="webhook">Webhook (JSON to your own server)</option>
-				</select>
+	<form class="sc-form" onsubmit={save} aria-label={isNew ? 'Add an Alert' : `Change ${editing.name}`}>
+		<SettingsCard title={isNew ? 'Add an Alert' : `Change ${editing.name}`}>
+			<div class="field" style="margin-top: var(--s-4)">
+				<label for="al-name">Name</label>
+				<input id="al-name" class="input" bind:value={form.name} maxlength="80" required />
 			</div>
-		{/if}
-		{#if form.kind === 'webhook'}
-			<div class="field">
-				<label for="al-hook">Webhook link</label>
-				<input id="al-hook" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" placeholder="https://example.com/holyarrs" />
-				<span class="hint">HolyArrs posts JSON here: the moment, the movie, and the reasons and paths. Kept encrypted; shown masked.</span>
-			</div>
-			<div class="field">
-				<label for="al-secret">Secret</label>
-				<input id="al-secret" class="input mono" type="password" bind:value={form.secret} autocomplete="new-password" />
-				<span class="hint">Optional. Kept encrypted and never shown again. Leave as it is to keep the stored one; a link to another server needs it typed again.</span>
-			</div>
-			<div class="field">
-				<label for="al-auth">What the secret does</label>
-				<select id="al-auth" class="input" bind:value={form.webhook_auth}>
-					<option value="sign">Signs each message (X-HolyArrs-Signature, HMAC-SHA256)</option>
-					<option value="bearer">Is sent as a bearer token (Authorization header)</option>
-					<option value="none">Nothing (no secret is sent)</option>
-				</select>
-			</div>
-		{:else if form.kind === 'discord'}
-			<div class="field">
-				<label for="al-url">Discord link</label>
-				<input id="al-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" placeholder="https://discord.com/api/webhooks/…" />
-				<span class="hint">In Discord: channel settings, Integrations, Webhooks, Copy link. Kept encrypted; shown masked.</span>
-			</div>
-		{:else}
-			<div class="field">
-				<label for="al-host">Mail server</label>
-				<input id="al-host" class="input" bind:value={form.smtp_host} placeholder="smtp.example.com" autocomplete="off" />
-			</div>
-			<div class="two">
+			{#if isNew}
 				<div class="field">
-					<label for="al-port">Port</label>
-					<input id="al-port" class="input" type="number" min="1" max="65535" bind:value={form.smtp_port} />
-				</div>
-				<div class="field">
-					<label for="al-sec">Security</label>
-					<select id="al-sec" class="input" bind:value={form.smtp_security}>
-						<option value="starttls">STARTTLS (port 587)</option>
-						<option value="tls">TLS (port 465)</option>
-						<option value="none">None (local mail server only)</option>
+					<label for="al-kind">Kind</label>
+					<select id="al-kind" class="input" bind:value={form.kind}>
+						<option value="discord">Discord</option>
+						<option value="email">Email</option>
+						<option value="webhook">Webhook (JSON to your own server)</option>
 					</select>
 				</div>
+			{/if}
+			{#if form.kind === 'webhook'}
+				<div class="field">
+					<label for="al-hook">Webhook link</label>
+					<input id="al-hook" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" placeholder="https://example.com/holyarrs" />
+					<span class="hint">HolyArrs posts JSON here: the moment, the movie, and the reasons and paths. Kept encrypted; shown masked.</span>
+				</div>
+				<div class="field">
+					<label for="al-secret">Secret</label>
+					<input id="al-secret" class="input mono" type="password" bind:value={form.secret} autocomplete="new-password" />
+					<span class="hint">Optional. Kept encrypted and never shown again. Leave as it is to keep the stored one; a link to another server needs it typed again.</span>
+				</div>
+				<div class="field">
+					<label for="al-auth">What the secret does</label>
+					<select id="al-auth" class="input" bind:value={form.webhook_auth}>
+						<option value="sign">Signs each message (X-HolyArrs-Signature, HMAC-SHA256)</option>
+						<option value="bearer">Is sent as a bearer token (Authorization header)</option>
+						<option value="none">Nothing (no secret is sent)</option>
+					</select>
+				</div>
+			{:else if form.kind === 'discord'}
+				<div class="field">
+					<label for="al-url">Discord link</label>
+					<input id="al-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" placeholder="https://discord.com/api/webhooks/…" />
+					<span class="hint">In Discord: channel settings, Integrations, Webhooks, Copy link. Kept encrypted; shown masked.</span>
+				</div>
+			{:else}
+				<div class="field">
+					<label for="al-host">Mail server</label>
+					<input id="al-host" class="input" bind:value={form.smtp_host} placeholder="smtp.example.com" autocomplete="off" />
+				</div>
+				<div class="two">
+					<div class="field">
+						<label for="al-port">Port</label>
+						<input id="al-port" class="input" type="number" min="1" max="65535" bind:value={form.smtp_port} />
+					</div>
+					<div class="field">
+						<label for="al-sec">Security</label>
+						<select id="al-sec" class="input" bind:value={form.smtp_security}>
+							<option value="starttls">STARTTLS (port 587)</option>
+							<option value="tls">TLS (port 465)</option>
+							<option value="none">None (local mail server only)</option>
+						</select>
+					</div>
+				</div>
+				<div class="field">
+					<label for="al-from">From address</label>
+					<input id="al-from" class="input" type="email" bind:value={form.smtp_from} autocomplete="off" />
+				</div>
+				<div class="field">
+					<label for="al-user">Mail sign-in name</label>
+					<input id="al-user" class="input" bind:value={form.smtp_user} autocomplete="off" />
+				</div>
+				<div class="field">
+					<label for="al-pw">Mail password</label>
+					<input id="al-pw" class="input" type="password" bind:value={form.smtp_pass} autocomplete="new-password" />
+					<span class="hint">Kept encrypted. Leave as it is to keep the stored one.</span>
+				</div>
+				<div class="field">
+					<label for="al-staff">Staff addresses</label>
+					<input id="al-staff" class="input" bind:value={form.staff_to} placeholder="you@example.com, other@example.com" autocomplete="off" />
+					<span class="hint">Who hears when someone asks for a movie. The people who asked get their own messages at their own address.</span>
+				</div>
+			{/if}
+			{#each momentGroups as g (g.label)}
+				{@const all = g.moments.every((m) => form.moments.includes(m))}
+				<fieldset class="moments" data-testid="moments-{g.label.toLowerCase()}">
+					<legend class="label">When to send: {g.label}</legend>
+					<p class="hint">{g.hint}</p>
+					<Button variant="plain" size="sm" type="button" onclick={() => toggleGroup(g.moments, !all)}>{all ? 'None of these' : 'All of these'}</Button>
+					{#each g.moments as m (m)}
+						<label class="checkline">
+							<input type="checkbox" checked={form.moments.includes(m)} onchange={(e) => toggle(m, e.currentTarget.checked)} />
+							<span><b>{momentWords[m][0]}</b><br /><span class="hint">{momentWords[m][1]}</span></span>
+						</label>
+					{/each}
+				</fieldset>
+			{/each}
+			<label class="checkline">
+				<input type="checkbox" bind:checked={form.allow_local_network} />
+				<span><b>May reach the local network</b><br /><span class="hint">Off: only discord.com links, and mail and webhook servers on the internet. On: also a server on this machine or your home network.</span></span>
+			</label>
+			<label class="checkline">
+				<input type="checkbox" bind:checked={form.enabled} />
+				<span><b>On</b><br /><span class="hint">Off keeps the Alert but sends nothing.</span></span>
+			</label>
+			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
+			<div class="row" style="margin-top: var(--s-5)">
+				<Button variant="plain" type="button" onclick={() => (editing = null)}>Cancel</Button>
+				<Button variant="primary" type="submit" disabled={busy || !form.name.trim()} aria-busy={busy}>Save Alert</Button>
 			</div>
-			<div class="field">
-				<label for="al-from">From address</label>
-				<input id="al-from" class="input" type="email" bind:value={form.smtp_from} autocomplete="off" />
-			</div>
-			<div class="field">
-				<label for="al-user">Mail sign-in name</label>
-				<input id="al-user" class="input" bind:value={form.smtp_user} autocomplete="off" />
-			</div>
-			<div class="field">
-				<label for="al-pw">Mail password</label>
-				<input id="al-pw" class="input" type="password" bind:value={form.smtp_pass} autocomplete="new-password" />
-				<span class="hint">Kept encrypted. Leave as it is to keep the stored one.</span>
-			</div>
-			<div class="field">
-				<label for="al-staff">Staff addresses</label>
-				<input id="al-staff" class="input" bind:value={form.staff_to} placeholder="you@example.com, other@example.com" autocomplete="off" />
-				<span class="hint">Who hears when someone asks for a movie. The people who asked get their own messages at their own address.</span>
-			</div>
-		{/if}
-		{#each momentGroups as g (g.label)}
-			{@const all = g.moments.every((m) => form.moments.includes(m))}
-			<fieldset class="moments" data-testid="moments-{g.label.toLowerCase()}">
-				<legend class="label">When to send: {g.label}</legend>
-				<p class="hint">{g.hint}</p>
-				<button class="btn btn-quiet pick-all" type="button" onclick={() => toggleGroup(g.moments, !all)}>{all ? 'None of these' : 'All of these'}</button>
-				{#each g.moments as m (m)}
-					<label class="checkline">
-						<input type="checkbox" checked={form.moments.includes(m)} onchange={(e) => toggle(m, e.currentTarget.checked)} />
-						<span><b>{momentWords[m][0]}</b><br /><span class="hint">{momentWords[m][1]}</span></span>
-					</label>
-				{/each}
-			</fieldset>
-		{/each}
-		<label class="checkline">
-			<input type="checkbox" bind:checked={form.allow_local_network} />
-			<span><b>May reach the local network</b><br /><span class="hint">Off: only discord.com links, and mail and webhook servers on the internet. On: also a server on this machine or your home network.</span></span>
-		</label>
-		<label class="checkline">
-			<input type="checkbox" bind:checked={form.enabled} />
-			<span><b>On</b><br /><span class="hint">Off keeps the Alert but sends nothing.</span></span>
-		</label>
-		{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
-		<div class="row" style="margin-top: var(--s-5)">
-			<button class="btn btn-quiet" type="button" onclick={() => (editing = null)}>Cancel</button>
-			<button class="btn btn-red" type="submit" disabled={busy || !form.name.trim()} aria-busy={busy}>Save Alert</button>
-		</div>
+		</SettingsCard>
 	</form>
 {/if}
 
@@ -304,9 +302,9 @@
 					<p class="small muted" data-testid="alert-result">Last sent {ago(a.last_sent_at)}</p>
 				{/if}
 				<div class="row actions">
-					<button class="btn btn-ghost" type="button" disabled={testing === a.id} aria-busy={testing === a.id} onclick={() => test(a)}>Send a test</button>
-					<button class="btn btn-quiet" type="button" onclick={() => startChange(a)}>Change</button>
-					<button class="btn btn-quiet" type="button" onclick={() => remove(a)} aria-label="Remove {a.name}">Remove</button>
+					<Button type="button" disabled={testing === a.id} aria-busy={testing === a.id} onclick={() => test(a)}>Send a test</Button>
+					<Button variant="plain" type="button" onclick={() => startChange(a)}>Change</Button>
+					<Button variant="plain" type="button" onclick={() => remove(a)} aria-label="Remove {a.name}">Remove</Button>
 				</div>
 			</li>
 		{/each}
@@ -374,11 +372,6 @@
 		border: 0;
 		padding: 0;
 		margin: var(--s-5) 0 0;
-	}
-	.pick-all {
-		min-height: 32px;
-		padding: 0 var(--s-2);
-		font-size: var(--text-xs);
 	}
 	.bad-text {
 		color: var(--fail);

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '#lib/ui/Button.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -212,13 +213,14 @@
 			busy = false;
 		}
 	}
+	let showPw = $state(false);
 </script>
 
 <svelte:head>
 	<title>{mode === 'setup' ? 'Set up HolyArrs' : 'Sign in'} · HolyArrs</title>
 </svelte:head>
 
-<div class="wrap">
+<main class="wrap">
 	<div class="panel rise">
 		<div class="brand">
 			<img src={to(mark)} alt="" width="44" height="44" />
@@ -226,10 +228,10 @@
 		</div>
 
 		{#if session.s.state === 'unknown' || ssoFinishing}
-			<div class="sk" style="height: 260px"></div>
+			<div class="sk" style="height: 260px; border-radius: var(--r-card)"></div>
 			{#if ssoFinishing}<p class="small muted" role="status">Finishing your sign-in…</p>{/if}
 		{:else}
-			<h1 class="h2">{mode === 'setup' ? 'Set up HolyArrs' : mode === 'code' ? 'Two-factor sign-in' : 'Sign in'}</h1>
+			<h1 class="title">{mode === 'setup' ? 'Set up HolyArrs' : mode === 'code' ? 'Two-factor sign-in' : 'Sign in'}</h1>
 			<p class="muted small lead">
 				{#if mode === 'setup'}
 					First start. Make the owner account: the one person who runs this HolyArrs.
@@ -246,15 +248,15 @@
 				<form onsubmit={submitCode} novalidate>
 					<div class="field">
 						<label for="otp">Code</label>
-						<input id="otp" class="input mono" bind:value={otp} autocomplete="one-time-code" maxlength="11" required />
+						<input id="otp" class="input mono otp" inputmode="numeric" bind:value={otp} autocomplete="one-time-code" maxlength="11" required />
 					</div>
 					{#if error}
 						<p class="form-error" role="alert">
 							{error}{#if waiting > 0}<span class="mono"> ({waiting}s)</span>{/if}
 						</p>
 					{/if}
-					<button class="btn btn-red btn-block submit" type="submit" disabled={busy || waiting > 0 || !otp.trim()} aria-busy={busy}>Sign in</button>
-					<button class="btn btn-quiet btn-block again" type="button" onclick={restart}>Start again</button>
+					<div class="submit"><Button variant="primary" size="lg" full type="submit" disabled={waiting > 0 || !otp.trim()} {busy}>Sign in</Button></div>
+					<div class="again"><Button variant="plain" full type="button" onclick={restart}>Start again</Button></div>
 				</form>
 			{:else}
 				<form onsubmit={submit} novalidate>
@@ -273,17 +275,20 @@
 					</div>
 					<div class="field">
 						<label for="password">Password</label>
-						{#if mode === 'setup'}
-							<input id="password" class="input" type="password" bind:value={pw} autocomplete="new-password" required />
-						{:else}
-							<input id="password" class="input" type="password" bind:value={pw} autocomplete="current-password" required />
-						{/if}
+						<div class="pw">
+							{#if mode === 'setup'}
+								<input id="password" class="input" type={showPw ? 'text' : 'password'} bind:value={pw} autocomplete="new-password" required />
+							{:else}
+								<input id="password" class="input" type={showPw ? 'text' : 'password'} bind:value={pw} autocomplete="current-password" required />
+							{/if}
+							<Button variant="plain" size="sm" type="button" aria-label={showPw ? 'Hide password' : 'Show password'} aria-pressed={showPw} onclick={() => (showPw = !showPw)}>{showPw ? 'Hide' : 'Show'}</Button>
+						</div>
 						{#if mode === 'setup'}<span class="hint">At least {MIN_LENGTH} characters.</span>{/if}
 					</div>
 					{#if mode === 'setup'}
 						<div class="field">
 							<label for="pwAgain">Password again</label>
-							<input id="pwAgain" class="input" type="password" bind:value={pwAgain} autocomplete="new-password" required />
+							<input id="pwAgain" class="input" type={showPw ? 'text' : 'password'} bind:value={pwAgain} autocomplete="new-password" required />
 						</div>
 					{/if}
 
@@ -293,28 +298,30 @@
 						</p>
 					{/if}
 
-					<button class="btn btn-red btn-block submit" type="submit" disabled={busy || waiting > 0} aria-busy={busy}>
-						{mode === 'setup' ? 'Make the owner and sign in' : via === 'password' ? 'Sign in' : `Sign in with ${wayWord[via]}`}
-					</button>
+					<div class="submit">
+						<Button variant="primary" size="lg" full type="submit" disabled={waiting > 0} {busy}>
+							{mode === 'setup' ? 'Make the owner and sign in' : via === 'password' ? 'Sign in' : `Sign in with ${wayWord[via]}`}
+						</Button>
+					</div>
 				</form>
 
 				{#if mode === 'login' && outside.length}
 					<div class="ways">
-						<p class="or xs muted"><span>or</span></p>
+						<p class="or"><span>or</span></p>
 						{#if via !== 'password'}
-							<button class="btn btn-ghost btn-block" type="button" onclick={() => pick('password')}>Sign in with a HolyArrs password</button>
+							<Button full type="button" onclick={() => pick('password')}>Sign in with a HolyArrs password</Button>
 						{/if}
 						{#each outside as w (w)}
 							{#if w === 'plex'}
-								<button class="btn btn-ghost btn-block" type="button" onclick={plex} disabled={plexWaiting} aria-busy={plexWaiting}>
+								<Button full type="button" onclick={plex} disabled={plexWaiting} aria-busy={plexWaiting}>
 									{plexWaiting ? 'Waiting for Plex…' : 'Sign in with Plex'}
-								</button>
+								</Button>
 							{:else if (w === 'jellyfin' || w === 'emby') && via !== w}
-								<button class="btn btn-ghost btn-block" type="button" onclick={() => pick(w)}>Sign in with {wayWord[w]}</button>
+								<Button full type="button" onclick={() => pick(w)}>Sign in with {wayWord[w]}</Button>
 							{:else if w === 'oidc'}
-								<button class="btn btn-ghost btn-block" type="button" onclick={oidc} disabled={busy} aria-busy={busy}>Sign in with single sign-on</button>
+								<Button full type="button" onclick={oidc} disabled={busy} aria-busy={busy}>Sign in with single sign-on</Button>
 							{:else if w === 'forward_auth'}
-								<button class="btn btn-ghost btn-block" type="button" onclick={forwardAuth} disabled={busy} aria-busy={busy}>Sign in through the trusted proxy</button>
+								<Button full type="button" onclick={forwardAuth} disabled={busy} aria-busy={busy}>Sign in through the trusted proxy</Button>
 							{/if}
 						{/each}
 						{#if plexWaiting}<p class="xs muted" role="status">Finish signing in on the Plex page that opened, then come back here.</p>{/if}
@@ -337,94 +344,51 @@
 			{/if}
 		{/if}
 	</div>
-</div>
+</main>
 
 <style>
 	.wrap {
 		min-height: 100dvh;
 		display: grid;
-		grid-template-columns: minmax(0, 1fr);
-		align-items: center;
-		gap: var(--s-6);
-		width: min(560px, 100%);
-		margin: 0 auto;
-		padding: clamp(var(--s-6), 6vw, var(--s-10));
-		background: var(--bg);
+		place-items: center;
+		padding: clamp(16px, 5vw, 48px);
+		background: radial-gradient(120% 80% at 50% 0%, var(--accent-soft), transparent 60%), var(--bg);
 	}
 	.panel {
-		width: 100%;
-		background: transparent;
-		border: 0;
-		border-radius: 0;
-		padding: var(--s-8);
-		box-shadow: none;
+		width: min(420px, 100%);
+		padding: clamp(24px, 5vw, 40px);
+		border-radius: var(--r-modal);
+		background: var(--surface-1);
+		box-shadow: var(--shadow-modal), 0 0 0 1px var(--line);
 	}
 	.brand {
 		display: flex;
+		flex-direction: column;
 		align-items: center;
-		gap: var(--s-3);
-		margin-bottom: var(--s-6);
-		font: var(--weight-bold) 22px/1 var(--font-display);
-		letter-spacing: var(--tracking-display);
+		gap: 10px;
+		margin-bottom: 20px;
+		font: var(--t-headline);
+		color: var(--text-muted);
 	}
-	.lead {
-		margin: var(--s-2) 0 var(--s-6);
-	}
-	.submit {
-		margin-top: var(--s-6);
-	}
-	.again {
-		margin-top: var(--s-2);
-	}
-	code {
-		font-family: var(--font-mono);
-		color: var(--text);
-	}
-	.help {
-		margin-top: var(--s-5);
-	}
-	.help summary {
-		cursor: pointer;
-		min-height: 32px;
-		display: inline-flex;
-		align-items: center;
-		border-radius: var(--r-sm);
-	}
-	.help p {
-		margin-top: var(--s-2);
-	}
-	.ways {
-		display: grid;
-		gap: var(--s-2);
-		margin-top: var(--s-5);
-	}
-	.or {
-		display: flex;
-		align-items: center;
-		gap: var(--s-3);
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
-	}
-	.or::before,
-	.or::after {
-		content: '';
-		flex: 1;
-		height: 1px;
-		background: var(--line);
-	}
-	@media (max-width: 800px) {
-		.wrap {
-			grid-template-columns: minmax(0, 1fr);
-			width: min(500px, 100%);
-		}
-	}
+	.title { font: var(--t-title1); letter-spacing: var(--t-title1-track); text-align: center; }
+	.lead { margin: 8px 0 24px; color: var(--text-muted); font: var(--t-callout); text-align: center; }
+	.panel :global(.field + .field) { margin-top: 14px; }
+	.pw { position: relative; display: flex; align-items: center; }
+	.pw .input { padding-right: 72px; }
+	.pw > :global(*:last-child) { position: absolute; right: 4px; }
+	.otp { text-align: center; font-size: 22px; letter-spacing: 0.3em; }
+	.submit { margin-top: 24px; }
+	.again { margin-top: 8px; }
+	code { font-family: var(--font-mono); color: var(--text); overflow-wrap: anywhere; }
+	.help { margin-top: 20px; color: var(--text-muted); font: var(--t-callout); }
+	.help summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; justify-content: center; border-radius: var(--r-sm); color: var(--accent-text); font-weight: 500; }
+	.help summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.help p { margin-top: 8px; }
+	.ways { display: grid; gap: 8px; margin-top: 20px; }
+	.or { display: flex; align-items: center; gap: 12px; color: var(--text-muted); font: var(--t-footnote); }
+	.or::before, .or::after { content: ''; flex: 1; height: 1px; background: var(--line); }
 	@media (max-width: 480px) {
-		.wrap {
-			align-items: start;
-			padding: var(--s-4);
-		}
-		.panel {
-			padding: var(--s-6) var(--s-4);
-		}
+		.wrap { place-items: start center; padding: 24px 16px; }
+		.panel { box-shadow: none; background: transparent; padding: 8px 0; }
 	}
 </style>

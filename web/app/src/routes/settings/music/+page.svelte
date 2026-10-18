@@ -1,4 +1,6 @@
 <script lang="ts">
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	// Settings > Music: what a new artist gets by default, which Pressing is
 	// used for an album, and where MusicBrainz answers come from.
 	import { onMount } from 'svelte';
@@ -48,12 +50,7 @@
 
 <svelte:head><title>Music settings · HolyArrs</title></svelte:head>
 
-<header class="page-head">
-	<div>
-		<h1>Music</h1>
-		<p>What a new artist gets, which Pressing an album follows, and where artist and album details come from.</p>
-	</div>
-</header>
+<PageHeader title="Music" subtitle="What a new artist gets, which Pressing an album follows, and where artist and album details come from." />
 
 {#if !loaded}
 	<div class="sk" style="height: 240px"></div>
@@ -119,7 +116,7 @@
 		</div>
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 		<div class="row" style="margin-top: var(--s-5)">
-			<button class="btn btn-red" type="submit" disabled={busy || !settings.album_types.length || !settings.secondary_types.length || !settings.release_statuses.length} aria-busy={busy}>Save</button>
+			<Button variant="primary" type="submit" disabled={busy || !settings.album_types.length || !settings.secondary_types.length || !settings.release_statuses.length} aria-busy={busy}>Save</Button>
 		</div>
 	</form>
 {/if}

@@ -1,4 +1,7 @@
 <script lang="ts">
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
@@ -155,19 +158,13 @@
 
 <svelte:head><title>Naming and files · HolyArrs</title></svelte:head>
 
-<header class="page-head">
-	<div>
-		<h1>Naming and files</h1>
-		<p>How movie, episode and track files and folders are named, and how HolyArrs looks after the disk.</p>
-	</div>
-</header>
+<PageHeader title="Naming and files" subtitle="How movie, episode and track files and folders are named, and how HolyArrs looks after the disk." />
 
 {#if !loaded}
 	<div class="sk" style="height: 320px"></div>
 {:else}
 	<form class="stack" onsubmit={save}>
-		<section class="card" aria-labelledby="h-names">
-			<h2 id="h-names" class="h2">Movie names</h2>
+		<SettingsCard title="Movie names">
 			<div class="field">
 				<label for="file-pattern">File name pattern</label>
 				<input id="file-pattern" class="input mono" bind:value={ns.file_pattern} autocomplete="off" spellcheck="false" />
@@ -193,7 +190,7 @@
 						.filter(([w]) => !showWords.includes(w) && !musicWords.includes(w))
 						.sort() as [w, about] (w)}
 						<dt>
-							<button class="btn btn-quiet mono" type="button" onclick={() => addWord('file_pattern', w)} aria-label="Add {'{'}{w}{'}'} to the file name pattern">{'{'}{w}{'}'}</button>
+							<Button variant="plain" class="mono" type="button" onclick={() => addWord('file_pattern', w)} aria-label="Add {'{'}{w}{'}'} to the file name pattern">{'{'}{w}{'}'}</Button>
 						</dt>
 						<dd class="small muted">{about}</dd>
 					{/each}
@@ -212,10 +209,9 @@
 					{#each illegalChoices as [v, label] (v)}<option value={v}>{label}</option>{/each}
 				</select>
 			</div>
-		</section>
+		</SettingsCard>
 
-		<section class="card" aria-labelledby="h-shows">
-			<h2 id="h-shows" class="h2">Show names</h2>
+		<SettingsCard title="Show names">
 			<div class="field">
 				<label for="show-folder-pattern">Show folder pattern</label>
 				<input id="show-folder-pattern" class="input mono" bind:value={ns.show_folder_pattern} autocomplete="off" spellcheck="false" />
@@ -288,91 +284,89 @@
 						.filter(([w]) => showWords.includes(w) || ['title', 'year', 'quality', 'group', 'release'].includes(w))
 						.sort() as [w, about] (w)}
 						<dt>
-							<button class="btn btn-quiet mono" type="button" onclick={() => addWord('episode_pattern', w)} aria-label="Add {'{'}{w}{'}'} to the episode file name pattern"
-								>{'{'}{w}{'}'}</button
-							>
+							<Button variant="plain" class="mono" type="button" onclick={() => addWord('episode_pattern', w)} aria-label="Add {'{'}{w}{'}'} to the episode file name pattern"
+								>{'{'}{w}{'}'}</Button>
 						</dt>
 						<dd class="small muted">{about}</dd>
 					{/each}
 				</dl>
 			</details>
-		</section>
+		</SettingsCard>
 
-		<section class="card" aria-labelledby="h-music" data-testid="music-naming">
-			<h2 id="h-music" class="h2">Music names</h2>
-			<div class="field">
-				<label for="artist-folder-pattern">Artist folder pattern</label>
-				<input id="artist-folder-pattern" class="input mono" bind:value={ns.artist_folder_pattern} autocomplete="off" spellcheck="false" />
-				<span class="hint"
-					>For artists added from now on. {'{'}artist_sort{'}'} moves a leading The to the end (Beatles, The). Folders of artists you already have keep their
-					names.</span
-				>
-			</div>
-			<div class="field">
-				<label for="album-folder-pattern">Album folder pattern</label>
-				<input id="album-folder-pattern" class="input mono" bind:value={ns.album_folder_pattern} autocomplete="off" spellcheck="false" />
-				<span class="hint">Must hold {'{'}album{'}'}. {'{'}edition{'}'} gives the Pressing's note, such as deluxe.</span>
-			</div>
-			<div class="field">
-				<label for="track-pattern">Track file name pattern</label>
-				<input id="track-pattern" class="input mono" bind:value={ns.track_pattern} autocomplete="off" spellcheck="false" />
-				<span class="hint">Must hold {'{'}track{'}'} (03).</span>
-			</div>
-			<div class="field">
-				<label for="multi-disc-pattern">Track file name on an album of more than one disc</label>
-				<input id="multi-disc-pattern" class="input mono" bind:value={ns.multi_disc_track_pattern} autocomplete="off" spellcheck="false" disabled={ns.disc_folders} />
-				<span class="hint">Must hold {'{'}disc{'}'} and {'{'}track{'}'} (2-03). With a folder for each disc the track pattern is used inside it.</span>
-			</div>
-			<label class="checkline">
-				<input type="checkbox" bind:checked={ns.disc_folders} />
-				<span><b>A folder for each disc</b><br /><span class="hint">Only on albums of more than one disc. Off keeps every track in the album folder.</span></span>
-			</label>
-			<div class="field">
-				<label for="disc-folder-pattern">Disc folder pattern</label>
-				<input id="disc-folder-pattern" class="input mono" bind:value={ns.disc_folder_pattern} autocomplete="off" spellcheck="false" disabled={!ns.disc_folders} />
-				<span class="hint">Must hold {'{'}disc{'}'} (Disc 2).</span>
-			</div>
-			<label class="checkline">
-				<input type="checkbox" bind:checked={ns.music_read_tags} />
-				<span
-					><b>Read a track's own tags when its name is not enough</b><br /><span class="hint"
-						>FLAC and MP3 only, and only to tell which track a file is (title, track and disc numbers) when its name leaves it open. Tags are never
-						changed.</span
-					></span
-				>
-			</label>
-			<div class="example" aria-live="polite" data-testid="music-examples">
-				<p class="xs muted">Examples</p>
-				{#if exampleError}
-					<p class="form-error" role="alert">{exampleError}</p>
-				{:else}
-					<dl class="exlist">
-						{#each musicExampleRows(music) as [label, path] (label)}
-							<dt class="xs muted">{label}</dt>
-							<dd class="mono small path">{path}</dd>
+		<div data-testid="music-naming">
+			<SettingsCard title="Music names">
+				<div class="field">
+					<label for="artist-folder-pattern">Artist folder pattern</label>
+					<input id="artist-folder-pattern" class="input mono" bind:value={ns.artist_folder_pattern} autocomplete="off" spellcheck="false" />
+					<span class="hint"
+						>For artists added from now on. {'{'}artist_sort{'}'} moves a leading The to the end (Beatles, The). Folders of artists you already have keep their
+						names.</span
+					>
+				</div>
+				<div class="field">
+					<label for="album-folder-pattern">Album folder pattern</label>
+					<input id="album-folder-pattern" class="input mono" bind:value={ns.album_folder_pattern} autocomplete="off" spellcheck="false" />
+					<span class="hint">Must hold {'{'}album{'}'}. {'{'}edition{'}'} gives the Pressing's note, such as deluxe.</span>
+				</div>
+				<div class="field">
+					<label for="track-pattern">Track file name pattern</label>
+					<input id="track-pattern" class="input mono" bind:value={ns.track_pattern} autocomplete="off" spellcheck="false" />
+					<span class="hint">Must hold {'{'}track{'}'} (03).</span>
+				</div>
+				<div class="field">
+					<label for="multi-disc-pattern">Track file name on an album of more than one disc</label>
+					<input id="multi-disc-pattern" class="input mono" bind:value={ns.multi_disc_track_pattern} autocomplete="off" spellcheck="false" disabled={ns.disc_folders} />
+					<span class="hint">Must hold {'{'}disc{'}'} and {'{'}track{'}'} (2-03). With a folder for each disc the track pattern is used inside it.</span>
+				</div>
+				<label class="checkline">
+					<input type="checkbox" bind:checked={ns.disc_folders} />
+					<span><b>A folder for each disc</b><br /><span class="hint">Only on albums of more than one disc. Off keeps every track in the album folder.</span></span>
+				</label>
+				<div class="field">
+					<label for="disc-folder-pattern">Disc folder pattern</label>
+					<input id="disc-folder-pattern" class="input mono" bind:value={ns.disc_folder_pattern} autocomplete="off" spellcheck="false" disabled={!ns.disc_folders} />
+					<span class="hint">Must hold {'{'}disc{'}'} (Disc 2).</span>
+				</div>
+				<label class="checkline">
+					<input type="checkbox" bind:checked={ns.music_read_tags} />
+					<span
+						><b>Read a track's own tags when its name is not enough</b><br /><span class="hint"
+							>FLAC and MP3 only, and only to tell which track a file is (title, track and disc numbers) when its name leaves it open. Tags are never
+							changed.</span
+						></span
+					>
+				</label>
+				<div class="example" aria-live="polite" data-testid="music-examples">
+					<p class="xs muted">Examples</p>
+					{#if exampleError}
+						<p class="form-error" role="alert">{exampleError}</p>
+					{:else}
+						<dl class="exlist">
+							{#each musicExampleRows(music) as [label, path] (label)}
+								<dt class="xs muted">{label}</dt>
+								<dd class="mono small path">{path}</dd>
+							{/each}
+						</dl>
+					{/if}
+				</div>
+				<details class="words">
+					<summary class="small">Words for music</summary>
+					<dl>
+						{#each Object.entries(words)
+							.filter(([w]) => musicWords.includes(w) || ['year', 'edition'].includes(w))
+							.sort() as [w, about] (w)}
+							<dt>
+								<Button variant="plain" class="mono" type="button" onclick={() => addWord('track_pattern', w)} aria-label="Add {'{'}{w}{'}'} to the track file name pattern"
+									>{'{'}{w}{'}'}</Button>
+							</dt>
+							<dd class="small muted">{about}</dd>
 						{/each}
 					</dl>
-				{/if}
-			</div>
-			<details class="words">
-				<summary class="small">Words for music</summary>
-				<dl>
-					{#each Object.entries(words)
-						.filter(([w]) => musicWords.includes(w) || ['year', 'edition'].includes(w))
-						.sort() as [w, about] (w)}
-						<dt>
-							<button class="btn btn-quiet mono" type="button" onclick={() => addWord('track_pattern', w)} aria-label="Add {'{'}{w}{'}'} to the track file name pattern"
-								>{'{'}{w}{'}'}</button
-							>
-						</dt>
-						<dd class="small muted">{about}</dd>
-					{/each}
-				</dl>
-			</details>
-		</section>
+				</details>
+			</SettingsCard>
+		</div>
 
-		<section class="card" aria-labelledby="h-import">
-			<h2 id="h-import" class="h2">Importing</h2>
+		<SettingsCard title="Importing">
 			<label class="checkline">
 				<input type="checkbox" bind:checked={ns.rename_on_import} />
 				<span
@@ -381,10 +375,9 @@
 					></span
 				>
 			</label>
-		</section>
+		</SettingsCard>
 
-		<section class="card" aria-labelledby="h-disk">
-			<h2 id="h-disk" class="h2">Where files go</h2>
+		<SettingsCard title="Where files go">
 			<div class="field">
 				<label for="scan-limit">Folders read per Import a library scan</label>
 				<input id="scan-limit" class="input narrow" type="number" min="10" max="100000" bind:value={ns.adopt_scan_limit} />
@@ -412,21 +405,19 @@
 				<input type="checkbox" bind:checked={fr.skip_free_space_check} />
 				<span><b>Skip the free-space check</b><br /><span class="hint">Only for disks that report their free space wrongly.</span></span>
 			</label>
-		</section>
+		</SettingsCard>
 
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 		<div class="row">
-			<button class="btn btn-red" type="submit" disabled={busy || !!exampleError} aria-busy={busy}>Save</button>
+			<Button variant="primary" type="submit" disabled={busy || !!exampleError} aria-busy={busy}>Save</Button>
 		</div>
 	</form>
 
-	<section class="card" aria-labelledby="h-hold">
-		<h2 id="h-hold" class="h2">Holding folder</h2>
-		<p class="small muted">HolyArrs empties old holding days once a day. Run it now to free the space straight away.</p>
+	<SettingsCard title="Holding folder" description="HolyArrs empties old holding days once a day. Run it now to free the space straight away.">
 		<div class="row" style="margin-top: var(--s-4)">
-			<button class="btn btn-ghost" type="button" onclick={cleanNow} disabled={cleaning} aria-busy={cleaning}>Empty old holding days now</button>
+			<Button type="button" onclick={cleanNow} disabled={cleaning} aria-busy={cleaning}>Empty old holding days now</Button>
 		</div>
-	</section>
+	</SettingsCard>
 {/if}
 
 <style>

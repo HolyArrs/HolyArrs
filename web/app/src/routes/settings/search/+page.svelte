@@ -1,4 +1,7 @@
 <script lang="ts">
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
@@ -83,12 +86,7 @@
 
 <svelte:head><title>Search settings · HolyArrs</title></svelte:head>
 
-<header class="page-head">
-	<div>
-		<h1>Search</h1>
-		<p>How HolyArrs looks for Releases by itself.</p>
-	</div>
-</header>
+<PageHeader title="Search" subtitle="How HolyArrs looks for Releases by itself." />
 
 {#if !loaded}
 	<div class="sk" style="height: 240px"></div>
@@ -221,19 +219,17 @@
 		</label>
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 		<div class="row" style="margin-top: var(--s-5)">
-			<button class="btn btn-red" type="submit" disabled={busy} aria-busy={busy}>Save</button>
+			<Button variant="primary" type="submit" disabled={busy} aria-busy={busy}>Save</Button>
 		</div>
 	</form>
 
-	<section class="card" aria-labelledby="h-now">
-		<h2 id="h-now" class="h2">Search now</h2>
-		<p class="small muted">Start a search without waiting for the timer. Home shows it running and what it found.</p>
+	<SettingsCard title="Search now" description="Start a search without waiting for the timer. Home shows it running and what it found.">
 		<div class="row now">
-			<button class="btn btn-ghost" type="button" disabled={now} onclick={() => run('/search/feed-check', 'Checking every feed now.')}>Check feeds now</button>
-			<button class="btn btn-ghost" type="button" disabled={now} onclick={() => run('/search/missing', 'Searching for every missing movie and episode.')}>Search every missing one</button>
-			<button class="btn btn-ghost" type="button" disabled={now} onclick={() => run('/search/better', 'Looking for better copies of everything below Good enough.')}>Find a better copy for all</button>
+			<Button type="button" disabled={now} onclick={() => run('/search/feed-check', 'Checking every feed now.')}>Check feeds now</Button>
+			<Button type="button" disabled={now} onclick={() => run('/search/missing', 'Searching for every missing movie and episode.')}>Search every missing one</Button>
+			<Button type="button" disabled={now} onclick={() => run('/search/better', 'Looking for better copies of everything below Good enough.')}>Find a better copy for all</Button>
 		</div>
-	</section>
+	</SettingsCard>
 {/if}
 
 <style>

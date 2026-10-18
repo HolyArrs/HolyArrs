@@ -1,4 +1,7 @@
 <script lang="ts">
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
@@ -94,12 +97,7 @@
 
 <svelte:head><title>Schedules · HolyArrs</title></svelte:head>
 
-<header class="page-head">
-	<div>
-		<h1>Schedules</h1>
-		<p>Everything HolyArrs does on a timer: when it last ran, when it runs next, and how often.</p>
-	</div>
-</header>
+<PageHeader title="Schedules" subtitle="Everything HolyArrs does on a timer: when it last ran, when it runs next, and how often." />
 
 {#if safeMode}<p class="notice warn">Safe mode: only the core runs. Schedules outside the core wait for a normal start.</p>{/if}
 
@@ -108,99 +106,96 @@
 {:else if !rows}
 	<div class="sk" style="height: 320px"></div>
 {:else}
-	<section class="card" aria-labelledby="h-sched" data-testid="schedules">
-		<h2 id="h-sched" class="h2">Scheduled work</h2>
-		<ul class="rows sched">
-			{#each rows as s (s.kind)}
-				{@const u = unit(s.step_s)}
-				<li data-testid="schedule" data-kind={s.kind} data-state={s.state}>
-					<div class="grow small">
-						<div class="head">
-							<b>{s.label}</b>
-							<span class="chip {stateTone(s.state)}">{stateWords[s.state]}</span>
+	<div data-testid="schedules">
+		<SettingsCard title="Scheduled work">
+			<ul class="rows sched">
+				{#each rows as s (s.kind)}
+					{@const u = unit(s.step_s)}
+					<li data-testid="schedule" data-kind={s.kind} data-state={s.state}>
+						<div class="grow small">
+							<div class="head">
+								<b>{s.label}</b>
+								<span class="chip {stateTone(s.state)}">{stateWords[s.state]}</span>
+							</div>
+							<span class="muted">{s.about}</span>
+							{#if s.kind === 'refresh_titles' && !s.enabled}
+								<p class="xs muted stale-note" data-testid="movie-refresh-off-note">
+									Automatic movie detail updates are off, so names, dates and artwork can become stale. A request already in flight may finish. Manual Library refresh remains available.
+								</p>
+							{/if}
+							<div class="xs muted when">
+								<span>Runs {every(s.every_s)}</span>
+								<span
+									>Last: {s.last_run ? ago(s.last_run, now) : 'not yet'}{#if s.last_job === 'failed'}
+										(failed{s.last_job_error ? `: ${s.last_job_error}` : ''}){/if}</span
+								>
+								<span data-testid="next">Next: {s.enabled ? until(s.next_run, now) : 'turned off'}</span>
+								{#if s.settings}<a href={to(s.settings)}>Its settings</a>{/if}
+							</div>
+							{#if editing === s.kind}
+								<form class="edit" onsubmit={(e) => save(e, s)}>
+									<label for="ev-{s.kind}" class="small">Every ({u.word})</label>
+									<input
+										id="ev-{s.kind}"
+										class="input"
+										type="number"
+										min={s.min_s / u.size}
+										max={s.max_s / u.size}
+										step={s.step_s / u.size}
+										bind:value={amount}
+									/>
+									<span class="hint">{s.min_s / u.size} to {s.max_s / u.size} {u.word}</span>
+									<Button variant="primary" type="submit" disabled={busy === s.kind}>Save</Button>
+									<Button variant="plain" type="button" onclick={() => (editing = null)}>Cancel</Button>
+									{#if editError}<p class="form-error" role="alert">{editError}</p>{/if}
+								</form>
+							{/if}
 						</div>
-						<span class="muted">{s.about}</span>
-						{#if s.kind === 'refresh_titles' && !s.enabled}
-							<p class="xs muted stale-note" data-testid="movie-refresh-off-note">
-								Automatic movie detail updates are off, so names, dates and artwork can become stale. A request already in flight may finish. Manual Library refresh remains available.
-							</p>
-						{/if}
-						<div class="xs muted when">
-							<span>Runs {every(s.every_s)}</span>
-							<span
-								>Last: {s.last_run ? ago(s.last_run, now) : 'not yet'}{#if s.last_job === 'failed'}
-									(failed{s.last_job_error ? `: ${s.last_job_error}` : ''}){/if}</span
-							>
-							<span data-testid="next">Next: {s.enabled ? until(s.next_run, now) : 'turned off'}</span>
-							{#if s.settings}<a href={to(s.settings)}>Its settings</a>{/if}
+						<div class="row acts">
+							{#if session.can('manage_library') && mayRun(s)}
+								<Button
+									type="button"
+									disabled={busy === s.kind}
+									aria-busy={busy === s.kind}
+									onclick={() => runNow(s)}
+									aria-label="Run {s.label} now">Run now</Button>
+							{/if}
+							{#if session.can('settings') && editing !== s.kind}
+								<Button variant="plain" type="button" onclick={() => edit(s)} aria-label="Change how often {s.label} runs">Change</Button>
+							{/if}
+							{#if session.can('settings') && s.kind === 'refresh_titles'}
+								<Button variant="plain"
+									type="button"
+									disabled={busy === s.kind}
+									onclick={() => setEnabled(s, !s.enabled)}
+								>{s.enabled ? 'Turn off automatic refresh' : 'Turn on automatic refresh'}</Button>
+							{/if}
 						</div>
-						{#if editing === s.kind}
-							<form class="edit" onsubmit={(e) => save(e, s)}>
-								<label for="ev-{s.kind}" class="small">Every ({u.word})</label>
-								<input
-									id="ev-{s.kind}"
-									class="input"
-									type="number"
-									min={s.min_s / u.size}
-									max={s.max_s / u.size}
-									step={s.step_s / u.size}
-									bind:value={amount}
-								/>
-								<span class="hint">{s.min_s / u.size} to {s.max_s / u.size} {u.word}</span>
-								<button class="btn btn-red" type="submit" disabled={busy === s.kind}>Save</button>
-								<button class="btn btn-quiet" type="button" onclick={() => (editing = null)}>Cancel</button>
-								{#if editError}<p class="form-error" role="alert">{editError}</p>{/if}
-							</form>
-						{/if}
-					</div>
-					<div class="row acts">
-						{#if session.can('manage_library') && mayRun(s)}
-							<button
-								class="btn btn-ghost"
-								type="button"
-								disabled={busy === s.kind}
-								aria-busy={busy === s.kind}
-								onclick={() => runNow(s)}
-								aria-label="Run {s.label} now">Run now</button
-							>
-						{/if}
-						{#if session.can('settings') && editing !== s.kind}
-							<button class="btn btn-quiet" type="button" onclick={() => edit(s)} aria-label="Change how often {s.label} runs">Change</button>
-						{/if}
-						{#if session.can('settings') && s.kind === 'refresh_titles'}
-							<button
-								class="btn btn-quiet"
-								type="button"
-								disabled={busy === s.kind}
-								onclick={() => setEnabled(s, !s.enabled)}
-							>{s.enabled ? 'Turn off automatic refresh' : 'Turn on automatic refresh'}</button
-							>
-						{/if}
-					</div>
-				</li>
-			{/each}
-		</ul>
-	</section>
+					</li>
+				{/each}
+			</ul>
+		</SettingsCard>
+	</div>
 
-	<section class="card" aria-labelledby="h-loops" data-testid="loops">
-		<h2 id="h-loops" class="h2">Background loops</h2>
-		<p class="small muted">Work that keeps running on its own. Pause or restart one in Settings > Parts and controls.</p>
-		<ul class="rows sched">
-			{#each loops as l (l.key)}
-				<li data-testid="loop">
-					<div class="grow small">
-						<div class="head"><b>{l.name}</b> <span class="chip {runTone(l.state)}">{runWord(l)}</span></div>
-						<div class="xs muted when">
-							<span>{l.every_s ? `Runs ${every(l.every_s)}` : 'Runs all the time'}</span>
-							{#if l.last_pass}<span>Last: {ago(l.last_pass, now)}</span>{/if}
-							{#if l.next_pass}<span>Next: {until(l.next_pass, now)}</span>{/if}
+	<div data-testid="loops">
+		<SettingsCard title="Background loops" description="Work that keeps running on its own. Pause or restart one in Settings > Parts and controls.">
+			<ul class="rows sched">
+				{#each loops as l (l.key)}
+					<li data-testid="loop">
+						<div class="grow small">
+							<div class="head"><b>{l.name}</b> <span class="chip {runTone(l.state)}">{runWord(l)}</span></div>
+							<div class="xs muted when">
+								<span>{l.every_s ? `Runs ${every(l.every_s)}` : 'Runs all the time'}</span>
+								{#if l.last_pass}<span>Last: {ago(l.last_pass, now)}</span>{/if}
+								{#if l.next_pass}<span>Next: {until(l.next_pass, now)}</span>{/if}
+							</div>
+							{#if l.reason}<span class="xs muted">{l.reason}</span>{/if}
 						</div>
-						{#if l.reason}<span class="xs muted">{l.reason}</span>{/if}
-					</div>
-				</li>
-			{/each}
-		</ul>
-	</section>
+					</li>
+				{/each}
+			</ul>
+		</SettingsCard>
+	</div>
 {/if}
 
 <style>

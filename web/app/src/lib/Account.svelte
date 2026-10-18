@@ -1,4 +1,8 @@
 <script lang="ts">
+	import { personName } from '#lib/plain.ts';
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { api, message, ApiError } from './api.ts';
 	import { session } from './session.svelte.ts';
 	import { toasts } from './toasts.svelte.ts';
@@ -220,22 +224,17 @@
 	}
 </script>
 
-<header class="page-head">
-	<div>
-		<h1>My account</h1>
-		<p>Your password and two-factor sign-in.</p>
-	</div>
-</header>
+<PageHeader title="My account" subtitle="Your password and two-factor sign-in." />
+<div class="acct">
 
 {#if session.s.mustTwoFactor}
 	<p class="notice warn" role="alert">The owner asks every admin to use two-factor sign-in. Turn it on below to use the rest of HolyArrs.</p>
 {/if}
 
-<section class="card" aria-labelledby="h-me">
-	<h2 id="h-me" class="h2" style="margin-bottom: var(--s-3)">Signed in</h2>
+<SettingsCard title="Signed in">
 	<dl class="facts">
 		<dt>Name</dt>
-		<dd>{session.s.name}</dd>
+		<dd>{personName(session.s.name, 'You')}</dd>
 		<dt>Role</dt>
 		<dd>{roleWord[session.s.role] ?? session.s.role}</dd>
 		<dt>How</dt>
@@ -245,10 +244,9 @@
 			<dd>{authMethodWord(session.s.authMethod)}</dd>
 		{/if}
 	</dl>
-</section>
+</SettingsCard>
 
-<section class="card" aria-labelledby="h-confirm-local">
-	<h2 id="h-confirm-local" class="h2">Confirm local sign-in</h2>
+<SettingsCard title="Confirm local sign-in">
 	<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">
 		{#if session.s.localRecent}
 			Your local sign-in was confirmed recently. Confirm it again here if a sensitive action says that confirmation expired.
@@ -270,15 +268,14 @@
 			</div>
 		{/if}
 		{#if reauthError}<p class="form-error" role="alert">{reauthError}</p>{/if}
-		<button class="btn btn-red" type="submit" disabled={reauthBusy || !reauthPassword || (session.s.twoFactor && !reauthCode.trim())} aria-busy={reauthBusy}>
+		<Button variant="primary" type="submit" disabled={reauthBusy || !reauthPassword || (session.s.twoFactor && !reauthCode.trim())} aria-busy={reauthBusy}>
 			Confirm local sign-in
-		</button>
+		</Button>
 	</form>
-</section>
+</SettingsCard>
 
 {#if hasLinkWay}
-	<section class="card" aria-labelledby="h-linked-signin">
-		<h2 id="h-linked-signin" class="h2">Linked sign-in</h2>
+	<SettingsCard title="Linked sign-in">
 		<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">
 			Link another sign-in only while you are already signed in. HolyArrs matches the provider's stable account id and never links accounts by email address.
 		</p>
@@ -288,19 +285,18 @@
 		{:else}
 			<div class="row">
 				{#if session.s.ways.includes('oidc')}
-					<button class="btn btn-ghost" type="button" onclick={startOIDCLink} disabled={linkBusy} aria-busy={linkBusy}>Link single sign-on</button>
+					<Button type="button" onclick={startOIDCLink} disabled={linkBusy} aria-busy={linkBusy}>Link single sign-on</Button>
 				{/if}
 				{#if session.s.ways.includes('forward_auth')}
-					<button class="btn btn-ghost" type="button" onclick={linkForwardAuth} disabled={linkBusy} aria-busy={linkBusy}>Link trusted proxy sign-in</button>
+					<Button type="button" onclick={linkForwardAuth} disabled={linkBusy} aria-busy={linkBusy}>Link trusted proxy sign-in</Button>
 				{/if}
 			</div>
 		{/if}
 		{#if linkError}<p class="form-error" role="alert">{linkError}</p>{/if}
-	</section>
+	</SettingsCard>
 {/if}
 
-<section class="card" aria-labelledby="h-tf">
-	<h2 id="h-tf" class="h2">Two-factor sign-in</h2>
+<SettingsCard title="Two-factor sign-in">
 	<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">
 		After your password, HolyArrs asks for a six-digit code from an authenticator app on your phone.
 	</p>
@@ -312,8 +308,8 @@
 				{#each codes as c (c)}<li>{c}</li>{/each}
 			</ul>
 			<div class="row">
-				<button class="btn btn-ghost" type="button" onclick={copyCodes}><Icon name="copy" size={18} /> Copy</button>
-				<button class="btn btn-quiet" type="button" onclick={() => (codes = [])}>Done</button>
+				<Button icon="copy" type="button" onclick={copyCodes}>Copy</Button>
+				<Button variant="plain" type="button" onclick={() => (codes = [])}>Done</Button>
 			</div>
 		</div>
 	{/if}
@@ -346,20 +342,17 @@
 		<form class="row" onsubmit={enable}>
 			<label class="sr-only" for="tf-code">Six-digit code</label>
 			<input id="tf-code" class="input mono" style="max-width: 160px" bind:value={code} autocomplete="one-time-code" inputmode="numeric" maxlength="6" placeholder="123456" />
-			<button class="btn btn-red" type="submit" disabled={tfBusy || code.trim().length !== 6} aria-busy={tfBusy}>Turn on</button>
-			<button class="btn btn-quiet" type="button" onclick={() => (setup = null)}>Cancel</button>
+			<Button variant="primary" type="submit" disabled={tfBusy || code.trim().length !== 6} aria-busy={tfBusy}>Turn on</Button>
+			<Button variant="plain" type="button" onclick={() => (setup = null)}>Cancel</Button>
 		</form>
 	{:else}
-		<button class="btn btn-red" type="button" onclick={startTwoFactor} disabled={tfBusy} aria-busy={tfBusy}>
-			<Icon name="shield" size={18} /> Set up two-factor sign-in
-		</button>
+		<Button icon="shield" variant="primary" type="button" onclick={startTwoFactor} disabled={tfBusy} aria-busy={tfBusy}>Set up two-factor sign-in
+		</Button>
 	{/if}
 	{#if tfError}<p class="form-error" role="alert">{tfError}</p>{/if}
-</section>
+</SettingsCard>
 
-<section class="card" aria-labelledby="h-alerts">
-	<h2 id="h-alerts" class="h2">Alerts for you</h2>
-	<p class="small muted">You always see news about your asks on your Wishlist. Add these to also hear by email or in Discord, when the owner has set those up.</p>
+<SettingsCard title="Alerts for you" description="You always see news about your asks on your Wishlist. Add these to also hear by email or in Discord, when the owner has set those up.">
 	<form class="pw" onsubmit={saveTargets} novalidate>
 		<div class="field">
 			<label for="tg-email">Email address</label>
@@ -371,12 +364,11 @@
 			<span class="hint">A long number: in Discord turn on Developer Mode, then right-click your name and Copy User ID. Discord Alerts then name you.</span>
 		</div>
 		{#if tgError}<p class="form-error" role="alert">{tgError}</p>{/if}
-		<button class="btn btn-red" type="submit" disabled={tgBusy} aria-busy={tgBusy}>Save</button>
+		<Button variant="primary" type="submit" disabled={tgBusy} aria-busy={tgBusy}>Save</Button>
 	</form>
-</section>
+</SettingsCard>
 
-<section class="card" aria-labelledby="h-pw">
-	<h2 id="h-pw" class="h2">Password</h2>
+<SettingsCard title="Password">
 	<form class="pw" onsubmit={changePassword} novalidate>
 		<input type="text" name="username" autocomplete="username" value={session.s.name} hidden readonly />
 		<div class="field">
@@ -394,7 +386,7 @@
 			<input id="pw-again" class="input" type="password" bind:value={again} autocomplete="new-password" />
 		</div>
 		{#if pwError}<p class="form-error" role="alert">{pwError}</p>{/if}
-		<button class="btn btn-red" type="submit" disabled={pwBusy || !next || !session.s.localRecent} aria-busy={pwBusy}>Change password</button>
+		<Button variant="primary" type="submit" disabled={pwBusy || !next || !session.s.localRecent} aria-busy={pwBusy}>Change password</Button>
 	</form>
 	{#if session.s.role === 'owner'}
 		<p class="small muted" style="margin-top: var(--s-4)">
@@ -402,15 +394,17 @@
 			two-factor sign-in, and signs out every device and API key.
 		</p>
 	{/if}
-</section>
+</SettingsCard>
 
-<section class="card" aria-labelledby="h-devices">
-	<h2 id="h-devices" class="h2">Signed-in devices</h2>
+<SettingsCard title="Signed-in devices">
 	<p class="small muted" style="margin-bottom: var(--s-3)">Every browser or phone where you are signed in. Sign out one you do not know, or all but this one.</p>
 	<Sessions path="/auth/sessions" />
-</section>
+</SettingsCard>
+</div>
 
 <style>
+	.acct { display: flex; flex-direction: column; gap: 16px; }
+	.acct > :global(*) { margin: 0; }
 	code {
 		font-family: var(--font-mono);
 		color: var(--text);
@@ -453,8 +447,8 @@
 		padding: 0;
 		margin: 0;
 	}
-	.pw button,
-	.tf-form button {
+	.pw :global(button),
+	.tf-form :global(button) {
 		margin-top: var(--s-4);
 	}
 	.fresh .row,
@@ -462,15 +456,12 @@
 		flex-wrap: wrap;
 	}
 	@media (max-width: 600px) {
-		section.card {
-			padding-inline: var(--s-4);
-		}
 		form.row > .input {
 			flex: 1 1 100%;
 			max-width: none !important;
 		}
-		form.row > .btn,
-		.fresh .btn {
+		form.row > :global(.ui-btn),
+		.fresh :global(.ui-btn) {
 			min-height: 44px;
 		}
 	}

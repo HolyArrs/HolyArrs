@@ -1,4 +1,7 @@
 <script lang="ts">
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
@@ -109,13 +112,11 @@
 
 <svelte:head><title>Sources · HolyArrs</title></svelte:head>
 
-<header class="page-head">
-	<div>
-		<h1>Sources</h1>
-		<p>Where HolyArrs looks for Releases: Torznab and Newznab feeds, plain rss feeds, and bridges such as Jackett or Prowlarr for sites that need their own rules.</p>
-	</div>
-	{#if !editing}<button class="btn btn-red" type="button" onclick={startAdd}><Icon name="plus" size={18} /> Add a Source</button>{/if}
-</header>
+<PageHeader title="Sources" subtitle="Where HolyArrs looks for Releases: Torznab and Newznab feeds, plain rss feeds, and bridges such as Jackett or Prowlarr for sites that need their own rules.">
+	{#snippet actions()}
+		{#if !editing}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>Add a Source</Button>{/if}
+	{/snippet}
+</PageHeader>
 
 <p class="small muted lead">
 	Sources are asked in priority order, 1 first. A Source that fails rests for a while and is tried again on its own: one minute, then twice as long each time, up to six hours.
@@ -123,118 +124,119 @@
 </p>
 
 {#if editing}
-	<form class="card" onsubmit={save} aria-labelledby="h-form">
-		<h2 id="h-form" class="h2">{isNew ? 'Add a Source' : `Change ${editing.name}`}</h2>
-		<div class="field" style="margin-top: var(--s-4)">
-			<label for="so-name">Name</label>
-			<input id="so-name" class="input" bind:value={form.name} maxlength="80" required />
-		</div>
-		<div class="two">
-			<div class="field">
-				<label for="so-format">Kind of feed</label>
-				<select id="so-format" class="input" bind:value={form.format}>
-					<option value="torznab">Torznab (torrents, also Jackett and Prowlarr)</option>
-					<option value="newznab">Newznab (Usenet)</option>
-					<option value="rss">Plain rss feed (newest list only)</option>
-				</select>
+	<form class="sc-form" onsubmit={save} aria-label={isNew ? 'Add a Source' : `Change ${editing.name}`}>
+		<SettingsCard title={isNew ? 'Add a Source' : `Change ${editing.name}`}>
+			<div class="field" style="margin-top: var(--s-4)">
+				<label for="so-name">Name</label>
+				<input id="so-name" class="input" bind:value={form.name} maxlength="80" required />
 			</div>
-			<div class="field">
-				<label for="so-proto">Downloads</label>
-				<select id="so-proto" class="input" bind:value={form.protocol}>
-					<option value="torrent">Torrents</option>
-					<option value="usenet">Usenet</option>
-				</select>
-			</div>
-		</div>
-		<div class="field">
-			<label for="so-url">Address</label>
-			<input id="so-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" required placeholder={form.format === 'rss' ? 'https://example.org/rss?passkey=…' : 'https://example.org/api'} />
-			<span class="hint">
-				{#if form.format === 'rss'}Anything after the ? (such as a passkey) is kept encrypted and shown masked.{:else}The feed address, with or without /api.{/if}
-			</span>
-		</div>
-		{#if form.format !== 'rss'}
-			<div class="field">
-				<label for="so-key">Key</label>
-				<input id="so-key" class="input mono" type="password" bind:value={form.api_key} autocomplete="new-password" spellcheck="false" />
-				<span class="hint">Kept encrypted. Leave as it is to keep the stored one. Moving the address to another host needs the key again.</span>
-			</div>
-		{/if}
-		<fieldset class="group">
-			<legend class="label">Use it for</legend>
-			<label class="checkline"><input type="checkbox" bind:checked={form.feed} /><span><b>Newest list</b><br /><span class="hint">Read its newest Releases now and then.</span></span></label>
-			{#if form.format !== 'rss'}
-				<label class="checkline"><input type="checkbox" bind:checked={form.auto_search} /><span><b>Searches on its own</b><br /><span class="hint">When HolyArrs looks for a title by itself.</span></span></label>
-				<label class="checkline"><input type="checkbox" bind:checked={form.hand_search} /><span><b>Search by hand</b><br /><span class="hint">When you search from a title's page.</span></span></label>
-			{/if}
-		</fieldset>
-		<fieldset class="group">
-			<legend class="label">Media</legend>
-			{#each [['movie', 'Movies'], ['tv', 'TV shows'], ['music', 'Music']] as [k, label] (k)}
-				<label class="checkline"><input type="checkbox" checked={form.kinds.includes(k)} onchange={(e) => toggleKind(k, e.currentTarget.checked)} /><span>{label}</span></label>
-			{/each}
-		</fieldset>
-		<div class="two">
-			<div class="field">
-				<label for="so-prio">Priority</label>
-				<input id="so-prio" class="input" type="number" min="1" max="50" bind:value={form.priority} />
-				<span class="hint">1 to 50; 1 is asked first and wins a tie.</span>
-			</div>
-			{#if form.protocol === 'torrent'}
-				<div class="field">
-					<label for="so-seed">Fewest seeders</label>
-					<input id="so-seed" class="input" type="number" min="0" bind:value={form.min_seeders} />
-				</div>
-			{/if}
-		</div>
-		<details class="more">
-			<summary>Limits</summary>
 			<div class="two">
 				<div class="field">
-					<label for="so-cap">Most searches per window</label>
-					<input id="so-cap" class="input" type="number" min="0" bind:value={form.searches_per_window} />
-					<span class="hint">0 means no cap.</span>
+					<label for="so-format">Kind of feed</label>
+					<select id="so-format" class="input" bind:value={form.format}>
+						<option value="torznab">Torznab (torrents, also Jackett and Prowlarr)</option>
+						<option value="newznab">Newznab (Usenet)</option>
+						<option value="rss">Plain rss feed (newest list only)</option>
+					</select>
 				</div>
 				<div class="field">
-					<label for="so-win">Window (hours)</label>
-					<input id="so-win" class="input" type="number" min="0" step="0.5" bind:value={form.window_hours} />
+					<label for="so-proto">Downloads</label>
+					<select id="so-proto" class="input" bind:value={form.protocol}>
+						<option value="torrent">Torrents</option>
+						<option value="usenet">Usenet</option>
+					</select>
 				</div>
-				<div class="field">
-					<label for="so-gap">Least time between calls (ms)</label>
-					<input id="so-gap" class="input" type="number" min="0" bind:value={form.gap_ms} />
-				</div>
-				<div class="field">
-					<label for="so-timeout">Give up after (seconds)</label>
-					<input id="so-timeout" class="input" type="number" min="1" max="300" bind:value={form.timeout_s} />
-				</div>
-			</div>
-		</details>
-		<details class="more" open={!!form.proxy}>
-			<summary>Proxy</summary>
-			<div class="field">
-				<label for="so-proxy">Proxy address</label>
-				<input id="so-proxy" class="input mono" bind:value={form.proxy} autocomplete="off" spellcheck="false" placeholder="socks5://name@host:1080 or http://host:3128" />
-				<span class="hint">Every call to this Source goes through it. Empty means none.</span>
 			</div>
 			<div class="field">
-				<label for="so-proxy-pw">Proxy password</label>
-				<input id="so-proxy-pw" class="input" type="password" bind:value={form.proxy_password} autocomplete="new-password" />
-				<span class="hint">Kept encrypted. Leave as it is to keep the stored one.</span>
+				<label for="so-url">Address</label>
+				<input id="so-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" required placeholder={form.format === 'rss' ? 'https://example.org/rss?passkey=…' : 'https://example.org/api'} />
+				<span class="hint">
+					{#if form.format === 'rss'}Anything after the ? (such as a passkey) is kept encrypted and shown masked.{:else}The feed address, with or without /api.{/if}
+				</span>
 			</div>
+			{#if form.format !== 'rss'}
+				<div class="field">
+					<label for="so-key">Key</label>
+					<input id="so-key" class="input mono" type="password" bind:value={form.api_key} autocomplete="new-password" spellcheck="false" />
+					<span class="hint">Kept encrypted. Leave as it is to keep the stored one. Moving the address to another host needs the key again.</span>
+				</div>
+			{/if}
+			<fieldset class="group">
+				<legend class="label">Use it for</legend>
+				<label class="checkline"><input type="checkbox" bind:checked={form.feed} /><span><b>Newest list</b><br /><span class="hint">Read its newest Releases now and then.</span></span></label>
+				{#if form.format !== 'rss'}
+					<label class="checkline"><input type="checkbox" bind:checked={form.auto_search} /><span><b>Searches on its own</b><br /><span class="hint">When HolyArrs looks for a title by itself.</span></span></label>
+					<label class="checkline"><input type="checkbox" bind:checked={form.hand_search} /><span><b>Search by hand</b><br /><span class="hint">When you search from a title's page.</span></span></label>
+				{/if}
+			</fieldset>
+			<fieldset class="group">
+				<legend class="label">Media</legend>
+				{#each [['movie', 'Movies'], ['tv', 'TV shows'], ['music', 'Music']] as [k, label] (k)}
+					<label class="checkline"><input type="checkbox" checked={form.kinds.includes(k)} onchange={(e) => toggleKind(k, e.currentTarget.checked)} /><span>{label}</span></label>
+				{/each}
+			</fieldset>
+			<div class="two">
+				<div class="field">
+					<label for="so-prio">Priority</label>
+					<input id="so-prio" class="input" type="number" min="1" max="50" bind:value={form.priority} />
+					<span class="hint">1 to 50; 1 is asked first and wins a tie.</span>
+				</div>
+				{#if form.protocol === 'torrent'}
+					<div class="field">
+						<label for="so-seed">Fewest seeders</label>
+						<input id="so-seed" class="input" type="number" min="0" bind:value={form.min_seeders} />
+					</div>
+				{/if}
+			</div>
+			<details class="more">
+				<summary>Limits</summary>
+				<div class="two">
+					<div class="field">
+						<label for="so-cap">Most searches per window</label>
+						<input id="so-cap" class="input" type="number" min="0" bind:value={form.searches_per_window} />
+						<span class="hint">0 means no cap.</span>
+					</div>
+					<div class="field">
+						<label for="so-win">Window (hours)</label>
+						<input id="so-win" class="input" type="number" min="0" step="0.5" bind:value={form.window_hours} />
+					</div>
+					<div class="field">
+						<label for="so-gap">Least time between calls (ms)</label>
+						<input id="so-gap" class="input" type="number" min="0" bind:value={form.gap_ms} />
+					</div>
+					<div class="field">
+						<label for="so-timeout">Give up after (seconds)</label>
+						<input id="so-timeout" class="input" type="number" min="1" max="300" bind:value={form.timeout_s} />
+					</div>
+				</div>
+			</details>
+			<details class="more" open={!!form.proxy}>
+				<summary>Proxy</summary>
+				<div class="field">
+					<label for="so-proxy">Proxy address</label>
+					<input id="so-proxy" class="input mono" bind:value={form.proxy} autocomplete="off" spellcheck="false" placeholder="socks5://name@host:1080 or http://host:3128" />
+					<span class="hint">Every call to this Source goes through it. Empty means none.</span>
+				</div>
+				<div class="field">
+					<label for="so-proxy-pw">Proxy password</label>
+					<input id="so-proxy-pw" class="input" type="password" bind:value={form.proxy_password} autocomplete="new-password" />
+					<span class="hint">Kept encrypted. Leave as it is to keep the stored one.</span>
+				</div>
+				<label class="checkline">
+					<input type="checkbox" bind:checked={form.proxy_allow_local_network} />
+					<span><b>The proxy may be on the local network</b><br /><span class="hint">Off: only a proxy on the internet.</span></span>
+				</label>
+			</details>
 			<label class="checkline">
-				<input type="checkbox" bind:checked={form.proxy_allow_local_network} />
-				<span><b>The proxy may be on the local network</b><br /><span class="hint">Off: only a proxy on the internet.</span></span>
+				<input type="checkbox" bind:checked={form.allow_local_network} />
+				<span><b>May reach the local network</b><br /><span class="hint">Off: only addresses on the internet. On: also this machine or your home network, for a bridge such as Jackett or Prowlarr.</span></span>
 			</label>
-		</details>
-		<label class="checkline">
-			<input type="checkbox" bind:checked={form.allow_local_network} />
-			<span><b>May reach the local network</b><br /><span class="hint">Off: only addresses on the internet. On: also this machine or your home network, for a bridge such as Jackett or Prowlarr.</span></span>
-		</label>
-		{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
-		<div class="row" style="margin-top: var(--s-5)">
-			<button class="btn btn-quiet" type="button" onclick={() => (editing = null)}>Cancel</button>
-			<button class="btn btn-red" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>Save Source</button>
-		</div>
+			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
+			<div class="row" style="margin-top: var(--s-5)">
+				<Button variant="plain" type="button" onclick={() => (editing = null)}>Cancel</Button>
+				<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>Save Source</Button>
+			</div>
+		</SettingsCard>
 	</form>
 {/if}
 
@@ -273,16 +275,16 @@
 					<p class="small" class:bad-text={!results[s.id].ok} class:ok-text={results[s.id].ok} role="status" data-testid="source-test">{results[s.id].text}</p>
 				{/if}
 				<div class="row actions">
-					<button class="btn btn-ghost" type="button" disabled={testing === s.id} aria-busy={testing === s.id} onclick={() => test(s)}>Test</button>
+					<Button type="button" disabled={testing === s.id} aria-busy={testing === s.id} onclick={() => test(s)}>Test</Button>
 					{#if s.state === 'disabled'}
-						<button class="btn btn-quiet" type="button" onclick={() => setPaused(s, false)}>Resume</button>
+						<Button variant="plain" type="button" onclick={() => setPaused(s, false)}>Resume</Button>
 					{:else}
-						<button class="btn btn-quiet" type="button" onclick={() => setPaused(s, true)}>Pause</button>
-						{#if s.state === 'paused'}<button class="btn btn-quiet" type="button" onclick={() => setPaused(s, false)}>Try again now</button>{/if}
+						<Button variant="plain" type="button" onclick={() => setPaused(s, true)}>Pause</Button>
+						{#if s.state === 'paused'}<Button variant="plain" type="button" onclick={() => setPaused(s, false)}>Try again now</Button>{/if}
 					{/if}
-					<a class="btn btn-quiet" href={to(`/settings/sources/${s.id}`)}>Health</a>
-					<button class="btn btn-quiet" type="button" onclick={() => startChange(s)}>Change</button>
-					<button class="btn btn-quiet" type="button" onclick={() => remove(s)} aria-label="Remove {s.name}">Remove</button>
+					<Button variant="plain" href={to(`/settings/sources/${s.id}`)}>Health</Button>
+					<Button variant="plain" type="button" onclick={() => startChange(s)}>Change</Button>
+					<Button variant="plain" type="button" onclick={() => remove(s)} aria-label="Remove {s.name}">Remove</Button>
 				</div>
 			</li>
 		{/each}

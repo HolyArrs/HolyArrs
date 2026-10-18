@@ -5,7 +5,11 @@
 	import { session } from '#lib/session.svelte.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { offPartName } from '#lib/parts.ts';
-	import { theme, setTheme } from '#lib/theme.svelte.ts';
+	import { theme, setTheme, type ThemeChoice } from '#lib/theme.svelte.ts';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
 
 	const sections = $derived(visible(all, session.can).filter((section) => !offPartName(partsNow.answer, section.href)));
 	const groups = [
@@ -30,189 +34,96 @@
 			hrefs: ['/settings/backups', '/settings/move', '/settings/parts', '/settings/this-app', '/settings/logs']
 		}
 	];
+
+	let query = $state('');
+	const words = $derived(query.trim().toLowerCase().split(/\s+/).filter(Boolean));
+	const matches = $derived(sections.filter((section) => words.every((w) => `${section.label} ${section.about}`.toLowerCase().includes(w))));
+	let themeChoice = $state<ThemeChoice>(theme.choice);
+	const themes: { value: ThemeChoice; label: string; icon: 'sun' | 'moon' | 'settings' }[] = [
+		{ value: 'light', label: 'Light', icon: 'sun' },
+		{ value: 'dark', label: 'Dark', icon: 'moon' },
+		{ value: 'system', label: 'Automatic', icon: 'settings' }
+	];
 </script>
 
 <svelte:head><title>Settings · HolyArrs</title></svelte:head>
 
-<header class="settings-head">
-	<div>
-		<h1>Settings</h1>
-		<p>Manage your library, connections, access and this installation.</p>
-	</div>
-</header>
+<PageHeader title="Settings" subtitle="Manage your library, connections, access and this installation." />
 
-<div class="settings-overview">
-	<section class="appearance" aria-labelledby="appearance-heading">
-		<div class="appearance-copy">
-			<span class="setting-icon"><Icon name="sun" size={19} /></span>
-			<div>
-				<h2 id="appearance-heading">Appearance</h2>
-				<p>Choose how HolyArrs looks in this browser.</p>
-			</div>
-		</div>
-		<div class="theme-control" role="radiogroup" aria-label="Theme">
-			<label class:active={theme.value === 'light'}>
-				<input type="radio" name="theme" checked={theme.value === 'light'} onchange={() => setTheme('light')} />
-				Light
-			</label>
-			<label class:active={theme.value === 'dark'}>
-				<input type="radio" name="theme" checked={theme.value === 'dark'} onchange={() => setTheme('dark')} />
-				Dark
-			</label>
-		</div>
-	</section>
-
-	{#each groups as group (group.label)}
-		{@const items = sections.filter((section) => group.hrefs.includes(section.href))}
-		{#if items.length}
-			<section class="settings-group" aria-labelledby="group-{group.label.toLowerCase()}">
-				<header>
-					<h2 id="group-{group.label.toLowerCase()}">{group.label}</h2>
-					<p>{group.description}</p>
-				</header>
-				<ul>
-					{#each items as section (section.href)}
-						<li>
-							<a href={to(section.href)}>
-								<span class="setting-icon"><Icon name={section.icon} size={19} /></span>
-								<span class="setting-copy">
-									<strong>{section.label}</strong>
-									<span>{section.about}</span>
-								</span>
-								<Icon name="arrow" size={16} />
-							</a>
-						</li>
-					{/each}
-				</ul>
-			</section>
-		{/if}
-	{/each}
+<div class="find">
+	<Icon name="search" size={17} />
+	<label class="sr-only" for="settings-find">Search settings</label>
+	<input id="settings-find" class="input" type="search" placeholder="Search settings" autocomplete="off" bind:value={query} />
 </div>
 
+{#if words.length}
+	{#if matches.length}
+		<ul class="results" aria-label="Matching settings">
+			{#each matches as section (section.href)}
+				<li>
+					<a class="row-link" href={to(section.href)}>
+						<span class="setting-icon"><Icon name={section.icon} size={17} /></span>
+						<span class="setting-copy"><strong>{section.label}</strong><span>{section.about}</span></span>
+						<Icon name="chevronRight" size={16} />
+					</a>
+				</li>
+			{/each}
+		</ul>
+	{:else}
+		<EmptyState compact icon="search" title="No settings match" text="Try another word, like folder, key or password." action={{ label: 'Clear the search', onclick: () => (query = '') }} />
+	{/if}
+{:else}
+	<div class="settings-overview">
+		<div class="wide">
+			<SettingsCard title="Appearance" description="Choose how HolyArrs looks in this browser." icon="sun">
+				<SegmentedControl label="Theme" options={themes} bind:value={themeChoice} onchange={(v) => setTheme(v)} />
+			</SettingsCard>
+		</div>
+
+		{#each groups as group (group.label)}
+			{@const items = sections.filter((section) => group.hrefs.includes(section.href))}
+			{#if items.length}
+				<SettingsCard title={group.label} description={group.description}>
+					<ul class="links">
+						{#each items as section (section.href)}
+							<li>
+								<a class="row-link" href={to(section.href)}>
+									<span class="setting-icon"><Icon name={section.icon} size={17} /></span>
+									<span class="setting-copy"><strong>{section.label}</strong><span>{section.about}</span></span>
+									<Icon name="chevronRight" size={16} />
+								</a>
+							</li>
+						{/each}
+					</ul>
+				</SettingsCard>
+			{/if}
+		{/each}
+	</div>
+{/if}
+
 <style>
-	.settings-head {
+	.find { position: relative; display: flex; align-items: center; max-width: 520px; margin: -8px 0 24px; }
+	.find > :global(.icon) { position: absolute; left: 12px; color: var(--text-muted); pointer-events: none; }
+	.find .input { padding-left: 38px; border-radius: var(--r-pill); background: var(--surface-2); border-color: transparent; }
+	.settings-overview { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 16px; align-items: start; }
+	.wide { grid-column: 1 / -1; }
+	.links, .results { margin: 0 -12px -8px; }
+	.results { margin: 0; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); padding: 6px; }
+	li + li { border-top: 1px solid var(--line); }
+	.row-link {
 		display: flex;
 		align-items: center;
-		min-height: 78px;
-		padding: var(--s-4) var(--s-6);
-		border-bottom: 1px solid var(--line);
-	}
-	.settings-head h1 {
-		font-size: var(--text-xl);
-		line-height: 1.2;
-		letter-spacing: -0.025em;
-	}
-	.settings-head p {
-		margin-top: var(--s-1);
-		color: var(--text-muted);
-		font-size: var(--text-sm);
-	}
-	.settings-overview { max-width: 960px; padding: var(--s-6); }
-	.appearance {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--s-5);
-		padding: var(--s-4) 0 var(--s-6);
-		border-bottom: 1px solid var(--line);
-	}
-	.appearance-copy {
-		display: flex;
-		align-items: center;
-		gap: var(--s-3);
-		min-width: 0;
-	}
-	.appearance h2,
-	.settings-group h2 { font-size: var(--text-md); line-height: 1.35; }
-	.appearance p,
-	.settings-group header p {
-		margin-top: 2px;
-		color: var(--text-muted);
-		font-size: var(--text-sm);
-	}
-	.theme-control {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(74px, 1fr));
-		flex: none;
-		padding: 3px;
-		border: 1px solid var(--line);
-		border-radius: var(--r-pill);
-		background: var(--surface-3);
-	}
-	.theme-control label {
-		min-height: 34px;
-		display: grid;
-		place-items: center;
-		padding: 0 var(--s-3);
-		border-radius: var(--r-pill);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		/* Muted grey is too faint on the grey track (axe contrast). */
-		color: var(--text);
-		cursor: pointer;
-	}
-	.theme-control label.active {
-		background: var(--surface-1);
-		color: var(--text);
-		box-shadow: 0 1px 3px rgb(24 24 21 / 10%);
-	}
-	.theme-control input {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		opacity: 0;
-		pointer-events: none;
-	}
-	.theme-control label:has(input:focus-visible) { box-shadow: var(--focus-ring); }
-	.settings-group { padding-top: var(--s-8); }
-	.settings-group > header { padding-bottom: var(--s-3); }
-	.settings-group ul { border-top: 1px solid var(--line); }
-	.settings-group li { border-bottom: 1px solid var(--line); }
-	.settings-group a {
-		display: flex;
-		align-items: center;
-		gap: var(--s-3);
-		min-height: 72px;
-		padding: var(--s-3) var(--s-2);
-		transition: background var(--dur-fast);
-	}
-	.settings-group a:hover { background: var(--surface-2); }
-	.setting-icon {
-		width: 38px;
-		height: 38px;
-		display: grid;
-		place-items: center;
-		flex: none;
-		border: 1px solid var(--line);
+		gap: 12px;
+		min-height: 56px;
+		padding: 8px 12px;
 		border-radius: var(--r-btn);
-		background: var(--surface-2);
-		color: var(--text);
+		transition: background var(--dur-fast) var(--ease-out);
 	}
+	.row-link:hover { background: var(--surface-2); }
+	.setting-icon { width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 8px; background: var(--surface-2); color: var(--text); }
 	.setting-copy { display: block; min-width: 0; flex: 1; }
-	.setting-copy strong,
-	.setting-copy span { display: block; }
-	.setting-copy strong { font-size: var(--text-sm); font-weight: var(--weight-semibold); }
-	.setting-copy span {
-		margin-top: 2px;
-		max-width: 72ch;
-		color: var(--text-muted);
-		font-size: var(--text-sm);
-		line-height: 1.4;
-	}
-	.settings-group a > :global(.icon:last-child) { flex: none; color: var(--text-faint); }
-	@media (max-width: 700px) {
-		.settings-head { min-height: 70px; padding: var(--s-4); }
-		.settings-overview { padding: var(--s-4); }
-		.appearance { align-items: stretch; flex-direction: column; }
-		.theme-control { width: 100%; }
-		.settings-group { padding-top: var(--s-6); }
-		.settings-group a { min-height: 78px; padding-inline: 0; }
-		.setting-copy span {
-			display: -webkit-box;
-			overflow: hidden;
-			line-clamp: 2;
-			-webkit-line-clamp: 2;
-			-webkit-box-orient: vertical;
-		}
-	}
+	.setting-copy strong, .setting-copy span { display: block; }
+	.setting-copy strong { font: var(--t-headline); font-size: 15px; }
+	.setting-copy span { margin-top: 2px; color: var(--text-muted); font: var(--t-subhead); font-weight: 400; display: -webkit-box; overflow: hidden; line-clamp: 2; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+	.row-link > :global(.icon:last-child) { flex: none; color: var(--text-muted); }
 </style>

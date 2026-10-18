@@ -1,4 +1,7 @@
 <script lang="ts">
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
 	import { ago } from '#lib/format.ts';
@@ -131,12 +134,7 @@
 
 <svelte:head><title>Parts and controls · HolyArrs</title></svelte:head>
 
-<header class="page-head">
-	<div>
-		<h1>Parts and controls</h1>
-		<p>Turn parts on and off, restart one piece without stopping the rest, and restart HolyArrs.</p>
-	</div>
-</header>
+<PageHeader title="Parts and controls" subtitle="Turn parts on and off, restart one piece without stopping the rest, and restart HolyArrs." />
 
 {#if !allowed}
 	<p class="notice warn">Only the owner and admins can use these controls.</p>
@@ -159,121 +157,122 @@
 			<h2 id="h-confirm" class="h2">{asking.label}?</h2>
 			<p id="confirm-text" class="small">{asking.confirm.text.replace(/, send the same request again.*$/, '.')}</p>
 			<div class="row">
-				<button id="confirm-yes" class="btn btn-danger" type="button" onclick={confirmNow} disabled={busy === asking.key} aria-busy={busy === asking.key}>Yes, {asking.label.toLowerCase()}</button>
-				<button class="btn btn-quiet" type="button" onclick={() => (asking = null)}>Cancel</button>
+				<Button variant="destructive" id="confirm-yes" type="button" onclick={confirmNow} disabled={busy === asking.key} aria-busy={busy === asking.key}>Yes, {asking.label.toLowerCase()}</Button>
+				<Button variant="plain" type="button" onclick={() => (asking = null)}>Cancel</Button>
 			</div>
 			<p class="xs muted">This question lasts 60 seconds.</p>
 		</div>
 	{/if}
 
-	<section class="card" aria-labelledby="h-parts" data-testid="parts">
-		<h2 id="h-parts" class="h2">Parts</h2>
-		<p class="small muted">A part that is off hides its screens and stops its work. Its data is kept, and turning it on brings everything back.</p>
-		<ul class="rows list">
-			{#each parts.parts as p (p.part)}
-				<li data-testid="part" data-part={p.part} data-state={p.state}>
-					<div class="grow">
-						<div class="name">
-							{p.name}
-							<span class="chip {runTone(p.state)}">{runWord({ state: p.state, stuck: false })}</span>
-						</div>
-						<p class="xs muted">When off: {partStops[p.part as PartName]}</p>
-						{#if partNeeds[p.part as PartName]}<p class="xs muted">{partNeeds[p.part as PartName]}</p>{/if}
-						{#if p.reason}<p class="xs muted">{p.reason}</p>{/if}
-					</div>
-					<div class="row acts">
-						{#if p.on}
-							<button class="btn btn-ghost" type="button" onclick={() => restartPart(p)} disabled={!!busy} aria-label="Restart {p.name}">Restart</button>
-							<button class="btn btn-quiet" type="button" onclick={() => switchPart(p, false)} disabled={!!busy} aria-label="Turn {p.name} off">Turn off</button>
-						{:else}
-							<button class="btn btn-red" type="button" onclick={() => switchPart(p, true)} disabled={!!busy} aria-label="Turn {p.name} on">Turn on</button>
-						{/if}
-					</div>
-				</li>
-			{/each}
-		</ul>
-	</section>
-
-	<section class="card" aria-labelledby="h-stages" data-testid="control-stages">
-		<h2 id="h-stages" class="h2">Stages</h2>
-		<p class="small muted">Background work such as feed checks and imports. Pause one to hold it; restart one that seems stuck. The rest keeps running.</p>
-		{#if split.stages.length === 0}
-			<p class="small muted">No stages reported.</p>
-		{:else}
+	<div data-testid="parts">
+		<SettingsCard title="Parts" description="A part that is off hides its screens and stops its work. Its data is kept, and turning it on brings everything back.">
 			<ul class="rows list">
-				{#each split.stages as s (s.key)}
-					<li data-testid="control-stage" data-state={s.state}>
+				{#each parts.parts as p (p.part)}
+					<li data-testid="part" data-part={p.part} data-state={p.state}>
 						<div class="grow">
-							<div class="name">{s.name} <span class="chip {runTone(s.state)}">{runWord(s)}</span></div>
-							{#if s.reason}<p class="xs muted">{s.reason}</p>{/if}
+							<div class="name">
+								{p.name}
+								<span class="chip {runTone(p.state)}">{runWord({ state: p.state, stuck: false })}</span>
+							</div>
+							<p class="xs muted">When off: {partStops[p.part as PartName]}</p>
+							{#if partNeeds[p.part as PartName]}<p class="xs muted">{partNeeds[p.part as PartName]}</p>{/if}
+							{#if p.reason}<p class="xs muted">{p.reason}</p>{/if}
 						</div>
-						{#if pausable(s)}<div class="row acts">
-							{#if paused(s)}
-								<button class="btn btn-ghost" type="button" onclick={() => stage(s, 'resume')} disabled={!!busy} aria-label="Resume {s.name}">Resume</button>
+						<div class="row acts">
+							{#if p.on}
+								<Button type="button" onclick={() => restartPart(p)} disabled={!!busy} aria-label="Restart {p.name}">Restart</Button>
+								<Button variant="plain" type="button" onclick={() => switchPart(p, false)} disabled={!!busy} aria-label="Turn {p.name} off">Turn off</Button>
 							{:else}
-								<button class="btn btn-quiet" type="button" onclick={() => stage(s, 'pause')} disabled={!!busy} aria-label="Pause {s.name}">Pause</button>
+								<Button variant="primary" type="button" onclick={() => switchPart(p, true)} disabled={!!busy} aria-label="Turn {p.name} on">Turn on</Button>
 							{/if}
-							<button class="btn btn-quiet" type="button" onclick={() => stage(s, 'restart')} disabled={!!busy} aria-label="Restart {s.name}">Restart</button>
-						</div>{:else}<span class="xs muted">Restarts with the whole app</span>{/if}
-					</li>
-				{/each}
-			</ul>
-		{/if}
-	</section>
-
-	<section class="card" aria-labelledby="h-links" data-testid="control-links">
-		<h2 id="h-links" class="h2">Linked apps</h2>
-		<p class="small muted">Reconnect one Downloader, or test one Source, media server or subtitle site now. Nothing else is interrupted.</p>
-		{#if split.links.length === 0}
-			<p class="small muted">No Sources, Downloaders, subtitle sites or media servers yet.</p>
-		{:else}
-			<ul class="rows list">
-				{#each split.links as l (l.key)}
-					<li data-testid="control-link" data-state={l.state}>
-						<div class="grow">
-							<div class="name">{l.name} <span class="xs muted">{linkLabel(l.kind)}</span> <span class="chip {runTone(l.state)}">{runWord(l)}</span></div>
-							{#if l.reason}<p class="xs muted">{l.reason}</p>{/if}
 						</div>
-						{#if linkTarget(l.key)}
-							<button class="btn btn-ghost" type="button" onclick={() => reconnect(l)} disabled={!!busy} aria-label="{linkAction[l.kind]} {l.name}"
-								>{linkAction[l.kind]}</button
-							>
-						{/if}
 					</li>
 				{/each}
 			</ul>
-		{/if}
-	</section>
+		</SettingsCard>
+	</div>
 
-	<section class="card" aria-labelledby="h-app" data-testid="control-app">
-		<h2 id="h-app" class="h2">The whole app</h2>
-		<p class="small muted">
-			These stop HolyArrs. Docker's restart policy starts it again in a few seconds, unless the policy is <code>no</code>; then start the
-			container yourself. Each one asks first.
-		</p>
-		<div class="row acts" style="margin-top: var(--s-3)">
-			<button class="btn btn-ghost" type="button" onclick={() => app('restart', 'Restart HolyArrs')} disabled={!!busy}>Restart HolyArrs</button>
-			<button class="btn btn-ghost" type="button" onclick={() => app('safe-mode', 'Restart in safe mode')} disabled={!!busy}>Restart in safe mode</button>
-			<button class="btn btn-danger" type="button" onclick={() => app('shutdown', 'Shut down')} disabled={!!busy}>Shut down</button>
-		</div>
-		<p class="xs muted">Safe mode starts only the core, once: sign-in, settings and the Library list. Use it when a part keeps breaking the start.</p>
-	</section>
+	<div data-testid="control-stages">
+		<SettingsCard title="Stages" description="Background work such as feed checks and imports. Pause one to hold it; restart one that seems stuck. The rest keeps running.">
+			{#if split.stages.length === 0}
+				<p class="small muted">No stages reported.</p>
+			{:else}
+				<ul class="rows list">
+					{#each split.stages as s (s.key)}
+						<li data-testid="control-stage" data-state={s.state}>
+							<div class="grow">
+								<div class="name">{s.name} <span class="chip {runTone(s.state)}">{runWord(s)}</span></div>
+								{#if s.reason}<p class="xs muted">{s.reason}</p>{/if}
+							</div>
+							{#if pausable(s)}<div class="row acts">
+								{#if paused(s)}
+									<Button type="button" onclick={() => stage(s, 'resume')} disabled={!!busy} aria-label="Resume {s.name}">Resume</Button>
+								{:else}
+									<Button variant="plain" type="button" onclick={() => stage(s, 'pause')} disabled={!!busy} aria-label="Pause {s.name}">Pause</Button>
+								{/if}
+								<Button variant="plain" type="button" onclick={() => stage(s, 'restart')} disabled={!!busy} aria-label="Restart {s.name}">Restart</Button>
+							</div>{:else}<span class="xs muted">Restarts with the whole app</span>{/if}
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</SettingsCard>
+	</div>
 
-	<section class="card" aria-labelledby="h-used" data-testid="control-events">
-		<h2 id="h-used" class="h2">Controls used</h2>
-		{#if events.length === 0}
-			<p class="small muted">No controls used yet.</p>
-		{:else}
-			<ul class="rows list">
-				{#each events as e (e.ID)}
-					<li>
-						<span class="grow small">{e.Summary}</span>
-						<time class="xs muted" datetime={e.At}>{ago(e.At)}</time>
-					</li>
-				{/each}
-			</ul>
-		{/if}
-	</section>
+	<div data-testid="control-links">
+		<SettingsCard title="Linked apps" description="Reconnect one Downloader, or test one Source, media server or subtitle site now. Nothing else is interrupted.">
+			{#if split.links.length === 0}
+				<p class="small muted">No Sources, Downloaders, subtitle sites or media servers yet.</p>
+			{:else}
+				<ul class="rows list">
+					{#each split.links as l (l.key)}
+						<li data-testid="control-link" data-state={l.state}>
+							<div class="grow">
+								<div class="name">{l.name} <span class="xs muted">{linkLabel(l.kind)}</span> <span class="chip {runTone(l.state)}">{runWord(l)}</span></div>
+								{#if l.reason}<p class="xs muted">{l.reason}</p>{/if}
+							</div>
+							{#if linkTarget(l.key)}
+								<Button type="button" onclick={() => reconnect(l)} disabled={!!busy} aria-label="{linkAction[l.kind]} {l.name}"
+									>{linkAction[l.kind]}</Button>
+							{/if}
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</SettingsCard>
+	</div>
+
+	<div data-testid="control-app">
+		<SettingsCard title="The whole app">
+			<p class="small muted">
+				These stop HolyArrs. Docker's restart policy starts it again in a few seconds, unless the policy is <code>no</code>; then start the
+				container yourself. Each one asks first.
+			</p>
+			<div class="row acts" style="margin-top: var(--s-3)">
+				<Button type="button" onclick={() => app('restart', 'Restart HolyArrs')} disabled={!!busy}>Restart HolyArrs</Button>
+				<Button type="button" onclick={() => app('safe-mode', 'Restart in safe mode')} disabled={!!busy}>Restart in safe mode</Button>
+				<Button variant="destructive" type="button" onclick={() => app('shutdown', 'Shut down')} disabled={!!busy}>Shut down</Button>
+			</div>
+			<p class="xs muted">Safe mode starts only the core, once: sign-in, settings and the Library list. Use it when a part keeps breaking the start.</p>
+		</SettingsCard>
+	</div>
+
+	<div data-testid="control-events">
+		<SettingsCard title="Controls used">
+			{#if events.length === 0}
+				<p class="small muted">No controls used yet.</p>
+			{:else}
+				<ul class="rows list">
+					{#each events as e (e.ID)}
+						<li>
+							<span class="grow small">{e.Summary}</span>
+							<time class="xs muted" datetime={e.At}>{ago(e.At)}</time>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</SettingsCard>
+	</div>
 {/if}
 
 <style>

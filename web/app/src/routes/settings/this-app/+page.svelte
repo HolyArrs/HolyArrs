@@ -1,4 +1,8 @@
 <script lang="ts">
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
 	import { api, message, ApiError } from '#lib/api.ts';
@@ -126,13 +130,11 @@
 
 <svelte:head><title>This app · HolyArrs</title></svelte:head>
 
-<header class="page-head">
-	<div>
-		<h1>This app</h1>
-		<p>Version and health of this HolyArrs.</p>
-	</div>
-	<button class="btn btn-ghost" type="button" onclick={runNow} disabled={running} aria-busy={running}>Check again</button>
-</header>
+<PageHeader title="This app" subtitle="Version and health of this HolyArrs.">
+	{#snippet actions()}
+		<Button type="button" onclick={runNow} disabled={running} aria-busy={running}>Check again</Button>
+	{/snippet}
+</PageHeader>
 
 {#if error}
 	<p class="notice bad" role="alert">{error}</p>
@@ -175,7 +177,7 @@
 			<p class="xs muted">HolyArrs only tells you; it never updates by itself. Pull the new image when it suits you.</p>
 			{#if update.on && session.can('settings')}
 				<div class="row" style="margin-top: var(--s-3)">
-					<button class="btn btn-ghost" type="button" onclick={checkUpdate} disabled={checking} aria-busy={checking}>Check for updates now</button>
+					<Button type="button" onclick={checkUpdate} disabled={checking} aria-busy={checking}>Check for updates now</Button>
 				</div>
 			{/if}
 		</section>
@@ -206,39 +208,40 @@
 	</section>
 
 	{#if settings}
-		<form class="card" aria-labelledby="h-hset" onsubmit={saveSettings}>
-			<h2 id="h-hset" class="h2">Health check settings</h2>
-			<div class="two">
-				<div class="field">
-					<label for="hs-every">Check every (minutes)</label>
-					<input id="hs-every" class="input" type="number" min="1" max="1440" bind:value={settings.every_minutes} />
+		<form class="sc-form" onsubmit={saveSettings} aria-label="Health check settings">
+			<SettingsCard title="Health check settings">
+				<div class="two">
+					<div class="field">
+						<label for="hs-every">Check every (minutes)</label>
+						<input id="hs-every" class="input" type="number" min="1" max="1440" bind:value={settings.every_minutes} />
+					</div>
+					<div class="field">
+						<label for="hs-guard">Alert after this many runs in a row</label>
+						<input id="hs-guard" class="input" type="number" min="1" max="20" bind:value={settings.flap_guard} />
+					</div>
 				</div>
+				<p class="hint">A break or a fix must hold for that many runs before an Alert goes out, so a Downloader that blips once sends nothing.</p>
 				<div class="field">
-					<label for="hs-guard">Alert after this many runs in a row</label>
-					<input id="hs-guard" class="input" type="number" min="1" max="20" bind:value={settings.flap_guard} />
+					<label for="hs-low">Warn when free space is under (MB)</label>
+					<input id="hs-low" class="input" type="number" min="0" bind:value={settings.low_space_mb} />
 				</div>
-			</div>
-			<p class="hint">A break or a fix must hold for that many runs before an Alert goes out, so a Downloader that blips once sends nothing.</p>
-			<div class="field">
-				<label for="hs-low">Warn when free space is under (MB)</label>
-				<input id="hs-low" class="input" type="number" min="0" bind:value={settings.low_space_mb} />
-			</div>
-			<label class="checkline" style="margin-top: var(--s-4)"
-				><input type="checkbox" bind:checked={settings.update_check} /> Check once a day for a newer HolyArrs</label
-			>
-			<p class="hint">Off: HolyArrs never asks. On: one small request a day to the release feed below; nothing is ever installed by itself.</p>
-			<p class="hint" data-testid="update-privacy">{updatePrivacy(update?.version ?? 'version')}</p>
-			<div class="field">
-				<label for="hs-upd">Release feed</label>
-				<input id="hs-upd" class="input mono" bind:value={settings.update_check_url} placeholder={settings.update_check_default} autocomplete="off" />
-				<span class="hint">Empty: the HolyArrs project's releases.</span>
-			</div>
-			<label class="checkline"><input type="checkbox" bind:checked={settings.update_check_local} /> The release feed may be on the local network</label>
-			<label class="checkline"><input type="checkbox" bind:checked={settings.update_prerelease} /> Tell me about test versions too (such as v1.2.0-rc1)</label>
-			{#if settingsError}<p class="form-error" role="alert">{settingsError}</p>{/if}
-			<div class="row" style="margin-top: var(--s-4)">
-				<button class="btn btn-red" type="submit" disabled={saving} aria-busy={saving}>Save</button>
-			</div>
+				<label class="checkline" style="margin-top: var(--s-4)"
+					><input type="checkbox" bind:checked={settings.update_check} /> Check once a day for a newer HolyArrs</label
+				>
+				<p class="hint">Off: HolyArrs never asks. On: one small request a day to the release feed below; nothing is ever installed by itself.</p>
+				<p class="hint" data-testid="update-privacy">{updatePrivacy(update?.version ?? 'version')}</p>
+				<div class="field">
+					<label for="hs-upd">Release feed</label>
+					<input id="hs-upd" class="input mono" bind:value={settings.update_check_url} placeholder={settings.update_check_default} autocomplete="off" />
+					<span class="hint">Empty: the HolyArrs project's releases.</span>
+				</div>
+				<label class="checkline"><input type="checkbox" bind:checked={settings.update_check_local} /> The release feed may be on the local network</label>
+				<label class="checkline"><input type="checkbox" bind:checked={settings.update_prerelease} /> Tell me about test versions too (such as v1.2.0-rc1)</label>
+				{#if settingsError}<p class="form-error" role="alert">{settingsError}</p>{/if}
+				<div class="row" style="margin-top: var(--s-4)">
+					<Button variant="primary" type="submit" disabled={saving} aria-busy={saving}>Save</Button>
+				</div>
+			</SettingsCard>
 		</form>
 	{/if}
 
@@ -266,72 +269,72 @@
 		{/if}
 	</section>
 
-	<section class="card" aria-labelledby="h-parts" data-testid="links">
-		<h2 id="h-parts" class="h2" style="margin-bottom: var(--s-3)">Linked apps</h2>
-		{#if split.links.length === 0}
-			<p class="small muted">No Sources, Downloaders, subtitle sites or media servers yet.</p>
-		{:else}
-			<ul class="rows checks">
-				{#each split.links as l (l.key)}
-					<li data-testid="link" data-state={l.state}>
-						<span class="chip {runTone(l.state)}">{runWord(l)}</span>
-						<span class="grow small">
-							<b>{l.name}</b> <span class="xs muted">{linkLabel(l.kind)}</span>
-							{#if l.reason}<br /><span class="muted">{l.reason}</span>{/if}
-						</span>
-					</li>
-				{/each}
-			</ul>
-		{/if}
-	</section>
+	<div data-testid="links">
+		<SettingsCard title="Linked apps">
+			{#if split.links.length === 0}
+				<p class="small muted">No Sources, Downloaders, subtitle sites or media servers yet.</p>
+			{:else}
+				<ul class="rows checks">
+					{#each split.links as l (l.key)}
+						<li data-testid="link" data-state={l.state}>
+							<span class="chip {runTone(l.state)}">{runWord(l)}</span>
+							<span class="grow small">
+								<b>{l.name}</b> <span class="xs muted">{linkLabel(l.kind)}</span>
+								{#if l.reason}<br /><span class="muted">{l.reason}</span>{/if}
+							</span>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</SettingsCard>
+	</div>
 
-	<section class="card" aria-labelledby="h-store" data-testid="storage">
-		<h2 id="h-store" class="h2">Storage</h2>
-		<p class="small muted">Paths as HolyArrs sees them (inside the container in Docker). Everything HolyArrs keeps lives in the config folder.</p>
-		{#if storage}
-			<ul class="rows checks">
-				{#each storage.app as p (p.name)}
-					<li data-testid="storage-path">
-						<span class="grow small">
-							<b>{p.name}</b>{#if p.bytes} <span class="xs muted">· {bytes(p.bytes)}</span>{/if}
-							<br /><code class="xs">{p.path}</code>
-						</span>
-						<span class="xs muted">{freeWords(p.free_bytes)}</span>
-					</li>
-				{/each}
-				{#each storage.library_folders as p (p.path)}
-					<li data-testid="storage-media">
-						<span class="grow small"><b>{p.name}</b> <span class="xs muted">Library folder</span><br /><code class="xs">{p.path}</code></span>
-						<span class="xs muted">{freeWords(p.free_bytes)}</span>
-					</li>
-				{/each}
-				{#if storage.save_path}
-					<li>
-						<span class="grow small"><b>Downloader save folder</b><br /><code class="xs">{storage.save_path}</code></span>
-					</li>
-				{/if}
-			</ul>
-		{:else if storageNeedsProof}
-			<p class="small muted" style="margin-top: var(--s-2)">Storage paths are protected. Confirm your HolyArrs password in My account, then return here.</p>
-			<a class="btn btn-ghost" href={to('/settings/account')} style="margin-top: var(--s-3)">Open My account</a>
-		{:else if storageError}
-			<p class="notice bad small" role="alert" style="margin-top: var(--s-3)">{storageError}</p>
-		{:else}
-			<p class="small muted" style="margin-top: var(--s-2)">Paths are shown to people who may change settings.</p>
-		{/if}
-	</section>
+	<div data-testid="storage">
+		<SettingsCard title="Storage" description="Paths as HolyArrs sees them (inside the container in Docker). Everything HolyArrs keeps lives in the config folder.">
+			{#if storage}
+				<ul class="rows checks">
+					{#each storage.app as p (p.name)}
+						<li data-testid="storage-path">
+							<span class="grow small">
+								<b>{p.name}</b>{#if p.bytes} <span class="xs muted">· {bytes(p.bytes)}</span>{/if}
+								<br /><code class="xs">{p.path}</code>
+							</span>
+							<span class="xs muted">{freeWords(p.free_bytes)}</span>
+						</li>
+					{/each}
+					{#each storage.library_folders as p (p.path)}
+						<li data-testid="storage-media">
+							<span class="grow small"><b>{p.name}</b> <span class="xs muted">Library folder</span><br /><code class="xs">{p.path}</code></span>
+							<span class="xs muted">{freeWords(p.free_bytes)}</span>
+						</li>
+					{/each}
+					{#if storage.save_path}
+						<li>
+							<span class="grow small"><b>Downloader save folder</b><br /><code class="xs">{storage.save_path}</code></span>
+						</li>
+					{/if}
+				</ul>
+			{:else if storageNeedsProof}
+				<p class="small muted" style="margin-top: var(--s-2)">Storage paths are protected. Confirm your HolyArrs password in My account, then return here.</p>
+				<AdminLinkButton href={to('/settings/account')} style="margin-top: var(--s-3)">Open My account</AdminLinkButton>
+			{:else if storageError}
+				<p class="notice bad small" role="alert" style="margin-top: var(--s-3)">{storageError}</p>
+			{:else}
+				<p class="small muted" style="margin-top: var(--s-2)">Paths are shown to people who may change settings.</p>
+			{/if}
+		</SettingsCard>
+	</div>
 
 	{#if session.can('users')}
-		<section class="card" aria-labelledby="h-logs">
-			<h2 id="h-logs" class="h2">Logs</h2>
+		<SettingsCard title="Logs">
 			<p class="small muted" style="margin-top: var(--s-2)">
 				HolyArrs keeps its newest log lines in the config folder (up to 10 MB). Keys, tokens, passwords and links with sign-in details are hidden.
 			</p>
 			<div class="row" style="margin-top: var(--s-3)">
-				<a class="btn btn-ghost" href={to(`/settings/logs`)}>Read the log</a>
-				<a class="btn btn-quiet" href={to(`/api/v1/logs/download`)} download>Download the log</a>
+				<Button href={to(`/settings/logs`)}>Read the log</Button>
+				<AdminLinkButton variant="plain" href={to(`/api/v1/logs/download`)} download>Download the log</AdminLinkButton>
 			</div>
-		</section>
+		</SettingsCard>
 	{/if}
 
 	<p class="xs muted" style="margin-top: var(--s-5)">

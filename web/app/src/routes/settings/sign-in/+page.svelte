@@ -1,4 +1,7 @@
 <script lang="ts">
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { onMount } from 'svelte';
 	import { api, message, ApiError } from '#lib/api.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
@@ -164,18 +167,12 @@
 
 <svelte:head><title>Sign-in · HolyArrs</title></svelte:head>
 
-<header class="page-head">
-	<div>
-		<h1>Sign-in</h1>
-		<p>Who can open HolyArrs, and keys for scripts and other apps.</p>
-	</div>
-</header>
+<PageHeader title="Sign-in" subtitle="Who can open HolyArrs, and keys for scripts and other apps." />
 
 {#if !loaded}
 	<div class="sk" style="height: 240px"></div>
 {:else}
-	<section class="card" aria-labelledby="h-local">
-		<h2 id="h-local" class="h2">Local network</h2>
+	<SettingsCard title="Local network">
 		{#if error}
 			<p class="notice bad" role="alert" style="margin-top: var(--s-3)">{error}</p>
 		{:else}
@@ -190,10 +187,9 @@
 			</p>
 			<p class="hint">Changing keys and passwords still needs a real sign-in.</p>
 		{/if}
-	</section>
+	</SettingsCard>
 
-	<section class="card" aria-labelledby="h-tf">
-		<h2 id="h-tf" class="h2">Two-factor sign-in</h2>
+	<SettingsCard title="Two-factor sign-in">
 		<label class="switch" style="margin-top: var(--s-3)">
 			<input type="checkbox" checked={requireAdmins} disabled={!isOwner || savingRequire} aria-busy={savingRequire} onchange={(e) => setRequire(e.currentTarget.checked)} />
 			<span class="sw" aria-hidden="true"></span>
@@ -203,10 +199,9 @@
 			An admin without it can open only My account until they turn it on. Anyone can turn it on for themselves in My account.{#if !isOwner}
 				Only the owner can change this.{/if}
 		</p>
-	</section>
+	</SettingsCard>
 
-	<section class="card" aria-labelledby="h-pw">
-		<h2 id="h-pw" class="h2">Passwords</h2>
+	<SettingsCard title="Passwords">
 		<form class="passwords" onsubmit={saveMin}>
 			<fieldset disabled={!isOwner}>
 				<div class="field">
@@ -219,17 +214,16 @@
 					password safe. If HolyArrs can be reached from outside your home, use 12 or more.
 				</p>
 				{#if isOwner}
-					<button class="btn btn-red" type="submit" disabled={savingMinLength} aria-busy={savingMinLength}>Save</button>
+					<Button variant="primary" type="submit" disabled={savingMinLength} aria-busy={savingMinLength}>Save</Button>
 				{:else}
 					<p class="hint">Only the owner can change this.</p>
 				{/if}
 			</fieldset>
 		</form>
-	</section>
+	</SettingsCard>
 
 	{#each ['plex', 'jellyfin', 'emby'] as const as w (w)}
-		<section class="card" aria-labelledby="h-{w}">
-			<h2 id="h-{w}" class="h2">Sign in with {wayWord[w]}</h2>
+		<SettingsCard title={`Sign in with ${wayWord[w]}`}>
 			<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">
 				{#if w === 'plex'}
 					People sign in with their Plex account on Plex's own page; HolyArrs never sees their Plex password.
@@ -272,23 +266,21 @@
 						</div>
 					{/if}
 					{#if isOwner}
-						<button class="btn btn-red" type="submit" disabled={savingWay === w} aria-busy={savingWay === w}>Save</button>
+						<Button variant="primary" type="submit" disabled={savingWay === w} aria-busy={savingWay === w}>Save</Button>
 					{/if}
 				</fieldset>
 			</form>
-		</section>
+		</SettingsCard>
 	{/each}
 
-	<section class="card" aria-labelledby="h-proxy">
-		<h2 id="h-proxy" class="h2">Trusted proxies</h2>
+	<SettingsCard title="Trusted proxies">
 		<p class="small muted" style="margin-top: var(--s-2)">
 			If HolyArrs sits behind a reverse proxy, list the proxy addresses in <code>HOLYARRS_TRUSTED_PROXIES</code> and extra host
 			names in <code>HOLYARRS_ALLOWED_HOSTS</code> when you start it. Editing them here comes in a later stage.
 		</p>
-	</section>
+	</SettingsCard>
 
-	<section class="card" aria-labelledby="h-keys">
-		<h2 id="h-keys" class="h2">API keys</h2>
+	<SettingsCard title="API keys">
 		<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">For scripts and other apps. Send the key in the <code>X-Api-Key</code> header, never in an address.</p>
 
 		{#if keysNote}
@@ -299,8 +291,8 @@
 					<p class="small"><b>{fresh.label}</b>: copy this key now. It is shown only once.</p>
 					<div class="row">
 						<code class="key grow">{fresh.key}</code>
-						<button class="btn btn-ghost" type="button" onclick={copy}><Icon name="copy" size={18} /> Copy</button>
-						<button class="btn btn-quiet" type="button" onclick={() => (fresh = null)}>Done</button>
+						<Button icon="copy" type="button" onclick={copy}>Copy</Button>
+						<Button variant="plain" type="button" onclick={() => (fresh = null)}>Done</Button>
 					</div>
 				</div>
 			{/if}
@@ -308,7 +300,7 @@
 			<form class="row" onsubmit={makeKey}>
 				<label class="sr-only" for="key-label">Key name</label>
 				<input id="key-label" class="input grow" style="max-width: 320px" bind:value={label} placeholder="What uses this key?" maxlength="64" />
-				<button class="btn btn-red" type="submit" disabled={making || !label.trim()} aria-busy={making}><Icon name="key" size={18} /> Make a key</button>
+				<Button icon="key" variant="primary" type="submit" disabled={making || !label.trim()} aria-busy={making}>Make a key</Button>
 			</form>
 
 			{#if keys.length === 0}
@@ -321,13 +313,13 @@
 								<div class="name">{k.label} <span class="mono xs muted">{k.hint}</span></div>
 								<div class="xs muted">Made {date(k.created_at)} · {k.last_used_at ? `last used ${ago(k.last_used_at)}` : 'never used'}</div>
 							</div>
-							<button class="btn btn-danger" type="button" onclick={() => revoke(k)}>Revoke</button>
+							<Button variant="destructive" type="button" onclick={() => revoke(k)}>Revoke</Button>
 						</li>
 					{/each}
 				</ul>
 			{/if}
 		{/if}
-	</section>
+	</SettingsCard>
 {/if}
 
 <style>
@@ -347,8 +339,8 @@
 		gap: var(--s-3);
 		max-width: 520px;
 	}
-	.way button,
-	.passwords button {
+	.way :global(button),
+	.passwords :global(button) {
 		justify-self: start;
 	}
 	textarea.input {

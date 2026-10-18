@@ -1,4 +1,8 @@
 <script lang="ts">
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import IconButton from '#lib/ui/IconButton.svelte';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
@@ -100,39 +104,38 @@
 
 <svelte:head><title>Library folders · HolyArrs</title></svelte:head>
 
-<header class="page-head">
-	<div>
-		<h1>Library folders</h1>
-		<p>Where finished movies and show episodes are placed. HolyArrs checks each folder: that it exists, that it can write there, and whether files can be hardlinked from your Downloaders.</p>
-	</div>
-	{#if !adding}<button class="btn btn-red" type="button" onclick={() => (adding = true)}><Icon name="plus" size={18} /> Add a folder</button>{/if}
-</header>
+<PageHeader title="Library folders" subtitle="Where finished movies and show episodes are placed. HolyArrs checks each folder: that it exists, that it can write there, and whether files can be hardlinked from your Downloaders.">
+	{#snippet actions()}
+		{#if !adding}<Button icon="plus" variant="primary" type="button" onclick={() => (adding = true)}>Add a folder</Button>{/if}
+	{/snippet}
+</PageHeader>
 
 {#if adding}
-	<form class="card" onsubmit={add} aria-labelledby="h-add">
-		<h2 id="h-add" class="h2" style="margin-bottom: var(--s-4)">New Library folder</h2>
-		<div class="field">
-			<label for="lf-kind">Holds</label>
-			<select id="lf-kind" class="input" bind:value={kind}>
-				<option value="movie">Movies</option>
-				<option value="show">Shows</option>
-				<option value="music">Music</option>
-			</select>
-			<span class="hint">Movies, shows and music each get their own folders.</span>
-		</div>
-		<div class="field">
-			<label for="lf-path">Folder path</label>
-			<input id="lf-path" class="input mono" bind:value={path} placeholder={kind === 'show' ? '/shows' : kind === 'music' ? '/music' : '/movies'} autocomplete="off" spellcheck="false" />
-		</div>
-		<div class="field">
-			<label for="lf-label">Name <span class="muted">(optional)</span></label>
-			<input id="lf-label" class="input" bind:value={label} placeholder={kind === 'show' ? 'Shows' : kind === 'music' ? 'Music' : 'Movies'} maxlength="64" />
-		</div>
-		{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
-		<div class="row" style="margin-top: var(--s-5)">
-			<button class="btn btn-red" type="submit" disabled={saving} aria-busy={saving}>Add and check</button>
-			<button class="btn btn-quiet" type="button" onclick={() => ((adding = false), (formError = ''))}>Cancel</button>
-		</div>
+	<form class="sc-form" onsubmit={add} aria-label="New Library folder">
+		<SettingsCard title="New Library folder">
+			<div class="field">
+				<label for="lf-kind">Holds</label>
+				<select id="lf-kind" class="input" bind:value={kind}>
+					<option value="movie">Movies</option>
+					<option value="show">Shows</option>
+					<option value="music">Music</option>
+				</select>
+				<span class="hint">Movies, shows and music each get their own folders.</span>
+			</div>
+			<div class="field">
+				<label for="lf-path">Folder path</label>
+				<input id="lf-path" class="input mono" bind:value={path} placeholder={kind === 'show' ? '/shows' : kind === 'music' ? '/music' : '/movies'} autocomplete="off" spellcheck="false" />
+			</div>
+			<div class="field">
+				<label for="lf-label">Name <span class="muted">(optional)</span></label>
+				<input id="lf-label" class="input" bind:value={label} placeholder={kind === 'show' ? 'Shows' : kind === 'music' ? 'Music' : 'Movies'} maxlength="64" />
+			</div>
+			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
+			<div class="row" style="margin-top: var(--s-5)">
+				<Button variant="primary" type="submit" disabled={saving} aria-busy={saving}>Add and check</Button>
+				<Button variant="plain" type="button" onclick={() => ((adding = false), (formError = ''))}>Cancel</Button>
+			</div>
+		</SettingsCard>
 	</form>
 {/if}
 
@@ -143,7 +146,7 @@
 {:else if folders.length === 0 && !adding}
 	<EmptyState icon="folder" title="No Library folder yet">
 		<p>Add the folder where your movies should live, for example <code>/movies</code>, and one for shows, for example <code>/shows</code>. HolyArrs needs one before it can add a movie or a show.</p>
-		{#snippet actions()}<button class="btn btn-red" type="button" onclick={() => (adding = true)}>Add a folder</button>{/snippet}
+		{#snippet actions()}<Button variant="primary" type="button" onclick={() => (adding = true)}>Add a folder</Button>{/snippet}
 	</EmptyState>
 {:else if folders.length}
 	<ul class="card rows">
@@ -155,8 +158,8 @@
 						<form class="row" onsubmit={(e) => (e.preventDefault(), saveLabel(f))}>
 							<label class="sr-only" for="ed-{f.id}">Name</label>
 							<input id="ed-{f.id}" class="input" style="max-width: 260px" bind:value={editLabel} maxlength="64" />
-							<button class="btn btn-ghost" type="submit" disabled={busyId === f.id}>Save</button>
-							<button class="btn btn-quiet" type="button" onclick={() => (editing = null)}>Cancel</button>
+							<Button type="submit" disabled={busyId === f.id}>Save</Button>
+							<Button variant="plain" type="button" onclick={() => (editing = null)}>Cancel</Button>
 						</form>
 					{:else}
 						<div class="name">{f.label || f.path}</div>
@@ -170,13 +173,9 @@
 					</div>
 				</div>
 				<div class="acts">
-					<button class="icon-btn" type="button" title="Check again" aria-label="Check {f.path} again" disabled={busyId === f.id} onclick={() => recheck(f)}>
-						<Icon name="refresh" size={18} />
-					</button>
-					<button class="btn btn-quiet" type="button" onclick={() => ((editing = f.id), (editLabel = f.label))}>Rename</button>
-					<button class="icon-btn" type="button" title="Remove" aria-label="Remove {f.path}" disabled={busyId === f.id} onclick={() => remove(f)}>
-						<Icon name="trash" size={18} />
-					</button>
+					<IconButton icon="refresh" label="Check {f.path} again" type="button" title="Check again" disabled={busyId === f.id} onclick={() => recheck(f)} />
+					<Button variant="plain" type="button" onclick={() => ((editing = f.id), (editLabel = f.label))}>Rename</Button>
+					<IconButton icon="trash" label="Remove {f.path}" type="button" title="Remove" disabled={busyId === f.id} onclick={() => remove(f)} />
 				</div>
 			</li>
 		{/each}

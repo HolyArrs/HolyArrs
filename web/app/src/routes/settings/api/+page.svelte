@@ -1,4 +1,8 @@
 <script lang="ts">
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
@@ -41,16 +45,13 @@
 
 <svelte:head><title>API for other apps · HolyArrs</title></svelte:head>
 
-<header class="page-head">
-	<div>
-		<h1>API for other apps</h1>
-		<p>Scripts, dashboards and other apps talk to HolyArrs through its API with a key of their own.</p>
-	</div>
-	<a class="btn btn-ghost" href={to(`/api/v1/openapi.json`)} target="_blank" rel="noopener">The OpenAPI file</a>
-</header>
+<PageHeader title="API for other apps" subtitle="Scripts, dashboards and other apps talk to HolyArrs through its API with a key of their own.">
+	{#snippet actions()}
+		<AdminLinkButton href={to(`/api/v1/openapi.json`)} target="_blank" rel="noopener">The OpenAPI file</AdminLinkButton>
+	{/snippet}
+</PageHeader>
 
-<section class="card" aria-labelledby="h-start">
-	<h2 id="h-start" class="h2">Start here</h2>
+<SettingsCard title="Start here">
 	<ol class="steps small">
 		<li>Make a key in <a href={to(`/settings/sign-in`)}>Settings > Sign-in > API keys</a>. Give it only the scopes it needs. The key is shown once; copy it then.</li>
 		<li>Send it in the <code>X-Api-Key</code> header with every call, never in the address.</li>
@@ -58,26 +59,26 @@
 			The base address is
 			<div class="cmd address">
 				<code data-testid="api-base">{base}</code>
-				<button class="btn btn-quiet" type="button" onclick={() => copy(base)} aria-label="Copy the base address"><Icon name="copy" size={16} /></button>
+				<Button variant="plain" type="button" onclick={() => copy(base)} aria-label="Copy the base address"><Icon name="copy" size={16} /></Button>
 			</div>
 		</li>
 	</ol>
-</section>
+</SettingsCard>
 
 {#if spec?.['x-holyarrs-scopes']}
-	<section class="card" aria-labelledby="h-scopes" data-testid="api-scopes">
-		<h2 id="h-scopes" class="h2">Scopes</h2>
-		<dl class="facts">
-			{#each Object.entries(spec['x-holyarrs-scopes']) as [name, note] (name)}
-				<dt><code>{name}</code></dt>
-				<dd class="small">{note}</dd>
-			{/each}
-		</dl>
-	</section>
+	<div data-testid="api-scopes">
+		<SettingsCard title="Scopes">
+			<dl class="facts">
+				{#each Object.entries(spec['x-holyarrs-scopes']) as [name, note] (name)}
+					<dt><code>{name}</code></dt>
+					<dd class="small">{note}</dd>
+				{/each}
+			</dl>
+		</SettingsCard>
+	</div>
 {/if}
 
-<section class="card" aria-labelledby="h-ex">
-	<h2 id="h-ex" class="h2">Example calls</h2>
+<SettingsCard title="Example calls">
 	<p class="small muted">Set <code>HOLYARRS_KEY</code> to your key in your shell first.</p>
 	<ul class="examples">
 		{#each examples as e (e.cmd)}
@@ -85,48 +86,49 @@
 				<span class="small">{e.what}</span>
 				<div class="cmd">
 					<code class="mono xs">{e.cmd}</code>
-					<button class="btn btn-quiet" type="button" onclick={() => copy(e.cmd)} aria-label="Copy: {e.what}"><Icon name="copy" size={16} /></button>
+					<Button variant="plain" type="button" onclick={() => copy(e.cmd)} aria-label="Copy: {e.what}"><Icon name="copy" size={16} /></Button>
 				</div>
 			</li>
 		{/each}
 	</ul>
-</section>
+</SettingsCard>
 
-<section class="card" aria-labelledby="h-routes" data-testid="api-routes">
-	<h2 id="h-routes" class="h2">Every route</h2>
-	{#if error}
-		<p class="form-error" role="alert">{error}</p>
-	{:else if !spec}
-		<div class="sk" style="height: 200px"></div>
-	{:else}
-		<div class="field">
-			<label for="api-q">Find a route</label>
-			<input id="api-q" class="input" type="search" bind:value={q} placeholder="For example downloads" autocomplete="off" />
-		</div>
-		<p class="xs muted" role="status">{filterOps(ops, q).length} of {ops.length} routes</p>
-		{#each shown as g (g.tag)}
-			<h3 class="tag">{g.tag}</h3>
-			<ul class="ops">
-				{#each g.ops as o (o.method + o.path)}
-					{@const id = o.method + ' ' + o.path}
-					<li data-testid="api-op">
-						<button class="op" type="button" aria-expanded={open === id} onclick={() => (open = open === id ? null : id)}>
-							<span class="m m-{o.method.toLowerCase()}">{o.method}</span>
-							<code class="p">{o.path}</code>
-							<span class="s small">{o.summary}</span>
-						</button>
-						{#if open === id}
-							<div class="more small">
-								<p>{o.description}</p>
-								<p class="xs muted">Scope <code>{o.scope}</code> · needs <code>{o.permission}</code></p>
-							</div>
-						{/if}
-					</li>
-				{/each}
-			</ul>
-		{/each}
-	{/if}
-</section>
+<div data-testid="api-routes">
+	<SettingsCard title="Every route">
+		{#if error}
+			<p class="form-error" role="alert">{error}</p>
+		{:else if !spec}
+			<div class="sk" style="height: 200px"></div>
+		{:else}
+			<div class="field">
+				<label for="api-q">Find a route</label>
+				<input id="api-q" class="input" type="search" bind:value={q} placeholder="For example downloads" autocomplete="off" />
+			</div>
+			<p class="xs muted" role="status">{filterOps(ops, q).length} of {ops.length} routes</p>
+			{#each shown as g (g.tag)}
+				<h3 class="tag">{g.tag}</h3>
+				<ul class="ops">
+					{#each g.ops as o (o.method + o.path)}
+						{@const id = o.method + ' ' + o.path}
+						<li data-testid="api-op">
+							<button class="op" type="button" aria-expanded={open === id} onclick={() => (open = open === id ? null : id)}>
+								<span class="m m-{o.method.toLowerCase()}">{o.method}</span>
+								<code class="p">{o.path}</code>
+								<span class="s small">{o.summary}</span>
+							</button>
+							{#if open === id}
+								<div class="more small">
+									<p>{o.description}</p>
+									<p class="xs muted">Scope <code>{o.scope}</code> · needs <code>{o.permission}</code></p>
+								</div>
+							{/if}
+						</li>
+					{/each}
+				</ul>
+			{/each}
+		{/if}
+	</SettingsCard>
+</div>
 
 <style>
 	.steps {
@@ -158,7 +160,7 @@
 		white-space: pre-wrap;
 	}
 	.address { align-items: center; margin-top: var(--s-2); }
-	.cmd button { flex: none; min-width: var(--tap); min-height: var(--tap); }
+	.cmd :global(button) { flex: none; min-width: var(--tap); min-height: var(--tap); }
 	.tag {
 		font-size: 0.9375rem;
 		margin: var(--s-4) 0 var(--s-2);

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { onMount } from 'svelte';
 	import { api, message, ApiError } from '#lib/api.ts';
 	import { to } from '#lib/paths.ts';
@@ -67,12 +69,7 @@
 
 <svelte:head><title>TMDB key · HolyArrs</title></svelte:head>
 
-<header class="page-head">
-	<div>
-		<h1>TMDB key</h1>
-		<p>HolyArrs looks up movie names, dates and posters on TMDB, with your own read access token. It is stored encrypted and never shown again in full.</p>
-	</div>
-</header>
+<PageHeader title="TMDB key" subtitle="HolyArrs looks up movie names, dates and posters on TMDB, with your own read access token. It is stored encrypted and never shown again in full." />
 
 {#if !loaded}
 	<div class="sk" style="height: 160px"></div>
@@ -82,7 +79,7 @@
 	<section class="card proof-state" aria-labelledby="h-confirm-key">
 		<h2 id="h-confirm-key" class="h2">Confirm your password to manage this key</h2>
 		<p class="small muted">TMDB credentials are protected settings. Confirm your HolyArrs password in My account, then return here to view the saved state or replace the token.</p>
-		<a class="btn btn-ghost" href={to('/settings/account')}>Open My account</a>
+		<Button href={to('/settings/account')}>Open My account</Button>
 	</section>
 {:else if missingRoute || from === 'file'}
 	<EmptyState icon="key" title="The key comes from a file">
@@ -102,7 +99,7 @@
 				<span class="hint">Find it on themoviedb.org under Settings, API: the long "API Read Access Token", not the short API key.</span>
 			</div>
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
-			<button class="btn btn-red" type="submit" disabled={saving} aria-busy={saving} style="margin-top: var(--s-4)">Save the key</button>
+			<Button variant="primary" type="submit" disabled={saving} aria-busy={saving} style="margin-top: var(--s-4)">Save the key</Button>
 		</form>
 	</section>
 {/if}

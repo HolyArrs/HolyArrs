@@ -2,8 +2,8 @@
 	import { to, appPath } from '#lib/paths.ts';
 	import type { Snippet } from 'svelte';
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
 	import Icon from '#lib/Icon.svelte';
+	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import { sections as all, visible } from '#lib/settings.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
@@ -32,187 +32,117 @@
 	let { children }: { children: Snippet } = $props();
 	const current = $derived(appPath(page.url.pathname));
 	const currentSection = $derived(sections.find((section) => section.href === current || current.startsWith(section.href + '/')));
-
-	function pickSection(event: Event) {
-		const href = (event.currentTarget as HTMLSelectElement).value;
-		if (href) void goto(to(href));
-	}
+	// Below the two-column width the section list is a Menu, so it stays one tap away on tablets and phones.
+	const menuItems = $derived<MenuItem[]>([
+		{ label: 'All settings', icon: 'home', href: to('/settings'), checked: current === '/settings' },
+		...groups.flatMap((group) => {
+			const items = sections.filter((section) => group.hrefs.includes(section.href));
+			return items.length
+				? [
+						{ kind: 'heading' as const, label: group.label },
+						...items.map((section) => ({ label: section.label, icon: section.icon, href: to(section.href), checked: currentSection?.href === section.href }))
+					]
+				: [];
+		})
+	]);
 </script>
 
 <div class="settings-shell">
 	<nav class="settings-nav" aria-label="Settings sections">
-		<div class="nav-heading"><p class="nav-title">Settings</p></div>
-
-		<a class="overview-link" href={to('/settings')} aria-current={current === '/settings' ? 'page' : undefined}>
-			<Icon name="home" size={18} />
-			<span>Home</span>
+		<a class="nav-row" href={to('/settings')} aria-current={current === '/settings' ? 'page' : undefined}>
+			<span class="ic"><Icon name="home" size={16} /></span>
+			<span>All settings</span>
 		</a>
 
 		{#each groups as group (group.label)}
 			{@const items = sections.filter((section) => group.hrefs.includes(section.href))}
 			{#if items.length}
-				<section class="nav-group" aria-labelledby="settings-nav-{group.label.toLowerCase()}">
-					<h2 id="settings-nav-{group.label.toLowerCase()}">{group.label}</h2>
-					<div class="nav-items">
-						{#each items as section (section.href)}
-							<a href={to(section.href)} aria-current={currentSection?.href === section.href ? 'page' : undefined}>
-								<Icon name={section.icon} size={17} />
-								<span>{section.label}</span>
-							</a>
-						{/each}
-					</div>
+				<section class="nav-group" aria-labelledby="settings-nav-{group.label.toLowerCase().replace(' ', '-')}">
+					<h2 id="settings-nav-{group.label.toLowerCase().replace(' ', '-')}">{group.label}</h2>
+					{#each items as section (section.href)}
+						<a class="nav-row" href={to(section.href)} aria-current={currentSection?.href === section.href ? 'page' : undefined}>
+							<span class="ic"><Icon name={section.icon} size={16} /></span>
+							<span>{section.label}</span>
+						</a>
+					{/each}
 				</section>
 			{/if}
 		{/each}
 	</nav>
 
 	<div class="settings-workspace">
-		<div class="section-picker">
-			<label for="settings-section">Settings section</label>
-			<div class="select-wrap">
-				<Icon name={currentSection?.icon ?? 'settings'} size={18} />
-				<select id="settings-section" value={currentSection?.href ?? '/settings'} onchange={pickSection}>
-					<option value="/settings">Settings overview</option>
-					{#each sections as section (section.href)}
-						<option value={section.href}>{section.label}</option>
-					{/each}
-				</select>
+		{#if current !== '/settings'}
+			<div class="section-picker">
+				<Menu label="Settings sections" variant="button" icon={currentSection?.icon ?? 'settings'} text={currentSection?.label ?? 'All settings'} align="start" width={280} items={menuItems} />
 			</div>
-		</div>
-		<div class:overview-content={current === '/settings'} class="settings-content">{@render children()}</div>
+		{/if}
+		<div class="settings-content">{@render children()}</div>
 	</div>
 </div>
 
 <style>
 	.settings-shell {
 		display: grid;
-		grid-template-columns: 288px minmax(0, 1fr);
-		gap: 10px;
-		min-height: calc(100dvh - var(--topbar) - var(--s-8));
-		margin: calc(var(--s-4) * -1);
-		background: var(--surface-3);
-	}
-	.settings-nav,
-	.settings-workspace {
-		border: 1px solid var(--line);
-		background: var(--surface-1);
+		grid-template-columns: 236px minmax(0, 1fr);
+		gap: clamp(24px, 3vw, 48px);
+		align-items: start;
 	}
 	.settings-nav {
 		position: sticky;
-		top: var(--topbar);
-		align-self: start;
-		height: calc(100dvh - var(--topbar) - var(--s-8));
+		top: calc(var(--topbar) + 8px);
+		max-height: calc(100dvh - var(--topbar) - 24px);
 		overflow-y: auto;
-		padding: var(--s-5) var(--s-3) var(--s-8);
-		border-radius: var(--r-panel);
+		padding: 4px 4px 24px;
 		scrollbar-width: thin;
 	}
-	.nav-heading { padding: 0 var(--s-2) var(--s-4); }
-	.nav-heading .nav-title {
-		font-size: var(--text-xl);
-		line-height: 1.2;
-		letter-spacing: -0.025em;
+	.nav-group { margin-top: 18px; }
+	.nav-group h2 {
+		padding: 0 10px 6px;
+		font: var(--t-footnote);
+		font-weight: 600;
+		color: var(--text-muted);
 	}
-	.overview-link,
-	.nav-items a {
+	.nav-row {
 		display: flex;
 		align-items: center;
-		gap: var(--s-3);
-		min-height: 40px;
-		padding: 0 var(--s-3);
-		border: 1px solid transparent;
+		gap: 10px;
+		min-height: 36px;
+		padding: 0 10px 0 6px;
 		border-radius: var(--r-btn);
 		color: var(--text);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		transition: background var(--dur-fast), border-color var(--dur-fast), box-shadow var(--dur-fast);
+		font: var(--t-callout);
+		font-weight: 500;
+		transition: background var(--dur-fast) var(--ease-out);
 	}
-	.overview-link:hover,
-	.nav-items a:hover { background: var(--surface-2); }
-	.overview-link[aria-current='page'],
-	.nav-items a[aria-current='page'] {
-		border-color: var(--line);
-		background: var(--surface-1);
-		box-shadow: 0 1px 3px rgb(24 24 21 / 8%);
-		font-weight: var(--weight-semibold);
-	}
-	.nav-group { margin-top: var(--s-4); }
-	.nav-group h2 {
-		padding: 0 var(--s-3) var(--s-1);
-		font-size: var(--text-xs);
-		font-weight: var(--weight-semibold);
+	.nav-row:hover { background: var(--surface-2); }
+	.nav-row[aria-current='page'] { background: var(--surface-3); font-weight: 600; }
+	.nav-row[aria-current='page'] .ic { background: var(--accent-fill); color: var(--text-on-red); }
+	.ic {
+		width: 26px;
+		height: 26px;
+		flex: none;
+		display: grid;
+		place-items: center;
+		border-radius: 7px;
+		background: var(--surface-2);
 		color: var(--text-muted);
-		letter-spacing: 0.01em;
+		transition: background var(--dur-fast), color var(--dur-fast);
 	}
-	.nav-items {
-		position: relative;
-		padding-left: var(--s-2);
-	}
-	.nav-items::before {
-		content: '';
-		position: absolute;
-		inset-block: 6px;
-		left: 4px;
-		width: 1px;
-		background: var(--line);
-	}
-	.nav-items a { position: relative; z-index: 1; }
-	.settings-workspace {
-		min-width: 0;
-		border-radius: var(--r-panel);
-		overflow: hidden;
-	}
-	.settings-content {
-		width: 100%;
-		min-width: 0;
-		padding: var(--s-6);
-	}
-	.settings-content.overview-content { padding: 0; }
-	.section-picker {
-		display: none;
-		padding: var(--s-4) var(--s-5) 0;
-	}
-	.section-picker label {
-		display: block;
-		margin-bottom: var(--s-2);
-		font-size: var(--text-xs);
-		font-weight: var(--weight-semibold);
-		color: var(--text-muted);
-	}
-	.select-wrap { position: relative; display: flex; align-items: center; }
-	.select-wrap > :global(.icon) {
-		position: absolute;
-		left: var(--s-3);
-		z-index: 1;
-		color: var(--text-muted);
-		pointer-events: none;
-	}
-	.select-wrap select {
-		width: 100%;
-		min-height: 44px;
-		padding: 0 var(--s-4) 0 calc(var(--s-3) + 26px);
-		border: 1px solid var(--line);
-		border-radius: var(--r-btn);
-		background: var(--surface-1);
-		color: var(--text);
-		font: inherit;
-		font-weight: var(--weight-medium);
-	}
-	@media (max-width: 1000px) {
-		.settings-shell {
-			grid-template-columns: minmax(0, 1fr);
-			margin: 0;
-			min-height: 0;
-			background: transparent;
-		}
+	.settings-workspace { min-width: 0; max-width: 820px; }
+	.settings-content { width: 100%; min-width: 0; }
+	.section-picker { display: none; margin-bottom: 16px; }
+	/* Section pages: every group is a SettingsCard (or a list card shaped like
+	   one), stacked with one rhythm. */
+	.settings-content > :global(:is(.ui-settings, .sc-form, .card, div[data-testid], ul.card) + :is(.ui-settings, .sc-form, .card, div[data-testid], ul, p, section)) { margin-top: 16px; }
+	.settings-content :global(.card) { border: 0; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); padding: 18px 20px; }
+	.settings-content :global(.card .h2) { font: var(--t-headline); font-size: 17px; letter-spacing: normal; }
+	.settings-content :global(.sc-form) { display: block; }
+	.settings-content :global(.ui-settings .h2) { font: var(--t-headline); font-size: 16px; letter-spacing: normal; }
+	@media (pointer: coarse) { .nav-row { min-height: 44px; } }
+	@media (max-width: 1099px) {
+		.settings-shell { grid-template-columns: minmax(0, 1fr); }
 		.settings-nav { display: none; }
-		.settings-workspace { border-radius: var(--r-panel); }
+		.settings-workspace { max-width: none; }
 		.section-picker { display: block; }
-	}
-	@media (max-width: 600px) {
-		.settings-workspace { border: 0; border-radius: 0; }
-		.section-picker { padding: var(--s-3) var(--s-4) 0; }
-		.settings-content { padding: var(--s-4); }
-		.settings-content.overview-content { padding: 0; }
 	}
 </style>

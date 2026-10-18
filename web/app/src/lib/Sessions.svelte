@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Button from '#lib/ui/Button.svelte';
+	import StatusPill from '#lib/ui/StatusPill.svelte';
 	// Signed-in devices: My account (path /auth/sessions) or one person on
 	// the Users page (path /users/<id>/sessions).
 	import { onMount } from 'svelte';
@@ -67,24 +69,22 @@
 				<li data-testid="session" data-current={s.current}>
 					<span class="grow small">
 						<b>{s.device}</b>
-						{#if s.current}<span class="chip ok">This device</span>{/if}
+						{#if s.current}<StatusPill kind="in_library" label="This device" />{/if}
 						<br /><span class="xs muted"
 							>Signed in {dateTime(s.created_at)} · last used <time datetime={s.last_used_at}>{ago(s.last_used_at)}</time></span
 						>
 					</span>
 					{#if !s.current}
-						<button class="btn btn-quiet" type="button" disabled={busy} onclick={() => endOne(s)} aria-label="Sign out {s.device}, last used {ago(s.last_used_at)}"
-							>Sign out</button
-						>
+						<Button variant="plain" type="button" disabled={busy} onclick={() => endOne(s)} aria-label="Sign out {s.device}, last used {ago(s.last_used_at)}"
+							>Sign out</Button>
 					{/if}
 				</li>
 			{/each}
 		</ul>
 		{#if mine ? others(rows) > 0 : rows.length > 0}
 			<div class="row" style="margin-top: var(--s-3)">
-				<button class="btn btn-ghost" type="button" disabled={busy} aria-busy={busy} onclick={endOthers}
-					>{mine ? 'Sign out all other devices' : `Sign ${name || 'them'} out everywhere`}</button
-				>
+				<Button type="button" disabled={busy} aria-busy={busy} onclick={endOthers}
+					>{mine ? 'Sign out all other devices' : `Sign ${name || 'them'} out everywhere`}</Button>
 			</div>
 		{/if}
 	{/if}
@@ -103,9 +103,6 @@
 		min-width: 0;
 		overflow-wrap: anywhere;
 	}
-	.chip {
-		margin-left: var(--s-2);
-	}
 	.empty-state {
 		padding: var(--s-4);
 		border: 1px dashed var(--line-strong);
@@ -120,7 +117,7 @@
 			align-items: flex-start;
 			flex-direction: column;
 		}
-		.sessions li .btn {
+		.sessions li > :global(.ui-btn) {
 			width: 100%;
 			min-height: 44px;
 		}

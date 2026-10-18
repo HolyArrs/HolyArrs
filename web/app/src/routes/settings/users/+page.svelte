@@ -1,4 +1,7 @@
 <script lang="ts">
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
@@ -273,20 +276,14 @@
 
 <svelte:head><title>Users · HolyArrs</title></svelte:head>
 
-<header class="page-head">
-	<div>
-		<h1>Users</h1>
-		<p>Invite family and friends, and choose what each one may do.</p>
-	</div>
-</header>
+<PageHeader title="Users" subtitle="Invite family and friends, and choose what each one may do." />
 
 {#if !loaded}
 	<div class="sk" style="height: 240px"></div>
 {:else if error}
 	<p class="notice bad" role="alert">{error}</p>
 {:else}
-	<section class="card" aria-labelledby="h-invite">
-		<h2 id="h-invite" class="h2">Invite someone</h2>
+	<SettingsCard title="Invite someone">
 		<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">Send them a one-time link. They pick their own name and password.</p>
 
 		{#if link}
@@ -294,8 +291,8 @@
 				<p class="small"><b>Invite link.</b> It works once and is shown only now.</p>
 				<div class="row">
 					<code class="key grow">{link}</code>
-					<button class="btn btn-ghost" type="button" onclick={copyLink}><Icon name="copy" size={18} /> Copy</button>
-					<button class="btn btn-quiet" type="button" onclick={() => (link = '')}>Done</button>
+					<Button icon="copy" type="button" onclick={copyLink}>Copy</Button>
+					<Button variant="plain" type="button" onclick={() => (link = '')}>Done</Button>
 				</div>
 			</div>
 		{/if}
@@ -330,12 +327,11 @@
 					<input id="inv-days" class="input" type="number" min="1" max="30" bind:value={days} style="max-width: 120px" />
 				</div>
 			</div>
-			<button class="btn btn-red" type="submit" disabled={making} aria-busy={making}><Icon name="plus" size={18} /> Make an invite link</button>
+			<Button icon="plus" variant="primary" type="submit" disabled={making} aria-busy={making}>Make an invite link</Button>
 		</form>
-	</section>
+	</SettingsCard>
 
-	<section class="card" aria-labelledby="h-people">
-		<h2 id="h-people" class="h2">People</h2>
+	<SettingsCard title="People">
 		<ul class="rows" style="margin-top: var(--s-3)">
 			{#each users as u (u.id)}
 				<li class="person">
@@ -358,23 +354,20 @@
 					{#if mayChange(u) || maySeeDevices(u)}
 						<div class="row acts">
 							{#if maySeeDevices(u)}
-								<button class="btn btn-quiet" type="button" onclick={() => openDevices(u)} aria-label="Signed-in devices of {u.name}">Devices</button>
+								<Button variant="plain" type="button" onclick={() => openDevices(u)} aria-label="Signed-in devices of {u.name}">Devices</Button>
 							{/if}
 						{#if mayChange(u)}
-							<button class="btn btn-ghost" type="button" onclick={() => openEdit(u)} aria-label="Change {u.name}">Change</button>
+							<Button type="button" onclick={() => openEdit(u)} aria-label="Change {u.name}">Change</Button>
 							{#if u.two_factor}
-								<button class="btn btn-quiet" type="button" onclick={() => resetTwoFactor(u)} aria-label="Reset two-factor sign-in for {u.name}"
-									>Reset two-factor</button
-								>
+								<Button variant="plain" type="button" onclick={() => resetTwoFactor(u)} aria-label="Reset two-factor sign-in for {u.name}"
+									>Reset two-factor</Button>
 							{/if}
 							{#if u.state === 'active'}
-								<button class="btn btn-danger" type="button" onclick={() => setState(u, 'disabled')} disabled={saving} aria-label="Turn off {u.name}"
-									>Turn off</button
-								>
+								<Button variant="destructive" type="button" onclick={() => setState(u, 'disabled')} disabled={saving} aria-label="Turn off {u.name}"
+									>Turn off</Button>
 							{:else}
-								<button class="btn btn-ghost" type="button" onclick={() => setState(u, 'active')} disabled={saving} aria-label="Turn on {u.name}"
-									>Turn on</button
-								>
+								<Button type="button" onclick={() => setState(u, 'active')} disabled={saving} aria-label="Turn on {u.name}"
+									>Turn on</Button>
 							{/if}
 						{/if}
 						</div>
@@ -382,10 +375,9 @@
 				</li>
 			{/each}
 		</ul>
-	</section>
+	</SettingsCard>
 
-	<section class="card" aria-labelledby="h-invites">
-		<h2 id="h-invites" class="h2">Invite links</h2>
+	<SettingsCard title="Invite links">
 		{#if invites.length === 0}
 			<p class="small muted" style="margin-top: var(--s-3)">No invites yet.</p>
 		{:else}
@@ -397,13 +389,13 @@
 							<div class="xs muted">Made by {i.created_by} {ago(i.created_at)} · {inviteState(i)}</div>
 						</div>
 						{#if !i.used_at && new Date(i.expires_at).getTime() > Date.now()}
-							<button class="btn btn-quiet" type="button" onclick={() => takeBack(i)}>Take back</button>
+							<Button variant="plain" type="button" onclick={() => takeBack(i)}>Take back</Button>
 						{/if}
 					</li>
 				{/each}
 			</ul>
 		{/if}
-	</section>
+	</SettingsCard>
 {/if}
 
 {#snippet presetPicker(list: Perm[], set: (next: Perm[]) => void, name: string)}
@@ -442,7 +434,7 @@
 		<p class="small muted" style="margin-bottom: var(--s-3)">Signing out ends the session at once; they sign in again with their password.</p>
 		<Sessions path="/users/{devicesOf.id}/sessions" name={devicesOf.name} />
 		<div class="row end" style="margin-top: var(--s-4)">
-			<button class="btn btn-quiet" type="button" onclick={() => devDialog?.close()}>Close</button>
+			<Button variant="plain" type="button" onclick={() => devDialog?.close()}>Close</Button>
 		</div>
 	{/if}
 </dialog>
@@ -496,8 +488,8 @@
 				<p class="hint">No weekly ask limit: {editing.name} may approve asks.</p>
 			{/if}
 			<div class="row end">
-				<button class="btn btn-quiet" type="button" onclick={() => dialog?.close()}>Cancel</button>
-				<button class="btn btn-red" type="submit" disabled={saving} aria-busy={saving}>Save</button>
+				<Button variant="plain" type="button" onclick={() => dialog?.close()}>Cancel</Button>
+				<Button variant="primary" type="submit" disabled={saving} aria-busy={saving}>Save</Button>
 			</div>
 		</form>
 	{/if}
@@ -535,7 +527,7 @@
 	.soon { color: var(--text-muted); }
 	.soon .chip { margin-left: 6px; }
 	.custom { font-weight: 600; }
-	.invite button[type='submit'] {
+	.invite :global(button[type='submit']) {
 		margin-top: var(--s-3);
 	}
 	.person {

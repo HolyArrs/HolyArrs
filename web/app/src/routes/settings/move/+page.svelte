@@ -1,4 +1,9 @@
 <script lang="ts">
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import IconButton from '#lib/ui/IconButton.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount, onDestroy } from 'svelte';
 	import { api, message } from '#lib/api.ts';
@@ -274,12 +279,7 @@
 
 <svelte:head><title>Move from other apps · HolyArrs</title></svelte:head>
 
-<header class="page-head">
-	<div>
-		<h1>Move from other apps</h1>
-		<p>Bring a setup over from the apps HolyArrs replaces. Read them, look at the plan, try it, then move. Media files are never moved or renamed, and the old apps are never changed.</p>
-	</div>
-</header>
+<PageHeader title="Move from other apps" subtitle="Bring a setup over from the apps HolyArrs replaces. Read them, look at the plan, try it, then move. Media files are never moved or renamed, and the old apps are never changed." />
 
 {#if !loaded}
 	<div class="sk" style="height: 200px"></div>
@@ -353,7 +353,7 @@
 					{/if}
 					{#if readError}<p class="form-error" role="alert">{readError}</p>{/if}
 					<div class="row" style="margin-top: var(--s-4)">
-						<button class="btn btn-red" type="submit" disabled={reading} aria-busy={reading}><Icon name="download" size={18} /> Read {appName(kind)}</button>
+						<Button icon="download" variant="primary" type="submit" disabled={reading} aria-busy={reading}>Read {appName(kind)}</Button>
 					</div>
 				</form>
 
@@ -371,7 +371,7 @@
 										<br /><span class="xs muted">{countWords(s.counts)}</span>
 									</span>
 								</label>
-								<button class="btn btn-quiet" type="button" onclick={() => forget(s)} aria-label="Forget {appName(s.kind)} read {s.id}">Forget</button>
+								<Button variant="plain" type="button" onclick={() => forget(s)} aria-label="Forget {appName(s.kind)} read {s.id}">Forget</Button>
 							</li>
 						{/each}
 					</ul>
@@ -383,9 +383,8 @@
 			<section class="card" aria-labelledby="h-plan">
 				<div class="card-head">
 					<h2 id="h-plan" class="h2"><span class="num" aria-hidden="true">2</span> See the plan</h2>
-					<button class="btn btn-ghost" type="button" onclick={makePlan} disabled={picked.length === 0 || planning || !rulesOk} aria-busy={planning}>
-						<Icon name="refresh" size={18} /> {plan ? 'Plan again' : 'Make the plan'}
-					</button>
+					<Button icon="refresh" type="button" onclick={makePlan} disabled={picked.length === 0 || planning || !rulesOk} aria-busy={planning}>{plan ? 'Plan again' : 'Make the plan'}
+					</Button>
 				</div>
 				{#if picked.length === 0}<p class="hint">Pick at least one read app above.</p>{/if}
 
@@ -402,14 +401,14 @@
 								<label for="rule-to-{i}">Path here</label>
 								<input id="rule-to-{i}" class="input mono" bind:value={r.to} placeholder="/data/movies" aria-invalid={ruleErrors[i] ? 'true' : undefined} oninput={stale} />
 							</div>
-							<button class="icon-btn" type="button" aria-label="Remove path rule {i + 1}" onclick={() => ((rules = rules.filter((_, j) => j !== i)), stale())}><Icon name="x" size={18} /></button>
+							<IconButton icon="x" label="Remove path rule {i + 1}" type="button" onclick={() => ((rules = rules.filter((_, j) => j !== i)), stale())} />
 							{#if ruleErrors[i]}<p class="form-error rule-err" role="alert">{ruleErrors[i]}</p>{/if}
 						</div>
 					{/each}
 					<div class="row">
-						<button class="btn btn-quiet" type="button" onclick={() => (rules = [...rules, { from: '', to: '' }])}><Icon name="plus" size={18} /> Add a path rule</button>
+						<Button icon="plus" variant="plain" type="button" onclick={() => (rules = [...rules, { from: '', to: '' }])}>Add a path rule</Button>
 						{#if suggested.length > 0}
-							<button class="btn btn-quiet" type="button" onclick={useSuggestions}>Use {suggested.length} suggested {suggested.length === 1 ? 'rule' : 'rules'}</button>
+							<Button variant="plain" type="button" onclick={useSuggestions}>Use {suggested.length} suggested {suggested.length === 1 ? 'rule' : 'rules'}</Button>
 						{/if}
 					</div>
 					{#if suggested.length > 0}
@@ -484,7 +483,7 @@
 			<section class="card" aria-labelledby="h-try">
 				<div class="card-head">
 					<h2 id="h-try" class="h2"><span class="num" aria-hidden="true">3</span> Try it (dry run)</h2>
-					<button class="btn btn-ghost" type="button" onclick={tryIt} disabled={!plan || trying} aria-busy={trying}>Try it</button>
+					<Button type="button" onclick={tryIt} disabled={!plan || trying} aria-busy={trying}>Try it</Button>
 				</div>
 				<p class="hint">Shows exactly what would be added, changed or left out on this server. Nothing changes.</p>
 				{#if dry}
@@ -498,8 +497,8 @@
 										<span class="chip {tone(l.result) === 'ok' ? 'ok' : tone(l.result) === 'warn' ? 'wait' : tone(l.result) === 'bad' ? 'fail' : ''}">{resultWords[l.result] ?? l.result}</span> <b>{l.name}</b>{#if l.detail}<span class="small muted"> · {l.detail}</span>{/if}
 										{#if sameName(l)}
 											<div class="row pick">
-												<button class="btn btn-quiet" type="button" onclick={() => choose(l.key, 'merge')} aria-label="Merge {l.name} with the person of this name here">Same person: merge</button>
-												<button class="btn btn-quiet" type="button" onclick={() => choose(l.key, 'skip')} aria-label="Leave {l.name} out">Leave out</button>
+												<Button variant="plain" type="button" onclick={() => choose(l.key, 'merge')} aria-label="Merge {l.name} with the person of this name here">Same person: merge</Button>
+												<Button variant="plain" type="button" onclick={() => choose(l.key, 'skip')} aria-label="Leave {l.name} out">Leave out</Button>
 											</div>
 										{/if}
 									</li>
@@ -518,7 +517,7 @@
 			<section class="card" aria-labelledby="h-move">
 				<div class="card-head">
 					<h2 id="h-move" class="h2"><span class="num" aria-hidden="true">4</span> Move</h2>
-					<button class="btn btn-red" type="button" onclick={approve} disabled={!dry || !planHash || moving} aria-busy={moving}>Approve and move</button>
+					<Button variant="primary" type="button" onclick={approve} disabled={!dry || !planHash || moving} aria-busy={moving}>Approve and move</Button>
 				</div>
 				<p class="hint">Runs in the background, from exactly the plan the dry run showed (change anything and try it again). Moving again later adds nothing twice, and a move can be undone.</p>
 				<p class="hint">Sources and Downloaders always come over paused and cannot reach your home network. After the move, check each one, turn on "reach the local network" only for one that lives on your network, and resume it.</p>
@@ -546,9 +545,9 @@
 							</details>
 						{/each}
 						<div class="row" style="margin-top: var(--s-4)">
-							<a class="btn btn-ghost" href={to(`/api/v1/migrate/moves/${current.id}/report`)} download><Icon name="download" size={18} /> Download the report</a>
+							<AdminLinkButton icon="download" href={to(`/api/v1/migrate/moves/${current.id}/report`)} download>Download the report</AdminLinkButton>
 							{#if current.state === 'done' || current.state === 'failed'}
-								<button class="btn btn-quiet" type="button" onclick={() => current && undo(current)}>Undo this move</button>
+								<Button variant="plain" type="button" onclick={() => current && undo(current)}>Undo this move</Button>
 							{/if}
 						</div>
 					</div>
@@ -558,20 +557,19 @@
 	</ol>
 
 	{#if moves.length > 0}
-		<section class="card" aria-labelledby="h-moves">
-			<h2 id="h-moves" class="h2">Earlier moves</h2>
+		<SettingsCard title="Earlier moves">
 			<ul class="snaps">
 				{#each moves as m (m.id)}
 					<li>
 						<span class="grow small"><b>Move {m.id}</b> · {dateTime(m.created_at)} · {m.state}{#if m.report} · {summary(m.report.counts)}{/if}</span>
-						<button class="btn btn-quiet" type="button" onclick={() => openMove(m)}>Open</button>
+						<Button variant="plain" type="button" onclick={() => openMove(m)}>Open</Button>
 						{#if m.state === 'done' || m.state === 'failed'}
-							<button class="btn btn-quiet" type="button" onclick={() => undo(m)} aria-label="Undo move {m.id}">Undo</button>
+							<Button variant="plain" type="button" onclick={() => undo(m)} aria-label="Undo move {m.id}">Undo</Button>
 						{/if}
 					</li>
 				{/each}
 			</ul>
-		</section>
+		</SettingsCard>
 	{/if}
 {/if}
 

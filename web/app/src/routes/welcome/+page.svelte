@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '#lib/ui/Button.svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { api, message } from '#lib/api.ts';
@@ -7,6 +8,8 @@
 	import { refreshParts } from '#lib/parts.svelte.ts';
 	import { needsProblem, partStops, type PartName } from '#lib/parts.ts';
 	import { applyParts } from '#lib/controls.ts';
+	import { theme } from '#lib/theme.svelte.ts';
+	const mark = $derived(theme.value === 'light' ? '/brand/mark-color.svg' : '/brand/mark-color-on-dark.svg');
 
 	type Step = 'parts' | 'tmdb' | 'folder';
 
@@ -94,35 +97,41 @@
 			busy = false;
 		}
 	}
+	const stepNo = $derived(step === 'parts' ? 1 : step === 'tmdb' ? 2 : (want.movies || want.shows ? 3 : 2));
+	const stepCount = $derived((want.movies || want.shows ? 3 : 2));
 </script>
 
 <svelte:head><title>{step === 'parts' ? 'What do you use?' : step === 'tmdb' ? 'TMDB key' : 'Library folder'} · HolyArrs</title></svelte:head>
 
 <div class="welcome">
-	<header class="page-head">
-		<div>
-			{#if step === 'parts'}
-				<h1>What do you use?</h1>
-				<p>Pick the parts of HolyArrs you want. Parts you leave out stay off and use nothing; change this any time in Settings &gt; Parts and controls.</p>
-			{:else if step === 'tmdb'}
-				<p class="mono xs muted">Step 2 of 3</p>
-				<h1>TMDB key</h1>
-				<p>HolyArrs uses your TMDB read access token to look up movie and show names, dates and pictures. It is stored encrypted and never shown again in full.</p>
-			{:else}
-				<p class="mono xs muted">{want.movies || want.shows ? 'Step 3 of 3' : 'Step 2 of 2'}</p>
-				<h1>Library folder</h1>
-				<p>Add one folder where finished movies, shows or music should live. You can add more later in Settings.</p>
-			{/if}
-		</div>
+	<div class="brand"><img src={to(mark)} alt="" width="40" height="40" /><span>HolyArrs</span></div>
+	{#if firstRun || step !== 'parts'}
+		<ol class="dots" aria-label="Step {stepNo} of {stepCount}">
+			{#each Array.from({ length: stepCount }, (_, n) => n + 1) as n (n)}<li class:done={n < stepNo} class:now={n === stepNo}></li>{/each}
+		</ol>
+	{/if}
+	<header class="head">
+		{#if step === 'parts'}
+			<h1>What do you use?</h1>
+			<p>Pick the parts of HolyArrs you want. Parts you leave out stay off and use nothing; change this any time in Settings &gt; Parts and controls.</p>
+		{:else if step === 'tmdb'}
+			<p class="step-word">Step 2 of {stepCount}</p>
+			<h1>TMDB key</h1>
+			<p>HolyArrs uses your TMDB read access token to look up movie and show names, dates and pictures. It is stored encrypted and never shown again in full.</p>
+		{:else}
+			<p class="step-word">Step {stepCount} of {stepCount}</p>
+			<h1>Library folder</h1>
+			<p>Add one folder where finished movies, shows or music should live. You can add more later in Settings.</p>
+		{/if}
 	</header>
 
 	{#if !session.can('users')}
 		<p class="notice warn">Only the owner and admins finish first-run setup.</p>
 	{:else if step === 'parts'}
 		<form class="card" onsubmit={submitParts} data-testid="welcome">
-			{#if firstRun}<p class="mono xs muted step">Step 1 of {want.movies || want.shows ? '3' : '2'}</p>{/if}
+			{#if firstRun}<p class="step-word">Step 1 of {stepCount}</p>{/if}
 			<fieldset>
-				<legend class="h2">Parts</legend>
+				<legend>Parts</legend>
 				<ul class="choices">
 					{#each choices as c (c.part)}
 						<li>
@@ -136,7 +145,7 @@
 			</fieldset>
 
 			<fieldset>
-				<legend class="h2">Will family or friends ask for titles?</legend>
+				<legend>Will family or friends ask for titles?</legend>
 				<p class="hint" id="family-hint">Yes turns on the Wishlist: people you invite ask, and you approve. Off: {partStops.wishlist}</p>
 				<div class="row" role="radiogroup" aria-describedby="family-hint">
 					<label class="checkline"><input type="radio" name="family" value="no" bind:group={family} /> No, just me</label>
@@ -146,13 +155,8 @@
 
 			{#if error || problem}<p class="form-error" role="alert">{error || problem}</p>{/if}
 			<div class="row acts">
-				<button class="btn btn-red" type="submit" disabled={busy || !!problem} aria-busy={busy}>Continue</button>
-				<button
-					class="btn btn-ghost"
-					type="button"
-					disabled={busy}
-					onclick={() => saveParts({ movies: true, shows: false, music: false, subtitles: false, wishlist: false })}>Just movies</button
-				>
+				<Button variant="primary" size="lg" type="submit" disabled={busy || !!problem} aria-busy={busy}>Continue</Button>
+				<Button type="button" disabled={busy} onclick={() => saveParts({ movies: true, shows: false, music: false, subtitles: false, wishlist: false })}>Just movies</Button>
 			</div>
 			<p class="xs muted">Change it later in Settings &gt; Parts and controls. Turning a part off keeps its data.</p>
 			<p class="xs muted" data-testid="welcome-update-privacy">
@@ -168,7 +172,7 @@
 				<span class="hint">Find the long API Read Access Token on themoviedb.org under Settings, API.</span>
 			</div>
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
-			<button class="btn btn-red" type="submit" disabled={busy} aria-busy={busy}>Save and continue</button>
+			<div class="go"><Button variant="primary" size="lg" full type="submit" disabled={busy} aria-busy={busy}>Save and continue</Button></div>
 			<p class="xs muted notice-line">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
 		</form>
 	{:else}
@@ -190,68 +194,35 @@
 				<input id="lf-label" class="input" bind:value={folderName} placeholder={folderKind === 'show' ? 'Shows' : folderKind === 'music' ? 'Music' : 'Movies'} maxlength="64" />
 			</div>
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
-			<button class="btn btn-red" type="submit" disabled={busy} aria-busy={busy}>Add folder and open Home</button>
+			<div class="go"><Button variant="primary" size="lg" full type="submit" disabled={busy} aria-busy={busy}>Add folder and open Home</Button></div>
 		</form>
 	{/if}
 </div>
 
 <style>
 	.welcome {
-		display: grid;
-		grid-template-columns: minmax(220px, 280px) minmax(0, 680px);
-		align-items: start;
-		gap: var(--s-8);
-		width: min(1040px, calc(100% - 32px));
+		width: min(640px, calc(100% - 32px));
 		min-height: 100dvh;
 		margin: 0 auto;
-		padding: var(--s-10) 0;
+		padding: clamp(24px, 6vw, 64px) 0;
 	}
-	.welcome > :global(.page-head) {
-		position: sticky;
-		top: var(--s-8);
-		padding-top: var(--s-4);
-		border-top: 1px solid var(--line);
-	}
-	.welcome > :global(.card),
-	.welcome > :global(.notice) {
-		grid-column: 2;
-	}
-	fieldset {
-		border: 0;
-		padding: 0;
-		margin: 0 0 var(--s-5);
-	}
-	legend,
-	.step {
-		margin-bottom: var(--s-2);
-	}
-	.choices {
-		display: flex;
-		flex-direction: column;
-		gap: var(--s-3);
-	}
-	.acts {
-		flex-wrap: wrap;
-		gap: var(--s-3);
-	}
-	.notice-line {
-		margin-top: var(--s-5);
-	}
-	@media (max-width: 800px) {
-		.welcome {
-			display: block;
-			width: min(680px, calc(100% - 32px));
-			padding: var(--s-6) 0;
-		}
-		.welcome > :global(.page-head) {
-			position: static;
-			padding-top: var(--s-3);
-		}
-	}
+	.brand { display: flex; align-items: center; justify-content: center; gap: 10px; font: var(--t-headline); color: var(--text-muted); }
+	.dots { display: flex; justify-content: center; gap: 8px; margin: 20px 0 0; }
+	.dots li { width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); transition: width var(--dur) var(--ease-out), background var(--dur); }
+	.dots li.done { background: var(--ok); }
+	.dots li.now { width: 24px; border-radius: 4px; background: var(--accent-fill); }
+	.head { margin: 24px 0; text-align: center; }
+	.head h1 { font: var(--t-large-title); letter-spacing: var(--t-large-title-track); text-wrap: balance; }
+	.head p:not(.step-word) { margin: 8px auto 0; max-width: 52ch; color: var(--text-muted); font: var(--t-body); }
+	.step-word { color: var(--text-muted); font: var(--t-footnote); font-weight: 600; margin-bottom: 4px; }
+	.welcome > :global(.card) { border: 0; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card), 0 0 0 1px var(--line); padding: clamp(18px, 4vw, 28px); }
+	fieldset { border: 0; padding: 0; margin: 0 0 24px; }
+	legend { margin-bottom: 10px; font: var(--t-title3); }
+	.choices { display: flex; flex-direction: column; gap: 4px; }
+	.acts { flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+	.go { margin-top: 20px; }
+	.notice-line { margin-top: 16px; }
 	@media (max-width: 480px) {
-		.acts > :global(.btn) {
-			width: 100%;
-			min-height: 44px;
-		}
+		.acts > :global(*) { flex: 1 1 100%; }
 	}
 </style>

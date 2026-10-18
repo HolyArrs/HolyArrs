@@ -1,4 +1,8 @@
 <script lang="ts">
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
@@ -43,13 +47,11 @@
 
 <svelte:head><title>Logs · HolyArrs</title></svelte:head>
 
-<header class="page-head">
-	<div>
-		<h1>Logs</h1>
-		<p>What HolyArrs wrote to its log, newest first. Keys, tokens, passwords and links with sign-in details are always hidden.</p>
-	</div>
-	<a class="btn btn-ghost" href={to(`/api/v1/logs/download`)} download>Download the log</a>
-</header>
+<PageHeader title="Logs" subtitle="What HolyArrs wrote to its log, newest first. Keys, tokens, passwords and links with sign-in details are always hidden.">
+	{#snippet actions()}
+		<AdminLinkButton href={to(`/api/v1/logs/download`)} download>Download the log</AdminLinkButton>
+	{/snippet}
+</PageHeader>
 
 <form class="card filters" aria-label="Filter the log" onsubmit={apply}>
 	<div class="row-fields">
@@ -75,8 +77,8 @@
 		</div>
 	</div>
 	<div class="row" style="margin-top: var(--s-3)">
-		<button class="btn btn-red" type="submit" disabled={busy} aria-busy={busy}>Show</button>
-		<button class="btn btn-quiet" type="button" onclick={clear}>Clear</button>
+		<Button variant="primary" type="submit" disabled={busy} aria-busy={busy}>Show</Button>
+		<Button variant="plain" type="button" onclick={clear}>Clear</Button>
 	</div>
 </form>
 
@@ -85,27 +87,27 @@
 {:else if !result}
 	<div class="sk" style="height: 240px"></div>
 {:else}
-	<section class="card" aria-labelledby="h-lines" data-testid="log-lines">
-		<h2 id="h-lines" class="h2">Lines</h2>
-		<p class="small muted" role="status">{pageWords(result, result.lines.length)}</p>
-		{#if result.lines.length}
-			<ol class="lines">
-				{#each result.lines as l, i (filter.offset + i)}
-					<li data-testid="log-line" data-level={l.level}>
-						<span class="chip {levelTone(l.level)}">{levelWord[l.level]}</span>
-						{#if l.at}<time class="mono xs muted" datetime={l.at}>{dateTime(l.at)}</time>{/if}
-						<code class="text">{l.text}</code>
-					</li>
-				{/each}
-			</ol>
-			<div class="row" style="margin-top: var(--s-3)">
-				<button class="btn btn-quiet" type="button" disabled={filter.offset === 0 || busy} onclick={() => move(-filter.limit)}>Newer</button>
-				<button class="btn btn-quiet" type="button" disabled={filter.offset + result.lines.length >= result.total || busy} onclick={() => move(filter.limit)}
-					>Older</button
-				>
-			</div>
-		{/if}
-	</section>
+	<div data-testid="log-lines">
+		<SettingsCard title="Lines">
+			<p class="small muted" role="status">{pageWords(result, result.lines.length)}</p>
+			{#if result.lines.length}
+				<ol class="lines">
+					{#each result.lines as l, i (filter.offset + i)}
+						<li data-testid="log-line" data-level={l.level}>
+							<span class="chip {levelTone(l.level)}">{levelWord[l.level]}</span>
+							{#if l.at}<time class="mono xs muted" datetime={l.at}>{dateTime(l.at)}</time>{/if}
+							<code class="text">{l.text}</code>
+						</li>
+					{/each}
+				</ol>
+				<div class="row" style="margin-top: var(--s-3)">
+					<Button variant="plain" type="button" disabled={filter.offset === 0 || busy} onclick={() => move(-filter.limit)}>Newer</Button>
+					<Button variant="plain" type="button" disabled={filter.offset + result.lines.length >= result.total || busy} onclick={() => move(filter.limit)}
+						>Older</Button>
+				</div>
+			{/if}
+		</SettingsCard>
+	</div>
 {/if}
 
 <style>

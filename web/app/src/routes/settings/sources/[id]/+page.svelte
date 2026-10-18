@@ -1,9 +1,10 @@
 <script lang="ts">
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import { to } from '#lib/paths.ts';
 	import { page } from '$app/state';
 	import { api, message } from '#lib/api.ts';
 	import { ago, words } from '#lib/format.ts';
-	import Icon from '#lib/Icon.svelte';
 	import { barHeight, healthWords, ms, opWords, sourceTone, uses } from '#lib/sources.ts';
 	import type { SourceCall, SourceDay, SourceView } from '#lib/types.ts';
 
@@ -41,20 +42,16 @@
 
 <svelte:head><title>{src?.name ?? 'Source'} health · HolyArrs</title></svelte:head>
 
-<p><a class="back" href={to(`/settings/sources`)}><Icon name="back" size={16} /> Sources</a></p>
-
 {#if error}
 	<p class="notice bad" role="alert">{error}</p>
 {:else if !src}
 	<div class="sk" style="height: 200px"></div>
 {:else}
-	<header class="page-head">
-		<div>
-			<h1>{src.name}</h1>
-			<p>{words(src.format)} · {words(src.protocol)} · priority {src.priority} · {uses(src)}</p>
-		</div>
-		<span class="chip {sourceTone(src.health.state)}" data-testid="health-state">{healthWords[src.health.state]}</span>
-	</header>
+	<PageHeader back={{ href: to('/settings/sources'), label: 'Sources' }} title={src.name} subtitle={`${words(src.format)} · ${words(src.protocol)} · priority ${src.priority} · ${uses(src)}`}>
+		{#snippet actions()}
+			{#if src}<span class="chip {sourceTone(src.health.state)}" data-testid="health-state">{healthWords[src.health.state]}</span>{/if}
+		{/snippet}
+	</PageHeader>
 
 	<section class="tiles" aria-label="At a glance">
 		<div class="card tile">
@@ -117,8 +114,7 @@
 		{/if}
 	</section>
 
-	<section class="card" aria-labelledby="h-recent">
-		<h2 id="h-recent" class="h2">Last calls</h2>
+	<SettingsCard title="Last calls">
 		{#if recent.length === 0}
 			<p class="small muted">No calls yet. Test the Source from the Sources page.</p>
 		{:else}
@@ -138,16 +134,10 @@
 				</table>
 			</div>
 		{/if}
-	</section>
+	</SettingsCard>
 {/if}
 
 <style>
-	.back {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--s-1);
-		color: var(--text-muted);
-	}
 	.tiles {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
