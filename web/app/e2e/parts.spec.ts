@@ -55,9 +55,9 @@ test('a part that is off hides its pages and says so on a direct link', async ()
 	expect(((await r.json()) as { error: string }).error).toBe('this part is off');
 
 	await page.goto('/settings');
-	await expect(page.locator('.settings-group a', { hasText: 'Sources' })).toBeVisible();
-	await expect(page.locator('.settings-group a', { hasText: 'MusicBrainz' })).toHaveCount(0);
-	await expect(page.locator('.settings-group a', { hasText: 'Weekly limits' })).toHaveCount(0);
+	await expect(page.getByRole('main').getByRole('link').filter({ hasText: 'Sources' })).toBeVisible();
+	await expect(page.getByRole('main').getByRole('link').filter({ hasText: 'MusicBrainz' })).toHaveCount(0);
+	await expect(page.getByRole('main').getByRole('link').filter({ hasText: 'Weekly limits' })).toHaveCount(0);
 
 	await page.goto('/wishlist');
 	await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));

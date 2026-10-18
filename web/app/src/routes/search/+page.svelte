@@ -220,7 +220,7 @@
 		const q = dest.url.searchParams.get('q') ?? '';
 		const k = dest.url.searchParams.get('kind');
 		const nextKind: SearchKind = k === 'show' || k === 'music' ? k : 'movie';
-		if (!q.trim() || (q.trim() === term.trim() && nextKind === kind)) return;
+		if (!q.trim() || (q.trim() === lastRun && nextKind === kind)) return;
 		if (nextKind !== kind) {
 			kind = nextKind;
 			results = null;
@@ -231,10 +231,13 @@
 		void run();
 	});
 
+	// The last query this page searched; our own address updates echo it.
+	let lastRun = '';
 	async function run(e?: SubmitEvent) {
 		e?.preventDefault();
 		const q = term.trim();
 		if (!q) return;
+		lastRun = q;
 		const searchKind = kind;
 		const isLatest = beginSearch();
 		busy = true;
