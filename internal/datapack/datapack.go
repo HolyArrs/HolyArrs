@@ -31,8 +31,6 @@ const (
 	MaxReleaseTests = 256
 	maxText         = 200
 	maxReleaseName  = 512
-	maxNested       = 64
-	maxPoints       = 10000
 )
 
 var (
@@ -228,100 +226,12 @@ func (r PickRule) validate() error {
 	if err := validID("pick rule", r.ID); err != nil {
 		return err
 	}
-	if err := validName("pick rule", r.Name); err != nil {
+	if err := domain.CheckPickRules(r.Name, r.Kinds, r.Rules); err != nil {
+		var fe *domain.FieldError
+		if errors.As(err, &fe) {
+			return fmt.Errorf("%s: %s", fe.Field, fe.Text)
+		}
 		return err
-	}
-	if len(r.Kinds) == 0 || len(r.Kinds) > 3 {
-		return errors.New("kinds must hold one to three values")
-	}
-	music := false
-	seenKinds := map[string]bool{}
-	for _, kind := range r.Kinds {
-		if seenKinds[kind] || (kind != "movie" && kind != "show" && kind != "music") {
-			return fmt.Errorf("invalid or duplicate kind %q", kind)
-		}
-		seenKinds[kind] = true
-		music = music || kind == "music"
-	}
-	if music && len(r.Kinds) != 1 {
-		return errors.New("music pick rules cannot mix with movie or show kinds")
-	}
-	ladder := domain.Ladder
-	matchableTraits := videoMatchableTraits
-	if music {
-		ladder = domain.MusicLadder
-		matchableTraits = musicMatchableTraits
-	}
-	b := r.Rules
-	if len(b.Steps) == 0 || len(b.Steps) > maxNested {
-		return errors.New("steps must hold one to 64 values")
-	}
-	steps := map[string]bool{}
-	allowed := false
-	goodEnoughAllowed := false
-	for _, s := range b.Steps {
-		if !slices.Contains(ladder, s.Quality) || steps[s.Quality] {
-			return fmt.Errorf("unknown or duplicate quality %q", s.Quality)
-		}
-		steps[s.Quality] = true
-		allowed = allowed || s.Allowed
-		goodEnoughAllowed = goodEnoughAllowed || (s.Quality == b.GoodEnoughAt && s.Allowed)
-	}
-	if !allowed || !steps[b.GoodEnoughAt] || !goodEnoughAllowed {
-		return errors.New("rules need an allowed step and good_enough_at must name an allowed listed step")
-	}
-	if len(b.Traits) > maxNested || len(b.MustHave) > maxNested || len(b.Never) > maxNested || len(b.Language.Wanted) > 32 || len(b.SizeLimits) > maxNested {
-		return errors.New("pick rule exceeds a nested item limit")
-	}
-	seenTraits := map[string]bool{}
-	for _, tp := range b.Traits {
-		if !matchableTraits[tp.Trait] || seenTraits[tp.Trait] || !inPoints(tp.Points) {
-			return fmt.Errorf("invalid or duplicate trait %q", tp.Trait)
-		}
-		seenTraits[tp.Trait] = true
-	}
-	for label, values := range map[string][]string{"must_have": b.MustHave, "never": b.Never} {
-		seen := map[string]bool{}
-		for _, trait := range values {
-			allowed := matchableTraits[trait]
-			if label == "never" {
-				allowed = allowed || safetyOnlyTraits[trait]
-			}
-			if !allowed || seen[trait] {
-				return fmt.Errorf("%s has invalid or duplicate trait %q", label, trait)
-			}
-			seen[trait] = true
-		}
-	}
-	if !inPoints(b.MinPoints) || !inPoints(b.UpgradeMinPoints) || (b.GoodEnoughPoints != nil && !inPoints(*b.GoodEnoughPoints)) {
-		return errors.New("point values must be from -10000 to 10000")
-	}
-	for step, limit := range b.SizeLimits {
-		if step != "*" && !steps[step] {
-			return fmt.Errorf("size limit names unknown quality %q", step)
-		}
-		if limit.Min < 0 || limit.Max < limit.Min || limit.Max > 1<<50 {
-			return fmt.Errorf("invalid size limit for %q", step)
-		}
-	}
-	if b.Protocol.Prefer != "torrent" && b.Protocol.Prefer != "usenet" && b.Protocol.Prefer != "either" {
-		return errors.New("protocol prefer must be torrent, usenet or either")
-	}
-	if b.Protocol.WaitMinutesTorrent < 0 || b.Protocol.WaitMinutesTorrent > 10080 || b.Protocol.WaitMinutesUsenet < 0 || b.Protocol.WaitMinutesUsenet > 10080 {
-		return errors.New("protocol waits must be from 0 to 10080 minutes")
-	}
-	seenLang := map[string]bool{}
-	for _, lang := range b.Language.Wanted {
-		if !languages[lang] || seenLang[lang] {
-			return fmt.Errorf("invalid or duplicate language %q", lang)
-		}
-		seenLang[lang] = true
-	}
-	if b.Order != "quality_then_points" && b.Order != "points_then_quality" {
-		return errors.New("order must be quality_then_points or points_then_quality")
-	}
-	if !slices.Contains([]string{"take_any", "same_group_only", "prefer_only", "ignore"}, b.ProperPolicy.Mode) || b.ProperPolicy.MaxAgeDays < 0 || b.ProperPolicy.MaxAgeDays > 36500 {
-		return errors.New("invalid proper policy")
 	}
 	return nil
 }
@@ -386,20 +296,6 @@ func equalFacts(a, b ExpectedFacts) bool {
 
 func knownQuality(q string) bool {
 	return slices.Contains(domain.Ladder, q) || slices.Contains(domain.MusicLadder, q)
-}
-func inPoints(n int) bool { return n >= -maxPoints && n <= maxPoints }
-
-var videoMatchableTraits = set("hevc", "ddp_audio", "web_dl", "upscaled", "dubbed_only", "hardcoded_subs", "3d", "cam", "telesync", "remux", "av1", "dv", "hdr10", "hdr10plus", "atmos")
-var musicMatchableTraits = set("cd_source", "web_source", "vinyl_source", "log_cue", "hires", "mp3", "aac", "opus", "vorbis", "flac", "alac", "single_image", "lossy_transcode", "deluxe")
-var safetyOnlyTraits = set("sample", "executable", "password_protected", "disc_image")
-var languages = set("en", "fr", "de", "it", "es", "ru", "ja", "ko")
-
-func set(values ...string) map[string]bool {
-	m := make(map[string]bool, len(values))
-	for _, v := range values {
-		m[v] = true
-	}
-	return m
 }
 
 func validID(kind, id string) error {

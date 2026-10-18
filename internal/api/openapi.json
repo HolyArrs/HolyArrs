@@ -2107,6 +2107,18 @@
         },
         "type": "object"
       },
+      "FieldError": {
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "field": {
+            "description": "The dotted path of the field that is wrong, such as name, kinds, body.good_enough_at, body.steps, body.traits, body.protocol.prefer, body.protocol.wait_minutes_torrent, body.size_limits or body.proper_policy.max_age_days.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "File": {
         "description": "A File record. These names match the domain record returned by copy-choice routes.",
         "properties": {
@@ -3582,6 +3594,10 @@
             "format": "int64",
             "type": "integer"
           },
+          "in_use": {
+            "description": "How many things use these Pick rules (Versions, Library folders, Outside lists, Wishlist settings and Movies and TV defaults added up).",
+            "type": "integer"
+          },
           "kinds": {
             "items": {
               "type": "string"
@@ -3593,6 +3609,100 @@
           },
           "preset": {
             "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "PickRulesBody": {
+        "additionalProperties": true,
+        "description": "The rules: steps (quality, allowed) in ladder order, good_enough_at, traits (trait, points), must_have, never, min_points, good_enough_points, size_limits (by step or *: min, max, per_minute), protocol (prefer, wait_minutes_torrent, wait_minutes_usenet, skip_wait_at_good_enough), language (wanted, original_ok), order, upgrade_min_points, proper_policy (mode, max_age_days).",
+        "type": "object"
+      },
+      "PickRulesDetail": {
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/PickRulesBody"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "in_use": {
+            "$ref": "#/components/schemas/PickRulesUse"
+          },
+          "kinds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          },
+          "preset": {
+            "type": "boolean"
+          },
+          "revision": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "PickRulesInUse": {
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "in_use": {
+            "$ref": "#/components/schemas/PickRulesUse"
+          }
+        },
+        "type": "object"
+      },
+      "PickRulesInput": {
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/PickRulesBody"
+          },
+          "kinds": {
+            "items": {
+              "enum": [
+                "movie",
+                "show",
+                "music"
+              ],
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "kinds",
+          "body"
+        ],
+        "type": "object"
+      },
+      "PickRulesUse": {
+        "description": "What uses one Pick rule.",
+        "properties": {
+          "library_folders": {
+            "type": "integer"
+          },
+          "outside_lists": {
+            "type": "integer"
+          },
+          "title_defaults": {
+            "type": "integer"
+          },
+          "versions": {
+            "type": "integer"
+          },
+          "wishlist": {
+            "type": "integer"
           }
         },
         "type": "object"
@@ -14779,7 +14889,7 @@
     },
     "/api/v1/pick-rules": {
       "get": {
-        "description": "Every Pick rules set, presets marked.",
+        "description": "Every Pick rules set, presets marked, with in_use: how many things use each.",
         "operationId": "listPickRules",
         "responses": {
           "200": {
@@ -14808,6 +14918,249 @@
         "x-holyarrs-part": "media",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "read"
+      },
+      "post": {
+        "description": "Makes new Pick rules (never ready-made). Checks: name 1 to 200 characters and not taken by other Pick rules (any case); kinds one to three of movie, show, music, with music alone; steps from the ladder of those kinds, each once, at least one allowed; good_enough_at an allowed step; known traits with points from -10000 to 10000; safety traits (sample, executable, password_protected, disc_image) only in never; size limits keyed by * or a listed step with 0 <= min <= max <= 2^50; protocol prefer torrent, usenet or either and waits from 0 to 10080 minutes; known languages; order and proper_policy.mode known; proper_policy.max_age_days from 0 to 36500.",
+        "operationId": "addPickRules",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PickRulesInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickRulesDetail"
+                }
+              }
+            },
+            "description": "The new rules."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldError"
+                }
+              }
+            },
+            "description": "A field is wrong; field names it."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldError"
+                }
+              }
+            },
+            "description": "The name is taken (field is name)."
+          }
+        },
+        "summary": "Make Pick rules",
+        "tags": [
+          "Library"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/pick-rules/{id}": {
+      "delete": {
+        "description": "Only rules nothing uses: no Version, Library folder, Outside list, Wishlist setting (ask_pick_rules_id, ask_show_pick_rules_id, ask_music_pick_rules_id) or Movies and TV default (movie_pick_rules_id, show_pick_rules_id). Ready-made rules cannot be removed.",
+        "operationId": "deletePickRules",
+        "parameters": [
+          {
+            "description": "The record id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The id is not a number."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such Pick rules."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickRulesInUse"
+                }
+              }
+            },
+            "description": "In use (the answer names what uses it, with in_use), or ready-made rules asked to change name or kinds or to be removed."
+          }
+        },
+        "summary": "Remove Pick rules",
+        "tags": [
+          "Library"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      },
+      "get": {
+        "description": "The rules with their body and in_use: what uses them, by kind of use (wishlist counts the Wishlist settings, title_defaults the saved Movies and TV defaults).",
+        "operationId": "getPickRules",
+        "parameters": [
+          {
+            "description": "The record id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickRulesDetail"
+                }
+              }
+            },
+            "description": "The rules."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The id is not a number."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such Pick rules."
+          }
+        },
+        "summary": "One set of Pick rules",
+        "tags": [
+          "Library"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "read"
+      },
+      "put": {
+        "description": "Replaces name, kinds and body and bumps revision. Ready-made rules (preset) keep their name and kinds; their body may change. Rules in use (see in_use) cannot drop a kind something uses or switch between the video and music ladders. Checks: name 1 to 200 characters and not taken by other Pick rules (any case); kinds one to three of movie, show, music, with music alone; steps from the ladder of those kinds, each once, at least one allowed; good_enough_at an allowed step; known traits with points from -10000 to 10000; safety traits (sample, executable, password_protected, disc_image) only in never; size limits keyed by * or a listed step with 0 <= min <= max <= 2^50; protocol prefer torrent, usenet or either and waits from 0 to 10080 minutes; known languages; order and proper_policy.mode known; proper_policy.max_age_days from 0 to 36500.",
+        "operationId": "editPickRules",
+        "parameters": [
+          {
+            "description": "The record id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PickRulesInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickRulesDetail"
+                }
+              }
+            },
+            "description": "The changed rules."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldError"
+                }
+              }
+            },
+            "description": "A field is wrong; field names it."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such Pick rules."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickRulesInUse"
+                }
+              }
+            },
+            "description": "In use (the answer names what uses it, with in_use), or ready-made rules asked to change name or kinds or to be removed."
+          }
+        },
+        "summary": "Change Pick rules",
+        "tags": [
+          "Library"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
       }
     },
     "/api/v1/releases/{id}/choose": {

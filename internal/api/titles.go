@@ -307,6 +307,9 @@ type PickRulesView struct {
 	Name   string   `json:"name"`
 	Kinds  []string `json:"kinds"`
 	Preset bool     `json:"preset"`
+	// InUse counts every use (Versions, Library folders, Outside lists, ask
+	// settings and Movies and TV defaults).
+	InUse int `json:"in_use"`
 }
 
 func (a *API) listPickRules(w http.ResponseWriter, r *http.Request) {
@@ -321,7 +324,12 @@ func (a *API) listPickRules(w http.ResponseWriter, r *http.Request) {
 		if k == nil {
 			k = []string{}
 		}
-		out = append(out, PickRulesView{ID: p.ID, Name: p.Name, Kinds: k, Preset: p.Preset})
+		u, err := library.PickRulesUse(r.Context(), a.s.Store, p.ID)
+		if err != nil {
+			internal(w, err)
+			return
+		}
+		out = append(out, PickRulesView{ID: p.ID, Name: p.Name, Kinds: k, Preset: p.Preset, InUse: u.Total()})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"pick_rules": out})
 }
