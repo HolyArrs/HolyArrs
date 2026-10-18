@@ -272,7 +272,7 @@ func (a *API) Handler() http.Handler {
 	}
 	if a.s.Auth != nil {
 		a.s.Auth.Routes(m)
-		return secure(a.s.Auth.Middleware(wrapMux(a.partGate(m, auth.Gate(m)))))
+		return secure(a.s.Auth.Middleware(wrapMux(a.kidGate(m, a.partGate(m, auth.Gate(m))))))
 	}
 	return secure(wrapMux(a.partGate(m, m)))
 }
@@ -590,6 +590,9 @@ func (a *API) listTitles(w http.ResponseWriter, r *http.Request) {
 		if p, ok := parts.ForTitleKind(t.Kind); ok && !a.partIsOn(p) && !a.s.Parts.SafeMode {
 			continue // its part is off: hidden, not removed (safe mode lists every title)
 		}
+		if !a.titleAllowed(r, t) {
+			continue // above a Kid's age-rating limit
+		}
 		v, err := a.titleView(r.Context(), t)
 		if err != nil {
 			internal(w, err)
@@ -890,6 +893,7 @@ func (a *API) searchMetadata(w http.ResponseWriter, r *http.Request) {
 	if ms == nil {
 		ms = []metadata.Movie{}
 	}
+	ms = a.kidMovies(r.Context(), a.kidMax(r), ms)
 	writeJSON(w, http.StatusOK, map[string]any{"movies": ms, "attribution": metadata.Attribution})
 }
 

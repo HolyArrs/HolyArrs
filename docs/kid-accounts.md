@@ -52,6 +52,38 @@ With a limit set, these are never shown and cannot be asked for:
   the ladder for its kind;
 - every music artist, album and track, because music has no age ratings.
 
+## What a Kid sees
+
+The server does the hiding, so every screen and every API client gets the
+same answer:
+
+- **Library, Home and search** list only the titles the limit allows, and
+  Home's counts count only those.
+- **A title page** for a Library title above the limit answers "not found",
+  exactly like a title that is not there, on every page of that title
+  (seasons, episodes, people and the rest).
+- **Explore rows, movie search and the add searches** show only allowed
+  movies and shows. A row item carries no rating, so HolyArrs takes it from
+  the Library, then from the details it keeps for 24 hours, then from one
+  TMDB lookup (at most four at a time). An item whose rating cannot be found
+  stays hidden.
+- **A TMDB title page** above the limit answers "This title is rated above
+  what this account may see.", and its "more like this" list keeps only
+  allowed titles.
+- **People pages** list only the person's movies that are in the Library
+  and allowed. **Movie series** show only their allowed movies, and a series
+  with none is not shown.
+- **Calendar** (for a Kid who may run the Library) lists only allowed titles.
+- **Asking** for a title above the limit is refused with "This account can
+  ask only for titles rated up to PG." (with the Kid's own limit). Asking for
+  music is refused with "This account cannot ask for music, because music
+  has no age ratings." A Kid also cannot join someone else's ask for a title
+  above the limit.
+
+A Kid account is meant to hold only the Ask permission. A Kid who is also
+given Run the Library can open the Library-work screens, such as Downloads
+and History, and the live updates, which still show every title.
+
 ## US ratings only for now
 
 HolyArrs keeps only the US rating of each title, so `rating_country` is `US`

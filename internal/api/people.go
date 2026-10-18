@@ -69,6 +69,9 @@ func (a *API) searchPeople(w http.ResponseWriter, r *http.Request) {
 	if result.People == nil {
 		result.People = []metadata.Person{}
 	}
+	for i := range result.People {
+		a.kidKnownFor(r.Context(), a.kidMax(r), &result.People[i])
+	}
 	writeJSON(w, http.StatusOK, map[string]any{"people": result.People, "page": result.Page, "total_pages": result.TotalPages,
 		"total_results": result.TotalResults, "attribution": metadata.Attribution})
 }
@@ -154,9 +157,13 @@ func (a *API) personCredits(r *http.Request, w http.ResponseWriter) (metadata.Pe
 		fail(w, http.StatusBadRequest, "role must be all, actor or director")
 		return metadata.Person{}, metadata.PersonMoviePage{}, false
 	}
+	// A Kid sees only credits in the Library with a rating their limit
+	// allows; the rest of the filmography stays hidden.
+	max := a.kidMax(r)
+	a.kidKnownFor(r.Context(), max, &person)
 	filtered := credits.Movies[:0]
 	for _, c := range credits.Movies {
-		if role == "all" || hasRole(c.Roles, role) {
+		if (role == "all" || hasRole(c.Roles, role)) && (max == "" || a.libraryMovieAllowed(r.Context(), max, c.Movie.IDs["tmdb"])) {
 			filtered = append(filtered, c)
 		}
 	}

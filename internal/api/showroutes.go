@@ -103,7 +103,7 @@ func (a *API) lookupShows(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	out := []ShowResult{}
-	for _, sh := range shows {
+	for _, sh := range a.kidShows(r.Context(), a.kidMax(r), shows) {
 		sh.Episodes = nil
 		v := ShowResult{Show: sh}
 		var err error

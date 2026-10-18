@@ -238,7 +238,7 @@ func (a *API) lookupTitles(w http.ResponseWriter, r *http.Request) {
 	}
 	out := []LookupView{}
 	db := a.s.Store.Read()
-	for _, m := range ms {
+	for _, m := range a.kidMovies(r.Context(), a.kidMax(r), ms) {
 		v := LookupView{Movie: m}
 		if id := m.IDs["tmdb"]; id != "" {
 			var err error
@@ -560,6 +560,24 @@ func (a *API) calendar(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		internal(w, err)
 		return
+	}
+	if max := a.kidMax(r); max != "" {
+		ids := make([]int64, len(es))
+		for i, e := range es {
+			ids[i] = e.TitleID
+		}
+		ok, err := a.allowedTitleIDs(r.Context(), max, ids)
+		if err != nil {
+			internal(w, err)
+			return
+		}
+		kept := []library.CalendarEntry{}
+		for _, e := range es {
+			if ok[e.TitleID] {
+				kept = append(kept, e)
+			}
+		}
+		es = kept
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"from": from.Format("2006-01-02"), "to": to.Format("2006-01-02"), "titles": titles, "dates": es})
 }

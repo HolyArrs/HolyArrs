@@ -34,6 +34,11 @@ func (a *API) librarySummary(w http.ResponseWriter, r *http.Request) {
 	if len(kinds) == 0 {
 		where = "0"
 	}
+	if kid, kidArgs := kidSQL(a.kidMax(r)); kid != "" {
+		// A Kid counts and sees only the titles their limit allows.
+		where += " AND " + kid
+		args = append(args, kidArgs...)
+	}
 	ctx, db := r.Context(), a.s.Store.Read()
 	var total int
 	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM titles t WHERE "+where, args...).Scan(&total); err != nil {

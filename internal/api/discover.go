@@ -12,6 +12,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/parts"
+	"github.com/CoderLuii/holyarrs/internal/ratings"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
@@ -223,7 +224,7 @@ func (a *API) discoverRow(w http.ResponseWriter, r *http.Request) {
 	ref := ""
 	if row == "similar" {
 		var t domain.Title
-		if err := store.Get(r.Context(), a.s.Store.Read(), "titles", titleID, &t); err != nil || t.State == "removed" {
+		if err := store.Get(r.Context(), a.s.Store.Read(), "titles", titleID, &t); err != nil || t.State == "removed" || !a.titleAllowed(r, t) {
 			fail(w, http.StatusNotFound, "no such Title")
 			return
 		}
@@ -256,6 +257,9 @@ func (a *API) discoverRow(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 	}
+	// A Kid gets only the items their limit allows; the ratings come from
+	// the Library, the details cache or TMDB, and unknown ones stay hidden.
+	merged = a.kidItems(r.Context(), a.kidMax(r), merged, discoverMax)
 	out, err := a.joinItems(r.Context(), merged, me, discoverMax)
 	if err != nil {
 		internal(w, err)
@@ -299,13 +303,24 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	max := a.kidMax(r)
+	if max != "" {
+		rating, inLibrary := a.libraryRating(r.Context(), kind, id)
+		if !inLibrary {
+			rating = e.details.Rating
+		}
+		if !ratings.Allows(max, kind, rating) {
+			fail(w, http.StatusForbidden, aboveLimit)
+			return
+		}
+	}
 	me := a.person(r).UserID
 	head, never, err := a.libraryJoin(r.Context(), e.details.DiscoverItem, me)
 	if err != nil {
 		internal(w, err)
 		return
 	}
-	similar, err := a.joinItems(r.Context(), e.details.Similar, me, len(e.details.Similar))
+	similar, err := a.joinItems(r.Context(), a.kidItems(r.Context(), max, e.details.Similar, 0), me, len(e.details.Similar))
 	if err != nil {
 		internal(w, err)
 		return
