@@ -1,6 +1,6 @@
 // Home: small pure helpers so the page stays a layout.
 import { duration } from './format.ts';
-import { checkLabel } from './health.ts';
+import { healthSentence, looksLikeId } from './plain.ts';
 import type { DownloadRow } from './downloaders.ts';
 import type { HealthCheck } from './types.ts';
 
@@ -9,12 +9,7 @@ import type { HealthCheck } from './types.ts';
  * an id (preview-…, e2e-…, a long hex or number string) and not a person.
  */
 export function greetName(name: string | null | undefined): string {
-	const n = (name ?? '').trim();
-	if (!n) return '';
-	if (/^(preview|e2e|test|user|guest)[-_]/i.test(n)) return '';
-	if (!/\p{L}/u.test(n)) return '';
-	if (/^[0-9a-f-]{12,}$/i.test(n)) return '';
-	return n;
+	return looksLikeId(name) ? '' : (name ?? '').trim();
 }
 
 /** downloadLine is the meta line under a download card: percent and time left. */
@@ -42,6 +37,8 @@ export interface Attention {
 	tone: 'fail' | 'wait';
 	word: string;
 	text: string;
+	/** Raw text for admins, shown inside a Details disclosure. */
+	detail?: string;
 	href: string;
 	action: string;
 }
@@ -71,12 +68,12 @@ export function attention(input: {
 }): Attention[] {
 	const out: Attention[] = [];
 	for (const c of input.health.filter((h) => h.state === 'error'))
-		out.push({ key: `h${c.key}`, tone: 'fail', word: 'Problem', text: c.message || `${checkLabel(c.kind)} ${c.subject}`, href: healthFix(c.kind), action: 'Fix' });
+		out.push({ key: `h${c.key}`, tone: 'fail', word: 'Problem', text: healthSentence(c), detail: [c.subject, c.message].filter(Boolean).join(': ') || undefined, href: healthFix(c.kind), action: 'Fix' });
 	for (const d of input.failed)
 		out.push({ key: `f${d.id}`, tone: 'fail', word: 'Failed', text: `${d.title}: ${d.text || 'The download failed.'}`, href: '/downloads', action: 'Open Downloads' });
 	for (const d of input.decisions)
 		out.push({ key: `d${d.slot_id}`, tone: 'wait', word: 'Your call', text: `${d.title}${d.episode ? ` ${d.episode.label}` : ''}: ${d.reason || 'HolyArrs needs you to choose.'}`, href: '/downloads/decide', action: 'Decide' });
 	for (const c of input.health.filter((h) => h.state === 'warning'))
-		out.push({ key: `h${c.key}`, tone: 'wait', word: 'Warning', text: c.message || `${checkLabel(c.kind)} ${c.subject}`, href: healthFix(c.kind), action: 'Look' });
+		out.push({ key: `h${c.key}`, tone: 'wait', word: 'Warning', text: healthSentence(c), detail: [c.subject, c.message].filter(Boolean).join(': ') || undefined, href: healthFix(c.kind), action: 'Look' });
 	return out;
 }

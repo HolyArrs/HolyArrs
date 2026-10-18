@@ -11,6 +11,7 @@
 	import { comingSoon, markTransitions, recentlyAdded, titleCard, type ExploreCard } from '#lib/explore.ts';
 	import { attention, downloadLine, downloadSubtitle, greetName, isActive } from '#lib/home.ts';
 	import { ymd } from '#lib/calendar.ts';
+	import { personName } from '#lib/plain.ts';
 	import type { DownloadRow, Decision } from '#lib/downloaders.ts';
 	import type { Ask, CalendarEntry, EventRecord, Health, HealthChecks, LibraryFolder, SearchView, TitleView } from '#lib/types.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
@@ -257,6 +258,9 @@
 								<span class="go">{f.action}<Icon name="chevronRight" size={14} /></span>
 							{/snippet}
 						</ListRow>
+						{#if admin && f.detail}
+							<details class="detail"><summary>Details</summary><p>{f.detail}</p></details>
+						{/if}
 					{/each}
 				</div>
 				{#if fixes.length > 6}<a class="more" href={to('/downloads')}>{fixes.length - 6} more in Downloads</a>{/if}
@@ -299,7 +303,7 @@
 		{#if approver && waiting.length}
 			<Shelf title="Waiting for approval" subtitle="{waiting.length} {waiting.length === 1 ? 'ask' : 'asks'} on the Wishlist" href={to('/wishlist')}>
 				{#each waiting.slice(0, 20) as a (a.id)}
-					<PosterCard title={a.name} href={to('/wishlist')} image={a.poster} subtitle="Asked by {greetName(a.asked_by?.name) || 'someone'}" status="requested" statusLabel="Waiting" />
+					<PosterCard title={a.name} href={to('/wishlist')} image={a.poster} subtitle="Asked by {personName(a.asked_by?.name, 'someone in your household')}" status="requested" statusLabel="Waiting" />
 				{/each}
 			</Shelf>
 		{:else if !approver && mine.length}
@@ -407,6 +411,10 @@
 	.attention h2, .panel h2 { font: var(--t-title2); letter-spacing: var(--t-title2-track); }
 	.panel h2 { font: var(--t-title3); }
 	.count { min-width: 24px; height: 24px; padding: 0 8px; display: inline-grid; place-items: center; border-radius: 999px; background: var(--accent-soft); color: var(--accent-text); font: var(--t-subhead); font-weight: 600; font-variant-numeric: tabular-nums; }
+	.detail { margin: -2px 12px 6px 52px; color: var(--text-muted); font: var(--t-footnote); }
+	.detail summary { width: max-content; min-height: 24px; cursor: pointer; border-radius: 6px; }
+	.detail summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.detail p { margin-top: 4px; font-family: var(--font-mono); overflow-wrap: anywhere; }
 	.attention .list { border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); padding: 6px; }
 	.go { display: inline-flex; align-items: center; gap: 2px; color: var(--accent-text); font: var(--t-subhead); font-weight: 600; }
 	.more, .panel header a { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent-text); font: var(--t-callout); font-weight: 500; }

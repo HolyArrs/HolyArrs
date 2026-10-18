@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { peopleNames } from './plain.ts';
 	import { to } from './paths.ts';
 	// One show: its seasons and episodes, Keep up to date per show, season
 	// and episode, air dates and why each episode is or is not looked for;
@@ -31,7 +32,7 @@
 	import './title-page.css';
 	import { session } from './session.svelte.ts';
 	import { toasts } from './toasts.svelte.ts';
-	import { decided, names } from './wishlist.ts';
+	import { decided } from './wishlist.ts';
 	import { groupLabel, kindTone } from './history.ts';
 	import {
 		detailsSources,
@@ -507,7 +508,7 @@
 				{#each title.asks as a (a.id)}
 					<dl class="facts">
 						<dt>Asked by</dt>
-						<dd>{names(a.people.map((p) => p.name))} · {date(a.asked_at)}</dd>
+						<dd>{peopleNames(a.people.map((p) => p.name))} · {date(a.asked_at)}</dd>
 						<dt>For</dt>
 						<dd>{a.season_words ?? seasonWords(a.seasons)}</dd>
 						{#if decided(a)}<dt>Decided</dt>

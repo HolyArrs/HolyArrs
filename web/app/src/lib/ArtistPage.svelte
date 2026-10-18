@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { peopleNames } from './plain.ts';
 	import { to } from './paths.ts';
 	// One artist: its albums with their kinds, dates and state, Keep up to
 	// date per artist and album, the album kinds it includes, and who asked.
@@ -18,7 +19,7 @@
 	import './title-page.css';
 	import { session } from './session.svelte.ts';
 	import { toasts } from './toasts.svelte.ts';
-	import { decided, names } from './wishlist.ts';
+	import { decided } from './wishlist.ts';
 	import { groupLabel, kindTone } from './history.ts';
 	import AskArtistDialog from './AskArtistDialog.svelte';
 	import RenamePreview from './RenamePreview.svelte';
@@ -357,7 +358,7 @@
 				{#each title.asks as a (a.id)}
 					<dl class="facts">
 						<dt>Asked by</dt>
-						<dd>{names(a.people.map((p) => p.name))} · {date(a.asked_at)}</dd>
+						<dd>{peopleNames(a.people.map((p) => p.name))} · {date(a.asked_at)}</dd>
 						<dt>For</dt>
 						<dd>{a.album_words ?? albumWords(a.albums)}</dd>
 						{#if decided(a)}<dt>Decided</dt>

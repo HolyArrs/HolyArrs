@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { peopleNames } from '#lib/plain.ts';
 	import { to } from '#lib/paths.ts';
 	import { page } from '$app/state';
 	import { api, message, ApiError } from '#lib/api.ts';
@@ -10,7 +11,7 @@
 	import EmptyState from '#lib/EmptyState.svelte';
 	import { secondVersion, slotNotes } from '#lib/library.ts';
 	import { chooseWarnings, facts, keyReasons, pager, verdict, verdictTone } from '#lib/releases.ts';
-	import { decided, names } from '#lib/wishlist.ts';
+	import { decided } from '#lib/wishlist.ts';
 	import { downloadTone, percent, timeLeft } from '#lib/downloaders.ts';
 	import RenamePreview from '#lib/RenamePreview.svelte';
 	import SubtitlePanel from '#lib/SubtitlePanel.svelte';
@@ -682,7 +683,7 @@
 						{#each title.asks as a (a.id)}
 							<dl class="facts">
 								<dt>Asked by</dt>
-								<dd>{names(a.people.map((p) => p.name))} · {date(a.asked_at)}</dd>
+								<dd>{peopleNames(a.people.map((p) => p.name))} · {date(a.asked_at)}</dd>
 								{#if decided(a)}<dt>Decided</dt>
 									<dd>{decided(a)}{a.decided_at ? ` · ${date(a.decided_at)}` : ''}</dd>{/if}
 								<dt>Now</dt>
