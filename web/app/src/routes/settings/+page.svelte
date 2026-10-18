@@ -147,7 +147,8 @@
 		border-radius: var(--r-pill);
 		font-size: var(--text-sm);
 		font-weight: var(--weight-medium);
-		color: var(--text-muted);
+		/* Muted grey is too faint on the grey track (axe contrast). */
+		color: var(--text);
 		cursor: pointer;
 	}
 	.theme-control label.active {

@@ -70,7 +70,7 @@
 			<IconButton bind:node={toggle} icon="sidebar" label={collapsed ? 'Show sidebar' : 'Hide sidebar'} aria-expanded={!collapsed} aria-controls={id} tipSide={collapsed ? 'right' : 'below'} onclick={ontoggle} />
 		</span>
 	</div>
-	<div class="search"><SidebarItem icon="search" label="Search" kbd={searchKey} {collapsed} onclick={onsearch} /></div>
+	<div class="search"><SidebarItem icon="search" label="Search…" kbd={searchKey} {collapsed} onclick={onsearch} /></div>
 	<nav aria-label="Main" class="scroll">
 		<div class="list" bind:this={list}>
 			<span class="pill" class:on={pill.on} class:still={pill.still} style="transform: translateY({pill.top}px); height: {pill.height}px" aria-hidden="true"></span>

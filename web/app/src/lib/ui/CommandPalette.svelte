@@ -44,6 +44,8 @@
 </script>
 
 <Sheet bind:open title="Search and go" hideTitle size="md" placement="top">
+	<!-- Only while open, so the closed palette adds no hidden copy of every place. -->
+	{#if open}
 	<div class="ui-palette">
 		<div class="field">
 			<Icon name="search" size={18} />
@@ -78,6 +80,7 @@
 		</ul>
 		{#if !count}<p class="hint">Type a title, or a place like Downloads or Settings.</p>{/if}
 	</div>
+	{/if}
 </Sheet>
 
 <style>

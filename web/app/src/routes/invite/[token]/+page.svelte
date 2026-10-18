@@ -37,7 +37,7 @@
 		busy = true;
 		try {
 			await session.acceptInvite(linkPart, name.trim(), pw);
-			await goto(to(session.can('manage_library') ? '/' : '/library'), { replace: true });
+			await goto(to('/'), { replace: true });
 		} catch (err) {
 			error = message(err);
 		} finally {

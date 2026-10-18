@@ -200,6 +200,11 @@
 		border-color: var(--ha-red);
 		background: var(--ha-red-soft);
 	}
+	/* Muted grey is too faint on the tinted and hover backgrounds (axe contrast). */
+	.preset.on .muted,
+	.preset:hover .muted {
+		color: var(--text);
+	}
 	.preset input {
 		position: absolute;
 		opacity: 0;

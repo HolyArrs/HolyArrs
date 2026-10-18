@@ -77,3 +77,7 @@ Role presets are display-only (spec §7): Admin, Manager, Member, Kid. Kid = `as
 - Title view: `rating` (certification for that country) so cards and title pages can show it.
 - Enforcement on the server, not the app: titles above the limit are left out of `/titles`, `/calendar`, `/discover`, search and `POST /asks` (`403` with a plain message).
 - Until this exists the invite screen shows Kid as "coming soon".
+
+## 4. Newest titles on the Library summary
+
+Home must not read the whole Library (`GET /titles`); the e2e suite checks that it only reads `GET /library-summary`, which is bounded. "Recently added" (and the posters on "Coming soon") need the newest titles, so Home reads an optional `recent: TitleView[]` on `GET /library-summary` and hides the shelf while it is absent. Ask: add `recent`, the 20 newest titles by date added (same view as `GET /titles`, parts and the Kid limit applied). Members may read it (the route is already open to every signed-in person).

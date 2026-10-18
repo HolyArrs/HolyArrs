@@ -41,7 +41,7 @@
 
 <div class="settings-shell">
 	<nav class="settings-nav" aria-label="Settings sections">
-		<div class="nav-heading"><h1>Settings</h1></div>
+		<div class="nav-heading"><p class="nav-title">Settings</p></div>
 
 		<a class="overview-link" href={to('/settings')} aria-current={current === '/settings' ? 'page' : undefined}>
 			<Icon name="home" size={18} />
@@ -66,7 +66,7 @@
 		{/each}
 	</nav>
 
-	<main class="settings-workspace">
+	<div class="settings-workspace">
 		<div class="section-picker">
 			<label for="settings-section">Settings section</label>
 			<div class="select-wrap">
@@ -80,7 +80,7 @@
 			</div>
 		</div>
 		<div class:overview-content={current === '/settings'} class="settings-content">{@render children()}</div>
-	</main>
+	</div>
 </div>
 
 <style>
@@ -108,7 +108,7 @@
 		scrollbar-width: thin;
 	}
 	.nav-heading { padding: 0 var(--s-2) var(--s-4); }
-	.nav-heading h1 {
+	.nav-heading .nav-title {
 		font-size: var(--text-xl);
 		line-height: 1.2;
 		letter-spacing: -0.025em;

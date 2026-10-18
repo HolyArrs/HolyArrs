@@ -30,7 +30,9 @@
 	let loaded = $state(false);
 	let failed = $state(false);
 	let retrying = $state(false);
+	// The newest titles, when the server sends them with the bounded summary; Home never reads the whole Library.
 	let titles = $state<TitleView[]>([]);
+	let total = $state(0);
 	let missing = $state<MissingTitle[]>([]);
 	let folders = $state<LibraryFolder[]>([]);
 	let downloads = $state<DownloadRow[]>([]);
@@ -61,7 +63,7 @@
 		{ done: folders.length > 0, text: 'Choose a Library folder', detail: 'Tell HolyArrs where finished media should live.', href: '/settings/library-folders' },
 		{ done: (health?.sources?.length ?? 0) > 0, text: 'Add a Source', detail: 'Connect a place where HolyArrs can find Releases.', href: '/settings/sources' },
 		{ done: (health?.downloaders?.length ?? 0) > 0, text: 'Add a Downloader', detail: 'Connect the app that fetches chosen Releases.', href: '/settings/downloaders' },
-		{ done: titles.length > 0, text: 'Add your first title', detail: 'Search for a movie, show or artist to begin your Library.', href: '/search' }
+		{ done: total > 0, text: 'Add your first title', detail: 'Search for a movie, show or artist to begin your Library.', href: '/search' }
 	]);
 	const doneCount = $derived(steps.filter((s) => s.done).length);
 	const nextStep = $derived(steps.find((s) => !s.done));
@@ -93,8 +95,8 @@
 
 	function summary(): string {
 		if (!loaded) return 'Looking at your Library…';
-		if (titles.length === 0) return 'Your Library is empty. Here is how to get going.';
-		const n = titles.length;
+		if (total === 0) return 'Your Library is empty. Here is how to get going.';
+		const n = total;
 		const parts = [`${n} ${n === 1 ? 'title' : 'titles'} in your Library`];
 		if (active.length) parts.push(`${active.length} downloading now`);
 		return parts.join(', ') + '.';
@@ -108,9 +110,8 @@
 		const mayReadTMDB = admin && !tmdbNeedsProof && (session.s.via === 'api_key' || session.s.localRecent);
 		const from = ymd(new Date());
 		const until = ymd(new Date(Date.now() + 30 * 86400000));
-		const [ti, su, fo, dl, ev, he, tk, se, ch, ca, as, de] = await Promise.allSettled([
-			api.get<{ titles: TitleView[] }>('/titles'),
-			api.get<{ total: number; missing: MissingTitle[] }>('/library-summary'),
+		const [su, fo, dl, ev, he, tk, se, ch, ca, as, de] = await Promise.allSettled([
+			api.get<{ total: number; missing: MissingTitle[]; recent?: TitleView[] }>('/library-summary'),
 			admin ? api.get<{ library_folders: LibraryFolder[] }>('/library-folders') : Promise.resolve(null),
 			// Members may only read the Library and their own asks (perms.go); the rest needs manage_library.
 			manager ? api.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=50') : Promise.resolve(null),
@@ -123,13 +124,14 @@
 			session.can('ask') || approver ? api.get<{ asks: Ask[] }>('/asks') : Promise.resolve(null),
 			manager ? api.get<{ items: Decision[]; count: number }>('/needs-decision') : Promise.resolve(null)
 		]);
-		// A failed refresh keeps what was shown before; only the Library list decides the error banner.
-		failed = ti.status === 'rejected';
-		if (ti.status === 'fulfilled') {
-			titles = ti.value.titles ?? [];
+		// A failed refresh keeps what was shown before; only the Library summary decides the error banner.
+		failed = su.status === 'rejected';
+		if (su.status === 'fulfilled') {
+			total = su.value.total ?? 0;
+			missing = su.value.missing ?? [];
+			titles = su.value.recent ?? [];
 			hasData = true;
 		}
-		if (su.status === 'fulfilled') missing = su.value.missing ?? [];
 		if (fo.status === 'fulfilled' && fo.value) folders = fo.value.library_folders;
 		if (dl.status === 'fulfilled' && dl.value) downloads = dl.value.downloads ?? [];
 		if (ev.status === 'fulfilled' && ev.value) events = ev.value.events ?? [];
@@ -232,7 +234,7 @@
 					{/each}
 				</ol>
 			</section>
-		{:else if loaded && titles.length === 0}
+		{:else if loaded && total === 0}
 			<EmptyState
 				icon="search"
 				title="Add your first title"

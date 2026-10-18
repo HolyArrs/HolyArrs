@@ -383,6 +383,8 @@
 	<CommandPalette bind:open={paletteOpen} items={paletteItems} go={(href) => void goto(link(href))} onsearch={(q) => void goto(to(`/search?q=${encodeURIComponent(q)}`))} />
 
 	<Sheet bind:open={moreOpen} title={manager ? 'Manage' : 'More'} size="sm">
+		<!-- Only while open, so a closed sheet adds no second copy of every place to the page. -->
+		{#if moreOpen}
 		<nav class="more" aria-label="All places">
 			{#each sections as s (s.id)}
 				<div class="more-sec">
@@ -401,6 +403,7 @@
 				<Button variant="destructive" icon="signout" full onclick={() => { moreOpen = false; void signOut(); }}>Sign out</Button>
 			</div>
 		</nav>
+		{/if}
 	</Sheet>
 {/if}
 <ToastList />
