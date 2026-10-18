@@ -78,6 +78,8 @@ Role presets are display-only (spec ยง7): Admin, Manager, Member, Kid. Kid = `as
 - Enforcement on the server, not the app: titles above the limit are left out of `/titles`, `/calendar`, `/discover`, search and `POST /asks` (`403` with a plain message).
 - Until this exists the invite screen shows Kid as "coming soon".
 
+**Built.** `/auth/me`, the user and invite views and `GET /auth/invites/{token}` carry `max_rating` (`""` = no limit) and `rating_country` (`US`); `PUT /users/{id}` and `POST /users/invites` take both. Only members may have a limit. The server hides titles above the limit and every unrated title and artist, answers `403` for TMDB details ("This title is rated above what this account may see.") and for asks ("This account can ask only for titles rated up to <max>."; music: "This account cannot ask for music, because music has no age ratings."). In the app, Kid is a real preset (asks only, `PG` by default) with an "Age rating" choice of `G`, `PG`, `PG-13` or `R`; the people list says "Kid ท up to PG"; a Kid sees no Music row; a blocked title page says it is not available on this account. Rules: `docs/kid-accounts.md`.
+
 ## 4. Newest titles on the Library summary
 
 Home must not read the whole Library (`GET /titles`); the e2e suite checks that it only reads `GET /library-summary`, which is bounded. "Recently added" (and the posters on "Coming soon") need the newest titles, so Home reads an optional `recent: TitleView[]` on `GET /library-summary` and hides the shelf while it is absent. Ask: add `recent`, the 20 newest titles by date added (same view as `GET /titles`, parts and the Kid limit applied). Members may read it (the route is already open to every signed-in person).
@@ -98,8 +100,8 @@ The rules are in `web/app/src/lib/settings-status.ts`, which has unit tests.
 
 What is asked for:
 
-- **One status route.** `GET /api/v1/settings/status` with the settings permission. It answers `{ items: [{ group, page, text, severity }], unset: { group: [page] } }`, using the same rules as `settings-status.ts`. That turns eight calls into one, and the rules then live in one place. It is small, so a 30-second cache is fine.
-- **TMDB key present.** `GET /settings/tmdb-token` needs a recent password, so without one the home cannot tell whether a key is missing. Please add `tmdb_key_set: boolean` to that status route, or to `GET /health`, for anyone with the settings permission. Never send the key itself.
+- **One status route.** **Built:** Settings home and the sidebar now make this single call (`lib/settings-status.svelte.ts`); `fromServer` in `lib/settings-status.ts` reads the answer and the rules live in Go (`internal/api/settings_status.go`). The answer is `{ items, unset, known, tmdb_key_set }`. Asked for: `GET /api/v1/settings/status` with the settings permission. It answers `{ items: [{ group, page, text, severity }], unset: { group: [page] } }`, using the same rules as `settings-status.ts`. That turns eight calls into one, and the rules then live in one place. It is small, so a 30-second cache is fine.
+- **TMDB key present.** **Built** as `tmdb_key_set` on the status route. `GET /settings/tmdb-token` needs a recent password, so without one the home cannot tell whether a key is missing. Please add `tmdb_key_set: boolean` to that status route, or to `GET /health`, for anyone with the settings permission. Never send the key itself.
 - **Status for the other groups.**
   - Media servers and Alerts keep no last test result, so Linked apps can only show a failure through `/health/states`.
   - Sign-in and security, and Wishlist and people, have no health signal at all, so their cards show no status line.

@@ -1,62 +1,72 @@
 import { describe, expect, it } from 'vitest';
-import { groupState, pageState, settingsStatus, stateWords } from './settings-status.ts';
+import { fromServer, groupState, pageState, stateWords, type ServerStatus } from './settings-status.ts';
 import { groups, grouped, sectionFor, sections, visible } from './settings.ts';
 import { searchSettings, settingIndex } from './settings-search.ts';
-import type { HealthCheck, StageState } from './types.ts';
 
-const check = (over: Partial<HealthCheck>): HealthCheck => ({
-	id: 1,
-	key: 'k',
-	kind: 'downloader',
-	subject: 'qBit',
-	state: 'ok',
-	message: '',
-	since: '',
-	checked_at: '',
-	...over
-});
-const st = (over: Partial<StageState>): StageState => ({ key: 'media_server:1', kind: 'media_server', name: 'Jelly', state: 'running', reason: '', since: '', stuck: false, restarts: 0, ...over });
-const now = Date.parse('2026-10-18T12:00:00Z');
+const answer = (over: Partial<ServerStatus> = {}): ServerStatus => ({ items: [], unset: {}, known: [], tmdb_key_set: true, ...over });
 
-describe('settingsStatus', () => {
-	it('says All set when every known check is fine', () => {
-		const a = settingsStatus({ checks: [check({})], sources: [{ name: 'A', state: 'working' }], downloaders: [{ name: 'Q', state: 'working' }], now });
+describe('fromServer', () => {
+	it('turns the server answer into pages, groups and severities', () => {
+		const a = fromServer(
+			answer({
+				items: [{ group: 'copies', page: '/settings/downloaders', text: 'qBit is not answering', severity: 'error' }],
+				unset: { library: ['/settings/library-folders'] },
+				known: ['/settings/sources'],
+				tmdb_key_set: false
+			})
+		);
+		expect(a.items).toEqual([{ group: 'copies', href: '/settings/downloaders', text: 'qBit is not answering', severity: 'error' }]);
+		expect(a.unset).toEqual({ library: ['/settings/library-folders'] });
+		expect(a.known.has('/settings/sources')).toBe(true);
+		expect(a.tmdbKeySet).toBe(false);
+	});
+
+	it('copes with missing lists', () => {
+		const a = fromServer({} as ServerStatus);
 		expect(a.items).toEqual([]);
+		expect(a.unset).toEqual({});
+		expect(a.known.size).toBe(0);
+	});
+
+	it('an empty answer is not known anywhere', () => {
+		expect(fromServer(null).known.size).toBe(0);
+	});
+});
+
+describe('groupState and pageState', () => {
+	it('says All set when every known page is fine', () => {
+		const a = fromServer(answer({ known: ['/settings/sources', '/settings/downloaders'] }));
 		expect(stateWords(groupState(a, 'copies', ['/settings/sources', '/settings/downloaders']))).toBe('All set');
 	});
 
-	it('counts a failing downloader once, from the check and the list', () => {
-		const a = settingsStatus({
-			checks: [check({ state: 'error', message: 'not answering' })],
-			downloaders: [{ name: 'qBit', state: 'not_answering' }],
-			sources: [{ name: 'A', state: 'working' }],
-			now
-		});
-		// One from the health check, one from the list (they word it differently but both point at Downloaders).
-		expect(a.items.every((i) => i.href === '/settings/downloaders')).toBe(true);
-		expect(groupState(a, 'copies', []).state).toBe('attention');
+	it('counts what needs attention per group and per page', () => {
+		const a = fromServer(
+			answer({
+				items: [
+					{ group: 'copies', page: '/settings/downloaders', text: 'qBit is not answering', severity: 'error' },
+					{ group: 'copies', page: '/settings/downloaders', text: 'Downloader check failed', severity: 'error' }
+				],
+				known: ['/settings/sources']
+			})
+		);
+		expect(groupState(a, 'copies', [])).toEqual({ state: 'attention', count: 2 });
 		expect(pageState(a, '/settings/sources').state).toBe('ok');
+		expect(stateWords(pageState(a, '/settings/downloaders'))).toBe('2 need attention');
 	});
 
-	it('flags a missing TMDB key, an old backup and a failed media server', () => {
-		const a = settingsStatus({ tmdbKey: false, newestBackup: '2026-10-01T00:00:00Z', states: [st({ state: 'failed' })], now });
-		expect(a.items.map((i) => i.href).sort()).toEqual(['/settings/backups', '/settings/media-servers', '/settings/tmdb']);
+	it('one item reads in the singular', () => {
+		const a = fromServer(answer({ items: [{ group: 'maintenance', page: '/settings/backups', text: 'No backup yet', severity: 'warning' }] }));
 		expect(stateWords(groupState(a, 'maintenance', ['/settings/backups']))).toBe('1 needs attention');
 	});
 
-	it('a recent backup is fine and no backup at all is flagged', () => {
-		expect(settingsStatus({ newestBackup: '2026-10-17T00:00:00Z', now }).items).toEqual([]);
-		expect(settingsStatus({ newestBackup: '', now }).items[0].text).toBe('No backup yet');
-	});
-
-	it('says Not set up when there are no folders, Sources or Downloaders', () => {
-		const a = settingsStatus({ folders: 0, sources: [], downloaders: [], now });
+	it('says Not set up for pages the server lists as unset', () => {
+		const a = fromServer(answer({ unset: { library: ['/settings/library-folders'], copies: ['/settings/sources', '/settings/downloaders'] } }));
 		expect(stateWords(groupState(a, 'library', ['/settings/library-folders']))).toBe('Not set up');
 		expect(pageState(a, '/settings/downloaders').state).toBe('unset');
 	});
 
 	it('says nothing about pages it knows nothing of', () => {
-		const a = settingsStatus({ now });
+		const a = fromServer(answer());
 		expect(stateWords(groupState(a, 'security', ['/settings/sign-in']))).toBe('');
 		expect(stateWords({ state: 'attention', count: 2 })).toBe('2 need attention');
 	});
