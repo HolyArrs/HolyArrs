@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
-import { owner, signIn } from './helpers.ts';
+import { owner, signIn, libraryStatus } from './helpers.ts';
 
 // Add-movie screen, Library screen and Movie page against the fake TMDB in
 // fakes.mjs. Runs after the other projects, so the owner and the Movies
@@ -75,21 +75,19 @@ test('Library filters, find by name, posters and list', async () => {
 	await page.goto('/library');
 	const grid = page.locator('.grid .item');
 	await expect(grid).toHaveCount(4);
-	const pill = (name: RegExp) => page.getByRole('group', { name: 'Show' }).getByRole('button', { name });
-
-	await pill(/^Not out yet/).click();
+	await libraryStatus(page, 'not_out_yet');
 	await expect(page).toHaveURL(/show=not_out_yet/);
 	await expect(grid).toHaveCount(1);
 	await expect(grid.first()).toContainText('The Lantern Keepers');
 
-	await pill(/^Missing/).click();
+	await libraryStatus(page, 'missing');
 	await expect(grid).toHaveCount(3);
 	await expect(page.locator('.grid')).not.toContainText('The Lantern Keepers');
 
-	await pill(/^Better copy wanted/).click();
+	await libraryStatus(page, 'better');
 	await expect(page.getByText('Nothing matches this filter.')).toBeVisible();
 
-	await pill(/^All/).click();
+	await libraryStatus(page, 'all');
 	await page.getByLabel('Find in the Library').fill('harbour');
 	await expect(grid).toHaveCount(1);
 	await page.getByLabel('Find in the Library').fill('');
@@ -107,12 +105,13 @@ test('Movie page: dates, why, file, refresh and edit', async () => {
 	await page.locator('.grid .item', { hasText: 'Paper Harbour' }).click();
 	await expect(page.getByRole('heading', { level: 1 })).toContainText('Paper Harbour');
 	await expect(page.getByTestId('gate-reason')).toContainText('open since 2023-07-01');
-	await expect(page.getByRole('heading', { name: 'Dates' })).toBeVisible();
-	await expect(page.getByText('Out on digital or disc')).toBeVisible();
-	await expect(page.getByRole('heading', { name: 'File' })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'About' })).toBeVisible();
+	await expect(page.getByText('Out on digital or disc', { exact: true })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Versions and files' })).toBeVisible();
 	await expect(page.getByText('No file yet.')).toBeVisible();
 
-	await page.getByRole('button', { name: 'Refresh' }).click();
+	await page.getByRole('button', { name: 'More actions' }).click();
+	await page.getByRole('menuitem', { name: 'Refresh from TMDB' }).click();
 	await expect(page.getByText('Refreshing names, dates and posters')).toBeVisible();
 
 	await page.getByRole('button', { name: 'Edit', exact: true }).click();
@@ -135,13 +134,14 @@ test('a member sees the movie but none of the staff controls', async ({ browser 
 	await m.getByLabel('Password', { exact: true }).fill(memberPw);
 	await m.getByLabel('Password again').fill(memberPw);
 	await m.getByRole('button', { name: 'Join and sign in' }).click();
-	await expect(m).toHaveURL(/\/library$/);
+	await expect(m).toHaveURL(/\/$/);
 
+	await m.goto('/library');
 	await expect(m.locator('.grid .item')).toHaveCount(4);
 	await expect(m.getByRole('link', { name: 'Add a movie' })).toHaveCount(0);
 	await m.locator('.grid .item', { hasText: 'The Lantern Keepers' }).click();
 	await expect(m.getByTestId('gate-reason')).toBeVisible();
-	for (const b of ['Search now', 'Refresh', 'Edit']) await expect(m.getByRole('button', { name: b, exact: true })).toHaveCount(0);
+	for (const b of ['Search now', 'Keep up to date', 'Edit', 'Library', 'More actions']) await expect(m.getByRole('button', { name: b, exact: true })).toHaveCount(0);
 	await expect(m.getByRole('heading', { name: 'Releases' })).toHaveCount(0);
 
 	await m.goto('/search');

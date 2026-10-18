@@ -21,6 +21,12 @@ async function fresh(browser: Browser) {
 	return (await browser.newContext()).newPage();
 }
 
+// Choose a release sits in the title's More menu.
+async function chooseRelease(p: Page) {
+	await p.getByRole('button', { name: 'More actions' }).click();
+	await p.getByRole('menuitem', { name: 'Choose a release' }).click();
+}
+
 const release = (p: Page, part: string) => p.getByTestId('release').filter({ has: p.locator('.rel-name', { hasText: part }) });
 
 test.beforeAll(async ({ browser }) => {
@@ -30,7 +36,7 @@ test.beforeAll(async ({ browser }) => {
 
 test('Choose a release shows every Release with its verdict and plain reasons; turn one down; force one that failed', async () => {
 	await openMovie(page, 'Quiet Orchard');
-	await page.getByRole('button', { name: 'Choose a release' }).click();
+	await chooseRelease(page);
 	await expect(page.getByTestId('search-running')).toContainText('Searching your Sources');
 	await expect(page.getByTestId('release')).toHaveCount(3, { timeout: 20_000 });
 	await expect(page.getByTestId('search-running')).toHaveText('');
@@ -67,7 +73,7 @@ test('Choose a release shows every Release with its verdict and plain reasons; t
 
 test('a movie not out yet: every Release is listed, and choosing one warns that the Release gate is skipped', async () => {
 	await openMovie(page, 'The Lantern Keepers');
-	await page.getByRole('button', { name: 'Choose a release' }).click();
+	await chooseRelease(page);
 	await expect(page.getByTestId('release')).toHaveCount(3, { timeout: 20_000 });
 	// A year past next year is not read as a year, so these match no Title;
 	// they are still listed with that reason.
@@ -87,7 +93,7 @@ test('a movie with two Versions: pick the Version to search for', async () => {
 	const pick = page.getByLabel('Version', { exact: true });
 	await expect(pick.locator('option')).toHaveCount(3);
 	await pick.selectOption({ label: '4K' });
-	await page.getByRole('button', { name: 'Choose a release' }).click();
+	await chooseRelease(page);
 	await expect(page.getByTestId('release').first()).toBeVisible({ timeout: 20_000 });
 	await expect(page.getByTestId('release').first()).toContainText('4K');
 });
@@ -192,16 +198,20 @@ test('a member sees none of the search screens', async ({ browser }) => {
 	await m.getByLabel('Password', { exact: true }).fill(pw);
 	await m.getByLabel('Password again').fill(pw);
 	await m.getByRole('button', { name: 'Join and sign in' }).click();
-	await expect(m).toHaveURL(/\/library$/);
+	await expect(m).toHaveURL(/\/$/);
+	await m.goto('/library');
 	await expect(m.getByRole('link', { name: 'Held', exact: true })).toHaveCount(0);
+	await expect(m.getByRole('link', { name: 'Library tools' })).toHaveCount(0);
 	await m.locator('.grid .item', { hasText: 'Quiet Orchard' }).click();
 	await expect(m.getByRole('heading', { level: 1 })).toContainText('Quiet Orchard');
 	for (const b of ['Search now', 'Choose a release']) await expect(m.getByRole('button', { name: b })).toHaveCount(0);
 	await expect(m.getByTestId('release')).toHaveCount(0);
+	// Staff pages send a member to their own Home, which has no searches panel.
 	for (const url of ['/library/held', '/library/turned-down', '/settings/search', '/']) {
 		await m.goto(url);
-		await expect(m).toHaveURL(/\/library$/);
+		await expect(m).toHaveURL(/\/$/);
 	}
+	await expect(m.getByTestId('home-searches')).toHaveCount(0);
 });
 
 test('no serious accessibility issues on the filled search screens', async () => {

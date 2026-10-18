@@ -64,7 +64,7 @@ test('a member asks for a movie from a phone and sees it on the Wishlist', async
 	await kim.getByLabel('Password', { exact: true }).fill(kimPw);
 	await kim.getByLabel('Password again').fill(kimPw);
 	await kim.getByRole('button', { name: 'Join and sign in' }).click();
-	await expect(kim).toHaveURL(/\/library$/);
+	await expect(kim).toHaveURL(/\/$/);
 
 	await kim.goto('/account');
 	await kim.getByLabel('Discord user id').fill(kimDiscord);
@@ -94,9 +94,11 @@ test('a member asks for a movie from a phone and sees it on the Wishlist', async
 
 test('the owner approves from a phone: the movie is added and kim is told', async () => {
 	await own.goto('/library');
-	const tab = own.locator('nav.tabbar').getByRole('link', { name: /Wishlist/ });
-	await expect(tab.locator('.badge')).toHaveText('1');
+	// Approvers find the Wishlist as Approvals in the Manage sheet; the tab shows a dot.
+	const tab = own.locator('nav.tabbar').getByRole('button', { name: /^Manage/ });
+	await expect(tab).toHaveAccessibleName(/items need attention/);
 	await tab.click();
+	await own.getByRole('dialog', { name: 'Manage' }).getByRole('link', { name: 'Approvals, 1 waiting' }).click();
 	await expect(own.getByRole('button', { name: /^Waiting/ })).toHaveAttribute('aria-pressed', 'true');
 	const ask = own.getByTestId('ask').filter({ hasText: 'Copper Lighthouse' });
 	await expect(ask.getByTestId('asked-by')).toContainText('Asked by kim');

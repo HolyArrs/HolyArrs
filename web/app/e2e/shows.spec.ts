@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { join } from 'node:path';
-import { moviesDir, noSidewaysScroll, owner, signIn } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, libraryStatus, openApprovals } from './helpers.ts';
 
 // Shows (2.2.5 to 2.2.10): the owner adds a show folder and a show from
 // Search (the fake TMDB knows Harbour Lights, Lantern Street and Moss
@@ -121,13 +121,13 @@ test('shows sit in the Library next to movies, with kinds and state filters', as
 	await expect(card).toContainText('Show');
 	await expect(card).toContainText('missing');
 	await expect(own.getByTestId('library-card').filter({ hasText: 'Quiet Orchard' })).toHaveCount(0);
-	await own.getByRole('button', { name: /^Missing/ }).click();
+	await libraryStatus(own, 'missing');
 	await expect(card).toBeVisible();
 	await own.getByRole('button', { name: /^Not out yet/ }).click();
 	await expect(card).toBeVisible();
 	await own.getByRole('button', { name: /^Better copy wanted/ }).click();
 	await expect(card).toHaveCount(0);
-	await own.getByRole('button', { name: /^All/ }).click();
+	await libraryStatus(own, 'all');
 	await own.getByRole('group', { name: 'Layout' }).getByRole('button', { name: 'List' }).click();
 	await expect(own.getByTestId('library-row').filter({ hasText: 'Harbour Lights' })).toContainText('aired episodes in the Library');
 	await own.getByRole('group', { name: 'Layout' }).getByRole('button', { name: 'Posters' }).click();
@@ -149,7 +149,7 @@ test('a member asks for two seasons of a show from a phone', async ({ browser })
 	await max.getByLabel('Password', { exact: true }).fill(maxPw);
 	await max.getByLabel('Password again').fill(maxPw);
 	await max.getByRole('button', { name: 'Join and sign in' }).click();
-	await expect(max).toHaveURL(/\/library$/);
+	await expect(max).toHaveURL(/\/$/);
 
 	await searchShows(max, 'lantern');
 	const hit = max.getByTestId('show-hit').filter({ hasText: 'Lantern Street' });
@@ -184,7 +184,7 @@ test('a member asks for two seasons of a show from a phone', async ({ browser })
 test('the owner approves from a phone: the show is added with those seasons and max is told', async ({ browser }) => {
 	const phone = await fresh(browser, 412);
 	await signIn(phone, owner());
-	await phone.locator('nav.tabbar').getByRole('link', { name: /Wishlist/ }).click();
+	await openApprovals(phone);
 	const ask = phone.getByTestId('ask').filter({ hasText: 'Lantern Street' });
 	await expect(ask.getByTestId('asked-by')).toContainText('Asked by max');
 	await ask.getByRole('button', { name: 'Approve' }).click();

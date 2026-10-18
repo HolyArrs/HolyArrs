@@ -5,7 +5,7 @@ test('phone: bottom menu, one column, no sideways scroll on any page', async ({ 
 	await signIn(page, owner());
 	const tabs = page.locator('nav.tabbar');
 	await expect(tabs).toBeVisible();
-	await expect(page.locator('aside.sidebar')).toBeHidden();
+	await expect(page.locator('aside.ui-sidebar')).toBeHidden();
 
 	const urls = ['/', '/library', '/library/1', '/search', '/downloads', '/calendar', '/settings'];
 	for (const url of urls) {
@@ -37,7 +37,11 @@ test('phone: bottom menu, one column, no sideways scroll on any page', async ({ 
 		await noSidewaysScroll(page);
 	}
 
-	await tabs.getByRole('link', { name: 'Downloads' }).click();
+	// Downloads lives in the Manage sheet behind the last tab.
+	await tabs.getByRole('button', { name: /^Manage/ }).click();
+	await page.getByRole('dialog', { name: 'Manage' }).getByRole('link', { name: 'Downloads', exact: true }).click();
 	await expect(page).toHaveURL(/\/downloads$/);
-	await expect(tabs.getByRole('link', { name: 'Downloads' })).toHaveAttribute('aria-current', 'page');
+	await expect(tabs.getByRole('button', { name: /^Manage/ })).toHaveClass(/active/);
+	await tabs.getByRole('button', { name: /^Manage/ }).click();
+	await expect(page.getByRole('dialog', { name: 'Manage' }).getByRole('link', { name: 'Downloads', exact: true })).toHaveAttribute('aria-current', 'page');
 });

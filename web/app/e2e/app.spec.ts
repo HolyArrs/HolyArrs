@@ -1,6 +1,6 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { moviesDir, newOwner, owner, setupCode, signIn, noSidewaysScroll } from './helpers.ts';
+import { moviesDir, newOwner, owner, setupCode, signIn, signOut, noSidewaysScroll, libraryStatus } from './helpers.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -70,16 +70,17 @@ test('first run makes the owner, adds the key and folder, then returns Home', as
 	await page.getByRole('button', { name: 'Add folder and open Home' }).click();
 
 	await expect(page).toHaveURL(/\/$/);
-	await expect(page.getByRole('heading', { level: 1 })).toContainText('luis');
+	await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible();
+	await expect(page.locator('header.ui-head')).toContainText('luis');
 	await expect(page.getByText('Live', { exact: true })).toBeVisible();
-	const gettingStarted = page.getByRole('complementary', { name: 'Getting started' });
+	const gettingStarted = page.getByRole('region', { name: 'Finish setting up HolyArrs' });
 	await expect(gettingStarted.getByText('2 of 5 done', { exact: true })).toBeVisible();
-	await expect(gettingStarted.getByRole('link', { name: 'Add your TMDB key' })).toHaveCount(0);
-	await expect(gettingStarted.getByRole('link', { name: 'Add a Library folder' })).toHaveCount(0);
+	await expect(gettingStarted.getByRole('link', { name: /TMDB.*\(done\)/ })).toBeVisible();
+	await expect(gettingStarted.getByRole('link', { name: /Choose a Library folder.*\(done\)/ })).toBeVisible();
 });
 
 test('sign out, wrong password, then sign in', async () => {
-	await page.getByRole('button', { name: 'Sign out' }).click();
+	await signOut(page);
 	await expect(page).toHaveURL(/\/login/);
 	await page.getByLabel('Name').fill('luis');
 	await page.getByLabel('Password', { exact: true }).fill('wrong password');
@@ -91,28 +92,38 @@ test('sign out, wrong password, then sign in', async () => {
 test('the desktop menu reaches every destination and Back works', async () => {
 	const nav = page.getByRole('navigation', { name: 'Main' }).first();
 	const places: [string, RegExp, string][] = [
-		['Library', /\/library$/, 'Library'],
-		['Search', /\/search$/, 'Search'],
+		['Movies', /\/library\?kind=movie$/, 'Library'],
 		['Downloads', /\/downloads$/, 'Downloads'],
 		['Calendar', /\/calendar$/, 'Calendar'],
 		['History', /\/downloads\/history$/, 'History'],
-		['Needs a decision', /\/downloads\/decide$/, 'Needs a decision'],
-		['Alerts', /\/settings\/alerts$/, 'Alerts'],
-		['Home', /\/$/, 'Good']
+		['Library tools', /\/library\/held$/, 'Held'],
+		['Settings', /\/settings$/, 'Settings'],
+		['Home', /\/$/, 'Home']
 	];
 	for (const [label, url, heading] of places) {
-		await nav.getByRole('link', { name: label }).click();
+		await nav.getByRole('link', { name: label, exact: true }).click();
 		await expect(page).toHaveURL(url);
 		await expect(page.getByRole('heading', { level: 1 })).toContainText(heading);
-		await expect(nav.getByRole('link', { name: label })).toHaveAttribute('aria-current', 'page');
-		await expect(page.locator('.sidebar a[aria-current="page"]')).toHaveCount(1);
+		await expect(nav.getByRole('link', { name: label, exact: true })).toHaveAttribute('aria-current', 'page');
+		await expect(page.locator('.ui-sidebar a[aria-current="page"]')).toHaveCount(1);
 	}
-	await page.getByRole('navigation', { name: 'Settings' }).getByRole('link', { name: 'Settings' }).click();
+	// Search lives in the top bar; the rest are one level down.
+	await page.getByRole('button', { name: /^Search…/ }).first().click();
+	await page.getByRole('combobox', { name: 'Search titles or go to a place' }).fill('Search');
+	await page.getByRole('dialog').getByRole('option', { name: /^Search/ }).first().click();
+	await expect(page).toHaveURL(/\/search/);
+	await nav.getByRole('link', { name: 'Downloads', exact: true }).click();
+	await page.locator('main').getByRole('link', { name: 'Needs a decision' }).first().click();
+	await expect(page).toHaveURL(/\/downloads\/decide$/);
+	await expect(page.getByRole('heading', { level: 1 })).toContainText('Needs a decision');
+	await nav.getByRole('link', { name: 'Settings', exact: true }).click();
+	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Alerts' }).click();
+	await expect(page).toHaveURL(/\/settings\/alerts$/);
+	await expect(page.getByRole('heading', { level: 1 })).toContainText('Alerts');
+	await page.goBack();
 	await expect(page).toHaveURL(/\/settings$/);
 	await page.goBack();
-	await expect(page).toHaveURL(/\/$/);
-	await page.goBack();
-	await expect(page).toHaveURL(/\/settings\/alerts$/);
+	await expect(page).toHaveURL(/\/downloads\/decide$/);
 });
 
 test('empty pages say what to do next', async () => {
@@ -162,8 +173,8 @@ test('settings pages render their forms', async () => {
 
 test('the first-run Library folder keeps its health', async () => {
 	await page.goto('/settings/library-folders');
-	await expect(page.getByText('Movies', { exact: true })).toBeVisible();
-	await expect(page.locator('.chip').first()).not.toHaveText('');
+	await expect(page.locator('#main').getByText('Movies', { exact: true })).toBeVisible();
+	await expect(page.locator('#main .chip').first()).not.toHaveText('');
 });
 
 test('make and revoke an API key', async () => {
@@ -207,7 +218,7 @@ test('search, add a movie, and the Library updates live', async ({ browser }) =>
 
 	await page.locator('li.hit').first().getByRole('link', { name: 'In your Library' }).click();
 	await expect(page.getByRole('button', { name: 'Search now' })).toBeVisible();
-	await expect(page.getByText('Keep up to date')).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Keep up to date' })).toBeVisible();
 });
 
 test('Home reads a bounded Library summary', async () => {
@@ -221,7 +232,7 @@ test('Home reads a bounded Library summary', async () => {
 		await page.goto('/');
 		const summary = await (await response).json();
 		expect(summary.missing.length).toBeLessThanOrEqual(8);
-		await expect(page.locator('header.page-head')).toContainText(`${summary.total} ${summary.total === 1 ? 'title' : 'titles'} in your Library`);
+		await expect(page.locator('header.ui-head')).toContainText(`${summary.total} ${summary.total === 1 ? 'title' : 'titles'} in your Library`);
 		expect(fullLibrary).toEqual([]);
 	} finally {
 		page.off('request', record);
@@ -256,11 +267,11 @@ test('Library search debounces the indexed query and ignores stale results', asy
 	expect(calls).not.toContain('alias café');
 	await expect.poll(() => calls).toContain('alias café');
 	await expect(cards.filter({ hasText: 'Driftwood Moon' })).toBeVisible();
-	await page.getByRole('button', { name: /^Missing/ }).click();
+	await libraryStatus(page, 'missing');
 	await expect(cards.filter({ hasText: 'Driftwood Moon' })).toBeVisible();
-	await page.getByRole('button', { name: /^In library/ }).click();
+	await libraryStatus(page, 'have');
 	await expect(cards.filter({ hasText: 'Driftwood Moon' })).toHaveCount(0);
-	await page.getByRole('button', { name: /^All/ }).click();
+	await libraryStatus(page, 'all');
 
 	await find.fill('drift');
 	await expect(cards.filter({ hasText: 'Driftwood Moon' })).toBeVisible();
@@ -287,6 +298,8 @@ test('Library search debounces the indexed query and ignores stale results', asy
 
 	await find.fill('broken');
 	await expect(page.getByRole('alert')).toContainText('Library search failed.');
+	// The Kind filter sits in the Type menu; it stays usable after a failed search.
+	await page.locator('details.filter-menu summary', { hasText: 'Type' }).click();
 	await expect(page.getByRole('group', { name: 'Kind' })).toBeVisible();
 	await expect(page.getByRole('group', { name: 'Layout' })).toBeVisible();
 	await page.unroute('**/api/v1/titles?*');

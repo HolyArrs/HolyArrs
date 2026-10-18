@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { join } from 'node:path';
-import { moviesDir, noSidewaysScroll, owner, signIn } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, openApprovals } from './helpers.ts';
 
 // Music (2.3.4 to 2.3.8): the owner adds a music folder, looks at Settings >
 // Music, adds Tin Lanterns from Search (the fake MusicBrainz knows it and
@@ -167,7 +167,7 @@ test('a member asks for one single from a phone', async ({ browser }) => {
 	await ivy.getByLabel('Password', { exact: true }).fill(ivyPw);
 	await ivy.getByLabel('Password again').fill(ivyPw);
 	await ivy.getByRole('button', { name: 'Join and sign in' }).click();
-	await expect(ivy).toHaveURL(/\/library$/);
+	await expect(ivy).toHaveURL(/\/$/);
 
 	await searchMusic(ivy, 'moss');
 	const hit = ivy.getByTestId('artist-hit').filter({ hasText: 'Moss Choir' });
@@ -204,7 +204,7 @@ test('a member asks for one single from a phone', async ({ browser }) => {
 test('the owner approves from a phone: the artist is added with that single and ivy is told', async ({ browser }) => {
 	const phone = await fresh(browser, 412);
 	await signIn(phone, owner());
-	await phone.locator('nav.tabbar').getByRole('link', { name: /Wishlist/ }).click();
+	await openApprovals(phone);
 	const ask = phone.getByTestId('ask').filter({ hasText: 'Moss Choir' });
 	await expect(ask.getByTestId('asked-by')).toContainText('Asked by ivy');
 	await ask.getByRole('button', { name: 'Approve' }).click();

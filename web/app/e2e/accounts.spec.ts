@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { createHmac } from 'node:crypto';
-import { owner, signIn } from './helpers.ts';
+import { owner, signIn, signOut } from './helpers.ts';
 import { jellyfinPort, mediaUser } from './fakes.mjs';
 
 test.describe.configure({ mode: 'serial' });
@@ -48,7 +48,7 @@ test('the owner invites a member with a one-time link', async ({ browser }) => {
 	await ana.getByLabel('Password', { exact: true }).fill(memberPw);
 	await ana.getByLabel('Password again').fill(memberPw);
 	await ana.getByRole('button', { name: 'Join and sign in' }).click();
-	await expect(ana).toHaveURL(/\/library$/);
+	await expect(ana).toHaveURL(/\/$/);
 
 	// The link works once.
 	const again = await fresh(browser);
@@ -58,16 +58,22 @@ test('the owner invites a member with a one-time link', async ({ browser }) => {
 	await expect(own.getByText('Used by ana')).toBeVisible();
 });
 
-test('a member sees Library, Search, Wishlist and My account only', async () => {
+test('a member sees Home, the Library, Search, Wishlist and My account only', async () => {
 	const nav = ana.getByRole('navigation', { name: 'Main' }).first();
-	for (const label of ['Library', 'Search', 'Wishlist']) await expect(nav.getByRole('link', { name: label })).toBeVisible();
-	for (const label of ['Home', 'Downloads', 'Calendar']) await expect(nav.getByRole('link', { name: label })).toHaveCount(0);
+	for (const label of ['Home', 'Explore', 'Movies', 'Wishlist']) await expect(nav.getByRole('link', { name: label, exact: true })).toBeVisible();
+	await expect(ana.getByRole('button', { name: /^Search…/ }).first()).toBeVisible();
+	for (const label of ['Downloads', 'Calendar', 'History', 'Library tools']) await expect(nav.getByRole('link', { name: label })).toHaveCount(0);
 	await expect(ana.getByRole('link', { name: 'Settings' })).toHaveCount(0);
-	await expect(ana.getByRole('link', { name: 'My account' }).first()).toBeVisible();
-	for (const p of ['/settings', '/settings/backups', '/downloads', '/', '/calendar']) {
+	await ana.getByRole('button', { name: 'Account and appearance' }).click();
+	await expect(ana.getByRole('menuitem', { name: 'Account' })).toBeVisible();
+	await ana.keyboard.press('Escape');
+	// Manager pages send a member to their own Home.
+	for (const p of ['/settings', '/settings/backups', '/downloads', '/calendar', '/']) {
 		await ana.goto(p);
-		await expect(ana).toHaveURL(/\/library$/);
+		await expect(ana).toHaveURL(/\/$/);
 	}
+	await expect(ana.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible();
+	await expect(ana.getByRole('heading', { name: 'Looking for something new?' })).toBeVisible();
 	await ana.goto('/wishlist');
 	await expect(ana.getByRole('heading', { name: 'Nothing on the Wishlist yet' })).toBeVisible();
 	await ana.goto('/search?q=Dune');
@@ -87,7 +93,7 @@ test('a member turns on two-factor sign-in and needs a code to sign in', async (
 	await ana.getByRole('button', { name: 'Done' }).click();
 	await expect(ana.locator('.chip.ok', { hasText: 'On' })).toBeVisible();
 
-	await ana.getByRole('button', { name: 'Sign out' }).click();
+	await signOut(ana);
 	await expect(ana).toHaveURL(/\/login/);
 	await ana.getByLabel('Name').fill('ana');
 	await ana.getByLabel('Password', { exact: true }).fill(memberPw);
@@ -141,8 +147,8 @@ test('sign in with Jellyfin makes a member', async ({ browser }) => {
 	await expect(mum.getByRole('alert')).toContainText('wrong name or password');
 	await mum.getByLabel('Password', { exact: true }).fill(mediaUser.password);
 	await mum.getByRole('button', { name: 'Sign in with Jellyfin' }).click();
-	await expect(mum).toHaveURL(/\/library$/);
-	await expect(mum.getByRole('link', { name: 'My account' }).first()).toBeVisible();
+	await expect(mum).toHaveURL(/\/$/);
+	await expect(mum.getByRole('button', { name: 'Account and appearance' })).toBeVisible();
 });
 
 test('sign in with Plex makes a member (fake Plex)', async ({ browser }) => {
@@ -159,7 +165,8 @@ test('sign in with Plex makes a member (fake Plex)', async ({ browser }) => {
 	const popup = kid.waitForEvent('popup');
 	await kid.getByRole('button', { name: 'Sign in with Plex' }).click();
 	await (await popup).waitForLoadState().catch(() => {});
-	await expect(kid).toHaveURL(/\/library$/, { timeout: 15_000 });
+	await expect(kid).toHaveURL(/\/$/, { timeout: 15_000 });
+	await expect(kid.getByRole('button', { name: 'Account and appearance' })).toBeVisible();
 
 	await own.goto('/settings/users');
 	await expect(own.getByText('Jellyfin: Mum')).toBeVisible();

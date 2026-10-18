@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -34,6 +34,32 @@ export async function signIn(page: Page, o: Owner) {
 	await page.getByLabel('Password', { exact: true }).fill(o.password);
 	await page.getByRole('button', { name: 'Sign in', exact: true }).click();
 	await expect(page).toHaveURL(/\/$/);
+}
+
+/** libraryStatus picks a Library status filter from the Status menu (all, missing, not_out_yet, better, have). */
+export async function libraryStatus(scope: Page | Locator, value: 'all' | 'missing' | 'not_out_yet' | 'better' | 'have') {
+	const menu = scope.locator('details.status-filter:not(.requester-menu)');
+	if (!(await menu.evaluate((d) => (d as HTMLDetailsElement).open))) await menu.locator('summary').click();
+	await menu.getByLabel('Show titles matching').selectOption(value);
+}
+
+/** openApprovals reaches the Wishlist as an approver on a phone: Manage tab, then Approvals. */
+export async function openApprovals(page: Page) {
+	await page.locator('.ui-tabbar').getByRole('button', { name: /^Manage/ }).click();
+	await page.getByRole('dialog', { name: 'Manage' }).getByRole('link', { name: /^Approvals/ }).click();
+	await expect(page).toHaveURL(/wishlist/);
+}
+
+/** signOut uses the account menu (sidebar) or, on a phone, the More sheet. */
+export async function signOut(page: Page) {
+	const account = page.getByRole('button', { name: 'Account and appearance' });
+	if (await account.isVisible()) {
+		await account.click();
+		await page.getByRole('menuitem', { name: 'Sign out' }).click();
+		return;
+	}
+	await page.locator('.ui-tabbar').getByRole('button', { name: /^(More|Manage)/ }).click();
+	await page.getByRole('dialog').getByRole('button', { name: 'Sign out' }).click();
 }
 
 /** noSidewaysScroll fails when the page is wider than the screen. */

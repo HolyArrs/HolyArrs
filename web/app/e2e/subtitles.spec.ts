@@ -274,7 +274,7 @@ test('members see none of it', async ({ browser }) => {
 	await uma.getByLabel('Password', { exact: true }).fill(pw);
 	await uma.getByLabel('Password again').fill(pw);
 	await uma.getByRole('button', { name: 'Join and sign in' }).click();
-	await expect(uma).toHaveURL(/\/library$/);
+	await expect(uma).toHaveURL(/\/$/);
 	await expect(uma.getByRole('link', { name: 'Missing subtitles' })).toHaveCount(0);
 	await uma.getByRole('link', { name: /Quill Atlas/ }).first().click();
 	await expect(uma.getByRole('heading', { level: 1 })).toContainText('Quill Atlas');

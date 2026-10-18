@@ -230,7 +230,7 @@ test('members see none of it', async ({ browser }) => {
 	await sam.getByLabel('Password', { exact: true }).fill(pw);
 	await sam.getByLabel('Password again').fill(pw);
 	await sam.getByRole('button', { name: 'Join and sign in' }).click();
-	await expect(sam).toHaveURL(/\/library$/);
+	await expect(sam).toHaveURL(/\/$/);
 	await expect(sam.getByRole('link', { name: 'Import a library' })).toHaveCount(0);
 	await expect(sam.getByRole('link', { name: 'Rename files' })).toHaveCount(0);
 	await sam.getByRole('link', { name: /Cinder Waltz/ }).first().click();
