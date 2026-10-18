@@ -74,7 +74,7 @@ test('turned on again, every page is back with its data', async () => {
 	expect(await control(page, '/parts/wishlist/on')).toBe(200);
 	await page.goto('/wishlist');
 	await expect(page.getByTestId('part-off')).toHaveCount(0);
-	await expect(page.getByRole('heading', { level: 1, name: 'Wishlist' })).toBeVisible();
+	await expect(page.getByRole('heading', { level: 1, name: 'Approvals' })).toBeVisible();
 	await page.goto('/settings/music');
 	await expect(page.getByTestId('part-off')).toHaveCount(0);
 	expect((await page.request.get('/api/v1/settings/music')).status()).toBe(200);
