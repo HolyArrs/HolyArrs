@@ -3,7 +3,7 @@ import { expect, test, type Browser, type Page } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { subsPort } from './fakes.mjs';
-import { moviesDir, noSidewaysScroll, owner, signIn } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, libraryTool, titleAction } from './helpers.ts';
 
 // Subtitles (4.16): the owner sets English and Spanish as the default
 // languages, reads what the Pass mark means, adds the lab's fake Subtitle
@@ -129,7 +129,7 @@ test('Missing subtitles: every movie missing Spanish, by show too, and Search al
 	await adopt(moviesDir, 'Quill Atlas', 'Adopt 1 movie', '1 movie is now in the Library');
 	await adopt('Shows: ', 'Fennel Clock', 'Adopt 1 show', '1 show is now in the Library');
 	await page.goto('/library');
-	await page.getByRole('link', { name: 'Missing subtitles' }).click();
+	await libraryTool(page, 'Missing subtitles');
 	await expect(page.getByRole('heading', { level: 1, name: 'Missing subtitles' })).toBeVisible();
 	await page.getByLabel('Language').selectOption('es');
 	await page.getByLabel('Kind').selectOption('movie');

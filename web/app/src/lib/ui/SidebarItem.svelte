@@ -14,7 +14,8 @@
 		badgeLabel,
 		kbd,
 		onclick,
-		testid
+		testid,
+		badgeTestid
 	}: {
 		href?: string;
 		label: string;
@@ -26,6 +27,8 @@
 		kbd?: string;
 		onclick?: (e: MouseEvent) => void;
 		testid?: string;
+		/** Test id on the count bubble itself. */
+		badgeTestid?: string;
 	} = $props();
 
 	let tip = $state<{ x: number; y: number } | null>(null);
@@ -50,7 +53,7 @@
 	<span class="ic"><Icon name={icon} size={19} /></span>
 	<span class="label">{label}</span>
 	{#if kbd}<kbd class="label" aria-hidden="true">{kbd}</kbd>{/if}
-	{#if badge > 0}<b class="count" aria-hidden="true">{badge > 99 ? '99+' : badge}</b>{/if}
+	{#if badge > 0}<b class="count" aria-hidden="true" data-testid={badgeTestid}>{badge > 99 ? '99+' : badge}</b>{/if}
 {/snippet}
 {#if href}
 	<a class="ui-sbi" class:current {href} aria-current={current ? 'page' : undefined} aria-label={collapsed || badge > 0 ? name : undefined} data-testid={testid} {onclick} onpointerenter={show} onpointerleave={hide} onfocus={show} onblur={hide} use:press={'row'}>{@render body()}</a>

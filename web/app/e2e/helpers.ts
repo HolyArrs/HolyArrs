@@ -50,6 +50,18 @@ export async function openApprovals(page: Page) {
 	await expect(page).toHaveURL(/wishlist/);
 }
 
+/** titleAction picks an item from a title page's hero menu: 'Library' (rename, delete, versions) or 'More actions'. */
+export async function titleAction(page: Page, menu: 'Library' | 'More actions', item: string) {
+	await page.getByRole('button', { name: menu, exact: true }).click();
+	await page.getByRole('menuitem', { name: item, exact: true }).click();
+}
+
+/** libraryTool opens a Library tool from the Library page's + Add menu. */
+export async function libraryTool(page: Page, name: string) {
+	await page.locator('details.library-tools summary').click();
+	await page.getByRole('navigation', { name: 'Library tools' }).getByRole('link', { name }).click();
+}
+
 /** signOut uses the account menu (sidebar) or, on a phone, the More sheet. */
 export async function signOut(page: Page) {
 	const account = page.getByRole('button', { name: 'Account and appearance' });
@@ -67,10 +79,22 @@ export async function noSidewaysScroll(page: Page) {
 	const { sw, cw, wide } = await page.evaluate(() => {
 		const cw = document.documentElement.clientWidth;
 		// The deepest elements that stick out, to say what to fix.
+		// Skip what sits inside its own scroller (shelves): that does not widen the page.
+		const scrolled = (el: Element) => {
+			if (['fixed', 'absolute'].includes(getComputedStyle(el).position)) return false;
+			for (let e = el.parentElement; e; e = e.parentElement) if (['auto', 'scroll'].includes(getComputedStyle(e).overflowX)) return true;
+			return false;
+		};
 		const wide = [...document.querySelectorAll('body *')]
-			.filter((el) => el.getBoundingClientRect().right > cw + 1 && ![...el.children].some((c) => c.getBoundingClientRect().right > cw + 1))
-			.slice(0, 3)
-			.map((el) => `${el.tagName.toLowerCase()}.${[...el.classList].join('.')}`);
+			.filter((el) => el.getBoundingClientRect().right > cw + 1 && !scrolled(el))
+			.slice(0, 6)
+			.map((el) => `${el.tagName.toLowerCase()}.${[...el.classList].join('.')} in ${el.parentElement?.className ?? ''}`);
+		if (document.documentElement.scrollWidth > cw) {
+			// Debug: the outermost elements reaching past the screen, with their overflow.
+			const all = [...document.querySelectorAll('body *')].filter((el) => el.getBoundingClientRect().right > cw + 1);
+			const outer = all.filter((el) => !all.includes(el.parentElement as Element)).slice(0, 6);
+			wide.push(...outer.map((el) => `OUTER ${el.tagName}.${el.className} r=${Math.round(el.getBoundingClientRect().right)} ov=${getComputedStyle(el).overflowX} pos=${getComputedStyle(el).position} parent=${el.parentElement?.tagName}.${el.parentElement?.className} pov=${el.parentElement ? getComputedStyle(el.parentElement).overflowX : ''}`));
+		}
 		return { sw: document.documentElement.scrollWidth, cw, wide };
 	});
 	expect(sw, `${page.url()} is ${sw}px wide on a ${cw}px screen (${wide.join(', ')})`).toBeLessThanOrEqual(cw);

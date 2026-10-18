@@ -4,7 +4,7 @@ import { existsSync, readdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { makeOldLibrary } from './fakes.mjs';
-import { noSidewaysScroll, owner, signIn } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn, titleAction, libraryTool } from './helpers.ts';
 
 // Organise (stage 5.1): import an existing library from the screen, rename
 // files after seeing the preview, delete a movie after seeing the plan, and
@@ -34,7 +34,7 @@ test.beforeAll(async ({ browser }) => {
 
 test('import: scan shows matched, unsure and unmatched; fix the unsure one; adopt without moving anything', async () => {
 	await page.goto('/library');
-	await page.getByRole('link', { name: 'Import a library' }).click();
+	await libraryTool(page, 'Import a library');
 	await expect(page.getByRole('heading', { level: 1, name: 'Import a library' })).toBeVisible();
 	await expect(page.getByTestId('nothing-moved')).toContainText('Nothing is moved or renamed');
 	await page.getByLabel('Library folder').selectOption({ label: `Old library (${oldLib})` });
@@ -76,7 +76,7 @@ test('import: scan shows matched, unsure and unmatched; fix the unsure one; adop
 test('rename: the Movie page shows the old and new name and renames after Apply', async () => {
 	await page.goto('/library');
 	await page.getByRole('link', { name: /Marble Comet/ }).first().click();
-	await page.getByRole('button', { name: 'Rename files' }).click();
+	await titleAction(page, 'Library', 'Rename files');
 	const dialog = page.getByRole('dialog');
 	const step = dialog.getByTestId('rename-step');
 	await expect(step).toHaveCount(1);
@@ -121,7 +121,7 @@ test('rename: a plan that changed since the preview renames nothing and says to 
 test('delete: the plan shows first, changes with each choice, and files go to the holding folder', async () => {
 	await page.goto('/library');
 	await page.getByRole('link', { name: /Willow Signal/ }).first().click();
-	await page.getByRole('button', { name: 'Delete' }).click();
+	await titleAction(page, 'Library', 'Delete movie');
 	const dialog = page.getByRole('dialog');
 	await expect(dialog.getByRole('heading', { name: 'Delete Willow Signal?' })).toBeVisible();
 	const plan = dialog.getByTestId('delete-plan');
@@ -203,14 +203,16 @@ test('the new screens fit a phone and pass the accessibility scan', async ({ bro
 	await ph.getByRole('link', { name: /Cinder Waltz/ }).first().click();
 	for (const [button, heading] of [
 		['Rename files', 'Rename the files of Cinder Waltz'],
-		['Delete', 'Delete Cinder Waltz?']
+		['Delete movie', 'Delete Cinder Waltz?']
 	]) {
-		await ph.getByRole('button', { name: button, exact: true }).click();
+		await titleAction(ph, 'Library', button);
 		const d = ph.getByRole('dialog');
 		await expect(d.getByRole('heading', { name: heading })).toBeVisible();
-		if (button === 'Delete') await expect(d.getByTestId('delete-plan')).toContainText('stays where it is');
+		if (button === 'Delete movie') await expect(d.getByTestId('delete-plan')).toContainText('stays where it is');
 		else await expect(d.getByRole('button', { name: 'Rename 1 file' })).toBeVisible();
 		await noSidewaysScroll(ph);
+		// Scan the settled dialog, not its opening animation.
+		await ph.evaluate(() => Promise.all(document.getAnimations().map((x) => x.finished.catch(() => undefined))));
 		const r = await new AxeBuilder({ page: ph }).include('dialog[open]').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
 		expect(r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id), heading).toEqual([]);
 		await ph.keyboard.press('Escape');
@@ -231,12 +233,14 @@ test('members see none of it', async ({ browser }) => {
 	await sam.getByLabel('Password again').fill(pw);
 	await sam.getByRole('button', { name: 'Join and sign in' }).click();
 	await expect(sam).toHaveURL(/\/$/);
+	await sam.goto('/library');
 	await expect(sam.getByRole('link', { name: 'Import a library' })).toHaveCount(0);
 	await expect(sam.getByRole('link', { name: 'Rename files' })).toHaveCount(0);
 	await sam.getByRole('link', { name: /Cinder Waltz/ }).first().click();
 	await expect(sam.getByRole('heading', { level: 1 })).toContainText('Cinder Waltz');
 	await expect(sam.getByRole('button', { name: 'Delete' })).toHaveCount(0);
 	await expect(sam.getByRole('button', { name: 'Rename files' })).toHaveCount(0);
+	await expect(sam.getByRole('button', { name: 'Library', exact: true })).toHaveCount(0);
 	for (const url of ['/library/import', '/library/rename', '/settings/naming']) {
 		await sam.goto(url);
 		await expect(sam).not.toHaveURL(new RegExp(url.replace(/\//g, '\\/') + '$'));

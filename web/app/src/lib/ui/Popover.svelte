@@ -74,6 +74,18 @@
 		};
 	});
 
+	// Keep the panel on screen: a menu near the right edge of a phone would
+	// otherwise reach past it and make the whole page scroll sideways.
+	let nudge = $state(0);
+	$effect(() => {
+		if (!open || !panel) return;
+		nudge = 0;
+		const r = panel.getBoundingClientRect();
+		const w = document.documentElement.clientWidth;
+		if (r.right > w - 8) nudge = Math.max(8 - r.left, w - 8 - r.right);
+		else if (r.left < 8) nudge = 8 - r.left;
+	});
+
 	const origin = $derived(`${placement === 'below' ? 'top' : 'bottom'} ${align === 'start' ? 'left' : 'right'}`);
 	function popIn(node: Element) {
 		return scale(node, { start: 0.96, opacity: 0, duration: reducedMotion() ? 0 : 240, easing: backOut });
@@ -107,7 +119,7 @@
 			class="panel {placement} {align}"
 			role={panelRole === 'none' ? undefined : panelRole}
 			aria-label={label}
-			style="width: {width}px; transform-origin: {origin}"
+			style="width: {width}px; translate: {nudge}px 0; transform-origin: {origin}"
 			in:popIn
 			out:popOut
 		>

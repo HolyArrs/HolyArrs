@@ -100,7 +100,8 @@ test('a movie with two Versions: pick the Version to search for', async () => {
 
 test('the Turned down list: un-refuse one, and the Held list is empty', async () => {
 	await page.goto('/library');
-	await page.getByRole('link', { name: 'Turned down', exact: true }).click();
+	await page.getByRole('navigation', { name: 'Main' }).first().getByRole('link', { name: 'Library tools' }).click();
+	await page.locator('#main').getByRole('link', { name: 'Turned down', exact: true }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Turned down' })).toBeVisible();
 	const row = page.getByTestId('listed-release').filter({ has: page.locator('.rel-name', { hasText: '.720p.' }) });
 	await expect(row).toContainText('Quiet Orchard');
@@ -109,7 +110,7 @@ test('the Turned down list: un-refuse one, and the Held list is empty', async ()
 	await expect(row).toHaveCount(0);
 	await expect(page.getByText('Nothing is turned down')).toBeVisible();
 
-	await page.getByRole('link', { name: 'Held', exact: true }).click();
+	await page.locator('#main').getByRole('link', { name: 'Held', exact: true }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Held' })).toBeVisible();
 	await expect(page.getByText('Nothing is held')).toBeVisible();
 });

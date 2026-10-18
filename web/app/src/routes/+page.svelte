@@ -115,7 +115,7 @@
 			admin ? api.get<{ library_folders: LibraryFolder[] }>('/library-folders') : Promise.resolve(null),
 			// Members may only read the Library and their own asks (perms.go); the rest needs manage_library.
 			manager ? api.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=50') : Promise.resolve(null),
-			manager ? api.get<{ events: EventRecord[] }>('/events?limit=5') : Promise.resolve(null),
+			manager ? api.get<{ events: EventRecord[] }>('/events?limit=12') : Promise.resolve(null),
 			manager ? api.get<Health>('/health') : Promise.resolve(null),
 			mayReadTMDB ? api.get<{ token: string }>('/settings/tmdb-token') : Promise.resolve(null),
 			manager ? api.get<{ running: SearchView[]; recent: SearchView[] }>('/searches?limit=6') : Promise.resolve(null),
