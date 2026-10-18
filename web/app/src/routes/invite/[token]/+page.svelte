@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Button from '#lib/ui/Button.svelte';
+	import IconButton from '#lib/ui/IconButton.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -73,7 +74,7 @@
 					<label for="password">Password</label>
 					<div class="pw">
 						<input id="password" class="input" type={showPw ? 'text' : 'password'} bind:value={pw} autocomplete="new-password" required />
-						<Button variant="plain" size="sm" type="button" aria-label={showPw ? 'Hide password' : 'Show password'} aria-pressed={showPw} onclick={() => (showPw = !showPw)}>{showPw ? 'Hide' : 'Show'}</Button>
+						<IconButton icon={showPw ? 'eyeOff' : 'eye'} label={showPw ? 'Hide password' : 'Show password'} aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
 					</div>
 					<span class="hint">At least {MIN_LENGTH} characters.</span>
 				</div>
@@ -116,7 +117,7 @@
 	.lead { margin: 8px 0 24px; color: var(--text-muted); font: var(--t-callout); text-align: center; }
 	.panel :global(.field + .field) { margin-top: 14px; }
 	.pw { position: relative; display: flex; align-items: center; }
-	.pw .input { padding-right: 72px; }
+	.pw .input { padding-right: 52px; }
 	.pw > :global(*:last-child) { position: absolute; right: 4px; }
 	.submit { margin-top: 24px; }
 	@media (max-width: 480px) {
