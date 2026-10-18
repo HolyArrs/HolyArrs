@@ -55,10 +55,13 @@ describe('format', () => {
 describe('tokens.css', () => {
 	const here = dirname(fileURLToPath(import.meta.url));
 	const ours = readFileSync(join(here, 'tokens.css'), 'utf8');
-	const dark = ours.match(/:root\s*\{([^}]+)\}/)?.[1] ?? '';
-	const light = ours.match(/:root\[data-theme=['"]light['"]\]\s*\{([^}]+)\}/)?.[1] ?? '';
+	const block = (selector: RegExp) => ours.match(selector)?.[1] ?? '';
 	const declarations = (css: string) => Object.fromEntries([...css.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]));
-	const base = declarations(dark);
+	const shared = declarations(block(/:root\s*\{([^}]+)\}/));
+	const light = declarations(block(/:root, \[data-theme='light'\]\s*\{([^}]+)\}/));
+	const dark = declarations(block(/:root\[data-theme='dark'\], \[data-theme='dark'\]\s*\{([^}]+)\}/));
+	const aliases = declarations(block(/:root, \[data-theme\]\s*\{([^}]+)\}/));
+	const base = { ...shared, ...light, ...aliases };
 
 	function luminance(hex: string) {
 		if (!/^#[\da-f]{6}$/i.test(hex)) throw Error(`Expected an opaque color: ${hex}`);
@@ -70,13 +73,22 @@ describe('tokens.css', () => {
 		for (const token of ['--ha-red', '--ha-red-hover', '--ha-red-press', '--ha-red-deep', '--ha-red-soft', '--font-ui', '--font-display', '--font-mono', '--focus-ring', '--sidebar', '--topbar', '--ok', '--wait', '--fail', '--info']) expect(base[token], token).toBeTruthy();
 		expect(parseFloat(base['--tap'])).toBeGreaterThanOrEqual(44);
 	});
-	it('keeps normal text readable on every shared surface in both themes', () => {
-		expect(light).not.toBe('');
-		for (const colors of [base, { ...base, ...declarations(light) }]) {
-			for (const foreground of ['--text', '--text-muted', '--text-faint', '--ok', '--wait', '--fail', '--info']) {
-				for (const background of ['--bg', '--sidebar-bg', '--surface-1', '--surface-2', '--surface-3']) {
-					const values = [luminance(colors[foreground]), luminance(colors[background])].sort((a, b) => b - a);
-					expect((values[0] + 0.05) / (values[1] + 0.05), `${foreground} on ${background}`).toBeGreaterThanOrEqual(4.5);
+	it('keeps text readable on the shared surfaces in both themes (spec §2)', () => {
+		expect(Object.keys(light).length).toBeGreaterThan(10);
+		expect(Object.keys(dark).length).toBeGreaterThan(10);
+		const pairs: [string, string[], number][] = [
+			['--text', ['--bg', '--sidebar-solid', '--surface-1', '--surface-2', '--surface-3'], 4.5],
+			['--text-muted', ['--bg', '--sidebar-solid', '--surface-1'], 4.5],
+			['--text-faint', ['--bg', '--surface-1'], 3],
+			['--accent', ['--bg', '--surface-1'], 3],
+			['--accent-text', ['--bg', '--surface-1', '--surface-2'], 4.5],
+			['--text-on-red', ['--accent-fill'], 4.5]
+		];
+		for (const colors of [light, dark]) {
+			for (const [fg, bgs, min] of [...pairs, ...['--ok', '--wait', '--fail', '--info'].map((t) => [t, ['--bg', '--surface-1'], 3] as [string, string[], number]), ...['--ok-text', '--wait-text', '--fail-text', '--info-text'].map((t) => [t, ['--bg', '--surface-1', '--surface-2'], 4.5] as [string, string[], number])]) {
+				for (const bg of bgs) {
+					const values = [luminance(colors[fg]), luminance(colors[bg])].sort((a, b) => b - a);
+					expect((values[0] + 0.05) / (values[1] + 0.05), `${fg} on ${bg}`).toBeGreaterThanOrEqual(min);
 				}
 			}
 		}
@@ -85,6 +97,7 @@ describe('tokens.css', () => {
 		const reduced = ours.slice(ours.indexOf('@media (prefers-reduced-motion: reduce)'));
 		expect(reduced).toMatch(/--lift:\s*0px/);
 		expect(reduced).toMatch(/--stagger:\s*0ms/);
-		expect(reduced).toMatch(/--dur-page:\s*0ms/);
+		expect(reduced).toMatch(/--dur-page:\s*1ms/);
+		expect(reduced).toMatch(/--press:\s*1/);
 	});
 });

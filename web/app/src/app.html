@@ -13,8 +13,9 @@
 			try {
 				var requested = new URLSearchParams(location.search).get('theme');
 				var t = requested === 'light' || requested === 'dark' ? requested : localStorage.getItem('holyarrs-theme');
-				if (t !== 'dark' && t !== 'light') t = 'light';
 				if (requested === 'light' || requested === 'dark') localStorage.setItem('holyarrs-theme', t);
+				if (requested === 'system') localStorage.removeItem('holyarrs-theme');
+				if (t !== 'dark' && t !== 'light') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 				document.documentElement.dataset.theme = t;
 			} catch (e) {}
 		</script>

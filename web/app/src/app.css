@@ -5,15 +5,7 @@
 @import './lib/tokens.css';
 
 :root {
-	--ok-text: var(--ok);
-	--wait-text: var(--wait);
-	--fail-text: var(--fail);
 	--tabbar: 60px;
-}
-:root[data-theme='light'] {
-	--ok-text: #085f3c;
-	--wait-text: #755700;
-	--fail-text: #a92319;
 }
 
 *,
@@ -32,6 +24,8 @@ body {
 	color: var(--text);
 	font: var(--weight-regular) var(--text-base) / var(--leading) var(--font-ui);
 	font-variant-numeric: tabular-nums;
+	font-feature-settings: var(--font-features);
+	letter-spacing: var(--tracking-body);
 	-webkit-font-smoothing: antialiased;
 	text-rendering: optimizeLegibility;
 }
