@@ -81,6 +81,7 @@
 		noTMDB = false;
 		askProblem = '';
 		const url = searchAddress(page.url, k, term);
+		ownAddresses.add(url.href);
 		void goto(url, { replace: true, shallow: true });
 		if (term.trim()) void run();
 	}
@@ -217,6 +218,7 @@
 	// Explore) runs that search; our own address updates match and do nothing.
 	afterNavigate(({ from, to: dest }) => {
 		if (!from || !dest) return;
+		if (ownAddresses.delete(dest.url.href)) return;
 		const q = dest.url.searchParams.get('q') ?? '';
 		const k = dest.url.searchParams.get('kind');
 		const nextKind: SearchKind = k === 'show' || k === 'music' ? k : 'movie';
@@ -231,8 +233,10 @@
 		void run();
 	});
 
-	// The last query this page searched; our own address updates echo it.
+	// The last query this page searched, and the addresses this page wrote
+	// itself (those land later and must not undo a newer query).
 	let lastRun = '';
+	const ownAddresses = new Set<string>();
 	async function run(e?: SubmitEvent) {
 		e?.preventDefault();
 		const q = term.trim();
@@ -244,6 +248,7 @@
 		error = '';
 		noTMDB = false;
 		const url = searchAddress(page.url, searchKind, q);
+		ownAddresses.add(url.href);
 		void goto(url, { replace: true, shallow: true });
 		try {
 			if (searchKind === 'music') {
