@@ -1,0 +1,113 @@
+// Retained preview only: one approved album, three synthetic files, no SQL writes.
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
+const crypto = require('node:crypto');
+const assert = require('node:assert/strict');
+const { execFileSync } = require('node:child_process');
+const { createRequire } = require('node:module');
+const repo = path.resolve(__dirname, '../../..');
+const { chromium, expect } = createRequire(path.join(repo, 'web/app/package.json'))('@playwright/test');
+const base = 'http://10.10.25.25:18746';
+const runtime = path.join(os.tmpdir(), 'holyarrs-intercom-preview-18747');
+const artistRoot = path.join(os.tmpdir(), 'holyarrs-intercom-preview-media-18747/music/Amber Satellites');
+const releaseName = 'Amber Satellites - Evening Signals (2024) [FLAC]';
+const hash = [...releaseName].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 11).toString(16).padStart(8, '0').repeat(5);
+const out = path.join(repo, '.omx/artifacts/visual-ralph/intercom/music-download', crypto.randomUUID());
+fs.mkdirSync(out, { recursive: true });
+const receipt = { started: new Date().toISOString(), commit: execFileSync('git', ['rev-parse', 'HEAD'], {cwd:repo,encoding:'utf8'}).trim(), hash, writes: [], checks: [], screenshots: [] };
+function save() { fs.writeFileSync(path.join(out, 'receipt.json'), JSON.stringify(receipt, null, 2)); }
+function guard() { return JSON.parse(execFileSync('python', [path.join(__dirname, 'music-download-guard.py')], { encoding:'utf8' })); }
+async function get(p) { const r = await fetch(base + '/api/v1' + p); assert.equal(r.status,200,p); return r.json(); }
+async function fake(p) { const r = await fetch('http://127.0.0.1:28768' + p); assert.equal(r.status,200); return r.json(); }
+async function poll(fn, label, timeout = 65000) {
+  const until = Date.now() + timeout;
+  while (Date.now() < until) { const value = await fn(); if (value) return value; await new Promise(r => setTimeout(r,1000)); }
+  throw Error('Timed out: ' + label);
+}
+function safeAncestors(p) {
+  for (let q = p; q !== path.dirname(q); q = path.dirname(q)) {
+    if (fs.existsSync(q)) assert(!fs.lstatSync(q).isSymbolicLink(), 'Linked storage ancestor');
+  }
+}
+let browser;
+(async () => {
+  // Command lines stay private; only listener identities are recorded.
+  const ps = `$ErrorActionPreference='Stop'; $r=@(Get-NetTCPConnection -State Listen | Where-Object { $_.LocalPort -in @(18730,18745,18746,18747,28768) }); foreach($port in @(18746,18747,28768)) { $x=@($r | Where-Object LocalPort -eq $port); if($x.Count -ne 1){throw 'Ambiguous listener'}; $p=Get-CimInstance Win32_Process -Filter ('ProcessId='+$x[0].OwningProcess); if($port -eq 18746 -and -not $p.CommandLine.Contains('vite.intercom-preview.config.ts')){throw 'Unexpected frontend'}; if($port -eq 18747 -and (-not $p.CommandLine.Contains('${runtime.replace(/'/g,"''")}\\config') -or $x[0].LocalAddress -ne '127.0.0.1')){throw 'Unexpected backend'}; if($port -eq 28768 -and $x[0].LocalAddress -ne '127.0.0.1'){throw 'Nonlocal fake'} }; $r | Select-Object LocalAddress,LocalPort,OwningProcess | ConvertTo-Json -Compress`;
+  receipt.listeners = JSON.parse(execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-Command',ps],{encoding:'utf8'}));
+  receipt.before = guard();
+  assert.equal((await get('/asks/34')).state, 'approved');
+  assert.equal((await get('/albums/144')).album.in_library, 0);
+  assert.deepEqual((await get('/albums/144/tracks')).tracks.flatMap(t=>t.slots.map(s=>s.id)),[1183,1184,1185]);
+  const fakeBefore = await fake('/api/v2/torrents/info');
+  assert(!fakeBefore.some(t=>t.hash===hash), 'This album already has a torrent; do not repeat writes');
+  receipt.fakeBefore = fakeBefore;
+  browser = await chromium.launch({headless:true});
+  const context = await browser.newContext({viewport:{width:1440,height:1000},deviceScaleFactor:1});
+  let allowedRelease = 0;
+  await context.route('**/api/v1/**', async route => {
+    const req=route.request(), u=new URL(req.url()), p=u.pathname;
+    if (['GET','HEAD','OPTIONS'].includes(req.method())) return route.continue();
+    let body={}; try {body=req.postDataJSON() || {};} catch {}
+    const allowed=req.method()==='POST' && (
+      (p==='/api/v1/titles/166/search' && body.album_id===144 && body.choose===false && Object.keys(body).length===2) ||
+      (allowedRelease && p===`/api/v1/releases/${allowedRelease}/choose` && body.force===false && Object.keys(body).length===1));
+    if(!allowed) {receipt.writes.push({method:req.method(),path:p,blocked:true});save();return route.abort('blockedbyclient');}
+    const response=await route.fetch(); receipt.writes.push({method:req.method(),path:p,status:response.status()});save();await route.fulfill({response});
+  });
+  const page=await context.newPage();
+  await page.goto(base+'/library/166/albums/144');
+  await page.getByTestId('album-choose').click();
+  const release=await poll(async()=> (await get('/titles/166/releases?album_id=144&limit=25&offset=0')).releases.find(r=>r.name===releaseName), 'scoped album search');
+  assert.deepEqual(release.slot_ids,[1183,1184,1185]); allowedRelease=release.id; receipt.releaseId=release.id;save();
+  const row=page.getByTestId('release').filter({hasText:releaseName});
+  await row.getByRole('button',{name:/^Choose /}).click();
+  await page.getByRole('dialog',{name:'Choose this Release?'}).getByRole('button',{name:'Choose',exact:true}).click();
+  const dl=await poll(async()=> (await get('/downloads')).downloads.find(d=>d.ReleaseID===release.id&&d.ExternalID===hash), 'real download creation');
+  receipt.downloadId=dl.ID;
+  await poll(async()=> (await get('/albums/144/tracks')).tracks.every(t=>t.slots.every(s=>s.state==='downloading')), 'three downloading slots');
+  receipt.checks.push('Real choose created a hash-scoped download and three downloading slots');
+  async function capture(label, url, locator) {
+    for(const [width,height] of [[360,800],[834,1112],[1440,1000]]) {
+      await page.setViewportSize({width,height}); await page.goto(base+url); await expect(locator(page)).toBeVisible({timeout:15000});
+      await page.evaluate(()=>document.fonts.ready); await page.waitForTimeout(500);
+      assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1), label+' horizontal overflow');
+      const file=`${label}-${width}.png`;await page.screenshot({path:path.join(out,file),fullPage:true});receipt.screenshots.push(file);save();
+    }
+  }
+  await capture('downloading','/downloads',p=>p.getByTestId('download-row').filter({hasText:'Evening Signals'}).first());
+  const downloadRoot=path.join(runtime,'downloads'); const folder=path.join(downloadRoot,releaseName);
+  safeAncestors(folder);safeAncestors(artistRoot);assert(!fs.existsSync(folder),'Refuse existing test folder');
+  fs.mkdirSync(folder); receipt.synthetic=[];
+  for(let i=1;i<=3;i++) {
+    const name=`0${i} - Song 1.${i}.flac`, content=Buffer.alloc(1000);
+    content.write(`DISPOSABLE PREVIEW IMPORT TEST - NOT AUDIO - Evening Signals track ${i}\n`);
+    fs.writeFileSync(path.join(folder,name),content,{flag:'wx'});
+    receipt.synthetic.push({name,size:content.length,sha256:crypto.createHash('sha256').update(content).digest('hex')});
+  }
+  receipt.filesCreated=true;save();
+  const files=receipt.synthetic.map(f=>releaseName+'/'+f.name).join('|');
+  await fake('/set?'+new URLSearchParams({hash,progress:'1',state:'stalledUP',save_path:downloadRoot,files}));
+  receipt.fakeCompletion={hash,progress:1,files:receipt.synthetic.map(f=>f.name)};save();
+  receipt.completed=await poll(async()=> {const d=(await get('/downloads')).downloads.find(d=>d.ID===dl.ID);return d&&['completed','imported'].includes(d.State)?d:null;}, 'completed import',90000);
+  await poll(async()=> (await get('/albums/144')).album.in_library===3, 'album available');
+  receipt.request=await poll(async()=> {const a=await get('/asks/34');return a.state==='available'?a:null;}, 'request available',90000);
+  receipt.album=await get('/albums/144'); receipt.tracks=await get('/albums/144/tracks');
+  receipt.checks.push('Completed download, all three imported tracks and request Available');
+  await capture('completed','/downloads',p=>p.getByTestId('download-row').filter({hasText:'Evening Signals'}).first());
+  await capture('album-available','/library/166/albums/144',p=>p.getByRole('heading',{name:'Evening Signals',exact:true}));
+  await capture('library','/library?kind=artist&q=Amber%20Satellites',p=>p.locator('main').getByText('Amber Satellites',{exact:true}).first());
+  receipt.after=guard();
+  assert.deepEqual(receipt.after.tables,receipt.before.tables,'Credentials/settings changed');
+  for(const table of ['asks','titles','slots']) assert.deepEqual(receipt.after[table],receipt.before[table], 'Existing '+table+' changed');
+  for(const [id,value] of Object.entries(receipt.before.files)) assert.equal(receipt.after.files[id],value,'Existing media changed');
+  const newFiles=Object.keys(receipt.after.files).filter(f=>!(f in receipt.before.files));
+  assert(newFiles.every(f=>f.startsWith(folder+path.sep)||f.startsWith(artistRoot+path.sep)),'Unexpected media write');
+  const imported=newFiles.filter(f=>f.startsWith(artistRoot+path.sep)); assert.equal(imported.length,3);
+  assert.deepEqual(imported.map(f=>receipt.after.files[f]).sort(),receipt.synthetic.map(f=>f.sha256).sort(),'Imported bytes differ');
+  receipt.imported=imported;
+  const fakeAfter=await fake('/api/v2/torrents/info');
+  for(const t of fakeBefore) assert.deepEqual(fakeAfter.find(x=>x.hash===t.hash),t,'Existing fake torrent changed');
+  receipt.checks.push('Original users, credentials, settings, requests, titles, slots, files and fake torrents preserved');
+  receipt.status='passed';
+})().catch(e=>{receipt.status='failed';receipt.error=e.message;process.exitCode=1;}).finally(async()=>{if(browser)await browser.close();receipt.finished=new Date().toISOString();save();console.log(JSON.stringify({status:receipt.status,error:receipt.error,evidence:out,checks:receipt.checks}));});
