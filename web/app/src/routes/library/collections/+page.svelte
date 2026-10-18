@@ -55,5 +55,6 @@
 <style>
 	.page { display: flex; flex-direction: column; gap: 16px; padding-bottom: 48px; }
 	.rows { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 4px; list-style: none; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card); }
+	.rows > li { display: block; min-height: 0; padding: 0; }
 	.rows > li + li { border-top: 1px solid var(--line); }
 </style>

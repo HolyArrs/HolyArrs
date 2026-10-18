@@ -399,7 +399,7 @@
 					{@const c = chipOf(t)}
 					{@const requester = requestedBy(t)}
 					<li data-testid="library-row" class:selected={preview?.id === t.id} class:last-opened={lastOpenedId === t.id}>
-						<ListRow title={t.name} subtitle={[t.year, kindLabel[t.kind], t.kind === 'movie' ? '' : progressOf(t)].filter(Boolean).join(' · ')} meta="{outOn(t)} · Keep up to date: {t.keep_up_to_date ? 'Yes' : 'No'}" href={titleLink(t.id)} image={t.artwork[0]}>
+						<ListRow title={t.name} subtitle={[t.year, kindLabel[t.kind], t.kind === 'movie' ? '' : progressOf(t)].filter(Boolean).join(' · ')} meta="{outOn(t)} · Keep up to date: {t.keep_up_to_date ? 'Yes' : 'No'}" href={titleLink(t.id)} image={t.artwork[0]} icon={t.kind === 'show' ? 'tv' : t.kind === 'artist' ? 'music' : 'film'}>
 							{#snippet trailing()}
 								{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}<StatusPill kind="approved" testid="request-approved" />{/if}
 								{#if t.kind === 'movie'}
@@ -488,7 +488,7 @@
 	.grid > li.last-opened { outline: 2px solid var(--text-muted); outline-offset: 4px; border-radius: var(--r-card); }
 	.grid > li.selected { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: var(--r-card); }
 	.rows { display: flex; flex-direction: column; margin: 0; padding: 4px; list-style: none; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card); }
-	.rows > li { min-width: 0; border-radius: var(--r-btn); }
+	.rows > li { display: block; min-height: 0; padding: 0; min-width: 0; border-radius: var(--r-btn); }
 	.rows > li + li { border-top: 1px solid var(--line); }
 	.rows > li.selected, .rows > li.last-opened { background: var(--surface-2); }
 	.rows > li.last-opened { box-shadow: inset 0 0 0 2px var(--text-muted); }
@@ -520,6 +520,9 @@
 	@media (max-width: 767px) {
 		.grid { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 18px 12px; }
 		.find-box { flex-basis: 100%; max-width: none; }
-		.row-notes { padding-left: 12px; }
+		.row-notes { padding-left: 58px; }
+		.rows :global(.ui-row) { flex-wrap: wrap; }
+		.rows :global(.ui-row > .main) { flex: 1 1 100%; }
+		.rows :global(.ui-row > .trail) { flex: 1 1 100%; flex-wrap: wrap; justify-content: flex-start; margin-left: 52px; min-width: 0; }
 	}
 </style>
