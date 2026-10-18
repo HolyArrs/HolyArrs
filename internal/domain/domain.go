@@ -84,6 +84,15 @@ type Title struct {
 	MusicStatuses  []string `db:"music_statuses,json"`
 	ArtistType     *string  `db:"artist_type"`
 	Disambiguation *string  `db:"disambiguation"`
+	// Details for screens, from the metadata source: wide picture and logo
+	// URLs, genre names, runtime in minutes, the US rating and the people
+	// (top cast, then directors).
+	Backdrop       string   `db:"backdrop"`
+	Logo           string   `db:"logo"`
+	Genres         []string `db:"genres,json"`
+	RuntimeMinutes int      `db:"runtime_minutes"`
+	Rating         string   `db:"rating"`
+	People         []string `db:"people,json"`
 }
 
 // NeverAdd is one entry of the Never-add list.

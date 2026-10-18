@@ -42,6 +42,11 @@ type Show struct {
 	Runtime          int               `json:"runtime,omitempty"`   // usual episode minutes
 	IDs              map[string]string `json:"ids"`                 // tmdb, tvdb, tvmaze, imdb
 	Poster           string            `json:"poster,omitempty"`
+	Backdrop         string            `json:"backdrop,omitempty"`
+	Logo             string            `json:"logo,omitempty"`
+	Genres           []string          `json:"genres,omitempty"`
+	Rating           string            `json:"rating,omitempty"` // US content rating
+	People           []string          `json:"people,omitempty"`
 	Seasons          []Season          `json:"seasons,omitempty"`
 	Episodes         []Episode         `json:"episodes,omitempty"`
 }

@@ -351,6 +351,14 @@ func applyMovie(t *domain.Title, m metadata.Movie, now time.Time) {
 	}
 	t.CinemaDate, t.DigitalDate, t.PhysicalDate = m.CinemaDate, m.DigitalDate, m.PhysicalDate
 	t.Status = titleStatus(Stage(DatesOf(*t), now))
+	applyDetails(t, m.Backdrop, m.Logo, m.Genres, m.Rating, m.People, m.Runtime)
+}
+
+// applyDetails copies the screen details; a fresh lookup replaces them all.
+func applyDetails(t *domain.Title, backdrop, logo string, genres []string, rating string, people []string, runtime int) {
+	t.Backdrop, t.Logo, t.Rating, t.RuntimeMinutes = backdrop, logo, rating, max(runtime, 0)
+	t.Genres = append([]string{}, genres...)
+	t.People = append([]string{}, people...)
 }
 
 // gateReason is the Slot reason that explains the gate.

@@ -17,8 +17,15 @@ type tmdbShow struct {
 	OriginalLanguage string `json:"original_language"`
 	Status           string `json:"status"`
 	PosterPath       string `json:"poster_path"`
-	RunTimes         []int  `json:"episode_run_time"`
-	Networks         []struct {
+	tmdbExtras
+	ContentRatings *struct {
+		Results []struct {
+			Country string `json:"iso_3166_1"`
+			Rating  string `json:"rating"`
+		} `json:"results"`
+	} `json:"content_ratings"`
+	RunTimes []int `json:"episode_run_time"`
+	Networks []struct {
 		Name string `json:"name"`
 	} `json:"networks"`
 	ExternalIDs *struct {
@@ -60,6 +67,15 @@ func (m tmdbShow) show(images string) Show {
 		}
 		if x.TVDB > 0 {
 			out.IDs["tvdb"] = strconv.FormatInt(x.TVDB, 10)
+		}
+	}
+	out.Backdrop, out.Logo, out.Genres, out.People = m.tmdbExtras.pictures(images)
+	if m.ContentRatings != nil {
+		for _, c := range m.ContentRatings.Results {
+			if c.Country == "US" && c.Rating != "" {
+				out.Rating = c.Rating
+				break
+			}
 		}
 	}
 	for _, s := range m.Seasons {
@@ -116,7 +132,7 @@ func (t *TMDB) Show(ctx context.Context, id string) (Show, error) {
 		return Show{}, ErrShowNotFound
 	}
 	base := "/tv/" + strconv.FormatInt(n, 10)
-	b, err := t.get(ctx, base, url.Values{"append_to_response": {"external_ids"}})
+	b, err := t.get(ctx, base, url.Values{"append_to_response": {"external_ids,images,credits,content_ratings"}, "include_image_language": {"en,null"}})
 	if err != nil {
 		return Show{}, notFoundShow(err)
 	}

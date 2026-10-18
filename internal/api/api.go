@@ -355,6 +355,14 @@ type TitleView struct {
 	PickRulesID     int64    `json:"pick_rules_id,omitempty"`
 	PickRulesName   string   `json:"pick_rules_name,omitempty"`
 	Artwork         []string `json:"artwork"`
+	// Screen details from the metadata source: wide picture and logo URLs,
+	// genre names, runtime, the US rating and people (top cast, directors).
+	Backdrop       string   `json:"backdrop,omitempty"`
+	Logo           string   `json:"logo,omitempty"`
+	Genres         []string `json:"genres"`
+	RuntimeMinutes int      `json:"runtime_minutes,omitempty"`
+	Rating         string   `json:"rating,omitempty"`
+	People         []string `json:"people"`
 	// Versions are the wanted copies (main first), such as HD and 4K.
 	Versions []VersionView `json:"versions"`
 	Slots    []SlotView    `json:"slots"`
@@ -436,12 +444,20 @@ func artworkLinks(in []string) []string {
 	return out
 }
 
+func nonNil(s []string) []string {
+	if s == nil {
+		return []string{}
+	}
+	return s
+}
+
 func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) {
 	db := a.s.Store.Read()
 	v := TitleView{ID: t.ID, Kind: t.Kind, Name: t.Name, Year: t.Year, Overview: t.Overview, OriginalLanguage: t.OriginalLanguage, IDs: t.SourceIDs, Slots: []SlotView{},
 		KeepUpToDate: t.KeepUpToDate, WhyAdded: t.WhyAdded, ReleaseGate: t.ReleaseGate, GateDelayDays: t.GateDelayDays,
 		GateDriver: t.GateDriver, GateOpensAt: t.GateOpensAt, CinemaDate: t.CinemaDate, DigitalDate: t.DigitalDate,
-		PhysicalDate: t.PhysicalDate, RefreshedAt: t.RefreshedAt, DroppedAt: t.DroppedAt, Artwork: artworkLinks(t.Artwork)}
+		PhysicalDate: t.PhysicalDate, RefreshedAt: t.RefreshedAt, DroppedAt: t.DroppedAt, Artwork: artworkLinks(t.Artwork),
+		Backdrop: t.Backdrop, Logo: t.Logo, Genres: nonNil(t.Genres), RuntimeMinutes: t.RuntimeMinutes, Rating: t.Rating, People: nonNil(t.People)}
 	now := time.Now()
 	if t.Kind == "artist" {
 		v.Stage, v.GateOpen = t.Status, true

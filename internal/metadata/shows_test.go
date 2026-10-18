@@ -30,7 +30,7 @@ func fakeTMDBTV(t *testing.T) *httptest.Server {
 			}
 			_, _ = w.Write([]byte(`{"results":[{"id":100,"name":"Lab Show","first_air_date":"2025-01-05","overview":"A test show.","original_language":"en","poster_path":"/s.jpg"}]}`))
 		case "/3/tv/100":
-			if r.URL.Query().Get("append_to_response") != "external_ids" {
+			if r.URL.Query().Get("append_to_response") != "external_ids,images,credits,content_ratings" {
 				t.Errorf("tv details %v", r.URL.Query())
 			}
 			_, _ = w.Write([]byte(`{"id":100,"name":"Lab Show","first_air_date":"2025-01-05","overview":"A test show.","original_language":"en",

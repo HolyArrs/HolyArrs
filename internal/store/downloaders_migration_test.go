@@ -82,7 +82,7 @@ func TestOptionalDownloadersMigrationKeepsData(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer s.Close()
-	if v, err := version(s.Read()); err != nil || v != 42 {
+	if v, err := version(s.Read()); err != nil || v < 42 {
 		t.Fatalf("schema=%d error=%v", v, err)
 	}
 	if got := downloaderRows(t, s.Read(), "SELECT * FROM downloaders ORDER BY id"); !reflect.DeepEqual(got, before) {

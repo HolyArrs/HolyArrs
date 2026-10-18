@@ -220,6 +220,7 @@ func applyShow(t *domain.Title, sh metadata.Show) {
 	default:
 		t.Status = "running"
 	}
+	applyDetails(t, sh.Backdrop, sh.Logo, sh.Genres, sh.Rating, sh.People, sh.Runtime)
 }
 
 // absolutes gives each regular episode its absolute number: the source's,
