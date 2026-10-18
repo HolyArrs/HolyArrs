@@ -93,3 +93,30 @@ export function slotKind(state: string | undefined): StatusKind {
 			return 'missing';
 	}
 }
+
+export interface PageSection {
+	/** The id of the section's heading or wrapper, for the in-page anchor. */
+	id: string;
+	label: string;
+}
+
+/**
+ * pageSections are the in-page anchors under a movie or show hero, in page
+ * order. Staff sections only with manage_library; Wishlist only when asked.
+ * Sections that turn out empty (no Similar titles) are hidden by the nav.
+ */
+export function pageSections(kind: 'movie' | 'show', has: { manage: boolean; asks: boolean }): PageSection[] {
+	const movie = kind === 'movie';
+	const list: (PageSection | false)[] = [
+		!movie && { id: 'h-seasons', label: 'Seasons' },
+		{ id: 'title-cast', label: 'Cast' },
+		{ id: movie ? 'h-versions' : 'h-show-versions', label: 'Versions' },
+		movie && has.manage && { id: 'h-rel', label: 'Releases' },
+		has.manage && { id: 'title-subtitles', label: 'Subtitles' },
+		{ id: movie ? 'h-dates' : 'h-show-facts', label: 'About' },
+		has.asks && { id: movie ? 'h-asks' : 'h-show-asks', label: 'Wishlist' },
+		has.manage && { id: movie ? 'h-history' : 'h-show-history', label: 'History' },
+		{ id: 'title-similar', label: 'Similar' }
+	];
+	return list.filter((s): s is PageSection => !!s);
+}

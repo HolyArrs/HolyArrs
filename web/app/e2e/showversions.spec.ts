@@ -91,6 +91,10 @@ test('Search now on the season fills each Version with its own pack; History nam
 test('change, add and remove Versions; a busy Version stays', async () => {
 	await openShow(page);
 	const card = page.getByTestId('show-versions');
+	// One row shows the main Version; See all lays out every Version.
+	await expect(card.getByRole('button', { name: 'Change the 4K Version' })).toBeHidden();
+	await card.getByRole('button', { name: 'See all 2' }).click();
+	await expect(card.getByRole('button', { name: 'Show less' })).toHaveAttribute('aria-expanded', 'true');
 	await card.getByRole('button', { name: 'Change the 4K Version' }).click();
 	const vd = page.getByRole('dialog').filter({ hasText: 'Change the 4K Version' });
 	await vd.getByLabel('Keep up to date').uncheck();

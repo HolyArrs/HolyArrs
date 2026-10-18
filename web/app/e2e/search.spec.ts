@@ -241,6 +241,11 @@ test('phone width: the search screens fit', async ({ browser }) => {
 	const p = await ctx.newPage();
 	await signIn(p, owner());
 	await openMovie(p, 'Quiet Orchard');
+	// On a phone the title page folds its sections; Releases opens from its heading.
+	const releases = p.getByTestId('releases');
+	await expect(releases).not.toHaveAttribute('open', '');
+	await releases.getByRole('heading', { name: 'Releases', exact: true }).click();
+	await expect(releases).toHaveAttribute('open', '');
 	await expect(p.getByTestId('release').first()).toBeVisible();
 	await noSidewaysScroll(p);
 	for (const url of ['/', '/library/held', '/library/turned-down', '/settings/search']) {

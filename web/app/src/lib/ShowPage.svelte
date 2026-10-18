@@ -29,7 +29,9 @@
 	import Skeleton from './ui/Skeleton.svelte';
 	import TitleCast from './TitleCast.svelte';
 	import SimilarShelf from './SimilarShelf.svelte';
-	import { artName, crumbFor, qualityBadges, slotKind } from './title-page.ts';
+	import { artName, crumbFor, pageSections, qualityBadges, slotKind } from './title-page.ts';
+	import SectionNav from './ui/SectionNav.svelte';
+	import TitleSection from './ui/TitleSection.svelte';
 	import './title-page.css';
 	import { session } from './session.svelte.ts';
 	import { toasts } from './toasts.svelte.ts';
@@ -412,6 +414,8 @@
 
 {#if loadErr || error}<LoadError hasData message={loadErr || error} onretry={() => void retry()} busy={retrying} />{/if}
 
+<SectionNav items={pageSections('show', { manage: staff, asks: !!title.asks?.length })} />
+
 
 {#if scope && staff}
 	<ShowReleases titleId={title.id} {scope} jobs={scopeJobs} onclose={() => (scope = null)} onchange={() => void reload()} />
@@ -503,13 +507,12 @@
 		<ShowVersions {title} {staff} onchange={reload} />
 		<CopyControls {title} onchange={reload} />
 		{#if staff}
-			{#key title.id}<SubtitlePanel titleId={title.id} movie={false} files={false} />{/key}
+			<div id="title-subtitles">{#key title.id}<SubtitlePanel titleId={title.id} movie={false} files={false} />{/key}</div>
 		{/if}
 	</div>
 	<aside class="tp-side" aria-label="About this show">
 
-		<section class="card" aria-labelledby="h-show-facts">
-			<h2 id="h-show-facts" class="h2 card-title">About</h2>
+		<TitleSection id="h-show-facts" title="About">
 			<dl class="tp-about">
 				<dt>Episodes</dt>
 				<dd>{show?.episodes ?? 0} in {show?.seasons.length ?? 0} seasons</dd>
@@ -532,11 +535,10 @@
 			</dl>
 			<p class="tp-why" data-testid="gate-reason">{title.gate_reason}</p>
 			{#if staff && title.folder_path}<details class="tp-details"><summary>Details</summary><ul><li>Folder: {shortFolder(title.folder_path)}</li></ul></details>{/if}
-		</section>
+		</TitleSection>
 
 		{#if title.asks?.length}
-			<section class="card" aria-labelledby="h-show-asks" data-testid="title-asks">
-				<h2 id="h-show-asks" class="h2 card-title">Wishlist</h2>
+			<TitleSection id="h-show-asks" title="Wishlist" testid="title-asks">
 				{#each title.asks as a (a.id)}
 					<dl class="facts">
 						<dt>Asked by</dt>
@@ -551,15 +553,14 @@
 							<dd>{a.note}</dd>{/if}
 					</dl>
 				{/each}
-			</section>
+			</TitleSection>
 		{/if}
 
 		{#if staff}
-			<section class="card" aria-labelledby="h-show-history" data-testid="title-history">
-				<div class="card-head">
-					<h2 id="h-show-history" class="h2">History</h2>
+			<TitleSection id="h-show-history" title="History" testid="title-history">
+				{#snippet head()}
 					{#if historyTotal > 0}<Button variant="plain" href={to(`/downloads/history?title=${title.id}`)}>All {historyTotal} rows</Button>{/if}
-				</div>
+				{/snippet}
 				{#if history.length === 0}
 					<p class="small muted">Nothing yet.</p>
 				{:else}
@@ -573,7 +574,7 @@
 						{/each}
 					</ol>
 				{/if}
-			</section>
+			</TitleSection>
 		{/if}
 	</aside>
 </div>

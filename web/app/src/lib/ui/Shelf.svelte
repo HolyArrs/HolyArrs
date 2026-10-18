@@ -11,8 +11,22 @@
 		seeAll = 'See all',
 		subtitle,
 		item = '180px',
+		anchor,
+		onseeall,
 		children
-	}: { title: string; href?: string; seeAll?: string; subtitle?: string; /** Item width, e.g. 180px posters, 300px wide cards. */ item?: string; children: Snippet } = $props();
+	}: {
+		title: string;
+		href?: string;
+		seeAll?: string;
+		subtitle?: string;
+		/** Item width, e.g. 180px posters, 300px wide cards. */
+		item?: string;
+		/** An id for in-page anchors. */
+		anchor?: string;
+		/** See all opens something on this page (a sheet) instead of a link. */
+		onseeall?: () => void;
+		children: Snippet;
+	} = $props();
 
 	const id = $props.id();
 	let scroller = $state<HTMLElement>();
@@ -41,13 +55,14 @@
 	}
 </script>
 
-<section class="ui-shelf" style="--item: {item}">
+<section class="ui-shelf" id={anchor} style="--item: {item}">
 	<header>
 		<div>
 			<h2 id="{id}-t">{#if href}<a href={href}>{title}</a>{:else}{title}{/if}</h2>
 			{#if subtitle}<p>{subtitle}</p>{/if}
 		</div>
-		{#if href}<a class="all" {href}>{seeAll}<Icon name="chevronRight" size={15} /><span class="sr-only"> {title}</span></a>{/if}
+		{#if href}<a class="all" {href}>{seeAll}<Icon name="chevronRight" size={15} /><span class="sr-only"> {title}</span></a>
+		{:else if onseeall}<button class="all" type="button" aria-haspopup="dialog" onclick={onseeall}>{seeAll}<Icon name="chevronRight" size={15} /><span class="sr-only"> {title}</span></button>{/if}
 	</header>
 	<div class="wrap">
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
@@ -65,7 +80,7 @@
 	h2 { font: var(--t-title2); letter-spacing: var(--t-title2-track); }
 	h2 a:hover { color: var(--accent-text); }
 	p { color: var(--text-muted); font: var(--t-callout); margin-top: 2px; }
-	.all { display: inline-flex; align-items: center; gap: 2px; min-height: 32px; flex: none; color: var(--accent-text); font: var(--t-callout); font-weight: 500; border-radius: 6px; }
+	.all { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; flex: none; color: var(--accent-text); font: var(--t-callout); font-weight: 500; border-radius: 6px; }
 	.all:hover { text-decoration: underline; text-underline-offset: 3px; }
 	.wrap { position: relative; }
 	.row {

@@ -34,7 +34,9 @@
 	import ProgressBar from '#lib/ui/ProgressBar.svelte';
 	import TitleCast from '#lib/TitleCast.svelte';
 	import SimilarShelf from '#lib/SimilarShelf.svelte';
-	import { artName, crumbFor, heroStatus, qualityBadges } from '#lib/title-page.ts';
+	import { artName, crumbFor, heroStatus, pageSections, qualityBadges } from '#lib/title-page.ts';
+	import SectionNav from '#lib/ui/SectionNav.svelte';
+	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import type { MenuItem } from '#lib/ui/Menu.svelte';
 	import '#lib/title-page.css';
 	import type { Choice, EventPage, EventRecord, LibraryFolder, PickRulesView, ReleasePage, ReleaseView, TitleView, VersionView } from '#lib/types.ts';
@@ -72,6 +74,9 @@
 	let eKeep = $state(true);
 	let editError = $state('');
 	let editing = $state(false);
+	// Versions are one row; See all lays every Version out.
+	let allVersions = $state(false);
+	const leadVersion = (vs: VersionView[]) => (vs.find((v) => v.main) ?? vs[0])?.id;
 	const gates: [string, string][] = [
 		['announced', 'As soon as it is announced'],
 		['in_cinemas', 'Once it is in cinemas'],
@@ -127,6 +132,7 @@
 			await api.post(`/titles/${id}/versions`, { label: vLabel.trim(), pick_rules_id: vRules, library_folder_id: vFolder, edition: vEdition.trim(), audio_languages: vAudio.split(/[,\s]+/).filter(Boolean), folder_name: vFolderName });
 			versionDialog?.close();
 			toasts.push(`The ${vLabel.trim()} Version is added.`, 'ok');
+			allVersions = true;
 			await load('title');
 		} catch (err) {
 			vError = message(err);
@@ -555,23 +561,29 @@
 
 		{#if error}<LoadError hasData message={error} onretry={() => load()} />{/if}
 
+		<SectionNav items={pageSections('movie', { manage: session.can('manage_library'), asks: !!title.asks?.length })} />
+
 
 		{#key title.id}<TitleCast titleId={title.id} />{/key}
 
 		<div class="tp-body">
 			<div class="tp-main">
-				<section class="tp-section" aria-labelledby="h-versions">
-					<div class="tp-head">
-						<h2 id="h-versions" class="tp-h2">Versions and files</h2>
-						{#if session.can('manage_library')}
-							<Button icon="plus" onclick={openVersion}>Add a Version</Button>
-						{/if}
-					</div>
-					<ul class="tp-list">
+				<TitleSection id="h-versions" title="Versions and files" primary>
+					{#snippet head()}
+						<div class="tp-head-end">
+							{#if title!.versions.length > 1}
+								<Button variant="plain" aria-expanded={allVersions} aria-controls="movie-versions" onclick={() => (allVersions = !allVersions)}>{allVersions ? 'Show less' : `See all ${title!.versions.length}`}</Button>
+							{/if}
+							{#if session.can('manage_library')}
+								<Button icon="plus" onclick={openVersion}>Add a Version</Button>
+							{/if}
+						</div>
+					{/snippet}
+					<ul class="tp-list tp-vrow" id="movie-versions" aria-label="Versions">
 						{#each title.versions as v (v.id)}
 							{@const s = slotOf(v)}
 							{@const f = s?.file}
-							<li class="tp-row" data-testid="version">
+							<li class="tp-row" data-testid="version" hidden={!allVersions && v.id !== leadVersion(title.versions)}>
 								<div class="tp-row-main">
 									<b>{v.label}{v.main ? ' (main)' : ''}</b>
 									<span class="xs muted">Edition: {v.edition || 'Not specified'} · Audio required: {v.audio_languages?.join(', ') || 'Any'}</span>
@@ -607,16 +619,15 @@
 							<ul>{#each notes as n (n.text + (n.detail ?? ''))}<li>{n.text}</li>{/each}</ul>
 						</details>
 					{/if}
-				</section>
+				</TitleSection>
 
 				<CopyControls {title} onchange={() => load('title')} />
 
 				{#if session.can('manage_library')}
-					<section class="tp-section" aria-labelledby="h-rel" data-testid="releases">
-						<div class="tp-head">
-							<h2 id="h-rel" class="tp-h2" tabindex="-1">Releases</h2>
+					<TitleSection id="h-rel" title="Releases" testid="releases" focusable>
+						{#snippet head()}
 							{#if relTotal}<span class="xs muted">{relTotal} found in the last search</span>{/if}
-						</div>
+						{/snippet}
 						{#if title.slots.length > 1}
 							<div class="field slot-pick">
 								<label for="slot-pick">Version</label>
@@ -677,15 +688,14 @@
 								</nav>
 							{/if}
 						{/if}
-					</section>
+					</TitleSection>
 				{/if}
 
 				{#if session.can('manage_library')}
-					{#key title.id}					<SubtitlePanel titleId={title.id} movie />{/key}
+					<div id="title-subtitles">{#key title.id}<SubtitlePanel titleId={title.id} movie />{/key}</div>
 				{/if}
 
-				<section class="tp-section" aria-labelledby="h-dates">
-					<h2 id="h-dates" class="tp-h2">About</h2>
+				<TitleSection id="h-dates" title="About">
 					<dl class="tp-about">
 						<dt>Now</dt>
 						<dd>{stageWord[title.stage] ?? words(title.stage)}</dd>
@@ -707,13 +717,12 @@
 							<dd>{date(title.refreshed_at)}</dd>{/if}
 					</dl>
 					<p class="tp-why" data-testid="gate-reason">{title.gate_reason}</p>
-				</section>
+				</TitleSection>
 </div>
 
 			<aside class="tp-side" aria-label="About this movie">
 				{#if title.asks?.length}
-					<section class="tp-section" aria-labelledby="h-asks" data-testid="title-asks">
-						<h2 id="h-asks" class="tp-h2">Wishlist</h2>
+					<TitleSection id="h-asks" title="Wishlist" testid="title-asks">
 						{#each title.asks as a (a.id)}
 							<dl class="facts">
 								<dt>Asked by</dt>
@@ -726,15 +735,14 @@
 									<dd>{a.note}</dd>{/if}
 							</dl>
 						{/each}
-					</section>
+					</TitleSection>
 				{/if}
 
 				{#if session.can('manage_library')}
-					<section class="tp-section" aria-labelledby="h-history" data-testid="title-history">
-						<div class="tp-head">
-							<h2 id="h-history" class="tp-h2">History</h2>
+					<TitleSection id="h-history" title="History" testid="title-history">
+						{#snippet head()}
 							{#if historyTotal > 0}<Button class="tp-btn" variant="plain" size="sm" href={to(`/downloads/history?title=${id}`)}>All {historyTotal} rows</Button>{/if}
-						</div>
+						{/snippet}
 						{#if history.length === 0}
 							<p class="small muted">Nothing yet. Every search, download, import, rename and delete of this movie writes a row here.</p>
 						{:else}
@@ -748,7 +756,7 @@
 								{/each}
 							</ol>
 						{/if}
-					</section>
+					</TitleSection>
 				{/if}
 			</aside>
 		</div>

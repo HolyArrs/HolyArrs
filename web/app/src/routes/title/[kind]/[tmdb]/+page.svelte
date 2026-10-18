@@ -17,6 +17,7 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
 	import AddMovieDialog from '#lib/AddMovieDialog.svelte';
 	import AddShowDialog from '#lib/AddShowDialog.svelte';
 	import AskShowDialog from '#lib/AskShowDialog.svelte';
@@ -46,6 +47,9 @@
 	let addMovie: ReturnType<typeof AddMovieDialog> | undefined = $state();
 	let addShow: ReturnType<typeof AddShowDialog> | undefined = $state();
 	let askShow: ReturnType<typeof AskShowDialog> | undefined = $state();
+	// Cast and Similar are one row each; See all opens the whole list.
+	let allCast = $state(false);
+	let allSimilar = $state(false);
 	let askMovieDialog: ReturnType<typeof AskMovieDialog> | undefined = $state();
 	let loadedSettings = false;
 
@@ -85,6 +89,8 @@
 
 	$effect(() => {
 		void load(kind, tmdb);
+		allCast = false;
+		allSimilar = false;
 	});
 
 	$effect(() => {
@@ -185,19 +191,33 @@
 		</TitleHero>
 
 		{#if d.cast.length}
-			<Shelf title="Cast and crew" item="112px">
-				{#each d.cast.slice(0, 20) as p, i (p.name + i)}
+			<Shelf title="Cast and crew" item="112px" anchor="title-cast" onseeall={() => (allCast = true)}>
+				{#each d.cast.slice(0, 12) as p, i (p.name + i)}
 					<PersonCircle name={p.name} role={p.role} image={p.image} href={p.id ? to(`/people/${p.id}`) : undefined} />
 				{/each}
 			</Shelf>
+			<Sheet bind:open={allCast} title="Cast and crew" size="lg">
+				<ul class="all-grid people">
+					{#each d.cast as p, i (p.name + i)}
+						<li><PersonCircle name={p.name} role={p.role} image={p.image} href={p.id ? to(`/people/${p.id}`) : undefined} /></li>
+					{/each}
+				</ul>
+			</Sheet>
 		{/if}
 
 		{#if d.similar.length}
-			<Shelf title="Similar">
-				{#each d.similar.slice(0, 20) as s (s.kind + s.tmdb)}
+			<Shelf title="Similar" anchor="title-similar" onseeall={() => (allSimilar = true)}>
+				{#each d.similar.slice(0, 12) as s (s.kind + s.tmdb)}
 					<PosterCard title={s.name} subtitle={s.year ? String(s.year) : undefined} image={s.poster} kind={s.kind} href={to(detailPath(s.kind, s.tmdb))} />
 				{/each}
 			</Shelf>
+			<Sheet bind:open={allSimilar} title="Similar" size="lg">
+				<ul class="all-grid">
+					{#each d.similar as s (s.kind + s.tmdb)}
+						<li><PosterCard title={s.name} subtitle={s.year ? String(s.year) : undefined} image={s.poster} kind={s.kind} href={to(detailPath(s.kind, s.tmdb))} /></li>
+					{/each}
+				</ul>
+			</Sheet>
 		{/if}
 
 		<p class="attribution">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
@@ -215,5 +235,7 @@
 
 <style>
 	.loading { display: flex; flex-direction: column; gap: 16px; }
+	.all-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 18px 14px; margin: 0; padding: 0; list-style: none; }
+	.all-grid.people { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
 	.attribution { color: var(--text-muted); font: var(--t-footnote); }
 </style>

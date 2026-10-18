@@ -44,3 +44,18 @@
 	.tp-about dd { margin-bottom: 10px; }
 }
 .tp-btn { max-width: 100%; min-width: 0; }
+
+/* In-page anchors land below the sticky top bar. */
+.tp [id] { scroll-margin-top: calc(var(--topbar, 56px) + 16px); }
+/* Phone: folded sections sit flush, one line between them. */
+@media (max-width: 767px) {
+	.ui-fold + .ui-fold { margin-top: calc(clamp(28px, 4vw, 44px) * -1 - 1px); }
+}
+
+/* Versions: one row (the main Version); See all lays every Version out. */
+.tp-head-end { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.tp-vrow { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.tp-vrow > li, .tp-vrow > .tp-row { flex-direction: column; justify-content: flex-start; gap: 10px; padding: 14px 16px; border: 0; border-radius: var(--r-card); background: var(--surface-2); min-width: 0; }
+.tp-vrow > li + li { border-top: 0; }
+.tp-vrow > li[hidden] { display: none; }
+.tp-vrow .tp-row-end { justify-content: flex-start; }

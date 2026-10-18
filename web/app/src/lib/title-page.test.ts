@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { artName, crumbFor, heroStatus, qualityBadges, similarTitles } from './title-page.ts';
+import { artName, crumbFor, heroStatus, pageSections, qualityBadges, similarTitles } from './title-page.ts';
 import type { SlotView } from './types.ts';
 
 const slot = (s: Partial<SlotView>): SlotView => ({ id: 1, version: 'Main', version_id: 1, state: 'wanted', state_label: '', ...s });
@@ -46,5 +46,18 @@ describe('title page helpers', () => {
 
 	it('shares the poster transition name', () => {
 		expect(artName(12)).toBe('title-art-12');
+	});
+});
+
+describe('title page sections', () => {
+	it('lists a movie page in page order, with the staff sections for staff', () => {
+		expect(pageSections('movie', { manage: true, asks: true }).map((s) => s.label)).toEqual(['Cast', 'Versions', 'Releases', 'Subtitles', 'About', 'Wishlist', 'History', 'Similar']);
+	});
+	it('leaves out staff sections and an empty Wishlist for members', () => {
+		expect(pageSections('movie', { manage: false, asks: false }).map((s) => s.id)).toEqual(['title-cast', 'h-versions', 'h-dates', 'title-similar']);
+	});
+	it('starts a show page with its seasons', () => {
+		const ids = pageSections('show', { manage: false, asks: true }).map((s) => s.id);
+		expect(ids).toEqual(['h-seasons', 'title-cast', 'h-show-versions', 'h-show-facts', 'h-show-asks', 'title-similar']);
 	});
 });

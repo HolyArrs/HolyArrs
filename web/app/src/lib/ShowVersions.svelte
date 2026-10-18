@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Button from '#lib/ui/Button.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
+	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import { shortFolder } from '#lib/ui/TitleHero.svelte';
 	// The Versions card of a show (4.8.11): every wanted copy, such as HD and
 	// 4K, with its Pick rules and folder; staff add, change and remove them.
@@ -13,6 +14,9 @@
 	let { title, staff, onchange }: { title: TitleView; staff: boolean; onchange: () => void | Promise<void> } = $props();
 
 	let dialog: HTMLDialogElement | undefined = $state();
+	// Versions are one row; See all lays every Version out.
+	let all = $state(false);
+	const lead = $derived((title.versions.find((v) => v.main) ?? title.versions[0])?.id);
 	let rules = $state<PickRulesView[]>([]);
 	let folders = $state<LibraryFolder[]>([]);
 	/** The Version being changed; null adds a new one. */
@@ -78,6 +82,7 @@
 			} else {
 				await api.post(`/titles/${title.id}/versions`, { label, pick_rules_id: vRules, library_folder_id: vFolder, keep_up_to_date: vKeep, audio_languages: vAudio.split(/[,\s]+/).filter(Boolean) });
 				toasts.push(`The ${label} Version is added. Each episode gets its own Slot for it.`, 'ok');
+				all = true;
 			}
 			dialog?.close();
 			await onchange();
@@ -100,16 +105,20 @@
 	}
 </script>
 
-<section class="card" aria-labelledby="h-show-versions" data-testid="show-versions">
-	<div class="card-head">
-		<h2 id="h-show-versions" class="h2">Versions</h2>
-		{#if staff}
-			<Button icon="plus" onclick={openAdd}>Add a Version</Button>
-		{/if}
-	</div>
-	<ul class="versions">
+<TitleSection id="h-show-versions" title="Versions" testid="show-versions" primary>
+	{#snippet head()}
+		<div class="tp-head-end">
+			{#if title.versions.length > 1}
+				<Button variant="plain" aria-expanded={all} aria-controls="show-versions-list" onclick={() => (all = !all)}>{all ? 'Show less' : `See all ${title.versions.length}`}</Button>
+			{/if}
+			{#if staff}
+				<Button icon="plus" onclick={openAdd}>Add a Version</Button>
+			{/if}
+		</div>
+	{/snippet}
+	<ul class="versions tp-vrow" id="show-versions-list" aria-label="Versions">
 		{#each title.versions as v (v.id)}
-			<li class="version" data-testid="version">
+			<li class="version" data-testid="version" hidden={!all && v.id !== lead}>
 				<b>{v.label}{v.main ? ' (main)' : ''}</b>
 				<div class="xs muted">Audio required: {v.audio_languages?.join(', ') || 'Any'}</div>
 				<div class="xs muted">Pick rules: {v.pick_rules_name}{v.keep_up_to_date ? '' : ' · not kept up to date'}</div>
@@ -129,7 +138,7 @@
 	{#if title.versions.length > 1}
 		<p class="xs muted">Each episode is looked for, downloaded and placed once per Version. Edit and Move change the main Version only.</p>
 	{/if}
-</section>
+</TitleSection>
 
 <dialog bind:this={dialog} aria-labelledby="show-version-title" class="modal">
 	<form onsubmit={save}>
@@ -183,13 +192,13 @@
 	@media (pointer: coarse) {
 		details > summary { min-height: 44px; }
 	}
-	.versions .version {
-		padding: var(--s-3);
-		border-radius: 5px;
-		background: var(--surface-2);
+	.versions .version[hidden] {
+		display: none;
 	}
-	.versions .version + .version {
-		margin-top: var(--s-2);
+	.versions .version {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
 	}
 	.path {
 		overflow-wrap: anywhere;
