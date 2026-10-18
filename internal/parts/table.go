@@ -408,6 +408,8 @@ var Screens = map[string]Owner{
 	"/library/collections/[id]":    movies,
 	"/library/copies":              movies,
 	"/":                            Core,
+	"/explore":                     Core,
+	"/ui":                          Core,
 	"/account":                     Core,
 	"/welcome":                     Core,
 	"/login":                       Core,

@@ -43,11 +43,16 @@ func TestEveryScreenHasAPart(t *testing.T) {
 			t.Errorf("Screens lists %s, but there is no such page", s)
 		}
 	}
-	layout, err := os.ReadFile(filepath.Join(webRoutes, "+layout.svelte"))
-	if err != nil {
-		t.Fatal(err)
+	// The menu lives in the layout and in lib/ui/nav.ts (the sidebar, tab bar and palette).
+	var menu []byte
+	for _, f := range []string{filepath.Join(webRoutes, "+layout.svelte"), filepath.Join(webRoutes, "..", "lib", "ui", "nav.ts")} {
+		b, err := os.ReadFile(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		menu = append(menu, b...)
 	}
-	hrefs := regexp.MustCompile(`href: '([^']+)'`).FindAllStringSubmatch(string(layout), -1)
+	hrefs := regexp.MustCompile(`href: '([^'?]+)[^']*'`).FindAllStringSubmatch(string(menu), -1)
 	if len(hrefs) < 6 {
 		t.Fatalf("found only %d menu entries", len(hrefs))
 	}
