@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { to } from '#lib/paths.ts';
+	import { detailPath, remember } from '#lib/title-details.ts';
 	import { api, message } from '#lib/api.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
@@ -85,6 +86,17 @@
 
 	function live(c: ExploreCard): ExploreCard {
 		return askedHere.has(c.key) ? { ...c, mine: true, status: 'requested', statusLabel: 'Requested' } : c;
+	}
+
+	// Library titles open their page; other movies and shows open their details.
+	function cardHref(c: ExploreCard): string | undefined {
+		if (c.titleId !== undefined) return to(`/library/${c.titleId}`);
+		const tmdb = c.ref?.startsWith('tmdb:') ? c.ref.slice(5) : '';
+		if (tmdb && (c.kind === 'movie' || c.kind === 'show')) {
+			remember(c.kind, tmdb, { name: c.name, year: c.year, poster: c.image });
+			return to(detailPath(c.kind, tmdb));
+		}
+		return c.status === 'requested' ? to('/wishlist') : undefined;
 	}
 
 	function searchHref(c: ExploreCard): string {
@@ -197,7 +209,7 @@
 						{@const act = cardAction(c, { manage, ask: mayAsk })}
 						<PosterCard
 							title={c.name}
-							href={c.titleId !== undefined ? to(`/library/${c.titleId}`) : c.status === 'requested' ? to('/wishlist') : undefined}
+							href={cardHref(c)}
 							image={c.image}
 							kind={c.kind}
 							subtitle={c.subtitle}

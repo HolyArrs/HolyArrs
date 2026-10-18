@@ -424,6 +424,7 @@ var Screens = map[string]Owner{
 	"/library/rename":              Media,
 	"/library/missing-subtitles":   subtitles,
 	"/search":                      Media,
+	"/title/[kind]/[tmdb]":         Media,
 	"/calendar":                    Media,
 	"/wishlist":                    wishlist,
 	"/settings":                    Core,
