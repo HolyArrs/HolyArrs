@@ -29,3 +29,4 @@
 	.tp-row { flex-direction: column; }
 	.tp-row-end { justify-content: flex-start; }
 }
+.tp-btn { max-width: 100%; min-width: 0; }

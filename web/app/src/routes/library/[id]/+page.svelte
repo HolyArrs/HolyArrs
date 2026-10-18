@@ -524,7 +524,7 @@
 						{#if d.active}<div class="tp-bar"><ProgressBar value={d.progress * 100} label="Download progress" on="art" /></div>{/if}
 						<p class="small" data-testid="download-text">{d.text}</p>
 						{#if d.active && session.can('manage_library')}
-							<Button class="tp-dl-btn" size="sm" onclick={() => markFailed(d.id)} busy={failing === d.id}>Mark failed</Button>
+							<Button class="tp-dl-btn tp-btn" size="sm" onclick={() => markFailed(d.id)} busy={failing === d.id}>Mark failed</Button>
 						{/if}
 					</div>
 				{/each}
@@ -600,7 +600,7 @@
 						{#if releases.length === 0}
 							{#if !running.length}
 								<p class="small muted">No search yet. Choose a release shows every Release HolyArrs finds, with why each one would be chosen or not, so you can pick one yourself.</p>
-								<Button class="tp-start" icon="grid" onclick={() => searchNow(false)} disabled={searching}>Choose a release</Button>
+								<Button class="tp-start tp-btn" icon="grid" onclick={() => searchNow(false)} disabled={searching}>Choose a release</Button>
 							{/if}
 						{:else}
 							<ul class="rels">
@@ -699,7 +699,7 @@
 					<section class="tp-section" aria-labelledby="h-history" data-testid="title-history">
 						<div class="tp-head">
 							<h2 id="h-history" class="tp-h2">History</h2>
-							{#if historyTotal > 0}<Button variant="plain" size="sm" href={to(`/downloads/history?title=${id}`)}>All {historyTotal} rows</Button>{/if}
+							{#if historyTotal > 0}<Button class="tp-btn" variant="plain" size="sm" href={to(`/downloads/history?title=${id}`)}>All {historyTotal} rows</Button>{/if}
 						</div>
 						{#if history.length === 0}
 							<p class="small muted">Nothing yet. Every search, download, import, rename and delete of this movie writes a row here.</p>
