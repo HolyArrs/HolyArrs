@@ -16,10 +16,17 @@ result = {'tables': {}, 'files': {}}
 for table in ('users', 'api_keys', 'secrets', 'settings', 'invites', 'ask_people',
               'library_folders', 'downloaders', 'pick_rules', 'user_links'):
     rows = [dict(r) for r in c.execute('SELECT * FROM ' + table)]
+    if table == 'downloaders':
+        for r in rows:
+            for key in ('updated_at', 'updated_by', 'checked_at', 'last_ok_at', 'last_error', 'state', 'failures', 'backoff_until'):
+                r.pop(key, None)
     result['tables'][table] = digest(sorted(rows, key=lambda r: json.dumps(r, sort_keys=True, default=str)))
 for table, condition in [('asks', 'id != 34'), ('titles', 'id != 166'),
                          ('slots', 'id NOT IN (1183,1184,1185)'), ('files', '1=1')]:
     result['file_rows' if table == 'files' else table] = {str(r['id']): digest(dict(r)) for r in c.execute('SELECT * FROM ' + table + ' WHERE ' + condition + ' ORDER BY id')}
+for table, columns in [('downloads', 'id,created_at,created_by,downloader_id,release_id,external_id,save_path,started_by'),
+                       ('imports', 'id,created_at,created_by,download_id,from_path,kind,mode')]:
+    result[table] = {str(r['id']): digest(dict(r)) for r in c.execute('SELECT ' + columns + ' FROM ' + table)}
 for base in (root / 'downloads', root / 'movies', media):
     if not base.exists():
         continue
