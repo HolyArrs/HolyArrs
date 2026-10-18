@@ -26,15 +26,15 @@ const frozenHash = '45144ef19d962c8cd785e124d352c7f00f42821ea359558b919415073e6f
         await expect(page.locator('h1')).toBeVisible();
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false);
         if (file === 'index.html') {
-          await page.getByLabel('Group', { exact: true }).selectOption('Comparison');
+          await page.locator('#group').selectOption('Comparison');
           await expect(page.locator('article:visible')).toHaveCount(8);
-          await page.getByLabel('Find', { exact: true }).fill('/wishlist');
+          await page.locator('#find').fill('/wishlist');
           await expect(page.locator('article:visible')).toHaveCount(2);
-          await page.getByLabel('CSS width', { exact: true }).selectOption('1920');
+          await page.locator('#width').selectOption('1920');
           await expect(page.locator('article:visible')).toHaveCount(2);
-          await page.getByLabel('Find', { exact: true }).fill('no-matching-audit-route');
+          await page.locator('#find').fill('no-matching-audit-route');
           await expect(page.locator('article:visible')).toHaveCount(0);
-          await page.getByLabel('Find', { exact: true }).fill('');
+          await page.locator('#find').fill('');
         } else {
           await expect(page.locator('section')).toHaveCount(4);
           await expect(page.locator('figure')).toHaveCount(8);
