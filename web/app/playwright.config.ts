@@ -88,6 +88,8 @@ export default defineConfig({
 		{ name: 'communitybrowse', testMatch: 'community-browse.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['desktop'] },
 		{ name: 'appframe', testMatch: 'appframe.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['controls'] },
 		// Settings: the seven groups, setting search with a deep link and highlight, the save bar and its leave guard, Advanced kept per person, Danger zone, a phone and accessibility.
-		{ name: 'settings', testMatch: 'settings.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['appframe'] }
+		{ name: 'settings', testMatch: 'settings.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['appframe'] },
+		// Pick rules: copy Good everyday, change a step and a trait, save and reload, a mistake named on its field, remove the copy (asked first), a ready-made set cannot be removed, the music steps, a phone and accessibility.
+		{ name: 'pickrules', testMatch: 'pick-rules.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['settings'] }
 	]
 });

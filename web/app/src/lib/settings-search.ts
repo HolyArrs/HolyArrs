@@ -110,6 +110,15 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/downloaders', 'remove-defaults', 'What removing a download does by default', 'remove delete files turned down search again'),
 	e('/settings/downloaders', 'st-gap', 'Seconds between sends to one Downloader', 'delay seconds send', true),
 	e('/settings/pick-rules', 'pick-rules-card', 'Pick rules', 'quality profile quality formats resolution 4k 1080p pick rules'),
+	// The editor works on one set at a time, so these open the list to pick which set to change.
+	e('/settings/pick-rules', 'pick-rules-card', 'New Pick rules', 'make add create copy new quality profile'),
+	e('/settings/pick-rules', 'pick-rules-card', 'Quality steps and Good enough', 'pick rules steps resolution 720p 1080p 2160p 4k remux bluray web good enough cutoff upgrade until'),
+	e('/settings/pick-rules', 'pick-rules-card', 'Traits and points', 'pick rules traits points score custom formats hevc x265 av1 dolby vision hdr atmos'),
+	e('/settings/pick-rules', 'pick-rules-card', 'Must have and Never', 'pick rules must have never required ignored block 3d burned subtitles sample'),
+	e('/settings/pick-rules', 'pick-rules-card', 'Release size per hour', 'pick rules size gb per hour smallest largest minimum maximum limits'),
+	e('/settings/pick-rules', 'pick-rules-card', 'Waiting for a better Release', 'pick rules wait delay profile torrent usenet prefer protocol minutes'),
+	e('/settings/pick-rules', 'pick-rules-card', 'Release languages', 'pick rules language english french german spanish dubbed original audio'),
+	e('/settings/pick-rules', 'pick-rules-card', 'Fixed copies', 'pick rules proper repack fixed copy re-release'),
 
 	// Wishlist and people
 	e('/settings/wishlist', 'per-week-movies', 'Movie asks each week', 'wishlist limit request quota movies'),

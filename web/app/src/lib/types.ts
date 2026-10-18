@@ -834,6 +834,59 @@ export interface PickRulesView {
 	name: string;
 	kinds: string[];
 	preset: boolean;
+	/** How many places use these rules, all kinds together. */
+	in_use?: number;
+}
+
+/** PickRulesStep is one rung of a quality ladder, on or off. */
+export interface PickRulesStep {
+	quality: string;
+	allowed: boolean;
+}
+
+/** PickRulesSize bounds a Release's size in bytes; with per_minute, per minute of runtime. */
+export interface PickRulesSize {
+	min: number;
+	max: number;
+	per_minute: boolean;
+}
+
+/** PickRulesBody is what a set of Pick rules takes (internal/domain/pickrules.go). */
+export interface PickRulesBody {
+	steps: PickRulesStep[];
+	good_enough_at: string;
+	traits: { trait: string; points: number }[];
+	must_have: string[];
+	never: string[];
+	min_points: number;
+	good_enough_points?: number;
+	/** By step; "*" is every step. */
+	size_limits: Record<string, PickRulesSize>;
+	protocol: { prefer: 'torrent' | 'usenet' | 'either'; wait_minutes_torrent: number; wait_minutes_usenet: number; skip_wait_at_good_enough: boolean };
+	language: { wanted: string[]; original_ok: boolean };
+	order: 'quality_then_points' | 'points_then_quality';
+	upgrade_min_points: number;
+	proper_policy: { mode: 'take_any' | 'same_group_only' | 'prefer_only' | 'ignore'; max_age_days?: number };
+}
+
+/** PickRulesUse counts what uses one set of Pick rules. */
+export interface PickRulesUse {
+	versions: number;
+	library_folders: number;
+	outside_lists: number;
+	wishlist: number;
+	title_defaults: number;
+}
+
+/** PickRulesDetail is one set of Pick rules with its body and where it is used. */
+export interface PickRulesDetail {
+	id: number;
+	name: string;
+	kinds: string[];
+	preset: boolean;
+	revision: number;
+	body: PickRulesBody;
+	in_use: PickRulesUse;
 }
 
 export interface GateDefaults {
