@@ -98,6 +98,7 @@
   --shadow-lift: 0 2px 4px rgb(0 0 0 / 8%), 0 12px 28px rgb(0 0 0 / 14%);
   --shadow-modal: 0 24px 64px rgb(0 0 0 / 24%);
   --ring-dark: 0 0 0 0 transparent;
+  --seg-thumb: #ffffff;
   color-scheme: light;
 }
 
@@ -125,6 +126,7 @@
   --ok-text: #30d158; --wait-text: #ffb340; --fail-text: #ff6961; --info-text: #409cff;
     --scrim: rgb(0 0 0 / 60%);
     --ring-dark: 0 0 0 1px var(--line);
+  --seg-thumb: #5a5a5f;
     --shadow-card: 0 1px 2px rgb(0 0 0 / 30%), 0 4px 12px rgb(0 0 0 / 28%), var(--ring-dark);
     --shadow-lift: 0 2px 4px rgb(0 0 0 / 34%), 0 12px 28px rgb(0 0 0 / 44%), var(--ring-dark);
     --shadow-modal: 0 24px 64px rgb(0 0 0 / 56%), var(--ring-dark);
@@ -154,6 +156,7 @@
   --ok-text: #30d158; --wait-text: #ffb340; --fail-text: #ff6961; --info-text: #409cff;
   --scrim: rgb(0 0 0 / 60%);
   --ring-dark: 0 0 0 1px var(--line);
+  --seg-thumb: #5a5a5f;
   --shadow-card: 0 1px 2px rgb(0 0 0 / 30%), 0 4px 12px rgb(0 0 0 / 28%), var(--ring-dark);
   --shadow-lift: 0 2px 4px rgb(0 0 0 / 34%), 0 12px 28px rgb(0 0 0 / 44%), var(--ring-dark);
   --shadow-modal: 0 24px 64px rgb(0 0 0 / 56%), var(--ring-dark);

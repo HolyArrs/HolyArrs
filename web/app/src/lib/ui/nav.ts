@@ -89,12 +89,12 @@ export function buildNav(input: NavInput): NavSection[] {
 }
 
 /** isCurrent says whether a nav item is the page at path (with its query). */
-export function isCurrent(item: Pick<NavItem, 'href' | 'also'>, path: string, search: URLSearchParams): boolean {
+export function isCurrent(item: Pick<NavItem, 'href' | 'also'>, path: string, search: Pick<URLSearchParams, 'get'>): boolean {
 	const [base, query] = item.href.split('?');
 	if (query) {
 		const want = new URLSearchParams(query);
 		if (path !== base) return false;
-		for (const [k, v] of want) if (search.get(k) !== v) return false;
+		for (const [k, v] of want.entries()) if (search.get(k) !== v) return false;
 		return true;
 	}
 	if (item.also?.some((a) => path === a || path.startsWith(a + '/'))) return true;
@@ -103,7 +103,7 @@ export function isCurrent(item: Pick<NavItem, 'href' | 'also'>, path: string, se
 }
 
 /** currentHref picks the single most specific item that matches, so only one row is selected. */
-export function currentHref(items: Pick<NavItem, 'href' | 'also'>[], path: string, search: URLSearchParams): string | null {
+export function currentHref(items: Pick<NavItem, 'href' | 'also'>[], path: string, search: Pick<URLSearchParams, 'get'>): string | null {
 	const hits = items.filter((i) => isCurrent(i, path, search));
 	// Exact query matches beat plain prefixes; longer paths beat shorter ones.
 	hits.sort((a, b) => Number(b.href.includes('?')) - Number(a.href.includes('?')) || b.href.length - a.href.length);
