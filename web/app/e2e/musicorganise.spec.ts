@@ -151,9 +151,9 @@ test('the Calendar lists album release days under Music', async () => {
 	const entry = page.getByTestId('cal-entry').filter({ hasText: 'Tin Lanterns – Harbour Songs' });
 	await expect(entry).toBeVisible();
 	await expect(entry).toHaveAttribute('href', /\/library\/\d+\/albums\/\d+$/);
-	await page.getByRole('button', { name: 'List' }).click();
+	await page.getByRole('radio', { name: 'List', exact: true }).click();
 	await expect(page.getByTestId('cal-item').filter({ hasText: 'Harbour Songs' })).toContainText('Album release');
-	await page.getByRole('button', { name: 'Movies' }).click();
+	await page.getByTestId('cal-titles').getByRole('radio', { name: 'Movies' }).click();
 	await expect(page.getByTestId('cal-item').filter({ hasText: 'Harbour Songs' })).toHaveCount(0);
 	await axe(page, 'calendar with music');
 });

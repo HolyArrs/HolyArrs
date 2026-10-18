@@ -117,7 +117,7 @@ test('calendar: month and list views with cinema, digital and disc dates', async
 	await expect(page.getByTestId('cal-month')).not.toHaveText(heading!);
 	await page.getByRole('button', { name: 'Month before' }).click();
 	await expect(page.getByTestId('cal-month')).toHaveText(heading!);
-	await page.getByRole('button', { name: 'List', exact: true }).click();
+	await page.getByRole('radio', { name: 'List', exact: true }).click();
 	const list = page.getByTestId('cal-list');
 	await expect(list.getByRole('link', { name: new RegExp(dated.name) })).toBeVisible();
 	await expect(list).toContainText('In cinemas');
@@ -227,7 +227,7 @@ test('the new screens at phone width: no sideways scroll, no serious accessibili
 		await axe(ph, url + ' (phone)');
 	}
 	await ph.goto('/calendar?month=2014-02');
-	await ph.getByRole('button', { name: 'List', exact: true }).click();
+	await ph.getByRole('radio', { name: 'List', exact: true }).click();
 	await noSidewaysScroll(ph);
 	await ph.context().close();
 });

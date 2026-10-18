@@ -10,7 +10,7 @@
 	import { date } from '#lib/format.ts';
 	import { inLibraryWord } from '#lib/library.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
-	import OpsSegments from '#lib/ui/OpsSegments.svelte';
+	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import OpsCheckChip from '#lib/ui/OpsCheckChip.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
@@ -193,7 +193,7 @@
 		<IconButton icon="chevronRight" label="Month after" variant="tinted" onclick={() => go(1)} />
 	</div>
 	<div class="segs">
-		<OpsSegments
+		<SegmentedControl
 			label="Movies, shows or music"
 			testid="cal-titles"
 			value={which}
@@ -205,7 +205,7 @@
 				{ value: 'music', label: 'Music' }
 			]}
 		/>
-		<OpsSegments label="View" value={view} onchange={(v) => (view = v as 'month' | 'list')} options={[{ value: 'month', label: 'Month' }, { value: 'list', label: 'List' }]} />
+		<SegmentedControl label="View" value={view} onchange={(v) => (view = v as 'month' | 'list')} options={[{ value: 'month', label: 'Month' }, { value: 'list', label: 'List' }]} />
 	</div>
 	{#if which === 'all' || which === 'movies'}
 		<fieldset class="kinds">
@@ -377,7 +377,7 @@
 	.acts { display: flex; flex-wrap: wrap; gap: 8px; }
 	@media (max-width: 640px) {
 		.month-nav { width: 100%; justify-content: space-between; margin-right: 0; }
-		.segs, .segs > :global(.ops-seg) { width: 100%; }
+		.segs, .segs > :global(.ui-seg) { width: 100%; }
 		.acts > :global(*) { flex: 1 1 100%; }
 	}
 </style>

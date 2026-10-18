@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { api, message, ApiError } from '#lib/api.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
@@ -11,7 +11,7 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import Chip from '#lib/ui/Chip.svelte';
+	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import StatusPill from '#lib/ui/StatusPill.svelte';
@@ -213,6 +213,24 @@
 		if (term) void run();
 	});
 
+	// A new ?q= while this page is already open (the ⌘K palette, a link from
+	// Explore) runs that search; our own address updates match and do nothing.
+	afterNavigate(({ from, to: dest }) => {
+		if (!from || !dest) return;
+		const q = dest.url.searchParams.get('q') ?? '';
+		const k = dest.url.searchParams.get('kind');
+		const nextKind: SearchKind = k === 'show' || k === 'music' ? k : 'movie';
+		if (!q.trim() || (q.trim() === term.trim() && nextKind === kind)) return;
+		if (nextKind !== kind) {
+			kind = nextKind;
+			results = null;
+			shows = null;
+			artists = null;
+		}
+		term = q;
+		void run();
+	});
+
 	async function run(e?: SubmitEvent) {
 		e?.preventDefault();
 		const q = term.trim();
@@ -319,10 +337,8 @@
 			: 'Find a movie by name, or paste tmdb: or imdb: with its id.'}
 />
 
-<div class="kind" role="group" aria-label="Look for">
-	<Chip icon="film" label="Movies" selected={kind === 'movie'} onclick={() => setKind('movie')} />
-	<Chip icon="tv" label="Shows" selected={kind === 'show'} onclick={() => setKind('show')} />
-	<Chip icon="music" label="Music" selected={kind === 'music'} onclick={() => setKind('music')} />
+<div class="kind">
+	<SegmentedControl label="Look for" value={kind} onchange={(k) => setKind(k)} options={[{ value: 'movie', label: 'Movies', icon: 'film' }, { value: 'show', label: 'Shows', icon: 'tv' }, { value: 'music', label: 'Music', icon: 'music' }]} />
 </div>
 
 <form class="searchbar" role="search" onsubmit={run}>

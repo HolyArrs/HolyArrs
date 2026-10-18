@@ -133,7 +133,7 @@ test('an episode History link lists only that episode, named on each row', async
 
 test("the Calendar shows this week's episode, and the movies and shows filter", async () => {
 	await page.goto('/calendar');
-	await page.getByRole('button', { name: 'List', exact: true }).click();
+	await page.getByRole('radio', { name: 'List', exact: true }).click();
 	const item = page.getByTestId('cal-item').filter({ hasText: 'Quarry Bells S02E01 New Bell' });
 	// The episode airs tomorrow (UTC); when that is next month, step forward.
 	const now = new Date();
@@ -142,12 +142,12 @@ test("the Calendar shows this week's episode, and the movies and shows filter", 
 	await expect(item).toBeVisible();
 	await expect(item).toContainText('Episode');
 	await expect(item).toContainText('on Lab Three');
-	await page.getByTestId('cal-titles').getByRole('button', { name: 'Movies' }).click();
+	await page.getByTestId('cal-titles').getByRole('radio', { name: 'Movies' }).click();
 	await expect(item).toHaveCount(0);
-	await page.getByTestId('cal-titles').getByRole('button', { name: 'Shows' }).click();
+	await page.getByTestId('cal-titles').getByRole('radio', { name: 'Shows' }).click();
 	await expect(item).toBeVisible();
 	await expect(page.getByRole('checkbox', { name: 'In cinemas' })).toHaveCount(0);
-	await page.getByRole('button', { name: 'Month', exact: true }).click();
+	await page.getByRole('radio', { name: 'Month', exact: true }).click();
 	await expect(page.getByTestId('cal-entry').filter({ hasText: 'Quarry Bells S02E01' })).toBeVisible();
 	await axe(page, 'calendar with episodes');
 });

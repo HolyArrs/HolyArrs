@@ -33,7 +33,7 @@ async function axe(p: Page, where: string) {
 
 async function searchMusic(p: Page, name: string) {
 	await p.goto('/search?kind=music');
-	await expect(p.getByRole('button', { name: 'Music', exact: true })).toHaveAttribute('aria-pressed', 'true');
+	await expect(p.getByRole('radio', { name: 'Music', exact: true })).toHaveAttribute('aria-checked', 'true');
 	await p.getByLabel('Artist name or id').fill(name);
 	await p.getByRole('button', { name: 'Search', exact: true }).click();
 }
@@ -68,7 +68,7 @@ test('the owner adds a music folder and looks at Settings > Music', async () => 
 
 test('the owner finds an artist and adds it from Search', async () => {
 	await own.goto('/search');
-	await own.getByRole('button', { name: 'Music', exact: true }).click();
+	await own.getByRole('radio', { name: 'Music', exact: true }).click();
 	await expect(own).toHaveURL(/kind=music/);
 	await own.getByLabel('Artist name or id').fill('lantern');
 	await own.getByRole('button', { name: 'Search', exact: true }).click();

@@ -8,8 +8,9 @@
 		value = $bindable(),
 		label,
 		size = 'md',
+		testid,
 		onchange
-	}: { options: { value: T; label: string; icon?: IconName }[]; value: T; label: string; size?: 'sm' | 'md'; onchange?: (v: T) => void } = $props();
+	}: { options: { value: T; label: string; icon?: IconName }[]; value: T; label: string; size?: 'sm' | 'md'; testid?: string; onchange?: (v: T) => void } = $props();
 
 	const index = $derived(Math.max(0, options.findIndex((o) => o.value === value)));
 	let buttons: HTMLButtonElement[] = $state([]);
@@ -29,7 +30,7 @@
 	}
 </script>
 
-<div class="ui-seg {size}" role="radiogroup" aria-label={label} style="--n: {options.length}; --i: {index}">
+<div class="ui-seg {size}" role="radiogroup" aria-label={label} data-testid={testid} style="--n: {options.length}; --i: {index}">
 	<span class="thumb" aria-hidden="true"></span>
 	{#each options as o, i (o.value)}
 		<button bind:this={buttons[i]} type="button" role="radio" aria-checked={o.value === value} tabindex={o.value === value ? 0 : -1} onclick={() => pick(o.value)} onkeydown={(e) => key(e, i)}>
