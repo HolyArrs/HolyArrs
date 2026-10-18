@@ -93,6 +93,8 @@ mkdirSync(downloads, { recursive: true });
 const fakes = await import('../../../web/app/e2e/fakes.mjs');
 const { addCatalogToFakes } = await import('./sample-preview.mjs');
 addCatalogToFakes(fakes);
+const { addMusicLifecycleSample } = await import('./music-lifecycle-sample.mjs');
+addMusicLifecycleSample(fakes);
 const { startFakes, mbPort, plexPort, tmdbPort, traktPort, tvmazePort } = fakes;
 const stopFakes = startFakes();
 const subs = spawn(subsBin, ['-addr', `127.0.0.1:${ports.HOLYARRS_E2E_SUBS_PORT}`], { cwd: runtime, stdio: 'inherit' });

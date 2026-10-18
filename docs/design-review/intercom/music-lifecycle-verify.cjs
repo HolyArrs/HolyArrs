@@ -2,6 +2,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { createHash } = require('node:crypto');
 const { chromium, expect } = require('../../../web/app/node_modules/@playwright/test');
 const { identity } = require('./audit-environments-20261017.cjs');
 const root = path.resolve(__dirname, '../../..');
@@ -21,6 +22,15 @@ const escape = value => String(value).replaceAll('&', '&amp;').replaceAll('<', '
 	assert.equal(lifecycle.sourceAfter.frontend, before.sourceHash);
 	const request = lifecycle.requests[0];
 	assert.equal(request.reference, 'mbid:a4444444-0000-4000-8000-000000000004');
+	const provenanceFiles = [
+		'docs/design-review/intercom/real-save-runner.cjs',
+		'docs/design-review/intercom/real-save-flows.cjs',
+		'docs/design-review/intercom/real-save-candidates.cjs',
+		'docs/design-review/intercom/music-lifecycle-sample.mjs',
+		'docs/design-review/intercom/backend-preview-18747.mjs',
+		'.omx/artifacts/visual-ralph/intercom/resume-preview.mjs'
+	];
+	const harnessProvenance = provenanceFiles.map(file => ({ file, sha256: createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex') }));
 	fs.mkdirSync(out, { recursive: true });
 	const checks = [], screenshots = [];
 	const browser = await chromium.launch({ headless: true });
@@ -58,7 +68,7 @@ const escape = value => String(value).replaceAll('&', '&amp;').replaceAll('<', '
 	const after = identity();
 	assert.deepEqual(after, before);
 	assert.equal(checks.length, 6);
-	fs.writeFileSync(path.join(evidence, 'final-checkout.json'), JSON.stringify({ passed: true, before, after, checks, screenshots, capturedAt: new Date().toISOString() }, null, 2));
+	fs.writeFileSync(path.join(evidence, 'final-checkout.json'), JSON.stringify({ passed: true, before, after, checks, screenshots, harnessProvenance, provenanceScope: 'Hashes collected after the completed continuation; initial-attempt flow file hash was not recorded. Genuine writes used the one-off owned resume launcher; canonical launcher wiring was subsequently corrected, not runtime-retested.', capturedAt: new Date().toISOString() }, null, 2));
 	console.log(`Music final checkout: ${checks.length} checks passed; title ${request.titleId}`);
 })().catch(error => {
 	fs.writeFileSync(path.join(evidence, 'final-checkout.json'), JSON.stringify({ passed: false, status: 'failed', error: error.message }));
