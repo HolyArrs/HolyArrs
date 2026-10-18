@@ -16,7 +16,7 @@
 	import { session } from '#lib/session.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { looksLikeId } from '#lib/plain.ts';
-	import { askedBy as askedByRaw, decided as decidedRaw, limitLines, limitKinds } from '#lib/wishlist.ts';
+	import { askedBy as askedByRaw, decided as decidedRaw, firstView, limitLines, limitKinds, viewCounts, type WishlistView } from '#lib/wishlist.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { inbox, markRead, refreshInbox } from '#lib/wishlist.svelte.ts';
 	import type { Ask, AskLimit, LibraryFolder, PickRulesView } from '#lib/types.ts';
@@ -27,7 +27,7 @@
 	let asks = $state<Ask[]>([]);
 	let loaded = $state(false);
 	let error = $state('');
-	let show = $state<'waiting' | 'all' | 'mine'>('all');
+	let show = $state<WishlistView>('all');
 	let kind = $state<'all' | 'movie' | 'show' | 'artist'>('all');
 	let limit = $state<AskLimit | null>(null);
 	// One line per kind whose part is on.
@@ -39,7 +39,7 @@
 	);
 	// The kind chips show once asks of more than one kind are listed.
 	const bothKinds = $derived(new Set(asks.map((a) => a.kind)).size > 1);
-	const waiting = $derived(asks.filter((a) => a.state === 'asked').length);
+	const counts = $derived(viewCounts(ofKind));
 	let selectedId = $state(0);
 	const selected = $derived(shown.find((a) => a.id === selectedId) ?? shown[0] ?? null);
 	let reviewHeading: HTMLHeadingElement | undefined = $state();
@@ -107,7 +107,7 @@
 
 	onMount(() => {
 		void load().then(() => {
-			if (approver && asks.some((a) => a.state === 'asked')) show = 'waiting';
+			if (approver) show = firstView(asks);
 		});
 		void refreshInbox();
 		if (session.can('manage_library')) {
@@ -246,9 +246,9 @@
 	<div class="toolbar">
 		{#if approver && asks.length}
 			<div class="chips" role="group" aria-label="Show">
-				<Chip label="Waiting" count={waiting} selected={show === 'waiting'} onclick={() => (show = 'waiting')} />
-				<Chip label="Everyone's" count={asks.length} selected={show === 'all'} onclick={() => (show = 'all')} />
-				<Chip label="Mine" selected={show === 'mine'} onclick={() => (show = 'mine')} />
+				<Chip label="Waiting" count={counts.waiting} selected={show === 'waiting'} onclick={() => (show = 'waiting')} />
+				<Chip label="Everyone's" count={counts.all} selected={show === 'all'} onclick={() => (show = 'all')} />
+				<Chip label="Mine" count={counts.mine} selected={show === 'mine'} onclick={() => (show = 'mine')} />
 			</div>
 		{/if}
 		{#if bothKinds}

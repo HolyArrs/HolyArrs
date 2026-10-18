@@ -87,3 +87,16 @@ export const momentWords: Record<string, [string, string]> = {
 export const askMoments = ['ask_waiting', 'ask_approved', 'ask_turned_down', 'ask_ready'] as const;
 /** libraryMoments go to the staff. */
 export const libraryMoments = ['grab', 'import', 'rename', 'add', 'delete', 'health', 'needs_decision'] as const;
+
+export type WishlistView = 'waiting' | 'all' | 'mine';
+
+/** viewCounts counts the asks in each Approvals view. */
+export function viewCounts(asks: Pick<Ask, 'state' | 'mine'>[]): Record<WishlistView, number> {
+	return { waiting: asks.filter((a) => a.state === 'asked').length, all: asks.length, mine: asks.filter((a) => a.mine).length };
+}
+
+/** firstView is the first view with items: Waiting, else Everyone's, else Mine. */
+export function firstView(asks: Pick<Ask, 'state' | 'mine'>[]): WishlistView {
+	const n = viewCounts(asks);
+	return n.waiting ? 'waiting' : n.all ? 'all' : 'mine';
+}

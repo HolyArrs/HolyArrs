@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { askTone, askedBy, decided, limitLine, limitLines, names, waitWords } from './wishlist.ts';
+import { askTone, askedBy, decided, firstView, limitLine, limitLines, names, viewCounts, waitWords } from './wishlist.ts';
 import type { AskKindLimit, AskLimit } from './types.ts';
 
 describe('wishlist words', () => {
@@ -52,5 +52,25 @@ describe('wishlist words', () => {
 		expect(limitLine(l, 'music')).toBe('');
 		expect(limitLines(l, undefined, now).map((x) => x.kind)).toEqual(['movies', 'shows']);
 		expect(limitLines(l, ['music'], now)).toEqual([]);
+	});
+});
+
+describe('wishlist views', () => {
+	const ask = (state: string, mine: boolean) => ({ state, mine }) as Pick<import('./types.ts').Ask, 'state' | 'mine'>;
+
+	it('counts each view', () => {
+		expect(viewCounts([ask('asked', true), ask('approved', false), ask('asked', false)])).toEqual({ waiting: 2, all: 3, mine: 1 });
+	});
+
+	it('opens on Waiting when something waits', () => {
+		expect(firstView([ask('approved', true), ask('asked', false)])).toBe('waiting');
+	});
+
+	it("opens on Everyone's when nothing waits but there is history", () => {
+		expect(firstView([ask('approved', false), ask('available', true)])).toBe('all');
+	});
+
+	it('opens on Mine only when the list is empty', () => {
+		expect(firstView([])).toBe('mine');
 	});
 });
