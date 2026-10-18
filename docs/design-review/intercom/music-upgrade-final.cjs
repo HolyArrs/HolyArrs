@@ -1,0 +1,37 @@
+const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),crypto=require('node:crypto'),assert=require('node:assert/strict'),{execFileSync}=require('node:child_process'),{createRequire}=require('node:module');
+const repo=path.resolve(__dirname,'../../..'),base='http://10.10.25.25:18746',parent=path.join(repo,'.omx/artifacts/visual-ralph/intercom/music-upgrade'),prior=JSON.parse(fs.readFileSync(path.join(parent,'89229cfa-b2bd-4799-9cdd-7de96f4fbb5e/receipt.json'))),out=path.join(parent,'final-'+crypto.randomUUID());fs.mkdirSync(out);
+const {chromium,expect}=createRequire(path.join(repo,'web/app/package.json'))('@playwright/test');const r={commit:execFileSync('git',['rev-parse','HEAD'],{cwd:repo,encoding:'utf8'}).trim(),started:new Date().toISOString(),screenshots:[],checks:[],browserWrites:[]};let browser;
+async function get(p){const x=await fetch(base+'/api/v1'+p);assert.equal(x.status,200);return x.json();}
+(async()=>{
+const after=JSON.parse(execFileSync('python',[path.join(__dirname,'music-download-guard.py')],{encoding:'utf8'}));
+for(const[t,h]of Object.entries(prior.original.tables))if(!['users','downloaders','library_folders'].includes(t))assert.equal(after.tables[t],h,t+' preserved');
+assert.equal(after.original_downloader,prior.original.original_downloader);
+for(const t of ['asks','titles','slots','downloads','imports','file_rows'])for(const[id,h]of Object.entries(prior.original[t]))if(!(t==='file_rows'&&['7','8','9'].includes(id)))assert.equal(after[t][id],h,t+' '+id+' preserved');
+const artist=path.join(os.tmpdir(),'holyarrs-intercom-preview-media-18747/music/Amber Satellites');
+for(const[p,h]of Object.entries(prior.original.files))if(!p.startsWith(artist+path.sep))assert.equal(after.files[p],h,'Original file preserved');else assert(Object.values(after.files).includes(h),'Old MP3 bytes retained');
+r.db=JSON.parse(execFileSync('python',['-c',String.raw`
+import sqlite3,pathlib,tempfile,json,hashlib
+c=sqlite3.connect((pathlib.Path(tempfile.gettempdir())/'holyarrs-intercom-preview-18747/config/holyarrs.db').as_uri()+'?mode=ro',uri=True);c.row_factory=sqlite3.Row
+def rows(q):return [dict(r)for r in c.execute(q)]
+u=rows('SELECT * FROM users WHERE id<17');u=sorted(u,key=lambda r:json.dumps(r,sort_keys=True,default=str))
+print(json.dumps({'originalUsers':hashlib.sha256(json.dumps(u,sort_keys=True,default=str).encode()).hexdigest(),'admin':rows('SELECT id,state,(SELECT count(*) FROM sessions WHERE user_id=users.id) sessions FROM users WHERE id=17'),'files':rows('SELECT id,relative_path,state,size FROM files WHERE version_id=166'),'slots':rows('SELECT id,state,file_id FROM slots WHERE id IN(1183,1184,1185)'),'import':rows('SELECT id,download_id,state FROM imports WHERE id=15')}))
+`],{encoding:'utf8'}));
+assert.equal(r.db.originalUsers,prior.original.tables.users);assert.deepEqual(r.db.admin,[{id:17,state:'disabled',sessions:0}]);assert.deepEqual(r.db.slots.map(s=>s.file_id),[10,11,12]);assert(r.db.slots.every(s=>s.state==='in_library'));assert.equal(r.db.import[0].state,'done');
+const root=path.join(os.tmpdir(),'holyarrs-intercom-preview-media-18747/music');r.audio=[];
+for(const f of r.db.files){const p=path.join(root,f.relative_path);assert.equal(fs.statSync(p).size,f.size);if(f.id<=9){assert.equal(f.state,'replaced');assert(f.relative_path.startsWith('.holyarrs-replaced/'));}else{assert.equal(f.state,'present');const generated=prior.synthetic.find(x=>x.name===path.basename(p));assert.equal(after.files[p],generated.sha256);const info=JSON.parse(execFileSync('ffprobe',['-v','error','-select_streams','a:0','-show_entries','stream=codec_name,sample_rate,channels','-of','json',p],{encoding:'utf8'}));assert.equal(info.streams[0].codec_name,'flac');r.audio.push({file:f.id,...info.streams[0]});}}
+r.album=await get('/albums/144');assert.equal(r.album.album.better_wanted,0);assert.equal(r.album.album.in_library,3);assert.equal(r.album.album.state,'complete');
+r.request=await get('/asks/34');assert.equal(r.request.state,'available');r.download=(await get('/downloads/view?limit=100')).downloads.find(d=>d.id===36);assert.equal(r.download.phase,'done');assert.equal(r.download.text,'3 of 3 tracks in the library.');
+const torrents=await(await fetch('http://127.0.0.1:28768/api/v2/torrents/info')).json();for(const t of prior.fakeBefore)if(t.hash!==prior.hash)assert.deepEqual(torrents.find(x=>x.hash===t.hash),t);
+r.checks.push('Three actual FLAC streams replace MP3 slots; original MP3 bytes retained in holding folder; album complete, zero better wanted; request remains available','Original accounts/password hashes, settings, unrelated sample records/files/torrents and downloader configuration preserved');
+r.limitations=['Raw library_folders fingerprint changed during scheduled health job390; health refresh writes free-space, health and timestamps. Exact pre-run nonvolatile folder fingerprint unavailable; browser write allowlist contained no folder/config changes beyond disposable downloader setup.'];
+browser=await chromium.launch({headless:true});const ctx=await browser.newContext({deviceScaleFactor:1});await ctx.route('**/*',route=>{if(['GET','HEAD','OPTIONS'].includes(route.request().method()))return route.continue();r.browserWrites.push(new URL(route.request().url()).pathname);return route.abort();});const page=await ctx.newPage();
+for(const[width,height]of[[360,800],[834,1112],[1440,1000]])for(const name of ['album','completed','library','library-list','request']){
+await page.setViewportSize({width,height});await page.goto(base+(name==='album'?'/library/166/albums/144':name==='completed'?'/downloads':name==='request'?'/wishlist':'/library?kind=artist&q=Amber%20Satellites'));await page.evaluate(()=>document.fonts.ready);
+if(name==='album'){await expect(page.getByTestId('album-state')).toHaveText('In library');await expect(page.getByTestId('track-state')).toHaveCount(3);for(const x of await page.getByTestId('track-state').all())await expect(x).toHaveText('In library');}
+if(name==='completed'){const row=page.getByTestId('download-row').filter({hasText:'Evening Signals'}).filter({hasText:'[FLAC]'}).filter({has:page.getByTestId('row-text').filter({hasText:'3 of 3 tracks in the library.'})});await expect(row.first().getByTestId('row-state')).toHaveText('Done');}
+if(name.startsWith('library')){await page.getByRole('button',{name:name==='library'?'Posters':'List',exact:true}).click();await expect(page.getByTestId(name==='library'?'library-card':'library-row').filter({hasText:'Amber Satellites'})).toContainText('3 tracks in library');}
+if(name==='request'){await page.getByRole('button',{name:/^Everyone's/}).click();await expect(page.getByTestId('ask').filter({hasText:'Amber Satellites'}).getByTestId('ask-state')).toHaveText('Ready to listen');}
+assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),name+' overflow');const file=`${name}-${width}.png`;await page.screenshot({path:path.join(out,file),fullPage:true});r.screenshots.push(file);
+}
+assert.equal(r.browserWrites.length,0);r.checks.push('15 state-asserted screenshots: 360/834/1440 CSS pixels, DPR1, default zoom, no page horizontal overflow or browser writes');r.status='passed';
+})().catch(e=>{r.status='failed';r.error=e.message;process.exitCode=1;}).finally(async()=>{if(browser)await browser.close();r.finished=new Date().toISOString();fs.writeFileSync(path.join(out,'receipt.json'),JSON.stringify(r,null,2));console.log(JSON.stringify({status:r.status,error:r.error,evidence:out,checks:r.checks}));});
