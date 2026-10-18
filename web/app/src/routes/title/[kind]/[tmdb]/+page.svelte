@@ -31,6 +31,8 @@
 	let loading = $state(true);
 	let error = $state('');
 	let missing = $state(false);
+	// A Kid account asked for a title above its age-rating limit (403).
+	let blocked = $state(false);
 
 	const manage = $derived(session.can('manage_library'));
 	const mayAsk = $derived(session.can('ask') && !manage);
@@ -57,6 +59,7 @@
 		loading = true;
 		error = '';
 		missing = false;
+		blocked = false;
 		try {
 			const d = await loadDetails(api.get, k, id);
 			if (k !== kind || id !== tmdb) return;
@@ -70,7 +73,10 @@
 			}
 			details = d;
 		} catch (e) {
-			error = message(e);
+			if (e instanceof ApiError && e.status === 403) {
+				blocked = true;
+				details = null;
+			} else error = message(e);
 		} finally {
 			loading = false;
 		}
@@ -140,7 +146,9 @@
 
 <svelte:head><title>{details?.name ? `${details.name} · HolyArrs` : `${kindWord} · HolyArrs`}</title></svelte:head>
 
-{#if missing}
+{#if blocked}
+	<EmptyState icon="shield" title="This title is not available on this account." action={{ label: 'Back to Explore', href: to('/explore') }} />
+{:else if missing}
 	<EmptyState icon="search" title="We could not find this title" text="It may have been removed from the movie and show database. Try searching for it by name." action={{ label: 'Search', href: to('/search') }} />
 {:else if error && !details}
 	<LoadError hasData={false} message="Could not load this title. {error}" onretry={() => void load(kind, tmdb)} />

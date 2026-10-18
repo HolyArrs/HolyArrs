@@ -31,6 +31,8 @@ export interface NavInput {
 	approvals: number;
 	decisions: number;
 	unread: number;
+	/** A Kid (age-rating limit) never sees music: it carries no rating. */
+	kid?: boolean;
 }
 
 const kindItems: Record<'movie' | 'show' | 'artist', NavItem> = {
@@ -56,7 +58,7 @@ export function buildNav(input: NavInput): NavSection[] {
 			id: 'library',
 			label: 'Library',
 			items: [
-				...input.kinds.map((k) => kindItems[k]),
+				...input.kinds.filter((k) => !(input.kid && k === 'artist')).map((k) => kindItems[k]),
 				...(input.kinds.includes('movie') ? [{ href: '/library/collections', label: 'Movie series', icon: 'grid', need: null } as NavItem] : [])
 			]
 		},

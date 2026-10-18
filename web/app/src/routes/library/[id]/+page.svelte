@@ -57,6 +57,7 @@
 	let slotPick = $state(0);
 	const pages = $derived(pager(relTotal, relLimit, relOffset));
 	let notFound = $state(false);
+	let blocked = $state(false);
 	let error = $state('');
 	let searching = $state(false);
 	let saving = $state(false);
@@ -248,6 +249,7 @@
 			error = '';
 		} catch (e) {
 			if (e instanceof ApiError && e.status === 404) notFound = true;
+			else if (e instanceof ApiError && e.status === 403) blocked = true;
 			else error = message(e);
 		}
 	}
@@ -478,7 +480,11 @@
 
 <svelte:head><title>{title?.name ?? 'Title'} · HolyArrs</title></svelte:head>
 
-{#if notFound}
+{#if blocked}
+	<EmptyState icon="shield" title="This title is not available on this account.">
+		{#snippet actions()}<Button href={libraryBack}>Back to the Library</Button>{/snippet}
+	</EmptyState>
+{:else if notFound}
 	<EmptyState icon="library" title="This title is not in your Library">
 		<p>It may have been removed.</p>
 		{#snippet actions()}<Button href={libraryBack}>Back to the Library</Button>{/snippet}

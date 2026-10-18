@@ -11,9 +11,16 @@ describe('role presets', () => {
 		expect(presetPerms('manager', all)).toEqual(['ask', 'auto_approve', 'approve', 'manage_library']);
 		expect(presetPerms('member', all)).toEqual(['ask']);
 	});
-	it('keeps Kid shown but not choosable', () => {
-		expect(presetsFor(all).find((p) => p.id === 'kid')?.soon).toBeTruthy();
-		expect(presetPerms('kid', all)).toBeNull();
+	it('makes Kid a real choice: asks only, PG by default', () => {
+		const kid = presetsFor(all).find((p) => p.id === 'kid');
+		expect(kid?.soon).toBeUndefined();
+		expect(kid?.maxRating).toBe('PG');
+		expect(presetPerms('kid', all)).toEqual(['ask']);
+	});
+	it('tells Kid from Member by the age-rating limit', () => {
+		expect(presetOf(['ask'], all, 'PG')).toBe('kid');
+		expect(presetOf(['ask'], all, '')).toBe('member');
+		expect(presetOf(['ask', 'approve'], all, 'PG')).toBe('custom');
 	});
 	it('hides presets with permissions this person cannot grant', () => {
 		expect(presetsFor(noSettings).map((p) => p.id)).toEqual(['manager', 'member', 'kid']);

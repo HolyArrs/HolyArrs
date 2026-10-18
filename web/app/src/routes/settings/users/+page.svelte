@@ -14,6 +14,8 @@
 	import Sessions from '#lib/Sessions.svelte';
 	import type { AskSettings, LimitKind, PersonLimit } from '#lib/types.ts';
 	import { kindAsks } from '#lib/wishlist.ts';
+	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
+	import { kidLabel, ratingChoices } from '#lib/kid.ts';
 
 	interface User {
 		id: number;
@@ -26,6 +28,8 @@
 		links: { provider: string; name: string }[];
 		created_at: string;
 		last_seen_at?: string;
+		max_rating?: string;
+		rating_country?: string;
 	}
 	interface Invite {
 		id: string;
@@ -37,6 +41,8 @@
 		expires_at: string;
 		used_at?: string;
 		used_by?: string;
+		max_rating?: string;
+		rating_country?: string;
 	}
 
 	const permWord: Record<Perm, string> = {
@@ -91,6 +97,7 @@
 	// New invite
 	let role = $state<'admin' | 'member'>('member');
 	let perms = $state<Perm[]>([...defaults.member]);
+	let maxRating = $state('');
 	let note = $state('');
 	let days = $state(7);
 	let making = $state(false);
@@ -100,6 +107,7 @@
 	let editing = $state<User | null>(null);
 	let editRole = $state<'admin' | 'member'>('member');
 	let editPerms = $state<Perm[]>([]);
+	let editMax = $state('');
 	let saving = $state(false);
 	let dialog: HTMLDialogElement | undefined = $state();
 
@@ -143,6 +151,7 @@
 
 	function pickRole(r: 'admin' | 'member') {
 		role = r;
+		maxRating = '';
 		perms = defaults[r].filter((p) => session.can(p));
 	}
 
@@ -154,7 +163,7 @@
 		e.preventDefault();
 		making = true;
 		try {
-			const r = await api.post<{ path: string }>('/users/invites', { role, perms, note: note.trim(), days });
+			const r = await api.post<{ path: string }>('/users/invites', { role, perms, note: note.trim(), days, max_rating: maxRating, rating_country: 'US' });
 			link = location.origin + to(r.path);
 			note = '';
 			await load();
@@ -206,6 +215,7 @@
 		editing = u;
 		editRole = u.role === 'admin' ? 'admin' : 'member';
 		editPerms = [...u.perms];
+		editMax = u.max_rating ?? '';
 		const l = limits[u.id];
 		editLimits = {
 			movies: l?.movies_per_week == null ? '' : String(l.movies_per_week),
@@ -233,7 +243,7 @@
 	async function saveEdit(e: SubmitEvent) {
 		e.preventDefault();
 		if (!editing) return;
-		const body: Record<string, unknown> = { perms: editPerms };
+		const body: Record<string, unknown> = { perms: editPerms, max_rating: editRole === 'admin' ? '' : editMax, rating_country: 'US' };
 		if (isOwner) body.role = editRole;
 		const u = editing;
 		if (limits[u.id] && !limits[u.id].no_limit) {
@@ -308,7 +318,7 @@
 					{/if}
 				</div>
 			</fieldset>
-			{@render presetPicker(perms, (next) => (perms = next), 'invite-preset')}
+			{@render presetPicker(perms, (next) => (perms = next), 'invite-preset', maxRating, (m) => (maxRating = m))}
 			<fieldset class="field">
 				<legend class="label">May</legend>
 				{#each grantable as p (p)}
@@ -341,6 +351,7 @@
 							<span class="chip {u.role === 'member' ? '' : 'red'}">{roleWord[u.role]}</span>
 							{#if u.state !== 'active'}<span class="chip fail">Off</span>{/if}
 							{#if u.two_factor}<span class="chip ok">Two-factor</span>{/if}
+							{#if u.max_rating}<span class="chip" data-testid="kid-label">{kidLabel(u.max_rating)}</span>{/if}
 						</div>
 						<div class="xs muted">
 							{#if u.links.length}{u.links.map((l) => `${providerWord[l.provider] ?? l.provider}: ${l.name}`).join(' · ')} ·
@@ -385,7 +396,7 @@
 				{#each invites as i (i.id)}
 					<li>
 						<div class="grow">
-							<div class="name">{i.note || `${roleWord[i.role]} invite`} <span class="chip">{roleWord[i.role]}</span></div>
+							<div class="name">{i.note || `${roleWord[i.role]} invite`} <span class="chip">{roleWord[i.role]}</span>{#if i.max_rating}<span class="chip">{kidLabel(i.max_rating)}</span>{/if}</div>
 							<div class="xs muted">Made by {i.created_by} {ago(i.created_at)} · {inviteState(i)}</div>
 						</div>
 						{#if !i.used_at && new Date(i.expires_at).getTime() > Date.now()}
@@ -398,8 +409,8 @@
 	</SettingsCard>
 {/if}
 
-{#snippet presetPicker(list: Perm[], set: (next: Perm[]) => void, name: string)}
-	{@const current = presetOf(list, grantable)}
+{#snippet presetPicker(list: Perm[], set: (next: Perm[]) => void, name: string, max: string, setMax: (m: string) => void)}
+	{@const current = presetOf(list, grantable, max)}
 	<fieldset class="field">
 		<legend class="label">Preset</legend>
 		<div class="row presets">
@@ -414,7 +425,10 @@
 						aria-describedby={pr.soon ? `${name}-${pr.id}-why` : undefined}
 						onchange={() => {
 							const next = presetPerms(pr.id as PresetId, grantable);
-							if (next) set(next);
+							if (next) {
+								set(next);
+								setMax(pr.maxRating ?? '');
+							}
 						}}
 					/>
 					{pr.label}{#if pr.soon}<span class="chip">Coming soon</span>{/if}</label
@@ -426,6 +440,19 @@
 			<p id="{name}-{pr.id}-why" class="xs muted">{pr.soon}</p>
 		{/each}
 	</fieldset>
+	{#if max}
+		<div class="field">
+			<span class="label" aria-hidden="true">Age rating</span>
+			<SegmentedControl
+				label="Age rating"
+				testid="{name}-rating"
+				options={ratingChoices.map((c) => ({ value: c.value, label: c.value }))}
+				value={max}
+				onchange={(v) => setMax(v)}
+			/>
+			<span class="hint" aria-live="polite">{ratingChoices.find((c) => c.value === max)?.hint ?? ''}</span>
+		</div>
+	{/if}
 {/snippet}
 
 <dialog bind:this={devDialog} class="dlg" aria-labelledby="h-devices" onclose={() => (devicesOf = null)}>
@@ -447,12 +474,14 @@
 				<fieldset class="field">
 					<legend class="label">Role</legend>
 					<div class="row">
-						<label class="checkline"><input type="radio" name="edit-role" value="member" bind:group={editRole} onchange={() => (editPerms = [...defaults.member])} /> Member</label>
-						<label class="checkline"><input type="radio" name="edit-role" value="admin" bind:group={editRole} onchange={() => (editPerms = [...defaults.admin])} /> Admin</label>
+						<label class="checkline"><input type="radio" name="edit-role" value="member" bind:group={editRole} onchange={() => { editPerms = [...defaults.member]; editMax = ''; }} /> Member</label>
+						<label class="checkline"><input type="radio" name="edit-role" value="admin" bind:group={editRole} onchange={() => { editPerms = [...defaults.admin]; editMax = ''; }} /> Admin</label>
 					</div>
 				</fieldset>
 			{/if}
-			{@render presetPicker(editPerms, (next) => (editPerms = next), 'edit-preset')}
+			{#if editRole === 'member'}
+				{@render presetPicker(editPerms, (next) => (editPerms = next), 'edit-preset', editMax, (m) => (editMax = m))}
+			{/if}
 			<fieldset class="field">
 				<legend class="label">May</legend>
 				{#each grantable as p (p)}

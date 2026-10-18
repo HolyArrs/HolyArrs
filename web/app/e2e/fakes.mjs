@@ -106,10 +106,10 @@ function send(res, code, obj, type = 'application/json') {
 export const tmdbMovies = [
 	{ id: 900017, title: 'Driftwood Moon', release_date: '2024-01-01', imdb_id: 'tt9000170', overview: 'A moon carved from the wood that washes ashore.', dates: [[3, '2024-01-01'], [4, '2024-03-01']] },
 	{ id: 900001, title: 'The Lantern Keepers', release_date: '2031-02-01', imdb_id: 'tt9000010', overview: 'Keepers of a lighthouse that is not on any map.', dates: [[3, '2031-02-01']] },
-	{ id: 900002, title: 'Paper Harbour', release_date: '2023-05-05', imdb_id: 'tt9000020', overview: 'A harbour town folds itself away each winter.', dates: [[3, '2023-05-05'], [4, '2023-07-01']] },
+	{ id: 900002, title: 'Paper Harbour', release_date: '2023-05-05', imdb_id: 'tt9000020', overview: 'A harbour town folds itself away each winter.', cert: 'PG', dates: [[3, '2023-05-05'], [4, '2023-07-01']] },
 	{ id: 900003, title: 'Quiet Orchard', release_date: '2022-09-09', imdb_id: 'tt9000030', overview: 'An orchard that only grows at night.', dates: [[3, '2022-09-09'], [5, '2022-12-01']] },
 	{ id: 900005, title: 'Salt Choir', release_date: '2020-01-01', imdb_id: 'tt9000050', overview: 'A choir that sings the tide in.', dates: [[3, '2020-01-01'], [4, '2020-03-01']] },
-	{ id: 900006, title: 'Ember Road', release_date: '2019-06-06', imdb_id: 'tt9000060', overview: 'A road that is only there while it burns.', dates: [[3, '2019-06-06'], [4, '2019-08-01']] },
+	{ id: 900006, title: 'Ember Road', release_date: '2019-06-06', imdb_id: 'tt9000060', overview: 'A road that is only there while it burns.', cert: 'R', dates: [[3, '2019-06-06'], [4, '2019-08-01']] },
 	{ id: 900007, title: 'Northern Kettle', release_date: '2018-02-02', imdb_id: 'tt9000070', overview: 'A kettle that boils only for strangers.', dates: [[3, '2018-02-02'], [4, '2018-04-01']] },
 	// Movies the Wishlist tests ask for.
 	{ id: 900008, title: 'Copper Lighthouse', release_date: '2017-04-04', imdb_id: 'tt9000080', overview: 'A lighthouse that guides ships into the past.', dates: [[3, '2017-04-04'], [4, '2017-06-01']] },
@@ -201,7 +201,7 @@ function tmdbMovie(m) {
 	return {
 		id: m.id, title: m.title, release_date: m.release_date, overview: m.overview, original_language: 'en', runtime: 101,
 		poster_path: `/p${m.id}.jpg`, imdb_id: m.imdb_id,
-		release_dates: { results: [{ iso_3166_1: 'US', release_dates: m.dates.map(([type, d]) => ({ type, release_date: `${d}T00:00:00.000Z` })) }] }
+		release_dates: { results: [{ iso_3166_1: 'US', release_dates: m.dates.map(([type, d]) => ({ type, release_date: `${d}T00:00:00.000Z`, certification: m.cert ?? '' })) }] }
 	};
 }
 

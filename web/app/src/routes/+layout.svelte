@@ -73,7 +73,8 @@
 			kinds,
 			approvals: inbox.waiting,
 			decisions: decisions.count,
-			unread: inbox.unread
+			unread: inbox.unread,
+			kid: session.kid
 		})
 	);
 	const allItems = $derived(sections.flatMap((s) => s.items));

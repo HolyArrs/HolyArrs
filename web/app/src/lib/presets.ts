@@ -8,6 +8,8 @@ export interface Preset {
 	id: PresetId;
 	label: string;
 	perms: Perm[];
+	/** The age-rating limit this preset sets ('' or absent: none). */
+	maxRating?: string;
 	/** Shown but not choosable yet; the reason is one line under it. */
 	soon?: string;
 }
@@ -16,7 +18,7 @@ export const presets: Preset[] = [
 	{ id: 'admin', label: 'Admin', perms: ['ask', 'auto_approve', 'approve', 'manage_library', 'settings'] },
 	{ id: 'manager', label: 'Manager', perms: ['ask', 'auto_approve', 'approve', 'manage_library'] },
 	{ id: 'member', label: 'Member', perms: ['ask'] },
-	{ id: 'kid', label: 'Kid', perms: ['ask'], soon: 'Coming soon: Kid adds an age-rating limit, which HolyArrs cannot keep yet.' }
+	{ id: 'kid', label: 'Kid', perms: ['ask'], maxRating: 'PG' }
 ];
 
 /** presetsFor lists the presets this person may hand out: every permission must be grantable. */
@@ -31,11 +33,12 @@ export function presetPerms(id: PresetId, grantable: readonly Perm[]): Perm[] | 
 	return [...p.perms];
 }
 
-/** presetOf names the preset a permission list matches, or 'custom'. */
-export function presetOf(perms: readonly Perm[], grantable: readonly Perm[]): PresetId | 'custom' {
+/** presetOf names the preset a permission list and age-rating limit match, or 'custom'. */
+export function presetOf(perms: readonly Perm[], grantable: readonly Perm[], maxRating = ''): PresetId | 'custom' {
 	const have = new Set(perms);
 	for (const p of presetsFor(grantable)) {
 		if (p.soon) continue;
+		if (!!p.maxRating !== !!maxRating) continue;
 		if (p.perms.length === have.size && p.perms.every((x) => have.has(x))) return p.id;
 	}
 	return 'custom';

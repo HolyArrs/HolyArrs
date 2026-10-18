@@ -16,6 +16,9 @@ describe('buildNav', () => {
 			['Manage', ['Downloads', 'Approvals', 'History', 'Library tools', 'Settings']]
 		]);
 	});
+	it('hides Music from a Kid, because music has no age ratings', () => {
+		expect(labels({ ...member, kid: true })[1]).toEqual(['Library', ['Movies', 'TV shows', 'Movie series']]);
+	});
 	it('hides Manage from members but keeps Home', () => {
 		expect(labels(member)).toEqual([
 			[null, ['Home', 'Explore']],

@@ -21,6 +21,9 @@ export interface Me {
 	safe_mode?: boolean;
 	auth_method?: AuthMethod;
 	local_recent?: boolean;
+	/** Age-rating limit ('' = none; set means a Kid account). */
+	max_rating?: string;
+	rating_country?: string;
 }
 
 /** A sign-in step answers with a session, or asks for a two-factor code. */
@@ -48,6 +51,8 @@ export function createSession(client: Client = defaultClient) {
 		mustTwoFactor: boolean;
 		authMethod: AuthMethod;
 		localRecent: boolean;
+		/** Age-rating limit; '' means none. A Kid has one. */
+		maxRating: string;
 		ways: Way[];
 		/** The server started in safe mode: only the core runs. */
 		safeMode: boolean;
@@ -63,6 +68,7 @@ export function createSession(client: Client = defaultClient) {
 		mustTwoFactor: false,
 		authMethod: '',
 		localRecent: false,
+		maxRating: '',
 		ways: ['password'],
 		safeMode: false,
 		minPassword: 4
@@ -110,6 +116,7 @@ export function createSession(client: Client = defaultClient) {
 		s.mustTwoFactor = !!me.must_two_factor;
 		s.authMethod = me.auth_method ?? '';
 		s.localRecent = !!me.local_recent;
+		s.maxRating = me.max_rating ?? '';
 		s.safeMode = !!me.safe_mode;
 		s.state = 'signed_in';
 	}
@@ -122,6 +129,7 @@ export function createSession(client: Client = defaultClient) {
 		s.perms = [];
 		s.authMethod = '';
 		s.localRecent = false;
+		s.maxRating = '';
 		try {
 			const st = await client.get<AuthState>('/auth/state');
 			if (expected !== generation) return;
@@ -266,6 +274,10 @@ export function createSession(client: Client = defaultClient) {
 		logout,
 		lost,
 		can,
+		/** True for a Kid account (an age-rating limit is set). */
+		get kid() {
+			return !!s.maxRating;
+		},
 		loadMinPassword,
 		loadWays
 	};
