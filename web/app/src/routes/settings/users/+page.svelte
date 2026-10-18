@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
 	import { session, type Perm, type Role } from '#lib/session.svelte.ts';
+	import { presetOf, presetPerms, presetsFor, type PresetId } from '#lib/presets.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { ago, date } from '#lib/format.ts';
 	import Icon from '#lib/Icon.svelte';
@@ -309,6 +310,7 @@
 					{/if}
 				</div>
 			</fieldset>
+			{@render presetPicker(perms, (next) => (perms = next), 'invite-preset')}
 			<fieldset class="field">
 				<legend class="label">May</legend>
 				{#each grantable as p (p)}
@@ -404,6 +406,36 @@
 	</section>
 {/if}
 
+{#snippet presetPicker(list: Perm[], set: (next: Perm[]) => void, name: string)}
+	{@const current = presetOf(list, grantable)}
+	<fieldset class="field">
+		<legend class="label">Preset</legend>
+		<div class="row presets">
+			{#each presetsFor(grantable) as pr (pr.id)}
+				<label class="checkline" class:soon={!!pr.soon}
+					><input
+						type="radio"
+						{name}
+						value={pr.id}
+						checked={!pr.soon && current === pr.id}
+						disabled={!!pr.soon}
+						aria-describedby={pr.soon ? `${name}-${pr.id}-why` : undefined}
+						onchange={() => {
+							const next = presetPerms(pr.id as PresetId, grantable);
+							if (next) set(next);
+						}}
+					/>
+					{pr.label}{#if pr.soon}<span class="chip">Coming soon</span>{/if}</label
+				>
+			{/each}
+			<span class="custom" aria-live="polite">{current === 'custom' ? 'Custom' : ''}</span>
+		</div>
+		{#each presetsFor(grantable).filter((x) => x.soon) as pr (pr.id)}
+			<p id="{name}-{pr.id}-why" class="xs muted">{pr.soon}</p>
+		{/each}
+	</fieldset>
+{/snippet}
+
 <dialog bind:this={devDialog} class="dlg" aria-labelledby="h-devices" onclose={() => (devicesOf = null)}>
 	{#if devicesOf}
 		<h2 id="h-devices" class="h2">Signed-in devices of {devicesOf.name}</h2>
@@ -428,6 +460,7 @@
 					</div>
 				</fieldset>
 			{/if}
+			{@render presetPicker(editPerms, (next) => (editPerms = next), 'edit-preset')}
 			<fieldset class="field">
 				<legend class="label">May</legend>
 				{#each grantable as p (p)}
@@ -498,6 +531,10 @@
 		padding: 0;
 		margin: 0 0 var(--s-3);
 	}
+	.presets { align-items: center; }
+	.soon { color: var(--text-muted); }
+	.soon .chip { margin-left: 6px; }
+	.custom { font-weight: 600; }
 	.invite button[type='submit'] {
 		margin-top: var(--s-3);
 	}
