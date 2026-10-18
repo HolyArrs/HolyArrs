@@ -96,3 +96,14 @@ export function options(places: number, sections: Section[], q: string): Option[
 	if (q.trim()) out.push({ kind: 'all', href: searchPath(q) });
 	return out;
 }
+
+export type SectionFilter = 'all' | Exclude<SectionId, 'library'>;
+const filterWord: Record<Exclude<SectionId, 'library'>, string> = { movies: 'Movie', shows: 'TV show', music: 'Artist' };
+
+/** filterSections keeps one kind: its Library titles and its own group; 'all' keeps every group. */
+export function filterSections(sections: Section[], filter: SectionFilter): Section[] {
+	if (filter === 'all') return sections;
+	return sections
+		.filter((s) => s.id === 'library' || s.id === filter)
+		.map((s) => (s.id === 'library' ? { ...s, hits: s.hits.filter((h) => h.kindWord === filterWord[filter]) } : s));
+}

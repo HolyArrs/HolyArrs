@@ -203,6 +203,15 @@ test('the search palette shows Library and movie results; a movie not in the Lib
 	const library = page.getByTestId('palette-library');
 	await expect(library.getByRole('option', { name: /Paper Harbour/ })).toContainText('In Library');
 	await expect(page.getByRole('option', { name: 'See all results for “Paper Harbour”' })).toBeVisible();
+	// The Movies / TV shows / Music filter narrows the grouped results to one kind.
+	const filter = page.getByTestId('palette-filter');
+	await expect(filter.getByRole('radio', { name: 'All', exact: true })).toHaveAttribute('aria-checked', 'true');
+	await filter.getByRole('radio', { name: 'TV shows', exact: true }).click();
+	await expect(page.getByTestId('palette-movies')).toHaveCount(0);
+	await expect(library.getByRole('option', { name: /Paper Harbour/ })).toHaveCount(0);
+	await filter.getByRole('radio', { name: 'All', exact: true }).click();
+	await expect(library.getByRole('option', { name: /Paper Harbour/ })).toContainText('In Library');
+	await expect(box).toBeFocused();
 	await box.press('ArrowDown');
 	await box.press('Enter');
 	await expect(page).toHaveURL(/\/library\/\d+$/);

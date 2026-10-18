@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { searchAddress } from './search.ts';
+import { kindOptions, searchAddress } from './search.ts';
 
 describe('search address', () => {
 	it('writes both the selected kind and trimmed query from current controls', () => {
@@ -10,5 +10,15 @@ describe('search address', () => {
 		expect(searchAddress(new URL('http://holyarrs.test/search?kind=music&q=old'), 'movie', ' Dune ').href).toBe(
 			'http://holyarrs.test/search?q=Dune'
 		);
+	});
+});
+
+describe('search kinds', () => {
+	it('offers Movies, TV shows and Music in that order', () => {
+		expect(kindOptions(() => true).map((o) => [o.value, o.label])).toEqual([['movie', 'Movies'], ['show', 'TV shows'], ['music', 'Music']]);
+	});
+	it('leaves out kinds whose part is off', () => {
+		expect(kindOptions((p) => p !== 'music').map((o) => o.value)).toEqual(['movie', 'show']);
+		expect(kindOptions((p) => p === 'shows').map((o) => o.value)).toEqual(['show']);
 	});
 });

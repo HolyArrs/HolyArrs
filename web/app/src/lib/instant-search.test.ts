@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { artistHits, libraryByTmdb, movieHits, options, searchPath, showHits, type Section } from './instant-search.ts';
+import { artistHits, filterSections, libraryByTmdb, movieHits, options, searchPath, showHits, type Section } from './instant-search.ts';
 import type { TitleView } from './types.ts';
 
 const lib = [{ id: 7, kind: 'movie', name: 'Dune', year: 2021, ids: { tmdb: '438631' }, artwork: ['https://p/1.jpg'] }] as unknown as TitleView[];
@@ -49,5 +49,28 @@ describe('instant search', () => {
 		const o = options(2, sections, 'du');
 		expect(o.map((x) => x.kind)).toEqual(['place', 'place', 'hit', 'hit', 'hit', 'hit', 'hit', 'hit', 'more', 'all']);
 		expect(o.at(-1)).toEqual({ kind: 'all', href: '/search?q=du' });
+	});
+});
+
+describe('instant search filter', () => {
+	const hit = (key: string, kindWord: string) => ({ key, name: key, kindWord, href: '/', inLibrary: true });
+	const sections: Section[] = [
+		{ id: 'library', label: 'Library', state: 'done', hits: [hit('a', 'Movie'), hit('b', 'TV show'), hit('c', 'Artist')] },
+		{ id: 'movies', label: 'Movies', state: 'done', hits: [hit('m', 'Movie')] },
+		{ id: 'shows', label: 'TV shows', state: 'done', hits: [hit('s', 'TV show')] },
+		{ id: 'music', label: 'Music', state: 'done', hits: [hit('r', 'Artist')] }
+	];
+	it('keeps every group for All', () => {
+		expect(filterSections(sections, 'all')).toEqual(sections);
+	});
+	it('keeps one kind: its Library titles and its own group', () => {
+		const out = filterSections(sections, 'shows');
+		expect(out.map((s) => s.id)).toEqual(['library', 'shows']);
+		expect(out[0].hits.map((h) => h.key)).toEqual(['b']);
+	});
+	it('keeps the Library group, empty, when it has nothing of that kind', () => {
+		const out = filterSections([{ ...sections[0], hits: [hit('a', 'Movie')] }, sections[3]], 'music');
+		expect(out.map((s) => s.id)).toEqual(['library', 'music']);
+		expect(out[0].hits).toEqual([]);
 	});
 });

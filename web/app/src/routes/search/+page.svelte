@@ -28,7 +28,8 @@
 	import AskArtistDialog from '#lib/AskArtistDialog.svelte';
 	import { albumWords } from '#lib/music.ts';
 	import { createLatestOnly } from '#lib/history.ts';
-	import { searchAddress, type SearchKind } from '#lib/search.ts';
+	import { kindOptions, searchAddress, type SearchKind } from '#lib/search.ts';
+	import { partsNow } from '#lib/parts.svelte.ts';
 
 	// Movies, shows or music; kept in the page address (?kind=show, ?kind=music).
 	const startKind = page.url.searchParams.get('kind');
@@ -38,6 +39,11 @@
 	let addArtist: ReturnType<typeof AddArtistDialog> | undefined = $state();
 	let askArtist: ReturnType<typeof AskArtistDialog> | undefined = $state();
 	const beginSearch = createLatestOnly();
+	// Movies / TV shows / Music, only for parts that are on.
+	const partOn = (name: string) => partsNow.answer?.parts.find((p) => p.part === name)?.on !== false;
+	const kindIcons = { movie: 'film', show: 'tv', music: 'music' } as const;
+	const kinds = $derived(kindOptions(partOn).map((o) => ({ value: o.value, label: o.label, icon: kindIcons[o.value] })));
+	const kindLabel = $derived(kindOptions(() => true).find((o) => o.value === kind)?.label ?? 'Movies');
 
 	function patchArtist(a: LookupArtist, change: Partial<LookupArtist>) {
 		if (!artists) return;
@@ -277,7 +283,7 @@
 />
 
 <div class="kind">
-	<SegmentedControl label="Look for" value={kind} onchange={(k) => setKind(k)} options={[{ value: 'movie', label: 'Movies', icon: 'film' }, { value: 'show', label: 'Shows', icon: 'tv' }, { value: 'music', label: 'Music', icon: 'music' }]} />
+	{#if kinds.length > 1}<SegmentedControl label="Look for" value={kind} onchange={(k) => setKind(k)} options={kinds} />{/if}
 </div>
 
 <form class="searchbar" role="search" onsubmit={run}>
@@ -305,12 +311,14 @@
 		{:else if artists.length === 0}
 			<EmptyState icon="search" title="Nothing found" text="No artist matches “{term}”. Check the spelling, or try a MusicBrainz id such as mbid:5b11f4ce-a62d-471e-81fc-a69a8278c7da." />
 		{:else}
+			<section class="group" aria-labelledby="results-group">
+			<h2 class="group-h" id="results-group">{kindLabel} <span class="group-n">{artists.length}</span></h2>
 			<ul class="list">
 				{#each artists as a, i (a.mbid)}
 					<li class="hit rise" style="--i: {i}" data-testid="artist-hit">
 						<div class="art"><Poster name={a.name} /></div>
 						<div class="grow">
-							<h2 class="h3">{a.name}{#if a.disambiguation}{' '}<span class="muted small">({a.disambiguation})</span>{/if}</h2>
+							<h3 class="h3">{a.name}{#if a.disambiguation}{' '}<span class="muted small">({a.disambiguation})</span>{/if}</h3>
 							<p class="xs muted">{[a.type ? a.type.charAt(0).toUpperCase() + a.type.slice(1) : '', a.country, a.status === 'ended' ? 'No longer active' : 'Still active'].filter(Boolean).join(' · ')}</p>
 						</div>
 						<div class="act">
@@ -334,6 +342,7 @@
 				{/each}
 			</ul>
 			{#if attribution}<p class="xs muted attribution">{attribution}</p>{/if}
+			</section>
 		{/if}
 	{:else if noTMDB}
 		<EmptyState icon="key" title="Add your TMDB key first" text="HolyArrs looks {kind === 'show' ? 'shows' : 'movies'} up on TMDB. Add your TMDB read access token in Settings, then search again." action={{ label: 'Add the TMDB key', href: to('/settings/tmdb') }} />
@@ -347,12 +356,14 @@
 		{:else if shows.length === 0}
 			<EmptyState icon="search" title="Nothing found" text="No show matches “{term}”. Check the spelling, or try an id such as tvmaze:82." />
 		{:else}
+			<section class="group" aria-labelledby="results-group">
+			<h2 class="group-h" id="results-group">{kindLabel} <span class="group-n">{shows.length}</span></h2>
 			<ul class="list">
 				{#each shows as s, i (showKey(s) + i)}
 					<li class="hit rise" style="--i: {i}" data-testid="show-hit">
 						<div class="art"><Poster src={s.poster} name={s.name} /></div>
 						<div class="grow">
-							<h2 class="h3">{s.name}{#if s.year}{" "}<span class="muted">({s.year})</span>{/if}</h2>
+							<h3 class="h3">{s.name}{#if s.year}{" "}<span class="muted">({s.year})</span>{/if}</h3>
 							<p class="xs muted">{[s.network, s.status === 'ended' ? 'Ended' : s.status === 'announced' ? 'Announced' : 'Still running'].filter(Boolean).join(' · ')}</p>
 							{#if s.overview}<p class="small muted overview">{s.overview}</p>{/if}
 						</div>
@@ -377,6 +388,7 @@
 				{/each}
 			</ul>
 			{#if attribution}<p class="xs muted attribution">{attribution}</p>{/if}
+			</section>
 		{/if}
 	{:else if error}
 		<p class="notice bad" role="alert">{plainReason(error).text}</p>
@@ -387,12 +399,14 @@
 	{:else if results.length === 0}
 		<EmptyState icon="search" title="Nothing found" text="No movie matches “{term}”. Check the spelling, or try the year or a TMDB id." />
 	{:else}
+		<section class="group" aria-labelledby="results-group">
+		<h2 class="group-h" id="results-group">{kindLabel} <span class="group-n">{results.length}</span></h2>
 		<ul class="list">
 			{#each results as m, i (m.ids.tmdb ?? i)}
 				<li class="hit rise" style="--i: {i}">
 					<div class="art"><Poster src={m.poster} name={m.name} /></div>
 					<div class="grow">
-						<h2 class="h3">{m.name}{#if m.year}{" "}<span class="muted">({m.year})</span>{/if}</h2>
+						<h3 class="h3">{m.name}{#if m.year}{" "}<span class="muted">({m.year})</span>{/if}</h3>
 						{#if m.overview}<p class="small muted overview">{m.overview}</p>{/if}
 					</div>
 					<div class="act">
@@ -415,6 +429,7 @@
 			{/each}
 		</ul>
 		{#if attribution}<p class="xs muted attribution">{attribution}</p>{/if}
+			</section>
 	{/if}
 </div>
 </section>
@@ -440,6 +455,9 @@
 	.limit { margin: 0; color: var(--text-muted); font: var(--t-callout); }
 	.ask-problem { max-width: 720px; }
 	.results { min-width: 0; }
+	.group { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+	.group-h { display: flex; align-items: baseline; gap: 8px; margin: 0; font: var(--t-title3); }
+	.group-n { color: var(--text-muted); font: var(--t-callout); font-variant-numeric: tabular-nums; }
 	.list { display: flex; flex-direction: column; margin: 0; padding: 4px; list-style: none; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card); }
 	.hit { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; gap: 14px; align-items: start; min-width: 0; padding: 12px; border-radius: var(--r-btn); }
 	.hit + .hit { border-top: 1px solid var(--line); border-radius: 0; }

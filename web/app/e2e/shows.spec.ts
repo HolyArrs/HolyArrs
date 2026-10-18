@@ -31,7 +31,7 @@ async function axe(p: Page, where: string) {
 
 async function searchShows(p: Page, name: string) {
 	await p.goto('/search?kind=show');
-	await expect(p.getByRole('radio', { name: 'Shows', exact: true })).toHaveAttribute('aria-checked', 'true');
+	await expect(p.getByRole('radio', { name: 'TV shows', exact: true })).toHaveAttribute('aria-checked', 'true');
 	await p.getByLabel('Show name or id').fill(name);
 	await p.getByRole('button', { name: 'Search', exact: true }).click();
 }
@@ -54,7 +54,7 @@ test('the owner adds a Library folder for shows', async () => {
 test('the owner finds a show and adds it with only the latest season kept', async () => {
 	// Search switches between movies and shows and keeps the choice in the address.
 	await own.goto('/search');
-	await own.getByRole('radio', { name: 'Shows', exact: true }).click();
+	await own.getByRole('radio', { name: 'TV shows', exact: true }).click();
 	await expect(own).toHaveURL(/kind=show/);
 	await own.getByLabel('Show name or id').fill('harbour');
 	await own.getByRole('button', { name: 'Search', exact: true }).click();

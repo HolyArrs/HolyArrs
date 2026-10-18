@@ -3,12 +3,15 @@
 	import Poster from '../Poster.svelte';
 	import Sheet from './Sheet.svelte';
 	import Skeleton from './Skeleton.svelte';
+	import SegmentedControl from './SegmentedControl.svelte';
+	import { kindOptions } from '../search.ts';
 	import { api } from '../api.ts';
 	import { partsNow } from '../parts.svelte.ts';
 	import { remember } from '../title-details.ts';
 	import { filterDestinations, type Destination } from './nav.ts';
 	import {
 		artistHits,
+		filterSections,
 		libraryByTmdb,
 		libraryHits,
 		movieHits,
@@ -19,6 +22,7 @@
 		type Hit,
 		type Option,
 		type Section,
+		type SectionFilter,
 		type SectionId
 	} from '../instant-search.ts';
 	import type { LookupArtist, LookupShow, Movie, TitleView } from '../types.ts';
@@ -41,13 +45,18 @@
 	let sections = $state<Section[]>([]);
 	const typed = $derived(q.trim());
 	const places = $derived(filterDestinations(items, q).slice(0, typed ? 4 : 8));
-	const list = $derived(flatten(places.length, sections, q));
 	const partOn = (name: string) => partsNow.answer?.parts.find((p) => p.part === name)?.on !== false;
+	// Movies / TV shows / Music filter over the grouped results (only parts that are on).
+	let filter = $state<SectionFilter>('all');
+	const filters = $derived([{ value: 'all' as SectionFilter, label: 'All' }, ...kindOptions(partOn).map((o) => ({ value: o.part as SectionFilter, label: o.label }))]);
+	const shown = $derived(filterSections(sections, filter));
+	const list = $derived(flatten(places.length, shown, q));
 
 	$effect(() => {
 		if (open) {
 			q = initial;
 			active = 0;
+			filter = 'all';
 			queueMicrotask(() => {
 				input?.focus();
 				if (input && initial) input.setSelectionRange(initial.length, initial.length);
@@ -132,6 +141,7 @@
 			if (o.hit.detail) remember(o.hit.detail.kind, o.hit.detail.tmdb, { name: o.hit.name, year: o.hit.year, poster: o.hit.poster });
 			go(o.hit.href);
 		} else if (o.kind === 'more') go(o.href);
+		else if (filter === 'shows' || filter === 'music') go(searchPath(typed, filter === 'shows' ? 'show' : 'music'));
 		else onsearch(typed);
 	}
 	function key(e: KeyboardEvent) {
@@ -153,7 +163,7 @@
 	const moreIndex = (sid: SectionId) => indexOf((x) => x.kind === 'more' && x.section === sid);
 	const allIndex = $derived(indexOf((x) => x.kind === 'all'));
 	const loading = $derived(sections.some((s) => s.state === 'loading'));
-	const nothing = $derived(typed.length >= 2 && !loading && !places.length && sections.every((s) => s.state !== 'loading' && !s.hits.length));
+	const nothing = $derived(typed.length >= 2 && !loading && !places.length && shown.every((s) => s.state !== 'loading' && !s.hits.length));
 </script>
 
 <Sheet bind:open title="Search and go" hideTitle size="lg" placement="full">
@@ -180,6 +190,9 @@
 			<kbd>esc</kbd>
 			<button class="cancel" type="button" onclick={() => (open = false)}>Cancel</button>
 		</div>
+		{#if typed.length >= 2 && filters.length > 2}
+			<div class="filter"><SegmentedControl label="Show results for" options={filters} value={filter} onchange={(v) => { filter = v; active = 0; input?.focus(); }} testid="palette-filter" /></div>
+		{/if}
 		<div class="results" id="{id}-list" role="listbox" aria-label="Results" aria-busy={loading}>
 			{#if places.length}
 				<div role="group" aria-labelledby="{id}-g-places">
@@ -191,7 +204,7 @@
 					{/each}
 				</div>
 			{/if}
-			{#each sections as s (s.id)}
+			{#each shown as s (s.id)}
 				<div role="group" aria-labelledby="{id}-g-{s.id}" data-testid="palette-{s.id}">
 					<p class="sh" id="{id}-g-{s.id}">{s.label}</p>
 					{#if s.state === 'loading'}
@@ -239,6 +252,7 @@
 	input::placeholder { color: var(--text-muted); }
 	kbd { padding: 2px 6px; border-radius: 5px; background: var(--surface-2); color: var(--text-muted); font: var(--t-footnote); }
 	.cancel { display: none; min-height: 44px; padding: 0 4px; color: var(--accent-text); font: var(--t-body); font-weight: 500; }
+	.filter { padding: 10px 12px 2px; }
 	.results { padding: 6px; max-height: min(64dvh, 620px); overflow: auto; overscroll-behavior: contain; }
 	.sh { padding: 10px 10px 4px; color: var(--text-muted); font: var(--t-footnote); font-weight: 600; }
 	.row { display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 0 10px; border-radius: 9px; cursor: pointer; font: var(--t-callout); font-size: 15px; }
