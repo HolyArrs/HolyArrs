@@ -220,3 +220,13 @@ export function startView(o: { remembered: CalendarView | null; which: TitlesSho
 	if (!o.wide) return 'list';
 	return o.which === 'shows' || o.which === 'all' ? 'week' : 'month';
 }
+
+/** entryArt is the picture for a calendar entry: the episode still, then the backdrop, then the poster. */
+export function entryArt(e: Pick<CalendarEntry, 'still' | 'backdrop' | 'poster'>): string | null {
+	return e.still || e.backdrop || e.poster || null;
+}
+
+/** entryIcon is the kind icon an entry shows when it has no picture. */
+export function entryIcon(kind: CalendarEntry['kind']): 'tv' | 'music' | 'film' {
+	return kind === 'episode' ? 'tv' : kind === 'album' ? 'music' : 'film';
+}

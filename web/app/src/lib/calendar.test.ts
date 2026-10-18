@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { byDay, feedLink, monthGrid, monthRange, shiftMonth, webcalLink, ymd, weekStart, weekRange, weekDays, shiftWeek, readView, saveView, startView } from './calendar.ts';
+import { byDay, feedLink, monthGrid, monthRange, shiftMonth, webcalLink, ymd, weekStart, weekRange, weekDays, shiftWeek, readView, saveView, startView, entryArt, entryIcon } from './calendar.ts';
 import type { CalendarEntry } from './types.ts';
 
 const e = (title_id: number, kind: CalendarEntry['kind'], date: string): CalendarEntry => ({ title_id, name: `Movie ${title_id}`, kind, date });
@@ -75,5 +75,19 @@ describe('calendar week', () => {
 		const broken = { getItem: () => { throw new Error('no'); }, setItem: () => { throw new Error('no'); } };
 		expect(readView(broken)).toBeNull();
 		expect(() => saveView('list', broken)).not.toThrow();
+	});
+});
+
+describe('calendar artwork', () => {
+	it('uses the still, then the backdrop, then the poster', () => {
+		expect(entryArt({ ...e(1, 'episode', '2026-10-20'), still: 's.jpg', backdrop: 'b.jpg', poster: 'p.jpg' })).toBe('s.jpg');
+		expect(entryArt({ ...e(1, 'episode', '2026-10-20'), backdrop: 'b.jpg', poster: 'p.jpg' })).toBe('b.jpg');
+		expect(entryArt({ ...e(1, 'digital', '2026-10-20'), still: '', poster: 'p.jpg' })).toBe('p.jpg');
+		expect(entryArt(e(1, 'digital', '2026-10-20'))).toBeNull();
+	});
+	it('picks the kind icon for entries without art', () => {
+		expect(entryIcon('episode')).toBe('tv');
+		expect(entryIcon('album')).toBe('music');
+		expect(entryIcon('cinema')).toBe('film');
 	});
 });

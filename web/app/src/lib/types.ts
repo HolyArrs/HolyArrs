@@ -732,6 +732,10 @@ export interface CalendarEntry {
 	keep_up_to_date?: boolean;
 	/** A show with more than one Version: each Version's state, main first. */
 	versions?: { label: string; state: string }[];
+	/** Artwork from the title row; still is the episode's own picture when known. */
+	poster?: string;
+	backdrop?: string;
+	still?: string;
 }
 
 export interface Health {

@@ -14,6 +14,7 @@
 	import OpsCheckChip from '#lib/ui/OpsCheckChip.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
+	import Icon from '#lib/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
@@ -30,6 +31,8 @@
 		shiftMonth,
 		shows,
 		entryHref,
+		entryArt,
+		entryIcon,
 		albumHave,
 		webcalLink,
 		weekStart,
@@ -213,6 +216,14 @@
 	});
 </script>
 
+{#snippet art(e: CalendarEntry)}
+	{@const src = entryArt(e)}
+	<span class="thumb" aria-hidden="true">
+		{#if src}<img {src} alt="" loading="lazy" decoding="async" />{:else}<Icon name={entryIcon(e.kind)} size={16} />{/if}
+		<span class="dot"></span>
+	</span>
+{/snippet}
+
 <svelte:head><title>Calendar · HolyArrs</title></svelte:head>
 
 <PageHeader title="Calendar" subtitle="Cinema, digital and disc dates for your movies, when your episodes air in your own time zone, and the days your artists' albums come out.">
@@ -268,7 +279,7 @@
 						<ul>
 							{#each d.items as e (entryKey(e))}
 								<li class="item k-{e.kind}" data-testid="cal-item">
-									<span class="dot" aria-hidden="true"></span>
+									{@render art(e)}
 									<div class="it">
 										<a href={to(entryHref(e))}>{#if entryTime(e)}<span class="t">{entryTime(e)}</span>{' '}{/if}{entryName(e)}</a>
 										<span class="sub">{kindWord[e.kind]}{#if e.network}{' on '}{e.network}{/if}{inLibraryWord(e.state, e.versions)}</span>
@@ -321,7 +332,7 @@
 						<ul>
 							{#each d.items as e (entryKey(e))}
 								<li class="item k-{e.kind}" data-testid="cal-item">
-									<span class="dot" aria-hidden="true"></span>
+									{@render art(e)}
 									<div class="it">
 										<a href={to(entryHref(e))}>{entryName(e)}</a>
 										<span class="sub">{kindWord[e.kind]}{#if entryTime(e)}{' at '}{entryTime(e)}{/if}{#if e.network}{' on '}{e.network}{/if}{inLibraryWord(e.state, e.versions)}{#if e.kind === 'album' && albumHave(e)}{' · '}{albumHave(e)}{/if}</span>
@@ -417,7 +428,9 @@
 	.items ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 	.item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; min-width: 0; }
 	.item + .item { border-top: 1px solid var(--line); }
-	.item .dot { margin-top: 7px; }
+	.thumb { position: relative; flex: none; width: 64px; aspect-ratio: 16 / 9; border-radius: var(--r-sm); background: var(--surface-2); color: var(--text-muted); display: grid; place-items: center; overflow: hidden; }
+	.thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+	.thumb .dot { position: absolute; left: 4px; bottom: 4px; box-shadow: 0 0 0 2px var(--surface-1); }
 	.it { display: flex; flex-direction: column; min-width: 0; }
 	.it a { color: var(--text); font: var(--t-headline); font-size: 15px; overflow-wrap: anywhere; }
 	.it a:hover { text-decoration: underline; text-underline-offset: 3px; }

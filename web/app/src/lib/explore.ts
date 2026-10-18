@@ -3,7 +3,7 @@
 // Everything that decides what shows, and in which order, lives here as pure
 // functions so it can be tested and explained.
 import { api, ApiError, type Client } from './api.ts';
-import { episodeCode } from './calendar.ts';
+import { entryArt, episodeCode } from './calendar.ts';
 import type { Ask, CalendarEntry, TitleView } from './types.ts';
 
 export type CardKind = 'movie' | 'show' | 'artist';
@@ -98,6 +98,19 @@ export function recentlyAdded(titles: TitleView[], n = ROW_MAX): TitleView[] {
 	return [...titles].sort((a, b) => b.id - a.id).slice(0, n);
 }
 
+/** orderRecent puts cards with artwork first, and within each group takes turns between kinds (order kept per kind). */
+export function orderRecent<T extends { kind: CardKind; image?: string | null }>(items: T[]): T[] {
+	const turns = (list: T[]): T[] => {
+		const byKind = new Map<CardKind, T[]>();
+		for (const x of list) byKind.set(x.kind, [...(byKind.get(x.kind) ?? []), x]);
+		const queues = [...byKind.values()];
+		const out: T[] = [];
+		while (out.length < list.length) for (const q of queues) if (q.length) out.push(q.shift()!);
+		return out;
+	};
+	return [...turns(items.filter((x) => !!x.image)), ...turns(items.filter((x) => !x.image))];
+}
+
 function shortDay(iso: string, now: Date): string {
 	const d = new Date(iso);
 	if (Number.isNaN(d.getTime())) return '';
@@ -127,6 +140,8 @@ export function comingSoon(entries: CalendarEntry[], titles: TitleView[], now = 
 		const card: ExploreCard = t
 			? titleCard(t, subtitle, `c${e.title_id}`)
 			: { key: `c${e.title_id}`, kind: e.kind === 'episode' ? 'show' : e.kind === 'album' ? 'artist' : 'movie', name: e.name, year: e.year, subtitle, titleId: e.title_id, badges: [] };
+		const art = entryArt(e);
+		if (art) card.image = art;
 		card.status = 'coming_soon';
 		card.statusLabel = 'Coming soon';
 		out.push(card);

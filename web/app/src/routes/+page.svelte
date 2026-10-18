@@ -8,7 +8,7 @@
 	import { searchLine } from '#lib/releases.ts';
 	import { problems } from '#lib/health.ts';
 	import { groupLabel } from '#lib/history.ts';
-	import { comingSoon, markTransitions, recentlyAdded, titleCard, type ExploreCard } from '#lib/explore.ts';
+	import { comingSoon, markTransitions, orderRecent, recentlyAdded, titleCard, type ExploreCard } from '#lib/explore.ts';
 	import { attention, downloadLine, downloadSubtitle, greetName, isActive } from '#lib/home.ts';
 	import { ymd } from '#lib/calendar.ts';
 	import { personName } from '#lib/plain.ts';
@@ -73,7 +73,7 @@
 	const active = $derived(downloads.filter(isActive));
 	const failedDownloads = $derived(downloads.filter((d) => d.state === 'failed'));
 	const byId = $derived(new Map(titles.map((t) => [t.id, t])));
-	const recent = $derived(recentlyAdded(titles, 20).map((t) => titleCard(t)));
+	const recent = $derived(orderRecent(recentlyAdded(titles, 20).map((t) => titleCard(t))));
 	const soon = $derived(comingSoon(dates, titles, new Date(), 20));
 	const waiting = $derived(asks.filter((a) => a.state === 'asked'));
 	const mine = $derived(asks.filter((a) => a.mine && a.state !== 'available').slice(0, 20));
@@ -287,7 +287,7 @@
 		{#if rows[0].cards.length}
 			<Shelf title="Coming soon" subtitle="The next 30 days" href={to('/calendar')}>
 				{#each rows[0].cards as c (c.key)}
-					<PosterCard title={c.name} href={c.titleId ? titleHref(c.titleId) : undefined} image={c.image} subtitle={c.subtitle} status={c.status} statusLabel={c.statusLabel} vtName={c.vtName} />
+					<PosterCard title={c.name} kind={c.kind} href={c.titleId ? titleHref(c.titleId) : undefined} image={c.image} subtitle={c.subtitle} status={c.status} statusLabel={c.statusLabel} vtName={c.vtName} />
 				{/each}
 			</Shelf>
 		{/if}
@@ -295,7 +295,7 @@
 		{#if rows[1].cards.length}
 			<Shelf title="Recently added" href={to('/library')}>
 				{#each rows[1].cards as c (c.key)}
-					<PosterCard title={c.name} href={titleHref(c.titleId!)} image={c.image} subtitle={c.subtitle} badges={c.badges} status={c.status === 'in_library' ? undefined : c.status} statusLabel={c.statusLabel} vtName={c.vtName} />
+					<PosterCard title={c.name} kind={c.kind} href={titleHref(c.titleId!)} image={c.image} subtitle={c.subtitle} badges={c.badges} status={c.status === 'in_library' ? undefined : c.status} statusLabel={c.statusLabel} vtName={c.vtName} />
 				{/each}
 			</Shelf>
 		{/if}

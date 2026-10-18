@@ -4,6 +4,7 @@ import {
 	becauseYouHave,
 	cardAction,
 	comingSoon,
+	orderRecent,
 	discoverCard,
 	discoverPath,
 	fetchProviderRow,
@@ -73,6 +74,41 @@ describe('coming soon', () => {
 	it('still shows titles it has no Library record for', () => {
 		const [c] = comingSoon([e(7, '2026-10-21T00:00:00Z', { kind: 'album', album: 'Blue' })], [], now);
 		expect(c).toMatchObject({ kind: 'artist', name: 'T7', subtitle: expect.stringMatching(/^Blue · /) });
+	});
+});
+
+describe('coming soon artwork', () => {
+	const now = new Date(2026, 9, 18, 12);
+	it('puts the episode still on the card, falling back to the backdrop and the poster', () => {
+		const cards = comingSoon(
+			[
+				{ title_id: 1, name: 'A', kind: 'episode', date: '2026-10-20T00:00:00Z', season: 1, episode: 2, still: 's.jpg', backdrop: 'b.jpg' },
+				{ title_id: 2, name: 'B', kind: 'digital', date: '2026-10-21T00:00:00Z', backdrop: 'b2.jpg', poster: 'p2.jpg' },
+				{ title_id: 3, name: 'C', kind: 'digital', date: '2026-10-22T00:00:00Z' }
+			],
+			[t(1, { kind: 'show', artwork: ['own.jpg'] })],
+			now
+		);
+		expect(cards.map((c) => c.image ?? null)).toEqual(['s.jpg', 'b2.jpg', null]);
+		expect(cards[0].kind).toBe('show');
+	});
+});
+
+describe('orderRecent', () => {
+	const c = (key: string, kind: 'movie' | 'show' | 'artist', image: string | null) => ({ key, kind, name: key, image, badges: [] });
+	it('puts cards with artwork first and keeps the order otherwise', () => {
+		expect(orderRecent([c('a', 'movie', null), c('b', 'movie', 'b.jpg'), c('c', 'movie', 'c.jpg')]).map((x) => x.key)).toEqual(['b', 'c', 'a']);
+	});
+	it('takes turns between kinds', () => {
+		const out = orderRecent([c('m1', 'movie', 'x'), c('m2', 'movie', 'x'), c('m3', 'movie', 'x'), c('s1', 'show', 'x'), c('a1', 'artist', 'x')]);
+		expect(out.map((x) => x.key)).toEqual(['m1', 's1', 'a1', 'm2', 'm3']);
+	});
+	it('interleaves within the artwork group, then the rest', () => {
+		const out = orderRecent([c('m1', 'movie', null), c('s1', 'show', 'x'), c('m2', 'movie', 'x'), c('a1', 'artist', null)]);
+		expect(out.map((x) => x.key)).toEqual(['s1', 'm2', 'm1', 'a1']);
+	});
+	it('keeps an empty list empty', () => {
+		expect(orderRecent([])).toEqual([]);
 	});
 });
 
