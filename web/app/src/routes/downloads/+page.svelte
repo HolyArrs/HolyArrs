@@ -16,6 +16,7 @@
 	import ProgressBar from '#lib/ui/ProgressBar.svelte';
 	import ListRow from '#lib/ui/ListRow.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
+	import Menu from '#lib/ui/Menu.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
@@ -215,8 +216,13 @@
 		<div class="acts">
 			<Button variant={wide && selected?.id === r.id ? 'secondary' : 'plain'} aria-label="Details for {who(r)}" aria-pressed={wide ? selected?.id === r.id : undefined} onclick={() => void selectDownload(r.id)}>Details</Button>
 			{#if r.can_act}
-				<Button variant="plain" onclick={() => markFailed(r)} disabled={busy === r.id}>Mark failed</Button>
-				<Button variant="plain" class="danger" onclick={() => askRemove(r)} disabled={busy === r.id}>Remove</Button>
+				<Menu
+					label="More for {who(r)}"
+					items={[
+						{ label: 'Mark failed', icon: 'alert', disabled: busy === r.id, onselect: () => markFailed(r) },
+						{ label: 'Remove', icon: 'trash', destructive: true, disabled: busy === r.id, onselect: () => askRemove(r) }
+					]}
+				/>
 			{/if}
 		</div>
 	</li>
@@ -383,10 +389,9 @@
 	.eplist li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; font: var(--t-callout); }
 	.eplabel { color: var(--text-muted); font-variant-numeric: tabular-nums; }
 	.epname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.acts { display: flex; flex-direction: column; align-items: stretch; gap: 2px; }
+	.acts { display: flex; align-items: center; gap: 4px; }
 	.acts > :global(.ui-btn) { color: var(--text-muted); font-weight: 500; }
 	.acts > :global(.ui-btn:hover) { color: var(--text); }
-	.acts > :global(.danger:hover) { color: var(--fail); }
 	.side { position: sticky; top: calc(var(--topbar, 56px) + 16px); padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 	.side .muted { color: var(--text-muted); font: var(--t-callout); }
 	.d-head { display: flex; gap: 14px; align-items: flex-start; }
@@ -411,8 +416,8 @@
 		.art { width: 40px; }
 		.top { flex-direction: column; align-items: stretch; gap: 6px; }
 		.top > :global(.ui-pill) { align-self: flex-start; }
-		.acts { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; gap: 6px; }
-		.acts > :global(*) { flex: 1 1 auto; min-height: 44px; }
+		.acts { grid-column: 1 / -1; justify-content: space-between; gap: 6px; }
+		.acts > :global(.ui-btn) { flex: 1 1 auto; min-height: 44px; }
 		.eplist li { grid-template-columns: auto minmax(0, 1fr); }
 		.eplist li > :global(.ui-pill) { grid-column: 2; justify-self: start; }
 		.epname { white-space: normal; overflow-wrap: anywhere; }

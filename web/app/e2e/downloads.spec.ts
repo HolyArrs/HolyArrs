@@ -16,7 +16,12 @@ test.beforeAll(async ({ browser }) => {
 	await signIn(page, owner());
 });
 
-const iron = () => page.getByTestId('download-row').filter({ hasText: 'Iron Lullaby' }).filter({ has: page.getByRole('button', { name: 'Remove' }) });
+const iron = () => page.getByTestId('download-row').filter({ hasText: 'Iron Lullaby' }).filter({ has: page.getByRole('button', { name: /^More for / }) });
+// Mark failed and Remove live in the row's ⋯ menu.
+async function rowAction(r: ReturnType<typeof iron>, name: string) {
+	await r.getByRole('button', { name: /^More for / }).click();
+	await r.getByRole('menuitem', { name }).click();
+}
 
 test('the Downloads screen shows progress, speed and time left, and follows it live', async () => {
 	await page.goto('/downloads');
@@ -26,7 +31,11 @@ test('the Downloads screen shows progress, speed and time left, and follows it l
 	await expect(r.getByTestId('row-percent')).toHaveText('40%');
 	await expect(r.getByTestId('row-speed')).toContainText('/s');
 	await expect(r.getByTestId('row-eta')).toContainText('left');
-	await expect(r.getByRole('button', { name: 'Mark failed' })).toBeVisible();
+	await r.getByRole('button', { name: /^More for / }).click();
+	await expect(r.getByRole('menuitem', { name: 'Mark failed' })).toBeVisible();
+	await expect(r.getByRole('menuitem', { name: 'Remove' })).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(r.getByRole('menuitem', { name: 'Mark failed' })).toBeHidden();
 	// The Downloader moves on; the row follows without a reload.
 	await fetch(`${qbit}/set?progress=0.7&eta=120`);
 	await expect(r.getByTestId('row-percent')).toHaveText('70%', { timeout: 15_000 });
@@ -35,7 +44,7 @@ test('the Downloads screen shows progress, speed and time left, and follows it l
 
 test('Remove asks first, starts from the settings and can turn the Release down and search again', async () => {
 	const r = iron();
-	await r.getByRole('button', { name: 'Remove' }).click();
+	await rowAction(r, 'Remove');
 	const dialog = page.getByRole('dialog');
 	await expect(dialog.getByRole('heading', { name: 'Remove this download?' })).toBeVisible();
 	await expect(dialog.getByLabel('Delete its files')).toBeChecked();
@@ -45,7 +54,7 @@ test('Remove asks first, starts from the settings and can turn the Release down 
 	await expect(dialog).toBeHidden();
 
 	const before = (await (await fetch(`${qbit}/state`)).json()).deleted.length;
-	await r.getByRole('button', { name: 'Remove' }).click();
+	await rowAction(r, 'Remove');
 	await dialog.getByLabel('Add its Release to Turned down').check();
 	await expect(dialog.getByLabel('Search again')).toBeChecked();
 	await dialog.getByRole('button', { name: 'Remove', exact: true }).click();
