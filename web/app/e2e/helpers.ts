@@ -57,7 +57,7 @@ export async function titleAction(page: Page, menu: 'Library' | 'More actions', 
 
 /** libraryTool opens a Library tool from the Library page's Add menu. */
 export async function libraryTool(page: Page, name: string) {
-	await page.getByRole('button', { name: 'Add and Library tools' }).click();
+	await page.getByRole('main').getByRole('button', { name: 'Add', exact: true }).click();
 	await page.getByRole('menu', { name: 'Add and Library tools' }).getByRole('menuitem', { name }).click();
 }
 
