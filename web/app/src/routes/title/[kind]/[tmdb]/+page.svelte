@@ -23,6 +23,7 @@
 	import AskShowDialog from '#lib/AskShowDialog.svelte';
 	import AskMovieDialog from '#lib/AskMovieDialog.svelte';
 	import '#lib/title-page.css';
+	import { audienceOf, titleStatus } from '#lib/title-status.ts';
 
 	// A movie or show that is not in the Library yet: the same hero as a
 	// Library title, with Add (people who manage the Library) or Ask
@@ -136,6 +137,8 @@
 		void richMetadata(api.get, k, id).then((m) => live && (rich = m));
 		return () => (live = false);
 	});
+	// One status vocabulary (title-status.ts) for the ask on this title.
+	const heroPill = (d: TitleDetails) => titleStatus({ ask: d.ask?.state, neverAdd: d.neverAdd, titleKind: d.kind }, audienceOf(session.can));
 	const scoreOf = (r?: string) => (r && /\/\s*10$/.test(r) ? Number.parseFloat(r) : undefined);
 	const certOf = (r?: string) => (r && !/\/\s*10$/.test(r) ? r : undefined);
 	const heroMeta = (d: TitleDetails) => [d.year ? String(d.year) : '', d.kind === 'show' ? (d.network ?? '') : runtimeWords(d.runtime), ...d.genres.slice(0, 3)].filter(Boolean);
@@ -168,8 +171,8 @@
 			meta={heroMeta(d)}
 			certification={rich?.certification ?? certOf(d.rating)}
 			score={rich?.score ?? scoreOf(d.rating)}
-			status={d.neverAdd ? 'turned_down' : d.ask ? (d.ask.state === 'approved' ? 'approved' : 'requested') : undefined}
-			statusLabel={d.neverAdd ? 'On the Never-add list' : d.ask ? (d.ask.mine ? 'You asked' : d.ask.state_label) : undefined}
+			status={d.neverAdd || d.ask ? heroPill(d).kind : undefined}
+			statusLabel={d.neverAdd || d.ask ? heroPill(d).label : undefined}
 			description={d.overview}
 		>
 			{#snippet actions()}

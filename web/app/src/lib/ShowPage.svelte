@@ -30,6 +30,7 @@
 	import TitleCast from './TitleCast.svelte';
 	import SimilarShelf from './SimilarShelf.svelte';
 	import { artName, crumbFor, pageSections, qualityBadges, slotKind } from './title-page.ts';
+	import { audienceStatus } from './title-status.ts';
 	import SectionNav from './ui/SectionNav.svelte';
 	import TitleSection from './ui/TitleSection.svelte';
 	import './title-page.css';
@@ -268,6 +269,8 @@
 	/** An episode's still, when the backend sends one. */
 	const still = (ep: EpisodeView) => ep.still;
 	const heroKind = $derived(show?.missing ? 'missing' : show?.in_library ? 'in_library' : show?.not_out_yet ? 'coming_soon' : 'missing');
+	// One status vocabulary (title-status.ts); staff also see how many episodes are missing.
+	const heroWords = $derived(audienceStatus(!staff && show?.in_library ? 'in_library' : heroKind, staff ? 'staff' : 'member', { tracked: true, titleKind: 'show' }));
 	const libraryItems = $derived<MenuItem[]>([
 		{ label: 'Rename files', icon: 'copy', onselect: openRename },
 		{ kind: 'separator' },
@@ -387,8 +390,8 @@
 	certification={title.rating ?? rich?.certification}
 	score={rich?.score}
 	badges={heroBadges}
-	status={heroKind}
-	statusLabel={show?.missing ? `${show.missing} missing` : !staff && heroKind === 'in_library' ? 'Ready to watch' : undefined}
+	status={heroWords.kind}
+	statusLabel={staff && show?.missing ? `${show.missing} missing` : heroWords.label}
 	description={title.overview || rich?.overview}
 	vtName={artName(title.id)}
 >

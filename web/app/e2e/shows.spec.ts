@@ -177,7 +177,7 @@ test('a member asks for two seasons of a show from a phone', async ({ browser })
 	await axe(max, 'ask show dialog phone');
 	await dialog.getByRole('button', { name: 'Ask for seasons 1 and 2' }).click();
 	await expect(dialog).toBeHidden();
-	await expect(hit.getByRole('link', { name: /You asked · Waiting for approval/ })).toBeVisible();
+	await expect(hit.getByRole('link', { name: /^Requested/ })).toBeVisible();
 
 	// A show already in the Library offers to ask for the seasons it does not keep.
 	await searchShows(max, 'harbour');
@@ -185,7 +185,7 @@ test('a member asks for two seasons of a show from a phone', async ({ browser })
 
 	await max.locator('nav.tabbar').getByRole('link', { name: 'Wishlist' }).click();
 	const ask = max.getByTestId('ask').filter({ hasText: 'Lantern Street' });
-	await expect(ask.getByTestId('ask-state')).toHaveText('Waiting for approval');
+	await expect(ask.getByTestId('ask-state')).toHaveText('Requested');
 	await expect(ask.getByTestId('ask-kind')).toHaveText('Show');
 	await expect(ask.getByTestId('ask-seasons')).toHaveText('Asked for seasons 1 and 2');
 	await expect(ask.getByRole('button', { name: 'Approve' })).toHaveCount(0);

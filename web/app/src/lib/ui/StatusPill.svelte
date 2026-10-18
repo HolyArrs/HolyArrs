@@ -1,15 +1,6 @@
 <script lang="ts" module>
+	import { statusLabel } from '../title-status.ts';
 	export type StatusKind = 'in_library' | 'downloading' | 'missing' | 'requested' | 'approved' | 'turned_down' | 'failed' | 'coming_soon';
-	const words: Record<StatusKind, string> = {
-		in_library: 'In your library',
-		downloading: 'Downloading',
-		missing: 'Missing',
-		requested: 'Requested',
-		approved: 'Approved',
-		turned_down: 'Turned down',
-		failed: 'Failed',
-		coming_soon: 'Coming soon'
-	};
 	const tones: Record<StatusKind, 'ok' | 'wait' | 'fail' | 'info' | 'idle'> = {
 		in_library: 'ok',
 		downloading: 'info',
@@ -20,9 +11,9 @@
 		failed: 'fail',
 		coming_soon: 'idle'
 	};
-	/** statusWord is the default word for a status; percent is added while downloading. */
+	/** statusWord is the default (staff) word for a status, from the one status vocabulary in title-status.ts. */
 	export function statusWord(kind: StatusKind, percent?: number): string {
-		return kind === 'downloading' && percent !== undefined ? `${words[kind]} ${Math.round(percent)}%` : words[kind];
+		return statusLabel(kind, 'staff', { percent });
 	}
 </script>
 

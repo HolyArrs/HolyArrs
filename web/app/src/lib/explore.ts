@@ -3,11 +3,13 @@
 // Everything that decides what shows, and in which order, lives here as pure
 // functions so it can be tested and explained.
 import { api, ApiError, type Client } from './api.ts';
+import type { StatusKind } from './ui/StatusPill.svelte';
+import { audienceStatus, factsOf, titleStatus, type Audience, type TitleStatus } from './title-status.ts';
 import { entryArt, episodeCode } from './calendar.ts';
 import type { Ask, CalendarEntry, TitleView } from './types.ts';
 
 export type CardKind = 'movie' | 'show' | 'artist';
-export type CardStatus = 'in_library' | 'downloading' | 'requested' | 'missing' | 'coming_soon';
+export type CardStatus = StatusKind;
 
 /** ExploreCard is one poster in a row, whatever it came from. */
 export interface ExploreCard {
@@ -66,18 +68,9 @@ export function quality(t: Pick<TitleView, 'slots'>): string | undefined {
 	return best > 0 ? `${best}p` : undefined;
 }
 
-/** titleStatus is the one overlay a Library title shows: downloading beats asked beats in the Library. */
-export function titleStatus(t: Pick<TitleView, 'slots' | 'asks'>): { status: CardStatus; label: string } {
-	if ((t.slots ?? []).some((s) => s.state === 'downloading')) return { status: 'downloading', label: 'Downloading' };
-	const open = (t.asks ?? []).some((a) => a.state === 'asked' || a.state === 'approved');
-	const have = (t.slots ?? []).some((s) => s.state === 'in_library');
-	if (open && !have) return { status: 'requested', label: 'Requested' };
-	return { status: 'in_library', label: 'In Library ✓' };
-}
-
 /** titleCard turns a Library title into a card. */
 export function titleCard(t: TitleView, subtitle?: string, key = `t${t.id}`): ExploreCard {
-	const s = titleStatus(t);
+	const s = titleStatus(factsOf(t), 'staff');
 	const q = quality(t);
 	return {
 		key,
@@ -87,8 +80,7 @@ export function titleCard(t: TitleView, subtitle?: string, key = `t${t.id}`): Ex
 		image: t.artwork?.[0] ?? null,
 		subtitle: subtitle ?? (t.year ? String(t.year) : kindWord[kindOf(t.kind)]),
 		titleId: t.id,
-		status: s.status,
-		statusLabel: s.label,
+		status: s.kind,
 		badges: q ? [q] : []
 	};
 }
@@ -143,7 +135,6 @@ export function comingSoon(entries: CalendarEntry[], titles: TitleView[], now = 
 		const art = entryArt(e);
 		if (art) card.image = art;
 		card.status = 'coming_soon';
-		card.statusLabel = 'Coming soon';
 		out.push(card);
 		if (out.length >= n) break;
 	}
@@ -159,7 +150,7 @@ export function missingEpisodes(titles: TitleView[], n = ROW_MAX): ExploreCard[]
 		.map((t) => {
 			const m = t.show!.missing;
 			const c = titleCard(t, `${m} ${m === 1 ? 'episode' : 'episodes'} missing`, `m${t.id}`);
-			if (c.status === 'in_library') { c.status = 'missing'; c.statusLabel = 'Missing'; }
+			if (c.status === 'in_library') c.status = 'missing';
 			return c;
 		});
 }
@@ -183,10 +174,7 @@ export function readyToWatch(titles: TitleView[], n = ROW_MAX): ExploreCard[] {
 export function stillLooking(titles: TitleView[], n = ROW_MAX): ExploreCard[] {
 	return recentlyAdded(titles.filter((t) => kindOf(t.kind) !== 'show' && (t.slots ?? []).some((s) => s.state === 'wanted')), n).map((t) => {
 		const c = titleCard(t, undefined, `w${t.id}`);
-		if (c.status === 'in_library') {
-			c.status = 'missing';
-			c.statusLabel = 'Missing';
-		}
+		if (c.status === 'in_library') c.status = 'missing';
 		return c;
 	});
 }
@@ -232,8 +220,7 @@ export function popularInHousehold(asks: Ask[], titles: TitleView[], n = ROW_MAX
 				subtitle: who,
 				titleId: g.ask.title_id,
 				ref: g.ask.ref || (g.ask.tmdb_id ? `tmdb:${g.ask.tmdb_id}` : undefined),
-				status: done ? 'in_library' : 'requested',
-				statusLabel: done ? 'In Library ✓' : 'Requested',
+				status: titleStatus({ ask: g.ask.state }, 'staff').kind,
 				badges: [],
 				mine: g.mine
 			} satisfies ExploreCard;
@@ -325,6 +312,16 @@ export function keepFull(rows: (ExploreRow | null | undefined)[]): ExploreRow[] 
 	return rows.filter((r): r is ExploreRow => !!r && r.cards.length > 0);
 }
 
+/**
+ * cardPill is the StatusPill a card shows, in the shared status words
+ * (title-status.ts) for this audience; a label set on the card wins.
+ */
+export function cardPill(c: ExploreCard, who: Audience): TitleStatus | null {
+	if (!c.status) return null;
+	if (c.statusLabel) return { kind: c.status, label: c.statusLabel };
+	return audienceStatus(c.status, who, { tracked: c.titleId !== undefined, titleKind: c.kind });
+}
+
 /** cardAction says what the round + does for this person on this card. */
 export function cardAction(c: ExploreCard, can: { manage: boolean; ask: boolean }): 'add' | 'ask' | null {
 	if (c.titleId !== undefined || c.status === 'in_library') return null;
@@ -389,7 +386,6 @@ export async function fetchProviderRow(q: ProviderRowQuery, client: Pick<Client,
 
 /** discoverCard turns a discover item into a card. */
 export function discoverCard(d: ProviderItem, row: string): ExploreCard {
-	const asked = d.ask && d.ask.state !== 'turned_down';
 	return {
 		key: `${row}-${d.kind}-${d.tmdb_id}`,
 		kind: d.kind,
@@ -399,8 +395,7 @@ export function discoverCard(d: ProviderItem, row: string): ExploreCard {
 		subtitle: d.year ? String(d.year) : undefined,
 		titleId: d.in_library ? d.title_id : undefined,
 		ref: `tmdb:${d.tmdb_id}`,
-		status: d.in_library ? 'in_library' : asked ? 'requested' : undefined,
-		statusLabel: d.in_library ? 'In Library ✓' : asked ? 'Requested' : undefined,
+		status: d.in_library ? 'in_library' : d.ask && d.ask.state !== 'turned_down' ? titleStatus({ ask: d.ask.state }, 'staff').kind : undefined,
 		badges: [],
 		mine: !!d.ask?.mine
 	};

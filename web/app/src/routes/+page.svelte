@@ -8,7 +8,8 @@
 	import { searchLine } from '#lib/releases.ts';
 	import { problems } from '#lib/health.ts';
 	import { groupLabel } from '#lib/history.ts';
-	import { comingSoon, markTransitions, orderRecent, recentlyAdded, titleCard, type ExploreCard } from '#lib/explore.ts';
+	import { cardPill, comingSoon, markTransitions, orderRecent, recentlyAdded, titleCard, type ExploreCard } from '#lib/explore.ts';
+	import { audienceOf, titleStatus } from '#lib/title-status.ts';
 	import { attention, downloadLine, downloadSubtitle, greetName, isActive } from '#lib/home.ts';
 	import { ymd } from '#lib/calendar.ts';
 	import { personName } from '#lib/plain.ts';
@@ -51,6 +52,8 @@
 	const admin = $derived(session.can('settings'));
 	const manager = $derived(session.can('manage_library'));
 	const approver = $derived(session.can('approve'));
+	// One status vocabulary: staff or member words for every poster.
+	const who = $derived(audienceOf(session.can));
 	const name = $derived(greetName(session.s.name));
 	const issues = $derived(problems(checks?.checks));
 
@@ -287,7 +290,8 @@
 		{#if rows[0].cards.length}
 			<Shelf title="Coming soon" subtitle="The next 30 days" href={to('/calendar')}>
 				{#each rows[0].cards as c (c.key)}
-					<PosterCard title={c.name} kind={c.kind} href={c.titleId ? titleHref(c.titleId) : undefined} image={c.image} subtitle={c.subtitle} status={c.status} statusLabel={c.statusLabel} vtName={c.vtName} />
+					{@const pill = cardPill(c, who)}
+					<PosterCard title={c.name} kind={c.kind} href={c.titleId ? titleHref(c.titleId) : undefined} image={c.image} subtitle={c.subtitle} status={pill?.kind} statusLabel={pill?.label} vtName={c.vtName} />
 				{/each}
 			</Shelf>
 		{/if}
@@ -295,7 +299,8 @@
 		{#if rows[1].cards.length}
 			<Shelf title="Recently added" href={to('/library')}>
 				{#each rows[1].cards as c (c.key)}
-					<PosterCard title={c.name} kind={c.kind} href={titleHref(c.titleId!)} image={c.image} subtitle={c.subtitle} badges={c.badges} status={c.status === 'in_library' ? undefined : c.status} statusLabel={c.statusLabel} vtName={c.vtName} />
+					{@const pill = c.status === 'in_library' ? null : cardPill(c, who)}
+					<PosterCard title={c.name} kind={c.kind} href={titleHref(c.titleId!)} image={c.image} subtitle={c.subtitle} badges={c.badges} status={pill?.kind} statusLabel={pill?.label} vtName={c.vtName} />
 				{/each}
 			</Shelf>
 		{/if}
@@ -303,19 +308,20 @@
 		{#if approver && waiting.length}
 			<Shelf title="Waiting for approval" subtitle="{waiting.length} {waiting.length === 1 ? 'ask' : 'asks'} on the Wishlist" href={to('/wishlist')}>
 				{#each waiting.slice(0, 20) as a (a.id)}
-					<PosterCard title={a.name} href={to('/wishlist')} image={a.poster} subtitle="Asked by {personName(a.asked_by?.name, 'someone in your household')}" status="requested" statusLabel="Waiting" />
+					<PosterCard title={a.name} href={to('/wishlist')} image={a.poster} subtitle="Asked by {personName(a.asked_by?.name, 'someone in your household')}" status="requested" statusLabel={titleStatus({ ask: 'asked' }, who).label} />
 				{/each}
 			</Shelf>
 		{:else if !approver && mine.length}
 			<Shelf title="Your Wishlist" href={to('/wishlist')}>
 				{#each mine as a (a.id)}
+					{@const pill = titleStatus({ ask: a.state, titleKind: a.kind === 'artist' ? 'artist' : a.kind === 'show' ? 'show' : 'movie' }, who)}
 					<PosterCard
 						title={a.name}
 						href={a.title_id ? titleHref(a.title_id) : to('/wishlist')}
 						image={a.poster}
 						subtitle={a.season_words || a.album_words || (a.year ? String(a.year) : undefined)}
-						status={a.state === 'approved' ? 'approved' : a.state === 'turned_down' ? 'turned_down' : 'requested'}
-						statusLabel={a.state === 'asked' ? 'Requested' : undefined}
+						status={pill.kind}
+						statusLabel={pill.label}
 					/>
 				{/each}
 			</Shelf>
@@ -334,7 +340,8 @@
 		{#if manager && rows[2].cards.length}
 			<Shelf title="Missing" subtitle="Titles you keep up to date that have no file yet" href={to('/library?show=missing&layout=list')}>
 				{#each rows[2].cards as c (c.key)}
-					<PosterCard title={c.name} href={titleHref(c.titleId!)} image={c.image} subtitle={c.subtitle} status={c.status} statusLabel={c.statusLabel} vtName={c.vtName} />
+					{@const pill = cardPill(c, who)}
+					<PosterCard title={c.name} href={titleHref(c.titleId!)} image={c.image} subtitle={c.subtitle} status={pill?.kind} statusLabel={pill?.label} vtName={c.vtName} />
 				{/each}
 			</Shelf>
 		{/if}

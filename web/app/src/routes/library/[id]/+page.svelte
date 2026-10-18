@@ -34,7 +34,8 @@
 	import ProgressBar from '#lib/ui/ProgressBar.svelte';
 	import TitleCast from '#lib/TitleCast.svelte';
 	import SimilarShelf from '#lib/SimilarShelf.svelte';
-	import { artName, crumbFor, heroStatus, pageSections, qualityBadges } from '#lib/title-page.ts';
+	import { artName, crumbFor, pageSections, qualityBadges } from '#lib/title-page.ts';
+	import { audienceOf, factsOf, titleStatus } from '#lib/title-status.ts';
 	import SectionNav from '#lib/ui/SectionNav.svelte';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import type { MenuItem } from '#lib/ui/Menu.svelte';
@@ -455,7 +456,8 @@
 	const heroMeta = $derived(title ? [title.year ? String(title.year) : '', runtimeWords(title.runtime_minutes ?? rich?.runtime), ...(title.genres?.length ? title.genres : (rich?.genres ?? [])).slice(0, 3)].filter(Boolean) : []);
 	const notes = $derived(title ? slotNotes(title.slots).map((n) => plainReason(n)) : []);
 	const heroBadges = $derived(qualityBadges(files.map((s) => s.file)));
-	const status = $derived(title ? heroStatus(title.slots, !!title.asks?.some((a) => !decided(a))) : { kind: 'missing' as const });
+	// One status vocabulary (title-status.ts): staff or member words.
+	const status = $derived(title ? titleStatus({ ...factsOf(title), titleKind: 'movie' }, audienceOf(session.can)) : { kind: 'missing' as const, label: 'Missing' });
 	const libraryItems = $derived<MenuItem[]>([
 		{ label: 'Rename files', icon: 'copy', onselect: openRename },
 		{ label: 'Add a Version', icon: 'plus', onselect: openVersion },
@@ -519,8 +521,7 @@
 			score={rich?.score}
 			badges={heroBadges}
 			status={status.kind}
-			percent={status.percent}
-			statusLabel={!session.can('manage_library') && status.kind === 'in_library' ? 'Ready to watch' : undefined}
+			statusLabel={status.label}
 			description={title.overview || rich?.overview}
 			vtName={artName(title.id)}
 		>

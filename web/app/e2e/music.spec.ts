@@ -186,7 +186,7 @@ test('a member asks for one single from a phone', async ({ browser }) => {
 	await axe(ivy, 'ask artist dialog phone');
 	await dialog.getByRole('button', { name: 'Ask for Fern Hymns' }).click();
 	await expect(dialog).toBeHidden();
-	await expect(hit.getByRole('link', { name: /You asked · Waiting for approval/ })).toBeVisible();
+	await expect(hit.getByRole('link', { name: /^Requested/ })).toBeVisible();
 
 	// An artist in the Library offers to ask for the albums it does not keep.
 	await searchMusic(ivy, 'lantern');
@@ -194,7 +194,7 @@ test('a member asks for one single from a phone', async ({ browser }) => {
 
 	await ivy.locator('nav.tabbar').getByRole('link', { name: 'Wishlist' }).click();
 	const ask = ivy.getByTestId('ask').filter({ hasText: 'Moss Choir' });
-	await expect(ask.getByTestId('ask-state')).toHaveText('Waiting for approval');
+	await expect(ask.getByTestId('ask-state')).toHaveText('Requested');
 	await expect(ask.getByTestId('ask-kind')).toHaveText('Music');
 	await expect(ask.getByTestId('ask-albums')).toHaveText('Asked for Fern Hymns');
 	await expect(ask.getByRole('button', { name: 'Approve' })).toHaveCount(0);

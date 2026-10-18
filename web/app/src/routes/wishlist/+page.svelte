@@ -23,6 +23,7 @@
 	import type { Ask, AskLimit, LibraryFolder, PickRulesView } from '#lib/types.ts';
 	import { seasonWords } from '#lib/shows.ts';
 	import { albumWords } from '#lib/music.ts';
+	import { titleStatus } from '#lib/title-status.ts';
 
 	const approver = $derived(session.can('approve'));
 	let asks = $state<Ask[]>([]);
@@ -204,7 +205,8 @@
 		}
 	}
 
-	const pillKind: Record<string, StatusKind> = { asked: 'requested', approved: 'approved', turned_down: 'turned_down', available: 'in_library' };
+	// One status vocabulary (title-status.ts): approvers get the staff words.
+	const askPill = (a: Ask) => titleStatus({ ask: a.state, titleKind: a.kind === 'artist' ? 'artist' : a.kind === 'show' ? 'show' : 'movie' }, approver ? 'staff' : 'member');
 	const msgKind = (k: string): StatusKind => (k === 'ready' ? 'in_library' : k === 'turned_down' ? 'turned_down' : 'approved');
 
 	// Id-like account names read as a person, never a raw id.
@@ -300,7 +302,7 @@
 									{#if a.title_id}<a href={to(`/library/${a.title_id}`)}>{a.name}<span class="muted">{year(a)}</span></a>
 									{:else}{a.name}<span class="muted">{year(a)}</span>{/if}
 								</h2>
-								<StatusPill kind={pillKind[a.state] ?? 'requested'} label={a.state_label} testid="ask-state" />
+								<StatusPill kind={askPill(a).kind} label={askPill(a).label} testid="ask-state" />
 								{#if a.kind === 'show'}<span class="kind" data-testid="ask-kind">Show</span>{/if}
 								{#if a.kind === 'artist'}<span class="kind" data-testid="ask-kind">Music</span>{/if}
 							</div>
@@ -355,7 +357,7 @@
 					<div class="review-art"><Poster src={selected.poster} name={selected.name} /></div>
 					<div>
 						<h2 class="review-title" bind:this={reviewHeading} tabindex="-1">{selected.name}<span class="muted">{year(selected)}</span></h2>
-						<StatusPill kind={pillKind[selected.state] ?? 'requested'} label={selected.state_label} />
+						<StatusPill kind={askPill(selected).kind} label={askPill(selected).label} />
 					</div>
 				</div>
 				<dl class="review-facts">

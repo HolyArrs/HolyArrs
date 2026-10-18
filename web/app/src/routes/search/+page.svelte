@@ -30,6 +30,7 @@
 	import { createLatestOnly } from '#lib/history.ts';
 	import { kindOptions, searchAddress, type SearchKind } from '#lib/search.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
+	import { audienceOf, titleStatus, type StatusFacts } from '#lib/title-status.ts';
 
 	// Movies, shows or music; kept in the page address (?kind=show, ?kind=music).
 	const startKind = page.url.searchParams.get('kind');
@@ -39,6 +40,12 @@
 	let addArtist: ReturnType<typeof AddArtistDialog> | undefined = $state();
 	let askArtist: ReturnType<typeof AskArtistDialog> | undefined = $state();
 	const beginSearch = createLatestOnly();
+	// One status vocabulary (title-status.ts) for every result.
+	const who = $derived(audienceOf(session.can));
+	const pill = (f: StatusFacts) => titleStatus(f, who);
+	// A lookup knows a title is in the Library, not whether its file is there
+	// yet, so everyone gets "In your Library" rather than "Ready to watch".
+	const inLibraryPill = titleStatus({ inLibrary: true }, 'staff');
 	// Movies / TV shows / Music, only for parts that are on.
 	const partOn = (name: string) => partsNow.answer?.parts.find((p) => p.part === name)?.on !== false;
 	const kindIcons = { movie: 'film', show: 'tv', music: 'music' } as const;
@@ -323,16 +330,16 @@
 						</div>
 						<div class="act">
 							{#if a.title_id && !asker}
-								<Button href={to(`/library/${a.title_id}`)} icon="check">In your Library</Button>
+								{@const p = inLibraryPill}<a class="pill-link" href={to(`/library/${a.title_id}`)}><StatusPill kind={p.kind} label={p.label} /></a>
 							{:else if a.never_add}
-								<StatusPill kind="turned_down" label="On the Never-add list" />
+								{@const p = pill({ neverAdd: true })}<StatusPill kind={p.kind} label={p.label} />
 							{:else if session.can('manage_library')}
 								<Button variant="primary" icon="plus" onclick={() => addArtist?.open(a)}>Add</Button>
 							{:else if a.ask?.mine}
-								<Button href={to(`/wishlist`)} icon="wish">You asked · {a.ask.state_label}</Button>
+								{@const p = pill({ ask: a.ask.state, titleKind: 'artist' })}<a class="pill-link" href={to(`/wishlist`)}><StatusPill kind={p.kind} label={p.label} /><span class="sr-only"> on your Wishlist</span></a>
 							{:else if session.can('ask')}
 								<Button variant="primary" icon="wish" onclick={() => askArtist?.open(a)}>{a.ask ? 'Ask too' : a.title_id ? 'Ask for more' : 'Ask'}</Button>
-								{#if a.ask}<span class="xs muted asked-already">Someone asked for {albumWords(a.ask.albums)} · {a.ask.state_label}</span>
+								{#if a.ask}<span class="xs muted asked-already">Someone asked for {albumWords(a.ask.albums)} · {pill({ ask: a.ask.state }).label}</span>
 								{:else if a.title_id}<span class="xs muted asked-already">In the Library; ask for albums it does not have yet.</span>{/if}
 							{:else}
 								<span class="xs muted">Your account may not ask for music; ask the owner.</span>
@@ -369,16 +376,16 @@
 						</div>
 						<div class="act">
 							{#if s.title_id && !asker}
-								<Button href={to(`/library/${s.title_id}`)} icon="check">In your Library</Button>
+								{@const p = inLibraryPill}<a class="pill-link" href={to(`/library/${s.title_id}`)}><StatusPill kind={p.kind} label={p.label} /></a>
 							{:else if s.never_add}
-								<StatusPill kind="turned_down" label="On the Never-add list" />
+								{@const p = pill({ neverAdd: true })}<StatusPill kind={p.kind} label={p.label} />
 							{:else if session.can('manage_library')}
 								<Button variant="primary" icon="plus" onclick={() => addShow?.open(s)}>Add</Button>
 							{:else if s.ask?.mine}
-								<Button href={to(`/wishlist`)} icon="wish">You asked · {s.ask.state_label}</Button>
+								{@const p = pill({ ask: s.ask.state, titleKind: 'show' })}<a class="pill-link" href={to(`/wishlist`)}><StatusPill kind={p.kind} label={p.label} /><span class="sr-only"> on your Wishlist</span></a>
 							{:else if session.can('ask')}
 								<Button variant="primary" icon="wish" onclick={() => askShow?.open(s)}>{s.ask ? 'Ask too' : s.title_id ? 'Ask for more' : 'Ask'}</Button>
-								{#if s.ask}<span class="xs muted asked-already">Someone asked for {seasonWords(s.ask.seasons)} · {s.ask.state_label}</span>
+								{#if s.ask}<span class="xs muted asked-already">Someone asked for {seasonWords(s.ask.seasons)} · {pill({ ask: s.ask.state }).label}</span>
 								{:else if s.title_id}<span class="xs muted asked-already">In the Library; ask for seasons it does not have yet.</span>{/if}
 							{:else}
 								<span class="xs muted">Your account may not ask for shows; ask the owner.</span>
@@ -411,16 +418,16 @@
 					</div>
 					<div class="act">
 						{#if m.title_id}
-							<Button href={to(`/library/${m.title_id}`)} icon="check">In your Library</Button>
+							{@const p = inLibraryPill}<a class="pill-link" href={to(`/library/${m.title_id}`)}><StatusPill kind={p.kind} label={p.label} /></a>
 						{:else if m.never_add}
-							<StatusPill kind="turned_down" label="On the Never-add list" />
+							{@const p = pill({ neverAdd: true })}<StatusPill kind={p.kind} label={p.label} />
 						{:else if session.can('manage_library')}
 							<Button variant="primary" icon="plus" onclick={() => addMovie?.open(m)}>Add</Button>
 						{:else if m.ask?.mine}
-							<Button href={to(`/wishlist`)} icon="wish">You asked · {m.ask.state_label}</Button>
+							{@const p = pill({ ask: m.ask.state, titleKind: 'movie' })}<a class="pill-link" href={to(`/wishlist`)}><StatusPill kind={p.kind} label={p.label} /><span class="sr-only"> on your Wishlist</span></a>
 						{:else if session.can('ask')}
 							<Button variant="primary" icon="wish" onclick={() => m.ids.tmdb && askMovie?.open({ tmdb: m.ids.tmdb, name: m.name, year: m.year, ask: m.ask })}>{m.ask ? 'Ask too' : 'Ask'}</Button>
-							{#if m.ask}<span class="xs muted asked-already">Someone asked already · {m.ask.state_label}</span>{/if}
+							{#if m.ask}<span class="xs muted asked-already">Someone asked already · {pill({ ask: m.ask.state }).label}</span>{/if}
 						{:else}
 							<span class="xs muted">Your account may not ask for movies; ask the owner.</span>
 						{/if}
@@ -468,6 +475,9 @@
 	.grow p { margin: 2px 0 0; color: var(--text-muted); font: var(--t-subhead); font-weight: 400; }
 	.overview { margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 	.act { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: none; max-width: 220px; text-align: right; }
+	.pill-link { display: inline-flex; align-items: center; min-height: 44px; border-radius: var(--r-pill); }
+	.pill-link:hover :global(.ui-pill) { background: var(--surface-3); }
+	.pill-link:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.asked-already { display: block; color: var(--text-muted); font: var(--t-footnote); }
 	.act > .xs { color: var(--text-muted); font: var(--t-footnote); }
 	.attribution { margin: 8px 0 0; color: var(--text-muted); font: var(--t-footnote); }

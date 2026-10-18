@@ -23,7 +23,8 @@ import {
 	quality,
 	recentlyAdded,
 	score,
-	titleStatus,
+	cardPill,
+	titleCard,
 	type Facets
 } from './explore.ts';
 import type { Ask, CalendarEntry, SlotView, TitleView } from './types.ts';
@@ -46,11 +47,19 @@ describe('explore cards', () => {
 		expect(quality(t(1))).toBeUndefined();
 	});
 
-	it('picks one overlay: downloading, then requested, then in the Library', () => {
-		expect(titleStatus(t(1, { slots: [slot('downloading'), slot('in_library')] })).status).toBe('downloading');
-		expect(titleStatus(t(1, { asks: [ask(1)] })).status).toBe('requested');
-		expect(titleStatus(t(1, { asks: [ask(1)], slots: [slot('in_library')] })).status).toBe('in_library');
-		expect(titleStatus(t(1)).label).toBe('In Library ✓');
+	it('picks one overlay with the shared status words: downloading, then in the Library, then asked', () => {
+		const pill = (x: TitleView, who: 'member' | 'staff') => cardPill(titleCard(x), who);
+		expect(pill(t(1, { slots: [slot('downloading'), slot('in_library')] }), 'staff')?.kind).toBe('downloading');
+		expect(pill(t(1, { asks: [ask(1)] }), 'member')).toEqual({ kind: 'requested', label: 'Requested' });
+		expect(pill(t(1, { asks: [ask(1)] }), 'staff')).toEqual({ kind: 'requested', label: 'Waiting for approval' });
+		expect(pill(t(1, { asks: [ask(1)], slots: [slot('in_library')] }), 'member')).toEqual({ kind: 'in_library', label: 'Ready to watch' });
+		expect(pill(t(1, { slots: [slot('in_library')] }), 'staff')).toEqual({ kind: 'in_library', label: 'In your Library' });
+	});
+
+	it('keeps a card label set on purpose, and shows nothing without a status', () => {
+		expect(cardPill({ key: 'k', kind: 'movie', name: 'K', badges: [], status: 'missing', statusLabel: 'Not out yet' }, 'member')).toEqual({ kind: 'missing', label: 'Not out yet' });
+		expect(cardPill({ key: 'k', kind: 'movie', name: 'K', badges: [], status: 'requested' }, 'member')).toEqual({ kind: 'requested', label: 'Requested' });
+		expect(cardPill({ key: 'k', kind: 'movie', name: 'K', badges: [] }, 'member')).toBeNull();
 	});
 
 	it('sorts recently added by id, newest first', () => {

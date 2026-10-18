@@ -10,6 +10,7 @@
 	import {
 		becauseYouHave,
 		cardAction,
+		cardPill,
 		cardTmdb,
 		comingSoon,
 		discoverCard,
@@ -34,6 +35,7 @@
 	import type { PersonSummary } from '#lib/people.ts';
 	import type { Ask, CalendarEntry, GateDefaults, LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleDefaults, TitleView } from '#lib/types.ts';
 	import { seasonWords } from '#lib/shows.ts';
+	import { audienceOf } from '#lib/title-status.ts';
 	import AddMovieDialog from '#lib/AddMovieDialog.svelte';
 	import AddShowDialog from '#lib/AddShowDialog.svelte';
 	import AskShowDialog from '#lib/AskShowDialog.svelte';
@@ -61,6 +63,7 @@
 
 	const manage = $derived(session.can('manage_library'));
 	const mayAsk = $derived(session.can('ask'));
+	const who = $derived(audienceOf(session.can));
 
 	const facets = $derived(new Map<number, Facets>(titles.map((t) => [t.id, { genres: genresOf(t), people: people.get(t.id) ?? [] }])));
 
@@ -91,7 +94,7 @@
 	});
 
 	function live(c: ExploreCard): ExploreCard {
-		return askedHere.has(c.key) ? { ...c, mine: true, status: 'requested', statusLabel: 'Requested' } : c;
+		return askedHere.has(c.key) ? { ...c, mine: true, status: 'requested', statusLabel: undefined } : c;
 	}
 
 	// Library titles open their page; other movies and shows open their details.
@@ -252,6 +255,7 @@
 				<Shelf title={row.title} subtitle={row.subtitle} href={row.href} item="var(--explore-item)">
 					{#each row.cards.map(live) as c (c.key)}
 						{@const act = cardAction(c, { manage, ask: mayAsk })}
+						{@const pill = cardPill(c, who)}
 						<PosterCard
 							title={c.name}
 							href={cardHref(c)}
@@ -259,8 +263,8 @@
 							kind={c.kind}
 							subtitle={c.subtitle}
 							badges={c.badges}
-							status={c.status}
-							statusLabel={c.statusLabel}
+							status={pill?.kind}
+							statusLabel={pill?.label}
 							vtName={c.vtName}
 						>
 							{#snippet action()}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { artName, crumbFor, heroStatus, pageSections, qualityBadges, similarTitles } from './title-page.ts';
+import { artName, crumbFor, pageSections, qualityBadges, similarTitles } from './title-page.ts';
 import type { SlotView } from './types.ts';
 
 const slot = (s: Partial<SlotView>): SlotView => ({ id: 1, version: 'Main', version_id: 1, state: 'wanted', state_label: '', ...s });
@@ -21,14 +21,6 @@ describe('title page helpers', () => {
 			'CC'
 		]);
 		expect(qualityBadges([{ Quality: { resolution: 1080 } }, { Quality: { resolution: 2160, hdr: 'HDR10' } }])).toEqual(['4K', 'HDR']);
-	});
-
-	it('picks the hero status', () => {
-		expect(heroStatus([slot({ state: 'in_library' })]).kind).toBe('in_library');
-		expect(heroStatus([slot({})], true).kind).toBe('requested');
-		expect(heroStatus([slot({})]).kind).toBe('missing');
-		const dl = heroStatus([slot({ download: { active: true, progress: 0.42 } as SlotView['download'] })]);
-		expect(dl).toEqual({ kind: 'downloading', percent: 42 });
 	});
 
 	it('ranks similar titles by overlap and leaves out unrelated ones', () => {

@@ -19,6 +19,7 @@
 	import { artName, crumbFor } from './title-page.ts';
 	import './title-page.css';
 	import { session } from './session.svelte.ts';
+	import { audienceStatus } from './title-status.ts';
 	import { toasts } from './toasts.svelte.ts';
 	import { decided } from './wishlist.ts';
 	import { groupLabel, kindTone } from './history.ts';
@@ -76,6 +77,8 @@
 	const visibleDisambiguation = $derived(artist?.disambiguation?.trim() ?? '');
 	const heroMeta = $derived(['Artist', artist?.type ? artist.type.charAt(0).toUpperCase() + artist.type.slice(1) : '', artist ? (artist.status === 'ended' ? 'No longer active' : 'Still active') : ''].filter(Boolean));
 	const heroKind = $derived(artist?.missing ? 'missing' : 'in_library');
+	// One status vocabulary (title-status.ts); staff also see how many are missing.
+	const heroWords = $derived(audienceStatus(heroKind, staff ? 'staff' : 'member', { tracked: true, titleKind: 'artist' }));
 	const libraryItems = $derived<MenuItem[]>([
 		{ label: 'Rename files', icon: 'copy', onselect: () => openRename() },
 		{ kind: 'separator' },
@@ -296,8 +299,8 @@
 	crumbIcon="music"
 	breadcrumb={[{ href: to(crumbFor('artist').path), label: crumbFor('artist').label }, { href: to(`/library/${title.id}`), label: title.name }]}
 	meta={heroMeta}
-	status={heroKind}
-	statusLabel={artist?.missing ? `${artist.missing} missing` : undefined}
+	status={heroWords.kind}
+	statusLabel={staff && artist?.missing ? `${artist.missing} missing` : heroWords.label}
 	description={visibleDisambiguation}
 	vtName={artName(title.id)}
 >

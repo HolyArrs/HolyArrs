@@ -36,17 +36,6 @@ export function qualityBadges(files: FileLike[]): string[] {
 	return list.includes('4K') ? list.filter((b) => b !== 'HD') : list;
 }
 
-/** The hero status: downloading wins, then in library, then asked, then missing. */
-export function heroStatus(slots: SlotView[], asked = false): { kind: StatusKind; percent?: number } {
-	const dl = slots.find((s) => s.download?.active);
-	if (dl?.download) return { kind: 'downloading', percent: Math.round((dl.download.progress ?? 0) * 100) };
-	if (slots.some((s) => s.state === 'in_library' || s.state === 'better_wanted' || s.file)) return { kind: 'in_library' };
-	if (slots.some((s) => s.state === 'failed')) return { kind: 'failed' };
-	if (slots.some((s) => s.state === 'not_out_yet' || s.state === 'waiting')) return { kind: 'coming_soon' };
-	if (asked) return { kind: 'requested' };
-	return { kind: 'missing' };
-}
-
 type Similar = Pick<TitleView, 'id' | 'kind' | 'name' | 'year' | 'original_language'> & { genres?: string[]; people?: string[] };
 
 /**

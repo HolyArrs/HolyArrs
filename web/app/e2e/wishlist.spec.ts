@@ -84,7 +84,7 @@ test('a member asks for a movie from a phone and sees it on the Wishlist', async
 	await expect(hit.getByRole('button', { name: 'Ask', exact: true })).toBeFocused();
 	await hit.getByRole('button', { name: 'Ask', exact: true }).click();
 	await confirmAsk.getByRole('button', { name: 'Ask for Copper Lighthouse' }).click();
-	await expect(hit.getByRole('link', { name: /You asked · Waiting for approval/ })).toBeVisible();
+	await expect(hit.getByRole('link', { name: /^Requested/ })).toBeVisible();
 	await expect(kim.getByTestId('ask-limit')).toContainText('You have 9 movie asks left this week');
 	await noSidewaysScroll(kim);
 	// A movie already in the Library still says so; there is nothing to ask.
@@ -93,7 +93,7 @@ test('a member asks for a movie from a phone and sees it on the Wishlist', async
 
 	await kim.locator('nav.tabbar').getByRole('link', { name: 'Wishlist' }).click();
 	const ask = kim.getByTestId('ask').filter({ hasText: 'Copper Lighthouse' });
-	await expect(ask.getByTestId('ask-state')).toHaveText('Waiting for approval');
+	await expect(ask.getByTestId('ask-state')).toHaveText('Requested');
 	await expect(ask.getByTestId('asked-by')).toContainText('Asked by kim');
 	// Take back lives only in the row's ⋯ menu, as a destructive item with a confirm sheet.
 	await expect(ask.getByRole('button', { name: 'Take back' })).toHaveCount(0);
@@ -104,7 +104,7 @@ test('a member asks for a movie from a phone and sees it on the Wishlist', async
 	await expect(confirmTakeBack.getByRole('button', { name: 'Take back' })).toBeVisible();
 	await confirmTakeBack.getByRole('button', { name: 'Keep it' }).click();
 	await expect(confirmTakeBack).toBeHidden();
-	await expect(ask.getByTestId('ask-state')).toHaveText('Waiting for approval');
+	await expect(ask.getByTestId('ask-state')).toHaveText('Requested');
 	await expect(ask.getByRole('button', { name: 'Approve' })).toHaveCount(0);
 	await noSidewaysScroll(kim);
 	expect((await posts()).some((c) => c.includes('kim asked for Copper Lighthouse'))).toBe(true);
@@ -155,7 +155,7 @@ test('turned down with a note; over the weekly limit kim is told when to try aga
 	await search(kim, 'velvet');
 	await kim.locator('li.hit', { hasText: 'Velvet Tide' }).getByRole('button', { name: 'Ask', exact: true }).click();
 	await kim.getByRole('dialog', { name: /^Ask for Velvet Tide/ }).getByRole('button', { name: 'Ask for Velvet Tide' }).click();
-	await expect(kim.locator('li.hit', { hasText: 'Velvet Tide' }).getByRole('link', { name: /You asked/ })).toBeVisible();
+	await expect(kim.locator('li.hit', { hasText: 'Velvet Tide' }).getByRole('link', { name: /^Requested/ })).toBeVisible();
 
 	await own.goto('/wishlist');
 	const ask = own.getByTestId('ask').filter({ hasText: 'Velvet Tide' });
