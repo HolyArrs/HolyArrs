@@ -246,8 +246,9 @@
 	.copy { padding: var(--s-4) 0; min-width: 0; }
 	.copy + .copy { border-top: 1px solid var(--line); }
 	.copy-head { display: flex; align-items: start; justify-content: space-between; gap: var(--s-3); }
+	.copy-head > div { min-width: 0; overflow-wrap: anywhere; }
 	.path { overflow-wrap: anywhere; }
-	.choice-grid { display: grid; grid-template-columns: minmax(14rem, 1fr) minmax(14rem, 1fr); gap: var(--s-4); margin-top: var(--s-3); }
+	.choice-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: var(--s-4); margin-top: var(--s-3); }
 	.compact, .protect { align-content: start; display: grid; gap: var(--s-2); }
 	@media (max-width: 700px) { .choice-grid { grid-template-columns: 1fr; } }
 </style>

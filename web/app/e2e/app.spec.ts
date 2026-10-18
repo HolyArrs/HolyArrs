@@ -226,6 +226,8 @@ test('Home reads a bounded Library summary', async () => {
 	const record = (request: import('@playwright/test').Request) => {
 		if (new URL(request.url()).pathname === '/api/v1/titles') fullLibrary.push(request.url());
 	};
+	// Let the movie page the last test left finish its own reads first.
+	await page.waitForLoadState('networkidle');
 	page.on('request', record);
 	try {
 		const response = page.waitForResponse((answer) => new URL(answer.url()).pathname === '/api/v1/library-summary' && answer.status() === 200);

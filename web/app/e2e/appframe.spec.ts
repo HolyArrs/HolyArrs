@@ -16,6 +16,8 @@ test.beforeAll(async ({ browser }) => {
 });
 
 async function axe(p: Page, where: string) {
+	// Scan settled screens: toasts and sheets animate in.
+	await p.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
 	const r = await new AxeBuilder({ page: p }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
 	expect(r.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`), where).toEqual([]);
 }

@@ -232,9 +232,10 @@ for (const viewport of viewports) {
 			await expect(page.getByText('603: The weekly fixture limit was reached.')).toBeVisible();
 
 			await page.goto('/library/77');
-			await expect(page.getByRole('heading', { name: 'North Star (2022)' })).toBeVisible();
-			await page.getByRole('button', { name: 'Show credits' }).click();
-			await expect(page.getByRole('link', { name: 'Alex Kim' })).toHaveAttribute('href', '/people/202');
+			await expect(page.getByRole('heading', { level: 1, name: 'North Star' })).toBeVisible();
+			await expect(page.getByText('2022', { exact: false }).first()).toBeVisible();
+			// Cast and crew loads by itself on the new title page.
+			await expect(page.getByRole('link', { name: /^Alex Kim/ })).toHaveAttribute('href', '/people/202');
 			await verifyPage(page, testInfo, `${viewport.name}-people-and-credits`);
 		});
 
