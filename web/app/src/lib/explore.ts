@@ -293,16 +293,16 @@ export function cardAction(c: ExploreCard, can: { manage: boolean; ask: boolean 
 
 // ---- Rows from the discover endpoint (not built yet; see backend-needs.md) ----
 
-export type DiscoverRowName = 'trending' | 'popular' | 'upcoming' | 'similar' | 'genre';
-export interface DiscoverQuery {
-	row: DiscoverRowName;
+export type ProviderRowName = 'trending' | 'popular' | 'upcoming' | 'similar' | 'genre';
+export interface ProviderRowQuery {
+	row: ProviderRowName;
 	/** similar: the Library title id. */
 	id?: number;
 	/** genre: the genre name. */
 	g?: string;
 	kind?: 'movie' | 'show';
 }
-export interface DiscoverItem {
+export interface ProviderItem {
 	tmdb_id: string;
 	kind: 'movie' | 'show';
 	name: string;
@@ -315,13 +315,13 @@ export interface DiscoverItem {
 	title_id?: number;
 	ask?: { id: number; state: Ask['state']; state_label: string; mine: boolean; people: number } | null;
 }
-export interface DiscoverAnswer {
-	row: DiscoverRowName;
+export interface ProviderRowAnswer {
+	row: ProviderRowName;
 	title?: string;
-	items: DiscoverItem[];
+	items: ProviderItem[];
 }
 
-export function discoverPath(q: DiscoverQuery): string {
+export function discoverPath(q: ProviderRowQuery): string {
 	const p = new URLSearchParams({ row: q.row });
 	if (q.id !== undefined) p.set('id', String(q.id));
 	if (q.g) p.set('g', q.g);
@@ -329,10 +329,10 @@ export function discoverPath(q: DiscoverQuery): string {
 	return `/discover?${p.toString()}`;
 }
 
-/** fetchDiscoverRow asks the server for a discover row; null when the server has none yet (404/501). */
-export async function fetchDiscoverRow(q: DiscoverQuery, client: Pick<Client, 'get'> = api, signal?: AbortSignal): Promise<DiscoverAnswer | null> {
+/** fetchProviderRow asks the server for a discover row; null when the server has none yet (404/501). */
+export async function fetchProviderRow(q: ProviderRowQuery, client: Pick<Client, 'get'> = api, signal?: AbortSignal): Promise<ProviderRowAnswer | null> {
 	try {
-		return await client.get<DiscoverAnswer>(discoverPath(q), signal);
+		return await client.get<ProviderRowAnswer>(discoverPath(q), signal);
 	} catch (e) {
 		if (e instanceof ApiError && (e.status === 404 || e.status === 501)) return null;
 		throw e;
@@ -340,7 +340,7 @@ export async function fetchDiscoverRow(q: DiscoverQuery, client: Pick<Client, 'g
 }
 
 /** discoverCard turns a discover item into a card. */
-export function discoverCard(d: DiscoverItem, row: string): ExploreCard {
+export function discoverCard(d: ProviderItem, row: string): ExploreCard {
 	const asked = d.ask && d.ask.state !== 'turned_down';
 	return {
 		key: `${row}-${d.kind}-${d.tmdb_id}`,
@@ -358,7 +358,7 @@ export function discoverCard(d: DiscoverItem, row: string): ExploreCard {
 	};
 }
 
-export const discoverTitles: Record<Exclude<DiscoverRowName, 'similar' | 'genre'>, string> = {
+export const discoverTitles: Record<Exclude<ProviderRowName, 'similar' | 'genre'>, string> = {
 	trending: 'Trending this week',
 	popular: 'Popular right now',
 	upcoming: 'Coming to cinemas'

@@ -6,7 +6,7 @@ import {
 	comingSoon,
 	discoverCard,
 	discoverPath,
-	fetchDiscoverRow,
+	fetchProviderRow,
 	fromPerson,
 	genreRows,
 	genresOf,
@@ -188,14 +188,14 @@ describe('discover', () => {
 	it('returns null when the server has no discover endpoint', async () => {
 		for (const status of [404, 501]) {
 			const client = { get: async () => { throw new ApiError('nope', status); } };
-			expect(await fetchDiscoverRow({ row: 'popular' }, client as never)).toBeNull();
+			expect(await fetchProviderRow({ row: 'popular' }, client as never)).toBeNull();
 		}
 	});
 	it('passes other errors on and answers through', async () => {
 		const bad = { get: async () => { throw new ApiError('down', 500); } };
-		await expect(fetchDiscoverRow({ row: 'popular' }, bad as never)).rejects.toThrow('down');
+		await expect(fetchProviderRow({ row: 'popular' }, bad as never)).rejects.toThrow('down');
 		const good = { get: async (p: string) => ({ row: 'popular', items: [], p }) };
-		expect(await fetchDiscoverRow({ row: 'popular' }, good as never)).toMatchObject({ p: '/discover?row=popular' });
+		expect(await fetchProviderRow({ row: 'popular' }, good as never)).toMatchObject({ p: '/discover?row=popular' });
 	});
 	it('turns items into cards', () => {
 		expect(discoverCard({ tmdb_id: '5', kind: 'movie', name: 'M', in_library: true, title_id: 9 }, 'trending')).toMatchObject({ titleId: 9, status: 'in_library', ref: 'tmdb:5' });

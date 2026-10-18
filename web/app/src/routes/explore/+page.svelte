@@ -12,7 +12,7 @@
 		comingSoon,
 		discoverCard,
 		discoverTitles,
-		fetchDiscoverRow,
+		fetchProviderRow,
 		fromPerson,
 		genreRows,
 		genresOf,
@@ -112,7 +112,7 @@
 		if (next.size) people = next;
 	}
 
-	async function loadDiscover(list: TitleView[]) {
+	async function loadProviderRows(list: TitleView[]) {
 		const seed = recentlyAdded(list.filter((t) => t.kind === 'movie' || t.kind === 'show'), 1)[0];
 		const asks = [
 			{ row: 'trending' as const },
@@ -120,7 +120,7 @@
 			{ row: 'upcoming' as const },
 			...(seed ? [{ row: 'similar' as const, id: seed.id }] : [])
 		];
-		const got = await Promise.allSettled(asks.map((q) => fetchDiscoverRow(q)));
+		const got = await Promise.allSettled(asks.map((q) => fetchProviderRow(q)));
 		const out: ExploreRow[] = [];
 		got.forEach((g, i) => {
 			if (g.status !== 'fulfilled' || !g.value) return;
@@ -151,7 +151,7 @@
 		busy = false;
 		if (ti.status === 'fulfilled') {
 			void loadPeople(titles);
-			void loadDiscover(titles).catch(() => {});
+			void loadProviderRows(titles).catch(() => {});
 		}
 	}
 

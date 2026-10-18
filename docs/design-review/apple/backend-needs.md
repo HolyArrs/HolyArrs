@@ -4,7 +4,7 @@ For the backend owner. The web app already calls these and hides what is missing
 
 ## 1. `GET /api/v1/discover`
 
-One endpoint for every Explore row that needs the metadata provider (TMDB). Client: `web/app/src/lib/explore.ts` (`fetchDiscoverRow`, `discoverPath`). A **404 or 501** answer means "not built": the row is hidden silently. Any other error also hides the row (the page catches it).
+One endpoint for every Explore row that needs the metadata provider (TMDB). Client: `web/app/src/lib/explore.ts` (`fetchProviderRow`, `discoverPath`). A **404 or 501** answer means "not built": the row is hidden silently. Any other error also hides the row (the page catches it).
 
 ### Query
 
