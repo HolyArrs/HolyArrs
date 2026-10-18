@@ -62,6 +62,8 @@ test('add by tmdb: and imdb: id; the last choices are remembered', async () => {
 	await dialog.getByLabel('Release gate').selectOption('released');
 	await dialog.getByRole('button', { name: 'Add to Library' }).click();
 	await expect(hit.getByRole('link', { name: 'In your Library' })).toBeVisible();
+	// The add sheet finishes closing before the next search is typed.
+	await expect(dialog).toBeHidden();
 
 	await page.getByLabel('Movie name or id').fill('imdb:tt9000030');
 	await page.getByRole('button', { name: 'Search', exact: true }).click();
