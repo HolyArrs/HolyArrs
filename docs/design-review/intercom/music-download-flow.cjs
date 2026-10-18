@@ -138,7 +138,7 @@ function sessionAction(action,extra={}) { return JSON.parse(execFileSync('python
   await poll(async()=> (await get('/albums/144')).album.in_library===3, 'album available');
   receipt.request=await poll(async()=> {const a=await get('/asks/34');return a.state==='available'?a:null;}, 'request available',90000);
   receipt.album=await get('/albums/144'); receipt.tracks=await get('/albums/144/tracks');
-  assert(receipt.tracks.tracks.every(t=>t.slots.every(s=>s.state==='in_library')),'All selected tracks must be in Library');
+  assert(receipt.tracks.tracks.every(t=>t.slots.every(s=>['in_library','better_wanted'].includes(s.state)&&s.file_id)),'All selected tracks must have a Library file');
   receipt.checks.push('Completed download, all three imported tracks and request Available');
   await capture('completed','/downloads',p=>p.getByTestId('download-row').filter({hasText:'Evening Signals'}).first());
   await capture('album-available','/library/166/albums/144',p=>p.getByRole('heading',{name:'Evening Signals',exact:true}));

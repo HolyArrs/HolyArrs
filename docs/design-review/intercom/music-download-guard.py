@@ -20,6 +20,8 @@ for table in ('users', 'api_keys', 'secrets', 'settings', 'invites', 'ask_people
         for r in rows:
             for key in ('updated_at', 'updated_by', 'checked_at', 'last_ok_at', 'last_error', 'state', 'failures', 'backoff_until'):
                 r.pop(key, None)
+    if table == 'downloaders':
+        result['original_downloader'] = digest(sorted([r for r in rows if r['id'] == 1], key=lambda r: json.dumps(r, sort_keys=True, default=str)))
     result['tables'][table] = digest(sorted(rows, key=lambda r: json.dumps(r, sort_keys=True, default=str)))
 for table, condition in [('asks', 'id != 34'), ('titles', 'id != 166'),
                          ('slots', 'id NOT IN (1183,1184,1185)'), ('files', '1=1')]:

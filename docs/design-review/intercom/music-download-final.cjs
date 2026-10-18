@@ -25,7 +25,9 @@ users=[dict(r)for r in c.execute('SELECT * FROM users WHERE id<=10')]
 print(json.dumps({'originalUsers':digest(sorted(users,key=lambda r:json.dumps(r,sort_keys=True,default=str))), 'testAdmins': [dict(r)for r in c.execute("SELECT id,state,(SELECT count(*) FROM sessions s WHERE s.user_id=u.id) sessions FROM users u WHERE name LIKE 'music-download-%'")], 'slots':[dict(r)for r in c.execute('SELECT id,state,file_id FROM slots WHERE id IN(1183,1184,1185)')], 'files':[dict(r)for r in c.execute('SELECT id,version_id,relative_path,state,size FROM files WHERE id>6')], 'import':[dict(r)for r in c.execute('SELECT id,download_id,state FROM imports WHERE id=14')]}))
 `],{encoding:'utf8'}));
   assert.equal(dbProof.originalUsers,first.before.tables.users,'All original users and password hashes preserved');
+  assert.deepEqual(dbProof.testAdmins.map(u=>u.id).sort((a,b)=>a-b),[11,12,13,14,15]);
   assert(dbProof.testAdmins.every(u=>u.state==='disabled'&&u.sessions===0),'Temporary access revoked');
+  assert.equal(after.original_downloader,download.original.tables.downloaders,'Original downloader configuration restored');
   assert.equal(dbProof.slots.length,3);assert(dbProof.slots.every(s=>['in_library','better_wanted'].includes(s.state)&&s.file_id));
   assert.equal(new Set(dbProof.slots.map(s=>s.file_id)).size,3);
   assert.equal(dbProof.files.length,3);assert(dbProof.files.every(f=>f.version_id===166&&f.state==='present'));
@@ -34,6 +36,7 @@ print(json.dumps({'originalUsers':digest(sorted(users,key=lambda r:json.dumps(r,
   const media=path.join(os.tmpdir(),'holyarrs-intercom-preview-media-18747/music/Amber Satellites');
   const imported=Object.keys(after.files).filter(p=>p.startsWith(media+path.sep));assert.equal(imported.length,3);
   assert.deepEqual(imported.map(p=>after.files[p]).sort(),download.synthetic.map(f=>f.sha256).sort());receipt.imported=imported;
+  for(const f of dbProof.files){const p=path.join(os.tmpdir(),'holyarrs-intercom-preview-media-18747/music',f.relative_path);assert(imported.includes(p));assert.equal(fs.statSync(p).size,f.size);}
   const downloadRoot=path.join(os.tmpdir(),'holyarrs-intercom-preview-18747/downloads');
   for(const p of Object.keys(after.files).filter(p=>!(p in first.before.files)))assert(p.startsWith(media+path.sep)||p.startsWith(path.join(downloadRoot,'Amber Satellites - Evening Signals (2024) [FLAC]')+path.sep)||p.startsWith(path.join(downloadRoot,'Amber Satellites - Evening Signals (2024) [MP3 320]')+path.sep),'Unexpected new file');
   const d=(await get('/downloaders')).downloaders;assert.equal(d.length,1);assert.equal(d[0].id,1);assert.equal(d[0].url,'http://127.0.0.1:28768');assert.equal(d[0].priority,1);
@@ -49,14 +52,22 @@ print(json.dumps({'originalUsers':digest(sorted(users,key=lambda r:json.dumps(r,
   const page=await ctx.newPage();
   for(const[width,height]of[[360,800],[834,1112],[1440,1000]]){
     await page.setViewportSize({width,height});
-    for(const[name,url]of[['completed','/downloads'],['album','/library/166/albums/144'],['library','/library?kind=artist&q=Amber%20Satellites'],['request','/wishlist']]){
+    for(const[name,url]of[['completed','/downloads'],['album','/library/166/albums/144'],['library','/library?kind=artist&q=Amber%20Satellites'],['library-list','/library?kind=artist&q=Amber%20Satellites'],['request','/wishlist']]){
       await page.goto(base+url);await page.evaluate(()=>document.fonts.ready);
       if(name==='completed'){const row=page.getByTestId('download-row').filter({hasText:'[MP3 320]'}).filter({hasText:'Evening Signals'});await expect(row.getByTestId('row-state')).toHaveText('Done');await expect(row.getByTestId('row-text')).toHaveText('3 of 3 tracks in the library.');}
       if(name==='album'){await expect(page.getByTestId('album-state')).toHaveText('In library');await expect(page.getByTestId('track-state')).toHaveCount(3);await expect(page.getByTestId('track-state').first()).toHaveText('Better copy sought');}
-      if(name==='library')await expect(page.locator('main').getByText('Amber Satellites',{exact:true}).first()).toBeVisible();
+      if(name==='library'||name==='library-list'){
+        await page.getByRole('button',{name:name==='library'?'Posters':'List',exact:true}).click();
+        const title=page.getByTestId(name==='library'?'library-card':'library-row').filter({hasText:'Amber Satellites'});
+        await expect(title).toContainText('3 tracks in library');
+      }
       if(name==='request'){await page.getByRole('button',{name:/^Everyone's/}).click();const ask=page.getByTestId('ask').filter({hasText:'Amber Satellites'});await expect(ask.getByTestId('ask-state')).toHaveText('Ready to listen');}
       await page.waitForTimeout(300);assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),name+' overflow '+width);
       const file=`${name}-${width}.png`;await page.screenshot({path:path.join(out,file),fullPage:true});receipt.screenshots.push(file);
+      if(name==='completed'||name==='request'||name==='library'){
+        const item=name==='completed'?page.getByTestId('download-row').filter({hasText:'[MP3 320]'}).filter({hasText:'Evening Signals'}):name==='request'?page.getByTestId('ask').filter({hasText:'Amber Satellites'}):page.getByTestId('library-card').filter({hasText:'Amber Satellites'});
+        const detail=`${name}-detail-${width}.png`;await item.screenshot({path:path.join(out,detail)});receipt.screenshots.push(detail);
+      }
     }
   }
   assert.equal(receipt.browserWrites.length,0);receipt.checks.push('State-asserted screenshots and no horizontal overflow at 360, 834 and 1440 CSS pixels; DPR1, default zoom');receipt.status='passed';

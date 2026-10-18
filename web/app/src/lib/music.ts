@@ -124,6 +124,7 @@ export function artistState(a: ArtistInfo | undefined): { state: string; label: 
 	if (a.missing) return { state: 'wanted', label: `${a.missing} missing` };
 	if (a.tracks && a.in_library === a.tracks) return { state: 'in_library', label: 'In library' };
 	if (a.not_out_yet) return { state: 'not_out_yet', label: 'Not out yet' };
+	if (a.in_library > 0) return { state: 'in_library', label: `${a.in_library} ${a.in_library === 1 ? 'track' : 'tracks'} in library` };
 	return { state: '', label: '' };
 }
 

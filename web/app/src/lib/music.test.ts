@@ -32,6 +32,9 @@ describe('music words', () => {
 		expect(artistProgress(info({ tracks: 12, in_library: 3, missing: 7, not_out_yet: 2 }))).toBe('3 of 12 tracks in the Library · 7 missing · 2 not out yet');
 		expect(artistState(info({ tracks: 4, missing: 2 }))).toEqual({ state: 'wanted', label: '2 missing' });
 		expect(artistState(info({ tracks: 4, in_library: 4 })).label).toBe('In library');
+		expect(artistState(info({ tracks: 5, in_library: 3, better_wanted: 3 }))).toEqual({ state: 'in_library', label: '3 tracks in library' });
+		expect(artistState(info({ tracks: 5, in_library: 1 })).label).toBe('1 track in library');
+		expect(artistState(info({ tracks: 5, in_library: 3, missing: 2 })).label).toBe('2 missing');
 		expect(artistState(info({})).label).toBe('');
 	});
 	it('says lengths, Pressings and asked albums', () => {
