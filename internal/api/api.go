@@ -109,6 +109,8 @@ type API struct {
 	lookups inFlight
 	// confirm holds the two-step controls' confirmation ids.
 	confirm confirms
+	// discover caches Explore rows and details pages and limits each person.
+	discover discoverState
 }
 
 // New makes the API.
@@ -244,6 +246,8 @@ func (a *API) Handler() http.Handler {
 	a.dataPackRoutes(m)
 	a.scheduleRoutes(m)
 	m.HandleFunc("GET /api/v1/metadata/search", a.searchMetadata)
+	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}", a.metadataDetails)
+	m.HandleFunc("GET /api/v1/discover", a.discoverRow)
 	if a.s.Secrets != nil {
 		m.HandleFunc("GET /api/v1/settings/tmdb-token", a.getTMDBToken)
 		m.HandleFunc("PUT /api/v1/settings/tmdb-token", a.putTMDBToken)

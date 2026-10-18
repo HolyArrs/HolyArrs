@@ -184,7 +184,7 @@ func (t *TMDB) get(ctx context.Context, path string, q url.Values) ([]byte, erro
 			}
 		case resp.StatusCode == http.StatusTooManyRequests:
 			outcome = outside.TransientFailure
-			return nil, errors.New("TMDB: rate limited; try again shortly")
+			return nil, ErrRateLimited
 		default:
 			outcome = outside.HTTPOutcome(resp.StatusCode, nil, ctx)
 			return nil, fmt.Errorf("TMDB answered %d", resp.StatusCode)
