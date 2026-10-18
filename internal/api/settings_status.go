@@ -315,7 +315,7 @@ func goneDefaults(ctx context.Context, st *store.Store) ([]string, error) {
 	var out []string
 	for _, k := range []struct {
 		kind, many, folder string
-		kd             library.KindDefaults
+		kd                 library.KindDefaults
 	}{{"movie", "movies", "movie", d.Movie}, {"show", "shows", "show", d.Show}} {
 		if saved[k.kind+"_library_folder_id"] && k.kd.LibraryFolderID != 0 && !library.UsableDefault(ctx, st.Read(), "library_folders", k.kind, k.kd.LibraryFolderID) {
 			out = append(out, "The Library folder saved for new "+k.many+" is gone, so new "+k.many+" go to the first "+k.folder+" folder")
