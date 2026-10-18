@@ -77,8 +77,7 @@
 	const allItems = $derived(sections.flatMap((s) => s.items));
 	const path = $derived(appPath(page.url.pathname));
 	const here = $derived(currentHref(allItems, path, (page.shallow?.url ?? page.url).searchParams));
-	const canHome = $derived(allowed('manage_library'));
-	const brandHref = $derived(to(homeHref(canHome)));
+	const brandHref = $derived(to(homeHref()));
 
 	// The Library remembers the last view per kind for this tab.
 	let libraryResumeLinks = $state<Record<string, string>>({});
@@ -186,7 +185,7 @@
 	const tabs = $derived.by<Tab[]>(() => {
 		const t: Tab[] = [];
 		const add = (href: string, label: string, icon: Tab['icon']) => t.push({ href: to(href), label, icon, current: here === href || (href === '/library' && !!here?.startsWith('/library?')) || (href === '/search' && path.startsWith('/search')) });
-		if (canHome) add('/', 'Home', 'home');
+		add('/', 'Home', 'home');
 		add('/explore', 'Explore', 'compass');
 		add('/library', 'Library', 'library');
 		add('/search', 'Search', 'search');
@@ -242,7 +241,7 @@
 	function pageAllowed(p: string): boolean {
 		if (p === '/account') return true;
 		if (session.s.mustTwoFactor) return false;
-		if (p === '/' || p.startsWith('/downloads') || p.startsWith('/calendar')) return allowed('manage_library');
+		if (p.startsWith('/downloads') || p.startsWith('/calendar')) return allowed('manage_library');
 		if (p === '/library/held' || p === '/library/turned-down' || p === '/library/rename' || p === '/library/import' || p === '/library/missing-subtitles') return allowed('manage_library');
 		if (p.startsWith('/wishlist')) return allowed('wishlist');
 		if (p === '/settings/users') return session.can('users');
@@ -260,7 +259,7 @@
 			void goto(to(back && back !== '/' ? `/login?next=${encodeURIComponent(back)}` : '/login'), { replace: true });
 		}
 		if (st === 'signed_in' && !bare && !pageAllowed(path)) {
-			void goto(to(session.s.mustTwoFactor ? '/account' : homeHref(allowed('manage_library'))), { replace: true });
+			void goto(to(session.s.mustTwoFactor ? '/account' : homeHref()), { replace: true });
 		}
 		// The live stream carries Library and download news for staff.
 		if (st === 'signed_in' && allowed('manage_library')) live.start();

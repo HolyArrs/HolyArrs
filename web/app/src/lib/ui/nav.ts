@@ -48,7 +48,7 @@ export function buildNav(input: NavInput): NavSection[] {
 			id: 'top',
 			label: null,
 			items: [
-				{ href: '/', label: 'Home', icon: 'home', need: 'manage_library' },
+				{ href: '/', label: 'Home', icon: 'home', need: null },
 				{ href: '/explore', label: 'Explore', icon: 'compass', need: null }
 			]
 		},
@@ -175,7 +175,7 @@ export function shellMode(width: number): ShellMode {
 	return width < 768 ? 'phone' : width < 1024 ? 'tablet' : 'desktop';
 }
 
-/** homeHref is where the logo goes: Home if the person may use it, else the Library. */
-export function homeHref(canHome: boolean): string {
-	return canHome ? '/' : '/library';
+/** homeHref is where the logo goes: Home, which every signed-in person may use (members see their own shelves). */
+export function homeHref(): string {
+	return '/';
 }

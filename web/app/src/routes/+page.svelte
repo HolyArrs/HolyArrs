@@ -112,13 +112,14 @@
 			api.get<{ titles: TitleView[] }>('/titles'),
 			api.get<{ total: number; missing: MissingTitle[] }>('/library-summary'),
 			admin ? api.get<{ library_folders: LibraryFolder[] }>('/library-folders') : Promise.resolve(null),
-			api.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=50'),
-			api.get<{ events: EventRecord[] }>('/events?limit=5'),
-			api.get<Health>('/health'),
+			// Members may only read the Library and their own asks (perms.go); the rest needs manage_library.
+			manager ? api.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=50') : Promise.resolve(null),
+			manager ? api.get<{ events: EventRecord[] }>('/events?limit=5') : Promise.resolve(null),
+			manager ? api.get<Health>('/health') : Promise.resolve(null),
 			mayReadTMDB ? api.get<{ token: string }>('/settings/tmdb-token') : Promise.resolve(null),
-			api.get<{ running: SearchView[]; recent: SearchView[] }>('/searches?limit=6'),
-			admin ? api.get<HealthChecks>('/health/checks') : Promise.resolve(null),
-			api.get<{ dates: CalendarEntry[] | null }>(`/calendar?from=${from}&to=${until}`),
+			manager ? api.get<{ running: SearchView[]; recent: SearchView[] }>('/searches?limit=6') : Promise.resolve(null),
+			admin && manager ? api.get<HealthChecks>('/health/checks') : Promise.resolve(null),
+			manager ? api.get<{ dates: CalendarEntry[] | null }>(`/calendar?from=${from}&to=${until}`) : Promise.resolve(null),
 			session.can('ask') || approver ? api.get<{ asks: Ask[] }>('/asks') : Promise.resolve(null),
 			manager ? api.get<{ items: Decision[]; count: number }>('/needs-decision') : Promise.resolve(null)
 		]);
@@ -130,15 +131,15 @@
 		}
 		if (su.status === 'fulfilled') missing = su.value.missing ?? [];
 		if (fo.status === 'fulfilled' && fo.value) folders = fo.value.library_folders;
-		if (dl.status === 'fulfilled') downloads = dl.value.downloads ?? [];
-		if (ev.status === 'fulfilled') events = ev.value.events ?? [];
-		if (he.status === 'fulfilled') health = he.value;
-		if (se.status === 'fulfilled') {
+		if (dl.status === 'fulfilled' && dl.value) downloads = dl.value.downloads ?? [];
+		if (ev.status === 'fulfilled' && ev.value) events = ev.value.events ?? [];
+		if (he.status === 'fulfilled' && he.value) health = he.value;
+		if (se.status === 'fulfilled' && se.value) {
 			searching = se.value.running ?? [];
 			found = se.value.recent ?? [];
 		}
 		if (ch.status === 'fulfilled' && ch.value) checks = ch.value;
-		if (ca.status === 'fulfilled') dates = ca.value.dates ?? [];
+		if (ca.status === 'fulfilled' && ca.value) dates = ca.value.dates ?? [];
 		if (as.status === 'fulfilled' && as.value) asks = as.value.asks ?? [];
 		if (de.status === 'fulfilled' && de.value) decisionItems = de.value.items ?? [];
 		if (mayReadTMDB) {
@@ -314,7 +315,17 @@
 			</Shelf>
 		{/if}
 
-		{#if rows[2].cards.length}
+		{#if !manager && loaded}
+			<section class="prompt" aria-labelledby="h-explore">
+				<div>
+					<h2 id="h-explore">Looking for something new?</h2>
+					<p>Explore popular movies and shows, then tap Ask to add one to your Wishlist.</p>
+				</div>
+				<Button variant="primary" icon="compass" href={to('/explore')}>Explore</Button>
+			</section>
+		{/if}
+
+		{#if manager && rows[2].cards.length}
 			<Shelf title="Missing" subtitle="Titles you keep up to date that have no file yet" href={to('/library?show=missing')}>
 				{#each rows[2].cards as c (c.key)}
 					<PosterCard title={c.name} href={titleHref(c.titleId!)} image={c.image} subtitle={c.subtitle} status={c.status} statusLabel={c.statusLabel} vtName={c.vtName} />
@@ -398,6 +409,10 @@
 	.go { display: inline-flex; align-items: center; gap: 2px; color: var(--accent-text); font: var(--t-subhead); font-weight: 600; }
 	.more, .panel header a { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent-text); font: var(--t-callout); font-weight: 500; }
 	.more:hover, .panel header a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+	.prompt { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: clamp(18px, 3vw, 28px); border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
+	.prompt h2 { font: var(--t-title3); }
+	.prompt p { color: var(--text-muted); max-width: 56ch; margin-top: 4px; }
 
 	.lately { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 20px; align-items: start; }
 	.panel { min-width: 0; padding: 16px 16px 10px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }

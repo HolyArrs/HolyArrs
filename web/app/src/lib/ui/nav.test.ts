@@ -16,9 +16,9 @@ describe('buildNav', () => {
 			['Manage', ['Downloads', 'Approvals', 'History', 'Library tools', 'Settings']]
 		]);
 	});
-	it('hides Manage and Home from members', () => {
+	it('hides Manage from members but keeps Home', () => {
 		expect(labels(member)).toEqual([
-			[null, ['Explore']],
+			[null, ['Home', 'Explore']],
 			['Library', ['Movies', 'TV shows', 'Music', 'Movie series']],
 			['Your stuff', ['Wishlist']]
 		]);
@@ -94,8 +94,7 @@ describe('shell helpers', () => {
 		expect(shellMode(834)).toBe('tablet');
 		expect(shellMode(1024)).toBe('desktop');
 	});
-	it('sends the logo Home only when Home is allowed', () => {
-		expect(homeHref(true)).toBe('/');
-		expect(homeHref(false)).toBe('/library');
+	it('sends the logo Home for everyone', () => {
+		expect(homeHref()).toBe('/');
 	});
 });
