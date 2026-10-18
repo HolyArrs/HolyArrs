@@ -29,6 +29,7 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import { trackInputModality } from '#lib/focus.ts';
 	import {
 		buildNav,
 		currentHref,
@@ -142,6 +143,7 @@
 		(wasCollapsed ? sidebarToggle : (topToggle ?? sidebarToggle))?.focus();
 	}
 
+	onMount(trackInputModality);
 	onMount(() => {
 		void session.load();
 		readLibraryResumeLinks();

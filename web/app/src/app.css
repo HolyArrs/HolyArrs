@@ -256,6 +256,13 @@ select.input {
 	border-color: var(--accent);
 	box-shadow: var(--focus-ring);
 }
+/* A clicked text field gets a quiet tint, not the keyboard ring (lib/focus.ts). */
+:root:not([data-input='keyboard']) :is(input:not([type='checkbox'], [type='radio'], [type='range'], [type='file'], [type='button'], [type='submit']), textarea):focus-visible {
+	outline: none !important;
+	box-shadow: none !important;
+	border-color: var(--line-strong);
+	background-color: var(--surface-1);
+}
 .input[aria-invalid='true'] {
 	border-color: var(--fail);
 }
