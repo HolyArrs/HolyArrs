@@ -85,7 +85,7 @@ function sessionAction(action,extra={}) { return JSON.parse(execFileSync('python
   await new Promise((resolve,reject)=>{proxy.once('error',reject);proxy.listen(28775,'127.0.0.1',resolve);});
   const d=(await get('/downloaders')).downloaders.find(d=>d.id===1);assert.equal(d.url,'http://127.0.0.1:28768');
   originalDownloader=Object.fromEntries(['name','kind','url','username','secret','category','priority','path_map','allow_local_network'].map(k=>[k,d[k]]));
-  async function setConfig(url){await page.evaluate(async body=>{const {api}=await import('/src/lib/api.ts');await api.put('/downloaders/1',body);},{...originalDownloader,url});}
+  async function setConfig(url){await page.evaluate(async ({body,csrf})=>{const {api}=await import('/src/lib/api.ts');api.setCsrf(csrf);await api.put('/downloaders/1',body);},{body:{...originalDownloader,url},csrf});}
   restoreDownloader=async()=>{await setConfig(originalDownloader.url);};
   // Set only the disposable fake service URL; credentials are retained masked.
   const restore=restoreDownloader;restoreDownloader=null;
