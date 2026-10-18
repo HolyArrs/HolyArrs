@@ -386,7 +386,7 @@
 		.app { --rail: 56px; }
 		.rail-theme { display: none; }
 		.settings-section .rail-theme { display: grid; }
-		.context-sidebar { position: fixed; inset: 8px auto 8px var(--rail); z-index: 31; display: flex; flex-direction: column; width: var(--context-sidebar); padding: 18px 12px 12px; background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--r-panel); box-shadow: var(--shadow-panel); overflow-y: auto; }
+		.context-sidebar { position: fixed; inset: 8px auto 8px var(--rail); z-index: 31; display: flex; flex-direction: column; width: var(--context-sidebar); padding: 18px 12px 12px; background: var(--sidebar-bg); border: 1px solid var(--line); border-radius: var(--r-panel); box-shadow: var(--shadow-panel); overflow-y: auto; }
 		.context-head { padding: 0 8px 18px; }
 		.context-brand { display: block; margin-bottom: 20px; color: var(--text-muted); font-size: var(--text-sm); font-weight: var(--weight-medium); }
 		.context-head h2 { font-size: 22px; line-height: 1.2; letter-spacing: -.025em; }

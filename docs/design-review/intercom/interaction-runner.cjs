@@ -12,7 +12,7 @@ const batch = process.env.INTERACTION_BATCH || 'baseline';
 if (!/^[a-z0-9][a-z0-9._-]*$/i.test(batch)) throw Error('Invalid evidence batch');
 const out = path.join(root, '.omx/artifacts/visual-ralph/intercom/interaction-pass', batch);
 const widths = (process.env.INTERACTION_WIDTHS || '360,834,1440').split(',').map(Number);
-const modules = ['navigation', 'library', 'management', 'activity', 'settings', 'extra-settings', 'account', 'forms'];
+const modules = ['navigation', 'library', 'management', 'activity', 'settings', 'extra-settings', 'account', 'forms', 'stress'];
 const scenarios = modules.flatMap(group => {
   const file = path.join(__dirname, `interaction-${group}.cjs`);
   if (!fs.existsSync(file)) throw Error(`Missing required scenario module: ${group}`);

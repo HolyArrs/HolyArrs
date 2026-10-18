@@ -1,18 +1,5 @@
 const assert = require('node:assert/strict');
-
-const references = {
-	movie: { kind: 'movie', reference: 'tmdb:900008', name: 'Copper Lighthouse' },
-	show: { kind: 'show', reference: 'tmdb:800003', name: 'Moss Parade', seasons: [1] },
-	music: {
-		kind: 'artist',
-		reference: 'mbid:a3333333-0000-4000-8000-000000000003',
-		name: 'Copper Wren',
-		albums: ['b3333333-0000-4000-8000-000000000001'],
-		albumName: 'Low Orbit'
-	},
-	denied: { kind: 'movie', reference: 'tmdb:900009', name: 'Velvet Tide' },
-	withdrawn: { kind: 'movie', reference: 'tmdb:900007', name: 'Northern Kettle' }
-};
+const { candidateProfiles } = require('./real-save-candidates.cjs');
 
 const kindQuery = { movie: 'movie', show: 'show', artist: 'music' };
 const libraryKind = { movie: 'movie', show: 'show', artist: 'artist' };
@@ -247,7 +234,10 @@ async function verifyMusicScope(ctx, title, metadata) {
 	const selected = albums.find((album) => album.mbid === metadata.albums[0]);
 	assert.ok(selected, `${metadata.albumName} appears in the approved artist`);
 	assert.equal(selected.keep_up_to_date, true, `${metadata.albumName} is kept up to date`);
-	assert.equal(albums.filter((album) => album.mbid !== metadata.albums[0]).some((album) => album.keep_up_to_date), false, `${metadata.name} leaves other albums off`);
+	const unselected = albums.find((album) => album.name === metadata.unselectedAlbumName);
+	assert.ok(unselected, `${metadata.unselectedAlbumName} appears as an unselected album`);
+	assert.equal(unselected.keep_up_to_date, false, `${metadata.unselectedAlbumName} is not kept up to date`);
+	assert.equal(albums.filter((album) => album.mbid !== metadata.albums[0]).some((album) => album.keep_up_to_date), false, `${metadata.name} leaves every unselected album off`);
 	await ctx.owner.setViewportSize({ width: 1440, height: 900 });
 	await open(ctx.owner, ctx.base, `/library/${title.id}`);
 	const album = ctx.owner.getByTestId('album').filter({ hasText: metadata.albumName });
@@ -354,6 +344,8 @@ async function markMemberMessagesRead(ctx) {
 }
 
 module.exports = async function run(ctx) {
+	const references = candidateProfiles[ctx.profileName]?.references;
+	assert.ok(references, `real-save candidate profile exists: ${ctx.profileName}`);
 	await ctx.step('member alert destination saves, reloads, and restores cleanly', async () => {
 		await saveAndRestoreMemberAlerts(ctx);
 	});
@@ -397,7 +389,7 @@ module.exports = async function run(ctx) {
 		await wishlistRow(ctx.member, ctx.base, references.music);
 		await ctx.capture(ctx.member, `music-album-${request.state}`);
 		const approved = await approve(ctx, references.music);
-		assert.deepEqual(approved.albums.map((album) => album.mbid), references.music.albums, 'approved artist keeps only Low Orbit');
+		assert.deepEqual(approved.albums.map((album) => album.mbid), references.music.albums, `approved artist keeps only ${references.music.albumName}`);
 		const title = await freshTitle(ctx, approved, references.music);
 		await verifyMusicScope(ctx, title, references.music);
 		await verifyLibraryAtWidths(ctx, title, references.music, [ctx.names.member], { requireStatus: false });

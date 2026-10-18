@@ -5,6 +5,7 @@ const os = require('node:os');
 const crypto = require('node:crypto');
 const { execFileSync } = require('node:child_process');
 const { createRequire } = require('node:module');
+const { selectCandidateProfile, isAllowedRequestBody } = require('./real-save-candidates.cjs');
 
 const repo = path.resolve(__dirname, '../../..');
 const appRequire = createRequire(path.join(repo, 'web/app/package.json'));
@@ -12,6 +13,9 @@ const { chromium, expect: baseExpect } = appRequire('@playwright/test');
 const expect = baseExpect.configure({ timeout: 10_000 });
 const base = 'http://10.10.25.25:18746';
 const runtime = path.join(os.tmpdir(), 'holyarrs-intercom-preview-18747');
+const candidateProfile = selectCandidateProfile();
+const profileName = candidateProfile.name;
+const candidates = Object.values(candidateProfile.references);
 const resuming = process.env.HOLYARRS_REAL_SAVE_RESUME || '';
 if (resuming && !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(resuming)) throw new Error('Invalid continuation run id');
 const runId = resuming || crypto.randomUUID();
@@ -25,8 +29,7 @@ const names = { member: `${namePrefix}one`, second: `${namePrefix}two` };
 const askIDs = new Set();
 const originalAskIDs = new Set();
 const titleIDs = new Set();
-const references = new Set(['tmdb:900008', 'tmdb:800003', 'tmdb:900009', 'tmdb:900007', 'mbid:a3333333-0000-4000-8000-000000000003']);
-let results = { runId, base, started: new Date().toISOString(), checks: [], screenshots: [], requests: [], writes: [], blocked: [], pageErrors: [] };
+let results = { runId, base, profile: profileName, started: new Date().toISOString(), checks: [], screenshots: [], requests: [], writes: [], blocked: [], pageErrors: [] };
 let browser;
 const pages = [];
 let fixtureCreated = false;
@@ -39,6 +42,13 @@ function sanitize(value) {
 }
 function saveReceipt() {
   fs.writeFileSync(path.join(evidenceDir, 'receipt.json'), sanitize(JSON.stringify(results, null, 2)) + '\n');
+}
+function matchesCandidate(item, candidate) {
+  if (item?.ref === candidate.reference || item?.reference === candidate.reference || item?.name === candidate.name) return true;
+  const [source, id] = candidate.reference.split(':', 2);
+  if (source === 'tmdb') return String(item?.tmdb_id ?? item?.ids?.tmdb ?? '') === id;
+  if (source === 'mbid') return [item?.ids?.mbid, item?.ids?.musicbrainz].some(value => String(value ?? '') === id);
+  return false;
 }
 function sourceIdentity() {
   const root = path.join(repo, 'web/app/src');
@@ -147,10 +157,7 @@ function allowedWrite(who, request, url) {
       && Object.keys(body).every(key => ['name', 'password'].includes(key));
   }
   if (method === 'POST' && apiPath === '/asks' && who !== 'owner') {
-    return references.has(body?.id) && Object.keys(body).every(key => ['id', 'kind', 'seasons', 'albums'].includes(key))
-      && (!body.kind || ['movie', 'show', 'artist'].includes(body.kind))
-      && (!body.seasons || JSON.stringify(body.seasons) === '[1]')
-      && (!body.albums || JSON.stringify(body.albums) === '["b3333333-0000-4000-8000-000000000001"]');
+    return isAllowedRequestBody(candidateProfile, body);
   }
   const decision = apiPath.match(/^\/asks\/(\d+)\/(approve|turn-down)$/);
   if (method === 'POST' && decision && who === 'owner' && askIDs.has(Number(decision[1]))) {
@@ -216,6 +223,8 @@ async function main() {
   if (path.resolve(process.cwd()) !== repo) throw new Error('Run only from the owned preview worktree');
   if (resuming) {
     results = JSON.parse(fs.readFileSync(path.join(evidenceDir, 'receipt.json'), 'utf8'));
+    if ((results.profile || 'default') !== profileName) throw new Error('Continuation candidate profile does not match the recorded run');
+    results.profile = profileName;
     if (results.runId !== runId || results.passed || !results.cleanup?.verified || results.cleanup.disabledMembers !== 2) throw new Error('Continuation requires a safely finalized incomplete run');
     fs.writeFileSync(path.join(evidenceDir, `attempt-${(results.previousAttempts?.length || 0) + 1}.json`), JSON.stringify(results, null, 2));
     results.previousAttempts = [...(results.previousAttempts || []), { checks: results.checks, error: results.error, cleanup: results.cleanup, finished: results.finished }];
@@ -250,14 +259,10 @@ async function main() {
   const ownedRefs = new Set(ownedAsks.map(ask => ask.ref));
   const ownedTitleIDs = new Set(ownedAsks.map(ask => ask.title_id).filter(Number.isInteger));
   for (const title of titles.filter(title => !ownedTitleIDs.has(title.id))) {
-    if ([900008, 800003, 900009, 900007].includes(Number(title.ids?.tmdb))
-      || [title.ids?.mbid, title.ids?.musicbrainz].includes('a3333333-0000-4000-8000-000000000003')
-      || ['Copper Lighthouse', 'Moss Parade', 'Copper Wren', 'Velvet Tide', 'Northern Kettle'].includes(title.name)) throw new Error('Lifecycle candidate already exists in Library');
+    if (candidates.some(candidate => matchesCandidate(title, candidate))) throw new Error('Lifecycle candidate already exists in Library');
   }
   for (const ask of pending.filter(ask => !ownedRefs.has(ask.ref))) originalAskIDs.add(ask.id);
-  if (pending.filter(ask => !ownedRefs.has(ask.ref)).some(ask => references.has(ask.ref) || references.has(ask.reference)
-    || [900008, 800003, 900009, 900007].includes(Number(ask.tmdb_id))
-    || ['Copper Lighthouse', 'Moss Parade', 'Copper Wren', 'Velvet Tide', 'Northern Kettle'].includes(ask.name))) throw new Error('Lifecycle candidate already has a request');
+  if (pending.filter(ask => !ownedRefs.has(ask.ref)).some(ask => candidates.some(candidate => matchesCandidate(ask, candidate)))) throw new Error('Lifecycle candidate already has a request');
   fs.mkdirSync(evidenceDir, { recursive: true });
   if (resuming) {
     results.continuation = data('resume', { sessionTokens, csrfTokens, expectedRequests: results.requests, allowPartial: true });
@@ -290,7 +295,7 @@ async function main() {
       results.memberIDs = { member: await join(member, 'member', 0), second: await join(second, 'second', 1) };
     });
   }
-  await require('./real-save-flows.cjs')({ owner, member, second, expect, step, capture, get, names, base, results,
+  await require('./real-save-flows.cjs')({ owner, member, second, expect, step, capture, get, names, base, results, profileName,
     registerAsk(id) { if (!Number.isInteger(id) || id <= 0 || originalAskIDs.has(id)) throw new Error('Request must be new and run-owned'); askIDs.add(id); },
     registerTitle(id) { if (!Number.isInteger(id) || id <= 0) throw new Error('Invalid title id'); titleIDs.add(id); }
   });

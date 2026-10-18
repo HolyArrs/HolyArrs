@@ -8,6 +8,8 @@ const origin = 'http://127.0.0.1:18746';
 const out = path.join(root, '.omx/artifacts/visual-ralph/intercom/responsive-pass', process.env.RESPONSIVE_BATCH || 'baseline');
 const widths = (process.env.RESPONSIVE_WIDTHS || '360,834,1440,3440').split(',').map(Number);
 const theme = process.env.RESPONSIVE_THEME === 'dark' ? 'dark' : 'light';
+const forcedHeight = process.env.RESPONSIVE_HEIGHT ? Number(process.env.RESPONSIVE_HEIGHT) : null;
+if (forcedHeight !== null && (!Number.isInteger(forcedHeight) || forcedHeight < 300 || forcedHeight > 4000)) throw Error('Invalid capture height');
 function identity() {
   const hash = createHash('sha256');
   function walk(dir) {
@@ -123,8 +125,8 @@ async function layout(page) {
   const browser = await chromium.launch({ headless: true });
   try {
     for (const width of widths) for (const descriptor of selected) {
-      const height = width >= 3840 ? 2160 : width >= 3440 ? 1440 : 900;
-      const context = await browser.newContext({ viewport: { width, height }, serviceWorkers: 'block', reducedMotion: 'no-preference' });
+      const height = forcedHeight ?? (width >= 3840 ? 2160 : width >= 2560 ? 1440 : 900);
+      const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, serviceWorkers: 'block', reducedMotion: 'no-preference' });
       await context.addInitScript(value => localStorage.setItem('holyarrs-theme', value), theme);
       await context.route('**/*', r => fixtures(r, descriptor));
       const page = await context.newPage(), errors = [];
@@ -170,7 +172,8 @@ async function layout(page) {
           await page.addScriptTag({ path: require.resolve('../../../web/app/node_modules/axe-core/axe.min.js') });
           violations = await page.evaluate(async () => (await axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'] } })).violations.map(v => ({ id: v.id, impact: v.impact, targets: v.nodes.map(n => n.target) })));
         }
-        checks.push({ ...descriptor, width, height, theme, documentStatus: response?.status(), landed: new URL(page.url()).pathname, screenshot, bottom, viewport, dialogFocus, ...measures, errors, violations });
+        const environment = await page.evaluate(() => ({ cssWidth: innerWidth, cssHeight: innerHeight, dpr: devicePixelRatio, visualViewportScale: visualViewport?.scale, reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches }));
+        checks.push({ ...descriptor, capturedAt: new Date().toISOString(), width, height, theme, environment, browserZoom: 'Default isolated context; native browser zoom not manipulated', documentStatus: response?.status(), landed: new URL(page.url()).pathname, screenshot, bottom, viewport, dialogFocus, ...measures, errors, violations });
         console.log(width, descriptor.route, descriptor.state || '', 'overflow', measures.overflow, 'outside', measures.outside.length, 'clipped', measures.clipped.length, 'overlap', measures.overlaps.length, 'axe', violations.length, 'errors', errors.length);
       } catch (e) {
         checks.push({ ...descriptor, width, height, failure: e.message, errors });
