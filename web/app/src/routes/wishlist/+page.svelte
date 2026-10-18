@@ -683,7 +683,7 @@
 	@media (max-width: 600px) {
 		.head-actions {
 			display: grid;
-			grid-template-columns: repeat(2, minmax(0, 1fr));
+			grid-template-columns: minmax(0, 1fr);
 			width: 100%;
 		}
 		.head-actions .btn {
@@ -753,7 +753,7 @@
 			white-space: nowrap;
 		}
 		.art {
-			width: 64px;
+			width: 44px;
 			align-self: start;
 		}
 		.ask {
@@ -764,7 +764,20 @@
 			flex: 1 0 100%;
 			min-width: 0;
 			line-height: 1.3;
+			overflow-wrap: anywhere;
 		}
+		.ask .chip,
+		.review .chip {
+			max-width: 100%;
+			height: auto;
+			min-height: 26px;
+			padding-block: 6px;
+			line-height: 1.25;
+			white-space: normal;
+			overflow-wrap: anywhere;
+		}
+		.ask .chip::before,
+		.review .chip::before { flex: none; }
 		.body > .small,
 		.body > .xs {
 			line-height: 1.45;
@@ -772,12 +785,14 @@
 		}
 		.actions {
 			display: grid;
-			grid-template-columns: repeat(2, minmax(0, 1fr));
+			grid-template-columns: minmax(0, 1fr);
 			width: 100%;
 		}
 		.actions :global(.btn) {
 			width: 100%;
+			min-width: 0;
 			min-height: 44px;
+			white-space: nowrap;
 		}
 		.pill {
 			min-height: 44px;

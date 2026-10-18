@@ -587,6 +587,33 @@
 		.names {
 			width: 100%;
 		}
+		.names .nm,
+		.meta > span {
+			min-width: 0;
+			overflow-wrap: anywhere;
+		}
+		.dl .chip,
+		.imports .chip,
+		.detail .chip {
+			max-width: 100%;
+			height: auto;
+			min-height: 26px;
+			padding-block: 6px;
+			line-height: 1.25;
+			white-space: normal;
+			overflow-wrap: anywhere;
+		}
+		.dl .chip::before,
+		.imports .chip::before,
+		.detail .chip::before { flex: none; }
+		.eplist li {
+			grid-template-columns: auto minmax(0, 1fr);
+		}
+		.eplist .chip { grid-column: 1 / -1; justify-self: start; }
+		.eplist .ellipsis { white-space: normal; overflow-wrap: anywhere; }
+		.imports li { flex-wrap: wrap; }
+		.imports li > .grow { flex-basis: 100%; }
+		.detail-head { flex-wrap: wrap; }
 		.dl > .inspect,
 		.acts,
 		.acts :global(.btn) {
@@ -599,6 +626,8 @@
 		.dl > .inspect,
 		.acts :global(.btn) {
 			min-height: 44px;
+			min-width: 0;
+			white-space: nowrap;
 		}
 		.load-error {
 			align-items: stretch;
