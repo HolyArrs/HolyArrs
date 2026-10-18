@@ -192,7 +192,8 @@
 	.shade {
 		position: absolute; inset: 0;
 		background:
-			linear-gradient(to right, rgb(11 11 12 / 92%) 0%, rgb(11 11 12 / 78%) 26%, rgb(11 11 12 / 38%) 52%, rgb(11 11 12 / 0%) 74%),
+			radial-gradient(ellipse 60% 75% at 22% 78%, rgb(11 11 12 / 55%) 0%, rgb(11 11 12 / 0%) 100%),
+			linear-gradient(to right, rgb(11 11 12 / 96%) 0%, rgb(11 11 12 / 92%) min(680px, 78%), rgb(11 11 12 / 55%) min(860px, 92%), rgb(11 11 12 / 0%) 100%),
 			linear-gradient(to top, var(--hero-ink) 0%, rgb(11 11 12 / 70%) 16%, rgb(11 11 12 / 0%) 44%),
 			linear-gradient(to bottom, rgb(11 11 12 / 45%) 0%, rgb(11 11 12 / 0%) 18%);
 	}
@@ -215,14 +216,14 @@
 	.name { font-family: var(--font-display, var(--font-ui)); font-weight: 800; font-size: clamp(44px, 6vw, 84px); line-height: .98; letter-spacing: -0.035em; text-wrap: balance; overflow-wrap: anywhere; text-shadow: 0 2px 30px rgb(0 0 0 / 35%); }
 	.logo img { display: block; max-width: min(520px, 100%); max-height: 180px; width: auto; height: auto; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 4px 24px rgb(0 0 0 / 45%)); }
 	.meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
-	.meta p { margin: 0; font: 600 15px/1.35 var(--font-ui); color: rgb(255 255 255 / 86%); font-variant-numeric: tabular-nums; }
+	.meta p { margin: 0; font: 600 15px/1.35 var(--font-ui); color: rgb(255 255 255 / 94%); font-variant-numeric: tabular-nums; text-shadow: 0 1px 2px rgb(0 0 0 / 60%), 0 0 12px rgb(0 0 0 / 50%); }
 	.badges { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
 	.b { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 7px; border-radius: 5px; border: 1px solid rgb(255 255 255 / 55%); color: rgb(255 255 255 / 92%); font: 700 11.5px/1 var(--font-ui); letter-spacing: .03em; white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.cert { border-width: 1.5px; border-color: rgb(255 255 255 / 80%); }
 	.score { border-radius: 999px; padding: 0 9px 0 7px; background: rgb(255 255 255 / 12%); border-color: rgb(255 255 255 / 30%); }
 	.score svg { color: #f5c518; }
 	.about { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
-	.desc { margin: 0; font: 400 16px/1.5 var(--font-ui); color: rgb(255 255 255 / 88%); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; max-width: 60ch; text-shadow: 0 1px 12px rgb(0 0 0 / 30%); }
+	.desc { margin: 0; font: 400 16px/1.5 var(--font-ui); color: #fff; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; max-width: 60ch; text-shadow: 0 1px 2px rgb(0 0 0 / 60%), 0 0 14px rgb(0 0 0 / 55%); }
 	.desc.open { -webkit-line-clamp: unset; line-clamp: unset; display: block; }
 	.more { min-height: 32px; padding: 0 2px; color: #fff; font: 600 14px/1 var(--font-ui); opacity: .85; transition: opacity var(--dur-fast) var(--ease-out); }
 	.more:hover { opacity: 1; text-decoration: underline; text-underline-offset: 3px; }

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Button from '#lib/ui/Button.svelte';
+	import { shortFolder } from '#lib/ui/TitleHero.svelte';
 	// The Versions card of a show (4.8.11): every wanted copy, such as HD and
 	// 4K, with its Pick rules and folder; staff add, change and remove them.
 	import { api, message } from './api.ts';
@@ -112,7 +113,8 @@
 				<div class="xs muted">Audio required: {v.audio_languages?.join(', ') || 'Any'}</div>
 				<div class="xs muted">Pick rules: {v.pick_rules_name}{v.keep_up_to_date ? '' : ' · not kept up to date'}</div>
 				{#if staff}
-					<div class="xs muted path">In {v.folder_path}</div>
+					<div class="xs muted path">In {shortFolder(v.folder_path)}</div>
+					<details class="xs muted"><summary>Details</summary><span class="mono path">{v.folder_path}</span></details>
 					<div class="row">
 						<Button variant="plain" onclick={() => openEdit(v)} aria-label="Change the {v.label} Version">Change</Button>
 						{#if !v.main}

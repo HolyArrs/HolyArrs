@@ -7,6 +7,7 @@
 	import Sheet from './ui/Sheet.svelte';
 	import Button from './ui/Button.svelte';
 	import Badge from './ui/Badge.svelte';
+	import { shortFolder } from './ui/TitleHero.svelte';
 	import Skeleton from './ui/Skeleton.svelte';
 	import { plainReason } from './plain.ts';
 	import type { CopyFile, LibraryFolder, PickRulesView, TitleView, VersionView } from './types.ts';
@@ -238,7 +239,8 @@
 
 <Sheet bind:open={adoptOpen} title="Use an existing video for {adoptVersion?.label ?? 'this Version'}">
 	<form id="adopt-copy-form" class="sheet-form" onsubmit={adopt}>
-		<p class="small muted">The file must already be inside <span class="mono">{adoptVersion?.folder_path}</span>. HolyArrs checks its actual audio and edition, then records it without moving or rewriting it.</p>
+		<p class="small muted">The file must already be inside the <span class="mono">{shortFolder(adoptVersion?.folder_path)}</span> folder of the Version. HolyArrs checks its actual audio and edition, then records it without moving or rewriting it.</p>
+		{#if session.can('manage_library')}<details class="small muted"><summary>Details</summary><span class="mono path">{adoptVersion?.folder_path}</span></details>{/if}
 		<div class="field"><label for="adopt-path">Path relative to the Library folder</label><input id="adopt-path" class="input" bind:value={adoptPath} required /></div>
 		<div class="field"><label for="adopt-edition">Checked edition <span class="muted">(only when the filename needs correction)</span></label><input id="adopt-edition" class="input" bind:value={adoptEdition} maxlength="80" /></div>
 		<label class="checkline small"><input type="checkbox" bind:checked={adoptChecked} /> I checked the file and want to use this edition correction</label>
