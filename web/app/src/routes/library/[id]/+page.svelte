@@ -7,7 +7,6 @@
 	import { ago, bytes, date, dateTime, tone, words } from '#lib/format.ts';
 	import Icon from '#lib/Icon.svelte';
 	import { session } from '#lib/session.svelte.ts';
-	import Poster from '#lib/Poster.svelte';
 	import EmptyState from '#lib/EmptyState.svelte';
 	import { secondVersion, slotNotes } from '#lib/library.ts';
 	import { chooseWarnings, facts, keyReasons, pager, verdict, verdictTone } from '#lib/releases.ts';
@@ -17,11 +16,21 @@
 	import SubtitlePanel from '#lib/SubtitlePanel.svelte';
 	import ShowPage from '#lib/ShowPage.svelte';
 	import CopyControls from '#lib/CopyControls.svelte';
-	import MoviePeople from '#lib/MoviePeople.svelte';
 	import ArtistPage from '#lib/ArtistPage.svelte';
 	import { goto } from '$app/navigation';
 	import { deleteSummary, type RemovePlan } from '#lib/organise.ts';
 	import { groupLabel, kindTone } from '#lib/history.ts';
+	import TitleHero from '#lib/ui/TitleHero.svelte';
+	import ActionButton from '#lib/ui/ActionButton.svelte';
+	import ActionMenu from '#lib/ui/ActionMenu.svelte';
+	import LoadError from '#lib/ui/LoadError.svelte';
+	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import StatusPill from '#lib/ui/StatusPill.svelte';
+	import TitleCast from '#lib/TitleCast.svelte';
+	import SimilarShelf from '#lib/SimilarShelf.svelte';
+	import { artName, crumbFor, heroStatus, qualityBadges } from '#lib/title-page.ts';
+	import type { MenuItem } from '#lib/ui/Menu.svelte';
+	import '#lib/title-page.css';
 	import type { Choice, EventPage, EventRecord, LibraryFolder, PickRulesView, ReleasePage, ReleaseView, TitleView, VersionView } from '#lib/types.ts';
 
 	const id = $derived(Number(page.params.id));
@@ -46,13 +55,6 @@
 	let searching = $state(false);
 	let saving = $state(false);
 	let refreshing = $state(false);
-	let overviewExpanded = $state(false);
-	const overviewLong = $derived((title?.overview?.length ?? 0) > 280);
-
-	$effect(() => {
-		id;
-		overviewExpanded = false;
-	});
 
 	// The edit dialog
 	let editDialog: HTMLDialogElement | undefined = $state();
@@ -406,6 +408,26 @@
 		}
 	}
 
+	// The hero: breadcrumb, meta line, badges from the kept files, status and menus.
+	const crumbs = $derived(
+		title ? [{ href: to(crumbFor('movie').path), label: crumbFor('movie').label }, { href: to(`/library/${title.id}`), label: title.year ? `${title.name} (${title.year})` : title.name }] : []
+	);
+	const heroMeta = $derived(title ? [title.year ? String(title.year) : '', stageWord[title.stage] ?? words(title.stage), title.original_language ? title.original_language.toUpperCase() : ''].filter(Boolean) : []);
+	const heroBadges = $derived(qualityBadges(files.map((s) => s.file)));
+	const status = $derived(title ? heroStatus(title.slots, !!title.asks?.some((a) => !decided(a))) : { kind: 'missing' as const });
+	const libraryItems = $derived<MenuItem[]>([
+		{ label: 'Rename files', icon: 'copy', onselect: openRename },
+		{ label: 'Add a Version', icon: 'plus', onselect: openVersion },
+		{ kind: 'separator' },
+		{ label: 'Delete movie', icon: 'trash', destructive: true, onselect: openDelete }
+	]);
+	const moreItems = $derived<MenuItem[]>([
+		{ label: 'Choose a release', icon: 'grid', onselect: () => searchNow(false), disabled: searching },
+		{ label: 'Refresh from TMDB', icon: 'refresh', onselect: refresh, disabled: refreshing },
+		{ kind: 'separator' },
+		{ label: 'All history', icon: 'clock', href: to(`/downloads/history?title=${id}`) }
+	]);
+
 	async function setKeep(v: boolean) {
 		if (!title) return;
 		saving = true;
@@ -423,284 +445,261 @@
 
 <svelte:head><title>{title?.name ?? 'Title'} · HolyArrs</title></svelte:head>
 
-<a class="back small muted" href={libraryBack}><Icon name="back" size={16} /> Library</a>
-
 {#if notFound}
 	<EmptyState icon="library" title="This title is not in your Library">
 		<p>It may have been removed.</p>
 		{#snippet actions()}<a class="btn btn-ghost" href={libraryBack}>Back to the Library</a>{/snippet}
 	</EmptyState>
-{:else if error}
-	<p class="notice bad" role="alert">{error}</p>
+{:else if error && !title}
+	<LoadError hasData={false} message={error} onretry={() => load()} />
 {:else if !title}
-	<div class="sk" style="height: 280px"></div>
+	<div class="tp" aria-busy="true">
+		<Skeleton shape="block" height="min(52vw, 520px)" />
+		<Skeleton lines={3} />
+	</div>
 {:else if title.kind === 'show'}
 	<ShowPage {title} onchange={(t) => (title = t)} />
 {:else if title.kind === 'artist'}
 	<ArtistPage {title} onchange={(t) => (title = t)} />
 {:else}
-	<div class="detail-workspace">
-	<section class="hero">
-		<div class="art"><Poster src={title.artwork[0]} name={title.name} /></div>
-		<div class="info">
-			<h1 class="title">{title.name}{#if title.year}{" "}<span class="year muted">({title.year})</span>{/if}</h1>
-			<div class="row chips">
-				{#each title.slots as s (s.id)}
-					<span class="chip {tone(s.state)}">{s.version ? `${s.version}: ` : ''}{s.state_label}</span>
-				{/each}
-			</div>
-			{#if title.overview}
-				<div class="overview-wrap">
-					<p id="title-overview-{title.id}" class="overview" class:clamped={overviewLong && !overviewExpanded}>{title.overview}</p>
-					{#if overviewLong}
-						<button
-							class="overview-toggle"
-							type="button"
-							aria-controls="title-overview-{title.id}"
-							aria-expanded={overviewExpanded}
-							onclick={() => (overviewExpanded = !overviewExpanded)}
-						>
-							{overviewExpanded ? 'Show less' : 'Read more'}
-						</button>
-					{/if}
-				</div>
-			{/if}
-			<p class="why small" class:open={title.gate_open} data-testid="gate-reason"><b>Why:</b> {title.gate_reason}</p>
-			{#each slotNotes(title.slots) as note (note)}<p class="small muted">{note}</p>{/each}
-			{#each title.slots.filter((s) => s.download) as s (s.id)}
-				{@const d = s.download!}
-				<div class="dl" data-testid="download">
-					<div class="row dl-head">
-						<span class="chip {downloadTone(d.state)}" data-testid="download-state">{s.version && title.slots.length > 1 ? `${s.version}: ` : ''}{d.label}</span>
-						{#if d.active}<span class="small muted">{percent(d.progress)}{#if d.speed > 0} · {bytes(d.speed)}/s{/if}{#if timeLeft(d.eta)} · {timeLeft(d.eta)}{/if}</span>{/if}
-					</div>
-					{#if d.active}<progress class="bar" max="1" value={d.progress} aria-label="Download progress">{percent(d.progress)}</progress>{/if}
-					<p class="small" data-testid="download-text">{d.text}</p>
-					{#if d.active && session.can('manage_library')}
-						<button class="btn btn-quiet" type="button" onclick={() => markFailed(d.id)} disabled={failing === d.id} aria-busy={failing === d.id}>Mark failed</button>
-					{/if}
-				</div>
-			{/each}
-			{#if session.can('manage_library')}
-			<div class="row actions">
-				<button class="btn btn-red" type="button" onclick={() => searchNow()} disabled={searching} aria-busy={searching}>
-					<Icon name="search" size={18} /> Search now
-				</button>
-				<button class="btn btn-ghost" type="button" onclick={() => searchNow(false)} disabled={searching}>Choose a release</button>
-				<button class="btn btn-ghost" type="button" onclick={refresh} disabled={refreshing} aria-busy={refreshing}>Refresh</button>
-				<button class="btn btn-ghost" type="button" onclick={openEdit}>Edit</button>
-				<button class="btn btn-ghost" type="button" onclick={openRename}>Rename files</button>
-				<button class="btn btn-quiet" type="button" onclick={openDelete}><Icon name="trash" size={16} /> Delete</button>
-				<label class="switch">
-					<input
-						type="checkbox"
-						checked={title.keep_up_to_date}
-						disabled={saving}
-						onchange={(e) => setKeep(e.currentTarget.checked)}
-					/>
-					<span class="sw" aria-hidden="true"></span>
-					<span class="small">Keep up to date</span>
-				</label>
-			</div>
-			{/if}
-		</div>
-	</section>
-
-	<div class="detail-tools">
-		<CopyControls {title} onchange={() => load('title')} />
-		<MoviePeople titleId={title.id} />
-	</div>
-	<div class="cols">
-		<section class="card" aria-labelledby="h-dates">
-			<h2 id="h-dates" class="h2 card-title">Dates</h2>
-			<dl class="facts">
-				<dt>Now</dt>
-				<dd>{stageWord[title.stage] ?? words(title.stage)}</dd>
-				<dt>In cinemas</dt>
-				<dd>{date(title.cinema_date) || 'Not known'}</dd>
-				<dt>Digital</dt>
-				<dd>{date(title.digital_date) || 'Not known'}</dd>
-				<dt>Disc</dt>
-				<dd>{date(title.physical_date) || 'Not known'}</dd>
-				<dt>Original language</dt>
-				<dd>{title.original_language || 'Not known'}</dd>
-				<dt>Release gate</dt>
-				<dd>{words(title.release_gate)}{title.gate_delay_days ? ` + ${title.gate_delay_days} days` : ''}</dd>
-				{#if title.gate_opens_at}<dt>Gate opens</dt>
-					<dd>{date(title.gate_opens_at)}</dd>{/if}
-				{#if title.pick_rules_name}<dt>Pick rules</dt>
-					<dd>{title.pick_rules_name}</dd>{/if}
-				{#if title.refreshed_at}<dt>Refreshed</dt>
-					<dd>{date(title.refreshed_at)}</dd>{/if}
-			</dl>
-		</section>
-
-		<section class="card" aria-labelledby="h-file">
-			<h2 id="h-file" class="h2 card-title">File</h2>
-			{#if files.length === 0}
-				<p class="small muted">No file yet.</p>
-			{:else}
-				{#each files as s (s.id)}
-					{@const f = s.file!}
-					<dl class="facts">
-						{#if s.version}<dt>Version</dt>
-							<dd>{s.version}</dd>{/if}
-						<dt>Name</dt>
-						<dd class="mono path">{f.RelativePath}</dd>
-						<dt>Size</dt>
-						<dd>{bytes(f.Size)}</dd>
-						{#if f.Quality?.resolution}<dt>Picture</dt>
-							<dd>{f.Quality.resolution}p{f.Quality.source ? ` ${words(String(f.Quality.source))}` : ''}</dd>{/if}
-						{#if f.ReleaseName}<dt>From</dt>
-							<dd class="mono path">{f.ReleaseName}</dd>{/if}
-						<dt>Added</dt>
-						<dd>{date(f.AddedAt)}</dd>
-					</dl>
-				{/each}
-			{/if}
-			{#if session.can('manage_library') && title.folder_path}<p class="xs muted path">In {title.folder_path}</p>{/if}
-		</section>
-
-		{#if session.can('manage_library')}
-			{#key title.id}<SubtitlePanel titleId={title.id} movie />{/key}
-		{/if}
-
-		{#if title.asks?.length}
-			<section class="card" aria-labelledby="h-asks" data-testid="title-asks">
-				<h2 id="h-asks" class="h2 card-title">Wishlist</h2>
-				{#each title.asks as a (a.id)}
-					<dl class="facts">
-						<dt>Asked by</dt>
-						<dd>{names(a.people.map((p) => p.name))} · {date(a.asked_at)}</dd>
-						{#if decided(a)}<dt>Decided</dt>
-							<dd>{decided(a)}{a.decided_at ? ` · ${date(a.decided_at)}` : ''}</dd>{/if}
-						<dt>Now</dt>
-						<dd>{a.state_label}</dd>
-						{#if a.note}<dt>Note</dt>
-							<dd>{a.note}</dd>{/if}
-					</dl>
-				{/each}
-			</section>
-		{/if}
-
-		<section class="card" aria-labelledby="h-versions">
-			<div class="card-head">
-				<h2 id="h-versions" class="h2">Versions</h2>
+	<div class="tp">
+		<TitleHero
+			title={title.name}
+			poster={title.artwork[0]}
+			backdrop={title.artwork[1]}
+			breadcrumb={crumbs}
+			meta={heroMeta}
+			badges={heroBadges}
+			status={status.kind}
+			percent={status.percent}
+			description={title.overview}
+			vtName={artName(title.id)}
+		>
+			{#snippet actions()}
 				{#if session.can('manage_library')}
-					<button class="btn btn-ghost" type="button" onclick={openVersion}><Icon name="plus" size={16} /> Add a Version</button>
-				{/if}
-			</div>
-			<ul class="versions">
-				{#each title.versions as v (v.id)}
-					{@const s = slotOf(v)}
-					<li class="version" data-testid="version">
-						<div class="rel-top">
-							<b>{v.label}{v.main ? ' (main)' : ''}</b>
-						<div class="xs muted">Edition: {v.edition || 'Not specified'} · Audio required: {v.audio_languages?.join(', ') || 'Any'}</div>
-							{#if s}<span class="chip {tone(s.state)}">{s.state_label}</span>{/if}
-						</div>
-						<div class="xs muted">Pick rules: {v.pick_rules_name}{v.keep_up_to_date ? '' : ' · not kept up to date'}</div>
-						{#if session.can('manage_library')}
-							<div class="xs muted path">In {v.folder_path}</div>
-							{#if !v.main}
-								<button class="btn btn-quiet" type="button" onclick={() => removeVersion(v)}>Remove {v.label}</button>
-							{/if}
-						{/if}
-					</li>
-				{/each}
-			</ul>
-		</section>
-
-		{#if session.can('manage_library')}
-			<section class="card" aria-labelledby="h-history" data-testid="title-history">
-				<div class="card-head">
-					<h2 id="h-history" class="h2">History</h2>
-					{#if historyTotal > 0}<a class="btn btn-quiet" href={to(`/downloads/history?title=${id}`)}>All {historyTotal} rows</a>{/if}
-				</div>
-				{#if history.length === 0}
-					<p class="small muted">Nothing yet. Every search, download, import, rename and delete of this movie writes a row here.</p>
+					<ActionButton icon="search" label="Search now" primary onclick={() => searchNow()} disabled={searching} busy={searching} />
+					<ActionButton
+						icon={title!.keep_up_to_date ? 'check' : 'plus'}
+						label="Keep up to date"
+						caption={title!.keep_up_to_date ? 'Kept up to date' : 'Keep up to date'}
+						pressed={title!.keep_up_to_date}
+						disabled={saving}
+						onclick={() => setKeep(!title!.keep_up_to_date)}
+					/>
+					<ActionButton icon="tools" label="Edit" onclick={openEdit} />
+					<ActionMenu label="Library" icon="library" items={libraryItems} />
+					<ActionMenu label="More actions" caption="More" icon="more" items={moreItems} />
 				{:else}
-					<ol class="rows hist">
-						{#each history as e (e.ID)}
-							<li>
-								<span class="chip {kindTone(e.Kind)}">{groupLabel(e.Kind)}</span>
-								<span class="grow small">{e.Summary}</span>
-								<time class="mono xs muted" datetime={e.At} title={dateTime(e.At)}>{ago(e.At)}</time>
-							</li>
-						{/each}
-					</ol>
+					<div class="tp-member"><StatusPill kind={status.kind} percent={status.percent} label={status.kind === 'in_library' ? 'Ready to watch' : undefined} on="art" /></div>
 				{/if}
-			</section>
-		{/if}
+			{/snippet}
+			{#snippet extra()}
+				{#each title!.slots.filter((s) => s.download) as s (s.id)}
+					{@const d = s.download!}
+					<div class="tp-dl" data-testid="download">
+						<div class="row tp-dl-head">
+							<span class="chip {downloadTone(d.state)}" data-testid="download-state">{s.version && title!.slots.length > 1 ? `${s.version}: ` : ''}{d.label}</span>
+							{#if d.active}<span class="small">{percent(d.progress)}{#if d.speed > 0} · {bytes(d.speed)}/s{/if}{#if timeLeft(d.eta)} · {timeLeft(d.eta)}{/if}</span>{/if}
+						</div>
+						{#if d.active}<progress class="tp-bar" max="1" value={d.progress} aria-label="Download progress">{percent(d.progress)}</progress>{/if}
+						<p class="small" data-testid="download-text">{d.text}</p>
+						{#if d.active && session.can('manage_library')}
+							<button class="tp-glass-btn" type="button" onclick={() => markFailed(d.id)} disabled={failing === d.id} aria-busy={failing === d.id}>Mark failed</button>
+						{/if}
+					</div>
+				{/each}
+			{/snippet}
+		</TitleHero>
 
-		{#if session.can('manage_library')}
-		<section class="card rel-card" aria-labelledby="h-rel" data-testid="releases">
-			<div class="card-head">
-				<h2 id="h-rel" class="h2">Releases</h2>
-				{#if relTotal}<span class="xs muted">{relTotal} found in the last search</span>{/if}
-			</div>
-			{#if title.slots.length > 1}
-				<div class="field slot-pick">
-					<label for="slot-pick">Version</label>
-					<select id="slot-pick" class="input" value={slotPick} onchange={(e) => pickSlot(Number(e.currentTarget.value))}>
-						<option value={0}>Every Version</option>
-						{#each title.slots as s (s.id)}<option value={s.id}>{s.version || 'Main'}</option>{/each}
-					</select>
-					<span class="hint">Search now and Choose a release then look for this Version only.</span>
-				</div>
-			{/if}
-			<p class="small muted" aria-live="polite" data-testid="search-running">
-				{running.length ? 'Searching your Sources. The list fills in once they answer.' : ''}
-			</p>
-			{#if releases.length === 0}
-				{#if !running.length}
-					<p class="small muted">No search yet. Press Choose a release to see every Release HolyArrs finds, with why each one would be chosen or not, and pick one yourself.</p>
-				{/if}
-			{:else}
-				<ul class="rels">
-					{#each releases as r (r.id)}
-						{@const key = keyReasons(r.reasons)}
-						<li class="rel" data-testid="release">
-							<div class="rel-top">
-								<span class="rel-name mono">{r.name}</span>
-								<span class="chip {verdictTone(r)}" data-testid="verdict">{verdict(r)}</span>
-							</div>
-							<div class="xs muted">{facts(r, bytes)}{title.slots.length > 1 && r.version ? ` · ${r.version}` : ''}</div>
-							{#if key.length}
-								<ul class="reasons">
-									{#each key as x, i (i)}<li class={x.effect}>{x.text}</li>{/each}
-								</ul>
-							{/if}
-							{#if r.reasons.length}
-								<details>
-									<summary class="xs muted">All {r.reasons.length} reasons</summary>
-									<ul class="reasons">
-										{#each r.reasons as x, i (i)}<li class={x.effect}>{x.text}</li>{/each}
-									</ul>
-								</details>
-							{/if}
-							{#if r.state !== 'chosen'}
-								<div class="row rel-actions">
-									<button class="btn btn-ghost" type="button" onclick={() => askChoose(r)} aria-label="Choose {r.name}">Choose</button>
-									{#if r.state !== 'turned_down'}
-										<button class="btn btn-quiet" type="button" onclick={() => askTurnDown(r)} aria-label="Turn down {r.name}">Turn down</button>
+		{#if error}<LoadError hasData message={error} onretry={() => load()} />{/if}
+
+		<p class="tp-why" class:open={title.gate_open} data-testid="gate-reason"><b>Why:</b> {title.gate_reason}</p>
+		{#each slotNotes(title.slots) as note (note)}<p class="small muted">{note}</p>{/each}
+
+		{#key title.id}<TitleCast titleId={title.id} />{/key}
+
+		<div class="tp-body">
+			<div class="tp-main">
+				<section class="tp-section" aria-labelledby="h-versions">
+					<div class="tp-head">
+						<h2 id="h-versions" class="tp-h2">Versions and files</h2>
+						{#if session.can('manage_library')}
+							<button class="btn btn-ghost" type="button" onclick={openVersion}><Icon name="plus" size={16} /> Add a Version</button>
+						{/if}
+					</div>
+					<ul class="tp-list">
+						{#each title.versions as v (v.id)}
+							{@const s = slotOf(v)}
+							{@const f = s?.file}
+							<li class="tp-row" data-testid="version">
+								<div class="tp-row-main">
+									<b>{v.label}{v.main ? ' (main)' : ''}</b>
+									<span class="xs muted">Edition: {v.edition || 'Not specified'} · Audio required: {v.audio_languages?.join(', ') || 'Any'}</span>
+									<span class="xs muted">Pick rules: {v.pick_rules_name}{v.keep_up_to_date ? '' : ' · not kept up to date'}</span>
+									{#if f}
+										<span class="xs mono path">{f.RelativePath}</span>
+										<span class="xs muted">{bytes(f.Size)}{#if f.Quality?.resolution} · {f.Quality.resolution}p{f.Quality.source ? ` ${words(String(f.Quality.source))}` : ''}{/if} · Added {date(f.AddedAt)}</span>
+										{#if f.ReleaseName}<span class="xs muted mono path">From {f.ReleaseName}</span>{/if}
+									{:else}
+										<span class="xs muted">No file yet.</span>
+									{/if}
+									{#if session.can('manage_library')}<span class="xs muted path">In {v.folder_path}</span>{/if}
+								</div>
+								<div class="tp-row-end">
+									{#if s}<span class="chip {tone(s.state)}">{s.state_label}</span>{/if}
+									{#if session.can('manage_library') && !v.main}
+										<button class="btn btn-quiet" type="button" onclick={() => removeVersion(v)}>Remove {v.label}</button>
 									{/if}
 								</div>
+							</li>
+						{/each}
+					</ul>
+				</section>
+
+				<CopyControls {title} onchange={() => load('title')} />
+
+				{#if session.can('manage_library')}
+					<section class="tp-section" aria-labelledby="h-rel" data-testid="releases">
+						<div class="tp-head">
+							<h2 id="h-rel" class="tp-h2">Releases</h2>
+							{#if relTotal}<span class="xs muted">{relTotal} found in the last search</span>{/if}
+						</div>
+						{#if title.slots.length > 1}
+							<div class="field slot-pick">
+								<label for="slot-pick">Version</label>
+								<select id="slot-pick" class="input" value={slotPick} onchange={(e) => pickSlot(Number(e.currentTarget.value))}>
+									<option value={0}>Every Version</option>
+									{#each title.slots as s (s.id)}<option value={s.id}>{s.version || 'Main'}</option>{/each}
+								</select>
+								<span class="hint">Search now and Choose a release then look for this Version only.</span>
+							</div>
+						{/if}
+						<p class="small muted" aria-live="polite" data-testid="search-running">
+							{running.length ? 'Searching your Sources. The list fills in once they answer.' : ''}
+						</p>
+						{#if releases.length === 0}
+							{#if !running.length}
+								<p class="small muted">No search yet. Choose a release shows every Release HolyArrs finds, with why each one would be chosen or not, so you can pick one yourself.</p>
+								<button class="btn btn-ghost tp-start" type="button" onclick={() => searchNow(false)} disabled={searching}>Choose a release</button>
 							{/if}
-						</li>
-					{/each}
-				</ul>
-				{#if pages.prev !== null || pages.next !== null}
-					<nav class="row pager" aria-label="Release pages">
-						<button class="btn btn-quiet" type="button" disabled={pages.prev === null} onclick={() => goPage(pages.prev)}>Back</button>
-						<span class="xs muted">{pages.from} to {pages.to} of {relTotal}</span>
-						<button class="btn btn-quiet" type="button" disabled={pages.next === null} onclick={() => goPage(pages.next)}>More</button>
-					</nav>
+						{:else}
+							<ul class="rels">
+								{#each releases as r (r.id)}
+									{@const key = keyReasons(r.reasons)}
+									<li class="rel" data-testid="release">
+										<div class="rel-top">
+											<span class="rel-name mono">{r.name}</span>
+											<span class="chip {verdictTone(r)}" data-testid="verdict">{verdict(r)}</span>
+										</div>
+										<div class="xs muted">{facts(r, bytes)}{title.slots.length > 1 && r.version ? ` · ${r.version}` : ''}</div>
+										{#if key.length}
+											<ul class="reasons">
+												{#each key as x, i (i)}<li class={x.effect}>{x.text}</li>{/each}
+											</ul>
+										{/if}
+										{#if r.reasons.length}
+											<details>
+												<summary class="xs muted">All {r.reasons.length} reasons</summary>
+												<ul class="reasons">
+													{#each r.reasons as x, i (i)}<li class={x.effect}>{x.text}</li>{/each}
+												</ul>
+											</details>
+										{/if}
+										{#if r.state !== 'chosen'}
+											<div class="row rel-actions">
+												<button class="btn btn-ghost" type="button" onclick={() => askChoose(r)} aria-label="Choose {r.name}">Choose</button>
+												{#if r.state !== 'turned_down'}
+													<button class="btn btn-quiet" type="button" onclick={() => askTurnDown(r)} aria-label="Turn down {r.name}">Turn down</button>
+												{/if}
+											</div>
+										{/if}
+									</li>
+								{/each}
+							</ul>
+							{#if pages.prev !== null || pages.next !== null}
+								<nav class="row pager" aria-label="Release pages">
+									<button class="btn btn-quiet" type="button" disabled={pages.prev === null} onclick={() => goPage(pages.prev)}>Back</button>
+									<span class="xs muted">{pages.from} to {pages.to} of {relTotal}</span>
+									<button class="btn btn-quiet" type="button" disabled={pages.next === null} onclick={() => goPage(pages.next)}>More</button>
+								</nav>
+							{/if}
+						{/if}
+					</section>
 				{/if}
-			{/if}
-		</section>
-		{/if}
-	</div>
+
+				{#if session.can('manage_library')}
+					{#key title.id}<SubtitlePanel titleId={title.id} movie />{/key}
+				{/if}
+			</div>
+
+			<aside class="tp-side" aria-label="About this movie">
+				<section class="tp-section" aria-labelledby="h-dates">
+					<h2 id="h-dates" class="tp-h2">About</h2>
+					<dl class="facts">
+						<dt>Now</dt>
+						<dd>{stageWord[title.stage] ?? words(title.stage)}</dd>
+						<dt>In cinemas</dt>
+						<dd>{date(title.cinema_date) || 'Not known'}</dd>
+						<dt>Digital</dt>
+						<dd>{date(title.digital_date) || 'Not known'}</dd>
+						<dt>Disc</dt>
+						<dd>{date(title.physical_date) || 'Not known'}</dd>
+						<dt>Original language</dt>
+						<dd>{title.original_language || 'Not known'}</dd>
+						<dt>Release gate</dt>
+						<dd>{words(title.release_gate)}{title.gate_delay_days ? ` + ${title.gate_delay_days} days` : ''}</dd>
+						{#if title.gate_opens_at}<dt>Gate opens</dt>
+							<dd>{date(title.gate_opens_at)}</dd>{/if}
+						{#if title.pick_rules_name}<dt>Pick rules</dt>
+							<dd>{title.pick_rules_name}</dd>{/if}
+						{#if title.refreshed_at}<dt>Refreshed</dt>
+							<dd>{date(title.refreshed_at)}</dd>{/if}
+					</dl>
+				</section>
+
+				{#if title.asks?.length}
+					<section class="tp-section" aria-labelledby="h-asks" data-testid="title-asks">
+						<h2 id="h-asks" class="tp-h2">Wishlist</h2>
+						{#each title.asks as a (a.id)}
+							<dl class="facts">
+								<dt>Asked by</dt>
+								<dd>{names(a.people.map((p) => p.name))} · {date(a.asked_at)}</dd>
+								{#if decided(a)}<dt>Decided</dt>
+									<dd>{decided(a)}{a.decided_at ? ` · ${date(a.decided_at)}` : ''}</dd>{/if}
+								<dt>Now</dt>
+								<dd>{a.state_label}</dd>
+								{#if a.note}<dt>Note</dt>
+									<dd>{a.note}</dd>{/if}
+							</dl>
+						{/each}
+					</section>
+				{/if}
+
+				{#if session.can('manage_library')}
+					<section class="tp-section" aria-labelledby="h-history" data-testid="title-history">
+						<div class="tp-head">
+							<h2 id="h-history" class="tp-h2">History</h2>
+							{#if historyTotal > 0}<a class="btn btn-quiet" href={to(`/downloads/history?title=${id}`)}>All {historyTotal} rows</a>{/if}
+						</div>
+						{#if history.length === 0}
+							<p class="small muted">Nothing yet. Every search, download, import, rename and delete of this movie writes a row here.</p>
+						{:else}
+							<ol class="rows hist">
+								{#each history as e (e.ID)}
+									<li>
+										<span class="chip {kindTone(e.Kind)}">{groupLabel(e.Kind)}</span>
+										<span class="grow small">{e.Summary}</span>
+										<time class="mono xs muted" datetime={e.At} title={dateTime(e.At)}>{ago(e.At)}</time>
+									</li>
+								{/each}
+							</ol>
+						{/if}
+					</section>
+				{/if}
+			</aside>
+		</div>
+
+		<SimilarShelf {title} />
 	</div>
 {/if}
 
@@ -882,349 +881,28 @@
 </dialog>
 
 <style>
-	.versions .version {
-		padding: var(--s-3) 0;
-	}
-	.versions .version + .version {
-		border-top: 1px solid var(--line);
-	}
-
-	.why {
-		margin: var(--s-2) 0;
-		padding: var(--s-2) var(--s-3);
-		border-left: 3px solid var(--wait);
-		background: var(--surface-1);
-		border-radius: var(--r-sm);
-		max-width: 70ch;
-	}
-	.why.open {
-		border-left-color: var(--ok);
-	}
-	.path {
-		overflow-wrap: anywhere;
-	}
-	.modal {
-		width: min(480px, calc(100vw - 32px));
-		max-height: calc(100dvh - 32px);
-		overflow: auto;
-		padding: var(--s-6);
-		border: 0;
-		border-radius: var(--r-modal);
-		background: var(--surface-1);
-		color: var(--text);
-		box-shadow: var(--shadow-modal);
-	}
-	.modal.wide {
-		width: min(640px, calc(100vw - 32px));
-	}
-	.plan {
-		margin-top: var(--s-5);
-	}
-	.files {
-		margin: var(--s-1) 0 var(--s-2);
-		padding-left: var(--s-5);
-	}
-	.modal::backdrop {
-		background: var(--scrim);
-	}
-	.modal-actions {
-		justify-content: flex-end;
-		margin-top: var(--s-6);
-	}
-	.back {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-		min-height: 36px;
-		margin-bottom: var(--s-4);
-		border-radius: var(--r-sm);
-	}
-	.back:hover {
-		color: var(--text);
-	}
-	.detail-workspace {
-		overflow: hidden;
-		border: 1px solid var(--line);
-		border-radius: 16px;
-		background: var(--surface-1);
-	}
-	.hero {
-		display: grid;
-		grid-template-columns: 144px minmax(0, 1fr);
-		gap: var(--s-5);
-		margin: 0;
-		padding: var(--s-5);
-		border-bottom: 1px solid var(--line);
-		background: var(--surface-1);
-	}
-	.title {
-		font: var(--weight-semibold) var(--text-2xl) / var(--leading-tight) var(--font-display);
-		letter-spacing: var(--tracking-display);
-	}
-	.overview {
-		margin: 0;
-		color: var(--text-muted);
-		max-width: 78ch;
-		line-height: 1.6;
-		text-wrap: pretty;
-	}
-	.overview-wrap {
-		margin-top: var(--s-3);
-	}
-	.overview-toggle {
-		display: none;
-	}
-	.chips {
-		margin: var(--s-4) 0 var(--s-2);
-	}
-	.actions {
-		margin-top: var(--s-4);
-		gap: var(--s-2);
-		flex-wrap: wrap;
-	}
-	.detail-tools {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		border-bottom: 1px solid var(--line);
-		background: var(--surface-1);
-	}
-	.detail-tools :global(.card) {
-		margin: 0;
-		border: 0;
-		border-radius: 0;
-		box-shadow: none;
-	}
-	.detail-tools :global(.card + .card),
-	.detail-tools > :global(* + *) {
-		border-left: 1px solid var(--line);
-	}
-	.cols {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
-		gap: 0;
-		align-items: start;
-	}
-	.rel-card {
-		grid-column: 1;
-		grid-row: 1 / span 20;
-	}
-	.cols > :not(.rel-card) { grid-column: 2; }
-	.cols .card {
-		margin: 0;
-		border: 0;
-		border-radius: 0;
-		box-shadow: none;
-	}
-	.cols > :not(.rel-card) {
-		border-left: 1px solid var(--line);
-		border-bottom: 1px solid var(--line);
-	}
-	.cols .card + .card {
-		margin-top: 0;
-	}
-	.card-title {
-		margin-bottom: var(--s-4);
-	}
-	.rel {
-		padding: var(--s-4) 0;
-	}
-	.rel + .rel {
-		border-top: 1px solid var(--line);
-	}
-	.rel-top {
-		display: flex;
-		justify-content: space-between;
-		gap: var(--s-3);
-		align-items: flex-start;
-		margin-bottom: 4px;
-	}
-	.rel-name {
-		font-size: var(--text-sm);
-		overflow-wrap: anywhere;
-	}
-	.reasons {
-		margin-top: var(--s-2);
-		font-size: var(--text-xs);
-		color: var(--text-muted);
-	}
-	.reasons li {
-		padding: 2px 0 2px var(--s-3);
-		border-left: 2px solid var(--line-strong);
-	}
-	.reasons li.fail {
-		border-left-color: var(--fail);
-	}
-	.reasons li.hold {
-		border-left-color: var(--wait);
-	}
-	.reasons li.warn {
-		border-left-color: var(--wait);
-	}
-	.rel-actions {
-		margin-top: var(--s-2);
-		gap: var(--s-2);
-	}
-	.pager {
-		justify-content: space-between;
-		margin-top: var(--s-3);
-	}
-	.dl {
-		margin-top: var(--s-3);
-		padding: var(--s-3);
-		border-radius: var(--r-btn);
-		background: var(--surface-2, var(--surface-3));
-		max-width: 520px;
-	}
-	.dl-head {
-		gap: var(--s-2);
-		flex-wrap: wrap;
-	}
-	.dl p {
-		margin-top: var(--s-2);
-	}
-	.dl .btn {
-		margin-top: var(--s-2);
-	}
-	.bar {
-		width: 100%;
-		height: 6px;
-		margin-top: var(--s-2);
-		accent-color: var(--red, currentColor);
-	}
-	.slot-pick {
-		max-width: 280px;
-	}
-	.warns {
-		margin-top: var(--s-4);
-		padding: var(--s-3);
-		border-left: 3px solid var(--wait);
-		background: var(--surface-2, var(--surface-1));
-		border-radius: var(--r-sm);
-		font-size: var(--text-sm);
-	}
-	.warns li + li {
-		margin-top: var(--s-2);
-	}
-	details {
-		margin-top: var(--s-2);
-	}
-	summary {
-		cursor: pointer;
-		min-height: 28px;
-		display: inline-flex;
-		align-items: center;
-	}
-	@media (max-width: 900px) {
-		.detail-workspace {
-			border-radius: 14px;
-		}
-		.cols {
-			grid-template-columns: 1fr;
-		}
-		.rel-card {
-			grid-column: auto;
-			grid-row: auto;
-			order: -1;
-		}
-		.cols > :not(.rel-card) { grid-column: auto; border-left: 0; }
-	}
-	@media (max-width: 600px) {
-		.hero {
-			grid-template-columns: 88px minmax(0, 1fr);
-			gap: var(--s-3);
-			padding: var(--s-4);
-		}
-		.hero > .art {
-			grid-column: 1;
-			grid-row: 1 / span 2;
-		}
-		.info {
-			display: contents;
-		}
-		.info > * {
-			grid-column: 1 / -1;
-		}
-		.info > .title {
-			grid-column: 2;
-			grid-row: 1;
-			align-self: start;
-		}
-		.info > .chips {
-			grid-column: 2;
-			grid-row: 2;
-			align-self: start;
-			margin: 0;
-		}
-		.info > .overview-wrap {
-			grid-row: 3;
-			margin-top: var(--s-1);
-		}
-		.overview.clamped {
-			display: -webkit-box;
-			overflow: hidden;
-			-webkit-box-orient: vertical;
-			-webkit-line-clamp: 5;
-			line-clamp: 5;
-		}
-		.overview-toggle {
-			display: inline-flex;
-			align-items: center;
-			min-height: 44px;
-			margin-top: var(--s-1);
-			padding: 0;
-			border: 0;
-			background: transparent;
-			color: var(--text);
-			font: inherit;
-			font-size: var(--text-sm);
-			font-weight: var(--weight-semibold);
-			cursor: pointer;
-		}
-		.overview-toggle:hover {
-			text-decoration: underline;
-		}
-		.overview-toggle:focus-visible {
-			outline: 2px solid var(--focus, currentColor);
-			outline-offset: 3px;
-			border-radius: 2px;
-		}
-		.hero .actions {
-			display: grid;
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			align-items: stretch;
-			width: 100%;
-		}
-		.hero .actions > .btn {
-			width: 100%;
-			min-width: 0;
-			justify-content: center;
-		}
-		.hero .actions > .btn:first-child,
-		.hero .actions > .switch {
-			grid-column: 1 / -1;
-		}
-		.hero .actions > .switch {
-			min-height: 44px;
-		}
-		.detail-tools { grid-template-columns: 1fr; }
-		.detail-tools > :global(* + *) { border-left: 0; border-top: 1px solid var(--line); }
-		.title {
-			font-size: var(--text-xl);
-			line-height: 1.15;
-		}
-		.title .year {
-			display: block;
-			margin-top: 2px;
-			font-size: var(--text-base);
-			font-weight: var(--weight-medium);
-		}
-	}
-	.hist li {
-		flex-wrap: wrap;
-		gap: var(--s-2) var(--s-3);
-	}
-	.hist .grow {
-		min-width: 0;
-		overflow-wrap: anywhere;
-	}
+	.path { overflow-wrap: anywhere; }
+	.modal { width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; padding: var(--s-6); border: 0; border-radius: var(--r-modal); background: var(--surface-1); color: var(--text); box-shadow: var(--shadow-modal); }
+	.modal.wide { width: min(640px, calc(100vw - 32px)); }
+	.modal::backdrop { background: var(--scrim); }
+	.modal-actions { justify-content: flex-end; margin-top: var(--s-6); }
+	.plan { margin-top: var(--s-5); }
+	.files { margin: var(--s-1) 0 var(--s-2); padding-left: var(--s-5); }
+	.rel { padding: var(--s-4) 0; }
+	.rel + .rel { border-top: 1px solid var(--line); }
+	.rel-top { display: flex; justify-content: space-between; gap: var(--s-3); align-items: flex-start; margin-bottom: 4px; }
+	.rel-name { font-size: var(--text-sm); overflow-wrap: anywhere; min-width: 0; }
+	.reasons { margin-top: var(--s-2); font-size: var(--text-xs); color: var(--text-muted); }
+	.reasons li { padding: 2px 0 2px var(--s-3); border-left: 2px solid var(--line-strong); }
+	.reasons li.fail { border-left-color: var(--fail); }
+	.reasons li.hold, .reasons li.warn { border-left-color: var(--wait); }
+	.rel-actions { margin-top: var(--s-2); gap: var(--s-2); }
+	.pager { justify-content: space-between; margin-top: var(--s-3); }
+	.slot-pick { max-width: 280px; }
+	.warns { margin-top: var(--s-4); padding: var(--s-3); border-left: 3px solid var(--wait); background: var(--surface-2, var(--surface-1)); border-radius: var(--r-sm); font-size: var(--text-sm); }
+	.warns li + li { margin-top: var(--s-2); }
+	details { margin-top: var(--s-2); }
+	summary { cursor: pointer; min-height: 28px; display: inline-flex; align-items: center; }
+	.hist li { flex-wrap: wrap; gap: var(--s-2) var(--s-3); }
+	.hist .grow { min-width: 0; overflow-wrap: anywhere; }
 </style>
