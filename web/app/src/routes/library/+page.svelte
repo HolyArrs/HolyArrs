@@ -347,23 +347,23 @@
 		<table class="list-table">
 		<caption class="sr-only">Titles in the Library</caption>
 		<thead>
-			<tr><th scope="col">Title</th><th scope="col">State</th><th scope="col" class="wide">Out on</th><th scope="col" class="wide">Keep up to date</th></tr>
+			<tr><th scope="col" id="library-title">Title</th><th scope="col" id="library-state">State</th><th scope="col" class="wide">Out on</th><th scope="col" class="wide">Keep up to date</th></tr>
 		</thead>
 		<tbody>
 			{#each shown as t (t.id)}
 				{@const requester = requestedBy(t)}
 				<tr data-testid="library-row" class:selected={preview?.id === t.id} class:last-opened={lastOpenedId === t.id}>
-					<td class="title-cell">{#if lastOpenedId === t.id}<span class="last-opened-label" data-testid="last-opened">Last opened</span>{/if}<a class="row-link" href={titleLink(t.id)}><span class="thumb"><Poster src={t.artwork[0]} name={t.name} /></span><span><b>{t.name}</b> <span class="muted xs">{t.year ?? ''}{kindWord[t.kind] ?? ''}</span></span></a><button class="preview-button list-preview" type="button" aria-label={`Preview ${t.name}`} aria-pressed={preview?.id === t.id} onclick={(event) => openPreview(t, event)}>Preview</button>{#if requester}<span class="requester xs muted" data-testid="requested-by">Requested by {requester}</span>{/if}</td>
+					<td class="title-cell" headers="library-title">{#if lastOpenedId === t.id}<span class="last-opened-label" data-testid="last-opened">Last opened</span>{/if}<a class="row-link" href={titleLink(t.id)}><span class="thumb"><Poster src={t.artwork[0]} name={t.name} /></span><span><b>{t.name}</b> <span class="muted xs">{t.year ?? ''}{kindWord[t.kind] ?? ''}</span></span></a><button class="preview-button list-preview" type="button" aria-label={`Preview ${t.name}`} aria-pressed={preview?.id === t.id} onclick={(event) => openPreview(t, event)}>Preview</button>{#if requester}<span class="requester xs muted" data-testid="requested-by">Requested by {requester}</span>{/if}</td>
 					{#if t.kind === 'artist'}
 						{@const c = chipOf(t)}
-						<td>{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}<span class="chip" data-testid="request-approved" title="Requested and approved">Approved</span>{/if}{#if c}<span class="chip {tone(c.state)}">{c.label}</span>{/if}<span class="xs muted block">{artistProgress(t.artist)}</span></td>
+						<td class="state-cell" headers="library-state">{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}<span class="chip" data-testid="request-approved" title="Requested and approved">Approved</span>{/if}{#if c}<span class="chip {tone(c.state)}">{c.label}</span>{/if}<span class="xs muted block">{artistProgress(t.artist)}</span></td>
 						<td class="wide small muted">{t.artist?.next_release ? `Next album ${date(t.artist.next_release)}` : t.artist?.status === 'ended' ? 'No longer active' : 'No date yet'}</td>
 					{:else if t.kind === 'show'}
 						{@const c = chipOf(t)}
-						<td>{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}<span class="chip" data-testid="request-approved" title="Requested and approved">Approved</span>{/if}{#if c}<span class="chip {tone(c.state)}">{c.label}</span>{/if}<span class="xs muted block">{showProgress(t.show)}</span></td>
+						<td class="state-cell" headers="library-state">{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}<span class="chip" data-testid="request-approved" title="Requested and approved">Approved</span>{/if}{#if c}<span class="chip {tone(c.state)}">{c.label}</span>{/if}<span class="xs muted block">{showProgress(t.show)}</span></td>
 						<td class="wide small muted">{t.show?.next_air_date ? `Next episode ${date(t.show.next_air_date)}` : t.show?.status === 'ended' ? 'Ended' : 'No date yet'}</td>
 					{:else}
-						<td>{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}<span class="chip" data-testid="request-approved" title="Requested and approved">Approved</span>{/if}{#each t.slots as s (s.id)}<span class="chip {tone(s.state)}">{s.state_label}</span>{/each}</td>
+						<td class="state-cell" headers="library-state">{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}<span class="chip" data-testid="request-approved" title="Requested and approved">Approved</span>{/if}{#each t.slots as s (s.id)}<span class="chip {tone(s.state)}">{s.state_label}</span>{/each}</td>
 						<td class="wide small muted">{date(t.digital_date ?? t.physical_date ?? t.cinema_date) || 'Not known'}</td>
 					{/if}
 					<td class="wide small">{t.keep_up_to_date ? 'Yes' : 'No'}</td>
@@ -575,10 +575,72 @@
 		flex: none;
 	}
 	@media (max-width: 600px) {
-		.wide {
+		.list-table,
+		.list-table tbody {
+			display: block;
+		}
+		/* Keep column headers available to assistive technology in stacked rows. */
+		.list-table thead {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			margin: -1px;
+			overflow: hidden;
+			clip-path: inset(50%);
+			white-space: nowrap;
+		}
+		.list-table tbody tr {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.list-table tbody tr + tr {
+			border-top: 1px solid var(--line);
+		}
+		.list-table td {
+			border-bottom: 0;
+		}
+		.title-cell {
+			min-width: 0;
+		}
+		.title-cell .row-link {
+			display: flex;
+			width: 100%;
+			min-width: 0;
+		}
+		.row-link > span:last-child {
+			min-width: 0;
+			overflow-wrap: anywhere;
+		}
+		.title-cell .requester {
+			margin-top: var(--s-2);
+		}
+		.state-cell {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			gap: var(--s-2);
+			min-width: 0;
+			padding-top: 0;
+		}
+		.state-cell .chip {
+			max-width: 100%;
+			height: auto;
+			min-height: 26px;
+			padding-block: 6px;
+			line-height: 1.25;
+			white-space: normal;
+			overflow-wrap: anywhere;
+		}
+		.state-cell .chip::before {
+			flex: none;
+		}
+		.state-cell .block {
+			flex-basis: 100%;
+			overflow-wrap: anywhere;
+		}
+		.list-table .wide {
 			display: none;
 		}
-
 	}
 	.grid {
 		display: grid;
