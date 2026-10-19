@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Sheet from './ui/Sheet.svelte';
+	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import Button from './ui/Button.svelte';
 	import { to } from './paths.ts';
 	import { api, message } from './api.ts';
@@ -104,6 +105,7 @@
 </script>
 
 <Sheet bind:open={addOpen} title={picked ? `Add ${picked.name}` : 'Add a movie'}>
+	<MetadataNotice />
 	{#if picked && !ready}
 		<div aria-busy="true" aria-label="Loading the defaults"><Skeleton lines={4} /></div>
 	{:else if picked}

@@ -3,7 +3,7 @@ import { fromServer, groupState, pageState, stateWords, type ServerStatus } from
 import { groups, grouped, sectionFor, sections, visible } from './settings.ts';
 import { searchSettings, settingIndex } from './settings-search.ts';
 
-const answer = (over: Partial<ServerStatus> = {}): ServerStatus => ({ items: [], unset: {}, known: [], tmdb_key_set: true, ...over });
+const answer = (over: Partial<ServerStatus> = {}): ServerStatus => ({ items: [], unset: {}, known: [], metadata_up: true, ...over });
 
 describe('fromServer', () => {
 	it('turns the server answer into pages, groups and severities', () => {
@@ -12,13 +12,13 @@ describe('fromServer', () => {
 				items: [{ group: 'copies', page: '/settings/downloaders', text: 'qBit is not answering', severity: 'error' }],
 				unset: { library: ['/settings/library-folders'] },
 				known: ['/settings/sources'],
-				tmdb_key_set: false
+				metadata_up: false
 			})
 		);
 		expect(a.items).toEqual([{ group: 'copies', href: '/settings/downloaders', text: 'qBit is not answering', severity: 'error' }]);
 		expect(a.unset).toEqual({ library: ['/settings/library-folders'] });
 		expect(a.known.has('/settings/sources')).toBe(true);
-		expect(a.tmdbKeySet).toBe(false);
+		expect(a.metadataUp).toBe(false);
 	});
 
 	it('copes with missing lists', () => {

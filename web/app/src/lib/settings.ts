@@ -47,7 +47,7 @@ export const sections: Section[] = [
 	{ href: '/settings/naming', group: 'library', label: 'Naming and files', icon: 'film', about: 'How files and folders are named, the holding folder and free space.' },
 	{ href: '/settings/music', group: 'library', label: 'Music defaults', icon: 'music', about: 'What a new artist gets, which Pressing an album follows, and MusicBrainz.' },
 	{ href: '/settings/subtitles', group: 'library', label: 'Subtitles', icon: 'subtitle', about: 'Default languages, Pass marks, when to look, Sync fix and Subtitle sites.' },
-	{ href: '/settings/tmdb', group: 'library', label: 'Metadata', icon: 'film', about: 'The TMDB key for names, dates and posters.' },
+	{ href: '/settings/tmdb', group: 'library', label: 'Metadata', icon: 'film', about: 'Where names, dates and posters come from.' },
 	{ href: '/settings/outside-lists', group: 'library', label: 'Outside lists', icon: 'source', about: 'TMDB and Trakt lists that add movies by themselves, and the Never-add list.' },
 
 	{ href: '/settings/sources', group: 'copies', label: 'Sources', icon: 'source', about: 'Where HolyArrs looks for Releases.' },

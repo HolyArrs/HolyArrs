@@ -21,8 +21,7 @@ export const episodeOrders: [string, string, string][] = [
 /** detailsSources are where a show's names and air dates come from. */
 export const detailsSources: [string, string][] = [
 	['tmdb', 'TMDB'],
-	['tvmaze', 'TVMaze'],
-	['tvdb', 'TVDB (your own key)']
+	['tvmaze', 'TVMaze']
 ];
 
 /** label finds the words for a stored value in one of the lists above. */

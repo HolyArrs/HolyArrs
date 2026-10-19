@@ -10,6 +10,7 @@
 	import { session } from '#lib/session.svelte.ts';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
@@ -288,6 +289,8 @@
 			: 'Find a movie by name, or paste tmdb: or imdb: with its id.'}
 />
 
+<MetadataNotice />
+
 <div class="kind">
 	{#if kinds.length > 1}<SegmentedControl label="Look for" value={kind} onchange={(k) => setKind(k)} options={kinds} />{/if}
 </div>
@@ -351,7 +354,7 @@
 			</section>
 		{/if}
 	{:else if noTMDB}
-		<EmptyState icon="key" title="Add your TMDB key first" text="HolyArrs looks {kind === 'show' ? 'shows' : 'movies'} up on TMDB. Add your TMDB read access token in Settings, then search again." action={{ label: 'Add the TMDB key', href: to('/settings/tmdb') }} />
+		<EmptyState icon="info" title="Metadata server is down" text="Searches and new artwork will return when it's back. Try again in a minute." />
 	{:else if kind === 'show'}
 		{#if error}
 			<p class="notice bad" role="alert">{plainReason(error).text}</p>

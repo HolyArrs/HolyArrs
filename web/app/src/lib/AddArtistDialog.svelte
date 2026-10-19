@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Sheet from './ui/Sheet.svelte';
+	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import Button from './ui/Button.svelte';
 	import { to } from './paths.ts';
 	// The add-an-artist dialog: Library folder, Pick rules, which albums to
@@ -85,6 +86,7 @@
 </script>
 
 <Sheet bind:open={sheetOpen} title={picked ? `Add ${picked.name}` : 'Add'}>
+	<MetadataNotice />
 	{#if picked}
 		<form id="add-artist-title" class="sheet-form" onsubmit={add}>
 			{#if picked.disambiguation}<p class="small muted">{picked.disambiguation}</p>{/if}

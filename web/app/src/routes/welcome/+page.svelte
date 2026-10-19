@@ -11,16 +11,15 @@
 	import { theme } from '#lib/theme.svelte.ts';
 	const mark = $derived(theme.value === 'light' ? '/brand/mark-color.svg' : '/brand/mark-color-on-dark.svg');
 
-	type Step = 'parts' | 'tmdb' | 'folder';
+	type Step = 'parts' | 'folder';
 
-	// First run, right after the owner is made: which parts to use, then the
-	// two things needed before Home can do useful work. A later visit to
+	// First run, right after the owner is made: which parts to use, then a
+	// Library folder; metadata needs no setup. A later visit to
 	// /welcome changes only the parts and returns to Home.
 	const firstRun = $derived(page.url.searchParams.get('first') === '1');
 	let step = $state<Step>('parts');
 	let want = $state<Record<'movies' | 'shows' | 'music' | 'subtitles', boolean>>({ movies: true, shows: true, music: false, subtitles: true });
 	let family = $state<'yes' | 'no'>('no');
-	let tmdbKey = $state('');
 	let folderPath = $state('');
 	let folderName = $state('');
 	let folderKind = $state<'movie' | 'show' | 'music'>('movie');
@@ -49,9 +48,7 @@
 			await refreshParts();
 			if (firstRun) {
 				folderKind = firstFolderKind(parts);
-				// TMDB is needed only when Movies or Shows is on. A music-only
-				// setup goes straight to its Music Library folder.
-				step = parts.movies || parts.shows ? 'tmdb' : 'folder';
+				step = 'folder';
 			}
 			else await goto(to('/'), { replace: true });
 		} catch (e) {
@@ -65,22 +62,6 @@
 		e.preventDefault();
 		if (problem) return void (error = problem);
 		void saveParts(full);
-	}
-
-	async function saveKey(e: SubmitEvent) {
-		e.preventDefault();
-		error = '';
-		if (!tmdbKey.trim()) return void (error = 'Paste the TMDB read access token.');
-		busy = true;
-		try {
-			await api.put('/settings/tmdb-token', { token: tmdbKey.trim() });
-			tmdbKey = '';
-			step = 'folder';
-		} catch (e) {
-			error = message(e);
-		} finally {
-			busy = false;
-		}
 	}
 
 	async function saveFolder(e: SubmitEvent) {
@@ -97,11 +78,11 @@
 			busy = false;
 		}
 	}
-	const stepNo = $derived(step === 'parts' ? 1 : step === 'tmdb' ? 2 : (want.movies || want.shows ? 3 : 2));
-	const stepCount = $derived((want.movies || want.shows ? 3 : 2));
+	const stepNo = $derived(step === 'parts' ? 1 : 2);
+	const stepCount = 2;
 </script>
 
-<svelte:head><title>{step === 'parts' ? 'What do you use?' : step === 'tmdb' ? 'TMDB key' : 'Library folder'} · HolyArrs</title></svelte:head>
+<svelte:head><title>{step === 'parts' ? 'What do you use?' : 'Library folder'} · HolyArrs</title></svelte:head>
 
 <div class="welcome">
 	<div class="brand"><img src={to(mark)} alt="" width="40" height="40" /><span>HolyArrs</span></div>
@@ -114,10 +95,6 @@
 		{#if step === 'parts'}
 			<h1>What do you use?</h1>
 			<p>Pick the parts of HolyArrs you want. Parts you leave out stay off and use nothing; change this any time in Settings &gt; Parts and controls.</p>
-		{:else if step === 'tmdb'}
-			<p class="step-word">Step 2 of {stepCount}</p>
-			<h1>TMDB key</h1>
-			<p>HolyArrs uses your TMDB read access token to look up movie and show names, dates and pictures. It is stored encrypted and never shown again in full.</p>
 		{:else}
 			<p class="step-word">Step {stepCount} of {stepCount}</p>
 			<h1>Library folder</h1>
@@ -163,17 +140,6 @@
 				Update check (on; turn it off in Settings &gt; This app): once a day HolyArrs asks api.github.com for the newest release, sending only the header User-Agent:
 				HolyArrs/(its version). Nothing else is sent.
 			</p>
-		</form>
-	{:else if step === 'tmdb'}
-		<form class="card" onsubmit={saveKey}>
-			<div class="field">
-				<label for="tmdb">Paste the key</label>
-				<input id="tmdb" class="input mono" type="password" bind:value={tmdbKey} autocomplete="off" spellcheck="false" placeholder="eyJhbGciOi…" />
-				<span class="hint">Find the long API Read Access Token on themoviedb.org under Settings, API.</span>
-			</div>
-			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
-			<div class="go"><Button variant="primary" size="lg" full type="submit" disabled={busy} aria-busy={busy}>Save and continue</Button></div>
-			<p class="xs muted notice-line">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
 		</form>
 	{:else}
 		<form class="card" onsubmit={saveFolder}>
@@ -221,7 +187,6 @@
 	.choices { display: flex; flex-direction: column; gap: 4px; }
 	.acts { flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 	.go { margin-top: 20px; }
-	.notice-line { margin-top: 16px; }
 	@media (max-width: 480px) {
 		.acts > :global(*) { flex: 1 1 100%; }
 	}

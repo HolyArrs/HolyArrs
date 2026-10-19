@@ -10,7 +10,7 @@ export interface ServerStatus {
 	items: { group: GroupId; page: string; text: string; severity: Severity }[];
 	unset: Partial<Record<GroupId, string[]>>;
 	known: string[];
-	tmdb_key_set: boolean;
+	metadata_up?: boolean;
 }
 
 export interface Attention {
@@ -27,7 +27,7 @@ export interface StatusAnswer {
 	unset: Partial<Record<GroupId, string[]>>;
 	/** Pages whose status is known: true when they are fine. */
 	known: Set<string>;
-	tmdbKeySet: boolean;
+	metadataUp: boolean;
 }
 
 /** fromServer turns the status route's answer into a StatusAnswer; null is "nothing known". */
@@ -36,7 +36,7 @@ export function fromServer(a: ServerStatus | null): StatusAnswer {
 		items: (a?.items ?? []).map((i) => ({ group: i.group, href: i.page, text: i.text, severity: i.severity })),
 		unset: { ...(a?.unset ?? {}) },
 		known: new Set(a?.known ?? []),
-		tmdbKeySet: !!a?.tmdb_key_set
+		metadataUp: a?.metadata_up !== false
 	};
 }
 

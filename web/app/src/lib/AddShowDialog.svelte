@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Sheet from './ui/Sheet.svelte';
+	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import Button from './ui/Button.svelte';
 	import { to } from './paths.ts';
 	// The add-a-show dialog: Library folder, Pick rules, which seasons to
@@ -116,6 +117,7 @@
 </script>
 
 <Sheet bind:open={sheetOpen} title={picked ? `Add ${picked.name}` : 'Add'}>
+	<MetadataNotice />
 	{#if picked && !ready}
 		<div aria-busy="true" aria-label="Loading the defaults"><Skeleton lines={4} /></div>
 	{:else if picked}

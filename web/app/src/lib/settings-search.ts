@@ -88,7 +88,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/subtitles', 'better-subs', 'Look for better subtitles', 'subtitles upgrade better'),
 	e('/settings/subtitles', 'sy-step', 'Sync fix shift', 'subtitles sync timing offset ms', true),
 	e('/settings/subtitles', 'sites-card', 'Subtitle sites', 'subtitles opensubtitles provider site add'),
-	e('/settings/tmdb', 'tmdb-card', 'TMDB key', 'metadata tmdb token key posters names api key'),
+	e('/settings/tmdb', 'metadata-card', 'Metadata server', 'metadata tmdb posters names artwork server'),
 	e('/settings/outside-lists', '', 'Outside lists', 'tmdb list trakt list import list auto add'),
 	e('/settings/outside-lists', 'trakt-card', 'Trakt key', 'trakt key client id', true),
 	e('/settings/outside-lists', 'never-card', 'Never-add list', 'never add exclusion block list'),

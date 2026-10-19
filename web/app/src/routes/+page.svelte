@@ -16,6 +16,7 @@
 	import type { DownloadRow, Decision } from '#lib/downloaders.ts';
 	import type { Ask, CalendarEntry, EventRecord, Health, HealthChecks, LibraryFolder, SearchView, TitleView } from '#lib/types.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
@@ -44,8 +45,6 @@
 	let decisionItems = $state<Decision[]>([]);
 	let health = $state<Health | null>(null);
 	let checks = $state<HealthChecks | null>(null);
-	let tmdbStatus = $state<'unknown' | 'ready' | 'missing'>('unknown');
-	let tmdbNeedsProof = $state(false);
 	let searching = $state<SearchView[]>([]);
 	let found = $state<SearchView[]>([]);
 
@@ -58,12 +57,6 @@
 	const issues = $derived(problems(checks?.checks));
 
 	const steps = $derived([
-		{
-			done: tmdbStatus === 'ready',
-			text: tmdbStatus === 'unknown' ? 'Check the TMDB connection' : 'Connect TMDB',
-			detail: tmdbStatus === 'unknown' ? 'Confirm the connection before HolyArrs marks TMDB ready.' : 'Use TMDB artwork and details when you add media.',
-			href: '/settings/tmdb'
-		},
 		{ done: folders.length > 0, text: 'Choose a Library folder', detail: 'Tell HolyArrs where finished media should live.', href: '/settings/library-folders' },
 		{ done: (health?.sources?.length ?? 0) > 0, text: 'Add a Source', detail: 'Connect a place where HolyArrs can find Releases.', href: '/settings/sources' },
 		{ done: (health?.downloaders?.length ?? 0) > 0, text: 'Add a Downloader', detail: 'Connect the app that fetches chosen Releases.', href: '/settings/downloaders' },
@@ -111,17 +104,15 @@
 	}
 
 	async function loadAll() {
-		const mayReadTMDB = admin && !tmdbNeedsProof && (session.s.via === 'api_key' || session.s.localRecent);
 		const from = ymd(new Date());
 		const until = ymd(new Date(Date.now() + 30 * 86400000));
-		const [su, fo, dl, ev, he, tk, se, ch, ca, as, de] = await Promise.allSettled([
+		const [su, fo, dl, ev, he, se, ch, ca, as, de] = await Promise.allSettled([
 			api.get<{ total: number; missing: MissingTitle[]; recent?: TitleView[] }>('/library-summary'),
 			manager ? api.get<{ library_folders: LibraryFolder[] }>('/library-folders') : Promise.resolve(null),
 			// Members may only read the Library and their own asks (perms.go); the rest needs manage_library.
 			manager ? api.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=50') : Promise.resolve(null),
 			manager ? api.get<{ events: EventRecord[] }>('/events?limit=12') : Promise.resolve(null),
 			manager ? api.get<Health>('/health') : Promise.resolve(null),
-			mayReadTMDB ? api.get<{ token: string }>('/settings/tmdb-token') : Promise.resolve(null),
 			manager ? api.get<{ running: SearchView[]; recent: SearchView[] }>('/searches?limit=6') : Promise.resolve(null),
 			admin && manager ? api.get<HealthChecks>('/health/checks') : Promise.resolve(null),
 			manager ? api.get<{ dates: CalendarEntry[] | null }>(`/calendar?from=${from}&to=${until}`) : Promise.resolve(null),
@@ -148,12 +139,6 @@
 		if (ca.status === 'fulfilled' && ca.value) dates = ca.value.dates ?? [];
 		if (as.status === 'fulfilled' && as.value) asks = as.value.asks ?? [];
 		if (de.status === 'fulfilled' && de.value) decisionItems = de.value.items ?? [];
-		if (mayReadTMDB) {
-			if (tk.status === 'rejected' && tk.reason instanceof ApiError && tk.reason.status === 403) tmdbNeedsProof = true;
-			tmdbStatus = tk.status === 'fulfilled' && tk.value ? (tk.value.token ? 'ready' : 'missing') : 'unknown';
-		} else {
-			tmdbStatus = 'unknown';
-		}
 		loaded = true;
 	}
 
@@ -207,6 +192,7 @@
 		<LoadError hasData={false} message="Could not load your Library." onretry={retry} busy={retrying} />
 	{:else}
 		{#if failed}<div class="banner"><LoadError hasData={true} message="Could not refresh Home." onretry={retry} busy={retrying} /></div>{/if}
+		<MetadataNotice />
 
 		{#if !loaded}
 			<section class="loading" aria-label="Loading" aria-busy="true">

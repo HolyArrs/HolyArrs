@@ -43,6 +43,7 @@
 	import AskShowDialog from '#lib/AskShowDialog.svelte';
 	import AskMovieDialog from '#lib/AskMovieDialog.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
@@ -250,6 +251,7 @@
 
 <div class="explore">
 	<PageHeader title="Explore" subtitle="Find something to watch or listen to next." />
+	<MetadataNotice />
 
 	{#if failed && !okOnce}
 		<LoadError hasData={false} message="Could not load Explore." onretry={load} {busy} />
