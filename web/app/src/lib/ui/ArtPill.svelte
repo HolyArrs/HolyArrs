@@ -7,8 +7,8 @@
 
 	// The one badge over artwork: a small dark glass pill, hairline ring,
 	// sentence case. Colour lives only in the glyph; the word stays white.
-	// `compact` hides the word below a card width (container query) and keeps
-	// the glyph, so a narrow poster never gets two long pills.
+	// `compact` shows the glyph only (a round glass button); the word stays as
+	// the accessible label and tooltip, so every row reads the same.
 	let {
 		text,
 		icon,
@@ -72,9 +72,7 @@
 	.info { --tint: var(--info-on-art); }
 	.wait { --tint: var(--wait-on-art); }
 	.fail { --tint: var(--fail-on-art); }
-	/* Narrow cards sharing the row with a type pill: glyph only, a 28px glass circle. */
-	@container art (max-width: 199px) {
-		.compact.glyph { width: 28px; height: 28px; padding: 0; justify-content: center; }
-		.compact.glyph .w { display: none; }
-	}
+	/* Status on posters is always the glyph in a 28px glass circle; the word stays as label and tooltip. */
+	.compact.glyph { width: 28px; height: 28px; padding: 0; justify-content: center; }
+	.compact.glyph .w { display: none; }
 </style>

@@ -88,7 +88,7 @@
 					{#if typePill}<ArtPill text={typeWords[typePill]} icon={typeIcons[typePill]} />{/if}
 					{#if status}<StatusPill kind={status} label={statusLabel} on="art" />{/if}
 					{#each badges as b (b)}<Badge label={b} on="art" />{/each}
-					{#if owned}<span class="own"><ArtPill text={ownWord(owned)} label={owned.label} icon={ownIcons[owned.state]} tone={ownTones[owned.state]} percent={ownPercent(owned)} compact={!!typePill} /></span>{/if}
+					{#if owned}<span class="own"><ArtPill text={ownWord(owned)} label={owned.label} icon={ownIcons[owned.state]} tone={ownTones[owned.state]} percent={ownPercent(owned)} compact /></span>{/if}
 				</span>
 			{/if}
 			{#if progress !== undefined}<span class="prog"><ProgressBar value={progress} label="{title} progress" size="sm" on="art" /></span>{/if}
