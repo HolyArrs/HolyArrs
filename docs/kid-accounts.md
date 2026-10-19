@@ -64,9 +64,12 @@ same answer:
   (seasons, episodes, people and the rest).
 - **Explore rows, movie search and the add searches** show only allowed
   movies and shows. A row item carries no rating, so HolyArrs takes it from
-  the Library, then from the details it keeps for 24 hours, then from one
-  TMDB lookup (at most four at a time). An item whose rating cannot be found
-  stays hidden.
+  the Library, then from the ratings and details it keeps for 24 hours, then
+  from one small TMDB rating lookup (at most four at a time). One answer
+  makes at most 24 such lookups, and each Kid at most 120 a minute; an item
+  whose rating cannot be found stays hidden. A Kid's searches, add searches,
+  TMDB title pages and Explore rows together are limited to 30 a minute
+  (429 with Retry-After after that).
 - **A TMDB title page** above the limit answers "This title is rated above
   what this account may see.", and its "more like this" list keeps only
   allowed titles.
