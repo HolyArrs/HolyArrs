@@ -56,7 +56,9 @@ func moveSetup(t *testing.T, safe bool) (*httptest.Server, *store.Store, int64, 
 	return srv, st, saved.ID, filepath.ToSlash(films)
 }
 
-func moveBody(snap int64, to string, skip ...string) string { return moveBodyHash(snap, to, "", skip...) }
+func moveBody(snap int64, to string, skip ...string) string {
+	return moveBodyHash(snap, to, "", skip...)
+}
 
 // moveBodyHash is a move body bound to a dry run's plan_hash.
 func moveBodyHash(snap int64, to, hash string, skip ...string) string {

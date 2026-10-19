@@ -217,7 +217,7 @@ func TestRefreshPlanChangedListDroppedAndArtwork(t *testing.T) {
 	var mu sync.Mutex
 	srv := fakeTMDB(t, &gone, &mu)
 	tm := &metadata.TMDB{BaseURL: srv.URL + "/3", Access: func(context.Context) (string, error) { return "test-read-value", nil }, Gap: time.Millisecond, Images: srv.URL}
-	cache := &ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{srv.URL + "/"}}
+	cache := &ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{srv.URL + "/"}, HTTP: &http.Client{}}
 	svc := &Service{Store: s, Metadata: tm, Artwork: cache, Now: func() time.Time { return now }}
 	first := metadata.Movie{Name: "First", Year: 2025, IDs: map[string]string{"tmdb": "111"}, CinemaDate: d("2025-01-01")}
 	second := metadata.Movie{Name: "Second", Year: 2026, IDs: map[string]string{"tmdb": "222"}, CinemaDate: d("2026-12-01")}
@@ -360,7 +360,7 @@ func TestArtworkCacheCapAndHosts(t *testing.T) {
 		_, _ = w.Write([]byte(strings.Repeat("x", 100)))
 	}))
 	defer srv.Close()
-	c := &ArtworkCache{Dir: t.TempDir(), Cap: 250, Allowed: []string{srv.URL + "/img/"}}
+	c := &ArtworkCache{Dir: t.TempDir(), Cap: 250, Allowed: []string{srv.URL + "/img/"}, HTTP: &http.Client{}}
 	ctx := context.Background()
 	if _, err := c.Fetch(ctx, "http://elsewhere.test/img/a.jpg"); err != ErrArtworkURL {
 		t.Fatalf("other host: %v", err)
@@ -368,7 +368,7 @@ func TestArtworkCacheCapAndHosts(t *testing.T) {
 	if _, err := c.Fetch(ctx, srv.URL+"/img/../page"); err != ErrArtworkURL {
 		t.Fatalf("dot-dot path: %v", err)
 	}
-	if _, err := (&ArtworkCache{Dir: c.Dir, Allowed: []string{srv.URL + "/"}}).Fetch(ctx, srv.URL+"/page"); err == nil {
+	if _, err := (&ArtworkCache{Dir: c.Dir, Allowed: []string{srv.URL + "/"}, HTTP: &http.Client{}}).Fetch(ctx, srv.URL+"/page"); err == nil {
 		t.Fatal("a page that is not an image was kept")
 	}
 	var names []string

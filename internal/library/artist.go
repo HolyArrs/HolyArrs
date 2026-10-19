@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"slices"
 	"strconv"
 	"strings"
@@ -272,9 +273,26 @@ func (s *Service) AddArtist(ctx context.Context, id string, opt ArtistAddOptions
 		Data: map[string]any{"why_added": t.WhyAdded, "albums": opt.Albums, "new_albums": opt.NewAlbums, "album_types": opt.AlbumTypes,
 			"secondary_types": opt.SecondaryTypes, "release_statuses": opt.ReleaseStatuses, "albums_added": sync.AlbumsAdded},
 		GroupKey: groupKey(t.ID)})
+	// The refresh finds the artist's picture (RefreshArtist), so the add
+	// does not wait on the picture source.
 	jobID, _, err := s.Queue.Enqueue(ctx, KindRefreshTitle, &domain.Subject{Type: "title", ID: t.ID},
 		map[string]any{"then": []any{KindScanTitle}, "new": true}, "refresh_title:"+strconv.FormatInt(t.ID, 10), by)
 	return t.ID, jobID, err
+}
+
+// artistPicture finds an artist's picture and keeps it as the artist's
+// artwork. Nothing found, or the picture source down, changes nothing and
+// fails nothing.
+func (s *Service) artistPicture(ctx context.Context, titleID int64, name string, by domain.Actor) {
+	if s.ArtistImages == nil || s.Artwork == nil {
+		return
+	}
+	pic, err := s.ArtistImages.Image(ctx, name)
+	if err != nil {
+		log.Printf("library: picture for artist %d: %v", titleID, err)
+		return
+	}
+	s.cachePoster(ctx, titleID, pic, by)
 }
 
 // ArtistSync says what one sync of an artist's albums, Pressings and

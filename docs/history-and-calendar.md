@@ -28,6 +28,11 @@ For your own tools, `GET /api/v1/events` takes the same filters: `title`, `kind`
 - The arrows move a month back or ahead; **Today** comes back to this month. A month can be linked directly, such as `/calendar?month=2026-10`.
 - **In cinemas**, **Digital release** and **Disc release** turn each kind of date on or off.
 
+Each entry of `GET /api/v1/calendar` carries the title's pictures when it has
+them: `poster` (a link such as `/api/v1/artwork/<name>`; for an album, the
+artist's picture), `backdrop` (the wide picture) and, for an episode, `still`
+when known. Fields without a picture are left out.
+
 ### Phone calendar
 
 Your phone's calendar app can show the same dates through a feed link.

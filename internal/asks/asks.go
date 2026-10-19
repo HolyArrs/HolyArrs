@@ -22,6 +22,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/library"
 	"github.com/CoderLuii/holyarrs/internal/live"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/CoderLuii/holyarrs/internal/ratings"
 	"github.com/CoderLuii/holyarrs/internal/store"
 	"github.com/CoderLuii/holyarrs/internal/supervisor"
 )
@@ -167,6 +168,43 @@ type Person struct {
 	Name        string
 	AutoApprove bool // their asks are approved straight away
 	NoLimit     bool // the weekly limit does not apply (people who approve)
+	// MaxRating is a Kid's age-rating limit ("" for none): they may ask
+	// only for movies and shows rated up to it, and never for music.
+	MaxRating string
+}
+
+// ErrAboveLimit is behind every ask refused for the asker's age-rating
+// limit; the error itself says why in plain words.
+var ErrAboveLimit = errors.New("above the age-rating limit")
+
+type limitRefusal string
+
+func (e limitRefusal) Error() string { return string(e) }
+func (e limitRefusal) Unwrap() error { return ErrAboveLimit }
+
+// overLimit refuses a movie or show rated rating when p's limit does not
+// allow it; nil when it does.
+func overLimit(p Person, kind, rating string) error {
+	if ratings.Allows(p.MaxRating, kind, rating) {
+		return nil
+	}
+	if kind == "artist" {
+		return limitRefusal("This account cannot ask for music, because music has no age ratings.")
+	}
+	return limitRefusal("This account can ask only for titles rated " + ratings.Up(p.MaxRating) + ".")
+}
+
+// libraryOverLimit refuses when the Library title id (0: none) is rated
+// above p's limit.
+func libraryOverLimit(ctx context.Context, db store.Querier, p Person, kind string, id int64) error {
+	if id == 0 {
+		return nil
+	}
+	var rating string
+	if err := db.QueryRowContext(ctx, "SELECT rating FROM titles WHERE id = ?", id).Scan(&rating); err != nil {
+		return err
+	}
+	return overLimit(p, kind, rating)
 }
 
 func (p Person) actor() domain.Actor { return domain.Actor{Kind: "user", ID: p.UserID} }
@@ -366,6 +404,25 @@ func openAskConflict(err error) bool {
 func (s *Service) ask(ctx context.Context, p Person, tmdbID string, retried bool) (Result, error) {
 	db := s.Store.Read()
 	tmdbID = strings.TrimSpace(tmdbID)
+	if p.MaxRating != "" {
+		// Checked first, so a Kid neither joins an open ask nor learns that
+		// the movie is in the Library. The Library's rating is checked
+		// first, then the provider's; either above the limit refuses.
+		tid, err := library.TitleByTMDB(ctx, db, tmdbID)
+		if err != nil {
+			return Result{}, err
+		}
+		if err := libraryOverLimit(ctx, db, p, "movie", tid); err != nil {
+			return Result{}, err
+		}
+		m, err := s.Metadata.Movie(ctx, "tmdb:"+tmdbID)
+		if err != nil {
+			return Result{}, err
+		}
+		if err := overLimit(p, "movie", m.Rating); err != nil {
+			return Result{}, err
+		}
+	}
 	// An open ask for the same movie: join it.
 	var openID int64
 	err := db.QueryRowContext(ctx, "SELECT id FROM asks WHERE kind = 'movie' AND tmdb_id = ? AND state IN ('asked', 'approved')", tmdbID).Scan(&openID)

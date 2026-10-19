@@ -224,15 +224,21 @@ type Who struct {
 	// Scopes are an API key's scopes (see Scopes); empty for
 	// a session, which holds every scope.
 	Scopes []string
+	// MaxRating is a Kid's age-rating limit ("" for no limit) and
+	// RatingCountry the country whose ratings apply (US). Both are read from
+	// the users row on every request, so a changed limit holds at once.
+	MaxRating     string
+	RatingCountry string
 }
 
 // userCols are the users columns fill reads, prefixed with u.
-const userCols = "u.id, u.name, u.role, u.perms, u.totp_secret_id IS NOT NULL"
+const userCols = "u.id, u.name, u.role, u.perms, u.totp_secret_id IS NOT NULL, u.max_rating, u.rating_country"
 
 // fill completes who from a row of userCols and the sign-in settings.
 func (a *Auth) fill(who *Who, perms string) {
 	who.Perms = parsePerms(perms)
 	who.MustTwoFactor = who.Role == RoleAdmin && !who.TwoFactor && a.requireAdmin2FA.Load()
+	who.RatingCountry = countryOr(who.RatingCountry)
 }
 
 // From returns who made the request, if anyone.
@@ -810,7 +816,7 @@ func (a *Auth) session(w http.ResponseWriter, r *http.Request) (Who, bool) {
 	var created, rotated, seen, expires, perms, localAuthAt string
 	err = a.s.Read().QueryRowContext(r.Context(), `SELECT `+userCols+`, s.csrf, s.created_at, s.rotated_at, s.last_seen_at, s.expires_at, s.auth_method, s.local_auth_at
 		FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.hash = ? AND u.state = 'active'`, h).
-		Scan(&who.UserID, &who.Name, &who.Role, &perms, &who.TwoFactor, &who.CSRF, &created, &rotated, &seen, &expires, &who.AuthMethod, &localAuthAt)
+		Scan(&who.UserID, &who.Name, &who.Role, &perms, &who.TwoFactor, &who.MaxRating, &who.RatingCountry, &who.CSRF, &created, &rotated, &seen, &expires, &who.AuthMethod, &localAuthAt)
 	if err != nil {
 		return Who{}, false
 	}
@@ -865,6 +871,8 @@ func (a *Auth) logout(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	a.setCookie(w, r, "", -1)
+	// The browser drops what it kept for this person, such as Explore rows.
+	w.Header().Set("Clear-Site-Data", `"cache"`)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -872,7 +880,7 @@ func (a *Auth) me(w http.ResponseWriter, r *http.Request) {
 	who, _ := From(r.Context())
 	writeJSON(w, http.StatusOK, map[string]any{"id": who.UserID, "name": who.Name, "via": who.Via, "csrf": who.CSRF, "role": who.Role,
 		"perms": who.Effective(), "two_factor": who.TwoFactor, "must_two_factor": who.MustTwoFactor, "auth_method": who.AuthMethod,
-		"local_recent": who.LocalRecent, "safe_mode": a.safeMode})
+		"local_recent": who.LocalRecent, "safe_mode": a.safeMode, "max_rating": who.MaxRating, "rating_country": countryOr(who.RatingCountry)})
 }
 
 // Cleanup drops ended sessions.
@@ -905,7 +913,7 @@ func (a *Auth) checkKey(ctx context.Context, k string) (Who, bool) {
 	var used sql.NullString
 	var perms, scope string
 	err := a.s.Read().QueryRowContext(ctx, `SELECT k.id, k.last_used_at, k.scope, `+userCols+` FROM api_keys k JOIN users u ON u.id = k.owner_user_id
-		WHERE k.hash = ? AND u.state = 'active'`, sum(k)).Scan(&keyID, &used, &scope, &who.UserID, &who.Name, &who.Role, &perms, &who.TwoFactor)
+		WHERE k.hash = ? AND u.state = 'active'`, sum(k)).Scan(&keyID, &used, &scope, &who.UserID, &who.Name, &who.Role, &perms, &who.TwoFactor, &who.MaxRating, &who.RatingCountry)
 	if err != nil {
 		return Who{}, false
 	}

@@ -284,6 +284,13 @@ var Routes = map[string]Owner{
 	"DELETE /api/v1/calendar/feed-key":        Media,
 	"GET /api/v1/calendar/feed.ics":           Media,
 	"GET /api/v1/pick-rules":                  Media,
+	"GET /api/v1/settings/status":             Core,
+	"GET /api/v1/settings/title-defaults":     Media,
+	"PUT /api/v1/settings/title-defaults":     Media,
+	"GET /api/v1/pick-rules/{id}":             Media,
+	"POST /api/v1/pick-rules":                 Media,
+	"PUT /api/v1/pick-rules/{id}":             Media,
+	"DELETE /api/v1/pick-rules/{id}":          Media,
 	"GET /api/v1/never-add":                   Media,
 	"POST /api/v1/never-add":                  Media,
 	"DELETE /api/v1/never-add/{id}":           Media,
@@ -335,11 +342,13 @@ var Routes = map[string]Owner{
 	"POST /api/v1/titles/{id}/delete":           ByTitle,
 
 	// Movies.
-	"POST /api/v1/titles":               movies,
-	"GET /api/v1/titles/lookup":         movies,
-	"GET /api/v1/metadata/search":       movies,
-	"GET /api/v1/settings/release-gate": movies,
-	"PUT /api/v1/settings/release-gate": movies,
+	"POST /api/v1/titles":                   movies,
+	"GET /api/v1/titles/lookup":             movies,
+	"GET /api/v1/metadata/search":           movies,
+	"GET /api/v1/metadata/{kind}/{tmdb_id}": Media,
+	"GET /api/v1/discover":                  Media,
+	"GET /api/v1/settings/release-gate":     movies,
+	"PUT /api/v1/settings/release-gate":     movies,
 
 	// Shows.
 	"POST /api/v1/shows":                       shows,

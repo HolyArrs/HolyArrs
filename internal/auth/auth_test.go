@@ -181,6 +181,9 @@ func TestLoginCookieFlagsAndLogout(t *testing.T) {
 	if resp.StatusCode != 204 {
 		t.Fatalf("logout: %d", resp.StatusCode)
 	}
+	if got := resp.Header.Get("Clear-Site-Data"); got != `"cache"` {
+		t.Fatalf("logout Clear-Site-Data %q", got)
+	}
 	resp, _ = call(t, c, "GET", f.srv.URL+"/api/v1/titles", "", nil)
 	if resp.StatusCode != 401 {
 		t.Fatalf("after logout: %d", resp.StatusCode)

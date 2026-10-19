@@ -41,6 +41,9 @@ type Service struct {
 	Live    *live.Hub
 	// Artwork caches posters; nil keeps no pictures.
 	Artwork *ArtworkCache
+	// ArtistImages finds artist pictures (music has no TMDB poster); nil
+	// finds none.
+	ArtistImages *metadata.ArtistImages
 	// SavePath is the Downloader save folder named at start, for health checks.
 	SavePath string
 	// Now is the clock (time.Now when nil).
@@ -132,6 +135,8 @@ func (s *Service) next(ctx context.Context, r *jobs.Run, titleID int64) error {
 		return err
 	case KindSearchSlot:
 		return s.searchTitle(ctx, titleID, by)
+	case stepSearchShow:
+		return s.searchShow(ctx, titleID, by)
 	}
 	return fmt.Errorf("unknown next step %q", kind)
 }

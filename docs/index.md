@@ -43,7 +43,7 @@ in square brackets.
 | Schedules | `/settings/schedules` | [Schedules](schedules.md). |
 | API for other apps | `/settings/api` | [The API for other apps](api.md) and [API keys and scopes](parts-and-safe-mode.md#api-keys-and-scopes). |
 | TMDB key | `/settings/tmdb` | [Metadata keys](metadata-keys.md), first-run setup in [Install](install.md#finish-the-first-run), and [Import secrets](import-secrets.md). |
-| Users | `/settings/users` | [Users, roles and two-factor sign-in](users-and-roles.md) and [Signed-in devices](sessions.md). |
+| Users | `/settings/users` | [Users, roles and two-factor sign-in](users-and-roles.md), [Kid accounts](kid-accounts.md) and [Signed-in devices](sessions.md). |
 | Naming and files | `/settings/naming` | [Organise movies](organise-movies.md), [shows](organise-shows.md), and [music](organise-music.md). |
 | Outside lists | `/settings/outside-lists` | [Adding and asking for movies](request-movies.md#outside-lists), [Metadata keys](metadata-keys.md#trakt), [Schedules](schedules.md), and [Import secrets](import-secrets.md). |
 | Search settings | `/settings/search` | [Searching for movies](search-movies.md), [shows](search-shows.md), and [music](search-music.md). |

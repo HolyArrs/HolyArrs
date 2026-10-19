@@ -89,7 +89,13 @@ func (a *API) addTitle(w http.ResponseWriter, r *http.Request) {
 		ID string `json:"id"` // "tmdb:693134" or "imdb:tt15239678"
 		library.AddOptions
 	}
-	if !decode(w, r, &body, `send {"id": "tmdb:<number>"} with optional library_folder_id, pick_rules_id, keep_up_to_date, release_gate, gate_delay_days, search_on_add, more_versions`) {
+	sent, ok := decodeKeys(w, r, &body, `send {"id": "tmdb:<number>"} with optional library_folder_id, pick_rules_id, keep_up_to_date, release_gate, gate_delay_days, search_on_add, more_versions`)
+	if !ok {
+		return
+	}
+	o := &body.AddOptions
+	if err := a.kindDefaultsFor(r.Context(), "movie", sent, &o.LibraryFolderID, &o.PickRulesID, &o.KeepUpToDate, &o.SearchOnAdd); err != nil {
+		internal(w, err)
 		return
 	}
 	if body.ID == "" {
@@ -217,6 +223,9 @@ func (a *API) lookupTitles(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "send ?term=<name>, tmdb:<id> or imdb:<tt id>, and &year=<year> with a name if you know it")
 		return
 	}
+	if a.kidLimited(w, r) {
+		return
+	}
 	var ms []metadata.Movie
 	low := strings.ToLower(term)
 	if strings.HasPrefix(low, "tmdb:") || strings.HasPrefix(low, "imdb:") {
@@ -238,7 +247,7 @@ func (a *API) lookupTitles(w http.ResponseWriter, r *http.Request) {
 	}
 	out := []LookupView{}
 	db := a.s.Store.Read()
-	for _, m := range ms {
+	for _, m := range a.kidMovies(r.Context(), a.kidMax(r), ms) {
 		v := LookupView{Movie: m}
 		if id := m.IDs["tmdb"]; id != "" {
 			var err error
@@ -307,10 +316,18 @@ type PickRulesView struct {
 	Name   string   `json:"name"`
 	Kinds  []string `json:"kinds"`
 	Preset bool     `json:"preset"`
+	// InUse counts every use (Versions, Library folders, Outside lists, ask
+	// settings and Movies and TV defaults).
+	InUse int `json:"in_use"`
 }
 
 func (a *API) listPickRules(w http.ResponseWriter, r *http.Request) {
 	ps, err := store.Select[domain.PickRules](r.Context(), a.s.Store.Read(), "pick_rules", "1=1 ORDER BY id")
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	uses, err := library.PickRulesUses(r.Context(), a.s.Store)
 	if err != nil {
 		internal(w, err)
 		return
@@ -321,7 +338,7 @@ func (a *API) listPickRules(w http.ResponseWriter, r *http.Request) {
 		if k == nil {
 			k = []string{}
 		}
-		out = append(out, PickRulesView{ID: p.ID, Name: p.Name, Kinds: k, Preset: p.Preset})
+		out = append(out, PickRulesView{ID: p.ID, Name: p.Name, Kinds: k, Preset: p.Preset, InUse: uses[p.ID].Total()})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"pick_rules": out})
 }
@@ -560,6 +577,29 @@ func (a *API) calendar(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		internal(w, err)
 		return
+	}
+	if max := a.kidMax(r); max != "" {
+		ids := make([]int64, len(es))
+		for i, e := range es {
+			ids[i] = e.TitleID
+		}
+		ok, err := a.allowedTitleIDs(r.Context(), max, ids)
+		if err != nil {
+			internal(w, err)
+			return
+		}
+		kept := []library.CalendarEntry{}
+		for _, e := range es {
+			if ok[e.TitleID] {
+				kept = append(kept, e)
+			}
+		}
+		es = kept
+	}
+	for i := range es {
+		if es[i].Poster != "" {
+			es[i].Poster = artworkLinks([]string{es[i].Poster})[0]
+		}
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"from": from.Format("2006-01-02"), "to": to.Format("2006-01-02"), "titles": titles, "dates": es})
 }

@@ -17,8 +17,15 @@ type tmdbShow struct {
 	OriginalLanguage string `json:"original_language"`
 	Status           string `json:"status"`
 	PosterPath       string `json:"poster_path"`
-	RunTimes         []int  `json:"episode_run_time"`
-	Networks         []struct {
+	tmdbExtras
+	ContentRatings *struct {
+		Results []struct {
+			Country string `json:"iso_3166_1"`
+			Rating  string `json:"rating"`
+		} `json:"results"`
+	} `json:"content_ratings"`
+	RunTimes []int `json:"episode_run_time"`
+	Networks []struct {
 		Name string `json:"name"`
 	} `json:"networks"`
 	ExternalIDs *struct {
@@ -62,6 +69,8 @@ func (m tmdbShow) show(images string) Show {
 			out.IDs["tvdb"] = strconv.FormatInt(x.TVDB, 10)
 		}
 	}
+	out.Backdrop, out.Logo, out.Genres, out.People = m.tmdbExtras.pictures(images)
+	out.Rating = m.usRating()
 	for _, s := range m.Seasons {
 		out.Seasons = append(out.Seasons, Season{Number: s.Number, Name: s.Name})
 	}
@@ -116,7 +125,7 @@ func (t *TMDB) Show(ctx context.Context, id string) (Show, error) {
 		return Show{}, ErrShowNotFound
 	}
 	base := "/tv/" + strconv.FormatInt(n, 10)
-	b, err := t.get(ctx, base, url.Values{"append_to_response": {"external_ids"}})
+	b, err := t.get(ctx, base, url.Values{"append_to_response": {"external_ids,images,credits,content_ratings"}, "include_image_language": {"en,null"}})
 	if err != nil {
 		return Show{}, notFoundShow(err)
 	}
@@ -141,6 +150,7 @@ func (t *TMDB) Show(ctx context.Context, id string) (Show, error) {
 				Name    string  `json:"name"`
 				AirDate *string `json:"air_date"`
 				Runtime int     `json:"runtime"`
+				Still   string  `json:"still_path"`
 			} `json:"episodes"`
 		}
 		if err := json.Unmarshal(b, &res); err != nil {
@@ -148,6 +158,9 @@ func (t *TMDB) Show(ctx context.Context, id string) (Show, error) {
 		}
 		for _, e := range res.Episodes {
 			ep := Episode{Season: e.Season, Number: e.Number, Name: e.Name, Runtime: e.Runtime, ID: strconv.FormatInt(e.ID, 10)}
+			if e.Still != "" {
+				ep.Still = t.images() + "/w780" + e.Still
+			}
 			if e.AirDate != nil {
 				ep.AirDate, ep.AirDay = dayEnd(*e.AirDate)
 			}
@@ -163,4 +176,16 @@ func notFoundShow(err error) error {
 		return ErrShowNotFound
 	}
 	return err
+}
+
+// usRating is the first US content rating.
+func (m tmdbShow) usRating() string {
+	if m.ContentRatings != nil {
+		for _, c := range m.ContentRatings.Results {
+			if c.Country == "US" && c.Rating != "" {
+				return c.Rating
+			}
+		}
+	}
+	return ""
 }

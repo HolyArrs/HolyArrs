@@ -57,7 +57,8 @@ func (a *API) person(r *http.Request) asks.Person {
 		_ = a.s.Store.Read().QueryRowContext(r.Context(), "SELECT name FROM users WHERE id = 1").Scan(&name)
 		return asks.Person{UserID: 1, Name: name, AutoApprove: true, NoLimit: true}
 	}
-	return asks.Person{UserID: who.UserID, Name: who.Name, AutoApprove: who.Has(auth.PermAutoApprove), NoLimit: who.Has(auth.PermApprove)}
+	return asks.Person{UserID: who.UserID, Name: who.Name, AutoApprove: who.Has(auth.PermAutoApprove), NoLimit: who.Has(auth.PermApprove),
+		MaxRating: a.kidMax(r)}
 }
 
 // mayApprove says whether the signed-in person decides asks.
@@ -78,7 +79,7 @@ func askError(w http.ResponseWriter, err error) {
 		writeJSON(w, http.StatusTooManyRequests, map[string]any{"error": err.Error(), "retry_at": le.RetryAt, "per_week": le.PerWeek, "kind": le.Kind})
 	case errors.Is(err, asks.ErrNotOpen), errors.Is(err, asks.ErrAskedAgain):
 		fail(w, http.StatusConflict, err.Error())
-	case errors.Is(err, asks.ErrNotYours):
+	case errors.Is(err, asks.ErrNotYours), errors.Is(err, asks.ErrAboveLimit):
 		fail(w, http.StatusForbidden, err.Error())
 	case errors.Is(err, asks.ErrNoteLength), errors.Is(err, asks.ErrPerWeek), errors.Is(err, asks.ErrEmail), errors.Is(err, asks.ErrDiscordID),
 		errors.Is(err, asks.ErrNoSuchSeason):

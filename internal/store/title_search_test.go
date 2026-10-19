@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"io/fs"
 	"path/filepath"
 	"reflect"
@@ -35,7 +36,16 @@ func TestTitleSearchMigrationAndIndexMaintenance(t *testing.T) {
 	title := domain.Title{Kind: "movie", Name: "Amélie", SortName: "amelie", Aliases: []string{"Le Fabuleux Destin", "Fête\nNoire", "Light & Shadow"}, MetadataSource: "tmdb", WhyAdded: "by_hand", State: "active"}
 	title.NewPartsPolicy, title.ReleaseGate, title.GateDriver, title.Status = "all", "released", "none", "announced"
 	err = s.Write(context.Background(), func(tx *sql.Tx) error {
-		_, err := Insert(tx, "titles", &title, domain.System)
+		// The old schema lacks later title columns, so write the row by hand.
+		aliases, _ := json.Marshal(title.Aliases)
+		res, err := tx.Exec(`INSERT INTO titles(created_at, created_by, updated_at, updated_by, kind, name, sort_name, aliases,
+			metadata_source, new_parts_policy, release_gate, gate_driver, status, why_added, state)
+			VALUES ('2026-01-01T00:00:00Z', '{}', '2026-01-01T00:00:00Z', '{}', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			title.Kind, title.Name, title.SortName, string(aliases),
+			title.MetadataSource, title.NewPartsPolicy, title.ReleaseGate, title.GateDriver, title.Status, title.WhyAdded, title.State)
+		if err == nil {
+			title.ID, err = res.LastInsertId()
+		}
 		return err
 	})
 	if err != nil {
@@ -86,6 +96,9 @@ func TestTitleSearchMigrationAndIndexMaintenance(t *testing.T) {
 			t.Fatal(err)
 		}
 		return out
+	}
+	if err := Get(context.Background(), s.Read(), "titles", title.ID, &title); err != nil {
+		t.Fatal(err)
 	}
 	indexBefore := indexRows()
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {

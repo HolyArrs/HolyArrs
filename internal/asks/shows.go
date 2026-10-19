@@ -40,6 +40,18 @@ func (s *Service) askShow(ctx context.Context, p Person, id string, seasons []in
 	if err != nil {
 		return Result{}, err
 	}
+	if p.MaxRating != "" {
+		tid, err := library.ShowByIDs(ctx, db, sh.IDs)
+		if err != nil {
+			return Result{}, err
+		}
+		if err := libraryOverLimit(ctx, db, p, "show", tid); err != nil {
+			return Result{}, err
+		}
+		if err := overLimit(p, "show", sh.Rating); err != nil {
+			return Result{}, err
+		}
+	}
 	want, err := pickSeasons(seasons, sh.Seasons)
 	if err != nil {
 		return Result{}, err

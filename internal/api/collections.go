@@ -20,7 +20,50 @@ func (a *API) listCollections(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
+	if max := a.kidMax(r); max != "" {
+		// A Kid sees a collection only for the titles their limit allows,
+		// and counts only those.
+		kept := []library.MovieCollection{}
+		for _, c := range cs {
+			d, err := a.kidCollection(r, max, c.ID)
+			if err != nil {
+				internal(w, err)
+				return
+			}
+			if len(d.Titles) > 0 {
+				c.OwnedTitles = len(d.Titles)
+				kept = append(kept, c)
+			}
+		}
+		cs = kept
+	}
 	writeJSON(w, http.StatusOK, map[string]any{"collections": cs})
+}
+
+// kidCollection is the collection with only the titles max allows, and
+// counts only those.
+func (a *API) kidCollection(r *http.Request, max string, id int64) (library.CollectionDetail, error) {
+	c, err := library.CollectionDetails(r.Context(), a.s.Store.Read(), id)
+	if err != nil || max == "" {
+		return c, err
+	}
+	ids := make([]int64, len(c.Titles))
+	for i, t := range c.Titles {
+		ids[i] = t.ID
+	}
+	ok, err := a.allowedTitleIDs(r.Context(), max, ids)
+	if err != nil {
+		return c, err
+	}
+	kept := []library.CollectionTitle{}
+	for _, t := range c.Titles {
+		if ok[t.ID] {
+			kept = append(kept, t)
+		}
+	}
+	c.Titles = kept
+	c.OwnedTitles = len(kept)
+	return c, nil
 }
 
 func (a *API) getCollection(w http.ResponseWriter, r *http.Request) {
@@ -28,7 +71,11 @@ func (a *API) getCollection(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	c, err := library.CollectionDetails(r.Context(), a.s.Store.Read(), id)
+	max := a.kidMax(r)
+	c, err := a.kidCollection(r, max, id)
+	if err == nil && max != "" && len(c.Titles) == 0 {
+		err = library.ErrCollectionNotFound // nothing in it a Kid may see
+	}
 	if err != nil {
 		collectionError(w, err)
 		return

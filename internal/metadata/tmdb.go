@@ -184,7 +184,7 @@ func (t *TMDB) get(ctx context.Context, path string, q url.Values) ([]byte, erro
 			}
 		case resp.StatusCode == http.StatusTooManyRequests:
 			outcome = outside.TransientFailure
-			return nil, errors.New("TMDB: rate limited; try again shortly")
+			return nil, ErrRateLimited
 		default:
 			outcome = outside.HTTPOutcome(resp.StatusCode, nil, ctx)
 			return nil, fmt.Errorf("TMDB answered %d", resp.StatusCode)
@@ -202,13 +202,14 @@ func stripURL(err error) error {
 }
 
 type tmdbMovie struct {
-	ID                  int64  `json:"id"`
-	Title               string `json:"title"`
-	ReleaseDate         string `json:"release_date"`
-	Overview            string `json:"overview"`
-	OriginalLanguage    string `json:"original_language"`
-	Runtime             int    `json:"runtime"`
-	PosterPath          string `json:"poster_path"`
+	ID               int64  `json:"id"`
+	Title            string `json:"title"`
+	ReleaseDate      string `json:"release_date"`
+	Overview         string `json:"overview"`
+	OriginalLanguage string `json:"original_language"`
+	Runtime          int    `json:"runtime"`
+	PosterPath       string `json:"poster_path"`
+	tmdbExtras
 	IMDbID              string `json:"imdb_id"`
 	BelongsToCollection *struct {
 		ID   int64  `json:"id"`
@@ -218,8 +219,9 @@ type tmdbMovie struct {
 		Results []struct {
 			Country string `json:"iso_3166_1"`
 			Dates   []struct {
-				Date string `json:"release_date"`
-				Type int    `json:"type"`
+				Date          string `json:"release_date"`
+				Type          int    `json:"type"`
+				Certification string `json:"certification"`
 			} `json:"release_dates"`
 		} `json:"results"`
 	} `json:"release_dates,omitempty"`
@@ -280,6 +282,106 @@ func (m tmdbMovie) dates() (cinema, digital, physical *time.Time) {
 	return cinema, digital, physical
 }
 
+// certification is the US certification, preferring the cinema release.
+func (m tmdbMovie) certification() string {
+	if m.ReleaseDates == nil {
+		return ""
+	}
+	best, bestType := "", 0
+	for _, c := range m.ReleaseDates.Results {
+		if c.Country != "US" {
+			continue
+		}
+		for _, d := range c.Dates {
+			if d.Certification == "" {
+				continue
+			}
+			if best == "" || d.Type == relCinema || (bestType != relCinema && d.Type < bestType) {
+				best, bestType = d.Certification, d.Type
+			}
+		}
+	}
+	return best
+}
+
+// tmdbExtras are the detail fields movies and shows share: wide picture,
+// genres, logos and credits (the last two only with append_to_response).
+type tmdbExtras struct {
+	BackdropPath string `json:"backdrop_path"`
+	Genres       []struct {
+		Name string `json:"name"`
+	} `json:"genres"`
+	Images *struct {
+		Logos []struct {
+			FilePath string  `json:"file_path"`
+			Language *string `json:"iso_639_1"`
+		} `json:"logos"`
+	} `json:"images"`
+	Credits *struct {
+		Cast []struct {
+			Name string `json:"name"`
+		} `json:"cast"`
+		Crew []struct {
+			Name string `json:"name"`
+			Job  string `json:"job"`
+		} `json:"crew"`
+	} `json:"credits"`
+}
+
+// maxCast is how many cast names a Title keeps.
+const maxCast = 10
+
+// pictures returns the backdrop (w1280), the logo (w500 PNG: English
+// first, then one with no language), the genre names and the people (top
+// cast, then directors not already listed).
+func (x tmdbExtras) pictures(images string) (backdrop, logo string, genres, people []string) {
+	if x.BackdropPath != "" {
+		backdrop = images + "/w1280" + x.BackdropPath
+	}
+	if x.Images != nil {
+		var none string
+		for _, l := range x.Images.Logos {
+			if !strings.HasSuffix(strings.ToLower(l.FilePath), ".png") {
+				continue
+			}
+			if l.Language != nil && *l.Language == "en" {
+				logo = images + "/w500" + l.FilePath
+				break
+			}
+			if l.Language == nil && none == "" {
+				none = images + "/w500" + l.FilePath
+			}
+		}
+		if logo == "" {
+			logo = none
+		}
+	}
+	for _, g := range x.Genres {
+		if g.Name != "" {
+			genres = append(genres, g.Name)
+		}
+	}
+	if x.Credits != nil {
+		seen := map[string]bool{}
+		for _, c := range x.Credits.Cast {
+			if len(people) == maxCast {
+				break
+			}
+			if c.Name != "" && !seen[c.Name] {
+				seen[c.Name] = true
+				people = append(people, c.Name)
+			}
+		}
+		for _, c := range x.Credits.Crew {
+			if c.Job == "Director" && c.Name != "" && !seen[c.Name] {
+				seen[c.Name] = true
+				people = append(people, c.Name)
+			}
+		}
+	}
+	return backdrop, logo, genres, people
+}
+
 // parseDay reads "2024-03-01" or a full time, as UTC midnight of that day.
 func parseDay(s string) (time.Time, bool) {
 	if len(s) < 10 {
@@ -309,6 +411,8 @@ func (m tmdbMovie) movieWithCollection(images string, collectionKnown bool) Movi
 		out.Collection = &MovieCollection{ID: strconv.FormatInt(m.BelongsToCollection.ID, 10), Name: m.BelongsToCollection.Name}
 	}
 	out.CinemaDate, out.DigitalDate, out.PhysicalDate = m.dates()
+	out.Backdrop, out.Logo, out.Genres, out.People = m.tmdbExtras.pictures(images)
+	out.Rating = m.certification()
 	return out
 }
 
@@ -362,7 +466,7 @@ func (t *TMDB) Movie(ctx context.Context, id string) (Movie, error) {
 		if err != nil || n <= 0 {
 			return Movie{}, ErrNotFound
 		}
-		b, err := t.get(ctx, "/movie/"+strconv.FormatInt(n, 10), url.Values{"append_to_response": {"release_dates"}})
+		b, err := t.get(ctx, "/movie/"+strconv.FormatInt(n, 10), url.Values{"append_to_response": {"release_dates,images,credits"}, "include_image_language": {"en,null"}})
 		if err != nil {
 			return Movie{}, err
 		}

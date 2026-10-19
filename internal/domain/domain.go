@@ -84,6 +84,15 @@ type Title struct {
 	MusicStatuses  []string `db:"music_statuses,json"`
 	ArtistType     *string  `db:"artist_type"`
 	Disambiguation *string  `db:"disambiguation"`
+	// Details for screens, from the metadata source: wide picture and logo
+	// URLs, genre names, runtime in minutes, the US rating and the people
+	// (top cast, then directors).
+	Backdrop       string   `db:"backdrop"`
+	Logo           string   `db:"logo"`
+	Genres         []string `db:"genres,json"`
+	RuntimeMinutes int      `db:"runtime_minutes"`
+	Rating         string   `db:"rating"`
+	People         []string `db:"people,json"`
 }
 
 // NeverAdd is one entry of the Never-add list.
@@ -188,6 +197,8 @@ type Item struct {
 	DroppedAt *time.Time        `db:"dropped_at"`
 	// Tracks: the length in milliseconds.
 	LengthMS *int `db:"length_ms"`
+	// Episodes: the still picture URL from the metadata source.
+	Still string `db:"still"`
 }
 
 // Version is one wanted copy of a Title, such as "HD" or "4K".
@@ -497,6 +508,11 @@ type User struct {
 	PasswordHash string `db:"password_hash"` // empty when they sign in only through Plex, Jellyfin or Emby
 	State        string `db:"state"`         // active, locked, disabled
 	Perms        string `db:"perms"`         // JSON list; the owner has every permission
+	// Kid limit: the highest age rating a member may see and ask for (""
+	// means no limit) and the country whose ratings apply (only US for now;
+	// "" reads as US).
+	MaxRating     string `db:"max_rating"`
+	RatingCountry string `db:"rating_country"`
 }
 
 // Setting is one typed key-value entry in a setting group.

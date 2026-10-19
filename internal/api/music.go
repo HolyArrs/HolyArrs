@@ -157,6 +157,11 @@ func (a *API) lookupArtists(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "send ?term=<artist name> or an id such as mbid:5b11f4ce-a62d-471e-81fc-a69a8278c7da")
 		return
 	}
+	if a.kidMax(r) != "" {
+		// Music has no age ratings, so a Kid finds none.
+		writeJSON(w, http.StatusOK, map[string]any{"artists": []ArtistResult{}, "source": "musicbrainz"})
+		return
+	}
 	me := a.person(r).UserID
 	if !a.lookups.take(me, maxLookupsEach) {
 		w.Header().Set("Retry-After", "5")

@@ -80,6 +80,9 @@ func (a *API) lookupShows(w http.ResponseWriter, r *http.Request) {
 		showError(w, metadata.ErrUnknownSource)
 		return
 	}
+	if a.kidLimited(w, r) {
+		return
+	}
 	var shows []metadata.Show
 	low := strings.ToLower(term)
 	if k, _, ok := strings.Cut(low, ":"); ok && (k == "tmdb" || k == "tvdb" || k == "tvmaze" || k == "imdb") {
@@ -103,7 +106,7 @@ func (a *API) lookupShows(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	out := []ShowResult{}
-	for _, sh := range shows {
+	for _, sh := range a.kidShows(r.Context(), a.kidMax(r), shows) {
 		sh.Episodes = nil
 		v := ShowResult{Show: sh}
 		var err error
@@ -135,14 +138,20 @@ func (a *API) showSource(name string) (metadata.ShowProvider, error) {
 	return a.s.Library.Shows.Get(name)
 }
 
-const addShowHelp = `send {"id": "tmdb:<number>"} (or tvdb:, tvmaze:, imdb:) with optional library_folder_id, pick_rules_id, keep_up_to_date, seasons (all, future, latest, none), new_seasons (all, none), episode_order (aired, daily, absolute), details_source (tmdb, tvmaze, tvdb), more_versions ([{"label": "4K", "pick_rules_id": <id>, "library_folder_id": <id>}])`
+const addShowHelp = `send {"id": "tmdb:<number>"} (or tvdb:, tvmaze:, imdb:) with optional library_folder_id, pick_rules_id, keep_up_to_date, seasons (all, future, latest, none), new_seasons (all, none), episode_order (aired, daily, absolute), details_source (tmdb, tvmaze, tvdb), search_on_add, more_versions ([{"label": "4K", "pick_rules_id": <id>, "library_folder_id": <id>}])`
 
 func (a *API) addShow(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		ID string `json:"id"`
 		library.ShowAddOptions
 	}
-	if !decode(w, r, &body, addShowHelp) {
+	sent, ok := decodeKeys(w, r, &body, addShowHelp)
+	if !ok {
+		return
+	}
+	o := &body.ShowAddOptions
+	if err := a.kindDefaultsFor(r.Context(), "show", sent, &o.LibraryFolderID, &o.PickRulesID, &o.KeepUpToDate, &o.SearchOnAdd); err != nil {
+		internal(w, err)
 		return
 	}
 	if strings.TrimSpace(body.ID) == "" {
@@ -246,22 +255,25 @@ type EpisodeSlot struct {
 
 // EpisodeView is one episode with its Slots.
 type EpisodeView struct {
-	ID           int64             `json:"id"`
-	Season       int               `json:"season"`
-	Episode      int               `json:"episode"`
-	Absolute     *int              `json:"absolute,omitempty"`
-	Name         string            `json:"name,omitempty"`
-	AirDate      *time.Time        `json:"air_date,omitempty"`
-	AirDay       string            `json:"air_day,omitempty"`
-	Runtime      *int              `json:"runtime,omitempty"`
-	KeepUpToDate bool              `json:"keep_up_to_date"`
-	Dropped      bool              `json:"dropped,omitempty"`
-	IDs          map[string]string `json:"ids"`
-	Slots        []EpisodeSlot     `json:"slots"`
+	ID       int64      `json:"id"`
+	Season   int        `json:"season"`
+	Episode  int        `json:"episode"`
+	Absolute *int       `json:"absolute,omitempty"`
+	Name     string     `json:"name,omitempty"`
+	AirDate  *time.Time `json:"air_date,omitempty"`
+	AirDay   string     `json:"air_day,omitempty"`
+	Runtime  *int       `json:"runtime,omitempty"`
+	// RuntimeMinutes repeats Runtime under the name title views use.
+	RuntimeMinutes *int              `json:"runtime_minutes,omitempty"`
+	Still          string            `json:"still,omitempty"` // still picture URL (w780)
+	KeepUpToDate   bool              `json:"keep_up_to_date"`
+	Dropped        bool              `json:"dropped,omitempty"`
+	IDs            map[string]string `json:"ids"`
+	Slots          []EpisodeSlot     `json:"slots"`
 }
 
 func episodeView(it domain.Item) EpisodeView {
-	v := EpisodeView{ID: it.ID, Absolute: it.Numbers.Absolute, AirDate: it.AirDate, Runtime: it.Runtime, KeepUpToDate: it.KeepUpToDate,
+	v := EpisodeView{ID: it.ID, Absolute: it.Numbers.Absolute, AirDate: it.AirDate, Runtime: it.Runtime, RuntimeMinutes: it.Runtime, Still: it.Still, KeepUpToDate: it.KeepUpToDate,
 		Dropped: it.DroppedAt != nil, IDs: it.SourceIDs, Slots: []EpisodeSlot{}}
 	if it.Numbers.Season != nil {
 		v.Season = *it.Numbers.Season

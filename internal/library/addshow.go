@@ -11,6 +11,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/naming"
+	"github.com/CoderLuii/holyarrs/internal/source"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
@@ -25,6 +26,9 @@ type ShowAddOptions struct {
 	NewSeasons      string `json:"new_seasons"`    // all, none
 	EpisodeOrder    string `json:"episode_order"`  // aired, daily, absolute
 	Source          string `json:"details_source"` // tmdb, tvmaze, tvdb
+	// SearchOnAdd searches the whole show after the folder scan, the same
+	// search POST /titles/{id}/search starts for a show.
+	SearchOnAdd bool `json:"search_on_add"`
 	// MoreVersions are extra wanted copies (for example 4K) next to the main one.
 	MoreVersions []VersionInput `json:"more_versions"`
 	// WhyAdded records why the show was added (by_hand when empty).
@@ -287,8 +291,59 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 		Data: map[string]any{"why_added": t.WhyAdded, "seasons": opt.Seasons, "new_seasons": opt.NewSeasons, "episode_order": opt.EpisodeOrder,
 			"details_source": opt.Source, "episodes": sync.EpisodesAdded, "wanted": countWanted(ctx, s.Store.Read(), t.ID)},
 		GroupKey: groupKey(t.ID)})
-	jobID, _, err := s.Queue.Enqueue(ctx, KindScanTitle, &domain.Subject{Type: "title", ID: t.ID}, nil, "scan_title:"+strconv.FormatInt(t.ID, 10), by)
+	var params map[string]any
+	if opt.SearchOnAdd {
+		params = map[string]any{"then": []any{stepSearchShow}}
+	}
+	jobID, _, err := s.Queue.Enqueue(ctx, KindScanTitle, &domain.Subject{Type: "title", ID: t.ID}, params, "scan_title:"+strconv.FormatInt(t.ID, 10), by)
 	return t.ID, jobID, err
+}
+
+// stepSearchShow is the chain step after a new show's scan when it was
+// added with search when added.
+const stepSearchShow = "search_show"
+
+// SeasonVersion is one season and Version of a show to search.
+type SeasonVersion struct{ PartID, VersionID int64 }
+
+// ShowSeasonsToSearch lists, for a whole-show search, every season with an
+// episode kept up to date that is looking for a copy, in a show and
+// Version kept up to date.
+func ShowSeasonsToSearch(ctx context.Context, db store.Lister, titleID int64) ([]SeasonVersion, error) {
+	rows, err := db.QueryContext(ctx, `SELECT DISTINCT p.id, s.version_id FROM parts p JOIN items i ON i.part_id = p.id JOIN slots s ON s.item_id = i.id
+		JOIN titles t ON t.id = p.title_id JOIN versions v ON v.id = s.version_id
+		WHERE p.title_id = ? AND t.keep_up_to_date = 1 AND v.keep_up_to_date = 1 AND p.keep_up_to_date = 1 AND i.keep_up_to_date = 1 AND i.dropped_at IS NULL
+		AND s.state IN ('wanted', 'better_wanted', 'failed', 'rejected', 'stalled') ORDER BY p.number, s.version_id`, titleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var list []SeasonVersion
+	for rows.Next() {
+		var x SeasonVersion
+		if err := rows.Scan(&x.PartID, &x.VersionID); err != nil {
+			return nil, err
+		}
+		list = append(list, x)
+	}
+	return list, rows.Err()
+}
+
+// searchShow is the whole-show search after a new show's scan: an
+// automatic search of each season, queued the way the missing search and
+// a failed download queue one (no by_hand, so the release gate holds).
+func (s *Service) searchShow(ctx context.Context, titleID int64, by domain.Actor) error {
+	list, err := ShowSeasonsToSearch(ctx, s.Store.Read(), titleID)
+	if err != nil {
+		return err
+	}
+	for _, x := range list {
+		if _, _, err := s.Queue.Enqueue(ctx, source.KindSearchSeason, &domain.Subject{Type: "part", ID: x.PartID},
+			map[string]any{"version_id": x.VersionID}, fmt.Sprintf("search_season:%d:%d", x.PartID, x.VersionID), by); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func countWanted(ctx context.Context, db store.Querier, titleID int64) int {

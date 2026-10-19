@@ -20,9 +20,14 @@ type Movie struct {
 	Year             int               `json:"year"`
 	Overview         string            `json:"overview"`
 	OriginalLanguage string            `json:"original_language"`
-	Runtime          int               `json:"runtime,omitempty"` // minutes, 0 when unknown
-	IDs              map[string]string `json:"ids"`               // tmdb, imdb
-	Poster           string            `json:"poster,omitempty"`  // full picture URL, "" when none
+	Runtime          int               `json:"runtime,omitempty"`  // minutes, 0 when unknown
+	IDs              map[string]string `json:"ids"`                // tmdb, imdb
+	Poster           string            `json:"poster,omitempty"`   // full picture URL, "" when none
+	Backdrop         string            `json:"backdrop,omitempty"` // wide picture URL (w1280), "" when none
+	Logo             string            `json:"logo,omitempty"`     // English or no-language logo PNG URL (w500)
+	Genres           []string          `json:"genres,omitempty"`   // provider genre names, English
+	Rating           string            `json:"rating,omitempty"`   // US certification, "" when unknown
+	People           []string          `json:"people,omitempty"`   // top cast, then directors (names only)
 	// Release dates (UTC midnight), nil when the source does not know them.
 	CinemaDate   *time.Time `json:"cinema_date,omitempty"`
 	DigitalDate  *time.Time `json:"digital_date,omitempty"`

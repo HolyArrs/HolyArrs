@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/ratings"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
@@ -59,7 +60,63 @@ type UserView struct {
 	Links     []LinkView `json:"links"`
 	CreatedAt string     `json:"created_at"`
 	LastSeen  *string    `json:"last_seen_at,omitempty"`
+	// MaxRating is a Kid's age-rating limit ("" for no limit).
+	MaxRating     string `json:"max_rating"`
+	RatingCountry string `json:"rating_country"`
 }
+
+// countryOr reads an empty rating country as US.
+func countryOr(c string) string {
+	if c = ratings.Norm(c); c == "" {
+		return "US"
+	}
+	return c
+}
+
+// kidLimit checks an age-rating limit asked for a person of role and
+// returns it as stored, or an error in plain words for a 400. A limit is
+// refused while sign-in is skipped on the local network (skipLocal).
+func kidLimit(role, max, country string, perms []Perm, skipLocal bool) (string, string, error) {
+	max, country = ratings.Norm(max), countryOr(country)
+	if !ratings.Valid(max) {
+		return "", "", fmt.Errorf("unknown age rating %q: pick one of %s, or leave it empty for no limit", max, ratings.Choices())
+	}
+	if !ratings.ValidCountry(country) {
+		return "", "", errors.New("Only US age ratings are known for now.")
+	}
+	if max != "" && role != RoleMember {
+		return "", "", errors.New("Only members can have an age-rating limit.")
+	}
+	if max != "" && skipLocal {
+		return "", "", errors.New(errSkipLocalKid)
+	}
+	if max != "" {
+		// A Kid may only ask: any other permission would open routes
+		// (live events, downloads, history, jobs) the limit does not cover.
+		for _, p := range perms {
+			if p != PermAsk && p != PermAutoApprove {
+				return "", "", errors.New("A Kid account can only ask for titles.")
+			}
+		}
+	}
+	return max, country, nil
+}
+
+// SkipLocal says sign-in is skipped on the local network.
+func (a *Auth) SkipLocal() bool { return a.skipLocal.Load() }
+
+// OutsideJoinOpen says new people can join by signing in with Plex,
+// Jellyfin, Emby or single sign-on.
+func (a *Auth) OutsideJoinOpen(ctx context.Context) bool {
+	for _, p := range []string{ProviderPlex, ProviderJellyfin, ProviderEmby} {
+		if v := a.way(ctx, p); v.On && v.Join != JoinNobody {
+			return true
+		}
+	}
+	return a.sso != nil && ((a.sso.oidc != nil && a.sso.oidc.opt.AllowJoin) || (a.sso.forward != nil && a.sso.forward.opt.AllowJoin))
+}
+
+const errSkipLocalKid = "Turn off skipping sign-in on the local network first: with it on, anyone at home signs in as the owner."
 
 // LinkView is an outside account linked to a user.
 type LinkView struct {
@@ -86,7 +143,7 @@ func serverError(w http.ResponseWriter, what string, err error) {
 
 func (a *Auth) listUsers(w http.ResponseWriter, r *http.Request) {
 	rows, err := a.s.Read().QueryContext(r.Context(), `SELECT u.id, u.name, u.role, u.state, u.perms, u.totp_secret_id IS NOT NULL,
-		u.password_hash != '', u.created_at, (SELECT max(last_seen_at) FROM sessions WHERE user_id = u.id)
+		u.password_hash != '', u.created_at, (SELECT max(last_seen_at) FROM sessions WHERE user_id = u.id), u.max_rating, u.rating_country
 		FROM users u ORDER BY CASE u.role WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 ELSE 2 END, u.name`)
 	if err != nil {
 		serverError(w, "users", err)
@@ -98,12 +155,13 @@ func (a *Auth) listUsers(w http.ResponseWriter, r *http.Request) {
 		var u UserView
 		var perms string
 		var seen sql.NullString
-		if err := rows.Scan(&u.ID, &u.Name, &u.Role, &u.State, &perms, &u.TwoFactor, &u.Password, &u.CreatedAt, &seen); err != nil {
+		if err := rows.Scan(&u.ID, &u.Name, &u.Role, &u.State, &perms, &u.TwoFactor, &u.Password, &u.CreatedAt, &seen, &u.MaxRating, &u.RatingCountry); err != nil {
 			rows.Close()
 			serverError(w, "users", err)
 			return
 		}
 		u.Perms = Who{Role: u.Role, Perms: parsePerms(perms)}.Effective()
+		u.RatingCountry = countryOr(u.RatingCountry)
 		u.Links = []LinkView{}
 		if seen.Valid {
 			u.LastSeen = &seen.String
@@ -184,16 +242,19 @@ func (a *Auth) editUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
-		Role  *string   `json:"role"`
-		Perms *[]string `json:"perms"`
-		State *string   `json:"state"`
+		Role          *string   `json:"role"`
+		Perms         *[]string `json:"perms"`
+		State         *string   `json:"state"`
+		MaxRating     *string   `json:"max_rating"`
+		RatingCountry *string   `json:"rating_country"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8<<10)).Decode(&body); err != nil {
 		fail(w, http.StatusBadRequest, `send {"role": "...", "perms": [...], "state": "active|disabled"}`)
 		return
 	}
-	var role, state, permsRaw string
-	err = a.s.Read().QueryRowContext(r.Context(), "SELECT role, state, perms FROM users WHERE id = ?", id).Scan(&role, &state, &permsRaw)
+	var role, state, permsRaw, maxRating, country string
+	err = a.s.Read().QueryRowContext(r.Context(), "SELECT role, state, perms, max_rating, rating_country FROM users WHERE id = ?", id).
+		Scan(&role, &state, &permsRaw, &maxRating, &country)
 	if errors.Is(err, sql.ErrNoRows) {
 		fail(w, http.StatusNotFound, "no such user")
 		return
@@ -238,6 +299,18 @@ func (a *Auth) editUser(w http.ResponseWriter, r *http.Request) {
 		}
 		newState = *body.State
 	}
+	if body.MaxRating != nil {
+		maxRating = *body.MaxRating
+	} else if newRole != RoleMember {
+		maxRating = "" // making someone an admin clears their limit
+	}
+	if body.RatingCountry != nil {
+		country = *body.RatingCountry
+	}
+	if maxRating, country, err = kidLimit(newRole, maxRating, country, perms, a.skipLocal.Load()); err != nil {
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	if newRole == RoleAdmin && role != RoleAdmin && !mayMakeAdmin(w, by) {
 		return
 	}
@@ -247,8 +320,8 @@ func (a *Auth) editUser(w http.ResponseWriter, r *http.Request) {
 	}
 	actor, _ := json.Marshal(Actor(r.Context()))
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		if _, err := tx.Exec("UPDATE users SET role = ?, perms = ?, state = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-			newRole, permsJSON(perms), newState, store.FormatTime(a.now()), string(actor), id); err != nil {
+		if _, err := tx.Exec("UPDATE users SET role = ?, perms = ?, state = ?, max_rating = ?, rating_country = ?, updated_at = ?, updated_by = ? WHERE id = ?",
+			newRole, permsJSON(perms), newState, maxRating, country, store.FormatTime(a.now()), string(actor), id); err != nil {
 			return err
 		}
 		if newState != "active" {
@@ -265,9 +338,9 @@ func (a *Auth) editUser(w http.ResponseWriter, r *http.Request) {
 		serverError(w, "edit user", err)
 		return
 	}
-	log.Printf("auth: user %d changed by user %d: role %s, state %s", id, by.UserID, newRole, newState)
+	log.Printf("auth: user %d changed by user %d: role %s, state %s, age-rating limit %q", id, by.UserID, newRole, newState, maxRating)
 	writeJSON(w, http.StatusOK, map[string]any{"id": id, "role": newRole, "state": newState,
-		"perms": Who{Role: newRole, Perms: perms}.Effective()})
+		"perms": Who{Role: newRole, Perms: perms}.Effective(), "max_rating": maxRating, "rating_country": country})
 }
 
 func (a *Auth) resetUserTwoFactor(w http.ResponseWriter, r *http.Request) {
@@ -315,10 +388,14 @@ type InviteView struct {
 	ExpiresAt string  `json:"expires_at"`
 	UsedAt    *string `json:"used_at,omitempty"`
 	UsedBy    *string `json:"used_by,omitempty"`
+	// MaxRating is the age-rating limit the new person gets ("" for none).
+	MaxRating     string `json:"max_rating"`
+	RatingCountry string `json:"rating_country"`
 }
 
 func (a *Auth) listInvites(w http.ResponseWriter, r *http.Request) {
-	rows, err := a.s.Read().QueryContext(r.Context(), `SELECT i.hash, i.role, i.perms, i.note, c.name, i.created_at, i.expires_at, i.used_at, u.name
+	rows, err := a.s.Read().QueryContext(r.Context(), `SELECT i.hash, i.role, i.perms, i.note, c.name, i.created_at, i.expires_at, i.used_at, u.name,
+		i.max_rating, i.rating_country
 		FROM invites i JOIN users c ON c.id = i.created_by LEFT JOIN users u ON u.id = i.used_by ORDER BY i.created_at DESC LIMIT 200`)
 	if err != nil {
 		serverError(w, "invites", err)
@@ -330,11 +407,12 @@ func (a *Auth) listInvites(w http.ResponseWriter, r *http.Request) {
 		var v InviteView
 		var perms string
 		var usedAt, usedBy sql.NullString
-		if err := rows.Scan(&v.ID, &v.Role, &perms, &v.Note, &v.CreatedBy, &v.CreatedAt, &v.ExpiresAt, &usedAt, &usedBy); err != nil {
+		if err := rows.Scan(&v.ID, &v.Role, &perms, &v.Note, &v.CreatedBy, &v.CreatedAt, &v.ExpiresAt, &usedAt, &usedBy, &v.MaxRating, &v.RatingCountry); err != nil {
 			serverError(w, "invites", err)
 			return
 		}
 		v.Perms = parsePerms(perms)
+		v.RatingCountry = countryOr(v.RatingCountry)
 		if usedAt.Valid {
 			v.UsedAt = &usedAt.String
 		}
@@ -352,10 +430,12 @@ func (a *Auth) makeInvite(w http.ResponseWriter, r *http.Request) {
 	}
 	by, _ := From(r.Context())
 	var body struct {
-		Role  string    `json:"role"`
-		Perms *[]string `json:"perms"`
-		Note  string    `json:"note"`
-		Days  int       `json:"days"`
+		Role          string    `json:"role"`
+		Perms         *[]string `json:"perms"`
+		Note          string    `json:"note"`
+		Days          int       `json:"days"`
+		MaxRating     string    `json:"max_rating"`
+		RatingCountry string    `json:"rating_country"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8<<10)).Decode(&body); err != nil {
 		fail(w, http.StatusBadRequest, `send {"role": "member", "perms": [...], "note": "...", "days": 7}`)
@@ -376,6 +456,11 @@ func (a *Auth) makeInvite(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	maxRating, country, err := kidLimit(body.Role, body.MaxRating, body.RatingCountry, perms, a.skipLocal.Load())
+	if err != nil {
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	if body.Role == RoleAdmin && !mayMakeAdmin(w, by) {
 		return
 	}
@@ -394,9 +479,10 @@ func (a *Auth) makeInvite(w http.ResponseWriter, r *http.Request) {
 	tok := token(32)
 	now := a.now()
 	expires := now.Add(time.Duration(body.Days) * 24 * time.Hour)
-	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		_, err := tx.Exec("INSERT INTO invites(hash, created_at, created_by, role, perms, note, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-			sum(tok), store.FormatTime(now), by.UserID, body.Role, permsJSON(perms), body.Note, store.FormatTime(expires))
+	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
+		_, err := tx.Exec(`INSERT INTO invites(hash, created_at, created_by, role, perms, note, expires_at, max_rating, rating_country)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			sum(tok), store.FormatTime(now), by.UserID, body.Role, permsJSON(perms), body.Note, store.FormatTime(expires), maxRating, country)
 		return err
 	})
 	if err != nil {
@@ -405,7 +491,8 @@ func (a *Auth) makeInvite(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("auth: user %d made a %s invite", by.UserID, body.Role)
 	writeJSON(w, http.StatusCreated, map[string]any{"id": sum(tok), "path": invitePath + tok, "role": body.Role, "perms": perms,
-		"expires_at": store.FormatTime(expires), "note": "This link is shown only now and works once."})
+		"expires_at": store.FormatTime(expires), "note": "This link is shown only now and works once.",
+		"max_rating": maxRating, "rating_country": country})
 }
 
 func (a *Auth) deleteInvite(w http.ResponseWriter, r *http.Request) {
@@ -451,16 +538,17 @@ func (a *Auth) inviteGate(w http.ResponseWriter, r *http.Request) (string, bool)
 
 func (a *Auth) openInvite(ctx context.Context, q interface {
 	QueryRowContext(context.Context, string, ...any) *sql.Row
-}, tok string) (role, perms, note string, ok bool) {
+}, tok string) (role, perms, note, maxRating, country string, ok bool) {
 	var expires string
 	// The person who made the invite must still be an active owner or admin.
-	err := q.QueryRowContext(ctx, `SELECT i.role, i.perms, i.note, i.expires_at FROM invites i JOIN users c ON c.id = i.created_by
+	err := q.QueryRowContext(ctx, `SELECT i.role, i.perms, i.note, i.expires_at, i.max_rating, i.rating_country FROM invites i
+		JOIN users c ON c.id = i.created_by
 		WHERE i.hash = ? AND i.used_at IS NULL AND c.state = 'active' AND c.role IN ('owner', 'admin')`, sum(tok)).
-		Scan(&role, &perms, &note, &expires)
+		Scan(&role, &perms, &note, &expires, &maxRating, &country)
 	if err != nil || !a.now().Before(parseTime(expires)) {
-		return "", "", "", false
+		return "", "", "", "", "", false
 	}
-	return role, perms, note, true
+	return role, perms, note, maxRating, countryOr(country), true
 }
 
 func (a *Auth) lookInvite(w http.ResponseWriter, r *http.Request) {
@@ -468,7 +556,7 @@ func (a *Auth) lookInvite(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	role, _, note, ok := a.openInvite(r.Context(), a.s.Read(), r.PathValue("token"))
+	role, _, note, maxRating, country, ok := a.openInvite(r.Context(), a.s.Read(), r.PathValue("token"))
 	if !ok {
 		a.mu.Lock()
 		a.noteFail(key)
@@ -476,7 +564,7 @@ func (a *Auth) lookInvite(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusNotFound, "this invite link is used up, ended or wrong; ask for a new one")
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]string{"role": role, "note": note})
+	writeJSON(w, http.StatusOK, map[string]string{"role": role, "note": note, "max_rating": maxRating, "rating_country": country})
 }
 
 var errInviteGone = errors.New("invite gone")
@@ -500,7 +588,7 @@ func (a *Auth) acceptInvite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	tok := r.PathValue("token")
-	if _, _, _, ok := a.openInvite(r.Context(), a.s.Read(), tok); !ok {
+	if _, _, _, _, _, ok := a.openInvite(r.Context(), a.s.Read(), tok); !ok {
 		a.mu.Lock()
 		a.noteFail(key)
 		a.mu.Unlock()
@@ -514,9 +602,10 @@ func (a *Auth) acceptInvite(w http.ResponseWriter, r *http.Request) {
 	}
 	var id int64
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		var role, perms, expires string
-		err := tx.QueryRow(`SELECT i.role, i.perms, i.expires_at FROM invites i JOIN users c ON c.id = i.created_by
-			WHERE i.hash = ? AND i.used_at IS NULL AND c.state = 'active' AND c.role IN ('owner', 'admin')`, sum(tok)).Scan(&role, &perms, &expires)
+		var role, perms, expires, maxRating, country string
+		err := tx.QueryRow(`SELECT i.role, i.perms, i.expires_at, i.max_rating, i.rating_country FROM invites i JOIN users c ON c.id = i.created_by
+			WHERE i.hash = ? AND i.used_at IS NULL AND c.state = 'active' AND c.role IN ('owner', 'admin')`, sum(tok)).
+			Scan(&role, &perms, &expires, &maxRating, &country)
 		if err != nil || !a.now().Before(parseTime(expires)) {
 			return errInviteGone
 		}
@@ -527,7 +616,8 @@ func (a *Auth) acceptInvite(w http.ResponseWriter, r *http.Request) {
 		if n > 0 {
 			return errNameTaken
 		}
-		id, err = store.Insert(tx, "users", &domain.User{Name: c.Name, Role: role, PasswordHash: h, State: "active", Perms: perms}, domain.System)
+		id, err = store.Insert(tx, "users", &domain.User{Name: c.Name, Role: role, PasswordHash: h, State: "active", Perms: perms,
+			MaxRating: maxRating, RatingCountry: countryOr(country)}, domain.System)
 		if err != nil {
 			return err
 		}

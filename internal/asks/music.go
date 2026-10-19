@@ -31,6 +31,9 @@ var (
 // takes the new albums too); an artist already in the Library is asked only
 // for the albums it does not keep up to date yet.
 func (s *Service) AskArtist(ctx context.Context, p Person, id string, albums []string) (Result, error) {
+	if p.MaxRating != "" {
+		return Result{}, overLimit(p, "artist", "")
+	}
 	mbid, ok := library.ArtistMBID(id)
 	if !ok {
 		return Result{}, library.ErrBadArtistID

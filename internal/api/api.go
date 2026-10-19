@@ -109,6 +109,12 @@ type API struct {
 	lookups inFlight
 	// confirm holds the two-step controls' confirmation ids.
 	confirm confirms
+	// discover caches Explore rows and details pages and limits each person.
+	discover discoverState
+	// rated keeps TMDB ratings looked up for Kid limits.
+	rated ratingState
+	// status keeps the Settings status answer for 30 seconds.
+	status statusCache
 }
 
 // New makes the API.
@@ -185,7 +191,14 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("POST /api/v1/titles/refresh", a.refreshTitles)
 	m.HandleFunc("GET /api/v1/calendar", a.calendar)
 	m.HandleFunc("GET /api/v1/artwork/{name}", a.artwork)
+	m.HandleFunc("GET /api/v1/settings/status", a.settingsStatusRoute)
+	m.HandleFunc("GET /api/v1/settings/title-defaults", a.getTitleDefaults)
+	m.HandleFunc("PUT /api/v1/settings/title-defaults", a.putTitleDefaults)
 	m.HandleFunc("GET /api/v1/pick-rules", a.listPickRules)
+	m.HandleFunc("POST /api/v1/pick-rules", a.addPickRules)
+	m.HandleFunc("GET /api/v1/pick-rules/{id}", a.getPickRules)
+	m.HandleFunc("PUT /api/v1/pick-rules/{id}", a.editPickRules)
+	m.HandleFunc("DELETE /api/v1/pick-rules/{id}", a.deletePickRules)
 	m.HandleFunc("GET /api/v1/library-folders", a.listFolders)
 	m.HandleFunc("POST /api/v1/library-folders", a.addFolder)
 	m.HandleFunc("PUT /api/v1/library-folders/{id}", a.editFolder)
@@ -244,6 +257,8 @@ func (a *API) Handler() http.Handler {
 	a.dataPackRoutes(m)
 	a.scheduleRoutes(m)
 	m.HandleFunc("GET /api/v1/metadata/search", a.searchMetadata)
+	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}", a.metadataDetails)
+	m.HandleFunc("GET /api/v1/discover", a.discoverRow)
 	if a.s.Secrets != nil {
 		m.HandleFunc("GET /api/v1/settings/tmdb-token", a.getTMDBToken)
 		m.HandleFunc("PUT /api/v1/settings/tmdb-token", a.putTMDBToken)
@@ -268,9 +283,9 @@ func (a *API) Handler() http.Handler {
 	}
 	if a.s.Auth != nil {
 		a.s.Auth.Routes(m)
-		return secure(a.s.Auth.Middleware(wrapMux(a.partGate(m, auth.Gate(m)))))
+		return secure(a.s.Auth.Middleware(wrapMux(a.forgetStatusOnWrite(a.kidGate(m, a.partGate(m, auth.Gate(m)))))))
 	}
-	return secure(wrapMux(a.partGate(m, m)))
+	return secure(wrapMux(a.forgetStatusOnWrite(a.partGate(m, m))))
 }
 
 // wrapMux lets tests record which routes the mux served.
@@ -355,6 +370,14 @@ type TitleView struct {
 	PickRulesID     int64    `json:"pick_rules_id,omitempty"`
 	PickRulesName   string   `json:"pick_rules_name,omitempty"`
 	Artwork         []string `json:"artwork"`
+	// Screen details from the metadata source: wide picture and logo URLs,
+	// genre names, runtime, the US rating and people (top cast, directors).
+	Backdrop       string   `json:"backdrop,omitempty"`
+	Logo           string   `json:"logo,omitempty"`
+	Genres         []string `json:"genres"`
+	RuntimeMinutes int      `json:"runtime_minutes,omitempty"`
+	Rating         string   `json:"rating,omitempty"`
+	People         []string `json:"people"`
 	// Versions are the wanted copies (main first), such as HD and 4K.
 	Versions []VersionView `json:"versions"`
 	Slots    []SlotView    `json:"slots"`
@@ -436,12 +459,20 @@ func artworkLinks(in []string) []string {
 	return out
 }
 
+func nonNil(s []string) []string {
+	if s == nil {
+		return []string{}
+	}
+	return s
+}
+
 func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) {
 	db := a.s.Store.Read()
 	v := TitleView{ID: t.ID, Kind: t.Kind, Name: t.Name, Year: t.Year, Overview: t.Overview, OriginalLanguage: t.OriginalLanguage, IDs: t.SourceIDs, Slots: []SlotView{},
 		KeepUpToDate: t.KeepUpToDate, WhyAdded: t.WhyAdded, ReleaseGate: t.ReleaseGate, GateDelayDays: t.GateDelayDays,
 		GateDriver: t.GateDriver, GateOpensAt: t.GateOpensAt, CinemaDate: t.CinemaDate, DigitalDate: t.DigitalDate,
-		PhysicalDate: t.PhysicalDate, RefreshedAt: t.RefreshedAt, DroppedAt: t.DroppedAt, Artwork: artworkLinks(t.Artwork)}
+		PhysicalDate: t.PhysicalDate, RefreshedAt: t.RefreshedAt, DroppedAt: t.DroppedAt, Artwork: artworkLinks(t.Artwork),
+		Backdrop: t.Backdrop, Logo: t.Logo, Genres: nonNil(t.Genres), RuntimeMinutes: t.RuntimeMinutes, Rating: t.Rating, People: nonNil(t.People)}
 	now := time.Now()
 	if t.Kind == "artist" {
 		v.Stage, v.GateOpen = t.Status, true
@@ -569,6 +600,9 @@ func (a *API) listTitles(w http.ResponseWriter, r *http.Request) {
 	for _, t := range ts {
 		if p, ok := parts.ForTitleKind(t.Kind); ok && !a.partIsOn(p) && !a.s.Parts.SafeMode {
 			continue // its part is off: hidden, not removed (safe mode lists every title)
+		}
+		if !a.titleAllowed(r, t) {
+			continue // above a Kid's age-rating limit
 		}
 		v, err := a.titleView(r.Context(), t)
 		if err != nil {
@@ -854,6 +888,9 @@ func (a *API) searchMetadata(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "send ?q=<name>, and &year=<year> if you know it")
 		return
 	}
+	if a.kidLimited(w, r) {
+		return
+	}
 	year, _ := strconv.Atoi(r.URL.Query().Get("year"))
 	ms, err := a.s.Metadata.Search(r.Context(), q, year)
 	if metadataServiceError(w, err) {
@@ -870,6 +907,7 @@ func (a *API) searchMetadata(w http.ResponseWriter, r *http.Request) {
 	if ms == nil {
 		ms = []metadata.Movie{}
 	}
+	ms = a.kidMovies(r.Context(), a.kidMax(r), ms)
 	writeJSON(w, http.StatusOK, map[string]any{"movies": ms, "attribution": metadata.Attribution})
 }
 

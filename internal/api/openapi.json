@@ -145,6 +145,10 @@
             "format": "int64",
             "type": "integer"
           },
+          "search_on_add": {
+            "description": "Search the whole show after the folder look (left out: the saved Movies and TV default, else off).",
+            "type": "boolean"
+          },
           "seasons": {
             "description": "Which seasons are kept up to date: all (specials only when the setting says so), only episodes still to air, the latest season, or none. Default from the show settings.",
             "enum": [
@@ -1270,6 +1274,10 @@
             "description": "album, ep, single, broadcast or other.",
             "type": "string"
           },
+          "backdrop": {
+            "description": "The title's wide picture URL; left out when it has none.",
+            "type": "string"
+          },
           "date": {
             "format": "date-time",
             "type": "string"
@@ -1313,6 +1321,10 @@
             "format": "int64",
             "type": "integer"
           },
+          "poster": {
+            "description": "The title's poster link (/api/v1/artwork/<name> or a picture URL); left out when it has none. For an album it is the artist's picture.",
+            "type": "string"
+          },
           "runtime": {
             "description": "Minutes.",
             "type": "integer"
@@ -1322,6 +1334,10 @@
           },
           "state": {
             "description": "The episode's Slot state in the main Version.",
+            "type": "string"
+          },
+          "still": {
+            "description": "An episode's still picture URL, when known.",
             "type": "string"
           },
           "timed": {
@@ -2107,6 +2123,18 @@
         },
         "type": "object"
       },
+      "FieldError": {
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "field": {
+            "description": "The dotted path of the field that is wrong, such as name, kinds, body.good_enough_at, body.steps, body.traits, body.protocol.prefer, body.protocol.wait_minutes_torrent, body.size_limits or body.proper_policy.max_age_days.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "File": {
         "description": "A File record. These names match the domain record returned by copy-choice routes.",
         "properties": {
@@ -2360,6 +2388,27 @@
               "type": "integer"
             },
             "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "KindDefaults": {
+        "properties": {
+          "keep_up_to_date": {
+            "type": "boolean"
+          },
+          "library_folder_id": {
+            "description": "0 means the first folder of that kind.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "pick_rules_id": {
+            "description": "0 means the folder's own Pick rules.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "search_on_add": {
+            "type": "boolean"
           }
         },
         "type": "object"
@@ -3582,6 +3631,10 @@
             "format": "int64",
             "type": "integer"
           },
+          "in_use": {
+            "description": "How many things use these Pick rules (Versions, Library folders, Outside lists, Wishlist settings and Movies and TV defaults added up).",
+            "type": "integer"
+          },
           "kinds": {
             "items": {
               "type": "string"
@@ -3593,6 +3646,100 @@
           },
           "preset": {
             "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "PickRulesBody": {
+        "additionalProperties": true,
+        "description": "The rules: steps (quality, allowed) in ladder order, good_enough_at, traits (trait, points), must_have, never, min_points, good_enough_points, size_limits (by step or *: min, max, per_minute), protocol (prefer, wait_minutes_torrent, wait_minutes_usenet, skip_wait_at_good_enough), language (wanted, original_ok), order, upgrade_min_points, proper_policy (mode, max_age_days).",
+        "type": "object"
+      },
+      "PickRulesDetail": {
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/PickRulesBody"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "in_use": {
+            "$ref": "#/components/schemas/PickRulesUse"
+          },
+          "kinds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          },
+          "preset": {
+            "type": "boolean"
+          },
+          "revision": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "PickRulesInUse": {
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "in_use": {
+            "$ref": "#/components/schemas/PickRulesUse"
+          }
+        },
+        "type": "object"
+      },
+      "PickRulesInput": {
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/PickRulesBody"
+          },
+          "kinds": {
+            "items": {
+              "enum": [
+                "movie",
+                "show",
+                "music"
+              ],
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "kinds",
+          "body"
+        ],
+        "type": "object"
+      },
+      "PickRulesUse": {
+        "description": "What uses one Pick rule.",
+        "properties": {
+          "library_folders": {
+            "type": "integer"
+          },
+          "outside_lists": {
+            "type": "integer"
+          },
+          "title_defaults": {
+            "type": "integer"
+          },
+          "versions": {
+            "type": "integer"
+          },
+          "wishlist": {
+            "type": "integer"
           }
         },
         "type": "object"
@@ -4315,6 +4462,68 @@
           },
           "number": {
             "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "SettingsStatus": {
+        "properties": {
+          "items": {
+            "items": {
+              "properties": {
+                "group": {
+                  "enum": [
+                    "general",
+                    "library",
+                    "copies",
+                    "people",
+                    "security",
+                    "linked",
+                    "maintenance",
+                    "account"
+                  ],
+                  "type": "string"
+                },
+                "page": {
+                  "description": "The Settings page to fix it on, such as /settings/downloaders.",
+                  "type": "string"
+                },
+                "severity": {
+                  "enum": [
+                    "info",
+                    "warning",
+                    "error"
+                  ],
+                  "type": "string"
+                },
+                "text": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "known": {
+            "description": "Pages whose status is known.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "tmdb_key_set": {
+            "description": "A TMDB key is saved or read from a file. The key itself is never in the answer.",
+            "type": "boolean"
+          },
+          "unset": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "description": "Per group, the pages not set up yet (no Library folders, Sources or Downloaders).",
+            "type": "object"
           }
         },
         "type": "object"
@@ -5689,6 +5898,18 @@
         },
         "type": "object"
       },
+      "TitleDefaults": {
+        "description": "Movies and TV defaults: what a new movie or show gets for each field the add leaves out.",
+        "properties": {
+          "movie": {
+            "$ref": "#/components/schemas/KindDefaults"
+          },
+          "show": {
+            "$ref": "#/components/schemas/KindDefaults"
+          }
+        },
+        "type": "object"
+      },
       "TitleView": {
         "properties": {
           "artist": {
@@ -5989,7 +6210,15 @@
           "id": {
             "type": "integer"
           },
+          "max_rating": {
+            "description": "The age-rating limit; empty for no limit.",
+            "type": "string"
+          },
           "name": {
+            "type": "string"
+          },
+          "rating_country": {
+            "description": "The country whose ratings apply; US for now.",
             "type": "string"
           }
         },
@@ -6887,7 +7116,7 @@
     },
     "/api/v1/artists/lookup": {
       "get": {
-        "description": "Finds artists on MusicBrainz by name, or one by mbid:<id>; at most one MusicBrainz request a second, answers cached. Each answer says whether the artist is already in the Library or on the Never-add list. With albums=true and an mbid: term, the answer lists the artist's albums to ask for, oldest first. Each answer lists every open ask for the artist (asks) and names the one the person is part of, else the oldest (ask). One person may have two lookups running at once; lookups by people who do not approve asks wait behind the scheduled refresh and staff at MusicBrainz and use at most half of its request budget.",
+        "description": "Finds artists on MusicBrainz by name, or one by mbid:<id>; at most one MusicBrainz request a second, answers cached. Each answer says whether the artist is already in the Library or on the Never-add list. With albums=true and an mbid: term, the answer lists the artist's albums to ask for, oldest first. Each answer lists every open ask for the artist (asks) and names the one the person is part of, else the oldest (ask). One person may have two lookups running at once; lookups by people who do not approve asks wait behind the scheduled refresh and staff at MusicBrainz and use at most half of its request budget. For a Kid (a member with an age-rating limit), the list is always empty, because music has no age ratings.",
         "operationId": "lookupArtists",
         "parameters": [
           {
@@ -7299,7 +7528,7 @@
         "x-holyarrs-scope": "read"
       },
       "post": {
-        "description": "A movie by tmdb: id, (kind show) a show by tmdb:, tvdb:, tvmaze: or imdb: id, whole or by seasons, or (kind artist) an artist by mbid: id, whole or by albums (MusicBrainz album ids). A second ask for the same thing joins the first (200, joined); a waiting show ask grows to the seasons asked for too; a show or artist in the Library is asked for only the seasons or albums it does not keep up to date yet; an album the artist's album kinds leave out is refused (409). Approving an artist ask adds the artist with only the asked-for albums kept up to date (their kinds included) and searches nothing yet. Approved straight away when the caller may auto-approve. Counts against the caller's weekly limit unless they may approve (show asks count when shows_count is on, artist asks when music_count is on).",
+        "description": "A movie by tmdb: id, (kind show) a show by tmdb:, tvdb:, tvmaze: or imdb: id, whole or by seasons, or (kind artist) an artist by mbid: id, whole or by albums (MusicBrainz album ids). A second ask for the same thing joins the first (200, joined); a waiting show ask grows to the seasons asked for too; a show or artist in the Library is asked for only the seasons or albums it does not keep up to date yet; an album the artist's album kinds leave out is refused (409). Approving an artist ask adds the artist with only the asked-for albums kept up to date (their kinds included) and searches nothing yet. Approved straight away when the caller may auto-approve. Counts against the caller's weekly limit unless they may approve (show asks count when shows_count is on, artist asks when music_count is on). For a Kid (a member with an age-rating limit), a movie or show above their limit, or without a rating, answers 403 \"This account can ask only for titles rated up to <limit>.\", and every artist answers 403 \"This account cannot ask for music, because music has no age ratings.\"",
         "operationId": "makeAsk",
         "requestBody": {
           "content": {
@@ -7374,6 +7603,16 @@
               }
             },
             "description": "Not a tmdb: id for a movie, a bad show id, or a season the show does not have."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Above the asker's age-rating limit, or music for a Kid account."
           },
           "404": {
             "content": {
@@ -7812,7 +8051,7 @@
     },
     "/api/v1/auth/invites/{token}": {
       "get": {
-        "description": "What an invite link offers; open without sign-in.",
+        "description": "What an invite link offers (role, note and age-rating limit: max_rating, rating_country); open without sign-in.",
         "operationId": "lookInvite",
         "parameters": [
           {
@@ -8192,7 +8431,7 @@
     },
     "/api/v1/auth/me": {
       "get": {
-        "description": "The signed-in person, their role and permissions.",
+        "description": "The signed-in person, their role and permissions, and their age-rating limit (max_rating, empty for no limit; rating_country, US). The limit is read on every request, so a change holds without signing out.",
         "operationId": "me",
         "responses": {
           "200": {
@@ -9309,7 +9548,7 @@
     },
     "/api/v1/calendar": {
       "get": {
-        "description": "Cinema, digital and disc dates of Library movies and the episodes of Library shows between from and to (YYYY-MM-DD, UTC; default the next 30 days). An episode (kind episode) carries its exact air time in date when timed is true (show it in the reader's time zone), else its air day; air_day is the day where it airs, and state its Slot state. titles narrows to movies or shows. Albums (kind album) of artists in the Library are listed on their release day; an album MusicBrainz dates only by year or month has no release day and is left out (it still opens for searching at the end of that year or month).",
+        "description": "Cinema, digital and disc dates of Library movies and the episodes of Library shows between from and to (YYYY-MM-DD, UTC; default the next 30 days). An episode (kind episode) carries its exact air time in date when timed is true (show it in the reader's time zone), else its air day; air_day is the day where it airs, and state its Slot state. titles narrows to movies or shows. Albums (kind album) of artists in the Library are listed on their release day; an album MusicBrainz dates only by year or month has no release day and is left out (it still opens for searching at the end of that year or month). For a Kid (a member with an age-rating limit), only the dates of titles their limit allows are listed.",
         "operationId": "calendar",
         "parameters": [
           {
@@ -9569,7 +9808,7 @@
     },
     "/api/v1/collections": {
       "get": {
-        "description": "Lists provider-identified movie series that currently have at least one active movie in the Library.",
+        "description": "Lists provider-identified movie series that currently have at least one active movie in the Library. For a Kid (a member with an age-rating limit), a series is listed only when it holds a movie their limit allows, and owned_titles counts only those.",
         "responses": {
           "200": {
             "description": "Movie series summaries with stable ids, source ids and active movie counts."
@@ -9583,7 +9822,7 @@
     },
     "/api/v1/collections/{id}": {
       "get": {
-        "description": "Returns one movie series and its current active movies, Versions and Files, including protected-copy state.",
+        "description": "Returns one movie series and its current active movies, Versions and Files, including protected-copy state. For a Kid (a member with an age-rating limit), only the movies their limit allows are listed, and a series with none of them answers 404.",
         "parameters": [
           {
             "in": "path",
@@ -9954,6 +10193,42 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "owner",
         "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/discover": {
+      "get": {
+        "description": "Returns up to 20 movies or shows for one Explore row (row=trending, popular, upcoming, similar with id=<Library title id>, or genre with g=<genre name>; kind=movie or show, both when absent). Each item carries tmdb_id, kind, name, year, poster, backdrop, overview, genres, in_library, title_id and the open ask (or null). Never-add items and kinds whose part is off are left out. Rows are cached (trending 6 h, popular and upcoming 12 h, similar and genre 24 h); the Library and ask joins are fresh. Each person may ask 30 times a minute. For a Kid (a member with an age-rating limit), only items their limit allows are listed: the rating comes from the Library, the 24 h details cache or one TMDB details lookup (at most 4 at a time), and an item whose rating cannot be found is left out; similar with a Library title above their limit answers 404.",
+        "operationId": "discoverRow",
+        "responses": {
+          "200": {
+            "description": "row, title and items."
+          },
+          "400": {
+            "description": "Unknown row or kind, or a missing id or g."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          },
+          "404": {
+            "description": "No such Library title (similar)."
+          },
+          "429": {
+            "description": "Over 30 requests a minute; see Retry-After."
+          },
+          "501": {
+            "description": "TMDB is not set up."
+          },
+          "502": {
+            "description": "TMDB did not answer."
+          },
+          "503": {
+            "description": "TMDB is rate limited and nothing is cached; see Retry-After."
+          }
+        },
+        "summary": "An Explore row from TMDB",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
       }
     },
     "/api/v1/downloaders": {
@@ -11893,11 +12168,11 @@
     },
     "/api/v1/library-summary": {
       "get": {
-        "description": "Returns the enabled Library title count and at most eight missing movie rows in Library order for Home. Removed titles are excluded. Safe mode includes every media kind.",
+        "description": "Returns the enabled Library title count and at most eight missing movie rows in Library order for Home. Removed titles are excluded. Safe mode includes every media kind. recent holds the 20 newest titles by date added, in the same view as GET /titles. For a Kid (a member with an age-rating limit), the count, missing and recent hold only the titles their limit allows.",
         "operationId": "homeLibrarySummary",
         "responses": {
           "200": {
-            "description": "Visible title total and bounded missing movie rows with id, name, year and state_label."
+            "description": "Visible title total, bounded missing movie rows with id, name, year and state_label, and recent titles."
           },
           "401": {
             "description": "Sign-in is required."
@@ -12609,7 +12884,7 @@
     },
     "/api/v1/metadata/search": {
       "get": {
-        "description": "Answers matches with the TMDB attribution.",
+        "description": "Answers matches with the TMDB attribution. For a Kid (a member with an age-rating limit), only movies their limit allows are listed (ratings found as for discover).",
         "operationId": "searchMetadata",
         "parameters": [
           {
@@ -12652,6 +12927,9 @@
             },
             "description": "Bad input."
           },
+          "429": {
+            "description": "A Kid account over 30 searches, lookups and Explore requests a minute; see Retry-After."
+          },
           "503": {
             "content": {
               "application/json": {
@@ -12668,6 +12946,73 @@
           "Library"
         ],
         "x-holyarrs-part": "movies",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/metadata/{kind}/{tmdb_id}": {
+      "get": {
+        "description": "Returns a movie or show page from TMDB whether or not it is in the Library: tmdb_id, kind, name, year, overview, poster, backdrop, logo, genres, runtime_minutes, rating (US), people (name, role actor/director/creator, character, profile), seasons for shows (number, episode_count, year), similar (up to 12, same items as discover), in_library, title_id, ask and never_add. Cached 24 h. For a Kid (a member with an age-rating limit), a title above their limit, or without a rating, answers 403 and similar holds only titles their limit allows.",
+        "operationId": "metadataDetails",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tmdb_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The details page."
+          },
+          "400": {
+            "description": "kind is not movie or show, or tmdb_id is not a number."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "This title is rated above what this account may see (a Kid account)."
+          },
+          "404": {
+            "description": "TMDB does not know it."
+          },
+          "409": {
+            "description": "The kind's part is off."
+          },
+          "429": {
+            "description": "A Kid account over 30 searches, lookups and Explore requests a minute; see Retry-After."
+          },
+          "501": {
+            "description": "TMDB is not set up."
+          },
+          "502": {
+            "description": "TMDB did not answer."
+          },
+          "503": {
+            "description": "TMDB is rate limited; see Retry-After."
+          }
+        },
+        "summary": "Details of a movie or show from TMDB",
+        "x-holyarrs-part": "media",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "read"
       }
@@ -14498,7 +14843,7 @@
     },
     "/api/v1/people/search": {
       "get": {
-        "description": "Searches TMDB people by name and includes TMDB attribution.",
+        "description": "Searches TMDB people by name and includes TMDB attribution. For a Kid (a member with an age-rating limit), known_for holds only movies in the Library that their limit allows.",
         "parameters": [
           {
             "in": "query",
@@ -14539,7 +14884,7 @@
     },
     "/api/v1/people/{id}": {
       "get": {
-        "description": "Returns one TMDB person and a bounded, newest-first movie filmography annotated with Library, Never-add and open-ask state.",
+        "description": "Returns one TMDB person and a bounded, newest-first movie filmography annotated with Library, Never-add and open-ask state. For a Kid (a member with an age-rating limit), the filmography holds only movies in the Library that their limit allows, and the totals count only those.",
         "parameters": [
           {
             "in": "path",
@@ -14661,7 +15006,7 @@
     },
     "/api/v1/pick-rules": {
       "get": {
-        "description": "Every Pick rules set, presets marked.",
+        "description": "Every Pick rules set, presets marked, with in_use: how many things use each.",
         "operationId": "listPickRules",
         "responses": {
           "200": {
@@ -14690,6 +15035,249 @@
         "x-holyarrs-part": "media",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "read"
+      },
+      "post": {
+        "description": "Makes new Pick rules (never ready-made). Checks: name 1 to 200 characters and not taken by other Pick rules (any case); kinds one to three of movie, show, music, with music alone; steps from the ladder of those kinds, each once, at least one allowed; good_enough_at an allowed step; known traits with points from -10000 to 10000; safety traits (sample, executable, password_protected, disc_image) only in never; size limits keyed by * or a listed step with 0 <= min <= max <= 2^50; protocol prefer torrent, usenet or either and waits from 0 to 10080 minutes; known languages; order and proper_policy.mode known; proper_policy.max_age_days from 0 to 36500.",
+        "operationId": "addPickRules",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PickRulesInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickRulesDetail"
+                }
+              }
+            },
+            "description": "The new rules."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldError"
+                }
+              }
+            },
+            "description": "A field is wrong; field names it."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldError"
+                }
+              }
+            },
+            "description": "The name is taken (field is name)."
+          }
+        },
+        "summary": "Make Pick rules",
+        "tags": [
+          "Library"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/pick-rules/{id}": {
+      "delete": {
+        "description": "Only rules nothing uses: no Version, Library folder, Outside list, Wishlist setting (ask_pick_rules_id, ask_show_pick_rules_id, ask_music_pick_rules_id) or Movies and TV default (movie_pick_rules_id, show_pick_rules_id). Ready-made rules cannot be removed.",
+        "operationId": "deletePickRules",
+        "parameters": [
+          {
+            "description": "The record id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The id is not a number."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such Pick rules."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickRulesInUse"
+                }
+              }
+            },
+            "description": "In use (the answer names what uses it, with in_use), or ready-made rules asked to change name or kinds or to be removed."
+          }
+        },
+        "summary": "Remove Pick rules",
+        "tags": [
+          "Library"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      },
+      "get": {
+        "description": "The rules with their body and in_use: what uses them, by kind of use (wishlist counts the Wishlist settings, title_defaults the saved Movies and TV defaults).",
+        "operationId": "getPickRules",
+        "parameters": [
+          {
+            "description": "The record id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickRulesDetail"
+                }
+              }
+            },
+            "description": "The rules."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The id is not a number."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such Pick rules."
+          }
+        },
+        "summary": "One set of Pick rules",
+        "tags": [
+          "Library"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "read"
+      },
+      "put": {
+        "description": "Replaces name, kinds and body and bumps revision. Ready-made rules (preset) keep their name and kinds; their body may change. Rules in use (see in_use) cannot drop a kind something uses or switch between the video and music ladders. Checks: name 1 to 200 characters and not taken by other Pick rules (any case); kinds one to three of movie, show, music, with music alone; steps from the ladder of those kinds, each once, at least one allowed; good_enough_at an allowed step; known traits with points from -10000 to 10000; safety traits (sample, executable, password_protected, disc_image) only in never; size limits keyed by * or a listed step with 0 <= min <= max <= 2^50; protocol prefer torrent, usenet or either and waits from 0 to 10080 minutes; known languages; order and proper_policy.mode known; proper_policy.max_age_days from 0 to 36500.",
+        "operationId": "editPickRules",
+        "parameters": [
+          {
+            "description": "The record id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PickRulesInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickRulesDetail"
+                }
+              }
+            },
+            "description": "The changed rules."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldError"
+                }
+              }
+            },
+            "description": "A field is wrong; field names it."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such Pick rules."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickRulesInUse"
+                }
+              }
+            },
+            "description": "In use (the answer names what uses it, with in_use), or ready-made rules asked to change name or kinds or to be removed."
+          }
+        },
+        "summary": "Change Pick rules",
+        "tags": [
+          "Library"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
       }
     },
     "/api/v1/releases/{id}/choose": {
@@ -16090,6 +16678,31 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/settings/status": {
+      "get": {
+        "description": "One answer for the Settings home: health checks (warning or error as the check says), failed (error) or stuck (warning) stages, media servers and subtitle sites, Sources and Downloaders not answering (error), no TMDB key, no backup or none in 7 days (warning), a newer HolyArrs (info), and saved Movies and TV defaults whose folder or Pick rules are gone (warning, page /settings/title-defaults, group library). The answer is kept 30 seconds for everyone.",
+        "operationId": "getSettingsStatus",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsStatus"
+                }
+              }
+            },
+            "description": "The status."
+          }
+        },
+        "summary": "What needs attention in Settings",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/settings/subtitles": {
       "get": {
         "description": "The default wish, Pass marks, built-in tracks, the hearing-impaired name, schedules and limits.",
@@ -16154,6 +16767,74 @@
           "Subtitles"
         ],
         "x-holyarrs-part": "subtitles",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/settings/title-defaults": {
+      "get": {
+        "description": "What a new movie or show gets when POST /titles or POST /shows leaves a field out. Built-in values: keep_up_to_date on for both, search_on_add on for movies and off for shows, folder and Pick rules 0. A built-in value is only shown; adds use a default only after it has been saved.",
+        "operationId": "getTitleDefaults",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TitleDefaults"
+                }
+              }
+            },
+            "description": "The defaults."
+          }
+        },
+        "summary": "Movies and TV defaults",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "read"
+      },
+      "put": {
+        "description": "Any field left out keeps its value; a save stores all eight values. A folder must exist and be of that kind; Pick rules must exist and be for movies and shows (music Pick rules answer 400). A saved folder or Pick rules removed later are skipped by adds, which then use the built-in choice.",
+        "operationId": "putTitleDefaults",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TitleDefaults"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TitleDefaults"
+                }
+              }
+            },
+            "description": "Saved."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "A value is not valid."
+          }
+        },
+        "summary": "Change the Movies and TV defaults",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "media",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
       }
@@ -16405,7 +17086,7 @@
     },
     "/api/v1/shows": {
       "post": {
-        "description": "Adds a show with which seasons to keep up to date, what happens to new seasons, its episode order and details source. Seasons, episodes and one Slot per episode are written at once; each episode is not out yet until it airs, then missing. A folder look follows as a Job. Episodes are not searched yet (stage 3.2). With more_versions, each extra Version (such as 4K) gets one Slot per episode too.",
+        "description": "Adds a show with which seasons to keep up to date, what happens to new seasons, its episode order and details source. Seasons, episodes and one Slot per episode are written at once; each episode is not out yet until it airs, then missing. A folder look follows as a Job. With search_on_add, the whole show is searched after the folder look, the same search POST /titles/{id}/search starts for a show. With more_versions, each extra Version (such as 4K) gets one Slot per episode too. A field the request leaves out (library_folder_id, pick_rules_id, keep_up_to_date, search_on_add) takes the saved Movies and TV default for shows, only when that default has been saved.",
         "operationId": "addShow",
         "requestBody": {
           "content": {
@@ -16489,7 +17170,7 @@
     },
     "/api/v1/shows/lookup": {
       "get": {
-        "description": "Finds shows by name, or by tmdb:, tvdb:, tvmaze: or imdb: id, in one details source (the default one when none is named), and says whether each is in the Library.",
+        "description": "Finds shows by name, or by tmdb:, tvdb:, tvmaze: or imdb: id, in one details source (the default one when none is named), and says whether each is in the Library. For a Kid (a member with an age-rating limit), only shows their limit allows are listed.",
         "operationId": "lookupShows",
         "parameters": [
           {
@@ -16547,6 +17228,9 @@
               }
             },
             "description": "No term, or an unknown source."
+          },
+          "429": {
+            "description": "A Kid account over 30 searches, lookups and Explore requests a minute; see Retry-After."
           },
           "503": {
             "content": {
@@ -17956,7 +18640,7 @@
     },
     "/api/v1/titles": {
       "get": {
-        "description": "Every visible title with its Versions and Slots. An optional q matches literal word prefixes across local names, aliases and years, ignoring Latin accents. All words must match; FTS operators are treated as words. Removed titles and disabled parts stay hidden.",
+        "description": "Every visible title with its Versions and Slots. An optional q matches literal word prefixes across local names, aliases and years, ignoring Latin accents. All words must match; FTS operators are treated as words. Removed titles and disabled parts stay hidden. For a Kid (a member with an age-rating limit), only the titles their limit allows are listed; titles without a rating, with a rating off the ladder, and music never pass a limit.",
         "operationId": "listTitles",
         "parameters": [
           {
@@ -18008,7 +18692,7 @@
         "x-holyarrs-scope": "read"
       },
       "post": {
-        "description": "Looks the movie up, adds it with a main Version and any more Versions, then queues a details refresh, a folder look and, when asked, a search.",
+        "description": "Looks the movie up, adds it with a main Version and any more Versions, then queues a details refresh, a folder look and, when asked, a search. A field the request leaves out (library_folder_id, pick_rules_id, keep_up_to_date, search_on_add) takes the saved Movies and TV default for movies, only when that default has been saved (GET /settings/title-defaults); with nothing saved the add behaves as before.",
         "operationId": "addTitle",
         "requestBody": {
           "content": {
@@ -18082,7 +18766,7 @@
     },
     "/api/v1/titles/lookup": {
       "get": {
-        "description": "Finds movies by name, tmdb:<id> or imdb:<tt id>, and says whether each is in the Library or on the Never-add list.",
+        "description": "Finds movies by name, tmdb:<id> or imdb:<tt id>, and says whether each is in the Library or on the Never-add list. For a Kid (a member with an age-rating limit), only movies their limit allows are listed.",
         "operationId": "lookupTitles",
         "parameters": [
           {
@@ -18132,6 +18816,9 @@
               }
             },
             "description": "No term given."
+          },
+          "429": {
+            "description": "A Kid account over 30 searches, lookups and Explore requests a minute; see Retry-After."
           },
           "503": {
             "content": {
@@ -18219,7 +18906,7 @@
     },
     "/api/v1/titles/{id}": {
       "get": {
-        "description": "A title with its dates, gate reason, Versions and Slots.",
+        "description": "A title with its dates, gate reason, Versions and Slots. For a Kid (a member with an age-rating limit), a title above their limit answers 404 not found, the same as a missing one; so does every /titles/{id} route; titles without a rating, with a rating off the ladder, and music never pass a limit.",
         "operationId": "getTitle",
         "parameters": [
           {
@@ -20082,7 +20769,7 @@
     },
     "/api/v1/users": {
       "get": {
-        "description": "Every account with role, state and permissions.",
+        "description": "Every account with role, state, permissions and age-rating limit (max_rating, rating_country).",
         "operationId": "listUsers",
         "responses": {
           "200": {
@@ -20107,7 +20794,7 @@
     },
     "/api/v1/users/invites": {
       "get": {
-        "description": "Open and used invites, newest first.",
+        "description": "Open and used invites, newest first, each with the age-rating limit the new person gets.",
         "operationId": "listInvites",
         "responses": {
           "200": {
@@ -20130,12 +20817,35 @@
         "x-holyarrs-scope": "admin"
       },
       "post": {
-        "description": "Answers the invite link once; it ends after its days (1 to 30).",
+        "description": "Answers the invite link once; it ends after its days (1 to 30). max_rating is a Kid's age-rating limit: one value from G, PG, PG-13, R, NC-17 or TV-Y, TV-Y7, TV-G, TV-PG, TV-14, TV-MA, or empty for no limit. rating_country is US (only US ratings are known for now). The person who joins gets the invite's limit. Only member invites can carry a limit; an unknown rating, a country other than US, or a limit on an admin invite answers 400. A person with a limit may hold only the ask and auto_approve permissions; any other permission with a limit answers 400 \"A Kid account can only ask for titles.\"",
         "operationId": "makeInvite",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
+                "properties": {
+                  "days": {
+                    "type": "integer"
+                  },
+                  "max_rating": {
+                    "type": "string"
+                  },
+                  "note": {
+                    "type": "string"
+                  },
+                  "perms": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "rating_country": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string"
+                  }
+                },
                 "type": "object"
               }
             }
@@ -20215,7 +20925,7 @@
     },
     "/api/v1/users/{id}": {
       "put": {
-        "description": "Role, permissions and state; the owner cannot be changed here.",
+        "description": "Role, permissions, state and age-rating limit; the owner cannot be changed here. max_rating is a Kid's age-rating limit: one value from G, PG, PG-13, R, NC-17 or TV-Y, TV-Y7, TV-G, TV-PG, TV-14, TV-MA, or empty for no limit. rating_country is US (only US ratings are known for now). An empty max_rating clears the limit and a left-out one keeps it. Only members can have a limit; making someone an admin clears it. An unknown rating, a country other than US, or a limit on an admin answers 400. A person with a limit may hold only the ask and auto_approve permissions; any other permission with a limit answers 400 \"A Kid account can only ask for titles.\"",
         "operationId": "editUser",
         "parameters": [
           {
@@ -20233,6 +20943,26 @@
           "content": {
             "application/json": {
               "schema": {
+                "properties": {
+                  "max_rating": {
+                    "type": "string"
+                  },
+                  "perms": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "rating_country": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string"
+                  },
+                  "state": {
+                    "type": "string"
+                  }
+                },
                 "type": "object"
               }
             }
