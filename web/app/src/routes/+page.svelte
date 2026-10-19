@@ -8,7 +8,7 @@
 	import { searchLine } from '#lib/releases.ts';
 	import { problems } from '#lib/health.ts';
 	import { groupLabel } from '#lib/history.ts';
-	import { cardPill, comingSoon, markTransitions, orderRecent, recentlyAdded, titleCard, type ExploreCard } from '#lib/explore.ts';
+	import { ownedIndex, cardPill, comingSoon, markTransitions, orderRecent, recentlyAdded, titleCard, type ExploreCard } from '#lib/explore.ts';
 	import { audienceOf, titleStatus } from '#lib/title-status.ts';
 	import { attention, downloadLine, downloadSubtitle, greetName, isActive } from '#lib/home.ts';
 	import { ymd } from '#lib/calendar.ts';
@@ -282,7 +282,7 @@
 			</Shelf>
 		{/if}
 
-		<Top10Row />
+		<Top10Row owned={ownedIndex(titles)} {who} />
 
 		{#if rows[1].cards.length}
 			<Shelf title="Recently added" href={to('/library')}>

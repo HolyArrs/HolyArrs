@@ -353,7 +353,7 @@
 		{:else if rows.length === 0}
 			<EmptyState icon="compass" title="Nothing to explore yet" text="Rows fill in as your Library grows." action={{ label: 'Search', href: to('/search'), icon: 'search' }} />
 		{:else}
-			{#if type !== 'music'}<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} />{/if}
+			{#if type !== 'music'}<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} typePill={type === 'all'} />{/if}
 			{#each rows as row (row.id)}
 				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.id === 'soon' ? 'var(--release-item)' : 'var(--explore-item)'}>
 					{#each row.cards.map(live) as c (c.key)}

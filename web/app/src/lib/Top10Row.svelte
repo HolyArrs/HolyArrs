@@ -5,12 +5,15 @@
 	import Shelf from './ui/Shelf.svelte';
 	import PosterCard from './ui/PosterCard.svelte';
 	import { defaultRegion, fetchTop10, top10Cards, type Top10Card, type Top10Kind } from './top10.ts';
+	import { matchOwned, ownedMark, ownedTitle, type OwnedIndex } from './explore.ts';
+	import type { Audience } from './title-status.ts';
 
 	// "Top 10 on Netflix": Netflix's weekly list with big rank numbers. Hidden
 	// when the metadata server has no list.
 	const KEY = 'holyarrs.top10';
 	/** lock: Explore's type switch picked Movies or Shows, so this row follows it and hides its own toggle. */
-	let { lock }: { lock?: Top10Kind } = $props();
+	/** owned and who: the Library, so the posters carry the same badges as the other rows; typePill shows the type pill (Explore's All). */
+	let { lock, owned, who = 'staff', typePill = false }: { lock?: Top10Kind; owned?: OwnedIndex; who?: Audience; typePill?: boolean } = $props();
 	let own = $state<Top10Kind>('movie');
 	const kind = $derived(lock ?? own);
 	let region = $state('global');
@@ -98,11 +101,13 @@
 				</select>
 			{/if}
 		</div>
-		<Shelf title="Top 10 on Netflix" subtitle={[regionName(region), weekText].filter(Boolean).join(' · ')} item="var(--top10-item, 230px)">
-			{#each cards as c (c.key)}
+		<Shelf title="Top 10 on Netflix" subtitle={[regionName(region), weekText].filter(Boolean).join(' · ')} item="calc(var(--explore-item, 180px) / 0.68)">
+			{#each cards as raw (raw.key)}
+				{@const c = owned ? { ...matchOwned(raw, owned), rank: raw.rank } : raw}
+				{@const mark = ownedMark(c, owned ? ownedTitle(c, owned) : undefined, who)}
 				<div class="ranked">
-					<span class="rank" aria-hidden="true">{c.rank}</span>
-					<div class="card"><PosterCard title={c.name} href={href(c)} image={c.image} kind={c.kind} subtitle={c.subtitle} status={c.status} /></div>
+					<span class="rank" class:two={c.rank > 9} aria-hidden="true">{c.rank}</span>
+					<div class="pc"><PosterCard title={c.name} href={href(c)} image={c.image} kind={c.kind} subtitle={c.subtitle} typePill={typePill ? c.kind : undefined} owned={mark} /></div>
 					<span class="sr">Number {c.rank}</span>
 				</div>
 			{/each}
@@ -117,9 +122,11 @@
 	.seg button { border: 0; background: transparent; color: var(--text-2, var(--text)); font: inherit; font-size: 13px; padding: 4px 12px; border-radius: 999px; cursor: pointer; }
 	.seg button[aria-pressed='true'] { background: var(--surface, var(--bg)); color: var(--text); box-shadow: var(--shadow-card); }
 	select { font: inherit; font-size: 13px; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--border, transparent); background: var(--surface-2); color: var(--text); max-width: 160px; }
-	.ranked { position: relative; display: grid; grid-template-columns: 34% 1fr; align-items: end; }
-	.rank { font-size: clamp(96px, 11vw, 150px); font-weight: 800; line-height: 0.8; letter-spacing: -0.06em; text-align: right; margin-right: -14px; margin-bottom: 44px; color: var(--bg, #000); -webkit-text-stroke: 3px var(--text-3, #8a8a8a); paint-order: stroke; user-select: none; }
-	.card { position: relative; min-width: 0; }
+	/* The column is the poster (68%, the same width as the other rows' posters) plus the number (32%); the poster overlaps the number's right edge a little. */
+	.ranked { position: relative; container-type: inline-size; }
+	.rank { position: absolute; left: 0; top: 0; width: 37%; height: 102cqw; display: flex; align-items: flex-end; justify-content: flex-end; font-size: 50cqw; font-weight: 800; line-height: 0.76; letter-spacing: -0.06em; color: var(--bg, #000); -webkit-text-stroke: 3px var(--text-2, #9a9a9a); paint-order: stroke; user-select: none; z-index: 0; }
+	.rank.two { font-size: 36cqw; letter-spacing: -0.12em; }
+	.pc { position: relative; z-index: 1; margin-left: 32%; width: 68%; min-width: 0; }
 	.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 	@media (max-width: 640px) {
 		.pick { position: static; margin-bottom: 8px; }
