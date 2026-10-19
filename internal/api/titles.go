@@ -324,18 +324,18 @@ func (a *API) listPickRules(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
+	uses, err := library.PickRulesUses(r.Context(), a.s.Store)
+	if err != nil {
+		internal(w, err)
+		return
+	}
 	out := []PickRulesView{}
 	for _, p := range ps {
 		k := p.Kinds
 		if k == nil {
 			k = []string{}
 		}
-		u, err := library.PickRulesUse(r.Context(), a.s.Store, p.ID)
-		if err != nil {
-			internal(w, err)
-			return
-		}
-		out = append(out, PickRulesView{ID: p.ID, Name: p.Name, Kinds: k, Preset: p.Preset, InUse: u.Total()})
+		out = append(out, PickRulesView{ID: p.ID, Name: p.Name, Kinds: k, Preset: p.Preset, InUse: uses[p.ID].Total()})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"pick_rules": out})
 }

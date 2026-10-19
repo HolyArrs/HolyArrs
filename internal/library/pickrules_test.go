@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
@@ -141,5 +142,73 @@ func TestPickRulesUnusedKindMayBeDropped(t *testing.T) {
 	}
 	if _, err := UpdatePickRules(ctx, s, p.ID, PickRulesInput{Name: "Mine", Kinds: []string{"movie"}, Body: domain.GoodEveryday()}, domain.System); err != nil {
 		t.Fatalf("drop unused show: %v", err)
+	}
+}
+
+// TestPickRulesUsesMatchesOneByOne: the counts for every rule at once equal
+// each rule's own count.
+func TestPickRulesUsesMatchesOneByOne(t *testing.T) {
+	s := open(t)
+	ctx := context.Background()
+	mk := func(name string) int64 {
+		p, err := CreatePickRules(ctx, s, PickRulesInput{Name: name, Kinds: []string{"movie", "show"}, Body: domain.GoodEveryday()}, domain.System)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return p.ID
+	}
+	a, b, c := mk("A"), mk("B"), mk("C")
+	lf1, lf2 := addFolder(t, s), addFolder(t, s)
+	err := s.Write(ctx, func(tx *sql.Tx) error {
+		stmts := []string{
+			fmt.Sprintf("UPDATE library_folders SET default_pick_rules_id = %d WHERE id = %d", a, lf1.ID),
+			fmt.Sprintf("UPDATE library_folders SET default_pick_rules_id = %d WHERE id = %d", b, lf2.ID),
+			fmt.Sprintf(`INSERT INTO outside_lists(created_at, created_by, updated_at, updated_by, name, kind, ref, library_folder_id, pick_rules_id)
+				VALUES ('x', '{}', 'x', '{}', 'L1', 'tmdb_list', '1', %d, %d), ('x', '{}', 'x', '{}', 'L2', 'tmdb_list', '2', %d, %d)`, lf1.ID, b, lf1.ID, b),
+			fmt.Sprintf(`INSERT INTO settings(grp, key, value, created_at, created_by, updated_at, updated_by) VALUES
+				('this_app', 'ask_pick_rules_id', '%d', 'x', '{}', 'x', '{}'), ('this_app', 'ask_show_pick_rules_id', '%d', 'x', '{}', 'x', '{}'),
+				('what_to_pick', 'show_pick_rules_id', '%d', 'x', '{}', 'x', '{}'), ('what_to_pick', 'movie_pick_rules_id', '%d', 'x', '{}', 'x', '{}'),
+				('this_app', 'movie_pick_rules_id', '%d', 'x', '{}', 'x', '{}')`, a, b, b, c, a),
+		}
+		for _, q := range stmts {
+			if _, err := tx.Exec(q); err != nil {
+				return fmt.Errorf("%s: %w", q, err)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := AddMovie(ctx, s, dune, AddOptions{PickRulesID: a}, nil, now, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	other := metadata.Movie{Name: "Quiet Orchard", Year: 2022, IDs: map[string]string{"tmdb": "900003"}}
+	if _, err := AddMovie(ctx, s, other, AddOptions{PickRulesID: a}, nil, now, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	all, err := PickRulesUses(ctx, s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ps, err := store.Select[domain.PickRules](ctx, s.Read(), "pick_rules", "1=1 ORDER BY id")
+	if err != nil {
+		t.Fatal(err)
+	}
+	used := 0
+	for _, p := range ps {
+		one, err := PickRulesUse(ctx, s, p.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if all[p.ID] != one {
+			t.Fatalf("rule %d %s: all at once %+v, one by one %+v", p.ID, p.Name, all[p.ID], one)
+		}
+		if one.Total() > 0 {
+			used++
+		}
+	}
+	if used < 3 {
+		t.Fatalf("only %d rules in use; the test needs several", used)
 	}
 }

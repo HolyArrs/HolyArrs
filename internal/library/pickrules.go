@@ -222,3 +222,66 @@ func DeletePickRules(ctx context.Context, st *store.Store, id int64, by domain.A
 		return err
 	})
 }
+
+// PickRulesUses counts what uses each Pick rule, for every rule at once: the
+// same counts as PickRulesUse, from one grouped query per kind of use. A rule
+// nothing uses has no entry.
+func PickRulesUses(ctx context.Context, st *store.Store) (map[int64]Use, error) {
+	q := st.Read()
+	out := map[int64]Use{}
+	count := func(query string, add func(u *Use, n int)) error {
+		rows, err := q.QueryContext(ctx, query)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var id int64
+			var n int
+			if err := rows.Scan(&id, &n); err != nil {
+				return err
+			}
+			u := out[id]
+			add(&u, n)
+			out[id] = u
+		}
+		return rows.Err()
+	}
+	if err := count(`SELECT v.pick_rules_id, count(*) FROM versions v JOIN titles t ON t.id = v.title_id GROUP BY v.pick_rules_id`, func(u *Use, n int) { u.Versions += n }); err != nil {
+		return nil, err
+	}
+	if err := count(`SELECT default_pick_rules_id, count(*) FROM library_folders WHERE default_pick_rules_id IS NOT NULL GROUP BY default_pick_rules_id`,
+		func(u *Use, n int) { u.LibraryFolders += n }); err != nil {
+		return nil, err
+	}
+	if err := count(`SELECT pick_rules_id, count(*) FROM outside_lists WHERE pick_rules_id IS NOT NULL GROUP BY pick_rules_id`,
+		func(u *Use, n int) { u.OutsideLists += n }); err != nil {
+		return nil, err
+	}
+	rows, err := q.QueryContext(ctx, `SELECT grp, key, value FROM settings WHERE key IN
+		('ask_pick_rules_id', 'ask_show_pick_rules_id', 'ask_music_pick_rules_id', 'movie_pick_rules_id', 'show_pick_rules_id')`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var grp, k, v string
+		if err := rows.Scan(&grp, &k, &v); err != nil {
+			return nil, err
+		}
+		id, err := strconv.ParseInt(v, 10, 64)
+		if err != nil || strconv.FormatInt(id, 10) != v {
+			continue // PickRulesUse matches the exact id text
+		}
+		u := out[id]
+		if _, ok := askRuleKeys[k]; ok && grp == "this_app" {
+			u.Wishlist++
+		} else if _, ok := defaultRuleKeys[k]; ok && grp == "what_to_pick" {
+			u.TitleDefaults++
+		} else {
+			continue
+		}
+		out[id] = u
+	}
+	return out, rows.Err()
+}
