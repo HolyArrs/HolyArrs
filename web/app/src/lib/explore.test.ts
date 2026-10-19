@@ -90,7 +90,7 @@ describe('coming soon', () => {
 
 describe('coming soon artwork', () => {
 	const now = new Date(2026, 9, 18, 12);
-	it('puts the episode still on the card, falling back to the backdrop and the poster', () => {
+	it('uses the poster, never a wide still or backdrop', () => {
 		const cards = comingSoon(
 			[
 				{ title_id: 1, name: 'A', kind: 'episode', date: '2026-10-20T00:00:00Z', season: 1, episode: 2, still: 's.jpg', backdrop: 'b.jpg' },
@@ -100,7 +100,7 @@ describe('coming soon artwork', () => {
 			[t(1, { kind: 'show', artwork: ['own.jpg'] })],
 			now
 		);
-		expect(cards.map((c) => c.image ?? null)).toEqual(['s.jpg', 'b2.jpg', null]);
+		expect(cards.map((c) => c.image ?? null)).toEqual(['own.jpg', 'p2.jpg', null]);
 		expect(cards[0].kind).toBe('show');
 	});
 });

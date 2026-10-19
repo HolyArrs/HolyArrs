@@ -5,7 +5,7 @@
 import { api, ApiError, type Client } from './api.ts';
 import type { StatusKind } from './ui/StatusPill.svelte';
 import { audienceStatus, factsOf, titleStatus, type Audience, type TitleStatus } from './title-status.ts';
-import { entryArt, episodeCode } from './calendar.ts';
+import { episodeCode } from './calendar.ts';
 import type { Ask, AskBrief, AskState, CalendarEntry, TitleView } from './types.ts';
 
 export type CardKind = 'movie' | 'show' | 'artist';
@@ -134,8 +134,8 @@ export function comingSoon(entries: CalendarEntry[], titles: TitleView[], now = 
 		const card: ExploreCard = t
 			? titleCard(t, subtitle, `c${e.title_id}`)
 			: { key: `c${e.title_id}`, kind: e.kind === 'episode' ? 'show' : e.kind === 'album' ? 'artist' : 'movie', name: e.name, year: e.year, subtitle, titleId: e.title_id, badges: [] };
-		const art = entryArt(e);
-		if (art) card.image = art;
+		// Poster cards are 2:3, so they use the show or movie poster; wide stills and backdrops crop badly.
+		card.image = card.image ?? e.poster ?? null;
 		card.status = 'coming_soon';
 		out.push(card);
 		if (out.length >= n) break;
