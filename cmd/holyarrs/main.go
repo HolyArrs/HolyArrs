@@ -406,8 +406,15 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return fmt.Errorf("optional metadata service: %w", err)
 	}
 	pictures, pictureHosts := artistImages()
+	// Pictures come from public addresses only; a picture stand-in named
+	// by HOLYARRS_DEEZER_URL (tests) may be on this machine.
+	artworkHTTP := library.ArtworkClient()
+	if env := os.Getenv("HOLYARRS_DEEZER_URL"); env != "" && env != "off" {
+		artworkHTTP = &http.Client{Timeout: 20 * time.Second}
+	}
 	lib := &library.Service{Store: s, Queue: q, Metadata: md, Live: hub, SavePath: c.SavePath, ArtistImages: pictures,
-		Artwork: &library.ArtworkCache{Dir: filepath.Join(c.ConfigDir, "artwork"), Allowed: append([]string{metadata.ImageBase + "/"}, pictureHosts...)}}
+		Artwork: &library.ArtworkCache{Dir: filepath.Join(c.ConfigDir, "artwork"), Allowed: append([]string{metadata.ImageBase + "/"}, pictureHosts...),
+			HTTP: artworkHTTP}}
 	lib.Shows = showMD
 	lib.Artists = artistMD
 	lib.Register(q)

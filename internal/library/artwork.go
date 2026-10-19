@@ -14,6 +14,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/CoderLuii/holyarrs/internal/source"
 )
 
 // DefaultArtworkCap is the artwork cache size cap (decision 0002, Images).
@@ -31,8 +33,10 @@ type ArtworkCache struct {
 	// Allowed lists URL prefixes pictures may come from (the TMDB image
 	// host); anything else is refused.
 	Allowed []string
-	HTTP    *http.Client
-	mu      sync.Mutex
+	// HTTP is the client to fetch with (tests); nil means ArtworkClient.
+	// Redirects are checked against Allowed either way.
+	HTTP *http.Client
+	mu   sync.Mutex
 }
 
 // ErrArtworkURL means a picture URL is not from an allowed place.
@@ -51,13 +55,7 @@ func ArtworkName(url string) string {
 // Fetch stores the picture at url (when not already there) and returns its
 // cache name.
 func (c *ArtworkCache) Fetch(ctx context.Context, url string) (string, error) {
-	ok := false
-	for _, p := range c.Allowed {
-		if strings.HasPrefix(url, p) {
-			ok = true
-		}
-	}
-	if !ok || strings.Contains(url, "..") {
+	if !c.allowed(url) {
 		return "", ErrArtworkURL
 	}
 	name := ArtworkName(url)
@@ -68,9 +66,17 @@ func (c *ArtworkCache) Fetch(ctx context.Context, url string) (string, error) {
 	if err := os.MkdirAll(c.Dir, 0o750); err != nil {
 		return "", err
 	}
-	cl := c.HTTP
-	if cl == nil {
-		cl = &http.Client{Timeout: 20 * time.Second}
+	base := c.HTTP
+	if base == nil {
+		base = ArtworkClient()
+	}
+	// Every redirect must stay on an allowed place too.
+	cl := *base
+	cl.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		if len(via) >= 5 || !c.allowed(req.URL.String()) {
+			return ErrArtworkURL
+		}
+		return nil
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -160,4 +166,25 @@ func (c *ArtworkCache) trim() {
 			total -= x.size
 		}
 	}
+}
+
+// ArtworkClient is the client pictures are fetched with: public addresses
+// only, no proxy.
+func ArtworkClient() *http.Client {
+	d := source.PolicyDialer(source.PublicOnly)
+	return &http.Client{Timeout: 20 * time.Second, Transport: &http.Transport{Proxy: nil, DialContext: d.DialContext,
+		TLSHandshakeTimeout: 10 * time.Second, ResponseHeaderTimeout: 20 * time.Second}}
+}
+
+// allowed says url is from an allowed place.
+func (c *ArtworkCache) allowed(url string) bool {
+	if strings.Contains(url, "..") {
+		return false
+	}
+	for _, p := range c.Allowed {
+		if strings.HasPrefix(url, p) {
+			return true
+		}
+	}
+	return false
 }

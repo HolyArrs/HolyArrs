@@ -46,7 +46,7 @@ func fakePictures(t *testing.T, down *atomic.Bool, asked ...*atomic.Int32) *http
 
 func withPictures(t *testing.T, svc *Service, srv *httptest.Server) {
 	svc.ArtistImages = &metadata.ArtistImages{BaseURL: srv.URL, Gap: time.Millisecond, Timeout: time.Second}
-	svc.Artwork = &ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{srv.URL + "/pic/"}}
+	svc.Artwork = &ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{srv.URL + "/pic/"}, HTTP: &http.Client{}}
 }
 
 func artworkOf(t *testing.T, s *store.Store, id int64) []string {
