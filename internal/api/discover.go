@@ -168,6 +168,33 @@ func (a *API) libraryJoin(ctx context.Context, it metadata.DiscoverItem, me int6
 	return v, never > 0, err
 }
 
+// dropNeverAdd leaves out the items on the Never-add list.
+func (a *API) dropNeverAdd(ctx context.Context, items []metadata.DiscoverItem) ([]metadata.DiscoverItem, error) {
+	rows, err := a.s.Store.Read().QueryContext(ctx, "SELECT kind, json_extract(source_ids, '$.tmdb') FROM never_add WHERE kind IN ('movie', 'show') AND json_extract(source_ids, '$.tmdb') IS NOT NULL")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	never := map[[2]string]bool{}
+	for rows.Next() {
+		var kind, id string
+		if err := rows.Scan(&kind, &id); err != nil {
+			return nil, err
+		}
+		never[[2]string{kind, id}] = true
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	out := make([]metadata.DiscoverItem, 0, len(items))
+	for _, it := range items {
+		if !never[[2]string{it.Kind, it.TMDBID}] {
+			out = append(out, it)
+		}
+	}
+	return out, nil
+}
+
 func (a *API) joinItems(ctx context.Context, items []metadata.DiscoverItem, me int64, n int) ([]discoverItemView, error) {
 	out := []discoverItemView{}
 	for _, it := range items {
@@ -257,8 +284,14 @@ func (a *API) discoverRow(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 	}
-	// A Kid gets only the items their limit allows; the ratings come from
-	// the Library, the details cache or TMDB, and unknown ones stay hidden.
+	// Never-add items go first, so they do not use up a Kid's row. A Kid
+	// gets only the items their limit allows; the ratings come from the
+	// Library, the details cache or TMDB, and unknown ones stay hidden.
+	merged, err := a.dropNeverAdd(r.Context(), merged)
+	if err != nil {
+		internal(w, err)
+		return
+	}
 	merged = a.kidItems(r.Context(), a.kidMax(r), merged, discoverMax)
 	out, err := a.joinItems(r.Context(), merged, me, discoverMax)
 	if err != nil {

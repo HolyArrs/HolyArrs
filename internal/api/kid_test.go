@@ -57,6 +57,10 @@ var (
 type kidTMDB struct {
 	srv     *httptest.Server
 	details atomic.Int32 // movie and show details answered
+	// extra are more movies a test adds; trending, when set, replaces the
+	// trending movies row. Both are set before the first request.
+	extra    []kidEntry
+	trending []string
 }
 
 func newKidTMDB(t *testing.T) *kidTMDB {
@@ -70,8 +74,9 @@ func newKidTMDB(t *testing.T) *kidTMDB {
 		}
 		return kidEntry{}, false
 	}
+	movies := func() []kidEntry { return append(slices.Clone(kidMovies), f.extra...) }
 	item := func(id string) string {
-		if m, ok := find(kidMovies, id); ok {
+		if m, ok := find(movies(), id); ok {
 			return fmt.Sprintf(`{"id":%s,"title":%q,"release_date":"2024-05-01","poster_path":"/p.jpg","genre_ids":[18]}`, m.id, m.name)
 		}
 		s, _ := find(kidShows, id)
@@ -93,6 +98,10 @@ func newKidTMDB(t *testing.T) *kidTMDB {
 			_, _ = io.WriteString(w, `{"genres":[{"id":18,"name":"Drama"}]}`)
 			return
 		case "/3/trending/movie/week":
+			if f.trending != nil {
+				_, _ = io.WriteString(w, list(f.trending...))
+				return
+			}
 			_, _ = io.WriteString(w, list("4211", "4111", "4212", "4204", "4101", "4203"))
 			return
 		case "/3/trending/tv/week":
@@ -124,7 +133,7 @@ func newKidTMDB(t *testing.T) *kidTMDB {
 			return
 		}
 		if m := movieRx.FindStringSubmatch(p); m != nil {
-			e, ok := find(kidMovies, m[1])
+			e, ok := find(movies(), m[1])
 			if !ok {
 				w.WriteHeader(404)
 				return
@@ -506,6 +515,42 @@ func TestKidExploreRows(t *testing.T) {
 	// A blocked Library title cannot seed a row.
 	if code, _ := k.kai.get("/api/v1/discover?row=similar&id=9102"); code != 404 {
 		t.Fatalf("similar to a blocked title: %d", code)
+	}
+}
+
+// TestKidExploreRowFullAfterNeverAdd: Never-add items do not use up a Kid's
+// row; with 3 of them among the first allowed and 23 allowed in all, the
+// Kid still gets a full row of 20.
+func TestKidExploreRowFullAfterNeverAdd(t *testing.T) {
+	k := newKidRig(t)
+	var ids []string
+	for i := range 23 {
+		id := fmt.Sprint(4300 + i)
+		k.tmdb.extra = append(k.tmdb.extra, kidEntry{id, "Calm Field " + id, "G"})
+		ids = append(ids, id)
+	}
+	k.tmdb.trending = ids
+	if err := k.st.Write(context.Background(), func(tx *sql.Tx) error {
+		for _, id := range ids[:3] {
+			if _, err := tx.Exec(`INSERT INTO never_add (created_at, created_by, updated_at, updated_by, kind, name, source_ids)
+				VALUES ('x', '{}', 'x', '{}', 'movie', 'Never', json_object('tmdb', ?))`, id); err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	got := namesIn(t, string(k.kai.call("GET", "/api/v1/discover?row=trending&kind=movie", "", 200)), "items")
+	if len(got) != 20 {
+		t.Fatalf("kid row has %d items, want 20: %v", len(got), got)
+	}
+	for _, n := range got {
+		for _, id := range ids[:3] {
+			if n == "Calm Field "+id {
+				t.Fatalf("Never-add item %s shown", n)
+			}
+		}
 	}
 }
 
