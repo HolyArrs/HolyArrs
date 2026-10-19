@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"slices"
@@ -214,5 +215,31 @@ func TestSettingsStatusCached(t *testing.T) {
 	at = at.Add(2 * time.Second)
 	if b := string(r.owner.call("GET", "/api/v1/settings/status", "", 200)); b == first || !strings.Contains(b, "/settings/title-defaults\",\"text") {
 		t.Fatalf("not refreshed after 30 s: %s", b)
+	}
+}
+
+// TestSettingsStatusForgetsAfterWrites: a write that can change what the
+// status looks at drops the kept answer, so Settings home is right at once.
+func TestSettingsStatusForgetsAfterWrites(t *testing.T) {
+	r := newAskRig(t)
+	if err := r.st.Write(context.Background(), func(tx *sql.Tx) error {
+		_, err := tx.Exec("DELETE FROM library_folders")
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	unsetFolders := func() bool {
+		var a statusAnswer
+		if err := json.Unmarshal(r.owner.call("GET", "/api/v1/settings/status", "", 200), &a); err != nil {
+			t.Fatal(err)
+		}
+		return slices.Contains(a.Unset["library"], "/settings/library-folders")
+	}
+	if !unsetFolders() {
+		t.Fatal("no folder, yet Library folders is not marked not set up")
+	}
+	r.owner.call("POST", "/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"movie","label":"Movies"}`, t.TempDir()), 201)
+	if unsetFolders() {
+		t.Fatal("a folder was added, yet the status still says Library folders is not set up")
 	}
 }

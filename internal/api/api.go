@@ -281,9 +281,9 @@ func (a *API) Handler() http.Handler {
 	}
 	if a.s.Auth != nil {
 		a.s.Auth.Routes(m)
-		return secure(a.s.Auth.Middleware(wrapMux(a.kidGate(m, a.partGate(m, auth.Gate(m))))))
+		return secure(a.s.Auth.Middleware(wrapMux(a.forgetStatusOnWrite(a.kidGate(m, a.partGate(m, auth.Gate(m)))))))
 	}
-	return secure(wrapMux(a.partGate(m, m)))
+	return secure(wrapMux(a.forgetStatusOnWrite(a.partGate(m, m))))
 }
 
 // wrapMux lets tests record which routes the mux served.

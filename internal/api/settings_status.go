@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -209,6 +210,28 @@ func (c *statusCache) forget() {
 	c.mu.Lock()
 	c.answer = nil
 	c.mu.Unlock()
+}
+
+// statusWrites are the paths whose writes can change a status input:
+// Settings, Library folders, Sources, Downloaders, backups, health checks
+// and Pick rules.
+var statusWrites = []string{"/api/v1/settings/", "/api/v1/library-folders", "/api/v1/sources", "/api/v1/downloaders",
+	"/api/v1/backups", "/api/v1/health/", "/api/v1/pick-rules"}
+
+// forgetStatusOnWrite drops the kept status answer after each successful
+// write to a statusWrites path, so Settings home shows the change at once.
+func (a *API) forgetStatusOnWrite(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet || r.Method == http.MethodHead || !slices.ContainsFunc(statusWrites, func(p string) bool { return strings.HasPrefix(r.URL.Path, p) }) {
+			h.ServeHTTP(w, r)
+			return
+		}
+		sw := &statusWriter{ResponseWriter: w}
+		h.ServeHTTP(sw, r)
+		if sw.code < 400 { // 0: nothing written, a plain 200
+			a.status.forget()
+		}
+	})
 }
 
 func (a *API) settingsStatusRoute(w http.ResponseWriter, r *http.Request) {
