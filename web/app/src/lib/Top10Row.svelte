@@ -101,6 +101,8 @@
 				</select>
 			{/if}
 		</div>
+		<!-- A new list starts at rank 1, not where the last one was scrolled to. -->
+		{#key `${kind}|${region}|${week}`}
 		<Shelf title="Top 10 on Netflix" subtitle={[regionName(region), weekText].filter(Boolean).join(' · ')} item="calc(var(--explore-item, 180px) / 0.68)">
 			{#each cards as raw (raw.key)}
 				{@const c = owned ? { ...matchOwned(raw, owned), rank: raw.rank } : raw}
@@ -112,6 +114,7 @@
 				</div>
 			{/each}
 		</Shelf>
+		{/key}
 	</section>
 {/if}
 

@@ -20,11 +20,13 @@ export interface Top10Card extends ExploreCard {
 	rank: number;
 }
 
-/** top10Cards turns the answer into poster cards that keep Netflix's rank. */
+/** top10Cards turns the answer into poster cards that keep Netflix's rank; every rank stays, matched or not. */
 export function top10Cards(a: Top10Answer): Top10Card[] {
 	return a.items.map((d) => {
 		const season = d.season_title?.startsWith(`${d.name}: `) ? d.season_title.slice(d.name.length + 2) : d.season_title;
-		return { ...discoverCard(d, 'top10'), rank: d.rank, subtitle: season || undefined };
+		const card = { ...discoverCard(d, 'top10'), key: `top10-${d.rank}`, rank: d.rank, subtitle: season || undefined };
+		// A title TMDB does not know keeps its rank: name tile, no link.
+		return d.tmdb_id ? card : { ...card, ref: undefined, image: null };
 	});
 }
 

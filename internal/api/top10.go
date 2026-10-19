@@ -79,14 +79,20 @@ func (a *API) top10List(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadGateway, "the metadata server did not answer; try again shortly")
 		return
 	}
-	rank, season := map[string]int{}, map[string]string{}
+	// Every rank is kept: a title TMDB does not know is listed by its
+	// Netflix name only (not for a Kid, whose limit needs a rating), and a
+	// show in the list twice (two seasons) is listed twice.
 	var items []metadata.DiscoverItem
+	seen := map[string]bool{}
 	for _, it := range list.Items {
-		id := strconv.FormatInt(it.TMDBID, 10)
-		if it.TMDBID <= 0 || rank[id] > 0 {
+		if it.TMDBID <= 0 {
 			continue
 		}
-		rank[id], season[id] = it.Rank, it.Season
+		id := strconv.FormatInt(it.TMDBID, 10)
+		if seen[id] {
+			continue
+		}
+		seen[id] = true
 		d := metadata.DiscoverItem{TMDBID: id, Kind: kind, Name: it.Title, Genres: []string{}}
 		if it.PosterPath != "" {
 			d.Poster = metadata.ImageBase + "/w342" + it.PosterPath
@@ -98,15 +104,28 @@ func (a *API) top10List(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
-	items = a.kidItems(r.Context(), a.kidMax(r), items, 10)
+	kid := a.kidMax(r)
+	items = a.kidItems(r.Context(), kid, items, 10)
 	joined, err := a.joinItems(r.Context(), items, a.person(r).UserID, 10)
 	if err != nil {
 		internal(w, err)
 		return
 	}
-	out := make([]top10View, 0, len(joined))
+	byID := map[string]discoverItemView{}
 	for _, v := range joined {
-		out = append(out, top10View{discoverItemView: v, Rank: rank[v.TMDBID], Season: season[v.TMDBID]})
+		byID[v.TMDBID] = v
+	}
+	out := make([]top10View, 0, len(list.Items))
+	for _, it := range list.Items {
+		if it.TMDBID <= 0 {
+			if kid == "" {
+				out = append(out, top10View{discoverItemView: discoverItemView{DiscoverItem: metadata.DiscoverItem{Kind: kind, Name: it.Title, Genres: []string{}}}, Rank: it.Rank, Season: it.Season})
+			}
+			continue
+		}
+		if v, ok := byID[strconv.FormatInt(it.TMDBID, 10)]; ok {
+			out = append(out, top10View{discoverItemView: v, Rank: it.Rank, Season: it.Season})
+		}
 	}
 	a.exploreCaching(w, r, "private, max-age=300")
 	writeJSON(w, http.StatusOK, map[string]any{"week": list.Week, "region": region, "regions": list.Regions, "items": out})

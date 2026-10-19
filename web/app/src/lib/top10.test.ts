@@ -8,6 +8,7 @@ const answer: Top10Answer = {
 	regions: ['global', 'US'],
 	items: [
 		{ rank: 1, tmdb_id: '11', kind: 'movie', name: 'UNABOMBER', poster: 'https://image.tmdb.org/t/p/w342/u.jpg', in_library: true, title_id: 7 },
+		{ rank: 2, tmdb_id: '', kind: 'show', name: 'Unknown Show', in_library: false },
 		{ rank: 4, tmdb_id: '12', kind: 'show', name: 'The Gentlemen', season_title: 'The Gentlemen: Season 2', in_library: false, ask: { id: 3, state: 'asked', state_label: 'Asked', mine: true, people: 1 } }
 	]
 };
@@ -15,9 +16,10 @@ const answer: Top10Answer = {
 describe('top10Cards', () => {
 	it('keeps the rank and maps items to poster cards', () => {
 		const cards = top10Cards(answer);
-		expect(cards.map((c) => c.rank)).toEqual([1, 4]);
-		expect(cards[0]).toMatchObject({ key: 'top10-movie-11', name: 'UNABOMBER', titleId: 7, image: 'https://image.tmdb.org/t/p/w342/u.jpg', status: 'in_library', ref: 'tmdb:11' });
-		expect(cards[1]).toMatchObject({ kind: 'show', subtitle: 'Season 2', mine: true, titleId: undefined });
+		expect(cards.map((c) => c.rank)).toEqual([1, 2, 4]);
+		expect(cards[1]).toMatchObject({ key: 'top10-2', name: 'Unknown Show', ref: undefined, image: null });
+		expect(cards[0]).toMatchObject({ key: 'top10-1', name: 'UNABOMBER', titleId: 7, image: 'https://image.tmdb.org/t/p/w342/u.jpg', status: 'in_library', ref: 'tmdb:11' });
+		expect(cards[2]).toMatchObject({ kind: 'show', subtitle: 'Season 2', mine: true, titleId: undefined });
 	});
 });
 

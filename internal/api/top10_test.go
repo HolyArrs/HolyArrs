@@ -43,10 +43,13 @@ func TestTop10JoinsLibraryAndKeepsRanks(t *testing.T) {
 	}
 	a := get("?kind=movie", 200)
 	items := a["items"].([]any)
-	if a["week"] != "2026-10-04" || a["region"] != "global" || len(a["regions"].([]any)) != 2 || len(items) != 2 {
+	if a["week"] != "2026-10-04" || a["region"] != "global" || len(a["regions"].([]any)) != 2 || len(items) != 4 {
 		t.Fatalf("answer %+v", a)
 	}
-	first, second := items[0].(map[string]any), items[1].(map[string]any)
+	first, unknown, second, again := items[0].(map[string]any), items[1].(map[string]any), items[2].(map[string]any), items[3].(map[string]any)
+	if unknown["rank"] != 2.0 || unknown["name"] != "Unknown" || unknown["tmdb_id"] != "" || again["rank"] != 5.0 || again["tmdb_id"] != "12" || again["season_title"] != "Asked: Season 1" {
+		t.Fatalf("ranks kept %+v", items)
+	}
 	if first["rank"] != 1.0 || first["tmdb_id"] != "11" || first["in_library"] != true || first["poster"] != metadata.ImageBase+"/w342/u.jpg" || second["rank"] != 4.0 || second["ask"] == nil {
 		t.Fatalf("items %+v", items)
 	}
