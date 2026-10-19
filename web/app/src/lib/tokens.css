@@ -23,6 +23,11 @@
   --on-art-scrim: rgb(0 0 0 / 86%);
   --on-art-scrim-mid: rgb(0 0 0 / 55%);
   --on-art-scrim-none: rgb(0 0 0 / 0%);
+  /* Status glyphs on artwork: bright enough on dark glass in both themes. */
+  --ok-on-art: #30d158;
+  --info-on-art: #64b5ff;
+  --wait-on-art: #ffb340;
+  --fail-on-art: #ff6961;
 
   /* Type scale (spec). Each is a font shorthand; pair with its tracking. */
   --t-large-title: 700 34px / 1.12 var(--font-display);

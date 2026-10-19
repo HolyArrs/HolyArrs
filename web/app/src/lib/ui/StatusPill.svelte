@@ -19,10 +19,28 @@
 
 <script lang="ts">
 	// Dot plus a word, never colour alone (spec §2).
+	// Over art it becomes the shared glass pill with a line glyph instead of the dot.
+	import ArtPill from './ArtPill.svelte';
+	import type { IconName } from '../Icon.svelte';
 	let { kind, percent, label, on = 'surface', testid }: { kind: StatusKind; percent?: number; label?: string; on?: 'surface' | 'art'; testid?: string } = $props();
+	const glyphs: Record<StatusKind, IconName> = {
+		in_library: 'owned',
+		downloading: 'download',
+		missing: 'partOwned',
+		requested: 'waiting',
+		approved: 'waiting',
+		turned_down: 'declined',
+		failed: 'alert',
+		coming_soon: 'calendarDay'
+	};
+	const artTone = { ok: 'ok', wait: 'wait', fail: 'fail', info: 'info', idle: 'plain' } as const;
 </script>
 
-<span class="ui-pill {tones[kind]} {on}" data-testid={testid}><i aria-hidden="true"></i>{label ?? statusWord(kind, percent)}</span>
+{#if on === 'art'}
+	<ArtPill text={label ?? statusWord(kind, percent)} icon={glyphs[kind]} tone={artTone[tones[kind]]} percent={kind === 'downloading' ? percent : undefined} {testid} />
+{:else}
+	<span class="ui-pill {tones[kind]} {on}" data-testid={testid}><i aria-hidden="true"></i>{label ?? statusWord(kind, percent)}</span>
+{/if}
 
 <style>
 	.ui-pill { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px 0 8px; border-radius: 999px; background: var(--surface-2); color: var(--text); font: var(--t-subhead); white-space: nowrap; font-variant-numeric: tabular-nums; }
@@ -33,5 +51,4 @@
 	.info i { background: var(--info); }
 	.ok { color: var(--ok-text); }
 	.fail { color: var(--fail-text); }
-	.art { background: rgb(0 0 0 / 46%); color: var(--on-art); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 </style>

@@ -82,7 +82,7 @@
 	.hit { display: flex; flex-direction: column; gap: 2px; color: var(--text); border-radius: var(--r-card); }
 	.hit:focus-visible { outline: none; }
 	.hit:focus-visible .art { box-shadow: var(--focus-ring); }
-	.art { position: relative; display: block; aspect-ratio: var(--wide-ratio); margin-bottom: 8px; border-radius: var(--r-card); overflow: hidden; background: var(--surface-2); box-shadow: var(--shadow-card); transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out); }
+	.art { position: relative; display: block; container: art / inline-size; aspect-ratio: var(--wide-ratio); margin-bottom: 8px; border-radius: var(--r-card); overflow: hidden; background: var(--surface-2); box-shadow: var(--shadow-card); transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out); }
 	img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--dur) ease, transform var(--dur-slow) var(--ease-out); }
 	img.in { opacity: 1; }
 	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {

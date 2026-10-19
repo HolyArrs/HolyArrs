@@ -52,13 +52,21 @@
 		grid: 'M4.5 4.5h6v6h-6zM13.5 4.5h6v6h-6zM4.5 13.5h6v6h-6zM13.5 13.5h6v6h-6z',
 		star: 'M12 4l2.4 5 5.4.6-4 3.7 1.1 5.4L12 16l-4.9 2.7 1.1-5.4-4-3.7 5.4-.6z',
 		alert: 'M12 4 21 19.5H3zM12 10v4.5M12 17.2v.1',
-		appearance: 'M12 3.5a8.5 8.5 0 1 1 0 17zM12 3.5a8.5 8.5 0 1 0 0 17'
+		appearance: 'M12 3.5a8.5 8.5 0 1 1 0 17zM12 3.5a8.5 8.5 0 1 0 0 17',
+		// Badge glyphs: drawn inside a 4–20 box so they sit optically centred in a pill.
+		owned: 'M5.5 12.5l4 4 9-9.5',
+		partOwned: 'M12 4a8 8 0 1 1 0 16 8 8 0 0 1 0-16zM12 4v16M12 8.5h5M12 12h6M12 15.5h5',
+		waiting: 'M12 4a8 8 0 1 1 0 16 8 8 0 0 1 0-16zM12 8v4l2.5 2',
+		declined: 'M12 4a8 8 0 1 1 0 16 8 8 0 0 1 0-16zM6.4 6.4l11.2 11.2',
+		calendarDay: 'M5 6.5h14v12.5H5zM5 10h14M9 4.5v3M15 4.5v3'
 	} as const;
 	export type IconName = keyof typeof paths;
 </script>
 
 <script lang="ts">
-	let { name, size = 20, label }: { name: IconName; size?: number; label?: string } = $props();
+	// `stroke` is in grid units; small glyphs (badges) use a heavier unit so
+	// they render near 1.5px at 12–14px.
+	let { name, size = 20, label, stroke = 1.75 }: { name: IconName; size?: number; label?: string; stroke?: number } = $props();
 </script>
 
 <svg
@@ -68,7 +76,7 @@
 	viewBox="0 0 24 24"
 	fill="none"
 	stroke="currentColor"
-	stroke-width="1.75"
+	stroke-width={stroke}
 	stroke-linecap="round"
 	stroke-linejoin="round"
 	role={label ? 'img' : undefined}
