@@ -41,11 +41,12 @@ import (
 
 // Moments an Alert can speak for.
 const (
-	MomentWaiting    = "ask_waiting"     // to the staff: an ask waits for approval
-	MomentApproved   = "ask_approved"    // to the people who asked
-	MomentTurnedDown = "ask_turned_down" // to the people who asked
-	MomentReady      = "ask_ready"       // to the people who asked: the movie is in the Library
-	MomentTest       = "test"            // the Send a test button
+	MomentWaiting     = "ask_waiting"     // to the staff: an ask waits for approval
+	MomentApproved    = "ask_approved"    // to the people who asked
+	MomentTurnedDown  = "ask_turned_down" // to the people who asked
+	MomentReady       = "ask_ready"       // to the people who asked: the movie is in the Library
+	MomentNewEpisodes = "new_episodes"    // to the people who asked for a show: new episodes are in the Library
+	MomentTest        = "test"            // the Send a test button
 )
 
 // Library moments, told to the staff.
@@ -61,7 +62,7 @@ const (
 )
 
 // Moments lists the moments in the order screens show them.
-var Moments = []string{MomentWaiting, MomentApproved, MomentTurnedDown, MomentReady,
+var Moments = []string{MomentWaiting, MomentApproved, MomentTurnedDown, MomentReady, MomentNewEpisodes,
 	MomentGrab, MomentImport, MomentRename, MomentAdd, MomentDelete, MomentHealth, MomentDecision, MomentSubtitle}
 
 // Person is someone a message is about, with where Alerts reach them.
@@ -366,7 +367,7 @@ func (s *Sender) secret(ctx context.Context, id *int64) (string, error) {
 
 // forPeople says whether a moment is told to the people who asked.
 func forPeople(moment string) bool {
-	return moment == MomentApproved || moment == MomentTurnedDown || moment == MomentReady
+	return moment == MomentApproved || moment == MomentTurnedDown || moment == MomentReady || moment == MomentNewEpisodes
 }
 
 func (s *Sender) discord(ctx context.Context, a domain.Alert, m Message) error {

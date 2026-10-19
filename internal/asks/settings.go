@@ -209,6 +209,9 @@ func SetPersonLimit(ctx context.Context, st *store.Store, userID int64, l Person
 type Targets struct {
 	Email     string `json:"email"`
 	DiscordID string `json:"discord_id"`
+	// NewEpisodes: tell this person when new episodes of a show they asked
+	// for arrive (on unless turned off).
+	NewEpisodes *bool `json:"new_episodes"`
 }
 
 // Errors from saving Targets.
@@ -220,7 +223,9 @@ var (
 // ReadTargets reads where Alerts reach a person.
 func ReadTargets(ctx context.Context, db store.Querier, userID int64) (Targets, error) {
 	var t Targets
-	err := db.QueryRowContext(ctx, "SELECT email, discord_id FROM user_ask_settings WHERE user_id = ?", userID).Scan(&t.Email, &t.DiscordID)
+	on := true
+	t.NewEpisodes = &on
+	err := db.QueryRowContext(ctx, "SELECT email, discord_id, new_episodes = 1 FROM user_ask_settings WHERE user_id = ?", userID).Scan(&t.Email, &t.DiscordID, &on)
 	if errors.Is(err, sql.ErrNoRows) {
 		err = nil
 	}
@@ -238,6 +243,9 @@ func SaveTargets(ctx context.Context, st *store.Store, userID int64, t Targets) 
 	return st.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO user_ask_settings (user_id, email, discord_id) VALUES (?, ?, ?)
 			ON CONFLICT (user_id) DO UPDATE SET email = excluded.email, discord_id = excluded.discord_id`, userID, t.Email, t.DiscordID)
+		if err == nil && t.NewEpisodes != nil {
+			_, err = tx.Exec("UPDATE user_ask_settings SET new_episodes = ? WHERE user_id = ?", *t.NewEpisodes, userID)
+		}
 		return err
 	})
 }

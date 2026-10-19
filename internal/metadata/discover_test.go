@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 // FakeDiscoverTMDB answers the discover and details paths with fixed data.
@@ -107,5 +108,18 @@ func TestTMDBDetails(t *testing.T) {
 	}
 	if _, err := p.Details(ctx, "artist", "7"); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("kind %v", err)
+	}
+}
+
+func TestBestQuery(t *testing.T) {
+	now := time.Date(2026, 10, 19, 23, 0, 0, 0, time.UTC)
+	m := BestQuery("movie", now)
+	if m.Get("primary_release_date.gte") != "2024-10-19" || m.Get("vote_average.gte") != "7.5" || m.Get("vote_count.gte") != "300" ||
+		m.Get("sort_by") != "vote_average.desc" || m.Has("first_air_date.gte") {
+		t.Fatalf("movie %v", m)
+	}
+	s := BestQuery("show", now)
+	if s.Get("first_air_date.gte") != "2024-10-19" || s.Has("primary_release_date.gte") {
+		t.Fatalf("show %v", s)
 	}
 }

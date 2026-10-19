@@ -451,12 +451,17 @@ func (a *API) getMyAlerts(w http.ResponseWriter, r *http.Request) {
 
 func (a *API) putMyAlerts(w http.ResponseWriter, r *http.Request) {
 	var t asks.Targets
-	if !decode(w, r, &t, `send {"email": "...", "discord_id": "..."}`) {
+	if !decode(w, r, &t, `send {"email": "...", "discord_id": "...", "new_episodes": true}`) {
 		return
 	}
 	t.Email, t.DiscordID = strings.TrimSpace(t.Email), strings.TrimSpace(t.DiscordID)
 	if err := asks.SaveTargets(r.Context(), a.s.Store, a.person(r).UserID, t); err != nil {
 		askError(w, err)
+		return
+	}
+	t, err := asks.ReadTargets(r.Context(), a.s.Store.Read(), a.person(r).UserID)
+	if err != nil {
+		internal(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, t)

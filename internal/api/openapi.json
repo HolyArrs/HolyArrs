@@ -10242,7 +10242,7 @@
     },
     "/api/v1/discover": {
       "get": {
-        "description": "Returns up to 20 movies or shows for one Explore row (row=trending, popular, upcoming, similar with id=<Library title id>, or genre with g=<genre name>; kind=movie or show, both when absent). Each item carries tmdb_id, kind, name, year, poster, backdrop, overview, genres, in_library, title_id and the open ask (or null). Never-add items and kinds whose part is off are left out. Rows are cached (trending 6 h, popular and upcoming 12 h, similar and genre 24 h); the Library and ask joins are fresh. Each person may ask 30 times a minute. For a Kid (a member with an age-rating limit), only items their limit allows are listed: the rating comes from the Library, the 24 h details cache or one TMDB details lookup (at most 4 at a time), and an item whose rating cannot be found is left out; similar with a Library title above their limit answers 404.",
+        "description": "Returns up to 20 movies or shows for one Explore row (row=trending, popular, upcoming, similar with id=<Library title id>, genre with g=<genre name>, or services with services=<streaming service ids joined by |> and region=<country code>, sorted by popularity, subscription only, or best: out in the last 24 months, rated 7.5+ by 300+ people, best rated first; kind=movie or show, both when absent). Each item carries tmdb_id, kind, name, year, poster, backdrop, overview, genres, in_library, title_id and the open ask (or null). Never-add items and kinds whose part is off are left out. Rows are cached (trending 6 h, popular and upcoming 12 h, similar and genre 24 h); the Library and ask joins are fresh. Each person may ask 30 times a minute. For a Kid (a member with an age-rating limit), only items their limit allows are listed: the rating comes from the Library, the 24 h details cache or one TMDB details lookup (at most 4 at a time), and an item whose rating cannot be found is left out; similar with a Library title above their limit answers 404.",
         "operationId": "discoverRow",
         "responses": {
           "200": {
@@ -21411,6 +21411,33 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "users",
         "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/watch-services": {
+      "get": {
+        "description": "Lists the streaming services TMDB knows in one region (region=two-letter country code), for movies and shows together: id, name, logo and priority (TMDB's order for that region, lowest first). Cached a day. Counts against the Explore minute limit when not cached.",
+        "operationId": "watchServices",
+        "responses": {
+          "200": {
+            "description": "region and services."
+          },
+          "400": {
+            "description": "Unknown region."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          },
+          "429": {
+            "description": "Too many Explore requests this minute."
+          },
+          "501": {
+            "description": "No TMDB access here."
+          }
+        },
+        "summary": "Streaming services in a region",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
       }
     }
   },

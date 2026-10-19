@@ -99,6 +99,11 @@ func SaveSettings(ctx context.Context, st *store.Store, s Settings, by domain.Ac
 
 // slotIDsOf finds the Slots an Event is about: those it names (an import
 // names the ones it placed), else its Download's, else its own Slot.
+// SlotIDsOf lists the Slots an Event is about.
+func SlotIDsOf(ctx context.Context, db store.Querier, e domain.Event) []int64 {
+	return slotIDsOf(ctx, db, e)
+}
+
 func slotIDsOf(ctx context.Context, db store.Querier, e domain.Event) []int64 {
 	for _, k := range []string{"placed_slot_ids", "slot_ids"} {
 		if raw, ok := e.Data[k].([]any); ok && len(raw) > 0 {

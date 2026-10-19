@@ -54,6 +54,10 @@ func newDiscoverTMDB(t *testing.T) *discoverTMDB {
 			_, _ = w.Write([]byte(list(21, 22)))
 		case "/3/movie/popular", "/3/movie/upcoming", "/3/tv/popular", "/3/tv/on_the_air", "/3/discover/movie", "/3/discover/tv":
 			_, _ = w.Write([]byte(list(31)))
+		case "/3/watch/providers/movie":
+			_, _ = w.Write([]byte(`{"results":[{"provider_id":8,"provider_name":"Netflix","logo_path":"/n.jpg","display_priority":5,"display_priorities":{"US":1}},{"provider_id":337,"provider_name":"Disney Plus","logo_path":"/d.jpg","display_priorities":{"US":2}}]}`))
+		case "/3/watch/providers/tv":
+			_, _ = w.Write([]byte(`{"results":[{"provider_id":15,"provider_name":"Hulu","display_priorities":{"US":0}},{"provider_id":8,"provider_name":"Netflix","display_priorities":{"US":3}}]}`))
 		case "/3/movie/11/recommendations":
 			_, _ = w.Write([]byte(list(41, 12)))
 		case "/3/movie/11":
@@ -287,4 +291,38 @@ func TestMetadataDetails(t *testing.T) {
 
 	srv2, _ := discoverRig(t, metadata.Lab())
 	do(t, "GET", srv2.URL+"/api/v1/metadata/movie/11", "", 501)
+}
+
+// route: GET /api/v1/watch-services
+func TestDiscoverServicesRowAndServiceList(t *testing.T) {
+	f := newDiscoverTMDB(t)
+	srv, _ := discoverRig(t, f.provider())
+	a, _ := getDiscover(t, srv.URL+"/api/v1/discover?row=services&services=8%7C337&region=us&kind=movie", 200)
+	if a.Row != "services" || a.Title != "On your services" || len(a.Items) != 1 || a.Items[0].TMDBID != "31" {
+		t.Fatalf("services row %+v", a)
+	}
+	for _, bad := range []string{"?row=services", "?row=services&services=8", "?row=services&services=8,9&region=US", "?row=services&services=0&region=US", "?row=services&services=8&region=USA"} {
+		getDiscover(t, srv.URL+"/api/v1/discover"+bad, 400)
+	}
+	resp, err := http.Get(srv.URL + "/api/v1/watch-services?region=US")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	var got struct {
+		Region   string                  `json:"region"`
+		Services []metadata.WatchService `json:"services"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&got); err != nil || resp.StatusCode != 200 {
+		t.Fatalf("list %d %v", resp.StatusCode, err)
+	}
+	if got.Region != "US" || len(got.Services) != 3 || got.Services[0].Name != "Hulu" || got.Services[1].Name != "Netflix" || got.Services[1].Priority != 1 ||
+		!strings.HasSuffix(got.Services[1].Logo, "/w92/n.jpg") || got.Services[2].ID != 337 {
+		t.Fatalf("list %+v", got)
+	}
+	r2, _ := http.Get(srv.URL + "/api/v1/watch-services?region=x")
+	r2.Body.Close()
+	if r2.StatusCode != 400 {
+		t.Fatalf("bad region %d", r2.StatusCode)
+	}
 }

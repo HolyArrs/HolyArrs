@@ -5,7 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -19,13 +21,13 @@ import (
 // discoverTitles are the row headings the app may show.
 var discoverTitles = map[string]string{
 	"trending": "Trending this week", "popular": "Popular", "upcoming": "Coming soon",
-	"similar": "Because you have it", "genre": "More in this genre",
+	"similar": "Because you have it", "genre": "More in this genre", "services": "On your services", "best": "Best new releases",
 }
 
 // discoverTTL is how long a row from TMDB is kept.
 var discoverTTL = map[string]time.Duration{
 	"trending": 6 * time.Hour, "popular": 12 * time.Hour, "upcoming": 12 * time.Hour,
-	"similar": 24 * time.Hour, "genre": 24 * time.Hour, "details": 24 * time.Hour,
+	"similar": 24 * time.Hour, "genre": 24 * time.Hour, "details": 24 * time.Hour, "services": 12 * time.Hour, "best": 24 * time.Hour,
 }
 
 const (
@@ -35,9 +37,10 @@ const (
 )
 
 type discoverEntry struct {
-	at      time.Time
-	items   []metadata.DiscoverItem
-	details *metadata.Details
+	at       time.Time
+	items    []metadata.DiscoverItem
+	details  *metadata.Details
+	services []metadata.WatchService
 }
 
 // discoverState holds the row cache and each person's request times.
@@ -240,7 +243,7 @@ func (a *API) discoverRow(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	row, kind, idText, genre := q.Get("row"), q.Get("kind"), q.Get("id"), q.Get("g")
 	if _, ok := discoverTitles[row]; !ok {
-		fail(w, http.StatusBadRequest, "row must be trending, popular, upcoming, similar or genre")
+		fail(w, http.StatusBadRequest, "row must be trending, popular, upcoming, similar, genre, services or best")
 		return
 	}
 	if kind != "" && kind != "movie" && kind != "show" {
@@ -260,6 +263,14 @@ func (a *API) discoverRow(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "genre needs g=<genre name>")
 		return
 	}
+	services := ""
+	if row == "services" {
+		services, genre = q.Get("services"), strings.ToUpper(q.Get("region"))
+		if !metadata.ServiceIDs(services) || !isCountry(genre) {
+			fail(w, http.StatusBadRequest, "services needs services=<ids joined by |> and region=<country code>")
+			return
+		}
+	}
 	me := a.person(r).UserID
 	if !a.discover.allow(me, time.Now()) {
 		w.Header().Set("Retry-After", "60")
@@ -272,7 +283,7 @@ func (a *API) discoverRow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	kinds := a.kindsOn(kind)
-	ref := ""
+	ref := services
 	if row == "similar" {
 		var t domain.Title
 		if err := store.Get(r.Context(), a.s.Store.Read(), "titles", titleID, &t); err != nil || t.State == "removed" || !a.titleAllowed(r, t) {
@@ -398,4 +409,54 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 		Ask       *askBrief          `json:"ask"`
 		NeverAdd  bool               `json:"never_add"`
 	}{Details: det, Similar: similar, InLibrary: head.InLibrary, TitleID: head.TitleID, Ask: head.Ask, NeverAdd: never})
+}
+
+// watchServices answers GET /api/v1/watch-services?region=<ISO>: the
+// streaming services TMDB knows there for movies and shows, best known first.
+func (a *API) watchServices(w http.ResponseWriter, r *http.Request) {
+	region := strings.ToUpper(r.URL.Query().Get("region"))
+	if !isCountry(region) {
+		fail(w, http.StatusBadRequest, "region must be a country code")
+		return
+	}
+	key := "services-list|" + region
+	if e, ok := a.discover.get(key); ok && time.Since(e.at) < 24*time.Hour {
+		a.exploreCaching(w, r, "private, max-age=3600")
+		writeJSON(w, http.StatusOK, map[string]any{"region": region, "services": e.services})
+		return
+	}
+	if !a.discover.allow(a.person(r).UserID, time.Now()) {
+		w.Header().Set("Retry-After", "60")
+		fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
+		return
+	}
+	l, ok := metadata.ServiceListerFor(r.Context(), a.s.Metadata)
+	if !ok {
+		fail(w, http.StatusNotImplemented, "Explore is not available here")
+		return
+	}
+	// One list for both kinds: a service keeps its best place in either.
+	at := map[int64]int{}
+	out := []metadata.WatchService{}
+	for _, k := range []string{"movie", "show"} {
+		list, err := l.WatchServices(r.Context(), k, region)
+		if err != nil {
+			discoverFail(w, err)
+			return
+		}
+		for _, s := range list {
+			if i, seen := at[s.ID]; seen {
+				if s.Priority < out[i].Priority {
+					out[i].Priority = s.Priority
+				}
+				continue
+			}
+			at[s.ID] = len(out)
+			out = append(out, s)
+		}
+	}
+	sort.SliceStable(out, func(i, j int) bool { return out[i].Priority < out[j].Priority })
+	a.discover.put(key, discoverEntry{at: time.Now(), services: out})
+	a.exploreCaching(w, r, "private, max-age=3600")
+	writeJSON(w, http.StatusOK, map[string]any{"region": region, "services": out})
 }

@@ -579,9 +579,13 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	defer sender.Wait()
 	wish := &asks.Service{Store: s, Library: lib, Metadata: md, Alerts: sender, Live: hub}
 	optional(supervisor.Loop{Name: "wishlist", Label: "Wishlist ready check", Every: 30 * time.Second, Run: func(ctx context.Context) error {
-		_, err := wish.CheckReady(ctx)
+		if _, err := wish.CheckReady(ctx); err != nil {
+			return err
+		}
+		_, err := wish.SendEpisodeNotices(ctx)
 		return err
 	}})
+	wish.WatchEpisodes()
 	reg.Set(supervisor.StageKey("alerts"), "stage", "Alerts", supervisor.Running, "")
 	if c.SafeMode {
 		reg.Set(supervisor.StageKey("media_servers"), "stage", "Media-server refresh", supervisor.Off, notStarted)

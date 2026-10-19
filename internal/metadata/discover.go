@@ -6,8 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // ErrRateLimited means TMDB kept answering "too many requests".
@@ -69,7 +71,99 @@ func DiscovererFor(ctx context.Context, provider Provider) (Discoverer, bool) {
 }
 
 // DiscoverRows are the row names Discover takes.
-var DiscoverRows = []string{"trending", "popular", "upcoming", "similar", "genre"}
+var DiscoverRows = []string{"trending", "popular", "upcoming", "similar", "genre", "services", "best"}
+
+// BestQuery is the TMDB discover query for best new releases: out in the
+// last 24 months, rated 7.5 or more by at least 300 people, best rated first.
+func BestQuery(kind string, now time.Time) url.Values {
+	from := now.UTC().AddDate(-2, 0, 0).Format("2006-01-02")
+	date := "primary_release_date.gte"
+	if kind == "show" {
+		date = "first_air_date.gte"
+	}
+	return url.Values{date: {from}, "vote_average.gte": {"7.5"}, "vote_count.gte": {"300"}, "sort_by": {"vote_average.desc"}, "include_adult": {"false"}}
+}
+
+// WatchService is one streaming service people can pick on Explore.
+type WatchService struct {
+	ID       int64  `json:"id"`
+	Name     string `json:"name"`
+	Logo     string `json:"logo,omitempty"`
+	Priority int    `json:"priority"`
+}
+
+// ServiceLister lists the streaming services TMDB knows for a region.
+type ServiceLister interface {
+	WatchServices(ctx context.Context, kind, region string) ([]WatchService, error)
+}
+
+// ServiceListerFor returns the service list surface selected for ctx.
+func ServiceListerFor(ctx context.Context, provider Provider) (ServiceLister, bool) {
+	if sw, ok := provider.(*Switch); ok {
+		provider = sw.pick(ctx)
+	}
+	l, ok := provider.(ServiceLister)
+	return l, ok
+}
+
+// ServiceIDs says whether s is 1 to 20 service ids joined by |.
+func ServiceIDs(s string) bool {
+	parts := strings.Split(s, "|")
+	if s == "" || len(parts) > 20 {
+		return false
+	}
+	for _, p := range parts {
+		n, err := strconv.ParseInt(p, 10, 64)
+		if err != nil || n <= 0 || n > 9999999 || strconv.FormatInt(n, 10) != p {
+			return false
+		}
+	}
+	return true
+}
+
+func isRegion(s string) bool {
+	return len(s) == 2 && s[0] >= 'A' && s[0] <= 'Z' && s[1] >= 'A' && s[1] <= 'Z'
+}
+
+// WatchServices reads TMDB's streaming services for one kind and region,
+// best known first (TMDB's own order for that region).
+func (t *TMDB) WatchServices(ctx context.Context, kind, region string) ([]WatchService, error) {
+	if (kind != "movie" && kind != "show") || !isRegion(region) {
+		return nil, fmt.Errorf("kind must be movie or show, region a country code")
+	}
+	b, err := t.get(ctx, "/watch/providers/"+tvPath(kind), url.Values{"watch_region": {region}, "language": {"en-US"}})
+	if err != nil {
+		return nil, err
+	}
+	var res struct {
+		Results []struct {
+			ID         int64          `json:"provider_id"`
+			Name       string         `json:"provider_name"`
+			Logo       string         `json:"logo_path"`
+			Priority   int            `json:"display_priority"`
+			Priorities map[string]int `json:"display_priorities"`
+		} `json:"results"`
+	}
+	if err := json.Unmarshal(b, &res); err != nil {
+		return nil, fmt.Errorf("TMDB: odd answer: %w", err)
+	}
+	out := []WatchService{}
+	for _, r := range res.Results {
+		if r.ID <= 0 || r.Name == "" {
+			continue
+		}
+		s := WatchService{ID: r.ID, Name: r.Name, Priority: r.Priority}
+		if p, ok := r.Priorities[region]; ok {
+			s.Priority = p
+		}
+		if r.Logo != "" {
+			s.Logo = t.images() + "/w92" + r.Logo
+		}
+		out = append(out, s)
+	}
+	sort.SliceStable(out, func(i, j int) bool { return out[i].Priority < out[j].Priority })
+	return out, nil
+}
 
 // maxDiscover caps a row before the Library join drops Never-add items.
 const maxDiscover = 40
@@ -189,6 +283,22 @@ func (t *TMDB) Discover(ctx context.Context, row, kind, ref, genre string) ([]Di
 		}
 		path = "/discover/" + p
 		q.Set("with_genres", strconv.FormatInt(id, 10))
+		q.Set("sort_by", "popularity.desc")
+		q.Set("include_adult", "false")
+	case "best":
+		path = "/discover/" + p
+		for k, v := range BestQuery(kind, time.Now()) {
+			q[k] = v
+		}
+	case "services":
+		// ref: streaming service ids joined by |; genre: the region.
+		if !ServiceIDs(ref) || !isRegion(genre) {
+			return nil, fmt.Errorf("services needs service ids and a region")
+		}
+		path = "/discover/" + p
+		q.Set("with_watch_providers", ref)
+		q.Set("watch_region", genre)
+		q.Set("with_watch_monetization_types", "flatrate")
 		q.Set("sort_by", "popularity.desc")
 		q.Set("include_adult", "false")
 	default:
