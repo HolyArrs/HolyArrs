@@ -402,7 +402,7 @@
 		<div class="chips" role="group" aria-label="Your streaming services">
 			{#each shownServices as sv (sv.id)}
 				{@const on = picked !== null && picked.includes(sv.id)}
-				<button type="button" class="chip" class:on aria-pressed={on} onclick={() => tapService(sv.id)} title={sv.name}>
+				<button type="button" class="svc-chip" class:on aria-pressed={on} onclick={() => tapService(sv.id)} title={sv.name}>
 					{#if sv.logo}<img src={sv.logo} alt="" width="28" height="28" loading="lazy" />{/if}
 					<span>{sv.name}</span>
 				</button>
@@ -500,11 +500,11 @@
 	.svc-hint { color: var(--text-muted); font: var(--t-callout); }
 	.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-inline: calc(var(--gutter) * -1); padding: 2px var(--gutter); }
 	.chips::-webkit-scrollbar { display: none; }
-	.chip { flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px 0 8px; border-radius: 999px; background: var(--surface-2); color: var(--text); font: var(--t-callout); font-weight: 500; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent); transition: background-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease; }
-	.chip img { width: 28px; height: 28px; border-radius: 7px; object-fit: cover; }
-	.chip:hover { background: color-mix(in srgb, var(--text) 10%, var(--surface-2)); }
-	.chip.on { background: color-mix(in srgb, var(--accent) 18%, var(--surface-2)); box-shadow: inset 0 0 0 2px var(--accent); }
-	.chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.svc-chip { flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px 0 8px; border-radius: 999px; background: var(--surface-2); color: var(--text); font: var(--t-callout); font-weight: 500; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent); transition: background-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease; }
+	.svc-chip img { width: 28px; height: 28px; border-radius: 7px; object-fit: cover; }
+	.svc-chip:hover { background: color-mix(in srgb, var(--text) 10%, var(--surface-2)); }
+	.svc-chip.on { background: color-mix(in srgb, var(--accent) 18%, var(--surface-2)); box-shadow: inset 0 0 0 2px var(--accent); }
+	.svc-chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.loading { display: flex; flex-direction: column; gap: 14px; }
 	.sk-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--shelf-gap); max-height: 250px; overflow: hidden; margin-bottom: 16px; }
 	@media (max-width: 767px) { .explore { --explore-item: 54vw; gap: 26px; } }
