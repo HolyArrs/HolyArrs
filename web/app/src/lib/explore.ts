@@ -5,7 +5,6 @@
 import { api, ApiError, type Client } from './api.ts';
 import type { StatusKind } from './ui/StatusPill.svelte';
 import { audienceStatus, factsOf, titleStatus, type Audience, type TitleStatus } from './title-status.ts';
-import { episodeCode } from './calendar.ts';
 import type { Ask, AskBrief, AskState, CalendarEntry, TitleView } from './types.ts';
 
 export type CardKind = 'movie' | 'show' | 'artist';
@@ -33,6 +32,8 @@ export interface ExploreCard {
 	vtName?: string;
 	/** The open ask for it, so asking says it joins that ask. */
 	ask?: AskBrief;
+	/** 16:9 picture for wide cards: backdrop, else episode still. */
+	wide?: string | null;
 }
 
 export interface ExploreRow {
@@ -117,6 +118,20 @@ function shortDay(iso: string, now: Date): string {
 
 const releaseWord: Record<CalendarEntry['kind'], string> = { cinema: 'In cinemas', digital: 'On digital', physical: 'On disc', episode: '', album: 'New album' };
 
+/** releaseLine is a wide card's second line: S1 · E3 · Name, On digital, or the album. */
+export function releaseLine(e: CalendarEntry): string {
+	if (e.kind === 'episode') return [`S${e.season ?? 0}`, `E${e.episode ?? 0}`, e.episode_name].filter(Boolean).join(' · ');
+	if (e.kind === 'album') return e.album ?? releaseWord.album;
+	return releaseWord[e.kind];
+}
+
+/** releaseBadges: the day, plus Premiere for S1E1 and New for any other episode 1. */
+export function releaseBadges(e: CalendarEntry, now: Date): string[] {
+	const when = shortDay(e.kind === 'episode' && !e.timed && e.air_day ? e.air_day : e.date, now);
+	const extra = e.kind === 'episode' && e.episode === 1 ? (e.season === 1 ? 'Premiere' : 'New') : '';
+	return [when, extra].filter(Boolean);
+}
+
 /** comingSoon keeps each title's next date, soonest first, skipping what already passed. */
 export function comingSoon(entries: CalendarEntry[], titles: TitleView[], now = new Date(), n = ROW_MAX): ExploreCard[] {
 	const byId = new Map(titles.map((t) => [t.id, t]));
@@ -128,14 +143,15 @@ export function comingSoon(entries: CalendarEntry[], titles: TitleView[], now = 
 		if (seen.has(e.title_id)) continue;
 		seen.add(e.title_id);
 		const t = byId.get(e.title_id);
-		const what = e.kind === 'episode' ? episodeCode(e) : e.kind === 'album' ? e.album ?? releaseWord.album : releaseWord[e.kind];
-		const when = shortDay(e.kind === 'episode' && !e.timed && e.air_day ? e.air_day : e.date, now);
-		const subtitle = [what, when].filter(Boolean).join(' · ');
+		const subtitle = releaseLine(e);
 		const card: ExploreCard = t
 			? titleCard(t, subtitle, `c${e.title_id}`)
 			: { key: `c${e.title_id}`, kind: e.kind === 'episode' ? 'show' : e.kind === 'album' ? 'artist' : 'movie', name: e.name, year: e.year, subtitle, titleId: e.title_id, badges: [] };
-		// Poster cards are 2:3, so they use the show or movie poster; wide stills and backdrops crop badly.
+		card.subtitle = subtitle;
+		card.badges = releaseBadges(e, now);
 		card.image = card.image ?? e.poster ?? null;
+		// Wide cards: the show or movie backdrop first, then the episode still; none falls back to the name tile.
+		card.wide = e.backdrop ?? t?.backdrop ?? e.still ?? null;
 		card.status = 'coming_soon';
 		out.push(card);
 		if (out.length >= n) break;

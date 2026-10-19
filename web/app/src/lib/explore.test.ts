@@ -78,30 +78,62 @@ describe('coming soon', () => {
 			now
 		);
 		expect(cards.map((c) => c.titleId)).toEqual([2, 1]);
-		expect(cards[0].subtitle).toMatch(/^S02E01 · /);
-		expect(cards[1].subtitle).toMatch(/^On digital · /);
+		expect(cards[0].subtitle).toBe('S2 · E1');
+		expect(cards[0].badges[1]).toBe('New');
+		expect(cards[1].subtitle).toBe('On digital');
 		expect(cards.every((c) => c.status === 'coming_soon')).toBe(true);
 	});
 	it('still shows titles it has no Library record for', () => {
 		const [c] = comingSoon([e(7, '2026-10-21T00:00:00Z', { kind: 'album', album: 'Blue' })], [], now);
-		expect(c).toMatchObject({ kind: 'artist', name: 'T7', subtitle: expect.stringMatching(/^Blue · /) });
+		expect(c).toMatchObject({ kind: 'artist', name: 'T7', subtitle: 'Blue' });
 	});
 });
 
-describe('coming soon artwork', () => {
+describe('coming soon wide cards', () => {
 	const now = new Date(2026, 9, 18, 12);
-	it('uses the poster, never a wide still or backdrop', () => {
+	it('picks the backdrop, then the title backdrop, then the still, else the name tile', () => {
 		const cards = comingSoon(
 			[
 				{ title_id: 1, name: 'A', kind: 'episode', date: '2026-10-20T00:00:00Z', season: 1, episode: 2, still: 's.jpg', backdrop: 'b.jpg' },
-				{ title_id: 2, name: 'B', kind: 'digital', date: '2026-10-21T00:00:00Z', backdrop: 'b2.jpg', poster: 'p2.jpg' },
-				{ title_id: 3, name: 'C', kind: 'digital', date: '2026-10-22T00:00:00Z' }
+				{ title_id: 2, name: 'B', kind: 'digital', date: '2026-10-21T00:00:00Z', poster: 'p2.jpg' },
+				{ title_id: 3, name: 'C', kind: 'episode', date: '2026-10-22T00:00:00Z', season: 3, episode: 4, still: 's3.jpg' },
+				{ title_id: 4, name: 'D', kind: 'physical', date: '2026-10-23T00:00:00Z' }
 			],
-			[t(1, { kind: 'show', artwork: ['own.jpg'] })],
+			[t(1, { kind: 'show', artwork: ['own.jpg'] }), t(2, { backdrop: 'tb.jpg' })],
 			now
 		);
-		expect(cards.map((c) => c.image ?? null)).toEqual(['own.jpg', 'p2.jpg', null]);
-		expect(cards[0].kind).toBe('show');
+		expect(cards.map((c) => c.wide)).toEqual(['b.jpg', 'tb.jpg', 's3.jpg', null]);
+		expect(cards.map((c) => c.image ?? null)).toEqual(['own.jpg', '/a/2.jpg', null, null]);
+	});
+	it('writes line 2 per kind', () => {
+		const lines = comingSoon(
+			[
+				{ title_id: 1, name: 'A', kind: 'episode', date: '2026-10-20T00:00:00Z', season: 1, episode: 3, episode_name: 'Pilot two' },
+				{ title_id: 2, name: 'B', kind: 'digital', date: '2026-10-21T00:00:00Z' },
+				{ title_id: 3, name: 'C', kind: 'physical', date: '2026-10-21T00:00:00Z' },
+				{ title_id: 4, name: 'D', kind: 'cinema', date: '2026-10-21T00:00:00Z' },
+				{ title_id: 5, name: 'E', kind: 'album', date: '2026-10-21T00:00:00Z', album: 'Blue' }
+			],
+			[],
+			now
+		).map((c) => c.subtitle);
+		expect(lines).toEqual(['S1 · E3 · Pilot two', 'On digital', 'On disc', 'In cinemas', 'Blue']);
+	});
+	it('badges the day and premieres', () => {
+		const b = comingSoon(
+			[
+				{ title_id: 1, name: 'A', kind: 'episode', date: '2026-10-18T20:00:00', season: 1, episode: 1, timed: true },
+				{ title_id: 2, name: 'B', kind: 'episode', date: '2026-10-19T20:00:00', season: 4, episode: 1, timed: true },
+				{ title_id: 3, name: 'C', kind: 'episode', date: '2026-10-21T20:00:00', season: 2, episode: 5, timed: true },
+				{ title_id: 4, name: 'D', kind: 'digital', date: '2026-11-20T12:00:00' }
+			],
+			[],
+			now
+		).map((c) => c.badges);
+		expect(b[0]).toEqual(['Today', 'Premiere']);
+		expect(b[1]).toEqual(['Tomorrow', 'New']);
+		expect(b[2]).toEqual([new Date(2026, 9, 21).toLocaleDateString(undefined, { weekday: 'long' })]);
+		expect(b[3]).toEqual([new Date(2026, 10, 20).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })]);
 	});
 });
 

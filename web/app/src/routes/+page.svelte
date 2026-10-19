@@ -17,6 +17,7 @@
 	import type { Ask, CalendarEntry, EventRecord, Health, HealthChecks, LibraryFolder, SearchView, TitleView } from '#lib/types.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
+	import Top10Row from '#lib/Top10Row.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
@@ -274,13 +275,14 @@
 		{/if}
 
 		{#if rows[0].cards.length}
-			<Shelf title="Coming soon" subtitle="The next 30 days" href={to('/calendar')}>
+			<Shelf title="Coming soon" subtitle="The next 30 days" href={to('/calendar')} item="var(--release-item)">
 				{#each rows[0].cards as c (c.key)}
-					{@const pill = cardPill(c, who)}
-					<PosterCard title={c.name} kind={c.kind} href={c.titleId ? titleHref(c.titleId) : undefined} image={c.image} subtitle={c.subtitle} status={pill?.kind} statusLabel={pill?.label} vtName={c.vtName} />
+					<WideCard title={c.name} kind={c.kind} href={c.titleId ? titleHref(c.titleId) : undefined} image={c.wide} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} />
 				{/each}
 			</Shelf>
 		{/if}
+
+		<Top10Row />
 
 		{#if rows[1].cards.length}
 			<Shelf title="Recently added" href={to('/library')}>

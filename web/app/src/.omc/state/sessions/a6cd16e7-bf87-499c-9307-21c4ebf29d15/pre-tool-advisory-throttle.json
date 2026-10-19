@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "entries": {
+    "466399dafa2d20f60587180bad0a07358eb7f2bce724df0ff682f038ad33f5ad": {
+      "last_emitted_at_ms": 1792441241994,
+      "message": "Read multiple files in parallel when possible for faster analysis."
+    },
+    "79a93d4a2f8f50b95f852280616242fee1855dc99a3c75211917f55e72e95fae": {
+      "last_emitted_at_ms": 1792441201771,
+      "message": "Use parallel execution for independent tasks. Use run_in_background for long operations (npm install, builds, tests)."
+    },
+    "a0294bdd0fc3e0a442b37e2e364c5d0de70aaa71e528502da13b8dd325a5258a": {
+      "last_emitted_at_ms": 1792441084506,
+      "message": "Spawning agent: oh-my-claudecode:debugger (opus) [BACKGROUND] | Task: Fix slow Explore/Home load"
+    },
+    "5b7203e09cf8175713e1cf471f94eb2e7707ce32dbe92866222776a567f9e6b9": {
+      "last_emitted_at_ms": 1792440987930,
+      "message": "Spawning agent: oh-my-claudecode:designer (opus) [BACKGROUND] | Task: Wide Trakt-style Coming soon row"
+    }
+  },
+  "updated_at": "2026-10-19T20:20:41.994Z"
+}

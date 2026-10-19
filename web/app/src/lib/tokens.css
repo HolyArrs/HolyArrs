@@ -66,6 +66,8 @@
   --sidebar: var(--sidebar-expanded);
   --poster-ratio: 2 / 3;
   --wide-ratio: 16 / 9;
+  /* Release rows: about 2.5 wide cards at 1440, 1.2 at 390 (Shelf shrinks by .78 on phones). */
+  --release-item: clamp(370px, 31vw, 460px);
 
   /* Motion. */
   --dur-instant: 90ms; --dur-fast: 150ms; --dur: 240ms; --dur-slow: 360ms; --dur-page: 300ms;

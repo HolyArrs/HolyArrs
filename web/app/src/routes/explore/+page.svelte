@@ -44,8 +44,10 @@
 	import AskMovieDialog from '#lib/AskMovieDialog.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
+	import Top10Row from '#lib/Top10Row.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
+	import WideCard from '#lib/ui/WideCard.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
@@ -267,11 +269,15 @@
 		{:else if rows.length === 0}
 			<EmptyState icon="compass" title="Nothing to explore yet" text="Rows fill in as your Library grows." action={{ label: 'Search', href: to('/search'), icon: 'search' }} />
 		{:else}
+			<Top10Row />
 			{#each rows as row (row.id)}
-				<Shelf title={row.title} subtitle={row.subtitle} href={row.href} item="var(--explore-item)">
+				<Shelf title={row.title} subtitle={row.subtitle} href={row.href} item={row.id === 'soon' ? 'var(--release-item)' : 'var(--explore-item)'}>
 					{#each row.cards.map(live) as c (c.key)}
 						{@const act = cardAction(c, { manage, ask: mayAsk })}
 						{@const pill = cardPill(c, who)}
+						{#if row.id === 'soon'}
+							<WideCard title={c.name} href={cardHref(c)} image={c.wide} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} />
+						{:else}
 						<PosterCard
 							title={c.name}
 							href={cardHref(c)}
@@ -291,6 +297,7 @@
 								{/if}
 							{/snippet}
 						</PosterCard>
+						{/if}
 					{/each}
 				</Shelf>
 			{/each}

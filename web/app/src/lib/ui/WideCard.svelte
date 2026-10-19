@@ -23,7 +23,8 @@
 		width,
 		kind,
 		action,
-		statusTestid
+		statusTestid,
+		badgesAt = 'top'
 	}: {
 		title: string;
 		href?: string;
@@ -42,6 +43,8 @@
 		action?: Snippet;
 		/** Test id on the status pill. */
 		statusTestid?: string;
+		/** Where the badges sit on the art. */
+		badgesAt?: 'top' | 'bottom';
 	} = $props();
 	let failed = $state(false);
 	// The name tile shows until the picture has loaded; in a row the picture
@@ -54,11 +57,11 @@
 
 <div class="ui-wide" style:width>
 	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} use:press={'card'}>
-		<span class="art" use:viewTransitionName={vtName}>
+		<span class="art" class:low={badgesAt === 'bottom' && (badges.length || status)} use:viewTransitionName={vtName}>
 			{#if !image || failed || !loaded}<span class="ph" aria-hidden="true"><span class="ph-ic"><Icon name={kindIcon} size={20} /></span><span class="ph-t">{title}</span></span>{/if}
 			{#if image && !failed && near()}<img src={sized(image, 'backdrop')} class:in={loaded} alt="" loading="lazy" decoding="async" use:whenLoaded={() => (loaded = true)} onerror={() => (failed = true)} />{/if}
 			{#if badges.length || status}
-				<span class="over">
+				<span class="over" class:bottom={badgesAt === 'bottom'}>
 					{#if status}<StatusPill kind={status} label={statusLabel} percent={pct} on="art" testid={statusTestid} />{/if}
 					{#each badges as b (b)}<Badge label={b} on="art" />{/each}
 				</span>
@@ -91,6 +94,8 @@
 	.ph-ic { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: var(--surface-1); color: var(--text-muted); box-shadow: var(--shadow-card); }
 	.ph-t { max-width: 100%; min-width: 0; font: var(--t-headline); letter-spacing: -0.01em; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 	.over { position: absolute; left: 8px; top: 8px; right: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
+	.low .ph { padding-bottom: 40px; }
+	.over.bottom { top: auto; bottom: 8px; }
 	.line { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgb(0 0 0 / 35%); }
 	.line i { display: block; height: 100%; background: var(--accent); transition: width var(--dur-slow) var(--ease-out); }
 	.line.done i { background: var(--ok); }
