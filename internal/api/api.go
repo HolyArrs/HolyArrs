@@ -192,6 +192,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("POST /api/v1/titles/refresh", a.refreshTitles)
 	m.HandleFunc("GET /api/v1/calendar", a.calendar)
 	m.HandleFunc("GET /api/v1/artwork/{name}", a.artwork)
+	m.HandleFunc("GET /api/v1/artwork/tmdb/{size}/{file}", a.tmdbArtwork)
 	m.HandleFunc("GET /api/v1/settings/status", a.settingsStatusRoute)
 	m.HandleFunc("GET /api/v1/settings/title-defaults", a.getTitleDefaults)
 	m.HandleFunc("PUT /api/v1/settings/title-defaults", a.putTitleDefaults)

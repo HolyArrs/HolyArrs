@@ -278,6 +278,7 @@ var Routes = map[string]Owner{
 	"GET /api/v1/library-summary":             Media,
 	"POST /api/v1/titles/refresh":             Media,
 	"GET /api/v1/artwork/{name}":              Media,
+	"GET /api/v1/artwork/tmdb/{size}/{file}":  Media,
 	"GET /api/v1/calendar":                    Media,
 	"GET /api/v1/calendar/feed-key":           Media,
 	"POST /api/v1/calendar/feed-key":          Media,

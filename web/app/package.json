@@ -6,7 +6,7 @@
 	"license": "GPL-3.0-only",
 	"scripts": {
 		"dev": "vite dev",
-		"build": "vite build && node scripts/check-words.mjs",
+		"build": "vite build && node scripts/precompress.mjs && node scripts/check-words.mjs",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
 		"test": "vitest run",
 		"e2e": "playwright test"

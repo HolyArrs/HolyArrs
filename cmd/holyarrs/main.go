@@ -25,6 +25,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/asks"
 	"github.com/CoderLuii/holyarrs/internal/auth"
 	"github.com/CoderLuii/holyarrs/internal/backup"
+	"github.com/CoderLuii/holyarrs/internal/compress"
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/downloader"
 	"github.com/CoderLuii/holyarrs/internal/health"
@@ -592,7 +593,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	a := api.New(api.Server{Library: lib, Lists: ol, Store: s, Queue: q, Live: hub, Metadata: md, Version: version, Auth: au, Backups: bm, Restart: restart,
 		Secrets: vault, MetadataUp: hosted.Health.Up, Alerts: sender, Asks: wish, Search: sr, Downloads: dm, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
 		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase})
-	srv := newServer(c.Addr, urlbase.Handler(c.URLBase, limitBodies(a.Handler())))
+	srv := newServer(c.Addr, urlbase.Handler(c.URLBase, compress.Handler(limitBodies(a.Handler()))))
 	ln, err := net.Listen("tcp", c.Addr)
 	if err != nil {
 		return err

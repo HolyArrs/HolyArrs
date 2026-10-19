@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import Icon from '../Icon.svelte';
 	import IconButton from './IconButton.svelte';
+	import { nearView, setShelfNear } from '../lazy-art.ts';
 
 	// A titled horizontal row: native scroll with snap, arrow buttons on hover
 	// (desktop), arrow keys scroll when the row has focus, optional See all ›.
@@ -29,6 +30,9 @@
 	} = $props();
 
 	const id = $props.id();
+	// Cards put in their pictures once the row comes near the screen.
+	let near = $state(false);
+	setShelfNear(() => near);
 	let scroller = $state<HTMLElement>();
 	let atStart = $state(true);
 	let atEnd = $state(false);
@@ -55,7 +59,7 @@
 	}
 </script>
 
-<section class="ui-shelf" id={anchor} style="--item: {item}">
+<section class="ui-shelf" id={anchor} style="--item: {item}" use:nearView={() => (near = true)}>
 	<header>
 		<div>
 			<h2 id="{id}-t">{#if href}<a href={href}>{title}</a>{:else}{title}{/if}</h2>

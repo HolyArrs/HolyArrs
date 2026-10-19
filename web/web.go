@@ -4,12 +4,16 @@
 package web
 
 import (
+	"bytes"
 	"embed"
 	"io/fs"
+	"mime"
 	"net/http"
 	"path"
 	"strings"
+	"time"
 
+	"github.com/CoderLuii/holyarrs/internal/compress"
 	"github.com/CoderLuii/holyarrs/internal/urlbase"
 )
 
@@ -88,6 +92,9 @@ func Handler() http.Handler {
 				_, _ = w.Write(WithBase(b, base))
 				return
 			}
+			if ServeBrotli(w, r, Files, name) {
+				return
+			}
 			fsrv.ServeHTTP(w, r)
 			return
 		}
@@ -97,4 +104,29 @@ func Handler() http.Handler {
 		}
 		Page(w, r)
 	})
+}
+
+// ServeBrotli sends name's build-time brotli copy (name.br, made by
+// web/app/scripts/precompress.mjs) when the browser accepts brotli and the
+// copy exists. It reports whether it answered.
+func ServeBrotli(w http.ResponseWriter, r *http.Request, fsys fs.FS, name string) bool {
+	if r.Header.Get("Range") != "" || !compress.Accepts(r, "br") {
+		return false
+	}
+	b, err := fs.ReadFile(fsys, name+".br")
+	if err != nil {
+		return false
+	}
+	ct := mime.TypeByExtension(path.Ext(name))
+	if ct == "" {
+		ct = "application/octet-stream"
+	}
+	h := w.Header()
+	h.Set("Content-Type", ct)
+	h.Set("Content-Encoding", "br")
+	if !strings.Contains(h.Get("Vary"), "Accept-Encoding") {
+		h.Add("Vary", "Accept-Encoding")
+	}
+	http.ServeContent(w, r, name, time.Time{}, bytes.NewReader(b))
+	return true
 }

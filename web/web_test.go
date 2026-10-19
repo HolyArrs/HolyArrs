@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"testing/fstest"
 )
 
 func get(t *testing.T, p string) *httptest.ResponseRecorder {
@@ -97,5 +98,25 @@ func TestServesUnderAURLBase(t *testing.T) {
 	}
 	if get("/library").Code != 404 {
 		t.Fatal("outside the base served")
+	}
+}
+
+func TestServeBrotli(t *testing.T) {
+	fsys := fstest.MapFS{"a.js": {Data: []byte("plain")}, "a.js.br": {Data: []byte("BR")}, "b.css": {Data: []byte("x")}}
+	try := func(name, enc string) *httptest.ResponseRecorder {
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, "/"+name, nil)
+		r.Header.Set("Accept-Encoding", enc)
+		if !ServeBrotli(w, r, fsys, name) {
+			return nil
+		}
+		return w
+	}
+	w := try("a.js", "gzip, deflate, br")
+	if w == nil || w.Body.String() != "BR" || w.Header().Get("Content-Encoding") != "br" || !strings.Contains(w.Header().Get("Content-Type"), "javascript") {
+		t.Fatalf("brotli copy not served: %+v", w)
+	}
+	if try("a.js", "gzip") != nil || try("b.css", "br") != nil {
+		t.Fatal("served brotli where it should not")
 	}
 }

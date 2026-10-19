@@ -6,6 +6,7 @@
 	import Icon, { type IconName } from '../Icon.svelte';
 	import { press, viewTransitionName } from '../motion.ts';
 	import { sized } from '../tmdb-image.ts';
+	import { shelfNear, whenLoaded } from '../lazy-art.ts';
 
 	// 2:3 poster with title below. Lifts on hover; artwork zooms inside its frame.
 	// `action` is an optional round button (Add / Ask) over the art corner.
@@ -39,6 +40,10 @@
 		action?: Snippet;
 	} = $props();
 	let failed = $state(false);
+	// The name tile shows until the picture has loaded; in a row the picture
+	// waits until the row is near the screen.
+	let loaded = $state(false);
+	const near = shelfNear();
 	const pic = $derived(sized(image, 'poster'));
 	const kindIcon = $derived<IconName>(kind === 'show' || kind === 'episode' ? 'tv' : kind === 'artist' ? 'music' : 'film');
 </script>
@@ -46,10 +51,11 @@
 <div class="ui-poster" style:width>
 	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} use:press={'card'}>
 		<span class="art" use:viewTransitionName={vtName}>
-			{#if image && !failed}
-				<img src={pic} alt="" loading="lazy" decoding="async" onerror={() => (failed = true)} />
-			{:else}
+			{#if !image || failed || !loaded}
 				<span class="ph" aria-hidden="true"><span class="ph-ic"><Icon name={kindIcon} size={22} /></span><span class="ph-t">{title}</span></span>
+			{/if}
+			{#if image && !failed && near()}
+				<img src={pic} class:in={loaded} alt="" loading="lazy" decoding="async" use:whenLoaded={() => (loaded = true)} onerror={() => (failed = true)} />
 			{/if}
 			{#if badges.length || status}
 				<span class="over">
@@ -71,7 +77,8 @@
 	.hit:focus-visible { outline: none; }
 	.hit:focus-visible .art { box-shadow: var(--focus-ring); }
 	.art { position: relative; display: block; aspect-ratio: var(--poster-ratio); margin-bottom: 8px; border-radius: var(--r-card); overflow: hidden; background: var(--surface-2); box-shadow: var(--shadow-card); transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out); }
-	img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--dur-slow) var(--ease-out); }
+	img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--dur) ease, transform var(--dur-slow) var(--ease-out); }
+	img.in { opacity: 1; }
 	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
 		a.hit:hover .art { transform: translateY(var(--lift)); box-shadow: var(--shadow-lift); }
 		a.hit:hover img, a.hit:hover .ph { transform: scale(1.03); }

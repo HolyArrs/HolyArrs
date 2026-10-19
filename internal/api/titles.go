@@ -3,7 +3,10 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"mime"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -609,11 +612,59 @@ func (a *API) artwork(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	p, ok := a.s.Library.Artwork.Path(r.PathValue("name"))
+	name := r.PathValue("name")
+	p, ok := a.s.Library.Artwork.Path(name)
 	if !ok {
 		http.NotFound(w, r)
 		return
 	}
-	w.Header().Set("Cache-Control", "private, max-age=86400")
-	http.ServeFile(w, r, p)
+	serveArtwork(w, r, name, p)
+}
+
+// tmdbArtwork serves a TMDB picture (search results, Explore rows, title
+// pages) through the artwork cache: fetched once at TMDB's own size, kept
+// on disk, then sent from here, so the browser never calls TMDB itself.
+func (a *API) tmdbArtwork(w http.ResponseWriter, r *http.Request) {
+	if a.s.Library == nil || a.s.Library.Artwork == nil {
+		http.NotFound(w, r)
+		return
+	}
+	src, ok := library.TMDBArtworkURL(metadata.ImageBase, r.PathValue("size"), r.PathValue("file"))
+	if !ok {
+		http.NotFound(w, r)
+		return
+	}
+	c := a.s.Library.Artwork
+	name := library.ArtworkName(src)
+	p, ok := c.Path(name)
+	if !ok {
+		if _, err := c.Fetch(r.Context(), src); err != nil {
+			http.Error(w, "picture unavailable", http.StatusBadGateway)
+			return
+		}
+		if p, ok = c.Path(name); !ok {
+			http.NotFound(w, r)
+			return
+		}
+	}
+	serveArtwork(w, r, name, p)
+}
+
+// serveArtwork sends a cached picture as it is stored (no re-compression).
+// Cache names come from the picture's address, so a name never holds other
+// bytes: browsers may keep it for a year, and the name is its ETag.
+func serveArtwork(w http.ResponseWriter, r *http.Request, name, p string) {
+	f, err := os.Open(p)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	defer f.Close()
+	h := w.Header()
+	h.Set("Cache-Control", "private, max-age=31536000, immutable")
+	h.Set("ETag", `"`+strings.TrimSuffix(name, filepath.Ext(name))+`"`)
+	if ct := mime.TypeByExtension(filepath.Ext(name)); ct != "" {
+		h.Set("Content-Type", ct)
+	}
+	http.ServeContent(w, r, name, time.Time{}, f)
 }
