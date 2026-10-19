@@ -41,6 +41,7 @@
 		type ExploreRow,
 		type Facets
 	} from '#lib/explore.ts';
+	import type { ProviderRowQuery } from '#lib/explore.ts';
 	import type { PersonSummary } from '#lib/people.ts';
 	import type { Ask, AskState, CalendarEntry, GateDefaults, LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleView } from '#lib/types.ts';
 	import { seasonWords } from '#lib/shows.ts';
@@ -60,9 +61,9 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
-
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import type { IconName } from '#lib/Icon.svelte';
+
 	let loaded = $state(false);
 	let failed = $state(false);
 	let okOnce = $state(false);
@@ -80,7 +81,6 @@
 	const mayAsk = $derived(session.can('ask'));
 	const who = $derived(audienceOf(session.can));
 
-	const facets = $derived(new Map<number, Facets>(titles.map((t) => [t.id, { genres: genresOf(t), people: people.get(t.id) ?? [] }])));
 	// The type switch: in the URL (?type=, none for All) and remembered on this device.
 	const TYPE_KEY = 'holyarrs.explore.type';
 	const musicOn = $derived(partsNow.answer?.parts.find((p) => p.part === 'music')?.on !== false);
@@ -136,6 +136,7 @@
 		if (discovered.length && type !== 'all') void loadKindRows(type);
 	});
 
+	const facets = $derived(new Map<number, Facets>(titles.map((t) => [t.id, { genres: genresOf(t), people: people.get(t.id) ?? [] }])));
 
 	const rows = $derived.by(() => {
 		const because = becauseYouHave(titles, facets);
@@ -261,14 +262,13 @@
 	/** A discover row shows at most this many cards; a longer answer is cut. */
 	const rowCap = 20;
 
-	async function loadProviderRows(list: TitleView[]) {
-		const seed = recentlyAdded(list.filter((t) => t.kind === 'movie' || t.kind === 'show'), 1)[0];
-		const asks = [
-			{ row: 'trending' as const },
-			{ row: 'popular' as const },
-			{ row: 'upcoming' as const },
-			...(seed ? [{ row: 'similar' as const, id: seed.id }] : [])
-		];
+	async function loadProviderRows(list: Promise<TitleView[]>) {
+		const asks = [{ row: 'trending' as const }, { row: 'popular' as const }, { row: 'upcoming' as const }];
+		const show = (q: ProviderRowQuery, got: Awaited<ReturnType<typeof fetchProviderRow>>, title?: string) => {
+			if (!got || gone.signal.aborted) return;
+			const row = { id: q.row, title: title ?? got.title ?? (discoverTitles as Record<string, string>)[q.row] ?? '', cards: got.items.slice(0, rowCap).map((d) => discoverCard(d, q.row)) };
+			discovered = [...discovered.filter((r) => r.id !== q.row), row];
+		};
 		// Ask one row first: a server without discover rows answers 404, and
 		// then the rest are not worth asking. Each row shows as soon as it comes.
 		const first = await fetchProviderRow(asks[0], api, gone.signal).catch(() => null);
@@ -288,6 +288,9 @@
 		busy = true;
 		const from = ymd(new Date());
 		const until = ymd(new Date(Date.now() + 60 * 86400000));
+		// Every ask starts at once; discover rows do not wait for the Library.
+		const library = api.get<{ titles: TitleView[] }>('/titles');
+		if (!discovered.length) void loadProviderRows(library.then((r) => r.titles ?? []).catch(() => [])).catch(() => {});
 		const [ti, ca, as] = await Promise.allSettled([
 			library,
 			api.get<{ dates: CalendarEntry[] | null }>(`/calendar?from=${from}&to=${until}`),
@@ -302,10 +305,7 @@
 		if (as.status === 'fulfilled' && as.value) asks = as.value.asks ?? [];
 		loaded = true;
 		busy = false;
-		if (ti.status === 'fulfilled') {
-			void loadPeople(titles);
-			void loadProviderRows(titles).catch(() => {});
-		}
+		if (ti.status === 'fulfilled') void loadPeople(titles);
 	}
 
 	// Leaving Explore stops the TMDB-backed asks still on their way.
@@ -394,8 +394,8 @@
 <style>
 	.explore { --explore-item: 168px; display: flex; flex-direction: column; gap: 32px; padding-bottom: 48px; }
 	.explore > :global(.ui-head) { margin-bottom: -8px; }
-	/* The type switch: an Apple-style pill, centred under the title, sticky under the top bar. */
-	.types { position: sticky; top: var(--topbar); z-index: 20; display: flex; justify-content: center; margin: -16px -16px -12px; padding: 8px 16px; background: color-mix(in srgb, var(--bg) 72%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); }
+	/* The type switch: an Apple-style pill under the title, in the page flow (no floating band over the rows). */
+	.types { display: flex; justify-content: flex-start; margin-top: -12px; }
 	.types :global(.ui-seg) { border-radius: 999px; padding: 3px; }
 	.types :global(.ui-seg .thumb) { top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / var(--n)); border-radius: 999px; }
 	.types :global(.ui-seg button) { min-height: 44px; padding: 0 20px; border-radius: 999px; }
