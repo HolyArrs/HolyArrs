@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { to } from './paths.ts';
 	import { detailPath, remember } from './title-details.ts';
 	import Shelf from './ui/Shelf.svelte';
@@ -9,7 +9,10 @@
 	// "Top 10 on Netflix": Netflix's weekly list with big rank numbers. Hidden
 	// when the metadata server has no list.
 	const KEY = 'holyarrs.top10';
-	let kind = $state<Top10Kind>('movie');
+	/** lock: Explore's type switch picked Movies or Shows, so this row follows it and hides its own toggle. */
+	let { lock }: { lock?: Top10Kind } = $props();
+	let own = $state<Top10Kind>('movie');
+	const kind = $derived(lock ?? own);
 	let region = $state('global');
 	let regions = $state<string[]>([]);
 	let cards = $state<Top10Card[]>([]);
@@ -53,13 +56,20 @@
 		region = defaultRegion();
 		try {
 			const saved = JSON.parse(localStorage.getItem(KEY) ?? 'null');
-			if (saved?.kind === 'movie' || saved?.kind === 'show') kind = saved.kind;
+			if (saved?.kind === 'movie' || saved?.kind === 'show') own = saved.kind;
 			if (typeof saved?.region === 'string') region = saved.region;
 		} catch {
 			/* nothing saved */
 		}
-		void load();
+		ready = true;
 		return () => gone?.abort();
+	});
+
+	// Loads once mounted, and again when the type switch changes the kind.
+	let ready = $state(false);
+	$effect(() => {
+		void lock;
+		if (ready) untrack(() => void load());
 	});
 
 	function href(c: Top10Card): string | undefined {
@@ -76,10 +86,12 @@
 {#if cards.length}
 	<section class="top10" data-testid="top10-row">
 		<div class="pick">
-			<div class="seg" role="group" aria-label="Movies or shows">
-				<button type="button" aria-pressed={kind === 'movie'} onclick={() => { kind = 'movie'; pick(); }}>Movies</button>
-				<button type="button" aria-pressed={kind === 'show'} onclick={() => { kind = 'show'; pick(); }}>Shows</button>
-			</div>
+			{#if !lock}
+				<div class="seg" role="group" aria-label="Movies or shows">
+					<button type="button" aria-pressed={kind === 'movie'} onclick={() => { own = 'movie'; pick(); }}>Movies</button>
+					<button type="button" aria-pressed={kind === 'show'} onclick={() => { own = 'show'; pick(); }}>Shows</button>
+				</div>
+			{/if}
 			{#if regions.length > 1}
 				<select aria-label="Region" bind:value={region} onchange={pick}>
 					{#each regions as r (r)}<option value={r}>{regionName(r)}</option>{/each}

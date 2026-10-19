@@ -437,3 +437,45 @@ export const discoverTitles: Record<Exclude<ProviderRowName, 'similar' | 'genre'
 	popular: 'Popular right now',
 	upcoming: 'Coming to cinemas'
 };
+
+// ---- The type switch (All · Movies · Shows · Music) ----
+
+export type ExploreType = 'all' | 'movies' | 'shows' | 'music';
+export const exploreTypes: ExploreType[] = ['all', 'movies', 'shows', 'music'];
+const typeKind: Record<Exclude<ExploreType, 'all'>, CardKind> = { movies: 'movie', shows: 'show', music: 'artist' };
+/** The shelves that hold one kind only, and the type they belong to. */
+const kindRows: Record<string, Exclude<ExploreType, 'all'>> = { movies: 'movies', shows: 'shows', music: 'music' };
+
+/** parseType reads ?type=; anything unknown (or music while it is off) is All. */
+export function parseType(v: string | null | undefined, musicOn = true): ExploreType {
+	if (v === 'movies' || v === 'shows' || (v === 'music' && musicOn)) return v;
+	return 'all';
+}
+
+/** typeKindOf is the card kind a type keeps, or null for All. */
+export function typeKindOf(t: ExploreType): CardKind | null {
+	return t === 'all' ? null : typeKind[t];
+}
+
+/**
+ * filterRows keeps the cards of one type in every row, drops the kind shelves
+ * of other types, and hides rows left empty. All keeps everything.
+ */
+export function filterRows(rows: ExploreRow[], t: ExploreType): ExploreRow[] {
+	const kind = typeKindOf(t);
+	if (!kind) return rows;
+	return keepFull(rows.filter((r) => !kindRows[r.id] || kindRows[r.id] === t).map((r) => ({ ...r, cards: r.cards.filter((c) => c.kind === kind) })));
+}
+
+/** typeHref carries the type to a "See all" target: kind= for the Library, type= elsewhere. */
+export function typeHref(href: string | undefined, t: ExploreType): string | undefined {
+	const kind = typeKindOf(t);
+	if (!href || !kind) return href;
+	const [path, query = ''] = href.split('?');
+	const p = new URLSearchParams(query);
+	if (/\/library\/?$/.test(path)) {
+		if (p.has('kind') && p.get('kind') !== kind) return href;
+		p.set('kind', kind);
+	} else p.set('type', t);
+	return `${path}?${p.toString()}`;
+}

@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
+	import { partsNow } from '#lib/parts.svelte.ts';
 	import { to } from '#lib/paths.ts';
 	import { detailPath, loadDetails, remember } from '#lib/title-details.ts';
 	import { api, message } from '#lib/api.ts';
@@ -29,6 +32,11 @@
 		popularInHousehold,
 		recentlyAdded,
 		titleCard,
+		filterRows,
+		parseType,
+		typeHref,
+		typeKindOf,
+		type ExploreType,
 		type ExploreCard,
 		type ExploreRow,
 		type Facets
@@ -53,6 +61,8 @@
 	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 
+	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
+	import type { IconName } from '#lib/Icon.svelte';
 	let loaded = $state(false);
 	let failed = $state(false);
 	let okOnce = $state(false);
@@ -71,13 +81,70 @@
 	const who = $derived(audienceOf(session.can));
 
 	const facets = $derived(new Map<number, Facets>(titles.map((t) => [t.id, { genres: genresOf(t), people: people.get(t.id) ?? [] }])));
+	// The type switch: in the URL (?type=, none for All) and remembered on this device.
+	const TYPE_KEY = 'holyarrs.explore.type';
+	const musicOn = $derived(partsNow.answer?.parts.find((p) => p.part === 'music')?.on !== false);
+	let type = $state<ExploreType>(parseType(page.url.searchParams.get('type')));
+	const typeOptions = $derived(
+		([
+			{ value: 'all', label: 'All', icon: 'grid' },
+			{ value: 'movies', label: 'Movies', icon: 'film' },
+			{ value: 'shows', label: 'Shows', icon: 'tv' },
+			{ value: 'music', label: 'Music', icon: 'music' }
+		] as { value: ExploreType; label: string; icon: IconName }[]).filter((o) => o.value !== 'music' || musicOn)
+	);
+	// Music turned off while picked falls back to All.
+	$effect(() => {
+		if (type === 'music' && !musicOn) setType('all');
+	});
+
+	function setType(t: ExploreType) {
+		type = t;
+		try {
+			localStorage.setItem(TYPE_KEY, t);
+		} catch {
+			/* the choice is a convenience */
+		}
+		const url = new URL((page.shallow?.url ?? page.url).href);
+		if (t === 'all') url.searchParams.delete('type');
+		else url.searchParams.set('type', t);
+		void goto(url, { replace: true, shallow: true, reset: false });
+		void loadKindRows(t);
+	}
+
+	/** Provider rows asked for one kind, so a Movies or Shows row is full rather than half of a mixed one. */
+	let kindRowsGot = $state<Record<'movie' | 'show', ExploreRow[]>>({ movie: [], show: [] });
+	const kindAsked = new Set<string>();
+	async function loadKindRows(t: ExploreType) {
+		const kind = typeKindOf(t);
+		if ((kind !== 'movie' && kind !== 'show') || kindAsked.has(kind) || !discovered.length) return;
+		kindAsked.add(kind);
+		await Promise.all(
+			(['trending', 'popular', 'upcoming'] as const).map((row) =>
+				fetchProviderRow({ row, kind }, api, gone.signal)
+					.then((got) => {
+						if (!got || gone.signal.aborted) return;
+						const r = { id: row, title: got.title ?? discoverTitles[row], cards: got.items.slice(0, rowCap).map((d) => discoverCard(d, row)) };
+						kindRowsGot = { ...kindRowsGot, [kind]: [...kindRowsGot[kind].filter((x) => x.id !== row), r] };
+					})
+					.catch(() => {})
+			)
+		);
+	}
+	// The mixed rows came in after a type was picked (or the page opened on one).
+	$effect(() => {
+		if (discovered.length && type !== 'all') void loadKindRows(type);
+	});
+
 
 	const rows = $derived.by(() => {
 		const because = becauseYouHave(titles, facets);
 		const person = fromPerson(titles, facets);
-		const [trending, popular, upcoming, similar] = ['trending', 'popular', 'upcoming', 'similar'].map((id) => discovered.find((r) => r.id === id));
+		const k = typeKindOf(type);
+		const own = k === 'movie' || k === 'show' ? kindRowsGot[k] : [];
+		const [trending, popular, upcoming, similar] = ['trending', 'popular', 'upcoming', 'similar'].map((id) => own.find((r) => r.id === id) ?? discovered.find((r) => r.id === id));
 		return markTransitions(
-			keepFull([
+			filterRows(keepFull([
 				{ id: 'recent', title: 'Recently added', href: to('/library'), cards: recentlyAdded(titles).map((t) => titleCard(t)) },
 				trending,
 				{ id: 'ready', title: 'Ready to watch', subtitle: 'Every copy is in your Library', cards: readyToWatch(titles) },
@@ -94,7 +161,7 @@
 				{ id: 'household', title: 'Popular in your household', subtitle: 'What people here asked for most', href: to('/wishlist'), cards: popularInHousehold(asks, titles) },
 				person && { id: 'person', title: `From ${person.person}`, cards: person.cards },
 				upcoming
-			])
+			]), type)
 		);
 	});
 
@@ -203,18 +270,18 @@
 			...(seed ? [{ row: 'similar' as const, id: seed.id }] : [])
 		];
 		// Ask one row first: a server without discover rows answers 404, and
-		// then the rest are not worth asking.
+		// then the rest are not worth asking. Each row shows as soon as it comes.
 		const first = await fetchProviderRow(asks[0], api, gone.signal).catch(() => null);
 		if (!first) return;
-		const got = [{ status: 'fulfilled' as const, value: first }, ...(await Promise.allSettled(asks.slice(1).map((q) => fetchProviderRow(q, api, gone.signal))))];
-		const out: ExploreRow[] = [];
-		got.forEach((g, i) => {
-			if (g.status !== 'fulfilled' || !g.value) return;
-			const q = asks[i];
-			const title = q.row === 'similar' ? `More like ${seed!.name}` : (g.value.title ?? discoverTitles[q.row]);
-			out.push({ id: q.row, title, cards: g.value.items.slice(0, rowCap).map((d) => discoverCard(d, q.row)) });
-		});
-		if (!gone.signal.aborted) discovered = out;
+		show(asks[0], first);
+		const rest = asks.slice(1).map((q) => fetchProviderRow(q, api, gone.signal).then((g) => show(q, g)).catch(() => {}));
+		// "More like" needs the Library, which may still be on its way.
+		const seed = recentlyAdded((await list).filter((t) => t.kind === 'movie' || t.kind === 'show'), 1)[0];
+		if (seed) {
+			const q = { row: 'similar' as const, id: seed.id };
+			rest.push(fetchProviderRow(q, api, gone.signal).then((g) => show(q, g, `More like ${seed.name}`)).catch(() => {}));
+		}
+		await Promise.all(rest);
 	}
 
 	async function load() {
@@ -222,7 +289,7 @@
 		const from = ymd(new Date());
 		const until = ymd(new Date(Date.now() + 60 * 86400000));
 		const [ti, ca, as] = await Promise.allSettled([
-			api.get<{ titles: TitleView[] }>('/titles'),
+			library,
 			api.get<{ dates: CalendarEntry[] | null }>(`/calendar?from=${from}&to=${until}`),
 			mayAsk || session.can('approve') ? api.get<{ asks: Ask[] }>('/asks') : Promise.resolve(null)
 		]);
@@ -244,6 +311,14 @@
 	// Leaving Explore stops the TMDB-backed asks still on their way.
 	const gone = new AbortController();
 	onMount(() => {
+		if (!page.url.searchParams.has('type')) {
+			try {
+				const saved = parseType(localStorage.getItem(TYPE_KEY), musicOn);
+				if (saved !== 'all') setType(saved);
+			} catch {
+				/* nothing saved */
+			}
+		}
 		void load();
 		return () => gone.abort();
 	});
@@ -253,13 +328,16 @@
 
 <div class="explore">
 	<PageHeader title="Explore" subtitle="Find something to watch or listen to next." />
+	<div class="types">
+		<SegmentedControl options={typeOptions} value={type} label="Show" testid="explore-type" onchange={setType} />
+	</div>
 	<MetadataNotice />
 
 	{#if failed && !okOnce}
 		<LoadError hasData={false} message="Could not load Explore." onretry={load} {busy} />
 	{:else}
 		{#if failed}<LoadError hasData={true} message="Could not refresh Explore." onretry={load} {busy} />{/if}
-		{#if !loaded}
+		{#if !loaded && discovered.length === 0}
 			<div class="loading" aria-busy="true" aria-label="Loading">
 				{#each [0, 1] as r (r)}
 					<Skeleton width="200px" />
@@ -269,9 +347,9 @@
 		{:else if rows.length === 0}
 			<EmptyState icon="compass" title="Nothing to explore yet" text="Rows fill in as your Library grows." action={{ label: 'Search', href: to('/search'), icon: 'search' }} />
 		{:else}
-			<Top10Row />
+			{#if type !== 'music'}<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} />{/if}
 			{#each rows as row (row.id)}
-				<Shelf title={row.title} subtitle={row.subtitle} href={row.href} item={row.id === 'soon' ? 'var(--release-item)' : 'var(--explore-item)'}>
+				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.id === 'soon' ? 'var(--release-item)' : 'var(--explore-item)'}>
 					{#each row.cards.map(live) as c (c.key)}
 						{@const act = cardAction(c, { manage, ask: mayAsk })}
 						{@const pill = cardPill(c, who)}
@@ -316,6 +394,16 @@
 <style>
 	.explore { --explore-item: 168px; display: flex; flex-direction: column; gap: 32px; padding-bottom: 48px; }
 	.explore > :global(.ui-head) { margin-bottom: -8px; }
+	/* The type switch: an Apple-style pill, centred under the title, sticky under the top bar. */
+	.types { position: sticky; top: var(--topbar); z-index: 20; display: flex; justify-content: center; margin: -16px -16px -12px; padding: 8px 16px; background: color-mix(in srgb, var(--bg) 72%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); }
+	.types :global(.ui-seg) { border-radius: 999px; padding: 3px; }
+	.types :global(.ui-seg .thumb) { top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / var(--n)); border-radius: 999px; }
+	.types :global(.ui-seg button) { min-height: 44px; padding: 0 20px; border-radius: 999px; }
+	@media (prefers-reduced-motion: reduce) { .types :global(.ui-seg .thumb) { transition: none; } }
+	@media (max-width: 767px) { .types :global(.ui-seg) { display: grid; width: 100%; } .types :global(.ui-seg button) { padding: 0 8px; } }
+	@media (max-width: 359px) {
+		.types :global(.ui-seg button span) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+	}
 	.loading { display: flex; flex-direction: column; gap: 14px; }
 	.sk-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--shelf-gap); max-height: 250px; overflow: hidden; margin-bottom: 16px; }
 	@media (max-width: 767px) { .explore { --explore-item: 54vw; gap: 26px; } }
