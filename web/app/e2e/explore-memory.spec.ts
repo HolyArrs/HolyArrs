@@ -1,0 +1,73 @@
+import { expect, test, type CDPSession, type Page, type Route } from '@playwright/test';
+import { owner, signIn } from './helpers.ts';
+
+// Explore memory: after 20 Home -> Explore -> title -> Home rounds the
+// heap, DOM nodes and event listeners come back to where they started
+// (within 10%). Discover rows are full (20 cards each) so a leak shows.
+
+type Metrics = { heap: number; nodes: number; listeners: number };
+
+const tiny = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
+
+function discoverRow(route: Route) {
+	const row = new URL(route.request().url()).searchParams.get('row') ?? 'trending';
+	const items = Array.from({ length: 20 }, (_, i) => ({
+		tmdb_id: String(9000 + i), kind: i % 2 ? 'show' : 'movie', name: `${row} ${i}`, year: 2020 + (i % 5),
+		poster: `https://image.tmdb.org/t/p/w500/${row}${i}.jpg`, backdrop: `https://image.tmdb.org/t/p/original/${row}${i}b.jpg`
+	}));
+	return route.fulfill({ json: { row, items } });
+}
+
+async function metrics(cdp: CDPSession): Promise<Metrics> {
+	for (let i = 0; i < 3; i++) await cdp.send('HeapProfiler.collectGarbage');
+	const { metrics } = await cdp.send('Performance.getMetrics');
+	const get = (n: string) => metrics.find((m) => m.name === n)?.value ?? 0;
+	return { heap: get('JSHeapUsedSize'), nodes: get('Nodes'), listeners: get('JSEventListeners') };
+}
+
+async function round(page: Page) {
+	const nav = page.getByRole('navigation', { name: 'Main' }).first();
+	await nav.getByRole('link', { name: 'Explore', exact: true }).click();
+	await expect(page.getByRole('heading', { level: 1, name: 'Explore' })).toBeVisible();
+	const card = page.locator('main .ui-poster a.hit[href*="/library/"]').first();
+	await expect(card).toBeVisible();
+	await card.click();
+	await expect(page).toHaveURL(/\/library\/\d+/);
+	await nav.getByRole('link', { name: 'Home', exact: true }).click();
+	await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible();
+}
+
+test('Explore gives memory back after 20 rounds', async ({ browser }) => {
+	test.setTimeout(240_000);
+	const context = await browser.newContext();
+	const page = await context.newPage();
+	await page.route('**/api/v1/discover?**', discoverRow);
+	await page.route('https://image.tmdb.org/**', (r) => r.fulfill({ body: tiny, contentType: 'image/png' }));
+	await signIn(page, owner());
+	const cdp = await context.newCDPSession(page);
+	await cdp.send('Performance.enable');
+
+	// Warm up first: code chunks, caches and the engine's compiled code
+	// count in the baseline, so only what the rounds keep shows as growth.
+	for (let i = 0; i < 10; i++) await round(page);
+	await page.waitForTimeout(500);
+	const base = await metrics(cdp);
+	console.log('DBG0', await page.evaluate(() => JSON.stringify({ u: location.pathname, all: document.getElementsByTagName('*').length, posters: document.querySelectorAll('.ui-poster').length })));
+
+	for (let i = 0; i < 20; i++) await round(page);
+	await page.waitForTimeout(500);
+	const after = await metrics(cdp);
+	console.log('DBG', await page.evaluate(() => JSON.stringify({ u: location.pathname, all: document.getElementsByTagName('*').length, posters: document.querySelectorAll('.ui-poster').length, imgs: document.images.length, mains: document.querySelectorAll('main').length, h1: [...document.querySelectorAll('h1')].map((h) => h.textContent) })));
+	const table = (['heap', 'nodes', 'listeners'] as const).map((k) => `${k}: ${Math.round(base[k])} -> ${Math.round(after[k])} (${(((after[k] - base[k]) / base[k]) * 100).toFixed(1)}%)`);
+	console.log(`explore memory\n${table.join('\n')}`);
+	for (const k of ['heap', 'nodes', 'listeners'] as const) expect(after[k], `${k}: ${table.join('; ')}`).toBeLessThanOrEqual(base[k] * 1.1);
+
+	// Row posters ask for a poster-sized TMDB picture, never a full-size one.
+	await page.getByRole('navigation', { name: 'Main' }).first().getByRole('link', { name: 'Explore', exact: true }).click();
+	const tmdbImg = page.locator('main img[src*="image.tmdb.org"]').first();
+	await expect(tmdbImg).toBeAttached();
+	const srcs = await page.locator('main img[src*="image.tmdb.org"]').evaluateAll((els) => els.map((e) => (e as HTMLImageElement).getAttribute('src') ?? ''));
+	expect(srcs.filter((s) => /\/(w500|w780|w1280|original)\//.test(s))).toEqual([]);
+
+	await context.close();
+});

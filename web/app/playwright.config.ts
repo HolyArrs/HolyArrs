@@ -85,6 +85,8 @@ export default defineConfig({
 		{ name: 'urlbase', testMatch: 'urlbase.spec.ts', use: { ...devices['Desktop Chrome'] } },
 		{ name: 'schedules', testMatch: 'schedules.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['controls'] },
 		{ name: 'copychoices', testMatch: 'copy-choices.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['controls'] },
+		// Explore memory: heap, DOM nodes and listeners back to the start after 20 Home, Explore and title rounds.
+		{ name: 'exploremem', testMatch: 'explore-memory.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['desktop'] },
 		{ name: 'communitybrowse', testMatch: 'community-browse.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['desktop'] },
 		{ name: 'appframe', testMatch: 'appframe.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['controls'] },
 		// Settings: the seven groups, setting search with a deep link and highlight, the save bar and its leave guard, Advanced kept per person, Danger zone, a phone and accessibility.
