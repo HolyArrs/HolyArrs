@@ -132,9 +132,7 @@ code file is mode `0600` and is deleted after the owner is made.
 The first-run screens then ask for:
 
 1. The parts you use: Movies, Shows, Music, Subtitles and the Wishlist.
-2. A TMDB read access token when Movies or Shows is on. A music-only setup
-   skips this step.
-3. One Library folder. Use a path inside the shared mount, such as
+2. One Library folder. Use a path inside the shared mount, such as
    `/data/library/movies`, `/data/library/shows` or `/data/library/music`.
 
 Add the other Library folders later under Settings > Library folders. Add

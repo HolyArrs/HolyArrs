@@ -2,7 +2,7 @@
 
 The People screen lets you find an actor or director and browse the movies credited to that exact provider identity. People with the same name stay separate. The search result shows the provider id indirectly through its link, the person's usual department and up to three known movies so you can choose the right person.
 
-HolyArrs currently reads people and movie credits from TMDB when that movie metadata connection is available. Person search uses TMDB's pages. A person's movie credits come from TMDB's single, unpaged movie-credit response. HolyArrs labels that filmography as incomplete because the provider does not promise that the response is a complete historical record.
+HolyArrs reads people and movie credits from TMDB through the HolyArrs metadata server. Person search uses TMDB's pages. A person's movie credits come from TMDB's single, unpaged movie-credit response. HolyArrs labels that filmography as incomplete because the provider does not promise that the response is a complete historical record.
 
 On a person's page you can filter credits to Actor or Director. A movie credited more than once appears once. Its card retains every distinct acting character and whether the person was also the director. Crew credits count as directing only when the provider marks the job as Director.
 

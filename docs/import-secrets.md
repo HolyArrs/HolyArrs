@@ -1,6 +1,6 @@
 # Import your keys and passwords from one file
 
-Setting up HolyArrs means typing a lot of keys: TMDB, subtitle sites, your Downloaders, media servers, mail. Instead of typing each one into Settings, you can put them all in one file and import it with one command. Then you delete the file.
+Setting up HolyArrs means typing a lot of keys: subtitle sites, your Downloaders, media servers, mail. Instead of typing each one into Settings, you can put them all in one file and import it with one command. Then you delete the file.
 
 ## What it does
 
@@ -8,7 +8,7 @@ Setting up HolyArrs means typing a lot of keys: TMDB, subtitle sites, your Downl
 
 | In the file | Becomes |
 |---|---|
-| `tmdb.read_token`, `tvdb.api_key`, `trakt.client_id` | the TMDB key (Settings > TMDB key), the TVDB key and the Trakt app key (Settings > Outside lists) |
+| `trakt.client_id` | the Trakt app key (Settings > Outside lists). `tmdb.read_token` and `tvdb.api_key` are still accepted from older files; metadata needs no keys. |
 | `opensubtitles`, `subdl` | a Subtitle site with your account |
 | `indexers` (one entry per feed) | a Source, **paused** until you check and resume it |
 | `jackett`, `prowlarr` | their key fills in any `indexers` entry on the same address that has no key of its own |

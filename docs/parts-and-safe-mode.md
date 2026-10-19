@@ -100,7 +100,7 @@ Make a key in **My account** (or `POST /api/v1/auth/keys`), send it in the `X-Ap
 |---|---|
 | `read` | The GET routes marked read: looking at the Library, Jobs, Downloads, History, health and settings (secrets in them are masked). |
 | `write` | Every route that changes something, except the admin ones and the controls. |
-| `admin` | People, invites, ask limits, API keys, password and two-factor sign-in, sign-in settings, backups (list, download, restore), the TMDB, Trakt and TVDB key settings, the calendar feed key, and any GET route not marked read. |
+| `admin` | People, invites, ask limits, API keys, password and two-factor sign-in, sign-in settings, backups (list, download, restore), the Trakt and TVDB key settings, the calendar feed key, and any GET route not marked read. |
 | `control` | The controls above. |
 | `all` | `read`, `write` and `admin` together. Keys made before scopes existed hold this one and keep working. It does not include `control`. |
 

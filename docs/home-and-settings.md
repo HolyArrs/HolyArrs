@@ -9,15 +9,15 @@ After the owner account is made, HolyArrs asks an owner or admin to:
 
 1. Turn Movies, Shows, Music and Subtitles on or off, and say whether family
    or friends will use the Wishlist.
-2. Add a TMDB read access token when Movies or Shows is on. A music-only setup
-   skips this step.
-3. Add one Library folder for movies, shows or music.
+2. Add one Library folder for movies, shows or music.
+
+Metadata needs no keys; see [Metadata](metadata-keys.md).
 
 The **Just movies** button turns on Movies and turns the other optional parts
 off. Parts may be changed later under **Settings > Parts and controls**.
 
 See [Install HolyArrs with Docker](install.md#finish-the-first-run),
-[Metadata keys](metadata-keys.md), and [Library folders](library-folders.md).
+[Metadata](metadata-keys.md), and [Library folders](library-folders.md).
 
 ## Home
 
@@ -37,7 +37,7 @@ background work run. Use the linked screen when a card needs more detail.
 ### Getting started
 
 Until the basic setup is complete, Home lists the remaining steps. The current
-checklist covers a TMDB key, a Library folder, a Source, a Downloader and a
+checklist covers a Library folder, a Source, a Downloader and a
 first movie. A music-only or shows-only setup can still use the relevant
 Settings screens even when that movie-oriented checklist remains visible.
 
@@ -59,21 +59,23 @@ The complete screen-to-guide map is in the [documentation index](index.md).
 
 `GET /api/v1/settings/status` (Change settings) gives the Settings home one
 answer: `{"items": [{"group", "page", "text", "severity"}], "unset": {"<group>":
-["<page>"]}, "known": ["<page>"], "tmdb_key_set": bool}`. Groups are
+["<page>"]}, "known": ["<page>"], "metadata_up": bool}`. Groups are
 `general`, `library`, `copies`, `people`, `security`, `linked`, `maintenance`
 and `account`. Severity follows what was found:
 
 - a health check: its own state (`warning` or `error`);
 - a failed stage, media server or subtitle site: `error`; a stuck one: `warning`;
 - a Source or Downloader not answering: `error`;
-- no TMDB key, no backup, or no backup in the last 7 days: `warning`;
+- the metadata server not answering, no backup, or no backup in the last 7
+  days: `warning`;
 - a newer HolyArrs: `info`;
 - a saved Movies and TV default whose Library folder or Pick rules are gone:
   `warning`, on `/settings/title-defaults` in `library`.
 
 Pages with no Library folders, Sources or Downloaders are listed under
-`unset`. The answer is kept for 30 seconds for everyone. `tmdb_key_set` only
-says whether a key is saved; the key never appears in the answer.
+`unset`. The answer is kept for 30 seconds for everyone. `metadata_up` says whether
+the metadata server answers (`GET /api/v1/metadata/health` gives the same,
+cached about a minute, to anyone signed in).
 
 ### Movies and TV defaults
 

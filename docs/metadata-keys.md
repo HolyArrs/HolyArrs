@@ -1,22 +1,25 @@
-# Metadata keys
+# Metadata
 
-HolyArrs uses outside catalogues for names, dates, pictures and identifiers.
-It ships without personal TMDB, TVDB or Trakt credentials. Settings that store
-a key require **Change settings** and a password sign-in.
+HolyArrs gets names, dates, pictures and identifiers from the HolyArrs
+metadata server. Metadata needs no keys: a new install works without typing
+anything.
 
-## TMDB
+## The metadata server
 
-Movies and TMDB-backed shows need the long **API Read Access Token** from a
-TMDB account. During first setup, HolyArrs asks for it when Movies or Shows is
-on. Later, open **Settings > TMDB key**.
+On its first lookup, each install registers itself with the server once and
+gets its own credential, which HolyArrs keeps encrypted and never shows. The
+server answers movie and show searches and details, seasons, Explore rows,
+people, age ratings, TMDB lists and music lookups. Pictures load straight
+from TMDB's picture host in TMDB's own sizes.
 
-The screen shows whether a token is saved and only a masked form of the current
-value. Paste a token to add or replace it. HolyArrs stores it encrypted and
-does not show the full value again.
+The server's address is `https://holyarrs-api.coderluii.dev`. An operator can
+point HolyArrs elsewhere with `HOLYARRS_METADATA_URL`.
 
-An operator may instead set `HOLYARRS_TMDB_TOKEN_FILE` to a file containing the
-token. When that setting is active, the screen says the key comes from a file;
-change that file rather than the form.
+**Settings > Metadata** shows whether the server answers. When it does not,
+Home, Search, Explore and the add screens show "Metadata server is down —
+searches and new artwork will return when it's back". HolyArrs checks at most
+once a minute. The Library, downloads and everything already saved keep
+working.
 
 ## Trakt
 
@@ -25,16 +28,10 @@ Trakt Outside lists need the Client ID of a Trakt app. Open
 Client ID. The screen shows only a masked value after saving it. A Trakt list
 cannot be read until this key is set.
 
-## TVDB
+## Show details
 
-TVDB is an optional show-details source and needs a personal TVDB API key.
-HolyArrs ships no key. The current web app has no TVDB-key form. Import it from
-a local secrets file as described in [Import secrets](import-secrets.md), or
-use the settings route in [the API reference](api.md). Sending an empty value
-through that API stops using TVDB.
-
-TMDB and TVMaze remain available show-details choices; TVMaze does not need a
-key.
+Shows take their details from TMDB (through the metadata server) or TVMaze.
+Neither needs a key.
 
 ## MusicBrainz
 
@@ -57,7 +54,7 @@ Deezer stand-in is named, the source is off, so tests never reach Deezer.
 
 ## Moving keys from other apps
 
-[Import secrets](import-secrets.md) accepts the supported TMDB, TVDB and Trakt
-fields from one local file. The preview masks values, and applying the import
-stores them in the encrypted vault. Do not put real keys in a tracked file.
+[Import secrets](import-secrets.md) accepts the Trakt key and other app keys
+from one local file. The preview masks values, and applying the import stores
+them in the encrypted vault. Do not put real keys in a tracked file.
 

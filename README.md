@@ -43,6 +43,13 @@ Host names other than IP addresses and `localhost` must be listed in
 proxy in `HOLYARRS_TRUSTED_PROXIES` if you turn on "skip sign-in on the local
 network" (off by default).
 
+## Metadata
+
+Metadata needs no keys. Names, dates, pictures, Explore and music details come
+from the HolyArrs metadata server at `https://holyarrs-api.coderluii.dev`;
+each install registers itself on its first lookup. `HOLYARRS_METADATA_URL`
+points HolyArrs at another server. See [docs/metadata-keys.md](docs/metadata-keys.md).
+
 ## Master key and backups
 
 Passwords, Source keys and tokens are stored encrypted with a master key. On

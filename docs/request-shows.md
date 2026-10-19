@@ -18,7 +18,7 @@ Shows live in their own Library folder. Open **Settings, Library folders**, pres
    - **Seasons to keep up to date**: every season, only new episodes, the latest season, or none for now. Specials stay off unless you turn them on.
    - **New seasons**: keep seasons that come out later up to date, or leave them off.
    - **Episode order**: season and episode (most shows), by air day (talk shows and news) or one running number (anime).
-   - **Details from**: TMDB (same key as movies), TVMaze (no key) or TVDB (only with your own TVDB key, in Settings).
+   - **Details from**: TMDB or TVMaze. Neither needs a key.
    - **Keep up to date** for the whole show.
 5. Want every episode in HD and in 4K? Tick **Also keep a second Version**. It suggests the name 4K and the 4K Pick rules. The 4K Version gets its own Pick rules and its own folder: in the same Library folder, the show folder gets `[4K]` after its name.
 6. Press **Add to Library**.
