@@ -13,6 +13,10 @@ export const traktPort = Number(process.env.HOLYARRS_E2E_TRAKT_PORT ?? 18745);
 export const tvmazePort = Number(process.env.HOLYARRS_E2E_TVMAZE_PORT ?? 18740);
 /** A fake MusicBrainz (artists, albums, Pressings and tracks). */
 export const mbPort = Number(process.env.HOLYARRS_E2E_MB_PORT ?? 18739);
+/** A fake Deezer artist search (artist pictures), served by the fake MusicBrainz under /deezer. */
+export const deezerURL = `http://127.0.0.1:${mbPort}/deezer`;
+// A tiny made-up PNG (2x2, one colour) served as the artist picture.
+const artistPicture = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGNk+M/AwMDAxMDAwMDAAAAZ5wEEtUNqgwAAAABJRU5ErkJggg==', 'base64');
 /** A fake Discord: it keeps what is posted to it; GET /posts reads them back. */
 export const discordPort = Number(process.env.HOLYARRS_E2E_DISCORD_PORT ?? 18746);
 /** A fake Torznab Source and a plain rss feed (test-only key). */
@@ -334,6 +338,12 @@ export function startFakes() {
 			return send(res, 200, { id: 501, name: 'Lab list', page: 1, total_pages: 1, items });
 		}
 		if (url.pathname === '/movie/changes') return send(res, 200, { results: [], page: 1, total_pages: 1 });
+		// Genre names, read before a title page's details.
+		if (url.pathname === '/genre/movie/list' || url.pathname === '/genre/tv/list') return send(res, 200, { genres: [{ id: 18, name: 'Drama' }, { id: 35, name: 'Comedy' }] });
+		// A movie's age ratings alone (the Kid limit check).
+		const dates = url.pathname.match(/^\/movie\/(\d+)\/release_dates$/);
+		const dm = dates && tmdbMovies.find((x) => x.id === Number(dates[1]));
+		if (dm) return send(res, 200, { id: dm.id, results: tmdbMovie(dm).release_dates.results });
 		const one = url.pathname.match(/^\/movie\/(\d+)$/);
 		const m = one && tmdbMovies.find((x) => x.id === Number(one[1]));
 		if (m) return send(res, 200, tmdbMovie(m));
@@ -344,6 +354,23 @@ export function startFakes() {
 	// each release group's releases with media and tracks.
 	const mb = createServer((req, res) => {
 		const url = new URL(req.url ?? '/', 'http://x');
+		// Fake Deezer: the first made-up artist has a picture, the others
+		// have none (an empty picture id, as Deezer answers).
+		if (url.pathname === '/deezer/search/artist') {
+			const q = squash(url.searchParams.get('q') ?? '');
+			const data = fakeArtists
+				.map((a, i) => ({ a, i }))
+				.filter(({ a }) => q && squash(a.name).includes(q))
+				.map(({ a, i }) => {
+					const pic = i === 0 ? `${deezerURL}/images/artist/${i + 1}/1000x1000.png` : `${deezerURL}/images/artist//1000x1000.png`;
+					return { id: i + 1, name: a.name, picture_xl: pic, picture_big: pic, picture_medium: pic };
+				});
+			return send(res, 200, { data, total: data.length });
+		}
+		if (/^\/deezer\/images\/artist\/\d+\/1000x1000\.png$/.test(url.pathname)) {
+			res.writeHead(200, { 'content-type': 'image/png', 'content-length': artistPicture.length });
+			return res.end(artistPicture);
+		}
 		if (url.pathname === '/ws/2/artist') {
 			const q = squash(url.searchParams.get('query') ?? '');
 			return send(res, 200, { artists: fakeArtists.filter((a) => q && squash(a.name).includes(q)).map((a) => mbArtist(a)) });
