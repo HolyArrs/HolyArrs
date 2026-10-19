@@ -3,6 +3,7 @@
 	import Badge from './Badge.svelte';
 	import StatusPill, { type StatusKind } from './StatusPill.svelte';
 	import Icon, { type IconName } from '../Icon.svelte';
+	import { sized } from '../tmdb-image.ts';
 	import { press, viewTransitionName } from '../motion.ts';
 
 	// 16:9 card for episodes and downloads: progress line along the art's
@@ -49,7 +50,7 @@
 <div class="ui-wide" style:width>
 	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} use:press={'card'}>
 		<span class="art" use:viewTransitionName={vtName}>
-			{#if image && !failed}<img src={image} alt="" loading="lazy" decoding="async" onerror={() => (failed = true)} />{:else}<span class="ph" aria-hidden="true"><span class="ph-ic"><Icon name={kindIcon} size={20} /></span><span class="ph-t">{title}</span></span>{/if}
+			{#if image && !failed}<img src={sized(image, 'backdrop')} alt="" loading="lazy" decoding="async" onerror={() => (failed = true)} />{:else}<span class="ph" aria-hidden="true"><span class="ph-ic"><Icon name={kindIcon} size={20} /></span><span class="ph-t">{title}</span></span>{/if}
 			{#if badges.length || status}
 				<span class="over">
 					{#if status}<StatusPill kind={status} label={statusLabel} percent={pct} on="art" testid={statusTestid} />{/if}

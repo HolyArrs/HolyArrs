@@ -5,6 +5,7 @@
 	import ProgressBar from './ProgressBar.svelte';
 	import Icon, { type IconName } from '../Icon.svelte';
 	import { press, viewTransitionName } from '../motion.ts';
+	import { sized } from '../tmdb-image.ts';
 
 	// 2:3 poster with title below. Lifts on hover; artwork zooms inside its frame.
 	// `action` is an optional round button (Add / Ask) over the art corner.
@@ -38,6 +39,7 @@
 		action?: Snippet;
 	} = $props();
 	let failed = $state(false);
+	const pic = $derived(sized(image, 'poster'));
 	const kindIcon = $derived<IconName>(kind === 'show' || kind === 'episode' ? 'tv' : kind === 'artist' ? 'music' : 'film');
 </script>
 
@@ -45,7 +47,7 @@
 	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} use:press={'card'}>
 		<span class="art" use:viewTransitionName={vtName}>
 			{#if image && !failed}
-				<img src={image} alt="" loading="lazy" decoding="async" onerror={() => (failed = true)} />
+				<img src={pic} alt="" loading="lazy" decoding="async" onerror={() => (failed = true)} />
 			{:else}
 				<span class="ph" aria-hidden="true"><span class="ph-ic"><Icon name={kindIcon} size={22} /></span><span class="ph-t">{title}</span></span>
 			{/if}

@@ -49,6 +49,7 @@
 	import Icon, { type IconName } from '../Icon.svelte';
 	import StatusPill, { type StatusKind } from './StatusPill.svelte';
 	import { viewTransitionName } from '../motion.ts';
+	import { sized } from '../tmdb-image.ts';
 
 	// The title page hero (movie, show, artist, not-yet-added titles), in the
 	// style of a TV app detail page: full-bleed backdrop with a strong left
@@ -129,9 +130,9 @@
 <section class="ui-thero" class:stand={!!stand} class:plain={!wide && !stand} aria-label={title}>
 	<div class="art" aria-hidden="true">
 		{#if wide}
-			<img class="bd" src={wide} alt="" decoding="async" fetchpriority="high" use:viewTransitionName={vtName} onerror={() => (backdropFailed = true)} />
+			<img class="bd" src={sized(wide, 'backdrop')} alt="" decoding="async" fetchpriority="high" use:viewTransitionName={vtName} onerror={() => (backdropFailed = true)} />
 		{:else if stand}
-			<img class="bd from-poster" class:square src={stand} alt="" decoding="async" fetchpriority="high" use:viewTransitionName={vtName} onerror={() => (posterFailed = true)} />
+			<img class="bd from-poster" class:square src={sized(stand, 'poster')} alt="" decoding="async" fetchpriority="high" use:viewTransitionName={vtName} onerror={() => (posterFailed = true)} />
 		{/if}
 		<div class="shade"></div>
 	</div>

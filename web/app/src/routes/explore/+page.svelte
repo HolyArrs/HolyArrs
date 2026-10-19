@@ -180,13 +180,16 @@
 	async function loadPeople(list: TitleView[]) {
 		// A few of the newest movies only: each one asks TMDB.
 		const movies = recentlyAdded(list.filter((t) => t.kind === 'movie' && t.ids?.tmdb), 6);
-		const got = await Promise.allSettled(movies.map((t) => api.get<{ people: { person: PersonSummary }[] }>(`/titles/${t.id}/people`)));
+		const got = await Promise.allSettled(movies.map((t) => api.get<{ people: { person: PersonSummary }[] }>(`/titles/${t.id}/people`, gone.signal)));
 		const next = new Map<number, string[]>();
 		got.forEach((g, i) => {
 			if (g.status === 'fulfilled') next.set(movies[i].id, (g.value.people ?? []).map((p) => p.person.name));
 		});
-		if (next.size) people = next;
+		if (next.size && !gone.signal.aborted) people = next;
 	}
+
+	/** A discover row shows at most this many cards; a longer answer is cut. */
+	const rowCap = 20;
 
 	async function loadProviderRows(list: TitleView[]) {
 		const seed = recentlyAdded(list.filter((t) => t.kind === 'movie' || t.kind === 'show'), 1)[0];
@@ -198,17 +201,17 @@
 		];
 		// Ask one row first: a server without discover rows answers 404, and
 		// then the rest are not worth asking.
-		const first = await fetchProviderRow(asks[0]).catch(() => null);
+		const first = await fetchProviderRow(asks[0], api, gone.signal).catch(() => null);
 		if (!first) return;
-		const got = [{ status: 'fulfilled' as const, value: first }, ...(await Promise.allSettled(asks.slice(1).map((q) => fetchProviderRow(q))))];
+		const got = [{ status: 'fulfilled' as const, value: first }, ...(await Promise.allSettled(asks.slice(1).map((q) => fetchProviderRow(q, api, gone.signal))))];
 		const out: ExploreRow[] = [];
 		got.forEach((g, i) => {
 			if (g.status !== 'fulfilled' || !g.value) return;
 			const q = asks[i];
 			const title = q.row === 'similar' ? `More like ${seed!.name}` : (g.value.title ?? discoverTitles[q.row]);
-			out.push({ id: q.row, title, cards: g.value.items.map((d) => discoverCard(d, q.row)) });
+			out.push({ id: q.row, title, cards: g.value.items.slice(0, rowCap).map((d) => discoverCard(d, q.row)) });
 		});
-		discovered = out;
+		if (!gone.signal.aborted) discovered = out;
 	}
 
 	async function load() {
@@ -235,8 +238,11 @@
 		}
 	}
 
+	// Leaving Explore stops the TMDB-backed asks still on their way.
+	const gone = new AbortController();
 	onMount(() => {
 		void load();
+		return () => gone.abort();
 	});
 </script>
 
