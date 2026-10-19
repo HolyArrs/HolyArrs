@@ -329,13 +329,13 @@
 						</div>
 						<div class="act">
 							{#if a.title_id && !asker}
-								{@const p = inLibraryPill}<a class="pill-link" href={to(`/library/${a.title_id}`)}><StatusPill kind={p.kind} label={p.label} /></a>
+								{@const p = inLibraryPill}<a class="pill-link" href={to(`/library/${a.title_id}`)}><StatusPill kind={p.kind} label={p.label} /><Icon name="chevronRight" size={16} /></a>
 							{:else if a.never_add}
 								{@const p = pill({ neverAdd: true })}<StatusPill kind={p.kind} label={p.label} />
 							{:else if session.can('manage_library')}
 								<Button variant="primary" icon="plus" onclick={() => addArtist?.open(a)}>Add</Button>
 							{:else if a.ask?.mine}
-								{@const p = pill({ ask: a.ask.state, titleKind: 'artist', mine: true })}<a class="pill-link" href={to(`/wishlist`)}><StatusPill kind={p.kind} label={p.label} /><span class="sr-only"> on your Wishlist</span></a>
+								{@const p = pill({ ask: a.ask.state, titleKind: 'artist', mine: true })}<a class="pill-link" href={to(`/wishlist`)}><StatusPill kind={p.kind} label={p.label} /><span class="sr-only"> on your Wishlist</span><Icon name="chevronRight" size={16} /></a>
 							{:else if session.can('ask')}
 								<Button variant="primary" icon="wish" onclick={() => askArtist?.open(a)}>{a.ask ? 'Ask too' : a.title_id ? 'Ask for more' : 'Ask'}</Button>
 								{#if a.ask}<span class="xs muted asked-already">Someone asked for {albumWords(a.ask.albums)} · {pill({ ask: a.ask.state }).label}</span>
@@ -375,13 +375,13 @@
 						</div>
 						<div class="act">
 							{#if s.title_id && !asker}
-								{@const p = inLibraryPill}<a class="pill-link" href={to(`/library/${s.title_id}`)}><StatusPill kind={p.kind} label={p.label} /></a>
+								{@const p = inLibraryPill}<a class="pill-link" href={to(`/library/${s.title_id}`)}><StatusPill kind={p.kind} label={p.label} /><Icon name="chevronRight" size={16} /></a>
 							{:else if s.never_add}
 								{@const p = pill({ neverAdd: true })}<StatusPill kind={p.kind} label={p.label} />
 							{:else if session.can('manage_library')}
 								<Button variant="primary" icon="plus" onclick={() => addShow?.open(s)}>Add</Button>
 							{:else if s.ask?.mine}
-								{@const p = pill({ ask: s.ask.state, titleKind: 'show', mine: true })}<a class="pill-link" href={to(`/wishlist`)}><StatusPill kind={p.kind} label={p.label} /><span class="sr-only"> on your Wishlist</span></a>
+								{@const p = pill({ ask: s.ask.state, titleKind: 'show', mine: true })}<a class="pill-link" href={to(`/wishlist`)}><StatusPill kind={p.kind} label={p.label} /><span class="sr-only"> on your Wishlist</span><Icon name="chevronRight" size={16} /></a>
 							{:else if session.can('ask')}
 								<Button variant="primary" icon="wish" onclick={() => askShow?.open(s)}>{s.ask ? 'Ask too' : s.title_id ? 'Ask for more' : 'Ask'}</Button>
 								{#if s.ask}<span class="xs muted asked-already">Someone asked for {seasonWords(s.ask.seasons)} · {pill({ ask: s.ask.state }).label}</span>
@@ -417,13 +417,13 @@
 					</div>
 					<div class="act">
 						{#if m.title_id}
-							{@const p = inLibraryPill}<a class="pill-link" href={to(`/library/${m.title_id}`)}><StatusPill kind={p.kind} label={p.label} /></a>
+							{@const p = inLibraryPill}<a class="pill-link" href={to(`/library/${m.title_id}`)}><StatusPill kind={p.kind} label={p.label} /><Icon name="chevronRight" size={16} /></a>
 						{:else if m.never_add}
 							{@const p = pill({ neverAdd: true })}<StatusPill kind={p.kind} label={p.label} />
 						{:else if session.can('manage_library')}
 							<Button variant="primary" icon="plus" onclick={() => addMovie?.open(m)}>Add</Button>
 						{:else if m.ask?.mine}
-							{@const p = pill({ ask: m.ask.state, titleKind: 'movie', mine: true })}<a class="pill-link" href={to(`/wishlist`)}><StatusPill kind={p.kind} label={p.label} /><span class="sr-only"> on your Wishlist</span></a>
+							{@const p = pill({ ask: m.ask.state, titleKind: 'movie', mine: true })}<a class="pill-link" href={to(`/wishlist`)}><StatusPill kind={p.kind} label={p.label} /><span class="sr-only"> on your Wishlist</span><Icon name="chevronRight" size={16} /></a>
 						{:else if session.can('ask')}
 							<Button variant="primary" icon="wish" onclick={() => m.ids.tmdb && askMovie?.open({ tmdb: m.ids.tmdb, name: m.name, year: m.year, ask: m.ask })}>{m.ask ? 'Ask too' : 'Ask'}</Button>
 							{#if m.ask}<span class="xs muted asked-already">Someone asked already · {pill({ ask: m.ask.state }).label}</span>{/if}
@@ -474,7 +474,9 @@
 	.grow p { margin: 2px 0 0; color: var(--text-muted); font: var(--t-subhead); font-weight: 400; }
 	.overview { margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 	.act { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: none; max-width: 220px; text-align: right; }
-	.pill-link { display: inline-flex; align-items: center; min-height: 44px; border-radius: var(--r-pill); }
+	/* A pill that opens the title or the Wishlist: the chevron says it can be tapped. */
+	.pill-link { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; padding-right: 4px; border-radius: var(--r-pill); color: var(--text-muted); text-decoration: none; }
+	.pill-link:hover { color: var(--text); }
 	.pill-link:hover :global(.ui-pill) { background: var(--surface-3); }
 	.pill-link:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.asked-already { display: block; color: var(--text-muted); font: var(--t-footnote); }

@@ -33,6 +33,11 @@ const pages = [
 	'/settings/wishlist',
 	'/settings/alerts',
 	'/settings/media-servers',
+	'/settings/pick-rules',
+	// The first ready-made Pick rules, made when HolyArrs starts.
+	'/settings/pick-rules/1',
+	'/settings/title-defaults',
+	'/explore',
 	'/wishlist'
 ];
 
