@@ -159,7 +159,10 @@ test('the owner approves from a phone: the movie is added and kim is told', asyn
 	await expect(asks).toContainText('Approved by luis');
 	// History on Home names them too.
 	await own.goto('/');
-	await expect(own.getByText('kim asked for Copper Lighthouse (2017)')).toBeVisible();
+	// kim asked, took it back and asked again: two ask events, the take-back between them.
+	await expect(own.getByText('kim asked for Copper Lighthouse (2017)')).toHaveCount(2);
+	await expect(own.getByText('kim asked for Copper Lighthouse (2017)').first()).toBeVisible();
+	await expect(own.getByText('kim took back the ask for Copper Lighthouse (2017)')).toBeVisible();
 
 	await kim.goto('/wishlist');
 	await expect(kim.getByTestId('message').first()).toContainText('Copper Lighthouse (2017) was approved by luis');
