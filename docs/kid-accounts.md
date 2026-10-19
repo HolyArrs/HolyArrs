@@ -106,6 +106,14 @@ a person more, clear the limit in the same change.
   outside accounts to their Kid account, or let only listed names join, so
   the child cannot come in through a second, unlimited account.
 
+## Pictures
+
+Posters are kept in one picture cache shared by everyone, and a picture's
+cache name comes from its address. Someone who knows a title's poster
+address can therefore tell whether that poster is cached, which hints that
+someone in the house looked at the title. The picture itself shows no
+title or rating, and the Kid limit still hides the title everywhere else.
+
 ## US ratings only for now
 
 HolyArrs keeps only the US rating of each title, so `rating_country` is `US`
