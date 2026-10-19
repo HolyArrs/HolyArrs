@@ -22,6 +22,7 @@ import (
 type pictureWorld struct {
 	srv                  *httptest.Server
 	audioDB, deezer, caa bool
+	hostile              bool   // TheAudioDB answers with addresses outside the allowed hosts
 	key                  string // TheAudioDB key; "" is off
 	mu                   sync.Mutex
 	asked                []string
@@ -51,8 +52,12 @@ func newPictureWorld(t *testing.T) *pictureWorld {
 				_, _ = rw.Write([]byte(`{"artists":null}`))
 				return
 			}
-			_, _ = rw.Write([]byte(`{"artists":[{"strArtist":"Lab Band","strMusicBrainzID":"` + labArtist + `","strArtistThumb":"` + w.srv.URL +
-				`/pic/adb-thumb.jpg","strArtistFanart":"https://img.test/fanart.jpg","strArtistLogo":"https://img.test/logo.png"}]}`))
+			base := w.srv.URL + "/pic"
+			if w.hostile {
+				base = "http://169.254.169.254/latest"
+			}
+			_, _ = rw.Write([]byte(`{"artists":[{"strArtist":"Lab Band","strMusicBrainzID":"` + labArtist + `","strArtistThumb":"` + base +
+				`/adb-thumb.jpg","strArtistFanart":"` + base + `/fanart.jpg","strArtistLogo":"` + base + `/logo.png"}]}`))
 		case p == "/search/artist":
 			w.log("deezer")
 			rw.Header().Set("Content-Type", "application/json")
@@ -141,7 +146,7 @@ func TestArtistPicturesOrder(t *testing.T) {
 			if (src != "") != (len(ti.Artwork) == 1 && strings.HasPrefix(ti.Artwork[0], "poster:")) {
 				t.Fatalf("artwork %v", ti.Artwork)
 			}
-			if tc.wide && (ti.Backdrop != "https://img.test/fanart.jpg" || ti.Logo != "https://img.test/logo.png") {
+			if tc.wide && (!strings.HasPrefix(ti.Backdrop, "/api/v1/artwork/") || !strings.HasPrefix(ti.Logo, "/api/v1/artwork/") || ti.Backdrop == ti.Logo) {
 				t.Fatalf("backdrop %q logo %q", ti.Backdrop, ti.Logo)
 			}
 			if !tc.wide && (ti.Backdrop != "" || ti.Logo != "") {
@@ -193,7 +198,7 @@ func TestArtistPicturesKeepWhatIsThere(t *testing.T) {
 		t.Fatal(err)
 	}
 	ti := titleOf(t, s, id)
-	if len(ti.Artwork) != 1 || ti.Artwork[0] != "poster:mine.jpg" || ti.Logo != "https://mine.test/logo.png" || ti.Backdrop != "https://img.test/fanart.jpg" {
+	if len(ti.Artwork) != 1 || ti.Artwork[0] != "poster:mine.jpg" || ti.Logo != "https://mine.test/logo.png" || !strings.HasPrefix(ti.Backdrop, "/api/v1/artwork/") {
 		t.Fatalf("artwork %v logo %q backdrop %q", ti.Artwork, ti.Logo, ti.Backdrop)
 	}
 	n := len(w.order())
@@ -265,6 +270,30 @@ func TestArtworkWildHost(t *testing.T) {
 	} {
 		if got := c.allowed(u); got != want {
 			t.Errorf("%s: %v", u, got)
+		}
+	}
+}
+
+// TestArtistPicturesRefuseHostileHosts: picture, backdrop and logo
+// addresses outside the artwork cache's allowed hosts are skipped, never
+// fetched or stored; the next source fills the picture.
+func TestArtistPicturesRefuseHostileHosts(t *testing.T) {
+	svc, s, _, _ := musicService(t)
+	id := addBareArtist(t, svc)
+	w := newPictureWorld(t)
+	w.audioDB, w.deezer, w.hostile = true, true, true
+	withPictureWorld(t, svc, w)
+	src, err := svc.FillArtistPictures(context.Background(), id, domain.System)
+	if err != nil || src != SourceDeezer {
+		t.Fatalf("source %q %v", src, err)
+	}
+	ti := titleOf(t, s, id)
+	if ti.Backdrop != "" || ti.Logo != "" {
+		t.Fatalf("hostile backdrop %q logo %q kept", ti.Backdrop, ti.Logo)
+	}
+	for _, a := range ti.Artwork {
+		if strings.Contains(a, "169.254") {
+			t.Fatalf("hostile artwork %v", ti.Artwork)
 		}
 	}
 }

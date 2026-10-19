@@ -60,8 +60,11 @@ func (s *Service) FillArtistPictures(ctx context.Context, titleID int64, by doma
 		if err != nil {
 			log.Printf("library: TheAudioDB pictures for artist %d: %v", titleID, err)
 		}
-		if p.Fanart != "" || p.Logo != "" {
-			s.fillWide(ctx, titleID, p.Fanart, p.Logo, by)
+		// The backdrop and logo are fetched through the artwork cache (its
+		// allowed hosts only) and kept as local links, never as the remote
+		// address TheAudioDB gave.
+		if wide, logo := s.cachedLink(ctx, titleID, p.Fanart), s.cachedLink(ctx, titleID, p.Logo); wide != "" || logo != "" {
+			s.fillWide(ctx, titleID, wide, logo, by)
 		}
 		if needArt && p.Thumb != "" && s.fillArt(ctx, titleID, p.Thumb, by) {
 			filled = SourceAudioDB
@@ -134,6 +137,21 @@ func (s *Service) fillArt(ctx context.Context, titleID int64, pic string, by dom
 		log.Printf("library: picture for artist %d: %v", titleID, err)
 	}
 	return n > 0
+}
+
+// cachedLink fetches a picture through the artwork cache, which refuses
+// any host it does not allow, and returns its local link ("" when refused
+// or not there).
+func (s *Service) cachedLink(ctx context.Context, titleID int64, pic string) string {
+	if pic == "" || s.Artwork == nil {
+		return ""
+	}
+	name, err := s.Artwork.Fetch(ctx, pic)
+	if err != nil {
+		log.Printf("library: picture for artist %d: %v", titleID, err)
+		return ""
+	}
+	return "/api/v1/artwork/" + url.PathEscape(name)
 }
 
 // fillWide keeps a backdrop and logo where the artist has none yet.
