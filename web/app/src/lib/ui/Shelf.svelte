@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import Icon from '../Icon.svelte';
+	import { dragScroll } from '../drag-scroll.ts';
 	import IconButton from './IconButton.svelte';
 	import { nearView, setShelfNear } from '../lazy-art.ts';
 
@@ -70,7 +71,7 @@
 	</header>
 	<div class="wrap">
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
-		<div class="row" bind:this={scroller} onscroll={measure} onkeydown={key} tabindex="0" role="group" aria-labelledby="{id}-t">
+		<div class="row" use:dragScroll bind:this={scroller} onscroll={measure} onkeydown={key} tabindex="0" role="group" aria-labelledby="{id}-t">
 			{@render children()}
 		</div>
 		<span class="arrow left" class:hide={atStart}><IconButton icon="chevronLeft" label="Scroll {title} back" variant="tinted" tabindex={-1} tooltip={false} onclick={() => page(-1)} /></span>
@@ -103,4 +104,7 @@
 	.hide { pointer-events: none; }
 	@media (hover: none) { .arrow { display: none; } }
 	@media (max-width: 767px) { .row { grid-auto-columns: calc(var(--item) * .78); } }
+	/* Mouse drag-to-scroll (drag-scroll.ts): a grab hand on rows that can scroll. */
+	.row:global(.dragging) { cursor: grabbing; user-select: none; }
+	.row:global(.dragging) :global(*) { pointer-events: none; }
 </style>
