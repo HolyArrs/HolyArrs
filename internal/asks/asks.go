@@ -194,6 +194,19 @@ func overLimit(p Person, kind, rating string) error {
 	return limitRefusal("This account can ask only for titles rated " + ratings.Up(p.MaxRating) + ".")
 }
 
+// libraryOverLimit refuses when the Library title id (0: none) is rated
+// above p's limit.
+func libraryOverLimit(ctx context.Context, db store.Querier, p Person, kind string, id int64) error {
+	if id == 0 {
+		return nil
+	}
+	var rating string
+	if err := db.QueryRowContext(ctx, "SELECT rating FROM titles WHERE id = ?", id).Scan(&rating); err != nil {
+		return err
+	}
+	return overLimit(p, kind, rating)
+}
+
 func (p Person) actor() domain.Actor { return domain.Actor{Kind: "user", ID: p.UserID} }
 
 // Result is what asking did.
@@ -393,7 +406,15 @@ func (s *Service) ask(ctx context.Context, p Person, tmdbID string, retried bool
 	tmdbID = strings.TrimSpace(tmdbID)
 	if p.MaxRating != "" {
 		// Checked first, so a Kid neither joins an open ask nor learns that
-		// the movie is in the Library.
+		// the movie is in the Library. The Library's rating is checked
+		// first, then the provider's; either above the limit refuses.
+		tid, err := library.TitleByTMDB(ctx, db, tmdbID)
+		if err != nil {
+			return Result{}, err
+		}
+		if err := libraryOverLimit(ctx, db, p, "movie", tid); err != nil {
+			return Result{}, err
+		}
 		m, err := s.Metadata.Movie(ctx, "tmdb:"+tmdbID)
 		if err != nil {
 			return Result{}, err

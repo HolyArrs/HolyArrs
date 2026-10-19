@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -175,6 +176,20 @@ func TestKidExploreNotCachedForOthers(t *testing.T) {
 			if c.cache != "" && resp.Header.Get("Cache-Control") != c.cache {
 				t.Errorf("kid %s: Cache-Control %q", p, resp.Header.Get("Cache-Control"))
 			}
+		}
+	}
+}
+
+// TestKidAskRefusedByLibraryRating: an ask is refused when the Library's
+// rating is above the limit, even if the provider's rating is not.
+func TestKidAskRefusedByLibraryRating(t *testing.T) {
+	k := newKidRig(t)
+	k.add(t, "movie", "Sunny Pond", "4111", "R", 0, nil)     // TMDB says G
+	k.add(t, "show", "Puppet Lane", "4131", "TV-MA", 0, nil) // TMDB says TV-Y
+	const upTo = `{"error":"This account can ask only for titles rated up to PG."}`
+	for _, body := range []string{`{"id":"tmdb:4111"}`, `{"kind":"show","id":"tmdb:4131"}`} {
+		if got := strings.TrimSpace(string(k.kai.call("POST", "/api/v1/asks", body, 403))); got != upTo {
+			t.Errorf("%s: %s", body, got)
 		}
 	}
 }
