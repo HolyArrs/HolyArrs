@@ -8,7 +8,7 @@
 	import { refreshInbox } from '#lib/wishlist.svelte.ts';
 	import { seasonWords } from '#lib/shows.ts';
 	import { detailPath, isDetailKind, loadDetails, remembered, type TitleDetails } from '#lib/title-details.ts';
-	import type { Ask, GateDefaults, LibraryFolder, LookupMovie, LookupShow, PickRulesView, ShowSettings, TitleDefaults, TitleView } from '#lib/types.ts';
+	import type { Ask, GateDefaults, LibraryFolder, LookupMovie, LookupShow, PickRulesView, ShowSettings, TitleView } from '#lib/types.ts';
 	import TitleHero, { richMetadata, runtimeWords, type RichMeta } from '#lib/ui/TitleHero.svelte';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
@@ -19,6 +19,7 @@
 	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import AddMovieDialog from '#lib/AddMovieDialog.svelte';
+	import { savedDefaults } from '#lib/title-defaults.svelte.ts';
 	import AddShowDialog from '#lib/AddShowDialog.svelte';
 	import AskShowDialog from '#lib/AskShowDialog.svelte';
 	import AskMovieDialog from '#lib/AskMovieDialog.svelte';
@@ -43,8 +44,7 @@
 	let folders = $state<LibraryFolder[]>([]);
 	let rules = $state<PickRulesView[]>([]);
 	let gateDefault = $state('released');
-	let showDefaults = $state<ShowSettings | null>(null);
-	let titleDefaults = $state<TitleDefaults | null>(null);
+	let showDefaults = $state<ShowSettings | null>(null);
 	let addMovie: ReturnType<typeof AddMovieDialog> | undefined = $state();
 	let addShow: ReturnType<typeof AddShowDialog> | undefined = $state();
 	let askShow: ReturnType<typeof AskShowDialog> | undefined = $state();
@@ -101,7 +101,9 @@
 		api.get<{ pick_rules: PickRulesView[] }>('/pick-rules').then((r) => (rules = r.pick_rules)).catch(() => {});
 		api.get<GateDefaults>('/settings/release-gate').then((r) => (gateDefault = r.release_gate)).catch(() => {});
 		api.get<ShowSettings>('/settings/shows').then((r) => (showDefaults = r)).catch(() => {});
-		api.get<TitleDefaults>('/settings/title-defaults').then((r) => (titleDefaults = r)).catch(() => {});
+		// The add dialogs wait for the saved defaults; fetched once for this visit.
+		savedDefaults.forget();
+		void savedDefaults.load();
 	});
 
 	function added(t: TitleView) {
@@ -228,8 +230,8 @@
 {/if}
 
 {#if manage}
-	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} {titleDefaults} onadded={(_m, t) => added(t)} />
-	<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} {titleDefaults} onadded={(_s, t) => added(t)} />
+	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} onadded={(_m, t) => added(t)} />
+	<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} onadded={(_s, t) => added(t)} />
 {/if}
 {#if mayAsk}
 	<AskMovieDialog bind:this={askMovieDialog} onasked={(_m, r) => movieAsked(r)} onrefused={(_m, body) => typeof body.title_id === 'number' && void goto(to(`/library/${body.title_id}`))} />

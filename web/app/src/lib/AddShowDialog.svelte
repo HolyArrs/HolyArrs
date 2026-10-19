@@ -8,20 +8,20 @@
 	import { api, message } from './api.ts';
 	import { secondVersion } from './library.ts';
 	import { detailsSources, episodeOrders, seasonChoices } from './shows.ts';
+	import Skeleton from './ui/Skeleton.svelte';
 	import { builtInDefaults, startChoices } from './title-defaults.ts';
+	import { savedDefaults } from './title-defaults.svelte.ts';
 	import type { LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleDefaults, TitleView } from './types.ts';
 
 	let {
 		folders,
 		rules,
 		defaults,
-		titleDefaults = null,
 		onadded
 	}: {
 		folders: LibraryFolder[];
 		rules: PickRulesView[];
 		defaults: ShowSettings | null;
-		titleDefaults?: TitleDefaults | null;
 		onadded: (show: LookupShow, title: TitleView) => void;
 	} = $props();
 
@@ -42,14 +42,22 @@
 	let moreFolder = $state(0);
 	let adding = $state(false);
 	let error = $state('');
+	// The saved defaults, once they are in; the sheet shows a placeholder until then.
+	let titleDefaults = $state<TitleDefaults | null>(null);
+	let ready = $state(false);
 
 	const showFolders = $derived(folders.filter((f) => f.kind === 'show'));
 	const showRules = $derived(rules.filter((r) => !r.kinds.length || r.kinds.includes('show')));
 
 	/** open shows the dialog for one looked-up show. */
-	export function open(s: LookupShow) {
+	export async function open(s: LookupShow) {
 		picked = s;
 		error = '';
+		ready = false;
+		sheetOpen = true;
+		const d = await savedDefaults.load();
+		if (picked !== s) return;
+		titleDefaults = d;
 		const start = startChoices(titleDefaults, folders, rules, 'show');
 		folderId = start.folderId;
 		rulesId = start.rulesId;
@@ -64,7 +72,7 @@
 		moreLabel = sv.label;
 		moreRules = sv.pick_rules_id;
 		moreFolder = sv.library_folder_id;
-		sheetOpen = true;
+		ready = true;
 	}
 
 	// Another folder: the saved default Pick rules, else that folder's own, else the first offered.
@@ -108,7 +116,9 @@
 </script>
 
 <Sheet bind:open={sheetOpen} title={picked ? `Add ${picked.name}` : 'Add'}>
-	{#if picked}
+	{#if picked && !ready}
+		<div aria-busy="true" aria-label="Loading the defaults"><Skeleton lines={4} /></div>
+	{:else if picked}
 		<form id="add-show-title" class="sheet-form" onsubmit={add}>
 			{#if showFolders.length === 0}
 				<p class="notice warn" >
@@ -202,7 +212,7 @@
 	{/if}
 	{#snippet footer()}
 				<Button variant="plain" onclick={() => (sheetOpen = false)}>Cancel</Button>
-				<Button variant="primary" type="submit" form="add-show-title" disabled={showFolders.length === 0} busy={adding}>Add to Library</Button>
+				<Button variant="primary" type="submit" form="add-show-title" disabled={showFolders.length === 0 || !ready} busy={adding}>Add to Library</Button>
 	{/snippet}
 </Sheet>
 

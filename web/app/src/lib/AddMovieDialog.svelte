@@ -5,7 +5,9 @@
 	import { api, message } from './api.ts';
 	import { plainReason } from './plain.ts';
 	import { loadChoices, saveChoices, secondVersion } from './library.ts';
+	import Skeleton from './ui/Skeleton.svelte';
 	import { builtInDefaults, gateChoices as gates, startChoices } from './title-defaults.ts';
+	import { savedDefaults } from './title-defaults.svelte.ts';
 	import type { LibraryFolder, LookupMovie, PickRulesView, TitleDefaults, TitleView } from './types.ts';
 
 	// Add a movie to the Library: folder, Pick rules, Release gate, Keep up
@@ -16,13 +18,11 @@
 		folders,
 		rules,
 		gateDefault = 'released',
-		titleDefaults = null,
 		onadded
 	}: {
 		folders: LibraryFolder[];
 		rules: PickRulesView[];
 		gateDefault?: string;
-		titleDefaults?: TitleDefaults | null;
 		onadded: (movie: LookupMovie, title: TitleView) => void;
 	} = $props();
 
@@ -40,13 +40,21 @@
 	let moreFolder = $state(0);
 	let adding = $state(false);
 	let addError = $state('');
+	// The saved defaults, once they are in; the sheet shows a placeholder until then.
+	let titleDefaults = $state<TitleDefaults | null>(null);
+	let ready = $state(false);
 
 	const movieFolders = $derived(folders.filter((f) => f.kind === 'movie'));
 	const movieRules = $derived(rules.filter((r) => !r.kinds.length || r.kinds.includes('movie')));
 
-	export function open(m: LookupMovie) {
+	export async function open(m: LookupMovie) {
 		picked = m;
 		addError = '';
+		ready = false;
+		addOpen = true;
+		const d = await savedDefaults.load();
+		if (picked !== m) return;
+		titleDefaults = d;
 		const start = startChoices(titleDefaults, folders, rules, 'movie');
 		folderId = start.folderId;
 		rulesId = start.rulesId;
@@ -60,7 +68,7 @@
 		moreLabel = sv.label;
 		moreRules = sv.pick_rules_id;
 		moreFolder = sv.library_folder_id;
-		addOpen = true;
+		ready = true;
 	}
 
 	// Another folder: the saved default Pick rules, else that folder's own, else the first offered.
@@ -96,7 +104,9 @@
 </script>
 
 <Sheet bind:open={addOpen} title={picked ? `Add ${picked.name}` : 'Add a movie'}>
-	{#if picked}
+	{#if picked && !ready}
+		<div aria-busy="true" aria-label="Loading the defaults"><Skeleton lines={4} /></div>
+	{:else if picked}
 		<form id="add-movie" class="sheet-form" onsubmit={add}>
 			{#if movieFolders.length === 0}
 				<p class="notice warn">
@@ -173,7 +183,7 @@
 	{/if}
 	{#snippet footer()}
 		<Button variant="plain" onclick={() => (addOpen = false)}>Cancel</Button>
-		<Button variant="primary" type="submit" form="add-movie" disabled={movieFolders.length === 0} busy={adding}>Add to Library</Button>
+		<Button variant="primary" type="submit" form="add-movie" disabled={movieFolders.length === 0 || !ready} busy={adding}>Add to Library</Button>
 	{/snippet}
 </Sheet>
 

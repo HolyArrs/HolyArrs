@@ -15,12 +15,13 @@
 	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import StatusPill from '#lib/ui/StatusPill.svelte';
 	import { plainReason } from '#lib/plain.ts';
-	import type { Ask, AskLimit, GateDefaults, LibraryFolder, LookupArtist, LookupMovie, LookupShow, MusicSettings, PickRulesView, ShowSettings, TitleDefaults, TitleView } from '#lib/types.ts';
+	import type { Ask, AskLimit, GateDefaults, LibraryFolder, LookupArtist, LookupMovie, LookupShow, MusicSettings, PickRulesView, ShowSettings, TitleView } from '#lib/types.ts';
 	import { limitLine } from '#lib/wishlist.ts';
 	import type { LimitKind } from '#lib/types.ts';
 	import { refreshInbox } from '#lib/wishlist.svelte.ts';
 	import AddShowDialog from '#lib/AddShowDialog.svelte';
 	import AddMovieDialog from '#lib/AddMovieDialog.svelte';
+	import { savedDefaults } from '#lib/title-defaults.svelte.ts';
 	import AskShowDialog from '#lib/AskShowDialog.svelte';
 	import AskMovieDialog, { type AskMovie } from '#lib/AskMovieDialog.svelte';
 	import { seasonWords } from '#lib/shows.ts';
@@ -133,7 +134,6 @@
 	let folders = $state<LibraryFolder[]>([]);
 	let rules = $state<PickRulesView[]>([]);
 	let gateDefault = $state('released');
-	let titleDefaults = $state<TitleDefaults | null>(null);
 
 	let addMovie: ReturnType<typeof AddMovieDialog> | undefined = $state();
 
@@ -189,10 +189,9 @@
 				.get<ShowSettings>('/settings/shows')
 				.then((r) => (showDefaults = r))
 				.catch(() => {});
-			api
-				.get<TitleDefaults>('/settings/title-defaults')
-				.then((r) => (titleDefaults = r))
-				.catch(() => {});
+			// The add dialogs wait for the saved defaults; fetched once for this visit.
+			savedDefaults.forget();
+			void savedDefaults.load();
 			api
 				.get<MusicSettings>('/settings/music')
 				.then((r) => (musicDefaults = r))
@@ -441,10 +440,10 @@
 </div>
 </section>
 
-<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} {titleDefaults} onadded={movieAdded} />
+<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} onadded={movieAdded} />
 
 
-<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} {titleDefaults} onadded={showAdded} />
+<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} onadded={showAdded} />
 <AskMovieDialog bind:this={askMovie} onasked={movieAsked} onrefused={movieRefused} />
 <AskShowDialog bind:this={askShow} onasked={showAsked} onrefused={showRefused} />
 <AddArtistDialog bind:this={addArtist} {folders} {rules} defaults={musicDefaults} onadded={artistAdded} />

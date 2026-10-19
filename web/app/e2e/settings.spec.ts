@@ -172,6 +172,19 @@ test('Movies and TV defaults: saved choices are where the add movie dialog start
 	await expect(dialog.getByLabel('Pick rules').locator('option:checked')).toHaveText('4K');
 	await expect(dialog.getByLabel('Keep up to date')).not.toBeChecked();
 	await expect(dialog.getByLabel('Search when added')).not.toBeChecked();
+	// A folder chosen in one add is not where the next add starts.
+	const values = await dialog.getByLabel('Library folder').locator('option').evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value));
+	const other = values.find((v) => v !== first);
+	if (other) {
+		await dialog.getByLabel('Library folder').selectOption(other);
+		await dialog.getByRole('button', { name: 'Cancel' }).click();
+		await expect(dialog).toBeHidden();
+		await page.locator('li.hit', { hasText: 'Salt Choir' }).getByRole('button', { name: 'Add' }).click();
+		await expect(dialog.getByLabel('Library folder')).toHaveValue(first);
+		await expect(dialog.getByLabel('Library folder')).not.toHaveValue(other);
+	} else {
+		test.info().annotations.push({ type: 'note', description: 'Only one movie folder: the second-add folder check needs two.' });
+	}
 	await dialog.getByRole('button', { name: 'Cancel' }).click();
 	await expect(dialog).toBeHidden();
 

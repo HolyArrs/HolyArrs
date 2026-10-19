@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { builtInDefaults, changedParts, foldersFor, rulesFor, startChoices } from './title-defaults.ts';
+import { builtInDefaults, changedParts, defaultsLoader, foldersFor, rulesFor, startChoices } from './title-defaults.ts';
 import type { LibraryFolder, PickRulesView, TitleDefaults } from './types.ts';
 
 const folder = (id: number, kind: string, over: Partial<LibraryFolder> = {}): LibraryFolder => ({
@@ -87,5 +87,32 @@ describe('changedParts', () => {
 		expect(changedParts(a, b)).toEqual(['gate']);
 		const c = { ...b, defaults: saved({ search_on_add: false }), shows: { season_choice: 'latest' } };
 		expect(changedParts(a, c)).toEqual(['defaults', 'gate', 'shows']);
+	});
+});
+
+describe('defaultsLoader', () => {
+	const saved: TitleDefaults = { movie: { library_folder_id: 4, pick_rules_id: 2, keep_up_to_date: true, search_on_add: false }, show: { ...builtInDefaults.show } };
+
+	it('asks the server once per visit and shares the answer', async () => {
+		let calls = 0;
+		const l = defaultsLoader(async (p) => (calls++, expect(p).toBe('/settings/title-defaults'), saved));
+		const [a, b] = await Promise.all([l.load(), l.load()]);
+		expect(a).toEqual(saved);
+		expect(b).toBe(a);
+		expect(calls).toBe(1);
+		l.forget();
+		await l.load();
+		expect(calls).toBe(2);
+	});
+
+	it('starts from the built-in defaults when the server fails, and tries again next time', async () => {
+		let calls = 0;
+		const l = defaultsLoader(async () => {
+			calls++;
+			if (calls === 1) throw new Error('down');
+			return saved;
+		});
+		expect(await l.load()).toBeNull();
+		expect(await l.load()).toEqual(saved);
 	});
 });

@@ -7,6 +7,7 @@
 	import { to } from '#lib/paths.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
+	import { savedDefaults } from '#lib/title-defaults.svelte.ts';
 	import { changedParts, foldersFor, gateChoices, rulesFor } from '#lib/title-defaults.ts';
 	import { detailsSources, episodeOrders, seasonChoices } from '#lib/shows.ts';
 	import Field from '#lib/ui/Field.svelte';
@@ -81,6 +82,7 @@
 				Object.assign(done, { [part]: $state.snapshot(form[part]) });
 				saved = JSON.stringify(done);
 			}
+			savedDefaults.forget();
 			toasts.push('Movies and TV defaults saved.', 'ok');
 		} catch (err) {
 			error = message(err);

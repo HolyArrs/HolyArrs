@@ -34,10 +34,11 @@
 		type Facets
 	} from '#lib/explore.ts';
 	import type { PersonSummary } from '#lib/people.ts';
-	import type { Ask, AskState, CalendarEntry, GateDefaults, LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleDefaults, TitleView } from '#lib/types.ts';
+	import type { Ask, AskState, CalendarEntry, GateDefaults, LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleView } from '#lib/types.ts';
 	import { seasonWords } from '#lib/shows.ts';
 	import { audienceOf } from '#lib/title-status.ts';
 	import AddMovieDialog from '#lib/AddMovieDialog.svelte';
+	import { savedDefaults } from '#lib/title-defaults.svelte.ts';
 	import AddShowDialog from '#lib/AddShowDialog.svelte';
 	import AskShowDialog from '#lib/AskShowDialog.svelte';
 	import AskMovieDialog from '#lib/AskMovieDialog.svelte';
@@ -125,7 +126,6 @@
 	let rules = $state<PickRulesView[]>([]);
 	let gateDefault = $state('released');
 	let showDefaults = $state<ShowSettings | null>(null);
-	let titleDefaults = $state<TitleDefaults | null>(null);
 	let addMovie: ReturnType<typeof AddMovieDialog> | undefined = $state();
 	let addShow: ReturnType<typeof AddShowDialog> | undefined = $state();
 	let askShow: ReturnType<typeof AskShowDialog> | undefined = $state();
@@ -172,7 +172,9 @@
 		api.get<{ pick_rules: PickRulesView[] }>('/pick-rules').then((r) => (rules = r.pick_rules)).catch(() => {});
 		api.get<GateDefaults>('/settings/release-gate').then((r) => (gateDefault = r.release_gate)).catch(() => {});
 		api.get<ShowSettings>('/settings/shows').then((r) => (showDefaults = r)).catch(() => {});
-		api.get<TitleDefaults>('/settings/title-defaults').then((r) => (titleDefaults = r)).catch(() => {});
+		// The add dialogs wait for the saved defaults; fetched once for this visit.
+		savedDefaults.forget();
+		void savedDefaults.load();
 	});
 
 	async function loadPeople(list: TitleView[]) {
@@ -289,8 +291,8 @@
 </div>
 
 {#if manage}
-	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} {titleDefaults} onadded={(_m, t) => added(t)} />
-	<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} {titleDefaults} onadded={(_s, t) => added(t)} />
+	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} onadded={(_m, t) => added(t)} />
+	<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} onadded={(_s, t) => added(t)} />
 {:else if mayAsk}
 	<AskMovieDialog bind:this={askMovie} onasked={(_m, r) => askedToast(r, r.ask.name)} onrefused={(_m, body) => refused(body)} />
 	<AskShowDialog bind:this={askShow} onasked={(_s: LookupShow, r) => askedToast(r, `${r.ask.name} (${seasonWords(r.ask.seasons)})`)} onrefused={(_s: LookupShow, body: Record<string, unknown>) => refused(body)} />
