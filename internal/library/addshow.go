@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
-	"github.com/CoderLuii/holyarrs/internal/jobs"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/naming"
+	"github.com/CoderLuii/holyarrs/internal/source"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
@@ -303,9 +303,6 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 // added with search when added.
 const stepSearchShow = "search_show"
 
-// KindSearchSeason is the season search job (run by the source package).
-const KindSearchSeason = "search_season"
-
 // SeasonVersion is one season and Version of a show to search.
 type SeasonVersion struct{ PartID, VersionID int64 }
 
@@ -332,26 +329,17 @@ func ShowSeasonsToSearch(ctx context.Context, db store.Lister, titleID int64) ([
 	return list, rows.Err()
 }
 
-// SearchSeason queues one season search the way a person's whole-show
-// search does (keptOnly: only the episodes kept up to date).
-func SearchSeason(ctx context.Context, q *jobs.Queue, x SeasonVersion, keptOnly bool, by domain.Actor) (int64, error) {
-	params := map[string]any{"by_hand": true, "version_id": x.VersionID}
-	if keptOnly {
-		params["kept_only"] = true
-	}
-	id, _, err := q.Enqueue(ctx, KindSearchSeason, &domain.Subject{Type: "part", ID: x.PartID}, params,
-		fmt.Sprintf("hand_search_season:%d:%d", x.PartID, x.VersionID), by)
-	return id, err
-}
-
-// searchShow is the whole-show search after a new show's scan.
+// searchShow is the whole-show search after a new show's scan: an
+// automatic search of each season, queued the way the missing search and
+// a failed download queue one (no by_hand, so the release gate holds).
 func (s *Service) searchShow(ctx context.Context, titleID int64, by domain.Actor) error {
 	list, err := ShowSeasonsToSearch(ctx, s.Store.Read(), titleID)
 	if err != nil {
 		return err
 	}
 	for _, x := range list {
-		if _, err := SearchSeason(ctx, s.Queue, x, true, by); err != nil {
+		if _, _, err := s.Queue.Enqueue(ctx, source.KindSearchSeason, &domain.Subject{Type: "part", ID: x.PartID},
+			map[string]any{"version_id": x.VersionID}, fmt.Sprintf("search_season:%d:%d", x.PartID, x.VersionID), by); err != nil {
 			return err
 		}
 	}

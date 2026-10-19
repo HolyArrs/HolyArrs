@@ -60,7 +60,8 @@ func TestTitleDefaultsSaveAndValidate(t *testing.T) {
 }
 
 // TestAddShowSearchOnAdd: a show added with search_on_add gets, after its
-// folder scan, the whole-show search a person starts by hand.
+// folder scan, an automatic search of each season looking for a copy: no
+// by_hand, so the release gate still holds back what is not out yet.
 func TestAddShowSearchOnAdd(t *testing.T) {
 	svc, s, _, _ := addShowService(t)
 	ctx := context.Background()
@@ -87,7 +88,7 @@ func TestAddShowSearchOnAdd(t *testing.T) {
 		t.Fatalf("season searches %v %v", ss, err)
 	}
 	for _, j := range ss {
-		if j.Params["by_hand"] != true || j.Params["kept_only"] != true || j.Subject == nil || j.Subject.Type != "part" {
+		if _, hand := j.Params["by_hand"]; hand || j.Params["kept_only"] != nil || j.Params["version_id"] == nil || j.Subject == nil || j.Subject.Type != "part" {
 			t.Fatalf("season search %+v", j)
 		}
 	}
