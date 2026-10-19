@@ -53,10 +53,11 @@ type Server struct {
 	// restore is staged.
 	Backups *backup.Manager
 	Restart func()
-	// Secrets stores the TMDB token; TokenFromFile says it comes from a
-	// file instead and cannot be changed here.
-	Secrets       *secrets.Vault
-	TokenFromFile bool
+	// Secrets stores the encrypted settings.
+	Secrets *secrets.Vault
+	// MetadataUp reports whether the metadata server answers (cached
+	// about a minute); nil counts as up.
+	MetadataUp func(context.Context) bool
 	// Library runs adding, editing and refreshing; New makes one when nil.
 	Library *library.Service
 	// Lists reads Outside lists; New makes one without keys when nil.
@@ -257,11 +258,10 @@ func (a *API) Handler() http.Handler {
 	a.dataPackRoutes(m)
 	a.scheduleRoutes(m)
 	m.HandleFunc("GET /api/v1/metadata/search", a.searchMetadata)
+	m.HandleFunc("GET /api/v1/metadata/health", a.metadataHealth)
 	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}", a.metadataDetails)
 	m.HandleFunc("GET /api/v1/discover", a.discoverRow)
 	if a.s.Secrets != nil {
-		m.HandleFunc("GET /api/v1/settings/tmdb-token", a.getTMDBToken)
-		m.HandleFunc("PUT /api/v1/settings/tmdb-token", a.putTMDBToken)
 		m.HandleFunc("GET /api/v1/settings/trakt-key", a.getTraktKey)
 		m.HandleFunc("PUT /api/v1/settings/trakt-key", a.putTraktKey)
 		m.HandleFunc("GET /api/v1/settings/tvdb-key", a.getTVDBKey)
@@ -911,43 +911,4 @@ func (a *API) searchMetadata(w http.ResponseWriter, r *http.Request) {
 	}
 	ms = a.kidMovies(r.Context(), a.kidMax(r), ms)
 	writeJSON(w, http.StatusOK, map[string]any{"movies": ms, "attribution": metadata.Attribution})
-}
-
-const tmdbTokenGroup, tmdbTokenKey = "links", "tmdb_token"
-
-// tokenView shows the TMDB token masked, and where it comes from.
-type tokenView struct {
-	Value string `json:"token"`
-	From  string `json:"from"`
-}
-
-func (a *API) getTMDBToken(w http.ResponseWriter, r *http.Request) {
-	from := "stored"
-	if a.s.TokenFromFile {
-		from = "file"
-	}
-	tok, err := a.s.Secrets.Setting(r.Context(), tmdbTokenGroup, tmdbTokenKey)
-	if err != nil {
-		internal(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, tokenView{Value: secrets.Mask(tok), From: from})
-}
-
-func (a *API) putTMDBToken(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
-		return
-	}
-	var body struct {
-		Token string `json:"token"`
-	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8<<10)).Decode(&body); err != nil || body.Token == "" {
-		fail(w, http.StatusBadRequest, `send {"token": "<TMDB read access token>"}`)
-		return
-	}
-	if err := a.s.Secrets.SetSetting(r.Context(), tmdbTokenGroup, tmdbTokenKey, body.Token, actor(r)); err != nil {
-		internal(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, tokenView{Value: secrets.Masked, From: "stored"})
 }

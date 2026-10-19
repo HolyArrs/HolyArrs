@@ -25,7 +25,7 @@ func peopleError(w http.ResponseWriter, err error) {
 	case errors.Is(err, metadata.ErrNotFound):
 		fail(w, http.StatusNotFound, "no such person")
 	case errors.Is(err, metadata.ErrNoAccess):
-		fail(w, http.StatusServiceUnavailable, "people results are unavailable; check the movie metadata connection")
+		fail(w, http.StatusServiceUnavailable, "people results are unavailable; try again shortly")
 	default:
 		// Provider transport and answer details can contain private search
 		// terms or links, so the public answer remains fixed.

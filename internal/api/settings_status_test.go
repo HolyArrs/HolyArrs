@@ -64,8 +64,8 @@ func TestSettingsStatusRules(t *testing.T) {
 			t.Fatalf("%+v", a)
 		}
 	})
-	t.Run("a missing TMDB key, an old backup and a failed media server", func(t *testing.T) {
-		a := settingsStatus(statusInput{TMDBKey: boolp(false), NewestBackup: timep("2026-10-01T00:00:00Z"),
+	t.Run("the metadata server down, an old backup and a failed media server", func(t *testing.T) {
+		a := settingsStatus(statusInput{MetadataUp: boolp(false), NewestBackup: timep("2026-10-01T00:00:00Z"),
 			States: []supervisor.Status{{Key: "media_server:1", Kind: "media_server", Name: "Jelly", State: supervisor.Failed}}, Now: statusNow})
 		if got := pages(a); !slices.Equal(got, []string{"/settings/backups", "/settings/media-servers", "/settings/tmdb"}) {
 			t.Fatalf("pages %v", got)
@@ -74,7 +74,7 @@ func TestSettingsStatusRules(t *testing.T) {
 			t.Fatalf("%+v", a.Items)
 		}
 		want := map[string]statusItem{
-			"/settings/tmdb":          {Group: "library", Page: "/settings/tmdb", Text: "No TMDB key yet, so names and posters cannot be found", Severity: "warning"},
+			"/settings/tmdb":          {Group: "library", Page: "/settings/tmdb", Text: MetadataDown, Severity: "warning"},
 			"/settings/backups":       {Group: "maintenance", Page: "/settings/backups", Text: "No backup in the last 7 days", Severity: "warning"},
 			"/settings/media-servers": {Group: "linked", Page: "/settings/media-servers", Text: "The media server Jelly failed", Severity: "error"},
 		}
@@ -130,28 +130,38 @@ func TestSettingsStatusRules(t *testing.T) {
 // route: GET /api/v1/settings/status
 func TestSettingsStatusRoute(t *testing.T) {
 	r := newAskRig(t)
-	const tok = "tmdb-secret-test-token-1234567890"
 	b := string(r.owner.call("GET", "/api/v1/settings/status", "", 200))
 	var a struct {
 		Items      []statusItem        `json:"items"`
 		Unset      map[string][]string `json:"unset"`
 		Known      []string            `json:"known"`
-		TMDBKeySet bool                `json:"tmdb_key_set"`
+		MetadataUp bool                `json:"metadata_up"`
 	}
-	if err := json.Unmarshal([]byte(b), &a); err != nil || a.Items == nil || a.Unset == nil || a.Known == nil || a.TMDBKeySet {
+	if err := json.Unmarshal([]byte(b), &a); err != nil || a.Items == nil || a.Unset == nil || a.Known == nil || !a.MetadataUp {
 		t.Fatalf("answer %s", b)
 	}
-	if !slices.Contains(pagesOf(a.Items), "/settings/tmdb") || !slices.Contains(a.Unset["copies"], "/settings/sources") {
+	// No key is ever asked for or flagged.
+	if slices.Contains(pagesOf(a.Items), "/settings/tmdb") || strings.Contains(strings.ToLower(b), "key") || !slices.Contains(a.Unset["copies"], "/settings/sources") {
 		t.Fatalf("answer %s", b)
 	}
 	r.ana.call("GET", "/api/v1/settings/status", "", 403)
-	if err := r.api.s.Secrets.SetSetting(context.Background(), tmdbTokenGroup, tmdbTokenKey, tok, domain.System); err != nil {
-		t.Fatal(err)
-	}
+	r.api.s.MetadataUp = func(context.Context) bool { return false }
 	r.api.status.forget()
 	b = string(r.owner.call("GET", "/api/v1/settings/status", "", 200))
-	if strings.Contains(b, tok) || strings.Contains(b, "1234567890") || !strings.Contains(b, `"tmdb_key_set":true`) || strings.Contains(b, "No TMDB key") {
-		t.Fatalf("with a key: %s", b)
+	if !strings.Contains(b, "Metadata server is down") || !strings.Contains(b, `"metadata_up":false`) {
+		t.Fatalf("server down: %s", b)
+	}
+}
+
+// route: GET /api/v1/metadata/health
+func TestMetadataHealthRoute(t *testing.T) {
+	r := newAskRig(t)
+	if b := string(r.ana.call("GET", "/api/v1/metadata/health", "", 200)); !strings.Contains(b, `"up":true`) {
+		t.Fatal(b)
+	}
+	r.api.s.MetadataUp = func(context.Context) bool { return false }
+	if b := string(r.ana.call("GET", "/api/v1/metadata/health", "", 200)); !strings.Contains(b, `"up":false`) || !strings.Contains(b, "searches and new artwork will return") {
+		t.Fatal(b)
 	}
 }
 

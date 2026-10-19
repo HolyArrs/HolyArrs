@@ -16,7 +16,6 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/jobs"
 	"github.com/CoderLuii/holyarrs/internal/live"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
-	"github.com/CoderLuii/holyarrs/internal/secrets"
 	"github.com/CoderLuii/holyarrs/internal/source"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
@@ -221,26 +220,23 @@ func TestMetadataSearchAndAttribution(t *testing.T) {
 
 // route: PUT /api/v1/settings/tmdb-token
 // route: GET /api/v1/settings/tmdb-token
-func TestTMDBTokenStoredMasked(t *testing.T) {
-	dir := t.TempDir()
-	s, err := store.Open(dir, store.Options{})
+func TestNoTMDBKeyRoutes(t *testing.T) {
+	s, err := store.Open(t.TempDir(), store.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s.Close() })
-	key, _ := secrets.LoadKey(dir, "")
-	v, err := secrets.Open(context.Background(), s, key)
-	if err != nil {
-		t.Fatal(err)
-	}
-	srv := httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "test", Secrets: v}).Handler())
+	srv := httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "test"}).Handler())
 	t.Cleanup(srv.Close)
-	do(t, "PUT", srv.URL+"/api/v1/settings/tmdb-token", `{"token":"TOKEN_FOR_TEST_ONLY"}`, 200)
-	b := string(do(t, "GET", srv.URL+"/api/v1/settings/tmdb-token", "", 200))
-	if strings.Contains(b, "TOKEN_FOR_TEST_ONLY") || !strings.Contains(b, secrets.Masked) {
-		t.Fatalf("token shown: %s", b)
-	}
-	if got, _ := v.Setting(context.Background(), "links", "tmdb_token"); got != "TOKEN_FOR_TEST_ONLY" {
-		t.Fatalf("stored %q", got)
+	for _, m := range []string{"GET", "PUT"} {
+		req, _ := http.NewRequest(m, srv.URL+"/api/v1/settings/tmdb-token", strings.NewReader(`{"token":"TOKEN_FOR_TEST_ONLY"}`))
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = resp.Body.Close()
+		if resp.StatusCode == 200 {
+			t.Fatalf("%s tmdb-token still served", m)
+		}
 	}
 }

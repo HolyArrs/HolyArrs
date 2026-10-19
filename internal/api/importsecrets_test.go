@@ -148,7 +148,7 @@ func TestSavedKeyNeedsSignedInOwner(t *testing.T) {
 }
 
 func TestImportSecretsSameKeys(t *testing.T) {
-	pairs := [][2]string{{importsecrets.LinksGroup, tmdbTokenGroup}, {importsecrets.TMDBTokenKey, tmdbTokenKey}, {importsecrets.LinksGroup, traktKeyGroup},
+	pairs := [][2]string{{importsecrets.LinksGroup, traktKeyGroup},
 		{importsecrets.TraktClientKey, traktKeyName}, {importsecrets.LinksGroup, TVDBKeyGroup}, {importsecrets.TVDBKeyKey, TVDBKeyName}}
 	for _, p := range pairs {
 		if p[0] != p[1] {

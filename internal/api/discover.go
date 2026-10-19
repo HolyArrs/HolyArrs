@@ -135,7 +135,7 @@ func (a *API) kindsOn(kind string) []string {
 func discoverFail(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, metadata.ErrNoAccess):
-		fail(w, http.StatusNotImplemented, "TMDB is not set up; add a TMDB read access token in Settings")
+		fail(w, http.StatusNotImplemented, "Explore is not available here")
 	case errors.Is(err, metadata.ErrRateLimited):
 		w.Header().Set("Retry-After", "60")
 		fail(w, http.StatusServiceUnavailable, "TMDB is busy; try again in a minute")
@@ -268,7 +268,7 @@ func (a *API) discoverRow(w http.ResponseWriter, r *http.Request) {
 	}
 	d, ok := metadata.DiscovererFor(r.Context(), a.s.Metadata)
 	if !ok {
-		fail(w, http.StatusNotImplemented, "TMDB is not set up; add a TMDB read access token in Settings")
+		fail(w, http.StatusNotImplemented, "Explore is not available here")
 		return
 	}
 	kinds := a.kindsOn(kind)
@@ -347,7 +347,7 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 	}
 	d, ok := metadata.DiscovererFor(r.Context(), a.s.Metadata)
 	if !ok {
-		fail(w, http.StatusNotImplemented, "TMDB is not set up; add a TMDB read access token in Settings")
+		fail(w, http.StatusNotImplemented, "Explore is not available here")
 		return
 	}
 	key := "details|" + kind + "|" + id

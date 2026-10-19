@@ -4511,8 +4511,8 @@
             },
             "type": "array"
           },
-          "tmdb_key_set": {
-            "description": "A TMDB key is saved or read from a file. The key itself is never in the answer.",
+          "metadata_up": {
+            "description": "The metadata server answers.",
             "type": "boolean"
           },
           "unset": {
@@ -12882,6 +12882,42 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/metadata/health": {
+      "get": {
+        "description": "A cheap check of the HolyArrs metadata server, cached about a minute. While it is down, searches and new artwork wait; message is the notice to show.",
+        "operationId": "getMetadataHealth",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "up": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "up"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The state."
+          }
+        },
+        "summary": "Whether the metadata server answers",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/metadata/search": {
       "get": {
         "description": "Answers matches with the TMDB attribution. For a Kid (a member with an age-rating limit), only movies their limit allows are listed (ratings found as for discover).",
@@ -16680,7 +16716,7 @@
     },
     "/api/v1/settings/status": {
       "get": {
-        "description": "One answer for the Settings home: health checks (warning or error as the check says), failed (error) or stuck (warning) stages, media servers and subtitle sites, Sources and Downloaders not answering (error), no TMDB key, no backup or none in 7 days (warning), a newer HolyArrs (info), and saved Movies and TV defaults whose folder or Pick rules are gone (warning, page /settings/title-defaults, group library). The answer is kept 30 seconds for everyone.",
+        "description": "One answer for the Settings home: health checks (warning or error as the check says), failed (error) or stuck (warning) stages, media servers and subtitle sites, Sources and Downloaders not answering (error), the metadata server not answering (warning), no backup or none in 7 days (warning), a newer HolyArrs (info), and saved Movies and TV defaults whose folder or Pick rules are gone (warning, page /settings/title-defaults, group library). The answer is kept 30 seconds for everyone.",
         "operationId": "getSettingsStatus",
         "responses": {
           "200": {
@@ -16921,79 +16957,6 @@
           "Settings"
         ],
         "x-holyarrs-part": "media",
-        "x-holyarrs-permission": "settings",
-        "x-holyarrs-scope": "write"
-      }
-    },
-    "/api/v1/settings/tmdb-token": {
-      "get": {
-        "description": "Masked, and whether it comes from a file.",
-        "operationId": "getTMDBToken",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MaskedKey"
-                }
-              }
-            },
-            "description": "Done."
-          }
-        },
-        "summary": "TMDB token",
-        "tags": [
-          "Settings"
-        ],
-        "x-holyarrs-part": "core",
-        "x-holyarrs-permission": "settings",
-        "x-holyarrs-scope": "admin"
-      },
-      "put": {
-        "description": "Kept encrypted. Needs a password sign-in or an API key.",
-        "operationId": "putTMDBToken",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "properties": {
-                  "token": {
-                    "type": "string"
-                  }
-                },
-                "type": "object"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MaskedKey"
-                }
-              }
-            },
-            "description": "Done."
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            },
-            "description": "Bad input."
-          }
-        },
-        "summary": "Set the TMDB token",
-        "tags": [
-          "Settings"
-        ],
-        "x-holyarrs-part": "core",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
       }

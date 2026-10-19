@@ -53,7 +53,7 @@ func listSetup(t *testing.T) (*httptest.Server, *store.Store) {
 	lib.Register(q)
 	q.Handle(library.KindSearchSlot, func(context.Context, *jobs.Run) error { return nil })
 	ls := &lists.Service{Store: s, Queue: q, Library: lib, Metadata: md, TMDBBase: fake.URL,
-		TMDBToken:   func(ctx context.Context) (string, error) { return v.Setting(ctx, "links", "tmdb_token") },
+		TMDBToken:   func(context.Context) (string, error) { return "TOKEN_FOR_TEST_ONLY", nil },
 		TraktClient: func(ctx context.Context) (string, error) { return v.Setting(ctx, "links", "trakt_client_id") }}
 	ls.Register(q)
 	if err := q.Start(context.Background()); err != nil {
@@ -78,7 +78,6 @@ func TestOutsideListsAPI(t *testing.T) {
 	movies := filepath.Join(t.TempDir(), "movies")
 	_ = os.MkdirAll(movies, 0o755)
 	do(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"movie"}`, movies), 201)
-	do(t, "PUT", srv.URL+"/api/v1/settings/tmdb-token", `{"token":"TOKEN_FOR_TEST_ONLY"}`, 200)
 	do(t, "POST", srv.URL+"/api/v1/never-add", `{"tmdb_id":"900001","name":"The Lantern Keepers"}`, 201)
 
 	// Trakt key: stored, shown masked only.

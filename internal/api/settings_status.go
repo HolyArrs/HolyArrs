@@ -33,8 +33,9 @@ type statusAnswer struct {
 	// Unset lists, per group, the pages not set up yet.
 	Unset map[string][]string `json:"unset"`
 	// Known lists the pages whose status is known.
-	Known      []string `json:"known"`
-	TMDBKeySet bool     `json:"tmdb_key_set"`
+	Known []string `json:"known"`
+	// MetadataUp says the metadata server answers.
+	MetadataUp bool `json:"metadata_up"`
 }
 
 type namedState struct{ Name, State string }
@@ -48,7 +49,7 @@ type statusInput struct {
 	Downloaders []namedState
 	// NewestBackup is the newest backup's time (RFC 3339), "" for none.
 	NewestBackup *string
-	TMDBKey      *bool
+	MetadataUp   *bool
 	UpdateNewer  *bool
 	// GoneDefaults are the plain-words notes for saved Movies and TV
 	// defaults whose folder or Pick rules are gone.
@@ -151,11 +152,11 @@ func settingsStatus(in statusInput) statusAnswer {
 			}
 		}
 	}
-	if in.TMDBKey != nil {
+	a.MetadataUp = in.MetadataUp == nil || *in.MetadataUp
+	if in.MetadataUp != nil {
 		known("/settings/tmdb")
-		a.TMDBKeySet = *in.TMDBKey
-		if !*in.TMDBKey {
-			add(statusItem{"library", "/settings/tmdb", "No TMDB key yet, so names and posters cannot be found", "warning"}, "tmdb")
+		if !*in.MetadataUp {
+			add(statusItem{"library", "/settings/tmdb", MetadataDown, "warning"}, "metadata")
 		}
 	}
 	if in.NewestBackup != nil {
@@ -270,8 +271,8 @@ func (a *API) settingsStatusRoute(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, c.answer)
 }
 
-// statusInput gathers what the rules look at. The TMDB key is only checked
-// for being set; it never reaches the answer.
+// statusInput gathers what the rules look at, including whether the
+// metadata server answers.
 func (a *API) statusInput(ctx context.Context, now time.Time) (statusInput, error) {
 	in := statusInput{Now: now}
 	db := a.s.Store.Read()
@@ -326,16 +327,9 @@ func (a *API) statusInput(ctx context.Context, now time.Time) (statusInput, erro
 			in.NewestBackup = &newest
 		}
 	}
-	if a.s.TokenFromFile {
-		set := true
-		in.TMDBKey = &set
-	} else if a.s.Secrets != nil {
-		tok, err := a.s.Secrets.Setting(ctx, tmdbTokenGroup, tmdbTokenKey)
-		if err != nil {
-			return in, err
-		}
-		set := tok != ""
-		in.TMDBKey = &set
+	if a.s.MetadataUp != nil {
+		up := a.s.MetadataUp(ctx)
+		in.MetadataUp = &up
 	}
 	newer := a.s.Health.Update(ctx).Newer
 	in.UpdateNewer = &newer
