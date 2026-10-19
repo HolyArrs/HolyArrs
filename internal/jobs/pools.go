@@ -42,6 +42,7 @@ var kindPools = map[string]Pool{
 	"refresh_titles":     PoolIO,
 	"refresh_shows":      PoolIO,
 	"refresh_artists":    PoolIO,
+	"artist_pictures":    PoolIO,
 	// heavy disk work
 	"import_download":     PoolHeavy,
 	"scan_title":          PoolHeavy,

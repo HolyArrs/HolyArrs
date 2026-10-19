@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	neturl "net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -182,9 +183,24 @@ func (c *ArtworkCache) allowed(url string) bool {
 		return false
 	}
 	for _, p := range c.Allowed {
-		if strings.HasPrefix(url, p) {
+		if strings.HasPrefix(url, p) || wildHost(url, p) {
 			return true
 		}
 	}
 	return false
+}
+
+// wildHost matches an Allowed entry "https://*.example.org/" against any
+// https URL on a subdomain of example.org (archive.org serves covers from
+// many numbered hosts).
+func wildHost(raw, p string) bool {
+	rest, ok := strings.CutPrefix(p, "https://*.")
+	if !ok {
+		return false
+	}
+	u, err := neturl.Parse(raw)
+	if err != nil || u.Scheme != "https" || u.User != nil || u.Port() != "" {
+		return false
+	}
+	return strings.HasSuffix(u.Hostname(), "."+strings.TrimSuffix(rest, "/"))
 }

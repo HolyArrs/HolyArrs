@@ -170,6 +170,7 @@ type getter struct {
 	timeout time.Duration
 	gap     time.Duration
 	ttl     time.Duration
+	agent   string // User-Agent, when set
 
 	mu    sync.Mutex
 	last  time.Time
@@ -248,6 +249,9 @@ func (g *getter) do(ctx context.Context, identity []string, mk func(ctx context.
 			return nil, err
 		}
 		req.Header.Set("Accept", "application/json")
+		if g.agent != "" {
+			req.Header.Set("User-Agent", g.agent)
+		}
 		resp, err := cl.Do(req)
 		if err != nil {
 			outcome = outside.HTTPOutcome(0, err, ctx)

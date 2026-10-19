@@ -66,3 +66,16 @@ func TestArtistImagesDown(t *testing.T) {
 		t.Fatalf("nil provider: %q %v", got, err)
 	}
 }
+
+// TestArtistImagesLooseName: with no exact name match, a match after
+// dropping case, accents, punctuation and a leading "The" counts.
+func TestArtistImagesLooseName(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"data":[{"name":"Beyonce Tribute","picture_xl":"https://img.test/no.jpg"},{"name":"The Beyoncé","picture_xl":"https://img.test/yes.jpg"}]}`))
+	}))
+	t.Cleanup(srv.Close)
+	d := &ArtistImages{BaseURL: srv.URL, Gap: time.Millisecond}
+	if p, err := d.Image(context.Background(), "Beyonce"); err != nil || p != "https://img.test/yes.jpg" {
+		t.Fatalf("%q %v", p, err)
+	}
+}

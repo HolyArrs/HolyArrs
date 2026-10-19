@@ -36,6 +36,7 @@ var scheduleInfos = map[string]scheduleInfo{
 	"refresh_titles":        {"Refresh movie details", "Reads names, dates and artwork of every movie again from TMDB.", 6 * schHour, 7 * schDay, schHour, ""},
 	"refresh_shows":         {"Refresh show details", "Reads seasons, episodes and air dates of every show again.", 6 * schHour, 7 * schDay, schHour, ""},
 	"refresh_artists":       {"Refresh artist details", "Reads albums and Pressings of every artist again from MusicBrainz.", 6 * schHour, 7 * schDay, schHour, ""},
+	"artist_pictures":       {"Find artist pictures", "Fills missing artist pictures from TheAudioDB (with your key), Deezer, then album covers.", schHour, 7 * schDay, schHour, ""},
 	"check_library_folders": {"Check Library folders", "Checks that every Library folder can be read and written.", schHour, schDay, schHour, ""},
 	"sync_outside_lists":    {"Read Outside lists", "Adds what TMDB and Trakt lists hold now.", 15 * schMinute, schDay, 5 * schMinute, ""},
 	"feed_check":            {"Feed check", "Reads the newest Releases of every Source with a feed.", 10 * schMinute, 120 * schMinute, schMinute, "/settings/search"},

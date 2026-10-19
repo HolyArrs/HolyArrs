@@ -339,6 +339,8 @@ var RoutePerms = map[string]Perm{
 	"PUT /api/v1/settings/trakt-key":       PermSettings,
 	"GET /api/v1/settings/tvdb-key":        PermSettings,
 	"PUT /api/v1/settings/tvdb-key":        PermSettings,
+	"GET /api/v1/settings/theaudiodb-key":  PermSettings,
+	"PUT /api/v1/settings/theaudiodb-key":  PermSettings,
 	"GET /api/v1/outside-lists":            PermSettings,
 	"POST /api/v1/outside-lists":           PermSettings,
 	"PUT /api/v1/outside-lists/{id}":       PermSettings,
@@ -491,23 +493,24 @@ var RouteScopes = map[string]string{
 
 	// GET routes that hand out the database, keys, tokens, sign-in
 	// settings or the people list: never the read scope.
-	"GET /api/v1/backups":              ScopeAdmin,
-	"GET /api/v1/backups/{name}":       ScopeAdmin, // the whole database, password hashes included
-	"GET /api/v1/auth/settings":        ScopeAdmin,
-	"GET /api/v1/settings/tmdb-token":  ScopeAdmin,
-	"GET /api/v1/settings/trakt-key":   ScopeAdmin,
-	"GET /api/v1/settings/tvdb-key":    ScopeAdmin,
-	"GET /api/v1/calendar/feed-key":    ScopeAdmin,
-	"GET /api/v1/users":                ScopeAdmin,
-	"GET /api/v1/users/invites":        ScopeAdmin,
-	"GET /api/v1/app/storage":          ScopeAdmin,
-	"GET /api/v1/logs":                 ScopeAdmin,
-	"GET /api/v1/logs/download":        ScopeAdmin,
-	"GET /api/v1/users/{id}/sessions":  ScopeAdmin,
-	"GET /api/v1/ask-limits":           ScopeAdmin,
-	"GET /api/v1/auth/state":           ScopeAdmin, // public; a key never needs it
-	"GET /api/v1/auth/invites/{token}": ScopeAdmin, // public; a key never needs it
-	"GET /api/v1/auth/oidc/callback":   ScopeAdmin, // public; a key never needs it
+	"GET /api/v1/backups":                 ScopeAdmin,
+	"GET /api/v1/backups/{name}":          ScopeAdmin, // the whole database, password hashes included
+	"GET /api/v1/auth/settings":           ScopeAdmin,
+	"GET /api/v1/settings/tmdb-token":     ScopeAdmin,
+	"GET /api/v1/settings/trakt-key":      ScopeAdmin,
+	"GET /api/v1/settings/tvdb-key":       ScopeAdmin,
+	"GET /api/v1/settings/theaudiodb-key": ScopeAdmin,
+	"GET /api/v1/calendar/feed-key":       ScopeAdmin,
+	"GET /api/v1/users":                   ScopeAdmin,
+	"GET /api/v1/users/invites":           ScopeAdmin,
+	"GET /api/v1/app/storage":             ScopeAdmin,
+	"GET /api/v1/logs":                    ScopeAdmin,
+	"GET /api/v1/logs/download":           ScopeAdmin,
+	"GET /api/v1/users/{id}/sessions":     ScopeAdmin,
+	"GET /api/v1/ask-limits":              ScopeAdmin,
+	"GET /api/v1/auth/state":              ScopeAdmin, // public; a key never needs it
+	"GET /api/v1/auth/invites/{token}":    ScopeAdmin, // public; a key never needs it
+	"GET /api/v1/auth/oidc/callback":      ScopeAdmin, // public; a key never needs it
 
 	// The move tool: what old apps hold (people, emails, links) is admin.
 	"POST /api/v1/migrate/probe":            ScopeAdmin,

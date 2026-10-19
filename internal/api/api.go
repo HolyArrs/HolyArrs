@@ -266,6 +266,8 @@ func (a *API) Handler() http.Handler {
 		m.HandleFunc("PUT /api/v1/settings/trakt-key", a.putTraktKey)
 		m.HandleFunc("GET /api/v1/settings/tvdb-key", a.getTVDBKey)
 		m.HandleFunc("PUT /api/v1/settings/tvdb-key", a.putTVDBKey)
+		m.HandleFunc("GET /api/v1/settings/theaudiodb-key", a.getAudioDBKey)
+		m.HandleFunc("PUT /api/v1/settings/theaudiodb-key", a.putAudioDBKey)
 	}
 	a.askRoutes(m)
 	a.controlRoutes(m)

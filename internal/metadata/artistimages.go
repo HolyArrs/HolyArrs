@@ -9,6 +9,11 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
+
+	"golang.org/x/text/runes"
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
 )
 
 // DeezerBase is Deezer's public API, which answers artist searches with
@@ -24,6 +29,8 @@ type ArtistImages struct {
 	Timeout time.Duration
 	Gap     time.Duration // least time between requests, default 250ms
 	TTL     time.Duration
+	// UserAgent names HolyArrs to Deezer (UserAgentFor).
+	UserAgent string
 
 	once sync.Once
 	g    *getter
@@ -35,7 +42,7 @@ func (d *ArtistImages) getter() *getter {
 		if ttl <= 0 {
 			ttl = 24 * time.Hour
 		}
-		d.g = &getter{name: "Deezer", http: d.HTTP, timeout: d.Timeout, gap: d.Gap, ttl: ttl}
+		d.g = &getter{name: "Deezer", http: d.HTTP, timeout: d.Timeout, gap: d.Gap, ttl: ttl, agent: d.UserAgent}
 	})
 	return d.g
 }
@@ -72,17 +79,46 @@ func (d *ArtistImages) Image(ctx context.Context, name string) (string, error) {
 	if err := json.Unmarshal(b, &out); err != nil {
 		return "", fmt.Errorf("Deezer artist search: %w", err)
 	}
-	for _, a := range out.Data {
-		if !strings.EqualFold(strings.TrimSpace(a.Name), name) {
-			continue
-		}
-		for _, p := range []string{a.XL, a.Big, a.Medium} {
-			// An artist without a picture has an empty picture id in the path.
-			if p != "" && !strings.Contains(p, "/artist//") {
-				return p, nil
+	// An exact name (case aside) wins; else a loose match (normalName).
+	// Deezer knows no MusicBrainz ids, so the name is all there is.
+	for _, loose := range []bool{false, true} {
+		for _, a := range out.Data {
+			if !sameArtistName(a.Name, name, loose) {
+				continue
 			}
+			for _, p := range []string{a.XL, a.Big, a.Medium} {
+				// An artist without a picture has an empty picture id in the path.
+				if p != "" && !strings.Contains(p, "/artist//") {
+					return p, nil
+				}
+			}
+			return "", nil
 		}
-		return "", nil
 	}
 	return "", nil
+}
+
+func sameArtistName(a, b string, loose bool) bool {
+	if !loose {
+		return strings.EqualFold(strings.TrimSpace(a), strings.TrimSpace(b))
+	}
+	n := normalName(a)
+	return n != "" && n == normalName(b)
+}
+
+// normalName folds a name for loose matching: lower case, no accents, only
+// letters and digits, and no leading "the".
+func normalName(s string) string {
+	s = strings.ToLower(strings.TrimSpace(s))
+	if t, _, err := transform.String(transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC), s); err == nil {
+		s = t
+	}
+	s = strings.TrimPrefix(s, "the ")
+	var b strings.Builder
+	for _, r := range s {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
 }

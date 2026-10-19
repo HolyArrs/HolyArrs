@@ -44,6 +44,12 @@ type Service struct {
 	// ArtistImages finds artist pictures (music has no TMDB poster); nil
 	// finds none.
 	ArtistImages *metadata.ArtistImages
+	// AudioDB is TheAudioDB, the first artist picture source (also the
+	// backdrop and logo); nil asks it nothing.
+	AudioDB *metadata.AudioDB
+	// CoverArtBase is the Cover Art Archive (CoverArtBase), the last artist
+	// picture source; "" asks it nothing.
+	CoverArtBase string
 	// SavePath is the Downloader save folder named at start, for health checks.
 	SavePath string
 	// Now is the clock (time.Now when nil).
@@ -63,6 +69,7 @@ func (s *Service) Register(q *jobs.Queue) {
 	q.Handle(KindRefreshTitles, s.handleRefreshTitles)
 	q.Handle(KindRefreshShows, s.handleRefreshShows)
 	q.Handle(KindRefreshArtists, s.handleRefreshArtists)
+	q.Handle(KindArtistPictures, s.handleArtistPictures)
 	q.Handle(KindScanTitle, s.handleScan)
 	q.Handle(KindMoveTitle, s.handleMove)
 	q.Handle(KindCheckFolders, s.handleCheckFolders)
