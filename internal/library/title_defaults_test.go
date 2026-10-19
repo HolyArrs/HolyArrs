@@ -41,7 +41,7 @@ func TestTitleDefaultsSaveAndValidate(t *testing.T) {
 		{TitleDefaults{Show: KindDefaults{PickRulesID: lossless}}, ErrNotVideoRules},
 	}
 	for _, b := range bad {
-		if err := SetTitleDefaults(ctx, s, b.d, domain.System); !errors.Is(err, b.want) {
+		if err := SetTitleDefaults(ctx, s, b.d, nil, domain.System); !errors.Is(err, b.want) {
 			t.Errorf("%+v: got %v want %v", b.d, err, b.want)
 		}
 	}
@@ -50,7 +50,7 @@ func TestTitleDefaultsSaveAndValidate(t *testing.T) {
 	}
 	d := TitleDefaults{Movie: KindDefaults{LibraryFolderID: movies.ID, PickRulesID: ge, KeepUpToDate: false, SearchOnAdd: false},
 		Show: KindDefaults{LibraryFolderID: shows.ID, PickRulesID: ge, KeepUpToDate: true, SearchOnAdd: true}}
-	if err := SetTitleDefaults(ctx, s, d, domain.System); err != nil {
+	if err := SetTitleDefaults(ctx, s, d, nil, domain.System); err != nil {
 		t.Fatal(err)
 	}
 	got, saved, err := ReadTitleDefaults(ctx, s.Read())

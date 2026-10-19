@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
@@ -96,17 +98,31 @@ func checkKindDefaults(tx *sql.Tx, kind string, kd KindDefaults) error {
 	return nil
 }
 
-// SetTitleDefaults checks and stores every Movies and TV default.
-func SetTitleDefaults(ctx context.Context, s *store.Store, d TitleDefaults, by domain.Actor) error {
+// SetTitleDefaults checks and stores the Movies and TV defaults named in
+// keys (TitleDefaultKeys; nil stores them all). A key left out stays as it
+// is, unsaved when it was never saved, and a kind with no key is not checked.
+func SetTitleDefaults(ctx context.Context, s *store.Store, d TitleDefaults, keys []string, by domain.Actor) error {
+	if keys == nil {
+		keys = TitleDefaultKeys
+	}
 	return s.Write(ctx, func(tx *sql.Tx) error {
-		if err := checkKindDefaults(tx, "movie", d.Movie); err != nil {
-			return err
-		}
-		if err := checkKindDefaults(tx, "show", d.Show); err != nil {
-			return err
+		for _, kind := range []string{"movie", "show"} {
+			if !slices.ContainsFunc(keys, func(k string) bool { return strings.HasPrefix(k, kind+"_") }) {
+				continue
+			}
+			kd := d.Movie
+			if kind == "show" {
+				kd = d.Show
+			}
+			if err := checkKindDefaults(tx, kind, kd); err != nil {
+				return err
+			}
 		}
 		now := store.FormatTime(time.Now())
-		for _, k := range TitleDefaultKeys {
+		for _, k := range keys {
+			if !slices.Contains(TitleDefaultKeys, k) {
+				continue
+			}
 			kd, name := d.field(k)
 			v := map[string]string{"library_folder_id": strconv.FormatInt(kd.LibraryFolderID, 10), "pick_rules_id": strconv.FormatInt(kd.PickRulesID, 10),
 				"keep_up_to_date": strconv.FormatBool(kd.KeepUpToDate), "search_on_add": strconv.FormatBool(kd.SearchOnAdd)}[name]

@@ -72,10 +72,29 @@ func (a *API) putTitleDefaults(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
-	if !decode(w, r, &d, `send {"movie": {...}, "show": {...}} with any of library_folder_id, pick_rules_id, keep_up_to_date, search_on_add`) {
+	const help = `send {"movie": {...}, "show": {...}} with any of library_folder_id, pick_rules_id, keep_up_to_date, search_on_add`
+	sent, ok := decodeKeys(w, r, &d, help)
+	if !ok {
 		return
 	}
-	if err := library.SetTitleDefaults(r.Context(), a.s.Store, d, actor(r)); err != nil {
+	// Only the fields sent are saved, so a left-out kind or field stays
+	// unsaved and adds keep their own default for it.
+	keys := []string{}
+	for _, kind := range []string{"movie", "show"} {
+		raw, ok := sent[kind]
+		if !ok {
+			continue
+		}
+		fields := map[string]json.RawMessage{}
+		if json.Unmarshal(raw, &fields) != nil {
+			fail(w, http.StatusBadRequest, help)
+			return
+		}
+		for f := range fields {
+			keys = append(keys, kind+"_"+f)
+		}
+	}
+	if err := library.SetTitleDefaults(r.Context(), a.s.Store, d, keys, actor(r)); err != nil {
 		switch {
 		case errors.Is(err, library.ErrBadFolder), errors.Is(err, library.ErrNoPickRules), errors.Is(err, library.ErrNotVideoRules):
 			fail(w, http.StatusBadRequest, err.Error())

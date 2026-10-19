@@ -174,3 +174,23 @@ func TestShowAddWithoutSearchOnAdd(t *testing.T) {
 		t.Fatalf("searched without asking: %v", then)
 	}
 }
+
+// TestSavingShowDefaultsLeavesMovieUnsaved: saving only the show defaults
+// marks no movie key saved, so a movie added without search_on_add still
+// gets no search, as before anything was saved.
+func TestSavingShowDefaultsLeavesMovieUnsaved(t *testing.T) {
+	srv, st, _ := libSetup(t)
+	folder(t, srv.URL, "movie")
+	do(t, "PUT", srv.URL+"/api/v1/settings/title-defaults", `{"show":{"keep_up_to_date":false}}`, 200)
+	_, saved, err := library.ReadTitleDefaults(context.Background(), st.Read())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(saved) != 1 || !saved["show_keep_up_to_date"] {
+		t.Fatalf("saved %v, want only the sent show_keep_up_to_date", saved)
+	}
+	a := addMovie(t, srv.URL, `{"id":"tmdb:693134"}`)
+	if then := thenOf(t, st, a.JobID); slices.Contains(then, library.KindSearchSlot) {
+		t.Fatalf("a show-only save made movie adds search: then %v", then)
+	}
+}
