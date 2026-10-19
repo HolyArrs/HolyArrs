@@ -12,8 +12,11 @@
 	let { title }: { title: TitleView } = $props();
 	let all = $state<TitleView[]>([]);
 
+	// Read the Library once per title: a live update hands the page a new
+	// title object with the same id, which must not fetch the whole list again.
+	const id = $derived(title.id);
 	$effect(() => {
-		void title.id;
+		void id;
 		let live = true;
 		api.get<{ titles: TitleView[] }>('/titles')
 			.then((r) => { if (live) all = r.titles ?? []; })
@@ -26,7 +29,7 @@
 	let open = $state(false);
 	// Opening another title from the sheet closes it.
 	$effect(() => {
-		void title.id;
+		void id;
 		open = false;
 	});
 </script>
