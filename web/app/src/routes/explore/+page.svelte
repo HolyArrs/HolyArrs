@@ -77,6 +77,16 @@
 	let askedHere = $state(new Map<string, { ask?: AskState; titleId?: number }>());
 	let asking = $state('');
 
+	// The switch floats once its spot scrolls under the top bar.
+	let typesMark = $state<HTMLElement>();
+	let typesStuck = $state(false);
+	$effect(() => {
+		if (!typesMark) return;
+		const top = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--topbar')) || 56;
+		const io = new IntersectionObserver(([e]) => (typesStuck = !e.isIntersecting), { rootMargin: `-${top}px 0px 0px 0px` });
+		io.observe(typesMark);
+		return () => io.disconnect();
+	});
 	const manage = $derived(session.can('manage_library'));
 	const mayAsk = $derived(session.can('ask'));
 	const who = $derived(audienceOf(session.can));
@@ -328,7 +338,8 @@
 
 <div class="explore">
 	<PageHeader title="Explore" subtitle="Find something to watch or listen to next." />
-	<div class="types">
+	<div class="types-mark" bind:this={typesMark} aria-hidden="true"></div>
+	<div class="types" class:stuck={typesStuck}>
 		<SegmentedControl options={typeOptions} value={type} label="Show" testid="explore-type" onchange={setType} />
 	</div>
 	<MetadataNotice />
@@ -394,12 +405,15 @@
 <style>
 	.explore { --explore-item: 168px; display: flex; flex-direction: column; gap: 32px; padding-bottom: 48px; }
 	.explore > :global(.ui-head) { margin-bottom: -8px; }
-	/* The type switch: an Apple-style pill under the title, in the page flow (no floating band over the rows). */
-	.types { display: flex; justify-content: flex-start; margin-top: -12px; }
+	/* The type switch: in the page under the title; once scrolled past it floats as a glass pill under the top bar. */
+	.types-mark { height: 0; margin-top: -32px; }
+	.types { position: sticky; top: calc(var(--topbar) + 10px); z-index: 20; display: flex; justify-content: center; margin-top: -12px; pointer-events: none; }
+	.types :global(.ui-seg) { pointer-events: auto; transition: transform 320ms cubic-bezier(.2,.8,.2,1), box-shadow 320ms ease, background-color 320ms ease; transform-origin: top center; }
+	.types.stuck :global(.ui-seg) { transform: scale(0.92); background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
 	.types :global(.ui-seg) { border-radius: 999px; padding: 3px; }
 	.types :global(.ui-seg .thumb) { top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / var(--n)); border-radius: 999px; }
 	.types :global(.ui-seg button) { min-height: 44px; padding: 0 20px; border-radius: 999px; }
-	@media (prefers-reduced-motion: reduce) { .types :global(.ui-seg .thumb) { transition: none; } }
+	@media (prefers-reduced-motion: reduce) { .types :global(.ui-seg), .types :global(.ui-seg .thumb) { transition: none; } .types.stuck :global(.ui-seg) { transform: none; } }
 	@media (max-width: 767px) { .types :global(.ui-seg) { display: grid; width: 100%; } .types :global(.ui-seg button) { padding: 0 8px; } }
 	@media (max-width: 359px) {
 		.types :global(.ui-seg button span) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
