@@ -6,6 +6,7 @@
 	import { api, message } from '#lib/api.ts';
 	import { to } from '#lib/paths.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
+	import { session } from '#lib/session.svelte.ts';
 	import { changedParts, foldersFor, gateChoices, rulesFor } from '#lib/title-defaults.ts';
 	import { detailsSources, episodeOrders, seasonChoices } from '#lib/shows.ts';
 	import Field from '#lib/ui/Field.svelte';
@@ -22,6 +23,8 @@
 		shows: ShowSettings;
 	}
 
+	// People without the settings permission see the defaults but cannot change them.
+	const mayEdit = $derived(session.can('settings'));
 	let form = $state<Parts | null>(null);
 	let saved = $state('');
 	let folders = $state<LibraryFolder[]>([]);
@@ -41,11 +44,16 @@
 		loading = true;
 		loadError = '';
 		try {
-			const [defaults, gate, shows] = await Promise.all([
+			// Folders and Pick rules come with the defaults, so the choices are there on the first draw.
+			const [defaults, gate, shows, f, r] = await Promise.all([
 				api.get<TitleDefaults>('/settings/title-defaults'),
 				api.get<GateDefaults>('/settings/release-gate'),
-				api.get<ShowSettings>('/settings/shows')
+				api.get<ShowSettings>('/settings/shows'),
+				api.get<{ library_folders: LibraryFolder[] }>('/library-folders'),
+				api.get<{ pick_rules: PickRulesView[] }>('/pick-rules')
 			]);
+			folders = f.library_folders;
+			rules = r.pick_rules;
 			form = { defaults, gate, shows };
 			saved = JSON.stringify(form);
 		} catch (e) {
@@ -55,17 +63,7 @@
 		}
 	}
 
-	onMount(() => {
-		void load();
-		api
-			.get<{ library_folders: LibraryFolder[] }>('/library-folders')
-			.then((r) => (folders = r.library_folders))
-			.catch(() => {});
-		api
-			.get<{ pick_rules: PickRulesView[] }>('/pick-rules')
-			.then((r) => (rules = r.pick_rules))
-			.catch(() => {});
-	});
+	onMount(load);
 
 	// Saves only the routes whose part changed, one after the other; a part
 	// that saved stays saved when a later one fails.
@@ -96,16 +94,19 @@
 
 <PageHeader title="Movies and TV defaults" subtitle="What a new movie or show gets. The add dialog starts from these, and you can still change them there for one title." />
 
-{#if loading && !form}
+{#if loading && !form && !loadError}
 	<div class="loading" aria-busy="true"><Skeleton shape="block" height="220px" /><Skeleton shape="block" height="220px" /></div>
 {:else if !form}
 	<LoadError hasData={false} message={loadError} onretry={load} busy={loading} />
 {:else}
+	{#if !mayEdit}<p class="hint" data-testid="read-only">You can see these defaults. Changing them takes the settings permission.</p>{/if}
 	<form class="sc-form" id="title-defaults-form" onsubmit={save} aria-label="Movies and TV defaults">
+	<fieldset class="all" disabled={!mayEdit}>
+	<legend class="sr-only">{mayEdit ? 'Movies and TV defaults' : 'Movies and TV defaults, read only'}</legend>
 		<SettingsCard id="movie-defaults" icon="film" title="Movies" description="What every movie you add gets.">
 			<Field id="td-movie-folder" label="Library folder" hint="Where a new movie goes.">
 				<select id="td-movie-folder" class="input" bind:value={form.defaults.movie.library_folder_id}>
-					<option value={0}>The first movie folder</option>
+					<option value={0}>The first working movie folder</option>
 					{#each movieFolders as f (f.id)}<option value={f.id}>{f.label || f.path} ({f.path})</option>{/each}
 				</select>
 			</Field>
@@ -138,7 +139,7 @@
 		<SettingsCard id="show-defaults" icon="tv" title="TV shows" description="What every show you add gets.">
 			<Field id="td-show-folder" label="Library folder" hint="Where a new show goes.">
 				<select id="td-show-folder" class="input" bind:value={form.defaults.show.library_folder_id}>
-					<option value={0}>The first TV show folder</option>
+					<option value={0}>The first working TV show folder</option>
 					{#each showFolders as f (f.id)}<option value={f.id}>{f.label || f.path} ({f.path})</option>{/each}
 				</select>
 			</Field>
@@ -185,12 +186,15 @@
 			Each <a href={to('/settings/library-folders')}>Library folder</a> has Pick rules of its own. <a href={to('/settings/wishlist')}>Wishlist rules</a> and
 			<a href={to('/settings/outside-lists')}>Outside lists</a> keep their own choices.
 		</p>
+	</fieldset>
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 	</form>
-	<SaveBar {dirty} form="title-defaults-form" saving={busy} ondiscard={() => (form = JSON.parse(saved))} />
+	{#if mayEdit}<SaveBar {dirty} form="title-defaults-form" saving={busy} ondiscard={() => (form = JSON.parse(saved))} />{/if}
 {/if}
 
 <style>
+	/* The fieldset only turns the form read only; it adds no box of its own. */
+	.all { display: contents; border: 0; padding: 0; margin: 0; }
 	.loading { display: flex; flex-direction: column; gap: 16px; }
 	.narrow { max-width: 160px; }
 	.where { margin-top: 4px; }
