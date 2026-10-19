@@ -49,3 +49,15 @@ func TestArtworkDefaultClientPublicOnly(t *testing.T) {
 		t.Fatal("artwork client uses a proxy")
 	}
 }
+
+func TestTMDBArtworkURL(t *testing.T) {
+	const base = "https://image.tmdb.org/t/p"
+	if u, ok := TMDBArtworkURL(base, "w342", "abc_D-9.jpg"); !ok || u != base+"/w342/abc_D-9.jpg" {
+		t.Fatalf("got %q %v", u, ok)
+	}
+	for _, c := range [][2]string{{"w343", "a.jpg"}, {"w342", "../x.jpg"}, {"w342", "a.gif"}, {"w342", "a.b.jpg"}, {"w342", ".jpg"}, {"w342", "a%2f.jpg"}, {"", "a.jpg"}} {
+		if _, ok := TMDBArtworkURL(base, c[0], c[1]); ok {
+			t.Errorf("%v accepted", c)
+		}
+	}
+}

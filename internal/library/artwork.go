@@ -53,6 +53,29 @@ func ArtworkName(url string) string {
 	return hex.EncodeToString(h[:16]) + ext
 }
 
+// tmdbSizes are the picture sizes TMDB serves; asking for one of them means
+// the stored file is used as it comes, with no resizing here.
+var tmdbSizes = map[string]bool{"w92": true, "w154": true, "w185": true, "w300": true, "w342": true, "w500": true, "w780": true, "w1280": true, "original": true}
+
+// TMDBArtworkURL is the TMDB picture at base (metadata.ImageBase) for a
+// size and file name taken from /api/v1/artwork/tmdb/{size}/{file}; ok is
+// false for an unknown size or a name that is not a plain picture file.
+func TMDBArtworkURL(base, size, file string) (string, bool) {
+	if !tmdbSizes[size] || len(file) < 5 || len(file) > 80 {
+		return "", false
+	}
+	stem, ext, ok := strings.Cut(file, ".")
+	if !ok || (ext != "jpg" && ext != "png" && ext != "webp") || stem == "" {
+		return "", false
+	}
+	for _, r := range stem {
+		if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '_' || r == '-') {
+			return "", false
+		}
+	}
+	return strings.TrimSuffix(base, "/") + "/" + size + "/" + file, true
+}
+
 // Fetch stores the picture at url (when not already there) and returns its
 // cache name.
 func (c *ArtworkCache) Fetch(ctx context.Context, url string) (string, error) {
