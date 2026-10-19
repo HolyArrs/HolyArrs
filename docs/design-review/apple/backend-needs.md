@@ -112,3 +112,7 @@ What is asked for:
   - The app has no density setting.
   - Reduced motion follows the operating system only.
   - If either is wanted per person, keep it with the person's other choices (`GET` and `PUT /api/v1/my/preferences`, `{ density: 'comfortable'|'compact', motion: 'system'|'reduce' }`). The same store could also keep which Advanced disclosures a person left open. Today that lives in the browser's own storage, per person.
+
+## 6. Artist pictures
+
+**Built.** MusicBrainz has no artist pictures, so the server looks an artist up by name in Deezer's public artist search (`internal/metadata/artistimages.go`) and keeps the picture address for the artist. Only Deezer's picture hosts are allowed as artwork. `HOLYARRS_DEEZER_URL` points at a stand-in (its own address is then the only allowed picture host) or turns the lookup off with `off`; with a MusicBrainz stand-in and no Deezer stand-in it is off too, so tests never reach the real Deezer. The browser tests use a fake Deezer search served by the fake MusicBrainz under `/deezer` (`web/app/e2e/fakes.mjs`): the first made-up artist has a small PNG picture, the others answer with an empty picture id, as Deezer does for an artist without one. The base-path test server sets `off`.
