@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 )
 
 // limitOf reads max_rating and rating_country from a body.
@@ -338,5 +339,36 @@ func TestOutsideJoinOpen(t *testing.T) {
 	}
 	if !f.a.OutsideJoinOpen(context.Background()) {
 		t.Fatal("closed while a list may join")
+	}
+}
+
+// TestOpenKidInviteBlocksLocalSkip: an open invite that carries an age
+// limit makes a Kid once used, so skipping sign-in on the local network
+// stays off while one is open; once it has run out, the skip may go on.
+func TestOpenKidInviteBlocksLocalSkip(t *testing.T) {
+	f := gated(t, Options{})
+	own := ownerOf(t, f)
+	if resp, out := own.do(t, f, "POST", "/api/v1/users/invites", `{"max_rating":"PG","days":1}`); resp.StatusCode != 201 {
+		t.Fatalf("kid invite: %d %s", resp.StatusCode, out)
+	}
+	resp, out := own.do(t, f, "PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true}`)
+	if resp.StatusCode != 400 || !strings.Contains(out, "invite") {
+		t.Fatalf("skip on with an open Kid invite: %d %s", resp.StatusCode, out)
+	}
+	if _, out := own.do(t, f, "GET", "/api/v1/auth/settings", ""); !strings.Contains(out, `"skip_login_local_network":false`) {
+		t.Fatalf("skip turned on anyway: %s", out)
+	}
+	f.clock.add(48 * time.Hour)
+	resp, out = own.do(t, f, "POST", "/api/v1/auth/reauth", `{"password":"`+pw+`"}`)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("reauth: %d %s", resp.StatusCode, out)
+	}
+	var fresh struct {
+		CSRF string `json:"csrf"`
+	}
+	jsonOf(t, out, &fresh)
+	own.csrf = fresh.CSRF
+	if resp, out := own.do(t, f, "PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true}`); resp.StatusCode != 200 {
+		t.Fatalf("skip on after the invite ran out: %d %s", resp.StatusCode, out)
 	}
 }

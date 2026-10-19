@@ -152,6 +152,34 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 			fail(w, http.StatusBadRequest, "Skipping sign-in on the local network cannot be on while a Kid account has an age limit: anyone at home would sign in as the owner. Remove the limits first.")
 			return
 		}
+		// An open invite with an age limit makes a Kid once it is used.
+		rows, err := a.s.Read().QueryContext(r.Context(), "SELECT expires_at FROM invites WHERE used_at IS NULL AND max_rating != ''")
+		if err != nil {
+			serverError(w, "sign-in settings", err)
+			return
+		}
+		open := false
+		for rows.Next() {
+			var expires string
+			if err := rows.Scan(&expires); err != nil {
+				rows.Close()
+				serverError(w, "sign-in settings", err)
+				return
+			}
+			if a.now().Before(parseTime(expires)) {
+				open = true
+			}
+		}
+		err = rows.Err()
+		rows.Close()
+		if err != nil {
+			serverError(w, "sign-in settings", err)
+			return
+		}
+		if open {
+			fail(w, http.StatusBadRequest, "Skipping sign-in on the local network cannot be on while an open invite has an age limit: the Kid it makes would sign in as the owner at home. Withdraw the invite or let it run out first.")
+			return
+		}
 	}
 	set := map[string]string{}
 	if body.SkipLocal != nil {
