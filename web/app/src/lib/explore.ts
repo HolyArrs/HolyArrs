@@ -34,6 +34,8 @@ export interface ExploreCard {
 	ask?: AskBrief;
 	/** 16:9 picture for wide cards: backdrop, else episode still. */
 	wide?: string | null;
+	/** An ask for it was turned down (shown to staff only). */
+	declined?: boolean;
 }
 
 export interface ExploreRow {
@@ -417,7 +419,8 @@ export function discoverCard(d: ProviderItem, row: string): ExploreCard {
 		status: d.in_library ? 'in_library' : d.ask && d.ask.state !== 'turned_down' ? titleStatus({ ask: d.ask.state }, 'staff').kind : undefined,
 		badges: [],
 		mine: !!d.ask?.mine,
-		ask: d.ask && d.ask.state !== 'turned_down' ? d.ask : undefined
+		ask: d.ask && d.ask.state !== 'turned_down' ? d.ask : undefined,
+		...(d.ask?.state === 'turned_down' ? { declined: true } : {})
 	};
 }
 
@@ -478,4 +481,100 @@ export function typeHref(href: string | undefined, t: ExploreType): string | und
 		p.set('kind', kind);
 	} else p.set('type', t);
 	return `${path}?${p.toString()}`;
+}
+
+// ---- Owned marks (Overseerr-style: type pill top-left, status icon top-right) ----
+
+/** OwnedState is the round status icon on a poster; none means not in the Library and not asked. */
+export type OwnedState = 'available' | 'partial' | 'downloading' | 'requested' | 'declined';
+export interface OwnedMark {
+	state: OwnedState;
+	/** aria-label and tooltip. */
+	label: string;
+}
+
+/** ownedKey is how a title is found again: kind plus its TMDB id (MusicBrainz id for artists). */
+function ownedKeys(kind: CardKind, ids: Record<string, string> | null | undefined): string[] {
+	const out: string[] = [];
+	if (ids?.tmdb) out.push(`${kind}:tmdb:${ids.tmdb}`);
+	if (ids?.musicbrainz) out.push(`${kind}:mbid:${ids.musicbrainz}`);
+	return out;
+}
+
+/** OwnedIndex finds Library titles by id or by their TMDB / MusicBrainz id. */
+export interface OwnedIndex {
+	byId: Map<number, TitleView>;
+	byRef: Map<string, TitleView>;
+}
+
+export function ownedIndex(titles: TitleView[]): OwnedIndex {
+	const byId = new Map<number, TitleView>();
+	const byRef = new Map<string, TitleView>();
+	for (const t of titles) {
+		byId.set(t.id, t);
+		const mbid = t.artist?.mbid;
+		for (const k of ownedKeys(kindOf(t.kind), { ...(t.ids ?? {}), ...(mbid ? { musicbrainz: mbid } : {}) })) byRef.set(k, t);
+	}
+	return { byId, byRef };
+}
+
+/** ownedTitle is the Library title behind a card, if any. */
+export function ownedTitle(c: Pick<ExploreCard, 'kind' | 'ref' | 'titleId'>, idx: OwnedIndex): TitleView | undefined {
+	if (c.titleId !== undefined) return idx.byId.get(c.titleId);
+	if (!c.ref) return undefined;
+	const [scheme, id] = [c.ref.slice(0, c.ref.indexOf(':')), c.ref.slice(c.ref.indexOf(':') + 1)];
+	if (!id || (scheme !== 'tmdb' && scheme !== 'mbid')) return undefined;
+	return idx.byRef.get(`${c.kind}:${scheme}:${id}`);
+}
+
+const fullStates = new Set(['in_library', 'better_wanted', 'no_hardlink']);
+
+const ownedWords: Record<OwnedState, string> = {
+	available: 'In your library',
+	partial: 'Partly available',
+	downloading: 'Downloading',
+	requested: 'Requested',
+	declined: 'Declined'
+};
+
+/**
+ * ownedMark says which round icon a card shows. A Library title is checked
+ * first (downloading, then all or part of its files); otherwise the card's
+ * own ask. Declined shows only to people who manage or approve (staff).
+ */
+export function ownedMark(c: ExploreCard, t: TitleView | undefined, who: Audience): OwnedMark | null {
+	const mark = (state: OwnedState, label = ownedWords[state]): OwnedMark => ({ state, label });
+	if (t) {
+		const f = factsOf(t);
+		if (f.downloading) return mark('downloading', f.percent !== undefined ? `Downloading ${f.percent}%` : undefined);
+		if (f.inLibrary) {
+			const slots = t.slots ?? [];
+			const part = (t.show?.missing ?? 0) > 0 || (t.artist?.missing ?? 0) > 0 || slots.some((s) => !fullStates.has(s.state) && !s.file && s.state !== 'not_out_yet');
+			return mark(part ? 'partial' : 'available');
+		}
+		if (f.ask === 'turned_down') return who === 'staff' ? mark('declined') : null;
+		return mark('requested', f.ask === 'approved' ? 'Approved, waiting for a copy' : f.ask ? 'Requested' : 'Waiting for a copy');
+	}
+	switch (c.status) {
+		case 'in_library':
+			return mark('available');
+		case 'downloading':
+			return mark('downloading');
+		case 'missing':
+			return c.titleId !== undefined ? mark('requested', 'Waiting for a copy') : null;
+		case 'requested':
+			return mark('requested');
+		case 'approved':
+			return mark('requested', 'Approved, waiting for a copy');
+		case 'turned_down':
+			return who === 'staff' && c.ask?.state === 'turned_down' ? mark('declined') : null;
+	}
+	return c.declined && who === 'staff' ? mark('declined') : null;
+}
+
+/** matchOwned ties a card to its Library title (found by TMDB or MusicBrainz id), so owned cards open the title page and lose the +. */
+export function matchOwned(c: ExploreCard, idx: OwnedIndex): ExploreCard {
+	const t = ownedTitle(c, idx);
+	if (!t || c.titleId === t.id) return c;
+	return { ...c, titleId: t.id, status: titleStatus(factsOf(t), 'staff').kind, statusLabel: undefined };
 }

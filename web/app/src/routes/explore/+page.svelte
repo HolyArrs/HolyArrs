@@ -13,7 +13,6 @@
 	import {
 		becauseYouHave,
 		cardAction,
-		cardPill,
 		cardTmdb,
 		comingSoon,
 		discoverCard,
@@ -23,15 +22,14 @@
 		genreRows,
 		genresOf,
 		keepFull,
-		kindShelf,
 		liveCard,
-		readyToWatch,
-		stillLooking,
+		matchOwned,
+		ownedIndex,
+		ownedMark,
+		ownedTitle,
 		markTransitions,
-		missingEpisodes,
 		popularInHousehold,
 		recentlyAdded,
-		titleCard,
 		filterRows,
 		parseType,
 		typeHref,
@@ -156,19 +154,12 @@
 		const [trending, popular, upcoming, similar] = ['trending', 'popular', 'upcoming', 'similar'].map((id) => own.find((r) => r.id === id) ?? discovered.find((r) => r.id === id));
 		return markTransitions(
 			filterRows(keepFull([
-				{ id: 'recent', title: 'Recently added', href: to('/library'), cards: recentlyAdded(titles).map((t) => titleCard(t)) },
 				trending,
-				{ id: 'ready', title: 'Ready to watch', subtitle: 'Every copy is in your Library', cards: readyToWatch(titles) },
 				{ id: 'soon', title: 'Coming soon', subtitle: 'From your calendar', href: to('/calendar'), cards: comingSoon(dates, titles) },
 				because && { id: 'because', title: `Because you have ${because.seed.name}`, cards: because.cards },
 				similar,
-				{ id: 'movies', title: 'Movies', href: to('/library?kind=movie'), cards: kindShelf(titles, 'movie') },
-				{ id: 'shows', title: 'TV shows', href: to('/library?kind=show'), cards: kindShelf(titles, 'show') },
 				...genreRows(titles, facets),
 				popular,
-				{ id: 'missing', title: 'Missing episodes', subtitle: 'Shows with aired episodes that have no file', href: to('/library?kind=show&show=missing&layout=list'), cards: missingEpisodes(titles) },
-				{ id: 'looking', title: 'Still looking', subtitle: 'No copy in your Library yet', cards: stillLooking(titles) },
-				{ id: 'music', title: 'Music', href: to('/library?kind=artist'), cards: kindShelf(titles, 'artist') },
 				{ id: 'household', title: 'Popular in your household', subtitle: 'What people here asked for most', href: to('/wishlist'), cards: popularInHousehold(asks, titles) },
 				person && { id: 'person', title: `From ${person.person}`, cards: person.cards },
 				upcoming
@@ -176,8 +167,10 @@
 		);
 	});
 
+	/** Every card is matched against the Library (by TMDB or MusicBrainz id), so owned titles read as owned in every row. */
+	const owned = $derived(ownedIndex(titles));
 	function live(c: ExploreCard): ExploreCard {
-		return liveCard(c, askedHere.get(c.key));
+		return matchOwned(liveCard(c, askedHere.get(c.key)), owned);
 	}
 
 	/** refused: the server says the title is in the Library already (409), so the card says so. */
@@ -363,7 +356,7 @@
 				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.id === 'soon' ? 'var(--release-item)' : 'var(--explore-item)'}>
 					{#each row.cards.map(live) as c (c.key)}
 						{@const act = cardAction(c, { manage, ask: mayAsk })}
-						{@const pill = cardPill(c, who)}
+						{@const mark = ownedMark(c, ownedTitle(c, owned), who)}
 						{#if row.id === 'soon'}
 							<WideCard title={c.name} href={cardHref(c)} image={c.wide} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} />
 						{:else}
@@ -374,8 +367,9 @@
 							kind={c.kind}
 							subtitle={c.subtitle}
 							badges={c.badges}
-							status={pill?.kind}
-							statusLabel={pill?.label}
+							typePill={type === 'all' ? c.kind : undefined}
+							owned={mark}
+							actionOnHover
 							vtName={c.vtName}
 						>
 							{#snippet action()}
