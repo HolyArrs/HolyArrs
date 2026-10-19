@@ -243,7 +243,8 @@
 
 <style>
 	.ui-palette { margin: -8px -22px -22px; display: flex; flex-direction: column; min-height: 0; }
-	.bar { display: flex; align-items: center; gap: 10px; padding: 0 16px; height: 56px; flex: none; border-bottom: 1px solid var(--line); color: var(--text-muted); }
+	/* .bar is also the global progress-bar class: undo its fill, radius and clip. */
+	.bar { display: flex; align-items: center; gap: 10px; padding: 0 16px; height: 56px; flex: none; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; overflow: visible; color: var(--text-muted); }
 	input { flex: 1; min-width: 0; height: 100%; border: 0; background: transparent; color: var(--text); font: var(--t-body); font-size: 17px; outline: none; }
 	/* The whole bar is the field: the input itself never draws a ring or tint;
 	   with the keyboard the bar gets an accent underline. */
@@ -267,6 +268,8 @@
 	.row:not(.hit) .grow { display: block; }
 	.name { font-weight: 500; }
 	.sub { color: var(--text-muted); font: var(--t-footnote); }
+	/* On the selected row's fill the muted grey is under 4.5:1; use the body colour. */
+	.row.active .sub { color: var(--text); }
 	.sec { color: var(--text-muted); font: var(--t-footnote); }
 	.more { color: var(--accent-text); font-weight: 500; min-height: 36px; }
 	.all { margin-top: 4px; border-top: 1px solid var(--line); border-radius: 0 0 9px 9px; color: var(--accent-text); font-weight: 600; }
