@@ -255,9 +255,11 @@
 			}
 			error = '';
 		} catch (e) {
-			if (e instanceof ApiError && e.status === 404) notFound = true;
-			else if (e instanceof ApiError && e.status === 403) blocked = true;
-			else error = message(e);
+			// A Kid gets 404 for a Library title above their age rating, the same as a missing one.
+			if (e instanceof ApiError && e.status === 404) {
+				if (session.kid) blocked = true;
+				else notFound = true;
+			} else error = message(e);
 		}
 	}
 
