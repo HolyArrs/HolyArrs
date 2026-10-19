@@ -84,7 +84,7 @@ test('a member asks for a movie from a phone and sees it on the Wishlist', async
 	await expect(hit.getByRole('button', { name: 'Ask', exact: true })).toBeFocused();
 	await hit.getByRole('button', { name: 'Ask', exact: true }).click();
 	await confirmAsk.getByRole('button', { name: 'Ask for Copper Lighthouse' }).click();
-	await expect(hit.getByRole('link', { name: /^Requested/ })).toBeVisible();
+	await expect(hit.getByRole('link', { name: /^You asked · Requested on your Wishlist$/ })).toBeVisible();
 	await expect(kim.getByTestId('ask-limit')).toContainText('You have 9 movie asks left this week');
 	await noSidewaysScroll(kim);
 	// A movie already in the Library still says so; there is nothing to ask.
@@ -121,7 +121,7 @@ test('a member asks for a movie from a phone and sees it on the Wishlist', async
 	const again = kim.locator('li.hit', { hasText: 'Copper Lighthouse' });
 	await again.getByRole('button', { name: 'Ask', exact: true }).click();
 	await kim.getByRole('dialog', { name: /^Ask for Copper Lighthouse/ }).getByRole('button', { name: 'Ask for Copper Lighthouse' }).click();
-	await expect(again.getByRole('link', { name: /^Requested/ })).toBeVisible();
+	await expect(again.getByRole('link', { name: /^You asked · Requested on your Wishlist$/ })).toBeVisible();
 	await kim.locator('nav.tabbar').getByRole('link', { name: 'Wishlist' }).click();
 	await expect(ask.getByTestId('ask-state')).toHaveText('Requested');
 	await noSidewaysScroll(kim);
@@ -173,7 +173,7 @@ test('turned down with a note; over the weekly limit kim is told when to try aga
 	await search(kim, 'velvet');
 	await kim.locator('li.hit', { hasText: 'Velvet Tide' }).getByRole('button', { name: 'Ask', exact: true }).click();
 	await kim.getByRole('dialog', { name: /^Ask for Velvet Tide/ }).getByRole('button', { name: 'Ask for Velvet Tide' }).click();
-	await expect(kim.locator('li.hit', { hasText: 'Velvet Tide' }).getByRole('link', { name: /^Requested/ })).toBeVisible();
+	await expect(kim.locator('li.hit', { hasText: 'Velvet Tide' }).getByRole('link', { name: /^You asked · Requested on your Wishlist$/ })).toBeVisible();
 
 	await own.goto('/wishlist');
 	const ask = own.getByTestId('ask').filter({ hasText: 'Velvet Tide' });

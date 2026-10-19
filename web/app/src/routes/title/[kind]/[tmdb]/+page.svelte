@@ -140,7 +140,7 @@
 		return () => (live = false);
 	});
 	// One status vocabulary (title-status.ts) for the ask on this title.
-	const heroPill = (d: TitleDetails) => titleStatus({ ask: d.ask?.state, neverAdd: d.neverAdd, titleKind: d.kind }, audienceOf(session.can));
+	const heroPill = (d: TitleDetails) => titleStatus({ ask: d.ask?.state, mine: d.ask?.mine, neverAdd: d.neverAdd, titleKind: d.kind }, audienceOf(session.can));
 	const scoreOf = (r?: string) => (r && /\/\s*10$/.test(r) ? Number.parseFloat(r) : undefined);
 	const certOf = (r?: string) => (r && !/\/\s*10$/.test(r) ? r : undefined);
 	const heroMeta = (d: TitleDetails) => [d.year ? String(d.year) : '', d.kind === 'show' ? (d.network ?? '') : runtimeWords(d.runtime), ...d.genres.slice(0, 3)].filter(Boolean);

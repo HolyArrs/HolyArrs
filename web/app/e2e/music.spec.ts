@@ -186,7 +186,7 @@ test('a member asks for one single from a phone', async ({ browser }) => {
 	await axe(ivy, 'ask artist dialog phone');
 	await dialog.getByRole('button', { name: 'Ask for Fern Hymns' }).click();
 	await expect(dialog).toBeHidden();
-	await expect(hit.getByRole('link', { name: /^Requested/ })).toBeVisible();
+	await expect(hit.getByRole('link', { name: /^You asked · Requested on your Wishlist$/ })).toBeVisible();
 
 	// An artist in the Library offers to ask for the albums it does not keep.
 	await searchMusic(ivy, 'lantern');

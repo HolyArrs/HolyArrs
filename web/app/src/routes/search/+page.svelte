@@ -335,7 +335,7 @@
 							{:else if session.can('manage_library')}
 								<Button variant="primary" icon="plus" onclick={() => addArtist?.open(a)}>Add</Button>
 							{:else if a.ask?.mine}
-								{@const p = pill({ ask: a.ask.state, titleKind: 'artist' })}<a class="pill-link" href={to(`/wishlist`)}><StatusPill kind={p.kind} label={p.label} /><span class="sr-only"> on your Wishlist</span></a>
+								{@const p = pill({ ask: a.ask.state, titleKind: 'artist', mine: true })}<a class="pill-link" href={to(`/wishlist`)}><StatusPill kind={p.kind} label={p.label} /><span class="sr-only"> on your Wishlist</span></a>
 							{:else if session.can('ask')}
 								<Button variant="primary" icon="wish" onclick={() => askArtist?.open(a)}>{a.ask ? 'Ask too' : a.title_id ? 'Ask for more' : 'Ask'}</Button>
 								{#if a.ask}<span class="xs muted asked-already">Someone asked for {albumWords(a.ask.albums)} · {pill({ ask: a.ask.state }).label}</span>
@@ -381,7 +381,7 @@
 							{:else if session.can('manage_library')}
 								<Button variant="primary" icon="plus" onclick={() => addShow?.open(s)}>Add</Button>
 							{:else if s.ask?.mine}
-								{@const p = pill({ ask: s.ask.state, titleKind: 'show' })}<a class="pill-link" href={to(`/wishlist`)}><StatusPill kind={p.kind} label={p.label} /><span class="sr-only"> on your Wishlist</span></a>
+								{@const p = pill({ ask: s.ask.state, titleKind: 'show', mine: true })}<a class="pill-link" href={to(`/wishlist`)}><StatusPill kind={p.kind} label={p.label} /><span class="sr-only"> on your Wishlist</span></a>
 							{:else if session.can('ask')}
 								<Button variant="primary" icon="wish" onclick={() => askShow?.open(s)}>{s.ask ? 'Ask too' : s.title_id ? 'Ask for more' : 'Ask'}</Button>
 								{#if s.ask}<span class="xs muted asked-already">Someone asked for {seasonWords(s.ask.seasons)} · {pill({ ask: s.ask.state }).label}</span>
@@ -423,7 +423,7 @@
 						{:else if session.can('manage_library')}
 							<Button variant="primary" icon="plus" onclick={() => addMovie?.open(m)}>Add</Button>
 						{:else if m.ask?.mine}
-							{@const p = pill({ ask: m.ask.state, titleKind: 'movie' })}<a class="pill-link" href={to(`/wishlist`)}><StatusPill kind={p.kind} label={p.label} /><span class="sr-only"> on your Wishlist</span></a>
+							{@const p = pill({ ask: m.ask.state, titleKind: 'movie', mine: true })}<a class="pill-link" href={to(`/wishlist`)}><StatusPill kind={p.kind} label={p.label} /><span class="sr-only"> on your Wishlist</span></a>
 						{:else if session.can('ask')}
 							<Button variant="primary" icon="wish" onclick={() => m.ids.tmdb && askMovie?.open({ tmdb: m.ids.tmdb, name: m.name, year: m.year, ask: m.ask })}>{m.ask ? 'Ask too' : 'Ask'}</Button>
 							{#if m.ask}<span class="xs muted asked-already">Someone asked already · {pill({ ask: m.ask.state }).label}</span>{/if}

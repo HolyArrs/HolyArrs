@@ -177,7 +177,7 @@ test('a member asks for two seasons of a show from a phone', async ({ browser })
 	await axe(max, 'ask show dialog phone');
 	await dialog.getByRole('button', { name: 'Ask for seasons 1 and 2' }).click();
 	await expect(dialog).toBeHidden();
-	await expect(hit.getByRole('link', { name: /^Requested/ })).toBeVisible();
+	await expect(hit.getByRole('link', { name: /^You asked · Requested on your Wishlist$/ })).toBeVisible();
 
 	// A show already in the Library offers to ask for the seasons it does not keep.
 	await searchShows(max, 'harbour');

@@ -49,6 +49,16 @@ describe('title status words', () => {
 		expect(titleStatus({ tracked: true }, 'staff')).toEqual({ kind: 'missing', label: 'Missing' });
 	});
 
+	it('says when the ask is the person’s own', () => {
+		expect(titleStatus({ ask: 'asked', mine: true }, 'member')).toEqual({ kind: 'requested', label: 'You asked · Requested' });
+		expect(titleStatus({ ask: 'asked', mine: true }, 'staff')).toEqual({ kind: 'requested', label: 'You asked · Waiting for approval' });
+		expect(titleStatus({ ask: 'approved', mine: true }, 'member').label).toBe('You asked · Approved');
+		expect(titleStatus({ ask: 'asked', mine: false }, 'member').label).toBe('Requested');
+		// Once it is in the Library or downloading, that is what counts.
+		expect(titleStatus({ ask: 'available', mine: true, inLibrary: true }, 'member').label).toBe('Ready to watch');
+		expect(titleStatus({ ask: 'asked', mine: true, downloading: true }, 'member').label).toBe('Downloading');
+	});
+
 	it('names the Never-add list', () => {
 		expect(titleStatus({ neverAdd: true }, 'staff')).toEqual({ kind: 'turned_down', label: 'On the Never-add list' });
 	});

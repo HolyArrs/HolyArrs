@@ -23,6 +23,8 @@ export interface StatusFacts {
 	neverAdd?: boolean;
 	/** The title is in the Library list, with or without a file yet. */
 	tracked?: boolean;
+	/** The ask is the signed-in person's own. */
+	mine?: boolean;
 }
 
 export interface TitleStatus {
@@ -89,7 +91,9 @@ export function titleStatus(f: StatusFacts, who: Audience): TitleStatus {
 					: f.comingSoon
 						? 'coming_soon'
 						: 'missing';
-	return audienceStatus(kind, who, f);
+	const st = audienceStatus(kind, who, f);
+	// The person's own open ask says so, so it reads apart from someone else's.
+	return f.mine && (st.kind === 'requested' || st.kind === 'approved') && f.ask ? { ...st, label: `You asked · ${st.label}` } : st;
 }
 
 const haveStates = new Set(['in_library', 'better_wanted', 'no_hardlink']);
