@@ -59,8 +59,24 @@ func TestTop10JoinsLibraryAndKeepsRanks(t *testing.T) {
 		t.Fatalf("asked %v", asked)
 	}
 	get("?kind=movie&region=ZZ", 404)
+	n := calls.Load()
+	get("?kind=movie&region=ZZ", 404)
+	if calls.Load() != n {
+		t.Fatal("unknown region asked again")
+	}
+	get("?kind=movie&region=1A", 400)
+	get("?kind=movie&region=%C3%A9A", 400)
 	get("?kind=album", 400)
 	get("?kind=movie&lang=fr", 400)
+	for range 40 {
+		resp, _ := http.Get(srv.URL + "/api/v1/top10?kind=movie")
+		resp.Body.Close()
+		if resp.StatusCode == 429 {
+			goto limited
+		}
+	}
+	t.Fatal("no per-person limit")
+limited:
 	srv2 := httptest.NewServer(New(Server{Store: s, Version: "test"}).Handler())
 	defer srv2.Close()
 	if resp, _ := http.Get(srv2.URL + "/api/v1/top10?kind=movie"); resp.StatusCode != 404 {
