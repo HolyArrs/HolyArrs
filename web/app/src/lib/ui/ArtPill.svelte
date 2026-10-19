@@ -35,12 +35,12 @@
 
 <span class="ui-art-pill {tone}" class:compact class:glyph={!!icon || pct !== undefined} role={label ? 'img' : undefined} aria-label={label} title={label} data-testid={testid}>
 	{#if pct !== undefined}
-		<svg class="g ring" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
-			<circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-opacity="0.28" stroke-width="2.8" />
-			<circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-dasharray="{(pct / 100) * C} {C}" transform="rotate(-90 12 12)" />
+		<svg class="g ring" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+			<circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-opacity="0.28" stroke-width="2.4" />
+			<circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="{(pct / 100) * C} {C}" transform="rotate(-90 12 12)" />
 		</svg>
 	{:else if icon}
-		<span class="g"><Icon name={icon} size={13} stroke={2.6} /></span>
+		<span class="g"><Icon name={icon} size={16} stroke={2} /></span>
 	{/if}
 	<span class="w" aria-hidden={label ? 'true' : undefined}>{text}</span>
 </span>
@@ -50,10 +50,10 @@
 		--tint: var(--on-art);
 		display: inline-flex;
 		align-items: center;
-		gap: 4px;
-		height: 22px;
+		gap: 5px;
+		height: 26px;
 		max-width: 100%;
-		padding: 0 8px;
+		padding: 0 10px;
 		border-radius: var(--r-pill);
 		color: var(--on-art);
 		font: var(--t-caption);
@@ -65,16 +65,16 @@
 		-webkit-backdrop-filter: blur(14px) saturate(160%);
 		backdrop-filter: blur(14px) saturate(160%);
 	}
-	.glyph { padding-left: 6px; }
-	.g { display: grid; place-items: center; width: 13px; height: 13px; flex: none; color: var(--tint); }
+	.glyph { padding-left: 7px; }
+	.g { display: grid; place-items: center; width: 16px; height: 16px; flex: none; color: var(--tint); }
 	.w { overflow: hidden; text-overflow: ellipsis; }
 	.ok { --tint: var(--ok-on-art); }
 	.info { --tint: var(--info-on-art); }
 	.wait { --tint: var(--wait-on-art); }
 	.fail { --tint: var(--fail-on-art); }
-	/* Narrow cards sharing the row with a type pill: glyph only, a 22px glass circle. */
+	/* Narrow cards sharing the row with a type pill: glyph only, a 28px glass circle. */
 	@container art (max-width: 199px) {
-		.compact.glyph { width: 22px; padding: 0; justify-content: center; }
+		.compact.glyph { width: 28px; height: 28px; padding: 0; justify-content: center; }
 		.compact.glyph .w { display: none; }
 	}
 </style>
