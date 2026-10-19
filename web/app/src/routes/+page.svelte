@@ -28,7 +28,7 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import Icon from '#lib/Icon.svelte';
 
-	interface MissingTitle { id: number; name: string; year?: number; state_label: string }
+	interface MissingTitle { id: number; name: string; year?: number; state_label: string; image?: string }
 
 	let loaded = $state(false);
 	let failed = $state(false);
@@ -77,7 +77,7 @@
 	const missingCards = $derived(
 		missing.slice(0, 20).map((m): ExploreCard => {
 			const t = byId.get(m.id);
-			return t ? { ...titleCard(t, m.state_label, `m${m.id}`), status: 'missing', statusLabel: m.state_label } : { key: `m${m.id}`, kind: 'movie', name: m.name, year: m.year, titleId: m.id, subtitle: m.state_label, status: 'missing', statusLabel: m.state_label, badges: [] };
+			return t ? { ...titleCard(t, m.state_label, `m${m.id}`), status: 'missing', statusLabel: m.state_label } : { key: `m${m.id}`, kind: 'movie', name: m.name, year: m.year, image: m.image ?? null, titleId: m.id, subtitle: m.state_label, status: 'missing', statusLabel: m.state_label, badges: [] };
 		})
 	);
 	// One view-transition name per title on the page: the first poster wins.

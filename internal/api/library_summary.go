@@ -1,6 +1,8 @@
 package api
 
 import (
+	"database/sql"
+	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -14,6 +16,8 @@ type libraryMissingView struct {
 	Name       string `json:"name"`
 	Year       *int   `json:"year"`
 	StateLabel string `json:"state_label"`
+	// Image is the title's first poster, so Home's Missing row shows real covers.
+	Image string `json:"image,omitempty"`
 }
 
 // recentMax is how many newest titles the summary carries.
@@ -45,7 +49,7 @@ func (a *API) librarySummary(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
-	rows, err := db.QueryContext(ctx, `SELECT t.id, t.name, t.year
+	rows, err := db.QueryContext(ctx, `SELECT t.id, t.name, t.year, t.artwork
 		FROM titles t WHERE `+where+` AND t.kind = 'movie' AND t.id IN
 		(SELECT i.title_id FROM slots s JOIN items i ON i.id = s.item_id WHERE s.state IN ('wanted', 'searching'))
 		ORDER BY t.sort_name, t.id LIMIT 8`, args...)
@@ -57,9 +61,16 @@ func (a *API) librarySummary(w http.ResponseWriter, r *http.Request) {
 	missing := []libraryMissingView{}
 	for rows.Next() {
 		var title libraryMissingView
-		if err := rows.Scan(&title.ID, &title.Name, &title.Year); err != nil {
+		var art sql.NullString
+		if err := rows.Scan(&title.ID, &title.Name, &title.Year, &art); err != nil {
 			internal(w, err)
 			return
+		}
+		var posters []string
+		if art.Valid && json.Unmarshal([]byte(art.String), &posters) == nil {
+			if links := artworkLinks(posters); len(links) > 0 {
+				title.Image = links[0]
+			}
 		}
 		missing = append(missing, title)
 	}
