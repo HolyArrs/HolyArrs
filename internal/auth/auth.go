@@ -871,6 +871,8 @@ func (a *Auth) logout(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	a.setCookie(w, r, "", -1)
+	// The browser drops what it kept for this person, such as Explore rows.
+	w.Header().Set("Clear-Site-Data", `"cache"`)
 	w.WriteHeader(http.StatusNoContent)
 }
 

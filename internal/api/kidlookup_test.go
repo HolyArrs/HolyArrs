@@ -154,3 +154,27 @@ func TestKidMetadataRoutesRateLimited(t *testing.T) {
 		k.ana.call("GET", "/api/v1/metadata/search?q=any", "", 200)
 	}
 }
+
+// TestKidExploreNotCachedForOthers: Explore rows and TMDB title pages vary
+// by who asks, and a Kid's answers are never reused without asking again.
+func TestKidExploreNotCachedForOthers(t *testing.T) {
+	k := newKidRig(t)
+	for _, c := range []struct {
+		who   *signedIn
+		cache string
+	}{{k.kai, "private, no-cache"}, {k.ana, ""}} {
+		for _, p := range []string{"/api/v1/discover?row=trending", "/api/v1/metadata/movie/4101"} {
+			resp, err := c.who.c.Get(k.srv.URL + p)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_ = resp.Body.Close()
+			if resp.StatusCode != 200 || resp.Header.Get("Vary") != "Cookie, Authorization" {
+				t.Errorf("%s: %d, Vary %q", p, resp.StatusCode, resp.Header.Get("Vary"))
+			}
+			if c.cache != "" && resp.Header.Get("Cache-Control") != c.cache {
+				t.Errorf("kid %s: Cache-Control %q", p, resp.Header.Get("Cache-Control"))
+			}
+		}
+	}
+}
