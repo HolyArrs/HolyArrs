@@ -142,6 +142,17 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, `send {"skip_login_local_network": true|false, "require_two_factor_admins": true|false, "min_password_length": 4..64, "plex": {...}, "jellyfin": {...}, "emby": {...}}`)
 		return
 	}
+	if body.SkipLocal != nil && *body.SkipLocal {
+		var kids int
+		if err := a.s.Read().QueryRowContext(r.Context(), "SELECT count(*) FROM users WHERE max_rating != ''").Scan(&kids); err != nil {
+			serverError(w, "sign-in settings", err)
+			return
+		}
+		if kids > 0 {
+			fail(w, http.StatusBadRequest, "Skipping sign-in on the local network cannot be on while a Kid account has an age limit: anyone at home would sign in as the owner. Remove the limits first.")
+			return
+		}
+	}
 	set := map[string]string{}
 	if body.SkipLocal != nil {
 		set["this_app/"+settingSkipLocal] = strconv.FormatBool(*body.SkipLocal)

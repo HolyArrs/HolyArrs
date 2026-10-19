@@ -243,3 +243,25 @@ func TestSettingsStatusForgetsAfterWrites(t *testing.T) {
 		t.Fatal("a folder was added, yet the status still says Library folders is not set up")
 	}
 }
+
+// TestStatusFlagsKidWithLocalSkip: a Kid while sign-in is skipped at home
+// is an error on the sign-in page; either alone is not.
+func TestStatusFlagsKidWithLocalSkip(t *testing.T) {
+	on, off, one, none := true, false, 1, 0
+	const page = "/settings/sign-in"
+	for _, c := range []struct {
+		skip *bool
+		kids *int
+		want bool
+	}{{&on, &one, true}, {&off, &one, false}, {&on, &none, false}, {nil, &one, false}} {
+		got := false
+		for _, i := range settingsStatus(statusInput{SkipLocal: c.skip, Kids: c.kids}).Items {
+			if i.Page == page && i.Group == "security" && i.Severity == "error" {
+				got = true
+			}
+		}
+		if got != c.want {
+			t.Fatalf("skip %v kids %v: flagged %t", c.skip, c.kids, got)
+		}
+	}
+}

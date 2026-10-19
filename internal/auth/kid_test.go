@@ -282,3 +282,39 @@ func TestKidMayOnlyAsk(t *testing.T) {
 		t.Fatalf("clear limit and grant: %d %s", resp.StatusCode, out)
 	}
 }
+
+// TestKidLimitAndLocalSkipExclude: with skipping sign-in at home on, a
+// limit is refused (anyone at home is the owner); with a Kid, skipping
+// sign-in cannot be turned on.
+func TestKidLimitAndLocalSkipExclude(t *testing.T) {
+	f := gated(t, Options{})
+	own := ownerOf(t, f)
+	join(t, f, invite(t, f, own, `{"role":"member"}`), "ana")
+	path := fmt.Sprintf("/api/v1/users/%d", userID(t, f, "ana"))
+	if resp, out := own.do(t, f, "PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true}`); resp.StatusCode != 200 {
+		t.Fatalf("skip on: %d %s", resp.StatusCode, out)
+	}
+	const refused = "Turn off skipping sign-in on the local network first: with it on, anyone at home signs in as the owner."
+	for _, c := range []struct{ method, path, body string }{
+		{"PUT", path, `{"max_rating":"PG"}`},
+		{"POST", "/api/v1/users/invites", `{"max_rating":"PG"}`},
+	} {
+		resp, out := own.do(t, f, c.method, c.path, c.body)
+		if resp.StatusCode != 400 || !strings.Contains(out, refused) {
+			t.Fatalf("%s %s with skip on: %d %s", c.method, c.path, resp.StatusCode, out)
+		}
+	}
+	if resp, out := own.do(t, f, "PUT", "/api/v1/auth/settings", `{"skip_login_local_network":false}`); resp.StatusCode != 200 {
+		t.Fatalf("skip off: %d %s", resp.StatusCode, out)
+	}
+	if resp, out := own.do(t, f, "PUT", path, `{"max_rating":"PG"}`); resp.StatusCode != 200 {
+		t.Fatalf("limit with skip off: %d %s", resp.StatusCode, out)
+	}
+	resp, out := own.do(t, f, "PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true}`)
+	if resp.StatusCode != 400 || !strings.Contains(out, "age limit") {
+		t.Fatalf("skip on with a Kid: %d %s", resp.StatusCode, out)
+	}
+	if _, out := own.do(t, f, "GET", "/api/v1/auth/settings", ""); !strings.Contains(out, `"skip_login_local_network":false`) {
+		t.Fatalf("skip turned on anyway: %s", out)
+	}
+}

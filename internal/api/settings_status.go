@@ -55,7 +55,11 @@ type statusInput struct {
 	GoneDefaults []string
 	// DefaultsKnown says the Movies and TV defaults were read.
 	DefaultsKnown bool
-	Now           time.Time
+	// SkipLocal says sign-in is skipped on the local network.
+	SkipLocal *bool
+	// Kids is how many people have an age-rating limit.
+	Kids *int
+	Now  time.Time
 }
 
 type statusTarget struct{ page, group, what string }
@@ -167,6 +171,12 @@ func settingsStatus(in statusInput) statusAnswer {
 		known("/settings/title-defaults")
 		for _, text := range in.GoneDefaults {
 			add(statusItem{"library", "/settings/title-defaults", text, "warning"}, "title-defaults:"+text)
+		}
+	}
+	if in.SkipLocal != nil && in.Kids != nil {
+		known("/settings/sign-in")
+		if *in.SkipLocal && *in.Kids > 0 {
+			add(statusItem{"security", "/settings/sign-in", "Sign-in is skipped on the local network while a Kid account exists, so anyone at home is the owner and the age limit means nothing; turn skipping off", "error"}, "kid-skip-local")
 		}
 	}
 	if in.Folders != nil {
@@ -325,6 +335,15 @@ func (a *API) statusInput(ctx context.Context, now time.Time) (statusInput, erro
 		return in, err
 	}
 	in.GoneDefaults, in.DefaultsKnown = gone, true
+	var kids int
+	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM users WHERE max_rating != ''").Scan(&kids); err != nil {
+		return in, err
+	}
+	in.Kids = &kids
+	if a.s.Auth != nil {
+		skip := a.s.Auth.SkipLocal()
+		in.SkipLocal = &skip
+	}
 	return in, nil
 }
 

@@ -74,8 +74,9 @@ func countryOr(c string) string {
 }
 
 // kidLimit checks an age-rating limit asked for a person of role and
-// returns it as stored, or an error in plain words for a 400.
-func kidLimit(role, max, country string, perms []Perm) (string, string, error) {
+// returns it as stored, or an error in plain words for a 400. A limit is
+// refused while sign-in is skipped on the local network (skipLocal).
+func kidLimit(role, max, country string, perms []Perm, skipLocal bool) (string, string, error) {
 	max, country = ratings.Norm(max), countryOr(country)
 	if !ratings.Valid(max) {
 		return "", "", fmt.Errorf("unknown age rating %q: pick one of %s, or leave it empty for no limit", max, ratings.Choices())
@@ -85,6 +86,9 @@ func kidLimit(role, max, country string, perms []Perm) (string, string, error) {
 	}
 	if max != "" && role != RoleMember {
 		return "", "", errors.New("Only members can have an age-rating limit.")
+	}
+	if max != "" && skipLocal {
+		return "", "", errors.New(errSkipLocalKid)
 	}
 	if max != "" {
 		// A Kid may only ask: any other permission would open routes
@@ -97,6 +101,11 @@ func kidLimit(role, max, country string, perms []Perm) (string, string, error) {
 	}
 	return max, country, nil
 }
+
+// SkipLocal says sign-in is skipped on the local network.
+func (a *Auth) SkipLocal() bool { return a.skipLocal.Load() }
+
+const errSkipLocalKid = "Turn off skipping sign-in on the local network first: with it on, anyone at home signs in as the owner."
 
 // LinkView is an outside account linked to a user.
 type LinkView struct {
@@ -287,7 +296,7 @@ func (a *Auth) editUser(w http.ResponseWriter, r *http.Request) {
 	if body.RatingCountry != nil {
 		country = *body.RatingCountry
 	}
-	if maxRating, country, err = kidLimit(newRole, maxRating, country, perms); err != nil {
+	if maxRating, country, err = kidLimit(newRole, maxRating, country, perms, a.skipLocal.Load()); err != nil {
 		fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -436,7 +445,7 @@ func (a *Auth) makeInvite(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	maxRating, country, err := kidLimit(body.Role, body.MaxRating, body.RatingCountry, perms)
+	maxRating, country, err := kidLimit(body.Role, body.MaxRating, body.RatingCountry, perms, a.skipLocal.Load())
 	if err != nil {
 		fail(w, http.StatusBadRequest, err.Error())
 		return
