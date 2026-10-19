@@ -265,3 +265,21 @@ func TestStatusFlagsKidWithLocalSkip(t *testing.T) {
 		}
 	}
 }
+
+// TestStatusWarnsKidWithOutsideJoin: with a Kid and outside sign-in open
+// to new people, the Users page warns that newcomers get no limit.
+func TestStatusWarnsKidWithOutsideJoin(t *testing.T) {
+	on, off, one, none := true, false, 1, 0
+	want := statusItem{Group: "people", Page: "/settings/users", Severity: "warning",
+		Text: "New people who sign in with Plex, Jellyfin, Emby or single sign-on get no age limit; link a Kid's outside accounts to their Kid account."}
+	for _, c := range []struct {
+		join *bool
+		kids *int
+		want bool
+	}{{&on, &one, true}, {&off, &one, false}, {&on, &none, false}} {
+		got := slices.Contains(settingsStatus(statusInput{OutsideJoin: c.join, Kids: c.kids}).Items, want)
+		if got != c.want {
+			t.Fatalf("join %v kids %v: warned %t", *c.join, *c.kids, got)
+		}
+	}
+}

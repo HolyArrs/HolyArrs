@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -316,5 +317,26 @@ func TestKidLimitAndLocalSkipExclude(t *testing.T) {
 	}
 	if _, out := own.do(t, f, "GET", "/api/v1/auth/settings", ""); !strings.Contains(out, `"skip_login_local_network":false`) {
 		t.Fatalf("skip turned on anyway: %s", out)
+	}
+}
+
+// TestOutsideJoinOpen: open only once a way is on and lets new people join.
+func TestOutsideJoinOpen(t *testing.T) {
+	f := gated(t, Options{})
+	own := ownerOf(t, f)
+	if f.a.OutsideJoinOpen(context.Background()) {
+		t.Fatal("open with nothing set up")
+	}
+	if resp, out := own.do(t, f, "PUT", "/api/v1/auth/settings", `{"jellyfin":{"on":true,"url":"http://192.0.2.10:8096","join":"nobody"}}`); resp.StatusCode != 200 {
+		t.Fatalf("jellyfin nobody: %d %s", resp.StatusCode, out)
+	}
+	if f.a.OutsideJoinOpen(context.Background()) {
+		t.Fatal("open while nobody may join")
+	}
+	if resp, out := own.do(t, f, "PUT", "/api/v1/auth/settings", `{"jellyfin":{"on":true,"url":"http://192.0.2.10:8096","join":"list","allow":"kai"}}`); resp.StatusCode != 200 {
+		t.Fatalf("jellyfin list: %d %s", resp.StatusCode, out)
+	}
+	if !f.a.OutsideJoinOpen(context.Background()) {
+		t.Fatal("closed while a list may join")
 	}
 }

@@ -59,7 +59,10 @@ type statusInput struct {
 	SkipLocal *bool
 	// Kids is how many people have an age-rating limit.
 	Kids *int
-	Now  time.Time
+	// OutsideJoin says new people can join by signing in with Plex,
+	// Jellyfin, Emby or single sign-on.
+	OutsideJoin *bool
+	Now         time.Time
 }
 
 type statusTarget struct{ page, group, what string }
@@ -177,6 +180,12 @@ func settingsStatus(in statusInput) statusAnswer {
 		known("/settings/sign-in")
 		if *in.SkipLocal && *in.Kids > 0 {
 			add(statusItem{"security", "/settings/sign-in", "Sign-in is skipped on the local network while a Kid account exists, so anyone at home is the owner and the age limit means nothing; turn skipping off", "error"}, "kid-skip-local")
+		}
+	}
+	if in.OutsideJoin != nil && in.Kids != nil {
+		known("/settings/users")
+		if *in.OutsideJoin && *in.Kids > 0 {
+			add(statusItem{"people", "/settings/users", "New people who sign in with Plex, Jellyfin, Emby or single sign-on get no age limit; link a Kid's outside accounts to their Kid account.", "warning"}, "kid-outside-join")
 		}
 	}
 	if in.Folders != nil {
@@ -343,6 +352,8 @@ func (a *API) statusInput(ctx context.Context, now time.Time) (statusInput, erro
 	if a.s.Auth != nil {
 		skip := a.s.Auth.SkipLocal()
 		in.SkipLocal = &skip
+		join := a.s.Auth.OutsideJoinOpen(ctx)
+		in.OutsideJoin = &join
 	}
 	return in, nil
 }

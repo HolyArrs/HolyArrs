@@ -88,6 +88,21 @@ invite or a change on `PUT /users/{id}` that combines a limit with any other
 permission answers 400 "A Kid account can only ask for titles." To give such
 a person more, clear the limit in the same change.
 
+## Sign-in and Kid accounts
+
+- **Skipping sign-in on the local network** makes everyone at home the
+  owner, so a limit would mean nothing. While it is on, setting a limit
+  answers 400 "Turn off skipping sign-in on the local network first: with it
+  on, anyone at home signs in as the owner." While anyone has a limit,
+  turning it on answers 400 too. If both are on anyway (for example a Kid
+  joined from an older invite), Settings shows an error on the sign-in page.
+- **Plex, Jellyfin, Emby and single sign-on** can let new people join by
+  signing in there. Such a newcomer is an ordinary member with no age limit,
+  even when it is a child. While a Kid account exists and any of these lets
+  new people join, Settings shows a warning on the Users page. Link a Kid's
+  outside accounts to their Kid account, or let only listed names join, so
+  the child cannot come in through a second, unlimited account.
+
 ## US ratings only for now
 
 HolyArrs keeps only the US rating of each title, so `rating_country` is `US`

@@ -105,6 +105,17 @@ func kidLimit(role, max, country string, perms []Perm, skipLocal bool) (string, 
 // SkipLocal says sign-in is skipped on the local network.
 func (a *Auth) SkipLocal() bool { return a.skipLocal.Load() }
 
+// OutsideJoinOpen says new people can join by signing in with Plex,
+// Jellyfin, Emby or single sign-on.
+func (a *Auth) OutsideJoinOpen(ctx context.Context) bool {
+	for _, p := range []string{ProviderPlex, ProviderJellyfin, ProviderEmby} {
+		if v := a.way(ctx, p); v.On && v.Join != JoinNobody {
+			return true
+		}
+	}
+	return a.sso != nil && ((a.sso.oidc != nil && a.sso.oidc.opt.AllowJoin) || (a.sso.forward != nil && a.sso.forward.opt.AllowJoin))
+}
+
 const errSkipLocalKid = "Turn off skipping sign-in on the local network first: with it on, anyone at home signs in as the owner."
 
 // LinkView is an outside account linked to a user.
