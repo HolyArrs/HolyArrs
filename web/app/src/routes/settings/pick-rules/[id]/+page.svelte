@@ -2,12 +2,13 @@
 	// One set of Pick rules: name and kinds, quality steps and Good enough,
 	// traits and points, Must have and Never, size, waiting and language.
 	// "new" starts a set; ?from=<id> starts it as a copy of another.
-	import { untrack } from 'svelte';
+	import { tick, untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { api, ApiError, message } from '#lib/api.ts';
 	import { to } from '#lib/paths.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
+	import { session } from '#lib/session.svelte.ts';
 	import {
 		applySize,
 		blankBody,
@@ -51,6 +52,8 @@
 		size: SizeFields;
 	}
 
+	// People without the settings permission see the rules but cannot change them.
+	const mayEdit = $derived(session.can('settings'));
 	let form = $state<Form>({ name: '', kinds: ['movie', 'show'], body: blankBody('movie'), size: { min: '', max: '' } });
 	let id = $state<number | null>(null);
 	let preset = $state(false);
@@ -149,6 +152,19 @@
 		if (free) form.body.traits = [...form.body.traits, { trait: free, points: 0 }];
 	}
 
+	/** removeTrait drops one trait and moves focus to the next row's trait, else to Add a trait. */
+	async function removeTrait(i: number) {
+		form.body.traits = form.body.traits.filter((_, j) => j !== i);
+		await tick();
+		(document.getElementById(`trait-${i}`) ?? document.getElementById('pr-add-trait'))?.focus();
+	}
+
+	/** traitChanged keeps focus on a row's trait after its key changes and the row is drawn again. */
+	async function traitChanged(i: number) {
+		await tick();
+		document.getElementById(`trait-${i}`)?.focus();
+	}
+
 	function addTo(list: 'must_have' | 'never', trait: string) {
 		if (trait && !form.body[list].includes(trait)) form.body[list] = [...form.body[list], trait];
 	}
@@ -242,18 +258,23 @@
 	back={{ href: to('/settings/pick-rules'), label: 'Pick rules' }}
 >
 	{#snippet actions()}
-		{#if id !== null}<Button icon="copy" href={to(`/settings/pick-rules/new?from=${id}`)}>Make a copy</Button>{/if}
+		{#if id !== null && mayEdit}<Button icon="copy" href={to(`/settings/pick-rules/new?from=${id}`)}>Make a copy</Button>{/if}
 	{/snippet}
 </PageHeader>
 
 {#if !loaded}
 	<div class="loading" aria-busy="true"><Skeleton shape="block" height="160px" /><Skeleton shape="block" height="260px" /></div>
+{:else if id === null && !mayEdit}
+	<EmptyState icon="star" title="Making Pick rules takes the settings permission" text="You can see the Pick rules there are." action={{ label: 'All Pick rules', href: to('/settings/pick-rules') }} />
 {:else if gone}
 	<EmptyState icon="star" title="These Pick rules are gone" text="They may have been removed on another device." action={{ label: 'All Pick rules', href: to('/settings/pick-rules') }} />
 {:else if loadError}
 	<LoadError hasData={false} message={loadError} onretry={load} />
 {:else}
+	{#if !mayEdit}<p class="hint" data-testid="read-only">You can see these Pick rules. Changing them takes the settings permission.</p>{/if}
 	<form class="sc-form" id="pick-rules-form" onsubmit={save} aria-label="Pick rules" novalidate>
+	<fieldset class="group" disabled={!mayEdit}>
+	<legend class="sr-only">{mayEdit ? 'Pick rules' : 'Pick rules, read only'}</legend>
 		<SettingsCard id="rules-name" title="Name and kinds" description="What these rules are called and what they are for.">
 			{#if preset}
 				<p class="ro" data-testid="preset-name"><b>{form.name}</b><span class="muted">{` · ${kindWords}`}</span></p>
@@ -304,21 +325,21 @@
 				<p class="hint">No traits yet: every Release on a step counts the same.</p>
 			{:else}
 				<ul class="traits" id="pr-traits" data-testid="traits">
-					{#each form.body.traits as t, i (i)}
+					{#each form.body.traits as t, i (t.trait)}
 						<li>
 							<label class="sr-only" for="trait-{i}">Trait {i + 1}</label>
-							<select id="trait-{i}" class="input" bind:value={t.trait}>
+							<select id="trait-{i}" class="input" bind:value={t.trait} onchange={() => traitChanged(i)}>
 								{#each own.filter((x) => x === t.trait || !form.body.traits.some((y) => y.trait === x)) as x (x)}<option value={x}>{traitLabel(x)}</option>{/each}
 							</select>
 							<label class="sr-only" for="points-{i}">Points for {traitLabel(t.trait)}</label>
 							<input id="points-{i}" class="input points" type="number" min="-10000" max="10000" step="1" bind:value={t.points} />
-							<IconButton icon="trash" label="Remove {traitLabel(t.trait)}" tooltip={false} onclick={() => (form.body.traits = form.body.traits.filter((_, j) => j !== i))} />
+							<IconButton icon="trash" label="Remove {traitLabel(t.trait)}" tooltip={false} onclick={() => removeTrait(i)} />
 						</li>
 					{/each}
 				</ul>
 			{/if}
 			{#if errors.traits}<span class="field-error" id="pr-traits-error" role="alert">{errors.traits}</span>{/if}
-			<div><Button icon="plus" onclick={addTrait} disabled={form.body.traits.length >= own.length}>Add a trait</Button></div>
+			<div><Button id="pr-add-trait" icon="plus" onclick={addTrait} disabled={form.body.traits.length >= own.length}>Add a trait</Button></div>
 			{#snippet advanced()}
 				<Field id="pr-order" label="Which wins" hint={orderChoices.find(([v]) => v === form.body.order)?.[2]} error={errors.order}>
 					<select id="pr-order" class="input" bind:value={form.body.order}>
@@ -417,12 +438,15 @@
 			</label>
 		</SettingsCard>
 
+	</fieldset>
 		{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 	</form>
-	<SaveBar {dirty} form="pick-rules-form" saving={busy} label={id === null ? 'Make these Pick rules' : 'Save'} ondiscard={() => start(JSON.parse(saved))} />
+	{#if mayEdit}<SaveBar {dirty} form="pick-rules-form" saving={busy} label={id === null ? 'Make these Pick rules' : 'Save'} ondiscard={() => start(JSON.parse(saved))} />{/if}
 {/if}
 
 <style>
+	/* The fieldset only turns the form read only; it adds no box of its own. */
+	.all { display: contents; border: 0; padding: 0; margin: 0; }
 	.loading { display: flex; flex-direction: column; gap: 16px; }
 	.ro { font: var(--t-body); }
 	.group { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }

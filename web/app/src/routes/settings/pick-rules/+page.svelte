@@ -3,6 +3,7 @@
 	import { api, ApiError, message } from '#lib/api.ts';
 	import { to } from '#lib/paths.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
+	import { session } from '#lib/session.svelte.ts';
 	import { kindChoices, usedWords } from '#lib/pick-rules.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -14,6 +15,8 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import type { PickRulesUse, PickRulesView } from '#lib/types.ts';
 
+	// People without the settings permission see the rules but cannot change them.
+	const mayEdit = $derived(session.can('settings'));
 	let rules = $state<PickRulesView[] | null>(null);
 	let error = $state('');
 	let loading = $state(false);
@@ -74,7 +77,7 @@
 
 <PageHeader title="Pick rules" subtitle="Pick rules choose which Release HolyArrs takes for a title, such as 1080p or 4K.">
 	{#snippet actions()}
-		<Button variant="primary" icon="plus" href={to('/settings/pick-rules/new')}>New Pick rules</Button>
+		{#if mayEdit}<Button variant="primary" icon="plus" href={to('/settings/pick-rules/new')}>New Pick rules</Button>{/if}
 	{/snippet}
 </PageHeader>
 
@@ -86,7 +89,7 @@
 	{#if error}<LoadError hasData message={error} onretry={load} busy={loading} />{/if}
 	<SettingsCard id="pick-rules-card" title="Your Pick rules" description="Each Library folder has its own Pick rules, and a title can use other ones.">
 		{#if rules.length === 0}
-			<EmptyState compact icon="star" title="No Pick rules yet" text="HolyArrs makes its ready-made Pick rules when it starts." action={{ label: 'New Pick rules', href: to('/settings/pick-rules/new'), icon: 'plus' }} />
+			<EmptyState compact icon="star" title="No Pick rules yet" text="HolyArrs makes its ready-made Pick rules when it starts." action={mayEdit ? { label: 'New Pick rules', href: to('/settings/pick-rules/new'), icon: 'plus' } : undefined} />
 		{:else}
 			<ul class="rows" data-testid="pick-rules">
 				{#each rules as r (r.id)}
@@ -97,14 +100,14 @@
 						</span>
 						{#if r.preset}<span class="chip">Ready-made</span>{/if}
 						<span class="acts">
-							<Button variant="plain" size="sm" href={to(`/settings/pick-rules/${r.id}`)}>Change</Button>
-							<Menu
+							<Button variant="plain" size="sm" href={to(`/settings/pick-rules/${r.id}`)}>{mayEdit ? 'Change' : 'Open'}</Button>
+							{#if mayEdit}<Menu
 								label="More for {r.name}"
 								items={[
 									{ label: 'Make a copy', icon: 'copy', href: to(`/settings/pick-rules/new?from=${r.id}`) },
 									...(r.preset ? [] : [{ label: 'Remove…', icon: 'trash' as const, destructive: true, onselect: () => askRemove(r) }])
 								]}
-							/>
+							/>{/if}
 						</span>
 					</li>
 				{/each}
@@ -120,7 +123,8 @@
 			<li><a href={to('/settings/outside-lists')}>Outside lists</a>: the rules titles from a list get.</li>
 			<li>A title's own page: change the rules for that one title.</li>
 		</ul>
-		<p class="hint">Change opens the steps, traits, sizes and waits of one set. Ready-made rules keep their name and kinds; make a copy to start your own from one.</p>
+		{#if mayEdit}<p class="hint">Change opens the steps, traits, sizes and waits of one set. Ready-made rules keep their name and kinds; make a copy to start your own from one.</p>
+		{:else}<p class="hint" data-testid="read-only">You can see Pick rules here. Changing them takes the settings permission.</p>{/if}
 	</SettingsCard>
 {/if}
 
