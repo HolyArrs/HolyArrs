@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
@@ -15,18 +17,127 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
-func TestOptionalMetadataDisabledPreservesDirectProviders(t *testing.T) {
-	t.Setenv("HOLYARRS_METADATA_SERVICE_URL", "")
-	md := metadata.Lab()
-	shows := metadata.ShowSources{"tmdb": &metadata.TMDB{}}
-	artists := &metadata.MusicBrainz{}
-	m, s, a, err := metadataServiceProviders(nil, md, shows, artists)
-	if err != nil || m != md || s["tmdb"] != shows["tmdb"] || a != artists {
-		t.Fatal("disabled service changed direct providers")
+// fixtureInstall is a made-up installation credential.
+var fixtureInstall = strings.Join([]string{"hai", "fixture", "install", "credential"}, "_")
+
+func testVault(t *testing.T) *secrets.Vault {
+	t.Helper()
+	st, err := store.Open(t.TempDir(), store.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	v, err := secrets.Open(context.Background(), st, make([]byte, secrets.KeySize))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return v
+}
+
+// fakeMetadataServer registers installs and answers TMDB reads at /v1/tmdb.
+func fakeMetadataServer(t *testing.T, registered *atomic.Int32, tmdb *atomic.Int32) *httptest.Server {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/installations":
+			registered.Add(1)
+			w.WriteHeader(201)
+			_, _ = w.Write([]byte(`{"schema_version":1,"` + "tok" + `en":"` + fixtureInstall + `"}`))
+		case strings.HasPrefix(r.URL.Path, "/v1/tmdb/"):
+			if r.Header.Get("Authorization") != "Bearer "+fixtureInstall {
+				w.WriteHeader(401)
+				return
+			}
+			tmdb.Add(1)
+			_, _ = w.Write([]byte(`{"page":1,"total_pages":1,"total_results":1,"results":[{"id":603,"title":"Fixture Film","release_date":"1999-03-31"}]}`))
+		default:
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+	return srv
+}
+
+func TestFreshInstallRegistersOnceAndSearchesThroughServer(t *testing.T) {
+	var registered, tmdb atomic.Int32
+	srv := fakeMetadataServer(t, &registered, &tmdb)
+	t.Setenv(metadata.EnvServiceURL, srv.URL)
+	t.Setenv("HOLYARRS_METADATA_SERVICE_ALLOW_LOCAL", "true")
+	t.Setenv("HOLYARRS_METADATA_SERVICE_TOKEN_FILE", "")
+	t.Setenv(metadata.EnvTMDBKey, "")
+	t.Setenv(metadata.EnvTokenFile, "")
+	t.Setenv("HOLYARRS_TMDB_URL", "")
+	v := testVault(t)
+	h, err := newHostedMetadata(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if h.OwnKey || h.TMDBBase != srv.URL+"/v1/tmdb" {
+		t.Fatalf("base %q", h.TMDBBase)
+	}
+	for _, q := range []string{"Fixture", "Other"} {
+		ms, err := h.TMDB().Search(context.Background(), q, 0)
+		if err != nil || len(ms) != 1 || ms[0].Name != "Fixture Film" {
+			t.Fatalf("%v %v", ms, err)
+		}
+	}
+	if registered.Load() != 1 || tmdb.Load() != 2 {
+		t.Fatalf("registered %d, tmdb %d", registered.Load(), tmdb.Load())
+	}
+	tok, _ := v.Setting(context.Background(), installationGroup, installationKey)
+	if tok != fixtureInstall {
+		t.Fatal("credential not kept")
+	}
+	// A restart reuses the kept credential.
+	h, _ = newHostedMetadata(v)
+	if _, err := h.TMDB().Search(context.Background(), "Again", 0); err != nil || registered.Load() != 1 {
+		t.Fatalf("registered again: %d %v", registered.Load(), err)
 	}
 }
 
-func TestOptionalMetadataURLAndAddressPolicy(t *testing.T) {
+func TestRefusedCredentialIsNotReplaced(t *testing.T) {
+	var registered, tmdb atomic.Int32
+	srv := fakeMetadataServer(t, &registered, &tmdb)
+	t.Setenv(metadata.EnvServiceURL, srv.URL)
+	t.Setenv("HOLYARRS_METADATA_SERVICE_ALLOW_LOCAL", "true")
+	t.Setenv("HOLYARRS_METADATA_SERVICE_TOKEN_FILE", "")
+	t.Setenv(metadata.EnvTMDBKey, "")
+	t.Setenv(metadata.EnvTokenFile, "")
+	v := testVault(t)
+	if err := v.SetSetting(context.Background(), installationGroup, installationKey, "hai_revoked_fixture", domain.System); err != nil {
+		t.Fatal(err)
+	}
+	h, err := newHostedMetadata(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := h.TMDB().Search(context.Background(), "Fixture", 0); err == nil {
+		t.Fatal("refused credential answered")
+	}
+	if registered.Load() != 0 {
+		t.Fatal("re-registered after a refusal")
+	}
+}
+
+func TestOwnTMDBKeyGoesDirect(t *testing.T) {
+	t.Setenv(metadata.EnvServiceURL, "")
+	t.Setenv(metadata.EnvTMDBKey, "own-fixture-key")
+	t.Setenv(metadata.EnvTokenFile, "")
+	t.Setenv("HOLYARRS_TMDB_URL", "")
+	h, err := newHostedMetadata(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tok, _ := h.TMDBAccess(context.Background())
+	if !h.OwnKey || h.TMDBBase != "" || tok != "own-fixture-key" {
+		t.Fatalf("own key: %+v", h)
+	}
+	if h.Service.Base() != metadata.DefaultServiceURL {
+		t.Fatal(h.Service.Base())
+	}
+}
+
+func TestMetadataURLAndAddressPolicy(t *testing.T) {
 	for _, ip := range []string{"169.254.169.254", "100.100.100.200", "fd00:ec2::254", "0.0.0.0", "::", "224.0.0.1", "ff02::1", "255.255.255.255"} {
 		if metadataServiceLocal(net.ParseIP(ip)) {
 			t.Fatalf("unsafe local policy: %s", ip)
@@ -37,101 +148,31 @@ func TestOptionalMetadataURLAndAddressPolicy(t *testing.T) {
 			t.Fatalf("private endpoint denied: %s", ip)
 		}
 	}
-	t.Setenv("HOLYARRS_METADATA_SERVICE_URL", "http://example.com")
+	t.Setenv(metadata.EnvServiceURL, "http://example.com")
 	t.Setenv("HOLYARRS_METADATA_SERVICE_ALLOW_LOCAL", "true")
-	if _, _, _, err := metadataServiceProviders(nil, metadata.Lab(), nil, nil); err == nil {
+	if _, err := newHostedMetadata(nil); err == nil {
 		t.Fatal("public bearer HTTP accepted")
 	}
 	t.Setenv("HOLYARRS_METADATA_SERVICE_ALLOW_LOCAL", "yes-please")
-	if _, _, _, err := metadataServiceProviders(nil, metadata.Lab(), nil, nil); err == nil {
+	if _, err := newHostedMetadata(nil); err == nil {
 		t.Fatal("invalid opt-in accepted")
 	}
 }
 
-func TestOptionalMetadataReadsSeparateFileOnEachCall(t *testing.T) {
+func TestInstallationCredentialFileReadOnEachCall(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "installation.txt")
 	if err := os.WriteFile(path, []byte("fixture-first"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	var calls int
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		calls++
-		want := "Bearer fixture-first"
-		if calls > 1 {
-			want = "Bearer fixture-second"
-		}
-		if r.Header.Get("Authorization") != want {
-			t.Error("wrong separate installation credential")
-		}
-		w.WriteHeader(401)
-	}))
-	defer srv.Close()
-	t.Setenv("HOLYARRS_METADATA_SERVICE_URL", srv.URL)
-	t.Setenv("HOLYARRS_METADATA_SERVICE_ALLOW_LOCAL", "true")
 	t.Setenv("HOLYARRS_METADATA_SERVICE_TOKEN_FILE", path)
-	md, _, _, err := metadataServiceProviders(nil, metadata.Lab(), nil, nil)
-	if err != nil {
-		t.Fatal(err)
+	access := installationAccess(nil, func(context.Context) (string, error) { t.Fatal("registered"); return "", nil })
+	if tok, _ := access(context.Background()); tok != "fixture-first" {
+		t.Fatal(tok)
 	}
-	_, _ = md.Search(context.Background(), "Fixture", 0)
 	if err := os.WriteFile(path, []byte("fixture-second"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	_, _ = md.Search(context.Background(), "Fixture", 0)
-	if calls != 2 {
-		t.Fatalf("credential not checked per lookup: %d", calls)
-	}
-}
-
-func TestOptionalMetadataVaultCredentialAndFilePrecedence(t *testing.T) {
-	ctx := context.Background()
-	st, err := store.Open(t.TempDir(), store.Options{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = st.Close() })
-	vault, err := secrets.Open(ctx, st, make([]byte, secrets.KeySize))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := vault.SetSetting(ctx, "links", "metadata_service_installation_token", "METADATA_VAULT_TEST", domain.System); err != nil {
-		t.Fatal(err)
-	}
-	want := "METADATA_VAULT_TEST"
-	var calls int
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		calls++
-		if r.Header.Get("Authorization") != "Bearer "+want {
-			t.Error("wrong credential source")
-		}
-		w.WriteHeader(http.StatusUnauthorized)
-	}))
-	defer srv.Close()
-	t.Setenv("HOLYARRS_METADATA_SERVICE_URL", srv.URL)
-	t.Setenv("HOLYARRS_METADATA_SERVICE_ALLOW_LOCAL", "true")
-	t.Setenv("HOLYARRS_METADATA_SERVICE_TOKEN_FILE", "")
-	md, _, _, err := metadataServiceProviders(vault, nil, nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, _ = md.Search(ctx, "Fixture", 0)
-	if err := vault.SetSetting(ctx, "links", "metadata_service_installation_token", "METADATA_VAULT_ROTATED", domain.System); err != nil {
-		t.Fatal(err)
-	}
-	want = "METADATA_VAULT_ROTATED"
-	_, _ = md.Search(ctx, "Fixture", 0)
-	path := filepath.Join(t.TempDir(), "installation.txt")
-	if err := os.WriteFile(path, []byte("METADATA_FILE_TEST"), 0600); err != nil {
-		t.Fatal(err)
-	}
-	t.Setenv("HOLYARRS_METADATA_SERVICE_TOKEN_FILE", path)
-	want = "METADATA_FILE_TEST"
-	md, _, _, err = metadataServiceProviders(vault, nil, nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, _ = md.Search(ctx, "Fixture", 0)
-	if calls != 3 {
-		t.Fatalf("credential checks=%d, want3", calls)
+	if tok, _ := access(context.Background()); tok != "fixture-second" {
+		t.Fatal(tok)
 	}
 }

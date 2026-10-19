@@ -19,7 +19,7 @@ import (
 
 var (
 	ErrServiceAccess      = errors.New("metadata service refused installation access")
-	ErrServiceUnavailable = errors.New("metadata service could not answer")
+	ErrServiceUnavailable = errors.New("Metadata server is down — searches and new artwork will return when it's back")
 	ErrServiceBusy        = errors.New("metadata service is busy; try again later")
 	ErrServiceInvalid     = errors.New("metadata service returned an invalid or expired answer")
 	ErrServiceIncomplete  = errors.New("metadata service does not supply the complete requested catalog")

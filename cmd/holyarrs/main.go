@@ -400,10 +400,17 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	q.ProbeSchedule(source.KindGrabHeld, sr.ProbeGrabHeld)
 	q.Handle(downloader.KindGrab, dm.HandleGrab)
 	q.Handle(importer.KindImport, im.HandleJob)
-	md, fromFile := metadataProvider(vault)
-	md, showMD, artistMD, err := metadataServiceProviders(vault, md, showSources(vault), musicSource(s, version))
+	hosted, err := newHostedMetadata(vault)
 	if err != nil {
-		return fmt.Errorf("optional metadata service: %w", err)
+		return fmt.Errorf("metadata server: %w", err)
+	}
+	var md metadata.Provider = hosted.TMDB()
+	showMD := showSources(vault, hosted)
+	var artistMD metadata.ArtistProvider = musicSource(s, version)
+	// Music lookups go through the metadata server, with MusicBrainz itself
+	// for full catalogs; a MusicBrainz stand-in (tests) is asked directly.
+	if os.Getenv("HOLYARRS_MUSICBRAINZ_URL") == "" {
+		artistMD = hosted.Service.Artists(artistMD)
 	}
 	pictures, pictureHosts := artistImages()
 	// Pictures come from public addresses only; a picture stand-in named
@@ -443,8 +450,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	} else if n, err := lib.RecoverRenames(ctx, domain.System); err != nil || n > 0 {
 		log.Printf("renames cut off by a stop: %d finished, error %v", n, err)
 	}
-	ol := &lists.Service{Store: s, Queue: q, Library: lib, Metadata: md, TMDBBase: os.Getenv("HOLYARRS_TMDB_URL"),
-		TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), TMDBToken: tmdbToken(vault),
+	ol := &lists.Service{Store: s, Queue: q, Library: lib, Metadata: md, TMDBBase: hosted.TMDBBase,
+		TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), TMDBToken: hosted.TMDBAccess,
 		TraktClient: func(ctx context.Context) (string, error) { return vault.Setting(ctx, "links", "trakt_client_id") }}
 	ol.Register(q)
 	q.ProbeSchedule(lists.KindSync, ol.ProbeSync)
@@ -583,7 +590,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	reg.Set(supervisor.StageKey("events"), "stage", "Event hooks", supervisor.Running, "")
 	defer wish.Wait()
 	a := api.New(api.Server{Library: lib, Lists: ol, Store: s, Queue: q, Live: hub, Metadata: md, Version: version, Auth: au, Backups: bm, Restart: restart,
-		Secrets: vault, TokenFromFile: fromFile, Alerts: sender, Asks: wish, Search: sr, Downloads: dm, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
+		Secrets: vault, MetadataUp: hosted.Health.Up, Alerts: sender, Asks: wish, Search: sr, Downloads: dm, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
 		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase})
 	srv := newServer(c.Addr, urlbase.Handler(c.URLBase, limitBodies(a.Handler())))
 	ln, err := net.Listen("tcp", c.Addr)
@@ -613,38 +620,12 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	return nil
 }
 
-// metadataProvider uses TMDB once a token is set: from the file named by
-// HOLYARRS_TMDB_TOKEN_FILE, else from the encrypted settings. Until then the
-// fixed lab record answers.
-func metadataProvider(v *secrets.Vault) (metadata.Provider, bool) {
-	// HOLYARRS_TMDB_URL points at a stand-in TMDB (browser tests); it
-	// serves pictures too.
-	base, images := os.Getenv("HOLYARRS_TMDB_URL"), ""
-	if base != "" {
-		images = strings.TrimRight(base, "/") + "/images"
-	}
-	if f := os.Getenv(metadata.EnvTokenFile); f != "" {
-		log.Printf("metadata: TMDB, token from the file in %s", metadata.EnvTokenFile)
-		return &metadata.TMDB{Access: metadata.TokenFile(f), BaseURL: base, Images: images}, true
-	}
-	token := func(ctx context.Context) (string, error) { return v.Setting(ctx, "links", "tmdb_token") }
-	return &metadata.Switch{
-		Use:  func(ctx context.Context) bool { t, err := token(ctx); return err == nil && t != "" },
-		Then: &metadata.TMDB{Access: token, BaseURL: base, Images: images},
-		Else: metadata.Lab(),
-	}, false
-}
-
-// showSources are the show details sources: TMDB with the same token as
-// movies, TVMaze (no key) and TVDB with the person's own key only.
-// HOLYARRS_TVMAZE_URL and HOLYARRS_TVDB_URL point at stand-ins (tests).
-func showSources(v *secrets.Vault) metadata.ShowSources {
-	base, images := os.Getenv("HOLYARRS_TMDB_URL"), ""
-	if base != "" {
-		images = strings.TrimRight(base, "/") + "/images"
-	}
+// showSources are the show details sources: TMDB through the metadata
+// server (as movies), TVMaze (no key) and TVDB with the person's own key
+// only. HOLYARRS_TVMAZE_URL and HOLYARRS_TVDB_URL point at stand-ins (tests).
+func showSources(v *secrets.Vault, hosted *hostedMetadata) metadata.ShowSources {
 	return metadata.ShowSources{
-		"tmdb":   &metadata.TMDB{Access: tmdbToken(v), BaseURL: base, Images: images},
+		"tmdb":   hosted.TMDB(),
 		"tvmaze": &metadata.TVMaze{BaseURL: os.Getenv("HOLYARRS_TVMAZE_URL")},
 		"tvdb": &metadata.TVDB{BaseURL: os.Getenv("HOLYARRS_TVDB_URL"),
 			Key: func(ctx context.Context) (string, error) { return v.Setting(ctx, api.TVDBKeyGroup, api.TVDBKeyName) }},
@@ -761,15 +742,6 @@ func musicSource(s *store.Store, version string) *metadata.MusicBrainz {
 		UserAgent: metadata.UserAgentFor(version),
 		Cache:     store.LookupCache{Store: s},
 	}
-}
-
-// tmdbToken reads the TMDB token the same way the metadata lookups do: the
-// file named by HOLYARRS_TMDB_TOKEN_FILE, else the encrypted settings.
-func tmdbToken(v *secrets.Vault) func(context.Context) (string, error) {
-	if f := os.Getenv(metadata.EnvTokenFile); f != "" {
-		return metadata.TokenFile(f)
-	}
-	return func(ctx context.Context) (string, error) { return v.Setting(ctx, "links", "tmdb_token") }
 }
 
 // healthcheck asks a running server for its health: 0 when it answers 200, 1

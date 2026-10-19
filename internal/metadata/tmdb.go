@@ -17,8 +17,8 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/outside"
 )
 
-// ErrNoAccess means TMDB refused the token, or no token is set.
-var ErrNoAccess = errors.New("TMDB refused access; check the TMDB read access token")
+// ErrNoAccess means TMDB or the metadata server refused the credential, or none is set.
+var ErrNoAccess = errors.New("the metadata server refused this install; searches and new artwork are unavailable")
 
 // ImageBase is where TMDB serves pictures.
 const ImageBase = "https://image.tmdb.org/t/p"
@@ -148,7 +148,7 @@ func (t *TMDB) get(ctx context.Context, path string, q url.Values) ([]byte, erro
 		if err != nil {
 			outcome = outside.HTTPOutcome(0, err, ctx)
 			cancel()
-			return nil, fmt.Errorf("TMDB: %w", stripURL(err))
+			return nil, fmt.Errorf("TMDB: %w (%w)", ErrServiceUnavailable, stripURL(err))
 		}
 		body, err := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
 		if closeErr := resp.Body.Close(); err == nil {
@@ -187,6 +187,9 @@ func (t *TMDB) get(ctx context.Context, path string, q url.Values) ([]byte, erro
 			return nil, ErrRateLimited
 		default:
 			outcome = outside.HTTPOutcome(resp.StatusCode, nil, ctx)
+			if resp.StatusCode >= 500 {
+				return nil, fmt.Errorf("TMDB answered %d: %w", resp.StatusCode, ErrServiceUnavailable)
+			}
 			return nil, fmt.Errorf("TMDB answered %d", resp.StatusCode)
 		}
 	}
