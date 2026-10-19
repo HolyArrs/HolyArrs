@@ -37,9 +37,9 @@ func tvRSS(names ...string) string {
 			n = name
 			fmt.Sscan(mb, &size)
 		}
-		fmt.Fprintf(&b, `<item><title>%s</title><pubDate>Sat, 10 Oct 2026 12:00:00 +0000</pubDate>
+		fmt.Fprintf(&b, `<item><title>%s</title><pubDate>%s</pubDate>
 <enclosure url="http://src/%d.torrent" length="%d" type="application/x-bittorrent"/>
-<torznab:attr name="seeders" value="50"/></item>`, n, i, size<<20)
+<torznab:attr name="seeders" value="50"/></item>`, n, time.Now().UTC().Format(time.RFC1123Z), i, size<<20)
 	}
 	b.WriteString(`</channel></rss>`)
 	return b.String()
