@@ -6,10 +6,10 @@
 	import { page } from '$app/state';
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { date } from '#lib/format.ts';
-	import { counts, exceptionChip, filters, firstOfLetter, kinds, letterOf, letters, matches, matchesTitleQuery, missingEpisodes, ofKind, titleQuery, type Filter, type Kind } from '#lib/library.ts';
+	import { counts, exceptionChip, filters, posterStatus, firstOfLetter, kinds, letterOf, letters, matches, matchesTitleQuery, missingEpisodes, ofKind, titleQuery, type Filter, type Kind } from '#lib/library.ts';
 	import { reducedMotion } from '#lib/motion.ts';
-	import { episodeLabel, showProgress, showState } from '#lib/shows.ts';
-	import { artistProgress, artistState } from '#lib/music.ts';
+	import { episodeLabel, showProgress } from '#lib/shows.ts';
+	import { artistProgress } from '#lib/music.ts';
 	import Poster from '#lib/Poster.svelte';
 	import Icon from '#lib/Icon.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
@@ -28,6 +28,7 @@
 	import { peopleNames, plainReason } from '#lib/plain.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
+	import { audienceOf, audienceStatus } from '#lib/title-status.ts';
 	import type { EpisodeView, TitleView } from '#lib/types.ts';
 
 	let titles = $state<TitleView[]>([]);
@@ -292,18 +293,8 @@
 		{ label: 'Import a library', href: to('/library/import') }
 	]);
 
-	/** chipOf is one state chip for a title: its first Slot, or a show's sum. */
-	function chipOf(t: TitleView): { state: string; label: string } | null {
-		if (t.kind === 'show') {
-			const s = showState(t.show);
-			return s.label ? s : null;
-		}
-		if (t.kind === 'artist') {
-			const s = artistState(t.artist);
-			return s.label ? s : null;
-		}
-		return t.slots[0] ? { state: t.slots[0].state, label: t.slots[0].state_label } : null;
-	}
+	/** who decides the status words: members get the plain ones. */
+	const who = $derived(audienceOf((p) => session.can(p)));
 
 	// The A to Z rail: only while sorted by name.
 	const jumps = $derived(firstOfLetter(shown));
@@ -447,16 +438,14 @@
 			<div class:has-rail={railOn} class="with-rail">
 			<ul class="rows" aria-label="Library titles">
 				{#each shown as t (t.id)}
-					{@const c = chipOf(t)}
+					{@const st = exceptionChip(filter, posterStatus(t, who))}
 					{@const requester = requestedBy(t)}
 					{@const fold = filter === 'missing' && t.kind === 'show' && (t.show?.missing ?? 0) > 0}
 					<li data-testid="library-row" data-title-id={t.id} data-letter={letterOf(t.name)} class:selected={preview?.id === t.id} class:last-opened={lastOpenedId === t.id}>
 						<ListRow title={t.name} subtitle={[t.year, kindLabel[t.kind], t.kind === 'movie' ? '' : progressOf(t)].filter(Boolean).join(' · ')} meta="{outOn(t)} · Keep up to date: {t.keep_up_to_date ? 'Yes' : 'No'}" href={titleLink(t.id)} image={t.artwork[0]} icon={t.kind === 'show' ? 'tv' : t.kind === 'artist' ? 'music' : 'film'}>
 							{#snippet trailing()}
 								{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}<StatusPill kind="approved" testid="request-approved" />{/if}
-								{#if t.kind === 'movie'}
-									{#each t.slots as s (s.id)}{#if exceptionChip(filter, { state: s.state, label: s.state_label })}<StatusPill kind={slotKind(s.state)} label={s.state_label} />{/if}{/each}
-								{:else if c && exceptionChip(filter, c)}<StatusPill kind={slotKind(c.state)} label={c.label} />{/if}
+								{#if st}<StatusPill kind={st.kind} label={st.label} />{/if}
 								<span class="preview-only"><IconButton icon="info" tooltip={false} label="Preview {t.name}" aria-pressed={preview?.id === t.id} onclick={(event: MouseEvent) => openPreview(t, event)} /></span>
 							{/snippet}
 							</ListRow>
@@ -472,7 +461,7 @@
 											{:else}
 												<ul>
 													{#each eps as ep (ep.id)}
-														<li data-testid="missing-episode"><span class="ep-code">{episodeLabel(ep, t.show?.episode_order ?? '')}</span> <span class="ep-name">{ep.name || 'Name not known yet'}</span>{#if ep.air_date}<span class="ep-date"> · {date(ep.air_date)}</span>{/if}{#if ep.slots[0] && ep.slots[0].state !== 'wanted'}{' '}<StatusPill kind={slotKind(ep.slots[0].state)} label={ep.slots[0].state_label} />{/if}</li>
+														<li data-testid="missing-episode"><span class="ep-code">{episodeLabel(ep, t.show?.episode_order ?? '')}</span> <span class="ep-name">{ep.name || 'Name not known yet'}</span>{#if ep.air_date}<span class="ep-date"> · {date(ep.air_date)}</span>{/if}{#if ep.slots[0] && ep.slots[0].state !== 'wanted'}{' '}{@const es = audienceStatus(slotKind(ep.slots[0].state), who, { tracked: true })}<StatusPill kind={es.kind} label={who === 'staff' ? ep.slots[0].state_label : es.label} />{/if}</li>
 													{/each}
 												</ul>
 											{/if}
@@ -495,11 +484,10 @@
 			<div class:has-rail={railOn} class="with-rail">
 			<ul class="grid" aria-label="Library titles">
 			{#each shown as t, i (t.id)}
-					{@const c = chipOf(t)}
-					{@const q3 = exceptionChip(filter, c)}
+					{@const q3 = exceptionChip(filter, posterStatus(t, who))}
 					{@const requester = requestedBy(t)}
 					<li class="item rise" data-testid="library-card" data-title-id={t.id} data-letter={letterOf(t.name)} class:selected={preview?.id === t.id} class:last-opened={lastOpenedId === t.id} style="--i: {Math.min(i, 8)}">
-					<PosterCard title={t.name} href={titleLink(t.id)} image={t.artwork[0]} subtitle={[t.year, t.kind === 'movie' ? '' : kindLabel[t.kind]].filter(Boolean).join(' · ')} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} status={q3 ? slotKind(q3.state) : undefined} statusLabel={q3?.label} vtName={artName(t.id)}>
+					<PosterCard title={t.name} href={titleLink(t.id)} image={t.artwork[0]} subtitle={[t.year, t.kind === 'movie' ? '' : kindLabel[t.kind]].filter(Boolean).join(' · ')} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} status={q3?.kind} statusLabel={q3?.label} vtName={artName(t.id)}>
 						{#snippet action()}<span class="preview-only"><IconButton icon="info" tooltip={false} variant="glass" size="sm" label="Preview {t.name}" aria-pressed={preview?.id === t.id} onclick={(event: MouseEvent) => openPreview(t, event)} /></span>{/snippet}
 					</PosterCard>
 					{#if lastOpenedId === t.id || requester || t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}
@@ -517,7 +505,7 @@
 		{/if}
 		</div>
 		{#if preview}
-			{@const previewChip = chipOf(preview)}
+			{@const previewChip = posterStatus(preview, who)}
 			<aside class="preview" aria-labelledby="preview-title">
 				<div class="preview-head">
 					<span class="preview-kind">{previewKind(preview)}</span>
@@ -525,7 +513,7 @@
 				</div>
 				<div class="preview-art"><Poster src={preview.artwork[0]} name={preview.name} /></div>
 				<h2 id="preview-title" bind:this={previewHeading} tabindex="-1">{preview.name}</h2>
-				{#if previewChip}<StatusPill kind={slotKind(previewChip.state)} label={previewChip.label} />{/if}
+				{#if previewChip}<StatusPill kind={previewChip.kind} label={previewChip.label} />{/if}
 				<p class="preview-progress">{progressOf(preview)}</p>
 				<dl class="preview-facts">
 					<dt>Keep up to date</dt><dd>{preview.keep_up_to_date ? 'Yes' : 'No'}</dd>
@@ -536,7 +524,7 @@
 						<h3>Versions</h3>
 						<ul>
 							{#each preview.slots as slot (slot.id)}
-								<li><span>{slot.version || 'Main'}</span><StatusPill kind={slotKind(slot.state)} label={slot.state_label} /></li>
+								{@const vs = audienceStatus(slotKind(slot.state), who, { tracked: true })}<li><span>{slot.version || 'Main'}</span><StatusPill kind={vs.kind} label={who === 'staff' ? slot.state_label : vs.label} /></li>
 							{/each}
 						</ul>
 					</div>

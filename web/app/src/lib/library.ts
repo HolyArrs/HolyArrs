@@ -1,6 +1,8 @@
 // Library filters and the remembered add choices, kept apart from the pages
 // so they can be tested.
 import type { TitleView } from './types.ts';
+import type { StatusKind } from './ui/StatusPill.svelte';
+import { audienceStatus, factsOf, titleStatus, type Audience, type TitleStatus } from './title-status.ts';
 
 export type Filter = 'all' | 'missing' | 'not_out_yet' | 'better' | 'have';
 
@@ -178,22 +180,43 @@ export function firstOfLetter(ts: Pick<TitleView, 'id' | 'name'>[]): Map<string,
 	return out;
 }
 
-const viewDefault: Record<Filter, string[]> = {
+const viewDefault: Record<Filter, StatusKind[]> = {
 	all: ['in_library'],
 	have: ['in_library'],
-	missing: ['wanted'],
-	not_out_yet: ['not_out_yet'],
-	better: ['better_wanted']
+	missing: ['missing'],
+	not_out_yet: ['coming_soon'],
+	better: ['in_library']
 };
 
 /**
- * exceptionChip keeps a poster's state only when it says something the view
- * does not already say: "In library" is dropped in the All and In library
- * views, but "3 missing" (a count) and any other state stay.
+ * exceptionChip keeps a poster's status only when it says something the view
+ * does not already say: "In your Library" is dropped in the All and In library
+ * views, but "Missing · 3 episodes" (a count) and any other status stay.
  */
-export function exceptionChip<T extends { state: string; label: string }>(f: Filter, chip: T | null): T | null {
+export function exceptionChip<T extends { kind: StatusKind; label: string }>(f: Filter, chip: T | null): T | null {
 	if (!chip) return null;
-	return viewDefault[f].includes(chip.state) && !/\d/.test(chip.label) ? null : chip;
+	return viewDefault[f].includes(chip.kind) && !/\d/.test(chip.label) ? null : chip;
+}
+
+/**
+ * posterStatus is the one status a Library poster or row shows, in the
+ * shared words of title-status.ts. A show or an artist with missing
+ * episodes or tracks puts the count on the shared word ("Missing · 3
+ * episodes"); null when nothing is kept yet.
+ */
+export function posterStatus(t: TitleView, who: Audience): TitleStatus | null {
+	const facts = factsOf(t);
+	if (t.kind !== 'show' && t.kind !== 'artist') return titleStatus({ ...facts, titleKind: 'movie' }, who);
+	const s = t.kind === 'show' ? t.show : t.artist;
+	const titleKind = t.kind;
+	if (!s) return null;
+	if (s.missing > 0) {
+		const st = audienceStatus('missing', who, { tracked: true, ask: facts.ask });
+		const unit = t.kind === 'show' ? 'episode' : 'track';
+		return { kind: st.kind, label: `${st.label} · ${s.missing} ${unit}${s.missing === 1 ? '' : 's'}` };
+	}
+	if (s.in_library > 0 || s.not_out_yet > 0 || facts.ask) return titleStatus({ titleKind, tracked: true, ask: facts.ask, inLibrary: s.in_library > 0, comingSoon: s.not_out_yet > 0 }, who);
+	return null;
 }
 
 /** missingEpisodes keeps the episodes that are kept, have aired and have no copy yet (wanted or on the way). */

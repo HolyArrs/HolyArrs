@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { byName, counts, slotNotes, loadChoices, matches, matchesTitleQuery, ofKind, pickId, saveChoices, secondVersion, titleQuery, inLibraryWord, letterOf, firstOfLetter, letters, exceptionChip, missingEpisodes } from './library.ts';
+import { byName, counts, slotNotes, loadChoices, matches, matchesTitleQuery, ofKind, pickId, saveChoices, secondVersion, titleQuery, inLibraryWord, letterOf, firstOfLetter, letters, exceptionChip, missingEpisodes, posterStatus } from './library.ts';
 import type { TitleView } from './types.ts';
 
 function title(name: string, ...states: string[]): TitleView {
@@ -128,15 +128,52 @@ describe('library letters and quiet states', () => {
 	});
 
 	it('drops the state a view already says, keeps counts and other states', () => {
-		const have = { state: 'in_library', label: 'In library' };
+		const have = { kind: 'in_library', label: 'In your Library' } as const;
 		expect(exceptionChip('all', have)).toBeNull();
 		expect(exceptionChip('have', have)).toBeNull();
+		expect(exceptionChip('better', have)).toBeNull();
 		expect(exceptionChip('missing', have)).toBe(have);
-		expect(exceptionChip('all', { state: 'in_library', label: '4 in library' })).not.toBeNull();
-		expect(exceptionChip('missing', { state: 'wanted', label: 'Wanted' })).toBeNull();
-		expect(exceptionChip('missing', { state: 'wanted', label: '3 missing' })).not.toBeNull();
-		expect(exceptionChip('all', { state: 'downloading', label: 'Downloading' })).not.toBeNull();
+		expect(exceptionChip('missing', { kind: 'missing', label: 'Missing' })).toBeNull();
+		expect(exceptionChip('not_out_yet', { kind: 'coming_soon', label: 'Coming soon' })).toBeNull();
+		expect(exceptionChip('missing', { kind: 'missing', label: 'Missing · 3 episodes' })).not.toBeNull();
+		expect(exceptionChip('all', { kind: 'downloading', label: 'Downloading' })).not.toBeNull();
 		expect(exceptionChip('all', null)).toBeNull();
+	});
+
+	describe('posterStatus', () => {
+		const show = (s: Partial<NonNullable<TitleView['show']>>): TitleView => ({ ...title('Harbour Lights'), kind: 'show', slots: [], show: { details_source: '', episode_order: '', new_seasons: '', status: '', seasons: [{ aired: 6 } as never], episodes: 6, missing: 0, not_out_yet: 0, in_library: 0, better_wanted: 0, ...s } });
+
+		it('gives a movie one status in the shared words', () => {
+			expect(posterStatus(title('A', 'in_library', 'wanted'), 'staff')).toEqual({ kind: 'in_library', label: 'In your Library' });
+			expect(posterStatus(title('A', 'in_library'), 'member')).toEqual({ kind: 'in_library', label: 'Ready to watch' });
+			expect(posterStatus(title('A', 'wanted'), 'staff')).toEqual({ kind: 'missing', label: 'Missing' });
+			expect(posterStatus(title('A', 'not_out_yet'), 'staff')?.kind).toBe('coming_soon');
+		});
+
+		it('never shows Failed to members', () => {
+			expect(posterStatus(title('A', 'failed'), 'staff')).toEqual({ kind: 'failed', label: 'Failed' });
+			expect(posterStatus(title('A', 'failed'), 'member')).toEqual({ kind: 'requested', label: 'Requested' });
+			expect(posterStatus({ ...title('A', 'failed'), asks: [{ state: 'approved' } as never] }, 'member')).toEqual({ kind: 'approved', label: 'Approved' });
+		});
+
+		it('tells members a missing movie is on its way', () => {
+			expect(posterStatus(title('A', 'wanted'), 'member')).toEqual({ kind: 'requested', label: 'Requested' });
+		});
+
+		it('puts a show count on the shared word', () => {
+			expect(posterStatus(show({ missing: 3, in_library: 2 }), 'staff')).toEqual({ kind: 'missing', label: 'Missing · 3 episodes' });
+			expect(posterStatus(show({ missing: 1 }), 'staff')?.label).toBe('Missing · 1 episode');
+			expect(posterStatus(show({ missing: 3 }), 'member')).toEqual({ kind: 'requested', label: 'Requested · 3 episodes' });
+			expect(posterStatus(show({ in_library: 6 }), 'member')).toEqual({ kind: 'in_library', label: 'Ready to watch' });
+			expect(posterStatus(show({ not_out_yet: 2 }), 'staff')).toEqual({ kind: 'coming_soon', label: 'Coming soon' });
+			expect(posterStatus(show({}), 'staff')).toBeNull();
+		});
+
+		it('counts tracks for an artist and says ready to listen', () => {
+			const artist: TitleView = { ...title('Tin Lanterns'), kind: 'artist', slots: [], artist: { mbid: '', status: '', new_albums: '', album_types: [], secondary_types: [], release_statuses: [], albums: 1, included: 1, tracks: 4, in_library: 4, missing: 0, not_out_yet: 0, better_wanted: 0 } };
+			expect(posterStatus(artist, 'member')).toEqual({ kind: 'in_library', label: 'Ready to listen' });
+			expect(posterStatus({ ...artist, artist: { ...artist.artist!, in_library: 2, missing: 2 } }, 'staff')?.label).toBe('Missing · 2 tracks');
+		});
 	});
 
 	it('lists the missing episodes of a show', () => {

@@ -148,7 +148,7 @@ test('artists sit in the Library with a Music kind', async () => {
 	await expect(own).toHaveURL(/kind=artist/);
 	const card = own.getByTestId('library-card').filter({ hasText: 'Tin Lanterns' });
 	await expect(card).toContainText('Artist');
-	await expect(card).toContainText('missing');
+	await expect(card).toContainText(/Missing · \d+ tracks?/);
 	await expect(own.getByTestId('library-card').filter({ hasText: 'Harbour Lights' })).toHaveCount(0);
 	await own.getByRole('radiogroup', { name: 'Layout' }).getByRole('radio', { name: 'List' }).click();
 	await expect(own.getByTestId('library-row').filter({ hasText: 'Tin Lanterns' })).toContainText('tracks in the Library');

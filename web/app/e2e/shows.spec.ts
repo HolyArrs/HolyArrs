@@ -124,7 +124,7 @@ test('shows sit in the Library next to movies, with kinds and state filters', as
 	await expect(own).toHaveURL(/kind=show/);
 	const card = own.getByTestId('library-card').filter({ hasText: 'Harbour Lights' });
 	await expect(card).toContainText('Show');
-	await expect(card).toContainText('missing');
+	await expect(card).toContainText(/Missing · \d+ episodes?/);
 	await expect(own.getByTestId('library-card').filter({ hasText: 'Quiet Orchard' })).toHaveCount(0);
 	await libraryStatus(own, 'missing');
 	await expect(card).toBeVisible();
