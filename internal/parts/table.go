@@ -344,14 +344,16 @@ var Routes = map[string]Owner{
 	"POST /api/v1/titles/{id}/delete":           ByTitle,
 
 	// Movies.
-	"POST /api/v1/titles":                   movies,
-	"GET /api/v1/titles/lookup":             movies,
-	"GET /api/v1/metadata/search":           movies,
-	"GET /api/v1/metadata/{kind}/{tmdb_id}": Media,
-	"GET /api/v1/discover":                  Media,
-	"GET /api/v1/top10":                     Media,
-	"GET /api/v1/settings/release-gate":     movies,
-	"PUT /api/v1/settings/release-gate":     movies,
+	"POST /api/v1/titles":                          movies,
+	"GET /api/v1/titles/lookup":                    movies,
+	"GET /api/v1/metadata/search":                  movies,
+	"GET /api/v1/metadata/{kind}/{tmdb_id}":        Media,
+	"GET /api/v1/discover":                         Media,
+	"GET /api/v1/top10":                            Media,
+	"GET /api/v1/music-trending":                   music,
+	"GET /api/v1/music-trending/art/{kind}/{mbid}": music,
+	"GET /api/v1/settings/release-gate":            movies,
+	"PUT /api/v1/settings/release-gate":            movies,
 
 	// Shows.
 	"POST /api/v1/shows":                       shows,

@@ -14040,6 +14040,75 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/music-trending": {
+      "get": {
+        "description": "Returns the weekly music trending list as the HolyArrs metadata server keeps it: ListenBrainz's sitewide top for region=global, Deezer's charts for a two-letter country code the server lists. kind=artist or album. Answers kind, region, source, regions and up to 30 items, each rank, mbid (the artist, or the album's MusicBrainz release group), name and, for albums, artist_name and artist_mbid. Lists are cached an hour, misses five minutes. Each person may ask 30 times a minute, shared with Explore rows. Not found while the Music part is off.",
+        "operationId": "musicTrending",
+        "responses": {
+          "200": {
+            "description": "kind, region, source, regions and items."
+          },
+          "400": {
+            "description": "Unknown kind or region."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          },
+          "404": {
+            "description": "No list for that region, no metadata server, or Music is off."
+          },
+          "429": {
+            "description": "Over 30 requests a minute; see Retry-After."
+          },
+          "502": {
+            "description": "The metadata server did not answer."
+          }
+        },
+        "summary": "The music trending rows",
+        "x-holyarrs-part": "music",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/music-trending/art/{kind}/{mbid}": {
+      "get": {
+        "description": "The picture of an artist or album on a trending list read earlier (kind=artist or album), through the artwork cache: artists by Deezer's artist search, albums by the Cover Art Archive's release group front cover. Served with a year-long private cache header.",
+        "operationId": "musicTrendArt",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "mbid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The picture."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          },
+          "404": {
+            "description": "Not on a cached list, or no picture."
+          }
+        },
+        "summary": "A music trending picture",
+        "x-holyarrs-part": "music",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/my/alerts": {
       "get": {
         "description": "My email address and Discord user id.",

@@ -52,6 +52,7 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import Top10Row from '#lib/Top10Row.svelte';
+	import MusicTrendingRows from '#lib/MusicTrendingRows.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
@@ -336,6 +337,7 @@
 		<SegmentedControl options={typeOptions} value={type} label="Show" testid="explore-type" onchange={setType} />
 	</div>
 	<MetadataNotice />
+	{#if type === 'music'}<MusicTrendingRows {owned} {manage} {mayAsk} {folders} {rules} onadded={() => void load()} />{/if}
 
 	{#if failed && !okOnce}
 		<LoadError hasData={false} message="Could not load Explore." onretry={load} {busy} />

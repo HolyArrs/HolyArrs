@@ -61,6 +61,9 @@ type Server struct {
 	// Top10 reads a Netflix Top 10 list from the metadata server; nil
 	// hides the row.
 	Top10 func(ctx context.Context, kind, region, lang string) (metadata.Top10, error)
+	// MusicTrending reads a music trending list from the metadata server;
+	// nil hides the rows.
+	MusicTrending func(ctx context.Context, kind, region string) (metadata.MusicTrend, error)
 	// Library runs adding, editing and refreshing; New makes one when nil.
 	Library *library.Service
 	// Lists reads Outside lists; New makes one without keys when nil.
@@ -121,6 +124,8 @@ type API struct {
 	status statusCache
 	// top10 keeps the Netflix Top 10 lists for an hour.
 	top10 top10Cache
+	// music keeps the music trending lists for an hour.
+	music musicTrendCache
 }
 
 // New makes the API.
@@ -268,6 +273,8 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}", a.metadataDetails)
 	m.HandleFunc("GET /api/v1/discover", a.discoverRow)
 	m.HandleFunc("GET /api/v1/top10", a.top10List)
+	m.HandleFunc("GET /api/v1/music-trending", a.musicTrending)
+	m.HandleFunc("GET /api/v1/music-trending/art/{kind}/{mbid}", a.musicTrendArt)
 	if a.s.Secrets != nil {
 		m.HandleFunc("GET /api/v1/settings/trakt-key", a.getTraktKey)
 		m.HandleFunc("PUT /api/v1/settings/trakt-key", a.putTraktKey)
