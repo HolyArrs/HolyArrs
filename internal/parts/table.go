@@ -349,6 +349,7 @@ var Routes = map[string]Owner{
 	"GET /api/v1/metadata/search":           movies,
 	"GET /api/v1/metadata/{kind}/{tmdb_id}": Media,
 	"GET /api/v1/discover":                  Media,
+	"GET /api/v1/top10":                     Media,
 	"GET /api/v1/settings/release-gate":     movies,
 	"PUT /api/v1/settings/release-gate":     movies,
 
