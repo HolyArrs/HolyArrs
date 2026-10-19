@@ -23,7 +23,7 @@ The canonical registry of exact ordered screen IDs is `inbox-flows.json` in that
 | HolyArrs component | Reference files / exact flow IDs | Comparison scope |
 | --- | --- | --- |
 | Shell, navigation, expandable Library | full-export 40,120,480; Inbox `57e3c9bd-7065-4cfc-9584-a248c4aaeea6` | Rail, sidebar, hierarchy, selected state, workspace |
-| Requests, Downloads, decisions, title detail | 40; Inbox; Sending a message `27b1d962-dee6-4cbb-ba51-f3d667477e9d`, screen `7d888da9-c41c-4130-aa8e-1d48326b910d` | List / inspector relationship, stable state progression |
+| Wishlist, Downloads, decisions, title detail | 40; Inbox; Sending a message `27b1d962-dee6-4cbb-ba51-f3d667477e9d`, screen `7d888da9-c41c-4130-aa8e-1d48326b910d` | List / inspector relationship, stable state progression |
 | Search and filters | Searching inbox `0e25f6bb-b36c-409b-a7f7-35687f1de248`; Filtering and sorting `6211d06a-abe1-4112-92c9-a37a676704f4`; Searching Intercom `1edce39d-654d-4597-8b5a-7d69a13708ce` | Filter hierarchy, query controls, selection |
 | Home and Calendar | 280,440; Team inbox performance `4005ac5d-5051-4d93-9121-5e3a46bb9cc8` | Metrics, restrained hierarchy, surfaces |
 | Settings, grouped forms, sheets | 240,480; Adding a team inbox `670d481a-5adb-4c2e-ae5d-9f48210d3c4f` | Fields, dividers, footer actions, feedback |

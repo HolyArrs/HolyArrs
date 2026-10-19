@@ -24,6 +24,7 @@ var wordExceptions = []struct{ file, line, why string }{
 	{"plans/active/holyarrs-prephase-design.md", "- **Words.** Ordinary words", "the clean-room rule naming coined terms"},
 	{"plans/active/holyarrs-prephase-design.md", "| 3 | **Seerr** (full)", "research side: names the upstream app's own feature"},
 	{"plans/done/2026-10-10-holyarrs-prephase-run.md", "", "research-side run plan (done) quoting upstream screens"},
+	{"repo/docs/design-review/apple/settings-inventory.md", "The brief asked for a group called \"Connections\"", "explains why that avoided word was not used as a group name"},
 }
 
 var bannedRx = func() *regexp.Regexp {
@@ -33,6 +34,24 @@ var bannedRx = func() *regexp.Regexp {
 	}
 	return regexp.MustCompile(`\b(` + strings.Join(q, "|") + `)\b`)
 }()
+
+// relName names p for messages and wordExceptions: repo/<path> inside the
+// repo, plans/<path> beside it. Both are made absolute first, as
+// filepath.Rel cannot climb out of a relative base like ../../..
+func relName(repo, p string) string {
+	absRepo, err1 := filepath.Abs(repo)
+	absP, err2 := filepath.Abs(p)
+	if err1 != nil || err2 != nil {
+		return filepath.ToSlash(p)
+	}
+	if r, err := filepath.Rel(absRepo, absP); err == nil && !strings.HasPrefix(r, "..") {
+		return "repo/" + filepath.ToSlash(r)
+	}
+	if r, err := filepath.Rel(filepath.Dir(absRepo), absP); err == nil && !strings.HasPrefix(r, "..") {
+		return filepath.ToSlash(r)
+	}
+	return filepath.ToSlash(absP)
+}
 
 func excepted(rel, line string) bool {
 	rel = filepath.ToSlash(rel)
@@ -83,10 +102,9 @@ func TestNoBannedWords(t *testing.T) {
 				return err
 			}
 			checked++
-			rel, _ := filepath.Rel(filepath.Join(repo, ".."), p)
-			if strings.HasPrefix(filepath.ToSlash(rel), "repo/") {
-				rel = filepath.ToSlash(rel)
-			}
+			// Files in the repo show as repo/<path> (whatever the checkout's
+			// folder is called), plans as plans/<path>.
+			rel := relName(repo, p)
 			for i, line := range strings.Split(string(b), "\n") {
 				if m := bannedRx.FindString(line); m != "" && !excepted(rel, line) {
 					t.Errorf("%s:%d uses %q (glossary.md); say it in HolyArrs words or add a logged exception", rel, i+1, m)

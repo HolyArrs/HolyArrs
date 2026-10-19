@@ -25,8 +25,8 @@ Fresh visual-ralph verdicts apply only to the named screenshots and reference fi
 ## Frontend corrections
 
 - Context sidebar uses the shared sidebar surface, separating it correctly from the workspace in light and dark themes.
-- Home Activity stacks through 1100px. The health panel moves below the activity content through 1600px, preserving readable event text at tablet and compact-desktop sizes.
-- Existing mobile Library, Requests and Downloads layouts, filter/requester counts, removable chips, saved search/view, scroll restoration and Last opened behavior are preserved and rechecked in the final scenarios.
+- The Home event feed stacks through 1100px. The health panel moves below the activity content through 1600px, preserving readable event text at tablet and compact-desktop sizes.
+- Existing mobile Library, Wishlist and Downloads layouts, filter/requester counts, removable chips, saved search/view, scroll restoration and Last opened behavior are preserved and rechecked in the final scenarios.
 
 Matching before/after captures retain their own source identities. Only the After images belong to the final frontend digest. The local gallery is generated only after required coverage gates clear:
 
@@ -43,7 +43,7 @@ Matching before/after captures retain their own source identities. Only the Afte
 | Interactions | 243 | 83 declared scenarios with viewport eligibility at 360/834/1440; six intentional width skips |
 | Touch | 8 | Actual Playwright tap actions at 390/834 |
 | Breakpoint/environment | 164 | Six routes at 27 breakpoint-neighbor widths, 640px reflow proxy and DPR-2 detail |
-| Comparison | 8 | Library, Requests, Downloads, Settings; light/dark; 1920×1192 |
+| Comparison | 8 | Library, Wishlist, Downloads, Settings; light/dark; 1920×1192 |
 | Motion | 6 | Normal/reduced motion at 390/834/1440, preference change, entry/exit/toast/font diagnostics and recordings |
 | Genuine saves | 7 | Disposable-member and request/approval/denial/withdrawal persistence journeys |
 

@@ -80,9 +80,9 @@ Implement as: CSS in `tokens.css` + a small `lib/motion.ts` (Svelte actions: `pr
 - Top of sidebar: HolyArrs mark + "HolyArrs". Then a **Search** row showing `⌘K`.
 - Sections (sentence case 12px muted labels, hidden when collapsed, replaced by a thin divider):
   - (no label) **Home**, **Explore**
-  - **Library**: Movies, TV shows, Music, Collections (only parts that are on)
+  - **Library**: Movies, TV shows, Music, Movie series (only parts that are on)
   - **Your stuff** (members): My requests, Calendar
-  - **Manage** (only for people with manage/approve/settings permissions): Downloads, Approvals (Wishlist inbox, with count badge), Activity/History, Library tools, Settings
+  - **Manage** (only for people with manage/approve/settings permissions): Downloads, Approvals (Wishlist inbox, with count badge), History, Library tools, Settings
 - Bottom: account row (avatar, name, role) with a ⌃⌄ menu: Account, Appearance (Light / Dark / System), Sign out.
 - Selected row: soft fill `--surface-3`, accent-coloured icon, semibold label. Counts are right-aligned pills.
 - Top bar inside the content area (56px, sticky, translucent blur): collapse button (when collapsed), back/forward chevrons on detail pages, search field `Search… ⌘K` opening a command palette sheet, live connection dot, and an activity button showing current download count.
@@ -91,7 +91,7 @@ Implement as: CSS in `tokens.css` + a small `lib/motion.ts` (Svelte actions: `pr
 - Sidebar starts collapsed (72px). Expanding overlays the content as a sheet with scrim, closes on Escape/outside tap/selection.
 
 ### Phone (< 768px)
-- No sidebar. Bottom tab bar (translucent blur, safe-area aware): **Home, Explore, Library, Search**, and **Manage** (admins) or **Requests** (members). A "More" sheet holds the rest. Large-title page headers that shrink on scroll.
+- No sidebar. Bottom tab bar (translucent blur, safe-area aware): **Home, Explore, Library, Search**, and **Manage** (admins) or **Wishlist** (members). A "More" sheet holds the rest. Large-title page headers that shrink on scroll.
 
 ### Accessibility
 - `<nav aria-label="Main">`, `aria-current="page"`, the toggle has `aria-expanded` and `aria-controls`. Collapsed rows keep text via `aria-label`. Tooltips are not the only label. Skip link stays first. Focus returns to the toggle after closing the overlay sheet.
@@ -136,7 +136,7 @@ Ranking: simple and explainable (genre overlap × recency × household requests)
 - Member words: "Get it", "Requested", "Downloading", "Ready to watch". Admin words may be more precise, but always glossary terms.
 
 ## 8. Not in this milestone (later, same template)
-Downloads, Approvals, Activity, Library list/grid, Search results, Calendar, People, Settings and Access screens move onto the kit in the next milestone. Until then they render inside the new shell with their current content (they must still work).
+Downloads, Approvals, History, Library list/grid, Search results, Calendar, People, Settings and Access screens move onto the kit in the next milestone. Until then they render inside the new shell with their current content (they must still work).
 
 ## 9. Done means
 - Svelte check 0/0, unit tests pass, word check passes.

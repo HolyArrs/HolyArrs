@@ -293,7 +293,7 @@ The approved Mobbin set is desktop-only. Responsive behavior below preserves Hol
 | `/library/held`, `/turned-down`, `/copies`, `/missing-subtitles` | Filtered Inbox or Contacts queue | Shared queue shell, clear selection, inspector-based resolution |
 | `/library/rename`, `/import` | Editor plus side inspector (`160`, `320`) | Preview changes in the main pane, options/actions in inspector |
 | `/search` | Search/list workspace and command pattern | Search field remains primary; results use media art with operational metadata |
-| `/wishlist` | Inbox queue | Requests list + selected request detail + approval/status inspector; member permissions preserved |
+| `/wishlist` | Inbox queue | Wishlist list + selected request detail + approval/status inspector; member permissions preserved |
 | `/downloads` | Inbox queue | Active queue with compact status, progress, source, and actions |
 | `/downloads/history` | Content/table pattern | Dense sortable history table with filters and detail drawer |
 | `/downloads/decide` | Inbox + right inspector | Decision queue, release evidence in detail, resolution controls in inspector |
@@ -307,7 +307,7 @@ The approved Mobbin set is desktop-only. Responsive behavior below preserves Hol
 ## Permission and lifecycle rules
 
 - Admin and household/member views use the same visual system. Permission changes destinations and actions, not the entire product shell.
-- Requested and approved media can appear both in Wishlist/My Requests and Library. The item detail communicates availability, approval, search, download, file, and subtitle state in one lifecycle.
+- Requested and approved media can appear both in Wishlist (your own asks) and Library. The item detail communicates availability, approval, search, download, file, and subtitle state in one lifecycle.
 - A missing approved title must remain visibly requested/approved. Do not reduce it to a generic missing state.
 - Hide actions the current user cannot perform. Do not show decorative controls that fail later.
 - Preserve part-off, safe-mode, URL-base, live status, session, and direct-route gates from the actual app.

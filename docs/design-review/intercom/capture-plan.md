@@ -12,7 +12,7 @@ The harness captures 24 implemented routes at three fixed viewports, for 72 scre
 | Library | `/library?kind=movie`, `/library/1`, `/library/collections` |
 | Library management | `/library/held`, `/library/turned-down`, `/library/copies`, `/library/missing-subtitles`, `/library/rename`, `/library/import` |
 | People and search | `/people`, `/search` |
-| Requests | `/wishlist` |
+| Wishlist | `/wishlist` |
 | Downloads | `/downloads`, `/downloads/decide`, `/downloads/history` |
 | Calendar | `/calendar` |
 | Settings | `/settings`, `/settings/naming`, `/settings/search`, `/settings/parts`, `/settings/schedules`, `/settings/this-app` |
