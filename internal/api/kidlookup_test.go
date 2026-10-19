@@ -1,0 +1,156 @@
+package api
+
+import (
+	"context"
+	"fmt"
+	"slices"
+	"sync/atomic"
+	"testing"
+	"time"
+
+	"github.com/CoderLuii/holyarrs/internal/auth"
+	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/CoderLuii/holyarrs/internal/store"
+)
+
+// lightRater is a provider with the light rating lookup, counting calls;
+// every title is rated G (movies) or TV-Y (shows).
+type lightRater struct{ slowDetails }
+
+var rateCalls atomic.Int32
+
+func (l *lightRater) Rating(_ context.Context, kind, _ string) (string, error) {
+	rateCalls.Add(1)
+	if kind == "show" {
+		return "TV-Y", nil
+	}
+	return "G", nil
+}
+
+func newRatingAPI(t *testing.T) (*API, *lightRater) {
+	t.Helper()
+	st, err := store.Open(t.TempDir(), store.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	l := &lightRater{}
+	rateCalls.Store(0)
+	return New(Server{Store: st, Metadata: l, Version: "test"}), l
+}
+
+func unknownRefs(from, n int) []ratingRef {
+	var refs []ratingRef
+	for i := range n {
+		refs = append(refs, ratingRef{kind: "movie", tmdbID: fmt.Sprint(from + i)})
+	}
+	return refs
+}
+
+func kidCtx(id int64) context.Context {
+	return auth.ContextWith(context.Background(), auth.Who{UserID: id, Role: auth.RoleMember, MaxRating: "PG"})
+}
+
+// TestKidRatingLookupsCappedPerRequest: one request looks up at most 24
+// ratings; the rest stay hidden.
+func TestKidRatingLookupsCappedPerRequest(t *testing.T) {
+	a, _ := newRatingAPI(t)
+	got := a.kidAllowed(kidCtx(5), "PG", unknownRefs(7000, 40), 0)
+	if c := rateCalls.Load(); c != ratingLookupsPerRequest {
+		t.Fatalf("%d lookups in one request, want %d", c, ratingLookupsPerRequest)
+	}
+	if slices.Contains(got[:ratingLookupsPerRequest], false) || slices.Contains(got[ratingLookupsPerRequest:], true) {
+		t.Fatalf("allowed %v", got)
+	}
+}
+
+// TestKidRatingLookupBudgetPerPerson: a person gets 120 lookups a minute;
+// over that, unknown titles stay hidden; someone else still gets theirs.
+func TestKidRatingLookupBudgetPerPerson(t *testing.T) {
+	a, _ := newRatingAPI(t)
+	for i := range 5 {
+		got := a.kidAllowed(kidCtx(5), "PG", unknownRefs(10000+100*i, 24), 0)
+		if slices.Contains(got, false) {
+			t.Fatalf("request %d: %v", i, got)
+		}
+	}
+	got := a.kidAllowed(kidCtx(5), "PG", unknownRefs(20000, 24), 0)
+	if slices.Contains(got, true) || rateCalls.Load() != 120 {
+		t.Fatalf("over budget: %d lookups, allowed %v", rateCalls.Load(), got)
+	}
+	if got := a.kidAllowed(kidCtx(6), "PG", unknownRefs(30000, 3), 0); slices.Contains(got, false) {
+		t.Fatalf("another person: %v", got)
+	}
+}
+
+// TestKidRatingLightLookupsOwnCache: ratings come from the light lookup,
+// not Details, and are kept apart from the Explore cache.
+func TestKidRatingLightLookupsOwnCache(t *testing.T) {
+	a, l := newRatingAPI(t)
+	a.discover.put("details|movie|1", discoverEntry{at: time.Now(), details: &metadata.Details{}})
+	a.kidAllowed(kidCtx(5), "PG", unknownRefs(7000, 10), 0)
+	a.kidAllowed(kidCtx(5), "PG", unknownRefs(7000, 10), 0)
+	if c := l.calls.Load(); c != 0 {
+		t.Fatalf("%d Details lookups for ratings", c)
+	}
+	if c := rateCalls.Load(); c != 10 {
+		t.Fatalf("%d rating lookups for 10 titles asked twice", c)
+	}
+	if len(a.discover.cache) != 1 {
+		t.Fatalf("Explore cache has %d entries, want the 1 it had", len(a.discover.cache))
+	}
+}
+
+// TestRatingCacheEvictsOldest: a full rating cache drops its oldest
+// entries, not everything.
+func TestRatingCacheEvictsOldest(t *testing.T) {
+	var s ratingState
+	now := time.Now()
+	for i := range maxRatingCache + 10 {
+		s.put(fmt.Sprint(i), "G", now)
+	}
+	if len(s.cache) != maxRatingCache {
+		t.Fatalf("cache holds %d, want %d", len(s.cache), maxRatingCache)
+	}
+	if _, ok := s.get("9", now); ok {
+		t.Fatal("oldest entry kept")
+	}
+	if _, ok := s.get("10", now); !ok {
+		t.Fatal("newer entry dropped")
+	}
+	if _, ok := s.get(fmt.Sprint(maxRatingCache+9), now.Add(ratingTTL)); ok {
+		t.Fatal("entry kept past a day")
+	}
+}
+
+// TestKidExploreUsesLightRatingLookups: a Kid's Explore row checks ratings
+// without any full details lookup.
+func TestKidExploreUsesLightRatingLookups(t *testing.T) {
+	k := newKidRig(t)
+	k.kai.call("GET", "/api/v1/discover?row=trending", "", 200)
+	if d, l := k.tmdb.details.Load(), k.tmdb.light.Load(); d != 0 || l == 0 {
+		t.Fatalf("%d details and %d light lookups", d, l)
+	}
+}
+
+// TestKidMetadataRoutesRateLimited: a Kid's searches, lookups and details
+// pages share the Explore limit of 30 a minute; others are not limited.
+func TestKidMetadataRoutesRateLimited(t *testing.T) {
+	k := newKidRig(t)
+	for range discoverPerMinute {
+		k.kai.call("GET", "/api/v1/metadata/search?q=any", "", 200)
+	}
+	for _, p := range []string{"/api/v1/metadata/search?q=any", "/api/v1/titles/lookup?term=any", "/api/v1/shows/lookup?term=any", "/api/v1/metadata/movie/4101"} {
+		resp, err := k.kai.c.Get(k.srv.URL + p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = resp.Body.Close()
+		if resp.StatusCode != 429 || resp.Header.Get("Retry-After") != "60" {
+			t.Errorf("%s: %d, Retry-After %q", p, resp.StatusCode, resp.Header.Get("Retry-After"))
+		}
+	}
+	for range discoverPerMinute + 1 {
+		k.ana.call("GET", "/api/v1/metadata/search?q=any", "", 200)
+	}
+}

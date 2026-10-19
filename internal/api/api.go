@@ -111,6 +111,8 @@ type API struct {
 	confirm confirms
 	// discover caches Explore rows and details pages and limits each person.
 	discover discoverState
+	// rated keeps TMDB ratings looked up for Kid limits.
+	rated ratingState
 	// status keeps the Settings status answer for 30 seconds.
 	status statusCache
 }
@@ -884,6 +886,9 @@ func (a *API) searchMetadata(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("q")
 	if q == "" || len(q) > 200 {
 		fail(w, http.StatusBadRequest, "send ?q=<name>, and &year=<year> if you know it")
+		return
+	}
+	if a.kidLimited(w, r) {
 		return
 	}
 	year, _ := strconv.Atoi(r.URL.Query().Get("year"))

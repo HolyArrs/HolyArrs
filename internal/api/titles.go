@@ -223,6 +223,9 @@ func (a *API) lookupTitles(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "send ?term=<name>, tmdb:<id> or imdb:<tt id>, and &year=<year> with a name if you know it")
 		return
 	}
+	if a.kidLimited(w, r) {
+		return
+	}
 	var ms []metadata.Movie
 	low := strings.ToLower(term)
 	if strings.HasPrefix(low, "tmdb:") || strings.HasPrefix(low, "imdb:") {

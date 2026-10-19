@@ -84,6 +84,17 @@ func (d *discoverState) put(key string, e discoverEntry) {
 	d.cache[key] = e
 }
 
+// kidLimited counts one TMDB search, lookup or details page of a Kid
+// against the Explore minute limit; true when it answered 429.
+func (a *API) kidLimited(w http.ResponseWriter, r *http.Request) bool {
+	if a.kidMax(r) == "" || a.discover.allow(a.person(r).UserID, time.Now()) {
+		return false
+	}
+	w.Header().Set("Retry-After", "60")
+	fail(w, http.StatusTooManyRequests, "too many lookups; try again in a minute")
+	return true
+}
+
 // discoverItemView is one discover item with what the Library knows of it.
 type discoverItemView struct {
 	metadata.DiscoverItem
@@ -316,6 +327,9 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 	}
 	if len(a.kindsOn(kind)) == 0 {
 		fail(w, http.StatusConflict, "that part is off")
+		return
+	}
+	if a.kidLimited(w, r) {
 		return
 	}
 	d, ok := metadata.DiscovererFor(r.Context(), a.s.Metadata)

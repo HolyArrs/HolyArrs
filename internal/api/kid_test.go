@@ -57,6 +57,7 @@ var (
 type kidTMDB struct {
 	srv     *httptest.Server
 	details atomic.Int32 // movie and show details answered
+	light   atomic.Int32 // release_dates and content_ratings answered
 	// extra are more movies a test adds; trending, when set, replaces the
 	// trending movies row. Both are set before the first request.
 	extra    []kidEntry
@@ -89,8 +90,8 @@ func newKidTMDB(t *testing.T) *kidTMDB {
 		}
 		return `{"results":[` + strings.Join(out, ",") + `],"page":1,"total_pages":1,"total_results":` + fmt.Sprint(len(ids)) + `}`
 	}
-	movieRx := regexp.MustCompile(`^/3/movie/(\d+)(/credits|/recommendations)?$`)
-	showRx := regexp.MustCompile(`^/3/tv/(\d+)(/season/1|/recommendations)?$`)
+	movieRx := regexp.MustCompile(`^/3/movie/(\d+)(/credits|/recommendations|/release_dates)?$`)
+	showRx := regexp.MustCompile(`^/3/tv/(\d+)(/season/1|/recommendations|/content_ratings)?$`)
 	f.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		p := r.URL.Path
 		switch p {
@@ -143,6 +144,9 @@ func newKidTMDB(t *testing.T) *kidTMDB {
 				_, _ = io.WriteString(w, `{"cast":[{"id":4901,"name":"Ann Actor","character":"Hero"}],"crew":[]}`)
 			case "/recommendations":
 				_, _ = io.WriteString(w, list("4111", "4211", "4203"))
+			case "/release_dates":
+				f.light.Add(1)
+				_, _ = io.WriteString(w, `{"id":`+e.id+`,"results":[{"iso_3166_1":"US","release_dates":[{"type":3,"certification":"`+e.rating+`"}]}]}`)
 			default:
 				f.details.Add(1)
 				cert := ""
@@ -166,6 +170,9 @@ func newKidTMDB(t *testing.T) *kidTMDB {
 				_, _ = io.WriteString(w, `{"episodes":[{"id":1,"season_number":1,"episode_number":1,"name":"Pilot","air_date":"2022-01-01"}]}`)
 			case "/recommendations":
 				_, _ = io.WriteString(w, list("4131", "4231"))
+			case "/content_ratings":
+				f.light.Add(1)
+				_, _ = io.WriteString(w, `{"id":`+e.id+`,"results":[{"iso_3166_1":"US","rating":"`+e.rating+`"}]}`)
 			default:
 				f.details.Add(1)
 				rating := ""

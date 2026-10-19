@@ -70,14 +70,7 @@ func (m tmdbShow) show(images string) Show {
 		}
 	}
 	out.Backdrop, out.Logo, out.Genres, out.People = m.tmdbExtras.pictures(images)
-	if m.ContentRatings != nil {
-		for _, c := range m.ContentRatings.Results {
-			if c.Country == "US" && c.Rating != "" {
-				out.Rating = c.Rating
-				break
-			}
-		}
-	}
+	out.Rating = m.usRating()
 	for _, s := range m.Seasons {
 		out.Seasons = append(out.Seasons, Season{Number: s.Number, Name: s.Name})
 	}
@@ -183,4 +176,16 @@ func notFoundShow(err error) error {
 		return ErrShowNotFound
 	}
 	return err
+}
+
+// usRating is the first US content rating.
+func (m tmdbShow) usRating() string {
+	if m.ContentRatings != nil {
+		for _, c := range m.ContentRatings.Results {
+			if c.Country == "US" && c.Rating != "" {
+				return c.Rating
+			}
+		}
+	}
+	return ""
 }

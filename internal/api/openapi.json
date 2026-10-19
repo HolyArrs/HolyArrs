@@ -12927,6 +12927,9 @@
             },
             "description": "Bad input."
           },
+          "429": {
+            "description": "A Kid account over 30 searches, lookups and Explore requests a minute; see Retry-After."
+          },
           "503": {
             "content": {
               "application/json": {
@@ -12994,6 +12997,9 @@
           },
           "409": {
             "description": "The kind's part is off."
+          },
+          "429": {
+            "description": "A Kid account over 30 searches, lookups and Explore requests a minute; see Retry-After."
           },
           "501": {
             "description": "TMDB is not set up."
@@ -17223,6 +17229,9 @@
             },
             "description": "No term, or an unknown source."
           },
+          "429": {
+            "description": "A Kid account over 30 searches, lookups and Explore requests a minute; see Retry-After."
+          },
           "503": {
             "content": {
               "application/json": {
@@ -18807,6 +18816,9 @@
               }
             },
             "description": "No term given."
+          },
+          "429": {
+            "description": "A Kid account over 30 searches, lookups and Explore requests a minute; see Retry-After."
           },
           "503": {
             "content": {

@@ -80,6 +80,9 @@ func (a *API) lookupShows(w http.ResponseWriter, r *http.Request) {
 		showError(w, metadata.ErrUnknownSource)
 		return
 	}
+	if a.kidLimited(w, r) {
+		return
+	}
 	var shows []metadata.Show
 	low := strings.ToLower(term)
 	if k, _, ok := strings.Cut(low, ":"); ok && (k == "tmdb" || k == "tvdb" || k == "tvmaze" || k == "imdb") {

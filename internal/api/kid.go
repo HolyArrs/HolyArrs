@@ -52,65 +52,160 @@ func (a *API) libraryRating(ctx context.Context, kind, tmdbID string) (string, b
 	return rating, err == nil
 }
 
-// tmdbRating finds the US rating of a TMDB movie or show: the Library's
-// first, then the details cache, then one Details lookup (kept in the
-// cache). False when it cannot be found.
-func (a *API) tmdbRating(ctx context.Context, kind, tmdbID string) (string, bool) {
-	if tmdbID == "" || (kind != "movie" && kind != "show") {
+const (
+	// ratingLookupsPerRequest caps the TMDB rating lookups one answer
+	// makes; the titles past it stay hidden.
+	ratingLookupsPerRequest = 24
+	// ratingLookupsPerMinute is each person's TMDB rating lookups a minute;
+	// over it, titles with unknown ratings stay hidden.
+	ratingLookupsPerMinute = 120
+	maxRatingCache         = 2000
+	ratingTTL              = 24 * time.Hour
+)
+
+type ratingEntry struct {
+	rating string
+	at     time.Time
+}
+
+// ratingState keeps the ratings looked up on TMDB (the oldest go first
+// when full) and each person's lookup times.
+type ratingState struct {
+	mu    sync.Mutex
+	cache map[string]ratingEntry
+	order []string // cache keys, oldest first
+	hits  map[int64][]time.Time
+}
+
+func (s *ratingState) get(key string, now time.Time) (string, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	e, ok := s.cache[key]
+	if !ok || now.Sub(e.at) >= ratingTTL {
 		return "", false
 	}
-	if r, ok := a.libraryRating(ctx, kind, tmdbID); ok {
-		return r, true
+	return e.rating, true
+}
+
+func (s *ratingState) put(key, rating string, now time.Time) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.cache == nil {
+		s.cache = map[string]ratingEntry{}
 	}
-	key := "details|" + kind + "|" + tmdbID
-	if e, ok := a.discover.get(key); ok && e.details != nil && time.Since(e.at) < discoverTTL["details"] {
-		return e.details.Rating, true
+	if _, ok := s.cache[key]; !ok {
+		for len(s.cache) >= maxRatingCache && len(s.order) > 0 {
+			delete(s.cache, s.order[0])
+			s.order = s.order[1:]
+		}
+		s.order = append(s.order, key)
 	}
-	d, ok := metadata.DiscovererFor(ctx, a.s.Metadata)
-	if !ok {
-		return "", false
+	s.cache[key] = ratingEntry{rating: rating, at: now}
+}
+
+// take grants up to n lookups from the person's minute budget.
+func (s *ratingState) take(who int64, n int, now time.Time) int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.hits == nil {
+		s.hits = map[int64][]time.Time{}
 	}
-	select {
-	case ratingSlots <- struct{}{}:
-	case <-ctx.Done():
-		return "", false
+	kept := s.hits[who][:0]
+	for _, t := range s.hits[who] {
+		if now.Sub(t) < time.Minute {
+			kept = append(kept, t)
+		}
 	}
-	det, err := d.Details(ctx, kind, tmdbID)
-	<-ratingSlots
-	if err != nil {
-		return "", false
+	n = max(0, min(n, ratingLookupsPerMinute-len(kept)))
+	for range n {
+		kept = append(kept, now)
 	}
-	a.discover.put(key, discoverEntry{at: time.Now(), details: &det})
-	return det.Rating, true
+	s.hits[who] = kept
+	return n
 }
 
 // ratingRef is one TMDB movie or show to check; rating is the rating the
 // answer at hand carries, if any. The Library's rating wins over it.
 type ratingRef struct{ kind, tmdbID, rating string }
 
-func (a *API) refRating(ctx context.Context, ref ratingRef) (string, bool) {
+// knownRating finds a rating without asking TMDB: the Library's, the one
+// the answer carries, then the rating and details caches.
+func (a *API) knownRating(ctx context.Context, ref ratingRef) (string, bool) {
 	if r, ok := a.libraryRating(ctx, ref.kind, ref.tmdbID); ok {
 		return r, true
 	}
 	if ref.rating != "" {
 		return ref.rating, true
 	}
-	return a.tmdbRating(ctx, ref.kind, ref.tmdbID)
+	if ref.tmdbID == "" || (ref.kind != "movie" && ref.kind != "show") {
+		return "", false
+	}
+	if r, ok := a.rated.get(ref.kind+"|"+ref.tmdbID, time.Now()); ok {
+		return r, true
+	}
+	if e, ok := a.discover.get("details|" + ref.kind + "|" + ref.tmdbID); ok && e.details != nil && time.Since(e.at) < discoverTTL["details"] {
+		return e.details.Rating, true
+	}
+	return "", false
+}
+
+// lookupRating asks TMDB for one rating, with the light rating call when
+// the provider has it, and keeps the answer in the rating cache.
+func (a *API) lookupRating(ctx context.Context, ref ratingRef) (string, bool) {
+	select {
+	case ratingSlots <- struct{}{}:
+	case <-ctx.Done():
+		return "", false
+	}
+	defer func() { <-ratingSlots }()
+	var rating string
+	if rt, ok := metadata.RaterFor(ctx, a.s.Metadata); ok {
+		r, err := rt.Rating(ctx, ref.kind, ref.tmdbID)
+		if err != nil {
+			return "", false
+		}
+		rating = r
+	} else if d, ok := metadata.DiscovererFor(ctx, a.s.Metadata); ok {
+		det, err := d.Details(ctx, ref.kind, ref.tmdbID)
+		if err != nil {
+			return "", false
+		}
+		rating = det.Rating
+	} else {
+		return "", false
+	}
+	a.rated.put(ref.kind+"|"+ref.tmdbID, rating, time.Now())
+	return rating, true
 }
 
 // kidAllowed says, for each ref, whether max allows it. Ratings are
 // looked up a few at a time, in order, stopping once n are allowed (n <=
-// 0: never); the refs after that are false.
+// 0: never); the refs after that are false. At most
+// ratingLookupsPerRequest go to TMDB, within the person's minute budget;
+// titles left without a rating are false.
 func (a *API) kidAllowed(ctx context.Context, max string, refs []ratingRef, n int) []bool {
 	out := make([]bool, len(refs))
+	who, _ := auth.From(ctx)
+	left := ratingLookupsPerRequest
 	found := 0
 	for i := 0; i < len(refs) && (n <= 0 || found < n); i += ratingLookups {
 		batch := refs[i:min(i+ratingLookups, len(refs))]
 		got := make([]string, len(batch))
 		known := make([]bool, len(batch))
-		var wg sync.WaitGroup
+		var need []int
 		for j, ref := range batch {
-			wg.Go(func() { got[j], known[j] = a.refRating(ctx, ref) })
+			if got[j], known[j] = a.knownRating(ctx, ref); !known[j] && ref.tmdbID != "" && (ref.kind == "movie" || ref.kind == "show") {
+				need = append(need, j)
+			}
+		}
+		grant := 0
+		if len(need) > 0 && left > 0 {
+			grant = a.rated.take(who.UserID, min(len(need), left), time.Now())
+			left -= grant
+		}
+		var wg sync.WaitGroup
+		for _, j := range need[:grant] {
+			wg.Go(func() { got[j], known[j] = a.lookupRating(ctx, batch[j]) })
 		}
 		wg.Wait()
 		for j, ref := range batch {
