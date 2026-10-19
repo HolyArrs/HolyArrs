@@ -21,6 +21,7 @@
 		genresOf,
 		keepFull,
 		kindShelf,
+		liveCard,
 		readyToWatch,
 		stillLooking,
 		markTransitions,
@@ -33,7 +34,7 @@
 		type Facets
 	} from '#lib/explore.ts';
 	import type { PersonSummary } from '#lib/people.ts';
-	import type { Ask, CalendarEntry, GateDefaults, LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleDefaults, TitleView } from '#lib/types.ts';
+	import type { Ask, AskState, CalendarEntry, GateDefaults, LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleDefaults, TitleView } from '#lib/types.ts';
 	import { seasonWords } from '#lib/shows.ts';
 	import { audienceOf } from '#lib/title-status.ts';
 	import AddMovieDialog from '#lib/AddMovieDialog.svelte';
@@ -57,8 +58,8 @@
 	let asks = $state<Ask[]>([]);
 	let people = $state(new Map<number, string[]>());
 	let discovered = $state<ExploreRow[]>([]);
-	/** Cards asked for on this page, so the card updates at once. */
-	let askedHere = $state(new Set<string>());
+	/** Cards asked for (with the ask state returned) or found in the Library on this page, so the card updates at once. */
+	let askedHere = $state(new Map<string, { ask?: AskState; titleId?: number }>());
 	let asking = $state('');
 
 	const manage = $derived(session.can('manage_library'));
@@ -94,7 +95,12 @@
 	});
 
 	function live(c: ExploreCard): ExploreCard {
-		return askedHere.has(c.key) ? { ...c, mine: true, status: 'requested', statusLabel: undefined } : c;
+		return liveCard(c, askedHere.get(c.key));
+	}
+
+	/** refused: the server says the title is in the Library already (409), so the card says so. */
+	function refused(body: Record<string, unknown>) {
+		if (current && typeof body.title_id === 'number') askedHere = new Map([...askedHere, [current.key, { titleId: body.title_id }]]);
 	}
 
 	// Library titles open their page; other movies and shows open their details.
@@ -131,7 +137,7 @@
 		const tmdb = cardTmdb(c);
 		if (!tmdb || asking) return;
 		current = c;
-		if (act === 'ask' && c.kind === 'movie') return askMovie?.open({ tmdb, name: c.name, year: c.year });
+		if (act === 'ask' && c.kind === 'movie') return askMovie?.open({ tmdb, name: c.name, year: c.year, ask: c.ask });
 		asking = c.key;
 		try {
 			const d = await loadDetails(api.get, c.kind as 'movie' | 'show', tmdb);
@@ -148,7 +154,7 @@
 	}
 
 	function askedToast(r: { ask: Ask; joined: boolean }, what: string) {
-		if (current) askedHere = new Set([...askedHere, current.key]);
+		if (current) askedHere = new Map([...askedHere, [current.key, { ask: r.ask.state }]]);
 		if (r.ask.state === 'approved') toasts.push(`${what} is approved; HolyArrs is looking for it.`, 'ok');
 		else if (r.joined) toasts.push(`Someone asked for ${what} already; you are on the ask too.`, 'ok');
 		else toasts.push(`Asked for ${what}. You will hear when it is approved.`, 'ok');
@@ -286,8 +292,8 @@
 	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} {titleDefaults} onadded={(_m, t) => added(t)} />
 	<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} {titleDefaults} onadded={(_s, t) => added(t)} />
 {:else if mayAsk}
-	<AskMovieDialog bind:this={askMovie} onasked={(_m, r) => askedToast(r, r.ask.name)} />
-	<AskShowDialog bind:this={askShow} onasked={(_s: LookupShow, r) => askedToast(r, `${r.ask.name} (${seasonWords(r.ask.seasons)})`)} />
+	<AskMovieDialog bind:this={askMovie} onasked={(_m, r) => askedToast(r, r.ask.name)} onrefused={(_m, body) => refused(body)} />
+	<AskShowDialog bind:this={askShow} onasked={(_s: LookupShow, r) => askedToast(r, `${r.ask.name} (${seasonWords(r.ask.seasons)})`)} onrefused={(_s: LookupShow, body: Record<string, unknown>) => refused(body)} />
 {/if}
 
 <style>

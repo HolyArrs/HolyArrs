@@ -14,6 +14,7 @@ import {
 	genresOf,
 	keepFull,
 	kindShelf,
+	liveCard,
 	readyToWatch,
 	stillLooking,
 	markTransitions,
@@ -147,6 +148,7 @@ describe('popular in the household', () => {
 		expect(cards[0].subtitle).toBe('3 people asked');
 		expect(cards[1].subtitle).toBe('2 people asked');
 		expect(cards[0].status).toBe('requested');
+		expect(cards[0].ask).toEqual({ id: 2, state: 'asked', state_label: 'Waiting for approval', mine: false, people: 3 });
 	});
 	it('uses the Library title when the ask led to one', () => {
 		const [c] = popularInHousehold([ask(1, { title_id: 5, mine: true })], [t(5, { slots: [slot('in_library')] })]);
@@ -257,6 +259,28 @@ describe('discover', () => {
 	it('turns items into cards', () => {
 		expect(discoverCard({ tmdb_id: '5', kind: 'movie', name: 'M', in_library: true, title_id: 9 }, 'trending')).toMatchObject({ titleId: 9, status: 'in_library', ref: 'tmdb:5' });
 		expect(discoverCard({ tmdb_id: '5', kind: 'show', name: 'S', in_library: false, ask: { id: 1, state: 'asked', state_label: '', mine: true, people: 1 } }, 'p')).toMatchObject({ titleId: undefined, status: 'requested', mine: true });
+	});
+	it('keeps the open ask on the card so asking joins it', () => {
+		const a = { id: 1, state: 'asked' as const, state_label: 'Waiting for approval', mine: false, people: 2 };
+		expect(discoverCard({ tmdb_id: '5', kind: 'movie', name: 'M', in_library: false, ask: a }, 'p').ask).toEqual(a);
+		expect(discoverCard({ tmdb_id: '5', kind: 'movie', name: 'M', in_library: false, ask: { ...a, state: 'turned_down' } }, 'p').ask).toBeUndefined();
+	});
+});
+
+describe('cards asked or refused on the page', () => {
+	const card = { key: 'k', kind: 'movie' as const, name: 'K', badges: [], ref: 'tmdb:1' };
+	it('reads the returned ask state, so an auto-approved ask says Approved', () => {
+		expect(liveCard(card, { ask: 'approved' })).toMatchObject({ mine: true, status: 'approved', statusLabel: undefined });
+		expect(cardPill(liveCard(card, { ask: 'approved' }), 'member')).toEqual({ kind: 'approved', label: 'Approved' });
+		expect(cardPill(liveCard(card, { ask: 'asked' }), 'member')).toEqual({ kind: 'requested', label: 'Requested' });
+	});
+	it('turns a card refused as in the Library into a Library card with no action', () => {
+		const c = liveCard(card, { titleId: 7 });
+		expect(c).toMatchObject({ titleId: 7, status: 'in_library' });
+		expect(cardAction(c, { manage: false, ask: true })).toBeNull();
+	});
+	it('leaves other cards alone', () => {
+		expect(liveCard(card, undefined)).toBe(card);
 	});
 });
 

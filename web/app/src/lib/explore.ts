@@ -6,7 +6,7 @@ import { api, ApiError, type Client } from './api.ts';
 import type { StatusKind } from './ui/StatusPill.svelte';
 import { audienceStatus, factsOf, titleStatus, type Audience, type TitleStatus } from './title-status.ts';
 import { entryArt, episodeCode } from './calendar.ts';
-import type { Ask, CalendarEntry, TitleView } from './types.ts';
+import type { Ask, AskBrief, AskState, CalendarEntry, TitleView } from './types.ts';
 
 export type CardKind = 'movie' | 'show' | 'artist';
 export type CardStatus = StatusKind;
@@ -31,6 +31,8 @@ export interface ExploreCard {
 	mine?: boolean;
 	/** view-transition-name; only the first card of a title on a page gets one. */
 	vtName?: string;
+	/** The open ask for it, so asking says it joins that ask. */
+	ask?: AskBrief;
 }
 
 export interface ExploreRow {
@@ -222,7 +224,8 @@ export function popularInHousehold(asks: Ask[], titles: TitleView[], n = ROW_MAX
 				ref: g.ask.ref || (g.ask.tmdb_id ? `tmdb:${g.ask.tmdb_id}` : undefined),
 				status: titleStatus({ ask: g.ask.state }, 'staff').kind,
 				badges: [],
-				mine: g.mine
+				mine: g.mine,
+				ask: { id: g.ask.id, state: g.ask.state, state_label: g.ask.state_label, mine: g.mine, people: g.people.size }
 			} satisfies ExploreCard;
 		});
 }
@@ -397,8 +400,20 @@ export function discoverCard(d: ProviderItem, row: string): ExploreCard {
 		ref: `tmdb:${d.tmdb_id}`,
 		status: d.in_library ? 'in_library' : d.ask && d.ask.state !== 'turned_down' ? titleStatus({ ask: d.ask.state }, 'staff').kind : undefined,
 		badges: [],
-		mine: !!d.ask?.mine
+		mine: !!d.ask?.mine,
+		ask: d.ask && d.ask.state !== 'turned_down' ? d.ask : undefined
 	};
+}
+
+/**
+ * liveCard is a card after something happened to it on this page: asked
+ * (its pill follows the ask state the server returned, so an auto-approved
+ * ask reads Approved) or refused because it is in the Library already.
+ */
+export function liveCard(c: ExploreCard, here: { ask?: AskState; titleId?: number } | undefined): ExploreCard {
+	if (here?.titleId !== undefined) return { ...c, titleId: here.titleId, status: 'in_library', statusLabel: undefined };
+	if (here?.ask) return { ...c, mine: true, status: titleStatus({ ask: here.ask }, 'staff').kind, statusLabel: undefined };
+	return c;
 }
 
 export const discoverTitles: Record<Exclude<ProviderRowName, 'similar' | 'genre'>, string> = {
