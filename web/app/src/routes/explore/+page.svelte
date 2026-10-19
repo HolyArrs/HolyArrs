@@ -32,13 +32,22 @@
 		recentlyAdded,
 		filterRows,
 		parseType,
+		pickerServices,
+		readServices,
+		serviceRegion,
+		SERVICES_KEY,
+		SERVICES_SHOWN,
+		toggleService,
+		writeServices,
 		typeHref,
 		typeKindOf,
 		type ExploreType,
 		type ExploreCard,
 		type ExploreRow,
-		type Facets
+		type Facets,
+		type WatchService
 	} from '#lib/explore.ts';
+	import { defaultRegion } from '#lib/top10.ts';
 	import type { ProviderRowQuery } from '#lib/explore.ts';
 	import type { PersonSummary } from '#lib/people.ts';
 	import type { Ask, AskState, CalendarEntry, GateDefaults, LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleView } from '#lib/types.ts';
@@ -129,7 +138,7 @@
 		if ((kind !== 'movie' && kind !== 'show') || kindAsked.has(kind) || !discovered.length) return;
 		kindAsked.add(kind);
 		await Promise.all(
-			(['trending', 'popular', 'upcoming'] as const).map((row) =>
+			(['trending', 'best', 'upcoming'] as const).map((row) =>
 				fetchProviderRow({ row, kind }, api, gone.signal)
 					.then((got) => {
 						if (!got || gone.signal.aborted) return;
@@ -152,15 +161,16 @@
 		const person = fromPerson(titles, facets);
 		const k = typeKindOf(type);
 		const own = k === 'movie' || k === 'show' ? kindRowsGot[k] : [];
-		const [trending, popular, upcoming, similar] = ['trending', 'popular', 'upcoming', 'similar'].map((id) => own.find((r) => r.id === id) ?? discovered.find((r) => r.id === id));
+		const [trending, best, upcoming, similar] = ['trending', 'best', 'upcoming', 'similar'].map((id) => own.find((r) => r.id === id) ?? discovered.find((r) => r.id === id));
 		return markTransitions(
 			filterRows(keepFull([
 				trending,
+				best,
+				services.length ? { id: 'services', title: 'On your services', cards: serviceCards, keep: true } : null,
 				{ id: 'soon', title: 'Coming soon', subtitle: 'From your calendar', href: to('/calendar'), cards: comingSoon(dates, titles) },
 				because && { id: 'because', title: `Because you have ${because.seed.name}`, cards: because.cards },
 				similar,
 				...genreRows(titles, facets),
-				popular,
 				{ id: 'household', title: 'Popular in your household', subtitle: 'What people here asked for most', href: to('/wishlist'), cards: popularInHousehold(asks, titles) },
 				person && { id: 'person', title: `From ${person.person}`, cards: person.cards },
 				upcoming
@@ -267,7 +277,7 @@
 	const rowCap = 20;
 
 	async function loadProviderRows(list: Promise<TitleView[]>) {
-		const asks = [{ row: 'trending' as const }, { row: 'popular' as const }, { row: 'upcoming' as const }];
+		const asks = [{ row: 'trending' as const }, { row: 'best' as const }, { row: 'upcoming' as const }];
 		const show = (q: ProviderRowQuery, got: Awaited<ReturnType<typeof fetchProviderRow>>, title?: string) => {
 			if (!got || gone.signal.aborted) return;
 			const row = { id: q.row, title: title ?? got.title ?? (discoverTitles as Record<string, string>)[q.row] ?? '', cards: got.items.slice(0, rowCap).map((d) => discoverCard(d, q.row)) };
@@ -312,6 +322,61 @@
 		if (ti.status === 'fulfilled') void loadPeople(titles);
 	}
 
+	// "On your services": the streaming services this person has, picked
+	// from the region's best known ones; remembered on this device.
+	const region = serviceRegion(defaultRegion());
+	let services = $state<WatchService[]>([]);
+	/** null until the person picks once (the row then asks them to). */
+	let picked = $state<number[] | null>(null);
+	let serviceCards = $state<ExploreCard[]>([]);
+	let serviceBusy = $state(false);
+	const shownServices = $derived(pickerServices(services, picked ?? []));
+	/** The ids the row is filled from: the picked ones, else the region's top few. */
+	const usedServices = $derived(picked ?? shownServices.slice(0, SERVICES_SHOWN).map((s) => s.id));
+
+	async function loadServices() {
+		try {
+			picked = readServices(region, localStorage.getItem(SERVICES_KEY));
+		} catch {
+			/* nothing saved */
+		}
+		try {
+			services = (await api.get<{ services: WatchService[] }>(`/watch-services?region=${region}`, gone.signal)).services ?? [];
+		} catch {
+			services = [];
+		}
+	}
+
+	let serviceAsk = 0;
+	async function fillServices(ids: number[], kind: 'movie' | 'show' | null) {
+		const n = ++serviceAsk;
+		if (!ids.length) return void (serviceCards = []);
+		serviceBusy = true;
+		try {
+			const got = await fetchProviderRow({ row: 'services', services: ids, region, ...(kind ? { kind } : {}) }, api, gone.signal);
+			if (n === serviceAsk) serviceCards = (got?.items ?? []).slice(0, rowCap).map((d) => discoverCard(d, 'services'));
+		} catch {
+			if (n === serviceAsk) serviceCards = [];
+		} finally {
+			if (n === serviceAsk) serviceBusy = false;
+		}
+	}
+	// Refills when the services or the type switch change.
+	$effect(() => {
+		const k = typeKindOf(type);
+		const ids = usedServices;
+		if (services.length && type !== 'music') void fillServices(ids, k === 'movie' || k === 'show' ? k : null);
+	});
+
+	function tapService(id: number) {
+		picked = toggleService(picked ?? [], id);
+		try {
+			localStorage.setItem(SERVICES_KEY, writeServices(region, picked, localStorage.getItem(SERVICES_KEY)));
+		} catch {
+			/* the choice is a convenience */
+		}
+	}
+
 	// Leaving Explore stops the TMDB-backed asks still on their way.
 	const gone = new AbortController();
 	onMount(() => {
@@ -324,11 +389,28 @@
 			}
 		}
 		void load();
+		void loadServices();
 		return () => gone.abort();
 	});
 </script>
 
 <svelte:head><title>Explore · HolyArrs</title></svelte:head>
+
+{#snippet serviceTools()}
+	<div class="svc" data-testid="services-picker">
+		{#if picked === null}<p class="svc-hint">Pick the services you have</p>{/if}
+		<div class="chips" role="group" aria-label="Your streaming services">
+			{#each shownServices as sv (sv.id)}
+				{@const on = picked !== null && picked.includes(sv.id)}
+				<button type="button" class="chip" class:on aria-pressed={on} onclick={() => tapService(sv.id)} title={sv.name}>
+					{#if sv.logo}<img src={sv.logo} alt="" width="28" height="28" loading="lazy" />{/if}
+					<span>{sv.name}</span>
+				</button>
+			{/each}
+		</div>
+		{#if !serviceBusy && serviceCards.length === 0}<p class="svc-hint">{usedServices.length ? 'Nothing found on these services.' : 'Pick a service to fill this row.'}</p>{/if}
+	</div>
+{/snippet}
 
 <div class="explore">
 	<PageHeader title="Explore" subtitle="Find something to watch or listen to next." />
@@ -355,7 +437,7 @@
 		{:else}
 			{#if type !== 'music'}<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} typePill={type === 'all'} />{/if}
 			{#each rows as row (row.id)}
-				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.id === 'soon' ? 'var(--release-item)' : 'var(--explore-item)'}>
+				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.id === 'soon' ? 'var(--release-item)' : 'var(--explore-item)'} tools={row.id === 'services' ? serviceTools : undefined}>
 					{#each row.cards.map(live) as c (c.key)}
 						{@const act = cardAction(c, { manage, ask: mayAsk })}
 						{@const mark = ownedMark(c, ownedTitle(c, owned), who)}
@@ -414,6 +496,15 @@
 	@media (max-width: 359px) {
 		.types :global(.ui-seg button span) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 	}
+	.svc { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+	.svc-hint { color: var(--text-muted); font: var(--t-callout); }
+	.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-inline: calc(var(--gutter) * -1); padding: 2px var(--gutter); }
+	.chips::-webkit-scrollbar { display: none; }
+	.chip { flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px 0 8px; border-radius: 999px; background: var(--surface-2); color: var(--text); font: var(--t-callout); font-weight: 500; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent); transition: background-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease; }
+	.chip img { width: 28px; height: 28px; border-radius: 7px; object-fit: cover; }
+	.chip:hover { background: color-mix(in srgb, var(--text) 10%, var(--surface-2)); }
+	.chip.on { background: color-mix(in srgb, var(--accent) 18%, var(--surface-2)); box-shadow: inset 0 0 0 2px var(--accent); }
+	.chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.loading { display: flex; flex-direction: column; gap: 14px; }
 	.sk-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--shelf-gap); max-height: 250px; overflow: hidden; margin-bottom: 16px; }
 	@media (max-width: 767px) { .explore { --explore-item: 54vw; gap: 26px; } }

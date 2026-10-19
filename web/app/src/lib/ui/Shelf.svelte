@@ -15,6 +15,7 @@
 		item = '180px',
 		anchor,
 		onseeall,
+		tools,
 		children
 	}: {
 		title: string;
@@ -27,6 +28,8 @@
 		anchor?: string;
 		/** See all opens something on this page (a sheet) instead of a link. */
 		onseeall?: () => void;
+		/** Controls under the title, inside the header (a picker that refills this row). */
+		tools?: Snippet;
 		children: Snippet;
 	} = $props();
 
@@ -68,6 +71,7 @@
 		</div>
 		{#if href}<a class="all" {href}>{seeAll}<Icon name="chevronRight" size={15} /><span class="sr-only"> {title}</span></a>
 		{:else if onseeall}<button class="all" type="button" aria-haspopup="dialog" onclick={onseeall}>{seeAll}<Icon name="chevronRight" size={15} /><span class="sr-only"> {title}</span></button>{/if}
+		{#if tools}<div class="tools">{@render tools()}</div>{/if}
 	</header>
 	<div class="wrap">
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
@@ -81,7 +85,8 @@
 
 <style>
 	.ui-shelf { min-width: 0; }
-	header { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+	header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+	.tools { flex: 1 0 100%; min-width: 0; }
 	h2 { font: var(--t-title2); letter-spacing: var(--t-title2-track); }
 	h2 a:hover { color: var(--accent-text); }
 	p { color: var(--text-muted); font: var(--t-callout); margin-top: 2px; }

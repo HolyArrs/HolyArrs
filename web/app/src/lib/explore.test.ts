@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from './api.ts';
 import {
+	discoverTitles,
 	becauseYouHave,
 	cardAction,
 	cardTmdb,
@@ -26,7 +27,12 @@ import {
 	score,
 	cardPill,
 	titleCard,
-	type Facets
+	type Facets,
+	pickerServices,
+	toggleService,
+	readServices,
+	writeServices,
+	serviceRegion,
 } from './explore.ts';
 import type { Ask, CalendarEntry, SlotView, TitleView } from './types.ts';
 
@@ -279,14 +285,14 @@ describe('discover', () => {
 	it('returns null when the server has no discover endpoint', async () => {
 		for (const status of [404, 501]) {
 			const client = { get: async () => { throw new ApiError('nope', status); } };
-			expect(await fetchProviderRow({ row: 'popular' }, client as never)).toBeNull();
+			expect(await fetchProviderRow({ row: 'best' }, client as never)).toBeNull();
 		}
 	});
 	it('passes other errors on and answers through', async () => {
 		const bad = { get: async () => { throw new ApiError('down', 500); } };
-		await expect(fetchProviderRow({ row: 'popular' }, bad as never)).rejects.toThrow('down');
-		const good = { get: async (p: string) => ({ row: 'popular', items: [], p }) };
-		expect(await fetchProviderRow({ row: 'popular' }, good as never)).toMatchObject({ p: '/discover?row=popular' });
+		await expect(fetchProviderRow({ row: 'best' }, bad as never)).rejects.toThrow('down');
+		const good = { get: async (p: string) => ({ row: 'best', items: [], p }) };
+		expect(await fetchProviderRow({ row: 'best' }, good as never)).toMatchObject({ p: '/discover?row=best' });
 	});
 	it('turns items into cards', () => {
 		expect(discoverCard({ tmdb_id: '5', kind: 'movie', name: 'M', in_library: true, title_id: 9 }, 'trending')).toMatchObject({ titleId: 9, status: 'in_library', ref: 'tmdb:5' });
@@ -335,5 +341,40 @@ describe('library shelves', () => {
 		const w = stillLooking(list);
 		expect(w.map((c) => c.titleId)).toEqual([5, 2]);
 		expect(w[0].status).toBe('missing');
+	});
+});
+
+describe('on your services', () => {
+	const all = [
+		{ id: 8, name: 'Netflix', priority: 1 },
+		{ id: 9, name: 'Prime Video', priority: 2 },
+		{ id: 337, name: 'Disney Plus', priority: 3 },
+		{ id: 1899, name: 'Max', priority: 4 },
+		{ id: 350, name: 'Apple TV+', priority: 5 },
+		{ id: 15, name: 'Hulu', priority: 6 },
+		{ id: 99, name: 'Small', priority: 40 }
+	];
+	it('offers the top six, plus a picked one that fell out', () => {
+		expect(pickerServices(all, []).map((s) => s.id)).toEqual([8, 9, 337, 1899, 350, 15]);
+		expect(pickerServices(all, [99]).map((s) => s.id)).toEqual([8, 9, 337, 1899, 350, 15, 99]);
+	});
+	it('toggles and remembers per region', () => {
+		expect(toggleService([8], 9)).toEqual([8, 9]);
+		expect(toggleService([8, 9], 8)).toEqual([9]);
+		expect(readServices('US', null)).toBeNull();
+		expect(readServices('US', 'nope')).toBeNull();
+		const raw = writeServices('US', [8, 15], writeServices('GB', [9], null));
+		expect(readServices('US', raw)).toEqual([8, 15]);
+		expect(readServices('GB', raw)).toEqual([9]);
+		expect(readServices('DE', raw)).toBeNull();
+	});
+	it('uses the country, else US', () => {
+		expect(serviceRegion('GB')).toBe('GB');
+		expect(serviceRegion('global')).toBe('US');
+	});
+	it('asks the server with services and region', () => {
+		expect(discoverPath({ row: 'services', services: [8, 337], region: 'US', kind: 'show' })).toBe('/discover?row=services&kind=show&services=8%7C337&region=US');
+		expect(discoverTitles.best).toBe('Best new releases');
+		expect('popular' in discoverTitles).toBe(false);
 	});
 });

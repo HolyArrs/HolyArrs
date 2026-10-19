@@ -418,6 +418,7 @@ export type Moment =
 	| 'ask_approved'
 	| 'ask_turned_down'
 	| 'ask_ready'
+	| 'new_episodes'
 	| 'grab'
 	| 'import'
 	| 'rename'

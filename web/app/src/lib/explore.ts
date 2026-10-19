@@ -44,6 +44,8 @@ export interface ExploreRow {
 	subtitle?: string;
 	href?: string;
 	cards: ExploreCard[];
+	/** Shown even with no cards (a row with its own picker). */
+	keep?: boolean;
 }
 
 /** Facets are what two titles can share: genres and people. */
@@ -330,7 +332,7 @@ export function markTransitions(rows: ExploreRow[]): ExploreRow[] {
 
 /** keepFull drops empty rows. */
 export function keepFull(rows: (ExploreRow | null | undefined)[]): ExploreRow[] {
-	return rows.filter((r): r is ExploreRow => !!r && r.cards.length > 0);
+	return rows.filter((r): r is ExploreRow => !!r && (r.cards.length > 0 || !!r.keep));
 }
 
 /**
@@ -359,7 +361,7 @@ export function cardTmdb(c: Pick<ExploreCard, 'kind' | 'ref'>): string {
 
 // ---- Rows from the discover endpoint (not built yet; see backend-needs.md) ----
 
-export type ProviderRowName = 'trending' | 'popular' | 'upcoming' | 'similar' | 'genre';
+export type ProviderRowName = 'trending' | 'best' | 'upcoming' | 'similar' | 'genre' | 'services';
 export interface ProviderRowQuery {
 	row: ProviderRowName;
 	/** similar: the Library title id. */
@@ -367,6 +369,10 @@ export interface ProviderRowQuery {
 	/** genre: the genre name. */
 	g?: string;
 	kind?: 'movie' | 'show';
+	/** services: streaming service ids. */
+	services?: number[];
+	/** services: the two-letter country. */
+	region?: string;
 }
 export interface ProviderItem {
 	tmdb_id: string;
@@ -392,6 +398,8 @@ export function discoverPath(q: ProviderRowQuery): string {
 	if (q.id !== undefined) p.set('id', String(q.id));
 	if (q.g) p.set('g', q.g);
 	if (q.kind) p.set('kind', q.kind);
+	if (q.services?.length) p.set('services', q.services.join('|'));
+	if (q.region) p.set('region', q.region);
 	return `/discover?${p.toString()}`;
 }
 
@@ -437,9 +445,61 @@ export function liveCard(c: ExploreCard, here: { ask?: AskState; titleId?: numbe
 
 export const discoverTitles: Record<Exclude<ProviderRowName, 'similar' | 'genre'>, string> = {
 	trending: 'Trending this week',
-	popular: 'Popular right now',
+	best: 'Best new releases',
+	services: 'On your services',
 	upcoming: 'Coming to cinemas'
 };
+
+// ---- "On your services": the streaming services a person has ----
+
+/** WatchService is one streaming service from GET /watch-services. */
+export interface WatchService {
+	id: number;
+	name: string;
+	logo?: string;
+	priority: number;
+}
+
+/** SERVICES_SHOWN: how many services the picker offers (the region's best known first). */
+export const SERVICES_SHOWN = 6;
+
+/** serviceRegion: the person's country (as for Top 10), else US. */
+export function serviceRegion(r: string): string {
+	return /^[A-Z]{2}$/.test(r) ? r : 'US';
+}
+
+/** pickerServices: the services the picker shows, the region's top few plus any picked that fell out of it. */
+export function pickerServices(all: WatchService[], picked: number[], n = SERVICES_SHOWN): WatchService[] {
+	const top = [...all].sort((a, b) => a.priority - b.priority).slice(0, n);
+	const extra = all.filter((s) => picked.includes(s.id) && !top.some((t) => t.id === s.id));
+	return [...top, ...extra];
+}
+
+/** toggleService adds or removes one service id, keeping the order picked. */
+export function toggleService(picked: number[], id: number): number[] {
+	return picked.includes(id) ? picked.filter((x) => x !== id) : [...picked, id];
+}
+
+/** Saved choice: { region: [ids] }, null when never picked (so the first-time prompt shows). */
+export const SERVICES_KEY = 'holyarrs.explore.services';
+export function readServices(region: string, raw: string | null): number[] | null {
+	try {
+		const v = JSON.parse(raw ?? 'null')?.[region];
+		return Array.isArray(v) ? v.filter((x): x is number => Number.isInteger(x) && x > 0) : null;
+	} catch {
+		return null;
+	}
+}
+export function writeServices(region: string, ids: number[], raw: string | null): string {
+	let all: Record<string, number[]> = {};
+	try {
+		const v = JSON.parse(raw ?? 'null');
+		if (v && typeof v === 'object' && !Array.isArray(v)) all = v;
+	} catch {
+		/* start over */
+	}
+	return JSON.stringify({ ...all, [region]: ids });
+}
 
 // ---- The type switch (All · Movies · Shows · Music) ----
 

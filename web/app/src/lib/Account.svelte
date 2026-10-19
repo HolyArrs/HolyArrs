@@ -14,7 +14,7 @@
 	import { to } from './paths.ts';
 
 	// Where Alerts reach this person (email, Discord).
-	let targets = $state({ email: '', discord_id: '' });
+	let targets = $state<{ email: string; discord_id: string; new_episodes?: boolean }>({ email: '', discord_id: '', new_episodes: true });
 	let tgBusy = $state(false);
 	let tgError = $state('');
 	onMount(() => {
@@ -22,7 +22,7 @@
 			if (page.url.searchParams.get('sso') === 'finish') void finishOIDCLink();
 		});
 		api
-			.get<{ email: string; discord_id: string }>('/my/alerts')
+			.get<{ email: string; discord_id: string; new_episodes?: boolean }>('/my/alerts')
 			.then((r) => (targets = r))
 			.catch(() => {});
 	});
@@ -362,6 +362,10 @@
 			<label for="tg-discord">Discord user id</label>
 			<input id="tg-discord" class="input mono" inputmode="numeric" bind:value={targets.discord_id} autocomplete="off" />
 			<span class="hint">A long number: in Discord turn on Developer Mode, then right-click your name and Copy User ID. Discord Alerts then name you.</span>
+		</div>
+		<div class="field">
+			<label class="box"><input type="checkbox" bind:checked={targets.new_episodes} data-testid="new-episodes" /> New episodes of shows I asked for</label>
+			<span class="hint">One notice per show, at most once an hour ("3 new episodes of …").</span>
 		</div>
 		{#if tgError}<p class="form-error" role="alert">{tgError}</p>{/if}
 		<Button variant="primary" type="submit" disabled={tgBusy} aria-busy={tgBusy}>Save</Button>
