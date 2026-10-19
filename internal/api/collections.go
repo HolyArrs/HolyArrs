@@ -40,7 +40,8 @@ func (a *API) listCollections(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"collections": cs})
 }
 
-// kidCollection is the collection with only the titles max allows.
+// kidCollection is the collection with only the titles max allows, and
+// counts only those.
 func (a *API) kidCollection(r *http.Request, max string, id int64) (library.CollectionDetail, error) {
 	c, err := library.CollectionDetails(r.Context(), a.s.Store.Read(), id)
 	if err != nil || max == "" {
@@ -61,6 +62,7 @@ func (a *API) kidCollection(r *http.Request, max string, id int64) (library.Coll
 		}
 	}
 	c.Titles = kept
+	c.OwnedTitles = len(kept)
 	return c, nil
 }
 

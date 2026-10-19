@@ -654,6 +654,9 @@ func TestKidPeopleAndCollections(t *testing.T) {
 	}
 	b = string(k.kai.call("GET", "/api/v1/collections/1", "", 200))
 	sameNames(t, "kid collection", namesIn(t, b, "titles"), "Gentle Meadow")
+	if !strings.Contains(b, `"owned_titles":1`) {
+		t.Fatalf("kid collection counts blocked titles: %s", b)
+	}
 	if code, _ := k.kai.get("/api/v1/collections/2"); code != 404 {
 		t.Fatalf("collection with only blocked titles: %d", code)
 	}
