@@ -316,29 +316,14 @@ func listOr(v []string) []string {
 }
 
 func (a *API) artistInfo(ctx context.Context, t domain.Title) (*ArtistInfo, error) {
-	als, err := library.Albums(ctx, a.s.Store.Read(), t.ID)
+	n, err := library.Totals(ctx, a.s.Store.Read(), t.ID, time.Now())
 	if err != nil {
 		return nil, err
 	}
-	ai := &ArtistInfo{MBID: t.SourceIDs["musicbrainz"], Type: strOr(t.ArtistType), Disambiguation: strOr(t.Disambiguation), Status: t.Status,
+	return &ArtistInfo{MBID: t.SourceIDs["musicbrainz"], Type: strOr(t.ArtistType), Disambiguation: strOr(t.Disambiguation), Status: t.Status,
 		AlbumChoice: strOr(t.AlbumChoice), NewAlbums: library.NewAlbumsOf(t.NewPartsPolicy), AlbumTypes: listOr(t.MusicTypes),
-		SecondaryTypes: listOr(t.MusicSecondary), ReleaseStatuses: listOr(t.MusicStatuses), Albums: len(als)}
-	now := time.Now()
-	for _, al := range als {
-		if al.Included {
-			ai.Included++
-			if al.ReleaseDate != nil && al.ReleaseDate.After(now) && (ai.NextRelease == nil || al.ReleaseDate.Before(*ai.NextRelease)) {
-				d := *al.ReleaseDate
-				ai.NextRelease = &d
-			}
-		}
-		ai.Tracks += al.Tracks
-		ai.InLibrary += al.InLibrary
-		ai.Missing += al.Missing
-		ai.NotOutYet += al.NotOutYet
-		ai.BetterWanted += al.BetterWanted
-	}
-	return ai, nil
+		SecondaryTypes: listOr(t.MusicSecondary), ReleaseStatuses: listOr(t.MusicStatuses), Albums: n.Albums, Included: n.Included,
+		Tracks: n.Tracks, InLibrary: n.InLibrary, Missing: n.Missing, NotOutYet: n.NotOutYet, BetterWanted: n.BetterWanted, NextRelease: n.NextRelease}, nil
 }
 
 // listAlbums lists an artist's albums, newest first; ?included=true leaves

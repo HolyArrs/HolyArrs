@@ -606,6 +606,7 @@ func (a *API) listTitles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out := []TitleView{}
+	ctx := withLookupMemo(r.Context())
 	for _, t := range ts {
 		if p, ok := parts.ForTitleKind(t.Kind); ok && !a.partIsOn(p) && !a.s.Parts.SafeMode {
 			continue // its part is off: hidden, not removed (safe mode lists every title)
@@ -613,7 +614,7 @@ func (a *API) listTitles(w http.ResponseWriter, r *http.Request) {
 		if !a.titleAllowed(r, t) {
 			continue // above a Kid's age-rating limit
 		}
-		v, err := a.titleView(r.Context(), t)
+		v, err := a.titleView(ctx, t)
 		if err != nil {
 			internal(w, err)
 			return

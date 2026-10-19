@@ -31,16 +31,76 @@ func versionView(ctx context.Context, db store.Querier, v domain.Version) Versio
 	if out.AudioLanguages == nil {
 		out.AudioLanguages = []string{}
 	}
-	var lf domain.LibraryFolder
-	if store.Get(ctx, db, "library_folders", v.LibraryFolderID, &lf) == nil {
-		out.FolderPath = filepath.Join(lf.Path, v.FolderName)
+	m, _ := ctx.Value(lookupMemoKey{}).(*lookupMemo)
+	if path, ok := m.folder(ctx, db, v.LibraryFolderID); ok {
+		out.FolderPath = filepath.Join(path, v.FolderName)
 	}
-	var pr domain.PickRules
-	if store.Get(ctx, db, "pick_rules", v.PickRulesID, &pr) == nil {
-		out.PickRulesName = pr.Name
+	if name, ok := m.rules(ctx, db, v.PickRulesID); ok {
+		out.PickRulesName = name
 	}
 	return out
 }
+
+// lookupMemo keeps the Library folder paths and Pick rules names read during
+// one request, so listing every Title reads each row once, not per Version.
+type lookupMemo struct{ folders, picks map[int64]*string }
+
+type lookupMemoKey struct{}
+
+func withLookupMemo(ctx context.Context) context.Context {
+	return context.WithValue(ctx, lookupMemoKey{}, &lookupMemo{folders: map[int64]*string{}, picks: map[int64]*string{}})
+}
+
+// memoRead answers id from seen, or reads it once with get and keeps it
+// (a nil memo just reads).
+func memoRead(seen map[int64]*string, id int64, get func() (string, bool)) (string, bool) {
+	if seen != nil {
+		if v, ok := seen[id]; ok {
+			return deref(v), v != nil
+		}
+	}
+	v, ok := get()
+	if seen != nil {
+		if ok {
+			seen[id] = &v
+		} else {
+			seen[id] = nil
+		}
+	}
+	return v, ok
+}
+
+func deref(p *string) string {
+	if p == nil {
+		return ""
+	}
+	return *p
+}
+
+func (m *lookupMemo) folder(ctx context.Context, db store.Querier, id int64) (string, bool) {
+	var seen map[int64]*string
+	if m != nil {
+		seen = m.folders
+	}
+	return memoRead(seen, id, func() (string, bool) {
+		var lf domain.LibraryFolder
+		err := store.Get(ctx, db, "library_folders", id, &lf)
+		return lf.Path, err == nil
+	})
+}
+
+func (m *lookupMemo) rules(ctx context.Context, db store.Querier, id int64) (string, bool) {
+	var seen map[int64]*string
+	if m != nil {
+		seen = m.picks
+	}
+	return memoRead(seen, id, func() (string, bool) {
+		var pr domain.PickRules
+		err := store.Get(ctx, db, "pick_rules", id, &pr)
+		return pr.Name, err == nil
+	})
+}
+
 
 func versionID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	id, err := strconv.ParseInt(r.PathValue("vid"), 10, 64)

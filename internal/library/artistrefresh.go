@@ -440,15 +440,48 @@ func Albums(ctx context.Context, db store.Lister, titleID int64) ([]AlbumSummary
 	if err != nil {
 		return nil, err
 	}
-	out := make([]AlbumSummary, 0, len(parts))
-	for _, p := range parts {
-		a, err := albumSummary(ctx, db, p)
-		if err != nil {
+	if len(parts) == 0 {
+		return []AlbumSummary{}, nil
+	}
+	// Three queries for the whole artist instead of two per album.
+	ps, err := store.Select[domain.AlbumPressing](ctx, db, "pressings",
+		"part_id IN (SELECT id FROM parts WHERE title_id = ? AND kind = 'album')", titleID)
+	if err != nil {
+		return nil, err
+	}
+	byPart := map[int64][]domain.AlbumPressing{}
+	for _, pr := range ps {
+		byPart[pr.PartID] = append(byPart[pr.PartID], pr)
+	}
+	tracks := map[int64][]trackState{}
+	rows, err := db.QueryContext(ctx, `SELECT i.part_id, i.keep_up_to_date, COALESCE(s.state, '') FROM items i
+		LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = (SELECT id FROM versions WHERE title_id = ? ORDER BY is_main DESC, id LIMIT 1)
+		WHERE i.title_id = ? AND i.kind = 'track' AND i.part_id IS NOT NULL`, titleID, titleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var part int64
+		var ts trackState
+		if err := rows.Scan(&part, &ts.keep, &ts.state); err != nil {
 			return nil, err
 		}
-		out = append(out, a)
+		tracks[part] = append(tracks[part], ts)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	out := make([]AlbumSummary, 0, len(parts))
+	for _, p := range parts {
+		out = append(out, summarise(p, byPart[p.ID], tracks[p.ID]))
 	}
 	return out, nil
+}
+
+type trackState struct {
+	keep  bool
+	state string
 }
 
 // AlbumOf summarises one album.
@@ -457,6 +490,33 @@ func AlbumOf(ctx context.Context, db store.Lister, p domain.Part) (AlbumSummary,
 }
 
 func albumSummary(ctx context.Context, db store.Lister, p domain.Part) (AlbumSummary, error) {
+	ps, err := store.Select[domain.AlbumPressing](ctx, db, "pressings", "part_id = ?", p.ID)
+	if err != nil {
+		return AlbumSummary{}, err
+	}
+	rows, err := db.QueryContext(ctx, `SELECT i.keep_up_to_date, COALESCE(s.state, '') FROM items i
+		LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = (SELECT id FROM versions WHERE title_id = i.title_id ORDER BY is_main DESC, id LIMIT 1)
+		WHERE i.part_id = ? AND i.kind = 'track'`, p.ID)
+	if err != nil {
+		return AlbumSummary{}, err
+	}
+	defer rows.Close()
+	var ts []trackState
+	for rows.Next() {
+		var t trackState
+		if err := rows.Scan(&t.keep, &t.state); err != nil {
+			return AlbumSummary{}, err
+		}
+		ts = append(ts, t)
+	}
+	if err := rows.Err(); err != nil {
+		return AlbumSummary{}, err
+	}
+	return summarise(p, ps, ts), nil
+}
+
+// summarise builds one album's summary from its pressings and track states.
+func summarise(p domain.Part, ps []domain.AlbumPressing, ts []trackState) AlbumSummary {
 	a := AlbumSummary{ID: p.ID, MBID: p.SourceIDs["musicbrainz"], Name: p.Name, SecondaryTypes: p.SecondaryTypes, ReleaseDate: p.ReleaseDate,
 		Included: p.Included, KeepUpToDate: p.KeepUpToDate, Dropped: p.DroppedAt != nil}
 	if p.ReleaseType != nil {
@@ -468,31 +528,15 @@ func albumSummary(ctx context.Context, db store.Lister, p domain.Part) (AlbumSum
 	if a.SecondaryTypes == nil {
 		a.SecondaryTypes = []string{}
 	}
-	ps, err := store.Select[domain.AlbumPressing](ctx, db, "pressings", "part_id = ?", p.ID)
-	if err != nil {
-		return a, err
-	}
 	a.Pressings = len(ps)
 	for _, pr := range ps {
 		if pr.Chosen {
 			a.Pressing, a.PressingID = pressingLabel(pr), pr.ID
 		}
 	}
-	rows, err := db.QueryContext(ctx, `SELECT i.keep_up_to_date, COALESCE(s.state, '') FROM items i
-		LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = (SELECT id FROM versions WHERE title_id = i.title_id ORDER BY is_main DESC, id LIMIT 1)
-		WHERE i.part_id = ? AND i.kind = 'track'`, p.ID)
-	if err != nil {
-		return a, err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var keep bool
-		var state string
-		if err := rows.Scan(&keep, &state); err != nil {
-			return a, err
-		}
+	for _, t := range ts {
 		a.Tracks++
-		switch domain.SlotState(state) {
+		switch domain.SlotState(t.state) {
 		case domain.SlotInLibrary:
 			a.InLibrary++
 		case domain.SlotBetterWanted:
@@ -501,13 +545,10 @@ func albumSummary(ctx context.Context, db store.Lister, p domain.Part) (AlbumSum
 		case domain.SlotNotOutYet:
 			a.NotOutYet++
 		case domain.SlotWanted:
-			if keep {
+			if t.keep {
 				a.Missing++
 			}
 		}
-	}
-	if err := rows.Err(); err != nil {
-		return a, err
 	}
 	switch {
 	case !a.Included:
@@ -525,5 +566,35 @@ func albumSummary(ctx context.Context, db store.Lister, p domain.Part) (AlbumSum
 	default:
 		a.State = "missing"
 	}
-	return a, nil
+	return a
+}
+
+// ArtistTotals are an artist's album and track counts, as Albums would sum them.
+type ArtistTotals struct {
+	Albums, Included, Tracks, InLibrary, Missing, NotOutYet, BetterWanted int
+	NextRelease                                                           *time.Time
+}
+
+// Totals counts an artist's albums and tracks in two aggregate queries, so
+// the Title list does not read every album and pressing row.
+func Totals(ctx context.Context, db store.Querier, titleID int64, now time.Time) (ArtistTotals, error) {
+	var t ArtistTotals
+	var next sql.NullString
+	err := db.QueryRowContext(ctx, `SELECT count(*), COALESCE(sum(included), 0), min(CASE WHEN included AND release_date > ? THEN release_date END)
+		FROM parts WHERE title_id = ? AND kind = 'album'`, store.FormatTime(now), titleID).Scan(&t.Albums, &t.Included, &next)
+	if err != nil {
+		return t, err
+	}
+	if next.Valid {
+		if at, err := time.Parse(store.TimeLayout, next.String); err == nil {
+			t.NextRelease = &at
+		}
+	}
+	err = db.QueryRowContext(ctx, `SELECT count(*), COALESCE(sum(s.state IN (?, ?)), 0), COALESCE(sum(s.state = ?), 0),
+		COALESCE(sum(s.state = ?), 0), COALESCE(sum(s.state = ? AND i.keep_up_to_date), 0) FROM items i
+		LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = (SELECT id FROM versions WHERE title_id = ? ORDER BY is_main DESC, id LIMIT 1)
+		WHERE i.title_id = ? AND i.kind = 'track' AND i.part_id IN (SELECT id FROM parts WHERE title_id = ? AND kind = 'album')`,
+		domain.SlotInLibrary, domain.SlotBetterWanted, domain.SlotBetterWanted, domain.SlotNotOutYet, domain.SlotWanted, titleID, titleID, titleID).
+		Scan(&t.Tracks, &t.InLibrary, &t.BetterWanted, &t.NotOutYet, &t.Missing)
+	return t, err
 }

@@ -286,18 +286,21 @@
 	});
 
 	// Wishlist counts: asks waiting for people who approve, else unread messages.
+	// A derived flag, so the Parts answer arriving does not ask a second time.
+	const inboxOn = $derived(session.s.state === 'signed_in' && allowed('wishlist') && !offPartName(partsNow.answer, '/wishlist'));
 	$effect(() => {
 		void path;
-		if (session.s.state !== 'signed_in' || !allowed('wishlist') || offPartName(partsNow.answer, '/wishlist')) return;
+		if (!inboxOn) return;
 		void refreshInbox();
 		const t = setInterval(() => void refreshInbox(), 60_000);
 		return () => clearInterval(t);
 	});
 
 	// Movies that need a decision (staff only), shown on Downloads.
+	const decisionsOn = $derived(session.s.state === 'signed_in' && allowed('manage_library'));
 	$effect(() => {
 		void path;
-		if (session.s.state !== 'signed_in' || !allowed('manage_library')) return;
+		if (!decisionsOn) return;
 		void refreshDecisions();
 		const off = live.on('slot', () => void refreshDecisions());
 		const t = setInterval(() => void refreshDecisions(), 60_000);

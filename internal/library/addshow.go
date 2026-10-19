@@ -441,49 +441,62 @@ func Seasons(ctx context.Context, db store.Lister, titleID int64, now time.Time)
 		return nil, err
 	}
 	out := make([]SeasonSummary, 0, len(parts))
-	for _, p := range parts {
-		ss := SeasonSummary{Number: deref(p.Number), Name: p.Name, KeepUpToDate: p.KeepUpToDate, Dropped: p.DroppedAt != nil}
-		rows, err := db.QueryContext(ctx, `SELECT i.air_date, i.keep_up_to_date, COALESCE(s.state, '') FROM items i
-			LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = (SELECT id FROM versions WHERE title_id = i.title_id ORDER BY is_main DESC, id LIMIT 1)
-			WHERE i.part_id = ?`, p.ID)
-		if err != nil {
+	index := map[int64]int{}
+	for i, p := range parts {
+		out = append(out, SeasonSummary{Number: deref(p.Number), Name: p.Name, KeepUpToDate: p.KeepUpToDate, Dropped: p.DroppedAt != nil})
+		index[p.ID] = i
+	}
+	if len(parts) == 0 {
+		return out, nil
+	}
+	// One query for every season of the show instead of one per season.
+	rows, err := db.QueryContext(ctx, `SELECT i.part_id, i.air_date, i.keep_up_to_date, COALESCE(s.state, '') FROM items i
+		LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = (SELECT id FROM versions WHERE title_id = i.title_id ORDER BY is_main DESC, id LIMIT 1)
+		WHERE i.part_id IN (SELECT id FROM parts WHERE title_id = ? AND kind = 'season')`, titleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var part int64
+		var air sql.NullString
+		var keep bool
+		var state string
+		if err := rows.Scan(&part, &air, &keep, &state); err != nil {
 			return nil, err
 		}
-		for rows.Next() {
-			var air sql.NullString
-			var keep bool
-			var state string
-			if err := rows.Scan(&air, &keep, &state); err != nil {
-				rows.Close()
-				return nil, err
-			}
-			ss.Episodes++
-			if air.Valid {
-				if at, err := time.Parse(store.TimeLayout, air.String); err == nil {
-					if !at.After(now) {
-						ss.Aired++
-					} else if ss.NextAirDate == nil || at.Before(*ss.NextAirDate) {
-						a := at
-						ss.NextAirDate = &a
-					}
-				}
-			}
-			switch domain.SlotState(state) {
-			case domain.SlotInLibrary:
-				ss.InLibrary++
-			case domain.SlotBetterWanted:
-				ss.InLibrary++
-				ss.BetterWanted++
-			case domain.SlotNotOutYet:
-				ss.NotOutYet++
-			case domain.SlotWanted:
-				if keep {
-					ss.Missing++
+		idx, ok := index[part]
+		if !ok {
+			continue
+		}
+		ss := &out[idx]
+		ss.Episodes++
+		if air.Valid {
+			if at, err := time.Parse(store.TimeLayout, air.String); err == nil {
+				if !at.After(now) {
+					ss.Aired++
+				} else if ss.NextAirDate == nil || at.Before(*ss.NextAirDate) {
+					a := at
+					ss.NextAirDate = &a
 				}
 			}
 		}
-		rows.Close()
-		out = append(out, ss)
+		switch domain.SlotState(state) {
+		case domain.SlotInLibrary:
+			ss.InLibrary++
+		case domain.SlotBetterWanted:
+			ss.InLibrary++
+			ss.BetterWanted++
+		case domain.SlotNotOutYet:
+			ss.NotOutYet++
+		case domain.SlotWanted:
+			if keep {
+				ss.Missing++
+			}
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return out, nil
 }
