@@ -106,6 +106,24 @@ test('a member asks for a movie from a phone and sees it on the Wishlist', async
 	await expect(confirmTakeBack).toBeHidden();
 	await expect(ask.getByTestId('ask-state')).toHaveText('Requested');
 	await expect(ask.getByRole('button', { name: 'Approve' })).toHaveCount(0);
+	// Take back through to removal: the ask leaves the Wishlist and, with no
+	// row left, focus lands on the page heading.
+	await ask.getByRole('button', { name: 'More for Copper Lighthouse' }).click();
+	await ask.getByRole('menuitem', { name: 'Take back' }).click();
+	await confirmTakeBack.getByRole('button', { name: 'Take back' }).click();
+	await expect(confirmTakeBack).toBeHidden();
+	await expect(confirmTakeBack.getByTestId('take-back-error')).toHaveCount(0);
+	await expect(ask).toHaveCount(0);
+	await expect(kim.getByText('Took back the ask for Copper Lighthouse.')).toBeVisible();
+	await expect(kim.getByRole('heading', { level: 1 })).toBeFocused();
+	// Asked again, it is back on the Wishlist for the owner to approve.
+	await search(kim, 'copper');
+	const again = kim.locator('li.hit', { hasText: 'Copper Lighthouse' });
+	await again.getByRole('button', { name: 'Ask', exact: true }).click();
+	await kim.getByRole('dialog', { name: /^Ask for Copper Lighthouse/ }).getByRole('button', { name: 'Ask for Copper Lighthouse' }).click();
+	await expect(again.getByRole('link', { name: /^Requested/ })).toBeVisible();
+	await kim.locator('nav.tabbar').getByRole('link', { name: 'Wishlist' }).click();
+	await expect(ask.getByTestId('ask-state')).toHaveText('Requested');
 	await noSidewaysScroll(kim);
 	expect((await posts()).some((c) => c.includes('kim asked for Copper Lighthouse'))).toBe(true);
 });

@@ -173,24 +173,46 @@
 	// Take back asks first in a confirm sheet.
 	let takeBackOpen = $state(false);
 	let takeBackAsk = $state<Ask | null>(null);
+	let takeBackError = $state('');
+	// Where focus goes once the sheet has closed after a Take back.
+	let focusAfterTakeBack: (() => void) | null = null;
 	function askTakeBack(a: Ask) {
 		takeBackAsk = a;
+		takeBackError = '';
 		takeBackOpen = true;
 	}
 
+	// The sheet stays open, busy, while the ask is taken back; a failure shows in it.
 	async function takeBack(a: Ask) {
 		if (takingBack.has(a.id)) return;
-		takeBackOpen = false;
+		takeBackError = '';
+		const at = shown.findIndex((x) => x.id === a.id);
 		takingBack = new Set([...takingBack, a.id]);
 		try {
 			await api.del(`/asks/${a.id}`);
 			toasts.push(`Took back the ask for ${a.name}.`);
 			await load();
+			focusAfterTakeBack = () => {
+				const rows = document.querySelectorAll<HTMLElement>('[data-testid="ask"]');
+				const row = rows.length ? rows[Math.min(Math.max(at, 0), rows.length - 1)] : undefined;
+				const heading = document.querySelector<HTMLElement>('main h1');
+				const target = row?.querySelector<HTMLElement>('button, a') ?? heading;
+				if (target === heading) heading?.setAttribute('tabindex', '-1');
+				target?.focus();
+			};
+			takeBackOpen = false;
 		} catch (err) {
-			toasts.push(message(err), 'fail');
+			takeBackError = message(err);
 		} finally {
 			takingBack = new Set([...takingBack].filter((id) => id !== a.id));
 		}
+	}
+
+	function takeBackClosed() {
+		const f = focusAfterTakeBack;
+		focusAfterTakeBack = null;
+		// After the browser has put focus back on the (now gone) opener.
+		if (f) setTimeout(f, 0);
 	}
 
 	async function readAllMessages() {
@@ -451,8 +473,9 @@
 	{/if}
 </Sheet>
 
-<Sheet bind:open={takeBackOpen} size="sm" title={takeBackAsk ? `Take back ${takeBackAsk.name}${year(takeBackAsk)}?` : 'Take back'} description="It leaves the Wishlist. You can ask again later.">
+<Sheet bind:open={takeBackOpen} onclose={takeBackClosed} size="sm" title={takeBackAsk ? `Take back ${takeBackAsk.name}${year(takeBackAsk)}?` : 'Take back'} description="It leaves the Wishlist. You can ask again later.">
 	{#if takeBackAsk}
+		{#if takeBackError}<p class="form-error" role="alert" data-testid="take-back-error">{takeBackError}</p>{/if}
 		<div class="decide-actions">
 			<Button variant="plain" type="button" onclick={() => (takeBackOpen = false)}>Keep it</Button>
 			<Button variant="destructive" type="button" busy={takingBack.has(takeBackAsk.id)} onclick={() => takeBackAsk && void takeBack(takeBackAsk)}>Take back</Button>
