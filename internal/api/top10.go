@@ -1,0 +1,127 @@
+package api
+
+import (
+	"context"
+	"errors"
+	"net/http"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/CoderLuii/holyarrs/internal/metadata"
+)
+
+// top10TTL is how long a Netflix Top 10 list from the metadata server is
+// kept; the server itself changes it once a week.
+const top10TTL = time.Hour
+
+type top10Entry struct {
+	at   time.Time
+	list metadata.Top10
+}
+
+type top10Cache struct {
+	mu    sync.Mutex
+	lists map[string]top10Entry
+}
+
+// top10View is one ranked card of the row.
+type top10View struct {
+	discoverItemView
+	Rank   int    `json:"rank"`
+	Season string `json:"season_title,omitempty"`
+}
+
+// top10List answers GET /api/v1/top10?kind=movie|show&region=global|<ISO>
+// &lang=en|non-en: the metadata server's Netflix Top 10, matched titles
+// only (one card per title, best rank), with the Library joined.
+func (a *API) top10List(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	kind, region, lang := q.Get("kind"), strings.ToUpper(q.Get("region")), q.Get("lang")
+	if region == "" || region == "GLOBAL" {
+		region = "global"
+		if lang == "" {
+			lang = "en"
+		}
+	} else {
+		lang = ""
+	}
+	if (kind != "movie" && kind != "show") || (region == "global" && lang != "en" && lang != "non-en") || (region != "global" && len(region) != 2) {
+		fail(w, http.StatusBadRequest, "kind must be movie or show, region global or a country code, lang en or non-en")
+		return
+	}
+	if a.s.Top10 == nil || len(a.kindsOn(kind)) == 0 {
+		fail(w, http.StatusNotFound, "no Top 10 list here")
+		return
+	}
+	list, err := a.cachedTop10(r.Context(), kind, region, lang)
+	if errors.Is(err, metadata.ErrNotFound) {
+		fail(w, http.StatusNotFound, "no Top 10 list for that region")
+		return
+	}
+	if err != nil {
+		fail(w, http.StatusBadGateway, "the metadata server did not answer; try again shortly")
+		return
+	}
+	rank, season := map[string]int{}, map[string]string{}
+	var items []metadata.DiscoverItem
+	for _, it := range list.Items {
+		id := strconv.FormatInt(it.TMDBID, 10)
+		if it.TMDBID <= 0 || rank[id] > 0 {
+			continue
+		}
+		rank[id], season[id] = it.Rank, it.Season
+		d := metadata.DiscoverItem{TMDBID: id, Kind: kind, Name: it.Title, Genres: []string{}}
+		if it.PosterPath != "" {
+			d.Poster = metadata.ImageBase + "/w342" + it.PosterPath
+		}
+		items = append(items, d)
+	}
+	items, err = a.dropNeverAdd(r.Context(), items)
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	items = a.kidItems(r.Context(), a.kidMax(r), items, 10)
+	joined, err := a.joinItems(r.Context(), items, a.person(r).UserID, 10)
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	out := make([]top10View, 0, len(joined))
+	for _, v := range joined {
+		out = append(out, top10View{discoverItemView: v, Rank: rank[v.TMDBID], Season: season[v.TMDBID]})
+	}
+	a.exploreCaching(w, r, "private, max-age=300")
+	writeJSON(w, http.StatusOK, map[string]any{"week": list.Week, "region": region, "regions": list.Regions, "items": out})
+}
+
+func (a *API) cachedTop10(ctx context.Context, kind, region, lang string) (metadata.Top10, error) {
+	key := kind + "|" + region + "|" + lang
+	c := &a.top10
+	c.mu.Lock()
+	e, ok := c.lists[key]
+	c.mu.Unlock()
+	if ok && time.Since(e.at) < top10TTL {
+		return e.list, nil
+	}
+	server := kind
+	if kind == "show" {
+		server = "tv"
+	}
+	l, err := a.s.Top10(ctx, server, region, lang)
+	if err != nil {
+		if ok && !errors.Is(err, metadata.ErrNotFound) {
+			return e.list, nil
+		}
+		return l, err
+	}
+	c.mu.Lock()
+	if c.lists == nil || len(c.lists) > 500 {
+		c.lists = map[string]top10Entry{}
+	}
+	c.lists[key] = top10Entry{at: time.Now(), list: l}
+	c.mu.Unlock()
+	return l, nil
+}

@@ -58,6 +58,9 @@ type Server struct {
 	// MetadataUp reports whether the metadata server answers (cached
 	// about a minute); nil counts as up.
 	MetadataUp func(context.Context) bool
+	// Top10 reads a Netflix Top 10 list from the metadata server; nil
+	// hides the row.
+	Top10 func(ctx context.Context, kind, region, lang string) (metadata.Top10, error)
 	// Library runs adding, editing and refreshing; New makes one when nil.
 	Library *library.Service
 	// Lists reads Outside lists; New makes one without keys when nil.
@@ -116,6 +119,8 @@ type API struct {
 	rated ratingState
 	// status keeps the Settings status answer for 30 seconds.
 	status statusCache
+	// top10 keeps the Netflix Top 10 lists for an hour.
+	top10 top10Cache
 }
 
 // New makes the API.
@@ -262,6 +267,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/metadata/health", a.metadataHealth)
 	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}", a.metadataDetails)
 	m.HandleFunc("GET /api/v1/discover", a.discoverRow)
+	m.HandleFunc("GET /api/v1/top10", a.top10List)
 	if a.s.Secrets != nil {
 		m.HandleFunc("GET /api/v1/settings/trakt-key", a.getTraktKey)
 		m.HandleFunc("PUT /api/v1/settings/trakt-key", a.putTraktKey)
