@@ -38,8 +38,14 @@
 <style>
 	.ui-shell { --space: var(--sidebar-expanded); min-height: 100dvh; }
 	.ui-shell.collapsed { --space: var(--sidebar-collapsed); }
-	.content { min-width: 0; min-height: 100dvh; margin-left: var(--space); transition: margin-left var(--dur) var(--ease-out); }
-	.collapsed .content { transition-delay: var(--dur-fast); }
+	.content { min-width: 0; min-height: 100dvh; margin-left: var(--space); }
+	/* The margin eases only when the sidebar is folded or opened; dropping to
+	   phone width (no sidebar) takes the margin away at once, so the page is
+	   never wider than the screen while it settles. */
+	@media (min-width: 768px) {
+		.content { transition: margin-left var(--dur) var(--ease-out); }
+		.collapsed .content { transition-delay: var(--dur-fast); }
+	}
 	.scrim { position: fixed; inset: 0; z-index: 39; background: var(--scrim); border: 0; animation: fade var(--dur-fast) ease both; }
 	@keyframes fade { from { opacity: 0; } }
 	@media (min-width: 768px) and (max-width: 1023px) { .ui-shell { --space: var(--sidebar-collapsed); } }

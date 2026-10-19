@@ -156,5 +156,8 @@ test('accessibility: the list, the remove sheet and a copy in the editor with Ad
 	await more('Good everyday', 'Make a copy');
 	await expect(page.getByLabel('Name', { exact: true })).toHaveValue('Good everyday copy');
 	await openAdvanced(page);
+	// The save bar rises in (opacity from 0); check its colours once it has settled.
+	const bar = page.getByTestId('savebar');
+	await bar.evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((x) => x.finished)));
 	expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });
