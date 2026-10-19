@@ -11,15 +11,20 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/jobs"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
 // fakePictures is a fake Deezer artist search that also serves the picture.
-func fakePictures(t *testing.T, down *atomic.Bool) *httptest.Server {
+// asked, when set, counts the requests.
+func fakePictures(t *testing.T, down *atomic.Bool, asked ...*atomic.Int32) *httptest.Server {
 	t.Helper()
 	var srv *httptest.Server
 	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		for _, n := range asked {
+			n.Add(1)
+		}
 		if down.Load() {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			return
@@ -53,12 +58,26 @@ func artworkOf(t *testing.T, s *store.Store, id int64) []string {
 	return ti.Artwork
 }
 
+// TestArtistImageOnAdd: adding an artist asks for no picture itself; the
+// refresh queued with the add finds it.
 func TestArtistImageOnAdd(t *testing.T) {
 	svc, s, _, _ := musicService(t)
+	ctx := context.Background()
 	var down atomic.Bool
-	withPictures(t, svc, fakePictures(t, &down))
-	id, _, err := svc.AddArtist(context.Background(), labArtist, ArtistAddOptions{}, domain.System)
+	var asked atomic.Int32
+	withPictures(t, svc, fakePictures(t, &down, &asked))
+	id, jobID, err := svc.AddArtist(ctx, labArtist, ArtistAddOptions{}, domain.System)
 	if err != nil {
+		t.Fatal(err)
+	}
+	if n := asked.Load(); n != 0 {
+		t.Fatalf("the add asked for a picture itself: %d requests", n)
+	}
+	var j domain.Job
+	if err := store.Get(ctx, s.Read(), "jobs", jobID, &j); err != nil || j.Kind != KindRefreshTitle {
+		t.Fatalf("queued job %+v %v", j, err)
+	}
+	if err := svc.handleRefreshTitle(ctx, &jobs.Run{Job: j}); err != nil {
 		t.Fatal(err)
 	}
 	art := artworkOf(t, s, id)

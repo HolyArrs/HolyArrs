@@ -273,7 +273,8 @@ func (s *Service) AddArtist(ctx context.Context, id string, opt ArtistAddOptions
 		Data: map[string]any{"why_added": t.WhyAdded, "albums": opt.Albums, "new_albums": opt.NewAlbums, "album_types": opt.AlbumTypes,
 			"secondary_types": opt.SecondaryTypes, "release_statuses": opt.ReleaseStatuses, "albums_added": sync.AlbumsAdded},
 		GroupKey: groupKey(t.ID)})
-	s.artistPicture(ctx, t.ID, t.Name, by)
+	// The refresh finds the artist's picture (RefreshArtist), so the add
+	// does not wait on the picture source.
 	jobID, _, err := s.Queue.Enqueue(ctx, KindRefreshTitle, &domain.Subject{Type: "title", ID: t.ID},
 		map[string]any{"then": []any{KindScanTitle}, "new": true}, "refresh_title:"+strconv.FormatInt(t.ID, 10), by)
 	return t.ID, jobID, err
