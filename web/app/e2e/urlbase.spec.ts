@@ -31,8 +31,6 @@ test('the app works under /holyarrs behind a proxy', async ({ page }) => {
 	await page.getByRole('button', { name: 'Make the owner and sign in' }).click();
 	await expect(page).toHaveURL(`${root}/welcome?first=1`);
 	await page.getByRole('button', { name: 'Continue' }).click();
-	await page.getByLabel('Paste the key').fill('stand-in-for-tests');
-	await page.getByRole('button', { name: 'Save and continue' }).click();
 	const movies = join(here, '.tmp-base', 'movies');
 	mkdirSync(movies, { recursive: true });
 	await page.getByLabel('Folder path').fill(movies);

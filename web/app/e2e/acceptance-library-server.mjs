@@ -5,7 +5,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { deezerURL, mbPort, startFakes, subsPort, tmdbPort, traktPort, tvmazePort } from './fakes.mjs';
+import { deezerURL, mbPort, metadataEnv, startFakes, subsPort, tmdbPort, traktPort, tvmazePort } from './fakes.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '../../..');
@@ -33,7 +33,7 @@ const child = spawn(bin, ['-config', config, '-addr', `127.0.0.1:${port}`], {
 	stdio: 'inherit',
 	env: {
 		...process.env,
-		HOLYARRS_TMDB_URL: `http://127.0.0.1:${tmdbPort}`,
+		...metadataEnv,
 		HOLYARRS_RELEASE_FEED: `http://127.0.0.1:${tmdbPort}/releases/latest`,
 		HOLYARRS_TRAKT_URL: `http://127.0.0.1:${traktPort}`,
 		HOLYARRS_TVMAZE_URL: `http://127.0.0.1:${tvmazePort}`,

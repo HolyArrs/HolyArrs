@@ -24,7 +24,8 @@ if (build.status !== 0) process.exit(build.status ?? 1);
 const child = spawn(bin, ['-config', config, '-addr', `127.0.0.1:${appPort}`, '-url-base', '/holyarrs'], {
 	cwd: tmp,
 	stdio: 'inherit',
-	env: { ...process.env, HOLYARRS_RELEASE_FEED: 'http://127.0.0.1:1/none', HOLYARRS_DEEZER_URL: 'off' }
+	// No metadata server here: never the live one from tests.
+	env: { ...process.env, HOLYARRS_RELEASE_FEED: 'http://127.0.0.1:1/none', HOLYARRS_DEEZER_URL: 'off', HOLYARRS_METADATA_URL: 'http://127.0.0.1:1', HOLYARRS_METADATA_SERVICE_ALLOW_LOCAL: 'true' }
 });
 
 const proxy = createServer((req, res) => {

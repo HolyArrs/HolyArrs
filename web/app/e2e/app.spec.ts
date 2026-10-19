@@ -55,14 +55,11 @@ test('first run makes the owner, adds the key and folder, then returns Home', as
 	await page.getByLabel('Yes', { exact: true }).check();
 	await page.getByRole('button', { name: 'Continue' }).click();
 
-	// First run stays outside the app frame until the key and one folder save.
+	// First run stays outside the app frame until one folder saves; metadata
+	// needs no key, so there is no key step.
 	await expect(page).toHaveURL(/\/welcome\?first=1$/);
-	await expect(page.getByRole('heading', { name: 'TMDB key', level: 1 })).toBeVisible();
-	await expect(page.getByRole('navigation', { name: 'Main' })).toHaveCount(0);
-	await scanFirstRun();
-	await page.getByLabel('Paste the key').fill('stand-in-for-tests');
-	await page.getByRole('button', { name: 'Save and continue' }).click();
 	await expect(page.getByRole('heading', { name: 'Library folder', level: 1 })).toBeVisible();
+	await expect(page.getByText(/TMDB|read access token/)).toHaveCount(0);
 	await expect(page.getByRole('navigation', { name: 'Main' })).toHaveCount(0);
 	await scanFirstRun();
 	await page.getByLabel('Folder path').fill(moviesDir);
@@ -74,8 +71,9 @@ test('first run makes the owner, adds the key and folder, then returns Home', as
 	await expect(page.locator('header.ui-head')).toContainText('luis');
 	await expect(page.getByText('Live', { exact: true })).toBeVisible();
 	const gettingStarted = page.getByRole('region', { name: 'Finish setting up HolyArrs' });
-	await expect(gettingStarted.getByText('2 of 5 done', { exact: true })).toBeVisible();
-	await expect(gettingStarted.getByRole('link', { name: /TMDB.*\(done\)/ })).toBeVisible();
+	await expect(gettingStarted.getByText('1 of 4 done', { exact: true })).toBeVisible();
+	await expect(gettingStarted.getByText(/TMDB/)).toHaveCount(0);
+	await expect(page.getByText('Metadata server is down')).toHaveCount(0);
 	await expect(gettingStarted.getByRole('link', { name: /Choose a Library folder.*\(done\)/ })).toBeVisible();
 });
 
@@ -153,7 +151,9 @@ test('settings pages render their forms', async () => {
 		await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
 	}
 	await page.goto('/settings/tmdb');
-	await expect(page.getByLabel('Replace the key')).toHaveAttribute('type', 'password');
+	await expect(page.getByText('Answering', { exact: true })).toBeVisible();
+	await expect(page.locator('input[type=password]')).toHaveCount(0);
+	await expect(page.getByText(/read access token|TMDB key/i)).toHaveCount(0);
 	await expect(page.getByText('This product uses the TMDB API but is not endorsed or certified by TMDB.')).toBeVisible();
 	await page.goto('/settings/backups');
 	for (const p of ['Balanced', 'Light', 'Careful']) await expect(page.getByText(p, { exact: true })).toBeVisible();

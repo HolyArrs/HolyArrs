@@ -298,12 +298,36 @@ export function makeOldLibrary(dir) {
 	}
 }
 
+// The fake metadata server's one installation credential.
+export const fakeInstallToken = ['hai', 'stand', 'in', 'install'].join('_');
+
+/** metadataEnv points a HolyArrs at the fake metadata server (no TMDB key). */
+export const metadataEnv = {
+	HOLYARRS_METADATA_URL: `http://127.0.0.1:${tmdbPort}`,
+	HOLYARRS_METADATA_SERVICE_ALLOW_LOCAL: 'true',
+	HOLYARRS_TMDB_URL: `http://127.0.0.1:${tmdbPort}`
+};
+
+/** Counts of what the fake metadata server answered, for the tests. */
+export const metadataCalls = { registered: 0, tmdb: 0 };
+
 export function startFakes() {
+	// The fake metadata server: registration, /readyz and TMDB reads at
+	// /v1/tmdb (answered by the fake TMDB below), like the real one.
 	const tmdb = createServer((req, res) => {
 		const url = new URL(req.url ?? '/', 'http://x');
 		// A made-up HolyArrs release feed for the update check (no sign-in).
 		if (url.pathname === '/releases/latest') return send(res, 200, { tag_name: 'v9.9.9', html_url: 'https://github.com/CoderLuii/holyarrs/releases/tag/v9.9.9' });
-		if (!/^Bearer \S+/.test(req.headers.authorization ?? '')) return send(res, 401, { status_message: 'no token' });
+		if (url.pathname === '/readyz' || url.pathname === '/healthz') return send(res, 200, { ok: true });
+		if (url.pathname === '/v1/installations') {
+			if (req.method !== 'POST') return send(res, 405, { error: { code: 'method_not_allowed', retry_after_seconds: 0 } });
+			metadataCalls.registered++;
+			return send(res, 201, { schema_version: 1, token: fakeInstallToken });
+		}
+		if (!url.pathname.startsWith('/v1/tmdb/')) return send(res, 404, { status_message: 'TMDB reads are at /v1/tmdb' });
+		if (req.headers.authorization !== `Bearer ${fakeInstallToken}`) return send(res, 401, { error: { code: 'unauthorized', retry_after_seconds: 0 } });
+		metadataCalls.tmdb++;
+		url.pathname = url.pathname.slice('/v1/tmdb'.length);
 		if (url.pathname === '/search/movie') {
 			const q = squash(url.searchParams.get('query') ?? '');
 			return send(res, 200, { page: 1, total_pages: 1, results: tmdbMovies.filter((m) => q && squash(m.title).includes(q)).map(tmdbMovie) });

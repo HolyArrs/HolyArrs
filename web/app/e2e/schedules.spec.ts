@@ -23,8 +23,6 @@ async function enterFreshApp(page: import('@playwright/test').Page) {
 	await page.getByLabel('Subtitles', { exact: true }).check();
 	await page.getByLabel('Yes', { exact: true }).check();
 	await page.getByRole('button', { name: 'Continue' }).click();
-	await page.getByLabel('Paste the key').fill('stand-in-for-tests');
-	await page.getByRole('button', { name: 'Save and continue' }).click();
 	await page.getByLabel('Folder path').fill(moviesDir);
 	await page.getByLabel(/^Name/).fill('Movies');
 	await page.getByRole('button', { name: 'Add folder and open Home' }).click();

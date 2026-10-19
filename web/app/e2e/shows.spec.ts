@@ -8,7 +8,7 @@ import { moviesDir, noSidewaysScroll, owner, signIn, libraryStatus, openApproval
 // Parade), turns seasons and episodes on and off on the show page, finds it
 // in the Library next to the movies, and a member asks for two seasons of
 // another show from a phone, which the owner approves from a phone. Runs
-// last: the owner, the TMDB key and the movies exist.
+// last: the owner and the movies exist.
 test.describe.configure({ mode: 'serial' });
 
 let own: Page;

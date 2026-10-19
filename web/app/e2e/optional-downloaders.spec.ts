@@ -52,7 +52,7 @@ async function bootstrap(page: Page) {
 	await page.getByRole('button', { name: 'Make the owner and sign in' }).click();
 
 	await expect(page).toHaveURL(/\/welcome\?first=1$/);
-	const firstRun = await page.evaluate(async ({ folder, tmdb }) => {
+	const firstRun = await page.evaluate(async ({ folder }) => {
 		const me = await fetch('/api/v1/auth/me');
 		if (!me.ok) throw new Error(`first-run session check returned ${me.status}`);
 		const { csrf } = (await me.json()) as { csrf: string };
@@ -64,10 +64,9 @@ async function bootstrap(page: Page) {
 			});
 			if (!response.ok) throw new Error(`first-run API ${path} returned ${response.status}`);
 		}
-		await save('/settings/tmdb-token', 'PUT', { token: tmdb });
 		await save('/library-folders', 'POST', { path: folder, kind: 'movie', label: 'Optional UI Library' });
 		return true;
-	}, { folder: libraryDir!, tmdb: `tmdb-${crypto.randomUUID()}` });
+	}, { folder: libraryDir! });
 	expect(firstRun).toBe(true);
 }
 

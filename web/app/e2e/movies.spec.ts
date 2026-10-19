@@ -17,11 +17,7 @@ async function fresh(browser: Browser) {
 test.beforeAll(async ({ browser }) => {
 	page = await fresh(browser);
 	await signIn(page, owner());
-	// Point HolyArrs at the fake TMDB: any key works there.
-	await page.goto('/settings/tmdb');
-	await page.getByLabel(/the key/).fill('stand-in-for-tests');
-	await page.getByRole('button', { name: 'Save the key' }).click();
-	await expect(page.getByText('Saved', { exact: true })).toBeVisible();
+	// Lookups go through the fake metadata server with no key to set.
 });
 
 test('add a movie by name with folder, Pick rules and Release gate in under a minute', async () => {

@@ -22,8 +22,6 @@ async function enterApp(page: import('@playwright/test').Page) {
 	await page.getByLabel('Subtitles', { exact: true }).check();
 	await page.getByLabel('Yes', { exact: true }).check();
 	await page.getByRole('button', { name: 'Continue' }).click();
-	await page.getByLabel('Paste the key').fill('stand-in-for-tests');
-	await page.getByRole('button', { name: 'Save and continue' }).click();
 	await page.getByLabel('Folder path').fill(moviesDir);
 	await page.getByLabel(/^Name/).fill('Movies');
 	await page.getByRole('button', { name: 'Add folder and open Home' }).click();
@@ -33,9 +31,6 @@ async function paperHarbour(page: import('@playwright/test').Page): Promise<stri
 	await page.goto('/library');
 	let movie = page.locator('a[href^="/library/"]', { hasText: 'Paper Harbour' }).first();
 	if ((await movie.count()) === 0) {
-		await page.goto('/settings/tmdb');
-		await page.getByLabel(/the key/).fill('stand-in-for-tests');
-		await page.getByRole('button', { name: 'Save the key' }).click();
 		await page.goto('/search');
 		await page.getByLabel('Movie name or id').fill('paper harbour');
 		await page.getByRole('button', { name: 'Search', exact: true }).click();
