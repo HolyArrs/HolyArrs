@@ -27,3 +27,14 @@ func TestCSPHashesNormalizedNewlines(t *testing.T) {
 		t.Fatal(got)
 	}
 }
+
+// Every inline script of the page gets its own hash, not just the first.
+func TestCSPHashesEveryInlineScript(t *testing.T) {
+	got := CSP([]byte("<head><script>a()</script></head><body><div id=\"hl\"></div><script>b()</script></body>"))
+	for _, s := range []string{"a()", "b()"} {
+		sum := sha256.Sum256([]byte(s))
+		if !strings.Contains(got, "'sha256-"+base64.StdEncoding.EncodeToString(sum[:])+"'") {
+			t.Fatal(s, got)
+		}
+	}
+}

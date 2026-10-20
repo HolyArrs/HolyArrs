@@ -15,6 +15,8 @@ interface SourceLike {
 
 export type SourceFactory = (url: string) => SourceLike;
 
+import { backoff } from './loader.ts';
+
 export function createLive(factory: SourceFactory = (u) => new EventSource(u) as unknown as SourceLike) {
 	const status = $state<{ state: LiveState; last: number }>({ state: 'off', last: 0 });
 	const listeners = new Map<string, Set<Listener>>();
@@ -43,21 +45,32 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 		emit(msg.topic, msg.data);
 	}
 
-	function start() {
+	let tries = 0;
+	let retry: ReturnType<typeof setTimeout> | undefined;
+
+	function start(again = false) {
 		if (src) return;
-		status.state = 'connecting';
+		if (!again) status.state = 'connecting';
 		src = factory(to('/live'));
 		src.onopen = () => {
+			tries = 0;
 			status.state = 'live';
 		};
 		src.onerror = () => {
-			// EventSource retries by itself and sends Last-Event-ID on resume.
+			// Lost the server (restart, update): retry after 1 s, 2 s, 4 s… up to 15 s.
 			status.state = 'reconnecting';
+			src?.close();
+			src = null;
+			clearTimeout(retry);
+			retry = setTimeout(() => {
+				if (status.state === 'reconnecting') start(true);
+			}, backoff(tries++));
 		};
 		src.onmessage = (e: MessageEvent) => dispatch(String(e.data));
 	}
 
 	function stop() {
+		clearTimeout(retry);
 		src?.close();
 		src = null;
 		status.state = 'off';

@@ -7,7 +7,8 @@
 	import '../app.css';
 	import { onMount, tick, type Snippet } from 'svelte';
 	import { page } from '$app/state';
-	import { afterNavigate, goto, onNavigate } from '$app/navigation';
+	import { afterNavigate, beforeNavigate, goto, onNavigate } from '$app/navigation';
+	import { hideReconnecting, loaderReady, navEnded, navStarted, showReconnecting } from '#lib/loader.ts';
 	import Icon from '#lib/Icon.svelte';
 	import ToastList from '#lib/ToastList.svelte';
 	import Theater from '#lib/ui/Theater.svelte';
@@ -185,7 +186,21 @@
 	// Page changes cross-fade and rise (View Transitions, where supported).
 	// The full-screen trailer covers its own hand-over to the title page (it shrinks into the hero).
 	onNavigate((navigation) => (theater.landing ? undefined : navigateWithTransition(navigation)));
+	// The loading screen from app.html leaves once the session is known;
+	// slow page changes get a small one (lib/loader.ts).
+	$effect(() => {
+		if (session.s.state !== 'unknown') void tick().then(loaderReady);
+	});
+	// The server went away (restart, update): Orbit with Reconnecting… until it answers.
+	$effect(() => {
+		if (live.status.state === 'reconnecting') showReconnecting();
+		else if (live.status.state === 'live') hideReconnecting();
+	});
+	beforeNavigate((nav) => {
+		if (!nav.willUnload) navStarted();
+	});
 	afterNavigate(() => {
+		navEnded();
 		readLibraryResumeLinks();
 		moreOpen = false;
 		void closeOverlay(false);

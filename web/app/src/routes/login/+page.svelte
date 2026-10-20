@@ -4,6 +4,7 @@
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { loaderReady, playSignIn } from '#lib/loader.ts';
 	import { page } from '$app/state';
 	import { ApiError, message } from '#lib/api.ts';
 	import { session, type SignInResult } from '#lib/session.svelte.ts';
@@ -66,7 +67,10 @@
 	// Right after the owner is made, the first-run step asks which parts to use.
 	let firstRun = false;
 	$effect(() => {
-		if (session.s.state === 'signed_in') void goto(to(firstRun ? '/welcome?first=1' : next()), { replace: true });
+		if (session.s.state !== 'signed_in') return;
+		// Signing in plays the loading screen once while the app opens.
+		playSignIn(session.s.name);
+		void goto(to(firstRun ? '/welcome?first=1' : next()), { replace: true }).finally(loaderReady);
 	});
 
 	function took(r: SignInResult) {

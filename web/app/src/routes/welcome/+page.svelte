@@ -2,6 +2,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
+	import { loaderReady, playLoader, SETUP_HOLD_MS } from '#lib/loader.ts';
 	import { api, message } from '#lib/api.ts';
 	import { to } from '#lib/paths.ts';
 	import { session } from '#lib/session.svelte.ts';
@@ -50,12 +51,18 @@
 				folderKind = firstFolderKind(parts);
 				step = 'folder';
 			}
-			else await goto(to('/'), { replace: true });
+			else await home();
 		} catch (e) {
 			error = message(e);
 		} finally {
 			busy = false;
 		}
+	}
+
+	// Setup is done: a short Orbit while Home opens.
+	async function home() {
+		playLoader('', SETUP_HOLD_MS);
+		await goto(to('/'), { replace: true }).finally(loaderReady);
 	}
 
 	function submitParts(e: SubmitEvent) {
@@ -71,7 +78,7 @@
 		busy = true;
 		try {
 			await api.post('/library-folders', { path: folderPath.trim(), kind: folderKind, label: folderName.trim() });
-			await goto(to('/'), { replace: true });
+			await home();
 		} catch (e) {
 			error = message(e);
 		} finally {
