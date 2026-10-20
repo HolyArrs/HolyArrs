@@ -220,10 +220,10 @@
 	.content { position: relative; width: clamp(320px, 40%, 600px); padding: 0 clamp(20px, 2vw, 40px) clamp(24px, 2.6vw, 50px); display: flex; flex-direction: column; gap: 10px; transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out); }
 	/* About 6 s into the trailer the overview folds (height and opacity, ~1 s ease) and
 	   the logo glides down with it; it unfolds the same way. */
-	.fold { display: grid; grid-template-rows: 1fr; opacity: 1; transition: grid-template-rows 1100ms var(--ease-hero, cubic-bezier(.4, 0, .2, 1)), opacity 650ms var(--ease-hero, cubic-bezier(.4, 0, .2, 1)); }
+	.fold { display: grid; min-height: 0; grid-template-rows: minmax(0, 1fr); opacity: 1; transition: grid-template-rows 1100ms var(--ease-hero, cubic-bezier(.4, 0, .2, 1)), opacity 650ms var(--ease-hero, cubic-bezier(.4, 0, .2, 1)); }
 	.fold-in { min-height: 0; overflow: hidden; }
-	.quiet .fold { grid-template-rows: 0fr; opacity: 0; pointer-events: none; }
-	.quiet.reveal:hover .fold, .quiet.reveal:focus-within .fold { grid-template-rows: 1fr; opacity: 1; pointer-events: auto; }
+	.quiet .fold { grid-template-rows: minmax(0, 0fr); opacity: 0; pointer-events: none; }
+	.quiet.reveal:hover .fold, .quiet.reveal:focus-within .fold { grid-template-rows: minmax(0, 1fr); opacity: 1; pointer-events: auto; }
 	.content { --title-h: clamp(80px, 10vw, 140px); min-height: 0; }
 	.ui-billboard:has(> .top) .content { --title-h: clamp(64px, 8vw, 130px); }
 	.heading { transform-origin: left bottom; transition: transform 1100ms var(--ease-hero, cubic-bezier(.4, 0, .2, 1)); }
@@ -248,7 +248,7 @@
 	@media (prefers-reduced-motion: reduce) {
 		.shade, .content { transition: none; }
 		.fold { transition: opacity 400ms linear; }
-		.quiet .fold { grid-template-rows: 1fr; }
+		.quiet .fold { grid-template-rows: minmax(0, 0fr); }
 		.heading, .quiet .heading { transition: none; transform: none; }
 	}
 </style>
