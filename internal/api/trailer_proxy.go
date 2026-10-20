@@ -33,6 +33,8 @@ const (
 	proxyMaxList   = 2 << 20          // one playlist
 	proxyMaxURLs   = 5000             // addresses one stream may hold
 	proxyMaxStream = 1 << 30          // bytes one stream may relay in all
+	proxyMaxActive = 6                // streams the whole install may have going at once
+	proxyLife      = 20 * time.Minute // how long one stream may relay, from its first request
 )
 
 // trailerProxyClient fetches from YouTube; tests point it at a fake.
@@ -53,6 +55,7 @@ type proxyStream struct {
 	index    map[string]int
 	last     time.Time
 	sent     int64
+	started  time.Time
 }
 
 type trailerProxy struct {
@@ -103,14 +106,20 @@ func (p *trailerProxy) begin(user int64, id string, now time.Time) (*proxyStream
 	if s == nil || s.user != user || now.After(s.expires) {
 		return nil, errNoStream
 	}
+	if !s.started.IsZero() && now.Sub(s.started) > proxyLife {
+		return nil, errProxyBusy
+	}
 	if now.Sub(s.last) >= proxyIdle {
-		active := 0
+		active, all := 0, 0
 		for oid, o := range p.streams {
-			if oid != id && o.user == user && now.Sub(o.last) < proxyIdle {
-				active++
+			if oid != id && now.Sub(o.last) < proxyIdle {
+				all++
+				if o.user == user {
+					active++
+				}
 			}
 		}
-		if active >= proxyStreams {
+		if active >= proxyStreams || all >= proxyMaxActive {
 			return nil, errProxyBusy
 		}
 	}
@@ -119,6 +128,9 @@ func (p *trailerProxy) begin(user int64, id string, now time.Time) (*proxyStream
 	}
 	p.inFlight[user]++
 	s.last = now
+	if s.started.IsZero() {
+		s.started = now
+	}
 	return s, nil
 }
 
@@ -336,15 +348,15 @@ func (a *API) trailerSegment(w http.ResponseWriter, r *http.Request) {
 	if !strings.HasPrefix(ct, "video/") && !strings.HasPrefix(ct, "audio/") {
 		ct = "application/octet-stream"
 	}
+	if res.ContentLength > proxyMaxBody {
+		fail(w, http.StatusBadGateway, "trailer segment too large")
+		return
+	}
 	proxyHeaders(w, ct)
 	for _, h := range []string{"Content-Length", "Content-Range", "Accept-Ranges"} {
 		if v := res.Header.Get(h); v != "" {
 			w.Header().Set(h, v)
 		}
-	}
-	if res.ContentLength > proxyMaxBody {
-		fail(w, http.StatusBadGateway, "trailer segment too large")
-		return
 	}
 	rc := http.NewResponseController(w)
 	_ = rc.SetWriteDeadline(time.Now().Add(proxyTimeout))

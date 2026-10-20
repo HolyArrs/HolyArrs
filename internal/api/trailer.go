@@ -6,8 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
-	"os"
-	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -177,16 +176,21 @@ func (a *API) TrailerFailures() (int, bool) {
 	return int(a.trailers.failed.Load()), ok
 }
 
-// trailerLanguage is the first language of Accept-Language ("de" from "de-DE,de;q=0.9").
+var trailerLangRe = regexp.MustCompile(`^[a-z]{2}(-[A-Z]{2})?$`)
+
+// trailerLanguage is the two-letter language of ?language= ("de" or
+// "de-DE"; anything else is ignored) or else the first language of
+// Accept-Language ("de" from "de-DE,de;q=0.9"), so only [a-z]{2} reaches
+// the cache keys.
 func trailerLanguage(r *http.Request) string {
-	if l := strings.TrimSpace(r.URL.Query().Get("language")); len(l) == 2 {
-		return strings.ToLower(l)
+	if l := strings.TrimSpace(r.URL.Query().Get("language")); trailerLangRe.MatchString(l) {
+		return l[:2]
 	}
 	first, _, _ := strings.Cut(r.Header.Get("Accept-Language"), ",")
 	first, _, _ = strings.Cut(strings.TrimSpace(first), ";")
 	first, _, _ = strings.Cut(first, "-")
-	if len(first) == 2 {
-		return strings.ToLower(first)
+	if first = strings.ToLower(first); trailerLangRe.MatchString(first) {
+		return first
 	}
 	return "en"
 }
@@ -261,7 +265,7 @@ func (t *trailerState) inFlight(ckey string) bool {
 // trailerStored loads a kept address from SQLite into memory, so a
 // restart does not redo lookups.
 func (a *API) trailerStored(ctx context.Context, ckey string, now time.Time) bool {
-	if a.s.Store == nil {
+	if a.s.Store == nil || a.s.Store.Read() == nil {
 		return false
 	}
 	b, ok, err := store.LookupCache{Store: a.s.Store}.Get(ctx, "trailer|"+ckey, now)
@@ -269,7 +273,11 @@ func (a *API) trailerStored(ctx context.Context, ckey string, now time.Time) boo
 		return false
 	}
 	var s TrailerStream
-	if json.Unmarshal(b, &s) != nil || s.URL == "" || !now.Before(s.ExpiresAt.Add(-trailerEarly)) {
+	// A kept row is checked again as if new: both addresses on YouTube's
+	// video servers and not yet (nearly) expired, by the row and by the
+	// address's own expire value.
+	if json.Unmarshal(b, &s) != nil || !googlevideo(s.URL) || (s.MP4URL != "" && !googlevideo(s.MP4URL)) ||
+		!now.Before(s.ExpiresAt.Add(-trailerEarly)) || urlExpired(s.URL, now) || (s.MP4URL != "" && urlExpired(s.MP4URL, now)) {
 		return false
 	}
 	a.trailers.put(ckey, trailerEntry{s: s})
@@ -529,6 +537,15 @@ func googlevideo(raw string) bool {
 	return err == nil && u.Scheme == "https" && strings.HasSuffix(u.Hostname(), ".googlevideo.com")
 }
 
+// urlExpired says whether the address carries an expire value that is
+// past or nearly so (an address without one is judged by its row).
+func urlExpired(raw string, now time.Time) bool {
+	if e := trailerExpiry(raw, time.Unix(0, 0)); e.Unix() > int64(trailerKeep/time.Second) {
+		return !now.Before(e.Add(-trailerEarly))
+	}
+	return false
+}
+
 // trailerExpiry reads the address's expire value (a query value, or a
 // path part /expire/<unix>/ in HLS manifests).
 func trailerExpiry(raw string, now time.Time) time.Time {
@@ -556,10 +573,8 @@ func resolveTrailer(ctx context.Context, bin string, pre []string, key string, n
 	ctx, cancel := context.WithTimeout(ctx, trailerTimeout)
 	defer cancel()
 	args := append(append(append([]string{}, pre...), trailerArgs...), "--", "https://www.youtube.com/watch?v="+key)
-	cmd := exec.CommandContext(ctx, bin, args...)
-	cmd.Env = os.Environ()
-	out, err := cmd.Output()
-	if err != nil || len(out) > 16<<20 {
+	out, err := ytdlp.Run(ctx, bin, trailerTimeout, args...)
+	if err != nil {
 		return TrailerStream{}, errNoStream
 	}
 	var j struct {

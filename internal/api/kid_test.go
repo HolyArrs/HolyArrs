@@ -201,6 +201,7 @@ type kidRig struct {
 	owner *signedIn
 	ana   *signedIn // a member without a limit
 	kai   *signedIn // a Kid limited to PG
+	api   *API
 	ids   map[string]int64
 }
 
@@ -248,7 +249,7 @@ func newKidRig(t *testing.T, off ...parts.Part) *kidRig {
 		Parts: pc})
 	srv := httptest.NewServer(a.Handler())
 	t.Cleanup(srv.Close)
-	k := &kidRig{srv: srv, st: st, tmdb: f, ids: map[string]int64{}}
+	k := &kidRig{srv: srv, st: st, tmdb: f, ids: map[string]int64{}, api: a}
 	browser := func() *signedIn {
 		jar, _ := cookiejar.New(nil)
 		return &signedIn{t: t, base: srv.URL, c: &http.Client{Jar: jar}}

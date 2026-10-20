@@ -236,6 +236,7 @@
 					title="{now.title} trailer"
 					allow="autoplay; encrypted-media; fullscreen"
 					referrerpolicy="strict-origin-when-cross-origin"
+					sandbox="allow-scripts allow-same-origin allow-presentation"
 					tabindex="-1"
 					onload={frameLoaded}
 				></iframe>

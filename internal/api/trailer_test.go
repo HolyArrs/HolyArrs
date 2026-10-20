@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -14,6 +16,8 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/CoderLuii/holyarrs/internal/ytdlp"
 )
 
 // TestFakeYTDLP is not a test: run as a child process it plays yt-dlp,
@@ -57,6 +61,9 @@ func fakeYTDLP(t *testing.T, mode string) *atomic.Int32 {
 	var runs atomic.Int32
 	old := ytdlpRun
 	t.Setenv("FAKE_YTDLP", mode)
+	oldAllow := ytdlp.EnvAllow
+	ytdlp.EnvAllow = append(append([]string{}, oldAllow...), "FAKE_YTDLP", "FAKE_YTDLP_KEY")
+	t.Cleanup(func() { ytdlp.EnvAllow = oldAllow })
 	ytdlpRun = func() (string, []string, bool) {
 		runs.Add(1)
 		return os.Args[0], []string{"-test.run=^TestFakeYTDLP$", "--"}, true
@@ -269,5 +276,45 @@ func TestExploreTrailerTitles(t *testing.T) {
 	got := fmt.Sprint(exploreTrailerTitles(hero, head))
 	if got != "[[movie 1] [show 2] [movie 3] [movie 4] [movie 5] [show 7] [movie 8]]" {
 		t.Fatal(got)
+	}
+}
+
+// ?language= is "xx" or "xx-YY"; anything else falls back to Accept-Language.
+func TestTrailerLanguageChecked(t *testing.T) {
+	for q, want := range map[string]string{"de": "de", "pt-BR": "pt", "|x": "fr", "DE": "fr", "de-br": "fr", "dee": "fr", "": "fr"} {
+		r := httptest.NewRequest("GET", "/x?language="+url.QueryEscape(q), nil)
+		r.Header.Set("Accept-Language", "fr-FR,fr;q=0.9")
+		if got := trailerLanguage(r); got != want {
+			t.Fatalf("%q: %q", q, got)
+		}
+	}
+	r := httptest.NewRequest("GET", "/x", nil)
+	r.Header.Set("Accept-Language", "|x")
+	if got := trailerLanguage(r); got != "en" {
+		t.Fatalf("junk header: %q", got)
+	}
+}
+
+// A kept address is checked again when read back from SQLite.
+func TestTrailerStoredRechecked(t *testing.T) {
+	_, st := discoverRig(t, trailerTMDB(t))
+	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	ctx, now := context.Background(), time.Now()
+	later := now.Add(time.Hour)
+	put := func(k string, s TrailerStream) {
+		b, _ := json.Marshal(s)
+		if err := (store.LookupCache{Store: st}).Put(ctx, "trailer|"+k, b, now, later); err != nil {
+			t.Fatal(err)
+		}
+	}
+	good := "https://rr1.googlevideo.com/videoplayback?expire=" + strconv.FormatInt(later.Unix(), 10)
+	put("movie|1|en", TrailerStream{Type: "mp4", URL: good, ExpiresAt: later})
+	put("movie|2|en", TrailerStream{Type: "mp4", URL: "https://evil.example/v", ExpiresAt: later})
+	put("movie|3|en", TrailerStream{Type: "hls", URL: good, MP4URL: "http://rr1.googlevideo.com/v", ExpiresAt: later})
+	put("movie|4|en", TrailerStream{Type: "mp4", URL: "https://rr1.googlevideo.com/videoplayback?expire=" + strconv.FormatInt(now.Add(-time.Minute).Unix(), 10), ExpiresAt: later})
+	for k, want := range map[string]bool{"movie|1|en": true, "movie|2|en": false, "movie|3|en": false, "movie|4|en": false} {
+		if got := a.trailerStored(ctx, k, now); got != want {
+			t.Fatalf("%s: %v", k, got)
+		}
 	}
 }
