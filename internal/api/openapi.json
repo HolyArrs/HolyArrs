@@ -6489,6 +6489,37 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/albums/{id}/cover": {
+      "get": {
+        "description": "The cover of a Library album, through the artwork cache: the metadata server's cover chain by release group, artist and name, else the Cover Art Archive's release group front cover. Served with a year-long private cache header. A Kid account gets 404.",
+        "operationId": "albumCoverArt",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The picture."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          },
+          "404": {
+            "description": "No such album, or no cover anywhere."
+          }
+        },
+        "summary": "A Library album's cover",
+        "x-holyarrs-part": "music",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/albums/{id}/tracks": {
       "get": {
         "description": "Tracks of the chosen Pressing in disc and track order, each with its length, recording id and each Version's Slot state and reason.",
