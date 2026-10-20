@@ -32,7 +32,7 @@ func showHousehold(n int) []HouseholdTitle {
 	return out
 }
 
-// svcTopOf is a Trending on your services list that shares titles with
+// svcTopOf is a Trending on streaming list that shares titles with
 // the trending chart, so the dedupe against row 2 is tested.
 func svcTopOf(p Pool) []Item {
 	for _, r := range p.Rows {
@@ -72,7 +72,7 @@ func checkPage(t *testing.T, name string, pg Page, svcTop []Item) {
 		}
 	}
 	if n != 1 {
-		t.Fatalf("%s: %d Trending on your services rows", name, n)
+		t.Fatalf("%s: %d Trending on streaming rows", name, n)
 	}
 	seen := map[string]string{}
 	for _, it := range svcTop {
@@ -127,7 +127,7 @@ func TestHeadOrderTabs(t *testing.T) {
 				if r.Type == TypeTrending && c.sw != "all" && r.Title != "Trending "+c.sw+" this week" {
 					t.Fatalf("trending title %q", r.Title)
 				}
-				if r.Type == TypeTopServices && c.sw == "all" && r.Title != "Trending on your services" {
+				if r.Type == TypeTopServices && c.sw == "all" && r.Title != "Trending on streaming" {
 					t.Fatalf("services title %q", r.Title)
 				}
 			}
@@ -281,7 +281,7 @@ func TestHouseholdNoNames(t *testing.T) {
 	t.Fatal("no household row")
 }
 
-// A chart whose titles are nearly all on Trending on your services still
+// A chart whose titles are nearly all on Trending on streaming still
 // shows (with them) rather than vanish; other rows still skip them.
 func TestChartMostlyOnServices(t *testing.T) {
 	p, _ := build(t, fullInput("all", 4))

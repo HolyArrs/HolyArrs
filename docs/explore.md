@@ -44,13 +44,13 @@ soon are Home rows, not Explore rows.
 
 | Tab | Head order |
 | --- | --- |
-| All | Trending on your services, Top picks for you, Trending this week everywhere, Because you have X, Best new releases, Because you asked for X, Popular in your household |
-| Movies | Trending movies on your services, Top picks for you, Finish the collection, Trending movies this week, Because you have X, Best new releases, Coming to cinemas and streaming, Popular in your household |
-| Shows | Trending shows on your services, Top picks for you, New seasons and premieres, Trending shows this week, Because you have X, Returning soon, Popular in your household |
-| Under 3 seeds | Trending on your services, Trending this week, Best new releases, the tab's own rows, Popular genre rows, Classics |
+| All | Trending on streaming, Top picks for you, Trending this week everywhere, Because you have X, Best new releases, Because you asked for X, Popular in your household |
+| Movies | Trending movies on streaming, Top picks for you, Finish the collection, Trending movies this week, Because you have X, Best new releases, Coming to cinemas and streaming, Popular in your household |
+| Shows | Trending shows on streaming, Top picks for you, New seasons and premieres, Trending shows this week, Because you have X, Returning soon, Popular in your household |
+| Under 3 seeds | Trending on streaming, Trending this week, Best new releases, the tab's own rows, Popular genre rows, Classics |
 
 - **Hero.** Up to 6 titles not in your Library yet, from Trending this week
-  and Trending on your services, with **Ask** as the main button.
+  and Trending on streaming, with **Ask** as the main button.
 - **Top picks for you** needs 3 seeds.
 - **Because you asked for X** needs an open ask of yours (your two newest).
 - **Popular in your household** needs at least 2 active members and asks from

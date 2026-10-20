@@ -263,7 +263,7 @@ func TestPerMemberOrder(t *testing.T) {
 	p1, _ := build(t, Input{Member: 1, Seeds: seedsN(6, 1)})
 	p2, _ := build(t, Input{Member: 2, Seeds: seedsN(6, 2)})
 	a, b := Assemble(p1, top10(), 1), Assemble(p2, top10(), 2)
-	// H1 Trending on your services, H2 Top picks.
+	// H1 Trending on streaming, H2 Top picks.
 	if a.Head[1].Type != TypeTopPicks || b.Head[1].Type != TypeTopPicks {
 		t.Fatalf("H2 is not Top picks: %s %s", a.Head[1].Type, b.Head[1].Type)
 	}

@@ -63,7 +63,7 @@ func (a *API) cachedServiceTop(ctx context.Context, region string) (metadata.Ser
 	return l, err
 }
 
-// warmServiceTop reads Trending on your services for every region a member
+// warmServiceTop reads Trending on streaming for every region a member
 // has, so the first Explore head after a restart can keep its rows
 // apart from that row's titles without waiting on it.
 func (a *API) warmServiceTop(ctx context.Context) {

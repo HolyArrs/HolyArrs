@@ -33,7 +33,7 @@ describe('revision 4', () => {
 		expect(factualBadges(['New season', 'Leaving soon', '3 days left', 'Coming 12 Nov', 'In library', 'Asked', '4K'])).toEqual(['New season', 'Coming 12 Nov', 'In library', 'Asked', '4K']);
 	});
 	it('keeps the Top on your services marker row in place', () => {
-		const r = serverRow({ id: 'top_services', type: 'top_services', title: 'Trending on your services', items: [] });
+		const r = serverRow({ id: 'top_services', type: 'top_services', title: 'Trending on streaming', items: [] });
 		expect(r.keep).toBe(true);
 		expect(serverRow({ id: 'top10', type: 'top10', title: 'Trending now', items: [] }).keep).toBe(false);
 	});

@@ -172,7 +172,7 @@ func orderTail(rows []Row, member int64, date string, m Moment, kid bool) []Row 
 // ledger is the per-page dedup record: where each title showed.
 type ledger struct {
 	rows map[string][]int // key -> row indexes it showed in
-	// above are the titles of Trending on your services: the head skips
+	// above are the titles of Trending on streaming: the head skips
 	// them unless a row would fall under its minimum without them.
 	above map[string]bool
 }
@@ -181,7 +181,7 @@ type ledger struct {
 // title at most once in the first HeadDedupe rows; at most twice on the page and at least
 // 4 rows apart; once in a row and one per franchise (Finish the
 // collection is one franchise by design); with skipAbove, no title of
-// Trending on your services in the head. Items past the shown ones fill
+// Trending on streaming in the head. Items past the shown ones fill
 // gaps.
 func (l *ledger) fill(r Row, at int, head, skipAbove bool) Row {
 	out := make([]Item, 0, RowMax)
@@ -236,7 +236,7 @@ func AssembleAt(p Pool, top10 []Item, member int64, m Moment) Page {
 }
 
 // AssembleTabAt builds the page from a pool, the region's Top 10 per kind
-// ("movie", "show") and the titles of Trending on your services (svcTop:
+// ("movie", "show") and the titles of Trending on streaming (svcTop:
 // the rows under it never repeat them in the first HeadDedupe rows), in
 // the tab's head order (HeadOrder), with the charts spread apart.
 func AssembleTabAt(p Pool, tops map[string][]Item, svcTop []Item, member int64, m Moment) Page {

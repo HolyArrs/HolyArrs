@@ -43,7 +43,7 @@ func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64,
 	now := a.exploreNow()
 	day := explore.Day(now)
 	moment, tz := exploreMoment(r, now)
-	// Trending on your services, as kept (never fetched here; warmed at
+	// Trending on streaming, as kept (never fetched here; warmed at
 	// start): the rows under it skip its titles.
 	svcTop := a.keptServiceTop(strings.ToUpper(r.URL.Query().Get("region")), sw)
 	key := strconv.FormatInt(member, 10) + "|" + sw + "|" + topKind + "|" + topRegion + "|" + tz

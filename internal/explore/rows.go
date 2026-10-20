@@ -70,7 +70,7 @@ const (
 	TypeHousehold     = "household"
 	TypeDecade        = "decade"
 	TypeHidden        = "hidden"
-	// TypeTopServices is the ranked "Trending on your services" row; the page
+	// TypeTopServices is the ranked "Trending on streaming" row; the page
 	// fills it per chosen service (the head carries an empty marker).
 	TypeTopServices = "top_services"
 	// TypeCollection (Movies) is the missing parts of TMDB collections the
@@ -329,7 +329,7 @@ func RowTitle(t, arg string) string {
 	case TypeHidden:
 		return "Hidden gems"
 	case TypeTopServices:
-		return "Trending on your services"
+		return "Trending on streaming"
 	case TypeCollection:
 		return "Finish the collection"
 	case TypeCinemas:

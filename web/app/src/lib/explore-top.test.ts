@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { genrePath, genresFor, parseGenre, serviceChips, serviceLabel, serviceTopPath, topChips, topPath, topSource, type ServiceTopRow } from './explore.ts';
 
-describe('Trending on your services', () => {
+describe('Trending on streaming', () => {
 	it('asks for one chip, with the services, region and genre', () => {
 		expect(topPath({ type: 'movies', chip: 'all', services: [8, 337], region: 'US' })).toBe('/explore/top?type=movies&chip=all&region=US&services=8%7C337');
 		expect(topPath({ type: 'shows', chip: 8, services: [8], region: 'GB', genre: 18 })).toBe('/explore/top?type=shows&chip=8&region=GB&services=8&genre=18');
