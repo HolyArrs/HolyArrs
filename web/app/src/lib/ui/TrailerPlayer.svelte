@@ -105,9 +105,17 @@
 		const go = () => {
 			if (gone || !old || swapped || asked) return;
 			// Too late (the relay took longer than the lead): aim further ahead.
+			// After a few misses, take the sound stream where the picture is and
+			// start it now (a tiny hitch beats falling back to mute).
 			if (old.currentTime > v.currentTime + 0.05) {
-				if (++tries > 3) return fail();
-				v.currentTime = old.currentTime + 0.8;
+				if (++tries <= 3) {
+					v.currentTime = old.currentTime + 0.8;
+					return;
+				}
+				v.currentTime = old.currentTime;
+				asked = performance.now();
+				v.muted = false;
+				v.play().catch(fail);
 				return;
 			}
 			const wait = () => {
@@ -131,8 +139,8 @@
 			if (gone) return;
 			gone = true;
 			dropUp();
+			// This trailer stays quiet; the person's sound choice is kept for the next one.
 			muted = true;
-			setSoundOn(false);
 		};
 		v.addEventListener('canplay', go);
 		v.addEventListener('playing', playing);
