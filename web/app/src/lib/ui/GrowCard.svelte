@@ -70,9 +70,6 @@
 	let shown = $state(false);
 	let logoFailed = $state(false);
 	let anim: Animation | null = null;
-	// The card's own width: the badge layer is drawn at the card's size and grows with it.
-	// svelte-ignore state_referenced_locally
-	const baseW = anchor.getBoundingClientRect().width || 1;
 	const ctl = new AbortController();
 	const reduce = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
@@ -90,6 +87,18 @@
 		return `inset(0 0 ${panel}px 0 round var(--r-card))`;
 	}
 
+	/** will-change only while it moves, so the card at rest is drawn crisp at its real size. */
+	function settle(a: Animation, done?: () => void) {
+		a.onfinish = () => {
+			if (anim === a) {
+				a.cancel();
+				anim = null;
+				if (card) card.style.willChange = '';
+			}
+			done?.();
+		};
+	}
+
 	function grow() {
 		const next = measure();
 		if (!next || !card) return;
@@ -97,6 +106,7 @@
 		shown = true;
 		if (reduce()) return;
 		anim?.cancel();
+		card.style.willChange = 'transform';
 		anim = card.animate(
 			[
 				// Only the picture at first: the panel below is clipped away, then opens as the card grows.
@@ -105,6 +115,7 @@
 			],
 			{ duration: GROW_MS, easing: 'cubic-bezier(.3, .1, .25, 1)', fill: 'both' }
 		);
+		settle(anim);
 	}
 
 	function shrink() {
@@ -113,6 +124,7 @@
 		const back = { x: a.left - g.left, y: a.top - g.top, scale: a.width / g.width };
 		const now = anim && anim.playState === 'running' ? getComputedStyle(card).transform : 'none';
 		anim?.cancel();
+		card.style.willChange = 'transform';
 		anim = card.animate([{ transform: now, clipPath: 'inset(0 0 0 0 round var(--r-card))' }, { transform: flipTransform(back), clipPath: clipTo(g) }], { duration: GROW_MS * 0.8, easing: 'cubic-bezier(.4, 0, .6, 1)', fill: 'both' });
 		anim.onfinish = () => ongone();
 	}
@@ -150,6 +162,9 @@
 		anim?.cancel();
 	});
 
+	// The sharp picture for the grown card's real size (w1280), over the card's own w780 until it loads.
+	let bigIn = $state(false);
+	const big = $derived(image && /\/artwork\/tmdb\/w780\//.test(image) ? image.replace('/w780/', '/w1280/') : null);
 	const shownLogo = $derived(logoFailed ? null : logo ? logo : meta?.logo ? sized(meta.logo, 'poster') : null);
 	function runtime(m?: number) {
 		if (!m) return '';
@@ -179,14 +194,13 @@
 >
 	<a class="media" href={href} tabindex="-1" aria-hidden="true">
 		{#if image}<img src={image} alt="" decoding="async" />{/if}
+		{#if big}<img src={big} alt="" decoding="async" class="big" class:in={bigIn} onload={() => (bigIn = true)} />{/if}
 		{#if trailerOk && sources.length}
-			<TrailerPlayer {sources} {title} repeat onplaying={() => (playing = true)} onfail={() => (playing = false)} onexpand={(o) => { openTheater({ kind, tmdb, title, source: o.source, time: o.time, rect: { left: o.rect.left, top: o.rect.top, width: o.rect.width, height: o.rect.height }, from: 'hover' }); onclose(); }} />
+			<TrailerPlayer {sources} {title} repeat onplaying={() => (playing = true)} onfail={() => (playing = false)} onended={() => (playing = false)} onexpand={(o) => { openTheater({ kind, tmdb, title, source: o.source, time: o.time, rect: { left: o.rect.left, top: o.rect.top, width: o.rect.width, height: o.rect.height }, from: 'hover' }); onclose(); }} />
 		{/if}
 		<span class="scrim" class:playing aria-hidden="true"></span>
-		<span class="name" class:playing class:lifted>
-			{#if shownLogo}<img class="logo" src={shownLogo} alt="" onerror={() => (logoFailed = true)} />{:else}<span class="word">{title}</span>{/if}
-		</span>
-		{#if badge && g}<span class="badge" class:playing style:width="{baseW}px" style:height="{baseW * 9 / 16}px" style:transform="scale({g.width / baseW})">{@render badge()}</span>{/if}
+		{#if shownLogo}<span class="name" class:playing class:lifted><img class="logo" src={shownLogo} alt="" onerror={() => (logoFailed = true)} /></span>{/if}
+		{#if badge && g}<span class="badge" class:playing>{@render badge()}</span>{/if}
 	</a>
 	<div class="panel">
 		<div class="buttons">
@@ -194,6 +208,7 @@
 			{#if onmore}<button type="button" class="more" aria-label="More info about {title}" title="More info" aria-haspopup="dialog" onclick={() => card && onmore(card.getBoundingClientRect())}><Icon name="chevronDown" size={20} /></button>
 			{:else if href}<a class="more" {href} aria-label="More about {title}" title="More info"><Icon name="chevronDown" size={20} /></a>{/if}
 		</div>
+		<p class="title" title={title}>{title}</p>
 		<!-- Both lines always take their room, so the panel's height is known before the facts arrive. -->
 		<p class="facts">
 			{#if meta?.certification}<span class="rating">{meta.certification}</span>{/if}
@@ -212,21 +227,21 @@
 		box-shadow: var(--grow-shadow), 0 0 0 1px var(--line);
 		transform-origin: 0 0;
 		visibility: hidden;
-		will-change: transform;
 	}
 	.ui-grow.shown { visibility: visible; }
 	.media { position: relative; display: block; container-type: inline-size; aspect-ratio: var(--wide-ratio, 16 / 9); background: var(--surface-2); overflow: hidden; }
 	.media > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+	.media > img.big { opacity: 0; transition: opacity 200ms ease; }
+	.media > img.big.in { opacity: 1; }
 	.scrim { position: absolute; inset: auto 0 0; height: 55%; background: linear-gradient(to top, rgb(0 0 0 / 0.62), transparent); pointer-events: none; transition: opacity 600ms ease; }
-	.name { position: absolute; left: 6%; right: 30%; bottom: 13%; z-index: 2; display: flex; align-items: flex-end; pointer-events: none; transition: transform 600ms var(--ease-out), opacity 600ms ease; transform-origin: left bottom; }
+	.name { position: absolute; left: 6%; right: 30%; bottom: 13%; z-index: 2; display: flex; align-items: flex-end; pointer-events: none; transition: opacity 300ms ease-out; }
 	.name.lifted { bottom: 26%; }
-	.name.playing { opacity: 0; transform: scale(0.9); transition-delay: 1.2s; }
-	.badge { transition: opacity 600ms ease 1.2s; }
-	.badge.playing { opacity: 0; }
+	.name.playing, .badge.playing { opacity: 0; }
+	.badge { transition: opacity 300ms ease-out; }
 	.scrim.playing { opacity: 0.5; }
 	.logo { max-width: 100%; max-height: 22cqw; width: auto; height: auto; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 2px 8px rgb(0 0 0 / 0.5)); }
-	.word { color: #fff; font-family: var(--font-display, inherit); font-size: max(13px, 7.2cqw); font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; text-shadow: 0 1px 10px rgb(0 0 0 / 0.55); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-	.badge { position: absolute; left: 0; top: 0; z-index: 3; container: art / inline-size; pointer-events: none; transform-origin: 0 0; }
+	/* The badges at their native size on the grown picture (no scale). */
+	.badge { position: absolute; inset: 0; z-index: 3; container: art / inline-size; pointer-events: none; }
 	.panel { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px 14px; opacity: 0; transform: translateY(-6px); }
 	.shown .panel { animation: panel-in 240ms var(--ease-out) 90ms both; }
 	@keyframes panel-in { to { opacity: 1; transform: none; } }
@@ -236,6 +251,7 @@
 	.more { flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; color: var(--text); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--text) 40%, transparent); transition: box-shadow var(--dur-fast) ease, background-color var(--dur-fast) ease; }
 	.more:hover { box-shadow: inset 0 0 0 2px var(--text); background: var(--surface-2); }
 	.more:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.title { margin: 2px 0 -4px; font: var(--t-headline); letter-spacing: -0.01em; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.facts, .tags { min-height: 18px; }
 	.facts { display: flex; align-items: center; gap: 8px; font: var(--t-footnote); color: var(--text-muted); font-variant-numeric: tabular-nums; }
 	.rating { padding: 0 5px; border: 1px solid color-mix(in srgb, var(--text) 45%, transparent); border-radius: 3px; color: var(--text); font-size: 11px; line-height: 16px; }
@@ -244,6 +260,5 @@
 	@media (prefers-reduced-motion: reduce) {
 		.shown .panel { animation: none; opacity: 1; transform: none; }
 		.name, .scrim { transition: opacity 200ms linear; }
-		.name.playing { transform: none; }
-	}
+			}
 </style>

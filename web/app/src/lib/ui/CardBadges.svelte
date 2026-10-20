@@ -55,14 +55,14 @@
 	/* Status circle: solid fill, white glyph (amber carries dark ink). */
 	.mark {
 		right: 8px; top: 8px;
-		width: 24px; height: 24px;
+		width: 28px; height: 28px;
 		display: grid; place-items: center;
 		border-radius: 50%;
 		color: var(--mark-ink);
 		box-shadow: 0 0 0 1.5px var(--mark-ring), 0 1px 4px rgb(0 0 0 / 35%);
 	}
-	.mark :global(svg) { width: 14px; height: 14px; }
-	.mark.downloading :global(svg) { width: 20px; height: 20px; }
+	.mark :global(svg) { width: 16px; height: 16px; }
+	.mark.downloading :global(svg) { width: 23px; height: 23px; }
 	.available, .partial { background: var(--mark-have); }
 	.downloading { background: var(--mark-dl); }
 	.requested { background: var(--mark-ask); color: var(--mark-ask-ink); }
@@ -72,12 +72,12 @@
 	.fresh {
 		left: 50%; bottom: 0; transform: translateX(-50%);
 		max-width: calc(100% - 12px);
-		height: 18px; padding: 0 7px;
+		height: 17px; padding: 0 6px;
 		display: inline-flex; align-items: center;
-		border-radius: 3px 3px 0 0;
+		border-radius: 2px 2px 0 0;
 		background: var(--accent-fill);
 		color: var(--accent-ink, #fff);
-		font: 700 11.5px/1 var(--font-text, inherit);
+		font: 700 11px/1 var(--font-ui);
 		letter-spacing: 0.015em;
 		white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 	}
@@ -89,14 +89,14 @@
 		border-radius: 0 0 2px 0;
 		background: var(--accent-fill);
 		color: var(--accent-ink, #fff);
-		font: 800 6.5px/1 var(--font-text, inherit);
+		font: 800 6.5px/1 var(--font-ui);
 		letter-spacing: 0.08em;
 	}
 	.top10 b { font-size: 12px; font-weight: 800; letter-spacing: -0.02em; line-height: 0.9; font-variant-numeric: tabular-nums; }
 	.sm.mark { width: 20px; height: 20px; right: 6px; top: 6px; }
 	.sm.mark :global(svg) { width: 12px; height: 12px; }
 	.sm.mark.downloading :global(svg) { width: 17px; height: 17px; }
-	.sm.fresh { height: 16px; font-size: 10.5px; padding: 0 6px; }
+	.sm.fresh { height: 16px; font-size: 10px; padding: 0 5px; }
 	.sm.top10 { width: 18px; height: 22px; font-size: 5.5px; }
 	.sm.top10 b { font-size: 10px; }
 	@media (forced-colors: active) {

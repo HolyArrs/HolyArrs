@@ -166,10 +166,10 @@
 			{#if !image || failed || !loaded}<span class="ph" aria-hidden="true">{#if !cover}<span class="ph-ic"><Icon name={kindIcon} size={20} /></span><span class="ph-t">{title}</span>{/if}</span>{/if}
 			{#if image && !failed && near()}<img src={art} class:in={loaded} alt="" loading="lazy" decoding="async" use:whenLoaded={() => (loaded = true)} onerror={() => (failed = true)} />{/if}
 			{#if cover}
-				<span class="scrim" aria-hidden="true"></span>
-				<span class="name" class:lifted={!!strip && strip.kind !== 'top10'} aria-hidden="true">
-					{#if shownLogo}<img class="logo" src={shownLogo} alt="" onerror={() => (logoFailed = true)} />{:else}<span class="word">{title}</span>{/if}
-				</span>
+				{#if shownLogo}
+					<span class="scrim" aria-hidden="true"></span>
+					<span class="name" class:lifted={!!strip && strip.kind !== 'top10'} aria-hidden="true"><img class="logo" src={shownLogo} alt="" onerror={() => (logoFailed = true)} /></span>
+				{/if}
 			{/if}
 			{#if badges.length || status}
 				<span class="over" class:bottom={badgesAt === 'bottom'} class:pushed={badgesAt === 'top' && (!!owned || strip?.kind === 'top10')} class:lifted={badgesAt === 'bottom' && !!strip && strip.kind !== 'top10'}>
@@ -183,11 +183,13 @@
 			{/if}
 		</span>
 		{#if !cover}
-			<span class="t">{title}</span>
+			<span class="t" title={title}>{title}</span>
 			{#if typedWord || sub}<span class="s">{#if typedWord}<span class="ty">{typedWord}</span>{#if sub}<span class="dot" aria-hidden="true">·</span>{/if}{/if}{sub ?? ''}</span>{/if}
 			{#if meta}<span class="m">{meta}</span>{/if}
-		{:else if typedWord}
-			<span class="s under" aria-hidden="true">{typedWord}{#if sub}<span class="dot">·</span>{sub}{/if}</span>
+		{:else}
+			<!-- Title cards: the name always under the art (many titles have no logo), then the type line. -->
+			<span class="t under" title={title} aria-hidden="true">{title}</span>
+			{#if typedWord || sub}<span class="s" aria-hidden="true">{#if typedWord}{typedWord}{#if sub}<span class="dot">·</span>{/if}{/if}{sub ?? ''}</span>{/if}
 		{/if}
 	</svelte:element>
 	{#if action}<span class="act" class:below={!!owned}>{@render action()}</span>{/if}
@@ -222,19 +224,19 @@
 	.over { position: absolute; left: 8px; top: 8px; right: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
 	.low .ph { padding-bottom: 40px; }
 	.over.bottom { top: auto; bottom: 8px; }
-	.over.pushed { top: 38px; }
+	.over.pushed { top: 42px; }
 	.over.lifted { bottom: 30px; }
 	.line { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgb(0 0 0 / 35%); }
 	.line i { display: block; height: 100%; background: var(--accent); transition: width var(--dur-slow) var(--ease-out); }
 	.line.done i { background: var(--ok); }
 	.t { font: var(--t-subhead); font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.s .dot { opacity: 0.7; margin: 0 0.3em; }
-	.s.under { display: block; padding-top: 6px; }
+	.t.under { display: block; padding-top: 8px; }
 	.s, .m { color: var(--text-muted); font: var(--t-footnote); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.m { font-variant-numeric: tabular-nums; }
 	.act { position: absolute; right: 8px; top: 8px; }
 	/* Under the status circle, never on it. */
-	.act.below { top: 38px; }
+	.act.below { top: 42px; }
 	/* Title cards: the logo or name over a bottom scrim, nothing below; the grown card takes the card's place. */
 	.cover .art { margin-bottom: 0; }
 	.big .art { border-radius: var(--r-panel); }
@@ -243,7 +245,6 @@
 	.name { position: absolute; left: 6%; right: 30%; bottom: 13%; z-index: 1; display: flex; align-items: flex-end; pointer-events: none; }
 	.name.lifted { bottom: 26%; }
 	.logo { max-width: 100%; max-height: 22cqw; width: auto; height: auto; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 2px 8px rgb(0 0 0 / 0.5)); }
-	.word { color: #fff; font-family: var(--font-display); font-size: max(13px, 7.2cqw); font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; text-shadow: 0 1px 10px rgb(0 0 0 / 0.55); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
 		.cover a.hit:hover .art { transform: none; }
 		.cover a.hit:hover img { transform: none; }

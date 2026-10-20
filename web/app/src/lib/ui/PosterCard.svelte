@@ -145,7 +145,7 @@
 			<CardBadges fresh={strip} {owned} size={shape === 'poster' ? 'md' : 'sm'} />
 			{#if progress !== undefined}<span class="prog"><ProgressBar value={progress} label="{title} progress" size="sm" on="art" /></span>{/if}
 		</span>
-		<span class="t">{title}</span>
+		<span class="t" title={title}>{title}</span>
 		{#if typedWord || sub}<span class="s">{#if typedWord}<span class="ty">{typedWord}</span>{#if sub}<span class="dot" aria-hidden="true">·</span>{/if}{/if}{sub ?? ''}</span>{/if}
 	</svelte:element>
 	{#if action && showAction}<span class="act-layer" class:hover-only={actionOnHover} class:over-strip={!!strip && strip.kind !== 'top10'}><span class="act">{@render action()}</span></span>{/if}

@@ -13,9 +13,9 @@ import { to } from './paths.ts';
 // (measured: 20 Explore visits kept 120,000 DOM nodes and 1,700 listeners).
 const tmdb = /^https:\/\/image\.tmdb\.org\/t\/p\/(?:w\d+|original)\/([A-Za-z0-9_-]+\.(?:jpg|png|webp))$/;
 
-const width = { poster: 342, backdrop: 780 } as const;
+const width = { poster: 342, backdrop: 780, large: 1280 } as const;
 
-export function sized(url: string | null | undefined, as: 'poster' | 'backdrop'): string {
+export function sized(url: string | null | undefined, as: 'poster' | 'backdrop' | 'large'): string {
 	const m = url ? tmdb.exec(url) : null;
 	return m ? to(`/api/v1/artwork/tmdb/w${width[as]}/${m[1]}`) : (url ?? '');
 }

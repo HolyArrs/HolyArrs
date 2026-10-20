@@ -70,3 +70,16 @@ describe('growPlacement', () => {
 		expect(phone.left).toBeGreaterThanOrEqual(8);
 	});
 });
+
+describe('the grown card at rest', () => {
+	it('sits on whole pixels and its start transform lands exactly on the card', () => {
+		const art = { left: 100.4, top: 300.6, width: 183.3, height: 103.1 };
+		const g = growPlacement(art, 120, { width: 1440, height: 900 });
+		for (const v of [g.left, g.top, g.width, g.mediaHeight]) expect(Number.isInteger(v)).toBe(true);
+		expect(g.from.scale).toBeCloseTo(art.width / g.width, 6);
+		// The inverse FLIP: grown rect scaled by from.scale and moved by from.x/y is the card.
+		expect(g.left + g.from.x).toBeCloseTo(art.left, 6);
+		expect(g.top + g.from.y).toBeCloseTo(art.top, 6);
+		expect(g.width * g.from.scale).toBeCloseTo(art.width, 6);
+	});
+});
