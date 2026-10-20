@@ -303,6 +303,9 @@
 		void savedDefaults.load();
 	});
 
+	/** Movies and shows draw wide title cards; artists keep their square cards. */
+	const wideKind = (k: string): boolean => k === 'movie' || k === 'show';
+
 	/** A row shows at most this many cards. */
 	const rowCap = 20;
 
@@ -437,12 +440,20 @@
 					<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} typePill={type === 'all'} initial={top10} />
 				{:else}
 				<div class="row-wrap" data-row={row.type ?? row.id} data-title-layer={row.titleLayer}>
-				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.wide ? 'var(--release-item)' : 'var(--explore-item)'} tools={row.id === 'services' ? serviceTools : undefined}>
+				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.cards.some((c) => wideKind(c.kind)) ? 'var(--title-item)' : 'var(--explore-item)'} tools={row.id === 'services' ? serviceTools : undefined}>
 					{#each row.cards.map(live) as c (c.key)}
 						{@const act = cardAction(c, { manage, ask: mayAsk })}
 						{@const mark = ownedMark(c, ownedTitle(c, owned), who)}
-						{#if row.wide}
-							<WideCard title={c.name} href={cardHref(c)} image={c.wide} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} fresh={c.fresh} owned={mark} typePill={type === 'all' ? c.kind : undefined} preview={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: cardTmdb(c), year: c.year } : undefined} />
+						{#if row.wide || wideKind(c.kind)}
+							<WideCard cover title={c.name} href={cardHref(c)} image={c.wide ?? c.image} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} fresh={c.fresh} owned={mark} typePill={type === 'all' ? c.kind : undefined} preview={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: cardTmdb(c), year: c.year } : undefined}>
+								{#snippet growAction()}
+									{#if act && cardTmdb(c)}
+										<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={asking === c.key || undefined} onclick={() => { count(row.type ?? row.id, 'ask', row.titleLayer); void quick(c, act); }} />
+									{:else}
+										<IconButton icon="play" label="Open {c.name}" variant="glass" size="lg" href={cardHref(c) ?? searchHref(c)} />
+									{/if}
+								{/snippet}
+							</WideCard>
 						{:else}
 						<PosterCard
 							title={c.name}
@@ -486,7 +497,7 @@
 {/if}
 
 <style>
-	.explore { --explore-item: 168px; display: flex; flex-direction: column; gap: 32px; padding-bottom: 48px; }
+	.explore { container: explore / inline-size; --title-item: calc((100cqi - 5 * var(--shelf-gap)) / 5.5); --explore-item: 168px; display: flex; flex-direction: column; gap: 32px; padding-bottom: 48px; }
 	.explore > :global(.ui-head) { margin-bottom: -8px; }
 	/* The type switch: in the page under the title; once scrolled past it floats as a glass pill under the top bar. */
 	.types-mark { height: 0; margin-top: -32px; }
@@ -514,5 +525,5 @@
 	.row-wrap { display: contents; }
 	.loading { display: flex; flex-direction: column; gap: 14px; }
 	.sk-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--shelf-gap); max-height: 250px; overflow: hidden; margin-bottom: 16px; }
-	@media (max-width: 767px) { .explore { --explore-item: 54vw; gap: 26px; } }
+	@media (max-width: 767px) { .explore { --explore-item: 54vw; --title-item: calc((100cqi - var(--shelf-gap)) / 1.6 / .78); gap: 26px; } }
 </style>

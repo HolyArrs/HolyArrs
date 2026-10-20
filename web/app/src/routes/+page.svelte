@@ -100,6 +100,14 @@
 		return parts.join(', ') + '.';
 	}
 
+	/** Wide title cards: a Library title's backdrop, logo and the grown card's TMDB id. */
+	function wideOf(id: number | undefined) {
+		const t = id === undefined ? undefined : byId.get(id);
+		const kind: 'movie' | 'show' | null = t?.kind === 'show' ? 'show' : t?.kind === 'movie' ? 'movie' : null;
+		const tmdb = t?.ids?.tmdb;
+		return { backdrop: t?.backdrop ?? null, logo: t?.logo ?? null, preview: kind && tmdb ? { kind, tmdb, year: t?.year } : null };
+	}
+
 	function titleHref(id: number): string {
 		return to(`/library/${id}`);
 	}
@@ -275,9 +283,10 @@
 		{/if}
 
 		{#if rows[0].cards.length}
-			<Shelf title="Coming soon" subtitle="The next 30 days" href={to('/calendar')} item="var(--release-item)">
+			<Shelf title="Coming soon" subtitle="The next 30 days" href={to('/calendar')} item="var(--title-item)">
 				{#each rows[0].cards as c (c.key)}
-					<WideCard title={c.name} kind={c.kind} href={c.titleId ? titleHref(c.titleId) : undefined} image={c.wide} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} />
+					{@const w = wideOf(c.titleId)}
+					<WideCard cover title={c.name} kind={c.kind} href={c.titleId ? titleHref(c.titleId) : undefined} image={c.wide ?? w.backdrop} logo={w.logo} preview={w.preview} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} />
 				{/each}
 			</Shelf>
 		{/if}
@@ -285,10 +294,15 @@
 		<Top10Row owned={ownedIndex(titles)} {who} />
 
 		{#if rows[1].cards.length}
-			<Shelf title="Recently added" href={to('/library')}>
+			<Shelf title="Recently added" href={to('/library')} item={rows[1].cards.some((c) => c.kind !== 'artist') ? 'var(--title-item)' : undefined}>
 				{#each rows[1].cards as c (c.key)}
 					{@const pill = c.status === 'in_library' ? null : cardPill(c, who)}
+					{@const w = wideOf(c.titleId)}
+					{#if c.kind !== 'artist'}
+					<WideCard cover title={c.name} kind={c.kind} href={titleHref(c.titleId!)} image={w.backdrop ?? c.image} logo={w.logo} preview={w.preview} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" status={pill?.kind} statusLabel={pill?.label} vtName={c.vtName} />
+					{:else}
 					<PosterCard title={c.name} kind={c.kind} href={titleHref(c.titleId!)} image={c.image} subtitle={c.subtitle} badges={c.badges} status={pill?.kind} statusLabel={pill?.label} vtName={c.vtName} />
+					{/if}
 				{/each}
 			</Shelf>
 		{/if}
@@ -326,10 +340,15 @@
 		{/if}
 
 		{#if manager && rows[2].cards.length}
-			<Shelf title="Missing" subtitle="Titles you keep up to date that have no file yet" href={to('/library?show=missing&layout=list')}>
+			<Shelf title="Missing" subtitle="Titles you keep up to date that have no file yet" href={to('/library?show=missing&layout=list')} item={rows[2].cards.some((c) => c.kind !== 'artist') ? 'var(--title-item)' : undefined}>
 				{#each rows[2].cards as c (c.key)}
 					{@const pill = cardPill(c, who)}
+					{@const w = wideOf(c.titleId)}
+					{#if c.kind !== 'artist'}
+					<WideCard cover title={c.name} kind={c.kind} href={titleHref(c.titleId!)} image={w.backdrop ?? c.image} logo={w.logo} preview={w.preview} subtitle={c.subtitle} badgesAt="bottom" status={pill?.kind} statusLabel={pill?.label} vtName={c.vtName} />
+					{:else}
 					<PosterCard title={c.name} href={titleHref(c.titleId!)} image={c.image} subtitle={c.subtitle} status={pill?.kind} statusLabel={pill?.label} vtName={c.vtName} />
+					{/if}
 				{/each}
 			</Shelf>
 		{/if}
@@ -376,7 +395,7 @@
 </div>
 
 <style>
-	.home { display: flex; flex-direction: column; gap: 36px; padding-bottom: 48px; }
+	.home { container: home / inline-size; --title-item: calc((100cqi - 5 * var(--shelf-gap)) / 5.5); display: flex; flex-direction: column; gap: 36px; padding-bottom: 48px; }
 	.home > :global(.ui-head) { margin-bottom: -12px; }
 	.banner { margin-bottom: -16px; }
 	.loading { display: flex; flex-direction: column; gap: 14px; }
@@ -428,4 +447,5 @@
 
 	@media (max-width: 900px) { .setup { grid-template-columns: 1fr; } }
 	@media (max-width: 767px) { .home { gap: 28px; } }
+	@media (max-width: 767px) { .home { --title-item: calc((100cqi - var(--shelf-gap)) / 1.6 / .78); } }
 </style>

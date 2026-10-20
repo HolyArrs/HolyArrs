@@ -727,7 +727,8 @@ export function serverRow(r: ServerRow): ExploreRow & { wide: boolean; type: str
 		...(r.title_layer ? { titleLayer: r.title_layer } : {}),
 		wide: !!r.wide,
 		cards: r.items.map((d) => {
-			const c = { ...discoverCard(d, r.id), ...(r.wide ? { wide: d.backdrop ?? null } : {}) };
+			// Every movie and show row draws wide title cards now: keep the backdrop on each card.
+			const c = { ...discoverCard(d, r.id), wide: d.backdrop ?? null };
 			return { ...c, badges: factualBadges(c.badges) };
 		}),
 		keep: r.type === 'services' || r.type === 'top10'

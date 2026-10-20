@@ -11,6 +11,10 @@
 	import { shownFresh, type Fresh } from '../fresh.ts';
 	import { prefetchTrailer } from '../autoplay.svelte.ts';
 	import { dwell, finePointer, HOVER_DELAY } from '../trailer.ts';
+	import GrowCard from './GrowCard.svelte';
+	import { richMetadata } from './TitleHero.svelte';
+	import { api } from '../api.ts';
+	import { GROW_DELAY, logoQueue } from '../grow.ts';
 
 	// 16:9 card for episodes and downloads: progress line along the art's
 	// bottom edge, overlay badges, title and a meta line below.
@@ -33,7 +37,10 @@
 		preview,
 		fresh,
 		owned,
-		typePill
+		typePill,
+		cover = false,
+		logo,
+		growAction
 	}: {
 		/** The server's one freshness strip (bottom centre of the art). */
 		fresh?: Fresh | null;
@@ -62,15 +69,37 @@
 		badgesAt?: 'top' | 'bottom';
 		/** Desktop: after a short hover or keyboard focus, open the expanded card (trailer, genres). */
 		preview?: { kind: 'movie' | 'show'; tmdb: string; year?: number } | null;
+		/**
+		 * Title cards (Explore and Home rows of movies and shows): the logo or
+		 * name sits over the picture, nothing below, and a hover grows the
+		 * card itself in place (GrowCard) instead of opening a hover card.
+		 */
+		cover?: boolean;
+		/** The title logo (transparent PNG); else one is looked up as the card comes into view. */
+		logo?: string | null;
+		/** The grown card's one-tap Ask/Add. */
+		growAction?: Snippet;
 	} = $props();
-	// The expanded card, as on PosterCard.
+	// The expanded card: a hover card (episodes, downloads) or the card grown in place (cover).
 	let root = $state<HTMLElement>();
+	let artEl = $state<HTMLElement>();
 	let open = $state(false);
-	const opener = dwell(HOVER_DELAY, () => (open = true));
-	const closer = dwell(140, () => (open = false));
+	/** The grown card is shrinking back onto this card. */
+	let leaving = $state(false);
+	// A card is a title card or not for its whole life: the delays are read once.
+	// svelte-ignore state_referenced_locally
+	const opener = dwell(cover ? GROW_DELAY : HOVER_DELAY, () => {
+		if (dragging()) return;
+		leaving = false;
+		open = true;
+	});
+	// svelte-ignore state_referenced_locally
+	const closer = dwell(cover ? 60 : 140, () => (cover ? (leaving = true) : (open = false)));
+	const dragging = () => !!root?.closest('.dragging');
 	function enter() {
-		if (!preview || !finePointer()) return;
+		if (!preview || !finePointer() || dragging()) return;
 		closer.cancel();
+		if (open && leaving) leaving = false;
 		if (!open) {
 			opener.start();
 			prefetchTrailer(preview.kind, preview.tmdb);
@@ -84,8 +113,27 @@
 		opener.cancel();
 		closer.cancel();
 		open = false;
+		leaving = false;
 	}
 	$effect(() => () => shut());
+	// Cover cards: the logo, looked up gently (a few at a time) once the card is on screen.
+	let foundLogo = $state<string | null>(null);
+	$effect(() => {
+		if (!cover || logo || !preview || !root || typeof IntersectionObserver === 'undefined') return;
+		const p = preview;
+		let done = false;
+		const io = new IntersectionObserver(([e]) => {
+			if (!e.isIntersecting || done) return;
+			done = true;
+			io.disconnect();
+			void logoQueue(() => richMetadata(api.get, p.kind, p.tmdb)).then((m) => (foundLogo = m?.logo ?? null));
+		}, { rootMargin: '0px 200px' });
+		io.observe(root);
+		return () => io.disconnect();
+	});
+	let logoFailed = $state(false);
+	const shownLogo = $derived(logoFailed ? null : sized(logo ?? foundLogo, 'poster') || null);
+	const art = $derived(image ? sized(image, 'backdrop') : null);
 	let failed = $state(false);
 	// The name tile shows until the picture has loaded; in a row the picture
 	// waits until the row is near the screen.
@@ -99,11 +147,17 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="ui-wide" style:width bind:this={root} onpointerenter={enter} onpointerleave={leave} onfocusin={(e) => (e.target as HTMLElement)?.matches?.(':focus-visible') && enter()} onfocusout={(e) => !root?.contains(e.relatedTarget as Node) && leave()} onpointerdown={() => opener.cancel()}>
-	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} use:press={'card'}>
-		<span class="art" class:low={badgesAt === 'bottom' && (badges.length || status)} use:viewTransitionName={vtName}>
-			{#if !image || failed || !loaded}<span class="ph" aria-hidden="true"><span class="ph-ic"><Icon name={kindIcon} size={20} /></span><span class="ph-t">{title}</span></span>{/if}
-			{#if image && !failed && near()}<img src={sized(image, 'backdrop')} class:in={loaded} alt="" loading="lazy" decoding="async" use:whenLoaded={() => (loaded = true)} onerror={() => (failed = true)} />{/if}
+<div class="ui-wide" class:cover class:grown={cover && open} style:width bind:this={root} onpointerenter={enter} onpointerleave={leave} onfocusin={(e) => (e.target as HTMLElement)?.matches?.(':focus-visible') && enter()} onfocusout={(e) => !root?.contains(e.relatedTarget as Node) && leave()} onpointerdown={() => opener.cancel()}>
+	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} use:press={'card'} aria-label={cover ? [title, subtitle].filter(Boolean).join(', ') : undefined}>
+		<span class="art" class:low={badgesAt === 'bottom' && (badges.length || status)} use:viewTransitionName={vtName} bind:this={artEl}>
+			{#if !image || failed || !loaded}<span class="ph" aria-hidden="true">{#if !cover}<span class="ph-ic"><Icon name={kindIcon} size={20} /></span><span class="ph-t">{title}</span>{/if}</span>{/if}
+			{#if image && !failed && near()}<img src={art} class:in={loaded} alt="" loading="lazy" decoding="async" use:whenLoaded={() => (loaded = true)} onerror={() => (failed = true)} />{/if}
+			{#if cover}
+				<span class="scrim" aria-hidden="true"></span>
+				<span class="name" class:lifted={!!strip} aria-hidden="true">
+					{#if shownLogo}<img class="logo" src={shownLogo} alt="" onerror={() => (logoFailed = true)} />{:else}<span class="word">{title}</span>{/if}
+				</span>
+			{/if}
 			{#if badges.length || status}
 				<span class="over" class:bottom={badgesAt === 'bottom'} class:pushed={badgesAt === 'top' && (!!owned || !!typePill)} class:lifted={badgesAt === 'bottom' && !!strip}>
 					{#if status}<StatusPill kind={status} label={statusLabel} percent={pct} on="art" testid={statusTestid} />{/if}
@@ -115,9 +169,11 @@
 				<span class="line" role="progressbar" aria-label="{title} progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)} class:done={pct >= 100}><i style="width: {pct}%"></i></span>
 			{/if}
 		</span>
-		<span class="t">{title}</span>
-		{#if subtitle}<span class="s">{subtitle}</span>{/if}
-		{#if meta}<span class="m">{meta}</span>{/if}
+		{#if !cover}
+			<span class="t">{title}</span>
+			{#if subtitle}<span class="s">{subtitle}</span>{/if}
+			{#if meta}<span class="m">{meta}</span>{/if}
+		{/if}
 	</svelte:element>
 	{#if action}<span class="act">{@render action()}</span>{/if}
 </div>
@@ -126,7 +182,9 @@
 	<CardBadges fresh={strip} owned={owned ?? null} typePill={typePill ?? null} />
 {/snippet}
 
-{#if open && preview && root}
+{#if open && preview && cover && artEl}
+	<GrowCard anchor={artEl} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} image={loaded && !failed ? art : null} logo={shownLogo} lifted={!!strip} {leaving} badge={marked ? wideBadges : undefined} action={growAction} onenter={() => { closer.cancel(); leaving = false; }} onleave={leave} onclose={shut} ongone={() => leaving && shut()} />
+{:else if open && preview && root}
 	<HoverPreview anchor={root} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} {image} badge={marked ? wideBadges : undefined} onenter={() => closer.cancel()} onleave={leave} onclose={shut} />
 {/if}
 
@@ -158,4 +216,16 @@
 	.s, .m { color: var(--text-muted); font: var(--t-footnote); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.m { font-variant-numeric: tabular-nums; }
 	.act { position: absolute; right: 8px; top: 8px; }
+	/* Title cards: the logo or name over a bottom scrim, nothing below; the grown card takes the card's place. */
+	.cover .art { margin-bottom: 0; }
+	.cover.grown .art { visibility: hidden; }
+	.scrim { position: absolute; inset: auto 0 0; height: 60%; background: linear-gradient(to top, rgb(0 0 0 / 0.66), rgb(0 0 0 / 0.18) 55%, transparent); pointer-events: none; }
+	.name { position: absolute; left: 6%; right: 30%; bottom: 13%; z-index: 1; display: flex; align-items: flex-end; pointer-events: none; }
+	.name.lifted { bottom: 26%; }
+	.logo { max-width: 100%; max-height: 22cqw; width: auto; height: auto; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 2px 8px rgb(0 0 0 / 0.5)); }
+	.word { color: #fff; font-family: var(--font-display); font-size: max(13px, 7.2cqw); font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; text-shadow: 0 1px 10px rgb(0 0 0 / 0.55); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+		.cover a.hit:hover .art { transform: none; }
+		.cover a.hit:hover img { transform: none; }
+	}
 </style>

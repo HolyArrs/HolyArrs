@@ -9,13 +9,14 @@ describe('server-built Explore', () => {
 		expect(headPath({ type: 'all' })).toBe('/explore/head?type=all');
 		expect(tailPath({ type: 'shows' }, 2)).toBe('/explore/tail?type=shows&page=2');
 	});
-	it('keeps wide pictures for Coming soon only', () => {
+	it('keeps the wide picture on every card (wide title cards)', () => {
 		const item = { tmdb_id: '1', kind: 'movie' as const, name: 'A', backdrop: 'b.jpg', poster: 'p.jpg', in_library: false };
 		const soon = serverRow({ id: 'coming_soon', type: 'coming_soon', title: 'Coming soon', wide: true, items: [item] });
 		expect(soon.wide).toBe(true);
 		expect(soon.cards[0].wide).toBe('b.jpg');
 		const other = serverRow({ id: 'best', type: 'best', title: 'Best new releases', items: [item] });
-		expect(other.cards[0].wide).toBeUndefined();
+		expect(other.wide).toBe(false);
+		expect(other.cards[0].wide).toBe('b.jpg');
 		expect(other.cards[0].ref).toBe('tmdb:1');
 	});
 	it('carries the server title, subtitle, layer and time zone', () => {
