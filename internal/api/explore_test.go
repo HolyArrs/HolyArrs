@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -224,5 +225,51 @@ func TestExploreKidPoolFiltered(t *testing.T) {
 	}
 	if !p.Kid {
 		t.Fatal("pool not marked Kid")
+	}
+}
+
+// The head answers in one request from the stored pool, and a missing
+// pool answers cold-start rows at once and queues a build.
+func TestExploreHeadAndTail(t *testing.T) {
+	a, _, _ := exploreRig(t)
+	srv := httptest.NewServer(a.Handler())
+	defer srv.Close()
+	get := func(path string) map[string]any {
+		resp, err := http.Get(srv.URL + path)
+		if err != nil || resp.StatusCode != 200 {
+			t.Fatalf("%s: %v %v", path, err, resp.StatusCode)
+		}
+		defer resp.Body.Close()
+		var out map[string]any
+		_ = json.NewDecoder(resp.Body).Decode(&out)
+		return out
+	}
+	cold := get("/api/v1/explore/head?type=all")
+	if cold["building"] != true {
+		t.Fatalf("no pool yet, building = %v", cold["building"])
+	}
+	if k, ok := a.nextDue(); !ok || k.member != 1 || k.sw != "all" {
+		t.Fatal("head did not queue a pool build")
+	}
+	if err := a.buildPool(context.Background(), 1, "all"); err != nil {
+		t.Fatal(err)
+	}
+	h := get("/api/v1/explore/head?type=all")
+	if h["building"] != false || len(h["head"].([]any)) == 0 {
+		t.Fatalf("head %v", h)
+	}
+	seen := map[string]bool{}
+	for _, r := range h["head"].([]any) {
+		for _, it := range r.(map[string]any)["items"].([]any) {
+			k := it.(map[string]any)["kind"].(string) + it.(map[string]any)["tmdb_id"].(string)
+			if seen[k] {
+				t.Fatalf("%s twice in the head", k)
+			}
+			seen[k] = true
+		}
+	}
+	tail := get("/api/v1/explore/tail?type=all&page=0")
+	if _, ok := tail["rows"].([]any); !ok {
+		t.Fatalf("tail %v", tail)
 	}
 }

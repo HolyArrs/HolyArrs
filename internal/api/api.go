@@ -276,6 +276,9 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/discover", a.discoverRow)
 	m.HandleFunc("GET /api/v1/watch-services", a.watchServices)
 	m.HandleFunc("GET /api/v1/top10", a.top10List)
+	m.HandleFunc("GET /api/v1/explore/head", a.exploreHead)
+	m.HandleFunc("GET /api/v1/explore/tail", a.exploreTail)
+	m.HandleFunc("POST /api/v1/explore/counts", a.exploreCounts)
 	m.HandleFunc("GET /api/v1/music-trending", a.musicTrending)
 	m.HandleFunc("GET /api/v1/music-trending/art/{kind}/{mbid}", a.musicTrendArt)
 	if a.s.Secrets != nil {

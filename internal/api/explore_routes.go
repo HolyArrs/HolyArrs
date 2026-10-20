@@ -1,0 +1,321 @@
+package api
+
+import (
+	"context"
+	"database/sql"
+	"encoding/json"
+	"net/http"
+	"strconv"
+	"strings"
+
+	"github.com/CoderLuii/holyarrs/internal/explore"
+	"github.com/CoderLuii/holyarrs/internal/metadata"
+)
+
+// exploreRowView is one row of the head or tail, with the Library joined.
+type exploreRowView struct {
+	ID    string             `json:"id"`
+	Type  string             `json:"type"`
+	Title string             `json:"title"`
+	Wide  bool               `json:"wide,omitempty"`
+	Items []discoverItemView `json:"items"`
+}
+
+// exploreSwitch reads ?type=: all (default), movies or shows.
+func exploreSwitch(v string) (string, bool) {
+	switch v {
+	case "", "all":
+		return "all", true
+	case "movies", "shows":
+		return v, true
+	}
+	return "", false
+}
+
+// explorePageFor assembles the member's page: today's pool, else the
+// newest older one, else cold-start rows from the list cache. It never
+// waits for outside calls; a missing or stale pool is queued instead.
+func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64, sw, topKind, topRegion string) (explore.Page, map[string]any, bool, error) {
+	now := a.exploreNow()
+	day := explore.Day(now)
+	key := strconv.FormatInt(member, 10) + "|" + sw + "|" + topKind + "|" + topRegion
+	e := &a.explore
+	pool, stale, err := a.readPool(ctx, member, sw, day, false)
+	if err != nil {
+		return explore.Page{}, nil, false, err
+	}
+	building := false
+	if pool == nil || stale {
+		building = true
+		a.queuePool(poolKey{member, sw}, now, false)
+	}
+	if pool == nil {
+		if pool, _, err = a.readPool(ctx, member, sw, day, true); err != nil {
+			return explore.Page{}, nil, false, err
+		}
+	}
+	if pool != nil {
+		e.mu.Lock()
+		got, ok := e.pages[key]
+		e.mu.Unlock()
+		if ok && now.Sub(got.at) < explorePageTTL && got.built.Equal(pool.Built) {
+			return got.page, got.top10, building, nil
+		}
+	}
+	if pool == nil {
+		m, err := a.loadMember(ctx, member)
+		if err != nil && err != sql.ErrNoRows {
+			return explore.Page{}, nil, false, err
+		}
+		in := explore.Input{Member: member, Kid: m.kid, Switch: sw, Now: now, Services: m.services, Region: m.region}
+		if m.kid {
+			in.Allow = a.kidAllow(ctx, m.maxRating)
+		}
+		cold, err := explore.Build(ctx, exploreSource{a: a, cacheOnly: true}, in)
+		if err != nil {
+			return explore.Page{}, nil, false, err
+		}
+		pool = &cold
+	}
+	var top10 map[string]any
+	var topItems []explore.Item
+	if a.s.Top10 != nil && topKind != "" {
+		lang := ""
+		if topRegion == "global" {
+			lang = "en"
+		}
+		if status, _, body := a.top10Answer(ctx, r, topKind, topRegion, lang); status == http.StatusOK {
+			top10 = body
+			for _, v := range body["items"].([]top10View) {
+				if v.TMDBID != "" {
+					topItems = append(topItems, explore.Item{TMDBID: v.TMDBID, Kind: v.Kind, Name: v.Name})
+				}
+			}
+		}
+	}
+	pg := explore.Assemble(*pool, topItems, member)
+	e.mu.Lock()
+	if e.pages == nil || len(e.pages) >= 1000 {
+		e.pages = map[string]explorePage{}
+	}
+	if !building || pool.Date == day {
+		e.pages[key] = explorePage{at: now, built: pool.Built, page: pg, top10: top10}
+	}
+	e.mu.Unlock()
+	return pg, top10, building, nil
+}
+
+// exploreViews joins rows with the Library; a Kid's rows are filtered
+// again here (the response-stage Kid limit), and rows that fall under
+// their minimum go.
+func (a *API) exploreViews(ctx context.Context, r *http.Request, rows []explore.Row) ([]exploreRowView, error) {
+	if max := a.kidMax(r); max != "" {
+		var all []metadata.DiscoverItem
+		for _, row := range rows {
+			for _, it := range row.Items {
+				all = append(all, metadata.DiscoverItem{TMDBID: it.TMDBID, Kind: it.Kind})
+			}
+		}
+		ok := map[string]bool{}
+		for _, it := range a.kidItems(ctx, max, all, 0) {
+			ok[it.Kind+":"+it.TMDBID] = true
+		}
+		rows = explore.Page{Head: rows}.Filter(func(it explore.Item) bool { return ok[it.Key()] }).Head
+	}
+	me := a.person(r).UserID
+	out := []exploreRowView{}
+	for _, row := range rows {
+		items := make([]metadata.DiscoverItem, 0, len(row.Items))
+		for _, it := range row.Items {
+			g := it.Genres
+			if g == nil {
+				g = []string{}
+			}
+			items = append(items, metadata.DiscoverItem{TMDBID: it.TMDBID, Kind: it.Kind, Name: it.Name, Year: it.Year, Poster: it.Poster,
+				Backdrop: it.Backdrop, Overview: it.Overview, Genres: g})
+		}
+		items, err := a.dropNeverAdd(ctx, items)
+		if err != nil {
+			return nil, err
+		}
+		joined, err := a.joinItems(ctx, items, me, explore.RowMax)
+		if err != nil {
+			return nil, err
+		}
+		if len(joined) < explore.MinItems(row.Type) {
+			continue
+		}
+		out = append(out, exploreRowView{ID: row.ID, Type: row.Type, Title: row.Title, Wide: row.Wide, Items: joined})
+	}
+	return out, nil
+}
+
+// exploreCount adds to the member's measuring counts for row types.
+func (a *API) exploreCount(ctx context.Context, member int64, field string, types []string) {
+	if len(types) == 0 {
+		return
+	}
+	day := explore.Day(a.exploreNow())
+	_ = a.s.Store.Write(ctx, func(tx *sql.Tx) error {
+		for _, t := range types {
+			if _, err := tx.Exec(`INSERT INTO explore_counts (member_id, row_type, day, `+field+`) VALUES (?, ?, ?, 1)
+				ON CONFLICT (member_id, row_type, day) DO UPDATE SET `+field+` = `+field+` + 1`, member, t, day); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func rowTypes(rows []exploreRowView) []string {
+	out := make([]string, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, r.Type)
+	}
+	return out
+}
+
+// exploreParams reads the type switch and the Top 10 choice shared by the
+// head and the tail.
+func exploreParams(w http.ResponseWriter, r *http.Request) (sw, topKind, topRegion string, ok bool) {
+	q := r.URL.Query()
+	sw, ok = exploreSwitch(q.Get("type"))
+	if !ok {
+		fail(w, http.StatusBadRequest, "type must be all, movies or shows")
+		return
+	}
+	topKind = q.Get("top10_kind")
+	switch {
+	case sw == "movies":
+		topKind = "movie"
+	case sw == "shows":
+		topKind = "show"
+	case topKind == "":
+		topKind = "movie"
+	}
+	if topKind != "movie" && topKind != "show" {
+		fail(w, http.StatusBadRequest, "top10_kind must be movie or show")
+		return "", "", "", false
+	}
+	topRegion = strings.ToUpper(q.Get("top10_region"))
+	if topRegion == "" || topRegion == "GLOBAL" {
+		topRegion = "global"
+	} else if !isCountry(topRegion) {
+		fail(w, http.StatusBadRequest, "top10_region must be global or a country code")
+		return "", "", "", false
+	}
+	return sw, topKind, topRegion, true
+}
+
+// exploreHead answers GET /api/v1/explore/head: the Top 10 list and the
+// head rows in one answer, from the stored pool. building says a pool is
+// on its way (the page may ask again shortly).
+func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
+	sw, topKind, topRegion, ok := exploreParams(w, r)
+	if !ok {
+		return
+	}
+	q := r.URL.Query()
+	services, region := q.Get("services"), strings.ToUpper(q.Get("region"))
+	if services != "" && (!metadata.ServiceIDs(services) || !isCountry(region)) {
+		fail(w, http.StatusBadRequest, "services needs services=<ids joined by |> and region=<country code>")
+		return
+	}
+	if region != "" && !isCountry(region) {
+		fail(w, http.StatusBadRequest, "region must be a country code")
+		return
+	}
+	if a.kidLimited(w, r) {
+		return
+	}
+	me := a.person(r).UserID
+	if q.Has("services") {
+		var old, oldRegion string
+		_ = a.s.Store.Read().QueryRowContext(r.Context(), "SELECT services, region FROM explore_prefs WHERE member_id = ?", me).Scan(&old, &oldRegion)
+		if old != services || oldRegion != region {
+			err := a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
+				_, err := tx.Exec(`INSERT INTO explore_prefs (member_id, services, region) VALUES (?, ?, ?)
+					ON CONFLICT (member_id) DO UPDATE SET services = excluded.services, region = excluded.region`, me, services, region)
+				return err
+			})
+			if err != nil {
+				internal(w, err)
+				return
+			}
+			a.markMemberStale(r.Context(), me, a.exploreNow())
+		}
+	}
+	pg, top10, building, err := a.explorePageFor(r.Context(), r, me, sw, topKind, topRegion)
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	var rest []explore.Row
+	for _, row := range pg.Head {
+		if row.Type != explore.TypeTop10 {
+			rest = append(rest, row)
+		}
+	}
+	head, err := a.exploreViews(r.Context(), r, rest)
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	a.exploreCount(r.Context(), me, "shown", rowTypes(head))
+	a.exploreCaching(w, r, "private, no-cache")
+	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "building": building, "seeds": pg.Seeds, "tail_cap": pg.Cap,
+		"tail_rows": len(pg.Tail), "top10": top10, "head": head})
+}
+
+// exploreTail answers GET /api/v1/explore/tail?page=n: the next 4 rows of
+// the generated tail; more says another page follows.
+func (a *API) exploreTail(w http.ResponseWriter, r *http.Request) {
+	sw, topKind, topRegion, ok := exploreParams(w, r)
+	if !ok {
+		return
+	}
+	n, err := strconv.Atoi(r.URL.Query().Get("page"))
+	if err != nil || n < 0 || n > 100 {
+		fail(w, http.StatusBadRequest, "page must be a number from 0")
+		return
+	}
+	if a.kidLimited(w, r) {
+		return
+	}
+	me := a.person(r).UserID
+	pg, _, _, err := a.explorePageFor(r.Context(), r, me, sw, topKind, topRegion)
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	slice, more := pg.TailSlice(n)
+	rows, err := a.exploreViews(r.Context(), r, slice)
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	a.exploreCount(r.Context(), me, "shown", rowTypes(rows))
+	a.exploreCaching(w, r, "private, no-cache")
+	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "page": n, "more": more, "rows": rows})
+}
+
+// exploreCounts answers POST /api/v1/explore/counts {row_type, event}:
+// a card opened or an ask started from a row. Counts only measure; they
+// never change what Explore shows.
+func (a *API) exploreCounts(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		RowType string `json:"row_type"`
+		Event   string `json:"event"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&body); err != nil {
+		fail(w, http.StatusBadRequest, "body must be {row_type, event}")
+		return
+	}
+	field := map[string]string{"open": "opens", "ask": "asks"}[body.Event]
+	if field == "" || explore.MinItems(body.RowType) == 0 {
+		fail(w, http.StatusBadRequest, "event must be open or ask, row_type an Explore row type")
+		return
+	}
+	a.exploreCount(r.Context(), a.person(r).UserID, field, []string{body.RowType})
+	w.WriteHeader(http.StatusNoContent)
+}

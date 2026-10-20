@@ -66,18 +66,31 @@ func (a *API) top10List(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
 		return
 	}
-	if !a.knownRegion(region) {
-		fail(w, http.StatusNotFound, "no Top 10 list for that region")
+	status, msg, out := a.top10Answer(r.Context(), r, kind, region, lang)
+	if status != http.StatusOK {
+		if status == http.StatusInternalServerError {
+			internal(w, errors.New(msg))
+			return
+		}
+		fail(w, status, msg)
 		return
 	}
-	list, err := a.cachedTop10(r.Context(), kind, region, lang)
+	a.exploreCaching(w, r, "private, max-age=300")
+	writeJSON(w, http.StatusOK, out)
+}
+
+// top10Answer is the Top 10 answer for one list: the status, the failure
+// words, or the body (week, region, regions, items).
+func (a *API) top10Answer(ctx context.Context, r *http.Request, kind, region, lang string) (int, string, map[string]any) {
+	if !a.knownRegion(region) {
+		return http.StatusNotFound, "no Top 10 list for that region", nil
+	}
+	list, err := a.cachedTop10(ctx, kind, region, lang)
 	if errors.Is(err, metadata.ErrNotFound) {
-		fail(w, http.StatusNotFound, "no Top 10 list for that region")
-		return
+		return http.StatusNotFound, "no Top 10 list for that region", nil
 	}
 	if err != nil {
-		fail(w, http.StatusBadGateway, "the metadata server did not answer; try again shortly")
-		return
+		return http.StatusBadGateway, "the metadata server did not answer; try again shortly", nil
 	}
 	// Every rank is kept: a title TMDB does not know is listed by its
 	// Netflix name only (not for a Kid, whose limit needs a rating), and a
@@ -99,17 +112,15 @@ func (a *API) top10List(w http.ResponseWriter, r *http.Request) {
 		}
 		items = append(items, d)
 	}
-	items, err = a.dropNeverAdd(r.Context(), items)
+	items, err = a.dropNeverAdd(ctx, items)
 	if err != nil {
-		internal(w, err)
-		return
+		return http.StatusInternalServerError, err.Error(), nil
 	}
 	kid := a.kidMax(r)
-	items = a.kidItems(r.Context(), kid, items, 10)
-	joined, err := a.joinItems(r.Context(), items, a.person(r).UserID, 10)
+	items = a.kidItems(ctx, kid, items, 10)
+	joined, err := a.joinItems(ctx, items, a.person(r).UserID, 10)
 	if err != nil {
-		internal(w, err)
-		return
+		return http.StatusInternalServerError, err.Error(), nil
 	}
 	byID := map[string]discoverItemView{}
 	for _, v := range joined {
@@ -127,8 +138,7 @@ func (a *API) top10List(w http.ResponseWriter, r *http.Request) {
 			out = append(out, top10View{discoverItemView: v, Rank: it.Rank, Season: it.Season})
 		}
 	}
-	a.exploreCaching(w, r, "private, max-age=300")
-	writeJSON(w, http.StatusOK, map[string]any{"week": list.Week, "region": region, "regions": list.Regions, "items": out})
+	return http.StatusOK, "", map[string]any{"week": list.Week, "region": region, "regions": list.Regions, "items": out}
 }
 
 func isCountry(r string) bool {

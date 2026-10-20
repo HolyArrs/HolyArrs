@@ -11220,6 +11220,48 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/explore/counts": {
+      "post": {
+        "description": "Adds one card open or ask start to the member's measuring counts for a row type. Counts never change what Explore shows.",
+        "responses": {
+          "204": {
+            "description": "Counted"
+          }
+        },
+        "summary": "Count an Explore open or ask",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/explore/head": {
+      "get": {
+        "description": "The Top 10 list and the head rows from the member's stored pool, in one answer. building is true while a pool is on its way.",
+        "responses": {
+          "200": {
+            "description": "The head"
+          }
+        },
+        "summary": "Explore head",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/explore/tail": {
+      "get": {
+        "description": "The next 4 generated tail rows (page from 0); more says another page follows.",
+        "responses": {
+          "200": {
+            "description": "One tail page"
+          }
+        },
+        "summary": "Explore tail page",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/files/{id}/subtitles/choices": {
       "post": {
         "description": "Asks every usable Subtitle site now and lists the scored candidates per wished language, best first, with the parts of each score. No subtitle file is saved; what the File has and wants is recorded first, and each site's answer counts against its limits, so this is a POST (send no body).",
