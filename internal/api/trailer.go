@@ -69,8 +69,8 @@ type TrailerStream struct {
 	MP4URL string `json:"mp4_url,omitempty"`
 	// MP4Audio says whether MP4URL has sound.
 	MP4Audio bool `json:"mp4_audio,omitempty"`
-	Width  int    `json:"width,omitempty"`
-	Height int    `json:"height,omitempty"`
+	Width    int  `json:"width,omitempty"`
+	Height   int  `json:"height,omitempty"`
 	// Audio is false for a picture-only stream (no sound to turn on).
 	Audio bool `json:"audio"`
 	// Key is the YouTube video, for the embed fallback.

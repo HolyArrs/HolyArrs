@@ -18,6 +18,20 @@ function discoverRow(route: Route) {
 	return route.fulfill({ json: { row, items } });
 }
 
+// Explore reads one server-built head now: six full rows, the first card of
+// each a Library title (so a card opens /library/<id>).
+function exploreHead(route: Route, libraryId: number) {
+	const head = Array.from({ length: 6 }, (_, r) => ({
+		id: `row${r}`, type: 'genre', title: `Row ${r}`,
+		items: Array.from({ length: 20 }, (_, i) => ({
+			tmdb_id: String(9000 + r * 100 + i), kind: i % 2 ? 'show' : 'movie', name: `row${r} ${i}`, year: 2020 + (i % 5),
+			poster: `https://image.tmdb.org/t/p/w500/r${r}i${i}.jpg`, backdrop: `https://image.tmdb.org/t/p/original/r${r}i${i}b.jpg`,
+			in_library: i === 0, ...(i === 0 ? { title_id: libraryId } : {})
+		}))
+	}));
+	return route.fulfill({ json: { type: 'all', building: false, seeds: 0, tail_cap: 0, tail_rows: 0, top10: null, hero: [], head } });
+}
+
 async function metrics(cdp: CDPSession): Promise<Metrics> {
 	for (let i = 0; i < 3; i++) await cdp.send('HeapProfiler.collectGarbage');
 	const { metrics } = await cdp.send('Performance.getMetrics');
@@ -29,7 +43,7 @@ async function round(page: Page) {
 	const nav = page.getByRole('navigation', { name: 'Main' }).first();
 	await nav.getByRole('link', { name: 'Explore', exact: true }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Explore' })).toBeVisible();
-	const card = page.locator('main .ui-poster a.hit[href*="/library/"]').first();
+	const card = page.locator('main :is(.ui-poster, .ui-wide) a.hit[href*="/library/"]').first();
 	await expect(card).toBeVisible();
 	await card.click();
 	await expect(page).toHaveURL(/\/library\/\d+/);
@@ -43,7 +57,10 @@ test('Explore gives memory back after 20 rounds', async ({ browser }) => {
 	const page = await context.newPage();
 	await page.route('**/api/v1/discover?**', discoverRow);
 	await page.route('https://image.tmdb.org/**', (r) => r.fulfill({ body: tiny, contentType: 'image/png' }));
+	await page.route('**/api/v1/artwork/tmdb/**', (r) => r.fulfill({ body: tiny, contentType: 'image/png' }));
 	await signIn(page, owner());
+	const libraryId: number = await page.evaluate(async () => (await (await fetch('/api/v1/titles')).json()).titles[0].id);
+	await page.route('**/api/v1/explore/head?**', (r) => exploreHead(r, libraryId));
 	const cdp = await context.newCDPSession(page);
 	await cdp.send('Performance.enable');
 
@@ -62,12 +79,13 @@ test('Explore gives memory back after 20 rounds', async ({ browser }) => {
 	console.log(`explore memory\n${table.join('\n')}`);
 	for (const k of ['heap', 'nodes', 'listeners'] as const) expect(after[k], `${k}: ${table.join('; ')}`).toBeLessThanOrEqual(base[k] * 1.1);
 
-	// Row posters ask for a poster-sized TMDB picture, never a full-size one.
+	// Row cards ask the artwork cache for a row-sized TMDB picture (w342
+	// posters, w780 backdrops), never a full-size one.
 	await page.getByRole('navigation', { name: 'Main' }).first().getByRole('link', { name: 'Explore', exact: true }).click();
-	const tmdbImg = page.locator('main img[src*="image.tmdb.org"]').first();
+	const tmdbImg = page.locator('main img[src*="/artwork/tmdb/"]').first();
 	await expect(tmdbImg).toBeAttached();
-	const srcs = await page.locator('main img[src*="image.tmdb.org"]').evaluateAll((els) => els.map((e) => (e as HTMLImageElement).getAttribute('src') ?? ''));
-	expect(srcs.filter((s) => /\/(w500|w780|w1280|original)\//.test(s))).toEqual([]);
+	const srcs = await page.locator('main img[src*="/artwork/tmdb/"]').evaluateAll((els) => els.map((e) => (e as HTMLImageElement).getAttribute('src') ?? ''));
+	expect(srcs.filter((s) => !/\/artwork\/tmdb\/(w342|w780)\//.test(s))).toEqual([]);
 
 	await context.close();
 });

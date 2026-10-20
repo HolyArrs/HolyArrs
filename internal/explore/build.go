@@ -80,15 +80,15 @@ type Input struct {
 
 // Pool is one member's scored candidate rows for one type switch and day.
 type Pool struct {
-	Member int64     `json:"member"`
-	Switch string    `json:"switch"`
-	Date   string    `json:"date"`
-	Seeds  int       `json:"seeds"`
-	Kid    bool      `json:"kid"`
-	Rows   []Row     `json:"rows"`
+	Member int64  `json:"member"`
+	Switch string `json:"switch"`
+	Date   string `json:"date"`
+	Seeds  int    `json:"seeds"`
+	Kid    bool   `json:"kid"`
+	Rows   []Row  `json:"rows"`
 	// Taste are the member's strongest genres, for taste-match titles.
-	Taste []string `json:"taste,omitempty"`
-	Built  time.Time `json:"built"`
+	Taste []string  `json:"taste,omitempty"`
+	Built time.Time `json:"built"`
 }
 
 // Day is the pool date of t (UTC).

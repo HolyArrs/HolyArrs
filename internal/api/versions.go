@@ -101,7 +101,6 @@ func (m *lookupMemo) rules(ctx context.Context, db store.Querier, id int64) (str
 	})
 }
 
-
 func versionID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	id, err := strconv.ParseInt(r.PathValue("vid"), 10, 64)
 	if err != nil || id <= 0 {
