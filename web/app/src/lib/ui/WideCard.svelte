@@ -7,6 +7,7 @@
 	import { shelfNear, whenLoaded } from '../lazy-art.ts';
 	import { press, viewTransitionName } from '../motion.ts';
 	import HoverPreview from './HoverPreview.svelte';
+	import { prefetchTrailer } from '../autoplay.svelte.ts';
 	import { dwell, finePointer, HOVER_DELAY } from '../trailer.ts';
 
 	// 16:9 card for episodes and downloads: progress line along the art's
@@ -59,7 +60,10 @@
 	function enter() {
 		if (!preview || !finePointer()) return;
 		closer.cancel();
-		if (!open) opener.start();
+		if (!open) {
+			opener.start();
+			prefetchTrailer(preview.kind, preview.tmdb);
+		}
 	}
 	function leave() {
 		opener.cancel();

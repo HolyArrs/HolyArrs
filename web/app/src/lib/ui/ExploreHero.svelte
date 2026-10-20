@@ -4,7 +4,7 @@
 	import { richMetadata, type RichMeta } from './TitleHero.svelte';
 	import HeroMotion from './HeroMotion.svelte';
 	import TrailerPlayer from './TrailerPlayer.svelte';
-	import { autoplayHere, loadUISettings, trailerSources, type TrailerSource } from '../autoplay.svelte.ts';
+	import { autoplayHere, loadUISettings, prefetchTrailer, trailerSources, type TrailerSource } from '../autoplay.svelte.ts';
 	import { dwell, heroPictures, HERO_DELAY } from '../trailer.ts';
 	import { sized } from '../tmdb-image.ts';
 
@@ -64,7 +64,11 @@
 	});
 
 	$effect(() => {
-		if (settled && inView) wait.start();
+		if (settled && inView) {
+			wait.start();
+			// The lookup starts now, not after the dwell.
+			prefetchTrailer(kind, tmdb);
+		}
 		else {
 			wait.cancel();
 			armed = false;

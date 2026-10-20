@@ -51,10 +51,72 @@ export function autoplayHere(): boolean {
 export type TrailerSource = { kind: 'direct'; url: string; key?: string; audio: boolean } | { kind: 'embed'; key: string };
 
 interface Stream {
+	/** hls: url is YouTube's adaptive manifest; mp4: url is the muxed 360p MP4. */
+	type?: 'hls' | 'mp4';
 	url: string;
+	/** The muxed MP4 beside an HLS answer. */
+	mp4_url?: string;
 	expires_at: string;
 	key: string;
 	audio?: boolean;
+}
+
+/**
+ * Native HLS (Safari, iOS). Elsewhere the MP4 plays: YouTube's video
+ * servers send no CORS headers, so a script player cannot read the
+ * manifest or its segments.
+ */
+function nativeHLS(): boolean {
+	if (typeof document === 'undefined') return false;
+	try {
+		return document.createElement('video').canPlayType('application/vnd.apple.mpegurl') !== '';
+	} catch {
+		return false;
+	}
+}
+
+/** playable picks the address this browser plays (null: none). */
+export function playable(s: Pick<Stream, 'type' | 'url' | 'mp4_url'>, hls = nativeHLS()): string | null {
+	if (s.type === 'hls') return hls ? s.url : (s.mp4_url ?? null);
+	return s.url || null;
+}
+
+// Warmed players: the first bytes (MP4 header, or the HLS manifest) load
+// while the dwell runs, so the real player starts from the browser cache.
+const warmed = new Map<string, HTMLVideoElement>();
+function warm(url: string) {
+	if (typeof document === 'undefined' || warmed.has(url)) return;
+	const v = document.createElement('video');
+	v.muted = true;
+	v.preload = 'metadata';
+	v.src = url;
+	warmed.set(url, v);
+	setTimeout(() => {
+		v.removeAttribute('src');
+		v.load();
+		warmed.delete(url);
+	}, 30_000);
+	while (warmed.size > 4) {
+		const [k, old] = warmed.entries().next().value as [string, HTMLVideoElement];
+		old.removeAttribute('src');
+		old.load();
+		warmed.delete(k);
+	}
+}
+
+/**
+ * prefetchTrailer starts the lookup at hover start (not after the dwell)
+ * and, once the address is known, loads its first bytes.
+ */
+export function prefetchTrailer(kind: 'movie' | 'show', tmdb: string) {
+	if (!tmdb) return;
+	void loadUISettings().then(() => {
+		if (!autoplayHere()) return;
+		void directStream(kind, tmdb).then((s) => {
+			const u = s && playable(s);
+			if (u) warm(u);
+		});
+	});
 }
 
 const streams = new Map<string, Promise<Stream | null>>();
@@ -91,7 +153,8 @@ function directStream(kind: 'movie' | 'show', tmdb: string, signal?: AbortSignal
 export async function trailerSources(kind: 'movie' | 'show', tmdb: string, videos: Video[] | undefined, signal?: AbortSignal): Promise<TrailerSource[]> {
 	const out: TrailerSource[] = [];
 	const s = await directStream(kind, tmdb, signal);
-	if (s) out.push({ kind: 'direct', url: s.url, key: s.key, audio: !!s.audio });
+	const u = s && playable(s);
+	if (s && u) out.push({ kind: 'direct', url: u, key: s.key, audio: !!s.audio });
 	const key = s?.key || pickTrailer(videos, lang())?.key;
 	if (key) out.push({ kind: 'embed', key });
 	return out;

@@ -18,11 +18,27 @@
 	// Autoplay trailers: one app-wide switch, owner and settings people only.
 	let autoplay = $state<boolean | null>(null);
 	let autoplayBusy = $state(false);
+	// Keep yt-dlp up to date: the weekly update from yt-dlp's own releases.
+	let keepYTDLP = $state(true);
 	async function loadAutoplay() {
 		try {
-			autoplay = (await api.get<{ autoplay_trailers: boolean }>('/settings/ui')).autoplay_trailers;
+			const s = await api.get<{ autoplay_trailers: boolean; keep_ytdlp_updated?: boolean }>('/settings/ui');
+			autoplay = s.autoplay_trailers;
+			keepYTDLP = s.keep_ytdlp_updated !== false;
 		} catch {
 			autoplay = null;
+		}
+	}
+	async function saveKeepYTDLP(on: boolean) {
+		autoplayBusy = true;
+		try {
+			keepYTDLP = (await api.put<{ keep_ytdlp_updated: boolean }>('/settings/ui', { keep_ytdlp_updated: on })).keep_ytdlp_updated;
+			toasts.push(keepYTDLP ? 'yt-dlp stays up to date' : 'yt-dlp is no longer updated automatically', 'ok');
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+			await loadAutoplay();
+		} finally {
+			autoplayBusy = false;
 		}
 	}
 	async function saveAutoplay(on: boolean) {
@@ -154,6 +170,10 @@
 			<label class="checkline">
 				<input type="checkbox" checked={autoplay} disabled={autoplayBusy} onchange={(e) => saveAutoplay(e.currentTarget.checked)} />
 				<span><b>Play trailers by themselves</b><br /><span class="hint">On Explore the featured title and the larger card that opens over a poster play a muted trailer. Never for Kid accounts, with Reduce motion on, or on slow or data-saving connections. Applies to everyone.</span></span>
+			</label>
+			<label class="checkline" data-testid="ytdlp-update-setting">
+				<input type="checkbox" checked={keepYTDLP} disabled={autoplayBusy} onchange={(e) => saveKeepYTDLP(e.currentTarget.checked)} />
+				<span><b>Keep yt-dlp up to date</b><br /><span class="hint">Trailers are found with yt-dlp. Once a week HolyArrs fetches its newest official release, checks it and keeps the previous copy if the new one does not work. Its version and the last update show under Health.</span></span>
 			</label>
 		</section>
 	{/if}

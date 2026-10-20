@@ -9,6 +9,7 @@
 	import { sized } from '../tmdb-image.ts';
 	import { shelfNear, whenLoaded } from '../lazy-art.ts';
 	import HoverPreview from './HoverPreview.svelte';
+	import { prefetchTrailer } from '../autoplay.svelte.ts';
 	import { dwell, finePointer, HOVER_DELAY } from '../trailer.ts';
 
 	// 2:3 poster with title below. Lifts on hover; artwork zooms inside its frame.
@@ -67,7 +68,10 @@
 	function enter() {
 		if (!preview || !finePointer()) return;
 		closer.cancel();
-		if (!open) opener.start();
+		if (!open) {
+			opener.start();
+			prefetchTrailer(preview.kind, preview.tmdb);
+		}
 	}
 	function leave() {
 		opener.cancel();
