@@ -17,20 +17,20 @@
 	import CopyControls from './CopyControls.svelte';
 	import SubtitlePanel from './SubtitlePanel.svelte';
 	import { ago, date, dateTime, tone } from './format.ts';
-	import Icon from './Icon.svelte';
 	import AskedByLine from './ui/AskedByLine.svelte';
 	import { loadAskedBy, type AskedByAnswer } from './askedby.ts';
-	import TitleHero, { richMetadata, runtimeWords, shortFolder, type RichMeta } from './ui/TitleHero.svelte';
+	import TitleHero, { richMetadata, shortFolder, type RichMeta } from './ui/TitleHero.svelte';
 	import LoadError from './ui/LoadError.svelte';
 	import ActionButton from './ui/ActionButton.svelte';
 	import ActionMenu from './ui/ActionMenu.svelte';
 	import Menu, { type MenuItem } from './ui/Menu.svelte';
 	import SegmentedControl from './ui/SegmentedControl.svelte';
-	import StatusPill from './ui/StatusPill.svelte';
 	import WideCard from './ui/WideCard.svelte';
 	import Skeleton from './ui/Skeleton.svelte';
 	import TitleCast from './TitleCast.svelte';
-	import SimilarShelf from './SimilarShelf.svelte';
+	import TitleRows from './TitleRows.svelte';
+	import LibrarySection from './ui/LibrarySection.svelte';
+	import type { CardOwned } from './ui/CardBadges.svelte';
 	import { artName, crumbFor, pageSections, qualityBadges, slotKind } from './title-page.ts';
 	import { audienceStatus } from './title-status.ts';
 	import SectionNav from './ui/SectionNav.svelte';
@@ -143,7 +143,7 @@
 			if (list) {
 				scope = list;
 				scopeJobs = r.job_ids;
-				// The list opens above Seasons: bring it into view from an episode card.
+				// The list opens at the top of the Library section: bring it into view.
 				await tick();
 				document.querySelector('[data-testid="show-releases"]')?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
 			}
@@ -272,24 +272,37 @@
 	});
 	const heroMeta = $derived([title.year ? String(title.year) : '', show?.seasons.length ? `${show.seasons.length} ${show.seasons.length === 1 ? 'season' : 'seasons'}` : '', show?.network ?? '', show ? (statusWord[show.status] ?? show.status) : '', ...(title.genres?.length ? title.genres : (rich?.genres ?? [])).slice(0, 2)].filter(Boolean));
 	const heroBadges = $derived(qualityBadges(title.slots.map((s) => s.file)));
-	const seasonMenu = (n: number): MenuItem[] => [
+	// Per season (managers): search it, pick a Release, keep it up to date, delete it.
+	const seasonMenu = (n: number, keep: boolean): MenuItem[] => [
+		{ label: 'Search season', icon: 'search', onselect: () => searchSeason(n), disabled: searching === `s${n}` },
 		{ label: 'Choose a release', icon: 'grid', onselect: () => searchSeason(n, true), disabled: searching === `s${n}l` },
+		{ label: `Keep ${seasonName(n)} up to date`, checked: keep, disabled: busy === `s${n}`, onselect: () => setSeason(n, !keep) },
 		{ kind: 'separator' },
 		{ label: `Delete ${seasonName(n)}`, icon: 'trash', destructive: true, onselect: () => deleter?.open({ season: n, label: seasonName(n) }) }
 	];
+	/** A requester's mark on an episode card: only whether it is here to watch. */
+	const episodeMark = (ep: EpisodeView): CardOwned | null => (ep.slots.some((x) => x.file_id) ? { state: 'available', label: 'In your Library' } : null);
+	const nextWords = $derived(show?.next_air_date ? date(show.next_air_date) : '');
+	function toLibrary() {
+		const h = document.getElementById('h-library');
+		h?.closest('section')?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
+	}
 	/** An episode's still, when the backend sends one. */
 	const still = (ep: EpisodeView) => ep.still;
 	const heroKind = $derived(show?.missing ? 'missing' : show?.in_library ? 'in_library' : show?.not_out_yet ? 'coming_soon' : 'missing');
 	// One status vocabulary (title-status.ts); staff also see how many episodes are missing.
 	const heroWords = $derived(audienceStatus(!staff && show?.in_library ? 'in_library' : heroKind, staff ? 'staff' : 'member', { tracked: true, titleKind: 'show' }));
-	const libraryItems = $derived<MenuItem[]>([
+	// Manager actions live in the hero's ⋯ menu; the Library section holds the rest.
+	const heroItems = $derived<MenuItem[]>([
+		{ label: 'Search now', icon: 'search', onselect: searchShow, disabled: searching === 'show' },
+		{ label: 'Keep up to date', checked: title.keep_up_to_date, disabled: busy === 'show', onselect: () => setKeep(!title.keep_up_to_date) },
+		{ kind: 'separator' },
+		{ label: 'Edit', icon: 'tools', onselect: openEdit },
 		{ label: 'Rename files', icon: 'copy', onselect: openRename },
+		{ label: 'Refresh seasons and episodes', icon: 'refresh', onselect: refresh, disabled: refreshing },
+		{ label: 'All history', icon: 'clock', href: to(`/downloads/history?title=${title.id}`) },
 		{ kind: 'separator' },
 		{ label: 'Delete show', icon: 'trash', destructive: true, onselect: () => deleter?.open() }
-	]);
-	const moreItems = $derived<MenuItem[]>([
-		{ label: 'Refresh seasons and episodes', icon: 'refresh', onselect: refresh, disabled: refreshing },
-		{ label: 'All history', icon: 'clock', href: to(`/downloads/history?title=${title.id}`) }
 	]);
 
 	async function setSeason(n: number, keep: boolean) {
@@ -392,6 +405,8 @@
 <div class="tp">
 <TitleHero
 	title={title.name}
+	kind="show"
+	tmdb={title.ids?.tmdb}
 	poster={title.artwork[0] ?? rich?.poster}
 	backdrop={title.backdrop ?? rich?.backdrop}
 	backdrops={rich?.backdrops}
@@ -407,45 +422,37 @@
 	description={title.overview || rich?.overview}
 	vtName={artName(title.id)}
 >
-	{#snippet byline()}<AskedByLine {askers} seesAll={askedBy.sees_all} />{/snippet}
+	{#snippet byline()}
+		<AskedByLine {askers} seesAll={askedBy.sees_all} />
+		{#if show?.next_air_date}<span data-testid="next-episode"><b>Next episode:</b> {nextWords}</span>{/if}
+		{#if staff}<span class="tp-progress" data-testid="show-progress">{showProgress(show)}</span>{/if}
+	{/snippet}
 	{#snippet actions()}
 		{#if staff}
-			<ActionButton icon="search" label="Search now" primary onclick={searchShow} disabled={searching === 'show'} busy={searching === 'show'} data-testid="search-show" />
-			<ActionButton
-				icon={title.keep_up_to_date ? 'check' : 'plus'}
-				label="Keep up to date"
-				caption={title.keep_up_to_date ? 'Kept up to date' : 'Keep up to date'}
-				pressed={title.keep_up_to_date}
-				disabled={busy === 'show'}
-				onclick={() => setKeep(!title.keep_up_to_date)}
-			/>
-			<ActionButton icon="tools" label="Edit" onclick={openEdit} />
-			<ActionMenu label="Library" icon="library" items={libraryItems} />
-			<ActionMenu label="More actions" caption="More" icon="more" items={moreItems} />
+			<ActionButton icon="library" label="In Library: go to the Library section" caption="In Library" primary onclick={toLibrary} data-testid="hero-library" />
+			<ActionMenu label="More actions" caption="More" icon="more" items={heroItems} />
 		{/if}
 	{/snippet}
 </TitleHero>
 
-<p class="tp-progress" data-testid="show-progress">{showProgress(show)}</p>
-
 {#if loadErr || error}<LoadError hasData message={loadErr || error} onretry={() => void retry()} busy={retrying} />{/if}
 
-<SectionNav items={pageSections('show', { manage: staff, asks: !!title.asks?.length })} />
-
-
-{#if scope && staff}
-	<ShowReleases titleId={title.id} {scope} jobs={scopeJobs} onclose={() => (scope = null)} onchange={() => void reload()} />
-{/if}
+<SectionNav items={pageSections('show', { manage: staff })} />
 
 <section class="tp-section" aria-labelledby="h-seasons">
 	<div class="tp-head">
-		<h2 id="h-seasons" class="tp-h2">Seasons</h2>
+		<h2 id="h-seasons" class="tp-h2">Episodes</h2>
 		{#if show?.seasons.length}
-			{#if show.seasons.length <= 4}
-				<SegmentedControl label="Season" options={show.seasons.map((s) => ({ value: String(s.number), label: s.name || seasonName(s.number) }))} value={String(cur)} onchange={(v) => pickSeason(Number(v))} />
-			{:else}
-				<Menu label="Pick a season" variant="button" icon="tv" text={curSeason ? curSeason.name || seasonName(curSeason.number) : 'Season'} align="end" items={seasonItems} />
-			{/if}
+			<div class="tp-head-end">
+				{#if show.seasons.length <= 6}
+					<SegmentedControl label="Season" options={show.seasons.map((s) => ({ value: String(s.number), label: s.name || seasonName(s.number) }))} value={String(cur)} onchange={(v) => pickSeason(Number(v))} />
+				{:else}
+					<Menu label="Pick a season" variant="button" icon="tv" text={curSeason ? curSeason.name || seasonName(curSeason.number) : 'Season'} align="end" items={seasonItems} />
+				{/if}
+				{#if staff && curSeason}
+					<span data-testid="season-menu"><Menu label="Season actions for {seasonName(curSeason.number)}" icon="more" items={seasonMenu(curSeason.number, curSeason.keep_up_to_date)} width={260} align="end" /></span>
+				{/if}
+			</div>
 		{/if}
 	</div>
 	{#if !show?.seasons.length}
@@ -453,57 +460,33 @@
 	{:else if curSeason}
 		{@const s = curSeason}
 		<div class="season" data-testid="season">
-			<p class="xs muted" data-testid="season-line">{seasonLine(s)}{s.dropped ? ' · no longer listed' : ''}</p>
-			{#if staff}
-				<div class="season-tools">
-					<Button icon="search" size="sm" onclick={() => searchSeason(s.number)} disabled={searching === `s${s.number}`} aria-label="Search now: {seasonName(s.number)}" data-testid="search-season">Search season</Button>
-					<span data-testid="season-menu"><Menu label="Season actions for {seasonName(s.number)}" variant="button" icon="more" text="Season actions" items={seasonMenu(s.number)} width={240} align="start" /></span>
-					{#if episodes[s.number] && seasonLooking(episodes[s.number])}
-						<span class="xs muted">{seasonLooking(episodes[s.number])} looking for a copy</span>
-					{/if}
-				</div>
-				<label class="switch season-keep">
-					<input type="checkbox" checked={s.keep_up_to_date} disabled={busy === `s${s.number}`} onchange={(e) => setSeason(s.number, e.currentTarget.checked)} />
-					<span class="sw" aria-hidden="true"></span>
-					<span class="small">Keep {seasonName(s.number)} up to date</span>
-				</label>
-			{:else if !s.keep_up_to_date}
-				<p class="xs muted">Not kept</p>
-			{/if}
+			<p class="xs muted" data-testid="season-line">{seasonLine(s)}{s.dropped ? ' · no longer listed' : ''}{#if staff && episodes[s.number] && seasonLooking(episodes[s.number])} · {seasonLooking(episodes[s.number])} looking for a copy{/if}</p>
 			{#if episodes[s.number]}
 				<ul class="episodes">
 					{#each episodes[s.number] as ep (ep.id)}
-						{@const why = episodeWhy(ep, s.keep_up_to_date, title.keep_up_to_date)}
+						{@const why = staff ? episodeWhy(ep, s.keep_up_to_date, title.keep_up_to_date) : ''}
 						{@const main = mainSlot(ep)}
-						<li class="episode" class:card={!!still(ep)} data-testid="episode">
-							{#if still(ep)}
-								<WideCard
-									title="{episodeLabel(ep, order)} · {ep.name || 'Name not known yet'}"
-									image={still(ep)}
-									subtitle={ep.air_date ? date(ep.air_date) : 'No air date yet'}
-									status={main ? slotKind(main.state) : undefined}
-									statusLabel={ep.slots.length > 1 ? ep.slots.map((x) => `${x.version}: ${x.state_label}`).join(' · ') : main?.state_label}
-									statusTestid="episode-state"
-								>
-									{#snippet action()}
-										{#if staff}<span class="ep-menu"><Menu label="Episode actions for {episodeLabel(ep, order)}" items={episodeItems(ep)} width={250} /></span>{/if}
-									{/snippet}
-								</WideCard>
-							{:else}
-								<div class="ep-row">
-									<span class="ep-num" aria-hidden="true">{ep.episode}</span>
-									<div class="ep-main">
-										<span class="ep-title"><span class="ep-code">{episodeLabel(ep, order)}</span> {ep.name || 'Name not known yet'}</span>
-										<span class="ep-sub">{ep.air_date ? date(ep.air_date) : 'No air date yet'}{(ep.runtime_minutes ?? ep.runtime) ? ` · ${runtimeWords(ep.runtime_minutes ?? ep.runtime)}` : ''}</span>
-									</div>
-									{#if main}<StatusPill kind={slotKind(main.state)} label={ep.slots.length > 1 ? ep.slots.map((x) => `${x.version}: ${x.state_label}`).join(' · ') : main.state_label} testid="episode-state" />{/if}
-									{#if staff}<Menu label="Episode actions for {episodeLabel(ep, order)}" items={episodeItems(ep)} width={250} />{/if}
-								</div>
-							{/if}
+						<li class="episode" data-testid="episode">
+							<WideCard
+								title={ep.name || 'Name not known yet'}
+								image={still(ep) ?? title.backdrop ?? rich?.backdrop}
+								kind="episode"
+								subtitle="{episodeLabel(ep, order)} · {ep.air_date ? date(ep.air_date) : 'No air date yet'}"
+								status={staff && main ? slotKind(main.state) : undefined}
+								statusLabel={staff ? (ep.slots.length > 1 ? ep.slots.map((x) => `${x.version}: ${x.state_label}`).join(' · ') : main?.state_label) : undefined}
+								statusTestid="episode-state"
+								owned={staff ? null : episodeMark(ep)}
+							>
+								{#snippet action()}
+									{#if staff}<span class="ep-menu"><Menu label="Episode actions for {episodeLabel(ep, order)}" items={episodeItems(ep)} width={250} /></span>{/if}
+								{/snippet}
+							</WideCard>
 							{#if why}<p class="xs muted ep-why" data-testid="episode-why">{why}</p>{/if}
-							{#each ep.slots.filter((x) => x.reason && ep.slots.length > 1) as sl (sl.id)}
-								<p class="xs muted ep-why">{sl.version}: {sl.reason}</p>
-							{/each}
+							{#if staff}
+								{#each ep.slots.filter((x) => x.reason && ep.slots.length > 1) as sl (sl.id)}
+									<p class="xs muted ep-why">{sl.version}: {sl.reason}</p>
+								{/each}
+							{/if}
 						</li>
 					{:else}
 						<li class="small muted">No episodes listed yet.</li>
@@ -516,26 +499,52 @@
 	{/if}
 </section>
 
-{#key title.id}<TitleCast titleId={title.id} />{/key}
+<TitleRows kind="show" tmdb={title.ids?.tmdb} dates={[['Next episode', show?.next_air_date ? date(show.next_air_date) : ''], ['Airs at', show?.air_time ? `${show.air_time}${show.time_zone ? ` (${show.time_zone})` : ''}` : ''], ['First aired', title.year ? String(title.year) : '']]}>
+	{#snippet middle()}{#key title.id}<TitleCast titleId={title.id} />{/key}{/snippet}
+</TitleRows>
 
-<div class="tp-body">
-	<div class="tp-main">
+<TitleSection id="h-about" title="About">
+	<dl class="tp-about">
+		<dt>Episodes</dt>
+		<dd>{show?.episodes ?? 0} in {show?.seasons.length ?? 0} seasons</dd>
+		{#if show?.network}<dt>Network</dt><dd>{show.network}</dd>{/if}
+		{#if show?.status}<dt>Status</dt><dd>{statusWord[show.status] ?? show.status}</dd>{/if}
+		{#if title.rating ?? rich?.certification}<dt>Rated</dt><dd>{title.rating ?? rich?.certification}</dd>{/if}
+		{#if title.genres?.length}<dt>Genres</dt><dd>{title.genres.join(', ')}</dd>{/if}
+	</dl>
+</TitleSection>
+
+{#if title.asks?.length}
+	<TitleSection id="h-show-asks" title="Wishlist" testid="title-asks">
+		{#each title.asks as a (a.id)}
+			<dl class="facts">
+				<dt>Asked by</dt>
+				<dd>{peopleNames(a.people.map((p) => p.name))} · {date(a.asked_at)}</dd>
+				<dt>For</dt>
+				<dd>{a.season_words ?? seasonWords(a.seasons)}</dd>
+				{#if decided(a)}<dt>Decided</dt>
+					<dd>{decided(a)}{a.decided_at ? ` · ${date(a.decided_at)}` : ''}</dd>{/if}
+				<dt>Now</dt>
+				<dd>{a.state_label}</dd>
+				{#if a.note}<dt>Note</dt>
+					<dd>{a.note}</dd>{/if}
+			</dl>
+		{/each}
+	</TitleSection>
+{/if}
+
+{#if staff}
+	<LibrarySection note="Releases, Versions and files, subtitles, settings and history">
+		{#if scope}
+			<ShowReleases titleId={title.id} {scope} jobs={scopeJobs} onclose={() => (scope = null)} onchange={() => void reload()} />
+		{/if}
 		<ShowVersions {title} {staff} onchange={reload} />
 		<CopyControls {title} onchange={reload} />
-		{#if staff}
-			<div id="title-subtitles">{#key title.id}<SubtitlePanel titleId={title.id} movie={false} files={false} />{/key}</div>
-		{/if}
-	</div>
-	<aside class="tp-side" aria-label="About this show">
-
-		<TitleSection id="h-show-facts" title="About">
+		<div id="title-subtitles">{#key title.id}<SubtitlePanel titleId={title.id} movie={false} files={false} />{/key}</div>
+		<TitleSection id="h-show-facts" title="How HolyArrs keeps it">
 			<dl class="tp-about">
-				<dt>Episodes</dt>
-				<dd>{show?.episodes ?? 0} in {show?.seasons.length ?? 0} seasons</dd>
-				{#if show?.next_air_date}<dt>Next episode</dt>
-					<dd>{date(show.next_air_date)}</dd>{/if}
-				{#if show?.air_time}<dt>Airs at</dt>
-					<dd>{show.air_time}{show.time_zone ? ` (${show.time_zone})` : ''}</dd>{/if}
+				<dt>Keep up to date</dt>
+				<dd>{title.keep_up_to_date ? 'On' : 'Off'}</dd>
 				<dt>Episode order</dt>
 				<dd>{label(episodeOrders, show?.episode_order)}</dd>
 				<dt>Details from</dt>
@@ -550,52 +559,28 @@
 					<dd>{date(title.refreshed_at)}</dd>{/if}
 			</dl>
 			<p class="tp-why" data-testid="gate-reason">{title.gate_reason}</p>
-			{#if staff && title.folder_path}<details class="tp-details"><summary>Details</summary><ul><li>Folder: {shortFolder(title.folder_path)}</li></ul></details>{/if}
+			{#if title.folder_path}<details class="tp-details"><summary>Details</summary><ul><li>Folder: {shortFolder(title.folder_path)}</li></ul></details>{/if}
 		</TitleSection>
-
-		{#if title.asks?.length}
-			<TitleSection id="h-show-asks" title="Wishlist" testid="title-asks">
-				{#each title.asks as a (a.id)}
-					<dl class="facts">
-						<dt>Asked by</dt>
-						<dd>{peopleNames(a.people.map((p) => p.name))} · {date(a.asked_at)}</dd>
-						<dt>For</dt>
-						<dd>{a.season_words ?? seasonWords(a.seasons)}</dd>
-						{#if decided(a)}<dt>Decided</dt>
-							<dd>{decided(a)}{a.decided_at ? ` · ${date(a.decided_at)}` : ''}</dd>{/if}
-						<dt>Now</dt>
-						<dd>{a.state_label}</dd>
-						{#if a.note}<dt>Note</dt>
-							<dd>{a.note}</dd>{/if}
-					</dl>
-				{/each}
-			</TitleSection>
-		{/if}
-
-		{#if staff}
-			<TitleSection id="h-show-history" title="History" testid="title-history">
-				{#snippet head()}
-					{#if historyTotal > 0}<Button variant="plain" href={to(`/downloads/history?title=${title.id}`)}>All {historyTotal} rows</Button>{/if}
-				{/snippet}
-				{#if history.length === 0}
-					<p class="small muted">Nothing yet.</p>
-				{:else}
-					<ol class="rows hist">
-						{#each history as e (e.ID)}
-							<li>
-								<span class="chip {kindTone(e.Kind)}">{groupLabel(e.Kind)}</span>
-								<span class="grow small">{#if e.episode}<span class="mono xs muted">{e.episode}</span>{' '}{/if}{#if e.version}<span class="chip" data-testid="event-version">{e.version}</span>{' '}{/if}{e.Summary}</span>
-								<time class="mono xs muted" datetime={e.At} title={dateTime(e.At)}>{ago(e.At)}</time>
-							</li>
-						{/each}
-					</ol>
-				{/if}
-			</TitleSection>
-		{/if}
-	</aside>
-</div>
-
-<SimilarShelf {title} />
+		<TitleSection id="h-show-history" title="History" testid="title-history">
+			{#snippet head()}
+				{#if historyTotal > 0}<Button variant="plain" href={to(`/downloads/history?title=${title.id}`)}>All {historyTotal} rows</Button>{/if}
+			{/snippet}
+			{#if history.length === 0}
+				<p class="small muted">Nothing yet.</p>
+			{:else}
+				<ol class="rows hist">
+					{#each history as e (e.ID)}
+						<li>
+							<span class="chip {kindTone(e.Kind)}">{groupLabel(e.Kind)}</span>
+							<span class="grow small">{#if e.episode}<span class="mono xs muted">{e.episode}</span>{' '}{/if}{#if e.version}<span class="chip" data-testid="event-version">{e.version}</span>{' '}{/if}{e.Summary}</span>
+							<time class="mono xs muted" datetime={e.At} title={dateTime(e.At)}>{ago(e.At)}</time>
+						</li>
+					{/each}
+				</ol>
+			{/if}
+		</TitleSection>
+	</LibrarySection>
+{/if}
 </div>
 
 {#if staff}
@@ -664,21 +649,12 @@
 	.path { overflow-wrap: anywhere; }
 	.season-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 12px 0 6px; }
 	.season-keep { margin: 0 0 14px; }
-	.episode:not(.card) + .episode:not(.card) { border-top: 1px solid var(--line); }
-	.ep-row { display: flex; align-items: center; gap: 14px; padding: 12px 0; min-width: 0; }
-	.ep-num { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 8px; background: var(--surface-2); color: var(--text-muted); font: 700 14px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
-	.ep-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-	.ep-title { font: 600 15px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.ep-code { color: var(--text-muted); margin-right: 4px; font-variant-numeric: tabular-nums; }
-	.ep-sub { color: var(--text-muted); font: var(--t-footnote); }
-	.tp-progress { margin: calc(clamp(28px, 4vw, 44px) * -0.5) 0 0; color: var(--text-muted); font: var(--t-subhead); }
-	@media (max-width: 600px) { .ep-row { flex-wrap: wrap; gap: 8px 12px; } .ep-main { flex-basis: calc(100% - 100px); } .ep-row :global(.ui-pill) { margin-left: 50px; } }
-	.episodes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-	.episodes:has(.card) { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 20px 16px; }
+	.tp-progress { color: var(--text-muted); }
+	.season-line { margin: 0 0 12px; }
+	.episodes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--title-item), 1fr)); gap: 20px var(--shelf-gap); }
 	.episode { min-width: 0; }
-	@media (max-width: 600px) { .episodes:has(.card) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 10px; } }
-	.ep-why { margin: -6px 0 10px 50px; }
-	.card .ep-why { margin: 2px 0 0; }
+	@media (max-width: 767px) { .episodes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 10px; } }
+	.ep-why { margin: 4px 0 0; }
 	.ep-menu :global(.ui-pop > .trigger) { background: var(--on-art-scrim-mid); color: var(--on-art); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 	.ep-menu :global(.ui-pop > .trigger:hover), .ep-menu :global(.ui-pop > .trigger[aria-expanded='true']) { background: rgb(0 0 0 / 65%); color: var(--on-art); }
 	.modal { width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; padding: var(--s-6); border: 0; border-radius: var(--r-modal); background: var(--surface-1); color: var(--text); box-shadow: var(--shadow-modal); }
