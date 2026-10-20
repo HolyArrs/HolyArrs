@@ -21,15 +21,12 @@ func TestPickCardArtOrder(t *testing.T) {
 		lang string
 		want CardArt
 	}{
-		{"titled backdrop wins over a logo", CardImages{
-			Backdrops: []CardImage{textless, {Path: "/w780/titled-en.jpg", Lang: lp("en"), Vote: 3}},
-			Logos:     []CardImage{logoEN}}, "en", CardArt{Art: "/w780/titled-en.jpg", Logo: "/w500/logo-en.png", HasTitle: true}},
-		{"the user's language first", CardImages{
-			Backdrops: []CardImage{{Path: "/w780/titled-en.jpg", Lang: lp("en"), Vote: 9}, {Path: "/w780/titled-fr.jpg", Lang: lp("fr"), Vote: 1}}}, "fr",
-			CardArt{Art: "/w780/titled-fr.jpg", HasTitle: true}},
-		{"English titled art when the language has none", CardImages{
-			Backdrops: []CardImage{textless, {Path: "/w780/titled-en.jpg", Lang: lp("en")}}}, "de",
-			CardArt{Art: "/w780/titled-en.jpg", HasTitle: true}},
+		{"textless art plus the logo, never the titled backdrop", CardImages{
+			Backdrops: []CardImage{{Path: "/w780/titled-en.jpg", Lang: lp("en"), Vote: 9}, textless},
+			Logos:     []CardImage{logoEN}}, "en", CardArt{Art: "/w780/plain.jpg", Logo: "/w500/logo-en.png"}},
+		{"titled art only when nothing textless exists, and then no logo", CardImages{
+			Backdrops: []CardImage{{Path: "/w780/titled-fr.jpg", Lang: lp("fr"), Vote: 1}},
+			Logos:     []CardImage{logoFR}}, "fr", CardArt{Art: "fallback.jpg", Logo: "/w500/logo-fr.png"}},
 		{"textless art plus the logo", CardImages{Backdrops: []CardImage{textless}, Logos: []CardImage{logoEN, logoFR}}, "fr",
 			CardArt{Art: "/w780/plain.jpg", Logo: "/w500/logo-fr.png"}},
 		{"logo must be a PNG", CardImages{Backdrops: []CardImage{textless}, Logos: []CardImage{{Path: "/w500/logo.svg", Lang: lp("en")}}}, "en",

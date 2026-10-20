@@ -114,6 +114,11 @@ func (a *API) fillCardArt(r *http.Request, items []discoverItemView) {
 		}
 		if ok {
 			v.CardArt = row.CardArt
+			if v.CardArt.HasTitle && v.CardArt.Logo != "" {
+				// Old pick until it is chosen again: the art already names the
+				// title, so leave the logo off rather than showing the name twice.
+				v.CardArt.Logo = ""
+			}
 		}
 	}
 }
@@ -225,7 +230,9 @@ func (a *API) queueCardItems(ctx context.Context, all []explore.Item) {
 		}
 		for _, it := range items {
 			k := cardKey(it.Kind, it.TMDBID, lang)
-			if row, ok := got[k]; ok && time.Since(row.at) < cardArtTTL {
+			// A titled backdrop stored with a logo is an old pick (the name showed
+			// twice); pick it again as a textless backdrop plus the logo.
+			if row, ok := got[k]; ok && time.Since(row.at) < cardArtTTL && !(row.HasTitle && row.Logo != "") {
 				continue
 			}
 			if _, ok := c.want[k]; !ok {

@@ -188,7 +188,8 @@
 		transition: opacity var(--dur-slow) var(--ease-out);
 	}
 	.shade.playing { opacity: .85; }
-	.content { position: relative; width: min(640px, 100%); padding: 0 clamp(20px, 2vw, 40px) clamp(24px, 2.6vw, 50px); display: flex; flex-direction: column; gap: 10px; transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out); }
+	/* Netflix keeps the billboard's words in the left ~40%, so the picture stays open. */
+	.content { position: relative; width: clamp(320px, 40%, 600px); padding: 0 clamp(20px, 2vw, 40px) clamp(24px, 2.6vw, 50px); display: flex; flex-direction: column; gap: 10px; transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out); }
 	/* About 6 s into the trailer the overview folds (height and opacity, ~1 s ease) and
 	   the logo glides down with it; it unfolds the same way. Both directions are one
 	   transition, so it reverses mid-way and never sticks. */
@@ -202,10 +203,10 @@
 	.quiet h2 { transform: scale(.8); }
 	.about { min-height: calc(15px * 1.5 * 3); }
 	.name { font-family: var(--font-display, var(--font-ui)); font-weight: 800; font-size: clamp(36px, 4.6vw, 64px); line-height: 1; letter-spacing: -0.03em; text-wrap: balance; text-shadow: 0 2px 30px rgb(0 0 0 / 35%); }
-	.logo img { display: block; max-width: min(420px, 100%); max-height: var(--title-h); width: auto; height: auto; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 4px 24px rgb(0 0 0 / 45%)); }
+	.logo img { display: block; max-width: 100%; max-height: var(--title-h); width: auto; height: auto; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 4px 24px rgb(0 0 0 / 45%)); }
 	.meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
 	.meta p { margin: 0; font: 600 15px/1.35 var(--font-ui); color: rgb(255 255 255 / 92%); font-variant-numeric: tabular-nums; text-shadow: 0 1px 2px rgb(0 0 0 / 60%); }
-	.desc { margin: 0; font: var(--t-body); color: rgb(255 255 255 / 92%); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; max-width: 58ch; text-shadow: 0 1px 2px rgb(0 0 0 / 60%); }
+	.desc { margin: 0; font: var(--t-body); color: rgb(255 255 255 / 92%); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; max-width: 100%; text-shadow: 0 1px 2px rgb(0 0 0 / 60%); }
 	.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 4px; }
 	.info { display: inline-flex; align-items: center; min-height: 44px; padding: 0 20px; border-radius: var(--r-pill); background: rgb(255 255 255 / 16%); border: 1px solid rgb(255 255 255 / 22%); color: #fff; font: var(--t-headline); -webkit-backdrop-filter: blur(18px) saturate(160%); backdrop-filter: blur(18px) saturate(160%); transition: background var(--dur-fast) var(--ease-out), transform var(--dur-instant) var(--ease-out); }
 	.info:hover { background: rgb(255 255 255 / 26%); }
@@ -215,7 +216,7 @@
 	.ui-xhero :global(.ctl) { z-index: 2; bottom: clamp(24px, 3.4vw, 44px); right: clamp(20px, 4vw, 56px); }
 	@media (max-width: 767px) {
 		.ui-xhero { --hero-r: 16px; height: auto; min-height: min(560px, 120vw); }
-		.content { padding: 0 var(--gutter) 24px; }
+		.content { width: 100%; padding: 0 var(--gutter) 24px; }
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.shade, .content { transition: none; }

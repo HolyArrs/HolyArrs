@@ -75,9 +75,9 @@ func (t *TMDB) CardImages(ctx context.Context, kind, tmdbID, lang string) (CardI
 	return out, nil
 }
 
-// PickCardArt chooses the card picture: a titled backdrop in lang, else
-// one in English; else the best textless backdrop (fallback when the list
-// has none). The logo (lang, else English, PNG only) rides along either way. The source lists
+// PickCardArt chooses the card picture: the best textless backdrop (else the
+// fallback, else a titled backdrop with no logo over it, so the name never shows
+// twice). The logo (lang, else English, PNG only) floats over it. The source lists
 // images best first; the highest vote wins within a group.
 func PickCardArt(im CardImages, lang, fallback string) CardArt {
 	lang = strings.ToLower(lang)
@@ -106,18 +106,21 @@ func PickCardArt(im CardImages, lang, fallback string) CardArt {
 			break
 		}
 	}
-	// The logo is kept with titled art too: the grown card lays it over
-	// the trailer, which hides the picture's own title.
+	// Netflix-style: always the clean (textless) backdrop, with the logo
+	// floating over its bottom. A titled backdrop plus a logo would show the
+	// name twice, so a titled backdrop is used only when nothing else exists.
+	if art := best(im.Backdrops, "", false); art != "" {
+		return CardArt{Art: art, Logo: logo}
+	}
+	if fallback != "" {
+		return CardArt{Art: fallback, Logo: logo}
+	}
 	for _, l := range uniq(lang, "en") {
 		if p := best(im.Backdrops, l, false); p != "" {
-			return CardArt{Art: p, Logo: logo, HasTitle: true}
+			return CardArt{Art: p, HasTitle: true}
 		}
 	}
-	art := best(im.Backdrops, "", false)
-	if art == "" {
-		art = fallback
-	}
-	return CardArt{Art: art, Logo: logo}
+	return CardArt{Logo: logo}
 }
 
 func uniq(a, b string) []string {
