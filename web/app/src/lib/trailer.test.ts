@@ -30,6 +30,9 @@ describe('mayAutoplay', () => {
 		expect(mayAutoplay({ ...base, kid: true })).toBe(false);
 		expect(mayAutoplay({ ...base, reducedMotion: true })).toBe(false);
 		expect(mayAutoplay({ ...base, saveData: true })).toBe(false);
+		// Phones never autoplay: the Trailer button opens the theater on a tap.
+		expect(mayAutoplay({ ...base, phone: true })).toBe(false);
+		expect(mayAutoplay({ ...base, phone: false })).toBe(true);
 		for (const t of ['slow-2g', '2g', '3g']) expect(mayAutoplay({ ...base, effectiveType: t })).toBe(false);
 	});
 });

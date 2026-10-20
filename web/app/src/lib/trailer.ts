@@ -64,22 +64,25 @@ export interface Conditions {
 	saveData?: boolean;
 	/** navigator.connection.effectiveType */
 	effectiveType?: string;
+	/** A phone (touch only, or narrower than a tablet): the trailer waits for a tap. */
+	phone?: boolean;
 }
 
 /** mayAutoplay says whether Layer 2 may start here; otherwise Layer 1 stays. */
 export function mayAutoplay(c: Conditions): boolean {
-	if (!c.setting || c.kid || c.reducedMotion || c.saveData) return false;
+	if (!c.setting || c.kid || c.reducedMotion || c.saveData || c.phone) return false;
 	return !['slow-2g', '2g', '3g'].includes(c.effectiveType ?? '');
 }
 
 /** What this browser says about motion and data. */
-export function browserConditions(): Pick<Conditions, 'reducedMotion' | 'saveData' | 'effectiveType'> {
+export function browserConditions(): Pick<Conditions, 'reducedMotion' | 'saveData' | 'effectiveType' | 'phone'> {
 	if (typeof window === 'undefined') return { reducedMotion: true };
 	const conn = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
 	return {
 		reducedMotion: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false,
 		saveData: !!conn?.saveData,
-		effectiveType: conn?.effectiveType
+		effectiveType: conn?.effectiveType,
+		phone: (window.matchMedia?.('(max-width: 767px)').matches ?? false) || !(window.matchMedia?.('(hover: hover)').matches ?? true)
 	};
 }
 
