@@ -476,7 +476,6 @@ var Screens = map[string]Owner{
 	"/settings":                    Core,
 	"/settings/account":            Core,
 	"/settings/appearance":         Core,
-	"/settings/services":           Core,
 	"/settings/danger":             Core,
 	"/settings/health":             Core,
 	"/settings/alerts":             Core,
