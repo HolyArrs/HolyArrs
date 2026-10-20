@@ -117,7 +117,17 @@
 	/** Tab out of the preview: on to the next card, else back to this one (Shift+Tab). */
 	function tabOut(back: boolean) {
 		shut();
-		const next = back ? null : root?.nextElementSibling?.querySelector<HTMLElement>('a[href], button:not([disabled])') ?? root?.parentElement?.nextElementSibling?.querySelector<HTMLElement>('a[href], button:not([disabled])');
+		// Back on this card: it stays closed (no reopen from the focus).
+		if (back || !root) return void (hit?.focus(), opener.cancel());
+		// The next card's link in the row (a ranked card sits in a wrapper, so not always the next sibling).
+		const hits = [...(root.closest('.row')?.querySelectorAll<HTMLElement>('.ui-poster a.hit, .ui-wide a.hit') ?? [])];
+		const i = hit ? hits.indexOf(hit) : -1;
+		const r = root;
+		const next =
+			(i >= 0 ? hits[i + 1] : undefined) ??
+			[...document.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input, select, textarea, [tabindex]')].find(
+				(el) => el.tabIndex >= 0 && !r.closest('.row')?.contains(el) && !el.closest('.ui-grow') && el.getClientRects().length > 0 && !!(r.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING)
+			);
 		(next ?? hit)?.focus();
 	}
 	function focusIn(e: FocusEvent) {
@@ -186,7 +196,7 @@
 {/snippet}
 
 {#if open && preview && artEl}
-	<GrowCard anchor={artEl} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} image={null} {leaving} badge={owned || strip ? ownBadge : undefined} {action} onenter={() => { closer.cancel(); leaving = false; }} onleave={leave} onclose={(back) => { shut(); if (back) hit?.focus(); }} focusIn={byKey} ontab={tabOut} returnTo={hit} ongone={() => leaving && shut()} />
+	<GrowCard anchor={artEl} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} image={null} {leaving} badge={owned || strip ? ownBadge : undefined} {action} onenter={() => { closer.cancel(); leaving = false; }} onleave={leave} onclose={(back) => { shut(); if (back) { hit?.focus(); opener.cancel(); } }} focusIn={byKey} ontab={tabOut} returnTo={hit} ongone={() => leaving && shut()} />
 {/if}
 
 <style>

@@ -69,7 +69,7 @@
 		</div>
 	{/snippet}
 	{#snippet actions()}
-		{#if href}<a class="info" {href}>More info</a>{/if}
+		{#if href}<a class="info" {href} onfocus={(e) => e.currentTarget.scrollIntoView({ block: 'nearest', behavior: 'instant' })}>More info</a>{/if}
 		{#if action}{@render action()}{/if}
 	{/snippet}
 </Billboard>

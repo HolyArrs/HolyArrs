@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import type { Snapshot } from '@sveltejs/kit';
 	import { anchorDelta, canReturn, putOffsets, readAnchor, readOffsets, type ExploreReturn } from '#lib/explore-return.ts';
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
+	import { goto, snapshot } from '$app/navigation';
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { to } from '#lib/paths.ts';
 	import { detailPath, loadDetails, remember } from '#lib/title-details.ts';
@@ -142,12 +141,13 @@
 	// come back once the rows have loaded far enough (more tail pages load
 	// first when the spot was further down).
 	let back = $state<ExploreReturn | null>(null);
-	export const snapshot: Snapshot<ExploreReturn> = {
+	snapshot<ExploreReturn>({
+		id: 'explore',
 		capture: () => ({ y: Math.round(scrollY), rows: readOffsets(document), anchor: readAnchor(document, document.querySelector('main')?.getBoundingClientRect().top ?? 0) }),
 		restore: (v) => {
 			if (v && v.y + Object.keys(v.rows).length > 0) back = v;
 		}
-	};
+	});
 	let backTries = 0;
 	// Rows above the spot may still be settling to their real heights: keep the
 	// row that was first on screen where it was for a moment, until the person scrolls.

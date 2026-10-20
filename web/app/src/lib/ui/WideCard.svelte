@@ -139,7 +139,8 @@
 	/** Tab out of the grown card: on to the next card in the row, else the next tab stop after this card; Shift+Tab back to this card. */
 	function tabOut(back: boolean) {
 		shut();
-		if (back || !root) return hit?.focus();
+		// Back on this card: it stays closed (no reopen from the focus).
+		if (back || !root) return void (hit?.focus(), opener.cancel());
 		const r = root;
 		const next = r.nextElementSibling?.querySelector<HTMLElement>('a[href], button:not([disabled])');
 		if (next) return next.focus();
@@ -248,7 +249,7 @@
 {/snippet}
 
 {#if open && preview && cover && artEl}
-	<GrowCard anchor={artEl} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} image={loaded && !failed ? art : null} logo={growLogo} lifted={!!strip && strip.kind !== 'top10'} {leaving} badge={marked ? wideBadges : undefined} action={growAction} followId={preview.titleId} onmore={onmore ? (r) => { shut(); onmore(r); } : undefined} onenter={() => { closer.cancel(); leaving = false; }} onleave={leave} onclose={(back) => { shut(); if (back) hit?.focus(); }} focusIn={byKey} ontab={tabOut} returnTo={hit} ongone={() => leaving && shut()} />
+	<GrowCard anchor={artEl} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} image={loaded && !failed ? art : null} logo={growLogo} lifted={!!strip && strip.kind !== 'top10'} {leaving} badge={marked ? wideBadges : undefined} action={growAction} followId={preview.titleId} onmore={onmore ? (r) => { shut(); onmore(r); } : undefined} onenter={() => { closer.cancel(); leaving = false; }} onleave={leave} onclose={(back) => { shut(); if (back) { hit?.focus(); opener.cancel(); } }} focusIn={byKey} ontab={tabOut} returnTo={hit} ongone={() => leaving && shut()} />
 {:else if open && preview && root}
 	<HoverPreview anchor={root} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} {image} badge={marked ? wideBadges : undefined} onenter={() => closer.cancel()} onleave={leave} onclose={shut} />
 {/if}

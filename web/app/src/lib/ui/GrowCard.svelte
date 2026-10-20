@@ -195,6 +195,12 @@
 
 	const focusables = () => (card ? [...card.querySelectorAll<HTMLElement>('a[href]:not([tabindex="-1"]), button:not([disabled])')] : []);
 	function keydown(e: KeyboardEvent) {
+		// The portal sits outside the row: hand the row's arrow keys back to it (rove.ts), from the card.
+		if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) {
+			e.preventDefault();
+			anchor.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, bubbles: true, cancelable: true }));
+			return;
+		}
 		if (e.key !== 'Tab' || !ontab) return;
 		const list = focusables();
 		const i = list.indexOf(document.activeElement as HTMLElement);
@@ -211,8 +217,8 @@
 
 	onMount(() => {
 		grow();
-		// The panel's buttons exist from the start (it is clipped, not absent): focus the first one.
-		if (focusIn) requestAnimationFrame(() => card?.querySelector<HTMLElement>('.buttons a[href], .buttons button:not([disabled])')?.focus({ preventScroll: true }));
+		// The panel's buttons exist from the start (it is clipped, not absent): focus the first button (the trailer's, when it already plays).
+		if (focusIn) requestAnimationFrame(() => focusables()[0]?.focus({ preventScroll: true }));
 		const close = () => onclose();
 		window.addEventListener('scroll', close, { passive: true, capture: true });
 		window.addEventListener('resize', close);
