@@ -81,6 +81,8 @@ type Engine struct {
 	Now func() time.Time
 	// Publish tells the web app the checks changed (may be nil).
 	Publish func(topic string, data any)
+	// Trailers reports trailer lookups and yt-dlp (nil skips the check).
+	Trailers func(ctx context.Context) Trailers
 
 	mu  sync.Mutex
 	low map[string]int64 // folder -> bytes an import needed but could not get
@@ -153,7 +155,7 @@ func (e *Engine) intSetting(ctx context.Context, key string, def, lo, hi int) in
 // Check runs every check once and returns the results, without storing.
 func (e *Engine) Check(ctx context.Context) ([]Result, error) {
 	var out []Result
-	for _, f := range []func(context.Context) ([]Result, error){e.folders, e.sources, e.downloaders, e.backups, e.update} {
+	for _, f := range []func(context.Context) ([]Result, error){e.folders, e.sources, e.downloaders, e.backups, e.trailers, e.update} {
 		rs, err := f(ctx)
 		if err != nil {
 			return nil, err
@@ -176,7 +178,7 @@ func (e *Engine) Probe(ctx context.Context, now time.Time) (bool, any, error) {
 		return true, nil, nil
 	}
 	var rs []Result
-	for _, f := range []func(context.Context) ([]Result, error){e.folders, e.sources, e.downloaders, e.backups} {
+	for _, f := range []func(context.Context) ([]Result, error){e.folders, e.sources, e.downloaders, e.backups, e.trailers} {
 		got, err := f(ctx)
 		if err != nil {
 			return true, nil, err
@@ -324,8 +326,45 @@ func label(kind string) string {
 		return "backups"
 	case "update":
 		return "update check"
+	case "trailers":
+		return "trailer lookups"
 	}
 	return kind
+}
+
+// TrailerFailLimit is how many trailer lookups in a row must fail before
+// the trailers check warns.
+const TrailerFailLimit = 5
+
+// Trailers is what the trailers check reads.
+type Trailers struct {
+	On      bool   // a yt-dlp is there
+	Failed  int    // lookups that failed in a row
+	Version string // yt-dlp's version
+	// Update is the last automatic update's result in plain words, and
+	// UpdateFailed whether it failed ("" when none ran).
+	Update       string
+	UpdateFailed bool
+}
+
+// trailers warns when trailer lookups keep failing (usually an old yt-dlp)
+// or the last yt-dlp update failed; it names yt-dlp's version.
+func (e *Engine) trailers(ctx context.Context) ([]Result, error) {
+	if e.Trailers == nil {
+		return nil, nil
+	}
+	t := e.Trailers(ctx)
+	if !t.On {
+		return nil, nil
+	}
+	r := Result{Key: "trailers", Kind: "trailers", Subject: strings.TrimSpace("yt-dlp " + t.Version), State: OK}
+	switch {
+	case t.Failed >= TrailerFailLimit:
+		r.State, r.Message = Warning, "Trailer lookups failing: update yt-dlp"
+	case t.UpdateFailed:
+		r.State, r.Message = Warning, "yt-dlp "+t.Update
+	}
+	return []Result{r}, nil
 }
 
 func mb(n int64) string { return strconv.FormatInt(n>>20, 10) + " MB" }

@@ -61,6 +61,9 @@ type Server struct {
 	// Top10 reads a Netflix Top 10 list from the metadata server; nil
 	// hides the row.
 	Top10 func(ctx context.Context, kind, region, lang string) (metadata.Top10, error)
+	// TrailerPick reads the metadata server's trailer key for a title
+	// (kind movie or show); nil uses only TMDB's videos.
+	TrailerPick func(ctx context.Context, kind, id, lang string) (string, error)
 	// MusicTrending reads a music trending list from the metadata server;
 	// nil hides the rows.
 	MusicTrending func(ctx context.Context, kind, region string) (metadata.MusicTrend, error)

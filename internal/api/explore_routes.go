@@ -293,6 +293,7 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	a.exploreCount(r.Context(), me, "shown", rowTypes(head))
+	a.prefetchTrailers(r, exploreTrailerTitles(hero, head))
 	a.exploreCaching(w, r, "private, no-cache")
 	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "building": building, "seeds": pg.Seeds, "tail_cap": pg.Cap,
 		"tail_rows": len(pg.Tail), "top10": top10, "hero": hero, "head": head})
@@ -358,4 +359,34 @@ func containsItem(items []explore.Item, key string) bool {
 		}
 	}
 	return false
+}
+
+// exploreTrailerTitles are the titles whose trailers are looked up ahead of
+// time: the hero first, then the first 4 cards of the first 3 rows.
+func exploreTrailerTitles(hero []discoverItemView, head []exploreRowView) [][2]string {
+	var out [][2]string
+	seen := map[string]bool{}
+	add := func(v discoverItemView) {
+		if (v.Kind == "movie" || v.Kind == "show") && v.TMDBID != "" && !seen[v.Kind+v.TMDBID] {
+			seen[v.Kind+v.TMDBID] = true
+			out = append(out, [2]string{v.Kind, v.TMDBID})
+		}
+	}
+	for _, v := range hero {
+		add(v)
+	}
+	rows := 0
+	for _, row := range head {
+		if len(row.Items) == 0 || rows == 3 {
+			continue
+		}
+		rows++
+		for i, v := range row.Items {
+			if i == 4 {
+				break
+			}
+			add(v)
+		}
+	}
+	return out
 }

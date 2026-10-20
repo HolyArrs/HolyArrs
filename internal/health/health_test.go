@@ -251,3 +251,26 @@ func TestBreakAndRecoverEventsWithFlapGuard(t *testing.T) {
 		t.Fatalf("guard 1: %+v", es)
 	}
 }
+
+func TestTrailersCheck(t *testing.T) {
+	w := newWorld(t)
+	failed, on, upd := 0, false, false
+	w.e.Trailers = func(context.Context) Trailers {
+		return Trailers{On: on, Failed: failed, Version: "2026.08.19", Update: "update failed: checksum mismatch", UpdateFailed: upd}
+	}
+	if _, ok := w.run(t)["trailers"]; ok {
+		t.Fatal("no yt-dlp: no check")
+	}
+	on = true
+	if c := w.run(t)["trailers"]; c.State != OK || c.Subject != "yt-dlp 2026.08.19" {
+		t.Fatalf("fine %+v", c)
+	}
+	upd = true
+	if c := w.run(t)["trailers"]; c.State != Warning || c.Message != "yt-dlp update failed: checksum mismatch" {
+		t.Fatalf("update failed %+v", c)
+	}
+	failed = TrailerFailLimit
+	if c := w.run(t)["trailers"]; c.State != Warning || c.Message != "Trailer lookups failing: update yt-dlp" {
+		t.Fatalf("failing %+v", c)
+	}
+}

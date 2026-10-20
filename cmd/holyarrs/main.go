@@ -595,11 +595,15 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	reg.Set(supervisor.StageKey("events"), "stage", "Event hooks", supervisor.Running, "")
 	defer wish.Wait()
 	a := api.New(api.Server{Library: lib, Lists: ol, Store: s, Queue: q, Live: hub, Metadata: md, Version: version, Auth: au, Backups: bm, Restart: restart,
-		Secrets: vault, MetadataUp: hosted.Health.Up, Top10: hosted.Service.NetflixTop10, MusicTrending: hosted.Service.MusicTrending, MusicSimilar: hosted.Service.MusicSimilar, Alerts: sender, Asks: wish, Search: sr, Downloads: dm, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
+		Secrets: vault, MetadataUp: hosted.Health.Up, Top10: hosted.Service.NetflixTop10, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
+			t, err := hosted.Service.TrailerPick(ctx, kind, id, lang)
+			return t.Key, err
+		}, MusicTrending: hosted.Service.MusicTrending, MusicSimilar: hosted.Service.MusicSimilar, Alerts: sender, Asks: wish, Search: sr, Downloads: dm, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
 		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase})
 	if !c.SafeMode {
 		a.StartExplore(ctx)
 	}
+	startYTDLP(ctx, c.ConfigDir, a, he)
 	srv := newServer(c.Addr, urlbase.Handler(c.URLBase, compress.Handler(limitBodies(a.Handler()))))
 	ln, err := net.Listen("tcp", c.Addr)
 	if err != nil {

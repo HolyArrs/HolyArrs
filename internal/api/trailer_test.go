@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -23,15 +24,22 @@ func TestFakeYTDLP(t *testing.T) {
 		return
 	}
 	args := strings.Join(os.Args, " ")
-	if !strings.Contains(args, "watch?v=trailerKey1") || !strings.Contains(args, "height<=720") {
+	want := os.Getenv("FAKE_YTDLP_KEY")
+	if want == "" {
+		want = "trailerKey1"
+	}
+	if !strings.Contains(args, "watch?v="+want) || !strings.Contains(args, "player_client=mweb,visionos") || !strings.Contains(args, "--no-check-formats") {
 		os.Exit(3)
 	}
 	exp := time.Now().Add(6 * time.Hour).Unix()
+	mp4 := fmt.Sprintf(`{"format_id":"18","url":"https://rr1---sn-abc.googlevideo.com/videoplayback?expire=%d&itag=18","ext":"mp4","vcodec":"avc1.42001E","acodec":"mp4a.40.2","width":640,"height":360,"protocol":"https"}`, exp)
 	switch mode {
 	case "ok":
-		fmt.Printf(`{"url":"https://rr1---sn-abc.googlevideo.com/videoplayback?expire=%d&itag=22","ext":"mp4","vcodec":"avc1.64001F","acodec":"mp4a.40.2","width":1280,"height":720,"protocol":"https"}`, exp)
+		fmt.Printf(`{"formats":[{"format_id":"233","manifest_url":"https://manifest.googlevideo.com/api/manifest/hls_variant/expire/%d/id/x/file/index.m3u8","protocol":"m3u8_native"},%s]}`, exp+60, mp4)
+	case "mp4":
+		fmt.Printf(`{"formats":[%s]}`, mp4)
 	case "odd":
-		fmt.Print(`{"url":"https://evil.example.com/v.mp4","ext":"mp4","vcodec":"avc1","height":720}`)
+		fmt.Print(`{"formats":[{"format_id":"18","url":"https://evil.example.com/v.mp4","ext":"mp4","vcodec":"avc1"},{"format_id":"1","manifest_url":"https://evil.example.com/hls_variant/x"}]}`)
 	case "slow":
 		time.Sleep(20 * time.Second)
 	default:
@@ -43,13 +51,13 @@ func TestFakeYTDLP(t *testing.T) {
 func fakeYTDLP(t *testing.T, mode string) *atomic.Int32 {
 	t.Helper()
 	var runs atomic.Int32
-	old := ytdlp
+	old := ytdlpRun
 	t.Setenv("FAKE_YTDLP", mode)
-	ytdlp = func() (string, []string, bool) {
+	ytdlpRun = func() (string, []string, bool) {
 		runs.Add(1)
 		return os.Args[0], []string{"-test.run=^TestFakeYTDLP$", "--"}, true
 	}
-	t.Cleanup(func() { ytdlp = old })
+	t.Cleanup(func() { ytdlpRun = old })
 	return &runs
 }
 
@@ -79,14 +87,16 @@ func TestTrailerStream(t *testing.T) {
 	if err := json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.HasPrefix(s.URL, "https://rr1---sn-abc.googlevideo.com/") || s.Key != "trailerKey1" || s.Height != 720 || s.Width != 1280 || !s.Audio ||
-		time.Until(s.ExpiresAt) < 5*time.Hour {
+	if s.Type != "hls" || !strings.HasPrefix(s.URL, "https://manifest.googlevideo.com/api/manifest/hls_variant/") || !strings.Contains(s.MP4URL, "itag=18") || s.Key != "trailerKey1" || s.Height != 360 || !s.Audio ||
+		time.Until(s.ExpiresAt) < 5*time.Hour || time.Until(s.ExpiresAt) > 6*time.Hour+time.Second {
 		t.Fatalf("stream %+v", s)
 	}
-	// The address is kept: a second ask does not run yt-dlp again.
+	// The address is kept: a second ask does not look it up again (ytdlpRun
+	// is still asked whether yt-dlp exists, but resolves stay at one).
+	before := runs.Load()
 	do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200)
-	if runs.Load() != 1 {
-		t.Fatalf("yt-dlp ran %d times", runs.Load())
+	if runs.Load() != before {
+		t.Fatalf("yt-dlp ran again (%d -> %d)", before, runs.Load())
 	}
 	do(t, "GET", srv.URL+"/api/v1/trailer/movie/12", "", 404) // no trailer
 	do(t, "GET", srv.URL+"/api/v1/trailer/artist/1", "", 400)
@@ -106,9 +116,9 @@ func TestTrailerStreamRefusals(t *testing.T) {
 		}
 	}
 	// No yt-dlp at all.
-	old := ytdlp
-	ytdlp = func() (string, []string, bool) { return "", nil, false }
-	t.Cleanup(func() { ytdlp = old })
+	old := ytdlpRun
+	ytdlpRun = func() (string, []string, bool) { return "", nil, false }
+	t.Cleanup(func() { ytdlpRun = old })
 	srv, _ := discoverRig(t, trailerTMDB(t))
 	do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 404)
 }
@@ -156,5 +166,93 @@ func TestUISettings(t *testing.T) {
 	do(t, "PUT", path, `{"autoplay_trailers":"yes"}`, 400)
 	if b := string(do(t, "PUT", path, `{"autoplay_trailers":true}`, 200)); !strings.Contains(b, `"autoplay_trailers":true`) {
 		t.Fatalf("on %s", b)
+	}
+}
+
+// A restart keeps resolved addresses (lookup_cache): a new API on the same
+// database answers without yt-dlp. MP4-only answers come back as mp4.
+func TestTrailerStreamKeptAcrossRestartAndMP4(t *testing.T) {
+	runs := fakeYTDLP(t, "mp4")
+	srv, st := discoverRig(t, trailerTMDB(t))
+	var s TrailerStream
+	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s)
+	if s.Type != "mp4" || !strings.Contains(s.URL, "itag=18") || s.MP4URL != "" || !s.Audio {
+		t.Fatalf("mp4 %+v", s)
+	}
+	srv2 := httptest.NewServer(New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"}).Handler())
+	t.Cleanup(srv2.Close)
+	n := runs.Load()
+	var again TrailerStream
+	_ = json.Unmarshal(do(t, "GET", srv2.URL+"/api/v1/trailer/movie/11", "", 200), &again)
+	if again.URL != s.URL || runs.Load() != n {
+		t.Fatalf("not kept: %+v runs %d->%d", again, n, runs.Load())
+	}
+}
+
+// The metadata server's pick wins over TMDB's videos; its "no trailer"
+// is final.
+func TestTrailerUsesServerPick(t *testing.T) {
+	fakeYTDLP(t, "ok")
+	t.Setenv("FAKE_YTDLP_KEY", "serverPick1")
+	_, st := discoverRig(t, trailerTMDB(t))
+	srv := httptest.NewServer(New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test", TrailerPick: func(_ context.Context, kind, id, lang string) (string, error) {
+		if id == "12" {
+			return "", metadata.ErrNotFound
+		}
+		return "serverPick1", nil
+	}}).Handler())
+	t.Cleanup(srv.Close)
+	var s TrailerStream
+	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s)
+	if s.Key != "serverPick1" {
+		t.Fatalf("%+v", s)
+	}
+	do(t, "GET", srv.URL+"/api/v1/trailer/movie/12", "", 404)
+}
+
+// Many asks for one title share one lookup; failures in a row are counted
+// for the health check and a success resets them.
+func TestTrailerSharedLookupAndFailures(t *testing.T) {
+	fakeYTDLP(t, "fail")
+	_, st := discoverRig(t, trailerTMDB(t))
+	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	ctx := context.Background()
+	for range 3 {
+		_, _ = a.resolveTitle(ctx, "movie", "11", "en")
+		a.trailers.cache = nil // forget the miss, as after trailerMiss
+	}
+	if n, on := a.TrailerFailures(); n != 3 || !on {
+		t.Fatalf("failures %d %v", n, on)
+	}
+	runs := fakeYTDLP(t, "ok")
+	a.trailers.cache = nil
+	var wg sync.WaitGroup
+	for range 5 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if s, err := a.resolveTitle(ctx, "movie", "11", "en"); err != nil || s.Type != "hls" {
+				t.Errorf("%+v %v", s, err)
+			}
+		}()
+	}
+	wg.Wait()
+	if runs.Load() != 1 {
+		t.Fatalf("lookups %d", runs.Load())
+	}
+	if n, _ := a.TrailerFailures(); n != 0 {
+		t.Fatalf("not reset %d", n)
+	}
+}
+
+func TestExploreTrailerTitles(t *testing.T) {
+	it := func(kind, id string) discoverItemView {
+		return discoverItemView{DiscoverItem: metadata.DiscoverItem{Kind: kind, TMDBID: id}}
+	}
+	hero := []discoverItemView{it("movie", "1"), it("show", "2")}
+	head := []exploreRowView{{Items: []discoverItemView{}}, {Items: []discoverItemView{it("movie", "1"), it("movie", "3"), it("movie", "4"), it("movie", "5"), it("movie", "6")}}, {Items: []discoverItemView{it("artist", "x"), it("show", "7")}}, {Items: []discoverItemView{it("movie", "8")}}, {Items: []discoverItemView{it("movie", "9")}}}
+	got := fmt.Sprint(exploreTrailerTitles(hero, head))
+	if got != "[[movie 1] [show 2] [movie 3] [movie 4] [movie 5] [show 7] [movie 8]]" {
+		t.Fatal(got)
 	}
 }
