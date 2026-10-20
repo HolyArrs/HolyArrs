@@ -22,6 +22,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/importer"
 	"github.com/CoderLuii/holyarrs/internal/jobs"
+	"github.com/CoderLuii/holyarrs/internal/outside"
 	"github.com/CoderLuii/holyarrs/internal/source"
 	"github.com/CoderLuii/holyarrs/internal/store"
 	"github.com/CoderLuii/holyarrs/internal/supervisor"
@@ -77,6 +78,9 @@ type Engine struct {
 	ReleaseFeed string
 	// FreeSpace reads free bytes (nil means importer.FreeSpace; -1 unknown).
 	FreeSpace func(dir string) int64
+	// Outside reads the outside-call breaker states (nil means the process
+	// registry, outside.States).
+	Outside func() []outside.State
 	// Now is the clock (nil means time.Now).
 	Now func() time.Time
 	// Publish tells the web app the checks changed (may be nil).

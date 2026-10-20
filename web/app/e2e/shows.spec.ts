@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { join } from 'node:path';
-import { moviesDir, noSidewaysScroll, owner, signIn, libraryStatus, openApprovals, openSeason, seasonCount, episodeAction, episodeKept, libraryKind } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, libraryStatus, openApprovals, openSeason, seasonCount, episodeAction, episodeKept, libraryKind, addFromSearch, openFromSearch, seasonKept, toggleSeasonKept } from './helpers.ts';
 
 // Shows (2.2.5 to 2.2.10): the owner adds a show folder and a show from
 // Search (the fake TMDB knows Harbour Lights, Lantern Street and Moss
@@ -29,12 +29,6 @@ async function axe(p: Page, where: string) {
 	expect(bad.map((v) => v.id), where).toEqual([]);
 }
 
-async function searchShows(p: Page, name: string) {
-	await p.goto('/search?kind=show');
-	await expect(p.getByRole('radio', { name: 'TV shows', exact: true })).toHaveAttribute('aria-checked', 'true');
-	await p.getByLabel('Show name or id').fill(name);
-	await p.getByRole('button', { name: 'Search', exact: true }).click();
-}
 
 test.beforeAll(async ({ browser }) => {
 	own = await fresh(browser);
@@ -53,17 +47,13 @@ test('the owner adds a Library folder for shows', async () => {
 
 test('the owner finds a show and adds it with only the latest season kept', async () => {
 	// Search switches between movies and shows and keeps the choice in the address.
-	await own.goto('/search');
-	await own.getByRole('radio', { name: 'TV shows', exact: true }).click();
+	await own.goto('/search?q=harbour');
+	await own.getByRole('radio', { name: 'Shows', exact: true }).click();
 	await expect(own).toHaveURL(/kind=show/);
-	await own.getByLabel('Show name or id').fill('harbour');
-	await own.getByRole('button', { name: 'Search', exact: true }).click();
-	const hit = own.getByTestId('show-hit').filter({ hasText: 'Harbour Lights' });
-	await expect(hit).toContainText('Lab TV');
+	await expect(own.getByRole('main').getByRole('link', { name: 'Harbour Lights,' }).first()).toBeVisible();
 	await axe(own, 'search shows');
-	await hit.getByRole('button', { name: 'Add' }).click();
-
-	const dialog = own.getByRole('dialog');
+	// A show opens its title page; Add lives there.
+	const dialog = await addFromSearch(own, 'harbour', 'Harbour Lights', 'show');
 	await expect(dialog.getByLabel('Library folder')).toContainText('Shows');
 	await expect(dialog.getByTestId('no-show-search')).toContainText('use Search now on the show page');
 	await expect(dialog.getByRole('checkbox', { name: /Search now/ })).toHaveCount(0);
@@ -77,28 +67,30 @@ test('the owner finds a show and adds it with only the latest season kept', asyn
 	await dialog.getByRole('button', { name: 'Add to Library' }).click();
 	await expect(dialog).toBeHidden();
 	await expect(own.getByRole('status')).toContainText('Harbour Lights is in your Library.');
-	await hit.getByRole('link', { name: 'In your Library' }).click();
+	await expect(own).toHaveURL(/\/library\/\d+/);
 
 	// The show page: seasons and their switches; Search now is there (3.2).
 	await expect(own.getByRole('heading', { level: 1, name: /Harbour Lights/ })).toBeVisible();
-	await expect(own.getByTestId('search-show')).toBeVisible();
+	await own.getByRole('button', { name: 'More actions', exact: true }).click();
+	await expect(own.getByRole('menuitem', { name: 'Search now', exact: true })).toBeVisible();
+	await own.keyboard.press('Escape');
 	// One season shows at a time; the Season picker holds all three.
 	expect(await seasonCount(own)).toBe(3);
 	await openSeason(own, 0);
-	await expect(own.getByRole('checkbox', { name: 'Keep Specials up to date' })).not.toBeChecked();
+	expect(await seasonKept(own, 'Specials')).toBe(false);
 	await openSeason(own, 1);
-	await expect(own.getByRole('checkbox', { name: 'Keep Season 1 up to date' })).not.toBeChecked();
+	expect(await seasonKept(own, 'Season 1')).toBe(false);
 	const s2 = await openSeason(own, 2);
-	await expect(own.getByRole('checkbox', { name: 'Keep Season 2 up to date' })).toBeChecked();
+	expect(await seasonKept(own, 'Season 2')).toBe(true);
 	await expect(s2.getByTestId('season-line')).toContainText('0 of 1 aired in the Library · 1 missing · 1 not out yet');
 	await axe(own, 'show page');
 });
 
 test('seasons and episodes turn on and off; each episode says its state and why', async () => {
 	await openSeason(own, 1);
-	await own.getByText('Keep Season 1 up to date', { exact: true }).click();
+	await toggleSeasonKept(own, 'Season 1');
 	await expect(own.getByRole('status')).toContainText('Season 1: HolyArrs keeps it up to date.');
-	await expect(own.getByRole('checkbox', { name: 'Keep Season 1 up to date' })).toBeChecked();
+	expect(await seasonKept(own, 'Season 1')).toBe(true);
 	await expect(own.getByTestId('season').getByTestId('season-line')).toContainText('2 missing');
 
 	const eps = (await openSeason(own, 2)).getByTestId('episode');
@@ -124,25 +116,25 @@ test('shows sit in the Library next to movies, with kinds and state filters', as
 	await expect(own).toHaveURL(/kind=show/);
 	const card = own.getByTestId('library-card').filter({ hasText: 'Harbour Lights' });
 	await expect(card).toContainText('Show');
-	await expect(card).toContainText(/Missing · \d+ episodes?/);
+	// Posters carry only the status circle now; the Missing filter below proves the state.
 	await expect(own.getByTestId('library-card').filter({ hasText: 'Quiet Orchard' })).toHaveCount(0);
 	await libraryStatus(own, 'missing');
 	await expect(card).toBeVisible();
 	// In the Missing list a show folds its missing episodes under one row.
-	await own.getByRole('radiogroup', { name: 'Layout' }).getByRole('radio', { name: 'List' }).click();
+	await own.getByRole('radiogroup', { name: 'View' }).getByRole('radio', { name: 'Table' }).click();
 	const missingRow = own.getByTestId('library-row').filter({ hasText: 'Harbour Lights' });
 	await missingRow.getByTestId('missing-fold').click();
 	await expect(missingRow.getByTestId('missing-fold')).toHaveAttribute('aria-expanded', 'true');
 	await expect(missingRow.getByTestId('missing-episode').first()).toContainText(/S\d\dE\d\d/);
-	await own.getByRole('radiogroup', { name: 'Layout' }).getByRole('radio', { name: 'Posters' }).click();
+	await own.getByRole('radiogroup', { name: 'View' }).getByRole('radio', { name: 'Grid' }).click();
 	await libraryStatus(own, 'not_out_yet');
 	await expect(card).toBeVisible();
 	await libraryStatus(own, 'better');
 	await expect(card).toHaveCount(0);
 	await libraryStatus(own, 'all');
-	await own.getByRole('radiogroup', { name: 'Layout' }).getByRole('radio', { name: 'List' }).click();
+	await own.getByRole('radiogroup', { name: 'View' }).getByRole('radio', { name: 'Table' }).click();
 	await expect(own.getByTestId('library-row').filter({ hasText: 'Harbour Lights' })).toContainText('aired episodes in the Library');
-	await own.getByRole('radiogroup', { name: 'Layout' }).getByRole('radio', { name: 'Posters' }).click();
+	await own.getByRole('radiogroup', { name: 'View' }).getByRole('radio', { name: 'Grid' }).click();
 	await libraryKind(own, /^Movies/);
 	await expect(card).toHaveCount(0);
 	await expect(own.getByTestId('library-card').filter({ hasText: 'Quiet Orchard' })).toBeVisible();
@@ -163,13 +155,14 @@ test('a member asks for two seasons of a show from a phone', async ({ browser })
 	await max.getByRole('button', { name: 'Join and sign in' }).click();
 	await expect(max).toHaveURL(/\/$/);
 
-	await searchShows(max, 'lantern');
-	const hit = max.getByTestId('show-hit').filter({ hasText: 'Lantern Street' });
+	await max.goto('/wishlist');
 	await expect(max.getByTestId('ask-limit')).toContainText('show asks left this week');
+	await openFromSearch(max, 'lantern', 'Lantern Street', 'show');
 	await noSidewaysScroll(max);
-	await hit.getByRole('button', { name: 'Ask', exact: true }).click();
+	const askLantern = max.getByTestId('title-detail').getByRole('button', { name: /^Ask for Lantern Street/ });
+	await askLantern.click();
 	const dialog = max.getByRole('dialog');
-	await dialog.getByRole('radio', { name: /Only some seasons/ }).check();
+	await dialog.getByRole('radio', { name: /Choose seasons/ }).check();
 	await expect(dialog.getByRole('button', { name: 'Pick a season' })).toBeDisabled();
 	await dialog.getByRole('checkbox', { name: 'Season 1' }).check();
 	await dialog.getByRole('checkbox', { name: 'Season 2' }).check();
@@ -177,11 +170,11 @@ test('a member asks for two seasons of a show from a phone', async ({ browser })
 	await axe(max, 'ask show dialog phone');
 	await dialog.getByRole('button', { name: 'Ask for seasons 1 and 2' }).click();
 	await expect(dialog).toBeHidden();
-	await expect(hit.getByRole('link', { name: /^You asked · Requested on your Wishlist$/ })).toBeVisible();
+	await expect(max.getByRole('status')).toContainText('Asked for Lantern Street');
 
 	// A show already in the Library offers to ask for the seasons it does not keep.
-	await searchShows(max, 'harbour');
-	await expect(max.getByTestId('show-hit').filter({ hasText: 'Harbour Lights' }).getByRole('button', { name: 'Ask for more' })).toBeVisible();
+	await openFromSearch(max, 'harbour', 'Harbour Lights', 'show');
+	await expect(max.getByTestId('ask-seasons-more')).toBeVisible();
 
 	await max.locator('nav.tabbar').getByRole('link', { name: 'Wishlist' }).click();
 	const ask = max.getByTestId('ask').filter({ hasText: 'Lantern Street' });
@@ -199,8 +192,10 @@ test('the owner approves from a phone: the show is added with those seasons and 
 	await openApprovals(phone);
 	const ask = phone.getByTestId('ask').filter({ hasText: 'Lantern Street' });
 	await expect(ask.getByTestId('asked-by')).toContainText('Asked by max');
-	await ask.getByRole('button', { name: 'Approve' }).click();
-	const dialog = phone.getByRole('dialog');
+	// The row's Approve is one tap with Undo; Review holds Approve with options.
+	await ask.getByRole('button', { name: 'Review Lantern Street' }).click();
+	await phone.getByRole('button', { name: 'Approve with options' }).click();
+	const dialog = phone.getByRole('dialog', { name: /^Approve Lantern Street/ });
 	await expect(dialog).toContainText('for seasons 1 and 2');
 	await expect(dialog.getByLabel('Library folder')).toContainText('Shows');
 	await expect(dialog.getByLabel('Library folder')).not.toContainText('Movies');
@@ -209,7 +204,7 @@ test('the owner approves from a phone: the show is added with those seasons and 
 	await noSidewaysScroll(phone);
 	await dialog.getByRole('button', { name: 'Approve and add' }).click();
 	await expect(dialog).toBeHidden();
-	await phone.getByRole('button', { name: /^Everyone's/ }).click();
+	await phone.getByRole('button', { name: /^Approved/ }).click();
 	await expect(ask.getByTestId('ask-state')).toHaveText('Approved');
 	await expect(ask.getByTestId('decided-by')).toContainText('Approved by luis');
 
@@ -218,11 +213,11 @@ test('the owner approves from a phone: the show is added with those seasons and 
 	await expect(phone.getByTestId('title-asks')).toContainText('max');
 	await expect(phone.getByTestId('title-asks')).toContainText('seasons 1 and 2');
 	await openSeason(phone, 0);
-	await expect(phone.getByRole('checkbox', { name: 'Keep Season 1 up to date' })).toBeChecked();
+	expect(await seasonKept(phone, 'Season 1')).toBe(true);
 	await openSeason(phone, 1);
-	await expect(phone.getByRole('checkbox', { name: 'Keep Season 2 up to date' })).toBeChecked();
+	expect(await seasonKept(phone, 'Season 2')).toBe(true);
 	await openSeason(phone, 2);
-	await expect(phone.getByRole('checkbox', { name: 'Keep Season 3 up to date' })).not.toBeChecked();
+	expect(await seasonKept(phone, 'Season 3')).toBe(false);
 	await noSidewaysScroll(phone);
 	await axe(phone, 'show page phone');
 

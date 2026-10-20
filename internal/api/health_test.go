@@ -6,7 +6,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/CoderLuii/holyarrs/internal/health"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/CoderLuii/holyarrs/internal/outside"
 	"github.com/CoderLuii/holyarrs/internal/store"
 	"github.com/CoderLuii/holyarrs/internal/supervisor"
 )
@@ -71,7 +73,10 @@ func TestHealthStatesOverHTTP(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s.Close() })
-	srv := httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "test", States: reg, SafeMode: true}).Handler())
+	// Other tests in this package trip breakers in the process-wide outside
+	// registry; read an empty one so only this fixture's states show.
+	eng := &health.Engine{Store: s, Version: "test", Outside: func() []outside.State { return nil }}
+	srv := httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "test", States: reg, SafeMode: true, Health: eng}).Handler())
 	t.Cleanup(srv.Close)
 	exec41(t, s, `INSERT INTO downloaders (created_at, created_by, updated_at, updated_by, name, adapter, protocol, url, category, priority, path_map, after_import, state)
 		VALUES ('2026-10-01T00:00:00Z', '{}', '2026-10-01T00:00:00Z', '{}', 'Lab qBittorrent', 'qbittorrent', 'torrent', 'http://qb', 'holyarrs', 1, '[]', 'leave', 'auth_failed')`)
@@ -92,7 +97,13 @@ func TestHealthStatesOverHTTP(t *testing.T) {
 		t.Fatalf("link %+v", l)
 	}
 	// Without a Registry the list still answers, as an empty list.
-	srv2, _, _ := setup(t)
+	s2, err := store.Open(t.TempDir(), store.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = s2.Close() })
+	srv2 := httptest.NewServer(New(Server{Store: s2, Metadata: metadata.Lab(), Version: "test", Health: &health.Engine{Store: s2, Version: "test", Outside: func() []outside.State { return nil }}}).Handler())
+	t.Cleanup(srv2.Close)
 	if b := do(t, "GET", srv2.URL+"/api/v1/health/states", "", 200); string(b) != `{"safe_mode":false,"states":[]}`+"\n" {
 		t.Fatalf("empty: %s", b)
 	}

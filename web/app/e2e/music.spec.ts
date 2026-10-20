@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { join } from 'node:path';
-import { moviesDir, noSidewaysScroll, owner, signIn, openApprovals, libraryKind, libraryStatus, titleAction, openAdvanced } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, openApprovals, libraryKind, libraryStatus, titleAction, openAdvanced, openFromSearch } from './helpers.ts';
 
 // Music (2.3.4 to 2.3.8): the owner adds a music folder, looks at Settings >
 // Music, adds Tin Lanterns from Search (the fake MusicBrainz knows it and
@@ -31,12 +31,12 @@ async function axe(p: Page, where: string) {
 	expect(bad.map((v) => v.id), where).toEqual([]);
 }
 
-async function searchMusic(p: Page, name: string) {
-	await p.goto('/search?kind=music');
+// Artists are added and asked for right on Search's cards.
+async function searchMusic(p: Page, words: string) {
+	await p.goto(`/search?q=${encodeURIComponent(words)}&kind=music`);
 	await expect(p.getByRole('radio', { name: 'Music', exact: true })).toHaveAttribute('aria-checked', 'true');
-	await p.getByLabel('Artist name or id').fill(name);
-	await p.getByRole('button', { name: 'Search', exact: true }).click();
 }
+const artistCard = (p: Page, name: string) => p.getByRole('main').getByRole('listitem').filter({ hasText: name }).first();
 
 test.beforeAll(async ({ browser }) => {
 	own = await fresh(browser);
@@ -68,14 +68,11 @@ test('the owner adds a music folder and looks at Settings > Music', async () => 
 });
 
 test('the owner finds an artist and adds it from Search', async () => {
-	await own.goto('/search');
+	await own.goto('/search?q=lantern');
 	await own.getByRole('radio', { name: 'Music', exact: true }).click();
 	await expect(own).toHaveURL(/kind=music/);
-	await own.getByLabel('Artist name or id').fill('lantern');
-	await own.getByRole('button', { name: 'Search', exact: true }).click();
-	const hit = own.getByTestId('artist-hit').filter({ hasText: 'Tin Lanterns' });
+	const hit = artistCard(own, 'Tin Lanterns');
 	await expect(hit).toContainText('lab folk band');
-	await expect(hit).toContainText('Group · GB · Still active');
 	await axe(own, 'search music');
 	await hit.getByRole('button', { name: 'Add' }).click();
 
@@ -91,11 +88,13 @@ test('the owner finds an artist and adds it from Search', async () => {
 	await dialog.getByRole('button', { name: 'Add to Library' }).click();
 	await expect(dialog).toBeHidden(slow);
 	await expect(own.getByRole('status')).toContainText('Tin Lanterns is in your Library.');
-	await hit.getByRole('link', { name: 'In your Library' }).click();
+	await own.getByRole('main').getByRole('link', { name: 'Tin Lanterns,' }).first().click();
 
 	// The artist page: albums with kinds, dates and state, and Search now.
 	await expect(own.getByRole('heading', { level: 1, name: 'Tin Lanterns' })).toBeVisible();
-	await expect(own.getByTestId('artist-search')).toBeVisible();
+	await own.getByRole('button', { name: 'More actions', exact: true }).click();
+	await expect(own.getByRole('menuitem', { name: 'Search now', exact: true })).toBeVisible();
+	await own.keyboard.press('Escape');
 	await expect(own.getByTestId('artist-progress')).toContainText('tracks in the Library', slow);
 	const albums = own.getByTestId('album');
 	await expect(albums).toHaveCount(3);
@@ -123,7 +122,7 @@ test('the owner finds an artist and adds it from Search', async () => {
 });
 
 test('the album page lists tracks and Pressings, and the owner picks another Pressing', async () => {
-	await own.getByRole('link', { name: 'Harbour Songs' }).click();
+	await own.getByTestId('album').filter({ hasText: 'Harbour Songs' }).getByRole('link', { name: 'Harbour Songs' }).click();
 	await expect(own.getByRole('heading', { level: 1, name: /Harbour Songs/ })).toBeVisible();
 	await expect(own.getByTestId('pressing')).toHaveCount(3);
 	await expect(own.getByTestId('track')).toHaveCount(3);
@@ -138,7 +137,7 @@ test('the album page lists tracks and Pressings, and the owner picks another Pre
 	await expect(own.getByRole('status')).toContainText('The tracks now follow Harbour Songs.');
 	await expect(own.getByTestId('track')).toHaveCount(4);
 	await expect(own.getByTestId('chosen-pressing')).toContainText('picked by hand');
-	await own.getByRole('link', { name: 'Tin Lanterns' }).click();
+	await own.getByRole('link', { name: 'Tin Lanterns', exact: true }).first().click();
 	await expect(own.getByTestId('album').filter({ hasText: 'Harbour Songs' }).getByTestId('album-line')).toContainText('of 4 tracks');
 });
 
@@ -148,11 +147,11 @@ test('artists sit in the Library with a Music kind', async () => {
 	await expect(own).toHaveURL(/kind=artist/);
 	const card = own.getByTestId('library-card').filter({ hasText: 'Tin Lanterns' });
 	await expect(card).toContainText('Artist');
-	await expect(card).toContainText(/Missing · \d+ tracks?/);
+	// Posters carry only the status circle now.
 	await expect(own.getByTestId('library-card').filter({ hasText: 'Harbour Lights' })).toHaveCount(0);
-	await own.getByRole('radiogroup', { name: 'Layout' }).getByRole('radio', { name: 'List' }).click();
+	await own.getByRole('radiogroup', { name: 'View' }).getByRole('radio', { name: 'Table' }).click();
 	await expect(own.getByTestId('library-row').filter({ hasText: 'Tin Lanterns' })).toContainText('tracks in the Library');
-	await own.getByRole('radiogroup', { name: 'Layout' }).getByRole('radio', { name: 'Posters' }).click();
+	await own.getByRole('radiogroup', { name: 'View' }).getByRole('radio', { name: 'Grid' }).click();
 	await libraryKind(own, /^Everything/);
 	await axe(own, 'library with music');
 });
@@ -170,10 +169,11 @@ test('a member asks for one single from a phone', async ({ browser }) => {
 	await ivy.getByRole('button', { name: 'Join and sign in' }).click();
 	await expect(ivy).toHaveURL(/\/$/);
 
-	await searchMusic(ivy, 'moss');
-	const hit = ivy.getByTestId('artist-hit').filter({ hasText: 'Moss Choir' });
-	await expect(hit).toContainText('No longer active');
+	await ivy.goto('/wishlist');
 	await expect(ivy.getByTestId('ask-limit')).toContainText('music asks left this week');
+	await searchMusic(ivy, 'moss');
+	const hit = artistCard(ivy, 'Moss Choir');
+	await expect(hit).toBeVisible();
 	await expect(hit.getByRole('button', { name: 'Add' })).toHaveCount(0);
 	await noSidewaysScroll(ivy);
 	await hit.getByRole('button', { name: 'Ask', exact: true }).click();
@@ -186,11 +186,11 @@ test('a member asks for one single from a phone', async ({ browser }) => {
 	await axe(ivy, 'ask artist dialog phone');
 	await dialog.getByRole('button', { name: 'Ask for Fern Hymns' }).click();
 	await expect(dialog).toBeHidden();
-	await expect(hit.getByRole('link', { name: /^You asked · Requested on your Wishlist$/ })).toBeVisible();
+	await expect(ivy.getByRole('status')).toContainText('Asked for Moss Choir');
 
-	// An artist in the Library offers to ask for the albums it does not keep.
-	await searchMusic(ivy, 'lantern');
-	await expect(ivy.getByTestId('artist-hit').filter({ hasText: 'Tin Lanterns' }).getByRole('button', { name: 'Ask for more' })).toBeVisible();
+	// An artist in the Library offers to ask for the albums it does not keep (on its page).
+	await openFromSearch(ivy, 'lantern', 'Tin Lanterns');
+	await expect(ivy.getByTestId('ask-albums')).toBeVisible();
 
 	await ivy.locator('nav.tabbar').getByRole('link', { name: 'Wishlist' }).click();
 	const ask = ivy.getByTestId('ask').filter({ hasText: 'Moss Choir' });
@@ -208,8 +208,10 @@ test('the owner approves from a phone: the artist is added with that single and 
 	await openApprovals(phone);
 	const ask = phone.getByTestId('ask').filter({ hasText: 'Moss Choir' });
 	await expect(ask.getByTestId('asked-by')).toContainText('Asked by ivy');
-	await ask.getByRole('button', { name: 'Approve' }).click();
-	const dialog = phone.getByRole('dialog');
+	// The row's Approve is one tap with Undo; Review holds Approve with options.
+	await ask.getByRole('button', { name: 'Review Moss Choir' }).click();
+	await phone.getByRole('button', { name: 'Approve with options' }).click();
+	const dialog = phone.getByRole('dialog', { name: /^Approve Moss Choir/ });
 	await expect(dialog).toContainText('for Fern Hymns');
 	await expect(dialog.getByLabel('Library folder')).toContainText('Music');
 	await expect(dialog.getByLabel('Library folder')).not.toContainText('Shows');
@@ -218,7 +220,7 @@ test('the owner approves from a phone: the artist is added with that single and 
 	await noSidewaysScroll(phone);
 	await dialog.getByRole('button', { name: 'Approve and add' }).click();
 	await expect(dialog).toBeHidden(slow);
-	await phone.getByRole('button', { name: /^Everyone's/ }).click();
+	await phone.getByRole('button', { name: /^Approved/ }).click();
 	await expect(ask.getByTestId('ask-state')).toHaveText('Approved');
 	await expect(ask.getByTestId('decided-by')).toContainText('Approved by luis');
 
@@ -241,14 +243,17 @@ test('the owner approves from a phone: the artist is added with that single and 
 	await expect(ivy.getByTestId('message').first()).toContainText('Moss Choir, Fern Hymns was approved by luis');
 	await expect(ivy.getByTestId('message').first()).toContainText('Enjoy the hymns');
 	await ivy.getByTestId('ask').filter({ hasText: 'Moss Choir' }).getByRole('link', { name: /Moss Choir/ }).click();
-	await expect(ivy.getByTestId('album').first()).toBeVisible();
+	// Members see the albums as cards; the Albums list with its switches is for managers.
+	await expect(ivy.getByRole('heading', { level: 1, name: /Moss Choir/ })).toBeVisible();
+	await expect(ivy.getByTestId('album')).toHaveCount(0);
 	await expect(ivy.getByRole('checkbox')).toHaveCount(0);
 	await expect(ivy.getByRole('button', { name: 'Refresh' })).toHaveCount(0);
 	await expect(ivy.getByRole('button', { name: 'Edit album kinds' })).toHaveCount(0);
 	await expect(ivy.getByRole('button', { name: 'More actions' })).toHaveCount(0);
 	await expect(ivy.getByTestId('ask-albums')).toBeVisible();
 	await noSidewaysScroll(ivy);
-	await ivy.getByRole('link', { name: 'Fern Hymns' }).click();
+	await ivy.getByRole('link', { name: /^Fern Hymns/ }).first().click();
+	await expect(ivy.getByRole('heading', { level: 1, name: /Fern Hymns/ })).toBeVisible();
 	await expect(ivy.getByRole('button', { name: 'Use this Pressing' })).toHaveCount(0);
 	await expect(ivy.getByRole('checkbox')).toHaveCount(0);
 	await noSidewaysScroll(ivy);

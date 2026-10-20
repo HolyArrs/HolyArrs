@@ -30,8 +30,9 @@
 
 <style>
 	.asked { display: flex; flex-direction: column; gap: 6px; }
-	.t { all: unset; font: 500 14px/1.35 var(--font-ui); color: rgb(255 255 255 / 86%); text-shadow: 0 1px 2px rgb(0 0 0 / 60%); }
-	.t { cursor: pointer; text-decoration: underline dotted rgb(255 255 255 / 50%); text-underline-offset: 3px; }
+	/* It sits in the hero's status line, on the page background: page colours, not white on art. */
+	.t { all: unset; font: 500 14px/1.35 var(--font-ui); color: var(--text-muted); }
+	.t { cursor: pointer; text-decoration: underline dotted currentColor; text-underline-offset: 3px; }
 	.t:focus-visible { box-shadow: var(--focus-ring); border-radius: 4px; }
 	.pop { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; width: max-content; max-width: 100%; border-radius: 12px; color: var(--on-art); background: var(--on-art-scrim-mid); box-shadow: inset 0 0 0 1px var(--on-art-ring); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
 	.pop p { margin: 0; font: var(--t-caption); }

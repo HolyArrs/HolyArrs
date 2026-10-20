@@ -57,7 +57,8 @@
 		showProgress,
 		type ReleaseScope
 	} from './shows.ts';
-	import type { EpisodeView, EventPage, EventRecord, PickRulesView, TitleView } from './types.ts';
+	import type { Ask, EpisodeView, EventPage, EventRecord, LookupShow, PickRulesView, TitleView } from './types.ts';
+	import AskShowDialog from './AskShowDialog.svelte';
 
 	let {
 		title,
@@ -89,6 +90,26 @@
 	}
 
 	const staff = $derived(session.can('manage_library'));
+
+	// People who ask (not manage) ask for the seasons the Library does not keep.
+	let asker: ReturnType<typeof AskShowDialog> | undefined = $state();
+	function askMore() {
+		const s: LookupShow = {
+			source: title.ids?.tmdb ? 'tmdb' : Object.keys(title.ids ?? {})[0] ?? 'tmdb',
+			name: title.name,
+			year: title.year || undefined,
+			status: title.show?.status ?? '',
+			ids: title.ids ?? {},
+			seasons: (title.show?.seasons ?? []).map((x) => ({ number: x.number, name: x.name })),
+			title_id: title.id
+		};
+		asker?.open(s);
+	}
+	function asked(_s: LookupShow, r: { ask: Ask; joined: boolean }) {
+		if (r.ask.state === 'approved') toasts.push(`${title.name} is approved; HolyArrs keeps it up to date.`, 'ok');
+		else if (r.joined) toasts.push(`Someone asked for ${title.name} already; you are on the ask too.`, 'ok');
+		else toasts.push(`Asked for ${title.name}. You will hear when it is approved.`, 'ok');
+	}
 	const show = $derived(title.show);
 	const order = $derived(show?.episode_order ?? 'aired');
 	let episodes = $state<Record<number, EpisodeView[]>>({});
@@ -432,10 +453,13 @@
 		{#if staff}
 			<ActionButton icon="library" label="In Library: go to the Library section" caption="In Library" primary onclick={toLibrary} data-testid="hero-library" />
 			<ActionMenu label="More actions" caption="More" icon="more" items={heroItems} />
+		{:else if session.can('ask')}
+			<ActionButton icon="wish" label="Ask for seasons" primary onclick={askMore} data-testid="ask-seasons-more" />
 		{/if}
 		<FollowButton titleId={title.id} kind="show" />
 	{/snippet}
 </TitleHero>
+{#if !staff && session.can('ask')}<AskShowDialog bind:this={asker} onasked={asked} />{/if}
 
 {#if loadErr || error}<LoadError hasData message={loadErr || error} onretry={() => void retry()} busy={retrying} />{/if}
 

@@ -113,13 +113,14 @@ test('calendar: month and list views with cinema, digital and disc dates', async
 	const dated = titles.find((t) => t.cinema_date)!;
 	const month = dated.cinema_date!.slice(0, 7);
 	await page.goto(`/calendar?month=${month}`);
-	const grid = page.getByTestId('cal-grid');
-	await expect(grid).toBeVisible();
-	await expect(grid.locator(`[data-day="${dated.cinema_date!.slice(0, 10)}"]`).getByRole('link', { name: new RegExp(dated.name) })).toBeVisible();
+	// Stacked weeks: the month's weeks, a day per row.
+	const weeks = page.getByTestId('cal-week');
+	await expect(weeks).toBeVisible();
+	await expect(weeks.locator(`[data-day="${dated.cinema_date!.slice(0, 10)}"]`).getByRole('link', { name: new RegExp(dated.name) })).toBeVisible();
 	const heading = await page.getByTestId('cal-month').textContent();
-	await page.getByRole('button', { name: 'Month after' }).click();
+	await page.getByRole('button', { name: 'Week after' }).click();
 	await expect(page.getByTestId('cal-month')).not.toHaveText(heading!);
-	await page.getByRole('button', { name: 'Month before' }).click();
+	await page.getByRole('button', { name: 'Week before' }).click();
 	await expect(page.getByTestId('cal-month')).toHaveText(heading!);
 	await page.getByRole('radio', { name: 'List', exact: true }).click();
 	const list = page.getByTestId('cal-list');

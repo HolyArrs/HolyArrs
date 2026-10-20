@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { noSidewaysScroll, owner, signIn } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn, addFromSearch } from './helpers.ts';
 
 // Settings: the seven groups, setting search with a deep link that scrolls to
 // and highlights the field, the save bar and its leave guard, Advanced
@@ -163,11 +163,7 @@ test('Movies and TV defaults: saved choices are where the add movie dialog start
 	await expect(movies.getByLabel('Search when added')).not.toBeChecked();
 
 	// The add dialog starts from them (Salt Choir is never added by the earlier tests).
-	await page.goto('/search');
-	await page.getByLabel('Movie name or id').fill('salt choir');
-	await page.getByRole('button', { name: 'Search', exact: true }).click();
-	await page.locator('li.hit', { hasText: 'Salt Choir' }).getByRole('button', { name: 'Add' }).click();
-	const dialog = page.getByRole('dialog');
+	const dialog = await addFromSearch(page, 'salt choir', 'Salt Choir');
 	await expect(dialog.getByLabel('Library folder')).toHaveValue(first);
 	await expect(dialog.getByLabel('Pick rules').locator('option:checked')).toHaveText('4K');
 	await expect(dialog.getByLabel('Keep up to date')).not.toBeChecked();
@@ -179,7 +175,7 @@ test('Movies and TV defaults: saved choices are where the add movie dialog start
 		await dialog.getByLabel('Library folder').selectOption(other);
 		await dialog.getByRole('button', { name: 'Cancel' }).click();
 		await expect(dialog).toBeHidden();
-		await page.locator('li.hit', { hasText: 'Salt Choir' }).getByRole('button', { name: 'Add' }).click();
+		await page.getByRole('button', { name: 'Add Salt Choir' }).click();
 		await expect(dialog.getByLabel('Library folder')).toHaveValue(first);
 		await expect(dialog.getByLabel('Library folder')).not.toHaveValue(other);
 	} else {

@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Locator, type Page } from '@playwright/test';
-import { noSidewaysScroll, owner, signIn, openAdvanced } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn, openAdvanced, titleAction } from './helpers.ts';
 
 // Searching albums (3.3.3, 3.3.4) against the fake Torznab Source in
 // fakes.mjs: an album search answers with a FLAC copy, an MP3 320 copy and
@@ -31,7 +31,7 @@ async function openAlbum(p: Page, artist: string, album: string) {
 	await p.goto('/library?kind=artist');
 	await p.locator('.grid .item', { hasText: artist }).click();
 	await expect(p.getByRole('heading', { level: 1, name: artist })).toBeVisible();
-	await p.getByRole('link', { name: album }).click();
+	await p.getByRole('link', { name: album, exact: true }).click();
 	await expect(p.getByRole('heading', { level: 1, name: new RegExp(album) })).toBeVisible();
 }
 
@@ -86,7 +86,7 @@ test('Home and the Turned down list name the artist and the album', async () => 
 test('the artist page searches every missing album, or one', async () => {
 	await page.goto('/library?kind=artist');
 	await page.locator('.grid .item', { hasText: 'Tin Lanterns' }).click();
-	await page.getByTestId('artist-search').click();
+	await titleAction(page, 'More actions', 'Search now');
 	await expect(page.getByRole('status')).toContainText(/Searching for \d+ albums?|No album is missing a track/);
 	const row = page.getByTestId('album').filter({ hasText: 'Night Ferry' });
 	await row.getByTestId('album-search').click();
@@ -114,6 +114,8 @@ test('the album page searches from a phone', async ({ browser }) => {
 	const phone = await ctx.newPage();
 	await signIn(phone, owner());
 	await openAlbum(phone, 'Tin Lanterns', 'Night Ferry');
+	// On a phone the title page sections fold; open Search.
+	await phone.locator('#h-album-search').click();
 	await expect(phone.getByTestId('album-search-now')).toBeVisible();
 	await phone.getByTestId('album-choose').click();
 	const panel = phone.getByTestId('show-releases');

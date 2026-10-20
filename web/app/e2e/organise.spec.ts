@@ -243,7 +243,7 @@ test('members see none of it', async ({ browser }) => {
 	await expect(sam.getByRole('heading', { level: 1 })).toContainText('Cinder Waltz');
 	await expect(sam.getByRole('button', { name: 'Delete' })).toHaveCount(0);
 	await expect(sam.getByRole('button', { name: 'Rename files' })).toHaveCount(0);
-	await expect(sam.getByRole('button', { name: 'Library', exact: true })).toHaveCount(0);
+	await expect(sam.getByRole('button', { name: 'More actions', exact: true })).toHaveCount(0);
 	for (const url of ['/library/import', '/library/rename', '/settings/naming']) {
 		await sam.goto(url);
 		await expect(sam).not.toHaveURL(new RegExp(url.replace(/\//g, '\\/') + '$'));

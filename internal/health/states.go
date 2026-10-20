@@ -116,7 +116,11 @@ func (e *Engine) Links(ctx context.Context) ([]supervisor.Status, error) {
 			add("media_server", m.ID, m.Name, supervisor.Running, "")
 		}
 	}
-	for _, s := range outside.States() {
+	outsideStates := e.Outside
+	if outsideStates == nil {
+		outsideStates = outside.States
+	}
+	for _, s := range outsideStates() {
 		add("outside_call", 0, s.Kind+" "+s.ID, supervisor.Retrying, s.Reason)
 		out[len(out)-1].Key = "outside:" + s.ID
 	}

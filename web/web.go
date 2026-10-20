@@ -47,13 +47,17 @@ const policy = "default-src 'self'; img-src 'self' %s data: blob:; " +
 func CSP(page []byte) string {
 	src := "script-src 'self'"
 	for _, m := range inlineScript.FindAllSubmatch(page, -1) {
-		sum := sha256.Sum256(m[1])
+		// Browsers hash the script after the HTML parser turns CR LF and lone
+		// CR into LF, so a page built from a CRLF checkout still matches.
+		sum := sha256.Sum256([]byte(newlines.Replace(string(m[1]))))
 		src += " 'sha256-" + base64.StdEncoding.EncodeToString(sum[:]) + "'"
 	}
 	return strings.Replace(policy, "%s", ImageHosts, 1) + "; " + src
 }
 
 var inlineScript = regexp.MustCompile(`(?s)<script>(.*?)</script>`)
+
+var newlines = strings.NewReplacer("\r\n", "\n", "\r", "\n")
 
 // Page writes the app's index.html, its links under the request's URL
 // base (internal/urlbase), so the app runs at /holyarrs behind a proxy.

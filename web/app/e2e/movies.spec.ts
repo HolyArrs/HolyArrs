@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { owner, signIn, libraryStatus } from './helpers.ts';
+import { owner, signIn, libraryStatus, addFromSearch, openFromSearch } from './helpers.ts';
 
 // Add-movie screen, Library screen and Movie page against the fake TMDB in
 // fakes.mjs. Runs after the other projects, so the owner and the Movies
@@ -22,55 +22,37 @@ test.beforeAll(async ({ browser }) => {
 
 test('add a movie by name with folder, Pick rules and Release gate in under a minute', async () => {
 	const started = Date.now();
-	await page.goto('/search');
-	await page.getByLabel('Movie name or id').fill('lantern keepers');
-	await page.getByRole('button', { name: 'Search', exact: true }).click();
-	const hit = page.locator('li.hit', { hasText: 'The Lantern Keepers' });
-	await expect(hit).toBeVisible();
-	await expect(hit.locator('.poster')).toBeVisible();
-	await hit.getByRole('button', { name: 'Add' }).click();
-
-	const dialog = page.getByRole('dialog');
+	const dialog = await addFromSearch(page, 'lantern keepers', 'The Lantern Keepers');
 	await expect(dialog.getByLabel('Library folder')).toHaveValue(/\d+/);
 	await expect(dialog.getByLabel('Pick rules').locator('option')).not.toHaveCount(0);
 	await dialog.getByLabel('Release gate').selectOption('in_cinemas');
 	await expect(dialog.getByText('Look from the cinema date.')).toBeVisible();
 	await dialog.getByLabel('Search when added').uncheck();
 	await dialog.getByRole('button', { name: 'Add to Library' }).click();
-	await expect(hit.getByRole('link', { name: 'In your Library' })).toBeVisible();
+	// Adding opens the movie's Library page.
+	await expect(page).toHaveURL(/\/library\/\d+/);
 	expect(Date.now() - started).toBeLessThan(60_000);
 
 	// The movie page shows the choices and why it waits.
-	await hit.getByRole('link', { name: 'In your Library' }).click();
 	await expect(page.getByRole('heading', { level: 1 })).toContainText('The Lantern Keepers');
 	await expect(page.getByTestId('gate-reason')).toContainText('closed until 2031-02-01');
 	await expect(page.getByText('Not out yet').first()).toBeVisible();
 });
 
 test('add by tmdb: and imdb: id; the last Release gate is remembered, the rest start from the Movies and TV defaults', async () => {
-	await page.goto('/search');
-	await page.getByLabel('Movie name or id').fill('tmdb:900002');
-	await page.getByRole('button', { name: 'Search', exact: true }).click();
-	const hit = page.locator('li.hit', { hasText: 'Paper Harbour' });
-	await hit.getByRole('button', { name: 'Add' }).click();
-	const dialog = page.getByRole('dialog');
+	const dialog = await addFromSearch(page, 'tmdb:900002', 'Paper Harbour');
 	await expect(dialog.getByLabel('Release gate')).toHaveValue('in_cinemas');
 	// Search when added is not remembered: it starts from the defaults (on for movies when nothing is saved).
 	await expect(dialog.getByLabel('Search when added')).toBeChecked();
 	await dialog.getByLabel('Search when added').uncheck();
 	await dialog.getByLabel('Release gate').selectOption('released');
 	await dialog.getByRole('button', { name: 'Add to Library' }).click();
-	await expect(hit.getByRole('link', { name: 'In your Library' })).toBeVisible();
-	// The add sheet finishes closing before the next search is typed.
-	await expect(dialog).toBeHidden();
+	await expect(page).toHaveURL(/\/library\/\d+/);
 
-	await page.getByLabel('Movie name or id').fill('imdb:tt9000030');
-	await page.getByRole('button', { name: 'Search', exact: true }).click();
-	const orchard = page.locator('li.hit', { hasText: 'Quiet Orchard' });
-	await orchard.getByRole('button', { name: 'Add' }).click();
-	await page.getByRole('dialog').getByLabel('Search when added').uncheck();
-	await page.getByRole('dialog').getByRole('button', { name: 'Add to Library' }).click();
-	await expect(orchard.getByRole('link', { name: 'In your Library' })).toBeVisible();
+	const orchard = await addFromSearch(page, 'imdb:tt9000030', 'Quiet Orchard');
+	await orchard.getByLabel('Search when added').uncheck();
+	await orchard.getByRole('button', { name: 'Add to Library' }).click();
+	await expect(page).toHaveURL(/\/library\/\d+/);
 });
 
 test('Library filters, find by name, posters and list', async () => {
@@ -94,13 +76,13 @@ test('Library filters, find by name, posters and list', async () => {
 	await expect(grid).toHaveCount(1);
 	await page.getByLabel('Find in the Library').fill('');
 
-	await page.getByRole('radio', { name: 'List', exact: true }).click();
+	await page.getByRole('radio', { name: 'Table', exact: true }).click();
 	await expect(page.getByTestId('library-row')).toHaveCount(4);
 	await page.reload();
 	// remembered
-	await expect(page.getByRole('radio', { name: 'List', exact: true })).toHaveAttribute('aria-checked', 'true');
+	await expect(page.getByRole('radio', { name: 'Table', exact: true })).toHaveAttribute('aria-checked', 'true');
 	await expect(page.getByTestId('library-row')).toHaveCount(4);
-	await page.getByRole('radio', { name: 'Posters' }).click();
+	await page.getByRole('radio', { name: 'Grid' }).click();
 	await expect(grid).toHaveCount(4);
 });
 
@@ -118,7 +100,8 @@ test('Movie page: dates, why, file, refresh and edit', async () => {
 	await page.getByRole('menuitem', { name: 'Refresh from TMDB' }).click();
 	await expect(page.getByText('Refreshing names, dates and posters')).toBeVisible();
 
-	await page.getByRole('button', { name: 'Edit', exact: true }).click();
+	await page.getByRole('button', { name: 'More actions' }).click();
+	await page.getByRole('menuitem', { name: 'Edit', exact: true }).click();
 	const dialog = page.getByRole('dialog');
 	await dialog.getByLabel('Release gate').selectOption('announced');
 	await dialog.getByLabel('Keep up to date').uncheck();
@@ -144,31 +127,27 @@ test('a member sees the movie but none of the staff controls', async ({ browser 
 	await expect(m.locator('.grid .item')).toHaveCount(4);
 	await expect(m.getByRole('link', { name: 'Add a movie' })).toHaveCount(0);
 	await m.locator('.grid .item', { hasText: 'The Lantern Keepers' }).click();
-	await expect(m.getByTestId('gate-reason')).toBeVisible();
+	await expect(m.getByRole('heading', { level: 1 })).toContainText('The Lantern Keepers');
+	// The Library section (gate, Versions, Releases) is for people who manage the Library.
+	await expect(m.getByTestId('gate-reason')).toHaveCount(0);
 	for (const b of ['Search now', 'Keep up to date', 'Edit', 'Library', 'More actions']) await expect(m.getByRole('button', { name: b, exact: true })).toHaveCount(0);
 	await expect(m.getByRole('heading', { name: 'Releases' })).toHaveCount(0);
 
-	await m.goto('/search');
-	await m.getByLabel('Movie name or id').fill('orchard');
-	await m.getByRole('button', { name: 'Search', exact: true }).click();
-	await expect(m.locator('li.hit', { hasText: 'Quiet Orchard' }).getByRole('link', { name: 'In your Library' })).toBeVisible();
-	await expect(m.getByRole('button', { name: 'Add' })).toHaveCount(0);
+	// Search: a Library movie opens its Library page, with no Add for a member.
+	await openFromSearch(m, 'orchard', 'Quiet Orchard');
+	await expect(m).toHaveURL(/\/library\/\d+/);
+	await expect(m.getByRole('button', { name: /^Add/ })).toHaveCount(0);
 });
 
 test('add a movie with a second 4K Version; the Movie page shows both and can add and remove one', async () => {
-	await page.goto('/search');
-	await page.getByLabel('Movie name or id').fill('glass meridian');
-	await page.getByRole('button', { name: 'Search', exact: true }).click();
-	const hit = page.locator('li.hit', { hasText: 'Glass Meridian' });
-	await hit.getByRole('button', { name: 'Add' }).click();
-	const dialog = page.getByRole('dialog');
+	const dialog = await addFromSearch(page, 'glass meridian', 'Glass Meridian');
 	await dialog.getByLabel('Also keep a second Version').check();
 	await expect(dialog.getByLabel('Version name')).toHaveValue('4K');
 	await expect(dialog.getByLabel('Pick rules for this Version').locator('option:checked')).toHaveText('4K');
 	await expect(dialog.getByText('it gets its own folder named with')).toBeVisible();
 	await dialog.getByLabel('Search when added').uncheck();
 	await dialog.getByRole('button', { name: 'Add to Library' }).click();
-	await hit.getByRole('link', { name: 'In your Library' }).click();
+	await expect(page).toHaveURL(/\/library\/\d+/);
 
 	const versions = page.getByTestId('version');
 	await expect(versions).toHaveCount(2);
@@ -193,7 +172,8 @@ test('add a movie with a second 4K Version; the Movie page shows both and can ad
 
 test('the search palette shows Library and movie results; a movie not in the Library opens its details with Add', async () => {
 	await page.goto('/');
-	await page.keyboard.press('Control+k');
+	// Ctrl+K now opens the Search page; the top bar's search button opens the palette.
+	await page.getByRole('button', { name: /^Search…/ }).first().click();
 	const box = page.getByRole('combobox', { name: 'Search titles or go to a place' });
 	await box.fill('Paper Harbour');
 	const library = page.getByTestId('palette-library');

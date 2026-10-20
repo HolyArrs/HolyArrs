@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { devices, expect, test, type Page } from '@playwright/test';
-import { noSidewaysScroll, owner, signIn, openAdvanced } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn, openAdvanced, addFromSearch } from './helpers.ts';
 import { movieReleaseHash, qbitPort, sabKey, sabPort } from './fakes.mjs';
 
 // Settings > Downloaders against the fake qBittorrent and SABnzbd in
@@ -91,15 +91,10 @@ test('a movie downloads through qBittorrent; Mark failed sends the next Release 
 	await expect(row('Lab qBittorrent').getByTestId('downloader-test')).toHaveText('It answered: qbittorrent v5.2.4.');
 
 	// Add a movie and let it search now.
-	await page.goto('/search');
-	await page.getByLabel('Movie name or id').fill('iron lullaby');
-	await page.getByRole('button', { name: 'Search', exact: true }).click();
-	const hit = page.locator('li.hit', { hasText: 'Iron Lullaby' });
-	await hit.getByRole('button', { name: 'Add' }).click();
-	const dialog = page.getByRole('dialog');
+	const dialog = await addFromSearch(page, 'iron lullaby', 'Iron Lullaby');
 	await dialog.getByLabel('Search when added').check();
 	await dialog.getByRole('button', { name: 'Add to Library' }).click();
-	await hit.getByRole('link', { name: 'In your Library' }).click();
+	await expect(page).toHaveURL(/\/library\/\d+/);
 	await expect(page.getByRole('heading', { level: 1 })).toContainText('Iron Lullaby');
 
 	const dl = page.getByTestId('download');

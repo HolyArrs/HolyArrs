@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { devices, expect, test, type Browser, type Page } from '@playwright/test';
-import { noSidewaysScroll, owner, signIn, openSeasonNamed } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn, openSeasonNamed, addFromSearch } from './helpers.ts';
 
 // Several Versions per show (4.8.11): Tidal Atlas is added with a second
 // 4K Version from the add dialog; the show page lists both Versions and
@@ -42,12 +42,7 @@ test.beforeAll(async ({ browser }) => {
 });
 
 test('add Tidal Atlas with a second 4K Version', async () => {
-	await page.goto('/search?kind=show');
-	await page.getByLabel('Show name or id').fill('tidal atlas');
-	await page.getByRole('button', { name: 'Search', exact: true }).click();
-	const hit = page.getByTestId('show-hit').filter({ hasText: 'Tidal Atlas' });
-	await hit.getByRole('button', { name: 'Add' }).click();
-	const dialog = page.getByRole('dialog');
+	const dialog = await addFromSearch(page, 'tidal atlas', 'Tidal Atlas', 'show');
 	await dialog.getByLabel('Seasons to keep up to date').selectOption('all');
 	await dialog.getByLabel('Also keep a second Version').check();
 	await expect(dialog.getByLabel('Version name')).toHaveValue('4K');
@@ -70,7 +65,8 @@ test('add Tidal Atlas with a second 4K Version', async () => {
 test('Search now on the season fills each Version with its own pack; History names the Version', async () => {
 	await openShow(page);
 	const s1 = await openSeason(page);
-	await s1.getByTestId('search-season').click();
+	await page.getByTestId('season-menu').getByRole('button').click();
+	await page.getByRole('menuitem', { name: 'Search season', exact: true }).click();
 	const first = s1.getByTestId('episode').first().getByTestId('episode-state');
 	// One pill names both Versions: neither may still be missing.
 	await expect(first).not.toContainText('Main: Missing', { timeout: 30_000 });

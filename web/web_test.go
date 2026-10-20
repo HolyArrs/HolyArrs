@@ -56,6 +56,10 @@ func TestNoBannedWords(t *testing.T) {
 		"Interactive Search", "Manual Import", "Grabbed", "Connections", "Discover", "Requests", "Collections"}
 	n := 0
 	_ = fs.WalkDir(Files, ".", func(p string, d fs.DirEntry, err error) error {
+		// vendor: third-party code (hls.js), not the app's words (as check-words.mjs).
+		if err == nil && d.IsDir() && p == "vendor" {
+			return fs.SkipDir
+		}
 		if err != nil || d.IsDir() || !(strings.HasSuffix(p, ".html") || strings.HasSuffix(p, ".js")) {
 			return nil
 		}

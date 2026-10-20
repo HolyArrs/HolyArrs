@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -11,14 +11,17 @@
 		<title>HolyArrs</title>
 		<script>
 			try {
-				var t = localStorage.getItem('holyarrs-theme');
-				if (!t) t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+				var requested = new URLSearchParams(location.search).get('theme');
+				var t = requested === 'light' || requested === 'dark' ? requested : localStorage.getItem('holyarrs-theme');
+				if (requested === 'light' || requested === 'dark') localStorage.setItem('holyarrs-theme', t);
+				if (requested === 'system') localStorage.removeItem('holyarrs-theme');
+				if (t !== 'dark' && t !== 'light') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 				document.documentElement.dataset.theme = t;
 			} catch (e) {}
 		</script>
-		<link href="/_app/immutable/bundle.CxndK234.js" rel="modulepreload">
+		<link href="/_app/immutable/bundle.BXAE_Boj.js" rel="modulepreload">
 		
-		<link href="/_app/immutable/assets/bundle.DiImDk3H.css" rel="stylesheet">
+		<link href="/_app/immutable/assets/bundle.BsH0lTBm.css" rel="stylesheet">
 	</head>
 	<body data-sveltekit-preload-data="hover">
 		<noscript>HolyArrs needs JavaScript. Movie data from TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB.</noscript>
@@ -32,7 +35,7 @@
 
 					const element = document.currentScript.parentElement;
 
-					import("/_app/immutable/bundle.CxndK234.js").then((app) => {
+					import("/_app/immutable/bundle.BXAE_Boj.js").then((app) => {
 						app.start(element)
 					});
 				}

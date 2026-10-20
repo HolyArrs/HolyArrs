@@ -49,9 +49,10 @@ export async function openApprovals(page: Page) {
 	await expect(page).toHaveURL(/wishlist/);
 }
 
-/** titleAction picks an item from a title page's hero menu: 'Library' (rename, delete, versions) or 'More actions'. */
-export async function titleAction(page: Page, menu: 'Library' | 'More actions', item: string) {
-	await page.getByRole('button', { name: menu, exact: true }).click();
+/** titleAction picks an item from a title page's hero ⋯ menu. The Library
+ *  items (rename, delete, versions) joined More actions; 'Library' is kept as a name. */
+export async function titleAction(page: Page, _menu: 'Library' | 'More actions', item: string) {
+	await page.getByRole('button', { name: 'More actions', exact: true }).click();
 	await page.getByRole('menuitem', { name: item, exact: true }).click();
 }
 
@@ -99,6 +100,20 @@ export async function seasonCount(page: Page): Promise<number> {
 	const n = await page.getByRole('menu', { name: 'Pick a season' }).getByRole('menuitemradio').count();
 	await page.keyboard.press('Escape');
 	return n;
+}
+
+/** seasonKept says whether the shown season's Keep item is checked (opens and closes its ⋯ menu). */
+export async function seasonKept(page: Page, season: string): Promise<boolean> {
+	await page.getByTestId('season-menu').getByRole('button').click();
+	const v = await page.getByRole('menuitemradio', { name: `Keep ${season} up to date` }).getAttribute('aria-checked');
+	await page.keyboard.press('Escape');
+	return v === 'true';
+}
+
+/** toggleSeasonKept flips the shown season's Keep item from its ⋯ menu. */
+export async function toggleSeasonKept(page: Page, season: string) {
+	await page.getByTestId('season-menu').getByRole('button').click();
+	await page.getByRole('menuitemradio', { name: `Keep ${season} up to date` }).click();
 }
 
 /** episodeAction picks an item from an episode card's menu. */
@@ -150,4 +165,21 @@ export async function noSidewaysScroll(page: Page) {
 export async function openAdvanced(scope: Page | Locator) {
 	const closed = scope.locator('details.advanced:not([open]) > summary');
 	while ((await closed.count()) > 0) await closed.first().click();
+}
+
+/** openFromSearch searches and opens a result's page: movies and shows open
+ *  their title page (Add or Ask lives there); Library titles open their Library page. */
+export async function openFromSearch(page: Page, words: string, name: string, kind?: 'movie' | 'show') {
+	await page.goto(`/search?q=${encodeURIComponent(words)}${kind ? `&kind=${kind}` : ''}`);
+	const card = page.getByRole('main').getByRole('link', { name: `${name},` }).first();
+	await expect(card).toBeVisible();
+	await card.click();
+	await expect(page.getByRole('heading', { level: 1 })).toContainText(name);
+}
+
+/** addFromSearch opens a movie or show from Search and opens its Add dialog. */
+export async function addFromSearch(page: Page, words: string, name: string, kind?: 'movie' | 'show') {
+	await openFromSearch(page, words, name, kind);
+	await page.getByRole('button', { name: `Add ${name}` }).click();
+	return page.getByRole('dialog');
 }

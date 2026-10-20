@@ -205,7 +205,7 @@ func (s *Store) Version() (int, error) { return version(s.read) }
 // Dir returns the config folder.
 func (s *Store) Dir() string { return s.dir }
 
-// Close stops the writers and closes every pool.
+// Close stops the writers and closes every pool. Calling it again is safe.
 func (s *Store) Close() error {
 	var errs []error
 	for _, w := range []*writer{s.main, s.events} {
@@ -218,7 +218,8 @@ func (s *Store) Close() error {
 			errs = append(errs, db.Close())
 		}
 	}
-	s.main, s.events, s.read, s.readEv = nil, nil, nil, nil
+	// The pools stay set: a background reader that outlives the server gets
+	// "database is closed" errors instead of a nil pointer panic.
 	return errors.Join(errs...)
 }
 

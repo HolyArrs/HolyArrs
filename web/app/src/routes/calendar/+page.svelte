@@ -508,8 +508,10 @@
 	.cal-main { min-width: 0; }
 	.stack { display: flex; flex-direction: column; gap: 22px; }
 	.wtitle { margin: 0 0 8px; font: var(--t-title3); letter-spacing: var(--t-title3-track); }
-	.wday.empty { opacity: 0.5; }
+	/* Empty days step back by colour, not opacity, so their text keeps its contrast. */
+	.wday.empty .dow { color: var(--text-muted); }
 	.wday.today { background: var(--accent-soft); }
+	.wday.today .dow, .wday.today .none { color: var(--text); }
 	.later-none { padding: 12px 0; }
 	.day.today { outline-color: var(--accent-fill); }
 	.sdot { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; vertical-align: 1px; background: var(--text-faint); }
@@ -521,7 +523,7 @@
 	.pick { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
 	.pw { color: var(--text-muted); font: var(--t-caption); padding: 4px 0; }
 	.pd { height: 30px; border-radius: 999px; font: var(--t-footnote); font-variant-numeric: tabular-nums; color: var(--text); }
-	.pd.out { color: var(--text-faint); }
+	.pd.out { color: var(--text-muted); }
 	.pd.shown { background: var(--surface-2); }
 	.pd.today { background: var(--text); color: var(--bg); font-weight: 700; }
 	.pd:hover { background: var(--surface-3); }

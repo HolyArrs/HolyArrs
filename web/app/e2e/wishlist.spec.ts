@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { discordPort } from './fakes.mjs';
-import { noSidewaysScroll, owner, signIn } from './helpers.ts';
+import { noSidewaysScroll, openFromSearch, owner, signIn } from './helpers.ts';
 
 // The Wishlist at phone width (Pixel 7): a member asks for movies, the owner
 // approves and turns down from a phone, a Discord Alert (the fake one in
@@ -23,10 +23,10 @@ async function posts(): Promise<string[]> {
 	return ((await r.json()) as { content: string }[]).map((p) => p.content);
 }
 
-async function search(p: Page, name: string) {
-	await p.goto('/search');
-	await p.getByLabel('Movie name or id').fill(name);
-	await p.getByRole('button', { name: 'Search', exact: true }).click();
+// Search opens a movie's title page; Ask lives there.
+async function askButton(p: Page, words: string, name: string) {
+	await openFromSearch(p, words, name);
+	return p.getByTestId('title-detail').getByRole('button', { name: new RegExp(`^Ask for ${name}`) });
 }
 
 test.beforeAll(async ({ browser }) => {
@@ -71,27 +71,28 @@ test('a member asks for a movie from a phone and sees it on the Wishlist', async
 	await kim.locator('section', { has: kim.getByRole('heading', { name: 'Alerts for you' }) }).getByRole('button', { name: 'Save' }).click();
 	await expect(kim.getByText('Saved where Alerts reach you.')).toBeVisible();
 
-	await search(kim, 'copper');
-	const hit = kim.locator('li.hit', { hasText: 'Copper Lighthouse' });
+	await kim.goto('/wishlist');
 	await expect(kim.getByTestId('ask-limit')).toContainText('You have 10 movie asks left this week');
-	await hit.getByRole('button', { name: 'Ask', exact: true }).click();
+	const askCopper = await askButton(kim, 'copper', 'Copper Lighthouse');
+	await askCopper.click();
 	// Ask never fires in one click: a confirm sheet opens with focus inside.
 	const confirmAsk = kim.getByRole('dialog', { name: /^Ask for Copper Lighthouse/ });
 	await expect(confirmAsk).toBeVisible();
 	await expect(confirmAsk.locator(':focus')).toHaveCount(1);
 	await kim.keyboard.press('Escape');
 	await expect(confirmAsk).toBeHidden();
-	await expect(hit.getByRole('button', { name: 'Ask', exact: true })).toBeFocused();
-	await hit.getByRole('button', { name: 'Ask', exact: true }).click();
+	await expect(askCopper).toBeFocused();
+	await askCopper.click();
 	await confirmAsk.getByRole('button', { name: 'Ask for Copper Lighthouse' }).click();
-	await expect(hit.getByRole('link', { name: /^You asked · Requested on your Wishlist$/ })).toBeVisible();
-	await expect(kim.getByTestId('ask-limit')).toContainText('You have 9 movie asks left this week');
+	await expect(askCopper).toBeDisabled();
 	await noSidewaysScroll(kim);
-	// A movie already in the Library still says so; there is nothing to ask.
-	await search(kim, 'orchard');
-	await expect(kim.locator('li.hit', { hasText: 'Quiet Orchard' }).getByRole('link', { name: 'In your Library' })).toBeVisible();
+	// A movie already in the Library opens its Library page; there is nothing to ask.
+	await openFromSearch(kim, 'orchard', 'Quiet Orchard');
+	await expect(kim).toHaveURL(/\/library\/\d+/);
+	await expect(kim.getByRole('button', { name: /^Ask for/ })).toHaveCount(0);
 
 	await kim.locator('nav.tabbar').getByRole('link', { name: 'Wishlist' }).click();
+	await expect(kim.getByTestId('ask-limit')).toContainText('You have 9 movie asks left this week');
 	const ask = kim.getByTestId('ask').filter({ hasText: 'Copper Lighthouse' });
 	await expect(ask.getByTestId('ask-state')).toHaveText('Requested');
 	await expect(ask.getByTestId('asked-by')).toContainText('Asked by kim');
@@ -117,11 +118,10 @@ test('a member asks for a movie from a phone and sees it on the Wishlist', async
 	await expect(kim.getByText('Took back the ask for Copper Lighthouse.')).toBeVisible();
 	await expect(kim.getByRole('heading', { level: 1 })).toBeFocused();
 	// Asked again, it is back on the Wishlist for the owner to approve.
-	await search(kim, 'copper');
-	const again = kim.locator('li.hit', { hasText: 'Copper Lighthouse' });
-	await again.getByRole('button', { name: 'Ask', exact: true }).click();
+	const again = await askButton(kim, 'copper', 'Copper Lighthouse');
+	await again.click();
 	await kim.getByRole('dialog', { name: /^Ask for Copper Lighthouse/ }).getByRole('button', { name: 'Ask for Copper Lighthouse' }).click();
-	await expect(again.getByRole('link', { name: /^You asked · Requested on your Wishlist$/ })).toBeVisible();
+	await expect(again).toBeDisabled();
 	await kim.locator('nav.tabbar').getByRole('link', { name: 'Wishlist' }).click();
 	await expect(ask.getByTestId('ask-state')).toHaveText('Requested');
 	await noSidewaysScroll(kim);
@@ -139,15 +139,17 @@ test('the owner approves from a phone: the movie is added and kim is told', asyn
 	const ask = own.getByTestId('ask').filter({ hasText: 'Copper Lighthouse' });
 	await expect(ask.getByTestId('asked-by')).toContainText('Asked by kim');
 	await noSidewaysScroll(own);
-	await ask.getByRole('button', { name: 'Approve' }).click();
-	const dialog = own.getByRole('dialog');
+	// The row's Approve is one tap with Undo; Review holds Approve with options.
+	await ask.getByRole('button', { name: 'Review Copper Lighthouse' }).click();
+	await own.getByRole('button', { name: 'Approve with options' }).click();
+	const dialog = own.getByRole('dialog', { name: /^Approve Copper Lighthouse/ });
 	await expect(dialog.getByLabel('Library folder')).toBeVisible();
 	await dialog.getByLabel('Note (optional)').fill('Friday night pick');
 	await noSidewaysScroll(own);
 	await dialog.getByRole('button', { name: 'Approve and add' }).click();
 	await expect(dialog).toBeHidden();
 
-	await own.getByRole('button', { name: /^Everyone's/ }).click();
+	await own.getByRole('button', { name: /^Approved/ }).click();
 	await expect(ask.getByTestId('ask-state')).toHaveText('Approved');
 	await expect(ask.getByTestId('decided-by')).toContainText('Approved by luis');
 	await expect.poll(async () => (await posts()).some((c) => c.startsWith(`<@${kimDiscord}> **Approved: Copper Lighthouse`))).toBe(true);
@@ -157,12 +159,14 @@ test('the owner approves from a phone: the movie is added and kim is told', asyn
 	const asks = own.getByTestId('title-asks');
 	await expect(asks).toContainText('kim');
 	await expect(asks).toContainText('Approved by luis');
-	// History on Home names them too.
+	// Home's Latest Events names them too; it keeps the newest twelve, so the
+	// full count comes from the Events list.
 	await own.goto('/');
-	// kim asked, took it back and asked again: two ask events, the take-back between them.
-	await expect(own.getByText('kim asked for Copper Lighthouse (2017)')).toHaveCount(2);
 	await expect(own.getByText('kim asked for Copper Lighthouse (2017)').first()).toBeVisible();
-	await expect(own.getByText('kim took back the ask for Copper Lighthouse (2017)')).toBeVisible();
+	// kim asked, took it back and asked again: two ask events, the take-back between them.
+	const events = ((await (await own.request.get('/api/v1/events?limit=200')).json()) as { events: { Summary: string }[] }).events.map((e) => e.Summary);
+	expect(events.filter((e) => /asked for Copper Lighthouse/.test(e))).toHaveLength(2);
+	expect(events.filter((e) => /took back the ask for Copper Lighthouse/.test(e))).toHaveLength(1);
 
 	await kim.goto('/wishlist');
 	await expect(kim.getByTestId('message').first()).toContainText('Copper Lighthouse (2017) was approved by luis');
@@ -173,20 +177,23 @@ test('the owner approves from a phone: the movie is added and kim is told', asyn
 });
 
 test('turned down with a note; over the weekly limit kim is told when to try again', async () => {
-	await search(kim, 'velvet');
-	await kim.locator('li.hit', { hasText: 'Velvet Tide' }).getByRole('button', { name: 'Ask', exact: true }).click();
+	const velvet = await askButton(kim, 'velvet', 'Velvet Tide');
+	await velvet.click();
 	await kim.getByRole('dialog', { name: /^Ask for Velvet Tide/ }).getByRole('button', { name: 'Ask for Velvet Tide' }).click();
-	await expect(kim.locator('li.hit', { hasText: 'Velvet Tide' }).getByRole('link', { name: /^You asked · Requested on your Wishlist$/ })).toBeVisible();
+	await expect(velvet).toBeDisabled();
 
 	await own.goto('/wishlist');
 	const ask = own.getByTestId('ask').filter({ hasText: 'Velvet Tide' });
 	await ask.getByRole('button', { name: 'Turn down' }).click();
 	await own.getByRole('dialog').getByLabel(/^Why/).fill('We have it on disc');
 	await own.getByRole('dialog').getByRole('button', { name: 'Turn down' }).click();
-	await own.getByRole('button', { name: /^Everyone's/ }).click();
+	await own.getByRole('button', { name: /^Declined/ }).click();
 	await expect(ask.getByTestId('ask-state')).toHaveText('Turned down');
+	// A turn down is sent after its few seconds of Undo.
+	await expect(ask.getByText('Sending in a moment…')).toHaveCount(0, { timeout: 15_000 });
 
 	await kim.goto('/wishlist');
+	await kim.getByRole('button', { name: /^Declined/ }).click();
 	const mine = kim.getByTestId('ask').filter({ hasText: 'Velvet Tide' });
 	await expect(mine.getByTestId('ask-state')).toHaveText('Turned down');
 	await expect(mine).toContainText('We have it on disc');
@@ -205,9 +212,9 @@ test('turned down with a note; over the weekly limit kim is told when to try aga
 	await expect(row.getByTestId('user-limits')).toContainText('0 show asks of 10');
 	await noSidewaysScroll(own);
 
-	await search(kim, 'salt choir');
+	await kim.goto('/wishlist');
 	await expect(kim.getByTestId('ask-limit')).toContainText('Try again in 7 days');
-	await kim.locator('li.hit', { hasText: 'Salt Choir' }).getByRole('button', { name: 'Ask', exact: true }).click();
+	await (await askButton(kim, 'salt choir', 'Salt Choir')).click();
 	await kim.getByRole('dialog', { name: /^Ask for Salt Choir/ }).getByRole('button', { name: 'Ask for Salt Choir' }).click();
 	await expect(kim.getByRole('alert')).toContainText('try again in 7 days');
 	await noSidewaysScroll(kim);

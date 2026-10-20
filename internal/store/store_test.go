@@ -273,3 +273,24 @@ func TestSnapshot(t *testing.T) {
 		t.Fatalf("versions %d %d", mv, ev)
 	}
 }
+
+// A background reader that outlives the server (Explore's genre fill) gets an
+// error after Close, never a nil pointer panic; Close twice is safe.
+func TestReadAfterCloseErrors(t *testing.T) {
+	s, err := Open(t.TempDir(), Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Read().QueryContext(context.Background(), "SELECT 1"); err == nil {
+		t.Fatal("read after Close: want an error")
+	}
+	if err := s.Write(context.Background(), func(*sql.Tx) error { return nil }); err == nil {
+		t.Fatal("write after Close: want an error")
+	}
+	if err := s.Close(); err != nil {
+		t.Fatalf("second Close: %v", err)
+	}
+}

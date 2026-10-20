@@ -37,7 +37,8 @@ test('no CSP violations on Explore, More info, a trailer and a title page', asyn
 	const info = page.getByRole('link', { name: 'More info' }).or(page.getByRole('button', { name: /^More info/ })).first();
 	if (await info.count()) {
 		await info.click();
-		await expect(page.getByRole('dialog').first()).toBeVisible();
+		// More info opens a sheet, or the hero's link goes to the title page.
+		await expect(page.getByRole('dialog').first().or(page.getByTestId('title-detail'))).toBeVisible();
 		await page.waitForTimeout(3000);
 		await page.keyboard.press('Escape');
 	} else {

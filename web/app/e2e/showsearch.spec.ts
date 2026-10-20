@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Locator, type Page } from '@playwright/test';
-import { noSidewaysScroll, owner, signIn } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn, openFromSearch } from './helpers.ts';
 
 // Searching shows (3.2.2 to 3.2.5) against the fake Torznab Source in
 // fakes.mjs: a show search answers per episode (a 1080p and a 720p web
@@ -67,12 +67,8 @@ test.beforeAll(async ({ browser }) => {
 });
 
 test('the owner adds Moss Parade with every season kept', async () => {
-	await page.goto('/search?kind=show');
-	await page.getByLabel('Show name or id').fill('moss parade');
-	await page.getByRole('button', { name: 'Search', exact: true }).click();
-	const hit = page.getByTestId('show-hit').filter({ hasText: 'Moss Parade' });
-	await expect(hit).toBeVisible();
-	const add = hit.getByRole('button', { name: 'Add' });
+	await openFromSearch(page, 'moss parade', 'Moss Parade', 'show');
+	const add = page.getByRole('button', { name: 'Add Moss Parade' });
 	if (await add.count()) {
 		await add.click();
 		const dialog = page.getByRole('dialog');
@@ -90,7 +86,7 @@ test('the owner adds Moss Parade with every season kept', async () => {
 test('Choose a release for a season: the season pack fills both episodes with one download', async () => {
 	await openShow(page, 'Moss Parade');
 	const s1 = await openSeason(page, 'Season 1');
-	await s1.getByRole('button', { name: 'Season actions', exact: true }).click();
+	await s1.page().getByTestId('season-menu').getByRole('button').click();
 	await page.getByRole('menuitem', { name: 'Choose a release' }).click();
 	const panel = page.getByTestId('show-releases');
 	await expect(panel.getByRole('heading', { level: 2 })).toHaveText('Choose a release: Season 1');
@@ -173,9 +169,9 @@ test('the show page searches from a phone', async ({ browser }) => {
 	const phone = await ctx.newPage();
 	await signIn(phone, owner());
 	await openShow(phone, 'Lantern Street');
-	await expect(phone.getByTestId('search-show')).toBeVisible();
+	await expect(phone.getByRole('button', { name: 'More actions', exact: true })).toBeVisible();
 	const s1 = await openSeason(phone, 'Season 1');
-	await s1.getByRole('button', { name: 'Season actions', exact: true }).click();
+	await s1.page().getByTestId('season-menu').getByRole('button').click();
 	await phone.getByRole('menuitem', { name: 'Choose a release' }).click();
 	const panel = phone.getByTestId('show-releases');
 	await expect(panel.getByTestId('release').first()).toBeVisible({ timeout: 20_000 });

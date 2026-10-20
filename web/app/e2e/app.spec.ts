@@ -1,6 +1,6 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { moviesDir, newOwner, owner, setupCode, signIn, signOut, noSidewaysScroll, libraryStatus } from './helpers.ts';
+import { moviesDir, newOwner, owner, setupCode, signIn, signOut, noSidewaysScroll, libraryStatus, addFromSearch } from './helpers.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -132,7 +132,8 @@ test('empty pages say what to do next', async () => {
 	await page.goto('/calendar');
 	await expect(page.getByRole('heading', { name: 'Nothing coming up' })).toBeVisible();
 	await page.goto('/search');
-	await expect(page.getByRole('heading', { name: 'Look for a movie' })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Search', level: 1 })).toBeVisible();
+	await expect(page.getByRole('searchbox', { name: 'Search for a title, an artist or a person' })).toBeVisible();
 });
 
 test('settings pages render their forms', async () => {
@@ -203,22 +204,18 @@ test('search, add a movie, and the Library updates live', async ({ browser }) =>
 	await watcher.goto('/library');
 	await expect(watcher.getByRole('heading', { name: 'Your Library is empty' })).toBeVisible();
 
-	await page.goto('/search');
-	await page.getByLabel('Movie name or id').fill('Driftwood Moon');
-	await page.getByRole('button', { name: 'Search', exact: true }).click();
-	const hit = page.locator('li.hit').first();
-	await expect(hit).toBeVisible();
-	await hit.getByRole('button', { name: 'Add' }).click();
-	await page.getByLabel('Search when added').uncheck();
-	await page.getByRole('button', { name: 'Add to Library' }).click();
-	await expect(hit.getByRole('link', { name: 'In your Library' })).toBeVisible();
+	const dialog = await addFromSearch(page, 'Driftwood Moon', 'Driftwood Moon');
+	await dialog.getByLabel('Search when added').uncheck();
+	await dialog.getByRole('button', { name: 'Add to Library' }).click();
+	await expect(page).toHaveURL(/\/library\/\d+/);
 
 	await expect(watcher.locator('.grid .item').first()).toBeVisible();
 	await watcher.close();
 
-	await page.locator('li.hit').first().getByRole('link', { name: 'In your Library' }).click();
-	await expect(page.getByRole('button', { name: 'Search now' })).toBeVisible();
-	await expect(page.getByRole('button', { name: 'Keep up to date' })).toBeVisible();
+	await expect(page.getByTestId('search-now')).toBeVisible();
+	await page.getByRole('button', { name: 'More actions', exact: true }).click();
+	await expect(page.getByRole('menuitemradio', { name: 'Keep up to date' })).toBeVisible();
+	await page.keyboard.press('Escape');
 });
 
 test('Home reads a bounded Library summary', async () => {
@@ -302,7 +299,7 @@ test('Library search debounces the indexed query and ignores stale results', asy
 	await expect(page.getByRole('alert')).toContainText('Library search failed.');
 	// The Kind chips and the layout switch stay usable after a failed search.
 	await expect(page.getByRole('group', { name: 'Kind' })).toBeVisible();
-	await expect(page.getByRole('radiogroup', { name: 'Layout' })).toBeVisible();
+	await expect(page.getByRole('radiogroup', { name: 'View' })).toBeVisible();
 	await page.unroute('**/api/v1/titles?*');
 });
 

@@ -19,3 +19,11 @@ func TestCSPHashesInlineScripts(t *testing.T) {
 		t.Fatal(CSP(nil))
 	}
 }
+
+// A CRLF checkout of app.html: the hash is of the text the browser sees (LF).
+func TestCSPHashesNormalizedNewlines(t *testing.T) {
+	sum := sha256.Sum256([]byte("a()\nb()\n"))
+	if got := CSP([]byte("<script>a()\r\nb()\r</script>")); !strings.Contains(got, "'sha256-"+base64.StdEncoding.EncodeToString(sum[:])+"'") {
+		t.Fatal(got)
+	}
+}

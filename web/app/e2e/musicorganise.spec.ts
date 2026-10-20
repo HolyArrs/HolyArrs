@@ -36,7 +36,7 @@ async function axe(p: Page, where: string) {
 async function openAlbum(p: Page, artist: string, album: string) {
 	await p.goto('/library');
 	await p.getByRole('link', { name: new RegExp(artist) }).first().click();
-	await p.getByRole('link', { name: album }).first().click();
+	await p.getByRole('link', { name: album, exact: true }).first().click();
 	await expect(p.getByRole('heading', { level: 1, name: album })).toBeVisible();
 }
 
@@ -75,7 +75,7 @@ test('Settings > Naming has music patterns with a live example', async () => {
 
 test('Rename files on the album page renames its tracks into the new album folder', async () => {
 	await openAlbum(page, 'Tin Lanterns', 'Harbour Songs');
-	await page.getByTestId('rename-album').click();
+	await titleAction(page, 'More actions', 'Rename files');
 	const dialog = page.getByRole('dialog', { name: 'Rename the files of Harbour Songs' });
 	await expect(dialog.getByTestId('rename-step')).toHaveCount(3);
 	await expect(dialog.getByTestId('rename-step').first()).toContainText('Tin Lanterns/2019 - Harbour Songs/01 - Song 1.1.flac');
@@ -149,7 +149,7 @@ test('deleting one track with its file moves it to the holding folder; the album
 
 test('the Calendar lists album release days under Music', async () => {
 	await page.goto('/calendar?titles=music&month=2019-04');
-	const entry = page.getByTestId('cal-entry').filter({ hasText: 'Tin Lanterns – Harbour Songs' });
+	const entry = page.getByTestId('cal-week').getByTestId('cal-item').filter({ hasText: 'Tin Lanterns – Harbour Songs' }).getByRole('link');
 	await expect(entry).toBeVisible();
 	await expect(entry).toHaveAttribute('href', /\/library\/\d+\/albums\/\d+$/);
 	await page.getByRole('radio', { name: 'List', exact: true }).click();
@@ -164,14 +164,14 @@ test('the album page, import and delete work at phone width', async ({ browser }
 	const phone = await ctx.newPage();
 	await signIn(phone, owner());
 	await openAlbum(phone, 'Copper Wren', 'Low Orbit');
-	await expect(phone.getByTestId('delete-album')).toBeVisible();
+	await expect(phone.getByRole('button', { name: 'More actions', exact: true })).toBeVisible();
 	await noSidewaysScroll(phone);
-	await phone.getByTestId('delete-album').click();
+	await titleAction(phone, 'More actions', 'Delete album');
 	await expect(phone.getByTestId('show-delete').getByTestId('delete-plan')).toContainText('Low Orbit (2 tracks)');
 	await noSidewaysScroll(phone);
 	await axe(phone, 'delete an album on a phone');
 	await phone.getByTestId('show-delete').getByRole('button', { name: 'Cancel' }).click();
-	await phone.getByTestId('rename-album').click();
+	await titleAction(phone, 'More actions', 'Rename files');
 	await expect(phone.getByRole('dialog', { name: 'Rename the files of Low Orbit' })).toBeVisible();
 	await noSidewaysScroll(phone);
 	await phone.getByRole('dialog', { name: 'Rename the files of Low Orbit' }).getByRole('button', { name: 'Close' }).click();

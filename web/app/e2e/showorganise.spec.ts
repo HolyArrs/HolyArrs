@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { moviesDir, noSidewaysScroll, owner, signIn, titleAction, openSeasonNamed, episodeAction } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, titleAction, openSeasonNamed, episodeAction, seasonKept } from './helpers.ts';
 
 // Organise for shows (5.2): Quarry Bells sits on disk before HolyArrs knows
 // it. The owner imports it from the show Library folder (nothing moves),
@@ -97,7 +97,7 @@ test('deleting one episode of a multi-episode file keeps the file; deleting the 
 	await axe(page, 'delete an episode');
 	await dialog.getByRole('button', { name: 'Cancel' }).click();
 
-	await s1.getByRole('button', { name: 'Season actions', exact: true }).click();
+	await s1.page().getByTestId('season-menu').getByRole('button').click();
 	await page.getByRole('menuitem', { name: 'Delete Season 1' }).click();
 	await expect(dialog.getByRole('heading', { level: 2 })).toHaveText('Delete Quarry Bells Season 1?');
 	await expect(dialog.getByTestId('delete-plan')).toContainText('Season 1 (3 episodes): HolyArrs stops keeping them up to date.');
@@ -113,7 +113,7 @@ test('deleting one episode of a multi-episode file keeps the file; deleting the 
 	expect(existsSync(files.extra)).toBe(true);
 	// The show stays, with Season 1 no longer kept up to date.
 	await expect(page.getByRole('heading', { name: /Quarry Bells/ })).toBeVisible();
-	await expect(s1.getByRole('checkbox', { name: 'Keep Season 1 up to date' })).not.toBeChecked();
+	expect(await seasonKept(page, 'Season 1')).toBe(false);
 });
 
 test('an episode History link lists only that episode, named on each row', async () => {
@@ -136,10 +136,7 @@ test("the Calendar shows this week's episode, and the movies and shows filter", 
 	await page.goto('/calendar');
 	await page.getByRole('radio', { name: 'List', exact: true }).click();
 	const item = page.getByTestId('cal-item').filter({ hasText: 'Quarry Bells S02E01 New Bell' });
-	// The episode airs tomorrow (UTC); when that is next month, step forward.
-	const now = new Date();
-	const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-	if (new Date(Date.now() + 86400000).toISOString().slice(0, 7) !== thisMonth) await page.getByRole('button', { name: 'Month after' }).click();
+	// The episode airs tomorrow (UTC); the Calendar opens on the weeks from today.
 	await expect(item).toBeVisible();
 	await expect(item).toContainText('Episode');
 	await expect(item).toContainText('on Lab Three');
@@ -148,8 +145,8 @@ test("the Calendar shows this week's episode, and the movies and shows filter", 
 	await page.getByTestId('cal-titles').getByRole('radio', { name: 'Shows' }).click();
 	await expect(item).toBeVisible();
 	await expect(page.getByRole('checkbox', { name: 'In cinemas' })).toHaveCount(0);
-	await page.getByRole('radio', { name: 'Month', exact: true }).click();
-	await expect(page.getByTestId('cal-entry').filter({ hasText: 'Quarry Bells S02E01' })).toBeVisible();
+	await page.getByRole('radio', { name: 'Weeks', exact: true }).click();
+	await expect(page.getByTestId('cal-week').getByTestId('cal-item').filter({ hasText: 'Quarry Bells S02E01' })).toBeVisible();
 	await axe(page, 'calendar with episodes');
 });
 
@@ -172,7 +169,7 @@ test('the show page, import, history and calendar work at phone width', async ({
 	await signIn(phone, owner());
 	await phone.goto('/library');
 	await phone.getByRole('link', { name: /Quarry Bells/ }).first().click();
-	await expect(phone.getByRole('button', { name: 'Library', exact: true })).toBeVisible();
+	await expect(phone.getByRole('button', { name: 'More actions', exact: true })).toBeVisible();
 	await noSidewaysScroll(phone);
 	await titleAction(phone, 'Library', 'Delete show');
 	await expect(phone.getByTestId('show-delete').getByRole('checkbox', { name: /Never-add/ })).toBeVisible();

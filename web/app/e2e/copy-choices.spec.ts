@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { moviesDir, newOwner, noSidewaysScroll, owner, setupCode, signIn } from './helpers.ts';
+import { moviesDir, newOwner, noSidewaysScroll, owner, setupCode, signIn, addFromSearch } from './helpers.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -31,14 +31,11 @@ async function paperHarbour(page: import('@playwright/test').Page): Promise<stri
 	await page.goto('/library');
 	let movie = page.locator('a[href^="/library/"]', { hasText: 'Paper Harbour' }).first();
 	if ((await movie.count()) === 0) {
-		await page.goto('/search');
-		await page.getByLabel('Movie name or id').fill('paper harbour');
-		await page.getByRole('button', { name: 'Search', exact: true }).click();
-		const hit = page.locator('li.hit', { hasText: 'Paper Harbour' });
-		await hit.getByRole('button', { name: 'Add' }).click();
-		await page.getByRole('dialog').getByLabel('Search when added').uncheck();
-		await page.getByRole('dialog').getByRole('button', { name: 'Add to Library' }).click();
-		movie = hit.getByRole('link', { name: 'In your Library' });
+		const dialog = await addFromSearch(page, 'paper harbour', 'Paper Harbour');
+		await dialog.getByLabel('Search when added').uncheck();
+		await dialog.getByRole('button', { name: 'Add to Library' }).click();
+		await expect(page).toHaveURL(/\/library\/\d+/);
+		return new URL(page.url()).pathname;
 	}
 	const href = await movie.getAttribute('href');
 	expect(href).toBeTruthy();
