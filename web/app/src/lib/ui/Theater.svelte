@@ -157,7 +157,7 @@
 		if (!reduce && target?.width) {
 			// Still playing while it shrinks (no frozen frame), then the hero takes over.
 			await move(target, false);
-			if (!ended && o.from === 'hero') await waitForResume(700);
+			if (!ended && o.from === 'hero') await waitForResume(250);
 		}
 		video?.pause();
 		if (!video) post('pauseVideo');
