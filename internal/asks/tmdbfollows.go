@@ -11,6 +11,7 @@ import (
 
 	"github.com/CoderLuii/holyarrs/internal/alerts"
 	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/library"
 	"github.com/CoderLuii/holyarrs/internal/store"
 	"github.com/CoderLuii/holyarrs/internal/supervisor"
 )
@@ -47,6 +48,20 @@ func (s *Service) FollowShowTMDB(ctx context.Context, p Person, tmdbID string) (
 			err = s.Follow(ctx, p, id)
 		}
 		return id, err
+	}
+	if p.MaxRating != "" {
+		// A Kid follows only shows their limit allows (unrated ones are refused), as when asking.
+		defs, err := library.ReadShowDefaults(ctx, s.Store.Read())
+		if err != nil {
+			return 0, err
+		}
+		sh, err := s.Library.LookupShow(ctx, "tmdb:"+tmdbID, defs.Source)
+		if err != nil {
+			return 0, err
+		}
+		if err := overLimit(p, "show", sh.Rating); err != nil {
+			return 0, err
+		}
 	}
 	now := store.FormatTime(s.now())
 	return 0, s.Store.Write(ctx, func(tx *sql.Tx) error {
@@ -123,7 +138,7 @@ func (s *Service) LandTMDBFollows(ctx context.Context, titleID int64) (int, erro
 	if err != nil {
 		return 0, err
 	}
-	rows, err := s.Store.Read().QueryContext(ctx, `SELECT u.id, u.name, coalesce(x.email, ''), coalesce(x.discord_id, ''), coalesce(x.new_episodes, 1)
+	rows, err := s.Store.Read().QueryContext(ctx, `SELECT u.id, u.name, coalesce(x.email, ''), coalesce(x.discord_id, ''), coalesce(x.new_episodes, 1), u.max_rating
 		FROM tmdb_follows f JOIN users u ON u.id = f.user_id LEFT JOIN user_ask_settings x ON x.user_id = u.id
 		WHERE f.kind = 'show' AND f.tmdb_id = ? AND u.state != 'disabled' ORDER BY u.id`, tmdbID)
 	if err != nil {
@@ -131,12 +146,18 @@ func (s *Service) LandTMDBFollows(ctx context.Context, titleID int64) (int, erro
 	}
 	var all []int64
 	var tell []person
+	var limits = map[int64]string{}
 	for rows.Next() {
 		var p person
 		var on int
-		if err := rows.Scan(&p.ID, &p.Name, &p.Email, &p.DiscordID, &on); err != nil {
+		var max string
+		if err := rows.Scan(&p.ID, &p.Name, &p.Email, &p.DiscordID, &on, &max); err != nil {
 			rows.Close()
 			return 0, err
+		}
+		if max != "" {
+			limits[p.ID] = max
+			continue
 		}
 		all = append(all, p.ID)
 		if on == 1 {
@@ -145,8 +166,53 @@ func (s *Service) LandTMDBFollows(ctx context.Context, titleID int64) (int, erro
 		}
 	}
 	rows.Close()
-	if err := rows.Err(); err != nil || len(all) == 0 {
+	if err := rows.Err(); err != nil {
 		return 0, err
+	}
+	// Followers with a rating limit move over only when the title is within
+	// it (as Follow checks); the others are dropped, with no notice.
+	for uid, max := range limits {
+		switch err := libraryOverLimit(ctx, s.Store.Read(), Person{UserID: uid, MaxRating: max}, "show", titleID); {
+		case err == nil:
+			all = append(all, uid)
+		case errors.Is(err, ErrAboveLimit):
+		default:
+			return 0, err
+		}
+	}
+	if len(limits) > 0 {
+		tell = tell[:0:0]
+		in := map[int64]bool{}
+		for _, uid := range all {
+			in[uid] = true
+		}
+		rows, err := s.Store.Read().QueryContext(ctx, `SELECT u.id, u.name, coalesce(x.email, ''), coalesce(x.discord_id, '') FROM users u
+			LEFT JOIN user_ask_settings x ON x.user_id = u.id WHERE u.state != 'disabled' AND coalesce(x.new_episodes, 1) = 1 AND u.id IN (SELECT user_id FROM tmdb_follows WHERE kind = 'show' AND tmdb_id = ?) ORDER BY u.id`, tmdbID)
+		if err != nil {
+			return 0, err
+		}
+		for rows.Next() {
+			var p person
+			if err := rows.Scan(&p.ID, &p.Name, &p.Email, &p.DiscordID); err != nil {
+				rows.Close()
+				return 0, err
+			}
+			if in[p.ID] {
+				p.Name = strings.TrimSpace(p.Name)
+				tell = append(tell, p)
+			}
+		}
+		rows.Close()
+		if err := rows.Err(); err != nil {
+			return 0, err
+		}
+	}
+	if len(all) == 0 {
+		_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
+			_, err := tx.Exec("DELETE FROM tmdb_follows WHERE kind = 'show' AND tmdb_id = ?", tmdbID)
+			return err
+		})
+		return 0, nil
 	}
 	now := store.FormatTime(s.now())
 	text := name + " is in the Library"
