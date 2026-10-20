@@ -18,6 +18,8 @@
 	import SubtitlePanel from './SubtitlePanel.svelte';
 	import { ago, date, dateTime, tone } from './format.ts';
 	import Icon from './Icon.svelte';
+	import AskedByLine from './ui/AskedByLine.svelte';
+	import { loadAskedBy, type AskedByAnswer } from './askedby.ts';
 	import TitleHero, { richMetadata, runtimeWords, shortFolder, type RichMeta } from './ui/TitleHero.svelte';
 	import LoadError from './ui/LoadError.svelte';
 	import ActionButton from './ui/ActionButton.svelte';
@@ -62,6 +64,15 @@
 		error = '',
 		onretry
 	}: { title: TitleView; onchange: (t: TitleView) => void; error?: string; onretry?: () => Promise<void> | void } = $props();
+
+	// Who asked, as the server lets this reader see it.
+	let askedBy = $state<AskedByAnswer>({ titles: {}, sees_all: false });
+	$effect(() => {
+		const id = title?.id;
+		if (!id) return;
+		loadAskedBy(api.get, [id]).then((x) => (askedBy = x), () => {});
+	});
+	const askers = $derived(askedBy.titles[String(title.id)]?.askers ?? []);
 
 	// A failed refresh keeps what is shown and says so above it.
 	let loadErr = $state('');
@@ -396,6 +407,7 @@
 	description={title.overview || rich?.overview}
 	vtName={artName(title.id)}
 >
+	{#snippet byline()}<AskedByLine {askers} seesAll={askedBy.sees_all} />{/snippet}
 	{#snippet actions()}
 		{#if staff}
 			<ActionButton icon="search" label="Search now" primary onclick={searchShow} disabled={searching === 'show'} busy={searching === 'show'} data-testid="search-show" />

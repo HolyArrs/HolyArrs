@@ -401,6 +401,8 @@ export interface AskSettings {
 	show_pick_rules_id: number;
 	music_library_folder_id: number;
 	music_pick_rules_id: number;
+	/** Who sees other people's names on asks. */
+	show_who_asked?: 'approvers' | 'everyone';
 }
 
 export interface AppMessage {

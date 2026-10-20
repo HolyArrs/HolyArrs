@@ -8,6 +8,7 @@
 	import { api, message } from '#lib/api.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
+	import { WORDS as ASKED } from '#lib/askedby.ts';
 	import type { AskSettings, LibraryFolder, PickRulesView } from '#lib/types.ts';
 
 	let settings = $state<AskSettings>({
@@ -20,7 +21,8 @@
 		show_library_folder_id: 0,
 		show_pick_rules_id: 0,
 		music_library_folder_id: 0,
-		music_pick_rules_id: 0
+		music_pick_rules_id: 0,
+		show_who_asked: 'approvers'
 	});
 	let folders = $state<LibraryFolder[]>([]);
 	let rules = $state<PickRulesView[]>([]);
@@ -108,6 +110,13 @@
 					have no limit. Taking an ask back or a turned down ask frees it up; joining someone else's ask costs nothing.
 				</span>
 			</fieldset>
+		</SettingsCard>
+		<SettingsCard id="show-who-asked" title={ASKED.householdLabel} description={ASKED.householdHelp}>
+			<Field id="show-who-asked-select" label={ASKED.householdLabel}>
+				<select id="show-who-asked-select" class="input" bind:value={settings.show_who_asked} data-testid="show-who-asked">
+					{#each ASKED.householdChoices as c (c.value)}<option value={c.value}>{c.label}</option>{/each}
+				</select>
+			</Field>
 		</SettingsCard>
 		<SettingsCard id="approved-asks" title="Approved asks" description="Where an approved ask goes, and whether the search starts straight away.">
 			<Field id="ask-folder" label="Library folder for approved movie asks" hint="An approved movie ask is added to this folder.">

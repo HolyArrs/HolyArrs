@@ -12,9 +12,20 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { to } from './paths.ts';
+	import { WORDS as ASKED } from './askedby.ts';
 
 	// Where Alerts reach this person (email, Discord).
 	let targets = $state<{ email: string; discord_id: string; new_episodes?: boolean }>({ email: '', discord_id: '', new_episodes: true });
+	// Asked by: whether my name shows on my asks (off by default).
+	let showMyName = $state(false);
+	async function setShowMyName(on: boolean) {
+		try {
+			showMyName = (await api.put<{ show_my_name: boolean }>('/my/ask-privacy', { show_my_name: on })).show_my_name;
+		} catch (err) {
+			showMyName = !on;
+			toasts.push(message(err), 'fail');
+		}
+	}
 	let tgBusy = $state(false);
 	let tgError = $state('');
 	onMount(() => {
@@ -24,6 +35,10 @@
 		api
 			.get<{ email: string; discord_id: string; new_episodes?: boolean }>('/my/alerts')
 			.then((r) => (targets = r))
+			.catch(() => {});
+		api
+			.get<{ show_my_name: boolean }>('/my/ask-privacy')
+			.then((r) => (showMyName = r.show_my_name))
 			.catch(() => {});
 	});
 	async function saveTargets(e: SubmitEvent) {
@@ -371,6 +386,12 @@
 		<Button variant="primary" type="submit" disabled={tgBusy} aria-busy={tgBusy}>Save</Button>
 	</form>
 </SettingsCard>
+
+{#if session.can('ask')}
+	<SettingsCard id="asked-by-me" title={ASKED.personalLabel} description={ASKED.personalHelp}>
+		<label class="box"><input type="checkbox" checked={showMyName} onchange={(e) => setShowMyName(e.currentTarget.checked)} data-testid="show-my-name" /> {ASKED.personalLabel}</label>
+	</SettingsCard>
+{/if}
 
 <SettingsCard title="Password">
 	<form class="pw" onsubmit={changePassword} novalidate>

@@ -82,7 +82,7 @@ func askError(w http.ResponseWriter, err error) {
 	case errors.Is(err, asks.ErrNotYours), errors.Is(err, asks.ErrAboveLimit):
 		fail(w, http.StatusForbidden, err.Error())
 	case errors.Is(err, asks.ErrNoteLength), errors.Is(err, asks.ErrPerWeek), errors.Is(err, asks.ErrEmail), errors.Is(err, asks.ErrDiscordID),
-		errors.Is(err, asks.ErrNoSuchSeason):
+		errors.Is(err, asks.ErrNoSuchSeason), errors.Is(err, asks.ErrShowWhoAsked):
 		fail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, asks.ErrNoSuchAlbum):
 		fail(w, http.StatusBadRequest, err.Error())
@@ -109,6 +109,13 @@ func (a *API) askViews(r *http.Request, where string, args ...any) ([]asks.View,
 		for _, p := range vs[i].People {
 			vs[i].Mine = vs[i].Mine || p.ID == me
 		}
+	}
+	s, err := a.seer(r.Context())
+	if err != nil {
+		return nil, err
+	}
+	for i := range vs {
+		s.trim(&vs[i])
 	}
 	return vs, nil
 }
@@ -328,7 +335,7 @@ func (a *API) putAskSettings(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
-	if !decode(w, r, &s, "send any of movies_per_week, shows_per_week, music_per_week, library_folder_id, pick_rules_id, search_on_approve, show_library_folder_id, show_pick_rules_id, music_library_folder_id, music_pick_rules_id") {
+	if !decode(w, r, &s, "send any of movies_per_week, shows_per_week, music_per_week, library_folder_id, pick_rules_id, search_on_approve, show_library_folder_id, show_pick_rules_id, music_library_folder_id, music_pick_rules_id, show_who_asked") {
 		return
 	}
 	if err := asks.SaveSettings(r.Context(), a.s.Store, s, actor(r)); err != nil {
@@ -725,8 +732,13 @@ func (a *API) titleAsks(ctx context.Context, titleID int64) ([]asks.View, error)
 		return a.s.Asks.Views(ctx, "a.title_id = ?", titleID)
 	}
 	vs, err := a.s.Asks.Views(ctx, "a.title_id = ? AND EXISTS (SELECT 1 FROM ask_people p WHERE p.ask_id = a.id AND p.user_id = ?)", titleID, who.UserID)
+	s, serr := a.seer(ctx)
 	for i := range vs {
 		vs[i].Mine = true
+		s.trim(&vs[i])
+	}
+	if err == nil {
+		err = serr
 	}
 	return vs, err
 }

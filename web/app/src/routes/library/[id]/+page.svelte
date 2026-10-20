@@ -24,6 +24,8 @@
 	import TitleHero, { richMetadata, runtimeWords, shortFolder, type RichMeta } from '#lib/ui/TitleHero.svelte';
 	import { plainReason } from '#lib/plain.ts';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
+	import AskedByLine from '#lib/ui/AskedByLine.svelte';
+	import { loadAskedBy, type AskedByAnswer } from '#lib/askedby.ts';
 	import { reducedMotion } from '#lib/motion.ts';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
@@ -49,6 +51,15 @@
 		return target && (target === library || target.startsWith(`${library}?`)) ? target : library;
 	});
 	let title = $state<TitleView | null>(null);
+
+	// Who asked, as the server lets this reader see it.
+	let askedBy = $state<AskedByAnswer>({ titles: {}, sees_all: false });
+	$effect(() => {
+		const id = title?.id;
+		if (!id) return;
+		loadAskedBy(api.get, [id]).then((x) => (askedBy = x), () => {});
+	});
+	const askers = $derived(title ? (askedBy.titles[String(title.id)]?.askers ?? []) : []);
 	let history = $state<EventRecord[]>([]);
 	let historyTotal = $state(0);
 	let releases = $state<ReleaseView[]>([]);
@@ -528,6 +539,7 @@
 			description={title.overview || rich?.overview}
 			vtName={artName(title.id)}
 		>
+			{#snippet byline()}<AskedByLine {askers} seesAll={askedBy.sees_all} />{/snippet}
 			{#snippet actions()}
 				{#if session.can('manage_library')}
 					<ActionButton icon="search" label="Search now" primary onclick={() => searchNow()} disabled={searching} busy={searching} />

@@ -81,6 +81,7 @@
 		crumbIcon = 'film',
 		vtName,
 		square = false,
+		byline,
 		actions
 	}: {
 		title: string;
@@ -105,6 +106,8 @@
 		vtName?: string;
 		/** Square art (music). */
 		square?: boolean;
+		/** A line under the meta line, such as who asked. */
+		byline?: Snippet;
 		actions?: Snippet;
 	} = $props();
 
@@ -172,6 +175,7 @@
 				{#if status}<StatusPill kind={status} {percent} label={statusLabel} on="art" />{/if}
 			</div>
 		{/if}
+		{#if byline}{@render byline()}{/if}
 		{#if hasBadges}
 			<ul class="badges" aria-label="Rating and quality">
 				{#if certification}<li class="b cert" title="Age rating">{certification}</li>{/if}

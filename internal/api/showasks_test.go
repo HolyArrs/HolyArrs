@@ -44,7 +44,8 @@ func TestShowAskOverHTTP(t *testing.T) {
 		Joined bool      `json:"joined"`
 	}
 	_ = json.Unmarshal(r.bo.call("POST", "/api/v1/asks", `{"kind":"show","id":"tvdb:200","seasons":[1]}`, 200), &joined)
-	if !joined.Joined || joined.Ask.ID != a.ID || len(joined.Ask.People) != 2 {
+	// A member sees only themself among the askers (Asked by privacy).
+	if !joined.Joined || joined.Ask.ID != a.ID || len(joined.Ask.People) != 1 {
 		t.Fatalf("join %+v", joined)
 	}
 	// The show search tells ana she asked already.

@@ -56,7 +56,8 @@ func TestMusicAskOverHTTP(t *testing.T) {
 		Joined bool      `json:"joined"`
 	}
 	_ = json.Unmarshal(r.bo.call("POST", "/api/v1/asks", `{"kind":"artist","id":"mbid:`+apiArtist+`","albums":["`+apiLive+`"]}`, 200), &joined)
-	if !joined.Joined || joined.Ask.ID != a.ID || len(joined.Ask.People) != 2 {
+	// A member sees only themself among the askers (Asked by privacy).
+	if !joined.Joined || joined.Ask.ID != a.ID || len(joined.Ask.People) != 1 {
 		t.Fatalf("join %+v", joined)
 	}
 	look.Artists = nil

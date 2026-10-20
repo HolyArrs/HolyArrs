@@ -304,6 +304,7 @@ func (a *API) Handler() http.Handler {
 		m.HandleFunc("PUT /api/v1/settings/theaudiodb-key", a.putAudioDBKey)
 	}
 	a.askRoutes(m)
+	a.askedByRoutes(m)
 	a.controlRoutes(m)
 	a.migrateRoutes(m)
 	a.moveRoutes(m)

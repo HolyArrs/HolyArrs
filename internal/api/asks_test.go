@@ -161,8 +161,9 @@ func TestAskJoinApproveOverHTTP(t *testing.T) {
 	if len(look.Movies) != 1 || look.Movies[0].Ask == nil || look.Movies[0].Ask.Mine || look.Movies[0].Ask.State != "asked" {
 		t.Fatalf("lookup %+v", look)
 	}
+	// A member sees only themself among the askers (Asked by privacy).
 	b := r.bo.call("POST", "/api/v1/asks", `{"id":"tmdb:693134"}`, 200)
-	if !strings.Contains(string(b), `"joined":true`) || len(askOf(t, b).People) != 2 {
+	if !strings.Contains(string(b), `"joined":true`) || len(askOf(t, b).People) != 1 {
 		t.Fatalf("join %s", b)
 	}
 
@@ -204,10 +205,11 @@ func TestAskJoinApproveOverHTTP(t *testing.T) {
 	r.owner.call("POST", "/api/v1/asks/"+itoa(a.ID)+"/approve", ``, 409)
 	r.owner.call("POST", "/api/v1/asks/999/approve", ``, 404)
 
-	// The Movie page names who asked and who approved.
+	// The Movie page names who asked and who approved; a member sees only
+	// themself among the askers (Asked by privacy).
 	var tv TitleView
 	_ = json.Unmarshal(r.ana.call("GET", "/api/v1/titles/"+itoa(*got.TitleID), "", 200), &tv)
-	if len(tv.Asks) != 1 || len(tv.Asks[0].People) != 2 || tv.Asks[0].DecidedBy.Name != "luis" || tv.WhyAdded != "ask" {
+	if len(tv.Asks) != 1 || len(tv.Asks[0].People) != 1 || tv.Asks[0].DecidedBy.Name != "luis" || tv.WhyAdded != "ask" {
 		t.Fatalf("title asks %+v", tv.Asks)
 	}
 	msgs.Waiting = nil
