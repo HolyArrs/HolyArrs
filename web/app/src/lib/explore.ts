@@ -686,7 +686,7 @@ export interface HeadAnswer {
 	seeds: number;
 	tail_cap: number;
 	tail_rows: number;
-	top10: (import('./top10.ts').Top10Answer & { kind?: 'movie' | 'show' }) | null;
+	top10: (import('./top10.ts').Top10Answer & { kind?: 'movie' | 'show'; by_kind?: Partial<Record<'movie' | 'show', import('./top10.ts').Top10Answer>> }) | null;
 	/** Up to 6 titles not in the Library (from Top 10 and Trending) for the hero. */
 	hero?: ProviderItem[];
 	head: ServerRow[];

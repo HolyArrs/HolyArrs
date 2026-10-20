@@ -28,7 +28,7 @@ describe('freshness strip', () => {
 		expect(pickFresh([null, undefined])).toBeNull();
 	});
 	it('at most one freshness badge and one status circle, no type badge', () => {
-		const b = cardBadges({ fresh: f('top10'), owned: { state: 'available' } });
+		const b = cardBadges({ fresh: f('new_season'), owned: { state: 'available' } });
 		expect(Object.keys(b)).toEqual(['fresh', 'owned']);
 		expect(Object.values(b).filter(Boolean)).toHaveLength(2);
 		expect(cardBadges({ fresh: f('coming'), music: true }).fresh).toBeNull();
@@ -41,7 +41,8 @@ describe('freshness strip', () => {
 		expect(shownFresh(f('coming'), { row: 'coming_soon' })).toBeNull();
 		expect(shownFresh(f('season_coming'), { row: 'coming_soon' })).toBeNull();
 		expect(shownFresh(f('new_episode'), { row: 'new_episodes' })).toBeNull();
-		expect(shownFresh(f('top10'), { row: 'best' })?.kind).toBe('top10');
+		// The Top 10 rank is shown only on the Netflix Top 10 rows.
+		expect(shownFresh(f('top10'), { row: 'best' })).toBeNull();
 		expect(shownFresh(f('new_release'), { row: 'trending' })?.kind).toBe('new_release');
 		for (const [row, kinds] of Object.entries(ROW_SUPPRESS)) for (const k of kinds) expect(shownFresh(f(k), { row })).toBeNull();
 	});

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"hash/fnv"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -85,15 +86,29 @@ func order(rows []Row) []string {
 	return ids
 }
 
-// Criterion 2: no title twice in the head; none more than twice on the
-// page; repeats at least 4 rows apart. 50 generated members.
+// Criterion 2: no title twice in the first HeadDedupe rows; none more
+// than twice on the page; repeats at least 4 rows apart. Top 10 rows keep
+// every title and are left out of the count, but rows under them skip
+// their titles in the first HeadDedupe rows. 50 generated members.
 func TestDedupFiftyMembers(t *testing.T) {
 	for m := int64(1); m <= 50; m++ {
 		p, _ := build(t, Input{Member: m, Seeds: seedsN(int(m%15), m), Services: "8|9", Region: "US"})
 		pg := Assemble(p, top10(), m)
 		at := map[string][]int{}
 		rows := append(append([]Row{}, pg.Head...), pg.Tail...)
+		topAt := map[string]int{}
 		for i, r := range rows {
+			if r.Type == TypeTop10 {
+				for _, it := range r.Items {
+					topAt[it.Key()] = i
+				}
+				continue
+			}
+			for _, it := range r.Items {
+				if j, ok := topAt[it.Key()]; ok && j < i && i < HeadDedupe {
+					t.Fatalf("member %d row %s repeats Top 10 title %s", m, r.ID, it.Key())
+				}
+			}
 			inRow := map[string]bool{}
 			for _, it := range r.Items {
 				if inRow[it.Key()] {
@@ -106,7 +121,7 @@ func TestDedupFiftyMembers(t *testing.T) {
 		for k, idx := range at {
 			heads := 0
 			for _, i := range idx {
-				if i < len(pg.Head) {
+				if i < HeadDedupe {
 					heads++
 				}
 			}
@@ -123,15 +138,16 @@ func TestDedupFiftyMembers(t *testing.T) {
 	}
 }
 
-// Criterion 3: an empty household gets 6 head rows and 6-8 tail rows, each
-// at its minimum, and no personal row.
+// Criterion 3: an empty household gets a full head and a short tail (the
+// slot rows of the 2026-10-20 order moved up into the head), each row at
+// its minimum, and no personal row.
 func TestColdStart(t *testing.T) {
 	p, _ := build(t, Input{Member: 1})
 	pg := Assemble(p, top10(), 1)
 	if len(pg.Head) != HeadRows {
 		t.Fatalf("head %d rows: %v", len(pg.Head), order(pg.Head))
 	}
-	if len(pg.Tail) < 6 || len(pg.Tail) > 8 {
+	if len(pg.Tail) < 2 || len(pg.Tail) > 8 {
 		t.Fatalf("tail %d rows: %v", len(pg.Tail), order(pg.Tail))
 	}
 	for _, r := range append(pg.Head, pg.Tail...) {
@@ -142,8 +158,8 @@ func TestColdStart(t *testing.T) {
 			t.Fatalf("personal row in a cold page: %s %q", r.ID, r.Title)
 		}
 	}
-	if pg.Head[4].Type != TypeBest && pg.Head[4].Type != TypeHidden {
-		t.Fatalf("cold head slot 5 is %s, want Best new releases or Hidden gems", pg.Head[4].Type)
+	if types := slotsOf(pg.Head); !slices.Contains(types, TypeBest) && !slices.Contains(types, TypeHidden) {
+		t.Fatalf("cold head %v has no Best new releases or Hidden gems", types)
 	}
 }
 
@@ -258,9 +274,10 @@ func TestPerMemberOrder(t *testing.T) {
 }
 
 // Criterion 10: 2, 5 and 12 seeds get at most 8, 20 and 40 tail rows; 12
-// seeds get more than 20.
+// seeds get more than 15 (Best, services, Because you have and household
+// rows now sit in the head).
 func TestTailLength(t *testing.T) {
-	for _, c := range []struct{ seeds, max, floor int }{{2, 8, 1}, {5, 20, 1}, {12, 40, 21}} {
+	for _, c := range []struct{ seeds, max, floor int }{{2, 8, 1}, {5, 20, 1}, {12, 40, 16}} {
 		p, _ := build(t, Input{Member: 5, Seeds: seedsN(c.seeds, 5), Services: "8|9", Region: "US",
 			OwnedPeople: map[string]int{"Ann": 3, "Bo": 2, "Cy": 2, "Di": 2}, OwnedDecadeGenre: map[string]int{"1990s|Drama": 4, "2000s|Comedy": 3}, Members: 2, Household: household(5)})
 		pg := Assemble(p, top10(), 5)
@@ -325,30 +342,84 @@ func TestFranchise(t *testing.T) {
 	}
 }
 
-// Revision 4 head order: Just arrived, Top 10, Your asks, Top picks,
-// Trending, Coming soon, then the best tail row; Just arrived keeps the
-// newest-first order it was given.
-func TestHeadOrderRevision4(t *testing.T) {
-	arrived := []Item{{TMDBID: "9001", Kind: "movie", Name: "Newest"}, {TMDBID: "9002", Kind: "show", Name: "Older"}, {TMDBID: "9003", Kind: "movie", Name: "Oldest"}}
-	asks := []Item{{TMDBID: "9100", Kind: "movie", Name: "Asked"}}
-	p, _ := build(t, Input{Member: 4, Seeds: seedsN(5, 4), JustArrived: arrived, MyAsks: asks})
-	pg := Assemble(p, top10(), 4)
-	want := []string{TypeJustArrived, TypeTop10, TypeYourAsks, TypeTopPicks, TypeTrending, TypeComingSoon}
-	if len(pg.Head) != HeadRows {
-		t.Fatalf("head %v", order(pg.Head))
+func top10Both() map[string][]Item {
+	out := map[string][]Item{}
+	for i := 0; i < 10; i++ {
+		out["movie"] = append(out["movie"], Item{TMDBID: fmt.Sprint(i + 1), Kind: "movie", Name: fmt.Sprint("Top", i)})
+		out["show"] = append(out["show"], Item{TMDBID: fmt.Sprint(i + 1), Kind: "show", Name: fmt.Sprint("TopShow", i)})
 	}
-	for i, w := range want {
-		if pg.Head[i].Type != w {
-			t.Fatalf("head %v, want %v first", order(pg.Head), want)
+	return out
+}
+
+func slotsOf(rows []Row) []string {
+	var out []string
+	for _, r := range rows {
+		if r.Type == TypeTop10 {
+			out = append(out, r.ID)
+		} else {
+			out = append(out, r.Type)
 		}
 	}
+	return out
+}
+
+// The 2026-10-20 head order per tab, rows without data skipped; Top 10 is
+// split by kind; Just arrived keeps the newest-first order it was given.
+func TestHeadOrderPerTab(t *testing.T) {
+	arrived := []Item{{TMDBID: "9001", Kind: "movie", Name: "Newest"}, {TMDBID: "9002", Kind: "show", Name: "Older"}, {TMDBID: "9003", Kind: "movie", Name: "Oldest"}}
+	asks := []Item{{TMDBID: "9100", Kind: "movie", Name: "Asked"}}
+	for _, c := range []struct {
+		sw   string
+		want []string
+	}{
+		{"all", []string{TypeJustArrived, TypeYourAsks, Top10Shows, TypeTrending, TypeTopPicks}},
+		{"movies", []string{Top10Movies, TypeYourAsks, TypeTrending, TypeTopPicks}},
+		{"shows", []string{Top10Shows, TypeTrending, TypeBest, TypeServices}},
+	} {
+		p, _ := build(t, Input{Member: 4, Switch: c.sw, Seeds: seedsN(5, 4), JustArrived: arrived, MyAsks: asks, Services: "8|9", Region: "US"})
+		pg := AssembleTabAt(p, top10Both(), 4, Moment{})
+		got := slotsOf(pg.Head)
+		if len(pg.Head) > HeadRows || fmt.Sprint(got[:len(c.want)]) != fmt.Sprint(c.want) {
+			t.Fatalf("%s head %v, want %v first", c.sw, got, c.want)
+		}
+		tops := 0
+		for i, r := range pg.Head {
+			if r.Type != TypeTop10 {
+				continue
+			}
+			tops++
+			if i > 0 && pg.Head[i-1].Type == TypeTop10 {
+				t.Fatalf("%s: two Top 10 rows next to each other %v", c.sw, got)
+			}
+			if len(r.Items) != 10 {
+				t.Fatalf("%s: Top 10 row lost titles: %d", c.sw, len(r.Items))
+			}
+			if (r.ID == Top10Shows) != (r.Title == "Top 10 shows on Netflix") {
+				t.Fatalf("%s: title %q for %s", c.sw, r.Title, r.ID)
+			}
+		}
+		if want := map[string]int{"all": 2, "movies": 1, "shows": 1}[c.sw]; tops != want {
+			t.Fatalf("%s: %d Top 10 rows %v", c.sw, tops, got)
+		}
+	}
+	p, _ := build(t, Input{Member: 4, Seeds: seedsN(5, 4), JustArrived: arrived, MyAsks: asks})
+	pg := AssembleTabAt(p, top10Both(), 4, Moment{})
 	if fmt.Sprint(pg.Head[0].Items) != fmt.Sprint(arrived) {
 		t.Fatal("Just arrived lost its newest-first order")
 	}
-	// Without open asks, the next candidate moves up.
+	// In All the movies Top 10 sits below Because you have / services, further down.
+	got := slotsOf(pg.Head)
+	if slices.Index(got, Top10Movies)-slices.Index(got, Top10Shows) < 3 {
+		t.Fatalf("all: movies Top 10 not further down %v", got)
+	}
+	// Without open asks, the next row moves up.
 	p, _ = build(t, Input{Member: 4, Seeds: seedsN(5, 4), JustArrived: arrived})
-	if pg := Assemble(p, top10(), 4); pg.Head[2].Type != TypeTopPicks {
-		t.Fatalf("head without asks %v", order(pg.Head))
+	if pg := AssembleTabAt(p, top10Both(), 4, Moment{}); slotsOf(pg.Head)[1] != Top10Shows {
+		t.Fatalf("head without asks %v", slotsOf(pg.Head))
+	}
+	// No Top 10 data: no Top 10 rows.
+	if pg := AssembleTabAt(p, nil, 4, Moment{}); slices.Contains(slotsOf(pg.Head), Top10Shows) {
+		t.Fatal("empty Top 10 shown")
 	}
 }
 

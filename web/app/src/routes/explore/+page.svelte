@@ -478,7 +478,8 @@
 			{#if !rows.some((r) => r.type === 'top10')}<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} initial={top10} />{/if}
 			{#each rows as row, ri (row.id)}
 				{#if row.type === 'top10'}
-					<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} initial={top10} />
+					{@const k = row.id === 'top10_show' ? 'show' : row.id === 'top10_movie' ? 'movie' : type === 'shows' ? 'show' : type === 'movies' ? 'movie' : undefined}
+					<Top10Row lock={k} {owned} {who} initial={k && top10?.by_kind?.[k] ? { ...top10.by_kind[k], kind: k } : top10} />
 				{:else}
 				<div class="row-wrap" class:wide-row={row.wide || row.cards.some((c) => wideKind(c.kind))} data-row={row.type ?? row.id} data-row-id={row.id} data-title-layer={row.titleLayer}>
 				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.cards.some((c) => wideKind(c.kind)) ? 'var(--title-item)' : 'var(--explore-item)'} tools={row.id === 'services' ? serviceTools : undefined}

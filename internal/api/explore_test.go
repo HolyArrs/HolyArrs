@@ -258,8 +258,12 @@ func TestExploreHeadAndTail(t *testing.T) {
 	if h["building"] != false || len(h["head"].([]any)) == 0 {
 		t.Fatalf("head %v", h)
 	}
+	// A title at most once in the first explore.HeadDedupe rows.
 	seen := map[string]bool{}
-	for _, r := range h["head"].([]any) {
+	for i, r := range h["head"].([]any) {
+		if i == explore.HeadDedupe {
+			break
+		}
 		for _, it := range r.(map[string]any)["items"].([]any) {
 			k := it.(map[string]any)["kind"].(string) + it.(map[string]any)["tmdb_id"].(string)
 			if seen[k] {

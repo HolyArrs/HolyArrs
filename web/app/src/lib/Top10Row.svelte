@@ -8,7 +8,7 @@
 	import { matchOwned, ownedMark, ownedTitle, type OwnedIndex } from './explore.ts';
 	import type { Audience } from './title-status.ts';
 
-	// "Top 10 on Netflix": Netflix's weekly list with big rank numbers. Hidden
+	// "Top 10 movies (or shows) on Netflix in <country>": Netflix's weekly list with big rank numbers. Hidden
 	// when the metadata server has no list.
 	const KEY = 'holyarrs.top10';
 	/** lock: Explore's type switch picked Movies or Shows, so this row follows it and hides its own toggle. */
@@ -105,7 +105,7 @@
 		</div>
 		<!-- A new list starts at rank 1, not where the last one was scrolled to. -->
 		{#key `${kind}|${region}|${week}`}
-		<Shelf title="Top 10 on Netflix" subtitle={[regionName(region), weekText].filter(Boolean).join(' · ')} item="calc(var(--explore-item, 180px) / 0.68)">
+		<Shelf title="Top 10 {kind === 'show' ? 'shows' : 'movies'} on Netflix {region === 'global' ? 'worldwide' : `in ${regionName(region)}`}" subtitle={weekText || undefined} item="calc(var(--explore-item, 180px) / 0.68)">
 			{#each cards as raw (raw.key)}
 				{@const c = owned ? { ...matchOwned(raw, owned), rank: raw.rank } : raw}
 				{@const mark = ownedMark(c, owned ? ownedTitle(c, owned) : undefined, who)}

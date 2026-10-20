@@ -42,7 +42,8 @@ export const ROW_SUPPRESS: Readonly<Record<string, readonly FreshKind[]>> = {
 export function shownFresh(f: Fresh | null | undefined, where: { music?: boolean; top10Row?: boolean; row?: string } = {}): Fresh | null {
 	if (!f || !FRESH_ORDER.includes(f.kind) || !f.text) return null;
 	if (where.music && !MUSIC.includes(f.kind)) return null;
-	if (where.top10Row && f.kind === 'top10') return null;
+	// The ranked-number style belongs to the Netflix Top 10 rows only, which draw the rank themselves.
+	if (f.kind === 'top10') return null;
 	if (where.row && ROW_SUPPRESS[where.row]?.includes(f.kind)) return null;
 	return f;
 }

@@ -90,23 +90,37 @@ func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64,
 		}
 		pool = &cold
 	}
+	// Top 10 per kind the tab shows (All: both, as two rows). top10 is the
+	// asked kind's list, with every kind's list under by_kind.
 	var top10 map[string]any
-	var topItems []explore.Item
+	tops := map[string][]explore.Item{}
 	if a.s.Top10 != nil && topKind != "" {
 		lang := ""
 		if topRegion == "global" {
 			lang = "en"
 		}
-		if status, _, body := a.top10Answer(ctx, r, topKind, topRegion, lang); status == http.StatusOK {
-			top10 = body
+		byKind := map[string]any{}
+		for _, kind := range explore.Kinds(sw) {
+			status, _, body := a.top10Answer(ctx, r, kind, topRegion, lang)
+			if status != http.StatusOK {
+				continue
+			}
+			byKind[kind] = body
 			for _, v := range body["items"].([]top10View) {
 				if v.TMDBID != "" {
-					topItems = append(topItems, explore.Item{TMDBID: v.TMDBID, Kind: v.Kind, Name: v.Name, Poster: v.Poster, Backdrop: v.Backdrop, Owned: v.InLibrary})
+					tops[kind] = append(tops[kind], explore.Item{TMDBID: v.TMDBID, Kind: v.Kind, Name: v.Name, Poster: v.Poster, Backdrop: v.Backdrop, Owned: v.InLibrary})
 				}
 			}
 		}
+		if body, ok := byKind[topKind].(map[string]any); ok {
+			top10 = map[string]any{}
+			for k, v := range body {
+				top10[k] = v
+			}
+			top10["by_kind"] = byKind
+		}
 	}
-	pg := explore.AssembleAt(*pool, topItems, member, moment)
+	pg := explore.AssembleTabAt(*pool, tops, member, moment)
 	e.mu.Lock()
 	if e.pages == nil || len(e.pages) >= 1000 {
 		e.pages = map[string]explorePage{}
