@@ -158,6 +158,7 @@
 			else {
 				listJobs = r.job_ids;
 				listing = true;
+				toLibrary();
 			}
 		} catch (e) {
 			toasts.push(message(e), 'fail');

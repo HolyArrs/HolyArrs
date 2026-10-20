@@ -12,7 +12,10 @@
 	import TitleHero, { richMetadata, runtimeWords, type RichMeta } from '#lib/ui/TitleHero.svelte';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
-	import PosterCard from '#lib/ui/PosterCard.svelte';
+	import TitleRows from '#lib/TitleRows.svelte';
+	import TitleSection from '#lib/ui/TitleSection.svelte';
+	import SectionNav from '#lib/ui/SectionNav.svelte';
+	import { pageSections } from '#lib/title-page.ts';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -44,13 +47,13 @@
 	let folders = $state<LibraryFolder[]>([]);
 	let rules = $state<PickRulesView[]>([]);
 	let gateDefault = $state('released');
-	let showDefaults = $state<ShowSettings | null>(null);
+	let showDefaults = $state<ShowSettings | null>(null);
+
 	let addMovie: ReturnType<typeof AddMovieDialog> | undefined = $state();
 	let addShow: ReturnType<typeof AddShowDialog> | undefined = $state();
 	let askShow: ReturnType<typeof AskShowDialog> | undefined = $state();
 	// Cast and Similar are one row each; See all opens the whole list.
 	let allCast = $state(false);
-	let allSimilar = $state(false);
 	let askMovieDialog: ReturnType<typeof AskMovieDialog> | undefined = $state();
 	let loadedSettings = false;
 
@@ -91,7 +94,6 @@
 	$effect(() => {
 		void load(kind, tmdb);
 		allCast = false;
-		allSimilar = false;
 	});
 
 	$effect(() => {
@@ -165,6 +167,8 @@
 	<article class="tp" data-testid="title-detail">
 		<TitleHero
 			title={d.name}
+			kind={d.kind}
+			tmdb={d.tmdb}
 			poster={d.poster}
 			backdrop={d.backdrop}
 			backdrops={rich?.backdrops}
@@ -192,39 +196,39 @@
 						<ActionButton icon="wish" label={d.ask ? `Ask for ${d.name} too` : `Ask for ${d.name}`} caption={d.ask ? 'Ask too' : 'Ask'} primary onclick={() => askShow?.open(d.show as LookupShow)} />
 					{/if}
 				{/if}
-				<ActionButton icon="search" label="Search for {d.name}"caption="Search" href={to(`/search?q=${encodeURIComponent(d.name)}${d.kind === 'show' ? '&kind=show' : ''}`)} />
 			{/snippet}
 		</TitleHero>
 
-		{#if d.cast.length}
-			<Shelf title="Cast and crew" item="112px" anchor="title-cast" onseeall={() => (allCast = true)}>
-				{#each d.cast.slice(0, 12) as p, i (p.name + i)}
-					<PersonCircle name={p.name} role={p.role} image={p.image} href={p.id ? to(`/people/${p.id}`) : undefined} />
-				{/each}
-			</Shelf>
-			<Sheet bind:open={allCast} title="Cast and crew" size="lg">
-				<ul class="all-grid people">
-					{#each d.cast as p, i (p.name + i)}
-						<li><PersonCircle name={p.name} role={p.role} image={p.image} href={p.id ? to(`/people/${p.id}`) : undefined} /></li>
-					{/each}
-				</ul>
-			</Sheet>
-		{/if}
+		<SectionNav items={pageSections(d.kind, { manage: false })} />
 
-		{#if d.similar.length}
-			<Shelf title="Similar" anchor="title-similar" onseeall={() => (allSimilar = true)}>
-				{#each d.similar.slice(0, 12) as s (s.kind + s.tmdb)}
-					<PosterCard title={s.name} subtitle={s.year ? String(s.year) : undefined} image={s.poster} kind={s.kind} href={to(detailPath(s.kind, s.tmdb))} />
-				{/each}
-			</Shelf>
-			<Sheet bind:open={allSimilar} title="Similar" size="lg">
-				<ul class="all-grid">
-					{#each d.similar as s (s.kind + s.tmdb)}
-						<li><PosterCard title={s.name} subtitle={s.year ? String(s.year) : undefined} image={s.poster} kind={s.kind} href={to(detailPath(s.kind, s.tmdb))} /></li>
+		<TitleRows kind={d.kind} tmdb={d.tmdb} dates={[[d.kind === 'show' ? 'First aired' : 'Released', d.year ? String(d.year) : '']]}>
+			{#snippet middle()}
+			{#if d.cast.length}
+				<Shelf title="Cast and crew" item="112px" anchor="title-cast" onseeall={() => (allCast = true)}>
+					{#each d.cast.slice(0, 12) as p, i (p.name + i)}
+						<PersonCircle name={p.name} role={p.role} image={p.image} href={p.id ? to(`/people/${p.id}`) : undefined} />
 					{/each}
-				</ul>
-			</Sheet>
-		{/if}
+				</Shelf>
+				<Sheet bind:open={allCast} title="Cast and crew" size="lg">
+					<ul class="all-grid people">
+						{#each d.cast as p, i (p.name + i)}
+							<li><PersonCircle name={p.name} role={p.role} image={p.image} href={p.id ? to(`/people/${p.id}`) : undefined} /></li>
+						{/each}
+					</ul>
+				</Sheet>
+			{/if}
+			{/snippet}
+		</TitleRows>
+
+		<TitleSection id="h-about" title="About">
+			<dl class="tp-about">
+				{#if d.year}<dt>{d.kind === 'show' ? 'First aired' : 'Released'}</dt><dd>{d.year}</dd>{/if}
+				{#if d.kind === 'movie' && d.runtime}<dt>Runtime</dt><dd>{runtimeWords(d.runtime)}</dd>{/if}
+				{#if d.network}<dt>Network</dt><dd>{d.network}</dd>{/if}
+				{#if rich?.certification ?? certOf(d.rating)}<dt>Rated</dt><dd>{rich?.certification ?? certOf(d.rating)}</dd>{/if}
+				{#if d.genres.length}<dt>Genres</dt><dd>{d.genres.join(', ')}</dd>{/if}
+			</dl>
+		</TitleSection>
 
 		<p class="attribution">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
 	</article>
