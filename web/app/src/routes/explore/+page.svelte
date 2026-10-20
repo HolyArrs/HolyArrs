@@ -31,8 +31,6 @@
 		SERVICES_KEY,
 		SERVICES_SHOWN,
 		tailPath,
-		toggleService,
-		writeServices,
 		typeHref,
 		genrePath,
 		genresFor,
@@ -433,16 +431,6 @@
 		}
 	}
 
-	function tapService(id: number) {
-		picked = toggleService(picked ?? [], id);
-		try {
-			localStorage.setItem(SERVICES_KEY, writeServices(region, picked, localStorage.getItem(SERVICES_KEY)));
-		} catch {
-			/* the choice is a convenience */
-		}
-		void loadHead();
-	}
-
 	// Leaving Explore stops the TMDB-backed asks still on their way.
 	const gone = new AbortController();
 	onMount(() => {
@@ -467,6 +455,20 @@
 </script>
 
 <svelte:head><title>Explore · HolyArrs</title></svelte:head>
+
+<!-- No services picked yet: one card that leads to Settings → Streaming services (a Kid asks the owner). -->
+{#snippet pickServices()}
+	<div class="pick-services" data-testid="pick-services">
+		{#if session.kid}
+			<p class="ps-title">Ask your owner to pick services</p>
+			<p class="ps-text">Then Explore shows what is trending on them first.</p>
+		{:else}
+			<p class="ps-title">Pick your services</p>
+			<p class="ps-text">Tell Explore which services you stream on, and it shows what is trending on them first.</p>
+			<a class="ps-link" href={to('/settings/services')}>Pick services</a>
+		{/if}
+	</div>
+{/snippet}
 
 {#snippet heroAction(c: ExploreCard)}
 	{@const act = cardAction(c, { manage, ask: mayAsk })}
@@ -524,6 +526,7 @@
 				{/each}
 			</div>
 		{:else if rows.length === 0}
+			{#if picked === null}{@render pickServices()}{/if}
 			<TopServicesRow {type} {region} {owned} {who} used={usedServices} />
 			<EmptyState icon="compass" title="Explore is getting ready" text="Rows fill in within a few minutes." action={{ label: 'Search', href: to('/search'), icon: 'search' }} />
 		{:else}
@@ -533,6 +536,7 @@
 					{#snippet action()}{@render heroAction(h)}{/snippet}
 				</ExploreHero>
 			{/if}
+			{#if picked === null && !genreOn}{@render pickServices()}{/if}
 			{#each rows as row, ri (row.id)}
 				{#if row.type === 'top_services'}
 					<TopServicesRow {type} {region} genre={genreOn ? genre : null} {owned} {who} used={usedServices} />
@@ -601,6 +605,10 @@
 {/if}
 
 <style>
+	.pick-services { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; padding: 20px 24px; border-radius: 16px; background: var(--surface-2); }
+	.ps-title { margin: 0; font-size: 1.15rem; font-weight: 600; color: var(--text); }
+	.ps-text { margin: 0; color: var(--text-muted); }
+	.ps-link { margin-top: 6px; padding: 10px 18px; border-radius: 999px; background: var(--text); color: var(--surface-2); font-weight: 600; text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; }
 	.explore { container: explore / inline-size; /* One size for every title row, measured on Netflix (2026-10-20): 279px cards at a 1536px window, sized from the window like Netflix (whose page has no sidebar), so cards match it; never under 200px. */
 		--title-item: max(200px, calc((100vw - 96px) / 5.16)); --explore-item: 168px; display: flex; flex-direction: column; gap: 32px; padding-bottom: 48px; }
 	.explore > :global(.ui-head) { margin-bottom: -8px; }

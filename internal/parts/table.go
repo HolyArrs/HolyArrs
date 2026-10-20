@@ -280,6 +280,7 @@ var Routes = map[string]Owner{
 	// Shared by Movies, Shows and Music.
 	"GET /api/v1/titles":                      Media,
 	"GET /api/v1/library-summary":             Media,
+	"GET /api/v1/home":                        Media,
 	"POST /api/v1/titles/refresh":             Media,
 	"GET /api/v1/artwork/{name}":              Media,
 	"GET /api/v1/artwork/tmdb/{size}/{file}":  Media,
@@ -474,6 +475,7 @@ var Screens = map[string]Owner{
 	"/settings":                    Core,
 	"/settings/account":            Core,
 	"/settings/appearance":         Core,
+	"/settings/services":           Core,
 	"/settings/danger":             Core,
 	"/settings/health":             Core,
 	"/settings/alerts":             Core,
@@ -600,6 +602,7 @@ func ScreenOwner(path string) (Owner, bool) {
 var SafeLibrary = map[string]bool{
 	"GET /api/v1/titles":               true,
 	"GET /api/v1/library-summary":      true,
+	"GET /api/v1/home":                 true,
 	"GET /api/v1/artwork/{name}":       true,
 	"GET /api/v1/titles/{id}":          true,
 	"PUT /api/v1/titles/{id}":          true,

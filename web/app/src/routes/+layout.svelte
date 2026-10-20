@@ -257,7 +257,7 @@
 		if (p === '/library/held' || p === '/library/turned-down' || p === '/library/rename' || p === '/library/import' || p === '/library/missing-subtitles' || p === '/library/copies') return allowed('manage_library');
 		if (p.startsWith('/wishlist')) return allowed('wishlist');
 		if (p === '/settings/users') return session.can('users');
-		if (p === '/settings/account' || p === '/settings/appearance') return true;
+		if (p === '/settings/account' || p === '/settings/appearance' || p === '/settings/services') return true;
 		// People who manage the Library may look at Pick rules and Movies and TV defaults, read only.
 		if (p === '/settings/title-defaults' || p === '/settings/pick-rules' || p.startsWith('/settings/pick-rules/')) return session.can('settings') || allowed('manage_library');
 		if (p.startsWith('/settings')) return p === '/settings' ? staff : session.can('settings');

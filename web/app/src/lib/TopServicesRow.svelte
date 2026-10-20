@@ -57,7 +57,7 @@
 	const items = $derived(genre ? (genreAnswer?.items ?? []) : (row?.items ?? []));
 	const cards = $derived<Ranked[]>(items.map((d) => ({ ...discoverCard(d, 'top_services'), key: `top-${d.kind}-${d.tmdb_id}`, rank: d.rank })));
 	const source = $derived(!row ? '' : genre ? `Popular in ${genre.name.toLowerCase()} on ${row.name}` : serviceLabel(row));
-	const title = $derived(genre ? `Trending ${genre.name.toLowerCase()} on your services` : 'Trending on your services');
+	const title = $derived(genre ? `Trending ${genre.name.toLowerCase()} on your services` : type === 'movies' || type === 'shows' ? `Trending ${type} on your services` : 'Trending on your services');
 	const attribution = $derived(!genre && row?.source === 'streaming-availability' ? (answer?.attribution ?? '') : '');
 
 	let gone: AbortController | undefined;

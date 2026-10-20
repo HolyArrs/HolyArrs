@@ -70,6 +70,7 @@ export const sections: Section[] = [
 	{ href: '/settings/health', group: 'maintenance', label: 'Health checks', icon: 'check', about: 'What HolyArrs checks, the results, and how often it checks.' },
 	{ href: '/settings/danger', group: 'maintenance', label: 'Danger zone', icon: 'alert', about: 'Restart HolyArrs, restart in safe mode or shut it down.', need: 'users' },
 
+	{ href: '/settings/services', group: 'account', label: 'Streaming services', icon: 'tv', about: 'The services you stream on, so Explore shows what is trending on them first.', need: 'self' },
 	{ href: '/settings/account', group: 'account', label: 'My account', icon: 'user', about: 'Your password, two-factor sign-in and your devices.', need: 'self' }
 ];
 
