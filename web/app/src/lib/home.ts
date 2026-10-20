@@ -134,13 +134,14 @@ export function mixLine(cards: { kind: string }[]): string {
 	return parts.length > 1 ? `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}` : (parts[0] ?? '');
 }
 
-/** arrivedTitle is Just arrived's smart title: today, this week, or the last two weeks, true to the newest card. */
+/** arrivedTitle is Just arrived's smart title: today, this week, the last two weeks, or Recently added, true to the newest card. */
 export function arrivedTitle(newest: number | undefined, now = Date.now()): string {
 	if (newest === undefined) return 'Just arrived';
 	const age = now - newest;
 	if (age < DAY) return 'New today';
 	if (age < 7 * DAY) return 'New this week';
-	return 'Just arrived';
+	if (age < 14 * DAY) return 'Just arrived';
+	return 'Recently added';
 }
 
 /** soonTitle is Coming soon's subtitle: what is next and when. */

@@ -219,8 +219,8 @@ func (a *API) homeWhere(r *http.Request) (string, []any) {
 	return where, args
 }
 
-// homeArrivals is Just arrived: titles with a file from the last two
-// weeks, newest first. A show is one card that says what is new, an
+// homeArrivals is Just arrived: the latest additions, newest first, never
+// empty while the Library has files (the row's title says how fresh). A show is one card that says what is new, an
 // artist is one card with its new albums, a movie is one card.
 func homeArrivals(ctx context.Context, db *sql.DB, where string, args []any, now time.Time) ([]homeCard, error) {
 	cut := store.FormatTime(now.AddDate(0, 0, -homeArrivedDays))
@@ -228,8 +228,8 @@ func homeArrivals(ctx context.Context, db *sql.DB, where string, args []any, now
 			i.id, COALESCE(p.id, 0), COALESCE(p.number, 0), COALESCE(p.name, ''), f.added_at
 		FROM slots s JOIN files f ON f.id = s.file_id JOIN items i ON i.id = s.item_id
 		JOIN titles t ON t.id = i.title_id LEFT JOIN parts p ON p.id = i.part_id
-		WHERE f.state = 'present' AND f.role = 'main' AND f.added_at >= ? AND `+where+`
-		ORDER BY f.added_at DESC`, append([]any{cut}, args...)...)
+		WHERE f.state = 'present' AND f.role = 'main' AND `+where+`
+		ORDER BY f.added_at DESC LIMIT 2000`, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -314,7 +314,10 @@ func homeArrivals(ctx context.Context, db *sql.DB, where string, args []any, now
 			c.Albums = albums
 			c.Line = homeArtistLine(len(albums), albums)
 		default:
-			c.Line = "New movie"
+			c.Line = "Movie"
+			if c.At >= cut {
+				c.Line = "New movie"
+			}
 		}
 		out = append(out, c)
 	}

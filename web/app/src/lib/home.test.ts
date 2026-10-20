@@ -64,6 +64,7 @@ describe('home rows', () => {
 		expect(arrivedTitle(now - 3600000, now)).toBe('New today');
 		expect(arrivedTitle(now - 3 * 86400000, now)).toBe('New this week');
 		expect(arrivedTitle(now - 10 * 86400000, now)).toBe('Just arrived');
+		expect(arrivedTitle(now - 40 * 86400000, now)).toBe('Recently added');
 		expect(soonLine({ name: 'Dune', subtitle: 'Fri' })).toBe('Next up: Dune, Fri');
 		expect(soonLine(undefined)).toBe('The next 30 days');
 	});
