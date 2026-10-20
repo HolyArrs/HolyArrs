@@ -134,6 +134,8 @@ type API struct {
 	music musicTrendCache
 	// musicx keeps artist genres and similar artists for Explore → Music.
 	musicx musicExplore
+	// musicAns keeps each member's Explore → Music answers a minute.
+	musicAns musicAnswers
 	// explore runs the Explore pool job and keeps its lists and pages.
 	explore exploreState
 	// trailers keeps resolved trailer addresses and each person's budget.

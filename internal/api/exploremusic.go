@@ -294,6 +294,14 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	db := a.s.Store.Read()
 	now := time.Now().UTC()
+	key := musicAnswerKey(a.person(r).UserID, genre, region, musicHour(q.Get("hour"), now))
+	if body, ok := a.cachedMusicAnswer(key, now); ok {
+		a.exploreCaching(w, r, "private, max-age=60")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(body)
+		return
+	}
 
 	titles, err := store.Select[domain.Title](ctx, db, "titles", "kind = 'artist' AND state != 'removed' ORDER BY id")
 	if err != nil {
@@ -388,7 +396,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 			ids = append(ids, s.MBID)
 		}
 	}
-	genres := a.genresOf(ids)
+	genres, genresDone := a.genresWaiting(ids, musicGenreWait)
 	for _, m := range artists {
 		m.genres = genres[m.mbid]
 	}
@@ -697,7 +705,8 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 	}
 	a.rememberMusicNames(names)
 	a.exploreCaching(w, r, "private, max-age=60")
-	writeJSON(w, http.StatusOK, map[string]any{"kid": false, "cold": cold, "genres": top, "genre": genre, "region": region, "regions": regions, "hero": hero, "rows": final})
+	complete := genresDone && len(similar) == len(seedIDs)
+	a.writeMusicAnswer(w, key, map[string]any{"kid": false, "cold": cold, "genres": top, "genre": genre, "region": region, "regions": regions, "hero": hero, "rows": final}, complete, now)
 }
 
 type nameKey struct{ kind, mbid, name string }
