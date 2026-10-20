@@ -84,3 +84,67 @@ func TestMusicTrendingListsAndPictures(t *testing.T) {
 		t.Fatalf("without a server %d", resp.StatusCode)
 	}
 }
+
+func TestMusicTrendArtUsesCoverChain(t *testing.T) {
+	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
+	const none, down = "11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222"
+	trend := func(_ context.Context, kind, region string) (metadata.MusicTrend, error) {
+		return metadata.MusicTrend{Kind: kind, Region: region, Items: []metadata.MusicTrendItem{
+			{Rank: 1, MBID: trendGroup, Title: "ARIRANG", Artist: "BTS", ArtistMBID: "0d79fe8e-ba27-4859-bb8c-2f255f346853"},
+			{Rank: 2, MBID: none, Title: "Nothing", Artist: "BTS", ArtistMBID: "0d79fe8e-ba27-4859-bb8c-2f255f346853"},
+			{Rank: 3, MBID: down, Title: "Down", Artist: "BTS", ArtistMBID: "0d79fe8e-ba27-4859-bb8c-2f255f346853"},
+		}}, nil
+	}
+	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/apple/600x600bb.jpg" && r.URL.Path != "/release-group/"+down+"/front-250" {
+			w.WriteHeader(404)
+			return
+		}
+		w.Header().Set("Content-Type", "image/jpeg")
+		_, _ = w.Write([]byte("\xff\xd8\xff synthetic"))
+	}))
+	defer pics.Close()
+	var asked atomic.Int32
+	cover := func(_ context.Context, mbid, artist, title string) (string, error) {
+		asked.Add(1)
+		switch mbid {
+		case trendGroup:
+			if artist != "BTS" || title != "ARIRANG" {
+				t.Errorf("asked %q %q", artist, title)
+			}
+			return pics.URL + "/apple/600x600bb.jpg", nil
+		case down:
+			return "", metadata.ErrServiceUnavailable
+		}
+		return "", metadata.ErrNotFound
+	}
+	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{pics.URL + "/"}, HTTP: pics.Client()}
+	srv := httptest.NewServer(New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), MusicTrending: trend, MusicCover: cover, Library: &library.Service{Store: s, Artwork: art, CoverArtBase: pics.URL}, Version: "test"}).Handler())
+	defer srv.Close()
+	code := func(id string) int {
+		resp, err := http.Get(srv.URL + "/api/v1/music-trending/art/album/" + id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		return resp.StatusCode
+	}
+	if resp, err := http.Get(srv.URL + "/api/v1/music-trending?kind=album"); err != nil || resp.StatusCode != 200 {
+		t.Fatalf("list %v", err)
+	}
+	if c := code(trendGroup); c != 200 {
+		t.Fatalf("chain cover %d", c)
+	}
+	if c := code(none); c != 404 {
+		t.Fatalf("no cover anywhere %d", c)
+	}
+	if c := code(down); c != 200 {
+		t.Fatalf("server down falls back to the archive %d", c)
+	}
+	n := asked.Load()
+	code(trendGroup)
+	code(none)
+	if asked.Load() != n {
+		t.Fatal("covers not kept")
+	}
+}

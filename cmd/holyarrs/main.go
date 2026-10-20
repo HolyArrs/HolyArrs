@@ -598,7 +598,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		Secrets: vault, MetadataUp: hosted.Health.Up, Top10: hosted.Service.NetflixTop10, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
 			t, err := hosted.Service.TrailerPick(ctx, kind, id, lang)
 			return t.Key, err
-		}, MusicTrending: hosted.Service.MusicTrending, MusicSimilar: hosted.Service.MusicSimilar, Alerts: sender, Asks: wish, Search: sr, Downloads: dm, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
+		}, MusicTrending: hosted.Service.MusicTrending, MusicSimilar: hosted.Service.MusicSimilar, MusicCover: hosted.Service.MusicCover, Alerts: sender, Asks: wish, Search: sr, Downloads: dm, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
 		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase})
 	if !c.SafeMode {
 		a.StartExplore(ctx)
@@ -701,7 +701,9 @@ func artistPictureSources(v *secrets.Vault, version string) (*metadata.AudioDB, 
 	t.DialContext = source.PolicyDialer(source.PublicOnly).DialContext
 	adb := &metadata.AudioDB{BaseURL: metadata.AudioDBBase, Key: key, HTTP: &http.Client{Transport: t}, UserAgent: ua}
 	hosts := []string{"https://r2.theaudiodb.com/images/", "https://www.theaudiodb.com/images/",
-		library.CoverArtBase + "/release-group/", "https://archive.org/download/", "https://*.archive.org/"}
+		library.CoverArtBase + "/release-group/", "https://archive.org/download/", "https://*.archive.org/",
+		// Album covers the metadata server's cover chain names.
+		library.CoverArtBase + "/release/", "https://cdn-images.dzcdn.net/images/cover/", "https://e-cdns-images.dzcdn.net/images/cover/", "https://*.mzstatic.com/"}
 	caa := library.CoverArtBase
 	if adbEnv != "" {
 		adb.BaseURL, adb.HTTP = adbEnv, nil

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from './api.ts';
 import { matchOwned, ownedIndex } from './explore.ts';
-import { fetchMusicExplore, fetchMusicTrend, listeners, musicCardHref, musicCardNote, musicTrendCards, newFromYourArtists, type MusicTrendAnswer } from './music-trending.ts';
+import { fetchMusicExplore, fetchMusicTrend, listeners, releaseWords, musicCardHref, musicCardNote, musicTrendCards, newFromYourArtists, type MusicTrendAnswer } from './music-trending.ts';
 import type { TitleView } from './types.ts';
 
 const bts = '0d79fe8e-ba27-4859-bb8c-2f255f346853';
@@ -77,8 +77,8 @@ describe('music pass', () => {
 describe('Explore music cards', () => {
 	const base = { key: 'k', mbid: arirang, name: 'ARIRANG', genres: [] };
 	it('says why each card is there, by row', () => {
-		expect(musicCardNote({ type: 'new_from' }, { ...base, kind: 'album', artist: 'BTS', date: '2026-10-09' })).toMatch(/^BTS · Out /);
-		expect(musicCardNote({ type: 'new_from' }, { ...base, kind: 'album', artist: 'BTS', date: '2026-12-09', upcoming: true })).toMatch(/^BTS · Coming /);
+		expect(musicCardNote({ type: 'new_from' }, { ...base, kind: 'album', artist: 'BTS', date: new Date(Date.now() - 3 * 86400000).toISOString().slice(0, 10) })).toBe('BTS · Out now');
+		expect(musicCardNote({ type: 'new_from' }, { ...base, kind: 'album', artist: 'BTS', date: new Date(Date.now() + 40 * 86400000).toISOString().slice(0, 10), upcoming: true })).toMatch(/^BTS · Out (?!now)/);
 		expect(musicCardNote({ type: 'just_arrived' }, { ...base, kind: 'album', artist: 'BTS', date: '2026-10-18' })).toMatch(/Arrived /);
 		expect(musicCardNote({ type: 'your_asks' }, { ...base, kind: 'artist', state: 'approved' })).toBe('Approved, on the way');
 		expect(musicCardNote({ type: 'top_albums' }, { ...base, kind: 'album', artist: 'BTS', listen_count: 12000 })).toBe('BTS · 12K listens this week');
@@ -99,5 +99,24 @@ describe('Explore music cards', () => {
 		const client = { get: async <T,>(p: string) => ((asked = p), { kid: false, cold: true, genres: [], genre: '', hero: null, rows: [] } as T) };
 		await fetchMusicExplore('rock', 'FR', client, undefined, 21);
 		expect(asked).toBe('/explore/music?region=FR&hour=21&genre=rock');
+	});
+});
+
+describe('releaseWords', () => {
+	const now = new Date(2026, 9, 20, 15, 0);
+	it('says Out with the day for an album still to come', () => {
+		expect(releaseWords('2026-10-25', now)).toMatch(/^Out .*25/);
+		expect(releaseWords('2026-10-21', now)).toMatch(/^Out .*21/);
+	});
+	it('says Out now from release day to 14 days after', () => {
+		expect(releaseWords('2026-10-20', now)).toBe('Out now');
+		expect(releaseWords('2026-10-06', now)).toBe('Out now');
+	});
+	it('says Released with the day after that', () => {
+		expect(releaseWords('2026-10-05', now)).toMatch(/^Released .*5/);
+		expect(releaseWords('2026-09-25', now)).toMatch(/^Released .*25/);
+	});
+	it('says nothing for a bad date', () => {
+		expect(releaseWords('soon', now)).toBe('');
 	});
 });

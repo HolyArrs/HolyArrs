@@ -32,6 +32,13 @@ type musicTrendCache struct {
 	// names are the artists and albums of the cached lists by MusicBrainz
 	// id, so only those pictures are fetched.
 	names map[string]metadata.MusicTrendItem
+	// covers are album cover URLs by release group ("" when none has one).
+	covers map[string]musicCover
+}
+
+type musicCover struct {
+	src string
+	at  time.Time
 }
 
 // musicTrendView is one card of the row.
@@ -154,11 +161,14 @@ func (a *API) musicTrendArt(w http.ResponseWriter, r *http.Request) {
 			src, _ = lib.ArtistImages.Image(r.Context(), it.Name)
 		}
 	case "album":
-		base := lib.CoverArtBase
-		if base == "" {
-			base = library.CoverArtBase
+		var found bool
+		if src, found = a.albumCover(r.Context(), mbid, it); !found {
+			base := lib.CoverArtBase
+			if base == "" {
+				base = library.CoverArtBase
+			}
+			src = strings.TrimRight(base, "/") + "/release-group/" + url.PathEscape(mbid) + "/front-250"
 		}
-		src = strings.TrimRight(base, "/") + "/release-group/" + url.PathEscape(mbid) + "/front-250"
 	}
 	if src == "" {
 		http.NotFound(w, r)
@@ -177,4 +187,35 @@ func (a *API) musicTrendArt(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	serveArtwork(w, r, name, p)
+}
+
+// albumCover asks the metadata server's cover chain for an album, kept a
+// month when found and a day when no source has one. found is false when
+// the server could not answer, so the caller tries the Cover Art Archive.
+func (a *API) albumCover(ctx context.Context, mbid string, it metadata.MusicTrendItem) (src string, found bool) {
+	if a.s.MusicCover == nil {
+		return "", false
+	}
+	c := &a.music
+	c.mu.Lock()
+	e, ok := c.covers[mbid]
+	c.mu.Unlock()
+	if ok && ((e.src != "" && time.Since(e.at) < 30*24*time.Hour) || (e.src == "" && time.Since(e.at) < 24*time.Hour)) {
+		return e.src, true
+	}
+	title := it.Title
+	if title == "" {
+		title = it.Name
+	}
+	src, err := a.s.MusicCover(ctx, mbid, it.Artist, title)
+	if err != nil && !errors.Is(err, metadata.ErrNotFound) {
+		return "", false
+	}
+	c.mu.Lock()
+	if c.covers == nil || len(c.covers) > 20000 {
+		c.covers = map[string]musicCover{}
+	}
+	c.covers[mbid] = musicCover{src: src, at: time.Now()}
+	c.mu.Unlock()
+	return src, true
 }

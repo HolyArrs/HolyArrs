@@ -123,6 +123,8 @@ export interface MusicCardData {
 	title_id?: number;
 	part_id?: number;
 	image?: string;
+	/** The artist's picture, on hero candidates (shown blurred when no album cover loads). */
+	artist_image?: string;
 	/** YYYY-MM-DD: when it arrived, comes out or was asked for. */
 	date?: string;
 	state?: string;
@@ -153,6 +155,8 @@ export interface MusicExploreAnswer {
 	region?: string;
 	regions?: string[];
 	hero: MusicCardData | null;
+	/** The hero's stand-ins, next newest first: the page shows the first whose cover loads. */
+	hero_alts?: MusicCardData[];
 	rows: MusicRowData[];
 }
 
@@ -170,13 +174,27 @@ function shortDay(d: string): string {
 	return Number.isNaN(t.getTime()) ? d : t.toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' });
 }
 
+/**
+ * releaseWords says when an album comes or came out: "Out Sep 25" ahead,
+ * "Out now" within 14 days after, "Released Sep 25" after that.
+ */
+export function releaseWords(date: string, now = new Date()): string {
+	const t = new Date(`${date}T00:00:00Z`);
+	if (Number.isNaN(t.getTime())) return '';
+	const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+	const days = Math.round((today - t.getTime()) / 86400000);
+	if (days < 0) return `Out ${shortDay(date)}`;
+	if (days <= 14) return 'Out now';
+	return `Released ${shortDay(date)}`;
+}
+
 /** musicCardNote is a card's one-line reason, by the row it is in. */
 export function musicCardNote(row: Pick<MusicRowData, 'type'>, c: MusicCardData): string {
 	const by = c.kind === 'album' && c.artist ? c.artist : '';
 	if (c.note) return c.note;
 	switch (row.type) {
 		case 'fresh':
-			return [by, c.date ? `Out ${shortDay(c.date)}` : ''].filter(Boolean).join(' · ');
+			return [by, c.date ? releaseWords(c.date) : ''].filter(Boolean).join(' · ');
 		case 'rising':
 			return listeners(c.listen_count);
 		case 'classic':
@@ -185,7 +203,7 @@ export function musicCardNote(row: Pick<MusicRowData, 'type'>, c: MusicCardData)
 		case 'just_arrived':
 			return [by, c.date ? `Arrived ${shortDay(c.date)}` : ''].filter(Boolean).join(' · ');
 		case 'new_from':
-			return [by, c.date ? `${c.upcoming ? 'Coming' : 'Out'} ${shortDay(c.date)}` : ''].filter(Boolean).join(' · ');
+			return [by, c.date ? releaseWords(c.date) : ''].filter(Boolean).join(' · ');
 		case 'your_asks':
 			return askWords[c.state ?? ''] ?? '';
 		case 'top_albums':

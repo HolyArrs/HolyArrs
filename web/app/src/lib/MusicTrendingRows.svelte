@@ -5,7 +5,7 @@
 	import { refreshInbox } from './wishlist.svelte.ts';
 	import type { OwnedIndex } from './explore.ts';
 	import { defaultRegion } from './top10.ts';
-	import { fetchMusicExplore, musicCardHref, musicCardNote, musicImage, type MusicCardData, type MusicExploreAnswer } from './music-trending.ts';
+	import { fetchMusicExplore, musicCardHref, musicCardNote, musicImage, releaseWords, type MusicCardData, type MusicExploreAnswer } from './music-trending.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './types.ts';
 	import Shelf from './ui/Shelf.svelte';
 	import PosterCard from './ui/PosterCard.svelte';
@@ -72,7 +72,8 @@
 			const kept = stableRows(order, a.rows, (r) => r.id);
 			order = kept.order;
 			if (heroSlot === null) heroSlot = !!a.hero;
-			answer = { ...a, rows: kept.rows, hero: heroSlot ? (a.hero ?? answer?.hero ?? null) : null };
+			const keepHero = heroSlot && !a.hero && answer?.hero;
+			answer = { ...a, rows: kept.rows, hero: heroSlot ? (a.hero ?? answer?.hero ?? null) : null, hero_alts: keepHero ? answer?.hero_alts : a.hero_alts };
 			failed = false;
 			// Chips come from the unfiltered answer, so picking one keeps the rest.
 			if (!genre) chips = a.genres ?? [];
@@ -156,16 +157,47 @@
 		void load();
 	}
 
-	const hero = $derived(answer?.hero ?? null);
-	let heroBroken = $state(false);
+	/** The hero candidates: the newest album first, then its stand-ins. */
+	const heroes = $derived(answer?.hero ? [answer.hero, ...(answer.hero_alts ?? [])] : []);
+	/** The hero shown: the first candidate whose cover loads, else the first one over its artist's picture. */
+	let heroPick = $state<{ card: MusicCardData; cover: boolean } | null>(null);
+	let heroFor = '';
+	function loads(src: string | null): Promise<boolean> {
+		if (!src) return Promise.resolve(false);
+		return new Promise((done) => {
+			const im = new Image();
+			im.onload = () => done(im.naturalWidth > 0);
+			im.onerror = () => done(false);
+			im.src = src;
+		});
+	}
+	$effect(() => {
+		const list = heroes;
+		const at = list.map((c) => c.key).join('|');
+		if (at === heroFor) return;
+		heroFor = at;
+		if (!list.length) return void (heroPick = null);
+		heroPick = null;
+		void (async () => {
+			for (const c of list) {
+				if (await loads(musicImage(c))) {
+					if (heroFor === at) heroPick = { card: c, cover: true };
+					return;
+				}
+				if (heroFor !== at) return;
+			}
+			if (heroFor === at) heroPick = { card: list[0], cover: false };
+		})();
+	});
+	const hero = $derived(heroPick?.card ?? null);
 	const heroNote = $derived.by(() => {
 		if (!hero) return '';
 		if (!hero.title_id) return `${hero.artist} · number ${hero.rank ?? 1} on this week's album chart`;
-		const out = hero.date ? `out ${new Date(`${hero.date}T00:00:00Z`).toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' })}` : '';
-		return ['From an artist you have', hero.artist, out].filter(Boolean).join(' · ');
+		return ['From an artist you have', hero.artist, hero.date ? releaseWords(hero.date) : ''].filter(Boolean).join(' · ');
 	});
 	const regions = $derived(answer?.regions ?? []);
-	const hasCharts = $derived(answer?.rows.some((r) => r.type === 'top_albums' || r.type === 'trending_artists') ?? false);
+	/** The row whose header carries the chart region: Popular in <country>, else Top albums. */
+	const pickRow = $derived(regions.length > 1 ? ((answer?.rows.find((r) => r.type === 'popular_country') ?? answer?.rows.find((r) => r.type === 'top_albums'))?.id ?? '') : '');
 </script>
 
 {#if answer?.kid}
@@ -183,16 +215,23 @@
 		{:else}
 			<div class="chips" aria-hidden="true">{#each [52, 64, 88, 72, 96, 60] as w (w)}<span class="chip sk-chip" style:width="{w}px"></span>{/each}</div>
 		{/if}
-		{#if !answer}
+		{#if !answer || (heroes.length && !heroPick)}
 			<div class="hero sk-hero" aria-hidden="true"><span class="cover"></span></div>
+		{/if}
+		{#if !answer}
 			{#each [0, 1] as r (r)}
 				<div class="sk-shelf" aria-hidden="true"><span class="sk-h"></span><div class="sk-tiles">{#each Array.from({ length: 8 }, (_, i) => i) as i (i)}<span class="sk-tile"></span>{/each}</div></div>
 			{/each}
 		{/if}
 
-		{#if answer && hero}
-			<a class="hero" href={musicCardHref(hero)} data-testid="music-hero">
-				<span class="cover">{#if hero.image && !heroBroken}<img src={musicImage(hero)} alt="" loading="lazy" onerror={() => (heroBroken = true)} />{/if}</span>
+		{#if answer && hero && heroPick}
+			<a class="hero" class:bare={!heroPick.cover} href={musicCardHref(hero)} data-testid="music-hero">
+				{#if heroPick.cover}
+					<span class="cover"><img src={musicImage(hero)} alt="" /></span>
+				{:else if hero.artist_image}
+					<!-- No album cover anywhere: the artist's picture, blurred, behind the title. -->
+					<img class="backdrop" src={musicImage({ image: hero.artist_image })} alt="" aria-hidden="true" onerror={(e) => ((e.currentTarget as HTMLImageElement).hidden = true)} />
+				{/if}
 				<span class="words">
 					<span class="eyebrow">New album</span>
 					<strong>{hero.name}</strong>
@@ -201,15 +240,16 @@
 			</a>
 		{/if}
 
-		{#if answer && regions.length > 1 && hasCharts}
-			<div class="pick">
-				<select aria-label="Chart region" bind:value={region} onchange={pick}>
-					{#each regions as r (r)}<option value={r}>{regionName(r)}</option>{/each}
-				</select>
-			</div>
-		{/if}
-
 		{#each answer?.rows ?? [] as row, ri (row.id)}
+			<div class="row">
+			{#if row.id === pickRow}
+				<!-- The chart region sits in its row's header, like the Top 10 region. -->
+				<div class="pick">
+					<select aria-label="Chart region" bind:value={region} onchange={pick}>
+						{#each regions as r (r)}<option value={r}>{regionName(r)}</option>{/each}
+					</select>
+				</div>
+			{/if}
 			<Shelf title={row.type === 'popular_country' ? `Popular in ${regionName(row.id.split(':')[1] ?? '')}` : row.title} subtitle={row.type === 'popular_country' ? `This week's top albums in ${regionName(row.id.split(':')[1] ?? '')}` : row.reason} item="var(--explore-item)"
 				items={row.items} key={(c) => c.key} defer={ri >= EAGER_ROWS} placeholder={row.shape === 'square' ? 'square' : 'round'} lines={row.items.some((c) => musicCardNote(row, c)) ? 2 : 1}>
 				{#snippet card(raw: MusicCardData)}
@@ -234,6 +274,7 @@
 					</PosterCard>
 				{/snippet}
 			</Shelf>
+			</div>
 		{/each}
 
 		{#if answer && answer.rows.length === 0 && !hero}
@@ -266,7 +307,13 @@
 	.sk-tile { display: block; aspect-ratio: 1; margin-bottom: 45px; border-radius: var(--r-card); background: var(--surface-2); }
 	.chip.on { background: var(--text); color: var(--surface-1, var(--bg)); border-color: transparent; }
 	.chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.pick { display: flex; justify-content: flex-end; margin-bottom: -20px; }
+	.row { position: relative; min-width: 0; }
+	.pick { position: absolute; right: 0; top: 0; z-index: 1; display: flex; gap: 8px; align-items: center; }
+	.hero { position: relative; overflow: hidden; }
+	.hero.bare { justify-content: flex-start; }
+	.backdrop { position: absolute; inset: -24px; width: calc(100% + 48px); height: calc(100% + 48px); object-fit: cover; filter: blur(22px) brightness(0.55) saturate(1.2); transform: scale(1.05); }
+	.hero.bare .words { position: relative; color: #fff; }
+	.hero.bare .eyebrow, .hero.bare .note { color: rgb(255 255 255 / 0.8); }
 	.hero { box-sizing: border-box; height: 152px; display: flex; gap: 20px; align-items: center; padding: 16px; border-radius: var(--r-card); background: var(--surface-2); color: var(--text); text-decoration: none; max-width: 640px; }
 	.hero:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.cover { flex: none; width: 120px; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: var(--surface-3); }
@@ -280,6 +327,7 @@
 		.hero, .sk-hero { gap: 14px; padding: 12px; height: 112px; }
 		.cover { width: 88px; }
 		.words strong { font-size: 18px; }
+		.pick { position: static; margin-bottom: 8px; justify-content: flex-end; }
 	}
 	@media (max-width: 767px) { .music { gap: 26px; } }
 </style>

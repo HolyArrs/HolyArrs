@@ -39,21 +39,24 @@ const (
 
 // MusicCard is one album or artist card.
 type MusicCard struct {
-	Key        string   `json:"key"`
-	Kind       string   `json:"kind"` // album, artist
-	MBID       string   `json:"mbid"`
-	Name       string   `json:"name"`
-	Artist     string   `json:"artist,omitempty"`
-	ArtistMBID string   `json:"artist_mbid,omitempty"`
-	TitleID    int64    `json:"title_id,omitempty"`
-	PartID     int64    `json:"part_id,omitempty"`
-	Image      string   `json:"image,omitempty"`
-	Date       string   `json:"date,omitempty"` // YYYY-MM-DD: arrived, out or asked
-	State      string   `json:"state,omitempty"`
-	Rank       int      `json:"rank,omitempty"`
-	Listens    int64    `json:"listen_count,omitempty"`
-	Upcoming   bool     `json:"upcoming,omitempty"`
-	Genres     []string `json:"genres"`
+	Key        string `json:"key"`
+	Kind       string `json:"kind"` // album, artist
+	MBID       string `json:"mbid"`
+	Name       string `json:"name"`
+	Artist     string `json:"artist,omitempty"`
+	ArtistMBID string `json:"artist_mbid,omitempty"`
+	TitleID    int64  `json:"title_id,omitempty"`
+	PartID     int64  `json:"part_id,omitempty"`
+	Image      string `json:"image,omitempty"`
+	// ArtistImage is the artist's picture, on hero candidates: the hero
+	// shows it when no candidate album has a cover.
+	ArtistImage string   `json:"artist_image,omitempty"`
+	Date        string   `json:"date,omitempty"` // YYYY-MM-DD: arrived, out or asked
+	State       string   `json:"state,omitempty"`
+	Rank        int      `json:"rank,omitempty"`
+	Listens     int64    `json:"listen_count,omitempty"`
+	Upcoming    bool     `json:"upcoming,omitempty"`
+	Genres      []string `json:"genres"`
 	// Note is the card's own reason line, when the row gives one.
 	Note string `json:"note,omitempty"`
 	// Fresh is the card's freshness strip (Recently Added, New Release).
@@ -416,7 +419,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 		c := MusicCard{Key: "album:" + strconv.FormatInt(p.ID, 10), Kind: "album", MBID: rg, Name: p.Name, Artist: m.name, ArtistMBID: m.mbid, TitleID: m.id, PartID: p.ID, Date: dayOf(p.ReleaseDate)}
 		if rg != "" {
 			c.Image = "/api/v1/music-trending/art/album/" + rg
-			names = append(names, nameKey{"album", rg, p.Name})
+			names = append(names, nameKey{"album", rg, p.Name, m.name})
 		}
 		return tag(c)
 	}
@@ -467,8 +470,10 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 
 	// New from artists you have: studio releases (no live, remix or
 	// compilation) out in the last 90 days, then the ones coming. The hero is
-	// the newest album, else the newest EP.
-	var hero, heroEP *MusicCard
+	// the newest album, else the newest EP; the next ones are its stand-ins
+	// (the page shows the first whose cover loads).
+	var hero *MusicCard
+	var heroAlts, heroAlbums, heroEPs []MusicCard
 	{
 		ps, err := store.Select[domain.Part](ctx, db, "parts", `kind = 'album' AND dropped_at IS NULL AND release_date >= ? AND release_date < ?
 			AND lower(coalesce(release_type, '')) IN ('album', 'ep', 'single') AND secondary_types = '[]' AND coalesce(release_date_precision, 'day') != 'year'
@@ -491,19 +496,17 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			out = append(out, c)
-			switch h := c; strings.ToLower(derefStr(p.ReleaseType)) {
+			h := c
+			h.ArtistImage = m.image
+			switch strings.ToLower(derefStr(p.ReleaseType)) {
 			case "album":
-				if hero == nil {
-					hero = &h
-				}
+				heroAlbums = append(heroAlbums, h)
 			case "ep":
-				if heroEP == nil {
-					heroEP = &h
-				}
+				heroEPs = append(heroEPs, h)
 			}
 		}
-		if hero == nil {
-			hero = heroEP
+		if all := append(heroAlbums, heroEPs...); len(all) > 0 {
+			hero, heroAlts = &all[0], all[1:min(len(all), 6)]
 		}
 		add(MusicRow{ID: "new_from", Type: "new_from", Title: "New from artists you have", Reason: "Out in the last 90 days, and coming soon", Shape: "square", Items: append(out, coming...)})
 	}
@@ -531,12 +534,12 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 			}
 			if c.Image == "" && mbid != "" {
 				c.Image = "/api/v1/music-trending/art/artist/" + mbid
-				names = append(names, nameKey{"artist", mbid, x.Name})
+				names = append(names, nameKey{"artist", mbid, x.Name, ""})
 			}
 			if len(x.Albums) == 1 {
 				c.Kind, c.Name, c.MBID = "album", x.Albums[0].Name, strings.ToLower(x.Albums[0].MBID)
 				c.Image = "/api/v1/music-trending/art/album/" + c.MBID
-				names = append(names, nameKey{"album", c.MBID, c.Name})
+				names = append(names, nameKey{"album", c.MBID, c.Name, x.Name})
 			}
 			c = tag(c)
 			if x.TitleID != nil {
@@ -549,8 +552,16 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 
 	// Charts.
 	if hero == nil && len(trendAlbums) > 0 {
-		h := tag(trendAlbums[0])
-		hero = &h
+		for i, c := range trendAlbums[:min(len(trendAlbums), 6)] {
+			c = tag(c)
+			c.ArtistImage = "/api/v1/music-trending/art/artist/" + c.ArtistMBID
+			names = append(names, nameKey{"artist", c.ArtistMBID, c.Artist, ""})
+			if i == 0 {
+				hero = &c
+			} else {
+				heroAlts = append(heroAlts, c)
+			}
+		}
 	}
 	for i := range trendAlbums {
 		trendAlbums[i] = tag(trendAlbums[i])
@@ -574,7 +585,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 			if len(c.Genres) == 0 {
 				c.Genres = s.genres // like its seed until its own are known
 			}
-			names = append(names, nameKey{"artist", x.MBID, x.Name})
+			names = append(names, nameKey{"artist", x.MBID, x.Name, ""})
 			items = append(items, c)
 			if _, ok := pool[x.MBID]; !ok {
 				pool[x.MBID] = c
@@ -700,16 +711,34 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 		}
 		final = append(final, row)
 	}
-	if hero != nil && genre != "" && !hasGenre(hero.Genres, genre) {
+	if genre != "" {
+		cands := []MusicCard{}
+		if hero != nil {
+			cands = append(cands, *hero)
+		}
 		hero = nil
+		kept := []MusicCard{}
+		for _, c := range append(cands, heroAlts...) {
+			if hasGenre(c.Genres, genre) {
+				kept = append(kept, c)
+			}
+		}
+		if len(kept) > 0 {
+			hero, heroAlts = &kept[0], kept[1:]
+		} else {
+			heroAlts = nil
+		}
+	}
+	if heroAlts == nil {
+		heroAlts = []MusicCard{}
 	}
 	a.rememberMusicNames(names)
 	a.exploreCaching(w, r, "private, max-age=60")
 	complete := genresDone && len(similar) == len(seedIDs)
-	a.writeMusicAnswer(w, key, map[string]any{"kid": false, "cold": cold, "genres": top, "genre": genre, "region": region, "regions": regions, "hero": hero, "rows": final}, complete, now)
+	a.writeMusicAnswer(w, key, map[string]any{"kid": false, "cold": cold, "genres": top, "genre": genre, "region": region, "regions": regions, "hero": hero, "hero_alts": heroAlts, "rows": final}, complete, now)
 }
 
-type nameKey struct{ kind, mbid, name string }
+type nameKey struct{ kind, mbid, name, artist string }
 
 // rememberMusicNames lets the picture route serve these albums and artists.
 func (a *API) rememberMusicNames(list []nameKey) {
@@ -728,7 +757,7 @@ func (a *API) rememberMusicNames(list []nameKey) {
 		}
 		k := n.kind + "|" + n.mbid
 		if _, ok := c.names[k]; !ok {
-			c.names[k] = metadata.MusicTrendItem{MBID: n.mbid, Name: n.name, Title: n.name}
+			c.names[k] = metadata.MusicTrendItem{MBID: n.mbid, Name: n.name, Title: n.name, Artist: n.artist}
 		}
 	}
 }

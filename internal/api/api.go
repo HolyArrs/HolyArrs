@@ -70,6 +70,9 @@ type Server struct {
 	// MusicSimilar reads similar artists from the metadata server; nil has
 	// no Because you have or Fans of rows.
 	MusicSimilar func(ctx context.Context, mbid string) ([]metadata.SimilarArtist, error)
+	// MusicCover reads an album cover URL from the metadata server; nil uses
+	// only the Cover Art Archive.
+	MusicCover func(ctx context.Context, mbid, artist, title string) (string, error)
 	// Library runs adding, editing and refreshing; New makes one when nil.
 	Library *library.Service
 	// Lists reads Outside lists; New makes one without keys when nil.

@@ -51,11 +51,12 @@ func mid(prefix byte, n int) string {
 }
 
 type musicRowsAnswer struct {
-	Kid    bool       `json:"kid"`
-	Cold   bool       `json:"cold"`
-	Genres []string   `json:"genres"`
-	Hero   *MusicCard `json:"hero"`
-	Rows   []MusicRow `json:"rows"`
+	Kid    bool        `json:"kid"`
+	Cold   bool        `json:"cold"`
+	Genres []string    `json:"genres"`
+	Hero   *MusicCard  `json:"hero"`
+	Alts   []MusicCard `json:"hero_alts"`
+	Rows   []MusicRow  `json:"rows"`
 }
 
 func (m musicRowsAnswer) row(id string) *MusicRow {
@@ -173,6 +174,10 @@ func TestExploreMusicRows(t *testing.T) {
 	if m.Hero == nil || m.Hero.Name != "Fresh Album" || m.Hero.Kind != "album" || m.Hero.Image != "/api/v1/music-trending/art/album/"+mid('c', 2) {
 		t.Fatalf("hero %+v", m.Hero)
 	}
+	// The next album, then the newest EP, stand in when the album has no cover.
+	if len(m.Alts) != 2 || m.Alts[0].Name != "Fresh Two" || m.Alts[1].Name != "Fresh EP" || m.Alts[1].Kind != "album" {
+		t.Fatalf("hero stand-ins %+v", m.Alts)
+	}
 	if r := m.row("just_arrived"); r != nil {
 		t.Fatalf("one album is under the row's minimum: %+v", r)
 	}
@@ -227,8 +232,12 @@ func TestExploreMusicRows(t *testing.T) {
 			}
 		}
 	}
-	if pop.row("top_albums") != nil || pop.Hero != nil {
+	if pop.row("top_albums") != nil {
 		t.Fatal("untagged charts kept under a chip")
+	}
+	// The hero becomes the first candidate tagged pop.
+	if pop.Hero == nil || !hasGenre(pop.Hero.Genres, "pop") {
+		t.Fatalf("pop hero %+v", pop.Hero)
 	}
 	if similarCalls.Load() != 2 {
 		t.Fatalf("similar lists not cached: %d", similarCalls.Load())
