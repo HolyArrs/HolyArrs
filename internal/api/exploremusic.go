@@ -447,12 +447,13 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 		add(MusicRow{ID: "just_arrived", Type: "just_arrived", Title: "Just arrived", Reason: "Added to your Library in the last 14 days", Shape: "square", Items: items})
 	}
 
-	// New from artists you have: studio albums and EPs out in the last 90
-	// days, then the ones coming.
-	var hero *MusicCard
+	// New from artists you have: studio releases (no live, remix or
+	// compilation) out in the last 90 days, then the ones coming. The hero is
+	// the newest album, else the newest EP.
+	var hero, heroEP *MusicCard
 	{
 		ps, err := store.Select[domain.Part](ctx, db, "parts", `kind = 'album' AND dropped_at IS NULL AND release_date >= ? AND release_date < ?
-			AND lower(coalesce(release_type, '')) IN ('album', 'ep') AND secondary_types = '[]' AND coalesce(release_date_precision, 'day') != 'year'
+			AND lower(coalesce(release_type, '')) IN ('album', 'ep', 'single') AND secondary_types = '[]' AND coalesce(release_date_precision, 'day') != 'year'
 			AND title_id IN (SELECT id FROM titles WHERE kind = 'artist' AND state != 'removed') ORDER BY release_date DESC, id`,
 			now.AddDate(0, 0, -90).Format("2006-01-02"), now.AddDate(0, 0, 180).Format("2006-01-02"))
 		if err != nil {
@@ -472,10 +473,19 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			out = append(out, c)
-			if hero == nil && strings.EqualFold(derefStr(p.ReleaseType), "album") {
-				h := c
-				hero = &h
+			switch h := c; strings.ToLower(derefStr(p.ReleaseType)) {
+			case "album":
+				if hero == nil {
+					hero = &h
+				}
+			case "ep":
+				if heroEP == nil {
+					heroEP = &h
+				}
 			}
+		}
+		if hero == nil {
+			hero = heroEP
 		}
 		add(MusicRow{ID: "new_from", Type: "new_from", Title: "New from artists you have", Reason: "Out in the last 90 days, and coming soon", Shape: "square", Items: append(out, coming...)})
 	}
