@@ -15,7 +15,8 @@
 		return parts[parts.length - 1] ?? '';
 	}
 
-	export type RichMeta = { backdrop?: string; logo?: string; poster?: string; genres: string[]; runtime?: number; certification?: string; score?: number; overview?: string };
+	export type RichMeta = { backdrop?: string; logo?: string; poster?: string; genres: string[]; runtime?: number; certification?: string; score?: number; overview?: string; year?: number; backdrops: string[]; videos: Video[] };
+	import type { Video } from '../trailer.ts';
 	type Raw = Record<string, unknown>;
 	const s = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined);
 	const n = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : undefined);
@@ -34,7 +35,9 @@
 				.then((raw) => {
 					const genres = Array.isArray(raw.genres) ? raw.genres.map((g) => (typeof g === 'string' ? g : s((g as Raw)?.name))).filter((g): g is string => !!g) : [];
 					const rating = s(raw.certification) ?? s(raw.content_rating) ?? (s(raw.rating)?.includes('/') ? undefined : s(raw.rating));
-					return { backdrop: s(raw.backdrop), logo: s(raw.logo), poster: s(raw.poster), genres, runtime: n(raw.runtime_minutes) ?? n(raw.runtime), certification: rating, score: n(raw.vote_average) ?? n(raw.score), overview: s(raw.overview) };
+					const backdrops = Array.isArray(raw.backdrops) ? raw.backdrops.filter((b): b is string => typeof b === 'string') : [];
+					const videos = Array.isArray(raw.videos) ? (raw.videos as Video[]).filter((v) => v && typeof v.key === 'string') : [];
+					return { backdrop: s(raw.backdrop), logo: s(raw.logo), poster: s(raw.poster), genres, runtime: n(raw.runtime_minutes) ?? n(raw.runtime), certification: rating, score: n(raw.vote_average) ?? n(raw.score), overview: s(raw.overview), year: n(raw.year), backdrops, videos };
 				})
 				.catch(() => null);
 			metaCache.set(key, p);
@@ -50,6 +53,8 @@
 	import StatusPill, { type StatusKind } from './StatusPill.svelte';
 	import { viewTransitionName } from '../motion.ts';
 	import { sized } from '../tmdb-image.ts';
+	import HeroMotion from './HeroMotion.svelte';
+	import { heroPictures } from '../trailer.ts';
 
 	// The title page hero (movie, show, artist, not-yet-added titles), in the
 	// style of a TV app detail page: full-bleed backdrop with a strong left
@@ -61,6 +66,7 @@
 	let {
 		title,
 		backdrop,
+		backdrops = [],
 		poster,
 		logo,
 		meta = [],
@@ -79,6 +85,8 @@
 	}: {
 		title: string;
 		backdrop?: string | null;
+		/** More backdrops for the slow crossfade (Layer 1). */
+		backdrops?: string[];
 		poster?: string | null;
 		logo?: string | null;
 		meta?: string[];
@@ -118,6 +126,7 @@
 	});
 
 	const wide = $derived(backdrop && !backdropFailed ? backdrop : null);
+	const pictures = $derived(wide ? heroPictures(wide, backdrops).map((u) => sized(u, 'backdrop')) : []);
 	// No backdrop: the poster itself, cropped full-bleed and darkened.
 	const stand = $derived(!wide && poster && !posterFailed ? poster : null);
 
@@ -130,7 +139,7 @@
 <section class="ui-thero" class:stand={!!stand} class:plain={!wide && !stand} aria-label={title}>
 	<div class="art" aria-hidden="true">
 		{#if wide}
-			<img class="bd" src={sized(wide, 'backdrop')} alt="" decoding="async" fetchpriority="high" use:viewTransitionName={vtName} onerror={() => (backdropFailed = true)} />
+			<HeroMotion {pictures} {vtName} position="70% 30%" onerror={() => (backdropFailed = true)} />
 		{:else if stand}
 			<img class="bd from-poster" class:square src={sized(stand, 'poster')} alt="" decoding="async" fetchpriority="high" use:viewTransitionName={vtName} onerror={() => (posterFailed = true)} />
 		{/if}

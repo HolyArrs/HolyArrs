@@ -167,6 +167,7 @@
 			title={d.name}
 			poster={d.poster}
 			backdrop={d.backdrop}
+			backdrops={rich?.backdrops}
 			logo={rich?.logo}
 			crumbIcon={d.kind === 'show' ? 'tv' : 'compass'}
 			breadcrumb={crumbs}

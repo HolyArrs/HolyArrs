@@ -58,7 +58,10 @@
 		partOwned: 'M12 4a8 8 0 1 1 0 16 8 8 0 0 1 0-16zM12 4v16M12 8.5h5M12 12h6M12 15.5h5',
 		waiting: 'M12 4a8 8 0 1 1 0 16 8 8 0 0 1 0-16zM12 8v4l2.5 2',
 		declined: 'M12 4a8 8 0 1 1 0 16 8 8 0 0 1 0-16zM6.4 6.4l11.2 11.2',
-		calendarDay: 'M5 6.5h14v12.5H5zM5 10h14M9 4.5v3M15 4.5v3'
+		calendarDay: 'M5 6.5h14v12.5H5zM5 10h14M9 4.5v3M15 4.5v3',
+		sound: 'M4.5 9.5h3l4.5-4v13l-4.5-4h-3zM15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11',
+		soundOff: 'M4.5 9.5h3l4.5-4v13l-4.5-4h-3zM15.5 9.5l5 5M20.5 9.5l-5 5',
+		replay: 'M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4.5v4.5H9'
 	} as const;
 	export type IconName = keyof typeof paths;
 </script>

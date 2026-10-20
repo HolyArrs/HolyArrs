@@ -516,6 +516,7 @@
 			title={title.name}
 			poster={title.artwork[0] ?? rich?.poster}
 			backdrop={title.backdrop ?? rich?.backdrop}
+			backdrops={rich?.backdrops}
 			logo={title.logo ?? rich?.logo}
 			breadcrumb={crumbs}
 			meta={heroMeta}
