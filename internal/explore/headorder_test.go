@@ -281,6 +281,23 @@ func TestHouseholdNoNames(t *testing.T) {
 	t.Fatal("no household row")
 }
 
+// A chart whose titles are nearly all on Trending on your services still
+// shows (with them) rather than vanish; other rows still skip them.
+func TestChartMostlyOnServices(t *testing.T) {
+	p, _ := build(t, fullInput("all", 4))
+	var trending []Item
+	for _, r := range p.Rows {
+		if r.Type == TypeTrending {
+			trending = r.Items
+		}
+	}
+	svc := trending[:len(trending)-3]
+	pg := AssembleTabAt(p, top10Both(), svc, 4, Moment{})
+	if !slices.Contains(slotsOf(pg.Head), TypeTrending) {
+		t.Fatalf("trending gone: %v", slotsOf(pg.Head))
+	}
+}
+
 // An older pool's rows of types this build no longer makes are dropped.
 func TestOldPoolRowsDropped(t *testing.T) {
 	p, _ := build(t, fullInput("all", 4))

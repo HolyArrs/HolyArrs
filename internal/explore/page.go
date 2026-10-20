@@ -172,14 +172,18 @@ func orderTail(rows []Row, member int64, date string, m Moment, kid bool) []Row 
 // ledger is the per-page dedup record: where each title showed.
 type ledger struct {
 	rows map[string][]int // key -> row indexes it showed in
+	// above are the titles of Trending on your services: the head skips
+	// them unless a row would fall under its minimum without them.
+	above map[string]bool
 }
 
 // fill takes up to RowMax items for row index at, by the rules of 5.5: a
 // title at most once in the first HeadDedupe rows; at most twice on the page and at least
 // 4 rows apart; once in a row and one per franchise (Finish the
-// collection is one franchise by design). Items past the shown ones fill
+// collection is one franchise by design); with skipAbove, no title of
+// Trending on your services in the head. Items past the shown ones fill
 // gaps.
-func (l *ledger) fill(r Row, at int, head bool) Row {
+func (l *ledger) fill(r Row, at int, head, skipAbove bool) Row {
 	out := make([]Item, 0, RowMax)
 	inRow, franchise := map[string]bool{}, map[string]bool{}
 	for _, it := range r.Items {
@@ -194,6 +198,9 @@ func (l *ledger) fill(r Row, at int, head bool) Row {
 			continue
 		}
 		if seen := l.rows[k]; len(seen) > 0 && (head || len(seen) >= 2 || at-seen[len(seen)-1] < 4) {
+			continue
+		}
+		if skipAbove && head && l.above[k] {
 			continue
 		}
 		inRow[k], franchise[it.Franchise()] = true, true
@@ -283,10 +290,9 @@ func AssembleTabAt(p Pool, tops map[string][]Item, svcTop []Item, member int64, 
 	}
 	lay := func(head, rest []Row) (Page, []Row) {
 		out := pg
-		l := &ledger{rows: map[string][]int{}}
+		l := &ledger{rows: map[string][]int{}, above: map[string]bool{}}
 		for _, it := range svcTop {
-			// Shown in row 2 already: the head never repeats them.
-			l.rows[it.Key()] = []int{-HeadDedupe}
+			l.above[it.Key()] = true
 		}
 		at := 0
 		var shown []Row
@@ -297,9 +303,15 @@ func AssembleTabAt(p Pool, tops map[string][]Item, svcTop []Item, member int64, 
 				shown = append(shown, r)
 				return
 			}
-			got := l.fill(r, at, at < HeadDedupe)
+			got := l.fill(r, at, at < HeadDedupe, true)
 			if len(got.Items) < MinItems(r.Type) {
-				return
+				if !Popular(r.Type) {
+					return
+				}
+				// A chart mostly on your services still shows, with those titles.
+				if got = l.fill(r, at, at < HeadDedupe, false); len(got.Items) < MinItems(r.Type) {
+					return
+				}
 			}
 			l.record(got, at)
 			at++
