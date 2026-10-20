@@ -351,11 +351,40 @@
 		window.addEventListener('click', take, true);
 		return () => window.removeEventListener('click', take, true);
 	});
+	// heard is what the person actually hears: the playing element's own
+	// muted flag (muted is the wish, which runs ahead while the sound stream
+	// starts or after a browser refused sound). The button shows heard.
+	let heard = $state(false);
+	$effect(() => {
+		if (!shown) return;
+		const read = () => {
+			const lv = live();
+			heard = src?.kind === 'embed' ? !muted : !!lv && !lv.muted;
+		};
+		read();
+		const t = setInterval(read, 300);
+		return () => clearInterval(t);
+	});
+	// A sound stream that has not started within 10 s gives up (quiet beats a wrong button).
+	$effect(() => {
+		if (!up || swapped) return;
+		const t = setTimeout(() => {
+			if (up && !swapped) {
+				dbg('sound stream timed out');
+				dropUp();
+				muted = true;
+			}
+		}, 10000);
+		return () => clearTimeout(t);
+	});
 	function toggleMute(e?: MouseEvent) {
 		ctlAt = Date.now();
 		// The hover card's art is a link: the button must not follow it.
 		e?.preventDefault();
 		e?.stopPropagation();
+		// Sound is on its way: a second press does not cancel it.
+		if (!heard && !muted && up && !swapped) return;
+		if (!heard) muted = true;
 		dbg(`sound button: ${muted ? 'unmute' : 'mute'} (src=${src?.kind}, swapped=${swapped})`);
 		setSoundOn(muted);
 		if (muted) return unmute();
@@ -490,7 +519,7 @@
 			<IconButton icon={paused ? 'play' : 'pause'} label={paused ? 'Play the trailer' : 'Pause the trailer'} variant="glass" size="md" tipSide="above" data-act="pause" />
 		{/if}
 		{#if shown && hasAudio()}
-			<IconButton icon={muted ? 'soundOff' : 'sound'} label={muted ? 'Turn sound on' : 'Turn sound off'} variant="glass" size="md" tipSide="above" data-act="sound" />
+			<IconButton icon={heard ? 'sound' : 'soundOff'} label={heard ? 'Turn sound off' : 'Turn sound on'} variant="glass" size="md" tipSide="above" data-act="sound" />
 		{:else if done && sources.length > 0}
 			<IconButton icon="replay" label="Play the trailer again" variant="glass" size="md" tipSide="above" data-act="replay" />
 		{/if}
