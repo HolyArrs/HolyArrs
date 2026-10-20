@@ -390,7 +390,7 @@
 				bind:toggle={topToggle}
 				ontoggle={toggleSidebar}
 				history={detail}
-				searchHref={path.startsWith('/search') ? undefined : to('/search')}
+				searchHref={collapsed && !path.startsWith('/search') ? to('/search') : undefined}
 				{searchKey}
 				live={allowed('manage_library') ? { state: live.status.state, word: liveWord } : undefined}
 				downloads={allowed('manage_library') && !offPartName(partsNow.answer, '/downloads') ? { count: 0, href: to('/downloads') } : undefined}
