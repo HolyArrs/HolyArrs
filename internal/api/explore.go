@@ -33,6 +33,10 @@ const (
 	// exploreKidLookups caps the rating lookups one Kid pool build makes.
 	exploreKidLookups = 60
 	maxExploreRows    = 5000
+	// exploreWorkers is how many pools build at once. They share one paced
+	// limiter, so the outside rate is the same; a member whose lists are
+	// already cached no longer waits behind another member's misses.
+	exploreWorkers = 3
 )
 
 var exploreSwitches = []string{"all", "movies", "shows"}
@@ -69,11 +73,18 @@ type exploreState struct {
 	day     string
 	paced   *explore.Paced
 	lists   map[string]exploreList
+	flight  map[string]*listFlight
 	pages   map[string]explorePage
 	// now is the clock (tests set it).
 	now func() time.Time
 	// builds counts finished pool builds (tests).
 	builds int
+	// building are the pools being built now; slots holds one token per
+	// running build.
+	building map[poolKey]bool
+	slots    chan struct{}
+	// calls are the outside calls of each pool's last build.
+	calls map[poolKey]*explore.Calls
 }
 
 func (a *API) exploreNow() time.Time {
@@ -84,7 +95,7 @@ func (a *API) exploreNow() time.Time {
 }
 
 // StartExplore starts the pool job: it listens for asks and adds, builds
-// queued pools one at a time, and rebuilds every recent pool each day.
+// queued pools (up to exploreWorkers at once), and rebuilds every recent pool each day.
 func (a *API) StartExplore(ctx context.Context) {
 	e := &a.explore
 	e.mu.Lock()
@@ -191,15 +202,7 @@ func (a *API) exploreLoop(ctx context.Context) {
 	defer tick.Stop()
 	for {
 		a.exploreDaily(ctx)
-		for {
-			k, ok := a.nextDue()
-			if !ok || ctx.Err() != nil {
-				break
-			}
-			if err := a.buildPool(ctx, k.member, k.sw); err != nil && ctx.Err() == nil {
-				log.Printf("explore: pool %d/%s: %v", k.member, k.sw, err)
-			}
-		}
+		a.runDue(ctx)
 		select {
 		case <-ctx.Done():
 			return
@@ -209,7 +212,49 @@ func (a *API) exploreLoop(ctx context.Context) {
 	}
 }
 
-// nextDue takes the earliest pool that is due.
+// runDue starts builds for due pools while a worker slot is free; a
+// finished build wakes the loop for the next one.
+func (a *API) runDue(ctx context.Context) {
+	e := &a.explore
+	e.mu.Lock()
+	if e.slots == nil {
+		e.slots = make(chan struct{}, exploreWorkers)
+	}
+	slots := e.slots
+	e.mu.Unlock()
+	for ctx.Err() == nil {
+		select {
+		case slots <- struct{}{}:
+		default:
+			return
+		}
+		k, ok := a.nextDue()
+		if !ok {
+			<-slots
+			return
+		}
+		go supervisor.Guard("explore-build", func() {
+			defer func() {
+				e.mu.Lock()
+				delete(e.building, k)
+				wake := e.wake
+				e.mu.Unlock()
+				<-slots
+				if wake != nil {
+					select {
+					case wake <- struct{}{}:
+					default:
+					}
+				}
+			}()
+			if err := a.buildPool(ctx, k.member, k.sw); err != nil && ctx.Err() == nil {
+				log.Printf("explore: pool %d/%s: %v", k.member, k.sw, err)
+			}
+		})
+	}
+}
+
+// nextDue takes the earliest pool that is due and not being built.
 func (a *API) nextDue() (poolKey, bool) {
 	e := &a.explore
 	now := a.exploreNow()
@@ -219,12 +264,16 @@ func (a *API) nextDue() (poolKey, bool) {
 	var at time.Time
 	found := false
 	for k, d := range e.due {
-		if !d.After(now) && (!found || d.Before(at)) {
+		if !d.After(now) && !e.building[k] && (!found || d.Before(at)) {
 			best, at, found = k, d, true
 		}
 	}
 	if found {
 		delete(e.due, best)
+		if e.building == nil {
+			e.building = map[poolKey]bool{}
+		}
+		e.building[best] = true
 	}
 	return best, found
 }
@@ -274,44 +323,58 @@ func (a *API) exploreDaily(ctx context.Context) {
 }
 
 // exploreSource answers the engine's Requests from TMDB through the
-// metadata server, cached per list; only misses wait for the limiter.
+// metadata server, cached per list in memory and in SQLite (so a restart
+// or the next member reuses it); only misses wait for the limiter, and
+// concurrent builds asking for the same list share one call.
 type exploreSource struct {
 	a      *API
 	lister metadata.ExploreLister
 	// cacheOnly answers from the cache and never goes out (cold pages).
 	cacheOnly bool
+	// calls counts this build's outside calls (nil: not counted).
+	calls *explore.Calls
 }
 
-func (s exploreSource) List(ctx context.Context, q explore.Request) ([]explore.Item, error) {
+// listFlight is one outside list being fetched; others wait on done.
+type listFlight struct {
+	done  chan struct{}
+	items []explore.Item
+	err   error
+}
+
+type storedList struct {
+	At    time.Time      `json:"at"`
+	Items []explore.Item `json:"items"`
+}
+
+// cachedList finds a list in memory, then in SQLite.
+func (s exploreSource) cachedList(ctx context.Context, key string) (exploreList, bool) {
 	e := &s.a.explore
-	key := q.String()
-	now := time.Now()
 	e.mu.Lock()
 	got, ok := e.lists[key]
 	e.mu.Unlock()
-	if ok && now.Sub(got.at) < exploreListTTL[q.List] {
-		return got.items, nil
+	if ok || s.a.s.Store == nil {
+		return got, ok
 	}
-	if s.cacheOnly || s.lister == nil {
-		if ok {
-			return got.items, nil
-		}
-		return []explore.Item{}, nil
+	b, ok, err := store.LookupCache{Store: s.a.s.Store}.Get(ctx, "explore|"+key, time.Now())
+	if err != nil || !ok {
+		return got, false
 	}
+	var sl storedList
+	if json.Unmarshal(b, &sl) != nil {
+		return got, false
+	}
+	got = exploreList{at: sl.At, items: sl.Items}
+	s.keepList(key, got)
+	return got, true
+}
+
+// keepList puts a list in the memory cache, dropping expired ones when full.
+func (s exploreSource) keepList(key string, l exploreList) {
+	e := &s.a.explore
+	now := time.Now()
 	e.mu.Lock()
-	if e.paced == nil {
-		e.paced = &explore.Paced{Source: listerSource{s.lister}}
-	}
-	p := e.paced
-	e.mu.Unlock()
-	items, err := p.List(ctx, q)
-	if err != nil {
-		if ok {
-			return got.items, nil
-		}
-		return nil, err
-	}
-	e.mu.Lock()
+	defer e.mu.Unlock()
 	if e.lists == nil || len(e.lists) >= maxExploreRows {
 		for k, v := range e.lists {
 			if now.Sub(v.at) >= exploreListTTL[strings.SplitN(k, "|", 2)[0]] {
@@ -322,9 +385,77 @@ func (s exploreSource) List(ctx context.Context, q explore.Request) ([]explore.I
 			e.lists = map[string]exploreList{}
 		}
 	}
-	e.lists[key] = exploreList{at: now, items: items}
+	e.lists[key] = l
+}
+
+// Cached says q is answered from a fresh cached list (no outside call).
+func (s exploreSource) Cached(ctx context.Context, q explore.Request) bool {
+	got, ok := s.cachedList(ctx, q.String())
+	return ok && time.Since(got.at) < exploreListTTL[q.List]
+}
+
+func (s exploreSource) List(ctx context.Context, q explore.Request) ([]explore.Item, error) {
+	e := &s.a.explore
+	key := q.String()
+	ttl := exploreListTTL[q.List]
+	got, ok := s.cachedList(ctx, key)
+	if ok && time.Since(got.at) < ttl {
+		return got.items, nil
+	}
+	if s.cacheOnly || s.lister == nil {
+		if ok {
+			return got.items, nil
+		}
+		return []explore.Item{}, nil
+	}
+	e.mu.Lock()
+	if f, busy := e.flight[key]; busy {
+		e.mu.Unlock()
+		select {
+		case <-f.done:
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+		if f.err == nil {
+			return f.items, nil
+		}
+		if ok {
+			return got.items, nil
+		}
+		return nil, f.err
+	}
+	if e.flight == nil {
+		e.flight = map[string]*listFlight{}
+	}
+	f := &listFlight{done: make(chan struct{})}
+	e.flight[key] = f
+	if e.paced == nil {
+		e.paced = &explore.Paced{Source: listerSource{s.lister}}
+	}
+	p := e.paced
 	e.mu.Unlock()
-	return items, nil
+	defer func() {
+		e.mu.Lock()
+		delete(e.flight, key)
+		e.mu.Unlock()
+		close(f.done)
+	}()
+	s.calls.Add(q)
+	f.items, f.err = p.List(ctx, q)
+	if f.err != nil {
+		if ok {
+			return got.items, nil
+		}
+		return nil, f.err
+	}
+	now := time.Now()
+	s.keepList(key, exploreList{at: now, items: f.items})
+	if s.a.s.Store != nil {
+		if b, err := json.Marshal(storedList{At: now, Items: f.items}); err == nil {
+			_ = store.LookupCache{Store: s.a.s.Store}.Put(context.WithoutCancel(ctx), "explore|"+key, b, now, now.Add(ttl))
+		}
+	}
+	return f.items, nil
 }
 
 // listerSource maps a Request to TMDB lists.
@@ -358,7 +489,7 @@ func (s listerSource) List(ctx context.Context, q explore.Request) ([]explore.It
 		var all []metadata.DiscoverItem
 		all, err = s.l.PersonCredits(ctx, q.Ref)
 		for _, it := range all {
-			if it.Kind == q.Kind {
+			if q.Kind == "" || it.Kind == q.Kind {
 				out = append(out, it)
 			}
 		}
@@ -612,10 +743,13 @@ func (a *API) buildPool(ctx context.Context, member int64, sw string) error {
 	if l, ok := metadata.ExploreListerFor(ctx, a.s.Metadata); ok {
 		lister = l
 	}
-	pool, err := explore.Build(ctx, exploreSource{a: a, lister: lister}, in)
+	calls := &explore.Calls{}
+	start := time.Now()
+	pool, err := explore.Build(ctx, exploreSource{a: a, lister: lister, calls: calls}, in)
 	if err != nil {
 		return err
 	}
+	log.Printf("explore: pool %d/%s built in %s, %d seeds, outside calls %s", member, sw, time.Since(start).Round(time.Millisecond), pool.Seeds, calls)
 	raw, err := json.Marshal(pool)
 	if err != nil {
 		return err
@@ -631,6 +765,10 @@ func (a *API) buildPool(ctx context.Context, member int64, sw string) error {
 	}
 	a.explore.mu.Lock()
 	a.explore.builds++
+	if a.explore.calls == nil {
+		a.explore.calls = map[poolKey]*explore.Calls{}
+	}
+	a.explore.calls[poolKey{member, sw}] = calls
 	for k := range a.explore.pages {
 		if strings.HasPrefix(k, strconv.FormatInt(member, 10)+"|"+sw+"|") {
 			delete(a.explore.pages, k)

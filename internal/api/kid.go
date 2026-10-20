@@ -13,6 +13,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/ratings"
+	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
 // Kid accounts: a member with an age-rating limit sees and asks for only
@@ -61,6 +62,9 @@ const (
 	ratingLookupsPerMinute = 120
 	maxRatingCache         = 2000
 	ratingTTL              = 24 * time.Hour
+	// ratingStoredTTL keeps a looked-up rating in SQLite: certifications
+	// rarely change, and a restart should not ask again.
+	ratingStoredTTL = 30 * 24 * time.Hour
 )
 
 type ratingEntry struct {
@@ -143,6 +147,12 @@ func (a *API) knownRating(ctx context.Context, ref ratingRef) (string, bool) {
 	if r, ok := a.rated.get(ref.kind+"|"+ref.tmdbID, time.Now()); ok {
 		return r, true
 	}
+	if a.s.Store != nil {
+		if b, ok, err := (store.LookupCache{Store: a.s.Store}).Get(ctx, "rating|"+ref.kind+"|"+ref.tmdbID, time.Now()); err == nil && ok {
+			a.rated.put(ref.kind+"|"+ref.tmdbID, string(b), time.Now())
+			return string(b), true
+		}
+	}
 	if e, ok := a.discover.get("details|" + ref.kind + "|" + ref.tmdbID); ok && e.details != nil && time.Since(e.at) < discoverTTL["details"] {
 		return e.details.Rating, true
 	}
@@ -174,7 +184,11 @@ func (a *API) lookupRating(ctx context.Context, ref ratingRef) (string, bool) {
 	} else {
 		return "", false
 	}
-	a.rated.put(ref.kind+"|"+ref.tmdbID, rating, time.Now())
+	now := time.Now()
+	a.rated.put(ref.kind+"|"+ref.tmdbID, rating, now)
+	if a.s.Store != nil {
+		_ = store.LookupCache{Store: a.s.Store}.Put(context.WithoutCancel(ctx), "rating|"+ref.kind+"|"+ref.tmdbID, []byte(rating), now, now.Add(ratingStoredTTL))
+	}
 	return rating, true
 }
 
