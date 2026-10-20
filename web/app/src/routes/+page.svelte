@@ -286,7 +286,7 @@
 			<Shelf title="Coming soon" subtitle="The next 30 days" href={to('/calendar')} item="var(--title-item)">
 				{#each rows[0].cards as c (c.key)}
 					{@const w = wideOf(c.titleId)}
-					<WideCard cover title={c.name} kind={c.kind} href={c.titleId ? titleHref(c.titleId) : undefined} image={c.wide ?? w.backdrop} logo={w.logo} preview={w.preview} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} />
+					<WideCard cover title={c.name} kind={c.kind} typed href={c.titleId ? titleHref(c.titleId) : undefined} image={c.wide ?? w.backdrop} logo={w.logo} preview={w.preview} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} />
 				{/each}
 			</Shelf>
 		{/if}
@@ -299,9 +299,9 @@
 					{@const pill = c.status === 'in_library' ? null : cardPill(c, who)}
 					{@const w = wideOf(c.titleId)}
 					{#if c.kind !== 'artist'}
-					<WideCard cover title={c.name} kind={c.kind} href={titleHref(c.titleId!)} image={w.backdrop ?? c.image} logo={w.logo} preview={w.preview} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" status={pill?.kind} statusLabel={pill?.label} vtName={c.vtName} />
+					<WideCard cover title={c.name} kind={c.kind} typed href={titleHref(c.titleId!)} image={w.backdrop ?? c.image} logo={w.logo} preview={w.preview} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" status={pill?.kind} statusLabel={pill?.label} vtName={c.vtName} />
 					{:else}
-					<PosterCard title={c.name} kind={c.kind} href={titleHref(c.titleId!)} image={c.image} subtitle={c.subtitle} badges={c.badges} status={pill?.kind} statusLabel={pill?.label} vtName={c.vtName} />
+					<PosterCard title={c.name} kind={c.kind} typed href={titleHref(c.titleId!)} image={c.image} subtitle={c.subtitle} badges={c.badges} status={pill?.kind} statusLabel={pill?.label} vtName={c.vtName} />
 					{/if}
 				{/each}
 			</Shelf>
@@ -345,7 +345,7 @@
 					{@const pill = cardPill(c, who)}
 					{@const w = wideOf(c.titleId)}
 					{#if c.kind !== 'artist'}
-					<WideCard cover title={c.name} kind={c.kind} href={titleHref(c.titleId!)} image={w.backdrop ?? c.image} logo={w.logo} preview={w.preview} subtitle={c.subtitle} badgesAt="bottom" status={pill?.kind} statusLabel={pill?.label} vtName={c.vtName} />
+					<WideCard cover title={c.name} kind={c.kind} typed href={titleHref(c.titleId!)} image={w.backdrop ?? c.image} logo={w.logo} preview={w.preview} subtitle={c.subtitle} badgesAt="bottom" status={pill?.kind} statusLabel={pill?.label} vtName={c.vtName} />
 					{:else}
 					<PosterCard title={c.name} href={titleHref(c.titleId!)} image={c.image} subtitle={c.subtitle} status={pill?.kind} statusLabel={pill?.label} vtName={c.vtName} />
 					{/if}

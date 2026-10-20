@@ -166,9 +166,8 @@ export function minutes(m?: number): string {
 
 /** facts is the line under the title: year · rating · runtime (movies) or seasons (shows). */
 export function facts(d: Pick<InfoDetails, 'kind' | 'year' | 'rating' | 'runtime' | 'seasons'>): string[] {
+	// The type leads, as on every card: "Show · 4 seasons · 2024 · TV-MA".
 	const out: string[] = [];
-	if (d.year) out.push(String(d.year));
-	if (d.rating) out.push(d.rating);
 	if (d.kind === 'movie') {
 		const r = minutes(d.runtime);
 		if (r) out.push(r);
@@ -176,7 +175,9 @@ export function facts(d: Pick<InfoDetails, 'kind' | 'year' | 'rating' | 'runtime
 		const n = d.seasons.filter((s) => s.number > 0).length;
 		if (n) out.push(n === 1 ? '1 season' : `${n} seasons`);
 	}
-	return out;
+	if (d.year) out.push(String(d.year));
+	if (d.rating) out.push(d.rating);
+	return out.length ? [d.kind === 'movie' ? 'Movie' : 'Show', ...out] : out;
 }
 
 // ---- Big 4 shelves ----

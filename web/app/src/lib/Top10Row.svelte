@@ -12,9 +12,9 @@
 	// when the metadata server has no list.
 	const KEY = 'holyarrs.top10';
 	/** lock: Explore's type switch picked Movies or Shows, so this row follows it and hides its own toggle. */
-	/** owned and who: the Library, so the posters carry the same badges as the other rows; typePill shows the type pill (Explore's All). */
+	/** owned and who: the Library, so the posters carry the same badges as the other rows. */
 	/** initial: the list the Explore head answer brought (kind and region as saved here), so the first paint needs no request of its own. */
-	let { lock, owned, who = 'staff', typePill = false, initial = null }: { lock?: Top10Kind; owned?: OwnedIndex; who?: Audience; typePill?: boolean; initial?: (Top10Answer & { kind?: Top10Kind }) | null } = $props();
+	let { lock, owned, who = 'staff', initial = null }: { lock?: Top10Kind; owned?: OwnedIndex; who?: Audience; initial?: (Top10Answer & { kind?: Top10Kind }) | null } = $props();
 	let own = $state<Top10Kind>('movie');
 	const kind = $derived(lock ?? own);
 	let region = $state('global');
@@ -111,7 +111,7 @@
 				{@const mark = ownedMark(c, owned ? ownedTitle(c, owned) : undefined, who)}
 				<div class="ranked">
 					<span class="rank" class:two={c.rank > 9} aria-hidden="true">{c.rank}</span>
-					<div class="pc"><PosterCard title={c.name} href={href(c)} image={c.image} kind={c.kind} subtitle={c.subtitle} typePill={typePill ? c.kind : undefined} owned={mark} fresh={c.fresh} top10Row preview={c.ref?.startsWith('tmdb:') && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: c.ref.slice(5) } : undefined} /></div>
+					<div class="pc"><PosterCard title={c.name} href={href(c)} image={c.image} kind={c.kind} subtitle={c.subtitle} owned={mark} fresh={c.fresh} top10Row preview={c.ref?.startsWith('tmdb:') && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: c.ref.slice(5) } : undefined} /></div>
 					<span class="sr">Number {c.rank}</span>
 				</div>
 			{/each}

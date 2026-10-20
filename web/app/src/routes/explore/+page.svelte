@@ -496,7 +496,7 @@
 				{/each}
 			</div>
 		{:else if rows.length === 0}
-			<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} typePill={type === 'all'} initial={top10} />
+			<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} initial={top10} />
 			<EmptyState icon="compass" title="Explore is getting ready" text="Rows fill in within a few minutes." action={{ label: 'Search', href: to('/search'), icon: 'search' }} />
 		{:else}
 			{#if hero.length}
@@ -505,10 +505,10 @@
 					{#snippet action()}{@render heroAction(h)}{/snippet}
 				</ExploreHero>
 			{/if}
-			{#if !rows.some((r) => r.type === 'top10')}<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} typePill={type === 'all'} initial={top10} />{/if}
+			{#if !rows.some((r) => r.type === 'top10')}<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} initial={top10} />{/if}
 			{#each rows as row, ri (row.id)}
 				{#if row.type === 'top10'}
-					<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} typePill={type === 'all'} initial={top10} />
+					<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} initial={top10} />
 				{:else}
 				<div class="row-wrap" data-row={row.type ?? row.id} data-title-layer={row.titleLayer}>
 				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.cards.some((c) => wideKind(c.kind)) ? (big.has(row.id) ? 'var(--title-item-big)' : 'var(--title-item)') : 'var(--explore-item)'} tools={row.id === 'services' ? serviceTools : undefined}
@@ -518,7 +518,7 @@
 						{@const act = cardAction(c, { manage, ask: mayAsk })}
 						{@const mark = ownedMark(c, ownedTitle(c, owned), who)}
 						{#if row.wide || wideKind(c.kind)}
-							<WideCard cover big={big.has(row.id)} title={c.name} href={(cardOpens === 'panel' ? infoHref(c) : undefined) ?? cardHref(c)} onmore={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? (from) => openInfo({ kind: c.kind as 'movie' | 'show', tmdb: cardTmdb(c) }, from) : undefined} image={c.wide ?? c.image} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} fresh={c.fresh} owned={mark} typePill={type === 'all' ? c.kind : undefined} preview={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: cardTmdb(c), year: c.year } : undefined}>
+							<WideCard cover big={big.has(row.id)} title={c.name} href={(cardOpens === 'panel' ? infoHref(c) : undefined) ?? cardHref(c)} onmore={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? (from) => openInfo({ kind: c.kind as 'movie' | 'show', tmdb: cardTmdb(c) }, from) : undefined} image={c.wide ?? c.image} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} fresh={c.fresh} owned={mark} typed row={row.type} preview={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: cardTmdb(c), year: c.year } : undefined}>
 								{#snippet growAction()}
 									{#if act && cardTmdb(c)}
 										<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={asking === c.key || undefined} onclick={() => { count(row.type ?? row.id, 'ask', row.titleLayer); void quick(c, act); }} />
@@ -535,7 +535,8 @@
 							kind={c.kind}
 							subtitle={c.subtitle}
 							badges={c.badges}
-							typePill={type === 'all' ? c.kind : undefined}
+							typed
+							row={row.type}
 							owned={mark}
 							fresh={c.fresh}
 							actionOnHover
@@ -565,13 +566,13 @@
 	{@const act = cardAction(c, { manage, ask: mayAsk })}
 	{#if act && cardTmdb(c)}
 		<button type="button" class="info-act" aria-haspopup="dialog" aria-busy={asking === c.key || undefined} data-testid="info-act" onclick={() => { count('more_info', 'ask'); void quick(c, act); }}>
-			<Icon name="plus" size={20} stroke={2.2} /><span>{act === 'add' ? 'Add' : 'Ask'}</span>
+			<Icon name="plus" size={20} stroke={2.2} /><span>{act === 'add' ? 'Add' : c.kind === 'show' ? 'Ask for seasons…' : 'Ask'}</span>
 		</button>
 	{/if}
 {/snippet}
 
 {#snippet infoCard(c: ExploreCard)}
-	<WideCard cover title={c.name} href={infoHref(c) ?? cardHref(c)} image={c.wide ?? c.image} kind={c.kind} badges={c.badges} badgesAt="bottom" fresh={c.fresh} owned={ownedMark(c, ownedTitle(c, owned), who)} />
+	<WideCard cover title={c.name} href={infoHref(c) ?? cardHref(c)} image={c.wide ?? c.image} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" fresh={c.fresh} owned={ownedMark(c, ownedTitle(c, owned), who)} typed />
 {/snippet}
 
 {#if info}

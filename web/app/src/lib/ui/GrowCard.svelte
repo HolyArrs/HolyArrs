@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { metaLine } from '../fresh.ts';
 	import { onDestroy, onMount, type Snippet } from 'svelte';
 	import { api } from '../api.ts';
 	import { richMetadata, type RichMeta } from './TitleHero.svelte';
@@ -155,7 +156,7 @@
 		const h = Math.floor(m / 60);
 		return h ? `${h}h ${m % 60}m` : `${m}m`;
 	}
-	const facts = $derived([kind === 'movie' ? runtime(meta?.runtime) : 'Show', String(meta?.year ?? year ?? '')].filter(Boolean));
+	const facts = $derived(metaLine(kind, [kind === 'movie' ? runtime(meta?.runtime) : undefined, meta?.year ?? year]));
 	const tags = $derived((meta?.genres ?? []).slice(0, 3));
 </script>
 

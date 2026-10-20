@@ -8,19 +8,17 @@
 	import { freshLabel, type Fresh } from '../fresh.ts';
 
 	// The badges over a card's artwork, laid on the art box (it must be
-	// position: relative). Top-left: a solid type pill (All only). Top-right:
-	// a solid round library status. Bottom-centre: one freshness strip in the
-	// accent colour. Same on posters, wide cards, Top 10 and music.
-	let { fresh = null, owned = null, typePill = null, size = 'md' }: { fresh?: Fresh | null; owned?: CardOwned | null; typePill?: 'movie' | 'show' | 'artist' | null; size?: 'sm' | 'md' } = $props();
+	// position: relative). Top-right: a solid round library status. The one
+	// freshness badge is either a thin accent strip flush with the bottom
+	// edge, or (Top 10) a tiny square tag in the top-left corner. Same on
+	// posters, wide cards, Top 10, hover cards and music.
+	let { fresh = null, owned = null, size = 'md' }: { fresh?: Fresh | null; owned?: CardOwned | null; size?: 'sm' | 'md' } = $props();
 
-	const typeWords = { movie: 'Movie', show: 'Show', artist: 'Artist' } as const;
 	/** Percent from a "Downloading 42%" label, for the ring. */
 	const pct = $derived(owned?.state === 'downloading' ? Number(/(\d+)%/.exec(owned.label)?.[1] ?? NaN) : NaN);
 	const R = 9;
 	const C = 2 * Math.PI * R;
 </script>
-
-{#if typePill}<span class="type {typePill}" class:sm={size === 'sm'} data-testid="card-type">{typeWords[typePill]}</span>{/if}
 
 {#if owned}
 	<span class="mark {owned.state}" class:sm={size === 'sm'} role="img" aria-label={owned.label} title={owned.label} data-testid="card-mark" data-state={owned.state}>
@@ -42,28 +40,18 @@
 	</span>
 {/if}
 
-{#if fresh}
+{#if fresh?.kind === 'top10'}
+	<span class="top10" class:sm={size === 'sm'} role="img" aria-label={freshLabel(fresh)} title={freshLabel(fresh)} data-testid="card-fresh" data-kind="top10">
+		<span aria-hidden="true">TOP</span><b aria-hidden="true">10</b>
+	</span>
+{:else if fresh}
 	<span class="fresh {fresh.kind}" class:sm={size === 'sm'} role="img" aria-label={freshLabel(fresh)} title={freshLabel(fresh)} data-testid="card-fresh" data-kind={fresh.kind}>
-		{#if fresh.kind === 'top10'}<b class="top">TOP<i>10</i></b>{#if fresh.rank}<span class="rk" aria-hidden="true">#{fresh.rank}</span>{/if}{:else}<span aria-hidden="true">{fresh.text}</span>{/if}
+		<span aria-hidden="true">{fresh.text}</span>
 	</span>
 {/if}
 
 <style>
-	.type, .mark, .fresh { position: absolute; z-index: 2; pointer-events: none; }
-	/* Type pill: solid, rounded, small caps-like weight. */
-	.type {
-		left: 8px; top: 8px;
-		height: 20px; padding: 0 8px;
-		display: inline-flex; align-items: center;
-		border-radius: var(--r-pill);
-		color: var(--mark-ink);
-		font: 600 11px/1 var(--font-text, inherit);
-		letter-spacing: 0.02em;
-		box-shadow: 0 0 0 1px var(--mark-ring), 0 1px 3px rgb(0 0 0 / 30%);
-	}
-	.type.movie { background: var(--type-movie); }
-	.type.show { background: var(--type-show); }
-	.type.artist { background: var(--type-artist); }
+	.mark, .fresh, .top10 { position: absolute; z-index: 2; pointer-events: none; }
 	/* Status circle: solid fill, white glyph (amber carries dark ink). */
 	.mark {
 		right: 8px; top: 8px;
@@ -79,29 +67,39 @@
 	.downloading { background: var(--mark-dl); }
 	.requested { background: var(--mark-ask); color: var(--mark-ask-ink); }
 	.declined { background: var(--mark-no); }
-	/* Freshness strip: centred on the bottom edge of the art, flush to it. */
+	/* Freshness strip: a thin flat bar flush with the art's bottom edge,
+	   centred, solid accent, square-ish top corners. No glass, no shadow. */
 	.fresh {
 		left: 50%; bottom: 0; transform: translateX(-50%);
-		max-width: calc(100% - 16px);
-		height: 22px; padding: 0 10px;
-		display: inline-flex; align-items: center; gap: 5px;
-		border-radius: 4px 4px 0 0;
+		max-width: calc(100% - 12px);
+		height: 18px; padding: 0 7px;
+		display: inline-flex; align-items: center;
+		border-radius: 3px 3px 0 0;
 		background: var(--accent-fill);
-		color: #fff;
-		font: 700 11px/1 var(--font-text, inherit);
-		letter-spacing: 0.01em;
+		color: var(--accent-ink, #fff);
+		font: 700 11.5px/1 var(--font-text, inherit);
+		letter-spacing: 0.015em;
 		white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-		box-shadow: 0 -1px 6px rgb(0 0 0 / 25%);
 	}
-	.top { display: inline-flex; flex-direction: column; align-items: center; font-size: 6.5px; line-height: 0.95; letter-spacing: 0.06em; }
-	.top i { font-style: normal; font-size: 10px; letter-spacing: 0; }
-	.rk { font-variant-numeric: tabular-nums; }
-	.sm.type { height: 18px; padding: 0 6px; font-size: 10px; left: 6px; top: 6px; }
+	/* Top 10 tag: tiny square corner tag, TOP over 10, flush top-left. */
+	.top10 {
+		left: 0; top: 0;
+		width: 22px; height: 26px;
+		display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+		border-radius: 0 0 2px 0;
+		background: var(--accent-fill);
+		color: var(--accent-ink, #fff);
+		font: 800 6.5px/1 var(--font-text, inherit);
+		letter-spacing: 0.08em;
+	}
+	.top10 b { font-size: 12px; font-weight: 800; letter-spacing: -0.02em; line-height: 0.9; font-variant-numeric: tabular-nums; }
 	.sm.mark { width: 20px; height: 20px; right: 6px; top: 6px; }
 	.sm.mark :global(svg) { width: 12px; height: 12px; }
 	.sm.mark.downloading :global(svg) { width: 17px; height: 17px; }
-	.sm.fresh { height: 18px; font-size: 10px; padding: 0 8px; }
+	.sm.fresh { height: 16px; font-size: 10.5px; padding: 0 6px; }
+	.sm.top10 { width: 18px; height: 22px; font-size: 5.5px; }
+	.sm.top10 b { font-size: 10px; }
 	@media (forced-colors: active) {
-		.type, .mark, .fresh { border: 1px solid CanvasText; }
+		.mark, .fresh, .top10 { border: 1px solid CanvasText; }
 	}
 </style>

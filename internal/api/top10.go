@@ -118,7 +118,7 @@ func (a *API) top10Answer(ctx context.Context, r *http.Request, kind, region, la
 	}
 	kid := a.kidMax(r)
 	items = a.kidItems(ctx, kid, items, 10)
-	joined, err := a.joinItems(ctx, items, a.person(r).UserID, 10)
+	joined, err := a.joinItems(withFreshRow(ctx, "top10"), items, a.person(r).UserID, 10)
 	if err != nil {
 		return http.StatusInternalServerError, err.Error(), nil
 	}

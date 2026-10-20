@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { metaLine } from '../fresh.ts';
 	import { onDestroy, onMount, type Snippet } from 'svelte';
 	import { api } from '../api.ts';
 	import { richMetadata, type RichMeta } from './TitleHero.svelte';
@@ -88,7 +89,7 @@
 	onDestroy(() => ctl.abort());
 
 	const art = $derived(sized(meta?.backdrop ?? null, 'backdrop') || sized(image, 'poster'));
-	const line = $derived([meta?.year ?? year, ...(meta?.genres ?? []).slice(0, 3)].filter(Boolean).join(' · '));
+	const line = $derived([...metaLine(kind, [kind === 'movie' && meta?.runtime ? `${Math.floor(meta.runtime / 60) ? `${Math.floor(meta.runtime / 60)}h ` : ''}${meta.runtime % 60}m`.trim() : undefined, meta?.year ?? year]), ...(meta?.genres ?? []).slice(0, 2)].join(' · '));
 </script>
 
 <svelte:window onkeydown={(e) => e.key === 'Escape' && onclose()} />

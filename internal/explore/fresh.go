@@ -69,10 +69,45 @@ func within(t, now time.Time, days int) bool {
 	return ok && d >= 0 && d < days
 }
 
+// RowSuppress maps a row type to the strips its cards never show: a card
+// never repeats what its row already says (no Top 10 tag in Top 10, no New
+// Release in Best new releases). Keys are Explore, discover and music row
+// types; a row not listed suppresses nothing.
+var RowSuppress = map[string][]string{
+	TypeTop10:       {FreshTop10},
+	TypeBest:        {FreshNewRelease},
+	TypeNewServices: {FreshNewRelease},
+	"fresh":         {FreshNewRelease}, // music: New this week
+	"new_from":      {FreshNewRelease}, // music: New from artists you have
+	TypeJustArrived: {FreshRecentlyAdded},
+	"recent":        {FreshRecentlyAdded},
+	TypeComingSoon:  {FreshComing, FreshSeasonComing},
+	"upcoming":      {FreshComing, FreshSeasonComing},
+	"new_episodes":  {FreshNewEpisode},
+	"new_seasons":   {FreshNewSeason},
+}
+
+// Suppressed says row type row never shows strip kind k.
+func Suppressed(row, k string) bool {
+	for _, s := range RowSuppress[row] {
+		if s == k {
+			return true
+		}
+	}
+	return false
+}
+
 // PickFresh is the card's freshness strip, or nil when no rule holds.
-func PickFresh(f FreshFacts, now time.Time) *Fresh {
+func PickFresh(f FreshFacts, now time.Time) *Fresh { return PickFreshIn(f, now, "") }
+
+// PickFreshIn is the card's one strip in a row of type row: the first rule
+// that holds and that the row does not suppress.
+func PickFreshIn(f FreshFacts, now time.Time, row string) *Fresh {
 	for _, k := range FreshOrder {
 		if f.Music && k != FreshRecentlyAdded && k != FreshNewRelease {
+			continue
+		}
+		if Suppressed(row, k) {
 			continue
 		}
 		if b := freshRule(k, f, now); b != nil {

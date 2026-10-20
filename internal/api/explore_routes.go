@@ -145,7 +145,7 @@ func (a *API) exploreViews(ctx context.Context, r *http.Request, rows []explore.
 		if err != nil {
 			return nil, err
 		}
-		joined, err := a.joinItems(ctx, items, me, explore.RowMax)
+		joined, err := a.joinItems(withFreshRow(ctx, row.Type), items, me, explore.RowMax)
 		if err != nil {
 			return nil, err
 		}

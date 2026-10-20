@@ -11,6 +11,19 @@ import (
 
 type top10RanksKey struct{}
 
+type freshRowKey struct{}
+
+// withFreshRow names the row type the cards are joined for, so their strip
+// never repeats the row's own meaning (explore.RowSuppress).
+func withFreshRow(ctx context.Context, row string) context.Context {
+	return context.WithValue(ctx, freshRowKey{}, row)
+}
+
+func freshRowOf(ctx context.Context) string {
+	s, _ := ctx.Value(freshRowKey{}).(string)
+	return s
+}
+
 // withTop10Ranks carries this week's Top 10 ranks (kind:tmdb -> rank) for
 // the member's region, so cards in other rows can show the Top 10 tag.
 func withTop10Ranks(ctx context.Context, ranks map[string]int) context.Context {
@@ -93,7 +106,7 @@ func (a *API) cardFresh(ctx context.Context, it metadata.DiscoverItem, titleID i
 			}
 		}
 	}
-	return explore.PickFresh(f, now), nil
+	return explore.PickFreshIn(f, now, freshRowOf(ctx)), nil
 }
 
 // musicFresh is a music card's strip: Recently added on Just arrived, New
@@ -110,5 +123,5 @@ func (a *API) musicFresh(row string, c MusicCard) *explore.Fresh {
 	default:
 		return nil
 	}
-	return explore.PickFresh(f, a.exploreNow())
+	return explore.PickFreshIn(f, a.exploreNow(), row)
 }

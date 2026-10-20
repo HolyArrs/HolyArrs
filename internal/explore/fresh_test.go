@@ -89,3 +89,50 @@ func TestParseDay(t *testing.T) {
 		t.Error("bad dates must be zero")
 	}
 }
+
+func TestRowSuppress(t *testing.T) {
+	now := time.Date(2026, 10, 19, 12, 0, 0, 0, time.UTC)
+	top := FreshFacts{Kind: "movie", Top10Rank: 3, Released: now.AddDate(0, 0, -3)}
+	if b := PickFreshIn(top, now, TypeTop10); b == nil || b.Kind != FreshNewRelease {
+		t.Fatalf("top10 row: want the next strip, got %+v", b)
+	}
+	if b := PickFreshIn(top, now, ""); b == nil || b.Kind != FreshTop10 {
+		t.Fatalf("other row: want top10, got %+v", b)
+	}
+	rel := FreshFacts{Kind: "movie", Released: now.AddDate(0, 0, -3)}
+	for _, row := range []string{TypeBest, TypeNewServices, "fresh", "new_from"} {
+		if b := PickFreshIn(rel, now, row); b != nil {
+			t.Fatalf("%s: new release must be dropped, got %+v", row, b)
+		}
+	}
+	added := FreshFacts{Kind: "movie", InLibrary: true, Added: now.AddDate(0, 0, -1)}
+	if b := PickFreshIn(added, now, TypeJustArrived); b != nil {
+		t.Fatalf("just arrived: got %+v", b)
+	}
+	coming := FreshFacts{Kind: "show", Released: now.AddDate(0, 0, 3), NextSeason: now.AddDate(0, 0, 20), NextSeasonNumber: 2}
+	if b := PickFreshIn(coming, now, TypeComingSoon); b != nil {
+		t.Fatalf("coming soon: got %+v", b)
+	}
+	ep := FreshFacts{Kind: "show", InLibrary: true, LastEpisode: now.AddDate(0, 0, -1), SeasonStart: now.AddDate(0, 0, -2)}
+	if b := PickFreshIn(ep, now, "new_episodes"); b == nil || b.Kind != FreshNewSeason {
+		t.Fatalf("new episodes row: got %+v", b)
+	}
+	if b := PickFreshIn(ep, now, "new_seasons"); b == nil || b.Kind != FreshNewEpisode {
+		t.Fatalf("new seasons row: got %+v", b)
+	}
+	// Music just arrived and new from rows repeat their only strips.
+	if b := PickFreshIn(FreshFacts{Kind: "album", Music: true, InLibrary: true, Added: now}, now, "just_arrived"); b != nil {
+		t.Fatalf("music just arrived: got %+v", b)
+	}
+}
+
+func TestOneStrip(t *testing.T) {
+	now := time.Date(2026, 10, 19, 12, 0, 0, 0, time.UTC)
+	all := FreshFacts{Kind: "show", InLibrary: true, Added: now, LastEpisode: now, SeasonStart: now, Top10Rank: 1, Released: now.AddDate(0, 0, -2)}
+	for row := range RowSuppress {
+		b := PickFreshIn(all, now, row)
+		if b != nil && Suppressed(row, b.Kind) {
+			t.Fatalf("%s showed suppressed %s", row, b.Kind)
+		}
+	}
+}

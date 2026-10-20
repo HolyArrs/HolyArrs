@@ -338,7 +338,7 @@ func (a *API) discoverRow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	merged = a.kidItems(r.Context(), a.kidMax(r), merged, discoverMax)
-	out, err := a.joinItems(r.Context(), merged, me, discoverMax)
+	out, err := a.joinItems(withFreshRow(r.Context(), row), merged, me, discoverMax)
 	if err != nil {
 		internal(w, err)
 		return

@@ -8,7 +8,7 @@
 	import { press, viewTransitionName } from '../motion.ts';
 	import HoverPreview from './HoverPreview.svelte';
 	import CardBadges, { type CardOwned } from './CardBadges.svelte';
-	import { shownFresh, type Fresh } from '../fresh.ts';
+	import { shownFresh, typeWord, type Fresh } from '../fresh.ts';
 	import { prefetchTrailer } from '../autoplay.svelte.ts';
 	import { dwell, finePointer, HOVER_DELAY } from '../trailer.ts';
 	import GrowCard from './GrowCard.svelte';
@@ -37,7 +37,8 @@
 		preview,
 		fresh,
 		owned,
-		typePill,
+		typed = false,
+		row,
 		cover = false,
 		logo,
 		growAction,
@@ -46,10 +47,13 @@
 	}: {
 		/** The server's one freshness strip (bottom centre of the art). */
 		fresh?: Fresh | null;
+		/** Put the type (Movie, Show) first on the metadata line. */
+		typed?: boolean;
+		/** The row type, so the card never repeats the row's meaning. */
+		row?: string;
 		/** Solid round library status, top-right, with its aria-label and tooltip. */
 		owned?: CardOwned | null;
 		/** Solid type pill top-left (Explore's All). */
-		typePill?: 'movie' | 'show' | 'artist';
 		title: string;
 		href?: string;
 		image?: string | null;
@@ -148,48 +152,53 @@
 	const kindIcon = $derived<IconName>(kind === 'show' || kind === 'episode' ? 'tv' : kind === 'artist' ? 'music' : 'film');
 	const pct = $derived(progress === undefined ? undefined : Math.max(0, Math.min(100, progress)));
 	// The progress line owns the bottom edge; the strip steps aside for it.
-	const strip = $derived(pct === undefined ? shownFresh(fresh) : null);
-	const marked = $derived(!!(strip || owned || typePill));
+	// The type leads the metadata line ("Show · 2024"); never twice.
+	const typedWord = $derived(typed ? typeWord(kind) : '');
+	const sub = $derived(typedWord && subtitle === typedWord ? undefined : subtitle);
+	const strip = $derived(pct === undefined ? shownFresh(fresh, { row }) : null);
+	const marked = $derived(!!(strip || owned));
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="ui-wide" class:cover class:big class:grown={cover && open} style:width bind:this={root} onpointerenter={enter} onpointerleave={leave} onfocusin={(e) => (e.target as HTMLElement)?.matches?.(':focus-visible') && enter()} onfocusout={(e) => !root?.contains(e.relatedTarget as Node) && leave()} onpointerdown={() => opener.cancel()}>
-	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} use:press={'card'} aria-label={cover ? [title, subtitle].filter(Boolean).join(', ') : undefined}>
+	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} use:press={'card'} aria-label={cover ? [title, typedWord, sub].filter(Boolean).join(', ') : undefined}>
 		<span class="art" class:low={badgesAt === 'bottom' && (badges.length || status)} use:viewTransitionName={vtName} bind:this={artEl}>
 			{#if !image || failed || !loaded}<span class="ph" aria-hidden="true">{#if !cover}<span class="ph-ic"><Icon name={kindIcon} size={20} /></span><span class="ph-t">{title}</span>{/if}</span>{/if}
 			{#if image && !failed && near()}<img src={art} class:in={loaded} alt="" loading="lazy" decoding="async" use:whenLoaded={() => (loaded = true)} onerror={() => (failed = true)} />{/if}
 			{#if cover}
 				<span class="scrim" aria-hidden="true"></span>
-				<span class="name" class:lifted={!!strip} aria-hidden="true">
+				<span class="name" class:lifted={!!strip && strip.kind !== 'top10'} aria-hidden="true">
 					{#if shownLogo}<img class="logo" src={shownLogo} alt="" onerror={() => (logoFailed = true)} />{:else}<span class="word">{title}</span>{/if}
 				</span>
 			{/if}
 			{#if badges.length || status}
-				<span class="over" class:bottom={badgesAt === 'bottom'} class:pushed={badgesAt === 'top' && (!!owned || !!typePill)} class:lifted={badgesAt === 'bottom' && !!strip}>
+				<span class="over" class:bottom={badgesAt === 'bottom'} class:pushed={badgesAt === 'top' && (!!owned || strip?.kind === 'top10')} class:lifted={badgesAt === 'bottom' && !!strip && strip.kind !== 'top10'}>
 					{#if status}<StatusPill kind={status} label={statusLabel} percent={pct} on="art" testid={statusTestid} />{/if}
 					{#each badges as b (b)}<Badge label={b} on="art" />{/each}
 				</span>
 			{/if}
-			{#if marked}<CardBadges fresh={strip} owned={owned ?? null} typePill={typePill ?? null} />{/if}
+			{#if marked}<CardBadges fresh={strip} owned={owned ?? null} />{/if}
 			{#if pct !== undefined}
 				<span class="line" role="progressbar" aria-label="{title} progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)} class:done={pct >= 100}><i style="width: {pct}%"></i></span>
 			{/if}
 		</span>
 		{#if !cover}
 			<span class="t">{title}</span>
-			{#if subtitle}<span class="s">{subtitle}</span>{/if}
+			{#if typedWord || sub}<span class="s">{#if typedWord}<span class="ty">{typedWord}</span>{#if sub}<span class="dot" aria-hidden="true">·</span>{/if}{/if}{sub ?? ''}</span>{/if}
 			{#if meta}<span class="m">{meta}</span>{/if}
+		{:else if typedWord}
+			<span class="s under" aria-hidden="true">{typedWord}{#if sub}<span class="dot">·</span>{sub}{/if}</span>
 		{/if}
 	</svelte:element>
-	{#if action}<span class="act">{@render action()}</span>{/if}
+	{#if action}<span class="act" class:below={!!owned}>{@render action()}</span>{/if}
 </div>
 
 {#snippet wideBadges()}
-	<CardBadges fresh={strip} owned={owned ?? null} typePill={typePill ?? null} />
+	<CardBadges fresh={strip} owned={owned ?? null} />
 {/snippet}
 
 {#if open && preview && cover && artEl}
-	<GrowCard anchor={artEl} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} image={loaded && !failed ? art : null} logo={shownLogo} lifted={!!strip} {leaving} badge={marked ? wideBadges : undefined} action={growAction} onmore={onmore ? (r) => { shut(); onmore(r); } : undefined} onenter={() => { closer.cancel(); leaving = false; }} onleave={leave} onclose={shut} ongone={() => leaving && shut()} />
+	<GrowCard anchor={artEl} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} image={loaded && !failed ? art : null} logo={shownLogo} lifted={!!strip && strip.kind !== 'top10'} {leaving} badge={marked ? wideBadges : undefined} action={growAction} onmore={onmore ? (r) => { shut(); onmore(r); } : undefined} onenter={() => { closer.cancel(); leaving = false; }} onleave={leave} onclose={shut} ongone={() => leaving && shut()} />
 {:else if open && preview && root}
 	<HoverPreview anchor={root} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} {image} badge={marked ? wideBadges : undefined} onenter={() => closer.cancel()} onleave={leave} onclose={shut} />
 {/if}
@@ -219,9 +228,13 @@
 	.line i { display: block; height: 100%; background: var(--accent); transition: width var(--dur-slow) var(--ease-out); }
 	.line.done i { background: var(--ok); }
 	.t { font: var(--t-subhead); font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.s .dot { opacity: 0.7; margin: 0 0.3em; }
+	.s.under { display: block; padding-top: 6px; }
 	.s, .m { color: var(--text-muted); font: var(--t-footnote); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.m { font-variant-numeric: tabular-nums; }
 	.act { position: absolute; right: 8px; top: 8px; }
+	/* Under the status circle, never on it. */
+	.act.below { top: 38px; }
 	/* Title cards: the logo or name over a bottom scrim, nothing below; the grown card takes the card's place. */
 	.cover .art { margin-bottom: 0; }
 	.big .art { border-radius: var(--r-panel); }

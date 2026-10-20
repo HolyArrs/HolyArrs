@@ -43,7 +43,7 @@ describe('the details answer', () => {
 		expect(d.collection?.parts).toHaveLength(2);
 		expect(d.titleId).toBe(4);
 		expect(d.head).toMatchObject({ tmdb_id: '7', kind: 'movie', in_library: true, title_id: 4 });
-		expect(facts(d)).toEqual(['2020', 'R', '1h 39m']);
+		expect(facts(d)).toEqual(['Movie', '1h 39m', '2020', 'R']);
 	});
 	it('tolerates an empty answer', () => {
 		const d = readInfo('show', '1', {});
@@ -53,7 +53,7 @@ describe('the details answer', () => {
 	it('counts real seasons and starts on season 1', () => {
 		const d = readInfo('show', '1', { year: 2021, seasons: [{ number: 0, episode_count: 3 }, { number: 1, episode_count: 8 }, { number: 2, episode_count: 0 }, { number: 3, episode_count: 6 }] });
 		expect(d.seasons.map((s) => s.number)).toEqual([0, 1, 3]);
-		expect(facts(d)).toEqual(['2021', '2 seasons']);
+		expect(facts(d)).toEqual(['Show', '2 seasons', '2021']);
 		expect(firstSeason(d.seasons)).toBe(1);
 		expect(firstSeason([{ number: 0, episodes: 1 }, { number: 4, episodes: 2 }])).toBe(4);
 		expect(firstSeason([])).toBeNull();

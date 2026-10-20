@@ -2,7 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import Badge from './Badge.svelte';
 	import CardBadges from './CardBadges.svelte';
-	import { shownFresh, type Fresh } from '../fresh.ts';
+	import { shownFresh, typeWord, type Fresh } from '../fresh.ts';
 	import StatusPill, { type StatusKind } from './StatusPill.svelte';
 	import ProgressBar from './ProgressBar.svelte';
 	import Icon, { type IconName } from '../Icon.svelte';
@@ -27,7 +27,8 @@
 		vtName,
 		width,
 		kind,
-		typePill,
+		typed = false,
+		row,
 		owned,
 		actionOnHover = false,
 		shape = 'poster',
@@ -50,8 +51,6 @@
 		width?: string;
 		/** What it is, for the artwork fallback's icon. */
 		kind?: 'movie' | 'show' | 'artist' | 'episode';
-		/** Small type pill top-left: glyph plus Movie, Show or Artist. */
-		typePill?: 'movie' | 'show' | 'artist';
 		/** Status pill top-right (glyph only on narrow cards), with its aria-label and tooltip. */
 		owned?: { state: 'available' | 'partial' | 'downloading' | 'requested' | 'declined'; label: string } | null;
 		/** The round action shows on hover or focus only (always on touch screens). */
@@ -62,6 +61,10 @@
 		preview?: { kind: 'movie' | 'show'; tmdb: string; year?: number } | null;
 		/** The server's one freshness strip (bottom centre of the art). */
 		fresh?: Fresh | null;
+		/** Put the type (Movie, Show) first on the metadata line. */
+		typed?: boolean;
+		/** The row type, so the card never repeats the row's meaning. */
+		row?: string;
 		/** Music cards keep Recently Added and New Release only. */
 		music?: boolean;
 		/** In the Top 10 row, which shows the rank already. */
@@ -110,7 +113,10 @@
 		}
 	}
 	$effect(() => () => shut());
-	const strip = $derived(progress === undefined ? shownFresh(fresh, { music, top10Row }) : null);
+	// The type leads the metadata line ("Show · 2024"); never twice.
+	const typedWord = $derived(typed ? typeWord(kind) : '');
+	const sub = $derived(typedWord && subtitle === typedWord ? undefined : subtitle);
+	const strip = $derived(progress === undefined ? shownFresh(fresh, { music, top10Row, row }) : null);
 	let failed = $state(false);
 	// The name tile shows until the picture has loaded; in a row the picture
 	// waits until the row is near the screen.
@@ -131,26 +137,26 @@
 				<img src={pic} class:in={loaded} alt="" loading="lazy" decoding="async" use:whenLoaded={() => (loaded = true)} onerror={() => (failed = true)} />
 			{/if}
 			{#if badges.length || status}
-				<span class="over" class:pushed={!!typePill}>
+				<span class="over" class:pushed={strip?.kind === 'top10'}>
 					{#if status}<StatusPill kind={status} label={statusLabel} on="art" />{/if}
 					{#each badges as b (b)}<Badge label={b} on="art" />{/each}
 				</span>
 			{/if}
-			<CardBadges fresh={strip} {owned} typePill={typePill ?? null} size={shape === 'poster' ? 'md' : 'sm'} />
+			<CardBadges fresh={strip} {owned} size={shape === 'poster' ? 'md' : 'sm'} />
 			{#if progress !== undefined}<span class="prog"><ProgressBar value={progress} label="{title} progress" size="sm" on="art" /></span>{/if}
 		</span>
 		<span class="t">{title}</span>
-		{#if subtitle}<span class="s">{subtitle}</span>{/if}
+		{#if typedWord || sub}<span class="s">{#if typedWord}<span class="ty">{typedWord}</span>{#if sub}<span class="dot" aria-hidden="true">·</span>{/if}{/if}{sub ?? ''}</span>{/if}
 	</svelte:element>
-	{#if action && showAction}<span class="act-layer" class:hover-only={actionOnHover}><span class="act">{@render action()}</span></span>{/if}
+	{#if action && showAction}<span class="act-layer" class:hover-only={actionOnHover} class:over-strip={!!strip && strip.kind !== 'top10'}><span class="act">{@render action()}</span></span>{/if}
 </div>
 
 {#snippet ownBadge()}
-	<CardBadges fresh={strip} {owned} typePill={typePill ?? null} />
+	<CardBadges fresh={strip} {owned} />
 {/snippet}
 
 {#if open && preview && root}
-	<HoverPreview anchor={root} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} {image} badge={owned || strip || typePill ? ownBadge : undefined} {action} onenter={() => closer.cancel()} onleave={leave} onclose={shut} />
+	<HoverPreview anchor={root} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} {image} badge={owned || strip ? ownBadge : undefined} {action} onenter={() => closer.cancel()} onleave={leave} onclose={shut} />
 {/if}
 
 <style>
@@ -174,10 +180,13 @@
 	.over { position: absolute; left: 8px; right: 8px; top: 8px; display: flex; flex-wrap: nowrap; align-items: center; gap: 4px; }
 	.prog { position: absolute; left: 8px; right: 8px; bottom: 8px; }
 	.t { font: var(--t-subhead); font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.s .dot { opacity: 0.7; margin: 0 0.3em; }
 	.s { color: var(--text-muted); font: var(--t-footnote); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.act-layer { position: absolute; inset: 0 0 auto; aspect-ratio: var(--poster-ratio); pointer-events: none; }
 	.act { position: absolute; right: 8px; bottom: 8px; pointer-events: auto; }
 	.over.pushed { top: 34px; }
+	/* The round action sits above the freshness strip, never on it. */
+	.act-layer.over-strip .act { bottom: 24px; }
 	@media (hover: hover) and (pointer: fine) {
 		.act-layer.hover-only .act { opacity: 0; transform: scale(0.9); transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
 		.ui-poster:hover .act-layer.hover-only .act, .ui-poster:focus-within .act-layer.hover-only .act { opacity: 1; transform: none; }
