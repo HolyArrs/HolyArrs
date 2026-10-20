@@ -11428,6 +11428,20 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/explore/title-stats": {
+      "get": {
+        "description": "Owner only. For the last 30 days: Explore rows shown, cards opened and asks started, by title layer (occasion, time, genre, taste, reason or plain), to compare smart row titles with plain ones. Counts stay on this server and never change what Explore shows.",
+        "responses": {
+          "200": {
+            "description": "days, templates and layers [{layer, shown, opens, asks}]."
+          }
+        },
+        "summary": "Explore title measuring counts",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/files/{id}/subtitles/choices": {
       "post": {
         "description": "Asks every usable Subtitle site now and lists the scored candidates per wished language, best first, with the parts of each score. No subtitle file is saved; what the File has and wants is recorded first, and each site's answer counts against its limits, so this is a POST (send no body).",

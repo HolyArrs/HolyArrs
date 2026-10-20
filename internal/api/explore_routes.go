@@ -14,11 +14,15 @@ import (
 
 // exploreRowView is one row of the head or tail, with the Library joined.
 type exploreRowView struct {
-	ID    string             `json:"id"`
-	Type  string             `json:"type"`
-	Title string             `json:"title"`
-	Wide  bool               `json:"wide,omitempty"`
-	Items []discoverItemView `json:"items"`
+	ID    string `json:"id"`
+	Type  string `json:"type"`
+	Title string `json:"title"`
+	// Subtitle is a small line under the title; TitleLayer says where the
+	// title came from (fixed, plain or a template layer), for measuring.
+	Subtitle   string             `json:"subtitle,omitempty"`
+	TitleLayer string             `json:"title_layer,omitempty"`
+	Wide       bool               `json:"wide,omitempty"`
+	Items      []discoverItemView `json:"items"`
 }
 
 // exploreSwitch reads ?type=: all (default), movies or shows.
@@ -38,7 +42,8 @@ func exploreSwitch(v string) (string, bool) {
 func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64, sw, topKind, topRegion string) (explore.Page, map[string]any, bool, error) {
 	now := a.exploreNow()
 	day := explore.Day(now)
-	key := strconv.FormatInt(member, 10) + "|" + sw + "|" + topKind + "|" + topRegion
+	moment, tz := exploreMoment(r, now)
+	key := strconv.FormatInt(member, 10) + "|" + sw + "|" + topKind + "|" + topRegion + "|" + tz
 	e := &a.explore
 	pool, stale, err := a.readPool(ctx, member, sw, day, false)
 	if err != nil {
@@ -59,7 +64,8 @@ func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64,
 		got, ok := e.pages[key]
 		e.mu.Unlock()
 		if ok && now.Sub(got.at) < explorePageTTL && got.built.Equal(pool.Built) {
-			return got.page, got.top10, building, nil
+			pg, err := a.titleExplore(ctx, member, got.page, moment, topRegion)
+			return pg, got.top10, building, err
 		}
 	}
 	if pool == nil {
@@ -93,7 +99,7 @@ func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64,
 			}
 		}
 	}
-	pg := explore.Assemble(*pool, topItems, member)
+	pg := explore.AssembleAt(*pool, topItems, member, moment)
 	e.mu.Lock()
 	if e.pages == nil || len(e.pages) >= 1000 {
 		e.pages = map[string]explorePage{}
@@ -102,7 +108,8 @@ func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64,
 		e.pages[key] = explorePage{at: now, built: pool.Built, page: pg, top10: top10}
 	}
 	e.mu.Unlock()
-	return pg, top10, building, nil
+	pg, err = a.titleExplore(ctx, member, pg, moment, topRegion)
+	return pg, top10, building, err
 }
 
 // exploreViews joins rows with the Library; a Kid's rows are filtered
@@ -145,7 +152,11 @@ func (a *API) exploreViews(ctx context.Context, r *http.Request, rows []explore.
 		if len(joined) < explore.MinItems(row.Type) {
 			continue
 		}
-		out = append(out, exploreRowView{ID: row.ID, Type: row.Type, Title: row.Title, Wide: row.Wide, Items: joined})
+		if row.Counted > 0 && len(joined) != row.Counted {
+			// A {count} title must state the count the row shows.
+			row.Title, row.Subtitle, row.Layer = row.Plain, "", explore.LayerPlain
+		}
+		out = append(out, exploreRowView{ID: row.ID, Type: row.Type, Title: row.Title, Subtitle: row.Subtitle, TitleLayer: row.Layer, Wide: row.Wide, Items: joined})
 	}
 	return out, nil
 }
@@ -250,6 +261,7 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
+	r = r.WithContext(withTop10Ranks(r.Context(), top10Ranks(top10)))
 	// Top 10 stays in its slot as an empty marker (the page draws it from
 	// top10); the hero is up to 6 titles not in the Library from Top 10 and
 	// Trending, with Ask as its action.
@@ -261,7 +273,6 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			for _, it := range row.Items {
-	r = r.WithContext(withTop10Ranks(r.Context(), top10Ranks(top10)))
 				if len(heroRow.Items) < 6 && !it.Owned && !containsItem(heroRow.Items, it.Key()) {
 					heroRow.Items = append(heroRow.Items, it)
 				}
@@ -270,7 +281,7 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, row := range pg.Head {
 		if row.Type == explore.TypeTop10 {
-			head = append(head, exploreRowView{ID: row.ID, Type: row.Type, Title: row.Title, Items: []discoverItemView{}})
+			head = append(head, exploreRowView{ID: row.ID, Type: row.Type, Title: row.Title, Subtitle: row.Subtitle, TitleLayer: row.Layer, Items: []discoverItemView{}})
 			continue
 		}
 		views, err := a.exploreViews(r.Context(), r, []explore.Row{row})
@@ -294,6 +305,7 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	a.exploreCount(r.Context(), me, "shown", rowTypes(head))
+	a.exploreTitleCount(r.Context(), me, "shown", rowLayers(head))
 	a.prefetchTrailers(r, exploreTrailerTitles(hero, head))
 	a.exploreCaching(w, r, "private, no-cache")
 	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "building": building, "seeds": pg.Seeds, "tail_cap": pg.Cap,
@@ -321,6 +333,7 @@ func (a *API) exploreTail(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
+	r = r.WithContext(withTop10Ranks(r.Context(), top10Ranks(top10)))
 	slice, more := pg.TailSlice(n)
 	rows, err := a.exploreViews(r.Context(), r, slice)
 	if err != nil {
@@ -328,18 +341,20 @@ func (a *API) exploreTail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.exploreCount(r.Context(), me, "shown", rowTypes(rows))
+	a.exploreTitleCount(r.Context(), me, "shown", rowLayers(rows))
 	a.exploreCaching(w, r, "private, no-cache")
 	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "page": n, "more": more, "rows": rows})
 }
 
 // exploreCounts answers POST /api/v1/explore/counts {row_type, event}:
-	r = r.WithContext(withTop10Ranks(r.Context(), top10Ranks(top10)))
 // a card opened or an ask started from a row. Counts only measure; they
 // never change what Explore shows.
 func (a *API) exploreCounts(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		RowType string `json:"row_type"`
 		Event   string `json:"event"`
+		// TitleLayer is the row's title_layer, when the page knows it.
+		TitleLayer string `json:"title_layer"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&body); err != nil {
 		fail(w, http.StatusBadRequest, "body must be {row_type, event}")
@@ -350,7 +365,12 @@ func (a *API) exploreCounts(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "event must be open or ask, row_type an Explore row type")
 		return
 	}
+	if body.TitleLayer != "" && !validTitleLayer(body.TitleLayer) && body.TitleLayer != explore.LayerFixed {
+		fail(w, http.StatusBadRequest, "title_layer must be an Explore title layer")
+		return
+	}
 	a.exploreCount(r.Context(), a.person(r).UserID, field, []string{body.RowType})
+	a.exploreTitleCount(r.Context(), a.person(r).UserID, field, []string{body.TitleLayer})
 	w.WriteHeader(http.StatusNoContent)
 }
 

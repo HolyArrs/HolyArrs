@@ -3,6 +3,7 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import Table from '#lib/ui/Table.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
 	import { api, message, ApiError } from '#lib/api.ts';
@@ -52,6 +53,19 @@
 			await loadAutoplay();
 		} finally {
 			autoplayBusy = false;
+		}
+	}
+
+	// Explore row titles: smart titles against plain ones, counted on this server only (owner).
+	type TitleStat = { layer: string; shown: number; opens: number; asks: number; rate: string };
+	let titleStats = $state<TitleStat[] | null>(null);
+	const layerWords: Record<string, string> = { occasion: 'Occasion', time: 'Time of day', genre: 'Genre mix', taste: 'Your taste', reason: 'Row reason', plain: 'Plain title' };
+	async function loadTitleStats() {
+		try {
+			const a = await api.get<{ layers: Omit<TitleStat, 'rate'>[] }>('/explore/title-stats');
+			titleStats = a.layers.map((l) => ({ ...l, layer: layerWords[l.layer] ?? l.layer, rate: l.shown ? `${(((l.opens + l.asks) / l.shown) * 100).toFixed(1)}%` : '–' }));
+		} catch {
+			titleStats = null;
 		}
 	}
 
@@ -125,6 +139,7 @@
 	onMount(() => {
 		void load();
 		if (session.can('settings')) void loadAutoplay();
+		if (session.s.role === 'owner') void loadTitleStats();
 		const t = setInterval(load, 30000);
 		const offs = [live.on('health', load)];
 		return () => {
@@ -289,6 +304,18 @@
 			{/if}
 		</SettingsCard>
 	</div>
+
+	{#if session.s.role === 'owner' && titleStats}
+		<SettingsCard title="Explore row titles" description="Last 30 days. Rows with a smart title next to rows with their plain title: opens and asks per row shown. Counted on this server only.">
+			<Table
+				caption="Explore row titles"
+				columns={[{ key: 'layer', label: 'Title from' }, { key: 'shown', label: 'Shown', align: 'end' }, { key: 'opens', label: 'Opens', align: 'end' }, { key: 'asks', label: 'Asks', align: 'end' }, { key: 'rate', label: 'Per row', align: 'end' }]}
+				rows={titleStats}
+				rowKey={(r) => r.layer}
+				empty="No Explore rows counted yet."
+			/>
+		</SettingsCard>
+	{/if}
 
 	{#if session.can('users')}
 		<SettingsCard title="Logs">

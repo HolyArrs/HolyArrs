@@ -52,6 +52,8 @@ export interface ExploreRow {
 	/** Server rows: the row type, and wide cards (Coming soon). */
 	type?: string;
 	wide?: boolean;
+	/** Server rows: where the title came from (fixed, plain or a template layer), for measuring. */
+	titleLayer?: string;
 }
 
 /** Facets are what two titles can share: genres and people. */
@@ -392,9 +394,9 @@ export interface ProviderItem {
 	in_library: boolean;
 	title_id?: number;
 	ask?: { id: number; state: Ask['state']; state_label: string; mine: boolean; people: number } | null;
+	fresh?: Fresh | null;
 }
 export interface ProviderRowAnswer {
-	fresh?: Fresh | null;
 	row: ProviderRowName;
 	title?: string;
 	items: ProviderItem[];
@@ -433,9 +435,9 @@ export function discoverCard(d: ProviderItem, row: string): ExploreCard {
 		ref: `tmdb:${d.tmdb_id}`,
 		status: d.in_library ? 'in_library' : d.ask && d.ask.state !== 'turned_down' ? titleStatus({ ask: d.ask.state }, 'staff').kind : undefined,
 		badges: [],
+		fresh: d.fresh ?? null,
 		mine: !!d.ask?.mine,
 		ask: d.ask && d.ask.state !== 'turned_down' ? d.ask : undefined,
-		fresh: d.fresh ?? null,
 		...(d.ask?.state === 'turned_down' ? { declined: true } : {})
 	};
 }
@@ -653,6 +655,9 @@ export interface ServerRow {
 	id: string;
 	type: string;
 	title: string;
+	/** A small line under the title, chosen by the server. */
+	subtitle?: string;
+	title_layer?: string;
 	wide?: boolean;
 	items: ProviderItem[];
 }
@@ -678,12 +683,15 @@ export interface HeadQuery {
 	region?: string;
 	top10Kind?: 'movie' | 'show';
 	top10Region?: string;
+	/** The viewer's time zone (IANA), so row titles fit their time of day. */
+	tz?: string;
 }
 
 function headParams(q: HeadQuery): URLSearchParams {
 	const p = new URLSearchParams({ type: q.type === 'music' ? 'all' : q.type });
 	if (q.top10Kind) p.set('top10_kind', q.top10Kind);
 	if (q.top10Region) p.set('top10_region', q.top10Region);
+	if (q.tz) p.set('tz', q.tz);
 	return p;
 }
 
@@ -715,6 +723,8 @@ export function serverRow(r: ServerRow): ExploreRow & { wide: boolean; type: str
 		id: r.id,
 		type: r.type,
 		title: r.title,
+		...(r.subtitle ? { subtitle: r.subtitle } : {}),
+		...(r.title_layer ? { titleLayer: r.title_layer } : {}),
 		wide: !!r.wide,
 		cards: r.items.map((d) => {
 			const c = { ...discoverCard(d, r.id), ...(r.wide ? { wide: d.backdrop ?? null } : {}) };

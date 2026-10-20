@@ -137,9 +137,16 @@
 			return savedTop10(null);
 		}
 	}
+	const viewerZone = (() => {
+		try {
+			return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined;
+		} catch {
+			return undefined;
+		}
+	})();
 	const query = () => {
 		const t = readTop10Pick();
-		return { type, services: picked ?? [], region, top10Kind: type === 'shows' ? ('show' as const) : type === 'movies' ? ('movie' as const) : t.kind, top10Region: t.region };
+		return { type, services: picked ?? [], region, top10Kind: type === 'shows' ? ('show' as const) : type === 'movies' ? ('movie' as const) : t.kind, top10Region: t.region, tz: viewerZone };
 	};
 
 	let headAsk = 0;
@@ -202,13 +209,14 @@
 
 	function opened(e: MouseEvent) {
 		const el = e.target as Element | null;
-		const row = el?.closest?.('[data-row]')?.getAttribute('data-row');
-		if (row && el?.closest('a')) count(row, 'open');
+		const wrap = el?.closest?.('[data-row]');
+		const row = wrap?.getAttribute('data-row');
+		if (row && el?.closest('a')) count(row, 'open', wrap?.getAttribute('data-title-layer') ?? undefined);
 	}
 
 	/** count: a card opened or an ask started from a row, kept only to measure Explore. */
-	function count(rowType: string, event: 'open' | 'ask') {
-		void api.post('/explore/counts', { row_type: rowType, event }).catch(() => {});
+	function count(rowType: string, event: 'open' | 'ask', titleLayer?: string) {
+		void api.post('/explore/counts', { row_type: rowType, event, ...(titleLayer ? { title_layer: titleLayer } : {}) }).catch(() => {});
 	}
 
 	/** Every card is matched against the Library (by TMDB or MusicBrainz id), so owned titles read as owned in every row. */
@@ -428,7 +436,7 @@
 				{#if row.type === 'top10'}
 					<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} typePill={type === 'all'} initial={top10} />
 				{:else}
-				<div class="row-wrap" data-row={row.type ?? row.id}>
+				<div class="row-wrap" data-row={row.type ?? row.id} data-title-layer={row.titleLayer}>
 				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.wide ? 'var(--release-item)' : 'var(--explore-item)'} tools={row.id === 'services' ? serviceTools : undefined}>
 					{#each row.cards.map(live) as c (c.key)}
 						{@const act = cardAction(c, { manage, ask: mayAsk })}
@@ -445,15 +453,15 @@
 							badges={c.badges}
 							typePill={type === 'all' ? c.kind : undefined}
 							owned={mark}
+							fresh={c.fresh}
 							actionOnHover
 							vtName={c.vtName}
 							preview={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: cardTmdb(c), year: c.year } : undefined}
 						>
 							{#snippet action()}
 								{#if act && cardTmdb(c)}
-									<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={asking === c.key || undefined} onclick={() => { count(row.type ?? row.id, 'ask'); void quick(c, act); }} />
+									<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={asking === c.key || undefined} onclick={() => { count(row.type ?? row.id, 'ask', row.titleLayer); void quick(c, act); }} />
 								{:else if act}
-							fresh={c.fresh}
 									<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" href={searchHref(c)} />
 								{/if}
 							{/snippet}

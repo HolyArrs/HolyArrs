@@ -18,6 +18,12 @@ describe('server-built Explore', () => {
 		expect(other.cards[0].wide).toBeUndefined();
 		expect(other.cards[0].ref).toBe('tmdb:1');
 	});
+	it('carries the server title, subtitle, layer and time zone', () => {
+		expect(tailPath({ type: 'all', tz: 'Europe/Paris' }, 0)).toBe('/explore/tail?type=all&tz=Europe%2FParis&page=0');
+		const r = serverRow({ id: 'genre:Horror', type: 'genre', title: 'Late-night horror', subtitle: 'Horror picks for you', title_layer: 'time', items: [] });
+		expect(r).toMatchObject({ title: 'Late-night horror', subtitle: 'Horror picks for you', titleLayer: 'time' });
+		expect(serverRow({ id: 'best', type: 'best', title: 'Best new releases', items: [] }).subtitle).toBeUndefined();
+	});
 });
 
 describe('revision 4', () => {

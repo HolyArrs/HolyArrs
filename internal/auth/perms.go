@@ -169,6 +169,7 @@ var RoutePerms = map[string]Perm{
 	"GET /api/v1/explore/head":                     needSignedIn,
 	"GET /api/v1/explore/tail":                     needSignedIn,
 	"POST /api/v1/explore/counts":                  needSignedIn,
+	"GET /api/v1/explore/title-stats":              needOwner,
 	"GET /api/v1/music-trending":                   needSignedIn,
 	"GET /api/v1/explore/music":                    needSignedIn,
 	"GET /api/v1/music-trending/art/{kind}/{mbid}": needSignedIn,
@@ -468,6 +469,7 @@ var ScopeNotes = map[string]string{
 // RoutePerms give them (see RouteScope).
 var RouteScopes = map[string]string{
 	"GET /api/v1/downloaders/{id}/attempts":                      ScopeAdmin,
+	"GET /api/v1/explore/title-stats":                            ScopeAdmin,
 	"POST /api/v1/downloaders/{id}/attempts/{attemptID}/abandon": ScopeAdmin,
 	"POST /api/v1/auth/oidc/start":                               ScopeAdmin,
 	"POST /api/v1/auth/oidc/finish":                              ScopeAdmin,

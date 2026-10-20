@@ -127,6 +127,19 @@ type Row struct {
 	Score float64 `json:"score"`
 	Fresh float64 `json:"fresh"`
 	Wide  bool    `json:"wide,omitempty"`
+	// SeedName, Person and Decade fill title slots of because, person
+	// and decade rows.
+	SeedName string `json:"seed_name,omitempty"`
+	Person   string `json:"person,omitempty"`
+	Decade   int    `json:"decade,omitempty"`
+	// Set by TitlePage: the plain title, the small line under the title,
+	// the template shown (if any) and its layer. Counted is the item count
+	// a {count} title states.
+	Plain    string `json:"plain,omitempty"`
+	Subtitle string `json:"subtitle,omitempty"`
+	TitleID  string `json:"title_id,omitempty"`
+	Layer    string `json:"title_layer,omitempty"`
+	Counted  int    `json:"-"`
 }
 
 // rating is the Bayesian-shrunk vote average, 0-1.

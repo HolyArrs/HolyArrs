@@ -19,6 +19,9 @@ type Page struct {
 	Tail  []Row `json:"tail"`
 	Seeds int   `json:"seeds"`
 	Cap   int   `json:"cap"`
+	// Kid and Taste carry the pool's Kid flag and taste for titling.
+	Kid   bool     `json:"-"`
+	Taste []string `json:"-"`
 }
 
 // jitter is hash(member, date, row) mapped to 0.95-1.05, stable in a day.
@@ -39,7 +42,7 @@ var headAnchors = []string{TypeJustArrived, TypeTop10, TypeYourAsks, TypeTopPick
 // then diversity (the next row of a type picked already ×0.75 per pick; a
 // row sharing a seed or genre with a picked row ×0.5), never two rows of
 // the same type back to back while another type is left.
-func orderTail(rows []Row, member int64, date string) []Row {
+func orderTail(rows []Row, member int64, date string, m Moment, kid bool) []Row {
 	type cand struct {
 		r   Row
 		s   float64
@@ -48,7 +51,7 @@ func orderTail(rows []Row, member int64, date string) []Row {
 	left := make([]cand, 0, len(rows))
 	for _, r := range rows {
 		j, tie := jitter(member, date, r.ID)
-		left = append(left, cand{r, r.Score * j, tie})
+		left = append(left, cand{r, r.Score * j * MomentBoost(r, m, kid), tie})
 	}
 	sort.SliceStable(left, func(i, j int) bool {
 		if left[i].s != left[j].s {
@@ -142,7 +145,14 @@ func (l *ledger) record(r Row, at int) {
 // next candidate up, so the head is always 6 rows when rows exist. The
 // tail follows rowScore order, capped by seed count.
 func Assemble(p Pool, top10 []Item, member int64) Page {
-	pg := Page{Seeds: p.Seeds, Cap: TailCap(p.Seeds, p.Kid)}
+	return AssembleAt(p, top10, member, Moment{})
+}
+
+// AssembleAt is Assemble with the viewer's moment, which may lift a fitting
+// tail row's score by at most BoostMax (time and occasion never change a
+// row's items).
+func AssembleAt(p Pool, top10 []Item, member int64, m Moment) Page {
+	pg := Page{Seeds: p.Seeds, Cap: TailCap(p.Seeds, p.Kid), Kid: p.Kid, Taste: p.Taste}
 	by := map[string]Row{}
 	var tail []Row
 	for _, r := range p.Rows {
@@ -153,7 +163,7 @@ func Assemble(p Pool, top10 []Item, member int64) Page {
 			tail = append(tail, r)
 		}
 	}
-	ordered := orderTail(tail, member, p.Date)
+	ordered := orderTail(tail, member, p.Date, m, p.Kid)
 	if p.Seeds < 3 {
 		// Cold start: Best new releases and Hidden gems take the head's last slots.
 		sort.SliceStable(ordered, func(i, j int) bool {

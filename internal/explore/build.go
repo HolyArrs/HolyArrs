@@ -86,6 +86,8 @@ type Pool struct {
 	Seeds  int       `json:"seeds"`
 	Kid    bool      `json:"kid"`
 	Rows   []Row     `json:"rows"`
+	// Taste are the member's strongest genres, for taste-match titles.
+	Taste []string `json:"taste,omitempty"`
 	Built  time.Time `json:"built"`
 }
 
@@ -245,7 +247,7 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 			items, err := fetch(Request{List: "discover", Genre: g, From: fmt.Sprintf("%d-01-01", dec), To: fmt.Sprintf("%d-12-31", dec+9), MinVotes: 200})
 			soft(err)
 			label := fmt.Sprintf("Popular %ds %s", dec, strings.ToLower(g))
-			addRow(Row{ID: fmt.Sprintf("%s:%d|%s", TypePopularDecade, dec, g), Type: TypePopularDecade, Genre: g, Title: label, Items: items})
+			addRow(Row{ID: fmt.Sprintf("%s:%d|%s", TypePopularDecade, dec, g), Type: TypePopularDecade, Genre: g, Decade: dec, Title: label, Items: items})
 		}
 	}
 
@@ -277,7 +279,7 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 		}
 		items = similarity(s, items)
 		t := TypeBecauseHave
-		addRow(Row{ID: t + ":" + s.Key(), Type: t, Seed: s.Key(), SeedWeight: s.Weight, Title: RowTitle(t, s.Name), Items: dropKey(items, s.Key())})
+		addRow(Row{ID: t + ":" + s.Key(), Type: t, Seed: s.Key(), SeedWeight: s.Weight, SeedName: s.Name, Title: RowTitle(t, s.Name), Items: dropKey(items, s.Key())})
 	}
 	if nSeeds >= 3 {
 		for _, g := range profile.TopGenres(5, 0.10) {
@@ -289,7 +291,7 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 	for _, p := range topCounts(in.OwnedPeople, 2, 3) {
 		items, err := fetch(Request{List: "person", Ref: p})
 		soft(err)
-		addRow(Row{ID: TypePerson + ":" + p, Type: TypePerson, Title: RowTitle(TypePerson, p), Items: items})
+		addRow(Row{ID: TypePerson + ":" + p, Type: TypePerson, Person: p, Title: RowTitle(TypePerson, p), Items: items})
 	}
 	for _, dg := range topCounts(in.OwnedDecadeGenre, 3, 2) {
 		dec, g, _ := strings.Cut(dg, "|")
@@ -297,7 +299,7 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 		fmt.Sscanf(dec, "%d", &y)
 		items, err := fetch(Request{List: "discover", Genre: g, From: fmt.Sprintf("%d-01-01", y), To: fmt.Sprintf("%d-12-31", y+9)})
 		soft(err)
-		addRow(Row{ID: TypeDecade + ":" + dg, Type: TypeDecade, Genre: g, Title: fmt.Sprintf("%s %s", dec, strings.ToLower(g)), Items: items})
+		addRow(Row{ID: TypeDecade + ":" + dg, Type: TypeDecade, Genre: g, Decade: y, Title: fmt.Sprintf("%s %s", dec, strings.ToLower(g)), Items: items})
 	}
 	if ctx.Err() != nil {
 		return pool, ctx.Err()
@@ -342,6 +344,7 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 		r.Score = RowScore(*r, maxSeed)
 	}
 	pool.Rows = rows
+	pool.Taste = profile.TopGenres(3, 0.15)
 	if len(errs) > 0 && len(rows) == 0 {
 		return pool, fmt.Errorf("explore: no rows: %s", errs[0])
 	}
