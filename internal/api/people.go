@@ -258,15 +258,26 @@ func (a *API) titlePeople(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	if title.Kind != "movie" || title.SourceIDs["tmdb"] == "" {
-		fail(w, http.StatusConflict, "this title has no TMDB movie identity")
+	if (title.Kind != "movie" && title.Kind != "show") || title.SourceIDs["tmdb"] == "" {
+		fail(w, http.StatusConflict, "this title has no TMDB identity")
 		return
 	}
-	p, ok := a.peopleProvider(r, w)
-	if !ok {
-		return
+	var people []metadata.MoviePersonCredit
+	var err error
+	if title.Kind == "show" {
+		sp, ok := metadata.ShowPeoplerFor(r.Context(), a.s.Metadata)
+		if !ok {
+			fail(w, http.StatusServiceUnavailable, "people results are unavailable for this show metadata provider")
+			return
+		}
+		people, err = sp.ShowPeople(r.Context(), "tmdb:"+title.SourceIDs["tmdb"])
+	} else {
+		p, ok := a.peopleProvider(r, w)
+		if !ok {
+			return
+		}
+		people, err = p.MoviePeople(r.Context(), "tmdb:"+title.SourceIDs["tmdb"])
 	}
-	people, err := p.MoviePeople(r.Context(), "tmdb:"+title.SourceIDs["tmdb"])
 	if err != nil {
 		peopleError(w, err)
 		return

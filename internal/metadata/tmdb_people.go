@@ -239,3 +239,42 @@ func (t *TMDB) MoviePeople(ctx context.Context, id string) ([]MoviePersonCredit,
 	})
 	return out, nil
 }
+
+// ShowPeople returns a show's cast from its credits across all seasons
+// (TMDB's aggregate list, most episodes first), each actor once with the
+// characters they played.
+func (t *TMDB) ShowPeople(ctx context.Context, id string) ([]MoviePersonCredit, error) {
+	n, err := tmdbNumericID(id)
+	if err != nil {
+		return nil, err
+	}
+	b, err := t.get(ctx, "/tv/"+strconv.FormatInt(n, 10)+"/aggregate_credits", nil)
+	if err != nil {
+		return nil, err
+	}
+	var res struct {
+		Cast []struct {
+			tmdbCredit
+			Roles []struct {
+				Character string `json:"character"`
+			} `json:"roles"`
+		}
+	}
+	if err := json.Unmarshal(b, &res); err != nil {
+		return nil, fmt.Errorf("TMDB: odd answer: %w", err)
+	}
+	out := []MoviePersonCredit{}
+	seen := map[int64]bool{}
+	for _, c := range res.Cast {
+		if c.ID <= 0 || c.Name == "" || seen[c.ID] {
+			continue
+		}
+		seen[c.ID] = true
+		v := MoviePersonCredit{Person: c.person(t.images()), Roles: []string{"Actor"}, Characters: []string{}}
+		for _, r := range c.Roles {
+			v.Characters = addUnique(v.Characters, r.Character)
+		}
+		out = append(out, v)
+	}
+	return out, nil
+}

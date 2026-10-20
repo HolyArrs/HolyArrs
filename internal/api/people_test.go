@@ -64,6 +64,13 @@ func (f *fakePeople) MoviePeople(_ context.Context, id string) ([]metadata.Movie
 	return []metadata.MoviePersonCredit{{Person: metadata.Person{ID: "11", Name: "Alex Kim", KnownFor: []metadata.Movie{}}, Roles: []string{"Actor", "Director"}, Characters: []string{"Lee"}}}, nil
 }
 
+func (f *fakePeople) ShowPeople(_ context.Context, id string) ([]metadata.MoviePersonCredit, error) {
+	if id != "tmdb:201" {
+		return nil, metadata.ErrNotFound
+	}
+	return []metadata.MoviePersonCredit{{Person: metadata.Person{ID: "12", Name: "Sam Lane", KnownFor: []metadata.Movie{}}, Roles: []string{"Actor"}, Characters: []string{"Jo"}}}, nil
+}
+
 func peopleRig(t *testing.T, p metadata.Provider) (*httptest.Server, *store.Store) {
 	t.Helper()
 	s, err := store.Open(t.TempDir(), store.Options{})
@@ -163,6 +170,24 @@ func TestMoviePeopleUsesStoredTMDBIdentity(t *testing.T) {
 		t.Fatalf("credits %s", b)
 	}
 	do(t, "GET", srv.URL+"/api/v1/titles/999/people", "", 404)
+}
+
+func TestShowPeopleUsesStoredTMDBIdentity(t *testing.T) {
+	p := &fakePeople{Static: metadata.Lab()}
+	srv, s := peopleRig(t, p)
+	var title domain.Title
+	err := s.Write(context.Background(), func(tx *sql.Tx) error {
+		title = domain.Title{Kind: "show", Name: "Show", SortName: "show", SourceIDs: map[string]string{"tmdb": "201"}, MetadataSource: "tmdb", NewPartsPolicy: "all", WhyAdded: "by_hand", State: "active", ReleaseGate: "released", GateDriver: "none", Status: "running"}
+		_, err := store.Insert(tx, "titles", &title, domain.System)
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	b := string(do(t, "GET", srv.URL+"/api/v1/titles/"+itoa(title.ID)+"/people", "", 200))
+	if !strings.Contains(b, `"name":"Sam Lane"`) || !strings.Contains(b, `"Jo"`) {
+		t.Fatalf("show credits %s", b)
+	}
 }
 
 func TestPeopleErrorsStayBounded(t *testing.T) {

@@ -63,3 +63,18 @@ type MoviePersonCredit struct {
 	Roles      []string `json:"roles"`
 	Characters []string `json:"characters"`
 }
+
+// ShowPeopler is the optional show-people surface: a show's regular cast
+// across every season, most episodes first.
+type ShowPeopler interface {
+	ShowPeople(ctx context.Context, id string) ([]MoviePersonCredit, error)
+}
+
+// ShowPeoplerFor returns the show-people surface selected for ctx.
+func ShowPeoplerFor(ctx context.Context, provider Provider) (ShowPeopler, bool) {
+	if sw, ok := provider.(*Switch); ok {
+		provider = sw.pick(ctx)
+	}
+	p, ok := provider.(ShowPeopler)
+	return p, ok
+}
