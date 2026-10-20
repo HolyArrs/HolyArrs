@@ -346,10 +346,13 @@ var Routes = map[string]Owner{
 	"POST /api/v1/titles/{id}/delete":           ByTitle,
 
 	// Movies.
-	"POST /api/v1/titles":                          movies,
-	"GET /api/v1/titles/lookup":                    movies,
-	"GET /api/v1/metadata/search":                  movies,
-	"GET /api/v1/metadata/{kind}/{tmdb_id}":        Media,
+	"POST /api/v1/titles":                   movies,
+	"GET /api/v1/titles/lookup":             movies,
+	"GET /api/v1/metadata/search":           movies,
+	"GET /api/v1/metadata/{kind}/{tmdb_id}": Media,
+
+	"GET /api/v1/metadata/show/{tmdb_id}/seasons/{number}": shows,
+
 	"GET /api/v1/trailer/{kind}/{tmdb_id}":         Media,
 	"GET /api/v1/discover":                         Media,
 	"GET /api/v1/watch-services":                   Media,

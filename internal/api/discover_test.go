@@ -63,8 +63,10 @@ func newDiscoverTMDB(t *testing.T) *discoverTMDB {
 		case "/3/movie/11":
 			_, _ = w.Write([]byte(`{"id":11,"title":"M11","release_date":"2024-05-01","runtime":100,"genres":[{"name":"Drama"}],
 				"credits":{"cast":[{"name":"Ann","character":"Hero"}]},"recommendations":` + list(12, 13, 41) + `}`))
+		case "/3/tv/21/season/1":
+			_, _ = w.Write([]byte(`{"episodes":[{"episode_number":1,"name":"Pilot","runtime":42}]}`))
 		case "/3/tv/21":
-			_, _ = w.Write([]byte(`{"id":21,"name":"S21","seasons":[{"season_number":1,"episode_count":8,"air_date":"2022-01-01"}],"created_by":[{"name":"Cee"}]}`))
+			_, _ = w.Write([]byte(`{"id":21,"name":"S21","watch/providers":{"results":{"DE":{"flatrate":[{"provider_id":8,"provider_name":"Netflix"}]}}},"seasons":[{"season_number":1,"episode_count":8,"air_date":"2022-01-01"}],"created_by":[{"name":"Cee"}]}`))
 		default:
 			w.WriteHeader(404)
 		}
@@ -285,12 +287,40 @@ func TestMetadataDetails(t *testing.T) {
 	if !strings.Contains(s, `"episode_count":8`) || !strings.Contains(s, `"role":"creator"`) || !strings.Contains(s, `"in_library":false`) {
 		t.Fatalf("show %s", s)
 	}
+	if !strings.Contains(s, `"streaming":[]`) {
+		t.Fatalf("streaming US %s", s)
+	}
+	if de := string(do(t, "GET", srv.URL+"/api/v1/metadata/show/21?region=de", "", 200)); !strings.Contains(de, `"streaming":[{"id":8,"name":"Netflix"`) {
+		t.Fatalf("streaming DE %s", de)
+	}
 	do(t, "GET", srv.URL+"/api/v1/metadata/movie/404", "", 404)
 	do(t, "GET", srv.URL+"/api/v1/metadata/artist/1", "", 400)
 	do(t, "GET", srv.URL+"/api/v1/metadata/movie/abc", "", 400)
 
 	srv2, _ := discoverRig(t, metadata.Lab())
 	do(t, "GET", srv2.URL+"/api/v1/metadata/movie/11", "", 501)
+}
+
+// route: GET /api/v1/metadata/show/{tmdb_id}/seasons/{number}
+func TestMetadataSeason(t *testing.T) {
+	f := newDiscoverTMDB(t)
+	srv, _ := discoverRig(t, f.provider())
+	b := string(do(t, "GET", srv.URL+"/api/v1/metadata/show/21/seasons/1", "", 200))
+	if !strings.Contains(b, `"season":1`) || !strings.Contains(b, `"name":"Pilot"`) || !strings.Contains(b, `"runtime":42`) {
+		t.Fatalf("season %s", b)
+	}
+	before := f.hits.Load()
+	do(t, "GET", srv.URL+"/api/v1/metadata/show/21/seasons/1", "", 200)
+	if f.hits.Load() != before {
+		t.Fatal("season not cached")
+	}
+	do(t, "GET", srv.URL+"/api/v1/metadata/show/21/seasons/9", "", 404)
+	do(t, "GET", srv.URL+"/api/v1/metadata/show/abc/seasons/1", "", 400)
+	do(t, "GET", srv.URL+"/api/v1/metadata/show/21/seasons/x", "", 400)
+	srv2, _ := discoverRig(t, f.provider(), parts.Shows)
+	do(t, "GET", srv2.URL+"/api/v1/metadata/show/21/seasons/1", "", 409)
+	srv3, _ := discoverRig(t, metadata.Lab())
+	do(t, "GET", srv3.URL+"/api/v1/metadata/show/21/seasons/1", "", 501)
 }
 
 // route: GET /api/v1/watch-services

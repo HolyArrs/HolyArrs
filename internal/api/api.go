@@ -283,6 +283,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/metadata/search", a.searchMetadata)
 	m.HandleFunc("GET /api/v1/metadata/health", a.metadataHealth)
 	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}", a.metadataDetails)
+	m.HandleFunc("GET /api/v1/metadata/show/{tmdb_id}/seasons/{number}", a.metadataSeason)
 	m.HandleFunc("GET /api/v1/trailer/{kind}/{tmdb_id}", a.trailerStream)
 	m.HandleFunc("GET /api/v1/settings/ui", a.getUISettings)
 	m.HandleFunc("PUT /api/v1/settings/ui", a.putUISettings)
