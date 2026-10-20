@@ -39,15 +39,13 @@ func jitter(member int64, date, id string) (float64, uint64) {
 }
 
 // headOrder are each tab's fixed head slots, in order; a slot without data
-// is skipped. "Top on your services" (one ranked row with a chip per
+// is skipped. Just arrived, Your asks and Coming soon are not Explore rows
+// (Home has them: Home = my stuff, Explore = new stuff). "Top on your services" (one ranked row with a chip per
 // service) takes the slot the Top 10 row had, once per tab.
 var headOrder = map[string][]string{
-	"all": {TypeJustArrived, TypeYourAsks, TypeTopServices, TypeTrending, TypeTopPicks, TypeBest, TypeBecauseHave,
-		TypeComingSoon, TypeHousehold},
-	"movies": {TypeJustArrived, TypeTopServices, TypeYourAsks, TypeTrending, TypeTopPicks, TypeBest, TypeComingSoon,
-		TypeBecauseHave, TypeHousehold},
-	"shows": {TypeJustArrived, TypeTopServices, TypeYourAsks, TypeTrending, TypeTopPicks, TypeBest, TypeBecauseHave,
-		TypeComingSoon, TypeHousehold},
+	"all":    {TypeTopServices, TypeTrending, TypeTopPicks, TypeBest, TypeBecauseHave, TypeHousehold},
+	"movies": {TypeTopServices, TypeTrending, TypeTopPicks, TypeBest, TypeBecauseHave, TypeHousehold},
+	"shows":  {TypeTopServices, TypeTrending, TypeTopPicks, TypeBest, TypeBecauseHave, TypeHousehold},
 }
 
 // headSlotTypes are the tail types a head slot takes its best row from.
@@ -156,7 +154,7 @@ func (l *ledger) record(r Row, at int) {
 
 // Assemble builds the page from a pool and the region's Top 10 (5.5, 6):
 // the head is Top 10, Top picks (3+ seeds), Trending, On your services,
-// Coming soon, then the best tail row; a slot that cannot fill lets the
+// then the best tail row; a slot that cannot fill lets the
 // next candidate up, so the head is always 6 rows when rows exist. The
 // tail follows rowScore order, capped by seed count.
 func Assemble(p Pool, top10 []Item, member int64) Page {

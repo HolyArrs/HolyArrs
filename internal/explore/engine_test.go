@@ -272,10 +272,10 @@ func TestPerMemberOrder(t *testing.T) {
 }
 
 // Criterion 10: 2, 5 and 12 seeds get at most 8, 20 and 40 tail rows; 12
-// seeds get 15 or more (On your services folded into Top on your services; Best, services, Because you have and household
+// seeds get 14 or more (On your services folded into Top on your services; Best, services, Because you have and household
 // rows now sit in the head).
 func TestTailLength(t *testing.T) {
-	for _, c := range []struct{ seeds, max, floor int }{{2, 8, 1}, {5, 20, 1}, {12, 40, 15}} {
+	for _, c := range []struct{ seeds, max, floor int }{{2, 8, 1}, {5, 20, 1}, {12, 40, 14}} {
 		p, _ := build(t, Input{Member: 5, Seeds: seedsN(c.seeds, 5), Services: "8|9", Region: "US",
 			OwnedPeople: map[string]int{"Ann": 3, "Bo": 2, "Cy": 2, "Di": 2}, OwnedDecadeGenre: map[string]int{"1990s|Drama": 4, "2000s|Comedy": 3}, Members: 2, Household: household(5)})
 		pg := Assemble(p, top10(), 5)
@@ -359,7 +359,7 @@ func slotsOf(rows []Row) []string {
 
 // The 2026-10-20 head order per tab, rows without data skipped; one Top on
 // your services row where Top 10 sat, once per tab, never On your services;
-// Just arrived keeps the newest-first order it was given.
+// Just arrived, Your asks and Coming soon never show (Home has them).
 func TestHeadOrderPerTab(t *testing.T) {
 	arrived := []Item{{TMDBID: "9001", Kind: "movie", Name: "Newest"}, {TMDBID: "9002", Kind: "show", Name: "Older"}, {TMDBID: "9003", Kind: "movie", Name: "Oldest"}}
 	asks := []Item{{TMDBID: "9100", Kind: "movie", Name: "Asked"}}
@@ -367,8 +367,8 @@ func TestHeadOrderPerTab(t *testing.T) {
 		sw   string
 		want []string
 	}{
-		{"all", []string{TypeJustArrived, TypeYourAsks, TypeTopServices, TypeTrending, TypeTopPicks}},
-		{"movies", []string{TypeTopServices, TypeYourAsks, TypeTrending, TypeTopPicks}},
+		{"all", []string{TypeTopServices, TypeTrending, TypeTopPicks}},
+		{"movies", []string{TypeTopServices, TypeTrending, TypeTopPicks}},
 		{"shows", []string{TypeTopServices, TypeTrending, TypeBest}},
 	} {
 		p, _ := build(t, Input{Member: 4, Switch: c.sw, Seeds: seedsN(5, 4), JustArrived: arrived, MyAsks: asks, Services: "8|9", Region: "US"})
@@ -383,23 +383,13 @@ func TestHeadOrderPerTab(t *testing.T) {
 			if s == TypeTopServices {
 				n++
 			}
-			if s == TypeTop10 || s == TypeServices {
+			if s == TypeTop10 || s == TypeServices || s == TypeJustArrived || s == TypeYourAsks || s == TypeComingSoon {
 				t.Fatalf("%s: old row %s still shown %v", c.sw, s, all)
 			}
 		}
 		if n != 1 {
 			t.Fatalf("%s: %d Top on your services rows", c.sw, n)
 		}
-	}
-	p, _ := build(t, Input{Member: 4, Seeds: seedsN(5, 4), JustArrived: arrived, MyAsks: asks})
-	pg := AssembleTabAt(p, top10Both(), 4, Moment{})
-	if fmt.Sprint(pg.Head[0].Items) != fmt.Sprint(arrived) {
-		t.Fatal("Just arrived lost its newest-first order")
-	}
-	// Without open asks, the next row moves up; with no Top 10 the row still shows (the page fills it).
-	p, _ = build(t, Input{Member: 4, Seeds: seedsN(5, 4), JustArrived: arrived})
-	if pg := AssembleTabAt(p, nil, 4, Moment{}); slotsOf(pg.Head)[1] != TypeTopServices {
-		t.Fatalf("head without asks %v", slotsOf(pg.Head))
 	}
 }
 
