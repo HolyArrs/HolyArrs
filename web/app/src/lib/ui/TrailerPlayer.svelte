@@ -95,7 +95,8 @@
 	let dbgLines = $state<string[]>([]);
 	function dbg(m: string) {
 		if (!debugOn) return;
-		dbgLines = [...dbgLines.slice(-11), `${(performance.now() / 1000).toFixed(1)}s ${m}`];
+		// untrack: dbg runs inside effects; reading dbgLines there would loop.
+		untrack(() => (dbgLines = [...dbgLines.slice(-11), `${(performance.now() / 1000).toFixed(1)}s ${m}`]));
 	}
 	function switchToPass(url: string) {
 		dbg(`switch to sound stream (video=${!!video} up=${!!up})`);
