@@ -178,8 +178,8 @@
 	let genreLoaded = $state<number | null>(null);
 	let genreFailed = $state(false);
 	let genreAsk = 0;
-	async function loadGenre(id: number) {
-		const n = ++genreAsk;
+	async function loadGenre(id: number, again = 0) {
+		const n = again ? genreAsk : ++genreAsk;
 		genreFailed = false;
 		try {
 			const a = await api.get<GenreAnswer>(genrePath(type, id), gone.signal);
@@ -189,10 +189,12 @@
 			const marker = { id: 'top_services', type: 'top_services', title: 'Trending on your services', cards: [], keep: true, wide: false };
 			genreRows = [...got.slice(0, 1), marker, ...got.slice(1)];
 			genreHero = (a.hero ?? []).map((d) => ({ ...discoverCard(d, 'hero'), wide: d.backdrop ?? null }));
-			heroAt = 0;
+			if (!again) heroAt = 0;
 			genreLoaded = id;
+			// A cold page answers with its first rows; the lower ones follow on the next ask.
+			if (a.partial && again < 6) setTimeout(() => n === genreAsk && void loadGenre(id, again + 1), 1500);
 		} catch {
-			if (n === genreAsk) genreFailed = true;
+			if (n === genreAsk && !again) genreFailed = true;
 		}
 	}
 	$effect(() => {

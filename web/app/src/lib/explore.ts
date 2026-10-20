@@ -885,6 +885,8 @@ export interface GenreAnswer {
 	genre: { id: number; name: string; kind: 'movie' | 'show' };
 	hero: ProviderItem[];
 	rows: ServerRow[];
+	/** Some lists were still out; the rest come on a later ask. */
+	partial?: boolean;
 }
 
 export function genrePath(t: ExploreType, genre: number): string {

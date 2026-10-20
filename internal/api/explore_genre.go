@@ -239,16 +239,8 @@ func (a *API) exploreGenre(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
 		return
 	}
+	st := newServerTiming()
 	ctx := r.Context()
-	src := a.liveSource(ctx)
-	list := func(q explore.Request) []explore.Item {
-		q.Kind, q.Scope = kind, explore.ScopeShared
-		items, err := src.List(ctx, q)
-		if err != nil {
-			return nil
-		}
-		return items
-	}
 	inGenre := func(items []explore.Item) []explore.Item {
 		var out []explore.Item
 		for _, it := range items {
@@ -261,34 +253,19 @@ func (a *API) exploreGenre(w http.ResponseWriter, r *http.Request) {
 	now := a.exploreNow().UTC()
 	lower := strings.ToLower(genre)
 	seed, hasSeed := a.genreSeed(ctx, r, kind, genre)
+	st.mark("seed")
 	cacheKey := kind + "|" + genre + "|" + a.kidMax(r) + "|" + seed.TMDBID + "|" + now.Format("2006-01-02")
 	rows, cached := a.genreRows.get(cacheKey)
+	partial := false
 	if !cached {
-		// Each row's list is its own outside call: fetch them side by side
-		// (a cold page was about 13 s one after another).
-		reqs := []explore.Request{
-			{List: "trending"},
-			{List: "discover", Genre: genre, MinVotes: 50},
-			{List: "discover", Genre: genre, From: now.AddDate(-1, 0, 0).Format("2006-01-02"), To: now.Format("2006-01-02"), MinVote: 6.5, MinVotes: 50},
-			{List: "discover", Genre: genre, To: now.AddDate(-20, 0, 0).Format("2006-01-02"), MinVotes: 1000, Sort: "rating"},
-		}
+		reqs := genreRequests(kind, genre, now)
 		moods := metadata.SubMoods(genre)
-		for _, m := range moods {
-			reqs = append(reqs, explore.Request{List: "discover", Genre: genre, Keywords: strings.Join(m.Keywords, "|"), MinVotes: 20})
-		}
 		if hasSeed {
 			reqs = append(reqs, explore.Request{List: "similar", Ref: seed.TMDBID})
 		}
-		got := make([][]explore.Item, len(reqs))
-		var wg sync.WaitGroup
-		for i, q := range reqs {
-			wg.Add(1)
-			go func(i int, q explore.Request) {
-				defer wg.Done()
-				got[i] = list(q)
-			}(i, q)
-		}
-		wg.Wait()
+		got, ready := a.genreLists(ctx, kind, reqs, genreWait)
+		partial = !ready
+		st.mark("lists")
 		trending := explore.Interleave([][]explore.Item{inGenre(got[0]), got[1]}, explore.RowMax)
 		rows = append(rows, explore.Row{ID: "genre_trending", Type: explore.TypeTrending, Title: "Trending " + lower, Items: trending})
 		rows = append(rows, explore.Row{ID: "genre_best", Type: explore.TypeBest, Title: "Best new " + lower, Items: got[2]})
@@ -316,7 +293,7 @@ func (a *API) exploreGenre(w http.ResponseWriter, r *http.Request) {
 		}
 		rows[i].Items = keep
 	}
-	if !cached {
+	if !cached && !partial {
 		a.genreRows.put(cacheKey, rows)
 	}
 	views, err := a.exploreViews(ctx, r, rows)
@@ -324,6 +301,7 @@ func (a *API) exploreGenre(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
+	st.mark("views")
 	hero := []discoverItemView{}
 	if len(views) > 0 && views[0].ID == "genre_trending" {
 		for _, v := range views[0].Items {
@@ -337,9 +315,12 @@ func (a *API) exploreGenre(w http.ResponseWriter, r *http.Request) {
 	for i := range views {
 		a.fillTrailerKeys(r, views[i].Items)
 	}
+	st.mark("trailers")
 	a.fillRowsCardArt(r, views)
+	st.mark("cardart")
+	st.write(w)
 	a.exploreCaching(w, r, "private, no-cache")
-	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "genre": map[string]any{"id": id, "name": genre, "kind": kind}, "hero": hero, "rows": views})
+	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "genre": map[string]any{"id": id, "name": genre, "kind": kind}, "hero": hero, "rows": views, "partial": partial})
 }
 
 // genreSeed is the newest Library title of kind in the genre (a Kid's
@@ -404,4 +385,115 @@ func (c *genreRowCache) put(key string, rows []explore.Row) {
 	keep := make([]explore.Row, len(rows))
 	copy(keep, rows)
 	c.rows[key] = genreRowsEntry{at: time.Now(), rows: keep}
+}
+
+// genreWait is how long a genre page waits for its outside lists. Rows
+// whose lists are not back by then are left out and the answer says
+// partial; the lists keep going and the page asks again.
+const genreWait = 1200 * time.Millisecond
+
+// genreRequests are a genre page's shared lists, in row order: trending,
+// the genre's popular titles, best new, classics, then one per mood (the
+// "similar" list for the seed comes last when there is one).
+func genreRequests(kind, genre string, now time.Time) []explore.Request {
+	reqs := []explore.Request{
+		{List: "trending"},
+		{List: "discover", Genre: genre, MinVotes: 50},
+		{List: "discover", Genre: genre, From: now.AddDate(-1, 0, 0).Format("2006-01-02"), To: now.Format("2006-01-02"), MinVote: 6.5, MinVotes: 50},
+		{List: "discover", Genre: genre, To: now.AddDate(-20, 0, 0).Format("2006-01-02"), MinVotes: 1000, Sort: "rating"},
+	}
+	for _, m := range metadata.SubMoods(genre) {
+		reqs = append(reqs, explore.Request{List: "discover", Genre: genre, Keywords: strings.Join(m.Keywords, "|"), MinVotes: 20})
+	}
+	for i := range reqs {
+		reqs[i].Kind, reqs[i].Scope = kind, explore.ScopeShared
+	}
+	return reqs
+}
+
+// genreLists fetches reqs side by side and waits up to wait (0: until all
+// are back). Lists still out at the deadline are nil and ready is false;
+// they finish in the background and land in the list cache.
+func (a *API) genreLists(ctx context.Context, kind string, reqs []explore.Request, wait time.Duration) ([][]explore.Item, bool) {
+	bg := context.WithoutCancel(ctx)
+	src := a.liveSource(bg)
+	var mu sync.Mutex
+	got := make([][]explore.Item, len(reqs))
+	back := make([]bool, len(reqs))
+	var wg sync.WaitGroup
+	for i, q := range reqs {
+		q.Kind, q.Scope = kind, explore.ScopeShared
+		wg.Add(1)
+		go func(i int, q explore.Request) {
+			defer wg.Done()
+			items, err := src.List(bg, q)
+			if err != nil {
+				items = nil
+			}
+			mu.Lock()
+			got[i], back[i] = items, true
+			mu.Unlock()
+		}(i, q)
+	}
+	done := make(chan struct{})
+	go func() { wg.Wait(); close(done) }()
+	var timeout <-chan time.Time
+	if wait > 0 {
+		t := time.NewTimer(wait)
+		defer t.Stop()
+		timeout = t.C
+	}
+	select {
+	case <-done:
+	case <-timeout:
+	case <-ctx.Done():
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	out := make([][]explore.Item, len(got))
+	copy(out, got)
+	ready := true
+	for _, b := range back {
+		ready = ready && b
+	}
+	return out, ready
+}
+
+// genreWarmGap spaces the warm job's lists so a person's genre page still
+// finds the list burst free.
+const genreWarmGap = 3 * time.Second
+
+// warmGenres fetches every genre page's shared lists for the parts that
+// are on, so a genre page after a restart reads kept lists. It runs at
+// start and again as the lists expire; kept lists cost no outside call.
+func (a *API) warmGenres(ctx context.Context) {
+	for {
+		for _, kind := range []string{"movie", "show"} {
+			if len(a.kindsOn(kind)) == 0 {
+				continue
+			}
+			for _, genre := range explore.Genres[kind] {
+				for _, q := range genreRequests(kind, genre, a.exploreNow().UTC()) {
+					if ctx.Err() != nil {
+						return
+					}
+					src := a.liveSource(ctx)
+					if got, ok := src.cachedList(ctx, q.String()); ok && time.Since(got.at) < exploreListTTL[q.List] {
+						continue
+					}
+					_, _ = src.List(ctx, q)
+					select {
+					case <-ctx.Done():
+						return
+					case <-time.After(genreWarmGap):
+					}
+				}
+			}
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(time.Hour):
+		}
+	}
 }

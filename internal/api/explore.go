@@ -41,6 +41,9 @@ const (
 
 var exploreSwitches = []string{"all", "movies", "shows"}
 
+// exploreListBurst is how many outside lists may go at once.
+const exploreListBurst = 10
+
 // exploreListTTL is how long one outside list is kept for pool builds.
 var exploreListTTL = map[string]time.Duration{
 	"trending": 6 * time.Hour, "upcoming": 12 * time.Hour, "best": 24 * time.Hour,
@@ -118,6 +121,7 @@ func (a *API) StartExplore(ctx context.Context) {
 	go supervisor.Guard("explore", func() { a.exploreLoop(ctx) })
 	go supervisor.Guard("explore-top10-warm", func() { a.warmTop10(ctx) })
 	go supervisor.Guard("explore-service-top-warm", func() { a.warmServiceTop(ctx) })
+	go supervisor.Guard("explore-genre-warm", func() { a.warmGenres(ctx) })
 }
 
 // exploreOnEvent marks pools stale: an ask (or joining one) marks the
@@ -438,7 +442,9 @@ func (s exploreSource) List(ctx context.Context, q explore.Request) ([]explore.I
 	f := &listFlight{done: make(chan struct{})}
 	e.flight[key] = f
 	if e.paced == nil {
-		e.paced = &explore.Paced{Source: listerSource{s.lister}}
+		// A cold genre page asks up to 9 lists at once; a burst lets them
+		// run side by side instead of 2 s apart (about 6 s cold before).
+		e.paced = &explore.Paced{Source: listerSource{s.lister}, Burst: exploreListBurst}
 	}
 	p := e.paced
 	e.mu.Unlock()
