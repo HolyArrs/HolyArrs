@@ -29,7 +29,7 @@ func TestFakeYTDLP(t *testing.T) {
 	exp := time.Now().Add(6 * time.Hour).Unix()
 	switch mode {
 	case "ok":
-		fmt.Printf(`{"url":"https://rr1---sn-abc.googlevideo.com/videoplayback?expire=%d&itag=22","ext":"mp4","vcodec":"avc1.64001F","width":1280,"height":720,"protocol":"https"}`, exp)
+		fmt.Printf(`{"url":"https://rr1---sn-abc.googlevideo.com/videoplayback?expire=%d&itag=22","ext":"mp4","vcodec":"avc1.64001F","acodec":"mp4a.40.2","width":1280,"height":720,"protocol":"https"}`, exp)
 	case "odd":
 		fmt.Print(`{"url":"https://evil.example.com/v.mp4","ext":"mp4","vcodec":"avc1","height":720}`)
 	case "slow":
@@ -79,7 +79,7 @@ func TestTrailerStream(t *testing.T) {
 	if err := json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.HasPrefix(s.URL, "https://rr1---sn-abc.googlevideo.com/") || s.Key != "trailerKey1" || s.Height != 720 || s.Width != 1280 ||
+	if !strings.HasPrefix(s.URL, "https://rr1---sn-abc.googlevideo.com/") || s.Key != "trailerKey1" || s.Height != 720 || s.Width != 1280 || !s.Audio ||
 		time.Until(s.ExpiresAt) < 5*time.Hour {
 		t.Fatalf("stream %+v", s)
 	}

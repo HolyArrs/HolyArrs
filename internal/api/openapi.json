@@ -6131,6 +6131,10 @@
       },
       "TrailerStream": {
         "properties": {
+          "audio": {
+            "description": "False for a picture-only stream (no sound to turn on).",
+            "type": "boolean"
+          },
           "expires_at": {
             "format": "date-time",
             "type": "string"

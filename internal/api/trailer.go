@@ -54,6 +54,8 @@ type TrailerStream struct {
 	ExpiresAt time.Time `json:"expires_at"`
 	Width     int       `json:"width,omitempty"`
 	Height    int       `json:"height,omitempty"`
+	// Audio is false for a picture-only stream (no sound to turn on).
+	Audio bool `json:"audio"`
 	// Key is the YouTube video, for the embed fallback.
 	Key string `json:"key"`
 }
@@ -234,6 +236,7 @@ func resolveTrailer(ctx context.Context, bin string, pre []string, key string, n
 		URL      string `json:"url"`
 		Ext      string `json:"ext"`
 		VCodec   string `json:"vcodec"`
+		ACodec   string `json:"acodec"`
 		Width    int    `json:"width"`
 		Height   int    `json:"height"`
 		Protocol string `json:"protocol"`
@@ -249,5 +252,5 @@ func resolveTrailer(ctx context.Context, bin string, pre []string, key string, n
 	if n, err := strconv.ParseInt(u.Query().Get("expire"), 10, 64); err == nil && n > now.Unix() {
 		exp = time.Unix(n, 0).UTC()
 	}
-	return TrailerStream{URL: j.URL, ExpiresAt: exp, Width: j.Width, Height: j.Height, Key: key}, nil
+	return TrailerStream{URL: j.URL, ExpiresAt: exp, Width: j.Width, Height: j.Height, Key: key, Audio: j.ACodec != "" && j.ACodec != "none"}, nil
 }
