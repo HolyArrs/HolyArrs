@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from './api.ts';
 import { matchOwned, ownedIndex } from './explore.ts';
-import { fetchMusicTrend, musicTrendCards, type MusicTrendAnswer } from './music-trending.ts';
+import { fetchMusicTrend, listeners, musicTrendCards, newFromYourArtists, type MusicTrendAnswer } from './music-trending.ts';
 import type { TitleView } from './types.ts';
 
 const bts = '0d79fe8e-ba27-4859-bb8c-2f255f346853';
@@ -55,5 +55,21 @@ describe('fetchMusicTrend', () => {
 		expect(await fetchMusicTrend('artist', 'global', none)).toBeNull();
 		const down = { get: async <T>(): Promise<T> => Promise.reject(new ApiError('down', 502)) };
 		expect(await fetchMusicTrend('artist', 'FR', down)).toBeNull();
+	});
+});
+
+describe('music pass', () => {
+	it('lists new albums from Library artists, newest first, last 60 days only', () => {
+		const now = new Date('2026-10-19T12:00:00Z');
+		const e = (d: string, album: string, part: number) => ({ title_id: 1, name: 'Artist', kind: 'album' as const, date: d, album, part_id: part });
+		const got = newFromYourArtists([e('2026-10-01', 'Old-ish', 1), e('2026-10-15', 'Newest', 2), e('2026-06-01', 'Too old', 3), e('2026-11-01', 'Future', 4), e('2026-10-15', 'Newest', 2)], now);
+		expect(got.map((a) => a.album)).toEqual(['Newest', 'Old-ish']);
+	});
+	it('shapes and listens', () => {
+		const cards = musicTrendCards({ kind: 'album', region: 'global', source: 'x', regions: null, items: [{ rank: 1, mbid: 'rg', name: 'LP', artist_name: 'A', artist_mbid: 'am', listen_count: 12345 }] });
+		expect(cards[0].shape).toBe('square');
+		expect(cards[0].subtitle).toBe('A · 12K listens this week');
+		expect(listeners(1500)).toBe('1.5K listens this week');
+		expect(listeners(0)).toBe('');
 	});
 });

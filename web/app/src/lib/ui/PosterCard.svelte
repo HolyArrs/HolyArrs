@@ -26,6 +26,7 @@
 		typePill,
 		owned,
 		actionOnHover = false,
+		shape = 'poster',
 		action
 	}: {
 		title: string;
@@ -47,6 +48,8 @@
 		owned?: { state: 'available' | 'partial' | 'downloading' | 'requested' | 'declined'; label: string } | null;
 		/** The round action shows on hover or focus only (always on touch screens). */
 		actionOnHover?: boolean;
+		/** Music: square for albums, round for artists (same width as a poster). */
+		shape?: 'poster' | 'square' | 'round';
 		action?: Snippet;
 	} = $props();
 	const typeWords = { movie: 'Movie', show: 'Show', artist: 'Artist' } as const;
@@ -74,7 +77,7 @@
 	const kindIcon = $derived<IconName>(kind === 'show' || kind === 'episode' ? 'tv' : kind === 'artist' ? 'music' : 'film');
 </script>
 
-<div class="ui-poster" style:width>
+<div class="ui-poster" class:square={shape === 'square'} class:round={shape === 'round'} style:width>
 	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} use:press={'card'}>
 		<span class="art" use:viewTransitionName={vtName}>
 			{#if !image || failed || !loaded}
@@ -104,6 +107,8 @@
 	.hit { display: flex; flex-direction: column; gap: 2px; color: var(--text); border-radius: var(--r-card); }
 	.hit:focus-visible { outline: none; }
 	.hit:focus-visible .art { box-shadow: var(--focus-ring); }
+	.square, .round { --poster-ratio: 1; }
+	.round .art { border-radius: 50%; }
 	.art { position: relative; display: block; container: art / inline-size; aspect-ratio: var(--poster-ratio); margin-bottom: 8px; border-radius: var(--r-card); overflow: hidden; background: var(--surface-2); box-shadow: var(--shadow-card); transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out); }
 	img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--dur) ease, transform var(--dur-slow) var(--ease-out); }
 	img.in { opacity: 1; }

@@ -123,7 +123,8 @@
 		void loadHead();
 	}
 
-	const rows = $derived(markTransitions(filterRows([...head, ...tail], type)));
+	// Music shows only music rows: the movie and show rows (Top 10, services, Coming soon, Best new releases) never appear there.
+	const rows = $derived(type === 'music' ? [] : markTransitions(filterRows([...head, ...tail], type)));
 
 	function readTop10Pick() {
 		try {
@@ -386,7 +387,9 @@
 	<MetadataNotice />
 	{#if type === 'music'}<MusicTrendingRows {owned} {manage} {mayAsk} {folders} {rules} onadded={() => void load()} />{/if}
 
-	{#if failed && !okOnce}
+	{#if type === 'music'}
+		<!-- Music: the music rows above only. -->
+	{:else if failed && !okOnce}
 		<LoadError hasData={false} message="Could not load Explore." onretry={load} {busy} />
 	{:else}
 		{#if failed}<LoadError hasData={true} message="Could not refresh Explore." onretry={load} {busy} />{/if}
@@ -398,10 +401,10 @@
 				{/each}
 			</div>
 		{:else if rows.length === 0}
-			{#if type !== 'music'}<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} typePill={type === 'all'} initial={top10} />
-			<EmptyState icon="compass" title="Explore is getting ready" text="Rows fill in within a few minutes." action={{ label: 'Search', href: to('/search'), icon: 'search' }} />{/if}
+			<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} typePill={type === 'all'} initial={top10} />
+			<EmptyState icon="compass" title="Explore is getting ready" text="Rows fill in within a few minutes." action={{ label: 'Search', href: to('/search'), icon: 'search' }} />
 		{:else}
-			{#if type !== 'music'}<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} typePill={type === 'all'} initial={top10} />{/if}
+			<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} typePill={type === 'all'} initial={top10} />
 			{#each rows as row (row.id)}
 				<div class="row-wrap" data-row={row.type ?? row.id}>
 				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.wide ? 'var(--release-item)' : 'var(--explore-item)'} tools={row.id === 'services' ? serviceTools : undefined}>
@@ -436,7 +439,7 @@
 				</Shelf>
 				</div>
 			{/each}
-			{#if tailMore && type !== 'music'}<div class="sentinel" bind:this={sentinel} aria-hidden="true"></div>{/if}
+			{#if tailMore}<div class="sentinel" bind:this={sentinel} aria-hidden="true"></div>{/if}
 		{/if}
 	{/if}
 </div>

@@ -6,7 +6,9 @@
 	import { refreshInbox } from './wishlist.svelte.ts';
 	import { matchOwned, type OwnedIndex } from './explore.ts';
 	import { defaultRegion } from './top10.ts';
-	import { fetchMusicTrend, musicTrendCards, type MusicTrendCard } from './music-trending.ts';
+	import { fetchMusicTrend, musicTrendCards, newFromYourArtists, type MusicTrendCard, type NewAlbum } from './music-trending.ts';
+	import { ymd } from './calendar.ts';
+	import type { CalendarEntry } from './types.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './types.ts';
 	import Shelf from './ui/Shelf.svelte';
 	import PosterCard from './ui/PosterCard.svelte';
@@ -14,8 +16,10 @@
 	import AddArtistDialog from './AddArtistDialog.svelte';
 	import AskArtistDialog from './AskArtistDialog.svelte';
 
-	// Explore's Music rows: "Trending this week" (artists) and "Top albums",
-	// from the metadata server's weekly lists. Hidden when there are none.
+	// Explore's Music rows, personal first: one hero (the newest album from
+	// an artist you have), New from artists you have, then the charts:
+	// Trending artists (ListenBrainz) and Top albums (Deezer, per country).
+	// Every row says why it is there; artists are round, albums square.
 	const KEY = 'holyarrs.music-trending';
 	let {
 		owned,
@@ -30,6 +34,7 @@
 	let regions = $state<string[]>([]);
 	let artists = $state<MusicTrendCard[]>([]);
 	let albums = $state<MusicTrendCard[]>([]);
+	let fresh = $state<NewAlbum[]>([]);
 	/** Artists added or asked for here, so their cards update at once. */
 	let addedHere = $state(new Map<string, number>());
 	let busy = $state('');
@@ -78,6 +83,10 @@
 			/* nothing saved */
 		}
 		void load();
+		const now = new Date();
+		api.get<{ dates: CalendarEntry[] | null }>(`/calendar?from=${ymd(new Date(now.getTime() - 60 * 86400000))}&to=${ymd(now)}`)
+			.then((r) => (fresh = newFromYourArtists(r.dates ?? [], now)))
+			.catch(() => {});
 		if (manage) api.get<MusicSettings>('/settings/music').then((r) => (defaults = r)).catch(() => {});
 		return () => gone?.abort();
 	});
@@ -134,7 +143,7 @@
 
 {#snippet cards(list: MusicTrendCard[])}
 	{#each list.map(live) as c (c.key)}
-		<PosterCard title={c.name} href={href(c)} image={c.image} kind="artist" subtitle={c.subtitle} status={c.status} actionOnHover>
+		<PosterCard title={c.name} href={href(c)} image={c.image} kind="artist" subtitle={c.subtitle} status={c.status} shape={c.shape} actionOnHover>
 			{#snippet action()}
 				{#if c.titleId === undefined && (manage || mayAsk)}
 					<IconButton icon="plus" label={manage ? `Add ${c.artist}` : `Ask for ${c.artist}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={busy === c.key || undefined} onclick={() => void quick(c)} />
@@ -144,18 +153,38 @@
 	{/each}
 {/snippet}
 
-{#if artists.length || albums.length}
+{#if fresh.length || artists.length || albums.length}
 	<section class="music-trending" data-testid="music-trending">
+		{#if fresh.length}
+			{@const hero = fresh[0]}
+			<a class="hero" href={to(`/library/${hero.titleId}`)} data-testid="music-hero">
+				<span class="cover">{#if hero.image}<img src={hero.image} alt="" loading="lazy" />{/if}</span>
+				<span class="words">
+					<span class="eyebrow">New album</span>
+					<strong>{hero.album}</strong>
+					<span class="note">{hero.artist} · out {new Date(hero.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</span>
+				</span>
+			</a>
+			{#if fresh.length > 1}
+				<Shelf title="New from artists you have" subtitle="Albums out in the last 60 days" item="var(--explore-item)">
+					{#each fresh.slice(1) as a (a.key)}
+						<PosterCard title={a.album} href={to(`/library/${a.titleId}`)} image={a.image} kind="artist" subtitle={a.artist} shape="square" />
+					{/each}
+				</Shelf>
+			{/if}
+		{/if}
 		{#if regions.length > 1}
-			<select aria-label="Region" bind:value={region} onchange={pick}>
-				{#each regions as r (r)}<option value={r}>{regionName(r)}</option>{/each}
-			</select>
+			<div class="pick">
+				<select aria-label="Region" bind:value={region} onchange={pick}>
+					{#each regions as r (r)}<option value={r}>{regionName(r)}</option>{/each}
+				</select>
+			</div>
 		{/if}
 		{#if artists.length}
-			<Shelf title="Trending this week" subtitle={where} item="var(--explore-item)">{@render cards(artists)}</Shelf>
+			<Shelf title="Trending artists" subtitle={`Most played this week · ${where}`} item="var(--explore-item)">{@render cards(artists)}</Shelf>
 		{/if}
 		{#if albums.length}
-			<Shelf title="Top albums" subtitle={where} item="var(--explore-item)">{@render cards(albums)}</Shelf>
+			<Shelf title="Top albums" subtitle={`Chart this week · ${where}`} item="var(--explore-item)">{@render cards(albums)}</Shelf>
 		{/if}
 	</section>
 {/if}
@@ -168,9 +197,20 @@
 
 <style>
 	.music-trending { position: relative; display: flex; flex-direction: column; gap: 32px; }
-	select { position: absolute; right: 0; top: 0; z-index: 1; font: inherit; font-size: 13px; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--border, transparent); background: var(--surface-2); color: var(--text); max-width: 160px; }
+	.pick { display: flex; justify-content: flex-end; margin-bottom: -20px; }
+	.hero { display: flex; gap: 20px; align-items: center; padding: 16px; border-radius: var(--r-card); background: var(--surface-2); color: var(--text); text-decoration: none; max-width: 640px; }
+	.hero:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.cover { flex: none; width: 120px; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: var(--surface-3); }
+	.cover img { width: 100%; height: 100%; object-fit: cover; }
+	.words { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+	.eyebrow { font: var(--t-caption, 12px/1.3 inherit); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+	.words strong { font-size: 22px; line-height: 1.2; }
+	.note { color: var(--text-muted); }
+	select { font: inherit; font-size: 13px; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--border, transparent); background: var(--surface-2); color: var(--text); max-width: 160px; }
 	@media (max-width: 640px) {
-		select { position: static; align-self: flex-end; margin-bottom: -20px; }
+		.hero { gap: 14px; padding: 12px; }
+		.cover { width: 88px; }
+		.words strong { font-size: 18px; }
 	}
 	@media (max-width: 767px) { .music-trending { gap: 26px; } }
 </style>

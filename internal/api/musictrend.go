@@ -41,6 +41,8 @@ type musicTrendView struct {
 	Name       string `json:"name"`
 	Artist     string `json:"artist_name,omitempty"`
 	ArtistMBID string `json:"artist_mbid,omitempty"`
+	// Listens is this week's listen count, when the source has one.
+	Listens int64 `json:"listen_count,omitempty"`
 }
 
 // musicTrending answers GET /api/v1/music-trending?kind=artist|album
@@ -76,7 +78,7 @@ func (a *API) musicTrending(w http.ResponseWriter, r *http.Request) {
 	}
 	out := make([]musicTrendView, 0, len(list.Items))
 	for _, it := range list.Items {
-		v := musicTrendView{Rank: it.Rank, MBID: it.MBID, Name: it.Name}
+		v := musicTrendView{Rank: it.Rank, MBID: it.MBID, Name: it.Name, Listens: it.Listens}
 		if kind == "album" {
 			v.Name, v.Artist, v.ArtistMBID = it.Title, it.Artist, it.ArtistMBID
 		}
