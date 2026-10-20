@@ -34,7 +34,11 @@ func (f *fakeSource) List(_ context.Context, q Request) ([]Item, error) {
 		if q.Genre != "" {
 			g = q.Genre
 		}
-		out = append(out, Item{TMDBID: fmt.Sprint(n + 1), Kind: q.Kind, Name: fmt.Sprintf("T%d", n), Year: 1980 + int(n%45),
+		kind := q.Kind
+		if kind == "" { // a person's credits hold both kinds
+			kind = []string{"movie", "show"}[i%2]
+		}
+		out = append(out, Item{TMDBID: fmt.Sprint(n + 1), Kind: kind, Name: fmt.Sprintf("T%d", n), Year: 1980 + int(n%45),
 			Genres: []string{g}, Pop: float64(n%97) + 1, Vote: 5 + float64(n%50)/10, Votes: int(n%3000) + 50, Released: "2026-09-01"})
 	}
 	return out, nil

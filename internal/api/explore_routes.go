@@ -73,7 +73,14 @@ func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64,
 		if err != nil && err != sql.ErrNoRows {
 			return explore.Page{}, nil, false, err
 		}
+		// The cold head is built from the Library, the asks and whatever
+		// lists are cached (memory or SQLite), with no outside call.
 		in := explore.Input{Member: member, Kid: m.kid, Switch: sw, Now: now, Services: m.services, Region: m.region}
+		if err == nil {
+			if full, ierr := a.exploreInput(ctx, m, sw, now); ierr == nil {
+				in = full
+			}
+		}
 		if m.kid {
 			in.Allow = a.kidAllow(ctx, m.maxRating)
 		}

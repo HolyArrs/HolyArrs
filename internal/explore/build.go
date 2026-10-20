@@ -28,6 +28,9 @@ type Request struct {
 	MinVotes         int
 	MaxVotes         int
 	Sort             string // popularity (default) or rating
+	// Scope is ScopeShared for region-wide lists; it is not part of the
+	// cache key, so it never splits a shared list.
+	Scope string
 }
 
 func (q Request) String() string {
@@ -38,6 +41,16 @@ func (q Request) String() string {
 type Source interface {
 	List(ctx context.Context, q Request) ([]Item, error)
 }
+
+// CacheChecker is a Source that can say a Request would be answered
+// without an outside call; such Requests do not count against the budget.
+type CacheChecker interface {
+	Cached(ctx context.Context, q Request) bool
+}
+
+// MemberBudget is the most member-specific outside calls one pool build
+// makes (plan 5.2); region-wide lists are counted apart.
+const MemberBudget = 30
 
 // HouseholdTitle is one title asked for by people in the household in
 // the last 30 days.
@@ -133,8 +146,16 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 		}
 		return out
 	}
-	// fetch asks for one list per kind and takes turns between them.
+	// fetch asks for one list per kind and takes turns between them. A
+	// person's credits cover both kinds, so they are asked for once.
 	fetch := func(q Request) ([]Item, error) {
+		if q.List == "person" {
+			items, err := src.List(ctx, q)
+			if err != nil {
+				return nil, err
+			}
+			return allow(items), nil
+		}
 		var lists [][]Item
 		for _, k := range kinds {
 			if q.Kind != "" && q.Kind != k {
@@ -149,6 +170,38 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 			lists = append(lists, allow(items))
 		}
 		return interleave(lists), nil
+	}
+	// spend keeps member-specific lists inside MemberBudget outside calls;
+	// lists the Source already has cached cost nothing. Callers ask in
+	// typePrior order, so the cheapest-to-lose rows are the ones dropped.
+	cached, _ := src.(CacheChecker)
+	used := 0
+	spend := func(q Request) bool {
+		if q.Shared() {
+			return true
+		}
+		cost := 0
+		for _, k := range kinds {
+			if q.List == "person" {
+				if cached == nil || !cached.Cached(ctx, q) {
+					cost = q.Outside()
+				}
+				break
+			}
+			if q.Kind != "" && q.Kind != k {
+				continue
+			}
+			qq := q
+			qq.Kind = k
+			if cached == nil || !cached.Cached(ctx, qq) {
+				cost += qq.Outside()
+			}
+		}
+		if used+cost > MemberBudget {
+			return false
+		}
+		used += cost
+		return true
 	}
 	seeds := []Seed{}
 	for _, s := range in.Seeds {
@@ -182,12 +235,12 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 	addRow(Row{ID: TypeYourAsks, Type: TypeYourAsks, Items: allow(in.MyAsks)})
 
 	// Region-wide rows.
-	trending, err := fetch(Request{List: "trending"})
+	trending, err := fetch(Request{List: "trending", Scope: ScopeShared})
 	if !soft(err) && ctx.Err() != nil {
 		return pool, ctx.Err()
 	}
 	addRow(Row{ID: TypeTrending, Type: TypeTrending, Items: trending})
-	upcoming, err := fetch(Request{List: "upcoming"})
+	upcoming, err := fetch(Request{List: "upcoming", Scope: ScopeShared})
 	soft(err)
 	var coming []Item
 	for _, it := range append(allow(in.Coming), upcoming...) {
@@ -199,7 +252,7 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 		coming = append(coming, it)
 	}
 	addRow(Row{ID: TypeComingSoon, Type: TypeComingSoon, Items: uniq(coming), Wide: true})
-	svc := Request{List: "discover", Services: in.Services, Region: in.Region}
+	svc := Request{List: "discover", Services: in.Services, Region: in.Region, Scope: ScopeShared}
 	services, err := fetch(svc)
 	soft(err)
 	addRow(Row{ID: TypeServices, Type: TypeServices, Items: services})
@@ -210,10 +263,10 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 		soft(err)
 		addRow(Row{ID: TypeNewServices, Type: TypeNewServices, Items: items})
 	}
-	best, err := fetch(Request{List: "best"})
+	best, err := fetch(Request{List: "best", Scope: ScopeShared})
 	soft(err)
 	addRow(Row{ID: TypeBest, Type: TypeBest, Items: best})
-	hidden, err := fetch(Request{List: "discover", MinVote: 7.3, MinVotes: 100, MaxVotes: 1500, Sort: "rating", Services: in.Services, Region: in.Region})
+	hidden, err := fetch(Request{List: "discover", MinVote: 7.3, MinVotes: 100, MaxVotes: 1500, Sort: "rating", Services: in.Services, Region: in.Region, Scope: ScopeShared})
 	soft(err)
 	addRow(Row{ID: TypeHidden, Type: TypeHidden, Items: hidden})
 
@@ -238,13 +291,13 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 		// Cold start: non-personal Popular <genre> and Popular <decade> <genre>.
 		genres := regionGenres(trending, 6)
 		for _, g := range genres {
-			items, err := fetch(Request{List: "discover", Genre: g, MinVotes: 200})
+			items, err := fetch(Request{List: "discover", Genre: g, MinVotes: 200, Scope: ScopeShared})
 			soft(err)
 			addRow(Row{ID: TypePopularGenre + ":" + g, Type: TypePopularGenre, Genre: g, Title: RowTitle(TypePopularGenre, g), Items: items})
 		}
 		for i, dec := range coldDecades {
 			g := genres[min(i, len(genres)-1)]
-			items, err := fetch(Request{List: "discover", Genre: g, From: fmt.Sprintf("%d-01-01", dec), To: fmt.Sprintf("%d-12-31", dec+9), MinVotes: 200})
+			items, err := fetch(Request{List: "discover", Genre: g, From: fmt.Sprintf("%d-01-01", dec), To: fmt.Sprintf("%d-12-31", dec+9), MinVotes: 200, Scope: ScopeShared})
 			soft(err)
 			label := fmt.Sprintf("Popular %ds %s", dec, strings.ToLower(g))
 			addRow(Row{ID: fmt.Sprintf("%s:%d|%s", TypePopularDecade, dec, g), Type: TypePopularDecade, Genre: g, Decade: dec, Title: label, Items: items})
@@ -253,7 +306,7 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 
 	// Seed rows: the top 10 seeds, at most 2 per franchise.
 	perFranchise := map[string]int{}
-	used := 0
+	nSeedRows := 0
 	maxSeed := 0.0
 	for _, s := range seeds {
 		if s.Weight > maxSeed {
@@ -261,7 +314,7 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 		}
 	}
 	for _, s := range seeds {
-		if used == 10 || s.Weight <= 0 {
+		if nSeedRows == 10 || s.Weight <= 0 {
 			break
 		}
 		if !s.Recent {
@@ -271,9 +324,13 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 		if perFranchise[f] == 2 {
 			continue
 		}
+		q := Request{List: "similar", Kind: s.Kind, Ref: s.TMDBID}
+		if !spend(q) {
+			break
+		}
 		perFranchise[f]++
-		used++
-		items, err := fetch(Request{List: "similar", Kind: s.Kind, Ref: s.TMDBID})
+		nSeedRows++
+		items, err := fetch(q)
 		if !soft(err) {
 			continue
 		}
@@ -283,13 +340,22 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 	}
 	if nSeeds >= 3 {
 		for _, g := range profile.TopGenres(5, 0.10) {
-			items, err := fetch(Request{List: "discover", Genre: g})
+			q := Request{List: "discover", Genre: g}
+			if !spend(q) {
+				break
+			}
+			items, err := fetch(q)
 			soft(err)
 			addRow(Row{ID: TypeGenre + ":" + g, Type: TypeGenre, Genre: g, Title: RowTitle(TypeGenre, g), Items: items})
 		}
 	}
 	for _, p := range topCounts(in.OwnedPeople, 2, 3) {
-		items, err := fetch(Request{List: "person", Ref: p})
+		// The Library is the household's, so these lists are shared.
+		q := Request{List: "person", Ref: p, Scope: ScopeShared}
+		if !spend(q) {
+			break
+		}
+		items, err := fetch(q)
 		soft(err)
 		addRow(Row{ID: TypePerson + ":" + p, Type: TypePerson, Person: p, Title: RowTitle(TypePerson, p), Items: items})
 	}
@@ -297,7 +363,11 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 		dec, g, _ := strings.Cut(dg, "|")
 		var y int
 		fmt.Sscanf(dec, "%d", &y)
-		items, err := fetch(Request{List: "discover", Genre: g, From: fmt.Sprintf("%d-01-01", y), To: fmt.Sprintf("%d-12-31", y+9)})
+		q := Request{List: "discover", Genre: g, From: fmt.Sprintf("%d-01-01", y), To: fmt.Sprintf("%d-12-31", y+9), Scope: ScopeShared}
+		if !spend(q) {
+			break
+		}
+		items, err := fetch(q)
 		soft(err)
 		addRow(Row{ID: TypeDecade + ":" + dg, Type: TypeDecade, Genre: g, Decade: y, Title: fmt.Sprintf("%s %s", dec, strings.ToLower(g)), Items: items})
 	}
