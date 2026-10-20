@@ -33,8 +33,8 @@
 	.wash { position: absolute; inset: 0; background: var(--hue); mix-blend-mode: color; }
 	.shade { position: absolute; inset: 0; background: linear-gradient(to top, color-mix(in srgb, var(--hue) 35%, #000) 0%, color-mix(in srgb, var(--hue) 30%, transparent) 45%, transparent 75%); opacity: 0.9; }
 	.name {
-		position: absolute; left: 16px; right: 16px; bottom: 14px; font: 700 clamp(17px, 0.9vw + 8px, 24px) / 1.12 var(--font-display); letter-spacing: -0.015em;
-		text-shadow: 0 1px 10px rgb(0 0 0 / 0.45); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere;
+		position: absolute; left: 14px; right: 14px; bottom: 14px; font: 700 clamp(16px, 0.7vw + 8px, 22px) / 1.12 var(--font-display); letter-spacing: -0.015em;
+		text-shadow: 0 1px 10px rgb(0 0 0 / 0.45); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; hyphens: auto;
 	}
 	@media (max-width: 599px) { .name { left: 12px; right: 12px; bottom: 10px; } }
 	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {

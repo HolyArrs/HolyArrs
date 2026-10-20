@@ -336,9 +336,9 @@
 
 <section class="search" class:calm data-testid="search-page">
 	<h1 class="sr-only">Search</h1>
-	<div class="bar">
+	<div class="sp-field">
 		<form class="box" role="search" onsubmit={run}>
-			<span class="ic" aria-hidden="true"><Icon name="search" size={20} /></span>
+			<span class="sp-ic" aria-hidden="true"><Icon name="search" size={20} /></span>
 			<label class="sr-only" for="q">Search for a title, an artist or a person</label>
 			<input id="q" bind:this={input} type="search" bind:value={term} oninput={typed} onblur={blurred} onkeydown={keyed} placeholder="Shows, movies, music and people" autocomplete="off" spellcheck="false" enterkeyhint="search" data-testid="search-box" />
 			{#if term}<button type="button" class="clear" aria-label="Clear the search" onclick={() => { term = ''; void run(); input?.focus(); }}><Icon name="x" size={16} /></button>{/if}
@@ -451,13 +451,13 @@
 	@media (max-width: 1279px) { .search { --title-item: max(180px, calc((100vw - 64px) / 4.2)); } }
 	@media (max-width: 767px) { .search { --title-item: calc((100vw - 40px) / 2.3); } }
 	/* The one search field: page top centre, pinned under the top bar with the Explore glass look. */
-	.bar { position: sticky; top: calc(var(--topbar) + 12px); z-index: 22; display: flex; justify-content: center; margin-top: 20px; pointer-events: none; }
+	.sp-field { position: sticky; top: calc(var(--topbar) + 12px); z-index: 22; display: flex; justify-content: center; margin-top: 20px; pointer-events: none; }
 	.box { position: relative; display: flex; align-items: center; max-width: 680px; width: 100%; pointer-events: auto; border-radius: 999px; box-shadow: 0 10px 30px rgb(0 0 0 / 0.22), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
-	.ic { position: absolute; left: 16px; display: grid; color: var(--text-muted); pointer-events: none; }
+	.sp-ic { position: absolute; z-index: 1; left: 16px; display: grid; color: var(--text-muted); pointer-events: none; }
 	.box input { flex: 1; min-width: 0; height: 56px; padding: 0 52px 0 48px; border: 1px solid transparent; border-radius: 999px; background: color-mix(in srgb, var(--surface-2) 78%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); color: var(--text); font: var(--t-title3); font-weight: 400; }
 	.box input::-webkit-search-cancel-button { display: none; }
 	.box input:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.clear { position: absolute; right: 6px; display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 999px; background: none; color: var(--text-muted); cursor: pointer; }
+	.clear { position: absolute; z-index: 1; right: 6px; display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 999px; background: none; color: var(--text-muted); cursor: pointer; }
 	.clear:hover { color: var(--text); }
 	.clear:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	/* The same floating glass pill as Explore's type switch. */

@@ -180,7 +180,9 @@
 
 	// Page changes cross-fade and rise (View Transitions, where supported).
 	// The full-screen trailer covers its own hand-over to the title page (it shrinks into the hero).
-	onNavigate((navigation) => (theater.landing ? undefined : navigateWithTransition(navigation)));
+	// Entering Search plays its own reveal (a mosaic from the top bar down), so no cross-fade there.
+	const intoSearch = (n: { from: { url: URL } | null; to: { url: URL } | null }) => !!n.to && n.to.url.pathname.endsWith('/search') && !n.from?.url.pathname.endsWith('/search');
+	onNavigate((navigation) => (theater.landing || intoSearch(navigation) ? undefined : navigateWithTransition(navigation)));
 	// The loading screen from app.html leaves once the session is known;
 	// slow page changes get a small one (lib/loader.ts).
 	$effect(() => {

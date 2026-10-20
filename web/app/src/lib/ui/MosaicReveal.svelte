@@ -7,17 +7,18 @@
 	// drawn at CSS pixels; it removes itself when done (ondone).
 	let { duration = 560, cell = 26, ondone }: { duration?: number; cell?: number; ondone?: () => void } = $props();
 	let canvas = $state<HTMLCanvasElement>();
-	let box = $state({ top: 0, left: 0, width: 0, height: 0 });
-	let bg = $state('');
+	// Measured as the component starts, so the very first frame covers only the content.
+	function measure() {
+		if (typeof document === 'undefined') return { top: 0, left: 0, width: 0, height: 0 };
+		const r = document.getElementById('main')?.getBoundingClientRect();
+		const top = Math.max(0, document.querySelector('.ui-topbar')?.getBoundingClientRect().bottom ?? 0);
+		const left = Math.max(0, r?.left ?? 0);
+		return { top, left, width: Math.max(1, (r?.right ?? innerWidth) - left), height: Math.max(1, innerHeight - top) };
+	}
+	const box = measure();
+	const bg = typeof document === 'undefined' ? '' : getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || getComputedStyle(document.body).backgroundColor || '#000';
 
 	onMount(() => {
-		const main = document.getElementById('main');
-		const bar = document.querySelector('.ui-topbar');
-		const r = main?.getBoundingClientRect();
-		const top = Math.max(0, bar?.getBoundingClientRect().bottom ?? 0);
-		const left = Math.max(0, r?.left ?? 0);
-		box = { top, left, width: Math.max(1, (r?.right ?? innerWidth) - left), height: Math.max(1, innerHeight - top) };
-		bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || getComputedStyle(document.body).backgroundColor || '#000';
 		const c = canvas;
 		const ctx = c?.getContext('2d');
 		if (!c || !ctx) {
