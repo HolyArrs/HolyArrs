@@ -13,6 +13,9 @@
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import TitleRows from '#lib/TitleRows.svelte';
+	import ShowSeasons from '#lib/ShowSeasons.svelte';
+	import FollowButton from '#lib/ui/FollowButton.svelte';
+	import type { InfoDetails } from '#lib/title-info.ts';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import SectionNav from '#lib/ui/SectionNav.svelte';
 	import { pageSections } from '#lib/title-page.ts';
@@ -146,7 +149,13 @@
 	const heroPill = (d: TitleDetails) => titleStatus({ ask: d.ask?.state, mine: d.ask?.mine, neverAdd: d.neverAdd, titleKind: d.kind }, audienceOf(session.can));
 	const scoreOf = (r?: string) => (r && /\/\s*10$/.test(r) ? Number.parseFloat(r) : undefined);
 	const certOf = (r?: string) => (r && !/\/\s*10$/.test(r) ? r : undefined);
-	const heroMeta = (d: TitleDetails) => [d.year ? String(d.year) : '', d.kind === 'show' ? (d.network ?? '') : runtimeWords(d.runtime), ...d.genres.slice(0, 3)].filter(Boolean);
+	// The details answer read by the rows (seasons for a show).
+	let info = $state<InfoDetails | null>(null);
+	const seasons = $derived(info?.seasons ?? []);
+	const regular = $derived(seasons.filter((s) => s.number > 0).length);
+	const networkOf = (d: TitleDetails) => d.network ?? d.show?.network ?? '';
+	const heroMeta = (d: TitleDetails) =>
+		[d.year ? String(d.year) : '', d.kind === 'show' && regular ? `${regular} ${regular === 1 ? 'season' : 'seasons'}` : '', d.kind === 'show' ? networkOf(d) : runtimeWords(d.runtime), ...d.genres.slice(0, d.kind === 'show' ? 2 : 3)].filter(Boolean);
 	const crumbs = $derived(details ? [{ href: to('/explore'), label: 'Explore' }, { href: to(detailPath(details.kind, details.tmdb)), label: details.year ? `${details.name} (${details.year})` : details.name }] : []);
 </script>
 
@@ -198,12 +207,15 @@
 						<ActionButton icon="wish" label={d.ask ? `Ask for ${d.name} too` : `Ask for ${d.name}`} caption={d.ask ? 'Ask too' : 'Ask'} primary onclick={() => askShow?.open(d.show as LookupShow)} />
 					{/if}
 				{/if}
+				{#if d.kind === 'show'}<FollowButton tmdb={d.tmdb} kind="show" />{/if}
 			{/snippet}
 		</TitleHero>
 
 		<SectionNav items={pageSections(d.kind, { manage: false })} />
 
-		<TitleRows kind={d.kind} tmdb={d.tmdb} dates={[[d.kind === 'show' ? 'First aired' : 'Released', d.year ? String(d.year) : '']]}>
+		{#if d.kind === 'show'}<ShowSeasons tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
+
+		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info>
 			{#snippet middle()}
 			{#if d.cast.length}
 				<Shelf title="Cast and crew" item="112px" anchor="title-cast" onseeall={() => (allCast = true)}>
@@ -226,7 +238,8 @@
 			<dl class="tp-about">
 				{#if d.year}<dt>{d.kind === 'show' ? 'First aired' : 'Released'}</dt><dd>{d.year}</dd>{/if}
 				{#if d.kind === 'movie' && d.runtime}<dt>Runtime</dt><dd>{runtimeWords(d.runtime)}</dd>{/if}
-				{#if d.network}<dt>Network</dt><dd>{d.network}</dd>{/if}
+				{#if d.kind === 'show' && regular}<dt>Seasons</dt><dd>{regular}</dd>{/if}
+				{#if networkOf(d)}<dt>Network</dt><dd>{networkOf(d)}</dd>{/if}
 				{#if rich?.certification ?? certOf(d.rating)}<dt>Rated</dt><dd>{rich?.certification ?? certOf(d.rating)}</dd>{/if}
 				{#if d.genres.length}<dt>Genres</dt><dd>{d.genres.join(', ')}</dd>{/if}
 			</dl>

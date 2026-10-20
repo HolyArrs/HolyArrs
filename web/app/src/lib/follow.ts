@@ -12,14 +12,22 @@ export function followLabel(on: boolean): string {
 }
 
 /** followHint says what following a title tells you. */
-export function followHint(kind: string, on: boolean): string {
-	const what = kind === 'artist' ? 'new albums' : 'new episodes and seasons';
+export function followHint(kind: string, on: boolean, waiting = false): string {
+	const what = kind === 'artist' ? 'new albums' : waiting ? 'it when it lands and about new seasons' : 'new episodes and seasons';
 	return on ? `You hear about ${what}. Tap to stop.` : `Follow to hear about ${what}. Nothing is asked for.`;
 }
 
-/** setFollow follows (on) or unfollows a Library title; it returns the new state. */
-export async function setFollow(client: Client, titleId: number, on: boolean): Promise<boolean> {
-	const path = `/titles/${titleId}/follow`;
+/** What is followed: a Library title, or a show by TMDB id (not in the Library yet). */
+export type FollowTarget = { titleId: number } | { tmdb: string };
+
+/** followPath is the follow address of a Library title or of a show by TMDB id. */
+export function followPath(t: FollowTarget): string {
+	return 'titleId' in t ? `/titles/${t.titleId}/follow` : `/metadata/show/${encodeURIComponent(t.tmdb)}/follow`;
+}
+
+/** setFollow follows (on) or unfollows a title; it returns the new state. */
+export async function setFollow(client: Client, target: number | FollowTarget, on: boolean): Promise<boolean> {
+	const path = followPath(typeof target === 'number' ? { titleId: target } : target);
 	const r = on ? await client.put<{ following: boolean }>(path) : await client.del<{ following: boolean }>(path);
 	return r.following;
 }

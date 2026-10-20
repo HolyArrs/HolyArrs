@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { followHint, followLabel, setFollow } from './follow.ts';
+import { followHint, followLabel, followPath, setFollow } from './follow.ts';
 
 describe('follow', () => {
 	it('labels the bell', () => {
@@ -28,5 +28,11 @@ describe('follow', () => {
 		expect(await setFollow(client, 7, true)).toBe(true);
 		expect(await setFollow(client, 7, false)).toBe(false);
 		expect(calls).toEqual(['PUT /titles/7/follow', 'DELETE /titles/7/follow']);
+	});
+
+	it('follows a show not in the Library by its TMDB id', () => {
+		expect(followPath({ tmdb: '203857' })).toBe('/metadata/show/203857/follow');
+		expect(followPath({ titleId: 3 })).toBe('/titles/3/follow');
+		expect(followHint('show', false, true)).toBe('Follow to hear about it when it lands and about new seasons. Nothing is asked for.');
 	});
 });
