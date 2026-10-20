@@ -293,6 +293,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/metadata/health", a.metadataHealth)
 	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}", a.metadataDetails)
 	m.HandleFunc("GET /api/v1/metadata/show/{tmdb_id}/seasons/{number}", a.metadataSeason)
+	m.HandleFunc("GET /api/v1/trailer/batch", a.trailerBatch)
 	m.HandleFunc("GET /api/v1/trailer/{kind}/{tmdb_id}", a.trailerStream)
 	m.HandleFunc("GET /api/v1/trailer/stream/{id}/manifest.m3u8", a.trailerManifest)
 	m.HandleFunc("GET /api/v1/trailer/stream/{id}/seg/{n}", a.trailerSegment)
@@ -347,6 +348,7 @@ func secure(h http.Handler) http.Handler {
 		hd.Set("X-Content-Type-Options", "nosniff")
 		hd.Set("Referrer-Policy", "no-referrer")
 		hd.Set("X-Frame-Options", "DENY")
+		hd.Set("Content-Security-Policy", web.CSP(nil))
 		h.ServeHTTP(w, r)
 	})
 }

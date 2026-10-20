@@ -148,3 +148,34 @@ func TestMusicTrendArtUsesCoverChain(t *testing.T) {
 		t.Fatal("covers not kept")
 	}
 }
+
+// A Kid gets no music trending list (it can hold explicit releases) and no
+// picture from one, like /explore/music.
+func TestMusicTrendingKidLimited(t *testing.T) {
+	k := newKidRig(t)
+	k.api.s.MusicTrending = func(_ context.Context, kind, region string) (metadata.MusicTrend, error) {
+		return metadata.MusicTrend{Kind: kind, Region: region, Source: "listenbrainz", Items: []metadata.MusicTrendItem{{Rank: 1, MBID: trendGroup, Title: "Explicit Record", Artist: "Loud"}}}, nil
+	}
+	cover := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/jpeg")
+		_, _ = w.Write([]byte("\xff\xd8\xff synthetic"))
+	}))
+	defer cover.Close()
+	k.api.s.Library.Artwork = &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{cover.URL + "/release-group/"}, HTTP: cover.Client()}
+	k.api.s.Library.CoverArtBase = cover.URL
+	items := func(b []byte) int {
+		var out struct {
+			Items []any `json:"items"`
+		}
+		_ = json.Unmarshal(b, &out)
+		return len(out.Items)
+	}
+	if n := items(k.ana.call("GET", "/api/v1/music-trending?kind=album", "", 200)); n != 1 {
+		t.Fatalf("member sees %d items", n)
+	}
+	if n := items(k.kai.call("GET", "/api/v1/music-trending?kind=album", "", 200)); n != 0 {
+		t.Fatalf("Kid sees %d items", n)
+	}
+	k.kai.call("GET", "/api/v1/music-trending/art/album/"+trendGroup, "", 404)
+	k.ana.call("GET", "/api/v1/music-trending/art/album/"+trendGroup, "", 200)
+}

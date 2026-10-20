@@ -28,8 +28,8 @@ export const GROW_MS = 220;
 /** The shrink back onto the card. */
 export const SHRINK_MS = 180;
 export const GROW_DELAY = 400;
-/** After the card has grown, the trailer may fade in (about 1 s after hover start). */
-export const TRAILER_AFTER = 500;
+/** After the card opens, the trailer player is put in (it shows only once playing): 0, at once. */
+export const TRAILER_AFTER = 0;
 
 /**
  * growPlacement places a grown card of the art's 16:9 ratio plus a panel

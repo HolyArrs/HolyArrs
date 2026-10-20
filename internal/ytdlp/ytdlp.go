@@ -4,8 +4,10 @@
 // Lookup order: HOLYARRS_YTDLP, then the updated copy in the config
 // folder (written only by a checked update that passed the canary), then
 // the copy bundled next to the holyarrs program, then PATH.
-// The weekly update downloads the newest release, checks its SHA-256
-// against the release's SHA2-256SUMS file, swaps it in atomically and
+// The weekly update downloads the newest release's SHA2-256SUMS and
+// SHA2-256SUMS.sig, checks the signature against yt-dlp's pinned public
+// key, then checks the program's SHA-256 against the signed sums, swaps it
+// in atomically and
 // keeps the previous copy; if the canary lookup then fails, the previous
 // copy comes back.
 package ytdlp
@@ -26,6 +28,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"golang.org/x/crypto/openpgp"
 )
 
 // Env names an explicit yt-dlp program.
@@ -77,6 +81,8 @@ type Tool struct {
 	// ReleaseBase is where releases are read (tests use a fake server).
 	ReleaseBase string
 	HTTP        *http.Client
+	// Keyring is trusted to sign releases (nil: yt-dlp's pinned key).
+	Keyring openpgp.EntityList
 	// Canary checks a freshly installed copy (nil: --version only).
 	Canary func(ctx context.Context, bin string) error
 
@@ -115,7 +121,7 @@ func (t *Tool) Find() string {
 func Version(ctx context.Context, bin string) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
-	out, err := exec.CommandContext(ctx, bin, "--version").Output()
+	out, err := Run(ctx, bin, 30*time.Second, "--version")
 	if err != nil {
 		return "", errors.New("yt-dlp does not run")
 	}
@@ -181,6 +187,19 @@ func (t *Tool) update(ctx context.Context) (string, error) {
 	}
 	sums, err := get("SHA2-256SUMS", 1<<20)
 	if err != nil {
+		return "", err
+	}
+	sig, err := get("SHA2-256SUMS.sig", 64<<10)
+	if err != nil {
+		return "", errors.New("the release has no signature")
+	}
+	kr := t.Keyring
+	if kr == nil {
+		if kr, err = pinnedKeyring(); err != nil {
+			return "", err
+		}
+	}
+	if err := verifySums(kr, sums, sig); err != nil {
 		return "", err
 	}
 	want := ""
@@ -250,16 +269,81 @@ func (t *Tool) update(ctx context.Context) (string, error) {
 	return v, nil
 }
 
-// Run runs yt-dlp with a time limit and returns what it printed.
+func pinnedKeyring() (openpgp.EntityList, error) {
+	kr, err := openpgp.ReadArmoredKeyRing(strings.NewReader(publicKey))
+	if err != nil || len(kr) == 0 {
+		return nil, errors.New("the pinned yt-dlp key does not load")
+	}
+	return kr, nil
+}
+
+// verifySums checks the detached signature (binary or armored) on sums.
+func verifySums(kr openpgp.EntityList, sums, sig []byte) error {
+	if _, err := openpgp.CheckDetachedSignature(kr, bytes.NewReader(sums), bytes.NewReader(sig)); err == nil {
+		return nil
+	}
+	if _, err := openpgp.CheckArmoredDetachedSignature(kr, bytes.NewReader(sums), bytes.NewReader(sig)); err == nil {
+		return nil
+	}
+	return errors.New("release signature invalid")
+}
+
+// MaxOutput is the most yt-dlp may print; a longer answer is refused.
+const MaxOutput = 4 << 20
+
+// EnvAllow names the only environment values yt-dlp gets (no HolyArrs
+// settings or secrets): the program path, home and temp folders, the
+// Windows system folder, and proxies.
+var EnvAllow = []string{"PATH", "HOME", "TMP", "TEMP", "TMPDIR", "SYSTEMROOT", "SystemRoot", "WINDIR",
+	"HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "no_proxy", "all_proxy"}
+
+// MinimalEnv is the environment yt-dlp runs with.
+func MinimalEnv() []string {
+	var env []string
+	seen := map[string]bool{}
+	for _, k := range EnvAllow {
+		if v, ok := os.LookupEnv(k); ok && !seen[strings.ToUpper(k)+"="+v] {
+			seen[strings.ToUpper(k)+"="+v] = true
+			env = append(env, k+"="+v)
+		}
+	}
+	if _, ok := os.LookupEnv("HOME"); !ok {
+		env = append(env, "HOME="+os.TempDir())
+	}
+	return env
+}
+
+type capped struct {
+	b      bytes.Buffer
+	over   bool
+	cancel context.CancelFunc
+}
+
+func (c *capped) Write(p []byte) (int, error) {
+	if c.over {
+		return 0, errors.New("too large")
+	}
+	if c.b.Len()+len(p) > MaxOutput {
+		c.over = true
+		c.cancel()
+		return 0, errors.New("too large")
+	}
+	return c.b.Write(p)
+}
+
+// Run runs yt-dlp with a time limit, the minimal environment and at most
+// MaxOutput of output (it is stopped when it prints more), and returns
+// what it printed.
 func Run(ctx context.Context, bin string, limit time.Duration, args ...string) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(ctx, limit)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, bin, args...)
-	var out bytes.Buffer
-	cmd.Stdout = &out
+	cmd.Env = MinimalEnv()
+	out := &capped{cancel: cancel}
+	cmd.Stdout = out
 	err := cmd.Run()
-	if out.Len() > 16<<20 {
+	if out.over {
 		return nil, errors.New("yt-dlp answer too large")
 	}
-	return out.Bytes(), err
+	return out.b.Bytes(), err
 }

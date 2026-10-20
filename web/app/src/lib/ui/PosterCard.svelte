@@ -10,7 +10,7 @@
 	import { sized } from '../tmdb-image.ts';
 	import { shelfNear, whenLoaded } from '../lazy-art.ts';
 	import HoverPreview from './HoverPreview.svelte';
-	import { prefetchTrailer } from '../autoplay.svelte.ts';
+	import { prefetchTrailer, watchTrailer } from '../autoplay.svelte.ts';
 	import { dwell, finePointer, HOVER_DELAY } from '../trailer.ts';
 
 	// 2:3 poster with title below. Lifts on hover; artwork zooms inside its frame.
@@ -113,6 +113,10 @@
 		}
 	}
 	$effect(() => () => shut());
+	// In view for a while: the trailer address is fetched ahead of any hover.
+	$effect(() => {
+		if (root && preview) return watchTrailer(root, preview.kind, preview.tmdb);
+	});
 	// The type leads the metadata line ("Show · 2024"); never twice.
 	const typedWord = $derived(typed ? typeWord(kind) : '');
 	const sub = $derived(typedWord && subtitle === typedWord ? undefined : subtitle);

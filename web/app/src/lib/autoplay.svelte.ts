@@ -3,7 +3,8 @@
 // privacy-enhanced YouTube embed, then nothing (Layer 1 pictures stay).
 import { api } from './api.ts';
 import { session } from './session.svelte.ts';
-import { browserConditions, mayAutoplay, pickTrailer, soundOn, type Video } from './trailer.ts';
+import { browserConditions, finePointer, mayAutoplay, pickTrailer, soundOn, type Video } from './trailer.ts';
+import { prefetchQueue } from './trailer-prefetch.ts';
 
 export interface UISettings {
 	autoplay_trailers: boolean;
@@ -99,7 +100,9 @@ function warm(url: string) {
 	if (typeof document === 'undefined' || warmed.has(url)) return;
 	const v = document.createElement('video');
 	v.muted = true;
-	v.preload = 'metadata';
+	// auto: the HLS manifest and first segments (or the MP4's first
+	// bytes) are in the cache before the card opens.
+	v.preload = 'auto';
 	v.src = url;
 	warmed.set(url, v);
 	setTimeout(() => {
@@ -132,6 +135,67 @@ export function prefetchTrailer(kind: 'movie' | 'show', tmdb: string) {
 
 const streams = new Map<string, Promise<Stream | null>>();
 
+const fresh = (s: Stream | null | undefined) => !!s?.url && Date.parse(s.expires_at) > Date.now() + 60_000;
+
+// In-view prefetch: cards on or near the screen for IN_VIEW_MS are named to the server
+// in one batch; the known addresses come back and the rest are looked up
+// ahead of time on the server, so the hover finds them ready.
+export const IN_VIEW_MS = 300;
+const batch = prefetchQueue({
+	send: async (ids) => {
+		const b = await api.get<{ streams: Record<string, Stream>; pending: string[] }>(`/trailer/batch?ids=${ids.map(encodeURIComponent).join(',')}&language=${lang()}`);
+		for (const [id, s] of Object.entries(b?.streams ?? {})) {
+			if (fresh(s) && !streams.has(id)) streams.set(id, Promise.resolve(s));
+		}
+		return (b?.pending ?? []).filter((id) => !streams.has(id));
+	}
+});
+let seen: IntersectionObserver | null = null;
+const viewTimers = new WeakMap<Element, ReturnType<typeof setTimeout>>();
+const viewIds = new WeakMap<Element, string>();
+
+/**
+ * watchTrailer names this card's title for the in-view prefetch once it has
+ * been on screen for IN_VIEW_MS (desktop pointer, autoplay allowed here:
+ * never for Kid accounts, reduced motion or saved data). The answer stops watching.
+ */
+export function watchTrailer(el: Element, kind: 'movie' | 'show', tmdb: string): () => void {
+	if (!tmdb || typeof IntersectionObserver === 'undefined' || !finePointer()) return () => {};
+	const id = `${kind}:${tmdb}`;
+	seen ??= new IntersectionObserver(
+		(entries) => {
+			for (const e of entries) {
+				const t = viewTimers.get(e.target);
+				if (e.isIntersecting && t === undefined) {
+					const target = e.target;
+					viewTimers.set(
+						target,
+						setTimeout(() => {
+							const tid = viewIds.get(target);
+							if (!tid || streams.has(tid)) return;
+							void loadUISettings().then(() => autoplayHere() && batch.add(tid));
+						}, IN_VIEW_MS)
+					);
+				} else if (!e.isIntersecting && t !== undefined) {
+					clearTimeout(t);
+					viewTimers.delete(e.target);
+				}
+			}
+		},
+		// Rows just below the screen count too: a cold lookup takes 1-3 s.
+		{ rootMargin: '300px 0px 600px 0px', threshold: 0 }
+	);
+	viewIds.set(el, id);
+	seen.observe(el);
+	return () => {
+		const t = viewTimers.get(el);
+		if (t !== undefined) clearTimeout(t);
+		viewTimers.delete(el);
+		viewIds.delete(el);
+		seen?.unobserve(el);
+	};
+}
+
 function lang(): string {
 	return (typeof navigator !== 'undefined' ? navigator.language : 'en').split('-')[0] || 'en';
 }
@@ -146,7 +210,7 @@ function directStream(kind: 'movie' | 'show', tmdb: string, signal?: AbortSignal
 		signal?.addEventListener('abort', () => ctl.abort(), { once: true });
 		p = api
 			.get<Stream>(`/trailer/${kind}/${encodeURIComponent(tmdb)}?language=${lang()}`, ctl.signal)
-			.then((s) => (s?.url && Date.parse(s.expires_at) > Date.now() + 60_000 ? s : null))
+			.then((s) => (fresh(s) ? s : null))
 			.catch(() => null)
 			.finally(() => clearTimeout(t));
 		p.then((s) => {

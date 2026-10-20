@@ -29,7 +29,7 @@ export async function attachHLS(video: HTMLVideoElement, url: string, native: bo
 	}
 	const Hls = await loadHls();
 	if (!Hls.isSupported()) throw new Error('no MediaSource');
-	const hls = new Hls({ startPosition: start, maxBufferLength: 20, capLevelToPlayerSize: true, enableWorker: true });
+	const hls = new Hls({ startPosition: start, startLevel: 0, maxBufferLength: 20, capLevelToPlayerSize: true, enableWorker: true });
 	hls.on(Hls.Events.ERROR, (_e, d) => {
 		if (d.fatal) video.dispatchEvent(new Event('error'));
 	});

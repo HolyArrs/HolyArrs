@@ -625,6 +625,13 @@
 		align-items: center;
 		gap: var(--s-2);
 	}
+	/* An album's own buttons are scrolled to (a click, a focus) from far
+	   below the artist's buttons. The margin keeps the artist's hero
+	   buttons clear of the sticky top bar when that scroll centres the row. */
+	.album-actions :global(.ui-btn),
+	.album-actions .switch {
+		scroll-margin-top: 160px;
+	}
 	.album-action-label {
 		display: none;
 	}

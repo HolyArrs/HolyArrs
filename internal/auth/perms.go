@@ -161,6 +161,7 @@ var RoutePerms = map[string]Perm{
 	"GET /api/v1/metadata/search":                          needSignedIn,
 	"GET /api/v1/metadata/{kind}/{tmdb_id}":                needSignedIn,
 	"GET /api/v1/metadata/show/{tmdb_id}/seasons/{number}": needSignedIn,
+	"GET /api/v1/trailer/batch":                            needSignedIn,
 	"GET /api/v1/trailer/{kind}/{tmdb_id}":                 needSignedIn,
 	"GET /api/v1/trailer/stream/{id}/manifest.m3u8":        needSignedIn,
 	"GET /api/v1/trailer/stream/{id}/seg/{n}":              needSignedIn,

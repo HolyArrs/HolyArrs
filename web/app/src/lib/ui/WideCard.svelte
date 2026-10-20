@@ -9,7 +9,7 @@
 	import HoverPreview from './HoverPreview.svelte';
 	import CardBadges, { type CardOwned } from './CardBadges.svelte';
 	import { shownFresh, typeWord, type Fresh } from '../fresh.ts';
-	import { prefetchTrailer } from '../autoplay.svelte.ts';
+	import { prefetchTrailer, watchTrailer } from '../autoplay.svelte.ts';
 	import { dwell, finePointer, HOVER_DELAY } from '../trailer.ts';
 	import GrowCard from './GrowCard.svelte';
 	import { richMetadata } from './TitleHero.svelte';
@@ -130,6 +130,10 @@
 		leaving = false;
 	}
 	$effect(() => () => shut());
+	// In view for a while: the trailer address is fetched ahead of any hover.
+	$effect(() => {
+		if (root && preview) return watchTrailer(root, preview.kind, preview.tmdb);
+	});
 	// Cover cards: the logo, looked up gently (a few at a time) once the card is on screen.
 	let foundLogo = $state<string | null>(null);
 	$effect(() => {

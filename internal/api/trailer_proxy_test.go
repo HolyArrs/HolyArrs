@@ -251,3 +251,27 @@ func readAll(t *testing.T, res *http.Response) string {
 	_, _ = bufio.NewReader(res.Body).WriteTo(&sb)
 	return sb.String()
 }
+
+// The whole install has at most proxyMaxActive streams going, and one
+// stream relays for at most proxyLife.
+func TestTrailerPassThroughInstallCap(t *testing.T) {
+	var p trailerProxy
+	exp := time.Now().Add(time.Hour)
+	now := time.Now()
+	manifest := func(m string) string {
+		return "https://manifest.googlevideo.com/api/manifest/hls_variant/" + m + "/index.m3u8"
+	}
+	for u := int64(1); u <= proxyMaxActive; u++ {
+		s, err := p.begin(u, p.register(u, manifest("a"), exp), now)
+		if err != nil {
+			t.Fatalf("person %d: %v", u, err)
+		}
+		p.done(u, s, 0)
+	}
+	if _, err := p.begin(99, p.register(99, manifest("a"), exp), now); err != errProxyBusy {
+		t.Fatalf("over the install cap: %v", err)
+	}
+	if _, err := p.begin(1, p.register(1, manifest("a"), exp), now.Add(proxyLife+time.Second)); err != errProxyBusy {
+		t.Fatalf("past the stream life: %v", err)
+	}
+}
