@@ -88,7 +88,8 @@ is built on `debian:12-slim`, because the yt-dlp release program needs glibc
   can see the viewer's address.
 - The embed uses `youtube-nocookie.com`, YouTube's privacy-enhanced domain.
 - HolyArrs sends no name, ask or Library data to YouTube. It keeps only the
-  video address (in memory and in its lookup cache, so a restart does not redo
-  lookups) and never the video.
+  video address (in memory and in its SQLite lookup cache, so a restart does
+  not redo lookups) and never the video. A kept address is checked again when
+  it is read back: it must still be on YouTube's video servers and not expired.
 - Trailer addresses are not cached by the browser (`Cache-Control: private,
   no-store`).
