@@ -228,7 +228,10 @@
 	.ui-billboard:has(> .top) .content { --title-h: clamp(64px, 8vw, 130px); }
 	.heading { transform-origin: left bottom; transition: transform 1100ms var(--ease-hero, cubic-bezier(.4, 0, .2, 1)); }
 	.quiet .heading { transform: scale(.8); }
-	.quiet.reveal:hover .heading, .quiet.reveal:focus-within .heading { transform: none; }
+	/* The facts line shrinks with the title, in the same motion. */
+	.meta { transform-origin: left center; transition: transform 1100ms var(--ease-hero, cubic-bezier(.4, 0, .2, 1)); }
+	.quiet .meta { transform: scale(.8); }
+	.quiet.reveal:hover .heading, .quiet.reveal:focus-within .heading, .quiet.reveal:hover .meta, .quiet.reveal:focus-within .meta { transform: none; }
 	.heading :global(h1), .heading :global(h2) { margin: 0; min-height: var(--title-h); display: flex; align-items: flex-end; }
 	.heading :global(.bb-name) { font-family: var(--font-display, var(--font-ui)); font-weight: 800; font-size: clamp(36px, 4.6vw, 64px); line-height: 1; letter-spacing: -0.03em; text-wrap: balance; overflow-wrap: anywhere; text-shadow: 0 2px 30px rgb(0 0 0 / 35%); }
 	.heading :global(.bb-logo img) { display: block; max-width: 100%; max-height: var(--title-h); width: auto; height: auto; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 4px 24px rgb(0 0 0 / 45%)); }
@@ -253,6 +256,6 @@
 		.shade, .content { transition: none; }
 		.fold { transition: opacity 400ms linear; }
 		.quiet .fold { grid-template-rows: minmax(0, 0fr); }
-		.heading, .quiet .heading { transition: none; transform: none; }
+		.heading, .quiet .heading, .meta, .quiet .meta { transition: none; transform: none; }
 	}
 </style>
