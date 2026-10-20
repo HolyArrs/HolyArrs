@@ -43,13 +43,16 @@ describe('title page helpers', () => {
 
 describe('title page sections', () => {
 	it('lists a movie page in page order, with the staff sections for staff', () => {
-		expect(pageSections('movie', { manage: true, asks: true }).map((s) => s.label)).toEqual(['Cast', 'Versions', 'Releases', 'Subtitles', 'About', 'Wishlist', 'History', 'Similar']);
+		expect(pageSections('movie', { manage: true }).map((s) => s.label)).toEqual(['Where to watch', 'Cast', 'Collection', 'More like this', 'About', 'Library']);
 	});
-	it('leaves out staff sections and an empty Wishlist for members', () => {
-		expect(pageSections('movie', { manage: false, asks: false }).map((s) => s.id)).toEqual(['title-cast', 'h-versions', 'h-dates', 'title-similar']);
+	it('leaves the manager Library section out for requesters', () => {
+		expect(pageSections('movie', { manage: false }).map((s) => s.id)).toEqual(['title-where', 'title-cast', 'title-collection', 'title-similar', 'h-about']);
+		expect(pageSections('artist', { manage: false }).map((s) => s.id)).not.toContain('h-library');
 	});
-	it('starts a show page with its seasons', () => {
-		const ids = pageSections('show', { manage: false, asks: true }).map((s) => s.id);
-		expect(ids).toEqual(['h-seasons', 'title-cast', 'h-show-versions', 'h-show-facts', 'h-show-asks', 'title-similar']);
+	it('starts a show page with its episodes and keeps Library last', () => {
+		const ids = pageSections('show', { manage: true }).map((s) => s.id);
+		expect(ids[0]).toBe('h-seasons');
+		expect(ids.at(-1)).toBe('h-library');
+		expect(pageSections('album', { manage: false }).map((s) => s.label)).toEqual(['Tracks', 'More by the artist', 'About']);
 	});
 });

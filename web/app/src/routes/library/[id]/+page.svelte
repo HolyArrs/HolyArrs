@@ -35,7 +35,8 @@
 	import Button from '#lib/ui/Button.svelte';
 	import ProgressBar from '#lib/ui/ProgressBar.svelte';
 	import TitleCast from '#lib/TitleCast.svelte';
-	import SimilarShelf from '#lib/SimilarShelf.svelte';
+	import TitleRows from '#lib/TitleRows.svelte';
+	import LibrarySection from '#lib/ui/LibrarySection.svelte';
 	import { artName, crumbFor, pageSections, qualityBadges } from '#lib/title-page.ts';
 	import { audienceOf, factsOf, titleStatus } from '#lib/title-status.ts';
 	import SectionNav from '#lib/ui/SectionNav.svelte';
@@ -471,18 +472,25 @@
 	const heroBadges = $derived(qualityBadges(files.map((s) => s.file)));
 	// One status vocabulary (title-status.ts): staff or member words.
 	const status = $derived(title ? titleStatus({ ...factsOf(title), titleKind: 'movie' }, audienceOf(session.can)) : { kind: 'missing' as const, label: 'Missing' });
-	const libraryItems = $derived<MenuItem[]>([
+	const manage = $derived(session.can('manage_library'));
+	// Manager actions live in the hero's ⋯ menu; the Library section holds the rest.
+	const heroItems = $derived<MenuItem[]>([
+		{ label: 'Search now', icon: 'search', onselect: () => searchNow(), disabled: searching },
+		{ label: 'Choose a release', icon: 'grid', onselect: chooseRelease, disabled: searching },
+		{ label: 'Keep up to date', checked: !!title?.keep_up_to_date, disabled: saving, onselect: () => title && setKeep(!title.keep_up_to_date) },
+		{ kind: 'separator' },
+		{ label: 'Edit', icon: 'tools', onselect: openEdit },
 		{ label: 'Rename files', icon: 'copy', onselect: openRename },
 		{ label: 'Add a Version', icon: 'plus', onselect: openVersion },
+		{ label: 'Refresh from TMDB', icon: 'refresh', onselect: refresh, disabled: refreshing },
+		{ label: 'All history', icon: 'clock', href: to(`/downloads/history?title=${id}`) },
 		{ kind: 'separator' },
 		{ label: 'Delete movie', icon: 'trash', destructive: true, onselect: openDelete }
 	]);
-	const moreItems = $derived<MenuItem[]>([
-		{ label: 'Choose a release', icon: 'grid', onselect: chooseRelease, disabled: searching },
-		{ label: 'Refresh from TMDB', icon: 'refresh', onselect: refresh, disabled: refreshing },
-		{ kind: 'separator' },
-		{ label: 'All history', icon: 'clock', href: to(`/downloads/history?title=${id}`) }
-	]);
+	function toLibrary() {
+		const h = document.getElementById('h-library');
+		h?.closest('section')?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
+	}
 
 	async function setKeep(v: boolean) {
 		if (!title) return;
@@ -525,6 +533,8 @@
 	<div class="tp">
 		<TitleHero
 			title={title.name}
+			kind="movie"
+			tmdb={title.ids?.tmdb}
 			poster={title.artwork[0] ?? rich?.poster}
 			backdrop={title.backdrop ?? rich?.backdrop}
 			backdrops={rich?.backdrops}
@@ -541,19 +551,9 @@
 		>
 			{#snippet byline()}<AskedByLine {askers} seesAll={askedBy.sees_all} />{/snippet}
 			{#snippet actions()}
-				{#if session.can('manage_library')}
-					<ActionButton icon="search" label="Search now" primary onclick={() => searchNow()} disabled={searching} busy={searching} />
-					<ActionButton
-						icon={title!.keep_up_to_date ? 'check' : 'plus'}
-						label="Keep up to date"
-						caption={title!.keep_up_to_date ? 'Kept up to date' : 'Keep up to date'}
-						pressed={title!.keep_up_to_date}
-						disabled={saving}
-						onclick={() => setKeep(!title!.keep_up_to_date)}
-					/>
-					<ActionButton icon="tools" label="Edit" onclick={openEdit} />
-					<ActionMenu label="Library" icon="library" items={libraryItems} />
-					<ActionMenu label="More actions" caption="More" icon="more" items={moreItems} />
+				{#if manage}
+					<ActionButton icon="library" label="In Library: go to the Library section" caption="In Library" primary onclick={toLibrary} data-testid="hero-library" />
+					<ActionMenu label="More actions" caption="More" icon="more" items={heroItems} />
 				{/if}
 			{/snippet}
 		</TitleHero>
@@ -567,7 +567,7 @@
 						{#if d.active}<div class="tp-bar"><ProgressBar value={d.progress * 100} label="Download progress" /></div>
 							<span class="small muted">{percent(d.progress)}{#if d.speed > 0} · {bytes(d.speed)}/s{/if}{#if timeLeft(d.eta)} · {timeLeft(d.eta)}{/if}</span>{/if}
 						<p class="tp-dl-text" data-testid="download-text">{d.text}</p>
-						{#if d.active && session.can('manage_library')}
+						{#if d.active && manage}
 							<Button class="tp-btn" size="sm" variant="plain" onclick={() => markFailed(d.id)} busy={failing === d.id}>Mark failed</Button>
 						{/if}
 					</div>
@@ -577,22 +577,52 @@
 
 		{#if error}<LoadError hasData message={error} onretry={() => load()} />{/if}
 
-		<SectionNav items={pageSections('movie', { manage: session.can('manage_library'), asks: !!title.asks?.length })} />
+		<SectionNav items={pageSections('movie', { manage })} />
 
+		<TitleRows kind="movie" tmdb={title.ids?.tmdb} dates={[['In cinemas', date(title.cinema_date)], ['Digital', date(title.digital_date)], ['Disc', date(title.physical_date)]]}>
+			{#snippet middle()}{#key title!.id}<TitleCast titleId={title!.id} />{/key}{/snippet}
+		</TitleRows>
 
-		{#key title.id}<TitleCast titleId={title.id} />{/key}
+		<TitleSection id="h-about" title="About">
+			<dl class="tp-about">
+				<dt>Now</dt>
+				<dd>{stageWord[title.stage] ?? words(title.stage)}</dd>
+				{#if title.year}<dt>Released</dt><dd>{title.year}</dd>{/if}
+				{#if title.runtime_minutes ?? rich?.runtime}<dt>Runtime</dt><dd>{runtimeWords(title.runtime_minutes ?? rich?.runtime)}</dd>{/if}
+				{#if title.rating ?? rich?.certification}<dt>Rated</dt><dd>{title.rating ?? rich?.certification}</dd>{/if}
+				<dt>Original language</dt>
+				<dd>{title.original_language ? title.original_language.toUpperCase() : 'Not known'}</dd>
+				{#if title.genres?.length}<dt>Genres</dt><dd>{title.genres.join(', ')}</dd>{/if}
+			</dl>
+		</TitleSection>
 
-		<div class="tp-body">
-			<div class="tp-main">
+		{#if title.asks?.length}
+			<TitleSection id="h-asks" title="Wishlist" testid="title-asks">
+				{#each title.asks as a (a.id)}
+					<dl class="facts">
+						<dt>Asked by</dt>
+						<dd>{peopleNames(a.people.map((p) => p.name))} · {date(a.asked_at)}</dd>
+						{#if decided(a)}<dt>Decided</dt>
+							<dd>{decided(a)}{a.decided_at ? ` · ${date(a.decided_at)}` : ''}</dd>{/if}
+						<dt>Now</dt>
+						<dd>{a.state_label}</dd>
+						{#if a.note}<dt>Note</dt>
+							<dd>{a.note}</dd>{/if}
+					</dl>
+				{/each}
+			</TitleSection>
+		{/if}
+
+		{#if manage}
+			<LibrarySection>
 				<TitleSection id="h-versions" title="Versions and files" primary>
 					{#snippet head()}
 						<div class="tp-head-end">
 							{#if title!.versions.length > 1}
 								<Button variant="plain" aria-expanded={allVersions} aria-controls="movie-versions" onclick={() => (allVersions = !allVersions)}>{allVersions ? 'Show less' : `See all ${title!.versions.length}`}</Button>
 							{/if}
-							{#if session.can('manage_library')}
-								<Button icon="plus" onclick={openVersion}>Add a Version</Button>
-							{/if}
+							<Button icon="search" onclick={() => searchNow()} disabled={searching} busy={searching} data-testid="search-now">Search now</Button>
+							<Button icon="plus" onclick={openVersion}>Add a Version</Button>
 						</div>
 					{/snippet}
 					<ul class="tp-list tp-vrow" id="movie-versions" aria-label="Versions">
@@ -605,11 +635,11 @@
 									<span class="xs muted">Edition: {v.edition || 'Not specified'} · Audio required: {v.audio_languages?.join(', ') || 'Any'}</span>
 									<span class="xs muted">Pick rules: {v.pick_rules_name}{v.keep_up_to_date ? '' : ' · not kept up to date'}</span>
 									{#if f}
-<span class="xs muted">{bytes(f.Size)}{#if f.Quality?.resolution} · {f.Quality.resolution}p{f.Quality.source ? ` ${words(String(f.Quality.source))}` : ''}{/if} · Added {date(f.AddedAt)}</span>
-{:else}
+										<span class="xs muted">{bytes(f.Size)}{#if f.Quality?.resolution} · {f.Quality.resolution}p{f.Quality.source ? ` ${words(String(f.Quality.source))}` : ''}{/if} · Added {date(f.AddedAt)}</span>
+									{:else}
 										<span class="xs muted">No file yet.</span>
 									{/if}
-									{#if session.can('manage_library') && (f || v.folder_path)}
+									{#if f || v.folder_path}
 										<details class="tp-details">
 											<summary>Details</summary>
 											<ul>
@@ -622,14 +652,14 @@
 								</div>
 								<div class="tp-row-end">
 									{#if s}<span class="chip {tone(s.state)}">{s.state_label}</span>{/if}
-									{#if session.can('manage_library') && !v.main}
+									{#if !v.main}
 										<Menu label="Version actions for {v.label}" items={[{ label: `Remove ${v.label}`, icon: 'trash', destructive: true, onselect: () => removeVersion(v) }]} width={220} />
 									{/if}
 								</div>
 							</li>
 						{/each}
 					</ul>
-					{#if session.can('manage_library') && notes.length}
+					{#if notes.length}
 						<details class="tp-details" data-testid="slot-notes">
 							<summary>Details</summary>
 							<ul>{#each notes as n (n.text + (n.detail ?? ''))}<li>{n.text}</li>{/each}</ul>
@@ -639,145 +669,110 @@
 
 				<CopyControls {title} onchange={() => load('title')} />
 
-				{#if session.can('manage_library')}
-					<TitleSection id="h-rel" title="Releases" testid="releases" focusable>
-						{#snippet head()}
-							{#if relTotal}<span class="xs muted">{relTotal} found in the last search</span>{/if}
-						{/snippet}
-						{#if title.slots.length > 1}
-							<div class="field slot-pick">
-								<label for="slot-pick">Version</label>
-								<select id="slot-pick" class="input" value={slotPick} onchange={(e) => pickSlot(Number(e.currentTarget.value))}>
-									<option value={0}>Every Version</option>
-									{#each title.slots as s (s.id)}<option value={s.id}>{s.version || 'Main'}</option>{/each}
-								</select>
-								<span class="hint">Search now and Choose a release then look for this Version only.</span>
-							</div>
+				<TitleSection id="h-rel" title="Releases" testid="releases" focusable>
+					{#snippet head()}
+						{#if relTotal}<span class="xs muted">{relTotal} found in the last search</span>{/if}
+					{/snippet}
+					{#if title.slots.length > 1}
+						<div class="field slot-pick">
+							<label for="slot-pick">Version</label>
+							<select id="slot-pick" class="input" value={slotPick} onchange={(e) => pickSlot(Number(e.currentTarget.value))}>
+								<option value={0}>Every Version</option>
+								{#each title.slots as s (s.id)}<option value={s.id}>{s.version || 'Main'}</option>{/each}
+							</select>
+							<span class="hint">Search now and Choose a release then look for this Version only.</span>
+						</div>
+					{/if}
+					<p class="small muted" aria-live="polite" data-testid="search-running">
+						{running.length ? 'Searching your Sources. The list fills in once they answer.' : ''}
+					</p>
+					{#if releases.length === 0}
+						{#if !running.length}
+							<p class="small muted">No search yet. Choose a release shows every Release HolyArrs finds, with why each one would be chosen or not, so you can pick one yourself.</p>
+							<Button class="tp-start tp-btn" icon="grid" onclick={() => searchNow(false)} disabled={searching}>Choose a release</Button>
 						{/if}
-						<p class="small muted" aria-live="polite" data-testid="search-running">
-							{running.length ? 'Searching your Sources. The list fills in once they answer.' : ''}
-						</p>
-						{#if releases.length === 0}
-							{#if !running.length}
-								<p class="small muted">No search yet. Choose a release shows every Release HolyArrs finds, with why each one would be chosen or not, so you can pick one yourself.</p>
-								<Button class="tp-start tp-btn" icon="grid" onclick={() => searchNow(false)} disabled={searching}>Choose a release</Button>
-							{/if}
-						{:else}
-							<ul class="rels">
-								{#each releases as r (r.id)}
-									{@const key = keyReasons(r.reasons)}
-									<li class="rel" data-testid="release">
-										<div class="rel-top">
-											<span class="rel-name mono">{r.name}</span>
-											<span class="chip {verdictTone(r)}" data-testid="verdict">{verdict(r)}</span>
-										</div>
-										<div class="xs muted">{facts(r, bytes)}{title.slots.length > 1 && r.version ? ` · ${r.version}` : ''}</div>
-										{#if key.length}
+					{:else}
+						<ul class="rels">
+							{#each releases as r (r.id)}
+								{@const key = keyReasons(r.reasons)}
+								<li class="rel" data-testid="release">
+									<div class="rel-top">
+										<span class="rel-name mono">{r.name}</span>
+										<span class="chip {verdictTone(r)}" data-testid="verdict">{verdict(r)}</span>
+									</div>
+									<div class="xs muted">{facts(r, bytes)}{title.slots.length > 1 && r.version ? ` · ${r.version}` : ''}</div>
+									{#if key.length}
+										<ul class="reasons">
+											{#each key as x, i (i)}<li class={x.effect}>{x.text}</li>{/each}
+										</ul>
+									{/if}
+									{#if r.reasons.length}
+										<details>
+											<summary class="xs muted">All {r.reasons.length} reasons</summary>
 											<ul class="reasons">
-												{#each key as x, i (i)}<li class={x.effect}>{x.text}</li>{/each}
+												{#each r.reasons as x, i (i)}<li class={x.effect}>{x.text}</li>{/each}
 											</ul>
-										{/if}
-										{#if r.reasons.length}
-											<details>
-												<summary class="xs muted">All {r.reasons.length} reasons</summary>
-												<ul class="reasons">
-													{#each r.reasons as x, i (i)}<li class={x.effect}>{x.text}</li>{/each}
-												</ul>
-											</details>
-										{/if}
-										{#if r.state !== 'chosen'}
-											<div class="row rel-actions">
-												<Button onclick={() => askChoose(r)} aria-label="Choose {r.name}">Choose</Button>
-												{#if r.state !== 'turned_down'}
-													<Button variant="plain" onclick={() => askTurnDown(r)} aria-label="Turn down {r.name}">Turn down</Button>
-												{/if}
-											</div>
-										{/if}
-									</li>
-								{/each}
-							</ul>
-							{#if pages.prev !== null || pages.next !== null}
-								<nav class="row pager" aria-label="Release pages">
-									<Button variant="plain" disabled={pages.prev === null} onclick={() => goPage(pages.prev)}>Back</Button>
-									<span class="xs muted">{pages.from} to {pages.to} of {relTotal}</span>
-									<Button variant="plain" disabled={pages.next === null} onclick={() => goPage(pages.next)}>More</Button>
-								</nav>
-							{/if}
+										</details>
+									{/if}
+									{#if r.state !== 'chosen'}
+										<div class="row rel-actions">
+											<Button onclick={() => askChoose(r)} aria-label="Choose {r.name}">Choose</Button>
+											{#if r.state !== 'turned_down'}
+												<Button variant="plain" onclick={() => askTurnDown(r)} aria-label="Turn down {r.name}">Turn down</Button>
+											{/if}
+										</div>
+									{/if}
+								</li>
+							{/each}
+						</ul>
+						{#if pages.prev !== null || pages.next !== null}
+							<nav class="row pager" aria-label="Release pages">
+								<Button variant="plain" disabled={pages.prev === null} onclick={() => goPage(pages.prev)}>Back</Button>
+								<span class="xs muted">{pages.from} to {pages.to} of {relTotal}</span>
+								<Button variant="plain" disabled={pages.next === null} onclick={() => goPage(pages.next)}>More</Button>
+							</nav>
 						{/if}
-					</TitleSection>
-				{/if}
+					{/if}
+				</TitleSection>
 
-				{#if session.can('manage_library')}
-					<div id="title-subtitles">{#key title.id}<SubtitlePanel titleId={title.id} movie />{/key}</div>
-				{/if}
+				<div id="title-subtitles">{#key title.id}<SubtitlePanel titleId={title.id} movie />{/key}</div>
 
-				<TitleSection id="h-dates" title="About">
+				<TitleSection id="h-dates" title="When HolyArrs looks">
 					<dl class="tp-about">
-						<dt>Now</dt>
-						<dd>{stageWord[title.stage] ?? words(title.stage)}</dd>
-						<dt>In cinemas</dt>
-						<dd>{date(title.cinema_date) || 'Not known'}</dd>
-						<dt>Digital</dt>
-						<dd>{date(title.digital_date) || 'Not known'}</dd>
-						<dt>Disc</dt>
-						<dd>{date(title.physical_date) || 'Not known'}</dd>
-						<dt>Original language</dt>
-						<dd>{title.original_language ? title.original_language.toUpperCase() : 'Not known'}</dd>
 						<dt>Release gate</dt>
 						<dd>{words(title.release_gate)}{title.gate_delay_days ? ` + ${title.gate_delay_days} days` : ''}</dd>
 						{#if title.gate_opens_at}<dt>Gate opens</dt>
 							<dd>{date(title.gate_opens_at)}</dd>{/if}
 						{#if title.pick_rules_name}<dt>Pick rules</dt>
 							<dd>{title.pick_rules_name}</dd>{/if}
+						<dt>Keep up to date</dt>
+						<dd>{title.keep_up_to_date ? 'On' : 'Off'}</dd>
 						{#if title.refreshed_at}<dt>Refreshed</dt>
 							<dd>{date(title.refreshed_at)}</dd>{/if}
 					</dl>
 					<p class="tp-why" data-testid="gate-reason">{title.gate_reason}</p>
 				</TitleSection>
-</div>
 
-			<aside class="tp-side" aria-label="About this movie">
-				{#if title.asks?.length}
-					<TitleSection id="h-asks" title="Wishlist" testid="title-asks">
-						{#each title.asks as a (a.id)}
-							<dl class="facts">
-								<dt>Asked by</dt>
-								<dd>{peopleNames(a.people.map((p) => p.name))} · {date(a.asked_at)}</dd>
-								{#if decided(a)}<dt>Decided</dt>
-									<dd>{decided(a)}{a.decided_at ? ` · ${date(a.decided_at)}` : ''}</dd>{/if}
-								<dt>Now</dt>
-								<dd>{a.state_label}</dd>
-								{#if a.note}<dt>Note</dt>
-									<dd>{a.note}</dd>{/if}
-							</dl>
-						{/each}
-					</TitleSection>
-				{/if}
-
-				{#if session.can('manage_library')}
-					<TitleSection id="h-history" title="History" testid="title-history">
-						{#snippet head()}
-							{#if historyTotal > 0}<Button class="tp-btn" variant="plain" size="sm" href={to(`/downloads/history?title=${id}`)}>All {historyTotal} rows</Button>{/if}
-						{/snippet}
-						{#if history.length === 0}
-							<p class="small muted">Nothing yet. Every search, download, import, rename and delete of this movie writes a row here.</p>
-						{:else}
-							<ol class="rows hist">
-								{#each history as e (e.ID)}
-									<li>
-										<span class="chip {kindTone(e.Kind)}">{groupLabel(e.Kind)}</span>
-										<span class="grow small">{e.Summary}</span>
-										<time class="mono xs muted" datetime={e.At} title={dateTime(e.At)}>{ago(e.At)}</time>
-									</li>
-								{/each}
-							</ol>
-						{/if}
-					</TitleSection>
-				{/if}
-			</aside>
-		</div>
-
-		<SimilarShelf {title} />
+				<TitleSection id="h-history" title="History" testid="title-history">
+					{#snippet head()}
+						{#if historyTotal > 0}<Button class="tp-btn" variant="plain" size="sm" href={to(`/downloads/history?title=${id}`)}>All {historyTotal} rows</Button>{/if}
+					{/snippet}
+					{#if history.length === 0}
+						<p class="small muted">Nothing yet. Every search, download, import, rename and delete of this movie writes a row here.</p>
+					{:else}
+						<ol class="rows hist">
+							{#each history as e (e.ID)}
+								<li>
+									<span class="chip {kindTone(e.Kind)}">{groupLabel(e.Kind)}</span>
+									<span class="grow small">{e.Summary}</span>
+									<time class="mono xs muted" datetime={e.At} title={dateTime(e.At)}>{ago(e.At)}</time>
+								</li>
+							{/each}
+						</ol>
+					{/if}
+				</TitleSection>
+			</LibrarySection>
+		{/if}
 	</div>
 {/if}
 

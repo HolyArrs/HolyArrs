@@ -22,7 +22,8 @@
 		kind,
 		tmdb,
 		dates = [],
-		info = $bindable(null)
+		info = $bindable(null),
+		middle
 	}: {
 		kind: InfoKind;
 		tmdb: string | null | undefined;
@@ -30,6 +31,8 @@
 		dates?: [string, string][];
 		/** The details answer, for the page (cast on a not-added title). */
 		info?: InfoDetails | null;
+		/** Between the band and the title rows (the cast). */
+		middle?: Snippet;
 	} = $props();
 
 	const region = serviceRegion(defaultRegion());
@@ -87,6 +90,8 @@
 		{/if}
 	</section>
 {/if}
+
+{#if middle}{@render middle()}{/if}
 
 {#if info?.collection && collection.length}
 	<Shelf title={info.collection.name} item="var(--title-item)" anchor="title-collection" placeholder="wide" lines={1}>
