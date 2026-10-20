@@ -417,12 +417,15 @@
 	/** The ids the row is filled from: the picked ones, else the region's top few. */
 	const usedServices = $derived(picked ?? shownServices.slice(0, SERVICES_SHOWN).map((s) => s.id));
 
-	async function loadServices() {
+	function readPicked() {
 		try {
 			picked = readServices(region, localStorage.getItem(SERVICES_KEY));
 		} catch {
 			/* nothing saved */
 		}
+	}
+
+	async function loadServices() {
 		try {
 			services = (await api.get<{ services: WatchService[] }>(`/watch-services?region=${region}`, gone.signal)).services ?? [];
 		} catch {
@@ -452,7 +455,10 @@
 			}
 		}
 		void load();
-		void loadServices().then(() => void loadHead());
+		// The head only needs the saved picks, not the service list: both go at once.
+		readPicked();
+		void loadHead();
+		void loadServices();
 		return () => {
 			clearTimeout(poll);
 			gone.abort();

@@ -243,6 +243,7 @@ func exploreParams(w http.ResponseWriter, r *http.Request) (sw, topKind, topRegi
 // head rows in one answer, from the stored pool. building says a pool is
 // on its way (the page may ask again shortly).
 func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
+	st := newServerTiming()
 	sw, topKind, topRegion, ok := exploreParams(w, r)
 	if !ok {
 		return
@@ -282,6 +283,7 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
+	st.mark("page")
 	r = r.WithContext(withTop10Ranks(r.Context(), top10Ranks(top10)))
 	// Top 10 stays in its slot as an empty marker (the page draws it from
 	// top10); the hero is up to 6 titles not in the Library from Top 10 and
@@ -325,16 +327,21 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	st.mark("views")
 	a.exploreCount(r.Context(), me, "shown", rowTypes(head))
 	a.exploreTitleCount(r.Context(), me, "shown", rowLayers(head))
+	st.mark("counts")
 	a.prefetchTrailers(r, exploreTrailerTitles(hero, head))
 	a.fillTrailerKeys(r, hero)
 	for i := range head {
 		a.fillTrailerKeys(r, head[i].Items)
 	}
+	st.mark("trailers")
 	a.fillCardArt(r, hero)
 	a.fillRowsCardArt(r, head)
+	st.mark("cardart")
 	a.exploreCaching(w, r, "private, no-cache")
+	st.write(w)
 	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "building": building, "seeds": pg.Seeds, "tail_cap": pg.Cap,
 		"tail_rows": len(pg.Tail), "top10": top10, "hero": hero, "head": head})
 }

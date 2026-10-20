@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
 // top10TTL is how long a Netflix Top 10 list from the metadata server is
@@ -30,6 +32,8 @@ type top10Entry struct {
 type top10Cache struct {
 	mu    sync.Mutex
 	lists map[string]top10Entry
+	// refresh marks lists being read again in the background.
+	refresh sync.Map
 }
 
 // top10View is one ranked card of the row.
@@ -183,6 +187,67 @@ func (a *API) cachedTop10(ctx context.Context, kind, region, lang string) (metad
 	if ok && ((e.err == nil && time.Since(e.at) < top10TTL) || (e.err != nil && time.Since(e.at) < top10Miss)) {
 		return e.list, e.err
 	}
+	if !ok {
+		// After a restart the list comes from disk at once; an old copy is
+		// answered now and read again in the background.
+		if d, found := a.diskTop10(ctx, key); found {
+			c.mu.Lock()
+			if c.lists == nil {
+				c.lists = map[string]top10Entry{}
+			}
+			c.lists[key] = d
+			c.mu.Unlock()
+			if time.Since(d.at) >= top10TTL {
+				go a.refreshTop10(kind, region, lang)
+			}
+			return d.list, nil
+		}
+	}
+	return a.fetchTop10(ctx, kind, region, lang, e, ok)
+}
+
+// top10Keep is how long a list stays on disk to be answered after a restart.
+const top10Keep = 14 * 24 * time.Hour
+
+type diskTop10Body struct {
+	At   time.Time      `json:"at"`
+	List metadata.Top10 `json:"list"`
+}
+
+func (a *API) diskTop10(ctx context.Context, key string) (top10Entry, bool) {
+	if a.s.Store == nil {
+		return top10Entry{}, false
+	}
+	b, found, err := store.LookupCache{Store: a.s.Store}.Get(ctx, "top10|"+key, time.Now())
+	if err != nil || !found {
+		return top10Entry{}, false
+	}
+	var d diskTop10Body
+	if json.Unmarshal(b, &d) != nil {
+		return top10Entry{}, false
+	}
+	return top10Entry{at: d.At, list: d.List}, true
+}
+
+// refreshTop10 reads one list again in the background (one at a time per list).
+func (a *API) refreshTop10(kind, region, lang string) {
+	key := kind + "|" + region + "|" + lang
+	if _, busy := a.top10.refresh.LoadOrStore(key, true); busy {
+		return
+	}
+	defer a.top10.refresh.Delete(key)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	c := &a.top10
+	c.mu.Lock()
+	e, ok := c.lists[key]
+	c.mu.Unlock()
+	_, _ = a.fetchTop10(ctx, kind, region, lang, e, ok)
+}
+
+func (a *API) fetchTop10(ctx context.Context, kind, region, lang string, e top10Entry, ok bool) (metadata.Top10, error) {
+	key := kind + "|" + region + "|" + lang
+	c := &a.top10
 	server := kind
 	if kind == "show" {
 		server = "tv"
@@ -207,7 +272,41 @@ func (a *API) cachedTop10(ctx context.Context, kind, region, lang string) (metad
 		}
 		delete(c.lists, oldest)
 	}
-	c.lists[key] = top10Entry{at: time.Now(), list: l, err: err}
+	now := time.Now()
+	c.lists[key] = top10Entry{at: now, list: l, err: err}
 	c.mu.Unlock()
+	if err == nil && a.s.Store != nil {
+		if b, jerr := json.Marshal(diskTop10Body{At: now, List: l}); jerr == nil {
+			_ = store.LookupCache{Store: a.s.Store}.Put(context.WithoutCancel(ctx), "top10|"+key, b, now, now.Add(top10Keep))
+		}
+	}
 	return l, err
+}
+
+// warmTop10 loads the Top 10 lists kept on disk into memory at start, so
+// the first Explore head after a restart makes no outside call; lists past
+// their hour are read again in the background.
+func (a *API) warmTop10(ctx context.Context) {
+	if a.s.Store == nil || a.s.Top10 == nil {
+		return
+	}
+	rows, err := a.s.Store.Read().QueryContext(ctx, "SELECT key FROM lookup_cache WHERE key LIKE 'top10|%' AND expires_at > ?", store.FormatTime(time.Now()))
+	if err != nil {
+		return
+	}
+	var keys []string
+	for rows.Next() {
+		var k string
+		if rows.Scan(&k) == nil {
+			keys = append(keys, strings.TrimPrefix(k, "top10|"))
+		}
+	}
+	rows.Close()
+	for _, key := range keys {
+		parts := strings.Split(key, "|")
+		if len(parts) != 3 {
+			continue
+		}
+		_, _ = a.cachedTop10(ctx, parts[0], parts[1], parts[2])
+	}
 }

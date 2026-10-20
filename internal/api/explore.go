@@ -114,6 +114,7 @@ func (a *API) StartExplore(ctx context.Context) {
 	a.s.Store.OnEvent(a.musicOnEvent)
 	go supervisor.Guard("explore-music-warm", func() { a.warmMusic(ctx) })
 	go supervisor.Guard("explore", func() { a.exploreLoop(ctx) })
+	go supervisor.Guard("explore-top10-warm", func() { a.warmTop10(ctx) })
 }
 
 // exploreOnEvent marks pools stale: an ask (or joining one) marks the

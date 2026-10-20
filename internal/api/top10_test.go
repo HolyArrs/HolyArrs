@@ -86,3 +86,25 @@ limited:
 		t.Fatalf("without a server %d", resp.StatusCode)
 	}
 }
+
+// After a restart the Top 10 list comes from disk with no outside call;
+// a copy past its hour is answered at once and read again behind it.
+func TestTop10KeptOnDiskAcrossRestart(t *testing.T) {
+	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
+	var calls atomic.Int32
+	top := func(_ context.Context, kind, region, lang string) (metadata.Top10, error) {
+		calls.Add(1)
+		return metadata.Top10{Week: "2026-10-04", Regions: []string{"global"}, Items: []metadata.Top10Item{{Rank: 1, TMDBID: 11, Title: "UNABOMBER"}}}, nil
+	}
+	ctx := context.Background()
+	first := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), Top10: top, Version: "test"})
+	if _, err := first.cachedTop10(ctx, "movie", "global", ""); err != nil || calls.Load() != 1 {
+		t.Fatalf("first read: %v, %d calls", err, calls.Load())
+	}
+	again := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), Top10: top, Version: "test"})
+	again.warmTop10(ctx)
+	l, err := again.cachedTop10(ctx, "movie", "global", "")
+	if err != nil || l.Week != "2026-10-04" || len(l.Items) != 1 || calls.Load() != 1 {
+		t.Fatalf("after restart: %+v %v, %d calls", l, err, calls.Load())
+	}
+}
