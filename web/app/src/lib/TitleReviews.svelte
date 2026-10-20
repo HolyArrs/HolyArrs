@@ -16,6 +16,13 @@
 	let loading = $state(false);
 	let failed = $state(false);
 	let open = $state<Record<number, boolean>>({});
+	// A few reviews first; More shows the next ones (and reads the next page when the shown ones run out).
+	const FIRST = 5;
+	let shown = $state(FIRST);
+	function more() {
+		if (shown >= reviews.length && answer && answer.page < answer.pages) load(answer.page + 1);
+		shown += 10;
+	}
 
 	const ps = $derived(pillState(answer?.sources, picked));
 	const orders = $derived(ordersOf(answer?.sources, ps.active));
@@ -46,6 +53,7 @@
 		void order;
 		const ctl = new AbortController();
 		open = {};
+		shown = FIRST;
 		load(1, ctl);
 		return () => ctl.abort();
 	});
@@ -58,9 +66,17 @@
 		picked = id;
 	}
 
-	// Read more shows only when the text is longer than its clamp.
+	// Read more shows only when the text runs well past its clamp; a review
+	// that would hide a line or two is shown whole instead.
+	const SLACK = 52;
 	function clamped(node: HTMLElement, i: number) {
-		const check = () => node.parentElement?.toggleAttribute('data-long', node.scrollHeight > node.clientHeight + 2 || !!open[i]);
+		const check = () => {
+			const li = node.parentElement;
+			if (!li || li.hasAttribute('data-fit')) return;
+			const extra = node.scrollHeight - node.clientHeight;
+			if (extra > 2 && extra <= SLACK && !open[i]) return void li.setAttribute('data-fit', '');
+			li.toggleAttribute('data-long', extra > SLACK || !!open[i]);
+		};
 		queueMicrotask(check);
 		const ro = new ResizeObserver(check);
 		ro.observe(node);
@@ -72,7 +88,9 @@
 	<section class="tp-section rv" aria-labelledby="title-reviews-h" id="title-reviews">
 		<div class="tp-head">
 			<h2 class="tp-h2" id="title-reviews-h">Ratings &amp; reviews</h2>
-			{#if ps.pills.length > 1}
+			{#if ps.pills.length === 1}
+				<span class="pill on" data-testid="review-source">{ps.pills[0].name}</span>
+			{:else if ps.pills.length > 1}
 				<div class="pills" role="group" aria-label="Review source">
 					{#each ps.pills as p (p.id)}
 						<button type="button" class="pill" aria-pressed={p.id === ps.active} onclick={() => choose(p.id)}>{p.name}</button>
@@ -111,7 +129,7 @@
 			{/if}
 			{#if reviews.length}
 				<ul class="list">
-					{#each reviews as r, i (i)}
+					{#each reviews.slice(0, shown) as r, i (i)}
 						<li class="review" class:open={open[i]}>
 							<div class="who">
 								<b>{r.author || 'Someone'}</b>
@@ -129,8 +147,8 @@
 						</li>
 					{/each}
 				</ul>
-				{#if answer.page < answer.pages}
-					<button type="button" class="btn ghost" disabled={loading} onclick={() => load(answer!.page + 1)}>{loading ? 'Loading…' : 'More reviews'}</button>
+				{#if shown < reviews.length || answer.page < answer.pages}
+					<button type="button" class="btn ghost" disabled={loading} onclick={more}>{loading ? 'Loading…' : 'More reviews'}</button>
 				{/if}
 			{:else if !loading}
 				<p class="muted">No written reviews on {sourceName} yet.</p>
@@ -146,7 +164,7 @@
 	.rv .tp-head { margin-bottom: 0; }
 	.pills { display: inline-flex; flex-wrap: wrap; gap: 6px; }
 	.pill { min-height: 32px; padding: 4px 14px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--text); font: var(--t-subhead); font-weight: 600; cursor: pointer; }
-	.pill[aria-pressed='true'] { background: var(--text); color: var(--bg); border-color: var(--text); }
+	.pill[aria-pressed='true'], .pill.on { background: var(--text); color: var(--bg); border-color: var(--text); }
 	.score-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; }
 	.score-row p { margin: 0; }
 	.score { font: 700 28px/1.1 var(--font-display, var(--font-ui)); letter-spacing: -0.02em; }
@@ -164,8 +182,8 @@
 	.their { font-weight: 600; }
 	.their [aria-hidden] { color: #f5c518; }
 	.text { margin: 6px 0 0; white-space: pre-line; overflow-wrap: anywhere; font: var(--t-body); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; line-clamp: 6; overflow: hidden; }
-	.review.open .text { display: block; -webkit-line-clamp: unset; line-clamp: unset; }
-	.more { display: none; margin-top: 4px; padding: 0; border: 0; background: none; color: var(--accent, var(--text)); font: var(--t-subhead); font-weight: 600; cursor: pointer; }
+	.review.open .text, .review:global([data-fit]) .text { display: block; -webkit-line-clamp: unset; line-clamp: unset; }
+	.more { display: none; margin-top: 4px; padding: 0; border: 0; background: none; color: var(--accent-text, var(--text)); font: var(--t-subhead); font-weight: 600; cursor: pointer; }
 	.review:global([data-long]) .more, .spoiler + .more { display: inline-block; }
 	.spoiler { margin: 6px 0 0; font-style: italic; }
 	.credit { margin: 0; }
