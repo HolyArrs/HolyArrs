@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { episodeCode, searchWord, seasonLooking, episodeLabel, episodeWhy, label, seasonChoices, seasonLine, seasonName, seasonWords, showProgress, showState } from './shows.ts';
+import { keepOffNote, newSeason, newestSeason, episodeCode, searchWord, seasonLooking, episodeLabel, episodeWhy, label, seasonChoices, seasonLine, seasonName, seasonWords, showProgress, showState } from './shows.ts';
 import { counts, matches, ofKind } from './library.ts';
 import type { EpisodeView, SeasonSummary, ShowInfo, TitleView } from './types.ts';
 
@@ -90,5 +90,28 @@ describe('searching episodes', () => {
 	it('counts what a season search could fill', () => {
 		const e = (state: string) => ({ id: 1, season: 1, episode: 1, keep_up_to_date: true, ids: {}, slots: [{ id: 1, version: 'Main', version_id: 1, state, state_label: '' }] }) as EpisodeView;
 		expect(seasonLooking([e('wanted'), e('better_wanted'), e('in_library'), e('not_out_yet'), e('chosen')])).toBe(2);
+	});
+});
+
+describe('the season a show opens on', () => {
+	const s = (number: number, x: Partial<SeasonSummary> = {}) => ({ number, aired: 10, not_out_yet: 0, ...x });
+	it('opens on the newest season with aired or upcoming episodes', () => {
+		expect(newestSeason([s(0), s(1), s(2), s(3, { aired: 0, not_out_yet: 4 })])).toBe(3);
+		expect(newestSeason([s(1), s(2), s(3, { aired: 0, not_out_yet: 0 })])).toBe(2);
+		expect(newestSeason([s(0)])).toBe(0);
+		expect(newestSeason([])).toBeUndefined();
+	});
+	it('marks the newest season New while it airs', () => {
+		expect(newSeason([s(1), s(6, { aired: 3, not_out_yet: 9 })])).toBe(6);
+		expect(newSeason([s(1), s(2, { next_air_date: '2026-11-01' })])).toBe(2);
+		expect(newSeason([s(1), s(2)])).toBeUndefined();
+		const now = new Date('2026-10-20');
+		expect(newSeason([{ number: 1, episodes: 8, year: 2023 }, { number: 2, episodes: 8, year: 2026 }], now)).toBe(2);
+		expect(newSeason([{ number: 1, episodes: 8, year: 2020 }], now)).toBeUndefined();
+	});
+	it('says Keep up to date is off once for the season', () => {
+		expect(keepOffNote(true, false)).toBe('Keep up to date is off for the show.');
+		expect(keepOffNote(false, true)).toBe('Keep up to date is off for this season.');
+		expect(keepOffNote(true, true)).toBe('');
 	});
 });

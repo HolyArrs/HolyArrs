@@ -26,13 +26,13 @@
 	import ActionButton from './ui/ActionButton.svelte';
 	import ActionMenu from './ui/ActionMenu.svelte';
 	import Menu, { type MenuItem } from './ui/Menu.svelte';
-	import SegmentedControl from './ui/SegmentedControl.svelte';
-	import WideCard from './ui/WideCard.svelte';
+	import StatusPill from './ui/StatusPill.svelte';
+	import EpisodeList, { type EpisodeRow } from './EpisodeList.svelte';
+	import SeasonPicker from './SeasonPicker.svelte';
 	import Skeleton from './ui/Skeleton.svelte';
 	import TitleCast from './TitleCast.svelte';
 	import TitleRows from './TitleRows.svelte';
 	import LibrarySection from './ui/LibrarySection.svelte';
-	import type { CardOwned } from './ui/CardBadges.svelte';
 	import { artName, crumbFor, pageSections, qualityBadges, slotKind } from './title-page.ts';
 	import { audienceStatus } from './title-status.ts';
 	import SectionNav from './ui/SectionNav.svelte';
@@ -47,8 +47,11 @@
 		episodeLabel,
 		episodeOrders,
 		episodeWhy,
+		keepOffNote,
 		label,
 		mainSlot,
+		newSeason,
+		newestSeason,
 		seasonChoices,
 		seasonLine,
 		seasonLooking,
@@ -255,10 +258,37 @@
 		}
 	}
 
-	// The season on screen: ?season=N (Home's cards), else the first regular season until one is picked.
+	// The season on screen: ?season=N (Home's cards), else the newest season
+	// that has aired or upcoming episodes until one is picked.
 	const askedSeason = Number(page.url.searchParams.get('season'));
 	let picked = $state<number | null>(Number.isInteger(askedSeason) && askedSeason > 0 ? askedSeason : null);
-	const cur = $derived((picked !== null && show?.seasons.some((x) => x.number === picked) ? picked : null) ?? show?.seasons.find((x) => x.number > 0)?.number ?? show?.seasons[0]?.number ?? 0);
+	const cur = $derived((picked !== null && show?.seasons.some((x) => x.number === picked) ? picked : null) ?? newestSeason(show?.seasons ?? []) ?? 0);
+	const freshSeason = $derived(newSeason(show?.seasons ?? []));
+	// Each episode's two-line synopsis, from the season's details answer (cached on the server).
+	let synopses = $state<Record<number, Record<number, string>>>({});
+	$effect(() => {
+		const n = cur;
+		const tmdb = title.ids?.tmdb;
+		if (!tmdb || synopses[n]) return;
+		const ctl = new AbortController();
+		api.get<{ episodes?: { number: number; overview?: string }[] }>(`/metadata/show/${encodeURIComponent(tmdb)}/seasons/${n}`, ctl.signal)
+			.then((r) => (synopses[n] = Object.fromEntries((r.episodes ?? []).filter((e) => e.overview).map((e) => [e.number, e.overview as string]))))
+			.catch(() => {
+				/* The synopsis is an extra: the list works without it. */
+			});
+		return () => ctl.abort();
+	});
+	const rowsOf = (n: number): EpisodeRow[] =>
+		(episodes[n] ?? []).map((ep) => ({
+			key: ep.id,
+			number: order === 'aired' ? String(ep.episode) : episodeLabel(ep, order),
+			name: ep.name || 'Name not known yet',
+			still: still(ep),
+			runtime: ep.runtime_minutes ?? ep.runtime,
+			when: ep.air_date ? date(ep.air_date) : 'No air date yet',
+			overview: synopses[n]?.[ep.episode],
+			here: !staff && ep.slots.some((x) => x.file_id)
+		}));
 	const curSeason = $derived(show?.seasons.find((x) => x.number === cur));
 	$effect(() => {
 		const n = cur;
@@ -269,7 +299,6 @@
 	function pickSeason(n: number) {
 		picked = n;
 	}
-	const seasonItems = $derived<MenuItem[]>((show?.seasons ?? []).map((x) => ({ label: x.name || seasonName(x.number), checked: x.number === cur, onselect: () => pickSeason(x.number) })));
 
 	function episodeItems(ep: EpisodeView): MenuItem[] {
 		const code = episodeLabel(ep, order);
@@ -304,8 +333,6 @@
 		{ kind: 'separator' },
 		{ label: `Delete ${seasonName(n)}`, icon: 'trash', destructive: true, onselect: () => deleter?.open({ season: n, label: seasonName(n) }) }
 	];
-	/** A requester's mark on an episode card: only whether it is here to watch. */
-	const episodeMark = (ep: EpisodeView): CardOwned | null => (ep.slots.some((x) => x.file_id) ? { state: 'available', label: 'In your Library' } : null);
 	const nextWords = $derived(show?.next_air_date ? date(show.next_air_date) : '');
 	function toLibrary() {
 		const h = document.getElementById('h-library');
@@ -472,11 +499,7 @@
 		<h2 id="h-seasons" class="tp-h2">Episodes</h2>
 		{#if show?.seasons.length}
 			<div class="tp-head-end">
-				{#if show.seasons.length <= 6}
-					<SegmentedControl label="Season" options={show.seasons.map((s) => ({ value: String(s.number), label: s.name || seasonName(s.number) }))} value={String(cur)} onchange={(v) => pickSeason(Number(v))} />
-				{:else}
-					<Menu label="Pick a season" variant="button" icon="tv" text={curSeason ? curSeason.name || seasonName(curSeason.number) : 'Season'} align="end" items={seasonItems} />
-				{/if}
+				<SeasonPicker seasons={show.seasons} value={cur} fresh={freshSeason} onpick={pickSeason} />
 				{#if staff && curSeason}
 					<span data-testid="season-menu"><Menu label="Season actions for {seasonName(curSeason.number)}" icon="more" items={seasonMenu(curSeason.number, curSeason.keep_up_to_date)} width={260} align="end" /></span>
 				{/if}
@@ -487,39 +510,30 @@
 		<p class="small muted">No seasons yet. A refresh adds them once the details source lists them.</p>
 	{:else if curSeason}
 		{@const s = curSeason}
+		{@const off = staff ? keepOffNote(s.keep_up_to_date, title.keep_up_to_date) : ''}
 		<div class="season" data-testid="season">
-			<p class="xs muted" data-testid="season-line">{seasonLine(s)}{s.dropped ? ' · no longer listed' : ''}{#if staff && episodes[s.number] && seasonLooking(episodes[s.number])} · {seasonLooking(episodes[s.number])} looking for a copy{/if}</p>
+			<p class="xs muted" data-testid="season-line">{seasonLine(s)}{s.dropped ? ' · no longer listed' : ''}{#if staff && episodes[s.number] && seasonLooking(episodes[s.number])}{` · ${seasonLooking(episodes[s.number])} looking for a copy`}{/if}{#if off}{` · ${off}`}{/if}</p>
 			{#if episodes[s.number]}
-				<ul class="episodes">
-					{#each episodes[s.number] as ep (ep.id)}
+				{@const eps = episodes[s.number]}
+				<EpisodeList rows={rowsOf(s.number)} fallback={title.backdrop ?? rich?.backdrop}>
+					{#snippet status(i: number)}
+						{@const main = mainSlot(eps[i])}
+						{#if staff && main}<StatusPill kind={slotKind(main.state)} label={eps[i].slots.length > 1 ? eps[i].slots.map((x) => `${x.version}: ${x.state_label}`).join(' · ') : main.state_label} testid="episode-state" />{/if}
+					{/snippet}
+					{#snippet action(i: number)}
+						{#if staff}<Menu label="Episode actions for {episodeLabel(eps[i], order)}" items={episodeItems(eps[i])} width={250} />{/if}
+					{/snippet}
+					{#snippet after(i: number)}
+						{@const ep = eps[i]}
 						{@const why = staff ? episodeWhy(ep, s.keep_up_to_date, title.keep_up_to_date) : ''}
-						{@const main = mainSlot(ep)}
-						<li class="episode" data-testid="episode">
-							<WideCard
-								title={ep.name || 'Name not known yet'}
-								image={still(ep) ?? title.backdrop ?? rich?.backdrop}
-								kind="episode"
-								subtitle="{episodeLabel(ep, order)} · {ep.air_date ? date(ep.air_date) : 'No air date yet'}"
-								status={staff && main ? slotKind(main.state) : undefined}
-								statusLabel={staff ? (ep.slots.length > 1 ? ep.slots.map((x) => `${x.version}: ${x.state_label}`).join(' · ') : main?.state_label) : undefined}
-								statusTestid="episode-state"
-								owned={staff ? null : episodeMark(ep)}
-							>
-								{#snippet action()}
-									{#if staff}<span class="ep-menu"><Menu label="Episode actions for {episodeLabel(ep, order)}" items={episodeItems(ep)} width={250} /></span>{/if}
-								{/snippet}
-							</WideCard>
-							{#if why}<p class="xs muted ep-why" data-testid="episode-why">{why}</p>{/if}
-							{#if staff}
-								{#each ep.slots.filter((x) => x.reason && ep.slots.length > 1) as sl (sl.id)}
-									<p class="xs muted ep-why">{sl.version}: {sl.reason}</p>
-								{/each}
-							{/if}
-						</li>
-					{:else}
-						<li class="small muted">No episodes listed yet.</li>
-					{/each}
-				</ul>
+						{#if why && why !== off}<p class="xs muted ep-why" data-testid="episode-why">{why}</p>{/if}
+						{#if staff}
+							{#each ep.slots.filter((x) => x.reason && ep.slots.length > 1) as sl (sl.id)}
+								<p class="xs muted ep-why">{sl.version}: {sl.reason}</p>
+							{/each}
+						{/if}
+					{/snippet}
+				</EpisodeList>
 			{:else}
 				<div class="episodes" aria-busy="true">{#each [0, 1, 2] as i (i)}<Skeleton lines={2} />{/each}</div>
 			{/if}
@@ -527,7 +541,7 @@
 	{/if}
 </section>
 
-<TitleRows kind="show" tmdb={title.ids?.tmdb} dates={[['Next episode', show?.next_air_date ? date(show.next_air_date) : ''], ['Airs at', show?.air_time ? `${show.air_time}${show.time_zone ? ` (${show.time_zone})` : ''}` : ''], ['First aired', title.year ? String(title.year) : '']]}>
+<TitleRows kind="show" tmdb={title.ids?.tmdb}>
 	{#snippet middle()}{#key title.id}<TitleCast titleId={title.id} />{/key}{/snippet}
 </TitleRows>
 
@@ -535,6 +549,9 @@
 	<dl class="tp-about">
 		<dt>Episodes</dt>
 		<dd>{show?.episodes ?? 0} in {show?.seasons.length ?? 0} seasons</dd>
+		{#if title.year}<dt>First aired</dt><dd>{title.year}</dd>{/if}
+		{#if show?.next_air_date}<dt>Next episode</dt><dd>{date(show.next_air_date)}</dd>{/if}
+		{#if show?.air_time}<dt>Airs at</dt><dd>{show.air_time}{show.time_zone ? ` (${show.time_zone})` : ''}</dd>{/if}
 		{#if show?.network}<dt>Network</dt><dd>{show.network}</dd>{/if}
 		{#if show?.status}<dt>Status</dt><dd>{statusWord[show.status] ?? show.status}</dd>{/if}
 		{#if title.rating ?? rich?.certification}<dt>Rated</dt><dd>{title.rating ?? rich?.certification}</dd>{/if}
@@ -679,12 +696,8 @@
 	.season-keep { margin: 0 0 14px; }
 	.tp-progress { color: var(--text-muted); }
 	.season-line { margin: 0 0 12px; }
-	.episodes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--title-item), 1fr)); gap: 20px var(--shelf-gap); }
-	.episode { min-width: 0; }
-	@media (max-width: 767px) { .episodes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 10px; } }
-	.ep-why { margin: 4px 0 0; }
-	.ep-menu :global(.ui-pop > .trigger) { background: var(--on-art-scrim-mid); color: var(--on-art); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-	.ep-menu :global(.ui-pop > .trigger:hover), .ep-menu :global(.ui-pop > .trigger[aria-expanded='true']) { background: rgb(0 0 0 / 65%); color: var(--on-art); }
+	.episodes { display: flex; flex-direction: column; gap: 12px; }
+	.ep-why { margin: 2px 0 0; }
 	.modal { width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; padding: var(--s-6); border: 0; border-radius: var(--r-modal); background: var(--surface-1); color: var(--text); box-shadow: var(--shadow-modal); }
 	.modal.wide { width: min(640px, calc(100vw - 32px)); }
 	.modal::backdrop { background: var(--scrim); }

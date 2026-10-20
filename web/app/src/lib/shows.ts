@@ -127,3 +127,38 @@ export function searchWord(state: string | undefined): string {
 export function seasonLooking(eps: EpisodeView[]): number {
 	return eps.filter((e) => ['wanted', 'better_wanted', 'failed', 'rejected', 'stalled'].includes(mainSlot(e)?.state ?? '')).length;
 }
+
+type SeasonLike = { number: number; aired?: number; episodes?: number; not_out_yet?: number; next_air_date?: string; year?: number };
+
+/**
+ * newestSeason is the season a show page opens on: the highest regular
+ * season that has aired or upcoming episodes, else the highest regular
+ * season, else the first one listed (specials only).
+ */
+export function newestSeason(seasons: SeasonLike[]): number | undefined {
+	const regular = seasons.filter((s) => s.number > 0).sort((a, b) => b.number - a.number);
+	const live = regular.find((s) => (s.aired ?? s.episodes ?? 0) > 0 || (s.not_out_yet ?? 0) > 0 || !!s.next_air_date);
+	return (live ?? regular[0] ?? seasons[0])?.number;
+}
+
+/**
+ * newSeason is the season that gets the "New" mark in the season picker:
+ * the newest season when it is still airing or about to (an upcoming
+ * episode), or, without episode counts, when it came out this year or
+ * last. Undefined when no season is new.
+ */
+export function newSeason(seasons: SeasonLike[], now = new Date()): number | undefined {
+	const n = newestSeason(seasons);
+	const s = seasons.find((x) => x.number === n);
+	if (!s || s.number <= 0) return undefined;
+	if ((s.not_out_yet ?? 0) > 0 || s.next_air_date) return s.number;
+	if (s.aired === undefined && s.year && s.year >= now.getFullYear() - 1) return s.number;
+	return undefined;
+}
+
+/** keepOffNote is the one Keep up to date note for a whole season, said once on the season line. */
+export function keepOffNote(seasonKept: boolean, showKept: boolean): string {
+	if (!showKept) return 'Keep up to date is off for the show.';
+	if (!seasonKept) return 'Keep up to date is off for this season.';
+	return '';
+}
