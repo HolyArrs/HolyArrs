@@ -153,6 +153,8 @@
 		clearGuard();
 		release?.();
 		release = null;
+		// Another player took over: for the hero this ends the trailer, so its words come back.
+		onended?.();
 	}
 
 	function clearGuard() {

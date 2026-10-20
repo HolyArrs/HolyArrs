@@ -8,6 +8,7 @@
 	import { dwell, heroPictures, HERO_DELAY } from '../trailer.ts';
 	import { sized } from '../tmdb-image.ts';
 	import { openTheater } from '../theater.svelte.ts';
+	import { heroQuiet, wordsShown, type HeroPhase } from '../hero-quiet.ts';
 
 	// The Explore hero: one featured title, Layer 1 moving pictures at once,
 	// and (Layer 2) a muted trailer that fades in once the page has settled
@@ -49,35 +50,14 @@
 	let more = $state(false);
 	let text = $state<HTMLElement>();
 	let clamped = $state(false);
-	// Netflix: a few seconds into the trailer the words step back and the
-	// logo settles small in the lower left; a pointer over the hero, or the
-	// trailer ending, brings them back.
-	const QUIET_AFTER = 4000;
-	let quiet = $state(false);
-	let drop = $state(0);
-	let quietTimer: ReturnType<typeof setTimeout> | undefined;
-	let fades = $state<HTMLElement>();
-	function hush() {
-		clearTimeout(quietTimer);
-		quietTimer = setTimeout(() => {
-			if (!playing) return;
-			// The logo drops by the height of the words fading under it.
-			drop = fades ? fades.offsetHeight : 0;
-			quiet = true;
-		}, QUIET_AFTER);
-	}
-	function wake() {
-		if (quiet) quiet = false;
-		if (playing) hush();
-	}
-	$effect(() => {
-		if (playing) hush();
-		else {
-			clearTimeout(quietTimer);
-			quiet = false;
-		}
-		return () => clearTimeout(quietTimer);
-	});
+	// Netflix (measured 2026-10-20): about 6 s into the trailer the overview
+	// folds away and the logo glides down; only the trailer stopping for good
+	// (ended, failed, taken over by another player) or a new title brings the
+	// words back. Pointer moves and scrolling leave it as it is.
+	let phase = $state<HeroPhase>('still');
+	const words = heroQuiet((p) => (phase = p));
+	const quiet = $derived(!wordsShown(phase));
+	$effect(() => () => words.dispose());
 	function moreInfo(e: MouseEvent) {
 		if (!onmore || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
 		e.preventDefault();
@@ -99,6 +79,7 @@
 		sources = [];
 		armed = false;
 		playing = false;
+		words.send('reset');
 		void richMetadata(api.get, kind, tmdb).then((m) => live && key === `${kind}:${tmdb}` && (meta = m));
 		return () => {
 			live = false;
@@ -158,13 +139,13 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<section class="ui-xhero" class:quiet bind:this={box} onpointermove={wake} onfocusin={wake} style:--drop="{drop}px" aria-label="Featured: {title}" data-testid="explore-hero">
+<section class="ui-xhero" class:quiet bind:this={box} aria-label="Featured: {title}" data-testid="explore-hero">
 	<div class="art" aria-hidden={!sources.length}>
 		{#if pictures.length}
 			{#key pictures[0]}<HeroMotion {pictures} position="70% 25%" paused={playing} />{/key}
 		{/if}
 		{#if sources.length}
-			<TrailerPlayer {sources} {title} onexpand={expand} onplaying={() => (playing = true)} onended={() => (playing = false)} onfail={() => (playing = false)} />
+			<TrailerPlayer {sources} {title} onexpand={expand} onplaying={() => ((playing = true), words.send('play'))} onended={() => ((playing = false), words.send('stop'))} onfail={() => ((playing = false), words.send('stop'))} />
 		{/if}
 		<div class="shade" class:playing></div>
 	</div>
@@ -174,13 +155,13 @@
 		{:else}
 			<h2 class="name">{title}</h2>
 		{/if}
-		<div class="fades" bind:this={fades}>
 		{#if line || badge}
 			<div class="meta">
 				{#if line}<p>{line}</p>{/if}
 				{#if badge}{@render badge()}{/if}
 			</div>
 		{/if}
+		<div class="fold" aria-hidden={quiet || undefined}><div class="fold-in">
 		{#if !meta}
 			<div class="about" aria-hidden="true"></div>
 		{:else if meta.overview}
@@ -189,7 +170,7 @@
 				{#if clamped}<button class="more" type="button" aria-expanded={more} onclick={() => (more = !more)}>{more ? 'Show less' : 'Show more'}</button>{/if}
 			</div>
 		{/if}
-		</div>
+		</div></div>
 		<div class="actions">
 			{#if href}<a class="info" {href} onclick={moreInfo} aria-haspopup={onmore ? 'dialog' : undefined}>More info</a>{/if}
 			{#if action}{@render action()}{/if}
@@ -200,9 +181,13 @@
 <style>
 	.ui-xhero {
 		--hero-ink: var(--on-art-ink, #0b0b0c);
+		/* Netflix's inset billboard (measured): inside the page gutter, 24 px corners,
+		   77 % of the viewport tall but never taller than a 2.18:1 card (1913 x 878 at 2048 x 1145). */
+		--hero-r: 24px;
 		position: relative; isolation: isolate; overflow: hidden;
-		margin: 0 calc(var(--gutter) * -1);
-		height: clamp(380px, 52vh, 600px);
+		margin: 8px 0 0;
+		border-radius: var(--hero-r);
+		height: max(380px, min(77svh, calc((100vw - var(--gutter) * 2) / 2.18)));
 		display: flex; flex-direction: column; justify-content: flex-end;
 		background: var(--hero-ink); color: var(--on-art, #fff);
 	}
@@ -210,17 +195,18 @@
 	.shade {
 		position: absolute; inset: 0; pointer-events: none;
 		background:
-			linear-gradient(to right, rgb(11 11 12 / 88%) 0%, rgb(11 11 12 / 62%) min(560px, 60%), rgb(11 11 12 / 0%) 92%),
-			linear-gradient(to top, var(--hero-ink) 0%, rgb(11 11 12 / 55%) 18%, rgb(11 11 12 / 0%) 46%);
+			linear-gradient(to right, rgb(0 0 0 / 60%) 0%, rgb(0 0 0 / 0%) 60%),
+			linear-gradient(to top, rgb(0 0 0 / 50%) 0%, rgb(0 0 0 / 10%) 35%, rgb(0 0 0 / 0%) 70%);
 		transition: opacity var(--dur-slow) var(--ease-out);
 	}
-	.shade.playing { opacity: .55; }
-	.content { position: relative; width: min(560px, 100%); padding: 0 clamp(20px, 4vw, 56px) clamp(24px, 3.4vw, 44px); display: flex; flex-direction: column; gap: 10px; transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out); }
-	/* A few seconds into the trailer the words fade (never moving layout) and the logo settles small, lower left. */
-	.fades { display: flex; flex-direction: column; gap: 10px; transition: opacity 600ms var(--ease-out), transform 600ms var(--ease-out); }
-	.quiet .fades { opacity: 0; transform: translateY(12px); pointer-events: none; }
-	.content h2 { transform-origin: left bottom; transition: transform 800ms var(--ease-out); }
-	.quiet .content h2 { transform: translateY(calc(var(--drop) + 10px)) scale(.6); }
+	.shade.playing { opacity: .85; }
+	.content { position: relative; width: min(640px, 100%); padding: 0 clamp(20px, 2vw, 40px) clamp(24px, 2.6vw, 50px); display: flex; flex-direction: column; gap: 10px; transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out); }
+	/* About 6 s into the trailer the overview folds (height and opacity, ~5 s slow ease) and
+	   the logo glides down with it; it unfolds the same way. Both directions are one
+	   transition, so it reverses mid-way and never sticks. */
+	.fold { display: grid; grid-template-rows: 1fr; opacity: 1; transition: grid-template-rows 4800ms var(--ease-hero, cubic-bezier(.4, 0, .2, 1)), opacity 3200ms var(--ease-hero, cubic-bezier(.4, 0, .2, 1)); }
+	.fold-in { min-height: 0; overflow: hidden; }
+	.quiet .fold { grid-template-rows: 0fr; opacity: 0; pointer-events: none; }
 	/* The title box and the overview keep their space while the details load, so nothing moves when they arrive. */
 	.content { --title-h: clamp(80px, 10vw, 140px); }
 	h2 { margin: 0; min-height: var(--title-h); display: flex; align-items: flex-end; }
@@ -241,14 +227,13 @@
 	.ui-xhero :global(.ui-trailer + .shade) { z-index: 1; }
 	.ui-xhero :global(.ctl) { z-index: 2; bottom: clamp(24px, 3.4vw, 44px); right: clamp(20px, 4vw, 56px); }
 	@media (max-width: 767px) {
-		.ui-xhero { height: auto; min-height: 420px; }
+		.ui-xhero { --hero-r: 16px; height: auto; min-height: min(560px, 120vw); }
 		.content { padding: 0 var(--gutter) 24px; }
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.shade, .content { transition: none; }
-		.fades { transition: opacity 400ms linear; }
-		.quiet .fades { transform: none; }
-		.content h2 { transition: none; }
-		.quiet .content h2 { transform: none; }
+		/* Opacity only: the overview keeps its room and simply fades. */
+		.fold { transition: opacity 400ms linear; }
+		.quiet .fold { grid-template-rows: 1fr; }
 	}
 </style>
