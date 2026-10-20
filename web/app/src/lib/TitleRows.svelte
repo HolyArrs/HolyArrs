@@ -11,6 +11,7 @@
 	import Shelf from './ui/Shelf.svelte';
 	import WideCard from './ui/WideCard.svelte';
 	import Sheet from './ui/Sheet.svelte';
+	import TitleReviews from './TitleReviews.svelte';
 
 	// The requester rows of a movie or show page, read from the details
 	// answer (GET /metadata/{kind}/{tmdb}): Where to stream beside the dates
@@ -133,6 +134,8 @@
 		{#each more.slice(0, 18) as p (p.c.key)}{@render card(p)}{/each}
 	</Shelf>
 {/if}
+
+<TitleReviews {kind} {tmdb} />
 
 <style>
 	.stream { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 6px; padding: 0; list-style: none; }
