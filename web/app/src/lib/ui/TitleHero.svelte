@@ -130,6 +130,8 @@
 
 	let backdropFailed = $state(false);
 	let logoFailed = $state(false);
+	// A very wide wordmark (over 6:1) would come out a thin line in the logo box: it gets a floor height and more width.
+	let wideLogo = $state(false);
 	let posterFailed = $state(false);
 
 	const wide = $derived(backdrop && !backdropFailed && !cover ? backdrop : null);
@@ -191,7 +193,7 @@
 				<img class="cover" src={cover} alt="" decoding="async" use:viewTransitionName={vtName} />
 			{/if}
 			{#if logo && !logoFailed}
-				<h1 class="bb-logo"><img src={logo} alt={title} onerror={() => (logoFailed = true)} /></h1>
+				<h1 class="bb-logo" class:wide={wideLogo}><img src={logo} alt={title} onload={(e) => { const i = e.currentTarget as HTMLImageElement; wideLogo = i.naturalHeight > 0 && i.naturalWidth / i.naturalHeight > 6; }} onerror={() => (logoFailed = true)} /></h1>
 			{:else}
 				<h1 class="bb-name" class:short={!!cover}>{title}</h1>
 			{/if}
@@ -220,6 +222,7 @@
 {/snippet}
 
 <style>
+	.bb-logo.wide :global(img) { min-height: clamp(40px, 3.4vw, 64px); max-width: min(92vw, 760px) !important; }
 	.bd { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 20%; filter: saturate(1.1) brightness(.75); }
 	.bd.square { object-position: center 35%; }
 	.bd.blur { filter: blur(40px) saturate(1.3) brightness(.6); transform: scale(1.2); }

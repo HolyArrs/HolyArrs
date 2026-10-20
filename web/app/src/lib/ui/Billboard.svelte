@@ -243,6 +243,9 @@
 	.actions { --hero-btn: clamp(44px, 2.35vw, 60px); display: flex; flex-wrap: wrap; align-items: center; gap: clamp(10px, .6vw, 14px); margin-top: 4px; }
 	.actions :global(.ui-act) { height: var(--hero-btn); min-width: var(--hero-btn); font-size: clamp(16px, 1vw, 22px); }
 	.actions :global(.ui-act.round) { width: var(--hero-btn); }
+	/* More actions (ActionMenu) matches the other hero buttons at every size. */
+	.actions :global(.ui-actmenu .ui-pop > .trigger) { height: var(--hero-btn); min-width: var(--hero-btn); font-size: clamp(16px, 1vw, 22px); }
+	.actions :global(.ui-actmenu.round .ui-pop > .trigger) { width: var(--hero-btn); }
 	.actions :global(.ui-ibtn) { width: var(--hero-btn); height: var(--hero-btn); }
 	.ui-billboard :global(.ui-trailer + .shade) { z-index: 1; }
 	.ui-billboard :global(.ctl) { z-index: 4; bottom: clamp(24px, 3.4vw, 44px); right: clamp(20px, 4vw, 56px); }
