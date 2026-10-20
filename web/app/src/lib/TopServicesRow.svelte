@@ -66,7 +66,6 @@
 	});
 	const source = $derived(!row ? '' : genre ? `Popular in ${genre.name.toLowerCase()} on ${row.name}` : serviceLabel(row));
 	const title = $derived(genre ? `Trending ${genre.name.toLowerCase()} on streaming` : type === 'movies' || type === 'shows' ? `Trending ${type} on streaming` : 'Trending on streaming');
-	const attribution = $derived(!genre && row?.source === 'streaming-availability' ? (answer?.attribution ?? '') : '');
 
 	let gone: AbortController | undefined;
 	async function load() {
@@ -157,7 +156,6 @@
 				{/snippet}
 			</Shelf>
 		{/key}
-		{#if attribution}<p class="credit">{attribution}</p>{/if}
 	</section>
 {/if}
 
@@ -167,7 +165,6 @@
 	.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-inline: calc(var(--gutter) * -1); padding: 2px var(--gutter); }
 	.chips::-webkit-scrollbar { display: none; }
 	.chips :global(.ui-chip) { flex: none; }
-	.credit { margin: 4px 0 0; padding-inline: var(--gutter); color: var(--text-muted); font: var(--t-caption, var(--t-callout)); }
 	/* The column is the poster (68%, the same width as the other rows' posters) plus the number (32%); the poster overlaps the number's right edge a little. */
 	.ranked { position: relative; container-type: inline-size; }
 	.rank { position: absolute; left: 0; top: 0; width: 37%; height: 102cqw; display: flex; align-items: flex-end; justify-content: flex-end; font-size: 50cqw; font-weight: 800; line-height: 0.76; letter-spacing: -0.06em; color: var(--bg, #000); -webkit-text-stroke: 3px var(--text-2, #9a9a9a); paint-order: stroke; user-select: none; z-index: 0; }
