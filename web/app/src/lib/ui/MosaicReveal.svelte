@@ -8,9 +8,9 @@
 	// curve (cubic-bezier(.16,1,.3,1)-like). Exit: the band runs back up over
 	// EXIT_MS on an ease-in curve (it accelerates away), building the cover.
 	export const ENTER_DELAY = 120;
-	export const ENTER_SWEEP = 780;
-	export const EXIT_MS = 620;
-	export const FEATHER = 120;
+	export const ENTER_SWEEP = 1100;
+	export const EXIT_MS = 760;
+	export const FEATHER = 280;
 	const expoOut = (x: number) => (x >= 1 ? 1 : 1 - Math.pow(2, -10 * x));
 	const easeIn = (x: number) => x * x * x;
 
@@ -37,7 +37,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 
-	let { exit = false, cell = 28, ondone }: { exit?: boolean; cell?: number; ondone?: () => void } = $props();
+	let { exit = false, cell = 36, ondone }: { exit?: boolean; cell?: number; ondone?: () => void } = $props();
 	let canvas = $state<HTMLCanvasElement>();
 	function measure() {
 		if (typeof document === 'undefined') return { top: 0, left: 0, width: 0, height: 0 };
@@ -48,6 +48,8 @@
 	}
 	const box = measure();
 	const bg = typeof document === 'undefined' ? '' : getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || getComputedStyle(document.body).backgroundColor || '#000';
+	// The breaking squares are drawn a touch lighter than the page, so the pixels read as pixels.
+	const px = typeof document === 'undefined' ? '' : getComputedStyle(document.documentElement).getPropertyValue('--surface-2').trim() || bg;
 
 	onMount(() => {
 		const c = canvas;
@@ -65,7 +67,7 @@
 		const rows = Math.ceil(box.height / cell);
 		const rnd = seeded(20261020);
 		const jitter = new Float32Array(cols * rows);
-		for (let i = 0; i < jitter.length; i++) jitter[i] = rnd() * 0.45;
+		for (let i = 0; i < jitter.length; i++) jitter[i] = rnd() * 0.9;
 		const H = box.height;
 		const travel = H + FEATHER;
 		let raf = 0;
@@ -86,12 +88,15 @@
 				if (y * cell >= solid) break;
 				for (let x = 0; x < cols; x++) {
 					// 0 at the band's top (clear), 1 at its bottom (covered); minus the seeded delay.
-					const k = Math.min(1, Math.max(0, ((y + 0.5) * cell - edge) / FEATHER + jitter[y * cols + x] - 0.2));
-					if (k <= 0.01) continue;
-					ctx.globalAlpha = k;
-					const s = cell * (0.92 + 0.08 * k);
+					const k = Math.min(1, Math.max(0, ((y + 0.5) * cell - edge) / FEATHER * 1.4 + jitter[y * cols + x] - 0.45));
+					if (k <= 0.02) continue;
+					// Each square breaks on its own beat: it shrinks to nothing (pixels), lighter while it goes.
+					ctx.globalAlpha = Math.min(1, 0.35 + k);
+					ctx.fillStyle = k > 0.96 ? bg : px;
+					const s = Math.max(2, cell * k - (k < 0.96 ? 2 : 0));
 					const o = (cell - s) / 2;
 					ctx.fillRect(x * cell + o, y * cell + o, s, s);
+					ctx.fillStyle = bg;
 				}
 			}
 			ctx.globalAlpha = 1;
