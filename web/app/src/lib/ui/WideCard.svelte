@@ -260,11 +260,12 @@
 	.big .art { border-radius: var(--r-panel); }
 	.cover.grown .art { visibility: hidden; }
 	.scrim { position: absolute; inset: auto 0 0; height: 60%; background: linear-gradient(to top, rgb(0 0 0 / 0.66), rgb(0 0 0 / 0.18) 55%, transparent); pointer-events: none; }
-	.name { position: absolute; left: 6%; right: 30%; bottom: 13%; z-index: 1; display: flex; align-items: flex-end; pointer-events: none; }
-	.name.lifted { bottom: 26%; }
-	/* One fixed box bottom-left for the logo or the name, so a row reads as one pattern. */
-	.name { height: 22cqw; }
-	.word { font: 700 clamp(15px, 7.5cqw, 30px)/1.05 var(--font-display); letter-spacing: -0.02em; color: #fff; text-shadow: 0 2px 10px rgb(0 0 0 / 0.55); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+	/* One fixed box bottom-left for the logo or the name, the same on every card:
+	   6% in from the left, 40% of the width, about a quarter of the height. Wide
+	   logos meet the width, tall logos meet the height; both sit bottom-left. */
+	.name { position: absolute; left: 6%; bottom: 9%; z-index: 1; width: 40%; height: 13cqw; display: flex; align-items: flex-end; justify-content: flex-start; pointer-events: none; }
+	.name.lifted { bottom: 20%; }
+	.word { font: 700 clamp(13px, 5.2cqw, 24px)/1.05 var(--font-display); letter-spacing: -0.02em; color: #fff; text-shadow: 0 2px 10px rgb(0 0 0 / 0.55); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 	/* Status mark, strip and Top 10 tag: 22px under 280px of card, 26px above (whole pixels). */
 	.cover .art :global(.mark) { width: 22px; height: 22px; }
 	.cover .art :global(.mark svg) { width: 13px; height: 13px; }
@@ -280,7 +281,7 @@
 		.cover .art :global(.top10) { width: 21px; height: 26px; font-size: 6px; }
 		.cover .art :global(.top10 b) { font-size: 12px; }
 	}
-	.logo { max-width: 100%; max-height: 22cqw; width: auto; height: auto; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 2px 8px rgb(0 0 0 / 0.5)); }
+	.logo { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 2px 8px rgb(0 0 0 / 0.5)); }
 	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
 		.cover a.hit:hover .art { transform: none; }
 		.cover a.hit:hover img { transform: none; }
