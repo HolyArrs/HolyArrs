@@ -417,3 +417,14 @@ func validDirectPressings(pressings []Pressing) bool {
 }
 
 var _ ArtistProvider = (*serviceMusic)(nil)
+
+// ArtistGenres asks the direct MusicBrainz client, when it can.
+func (m *serviceMusic) ArtistGenres(ctx context.Context, mbid string) ([]string, error) {
+	g, ok := m.direct.(interface {
+		ArtistGenres(context.Context, string) ([]string, error)
+	})
+	if !ok {
+		return nil, ErrArtistNotFound
+	}
+	return g.ArtistGenres(ctx, mbid)
+}

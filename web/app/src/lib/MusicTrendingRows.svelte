@@ -143,6 +143,13 @@
 	}
 
 	const hero = $derived(answer?.hero ?? null);
+	let heroBroken = $state(false);
+	const heroNote = $derived.by(() => {
+		if (!hero) return '';
+		if (!hero.title_id) return `${hero.artist} · number ${hero.rank ?? 1} on this week's album chart`;
+		const out = hero.date ? `out ${new Date(`${hero.date}T00:00:00Z`).toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' })}` : '';
+		return ['From an artist you have', hero.artist, out].filter(Boolean).join(' · ');
+	});
 	const regions = $derived(answer?.regions ?? []);
 	const hasCharts = $derived(answer?.rows.some((r) => r.type === 'top_albums' || r.type === 'trending_artists') ?? false);
 </script>
@@ -162,14 +169,11 @@
 
 		{#if hero}
 			<a class="hero" href={musicCardHref(hero)} data-testid="music-hero">
-				<span class="cover">{#if hero.image}<img src={musicImage(hero)} alt="" loading="lazy" />{/if}</span>
+				<span class="cover">{#if hero.image && !heroBroken}<img src={musicImage(hero)} alt="" loading="lazy" onerror={() => (heroBroken = true)} />{/if}</span>
 				<span class="words">
 					<span class="eyebrow">New album</span>
 					<strong>{hero.name}</strong>
-					<span class="note">
-						{#if hero.title_id}From an artist you have · {hero.artist}{#if hero.date} · out {new Date(`${hero.date}T00:00:00Z`).toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' })}{/if}
-						{:else}{hero.artist} · number {hero.rank ?? 1} on this week's album chart{/if}
-					</span>
+					<span class="note">{heroNote}</span>
 				</span>
 			</a>
 		{/if}
