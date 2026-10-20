@@ -304,18 +304,24 @@
 
 	let ctlAt = 0;
 	let ctlBox = $state<HTMLElement>();
-	// A press on the controls may swap the button (sound on/off) before the
-	// click lands; that click must never fall through to the card's link.
-	function guardClick() {
-		const stop = (e: MouseEvent) => {
-			window.removeEventListener('click', stop, true);
-			if (ctlBox?.contains(e.target as Node) && (e.target as Element).closest('button')) return;
+	// The controls sit inside a card's link: the app's link router sees a
+	// click before the button's own handler could cancel it. So clicks on the
+	// controls are taken first (window capture), run here, and go no further.
+	$effect(() => {
+		const take = (e: MouseEvent) => {
+			const b = (e.target as Element | null)?.closest?.('button[data-act]');
+			if (!b || !ctlBox?.contains(b)) return;
 			e.preventDefault();
-			e.stopPropagation();
+			e.stopImmediatePropagation();
+			ctlAt = Date.now();
+			const act = b.getAttribute('data-act');
+			if (act === 'sound') toggleMute();
+			else if (act === 'pause') togglePause();
+			else if (act === 'replay') replay();
 		};
-		window.addEventListener('click', stop, true);
-		setTimeout(() => window.removeEventListener('click', stop, true), 800);
-	}
+		window.addEventListener('click', take, true);
+		return () => window.removeEventListener('click', take, true);
+	});
 	function toggleMute(e?: MouseEvent) {
 		ctlAt = Date.now();
 		// The hover card's art is a link: the button must not follow it.
@@ -449,14 +455,14 @@
 	<button type="button" class="expand" aria-label="Play the {title} trailer full screen" onclick={expand}></button>
 {/if}
 {#if controls}
-	<div class="ctl" class:on={shown} data-testid="trailer-sound" role="group" aria-label="Trailer controls" bind:this={ctlBox} onpointerdown={(e) => { ctlAt = Date.now(); e.stopPropagation(); guardClick(); }} onclickcapture={() => (ctlAt = Date.now())}>
+	<div class="ctl" class:on={shown} data-testid="trailer-sound" role="group" aria-label="Trailer controls" bind:this={ctlBox} onpointerdown={(e) => { ctlAt = Date.now(); e.stopPropagation(); }} onclickcapture={() => (ctlAt = Date.now())}>
 		{#if shown && pausable}
-			<IconButton icon={paused ? 'play' : 'pause'} label={paused ? 'Play the trailer' : 'Pause the trailer'} variant="glass" size="md" tipSide="above" onclick={togglePause} />
+			<IconButton icon={paused ? 'play' : 'pause'} label={paused ? 'Play the trailer' : 'Pause the trailer'} variant="glass" size="md" tipSide="above" data-act="pause" />
 		{/if}
 		{#if shown && hasAudio()}
-			<IconButton icon={muted ? 'soundOff' : 'sound'} label={muted ? 'Turn sound on' : 'Turn sound off'} variant="glass" size="md" tipSide="above" onclick={toggleMute} />
+			<IconButton icon={muted ? 'soundOff' : 'sound'} label={muted ? 'Turn sound on' : 'Turn sound off'} variant="glass" size="md" tipSide="above" data-act="sound" />
 		{:else if done && sources.length > 0}
-			<IconButton icon="replay" label="Play the trailer again" variant="glass" size="md" tipSide="above" onclick={replay} />
+			<IconButton icon="replay" label="Play the trailer again" variant="glass" size="md" tipSide="above" data-act="replay" />
 		{/if}
 	</div>
 {/if}
