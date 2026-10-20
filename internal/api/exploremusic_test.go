@@ -34,6 +34,18 @@ func (g *genreArtists) ArtistGenres(_ context.Context, mbid string) ([]string, e
 	return []string{"jazz"}, nil
 }
 
+func (g *genreArtists) ArtistGenresLinks(ctx context.Context, mbid string) ([]string, []metadata.ArtistLink, error) {
+	gs, _ := g.ArtistGenres(ctx, mbid)
+	var links []metadata.ArtistLink
+	if mbid == mid('a', 1) {
+		for i := 1; i <= 4; i++ {
+			links = append(links, metadata.ArtistLink{MBID: mid('9', i), Name: fmt.Sprintf("Member %d", i), Type: "member of band"})
+		}
+		links = append(links, metadata.ArtistLink{MBID: mid('b', 2), Name: "Second Band"}) // owned: left out
+	}
+	return gs, links, nil
+}
+
 func mid(prefix byte, n int) string {
 	return fmt.Sprintf("%c%07d-0000-4000-8000-%012d", prefix, n, n)
 }
@@ -203,6 +215,9 @@ func TestExploreMusicRows(t *testing.T) {
 	if r := m.row("genre:rock"); r == nil || !strings.Contains(r.Reason, "rock") {
 		t.Fatalf("genre row %+v", m.Rows)
 	}
+	if r := m.row("collabs"); r == nil || len(r.Items) != 4 || r.Shape != "round" || r.Items[0].Note != "With Owned Band" {
+		t.Fatalf("collabs %+v", r)
+	}
 	// The pop chip keeps only cards tagged pop (Second Band's albums).
 	pop := get("?genre=pop")
 	for _, r := range pop.Rows {
@@ -228,10 +243,16 @@ func TestExploreMusicColdStart(t *testing.T) {
 	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
 	trend := func(_ context.Context, kind, region string) (metadata.MusicTrend, error) {
 		l := metadata.MusicTrend{Kind: kind, Region: region, Source: "deezer"}
-		for i := 1; i <= 6; i++ {
-			if kind == "album" {
-				l.Items = append(l.Items, metadata.MusicTrendItem{Rank: i, MBID: mid('e', i), Title: "A", Artist: "B", ArtistMBID: mid('a', i)})
-			} else {
+		years := []int{1981, 1984, 1986, 1989, 1991, 1995, 1997, 1996, 2001, 2004, 2006, 2006, 2015, 2016, 2016, 2011}
+		for i := 1; i <= 16; i++ {
+			switch kind {
+			case "album", "fresh", "classic":
+				it := metadata.MusicTrendItem{Rank: i, MBID: mid(kind[0], i), Title: "A", Artist: "B", ArtistMBID: mid('a', i)}
+				if kind == "classic" {
+					it.ReleaseDate, it.Tags = fmt.Sprintf("%d-01-01", years[i-1]), []string{"chill"}
+				}
+				l.Items = append(l.Items, it)
+			default:
 				l.Items = append(l.Items, metadata.MusicTrendItem{Rank: i, MBID: mid('a', i), Name: fmt.Sprintf("Artist %d", i)})
 			}
 		}
@@ -260,11 +281,20 @@ func TestExploreMusicColdStart(t *testing.T) {
 		t.Fatalf("cold %+v", m)
 	}
 	for _, r := range m.Rows {
-		if r.Type != "top_albums" && r.Type != "trending_artists" && r.Type != "popular_genre" {
+		if !musicColdTypes[r.Type] {
 			t.Fatalf("cold start row %s", r.ID)
 		}
 	}
-	if r := m.row("popular_genre:rock"); r == nil || len(r.Items) != 6 || !strings.Contains(m.row("top_albums").Reason, "FR") {
-		t.Fatalf("popular rock %+v", m.Rows)
+	if len(m.Rows) < 10 {
+		var ids []string
+		for _, r := range m.Rows {
+			ids = append(ids, r.ID)
+		}
+		t.Fatalf("cold start shows %d rows: %v", len(m.Rows), ids)
+	}
+	for _, id := range []string{"popular_genre:rock", "popular_country:FR", "fresh", "rising", "classic", "mood:chill", "decade:1980", "decade:1990", "decade:2000", "decade:2010"} {
+		if m.row(id) == nil {
+			t.Fatalf("no %s row", id)
+		}
 	}
 }

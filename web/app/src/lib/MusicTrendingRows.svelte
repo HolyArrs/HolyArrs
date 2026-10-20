@@ -187,7 +187,7 @@
 		{/if}
 
 		{#each answer.rows as row (row.id)}
-			<Shelf title={row.title} subtitle={row.reason} item="var(--explore-item)">
+			<Shelf title={row.type === 'popular_country' ? `Popular in ${regionName(row.id.split(':')[1] ?? '')}` : row.title} subtitle={row.type === 'popular_country' ? `This week's top albums in ${regionName(row.id.split(':')[1] ?? '')}` : row.reason} item="var(--explore-item)">
 				{#each row.items.map(live) as c (c.key)}
 					<PosterCard
 						title={c.name}

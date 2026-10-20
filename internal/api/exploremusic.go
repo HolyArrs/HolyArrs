@@ -54,6 +54,8 @@ type MusicCard struct {
 	Listens    int64    `json:"listen_count,omitempty"`
 	Upcoming   bool     `json:"upcoming,omitempty"`
 	Genres     []string `json:"genres"`
+	// Note is the card's own reason line, when the row gives one.
+	Note string `json:"note,omitempty"`
 	// Fresh is the card's freshness strip (Recently Added, New Release).
 	Fresh *explore.Fresh `json:"fresh,omitempty"`
 }
@@ -70,6 +72,7 @@ type MusicRow struct {
 
 type musicGenreEntry struct {
 	genres []string
+	links  []metadata.ArtistLink
 	at     time.Time
 }
 
@@ -158,7 +161,14 @@ func (a *API) fillGenres(src genreSource) {
 		c.lookups = append(c.lookups, now)
 		c.mu.Unlock()
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		g, err := src.ArtistGenres(ctx, id)
+		var g []string
+		var links []metadata.ArtistLink
+		var err error
+		if gl, ok := src.(genreLinkSource); ok {
+			g, links, err = gl.ArtistGenresLinks(ctx, id)
+		} else {
+			g, err = src.ArtistGenres(ctx, id)
+		}
 		cancel()
 		c.mu.Lock()
 		delete(c.queued, id)
@@ -166,7 +176,7 @@ func (a *API) fillGenres(src genreSource) {
 			if len(c.genres) >= musicCacheMax {
 				c.genres = map[string]musicGenreEntry{}
 			}
-			c.genres[id] = musicGenreEntry{genres: g, at: time.Now()}
+			c.genres[id] = musicGenreEntry{genres: g, links: links, at: time.Now()}
 		}
 		c.mu.Unlock()
 	}
@@ -327,12 +337,12 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 		}
 		return seeds[i].added.After(seeds[j].added)
 	})
-	seeds = seeds[:min(8, len(seeds))]
+	seeds = seeds[:min(16, len(seeds))]
 	if n := len(seeds); n > 1 {
 		k := int(now.Unix()/86400) % n
 		seeds = append(seeds[k:], seeds[:k]...)
 	}
-	seeds = seeds[:min(4, len(seeds))]
+	seeds = seeds[:min(musicSeedCount(len(artists)), len(seeds))]
 	var seedIDs []string
 	for _, s := range seeds {
 		if s.mbid != "" {
@@ -346,10 +356,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 	regions := []string{}
 	if a.s.MusicTrending != nil {
 		for _, kind := range []string{"artist", "album"} {
-			l, err := a.cachedMusicTrend(ctx, kind, region)
-			if err != nil && region != "global" {
-				l, err = a.cachedMusicTrend(ctx, kind, "global")
-			}
+			l, err := a.cachedMusicTrend(ctx, kind, "global")
 			if err != nil {
 				continue
 			}
@@ -543,8 +550,8 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 	for i := range trendArtists {
 		trendArtists[i] = tag(trendArtists[i])
 	}
-	add(MusicRow{ID: "top_albums", Type: "top_albums", Title: "Top albums this week", Reason: chartReason(region, "Chart"), Shape: "square", Items: trendAlbums})
-	add(MusicRow{ID: "trending_artists", Type: "trending_artists", Title: "Trending artists", Reason: chartReason(region, "Most played"), Shape: "round", Items: trendArtists})
+	add(MusicRow{ID: "top_albums", Type: "top_albums", Title: "Top albums this week", Reason: chartReason("global", "Chart"), Shape: "square", Items: trendAlbums})
+	add(MusicRow{ID: "trending_artists", Type: "trending_artists", Title: "Trending artists", Reason: chartReason("global", "Most played"), Shape: "round", Items: trendArtists})
 
 	// Because you have / Fans of: similar artists not in the Library.
 	pool := map[string]MusicCard{}
@@ -566,7 +573,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		t, title, reason := "because_have", "Because you have "+s.name, "Artists people who play "+s.name+" also play"
-		if i >= 2 {
+		if i%2 == 1 {
 			t, title, reason = "fans_of", "Fans of "+s.name+" also like", "From listening sessions that include "+s.name
 		}
 		add(MusicRow{ID: t + ":" + s.mbid, Type: t, Title: title, Reason: reason, Shape: "round", Items: items})
@@ -626,6 +633,9 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	nGenreRows := 3
+	if len(artists) >= 10 {
+		nGenreRows = 6
+	}
 	if cold {
 		nGenreRows = 6
 	}
@@ -643,10 +653,13 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Cold start: charts and genre rows only.
+	out = a.moreMusicRows(ctx, &musicCtx{now: now, hour: musicHour(q.Get("hour"), now), region: region, artists: artists, byTitle: byTitle, owned: owned,
+		genres: genres, trendAlbums: trendAlbums, trendArtists: trendArtists, pool: pool, top: top, tag: tag, albumCard: albumCard, names: &names, cold: cold}, out)
+
+	// Cold start: only rows that need no Library.
 	final := []MusicRow{}
 	for _, row := range out {
-		if cold && row.Type != "top_albums" && row.Type != "trending_artists" && row.Type != "popular_genre" {
+		if cold && !musicColdTypes[row.Type] {
 			continue
 		}
 		if genre != "" {
@@ -671,7 +684,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 		if len(row.Items) > musicRowMax {
 			row.Items = row.Items[:musicRowMax]
 		}
-		if len(row.Items) < musicRowMin[row.Type] {
+		if len(row.Items) < musicMinFor(row.Type, len(artists)) {
 			continue
 		}
 		for i := range row.Items {

@@ -84,6 +84,8 @@ describe('Explore music cards', () => {
 		expect(musicCardNote({ type: 'top_albums' }, { ...base, kind: 'album', artist: 'BTS', listen_count: 12000 })).toBe('BTS · 12K listens this week');
 		expect(musicCardNote({ type: 'missing' }, { ...base, kind: 'album', artist: 'BTS', date: '1997-05-21' })).toBe('BTS · 1997');
 		expect(musicCardNote({ type: 'because_have' }, { ...base, kind: 'artist' })).toBe('');
+		expect(musicCardNote({ type: 'collabs' }, { ...base, kind: 'artist', note: 'With Radiohead' })).toBe('With Radiohead');
+		expect(musicCardNote({ type: 'classic' }, { ...base, kind: 'album', artist: 'Radiohead', date: '1997-05-21' })).toBe('Radiohead · 1997');
 	});
 
 	it('opens Library albums and artists, else the artist search', () => {
@@ -95,7 +97,7 @@ describe('Explore music cards', () => {
 	it('reads the rows for a chip and region', async () => {
 		let asked = '';
 		const client = { get: async <T,>(p: string) => ((asked = p), { kid: false, cold: true, genres: [], genre: '', hero: null, rows: [] } as T) };
-		await fetchMusicExplore('rock', 'FR', client);
-		expect(asked).toBe('/explore/music?region=FR&genre=rock');
+		await fetchMusicExplore('rock', 'FR', client, undefined, 21);
+		expect(asked).toBe('/explore/music?region=FR&hour=21&genre=rock');
 	});
 });

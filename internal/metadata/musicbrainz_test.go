@@ -121,8 +121,12 @@ func (f *fakeMB) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		fmt.Fprint(w, `{"artists":[]}`)
-	case r.URL.Path == "/ws/2/artist/"+mbArtistID && q.Get("inc") == "genres":
-		fmt.Fprintf(w, `{"id":%q,"name":"Lab Band","genres":[{"name":"Rock","count":2},{"name":"art pop","count":5},{"name":"zero","count":0}]}`, mbArtistID)
+	case r.URL.Path == "/ws/2/artist/"+mbArtistID && q.Get("inc") == "genres artist-rels":
+		fmt.Fprintf(w, `{"id":%q,"name":"Lab Band","genres":[{"name":"Rock","count":2},{"name":"art pop","count":5},{"name":"zero","count":0}],
+			"relations":[{"type":"member of band","artist":{"id":%q,"name":"Singer"}},{"type":"tribute","artist":{"id":%q,"name":"Cover Band"}},{"type":"collaboration","artist":{"id":"bad","name":"Bad"}}]}`, mbArtistID, mbAlbumA, mbAlbumB)
+	case r.URL.Path == "/ws/2/release-group" && strings.Contains(q.Get("query"), "secondarytype:soundtrack"):
+		fmt.Fprintf(w, `{"release-groups":[{"id":%q,"title":"Lab Movie (Original Soundtrack)","score":100,"first-release-date":"2020-05-01"},
+			{"id":%q,"title":"Lab Movie 2","score":100,"first-release-date":"1990"},{"id":%q,"title":"Other","score":100,"first-release-date":"2020"}]}`, mbAlbumA, mbAlbumB, mbLive)
 	case r.URL.Path == "/ws/2/artist/"+mbArtistID:
 		fmt.Fprintf(w, `{"id":%q,"name":"Lab Band","sort-name":"Band, Lab","type":"Group","life-span":{"ended":true}}`, mbArtistID)
 	case r.URL.Path == "/ws/2/release-group" && q.Get("artist") == mbArtistID:
@@ -417,5 +421,17 @@ func TestMusicBrainzArtistGenres(t *testing.T) {
 	}
 	if _, err := mb.ArtistGenres(context.Background(), "nope"); err == nil {
 		t.Fatal("bad id looked up")
+	}
+}
+
+func TestMusicBrainzLinksAndSoundtracks(t *testing.T) {
+	mb, _, _, _ := mbSetup(t)
+	_, links, err := mb.ArtistGenresLinks(context.Background(), mbArtistID)
+	if err != nil || len(links) != 1 || links[0].Name != "Singer" || links[0].MBID != mbAlbumA {
+		t.Fatalf("%+v %v", links, err)
+	}
+	st, err := mb.SoundtrackFor(context.Background(), "Lab Movie", 2020)
+	if err != nil || len(st) != 1 || st[0].MBID != mbAlbumA {
+		t.Fatalf("%+v %v", st, err)
 	}
 }

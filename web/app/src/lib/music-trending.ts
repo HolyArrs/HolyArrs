@@ -132,6 +132,8 @@ export interface MusicCardData {
 	genres: string[];
 	/** The server freshness strip (Recently Added, New Release). */
 	fresh?: Fresh | null;
+	/** The card's own reason line, when the server gives one. */
+	note?: string;
 }
 
 export interface MusicRowData {
@@ -155,8 +157,8 @@ export interface MusicExploreAnswer {
 }
 
 /** fetchMusicExplore reads the Music rows for a genre chip ('' is all) and chart region. */
-export async function fetchMusicExplore(genre: string, region: string, client: Pick<Client, 'get'> = api, signal?: AbortSignal): Promise<MusicExploreAnswer> {
-	const q = new URLSearchParams({ region });
+export async function fetchMusicExplore(genre: string, region: string, client: Pick<Client, 'get'> = api, signal?: AbortSignal, hour = new Date().getHours()): Promise<MusicExploreAnswer> {
+	const q = new URLSearchParams({ region, hour: String(hour) });
 	if (genre) q.set('genre', genre);
 	return client.get<MusicExploreAnswer>(`/explore/music?${q}`, signal);
 }
@@ -171,7 +173,15 @@ function shortDay(d: string): string {
 /** musicCardNote is a card's one-line reason, by the row it is in. */
 export function musicCardNote(row: Pick<MusicRowData, 'type'>, c: MusicCardData): string {
 	const by = c.kind === 'album' && c.artist ? c.artist : '';
+	if (c.note) return c.note;
 	switch (row.type) {
+		case 'fresh':
+			return [by, c.date ? `Out ${shortDay(c.date)}` : ''].filter(Boolean).join(' · ');
+		case 'rising':
+			return listeners(c.listen_count);
+		case 'classic':
+		case 'decade':
+			return [by, c.date ? c.date.slice(0, 4) : ''].filter(Boolean).join(' · ');
 		case 'just_arrived':
 			return [by, c.date ? `Arrived ${shortDay(c.date)}` : ''].filter(Boolean).join(' · ');
 		case 'new_from':
@@ -181,6 +191,7 @@ export function musicCardNote(row: Pick<MusicRowData, 'type'>, c: MusicCardData)
 		case 'top_albums':
 		case 'trending_artists':
 		case 'popular_genre':
+		case 'popular_country':
 			return [by, listeners(c.listen_count)].filter(Boolean).join(' · ');
 		case 'missing':
 			return [by, c.date ? c.date.slice(0, 4) : ''].filter(Boolean).join(' · ');

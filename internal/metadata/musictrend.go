@@ -20,6 +20,9 @@ type MusicTrendItem struct {
 	Artist     string `json:"artist_name"`
 	ArtistMBID string `json:"artist_mbid"`
 	Listens    int64  `json:"listen_count"`
+	// ReleaseDate and Tags come on the fresh and classic lists.
+	ReleaseDate string   `json:"release_date"`
+	Tags        []string `json:"tags"`
 }
 
 // MusicTrend is one music trending list as the metadata server keeps it:

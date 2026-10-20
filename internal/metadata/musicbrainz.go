@@ -693,24 +693,46 @@ func (m *MusicBrainz) Pressings(ctx context.Context, albumMBID string) ([]Pressi
 	return out, ErrListCut
 }
 
+// ArtistLink is an artist another artist worked with: a member, a band
+// they were in, or a collaborator.
+type ArtistLink struct {
+	MBID string `json:"mbid"`
+	Name string `json:"name"`
+	Type string `json:"type"` // member of band, collaboration, ...
+}
+
 // ArtistGenres returns an artist's MusicBrainz genres, most voted first, at
 // most five (lower case, as MusicBrainz names them).
 func (m *MusicBrainz) ArtistGenres(ctx context.Context, mbid string) ([]string, error) {
+	g, _, err := m.ArtistGenresLinks(ctx, mbid)
+	return g, err
+}
+
+// ArtistGenresLinks returns an artist's genres and the artists it worked
+// with (members, bands, collaborations), in one lookup.
+func (m *MusicBrainz) ArtistGenresLinks(ctx context.Context, mbid string) ([]string, []ArtistLink, error) {
 	if !ValidMBID(mbid) {
-		return nil, ErrArtistNotFound
+		return nil, nil, ErrArtistNotFound
 	}
-	b, err := m.get(ctx, "/ws/2/artist/"+strings.ToLower(mbid), url.Values{"inc": {"genres"}})
+	b, err := m.get(ctx, "/ws/2/artist/"+strings.ToLower(mbid), url.Values{"inc": {"genres artist-rels"}})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	var a struct {
 		Genres []struct {
 			Name  string `json:"name"`
 			Count int    `json:"count"`
 		} `json:"genres"`
+		Relations []struct {
+			Type   string `json:"type"`
+			Artist struct {
+				ID   string `json:"id"`
+				Name string `json:"name"`
+			} `json:"artist"`
+		} `json:"relations"`
 	}
 	if err := json.Unmarshal(b, &a); err != nil {
-		return nil, fmt.Errorf("MusicBrainz: odd answer")
+		return nil, nil, fmt.Errorf("MusicBrainz: odd answer")
 	}
 	sort.SliceStable(a.Genres, func(i, j int) bool { return a.Genres[i].Count > a.Genres[j].Count })
 	out := []string{}
@@ -718,6 +740,62 @@ func (m *MusicBrainz) ArtistGenres(ctx context.Context, mbid string) ([]string, 
 		if n := strings.ToLower(strings.TrimSpace(g.Name)); n != "" && g.Count > 0 && len(out) < 5 {
 			out = append(out, n)
 		}
+	}
+	links := []ArtistLink{}
+	seen := map[string]bool{strings.ToLower(mbid): true}
+	for _, r := range a.Relations {
+		id := strings.ToLower(r.Artist.ID)
+		switch r.Type {
+		case "member of band", "collaboration", "is person", "supporting musician", "subgroup", "founder", "artistic director":
+		default:
+			continue
+		}
+		if ValidMBID(id) && r.Artist.Name != "" && !seen[id] {
+			seen[id] = true
+			links = append(links, ArtistLink{MBID: id, Name: r.Artist.Name, Type: r.Type})
+		}
+	}
+	return out, links, nil
+}
+
+// SoundtrackFor finds soundtrack albums (release groups) named like a
+// movie or show; year 0 is any year.
+func (m *MusicBrainz) SoundtrackFor(ctx context.Context, title string, year int) ([]Album, error) {
+	q := strings.TrimSpace(title)
+	if q == "" {
+		return []Album{}, nil
+	}
+	query := `releasegroup:"` + luceneSpecial.ReplaceAllString(q, `\$1`) + `" AND secondarytype:soundtrack`
+	b, err := m.get(ctx, "/ws/2/release-group", url.Values{"query": {query}, "limit": {"5"}})
+	if errors.Is(err, ErrArtistNotFound) {
+		return []Album{}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var res struct {
+		Groups []struct {
+			ID    string `json:"id"`
+			Title string `json:"title"`
+			Score int    `json:"score"`
+			First string `json:"first-release-date"`
+		} `json:"release-groups"`
+	}
+	if err := json.Unmarshal(b, &res); err != nil {
+		return nil, fmt.Errorf("MusicBrainz: odd answer")
+	}
+	out := []Album{}
+	low := strings.ToLower(q)
+	for _, g := range res.Groups {
+		if !ValidMBID(g.ID) || g.Score < 80 || !strings.Contains(strings.ToLower(g.Title), low) {
+			continue
+		}
+		if year > 0 && len(g.First) >= 4 {
+			if y, err := strconv.Atoi(g.First[:4]); err != nil || y < year-1 || y > year+1 {
+				continue
+			}
+		}
+		out = append(out, Album{MBID: strings.ToLower(g.ID), Name: g.Title, PrimaryType: "album", SecondaryTypes: []string{"soundtrack"}, ReleaseDate: g.First})
 	}
 	return out, nil
 }

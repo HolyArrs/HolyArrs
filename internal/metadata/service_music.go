@@ -428,3 +428,25 @@ func (m *serviceMusic) ArtistGenres(ctx context.Context, mbid string) ([]string,
 	}
 	return g.ArtistGenres(ctx, mbid)
 }
+
+// ArtistGenresLinks asks the direct MusicBrainz client, when it can.
+func (m *serviceMusic) ArtistGenresLinks(ctx context.Context, mbid string) ([]string, []ArtistLink, error) {
+	g, ok := m.direct.(interface {
+		ArtistGenresLinks(context.Context, string) ([]string, []ArtistLink, error)
+	})
+	if !ok {
+		return nil, nil, ErrArtistNotFound
+	}
+	return g.ArtistGenresLinks(ctx, mbid)
+}
+
+// SoundtrackFor asks the direct MusicBrainz client, when it can.
+func (m *serviceMusic) SoundtrackFor(ctx context.Context, title string, year int) ([]Album, error) {
+	g, ok := m.direct.(interface {
+		SoundtrackFor(context.Context, string, int) ([]Album, error)
+	})
+	if !ok {
+		return nil, ErrArtistNotFound
+	}
+	return g.SoundtrackFor(ctx, title, year)
+}
