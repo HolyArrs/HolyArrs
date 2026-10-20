@@ -58,6 +58,11 @@ func (a *API) musicTrending(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "kind must be artist or album, region global or a country code")
 		return
 	}
+	// A Kid gets no list: it can hold explicit releases (like /explore/music).
+	if a.kidMax(r) != "" {
+		writeJSON(w, http.StatusOK, map[string]any{"kind": kind, "items": []any{}})
+		return
+	}
 	if p, _ := parts.ForTitleKind("artist"); a.s.MusicTrending == nil || !a.partIsOn(p) {
 		fail(w, http.StatusNotFound, "no music trending list here")
 		return
@@ -137,6 +142,10 @@ func (a *API) cachedMusicTrend(ctx context.Context, kind, region string) (metada
 // artwork cache. Artists use the artist-picture chain's Deezer search;
 // albums the Cover Art Archive's release group front cover.
 func (a *API) musicTrendArt(w http.ResponseWriter, r *http.Request) {
+	if a.kidMax(r) != "" {
+		fail(w, http.StatusNotFound, "no picture here")
+		return
+	}
 	kind, mbid := r.PathValue("kind"), strings.ToLower(r.PathValue("mbid"))
 	c := &a.music
 	c.mu.Lock()
