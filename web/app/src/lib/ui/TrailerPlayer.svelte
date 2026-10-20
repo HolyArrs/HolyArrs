@@ -15,7 +15,8 @@
 		controls = true,
 		onfail,
 		onended,
-		onplaying
+		onplaying,
+		onexpand
 	}: {
 		sources: TrailerSource[];
 		title: string;
@@ -26,6 +27,8 @@
 		onfail?: () => void;
 		onended?: () => void;
 		onplaying?: () => void;
+		/** Clicking the playing trailer opens it full screen: the source, the time played and where it sits. */
+		onexpand?: (o: { source: TrailerSource; time: number; rect: DOMRect }) => void;
 	} = $props();
 
 	let at = $state(0);
@@ -37,6 +40,9 @@
 	let done = $state(false);
 	let video = $state<HTMLVideoElement>();
 	let frame = $state<HTMLIFrameElement>();
+	let box = $state<HTMLElement>();
+	/** Seconds played (the embed reports it in its info messages). */
+	let embedTime = 0;
 	const src = $derived(sources[at]);
 	const origin = typeof location !== 'undefined' ? location.origin : '';
 
@@ -131,6 +137,8 @@
 		} catch {
 			return;
 		}
+		const t = (d.info as { currentTime?: unknown } | undefined)?.currentTime;
+		if (typeof t === 'number') embedTime = t;
 		const state = d.event === 'onStateChange' ? d.info : d.event === 'infoDelivery' ? (d.info as { playerState?: number })?.playerState : undefined;
 		if (d.event === 'onError') next();
 		else if (state === 1 && !shown) started();
@@ -159,6 +167,17 @@
 		run += 1;
 	}
 
+	function expand(e: MouseEvent) {
+		e.preventDefault();
+		e.stopPropagation();
+		if (!src || !box || !onexpand) return;
+		const time = video ? video.currentTime : embedTime;
+		const rect = box.getBoundingClientRect();
+		const source = src;
+		stop();
+		onexpand({ source, time, rect });
+	}
+
 	onDestroy(() => {
 		stopped = true;
 		clearGuard();
@@ -168,7 +187,7 @@
 
 <svelte:window onmessage={onMessage} />
 
-<div class="ui-trailer" class:shown>
+<div class="ui-trailer" class:shown bind:this={box}>
 	{#key `${at}:${run}`}
 		{#if src?.kind === 'direct'}
 			<!-- svelte-ignore a11y_media_has_caption -->
@@ -200,6 +219,9 @@
 		{/if}
 	{/key}
 </div>
+{#if onexpand && shown}
+	<button type="button" class="expand" aria-label="Play the {title} trailer full screen" onclick={expand}></button>
+{/if}
 {#if controls}
 	<div class="ctl" class:on={shown} data-testid="trailer-sound">
 		{#if shown && hasAudio()}
@@ -216,6 +238,8 @@
 	video, iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; object-fit: cover; }
 	/* The embed is letterboxed 16:9; scale it to cover a wider or taller box. */
 	iframe { left: 50%; top: 50%; width: max(100%, 177.78cqh); height: max(100%, 56.25cqw); translate: -50% -50%; }
+	.expand { position: absolute; inset: 0; z-index: 1; padding: 0; border: 0; background: transparent; cursor: zoom-in; }
+	.expand:focus-visible { outline: none; box-shadow: inset 0 0 0 3px var(--on-art); }
 	.ctl { position: absolute; right: 12px; bottom: 12px; z-index: 2; display: flex; gap: 8px; }
 	@media (prefers-reduced-motion: reduce) { .ui-trailer { transition: none; } }
 </style>
