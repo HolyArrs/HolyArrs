@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { albumKind, albumLine, albumState, albumStateOf, albumWords, albumYear, artistProgress, artistState, pressingLabel, toggle, trackLength, extraKinds, word, albumChoices, artistSearchToast } from './music.ts';
+import { albumKind, albumLine, albumState, albumStateOf, albumWords, albumYear, artistProgress, artistState, pressingLabel, toggle, trackLength, extraKinds, word, albumChoices, artistSearchToast, discography, discographyRow, latestRelease } from './music.ts';
 import type { ArtistInfo } from './types.ts';
 
 const info = (a: Partial<ArtistInfo>): ArtistInfo => ({
@@ -60,5 +60,21 @@ describe('artist search toast', () => {
 		expect(artistSearchToast(1)).toBe('Searching for 1 album, a little apart. Home shows what they find.');
 		expect(artistSearchToast(200, 37)).toContain('37 more are left for the next Search now');
 		expect(artistSearchToast(200, 1)).toContain('1 more is left');
+	});
+});
+
+describe('discography', () => {
+	const a = (type: string, secondary_types: string[] = [], release_date?: string) => ({ type, secondary_types, release_date });
+	it('groups albums into rows in page order, newest first', () => {
+		const rows = discography([a('single', [], '2019-01-01'), a('album', [], '2018-01-01'), a('album', ['live'], '2020-01-01'), a('album', [], '2021-05-01'), a('ep', [], '2022-01-01'), a('album', ['compilation'])]);
+		expect(rows.map((r) => r.row)).toEqual(['albums', 'singles', 'live', 'compilations']);
+		expect(rows[0].albums.map((x) => x.release_date)).toEqual(['2021-05-01', '2018-01-01']);
+		expect(rows[1].albums.map((x) => x.type)).toEqual(['ep', 'single']);
+		expect(discographyRow(a('album', ['soundtrack']))).toBe('other');
+	});
+	it('picks the newest album or EP that is out as the latest release', () => {
+		const now = Date.parse('2024-01-01');
+		expect(latestRelease([a('album', [], '2020-01-01'), a('album', [], '2030-01-01'), a('album', ['live'], '2023-01-01')], now)?.release_date).toBe('2020-01-01');
+		expect(latestRelease([a('album')], now)).toBeNull();
 	});
 });

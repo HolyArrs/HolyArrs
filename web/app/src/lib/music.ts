@@ -1,6 +1,7 @@
 // Words and small rules for the music screens: album choices and kinds,
 // album and artist progress, track lengths and Pressing names.
 import type { AlbumSummary, ArtistInfo, AskAlbum, PressingView } from './types.ts';
+import { to } from './paths.ts';
 
 /** albumChoices are the add-an-artist choices of which albums to keep up to date. */
 export const albumChoices: [string, string, string][] = [
@@ -170,3 +171,38 @@ export function artistSearchToast(queued: number, leftOut = 0): string {
 	const s = `Searching for ${queued} ${queued === 1 ? 'album' : 'albums'}, a little apart. Home shows what they find.`;
 	return leftOut > 0 ? `${s} ${leftOut} more ${leftOut === 1 ? 'is' : 'are'} left for the next Search now or the nightly search.` : s;
 }
+
+/** The discography rows of an artist page, in page order. */
+export const DISCOGRAPHY = [
+	['albums', 'Albums'],
+	['singles', 'Singles and EPs'],
+	['live', 'Live'],
+	['compilations', 'Compilations'],
+	['other', 'Other releases']
+] as const;
+export type DiscographyRow = (typeof DISCOGRAPHY)[number][0];
+
+/** discographyRow places an album: live and compilations first by their extra kind, then by the main kind. */
+export function discographyRow(a: Pick<AlbumSummary, 'type' | 'secondary_types'>): DiscographyRow {
+	const extra = a.secondary_types ?? [];
+	if (extra.includes('live')) return 'live';
+	if (extra.includes('compilation')) return 'compilations';
+	if (a.type === 'album') return extra.length ? 'other' : 'albums';
+	if (a.type === 'single' || a.type === 'ep') return 'singles';
+	return 'other';
+}
+
+/** discography groups albums into rows, newest first; rows with nothing are left out. */
+export function discography<T extends Pick<AlbumSummary, 'type' | 'secondary_types' | 'release_date'>>(albums: T[]): { row: DiscographyRow; label: string; albums: T[] }[] {
+	const newest = (x: T, y: T) => (y.release_date ?? '').localeCompare(x.release_date ?? '');
+	return DISCOGRAPHY.map(([row, label]) => ({ row, label, albums: albums.filter((a) => discographyRow(a) === row).sort(newest) })).filter((g) => g.albums.length);
+}
+
+/** latestRelease is the newest album or EP that is out (never one still to come). */
+export function latestRelease<T extends Pick<AlbumSummary, 'type' | 'secondary_types' | 'release_date'>>(albums: T[], now = Date.now()): T | null {
+	const out = albums.filter((a) => a.release_date && Date.parse(a.release_date) <= now && (discographyRow(a) === 'albums' || discographyRow(a) === 'singles'));
+	return out.sort((x, y) => (y.release_date ?? '').localeCompare(x.release_date ?? ''))[0] ?? null;
+}
+
+/** albumCover is the address of a Library album's cover (served from the artwork cache). */
+export const albumCover = (id: number) => to(`/api/v1/albums/${id}/cover`);

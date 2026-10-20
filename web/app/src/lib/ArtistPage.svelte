@@ -16,7 +16,13 @@
 	import ActionMenu from './ui/ActionMenu.svelte';
 	import type { MenuItem } from './ui/Menu.svelte';
 	import SimilarShelf from './SimilarShelf.svelte';
-	import { artName, crumbFor } from './title-page.ts';
+	import LibrarySection from './ui/LibrarySection.svelte';
+	import TitleSection from './ui/TitleSection.svelte';
+	import SectionNav from './ui/SectionNav.svelte';
+	import Shelf from './ui/Shelf.svelte';
+	import WideCard from './ui/WideCard.svelte';
+	import { reducedMotion } from './motion.ts';
+	import { artName, crumbFor, pageSections } from './title-page.ts';
 	import './title-page.css';
 	import { session } from './session.svelte.ts';
 	import { audienceStatus } from './title-status.ts';
@@ -35,7 +41,10 @@
 		albumWords,
 		albumYear,
 		artistProgress,
+		albumCover,
 		artistSearchToast,
+		discography,
+		latestRelease,
 		extraKinds,
 		mainKinds,
 		newAlbumChoices,
@@ -79,15 +88,28 @@
 	const heroKind = $derived(artist?.missing ? 'missing' : 'in_library');
 	// One status vocabulary (title-status.ts); staff also see how many are missing.
 	const heroWords = $derived(audienceStatus(heroKind, staff ? 'staff' : 'member', { tracked: true, titleKind: 'artist' }));
-	const libraryItems = $derived<MenuItem[]>([
+	// Manager actions live in the hero's ⋯ menu; the Library section holds the rest.
+	const heroItems = $derived<MenuItem[]>([
+		{ label: 'Search now', icon: 'search', onselect: () => search(), disabled: busy === 'search' },
+		{ label: 'Keep up to date', checked: title.keep_up_to_date, disabled: busy === 'artist', onselect: () => setKeep(!title.keep_up_to_date) },
+		{ kind: 'separator' },
+		{ label: 'Edit album kinds', icon: 'tools', onselect: openEdit },
 		{ label: 'Rename files', icon: 'copy', onselect: () => openRename() },
+		{ label: 'Refresh albums', icon: 'refresh', onselect: () => refresh(), disabled: refreshing },
+		{ label: 'All history', icon: 'clock', href: to(`/downloads/history?title=${title.id}`) },
 		{ kind: 'separator' },
 		{ label: 'Delete artist', icon: 'trash', destructive: true, onselect: () => deleter?.open() }
 	]);
-	const moreItems = $derived<MenuItem[]>([
-		{ label: 'Refresh albums', icon: 'refresh', onselect: () => refresh(), disabled: refreshing },
-		{ label: 'All history', icon: 'clock', href: to(`/downloads/history?title=${title.id}`) }
-	]);
+	function toLibrary() {
+		const h = document.getElementById('h-library');
+		h?.closest('section')?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
+	}
+	// The discography: one wide-card row per kind; Missing only keeps what is not all here yet.
+	let missingOnly = $state(false);
+	const notHere = (a: AlbumSummary) => a.in_library === 0 || a.missing > 0;
+	const missingCount = $derived((albums ?? []).filter(notHere).length);
+	const rows = $derived(discography((albums ?? []).filter((a) => !missingOnly || notHere(a))));
+	const latest = $derived(missingOnly ? null : latestRelease(albums ?? []));
 
 	// Rename files and delete (4.15.4): the rename preview for this artist,
 	// and the delete dialog for the artist.
@@ -304,40 +326,144 @@
 	description={visibleDisambiguation}
 	vtName={artName(title.id)}
 >
+	{#snippet byline()}
+		{#if staff}<span class="tp-progress" data-testid="artist-progress">{artistProgress(artist)}</span>{/if}
+		{#if artist?.next_release}<span><b>Next album:</b> {date(artist.next_release)}</span>{/if}
+	{/snippet}
 	{#snippet actions()}
 		{#if staff}
-			<ActionButton icon="search" label="Search now" primary onclick={() => search()} disabled={busy === 'search'} busy={busy === 'search'} data-testid="artist-search" />
-			<ActionButton
-				icon={title.keep_up_to_date ? 'check' : 'plus'}
-				label="Keep up to date"
-				caption={title.keep_up_to_date ? 'Kept up to date' : 'Keep up to date'}
-				pressed={title.keep_up_to_date}
-				disabled={busy === 'artist'}
-				onclick={() => setKeep(!title.keep_up_to_date)}
-			/>
-			<ActionButton icon="tools" label="Edit album kinds" caption="Edit" onclick={openEdit} />
-			<ActionMenu label="Library" icon="library" items={libraryItems} />
-			<ActionMenu label="More actions" caption="More" icon="more" items={moreItems} />
+			<ActionButton icon="library" label="In Library: go to the Library section" caption="In Library" primary onclick={toLibrary} data-testid="hero-library" />
+			<ActionMenu label="More actions" caption="More" icon="more" items={heroItems} />
 		{:else if session.can('ask')}
 			<ActionButton icon="wish" label="Ask for albums" primary onclick={askMore} data-testid="ask-albums" />
 		{/if}
 	{/snippet}
 </TitleHero>
 
-<p class="tp-progress" data-testid="artist-progress">{artistProgress(artist)}</p>
-
 {#if loadErr || error}<LoadError hasData message={loadErr || error} onretry={() => void retry()} busy={retrying} />{/if}
 
+<SectionNav items={pageSections('artist', { manage: staff })} />
 
-<div class="tp-body tp-artist">
-	<aside class="tp-side" aria-label="About this artist">
-		<section class="card" aria-labelledby="h-artist-facts">
-			<h2 id="h-artist-facts" class="h2 card-title">About</h2>
+{#snippet albumCard(a: AlbumSummary)}
+	{@const st = albumStateOf(a)}
+	<WideCard
+		title={a.name}
+		href={to(`/library/${title.id}/albums/${a.id}`)}
+		image={albumCover(a.id)}
+		kind="artist"
+		subtitle={[albumYear(a.release_date), albumKind(a)].filter(Boolean).join(' · ')}
+		owned={a.in_library > 0 ? { state: a.missing ? 'partial' : 'available', label: a.missing ? `${a.in_library} of ${a.tracks} tracks here` : 'In your Library' } : staff && a.included ? { state: 'requested', label: st.label } : null}
+	/>
+{/snippet}
+
+{#if albums === null}
+	<div class="sk" style="height: 160px" aria-busy="true"></div>
+{:else if albums.length === 0}
+	<p class="small muted">No albums yet. A refresh adds them once MusicBrainz lists them.</p>
+{:else}
+	{#if latest}
+		<section class="tp-section latest" aria-labelledby="h-latest">
+			<h2 id="h-latest" class="tp-h2">Latest release</h2>
+			<div class="latest-card">{@render albumCard(latest)}</div>
+		</section>
+	{/if}
+	<div class="disc" id="h-discography">
+		{#if missingCount}
+			<div class="disc-tools">
+				<button type="button" class="pill" aria-pressed={missingOnly} onclick={() => (missingOnly = !missingOnly)} data-testid="missing-only">Missing only <span class="n">{missingCount}</span></button>
+			</div>
+		{/if}
+		{#each rows as g (g.row)}
+			<Shelf title={g.label} item="var(--title-item)" placeholder="wide" lines={1} anchor="disc-{g.row}">
+				{#each g.albums as a (a.id)}{@render albumCard(a)}{/each}
+			</Shelf>
+		{:else}
+			<p class="small muted">Nothing missing.</p>
+		{/each}
+	</div>
+{/if}
+
+<SimilarShelf {title} />
+
+<TitleSection id="h-about" title="About">
+	<dl class="tp-about">
+		{#if artist?.type}<dt>Kind</dt><dd>{artist.type.charAt(0).toUpperCase() + artist.type.slice(1)}</dd>{/if}
+		<dt>Active</dt>
+		<dd>{artist?.status === 'ended' ? 'No longer active' : 'Still active'}</dd>
+		<dt>Albums</dt>
+		<dd>{albums?.length ?? artist?.albums ?? 0}</dd>
+		{#if artist?.next_release}<dt>Next album</dt><dd>{date(artist.next_release)}</dd>{/if}
+	</dl>
+</TitleSection>
+
+{#if title.asks?.length}
+	<TitleSection id="h-artist-asks" title="Wishlist" testid="title-asks">
+		{#each title.asks as a (a.id)}
+			<dl class="facts">
+				<dt>Asked by</dt>
+				<dd>{peopleNames(a.people.map((p) => p.name))} · {date(a.asked_at)}</dd>
+				<dt>For</dt>
+				<dd>{a.album_words ?? albumWords(a.albums)}</dd>
+				{#if decided(a)}<dt>Decided</dt>
+					<dd>{decided(a)}{a.decided_at ? ` · ${date(a.decided_at)}` : ''}</dd>{/if}
+				<dt>Now</dt>
+				<dd>{a.state_label}</dd>
+				{#if a.note}<dt>Note</dt>
+					<dd>{a.note}</dd>{/if}
+			</dl>
+		{/each}
+	</TitleSection>
+{/if}
+
+{#if staff}
+	<LibrarySection note="Album choices, files, kinds and history">
+		<TitleSection id="h-albums" title="Albums" primary>
+			{#snippet head()}
+				{#if leftOut}
+					<div class="pills" role="group" aria-label="Albums shown">
+						<button type="button" class="pill" aria-pressed={show === 'included'} onclick={() => (show = 'included')}>Included</button>
+						<button type="button" class="pill" aria-pressed={show === 'left_out'} onclick={() => (show = 'left_out')}>Not included <span class="n">{leftOut}</span></button>
+						<button type="button" class="pill" aria-pressed={show === 'all'} onclick={() => (show = 'all')}>All</button>
+					</div>
+				{/if}
+			{/snippet}
+			{#if albums === null}
+				<div class="sk" style="height: 120px"></div>
+			{:else if shown.length === 0}
+				<p class="small muted">Nothing here.</p>
+			{:else}
+				<ul class="albums">
+					{#each shown as a (a.id)}
+						{@const st = albumStateOf(a)}
+						<li class="album" data-testid="album">
+							<div class="grow album-copy">
+								<a class="album-name" href={to(`/library/${title.id}/albums/${a.id}`)}><b>{a.name}</b></a>
+								{#if a.disambiguation}<span class="xs muted"> ({a.disambiguation})</span>{/if}
+								<p class="xs muted album-meta">{[albumYear(a.release_date), albumKind(a), a.dropped ? 'no longer listed' : ''].filter(Boolean).join(' · ')}</p>
+								<p class="xs muted album-availability" data-testid="album-line">{albumLine(a)}</p>
+							</div>
+							<span class="chip {st.tone}" data-testid="album-state">{st.label}</span>
+							<div class="album-actions">
+								<Button variant="plain" size="sm" icon="search" onclick={() => search(a)} disabled={busy === `s${a.id}`} aria-label="Search now for {a.name}" data-testid="album-search"><span class="album-action-label" aria-hidden="true">Search</span></Button>
+								<label class="switch" title={a.included ? '' : 'Not included by the album kinds'}>
+									<input type="checkbox" checked={a.keep_up_to_date} disabled={busy === `a${a.id}` || !a.included} onchange={(e) => setAlbum(a, e.currentTarget.checked)} />
+									<span class="sw" aria-hidden="true"></span>
+									<span class="sr-only">Keep {a.name} up to date</span>
+									<span class="album-action-label" aria-hidden="true">Keep up to date</span>
+								</label>
+							</div>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</TitleSection>
+
+		<TitleSection id="h-artist-facts" title="How HolyArrs keeps it">
 			<dl class="tp-about">
+				<dt>Keep up to date</dt>
+				<dd>{title.keep_up_to_date ? 'On' : 'Off'}</dd>
 				<dt>Albums</dt>
 				<dd>{artist?.included ?? 0} included of {artist?.albums ?? 0}</dd>
-				{#if artist?.next_release}<dt>Next album</dt>
-					<dd>{date(artist.next_release)}</dd>{/if}
 				{#if artist?.album_choice}<dt>Picked when added</dt>
 					<dd>{word(albumChoices, artist.album_choice)}</dd>{/if}
 				<dt>New albums</dt>
@@ -354,102 +480,29 @@
 					<dd>{date(title.refreshed_at)}</dd>{/if}
 			</dl>
 			<p class="tp-why" data-testid="gate-reason">{title.gate_reason}</p>
-			{#if staff && title.folder_path}<details class="tp-details"><summary>Details</summary><ul><li>Folder: {shortFolder(title.folder_path)}</li></ul></details>{/if}
-		</section>
+			{#if title.folder_path}<details class="tp-details"><summary>Details</summary><ul><li>Folder: {shortFolder(title.folder_path)}</li></ul></details>{/if}
+		</TitleSection>
 
-		{#if title.asks?.length}
-			<section class="card" aria-labelledby="h-artist-asks" data-testid="title-asks">
-				<h2 id="h-artist-asks" class="h2 card-title">Wishlist</h2>
-				{#each title.asks as a (a.id)}
-					<dl class="facts">
-						<dt>Asked by</dt>
-						<dd>{peopleNames(a.people.map((p) => p.name))} · {date(a.asked_at)}</dd>
-						<dt>For</dt>
-						<dd>{a.album_words ?? albumWords(a.albums)}</dd>
-						{#if decided(a)}<dt>Decided</dt>
-							<dd>{decided(a)}{a.decided_at ? ` · ${date(a.decided_at)}` : ''}</dd>{/if}
-						<dt>Now</dt>
-						<dd>{a.state_label}</dd>
-						{#if a.note}<dt>Note</dt>
-							<dd>{a.note}</dd>{/if}
-					</dl>
-				{/each}
-			</section>
-		{/if}
-
-		{#if staff}
-			<section class="card" aria-labelledby="h-artist-history" data-testid="title-history">
-				<div class="card-head">
-					<h2 id="h-artist-history" class="h2">History</h2>
-					{#if historyTotal > 0}<Button variant="plain" href={to(`/downloads/history?title=${title.id}`)}>All {historyTotal} rows</Button>{/if}
-				</div>
-				{#if history.length === 0}
-					<p class="small muted">Nothing yet.</p>
-				{:else}
-					<ol class="rows hist">
-						{#each history as e (e.ID)}
-							<li>
-								<span class="chip {kindTone(e.Kind)}">{groupLabel(e.Kind)}</span>
-								<span class="grow small">{e.Summary}</span>
-								<time class="mono xs muted" datetime={e.At} title={dateTime(e.At)}>{ago(e.At)}</time>
-							</li>
-						{/each}
-					</ol>
-				{/if}
-			</section>
-		{/if}
-	</aside>
-
-	<div class="tp-main">
-		<section class="card" aria-labelledby="h-albums">
-			<div class="card-head">
-				<h2 id="h-albums" class="h2">Albums</h2>
-				{#if leftOut}
-					<div class="pills" role="group" aria-label="Albums shown">
-						<button type="button" class="pill" aria-pressed={show === 'included'} onclick={() => (show = 'included')}>Included</button>
-						<button type="button" class="pill" aria-pressed={show === 'left_out'} onclick={() => (show = 'left_out')}>Not included <span class="n">{leftOut}</span></button>
-						<button type="button" class="pill" aria-pressed={show === 'all'} onclick={() => (show = 'all')}>All</button>
-					</div>
-				{/if}
-			</div>
-			{#if albums === null}
-				<div class="sk" style="height: 120px"></div>
-			{:else if albums.length === 0}
-				<p class="small muted">No albums yet. A refresh adds them once MusicBrainz lists them.</p>
-			{:else if shown.length === 0}
-				<p class="small muted">Nothing here.</p>
+		<TitleSection id="h-artist-history" title="History" testid="title-history">
+			{#snippet head()}
+				{#if historyTotal > 0}<Button variant="plain" href={to(`/downloads/history?title=${title.id}`)}>All {historyTotal} rows</Button>{/if}
+			{/snippet}
+			{#if history.length === 0}
+				<p class="small muted">Nothing yet.</p>
 			{:else}
-				<ul class="albums">
-					{#each shown as a (a.id)}
-						{@const st = albumStateOf(a)}
-						<li class="album" data-testid="album">
-							<div class="grow album-copy">
-								<a class="album-name" href={to(`/library/${title.id}/albums/${a.id}`)}><b>{a.name}</b></a>
-								{#if a.disambiguation}<span class="xs muted"> ({a.disambiguation})</span>{/if}
-								<p class="xs muted album-meta">{[albumYear(a.release_date), albumKind(a), a.dropped ? 'no longer listed' : ''].filter(Boolean).join(' · ')}</p>
-								<p class="xs muted album-availability" data-testid="album-line">{albumLine(a)}</p>
-							</div>
-							<span class="chip {st.tone}" data-testid="album-state">{st.label}</span>
-							{#if staff}
-								<div class="album-actions">
-									<Button variant="plain" size="sm" icon="search" onclick={() => search(a)} disabled={busy === `s${a.id}`} aria-label="Search now for {a.name}" data-testid="album-search"><span class="album-action-label" aria-hidden="true">Search</span></Button>
-									<label class="switch" title={a.included ? '' : 'Not included by the album kinds'}>
-										<input type="checkbox" checked={a.keep_up_to_date} disabled={busy === `a${a.id}` || !a.included} onchange={(e) => setAlbum(a, e.currentTarget.checked)} />
-										<span class="sw" aria-hidden="true"></span>
-									<span class="sr-only">Keep {a.name} up to date</span>
-									<span class="album-action-label" aria-hidden="true">Keep up to date</span>
-									</label>
-								</div>
-							{/if}
+				<ol class="rows hist">
+					{#each history as e (e.ID)}
+						<li>
+							<span class="chip {kindTone(e.Kind)}">{groupLabel(e.Kind)}</span>
+							<span class="grow small">{e.Summary}</span>
+							<time class="mono xs muted" datetime={e.At} title={dateTime(e.At)}>{ago(e.At)}</time>
 						</li>
 					{/each}
-				</ul>
+				</ol>
 			{/if}
-		</section>
-	</div>
-</div>
-
-<SimilarShelf {title} />
+		</TitleSection>
+	</LibrarySection>
+{/if}
 </div>
 
 {#if !staff && session.can('ask')}
@@ -514,7 +567,7 @@
 </dialog>
 
 <style>
-	.tp-progress { margin: calc(clamp(28px, 4vw, 44px) * -0.5) 0 0; color: var(--text-muted); font: var(--t-subhead); }
+	.tp-progress { color: var(--text-muted); }
 	.card-title {
 		margin-bottom: var(--s-4);
 	}
@@ -673,5 +726,7 @@
 			font-weight: var(--weight-medium);
 		}
 	}
-	.tp-artist > .tp-side { order: 2; }
+	.latest-card { width: min(100%, calc(var(--title-item) * 1.0)); }
+	.disc { display: flex; flex-direction: column; gap: clamp(28px, 4vw, 44px); }
+	.disc-tools { display: flex; gap: 8px; margin-bottom: calc(clamp(28px, 4vw, 44px) * -0.6); }
 </style>
