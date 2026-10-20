@@ -351,7 +351,7 @@ func TabTitle(t, sw string) string {
 	case t == TypeTrending && word != "":
 		return "Trending " + word + " this week"
 	case t == TypeTopServices && word != "":
-		return "Trending " + word + " on your services"
+		return "Trending " + word + " on streaming"
 	}
 	return RowTitle(t, "")
 }
