@@ -179,8 +179,10 @@
 		const h = Math.floor(m / 60);
 		return h ? `${h}h ${m % 60}m` : `${m}m`;
 	}
-	const facts = $derived(metaLine(kind, [kind === 'movie' ? runtime(meta?.runtime) : undefined, meta?.year ?? year]));
-	const tags = $derived((meta?.genres ?? []).slice(0, 3));
+	// Netflix's line: Movie · R · 1h 49m · HD/4K (the quality only when the Library has it).
+	const facts = $derived(metaLine(kind, [meta?.certification, kind === 'movie' ? runtime(meta?.runtime) : undefined, meta?.quality]));
+	// Mood words from the server (TMDB keywords mapped to our moods), else genres.
+	const tags = $derived((meta?.moods?.length ? meta.moods : (meta?.genres ?? [])).slice(0, 3));
 </script>
 
 <svelte:window onkeydown={(e) => e.key === 'Escape' && onclose()} />
@@ -221,10 +223,9 @@
 		<p class="title" title={title}>{title}</p>
 		<!-- Both lines always take their room, so the panel's height is known before the facts arrive. -->
 		<p class="facts">
-			{#if meta?.certification}<span class="rating">{meta.certification}</span>{/if}
-			{#each facts as f (f)}<span>{f}</span>{/each}
+			{#each facts as f, i (f)}{#if i}<i aria-hidden="true">·</i>{/if}<span class:rating={f === meta?.certification} class:q={f === meta?.quality}>{f}</span>{/each}
 		</p>
-		<p class="tags">{#each tags as t, i (t)}{#if i}<i aria-hidden="true">•</i>{/if}<span>{t}</span>{/each}</p>
+		<p class="tags">{#each tags as t, i (t)}{#if i}<i aria-hidden="true">·</i>{/if}<span>{t}</span>{/each}</p>
 	</div>
 </div>
 
@@ -264,7 +265,7 @@
 	.more:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.title { margin: 2px 0 -4px; font: var(--t-headline); letter-spacing: -0.01em; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.facts, .tags { min-height: 18px; }
-	.facts { display: flex; align-items: center; gap: 8px; font: var(--t-footnote); color: var(--text-muted); font-variant-numeric: tabular-nums; }
+	.facts { display: flex; align-items: center; gap: 6px; font: var(--t-footnote); color: var(--text-muted); font-variant-numeric: tabular-nums; }
 	.rating { padding: 0 5px; border: 1px solid color-mix(in srgb, var(--text) 45%, transparent); border-radius: 3px; color: var(--text); font-size: 11px; line-height: 16px; }
 	.tags { display: flex; flex-wrap: nowrap; overflow: hidden; white-space: nowrap; align-items: center; gap: 6px; font: var(--t-footnote); color: var(--text); }
 	.tags i { color: var(--text-muted); font-style: normal; font-size: 9px; }

@@ -480,7 +480,7 @@
 				{#if row.type === 'top10'}
 					<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} initial={top10} />
 				{:else}
-				<div class="row-wrap" data-row={row.type ?? row.id} data-row-id={row.id} data-title-layer={row.titleLayer}>
+				<div class="row-wrap" class:wide-row={row.wide || row.cards.some((c) => wideKind(c.kind))} data-row={row.type ?? row.id} data-row-id={row.id} data-title-layer={row.titleLayer}>
 				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.cards.some((c) => wideKind(c.kind)) ? 'var(--title-item)' : 'var(--explore-item)'} tools={row.id === 'services' ? serviceTools : undefined}
 					items={row.cards} key={(c) => c.key} defer={ri >= EAGER_ROWS} placeholder={row.wide || row.cards.some((c) => wideKind(c.kind)) ? 'wide' : 'poster'} lines={row.cards.some((c) => c.subtitle) ? 2 : 1}>
 					{#snippet card(raw: ExploreCard)}
@@ -494,6 +494,9 @@
 										<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={asking === c.key || undefined} onclick={() => { count(row.type ?? row.id, 'ask', row.titleLayer); void quick(c, act); }} />
 									{:else}
 										<IconButton icon="play" label="Open {c.name}" variant="glass" size="lg" href={cardHref(c) ?? searchHref(c)} />
+										{#if mark?.state === 'available' || mark?.state === 'partial'}
+											<IconButton icon="check" label="In library: open the title page" variant="glass" size="lg" href={cardHref(c) ?? searchHref(c)} />
+										{/if}
 									{/if}
 								{/snippet}
 							</WideCard>
@@ -568,6 +571,8 @@
 	.svc-chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.sentinel { height: 1px; }
 	.row-wrap { display: contents; }
+	/* Wide title rows sit almost edge to edge, as on Netflix: about 279px cards at a 1536px window with a 5px gap. */
+	@media (min-width: 768px) { .row-wrap.wide-row { --shelf-gap: 5px; } }
 	.loading { display: flex; flex-direction: column; gap: 14px; }
 	.sk-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--shelf-gap); max-height: 250px; overflow: hidden; margin-bottom: 16px; }
 	@media (max-width: 767px) { .explore { --explore-item: 54vw; --title-item: calc((100cqi - var(--shelf-gap)) / 1.6 / .78); gap: 26px; } }

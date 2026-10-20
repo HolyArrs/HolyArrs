@@ -438,8 +438,19 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 	if streaming == nil {
 		streaming = []metadata.WatchService{}
 	}
+	quality := ""
+	if head.TitleID != 0 {
+		var res sql.NullInt64
+		if err := a.s.Store.Read().QueryRowContext(r.Context(), `SELECT MAX(CAST(json_extract(f.quality, '$.resolution') AS INTEGER)) FROM files f
+			JOIN versions v ON v.id = f.version_id WHERE v.title_id = ? AND f.role = 'main' AND f.state = 'present'`, head.TitleID).Scan(&res); err != nil {
+			internal(w, err)
+			return
+		}
+		quality = qualityWord(res.Int64)
+	}
 	writeJSON(w, http.StatusOK, struct {
 		metadata.Details
+		Quality    string                  `json:"quality,omitempty"`
 		Streaming  []metadata.WatchService `json:"streaming"`
 		Collection *collectionView         `json:"collection,omitempty"`
 		Similar    []discoverItemView      `json:"similar"`
@@ -447,7 +458,18 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 		TitleID    int64                   `json:"title_id,omitempty"`
 		Ask        *askBrief               `json:"ask"`
 		NeverAdd   bool                    `json:"never_add"`
-	}{Details: det, Streaming: streaming, Collection: coll, Similar: similar, InLibrary: head.InLibrary, TitleID: head.TitleID, Ask: head.Ask, NeverAdd: never})
+	}{Details: det, Quality: quality, Streaming: streaming, Collection: coll, Similar: similar, InLibrary: head.InLibrary, TitleID: head.TitleID, Ask: head.Ask, NeverAdd: never})
+}
+
+// qualityWord names the best picture the Library has: 4K, HD, or nothing.
+func qualityWord(resolution int64) string {
+	switch {
+	case resolution >= 2160:
+		return "4K"
+	case resolution >= 720:
+		return "HD"
+	}
+	return ""
 }
 
 // moreFromMin is the fewest titles a More from row shows; fewer answer none.

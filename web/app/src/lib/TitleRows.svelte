@@ -50,6 +50,23 @@
 		return () => ctl.abort();
 	});
 
+	// More from the director (movies) or the creator (shows): the server
+	// answers at least four of their other titles, most popular first, or none.
+	let moreFrom = $state<{ person: string; items: ProviderItem[] } | null>(null);
+	$effect(() => {
+		const k = kind;
+		const t = tmdb;
+		moreFrom = null;
+		if (!t) return;
+		const ctl = new AbortController();
+		api.get<{ person?: string; items?: ProviderItem[] }>(`/metadata/${k}/${encodeURIComponent(t)}/more-from`, ctl.signal)
+			.then((r) => (moreFrom = { person: r.person ?? '', items: r.items ?? [] }))
+			.catch(() => {
+				/* An extra row: hidden when it cannot be read. */
+			});
+		return () => ctl.abort();
+	});
+
 	const who = $derived(audienceOf(session.can));
 	type Pair = { c: ExploreCard; item: ProviderItem };
 	const pairsOf = (items: ProviderItem[], row: string): Pair[] => items.filter((i) => i.tmdb_id !== tmdb || i.kind !== kind).map((item) => ({ c: discoverCard(item, row), item }));
@@ -58,6 +75,7 @@
 		const seen = new Set(collection.map((p) => p.c.key));
 		return info ? pairsOf(info.similar, 'similar').filter((p) => !seen.has(p.c.key)) : [];
 	});
+	const more = $derived(moreFrom && moreFrom.items.length >= 4 ? pairsOf(moreFrom.items, 'more-from') : []);
 	const hrefOf = (item: ProviderItem) => (item.title_id ? to(`/library/${item.title_id}`) : to(detailPath(item.kind, item.tmdb_id)));
 	const shownDates = $derived(dates.filter(([, v]) => !!v));
 	let allSimilar = $state(false);
@@ -108,6 +126,12 @@
 			{#each similar as p (p.c.key)}<li>{@render card(p)}</li>{/each}
 		</ul>
 	</Sheet>
+{/if}
+
+{#if more.length >= 4}
+	<Shelf title={kind === 'show' ? 'More from the creator' : 'More from the director'} subtitle={moreFrom?.person || undefined} item="var(--title-item)" anchor="title-more-from" placeholder="wide" lines={1}>
+		{#each more.slice(0, 18) as p (p.c.key)}{@render card(p)}{/each}
+	</Shelf>
 {/if}
 
 <style>

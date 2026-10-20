@@ -310,6 +310,14 @@ func TestMetadataDetails(t *testing.T) {
 	do(t, "GET", srv2.URL+"/api/v1/metadata/movie/11", "", 501)
 }
 
+func TestQualityWord(t *testing.T) {
+	for res, want := range map[int64]string{0: "", 480: "", 720: "HD", 1080: "HD", 2160: "4K", 4320: "4K"} {
+		if got := qualityWord(res); got != want {
+			t.Errorf("%d: %q, want %q", res, got, want)
+		}
+	}
+}
+
 // route: GET /api/v1/metadata/{kind}/{tmdb_id}/more-from
 func TestMetadataMoreFrom(t *testing.T) {
 	f := newDiscoverTMDB(t)
