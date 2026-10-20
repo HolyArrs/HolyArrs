@@ -328,18 +328,27 @@ export function genresOf(t: TitleView): string[] {
 	return Array.isArray(g) ? g.filter((x): x is string => typeof x === 'string') : [];
 }
 
-/** markTransitions gives each title's first card on the page the view-transition name title-art-<id>. */
+/**
+ * markTransitions gives each title's first card on the page a view-transition
+ * name, so its art grows into the title page's hero: title-art-<id> for a
+ * Library title, tmdb-art-<kind>-<tmdb> for a movie or show not added yet.
+ */
 export function markTransitions(rows: ExploreRow[]): ExploreRow[] {
-	const used = new Set<number>();
+	const used = new Set<string>();
 	return rows.map((r) => ({
 		...r,
 		cards: r.cards.map((c) => {
-			if (c.titleId === undefined || used.has(c.titleId)) return { ...c, vtName: undefined };
-			used.add(c.titleId);
-			return { ...c, vtName: `title-art-${c.titleId}` };
+			const tmdb = c.kind === 'movie' || c.kind === 'show' ? cardTmdb(c) : '';
+			const name = c.titleId !== undefined ? `title-art-${c.titleId}` : tmdb ? tmdbArtName(c.kind as 'movie' | 'show', tmdb) : '';
+			if (!name || used.has(name)) return { ...c, vtName: undefined };
+			used.add(name);
+			return { ...c, vtName: name };
 		})
 	}));
 }
+
+/** tmdbArtName is the view-transition name of a not-added movie or show's art (card and hero). */
+export const tmdbArtName = (kind: 'movie' | 'show', tmdb: string) => `tmdb-art-${kind}-${tmdb}`;
 
 /** keepFull drops empty rows. */
 export function keepFull(rows: (ExploreRow | null | undefined)[]): ExploreRow[] {

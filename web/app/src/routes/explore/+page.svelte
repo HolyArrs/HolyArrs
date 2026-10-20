@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
+	import type { Snapshot } from '@sveltejs/kit';
+	import { canReturn, putOffsets, readOffsets, type ExploreReturn } from '#lib/explore-return.ts';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { partsNow } from '#lib/parts.svelte.ts';
@@ -130,6 +132,34 @@
 		void loadHead();
 	}
 
+	// Back from a title page: the page's scroll and each row's sideways offset
+	// come back once the rows have loaded far enough (more tail pages load
+	// first when the spot was further down).
+	let back = $state<ExploreReturn | null>(null);
+	export const snapshot: Snapshot<ExploreReturn> = {
+		capture: () => ({ y: Math.round(scrollY), rows: readOffsets(document) }),
+		restore: (v) => {
+			if (v && v.y + Object.keys(v.rows).length > 0) back = v;
+		}
+	};
+	let backTries = 0;
+	$effect(() => {
+		const v = back;
+		if (!v || !headLoaded) return;
+		void rows.length;
+		void tick().then(() => {
+			if (back !== v) return;
+			const more = tailMore && backTries++ < 12;
+			if (!canReturn(document.documentElement.scrollHeight, v.y, innerHeight, more)) {
+				void loadTail();
+				return;
+			}
+			back = null;
+			backTries = 0;
+			scrollTo({ top: v.y, behavior: 'instant' });
+			putOffsets(document, v.rows);
+		});
+	});
 	// Leaving the full-screen trailer (hero or hover card) lands on the title's page.
 	$effect(() => onTheaterExit((o) => void goto(to(detailPath(o.kind, o.tmdb)))));
 
@@ -450,7 +480,7 @@
 				{#if row.type === 'top10'}
 					<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} initial={top10} />
 				{:else}
-				<div class="row-wrap" data-row={row.type ?? row.id} data-title-layer={row.titleLayer}>
+				<div class="row-wrap" data-row={row.type ?? row.id} data-row-id={row.id} data-title-layer={row.titleLayer}>
 				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.cards.some((c) => wideKind(c.kind)) ? 'var(--title-item)' : 'var(--explore-item)'} tools={row.id === 'services' ? serviceTools : undefined}
 					items={row.cards} key={(c) => c.key} defer={ri >= EAGER_ROWS} placeholder={row.wide || row.cards.some((c) => wideKind(c.kind)) ? 'wide' : 'poster'} lines={row.cards.some((c) => c.subtitle) ? 2 : 1}>
 					{#snippet card(raw: ExploreCard)}

@@ -16,6 +16,7 @@
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import SectionNav from '#lib/ui/SectionNav.svelte';
 	import { pageSections } from '#lib/title-page.ts';
+	import { tmdbArtName } from '#lib/explore.ts';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -181,6 +182,7 @@
 			status={d.neverAdd || d.ask ? heroPill(d).kind : undefined}
 			statusLabel={d.neverAdd || d.ask ? heroPill(d).label : undefined}
 			description={d.overview}
+			vtName={tmdbArtName(d.kind, d.tmdb)}
 		>
 			{#snippet actions()}
 				{#if manage && !d.neverAdd}

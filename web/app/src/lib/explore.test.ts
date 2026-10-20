@@ -19,6 +19,7 @@ import {
 	readyToWatch,
 	stillLooking,
 	markTransitions,
+	tmdbArtName,
 	missingEpisodes,
 	overlap,
 	popularInHousehold,
@@ -254,6 +255,12 @@ describe('rows on a page', () => {
 		]);
 		expect(rows[0].cards[0].vtName).toBe('title-art-1');
 		expect(rows[1].cards.map((c) => c.vtName)).toEqual([undefined, undefined]);
+	});
+	it('names a not-added movie or show card by its TMDB id, once', () => {
+		const rows = markTransitions([
+			{ id: 'a', title: 'A', cards: [{ key: 'm', kind: 'movie', name: 'M', ref: 'tmdb:12', badges: [] }, { key: 'm2', kind: 'movie', name: 'M', ref: 'tmdb:12', badges: [] }] }
+		]);
+		expect(rows[0].cards.map((c) => c.vtName)).toEqual([tmdbArtName('movie', '12'), undefined]);
 	});
 	it('drops empty rows', () => {
 		expect(keepFull([null, { id: 'a', title: 'A', cards: [] }, { id: 'b', title: 'B', cards: [{ key: 'k', kind: 'movie', name: 'K', badges: [] }] }]).map((r) => r.id)).toEqual(['b']);
