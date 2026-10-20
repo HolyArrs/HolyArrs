@@ -6203,6 +6203,10 @@
             "description": "The YouTube video, for the embedded player fallback.",
             "type": "string"
           },
+          "proxy_url": {
+            "description": "The same HLS stream relayed by HolyArrs (pass-through), for sound in browsers without native HLS and when direct playback is refused. Only for this person.",
+            "type": "string"
+          },
           "url": {
             "description": "Direct H.264 MP4 address on YouTube's video servers (at most 720p).",
             "type": "string"
@@ -21202,9 +21206,171 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/trailer/stream/{id}/manifest.m3u8": {
+      "get": {
+        "description": "Pass-through: the trailer's HLS manifest relayed from YouTube, every address in it pointed at seg/{n} beside it. id is the opaque id in a trailer answer's proxy_url, valid only for the person it was given to and until the address expires. Only addresses HolyArrs resolved itself, on YouTube's video servers, are relayed. Nothing is stored; answers are private, no-store. A person may have 2 streams going at once.",
+        "operationId": "getTrailerManifest",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.apple.mpegurl": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "The rewritten manifest."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "A Kid account."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Unknown, expired or another person's stream."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Too many trailer streams at once."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "YouTube refused, or the manifest named an address off YouTube's video servers."
+          }
+        },
+        "summary": "Trailer pass-through manifest",
+        "tags": [
+          "Explore"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/trailer/stream/{id}/seg/{n}": {
+      "get": {
+        "description": "Pass-through: one address from the stream's manifest. A variant playlist comes back rewritten like the manifest; a segment is streamed from YouTube as it arrives (Range is passed on), never stored, private, no-store, at most 64 MiB and 60 seconds.",
+        "operationId": "getTrailerSegment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "n",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "video/mp2t": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "The playlist or segment."
+          },
+          "206": {
+            "description": "Part of the segment (Range)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "A Kid account."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Unknown stream or address number."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Too many trailer streams at once."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "YouTube refused, or a playlist named an address off YouTube's video servers."
+          }
+        },
+        "summary": "Trailer pass-through segment",
+        "tags": [
+          "Explore"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/trailer/{kind}/{tmdb_id}": {
       "get": {
-        "description": "The title's trailer (TMDB videos: an official Trailer, the language of ?language= or Accept-Language first) as a direct MP4 address resolved by yt-dlp (HOLYARRS_YTDLP or yt-dlp in PATH, 8 second limit). Only the address is kept in memory until shortly before it expires; no video passes through HolyArrs. Each person may start 12 resolves a minute. Kid accounts are refused.",
+        "description": "The title's trailer (TMDB videos: an official Trailer, the language of ?language= or Accept-Language first) as a direct MP4 address resolved by yt-dlp (HOLYARRS_YTDLP or yt-dlp in PATH, 8 second limit). Only the address is kept (memory and SQLite) until shortly before it expires, and the title's YouTube key for 30 days; video is never stored. An HLS answer carries proxy_url, the pass-through relay of the same stream. Each person may start 12 resolves a minute. Kid accounts are refused.",
         "operationId": "getTrailerStream",
         "parameters": [
           {

@@ -138,6 +138,10 @@ type API struct {
 	explore exploreState
 	// trailers keeps resolved trailer addresses and each person's budget.
 	trailers trailerState
+	// trailerRelay holds the trailer streams HolyArrs relays (pass-through).
+	trailerRelay trailerProxy
+	// trailerKeys keeps each title's YouTube key (also in lookup_cache).
+	trailerKeys trailerKeyCache
 }
 
 // New makes the API.
@@ -284,6 +288,8 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/metadata/health", a.metadataHealth)
 	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}", a.metadataDetails)
 	m.HandleFunc("GET /api/v1/trailer/{kind}/{tmdb_id}", a.trailerStream)
+	m.HandleFunc("GET /api/v1/trailer/stream/{id}/manifest.m3u8", a.trailerManifest)
+	m.HandleFunc("GET /api/v1/trailer/stream/{id}/seg/{n}", a.trailerSegment)
 	m.HandleFunc("GET /api/v1/settings/ui", a.getUISettings)
 	m.HandleFunc("PUT /api/v1/settings/ui", a.putUISettings)
 	m.HandleFunc("GET /api/v1/discover", a.discoverRow)

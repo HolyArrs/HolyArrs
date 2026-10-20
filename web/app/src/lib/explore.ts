@@ -395,6 +395,8 @@ export interface ProviderItem {
 	title_id?: number;
 	ask?: { id: number; state: Ask['state']; state_label: string; mine: boolean; people: number } | null;
 	fresh?: Fresh | null;
+	/** Explore: the YouTube trailer, when the server already knows it. */
+	trailer_key?: string;
 }
 export interface ProviderRowAnswer {
 	row: ProviderRowName;

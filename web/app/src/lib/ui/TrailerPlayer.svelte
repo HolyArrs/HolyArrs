@@ -2,7 +2,8 @@
 	import { onDestroy } from 'svelte';
 	import IconButton from './IconButton.svelte';
 	import { claimPlayer, embedUrl, setSoundOn, soundOn } from '../trailer.ts';
-	import type { TrailerSource } from '../autoplay.svelte.ts';
+	import { hasSound, nativeHLS, onUnmute, type TrailerSource } from '../autoplay.svelte.ts';
+	import { attachHLS } from '../hls-player.ts';
 
 	// A muted trailer over the hero or hover card art. Tries each source in
 	// order (our own <video> on the direct stream, then the privacy-enhanced
@@ -44,10 +45,104 @@
 	let guard: ReturnType<typeof setTimeout> | null = null;
 	let stopped = false;
 
+	// Pass-through: the relayed stream on this source's <video> (kind pass),
+	// or on a second <video> the direct one hands over to when sound is
+	// turned on (kind direct with pass). The direct one stays visible and
+	// playing until the second is playing at the same moment.
+	let detach: (() => void) | null = null;
+	let up = $state<{ url: string; start: number } | null>(null);
+	let upVideo = $state<HTMLVideoElement>();
+	let swapped = $state(false);
+	let upDetach: (() => void) | null = null;
+	const live = () => (swapped ? upVideo : video);
+
+	$effect(() => {
+		const v = video;
+		if (!v || src?.kind !== 'pass') return;
+		let gone = false;
+		attachHLS(v, src.url, nativeHLS())
+			.then((d) => (gone ? d() : (detach = d)))
+			.catch(() => !gone && next());
+		return () => {
+			gone = true;
+			detach?.();
+			detach = null;
+		};
+	});
+
+	function dropUp() {
+		upDetach?.();
+		upDetach = null;
+		up = null;
+		swapped = false;
+	}
+
+	// switchToPass starts the relayed stream a little ahead of the direct
+	// one, waits for the direct one to reach it, then plays it with sound.
+	function switchToPass(url: string) {
+		if (!video || up) return;
+		up = { url, start: video.currentTime + 1.2 };
+	}
+
+	$effect(() => {
+		const v = upVideo;
+		const u = up;
+		if (!v || !u) return;
+		let gone = false;
+		let tries = 0;
+		let asked = 0;
+		const old = video;
+		const go = () => {
+			if (gone || !old || swapped || asked) return;
+			// Too late (the relay took longer than the lead): aim further ahead.
+			if (old.currentTime > v.currentTime + 0.05) {
+				if (++tries > 3) return fail();
+				v.currentTime = old.currentTime + 0.8;
+				return;
+			}
+			const wait = () => {
+				if (gone) return;
+				if (old.currentTime + 0.02 < v.currentTime && !old.paused && !old.ended) return void requestAnimationFrame(wait);
+				asked = performance.now();
+				v.muted = false;
+				v.play().catch(fail);
+			};
+			wait();
+		};
+		const playing = () => {
+			if (gone || swapped) return;
+			const el = v.closest('.ui-trailer');
+			el?.setAttribute('data-switch-ms', String(Math.round(performance.now() - asked)));
+			el?.setAttribute('data-switch-drift-ms', String(Math.round(Math.abs((old?.currentTime ?? 0) - v.currentTime) * 1000)));
+			swapped = true;
+			old?.pause();
+		};
+		const fail = () => {
+			if (gone) return;
+			gone = true;
+			dropUp();
+			muted = true;
+			setSoundOn(false);
+		};
+		v.addEventListener('canplay', go);
+		v.addEventListener('playing', playing);
+		v.addEventListener('error', fail);
+		attachHLS(v, u.url, nativeHLS(), u.start)
+			.then((d) => (gone ? d() : (upDetach = d)))
+			.catch(fail);
+		return () => {
+			gone = true;
+			v.removeEventListener('canplay', go);
+			v.removeEventListener('playing', playing);
+			v.removeEventListener('error', fail);
+		};
+	});
+
 	function stop() {
 		stopped = true;
 		shown = false;
 		video?.pause();
+		dropUp();
 		at = sources.length;
 		clearGuard();
 		release?.();
@@ -67,6 +162,7 @@
 
 	function next() {
 		clearGuard();
+		dropUp();
 		shown = false;
 		if (at + 1 < sources.length) at += 1;
 		else {
@@ -89,14 +185,34 @@
 	}
 
 	function hasAudio() {
-		return !(src?.kind === 'direct' && !src.audio);
+		return hasSound(src);
 	}
 
 	// Unmuting without a recent click may pause the video; then it stays muted.
+	// A picture-only stream switches to pass-through instead.
 	function unmute() {
+		if (src?.kind === 'direct' && !swapped && onUnmute(src) === 'switch' && src.pass && !video?.currentSrc.includes('/trailer/stream/')) {
+			muted = false;
+			// Native HLS (iOS Safari): unmuted play must start inside the tap,
+			// so the same element takes the relayed stream right away.
+			if (nativeHLS() && video && matchMedia('(pointer: coarse)').matches) {
+				const v = video;
+				const t = v.currentTime;
+				v.addEventListener('loadedmetadata', () => (v.currentTime = t), { once: true });
+				v.src = src.pass;
+				v.muted = false;
+				void v.play().catch(() => {
+					v.muted = muted = true;
+				});
+				return;
+			}
+			switchToPass(src.pass);
+			return;
+		}
 		muted = false;
-		if (video) {
-			const v = video;
+		const lv = live();
+		if (lv) {
+			const v = lv;
 			v.muted = false;
 			if (v.paused) {
 				v.muted = muted = true;
@@ -144,14 +260,22 @@
 		// The hover card's art is a link: the button must not follow it.
 		e?.preventDefault();
 		e?.stopPropagation();
-		muted = !muted;
-		if (video) video.muted = muted;
-		else post(muted ? 'mute' : 'unMute');
-		setSoundOn(!muted);
+		setSoundOn(muted);
+		if (muted) return unmute();
+		muted = true;
+		dropUpIfWaiting();
+		const lv = live();
+		if (lv) lv.muted = true;
+		else post('mute');
+	}
+	// Sound off before the switch finished: stay on the direct stream.
+	function dropUpIfWaiting() {
+		if (up && !swapped) dropUp();
 	}
 	function replay(e?: MouseEvent) {
 		e?.preventDefault();
 		e?.stopPropagation();
+		dropUp();
 		muted = true;
 		stopped = false;
 		done = false;
@@ -162,6 +286,7 @@
 	onDestroy(() => {
 		stopped = true;
 		clearGuard();
+		dropUp();
 		release?.();
 	});
 </script>
@@ -175,6 +300,37 @@
 			<video
 				bind:this={video}
 				src={src.url}
+				muted
+				autoplay
+				playsinline
+				loop={repeat}
+				preload="auto"
+				disablepictureinpicture
+				disableremoteplayback
+				aria-label="{title} trailer"
+				onplaying={started}
+				onerror={next}
+				onended={ended}
+			></video>
+			{#if up}
+				<!-- svelte-ignore a11y_media_has_caption -->
+				<video
+					bind:this={upVideo}
+					class="up"
+					class:swapped
+					playsinline
+					loop={repeat}
+					preload="auto"
+					disablepictureinpicture
+					disableremoteplayback
+					aria-label="{title} trailer"
+					onended={ended}
+				></video>
+			{/if}
+		{:else if src?.kind === 'pass'}
+			<!-- svelte-ignore a11y_media_has_caption -->
+			<video
+				bind:this={video}
 				muted
 				autoplay
 				playsinline
@@ -216,6 +372,9 @@
 	video, iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; object-fit: cover; }
 	/* The embed is letterboxed 16:9; scale it to cover a wider or taller box. */
 	iframe { left: 50%; top: 50%; width: max(100%, 177.78cqh); height: max(100%, 56.25cqw); translate: -50% -50%; }
+	/* The pass-through video waits unseen until it plays, then covers the direct one. */
+	video.up { opacity: 0; z-index: 1; }
+	video.up.swapped { opacity: 1; }
 	.ctl { position: absolute; right: 12px; bottom: 12px; z-index: 2; display: flex; gap: 8px; }
 	@media (prefers-reduced-motion: reduce) { .ui-trailer { transition: none; } }
 </style>

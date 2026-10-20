@@ -3,7 +3,7 @@
 // privacy-enhanced YouTube embed, then nothing (Layer 1 pictures stay).
 import { api } from './api.ts';
 import { session } from './session.svelte.ts';
-import { browserConditions, mayAutoplay, pickTrailer, type Video } from './trailer.ts';
+import { browserConditions, mayAutoplay, pickTrailer, soundOn, type Video } from './trailer.ts';
 
 export interface UISettings {
 	autoplay_trailers: boolean;
@@ -48,7 +48,15 @@ export function autoplayHere(): boolean {
 	return state.loaded && mayAutoplay({ setting: state.autoplay, kid: session.kid, ...browserConditions() });
 }
 
-export type TrailerSource = { kind: 'direct'; url: string; key?: string; audio: boolean } | { kind: 'embed'; key: string };
+/**
+ * direct: straight from YouTube (pass: the same trailer through HolyArrs,
+ * for switching to when sound is turned on); pass: the HLS stream relayed
+ * by HolyArrs (pass-through); embed: the YouTube embed.
+ */
+export type TrailerSource =
+	| { kind: 'direct'; url: string; key?: string; audio: boolean; pass?: string }
+	| { kind: 'pass'; url: string; key?: string }
+	| { kind: 'embed'; key: string };
 
 interface Stream {
 	/** hls: url is YouTube's adaptive manifest; mp4: url is the muxed 360p MP4. */
@@ -60,14 +68,16 @@ interface Stream {
 	expires_at: string;
 	key: string;
 	audio?: boolean;
+	/** The same HLS stream relayed by HolyArrs (pass-through). */
+	proxy_url?: string;
 }
 
 /**
  * Native HLS (Safari, iOS). Elsewhere the MP4 plays: YouTube's video
  * servers send no CORS headers, so a script player cannot read the
- * manifest or its segments.
+ * manifest or its segments; with sound on, HolyArrs relays the HLS stream.
  */
-function nativeHLS(): boolean {
+export function nativeHLS(): boolean {
 	if (typeof document === 'undefined') return false;
 	try {
 		return document.createElement('video').canPlayType('application/vnd.apple.mpegurl') !== '';
@@ -152,14 +162,43 @@ function directStream(kind: 'movie' | 'show', tmdb: string, signal?: AbortSignal
  * title's TMDB videos (from the details answer) for the embed fallback.
  */
 export async function trailerSources(kind: 'movie' | 'show', tmdb: string, videos: Video[] | undefined, signal?: AbortSignal): Promise<TrailerSource[]> {
-	const out: TrailerSource[] = [];
 	const s = await directStream(kind, tmdb, signal);
-	const u = s && playable(s);
-	if (s && u) out.push({ kind: 'direct', url: u, key: s.key, audio: s.type === 'hls' && u !== s.url ? !!s.mp4_audio : !!s.audio });
+	return sourcesFor(s, pickTrailer(videos, lang())?.key, nativeHLS(), soundOn());
+}
+
+/**
+ * sourcesFor orders the sources. Direct from YouTube first (muted, no
+ * server bandwidth); once sound was turned on this session, a browser
+ * without native HLS starts on pass-through instead. Pass-through is also
+ * the fallback when direct playback is refused (YouTube ties addresses to
+ * the IP that resolved them), then the embed.
+ */
+export function sourcesFor(s: Stream | null, videoKey: string | undefined, hls: boolean, sound: boolean): TrailerSource[] {
+	const out: TrailerSource[] = [];
+	const u = s && playable(s, hls);
+	const pass = s?.type === 'hls' ? s.proxy_url : undefined;
+	if (s && pass && sound && !hls) out.push({ kind: 'pass', url: pass, key: s.key });
+	if (s && u) out.push({ kind: 'direct', url: u, key: s.key, audio: s.type === 'hls' && u !== s.url ? !!s.mp4_audio : !!s.audio, pass });
 	// Some browsers say they may play HLS and then refuse YouTube's manifest
 	// (Chrome: error 4); the MP4 is tried next.
-	if (s?.type === 'hls' && u === s.url && s.mp4_url) out.push({ kind: 'direct', url: s.mp4_url, key: s.key, audio: !!s.mp4_audio });
-	const key = s?.key || pickTrailer(videos, lang())?.key;
+	if (s?.type === 'hls' && u === s.url && s.mp4_url) out.push({ kind: 'direct', url: s.mp4_url, key: s.key, audio: !!s.mp4_audio, pass });
+	if (s && pass && !out.some((o) => o.kind === 'pass')) out.push({ kind: 'pass', url: pass, key: s.key });
+	const key = s?.key || videoKey;
 	if (key) out.push({ kind: 'embed', key });
 	return out;
+}
+
+/**
+ * onUnmute says what turning the sound on does: unmute in place, switch to
+ * pass-through (a picture-only stream with a relay beside it), or nothing.
+ */
+export function onUnmute(src: TrailerSource | undefined): 'unmute' | 'switch' | 'none' {
+	if (!src) return 'none';
+	if (src.kind !== 'direct' || src.audio) return 'unmute';
+	return src.pass ? 'switch' : 'none';
+}
+
+/** hasSound says whether the sound button shows for this source. */
+export function hasSound(src: TrailerSource | undefined): boolean {
+	return onUnmute(src) !== 'none';
 }

@@ -14,7 +14,8 @@ let bad = 0;
 function walk(dir) {
 	for (const name of readdirSync(dir)) {
 		const p = join(dir, name);
-		if (statSync(p).isDirectory()) walk(p);
+		// vendor: third-party code (hls.js), not the app's words.
+		if (statSync(p).isDirectory()) { if (name !== 'vendor') walk(p); }
 		else if (exts.has(extname(p)) && !p.endsWith('.test.ts')) {
 			const text = readFileSync(p, 'utf8');
 			for (const w of banned) {
