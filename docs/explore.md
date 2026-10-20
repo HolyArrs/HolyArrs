@@ -38,16 +38,25 @@ measure only. They never change what Explore shows.
 
 ## Head rows
 
-| Row | What it holds |
+Each tab has its own head order. A slot without data is skipped, and the best
+tail rows fill the head up to 12 rows. Just arrived, your asks and Coming
+soon are Home rows, not Explore rows.
+
+| Tab | Head order |
 | --- | --- |
-| Hero | Up to 6 titles that are not in your Library yet, taken from Trending now and Trending this week everywhere, with **Ask** as the main button. |
-| Just arrived | Titles added to the Library in the last 14 days, newest first (at least 3). |
-| Trending on Netflix | Netflix's current list, with big rank numbers. Pick movies or shows, and a region. |
-| Your asks, on the way | Your open asks and where each one is. Only shown when you have open asks. |
-| Top picks for you | From 3 seeds up. |
-| Trending this week everywhere | TMDB trending titles for the week. |
-| Coming soon | Upcoming releases, as wide cards. |
-| The best tail row | The highest-scoring generated row moves up as the last head row. |
+| All | Trending on your services, Top picks for you, Trending this week everywhere, Because you have X, Best new releases, Because you asked for X, Popular in your household |
+| Movies | Trending movies on your services, Top picks for you, Finish the collection, Trending movies this week, Because you have X, Best new releases, Coming to cinemas and streaming, Popular in your household |
+| Shows | Trending shows on your services, Top picks for you, New seasons and premieres, Trending shows this week, Because you have X, Returning soon, Popular in your household |
+| Under 3 seeds | Trending on your services, Trending this week, Best new releases, the tab's own rows, Popular genre rows, Classics |
+
+- **Hero.** Up to 6 titles not in your Library yet, from Trending this week
+  and Trending on your services, with **Ask** as the main button.
+- **Top picks for you** needs 3 seeds.
+- **Because you asked for X** needs an open ask of yours (your two newest).
+- **Popular in your household** needs at least 2 active members and asks from
+  the last 30 days. Without them these rows do not show.
+- A title shows once in the first 8 rows, counting the hero and Trending on
+  your services. A row keeps repeats rather than drop under its minimum.
 
 When a row cannot fill, the next candidate moves up.
 
@@ -82,8 +91,9 @@ If none fits, the row keeps its plain title. Titles stay true to the row: a
 genre word needs that genre on at least half the items, and "new" needs at
 least half released in the last 90 days. A Kid account only gets titles flagged
 for Kids. A person does not see the same title again for 14 days, and a row
-keeps its title for the whole local day. The fixed head rows keep their title
-and get a short factual subtitle instead.
+keeps its title for the whole local day. The fixed head rows (the charts, Top
+picks, Best new releases, Because you have X and Because you asked for X, and
+the tab's own rows) keep their title and get a short factual subtitle instead.
 
 The occasion and time of day also nudge the order a little (a late-night
 thriller row moves up a place or two, never more, and never for Kid
@@ -126,10 +136,13 @@ albums and artists keep their square and round shapes.
 
 ### Hover and touch
 
-- On a wide card, resting the pointer for half a second grows the card about
-  1.5 times in place (inward at the edge of a row), then shows an info panel
-  and the trailer. On a poster, the info card opens after 0.8 seconds.
-- Keyboard focus opens the card and Esc closes it. On touch, a tap opens it.
+- On a wide card, resting the pointer for 0.4 seconds grows the card in place
+  (inward at the edge of a row), then shows an info panel and the trailer.
+  Every grown card has the same width (414 px), whatever row it is in.
+- Keyboard focus opens the card after the same delay, and Esc closes it.
+- On touch, a tap opens the title page. This follows Netflix on phones, where
+  a tap on a poster goes straight to the title's details; there is no hover
+  to grow a card from.
 - With Reduce motion on, cards do not grow. Nothing opens while a row is being
   dragged.
 - Rows also scroll by dragging with the mouse, with a glide on release.
