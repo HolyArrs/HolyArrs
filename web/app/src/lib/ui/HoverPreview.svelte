@@ -40,7 +40,8 @@
 		onclose: () => void;
 	} = $props();
 
-	const W = 340;
+	let W = $state(340);
+	let from = $state(0.6);
 	let card = $state<HTMLElement>();
 	let pos = $state({ left: -9999, top: -9999 });
 	let origin = $state('50% 50%');
@@ -52,8 +53,12 @@
 	function place() {
 		if (!card) return;
 		const a = anchor.getBoundingClientRect();
+		// About twice the poster width, so the card is bigger than the poster it grows from, like Netflix; it starts at the poster's own size.
+		W = Math.round(Math.min(440, Math.max(320, a.width * 2)));
+		from = Math.min(1, a.width / W);
 		const h = card.offsetHeight;
-		pos = placeCard(a, W, h, { width: document.documentElement.clientWidth, height: window.innerHeight });
+		const row = (anchor.closest('.row') ?? anchor.closest('main'))?.getBoundingClientRect();
+		pos = placeCard(a, W, h, { width: document.documentElement.clientWidth, height: window.innerHeight }, 8, row ? { left: row.left, right: row.right } : undefined);
 		origin = `${Math.round(a.left + a.width / 2 - pos.left)}px ${Math.round(a.top + a.height / 2 - pos.top)}px`;
 	}
 
@@ -99,6 +104,7 @@
 	style:top="{pos.top}px"
 	style:width="{W}px"
 	style:transform-origin={origin}
+	style:--from={from}
 	onpointerenter={onenter}
 	onpointerleave={onleave}
 >
@@ -130,7 +136,7 @@
 		animation: hover-open var(--dur) var(--ease-spring, var(--ease-out)) both;
 		will-change: transform, opacity;
 	}
-	@keyframes hover-open { from { opacity: 0; transform: scale(.62); } }
+	@keyframes hover-open { from { opacity: 0.4; transform: scale(var(--from, .62)); } }
 	.media { position: relative; display: block; aspect-ratio: 16 / 9; background: var(--surface-2); overflow: hidden; }
 	.media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 	.media img.poster { object-position: center 20%; }

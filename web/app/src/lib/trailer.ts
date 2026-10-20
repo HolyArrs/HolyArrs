@@ -134,10 +134,23 @@ export const HERO_DELAY = 2500;
 export const HOVER_DELAY = 800;
 
 /** Where a hover card of size w×h opens, kept inside the viewport (8px margin). */
-export function placeCard(anchor: { left: number; top: number; width: number; height: number }, w: number, h: number, view: { width: number; height: number }, margin = 8) {
+export function placeCard(
+	anchor: { left: number; top: number; width: number; height: number },
+	w: number,
+	h: number,
+	view: { width: number; height: number },
+	margin = 8,
+	bounds?: { left: number; right: number }
+) {
+	// Netflix-style: grow from the poster itself, centred on it; at a row's
+	// edge, line up with the poster's outer edge instead of sliding away.
+	const lo = Math.max(margin, bounds?.left ?? margin);
+	const hi = Math.min(view.width - margin, bounds?.right ?? view.width - margin);
 	const cx = anchor.left + anchor.width / 2;
 	const cy = anchor.top + anchor.height / 2;
-	const left = Math.min(Math.max(cx - w / 2, margin), Math.max(margin, view.width - w - margin));
+	let left = cx - w / 2;
+	if (left < lo) left = Math.max(anchor.left, lo);
+	else if (left + w > hi) left = Math.min(anchor.left + anchor.width, hi) - w;
 	const top = Math.min(Math.max(cy - h / 2, margin), Math.max(margin, view.height - h - margin));
 	return { left: Math.round(left), top: Math.round(top) };
 }

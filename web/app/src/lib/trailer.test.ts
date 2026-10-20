@@ -82,7 +82,10 @@ describe('helpers', () => {
 	it('keeps the hover card inside the viewport', () => {
 		const view = { width: 1000, height: 800 };
 		expect(placeCard({ left: 0, top: 10, width: 100, height: 150 }, 300, 300, view)).toEqual({ left: 8, top: 8 });
+		// At a row's left edge it lines up with the poster, not the window edge.
+		expect(placeCard({ left: 165, top: 300, width: 170, height: 255 }, 300, 300, view, 8, { left: 160, right: 1000 }).left).toBe(165);
 		expect(placeCard({ left: 950, top: 700, width: 50, height: 100 }, 300, 300, view)).toEqual({ left: 692, top: 492 });
+		expect(placeCard({ left: 820, top: 300, width: 170, height: 255 }, 300, 300, view, 8, { left: 160, right: 1000 }).left).toBe(690);
 		expect(placeCard({ left: 400, top: 300, width: 200, height: 200 }, 300, 300, view)).toEqual({ left: 350, top: 250 });
 	});
 });
