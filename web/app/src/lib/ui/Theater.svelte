@@ -21,6 +21,8 @@
 	let time = $state(0);
 	let duration = $state(0);
 	let idle = $state(false);
+	// YouTube refused this trailer (removed, private or not allowed outside YouTube).
+	let unavailable = $state(false);
 	let leaving = false;
 	let release: (() => void) | null = null;
 	let idleTimer: ReturnType<typeof setTimeout> | undefined;
@@ -58,6 +60,7 @@
 	$effect(() => {
 		if (!now || !dialog || dialog.open) return;
 		leaving = false;
+		unavailable = false;
 		paused = false;
 		muted = false;
 		time = now.time;
@@ -119,6 +122,10 @@
 		try {
 			d = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
 		} catch {
+			return;
+		}
+		if (d.event === 'onError') {
+			unavailable = true;
 			return;
 		}
 		const info = typeof d.info === 'object' && d.info ? d.info : {};
@@ -241,6 +248,12 @@
 					onload={frameLoaded}
 				></iframe>
 				<button type="button" class="catch" aria-label={paused ? 'Play' : 'Pause'} onclick={togglePlay} tabindex="-1"></button>
+				{#if unavailable}
+					<div class="gone" role="status">
+						<p>This trailer can't play here.</p>
+						<button type="button" class="gone-close" onclick={() => void close()}>Close</button>
+					</div>
+				{/if}
 			{/if}
 			<div class="top">
 				<p class="name">{now.title}</p>
@@ -265,6 +278,9 @@
 	.stage { position: absolute; inset: 0; background: #000; transform-origin: 0 0; overflow: hidden; container-type: size; }
 	video, iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; object-fit: contain; background: #000; }
 	iframe { pointer-events: none; }
+	.gone { position: absolute; inset: 0; z-index: 3; display: grid; place-content: center; justify-items: center; gap: 16px; background: #0b0b0c; color: var(--on-art); text-align: center; }
+	.gone p { margin: 0; font: var(--t-title3); }
+	.gone-close { min-height: 44px; padding: 0 22px; border: 0; border-radius: var(--r-pill); background: #fff; color: #000; font: var(--t-headline); cursor: pointer; }
 	.catch { position: absolute; inset: 0; border: 0; background: transparent; padding: 0; }
 	.top, .bar { position: absolute; left: 0; right: 0; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 20px clamp(16px, 3vw, 40px); transition: opacity 400ms var(--ease-out), transform 400ms var(--ease-out); }
 	.top { top: 0; justify-content: space-between; background: linear-gradient(to bottom, var(--on-art-scrim-mid), var(--on-art-scrim-none)); }
