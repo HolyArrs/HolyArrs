@@ -138,7 +138,7 @@ const SOUND_KEY = 'holyarrs.trailer.sound';
 /** Whether the person turned trailer sound on earlier in this browser session. */
 export function soundOn(): boolean {
 	try {
-		return sessionStorage.getItem(SOUND_KEY) === 'on';
+		return localStorage.getItem(SOUND_KEY) === 'on';
 	} catch {
 		return false;
 	}
@@ -146,8 +146,8 @@ export function soundOn(): boolean {
 
 export function setSoundOn(on: boolean) {
 	try {
-		if (on) sessionStorage.setItem(SOUND_KEY, 'on');
-		else sessionStorage.removeItem(SOUND_KEY);
+		if (on) localStorage.setItem(SOUND_KEY, 'on');
+		else localStorage.removeItem(SOUND_KEY);
 	} catch {
 		/* private mode: not remembered */
 	}
