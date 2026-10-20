@@ -9,9 +9,10 @@
 	import { press, viewTransitionName } from '../motion.ts';
 	import { sized } from '../tmdb-image.ts';
 	import { shelfNear, whenLoaded } from '../lazy-art.ts';
-	import HoverPreview from './HoverPreview.svelte';
+	import GrowCard from './GrowCard.svelte';
 	import { prefetchTrailer, watchTrailer } from '../autoplay.svelte.ts';
-	import { dwell, finePointer, HOVER_DELAY } from '../trailer.ts';
+	import { dwell, finePointer } from '../trailer.ts';
+	import { GROW_DELAY } from '../grow.ts';
 
 	// 2:3 poster with title below. Lifts on hover; artwork zooms inside its frame.
 	// `action` is an optional round button (Add / Ask) over the art corner.
@@ -74,10 +75,19 @@
 
 	// The expanded card: pointer: fine only, after HOVER_DELAY; leaving both
 	// the poster and the card (a short grace to cross the gap) closes it.
+	// The same wide preview every row opens (GrowCard), centred over the poster.
 	let root = $state<HTMLElement>();
+	let artEl = $state<HTMLElement>();
+	let hit = $state<HTMLElement>();
+	/** Opened by keyboard focus: the preview takes the focus. */
+	let byKey = $state(false);
 	let open = $state(false);
-	const opener = dwell(HOVER_DELAY, () => (open = true));
-	const closer = dwell(140, () => (open = false));
+	let leaving = $state(false);
+	const opener = dwell(GROW_DELAY, () => {
+		leaving = false;
+		open = true;
+	});
+	const closer = dwell(60, () => (leaving = true));
 	// A hover-only action (fine pointers) is put in only while the card is hovered or
 	// focused: a glass button on every card makes long rows slow to scroll.
 	let hot = $state(false);
@@ -87,6 +97,7 @@
 		hot = true;
 		if (!preview || !finePointer()) return;
 		closer.cancel();
+		if (open && leaving) leaving = false;
 		if (!open) {
 			opener.start();
 			prefetchTrailer(preview.kind, preview.tmdb);
@@ -101,10 +112,20 @@
 		opener.cancel();
 		closer.cancel();
 		open = false;
+		leaving = false;
+	}
+	/** Tab out of the preview: on to the next card, else back to this one (Shift+Tab). */
+	function tabOut(back: boolean) {
+		shut();
+		const next = back ? null : root?.nextElementSibling?.querySelector<HTMLElement>('a[href], button:not([disabled])') ?? root?.parentElement?.nextElementSibling?.querySelector<HTMLElement>('a[href], button:not([disabled])');
+		(next ?? hit)?.focus();
 	}
 	function focusIn(e: FocusEvent) {
 		hot = true;
-		if ((e.target as HTMLElement)?.matches?.(':focus-visible')) enter();
+		if ((e.target as HTMLElement)?.matches?.(':focus-visible')) {
+			byKey = true;
+			enter();
+		}
 	}
 	function focusOut(e: FocusEvent) {
 		if (!root?.contains(e.relatedTarget as Node)) {
@@ -131,9 +152,9 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="ui-poster" class:square={shape === 'square'} class:round={shape === 'round'} style:width bind:this={root} onpointerenter={enter} onpointerleave={leave} onfocusin={focusIn} onfocusout={focusOut} onpointerdown={() => opener.cancel()}>
-	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} use:press={'card'}>
-		<span class="art" use:viewTransitionName={vtName}>
+<div class="ui-poster" class:square={shape === 'square'} class:round={shape === 'round'} style:width bind:this={root} onpointerenter={() => ((byKey = false), enter())} onpointerleave={leave} onfocusin={focusIn} onfocusout={focusOut} onpointerdown={() => opener.cancel()}>
+	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} bind:this={hit} use:press={'card'}>
+		<span class="art" use:viewTransitionName={vtName} bind:this={artEl}>
 			{#if !image || failed || !loaded}
 				<span class="ph" aria-hidden="true"><span class="ph-ic"><Icon name={kindIcon} size={22} /></span><span class="ph-t">{title}</span></span>
 			{/if}
@@ -159,8 +180,8 @@
 	<CardBadges fresh={strip} {owned} />
 {/snippet}
 
-{#if open && preview && root}
-	<HoverPreview anchor={root} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} {image} badge={owned || strip ? ownBadge : undefined} {action} onenter={() => closer.cancel()} onleave={leave} onclose={shut} />
+{#if open && preview && artEl}
+	<GrowCard anchor={artEl} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} image={null} {leaving} badge={owned || strip ? ownBadge : undefined} {action} onenter={() => { closer.cancel(); leaving = false; }} onleave={leave} onclose={(back) => { shut(); if (back) hit?.focus(); }} focusIn={byKey} ontab={tabOut} returnTo={hit} ongone={() => leaving && shut()} />
 {/if}
 
 <style>

@@ -9,7 +9,7 @@
 	import { sized } from '../tmdb-image.ts';
 	import { autoplayHere, loadUISettings, trailerSources, type TrailerSource } from '../autoplay.svelte.ts';
 	import { openTheater } from '../theater.svelte.ts';
-	import { flipTransform, growPlacement, GROW_MS, SHRINK_MS, TRAILER_AFTER, type Growth } from '../grow.ts';
+	import { flipTransform, growPlacement, GROW_MS, GROW_SCALE, SHRINK_MS, TRAILER_AFTER, type Growth, type Rect } from '../grow.ts';
 
 	// The wide card grown in place, Netflix style: the card itself (same
 	// picture, same logo, same badges) scales up about 1.5x over its
@@ -105,9 +105,22 @@
 	const ctl = new AbortController();
 	const reduce = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
+	/**
+	 * The rect the grow starts from: the card's own picture when it is 16:9;
+	 * a poster or square tile stands in for a 16:9 frame centred on it, as
+	 * tall as the tile, so every card opens the same wide preview (Netflix).
+	 */
+	function from(): Rect {
+		const a = anchor.getBoundingClientRect();
+		if (a.height <= 0 || Math.abs(a.width / a.height - 16 / 9) < 0.05) return a;
+		const width = (a.height * 16) / 9 / GROW_SCALE;
+		const height = (width * 9) / 16;
+		return { left: a.left + a.width / 2 - width / 2, top: a.top + a.height / 2 - height / 2, width, height };
+	}
+
 	function measure(): Growth | null {
 		if (!card) return null;
-		const a = anchor.getBoundingClientRect();
+		const a = from();
 		const panel = card.querySelector<HTMLElement>('.panel')?.offsetHeight ?? 0;
 		const row = (anchor.closest('.row') ?? anchor.closest('main'))?.getBoundingClientRect();
 		return growPlacement({ left: a.left, top: a.top, width: a.width, height: a.height }, panel, { width: document.documentElement.clientWidth, height: window.innerHeight }, row ? { left: row.left, right: row.right } : undefined);
@@ -152,7 +165,7 @@
 
 	function shrink() {
 		if (!card || !g || reduce()) return ongone();
-		const a = anchor.getBoundingClientRect();
+		const a = from();
 		const back = { x: a.left - g.left, y: a.top - g.top, scale: a.width / g.width };
 		const now = anim && anim.playState === 'running' ? getComputedStyle(card).transform : 'none';
 		anim?.cancel();
@@ -183,7 +196,7 @@
 	}
 	function focusout(e: FocusEvent) {
 		const to = e.relatedTarget as Node | null;
-		if (to && (card?.contains(to) || anchor.closest('.ui-wide')?.contains(to))) return;
+		if (to && (card?.contains(to) || anchor.closest('.ui-wide, .ui-poster')?.contains(to))) return;
 		onleave?.();
 	}
 
@@ -222,7 +235,9 @@
 
 	// The sharp picture for the grown card's real size (w1280), over the card's own w780 until it loads.
 	let bigIn = $state(false);
-	const big = $derived(image && /\/artwork\/tmdb\/w780\//.test(image) ? image.replace('/w780/', '/w1280/') : null);
+	// Poster cards pass no picture: the title's backdrop fills the 16:9 frame.
+	const pic = $derived(image ?? (meta?.backdrop ? sized(meta.backdrop, 'backdrop') || null : null));
+	const big = $derived(pic && /\/artwork\/tmdb\/w780\//.test(pic) ? pic.replace('/w780/', '/w1280/') : null);
 	const shownLogo = $derived(logoFailed ? null : logo ? logo : meta?.logo ? sized(meta.logo, 'poster') : null);
 	function runtime(m?: number) {
 		if (!m) return '';
@@ -250,7 +265,7 @@
 	data-testid="grow-card"
 	style:left="{g?.left ?? -9999}px"
 	style:top="{g?.top ?? -9999}px"
-	style:width="{g?.width ?? anchor.getBoundingClientRect().width * 1.5}px"
+	style:width="{g?.width ?? from().width * GROW_SCALE}px"
 	onpointerenter={onenter}
 	onpointerleave={onleave}
 	onfocusin={onenter}
@@ -258,7 +273,7 @@
 	onkeydown={keydown}
 >
 	<a class="media" href={href} tabindex="-1">
-		{#if image}<img src={image} alt="" decoding="async" />{/if}
+		{#if pic}<img src={pic} alt="" decoding="async" />{/if}
 		{#if big}<img src={big} alt="" decoding="async" class="big" class:in={bigIn} onload={() => (bigIn = true)} />{/if}
 		{#if trailerOk && sources.length}
 			<TrailerPlayer {sources} {title} repeat onplaying={() => (playing = true)} onfail={() => (playing = false)} onended={() => (playing = false)} onexpand={(o) => { openTheater({ kind, tmdb, title, source: o.source, time: o.time, rect: { left: o.rect.left, top: o.rect.top, width: o.rect.width, height: o.rect.height }, from: 'hover', returnTo }); onclose(); }} />
