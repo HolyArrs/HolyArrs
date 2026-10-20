@@ -1,46 +1,9 @@
-// The More info panel on Explore: which title it shows (in the URL as
-// ?title=movie:123, so Back closes it and the link can be shared), how a
-// card click opens (the panel or the title page, a device choice), the
-// details it reads from GET /metadata/{kind}/{tmdb}, and which rows draw
-// the bigger "big 4" cards.
+// The details a title page reads from GET /metadata/{kind}/{tmdb}: people,
+// where to stream, similar titles and the collection, tolerating missing fields.
 import type { ProviderItem } from './explore.ts';
 
 export type InfoKind = 'movie' | 'show';
-export interface InfoRef {
-	kind: InfoKind;
-	tmdb: string;
-}
 
-export const TITLE_PARAM = 'title';
-
-/** parseTitleParam reads ?title=movie:123 (or show:456); anything else is no panel. */
-export function parseTitleParam(v: string | null | undefined): InfoRef | null {
-	const m = /^(movie|show):([1-9]\d{0,9})$/.exec(v?.trim() ?? '');
-	return m ? { kind: m[1] as InfoKind, tmdb: m[2] } : null;
-}
-
-export function titleParam(r: InfoRef): string {
-	return `${r.kind}:${r.tmdb}`;
-}
-
-/** withTitle is the address with the panel open on r, or closed (null); other parameters stay. */
-export function withTitle(href: string | URL, r: InfoRef | null): URL {
-	const url = new URL(String(href));
-	if (r) url.searchParams.set(TITLE_PARAM, titleParam(r));
-	else url.searchParams.delete(TITLE_PARAM);
-	// Keep the colon readable: ?title=movie:123.
-	url.search = url.search.replace(/([?&]title=(?:movie|show))%3A/, '$1:');
-	return url;
-}
-
-// A card click on Explore opens the title page (the default) or the panel.
-export const CARD_OPENS_KEY = 'holyarrs.explore.cardOpens';
-export type CardOpens = 'page' | 'panel';
-export function readCardOpens(raw: string | null | undefined): CardOpens {
-	return raw === 'panel' ? 'panel' : 'page';
-}
-
-// ---- The details answer ----
 
 export interface InfoPerson {
 	name: string;
@@ -93,7 +56,7 @@ const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : unde
 const pos = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : undefined);
 const arr = (v: unknown): Raw[] => (Array.isArray(v) ? (v.filter((x) => x && typeof x === 'object') as Raw[]) : []);
 
-/** MAX_CAST round faces in the panel. */
+/** MAX_CAST round faces in a short row. */
 export const MAX_CAST = 8;
 
 /** readInfo reads a /metadata/{kind}/{tmdb} answer, tolerating missing fields. */
@@ -180,34 +143,3 @@ export function facts(d: Pick<InfoDetails, 'kind' | 'year' | 'rating' | 'runtime
 	return out.length ? [d.kind === 'movie' ? 'Movie' : 'Show', ...out] : out;
 }
 
-// ---- Big 4 shelves ----
-
-/** The rows that draw the bigger cards when they appear: the first personal row, and Best new releases. */
-export const BIG_ROW_TYPES = ['best'];
-const PERSONAL = /^(top_picks|because_have|genre)$/;
-
-export interface ShelfRow {
-	id: string;
-	type?: string;
-}
-
-/**
- * bigRows picks which rows draw big cards: the first personal row (Top
- * picks for you) and Best new releases, never two big rows in a row.
- */
-export function bigRows(rows: ShelfRow[]): Set<string> {
-	const out = new Set<string>();
-	let personal = false;
-	let prev = false;
-	for (const r of rows) {
-		const t = r.type ?? r.id;
-		let big = false;
-		if (!personal && PERSONAL.test(t)) {
-			personal = true;
-			big = true;
-		} else if (BIG_ROW_TYPES.includes(t)) big = true;
-		if (big && !prev) out.add(r.id);
-		prev = out.has(r.id);
-	}
-	return out;
-}

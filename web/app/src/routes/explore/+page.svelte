@@ -64,9 +64,7 @@
 	import type { IconName } from '#lib/Icon.svelte';
 	import { EAGER_ROWS, stableRows } from '#lib/row-window.ts';
 	import Icon from '#lib/Icon.svelte';
-	import MoreInfo from '#lib/ui/MoreInfo.svelte';
 	import { onTheaterExit } from '#lib/theater.svelte.ts';
-	import { CARD_OPENS_KEY, parseTitleParam, readCardOpens, withTitle, type CardOpens, type InfoRef } from '#lib/more-info.ts';
 
 	let loaded = $state(false);
 	let failed = $state(false);
@@ -132,50 +130,8 @@
 		void loadHead();
 	}
 
-	// The More info panel: ?title=movie:123 in the address (shallow), so Back
-	// closes it and the link can be shared; the page keeps its place behind it.
-	const shownUrl = $derived(page.shallow?.url ?? page.url);
-	const info = $derived(parseTitleParam(shownUrl.searchParams.get('title')));
-	let infoFrom = $state<DOMRect | null>(null);
-	/** The panel was opened here (a history entry of ours), so closing it goes Back. */
-	let pushed = false;
-	$effect(() => {
-		if (!info) pushed = false;
-	});
-	function openInfo(r: InfoRef, from: DOMRect | null) {
-		infoFrom = from;
-		const url = withTitle(shownUrl.href, r);
-		if (info) return void goto(url, { shallow: true, replace: true, reset: false });
-		pushed = true;
-		void goto(url, { shallow: true, reset: false });
-	}
-	function closeInfo() {
-		if (pushed) {
-			pushed = false;
-			history.back();
-		} else void goto(withTitle(shownUrl.href, null), { shallow: true, replace: true, reset: false });
-	}
-	// A card click opens the title page, or the panel when this device prefers it.
-	let cardOpens = $state<CardOpens>('page');
-	function setCardOpens(v: CardOpens) {
-		cardOpens = v;
-		try {
-			localStorage.setItem(CARD_OPENS_KEY, v);
-		} catch {
-			/* the choice is a convenience */
-		}
-	}
-	/** infoHref is the panel's own address for a movie or show card (a real link: new tabs open the panel too). */
-	function infoHref(c: ExploreCard): string | undefined {
-		const tmdb = cardTmdb(c);
-		if (!tmdb || (c.kind !== 'movie' && c.kind !== 'show')) return undefined;
-		const u = withTitle(shownUrl.href, { kind: c.kind, tmdb });
-		return u.pathname + u.search;
-	}
-	// Leaving the full-screen trailer lands in the title's panel (from the panel itself: back to it as it was).
-	$effect(() => onTheaterExit((o) => {
-		if (o.from !== 'panel') openInfo({ kind: o.kind, tmdb: o.tmdb }, null);
-	}));
+	// Leaving the full-screen trailer (hero or hover card) lands on the title's page.
+	$effect(() => onTheaterExit((o) => void goto(to(detailPath(o.kind, o.tmdb)))));
 
 	// Music shows only music rows: the movie and show rows (Top 10, services, Coming soon, Best new releases) never appear there.
 	const rows = $derived(type === 'music' ? [] : markTransitions(filterRows([...head, ...tail], type)));
@@ -264,15 +220,6 @@
 
 	function opened(e: MouseEvent) {
 		const el = e.target as Element | null;
-		// A card link to the panel (the device prefers it) opens it here, growing from the card.
-		const link = el?.closest?.('a[href]') as HTMLAnchorElement | null;
-		if (link && !e.defaultPrevented && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && link.closest('.row-wrap')) {
-			const r = parseTitleParam(new URL(link.href, location.href).searchParams.get('title'));
-			if (r) {
-				e.preventDefault();
-				openInfo(r, (link.querySelector('.art') ?? link).getBoundingClientRect());
-			}
-		}
 		const wrap = el?.closest?.('[data-row]');
 		const row = wrap?.getAttribute('data-row');
 		if (row && el?.closest('a')) count(row, 'open', wrap?.getAttribute('data-title-layer') ?? undefined);
@@ -430,11 +377,6 @@
 				/* nothing saved */
 			}
 		}
-		try {
-			cardOpens = readCardOpens(localStorage.getItem(CARD_OPENS_KEY));
-		} catch {
-			/* nothing saved */
-		}
 		void load();
 		void loadServices().then(() => void loadHead());
 		return () => {
@@ -516,7 +458,7 @@
 						{@const act = cardAction(c, { manage, ask: mayAsk })}
 						{@const mark = ownedMark(c, ownedTitle(c, owned), who)}
 						{#if row.wide || wideKind(c.kind)}
-							<WideCard cover title={c.name} href={(cardOpens === 'panel' ? infoHref(c) : undefined) ?? cardHref(c)} onmore={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? (from) => openInfo({ kind: c.kind as 'movie' | 'show', tmdb: cardTmdb(c) }, from) : undefined} image={c.wide ?? c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} fresh={c.fresh} owned={mark} typed row={row.type} preview={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: cardTmdb(c), year: c.year } : undefined}>
+							<WideCard cover title={c.name} href={cardHref(c)} image={c.wide ?? c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} fresh={c.fresh} owned={mark} typed row={row.type} preview={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: cardTmdb(c), year: c.year } : undefined}>
 								{#snippet growAction()}
 									{#if act && cardTmdb(c)}
 										<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={asking === c.key || undefined} onclick={() => { count(row.type ?? row.id, 'ask', row.titleLayer); void quick(c, act); }} />
@@ -559,23 +501,6 @@
 		{/if}
 	{/if}
 </div>
-
-{#snippet infoAction(c: ExploreCard)}
-	{@const act = cardAction(c, { manage, ask: mayAsk })}
-	{#if act && cardTmdb(c)}
-		<button type="button" class="info-act" aria-haspopup="dialog" aria-busy={asking === c.key || undefined} data-testid="info-act" onclick={() => { count('more_info', 'ask'); void quick(c, act); }}>
-			<Icon name="plus" size={20} stroke={2.2} /><span>{act === 'add' ? 'Add' : c.kind === 'show' ? 'Ask for seasons…' : 'Ask'}</span>
-		</button>
-	{/if}
-{/snippet}
-
-{#snippet infoCard(c: ExploreCard)}
-	<WideCard cover title={c.name} href={infoHref(c) ?? cardHref(c)} image={c.wide ?? c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" fresh={c.fresh} owned={ownedMark(c, ownedTitle(c, owned), who)} typed />
-{/snippet}
-
-{#if info}
-	<MoreInfo ref={info} from={infoFrom} {region} {live} action={infoAction} card={infoCard} {cardOpens} onCardOpens={setCardOpens} onpick={openInfo} onclose={closeInfo} />
-{/if}
 
 {#if manage}
 	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} onadded={(_m, t) => added(t)} />

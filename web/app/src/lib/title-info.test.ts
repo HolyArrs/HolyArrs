@@ -1,28 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bigRows, facts, firstSeason, parseTitleParam, readCardOpens, readEpisodes, readInfo, seasonLabel, titleParam, withTitle } from './more-info.ts';
-
-describe('the panel in the URL', () => {
-	it('reads movie and show refs and refuses anything else', () => {
-		expect(parseTitleParam('movie:123')).toEqual({ kind: 'movie', tmdb: '123' });
-		expect(parseTitleParam(' show:9 ')).toEqual({ kind: 'show', tmdb: '9' });
-		for (const bad of [null, undefined, '', 'artist:1', 'movie:', 'movie:0', 'movie:12a', 'movie:-1', 'movie:01', 'movie:12345678901']) expect(parseTitleParam(bad)).toBeNull();
-	});
-	it('writes the ref and keeps other parameters', () => {
-		expect(titleParam({ kind: 'show', tmdb: '7' })).toBe('show:7');
-		const open = withTitle('https://h.test/explore?type=movies', { kind: 'movie', tmdb: '5' });
-		expect(open.searchParams.get('title')).toBe('movie:5');
-		expect(open.search).toBe('?type=movies&title=movie:5');
-		expect(open.searchParams.get('type')).toBe('movies');
-		const closed = withTitle(open, null);
-		expect(closed.search).toBe('?type=movies');
-		expect(parseTitleParam(open.searchParams.get('title'))).toEqual({ kind: 'movie', tmdb: '5' });
-	});
-	it('card clicks open the title page unless the device chose the panel', () => {
-		expect(readCardOpens(null)).toBe('page');
-		expect(readCardOpens('odd')).toBe('page');
-		expect(readCardOpens('panel')).toBe('panel');
-	});
-});
+import { facts, firstSeason, readEpisodes, readInfo, seasonLabel } from './title-info.ts';
 
 describe('the details answer', () => {
 	const raw = {
@@ -63,19 +40,5 @@ describe('the details answer', () => {
 		expect(readEpisodes({ episodes: [{ number: 1, name: 'Pilot', runtime: 50, air_day: '2021-01-01' }, { number: 0 }] })).toEqual([
 			{ number: 1, name: 'Pilot', overview: undefined, runtime: 50, still: undefined, airDay: '2021-01-01' }
 		]);
-	});
-});
-
-describe('big 4 shelves', () => {
-	it('marks the first personal row and Best new releases', () => {
-		const rows = [{ id: 'a', type: 'just_arrived' }, { id: 'b', type: 'top_picks' }, { id: 'c', type: 'trending' }, { id: 'd', type: 'genre' }, { id: 'e', type: 'best' }];
-		expect([...bigRows(rows)]).toEqual(['b', 'e']);
-	});
-	it('falls back to the first personal row of another kind', () => {
-		expect([...bigRows([{ id: 'x', type: 'trending' }, { id: 'y', type: 'because_have' }, { id: 'z', type: 'genre' }])]).toEqual(['y']);
-	});
-	it('never puts two big rows next to each other', () => {
-		expect([...bigRows([{ id: 'p', type: 'top_picks' }, { id: 'q', type: 'best' }, { id: 'r', type: 'trending' }])]).toEqual(['p']);
-		expect([...bigRows([{ id: 'r', type: 'trending' }])]).toEqual([]);
 	});
 });
