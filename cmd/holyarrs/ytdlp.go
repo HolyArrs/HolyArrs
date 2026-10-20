@@ -19,8 +19,8 @@ import (
 // Foundation's open film) used to check a freshly updated yt-dlp.
 const canaryKey = "aqz-KE-bpKQ"
 
-// startYTDLP sets where trailers find yt-dlp (HOLYARRS_YTDLP, the copy
-// bundled next to this program, <config>/bin, PATH), runs the weekly
+// startYTDLP sets where trailers find yt-dlp (HOLYARRS_YTDLP, the checked
+// update in <config>/bin, the copy bundled next to this program, PATH), runs the weekly
 // update while "Keep yt-dlp up to date" is on, and feeds the trailers
 // health check.
 func startYTDLP(ctx context.Context, configDir string, a *api.API, he *health.Engine) {

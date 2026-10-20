@@ -115,8 +115,12 @@ func TestFindOrder(t *testing.T) {
 		t.Fatal("data copy")
 	}
 	os.WriteFile(filepath.Join(dir, exe()), []byte("x"), 0o755)
+	if tool.Find() != filepath.Join(data, exe()) {
+		t.Fatal("the updated copy wins over the bundled one")
+	}
+	os.Remove(filepath.Join(data, exe()))
 	if tool.Find() != filepath.Join(dir, exe()) {
-		t.Fatal("bundled copy wins over the data copy")
+		t.Fatal("bundled copy")
 	}
 	t.Setenv(Env, filepath.Join(dir, "missing"))
 	if tool.Find() != "" {

@@ -21,6 +21,14 @@ TARGETS = {"linux-amd64": ("linux", "amd64", ""),
            "linux-armv7": ("linux", "arm", "7"),
            "linux-386": ("linux", "386", ""),
            "windows-amd64": ("windows", "amd64", "")}
+# yt-dlp ships next to holyarrs (trailers): the official pinned release
+# for each target, checked against yt-dlp's SHA2-256SUMS for that release.
+# Packaging runs without network, so the files are fetched beforehand into
+# --ytdlp-dir (scripts/fetch-ytdlp.py). No armv7 or 386 release exists.
+YTDLP_VERSION = "2026.08.19"
+YTDLP = {"linux-amd64": ("yt-dlp_linux", "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a"),
+         "linux-arm64": ("yt-dlp_linux_aarch64", "b16e4dab368a816cd05d477d698a605a6ae87ccee1c8ffd38fa21d7254141fcc"),
+         "windows-amd64": ("yt-dlp.exe", "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a")}
 SOURCE_DIRS = {"cmd", "internal", "web", "scripts", "docs", ".github"}
 SOURCE_FILES = {"go.mod", "go.sum", "LICENSE", "README.md", "SECURITY.md",
                 "Makefile", "Dockerfile", ".gitignore", ".gitattributes", ".dockerignore"}
@@ -205,6 +213,12 @@ def build(args: argparse.Namespace) -> None:
                        "source-manifest.json": (manifest, 0o644), "package.json": (encoded(identity), 0o644),
                        "build-info.txt": (build_info, 0o644)}
             members.update({p: value for p, value in files.items() if p.startswith("docs/")})
+            if getattr(args, "ytdlp_dir", None) and target in YTDLP:
+                asset, want = YTDLP[target]
+                data = (Path(args.ytdlp_dir) / asset).read_bytes()
+                if digest(data) != want:
+                    raise ValueError(f"{asset} does not match yt-dlp {YTDLP_VERSION}'s published checksum")
+                members["yt-dlp.exe" if TARGETS[target][0] == "windows" else "yt-dlp"] = (data, 0o755)
             suffix = "zip" if TARGETS[target][0] == "windows" else "tar.gz"
             archive(result / f"holyarrs-{version}-{target}.{suffix}", members, epoch)
             (source / executable).unlink()
@@ -223,6 +237,7 @@ def main() -> None:
     parser.add_argument("--module-cache", required=True, help="complete Go module cache path or Docker volume, mounted read-only")
     parser.add_argument("--targets", default=",".join(TARGETS))
     parser.add_argument("--low-resource", action="store_true", help="limit each builder to one CPU and 2 GiB")
+    parser.add_argument("--ytdlp-dir", help="folder with the pinned yt-dlp release files (scripts/fetch-ytdlp.py); each is shipped next to holyarrs")
     args = parser.parse_args()
     try:
         build(args)

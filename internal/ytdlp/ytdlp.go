@@ -1,8 +1,9 @@
 // Package ytdlp finds the yt-dlp program HolyArrs uses for trailers and
 // keeps a copy of it up to date from the official GitHub releases.
 //
-// Lookup order: HOLYARRS_YTDLP, then the copy bundled next to the
-// holyarrs program, then the updated copy in the config folder, then PATH.
+// Lookup order: HOLYARRS_YTDLP, then the updated copy in the config
+// folder (written only by a checked update that passed the canary), then
+// the copy bundled next to the holyarrs program, then PATH.
 // The weekly update downloads the newest release, checks its SHA-256
 // against the release's SHA2-256SUMS file, swaps it in atomically and
 // keeps the previous copy; if the canary lookup then fails, the previous
@@ -92,13 +93,15 @@ func (t *Tool) Find() string {
 		}
 		return ""
 	}
-	if t.Self != "" {
-		if p := filepath.Join(filepath.Dir(t.Self), exe()); regular(p) {
+	// The updated copy only exists after a checked update passed the
+	// canary, so it wins over the bundled one (else updates never apply).
+	if t.DataDir != "" {
+		if p := filepath.Join(t.DataDir, exe()); regular(p) {
 			return p
 		}
 	}
-	if t.DataDir != "" {
-		if p := filepath.Join(t.DataDir, exe()); regular(p) {
+	if t.Self != "" {
+		if p := filepath.Join(filepath.Dir(t.Self), exe()); regular(p) {
 			return p
 		}
 	}

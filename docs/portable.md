@@ -19,6 +19,24 @@ From the checkout:
 python scripts/package.py --ref HEAD --version 0.0.0-candidate.1 --output /srv/holyarrs-candidates/candidate-1 --web-node-modules web/app/node_modules --module-cache /home/you/go/pkg/mod
 ```
 
+To ship yt-dlp (trailers) next to holyarrs, fetch the pinned release first
+and pass the folder; each file is checked against the SHA-256 pinned in
+`scripts/package.py`, and the Linux amd64, Linux arm64 and Windows packages
+get `yt-dlp` / `yt-dlp.exe` beside the program:
+
+```sh
+python scripts/fetch-ytdlp.py /srv/holyarrs-candidates/ytdlp
+python scripts/package.py ... --ytdlp-dir /srv/holyarrs-candidates/ytdlp
+```
+
+HolyArrs looks for yt-dlp in this order: `HOLYARRS_YTDLP`, the updated copy
+in `<config>/bin` (only written by a checked update), the copy next to the
+program, then `PATH`. While "Keep
+yt-dlp up to date" is on (Settings, This app; default on), a weekly job
+fetches the newest official release, checks its SHA-256 against the
+release's `SHA2-256SUMS`, swaps it into `<config>/bin` and keeps the
+previous copy if the new one fails a test lookup.
+
 Use a new output directory outside the checkout. An existing output is
 refused. The command exports the committed source, including `web/dist`,
 and builds there with networking disabled. Uncommitted edits and runtime
