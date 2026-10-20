@@ -26,26 +26,14 @@ type AskSeed struct {
 	At                 time.Time
 }
 
-// Play is one title a linked media-server user played (after the sync).
-type Play struct {
-	TMDBID, Kind, Name string
-	Year               int
-	Genres             []string
-	Percent            float64
-	At                 time.Time
-}
-
 // Seed is a title with a weight for one member.
 type Seed struct {
 	TMDBID, Kind, Name string
 	Year               int
 	Genres, People     []string
 	Weight             float64
-	// Watched says a play of 50% or more in 180 days made it a seed
-	// (Because you watched).
-	Watched bool
-	// Recent says it was added, asked or played within its window (365
-	// days; 180 for plays), so it may name a Because row.
+	// Recent says it was added or asked within 365 days, so it may name a
+	// Because row.
 	Recent bool
 }
 
@@ -61,11 +49,11 @@ func decay(now, at time.Time) float64 {
 }
 
 // Seeds weighs the member's signals (5.1): own ask 2.0, another member's
-// 0.5; Library 1.0 when added within 365 days, else 0.5; plays (after
-// the sync) 3.0 / 2.0 / -1.0; each times exp(-days/120). A Kid's seeds
-// are their own asks and plays only, and a Kid's asks never seed an
-// adult. lib is passed already filtered for a Kid's limit. Strongest first.
-func Seeds(member int64, kid bool, lib []LibTitle, asks []AskSeed, plays []Play, now time.Time) []Seed {
+// 0.5; Library 1.0 when added within 365 days, else 0.5; each times
+// exp(-days/120). A Kid's seeds are their own asks only, and a Kid's asks
+// never seed an adult. lib is passed already filtered for a Kid's limit.
+// Strongest first.
+func Seeds(member int64, kid bool, lib []LibTitle, asks []AskSeed, now time.Time) []Seed {
 	by := map[string]*Seed{}
 	add := func(s Seed, w float64) {
 		if s.TMDBID == "" || (s.Kind != "movie" && s.Kind != "show") || w == 0 {
@@ -78,7 +66,6 @@ func Seeds(member int64, kid bool, lib []LibTitle, asks []AskSeed, plays []Play,
 			by[s.Key()] = cur
 		}
 		cur.Weight += w
-		cur.Watched = cur.Watched || s.Watched
 		cur.Recent = cur.Recent || s.Recent
 		if len(cur.Genres) == 0 {
 			cur.Genres = s.Genres
@@ -106,19 +93,6 @@ func Seeds(member int64, kid bool, lib []LibTitle, asks []AskSeed, plays []Play,
 			continue
 		}
 		add(Seed{TMDBID: a.TMDBID, Kind: a.Kind, Name: a.Name, Year: a.Year, Genres: a.Genres, Recent: now.Sub(a.At) <= 365*24*time.Hour}, w*decay(now, a.At))
-	}
-	for _, p := range plays {
-		var w float64
-		switch {
-		case p.Percent >= 90:
-			w = 3.0
-		case p.Percent >= 50:
-			w = 2.0
-		case now.Sub(p.At) > 30*24*time.Hour:
-			w = -1.0
-		}
-		watched := p.Percent >= 50 && now.Sub(p.At) <= 180*24*time.Hour
-		add(Seed{TMDBID: p.TMDBID, Kind: p.Kind, Name: p.Name, Year: p.Year, Genres: p.Genres, Watched: watched, Recent: watched}, w*decay(now, p.At))
 	}
 	out := make([]Seed, 0, len(by))
 	for _, s := range by {

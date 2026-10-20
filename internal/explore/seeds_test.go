@@ -19,7 +19,7 @@ func TestSeedWeights(t *testing.T) {
 		{TMDBID: "3", Kind: "show", Name: "Mine", Member: 7, At: day0},
 		{TMDBID: "4", Kind: "movie", Name: "Theirs", Member: 8, At: day0},
 	}
-	seeds := Seeds(7, false, lib, asks, nil, day0)
+	seeds := Seeds(7, false, lib, asks, day0)
 	w := map[string]float64{}
 	for _, s := range seeds {
 		w[s.Key()] = s.Weight
@@ -37,28 +37,13 @@ func TestSeedWeights(t *testing.T) {
 
 func TestKidSeedsStayApart(t *testing.T) {
 	asks := []AskSeed{{TMDBID: "1", Kind: "movie", Member: 1, At: day0}, {TMDBID: "2", Kind: "movie", Member: 2, At: day0, Kid: true}}
-	adult := Seeds(1, false, nil, asks, nil, day0)
-	kid := Seeds(2, true, nil, asks, nil, day0)
+	adult := Seeds(1, false, nil, asks, day0)
+	kid := Seeds(2, true, nil, asks, day0)
 	if len(adult) != 1 || adult[0].TMDBID != "1" {
 		t.Fatalf("an adult page took a Kid's ask: %v", adult)
 	}
 	if len(kid) != 1 || kid[0].TMDBID != "2" {
 		t.Fatalf("a Kid page took an adult's ask: %v", kid)
-	}
-}
-
-func TestPlaySeedsOnlyWhenSynced(t *testing.T) {
-	plays := []Play{{TMDBID: "9", Kind: "movie", Percent: 95, At: day0}, {TMDBID: "8", Kind: "movie", Percent: 20, At: day0.AddDate(0, 0, -40)}}
-	seeds := Seeds(1, false, nil, nil, plays, day0)
-	w := map[string]float64{}
-	for _, s := range seeds {
-		w[s.Key()] = s.Weight
-	}
-	if !near(w["movie:9"], 3.0) || w["movie:8"] >= 0 {
-		t.Fatalf("play weights %v", w)
-	}
-	if n := SeedCount(seeds); n != 1 {
-		t.Fatalf("negative seeds counted: %d", n)
 	}
 }
 

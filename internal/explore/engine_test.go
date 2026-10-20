@@ -237,7 +237,7 @@ func TestPrivacyOfRequests(t *testing.T) {
 }
 
 // Criterion 8: two members with different seeds get different Top picks
-// and tail orders; no "Because you watched" without plays.
+// and tail orders.
 func TestPerMemberOrder(t *testing.T) {
 	p1, _ := build(t, Input{Member: 1, Seeds: seedsN(6, 1)})
 	p2, _ := build(t, Input{Member: 2, Seeds: seedsN(6, 2)})
@@ -250,11 +250,6 @@ func TestPerMemberOrder(t *testing.T) {
 	}
 	if fmt.Sprint(order(a.Tail)) == fmt.Sprint(order(b.Tail)) {
 		t.Fatal("same tail order for different seeds")
-	}
-	for _, r := range append(a.Head, a.Tail...) {
-		if r.Type == TypeBecauseWatched {
-			t.Fatal("Because you watched without a synced server")
-		}
 	}
 }
 

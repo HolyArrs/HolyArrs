@@ -39,12 +39,11 @@ type Source interface {
 	List(ctx context.Context, q Request) ([]Item, error)
 }
 
-// HouseholdTitle is one title asked for (or played, after the sync) by
-// people in the household in the last 30 days.
+// HouseholdTitle is one title asked for by people in the household in
+// the last 30 days.
 type HouseholdTitle struct {
 	Item    Item
 	Asks    int
-	Plays   int
 	Members int
 }
 
@@ -215,7 +214,7 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 		ok := true
 		for _, h := range in.Household {
 			it := h.Item
-			it.HH = float64(h.Asks*2 + h.Plays + h.Members*3)
+			it.HH = float64(h.Asks*2 + h.Members*3)
 			if in.Kid && (in.Allow == nil || !in.Allow(it)) {
 				ok = false
 			}
@@ -271,9 +270,6 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 		}
 		items = similarity(s, items)
 		t := TypeBecauseHave
-		if s.Watched {
-			t = TypeBecauseWatched
-		}
 		addRow(Row{ID: t + ":" + s.Key(), Type: t, Seed: s.Key(), SeedWeight: s.Weight, Title: RowTitle(t, s.Name), Items: dropKey(items, s.Key())})
 	}
 	if nSeeds >= 3 {
@@ -310,7 +306,7 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 	}
 	hhBy := map[string]float64{}
 	for _, h := range in.Household {
-		v := float64(h.Asks*2 + h.Plays + h.Members*3)
+		v := float64(h.Asks*2 + h.Members*3)
 		hhBy[h.Item.Key()] = v
 		sc.MaxHH = maxf(sc.MaxHH, v)
 	}

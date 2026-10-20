@@ -27,6 +27,5 @@ CREATE TABLE explore_counts (
     shown     INTEGER NOT NULL DEFAULT 0,
     opens     INTEGER NOT NULL DEFAULT 0,
     asks      INTEGER NOT NULL DEFAULT 0,
-    plays     INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (member_id, row_type, day)
 );

@@ -519,11 +519,7 @@ func (a *API) exploreInput(ctx context.Context, m exploreMember, sw string, now 
 		in.Household = append(in.Household, explore.HouseholdTitle{Item: h.item, Asks: h.asks, Members: len(h.members)})
 	}
 	_ = db.QueryRowContext(ctx, "SELECT count(*) FROM users WHERE state = 'active'").Scan(&in.Members)
-	plays, err := a.memberPlays(ctx, m.id)
-	if err != nil {
-		return in, err
-	}
-	in.Seeds = explore.Seeds(m.id, m.kid, lib, asks, plays, now)
+	in.Seeds = explore.Seeds(m.id, m.kid, lib, asks, now)
 	return in, nil
 }
 
@@ -619,10 +615,4 @@ func (a *API) buildPool(ctx context.Context, member int64, sw string) error {
 	}
 	a.explore.mu.Unlock()
 	return nil
-}
-
-// memberPlays are the member's plays from a linked media-server user;
-// none until the activity sync has run for them.
-func (a *API) memberPlays(ctx context.Context, member int64) ([]explore.Play, error) {
-	return nil, nil
 }

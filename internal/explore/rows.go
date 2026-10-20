@@ -28,7 +28,7 @@ type Item struct {
 	Collection int64 `json:"collection,omitempty"`
 	Owned      bool  `json:"owned,omitempty"`
 	Monitored  bool  `json:"monitored,omitempty"`
-	// HH is the household signal (asks, and plays after the sync).
+	// HH is the household signal (asks).
 	HH float64 `json:"hh,omitempty"`
 	// Sim is the similarity to the row's seed, 0-1.
 	Sim   float64 `json:"sim,omitempty"`
@@ -58,22 +58,21 @@ func (it Item) Franchise() string {
 
 // Row types.
 const (
-	TypeTop10          = "top10"
-	TypeTopPicks       = "top_picks"
-	TypeTrending       = "trending"
-	TypeServices       = "services"
-	TypeComingSoon     = "coming_soon"
-	TypeBecauseHave    = "because_have"
-	TypeBecauseWatched = "because_watched"
-	TypePerson         = "person"
-	TypeGenre          = "genre"
-	TypePopularGenre   = "popular_genre"
-	TypePopularDecade  = "popular_decade"
-	TypeNewServices    = "new_services"
-	TypeBest           = "best"
-	TypeHousehold      = "household"
-	TypeDecade         = "decade"
-	TypeHidden         = "hidden"
+	TypeTop10         = "top10"
+	TypeTopPicks      = "top_picks"
+	TypeTrending      = "trending"
+	TypeServices      = "services"
+	TypeComingSoon    = "coming_soon"
+	TypeBecauseHave   = "because_have"
+	TypePerson        = "person"
+	TypeGenre         = "genre"
+	TypePopularGenre  = "popular_genre"
+	TypePopularDecade = "popular_decade"
+	TypeNewServices   = "new_services"
+	TypeBest          = "best"
+	TypeHousehold     = "household"
+	TypeDecade        = "decade"
+	TypeHidden        = "hidden"
 )
 
 // rowKind is what the catalog (section 4) says of one row type.
@@ -84,22 +83,21 @@ type rowKind struct {
 }
 
 var catalog = map[string]rowKind{
-	TypeTop10:          {5, 0, false},
-	TypeTopPicks:       {8, 0.95, true},
-	TypeTrending:       {8, 0, false},
-	TypeServices:       {8, 0, false},
-	TypeComingSoon:     {4, 0, false},
-	TypeBecauseHave:    {6, 0.8, true},
-	TypeBecauseWatched: {6, 1.0, true},
-	TypePerson:         {6, 0.6, true},
-	TypeGenre:          {8, 0.65, true},
-	TypePopularGenre:   {8, 0.5, false},
-	TypePopularDecade:  {8, 0.45, false},
-	TypeNewServices:    {6, 0.75, false},
-	TypeBest:           {8, 0.55, false},
-	TypeHousehold:      {4, 0.7, false},
-	TypeDecade:         {8, 0.45, false},
-	TypeHidden:         {6, 0.4, false},
+	TypeTop10:         {5, 0, false},
+	TypeTopPicks:      {8, 0.95, true},
+	TypeTrending:      {8, 0, false},
+	TypeServices:      {8, 0, false},
+	TypeComingSoon:    {4, 0, false},
+	TypeBecauseHave:   {6, 0.8, true},
+	TypePerson:        {6, 0.6, true},
+	TypeGenre:         {8, 0.65, true},
+	TypePopularGenre:  {8, 0.5, false},
+	TypePopularDecade: {8, 0.45, false},
+	TypeNewServices:   {6, 0.75, false},
+	TypeBest:          {8, 0.55, false},
+	TypeHousehold:     {4, 0.7, false},
+	TypeDecade:        {8, 0.45, false},
+	TypeHidden:        {6, 0.4, false},
 }
 
 // MinItems is the fewest items a row of type t shows.
@@ -176,7 +174,7 @@ func (s Scorer) ItemScore(t string, it Item) float64 {
 		return 0.40*p + 0.30*aff + 0.20*r + 0.10*fresh(it, s.Now, 730)
 	case TypeComingSoon:
 		return 0.6*p + 0.4*aff
-	case TypeBecauseHave, TypeBecauseWatched:
+	case TypeBecauseHave:
 		return 0.50*it.Sim + 0.20*r + 0.15*aff + 0.15*p
 	case TypePerson:
 		return 0.5*r + 0.3*p + 0.2*aff
@@ -304,8 +302,6 @@ func RowTitle(t, arg string) string {
 		return "Coming soon"
 	case TypeBecauseHave:
 		return "Because you have " + arg
-	case TypeBecauseWatched:
-		return "Because you watched " + arg
 	case TypePerson:
 		return "More from " + arg
 	case TypeGenre:
