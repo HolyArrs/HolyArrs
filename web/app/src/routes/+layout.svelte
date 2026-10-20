@@ -10,6 +10,7 @@
 	import { afterNavigate, goto, onNavigate } from '$app/navigation';
 	import Icon from '#lib/Icon.svelte';
 	import ToastList from '#lib/ToastList.svelte';
+	import Theater from '#lib/ui/Theater.svelte';
 	import { session } from '#lib/session.svelte.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { theme, setTheme, type ThemeChoice } from '#lib/theme.svelte.ts';
@@ -427,6 +428,7 @@
 	</Sheet>
 {/if}
 <ToastList />
+<Theater />
 
 <style>
 	.boot { min-height: 100dvh; display: grid; place-items: center; }

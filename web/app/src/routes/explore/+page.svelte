@@ -65,7 +65,6 @@
 	import { EAGER_ROWS, stableRows } from '#lib/row-window.ts';
 	import Icon from '#lib/Icon.svelte';
 	import MoreInfo from '#lib/ui/MoreInfo.svelte';
-	import Theater from '#lib/ui/Theater.svelte';
 	import { onTheaterExit } from '#lib/theater.svelte.ts';
 	import { CARD_OPENS_KEY, parseTitleParam, readCardOpens, withTitle, type CardOpens, type InfoRef } from '#lib/more-info.ts';
 
@@ -500,7 +499,7 @@
 		{:else}
 			{#if hero.length}
 				{@const h = live(hero[heroAt % hero.length])}
-				<ExploreHero kind={h.kind === 'show' ? 'show' : 'movie'} tmdb={cardTmdb(h)} title={h.name} href={cardHref(h)} backdrop={h.wide ?? h.image} onmore={cardTmdb(h) ? (from) => openInfo({ kind: h.kind === 'show' ? 'show' : 'movie', tmdb: cardTmdb(h) }, from) : undefined} subtitle={h.year ? `${h.year} · ${h.kind === 'show' ? 'Show' : 'Movie'}` : h.subtitle} settled={headLoaded && !busy}>
+				<ExploreHero kind={h.kind === 'show' ? 'show' : 'movie'} tmdb={cardTmdb(h)} title={h.name} href={cardHref(h)} backdrop={h.wide ?? h.image} vtName={h.vtName} subtitle={h.year ? `${h.year} · ${h.kind === 'show' ? 'Show' : 'Movie'}` : h.subtitle} settled={headLoaded && !busy}>
 					{#snippet action()}{@render heroAction(h)}{/snippet}
 				</ExploreHero>
 			{/if}
@@ -577,7 +576,6 @@
 {#if info}
 	<MoreInfo ref={info} from={infoFrom} {region} {live} action={infoAction} card={infoCard} {cardOpens} onCardOpens={setCardOpens} onpick={openInfo} onclose={closeInfo} />
 {/if}
-<Theater />
 
 {#if manage}
 	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} onadded={(_m, t) => added(t)} />
