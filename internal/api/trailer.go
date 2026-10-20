@@ -6,8 +6,6 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
-	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"sync"
@@ -556,10 +554,8 @@ func resolveTrailer(ctx context.Context, bin string, pre []string, key string, n
 	ctx, cancel := context.WithTimeout(ctx, trailerTimeout)
 	defer cancel()
 	args := append(append(append([]string{}, pre...), trailerArgs...), "--", "https://www.youtube.com/watch?v="+key)
-	cmd := exec.CommandContext(ctx, bin, args...)
-	cmd.Env = os.Environ()
-	out, err := cmd.Output()
-	if err != nil || len(out) > 16<<20 {
+	out, err := ytdlp.Run(ctx, bin, trailerTimeout, args...)
+	if err != nil {
 		return TrailerStream{}, errNoStream
 	}
 	var j struct {

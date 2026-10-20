@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/CoderLuii/holyarrs/internal/ytdlp"
 )
 
 // TestFakeYTDLP is not a test: run as a child process it plays yt-dlp,
@@ -57,6 +58,9 @@ func fakeYTDLP(t *testing.T, mode string) *atomic.Int32 {
 	var runs atomic.Int32
 	old := ytdlpRun
 	t.Setenv("FAKE_YTDLP", mode)
+	oldAllow := ytdlp.EnvAllow
+	ytdlp.EnvAllow = append(append([]string{}, oldAllow...), "FAKE_YTDLP", "FAKE_YTDLP_KEY")
+	t.Cleanup(func() { ytdlp.EnvAllow = oldAllow })
 	ytdlpRun = func() (string, []string, bool) {
 		runs.Add(1)
 		return os.Args[0], []string{"-test.run=^TestFakeYTDLP$", "--"}, true
