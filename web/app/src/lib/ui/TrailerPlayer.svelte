@@ -303,6 +303,19 @@
 	}
 
 	let ctlAt = 0;
+	let ctlBox = $state<HTMLElement>();
+	// A press on the controls may swap the button (sound on/off) before the
+	// click lands; that click must never fall through to the card's link.
+	function guardClick() {
+		const stop = (e: MouseEvent) => {
+			window.removeEventListener('click', stop, true);
+			if (ctlBox?.contains(e.target as Node) && (e.target as Element).closest('button')) return;
+			e.preventDefault();
+			e.stopPropagation();
+		};
+		window.addEventListener('click', stop, true);
+		setTimeout(() => window.removeEventListener('click', stop, true), 800);
+	}
 	function toggleMute(e?: MouseEvent) {
 		ctlAt = Date.now();
 		// The hover card's art is a link: the button must not follow it.
@@ -436,7 +449,7 @@
 	<button type="button" class="expand" aria-label="Play the {title} trailer full screen" onclick={expand}></button>
 {/if}
 {#if controls}
-	<div class="ctl" class:on={shown} data-testid="trailer-sound" onpointerdown={(e) => { ctlAt = Date.now(); e.stopPropagation(); }} onclickcapture={() => (ctlAt = Date.now())}>
+	<div class="ctl" class:on={shown} data-testid="trailer-sound" role="group" aria-label="Trailer controls" bind:this={ctlBox} onpointerdown={(e) => { ctlAt = Date.now(); e.stopPropagation(); guardClick(); }} onclickcapture={() => (ctlAt = Date.now())}>
 		{#if shown && pausable}
 			<IconButton icon={paused ? 'play' : 'pause'} label={paused ? 'Play the trailer' : 'Pause the trailer'} variant="glass" size="md" tipSide="above" onclick={togglePause} />
 		{/if}
