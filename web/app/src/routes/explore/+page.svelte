@@ -67,7 +67,7 @@
 	import MoreInfo from '#lib/ui/MoreInfo.svelte';
 	import Theater from '#lib/ui/Theater.svelte';
 	import { onTheaterExit } from '#lib/theater.svelte.ts';
-	import { bigRows, CARD_OPENS_KEY, parseTitleParam, readCardOpens, withTitle, type CardOpens, type InfoRef } from '#lib/more-info.ts';
+	import { CARD_OPENS_KEY, parseTitleParam, readCardOpens, withTitle, type CardOpens, type InfoRef } from '#lib/more-info.ts';
 
 	let loaded = $state(false);
 	let failed = $state(false);
@@ -181,7 +181,6 @@
 	// Music shows only music rows: the movie and show rows (Top 10, services, Coming soon, Best new releases) never appear there.
 	const rows = $derived(type === 'music' ? [] : markTransitions(filterRows([...head, ...tail], type)));
 	/** Big 4 shelves: the first personal row and Best new releases draw bigger cards. */
-	const big = $derived(bigRows(rows));
 
 	function readTop10Pick() {
 		try {
@@ -511,14 +510,14 @@
 					<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} initial={top10} />
 				{:else}
 				<div class="row-wrap" data-row={row.type ?? row.id} data-title-layer={row.titleLayer}>
-				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.cards.some((c) => wideKind(c.kind)) ? (big.has(row.id) ? 'var(--title-item-big)' : 'var(--title-item)') : 'var(--explore-item)'} tools={row.id === 'services' ? serviceTools : undefined}
+				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.cards.some((c) => wideKind(c.kind)) ? 'var(--title-item)' : 'var(--explore-item)'} tools={row.id === 'services' ? serviceTools : undefined}
 					items={row.cards} key={(c) => c.key} defer={ri >= EAGER_ROWS} placeholder={row.wide || row.cards.some((c) => wideKind(c.kind)) ? 'wide' : 'poster'} lines={row.cards.some((c) => c.subtitle) ? 2 : 1}>
 					{#snippet card(raw: ExploreCard)}
 						{@const c = live(raw)}
 						{@const act = cardAction(c, { manage, ask: mayAsk })}
 						{@const mark = ownedMark(c, ownedTitle(c, owned), who)}
 						{#if row.wide || wideKind(c.kind)}
-							<WideCard cover big={big.has(row.id)} title={c.name} href={(cardOpens === 'panel' ? infoHref(c) : undefined) ?? cardHref(c)} onmore={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? (from) => openInfo({ kind: c.kind as 'movie' | 'show', tmdb: cardTmdb(c) }, from) : undefined} image={c.wide ?? c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} fresh={c.fresh} owned={mark} typed row={row.type} preview={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: cardTmdb(c), year: c.year } : undefined}>
+							<WideCard cover title={c.name} href={(cardOpens === 'panel' ? infoHref(c) : undefined) ?? cardHref(c)} onmore={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? (from) => openInfo({ kind: c.kind as 'movie' | 'show', tmdb: cardTmdb(c) }, from) : undefined} image={c.wide ?? c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} fresh={c.fresh} owned={mark} typed row={row.type} preview={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: cardTmdb(c), year: c.year } : undefined}>
 								{#snippet growAction()}
 									{#if act && cardTmdb(c)}
 										<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={asking === c.key || undefined} onclick={() => { count(row.type ?? row.id, 'ask', row.titleLayer); void quick(c, act); }} />
@@ -589,7 +588,8 @@
 {/if}
 
 <style>
-	.explore { container: explore / inline-size; --title-item: max(240px, calc((100cqi - 5 * var(--shelf-gap)) / 5.5)); --title-item-big: calc((100cqi - 4 * var(--shelf-gap)) / 4.2); --explore-item: 168px; display: flex; flex-direction: column; gap: 32px; padding-bottom: 48px; }
+	.explore { container: explore / inline-size; /* One size for every title row, Netflix-like: about 6 cards across, never under 200px. */
+		--title-item: max(200px, calc((100cqi - 5 * var(--shelf-gap)) / 6.2)); --explore-item: 168px; display: flex; flex-direction: column; gap: 32px; padding-bottom: 48px; }
 	.explore > :global(.ui-head) { margin-bottom: -8px; }
 	/* The type switch: in the page under the title; once scrolled past it floats as a glass pill under the top bar. */
 	.types-mark { height: 0; margin-top: -32px; }
@@ -617,5 +617,5 @@
 	.row-wrap { display: contents; }
 	.loading { display: flex; flex-direction: column; gap: 14px; }
 	.sk-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--shelf-gap); max-height: 250px; overflow: hidden; margin-bottom: 16px; }
-	@media (max-width: 767px) { .explore { --explore-item: 54vw; --title-item: calc((100cqi - var(--shelf-gap)) / 1.6 / .78); --title-item-big: calc((100cqi - var(--shelf-gap)) / 1.08); gap: 26px; } }
+	@media (max-width: 767px) { .explore { --explore-item: 54vw; --title-item: calc((100cqi - var(--shelf-gap)) / 1.6 / .78); gap: 26px; } }
 </style>
