@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/explore"
@@ -259,20 +260,47 @@ func (a *API) exploreGenre(w http.ResponseWriter, r *http.Request) {
 	}
 	now := a.exploreNow().UTC()
 	lower := strings.ToLower(genre)
-	var rows []explore.Row
-	trending := explore.Interleave([][]explore.Item{inGenre(list(explore.Request{List: "trending"})), list(explore.Request{List: "discover", Genre: genre, MinVotes: 50})}, explore.RowMax)
-	rows = append(rows, explore.Row{ID: "genre_trending", Type: explore.TypeTrending, Title: "Trending " + lower, Items: trending})
-	rows = append(rows, explore.Row{ID: "genre_best", Type: explore.TypeBest, Title: "Best new " + lower,
-		Items: list(explore.Request{List: "discover", Genre: genre, From: now.AddDate(-1, 0, 0).Format("2006-01-02"), To: now.Format("2006-01-02"), MinVote: 6.5, MinVotes: 50})})
-	if seed, ok := a.genreSeed(ctx, r, kind, genre); ok {
-		rows = append(rows, explore.Row{ID: "genre_because", Type: explore.TypeBecauseHave, Title: "Because you have " + seed.Name,
-			Items: inGenre(list(explore.Request{List: "similar", Ref: seed.TMDBID}))})
-	}
-	rows = append(rows, explore.Row{ID: "genre_classics", Type: explore.TypeClassics, Title: "Top-rated " + lower + " classics",
-		Items: list(explore.Request{List: "discover", Genre: genre, To: now.AddDate(-20, 0, 0).Format("2006-01-02"), MinVotes: 1000, Sort: "rating"})})
-	for _, m := range metadata.SubMoods(genre) {
-		rows = append(rows, explore.Row{ID: "genre_mood_" + strings.ReplaceAll(strings.ToLower(m.Label), " ", "_"), Type: explore.TypeMood, Title: m.Label,
-			Items: list(explore.Request{List: "discover", Genre: genre, Keywords: strings.Join(m.Keywords, "|"), MinVotes: 20})})
+	seed, hasSeed := a.genreSeed(ctx, r, kind, genre)
+	cacheKey := kind + "|" + genre + "|" + a.kidMax(r) + "|" + seed.TMDBID + "|" + now.Format("2006-01-02")
+	rows, cached := a.genreRows.get(cacheKey)
+	if !cached {
+		// Each row's list is its own outside call: fetch them side by side
+		// (a cold page was about 13 s one after another).
+		reqs := []explore.Request{
+			{List: "trending"},
+			{List: "discover", Genre: genre, MinVotes: 50},
+			{List: "discover", Genre: genre, From: now.AddDate(-1, 0, 0).Format("2006-01-02"), To: now.Format("2006-01-02"), MinVote: 6.5, MinVotes: 50},
+			{List: "discover", Genre: genre, To: now.AddDate(-20, 0, 0).Format("2006-01-02"), MinVotes: 1000, Sort: "rating"},
+		}
+		moods := metadata.SubMoods(genre)
+		for _, m := range moods {
+			reqs = append(reqs, explore.Request{List: "discover", Genre: genre, Keywords: strings.Join(m.Keywords, "|"), MinVotes: 20})
+		}
+		if hasSeed {
+			reqs = append(reqs, explore.Request{List: "similar", Ref: seed.TMDBID})
+		}
+		got := make([][]explore.Item, len(reqs))
+		var wg sync.WaitGroup
+		for i, q := range reqs {
+			wg.Add(1)
+			go func(i int, q explore.Request) {
+				defer wg.Done()
+				got[i] = list(q)
+			}(i, q)
+		}
+		wg.Wait()
+		trending := explore.Interleave([][]explore.Item{inGenre(got[0]), got[1]}, explore.RowMax)
+		rows = append(rows, explore.Row{ID: "genre_trending", Type: explore.TypeTrending, Title: "Trending " + lower, Items: trending})
+		rows = append(rows, explore.Row{ID: "genre_best", Type: explore.TypeBest, Title: "Best new " + lower, Items: got[2]})
+		if hasSeed {
+			rows = append(rows, explore.Row{ID: "genre_because", Type: explore.TypeBecauseHave, Title: "Because you have " + seed.Name,
+				Items: inGenre(got[len(got)-1])})
+		}
+		rows = append(rows, explore.Row{ID: "genre_classics", Type: explore.TypeClassics, Title: "Top-rated " + lower + " classics", Items: got[3]})
+		for i, m := range moods {
+			rows = append(rows, explore.Row{ID: "genre_mood_" + strings.ReplaceAll(strings.ToLower(m.Label), " ", "_"), Type: explore.TypeMood, Title: m.Label,
+				Items: got[4+i]})
+		}
 	}
 	// A title once per page, first row wins.
 	seen := map[string]bool{}
@@ -287,6 +315,9 @@ func (a *API) exploreGenre(w http.ResponseWriter, r *http.Request) {
 			seen[it.Key()] = true
 		}
 		rows[i].Items = keep
+	}
+	if !cached {
+		a.genreRows.put(cacheKey, rows)
 	}
 	views, err := a.exploreViews(ctx, r, rows)
 	if err != nil {
@@ -335,4 +366,42 @@ func (a *API) genreSeed(ctx context.Context, r *http.Request, kind, genre string
 		return it, true
 	}
 	return explore.Item{}, false
+}
+
+// genreRowsTTL is how long a genre page's rows are kept in memory.
+const genreRowsTTL = 15 * time.Minute
+
+// genreRowCache keeps built genre-page rows (before per-person views) so a
+// second visit skips the outside lists.
+type genreRowCache struct {
+	mu   sync.Mutex
+	rows map[string]genreRowsEntry
+}
+
+type genreRowsEntry struct {
+	at   time.Time
+	rows []explore.Row
+}
+
+func (c *genreRowCache) get(key string) ([]explore.Row, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	e, ok := c.rows[key]
+	if !ok || time.Since(e.at) > genreRowsTTL {
+		return nil, false
+	}
+	out := make([]explore.Row, len(e.rows))
+	copy(out, e.rows)
+	return out, true
+}
+
+func (c *genreRowCache) put(key string, rows []explore.Row) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.rows == nil || len(c.rows) > 200 {
+		c.rows = map[string]genreRowsEntry{}
+	}
+	keep := make([]explore.Row, len(rows))
+	copy(keep, rows)
+	c.rows[key] = genreRowsEntry{at: time.Now(), rows: keep}
 }
