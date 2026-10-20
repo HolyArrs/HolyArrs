@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { sized } from './tmdb-image.ts';
+import { pick, sized } from './tmdb-image.ts';
 import { setBase } from './paths.ts';
 
 describe('sized', () => {
@@ -19,5 +19,20 @@ describe('sized', () => {
 		expect(sized('/api/v1/artwork/x.jpg', 'poster')).toBe('/api/v1/artwork/x.jpg');
 		expect(sized('https://image.tmdb.org/t/p/w500/../x.jpg', 'poster')).toBe('https://image.tmdb.org/t/p/w500/../x.jpg');
 		expect(sized(null, 'poster')).toBe('');
+	});
+});
+
+describe('pick', () => {
+	it('takes the smallest size that covers the card at the pixel ratio', () => {
+		expect(pick('backdrop', 260, 1)).toBe(300);
+		expect(pick('backdrop', 260, 2)).toBe(780);
+		expect(pick('poster', 168, 1)).toBe(185);
+		expect(pick('poster', 168, 2)).toBe(342);
+		expect(pick('poster', 80, 1)).toBe(92);
+	});
+	it('never goes above the default size', () => {
+		expect(pick('backdrop', 900, 2)).toBe(780);
+		expect(pick('poster', 400, 3)).toBe(342);
+		expect(pick('backdrop')).toBe(780);
 	});
 });

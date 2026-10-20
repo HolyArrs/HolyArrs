@@ -233,11 +233,11 @@
 		anim?.cancel();
 	});
 
-	// The sharp picture for the grown card's real size (w1280), over the card's own w780 until it loads.
+	// The sharp picture for the grown card's real size (w1280), over the card's own w300 or w780 until it loads.
 	let bigIn = $state(false);
 	// Poster cards pass no picture: the title's backdrop fills the 16:9 frame.
 	const pic = $derived(image ?? (meta?.backdrop ? sized(meta.backdrop, 'backdrop') || null : null));
-	const big = $derived(pic && /\/artwork\/tmdb\/w780\//.test(pic) ? pic.replace('/w780/', '/w1280/') : null);
+	const big = $derived(pic && /\/artwork\/tmdb\/w(?:300|780)\//.test(pic) ? pic.replace(/\/w(?:300|780)\//, '/w1280/') : null);
 	const shownLogo = $derived(logoFailed ? null : logo ? logo : meta?.logo ? sized(meta.logo, 'poster') : null);
 	function runtime(m?: number) {
 		if (!m) return '';

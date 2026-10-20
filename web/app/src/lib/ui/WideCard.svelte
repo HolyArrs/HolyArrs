@@ -175,8 +175,15 @@
 	// Title cards follow the card template: titled art, else logo, else name (all on the art).
 	const tpl = $derived(cover ? cardTemplate(pick, { backdrop: image, logo: logo ?? foundLogo }, { art: pickFailed, logo: logoFailed }) : null);
 	const src = $derived(tpl ? tpl.image : (image ?? null));
-	const art = $derived(src ? sized(src, 'backdrop') : null);
+	// The card's rendered width picks the picture size (the grown card loads its own w1280).
+	let cw = $state(0);
+	$effect(() => {
+		if (root) cw = root.clientWidth;
+	});
+	const art = $derived(src ? sized(src, 'backdrop', cw) : null);
 	const coverLogo = $derived(tpl?.variant === 'logo' && tpl.logo ? sized(tpl.logo, 'poster') || null : null);
+	// The logo on the card is 40% of its width.
+	const cardLogo = $derived(tpl?.variant === 'logo' && tpl.logo && cw ? sized(tpl.logo, 'poster', cw * 0.4) || null : null);
 	// The grown card lays the logo (titled art keeps it too) or the name over the trailer.
 	const growLogo = $derived(tpl ? (coverLogo ?? (tpl.variant === 'titled' && pick?.logo && !logoFailed ? sized(pick.logo, 'poster') || null : null)) : shownLogo);
 	function artError() {
@@ -208,7 +215,7 @@
 			{#if tpl && (tpl.variant !== 'titled' || !loaded)}
 				<span class="scrim" aria-hidden="true"></span>
 				<span class="name" class:lifted={!!strip && strip.kind !== 'top10'} aria-hidden="true">
-					{#if coverLogo}<img class="logo" src={coverLogo} alt="" loading="lazy" decoding="async" onerror={() => (logoFailed = true)} />{:else}<span class="word">{title}</span>{/if}
+					{#if coverLogo}<img class="logo" src={cardLogo ?? coverLogo} alt="" loading="lazy" decoding="async" onerror={() => (logoFailed = true)} />{:else}<span class="word">{title}</span>{/if}
 				</span>
 			{/if}
 			{#if badges.length || status}

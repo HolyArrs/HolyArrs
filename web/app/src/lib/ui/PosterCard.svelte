@@ -147,7 +147,12 @@
 	// waits until the row is near the screen.
 	let loaded = $state(false);
 	const near = shelfNear();
-	const pic = $derived(sized(image, 'poster'));
+	// The card's rendered width picks the picture size.
+	let cw = $state(0);
+	$effect(() => {
+		if (root) cw = root.clientWidth;
+	});
+	const pic = $derived(sized(image, 'poster', cw));
 	const kindIcon = $derived<IconName>(kind === 'show' || kind === 'episode' ? 'tv' : kind === 'artist' ? 'music' : 'film');
 </script>
 
