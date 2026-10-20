@@ -273,3 +273,39 @@ func TestExploreHeadAndTail(t *testing.T) {
 		t.Fatalf("tail %v", tail)
 	}
 }
+
+// Revision 4 ship gate: Just arrived shows only Library adds from the last
+// 14 days, newest first.
+func TestExploreJustArrived(t *testing.T) {
+	a, s, _ := exploreRig(t)
+	ctx := context.Background()
+	err := s.Write(ctx, func(tx *sql.Tx) error {
+		old := domain.Title{Kind: "movie", Name: "Old", SortName: "old", SourceIDs: map[string]string{"tmdb": "55"}, MetadataSource: "tmdb", NewPartsPolicy: "all", WhyAdded: "by_hand", State: "active", ReleaseGate: "released", GateDriver: "none", Status: "released"}
+		if _, err := store.Insert(tx, "titles", &old, domain.System); err != nil {
+			return err
+		}
+		_, err := tx.Exec("UPDATE titles SET created_at = ? WHERE id = ?", store.FormatTime(time.Now().AddDate(0, 0, -30)), old.ID)
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := a.buildPool(ctx, 1, "all"); err != nil {
+		t.Fatal(err)
+	}
+	p, _, _ := a.readPool(ctx, 1, "all", explore.Day(time.Now()), false)
+	for _, r := range p.Rows {
+		if r.Type != explore.TypeJustArrived {
+			continue
+		}
+		var got []string
+		for _, it := range r.Items {
+			got = append(got, it.Key())
+		}
+		if fmt.Sprint(got) != "[show:22 movie:11]" {
+			t.Fatalf("Just arrived %v, want the two recent adds, newest first", got)
+		}
+		return
+	}
+	t.Fatal("no Just arrived row")
+}

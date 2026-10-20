@@ -258,7 +258,7 @@ func TestPerMemberOrder(t *testing.T) {
 func TestTailLength(t *testing.T) {
 	for _, c := range []struct{ seeds, max, floor int }{{2, 8, 1}, {5, 20, 1}, {12, 40, 21}} {
 		p, _ := build(t, Input{Member: 5, Seeds: seedsN(c.seeds, 5), Services: "8|9", Region: "US",
-			OwnedPeople: map[string]int{"Ann": 3, "Bo": 2, "Cy": 2}, OwnedDecadeGenre: map[string]int{"1990s|Drama": 4, "2000s|Comedy": 3}})
+			OwnedPeople: map[string]int{"Ann": 3, "Bo": 2, "Cy": 2, "Di": 2}, OwnedDecadeGenre: map[string]int{"1990s|Drama": 4, "2000s|Comedy": 3}, Members: 2, Household: household(5)})
 		pg := Assemble(p, top10(), 5)
 		if len(pg.Tail) > c.max || len(pg.Tail) < c.floor {
 			t.Fatalf("%d seeds: %d tail rows, want %d-%d (%v)", c.seeds, len(pg.Tail), c.floor, c.max, order(pg.Tail))
@@ -319,4 +319,39 @@ func TestFranchise(t *testing.T) {
 	if (Item{Kind: "movie", Name: "X", Collection: 9}).Franchise() != "c9" {
 		t.Fatal("collection not used")
 	}
+}
+
+// Revision 4 head order: Just arrived, Top 10, Your asks, Top picks,
+// Trending, Coming soon, then the best tail row; Just arrived keeps the
+// newest-first order it was given.
+func TestHeadOrderRevision4(t *testing.T) {
+	arrived := []Item{{TMDBID: "9001", Kind: "movie", Name: "Newest"}, {TMDBID: "9002", Kind: "show", Name: "Older"}, {TMDBID: "9003", Kind: "movie", Name: "Oldest"}}
+	asks := []Item{{TMDBID: "9100", Kind: "movie", Name: "Asked"}}
+	p, _ := build(t, Input{Member: 4, Seeds: seedsN(5, 4), JustArrived: arrived, MyAsks: asks})
+	pg := Assemble(p, top10(), 4)
+	want := []string{TypeJustArrived, TypeTop10, TypeYourAsks, TypeTopPicks, TypeTrending, TypeComingSoon}
+	if len(pg.Head) != HeadRows {
+		t.Fatalf("head %v", order(pg.Head))
+	}
+	for i, w := range want {
+		if pg.Head[i].Type != w {
+			t.Fatalf("head %v, want %v first", order(pg.Head), want)
+		}
+	}
+	if fmt.Sprint(pg.Head[0].Items) != fmt.Sprint(arrived) {
+		t.Fatal("Just arrived lost its newest-first order")
+	}
+	// Without open asks, the next candidate moves up.
+	p, _ = build(t, Input{Member: 4, Seeds: seedsN(5, 4), JustArrived: arrived})
+	if pg := Assemble(p, top10(), 4); pg.Head[2].Type != TypeTopPicks {
+		t.Fatalf("head without asks %v", order(pg.Head))
+	}
+}
+
+func household(n int) []HouseholdTitle {
+	var out []HouseholdTitle
+	for i := 0; i < n; i++ {
+		out = append(out, HouseholdTitle{Item: Item{TMDBID: fmt.Sprint(8000 + i), Kind: "movie", Name: fmt.Sprint("H", i)}, Asks: 2, Members: 2})
+	}
+	return out
 }

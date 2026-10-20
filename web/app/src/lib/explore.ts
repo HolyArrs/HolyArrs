@@ -658,6 +658,8 @@ export interface HeadAnswer {
 	tail_cap: number;
 	tail_rows: number;
 	top10: (import('./top10.ts').Top10Answer & { kind?: 'movie' | 'show' }) | null;
+	/** Up to 6 titles not in the Library (from Top 10 and Trending) for the hero. */
+	hero?: ProviderItem[];
 	head: ServerRow[];
 }
 export interface TailAnswer {
@@ -696,6 +698,12 @@ export function tailPath(q: HeadQuery, page: number): string {
 	return `/explore/tail?${p.toString()}`;
 }
 
+/** Badges state facts only (revision 4): no countdowns, no "leaving soon". */
+export const FACTUAL_BADGES = /^(New season|New episodes|Coming .+|In library|Asked|Today|Tomorrow|Premiere|New|4K|1080p|720p|\d+p)$/;
+export function factualBadges(badges: string[]): string[] {
+	return badges.filter((b) => FACTUAL_BADGES.test(b));
+}
+
 /** serverRow turns a server row into an Explore row; Coming soon keeps its wide pictures. */
 export function serverRow(r: ServerRow): ExploreRow & { wide: boolean; type: string } {
 	return {
@@ -703,7 +711,10 @@ export function serverRow(r: ServerRow): ExploreRow & { wide: boolean; type: str
 		type: r.type,
 		title: r.title,
 		wide: !!r.wide,
-		cards: r.items.map((d) => ({ ...discoverCard(d, r.id), ...(r.wide ? { wide: d.backdrop ?? null } : {}) })),
-		keep: r.type === 'services'
+		cards: r.items.map((d) => {
+			const c = { ...discoverCard(d, r.id), ...(r.wide ? { wide: d.backdrop ?? null } : {}) };
+			return { ...c, badges: factualBadges(c.badges) };
+		}),
+		keep: r.type === 'services' || r.type === 'top10'
 	};
 }

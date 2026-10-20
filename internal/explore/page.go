@@ -6,8 +6,9 @@ import (
 	"sort"
 )
 
-// HeadRows is the head's size: 5 fixed-type slots plus the best tail row.
-const HeadRows = 6
+// HeadRows is the head's most rows: Just arrived, Top 10, Your asks, Top
+// picks, Trending, Coming soon, then the best tail row (revision 4).
+const HeadRows = 7
 
 // TailPage is how many tail rows one tail page holds.
 const TailPage = 4
@@ -31,8 +32,8 @@ func jitter(member int64, date, id string) (float64, uint64) {
 	return 0.95 + 0.10*float64(v%10007)/10006, v
 }
 
-// headAnchors are the fixed head slots after Top 10, in order.
-var headAnchors = []string{TypeTopPicks, TypeTrending, TypeServices, TypeComingSoon}
+// headAnchors are the fixed head slots, in order.
+var headAnchors = []string{TypeJustArrived, TypeTop10, TypeYourAsks, TypeTopPicks, TypeTrending, TypeComingSoon}
 
 // orderTail orders tail candidates (5.4): rowScore with the daily jitter,
 // then diversity (the next row of a type picked already ×0.75 per pick; a
@@ -146,7 +147,7 @@ func Assemble(p Pool, top10 []Item, member int64) Page {
 	var tail []Row
 	for _, r := range p.Rows {
 		switch r.Type {
-		case TypeTopPicks, TypeTrending, TypeServices, TypeComingSoon:
+		case TypeJustArrived, TypeYourAsks, TypeTopPicks, TypeTrending, TypeComingSoon:
 			by[r.Type] = r
 		default:
 			tail = append(tail, r)
@@ -178,14 +179,14 @@ func Assemble(p Pool, top10 []Item, member int64) Page {
 		return true
 	}
 	if len(top10) > 0 {
-		place(Row{ID: TypeTop10, Type: TypeTop10, Title: RowTitle(TypeTop10, ""), Items: top10}, true, true)
+		by[TypeTop10] = Row{ID: TypeTop10, Type: TypeTop10, Title: RowTitle(TypeTop10, ""), Items: top10}
 	}
 	for _, t := range headAnchors {
 		r, ok := by[t]
 		if !ok || (t == TypeTopPicks && p.Seeds < 3) {
 			continue
 		}
-		place(r, true, false)
+		place(r, true, t == TypeTop10)
 	}
 	i := 0
 	for ; i < len(ordered) && len(pg.Head) < HeadRows; i++ {

@@ -19,3 +19,14 @@ describe('server-built Explore', () => {
 		expect(other.cards[0].ref).toBe('tmdb:1');
 	});
 });
+
+describe('revision 4', () => {
+	it('keeps only factual badges', async () => {
+		const { factualBadges } = await import('./explore.ts');
+		expect(factualBadges(['New season', 'Leaving soon', '3 days left', 'Coming 12 Nov', 'In library', 'Asked', '4K'])).toEqual(['New season', 'Coming 12 Nov', 'In library', 'Asked', '4K']);
+	});
+	it('keeps the Top 10 marker row in place', () => {
+		const r = serverRow({ id: 'top10', type: 'top10', title: 'Top 10 today', items: [] });
+		expect(r.keep).toBe(true);
+	});
+});

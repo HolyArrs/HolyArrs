@@ -64,8 +64,11 @@ type Input struct {
 	// OwnedDecadeGenre counts Library titles per "1990s|Drama".
 	OwnedDecadeGenre map[string]int
 	Household        []HouseholdTitle
-	Members          int
-	Services, Region string
+	// JustArrived are Library adds from the last 14 days, newest first;
+	// MyAsks the member's open asks, newest first.
+	JustArrived, MyAsks []Item
+	Members             int
+	Services, Region    string
 	// Coming are monitored Library releases in the next 90 days.
 	Coming []Item
 	// Allow is the Kid limit at candidate time; nil allows all.
@@ -171,6 +174,10 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 		errs = append(errs, err.Error())
 		return false
 	}
+
+	// The member's own rows: kept in their order, not scored.
+	addRow(Row{ID: TypeJustArrived, Type: TypeJustArrived, Items: allow(in.JustArrived)})
+	addRow(Row{ID: TypeYourAsks, Type: TypeYourAsks, Items: allow(in.MyAsks)})
 
 	// Region-wide rows.
 	trending, err := fetch(Request{List: "trending"})

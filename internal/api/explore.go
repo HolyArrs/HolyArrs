@@ -434,7 +434,8 @@ func (a *API) exploreInput(ctx context.Context, m exploreMember, sw string, now 
 		OwnedPeople: map[string]int{}, OwnedDecadeGenre: map[string]int{}, Services: m.services, Region: m.region}
 	db := a.s.Store.Read()
 	rows, err := db.QueryContext(ctx, `SELECT kind, json_extract(source_ids, '$.tmdb'), name, COALESCE(year, 0), genres, people, rating, created_at,
-		COALESCE(digital_date, cinema_date, ''), backdrop FROM titles WHERE kind IN ('movie', 'show') AND state != 'removed' AND json_extract(source_ids, '$.tmdb') IS NOT NULL`)
+		COALESCE(digital_date, cinema_date, ''), backdrop, artwork FROM titles WHERE kind IN ('movie', 'show') AND state != 'removed' AND json_extract(source_ids, '$.tmdb') IS NOT NULL
+		ORDER BY created_at DESC, id DESC`)
 	if err != nil {
 		return in, err
 	}
@@ -442,8 +443,8 @@ func (a *API) exploreInput(ctx context.Context, m exploreMember, sw string, now 
 	soon := now.AddDate(0, 0, 90)
 	for rows.Next() {
 		var t explore.LibTitle
-		var genres, people, added, release, backdrop string
-		if err := rows.Scan(&t.Kind, &t.TMDBID, &t.Name, &t.Year, &genres, &people, &t.Rating, &added, &release, &backdrop); err != nil {
+		var genres, people, added, release, backdrop, artwork string
+		if err := rows.Scan(&t.Kind, &t.TMDBID, &t.Name, &t.Year, &genres, &people, &t.Rating, &added, &release, &backdrop, &artwork); err != nil {
 			rows.Close()
 			return in, err
 		}
@@ -456,6 +457,15 @@ func (a *API) exploreInput(ctx context.Context, m exploreMember, sw string, now 
 			continue
 		}
 		lib = append(lib, t)
+		if now.Sub(t.Added) <= 14*24*time.Hour && t.Added.Before(now.Add(time.Minute)) {
+			var art []string
+			_ = json.Unmarshal([]byte(artwork), &art)
+			it := explore.Item{TMDBID: t.TMDBID, Kind: t.Kind, Name: t.Name, Year: t.Year, Genres: t.Genres, Backdrop: backdrop, Owned: true}
+			if links := artworkLinks(art); len(links) > 0 {
+				it.Poster = links[0]
+			}
+			in.JustArrived = append(in.JustArrived, it)
+		}
 		for _, p := range t.People[:min(4, len(t.People))] {
 			in.OwnedPeople[p]++
 		}
@@ -474,9 +484,10 @@ func (a *API) exploreInput(ctx context.Context, m exploreMember, sw string, now 
 	if err := rows.Err(); err != nil {
 		return in, err
 	}
-	rows, err = db.QueryContext(ctx, `SELECT a.kind, a.tmdb_id, a.name, COALESCE(a.year, 0), a.poster, p.user_id, p.asked_at, u.role = 'member' AND u.max_rating != ''
+	rows, err = db.QueryContext(ctx, `SELECT a.kind, a.tmdb_id, a.name, COALESCE(a.year, 0), a.poster, p.user_id, p.asked_at, u.role = 'member' AND u.max_rating != '',
+		a.state IN ('asked', 'approved')
 		FROM ask_people p JOIN asks a ON a.id = p.ask_id JOIN users u ON u.id = p.user_id
-		WHERE a.kind IN ('movie', 'show') AND a.tmdb_id != '' AND a.state != 'turned_down'`)
+		WHERE a.kind IN ('movie', 'show') AND a.tmdb_id != '' AND a.state != 'turned_down' ORDER BY p.asked_at`)
 	if err != nil {
 		return in, err
 	}
@@ -492,12 +503,16 @@ func (a *API) exploreInput(ctx context.Context, m exploreMember, sw string, now 
 	for rows.Next() {
 		var s explore.AskSeed
 		var poster, at string
-		if err := rows.Scan(&s.Kind, &s.TMDBID, &s.Name, &s.Year, &poster, &s.Member, &at, &s.Kid); err != nil {
+		var open bool
+		if err := rows.Scan(&s.Kind, &s.TMDBID, &s.Name, &s.Year, &poster, &s.Member, &at, &s.Kid, &open); err != nil {
 			rows.Close()
 			return in, err
 		}
 		s.At, _ = time.Parse(store.TimeLayout, at)
 		asks = append(asks, s)
+		if s.Member == m.id && open {
+			in.MyAsks = append([]explore.Item{{TMDBID: s.TMDBID, Kind: s.Kind, Name: s.Name, Year: s.Year, Poster: poster, Genres: []string{}}}, in.MyAsks...)
+		}
 		if s.At.After(month) {
 			key := s.Kind + ":" + s.TMDBID
 			h, ok := house[key]

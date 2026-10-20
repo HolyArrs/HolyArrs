@@ -58,6 +58,8 @@ func (it Item) Franchise() string {
 
 // Row types.
 const (
+	TypeJustArrived   = "just_arrived"
+	TypeYourAsks      = "your_asks"
 	TypeTop10         = "top10"
 	TypeTopPicks      = "top_picks"
 	TypeTrending      = "trending"
@@ -83,10 +85,12 @@ type rowKind struct {
 }
 
 var catalog = map[string]rowKind{
+	TypeJustArrived:   {3, 0, false},
+	TypeYourAsks:      {1, 0, false},
 	TypeTop10:         {5, 0, false},
 	TypeTopPicks:      {8, 0.95, true},
 	TypeTrending:      {8, 0, false},
-	TypeServices:      {8, 0, false},
+	TypeServices:      {8, 0.6, false},
 	TypeComingSoon:    {4, 0, false},
 	TypeBecauseHave:   {6, 0.8, true},
 	TypePerson:        {6, 0.6, true},
@@ -213,7 +217,7 @@ func (s Scorer) Rank(t string, items []Item) []Item {
 	}
 	n := len(out)
 	switch t {
-	case TypeTop10:
+	case TypeTop10, TypeJustArrived, TypeYourAsks:
 		return out
 	case TypeTrending:
 		for i := range out {
@@ -290,6 +294,10 @@ func RowScore(r Row, maxSeed float64) float64 {
 // Title words for each row type.
 func RowTitle(t, arg string) string {
 	switch t {
+	case TypeJustArrived:
+		return "Just arrived"
+	case TypeYourAsks:
+		return "Your asks, on the way"
 	case TypeTop10:
 		return "Top 10 today"
 	case TypeTopPicks:

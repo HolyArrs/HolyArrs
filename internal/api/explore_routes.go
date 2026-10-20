@@ -88,7 +88,7 @@ func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64,
 			top10 = body
 			for _, v := range body["items"].([]top10View) {
 				if v.TMDBID != "" {
-					topItems = append(topItems, explore.Item{TMDBID: v.TMDBID, Kind: v.Kind, Name: v.Name})
+					topItems = append(topItems, explore.Item{TMDBID: v.TMDBID, Kind: v.Kind, Name: v.Name, Poster: v.Poster, Backdrop: v.Backdrop, Owned: v.InLibrary})
 				}
 			}
 		}
@@ -250,21 +250,52 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
-	var rest []explore.Row
-	for _, row := range pg.Head {
-		if row.Type != explore.TypeTop10 {
-			rest = append(rest, row)
+	// Top 10 stays in its slot as an empty marker (the page draws it from
+	// top10); the hero is up to 6 titles not in the Library from Top 10 and
+	// Trending, with Ask as its action.
+	head := []exploreRowView{}
+	var heroRow explore.Row
+	for _, t := range []string{explore.TypeTrending, explore.TypeTop10} {
+		for _, row := range pg.Head {
+			if row.Type != t {
+				continue
+			}
+			for _, it := range row.Items {
+				if len(heroRow.Items) < 6 && !it.Owned && !containsItem(heroRow.Items, it.Key()) {
+					heroRow.Items = append(heroRow.Items, it)
+				}
+			}
 		}
 	}
-	head, err := a.exploreViews(r.Context(), r, rest)
+	for _, row := range pg.Head {
+		if row.Type == explore.TypeTop10 {
+			head = append(head, exploreRowView{ID: row.ID, Type: row.Type, Title: row.Title, Items: []discoverItemView{}})
+			continue
+		}
+		views, err := a.exploreViews(r.Context(), r, []explore.Row{row})
+		if err != nil {
+			internal(w, err)
+			return
+		}
+		head = append(head, views...)
+	}
+	heroViews, err := a.exploreViews(r.Context(), r, []explore.Row{heroRow})
 	if err != nil {
 		internal(w, err)
 		return
 	}
+	hero := []discoverItemView{}
+	if len(heroViews) == 1 {
+		for _, v := range heroViews[0].Items {
+			if !v.InLibrary {
+				hero = append(hero, v)
+			}
+		}
+	}
 	a.exploreCount(r.Context(), me, "shown", rowTypes(head))
 	a.exploreCaching(w, r, "private, no-cache")
 	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "building": building, "seeds": pg.Seeds, "tail_cap": pg.Cap,
-		"tail_rows": len(pg.Tail), "top10": top10, "head": head})
+		"tail_rows": len(pg.Tail), "top10": top10, "hero": hero, "head": head})
 }
 
 // exploreTail answers GET /api/v1/explore/tail?page=n: the next 4 rows of
@@ -312,10 +343,19 @@ func (a *API) exploreCounts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	field := map[string]string{"open": "opens", "ask": "asks"}[body.Event]
-	if field == "" || explore.MinItems(body.RowType) == 0 {
+	if field == "" || (explore.MinItems(body.RowType) == 0 && body.RowType != "hero") {
 		fail(w, http.StatusBadRequest, "event must be open or ask, row_type an Explore row type")
 		return
 	}
 	a.exploreCount(r.Context(), a.person(r).UserID, field, []string{body.RowType})
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func containsItem(items []explore.Item, key string) bool {
+	for _, it := range items {
+		if it.Key() == key {
+			return true
+		}
+	}
+	return false
 }
