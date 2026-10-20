@@ -305,6 +305,8 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/top10", a.top10List)
 	m.HandleFunc("GET /api/v1/explore/head", a.exploreHead)
 	m.HandleFunc("GET /api/v1/explore/tail", a.exploreTail)
+	m.HandleFunc("GET /api/v1/explore/top", a.exploreTop)
+	m.HandleFunc("GET /api/v1/explore/genre", a.exploreGenre)
 	m.HandleFunc("POST /api/v1/explore/counts", a.exploreCounts)
 	m.HandleFunc("GET /api/v1/explore/title-stats", a.exploreTitleStats)
 	m.HandleFunc("GET /api/v1/music-trending", a.musicTrending)

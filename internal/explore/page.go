@@ -3,7 +3,6 @@ package explore
 import (
 	"encoding/binary"
 	"hash/fnv"
-	"slices"
 	"sort"
 )
 
@@ -13,12 +12,6 @@ const HeadRows = 12
 
 // HeadDedupe is how many rows from the top show a title at most once.
 const HeadDedupe = 8
-
-// Top 10 row ids, one per kind; both are of type TypeTop10.
-const (
-	Top10Movies = "top10_movie"
-	Top10Shows  = "top10_show"
-)
 
 // TailPage is how many tail rows one tail page holds.
 const TailPage = 4
@@ -45,21 +38,20 @@ func jitter(member int64, date, id string) (float64, uint64) {
 	return 0.95 + 0.10*float64(v%10007)/10006, v
 }
 
-// headOrder are each tab's fixed head slots, in order. A slot is a row
-// type, or a Top 10 row id; a slot without data is skipped. In All the
-// shows Top 10 sits high and the movies Top 10 further down, never next
-// to each other (as on Netflix).
+// headOrder are each tab's fixed head slots, in order; a slot without data
+// is skipped. "Top on your services" (one ranked row with a chip per
+// service) takes the slot the Top 10 row had, once per tab.
 var headOrder = map[string][]string{
-	"all": {TypeJustArrived, TypeYourAsks, Top10Shows, TypeTrending, TypeTopPicks, TypeBest, TypeServices, TypeBecauseHave,
-		Top10Movies, TypeComingSoon, TypeHousehold},
-	"movies": {TypeJustArrived, Top10Movies, TypeYourAsks, TypeTrending, TypeTopPicks, TypeBest, TypeComingSoon, TypeServices,
+	"all": {TypeJustArrived, TypeYourAsks, TypeTopServices, TypeTrending, TypeTopPicks, TypeBest, TypeBecauseHave,
+		TypeComingSoon, TypeHousehold},
+	"movies": {TypeJustArrived, TypeTopServices, TypeYourAsks, TypeTrending, TypeTopPicks, TypeBest, TypeComingSoon,
 		TypeBecauseHave, TypeHousehold},
-	"shows": {TypeJustArrived, Top10Shows, TypeYourAsks, TypeTrending, TypeTopPicks, TypeBest, TypeServices, TypeBecauseHave,
+	"shows": {TypeJustArrived, TypeTopServices, TypeYourAsks, TypeTrending, TypeTopPicks, TypeBest, TypeBecauseHave,
 		TypeComingSoon, TypeHousehold},
 }
 
 // headSlotTypes are the tail types a head slot takes its best row from.
-var headSlotTypes = map[string]bool{TypeBest: true, TypeServices: true, TypeBecauseHave: true, TypeHousehold: true}
+var headSlotTypes = map[string]bool{TypeBest: true, TypeBecauseHave: true, TypeHousehold: true}
 
 // orderTail orders tail candidates (5.4): rowScore with the daily jitter,
 // then diversity (the next row of a type picked already ×0.75 per pick; a
@@ -190,6 +182,8 @@ func AssembleTabAt(p Pool, tops map[string][]Item, member int64, m Moment) Page 
 	var tail []Row
 	for _, r := range p.Rows {
 		switch r.Type {
+		case TypeServices:
+			// Folded into Top on your services.
 		case TypeJustArrived, TypeYourAsks, TypeTopPicks, TypeTrending, TypeComingSoon:
 			by[r.Type] = r
 		default:
@@ -231,38 +225,28 @@ func AssembleTabAt(p Pool, tops map[string][]Item, member int64, m Moment) Page 
 		}
 		return true
 	}
-	kinds := Kinds(p.Switch)
-	for id, kind := range map[string]string{Top10Movies: "movie", Top10Shows: "show"} {
-		if len(tops[kind]) > 0 && slices.Contains(kinds, kind) {
-			by[id] = Row{ID: id, Type: TypeTop10, Title: Top10Title(kind), Items: tops[kind]}
-		}
+	// The marker carries the Netflix Top 10 titles (for the hero only); the
+	// page fills the row itself, so it is never deduped against.
+	var marker []Item
+	for _, kind := range Kinds(p.Switch) {
+		marker = append(marker, tops[kind]...)
 	}
+	by[TypeTopServices] = Row{ID: TypeTopServices, Type: TypeTopServices, Title: RowTitle(TypeTopServices, ""), Items: marker}
 	order := headOrder[p.Switch]
 	if order == nil {
 		order = headOrder["all"]
 	}
-	var held *Row // a Top 10 row that would sit right under the other one
-	lastTop := false
 	for _, t := range order {
 		r, ok := by[t]
 		if !ok || (t == TypeTopPicks && p.Seeds < 3) {
 			continue
 		}
-		top := r.Type == TypeTop10
-		if top && lastTop {
-			held = &r
+		if t == TypeTopServices {
+			// Not counted in at: the dedupe window covers eight rows with titles.
+			pg.Head = append(pg.Head, r)
 			continue
 		}
-		if place(r, true, top) {
-			lastTop = top
-			if held != nil && !top {
-				place(*held, true, true)
-				held, lastTop = nil, true
-			}
-		}
-	}
-	if held != nil {
-		place(*held, true, true)
+		place(r, true, false)
 	}
 	i := 0
 	for ; i < len(ordered) && len(pg.Head) < HeadRows; i++ {
@@ -272,14 +256,6 @@ func AssembleTabAt(p Pool, tops map[string][]Item, member int64, m Moment) Page 
 		place(ordered[i], false, false)
 	}
 	return pg
-}
-
-// Top10Title is a Top 10 row's title words; the page adds the country.
-func Top10Title(kind string) string {
-	if kind == "show" {
-		return "Top 10 shows on Netflix"
-	}
-	return "Top 10 movies on Netflix"
 }
 
 // Filter applies the Kid limit at response time: items allow refuses are

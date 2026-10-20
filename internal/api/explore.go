@@ -45,6 +45,8 @@ var exploreSwitches = []string{"all", "movies", "shows"}
 var exploreListTTL = map[string]time.Duration{
 	"trending": 6 * time.Hour, "upcoming": 12 * time.Hour, "best": 24 * time.Hour,
 	"similar": 24 * time.Hour, "discover": 12 * time.Hour, "person": 7 * 24 * time.Hour,
+	// weekly is a discover list kept a week (Top on your services).
+	"weekly": 7 * 24 * time.Hour,
 }
 
 type poolKey struct {
@@ -495,8 +497,28 @@ func (s listerSource) List(ctx context.Context, q explore.Request) ([]explore.It
 				out = append(out, it)
 			}
 		}
-	case "discover":
+	case "discover", "weekly":
 		v := url.Values{"include_adult": {"false"}, "sort_by": {"popularity.desc"}}
+		if q.Keywords != "" {
+			kf, ok := s.l.(metadata.KeywordFinder)
+			if !ok {
+				return []explore.Item{}, nil
+			}
+			var ids []string
+			for _, name := range strings.Split(q.Keywords, "|") {
+				id, kerr := kf.KeywordID(ctx, name)
+				if kerr != nil {
+					return nil, kerr
+				}
+				if id > 0 {
+					ids = append(ids, strconv.FormatInt(id, 10))
+				}
+			}
+			if len(ids) == 0 {
+				return []explore.Item{}, nil
+			}
+			v.Set("with_keywords", strings.Join(ids, "|"))
+		}
 		if q.Sort == "rating" {
 			v.Set("sort_by", "vote_average.desc")
 		}

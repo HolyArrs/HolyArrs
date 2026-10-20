@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"sort"
 	"strconv"
+	"strings"
 )
 
 // ExploreLister reads the lists the Explore engine builds rows from. Only
@@ -131,4 +132,33 @@ func (t *TMDB) PersonCredits(ctx context.Context, name string) ([]DiscoverItem, 
 	out = append(out, t.items("show", shows, showNames, len(shows))...)
 	sort.SliceStable(out, func(i, j int) bool { return out[i].Popularity > out[j].Popularity })
 	return out[:min(len(out), maxDiscover)], nil
+}
+
+// KeywordFinder finds TMDB keyword ids by name, for mood rows.
+type KeywordFinder interface {
+	KeywordID(ctx context.Context, name string) (int64, error)
+}
+
+// KeywordID is the id of the TMDB keyword named exactly name (any case),
+// 0 when TMDB has none.
+func (t *TMDB) KeywordID(ctx context.Context, name string) (int64, error) {
+	b, err := t.get(ctx, "/search/keyword", url.Values{"query": {name}})
+	if err != nil {
+		return 0, err
+	}
+	var res struct {
+		Results []struct {
+			ID   int64  `json:"id"`
+			Name string `json:"name"`
+		} `json:"results"`
+	}
+	if err := json.Unmarshal(b, &res); err != nil {
+		return 0, fmt.Errorf("TMDB: odd answer: %w", err)
+	}
+	for _, r := range res.Results {
+		if strings.EqualFold(r.Name, name) {
+			return r.ID, nil
+		}
+	}
+	return 0, nil
 }

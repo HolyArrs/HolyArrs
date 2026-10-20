@@ -267,7 +267,7 @@ func TestExploreHeadAndTail(t *testing.T) {
 		for _, it := range r.(map[string]any)["items"].([]any) {
 			k := it.(map[string]any)["kind"].(string) + it.(map[string]any)["tmdb_id"].(string)
 			if seen[k] {
-				t.Fatalf("%s twice in the head", k)
+				t.Fatalf("%s twice in the head (row %d %v)", k, i, r.(map[string]any)["id"])
 			}
 			seen[k] = true
 		}

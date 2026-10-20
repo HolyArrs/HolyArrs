@@ -75,6 +75,12 @@ const (
 	TypeHousehold     = "household"
 	TypeDecade        = "decade"
 	TypeHidden        = "hidden"
+	// TypeTopServices is the ranked "Top on your services" row; the page
+	// fills it per chosen service (the head carries an empty marker).
+	TypeTopServices = "top_services"
+	// TypeMood and TypeClassics only show on a genre page.
+	TypeMood     = "mood"
+	TypeClassics = "classics"
 )
 
 // rowKind is what the catalog (section 4) says of one row type.
@@ -102,6 +108,9 @@ var catalog = map[string]rowKind{
 	TypeHousehold:     {4, 0.7, false},
 	TypeDecade:        {8, 0.45, false},
 	TypeHidden:        {6, 0.4, false},
+	TypeTopServices:   {1, 0, false},
+	TypeMood:          {8, 0.5, false},
+	TypeClassics:      {8, 0.45, false},
 }
 
 // MinItems is the fewest items a row of type t shows.
@@ -339,6 +348,8 @@ func RowTitle(t, arg string) string {
 		return "Popular in your household"
 	case TypeHidden:
 		return "Hidden gems"
+	case TypeTopServices:
+		return "Top on your services"
 	}
 	return arg
 }

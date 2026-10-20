@@ -28,12 +28,17 @@ type Request struct {
 	MinVotes         int
 	MaxVotes         int
 	Sort             string // popularity (default) or rating
+	// Keywords are TMDB keyword names joined by "|" (any of them).
+	Keywords string
 	// Scope is ScopeShared for region-wide lists; it is not part of the
 	// cache key, so it never splits a shared list.
 	Scope string
 }
 
 func (q Request) String() string {
+	if q.Keywords != "" {
+		return fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%.1f|%d|%d|%s|%s", q.List, q.Kind, q.Ref, q.Genre, q.From, q.To, q.Services, q.Region, q.MinVote, q.MinVotes, q.MaxVotes, q.Sort, q.Keywords)
+	}
 	return fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%.1f|%d|%d|%s", q.List, q.Kind, q.Ref, q.Genre, q.From, q.To, q.Services, q.Region, q.MinVote, q.MinVotes, q.MaxVotes, q.Sort)
 }
 

@@ -87,3 +87,97 @@ func Moods(keywords, genres []string) []string {
 	}
 	return out
 }
+
+// SubMood is one mood row inside a genre: our own label and the TMDB
+// keyword names whose titles fill it (any of them).
+type SubMood struct {
+	Label    string
+	Keywords []string
+}
+
+// genreSubMoods are a genre page's mood rows, built on the mood words
+// above (Scary, Suspenseful, Mind-bending...) narrowed to the genre.
+var genreSubMoods = map[string][]SubMood{
+	"Horror": {
+		{"Supernatural", []string{"supernatural", "ghost", "haunted house", "demon", "possession"}},
+		{"Psychological", []string{"psychological thriller", "psychological horror", "paranoia", "madness"}},
+		{"Slasher", []string{"slasher", "serial killer", "masked killer"}},
+		{"Found footage", []string{"found footage", "mockumentary"}},
+		{"Creature features", []string{"monster", "creature", "zombie", "vampire"}},
+	},
+	"Thriller": {
+		{"Conspiracy", []string{"conspiracy", "government conspiracy", "cover-up"}},
+		{"Heist", []string{"heist", "bank robbery", "robbery"}},
+		{"Psychological", []string{"psychological thriller", "paranoia", "obsession"}},
+		{"Whodunit", []string{"whodunit", "murder mystery", "investigation"}},
+	},
+	"Comedy": {
+		{"Satire", []string{"satire", "political satire", "parody", "spoof"}},
+		{"Dark comedy", []string{"dark comedy", "black comedy"}},
+		{"Romantic comedy", []string{"romantic comedy", "falling in love"}},
+		{"Feel-good", []string{"feel-good", "heartwarming", "friendship"}},
+	},
+	"Drama": {
+		{"Based on a true story", []string{"based on true story", "biography"}},
+		{"Coming of age", []string{"coming of age", "teenager"}},
+		{"Tearjerkers", []string{"tearjerker", "grief", "terminal illness"}},
+		{"Family drama", []string{"family relationships", "dysfunctional family"}},
+	},
+	"Science Fiction": {
+		{"Time travel", []string{"time travel", "time loop"}},
+		{"Space", []string{"space", "outer space", "spacecraft", "space travel"}},
+		{"Dystopia", []string{"dystopia", "post-apocalyptic future"}},
+		{"Artificial intelligence", []string{"artificial intelligence (a.i.)", "robot", "android"}},
+	},
+	"Sci-Fi & Fantasy": {
+		{"Time travel", []string{"time travel", "time loop"}},
+		{"Space", []string{"space", "outer space", "spacecraft"}},
+		{"Dystopia", []string{"dystopia", "post-apocalyptic future"}},
+		{"Magic", []string{"magic", "sword and sorcery", "dragon"}},
+	},
+	"Action": {
+		{"Martial arts", []string{"martial arts", "kung fu"}},
+		{"Heist", []string{"heist", "bank robbery"}},
+		{"Superheroes", []string{"superhero", "based on comic"}},
+		{"Revenge", []string{"revenge", "vigilante"}},
+	},
+	"Action & Adventure": {
+		{"Superheroes", []string{"superhero", "based on comic"}},
+		{"Martial arts", []string{"martial arts", "kung fu"}},
+		{"Revenge", []string{"revenge", "vigilante"}},
+	},
+	"Crime": {
+		{"Gangsters", []string{"gangster", "mafia", "organized crime"}},
+		{"Heist", []string{"heist", "bank robbery"}},
+		{"Serial killers", []string{"serial killer", "murder investigation"}},
+		{"True crime", []string{"true crime", "based on true story"}},
+	},
+	"Romance": {
+		{"Romantic comedy", []string{"romantic comedy"}},
+		{"Period romance", []string{"period drama", "historical"}},
+		{"Love triangles", []string{"love triangle"}},
+	},
+	"Fantasy": {
+		{"Magic", []string{"magic", "witch", "wizard"}},
+		{"Dragons", []string{"dragon", "sword and sorcery"}},
+		{"Fairy tales", []string{"fairy tale", "based on fairy tale"}},
+	},
+	"Animation": {
+		{"Anime", []string{"anime"}},
+		{"Feel-good", []string{"friendship", "heartwarming"}},
+		{"Adult animation", []string{"adult animation"}},
+	},
+	"Mystery": {
+		{"Whodunit", []string{"whodunit", "murder mystery"}},
+		{"Detectives", []string{"detective", "investigation"}},
+		{"Supernatural", []string{"supernatural", "ghost"}},
+	},
+	"Documentary": {
+		{"True crime", []string{"true crime", "crime"}},
+		{"Nature", []string{"nature", "wildlife"}},
+		{"Music", []string{"music", "concert"}},
+	},
+}
+
+// SubMoods are the mood rows of a genre page (by the genre's TMDB name).
+func SubMoods(genre string) []SubMood { return genreSubMoods[genre] }

@@ -374,7 +374,7 @@ type Shown struct {
 }
 
 // fixedTypes keep their title and get a subtitle.
-var fixedTypes = map[string]bool{TypeJustArrived: true, TypeYourAsks: true, TypeTop10: true, TypeTopPicks: true, TypeTrending: true, TypeComingSoon: true}
+var fixedTypes = map[string]bool{TypeJustArrived: true, TypeYourAsks: true, TypeTop10: true, TypeTopServices: true, TypeTopPicks: true, TypeTrending: true, TypeComingSoon: true}
 
 // requiredSlot is the slot a row type's titles must name.
 var requiredSlot = map[string]string{TypeBecauseHave: "name_of_seed", TypePerson: "person", TypeDecade: "decade", TypePopularDecade: "decade"}

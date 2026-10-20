@@ -288,7 +288,7 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 	// Trending, with Ask as its action.
 	head := []exploreRowView{}
 	var heroRow explore.Row
-	for _, t := range []string{explore.TypeTrending, explore.TypeTop10} {
+	for _, t := range []string{explore.TypeTrending, explore.TypeTopServices} {
 		for _, row := range pg.Head {
 			if row.Type != t {
 				continue
