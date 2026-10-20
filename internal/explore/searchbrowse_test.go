@@ -46,3 +46,16 @@ func sprint(s []string) string {
 	}
 	return out + "]"
 }
+
+func TestBrowseTilesOneNameUnderAll(t *testing.T) {
+	it := func(id, kind string, pop float64, g ...string) Item {
+		return Item{TMDBID: id, Kind: kind, Name: id, Backdrop: "/b" + id, Pop: pop, Genres: g}
+	}
+	pg := Page{Head: []Row{{Items: []Item{
+		it("1", "movie", 90, "Crime"), it("2", "movie", 80, "Crime"), it("3", "show", 70, "Crime"), it("4", "show", 60, "Crime"),
+	}}}}
+	got := BrowseTiles(pg, "all", false, func(string) []string { return []string{"Heist"} })
+	if len(got) != 2 || got[0].Kind != "movie" || got[1].Name != "Heist" {
+		t.Fatalf("tiles %+v", got)
+	}
+}

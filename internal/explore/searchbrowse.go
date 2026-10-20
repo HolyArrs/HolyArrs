@@ -23,7 +23,8 @@ var kidMoodsOff = map[string]bool{"Adult animation": true, "True crime": true, "
 // BrowseTiles picks Search's Browse tiles from the page's rows (no outside
 // call): every genre of the tab's kinds that has a title with a backdrop,
 // biggest first, each followed by its mood rows (moods names them per
-// genre). A mood seen under an earlier genre of the same kind shows once.
+// genre). A name shows once: under All a genre or mood both kinds have
+// goes with the kind that has more of it (the earlier one).
 // Each tile gets the most popular title of its genre whose backdrop no
 // earlier tile uses; a tile without one is left out. A Kid gets only
 // kid-safe genres and moods.
@@ -79,7 +80,7 @@ func BrowseTiles(pg Page, sw string, kid bool, moods func(genre string) []string
 		return list[i].kind < list[j].kind
 	})
 	used := map[string]bool{}
-	moodSeen := map[string]bool{}
+	named := map[string]bool{}
 	pick := func(c *cand) (Item, bool) {
 		for _, it := range c.items {
 			if !used[it.Backdrop] {
@@ -91,24 +92,28 @@ func BrowseTiles(pg Page, sw string, kid bool, moods func(genre string) []string
 	}
 	out := []BrowseTile{}
 	for _, c := range list {
+		if named[c.name] {
+			continue
+		}
 		it, ok := pick(c)
 		if !ok {
 			continue
 		}
+		named[c.name] = true
 		id := genreID(c.kind, c.name)
 		out = append(out, BrowseTile{Kind: c.kind, Genre: id, GenreName: c.name, Name: c.name, Backdrop: it.Backdrop, From: it.Key()})
 		if moods == nil {
 			continue
 		}
 		for _, m := range moods(c.name) {
-			if (kid && kidMoodsOff[m]) || moodSeen[c.kind+"|"+m] {
+			if (kid && kidMoodsOff[m]) || named[m] {
 				continue
 			}
 			mi, ok := pick(c)
 			if !ok {
 				break
 			}
-			moodSeen[c.kind+"|"+m] = true
+			named[m] = true
 			out = append(out, BrowseTile{Kind: c.kind, Genre: id, GenreName: c.name, Mood: m, Name: m, Backdrop: mi.Backdrop, From: mi.Key()})
 		}
 	}
