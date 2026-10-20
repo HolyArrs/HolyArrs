@@ -7,6 +7,7 @@
 	import { autoplayHere, loadUISettings, prefetchTrailer, trailerSources, type TrailerSource } from '../autoplay.svelte.ts';
 	import { dwell, heroPictures, HERO_DELAY } from '../trailer.ts';
 	import { sized } from '../tmdb-image.ts';
+	import { shortSynopsis } from '../synopsis.ts';
 	import { openTheater } from '../theater.svelte.ts';
 	import { heroQuiet, wordsShown, type HeroPhase } from '../hero-quiet.ts';
 
@@ -47,9 +48,6 @@
 	let armed = $state(false);
 	let sources = $state<TrailerSource[]>([]);
 	let playing = $state(false);
-	let more = $state(false);
-	let text = $state<HTMLElement>();
-	let clamped = $state(false);
 	// Netflix (measured 2026-10-20): about 6 s into the trailer the overview
 	// folds away and the logo glides down; only the trailer stopping for good
 	// (ended, failed, taken over by another player) or a new title brings the
@@ -116,16 +114,6 @@
 		return () => ctl.abort();
 	});
 
-	$effect(() => {
-		void meta?.overview;
-		if (!text) return;
-		const check = () => text && (clamped = more || text.scrollHeight > text.clientHeight + 1);
-		check();
-		const ro = new ResizeObserver(check);
-		ro.observe(text);
-		return () => ro.disconnect();
-	});
-
 	onMount(() => {
 		const io = new IntersectionObserver(([e]) => (inView = e.isIntersecting && e.intersectionRatio >= 0.6), { threshold: [0, 0.6, 1] });
 		if (box) io.observe(box);
@@ -166,8 +154,8 @@
 			<div class="about" aria-hidden="true"></div>
 		{:else if meta.overview}
 			<div class="about">
-				<p class="desc" class:open={more} bind:this={text}>{meta.overview}</p>
-				{#if clamped}<button class="more" type="button" aria-expanded={more} onclick={() => (more = !more)}>{more ? 'Show less' : 'Show more'}</button>{/if}
+				<!-- Netflix keeps the billboard synopsis to a couple of lines; no Show more. -->
+				<p class="desc" title={meta.overview}>{shortSynopsis(meta.overview)}</p>
 			</div>
 		{/if}
 		</div></div>
@@ -218,14 +206,11 @@
 	.meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
 	.meta p { margin: 0; font: 600 15px/1.35 var(--font-ui); color: rgb(255 255 255 / 92%); font-variant-numeric: tabular-nums; text-shadow: 0 1px 2px rgb(0 0 0 / 60%); }
 	.desc { margin: 0; font: var(--t-body); color: rgb(255 255 255 / 92%); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; max-width: 58ch; text-shadow: 0 1px 2px rgb(0 0 0 / 60%); }
-	.desc.open { -webkit-line-clamp: unset; line-clamp: unset; display: block; }
-	.more { min-height: 32px; padding: 0 2px; color: #fff; font: 600 14px/1 var(--font-ui); opacity: .85; }
-	.more:hover { opacity: 1; text-decoration: underline; text-underline-offset: 3px; }
 	.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 4px; }
 	.info { display: inline-flex; align-items: center; min-height: 44px; padding: 0 20px; border-radius: var(--r-pill); background: rgb(255 255 255 / 16%); border: 1px solid rgb(255 255 255 / 22%); color: #fff; font: var(--t-headline); -webkit-backdrop-filter: blur(18px) saturate(160%); backdrop-filter: blur(18px) saturate(160%); transition: background var(--dur-fast) var(--ease-out), transform var(--dur-instant) var(--ease-out); }
 	.info:hover { background: rgb(255 255 255 / 26%); }
 	.info:active { transform: scale(.97); }
-	.info:focus-visible, .more:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff; }
+	.info:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff; }
 	.ui-xhero :global(.ui-trailer + .shade) { z-index: 1; }
 	.ui-xhero :global(.ctl) { z-index: 2; bottom: clamp(24px, 3.4vw, 44px); right: clamp(20px, 4vw, 56px); }
 	@media (max-width: 767px) {

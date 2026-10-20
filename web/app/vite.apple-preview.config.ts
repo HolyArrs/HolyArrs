@@ -156,7 +156,9 @@ export default mergeConfig(appConfig, defineConfig({
 		host: '0.0.0.0',
 		port: 18749,
 		strictPort: true,
-		fs: { allow: ['.', '../../../mobbin-product-review/web/app/node_modules/@fontsource-variable'], deny: ['.env', '.env.*', '*.{crt,pem,key}', '**/.git/**'] },
+		// Build, test and agent output churns while other work runs; the preview must not reload on it.
+		watch: { ignored: ['**/.svelte-kit/output/**', '**/web/dist/**', '**/test-results/**', '**/playwright-report/**', '**/.omc/**', '**/e2e/**'] },
+		fs: { allow: ['.'], deny: ['.env', '.env.*', '*.{crt,pem,key}', '**/.git/**'] },
 		proxy: {
 			'/api': isolatedProxy(),
 			'/live': isolatedProxy(),
