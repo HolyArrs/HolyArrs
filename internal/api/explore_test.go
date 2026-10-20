@@ -282,6 +282,20 @@ func TestExploreHeadAndTail(t *testing.T) {
 	if _, ok := tail["rows"].([]any); !ok {
 		t.Fatalf("tail %v", tail)
 	}
+	// Browse by genre: cards from the same page, each its own backdrop.
+	gr := get("/api/v1/explore/genre-row?type=all")
+	cards, ok := gr["genres"].([]any)
+	if !ok {
+		t.Fatalf("genre row %v", gr)
+	}
+	backs := map[string]bool{}
+	for _, c := range cards {
+		b := c.(map[string]any)["backdrop"].(string)
+		if b == "" || backs[b] {
+			t.Fatalf("genre card backdrop %q empty or repeated", b)
+		}
+		backs[b] = true
+	}
 }
 
 // Finish the collection (Movies): the released parts of a TMDB collection

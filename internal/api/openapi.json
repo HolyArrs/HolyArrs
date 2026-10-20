@@ -11476,6 +11476,26 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/explore/genre-row": {
+      "get": {
+        "description": "Up to 16 genre cards for the tab, each with a backdrop from a popular title of that genre on the member's page; the household's genres lead. Empty when under 6 genres have art.",
+        "responses": {
+          "200": {
+            "description": "The genre cards."
+          },
+          "400": {
+            "description": "type is not valid."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          }
+        },
+        "summary": "The Explore Browse by genre row",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/explore/head": {
       "get": {
         "description": "The Top 10 list and the head rows from the member's stored pool, in one answer. building is true while a pool is on its way.",

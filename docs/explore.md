@@ -73,6 +73,15 @@ shows as a name tile, and both seasons of a show are listed.
 - **Because you have X**, **More from a person**, **Genre picks for you**,
   **New on your services**, **Popular in your household**, decade rows and
   **Hidden gems** fill the tail.
+- **Browse by genre** (All, Movies and Shows; not Music). One row of wide genre
+  cards: each shows a backdrop from a popular title of that genre on your page,
+  with the genre name in the corner. The genres your household has and asks
+  for most come first, then the most popular ones, up to 16. No two cards share
+  a backdrop, and Kid accounts see only kid-safe genres. Under All a genre shows
+  once, as the kind with more of it. A card opens the same genre page as the
+  **Genres** picker. The row comes from the page Explore already built (no new
+  outside calls) and loads after the first rows, after row 6, never next to
+  another genre row. API: `GET /api/v1/explore/genre-row?type=`.
 
 ## Smart row titles
 

@@ -63,6 +63,8 @@
 	import PosterCard from '#lib/ui/PosterCard.svelte';
 	import ExploreHero from '#lib/ui/ExploreHero.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
+	import GenreCard from '#lib/ui/GenreCard.svelte';
+	import { genreCardHref, genreRowPath, genreRowSlot, genreTab, type GenreRowAnswer, type GenreRowCard } from '#lib/explore-genre-row.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
@@ -234,12 +236,56 @@
 		scrollTo({ top: 0, behavior: 'instant' });
 	}
 	const genreOn = $derived(!!genre && type !== 'music');
+
+	// Browse by genre: one row of genre cards mid-page, asked for after the head so it never slows the first row.
+	let genreCards = $state<GenreRowCard[]>([]);
+	let genreCardsFor = '';
+	async function loadGenreCards(t: ExploreType) {
+		if (t === 'music' || genreCardsFor === t) return;
+		genreCardsFor = t;
+		genreCards = [];
+		try {
+			const a = await api.get<GenreRowAnswer>(genreRowPath(t), gone.signal);
+			if (genreCardsFor === t) genreCards = a.genres ?? [];
+		} catch {
+			if (genreCardsFor === t) genreCardsFor = '';
+		}
+	}
+	$effect(() => {
+		const t = type;
+		if (!headLoaded || genreOn || t === 'music') return;
+		const id = setTimeout(() => void loadGenreCards(t), 300);
+		return () => clearTimeout(id);
+	});
+	/** openGenreCard opens the card's genre page in place (under All, on its kind's tab). */
+	function openGenreCard(e: MouseEvent, c: GenreRowCard) {
+		if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+		e.preventDefault();
+		const t = genreTab(c);
+		if (type !== t) {
+			type = t;
+			try {
+				localStorage.setItem(TYPE_KEY, t);
+			} catch {
+				/* the choice is a convenience */
+			}
+			void loadHead();
+		}
+		const url = new URL((page.shallow?.url ?? page.url).href);
+		url.searchParams.set('type', t);
+		url.searchParams.set('genre', String(c.id));
+		genreLoaded = null;
+		void goto(url, { shallow: true, reset: false });
+		scrollTo({ top: 0, behavior: 'instant' });
+	}
 	const heroCards = $derived(genreOn ? genreHero : hero);
 	/** The titles of Trending on streaming, as that row shows them now. */
 	let servicesShown = $state<string[]>([]);
 	// A title shows once in the first 8 rows, counting the hero and the services row.
 	const taken = $derived([...heroCards.map(cardIdentity), ...servicesShown]);
 	const rows = $derived(type === 'music' ? [] : markTransitions(dedupeTop(genreOn ? (genreLoaded === genre?.id ? genreRows : []) : filterRows([...head, ...tail], type), taken)));
+	/** Where Browse by genre goes: after this row index (-1: not shown). */
+	const genreSlot = $derived(genreOn || genreCards.length === 0 ? -1 : genreRowSlot(rows));
 	/** Big 4 shelves: the first personal row and Best new releases draw bigger cards. */
 
 	function readTop10Pick() {
@@ -606,6 +652,15 @@
 					{/snippet}
 				</Shelf>
 				</div>
+				{/if}
+				{#if ri === genreSlot}
+					<div class="row-wrap wide-row" data-row-id="genre_browse">
+						<Shelf title="Browse by genre" item="var(--title-item)" items={genreCards} key={(c) => `${c.kind}:${c.id}`} defer placeholder="wide" lines={1}>
+							{#snippet card(c: GenreRowCard)}
+								<GenreCard name={c.name} image={c.backdrop} href={to(genreCardHref(c))} onclick={(e) => openGenreCard(e, c)} />
+							{/snippet}
+						</Shelf>
+					</div>
 				{/if}
 			{/each}
 			{#if tailMore && !genreOn}<div class="sentinel" bind:this={sentinel} aria-hidden="true"></div>{/if}
