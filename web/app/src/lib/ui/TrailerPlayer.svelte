@@ -81,6 +81,7 @@
 	});
 
 	function dropUp() {
+		if (up) dbg('drop sound stream');
 		upDetach?.();
 		upDetach = null;
 		up = null;
@@ -105,7 +106,11 @@
 	$effect(() => {
 		const v = upVideo;
 		const u = up;
-		if (!v || !u) return;
+		if (!v || !u) {
+			if (u) dbg('sound stream waiting for its video element');
+			return;
+		}
+		dbg('sound stream: attaching');
 		let gone = false;
 		let tries = 0;
 		let asked = 0;

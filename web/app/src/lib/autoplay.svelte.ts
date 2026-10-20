@@ -291,8 +291,12 @@ export function sourcesFor(s: Stream | null, videoKey: string | undefined, hls: 
 	const out: TrailerSource[] = [];
 	const u = s && playable(s, hls);
 	const pass = s?.type === 'hls' ? s.proxy_url : undefined;
-	if (s && pass && sound && !hls) out.push({ kind: 'pass', url: pass, key: s.key });
-	if (s && u) out.push({ kind: 'direct', url: u, key: s.key, audio: s.type === 'hls' && u !== s.url ? !!s.mp4_audio : !!s.audio, pass });
+	const directAudio = !!s && (s.type === 'hls' && u !== s.url ? !!s.mp4_audio : !!s.audio);
+	// Outside Safari the relay plays through hls.js with sound in the same
+	// stream; when the direct one is picture-only, start on the relay so
+	// turning sound on is a plain unmute (switching streams mid-play stalled).
+	if (s && pass && !hls && (sound || !directAudio)) out.push({ kind: 'pass', url: pass, key: s.key });
+	if (s && u) out.push({ kind: 'direct', url: u, key: s.key, audio: directAudio, pass });
 	// Some browsers say they may play HLS and then refuse YouTube's manifest
 	// (Chrome: error 4); the MP4 is tried next.
 	if (s?.type === 'hls' && u === s.url && s.mp4_url) out.push({ kind: 'direct', url: s.mp4_url, key: s.key, audio: !!s.mp4_audio, pass });

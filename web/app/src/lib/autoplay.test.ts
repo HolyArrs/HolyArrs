@@ -27,13 +27,14 @@ describe('pass-through', () => {
 		key: 'abcdefghijk',
 		proxy_url: '/api/v1/trailer/stream/0a/manifest.m3u8'
 	};
-	it('starts direct and muted, with the relay as the fallback (Chrome)', () => {
+	it('starts on the relay when the direct stream is picture-only (Chrome), so sound is a plain unmute', () => {
 		const out = sourcesFor(s, undefined, false, false);
-		expect(out.map((o) => o.kind)).toEqual(['direct', 'pass', 'embed']);
-		expect(out[0]).toMatchObject({ url: s.mp4_url, audio: false, pass: s.proxy_url });
+		expect(out.map((o) => o.kind)).toEqual(['pass', 'direct', 'embed']);
+		expect(out[1]).toMatchObject({ url: s.mp4_url, audio: false, pass: s.proxy_url });
+		expect(onUnmute(out[0])).toBe('unmute');
 	});
 	it('switches to pass-through on unmute only for a picture-only stream', () => {
-		const [direct] = sourcesFor(s, undefined, false, false);
+		const direct = sourcesFor(s, undefined, false, false)[1];
 		expect(onUnmute(direct)).toBe('switch');
 		expect(hasSound(direct)).toBe(true);
 		expect(onUnmute({ ...direct, pass: undefined } as TrailerSource)).toBe('none');
