@@ -21,9 +21,24 @@ export function remaining(shownAt: number, now: number, hold = HOLD_MS): number 
 	return Math.max(0, shownAt + hold - now);
 }
 
+/**
+ * bootHold is the page-load hold: the full ~2.2 s only for a full refresh
+ * (reload) or the sign-in page; any other load (a link to a title, an
+ * in-app address opened fresh) lets the screen go on the first content paint.
+ */
+export function bootHold(navType: string | undefined, path: string): number {
+	return navType === 'reload' || /\/login\/?$/.test(path) ? HOLD_MS : 0;
+}
+
+function pageHold(): number {
+	if (typeof performance === 'undefined' || typeof location === 'undefined') return HOLD_MS;
+	const nav = performance.getEntriesByType?.('navigation')[0] as PerformanceNavigationTiming | undefined;
+	return bootHold(nav?.type, location.pathname);
+}
+
 const el = () => (typeof document === 'undefined' ? null : document.getElementById('hl'));
 let shownAt = 0; // page load: time zero of performance.now()
-let hold = HOLD_MS;
+let hold = pageHold();
 let reconnecting = false;
 let full = true; // the full screen is up (page load or sign-in)
 let timer: ReturnType<typeof setTimeout> | undefined;

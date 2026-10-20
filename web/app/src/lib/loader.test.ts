@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HOLD_MS, NAV_DELAY_MS, backoff, isUserSwitch, remaining } from './loader.ts';
+import { HOLD_MS, NAV_DELAY_MS, backoff, bootHold, isUserSwitch, remaining } from './loader.ts';
 
 describe('loader timing', () => {
 	it('holds the screen for the rest of 2.2 s', () => {
@@ -25,5 +25,15 @@ describe('loader moments', () => {
 		expect(isUserSwitch(null, 'home')).toBe(false);
 		expect(isUserSwitch('home', 'home')).toBe(false);
 		expect(isUserSwitch('home', 'kid')).toBe(true);
+	});
+});
+
+describe('boot hold', () => {
+	it('holds only on a full refresh or the sign-in page', () => {
+		expect(bootHold('reload', '/library/45')).toBe(HOLD_MS);
+		expect(bootHold('navigate', '/login')).toBe(HOLD_MS);
+		expect(bootHold('navigate', '/library/45')).toBe(0);
+		expect(bootHold('navigate', '/title/show/203857')).toBe(0);
+		expect(bootHold(undefined, '/')).toBe(0);
 	});
 });
