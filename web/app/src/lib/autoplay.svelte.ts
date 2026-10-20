@@ -3,7 +3,7 @@
 // privacy-enhanced YouTube embed, then nothing (Layer 1 pictures stay).
 import { api } from './api.ts';
 import { session } from './session.svelte.ts';
-import { browserConditions, finePointer, mayAutoplay, pickTrailer, soundOn, type Video } from './trailer.ts';
+import { autoplayPref, browserConditions, finePointer, mayAutoplay, pickTrailer, soundOn, type Video } from './trailer.ts';
 import { prefetchQueue } from './trailer-prefetch.ts';
 
 export interface UISettings {
@@ -46,7 +46,7 @@ export const uiSettings = {
 
 /** autoplayHere says whether Layer 2 may start in this browser for this person. */
 export function autoplayHere(): boolean {
-	return state.loaded && mayAutoplay({ setting: state.autoplay, kid: session.kid, ...browserConditions() });
+	return state.loaded && mayAutoplay({ setting: state.autoplay, kid: session.kid, pref: autoplayPref(), ...browserConditions() });
 }
 
 /**

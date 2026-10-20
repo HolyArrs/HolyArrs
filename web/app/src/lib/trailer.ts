@@ -61,6 +61,8 @@ export interface Conditions {
 	setting: boolean;
 	kid: boolean;
 	reducedMotion: boolean;
+	/** This device's choice (autoplayPref); auto when left out. */
+	pref?: AutoplayPref;
 	saveData?: boolean;
 	/** navigator.connection.effectiveType */
 	effectiveType?: string;
@@ -69,8 +71,33 @@ export interface Conditions {
 }
 
 /** mayAutoplay says whether Layer 2 may start here; otherwise Layer 1 stays. */
+export type AutoplayPref = 'auto' | 'always' | 'never';
+const AUTOPLAY_KEY = 'holyarrs.trailer.autoplay';
+
+/** This device's trailer choice: auto follows the system (reduced motion, data saver), always ignores it, never turns trailers off. */
+export function autoplayPref(): AutoplayPref {
+	try {
+		const v = localStorage.getItem(AUTOPLAY_KEY);
+		return v === 'always' || v === 'never' ? v : 'auto';
+	} catch {
+		return 'auto';
+	}
+}
+
+export function setAutoplayPref(v: AutoplayPref) {
+	try {
+		if (v === 'auto') localStorage.removeItem(AUTOPLAY_KEY);
+		else localStorage.setItem(AUTOPLAY_KEY, v);
+	} catch {
+		/* private mode: the choice lasts this page only */
+	}
+}
+
 export function mayAutoplay(c: Conditions): boolean {
-	if (!c.setting || c.kid || c.reducedMotion || c.saveData || c.phone) return false;
+	const pref = c.pref ?? 'auto';
+	if (!c.setting || c.kid || pref === 'never') return false;
+	if (pref === 'always') return true;
+	if (c.reducedMotion || c.saveData || c.phone) return false;
 	return !['slow-2g', '2g', '3g'].includes(c.effectiveType ?? '');
 }
 

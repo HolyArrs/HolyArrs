@@ -14,6 +14,8 @@
 	import { to } from './paths.ts';
 	import { WORDS as ASKED } from './askedby.ts';
 	import { setFollow } from './follow.ts';
+	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
+	import { autoplayPref, setAutoplayPref, type AutoplayPref } from './trailer.ts';
 
 	// Where Alerts reach this person (email, Discord).
 	let targets = $state<{ email: string; discord_id: string; new_episodes?: boolean }>({ email: '', discord_id: '', new_episodes: true });
@@ -253,6 +255,7 @@
 			linkBusy = false;
 		}
 	}
+	let pref = $state<AutoplayPref>(autoplayPref());
 </script>
 
 <PageHeader title="My account" subtitle="Your password, two-factor sign-in and the devices you are signed in on." />
@@ -261,6 +264,11 @@
 {#if session.s.mustTwoFactor}
 	<p class="notice warn" role="alert">The owner asks every admin to use two-factor sign-in. Turn it on below to use the rest of HolyArrs.</p>
 {/if}
+
+<SettingsCard title="Trailers on this device">
+	<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">Auto follows your system (reduced motion, data saver). Always plays them anyway; Never turns them off.</p>
+	<SegmentedControl label="Play trailers" options={[{ value: 'auto', label: 'Auto' }, { value: 'always', label: 'Always' }, { value: 'never', label: 'Never' }] as { value: AutoplayPref; label: string }[]} value={pref} onchange={(v) => { pref = v; setAutoplayPref(v); location.reload(); }} />
+</SettingsCard>
 
 <SettingsCard title="Signed in">
 	<dl class="facts">
