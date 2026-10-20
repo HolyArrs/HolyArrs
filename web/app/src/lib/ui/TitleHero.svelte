@@ -155,13 +155,41 @@
 		return () => (live = false);
 	});
 	let opening = $state(false);
+	/** heroStill draws the hero's picture as it shows (cover, the hero's shape). */
+	function heroStill(hero: HTMLElement | null | undefined): HTMLCanvasElement | null {
+		const img = hero?.querySelector<HTMLImageElement>('.art img');
+		const r = hero?.getBoundingClientRect();
+		if (!img?.complete || !img.naturalWidth || !r?.width || !r.height) return null;
+		const c = document.createElement('canvas');
+		c.width = Math.round(r.width);
+		c.height = Math.round(r.height);
+		const k = Math.max(c.width / img.naturalWidth, c.height / img.naturalHeight);
+		const w = img.naturalWidth * k;
+		const h = img.naturalHeight * k;
+		try {
+			c.getContext('2d')?.drawImage(img, (c.width - w) * 0.7, (c.height - h) * 0.3, w, h);
+		} catch {
+			return null;
+		}
+		return c;
+	}
 	async function playTrailer(e: MouseEvent) {
 		if (!kind || !tmdb || opening) return;
+		const btn = e.currentTarget as HTMLElement;
+		const hero = btn.closest('section');
+		// The hero's trailer is playing: hand off from it, as a click on the picture does (same second, sound, frame, rect).
+		const playing = hero?.querySelector<HTMLButtonElement>('.art button.expand');
+		if (playing) {
+			playing.click();
+			return;
+		}
 		opening = true;
-		const r = (e.currentTarget as HTMLElement).closest('section')?.getBoundingClientRect();
+		const r = hero?.getBoundingClientRect();
+		// The hero's picture is held while the big player loads (no black frame).
+		const still = heroStill(hero);
 		try {
 			const s = await trailerSources(kind, tmdb, videos);
-			if (s[0]) openTheater({ kind, tmdb, title, source: s[0], time: 0, rect: r ? { left: r.left, top: r.top, width: r.width, height: r.height } : null, from: 'hero' });
+			if (s[0]) openTheater({ kind, tmdb, title, source: s[0], time: 0, rect: r ? { left: r.left, top: r.top, width: r.width, height: r.height } : null, from: 'hero', still, returnTo: btn });
 		} finally {
 			opening = false;
 		}
