@@ -244,5 +244,6 @@
   [data-press][data-pressed] { transform: none; }
   [data-reveal] { transform: none !important; }
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
-  *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; scroll-behavior: auto !important; }
+  /* The loader (#hl) is exempt: its ring always spins (Luis, 2026-10-20). */
+  :not(#hl, #hl *), :not(#hl, #hl *)::before, :not(#hl, #hl *)::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; scroll-behavior: auto !important; }
 }
