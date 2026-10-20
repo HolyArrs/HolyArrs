@@ -62,6 +62,36 @@ func (t *TMDB) ExploreList(ctx context.Context, kind, path string, q url.Values)
 	return t.items(kind, res.Results, names, maxDiscover), nil
 }
 
+// CollectionLister lists the movies of a TMDB collection, for Finish the
+// collection.
+type CollectionLister interface {
+	CollectionParts(ctx context.Context, id string) ([]DiscoverItem, error)
+}
+
+// CollectionParts lists collection id's movies, oldest first.
+func (t *TMDB) CollectionParts(ctx context.Context, id string) ([]DiscoverItem, error) {
+	if n, err := strconv.ParseInt(id, 10, 64); err != nil || n <= 0 {
+		return nil, fmt.Errorf("collection %q is not a TMDB id", id)
+	}
+	names, err := t.genreNames(ctx, "movie")
+	if err != nil {
+		return nil, err
+	}
+	b, err := t.get(ctx, "/collection/"+id, url.Values{"language": {"en-US"}})
+	if err != nil {
+		return nil, err
+	}
+	var res struct {
+		Parts []tmdbListItem `json:"parts"`
+	}
+	if err := json.Unmarshal(b, &res); err != nil {
+		return nil, fmt.Errorf("TMDB: odd answer: %w", err)
+	}
+	parts := t.items("movie", res.Parts, names, maxCollection)
+	sort.SliceStable(parts, func(i, j int) bool { return parts[i].Released < parts[j].Released })
+	return parts, nil
+}
+
 // GenreID looks a genre name up for kind.
 func (t *TMDB) GenreID(ctx context.Context, kind, genre string) (int64, error) {
 	names, err := t.genreNames(ctx, kind)

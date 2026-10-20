@@ -178,16 +178,27 @@ func TestExploreMusicRows(t *testing.T) {
 	if len(m.Alts) != 2 || m.Alts[0].Name != "Fresh Two" || m.Alts[1].Name != "Fresh EP" || m.Alts[1].Kind != "album" {
 		t.Fatalf("hero stand-ins %+v", m.Alts)
 	}
-	if r := m.row("just_arrived"); r != nil {
-		t.Fatalf("one album is under the row's minimum: %+v", r)
+	// Just arrived and Your asks are Home rows, never Explore → Music.
+	for _, home := range []string{"just_arrived", "your_asks"} {
+		if r := m.row(home); r != nil {
+			t.Fatalf("Home row %s on Explore: %+v", home, r)
+		}
+	}
+	// Rows review order: New from, Top albums, Missing albums, Trending artists.
+	at := map[string]int{}
+	for i, r := range m.Rows {
+		if _, ok := at[r.Type]; !ok {
+			at[r.Type] = i
+		}
+	}
+	for i, pair := range [][2]string{{"new_from", "top_albums"}, {"top_albums", "missing"}, {"missing", "trending_artists"}, {"trending_artists", "because_have"}} {
+		if at[pair[0]] >= at[pair[1]] {
+			t.Fatalf("order %d: %s (%d) not before %s (%d)", i, pair[0], at[pair[0]], pair[1], at[pair[1]])
+		}
 	}
 	nf := m.row("new_from")
 	if nf == nil || len(nf.Items) != 3 || nf.Items[0].Name != "Fresh EP" || !nf.Items[2].Upcoming || nf.Items[2].Name != "Coming Album" {
 		t.Fatalf("new from (the hero left out, upcoming last) %+v", nf)
-	}
-	asks := m.row("your_asks")
-	if asks == nil || len(asks.Items) != 1 || asks.Items[0].State != "approved" || asks.Items[0].Name != "Asked Artist" {
-		t.Fatalf("asks %+v", asks)
 	}
 	top := m.row("top_albums")
 	if top == nil || top.Shape != "square" || len(top.Items) != 6 || top.Items[0].Listens != 1000 || !strings.Contains(top.Reason, "worldwide") {

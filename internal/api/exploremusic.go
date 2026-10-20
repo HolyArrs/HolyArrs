@@ -22,7 +22,7 @@ import (
 
 // musicRowMin is the fewest cards each music row shows.
 var musicRowMin = map[string]int{
-	"just_arrived": 3, "new_from": 3, "your_asks": 1, "top_albums": 5, "trending_artists": 5,
+	"new_from": 3, "top_albums": 5, "trending_artists": 5,
 	"because_have": 4, "fans_of": 4, "missing": 4, "genre": 4, "popular_genre": 4,
 }
 
@@ -434,40 +434,6 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 		out = append(out, r)
 	}
 
-	// Just arrived: albums with music added in the last 14 days.
-	{
-		var items []MusicCard
-		rs, err := db.QueryContext(ctx, `SELECT p.id, MAX(f.added_at) FROM files f JOIN slots s ON s.file_id = f.id
-			JOIN items i ON i.id = s.item_id JOIN parts p ON p.id = i.part_id
-			WHERE i.kind = 'track' AND p.kind = 'album' AND f.added_at >= ? GROUP BY p.id ORDER BY 2 DESC LIMIT ?`, now.AddDate(0, 0, -14).Format("2006-01-02"), musicRowMax)
-		if err == nil {
-			type arrived struct {
-				id int64
-				at string
-			}
-			var got []arrived
-			for rs.Next() {
-				var x arrived
-				if rs.Scan(&x.id, &x.at) == nil {
-					got = append(got, x)
-				}
-			}
-			rs.Close()
-			for _, x := range got {
-				var p domain.Part
-				if store.Get(ctx, db, "parts", x.id, &p) != nil {
-					continue
-				}
-				if m := byTitle[p.TitleID]; m != nil {
-					c := albumCard(m, p)
-					c.Date = x.at[:min(10, len(x.at))]
-					items = append(items, c)
-				}
-			}
-		}
-		add(MusicRow{ID: "just_arrived", Type: "just_arrived", Title: "Just arrived", Reason: "Added to your Library in the last 14 days", Shape: "square", Items: items})
-	}
-
 	// New from artists you have: studio releases (no live, remix or
 	// compilation) out in the last 90 days, then the ones coming. The hero is
 	// the newest album, else the newest EP; the next ones are its stand-ins
@@ -509,45 +475,6 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 			hero, heroAlts = &all[0], all[1:min(len(all), 6)]
 		}
 		add(MusicRow{ID: "new_from", Type: "new_from", Title: "New from artists you have", Reason: "Out in the last 90 days, and coming soon", Shape: "square", Items: append(out, coming...)})
-	}
-
-	// Your asks: this person's music asks and where each one is.
-	{
-		me := a.person(r).UserID
-		as, err := store.Select[domain.Ask](ctx, db, "asks", `kind = 'artist' AND (asked_by = ? OR id IN (SELECT ask_id FROM ask_people WHERE user_id = ?))
-			ORDER BY asked_at DESC, id DESC LIMIT ?`, me, me, musicRowMax)
-		if err != nil {
-			internal(w, err)
-			return
-		}
-		var items []MusicCard
-		for _, x := range as {
-			mbid := strings.ToLower(x.SourceIDs["musicbrainz"])
-			if mbid == "" {
-				mbid = strings.ToLower(strings.TrimPrefix(x.Ref, "mbid:"))
-			}
-			c := MusicCard{Key: "ask:" + strconv.FormatInt(x.ID, 10), Kind: "artist", MBID: mbid, Name: x.Name, Artist: x.Name, ArtistMBID: mbid, State: x.State, Date: x.AskedAt.UTC().Format("2006-01-02")}
-			if x.TitleID != nil {
-				if m := byTitle[*x.TitleID]; m != nil {
-					c.Image = m.image
-				}
-			}
-			if c.Image == "" && mbid != "" {
-				c.Image = "/api/v1/music-trending/art/artist/" + mbid
-				names = append(names, nameKey{"artist", mbid, x.Name, ""})
-			}
-			if len(x.Albums) == 1 {
-				c.Kind, c.Name, c.MBID = "album", x.Albums[0].Name, strings.ToLower(x.Albums[0].MBID)
-				c.Image = "/api/v1/music-trending/art/album/" + c.MBID
-				names = append(names, nameKey{"album", c.MBID, c.Name, x.Name})
-			}
-			c = tag(c)
-			if x.TitleID != nil {
-				c.TitleID = *x.TitleID
-			}
-			items = append(items, c)
-		}
-		add(MusicRow{ID: "your_asks", Type: "your_asks", Title: "Your asks", Reason: "What you asked for, and where each one is", Shape: "round", Items: items})
 	}
 
 	// Charts.

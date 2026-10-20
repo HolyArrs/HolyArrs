@@ -40,6 +40,12 @@ func newRecordingTMDB(t *testing.T) *recordingTMDB {
 			_, _ = w.Write([]byte(`{"results":[{"id":5}]}`))
 		case strings.HasSuffix(r.URL.Path, "/combined_credits"):
 			_, _ = w.Write([]byte(`{"cast":[]}`))
+		case strings.HasSuffix(r.URL.Path, "/collection/77"):
+			var parts []string
+			for i, d := range []string{"2001-05-01", "2004-05-01", "2008-05-01", "2030-05-01"} {
+				parts = append(parts, fmt.Sprintf(`{"id":%d,"title":"Saga %d","release_date":%q,"genre_ids":[18],"popularity":50,"vote_average":7.5,"vote_count":400}`, 501+i, i+1, d))
+			}
+			_, _ = w.Write([]byte(`{"name":"Saga","parts":[` + strings.Join(parts, ",") + `]}`))
 		default:
 			var parts []string
 			base := len(r.URL.String()) * 7
@@ -278,40 +284,55 @@ func TestExploreHeadAndTail(t *testing.T) {
 	}
 }
 
-// Revision 4 ship gate: Just arrived shows only Library adds from the last
-// 14 days, newest first.
-func TestExploreJustArrived(t *testing.T) {
-	a, s, _ := exploreRig(t)
+// Finish the collection (Movies): the released parts of a TMDB collection
+// the Library has some of, never the owned or unreleased ones.
+func TestExploreFinishCollection(t *testing.T) {
+	a, s, f := exploreRig(t)
 	ctx := context.Background()
 	err := s.Write(ctx, func(tx *sql.Tx) error {
-		old := domain.Title{Kind: "movie", Name: "Old", SortName: "old", SourceIDs: map[string]string{"tmdb": "55"}, MetadataSource: "tmdb", NewPartsPolicy: "all", WhyAdded: "by_hand", State: "active", ReleaseGate: "released", GateDriver: "none", Status: "released"}
-		if _, err := store.Insert(tx, "titles", &old, domain.System); err != nil {
+		own := domain.Title{Kind: "movie", Name: "Saga 1", SortName: "saga 1", SourceIDs: map[string]string{"tmdb": "501"}, MetadataSource: "tmdb", NewPartsPolicy: "all", WhyAdded: "by_hand", State: "active", ReleaseGate: "released", GateDriver: "none", Status: "released"}
+		if _, err := store.Insert(tx, "titles", &own, domain.System); err != nil {
 			return err
 		}
-		_, err := tx.Exec("UPDATE titles SET created_at = ? WHERE id = ?", store.FormatTime(time.Now().AddDate(0, 0, -30)), old.ID)
+		res, err := tx.Exec("INSERT INTO movie_collections(source_id, name) VALUES('tmdb:77', 'Saga')")
+		if err != nil {
+			return err
+		}
+		cid, _ := res.LastInsertId()
+		_, err = tx.Exec("INSERT INTO movie_collection_titles(collection_id, title_id) VALUES(?, ?)", cid, own.ID)
 		return err
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := a.buildPool(ctx, 1, "all"); err != nil {
+	if err := a.buildPool(ctx, 1, "movies"); err != nil {
 		t.Fatal(err)
 	}
-	p, _, _ := a.readPool(ctx, 1, "all", explore.Day(time.Now()), false)
+	p, _, _ := a.readPool(ctx, 1, "movies", explore.Day(time.Now()), false)
+	if p.Version != explore.PoolVersion {
+		t.Fatalf("pool version %d", p.Version)
+	}
 	for _, r := range p.Rows {
-		if r.Type != explore.TypeJustArrived {
+		if r.Type != explore.TypeCollection {
 			continue
 		}
 		var got []string
 		for _, it := range r.Items {
 			got = append(got, it.Key())
 		}
-		if fmt.Sprint(got) != "[show:22 movie:11]" {
-			t.Fatalf("Just arrived %v, want the two recent adds, newest first", got)
+		if fmt.Sprint(got) != "[movie:502 movie:503]" {
+			t.Fatalf("Finish the collection %v, want the two released missing parts", got)
 		}
-		return
+		f.mu.Lock()
+		defer f.mu.Unlock()
+		for _, u := range f.urls {
+			if strings.Contains(u, "/collection/77") {
+				return
+			}
+		}
+		t.Fatal("collection never looked up")
 	}
-	t.Fatal("no Just arrived row")
+	t.Fatal("no Finish the collection row")
 }
 
 // route: POST /api/v1/explore/counts

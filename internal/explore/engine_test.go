@@ -39,8 +39,12 @@ func (f *fakeSource) List(_ context.Context, q Request) ([]Item, error) {
 		if kind == "" { // a person's credits hold both kinds
 			kind = []string{"movie", "show"}[i%2]
 		}
+		released := "2026-09-01"
+		if q.List == "upcoming" && kind == "movie" {
+			released = day0.AddDate(0, 0, i%60).Format("2006-01-02")
+		}
 		out = append(out, Item{TMDBID: fmt.Sprint(n + 1), Kind: kind, Name: fmt.Sprintf("T%d", n), Year: 1980 + int(n%45),
-			Genres: []string{g}, Pop: float64(n%97) + 1, Vote: 5 + float64(n%50)/10, Votes: int(n%3000) + 50, Released: "2026-09-01"})
+			Genres: []string{g}, Pop: float64(n%97) + 1, Vote: 5 + float64(n%50)/10, Votes: int(n%3000) + 50, Released: released})
 	}
 	return out, nil
 }
@@ -98,7 +102,7 @@ func TestDedupFiftyMembers(t *testing.T) {
 		rows := append(append([]Row{}, pg.Head...), pg.Tail...)
 		topAt := map[string]int{}
 		for i, r := range rows {
-			if r.Type == TypeTop10 || r.Type == TypeTopServices {
+			if r.Type == TypeTopServices {
 				continue
 			}
 			for _, it := range r.Items {
@@ -231,8 +235,8 @@ func TestKidFilters(t *testing.T) {
 	// Response stage alone.
 	p, _ = build(t, Input{Member: 9, Kid: true, Seeds: seedsN(5, 9)})
 	check("response", Assemble(p, nil, 9).Filter(allow))
-	if TailCap(12, true) != 20 {
-		t.Fatal("Kid tail not capped at 20")
+	if TailCap(12, true) != 8 {
+		t.Fatal("Kid tail not capped at 8")
 	}
 }
 
@@ -259,11 +263,11 @@ func TestPerMemberOrder(t *testing.T) {
 	p1, _ := build(t, Input{Member: 1, Seeds: seedsN(6, 1)})
 	p2, _ := build(t, Input{Member: 2, Seeds: seedsN(6, 2)})
 	a, b := Assemble(p1, top10(), 1), Assemble(p2, top10(), 2)
-	// H1 Top on your services, H2 Trending, H3 Top picks.
-	if a.Head[2].Type != TypeTopPicks || b.Head[2].Type != TypeTopPicks {
-		t.Fatalf("H3 is not Top picks: %s %s", a.Head[2].Type, b.Head[2].Type)
+	// H1 Trending on your services, H2 Top picks.
+	if a.Head[1].Type != TypeTopPicks || b.Head[1].Type != TypeTopPicks {
+		t.Fatalf("H2 is not Top picks: %s %s", a.Head[1].Type, b.Head[1].Type)
 	}
-	if fmt.Sprint(a.Head[2].Items) == fmt.Sprint(b.Head[2].Items) {
+	if fmt.Sprint(a.Head[1].Items) == fmt.Sprint(b.Head[1].Items) {
 		t.Fatal("same Top picks for different seeds")
 	}
 	if fmt.Sprint(order(a.Tail)) == fmt.Sprint(order(b.Tail)) {
@@ -355,42 +359,6 @@ func slotsOf(rows []Row) []string {
 		out = append(out, r.Type)
 	}
 	return out
-}
-
-// The 2026-10-20 head order per tab, rows without data skipped; one Top on
-// your services row where Top 10 sat, once per tab, never On your services;
-// Just arrived, Your asks and Coming soon never show (Home has them).
-func TestHeadOrderPerTab(t *testing.T) {
-	arrived := []Item{{TMDBID: "9001", Kind: "movie", Name: "Newest"}, {TMDBID: "9002", Kind: "show", Name: "Older"}, {TMDBID: "9003", Kind: "movie", Name: "Oldest"}}
-	asks := []Item{{TMDBID: "9100", Kind: "movie", Name: "Asked"}}
-	for _, c := range []struct {
-		sw   string
-		want []string
-	}{
-		{"all", []string{TypeTopServices, TypeTrending, TypeTopPicks}},
-		{"movies", []string{TypeTopServices, TypeTrending, TypeTopPicks}},
-		{"shows", []string{TypeTopServices, TypeTrending, TypeBest}},
-	} {
-		p, _ := build(t, Input{Member: 4, Switch: c.sw, Seeds: seedsN(5, 4), JustArrived: arrived, MyAsks: asks, Services: "8|9", Region: "US"})
-		pg := AssembleTabAt(p, top10Both(), 4, Moment{})
-		got := slotsOf(pg.Head)
-		if len(pg.Head) > HeadRows || fmt.Sprint(got[:len(c.want)]) != fmt.Sprint(c.want) {
-			t.Fatalf("%s head %v, want %v first", c.sw, got, c.want)
-		}
-		all := slotsOf(append(append([]Row{}, pg.Head...), pg.Tail...))
-		n := 0
-		for _, s := range all {
-			if s == TypeTopServices {
-				n++
-			}
-			if s == TypeTop10 || s == TypeServices || s == TypeJustArrived || s == TypeYourAsks || s == TypeComingSoon {
-				t.Fatalf("%s: old row %s still shown %v", c.sw, s, all)
-			}
-		}
-		if n != 1 {
-			t.Fatalf("%s: %d Top on your services rows", c.sw, n)
-		}
-	}
 }
 
 func household(n int) []HouseholdTitle {

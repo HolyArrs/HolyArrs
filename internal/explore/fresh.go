@@ -74,14 +74,16 @@ func within(t, now time.Time, days int) bool {
 // Release in Best new releases). Keys are Explore, discover and music row
 // types; a row not listed suppresses nothing.
 var RowSuppress = map[string][]string{
-	TypeTop10:       {FreshTop10},
+	"top10":         {FreshTop10},
 	TypeBest:        {FreshNewRelease},
 	TypeNewServices: {FreshNewRelease},
 	"fresh":         {FreshNewRelease}, // music: New this week
 	"new_from":      {FreshNewRelease}, // music: New from artists you have
-	TypeJustArrived: {FreshRecentlyAdded},
+	"just_arrived":  {FreshRecentlyAdded},
 	"recent":        {FreshRecentlyAdded},
-	TypeComingSoon:  {FreshComing, FreshSeasonComing},
+	"coming_soon":   {FreshComing, FreshSeasonComing},
+	TypeCinemas:     {FreshComing},
+	TypeReturning:   {FreshSeasonComing},
 	"upcoming":      {FreshComing, FreshSeasonComing},
 	"new_episodes":  {FreshNewEpisode},
 	"new_seasons":   {FreshNewSeason},

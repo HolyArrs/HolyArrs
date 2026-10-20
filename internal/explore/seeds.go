@@ -119,7 +119,7 @@ func SeedCount(seeds []Seed) int {
 }
 
 // TailCap is the most tail rows a page gets (5.4): under 3 seeds 8, 3 to 9
-// seeds 20, 10 or more 40. A Kid's tail stops at 20.
+// seeds 20, 10 or more 40. A Kid's tail stops at 8 (a short page).
 func TailCap(seeds int, kid bool) int {
 	n := 8
 	switch {
@@ -128,8 +128,8 @@ func TailCap(seeds int, kid bool) int {
 	case seeds >= 3:
 		n = 20
 	}
-	if kid && n > 20 {
-		n = 20
+	if kid && n > 8 {
+		n = 8
 	}
 	return n
 }

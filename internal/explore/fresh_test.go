@@ -93,7 +93,7 @@ func TestParseDay(t *testing.T) {
 func TestRowSuppress(t *testing.T) {
 	now := time.Date(2026, 10, 19, 12, 0, 0, 0, time.UTC)
 	top := FreshFacts{Kind: "movie", Top10Rank: 3, Released: now.AddDate(0, 0, -3)}
-	if b := PickFreshIn(top, now, TypeTop10); b == nil || b.Kind != FreshNewRelease {
+	if b := PickFreshIn(top, now, "top10"); b == nil || b.Kind != FreshNewRelease {
 		t.Fatalf("top10 row: want the next strip, got %+v", b)
 	}
 	if b := PickFreshIn(top, now, ""); b == nil || b.Kind != FreshTop10 {
@@ -106,11 +106,11 @@ func TestRowSuppress(t *testing.T) {
 		}
 	}
 	added := FreshFacts{Kind: "movie", InLibrary: true, Added: now.AddDate(0, 0, -1)}
-	if b := PickFreshIn(added, now, TypeJustArrived); b != nil {
+	if b := PickFreshIn(added, now, "just_arrived"); b != nil {
 		t.Fatalf("just arrived: got %+v", b)
 	}
 	coming := FreshFacts{Kind: "show", Released: now.AddDate(0, 0, 3), NextSeason: now.AddDate(0, 0, 20), NextSeasonNumber: 2}
-	if b := PickFreshIn(coming, now, TypeComingSoon); b != nil {
+	if b := PickFreshIn(coming, now, "coming_soon"); b != nil {
 		t.Fatalf("coming soon: got %+v", b)
 	}
 	ep := FreshFacts{Kind: "show", InLibrary: true, LastEpisode: now.AddDate(0, 0, -1), SeasonStart: now.AddDate(0, 0, -2)}

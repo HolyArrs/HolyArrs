@@ -54,13 +54,15 @@ var musicColdTypes = map[string]bool{
 	"rising": true, "classic": true, "decade": true, "mood": true, "anniversary": true,
 }
 
-// musicOrder places each row type on the page; rows of one type keep
-// their order. Seed rows past the first two go to the tail.
+// musicOrder places each row type on the page (rows review 2026-10-20:
+// New from artists you have, Top albums, Missing albums, Trending artists,
+// the seeded artist rows, genre picks, then the tail); rows of one type
+// keep their order. Seed rows past the first two go to the tail. Just
+// arrived and Your asks are Home rows.
 var musicOrder = map[string]int{
-	"just_arrived": 10, "new_from": 20, "your_asks": 30, "fresh": 40, "top_albums": 50, "popular_country": 55,
-	"because_have": 60, "fans_of": 60, "trending_artists": 70, "rising": 75, "missing": 80, "debut": 85, "classic": 90,
-	"mood": 95, "anniversary": 100, "soundtracks": 105, "live_eps": 110, "collabs": 115, "decade": 120,
-	"genre": 130, "popular_genre": 130, "tail": 140,
+	"new_from": 20, "top_albums": 30, "missing": 40, "trending_artists": 50, "because_have": 60, "fans_of": 60,
+	"genre": 70, "popular_genre": 70, "fresh": 80, "popular_country": 85, "rising": 90, "debut": 95, "classic": 100,
+	"mood": 105, "anniversary": 110, "soundtracks": 115, "live_eps": 120, "collabs": 125, "decade": 130, "tail": 140,
 }
 
 func init() {

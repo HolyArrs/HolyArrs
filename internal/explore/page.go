@@ -6,7 +6,7 @@ import (
 	"sort"
 )
 
-// HeadRows is the head's most rows: the tab's fixed slots (headOrder),
+// HeadRows is the head's most rows: the tab's slots (HeadOrder),
 // then the best tail rows (row order of 2026-10-20).
 const HeadRows = 12
 
@@ -38,18 +38,77 @@ func jitter(member int64, date, id string) (float64, uint64) {
 	return 0.95 + 0.10*float64(v%10007)/10006, v
 }
 
-// headOrder are each tab's fixed head slots, in order; a slot without data
-// is skipped. Just arrived, Your asks and Coming soon are not Explore rows
-// (Home has them: Home = my stuff, Explore = new stuff). "Top on your services" (one ranked row with a chip per
-// service) takes the slot the Top 10 row had, once per tab.
-var headOrder = map[string][]string{
-	"all":    {TypeTopServices, TypeTrending, TypeTopPicks, TypeBest, TypeBecauseHave, TypeHousehold},
-	"movies": {TypeTopServices, TypeTrending, TypeTopPicks, TypeBest, TypeBecauseHave, TypeHousehold},
-	"shows":  {TypeTopServices, TypeTrending, TypeTopPicks, TypeBest, TypeBecauseHave, TypeHousehold},
+// headOrders are each tab's head slots, in order (rows review of
+// 2026-10-20); a slot without data is skipped. A slot names a row type, or
+// one row's id. Explore shows new stuff only: Just arrived, Your asks and
+// Coming soon are Home rows.
+var headOrders = map[string][]string{
+	"all":    {TypeTopServices, TypeTopPicks, TypeTrending, TypeBecauseHave, TypeBest, TypeBecauseAsked, TypeHousehold},
+	"movies": {TypeTopServices, TypeTopPicks, TypeCollection, TypeTrending, TypeBecauseHave, TypeBest, TypeCinemas, TypeHousehold},
+	"shows":  {TypeTopServices, TypeTopPicks, TypeNewSeasons, TypeTrending, TypeBecauseHave, TypeReturning, TypeHousehold},
 }
 
-// headSlotTypes are the tail types a head slot takes its best row from.
-var headSlotTypes = map[string]bool{TypeBest: true, TypeBecauseHave: true, TypeHousehold: true}
+// coldOrder is the head with no taste yet (under 3 seeds): the charts,
+// Best new releases, then popular genres and Classics.
+var coldOrder = []string{TypeTopServices, TypeTrending, TypeBest, TypePopularGenre, TypePopularGenre, TypeClassics}
+
+// kidOrder is a Kid's short head: family rows instead of the charts.
+var kidOrder = []string{TypeTopServices, TypeTopPicks, TypePopularGenre + ":" + KidGenres[0], TypePopularGenre + ":" + KidGenres[1], TypeBecauseHave, TypeHousehold}
+
+// KidHeadRows is the most head rows a Kid gets.
+const KidHeadRows = 7
+
+// HeadOrder is the head slots for a tab, a Kid and a seed count.
+func HeadOrder(sw string, kid bool, seeds int) []string {
+	switch {
+	case kid:
+		return kidOrder
+	case seeds < 3:
+		order := append([]string{}, coldOrder[:3]...)
+		// The tab's own rows still show after the charts.
+		switch sw {
+		case "movies":
+			order = append(order, TypeCollection, TypeCinemas)
+		case "shows":
+			order = append(order, TypeNewSeasons, TypeReturning)
+		}
+		return append(order, coldOrder[3:]...)
+	}
+	if o, ok := headOrders[sw]; ok {
+		return o
+	}
+	return headOrders["all"]
+}
+
+// fixedRowTypes are pool rows that only show in their head slot.
+var fixedRowTypes = map[string]bool{TypeTopPicks: true, TypeTrending: true, TypeCollection: true, TypeCinemas: true, TypeNewSeasons: true, TypeReturning: true}
+
+// Popular says a row is one of the three popularity charts.
+func Popular(t string) bool { return t == TypeTopServices || t == TypeTrending || t == TypeBest }
+
+// SpreadWindow is how many head rows from the top never hold two charts
+// next to each other.
+const SpreadWindow = 4
+
+// spread moves charts apart: in the first SpreadWindow rows, a chart right
+// under another trades places with the nearest row below that is not one.
+func spread(rows []Row) []Row {
+	out := append([]Row{}, rows...)
+	for i := 1; i < min(SpreadWindow, len(out)); i++ {
+		if !Popular(out[i].Type) || !Popular(out[i-1].Type) {
+			continue
+		}
+		for j := i + 1; j < len(out); j++ {
+			if !Popular(out[j].Type) {
+				moved := out[j]
+				copy(out[i+1:j+1], out[i:j])
+				out[i] = moved
+				break
+			}
+		}
+	}
+	return out
+}
 
 // orderTail orders tail candidates (5.4): rowScore with the daily jitter,
 // then diversity (the next row of a type picked already ×0.75 per pick; a
@@ -117,9 +176,10 @@ type ledger struct {
 
 // fill takes up to RowMax items for row index at, by the rules of 5.5: a
 // title at most once in the first HeadDedupe rows; at most twice on the page and at least
-// 4 rows apart; once in a row and one per franchise. keepAll (Top 10)
-// keeps its list whole. Items past the shown ones fill gaps.
-func (l *ledger) fill(r Row, at int, head, keepAll bool) Row {
+// 4 rows apart; once in a row and one per franchise (Finish the
+// collection is one franchise by design). Items past the shown ones fill
+// gaps.
+func (l *ledger) fill(r Row, at int, head bool) Row {
 	out := make([]Item, 0, RowMax)
 	inRow, franchise := map[string]bool{}, map[string]bool{}
 	for _, it := range r.Items {
@@ -130,14 +190,11 @@ func (l *ledger) fill(r Row, at int, head, keepAll bool) Row {
 		if inRow[k] {
 			continue
 		}
-		if !keepAll {
-			if franchise[it.Franchise()] {
-				continue
-			}
-			seen := l.rows[k]
-			if len(seen) > 0 && (head || len(seen) >= 2 || at-seen[len(seen)-1] < 4) {
-				continue
-			}
+		if franchise[it.Franchise()] && r.Type != TypeCollection {
+			continue
+		}
+		if seen := l.rows[k]; len(seen) > 0 && (head || len(seen) >= 2 || at-seen[len(seen)-1] < 4) {
+			continue
 		}
 		inRow[k], franchise[it.Franchise()] = true, true
 		out = append(out, it)
@@ -153,10 +210,9 @@ func (l *ledger) record(r Row, at int) {
 }
 
 // Assemble builds the page from a pool and the region's Top 10 (5.5, 6):
-// the head is Top 10, Top picks (3+ seeds), Trending, On your services,
-// then the best tail row; a slot that cannot fill lets the
-// next candidate up, so the head is always 6 rows when rows exist. The
-// tail follows rowScore order, capped by seed count.
+// the tab's head slots (HeadOrder), then the best tail rows; a slot that
+// cannot fill is skipped. The tail follows rowScore order, capped by seed
+// count.
 func Assemble(p Pool, top10 []Item, member int64) Page {
 	return AssembleAt(p, top10, member, Moment{})
 }
@@ -169,91 +225,124 @@ func AssembleAt(p Pool, top10 []Item, member int64, m Moment) Page {
 	for _, it := range top10 {
 		tops[it.Kind] = append(tops[it.Kind], it)
 	}
-	return AssembleTabAt(p, tops, member, m)
+	return AssembleTabAt(p, tops, nil, member, m)
 }
 
-// AssembleTabAt builds the page from a pool and the region's Top 10 per
-// kind ("movie", "show"), in the pool's tab order (headOrder).
-func AssembleTabAt(p Pool, tops map[string][]Item, member int64, m Moment) Page {
+// AssembleTabAt builds the page from a pool, the region's Top 10 per kind
+// ("movie", "show") and the titles of Trending on your services (svcTop:
+// the rows under it never repeat them in the first HeadDedupe rows), in
+// the tab's head order (HeadOrder), with the charts spread apart.
+func AssembleTabAt(p Pool, tops map[string][]Item, svcTop []Item, member int64, m Moment) Page {
 	pg := Page{Seeds: p.Seeds, Cap: TailCap(p.Seeds, p.Kid), Kid: p.Kid, Taste: p.Taste}
 	by := map[string]Row{}
 	var tail []Row
 	for _, r := range p.Rows {
-		switch r.Type {
-		case TypeServices:
-			// Folded into Top on your services.
-		case TypeJustArrived, TypeYourAsks, TypeTopPicks, TypeTrending, TypeComingSoon:
+		switch {
+		case MinItems(r.Type) == 0:
+			// A row type this build no longer makes (an older pool).
+		case fixedRowTypes[r.Type]:
 			by[r.Type] = r
 		default:
 			tail = append(tail, r)
 		}
 	}
 	ordered := orderTail(tail, member, p.Date, m, p.Kid)
-	// The best-ordered row of each slot type takes its head slot.
-	for i := 0; i < len(ordered); i++ {
-		t := ordered[i].Type
-		if _, ok := by[t]; ok || !headSlotTypes[t] {
-			continue
-		}
-		by[t] = ordered[i]
-		ordered = append(ordered[:i], ordered[i+1:]...)
-		i--
-	}
-	if p.Seeds < 3 {
-		// Cold start: Best new releases and Hidden gems take the head's last slots.
-		sort.SliceStable(ordered, func(i, j int) bool {
-			ci := ordered[i].Type == TypeBest || ordered[i].Type == TypeHidden
-			cj := ordered[j].Type == TypeBest || ordered[j].Type == TypeHidden
-			return ci && !cj
-		})
-	}
-	l := &ledger{rows: map[string][]int{}}
-	at := 0
-	place := func(r Row, head, keepAll bool) bool {
-		got := l.fill(r, at, at < HeadDedupe, keepAll)
-		if len(got.Items) < MinItems(r.Type) {
-			return false
-		}
-		l.record(got, at)
-		at++
-		if head {
-			pg.Head = append(pg.Head, got)
-		} else {
-			pg.Tail = append(pg.Tail, got)
-		}
-		return true
-	}
 	// The marker carries the Netflix Top 10 titles (for the hero only); the
 	// page fills the row itself, so it is never deduped against.
 	var marker []Item
 	for _, kind := range Kinds(p.Switch) {
 		marker = append(marker, tops[kind]...)
 	}
-	by[TypeTopServices] = Row{ID: TypeTopServices, Type: TypeTopServices, Title: RowTitle(TypeTopServices, ""), Items: marker}
-	order := headOrder[p.Switch]
-	if order == nil {
-		order = headOrder["all"]
+	by[TypeTopServices] = Row{ID: TypeTopServices, Type: TypeTopServices, Title: TabTitle(TypeTopServices, p.Switch), Items: marker}
+	if t, ok := by[TypeTrending]; ok {
+		t.Title = TabTitle(TypeTrending, p.Switch)
+		by[TypeTrending] = t
 	}
-	for _, t := range order {
-		r, ok := by[t]
-		if !ok || (t == TypeTopPicks && p.Seeds < 3) {
+	headMax := HeadRows
+	if p.Kid {
+		headMax = KidHeadRows
+	}
+	// Pick each slot's row: a fixed row by type, else the best-ordered tail
+	// row whose id or type the slot names.
+	var picks []Row
+	for _, slot := range HeadOrder(p.Switch, p.Kid, p.Seeds) {
+		if r, ok := by[slot]; ok {
+			if slot != TypeTopPicks || p.Seeds >= 3 {
+				picks = append(picks, r)
+			}
+			delete(by, slot)
 			continue
 		}
-		if t == TypeTopServices {
-			// Not counted in at: the dedupe window covers eight rows with titles.
-			pg.Head = append(pg.Head, r)
-			continue
+		for i, r := range ordered {
+			if r.ID == slot || (r.Type == slot && !fixedRowTypes[slot]) {
+				picks = append(picks, r)
+				ordered = append(ordered[:i], ordered[i+1:]...)
+				break
+			}
 		}
-		place(r, true, false)
 	}
-	i := 0
-	for ; i < len(ordered) && len(pg.Head) < HeadRows; i++ {
-		place(ordered[i], true, false)
+	lay := func(head, rest []Row) (Page, []Row) {
+		out := pg
+		l := &ledger{rows: map[string][]int{}}
+		for _, it := range svcTop {
+			// Shown in row 2 already: the head never repeats them.
+			l.rows[it.Key()] = []int{-HeadDedupe}
+		}
+		at := 0
+		var shown []Row
+		place := func(r Row, toHead bool) {
+			if r.Type == TypeTopServices {
+				// Not counted in at: the dedupe window covers eight rows with titles.
+				out.Head = append(out.Head, r)
+				shown = append(shown, r)
+				return
+			}
+			got := l.fill(r, at, at < HeadDedupe)
+			if len(got.Items) < MinItems(r.Type) {
+				return
+			}
+			l.record(got, at)
+			at++
+			if toHead {
+				out.Head = append(out.Head, got)
+				shown = append(shown, r)
+			} else {
+				out.Tail = append(out.Tail, got)
+			}
+		}
+		for _, r := range head {
+			place(r, true)
+		}
+		i := 0
+		for ; i < len(rest) && len(out.Head) < headMax; i++ {
+			place(rest[i], true)
+		}
+		for ; i < len(rest) && len(out.Tail) < out.Cap; i++ {
+			place(rest[i], false)
+		}
+		return out, shown
 	}
-	for ; i < len(ordered) && len(pg.Tail) < pg.Cap; i++ {
-		place(ordered[i], false, false)
+	// Lay the page out once to learn which head rows fill, spread the
+	// charts in that order, then lay it out again in the spread order.
+	first, shown := lay(picks, ordered)
+	spreadHead := spread(shown)
+	same := true
+	inHead := map[string]bool{}
+	for i, r := range spreadHead {
+		same = same && r.ID == shown[i].ID
+		inHead[r.ID] = true
 	}
-	return pg
+	if same {
+		return first
+	}
+	var rest []Row
+	for _, r := range ordered {
+		if !inHead[r.ID] {
+			rest = append(rest, r)
+		}
+	}
+	final, _ := lay(spreadHead, rest)
+	return final
 }
 
 // Filter applies the Kid limit at response time: items allow refuses are

@@ -63,6 +63,31 @@ func (a *API) cachedServiceTop(ctx context.Context, region string) (metadata.Ser
 	return l, err
 }
 
+// keptServiceTop is every service's titles for region and the switch's
+// kinds, from the kept lists only (no outside call); nil when none is kept.
+func (a *API) keptServiceTop(region, sw string) []explore.Item {
+	c := &a.serviceTop
+	c.mu.Lock()
+	e, ok := c.regions[region]
+	c.mu.Unlock()
+	if !ok || e.err != nil {
+		return nil
+	}
+	kinds := map[string]bool{}
+	for _, k := range explore.Kinds(sw) {
+		kinds[k] = true
+	}
+	var out []explore.Item
+	for _, sv := range e.list.Services {
+		for i, it := range sv.Items {
+			if kind := serviceKind(it.Kind); i < topServicesMax && it.TMDBID > 0 && kinds[kind] {
+				out = append(out, explore.Item{TMDBID: strconv.FormatInt(it.TMDBID, 10), Kind: kind})
+			}
+		}
+	}
+	return out
+}
+
 // serviceTopView is one service's ranked row.
 type serviceTopView struct {
 	// Service is the TMDB watch provider id; Key the server's name.

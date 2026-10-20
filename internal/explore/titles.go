@@ -374,7 +374,8 @@ type Shown struct {
 }
 
 // fixedTypes keep their title and get a subtitle.
-var fixedTypes = map[string]bool{TypeJustArrived: true, TypeYourAsks: true, TypeTop10: true, TypeTopServices: true, TypeTopPicks: true, TypeTrending: true, TypeComingSoon: true}
+var fixedTypes = map[string]bool{TypeTopServices: true, TypeTopPicks: true, TypeTrending: true, TypeBecauseAsked: true,
+	TypeCollection: true, TypeCinemas: true, TypeNewSeasons: true, TypeReturning: true, TypeClassics: true}
 
 // requiredSlot is the slot a row type's titles must name.
 var requiredSlot = map[string]string{TypeBecauseHave: "name_of_seed", TypePerson: "person", TypeDecade: "decade", TypePopularDecade: "decade"}
@@ -421,7 +422,7 @@ func factsOf(r Row, c TitleContext) rowFacts {
 		}
 	}
 	f.slots["day"] = c.Moment.Local.Weekday().String()
-	if c.Service != "" && (r.Type == TypeServices || r.Type == TypeNewServices) {
+	if c.Service != "" && r.Type == TypeNewServices {
 		f.slots["service"] = c.Service
 	}
 	if n := len(r.Items); n >= 8 {
@@ -641,32 +642,9 @@ func TitlePage(pg Page, c TitleContext) (Page, []Shown) {
 	return out, shown
 }
 
-// regionNames reads common country codes the way a sentence says them.
-var regionNames = map[string]string{"US": "the US", "GB": "the UK", "CA": "Canada", "AU": "Australia", "DE": "Germany", "FR": "France",
-	"ES": "Spain", "IT": "Italy", "NL": "the Netherlands", "MX": "Mexico", "BR": "Brazil", "IN": "India", "JP": "Japan", "IE": "Ireland", "NZ": "New Zealand"}
-
 // fixedSubtitle is a head row's small line: always a plain fact.
 func fixedSubtitle(r Row, c TitleContext) string {
-	n := len(r.Items)
 	switch r.Type {
-	case TypeTop10:
-		if c.Region == "" || c.Region == "global" {
-			return "Today, worldwide"
-		}
-		if name := regionNames[c.Region]; name != "" {
-			return "Today in " + name
-		}
-		return "Today in " + c.Region
-	case TypeJustArrived:
-		if n == 1 {
-			return "1 title added in the last 14 days"
-		}
-		return strconv.Itoa(n) + " titles added in the last 14 days"
-	case TypeYourAsks:
-		if n == 1 {
-			return "1 ask on the way"
-		}
-		return strconv.Itoa(n) + " asks on the way"
 	case TypeTopPicks:
 		return "Matched to your Library and asks"
 	case TypeTrending:
@@ -674,8 +652,14 @@ func fixedSubtitle(r Row, c TitleContext) string {
 			return "This week, mostly " + groupWord[g]
 		}
 		return "What people watch this week"
-	case TypeComingSoon:
+	case TypeCollection:
+		return "The parts missing from collections you have"
+	case TypeCinemas:
 		return "In the next 90 days"
+	case TypeNewSeasons:
+		return "Shows you have that are airing, then new shows"
+	case TypeReturning:
+		return "Back in the next two months"
 	}
 	return ""
 }

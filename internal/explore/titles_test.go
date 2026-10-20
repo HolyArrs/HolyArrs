@@ -224,11 +224,10 @@ func TestLayerFallback(t *testing.T) {
 		t.Fatalf("taste, got %s %q", got.Layer, got.Title)
 	}
 	// Fixed head rows keep their title and get a subtitle.
-	top := Row{ID: TypeTop10, Type: TypeTop10, Title: "Trending now", Items: genreItems(10, []string{"Drama"})}
+	top := Row{ID: TypeCinemas, Type: TypeCinemas, Title: RowTitle(TypeCinemas, ""), Items: genreItems(10, []string{"Drama"})}
 	c3 := ctxAt(plainMoment)
-	c3.Region = "US"
 	pg, _ := TitlePage(Page{Head: []Row{top}}, c3)
-	if pg.Head[0].Title != "Trending now" || pg.Head[0].Subtitle != "Today in the US" {
+	if pg.Head[0].Title != "Coming to cinemas and streaming" || pg.Head[0].Subtitle != "In the next 90 days" {
 		t.Fatalf("fixed row: %+v", pg.Head[0])
 	}
 }
@@ -287,7 +286,7 @@ func TestTitlesStableWithinDay(t *testing.T) {
 var simGenres = [][]string{{"Horror"}, {"Comedy"}, {"Drama"}, {"Action"}, {"Thriller"}, {"Science Fiction"}, {"Fantasy"}, {"Romance"},
 	{"Crime"}, {"Animation", "Family"}, {"Documentary"}, {"Mystery"}, {"Comedy", "Romance"}, {"Action", "Science Fiction"}, {"Drama", "Crime"}}
 
-var simTypes = []string{TypeBecauseHave, TypeGenre, TypePerson, TypeDecade, TypeHidden, TypeBest, TypeServices, TypeNewServices, TypeHousehold, TypePopularGenre, TypePopularDecade}
+var simTypes = []string{TypeBecauseHave, TypeGenre, TypePerson, TypeDecade, TypeHidden, TypeBest, TypeNewServices, TypeHousehold, TypePopularGenre, TypePopularDecade}
 
 // simRows is one heavy day: 50 titled rows of mixed types and genres.
 func simRows(day int) []Row {
@@ -296,7 +295,8 @@ func simRows(day int) []Row {
 		k := day*7 + i
 		typ := simTypes[k%len(simTypes)]
 		g := simGenres[(k*5+day)%len(simGenres)]
-		r := Row{ID: fmt.Sprintf("%s:%d", typ, k%40), Type: typ, Items: genreItems(12, g)}
+		// k%44: row ids stay unique on a day (44 is no multiple of len(simTypes)).
+		r := Row{ID: fmt.Sprintf("%s:%d", typ, k%44), Type: typ, Items: genreItems(12, g)}
 		switch typ {
 		case TypeBecauseHave:
 			r.SeedName = []string{"Alien", "Heat", "Up", "Fargo", "Arrival", "Coco", "Se7en", "Amélie"}[k%8]

@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -15,8 +16,10 @@ import (
 // a member.
 type Request struct {
 	// List: similar (recommendations + similar of Ref), trending,
-	// upcoming, best (Best new releases), discover, person (credits of
-	// the person named Ref).
+	// upcoming (movies coming out; shows airing now), best (Best new
+	// releases), discover, person (credits of the person named Ref),
+	// collection (the movies of TMDB collection Ref), returning (shows
+	// with episodes between From and To that started before From).
 	List  string
 	Kind  string
 	Ref   string
@@ -74,21 +77,20 @@ type Input struct {
 	Switch string
 	Now    time.Time
 	Seeds  []Seed
-	// Owned and Monitored are kind:tmdb keys.
-	Owned     map[string]bool
-	Monitored map[string]bool
+	// Owned are kind:tmdb keys.
+	Owned map[string]bool
 	// OwnedPeople counts Library titles per credited person.
 	OwnedPeople map[string]int
 	// OwnedDecadeGenre counts Library titles per "1990s|Drama".
 	OwnedDecadeGenre map[string]int
 	Household        []HouseholdTitle
-	// JustArrived are Library adds from the last 14 days, newest first;
-	// MyAsks the member's open asks, newest first.
-	JustArrived, MyAsks []Item
-	Members             int
-	Services, Region    string
-	// Coming are monitored Library releases in the next 90 days.
-	Coming []Item
+	// MyAsks are the member's open asks, newest first.
+	MyAsks           []Item
+	Members          int
+	Services, Region string
+	// Collections are the TMDB collections the Library has a movie of,
+	// most owned first.
+	Collections []LibCollection
 	// Allow is the Kid limit at candidate time; nil allows all.
 	Allow func(Item) bool
 	// Today is the pool already built today (its typeFreshness is kept);
@@ -96,14 +98,26 @@ type Input struct {
 	Today, Prev *Pool
 }
 
+// LibCollection is a TMDB collection the Library has Owned movies of.
+type LibCollection struct {
+	TMDBID string
+	Name   string
+	Owned  int
+}
+
+// PoolVersion is the row set a pool was built with; an older pool is
+// rebuilt.
+const PoolVersion = 2
+
 // Pool is one member's scored candidate rows for one type switch and day.
 type Pool struct {
-	Member int64  `json:"member"`
-	Switch string `json:"switch"`
-	Date   string `json:"date"`
-	Seeds  int    `json:"seeds"`
-	Kid    bool   `json:"kid"`
-	Rows   []Row  `json:"rows"`
+	Version int    `json:"v"`
+	Member  int64  `json:"member"`
+	Switch  string `json:"switch"`
+	Date    string `json:"date"`
+	Seeds   int    `json:"seeds"`
+	Kid     bool   `json:"kid"`
+	Rows    []Row  `json:"rows"`
 	// Taste are the member's strongest genres, for taste-match titles.
 	Taste []string  `json:"taste,omitempty"`
 	Built time.Time `json:"built"`
@@ -129,6 +143,12 @@ var coldGenres = []string{"Drama", "Comedy", "Action", "Thriller", "Animation", 
 // coldDecades are the two region defaults for Popular <decade> <genre>.
 var coldDecades = []int{1990, 2000}
 
+// KidGenres are the family rows a Kid page always gets.
+var KidGenres = []string{"Family", "Animation"}
+
+// maxCollections caps the collections one pool looks up.
+const maxCollections = 8
+
 const poolItems = 40
 
 // Build fetches and scores every candidate row for one member (5.2). The
@@ -146,7 +166,6 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 				continue
 			}
 			it.Owned = in.Owned[it.Key()]
-			it.Monitored = in.Monitored[it.Key()]
 			out = append(out, it)
 		}
 		return out
@@ -216,7 +235,7 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 	}
 	nSeeds := SeedCount(seeds)
 	profile := NewProfile(seeds)
-	pool := Pool{Member: in.Member, Switch: in.Switch, Date: Day(in.Now), Seeds: nSeeds, Kid: in.Kid, Built: in.Now}
+	pool := Pool{Version: PoolVersion, Member: in.Member, Switch: in.Switch, Date: Day(in.Now), Seeds: nSeeds, Kid: in.Kid, Built: in.Now}
 	var rows []Row
 	addRow := func(r Row) {
 		if len(r.Items) > 0 {
@@ -235,38 +254,74 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 		return false
 	}
 
-	// The member's own rows: kept in their order, not scored.
-	addRow(Row{ID: TypeJustArrived, Type: TypeJustArrived, Items: allow(in.JustArrived)})
-	addRow(Row{ID: TypeYourAsks, Type: TypeYourAsks, Items: allow(in.MyAsks)})
-
 	// Region-wide rows.
 	trending, err := fetch(Request{List: "trending", Scope: ScopeShared})
 	if !soft(err) && ctx.Err() != nil {
 		return pool, ctx.Err()
 	}
 	addRow(Row{ID: TypeTrending, Type: TypeTrending, Items: trending})
-	upcoming, err := fetch(Request{List: "upcoming", Scope: ScopeShared})
-	soft(err)
-	var coming []Item
-	for _, it := range append(allow(in.Coming), upcoming...) {
-		if it.Kind == "movie" && it.Released != "" {
-			if d, e := time.Parse("2006-01-02", it.Released); e == nil && (d.Before(in.Now.AddDate(0, 0, -1)) || d.After(in.Now.AddDate(0, 0, 90))) {
-				continue
-			}
-		}
-		coming = append(coming, it)
-	}
-	addRow(Row{ID: TypeComingSoon, Type: TypeComingSoon, Items: uniq(coming), Wide: true})
-	svc := Request{List: "discover", Services: in.Services, Region: in.Region, Scope: ScopeShared}
-	services, err := fetch(svc)
-	soft(err)
-	addRow(Row{ID: TypeServices, Type: TypeServices, Items: services})
 	if in.Services != "" {
-		q := svc
-		q.From = Day(in.Now.AddDate(0, 0, -30))
-		items, err := fetch(q)
+		items, err := fetch(Request{List: "discover", Services: in.Services, Region: in.Region, From: Day(in.Now.AddDate(0, 0, -30)), Scope: ScopeShared})
 		soft(err)
 		addRow(Row{ID: TypeNewServices, Type: TypeNewServices, Items: items})
+	}
+	switch in.Switch {
+	case "movies":
+		upcoming, err := fetch(Request{List: "upcoming", Kind: "movie", Scope: ScopeShared})
+		soft(err)
+		var coming []Item
+		for _, it := range upcoming {
+			if d, e := time.Parse("2006-01-02", it.Released); e == nil && !d.Before(in.Now.AddDate(0, 0, -1)) && !d.After(in.Now.AddDate(0, 0, 90)) {
+				coming = append(coming, it)
+			}
+		}
+		addRow(Row{ID: TypeCinemas, Type: TypeCinemas, Items: coming})
+		// Finish the collection: the released parts the Library lacks.
+		var missing []Item
+		for _, c := range in.Collections[:min(maxCollections, len(in.Collections))] {
+			parts, err := fetch(Request{List: "collection", Kind: "movie", Ref: c.TMDBID, Scope: ScopeShared})
+			if !soft(err) {
+				continue
+			}
+			id, _ := strconv.ParseInt(c.TMDBID, 10, 64)
+			for _, it := range parts {
+				if it.Owned || it.Released == "" || it.Released > Day(in.Now) {
+					continue
+				}
+				it.Collection = id
+				missing = append(missing, it)
+			}
+		}
+		addRow(Row{ID: TypeCollection, Type: TypeCollection, Items: missing})
+	case "shows":
+		// New seasons of Library shows on the air now, then new shows.
+		airing, err := fetch(Request{List: "upcoming", Kind: "show", Scope: ScopeShared})
+		soft(err)
+		premieres, err := fetch(Request{List: "discover", Kind: "show", From: Day(in.Now.AddDate(0, 0, -30)), To: Day(in.Now.AddDate(0, 0, 14)), Scope: ScopeShared})
+		soft(err)
+		var seasons []Item
+		for _, it := range airing {
+			if it.Owned {
+				seasons = append(seasons, it)
+			}
+		}
+		for _, it := range premieres {
+			if !it.Owned {
+				seasons = append(seasons, it)
+			}
+		}
+		addRow(Row{ID: TypeNewSeasons, Type: TypeNewSeasons, Items: seasons})
+		returning, err := fetch(Request{List: "returning", Kind: "show", From: Day(in.Now.AddDate(0, 0, 7)), To: Day(in.Now.AddDate(0, 0, 60)), Scope: ScopeShared})
+		soft(err)
+		var back []Item
+		for _, own := range []bool{true, false} {
+			for _, it := range returning {
+				if it.Owned == own {
+					back = append(back, it)
+				}
+			}
+		}
+		addRow(Row{ID: TypeReturning, Type: TypeReturning, Items: back})
 	}
 	best, err := fetch(Request{List: "best", Scope: ScopeShared})
 	soft(err)
@@ -307,6 +362,20 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 			label := fmt.Sprintf("Popular %ds %s", dec, strings.ToLower(g))
 			addRow(Row{ID: fmt.Sprintf("%s:%d|%s", TypePopularDecade, dec, g), Type: TypePopularDecade, Genre: g, Decade: dec, Title: label, Items: items})
 		}
+		items, err := fetch(Request{List: "discover", To: Day(in.Now.AddDate(-20, 0, 0)), MinVotes: 1000, Sort: "rating", Scope: ScopeShared})
+		soft(err)
+		addRow(Row{ID: TypeClassics, Type: TypeClassics, Items: items})
+	}
+	if in.Kid {
+		for _, g := range KidGenres {
+			id := TypePopularGenre + ":" + g
+			if hasRow(rows, id) {
+				continue
+			}
+			items, err := fetch(Request{List: "discover", Genre: g, MinVotes: 200, Scope: ScopeShared})
+			soft(err)
+			addRow(Row{ID: id, Type: TypePopularGenre, Genre: g, Title: RowTitle(TypePopularGenre, g), Items: items})
+		}
 	}
 
 	// Seed rows: the top 10 seeds, at most 2 per franchise.
@@ -342,6 +411,28 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 		items = similarity(s, items)
 		t := TypeBecauseHave
 		addRow(Row{ID: t + ":" + s.Key(), Type: t, Seed: s.Key(), SeedWeight: s.Weight, SeedName: s.Name, Title: RowTitle(t, s.Name), Items: dropKey(items, s.Key())})
+	}
+	// Because you asked for X: the member's two newest open asks.
+	nAsked := 0
+	for _, ask := range in.MyAsks {
+		if nAsked == 2 {
+			break
+		}
+		if !kindIn(kinds, ask.Kind) || hasRow(rows, TypeBecauseHave+":"+ask.Key()) {
+			continue
+		}
+		q := Request{List: "similar", Kind: ask.Kind, Ref: ask.TMDBID}
+		if !spend(q) {
+			break
+		}
+		nAsked++
+		items, err := fetch(q)
+		if !soft(err) {
+			continue
+		}
+		seed := Seed{TMDBID: ask.TMDBID, Kind: ask.Kind, Name: ask.Name, Genres: ask.Genres}
+		t := TypeBecauseAsked
+		addRow(Row{ID: t + ":" + ask.Key(), Type: t, Seed: ask.Key(), SeedName: ask.Name, Title: RowTitle(t, ask.Name), Items: dropKey(similarity(seed, items), ask.Key())})
 	}
 	if nSeeds >= 3 {
 		for _, g := range profile.TopGenres(5, 0.10) {
@@ -580,6 +671,15 @@ func dropKey(items []Item, key string) []Item {
 }
 
 func kindIn(kinds []string, k string) bool { return contains(kinds, k) }
+
+func hasRow(rows []Row, id string) bool {
+	for _, r := range rows {
+		if r.ID == id {
+			return true
+		}
+	}
+	return false
+}
 
 func contains(list []string, s string) bool {
 	for _, x := range list {

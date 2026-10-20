@@ -27,7 +27,6 @@ type Item struct {
 	// Collection is the TMDB collection (franchise) when known.
 	Collection int64 `json:"collection,omitempty"`
 	Owned      bool  `json:"owned,omitempty"`
-	Monitored  bool  `json:"monitored,omitempty"`
 	// HH is the household signal (asks).
 	HH float64 `json:"hh,omitempty"`
 	// Sim is the similarity to the row's seed, 0-1.
@@ -58,14 +57,10 @@ func (it Item) Franchise() string {
 
 // Row types.
 const (
-	TypeJustArrived   = "just_arrived"
-	TypeYourAsks      = "your_asks"
-	TypeTop10         = "top10"
 	TypeTopPicks      = "top_picks"
 	TypeTrending      = "trending"
-	TypeServices      = "services"
-	TypeComingSoon    = "coming_soon"
 	TypeBecauseHave   = "because_have"
+	TypeBecauseAsked  = "because_asked"
 	TypePerson        = "person"
 	TypeGenre         = "genre"
 	TypePopularGenre  = "popular_genre"
@@ -78,7 +73,16 @@ const (
 	// TypeTopServices is the ranked "Trending on your services" row; the page
 	// fills it per chosen service (the head carries an empty marker).
 	TypeTopServices = "top_services"
-	// TypeMood and TypeClassics only show on a genre page.
+	// TypeCollection (Movies) is the missing parts of TMDB collections the
+	// Library has some of; TypeCinemas (Movies) is upcoming movies.
+	TypeCollection = "collection"
+	TypeCinemas    = "cinemas"
+	// TypeNewSeasons (Shows) is shows in the Library airing now, then new
+	// shows; TypeReturning (Shows) is shows back in the next two months.
+	TypeNewSeasons = "new_seasons"
+	TypeReturning  = "returning"
+	// TypeClassics shows on a genre page and on a cold-start page;
+	// TypeMood only on a genre page.
 	TypeMood     = "mood"
 	TypeClassics = "classics"
 )
@@ -91,14 +95,10 @@ type rowKind struct {
 }
 
 var catalog = map[string]rowKind{
-	TypeJustArrived:   {3, 0, false},
-	TypeYourAsks:      {1, 0, false},
-	TypeTop10:         {5, 0, false},
 	TypeTopPicks:      {8, 0.95, true},
 	TypeTrending:      {8, 0, false},
-	TypeServices:      {8, 0.6, false},
-	TypeComingSoon:    {4, 0, false},
 	TypeBecauseHave:   {6, 0.8, true},
+	TypeBecauseAsked:  {6, 0.75, true},
 	TypePerson:        {6, 0.6, true},
 	TypeGenre:         {8, 0.65, true},
 	TypePopularGenre:  {8, 0.5, false},
@@ -109,6 +109,10 @@ var catalog = map[string]rowKind{
 	TypeDecade:        {8, 0.45, false},
 	TypeHidden:        {6, 0.4, false},
 	TypeTopServices:   {1, 0, false},
+	TypeCollection:    {2, 0.85, false},
+	TypeCinemas:       {6, 0.6, false},
+	TypeNewSeasons:    {4, 0.85, false},
+	TypeReturning:     {4, 0.7, false},
 	TypeMood:          {8, 0.5, false},
 	TypeClassics:      {8, 0.45, false},
 }
@@ -196,11 +200,9 @@ func (s Scorer) ItemScore(t string, it Item) float64 {
 			hh = clamp(it.HH / s.MaxHH)
 		}
 		return 0.45*aff + 0.20*r + 0.15*p + 0.10*fresh(it, s.Now, 365) + 0.10*hh
-	case TypeServices:
-		return 0.40*p + 0.30*aff + 0.20*r + 0.10*fresh(it, s.Now, 730)
-	case TypeComingSoon:
+	case TypeCinemas:
 		return 0.6*p + 0.4*aff
-	case TypeBecauseHave:
+	case TypeBecauseHave, TypeBecauseAsked:
 		return 0.50*it.Sim + 0.20*r + 0.15*aff + 0.15*p
 	case TypePerson:
 		return 0.5*r + 0.3*p + 0.2*aff
@@ -224,11 +226,12 @@ func (s Scorer) ItemScore(t string, it Item) float64 {
 }
 
 // dropsOwned are the row types that leave out Library titles.
-var dropsOwned = map[string]bool{TypeTopPicks: true, TypePerson: true}
+var dropsOwned = map[string]bool{TypeTopPicks: true, TypePerson: true, TypeBecauseAsked: true, TypeCinemas: true}
 
 // Rank scores and orders a row's items for its type, applying the
 // type's own rules (trending keeps upstream order with a tilt and its top
-// 3 fixed; Coming soon puts owned or monitored first).
+// 3 fixed; collection, new-season and returning rows keep the order the
+// pool built them in).
 func (s Scorer) Rank(t string, items []Item) []Item {
 	out := make([]Item, 0, len(items))
 	for _, it := range items {
@@ -239,7 +242,7 @@ func (s Scorer) Rank(t string, items []Item) []Item {
 	}
 	n := len(out)
 	switch t {
-	case TypeTop10, TypeJustArrived, TypeYourAsks:
+	case TypeCollection, TypeNewSeasons, TypeReturning:
 		return out
 	case TypeTrending:
 		for i := range out {
@@ -262,21 +265,6 @@ func (s Scorer) Rank(t string, items []Item) []Item {
 			res = append(res, it)
 		}
 		return append(res, later...)
-	case TypeComingSoon:
-		for i := range out {
-			out[i].Score = s.ItemScore(t, out[i])
-		}
-		sort.SliceStable(out, func(i, j int) bool {
-			a, b := out[i].Owned || out[i].Monitored, out[j].Owned || out[j].Monitored
-			if a != b {
-				return a
-			}
-			if out[i].Score != out[j].Score {
-				return out[i].Score > out[j].Score
-			}
-			return out[i].Released < out[j].Released
-		})
-		return out
 	}
 	for i := range out {
 		out[i].Score = s.ItemScore(t, out[i])
@@ -313,25 +301,17 @@ func RowScore(r Row, maxSeed float64) float64 {
 	return 0.40*sw + 0.30*meanTop8(r.Items) + 0.15*r.Fresh + 0.15*catalog[r.Type].prior
 }
 
-// Title words for each row type.
+// RowTitle is the title words for each row type.
 func RowTitle(t, arg string) string {
 	switch t {
-	case TypeJustArrived:
-		return "Just arrived"
-	case TypeYourAsks:
-		return "Your asks, on the way"
-	case TypeTop10:
-		return "Trending now"
 	case TypeTopPicks:
 		return "Top picks for you"
 	case TypeTrending:
 		return "Trending this week everywhere"
-	case TypeServices:
-		return "On your services"
-	case TypeComingSoon:
-		return "Coming soon"
 	case TypeBecauseHave:
 		return "Because you have " + arg
+	case TypeBecauseAsked:
+		return "Because you asked for " + arg
 	case TypePerson:
 		return "More from " + arg
 	case TypeGenre:
@@ -350,6 +330,28 @@ func RowTitle(t, arg string) string {
 		return "Hidden gems"
 	case TypeTopServices:
 		return "Trending on your services"
+	case TypeCollection:
+		return "Finish the collection"
+	case TypeCinemas:
+		return "Coming to cinemas and streaming"
+	case TypeNewSeasons:
+		return "New seasons and premieres"
+	case TypeReturning:
+		return "Returning soon"
+	case TypeClassics:
+		return "Classics"
 	}
 	return arg
+}
+
+// TabTitle is a row's title on one tab: the charts name the tab's kind.
+func TabTitle(t, sw string) string {
+	word := map[string]string{"movies": "movies", "shows": "shows"}[sw]
+	switch {
+	case t == TypeTrending && word != "":
+		return "Trending " + word + " this week"
+	case t == TypeTopServices && word != "":
+		return "Trending " + word + " on your services"
+	}
+	return RowTitle(t, "")
 }

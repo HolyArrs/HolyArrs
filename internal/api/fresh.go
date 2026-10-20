@@ -109,13 +109,11 @@ func (a *API) cardFresh(ctx context.Context, it metadata.DiscoverItem, titleID i
 	return explore.PickFreshIn(f, now, freshRowOf(ctx)), nil
 }
 
-// musicFresh is a music card's strip: Recently added on Just arrived, New
-// release on New from artists you have.
+// musicFresh is a music card's strip: New release on New from artists you
+// have.
 func (a *API) musicFresh(row string, c MusicCard) *explore.Fresh {
 	f := explore.FreshFacts{Kind: c.Kind, Music: true}
 	switch row {
-	case "just_arrived":
-		f.InLibrary, f.Added = true, explore.ParseDay(c.Date)
 	case "new_from":
 		if !c.Upcoming {
 			f.Released = explore.ParseDay(c.Date)

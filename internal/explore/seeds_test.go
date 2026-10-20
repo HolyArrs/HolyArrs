@@ -70,7 +70,7 @@ func TestTailCap(t *testing.T) {
 		seeds int
 		kid   bool
 		want  int
-	}{{0, false, 8}, {2, false, 8}, {3, false, 20}, {9, false, 20}, {10, false, 40}, {12, true, 20}} {
+	}{{0, false, 8}, {2, false, 8}, {3, false, 20}, {9, false, 20}, {10, false, 40}, {12, true, 8}} {
 		if got := TailCap(c.seeds, c.kid); got != c.want {
 			t.Errorf("TailCap(%d, %v) = %d, want %d", c.seeds, c.kid, got, c.want)
 		}

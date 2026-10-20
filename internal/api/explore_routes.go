@@ -43,14 +43,18 @@ func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64,
 	now := a.exploreNow()
 	day := explore.Day(now)
 	moment, tz := exploreMoment(r, now)
-	key := strconv.FormatInt(member, 10) + "|" + sw + "|" + topKind + "|" + topRegion + "|" + tz
+	// Trending on your services, as kept (never fetched here): the rows
+	// under it skip its titles. The key says whether it was known.
+	svcTop := a.keptServiceTop(strings.ToUpper(r.URL.Query().Get("region")), sw)
+	key := strconv.FormatInt(member, 10) + "|" + sw + "|" + topKind + "|" + topRegion + "|" + tz + "|" + strconv.FormatBool(len(svcTop) > 0)
 	e := &a.explore
 	pool, stale, err := a.readPool(ctx, member, sw, day, false)
 	if err != nil {
 		return explore.Page{}, nil, false, err
 	}
 	building := false
-	if pool == nil || stale {
+	if pool == nil || stale || pool.Version != explore.PoolVersion {
+		// A pool from an older build has other rows: build it again.
 		building = true
 		a.queuePool(poolKey{member, sw}, now, false)
 	}
@@ -120,7 +124,7 @@ func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64,
 			top10["by_kind"] = byKind
 		}
 	}
-	pg := explore.AssembleTabAt(*pool, tops, member, moment)
+	pg := explore.AssembleTabAt(*pool, tops, svcTop, member, moment)
 	e.mu.Lock()
 	if e.pages == nil || len(e.pages) >= 1000 {
 		e.pages = map[string]explorePage{}
@@ -303,7 +307,8 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	for _, row := range pg.Head {
-		if row.Type == explore.TypeTop10 {
+		if row.Type == explore.TypeTopServices {
+			// The page fills this row itself (GET /explore/service-top).
 			head = append(head, exploreRowView{ID: row.ID, Type: row.Type, Title: row.Title, Subtitle: row.Subtitle, TitleLayer: row.Layer, Items: []discoverItemView{}})
 			continue
 		}

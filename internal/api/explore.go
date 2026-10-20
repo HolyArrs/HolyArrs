@@ -47,6 +47,8 @@ var exploreListTTL = map[string]time.Duration{
 	"similar": 24 * time.Hour, "discover": 12 * time.Hour, "person": 7 * 24 * time.Hour,
 	// weekly is a discover list kept a week (Top on your services).
 	"weekly": 7 * 24 * time.Hour,
+	// A collection's movies rarely change; returning is a dated discover.
+	"collection": 7 * 24 * time.Hour, "returning": 12 * time.Hour,
 }
 
 type poolKey struct {
@@ -490,6 +492,18 @@ func (s listerSource) List(ctx context.Context, q explore.Request) ([]explore.It
 			sim, err = s.l.ExploreList(ctx, q.Kind, "/"+p+"/"+q.Ref+"/similar", nil)
 		}
 		out = append(recs, sim...)
+	case "collection":
+		cl, ok := s.l.(metadata.CollectionLister)
+		if !ok {
+			return []explore.Item{}, nil
+		}
+		out, err = cl.CollectionParts(ctx, q.Ref)
+	case "returning":
+		// Shows that started before From with an episode between From and
+		// To: running series coming back, not premieres.
+		v := url.Values{"include_adult": {"false"}, "sort_by": {"popularity.desc"}, "with_status": {"0"},
+			"air_date.gte": {q.From}, "air_date.lte": {q.To}, "first_air_date.lte": {q.From}}
+		out, err = s.l.ExploreList(ctx, "show", "/discover/tv", v)
 	case "person":
 		var all []metadata.DiscoverItem
 		all, err = s.l.PersonCredits(ctx, q.Ref)
@@ -594,21 +608,20 @@ func (a *API) loadMember(ctx context.Context, id int64) (exploreMember, error) {
 
 // exploreInput reads the member's signals from the Library and the asks.
 func (a *API) exploreInput(ctx context.Context, m exploreMember, sw string, now time.Time) (explore.Input, error) {
-	in := explore.Input{Member: m.id, Kid: m.kid, Switch: sw, Now: now, Owned: map[string]bool{}, Monitored: map[string]bool{},
+	in := explore.Input{Member: m.id, Kid: m.kid, Switch: sw, Now: now, Owned: map[string]bool{},
 		OwnedPeople: map[string]int{}, OwnedDecadeGenre: map[string]int{}, Services: m.services, Region: m.region}
 	db := a.s.Store.Read()
-	rows, err := db.QueryContext(ctx, `SELECT kind, json_extract(source_ids, '$.tmdb'), name, COALESCE(year, 0), genres, people, rating, created_at,
-		COALESCE(digital_date, cinema_date, ''), backdrop, artwork FROM titles WHERE kind IN ('movie', 'show') AND state != 'removed' AND json_extract(source_ids, '$.tmdb') IS NOT NULL
+	rows, err := db.QueryContext(ctx, `SELECT kind, json_extract(source_ids, '$.tmdb'), name, COALESCE(year, 0), genres, people, rating, created_at
+		FROM titles WHERE kind IN ('movie', 'show') AND state != 'removed' AND json_extract(source_ids, '$.tmdb') IS NOT NULL
 		ORDER BY created_at DESC, id DESC`)
 	if err != nil {
 		return in, err
 	}
 	var lib []explore.LibTitle
-	soon := now.AddDate(0, 0, 90)
 	for rows.Next() {
 		var t explore.LibTitle
-		var genres, people, added, release, backdrop, artwork string
-		if err := rows.Scan(&t.Kind, &t.TMDBID, &t.Name, &t.Year, &genres, &people, &t.Rating, &added, &release, &backdrop, &artwork); err != nil {
+		var genres, people, added string
+		if err := rows.Scan(&t.Kind, &t.TMDBID, &t.Name, &t.Year, &genres, &people, &t.Rating, &added); err != nil {
 			rows.Close()
 			return in, err
 		}
@@ -621,15 +634,6 @@ func (a *API) exploreInput(ctx context.Context, m exploreMember, sw string, now 
 			continue
 		}
 		lib = append(lib, t)
-		if now.Sub(t.Added) <= 14*24*time.Hour && t.Added.Before(now.Add(time.Minute)) {
-			var art []string
-			_ = json.Unmarshal([]byte(artwork), &art)
-			it := explore.Item{TMDBID: t.TMDBID, Kind: t.Kind, Name: t.Name, Year: t.Year, Genres: t.Genres, Backdrop: backdrop, Owned: true}
-			if links := artworkLinks(art); len(links) > 0 {
-				it.Poster = links[0]
-			}
-			in.JustArrived = append(in.JustArrived, it)
-		}
 		for _, p := range t.People[:min(4, len(t.People))] {
 			in.OwnedPeople[p]++
 		}
@@ -637,11 +641,6 @@ func (a *API) exploreInput(ctx context.Context, m exploreMember, sw string, now 
 			for _, g := range t.Genres {
 				in.OwnedDecadeGenre[strconv.Itoa(t.Year/10*10)+"s|"+g]++
 			}
-		}
-		if d, err := time.Parse(store.TimeLayout, release); err == nil && d.After(now) && d.Before(soon) {
-			in.Monitored[key] = true
-			in.Coming = append(in.Coming, explore.Item{TMDBID: t.TMDBID, Kind: t.Kind, Name: t.Name, Year: t.Year, Genres: t.Genres, Backdrop: backdrop,
-				Released: d.Format("2006-01-02")})
 		}
 	}
 	rows.Close()
@@ -698,8 +697,38 @@ func (a *API) exploreInput(ctx context.Context, m exploreMember, sw string, now 
 		in.Household = append(in.Household, explore.HouseholdTitle{Item: h.item, Asks: h.asks, Members: len(h.members)})
 	}
 	_ = db.QueryRowContext(ctx, "SELECT count(*) FROM users WHERE state = 'active'").Scan(&in.Members)
+	if sw == "movies" {
+		// Finish the collection: TMDB collections the Library has a movie of.
+		if in.Collections, err = exploreCollections(ctx, db); err != nil {
+			return in, err
+		}
+	}
 	in.Seeds = explore.Seeds(m.id, m.kid, lib, asks, now)
 	return in, nil
+}
+
+// exploreCollections are the TMDB collections with an owned movie, most
+// owned first (local data only; the parts are looked up by collection id).
+func exploreCollections(ctx context.Context, db *sql.DB) ([]explore.LibCollection, error) {
+	rows, err := db.QueryContext(ctx, `SELECT substr(c.source_id, 6), c.name, count(t.id) AS n
+		FROM movie_collections c
+		JOIN movie_collection_titles ct ON ct.collection_id = c.id
+		JOIN titles t ON t.id = ct.title_id AND t.kind = 'movie' AND t.state != 'removed'
+		WHERE substr(c.source_id, 1, 5) = 'tmdb:'
+		GROUP BY c.id ORDER BY n DESC, c.id`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []explore.LibCollection
+	for rows.Next() {
+		var c explore.LibCollection
+		if err := rows.Scan(&c.TMDBID, &c.Name, &c.Owned); err != nil {
+			return nil, err
+		}
+		out = append(out, c)
+	}
+	return out, rows.Err()
 }
 
 // kidAllow is the Kid limit at candidate time: known ratings first, then a
