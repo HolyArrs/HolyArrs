@@ -1,4 +1,4 @@
-package api
+﻿package api
 
 import (
 	"context"
@@ -16,7 +16,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
-// Explore → Music: every row the page shows, built here so they share one
+// Explore â†’ Music: every row the page shows, built here so they share one
 // genre filter and one set of rules. Albums are square, artists round; each
 // row says why it is there and hides below its minimum.
 
@@ -63,7 +63,7 @@ type MusicCard struct {
 	Fresh *explore.Fresh `json:"fresh,omitempty"`
 }
 
-// MusicRow is one row of Explore → Music.
+// MusicRow is one row of Explore â†’ Music.
 type MusicRow struct {
 	ID     string      `json:"id"`
 	Type   string      `json:"type"`
@@ -216,12 +216,16 @@ func (a *API) similarTo(seeds []string, wait time.Duration) map[string][]metadat
 		entries[id] = e
 	}
 	c.mu.Unlock()
+	// One deadline for all: a timer's channel fires once, so after it the
+	// loop would wait on every other pending seed in full.
 	timer := time.NewTimer(wait)
 	defer timer.Stop()
+wait:
 	for _, e := range pending {
 		select {
 		case <-e.done:
 		case <-timer.C:
+			break wait
 		}
 	}
 	c.mu.Lock()
@@ -246,6 +250,10 @@ func (a *API) fetchSimilar(id string, e *musicSimilarEntry) {
 	c.mu.Unlock()
 	close(done)
 }
+
+// musicSimilarWait is how long a Music answer waits for similar artists
+// not read yet; they keep filling for the next visit.
+const musicSimilarWait = 1500 * time.Millisecond
 
 // musicArtist is one artist in the Library.
 type musicArtist struct {
@@ -360,7 +368,9 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 			seedIDs = append(seedIDs, s.mbid)
 		}
 	}
-	similar := a.similarTo(seedIDs, 3*time.Second)
+	st := newServerTiming()
+	similar := a.similarTo(seedIDs, musicSimilarWait)
+	st.mark("similar")
 
 	// Charts, from the cached trending lists.
 	var trendArtists, trendAlbums []MusicCard
@@ -399,7 +409,9 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 			ids = append(ids, s.MBID)
 		}
 	}
+	st.mark("charts")
 	genres, genresDone := a.genresWaiting(ids, musicGenreWait)
+	st.mark("genres")
 	for _, m := range artists {
 		m.genres = genres[m.mbid]
 	}
@@ -601,6 +613,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 
 	out = a.moreMusicRows(ctx, &musicCtx{now: now, hour: musicHour(q.Get("hour"), now), region: region, artists: artists, byTitle: byTitle, owned: owned,
 		genres: genres, trendAlbums: trendAlbums, trendArtists: trendArtists, pool: pool, top: top, tag: tag, albumCard: albumCard, names: &names, cold: cold}, out)
+	st.mark("more")
 
 	// Cold start: only rows that need no Library.
 	final := []MusicRow{}
@@ -680,6 +693,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 	a.rememberMusicNames(names)
 	a.exploreCaching(w, r, "private, max-age=60")
 	complete := genresDone && len(similar) == len(seedIDs)
+	st.write(w)
 	a.writeMusicAnswer(w, key, map[string]any{"kid": false, "cold": cold, "genres": top, "genre": genre, "region": region, "regions": regions, "hero": hero, "hero_alts": heroAlts, "rows": final}, complete, now)
 }
 

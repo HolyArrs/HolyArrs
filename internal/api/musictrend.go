@@ -34,6 +34,8 @@ type musicTrendCache struct {
 	names map[string]metadata.MusicTrendItem
 	// covers are album cover URLs by release group ("" when none has one).
 	covers map[string]musicCover
+	// artMiss is when a picture was last not found, by "kind|mbid".
+	artMiss map[string]time.Time
 }
 
 type musicCover struct {
@@ -154,46 +156,10 @@ func (a *API) musicTrendArt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	kind, mbid := r.PathValue("kind"), strings.ToLower(r.PathValue("mbid"))
-	c := &a.music
-	c.mu.Lock()
-	it, ok := c.names[kind+"|"+mbid]
-	c.mu.Unlock()
-	lib := a.s.Library
-	if !ok || lib == nil || lib.Artwork == nil {
-		http.NotFound(w, r)
-		return
-	}
-	src := ""
-	switch kind {
-	case "artist":
-		if lib.ArtistImages != nil {
-			src, _ = lib.ArtistImages.Image(r.Context(), it.Name)
-		}
-	case "album":
-		var found bool
-		if src, found = a.albumCover(r.Context(), mbid, it); !found {
-			base := lib.CoverArtBase
-			if base == "" {
-				base = library.CoverArtBase
-			}
-			src = strings.TrimRight(base, "/") + "/release-group/" + url.PathEscape(mbid) + "/front-250"
-		}
-	}
-	if src == "" {
-		http.NotFound(w, r)
-		return
-	}
-	name := library.ArtworkName(src)
-	p, ok := lib.Artwork.Path(name)
+	name, p, ok := a.musicTrendArtFile(r.Context(), kind, mbid)
 	if !ok {
-		if _, err := lib.Artwork.Fetch(r.Context(), src); err != nil {
-			http.Error(w, "picture unavailable", http.StatusNotFound)
-			return
-		}
-		if p, ok = lib.Artwork.Path(name); !ok {
-			http.NotFound(w, r)
-			return
-		}
+		http.NotFound(w, r)
+		return
 	}
 	serveArtwork(w, r, name, p)
 }
@@ -227,4 +193,71 @@ func (a *API) albumCover(ctx context.Context, mbid string, it metadata.MusicTren
 	c.covers[mbid] = musicCover{src: src, at: time.Now()}
 	c.mu.Unlock()
 	return src, true
+}
+
+// musicArtMissTTL is how long a picture no source has is not asked again.
+const musicArtMissTTL = 6 * time.Hour
+
+// musicTrendArtFile finds and keeps the picture of a named artist or
+// album. An album no cover source has shows its artist's picture, so the
+// card is never blank. Misses are remembered a while (each costs outside
+// calls).
+func (a *API) musicTrendArtFile(ctx context.Context, kind, mbid string) (name, path string, ok bool) {
+	c := &a.music
+	c.mu.Lock()
+	it, known := c.names[kind+"|"+mbid]
+	missAt, missed := c.artMiss[kind+"|"+mbid]
+	c.mu.Unlock()
+	lib := a.s.Library
+	if !known || lib == nil || lib.Artwork == nil || (missed && time.Since(missAt) < musicArtMissTTL) {
+		return "", "", false
+	}
+	keep := func(src string) bool {
+		if src == "" {
+			return false
+		}
+		name = library.ArtworkName(src)
+		if path, ok = lib.Artwork.Path(name); ok {
+			return true
+		}
+		if _, err := lib.Artwork.Fetch(ctx, src); err != nil {
+			return false
+		}
+		path, ok = lib.Artwork.Path(name)
+		return ok
+	}
+	artist := func(n string) bool {
+		if lib.ArtistImages == nil || n == "" {
+			return false
+		}
+		src, _ := lib.ArtistImages.Image(ctx, n)
+		return keep(src)
+	}
+	switch kind {
+	case "artist":
+		if artist(it.Name) {
+			return name, path, true
+		}
+	case "album":
+		src, found := a.albumCover(ctx, mbid, it)
+		if !found {
+			base := lib.CoverArtBase
+			if base == "" {
+				base = library.CoverArtBase
+			}
+			src = strings.TrimRight(base, "/") + "/release-group/" + url.PathEscape(mbid) + "/front-250"
+		}
+		if keep(src) || artist(it.Artist) {
+			return name, path, true
+		}
+	}
+	if ctx.Err() == nil {
+		c.mu.Lock()
+		if c.artMiss == nil || len(c.artMiss) > 20000 {
+			c.artMiss = map[string]time.Time{}
+		}
+		c.artMiss[kind+"|"+mbid] = time.Now()
+		c.mu.Unlock()
+	}
+	return "", "", false
 }

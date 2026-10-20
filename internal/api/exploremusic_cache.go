@@ -149,6 +149,7 @@ func (a *API) warmMusic(ctx context.Context) {
 			ids = append(ids, id)
 		}
 	}
+	var art [][2]string
 	if a.s.MusicTrending != nil {
 		for _, kind := range []string{"artist", "album"} {
 			l, err := a.cachedMusicTrend(ctx, kind, "global")
@@ -156,6 +157,7 @@ func (a *API) warmMusic(ctx context.Context) {
 				continue
 			}
 			for _, it := range l.Items {
+				art = append(art, [2]string{kind, strings.ToLower(it.MBID)})
 				id := it.ArtistMBID
 				if kind == "artist" {
 					id = it.MBID
@@ -167,4 +169,20 @@ func (a *API) warmMusic(ctx context.Context) {
 		}
 	}
 	a.genresOf(ids)
+	// The charts' pictures are fetched ahead too, so the first Music visit
+	// reads kept files instead of a picture search per card.
+	for _, k := range art {
+		if ctx.Err() != nil {
+			return
+		}
+		_, _, _ = a.musicTrendArtFile(ctx, k[0], k[1])
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(musicArtWarmGap):
+		}
+	}
 }
+
+// musicArtWarmGap spaces the picture read-ahead.
+const musicArtWarmGap = 250 * time.Millisecond
