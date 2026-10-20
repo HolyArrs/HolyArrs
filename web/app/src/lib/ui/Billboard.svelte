@@ -169,7 +169,7 @@
 		position: relative; isolation: isolate; overflow: hidden;
 		margin: 8px 0 0;
 		border-radius: var(--hero-r);
-		height: max(380px, min(77svh, calc((100vw - var(--gutter) * 2) / 2.18)));
+		min-height: max(380px, min(77svh, calc((100vw - var(--gutter) * 2) / 2.18)));
 		display: flex; flex-direction: column; justify-content: flex-end;
 		background: var(--hero-ink); color: var(--on-art, #fff);
 	}
@@ -182,6 +182,9 @@
 		transition: opacity var(--dur-slow) var(--ease-out);
 	}
 	.shade.playing { opacity: .85; }
+	/* Room for the breadcrumb, so a tall logo never runs under it. */
+	.ui-billboard:has(> .top) { padding-top: 60px; }
+	.ui-billboard:has(> .top) .heading :global(.bb-logo img) { max-height: min(var(--title-h), calc(100% - 8px)); }
 	.top { position: absolute; top: clamp(14px, 2vw, 24px); left: clamp(20px, 2vw, 40px); right: 16px; z-index: 2; }
 	/* Netflix keeps the billboard's words in the left ~40%, so the picture stays open. */
 	.content { position: relative; width: clamp(320px, 40%, 600px); padding: 0 clamp(20px, 2vw, 40px) clamp(24px, 2.6vw, 50px); display: flex; flex-direction: column; gap: 10px; transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out); }
@@ -191,7 +194,8 @@
 	.fold-in { min-height: 0; overflow: hidden; }
 	.quiet .fold { grid-template-rows: 0fr; opacity: 0; pointer-events: none; }
 	.quiet.reveal:hover .fold, .quiet.reveal:focus-within .fold { grid-template-rows: 1fr; opacity: 1; pointer-events: auto; }
-	.content { --title-h: clamp(80px, 10vw, 140px); }
+	.content { --title-h: clamp(80px, 10vw, 140px); min-height: 0; }
+	.ui-billboard:has(> .top) .content { --title-h: clamp(64px, 8vw, 130px); }
 	.heading { transform-origin: left bottom; transition: transform 1100ms var(--ease-hero, cubic-bezier(.4, 0, .2, 1)); }
 	.quiet .heading { transform: scale(.8); }
 	.quiet.reveal:hover .heading, .quiet.reveal:focus-within .heading { transform: none; }
