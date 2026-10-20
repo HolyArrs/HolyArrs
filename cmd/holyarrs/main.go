@@ -589,6 +589,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return err
 	}})
 	wish.WatchEpisodes()
+	wish.WatchTMDBFollows()
 	reg.Set(supervisor.StageKey("alerts"), "stage", "Alerts", supervisor.Running, "")
 	if c.SafeMode {
 		reg.Set(supervisor.StageKey("media_servers"), "stage", "Media-server refresh", supervisor.Off, notStarted)

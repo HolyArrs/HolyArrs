@@ -1,0 +1,178 @@
+package asks
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"log"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/CoderLuii/holyarrs/internal/alerts"
+	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/CoderLuii/holyarrs/internal/supervisor"
+)
+
+// ErrBadTMDBID says a TMDB id is not a positive number.
+var ErrBadTMDBID = errors.New("tmdb_id must be a TMDB number")
+
+func tmdbIDOK(id string) bool {
+	n, err := strconv.ParseInt(id, 10, 64)
+	return err == nil && n > 0 && strings.TrimSpace(id) == id
+}
+
+// libraryShow is the Library title of a show by TMDB id, or 0.
+func (s *Service) libraryShow(ctx context.Context, tmdbID string) (int64, error) {
+	var id int64
+	err := s.Store.Read().QueryRowContext(ctx, "SELECT id FROM titles WHERE kind = 'show' AND state != 'removed' AND json_extract(source_ids, '$.tmdb') = ?", tmdbID).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, nil
+	}
+	return id, err
+}
+
+// FollowShowTMDB follows a show by its TMDB id. A show already in the
+// Library is followed as that title; otherwise the follow waits for the
+// show to be added (WatchTMDBFollows), and the person hears when it lands.
+// It returns the Library title id, or 0.
+func (s *Service) FollowShowTMDB(ctx context.Context, p Person, tmdbID string) (int64, error) {
+	if !tmdbIDOK(tmdbID) {
+		return 0, ErrBadTMDBID
+	}
+	id, err := s.libraryShow(ctx, tmdbID)
+	if err != nil || id != 0 {
+		if err == nil {
+			err = s.Follow(ctx, p, id)
+		}
+		return id, err
+	}
+	now := store.FormatTime(s.now())
+	return 0, s.Store.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("INSERT INTO tmdb_follows (user_id, kind, tmdb_id, created_at) VALUES (?, 'show', ?, ?) ON CONFLICT DO NOTHING", p.UserID, tmdbID, now)
+		return err
+	})
+}
+
+// UnfollowShowTMDB stops a follow by TMDB id, waiting or already moved to
+// the Library title.
+func (s *Service) UnfollowShowTMDB(ctx context.Context, userID int64, tmdbID string) error {
+	if !tmdbIDOK(tmdbID) {
+		return ErrBadTMDBID
+	}
+	id, err := s.libraryShow(ctx, tmdbID)
+	if err != nil {
+		return err
+	}
+	return s.Store.Write(ctx, func(tx *sql.Tx) error {
+		if _, err := tx.Exec("DELETE FROM tmdb_follows WHERE user_id = ? AND kind = 'show' AND tmdb_id = ?", userID, tmdbID); err != nil {
+			return err
+		}
+		if id != 0 {
+			_, err := tx.Exec("DELETE FROM follows WHERE user_id = ? AND title_id = ?", userID, id)
+			return err
+		}
+		return nil
+	})
+}
+
+// IsFollowingShowTMDB says whether a person follows a show by TMDB id.
+func (s *Service) IsFollowingShowTMDB(ctx context.Context, userID int64, tmdbID string) (bool, error) {
+	if !tmdbIDOK(tmdbID) {
+		return false, ErrBadTMDBID
+	}
+	var n int
+	err := s.Store.Read().QueryRowContext(ctx, `SELECT (SELECT count(*) FROM tmdb_follows WHERE user_id = ? AND kind = 'show' AND tmdb_id = ?)
+		+ (SELECT count(*) FROM follows f JOIN titles t ON t.id = f.title_id WHERE f.user_id = ? AND t.kind = 'show' AND t.state != 'removed' AND json_extract(t.source_ids, '$.tmdb') = ?)`,
+		userID, tmdbID, userID, tmdbID).Scan(&n)
+	return n > 0, err
+}
+
+// WatchTMDBFollows moves the waiting follows of a show onto its Library
+// title once it is added, and tells those people it landed. From then on
+// they hear about its new episodes and seasons like any follower.
+func (s *Service) WatchTMDBFollows() {
+	s.Store.OnEvent(func(e domain.Event) {
+		if e.Kind != domain.EventTitleAdded || e.TitleID == nil {
+			return
+		}
+		id := *e.TitleID
+		s.sending.Add(1)
+		go func() {
+			defer s.sending.Done()
+			supervisor.Guard("tmdb_follows", func() {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+				defer cancel()
+				if _, err := s.LandTMDBFollows(ctx, id); err != nil {
+					log.Printf("asks: follows by TMDB id: %v", err)
+				}
+			})
+		}()
+	})
+}
+
+// LandTMDBFollows moves the waiting follows of a just-added show to the
+// title and sends each person a notice. It returns how many were told.
+func (s *Service) LandTMDBFollows(ctx context.Context, titleID int64) (int, error) {
+	var name, tmdbID string
+	err := s.Store.Read().QueryRowContext(ctx, "SELECT name, coalesce(json_extract(source_ids, '$.tmdb'), '') FROM titles WHERE id = ? AND kind = 'show'", titleID).Scan(&name, &tmdbID)
+	if errors.Is(err, sql.ErrNoRows) || (err == nil && tmdbID == "") {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	rows, err := s.Store.Read().QueryContext(ctx, `SELECT u.id, u.name, coalesce(x.email, ''), coalesce(x.discord_id, ''), coalesce(x.new_episodes, 1)
+		FROM tmdb_follows f JOIN users u ON u.id = f.user_id LEFT JOIN user_ask_settings x ON x.user_id = u.id
+		WHERE f.kind = 'show' AND f.tmdb_id = ? AND u.state != 'disabled' ORDER BY u.id`, tmdbID)
+	if err != nil {
+		return 0, err
+	}
+	var all []int64
+	var tell []person
+	for rows.Next() {
+		var p person
+		var on int
+		if err := rows.Scan(&p.ID, &p.Name, &p.Email, &p.DiscordID, &on); err != nil {
+			rows.Close()
+			return 0, err
+		}
+		all = append(all, p.ID)
+		if on == 1 {
+			p.Name = strings.TrimSpace(p.Name)
+			tell = append(tell, p)
+		}
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil || len(all) == 0 {
+		return 0, err
+	}
+	now := store.FormatTime(s.now())
+	text := name + " is in the Library"
+	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
+		for _, uid := range all {
+			if _, err := tx.Exec("INSERT INTO follows (user_id, title_id, created_at) VALUES (?, ?, ?) ON CONFLICT DO NOTHING", uid, titleID, now); err != nil {
+				return err
+			}
+		}
+		if _, err := tx.Exec("DELETE FROM tmdb_follows WHERE kind = 'show' AND tmdb_id = ?", tmdbID); err != nil {
+			return err
+		}
+		for _, p := range tell {
+			if _, err := tx.Exec("INSERT INTO messages (created_at, user_id, kind, text, title_id) VALUES (?, ?, 'new_episodes', ?, ?)", now, p.ID, text+".", titleID); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil || len(tell) == 0 {
+		return 0, err
+	}
+	m := alerts.Message{Moment: alerts.MomentNewEpisodes, Subject: text, Text: text + ". You will hear about its new episodes and seasons."}
+	for _, p := range tell {
+		m.People = append(m.People, alerts.Person{Name: p.Name, Email: p.Email, DiscordID: p.DiscordID})
+	}
+	s.send(ctx, m)
+	return len(tell), nil
+}

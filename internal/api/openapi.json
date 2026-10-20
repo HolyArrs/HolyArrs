@@ -13454,6 +13454,149 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/metadata/show/{tmdb_id}/follow": {
+      "delete": {
+        "description": "No more notices for this show, whether it is waiting or in the Library.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tmdb_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "following": {
+                      "type": "boolean"
+                    },
+                    "title_id": {
+                      "type": "integer"
+                    },
+                    "tmdb_id": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Not following."
+          },
+          "400": {
+            "description": "tmdb_id is not a TMDB number."
+          }
+        },
+        "summary": "Stop following a show by its TMDB id",
+        "tags": [
+          "Wishlist"
+        ],
+        "x-holyarrs-part": "wishlist",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "write"
+      },
+      "get": {
+        "description": "True when I follow the show, waiting for it to be added or already in the Library.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tmdb_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "following": {
+                      "type": "boolean"
+                    },
+                    "title_id": {
+                      "type": "integer"
+                    },
+                    "tmdb_id": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "My follow state."
+          },
+          "400": {
+            "description": "tmdb_id is not a TMDB number."
+          }
+        },
+        "summary": "Whether I follow a show by its TMDB id",
+        "tags": [
+          "Wishlist"
+        ],
+        "x-holyarrs-part": "wishlist",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      },
+      "put": {
+        "description": "Follows a show that may not be in the Library yet. I hear when it is added and, from then on, about its new episodes and seasons. A show already in the Library is followed as that title. Nothing is asked for or added.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tmdb_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "following": {
+                      "type": "boolean"
+                    },
+                    "title_id": {
+                      "type": "integer"
+                    },
+                    "tmdb_id": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Now following."
+          },
+          "400": {
+            "description": "tmdb_id is not a TMDB number."
+          },
+          "403": {
+            "description": "Above my age-rating limit."
+          }
+        },
+        "summary": "Follow a show by its TMDB id",
+        "tags": [
+          "Wishlist"
+        ],
+        "x-holyarrs-part": "wishlist",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/metadata/show/{tmdb_id}/seasons/{number}": {
       "get": {
         "description": "Returns one season of a show from TMDB, in the Library or not: tmdb_id, season and episodes (number, name, overview, runtime, still, air_day). Cached 24 h. For a Kid, a show above their limit, or without a rating, answers 403.",

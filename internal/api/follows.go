@@ -12,6 +12,61 @@ func (a *API) followRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/titles/{id}/follow", a.getFollow)
 	m.HandleFunc("PUT /api/v1/titles/{id}/follow", a.putFollow)
 	m.HandleFunc("DELETE /api/v1/titles/{id}/follow", a.deleteFollow)
+	m.HandleFunc("GET /api/v1/metadata/show/{tmdb_id}/follow", a.getShowFollow)
+	m.HandleFunc("PUT /api/v1/metadata/show/{tmdb_id}/follow", a.putShowFollow)
+	m.HandleFunc("DELETE /api/v1/metadata/show/{tmdb_id}/follow", a.deleteShowFollow)
+}
+
+// Follow by TMDB id: a show not in the Library yet can be followed; the
+// person hears when it lands and, from then on, about its new seasons.
+
+func (a *API) showFollowState(w http.ResponseWriter, r *http.Request, tmdbID string, titleID int64) {
+	on, err := a.s.Asks.IsFollowingShowTMDB(r.Context(), a.person(r).UserID, tmdbID)
+	if errors.Is(err, asks.ErrBadTMDBID) {
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	out := map[string]any{"tmdb_id": tmdbID, "following": on}
+	if titleID != 0 {
+		out["title_id"] = titleID
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
+func (a *API) getShowFollow(w http.ResponseWriter, r *http.Request) {
+	a.showFollowState(w, r, r.PathValue("tmdb_id"), 0)
+}
+
+func (a *API) putShowFollow(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("tmdb_id")
+	tid, err := a.s.Asks.FollowShowTMDB(r.Context(), a.person(r), id)
+	switch {
+	case errors.Is(err, asks.ErrBadTMDBID), errors.Is(err, asks.ErrNotFollowable):
+		fail(w, http.StatusBadRequest, err.Error())
+	case errors.Is(err, asks.ErrAboveLimit):
+		fail(w, http.StatusForbidden, err.Error())
+	case err != nil:
+		internal(w, err)
+	default:
+		a.showFollowState(w, r, id, tid)
+	}
+}
+
+func (a *API) deleteShowFollow(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("tmdb_id")
+	err := a.s.Asks.UnfollowShowTMDB(r.Context(), a.person(r).UserID, id)
+	switch {
+	case errors.Is(err, asks.ErrBadTMDBID):
+		fail(w, http.StatusBadRequest, err.Error())
+	case err != nil:
+		internal(w, err)
+	default:
+		a.showFollowState(w, r, id, 0)
+	}
 }
 
 func (a *API) myFollows(w http.ResponseWriter, r *http.Request) {
