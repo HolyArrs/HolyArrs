@@ -211,7 +211,7 @@
 	.fold :global(.bb-desc.open) { -webkit-line-clamp: unset; line-clamp: unset; display: block; }
 	.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 4px; }
 	.ui-billboard :global(.ui-trailer + .shade) { z-index: 1; }
-	.ui-billboard :global(.ctl) { z-index: 2; bottom: clamp(24px, 3.4vw, 44px); right: clamp(20px, 4vw, 56px); }
+	.ui-billboard :global(.ctl) { z-index: 4; bottom: clamp(24px, 3.4vw, 44px); right: clamp(20px, 4vw, 56px); }
 	@media (max-width: 767px) {
 		.ui-billboard { --hero-r: 16px; height: auto; min-height: min(560px, 120vw); }
 		.content { width: 100%; padding: 64px var(--gutter) 24px; }

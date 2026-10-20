@@ -302,7 +302,9 @@
 		frame?.contentWindow?.postMessage(JSON.stringify({ event: 'listening', id: 'holyarrs', channel: 'widget' }), 'https://www.youtube-nocookie.com');
 	}
 
+	let ctlAt = 0;
 	function toggleMute(e?: MouseEvent) {
+		ctlAt = Date.now();
 		// The hover card's art is a link: the button must not follow it.
 		e?.preventDefault();
 		e?.stopPropagation();
@@ -341,6 +343,8 @@
 	}
 
 	function expand(e: MouseEvent) {
+		// A click on the sound or pause buttons never opens the full-screen player.
+		if (Date.now() - ctlAt < 600) return;
 		e.preventDefault();
 		e.stopPropagation();
 		if (!src || !box || !onexpand) return;
@@ -432,7 +436,7 @@
 	<button type="button" class="expand" aria-label="Play the {title} trailer full screen" onclick={expand}></button>
 {/if}
 {#if controls}
-	<div class="ctl" class:on={shown} data-testid="trailer-sound">
+	<div class="ctl" class:on={shown} data-testid="trailer-sound" onpointerdown={(e) => { ctlAt = Date.now(); e.stopPropagation(); }} onclickcapture={() => (ctlAt = Date.now())}>
 		{#if shown && pausable}
 			<IconButton icon={paused ? 'play' : 'pause'} label={paused ? 'Play the trailer' : 'Pause the trailer'} variant="glass" size="md" tipSide="above" onclick={togglePause} />
 		{/if}
@@ -457,6 +461,6 @@
 	video.up.swapped { opacity: 1; }
 	.expand { position: absolute; inset: 0; z-index: 2; padding: 0; border: 0; background: transparent; cursor: zoom-in; }
 	.expand:focus-visible { outline: none; box-shadow: inset 0 0 0 3px var(--on-art); }
-	.ctl { position: absolute; right: 12px; bottom: 12px; z-index: 3; display: flex; gap: 8px; }
+	.ctl { position: absolute; right: 12px; bottom: 12px; z-index: 4; display: flex; gap: 8px; }
 	@media (prefers-reduced-motion: reduce) { .ui-trailer { transition: none; } }
 </style>
