@@ -230,3 +230,80 @@ export function entryArt(e: Pick<CalendarEntry, 'still' | 'backdrop' | 'poster'>
 export function entryIcon(kind: CalendarEntry['kind']): 'tv' | 'music' | 'film' {
 	return kind === 'episode' ? 'tv' : kind === 'album' ? 'music' : 'film';
 }
+
+/** The status dot on a calendar item: in the Library, missing (its day has passed), or still to come. */
+export type ItemDot = 'have' | 'missing' | 'upcoming';
+
+/** itemDot says which dot a calendar item shows on a given day. */
+export function itemDot(e: CalendarEntry, today = ymd(new Date())): ItemDot {
+	const have = e.kind === 'album' ? !!e.tracks && (e.have ?? 0) >= e.tracks : e.state === 'in_library' || !!e.versions?.some((v) => v.state === 'in_library');
+	if (have) return 'have';
+	return entryDay(e) < today ? 'missing' : 'upcoming';
+}
+
+/** How many weeks the stacked view loads: this week, next week, and four weeks of Later. */
+export const stackedWeeks = 6;
+
+/** stackedRange is the query range for the stacked weeks from a week start. */
+export function stackedRange(start: Date): { from: string; to: string } {
+	return { from: ymd(start), to: ymd(shiftWeek(start, stackedWeeks)) };
+}
+
+/** weekLabel names a week row: This week, Next week, or its dates. */
+export function weekLabel(start: Date, today = new Date()): string {
+	const diff = Math.round((weekStart(start).getTime() - weekStart(today).getTime()) / (7 * 86400000));
+	if (diff === 0) return 'This week';
+	if (diff === 1) return 'Next week';
+	if (diff === -1) return 'Last week';
+	const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6);
+	const f = (d: Date) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+	return `${f(start)} – ${f(end)}`;
+}
+
+/** stacked lays out two week rows of seven days and the Later days (only days with items). */
+export function stacked(start: Date, entries: CalendarEntry[], today = ymd(new Date())) {
+	const later = ymd(shiftWeek(start, 2));
+	const end = ymd(shiftWeek(start, stackedWeeks));
+	return {
+		weeks: [0, 1].map((n) => ({ start: shiftWeek(start, n), days: weekDays(shiftWeek(start, n), entries, today) })),
+		later: byDay(entries.filter((e) => entryDay(e) >= later && entryDay(e) < end))
+	};
+}
+
+/** A saved set of calendar filters. */
+export interface CalFilter {
+	name: string;
+	which: TitlesShown;
+	/** Hidden movie date kinds. */
+	off: CalendarEntry['kind'][];
+	keptOnly: boolean;
+	haveOnly: boolean;
+}
+
+/** passes says whether an entry gets past the extra filters (kept up to date, in the Library). */
+export function passes(e: CalendarEntry, f: Pick<CalFilter, 'keptOnly' | 'haveOnly'>): boolean {
+	if (f.keptOnly && e.keep_up_to_date === false) return false;
+	if (f.haveOnly && itemDot(e) !== 'have') return false;
+	return true;
+}
+
+const presetKey = 'holyarrs.calendar-filters';
+
+/** readPresets is this browser's saved calendar filters. */
+export function readPresets(store: Pick<Storage, 'getItem'> | undefined = globalThis.localStorage): CalFilter[] {
+	try {
+		const v = JSON.parse(store?.getItem(presetKey) ?? '[]');
+		return Array.isArray(v) ? v.filter((p) => p && typeof p.name === 'string' && Array.isArray(p.off)) : [];
+	} catch {
+		return [];
+	}
+}
+
+/** savePresets keeps the saved filters; a private window may refuse and that is fine. */
+export function savePresets(list: CalFilter[], store: Pick<Storage, 'setItem'> | undefined = globalThis.localStorage) {
+	try {
+		store?.setItem(presetKey, JSON.stringify(list));
+	} catch {
+		// Not kept; the filters still work for now.
+	}
+}
