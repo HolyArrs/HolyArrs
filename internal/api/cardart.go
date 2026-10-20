@@ -114,10 +114,10 @@ func (a *API) fillCardArt(r *http.Request, items []discoverItemView) {
 		}
 		if ok {
 			v.CardArt = row.CardArt
-			if v.CardArt.HasTitle && v.CardArt.Logo != "" {
-				// Old pick until it is chosen again: the art already names the
-				// title, so leave the logo off rather than showing the name twice.
-				v.CardArt.Logo = ""
+			if v.CardArt.HasTitle {
+				// Never hand out a backdrop with the title printed on it: the card
+				// keeps the title's own backdrop and the logo floats over it.
+				v.CardArt.Art, v.CardArt.HasTitle = "", false
 			}
 		}
 	}

@@ -24,7 +24,7 @@ export interface CardTemplate {
 
 /** pickFrom reads the server fields off an Explore item or a Home map entry. */
 export function pickFrom(d: { card_art?: string; card_logo?: string; art_has_title?: boolean } | null | undefined): CardArtPick | undefined {
-	if (!d || !d.card_art) return undefined;
+	if (!d || (!d.card_art && !d.card_logo)) return undefined;
 	return { art: d.card_art, logo: d.card_logo || null, hasTitle: !!d.art_has_title };
 }
 
@@ -39,11 +39,11 @@ export function cardTemplate(
 	known: { backdrop?: string | null; logo?: string | null },
 	failed: { art?: boolean; logo?: boolean } = {}
 ): CardTemplate {
-	const image = pick?.art || known.backdrop || null;
-	if (pick?.hasTitle && pick.art && !failed.art) return { variant: 'titled', image: pick.art, logo: null };
-	const shown = failed.art ? null : image;
-	// A titled picture that failed: the known textless backdrop, if different.
-	const base = failed.art && pick?.art && known.backdrop && known.backdrop !== pick.art ? known.backdrop : shown;
+	// Netflix-style: the card keeps the title's own backdrop (as it always had)
+	// and the logo floats bottom-left; a backdrop with the title printed on it
+	// is never used, so the name never shows twice.
+	const image = known.backdrop || (pick?.hasTitle ? null : pick?.art) || null;
+	const base = failed.art ? null : image;
 	const logo = failed.logo ? null : pick?.logo || known.logo || null;
 	if (logo) return { variant: 'logo', image: base, logo };
 	return { variant: 'name', image: base, logo: null };

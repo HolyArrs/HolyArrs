@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { cardTemplate, pickFrom } from './card-art.ts';
 
 describe('wide card template', () => {
-	it('titled art wins, with no logo over it', () => {
+	it('never uses titled art: the own backdrop with the logo over it', () => {
 		const t = cardTemplate({ art: 'titled.jpg', logo: 'l.png', hasTitle: true }, { backdrop: 'b.jpg', logo: 'k.png' });
-		expect(t).toEqual({ variant: 'titled', image: 'titled.jpg', logo: null });
+		expect(t).toEqual({ variant: 'logo', image: 'b.jpg', logo: 'l.png' });
 	});
 	it('textless art plus the server logo, else the known logo', () => {
 		expect(cardTemplate({ art: 'a.jpg', logo: 'l.png' }, {})).toEqual({ variant: 'logo', image: 'a.jpg', logo: 'l.png' });
@@ -16,7 +16,7 @@ describe('wide card template', () => {
 		expect(cardTemplate(undefined, {})).toEqual({ variant: 'name', image: null, logo: null });
 	});
 	it('falls back a step when a picture fails', () => {
-		expect(cardTemplate({ art: 't.jpg', hasTitle: true }, { backdrop: 'b.jpg', logo: 'k.png' }, { art: true })).toEqual({ variant: 'logo', image: 'b.jpg', logo: 'k.png' });
+		expect(cardTemplate({ art: 't.jpg', hasTitle: true }, { backdrop: 'b.jpg', logo: 'k.png' }, { art: true })).toEqual({ variant: 'logo', image: null, logo: 'k.png' });
 		expect(cardTemplate({ art: 'a.jpg', logo: 'l.png' }, {}, { logo: true })).toEqual({ variant: 'name', image: 'a.jpg', logo: null });
 	});
 	it('reads the server fields', () => {
