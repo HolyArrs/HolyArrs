@@ -120,3 +120,25 @@ func TestPacedSharedByParallelBuilds(t *testing.T) {
 		t.Fatalf("12 calls from 3 builders took %v, under 11 gaps of %v: the rate went up", el, gap)
 	}
 }
+
+// TestPacedBurst: after a quiet spell Burst calls go at once, and the
+// ones after them are spaced by Gap again.
+func TestPacedBurst(t *testing.T) {
+	gap := 40 * time.Millisecond
+	p := &Paced{Source: &fakeSource{}, Gap: gap, Burst: 4}
+	start := time.Now()
+	for i := 0; i < 4; i++ {
+		if _, err := p.List(context.Background(), Request{List: "discover", Kind: "movie", Ref: fmt.Sprint(i)}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if el := time.Since(start); el > gap {
+		t.Fatalf("4 calls within a burst of 4 took %v, want under %v", el, gap)
+	}
+	if _, err := p.List(context.Background(), Request{List: "discover", Kind: "movie", Ref: "5"}); err != nil {
+		t.Fatal(err)
+	}
+	if el := time.Since(start); el < gap*3/4 {
+		t.Fatalf("the 5th call went after %v, want about one gap (%v)", el, gap)
+	}
+}

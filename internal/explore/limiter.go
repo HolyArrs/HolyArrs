@@ -12,6 +12,9 @@ import (
 type Paced struct {
 	Source Source
 	Gap    time.Duration // default 2 s
+	// Burst is how many calls may go at once after a quiet spell (default
+	// 1); the long-run rate stays one per Gap.
+	Burst int
 	mu     sync.Mutex
 	next   time.Time
 	// Calls counts the calls let through.
@@ -26,9 +29,10 @@ func (p *Paced) List(ctx context.Context, q Request) ([]Item, error) {
 	}
 	p.mu.Lock()
 	now := time.Now()
+	burst := max(p.Burst, 1)
 	at := p.next
-	if at.Before(now) {
-		at = now
+	if floor := now.Add(-time.Duration(burst-1) * gap); at.Before(floor) {
+		at = floor
 	}
 	p.next = at.Add(gap)
 	p.Calls++
