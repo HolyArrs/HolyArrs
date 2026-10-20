@@ -201,15 +201,17 @@
 	}
 	.shade.playing { opacity: .85; }
 	.content { position: relative; width: min(640px, 100%); padding: 0 clamp(20px, 2vw, 40px) clamp(24px, 2.6vw, 50px); display: flex; flex-direction: column; gap: 10px; transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out); }
-	/* About 6 s into the trailer the overview folds (height and opacity, ~5 s slow ease) and
+	/* About 6 s into the trailer the overview folds (height and opacity, ~1 s ease) and
 	   the logo glides down with it; it unfolds the same way. Both directions are one
 	   transition, so it reverses mid-way and never sticks. */
-	.fold { display: grid; grid-template-rows: 1fr; opacity: 1; transition: grid-template-rows 4800ms var(--ease-hero, cubic-bezier(.4, 0, .2, 1)), opacity 3200ms var(--ease-hero, cubic-bezier(.4, 0, .2, 1)); }
+	.fold { display: grid; grid-template-rows: 1fr; opacity: 1; transition: grid-template-rows 1100ms var(--ease-hero, cubic-bezier(.4, 0, .2, 1)), opacity 650ms var(--ease-hero, cubic-bezier(.4, 0, .2, 1)); }
 	.fold-in { min-height: 0; overflow: hidden; }
 	.quiet .fold { grid-template-rows: 0fr; opacity: 0; pointer-events: none; }
 	/* The title box and the overview keep their space while the details load, so nothing moves when they arrive. */
 	.content { --title-h: clamp(80px, 10vw, 140px); }
-	h2 { margin: 0; min-height: var(--title-h); display: flex; align-items: flex-end; }
+	h2 { margin: 0; min-height: var(--title-h); display: flex; align-items: flex-end; transform-origin: left bottom; transition: transform 1100ms var(--ease-hero, cubic-bezier(.4, 0, .2, 1)); }
+	/* While the trailer plays the title settles a little smaller, like before. */
+	.quiet h2 { transform: scale(.8); }
 	.about { min-height: calc(15px * 1.5 * 3); }
 	.name { font-family: var(--font-display, var(--font-ui)); font-weight: 800; font-size: clamp(36px, 4.6vw, 64px); line-height: 1; letter-spacing: -0.03em; text-wrap: balance; text-shadow: 0 2px 30px rgb(0 0 0 / 35%); }
 	.logo img { display: block; max-width: min(420px, 100%); max-height: var(--title-h); width: auto; height: auto; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 4px 24px rgb(0 0 0 / 45%)); }
@@ -235,5 +237,6 @@
 		/* Opacity only: the overview keeps its room and simply fades. */
 		.fold { transition: opacity 400ms linear; }
 		.quiet .fold { grid-template-rows: 1fr; }
+		h2, .quiet h2 { transition: none; transform: none; }
 	}
 </style>
