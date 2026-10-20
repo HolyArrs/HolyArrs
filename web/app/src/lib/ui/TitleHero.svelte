@@ -128,22 +128,9 @@
 		actions?: Snippet;
 	} = $props();
 
-	let more = $state(false);
-	let text = $state<HTMLElement>();
-	let clamped = $state(false);
 	let backdropFailed = $state(false);
 	let logoFailed = $state(false);
 	let posterFailed = $state(false);
-
-	$effect(() => {
-		void description;
-		if (!text) return;
-		const check = () => text && (clamped = more || text.scrollHeight > text.clientHeight + 1);
-		check();
-		const ro = new ResizeObserver(check);
-		ro.observe(text);
-		return () => ro.disconnect();
-	});
 
 	const wide = $derived(backdrop && !backdropFailed && !cover ? backdrop : null);
 	const pictures = $derived(wide ? heroPictures(wide, backdrops).map((u) => sized(u, 'backdrop')) : []);
@@ -183,7 +170,7 @@
 </script>
 
 <div class="ui-thero" class:square>
-	<Billboard label={title} testid="title-hero" {kind} {tmdb} {title} {videos} {pictures} {vtName} {settled} reveal position="70% 30%" onpictureerror={() => (backdropFailed = true)} art={stand ? standArt : undefined}>
+	<Billboard label={title} testid="title-hero" {kind} {tmdb} {title} {videos} {pictures} {vtName} {settled} position="70% 30%" onpictureerror={() => (backdropFailed = true)} art={stand ? standArt : undefined}>
 		{#snippet top()}
 			{#if crumbHome}
 				<nav class="crumbs" aria-label="Breadcrumb">
@@ -216,14 +203,6 @@
 			{#each badges as b (b)}<span class="b">{b}</span>{/each}
 			{#if status}<StatusPill kind={status} {percent} label={statusLabel} on="art" />{/if}
 		{/snippet}
-		{#snippet fold()}
-			{#if description}
-				<div class="about">
-					<p class="bb-desc" class:open={more} bind:this={text}>{description}</p>
-					{#if clamped}<button class="more" type="button" onclick={() => (more = !more)}>{more ? 'Show less' : 'Show more'}</button>{/if}
-				</div>
-			{/if}
-		{/snippet}
 		{#snippet actions()}
 			{@render actionRow?.()}
 			{#if kind && tmdb && videos?.length}
@@ -231,6 +210,8 @@
 			{/if}
 		{/snippet}
 	</Billboard>
+	<!-- A title page: the story sits under the hero, in full, and never pops over the art. -->
+	{#if description}<p class="story" data-testid="title-story">{description}</p>{/if}
 	{#if byline}<div class="status-line">{@render byline()}</div>{/if}
 </div>
 
@@ -251,14 +232,12 @@
 	.sep { color: rgb(255 255 255 / 60%); }
 	.here { color: rgb(255 255 255 / 86%); min-height: 30px; display: inline-flex; align-items: center; overflow-wrap: anywhere; text-shadow: 0 1px 2px rgb(0 0 0 / 60%); }
 	.here:hover { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
-	.chip:focus-visible, .here:focus-visible, .more:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff; border-radius: 999px; }
+	.chip:focus-visible, .here:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff; border-radius: 999px; }
 	.b { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 7px; border-radius: 5px; border: 1px solid rgb(255 255 255 / 55%); color: rgb(255 255 255 / 92%); font: 700 11.5px/1 var(--font-ui); letter-spacing: .03em; white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.cert { border-width: 1.5px; border-color: rgb(255 255 255 / 80%); }
 	.score { border-radius: 999px; padding: 0 9px 0 7px; background: rgb(255 255 255 / 12%); border-color: rgb(255 255 255 / 30%); }
 	.score svg { color: #f5c518; }
-	.about { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
-	.more { min-height: 32px; padding: 0 2px; color: #fff; font: 600 14px/1 var(--font-ui); opacity: .85; transition: opacity var(--dur-fast) var(--ease-out); }
-	.more:hover { opacity: 1; text-decoration: underline; text-underline-offset: 3px; }
+	.story { max-width: 72ch; margin: var(--s-5) 0 0; font: 400 16px/1.55 var(--font-ui); color: var(--text); }
 	.ui-thero :global(.tp-member) { min-height: 44px; display: flex; align-items: center; }
 	.status-line { margin-top: var(--s-4); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; font: 500 15px/1.4 var(--font-ui); color: var(--text-muted); }
 </style>
