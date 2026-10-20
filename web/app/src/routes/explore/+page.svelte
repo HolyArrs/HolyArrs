@@ -482,6 +482,7 @@
 				<Popover label="Genres" text={genre ? genre.name : 'Genres'} variant="button" align="end" width={340}>
 					{#snippet children(close)}
 						<div class="genre-list" role="group" aria-label="Genres">
+							<Chip label="All genres" selected={!genre} onclick={() => pickGenre(null, close)} />
 							{#each genres as g (g.id)}
 								<Chip label={g.name} selected={genre?.id === g.id} onclick={() => pickGenre(g.id, close)} />
 							{/each}
@@ -491,11 +492,6 @@
 			</div>
 		{/if}
 	</div>
-	{#if genreOn && genre}
-		<div class="genre-on" data-testid="genre-on">
-			<Chip label={genre.name} selected onremove={() => pickGenre(null)} />
-		</div>
-	{/if}
 	<MetadataNotice />
 	{#if type === 'music'}<MusicTrendingRows {owned} {manage} {mayAsk} {folders} {rules} onadded={() => void load()} />{/if}
 
@@ -618,7 +614,6 @@
 	.genre-pick { pointer-events: auto; margin-left: 8px; display: flex; align-items: center; }
 	.genre-pick :global(.trigger) { min-height: 44px; border-radius: 999px; padding: 0 16px; }
 	.genre-list { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; }
-	.genre-on { display: flex; justify-content: center; margin-top: -16px; }
 	.sentinel { height: 1px; }
 	.row-wrap { display: contents; }
 	/* Wide title rows sit almost edge to edge, as on Netflix: about 279px cards at a 1536px window with a 5px gap. */
