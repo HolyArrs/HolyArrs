@@ -121,6 +121,8 @@ func (f *fakeMB) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		fmt.Fprint(w, `{"artists":[]}`)
+	case r.URL.Path == "/ws/2/artist/"+mbArtistID && q.Get("inc") == "genres":
+		fmt.Fprintf(w, `{"id":%q,"name":"Lab Band","genres":[{"name":"Rock","count":2},{"name":"art pop","count":5},{"name":"zero","count":0}]}`, mbArtistID)
 	case r.URL.Path == "/ws/2/artist/"+mbArtistID:
 		fmt.Fprintf(w, `{"id":%q,"name":"Lab Band","sort-name":"Band, Lab","type":"Group","life-span":{"ended":true}}`, mbArtistID)
 	case r.URL.Path == "/ws/2/release-group" && q.Get("artist") == mbArtistID:
@@ -404,5 +406,16 @@ func TestMusicBrainzBaseURL(t *testing.T) {
 	}
 	if got := (&MusicBrainz{}).base(context.Background()); got != DefaultMusicBrainzURL {
 		t.Fatalf("default base %q", got)
+	}
+}
+
+func TestMusicBrainzArtistGenres(t *testing.T) {
+	mb, _, _, _ := mbSetup(t)
+	got, err := mb.ArtistGenres(context.Background(), strings.ToUpper(mbArtistID))
+	if err != nil || strings.Join(got, ",") != "art pop,rock" {
+		t.Fatalf("%v %v", got, err)
+	}
+	if _, err := mb.ArtistGenres(context.Background(), "nope"); err == nil {
+		t.Fatal("bad id looked up")
 	}
 }

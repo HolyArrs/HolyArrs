@@ -1,0 +1,773 @@
+package api
+
+import (
+	"context"
+	"net/http"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/CoderLuii/holyarrs/internal/parts"
+	"github.com/CoderLuii/holyarrs/internal/store"
+)
+
+// Explore → Music: every row the page shows, built here so they share one
+// genre filter and one set of rules. Albums are square, artists round; each
+// row says why it is there and hides below its minimum.
+
+// musicRowMin is the fewest cards each music row shows.
+var musicRowMin = map[string]int{
+	"just_arrived": 3, "new_from": 3, "your_asks": 1, "top_albums": 5, "trending_artists": 5,
+	"because_have": 4, "fans_of": 4, "missing": 4, "genre": 4, "popular_genre": 4,
+}
+
+const (
+	musicRowMax = 20
+	// musicGenreTTL keeps an artist's genres; musicSimilarTTL a similar list
+	// (misses an hour).
+	musicGenreTTL   = 7 * 24 * time.Hour
+	musicSimilarTTL = 24 * time.Hour
+	// musicGenreLookups caps background MusicBrainz genre lookups an hour.
+	musicGenreLookups = 300
+	musicCacheMax     = 5000
+)
+
+// MusicCard is one album or artist card.
+type MusicCard struct {
+	Key        string   `json:"key"`
+	Kind       string   `json:"kind"` // album, artist
+	MBID       string   `json:"mbid"`
+	Name       string   `json:"name"`
+	Artist     string   `json:"artist,omitempty"`
+	ArtistMBID string   `json:"artist_mbid,omitempty"`
+	TitleID    int64    `json:"title_id,omitempty"`
+	PartID     int64    `json:"part_id,omitempty"`
+	Image      string   `json:"image,omitempty"`
+	Date       string   `json:"date,omitempty"` // YYYY-MM-DD: arrived, out or asked
+	State      string   `json:"state,omitempty"`
+	Rank       int      `json:"rank,omitempty"`
+	Listens    int64    `json:"listen_count,omitempty"`
+	Upcoming   bool     `json:"upcoming,omitempty"`
+	Genres     []string `json:"genres"`
+}
+
+// MusicRow is one row of Explore → Music.
+type MusicRow struct {
+	ID     string      `json:"id"`
+	Type   string      `json:"type"`
+	Title  string      `json:"title"`
+	Reason string      `json:"reason"`
+	Shape  string      `json:"shape"` // square, round
+	Items  []MusicCard `json:"items"`
+}
+
+type musicGenreEntry struct {
+	genres []string
+	at     time.Time
+}
+
+type musicSimilarEntry struct {
+	list []metadata.SimilarArtist
+	ok   bool
+	at   time.Time
+	done chan struct{}
+}
+
+// musicExplore keeps artists' genres and similar lists between requests.
+type musicExplore struct {
+	mu      sync.Mutex
+	genres  map[string]musicGenreEntry
+	queue   []string
+	queued  map[string]bool
+	running bool
+	lookups []time.Time
+	similar map[string]*musicSimilarEntry
+}
+
+type genreSource interface {
+	ArtistGenres(ctx context.Context, mbid string) ([]string, error)
+}
+
+// genresOf answers the known genres of each id and queues the rest for a
+// background MusicBrainz lookup.
+func (a *API) genresOf(ids []string) map[string][]string {
+	c := &a.musicx
+	out := map[string][]string{}
+	src, _ := a.genreProvider()
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.genres == nil {
+		c.genres, c.queued = map[string]musicGenreEntry{}, map[string]bool{}
+	}
+	for _, id := range ids {
+		if id == "" {
+			continue
+		}
+		e, ok := c.genres[id]
+		if ok {
+			out[id] = e.genres
+		}
+		if (!ok || time.Since(e.at) > musicGenreTTL) && src != nil && !c.queued[id] && len(c.queue) < 400 {
+			c.queue = append(c.queue, id)
+			c.queued[id] = true
+		}
+	}
+	if src != nil && len(c.queue) > 0 && !c.running {
+		c.running = true
+		go a.fillGenres(src)
+	}
+	return out
+}
+
+func (a *API) genreProvider() (genreSource, bool) {
+	if a.s.Library == nil || a.s.Library.Artists == nil {
+		return nil, false
+	}
+	g, ok := a.s.Library.Artists.(genreSource)
+	return g, ok
+}
+
+// fillGenres looks the queued artists up one at a time (MusicBrainz's own
+// limiter spaces them), at most musicGenreLookups an hour.
+func (a *API) fillGenres(src genreSource) {
+	c := &a.musicx
+	for {
+		c.mu.Lock()
+		now := time.Now()
+		kept := c.lookups[:0]
+		for _, t := range c.lookups {
+			if now.Sub(t) < time.Hour {
+				kept = append(kept, t)
+			}
+		}
+		c.lookups = kept
+		if len(c.queue) == 0 || len(c.lookups) >= musicGenreLookups {
+			c.running = false
+			c.mu.Unlock()
+			return
+		}
+		id := c.queue[0]
+		c.queue = c.queue[1:]
+		c.lookups = append(c.lookups, now)
+		c.mu.Unlock()
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		g, err := src.ArtistGenres(ctx, id)
+		cancel()
+		c.mu.Lock()
+		delete(c.queued, id)
+		if err == nil {
+			if len(c.genres) >= musicCacheMax {
+				c.genres = map[string]musicGenreEntry{}
+			}
+			c.genres[id] = musicGenreEntry{genres: g, at: time.Now()}
+		}
+		c.mu.Unlock()
+	}
+}
+
+// similarTo reads the similar artists of each seed, waiting at most wait
+// for answers not cached yet (they keep filling in the background).
+func (a *API) similarTo(seeds []string, wait time.Duration) map[string][]metadata.SimilarArtist {
+	out := map[string][]metadata.SimilarArtist{}
+	if a.s.MusicSimilar == nil {
+		return out
+	}
+	c := &a.musicx
+	var pending []*musicSimilarEntry
+	c.mu.Lock()
+	if c.similar == nil {
+		c.similar = map[string]*musicSimilarEntry{}
+	}
+	entries := map[string]*musicSimilarEntry{}
+	for _, id := range seeds {
+		e := c.similar[id]
+		fresh := e != nil && (e.done == nil) && ((e.ok && time.Since(e.at) < musicSimilarTTL) || (!e.ok && time.Since(e.at) < time.Hour))
+		if e == nil || (!fresh && e.done == nil) {
+			if len(c.similar) >= musicCacheMax {
+				c.similar = map[string]*musicSimilarEntry{}
+			}
+			e = &musicSimilarEntry{done: make(chan struct{})}
+			c.similar[id] = e
+			go a.fetchSimilar(id, e)
+		}
+		if e.done != nil {
+			pending = append(pending, e)
+		}
+		entries[id] = e
+	}
+	c.mu.Unlock()
+	timer := time.NewTimer(wait)
+	defer timer.Stop()
+	for _, e := range pending {
+		select {
+		case <-e.done:
+		case <-timer.C:
+		}
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for id, e := range entries {
+		if e.done == nil && e.ok {
+			out[id] = e.list
+		}
+	}
+	return out
+}
+
+func (a *API) fetchSimilar(id string, e *musicSimilarEntry) {
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	list, err := a.s.MusicSimilar(ctx, id)
+	c := &a.musicx
+	c.mu.Lock()
+	e.list, e.ok, e.at = list, err == nil, time.Now()
+	done := e.done
+	e.done = nil
+	c.mu.Unlock()
+	close(done)
+}
+
+// musicArtist is one artist in the Library.
+type musicArtist struct {
+	id     int64
+	name   string
+	mbid   string
+	image  string
+	files  int
+	added  time.Time
+	genres []string
+}
+
+func artistImage(t domain.Title) string {
+	if l := artworkLinks(t.Artwork); len(l) > 0 && strings.HasPrefix(l[0], "/api/v1/artwork/") {
+		return l[0]
+	}
+	return ""
+}
+
+func dayOf(t *time.Time) string {
+	if t == nil {
+		return ""
+	}
+	return t.UTC().Format("2006-01-02")
+}
+
+// exploreMusic answers GET /api/v1/explore/music?genre=<tag>&region=<code>.
+func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
+	if p, _ := parts.ForTitleKind("artist"); !a.partIsOn(p) {
+		fail(w, http.StatusNotFound, "music is turned off")
+		return
+	}
+	// Music has no ratings, so a Kid limit shows none of it.
+	if a.kidMax(r) != "" {
+		writeJSON(w, http.StatusOK, map[string]any{"kid": true, "cold": false, "genres": []string{}, "genre": "", "hero": nil, "rows": []MusicRow{}})
+		return
+	}
+	if !a.discover.allow(a.person(r).UserID, time.Now()) {
+		w.Header().Set("Retry-After", "60")
+		fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
+		return
+	}
+	q := r.URL.Query()
+	genre := strings.ToLower(strings.TrimSpace(q.Get("genre")))
+	region := strings.ToUpper(q.Get("region"))
+	if region == "" || region == "GLOBAL" || !isCountry(region) {
+		region = "global"
+	}
+	ctx := r.Context()
+	db := a.s.Store.Read()
+	now := time.Now().UTC()
+
+	titles, err := store.Select[domain.Title](ctx, db, "titles", "kind = 'artist' AND state != 'removed' ORDER BY id")
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	files := map[int64]int{}
+	rows, err := db.QueryContext(ctx, `SELECT i.title_id, COUNT(*) FROM items i JOIN slots s ON s.item_id = i.id
+		WHERE i.kind = 'track' AND s.file_id IS NOT NULL GROUP BY i.title_id`)
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	for rows.Next() {
+		var id int64
+		var n int
+		if rows.Scan(&id, &n) == nil {
+			files[id] = n
+		}
+	}
+	rows.Close()
+	artists := make([]*musicArtist, 0, len(titles))
+	byTitle := map[int64]*musicArtist{}
+	owned := map[string]int64{}
+	var ids []string
+	for _, t := range titles {
+		m := &musicArtist{id: t.ID, name: t.Name, mbid: strings.ToLower(t.SourceIDs["musicbrainz"]), image: artistImage(t), files: files[t.ID], added: t.CreatedAt}
+		artists = append(artists, m)
+		byTitle[t.ID] = m
+		if m.mbid != "" {
+			owned[m.mbid] = t.ID
+			ids = append(ids, m.mbid)
+		}
+	}
+	// Seeds: the artists with most music on disk, then the newest adds;
+	// the top 8 take turns by day so the rows change.
+	seeds := append([]*musicArtist{}, artists...)
+	sort.SliceStable(seeds, func(i, j int) bool {
+		if seeds[i].files != seeds[j].files {
+			return seeds[i].files > seeds[j].files
+		}
+		return seeds[i].added.After(seeds[j].added)
+	})
+	seeds = seeds[:min(8, len(seeds))]
+	if n := len(seeds); n > 1 {
+		k := int(now.Unix()/86400) % n
+		seeds = append(seeds[k:], seeds[:k]...)
+	}
+	seeds = seeds[:min(4, len(seeds))]
+	var seedIDs []string
+	for _, s := range seeds {
+		if s.mbid != "" {
+			seedIDs = append(seedIDs, s.mbid)
+		}
+	}
+	similar := a.similarTo(seedIDs, 3*time.Second)
+
+	// Charts, from the cached trending lists.
+	var trendArtists, trendAlbums []MusicCard
+	regions := []string{}
+	if a.s.MusicTrending != nil {
+		for _, kind := range []string{"artist", "album"} {
+			l, err := a.cachedMusicTrend(ctx, kind, region)
+			if err != nil && region != "global" {
+				l, err = a.cachedMusicTrend(ctx, kind, "global")
+			}
+			if err != nil {
+				continue
+			}
+			if len(l.Regions) > len(regions) {
+				regions = l.Regions
+			}
+			for _, it := range l.Items {
+				c := MusicCard{Kind: kind, MBID: strings.ToLower(it.MBID), Rank: it.Rank, Listens: it.Listens}
+				if kind == "artist" {
+					c.Name, c.ArtistMBID, c.Artist = it.Name, c.MBID, it.Name
+				} else {
+					c.Name, c.Artist, c.ArtistMBID = it.Title, it.Artist, strings.ToLower(it.ArtistMBID)
+				}
+				if c.MBID == "" || c.Name == "" || c.ArtistMBID == "" {
+					continue
+				}
+				c.Image = "/api/v1/music-trending/art/" + kind + "/" + c.MBID
+				if kind == "artist" {
+					trendArtists = append(trendArtists, c)
+				} else {
+					trendAlbums = append(trendAlbums, c)
+				}
+				ids = append(ids, c.ArtistMBID)
+			}
+		}
+	}
+	for _, l := range similar {
+		for _, s := range l {
+			ids = append(ids, s.MBID)
+		}
+	}
+	genres := a.genresOf(ids)
+	for _, m := range artists {
+		m.genres = genres[m.mbid]
+	}
+	tag := func(c MusicCard) MusicCard {
+		c.Genres = genres[c.ArtistMBID]
+		if c.Genres == nil {
+			c.Genres = []string{}
+		}
+		if id, ok := owned[c.ArtistMBID]; ok && c.Kind == "artist" {
+			c.TitleID = id
+		}
+		return c
+	}
+	var names []nameKey
+	albumCard := func(m *musicArtist, p domain.Part) MusicCard {
+		rg := strings.ToLower(p.SourceIDs["musicbrainz"])
+		c := MusicCard{Key: "album:" + strconv.FormatInt(p.ID, 10), Kind: "album", MBID: rg, Name: p.Name, Artist: m.name, ArtistMBID: m.mbid, TitleID: m.id, PartID: p.ID, Date: dayOf(p.ReleaseDate)}
+		if rg != "" {
+			c.Image = "/api/v1/music-trending/art/album/" + rg
+			names = append(names, nameKey{"album", rg, p.Name})
+		}
+		return tag(c)
+	}
+
+	var out []MusicRow
+	add := func(r MusicRow) {
+		for i := range r.Items {
+			if r.Items[i].Key == "" {
+				r.Items[i].Key = r.Items[i].Kind + ":" + r.Items[i].MBID
+			}
+		}
+		out = append(out, r)
+	}
+
+	// Just arrived: albums with music added in the last 14 days.
+	{
+		var items []MusicCard
+		rs, err := db.QueryContext(ctx, `SELECT p.id, MAX(f.added_at) FROM files f JOIN slots s ON s.file_id = f.id
+			JOIN items i ON i.id = s.item_id JOIN parts p ON p.id = i.part_id
+			WHERE i.kind = 'track' AND p.kind = 'album' AND f.added_at >= ? GROUP BY p.id ORDER BY 2 DESC LIMIT ?`, now.AddDate(0, 0, -14).Format("2006-01-02"), musicRowMax)
+		if err == nil {
+			type arrived struct {
+				id int64
+				at string
+			}
+			var got []arrived
+			for rs.Next() {
+				var x arrived
+				if rs.Scan(&x.id, &x.at) == nil {
+					got = append(got, x)
+				}
+			}
+			rs.Close()
+			for _, x := range got {
+				var p domain.Part
+				if store.Get(ctx, db, "parts", x.id, &p) != nil {
+					continue
+				}
+				if m := byTitle[p.TitleID]; m != nil {
+					c := albumCard(m, p)
+					c.Date = x.at[:min(10, len(x.at))]
+					items = append(items, c)
+				}
+			}
+		}
+		add(MusicRow{ID: "just_arrived", Type: "just_arrived", Title: "Just arrived", Reason: "Added to your Library in the last 14 days", Shape: "square", Items: items})
+	}
+
+	// New from artists you have: studio albums and EPs out in the last 90
+	// days, then the ones coming.
+	var hero *MusicCard
+	{
+		ps, err := store.Select[domain.Part](ctx, db, "parts", `kind = 'album' AND dropped_at IS NULL AND release_date >= ? AND release_date < ?
+			AND lower(coalesce(release_type, '')) IN ('album', 'ep') AND secondary_types = '[]' AND coalesce(release_date_precision, 'day') != 'year'
+			AND title_id IN (SELECT id FROM titles WHERE kind = 'artist' AND state != 'removed') ORDER BY release_date DESC, id`,
+			now.AddDate(0, 0, -90).Format("2006-01-02"), now.AddDate(0, 0, 180).Format("2006-01-02"))
+		if err != nil {
+			internal(w, err)
+			return
+		}
+		var out, coming []MusicCard
+		for _, p := range ps {
+			m := byTitle[p.TitleID]
+			if m == nil {
+				continue
+			}
+			c := albumCard(m, p)
+			if p.ReleaseDate.After(now) {
+				c.Upcoming = true
+				coming = append([]MusicCard{c}, coming...) // soonest first
+				continue
+			}
+			out = append(out, c)
+			if hero == nil && strings.EqualFold(derefStr(p.ReleaseType), "album") {
+				h := c
+				hero = &h
+			}
+		}
+		add(MusicRow{ID: "new_from", Type: "new_from", Title: "New from artists you have", Reason: "Out in the last 90 days, and coming soon", Shape: "square", Items: append(out, coming...)})
+	}
+
+	// Your asks: this person's music asks and where each one is.
+	{
+		me := a.person(r).UserID
+		as, err := store.Select[domain.Ask](ctx, db, "asks", `kind = 'artist' AND (asked_by = ? OR id IN (SELECT ask_id FROM ask_people WHERE user_id = ?))
+			ORDER BY asked_at DESC, id DESC LIMIT ?`, me, me, musicRowMax)
+		if err != nil {
+			internal(w, err)
+			return
+		}
+		var items []MusicCard
+		for _, x := range as {
+			mbid := strings.ToLower(x.SourceIDs["musicbrainz"])
+			if mbid == "" {
+				mbid = strings.ToLower(strings.TrimPrefix(x.Ref, "mbid:"))
+			}
+			c := MusicCard{Key: "ask:" + strconv.FormatInt(x.ID, 10), Kind: "artist", MBID: mbid, Name: x.Name, Artist: x.Name, ArtistMBID: mbid, State: x.State, Date: x.AskedAt.UTC().Format("2006-01-02")}
+			if x.TitleID != nil {
+				if m := byTitle[*x.TitleID]; m != nil {
+					c.Image = m.image
+				}
+			}
+			if c.Image == "" && mbid != "" {
+				c.Image = "/api/v1/music-trending/art/artist/" + mbid
+				names = append(names, nameKey{"artist", mbid, x.Name})
+			}
+			if len(x.Albums) == 1 {
+				c.Kind, c.Name, c.MBID = "album", x.Albums[0].Name, strings.ToLower(x.Albums[0].MBID)
+				c.Image = "/api/v1/music-trending/art/album/" + c.MBID
+				names = append(names, nameKey{"album", c.MBID, c.Name})
+			}
+			c = tag(c)
+			if x.TitleID != nil {
+				c.TitleID = *x.TitleID
+			}
+			items = append(items, c)
+		}
+		add(MusicRow{ID: "your_asks", Type: "your_asks", Title: "Your asks", Reason: "What you asked for, and where each one is", Shape: "round", Items: items})
+	}
+
+	// Charts.
+	if hero == nil && len(trendAlbums) > 0 {
+		h := tag(trendAlbums[0])
+		hero = &h
+	}
+	for i := range trendAlbums {
+		trendAlbums[i] = tag(trendAlbums[i])
+	}
+	for i := range trendArtists {
+		trendArtists[i] = tag(trendArtists[i])
+	}
+	add(MusicRow{ID: "top_albums", Type: "top_albums", Title: "Top albums this week", Reason: chartReason(region, "Chart"), Shape: "square", Items: trendAlbums})
+	add(MusicRow{ID: "trending_artists", Type: "trending_artists", Title: "Trending artists", Reason: chartReason(region, "Most played"), Shape: "round", Items: trendArtists})
+
+	// Because you have / Fans of: similar artists not in the Library.
+	pool := map[string]MusicCard{}
+	for i, s := range seeds {
+		list := similar[s.mbid]
+		var items []MusicCard
+		for _, x := range list {
+			if _, mine := owned[x.MBID]; mine {
+				continue
+			}
+			c := tag(MusicCard{Kind: "artist", MBID: x.MBID, Name: x.Name, Artist: x.Name, ArtistMBID: x.MBID, Image: "/api/v1/music-trending/art/artist/" + x.MBID})
+			if len(c.Genres) == 0 {
+				c.Genres = s.genres // like its seed until its own are known
+			}
+			names = append(names, nameKey{"artist", x.MBID, x.Name})
+			items = append(items, c)
+			if _, ok := pool[x.MBID]; !ok {
+				pool[x.MBID] = c
+			}
+		}
+		t, title, reason := "because_have", "Because you have "+s.name, "Artists people who play "+s.name+" also play"
+		if i >= 2 {
+			t, title, reason = "fans_of", "Fans of "+s.name+" also like", "From listening sessions that include "+s.name
+		}
+		add(MusicRow{ID: t + ":" + s.mbid, Type: t, Title: title, Reason: reason, Shape: "round", Items: items})
+	}
+
+	// Missing albums: studio albums of artists you have that have no music
+	// yet, artists with music first, a few each, newest first.
+	{
+		ps, err := store.Select[domain.Part](ctx, db, "parts", `kind = 'album' AND dropped_at IS NULL AND release_date IS NOT NULL AND release_date <= ?
+			AND lower(coalesce(release_type, '')) = 'album' AND secondary_types = '[]'
+			AND title_id IN (SELECT id FROM titles WHERE kind = 'artist' AND state != 'removed')
+			AND NOT EXISTS (SELECT 1 FROM items i JOIN slots s ON s.item_id = i.id WHERE i.part_id = parts.id AND s.file_id IS NOT NULL)
+			ORDER BY release_date DESC, id`, now.Format("2006-01-02T15:04:05Z"))
+		if err != nil {
+			internal(w, err)
+			return
+		}
+		by := map[int64][]domain.Part{}
+		for _, p := range ps {
+			if len(by[p.TitleID]) < 3 {
+				by[p.TitleID] = append(by[p.TitleID], p)
+			}
+		}
+		order := append([]*musicArtist{}, artists...)
+		sort.SliceStable(order, func(i, j int) bool { return order[i].files > order[j].files })
+		var items []MusicCard
+		for round := 0; round < 3 && len(items) < musicRowMax; round++ {
+			for _, m := range order {
+				if l := by[m.id]; round < len(l) && len(items) < musicRowMax {
+					items = append(items, albumCard(m, l[round]))
+				}
+			}
+		}
+		add(MusicRow{ID: "missing", Type: "missing", Title: "Missing albums from artists you have", Reason: "Studio albums not in your Library yet", Shape: "square", Items: items})
+	}
+
+	// Genre rows: the Library's top genres; cold start: the charts'.
+	cold := len(artists) == 0
+	count := map[string]int{}
+	if cold {
+		for _, c := range append(append([]MusicCard{}, trendArtists...), trendAlbums...) {
+			for _, g := range c.Genres {
+				count[g]++
+			}
+		}
+	} else {
+		for _, m := range artists {
+			for _, g := range m.genres {
+				count[g]++
+			}
+		}
+	}
+	top := topGenres(count, 8)
+	for _, c := range trendArtists {
+		if _, ok := pool[c.MBID]; !ok && c.TitleID == 0 {
+			pool[c.MBID] = c
+		}
+	}
+	nGenreRows := 3
+	if cold {
+		nGenreRows = 6
+	}
+	for _, g := range top[:min(nGenreRows, len(top))] {
+		var items []MusicCard
+		for _, c := range sortedPool(pool) {
+			if hasGenre(c.Genres, g) {
+				items = append(items, c)
+			}
+		}
+		if cold {
+			add(MusicRow{ID: "popular_genre:" + g, Type: "popular_genre", Title: "Popular " + g, Reason: "Charting " + g + " artists this week", Shape: "round", Items: items})
+		} else {
+			add(MusicRow{ID: "genre:" + g, Type: "genre", Title: titleCase(g) + " picks for you", Reason: "Because " + g + " is big in your Library", Shape: "round", Items: items})
+		}
+	}
+
+	// Cold start: charts and genre rows only.
+	final := []MusicRow{}
+	for _, row := range out {
+		if cold && row.Type != "top_albums" && row.Type != "trending_artists" && row.Type != "popular_genre" {
+			continue
+		}
+		if genre != "" {
+			kept := []MusicCard{}
+			for _, c := range row.Items {
+				if hasGenre(c.Genres, genre) {
+					kept = append(kept, c)
+				}
+			}
+			row.Items = kept
+		}
+		if row.Type == "new_from" && hero != nil {
+			kept := []MusicCard{}
+			for _, c := range row.Items {
+				if c.Key != hero.Key {
+					kept = append(kept, c)
+				}
+			}
+			row.Items = kept
+		}
+		row.Items = uniqCards(row.Items)
+		if len(row.Items) > musicRowMax {
+			row.Items = row.Items[:musicRowMax]
+		}
+		if len(row.Items) < musicRowMin[row.Type] {
+			continue
+		}
+		final = append(final, row)
+	}
+	if hero != nil && genre != "" && !hasGenre(hero.Genres, genre) {
+		hero = nil
+	}
+	a.rememberMusicNames(names)
+	a.exploreCaching(w, r, "private, max-age=60")
+	writeJSON(w, http.StatusOK, map[string]any{"kid": false, "cold": cold, "genres": top, "genre": genre, "region": region, "regions": regions, "hero": hero, "rows": final})
+}
+
+type nameKey struct{ kind, mbid, name string }
+
+// rememberMusicNames lets the picture route serve these albums and artists.
+func (a *API) rememberMusicNames(list []nameKey) {
+	c := &a.music
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.names == nil {
+		c.lists, c.names = map[string]musicTrendEntry{}, map[string]metadata.MusicTrendItem{}
+	}
+	if len(c.names) > 20000 {
+		c.names = map[string]metadata.MusicTrendItem{}
+	}
+	for _, n := range list {
+		if n.mbid == "" {
+			continue
+		}
+		k := n.kind + "|" + n.mbid
+		if _, ok := c.names[k]; !ok {
+			c.names[k] = metadata.MusicTrendItem{MBID: n.mbid, Name: n.name, Title: n.name}
+		}
+	}
+}
+
+func chartReason(region, what string) string {
+	if region == "global" {
+		return what + " this week, worldwide"
+	}
+	return what + " this week in " + region
+}
+
+func topGenres(count map[string]int, n int) []string {
+	list := []string{}
+	for g, c := range count {
+		if c > 0 {
+			list = append(list, g)
+		}
+	}
+	sort.Slice(list, func(i, j int) bool {
+		if count[list[i]] != count[list[j]] {
+			return count[list[i]] > count[list[j]]
+		}
+		return list[i] < list[j]
+	})
+	return list[:min(n, len(list))]
+}
+
+func sortedPool(pool map[string]MusicCard) []MusicCard {
+	out := make([]MusicCard, 0, len(pool))
+	for _, c := range pool {
+		out = append(out, c)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		ri, rj := out[i].Rank, out[j].Rank
+		if (ri == 0) != (rj == 0) {
+			return ri == 0 // similar artists (personal) first
+		}
+		if ri != rj {
+			return ri < rj
+		}
+		return out[i].Name < out[j].Name
+	})
+	return out
+}
+
+func hasGenre(list []string, g string) bool {
+	for _, x := range list {
+		if x == g {
+			return true
+		}
+	}
+	return false
+}
+
+func uniqCards(list []MusicCard) []MusicCard {
+	seen := map[string]bool{}
+	out := make([]MusicCard, 0, len(list))
+	for _, c := range list {
+		if !seen[c.Key] {
+			seen[c.Key] = true
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
+func titleCase(s string) string {
+	words := strings.Fields(s)
+	for i, w := range words {
+		words[i] = strings.ToUpper(w[:1]) + w[1:]
+	}
+	return strings.Join(words, " ")
+}
+
+func derefStr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}

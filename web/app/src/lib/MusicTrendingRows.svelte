@@ -1,28 +1,26 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { api, message } from './api.ts';
-	import { to } from './paths.ts';
 	import { toasts } from './toasts.svelte.ts';
 	import { refreshInbox } from './wishlist.svelte.ts';
-	import { matchOwned, type OwnedIndex } from './explore.ts';
+	import type { OwnedIndex } from './explore.ts';
 	import { defaultRegion } from './top10.ts';
-	import { fetchMusicTrend, musicTrendCards, newFromYourArtists, type MusicTrendCard, type NewAlbum } from './music-trending.ts';
-	import { ymd } from './calendar.ts';
-	import type { CalendarEntry } from './types.ts';
+	import { fetchMusicExplore, musicCardHref, musicCardNote, musicImage, type MusicCardData, type MusicExploreAnswer } from './music-trending.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './types.ts';
 	import Shelf from './ui/Shelf.svelte';
 	import PosterCard from './ui/PosterCard.svelte';
 	import IconButton from './ui/IconButton.svelte';
+	import EmptyState from './ui/EmptyState.svelte';
 	import AddArtistDialog from './AddArtistDialog.svelte';
 	import AskArtistDialog from './AskArtistDialog.svelte';
 
-	// Explore's Music rows, personal first: one hero (the newest album from
-	// an artist you have), New from artists you have, then the charts:
-	// Trending artists (ListenBrainz) and Top albums (Deezer, per country).
-	// Every row says why it is there; artists are round, albums square.
+	// Explore → Music. The server builds every row (personal first, then the
+	// charts, similar artists, missing albums and genre rows); genre chips
+	// filter them all. Every row says why it is there; albums are square,
+	// artists round, and every card is the same size.
 	const KEY = 'holyarrs.music-trending';
 	let {
-		owned,
+		owned: _owned,
 		manage,
 		mayAsk,
 		folders,
@@ -31,10 +29,10 @@
 	}: { owned: OwnedIndex; manage: boolean; mayAsk: boolean; folders: LibraryFolder[]; rules: PickRulesView[]; onadded?: (t: TitleView) => void } = $props();
 
 	let region = $state('global');
-	let regions = $state<string[]>([]);
-	let artists = $state<MusicTrendCard[]>([]);
-	let albums = $state<MusicTrendCard[]>([]);
-	let fresh = $state<NewAlbum[]>([]);
+	let genre = $state('');
+	let answer = $state<MusicExploreAnswer | null>(null);
+	let chips = $state<string[]>([]);
+	let failed = $state(false);
 	/** Artists added or asked for here, so their cards update at once. */
 	let addedHere = $state(new Map<string, number>());
 	let busy = $state('');
@@ -57,13 +55,17 @@
 		gone?.abort();
 		gone = new AbortController();
 		const signal = gone.signal;
-		const [ar, al] = await Promise.all([fetchMusicTrend('artist', region, api, signal), fetchMusicTrend('album', region, api, signal)]);
-		if (signal.aborted) return;
-		artists = ar ? musicTrendCards(ar) : [];
-		albums = al ? musicTrendCards(al) : [];
-		const got = ar ?? al;
-		if (got?.regions?.length) regions = got.regions;
-		if (got && got.region !== region) region = got.region;
+		try {
+			const a = await fetchMusicExplore(genre, region, api, signal);
+			if (signal.aborted) return;
+			answer = a;
+			failed = false;
+			// Chips come from the unfiltered answer, so picking one keeps the rest.
+			if (!genre) chips = a.genres ?? [];
+			if (a.region && a.region !== region) region = a.region;
+		} catch {
+			if (!signal.aborted) failed = true;
+		}
 	}
 
 	function pick() {
@@ -75,6 +77,11 @@
 		void load();
 	}
 
+	function chip(g: string) {
+		genre = genre === g ? '' : g;
+		void load();
+	}
+
 	onMount(() => {
 		region = defaultRegion();
 		try {
@@ -83,37 +90,33 @@
 			/* nothing saved */
 		}
 		void load();
-		const now = new Date();
-		api.get<{ dates: CalendarEntry[] | null }>(`/calendar?from=${ymd(new Date(now.getTime() - 60 * 86400000))}&to=${ymd(now)}`)
-			.then((r) => (fresh = newFromYourArtists(r.dates ?? [], now)))
-			.catch(() => {});
+		// Genres fill in the background on a first visit: look again once.
+		const again = setTimeout(() => {
+			if (!genre && chips.length === 0) void load();
+		}, 20000);
 		if (manage) api.get<MusicSettings>('/settings/music').then((r) => (defaults = r)).catch(() => {});
-		return () => gone?.abort();
+		return () => {
+			clearTimeout(again);
+			gone?.abort();
+		};
 	});
 
-	function live(c: MusicTrendCard): MusicTrendCard {
-		const id = addedHere.get(c.artistMbid);
-		if (id !== undefined) return { ...c, titleId: id, status: 'in_library' };
-		return matchOwned(c, owned) as MusicTrendCard;
-	}
-
-	// An artist in the Library opens its page; any other card opens the
-	// artist search, where it can be added or asked for.
-	function href(c: MusicTrendCard): string {
-		if (c.titleId !== undefined) return to(`/library/${c.titleId}`);
-		return to(`/search?q=${encodeURIComponent(c.artist)}&kind=music`);
+	function live(c: MusicCardData): MusicCardData {
+		const id = c.artist_mbid ? addedHere.get(c.artist_mbid) : undefined;
+		return id !== undefined && c.kind === 'artist' ? { ...c, title_id: id } : c;
 	}
 
 	/** quick looks the artist up by name and opens the add (or ask) sheet for the matching MusicBrainz id. */
-	async function quick(c: MusicTrendCard) {
-		if (busy) return;
+	async function quick(c: MusicCardData) {
+		const artist = c.artist || c.name;
+		if (busy || !c.artist_mbid) return;
 		busy = c.key;
 		try {
-			const r = await api.get<{ artists: LookupArtist[] }>(`/artists/lookup?term=${encodeURIComponent(c.artist)}`);
-			const a = r.artists?.find((x) => x.mbid === c.artistMbid);
-			if (!a) return void toasts.push(`Could not find ${c.artist}. Try Search.`, 'fail');
+			const r = await api.get<{ artists: LookupArtist[] }>(`/artists/lookup?term=${encodeURIComponent(artist)}`);
+			const a = r.artists?.find((x) => x.mbid === c.artist_mbid);
+			if (!a) return void toasts.push(`Could not find ${artist}. Try Search.`, 'fail');
 			if (a.title_id) {
-				addedHere = new Map([...addedHere, [c.artistMbid, a.title_id]]);
+				addedHere = new Map([...addedHere, [a.mbid, a.title_id]]);
 				return void toasts.push(`${a.name} is in your Library already.`, 'ok');
 			}
 			if (manage) addArtist?.open(a);
@@ -133,60 +136,81 @@
 
 	function asked(_a: LookupArtist, r: { ask: Ask; joined: boolean }) {
 		if (r.ask.state === 'approved') toasts.push(`${r.ask.name} is approved; HolyArrs keeps it up to date.`, 'ok');
-		else if (r.joined) toasts.push(`Someone asked for ${r.ask.name} already; you are on the ask too.`, 'ok');
+		else if (r.ask.state === 'asked' && r.joined) toasts.push(`Someone asked for ${r.ask.name} already; you are on the ask too.`, 'ok');
 		else toasts.push(`Asked for ${r.ask.name}. You will hear when it is approved.`, 'ok');
 		void refreshInbox();
+		void load();
 	}
 
-	const where = $derived(regionName(region));
+	const hero = $derived(answer?.hero ?? null);
+	const regions = $derived(answer?.regions ?? []);
+	const hasCharts = $derived(answer?.rows.some((r) => r.type === 'top_albums' || r.type === 'trending_artists') ?? false);
 </script>
 
-{#snippet cards(list: MusicTrendCard[])}
-	{#each list.map(live) as c (c.key)}
-		<PosterCard title={c.name} href={href(c)} image={c.image} kind="artist" subtitle={c.subtitle} status={c.status} shape={c.shape} actionOnHover>
-			{#snippet action()}
-				{#if c.titleId === undefined && (manage || mayAsk)}
-					<IconButton icon="plus" label={manage ? `Add ${c.artist}` : `Ask for ${c.artist}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={busy === c.key || undefined} onclick={() => void quick(c)} />
-				{/if}
-			{/snippet}
-		</PosterCard>
-	{/each}
-{/snippet}
+{#if answer?.kid}
+	<EmptyState icon="music" title="Music is not shown on this account" text="Music has no age ratings, so it stays off for accounts with an age limit." />
+{:else if answer}
+	<section class="music" data-testid="music-trending">
+		{#if chips.length}
+			<div class="chips" role="group" aria-label="Genres" data-testid="music-genres">
+				<button type="button" class="chip" class:on={genre === ''} aria-pressed={genre === ''} onclick={() => chip('')}>All</button>
+				{#each chips as g (g)}
+					<button type="button" class="chip" class:on={genre === g} aria-pressed={genre === g} onclick={() => chip(g)}>{g}</button>
+				{/each}
+			</div>
+		{/if}
 
-{#if fresh.length || artists.length || albums.length}
-	<section class="music-trending" data-testid="music-trending">
-		{#if fresh.length}
-			{@const hero = fresh[0]}
-			<a class="hero" href={to(`/library/${hero.titleId}`)} data-testid="music-hero">
-				<span class="cover">{#if hero.image}<img src={hero.image} alt="" loading="lazy" />{/if}</span>
+		{#if hero}
+			<a class="hero" href={musicCardHref(hero)} data-testid="music-hero">
+				<span class="cover">{#if hero.image}<img src={musicImage(hero)} alt="" loading="lazy" />{/if}</span>
 				<span class="words">
 					<span class="eyebrow">New album</span>
-					<strong>{hero.album}</strong>
-					<span class="note">{hero.artist} · out {new Date(hero.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</span>
+					<strong>{hero.name}</strong>
+					<span class="note">
+						{#if hero.title_id}From an artist you have · {hero.artist}{#if hero.date} · out {new Date(`${hero.date}T00:00:00Z`).toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' })}{/if}
+						{:else}{hero.artist} · number {hero.rank ?? 1} on this week's album chart{/if}
+					</span>
 				</span>
 			</a>
-			{#if fresh.length > 1}
-				<Shelf title="New from artists you have" subtitle="Albums out in the last 60 days" item="var(--explore-item)">
-					{#each fresh.slice(1) as a (a.key)}
-						<PosterCard title={a.album} href={to(`/library/${a.titleId}`)} image={a.image} kind="artist" subtitle={a.artist} shape="square" />
-					{/each}
-				</Shelf>
-			{/if}
 		{/if}
-		{#if regions.length > 1}
+
+		{#if regions.length > 1 && hasCharts}
 			<div class="pick">
-				<select aria-label="Region" bind:value={region} onchange={pick}>
+				<select aria-label="Chart region" bind:value={region} onchange={pick}>
 					{#each regions as r (r)}<option value={r}>{regionName(r)}</option>{/each}
 				</select>
 			</div>
 		{/if}
-		{#if artists.length}
-			<Shelf title="Trending artists" subtitle={`Most played this week · ${where}`} item="var(--explore-item)">{@render cards(artists)}</Shelf>
-		{/if}
-		{#if albums.length}
-			<Shelf title="Top albums" subtitle={`Chart this week · ${where}`} item="var(--explore-item)">{@render cards(albums)}</Shelf>
+
+		{#each answer.rows as row (row.id)}
+			<Shelf title={row.title} subtitle={row.reason} item="var(--explore-item)">
+				{#each row.items.map(live) as c (c.key)}
+					<PosterCard
+						title={c.name}
+						href={musicCardHref(c)}
+						image={musicImage(c)}
+						kind="artist"
+						subtitle={musicCardNote(row, c) || undefined}
+						status={c.kind === 'artist' && c.title_id && row.type !== 'your_asks' ? 'in_library' : undefined}
+						shape={c.kind === 'album' ? 'square' : 'round'}
+						actionOnHover
+					>
+						{#snippet action()}
+							{#if !c.title_id && c.artist_mbid && row.type !== 'your_asks' && (manage || mayAsk)}
+								<IconButton icon="plus" label={manage ? `Add ${c.artist || c.name}` : `Ask for ${c.artist || c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={busy === c.key || undefined} onclick={() => void quick(c)} />
+							{/if}
+						{/snippet}
+					</PosterCard>
+				{/each}
+			</Shelf>
+		{/each}
+
+		{#if answer.rows.length === 0 && !hero}
+			<EmptyState icon="music" title={genre ? `Nothing tagged ${genre} yet` : 'Music rows are getting ready'} text={genre ? 'Pick another genre, or All.' : 'Charts and suggestions fill in within a few minutes.'} />
 		{/if}
 	</section>
+{:else if failed}
+	<EmptyState icon="music" title="Could not load Music" text="The music rows did not answer. Try again shortly." />
 {/if}
 
 {#if manage}
@@ -196,7 +220,12 @@
 {/if}
 
 <style>
-	.music-trending { position: relative; display: flex; flex-direction: column; gap: 32px; }
+	.music { position: relative; display: flex; flex-direction: column; gap: 32px; }
+	.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-bottom: -12px; padding: 2px; }
+	.chips::-webkit-scrollbar { display: none; }
+	.chip { flex: none; font: inherit; font-size: 14px; font-weight: 500; text-transform: capitalize; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border, transparent); background: var(--surface-2); color: var(--text); cursor: pointer; }
+	.chip.on { background: var(--text); color: var(--surface-1, var(--bg)); border-color: transparent; }
+	.chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.pick { display: flex; justify-content: flex-end; margin-bottom: -20px; }
 	.hero { display: flex; gap: 20px; align-items: center; padding: 16px; border-radius: var(--r-card); background: var(--surface-2); color: var(--text); text-decoration: none; max-width: 640px; }
 	.hero:focus-visible { outline: none; box-shadow: var(--focus-ring); }
@@ -212,5 +241,5 @@
 		.cover { width: 88px; }
 		.words strong { font-size: 18px; }
 	}
-	@media (max-width: 767px) { .music-trending { gap: 26px; } }
+	@media (max-width: 767px) { .music { gap: 26px; } }
 </style>

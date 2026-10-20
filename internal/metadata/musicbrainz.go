@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"regexp"
 	"slices"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -690,4 +691,33 @@ func (m *MusicBrainz) Pressings(ctx context.Context, albumMBID string) ([]Pressi
 		}
 	}
 	return out, ErrListCut
+}
+
+// ArtistGenres returns an artist's MusicBrainz genres, most voted first, at
+// most five (lower case, as MusicBrainz names them).
+func (m *MusicBrainz) ArtistGenres(ctx context.Context, mbid string) ([]string, error) {
+	if !ValidMBID(mbid) {
+		return nil, ErrArtistNotFound
+	}
+	b, err := m.get(ctx, "/ws/2/artist/"+strings.ToLower(mbid), url.Values{"inc": {"genres"}})
+	if err != nil {
+		return nil, err
+	}
+	var a struct {
+		Genres []struct {
+			Name  string `json:"name"`
+			Count int    `json:"count"`
+		} `json:"genres"`
+	}
+	if err := json.Unmarshal(b, &a); err != nil {
+		return nil, fmt.Errorf("MusicBrainz: odd answer")
+	}
+	sort.SliceStable(a.Genres, func(i, j int) bool { return a.Genres[i].Count > a.Genres[j].Count })
+	out := []string{}
+	for _, g := range a.Genres {
+		if n := strings.ToLower(strings.TrimSpace(g.Name)); n != "" && g.Count > 0 && len(out) < 5 {
+			out = append(out, n)
+		}
+	}
+	return out, nil
 }

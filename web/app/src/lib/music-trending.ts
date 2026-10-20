@@ -109,3 +109,90 @@ export function newFromYourArtists(entries: CalendarEntry[], now = new Date(), d
 		})
 		.map((e) => ({ key: `new-${e.title_id}-${e.part_id ?? e.album}`, titleId: e.title_id, artist: e.name, album: e.album!, date: e.date, image: e.poster ?? null }));
 }
+
+// ---- Explore → Music: every row, built by the server ----
+
+export interface MusicCardData {
+	key: string;
+	kind: 'album' | 'artist';
+	mbid: string;
+	name: string;
+	artist?: string;
+	artist_mbid?: string;
+	title_id?: number;
+	part_id?: number;
+	image?: string;
+	/** YYYY-MM-DD: when it arrived, comes out or was asked for. */
+	date?: string;
+	state?: string;
+	rank?: number;
+	listen_count?: number;
+	upcoming?: boolean;
+	genres: string[];
+}
+
+export interface MusicRowData {
+	id: string;
+	type: string;
+	title: string;
+	reason: string;
+	shape: 'square' | 'round';
+	items: MusicCardData[];
+}
+
+export interface MusicExploreAnswer {
+	kid: boolean;
+	cold: boolean;
+	genres: string[];
+	genre: string;
+	region?: string;
+	regions?: string[];
+	hero: MusicCardData | null;
+	rows: MusicRowData[];
+}
+
+/** fetchMusicExplore reads the Music rows for a genre chip ('' is all) and chart region. */
+export async function fetchMusicExplore(genre: string, region: string, client: Pick<Client, 'get'> = api, signal?: AbortSignal): Promise<MusicExploreAnswer> {
+	const q = new URLSearchParams({ region });
+	if (genre) q.set('genre', genre);
+	return client.get<MusicExploreAnswer>(`/explore/music?${q}`, signal);
+}
+
+const askWords: Record<string, string> = { asked: 'Asked', approved: 'Approved, on the way', turned_down: 'Turned down', available: 'Arrived' };
+
+function shortDay(d: string): string {
+	const t = new Date(`${d}T00:00:00Z`);
+	return Number.isNaN(t.getTime()) ? d : t.toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' });
+}
+
+/** musicCardNote is a card's one-line reason, by the row it is in. */
+export function musicCardNote(row: Pick<MusicRowData, 'type'>, c: MusicCardData): string {
+	const by = c.kind === 'album' && c.artist ? c.artist : '';
+	switch (row.type) {
+		case 'just_arrived':
+			return [by, c.date ? `Arrived ${shortDay(c.date)}` : ''].filter(Boolean).join(' · ');
+		case 'new_from':
+			return [by, c.date ? `${c.upcoming ? 'Coming' : 'Out'} ${shortDay(c.date)}` : ''].filter(Boolean).join(' · ');
+		case 'your_asks':
+			return askWords[c.state ?? ''] ?? '';
+		case 'top_albums':
+		case 'trending_artists':
+		case 'popular_genre':
+			return [by, listeners(c.listen_count)].filter(Boolean).join(' · ');
+		case 'missing':
+			return [by, c.date ? c.date.slice(0, 4) : ''].filter(Boolean).join(' · ');
+	}
+	return by;
+}
+
+/** musicCardHref: a Library album opens its album page, a Library artist its page, anything else the artist search. */
+export function musicCardHref(c: MusicCardData): string {
+	if (c.title_id && c.part_id && c.kind === 'album') return to(`/library/${c.title_id}/albums/${c.part_id}`);
+	if (c.title_id) return to(`/library/${c.title_id}`);
+	return to(`/search?q=${encodeURIComponent(c.artist || c.name)}&kind=music`);
+}
+
+/** musicImage puts the server's picture path under the app's base path. */
+export function musicImage(c: Pick<MusicCardData, 'image'>): string | null {
+	return c.image ? to(c.image) : null;
+}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from './api.ts';
 import { matchOwned, ownedIndex } from './explore.ts';
-import { fetchMusicTrend, listeners, musicTrendCards, newFromYourArtists, type MusicTrendAnswer } from './music-trending.ts';
+import { fetchMusicExplore, fetchMusicTrend, listeners, musicCardHref, musicCardNote, musicTrendCards, newFromYourArtists, type MusicTrendAnswer } from './music-trending.ts';
 import type { TitleView } from './types.ts';
 
 const bts = '0d79fe8e-ba27-4859-bb8c-2f255f346853';
@@ -71,5 +71,31 @@ describe('music pass', () => {
 		expect(cards[0].subtitle).toBe('A · 12K listens this week');
 		expect(listeners(1500)).toBe('1.5K listens this week');
 		expect(listeners(0)).toBe('');
+	});
+});
+
+describe('Explore music cards', () => {
+	const base = { key: 'k', mbid: arirang, name: 'ARIRANG', genres: [] };
+	it('says why each card is there, by row', () => {
+		expect(musicCardNote({ type: 'new_from' }, { ...base, kind: 'album', artist: 'BTS', date: '2026-10-09' })).toMatch(/^BTS · Out /);
+		expect(musicCardNote({ type: 'new_from' }, { ...base, kind: 'album', artist: 'BTS', date: '2026-12-09', upcoming: true })).toMatch(/^BTS · Coming /);
+		expect(musicCardNote({ type: 'just_arrived' }, { ...base, kind: 'album', artist: 'BTS', date: '2026-10-18' })).toMatch(/Arrived /);
+		expect(musicCardNote({ type: 'your_asks' }, { ...base, kind: 'artist', state: 'approved' })).toBe('Approved, on the way');
+		expect(musicCardNote({ type: 'top_albums' }, { ...base, kind: 'album', artist: 'BTS', listen_count: 12000 })).toBe('BTS · 12K listens this week');
+		expect(musicCardNote({ type: 'missing' }, { ...base, kind: 'album', artist: 'BTS', date: '1997-05-21' })).toBe('BTS · 1997');
+		expect(musicCardNote({ type: 'because_have' }, { ...base, kind: 'artist' })).toBe('');
+	});
+
+	it('opens Library albums and artists, else the artist search', () => {
+		expect(musicCardHref({ ...base, kind: 'album', title_id: 4, part_id: 9 })).toMatch(/\/library\/4\/albums\/9$/);
+		expect(musicCardHref({ ...base, kind: 'artist', title_id: 4 })).toMatch(/\/library\/4$/);
+		expect(musicCardHref({ ...base, kind: 'album', artist: 'BTS' })).toMatch(/\/search\?q=BTS&kind=music$/);
+	});
+
+	it('reads the rows for a chip and region', async () => {
+		let asked = '';
+		const client = { get: async <T,>(p: string) => ((asked = p), { kid: false, cold: true, genres: [], genre: '', hero: null, rows: [] } as T) };
+		await fetchMusicExplore('rock', 'FR', client);
+		expect(asked).toBe('/explore/music?region=FR&genre=rock');
 	});
 });

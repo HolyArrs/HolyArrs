@@ -11284,6 +11284,30 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/explore/music": {
+      "get": {
+        "description": "Returns every row of Explore → Music for the signed-in person: hero (the newest studio album from an artist in the Library, else the top album chart's first), then rows just_arrived (albums with music added in 14 days), new_from (studio albums and EPs of Library artists out in the last 90 days, then upcoming), your_asks (this person's music asks with their state), top_albums and trending_artists (the music trending lists for region, with listen counts), because_have and fans_of (similar artists from the metadata server, not in the Library), missing (studio albums of Library artists with no music yet) and genre rows from the Library's top MusicBrainz genres. Without music in the Library (cold) only the charts and popular_genre rows come. genre=<tag> keeps only cards with that genre. Each row has id, type, title, reason, shape (square albums, round artists) and items; rows below their minimum are left out. A Kid limit answers kid=true and no rows, since music has no ratings. Each person may ask 30 times a minute, shared with Explore rows. Not found while the Music part is off.",
+        "operationId": "exploreMusic",
+        "responses": {
+          "200": {
+            "description": "kid, cold, genres, genre, region, hero and rows."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          },
+          "404": {
+            "description": "Music is off."
+          },
+          "429": {
+            "description": "Over 30 requests a minute; see Retry-After."
+          }
+        },
+        "summary": "The Explore music rows",
+        "x-holyarrs-part": "music",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/explore/tail": {
       "get": {
         "description": "The next 4 generated tail rows (page from 0); more says another page follows.",

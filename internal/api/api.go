@@ -64,6 +64,9 @@ type Server struct {
 	// MusicTrending reads a music trending list from the metadata server;
 	// nil hides the rows.
 	MusicTrending func(ctx context.Context, kind, region string) (metadata.MusicTrend, error)
+	// MusicSimilar reads similar artists from the metadata server; nil has
+	// no Because you have or Fans of rows.
+	MusicSimilar func(ctx context.Context, mbid string) ([]metadata.SimilarArtist, error)
 	// Library runs adding, editing and refreshing; New makes one when nil.
 	Library *library.Service
 	// Lists reads Outside lists; New makes one without keys when nil.
@@ -126,6 +129,8 @@ type API struct {
 	top10 top10Cache
 	// music keeps the music trending lists for an hour.
 	music musicTrendCache
+	// musicx keeps artist genres and similar artists for Explore → Music.
+	musicx musicExplore
 	// explore runs the Explore pool job and keeps its lists and pages.
 	explore exploreState
 	// trailers keeps resolved trailer addresses and each person's budget.
@@ -285,6 +290,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/explore/tail", a.exploreTail)
 	m.HandleFunc("POST /api/v1/explore/counts", a.exploreCounts)
 	m.HandleFunc("GET /api/v1/music-trending", a.musicTrending)
+	m.HandleFunc("GET /api/v1/explore/music", a.exploreMusic)
 	m.HandleFunc("GET /api/v1/music-trending/art/{kind}/{mbid}", a.musicTrendArt)
 	if a.s.Secrets != nil {
 		m.HandleFunc("GET /api/v1/settings/trakt-key", a.getTraktKey)
