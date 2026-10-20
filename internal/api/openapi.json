@@ -11458,8 +11458,19 @@
     },
     "/api/v1/explore/genre": {
       "get": {
-        "responses": {},
-        "summary": "",
+        "description": "The hero from the genre's trending titles, then Trending, Best new, Because you have, Top-rated classics and the genre's mood rows (each only with 8 or more titles).",
+        "responses": {
+          "200": {
+            "description": "The page."
+          },
+          "400": {
+            "description": "type or genre is not valid."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          }
+        },
+        "summary": "An Explore genre page",
         "x-holyarrs-part": "media",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "read"
@@ -11533,8 +11544,19 @@
     },
     "/api/v1/explore/top": {
       "get": {
-        "responses": {},
-        "summary": "",
+        "description": "The ranked row for one chip (all or a service id). Netflix with no genre is its weekly Top 10; other services and All my services are TMDB's most popular on them in the region, kept a week, merged by popularity.",
+        "responses": {
+          "200": {
+            "description": "The row."
+          },
+          "400": {
+            "description": "A parameter is not valid."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          }
+        },
+        "summary": "Explore's Top on your services row",
         "x-holyarrs-part": "media",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "read"
@@ -13556,6 +13578,106 @@
           }
         },
         "summary": "Details of a movie or show from TMDB",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/metadata/{kind}/{tmdb_id}/reviews": {
+      "get": {
+        "description": "One source's score (out of 10), vote count, a per-point vote spread when the source has one (distribution, points 1 to 10), people watching now (Trakt), and one page of written reviews as plain text (author, date, the author's own rating, text, likes, spoiler). sources lists the sources that are set up: TMDB always, Trakt once the owner saved the Trakt client id and VIP token. orders lists the orders a source can sort by. TMDB pages are kept 6 h, Trakt pages 10 min. A Kid gets the score with no reviews (reviews_hidden).",
+        "operationId": "metadataReviews",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tmdb_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Default tmdb.",
+            "in": "query",
+            "name": "source",
+            "schema": {
+              "enum": [
+                "tmdb",
+                "trakt"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "maximum": 500,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Default newest; a source without the order uses its first.",
+            "in": "query",
+            "name": "order",
+            "schema": {
+              "enum": [
+                "newest",
+                "helpful"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The score and one page of reviews."
+          },
+          "400": {
+            "description": "kind, tmdb_id, page, order or source is not valid."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "This title is rated above what this account may see (a Kid account)."
+          },
+          "404": {
+            "description": "TMDB does not know it, or the source is not set up."
+          },
+          "409": {
+            "description": "The kind's part is off."
+          },
+          "429": {
+            "description": "A Kid account over 30 searches, lookups and Explore requests a minute; see Retry-After."
+          },
+          "501": {
+            "description": "TMDB is not set up."
+          },
+          "502": {
+            "description": "The source did not answer, or Trakt refused the key."
+          },
+          "503": {
+            "description": "TMDB is rate limited; see Retry-After."
+          }
+        },
+        "summary": "A title's ratings and reviews from one source",
         "x-holyarrs-part": "media",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "read"
@@ -17723,6 +17845,102 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/settings/trakt-token": {
+      "get": {
+        "description": "Never sent in full. Owner only.",
+        "operationId": "getTraktToken",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "token": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Masked token."
+          }
+        },
+        "summary": "The Trakt VIP token, masked",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "description": "An access token of a Trakt VIP account, kept encrypted and never logged. With the Trakt client id it turns on Trakt ratings, watchers and comments on title pages. Owner only; needs a password sign-in, not an API key.",
+        "operationId": "putTraktToken",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "token": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "token"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "token": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Saved (masked)."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Sign in with a password first."
+          }
+        },
+        "summary": "Store the Trakt VIP token",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/settings/tvdb-key": {

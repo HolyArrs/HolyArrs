@@ -54,10 +54,13 @@ type DetailSeason struct {
 // Details is a movie or show looked up for its page, in the Library or not.
 type Details struct {
 	DiscoverItem
-	Logo           string         `json:"logo,omitempty"`
-	RuntimeMinutes int            `json:"runtime_minutes,omitempty"`
-	Rating         string         `json:"rating,omitempty"`
-	People         []DetailPerson `json:"people"`
+	Logo           string `json:"logo,omitempty"`
+	RuntimeMinutes int    `json:"runtime_minutes,omitempty"`
+	Rating         string `json:"rating,omitempty"`
+	// Score is TMDB's average vote out of 10 and Votes how many voted.
+	Score  float64        `json:"score,omitempty"`
+	Votes  int            `json:"votes,omitempty"`
+	People []DetailPerson `json:"people"`
 	// Moods are up to three mood words from TMDB keywords and genres.
 	Moods   []string       `json:"moods"`
 	Seasons []DetailSeason `json:"seasons,omitempty"`
@@ -413,7 +416,9 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 		return Details{}, err
 	}
 	var raw struct {
-		Credits *struct {
+		VoteAverage float64 `json:"vote_average"`
+		VoteCount   int     `json:"vote_count"`
+		Credits     *struct {
 			Cast []struct {
 				Name        string `json:"name"`
 				Character   string `json:"character"`
@@ -467,7 +472,7 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return Details{}, fmt.Errorf("TMDB: odd answer: %w", err)
 	}
-	var d Details
+	d := Details{Score: float64(int(raw.VoteAverage*10+0.5)) / 10, Votes: raw.VoteCount}
 	if kind == "movie" {
 		var m tmdbMovie
 		if err := json.Unmarshal(b, &m); err != nil {

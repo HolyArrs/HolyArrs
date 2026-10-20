@@ -5,6 +5,12 @@ export interface Toast {
 	id: number;
 	text: string;
 	tone: ToastTone;
+	/** An optional button, such as Undo; pressing it runs and closes the toast. */
+	action?: ToastAction;
+}
+export interface ToastAction {
+	label: string;
+	run: () => void;
 }
 
 export function createToasts(ms = 4200) {
@@ -16,11 +22,11 @@ export function createToasts(ms = 4200) {
 		if (i >= 0) list.splice(i, 1);
 	}
 
-	function push(text: string, tone: ToastTone = 'info'): number {
+	function push(text: string, tone: ToastTone = 'info', opts: { action?: ToastAction; ms?: number } = {}): number {
 		const id = next++;
-		list.push({ id, text, tone });
+		list.push({ id, text, tone, action: opts.action });
 		if (list.length > 4) list.splice(0, list.length - 4);
-		setTimeout(() => dismiss(id), tone === 'fail' ? ms * 2 : ms);
+		setTimeout(() => dismiss(id), opts.ms ?? (tone === 'fail' ? ms * 2 : ms));
 		return id;
 	}
 

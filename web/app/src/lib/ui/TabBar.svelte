@@ -19,7 +19,7 @@
 				<span class="ic"><Icon name={t.icon} size={22} />{#if t.badge}<b class="count" aria-hidden="true">{t.badge}</b>{/if}</span><span>{t.label}</span>
 			</a>
 		{:else}
-			<button class="tab" class:active={t.current} type="button" aria-haspopup="dialog" onclick={t.onclick} use:press={'round'}>
+			<button class="tab" class:active={t.current} type="button" aria-haspopup="dialog" aria-current={t.current ? 'page' : undefined} onclick={t.onclick} use:press={'round'}>
 				<span class="ic"><Icon name={t.icon} size={22} />{#if t.dot}<i class="dot" aria-hidden="true"></i>{/if}</span><span>{t.label}</span>{#if t.dot}<span class="sr-only">, items need attention</span>{/if}
 			</button>
 		{/if}

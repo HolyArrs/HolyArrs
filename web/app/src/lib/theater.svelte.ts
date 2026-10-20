@@ -15,6 +15,8 @@ export interface TheaterOpen {
 	/** Where the small player sat, so the big one grows from it. */
 	rect: { left: number; top: number; width: number; height: number } | null;
 	from: TheaterFrom;
+	/** Focus goes back here on close when nothing else took it (else to what had focus at open). */
+	returnTo?: HTMLElement | null;
 }
 
 export const theater = $state<{ now: TheaterOpen | null }>({ now: null });
@@ -30,13 +32,19 @@ export function onTheaterExit(fn: (o: TheaterOpen) => void): () => void {
 }
 
 export function openTheater(o: TheaterOpen) {
-	theater.now = o;
+	const was = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null;
+	theater.now = { ...o, returnTo: o.returnTo ?? was };
 }
 
 export function closeTheater() {
 	const o = theater.now;
 	theater.now = null;
 	if (o) exitTo?.(o);
+	// Focus back on the card or button that opened it, unless the exit (a panel, a page) took it.
+	requestAnimationFrame(() => {
+		const a = document.activeElement;
+		if (o?.returnTo?.isConnected && (!a || a === document.body)) o.returnTo.focus();
+	});
 }
 
 // Scroll lock behind the panel and the full-screen trailer (either or both):

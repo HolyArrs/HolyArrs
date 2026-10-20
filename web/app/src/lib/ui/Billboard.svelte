@@ -80,7 +80,7 @@
 	function expand(o: { source: TrailerSource; time: number; rect: DOMRect }) {
 		if (!kind || !tmdb) return;
 		playing = false;
-		openTheater({ kind, tmdb, title, source: o.source, time: o.time, rect: { left: o.rect.left, top: o.rect.top, width: o.rect.width, height: o.rect.height }, from: 'hero' });
+		openTheater({ kind, tmdb, title, source: o.source, time: o.time, rect: { left: o.rect.left, top: o.rect.top, width: o.rect.width, height: o.rect.height }, from: 'hero', returnTo: box?.querySelector<HTMLElement>('.actions a[href], .actions button') ?? null });
 	}
 
 	// A new title: back to the still pictures.
@@ -144,7 +144,7 @@
 			{#key pictures[0]}<HeroMotion {pictures} {vtName} {position} paused={playing} onerror={onpictureerror} />{/key}
 		{/if}
 		{#if sources.length}
-			<TrailerPlayer {sources} {title} onexpand={expand} onplaying={() => ((playing = true), words.send('play'))} onended={() => ((playing = false), words.send('stop'))} onfail={() => ((playing = false), words.send('stop'))} />
+			<TrailerPlayer {sources} {title} pausable onexpand={expand} onplaying={() => ((playing = true), words.send('play'))} onended={() => ((playing = false), words.send('stop'))} onfail={() => ((playing = false), words.send('stop'))} />
 		{/if}
 		<div class="shade" class:playing></div>
 	</div>
@@ -178,13 +178,16 @@
 		position: absolute; inset: 0; pointer-events: none;
 		background:
 			linear-gradient(to right, rgb(0 0 0 / 60%) 0%, rgb(0 0 0 / 0%) 60%),
-			linear-gradient(to top, rgb(0 0 0 / 50%) 0%, rgb(0 0 0 / 10%) 35%, rgb(0 0 0 / 0%) 70%);
+			linear-gradient(to top, rgb(0 0 0 / 50%) 0%, rgb(0 0 0 / 10%) 35%, rgb(0 0 0 / 0%) 70%),
+			/* Behind the breadcrumb and chips at the top: bright frames kept them under 3:1. */
+			linear-gradient(to bottom, rgb(0 0 0 / 45%) 0%, rgb(0 0 0 / 0%) 22%);
 		transition: opacity var(--dur-slow) var(--ease-out);
 	}
 	.shade.playing { opacity: .85; }
 	/* Room for the breadcrumb, so a tall logo never runs under it. */
 	.ui-billboard:has(> .top) { padding-top: 60px; }
 	.ui-billboard:has(> .top) .heading :global(.bb-logo img) { max-height: min(var(--title-h), calc(100% - 8px)); }
+	.top :global(:is(a, span, p, button, li)) { text-shadow: 0 1px 3px rgb(0 0 0 / 80%), 0 0 12px rgb(0 0 0 / 50%); }
 	.top { position: absolute; top: clamp(14px, 2vw, 24px); left: clamp(20px, 2vw, 40px); right: 16px; z-index: 2; }
 	/* Netflix keeps the billboard's words in the left ~40%, so the picture stays open. */
 	.content { position: relative; width: clamp(320px, 40%, 600px); padding: 0 clamp(20px, 2vw, 40px) clamp(24px, 2.6vw, 50px); display: flex; flex-direction: column; gap: 10px; transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out); }

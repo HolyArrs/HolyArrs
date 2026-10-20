@@ -14,6 +14,7 @@
 		title,
 		repeat = false,
 		controls = true,
+		pausable = false,
 		onfail,
 		onended,
 		onplaying,
@@ -24,6 +25,8 @@
 		/** Loop (hover cards); the hero ends and shows its pictures again. */
 		repeat?: boolean;
 		controls?: boolean;
+		/** A pause/play button beside the sound (the hero, which autoplays for longer than 5 s). */
+		pausable?: boolean;
 		/** Every source failed: stay on the pictures. */
 		onfail?: () => void;
 		onended?: () => void;
@@ -39,6 +42,7 @@
 	let muted = $state(true);
 	let run = $state(0);
 	let done = $state(false);
+	let paused = $state(false);
 	let video = $state<HTMLVideoElement>();
 	let frame = $state<HTMLIFrameElement>();
 	let box = $state<HTMLElement>();
@@ -310,6 +314,16 @@
 		if (lv) lv.muted = true;
 		else post('mute');
 	}
+	function togglePause(e?: MouseEvent) {
+		e?.preventDefault();
+		e?.stopPropagation();
+		paused = !paused;
+		const lv = live();
+		if (lv) {
+			if (paused) lv.pause();
+			else void lv.play().catch(() => {});
+		} else post(paused ? 'pauseVideo' : 'playVideo');
+	}
 	// Sound off before the switch finished: stay on the direct stream.
 	function dropUpIfWaiting() {
 		if (up && !swapped) dropUp();
@@ -321,6 +335,7 @@
 		muted = true;
 		stopped = false;
 		done = false;
+		paused = false;
 		at = 0;
 		run += 1;
 	}
@@ -418,8 +433,11 @@
 {/if}
 {#if controls}
 	<div class="ctl" class:on={shown} data-testid="trailer-sound">
+		{#if shown && pausable}
+			<IconButton icon={paused ? 'play' : 'pause'} label={paused ? 'Play the trailer' : 'Pause the trailer'} variant="glass" size="md" tipSide="above" onclick={togglePause} />
+		{/if}
 		{#if shown && hasAudio()}
-			<IconButton icon={muted ? 'soundOff' : 'sound'} label={muted ? 'Turn sound on' : 'Turn sound off'} variant="glass" size="md" tipSide="above" aria-pressed={!muted} onclick={toggleMute} />
+			<IconButton icon={muted ? 'soundOff' : 'sound'} label={muted ? 'Turn sound on' : 'Turn sound off'} variant="glass" size="md" tipSide="above" onclick={toggleMute} />
 		{:else if done && sources.length > 0}
 			<IconButton icon="replay" label="Play the trailer again" variant="glass" size="md" tipSide="above" onclick={replay} />
 		{/if}

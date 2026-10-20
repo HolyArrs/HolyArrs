@@ -28,11 +28,12 @@
 <div class="ui-shell" class:collapsed class:overlay>
 	{@render sidebar()}
 	{#if overlay}<button class="scrim" type="button" tabindex="-1" aria-label="Close sidebar" onclick={onscrim}></button>{/if}
+	<!-- The phone tab bar comes before the content in tab order (it is fixed at the bottom on screen). -->
+	{#if tabbar}{@render tabbar()}{/if}
 	<div class="content">
 		{#if topbar}{@render topbar()}{/if}
 		{@render children()}
 	</div>
-	{#if tabbar}{@render tabbar()}{/if}
 </div>
 
 <style>

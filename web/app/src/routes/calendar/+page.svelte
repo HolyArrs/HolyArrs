@@ -18,6 +18,7 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import Chip from '#lib/ui/Chip.svelte';
 	import {
 		byDay,
 		entryDay,
@@ -40,6 +41,15 @@
 		weekDays,
 		shiftWeek,
 		readView,
+		itemDot,
+		passes,
+		readPresets,
+		savePresets,
+		stacked,
+		stackedRange,
+		weekLabel,
+		ymd,
+		type CalFilter,
 		saveView,
 		startView,
 		type CalendarView,
@@ -52,7 +62,7 @@
 	const asked = /^(\d{4})-(\d{2})$/.exec(page.url.searchParams.get('month') ?? '');
 	let year = $state(asked ? Number(asked[1]) : now.getFullYear());
 	let month = $state(asked && Number(asked[2]) >= 1 && Number(asked[2]) <= 12 ? Number(asked[2]) - 1 : now.getMonth());
-	let view = $state<CalendarView>('month');
+	let view = $state<CalendarView>('week');
 	// The week shown in Week view: this week, or the first week of a linked month.
 	let week = $state(weekStart(asked ? new Date(Number(asked[1]), Number(asked[2]) - 1, 1) : now));
 	let entries = $state<CalendarEntry[]>([]);
@@ -60,6 +70,10 @@
 	let loaded = $state(false);
 	let error = $state('');
 	let kinds = $state({ cinema: true, digital: true, physical: true, episode: true, album: true });
+	let keptOnly = $state(false);
+	let haveOnly = $state(false);
+	let presets = $state<CalFilter[]>([]);
+	let panelOpen = $state(true);
 	// ?titles=shows opens the calendar on one kind of title.
 	const askedTitles = page.url.searchParams.get('titles');
 	let which = $state<TitlesShown>(askedTitles === 'movies' || askedTitles === 'shows' || askedTitles === 'music' ? askedTitles : 'all');
@@ -72,19 +86,26 @@
 	let newLink = $state('');
 	let feedBusy = $state(false);
 
-	const shown = $derived(entries.filter((e) => kinds[e.kind] && shows(e, which)));
-	const weeks = $derived(monthGrid(year, month, shown));
-	const monthKey = $derived(`${year}-${String(month + 1).padStart(2, '0')}`);
-	const list = $derived(byDay(shown.filter((e) => entryDay(e).startsWith(monthKey))));
-	const days = $derived(weekDays(week, shown));
-	const weekEnd = $derived(shiftWeek(week, 1));
-	const weekName = $derived(`${week.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${new Date(weekEnd.getFullYear(), weekEnd.getMonth(), weekEnd.getDate() - 1).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`);
-	const monthName = $derived(new Date(year, month, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }));
-	const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+	const shown = $derived(entries.filter((e) => kinds[e.kind] && shows(e, which) && passes(e, { keptOnly, haveOnly })));
+	const todayKey = ymd(now);
+	const layout = $derived(stacked(week, shown, todayKey));
+	const agenda = $derived(byDay(shown));
+	const rangeName = $derived(
+		`${week.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${new Date(week.getFullYear(), week.getMonth(), week.getDate() + 7 * 6 - 1).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
+	);
+	// The mini month picker starts on the month of the first week shown, and can page on its own.
+	let pickYear = $state(now.getFullYear());
+	let pickMonth = $state(now.getMonth());
+	const pickWeeks = $derived(monthGrid(pickYear, pickMonth, [], todayKey));
+	const pickName = $derived(new Date(pickYear, pickMonth, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }));
+	const shownFrom = $derived(ymd(week));
+	const shownTo = $derived(ymd(shiftWeek(week, 6)));
+	const weekdays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+	const dotWord = { have: 'In the Library', missing: 'Missing', upcoming: 'Coming up' } as const;
 
 	async function load() {
 		try {
-			const r = view === 'week' ? weekRange(week) : monthRange(year, month);
+			const r = stackedRange(week);
 			const [c, t] = await Promise.all([
 				api.get<{ dates: CalendarEntry[] | null }>(`/calendar?from=${r.from}&to=${r.to}`),
 				api.get<{ titles: TitleView[] }>('/titles')
@@ -99,35 +120,44 @@
 		}
 	}
 
-	function go(n: number) {
-		if (view === 'week') {
-			week = shiftWeek(week, n);
-			const mid = shiftWeek(week, 0.5);
-			({ year, month } = { year: mid.getFullYear(), month: mid.getMonth() });
-		} else ({ year, month } = shiftMonth(year, month, n));
+	function jump(d: Date) {
+		week = weekStart(d);
+		pickYear = week.getFullYear();
+		pickMonth = week.getMonth();
 		void load();
 	}
-
-	function thisMonth() {
-		year = now.getFullYear();
-		month = now.getMonth();
-		week = weekStart(now);
-		void load();
+	const go = (n: number) => jump(shiftWeek(week, n));
+	const thisMonth = () => jump(new Date());
+	function pickPage(n: number) {
+		({ year: pickYear, month: pickMonth } = shiftMonth(pickYear, pickMonth, n));
 	}
 
-	// Week and Month/List load different ranges; the last pick is remembered on this browser.
+	// Weeks or List; the last pick is remembered on this browser.
 	function pickView(v: CalendarView) {
-		const was = view;
 		view = v;
 		saveView(v);
-		if (v === 'week' && was !== 'week') {
-			const t = new Date();
-			week = weekStart(t.getFullYear() === year && t.getMonth() === month ? t : new Date(year, month, 1));
-		} else if (was === 'week' && v !== 'week') {
-			const mid = shiftWeek(week, 0.5);
-			({ year, month } = { year: mid.getFullYear(), month: mid.getMonth() });
-		}
-		void load();
+	}
+
+	// Saved filters live on this browser.
+	const kindKeys = Object.keys(kinds) as (keyof typeof kinds)[];
+	const current = (name: string): CalFilter => ({ name, which, off: kindKeys.filter((k) => !kinds[k]), keptOnly, haveOnly });
+	const isOn = (p: CalFilter) => p.which === which && p.keptOnly === keptOnly && p.haveOnly === haveOnly && kindKeys.every((k) => kinds[k] === !p.off.includes(k));
+	function applyPreset(p: CalFilter) {
+		which = p.which;
+		for (const k of kindKeys) kinds[k] = !p.off.includes(k);
+		keptOnly = p.keptOnly;
+		haveOnly = p.haveOnly;
+	}
+	function savePreset() {
+		const name = prompt('Name these filters', 'My filters')?.trim();
+		if (!name) return;
+		presets = [...presets.filter((p) => p.name !== name), current(name)];
+		savePresets(presets);
+		toasts.push(`Saved the filters as ${name}.`, 'ok');
+	}
+	function dropPreset(p: CalFilter) {
+		presets = presets.filter((x) => x.name !== p.name);
+		savePresets(presets);
 	}
 
 	async function loadFeed() {
@@ -208,13 +238,45 @@
 	}
 
 	onMount(() => {
-		view = startView({ remembered: readView(), which, wide: !window.matchMedia('(max-width: 767px)').matches, monthLink: !!asked });
+		const v = startView({ remembered: readView(), which, wide: !window.matchMedia('(max-width: 767px)').matches, monthLink: false });
+		view = v === 'month' ? 'week' : v;
+		presets = readPresets();
+		pickYear = week.getFullYear();
+		pickMonth = week.getMonth();
+		panelOpen = !window.matchMedia('(max-width: 1023px)').matches;
 		void load();
 		void loadFeed();
 		const offs = [live.on('title', load), live.on('resync', load)];
 		return () => offs.forEach((off) => off());
 	});
 </script>
+
+{#snippet item(e: CalendarEntry, compact: boolean)}
+	{@const dot = itemDot(e, todayKey)}
+	<li class="item k-{e.kind}" data-testid="cal-item">
+		{@render art(e)}
+		<div class="it">
+			<a href={to(entryHref(e))}>{#if compact && entryTime(e)}<span class="t">{entryTime(e)}</span>{' '}{/if}{entryName(e)}</a>
+			<span class="sub"
+				><span class="sdot {dot}" title={dotWord[dot]} aria-hidden="true"></span><span class="sr-only">{dotWord[dot]}. </span>{kindWord[e.kind]}{#if !compact && entryTime(e)}{' at '}{entryTime(e)}{/if}{#if e.network}{' on '}{e.network}{/if}{inLibraryWord(e.state, e.versions)}{#if e.kind === 'album' && albumHave(e)}{' · '}{albumHave(e)}{/if}</span
+			>
+		</div>
+	</li>
+{/snippet}
+
+{#snippet dayRow(d: { day: string; items: CalendarEntry[] })}
+	{@const at = new Date(d.day + 'T00:00:00')}
+	<li class="day" class:today={d.day === todayKey}>
+		<div class="when" aria-hidden="true">
+			<span class="dow">{at.toLocaleDateString(undefined, { weekday: 'short' })}</span>
+			<b>{at.getDate()}</b>
+		</div>
+		<div class="items">
+			<p class="sr-only">{date(d.day + 'T12:00:00')}</p>
+			<ul>{#each d.items as e (entryKey(e))}{@render item(e, false)}{/each}</ul>
+		</div>
+	</li>
+{/snippet}
 
 {#snippet art(e: CalendarEntry)}
 	{@const src = entryArt(e)}
@@ -232,9 +294,9 @@
 
 <section class="tools" aria-label="Calendar controls">
 	<div class="month-nav">
-		<IconButton icon="chevronLeft" label={view === 'week' ? 'Week before' : 'Month before'} variant="tinted" onclick={() => go(-1)} />
-		<h2 class="month" aria-live="polite" data-testid="cal-month">{view === 'week' ? weekName : monthName}</h2>
-		<IconButton icon="chevronRight" label={view === 'week' ? 'Week after' : 'Month after'} variant="tinted" onclick={() => go(1)} />
+		<IconButton icon="chevronLeft" label="Week before" variant="glass" onclick={() => go(-1)} />
+		<h2 class="month" aria-live="polite" data-testid="cal-month">{rangeName}</h2>
+		<IconButton icon="chevronRight" label="Week after" variant="glass" onclick={() => go(1)} />
 	</div>
 	<div class="segs">
 		<SegmentedControl
@@ -249,16 +311,22 @@
 				{ value: 'music', label: 'Music' }
 			]}
 		/>
-		<SegmentedControl label="View" testid="cal-view" value={view} onchange={(v) => pickView(v as CalendarView)} options={[{ value: 'week', label: 'Week' }, { value: 'month', label: 'Month' }, { value: 'list', label: 'List' }]} />
+		<SegmentedControl label="View" testid="cal-view" value={view} onchange={(v) => pickView(v as CalendarView)} options={[{ value: 'week', label: 'Weeks' }, { value: 'list', label: 'List' }]} />
+		<IconButton icon="sidebar" label={panelOpen ? 'Hide the month' : 'Show the month'} variant="glass" aria-expanded={panelOpen} aria-controls="cal-side" onclick={() => (panelOpen = !panelOpen)} />
 	</div>
-	{#if which === 'all' || which === 'movies'}
-		<fieldset class="kinds">
-			<legend class="sr-only">Which movie dates</legend>
+	<div class="kinds" role="group" aria-label="Filters">
+		{#if which === 'all' || which === 'movies'}
 			{#each ['cinema', 'digital', 'physical'] as const as k (k)}
 				<OpsCheckChip label={kindWord[k]} bind:checked={kinds[k]} dot={k === 'physical' ? 'var(--wait)' : 'var(--info)'} />
 			{/each}
-		</fieldset>
-	{/if}
+		{/if}
+		<Chip label="Kept up to date" selected={keptOnly} onclick={() => (keptOnly = !keptOnly)} />
+		<Chip label="In the Library" selected={haveOnly} onclick={() => (haveOnly = !haveOnly)} />
+		{#each presets as p (p.name)}
+			<span data-testid="cal-preset"><Chip label={p.name} icon="star" selected={isOn(p)} onclick={() => applyPreset(p)} onremove={() => dropPreset(p)} /></span>
+		{/each}
+		<Chip label="Save filters" icon="plus" onclick={savePreset} />
+	</div>
 </section>
 
 {#if !loaded}
@@ -269,82 +337,72 @@
 	<EmptyState icon="calendar" title="Nothing coming up" text="Add movies, shows and artists to your Library and their dates, episodes and albums show up here." action={{ label: 'Add media', href: to('/search'), icon: 'search' }} />
 {:else}
 	{#if error}<LoadError hasData message="Calendar could not be loaded." onretry={load} />{/if}
-	{#if view === 'week'}
-		<ol class="week" data-testid="cal-week" aria-label="Week of {weekName}">
-			{#each days as d (d.day)}
-				{@const at = new Date(d.day + 'T00:00:00')}
-				<li class="wday" class:today={d.today} data-day={d.day}>
-					<p class="wday-head"><span class="dow">{at.toLocaleDateString(undefined, { weekday: 'short' })}</span> <b class="num">{d.date}</b><span class="sr-only">, {date(d.day + 'T12:00:00')}</span></p>
-					{#if d.items.length}
-						<ul>
-							{#each d.items as e (entryKey(e))}
-								<li class="item k-{e.kind}" data-testid="cal-item">
-									{@render art(e)}
-									<div class="it">
-										<a href={to(entryHref(e))}>{#if entryTime(e)}<span class="t">{entryTime(e)}</span>{' '}{/if}{entryName(e)}</a>
-										<span class="sub">{kindWord[e.kind]}{#if e.network}{' on '}{e.network}{/if}{inLibraryWord(e.state, e.versions)}</span>
-									</div>
-								</li>
-							{/each}
-						</ul>
-					{:else}
-						<p class="none">Nothing</p>
-					{/if}
-				</li>
-			{/each}
-		</ol>
-	{:else if view === 'month'}
-		<!-- svelte-ignore a11y_no_noninteractive_tabindex (keyboard users need to focus and scroll this region) -->
-		<div class="month-scroll" role="region" tabindex="0" aria-label="{monthName} month calendar; scroll horizontally to see every day">
-			<div class="grid" data-testid="cal-grid">
-				<div class="wk head" aria-hidden="true">
-					{#each weekdays as w (w)}<span>{w}</span>{/each}
-				</div>
-				{#each weeks as week, i (i)}
-					<div class="wk">
-						{#each week as d (d.day)}
-							<div class="cell" class:out={!d.inMonth} class:today={d.today} data-day={d.day}>
-								<span class="num"><span aria-hidden="true">{d.date}</span><span class="sr-only">{date(d.day + 'T12:00:00')}. </span></span>
-								{#each d.items as e (entryKey(e))}
-									<a class="ev k-{e.kind}" href={to(entryHref(e))} data-testid="cal-entry" title="{entryName(e)}: {kindWord[e.kind]}{entryTime(e) ? ` at ${entryTime(e)}` : ''}">
-										<span class="dot" aria-hidden="true"></span><span class="ev-name">{#if entryTime(e)}<span class="t">{entryTime(e)}</span>{' '}{/if}{entryName(e)}</span><span class="sr-only">, {kindWord[e.kind]}</span>
-									</a>
+	<div class="cal-body" class:with-side={panelOpen}>
+		<div class="cal-main">
+			{#if view === 'week'}
+				<div class="stack" data-testid="cal-week">
+					{#each layout.weeks as w (ymd(w.start))}
+						<section class="wrow" aria-label={weekLabel(w.start, now)}>
+							<h3 class="wtitle">{weekLabel(w.start, now)}</h3>
+							<ol class="week">
+								{#each w.days as d (d.day)}
+									{@const at = new Date(d.day + 'T00:00:00')}
+									<li class="wday" class:today={d.today} class:empty={!d.items.length} data-day={d.day}>
+										<p class="wday-head"><span class="dow">{at.toLocaleDateString(undefined, { weekday: 'short' })}</span> <b class="num">{d.date}</b><span class="sr-only">, {date(d.day + 'T12:00:00')}</span></p>
+										{#if d.items.length}
+											<ul>{#each d.items as e (entryKey(e))}{@render item(e, true)}{/each}</ul>
+										{:else}
+											<p class="none">Nothing</p>
+										{/if}
+									</li>
 								{/each}
-							</div>
-						{/each}
-					</div>
-				{/each}
-			</div>
+							</ol>
+						</section>
+					{/each}
+					<section class="wrow" aria-label="Later">
+						<h3 class="wtitle">Later</h3>
+						{#if layout.later.length}
+							<ol class="days">
+								{#each layout.later as d (d.day)}{@render dayRow(d)}{/each}
+							</ol>
+						{:else}
+							<p class="none later-none">Nothing else in the next four weeks.</p>
+						{/if}
+					</section>
+				</div>
+			{:else if agenda.length === 0}
+				<EmptyState compact icon="calendar" title="No dates from {rangeName}" />
+			{:else}
+				<ol class="days" data-testid="cal-list">
+					{#each agenda as d (d.day)}{@render dayRow(d)}{/each}
+				</ol>
+			{/if}
 		</div>
-	{:else if list.length === 0}
-		<EmptyState compact icon="calendar" title="No dates in {monthName}" />
-	{:else}
-		<ol class="days" data-testid="cal-list">
-			{#each list as d (d.day)}
-				{@const at = new Date(d.day + 'T00:00:00')}
-				<li class="day">
-					<div class="when" aria-hidden="true">
-						<span class="dow">{at.toLocaleDateString(undefined, { weekday: 'short' })}</span>
-						<b>{at.getDate()}</b>
-					</div>
-					<div class="items">
-						<p class="sr-only">{date(d.day + 'T12:00:00')}</p>
-						<ul>
-							{#each d.items as e (entryKey(e))}
-								<li class="item k-{e.kind}" data-testid="cal-item">
-									{@render art(e)}
-									<div class="it">
-										<a href={to(entryHref(e))}>{entryName(e)}</a>
-										<span class="sub">{kindWord[e.kind]}{#if entryTime(e)}{' at '}{entryTime(e)}{/if}{#if e.network}{' on '}{e.network}{/if}{inLibraryWord(e.state, e.versions)}{#if e.kind === 'album' && albumHave(e)}{' · '}{albumHave(e)}{/if}</span>
-									</div>
-								</li>
-							{/each}
-						</ul>
-					</div>
-				</li>
-			{/each}
-		</ol>
-	{/if}
+		{#if panelOpen}
+			<aside class="side" id="cal-side" aria-label="Pick a week">
+				<div class="pick-head">
+					<IconButton icon="chevronLeft" size="sm" label="Month before" onclick={() => pickPage(-1)} />
+					<b>{pickName}</b>
+					<IconButton icon="chevronRight" size="sm" label="Month after" onclick={() => pickPage(1)} />
+				</div>
+				<div class="pick" data-testid="cal-picker">
+					{#each weekdays as w, i (i)}<span class="pw" aria-hidden="true">{w}</span>{/each}
+					{#each pickWeeks.flat() as d (d.day)}
+						<button
+							type="button"
+							class="pd"
+							class:out={!d.inMonth}
+							class:today={d.today}
+							class:shown={d.day >= shownFrom && d.day < shownTo}
+							aria-label="Show the week of {date(d.day + 'T12:00:00')}"
+							onclick={() => jump(new Date(d.day + 'T00:00:00'))}>{d.date}</button
+						>
+					{/each}
+				</div>
+				<Button variant="secondary" size="sm" full icon="calendarDay" onclick={thisMonth}>Today</Button>
+			</aside>
+		{/if}
+	</div>
 {/if}
 
 {#if feedLoaded && feedError}
@@ -445,6 +503,33 @@
 	.wday .it a { font-size: 14px; }
 	.wday .t { color: var(--text-muted); font-variant-numeric: tabular-nums; }
 	.none { color: var(--text-muted); font: var(--t-footnote); }
+	.cal-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
+	.cal-body.with-side { grid-template-columns: minmax(0, 1fr) 248px; }
+	.cal-main { min-width: 0; }
+	.stack { display: flex; flex-direction: column; gap: 22px; }
+	.wtitle { margin: 0 0 8px; font: var(--t-title3); letter-spacing: var(--t-title3-track); }
+	.wday.empty { opacity: 0.5; }
+	.wday.today { background: var(--accent-soft); }
+	.later-none { padding: 12px 0; }
+	.day.today { outline-color: var(--accent-fill); }
+	.sdot { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; vertical-align: 1px; background: var(--text-faint); }
+	.sdot.have { background: var(--ok); }
+	.sdot.missing { background: var(--fail); }
+	.sdot.upcoming { background: var(--info); }
+	.side { position: sticky; top: calc(var(--topbar) + 16px); display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
+	.pick-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; font: var(--t-subhead); }
+	.pick { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+	.pw { color: var(--text-muted); font: var(--t-caption); padding: 4px 0; }
+	.pd { height: 30px; border-radius: 999px; font: var(--t-footnote); font-variant-numeric: tabular-nums; color: var(--text); }
+	.pd.out { color: var(--text-faint); }
+	.pd.shown { background: var(--surface-2); }
+	.pd.today { background: var(--text); color: var(--bg); font-weight: 700; }
+	.pd:hover { background: var(--surface-3); }
+	.pd:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	@media (max-width: 1023px) {
+		.cal-body.with-side { grid-template-columns: minmax(0, 1fr); }
+		.side { position: static; order: -1; }
+	}
 	@media (max-width: 1023px) {
 		.week { grid-template-columns: minmax(0, 1fr); }
 		.wday { min-height: 0; flex-direction: row; align-items: flex-start; gap: 14px; }

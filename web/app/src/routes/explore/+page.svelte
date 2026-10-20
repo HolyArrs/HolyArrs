@@ -169,7 +169,7 @@
 	// Leaving the full-screen trailer (hero or hover card) lands on the title's page.
 	$effect(() => onTheaterExit((o) => void goto(to(detailPath(o.kind, o.tmdb)))));
 
-	// Music shows only music rows: the movie and show rows (Top 10, services, Coming soon, Best new releases) never appear there.
+	// Music shows only music rows: the movie and show rows (Top 10, services, Best new releases) never appear there.
 	// A genre page (Movies or Shows, ?genre=<TMDB id>) swaps the head and tail for its own rows.
 	const genre = $derived(parseGenre((page.shallow?.url ?? page.url).searchParams.get('genre'), type));
 	const genres = $derived(genresFor(type));
@@ -476,7 +476,7 @@
 	<PageHeader title="Explore" subtitle="Find something to watch or listen to next." />
 	<div class="types-mark" bind:this={typesMark} aria-hidden="true"></div>
 	<div class="types" class:stuck={typesStuck}>
-		<SegmentedControl options={typeOptions} value={type} label="Show" testid="explore-type" onchange={setType} />
+		<SegmentedControl options={typeOptions} value={type} label="Show" testid="explore-type" announce={(l) => `Showing ${l}`} onchange={setType} />
 		{#if genres.length}
 			<div class="genre-pick" data-testid="genre-picker">
 				<Popover label="Genres" text={genre ? genre.name : 'Genres'} variant="button" align="end" width={340}>

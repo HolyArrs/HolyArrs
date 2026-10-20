@@ -8,7 +8,7 @@
 	import { press, viewTransitionName } from '../motion.ts';
 	import HoverPreview from './HoverPreview.svelte';
 	import CardBadges, { type CardOwned } from './CardBadges.svelte';
-	import { shownFresh, typeWord, type Fresh } from '../fresh.ts';
+	import { freshLabel, shownFresh, typeWord, type Fresh } from '../fresh.ts';
 	import { prefetchTrailer, watchTrailer } from '../autoplay.svelte.ts';
 	import { dwell, finePointer, HOVER_DELAY } from '../trailer.ts';
 	import GrowCard from './GrowCard.svelte';
@@ -97,6 +97,9 @@
 	// The expanded card: a hover card (episodes, downloads) or the card grown in place (cover).
 	let root = $state<HTMLElement>();
 	let artEl = $state<HTMLElement>();
+	let hit = $state<HTMLElement>();
+	/** Opened by keyboard focus (not a hover): the grown card takes the focus. */
+	let byKey = $state(false);
 	let open = $state(false);
 	/** The grown card is shrinking back onto this card. */
 	let leaving = $state(false);
@@ -130,6 +133,18 @@
 		leaving = false;
 	}
 	$effect(() => () => shut());
+	/** Tab out of the grown card: on to the next card in the row, else the next tab stop after this card; Shift+Tab back to this card. */
+	function tabOut(back: boolean) {
+		shut();
+		if (back || !root) return hit?.focus();
+		const r = root;
+		const next = r.nextElementSibling?.querySelector<HTMLElement>('a[href], button:not([disabled])');
+		if (next) return next.focus();
+		const after = [...document.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input, select, textarea, [tabindex]')].find(
+			(el) => el.tabIndex >= 0 && !r.contains(el) && !el.closest('.ui-grow') && el.getClientRects().length > 0 && !!(r.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING)
+		);
+		(after ?? hit)?.focus();
+	}
 	// In view for a while: the trailer address is fetched ahead of any hover.
 	$effect(() => {
 		if (root && preview) return watchTrailer(root, preview.kind, preview.tmdb);
@@ -182,8 +197,8 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="ui-wide" class:cover class:big class:grown={cover && open} style:width bind:this={root} onpointerenter={enter} onpointerleave={leave} onfocusin={(e) => (e.target as HTMLElement)?.matches?.(':focus-visible') && enter()} onfocusout={(e) => !root?.contains(e.relatedTarget as Node) && leave()} onpointerdown={() => opener.cancel()}>
-	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} use:press={'card'} aria-label={cover ? [title, typedWord, sub].filter(Boolean).join(', ') : undefined} title={cover ? title : undefined}>
+<div class="ui-wide" class:cover class:big class:grown={cover && open} style:width bind:this={root} onpointerenter={() => ((byKey = false), enter())} onpointerleave={leave} onfocusin={(e) => (e.target as HTMLElement)?.matches?.(':focus-visible') && ((byKey = true), enter())} onfocusout={(e) => !root?.contains(e.relatedTarget as Node) && leave()} onpointerdown={() => opener.cancel()}>
+	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} bind:this={hit} use:press={'card'} aria-label={cover ? [title, typedWord, sub, strip && freshLabel(strip)].filter(Boolean).join(', ') : undefined} title={cover ? title : undefined}>
 		<span class="art" class:low={badgesAt === 'bottom' && (badges.length || status)} use:viewTransitionName={vtName} bind:this={artEl}>
 			{#if !src || failed || !loaded}<span class="ph" aria-hidden="true">{#if !cover}<span class="ph-ic"><Icon name={kindIcon} size={20} /></span><span class="ph-t">{title}</span>{/if}</span>{/if}
 			{#if src && !failed && near()}{#key art}<img src={art} class:in={loaded} alt="" loading="lazy" decoding="async" use:whenLoaded={() => (loaded = true)} onerror={artError} />{/key}{/if}
@@ -222,7 +237,7 @@
 {/snippet}
 
 {#if open && preview && cover && artEl}
-	<GrowCard anchor={artEl} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} image={loaded && !failed ? art : null} logo={growLogo} lifted={!!strip && strip.kind !== 'top10'} {leaving} badge={marked ? wideBadges : undefined} action={growAction} followId={preview.titleId} onmore={onmore ? (r) => { shut(); onmore(r); } : undefined} onenter={() => { closer.cancel(); leaving = false; }} onleave={leave} onclose={shut} ongone={() => leaving && shut()} />
+	<GrowCard anchor={artEl} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} image={loaded && !failed ? art : null} logo={growLogo} lifted={!!strip && strip.kind !== 'top10'} {leaving} badge={marked ? wideBadges : undefined} action={growAction} followId={preview.titleId} onmore={onmore ? (r) => { shut(); onmore(r); } : undefined} onenter={() => { closer.cancel(); leaving = false; }} onleave={leave} onclose={(back) => { shut(); if (back) hit?.focus(); }} focusIn={byKey} ontab={tabOut} returnTo={hit} ongone={() => leaving && shut()} />
 {:else if open && preview && root}
 	<HoverPreview anchor={root} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} {image} badge={marked ? wideBadges : undefined} onenter={() => closer.cancel()} onleave={leave} onclose={shut} />
 {/if}
@@ -274,7 +289,7 @@
 	.cover .art :global(.mark) { width: 22px; height: 22px; }
 	.cover .art :global(.mark svg) { width: 13px; height: 13px; }
 	.cover .art :global(.mark.downloading svg) { width: 18px; height: 18px; }
-	.cover .art :global(.fresh) { height: 14px; font-size: 9px; }
+	.cover .art :global(.fresh) { height: 14px; font-size: 10px; }
 	.cover .art :global(.top10) { width: 18px; height: 22px; font-size: 5px; }
 	.cover .art :global(.top10 b) { font-size: 10px; }
 	@container art (min-width: 280px) {

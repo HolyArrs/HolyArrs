@@ -94,6 +94,19 @@ describe('toasts', () => {
 		t.dismiss(id);
 		expect(t.list).toHaveLength(0);
 	});
+
+	it('carries an action and its own time', () => {
+		vi.useFakeTimers();
+		const t = createToasts(1000);
+		const run = vi.fn();
+		t.push('done', 'ok', { action: { label: 'Undo', run }, ms: 3000 });
+		vi.advanceTimersByTime(1001);
+		expect(t.list[0].action?.label).toBe('Undo');
+		t.list[0].action?.run();
+		expect(run).toHaveBeenCalled();
+		vi.advanceTimersByTime(2000);
+		expect(t.list).toHaveLength(0);
+	});
 });
 
 describe('session', () => {

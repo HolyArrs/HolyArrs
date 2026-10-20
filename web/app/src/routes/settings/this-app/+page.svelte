@@ -3,6 +3,7 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import Field from '#lib/ui/Field.svelte';
 	import Table from '#lib/ui/Table.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
@@ -136,8 +137,48 @@
 		}
 	}
 
+	// Trakt ratings, watchers and comments on title pages (owner only):
+	// the Client ID of a Trakt app plus a VIP account's access token, both
+	// kept encrypted and only ever shown masked.
+	let traktIdMasked = $state('');
+	let traktVipMasked = $state('');
+	let traktId = $state('');
+	let traktVip = $state('');
+	let traktErr = $state('');
+	let traktBusy = $state(false);
+	async function loadTrakt() {
+		try {
+			const [k, t] = await Promise.all([api.get<{ key: string }>('/settings/trakt-key'), api.get<{ token: string }>('/settings/trakt-token')]);
+			traktIdMasked = k.key;
+			traktVipMasked = t.token;
+		} catch {
+			/* The card shows Not set. */
+		}
+	}
+	async function saveTraktKeys(e: SubmitEvent) {
+		e.preventDefault();
+		traktErr = '';
+		if (!traktId.trim() && !traktVip.trim()) {
+			traktErr = 'Paste the Client ID, the access token, or both.';
+			return;
+		}
+		traktBusy = true;
+		try {
+			if (traktId.trim()) traktIdMasked = (await api.put<{ key: string }>('/settings/trakt-key', { key: traktId.trim() })).key;
+			if (traktVip.trim()) traktVipMasked = (await api.put<{ token: string }>('/settings/trakt-token', { token: traktVip.trim() })).token;
+			traktId = '';
+			traktVip = '';
+			toasts.push('Trakt saved.', 'ok');
+		} catch (err) {
+			traktErr = err instanceof ApiError && err.status === 403 ? 'Sign in with your password to change Trakt.' : message(err);
+		} finally {
+			traktBusy = false;
+		}
+	}
+
 	onMount(() => {
 		void load();
+		if (session.s.role === 'owner') void loadTrakt();
 		if (session.can('settings')) void loadAutoplay();
 		if (session.s.role === 'owner') void loadTitleStats();
 		const t = setInterval(load, 30000);
@@ -304,6 +345,28 @@
 			{/if}
 		</SettingsCard>
 	</div>
+
+	{#if session.s.role === 'owner'}
+		<section class="card" id="trakt-reviews-card" aria-labelledby="h-trakt-reviews" data-testid="trakt-reviews-setting">
+			<div class="card-head">
+				<h2 id="h-trakt-reviews" class="h2">Trakt</h2>
+				<span class="chip {traktIdMasked && traktVipMasked ? 'ok' : ''}">{traktIdMasked && traktVipMasked ? 'On' : 'Off'}</span>
+			</div>
+			<p class="small muted">
+				With both set, title pages get a Trakt tab under Ratings &amp; reviews: its score, how many people are watching now, and comments. Trakt's API needs a VIP account. Both are stored encrypted and never shown again in full.
+			</p>
+			<form onsubmit={saveTraktKeys} style="margin-top: var(--s-4)">
+				<Field id="trakt-id" label={traktIdMasked ? 'Replace the Client ID' : 'Client ID of your Trakt app'}>
+					<input id="trakt-id" class="input mono" type="password" bind:value={traktId} autocomplete="off" spellcheck="false" />
+				</Field>
+				<Field id="trakt-token" label={traktVipMasked ? 'Replace the VIP access token' : 'VIP access token'}>
+					<input id="trakt-token" class="input mono" type="password" bind:value={traktVip} autocomplete="off" spellcheck="false" />
+				</Field>
+				{#if traktErr}<p class="form-error" role="alert">{traktErr}</p>{/if}
+				<Button type="submit" disabled={traktBusy} aria-busy={traktBusy}>Save Trakt</Button>
+			</form>
+		</section>
+	{/if}
 
 	{#if session.s.role === 'owner' && titleStats}
 		<SettingsCard title="Explore row titles" description="Last 30 days. Rows with a smart title next to rows with their plain title: opens and asks per row shown. Counted on this server only.">

@@ -35,6 +35,9 @@
 		onclose,
 		ongone,
 		onmore,
+		focusIn = false,
+		ontab,
+		returnTo,
 		followId
 	}: {
 		/** The card's picture box: the grown card starts exactly on it. */
@@ -55,8 +58,14 @@
 		action?: Snippet;
 		onenter?: () => void;
 		onleave?: () => void;
-		/** Esc, scroll or resize: close now. */
-		onclose: () => void;
+		/** Esc, scroll or resize: close now (back: focus was inside, return it to the card). */
+		onclose: (back?: boolean) => void;
+		/** Opened from the keyboard: focus moves to the first button. */
+		focusIn?: boolean;
+		/** Tab past the last button (or Shift+Tab before the first): back is true for Shift+Tab. */
+		ontab?: (back: boolean) => void;
+		/** Where focus goes when the full-screen trailer opened from here closes. */
+		returnTo?: HTMLElement;
 		/** The shrink finished; the card shows again. */
 		ongone: () => void;
 		/** The ⌄ opens the More info panel here (Explore) instead of following href. */
@@ -162,8 +171,26 @@
 		return { destroy: () => node.remove() };
 	}
 
+	const focusables = () => (card ? [...card.querySelectorAll<HTMLElement>('a[href]:not([tabindex="-1"]), button:not([disabled])')] : []);
+	function keydown(e: KeyboardEvent) {
+		if (e.key !== 'Tab' || !ontab) return;
+		const list = focusables();
+		const i = list.indexOf(document.activeElement as HTMLElement);
+		if (e.shiftKey ? i <= 0 : i === list.length - 1) {
+			e.preventDefault();
+			ontab(e.shiftKey);
+		}
+	}
+	function focusout(e: FocusEvent) {
+		const to = e.relatedTarget as Node | null;
+		if (to && (card?.contains(to) || anchor.closest('.ui-wide')?.contains(to))) return;
+		onleave?.();
+	}
+
 	onMount(() => {
 		grow();
+		// The panel's buttons exist from the start (it is clipped, not absent): focus the first one.
+		if (focusIn) requestAnimationFrame(() => card?.querySelector<HTMLElement>('.buttons a[href], .buttons button:not([disabled])')?.focus({ preventScroll: true }));
 		const close = () => onclose();
 		window.addEventListener('scroll', close, { passive: true, capture: true });
 		window.addEventListener('resize', close);
@@ -203,14 +230,16 @@
 		return h ? `${h}h ${m % 60}m` : `${m}m`;
 	}
 	// Netflix's line: Movie · R · 1h 49m · HD/4K (the quality only when the Library has it).
-	const facts = $derived(metaLine(kind, [meta?.certification, kind === 'movie' ? runtime(meta?.runtime) : undefined, meta?.quality]));
+	// TMDB's score, small, after the age rating.
+	const stars = $derived(meta?.score ? `★ ${(Math.round(meta.score * 10) / 10).toFixed(1)}` : undefined);
+	const facts = $derived(metaLine(kind, [meta?.certification, stars, kind === 'movie' ? runtime(meta?.runtime) : undefined, meta?.quality]));
 	// Mood words from the server (TMDB keywords mapped to our moods), else genres.
 	const tags = $derived((meta?.moods?.length ? meta.moods : (meta?.genres ?? [])).slice(0, 3));
 </script>
 
-<svelte:window onkeydown={(e) => e.key === 'Escape' && onclose()} />
+<svelte:window onkeydown={(e) => e.key === 'Escape' && onclose(!!card?.contains(document.activeElement))} />
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
+<!-- svelte-ignore a11y_no_static_element_interactions, a11y_no_noninteractive_element_interactions -->
 <div
 	class="ui-grow"
 	class:shown
@@ -224,17 +253,20 @@
 	style:width="{g?.width ?? anchor.getBoundingClientRect().width * 1.5}px"
 	onpointerenter={onenter}
 	onpointerleave={onleave}
+	onfocusin={onenter}
+	onfocusout={focusout}
+	onkeydown={keydown}
 >
-	<a class="media" href={href} tabindex="-1" aria-hidden="true">
+	<a class="media" href={href} tabindex="-1">
 		{#if image}<img src={image} alt="" decoding="async" />{/if}
 		{#if big}<img src={big} alt="" decoding="async" class="big" class:in={bigIn} onload={() => (bigIn = true)} />{/if}
 		{#if trailerOk && sources.length}
-			<TrailerPlayer {sources} {title} repeat onplaying={() => (playing = true)} onfail={() => (playing = false)} onended={() => (playing = false)} onexpand={(o) => { openTheater({ kind, tmdb, title, source: o.source, time: o.time, rect: { left: o.rect.left, top: o.rect.top, width: o.rect.width, height: o.rect.height }, from: 'hover' }); onclose(); }} />
+			<TrailerPlayer {sources} {title} repeat onplaying={() => (playing = true)} onfail={() => (playing = false)} onended={() => (playing = false)} onexpand={(o) => { openTheater({ kind, tmdb, title, source: o.source, time: o.time, rect: { left: o.rect.left, top: o.rect.top, width: o.rect.width, height: o.rect.height }, from: 'hover', returnTo }); onclose(); }} />
 		{/if}
 		<span class="scrim" class:playing aria-hidden="true"></span>
 		<!-- The logo, else the name, stays over the trailer (card template). -->
-		{#if shownLogo}<span class="name" class:lifted><img class="logo" src={shownLogo} alt="" onerror={() => (logoFailed = true)} /></span>
-		{:else}<span class="name" class:lifted><span class="word">{title}</span></span>{/if}
+		{#if shownLogo}<span class="name" class:lifted aria-hidden="true"><img class="logo" src={shownLogo} alt="" onerror={() => (logoFailed = true)} /></span>
+		{:else}<span class="name" class:lifted aria-hidden="true"><span class="word">{title}</span></span>{/if}
 		{#if badge && g}<span class="badge" class:playing>{@render badge()}</span>{/if}
 	</a>
 	<div class="panel">
@@ -247,7 +279,7 @@
 		<p class="title" title={title}>{title}</p>
 		<!-- Both lines always take their room, so the panel's height is known before the facts arrive. -->
 		<p class="facts">
-			{#each facts as f, i (f)}{#if i}<i aria-hidden="true">·</i>{/if}<span class:rating={f === meta?.certification} class:q={f === meta?.quality}>{f}</span>{/each}
+			{#each facts as f, i (f)}{#if i}<i aria-hidden="true">·</i>{/if}<span class:rating={f === meta?.certification} class:q={f === meta?.quality} class:stars={f === stars}>{f}</span>{/each}
 		</p>
 		<p class="tags">{#each tags as t, i (t)}{#if i}<i aria-hidden="true">·</i>{/if}<span>{t}</span>{/each}</p>
 	</div>
@@ -292,6 +324,7 @@
 	.facts, .tags { min-height: 18px; }
 	.facts { display: flex; align-items: center; gap: 6px; font: var(--t-footnote); color: var(--text-muted); font-variant-numeric: tabular-nums; }
 	.rating { padding: 0 5px; border: 1px solid color-mix(in srgb, var(--text) 45%, transparent); border-radius: 3px; color: var(--text); font-size: 11px; line-height: 16px; }
+	.stars { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
 	.tags { display: flex; flex-wrap: nowrap; overflow: hidden; white-space: nowrap; align-items: center; gap: 6px; font: var(--t-footnote); color: var(--text); }
 	.tags i { color: var(--text-muted); font-style: normal; font-size: 9px; }
 	@media (prefers-reduced-motion: reduce) {

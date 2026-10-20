@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { to } from '#lib/paths.ts';
-	import { onMount, tick } from 'svelte';
+	import { onMount, tick, untrack } from 'svelte';
 	import { api, message } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { page } from '$app/state';
@@ -30,6 +30,9 @@
 	import { session } from '#lib/session.svelte.ts';
 	import { audienceOf, audienceStatus } from '#lib/title-status.ts';
 	import type { EpisodeView, TitleView } from '#lib/types.ts';
+	import { ownedMark, type ExploreCard } from '#lib/explore.ts';
+	import { toasts } from '#lib/toasts.svelte.ts';
+	import { deleteBody } from '#lib/organise.ts';
 
 	let titles = $state<TitleView[]>([]);
 	let loaded = $state(false);
@@ -97,7 +100,7 @@
 	const requesters = $derived([...new Map(titles.flatMap((t) => linkedPeople(t)).map((p) => [p.id, p])).values()].sort((a, b) => a.name.localeCompare(b.name)));
 	const query = $derived(titleQuery(q));
 	const moviesOn = $derived(partsNow.answer?.parts.find((part) => part.part === 'movies')?.on !== false);
-	let view = $state<'grid' | 'list'>(readView());
+	let view = $state<'grid' | 'list'>(untrack(() => readView(kind, true)));
 	let previewId = $state<number | null>(null);
 	let previewReturn = $state<HTMLButtonElement | null>(null);
 	let previewHeading = $state<HTMLHeadingElement | null>(null);
@@ -106,12 +109,13 @@
 	const preview = $derived(previewId === null ? null : (titles.find((title) => title.id === previewId) ?? null));
 	const kindLabel: Record<string, string> = { movie: 'Movie', show: 'Show', artist: 'Artist' };
 
-	function readView(): 'grid' | 'list' {
+	// Grid or Table is remembered per library (All, Movies, Shows, Music).
+	function readView(k: Kind, fromUrl = false): 'grid' | 'list' {
 		// ?layout=list (from the Missing shelves) opens the list, where shows fold their missing episodes.
-		const asked = page.url.searchParams.get('layout');
+		const asked = fromUrl ? page.url.searchParams.get('layout') : null;
 		if (asked === 'list' || asked === 'grid') return asked;
 		try {
-			return localStorage.getItem('holyarrs.library-view') === 'list' ? 'list' : 'grid';
+			return (localStorage.getItem(`holyarrs.library-view.${k}`) ?? localStorage.getItem('holyarrs.library-view')) === 'list' ? 'list' : 'grid';
 		} catch {
 			return 'grid';
 		}
@@ -123,7 +127,7 @@
 	function setView(v: 'grid' | 'list') {
 		view = v;
 		try {
-			localStorage.setItem('holyarrs.library-view', v);
+			localStorage.setItem(`holyarrs.library-view.${kind}`, v);
 		} catch {
 			// Not remembered in a private window; still works.
 		}
@@ -152,6 +156,7 @@
 
 	function setKind(k: Kind) {
 		kind = k;
+		view = readView(k);
 		syncFilterUrl();
 	}
 	function syncFilterUrl() {
@@ -293,6 +298,100 @@
 		{ label: 'Import a library', href: to('/library/import') }
 	]);
 
+	// The one corner badge: the same status circle as Explore and Search.
+	function markOf(t: TitleView) {
+		return ownedMark({ key: String(t.id), kind: t.kind === 'show' ? 'show' : t.kind === 'artist' ? 'artist' : 'movie', name: t.name, titleId: t.id } as ExploreCard, t, who);
+	}
+
+	// Select many, then act on them from the bottom bar. Kids and members only open titles.
+	const canManage = $derived(session.can('manage_library') && !session.kid);
+	let selecting = $state(false);
+	let picked = $state<Set<number>>(new Set());
+	let busy = $state(false);
+	let deleteIds = $state<number[]>([]);
+	let deleteDialog = $state<HTMLDialogElement | null>(null);
+	const pickedShown = $derived(shown.filter((t) => picked.has(t.id)));
+	const allPicked = $derived(shown.length > 0 && pickedShown.length === shown.length);
+	const deleteWord = $derived(deleteIds.length === 1 ? (titles.find((t) => t.id === deleteIds[0])?.name ?? '1 title') : `${deleteIds.length} titles`);
+	function togglePick(id: number) {
+		const next = new Set(picked);
+		if (next.has(id)) next.delete(id);
+		else next.add(id);
+		picked = next;
+	}
+	function startSelecting(id?: number) {
+		selecting = true;
+		picked = new Set(id === undefined ? [] : [id]);
+	}
+	function stopSelecting() {
+		selecting = false;
+		picked = new Set();
+	}
+	function pickAll() {
+		picked = allPicked ? new Set() : new Set(shown.map((t) => t.id));
+	}
+	async function eachTitle(ids: number[], run: (id: number) => Promise<unknown>): Promise<number> {
+		let failed = 0;
+		for (const id of ids) {
+			try {
+				await run(id);
+			} catch {
+				failed++;
+			}
+		}
+		return failed;
+	}
+	function report(done: string, failed: number, total: number) {
+		if (failed) toasts.push(`${total - failed} of ${total} ${done}. ${failed} could not be changed.`, 'fail');
+		else toasts.push(`${total} ${total === 1 ? 'title' : 'titles'} ${done}.`, 'ok');
+	}
+	async function setKeep(ids: number[], keep: boolean) {
+		busy = true;
+		const failed = await eachTitle(ids, (id) => api.put(`/titles/${id}`, { keep_up_to_date: keep }));
+		busy = false;
+		report(keep ? 'kept up to date' : 'no longer kept up to date', failed, ids.length);
+		await load();
+	}
+	async function searchTitles(ids: number[]) {
+		busy = true;
+		const failed = await eachTitle(ids, (id) => api.post(`/titles/${id}/search`, {}));
+		busy = false;
+		report('searching now', failed, ids.length);
+	}
+	function askDelete(ids: number[]) {
+		if (!ids.length) return;
+		deleteIds = ids;
+		deleteDialog?.showModal();
+	}
+	async function confirmDelete() {
+		const ids = deleteIds;
+		busy = true;
+		// Files stay on disk; the title page offers the file and Never-add choices.
+		const failed = await eachTitle(ids, (id) => api.post(`/titles/${id}/delete`, deleteBody({}, false, false, true)));
+		busy = false;
+		deleteDialog?.close();
+		report('deleted, files kept on disk', failed, ids.length);
+		stopSelecting();
+		await load();
+	}
+	function quickItems(t: TitleView): MenuItem[] {
+		const items: MenuItem[] = [{ label: 'Open', icon: 'chevronRight', href: titleLink(t.id) }];
+		if (!canManage) return items;
+		return [
+			...items,
+			{ label: 'Search now', icon: 'search', onselect: () => searchTitles([t.id]) },
+			{ label: t.keep_up_to_date ? 'Stop keeping up to date' : 'Keep up to date', icon: 'refresh', onselect: () => setKeep([t.id], !t.keep_up_to_date) },
+			{ label: 'Select', icon: 'check', onselect: () => startSelecting(t.id) },
+			{ kind: 'separator' },
+			{ label: `Delete ${kindLabel[t.kind]?.toLowerCase() ?? 'title'}`, icon: 'trash', destructive: true, onselect: () => askDelete([t.id]) }
+		];
+	}
+	function selectKey(e: KeyboardEvent) {
+		if (selecting && e.key === 'Escape' && !deleteDialog?.open) stopSelecting();
+	}
+	const statusLabel = $derived(filters.find(([f]) => f === filter)?.[1] ?? '');
+	const kindName = $derived(kinds.find(([k]) => k === kind)?.[1] ?? '');
+
 	/** who decides the status words: members get the plain ones. */
 	const who = $derived(audienceOf((p) => session.can(p)));
 
@@ -377,8 +476,10 @@
 </script>
 
 <svelte:head><title>Library · HolyArrs</title></svelte:head>
+<svelte:window onkeydown={selectKey} />
 
-<div class="library">
+
+<div class="library" class:selecting>
 	<PageHeader title="Library" subtitle={loaded && !error ? `${shown.length} ${shown.length === 1 ? 'title' : 'titles'}${filtersActive ? ' match' : ''}` : undefined}>
 		{#snippet actions()}
 			{#if browseItems.length}<Menu label="Browse the Library" variant="button" text="Browse" icon="library" items={browseItems} width={240} />{/if}
@@ -394,7 +495,8 @@
 		</div>
 		<div class="view-tools">
 			<Menu label="Sort titles" variant="button" text={sort === 'year' ? 'Newest year' : 'Name'} icon="chevronUpDown" items={sortItems} width={200} />
-			<SegmentedControl label="Layout" value={view} options={[{ value: 'grid', label: 'Posters', icon: 'grid' }, { value: 'list', label: 'List', icon: 'menu' }]} onchange={(v) => setView(v)} />
+				<SegmentedControl label="View" value={view} options={[{ value: 'grid', label: 'Grid', icon: 'grid' }, { value: 'list', label: 'Table', icon: 'menu' }]} onchange={(v) => setView(v)} />
+				{#if canManage && shown.length}<Button variant={selecting ? 'primary' : 'secondary'} size="md" icon="check" aria-pressed={selecting} onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select">{selecting ? 'Done' : 'Select'}</Button>{/if}
 		</div>
 	</div>
 
@@ -407,7 +509,10 @@
 			<Menu label="Requested by" variant="button" text={requesterText} icon="user" items={requesterItems} width={260} align="start" />
 		</div>
 		{#if requesterFilter !== 'anyone' || q || filtersActive}
-			<div class="chips active" role="group" aria-label="Active filters" bind:this={activeFilters}>
+				<div class="chips active" role="group" aria-label="Active filters" bind:this={activeFilters}>
+					{#if kind !== 'all'}<Chip label="Type: {kindName}" selected onclick={() => removeFilter('type')} onremove={() => removeFilter('type')} />{/if}
+					{#if filter !== 'all'}<Chip label="Status: {statusLabel}" selected onclick={() => removeFilter('status')} onremove={() => removeFilter('status')} />{/if}
+
 				{#if requesterFilter !== 'anyone'}<Chip label="Requested by: {requesterName}" selected onclick={() => removeFilter('requester')} onremove={() => removeFilter('requester')} />{/if}
 				{#if q}<Chip label="Search: {q}" selected onclick={() => removeFilter('search')} onremove={() => removeFilter('search')} />{/if}
 				{#if filtersActive}<Button variant="plain" size="md" onclick={clearFilters}>Clear</Button>{/if}
@@ -441,13 +546,15 @@
 					{@const st = exceptionChip(filter, posterStatus(t, who))}
 					{@const requester = requestedBy(t)}
 					{@const fold = filter === 'missing' && t.kind === 'show' && (t.show?.missing ?? 0) > 0}
-					<li data-testid="library-row" data-title-id={t.id} data-letter={letterOf(t.name)} class:selected={preview?.id === t.id} class:last-opened={lastOpenedId === t.id}>
-						<ListRow title={t.name} subtitle={[t.year, kindLabel[t.kind], t.kind === 'movie' ? '' : progressOf(t)].filter(Boolean).join(' · ')} meta="{outOn(t)} · Keep up to date: {t.keep_up_to_date ? 'Yes' : 'No'}" href={titleLink(t.id)} image={t.artwork[0]} icon={t.kind === 'show' ? 'tv' : t.kind === 'artist' ? 'music' : 'film'}>
-							{#snippet trailing()}
-								{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}<StatusPill kind="approved" testid="request-approved" />{/if}
+					<li data-testid="library-row" data-title-id={t.id} data-letter={letterOf(t.name)} class:selected={preview?.id === t.id || picked.has(t.id)} class:last-opened={lastOpenedId === t.id}>
+							<ListRow title={t.name} subtitle={[t.year, kindLabel[t.kind], t.kind === 'movie' ? '' : progressOf(t)].filter(Boolean).join(' · ')} meta="{outOn(t)} · Keep up to date: {t.keep_up_to_date ? 'Yes' : 'No'}" href={titleLink(t.id)} image={t.artwork[0]} icon={t.kind === 'show' ? 'tv' : t.kind === 'artist' ? 'music' : 'film'}>
+								{#snippet trailing()}
+									{#if selecting}<input type="checkbox" class="pick-box" checked={picked.has(t.id)} aria-label="Select {t.name}" onchange={() => togglePick(t.id)} data-testid="library-pick" />{/if}
+									{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}<StatusPill kind="approved" testid="request-approved" />{/if}
 								{#if st}<StatusPill kind={st.kind} label={st.label} />{/if}
-								<span class="preview-only"><IconButton icon="info" tooltip={false} label="Preview {t.name}" aria-pressed={preview?.id === t.id} onclick={(event: MouseEvent) => openPreview(t, event)} /></span>
-							{/snippet}
+									<span class="preview-only"><IconButton icon="info" tooltip={false} label="Preview {t.name}" aria-pressed={preview?.id === t.id} onclick={(event: MouseEvent) => openPreview(t, event)} /></span>
+									<Menu label="More for {t.name}" items={quickItems(t)} width={230} />
+								{/snippet}
 							</ListRow>
 							{#if fold}
 								{@const eps = missingOf[t.id]}
@@ -486,11 +593,16 @@
 			{#each shown as t, i (t.id)}
 					{@const q3 = exceptionChip(filter, posterStatus(t, who))}
 					{@const requester = requestedBy(t)}
-					<li class="item rise" data-testid="library-card" data-title-id={t.id} data-letter={letterOf(t.name)} class:selected={preview?.id === t.id} class:last-opened={lastOpenedId === t.id} style="--i: {Math.min(i, 8)}">
-					<PosterCard title={t.name} href={titleLink(t.id)} image={t.artwork[0]} subtitle={[t.year, t.kind === 'movie' ? '' : kindLabel[t.kind]].filter(Boolean).join(' · ')} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} status={q3?.kind} statusLabel={q3?.label} vtName={artName(t.id)}>
+					<li class="item rise" data-testid="library-card" data-title-id={t.id} data-letter={letterOf(t.name)} class:selected={preview?.id === t.id || picked.has(t.id)} class:last-opened={lastOpenedId === t.id} style="--i: {Math.min(i, 8)}">
+						<PosterCard title={t.name} href={titleLink(t.id)} image={t.artwork[0]} subtitle={[t.year, t.kind === 'movie' ? '' : kindLabel[t.kind]].filter(Boolean).join(' · ')} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} owned={markOf(t)} vtName={artName(t.id)}>
 						{#snippet action()}<span class="preview-only"><IconButton icon="info" tooltip={false} variant="glass" size="sm" label="Preview {t.name}" aria-pressed={preview?.id === t.id} onclick={(event: MouseEvent) => openPreview(t, event)} /></span>{/snippet}
-					</PosterCard>
-					{#if lastOpenedId === t.id || requester || t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}
+						</PosterCard>
+						{#if selecting}
+							<button type="button" class="pick" aria-pressed={picked.has(t.id)} aria-label="Select {t.name}" onclick={() => togglePick(t.id)} data-testid="library-pick"><span class="pick-dot" aria-hidden="true">{#if picked.has(t.id)}<Icon name="check" size={14} stroke={3} />{/if}</span></button>
+						{:else}
+							<span class="kebab"><Menu label="More for {t.name}" items={quickItems(t)} width={230} /></span>
+						{/if}
+						{#if lastOpenedId === t.id || requester || t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}
 						<div class="card-notes">
 							{#if lastOpenedId === t.id}<span class="last-opened-label" data-testid="last-opened">Last opened</span>{/if}
 							{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}<StatusPill kind="approved" testid="request-approved" />{/if}
@@ -533,7 +645,29 @@
 			</aside>
 		{/if}
 	</div>
+
+	{#if selecting}
+		<div class="select-bar" role="toolbar" aria-label="Selected titles" data-testid="select-bar">
+			<span class="count" aria-live="polite">{pickedShown.length} selected</span>
+			<Button variant="plain" size="md" onclick={pickAll}>{allPicked ? 'Select none' : `Select all ${shown.length}`}</Button>
+			<span class="bar-gap"></span>
+			<Button size="md" icon="search" disabled={busy || !pickedShown.length} onclick={() => searchTitles(pickedShown.map((t) => t.id))}>Search now</Button>
+			<Button size="md" icon="refresh" disabled={busy || !pickedShown.length} onclick={() => setKeep(pickedShown.map((t) => t.id), true)}>Keep up to date</Button>
+			<Button size="md" disabled={busy || !pickedShown.length} onclick={() => setKeep(pickedShown.map((t) => t.id), false)}>Stop keeping</Button>
+			<Button variant="destructive" size="md" icon="trash" disabled={busy || !pickedShown.length} onclick={() => askDelete(pickedShown.map((t) => t.id))} data-testid="select-delete">Delete {pickedShown.length || ''}</Button>
+			<IconButton icon="x" label="Stop selecting" onclick={stopSelecting} />
+		</div>
+	{/if}
 </div>
+
+<dialog bind:this={deleteDialog} aria-labelledby="bulk-delete-title" class="modal" data-testid="bulk-delete">
+	<h2 id="bulk-delete-title" class="h2">Delete {deleteWord}?</h2>
+	<p class="small muted">{deleteIds.length === 1 ? 'It leaves' : `All ${deleteIds.length} leave`} the Library. Files stay on disk. To also delete files, open the title and use Delete there.</p>
+	<div class="modal-actions">
+		<Button onclick={() => deleteDialog?.close()} disabled={busy}>Cancel</Button>
+		<Button variant="destructive" icon="trash" disabled={busy} onclick={confirmDelete} data-testid="bulk-delete-confirm">Delete {deleteIds.length} {deleteIds.length === 1 ? 'title' : 'titles'}</Button>
+	</div>
+</dialog>
 
 {#snippet letterRail()}
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -547,6 +681,20 @@
 
 <style>
 	.library { display: flex; flex-direction: column; gap: 16px; padding-bottom: 48px; min-width: 0; }
+	.library.selecting { padding-bottom: 112px; }
+	.kebab { position: absolute; left: 8px; top: 8px; z-index: 3; border-radius: 50%; background: rgb(0 0 0 / 45%); color: #fff; opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
+	.grid > li:hover .kebab, .grid > li:focus-within .kebab { opacity: 1; }
+	@media (hover: none) { .kebab { opacity: 1; } }
+	.pick { position: absolute; inset: 0 0 auto 0; aspect-ratio: 2 / 3; z-index: 3; display: block; padding: 0; border: 0; border-radius: var(--r-card); background: transparent; cursor: pointer; }
+	.pick[aria-pressed='true'] { background: rgb(0 0 0 / 30%); box-shadow: inset 0 0 0 3px var(--accent); }
+	.pick:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.pick-dot { position: absolute; left: 8px; top: 8px; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; border: 2px solid #fff; background: rgb(0 0 0 / 35%); color: #fff; }
+	.pick[aria-pressed='true'] .pick-dot { background: var(--accent-fill); border-color: var(--accent-fill); color: var(--accent-ink, #fff); }
+	.pick-box { width: 20px; height: 20px; accent-color: var(--accent); }
+	.select-bar { position: sticky; bottom: 16px; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; padding: 10px 12px; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card), 0 8px 28px rgb(0 0 0 / 25%); }
+	.select-bar .count { padding: 0 8px; font: var(--t-subhead); font-weight: 600; font-variant-numeric: tabular-nums; }
+	.bar-gap { flex: 1 1 auto; }
+	.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 	.toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 	.find-box { position: relative; flex: 1 1 320px; max-width: 560px; min-width: 0; }
 	.find-ic { position: absolute; left: 12px; top: 50%; translate: 0 -50%; color: var(--text-muted); display: grid; pointer-events: none; }

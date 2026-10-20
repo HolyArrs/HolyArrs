@@ -102,3 +102,34 @@ export function firstView(asks: Pick<Ask, 'state' | 'mine'>[]): WishlistView {
 	const n = viewCounts(asks);
 	return n.waiting ? 'waiting' : n.all ? 'all' : 'mine';
 }
+
+/** The Approvals tabs. Failed is an approved ask that never reached the Library. */
+export type AskTab = 'waiting' | 'approved' | 'declined' | 'done' | 'failed';
+export const askTabs: { tab: AskTab; label: string }[] = [
+	{ tab: 'waiting', label: 'Waiting' },
+	{ tab: 'approved', label: 'Approved' },
+	{ tab: 'declined', label: 'Declined' },
+	{ tab: 'done', label: 'Done' },
+	{ tab: 'failed', label: 'Failed' }
+];
+
+/** askTab says which tab an ask sits in. */
+export function askTab(a: Pick<Ask, 'state' | 'title_id'>): AskTab {
+	if (a.state === 'asked') return 'waiting';
+	if (a.state === 'turned_down') return 'declined';
+	if (a.state === 'available') return 'done';
+	return a.title_id ? 'approved' : 'failed';
+}
+
+/** tabCounts counts the asks in each tab. */
+export function tabCounts(asks: Pick<Ask, 'state' | 'title_id'>[]): Record<AskTab, number> {
+	const n: Record<AskTab, number> = { waiting: 0, approved: 0, declined: 0, done: 0, failed: 0 };
+	for (const a of asks) n[askTab(a)]++;
+	return n;
+}
+
+/** firstTab is Waiting when anything waits, else the first tab with asks. */
+export function firstTab(asks: Pick<Ask, 'state' | 'title_id'>[]): AskTab {
+	const n = tabCounts(asks);
+	return askTabs.find((t) => n[t.tab] > 0)?.tab ?? 'waiting';
+}

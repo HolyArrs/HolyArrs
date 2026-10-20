@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { byDay, feedLink, monthGrid, monthRange, shiftMonth, webcalLink, ymd, weekStart, weekRange, weekDays, shiftWeek, readView, saveView, startView, entryArt, entryIcon } from './calendar.ts';
+import { itemDot, passes, readPresets, savePresets, stacked, stackedRange, weekLabel, byDay, feedLink, monthGrid, monthRange, shiftMonth, webcalLink, ymd, weekStart, weekRange, weekDays, shiftWeek, readView, saveView, startView, entryArt, entryIcon } from './calendar.ts';
 import type { CalendarEntry } from './types.ts';
 
 const e = (title_id: number, kind: CalendarEntry['kind'], date: string): CalendarEntry => ({ title_id, name: `Movie ${title_id}`, kind, date });
@@ -89,5 +89,41 @@ describe('calendar artwork', () => {
 		expect(entryIcon('episode')).toBe('tv');
 		expect(entryIcon('album')).toBe('music');
 		expect(entryIcon('cinema')).toBe('film');
+	});
+});
+
+describe('stacked weeks', () => {
+	const ep = (date: string, state?: string): CalendarEntry => ({ title_id: 1, name: 'X', kind: 'episode', date, air_day: date, timed: false, state });
+	it('names the weeks', () => {
+		const today = new Date(2026, 9, 21);
+		expect(weekLabel(weekStart(today), today)).toBe('This week');
+		expect(weekLabel(shiftWeek(weekStart(today), 1), today)).toBe('Next week');
+		expect(weekLabel(shiftWeek(weekStart(today), 3), today)).not.toMatch(/week/);
+	});
+	it('lays out two weeks and Later', () => {
+		const start = new Date(2026, 9, 19);
+		const s = stacked(start, [ep('2026-10-20'), ep('2026-10-28'), ep('2026-11-05'), ep('2026-12-30')], '2026-10-21');
+		expect(s.weeks).toHaveLength(2);
+		expect(s.weeks[0].days[1].items).toHaveLength(1);
+		expect(s.weeks[0].days[2].today).toBe(true);
+		expect(s.later.map((d) => d.day)).toEqual(['2026-11-05']);
+		expect(stackedRange(start)).toEqual({ from: '2026-10-19', to: '2026-11-30' });
+	});
+	it('picks a status dot and filters', () => {
+		expect(itemDot(ep('2026-10-20', 'in_library'), '2026-10-21')).toBe('have');
+		expect(itemDot(ep('2026-10-20'), '2026-10-21')).toBe('missing');
+		expect(itemDot(ep('2026-10-22'), '2026-10-21')).toBe('upcoming');
+		expect(passes({ ...ep('2026-10-22'), keep_up_to_date: false }, { keptOnly: true, haveOnly: false })).toBe(false);
+		expect(passes(ep('2026-10-22'), { keptOnly: false, haveOnly: true })).toBe(false);
+	});
+	it('saves and reads filter presets', () => {
+		const m = new Map<string, string>();
+		const store = { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v) };
+		expect(readPresets(store)).toEqual([]);
+		const p = { name: 'Shows I keep', which: 'shows' as const, off: [], keptOnly: true, haveOnly: false };
+		savePresets([p], store);
+		expect(readPresets(store)).toEqual([p]);
+		m.set('holyarrs.calendar-filters', '{bad');
+		expect(readPresets(store)).toEqual([]);
 	});
 });
