@@ -149,7 +149,7 @@
 		};
 		const fail = (why?: unknown) => {
 			if (gone) return;
-			dbg('FAIL ' + (typeof why === 'string' ? why : (v.error?.message || (why as Error)?.message || 'error event')));
+			dbg('FAIL ' + (typeof why === 'string' ? why : (v.error?.message || v.dataset.hlsError || (why as Error)?.message || 'error event')));
 			gone = true;
 			dropUp();
 			// This trailer stays quiet; the person's sound choice is kept for the next one.

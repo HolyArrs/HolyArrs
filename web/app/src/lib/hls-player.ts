@@ -43,7 +43,10 @@ export async function attachHLS(video: HTMLVideoElement, url: string, native: bo
 		if (i >= 0 && hls.audioTrack !== i) hls.audioTrack = i;
 	});
 	hls.on(Hls.Events.ERROR, (_e, d) => {
-		if (d.fatal) video.dispatchEvent(new Event('error'));
+		if (d.fatal) {
+			video.dataset.hlsError = `${d.type}/${d.details}${d.response?.code ? ' ' + d.response.code : ''}`;
+			video.dispatchEvent(new Event('error'));
+		}
 	});
 	if (typeof location !== 'undefined' && location.search.includes('trailerdebug')) (window as unknown as { __hls?: unknown[] }).__hls = [...((window as unknown as { __hls?: unknown[] }).__hls ?? []), hls];
 	hls.loadSource(url);
