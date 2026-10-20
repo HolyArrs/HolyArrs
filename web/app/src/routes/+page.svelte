@@ -9,16 +9,15 @@
 	import { problems } from '#lib/health.ts';
 	import { groupLabel } from '#lib/history.ts';
 	import { pickFrom } from '#lib/card-art.ts';
-	import { ownedIndex, cardPill, comingSoon, markTransitions, orderRecent, recentlyAdded, titleCard, type ExploreCard } from '#lib/explore.ts';
-	import { audienceOf, titleStatus } from '#lib/title-status.ts';
-	import { attention, downloadLine, downloadSubtitle, greetName, isActive } from '#lib/home.ts';
+	import { comingSoon, markTransitions, orderRecent, ownedMark, titleCard, type ExploreCard } from '#lib/explore.ts';
+	import { audienceOf } from '#lib/title-status.ts';
+	import { arrivedAt, arrivedTitle, attention, downloadLine, downloadSubtitle, greetName, homeFresh, isActive, mixLine, soonLine, splitArrivals } from '#lib/home.ts';
 	import { ymd } from '#lib/calendar.ts';
 	import { personName } from '#lib/plain.ts';
 	import type { DownloadRow, Decision } from '#lib/downloaders.ts';
 	import type { Ask, CalendarEntry, EventRecord, Health, HealthChecks, LibraryFolder, SearchView, TitleView } from '#lib/types.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
-	import Top10Row from '#lib/Top10Row.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
@@ -73,8 +72,12 @@
 	const active = $derived(downloads.filter(isActive));
 	const failedDownloads = $derived(downloads.filter((d) => d.state === 'failed'));
 	const byId = $derived(new Map(titles.map((t) => [t.id, t])));
-	const recent = $derived(orderRecent(recentlyAdded(titles, 20).map((t) => titleCard(t))));
+	// Just arrived (a file in the last 14 days) and Recently added (the rest) never share a title.
+	const split = $derived(splitArrivals(titles));
+	const arrived = $derived(split.arrived.slice(0, 20).map((t) => titleCard(t)));
+	const recent = $derived(orderRecent(split.earlier.slice(0, 20).map((t) => titleCard(t))));
 	const soon = $derived(comingSoon(dates, titles, new Date(), 20));
+	const arrivedName = $derived(arrivedTitle(split.arrived[0] ? arrivedAt(split.arrived[0]) : undefined));
 	const waiting = $derived(asks.filter((a) => a.state === 'asked'));
 	const mine = $derived(asks.filter((a) => a.mine && a.state !== 'available').slice(0, 20));
 	const fixes = $derived(manager || admin ? attention({ failed: failedDownloads, decisions: decisionItems, health: admin ? (checks?.checks ?? []) : [] }) : []);
@@ -87,6 +90,7 @@
 	// One view-transition name per title on the page: the first poster wins.
 	const rows = $derived(
 		markTransitions([
+			{ id: 'arrived', title: '', cards: arrived },
 			{ id: 'soon', title: '', cards: soon },
 			{ id: 'recent', title: '', cards: recent },
 			{ id: 'missing', title: '', cards: missingCards }
@@ -109,6 +113,13 @@
 		const kind: 'movie' | 'show' | null = t?.kind === 'show' ? 'show' : t?.kind === 'movie' ? 'movie' : null;
 		const tmdb = t?.ids?.tmdb;
 		return { backdrop: t?.backdrop ?? null, logo: t?.logo ?? null, art: kind && tmdb ? pickFrom(cardArt[`:${tmdb}`]) : undefined, preview: kind && tmdb ? { kind, tmdb, year: t?.year } : null };
+	}
+
+	/** The ask's one round status mark, in the same words as the cards. */
+	function askMark(a: Ask): { state: 'available' | 'requested' | 'declined'; label: string } | null {
+		if (a.state === 'available') return { state: 'available', label: 'In your library' };
+		if (a.state === 'turned_down') return who === 'staff' || a.mine ? { state: 'declined', label: 'Turned down' } : null;
+		return { state: 'requested', label: a.state === 'approved' ? 'Approved, waiting for a copy' : 'Requested' };
 	}
 
 	function titleHref(id: number): string {
@@ -270,68 +281,71 @@
 		{/if}
 
 		{#if active.length}
-			<Shelf title="Downloading now" subtitle="{active.length} {active.length === 1 ? 'download' : 'downloads'}" href={to('/downloads')} item="300px">
-				{#each active.slice(0, 20) as d (d.id)}
-					<WideCard
-						title={d.title || d.name}
-						href={d.title_id ? titleHref(d.title_id) : to('/downloads')}
-						image={d.artwork || byId.get(d.title_id ?? -1)?.artwork?.[0]}
-						subtitle={downloadSubtitle(d)}
-						meta={downloadLine(d)}
-						progress={Math.round(d.progress * 100)}
-						status={d.state === 'stalled' ? 'missing' : 'downloading'}
-						statusLabel={d.state === 'stalled' ? 'Stalled' : d.state === 'queued' ? 'Waiting' : undefined}
-					/>
-				{/each}
-			</Shelf>
+			<div class="wide-row">
+				<Shelf title="Downloading now" subtitle="{active.length} {active.length === 1 ? 'download' : 'downloads'}" href={to('/downloads')} item="var(--title-item)">
+					{#each active.slice(0, 20) as d (d.id)}
+						{@const t = byId.get(d.title_id ?? -1)}
+						<WideCard
+							cover
+							title={d.title || d.name}
+							href={d.title_id ? titleHref(d.title_id) : to('/downloads')}
+							image={t?.backdrop ?? d.artwork ?? t?.artwork?.[0]}
+							logo={t?.logo}
+							subtitle={downloadSubtitle(d)}
+							meta={downloadLine(d)}
+							progress={Math.round(d.progress * 100)}
+							owned={{ state: 'downloading', label: d.state === 'stalled' ? 'Stalled' : d.state === 'queued' ? 'Waiting to start' : `Downloading ${Math.round(d.progress * 100)}%` }}
+						/>
+					{/each}
+				</Shelf>
+			</div>
 		{/if}
 
-		{#if rows[0].cards.length}
-			<Shelf title="Coming soon" subtitle="The next 30 days" href={to('/calendar')} item="var(--title-item)">
-				{#each rows[0].cards as c (c.key)}
-					{@const w = wideOf(c.titleId)}
-					<WideCard cover title={c.name} kind={c.kind} typed href={c.titleId ? titleHref(c.titleId) : undefined} image={c.wide ?? w.backdrop} logo={w.logo} art={w.art} preview={w.preview} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} />
-				{/each}
-			</Shelf>
-		{/if}
+		{#snippet titleRow(row: { cards: ExploreCard[] }, type: string, opts: { title: string; subtitle?: string; href?: string })}
+			{#if row.cards.length}
+				{@const wide = row.cards.some((c) => c.kind !== 'artist')}
+				<div class={wide ? 'wide-row' : 'poster-row'}>
+					<Shelf title={opts.title} subtitle={opts.subtitle || undefined} href={opts.href} item={wide ? 'var(--title-item)' : 'var(--poster-item)'}>
+						{#each row.cards as c (c.key)}
+							{@const t = c.titleId === undefined ? undefined : byId.get(c.titleId)}
+							{@const w = wideOf(c.titleId)}
+							{@const mark = ownedMark(c, t, who)}
+							{@const fresh = homeFresh(t, dates)}
+							{#if c.kind !== 'artist'}
+								<WideCard cover title={c.name} kind={c.kind} typed row={type} href={c.titleId ? titleHref(c.titleId) : undefined} image={c.wide ?? w.backdrop ?? c.image} logo={w.logo} art={w.art} preview={w.preview} subtitle={c.subtitle} {fresh} owned={mark} vtName={c.vtName} />
+							{:else}
+								<PosterCard title={c.name} kind={c.kind} typed row={type} href={c.titleId ? titleHref(c.titleId) : undefined} image={c.image} subtitle={c.subtitle} {fresh} owned={mark} vtName={c.vtName} />
+							{/if}
+						{/each}
+					</Shelf>
+				</div>
+			{/if}
+		{/snippet}
 
-		<Top10Row owned={ownedIndex(titles)} {who} />
-
-		{#if rows[1].cards.length}
-			<Shelf title="Recently added" href={to('/library')} item={rows[1].cards.some((c) => c.kind !== 'artist') ? 'var(--title-item)' : undefined}>
-				{#each rows[1].cards as c (c.key)}
-					{@const pill = c.status === 'in_library' ? null : cardPill(c, who)}
-					{@const w = wideOf(c.titleId)}
-					{#if c.kind !== 'artist'}
-					<WideCard cover title={c.name} kind={c.kind} typed href={titleHref(c.titleId!)} image={w.backdrop ?? c.image} logo={w.logo} art={w.art} preview={w.preview} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" status={pill?.kind} statusLabel={pill?.label} vtName={c.vtName} />
-					{:else}
-					<PosterCard title={c.name} kind={c.kind} typed href={titleHref(c.titleId!)} image={c.image} subtitle={c.subtitle} badges={c.badges} status={pill?.kind} statusLabel={pill?.label} vtName={c.vtName} />
-					{/if}
-				{/each}
-			</Shelf>
-		{/if}
+		{@render titleRow(rows[0], 'just_arrived', { title: arrivedName, subtitle: mixLine(rows[0].cards), href: to('/library') })}
 
 		{#if approver && waiting.length}
-			<Shelf title="Waiting for approval" subtitle="{waiting.length} {waiting.length === 1 ? 'ask' : 'asks'} on the Wishlist" href={to('/wishlist')}>
+			<Shelf title="Waiting for approval" subtitle="{waiting.length} {waiting.length === 1 ? 'ask' : 'asks'} on the Wishlist" href={to('/wishlist')} item="var(--poster-item)">
 				{#each waiting.slice(0, 20) as a (a.id)}
-					<PosterCard title={a.name} href={to('/wishlist')} image={a.poster} subtitle="Asked by {personName(a.asked_by?.name, 'someone in your household')}" status="requested" statusLabel={titleStatus({ ask: 'asked' }, who).label} />
+					<PosterCard title={a.name} href={to('/wishlist')} image={a.poster} subtitle="Asked by {personName(a.asked_by?.name, 'someone in your household')}" owned={askMark(a)} />
 				{/each}
 			</Shelf>
 		{:else if !approver && mine.length}
-			<Shelf title="Your Wishlist" href={to('/wishlist')}>
+			<Shelf title="Your asks" subtitle="{mine.length} on your Wishlist" href={to('/wishlist')} item="var(--poster-item)">
 				{#each mine as a (a.id)}
-					{@const pill = titleStatus({ ask: a.state, titleKind: a.kind === 'artist' ? 'artist' : a.kind === 'show' ? 'show' : 'movie' }, who)}
 					<PosterCard
 						title={a.name}
 						href={a.title_id ? titleHref(a.title_id) : to('/wishlist')}
 						image={a.poster}
 						subtitle={a.season_words || a.album_words || (a.year ? String(a.year) : undefined)}
-						status={pill.kind}
-						statusLabel={pill.label}
+						owned={askMark(a)}
 					/>
 				{/each}
 			</Shelf>
 		{/if}
+
+		{@render titleRow(rows[1], 'coming_soon', { title: 'Coming soon', subtitle: soonLine(rows[1].cards[0]), href: to('/calendar') })}
+		{@render titleRow(rows[2], 'recent', { title: 'Recently added', subtitle: mixLine(rows[2].cards), href: to('/library') })}
 
 		{#if !manager && loaded}
 			<section class="prompt" aria-labelledby="h-explore">
@@ -343,18 +357,8 @@
 			</section>
 		{/if}
 
-		{#if manager && rows[2].cards.length}
-			<Shelf title="Missing" subtitle="Titles you keep up to date that have no file yet" href={to('/library?show=missing&layout=list')} item={rows[2].cards.some((c) => c.kind !== 'artist') ? 'var(--title-item)' : undefined}>
-				{#each rows[2].cards as c (c.key)}
-					{@const pill = cardPill(c, who)}
-					{@const w = wideOf(c.titleId)}
-					{#if c.kind !== 'artist'}
-					<WideCard cover title={c.name} kind={c.kind} typed href={titleHref(c.titleId!)} image={w.backdrop ?? c.image} logo={w.logo} art={w.art} preview={w.preview} subtitle={c.subtitle} badgesAt="bottom" status={pill?.kind} statusLabel={pill?.label} vtName={c.vtName} />
-					{:else}
-					<PosterCard title={c.name} href={titleHref(c.titleId!)} image={c.image} subtitle={c.subtitle} status={pill?.kind} statusLabel={pill?.label} vtName={c.vtName} />
-					{/if}
-				{/each}
-			</Shelf>
+		{#if manager}
+			{@render titleRow(rows[3], 'missing', { title: 'Missing', subtitle: 'Titles you keep up to date that have no file yet', href: to('/library?show=missing&layout=list') })}
 		{/if}
 
 		{#if loaded && (searching.length || found.length || events.length || (admin && health))}
@@ -376,7 +380,7 @@
 					<section class="panel" aria-labelledby="h-ev">
 						<header><h2 id="h-ev">Latest Events</h2><a href={to('/downloads/history')}>History</a></header>
 						<div class="list">
-							{#each events as e (e.ID)}
+							{#each events.slice(0, 6) as e (e.ID)}
 								<ListRow title={e.Summary} subtitle={groupLabel(e.Kind)} meta={ago(e.At)} icon="clock" />
 							{/each}
 						</div>
@@ -399,9 +403,12 @@
 </div>
 
 <style>
-	.home { container: home / inline-size; --title-item: max(240px, calc((100cqi - 5 * var(--shelf-gap)) / 5.5)); display: flex; flex-direction: column; gap: 36px; padding-bottom: 48px; }
-	.home > :global(.ui-head) { margin-bottom: -12px; }
+	/* The same sizes as Explore: 279px wide cards at a 1536px window (Netflix), 5px gaps on wide rows, one 32px rhythm between blocks. */
+	.home { container: home / inline-size; --title-item: max(200px, calc((100vw - 96px) / 5.16)); --poster-item: 168px; --home-gap: 32px; display: flex; flex-direction: column; gap: var(--home-gap); padding-bottom: 48px; }
+	.home > :global(.ui-head) { margin-bottom: -8px; }
 	.banner { margin-bottom: -16px; }
+	.wide-row, .poster-row { display: contents; }
+	@media (min-width: 768px) { .wide-row { --shelf-gap: 5px; } }
 	.loading { display: flex; flex-direction: column; gap: 14px; }
 	.sk-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--shelf-gap); max-height: 260px; overflow: hidden; }
 
@@ -424,7 +431,7 @@
 	.done .dot { background: var(--ok); color: var(--on-art); outline: none; }
 	.grow { flex: 1; min-width: 0; }
 
-	.attention header, .panel header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+	.attention header, .panel header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 	.attention header { justify-content: flex-start; }
 	.attention h2, .panel h2 { font: var(--t-title2); letter-spacing: var(--t-title2-track); }
 	.panel h2 { font: var(--t-title3); }
@@ -433,23 +440,23 @@
 	.detail summary { width: max-content; min-height: 24px; cursor: pointer; border-radius: 6px; }
 	.detail summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.detail p { margin-top: 4px; font-family: var(--font-mono); overflow-wrap: anywhere; }
-	.attention .list { border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); padding: 6px; }
+	/* Management widgets: calm grouped lists, a hairline and no lift, like Settings. */
+	.attention .list { border-radius: var(--r-panel); background: var(--surface-1); box-shadow: inset 0 0 0 1px var(--line); padding: 4px; }
 	.go { display: inline-flex; align-items: center; gap: 2px; color: var(--accent-text); font: var(--t-subhead); font-weight: 600; }
 	.more, .panel header a { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent-text); font: var(--t-callout); font-weight: 500; }
 	.more:hover, .panel header a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
-	.prompt { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: clamp(18px, 3vw, 28px); border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
+	.prompt { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: clamp(16px, 3vw, 24px); border-radius: var(--r-panel); background: var(--surface-2); }
 	.prompt h2 { font: var(--t-title3); }
 	.prompt p { color: var(--text-muted); max-width: 56ch; margin-top: 4px; }
 
-	.lately { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 20px; align-items: start; }
-	.panel { min-width: 0; padding: 16px 16px 10px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
+	.lately { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 16px; align-items: start; }
+	.panel { min-width: 0; padding: 16px 16px 8px; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: inset 0 0 0 1px var(--line); }
 	.panel .list { margin: 0 -8px; }
 	.facts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 4px 0 8px; }
 	.facts dt { color: var(--text-muted); font: var(--t-footnote); margin-bottom: 4px; }
 	.facts dd { margin: 0; font: var(--t-headline); font-variant-numeric: tabular-nums; }
 
 	@media (max-width: 900px) { .setup { grid-template-columns: 1fr; } }
-	@media (max-width: 767px) { .home { gap: 28px; } }
-	@media (max-width: 767px) { .home { --title-item: calc((100cqi - var(--shelf-gap)) / 1.6 / .78); } }
+	@media (max-width: 767px) { .home { --home-gap: 26px; --poster-item: 54vw; --title-item: calc((100cqi - var(--shelf-gap)) / 1.6 / .78); } }
 </style>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { attention, downloadLine, downloadSubtitle, greetName, healthFix, isActive } from './home.ts';
+import { arrivedAt, arrivedTitle, attention, downloadLine, downloadSubtitle, greetName, healthFix, homeFresh, isActive, mixLine, soonLine, splitArrivals } from './home.ts';
 import type { HealthCheck } from './types.ts';
 
 const check = (key: string, state: HealthCheck['state'], kind: HealthCheck['kind'] = 'source'): HealthCheck => ({ id: 1, key, kind, subject: 'S', state, message: `${key} broke`, since: '', checked_at: '' });
@@ -38,5 +38,33 @@ describe('home', () => {
 		expect(items[2]).toMatchObject({ text: 'Harbour Lights S02E01: Ran out.', href: '/downloads/decide' });
 		expect(items[3].href).toBe('/settings/library-folders');
 		expect(healthFix('update')).toBe('/settings/this-app');
+	});
+});
+
+
+describe('home rows', () => {
+	const now = Date.parse('2026-10-20T12:00:00Z');
+	const t = (id: number, kind: string, ...days: number[]) => ({ id, kind, slots: days.map((d) => ({ file: { AddedAt: new Date(now - d * 86400000).toISOString() } })) }) as never;
+	it('splits arrivals so no title is on both rows', () => {
+		const { arrived, earlier } = splitArrivals([t(1, 'movie', 30), t(2, 'movie', 2), t(3, 'show', 5, 1), t(4, 'movie')], now);
+		expect(arrived.map((x: { id: number }) => x.id)).toEqual([3, 2]);
+		expect(earlier.map((x: { id: number }) => x.id)).toEqual([4, 1]);
+		expect(arrivedAt(t(5, 'movie'))).toBeUndefined();
+	});
+	it('picks one factual freshness strip', () => {
+		expect(homeFresh(t(1, 'show', 2, 40), [], now)?.kind).toBe('new_episode');
+		expect(homeFresh(t(1, 'movie', 2), [], now)?.kind).toBe('recently_added');
+		expect(homeFresh(t(1, 'show', 40), [{ title_id: 1, date: '2026-10-25', kind: 'episode', season: 3, episode: 1 }], now)).toEqual({ kind: 'season_coming', text: 'Season 3 Coming' });
+		expect(homeFresh(t(1, 'movie', 40), [], now)).toBeNull();
+		expect(homeFresh(undefined, [], now)).toBeNull();
+	});
+	it('writes true row titles and lines', () => {
+		expect(mixLine([{ kind: 'movie' }, { kind: 'show' }, { kind: 'show' }])).toBe('1 movie and 2 shows');
+		expect(mixLine([])).toBe('');
+		expect(arrivedTitle(now - 3600000, now)).toBe('New today');
+		expect(arrivedTitle(now - 3 * 86400000, now)).toBe('New this week');
+		expect(arrivedTitle(now - 10 * 86400000, now)).toBe('Just arrived');
+		expect(soonLine({ name: 'Dune', subtitle: 'Fri' })).toBe('Next up: Dune, Fri');
+		expect(soonLine(undefined)).toBe('The next 30 days');
 	});
 });
