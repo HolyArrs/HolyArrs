@@ -91,9 +91,10 @@ export interface PageSection {
 
 /**
  * pageSections are the in-page anchors under a title hero, in page order:
- * requester sections first, the manager Library section last (only with
- * manage_library). Sections that turn out empty (no Collection) are hidden
- * by the nav.
+ * Where to watch, Cast, Ratings & reviews, Collection, More like this,
+ * More from, About (with the dates), and the manager Library section last
+ * (only with manage_library). Sections that turn out empty (no Collection)
+ * are hidden by the nav.
  */
 export function pageSections(kind: 'movie' | 'show' | 'artist' | 'album', has: { manage: boolean; asks?: boolean }): PageSection[] {
 	const music = kind === 'artist' || kind === 'album';
@@ -103,8 +104,10 @@ export function pageSections(kind: 'movie' | 'show' | 'artist' | 'album', has: {
 		kind === 'album' && { id: 'h-tracks', label: 'Tracks' },
 		!music && { id: 'title-where', label: 'Where to watch' },
 		!music && { id: 'title-cast', label: 'Cast' },
+		!music && { id: 'title-reviews', label: 'Ratings & reviews' },
 		!music && { id: 'title-collection', label: 'Collection' },
 		{ id: 'title-similar', label: kind === 'artist' ? 'Similar' : kind === 'album' ? 'More by the artist' : 'More like this' },
+		!music && { id: 'title-more-from', label: 'More from' },
 		{ id: 'h-about', label: 'About' },
 		has.manage && { id: 'h-library', label: 'Library' }
 	];

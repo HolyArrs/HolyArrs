@@ -579,7 +579,7 @@
 
 		<SectionNav items={pageSections('movie', { manage })} />
 
-		<TitleRows kind="movie" tmdb={title.ids?.tmdb} dates={[['In cinemas', date(title.cinema_date)], ['Digital', date(title.digital_date)], ['Disc', date(title.physical_date)]]}>
+		<TitleRows kind="movie" tmdb={title.ids?.tmdb}>
 			{#snippet middle()}{#key title!.id}<TitleCast titleId={title!.id} />{/key}{/snippet}
 		</TitleRows>
 
@@ -588,6 +588,9 @@
 				<dt>Now</dt>
 				<dd>{stageWord[title.stage] ?? words(title.stage)}</dd>
 				{#if title.year}<dt>Released</dt><dd>{title.year}</dd>{/if}
+				{#if title.cinema_date}<dt>In cinemas</dt><dd>{date(title.cinema_date)}</dd>{/if}
+				{#if title.digital_date}<dt>Digital</dt><dd>{date(title.digital_date)}</dd>{/if}
+				{#if title.physical_date}<dt>Disc</dt><dd>{date(title.physical_date)}</dd>{/if}
 				{#if title.runtime_minutes ?? rich?.runtime}<dt>Runtime</dt><dd>{runtimeWords(title.runtime_minutes ?? rich?.runtime)}</dd>{/if}
 				{#if title.rating ?? rich?.certification}<dt>Rated</dt><dd>{title.rating ?? rich?.certification}</dd>{/if}
 				<dt>Original language</dt>

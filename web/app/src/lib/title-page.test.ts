@@ -43,10 +43,10 @@ describe('title page helpers', () => {
 
 describe('title page sections', () => {
 	it('lists a movie page in page order, with the staff sections for staff', () => {
-		expect(pageSections('movie', { manage: true }).map((s) => s.label)).toEqual(['Where to watch', 'Cast', 'Collection', 'More like this', 'About', 'Library']);
+		expect(pageSections('movie', { manage: true }).map((s) => s.label)).toEqual(['Where to watch', 'Cast', 'Ratings & reviews', 'Collection', 'More like this', 'More from', 'About', 'Library']);
 	});
 	it('leaves the manager Library section out for requesters', () => {
-		expect(pageSections('movie', { manage: false }).map((s) => s.id)).toEqual(['title-where', 'title-cast', 'title-collection', 'title-similar', 'h-about']);
+		expect(pageSections('movie', { manage: false }).map((s) => s.id)).toEqual(['title-where', 'title-cast', 'title-reviews', 'title-collection', 'title-similar', 'title-more-from', 'h-about']);
 		expect(pageSections('artist', { manage: false }).map((s) => s.id)).not.toContain('h-library');
 	});
 	it('starts a show page with its episodes and keeps Library last', () => {
