@@ -19,10 +19,11 @@ function fake() {
 }
 
 describe('heroStep', () => {
-	it('folds only from playing and comes back on stop', () => {
+	it('folds only from playing and stays folded for the title', () => {
 		expect(heroStep('still', 'settle')).toBe('still');
 		expect(heroStep('playing', 'settle')).toBe('quiet');
-		expect(heroStep('quiet', 'stop')).toBe('ended');
+		expect(heroStep('quiet', 'stop')).toBe('quiet');
+		expect(heroStep('playing', 'stop')).toBe('ended');
 		expect(heroStep('ended', 'play')).toBe('playing');
 		expect(heroStep('quiet', 'play')).toBe('quiet');
 		expect(heroStep('quiet', 'reset')).toBe('still');
@@ -32,7 +33,7 @@ describe('heroStep', () => {
 });
 
 describe('heroQuiet', () => {
-	it('runs the measured sequence: play, fold after the wait, back on end', () => {
+	it('runs the measured sequence: play, fold after the wait, stays folded on end', () => {
 		const f = fake();
 		const seen: HeroPhase[] = [];
 		const h = heroQuiet((p) => seen.push(p), f.timers);
@@ -42,8 +43,9 @@ describe('heroQuiet', () => {
 		f.tick(1);
 		expect(h.phase).toBe('quiet');
 		h.send('stop');
-		expect(h.phase).toBe('ended');
-		expect(seen).toEqual(['playing', 'quiet', 'ended']);
+		h.send('play');
+		expect(h.phase).toBe('quiet');
+		expect(seen).toEqual(['playing', 'quiet']);
 	});
 
 	it('never sticks: a stop before the wait cancels the fold', () => {
@@ -67,7 +69,8 @@ describe('heroQuiet', () => {
 			h.send('play');
 			expect(h.phase).toBe('quiet');
 			h.send('stop');
-			expect(wordsShown(h.phase)).toBe(true);
+			expect(wordsShown(h.phase)).toBe(false);
+			h.send('reset');
 		}
 		expect(f.pending).toBe(0);
 	});

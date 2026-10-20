@@ -1,8 +1,8 @@
 // The Explore hero's words, as Netflix runs them: a few seconds into the
-// trailer the overview folds away and the logo glides down; the words come
-// back when the trailer stops for good (ended, failed, or taken over by
-// another player) or the title changes. Pointer moves and scrolling do not
-// change it. Every state can go to every other, so nothing gets stuck.
+// trailer the overview folds away and the logo glides down. Once folded, the
+// words stay folded for that title (a quick glance, shown once): scrolling
+// away and back, the trailer ending or another player taking over never bring
+// them back; only a new title or a page load does. Every state can go to every other, so nothing gets stuck.
 
 export type HeroPhase = 'still' | 'playing' | 'quiet' | 'ended';
 export type HeroEvent = 'play' | 'settle' | 'stop' | 'reset';
@@ -15,7 +15,7 @@ export function heroStep(phase: HeroPhase, ev: HeroEvent): HeroPhase {
 		case 'reset':
 			return 'still';
 		case 'stop':
-			return phase === 'still' ? 'still' : 'ended';
+			return phase === 'still' || phase === 'quiet' ? phase : 'ended';
 		case 'play':
 			// Resuming after a pause keeps the words folded; a fresh start shows them.
 			return phase === 'quiet' ? 'quiet' : 'playing';
