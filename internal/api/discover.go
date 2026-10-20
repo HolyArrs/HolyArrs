@@ -120,6 +120,9 @@ type discoverItemView struct {
 	Ask       *askBrief `json:"ask"`
 	// Fresh is the card's one freshness strip (New Episode, Top 10...).
 	Fresh *explore.Fresh `json:"fresh,omitempty"`
+	// TrailerKey is the title's YouTube trailer when HolyArrs already knows
+	// it (Explore only; never looked up for this answer).
+	TrailerKey string `json:"trailer_key,omitempty"`
 }
 
 // kindsOn are the asked kinds whose part is on.

@@ -307,6 +307,10 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 	a.exploreCount(r.Context(), me, "shown", rowTypes(head))
 	a.exploreTitleCount(r.Context(), me, "shown", rowLayers(head))
 	a.prefetchTrailers(r, exploreTrailerTitles(hero, head))
+	a.fillTrailerKeys(r, hero)
+	for i := range head {
+		a.fillTrailerKeys(r, head[i].Items)
+	}
 	a.exploreCaching(w, r, "private, no-cache")
 	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "building": building, "seeds": pg.Seeds, "tail_cap": pg.Cap,
 		"tail_rows": len(pg.Tail), "top10": top10, "hero": hero, "head": head})
@@ -342,6 +346,9 @@ func (a *API) exploreTail(w http.ResponseWriter, r *http.Request) {
 	}
 	a.exploreCount(r.Context(), me, "shown", rowTypes(rows))
 	a.exploreTitleCount(r.Context(), me, "shown", rowLayers(rows))
+	for i := range rows {
+		a.fillTrailerKeys(r, rows[i].Items)
+	}
 	a.exploreCaching(w, r, "private, no-cache")
 	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "page": n, "more": more, "rows": rows})
 }

@@ -16,14 +16,16 @@ import (
 
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/CoderLuii/holyarrs/internal/urlbase"
 	"github.com/CoderLuii/holyarrs/internal/ytdlp"
 )
 
 // Trailers in HolyArrs' own player: the title's YouTube trailer, resolved
 // by yt-dlp to addresses on YouTube's video servers (an adaptive HLS
 // manifest and an H.264 MP4). Only the resolved addresses are kept
-// (in memory and in lookup_cache, until shortly before they expire); no
-// video passes through or is stored by HolyArrs.
+// (in memory and in lookup_cache, until shortly before they expire), and
+// each title's YouTube key for 30 days. Video is never stored; it passes
+// through HolyArrs only on the pass-through relay (trailer_proxy.go).
 
 // EnvYTDLP names the yt-dlp program to use (package ytdlp has the order).
 const EnvYTDLP = ytdlp.Env
@@ -75,6 +77,10 @@ type TrailerStream struct {
 	Audio bool `json:"audio"`
 	// Key is the YouTube video, for the embed fallback.
 	Key string `json:"key"`
+	// ProxyURL is the same HLS stream relayed by HolyArrs (pass-through),
+	// for sound in browsers without native HLS and for viewers whose direct
+	// playback is refused. Given per person; never stored.
+	ProxyURL string `json:"proxy_url,omitempty"`
 }
 
 type trailerEntry struct {
@@ -236,6 +242,11 @@ func (a *API) trailerStream(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		discoverFail(w, err)
 	default:
+		if s.Type == "hls" {
+			if id := a.trailerRelay.register(a.person(r).UserID, s.URL, s.ExpiresAt); id != "" {
+				s.ProxyURL = urlbase.From(r.Context()) + "/api/v1/trailer/stream/" + id + "/manifest.m3u8"
+			}
+		}
 		w.Header().Set("Cache-Control", "private, no-store")
 		writeJSON(w, http.StatusOK, s)
 	}
@@ -319,6 +330,85 @@ func (a *API) resolveTitle(ctx context.Context, kind, id, lang string) (TrailerS
 // trailerKey picks the YouTube key: the metadata server's pick first (it
 // skips keys it found broken), else our own pick from TMDB's videos.
 func (a *API) trailerKey(ctx context.Context, kind, id, lang string) (string, error) {
+	if k := a.knownTrailerKey(ctx, kind, id, lang); k != "" {
+		return k, nil
+	}
+	k, err := a.pickTrailerKey(ctx, kind, id, lang)
+	if err == nil && k != "" {
+		a.keepTrailerKey(ctx, kind, id, lang, k)
+	}
+	return k, err
+}
+
+const (
+	trailerKeyKeep = 30 * 24 * time.Hour // a title's YouTube key is kept this long
+	trailerKeyMiss = 10 * time.Minute    // an unknown key is not read from SQLite again before this
+)
+
+type trailerKeyEntry struct {
+	key string
+	at  time.Time
+}
+
+// trailerKeyCache keeps titles' YouTube keys in memory before lookup_cache.
+type trailerKeyCache struct {
+	mu sync.Mutex
+	m  map[string]trailerKeyEntry
+}
+
+// knownTrailerKey answers the kept key, "" when none is kept (no lookup).
+func (a *API) knownTrailerKey(ctx context.Context, kind, id, lang string) string {
+	ck := kind + "|" + id + "|" + lang
+	now := time.Now()
+	c := &a.trailerKeys
+	c.mu.Lock()
+	e, ok := c.m[ck]
+	c.mu.Unlock()
+	if ok && ((e.key != "" && now.Sub(e.at) < trailerKeyKeep) || (e.key == "" && now.Sub(e.at) < trailerKeyMiss)) {
+		return e.key
+	}
+	e = trailerKeyEntry{at: now}
+	if a.s.Store != nil {
+		if b, found, err := (store.LookupCache{Store: a.s.Store}).Get(ctx, "trailerkey|"+ck, now); err == nil && found {
+			e.key = string(b)
+		}
+	}
+	c.put(ck, e)
+	return e.key
+}
+
+func (c *trailerKeyCache) put(ck string, e trailerKeyEntry) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.m == nil || len(c.m) > 20000 {
+		c.m = map[string]trailerKeyEntry{}
+	}
+	c.m[ck] = e
+}
+
+func (a *API) keepTrailerKey(ctx context.Context, kind, id, lang, key string) {
+	ck := kind + "|" + id + "|" + lang
+	now := time.Now()
+	a.trailerKeys.put(ck, trailerKeyEntry{key: key, at: now})
+	if a.s.Store != nil {
+		_ = store.LookupCache{Store: a.s.Store}.Put(ctx, "trailerkey|"+ck, []byte(key), now, now.Add(trailerKeyKeep))
+	}
+}
+
+// fillTrailerKeys sets trailer_key on Explore cards whose key is kept.
+func (a *API) fillTrailerKeys(r *http.Request, items []discoverItemView) {
+	if a.kidMax(r) != "" {
+		return
+	}
+	lang := trailerLanguage(r)
+	for i := range items {
+		if v := &items[i]; (v.Kind == "movie" || v.Kind == "show") && v.TMDBID != "" {
+			v.TrailerKey = a.knownTrailerKey(r.Context(), v.Kind, v.TMDBID, lang)
+		}
+	}
+}
+
+func (a *API) pickTrailerKey(ctx context.Context, kind, id, lang string) (string, error) {
 	if a.s.TrailerPick != nil {
 		k, err := a.s.TrailerPick(ctx, kind, id, lang)
 		if err == nil && k != "" {
