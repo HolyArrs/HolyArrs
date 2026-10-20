@@ -124,6 +124,9 @@ type discoverItemView struct {
 	// TrailerKey is the title's YouTube trailer when HolyArrs already knows
 	// it (Explore only; never looked up for this answer).
 	TrailerKey string `json:"trailer_key,omitempty"`
+	// The wide card's picture (card_art, card_logo, art_has_title), from
+	// the card_art table only.
+	metadata.CardArt
 }
 
 // kindsOn are the asked kinds whose part is on.

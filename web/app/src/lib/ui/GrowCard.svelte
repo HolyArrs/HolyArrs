@@ -8,7 +8,7 @@
 	import { sized } from '../tmdb-image.ts';
 	import { autoplayHere, loadUISettings, trailerSources, type TrailerSource } from '../autoplay.svelte.ts';
 	import { openTheater } from '../theater.svelte.ts';
-	import { flipTransform, growPlacement, GROW_MS, TRAILER_AFTER, type Growth } from '../grow.ts';
+	import { flipTransform, growPlacement, GROW_MS, SHRINK_MS, TRAILER_AFTER, type Growth } from '../grow.ts';
 
 	// The wide card grown in place, Netflix style: the card itself (same
 	// picture, same logo, same badges) scales up about 1.5x over its
@@ -113,7 +113,7 @@
 				{ transform: flipTransform(next.from), clipPath: clipTo(next) },
 				{ transform: 'none', clipPath: 'inset(0 0 0 0 round var(--r-card))' }
 			],
-			{ duration: GROW_MS, easing: 'cubic-bezier(.3, .1, .25, 1)', fill: 'both' }
+			{ duration: GROW_MS, easing: 'cubic-bezier(.2, .8, .2, 1)', fill: 'both' }
 		);
 		settle(anim);
 	}
@@ -125,7 +125,7 @@
 		const now = anim && anim.playState === 'running' ? getComputedStyle(card).transform : 'none';
 		anim?.cancel();
 		card.style.willChange = 'transform';
-		anim = card.animate([{ transform: now, clipPath: 'inset(0 0 0 0 round var(--r-card))' }, { transform: flipTransform(back), clipPath: clipTo(g) }], { duration: GROW_MS * 0.8, easing: 'cubic-bezier(.4, 0, .6, 1)', fill: 'both' });
+		anim = card.animate([{ transform: now, clipPath: 'inset(0 0 0 0 round var(--r-card))' }, { transform: flipTransform(back), clipPath: clipTo(g) }], { duration: SHRINK_MS, easing: 'cubic-bezier(.4, 0, .6, 1)', fill: 'both' });
 		anim.onfinish = () => ongone();
 	}
 
@@ -199,7 +199,9 @@
 			<TrailerPlayer {sources} {title} repeat onplaying={() => (playing = true)} onfail={() => (playing = false)} onended={() => (playing = false)} onexpand={(o) => { openTheater({ kind, tmdb, title, source: o.source, time: o.time, rect: { left: o.rect.left, top: o.rect.top, width: o.rect.width, height: o.rect.height }, from: 'hover' }); onclose(); }} />
 		{/if}
 		<span class="scrim" class:playing aria-hidden="true"></span>
-		{#if shownLogo}<span class="name" class:playing class:lifted><img class="logo" src={shownLogo} alt="" onerror={() => (logoFailed = true)} /></span>{/if}
+		<!-- The logo, else the name, stays over the trailer (card template). -->
+		{#if shownLogo}<span class="name" class:lifted><img class="logo" src={shownLogo} alt="" onerror={() => (logoFailed = true)} /></span>
+		{:else}<span class="name" class:lifted><span class="word">{title}</span></span>{/if}
 		{#if badge && g}<span class="badge" class:playing>{@render badge()}</span>{/if}
 	</a>
 	<div class="panel">
@@ -236,14 +238,15 @@
 	.scrim { position: absolute; inset: auto 0 0; height: 55%; background: linear-gradient(to top, rgb(0 0 0 / 0.62), transparent); pointer-events: none; transition: opacity 600ms ease; }
 	.name { position: absolute; left: 6%; right: 30%; bottom: 13%; z-index: 2; display: flex; align-items: flex-end; pointer-events: none; transition: opacity 300ms ease-out; }
 	.name.lifted { bottom: 26%; }
-	.name.playing, .badge.playing { opacity: 0; }
+	.badge.playing { opacity: 0; }
+	.word { font: 700 clamp(18px, 7cqw, 40px)/1.05 var(--font-display); letter-spacing: -0.02em; color: #fff; text-shadow: 0 2px 10px rgb(0 0 0 / 0.55); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 	.badge { transition: opacity 300ms ease-out; }
 	.scrim.playing { opacity: 0.5; }
 	.logo { max-width: 100%; max-height: 22cqw; width: auto; height: auto; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 2px 8px rgb(0 0 0 / 0.5)); }
 	/* The badges at their native size on the grown picture (no scale). */
 	.badge { position: absolute; inset: 0; z-index: 3; container: art / inline-size; pointer-events: none; }
 	.panel { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px 14px; opacity: 0; transform: translateY(-6px); }
-	.shown .panel { animation: panel-in 240ms var(--ease-out) 90ms both; }
+	.shown .panel { animation: panel-in 160ms cubic-bezier(.2, .8, .2, 1) 120ms both; }
 	@keyframes panel-in { to { opacity: 1; transform: none; } }
 	.buttons { display: flex; align-items: center; gap: 8px; min-width: 0; }
 	.buttons :global(.ui-ibtn.glass) { background: var(--text); color: var(--surface-1); box-shadow: none; }

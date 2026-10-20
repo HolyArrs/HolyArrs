@@ -8,6 +8,7 @@
 	import { searchLine } from '#lib/releases.ts';
 	import { problems } from '#lib/health.ts';
 	import { groupLabel } from '#lib/history.ts';
+	import { pickFrom } from '#lib/card-art.ts';
 	import { ownedIndex, cardPill, comingSoon, markTransitions, orderRecent, recentlyAdded, titleCard, type ExploreCard } from '#lib/explore.ts';
 	import { audienceOf, titleStatus } from '#lib/title-status.ts';
 	import { attention, downloadLine, downloadSubtitle, greetName, isActive } from '#lib/home.ts';
@@ -36,6 +37,8 @@
 	let retrying = $state(false);
 	// The newest titles, when the server sends them with the bounded summary; Home never reads the whole Library.
 	let titles = $state<TitleView[]>([]);
+	/** The wide cards' server-picked art, by "kind:tmdb id". */
+	let cardArt = $state<Record<string, { card_art?: string; card_logo?: string; art_has_title?: boolean }>>({});
 	let total = $state(0);
 	let missing = $state<MissingTitle[]>([]);
 	let folders = $state<LibraryFolder[]>([]);
@@ -105,7 +108,7 @@
 		const t = id === undefined ? undefined : byId.get(id);
 		const kind: 'movie' | 'show' | null = t?.kind === 'show' ? 'show' : t?.kind === 'movie' ? 'movie' : null;
 		const tmdb = t?.ids?.tmdb;
-		return { backdrop: t?.backdrop ?? null, logo: t?.logo ?? null, preview: kind && tmdb ? { kind, tmdb, year: t?.year } : null };
+		return { backdrop: t?.backdrop ?? null, logo: t?.logo ?? null, art: kind && tmdb ? pickFrom(cardArt[`:${tmdb}`]) : undefined, preview: kind && tmdb ? { kind, tmdb, year: t?.year } : null };
 	}
 
 	function titleHref(id: number): string {
@@ -116,7 +119,7 @@
 		const from = ymd(new Date());
 		const until = ymd(new Date(Date.now() + 30 * 86400000));
 		const [su, fo, dl, ev, he, se, ch, ca, as, de] = await Promise.allSettled([
-			api.get<{ total: number; missing: MissingTitle[]; recent?: TitleView[] }>('/library-summary'),
+			api.get<{ total: number; missing: MissingTitle[]; recent?: TitleView[]; card_art?: Record<string, { card_art?: string; card_logo?: string; art_has_title?: boolean }> }>('/library-summary'),
 			manager ? api.get<{ library_folders: LibraryFolder[] }>('/library-folders') : Promise.resolve(null),
 			// Members may only read the Library and their own asks (perms.go); the rest needs manage_library.
 			manager ? api.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=50') : Promise.resolve(null),
@@ -134,6 +137,7 @@
 			total = su.value.total ?? 0;
 			missing = su.value.missing ?? [];
 			titles = su.value.recent ?? [];
+			cardArt = su.value.card_art ?? {};
 			hasData = true;
 		}
 		if (fo.status === 'fulfilled' && fo.value) folders = fo.value.library_folders;
@@ -286,7 +290,7 @@
 			<Shelf title="Coming soon" subtitle="The next 30 days" href={to('/calendar')} item="var(--title-item)">
 				{#each rows[0].cards as c (c.key)}
 					{@const w = wideOf(c.titleId)}
-					<WideCard cover title={c.name} kind={c.kind} typed href={c.titleId ? titleHref(c.titleId) : undefined} image={c.wide ?? w.backdrop} logo={w.logo} preview={w.preview} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} />
+					<WideCard cover title={c.name} kind={c.kind} typed href={c.titleId ? titleHref(c.titleId) : undefined} image={c.wide ?? w.backdrop} logo={w.logo} art={w.art} preview={w.preview} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} />
 				{/each}
 			</Shelf>
 		{/if}
@@ -299,7 +303,7 @@
 					{@const pill = c.status === 'in_library' ? null : cardPill(c, who)}
 					{@const w = wideOf(c.titleId)}
 					{#if c.kind !== 'artist'}
-					<WideCard cover title={c.name} kind={c.kind} typed href={titleHref(c.titleId!)} image={w.backdrop ?? c.image} logo={w.logo} preview={w.preview} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" status={pill?.kind} statusLabel={pill?.label} vtName={c.vtName} />
+					<WideCard cover title={c.name} kind={c.kind} typed href={titleHref(c.titleId!)} image={w.backdrop ?? c.image} logo={w.logo} art={w.art} preview={w.preview} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" status={pill?.kind} statusLabel={pill?.label} vtName={c.vtName} />
 					{:else}
 					<PosterCard title={c.name} kind={c.kind} typed href={titleHref(c.titleId!)} image={c.image} subtitle={c.subtitle} badges={c.badges} status={pill?.kind} statusLabel={pill?.label} vtName={c.vtName} />
 					{/if}
@@ -345,7 +349,7 @@
 					{@const pill = cardPill(c, who)}
 					{@const w = wideOf(c.titleId)}
 					{#if c.kind !== 'artist'}
-					<WideCard cover title={c.name} kind={c.kind} typed href={titleHref(c.titleId!)} image={w.backdrop ?? c.image} logo={w.logo} preview={w.preview} subtitle={c.subtitle} badgesAt="bottom" status={pill?.kind} statusLabel={pill?.label} vtName={c.vtName} />
+					<WideCard cover title={c.name} kind={c.kind} typed href={titleHref(c.titleId!)} image={w.backdrop ?? c.image} logo={w.logo} art={w.art} preview={w.preview} subtitle={c.subtitle} badgesAt="bottom" status={pill?.kind} statusLabel={pill?.label} vtName={c.vtName} />
 					{:else}
 					<PosterCard title={c.name} href={titleHref(c.titleId!)} image={c.image} subtitle={c.subtitle} status={pill?.kind} statusLabel={pill?.label} vtName={c.vtName} />
 					{/if}
@@ -395,7 +399,7 @@
 </div>
 
 <style>
-	.home { container: home / inline-size; --title-item: calc((100cqi - 5 * var(--shelf-gap)) / 5.5); display: flex; flex-direction: column; gap: 36px; padding-bottom: 48px; }
+	.home { container: home / inline-size; --title-item: max(240px, calc((100cqi - 5 * var(--shelf-gap)) / 5.5)); display: flex; flex-direction: column; gap: 36px; padding-bottom: 48px; }
 	.home > :global(.ui-head) { margin-bottom: -12px; }
 	.banner { margin-bottom: -16px; }
 	.loading { display: flex; flex-direction: column; gap: 14px; }

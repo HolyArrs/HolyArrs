@@ -24,8 +24,10 @@ export interface Growth {
 export const GROW_SCALE = 1.5;
 export const GROW_MIN = 240;
 export const GROW_MAX = 560;
-export const GROW_MS = 300;
-export const GROW_DELAY = 500;
+export const GROW_MS = 220;
+/** The shrink back onto the card. */
+export const SHRINK_MS = 180;
+export const GROW_DELAY = 400;
 /** After the card has grown, the trailer may fade in (about 1 s after hover start). */
 export const TRAILER_AFTER = 500;
 

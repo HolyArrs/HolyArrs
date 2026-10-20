@@ -518,7 +518,7 @@
 						{@const act = cardAction(c, { manage, ask: mayAsk })}
 						{@const mark = ownedMark(c, ownedTitle(c, owned), who)}
 						{#if row.wide || wideKind(c.kind)}
-							<WideCard cover big={big.has(row.id)} title={c.name} href={(cardOpens === 'panel' ? infoHref(c) : undefined) ?? cardHref(c)} onmore={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? (from) => openInfo({ kind: c.kind as 'movie' | 'show', tmdb: cardTmdb(c) }, from) : undefined} image={c.wide ?? c.image} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} fresh={c.fresh} owned={mark} typed row={row.type} preview={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: cardTmdb(c), year: c.year } : undefined}>
+							<WideCard cover big={big.has(row.id)} title={c.name} href={(cardOpens === 'panel' ? infoHref(c) : undefined) ?? cardHref(c)} onmore={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? (from) => openInfo({ kind: c.kind as 'movie' | 'show', tmdb: cardTmdb(c) }, from) : undefined} image={c.wide ?? c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} fresh={c.fresh} owned={mark} typed row={row.type} preview={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: cardTmdb(c), year: c.year } : undefined}>
 								{#snippet growAction()}
 									{#if act && cardTmdb(c)}
 										<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={asking === c.key || undefined} onclick={() => { count(row.type ?? row.id, 'ask', row.titleLayer); void quick(c, act); }} />
@@ -572,7 +572,7 @@
 {/snippet}
 
 {#snippet infoCard(c: ExploreCard)}
-	<WideCard cover title={c.name} href={infoHref(c) ?? cardHref(c)} image={c.wide ?? c.image} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" fresh={c.fresh} owned={ownedMark(c, ownedTitle(c, owned), who)} typed />
+	<WideCard cover title={c.name} href={infoHref(c) ?? cardHref(c)} image={c.wide ?? c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" fresh={c.fresh} owned={ownedMark(c, ownedTitle(c, owned), who)} typed />
 {/snippet}
 
 {#if info}
@@ -589,7 +589,7 @@
 {/if}
 
 <style>
-	.explore { container: explore / inline-size; --title-item: calc((100cqi - 5 * var(--shelf-gap)) / 5.5); --title-item-big: calc((100cqi - 4 * var(--shelf-gap)) / 4.2); --explore-item: 168px; display: flex; flex-direction: column; gap: 32px; padding-bottom: 48px; }
+	.explore { container: explore / inline-size; --title-item: max(240px, calc((100cqi - 5 * var(--shelf-gap)) / 5.5)); --title-item-big: calc((100cqi - 4 * var(--shelf-gap)) / 4.2); --explore-item: 168px; display: flex; flex-direction: column; gap: 32px; padding-bottom: 48px; }
 	.explore > :global(.ui-head) { margin-bottom: -8px; }
 	/* The type switch: in the page under the title; once scrolled past it floats as a glass pill under the top bar. */
 	.types-mark { height: 0; margin-top: -32px; }

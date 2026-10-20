@@ -15,6 +15,7 @@
 	import { richMetadata } from './TitleHero.svelte';
 	import { api } from '../api.ts';
 	import { GROW_DELAY, logoQueue } from '../grow.ts';
+	import { cardTemplate, type CardArtPick } from '../card-art.ts';
 
 	// 16:9 card for episodes and downloads: progress line along the art's
 	// bottom edge, overlay badges, title and a meta line below.
@@ -43,8 +44,11 @@
 		logo,
 		growAction,
 		onmore,
-		big = false
+		big = false,
+		art: pick
 	}: {
+		/** Title cards: the server's picture pick (card-art.ts). */
+		art?: CardArtPick;
 		/** The server's one freshness strip (bottom centre of the art). */
 		fresh?: Fresh | null;
 		/** Put the type (Movie, Show) first on the metadata line. */
@@ -129,7 +133,7 @@
 	// Cover cards: the logo, looked up gently (a few at a time) once the card is on screen.
 	let foundLogo = $state<string | null>(null);
 	$effect(() => {
-		if (!cover || logo || !preview || !root || typeof IntersectionObserver === 'undefined') return;
+		if (!cover || logo || pick || !preview || !root || typeof IntersectionObserver === 'undefined') return;
 		const p = preview;
 		let done = false;
 		const io = new IntersectionObserver(([e]) => {
@@ -143,8 +147,22 @@
 	});
 	let logoFailed = $state(false);
 	const shownLogo = $derived(logoFailed ? null : sized(logo ?? foundLogo, 'poster') || null);
-	const art = $derived(image ? sized(image, 'backdrop') : null);
 	let failed = $state(false);
+	/** The server's picked picture failed to load (the template falls back). */
+	let pickFailed = $state(false);
+	// Title cards follow the card template: titled art, else logo, else name (all on the art).
+	const tpl = $derived(cover ? cardTemplate(pick, { backdrop: image, logo: logo ?? foundLogo }, { art: pickFailed, logo: logoFailed }) : null);
+	const src = $derived(tpl ? tpl.image : (image ?? null));
+	const art = $derived(src ? sized(src, 'backdrop') : null);
+	const coverLogo = $derived(tpl?.variant === 'logo' && tpl.logo ? sized(tpl.logo, 'poster') || null : null);
+	// The grown card lays the logo (titled art keeps it too) or the name over the trailer.
+	const growLogo = $derived(tpl ? (coverLogo ?? (tpl.variant === 'titled' && pick?.logo && !logoFailed ? sized(pick.logo, 'poster') || null : null)) : shownLogo);
+	function artError() {
+		if (cover && pick?.art && src === pick.art && !pickFailed) {
+			pickFailed = true;
+			loaded = false;
+		} else failed = true;
+	}
 	// The name tile shows until the picture has loaded; in a row the picture
 	// waits until the row is near the screen.
 	let loaded = $state(false);
@@ -161,15 +179,15 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="ui-wide" class:cover class:big class:grown={cover && open} style:width bind:this={root} onpointerenter={enter} onpointerleave={leave} onfocusin={(e) => (e.target as HTMLElement)?.matches?.(':focus-visible') && enter()} onfocusout={(e) => !root?.contains(e.relatedTarget as Node) && leave()} onpointerdown={() => opener.cancel()}>
-	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} use:press={'card'} aria-label={cover ? [title, typedWord, sub].filter(Boolean).join(', ') : undefined}>
+	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} use:press={'card'} aria-label={cover ? [title, typedWord, sub].filter(Boolean).join(', ') : undefined} title={cover ? title : undefined}>
 		<span class="art" class:low={badgesAt === 'bottom' && (badges.length || status)} use:viewTransitionName={vtName} bind:this={artEl}>
-			{#if !image || failed || !loaded}<span class="ph" aria-hidden="true">{#if !cover}<span class="ph-ic"><Icon name={kindIcon} size={20} /></span><span class="ph-t">{title}</span>{/if}</span>{/if}
-			{#if image && !failed && near()}<img src={art} class:in={loaded} alt="" loading="lazy" decoding="async" use:whenLoaded={() => (loaded = true)} onerror={() => (failed = true)} />{/if}
-			{#if cover}
-				{#if shownLogo}
-					<span class="scrim" aria-hidden="true"></span>
-					<span class="name" class:lifted={!!strip && strip.kind !== 'top10'} aria-hidden="true"><img class="logo" src={shownLogo} alt="" onerror={() => (logoFailed = true)} /></span>
-				{/if}
+			{#if !src || failed || !loaded}<span class="ph" aria-hidden="true">{#if !cover}<span class="ph-ic"><Icon name={kindIcon} size={20} /></span><span class="ph-t">{title}</span>{/if}</span>{/if}
+			{#if src && !failed && near()}{#key art}<img src={art} class:in={loaded} alt="" loading="lazy" decoding="async" use:whenLoaded={() => (loaded = true)} onerror={artError} />{/key}{/if}
+			{#if tpl && (tpl.variant !== 'titled' || !loaded)}
+				<span class="scrim" aria-hidden="true"></span>
+				<span class="name" class:lifted={!!strip && strip.kind !== 'top10'} aria-hidden="true">
+					{#if coverLogo}<img class="logo" src={coverLogo} alt="" onerror={() => (logoFailed = true)} />{:else}<span class="word">{title}</span>{/if}
+				</span>
 			{/if}
 			{#if badges.length || status}
 				<span class="over" class:bottom={badgesAt === 'bottom'} class:pushed={badgesAt === 'top' && (!!owned || strip?.kind === 'top10')} class:lifted={badgesAt === 'bottom' && !!strip && strip.kind !== 'top10'}>
@@ -187,7 +205,7 @@
 			{#if typedWord || sub}<span class="s">{#if typedWord}<span class="ty">{typedWord}</span>{#if sub}<span class="dot" aria-hidden="true">·</span>{/if}{/if}{sub ?? ''}</span>{/if}
 			{#if meta}<span class="m">{meta}</span>{/if}
 		{:else}
-			<!-- Title cards: the name always under the art (many titles have no logo), then the type line. -->
+			<!-- Title cards: the title is on the art and the name sits under it too, then the muted meta line. -->
 			<span class="t under" title={title} aria-hidden="true">{title}</span>
 			{#if typedWord || sub}<span class="s" aria-hidden="true">{#if typedWord}{typedWord}{#if sub}<span class="dot">·</span>{/if}{/if}{sub ?? ''}</span>{/if}
 		{/if}
@@ -200,7 +218,7 @@
 {/snippet}
 
 {#if open && preview && cover && artEl}
-	<GrowCard anchor={artEl} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} image={loaded && !failed ? art : null} logo={shownLogo} lifted={!!strip && strip.kind !== 'top10'} {leaving} badge={marked ? wideBadges : undefined} action={growAction} onmore={onmore ? (r) => { shut(); onmore(r); } : undefined} onenter={() => { closer.cancel(); leaving = false; }} onleave={leave} onclose={shut} ongone={() => leaving && shut()} />
+	<GrowCard anchor={artEl} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} image={loaded && !failed ? art : null} logo={growLogo} lifted={!!strip && strip.kind !== 'top10'} {leaving} badge={marked ? wideBadges : undefined} action={growAction} onmore={onmore ? (r) => { shut(); onmore(r); } : undefined} onenter={() => { closer.cancel(); leaving = false; }} onleave={leave} onclose={shut} ongone={() => leaving && shut()} />
 {:else if open && preview && root}
 	<HoverPreview anchor={root} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} {image} badge={marked ? wideBadges : undefined} onenter={() => closer.cancel()} onleave={leave} onclose={shut} />
 {/if}
@@ -244,6 +262,24 @@
 	.scrim { position: absolute; inset: auto 0 0; height: 60%; background: linear-gradient(to top, rgb(0 0 0 / 0.66), rgb(0 0 0 / 0.18) 55%, transparent); pointer-events: none; }
 	.name { position: absolute; left: 6%; right: 30%; bottom: 13%; z-index: 1; display: flex; align-items: flex-end; pointer-events: none; }
 	.name.lifted { bottom: 26%; }
+	/* One fixed box bottom-left for the logo or the name, so a row reads as one pattern. */
+	.name { height: 22cqw; }
+	.word { font: 700 clamp(15px, 7.5cqw, 30px)/1.05 var(--font-display); letter-spacing: -0.02em; color: #fff; text-shadow: 0 2px 10px rgb(0 0 0 / 0.55); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+	/* Status mark, strip and Top 10 tag: 22px under 280px of card, 26px above (whole pixels). */
+	.cover .art :global(.mark) { width: 22px; height: 22px; }
+	.cover .art :global(.mark svg) { width: 13px; height: 13px; }
+	.cover .art :global(.mark.downloading svg) { width: 18px; height: 18px; }
+	.cover .art :global(.fresh) { height: 14px; font-size: 9px; }
+	.cover .art :global(.top10) { width: 18px; height: 22px; font-size: 5px; }
+	.cover .art :global(.top10 b) { font-size: 10px; }
+	@container art (min-width: 280px) {
+		.cover .art :global(.mark) { width: 26px; height: 26px; }
+		.cover .art :global(.mark svg) { width: 15px; height: 15px; }
+		.cover .art :global(.mark.downloading svg) { width: 21px; height: 21px; }
+		.cover .art :global(.fresh) { height: 16px; font-size: 10px; }
+		.cover .art :global(.top10) { width: 21px; height: 26px; font-size: 6px; }
+		.cover .art :global(.top10 b) { font-size: 12px; }
+	}
 	.logo { max-width: 100%; max-height: 22cqw; width: auto; height: auto; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 2px 8px rgb(0 0 0 / 0.5)); }
 	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
 		.cover a.hit:hover .art { transform: none; }

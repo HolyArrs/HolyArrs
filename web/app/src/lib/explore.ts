@@ -2,6 +2,7 @@
 // the calendar and the Wishlist), plus rows from a later discover endpoint.
 // Everything that decides what shows, and in which order, lives here as pure
 // functions so it can be tested and explained.
+import { pickFrom, type CardArtPick } from './card-art.ts';
 import { api, ApiError, type Client } from './api.ts';
 import type { Fresh } from './fresh.ts';
 import type { StatusKind } from './ui/StatusPill.svelte';
@@ -39,6 +40,8 @@ export interface ExploreCard {
 	declined?: boolean;
 	/** The server's one freshness strip. */
 	fresh?: Fresh | null;
+	/** The wide card's picture, picked on the server (card system). */
+	art?: CardArtPick;
 }
 
 export interface ExploreRow {
@@ -397,6 +400,10 @@ export interface ProviderItem {
 	fresh?: Fresh | null;
 	/** Explore: the YouTube trailer, when the server already knows it. */
 	trailer_key?: string;
+	/** The wide card's picture, picked on the server (card system). */
+	card_art?: string;
+	card_logo?: string;
+	art_has_title?: boolean;
 }
 export interface ProviderRowAnswer {
 	row: ProviderRowName;
@@ -438,6 +445,7 @@ export function discoverCard(d: ProviderItem, row: string): ExploreCard {
 		status: d.in_library ? 'in_library' : d.ask && d.ask.state !== 'turned_down' ? titleStatus({ ask: d.ask.state }, 'staff').kind : undefined,
 		badges: [],
 		fresh: d.fresh ?? null,
+		art: pickFrom(d),
 		mine: !!d.ask?.mine,
 		ask: d.ask && d.ask.state !== 'turned_down' ? d.ask : undefined,
 		...(d.ask?.state === 'turned_down' ? { declined: true } : {})

@@ -107,5 +107,5 @@ func (a *API) librarySummary(w http.ResponseWriter, r *http.Request) {
 		}
 		recent = append(recent, v)
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"total": total, "missing": missing, "recent": recent})
+	writeJSON(w, http.StatusOK, map[string]any{"total": total, "missing": missing, "recent": recent, "card_art": a.libraryCardArt(r, newest)})
 }

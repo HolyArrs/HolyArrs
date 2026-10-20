@@ -85,6 +85,8 @@ type exploreState struct {
 	slots    chan struct{}
 	// calls are the outside calls of each pool's last build.
 	calls map[poolKey]*explore.Calls
+	// cards is the wide card art filler (cardart.go).
+	cards cardArtState
 }
 
 func (a *API) exploreNow() time.Time {
@@ -775,5 +777,6 @@ func (a *API) buildPool(ctx context.Context, member int64, sw string) error {
 		}
 	}
 	a.explore.mu.Unlock()
+	a.queueCardArt(ctx, &pool)
 	return nil
 }

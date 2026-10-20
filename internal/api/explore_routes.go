@@ -318,6 +318,8 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 	for i := range head {
 		a.fillTrailerKeys(r, head[i].Items)
 	}
+	a.fillCardArt(r, hero)
+	a.fillRowsCardArt(r, head)
 	a.exploreCaching(w, r, "private, no-cache")
 	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "building": building, "seeds": pg.Seeds, "tail_cap": pg.Cap,
 		"tail_rows": len(pg.Tail), "top10": top10, "hero": hero, "head": head})
@@ -356,6 +358,7 @@ func (a *API) exploreTail(w http.ResponseWriter, r *http.Request) {
 	for i := range rows {
 		a.fillTrailerKeys(r, rows[i].Items)
 	}
+	a.fillRowsCardArt(r, rows)
 	a.exploreCaching(w, r, "private, no-cache")
 	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "page": n, "more": more, "rows": rows})
 }
