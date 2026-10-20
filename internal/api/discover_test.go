@@ -427,3 +427,12 @@ func TestDiscoverServicesRowAndServiceList(t *testing.T) {
 		t.Fatalf("bad region %d", r2.StatusCode)
 	}
 }
+
+func TestDetailsWithMissedCollectionAreKeptBriefly(t *testing.T) {
+	if got := detailsTTL(discoverEntry{details: &metadata.Details{CollectionMissed: true}}); got != collectionRetry {
+		t.Fatalf("missed collection kept %v", got)
+	}
+	if got := detailsTTL(discoverEntry{details: &metadata.Details{}}); got != discoverTTL["details"] {
+		t.Fatalf("details kept %v", got)
+	}
+}

@@ -77,6 +77,9 @@ type Details struct {
 	// Streaming is, per country, the subscription services TMDB lists the
 	// title on; the API answers only the asked region as "streaming".
 	Streaming map[string][]WatchService `json:"-"`
+	// CollectionMissed says the movie belongs to a collection that could not
+	// be read this time (the answer is then kept only briefly).
+	CollectionMissed bool `json:"-"`
 }
 
 // DetailCollection is a movie's TMDB collection on a details page.
@@ -483,7 +486,9 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 			Overview: mv.Overview, Genres: append([]string{}, mv.Genres...)}
 		d.Logo, d.RuntimeMinutes, d.Rating = mv.Logo, mv.Runtime, mv.Rating
 		if mv.Collection != nil {
-			d.Collection = t.collection(ctx, mv.Collection.ID, mv.Collection.Name, names)
+			var read bool
+			d.Collection, read = t.collection(ctx, mv.Collection.ID, mv.Collection.Name, names)
+			d.CollectionMissed = !read
 		}
 	} else {
 		var m tmdbShow
@@ -642,22 +647,23 @@ const (
 	maxCollection = 20
 )
 
-// collection looks a TMDB collection up; nil when it cannot (the page
-// shows without it).
-func (t *TMDB) collection(ctx context.Context, id, name string, names map[int64]string) *DetailCollection {
+// collection looks a TMDB collection up; nil when it has fewer than two
+// movies, or when it cannot be read (read false: the page shows without it
+// and asks again soon).
+func (t *TMDB) collection(ctx context.Context, id, name string, names map[int64]string) (*DetailCollection, bool) {
 	if n, err := strconv.ParseInt(id, 10, 64); err != nil || n <= 0 {
-		return nil
+		return nil, true
 	}
 	b, err := t.get(ctx, "/collection/"+id, nil)
 	if err != nil {
-		return nil
+		return nil, false
 	}
 	var res struct {
 		Name  string         `json:"name"`
 		Parts []tmdbListItem `json:"parts"`
 	}
 	if json.Unmarshal(b, &res) != nil {
-		return nil
+		return nil, false
 	}
 	parts := t.items("movie", res.Parts, names, maxCollection)
 	sort.SliceStable(parts, func(i, j int) bool {
@@ -668,12 +674,12 @@ func (t *TMDB) collection(ctx context.Context, id, name string, names map[int64]
 		return a < b
 	})
 	if len(parts) < 2 {
-		return nil
+		return nil, true
 	}
 	if res.Name != "" {
 		name = res.Name
 	}
-	return &DetailCollection{ID: id, Name: name, Parts: parts}
+	return &DetailCollection{ID: id, Name: name, Parts: parts}, true
 }
 
 // SeasonEpisodes lists one season of a show for its details page.

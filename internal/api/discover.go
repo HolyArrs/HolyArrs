@@ -377,7 +377,7 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 	}
 	key := "details|" + kind + "|" + id
 	e, cached := a.discover.get(key)
-	if !cached || time.Since(e.at) >= discoverTTL["details"] {
+	if !cached || time.Since(e.at) >= detailsTTL(e) {
 		det, err := d.Details(r.Context(), kind, id)
 		switch {
 		case err == nil:
@@ -480,6 +480,19 @@ func (a *API) rowCardArt(r *http.Request, items []discoverItemView) {
 	if len(missing) > 0 {
 		a.queueCardItems(context.WithoutCancel(r.Context()), missing)
 	}
+}
+
+// collectionRetry is how long details whose collection could not be read
+// are kept before they are asked for again.
+const collectionRetry = 5 * time.Minute
+
+// detailsTTL is how long a details answer is kept: a day, or a few minutes
+// when its movie collection could not be read.
+func detailsTTL(e discoverEntry) time.Duration {
+	if e.details != nil && e.details.CollectionMissed {
+		return collectionRetry
+	}
+	return discoverTTL["details"]
 }
 
 // qualityWord names the best picture the Library has: 4K, HD, or nothing.
