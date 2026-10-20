@@ -1,19 +1,28 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import IconButton from './IconButton.svelte';
-	import { closeTheater, holdScroll, theater } from '../theater.svelte.ts';
-	import { embedUrl } from '../trailer.ts';
-	import { reducedMotion } from '../motion.ts';
+	import { closeTheater, holdScroll, runExit, theater, waitForResume } from '../theater.svelte.ts';
+	import { embedUrl, setSoundOn } from '../trailer.ts';
+	import { clipFrom, coverFrom, reducedMotion, THEATER_CHROME_MS, THEATER_EASE, THEATER_FADE_MS, THEATER_GROW_MS, THEATER_SHRINK_MS, type Box } from '../motion.ts';
 	import { nativeHLS } from '../autoplay.svelte.ts';
 	import { attachHLS } from '../hls-player.ts';
 
-	// The full-screen trailer. It grows from the small player's rect to fill
-	// the window (and asks the browser for real full screen where allowed),
-	// plays with sound from where the small one was, and has our own small
-	// controls: play/pause, a seek bar, sound and close. Esc, close or the
-	// end of the trailer shrink it away; only the end hands over to the title.
+	// The full-screen trailer, one shared element from the card to full screen
+	// and back (Netflix): the picture grows out of the small player's rect
+	// (a clip that opens plus one uniform scale, so it never stretches),
+	// carries on from the same second with the same sound, and shows the small
+	// player's last frame until its own first frame is ready. The scrim and
+	// controls fade in after the grow and out before the shrink. Esc or Close
+	// shrink it back where it came from (a hero carries on playing there);
+	// the end of the trailer opens the title page under it first and shrinks
+	// into that page's hero. Reduced motion: a plain crossfade.
 	let dialog = $state<HTMLDialogElement>();
 	let stage = $state<HTMLElement>();
+	let pic = $state<HTMLElement>();
+	// The controls and their scrims: off while it grows or shrinks.
+	let chrome = $state(false);
+	// The small player's last frame is up until this player shows its own.
+	let stillUp = $state(false);
 	let video = $state<HTMLVideoElement>();
 	let frame = $state<HTMLIFrameElement>();
 	let paused = $state(false);
@@ -31,7 +40,40 @@
 	const now = $derived(theater.now);
 	const src = $derived(now?.source);
 
-	const GROW_MS = 420;
+	const vw = () => document.documentElement.clientWidth || window.innerWidth;
+	const vh = () => window.innerHeight;
+	/** The picture's shape: the video's own, else the small player's frame, else 16:9. */
+	function aspect(): number {
+		if (video?.videoWidth && video.videoHeight) return video.videoWidth / video.videoHeight;
+		const st = now?.still;
+		if (st?.width && st.height) return st.width / st.height;
+		return 16 / 9;
+	}
+	const FULL = 'inset(0px 0px 0px 0px round 0px)';
+	function move(from: Box, radius: number, grow: boolean): Promise<unknown> {
+		if (!stage || !pic || !dialog) return Promise.resolve();
+		const clip = clipFrom(from, vw(), vh(), radius);
+		const cover = coverFrom(from, aspect(), vw(), vh());
+		const opts: KeyframeAnimationOptions = { duration: grow ? THEATER_GROW_MS : THEATER_SHRINK_MS, easing: THEATER_EASE, fill: 'forwards' };
+		const a = stage.animate(grow ? [{ clipPath: clip }, { clipPath: FULL }] : [{ clipPath: FULL }, { clipPath: clip }], opts);
+		pic.animate(grow ? [{ transform: cover }, { transform: 'none' }] : [{ transform: 'none' }, { transform: cover }], opts);
+		dialog.animate(grow ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 1 }, { opacity: 0 }], { ...opts, pseudoElement: '::backdrop' });
+		return a.finished.catch(() => {});
+	}
+	function fade(inOut: 'in' | 'out'): Promise<unknown> {
+		if (!dialog) return Promise.resolve();
+		const k = inOut === 'in' ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 1 }, { opacity: 0 }];
+		const opts: KeyframeAnimationOptions = { duration: THEATER_FADE_MS, easing: 'linear', fill: 'forwards' };
+		dialog.animate(k, { ...opts, pseudoElement: '::backdrop' });
+		return dialog.animate(k, opts).finished.catch(() => {});
+	}
+	const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+	/** keepStill puts the small player's last frame in the picture until this one plays. */
+	function keepStill(node: HTMLElement) {
+		const c = now?.still;
+		if (c) node.replaceChildren(c);
+		return () => node.replaceChildren();
+	}
 
 	// A pass-through trailer (HLS relayed by HolyArrs) plays on the same <video>.
 	$effect(() => {
@@ -49,33 +91,29 @@
 		};
 	});
 
-	function fromRect(): string | null {
-		const r = now?.rect;
-		if (!r || !r.width) return null;
-		const W = window.innerWidth;
-		const H = window.innerHeight;
-		return `translate(${r.left}px, ${r.top}px) scale(${r.width / W}, ${r.height / H})`;
-	}
-
 	$effect(() => {
 		if (!now || !dialog || dialog.open) return;
 		leaving = false;
 		unavailable = false;
 		paused = false;
-		muted = false;
+		muted = now.muted ?? false;
 		time = now.time;
 		duration = 0;
+		chrome = false;
+		stillUp = !!now.still;
 		release = holdScroll();
+		dialog.getAnimations({ subtree: true }).forEach((a) => a.cancel());
 		dialog.showModal();
-		wake();
-		const from = fromRect();
-		if (stage && from && !reducedMotion()) {
-			stage.animate([{ transform: from, borderRadius: '12px' }, { transform: 'none', borderRadius: '0px' }], { duration: GROW_MS, easing: 'cubic-bezier(.2, .8, .2, 1)' });
-		} else if (stage) {
-			stage.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200 });
-		}
-		// Real full screen where the browser allows it; the window-filling player works without.
-		dialog.requestFullscreen?.().catch(() => {});
+		const r = now.rect;
+		const d = dialog;
+		const grown = r && r.width && !reducedMotion() ? move(r, 12, true) : fade('in');
+		void grown.then(() => {
+			if (leaving || !d.open) return;
+			chrome = true;
+			wake();
+			// Real full screen where the browser allows it (after the grow, so it never jumps mid-move).
+			d.requestFullscreen?.().catch(() => {});
+		});
 	});
 
 	function onFullscreen() {
@@ -83,20 +121,42 @@
 	}
 
 	async function close(ended = false) {
-		if (leaving || !dialog) return;
+		if (leaving || !dialog || !now) return;
 		leaving = true;
-		video?.pause();
+		const o = now;
+		const reduce = reducedMotion();
+		// The controls go first, then the picture moves.
+		chrome = false;
+		clearTimeout(idleTimer);
+		const at = video ? video.currentTime : time;
+		// What the hero it lands in carries on with (same second, same sound).
+		theater.back = { kind: o.kind, tmdb: o.tmdb, time: at, muted, ended };
 		if (document.fullscreenElement) await document.exitFullscreen().catch(() => {});
-		const from = fromRect();
-		if (stage && !reducedMotion()) {
-			const a = stage.animate(from ? [{ transform: 'none', opacity: 1 }, { transform: from, opacity: 0.2 }] : [{ opacity: 1 }, { opacity: 0 }], { duration: from ? 320 : 200, easing: 'cubic-bezier(.4, 0, .6, 1)', fill: 'forwards' });
-			await a.finished.catch(() => {});
+		if (!reduce) await sleep(THEATER_CHROME_MS);
+		let target: Box | null = o.rect;
+		let radius = 12;
+		// The end of the trailer: the title page opens under the player, then it shrinks into its hero.
+		if (ended && (await runExit(o))) {
+			await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+			const h = document.querySelector<HTMLElement>('[data-testid="title-hero"]')?.getBoundingClientRect();
+			target = h && h.width ? { left: h.left, top: h.top, width: h.width, height: h.height } : null;
+			radius = 24;
 		}
+		if (!reduce && target?.width) {
+			// Still playing while it shrinks (no frozen frame), then the hero takes over.
+			await move(target, radius, false);
+			if (!ended && o.from === 'hero') await waitForResume(700);
+		}
+		video?.pause();
+		if (!video) post('pauseVideo');
+		await fade('out');
 		dialog.close();
+		dialog.getAnimations({ subtree: true }).forEach((a) => a.cancel());
+		theater.back = null;
 		release?.();
 		release = null;
 		clearInterval(tick);
-		closeTheater(ended);
+		closeTheater();
 	}
 
 	function wake() {
@@ -112,7 +172,7 @@
 	function frameLoaded() {
 		frame?.contentWindow?.postMessage(JSON.stringify({ event: 'listening', id: 'holyarrs-theater', channel: 'widget' }), 'https://www.youtube-nocookie.com');
 		if (now && now.time > 1) post('seekTo', [now.time, true]);
-		post('unMute');
+		post(muted ? 'mute' : 'unMute');
 		post('setVolume', [100]);
 		post('playVideo');
 	}
@@ -133,7 +193,10 @@
 		if (typeof info.duration === 'number' && info.duration > 0) duration = info.duration;
 		if (typeof info.muted === 'boolean') muted = info.muted;
 		const state = d.event === 'onStateChange' ? d.info : info.playerState;
-		if (state === 1) paused = false;
+		if (state === 1) {
+			paused = false;
+			stillUp = false;
+		}
 		else if (state === 2) paused = true;
 		else if (state === 0) void close(true);
 	}
@@ -141,7 +204,7 @@
 	function videoReady() {
 		if (!video || !now) return;
 		if (now.time > 0.5 && now.time < (video.duration || Infinity)) video.currentTime = now.time;
-		video.muted = false;
+		video.muted = muted;
 		void video.play().catch(() => {
 			// Sound refused without a fresh click: play muted, the sound button turns it on.
 			if (!video) return;
@@ -163,6 +226,7 @@
 	function toggleSound() {
 		wake();
 		muted = !muted;
+		setSoundOn(!muted);
 		if (video) video.muted = muted;
 		else post(muted ? 'mute' : 'unMute');
 	}
@@ -203,6 +267,7 @@
 	bind:this={dialog}
 	class="ui-theater"
 	class:idle
+	class:chrome
 	aria-label={now ? `${now.title} trailer` : 'Trailer'}
 	data-testid="theater"
 	oncancel={(e) => {
@@ -214,6 +279,7 @@
 >
 	{#if now && src}
 		<div class="stage" bind:this={stage}>
+			<div class="pic" bind:this={pic}>
 			{#if src.kind === 'direct' || src.kind === 'pass'}
 				<!-- svelte-ignore a11y_media_has_caption -->
 				<video
@@ -228,6 +294,7 @@
 					}}
 					ontimeupdate={() => (time = video?.currentTime ?? 0)}
 					onplay={() => (paused = false)}
+					onplaying={() => (stillUp = false)}
 					onpause={() => {
 						paused = true;
 						idle = false;
@@ -248,6 +315,12 @@
 					tabindex="-1"
 					onload={frameLoaded}
 				></iframe>
+			{/if}
+			{#if now.still}
+				<div class="still" class:off={!stillUp} aria-hidden="true" {@attach keepStill}></div>
+			{/if}
+			</div>
+			{#if src.kind === 'embed'}
 				<button type="button" class="catch" aria-label={paused ? 'Play' : 'Pause'} onclick={togglePlay} tabindex="-1"></button>
 			{/if}
 			{#if unavailable}
@@ -276,16 +349,21 @@
 	.ui-theater { position: fixed; inset: 0; width: auto; height: auto; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; color: var(--on-art); overflow: hidden; }
 	.ui-theater::backdrop { background: var(--on-art-scrim); }
 	.ui-theater:fullscreen { width: 100%; height: 100%; }
-	.stage { position: absolute; inset: 0; background: #000; transform-origin: 0 0; overflow: hidden; container-type: size; }
+	.stage { position: absolute; inset: 0; background: #000; overflow: hidden; container-type: size; }
+	.pic { position: absolute; inset: 0; transform-origin: 50% 50%; }
+	.still { position: absolute; inset: 0; z-index: 1; pointer-events: none; transition: opacity var(--dur-fast) linear; }
+	.still.off { opacity: 0; }
+	.still :global(canvas) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 	video, iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; object-fit: contain; background: #000; }
 	iframe { pointer-events: none; }
 	.gone { position: absolute; inset: 0; z-index: 3; display: grid; place-content: center; justify-items: center; gap: 16px; background: #0b0b0c; color: var(--on-art); text-align: center; }
 	.gone p { margin: 0; font: var(--t-title3); }
 	.gone-close { min-height: 44px; padding: 0 22px; border: 0; border-radius: var(--r-pill); background: #fff; color: #000; font: var(--t-headline); cursor: pointer; }
 	.catch { position: absolute; inset: 0; border: 0; background: transparent; padding: 0; }
-	.top, .bar { position: absolute; left: 0; right: 0; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 20px clamp(16px, 3vw, 40px); transition: opacity 400ms var(--ease-out), transform 400ms var(--ease-out); }
+	.top, .bar { position: absolute; left: 0; right: 0; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 20px clamp(16px, 3vw, 40px); transition: opacity 240ms var(--ease-out), transform 240ms var(--ease-out); }
 	.top { top: 0; justify-content: space-between; background: linear-gradient(to bottom, var(--on-art-scrim-mid), var(--on-art-scrim-none)); }
 	.bar { bottom: 0; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); overflow: visible; background: linear-gradient(to top, var(--on-art-scrim), var(--on-art-scrim-none)); }
+	.ui-theater:not(.chrome) .top, .ui-theater:not(.chrome) .bar { opacity: 0; pointer-events: none; transition-duration: 150ms; }
 	.idle .top { opacity: 0; transform: translateY(-8px); }
 	.idle .bar { opacity: 0; transform: translateY(8px); }
 	.idle { cursor: none; }

@@ -148,3 +148,54 @@ export function navigateWithTransition(navigation: PageChange, doc: TransitionDo
 		});
 	});
 }
+
+// The full-screen trailer's shared-element motion (Theater.svelte): one
+// grow and one shrink, a spring-like ease-out that settles without bounce
+// (tokens.css --ease-out), the controls fading in after and out before.
+export const THEATER_GROW_MS = 420;
+export const THEATER_SHRINK_MS = 380;
+export const THEATER_CHROME_MS = 150;
+export const THEATER_FADE_MS = 200;
+export const THEATER_EASE = 'cubic-bezier(.22, 1, .36, 1)';
+
+export interface Box {
+	left: number;
+	top: number;
+	width: number;
+	height: number;
+}
+
+/** containBox is where a picture of this aspect sits when fitted (object-fit: contain) into the window. */
+export function containBox(aspect: number, vw: number, vh: number): Box {
+	const a = aspect > 0 && Number.isFinite(aspect) ? aspect : 16 / 9;
+	const width = Math.min(vw, vh * a);
+	const height = width / a;
+	return { left: (vw - width) / 2, top: (vh - height) / 2, width, height };
+}
+
+/**
+ * coverFrom is the transform that makes the full-screen picture (fitted to
+ * the window) cover a small rect, one uniform scale so it never stretches;
+ * clipFrom is the clip that shows only that rect. Together they are the
+ * first frame of the grow and the last frame of the shrink.
+ */
+export function coverFrom(rect: Box, aspect: number, vw: number, vh: number): string {
+	const c = containBox(aspect, vw, vh);
+	const s = Math.max(rect.width / c.width, rect.height / c.height);
+	const dx = rect.left + rect.width / 2 - (c.left + c.width / 2);
+	const dy = rect.top + rect.height / 2 - (c.top + c.height / 2);
+	return `translate(${round(dx)}px, ${round(dy)}px) scale(${round(s, 4)})`;
+}
+
+export function clipFrom(rect: Box, vw: number, vh: number, radius: number): string {
+	const t = Math.max(0, rect.top);
+	const l = Math.max(0, rect.left);
+	const r = Math.max(0, vw - rect.left - rect.width);
+	const b = Math.max(0, vh - rect.top - rect.height);
+	return `inset(${round(t)}px ${round(r)}px ${round(b)}px ${round(l)}px round ${radius}px)`;
+}
+
+function round(n: number, places = 2): number {
+	const f = 10 ** places;
+	return Math.round(n * f) / f;
+}

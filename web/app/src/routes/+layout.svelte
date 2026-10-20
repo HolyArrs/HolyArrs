@@ -11,6 +11,7 @@
 	import Icon from '#lib/Icon.svelte';
 	import ToastList from '#lib/ToastList.svelte';
 	import Theater from '#lib/ui/Theater.svelte';
+	import { theater } from '#lib/theater.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { theme, setTheme, type ThemeChoice } from '#lib/theme.svelte.ts';
@@ -182,7 +183,8 @@
 	}
 
 	// Page changes cross-fade and rise (View Transitions, where supported).
-	onNavigate((navigation) => navigateWithTransition(navigation));
+	// The full-screen trailer covers its own hand-over to the title page (it shrinks into the hero).
+	onNavigate((navigation) => (theater.landing ? undefined : navigateWithTransition(navigation)));
 	afterNavigate(() => {
 		readLibraryResumeLinks();
 		moreOpen = false;

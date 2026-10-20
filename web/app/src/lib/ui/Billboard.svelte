@@ -4,7 +4,8 @@
 	import TrailerPlayer from './TrailerPlayer.svelte';
 	import { autoplayHere, loadUISettings, prefetchTrailer, trailerSources, type TrailerSource } from '../autoplay.svelte.ts';
 	import { dwell, HERO_DELAY, type Video } from '../trailer.ts';
-	import { openTheater } from '../theater.svelte.ts';
+	import { fromHandoff, openTheater, resumedPlaying, takeBack, theater, type TheaterHandoff } from '../theater.svelte.ts';
+	import { THEATER_CHROME_MS, THEATER_SHRINK_MS } from '../motion.ts';
 	import { heroQuiet, wordsShown, type HeroPhase } from '../hero-quiet.ts';
 
 	// The billboard every hero shares (Explore and the four title pages): an
@@ -77,10 +78,34 @@
 	const trailer = $derived(!!kind && !!tmdb);
 	const wait = dwell(HERO_DELAY, () => (armed = true));
 
-	function expand(o: { source: TrailerSource; time: number; rect: DOMRect }) {
+	function expand(o: TheaterHandoff) {
 		if (!kind || !tmdb) return;
 		playing = false;
-		openTheater({ kind, tmdb, title, source: o.source, time: o.time, rect: { left: o.rect.left, top: o.rect.top, width: o.rect.width, height: o.rect.height }, from: 'hero', returnTo: box?.querySelector<HTMLElement>('.actions a[href], .actions button') ?? null });
+		openTheater({ kind, tmdb, title, ...fromHandoff(o), from: 'hero', returnTo: box?.querySelector<HTMLElement>('.actions a[href], .actions button') ?? null });
+	}
+
+	// The full-screen player shrinking back into this hero: the trailer carries
+	// on here from the second it will have reached when the shrink ends.
+	let resumeAt = $state(0);
+	let resumeRun = $state(0);
+	let resuming = false;
+	$effect(() => {
+		if (!theater.back) return;
+		const b = takeBack(kind, tmdb);
+		if (!b || b.ended) return;
+		resumeAt = b.time + (THEATER_CHROME_MS + THEATER_SHRINK_MS) / 1000;
+		resumeRun += 1;
+		resuming = true;
+		wait.cancel();
+		armed = true;
+	});
+	function heroPlaying() {
+		playing = true;
+		words.send('play');
+		if (resuming) {
+			resuming = false;
+			resumedPlaying();
+		}
 	}
 
 	// A new title: back to the still pictures.
@@ -144,7 +169,9 @@
 			{#key pictures[0]}<HeroMotion {pictures} {vtName} {position} paused={playing} onerror={onpictureerror} />{/key}
 		{/if}
 		{#if sources.length}
-			<TrailerPlayer {sources} {title} pausable onexpand={expand} onplaying={() => ((playing = true), words.send('play'))} onended={() => ((playing = false), words.send('stop'))} onfail={() => ((playing = false), words.send('stop'))} />
+			{#key resumeRun}
+			<TrailerPlayer {sources} {title} pausable start={resumeAt} onexpand={expand} onplaying={heroPlaying} onended={() => ((playing = false), words.send('stop'))} onfail={() => ((playing = false), words.send('stop'))} />
+			{/key}
 		{/if}
 		<div class="shade" class:playing></div>
 	</div>

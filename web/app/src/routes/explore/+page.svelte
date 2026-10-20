@@ -167,7 +167,7 @@
 		});
 	});
 	// A full-screen trailer (hero or hover card) that plays to its end lands on the title's page; Esc only closes it.
-	$effect(() => onTheaterExit((o) => void goto(to(detailPath(o.kind, o.tmdb)))));
+	$effect(() => onTheaterExit((o) => goto(to(detailPath(o.kind, o.tmdb)))));
 
 	// Music shows only music rows: the movie and show rows (Top 10, services, Best new releases) never appear there.
 	// A genre page (Movies or Shows, ?genre=<TMDB id>) swaps the head and tail for its own rows.

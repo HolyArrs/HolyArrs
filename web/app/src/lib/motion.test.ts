@@ -48,3 +48,21 @@ describe('motion', () => {
 		expect(start).toHaveBeenCalledTimes(1);
 	});
 });
+
+import { clipFrom, containBox, coverFrom } from './motion.ts';
+describe('theater geometry', () => {
+	it('fits a 16:9 picture into a wider window, centred', () => {
+		expect(containBox(16 / 9, 2000, 900)).toEqual({ left: 200, top: 0, width: 1600, height: 900 });
+		expect(containBox(0, 1600, 900).width).toBe(1600);
+	});
+	it('covers the small rect with one uniform scale', () => {
+		// 1600x900 window, a 320x180 card at (100, 50): a fifth of the size, centred on the card.
+		expect(coverFrom({ left: 100, top: 50, width: 320, height: 180 }, 16 / 9, 1600, 900)).toBe('translate(-540px, -310px) scale(0.2)');
+		// A taller rect than the picture: scale by height (cover), never stretched.
+		expect(coverFrom({ left: 0, top: 0, width: 160, height: 180 }, 16 / 9, 1600, 900)).toContain('scale(0.2)');
+	});
+	it('clips to the rect with rounded corners', () => {
+		expect(clipFrom({ left: 100, top: 50, width: 320, height: 180 }, 1600, 900, 12)).toBe('inset(50px 1180px 670px 100px round 12px)');
+		expect(clipFrom({ left: -10, top: -10, width: 2000, height: 2000 }, 1600, 900, 0)).toBe('inset(0px 0px 0px 0px round 0px)');
+	});
+});

@@ -3,6 +3,7 @@
 	import IconButton from './IconButton.svelte';
 	import { claimPlayer, embedUrl, setSoundOn, soundOn } from '../trailer.ts';
 	import { adoptWarm, hasSound, hasWarm, nativeHLS, onUnmute, type TrailerSource } from '../autoplay.svelte.ts';
+	import type { TheaterHandoff } from '../theater.svelte.ts';
 	import { attachHLS } from '../hls-player.ts';
 
 	// A muted trailer over the hero or hover card art. Tries each source in
@@ -18,7 +19,8 @@
 		onfail,
 		onended,
 		onplaying,
-		onexpand
+		onexpand,
+		start = 0
 	}: {
 		sources: TrailerSource[];
 		title: string;
@@ -32,8 +34,33 @@
 		onended?: () => void;
 		onplaying?: () => void;
 		/** Clicking the playing trailer opens it full screen: the source, the time played and where it sits. */
-		onexpand?: (o: { source: TrailerSource; time: number; rect: DOMRect }) => void;
+		onexpand?: (o: TheaterHandoff) => void;
+		/** Seconds to start from (a hero carrying on where the full-screen player left off). */
+		start?: number;
 	} = $props();
+	/** Read once: a later change never seeks a running player. */
+	const startAt = untrack(() => start);
+	let seeded = false;
+	/** seed starts the first picture at startAt (direct streams; pass-through starts there itself). */
+	function seed(e: Event) {
+		const v = e.currentTarget as HTMLVideoElement;
+		if (seeded || startAt <= 0.5) return;
+		seeded = true;
+		if (startAt < (v.duration || Infinity) - 1) v.currentTime = startAt;
+	}
+	/** grab copies the playing frame, so the full-screen player never opens on black. */
+	function grab(v: HTMLVideoElement | undefined | null): HTMLCanvasElement | null {
+		if (!v || !v.videoWidth || !v.videoHeight) return null;
+		const c = document.createElement('canvas');
+		c.width = v.videoWidth;
+		c.height = v.videoHeight;
+		try {
+			c.getContext('2d')?.drawImage(v, 0, 0);
+		} catch {
+			return null;
+		}
+		return c;
+	}
 
 	let at = $state(0);
 	let shown = $state(false);
@@ -70,7 +97,7 @@
 		const v = video;
 		if (!v || src?.kind !== 'pass') return;
 		let gone = false;
-		attachHLS(v, src.url, nativeHLS())
+		attachHLS(v, src.url, nativeHLS(), seeded ? 0 : ((seeded = true), startAt > 0.5 ? startAt : 0))
 			.then((d) => (gone ? d() : (detach = d)))
 			.catch(() => !gone && next());
 		return () => {
@@ -329,6 +356,10 @@
 	}
 	function frameLoaded() {
 		frame?.contentWindow?.postMessage(JSON.stringify({ event: 'listening', id: 'holyarrs', channel: 'widget' }), 'https://www.youtube-nocookie.com');
+		if (startAt > 1 && !seeded) {
+			seeded = true;
+			post('seekTo', [startAt, true]);
+		}
 	}
 
 	let ctlAt = 0;
@@ -431,8 +462,11 @@
 		const rect = box.getBoundingClientRect();
 		// Full screen plays with sound: a picture-only direct trailer goes over pass-through.
 		const source: TrailerSource = swapped && up ? { kind: 'pass', url: up.url, key: src.key } : src.kind === 'direct' && !src.audio && src.pass ? { kind: 'pass', url: src.pass, key: src.key } : src;
+		// The sound and the frame on screen go with it.
+		const still = grab(v);
+		const quiet = !heard;
 		stop();
-		onexpand({ source, time, rect });
+		onexpand({ source, time, rect, muted: quiet, still });
 	}
 
 	onDestroy(() => {
@@ -462,6 +496,7 @@
 				disableremoteplayback
 				aria-label="{title} trailer"
 				onplaying={started}
+				onloadedmetadata={seed}
 				onerror={next}
 				onended={ended}
 			></video>

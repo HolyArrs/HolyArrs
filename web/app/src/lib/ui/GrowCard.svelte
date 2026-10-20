@@ -8,7 +8,7 @@
 	import { followHint, followLabel, setFollow } from '../follow.ts';
 	import { sized } from '../tmdb-image.ts';
 	import { autoplayHere, loadUISettings, trailerSources, type TrailerSource } from '../autoplay.svelte.ts';
-	import { openTheater } from '../theater.svelte.ts';
+	import { fromHandoff, openTheater } from '../theater.svelte.ts';
 	import { flipTransform, growPlacement, GROW_MS, GROW_SCALE, GROW_WIDTH, SHRINK_MS, TRAILER_AFTER, type Growth, type Rect } from '../grow.ts';
 
 	// The wide card grown in place, Netflix style: the card itself (same
@@ -163,7 +163,15 @@
 		settle(anim);
 	}
 
+	/** The full-screen player took over from this card's spot: the card goes at once, under it, instead of shrinking back. */
+	function hideNow() {
+		anim?.cancel();
+		anim = null;
+		if (card) card.style.visibility = 'hidden';
+	}
+
 	function shrink() {
+		if (card?.style.visibility === 'hidden') return ongone();
 		if (!card || !g || reduce()) return ongone();
 		const a = from();
 		const back = { x: a.left - g.left, y: a.top - g.top, scale: a.width / g.width };
@@ -276,7 +284,7 @@
 		{#if pic}<img src={pic} alt="" decoding="async" />{/if}
 		{#if big}<img src={big} alt="" decoding="async" class="big" class:in={bigIn} onload={() => (bigIn = true)} />{/if}
 		{#if trailerOk && sources.length}
-			<TrailerPlayer {sources} {title} repeat onplaying={() => (playing = true)} onfail={() => (playing = false)} onended={() => (playing = false)} onexpand={(o) => { openTheater({ kind, tmdb, title, source: o.source, time: o.time, rect: { left: o.rect.left, top: o.rect.top, width: o.rect.width, height: o.rect.height }, from: 'hover', returnTo }); onclose(); }} />
+			<TrailerPlayer {sources} {title} repeat onplaying={() => (playing = true)} onfail={() => (playing = false)} onended={() => (playing = false)} onexpand={(o) => { openTheater({ kind, tmdb, title, ...fromHandoff(o), from: 'hover', returnTo }); hideNow(); onclose(); }} />
 		{/if}
 		<span class="scrim" class:playing aria-hidden="true"></span>
 		<!-- The logo, else the name, stays over the trailer (card template). -->
