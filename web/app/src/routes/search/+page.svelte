@@ -1,496 +1,380 @@
 <script lang="ts">
 	import { to } from '#lib/paths.ts';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { api, message, ApiError } from '#lib/api.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
-	import Icon from '#lib/Icon.svelte';
-	import Poster from '#lib/Poster.svelte';
+	import Icon, { type IconName } from '#lib/Icon.svelte';
 	import { session } from '#lib/session.svelte.ts';
-	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
-	import Skeleton from '#lib/ui/Skeleton.svelte';
-	import StatusPill from '#lib/ui/StatusPill.svelte';
+	import Shelf from '#lib/ui/Shelf.svelte';
+	import WideCard from '#lib/ui/WideCard.svelte';
+	import type { CardOwned } from '#lib/ui/CardBadges.svelte';
+	import Chip from '#lib/ui/Chip.svelte';
 	import { plainReason } from '#lib/plain.ts';
-	import type { Ask, AskLimit, GateDefaults, LibraryFolder, LookupArtist, LookupMovie, LookupShow, MusicSettings, PickRulesView, ShowSettings, TitleView } from '#lib/types.ts';
-	import { limitLine } from '#lib/wishlist.ts';
-	import type { LimitKind } from '#lib/types.ts';
+	import type { Ask, LibraryFolder, LookupArtist, LookupMovie, LookupShow, MusicSettings, PickRulesView, TitleView } from '#lib/types.ts';
+	import type { PersonSummary } from '#lib/people.ts';
 	import { refreshInbox } from '#lib/wishlist.svelte.ts';
-	import AddShowDialog from '#lib/AddShowDialog.svelte';
-	import AddMovieDialog from '#lib/AddMovieDialog.svelte';
-	import { savedDefaults } from '#lib/title-defaults.svelte.ts';
-	import AskShowDialog from '#lib/AskShowDialog.svelte';
-	import AskMovieDialog, { type AskMovie } from '#lib/AskMovieDialog.svelte';
-	import { seasonWords } from '#lib/shows.ts';
 	import AddArtistDialog from '#lib/AddArtistDialog.svelte';
 	import AskArtistDialog from '#lib/AskArtistDialog.svelte';
 	import { albumWords } from '#lib/music.ts';
 	import { createLatestOnly } from '#lib/history.ts';
-	import { kindOptions, searchAddress, type SearchKind } from '#lib/search.ts';
+	import { addRecent, readRecent, readScope, recentKey, scopeAddress, topMatches, type SearchScope } from '#lib/search.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
-	import { audienceOf, titleStatus, type StatusFacts } from '#lib/title-status.ts';
+	import { detailPath } from '#lib/title-details.ts';
+	import { discoverCard, fetchProviderRow, ownedMark, type ProviderItem } from '#lib/explore.ts';
+	import { audienceOf } from '#lib/title-status.ts';
 
-	// Movies, shows or music; kept in the page address (?kind=show, ?kind=music).
-	const startKind = page.url.searchParams.get('kind');
-	let kind = $state<SearchKind>(startKind === 'show' || startKind === 'music' ? startKind : 'movie');
-	let artists = $state<LookupArtist[] | null>(null);
+	// Search, on the Explore card system: the words and the scope live in the
+	// address (?q=, ?kind=); before typing it shows recent searches (this
+	// device, per user) and what is trending; results come in as you type.
+	// Kid limits are applied by the server on every lookup used here.
+
+	type Card = { key: string; type: Exclude<SearchScope, 'all'>; name: string; year?: number; image?: string | null; href: string; owned: CardOwned | null; preview?: { kind: 'movie' | 'show'; tmdb: string; year?: number }; artist?: LookupArtist; subtitle?: string };
+
+	let term = $state(page.url.searchParams.get('q') ?? '');
+	let scope = $state<SearchScope>(readScope(page.url.searchParams.get('kind')));
+	let busy = $state(false);
+	let error = $state('');
+	let noTMDB = $state(false);
+	let searched = $state('');
+	let groups = $state<Record<Card['type'], Card[] | null>>({ show: null, movie: null, music: null, people: null });
+	let trending = $state<ProviderItem[]>([]);
+	let recent = $state<string[]>([]);
+	let input = $state<HTMLInputElement>();
+	const beginSearch = createLatestOnly();
+	const who = $derived(audienceOf(session.can));
+	const manage = $derived(session.can('manage_library'));
+
+	const partOn = (name: string) => partsNow.answer?.parts.find((p) => p.part === name)?.on !== false;
+	const scopeOptions = $derived(
+		([
+			{ value: 'all', label: 'All', icon: 'grid' },
+			{ value: 'show', label: 'Shows', icon: 'tv' },
+			{ value: 'movie', label: 'Movies', icon: 'film' },
+			{ value: 'music', label: 'Music', icon: 'music' },
+			{ value: 'people', label: 'People', icon: 'people' }
+		] as { value: SearchScope; label: string; icon: IconName }[]).filter((o) => (o.value === 'show' ? partOn('shows') : o.value === 'movie' ? partOn('movies') : o.value === 'music' ? partOn('music') : true))
+	);
+	const labels: Record<Card['type'], string> = { show: 'Shows', movie: 'Movies', music: 'Music', people: 'People' };
+	const order = $derived(scopeOptions.map((o) => o.value).filter((v): v is Card['type'] => v !== 'all'));
+
+	// ── Library marking: one mark for every card, as on Explore ────────────
+	const inLibrary: CardOwned = { state: 'available', label: 'In your Library' };
+	function askMark(ask: { state: string; mine: boolean } | undefined | null): CardOwned | null {
+		if (!ask || ask.state === 'turned_down') return null;
+		return { state: 'requested', label: ask.state === 'approved' ? 'Approved, waiting for a copy' : 'Requested' };
+	}
+	const movieCard = (m: LookupMovie): Card | null =>
+		m.ids.tmdb
+			? { key: `m${m.ids.tmdb}`, type: 'movie', name: m.name, year: m.year || undefined, subtitle: m.year ? String(m.year) : undefined, image: m.poster, href: to(m.title_id ? `/library/${m.title_id}` : detailPath('movie', m.ids.tmdb)), owned: m.title_id ? inLibrary : askMark(m.ask), preview: { kind: 'movie', tmdb: m.ids.tmdb, year: m.year || undefined } }
+			: null;
+	const showCard = (s: LookupShow, i: number): Card => {
+		const tmdb = s.ids.tmdb;
+		return { key: `s${s.source}${s.ids[s.source] ?? s.name}${i}`, type: 'show', name: s.name, year: s.year, subtitle: s.year ? String(s.year) : undefined, image: s.poster, href: to(s.title_id ? `/library/${s.title_id}` : tmdb ? detailPath('show', tmdb) : `/search?q=${encodeURIComponent(s.name)}&kind=show`), owned: s.title_id ? inLibrary : askMark(s.ask), preview: tmdb ? { kind: 'show', tmdb, year: s.year } : undefined };
+	};
+	const artistCard = (a: LookupArtist): Card => ({ key: `a${a.mbid}`, type: 'music', name: a.name, subtitle: a.disambiguation || [a.type, a.country].filter(Boolean).join(' · ') || undefined, href: a.title_id ? to(`/library/${a.title_id}`) : '', owned: a.title_id ? inLibrary : askMark(a.ask), artist: a });
+	const personCard = (p: PersonSummary): Card => ({ key: `p${p.id}`, type: 'people', name: p.name, subtitle: p.department, image: p.profile, href: to(`/people/${encodeURIComponent(p.id)}`), owned: null });
+
+	const lists = $derived(order.map((t) => groups[t] ?? []));
+	const top = $derived(topMatches(lists.filter((_, i) => order[i] !== 'people'), 6));
+	const total = $derived(lists.reduce((n, g) => n + g.length, 0));
+	const pending = $derived(order.some((t) => groups[t] === null));
+
+	// ── Searching ──────────────────────────────────────────────────────────
+	const ownAddresses = new Set<string>();
+	function writeAddress() {
+		const url = scopeAddress(page.url, scope, term);
+		if (url.href === page.url.href) return;
+		ownAddresses.add(url.href);
+		void goto(url, { replace: true, shallow: true });
+	}
+
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	function typed() {
+		clearTimeout(timer);
+		timer = setTimeout(() => void run(), 250);
+	}
+
+	async function run(e?: SubmitEvent) {
+		e?.preventDefault();
+		clearTimeout(timer);
+		const q = term.trim();
+		writeAddress();
+		const isLatest = beginSearch();
+		error = '';
+		noTMDB = false;
+		if (!q) {
+			searched = '';
+			busy = false;
+			return;
+		}
+		if (e) remember(q);
+		busy = true;
+		const want = scope === 'all' ? order : order.filter((t) => t === scope);
+		const next: Record<Card['type'], Card[] | null> = { show: null, movie: null, music: null, people: null };
+		for (const t of order) next[t] = want.includes(t) ? null : [];
+		groups = next;
+		const enc = encodeURIComponent(q);
+		const jobs: Record<Card['type'], () => Promise<Card[]>> = {
+			movie: () => api.get<{ movies: LookupMovie[] }>(`/titles/lookup?term=${enc}`).then((r) => r.movies.map(movieCard).filter((c): c is Card => !!c)),
+			show: () => api.get<{ shows: LookupShow[] }>(`/shows/lookup?term=${enc}`).then((r) => r.shows.map(showCard)),
+			music: () => api.get<{ artists: LookupArtist[] }>(`/artists/lookup?term=${enc}`).then((r) => r.artists.map(artistCard)),
+			people: () => api.get<{ people: PersonSummary[] }>(`/people/search?q=${enc}`).then((r) => r.people.map(personCard))
+		};
+		let failures = 0;
+		await Promise.all(
+			want.map((t) =>
+				jobs[t]()
+					.then((cards) => {
+						if (isLatest()) groups[t] = cards;
+					})
+					.catch((err) => {
+						if (!isLatest()) return;
+						groups[t] = [];
+						failures++;
+						if (err instanceof ApiError && err.status === 503) noTMDB = true;
+						else if (!(err instanceof ApiError && err.status === 403)) error = message(err);
+					})
+			)
+		);
+		if (!isLatest()) return;
+		if (failures < want.length) error = '';
+		searched = q;
+		busy = false;
+	}
+
+	function setScope(s: SearchScope) {
+		if (s === scope) return;
+		scope = s;
+		void run();
+	}
+
+	// ── Recent searches (this device, per user) ────────────────────────────
+	const key = () => recentKey(session.s.name);
+	function loadRecent() {
+		try {
+			recent = readRecent(localStorage.getItem(key()));
+		} catch {
+			recent = [];
+		}
+	}
+	function saveRecent() {
+		try {
+			localStorage.setItem(key(), JSON.stringify(recent));
+		} catch {
+			/* A private window: recents just are not kept. */
+		}
+	}
+	function remember(q: string) {
+		recent = addRecent(recent, q);
+		saveRecent();
+	}
+	function clearRecent() {
+		recent = [];
+		saveRecent();
+	}
+	function pickRecent(q: string) {
+		term = q;
+		void run();
+	}
+
+	onMount(() => {
+		loadRecent();
+		fetchProviderRow({ row: 'trending' })
+			.then((r) => (trending = r?.items ?? []))
+			.catch(() => {});
+		if (manage) {
+			api.get<{ library_folders: LibraryFolder[] }>('/library-folders').then((r) => (folders = r.library_folders)).catch(() => {});
+			api.get<{ pick_rules: PickRulesView[] }>('/pick-rules').then((r) => (rules = r.pick_rules)).catch(() => {});
+			api.get<MusicSettings>('/settings/music').then((r) => (musicDefaults = r)).catch(() => {});
+		}
+		if (term.trim()) void run();
+		void tick().then(() => input?.focus());
+		return () => clearTimeout(timer);
+	});
+
+	// A new ?q= from elsewhere (Ctrl+K, a link) runs it; our own address writes do nothing.
+	afterNavigate(({ from, to: dest }) => {
+		if (!from || !dest) return;
+		if (ownAddresses.delete(dest.url.href)) return;
+		const q = dest.url.searchParams.get('q') ?? '';
+		const s = readScope(dest.url.searchParams.get('kind'));
+		void tick().then(() => input?.focus());
+		if (q === term && s === scope) return;
+		term = q;
+		scope = s;
+		void run();
+	});
+
+	// Leaving the box after a search counts it as a recent one.
+	function blurred() {
+		if (searched && searched === term.trim()) remember(searched);
+	}
+
+	// ── Music: artists are added or asked for here ─────────────────────────
+	let folders = $state<LibraryFolder[]>([]);
+	let rules = $state<PickRulesView[]>([]);
 	let musicDefaults = $state<MusicSettings | null>(null);
 	let addArtist: ReturnType<typeof AddArtistDialog> | undefined = $state();
 	let askArtist: ReturnType<typeof AskArtistDialog> | undefined = $state();
-	const beginSearch = createLatestOnly();
-	// One status vocabulary (title-status.ts) for every result.
-	const who = $derived(audienceOf(session.can));
-	const pill = (f: StatusFacts) => titleStatus(f, who);
-	// A lookup knows a title is in the Library, not whether its file is there
-	// yet, so everyone gets "In your Library" rather than "Ready to watch".
-	const inLibraryPill = titleStatus({ inLibrary: true }, 'staff');
-	// Movies / TV shows / Music, only for parts that are on.
-	const partOn = (name: string) => partsNow.answer?.parts.find((p) => p.part === name)?.on !== false;
-	const kindIcons = { movie: 'film', show: 'tv', music: 'music' } as const;
-	const kinds = $derived(kindOptions(partOn).map((o) => ({ value: o.value, label: o.label, icon: kindIcons[o.value] })));
-	const kindLabel = $derived(kindOptions(() => true).find((o) => o.value === kind)?.label ?? 'Movies');
-
 	function patchArtist(a: LookupArtist, change: Partial<LookupArtist>) {
-		if (!artists) return;
-		const i = artists.findIndex((x) => x.mbid === a.mbid);
-		if (i >= 0) artists[i] = { ...artists[i], ...change };
+		const list = groups.music;
+		if (!list) return;
+		const i = list.findIndex((c) => c.artist?.mbid === a.mbid);
+		if (i >= 0) list[i] = artistCard({ ...a, ...change });
 	}
-
 	function artistAdded(a: LookupArtist, t: TitleView) {
 		patchArtist(a, { title_id: t.id });
 		toasts.push(`${t.name} is in your Library. Albums, Pressings and tracks are being filled in.`, 'ok');
 	}
-
 	function artistAsked(a: LookupArtist, r: { ask: Ask; joined: boolean; already: boolean }) {
 		patchArtist(a, { ask: { id: r.ask.id, state: r.ask.state, state_label: r.ask.state_label, mine: true, people: r.ask.people.length, albums: r.ask.albums } });
 		const what = `${r.ask.name} (${albumWords(r.ask.albums)})`;
 		if (r.ask.state === 'approved') toasts.push(`${what} is approved; HolyArrs keeps it up to date.`, 'ok');
 		else if (r.joined) toasts.push(`Someone asked for ${what} already; you are on the ask too and will hear when it is ready.`, 'ok');
 		else toasts.push(`Asked for ${what}. You will hear when it is approved.`, 'ok');
-		loadLimit();
 		void refreshInbox();
 	}
-
 	function artistRefused(a: LookupArtist, body: Record<string, unknown>) {
 		if (typeof body.title_id === 'number') patchArtist(a, { title_id: body.title_id });
 	}
-	let shows = $state<LookupShow[] | null>(null);
-	let showDefaults = $state<ShowSettings | null>(null);
-	let addShow: ReturnType<typeof AddShowDialog> | undefined = $state();
-	let askShow: ReturnType<typeof AskShowDialog> | undefined = $state();
-	const showKey = (s: LookupShow) => `${s.source}:${s.ids[s.source] ?? s.name}`;
 
-	function setKind(k: SearchKind) {
-		if (k === kind) return;
-		beginSearch();
-		busy = false;
-		kind = k;
-		results = null;
-		shows = null;
-		artists = null;
-		error = '';
-		noTMDB = false;
-		askProblem = '';
-		const url = searchAddress(page.url, k, term);
-		ownAddresses.add(url.href);
-		void goto(url, { replace: true, shallow: true });
-		if (term.trim()) void run();
-	}
-
-	function patchShow(s: LookupShow, change: Partial<LookupShow>) {
-		if (!shows) return;
-		const i = shows.findIndex((x) => showKey(x) === showKey(s));
-		if (i >= 0) shows[i] = { ...shows[i], ...change };
-	}
-
-	function showAdded(s: LookupShow, t: TitleView) {
-		patchShow(s, { title_id: t.id });
-		toasts.push(`${t.name} is in your Library.`, 'ok');
-	}
-
-	function showAsked(s: LookupShow, r: { ask: Ask; joined: boolean; already: boolean }) {
-		patchShow(s, { ask: { id: r.ask.id, state: r.ask.state, state_label: r.ask.state_label, mine: true, people: r.ask.people.length, seasons: r.ask.seasons } });
-		const what = `${r.ask.name} (${seasonWords(r.ask.seasons)})`;
-		if (r.ask.state === 'approved') toasts.push(`${what} is approved; HolyArrs keeps it up to date.`, 'ok');
-		else if (r.joined) toasts.push(`Someone asked for ${what} already; you are on the ask too and will hear when it is ready.`, 'ok');
-		else toasts.push(`Asked for ${what}. You will hear when it is approved.`, 'ok');
-		loadLimit();
-		void refreshInbox();
-	}
-
-	function showRefused(s: LookupShow, body: Record<string, unknown>) {
-		if (typeof body.title_id === 'number') patchShow(s, { title_id: body.title_id });
-	}
-
-	let term = $state(page.url.searchParams.get('q') ?? '');
-	let results = $state<LookupMovie[] | null>(null);
-	let attribution = $state('');
-	let busy = $state(false);
-	let error = $state('');
-	let noTMDB = $state(false);
-	let folders = $state<LibraryFolder[]>([]);
-	let rules = $state<PickRulesView[]>([]);
-	let gateDefault = $state('released');
-
-	let addMovie: ReturnType<typeof AddMovieDialog> | undefined = $state();
-
-	// Members ask instead of adding.
-	const asker = $derived(session.can('ask') && !session.can('manage_library'));
-	let askLimit = $state<AskLimit | null>(null);
-	// The line under the search box is for the kind being searched.
-	const limitKindOf: Record<SearchKind, LimitKind> = { movie: 'movies', show: 'shows', music: 'music' };
-	let askProblem = $state('');
-	let askMovie: ReturnType<typeof AskMovieDialog> | undefined = $state();
-
-	function loadLimit() {
-		api
-			.get<AskLimit>('/asks/limit')
-			.then((r) => (askLimit = r))
-			.catch(() => {});
-	}
-
-	function movieAsked(m: AskMovie, r: { ask: Ask; joined: boolean; already: boolean }) {
-		askProblem = '';
-		const i = results?.findIndex((x) => x.ids.tmdb === m.tmdb) ?? -1;
-		if (results && i >= 0) {
-			results[i] = { ...results[i], ask: { id: r.ask.id, state: r.ask.state, state_label: r.ask.state_label, mine: true, people: r.ask.people.length } };
-		}
-		if (r.ask.state === 'approved') toasts.push(`${r.ask.name} is approved; HolyArrs is looking for it.`, 'ok');
-		else if (r.joined) toasts.push(`Someone asked for ${r.ask.name} already; you are on the ask too and will hear when it is ready.`, 'ok');
-		else toasts.push(`Asked for ${r.ask.name}. You will hear when it is approved.`, 'ok');
-		loadLimit();
-		void refreshInbox();
-	}
-
-	function movieRefused(m: AskMovie, body: Record<string, unknown>) {
-		if (typeof body.title_id !== 'number' || !results) return;
-		const i = results.findIndex((x) => x.ids.tmdb === m.tmdb);
-		if (i >= 0) results[i] = { ...results[i], title_id: body.title_id };
-	}
-
-	onMount(() => {
-		if (session.can('manage_library')) {
-			api
-				.get<{ library_folders: LibraryFolder[] }>('/library-folders')
-				.then((r) => (folders = r.library_folders))
-				.catch(() => {});
-			api
-				.get<{ pick_rules: PickRulesView[] }>('/pick-rules')
-				.then((r) => (rules = r.pick_rules))
-				.catch(() => {});
-			api
-				.get<GateDefaults>('/settings/release-gate')
-				.then((r) => (gateDefault = r.release_gate))
-				.catch(() => {});
-			api
-				.get<ShowSettings>('/settings/shows')
-				.then((r) => (showDefaults = r))
-				.catch(() => {});
-			// The add dialogs wait for the saved defaults; fetched once for this visit.
-			savedDefaults.forget();
-			void savedDefaults.load();
-			api
-				.get<MusicSettings>('/settings/music')
-				.then((r) => (musicDefaults = r))
-				.catch(() => {});
-		}
-		if (session.can('ask') && !session.can('manage_library')) loadLimit();
-		if (term) void run();
-	});
-
-	// A new ?q= while this page is already open (the ⌘K palette, a link from
-	// Explore) runs that search; our own address updates match and do nothing.
-	afterNavigate(({ from, to: dest }) => {
-		if (!from || !dest) return;
-		if (ownAddresses.delete(dest.url.href)) return;
-		const q = dest.url.searchParams.get('q') ?? '';
-		const k = dest.url.searchParams.get('kind');
-		const nextKind: SearchKind = k === 'show' || k === 'music' ? k : 'movie';
-		if (!q.trim() || (q.trim() === lastRun && nextKind === kind)) return;
-		if (nextKind !== kind) {
-			kind = nextKind;
-			results = null;
-			shows = null;
-			artists = null;
-		}
-		term = q;
-		void run();
-	});
-
-	// The last query this page searched, and the addresses this page wrote
-	// itself (those land later and must not undo a newer query).
-	let lastRun = '';
-	const ownAddresses = new Set<string>();
-	async function run(e?: SubmitEvent) {
-		e?.preventDefault();
-		const q = term.trim();
-		if (!q) return;
-		lastRun = q;
-		const searchKind = kind;
-		const isLatest = beginSearch();
-		busy = true;
-		error = '';
-		noTMDB = false;
-		const url = searchAddress(page.url, searchKind, q);
-		ownAddresses.add(url.href);
-		void goto(url, { replace: true, shallow: true });
-		try {
-			if (searchKind === 'music') {
-				const r = await api.get<{ artists: LookupArtist[] }>(`/artists/lookup?term=${encodeURIComponent(q)}`);
-				if (!isLatest()) return;
-				artists = r.artists;
-				attribution = 'Artist and album details from MusicBrainz.';
-			} else if (searchKind === 'show') {
-				const r = await api.get<{ shows: LookupShow[]; attribution?: string }>(`/shows/lookup?term=${encodeURIComponent(q)}`);
-				if (!isLatest()) return;
-				shows = r.shows;
-				attribution = r.attribution ?? '';
-			} else {
-				const r = await api.get<{ movies: LookupMovie[]; attribution: string }>(`/titles/lookup?term=${encodeURIComponent(q)}`);
-				if (!isLatest()) return;
-				results = r.movies;
-				attribution = r.attribution;
-			}
-		} catch (err) {
-			if (!isLatest()) return;
-			results = null;
-			shows = null;
-			artists = null;
-			if (err instanceof ApiError && err.status === 503 && searchKind !== 'music') noTMDB = true;
-			else error = message(err);
-		} finally {
-			if (isLatest()) busy = false;
-		}
-	}
-
-	function movieAdded(m: LookupMovie, t: TitleView) {
-		if (results) {
-			const i = results.findIndex((x) => x.ids.tmdb === m.ids.tmdb);
-			if (i >= 0) results[i] = { ...results[i], title_id: t.id };
-		}
-		toasts.push(`${t.name} is in your Library.`, 'ok');
-	}
-
+	const trendCards = $derived(trending.map((item) => ({ item, c: discoverCard(item, 'search-trending') })));
+	const showTrending = $derived(trendCards.filter(({ item }) => (item.kind === 'show' ? partOn('shows') : partOn('movies'))));
 </script>
 
-<svelte:head><title>Search · HolyArrs</title></svelte:head>
+<svelte:head><title>{searched ? `${searched} · Search` : 'Search'} · HolyArrs</title></svelte:head>
 
-<section class="search-workspace">
-<PageHeader
-	title="Search"
-	subtitle={kind === 'music'
-		? 'Find an artist by name, or paste mbid: with its MusicBrainz id.'
-		: kind === 'show'
-			? 'Find a show by name, or paste tmdb:, tvdb:, tvmaze: or imdb: with its id.'
-			: 'Find a movie by name, or paste tmdb: or imdb: with its id.'}
-/>
-
-<MetadataNotice />
-
-<div class="kind">
-	{#if kinds.length > 1}<SegmentedControl label="Look for" value={kind} onchange={(k) => setKind(k)} options={kinds} />{/if}
-</div>
-
-<form class="searchbar" role="search" onsubmit={run}>
-	<span class="search-ic" aria-hidden="true"><Icon name="search" size={18} /></span>
-	<label class="sr-only" for="q">{kind === 'music' ? 'Artist name or id' : kind === 'show' ? 'Show name or id' : 'Movie name or id'}</label>
-	<input id="q" type="search" bind:value={term} placeholder={kind === 'music' ? 'Tin Lanterns, mbid:…' : kind === 'show' ? 'Harbour Lights, tvmaze:82 …' : 'Dune Part Two, tmdb:693134 …'} autocomplete="off" spellcheck="false" />
-	<Button variant="primary" type="submit" disabled={!term.trim()} {busy}>Search</Button>
-</form>
-
-{#if asker && limitLine(askLimit, limitKindOf[kind])}
-	<p class="small muted limit" data-testid="ask-limit">{limitLine(askLimit, limitKindOf[kind])}</p>
-{/if}
-{#if askProblem}
-	<p class="notice warn ask-problem" role="alert">{plainReason(askProblem).text}</p>
-{/if}
-
-<div class="results" aria-live="polite" aria-busy={busy}>
-	{#if kind === 'music'}
-		{#if error}
-			<p class="notice bad" role="alert">{plainReason(error).text}</p>
-		{:else if busy && !artists}
-			<ul class="list" aria-hidden="true">{#each Array(3) as _, i (i)}<li class="hit"><Skeleton shape="poster" /><Skeleton lines={2} /></li>{/each}</ul>
-		{:else if artists === null}
-			<EmptyState icon="music" title="Look for an artist" text="Type a name above. Details come from MusicBrainz; {asker ? 'ask for every album or a few, and it lands on your Wishlist' : 'pick one to add it to your Library'}." />
-		{:else if artists.length === 0}
-			<EmptyState icon="search" title="Nothing found" text="No artist matches “{term}”. Check the spelling, or try a MusicBrainz id such as mbid:5b11f4ce-a62d-471e-81fc-a69a8278c7da." />
-		{:else}
-			<section class="group" aria-labelledby="results-group">
-			<h2 class="group-h" id="results-group">{kindLabel} <span class="group-n">{artists.length}</span></h2>
-			<ul class="list">
-				{#each artists as a, i (a.mbid)}
-					<li class="hit rise" style="--i: {i}" data-testid="artist-hit">
-						<div class="art"><Poster name={a.name} /></div>
-						<div class="grow">
-							<h3 class="h3">{a.name}{#if a.disambiguation}{' '}<span class="muted small">({a.disambiguation})</span>{/if}</h3>
-							<p class="xs muted">{[a.type ? a.type.charAt(0).toUpperCase() + a.type.slice(1) : '', a.country, a.status === 'ended' ? 'No longer active' : 'Still active'].filter(Boolean).join(' · ')}</p>
-						</div>
-						<div class="act">
-							{#if a.title_id && !asker}
-								{@const p = inLibraryPill}<a class="pill-link" href={to(`/library/${a.title_id}`)}><StatusPill kind={p.kind} label={p.label} /><Icon name="chevronRight" size={16} /></a>
-							{:else if a.never_add}
-								{@const p = pill({ neverAdd: true })}<StatusPill kind={p.kind} label={p.label} />
-							{:else if session.can('manage_library')}
-								<Button variant="primary" icon="plus" onclick={() => addArtist?.open(a)}>Add</Button>
-							{:else if a.ask?.mine}
-								{@const p = pill({ ask: a.ask.state, titleKind: 'artist', mine: true })}<a class="pill-link" href={to(`/wishlist`)}><StatusPill kind={p.kind} label={p.label} /><span class="sr-only"> on your Wishlist</span><Icon name="chevronRight" size={16} /></a>
-							{:else if session.can('ask')}
-								<Button variant="primary" icon="wish" onclick={() => askArtist?.open(a)}>{a.ask ? 'Ask too' : a.title_id ? 'Ask for more' : 'Ask'}</Button>
-								{#if a.ask}<span class="xs muted asked-already">Someone asked for {albumWords(a.ask.albums)} · {pill({ ask: a.ask.state }).label}</span>
-								{:else if a.title_id}<span class="xs muted asked-already">In the Library; ask for albums it does not have yet.</span>{/if}
-							{:else}
-								<span class="xs muted">Your account may not ask for music; ask the owner.</span>
-							{/if}
-						</div>
-					</li>
-				{/each}
-			</ul>
-			{#if attribution}<p class="xs muted attribution">{attribution}</p>{/if}
-			</section>
-		{/if}
-	{:else if noTMDB}
-		<EmptyState icon="info" title="Metadata server is down" text="Searches and new artwork will return when it's back. Try again in a minute." />
-	{:else if kind === 'show'}
-		{#if error}
-			<p class="notice bad" role="alert">{plainReason(error).text}</p>
-		{:else if busy && !shows}
-			<ul class="list" aria-hidden="true">{#each Array(3) as _, i (i)}<li class="hit"><Skeleton shape="poster" /><Skeleton lines={3} /></li>{/each}</ul>
-		{:else if shows === null}
-			<EmptyState icon="tv" title="Look for a show" text="Type a name above. {asker ? 'Ask for the whole show or a few seasons, and it lands on your Wishlist' : 'Pick one to add it to your Library'}." />
-		{:else if shows.length === 0}
-			<EmptyState icon="search" title="Nothing found" text="No show matches “{term}”. Check the spelling, or try an id such as tvmaze:82." />
-		{:else}
-			<section class="group" aria-labelledby="results-group">
-			<h2 class="group-h" id="results-group">{kindLabel} <span class="group-n">{shows.length}</span></h2>
-			<ul class="list">
-				{#each shows as s, i (showKey(s) + i)}
-					<li class="hit rise" style="--i: {i}" data-testid="show-hit">
-						<div class="art"><Poster src={s.poster} name={s.name} /></div>
-						<div class="grow">
-							<h3 class="h3">{s.name}{#if s.year}{" "}<span class="muted">({s.year})</span>{/if}</h3>
-							<p class="xs muted">{[s.network, s.status === 'ended' ? 'Ended' : s.status === 'announced' ? 'Announced' : 'Still running'].filter(Boolean).join(' · ')}</p>
-							{#if s.overview}<p class="small muted overview">{s.overview}</p>{/if}
-						</div>
-						<div class="act">
-							{#if s.title_id && !asker}
-								{@const p = inLibraryPill}<a class="pill-link" href={to(`/library/${s.title_id}`)}><StatusPill kind={p.kind} label={p.label} /><Icon name="chevronRight" size={16} /></a>
-							{:else if s.never_add}
-								{@const p = pill({ neverAdd: true })}<StatusPill kind={p.kind} label={p.label} />
-							{:else if session.can('manage_library')}
-								<Button variant="primary" icon="plus" onclick={() => addShow?.open(s)}>Add</Button>
-							{:else if s.ask?.mine}
-								{@const p = pill({ ask: s.ask.state, titleKind: 'show', mine: true })}<a class="pill-link" href={to(`/wishlist`)}><StatusPill kind={p.kind} label={p.label} /><span class="sr-only"> on your Wishlist</span><Icon name="chevronRight" size={16} /></a>
-							{:else if session.can('ask')}
-								<Button variant="primary" icon="wish" onclick={() => askShow?.open(s)}>{s.ask ? 'Ask too' : s.title_id ? 'Ask for more' : 'Ask'}</Button>
-								{#if s.ask}<span class="xs muted asked-already">Someone asked for {seasonWords(s.ask.seasons)} · {pill({ ask: s.ask.state }).label}</span>
-								{:else if s.title_id}<span class="xs muted asked-already">In the Library; ask for seasons it does not have yet.</span>{/if}
-							{:else}
-								<span class="xs muted">Your account may not ask for shows; ask the owner.</span>
-							{/if}
-						</div>
-					</li>
-				{/each}
-			</ul>
-			{#if attribution}<p class="xs muted attribution">{attribution}</p>{/if}
-			</section>
-		{/if}
-	{:else if error}
-		<p class="notice bad" role="alert">{plainReason(error).text}</p>
-	{:else if busy && !results}
-		<ul class="list" aria-hidden="true">{#each Array(3) as _, i (i)}<li class="hit"><Skeleton shape="poster" /><Skeleton lines={3} /></li>{/each}</ul>
-	{:else if results === null}
-		<EmptyState icon="film" title="Look for a movie" text="Type a name above. Results come from TMDB; {asker ? 'ask for one and it lands on your Wishlist' : 'pick one to add it to your Library'}." />
-	{:else if results.length === 0}
-		<EmptyState icon="search" title="Nothing found" text="No movie matches “{term}”. Check the spelling, or try the year or a TMDB id." />
+{#snippet card(c: Card)}
+	{@const a = c.artist}
+	{#if a && !a.title_id && !a.never_add && (manage || (session.can('ask') && !a.ask?.mine))}
+		<WideCard cover title={c.name} image={c.image} kind="artist" subtitle={c.subtitle} owned={c.owned} typed={scope === 'all'}>
+			{#snippet action()}
+				{#if manage}<Button variant="primary" icon="plus" onclick={() => addArtist?.open(a)}>Add</Button>
+				{:else}<Button variant="primary" icon="wish" onclick={() => askArtist?.open(a)}>{a.ask ? 'Ask too' : 'Ask'}</Button>{/if}
+			{/snippet}
+		</WideCard>
 	{:else}
-		<section class="group" aria-labelledby="results-group">
-		<h2 class="group-h" id="results-group">{kindLabel} <span class="group-n">{results.length}</span></h2>
-		<ul class="list">
-			{#each results as m, i (m.ids.tmdb ?? i)}
-				<li class="hit rise" style="--i: {i}">
-					<div class="art"><Poster src={m.poster} name={m.name} /></div>
-					<div class="grow">
-						<h3 class="h3">{m.name}{#if m.year}{" "}<span class="muted">({m.year})</span>{/if}</h3>
-						{#if m.overview}<p class="small muted overview">{m.overview}</p>{/if}
-					</div>
-					<div class="act">
-						{#if m.title_id}
-							{@const p = inLibraryPill}<a class="pill-link" href={to(`/library/${m.title_id}`)}><StatusPill kind={p.kind} label={p.label} /><Icon name="chevronRight" size={16} /></a>
-						{:else if m.never_add}
-							{@const p = pill({ neverAdd: true })}<StatusPill kind={p.kind} label={p.label} />
-						{:else if session.can('manage_library')}
-							<Button variant="primary" icon="plus" onclick={() => addMovie?.open(m)}>Add</Button>
-						{:else if m.ask?.mine}
-							{@const p = pill({ ask: m.ask.state, titleKind: 'movie', mine: true })}<a class="pill-link" href={to(`/wishlist`)}><StatusPill kind={p.kind} label={p.label} /><span class="sr-only"> on your Wishlist</span><Icon name="chevronRight" size={16} /></a>
-						{:else if session.can('ask')}
-							<Button variant="primary" icon="wish" onclick={() => m.ids.tmdb && askMovie?.open({ tmdb: m.ids.tmdb, name: m.name, year: m.year, ask: m.ask })}>{m.ask ? 'Ask too' : 'Ask'}</Button>
-							{#if m.ask}<span class="xs muted asked-already">Someone asked already · {pill({ ask: m.ask.state }).label}</span>{/if}
-						{:else}
-							<span class="xs muted">Your account may not ask for movies; ask the owner.</span>
-						{/if}
-					</div>
-				</li>
-			{/each}
-		</ul>
-		{#if attribution}<p class="xs muted attribution">{attribution}</p>{/if}
-			</section>
+		<WideCard cover title={c.name} href={c.href || undefined} image={c.image} kind={c.type === 'music' ? 'artist' : c.type === 'people' ? undefined : c.type} subtitle={c.subtitle} owned={c.owned} typed={scope === 'all'} preview={c.preview} />
 	{/if}
-</div>
+{/snippet}
+
+<section class="search">
+	<PageHeader title="Search" subtitle="Shows, movies, music and people. Press / or Ctrl K from anywhere." />
+	<MetadataNotice />
+
+	<form class="box" role="search" onsubmit={run}>
+		<span class="ic" aria-hidden="true"><Icon name="search" size={20} /></span>
+		<label class="sr-only" for="q">Search for a title, an artist or a person</label>
+		<input id="q" bind:this={input} type="search" bind:value={term} oninput={typed} onblur={blurred} placeholder="Dune, Harbour Lights, tmdb:693134 …" autocomplete="off" spellcheck="false" enterkeyhint="search" data-testid="search-box" />
+		{#if term}<button type="button" class="clear" aria-label="Clear the search" onclick={() => { term = ''; void run(); input?.focus(); }}><Icon name="x" size={16} /></button>{/if}
+	</form>
+
+	{#if scopeOptions.length > 2}
+		<div class="types">
+			<SegmentedControl options={scopeOptions} value={scope} label="Look in" testid="search-scope" onchange={setScope} />
+		</div>
+	{/if}
+
+	<div class="results" aria-live="polite" aria-busy={busy}>
+		{#if !term.trim()}
+			{#if recent.length}
+				<section class="recent" aria-labelledby="recent-h">
+					<div class="recent-head">
+						<h2 id="recent-h" class="h2">Recent searches</h2>
+						<Button variant="plain" onclick={clearRecent}>Clear</Button>
+					</div>
+					<div class="chips">
+						{#each recent as q (q)}<Chip label={q} icon="clock" onclick={() => pickRecent(q)} />{/each}
+					</div>
+				</section>
+			{/if}
+			{#if showTrending.length}
+				<Shelf title="Trending this week" item="var(--title-item)" placeholder="wide" lines={1}>
+					{#each showTrending as { item, c } (c.key)}
+						<WideCard cover title={c.name} href={to(item.title_id ? `/library/${item.title_id}` : detailPath(item.kind, item.tmdb_id))} image={c.wide ?? c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} owned={ownedMark(c, undefined, who)} fresh={c.fresh} typed preview={{ kind: item.kind, tmdb: item.tmdb_id, year: item.year }} />
+					{/each}
+				</Shelf>
+			{/if}
+		{:else if noTMDB && total === 0}
+			<div class="empty"><h2 class="h2">The metadata server is down</h2><p class="muted">Searches and new artwork come back when it is. Try again in a minute.</p></div>
+		{:else if error && total === 0}
+			<p class="notice bad" role="alert">{plainReason(error).text}</p>
+		{:else if total === 0 && (pending || busy)}
+			<p class="muted searching">Searching for “{term.trim()}”…</p>
+		{:else if total === 0 && searched}
+			<div class="empty" data-testid="search-empty">
+				<h2 class="h2">Nothing found for “{searched}”</h2>
+				<ul class="tips">
+					<li>Check the spelling, or use fewer words.</li>
+					<li>Add the year, such as “Dune 2021”.</li>
+					<li>Paste an id: tmdb:693134, tvmaze:82 or mbid:…</li>
+				</ul>
+				{#if scope !== 'all'}<Button variant="secondary" onclick={() => setScope('all')}>Look everywhere</Button>{/if}
+				{#if manage}<Button variant="primary" icon="search" href={to('/settings/sources')}>Search indexers for “{searched}”</Button>{/if}
+			</div>
+		{:else if scope === 'all'}
+			{#if top.length}
+				<Shelf title="Top matches" item="var(--title-item)" placeholder="wide" lines={1}>
+					{#each top as c (c.key)}{@render card(c)}{/each}
+				</Shelf>
+			{/if}
+			{#each order as t (t)}
+				{@const g = groups[t]}
+				{#if g?.length}
+					<Shelf title={labels[t]} subtitle={String(g.length)} item="var(--title-item)" placeholder="wide" lines={1} onseeall={() => setScope(t)}>
+						{#each g as c (c.key)}{@render card(c)}{/each}
+					</Shelf>
+				{/if}
+			{/each}
+		{:else}
+			{@const g = groups[scope] ?? []}
+			<h2 class="h2">{labels[scope]} <span class="muted n">{g.length}</span></h2>
+			<ul class="grid">
+				{#each g as c (c.key)}<li>{@render card(c)}</li>{/each}
+			</ul>
+		{/if}
+	</div>
 </section>
 
-<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} onadded={movieAdded} />
-
-
-<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} onadded={showAdded} />
-<AskMovieDialog bind:this={askMovie} onasked={movieAsked} onrefused={movieRefused} />
-<AskShowDialog bind:this={askShow} onasked={showAsked} onrefused={showRefused} />
 <AddArtistDialog bind:this={addArtist} {folders} {rules} defaults={musicDefaults} onadded={artistAdded} />
 <AskArtistDialog bind:this={askArtist} onasked={artistAsked} onrefused={artistRefused} />
 
 <style>
-	.search-workspace { display: flex; flex-direction: column; gap: 16px; padding-bottom: 48px; min-width: 0; }
-	.kind { display: flex; flex-wrap: wrap; gap: 8px; }
-	.searchbar { position: relative; display: flex; align-items: center; gap: 8px; max-width: 720px; }
-	.search-ic { position: absolute; left: 14px; top: 50%; translate: 0 -50%; display: grid; color: var(--text-muted); pointer-events: none; }
-	.searchbar input { flex: 1; min-width: 0; height: 44px; padding: 0 12px 0 40px; border: 1px solid transparent; border-radius: var(--r-btn); background: var(--surface-2); color: var(--text); font: var(--t-body); }
-	.searchbar input:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.notice { display: flex; gap: 8px; margin: 0; padding: 10px 12px; border: 0; border-radius: var(--r-btn); background: var(--surface-2); font: var(--t-callout); }
+	.search { --title-item: max(200px, calc((100vw - 96px) / 5.16)); display: flex; flex-direction: column; gap: 24px; padding-bottom: 48px; min-width: 0; }
+	@media (max-width: 1279px) { .search { --title-item: max(180px, calc((100vw - 64px) / 4.2)); } }
+	@media (max-width: 767px) { .search { --title-item: calc((100vw - 40px) / 2.3); } }
+	.box { position: relative; display: flex; align-items: center; max-width: 760px; width: 100%; }
+	.ic { position: absolute; left: 16px; display: grid; color: var(--text-muted); pointer-events: none; }
+	.box input { flex: 1; min-width: 0; height: 52px; padding: 0 48px 0 46px; border: 1px solid transparent; border-radius: 999px; background: var(--surface-2); color: var(--text); font: var(--t-title3); font-weight: 400; }
+	.box input::-webkit-search-cancel-button { display: none; }
+	.box input:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.clear { position: absolute; right: 6px; display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 999px; background: none; color: var(--text-muted); cursor: pointer; }
+	.clear:hover { color: var(--text); }
+	.clear:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	/* The same floating glass pill as Explore's type switch. */
+	.types { position: sticky; top: calc(var(--topbar) + 10px); z-index: 20; display: flex; justify-content: center; pointer-events: none; }
+	.types :global(.ui-seg) { pointer-events: auto; border-radius: 999px; padding: 3px; background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
+	.types :global(.ui-seg .thumb) { top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / var(--n)); border-radius: 999px; }
+	.types :global(.ui-seg button) { min-height: 44px; padding: 0 20px; border-radius: 999px; }
+	@media (max-width: 767px) { .types :global(.ui-seg) { display: grid; width: 100%; } .types :global(.ui-seg button) { padding: 0 6px; } }
+	@media (max-width: 419px) { .types :global(.ui-seg button span) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } }
+	.results { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
+	.h2 { margin: 0; font: var(--t-title3); }
+	.n { font: var(--t-callout); font-variant-numeric: tabular-nums; }
+	.muted { color: var(--text-muted); }
+	.recent { display: flex; flex-direction: column; gap: 12px; }
+	.recent-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 760px; }
+	.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--title-item), 1fr)); gap: 16px 5px; margin: -16px 0 0; padding: 0; list-style: none; }
+	.empty { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; max-width: 640px; }
+	.tips { margin: 0; padding-left: 20px; color: var(--text-muted); font: var(--t-body); display: grid; gap: 4px; }
+	.searching { margin: 0; }
+	.notice { margin: 0; padding: 10px 12px; border-radius: var(--r-btn); background: var(--surface-2); font: var(--t-callout); }
 	.notice.bad { color: var(--fail); }
-	.limit { margin: 0; color: var(--text-muted); font: var(--t-callout); }
-	.ask-problem { max-width: 720px; }
-	.results { min-width: 0; }
-	.group { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-	.group-h { display: flex; align-items: baseline; gap: 8px; margin: 0; font: var(--t-title3); }
-	.group-n { color: var(--text-muted); font: var(--t-callout); font-variant-numeric: tabular-nums; }
-	.list { display: flex; flex-direction: column; margin: 0; padding: 4px; list-style: none; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card); }
-	.hit { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; gap: 14px; align-items: start; min-width: 0; padding: 12px; border-radius: var(--r-btn); }
-	.hit + .hit { border-top: 1px solid var(--line); border-radius: 0; }
-	.art { width: 72px; flex: none; border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-card); }
-	.grow { min-width: 0; }
-	.grow :global(.h3) { margin: 0; font: var(--t-headline); }
-	.grow .muted { color: var(--text-muted); font-weight: 400; }
-	.grow p { margin: 2px 0 0; color: var(--text-muted); font: var(--t-subhead); font-weight: 400; }
-	.overview { margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-	.act { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: none; max-width: 220px; text-align: right; }
-	/* A pill that opens the title or the Wishlist: the chevron says it can be tapped. */
-	.pill-link { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; padding-right: 4px; border-radius: var(--r-pill); color: var(--text-muted); text-decoration: none; }
-	.pill-link:hover { color: var(--text); }
-	.pill-link:hover :global(.ui-pill) { background: var(--surface-3); }
-	.pill-link:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.asked-already { display: block; color: var(--text-muted); font: var(--t-footnote); }
-	.act > .xs { color: var(--text-muted); font: var(--t-footnote); }
-	.attribution { margin: 8px 0 0; color: var(--text-muted); font: var(--t-footnote); }
-	@media (max-width: 600px) {
-		.hit { grid-template-columns: 60px minmax(0, 1fr); }
-		.art { width: 60px; }
-		.act { grid-column: 1 / -1; align-items: stretch; max-width: none; text-align: left; }
-		.act :global(.ui-btn) { width: 100%; }
-		.asked-already { text-align: left; }
-		.act > :global(.ui-pill) { align-self: flex-start; }
-	}
 </style>

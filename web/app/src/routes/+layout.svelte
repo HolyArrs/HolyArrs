@@ -163,16 +163,19 @@
 	const searchKey = mac ? '⌘K' : 'Ctrl K';
 	let paletteOpen = $state(false);
 	let paletteInitial = $state('');
+	const typingIn = (t: EventTarget | null) => t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
 	function keys(e: KeyboardEvent) {
 		if (!ready || bare) return;
 		const mod = mac ? e.metaKey : e.ctrlKey;
 		if (mod && e.key === '\\') {
 			e.preventDefault();
 			void toggleSidebar();
-		} else if (mod && (e.key === 'k' || e.key === 'K')) {
+		} else if ((mod && (e.key === 'k' || e.key === 'K')) || (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey && !typingIn(e.target))) {
+			// Ctrl+K and / open the Search page from anywhere (its box takes focus).
 			e.preventDefault();
-			paletteInitial = '';
-			paletteOpen = !paletteOpen;
+			paletteOpen = false;
+			if (path.startsWith('/search')) document.getElementById('q')?.focus();
+			else void goto(to('/search'));
 		} else if (e.key === 'Escape' && overlayOpen) {
 			void closeOverlay();
 		}
