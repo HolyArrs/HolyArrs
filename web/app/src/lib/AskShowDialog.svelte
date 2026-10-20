@@ -1,5 +1,6 @@
 <script lang="ts">
-	// A member asks for a show: the whole show, or the seasons they pick.
+	// A member asks for a show: all seasons, the seasons they pick, or the
+	// future seasons only (what airs from now on).
 	import Sheet from './ui/Sheet.svelte';
 	import Button from './ui/Button.svelte';
 	import { api, message, ApiError } from './api.ts';
@@ -16,7 +17,7 @@
 
 	let sheetOpen = $state(false);
 	let picked = $state<LookupShow | null>(null);
-	let whole = $state(true);
+	let mode = $state<'all' | 'choose' | 'future'>('all');
 	let chosen = $state<number[]>([]);
 	let busy = $state(false);
 	let error = $state('');
@@ -26,7 +27,7 @@
 	/** open shows the dialog for one looked-up show. */
 	export function open(s: LookupShow) {
 		picked = s;
-		whole = true;
+		mode = 'all';
 		chosen = [];
 		error = '';
 		sheetOpen = true;
@@ -47,7 +48,7 @@
 		busy = true;
 		error = '';
 		try {
-			const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', { kind: 'show', id: idOf(picked), seasons: whole ? [] : chosen });
+			const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', mode === 'future' ? { kind: 'show', id: idOf(picked), future_only: true } : { kind: 'show', id: idOf(picked), seasons: mode === 'all' ? [] : chosen });
 			(sheetOpen = false);
 			onasked(picked, r);
 		} catch (err) {
@@ -68,15 +69,19 @@
 			<fieldset class="pick">
 				<legend class="small">What would you like?</legend>
 				<label class="checkline">
-					<input type="radio" name="what" checked={whole} onchange={() => (whole = true)} />
-					<span><b>The whole show</b><br /><span class="hint">Every season, and seasons that come later.</span></span>
+					<input type="radio" name="what" checked={mode === 'all'} onchange={() => (mode = 'all')} />
+					<span><b>All seasons</b><br /><span class="hint">Every season, and seasons that come later.</span></span>
 				</label>
 				<label class="checkline">
-					<input type="radio" name="what" checked={!whole} onchange={() => (whole = false)} disabled={seasons.length === 0} />
-					<span><b>Only some seasons</b><br /><span class="hint">Pick them below.</span></span>
+					<input type="radio" name="what" checked={mode === 'choose'} onchange={() => (mode = 'choose')} disabled={seasons.length === 0} />
+					<span><b>Choose seasons</b><br /><span class="hint">Pick them below.</span></span>
+				</label>
+				<label class="checkline">
+					<input type="radio" name="what" checked={mode === 'future'} onchange={() => (mode = 'future')} />
+					<span><b>Future seasons only</b><br /><span class="hint">Nothing that is out already; new episodes and seasons from today on.</span></span>
 				</label>
 			</fieldset>
-			{#if !whole}
+			{#if mode === 'choose'}
 				<fieldset class="seasons">
 					<legend class="sr-only">Seasons</legend>
 					{#each seasons as n (n)}
@@ -92,8 +97,8 @@
 	{/if}
 	{#snippet footer()}
 				<Button variant="plain" onclick={() => (sheetOpen = false)}>Cancel</Button>
-				<Button variant="primary" type="submit" form="ask-show-title" disabled={(!whole && chosen.length === 0)} busy={busy}>
-					{whole ? 'Ask for the whole show' : chosen.length ? `Ask for ${seasonWords(chosen)}` : 'Pick a season'}
+				<Button variant="primary" type="submit" form="ask-show-title" disabled={mode === 'choose' && chosen.length === 0} busy={busy}>
+					{mode === 'all' ? 'Ask for all seasons' : mode === 'future' ? 'Ask for future seasons' : chosen.length ? `Ask for ${seasonWords(chosen)}` : 'Pick a season'}
 				</Button>
 	{/snippet}
 </Sheet>

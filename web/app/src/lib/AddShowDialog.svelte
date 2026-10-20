@@ -101,7 +101,7 @@
 				keep_up_to_date: keep,
 				search_on_add: searchOnAdd,
 				seasons,
-				new_seasons: newSeasons,
+				new_seasons: seasons === 'future' ? 'all' : newSeasons,
 				episode_order: order,
 				details_source: source,
 				more_versions: more ? [{ label: moreLabel.trim(), pick_rules_id: moreRules, library_folder_id: moreFolder }] : []
@@ -153,11 +153,11 @@
 				</div>
 				<div class="field">
 					<label for="show-new">New seasons</label>
-					<select id="show-new" class="input" bind:value={newSeasons}>
+					<select id="show-new" class="input" bind:value={newSeasons} disabled={seasons === 'future'}>
 						<option value="all">Keep them up to date</option>
 						<option value="none">Leave them off</option>
 					</select>
-					<span class="hint">What happens to a season that comes out later.</span>
+					<span class="hint">{seasons === 'future' ? 'Future seasons only keeps new seasons up to date.' : 'What happens to a season that comes out later.'}</span>
 				</div>
 				<div class="field">
 					<label for="show-order">Episode order</label>
