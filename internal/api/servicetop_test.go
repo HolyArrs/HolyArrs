@@ -26,6 +26,8 @@ func TestExploreServiceTop(t *testing.T) {
 		return metadata.ServiceTop{Region: region, Attribution: "Streaming data by Streaming Availability (Movie of the Night)", Services: []metadata.ServiceTopList{
 			{Service: "netflix", Name: "Netflix", Source: "streaming-availability", Items: []metadata.ServiceTopItem{{Rank: 1, TMDBID: 701, Kind: "tv", Title: "Show A"}, {Rank: 2, TMDBID: 702, Kind: "movie", Title: "Film B", PosterPath: "/b.jpg"}, {Rank: 3, TMDBID: 703, Kind: "tv", Title: "Show C"}}},
 			{Service: "peacock", Name: "Peacock", Source: "tmdb-popular", Items: []metadata.ServiceTopItem{{Rank: 1, TMDBID: 704, Kind: "movie", Title: "Film D"}}},
+			{Service: "starz", Name: "Starz", Source: "streaming-availability", Items: []metadata.ServiceTopItem{{Rank: 1, TMDBID: 706, Kind: "movie", Title: "Film E"}}},
+			{Service: "tubi", Name: "Tubi", Source: "tmdb-popular", Items: []metadata.ServiceTopItem{{Rank: 1, TMDBID: 707, Kind: "movie", Title: "Film F"}}},
 			{Service: "justwatch", Name: "JustWatch TV", Source: "tmdb-popular", Items: []metadata.ServiceTopItem{{Rank: 1, TMDBID: 705, Kind: "movie", Title: "Junk"}}},
 		}}, nil
 	}
@@ -35,7 +37,7 @@ func TestExploreServiceTop(t *testing.T) {
 
 	all := getJSON(t, base+"?type=all&region=US", 200)
 	svcs := all["services"].([]any)
-	if all["attribution"] == "" || len(svcs) != 2 {
+	if all["attribution"] == "" || len(svcs) != 4 {
 		t.Fatalf("all %v", all)
 	}
 	nf := svcs[0].(map[string]any)
@@ -46,6 +48,9 @@ func TestExploreServiceTop(t *testing.T) {
 	pc := svcs[1].(map[string]any)
 	if pc["service"] != float64(386) || pc["ranked"] != false {
 		t.Fatalf("peacock %v", pc)
+	}
+	if sz, tb := svcs[2].(map[string]any), svcs[3].(map[string]any); sz["service"] != float64(43) || sz["ranked"] != true || tb["service"] != float64(73) || tb["ranked"] != false {
+		t.Fatalf("starz %v tubi %v", sz, tb)
 	}
 
 	// Shows only: the service's order kept, numbered again.

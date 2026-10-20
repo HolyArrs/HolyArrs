@@ -22,7 +22,7 @@ const serviceTopMiss = 5 * time.Minute
 
 // serviceTopProviders maps the server's service names to TMDB watch
 // provider ids (the ids the picker uses).
-var serviceTopProviders = map[string]int{"netflix": 8, "prime": 9, "disney": 337, "apple": 350, "hbo": 1899, "hulu": 15, "paramount": 531, "crunchyroll": 283, "peacock": 386}
+var serviceTopProviders = map[string]int{"netflix": 8, "prime": 9, "disney": 337, "apple": 350, "hbo": 1899, "hulu": 15, "paramount": 531, "crunchyroll": 283, "peacock": 386, "starz": 43, "tubi": 73}
 
 type serviceTopEntry struct {
 	at   time.Time
