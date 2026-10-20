@@ -193,12 +193,12 @@ func (a *API) answerAsk(w http.ResponseWriter, r *http.Request, code int, id int
 
 func (a *API) makeAsk(w http.ResponseWriter, r *http.Request) {
 	var body struct {
-		ID      string   `json:"id"`      // "tmdb:693134"; for a show also tvdb:, tvmaze:, imdb:; for an artist mbid:
-		Kind    string   `json:"kind"`    // movie (default), show or artist
-		Seasons []int    `json:"seasons"` // a show's seasons; empty or missing: the whole show
+		ID      string `json:"id"`      // "tmdb:693134"; for a show also tvdb:, tvmaze:, imdb:; for an artist mbid:
+		Kind    string `json:"kind"`    // movie (default), show or artist
+		Seasons []int  `json:"seasons"` // a show's seasons; empty or missing: the whole show
 		// FutureOnly asks a show for its future seasons only (no seasons list).
-		FutureOnly bool `json:"future_only"`
-		Albums  []string `json:"albums"`  // an artist's albums (MusicBrainz ids); empty or missing: the whole artist
+		FutureOnly bool     `json:"future_only"`
+		Albums     []string `json:"albums"` // an artist's albums (MusicBrainz ids); empty or missing: the whole artist
 	}
 	if !decode(w, r, &body, askHelp) {
 		return

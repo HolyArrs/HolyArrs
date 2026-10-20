@@ -76,9 +76,9 @@ type Title struct {
 	// FutureFrom is set for Future seasons only: episodes that aired by
 	// then are not wanted when a refresh finds them.
 	FutureFrom *time.Time `db:"future_from"`
-	Network      *string `db:"network"`
-	AirTime      *string `db:"air_time"`  // local, HH:MM
-	TimeZone     *string `db:"time_zone"` // IANA name
+	Network    *string    `db:"network"`
+	AirTime    *string    `db:"air_time"`  // local, HH:MM
+	TimeZone   *string    `db:"time_zone"` // IANA name
 	// Artists: the album choice made at add time (all, future, missing,
 	// latest, first, none), the extra album kinds and Pressing statuses
 	// that count (MusicTypes holds the main kinds), and details.
