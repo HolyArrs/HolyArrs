@@ -208,7 +208,7 @@
 			{#if tpl && (tpl.variant !== 'titled' || !loaded)}
 				<span class="scrim" aria-hidden="true"></span>
 				<span class="name" class:lifted={!!strip && strip.kind !== 'top10'} aria-hidden="true">
-					{#if coverLogo}<img class="logo" src={coverLogo} alt="" onerror={() => (logoFailed = true)} />{:else}<span class="word">{title}</span>{/if}
+					{#if coverLogo}<img class="logo" src={coverLogo} alt="" loading="lazy" decoding="async" onerror={() => (logoFailed = true)} />{:else}<span class="word">{title}</span>{/if}
 				</span>
 			{/if}
 			{#if badges.length || status}
