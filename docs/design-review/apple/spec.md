@@ -115,17 +115,25 @@ Large title "Home" (+ greeting line using the person's display name, never a raw
 5. **Needs attention** (admins: failed downloads, decisions; one tap goes to the fix).
 A setup card replaces shelves when the library is empty.
 
-### Explore (new route `/explore`)
-Netflix-style rows, trakt-style cards. Card overlays: "In Library ✓", "Requested", "Downloading", quality badge. Each card has a round ＋ (Add for admins, Ask for members), with the same rules as the existing add/ask dialogs.
-Rows built **from data we already have** (no new backend needed for the milestone):
-- "Recently added", "Coming soon" (calendar), "Because you have <title>" (same genre/people from library titles), "<Genre> in your library", "Missing episodes", "Popular in your household" (most-requested), "From <person>" (people in many titles).
-Rows that need a new backend endpoint (**trending, popular, similar, by genre from the metadata provider**) are designed and wired to a single client function `lib/explore.ts` that tries `GET /api/v1/discover?row=…`; when it returns 404 the row is hidden silently. Record the exact contract in `docs/design-review/apple/backend-needs.md` (endpoint, query, fields, permissions, cache) for the backend owner. Do not change Go code in this milestone.
-Ranking: simple and explainable (genre overlap × recency × household requests). Write it as pure functions with unit tests.
+### Explore (route `/explore`)
+Behaviour as built (user guide: [Explore](../../explore.md), [Trailers](../../trailers.md)). The first draft of this section described rows from local data and a `GET /discover` fallback; the server now builds the page.
+- **Switch:** All, Movies, Shows, Music (`?type=`, remembered per device; Music only when the Music part is on).
+- **Head, one request** (`GET /api/v1/explore/head`): a static hero (up to 6 titles not in the Library, Ask as the main button), Just arrived (Library adds in 14 days, newest first), Top 10 on Netflix (rank cards, movies or shows, region), Your asks on the way (only with open asks), Top picks for you (3+ seeds), Trending this week, Coming soon (wide cards), then the best tail row. Seven rows at most.
+- **Tail** (`GET /api/v1/explore/tail?page=n`): generated rows, 4 per page as the page scrolls, capped by signal (8 under 3 seeds, 20 from 3, 40 from 10; Kids 20). On your services (in-row picker), Best new releases, Because you have X, More from a person, Genre picks, Popular in your household, decades and Hidden gems. A daily shuffle of up to 5 percent; the same row type never twice in a row.
+- **Smart row titles:** 585 templates in five layers (occasion, time of day, genre mix, taste, row reason), true to the row's items, no repeat for 14 days; fixed head rows keep their title and get a factual subtitle.
+- **Music:** its own head (genre chips, album hero, Just arrived, New from artists you have, Your asks, charts) and a longer tail; square albums, round artists.
+- **Cards:** movie and show rows use wide 16:9 cards with the title logo; Top 10 uses rank cards. One freshness strip (New Episode, New Season, Recently Added, Top 10, Coming or Premieres, Season N coming, New Release) and one solid round Library mark top right with a download ring; under All a type pill top left. Badge text states facts only.
+- **Hover:** a wide card grows about 1.5 times in place after 0.5 s, then shows an info panel and the trailer; a poster opens its card after 0.8 s. Pointer: fine only; focus opens, Esc closes, tap opens on touch; no grow with reduced motion; never mid-drag. Rows scroll by mouse drag with a glide.
+- **Trailers:** muted, one at a time, hero after 1.5 s in view; never for Kid accounts, with reduced motion, on slow or data-saving connections, or when **Autoplay trailers** is off. Sound button when the stream has sound.
+- **Signals:** Library, asks and the metadata server's charts only. No play history.
+- Explore row contracts for the older `GET /discover` are in `backend-needs.md`.
 
 ### Title page (movie and show; artist uses the same hero)
 - **Hero**: full-bleed backdrop (fallback: blurred poster), gradient for legibility, title (logo art if available, else large title type), meta line (year · runtime · genres), badges row (rating, 4K/HDR/Dolby/Atmos/CC from files when known), StatusPill, description clamped to 3 lines with "Show more", action row of round buttons.
 - Actions (by permission): admins — Search now, Monitor on/off, Edit, Library ▾ (move/rename/remove), ⋯ (all existing actions remain reachable). Members — Ask / "Requested" / "In your library". "Open in Jellyfin/Plex" only when that integration is configured. **Every existing title action and confirmation must stay reachable.**
 - Below: Seasons (SegmentedControl or menu → episode WideCards with status per episode), Cast & crew (PersonCircle shelf), Versions & files (ListRow), Subtitles, Similar in your library. Breadcrumb "Movies › Title (Year)" at top-left of hero.
+- **Asked by** line under the title (library title pages): "You asked", "Asked by Ana", "Asked by Ana and 2 others". The server trims it per reader (owner, admins and managers see all; members see themselves and askers who opted in when the household allows it; Kids see only themselves). Settings: **Show who asked** (household) and **Show my name on my asks**.
+- The hero backdrops move slowly (up to four pictures) and can play a muted trailer; see Explore.
 
 ## 7. Admins and members: one app, permission-driven
 

@@ -1,7 +1,10 @@
 # Optional metadata service
 
-HolyArrs uses the existing direct providers by default. The standalone metadata
-service is optional and has its own API. Its address is not a MusicBrainz mirror
+By default HolyArrs uses the HolyArrs metadata server at
+`https://holyarrs-api.coderluii.dev` and needs no keys (see
+[Metadata](metadata-keys.md); `HOLYARRS_METADATA_URL` points it at another
+server). This page covers a separate, optional standalone metadata service
+with its own API. Its address is not a MusicBrainz mirror
 address and must never be entered in `musicbrainz_url`.
 
 After the application wiring is integrated, select the service at startup with

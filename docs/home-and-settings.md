@@ -106,6 +106,18 @@ switch between video and music: those answer 409 with `in_use`. A wrong field
 answers 400 `{"error", "field"}` where `field` is a dotted path such as
 `body.good_enough_at`.
 
+## Settings for Explore and trailers
+
+| Where | Setting | Default |
+| --- | --- | --- |
+| My account, Alerts for you | **New episodes of shows I asked for** | On |
+| My account | **Show my name on my asks** (people who may ask) | Off |
+| Settings > Wishlist | **Show who asked** (household): owner, admins and managers only, or everyone | Owner, admins and managers only |
+| Settings > This app | **Autoplay trailers** | On |
+| Settings > This app | **Keep yt-dlp up to date** | On |
+
+See [Explore](explore.md#new-episode-notices) and [Trailers](trailers.md#settings).
+
 ## Appearance
 
 The Settings landing page offers **Dark** and **Light**. The choice is kept in

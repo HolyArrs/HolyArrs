@@ -50,6 +50,14 @@ from the HolyArrs metadata server at `https://holyarrs-api.coderluii.dev`;
 each install registers itself on its first lookup. `HOLYARRS_METADATA_URL`
 points HolyArrs at another server. See [docs/metadata-keys.md](docs/metadata-keys.md).
 
+## Explore and trailers
+
+Explore builds a page of rows for each person from the Library, their asks and
+the metadata server's charts, and can play a muted trailer over the art. See
+[Explore](docs/explore.md) and [Trailers](docs/trailers.md). The Docker image
+is built on `debian:12-slim` and bundles yt-dlp for trailers
+([details](docs/install.md#the-image)).
+
 ## Master key and backups
 
 Passwords, Source keys and tokens are stored encrypted with a master key. On
