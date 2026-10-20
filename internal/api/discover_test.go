@@ -62,7 +62,9 @@ func newDiscoverTMDB(t *testing.T) *discoverTMDB {
 			_, _ = w.Write([]byte(list(41, 12)))
 		case "/3/movie/11":
 			_, _ = w.Write([]byte(`{"id":11,"title":"M11","release_date":"2024-05-01","runtime":100,"genres":[{"name":"Drama"}],
-				"credits":{"cast":[{"name":"Ann","character":"Hero"}]},"recommendations":` + list(12, 13, 41) + `}`))
+				"credits":{"cast":[{"name":"Ann","character":"Hero"}]},"belongs_to_collection":{"id":90,"name":"Set"},"recommendations":` + list(12, 13, 41) + `}`))
+		case "/3/collection/90":
+			_, _ = w.Write([]byte(`{"name":"The Set","parts":[{"id":11,"title":"M11","release_date":"2024-05-01","poster_path":"/p.jpg"},{"id":12,"title":"M12","release_date":"2025-05-01","poster_path":"/p.jpg"}]}`))
 		case "/3/tv/21/season/1":
 			_, _ = w.Write([]byte(`{"episodes":[{"episode_number":1,"name":"Pilot","runtime":42}]}`))
 		case "/3/tv/21":
@@ -263,7 +265,7 @@ func TestMetadataDetails(t *testing.T) {
 	srv, _ := discoverRig(t, f.provider())
 	b := string(do(t, "GET", srv.URL+"/api/v1/metadata/movie/11", "", 200))
 	for _, want := range []string{`"tmdb_id":"11"`, `"kind":"movie"`, `"runtime_minutes":100`, `"in_library":true`, `"title_id":1`,
-		`"character":"Hero"`, `"ask":null`} {
+		`"character":"Hero"`, `"ask":null`, `"collection":{"id":"90","name":"The Set","parts":[{"tmdb_id":"11"`, `"streaming":[]`} {
 		if !strings.Contains(b, want) {
 			t.Errorf("missing %s in %s", want, b)
 		}

@@ -408,6 +408,22 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 	if det.People == nil {
 		det.People = []metadata.DetailPerson{}
 	}
+	type collectionView struct {
+		ID    string             `json:"id"`
+		Name  string             `json:"name"`
+		Parts []discoverItemView `json:"parts"`
+	}
+	var coll *collectionView
+	if c := e.details.Collection; c != nil {
+		parts, err := a.joinItems(r.Context(), a.kidItems(r.Context(), max, c.Parts, 0), me, len(c.Parts))
+		if err != nil {
+			internal(w, err)
+			return
+		}
+		if len(parts) > 1 {
+			coll = &collectionView{ID: c.ID, Name: c.Name, Parts: parts}
+		}
+	}
 	region := strings.ToUpper(r.URL.Query().Get("region"))
 	if !isCountry(region) {
 		region = "US"
@@ -418,13 +434,14 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, struct {
 		metadata.Details
-		Streaming []metadata.WatchService `json:"streaming"`
-		Similar   []discoverItemView      `json:"similar"`
-		InLibrary bool                    `json:"in_library"`
-		TitleID   int64                   `json:"title_id,omitempty"`
-		Ask       *askBrief               `json:"ask"`
-		NeverAdd  bool                    `json:"never_add"`
-	}{Details: det, Streaming: streaming, Similar: similar, InLibrary: head.InLibrary, TitleID: head.TitleID, Ask: head.Ask, NeverAdd: never})
+		Streaming  []metadata.WatchService `json:"streaming"`
+		Collection *collectionView         `json:"collection,omitempty"`
+		Similar    []discoverItemView      `json:"similar"`
+		InLibrary  bool                    `json:"in_library"`
+		TitleID    int64                   `json:"title_id,omitempty"`
+		Ask        *askBrief               `json:"ask"`
+		NeverAdd   bool                    `json:"never_add"`
+	}{Details: det, Streaming: streaming, Collection: coll, Similar: similar, InLibrary: head.InLibrary, TitleID: head.TitleID, Ask: head.Ask, NeverAdd: never})
 }
 
 // metadataSeason answers GET /api/v1/metadata/show/{tmdb_id}/seasons/{number}:
