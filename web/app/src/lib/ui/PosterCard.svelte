@@ -75,7 +75,13 @@
 	let open = $state(false);
 	const opener = dwell(HOVER_DELAY, () => (open = true));
 	const closer = dwell(140, () => (open = false));
+	// A hover-only action (fine pointers) is put in only while the card is hovered or
+	// focused: a glass button on every card makes long rows slow to scroll.
+	let hot = $state(false);
+	const lazyAction = $derived(actionOnHover && finePointer());
+	const showAction = $derived(!!action && (!lazyAction || hot));
 	function enter() {
+		hot = true;
 		if (!preview || !finePointer()) return;
 		closer.cancel();
 		if (!open) {
@@ -84,6 +90,7 @@
 		}
 	}
 	function leave() {
+		if (!root?.contains(document.activeElement)) hot = false;
 		opener.cancel();
 		if (open) closer.start();
 	}
@@ -93,10 +100,14 @@
 		open = false;
 	}
 	function focusIn(e: FocusEvent) {
+		hot = true;
 		if ((e.target as HTMLElement)?.matches?.(':focus-visible')) enter();
 	}
 	function focusOut(e: FocusEvent) {
-		if (!root?.contains(e.relatedTarget as Node)) leave();
+		if (!root?.contains(e.relatedTarget as Node)) {
+			if (!root?.matches(':hover')) hot = false;
+			leave();
+		}
 	}
 	$effect(() => () => shut());
 	const strip = $derived(progress === undefined ? shownFresh(fresh, { music, top10Row }) : null);
@@ -131,7 +142,7 @@
 		<span class="t">{title}</span>
 		{#if subtitle}<span class="s">{subtitle}</span>{/if}
 	</svelte:element>
-	{#if action}<span class="act-layer" class:hover-only={actionOnHover}><span class="act">{@render action()}</span></span>{/if}
+	{#if action && showAction}<span class="act-layer" class:hover-only={actionOnHover}><span class="act">{@render action()}</span></span>{/if}
 </div>
 
 {#snippet ownBadge()}
@@ -170,5 +181,6 @@
 	@media (hover: hover) and (pointer: fine) {
 		.act-layer.hover-only .act { opacity: 0; transform: scale(0.9); transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
 		.ui-poster:hover .act-layer.hover-only .act, .ui-poster:focus-within .act-layer.hover-only .act { opacity: 1; transform: none; }
+		@starting-style { .ui-poster:hover .act-layer.hover-only .act, .ui-poster:focus-within .act-layer.hover-only .act { opacity: 0; transform: scale(0.9); } }
 	}
 </style>

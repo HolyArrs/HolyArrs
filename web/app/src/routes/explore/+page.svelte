@@ -62,6 +62,7 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import type { IconName } from '#lib/Icon.svelte';
+	import { EAGER_ROWS, stableRows } from '#lib/row-window.ts';
 
 	let loaded = $state(false);
 	let failed = $state(false);
@@ -150,6 +151,8 @@
 	};
 
 	let headAsk = 0;
+	/** The head rows' order as first shown for this query; a rebuilt pool never moves them. */
+	let headOrder: string[] = [];
 	let poll: ReturnType<typeof setTimeout> | undefined;
 	/** loadHead reads the head; while the server builds the pool it asks again every 5 s (at most 2 minutes). */
 	async function loadHead(tries = 0) {
@@ -160,7 +163,9 @@
 		try {
 			const a = await api.get<HeadAnswer>(headPath(q), gone.signal);
 			if (n !== headAsk) return;
-			head = a.head.map(serverRow);
+			const kept = stableRows(tries > 0 ? headOrder : [], a.head.map(serverRow), (r) => r.id);
+			headOrder = kept.order;
+			head = kept.rows;
 			top10 = a.top10 ? { ...a.top10, kind: q.top10Kind } : null;
 			hero = (a.hero ?? []).map((d) => ({ ...discoverCard(d, 'hero'), wide: d.backdrop ?? null }));
 			heroAt = 0;
@@ -435,13 +440,15 @@
 				</ExploreHero>
 			{/if}
 			{#if !rows.some((r) => r.type === 'top10')}<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} typePill={type === 'all'} initial={top10} />{/if}
-			{#each rows as row (row.id)}
+			{#each rows as row, ri (row.id)}
 				{#if row.type === 'top10'}
 					<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} typePill={type === 'all'} initial={top10} />
 				{:else}
 				<div class="row-wrap" data-row={row.type ?? row.id} data-title-layer={row.titleLayer}>
-				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.cards.some((c) => wideKind(c.kind)) ? 'var(--title-item)' : 'var(--explore-item)'} tools={row.id === 'services' ? serviceTools : undefined}>
-					{#each row.cards.map(live) as c (c.key)}
+				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.cards.some((c) => wideKind(c.kind)) ? 'var(--title-item)' : 'var(--explore-item)'} tools={row.id === 'services' ? serviceTools : undefined}
+					items={row.cards} key={(c) => c.key} defer={ri >= EAGER_ROWS} placeholder={row.wide || row.cards.some((c) => wideKind(c.kind)) ? 'wide' : 'poster'} lines={row.cards.some((c) => c.subtitle) ? 2 : 1}>
+					{#snippet card(raw: ExploreCard)}
+						{@const c = live(raw)}
 						{@const act = cardAction(c, { manage, ask: mayAsk })}
 						{@const mark = ownedMark(c, ownedTitle(c, owned), who)}
 						{#if row.wide || wideKind(c.kind)}
@@ -478,7 +485,7 @@
 							{/snippet}
 						</PosterCard>
 						{/if}
-					{/each}
+					{/snippet}
 				</Shelf>
 				</div>
 				{/if}

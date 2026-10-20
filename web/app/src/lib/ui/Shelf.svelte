@@ -1,9 +1,10 @@
-<script lang="ts">
-	import type { Snippet } from 'svelte';
+<script lang="ts" generics="T = unknown">
+	import { untrack, type Snippet } from 'svelte';
 	import Icon from '../Icon.svelte';
 	import { dragScroll } from '../drag-scroll.ts';
 	import IconButton from './IconButton.svelte';
 	import { nearView, setShelfNear } from '../lazy-art.ts';
+	import { mountNow, nextLimit, ROW_FIRST } from '../row-window.ts';
 
 	// A titled horizontal row: native scroll with snap, arrow buttons on hover
 	// (desktop), arrow keys scroll when the row has focus, optional See all ›.
@@ -16,6 +17,12 @@
 		anchor,
 		onseeall,
 		tools,
+		items,
+		card,
+		key: keyOf = (_it: T, i: number) => i,
+		defer = false,
+		placeholder = 'poster',
+		lines = 2,
 		children
 	}: {
 		title: string;
@@ -30,7 +37,18 @@
 		onseeall?: () => void;
 		/** Controls under the title, inside the header (a picker that refills this row). */
 		tools?: Snippet;
-		children: Snippet;
+		/** Windowed rows: the cards' data, drawn by `card` a dozen at a time as the row scrolls. */
+		items?: readonly T[];
+		card?: Snippet<[T, number]>;
+		/** Each card's key in a windowed row. */
+		key?: (it: T, i: number) => string | number;
+		/** Wait as a placeholder of the same height until the row is within 1.5 screens. */
+		defer?: boolean;
+		/** The placeholder's card shape while deferred. */
+		placeholder?: 'poster' | 'square' | 'round' | 'wide';
+		/** Text lines under each placeholder card: title only (1), or title and a note (2). */
+		lines?: 1 | 2;
+		children?: Snippet;
 	} = $props();
 
 	const id = $props.id();
@@ -40,14 +58,37 @@
 	let scroller = $state<HTMLElement>();
 	let atStart = $state(true);
 	let atEnd = $state(false);
+	// Windowing: a deferred row mounts near the screen; then a dozen cards, more as it scrolls.
+	let mounted = $state(untrack(() => !defer)); // once mounted a row stays
+	let limit = $state(ROW_FIRST);
+	const shown = $derived(items ? (items.length > limit ? items.slice(0, limit) : items) : []);
+	const more = $derived(!!items && items.length > limit);
 
 	function measure() {
 		if (!scroller) return;
 		atStart = scroller.scrollLeft <= 2;
-		atEnd = scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - 2;
+		atEnd = !more && scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - 2;
+		if (items) limit = nextLimit(limit, items.length, scroller);
+	}
+	/** soon mounts a deferred row at once when it starts near the screen, else when it comes within 1.5 screens. */
+	function soon(node: Element) {
+		if (mounted) return {};
+		if (typeof IntersectionObserver === 'undefined' || mountNow(node.getBoundingClientRect().top, innerHeight)) {
+			mounted = true;
+			return {};
+		}
+		const io = new IntersectionObserver((es) => {
+			if (es.some((e) => e.isIntersecting)) {
+				io.disconnect();
+				mounted = true;
+			}
+		}, { rootMargin: '0px 0px 150% 0px' });
+		io.observe(node);
+		return { destroy: () => io.disconnect() };
 	}
 	$effect(() => {
 		if (!scroller) return;
+		void shown.length;
 		measure();
 		const ro = new ResizeObserver(measure);
 		ro.observe(scroller);
@@ -63,7 +104,7 @@
 	}
 </script>
 
-<section class="ui-shelf" id={anchor} style="--item: {item}" use:nearView={() => (near = true)}>
+<section class="ui-shelf" id={anchor} style="--item: {item}" use:nearView={() => (near = true)} use:soon>
 	<header>
 		<div>
 			<h2 id="{id}-t">{#if href}<a href={href}>{title}</a>{:else}{title}{/if}</h2>
@@ -73,14 +114,18 @@
 		{:else if onseeall}<button class="all" type="button" aria-haspopup="dialog" onclick={onseeall}>{seeAll}<Icon name="chevronRight" size={15} /><span class="sr-only"> {title}</span></button>{/if}
 		{#if tools}<div class="tools">{@render tools()}</div>{/if}
 	</header>
+	{#if !mounted}
+		<div class="sk {placeholder}" class:one={lines === 1} aria-hidden="true"></div>
+	{:else}
 	<div class="wrap">
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
 		<div class="row" use:dragScroll bind:this={scroller} onscroll={measure} onkeydown={key} tabindex="0" role="group" aria-labelledby="{id}-t">
-			{@render children()}
+			{#if items && card}{#each shown as it, i (keyOf(it, i))}{@render card(it, i)}{/each}{:else}{@render children?.()}{/if}
 		</div>
 		<span class="arrow left" class:hide={atStart}><IconButton icon="chevronLeft" label="Scroll {title} back" variant="tinted" tabindex={-1} tooltip={false} onclick={() => page(-1)} /></span>
 		<span class="arrow right" class:hide={atEnd}><IconButton icon="chevronRight" label="Scroll {title} forward" variant="tinted" tabindex={-1} tooltip={false} onclick={() => page(1)} /></span>
 	</div>
+	{/if}
 </section>
 
 <style>
@@ -99,6 +144,13 @@
 		margin-inline: calc(var(--gutter) * -1); padding: 6px var(--gutter) 14px; scrollbar-width: none; border-radius: var(--r-card);
 	}
 	.row::-webkit-scrollbar { display: none; }
+	/* The deferred row's stand-in, one element: the cards' own height (art, then two text lines), with tile shapes drawn by a gradient. */
+	.sk { --w: var(--item); --art: calc(var(--w) * 1.5); --text-h: 52.5px; height: calc(var(--art) + var(--text-h)); margin: 6px 0 14px; overflow: hidden;
+		background: repeating-linear-gradient(90deg, var(--surface-2) 0 var(--w), transparent var(--w) calc(var(--w) + var(--shelf-gap))) 0 0 / 100% var(--art) no-repeat; }
+	.sk.one { --text-h: 35px; }
+	.sk.square, .sk.round { --art: var(--w); }
+	.sk.wide { --art: calc(var(--w) * 9 / 16); --text-h: 0px; }
+	@media (max-width: 767px) { .sk { --w: calc(var(--item) * .78); } }
 	.row > :global(*) { scroll-snap-align: start; }
 	.row:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
 	.arrow { position: absolute; top: calc(50% - 26px); opacity: 0; transition: opacity var(--dur-fast) ease; }
