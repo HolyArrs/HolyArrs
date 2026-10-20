@@ -269,7 +269,9 @@
 		try {
 			const a = await api.get<TailAnswer>(tailPath(query(), tailPageNext), gone.signal);
 			if (n !== headAsk) return;
-			tail = [...tail, ...a.rows.map(serverRow)];
+			// A page laid out again between two asks may repeat a row: keep the first.
+			const have = new Set([...head, ...tail].map((r) => r.id));
+			tail = [...tail, ...a.rows.map(serverRow).filter((r) => !have.has(r.id))];
 			tailPageNext++;
 			tailMore = a.more;
 		} catch {

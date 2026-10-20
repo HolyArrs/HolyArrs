@@ -14,6 +14,9 @@ func fullInput(sw string, member int64) Input {
 		Household: append(household(6), showHousehold(6)...), Collections: []LibCollection{{TMDBID: "77", Name: "Saga", Owned: 2}},
 		MyAsks: []Item{{TMDBID: "9100", Kind: "movie", Name: "Asked movie"}, {TMDBID: "9101", Kind: "show", Name: "Asked show"}},
 		Owned:  map[string]bool{}}
+	for i := 0; i < 6; i++ {
+		in.Returning = append(in.Returning, Item{TMDBID: fmt.Sprint(7000 + i), Kind: "show", Name: fmt.Sprint("Back", i), Owned: true, Released: "2026-11-20"})
+	}
 	airing, _ := (&fakeSource{}).List(context.Background(), Request{List: "upcoming", Kind: "show", Scope: ScopeShared})
 	for _, it := range airing[:10] {
 		in.Owned[it.Key()] = true

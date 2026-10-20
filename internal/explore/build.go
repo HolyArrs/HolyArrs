@@ -18,8 +18,7 @@ type Request struct {
 	// List: similar (recommendations + similar of Ref), trending,
 	// upcoming (movies coming out; shows airing now), best (Best new
 	// releases), discover, person (credits of the person named Ref),
-	// collection (the movies of TMDB collection Ref), returning (shows
-	// with episodes between From and To that started before From).
+	// collection (the movies of TMDB collection Ref).
 	List  string
 	Kind  string
 	Ref   string
@@ -91,6 +90,9 @@ type Input struct {
 	// Collections are the TMDB collections the Library has a movie of,
 	// most owned first.
 	Collections []LibCollection
+	// Returning are Library shows whose next episode airs in 7 to 60
+	// days, soonest first.
+	Returning []Item
 	// Allow is the Kid limit at candidate time; nil allows all.
 	Allow func(Item) bool
 	// Today is the pool already built today (its typeFreshness is kept);
@@ -311,17 +313,7 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 			}
 		}
 		addRow(Row{ID: TypeNewSeasons, Type: TypeNewSeasons, Items: seasons})
-		returning, err := fetch(Request{List: "returning", Kind: "show", From: Day(in.Now.AddDate(0, 0, 7)), To: Day(in.Now.AddDate(0, 0, 60)), Scope: ScopeShared})
-		soft(err)
-		var back []Item
-		for _, own := range []bool{true, false} {
-			for _, it := range returning {
-				if it.Owned == own {
-					back = append(back, it)
-				}
-			}
-		}
-		addRow(Row{ID: TypeReturning, Type: TypeReturning, Items: back})
+		addRow(Row{ID: TypeReturning, Type: TypeReturning, Items: allow(in.Returning)})
 	}
 	best, err := fetch(Request{List: "best", Scope: ScopeShared})
 	soft(err)

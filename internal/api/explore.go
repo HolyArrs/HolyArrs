@@ -47,8 +47,8 @@ var exploreListTTL = map[string]time.Duration{
 	"similar": 24 * time.Hour, "discover": 12 * time.Hour, "person": 7 * 24 * time.Hour,
 	// weekly is a discover list kept a week (Top on your services).
 	"weekly": 7 * 24 * time.Hour,
-	// A collection's movies rarely change; returning is a dated discover.
-	"collection": 7 * 24 * time.Hour, "returning": 12 * time.Hour,
+	// A collection's movies rarely change.
+	"collection": 7 * 24 * time.Hour,
 }
 
 type poolKey struct {
@@ -117,6 +117,7 @@ func (a *API) StartExplore(ctx context.Context) {
 	go supervisor.Guard("explore-music-warm", func() { a.warmMusic(ctx) })
 	go supervisor.Guard("explore", func() { a.exploreLoop(ctx) })
 	go supervisor.Guard("explore-top10-warm", func() { a.warmTop10(ctx) })
+	go supervisor.Guard("explore-service-top-warm", func() { a.warmServiceTop(ctx) })
 }
 
 // exploreOnEvent marks pools stale: an ask (or joining one) marks the
@@ -450,6 +451,7 @@ func (s exploreSource) List(ctx context.Context, q explore.Request) ([]explore.I
 	s.calls.Add(q)
 	f.items, f.err = p.List(ctx, q)
 	if f.err != nil {
+		log.Printf("explore: list %s failed: %v", q.List, f.err)
 		if ok {
 			return got.items, nil
 		}
@@ -498,12 +500,6 @@ func (s listerSource) List(ctx context.Context, q explore.Request) ([]explore.It
 			return []explore.Item{}, nil
 		}
 		out, err = cl.CollectionParts(ctx, q.Ref)
-	case "returning":
-		// Shows that started before From with an episode between From and
-		// To: running series coming back, not premieres.
-		v := url.Values{"include_adult": {"false"}, "sort_by": {"popularity.desc"}, "with_status": {"0"},
-			"air_date.gte": {q.From}, "air_date.lte": {q.To}, "first_air_date.lte": {q.From}}
-		out, err = s.l.ExploreList(ctx, "show", "/discover/tv", v)
 	case "person":
 		var all []metadata.DiscoverItem
 		all, err = s.l.PersonCredits(ctx, q.Ref)
@@ -697,6 +693,12 @@ func (a *API) exploreInput(ctx context.Context, m exploreMember, sw string, now 
 		in.Household = append(in.Household, explore.HouseholdTitle{Item: h.item, Asks: h.asks, Members: len(h.members)})
 	}
 	_ = db.QueryRowContext(ctx, "SELECT count(*) FROM users WHERE state = 'active'").Scan(&in.Members)
+	if sw == "shows" {
+		// Returning soon: Library shows whose next episode airs in 7 to 60 days.
+		if in.Returning, err = exploreReturning(ctx, db, now); err != nil {
+			return in, err
+		}
+	}
 	if sw == "movies" {
 		// Finish the collection: TMDB collections the Library has a movie of.
 		if in.Collections, err = exploreCollections(ctx, db); err != nil {
@@ -705,6 +707,40 @@ func (a *API) exploreInput(ctx context.Context, m exploreMember, sw string, now 
 	}
 	in.Seeds = explore.Seeds(m.id, m.kid, lib, asks, now)
 	return in, nil
+}
+
+// exploreReturning are the Library shows whose next episode airs in 7 to
+// 60 days, soonest first (local data only).
+func exploreReturning(ctx context.Context, db *sql.DB, now time.Time) ([]explore.Item, error) {
+	rows, err := db.QueryContext(ctx, `SELECT json_extract(t.source_ids, '$.tmdb'), t.name, COALESCE(t.year, 0), t.genres, t.artwork, t.backdrop, MIN(i.air_date) AS next
+		FROM titles t JOIN items i ON i.title_id = t.id AND i.kind = 'episode' AND i.dropped_at IS NULL AND i.air_date > ?
+		WHERE t.kind = 'show' AND t.state != 'removed' AND json_extract(t.source_ids, '$.tmdb') IS NOT NULL
+		GROUP BY t.id HAVING next >= ? AND next <= ? ORDER BY next, t.id LIMIT 40`,
+		store.FormatTime(now), store.FormatTime(now.AddDate(0, 0, 7)), store.FormatTime(now.AddDate(0, 0, 60)))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []explore.Item
+	for rows.Next() {
+		var it explore.Item
+		var genres, artwork, next string
+		if err := rows.Scan(&it.TMDBID, &it.Name, &it.Year, &genres, &artwork, &it.Backdrop, &next); err != nil {
+			return nil, err
+		}
+		_ = json.Unmarshal([]byte(genres), &it.Genres)
+		var art []string
+		_ = json.Unmarshal([]byte(artwork), &art)
+		if links := artworkLinks(art); len(links) > 0 {
+			it.Poster = links[0]
+		}
+		if d, err := time.Parse(store.TimeLayout, next); err == nil {
+			it.Released = d.Format("2006-01-02")
+		}
+		it.Kind, it.Owned = "show", true
+		out = append(out, it)
+	}
+	return out, rows.Err()
 }
 
 // exploreCollections are the TMDB collections with an owned movie, most

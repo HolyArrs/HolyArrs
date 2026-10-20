@@ -63,6 +63,33 @@ func (a *API) cachedServiceTop(ctx context.Context, region string) (metadata.Ser
 	return l, err
 }
 
+// warmServiceTop reads Trending on your services for every region a member
+// has, so the first Explore head after a restart can keep its rows
+// apart from that row's titles without waiting on it.
+func (a *API) warmServiceTop(ctx context.Context) {
+	if a.s.Store == nil || a.s.ServiceTop == nil {
+		return
+	}
+	regions := map[string]bool{}
+	rows, err := a.s.Store.Read().QueryContext(ctx, "SELECT DISTINCT region FROM explore_prefs WHERE region != ''")
+	if err != nil {
+		return
+	}
+	for rows.Next() {
+		var r string
+		if rows.Scan(&r) == nil && isCountry(r) {
+			regions[r] = true
+		}
+	}
+	rows.Close()
+	for r := range regions {
+		if ctx.Err() != nil {
+			return
+		}
+		_, _ = a.cachedServiceTop(ctx, r)
+	}
+}
+
 // keptServiceTop is every service's titles for region and the switch's
 // kinds, from the kept lists only (no outside call); nil when none is kept.
 func (a *API) keptServiceTop(region, sw string) []explore.Item {
