@@ -3,6 +3,7 @@
 // Everything that decides what shows, and in which order, lives here as pure
 // functions so it can be tested and explained.
 import { api, ApiError, type Client } from './api.ts';
+import type { Fresh } from './fresh.ts';
 import type { StatusKind } from './ui/StatusPill.svelte';
 import { audienceStatus, factsOf, titleStatus, type Audience, type TitleStatus } from './title-status.ts';
 import type { Ask, AskBrief, AskState, CalendarEntry, TitleView } from './types.ts';
@@ -36,6 +37,8 @@ export interface ExploreCard {
 	wide?: string | null;
 	/** An ask for it was turned down (shown to staff only). */
 	declined?: boolean;
+	/** The server's one freshness strip. */
+	fresh?: Fresh | null;
 }
 
 export interface ExploreRow {
@@ -391,6 +394,7 @@ export interface ProviderItem {
 	ask?: { id: number; state: Ask['state']; state_label: string; mine: boolean; people: number } | null;
 }
 export interface ProviderRowAnswer {
+	fresh?: Fresh | null;
 	row: ProviderRowName;
 	title?: string;
 	items: ProviderItem[];
@@ -431,6 +435,7 @@ export function discoverCard(d: ProviderItem, row: string): ExploreCard {
 		badges: [],
 		mine: !!d.ask?.mine,
 		ask: d.ask && d.ask.state !== 'turned_down' ? d.ask : undefined,
+		fresh: d.fresh ?? null,
 		...(d.ask?.state === 'turned_down' ? { declined: true } : {})
 	};
 }

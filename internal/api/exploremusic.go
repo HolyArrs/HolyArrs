@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/explore"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/parts"
 	"github.com/CoderLuii/holyarrs/internal/store"
@@ -53,6 +54,8 @@ type MusicCard struct {
 	Listens    int64    `json:"listen_count,omitempty"`
 	Upcoming   bool     `json:"upcoming,omitempty"`
 	Genres     []string `json:"genres"`
+	// Fresh is the card's freshness strip (Recently Added, New Release).
+	Fresh *explore.Fresh `json:"fresh,omitempty"`
 }
 
 // MusicRow is one row of Explore → Music.
@@ -670,6 +673,9 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 		}
 		if len(row.Items) < musicRowMin[row.Type] {
 			continue
+		}
+		for i := range row.Items {
+			row.Items[i].Fresh = a.musicFresh(row.Type, row.Items[i])
 		}
 		final = append(final, row)
 	}

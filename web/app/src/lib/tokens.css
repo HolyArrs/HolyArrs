@@ -28,6 +28,18 @@
   --info-on-art: #64b5ff;
   --wait-on-art: #ffb340;
   --fail-on-art: #ff6961;
+  /* Solid card badges over artwork (same in both themes: they sit on pictures).
+     Library status circles and the type pill; each fill carries its own glyph colour. */
+  --mark-have: #1f9d48;
+  --mark-dl: #4f46e5;
+  --mark-ask: #f0a020;
+  --mark-ask-ink: #2a1a00;
+  --mark-no: #d92d20;
+  --mark-ink: #fff;
+  --mark-ring: rgb(0 0 0 / 22%);
+  --type-movie: #2563eb;
+  --type-show: #7c3aed;
+  --type-artist: #c026d3;
 
   /* Type scale (spec). Each is a font shorthand; pair with its tracking. */
   --t-large-title: 700 34px / 1.12 var(--font-display);

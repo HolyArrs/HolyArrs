@@ -434,7 +434,7 @@
 						{@const act = cardAction(c, { manage, ask: mayAsk })}
 						{@const mark = ownedMark(c, ownedTitle(c, owned), who)}
 						{#if row.wide}
-							<WideCard title={c.name} href={cardHref(c)} image={c.wide} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} preview={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: cardTmdb(c), year: c.year } : undefined} />
+							<WideCard title={c.name} href={cardHref(c)} image={c.wide} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} fresh={c.fresh} owned={mark} typePill={type === 'all' ? c.kind : undefined} preview={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: cardTmdb(c), year: c.year } : undefined} />
 						{:else}
 						<PosterCard
 							title={c.name}
@@ -453,6 +453,7 @@
 								{#if act && cardTmdb(c)}
 									<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={asking === c.key || undefined} onclick={() => { count(row.type ?? row.id, 'ask'); void quick(c, act); }} />
 								{:else if act}
+							fresh={c.fresh}
 									<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" href={searchHref(c)} />
 								{/if}
 							{/snippet}

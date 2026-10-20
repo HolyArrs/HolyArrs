@@ -132,7 +132,7 @@ func (a *API) exploreViews(ctx context.Context, r *http.Request, rows []explore.
 				g = []string{}
 			}
 			items = append(items, metadata.DiscoverItem{TMDBID: it.TMDBID, Kind: it.Kind, Name: it.Name, Year: it.Year, Poster: it.Poster,
-				Backdrop: it.Backdrop, Overview: it.Overview, Genres: g})
+				Backdrop: it.Backdrop, Overview: it.Overview, Genres: g, Released: it.Released})
 		}
 		items, err := a.dropNeverAdd(ctx, items)
 		if err != nil {
@@ -261,6 +261,7 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			for _, it := range row.Items {
+	r = r.WithContext(withTop10Ranks(r.Context(), top10Ranks(top10)))
 				if len(heroRow.Items) < 6 && !it.Owned && !containsItem(heroRow.Items, it.Key()) {
 					heroRow.Items = append(heroRow.Items, it)
 				}
@@ -315,7 +316,7 @@ func (a *API) exploreTail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	me := a.person(r).UserID
-	pg, _, _, err := a.explorePageFor(r.Context(), r, me, sw, topKind, topRegion)
+	pg, top10, _, err := a.explorePageFor(r.Context(), r, me, sw, topKind, topRegion)
 	if err != nil {
 		internal(w, err)
 		return
@@ -332,6 +333,7 @@ func (a *API) exploreTail(w http.ResponseWriter, r *http.Request) {
 }
 
 // exploreCounts answers POST /api/v1/explore/counts {row_type, event}:
+	r = r.WithContext(withTop10Ranks(r.Context(), top10Ranks(top10)))
 // a card opened or an ask started from a row. Counts only measure; they
 // never change what Explore shows.
 func (a *API) exploreCounts(w http.ResponseWriter, r *http.Request) {

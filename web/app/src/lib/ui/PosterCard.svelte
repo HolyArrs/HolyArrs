@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import Badge from './Badge.svelte';
-	import ArtPill from './ArtPill.svelte';
+	import CardBadges from './CardBadges.svelte';
+	import { shownFresh, type Fresh } from '../fresh.ts';
 	import StatusPill, { type StatusKind } from './StatusPill.svelte';
 	import ProgressBar from './ProgressBar.svelte';
 	import Icon, { type IconName } from '../Icon.svelte';
@@ -31,6 +32,9 @@
 		actionOnHover = false,
 		shape = 'poster',
 		preview,
+		fresh,
+		music = false,
+		top10Row = false,
 		action
 	}: {
 		title: string;
@@ -56,6 +60,12 @@
 		shape?: 'poster' | 'square' | 'round';
 		/** Desktop: after a short hover or keyboard focus, open the expanded card (trailer, genres). */
 		preview?: { kind: 'movie' | 'show'; tmdb: string; year?: number } | null;
+		/** The server's one freshness strip (bottom centre of the art). */
+		fresh?: Fresh | null;
+		/** Music cards keep Recently Added and New Release only. */
+		music?: boolean;
+		/** In the Top 10 row, which shows the rank already. */
+		top10Row?: boolean;
 		action?: Snippet;
 	} = $props();
 
@@ -89,22 +99,7 @@
 		if (!root?.contains(e.relatedTarget as Node)) leave();
 	}
 	$effect(() => () => shut());
-	const typeWords = { movie: 'Movie', show: 'Show', artist: 'Artist' } as const;
-	const typeIcons = { movie: 'film', show: 'tv', artist: 'music' } as const;
-	type Own = NonNullable<typeof owned>;
-	const ownIcons = { available: 'owned', partial: 'partOwned', downloading: 'download', requested: 'waiting', declined: 'declined' } as const;
-	const ownTones = { available: 'ok', partial: 'ok', downloading: 'info', requested: 'plain', declined: 'fail' } as const;
-	/** Percent from a "Downloading 42%" label, for the ring. */
-	const ownPercent = (o: Own) => (o.state === 'downloading' ? Number(/(\d+)%/.exec(o.label)?.[1] ?? NaN) : NaN) || undefined;
-	/** Short visible word; the full sentence stays the accessible name. */
-	function ownWord(o: Own): string {
-		const p = ownPercent(o);
-		if (o.state === 'available') return 'In library';
-		if (o.state === 'partial') return 'Partly in library';
-		if (o.state === 'downloading') return p !== undefined ? `${p}%` : 'Downloading';
-		if (o.state === 'requested') return o.label.startsWith('Approved') ? 'Approved' : 'Requested';
-		return 'Declined';
-	}
+	const strip = $derived(progress === undefined ? shownFresh(fresh, { music, top10Row }) : null);
 	let failed = $state(false);
 	// The name tile shows until the picture has loaded; in a row the picture
 	// waits until the row is near the screen.
@@ -124,14 +119,13 @@
 			{#if image && !failed && near()}
 				<img src={pic} class:in={loaded} alt="" loading="lazy" decoding="async" use:whenLoaded={() => (loaded = true)} onerror={() => (failed = true)} />
 			{/if}
-			{#if badges.length || status || typePill || owned}
-				<span class="over">
-					{#if typePill}<ArtPill text={typeWords[typePill]} icon={typeIcons[typePill]} />{/if}
+			{#if badges.length || status}
+				<span class="over" class:pushed={!!typePill}>
 					{#if status}<StatusPill kind={status} label={statusLabel} on="art" />{/if}
 					{#each badges as b (b)}<Badge label={b} on="art" />{/each}
-					{#if owned}<span class="own"><ArtPill text={ownWord(owned)} label={owned.label} icon={ownIcons[owned.state]} tone={ownTones[owned.state]} percent={ownPercent(owned)} compact /></span>{/if}
 				</span>
 			{/if}
+			<CardBadges fresh={strip} {owned} typePill={typePill ?? null} size={shape === 'poster' ? 'md' : 'sm'} />
 			{#if progress !== undefined}<span class="prog"><ProgressBar value={progress} label="{title} progress" size="sm" on="art" /></span>{/if}
 		</span>
 		<span class="t">{title}</span>
@@ -141,11 +135,11 @@
 </div>
 
 {#snippet ownBadge()}
-	{#if owned}<ArtPill text={ownWord(owned)} label={owned.label} icon={ownIcons[owned.state]} tone={ownTones[owned.state]} percent={ownPercent(owned)} />{/if}
+	<CardBadges fresh={strip} {owned} typePill={typePill ?? null} />
 {/snippet}
 
 {#if open && preview && root}
-	<HoverPreview anchor={root} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} {image} badge={owned ? ownBadge : undefined} {action} onenter={() => closer.cancel()} onleave={leave} onclose={shut} />
+	<HoverPreview anchor={root} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} {image} badge={owned || strip || typePill ? ownBadge : undefined} {action} onenter={() => closer.cancel()} onleave={leave} onclose={shut} />
 {/if}
 
 <style>
@@ -172,8 +166,7 @@
 	.s { color: var(--text-muted); font: var(--t-footnote); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.act-layer { position: absolute; inset: 0 0 auto; aspect-ratio: var(--poster-ratio); pointer-events: none; }
 	.act { position: absolute; right: 8px; bottom: 8px; pointer-events: auto; }
-	/* Badges share one glass pill (ArtPill). Type left, status pushed right. */
-	.own { margin-left: auto; min-width: 0; display: flex; }
+	.over.pushed { top: 34px; }
 	@media (hover: hover) and (pointer: fine) {
 		.act-layer.hover-only .act { opacity: 0; transform: scale(0.9); transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
 		.ui-poster:hover .act-layer.hover-only .act, .ui-poster:focus-within .act-layer.hover-only .act { opacity: 1; transform: none; }

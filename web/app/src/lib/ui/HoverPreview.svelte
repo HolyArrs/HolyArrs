@@ -153,6 +153,7 @@
 	/* The art-glass button sits on the card surface here: use the surface tint in both themes. */
 	.act :global(.ui-ibtn.glass) { background: var(--surface-2); color: var(--text); box-shadow: inset 0 0 0 1px var(--line); }
 	.act :global(.ui-ibtn.glass:hover) { background: var(--surface-3); }
-	.badge { position: absolute; top: 10px; left: 10px; z-index: 3; display: flex; max-width: calc(100% - 20px); }
+	/* Same badge layer as the card, over the 16:9 media box. */
+	.badge { position: absolute; top: 0; left: 0; right: 0; aspect-ratio: 16 / 9; z-index: 3; pointer-events: none; }
 	@media (prefers-reduced-motion: reduce) { .ui-hover { animation: none; } }
 </style>

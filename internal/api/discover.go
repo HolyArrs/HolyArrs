@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/explore"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/parts"
 	"github.com/CoderLuii/holyarrs/internal/ratings"
@@ -117,6 +118,8 @@ type discoverItemView struct {
 	InLibrary bool      `json:"in_library"`
 	TitleID   int64     `json:"title_id,omitempty"`
 	Ask       *askBrief `json:"ask"`
+	// Fresh is the card's one freshness strip (New Episode, Top 10...).
+	Fresh *explore.Fresh `json:"fresh,omitempty"`
 }
 
 // kindsOn are the asked kinds whose part is on.
@@ -182,6 +185,9 @@ func (a *API) libraryJoin(ctx context.Context, it metadata.DiscoverItem, me int6
 		return v, false, err
 	}
 	v.InLibrary = v.TitleID != 0
+	if v.Fresh, err = a.cardFresh(ctx, it, v.TitleID); err != nil {
+		return v, false, err
+	}
 	var never int
 	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM never_add WHERE kind = ? AND json_extract(source_ids, '$.tmdb') = ?",
 		it.Kind, it.TMDBID).Scan(&never); err != nil {

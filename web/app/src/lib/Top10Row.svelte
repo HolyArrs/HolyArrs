@@ -111,7 +111,7 @@
 				{@const mark = ownedMark(c, owned ? ownedTitle(c, owned) : undefined, who)}
 				<div class="ranked">
 					<span class="rank" class:two={c.rank > 9} aria-hidden="true">{c.rank}</span>
-					<div class="pc"><PosterCard title={c.name} href={href(c)} image={c.image} kind={c.kind} subtitle={c.subtitle} typePill={typePill ? c.kind : undefined} owned={mark} preview={c.ref?.startsWith('tmdb:') && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: c.ref.slice(5) } : undefined} /></div>
+					<div class="pc"><PosterCard title={c.name} href={href(c)} image={c.image} kind={c.kind} subtitle={c.subtitle} typePill={typePill ? c.kind : undefined} owned={mark} fresh={c.fresh} top10Row preview={c.ref?.startsWith('tmdb:') && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: c.ref.slice(5) } : undefined} /></div>
 					<span class="sr">Number {c.rank}</span>
 				</div>
 			{/each}

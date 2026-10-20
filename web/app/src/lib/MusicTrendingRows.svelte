@@ -197,6 +197,8 @@
 						subtitle={musicCardNote(row, c) || undefined}
 						status={c.kind === 'artist' && c.title_id && row.type !== 'your_asks' ? 'in_library' : undefined}
 						shape={c.kind === 'album' ? 'square' : 'round'}
+						fresh={c.fresh}
+						music
 						actionOnHover
 					>
 						{#snippet action()}

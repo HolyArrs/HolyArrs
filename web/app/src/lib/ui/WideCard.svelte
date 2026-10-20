@@ -7,6 +7,8 @@
 	import { shelfNear, whenLoaded } from '../lazy-art.ts';
 	import { press, viewTransitionName } from '../motion.ts';
 	import HoverPreview from './HoverPreview.svelte';
+	import CardBadges, { type CardOwned } from './CardBadges.svelte';
+	import { shownFresh, type Fresh } from '../fresh.ts';
 	import { prefetchTrailer } from '../autoplay.svelte.ts';
 	import { dwell, finePointer, HOVER_DELAY } from '../trailer.ts';
 
@@ -28,8 +30,17 @@
 		action,
 		statusTestid,
 		badgesAt = 'top',
-		preview
+		preview,
+		fresh,
+		owned,
+		typePill
 	}: {
+		/** The server's one freshness strip (bottom centre of the art). */
+		fresh?: Fresh | null;
+		/** Solid round library status, top-right, with its aria-label and tooltip. */
+		owned?: CardOwned | null;
+		/** Solid type pill top-left (Explore's All). */
+		typePill?: 'movie' | 'show' | 'artist';
 		title: string;
 		href?: string;
 		image?: string | null;
@@ -82,6 +93,9 @@
 	const near = shelfNear();
 	const kindIcon = $derived<IconName>(kind === 'show' || kind === 'episode' ? 'tv' : kind === 'artist' ? 'music' : 'film');
 	const pct = $derived(progress === undefined ? undefined : Math.max(0, Math.min(100, progress)));
+	// The progress line owns the bottom edge; the strip steps aside for it.
+	const strip = $derived(pct === undefined ? shownFresh(fresh) : null);
+	const marked = $derived(!!(strip || owned || typePill));
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -91,11 +105,12 @@
 			{#if !image || failed || !loaded}<span class="ph" aria-hidden="true"><span class="ph-ic"><Icon name={kindIcon} size={20} /></span><span class="ph-t">{title}</span></span>{/if}
 			{#if image && !failed && near()}<img src={sized(image, 'backdrop')} class:in={loaded} alt="" loading="lazy" decoding="async" use:whenLoaded={() => (loaded = true)} onerror={() => (failed = true)} />{/if}
 			{#if badges.length || status}
-				<span class="over" class:bottom={badgesAt === 'bottom'}>
+				<span class="over" class:bottom={badgesAt === 'bottom'} class:pushed={badgesAt === 'top' && (!!owned || !!typePill)} class:lifted={badgesAt === 'bottom' && !!strip}>
 					{#if status}<StatusPill kind={status} label={statusLabel} percent={pct} on="art" testid={statusTestid} />{/if}
 					{#each badges as b (b)}<Badge label={b} on="art" />{/each}
 				</span>
 			{/if}
+			{#if marked}<CardBadges fresh={strip} owned={owned ?? null} typePill={typePill ?? null} />{/if}
 			{#if pct !== undefined}
 				<span class="line" role="progressbar" aria-label="{title} progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)} class:done={pct >= 100}><i style="width: {pct}%"></i></span>
 			{/if}
@@ -107,8 +122,12 @@
 	{#if action}<span class="act">{@render action()}</span>{/if}
 </div>
 
+{#snippet wideBadges()}
+	<CardBadges fresh={strip} owned={owned ?? null} typePill={typePill ?? null} />
+{/snippet}
+
 {#if open && preview && root}
-	<HoverPreview anchor={root} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} {image} onenter={() => closer.cancel()} onleave={leave} onclose={shut} />
+	<HoverPreview anchor={root} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} {image} badge={marked ? wideBadges : undefined} onenter={() => closer.cancel()} onleave={leave} onclose={shut} />
 {/if}
 
 <style>
@@ -130,6 +149,8 @@
 	.over { position: absolute; left: 8px; top: 8px; right: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
 	.low .ph { padding-bottom: 40px; }
 	.over.bottom { top: auto; bottom: 8px; }
+	.over.pushed { top: 38px; }
+	.over.lifted { bottom: 30px; }
 	.line { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgb(0 0 0 / 35%); }
 	.line i { display: block; height: 100%; background: var(--accent); transition: width var(--dur-slow) var(--ease-out); }
 	.line.done i { background: var(--ok); }
