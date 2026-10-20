@@ -137,7 +137,9 @@
 				{#if badge}{@render badge()}{/if}
 			</div>
 		{/if}
-		{#if meta?.overview}
+		{#if !meta}
+			<div class="about" aria-hidden="true"></div>
+		{:else if meta.overview}
 			<div class="about">
 				<p class="desc" class:open={more} bind:this={text}>{meta.overview}</p>
 				{#if clamped}<button class="more" type="button" aria-expanded={more} onclick={() => (more = !more)}>{more ? 'Show less' : 'Show more'}</button>{/if}
@@ -172,9 +174,12 @@
 	/* While the trailer plays the words step back (fade and settle), never move layout. */
 	.content.playing .about { opacity: 0; }
 	.about { transition: opacity var(--dur-slow) var(--ease-out); }
-	h2 { margin: 0; }
+	/* The title box and the overview keep their space while the details load, so nothing moves when they arrive. */
+	.content { --title-h: clamp(80px, 10vw, 140px); }
+	h2 { margin: 0; min-height: var(--title-h); display: flex; align-items: flex-end; }
+	.about { min-height: calc(15px * 1.5 * 3); }
 	.name { font-family: var(--font-display, var(--font-ui)); font-weight: 800; font-size: clamp(36px, 4.6vw, 64px); line-height: 1; letter-spacing: -0.03em; text-wrap: balance; text-shadow: 0 2px 30px rgb(0 0 0 / 35%); }
-	.logo img { display: block; max-width: min(420px, 100%); max-height: 140px; width: auto; height: auto; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 4px 24px rgb(0 0 0 / 45%)); }
+	.logo img { display: block; max-width: min(420px, 100%); max-height: var(--title-h); width: auto; height: auto; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 4px 24px rgb(0 0 0 / 45%)); }
 	.meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
 	.meta p { margin: 0; font: 600 15px/1.35 var(--font-ui); color: rgb(255 255 255 / 92%); font-variant-numeric: tabular-nums; text-shadow: 0 1px 2px rgb(0 0 0 / 60%); }
 	.desc { margin: 0; font: var(--t-body); color: rgb(255 255 255 / 92%); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; max-width: 58ch; text-shadow: 0 1px 2px rgb(0 0 0 / 60%); }

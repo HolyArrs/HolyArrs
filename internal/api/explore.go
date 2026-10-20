@@ -96,6 +96,8 @@ func (a *API) StartExplore(ctx context.Context) {
 	e.wake = make(chan struct{}, 1)
 	e.mu.Unlock()
 	a.s.Store.OnEvent(a.exploreOnEvent)
+	a.s.Store.OnEvent(a.musicOnEvent)
+	go supervisor.Guard("explore-music-warm", func() { a.warmMusic(ctx) })
 	go supervisor.Guard("explore", func() { a.exploreLoop(ctx) })
 }
 

@@ -13,6 +13,7 @@
 	import EmptyState from './ui/EmptyState.svelte';
 	import AddArtistDialog from './AddArtistDialog.svelte';
 	import AskArtistDialog from './AskArtistDialog.svelte';
+	import { EAGER_ROWS, stableRows } from './row-window.ts';
 
 	// Explore → Music. The server builds every row (personal first, then the
 	// charts, similar artists, missing albums and genre rows); genre chips
@@ -32,6 +33,11 @@
 	let genre = $state('');
 	let answer = $state<MusicExploreAnswer | null>(null);
 	let chips = $state<string[]>([]);
+	/** The rows' order as first shown this visit (per genre and region), so later answers never move them. */
+	let order: string[] = [];
+	let orderFor = '';
+	/** Whether the first answer had a hero: its space stays (or stays away) for the visit. */
+	let heroSlot: boolean | null = null;
 	let failed = $state(false);
 	/** Artists added or asked for here, so their cards update at once. */
 	let addedHere = $state(new Map<string, number>());
@@ -58,7 +64,15 @@
 		try {
 			const a = await fetchMusicExplore(genre, region, api, signal);
 			if (signal.aborted) return;
-			answer = a;
+			const at = `${genre}|${region}`;
+			if (at !== orderFor) {
+				order = [];
+				orderFor = at;
+			}
+			const kept = stableRows(order, a.rows, (r) => r.id);
+			order = kept.order;
+			if (heroSlot === null) heroSlot = !!a.hero;
+			answer = { ...a, rows: kept.rows, hero: heroSlot ? (a.hero ?? answer?.hero ?? null) : null };
 			failed = false;
 			// Chips come from the unfiltered answer, so picking one keeps the rest.
 			if (!genre) chips = a.genres ?? [];
@@ -156,8 +170,9 @@
 
 {#if answer?.kid}
 	<EmptyState icon="music" title="Music is not shown on this account" text="Music has no age ratings, so it stays off for accounts with an age limit." />
-{:else if answer}
-	<section class="music" data-testid="music-trending">
+{:else if answer || !failed}
+	<section class="music" data-testid="music-trending" aria-busy={!answer || undefined}>
+		<!-- The chip bar keeps its height: placeholder chips until the genres are known. -->
 		{#if chips.length}
 			<div class="chips" role="group" aria-label="Genres" data-testid="music-genres">
 				<button type="button" class="chip" class:on={genre === ''} aria-pressed={genre === ''} onclick={() => chip('')}>All</button>
@@ -165,9 +180,17 @@
 					<button type="button" class="chip" class:on={genre === g} aria-pressed={genre === g} onclick={() => chip(g)}>{g}</button>
 				{/each}
 			</div>
+		{:else}
+			<div class="chips" aria-hidden="true">{#each [52, 64, 88, 72, 96, 60] as w (w)}<span class="chip sk-chip" style:width="{w}px"></span>{/each}</div>
+		{/if}
+		{#if !answer}
+			<div class="hero sk-hero" aria-hidden="true"><span class="cover"></span></div>
+			{#each [0, 1] as r (r)}
+				<div class="sk-shelf" aria-hidden="true"><span class="sk-h"></span><div class="sk-tiles">{#each Array.from({ length: 8 }, (_, i) => i) as i (i)}<span class="sk-tile"></span>{/each}</div></div>
+			{/each}
 		{/if}
 
-		{#if hero}
+		{#if answer && hero}
 			<a class="hero" href={musicCardHref(hero)} data-testid="music-hero">
 				<span class="cover">{#if hero.image && !heroBroken}<img src={musicImage(hero)} alt="" loading="lazy" onerror={() => (heroBroken = true)} />{/if}</span>
 				<span class="words">
@@ -178,7 +201,7 @@
 			</a>
 		{/if}
 
-		{#if regions.length > 1 && hasCharts}
+		{#if answer && regions.length > 1 && hasCharts}
 			<div class="pick">
 				<select aria-label="Chart region" bind:value={region} onchange={pick}>
 					{#each regions as r (r)}<option value={r}>{regionName(r)}</option>{/each}
@@ -186,9 +209,11 @@
 			</div>
 		{/if}
 
-		{#each answer.rows as row (row.id)}
-			<Shelf title={row.type === 'popular_country' ? `Popular in ${regionName(row.id.split(':')[1] ?? '')}` : row.title} subtitle={row.type === 'popular_country' ? `This week's top albums in ${regionName(row.id.split(':')[1] ?? '')}` : row.reason} item="var(--explore-item)">
-				{#each row.items.map(live) as c (c.key)}
+		{#each answer?.rows ?? [] as row, ri (row.id)}
+			<Shelf title={row.type === 'popular_country' ? `Popular in ${regionName(row.id.split(':')[1] ?? '')}` : row.title} subtitle={row.type === 'popular_country' ? `This week's top albums in ${regionName(row.id.split(':')[1] ?? '')}` : row.reason} item="var(--explore-item)"
+				items={row.items} key={(c) => c.key} defer={ri >= EAGER_ROWS} placeholder={row.shape === 'square' ? 'square' : 'round'} lines={row.items.some((c) => musicCardNote(row, c)) ? 2 : 1}>
+				{#snippet card(raw: MusicCardData)}
+					{@const c = live(raw)}
 					<PosterCard
 						title={c.name}
 						href={musicCardHref(c)}
@@ -207,11 +232,11 @@
 							{/if}
 						{/snippet}
 					</PosterCard>
-				{/each}
+				{/snippet}
 			</Shelf>
 		{/each}
 
-		{#if answer.rows.length === 0 && !hero}
+		{#if answer && answer.rows.length === 0 && !hero}
 			<EmptyState icon="music" title={genre ? `Nothing tagged ${genre} yet` : 'Music rows are getting ready'} text={genre ? 'Pick another genre, or All.' : 'Charts and suggestions fill in within a few minutes.'} />
 		{/if}
 	</section>
@@ -230,10 +255,19 @@
 	.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-bottom: -12px; padding: 2px; }
 	.chips::-webkit-scrollbar { display: none; }
 	.chip { flex: none; font: inherit; font-size: 14px; font-weight: 500; text-transform: capitalize; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border, transparent); background: var(--surface-2); color: var(--text); cursor: pointer; }
+	.chips { height: 38px; flex: none; }
+	.chip { height: 34px; box-sizing: border-box; line-height: 20px; }
+	.sk-chip { display: block; padding: 0; border-color: transparent; cursor: default; }
+	.sk-hero { height: 152px; box-sizing: border-box; }
+	/* A loading row: the header and one row of square cards, at the real row's height. */
+	.sk-shelf { display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+	.sk-h { display: block; width: 220px; height: 46px; border-radius: 8px; background: var(--surface-2); }
+	.sk-tiles { display: grid; grid-auto-flow: column; grid-auto-columns: var(--explore-item); gap: var(--shelf-gap); padding: 6px 0 14px; }
+	.sk-tile { display: block; aspect-ratio: 1; margin-bottom: 45px; border-radius: var(--r-card); background: var(--surface-2); }
 	.chip.on { background: var(--text); color: var(--surface-1, var(--bg)); border-color: transparent; }
 	.chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.pick { display: flex; justify-content: flex-end; margin-bottom: -20px; }
-	.hero { display: flex; gap: 20px; align-items: center; padding: 16px; border-radius: var(--r-card); background: var(--surface-2); color: var(--text); text-decoration: none; max-width: 640px; }
+	.hero { box-sizing: border-box; height: 152px; display: flex; gap: 20px; align-items: center; padding: 16px; border-radius: var(--r-card); background: var(--surface-2); color: var(--text); text-decoration: none; max-width: 640px; }
 	.hero:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.cover { flex: none; width: 120px; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: var(--surface-3); }
 	.cover img { width: 100%; height: 100%; object-fit: cover; }
@@ -243,7 +277,7 @@
 	.note { color: var(--text-muted); }
 	select { font: inherit; font-size: 13px; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--border, transparent); background: var(--surface-2); color: var(--text); max-width: 160px; }
 	@media (max-width: 640px) {
-		.hero { gap: 14px; padding: 12px; }
+		.hero, .sk-hero { gap: 14px; padding: 12px; height: 112px; }
 		.cover { width: 88px; }
 		.words strong { font-size: 18px; }
 	}
