@@ -11514,6 +11514,29 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/explore/service-top": {
+      "get": {
+        "description": "Every streaming service's top list for a region in one answer (from the metadata server, kept 12 hours): source streaming-availability (the service's own top today) or tmdb-popular (TMDB's most popular on it, Peacock only). Each list keeps the service's order, split by type, at most 10 titles, with fetched_at, age_seconds and stale (over 14 days); ranked is false for tmdb-popular. attribution must be shown with the lists.",
+        "responses": {
+          "200": {
+            "description": "region, attribution and services: [{service, key, name, source, fetched_at, age_seconds, stale, ranked, items}]."
+          },
+          "400": {
+            "description": "A parameter is not valid."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          },
+          "502": {
+            "description": "The metadata server did not answer."
+          }
+        },
+        "summary": "Explore's per-service top lists",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/explore/tail": {
       "get": {
         "description": "The next 4 generated tail rows (page from 0); more says another page follows.",

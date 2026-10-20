@@ -11,95 +11,101 @@
 		matchOwned,
 		ownedMark,
 		ownedTitle,
-		topChips,
+		serviceChips,
+		serviceLabel,
+		serviceTopPath,
 		topPath,
-		topSource,
 		type ExploreCard,
 		type ExploreType,
 		type Genre,
 		type OwnedIndex,
-		type TopAnswer,
-		type TopChip,
-		type WatchService
+		type ServiceTopAnswer,
+		type ServiceTopRow,
+		type TopAnswer
 	} from './explore.ts';
 	import type { Audience } from './title-status.ts';
 
-	// "Top on your services": one ranked 1-10 row with a chip per service the
-	// person has. Netflix's chip is Netflix's weekly Top 10; the others (and
-	// All my services) are TMDB's most popular this week on them.
+	// "Top on your services": one row, one chip per streaming service (one
+	// picked at a time). Every service's list comes in one answer, so a chip
+	// switch never waits on the network. Inside a genre a service's chip is
+	// TMDB's most popular in that genre on it.
 	let {
 		type,
-		picked,
 		used,
-		shown,
 		region,
 		genre = null,
 		owned,
-		who = 'staff',
-		ontoggle
+		who = 'staff'
 	}: {
 		type: ExploreType;
-		/** The services picked on this device; null until the person picks once. */
-		picked: number[] | null;
-		/** The services the row is filled from: the picked ones, else the region's top few. */
+		/** The person's services, first in the chips. */
 		used: number[];
-		/** The picker's services (the region's best known plus any picked). */
-		shown: WatchService[];
 		region: string;
 		genre?: Genre | null;
 		owned?: OwnedIndex;
 		who?: Audience;
-		ontoggle: (id: number) => void;
 	} = $props();
 
 	type Ranked = ExploreCard & { rank: number };
-	let chip = $state<TopChip>('all');
-	let answer = $state<TopAnswer | null>(null);
+	let answer = $state<ServiceTopAnswer | null>(null);
+	let picked = $state<number | null>(null);
+	let genreAnswer = $state<TopAnswer | null>(null);
 	let loading = $state(true);
-	let editing = $state(false);
-	const mine = $derived(used);
-	const chips = $derived(topChips(mine, shown));
-	const cards = $derived<Ranked[]>(
-		(answer?.items ?? []).map((d) => ({ ...discoverCard(d, 'top_services'), key: `top-${d.kind}-${d.tmdb_id}`, rank: d.rank }))
-	);
-	const chipName = $derived(chip === 'all' ? 'your services' : (chips.find((c) => c.id === chip)?.name ?? 'this service'));
-	const source = $derived(answer && answer.items.length ? topSource(answer, chipName) : '');
+	const chips = $derived(serviceChips(answer?.services ?? [], used));
+	const row = $derived<ServiceTopRow | undefined>(chips.find((c) => c.service === picked) ?? chips[0]);
+	const ranked = $derived(!genre && !!row?.ranked);
+	const items = $derived(genre ? (genreAnswer?.items ?? []) : (row?.items ?? []));
+	const cards = $derived<Ranked[]>(items.map((d) => ({ ...discoverCard(d, 'top_services'), key: `top-${d.kind}-${d.tmdb_id}`, rank: d.rank })));
+	const source = $derived(!row ? '' : genre ? `Popular in ${genre.name.toLowerCase()} on ${row.name}` : serviceLabel(row));
 	const title = $derived(genre ? `Top ${genre.name.toLowerCase()} on your services` : 'Top on your services');
+	const attribution = $derived(!genre && row?.source === 'streaming-availability' ? (answer?.attribution ?? '') : '');
 
-	/** Answers already read this visit, per chip, type and genre. */
-	const memo = new Map<string, TopAnswer>();
 	let gone: AbortController | undefined;
 	async function load() {
-		const q = { type, chip, services: mine, region, genre: genre?.id };
-		const key = topPath(q);
 		gone?.abort();
-		const hit = memo.get(key);
-		if (hit) {
-			answer = hit;
-			loading = false;
-			return;
-		}
-		gone = new AbortController();
+		const mine = (gone = new AbortController());
 		loading = true;
 		try {
-			const a = await api.get<TopAnswer>(key, gone.signal);
-			memo.set(key, a);
-			answer = a;
+			answer = await api.get<ServiceTopAnswer>(serviceTopPath(type, region), mine.signal);
 		} catch {
-			if (!gone.signal.aborted) answer = null;
+			if (!mine.signal.aborted) answer = null;
 		} finally {
-			if (!gone.signal.aborted) loading = false;
+			if (!mine.signal.aborted) loading = false;
 		}
 	}
-
-	// A chip whose service was unpicked falls back to All my services.
 	$effect(() => {
-		if (chip !== 'all' && !mine.includes(chip)) chip = 'all';
-	});
-	$effect(() => {
-		void [type, chip, mine.join('|'), region, genre?.id];
+		void [type, region];
 		untrack(() => void load());
 		return () => gone?.abort();
+	});
+
+	/** Genre lists already read this visit, per service. */
+	const memo = new Map<string, TopAnswer>();
+	let genreGone: AbortController | undefined;
+	$effect(() => {
+		const id = row?.service;
+		const g = genre;
+		void [type, region];
+		if (!g || id === undefined) return;
+		const path = topPath({ type, chip: id, services: [id], region, genre: g.id });
+		const hit = memo.get(path);
+		if (hit) {
+			genreAnswer = hit;
+			return;
+		}
+		untrack(() => {
+			genreGone?.abort();
+			const mine = (genreGone = new AbortController());
+			api.get<TopAnswer>(path, mine.signal).then(
+				(a) => {
+					memo.set(path, a);
+					if (!mine.signal.aborted) genreAnswer = a;
+				},
+				() => {
+					if (!mine.signal.aborted) genreAnswer = null;
+				}
+			);
+		});
 	});
 
 	function href(c: Ranked): string | undefined {
@@ -109,61 +115,51 @@
 		remember(c.kind, tmdb, { name: c.name, poster: c.image });
 		return to(detailPath(c.kind, tmdb));
 	}
-	const empty = $derived(!loading && cards.length === 0);
 </script>
 
 {#snippet tools()}
 	<div class="top-tools">
 		<div class="chips" role="group" aria-label="Services">
-			{#each chips as c (c.id)}
-				<Chip label={c.name} selected={chip === c.id} onclick={() => (chip = c.id)} />
+			{#each chips as c (c.service)}
+				<Chip label={c.name} selected={row?.service === c.service} onclick={() => (picked = c.service)} />
 			{/each}
-			<Chip label={mine.length ? 'Edit services' : 'Pick your services'} icon={mine.length ? 'tools' : 'plus'} selected={editing ? true : undefined} onclick={() => (editing = !editing)} />
 		</div>
-		{#if editing || picked === null}
-			<div class="svc" data-testid="services-picker" role="group" aria-label="Your streaming services">
-				{#each shown as sv (sv.id)}
-					{@const on = mine.includes(sv.id)}
-					<button type="button" class="svc-chip" class:on aria-pressed={on} onclick={() => ontoggle(sv.id)} title={sv.name}>
-						{#if sv.logo}<img src={sv.logo} alt="" width="28" height="28" loading="lazy" />{/if}
-						<span>{sv.name}</span>
-					</button>
-				{/each}
-			</div>
-		{/if}
-		{#if empty}<p class="hint">{mine.length ? 'Nothing ranked here this week.' : 'Pick the services you have to fill this row.'}</p>{/if}
 	</div>
 {/snippet}
 
-<section class="top" data-testid="top-services-row" data-row="top_services">
-	<!-- A new list starts at rank 1, not where the last one was scrolled to. -->
-	{#key `${chip}|${type}|${genre?.id ?? ''}|${answer?.week ?? ''}`}
-		<Shelf {title} subtitle={source || undefined} {tools} item="calc(var(--explore-item, 180px) / 0.68)" items={cards} key={(c) => c.key} placeholder="poster">
-			{#snippet card(raw: Ranked)}
-				{@const c = owned ? { ...matchOwned(raw, owned), rank: raw.rank } : raw}
-				{@const mark = ownedMark(c, owned ? ownedTitle(c, owned) : undefined, who)}
-				<div class="ranked">
-					<span class="rank" class:two={c.rank > 9} aria-hidden="true">{c.rank}</span>
-					<div class="pc"><PosterCard title={c.name} href={href(c)} image={c.image} kind={c.kind} owned={mark} fresh={c.fresh} top10Row preview={c.ref?.startsWith('tmdb:') && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: c.ref.slice(5) } : undefined} /></div>
-					<span class="sr">Number {c.rank}</span>
-				</div>
-			{/snippet}
-		</Shelf>
-	{/key}
-</section>
+<!-- No list at all (a cold metadata server): the row is left out, never shown empty. -->
+{#if loading || chips.length > 0}
+	<section class="top" data-testid="top-services-row" data-row="top_services">
+		<!-- A new list starts at rank 1, not where the last one was scrolled to. -->
+		{#key `${row?.service ?? ''}|${type}|${genre?.id ?? ''}`}
+			<Shelf {title} subtitle={source || undefined} {tools} item={ranked ? 'calc(var(--explore-item, 180px) / 0.68)' : 'var(--explore-item, 180px)'} items={cards} key={(c) => c.key} placeholder="poster">
+				{#snippet card(raw: Ranked)}
+					{@const c = owned ? { ...matchOwned(raw, owned), rank: raw.rank } : raw}
+					{@const mark = ownedMark(c, owned ? ownedTitle(c, owned) : undefined, who)}
+					{@const preview = c.ref?.startsWith('tmdb:') && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: c.ref.slice(5) } : undefined}
+					{#if ranked}
+						<div class="ranked">
+							<span class="rank" class:two={c.rank > 9} aria-hidden="true">{c.rank}</span>
+							<div class="pc"><PosterCard title={c.name} href={href(c)} image={c.image} kind={c.kind} owned={mark} fresh={c.fresh} top10Row {preview} /></div>
+							<span class="sr">Number {c.rank}</span>
+						</div>
+					{:else}
+						<PosterCard title={c.name} href={href(c)} image={c.image} kind={c.kind} owned={mark} fresh={c.fresh} {preview} />
+					{/if}
+				{/snippet}
+			</Shelf>
+		{/key}
+		{#if attribution}<p class="credit">{attribution}</p>{/if}
+	</section>
+{/if}
 
 <style>
 	.top { position: relative; }
 	.top-tools { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-	.chips, .svc { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-inline: calc(var(--gutter) * -1); padding: 2px var(--gutter); }
-	.chips::-webkit-scrollbar, .svc::-webkit-scrollbar { display: none; }
+	.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-inline: calc(var(--gutter) * -1); padding: 2px var(--gutter); }
+	.chips::-webkit-scrollbar { display: none; }
 	.chips :global(.ui-chip) { flex: none; }
-	.hint { color: var(--text-muted); font: var(--t-callout); }
-	.svc-chip { flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px 0 8px; border-radius: 999px; background: var(--surface-2); color: var(--text); font: var(--t-callout); font-weight: 500; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent); transition: background-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease; }
-	.svc-chip img { width: 28px; height: 28px; border-radius: 7px; object-fit: cover; }
-	.svc-chip:hover { background: color-mix(in srgb, var(--text) 10%, var(--surface-2)); }
-	.svc-chip.on { background: color-mix(in srgb, var(--accent) 18%, var(--surface-2)); box-shadow: inset 0 0 0 2px var(--accent); }
-	.svc-chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.credit { margin: 4px 0 0; padding-inline: var(--gutter); color: var(--text-muted); font: var(--t-caption, var(--t-callout)); }
 	/* The column is the poster (68%, the same width as the other rows' posters) plus the number (32%); the poster overlaps the number's right edge a little. */
 	.ranked { position: relative; container-type: inline-size; }
 	.rank { position: absolute; left: 0; top: 0; width: 37%; height: 102cqw; display: flex; align-items: flex-end; justify-content: flex-end; font-size: 50cqw; font-weight: 800; line-height: 0.76; letter-spacing: -0.06em; color: var(--bg, #000); -webkit-text-stroke: 3px var(--text-2, #9a9a9a); paint-order: stroke; user-select: none; z-index: 0; }

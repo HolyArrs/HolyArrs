@@ -518,7 +518,7 @@
 				{/each}
 			</div>
 		{:else if rows.length === 0}
-			<TopServicesRow {type} {picked} shown={shownServices} {region} {owned} {who} used={usedServices} ontoggle={tapService} />
+			<TopServicesRow {type} {region} {owned} {who} used={usedServices} />
 			<EmptyState icon="compass" title="Explore is getting ready" text="Rows fill in within a few minutes." action={{ label: 'Search', href: to('/search'), icon: 'search' }} />
 		{:else}
 			{#if heroCards.length}
@@ -529,7 +529,7 @@
 			{/if}
 			{#each rows as row, ri (row.id)}
 				{#if row.type === 'top_services'}
-					<TopServicesRow {type} {picked} shown={shownServices} {region} genre={genreOn ? genre : null} {owned} {who} used={usedServices} ontoggle={tapService} />
+					<TopServicesRow {type} {region} genre={genreOn ? genre : null} {owned} {who} used={usedServices} />
 				{:else}
 				<div class="row-wrap" class:wide-row={row.wide || row.cards.some((c) => wideKind(c.kind))} data-row={row.type ?? row.id} data-row-id={row.id} data-title-layer={row.titleLayer}>
 				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.cards.some((c) => wideKind(c.kind)) ? 'var(--title-item)' : 'var(--explore-item)'}

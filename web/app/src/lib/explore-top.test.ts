@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { genrePath, genresFor, parseGenre, topChips, topPath, topSource } from './explore.ts';
+import { genrePath, genresFor, parseGenre, serviceChips, serviceLabel, serviceTopPath, topChips, topPath, topSource, type ServiceTopRow } from './explore.ts';
 
 describe('Top on your services', () => {
 	it('asks for one chip, with the services, region and genre', () => {
@@ -36,5 +36,23 @@ describe('genre pages', () => {
 	});
 	it('builds the genre page path', () => {
 		expect(genrePath('movies', 27)).toBe('/explore/genre?type=movies&genre=27');
+	});
+});
+
+describe('per-service top lists', () => {
+	const row = (service: number, name: string, n = 1): ServiceTopRow => ({ service, key: name.toLowerCase(), name, source: 'streaming-availability', fetched_at: '2026-10-18T10:00:00Z', age_seconds: 60, stale: false, ranked: true, items: Array.from({ length: n }, (_, i) => ({ tmdb_id: String(i + 1), kind: 'movie' as const, name: 'T', in_library: false, rank: i + 1 })) });
+	it('asks once for every service', () => {
+		expect(serviceTopPath('movies', 'US')).toBe('/explore/service-top?type=movies&region=US');
+		expect(serviceTopPath('music', 'GB')).toBe('/explore/service-top?type=all&region=GB');
+	});
+	it("puts the person's services first and leaves out empty lists", () => {
+		const rows = [row(8, 'Netflix'), row(9, 'Prime Video'), row(337, 'Disney+'), row(386, 'Peacock', 0)];
+		expect(serviceChips(rows, [337, 9]).map((r) => r.name)).toEqual(['Disney+', 'Prime Video', 'Netflix']);
+		expect(serviceChips(rows, []).map((r) => r.service)).toEqual([8, 9, 337]);
+	});
+	it('labels today, an older list, and TMDB popularity', () => {
+		expect(serviceLabel(row(8, 'Netflix'))).toBe('Top on Netflix today · via Streaming Availability');
+		expect(serviceLabel({ ...row(8, 'Netflix'), age_seconds: 2 * 86400 })).toBe('Top on Netflix as of Oct 18 · via Streaming Availability');
+		expect(serviceLabel({ ...row(386, 'Peacock'), source: 'tmdb-popular' })).toBe('Popular on Peacock');
 	});
 });

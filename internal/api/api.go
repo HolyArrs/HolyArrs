@@ -63,6 +63,9 @@ type Server struct {
 	// Top10 reads a Netflix Top 10 list from the metadata server; nil
 	// hides the row.
 	Top10 func(ctx context.Context, kind, region, lang string) (metadata.Top10, error)
+	// ServiceTop reads every streaming service's top list for a region
+	// from the metadata server; nil leaves the row empty.
+	ServiceTop func(ctx context.Context, region string) (metadata.ServiceTop, error)
 	// TrailerPick reads the metadata server's trailer key for a title
 	// (kind movie or show); nil uses only TMDB's videos.
 	TrailerPick func(ctx context.Context, kind, id, lang string) (string, error)
@@ -135,6 +138,8 @@ type API struct {
 	status statusCache
 	// top10 keeps the Netflix Top 10 lists for an hour.
 	top10 top10Cache
+	// serviceTop keeps the per-service top lists for 12 hours.
+	serviceTop serviceTopCache
 	// music keeps the music trending lists for an hour.
 	music musicTrendCache
 	// musicx keeps artist genres and similar artists for Explore → Music.
@@ -309,6 +314,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/explore/head", a.exploreHead)
 	m.HandleFunc("GET /api/v1/explore/tail", a.exploreTail)
 	m.HandleFunc("GET /api/v1/explore/top", a.exploreTop)
+	m.HandleFunc("GET /api/v1/explore/service-top", a.exploreServiceTop)
 	m.HandleFunc("GET /api/v1/explore/genre", a.exploreGenre)
 	m.HandleFunc("POST /api/v1/explore/counts", a.exploreCounts)
 	m.HandleFunc("GET /api/v1/explore/title-stats", a.exploreTitleStats)

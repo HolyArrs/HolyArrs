@@ -800,6 +800,55 @@ export function topSource(a: Pick<TopAnswer, 'source' | 'region'>, serviceName: 
 	return `Most popular this week on ${serviceName} · ${where}`;
 }
 
+// ---- Per-service top lists (one answer, every service) ----
+
+/** ServiceTopRow is one streaming service's list from GET /explore/service-top. */
+export interface ServiceTopRow {
+	/** The TMDB watch provider id (the picker's ids). */
+	service: number;
+	key: string;
+	name: string;
+	/** streaming-availability: the service's own top today; tmdb-popular: TMDB's most popular on it. */
+	source: 'streaming-availability' | 'tmdb-popular';
+	fetched_at: string;
+	age_seconds: number;
+	stale: boolean;
+	/** Only the service's own top list is a ranking. */
+	ranked: boolean;
+	items: (ProviderItem & { rank: number })[];
+}
+
+export interface ServiceTopAnswer {
+	region: string;
+	/** Must be shown with the lists. */
+	attribution: string;
+	services: ServiceTopRow[];
+}
+
+/** serviceTopPath is GET /explore/service-top: every service at once. */
+export function serviceTopPath(t: ExploreType, region: string): string {
+	return `/explore/service-top?${new URLSearchParams({ type: t === 'music' ? 'all' : t, region }).toString()}`;
+}
+
+/** serviceChips: the services with a list, the person's own first (in their order), then the rest. */
+export function serviceChips(rows: ServiceTopRow[], mine: number[]): ServiceTopRow[] {
+	const have = rows.filter((r) => r.items.length > 0);
+	const pos = (r: ServiceTopRow) => {
+		const i = mine.indexOf(r.service);
+		return i < 0 ? mine.length + have.indexOf(r) : i;
+	};
+	return [...have].sort((a, b) => pos(a) - pos(b));
+}
+
+/** serviceLabel is the line under the row title for one service's list. */
+export function serviceLabel(r: Pick<ServiceTopRow, 'source' | 'name' | 'age_seconds' | 'fetched_at'>): string {
+	if (r.source !== 'streaming-availability') return `Popular on ${r.name}`;
+	if (r.age_seconds < 24 * 3600) return `Top on ${r.name} today · via Streaming Availability`;
+	const d = new Date(r.fetched_at);
+	const when = Number.isNaN(d.getTime()) ? 'recently' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+	return `Top on ${r.name} as of ${when} · via Streaming Availability`;
+}
+
 // ---- Genre pages ----
 
 export interface Genre {
