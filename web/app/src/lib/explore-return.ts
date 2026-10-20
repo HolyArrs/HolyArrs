@@ -7,6 +7,35 @@ export interface ExploreReturn {
 	y: number;
 	/** Each scrolled row's sideways offset, by row id. */
 	rows: Record<string, number>;
+	/** The first row on screen and how far from the top it sat: rows above may load at other heights, so this, not y, is the spot. */
+	anchor?: { id: string; top: number };
+}
+
+type Box = { top: number; bottom: number };
+type RowEl = { dataset: { rowId?: string }; getBoundingClientRect(): Box; firstElementChild?: { getBoundingClientRect(): Box } | null };
+/** A row wrapper may be display: contents (no box of its own): its first child stands in. */
+function box(el: RowEl): Box {
+	const r = el.getBoundingClientRect();
+	return r.bottom - r.top > 0 || !el.firstElementChild ? r : el.firstElementChild.getBoundingClientRect();
+}
+
+/** readAnchor finds the first row whose bottom is on screen (below the top bar) and its top. */
+export function readAnchor(root: ParentNode, below = 0): { id: string; top: number } | undefined {
+	for (const el of root.querySelectorAll('[data-row-id]') as unknown as Iterable<RowEl>) {
+		const r = box(el);
+		const id = el.dataset.rowId;
+		if (id && r.bottom > below) return { id, top: Math.round(r.top) };
+	}
+	return undefined;
+}
+
+/** anchorDelta is how far to scroll so the anchor row sits where it was (null: that row is not on the page). */
+export function anchorDelta(root: ParentNode, anchor: { id: string; top: number } | undefined): number | null {
+	if (!anchor) return null;
+	for (const el of root.querySelectorAll('[data-row-id]') as unknown as Iterable<RowEl>) {
+		if (el.dataset.rowId === anchor.id) return Math.round(box(el).top - anchor.top);
+	}
+	return null;
 }
 
 /** readOffsets reads the sideways offset of every scrolled row under root. */

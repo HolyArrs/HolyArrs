@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canReturn, putOffsets, readOffsets } from './explore-return.ts';
+import { anchorDelta, canReturn, putOffsets, readAnchor, readOffsets } from './explore-return.ts';
 
 // A tiny stand-in for the page: rows with an id and a scrolling element.
 function page(rows: Record<string, number>) {
@@ -23,5 +23,16 @@ describe('back to Explore', () => {
 		expect(canReturn(1000, 2000, 800, true)).toBe(false);
 		expect(canReturn(3000, 2000, 800, true)).toBe(true);
 		expect(canReturn(1000, 2000, 800, false)).toBe(true);
+	});
+	it('keeps the first row on screen as the spot, and scrolls it back to the same place', () => {
+		const at = (tops: Record<string, number>) => ({ querySelectorAll: () => Object.entries(tops).map(([id, top]) => ({ dataset: { rowId: id }, getBoundingClientRect: () => ({ top, bottom: top + 300 }) })) }) as unknown as ParentNode;
+		expect(readAnchor(at({ a: -600, b: -100, c: 220 }), 60)).toEqual({ id: 'b', top: -100 });
+		// Rows above came back 350 px taller: scroll 350 further down.
+		expect(anchorDelta(at({ a: -600, b: 250 }), { id: 'b', top: -100 })).toBe(350);
+		expect(anchorDelta(at({ a: 0 }), { id: 'b', top: -100 })).toBeNull();
+		expect(anchorDelta(at({ a: 0 }), undefined)).toBeNull();
+		// A display: contents wrapper has no box: its first child is measured.
+		const wrap = { querySelectorAll: () => [{ dataset: { rowId: 'w' }, getBoundingClientRect: () => ({ top: 0, bottom: 0 }), firstElementChild: { getBoundingClientRect: () => ({ top: 140, bottom: 400 }) } }] } as unknown as ParentNode;
+		expect(readAnchor(wrap)).toEqual({ id: 'w', top: 140 });
 	});
 });

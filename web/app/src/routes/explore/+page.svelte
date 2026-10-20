@@ -208,7 +208,7 @@
 			if (n !== genreAsk) return;
 			const got = a.rows.map(serverRow);
 			// Top on your services, in the genre, is the second row.
-			const marker = { id: 'top_services', type: 'top_services', title: 'Trending on your services', cards: [], keep: true, wide: false };
+			const marker = { id: 'top_services', type: 'top_services', title: 'Trending on streaming', cards: [], keep: true, wide: false };
 			genreRows = [...got.slice(0, 1), marker, ...got.slice(1)];
 			genreHero = (a.hero ?? []).map((d) => ({ ...discoverCard(d, 'hero'), wide: d.backdrop ?? null }));
 			if (!again) heroAt = 0;
@@ -235,7 +235,7 @@
 	}
 	const genreOn = $derived(!!genre && type !== 'music');
 	const heroCards = $derived(genreOn ? genreHero : hero);
-	/** The titles of Trending on your services, as that row shows them now. */
+	/** The titles of Trending on streaming, as that row shows them now. */
 	let servicesShown = $state<string[]>([]);
 	// A title shows once in the first 8 rows, counting the hero and the services row.
 	const taken = $derived([...heroCards.map(cardIdentity), ...servicesShown]);

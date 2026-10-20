@@ -364,11 +364,17 @@
 
 	let ctlAt = 0;
 	let ctlBox = $state<HTMLElement>();
+	let expandBtn = $state<HTMLButtonElement>();
 	// The controls sit inside a card's link: the app's link router sees a
 	// click before the button's own handler could cancel it. So clicks on the
 	// controls are taken first (window capture), run here, and go no further.
 	$effect(() => {
 		const take = (e: MouseEvent) => {
+			// The full-screen click too: the card's link must not open the title page under the player.
+			if (expandBtn && (e.target as Element | null)?.closest?.('button.expand') === expandBtn) {
+				e.stopImmediatePropagation();
+				return expand(e);
+			}
 			const b = (e.target as Element | null)?.closest?.('button[data-act]');
 			if (!b || !ctlBox?.contains(b)) return;
 			e.preventDefault();
@@ -546,7 +552,7 @@
 	{/key}
 </div>
 {#if onexpand && shown}
-	<button type="button" class="expand" aria-label="Play the {title} trailer full screen" onclick={expand}></button>
+	<button type="button" class="expand" aria-label="Play the {title} trailer full screen" bind:this={expandBtn} onclick={expand}></button>
 {/if}
 {#if controls}
 	<div class="ctl" class:on={shown} data-testid="trailer-sound" role="group" aria-label="Trailer controls" bind:this={ctlBox} onpointerdown={(e) => { ctlAt = Date.now(); e.stopPropagation(); }} onclickcapture={() => (ctlAt = Date.now())}>
