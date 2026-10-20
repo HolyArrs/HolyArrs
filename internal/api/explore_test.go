@@ -282,6 +282,20 @@ func TestExploreHeadAndTail(t *testing.T) {
 	if _, ok := tail["rows"].([]any); !ok {
 		t.Fatalf("tail %v", tail)
 	}
+	// Search Browse: genre and mood tiles from the same page, each its own backdrop.
+	br := get("/api/v1/explore/browse?type=all")
+	tiles, ok := br["tiles"].([]any)
+	if !ok {
+		t.Fatalf("browse %v", br)
+	}
+	tb := map[string]bool{}
+	for _, x := range tiles {
+		b := x.(map[string]any)["backdrop"].(string)
+		if b == "" || tb[b] {
+			t.Fatalf("browse tile backdrop %q empty or repeated", b)
+		}
+		tb[b] = true
+	}
 	// Browse by genre: cards from the same page, each its own backdrop.
 	gr := get("/api/v1/explore/genre-row?type=all")
 	cards, ok := gr["genres"].([]any)

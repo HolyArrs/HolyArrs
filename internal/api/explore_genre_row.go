@@ -62,3 +62,37 @@ func (a *API) genreRowPage(ctx context.Context, r *http.Request, pg explore.Page
 	}
 	return pg.Filter(func(it explore.Item) bool { return ok[it.Key()] }), nil
 }
+
+// searchBrowse answers GET /api/v1/explore/browse?type=all|movies|shows:
+// Search's Browse tiles, every genre of the tab with its mood rows (the
+// genre page's mood rows, metadata.SubMoods), from the same assembled page
+// and the same filters as the genre row. A Kid gets only kid-safe ones.
+func (a *API) searchBrowse(w http.ResponseWriter, r *http.Request) {
+	sw, topKind, topRegion, ok := exploreParams(w, r)
+	if !ok {
+		return
+	}
+	if a.kidLimited(w, r) {
+		return
+	}
+	me := a.person(r).UserID
+	pg, _, _, err := a.explorePageFor(r.Context(), r, me, sw, topKind, topRegion)
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	if pg, err = a.genreRowPage(r.Context(), r, pg); err != nil {
+		internal(w, err)
+		return
+	}
+	moods := func(genre string) []string {
+		var out []string
+		for _, m := range metadata.SubMoods(genre) {
+			out = append(out, m.Label)
+		}
+		return out
+	}
+	tiles := explore.BrowseTiles(pg, sw, pg.Kid || a.kidMax(r) != "", moods)
+	a.exploreCaching(w, r, "private, no-cache")
+	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "tiles": tiles})
+}

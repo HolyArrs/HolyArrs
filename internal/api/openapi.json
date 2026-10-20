@@ -11442,6 +11442,26 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/explore/browse": {
+      "get": {
+        "description": "Search's Browse tiles for the tab: every genre with a title that has a backdrop on the member's page, biggest first, each followed by its mood rows (the genre page's mood rows). Each tile has kind, genre (TMDB id), genre_name, mood (mood tiles only), name, backdrop and from. A Kid gets only kid-safe genres and moods.",
+        "responses": {
+          "200": {
+            "description": "The tiles."
+          },
+          "400": {
+            "description": "type is not valid."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          }
+        },
+        "summary": "Search Browse tiles (genres and moods)",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/explore/counts": {
       "post": {
         "description": "Adds one card open or ask start to the member's measuring counts for a row type. Counts never change what Explore shows.",
