@@ -5,11 +5,14 @@ package web
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"embed"
+	"encoding/base64"
 	"io/fs"
 	"mime"
 	"net/http"
 	"path"
+	"regexp"
 	"strings"
 	"time"
 
@@ -29,6 +32,29 @@ func IsAsset(p string) bool {
 	return strings.HasPrefix(p, "/_app/") || strings.HasPrefix(p, "/brand/") || p == "/favicon.ico"
 }
 
+// ImageHosts are where the app loads pictures from besides itself: TMDB,
+// or a stand-in TMDB in the browser tests (set once at start).
+var ImageHosts = "https://image.tmdb.org"
+
+// policy is the Content-Security-Policy of every answer; script-src gets
+// the hashes of the page's own inline scripts (theme, app start).
+const policy = "default-src 'self'; img-src 'self' %s data: blob:; " +
+	"media-src 'self' https://*.googlevideo.com blob:; frame-src https://www.youtube-nocookie.com; " +
+	"connect-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; worker-src 'self' blob:; " +
+	"object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+
+// CSP is the policy, with script-src allowing the inline scripts of page.
+func CSP(page []byte) string {
+	src := "script-src 'self'"
+	for _, m := range inlineScript.FindAllSubmatch(page, -1) {
+		sum := sha256.Sum256(m[1])
+		src += " 'sha256-" + base64.StdEncoding.EncodeToString(sum[:]) + "'"
+	}
+	return strings.Replace(policy, "%s", ImageHosts, 1) + "; " + src
+}
+
+var inlineScript = regexp.MustCompile(`(?s)<script>(.*?)</script>`)
+
 // Page writes the app's index.html, its links under the request's URL
 // base (internal/urlbase), so the app runs at /holyarrs behind a proxy.
 func Page(w http.ResponseWriter, r *http.Request) {
@@ -39,7 +65,9 @@ func Page(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-cache")
-	_, _ = w.Write(WithBase(b, urlbase.From(r.Context())))
+	b = WithBase(b, urlbase.From(r.Context()))
+	w.Header().Set("Content-Security-Policy", CSP(b))
+	_, _ = w.Write(b)
 }
 
 // WithBase puts base in front of the built app's own links: scripts,

@@ -344,6 +344,7 @@ func secure(h http.Handler) http.Handler {
 		hd.Set("X-Content-Type-Options", "nosniff")
 		hd.Set("Referrer-Policy", "no-referrer")
 		hd.Set("X-Frame-Options", "DENY")
+		hd.Set("Content-Security-Policy", web.CSP(nil))
 		h.ServeHTTP(w, r)
 	})
 }

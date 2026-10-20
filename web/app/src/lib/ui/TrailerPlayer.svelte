@@ -373,6 +373,7 @@
 				title="{title} trailer"
 				allow="autoplay; encrypted-media; picture-in-picture"
 				referrerpolicy="strict-origin-when-cross-origin"
+				sandbox="allow-scripts allow-same-origin allow-presentation"
 				tabindex="-1"
 				onload={frameLoaded}
 			></iframe>

@@ -265,7 +265,7 @@ func (t *trailerState) inFlight(ckey string) bool {
 // trailerStored loads a kept address from SQLite into memory, so a
 // restart does not redo lookups.
 func (a *API) trailerStored(ctx context.Context, ckey string, now time.Time) bool {
-	if a.s.Store == nil {
+	if a.s.Store == nil || a.s.Store.Read() == nil {
 		return false
 	}
 	b, ok, err := store.LookupCache{Store: a.s.Store}.Get(ctx, "trailer|"+ckey, now)
