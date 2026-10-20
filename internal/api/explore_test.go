@@ -309,3 +309,31 @@ func TestExploreJustArrived(t *testing.T) {
 	}
 	t.Fatal("no Just arrived row")
 }
+
+// route: POST /api/v1/explore/counts
+// Counts accept an open or ask from a known row type and refuse anything else.
+func TestExploreCountsRoute(t *testing.T) {
+	a, _, _ := exploreRig(t)
+	srv := httptest.NewServer(a.Handler())
+	defer srv.Close()
+	post := func(body string) int {
+		resp, err := http.Post(srv.URL+"/api/v1/explore/counts", "application/json", strings.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		return resp.StatusCode
+	}
+	if got := post(`{"row_type":"hero","event":"open"}`); got != http.StatusNoContent {
+		t.Fatalf("hero open = %d, want 204", got)
+	}
+	if got := post(`{"row_type":"hero","event":"play"}`); got != http.StatusBadRequest {
+		t.Fatalf("unknown event = %d, want 400", got)
+	}
+	if got := post(`{"row_type":"nope","event":"ask"}`); got != http.StatusBadRequest {
+		t.Fatalf("unknown row = %d, want 400", got)
+	}
+	if got := post(`not json`); got != http.StatusBadRequest {
+		t.Fatalf("bad body = %d, want 400", got)
+	}
+}
