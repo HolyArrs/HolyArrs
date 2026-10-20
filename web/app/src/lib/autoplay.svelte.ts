@@ -156,6 +156,9 @@ export async function trailerSources(kind: 'movie' | 'show', tmdb: string, video
 	const s = await directStream(kind, tmdb, signal);
 	const u = s && playable(s);
 	if (s && u) out.push({ kind: 'direct', url: u, key: s.key, audio: s.type === 'hls' && u !== s.url ? !!s.mp4_audio : !!s.audio });
+	// Some browsers say they may play HLS and then refuse YouTube's manifest
+	// (Chrome: error 4); the MP4 is tried next.
+	if (s?.type === 'hls' && u === s.url && s.mp4_url) out.push({ kind: 'direct', url: s.mp4_url, key: s.key, audio: !!s.mp4_audio });
 	const key = s?.key || pickTrailer(videos, lang())?.key;
 	if (key) out.push({ kind: 'embed', key });
 	return out;
