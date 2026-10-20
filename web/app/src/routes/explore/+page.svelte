@@ -588,8 +588,8 @@
 {/if}
 
 <style>
-	.explore { container: explore / inline-size; /* One size for every title row, measured on Netflix (2026-10-20): 279px cards at a 1536px window, about 5.1 across; never under 200px. */
-		--title-item: max(200px, calc((100cqi - 4 * var(--shelf-gap)) / 5.1)); --explore-item: 168px; display: flex; flex-direction: column; gap: 32px; padding-bottom: 48px; }
+	.explore { container: explore / inline-size; /* One size for every title row, measured on Netflix (2026-10-20): 279px cards at a 1536px window, sized from the window like Netflix (whose page has no sidebar), so cards match it; never under 200px. */
+		--title-item: max(200px, calc((100vw - 96px - 4 * var(--shelf-gap)) / 5.1)); --explore-item: 168px; display: flex; flex-direction: column; gap: 32px; padding-bottom: 48px; }
 	.explore > :global(.ui-head) { margin-bottom: -8px; }
 	/* The type switch: in the page under the title; once scrolled past it floats as a glass pill under the top bar. */
 	.types-mark { height: 0; margin-top: -32px; }
