@@ -53,6 +53,7 @@
 	import MusicTrendingRows from '#lib/MusicTrendingRows.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
+	import ExploreHero from '#lib/ui/ExploreHero.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -359,6 +360,13 @@
 
 <svelte:head><title>Explore · HolyArrs</title></svelte:head>
 
+{#snippet heroAction(c: ExploreCard)}
+	{@const act = cardAction(c, { manage, ask: mayAsk })}
+	{#if act && cardTmdb(c)}
+		<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={asking === c.key || undefined} onclick={() => void quick(c, act)} />
+	{/if}
+{/snippet}
+
 {#snippet serviceTools()}
 	<div class="svc" data-testid="services-picker">
 		{#if picked === null}<p class="svc-hint">Pick the services you have</p>{/if}
@@ -401,6 +409,12 @@
 			{#if type !== 'music'}<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} typePill={type === 'all'} initial={top10} />
 			<EmptyState icon="compass" title="Explore is getting ready" text="Rows fill in within a few minutes." action={{ label: 'Search', href: to('/search'), icon: 'search' }} />{/if}
 		{:else}
+			{@const featured = type !== 'music' ? rows.flatMap((r) => (r.wide ? [] : r.cards)).map(live).find((c) => (c.kind === 'movie' || c.kind === 'show') && cardTmdb(c)) : undefined}
+			{#if featured}
+				<ExploreHero kind={featured.kind === 'show' ? 'show' : 'movie'} tmdb={cardTmdb(featured)} title={featured.name} href={cardHref(featured)} backdrop={featured.wide} subtitle={featured.subtitle} settled={headLoaded && !busy}>
+					{#snippet action()}{@render heroAction(featured)}{/snippet}
+				</ExploreHero>
+			{/if}
 			{#if type !== 'music'}<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} typePill={type === 'all'} initial={top10} />{/if}
 			{#each rows as row (row.id)}
 				<div class="row-wrap" data-row={row.type ?? row.id}>
@@ -422,6 +436,7 @@
 							owned={mark}
 							actionOnHover
 							vtName={c.vtName}
+							preview={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: cardTmdb(c), year: c.year } : undefined}
 						>
 							{#snippet action()}
 								{#if act && cardTmdb(c)}

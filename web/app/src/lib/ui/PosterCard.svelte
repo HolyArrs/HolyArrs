@@ -8,6 +8,8 @@
 	import { press, viewTransitionName } from '../motion.ts';
 	import { sized } from '../tmdb-image.ts';
 	import { shelfNear, whenLoaded } from '../lazy-art.ts';
+	import HoverPreview from './HoverPreview.svelte';
+	import { dwell, finePointer, HOVER_DELAY } from '../trailer.ts';
 
 	// 2:3 poster with title below. Lifts on hover; artwork zooms inside its frame.
 	// `action` is an optional round button (Add / Ask) over the art corner.
@@ -26,6 +28,7 @@
 		typePill,
 		owned,
 		actionOnHover = false,
+		preview,
 		action
 	}: {
 		title: string;
@@ -47,8 +50,38 @@
 		owned?: { state: 'available' | 'partial' | 'downloading' | 'requested' | 'declined'; label: string } | null;
 		/** The round action shows on hover or focus only (always on touch screens). */
 		actionOnHover?: boolean;
+		/** Desktop: after a short hover or keyboard focus, open the expanded card (trailer, genres). */
+		preview?: { kind: 'movie' | 'show'; tmdb: string; year?: number } | null;
 		action?: Snippet;
 	} = $props();
+
+	// The expanded card: pointer: fine only, after HOVER_DELAY; leaving both
+	// the poster and the card (a short grace to cross the gap) closes it.
+	let root = $state<HTMLElement>();
+	let open = $state(false);
+	const opener = dwell(HOVER_DELAY, () => (open = true));
+	const closer = dwell(140, () => (open = false));
+	function enter() {
+		if (!preview || !finePointer()) return;
+		closer.cancel();
+		if (!open) opener.start();
+	}
+	function leave() {
+		opener.cancel();
+		if (open) closer.start();
+	}
+	function shut() {
+		opener.cancel();
+		closer.cancel();
+		open = false;
+	}
+	function focusIn(e: FocusEvent) {
+		if ((e.target as HTMLElement)?.matches?.(':focus-visible')) enter();
+	}
+	function focusOut(e: FocusEvent) {
+		if (!root?.contains(e.relatedTarget as Node)) leave();
+	}
+	$effect(() => () => shut());
 	const typeWords = { movie: 'Movie', show: 'Show', artist: 'Artist' } as const;
 	const typeIcons = { movie: 'film', show: 'tv', artist: 'music' } as const;
 	type Own = NonNullable<typeof owned>;
@@ -74,7 +107,8 @@
 	const kindIcon = $derived<IconName>(kind === 'show' || kind === 'episode' ? 'tv' : kind === 'artist' ? 'music' : 'film');
 </script>
 
-<div class="ui-poster" style:width>
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div class="ui-poster" style:width bind:this={root} onpointerenter={enter} onpointerleave={leave} onfocusin={focusIn} onfocusout={focusOut} onpointerdown={() => opener.cancel()}>
 	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} use:press={'card'}>
 		<span class="art" use:viewTransitionName={vtName}>
 			{#if !image || failed || !loaded}
@@ -98,6 +132,14 @@
 	</svelte:element>
 	{#if action}<span class="act-layer" class:hover-only={actionOnHover}><span class="act">{@render action()}</span></span>{/if}
 </div>
+
+{#snippet ownBadge()}
+	{#if owned}<ArtPill text={ownWord(owned)} label={owned.label} icon={ownIcons[owned.state]} tone={ownTones[owned.state]} percent={ownPercent(owned)} />{/if}
+{/snippet}
+
+{#if open && preview && root}
+	<HoverPreview anchor={root} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} {image} badge={owned ? ownBadge : undefined} {action} onenter={() => closer.cancel()} onleave={leave} onclose={shut} />
+{/if}
 
 <style>
 	.ui-poster { position: relative; min-width: 0; }
