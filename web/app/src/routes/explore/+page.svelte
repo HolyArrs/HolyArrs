@@ -684,17 +684,21 @@
 	.types-mark { height: 0; margin-top: -32px; }
 	.types { position: sticky; top: calc(var(--topbar) + 10px); z-index: 20; display: flex; justify-content: center; margin-top: -12px; pointer-events: none; }
 	.types :global(.ui-seg) { pointer-events: auto; transition: transform 320ms cubic-bezier(.2,.8,.2,1), box-shadow 320ms ease, background-color 320ms ease; transform-origin: top center; }
-	.types.stuck :global(.ui-seg) { transform: scale(0.92); background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
+	.types.stuck :global(.ui-seg) { transform: scale(0.9); background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
 	.types :global(.ui-seg) { border-radius: 999px; padding: 3px; }
 	.types :global(.ui-seg .thumb) { top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / var(--n)); border-radius: 999px; }
-	.types :global(.ui-seg button) { min-height: 44px; padding: 0 20px; border-radius: 999px; }
-	@media (prefers-reduced-motion: reduce) { .types :global(.ui-seg), .types :global(.ui-seg .thumb) { transition: none; } .types.stuck :global(.ui-seg) { transform: none; } }
+	.types :global(.ui-seg button) { min-height: 38px; padding: 0 16px; border-radius: 999px; font-size: 14px; }
+	/* Reduced motion: the same compact size, without the animation. */
+	@media (prefers-reduced-motion: reduce) { .types :global(.ui-seg), .types :global(.ui-seg .thumb), .genre-pick { transition: none; } }
 	@media (max-width: 767px) { .types :global(.ui-seg) { display: grid; width: 100%; } .types :global(.ui-seg button) { padding: 0 8px; } }
 	@media (max-width: 359px) {
 		.types :global(.ui-seg button span) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 	}
-	.genre-pick { pointer-events: auto; margin-left: 8px; display: flex; align-items: center; }
-	.genre-pick :global(.trigger) { min-height: 44px; border-radius: 999px; padding: 0 16px; }
+	.genre-pick { pointer-events: auto; margin-left: 8px; display: flex; align-items: center; transition: transform 320ms cubic-bezier(.2,.8,.2,1); transform-origin: top center; }
+	/* Genres matches the tab pill: same height, type and glass. */
+	.genre-pick :global(.trigger) { min-height: 44px; border-radius: 999px; padding: 0 16px; font: 600 14px/1 var(--font-ui); background: var(--surface-2); color: var(--text); }
+	.types.stuck .genre-pick { transform: scale(0.9); }
+	.types.stuck .genre-pick :global(.trigger) { background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
 	.genre-list { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; }
 	.sentinel { height: 1px; }
 	.row-wrap { display: contents; }
