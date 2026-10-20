@@ -386,6 +386,7 @@ var Routes = map[string]Owner{
 	"PUT /api/v1/titles/{id}/artist": music,
 	"GET /api/v1/albums/{id}":        music,
 	"GET /api/v1/albums/{id}/tracks": music,
+	"GET /api/v1/albums/{id}/cover":  music,
 	"PUT /api/v1/albums/{id}":        music,
 
 	// Subtitles (4.16).

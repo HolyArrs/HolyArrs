@@ -25,6 +25,7 @@ func (a *API) musicRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/albums/{id}", a.getAlbum)
 	m.HandleFunc("PUT /api/v1/albums/{id}", a.setAlbum)
 	m.HandleFunc("GET /api/v1/albums/{id}/tracks", a.listTracks)
+	m.HandleFunc("GET /api/v1/albums/{id}/cover", a.albumCoverArt)
 	m.HandleFunc("GET /api/v1/settings/music", a.getMusicSettings)
 	m.HandleFunc("PUT /api/v1/settings/music", a.putMusicSettings)
 }

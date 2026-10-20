@@ -1,0 +1,74 @@
+package api
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"path/filepath"
+	"testing"
+
+	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/jobs"
+	"github.com/CoderLuii/holyarrs/internal/library"
+	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/CoderLuii/holyarrs/internal/store"
+)
+
+// route: GET /api/v1/albums/{id}/cover
+func TestAlbumCoverServesTheCachedCover(t *testing.T) {
+	s, err := store.Open(t.TempDir(), store.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = s.Close() })
+	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/release-group/"+apiAlbum+"/front-250" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "image/jpeg")
+		_, _ = w.Write([]byte("\xff\xd8\xff synthetic"))
+	}))
+	defer pics.Close()
+	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{pics.URL + "/release-group/"}, HTTP: pics.Client()}
+	q := jobs.New(s, jobs.Options{})
+	lib := &library.Service{Store: s, Queue: q, Artists: apiMusic(), Artwork: art, CoverArtBase: pics.URL}
+	srv := httptest.NewServer(New(Server{Store: s, Queue: q, Library: lib, Metadata: &metadata.Static{}}).Handler())
+	defer srv.Close()
+	u := srv.URL + "/api/v1"
+	do(t, "POST", u+"/library-folders", fmt.Sprintf(`{"path":%q,"kind":"music","label":"Music"}`, t.TempDir()), 201)
+	var added struct {
+		Title struct {
+			ID int64 `json:"id"`
+		} `json:"title"`
+	}
+	_ = json.Unmarshal(do(t, "POST", u+"/artists", `{"id":"mbid:`+apiArtist+`","albums":"all"}`, 201), &added)
+	if _, err := lib.RefreshArtist(context.Background(), added.Title.ID, domain.System, nil); err != nil {
+		t.Fatal(err)
+	}
+	var albums struct {
+		Albums []library.AlbumSummary `json:"albums"`
+	}
+	_ = json.Unmarshal(do(t, "GET", fmt.Sprintf("%s/titles/%d/albums", u, added.Title.ID), "", 200), &albums)
+	var with, without int64
+	for _, a := range albums.Albums {
+		if a.MBID == apiAlbum {
+			with = a.ID
+		} else {
+			without = a.ID
+		}
+	}
+	if with == 0 || without == 0 {
+		t.Fatalf("albums %+v", albums.Albums)
+	}
+	resp, err := http.Get(fmt.Sprintf("%s/albums/%d/cover", u, with))
+	if err != nil || resp.StatusCode != 200 || resp.Header.Get("Cache-Control") != "private, max-age=31536000, immutable" {
+		t.Fatalf("cover %v %d", err, resp.StatusCode)
+	}
+	resp.Body.Close()
+	// No cover anywhere, a season id and an unknown id are all 404.
+	do(t, "GET", fmt.Sprintf("%s/albums/%d/cover", u, without), "", 404)
+	do(t, "GET", u+"/albums/999999/cover", "", 404)
+}
