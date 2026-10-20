@@ -98,8 +98,8 @@ export function playable(s: Pick<Stream, 'type' | 'url' | 'mp4_url'>, hls = nati
 }
 
 // Warmed players: at hover start a hidden, muted <video> starts playing the
-// address, so it is already decoding when the card opens; the card's player
-// takes that element over (adoptWarm) and only fades it in. An address this
+// address and holds on its first frame, so it is ready when the card opens;
+// the card's player takes that element over (adoptWarm) and plays it. An address this
 // browser refuses (Chrome may refuse YouTube's HLS manifest: error 4) is
 // remembered, the next one is tried in the same element, and the card's
 // player skips it.
@@ -130,7 +130,7 @@ function warm(urls: string[]) {
 	v.setAttribute('aria-hidden', 'true');
 	v.style.cssText = 'position:fixed;left:0;top:0;width:160px;height:90px;opacity:0.01;pointer-events:none;z-index:-1';
 	document.body.appendChild(v);
-	const w: Warm = { v, url: list[0], t: setTimeout(() => (forget(w), drop(v)), 10_000) };
+	const w: Warm = { v, url: list[0], t: setTimeout(() => (forget(w), drop(v)), 6_000) };
 	let i = 0;
 	const go = () => {
 		w.url = list[i];
@@ -143,6 +143,11 @@ function warm(urls: string[]) {
 		warmed.delete(w.url);
 		if (++i < list.length) go();
 		else (forget(w), drop(v));
+	});
+	// Decoding has started once it plays: hold it on its first frame, so an
+	// unseen player never keeps streaming 720p next to the hero and cards.
+	v.addEventListener('playing', () => {
+		if (!w.dead && v.isConnected && v.parentElement === document.body && v.getAttribute('aria-hidden') === 'true') v.pause();
 	});
 	for (const u of list) warmed.set(u, w);
 	go();
