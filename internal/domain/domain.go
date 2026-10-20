@@ -73,6 +73,9 @@ type Title struct {
 	// Shows: the season choice made at add time (all, future, latest,
 	// none), and where and when the show airs.
 	SeasonChoice *string `db:"season_choice"`
+	// FutureFrom is set for Future seasons only: episodes that aired by
+	// then are not wanted when a refresh finds them.
+	FutureFrom *time.Time `db:"future_from"`
 	Network      *string `db:"network"`
 	AirTime      *string `db:"air_time"`  // local, HH:MM
 	TimeZone     *string `db:"time_zone"` // IANA name
@@ -575,6 +578,8 @@ type Ask struct {
 	// Seasons are the seasons asked for; empty is the whole show (and
 	// always empty for movies).
 	Seasons []int `db:"seasons,json"`
+	// FutureOnly asks a show for the seasons and episodes still to air.
+	FutureOnly bool `db:"future_only"`
 	// Albums are the albums of an artist asked for; empty is the whole
 	// artist (and always empty for movies and shows).
 	Albums []AskAlbum `db:"albums,json"`

@@ -40,7 +40,7 @@ func TestAddShowSeasonChoices(t *testing.T) {
 			map[string]bool{"S00E01": false, "S01E01": true, "S01E02": true, "S02E01": true, "S02E02": true, "S02E03": true}},
 		{SeasonsAll, true, map[int]bool{0: true, 1: true, 2: true},
 			map[string]bool{"S00E01": true, "S01E01": true, "S02E03": true}},
-		{SeasonsFuture, false, map[int]bool{0: false, 1: true, 2: true},
+		{SeasonsFuture, false, map[int]bool{0: false, 1: false, 2: true},
 			map[string]bool{"S00E01": false, "S01E01": false, "S01E02": false, "S02E01": false, "S02E02": true, "S02E03": true}},
 		{SeasonsLatest, false, map[int]bool{0: false, 1: false, 2: true},
 			map[string]bool{"S00E01": false, "S01E01": false, "S01E02": false, "S02E01": true, "S02E02": true, "S02E03": true}},

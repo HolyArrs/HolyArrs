@@ -105,3 +105,15 @@ func TestShowAskOverHTTP(t *testing.T) {
 	}
 	r.owner.call("PUT", "/api/v1/settings/asks", `{"show_library_folder_id":1}`, 400)
 }
+
+// route: POST /api/v1/asks
+func TestShowAskFutureOnlyOverHTTP(t *testing.T) {
+	r := newShowAskRig(t)
+	// Future seasons only takes no seasons list.
+	r.ana.call("POST", "/api/v1/asks", `{"kind":"show","id":"tmdb:100","seasons":[1],"future_only":true}`, 400)
+	r.ana.call("POST", "/api/v1/asks", `{"id":"tmdb:1","future_only":true}`, 400)
+	a := askOf(t, r.ana.call("POST", "/api/v1/asks", `{"kind":"show","id":"tmdb:100","future_only":true}`, 201))
+	if !a.FutureOnly || a.SeasonWords != "future seasons only" {
+		t.Fatalf("ask %+v", a)
+	}
+}

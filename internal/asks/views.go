@@ -34,6 +34,8 @@ type View struct {
 	Ref         string `json:"ref"`     // the id it is added by (tmdb:1399, tvmaze:82)
 	Seasons     []int  `json:"seasons"` // asked-for seasons of a show; empty: the whole show
 	SeasonWords string `json:"season_words,omitempty"`
+	// FutureOnly: the show's future seasons only.
+	FutureOnly bool `json:"future_only"`
 	// Albums are the albums of an artist asked for; empty: the whole artist.
 	Albums       []domain.AskAlbum `json:"albums"`
 	AlbumWords   string            `json:"album_words,omitempty"`
@@ -69,14 +71,14 @@ func (s *Service) Views(ctx context.Context, where string, args ...any) ([]View,
 		return n
 	}
 	for _, a := range as {
-		v := View{ID: a.ID, Kind: a.Kind, TMDBID: a.TMDBID, Ref: a.Ref, Seasons: a.Seasons, Name: a.Name, Year: a.Year, Poster: a.Poster, State: a.State, StateLabel: StateLabels[a.State],
+		v := View{ID: a.ID, Kind: a.Kind, TMDBID: a.TMDBID, Ref: a.Ref, Seasons: a.Seasons, FutureOnly: a.FutureOnly, Name: a.Name, Year: a.Year, Poster: a.Poster, State: a.State, StateLabel: StateLabels[a.State],
 			TitleID: a.TitleID, AskedBy: Who{a.AskedBy, userName(a.AskedBy)}, AskedAt: a.AskedAt, DecidedAt: a.DecidedAt, Note: a.Note,
 			AutoApproved: a.AutoApproved, AvailableAt: a.AvailableAt, People: []Asker{}}
 		if v.Seasons == nil {
 			v.Seasons = []int{}
 		}
 		if a.Kind == "show" {
-			v.SeasonWords = seasonWords(a.Seasons)
+			v.SeasonWords = askSeasonWords(a)
 		}
 		v.Albums = a.Albums
 		if v.Albums == nil {
