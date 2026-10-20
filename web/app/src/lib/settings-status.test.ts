@@ -77,7 +77,7 @@ describe('settings groups', () => {
 		const ids = new Set(groups.map((g) => g.id));
 		for (const s of sections) expect(ids.has(s.group)).toBe(true);
 		const none = visible(sections, () => false).map((s) => s.href);
-		expect(none).toEqual(['/settings/appearance', '/settings/services', '/settings/account']);
+		expect(none).toEqual(['/settings/appearance', '/settings/account']);
 	});
 
 	it('puts Danger zone last in Maintenance', () => {
