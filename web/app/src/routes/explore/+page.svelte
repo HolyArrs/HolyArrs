@@ -192,7 +192,7 @@
 			if (!again) heroAt = 0;
 			genreLoaded = id;
 			// A cold page answers with its first rows; the lower ones follow on the next ask.
-			if (a.partial && again < 6) setTimeout(() => n === genreAsk && void loadGenre(id, again + 1), 1500);
+			if (a.partial && again < 6) setTimeout(() => n === genreAsk && void loadGenre(id, again + 1), 1000);
 		} catch {
 			if (n === genreAsk && !again) genreFailed = true;
 		}

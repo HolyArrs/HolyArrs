@@ -389,8 +389,12 @@ func (c *genreRowCache) put(key string, rows []explore.Row) {
 
 // genreWait is how long a genre page waits for its outside lists. Rows
 // whose lists are not back by then are left out and the answer says
-// partial; the lists keep going and the page asks again.
-const genreWait = 1200 * time.Millisecond
+// partial; the lists keep going and the page asks again. After genreSoft
+// the page answers as soon as its first row's lists are back.
+const (
+	genreWait = 1200 * time.Millisecond
+	genreSoft = 600 * time.Millisecond
+)
 
 // genreRequests are a genre page's shared lists, in row order: trending,
 // the genre's popular titles, best new, classics, then one per mood (the
@@ -437,16 +441,33 @@ func (a *API) genreLists(ctx context.Context, kind string, reqs []explore.Reques
 	}
 	done := make(chan struct{})
 	go func() { wg.Wait(); close(done) }()
-	var timeout <-chan time.Time
+	var timeout, soft <-chan time.Time
 	if wait > 0 {
 		t := time.NewTimer(wait)
 		defer t.Stop()
 		timeout = t.C
+		tick := time.NewTicker(50 * time.Millisecond)
+		defer tick.Stop()
+		soft = tick.C
 	}
-	select {
-	case <-done:
-	case <-timeout:
-	case <-ctx.Done():
+	start := time.Now()
+wait:
+	for {
+		select {
+		case <-done:
+			break wait
+		case <-timeout:
+			break wait
+		case <-ctx.Done():
+			break wait
+		case <-soft:
+			mu.Lock()
+			first := len(back) < 2 || (back[0] && back[1])
+			mu.Unlock()
+			if first && time.Since(start) >= genreSoft {
+				break wait
+			}
+		}
 	}
 	mu.Lock()
 	defer mu.Unlock()
