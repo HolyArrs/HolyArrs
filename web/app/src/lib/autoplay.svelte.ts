@@ -54,8 +54,9 @@ interface Stream {
 	/** hls: url is YouTube's adaptive manifest; mp4: url is the muxed 360p MP4. */
 	type?: 'hls' | 'mp4';
 	url: string;
-	/** The muxed MP4 beside an HLS answer. */
+	/** The MP4 beside an HLS answer, and whether it has sound. */
 	mp4_url?: string;
+	mp4_audio?: boolean;
 	expires_at: string;
 	key: string;
 	audio?: boolean;
@@ -154,7 +155,7 @@ export async function trailerSources(kind: 'movie' | 'show', tmdb: string, video
 	const out: TrailerSource[] = [];
 	const s = await directStream(kind, tmdb, signal);
 	const u = s && playable(s);
-	if (s && u) out.push({ kind: 'direct', url: u, key: s.key, audio: !!s.audio });
+	if (s && u) out.push({ kind: 'direct', url: u, key: s.key, audio: s.type === 'hls' && u !== s.url ? !!s.mp4_audio : !!s.audio });
 	const key = s?.key || pickTrailer(videos, lang())?.key;
 	if (key) out.push({ kind: 'embed', key });
 	return out;

@@ -21,7 +21,7 @@ import (
 
 // Trailers in HolyArrs' own player: the title's YouTube trailer, resolved
 // by yt-dlp to addresses on YouTube's video servers (an adaptive HLS
-// manifest and the muxed 360p MP4). Only the resolved addresses are kept
+// manifest and an H.264 MP4). Only the resolved addresses are kept
 // (in memory and in lookup_cache, until shortly before they expire); no
 // video passes through or is stored by HolyArrs.
 
@@ -38,11 +38,13 @@ const (
 	trailerAhead     = 40               // ahead-of-time lookups per 10 minutes for the whole install
 )
 
-// trailerArgs ask yt-dlp for the formats only: one player API call per
-// client (mweb has the muxed 360p MP4, format 18; visionos has the HLS
-// manifest), no player config page, no format probing, no cache writes.
+// trailerArgs ask yt-dlp for the formats only: one player API call (the
+// visionos client gives the HLS manifest and H.264 MP4s without a PO token
+// or a JavaScript runtime; the muxed format 18 from mweb or android_vr
+// answered 403 without a PO token, measured 2026-10-19), no player config
+// page, no format probing, no cache writes.
 var trailerArgs = []string{"-J", "--no-playlist", "--no-warnings", "--no-cache-dir", "--no-check-formats", "--skip-download", "--ignore-no-formats-error",
-	"--extractor-args", "youtube:player_client=mweb,visionos;player_skip=configs"}
+	"--extractor-args", "youtube:player_client=visionos;player_skip=configs"}
 
 // YTDLPTool finds yt-dlp; main gives it the bundled and updated copies.
 var YTDLPTool = &ytdlp.Tool{}
@@ -55,15 +57,18 @@ var ytdlpRun = func() (bin string, pre []string, ok bool) {
 
 // TrailerStream is the answer of GET /trailer/{kind}/{tmdb_id}.
 type TrailerStream struct {
-	// Type is hls (URL is YouTube's adaptive HLS manifest, which starts low
-	// and steps up) or mp4 (URL is the muxed 360p MP4, format 18).
+	// Type is hls (URL is YouTube's adaptive HLS manifest with sound, which
+	// starts low and steps up) or mp4 (URL is an H.264 MP4 of at most 720p:
+	// the muxed one when offered, else picture only).
 	Type      string    `json:"type"`
 	URL       string    `json:"url"`
 	ExpiresAt time.Time `json:"expires_at"`
-	// MP4URL is the muxed MP4 beside an HLS answer, for browsers without
-	// native HLS: YouTube's video servers allow no cross-origin reads, so
-	// a script player (hls.js) cannot fetch the manifest or its segments.
+	// MP4URL is the MP4 beside an HLS answer, for browsers without native
+	// HLS: YouTube's video servers allow no cross-origin reads, so a script
+	// player (hls.js) cannot fetch the manifest or its segments.
 	MP4URL string `json:"mp4_url,omitempty"`
+	// MP4Audio says whether MP4URL has sound.
+	MP4Audio bool `json:"mp4_audio,omitempty"`
 	Width  int    `json:"width,omitempty"`
 	Height int    `json:"height,omitempty"`
 	// Audio is false for a picture-only stream (no sound to turn on).
@@ -455,8 +460,8 @@ func trailerExpiry(raw string, now time.Time) time.Time {
 }
 
 // resolveTrailer runs yt-dlp (at most trailerTimeout) for one YouTube key
-// and returns the HLS manifest (with the muxed MP4 beside it) or, without
-// one, the muxed MP4.
+// and returns the HLS manifest (with an MP4 beside it) or, without one,
+// the MP4.
 func resolveTrailer(ctx context.Context, bin string, pre []string, key string, now time.Time) (TrailerStream, error) {
 	ctx, cancel := context.WithTimeout(ctx, trailerTimeout)
 	defer cancel()
@@ -474,6 +479,7 @@ func resolveTrailer(ctx context.Context, bin string, pre []string, key string, n
 			ManifestURL string `json:"manifest_url"`
 			Ext         string `json:"ext"`
 			VCodec      string `json:"vcodec"`
+			ACodec      string `json:"acodec"`
 			Width       int    `json:"width"`
 			Height      int    `json:"height"`
 			Protocol    string `json:"protocol"`
@@ -483,18 +489,28 @@ func resolveTrailer(ctx context.Context, bin string, pre []string, key string, n
 		return TrailerStream{}, errNoStream
 	}
 	var hls, mp4 string
-	var w, h int
+	var w, h, rank int
+	audio := false
 	for _, f := range j.Formats {
 		if hls == "" && strings.Contains(f.ManifestURL, "/hls_variant/") && googlevideo(f.ManifestURL) {
 			hls = f.ManifestURL
 		}
-		if mp4 == "" && f.FormatID == "18" && f.Ext == "mp4" && strings.HasPrefix(f.VCodec, "avc1") && (f.Protocol == "" || f.Protocol == "https") && googlevideo(f.URL) {
-			mp4, w, h = f.URL, f.Width, f.Height
+		if f.Ext != "mp4" || !strings.HasPrefix(f.VCodec, "avc1") || (f.Protocol != "" && f.Protocol != "https") || f.Height > 720 || !googlevideo(f.URL) {
+			continue
+		}
+		// The muxed MP4 (sound) first, else the tallest picture-only one.
+		withSound := f.ACodec != "" && f.ACodec != "none"
+		r := f.Height
+		if withSound {
+			r += 10000
+		}
+		if r > rank {
+			mp4, w, h, rank, audio = f.URL, f.Width, f.Height, r, withSound
 		}
 	}
 	switch {
 	case hls != "":
-		s := TrailerStream{Type: "hls", URL: hls, ExpiresAt: trailerExpiry(hls, now), MP4URL: mp4, Width: w, Height: h, Key: key, Audio: true}
+		s := TrailerStream{Type: "hls", URL: hls, ExpiresAt: trailerExpiry(hls, now), MP4URL: mp4, MP4Audio: audio, Width: w, Height: h, Key: key, Audio: true}
 		if mp4 != "" {
 			if e := trailerExpiry(mp4, now); e.Before(s.ExpiresAt) {
 				s.ExpiresAt = e
@@ -502,7 +518,7 @@ func resolveTrailer(ctx context.Context, bin string, pre []string, key string, n
 		}
 		return s, nil
 	case mp4 != "":
-		return TrailerStream{Type: "mp4", URL: mp4, ExpiresAt: trailerExpiry(mp4, now), Width: w, Height: h, Key: key, Audio: true}, nil
+		return TrailerStream{Type: "mp4", URL: mp4, ExpiresAt: trailerExpiry(mp4, now), Width: w, Height: h, Key: key, Audio: audio}, nil
 	}
 	return TrailerStream{}, errNoStream
 }

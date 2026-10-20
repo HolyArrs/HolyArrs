@@ -28,11 +28,15 @@ func TestFakeYTDLP(t *testing.T) {
 	if want == "" {
 		want = "trailerKey1"
 	}
-	if !strings.Contains(args, "watch?v="+want) || !strings.Contains(args, "player_client=mweb,visionos") || !strings.Contains(args, "--no-check-formats") {
+	if !strings.Contains(args, "watch?v="+want) || !strings.Contains(args, "player_client=visionos") || !strings.Contains(args, "--no-check-formats") {
 		os.Exit(3)
 	}
 	exp := time.Now().Add(6 * time.Hour).Unix()
-	mp4 := fmt.Sprintf(`{"format_id":"18","url":"https://rr1---sn-abc.googlevideo.com/videoplayback?expire=%d&itag=18","ext":"mp4","vcodec":"avc1.42001E","acodec":"mp4a.40.2","width":640,"height":360,"protocol":"https"}`, exp)
+	mp4 := fmt.Sprintf(`{"format_id":"137","url":"https://rr1---sn-abc.googlevideo.com/videoplayback?expire=%d&itag=137","ext":"mp4","vcodec":"avc1.640028","acodec":"none","width":1920,"height":1080,"protocol":"https"},{"format_id":"136","url":"https://rr1---sn-abc.googlevideo.com/videoplayback?expire=%d&itag=136","ext":"mp4","vcodec":"avc1.4d401f","acodec":"none","width":1280,"height":720,"protocol":"https"},{"format_id":"243","url":"https://rr1---sn-abc.googlevideo.com/videoplayback?expire=%d&itag=243","ext":"webm","vcodec":"vp9","acodec":"none","height":360,"protocol":"https"}`, exp, exp, exp)
+	if mode == "muxed" {
+		mode = "mp4"
+		mp4 += fmt.Sprintf(`,{"format_id":"18","url":"https://rr1---sn-abc.googlevideo.com/videoplayback?expire=%d&itag=18","ext":"mp4","vcodec":"avc1.42001E","acodec":"mp4a.40.2","width":640,"height":360,"protocol":"https"}`, exp)
+	}
 	switch mode {
 	case "ok":
 		fmt.Printf(`{"formats":[{"format_id":"233","manifest_url":"https://manifest.googlevideo.com/api/manifest/hls_variant/expire/%d/id/x/file/index.m3u8","protocol":"m3u8_native"},%s]}`, exp+60, mp4)
@@ -87,7 +91,7 @@ func TestTrailerStream(t *testing.T) {
 	if err := json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s); err != nil {
 		t.Fatal(err)
 	}
-	if s.Type != "hls" || !strings.HasPrefix(s.URL, "https://manifest.googlevideo.com/api/manifest/hls_variant/") || !strings.Contains(s.MP4URL, "itag=18") || s.Key != "trailerKey1" || s.Height != 360 || !s.Audio ||
+	if s.Type != "hls" || !strings.HasPrefix(s.URL, "https://manifest.googlevideo.com/api/manifest/hls_variant/") || !strings.Contains(s.MP4URL, "itag=136") || s.MP4Audio || s.Key != "trailerKey1" || s.Height != 720 || !s.Audio ||
 		time.Until(s.ExpiresAt) < 5*time.Hour || time.Until(s.ExpiresAt) > 6*time.Hour+time.Second {
 		t.Fatalf("stream %+v", s)
 	}
@@ -176,7 +180,7 @@ func TestTrailerStreamKeptAcrossRestartAndMP4(t *testing.T) {
 	srv, st := discoverRig(t, trailerTMDB(t))
 	var s TrailerStream
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s)
-	if s.Type != "mp4" || !strings.Contains(s.URL, "itag=18") || s.MP4URL != "" || !s.Audio {
+	if s.Type != "mp4" || !strings.Contains(s.URL, "itag=136") || s.MP4URL != "" || s.Audio {
 		t.Fatalf("mp4 %+v", s)
 	}
 	srv2 := httptest.NewServer(New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"}).Handler())
@@ -186,6 +190,17 @@ func TestTrailerStreamKeptAcrossRestartAndMP4(t *testing.T) {
 	_ = json.Unmarshal(do(t, "GET", srv2.URL+"/api/v1/trailer/movie/11", "", 200), &again)
 	if again.URL != s.URL || runs.Load() != n {
 		t.Fatalf("not kept: %+v runs %d->%d", again, n, runs.Load())
+	}
+}
+
+// A muxed MP4, when offered, wins over a taller picture-only one.
+func TestTrailerStreamPrefersMuxed(t *testing.T) {
+	fakeYTDLP(t, "muxed")
+	srv, _ := discoverRig(t, trailerTMDB(t))
+	var s TrailerStream
+	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s)
+	if s.Type != "mp4" || !strings.Contains(s.URL, "itag=18") || !s.Audio {
+		t.Fatalf("%+v", s)
 	}
 }
 

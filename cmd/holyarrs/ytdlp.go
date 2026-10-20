@@ -75,7 +75,7 @@ func startYTDLP(ctx context.Context, configDir string, a *api.API, he *health.En
 // playable format (the muxed MP4 or an HLS manifest).
 func ytdlpCanary(ctx context.Context, bin string) error {
 	out, err := ytdlp.Run(ctx, bin, 60*time.Second, "-J", "--no-playlist", "--no-warnings", "--no-cache-dir", "--no-check-formats", "--skip-download", "--ignore-no-formats-error",
-		"--extractor-args", "youtube:player_client=mweb,visionos;player_skip=configs", "--", "https://www.youtube.com/watch?v="+canaryKey)
+		"--extractor-args", "youtube:player_client=visionos;player_skip=configs", "--", "https://www.youtube.com/watch?v="+canaryKey)
 	if err != nil {
 		return errors.New("canary lookup failed")
 	}
@@ -90,7 +90,7 @@ func ytdlpCanary(ctx context.Context, bin string) error {
 		return errors.New("canary answer unreadable")
 	}
 	for _, f := range j.Formats {
-		if f.FormatID == "18" && f.URL != "" || strings.Contains(f.ManifestURL, "/hls_variant/") {
+		if strings.Contains(f.ManifestURL, "/hls_variant/") || strings.Contains(f.URL, ".googlevideo.com/") {
 			return nil
 		}
 	}
