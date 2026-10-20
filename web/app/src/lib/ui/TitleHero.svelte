@@ -220,7 +220,7 @@
 			{#if description}
 				<div class="about">
 					<p class="bb-desc" class:open={more} bind:this={text}>{description}</p>
-					{#if clamped}<button class="more" type="button" aria-expanded={more} onclick={() => (more = !more)}>{more ? 'Show less' : 'Show more'}</button>{/if}
+					{#if clamped}<button class="more" type="button" onclick={() => (more = !more)}>{more ? 'Show less' : 'Show more'}</button>{/if}
 				</div>
 			{/if}
 		{/snippet}

@@ -191,7 +191,7 @@
 	const manager = $derived(allowed('manage'));
 	const tabs = $derived.by<Tab[]>(() => {
 		const t: Tab[] = [];
-		const add = (href: string, label: string, icon: Tab['icon']) => t.push({ href: to(href), label, icon, current: here === href || (href === '/library' && !!here?.startsWith('/library?')) || (href === '/search' && path.startsWith('/search')) });
+		const add = (href: string, label: string, icon: Tab['icon']) => t.push({ href: to(href), label, icon, current: href === '/' ? path === '/' : path === href || path.startsWith(href + '/') });
 		add('/', 'Home', 'home');
 		add('/explore', 'Explore', 'compass');
 		add('/library', 'Library', 'library');
@@ -327,7 +327,7 @@
 <svelte:window onkeydown={keys} />
 
 {#snippet account()}
-	<Menu label="Account and appearance" items={accountItems} variant="row" align="start" placement="above" width={240}>
+	<Menu label="{shownName}, {roleWord}: account and appearance" items={accountItems} variant="row" align="start" placement="above" width={240}>
 		{#snippet trigger()}
 			<span class="who" class:only={collapsed}>
 				<span class="avatar" aria-hidden="true">{initials}</span>

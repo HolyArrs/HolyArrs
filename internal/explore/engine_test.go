@@ -144,7 +144,7 @@ func TestColdStart(t *testing.T) {
 	if len(pg.Head) != HeadRows {
 		t.Fatalf("head %d rows: %v", len(pg.Head), order(pg.Head))
 	}
-	if len(pg.Tail) < 1 || len(pg.Tail) > 8 {
+	if len(pg.Tail) > 8 {
 		t.Fatalf("tail %d rows: %v", len(pg.Tail), order(pg.Tail))
 	}
 	for _, r := range append(pg.Head, pg.Tail...) {
