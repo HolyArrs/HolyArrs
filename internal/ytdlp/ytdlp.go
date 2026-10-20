@@ -288,8 +288,10 @@ func verifySums(kr openpgp.EntityList, sums, sig []byte) error {
 	return errors.New("release signature invalid")
 }
 
-// MaxOutput is the most yt-dlp may print; a longer answer is refused.
-const MaxOutput = 4 << 20
+// MaxOutput is the most yt-dlp may print; a longer answer is refused. A
+// trailer with many auto-translated subtitle tracks prints over 4 MB of
+// JSON (seen: 4.5 MB), so the cap leaves room for that.
+const MaxOutput = 16 << 20
 
 // EnvAllow names the only environment values yt-dlp gets (no HolyArrs
 // settings or secrets): the program path, home and temp folders, the
