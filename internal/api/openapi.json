@@ -21282,6 +21282,61 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/trailer/batch": {
+      "get": {
+        "description": "The trailers of the cards on screen at once (?ids=kind:tmdb_id,..., at most 40). streams holds the ones already known (memory or SQLite); pending names the ones being looked up ahead of time, one after another within the install's ahead-of-time budget, so a later hover is answered from the cache. It never spends a person's own resolves. Kid accounts are refused.",
+        "operationId": "getTrailerBatch",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "ids",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The known streams and the titles still pending."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "ids missing, too many, or not kind:tmdb_id."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "A Kid account."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Trailers are turned off."
+          }
+        },
+        "summary": "Trailers for the cards on screen",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/trailer/stream/{id}/manifest.m3u8": {
       "get": {
         "description": "Pass-through: the trailer's HLS manifest relayed from YouTube, every address in it pointed at seg/{n} beside it. id is the opaque id in a trailer answer's proxy_url, valid only for the person it was given to and until the address expires. Only addresses HolyArrs resolved itself, on YouTube's video servers, are relayed. Nothing is stored; answers are private, no-store. A person may have 2 streams going at once.",

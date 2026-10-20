@@ -144,12 +144,20 @@
 		const close = () => onclose();
 		window.addEventListener('scroll', close, { passive: true, capture: true });
 		window.addEventListener('resize', close);
-		const later = setTimeout(() => (trailerOk = true), GROW_MS + TRAILER_AFTER);
+		// The player is put in at once, hidden until a picture plays (it fades
+		// in over the end of the grow); the address was prefetched in view or
+		// at hover start, so the trailer does not wait on the details.
+		const later = setTimeout(() => (trailerOk = true), TRAILER_AFTER);
+		const metaP = richMetadata(api.get, kind, tmdb).then((m) => (meta = m));
 		void (async () => {
-			meta = await richMetadata(api.get, kind, tmdb);
 			await loadUISettings();
 			if (!autoplayHere() || ctl.signal.aborted) return;
-			sources = await trailerSources(kind, tmdb, meta?.videos, ctl.signal);
+			const first = await trailerSources(kind, tmdb, undefined, ctl.signal);
+			if (ctl.signal.aborted) return;
+			if (first.some((x) => x.kind !== 'embed')) return void (sources = first);
+			// No direct stream: the embed needs the title's videos from the details.
+			const m = await metaP;
+			if (!ctl.signal.aborted) sources = await trailerSources(kind, tmdb, m?.videos, ctl.signal);
 		})();
 		return () => {
 			clearTimeout(later);
