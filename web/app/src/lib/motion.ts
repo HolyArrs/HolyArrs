@@ -173,29 +173,59 @@ export function containBox(aspect: number, vw: number, vh: number): Box {
 	return { left: (vw - width) / 2, top: (vh - height) / 2, width, height };
 }
 
-/**
- * coverFrom is the transform that makes the full-screen picture (fitted to
- * the window) cover a small rect, one uniform scale so it never stretches;
- * clipFrom is the clip that shows only that rect. Together they are the
- * first frame of the grow and the last frame of the shrink.
- */
-export function coverFrom(rect: Box, aspect: number, vw: number, vh: number): string {
-	const c = containBox(aspect, vw, vh);
-	const s = Math.max(rect.width / c.width, rect.height / c.height);
-	const dx = rect.left + rect.width / 2 - (c.left + c.width / 2);
-	const dy = rect.top + rect.height / 2 - (c.top + c.height / 2);
-	return `translate(${round(dx)}px, ${round(dy)}px) scale(${round(s, 4)})`;
-}
-
-export function clipFrom(rect: Box, vw: number, vh: number, radius: number): string {
-	const t = Math.max(0, rect.top);
-	const l = Math.max(0, rect.left);
-	const r = Math.max(0, vw - rect.left - rect.width);
-	const b = Math.max(0, vh - rect.top - rect.height);
-	return `inset(${round(t)}px ${round(r)}px ${round(b)}px ${round(l)}px round ${radius}px)`;
-}
-
 function round(n: number, places = 2): number {
 	const f = 10 ** places;
 	return Math.round(n * f) / f;
+}
+
+/** cubicBezier is a CSS cubic-bezier(x1, y1, x2, y2) timing function. */
+export function cubicBezier(x1: number, y1: number, x2: number, y2: number): (t: number) => number {
+	const at = (a: number, b: number, s: number) => 3 * a * s * (1 - s) ** 2 + 3 * b * s * s * (1 - s) + s ** 3;
+	return (t) => {
+		if (t <= 0) return 0;
+		if (t >= 1) return 1;
+		let lo = 0;
+		let hi = 1;
+		let s = t;
+		for (let i = 0; i < 30; i++) {
+			s = (lo + hi) / 2;
+			if (at(x1, x2, s) < t) lo = s;
+			else hi = s;
+		}
+		return at(y1, y2, s);
+	};
+}
+/** The theater's ease as a function (THEATER_EASE). */
+export const theaterEase = cubicBezier(0.22, 1, 0.36, 1);
+
+/**
+ * flipFrames are the keyframes of the grow, compositor only: the frame
+ * (`outer`, clips) scales from the small rect to the window, and the picture
+ * inside (`inner`) is counter-scaled so it keeps one uniform scale and
+ * covers the frame the whole way. The ease is baked into the frames (play
+ * them with linear timing), which keeps the counter-scale exact.
+ */
+export function flipFrames(from: Box, aspect: number, vw: number, vh: number, shrink = false, steps = 24, ease = theaterEase): { outer: string[]; inner: string[] } {
+	const c = containBox(aspect, vw, vh);
+	const s0 = Math.max(from.width / c.width, from.height / c.height);
+	const ccx = c.left + c.width / 2;
+	const ccy = c.top + c.height / 2;
+	const outer: string[] = [];
+	const inner: string[] = [];
+	for (let i = 0; i <= steps; i++) {
+		// The shrink eases out too: fast off the window, settling into the rect.
+		const p = shrink ? 1 - ease(i / steps) : ease(i / steps);
+		const w = from.width + (vw - from.width) * p;
+		const h = from.height + (vh - from.height) * p;
+		const tx = from.left * (1 - p);
+		const ty = from.top * (1 - p);
+		const ox = w / vw;
+		const oy = h / vh;
+		const s = s0 + (1 - s0) * p;
+		const px = tx + w / 2 - s * ccx;
+		const py = ty + h / 2 - s * ccy;
+		outer.push(`translate(${round(tx)}px, ${round(ty)}px) scale(${round(ox, 5)}, ${round(oy, 5)})`);
+		inner.push(`translate(${round((px - tx) / ox)}px, ${round((py - ty) / oy)}px) scale(${round(s / ox, 5)}, ${round(s / oy, 5)})`);
+	}
+	return { outer, inner };
 }

@@ -9,6 +9,7 @@
 	import { sized } from '../tmdb-image.ts';
 	import { autoplayHere, loadUISettings, trailerSources, type TrailerSource } from '../autoplay.svelte.ts';
 	import { fromHandoff, openTheater } from '../theater.svelte.ts';
+	import { THEATER_GROW_MS } from '../motion.ts';
 	import { flipTransform, growPlacement, GROW_MS, GROW_SCALE, GROW_WIDTH, SHRINK_MS, TRAILER_AFTER, type Growth, type Rect } from '../grow.ts';
 
 	// The wide card grown in place, Netflix style: the card itself (same
@@ -163,7 +164,7 @@
 		settle(anim);
 	}
 
-	/** The full-screen player took over from this card's spot: the card goes at once, under it, instead of shrinking back. */
+	/** The full-screen player took over from this card's spot: the card hides at once, under it, and is taken down after the grow (its teardown never costs the grow frames). */
 	function hideNow() {
 		anim?.cancel();
 		anim = null;
@@ -284,12 +285,12 @@
 		{#if pic}<img src={pic} alt="" decoding="async" />{/if}
 		{#if big}<img src={big} alt="" decoding="async" class="big" class:in={bigIn} onload={() => (bigIn = true)} />{/if}
 		{#if trailerOk && sources.length}
-			<TrailerPlayer {sources} {title} repeat onplaying={() => (playing = true)} onfail={() => (playing = false)} onended={() => (playing = false)} onexpand={(o) => { openTheater({ kind, tmdb, title, ...fromHandoff(o), from: 'hover', returnTo }); hideNow(); onclose(); }} />
+			<TrailerPlayer {sources} {title} repeat onplaying={() => (playing = true)} onfail={() => (playing = false)} onended={() => (playing = false)} onexpand={(o) => { openTheater({ kind, tmdb, title, ...fromHandoff(o), from: 'hover', returnTo }); hideNow(); setTimeout(onclose, THEATER_GROW_MS + 50); }} />
 		{/if}
 		<span class="scrim" class:playing aria-hidden="true"></span>
 		<!-- The logo, else the name, stays over the trailer (card template). -->
-		{#if shownLogo}<span class="name" class:lifted aria-hidden="true"><img class="logo" src={shownLogo} alt="" onerror={() => (logoFailed = true)} /></span>
-		{:else}<span class="name" class:lifted aria-hidden="true"><span class="word">{title}</span></span>{/if}
+		{#if shownLogo}<span class="name" class:lifted class:playing aria-hidden="true"><img class="logo" src={shownLogo} alt="" onerror={() => (logoFailed = true)} /></span>
+		{:else}<span class="name" class:lifted class:playing aria-hidden="true"><span class="word">{title}</span></span>{/if}
 		{#if badge && g}<span class="badge" class:playing>{@render badge()}</span>{/if}
 	</a>
 	<div class="panel">
@@ -324,13 +325,15 @@
 	.media > img.big { opacity: 0; transition: opacity 200ms ease; }
 	.media > img.big.in { opacity: 1; }
 	.scrim { position: absolute; inset: auto 0 0; height: 55%; background: linear-gradient(to top, rgb(0 0 0 / 0.62), transparent); pointer-events: none; transition: opacity 600ms ease; }
-	.name { position: absolute; left: 6%; right: 30%; bottom: 13%; z-index: 2; display: flex; align-items: flex-end; pointer-events: none; transition: opacity 300ms ease-out; }
-	.name.lifted { bottom: 26%; }
+	/* The same bottom-left box as the card (WideCard), so the title doesn't grow or move as the card opens; once the trailer plays it settles a little smaller (Netflix). */
+	.name { position: absolute; left: 6%; bottom: 9%; z-index: 2; width: 40%; height: 13cqw; display: flex; align-items: flex-end; justify-content: flex-start; pointer-events: none; transform-origin: left bottom; transition: opacity 300ms ease-out, transform 600ms var(--ease-out); }
+	.name.lifted { bottom: 9%; }
+	.name.playing { transform: scale(.8); }
 	.badge.playing { opacity: 0; }
-	.word { font: 700 clamp(18px, 7cqw, 40px)/1.05 var(--font-display); letter-spacing: -0.02em; color: #fff; text-shadow: 0 2px 10px rgb(0 0 0 / 0.55); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+	.word { font: 700 clamp(14px, 4.4cqw, 26px)/1.05 var(--font-display); letter-spacing: -0.02em; color: #fff; text-shadow: 0 2px 10px rgb(0 0 0 / 0.55); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 	.badge { transition: opacity 300ms ease-out; }
 	.scrim.playing { opacity: 0.5; }
-	.logo { max-width: 100%; max-height: 22cqw; width: auto; height: auto; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 2px 8px rgb(0 0 0 / 0.5)); }
+	.logo { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 2px 8px rgb(0 0 0 / 0.5)); }
 	/* The badges at their native size on the grown picture (no scale). */
 	.badge { position: absolute; inset: 0; z-index: 3; container: art / inline-size; pointer-events: none; }
 	.panel { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px 14px; opacity: 0; transform: translateY(-6px); }

@@ -3,13 +3,14 @@
 	import IconButton from './IconButton.svelte';
 	import { closeTheater, holdScroll, runExit, theater, waitForResume } from '../theater.svelte.ts';
 	import { embedUrl, setSoundOn } from '../trailer.ts';
-	import { clipFrom, coverFrom, reducedMotion, THEATER_CHROME_MS, THEATER_EASE, THEATER_FADE_MS, THEATER_GROW_MS, THEATER_SHRINK_MS, type Box } from '../motion.ts';
+	import { flipFrames, reducedMotion, THEATER_CHROME_MS, THEATER_EASE, THEATER_FADE_MS, THEATER_GROW_MS, THEATER_SHRINK_MS, type Box } from '../motion.ts';
 	import { nativeHLS } from '../autoplay.svelte.ts';
 	import { attachHLS } from '../hls-player.ts';
 
 	// The full-screen trailer, one shared element from the card to full screen
 	// and back (Netflix): the picture grows out of the small player's rect
-	// (a clip that opens plus one uniform scale, so it never stretches),
+	// (the frame scales, the picture inside is counter-scaled to one uniform
+	// scale so it never stretches; transforms only, so the compositor runs it),
 	// carries on from the same second with the same sound, and shows the small
 	// player's last frame until its own first frame is ready. The scrim and
 	// controls fade in after the grow and out before the shrink. Esc or Close
@@ -23,6 +24,8 @@
 	let chrome = $state(false);
 	// The small player's last frame is up until this player shows its own.
 	let stillUp = $state(false);
+	// The big player's media starts once the grow is done (the held frame shows meanwhile), so the grow has the main thread.
+	let mediaOn = $state(false);
 	let video = $state<HTMLVideoElement>();
 	let frame = $state<HTMLIFrameElement>();
 	let paused = $state(false);
@@ -49,23 +52,32 @@
 		if (st?.width && st.height) return st.width / st.height;
 		return 16 / 9;
 	}
-	const FULL = 'inset(0px 0px 0px 0px round 0px)';
-	function move(from: Box, radius: number, grow: boolean): Promise<unknown> {
+	function move(from: Box, grow: boolean): Promise<unknown> {
 		if (!stage || !pic || !dialog) return Promise.resolve();
-		const clip = clipFrom(from, vw(), vh(), radius);
-		const cover = coverFrom(from, aspect(), vw(), vh());
-		const opts: KeyframeAnimationOptions = { duration: grow ? THEATER_GROW_MS : THEATER_SHRINK_MS, easing: THEATER_EASE, fill: 'forwards' };
-		const a = stage.animate(grow ? [{ clipPath: clip }, { clipPath: FULL }] : [{ clipPath: FULL }, { clipPath: clip }], opts);
-		pic.animate(grow ? [{ transform: cover }, { transform: 'none' }] : [{ transform: 'none' }, { transform: cover }], opts);
-		dialog.animate(grow ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 1 }, { opacity: 0 }], { ...opts, pseudoElement: '::backdrop' });
+		const f = flipFrames(from, aspect(), vw(), vh(), !grow);
+		const opts: KeyframeAnimationOptions = { duration: grow ? THEATER_GROW_MS : THEATER_SHRINK_MS, easing: 'linear', fill: 'forwards' };
+		// The ease is in the frames, so they play at linear timing.
+		const a = track(stage.animate(f.outer.map((transform) => ({ transform })), opts));
+		track(pic.animate(f.inner.map((transform) => ({ transform })), opts));
+		track(dialog.animate(grow ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 1 }, { opacity: 0 }], { ...opts, easing: THEATER_EASE, pseudoElement: '::backdrop' }));
 		return a.finished.catch(() => {});
 	}
 	function fade(inOut: 'in' | 'out'): Promise<unknown> {
 		if (!dialog) return Promise.resolve();
 		const k = inOut === 'in' ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 1 }, { opacity: 0 }];
 		const opts: KeyframeAnimationOptions = { duration: THEATER_FADE_MS, easing: 'linear', fill: 'forwards' };
-		dialog.animate(k, { ...opts, pseudoElement: '::backdrop' });
-		return dialog.animate(k, opts).finished.catch(() => {});
+		track(dialog.animate(k, { ...opts, pseudoElement: '::backdrop' }));
+		return track(dialog.animate(k, opts)).finished.catch(() => {});
+	}
+	// Its own animations, so a new open or the close clears them without asking the page for all of them.
+	let anims: Animation[] = [];
+	function track<T extends Animation>(a: T): T {
+		anims.push(a);
+		return a;
+	}
+	function clearAnims() {
+		for (const a of anims) a.cancel();
+		anims = [];
 	}
 	const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 	/** keepStill puts the small player's last frame in the picture until this one plays. */
@@ -101,14 +113,16 @@
 		duration = 0;
 		chrome = false;
 		stillUp = !!now.still;
+		mediaOn = !now.still || reducedMotion();
 		release = holdScroll();
-		dialog.getAnimations({ subtree: true }).forEach((a) => a.cancel());
+		clearAnims();
 		dialog.showModal();
 		const r = now.rect;
 		const d = dialog;
-		const grown = r && r.width && !reducedMotion() ? move(r, 12, true) : fade('in');
+		const grown = r && r.width && !reducedMotion() ? move(r, true) : fade('in');
 		void grown.then(() => {
 			if (leaving || !d.open) return;
+			mediaOn = true;
 			chrome = true;
 			wake();
 			// Real full screen where the browser allows it (after the grow, so it never jumps mid-move).
@@ -134,24 +148,22 @@
 		if (document.fullscreenElement) await document.exitFullscreen().catch(() => {});
 		if (!reduce) await sleep(THEATER_CHROME_MS);
 		let target: Box | null = o.rect;
-		let radius = 12;
 		// The end of the trailer: the title page opens under the player, then it shrinks into its hero.
 		if (ended && (await runExit(o))) {
 			await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 			const h = document.querySelector<HTMLElement>('[data-testid="title-hero"]')?.getBoundingClientRect();
 			target = h && h.width ? { left: h.left, top: h.top, width: h.width, height: h.height } : null;
-			radius = 24;
 		}
 		if (!reduce && target?.width) {
 			// Still playing while it shrinks (no frozen frame), then the hero takes over.
-			await move(target, radius, false);
+			await move(target, false);
 			if (!ended && o.from === 'hero') await waitForResume(700);
 		}
 		video?.pause();
 		if (!video) post('pauseVideo');
 		await fade('out');
 		dialog.close();
-		dialog.getAnimations({ subtree: true }).forEach((a) => a.cancel());
+		clearAnims();
 		theater.back = null;
 		release?.();
 		release = null;
@@ -280,7 +292,9 @@
 	{#if now && src}
 		<div class="stage" bind:this={stage}>
 			<div class="pic" bind:this={pic}>
-			{#if src.kind === 'direct' || src.kind === 'pass'}
+			{#if !mediaOn}
+				<!-- The held frame alone while it grows. -->
+			{:else if src.kind === 'direct' || src.kind === 'pass'}
 				<!-- svelte-ignore a11y_media_has_caption -->
 				<video
 					bind:this={video}
@@ -348,9 +362,11 @@
 	:global(html.scroll-held) { overflow: hidden; padding-right: var(--held-scrollbar, 0px); }
 	.ui-theater { position: fixed; inset: 0; width: auto; height: auto; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; color: var(--on-art); overflow: hidden; }
 	.ui-theater::backdrop { background: var(--on-art-scrim); }
+	/* Its own grow and fades replace the app's dialog entrance (that faded the whole player in). */
+	.ui-theater[open], .ui-theater[open]::backdrop { animation: none; }
 	.ui-theater:fullscreen { width: 100%; height: 100%; }
-	.stage { position: absolute; inset: 0; background: #000; overflow: hidden; container-type: size; }
-	.pic { position: absolute; inset: 0; transform-origin: 50% 50%; }
+	.stage { position: absolute; inset: 0; background: #000; overflow: hidden; container-type: size; transform-origin: 0 0; }
+	.pic { position: absolute; inset: 0; transform-origin: 0 0; }
 	.still { position: absolute; inset: 0; z-index: 1; pointer-events: none; transition: opacity var(--dur-fast) linear; }
 	.still.off { opacity: 0; }
 	.still :global(canvas) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }

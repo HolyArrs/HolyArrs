@@ -49,20 +49,38 @@ describe('motion', () => {
 	});
 });
 
-import { clipFrom, containBox, coverFrom } from './motion.ts';
+import { containBox } from './motion.ts';
 describe('theater geometry', () => {
 	it('fits a 16:9 picture into a wider window, centred', () => {
 		expect(containBox(16 / 9, 2000, 900)).toEqual({ left: 200, top: 0, width: 1600, height: 900 });
 		expect(containBox(0, 1600, 900).width).toBe(1600);
 	});
-	it('covers the small rect with one uniform scale', () => {
-		// 1600x900 window, a 320x180 card at (100, 50): a fifth of the size, centred on the card.
-		expect(coverFrom({ left: 100, top: 50, width: 320, height: 180 }, 16 / 9, 1600, 900)).toBe('translate(-540px, -310px) scale(0.2)');
-		// A taller rect than the picture: scale by height (cover), never stretched.
-		expect(coverFrom({ left: 0, top: 0, width: 160, height: 180 }, 16 / 9, 1600, 900)).toContain('scale(0.2)');
+});
+
+import { cubicBezier, flipFrames } from './motion.ts';
+describe('theater flip frames', () => {
+	it('evaluates a cubic-bezier like CSS', () => {
+		const lin = cubicBezier(0, 0, 1, 1);
+		expect(lin(0.5)).toBeCloseTo(0.5, 3);
+		expect(cubicBezier(0.22, 1, 0.36, 1)(0.5)).toBeGreaterThan(0.9);
 	});
-	it('clips to the rect with rounded corners', () => {
-		expect(clipFrom({ left: 100, top: 50, width: 320, height: 180 }, 1600, 900, 12)).toBe('inset(50px 1180px 670px 100px round 12px)');
-		expect(clipFrom({ left: -10, top: -10, width: 2000, height: 2000 }, 1600, 900, 0)).toBe('inset(0px 0px 0px 0px round 0px)');
+	it('starts on the small rect and ends on the window, the picture never stretched', () => {
+		const f = flipFrames({ left: 100, top: 50, width: 320, height: 180 }, 16 / 9, 1600, 900, false, 10);
+		expect(f.outer[0]).toBe('translate(100px, 50px) scale(0.2, 0.2)');
+		expect(f.outer[10]).toBe('translate(0px, 0px) scale(1, 1)');
+		expect(f.inner[10]).toBe('translate(0px, 0px) scale(1, 1)');
+		// Same aspect as the window: the picture's counter-scale stays 1 throughout.
+		for (const t of f.inner) expect(t).toMatch(/scale\(1, 1\)$/);
+		const back = flipFrames({ left: 100, top: 50, width: 320, height: 180 }, 16 / 9, 1600, 900, true, 10);
+		expect(back.outer[0]).toBe(f.outer[10]);
+		expect(back.outer[10]).toBe(f.outer[0]);
+	});
+	it('keeps one uniform picture scale when the rect is wider than the picture', () => {
+		const f = flipFrames({ left: 0, top: 0, width: 436, height: 200 }, 16 / 9, 1600, 900, false, 8);
+		for (let i = 0; i <= 8; i++) {
+			const [ox, oy] = f.outer[i].match(/scale\(([\d.]+), ([\d.]+)\)/)!.slice(1).map(Number);
+			const [ix, iy] = f.inner[i].match(/scale\(([\d.]+), ([\d.]+)\)/)!.slice(1).map(Number);
+			expect(ox * ix).toBeCloseTo(oy * iy, 3);
+		}
 	});
 });
