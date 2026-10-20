@@ -9,8 +9,19 @@
 		label,
 		size = 'md',
 		testid,
+		announce,
 		onchange
-	}: { options: { value: T; label: string; icon?: IconName }[]; value: T; label: string; size?: 'sm' | 'md'; testid?: string; onchange?: (v: T) => void } = $props();
+	}: {
+		options: { value: T; label: string; icon?: IconName }[];
+		value: T;
+		label: string;
+		size?: 'sm' | 'md';
+		testid?: string;
+		/** The words a screen reader hears after a change (the page's content switched), e.g. l => `Showing ${l}`. */
+		announce?: (label: string) => string;
+		onchange?: (v: T) => void;
+	} = $props();
+	let said = $state('');
 
 	const index = $derived(Math.max(0, options.findIndex((o) => o.value === value)));
 	let buttons: HTMLButtonElement[] = $state([]);
@@ -19,6 +30,7 @@
 		if (v === value) return;
 		value = v;
 		onchange?.(v);
+		if (announce) said = announce(options.find((o) => o.value === v)?.label ?? '');
 	}
 	function key(e: KeyboardEvent, i: number) {
 		const step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
@@ -38,6 +50,7 @@
 		</button>
 	{/each}
 </div>
+{#if announce}<span class="sr-only" aria-live="polite">{said}</span>{/if}
 
 <style>
 	.ui-seg { position: relative; display: inline-grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); padding: 2px; border-radius: 10px; background: var(--surface-2); isolation: isolate; max-width: 100%; }

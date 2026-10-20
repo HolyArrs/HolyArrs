@@ -24,6 +24,10 @@ html:has(.savebar) {
 	scroll-padding-bottom: 96px;
 }
 @media (max-width: 767px) {
+	/* Focused rows never land under the fixed tab bar. */
+	html {
+		scroll-padding-bottom: calc(var(--tabbar) + env(safe-area-inset-bottom, 0px) + 8px);
+	}
 	html:has(.savebar) {
 		scroll-padding-bottom: calc(var(--tabbar) + env(safe-area-inset-bottom, 0px) + 104px);
 	}

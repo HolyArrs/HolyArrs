@@ -33,7 +33,10 @@
 		onleave,
 		onclose,
 		ongone,
-		onmore
+		onmore,
+		focusIn = false,
+		ontab,
+		returnTo
 	}: {
 		/** The card's picture box: the grown card starts exactly on it. */
 		anchor: HTMLElement;
@@ -53,8 +56,14 @@
 		action?: Snippet;
 		onenter?: () => void;
 		onleave?: () => void;
-		/** Esc, scroll or resize: close now. */
-		onclose: () => void;
+		/** Esc, scroll or resize: close now (back: focus was inside, return it to the card). */
+		onclose: (back?: boolean) => void;
+		/** Opened from the keyboard: focus moves to the first button. */
+		focusIn?: boolean;
+		/** Tab past the last button (or Shift+Tab before the first): back is true for Shift+Tab. */
+		ontab?: (back: boolean) => void;
+		/** Where focus goes when the full-screen trailer opened from here closes. */
+		returnTo?: HTMLElement;
 		/** The shrink finished; the card shows again. */
 		ongone: () => void;
 		/** The ⌄ opens the More info panel here (Explore) instead of following href. */
@@ -139,8 +148,26 @@
 		return { destroy: () => node.remove() };
 	}
 
+	const focusables = () => (card ? [...card.querySelectorAll<HTMLElement>('a[href]:not([tabindex="-1"]), button:not([disabled])')] : []);
+	function keydown(e: KeyboardEvent) {
+		if (e.key !== 'Tab' || !ontab) return;
+		const list = focusables();
+		const i = list.indexOf(document.activeElement as HTMLElement);
+		if (e.shiftKey ? i <= 0 : i === list.length - 1) {
+			e.preventDefault();
+			ontab(e.shiftKey);
+		}
+	}
+	function focusout(e: FocusEvent) {
+		const to = e.relatedTarget as Node | null;
+		if (to && (card?.contains(to) || anchor.closest('.ui-wide')?.contains(to))) return;
+		onleave?.();
+	}
+
 	onMount(() => {
 		grow();
+		// The panel's buttons exist from the start (it is clipped, not absent): focus the first one.
+		if (focusIn) requestAnimationFrame(() => card?.querySelector<HTMLElement>('.buttons a[href], .buttons button:not([disabled])')?.focus({ preventScroll: true }));
 		const close = () => onclose();
 		window.addEventListener('scroll', close, { passive: true, capture: true });
 		window.addEventListener('resize', close);
@@ -187,9 +214,9 @@
 	const tags = $derived((meta?.moods?.length ? meta.moods : (meta?.genres ?? [])).slice(0, 3));
 </script>
 
-<svelte:window onkeydown={(e) => e.key === 'Escape' && onclose()} />
+<svelte:window onkeydown={(e) => e.key === 'Escape' && onclose(!!card?.contains(document.activeElement))} />
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
+<!-- svelte-ignore a11y_no_static_element_interactions, a11y_no_noninteractive_element_interactions -->
 <div
 	class="ui-grow"
 	class:shown
@@ -203,17 +230,20 @@
 	style:width="{g?.width ?? anchor.getBoundingClientRect().width * 1.5}px"
 	onpointerenter={onenter}
 	onpointerleave={onleave}
+	onfocusin={onenter}
+	onfocusout={focusout}
+	onkeydown={keydown}
 >
-	<a class="media" href={href} tabindex="-1" aria-hidden="true">
+	<a class="media" href={href} tabindex="-1">
 		{#if image}<img src={image} alt="" decoding="async" />{/if}
 		{#if big}<img src={big} alt="" decoding="async" class="big" class:in={bigIn} onload={() => (bigIn = true)} />{/if}
 		{#if trailerOk && sources.length}
-			<TrailerPlayer {sources} {title} repeat onplaying={() => (playing = true)} onfail={() => (playing = false)} onended={() => (playing = false)} onexpand={(o) => { openTheater({ kind, tmdb, title, source: o.source, time: o.time, rect: { left: o.rect.left, top: o.rect.top, width: o.rect.width, height: o.rect.height }, from: 'hover' }); onclose(); }} />
+			<TrailerPlayer {sources} {title} repeat onplaying={() => (playing = true)} onfail={() => (playing = false)} onended={() => (playing = false)} onexpand={(o) => { openTheater({ kind, tmdb, title, source: o.source, time: o.time, rect: { left: o.rect.left, top: o.rect.top, width: o.rect.width, height: o.rect.height }, from: 'hover', returnTo }); onclose(); }} />
 		{/if}
 		<span class="scrim" class:playing aria-hidden="true"></span>
 		<!-- The logo, else the name, stays over the trailer (card template). -->
-		{#if shownLogo}<span class="name" class:lifted><img class="logo" src={shownLogo} alt="" onerror={() => (logoFailed = true)} /></span>
-		{:else}<span class="name" class:lifted><span class="word">{title}</span></span>{/if}
+		{#if shownLogo}<span class="name" class:lifted aria-hidden="true"><img class="logo" src={shownLogo} alt="" onerror={() => (logoFailed = true)} /></span>
+		{:else}<span class="name" class:lifted aria-hidden="true"><span class="word">{title}</span></span>{/if}
 		{#if badge && g}<span class="badge" class:playing>{@render badge()}</span>{/if}
 	</a>
 	<div class="panel">

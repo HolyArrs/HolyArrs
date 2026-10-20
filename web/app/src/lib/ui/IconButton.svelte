@@ -12,7 +12,7 @@
 		href?: string;
 		badge?: number;
 		tooltip?: boolean;
-		tipSide?: 'below' | 'above' | 'right';
+		tipSide?: 'below' | 'below-end' | 'above' | 'right';
 		node?: HTMLElement;
 	};
 	let { icon, label, variant = 'plain', size = 'md', href, badge = 0, tooltip = true, tipSide = 'below', type = 'button', class: cls = '', node = $bindable(), ...rest }: Props = $props();
@@ -55,6 +55,9 @@
 		transition: opacity var(--dur-fast) ease 0ms, translate var(--dur-fast) var(--ease-out) 0ms;
 	}
 	.tip-above[data-tip]::after { top: auto; bottom: calc(100% + 6px); }
+	/* At the right edge of the screen: the tip lines up with the button's right side. */
+	.tip-below-end[data-tip]::after { left: auto; right: 0; translate: 0 -2px; }
+	.tip-below-end[data-tip]:hover::after, .tip-below-end[data-tip]:focus-visible::after { translate: 0 0; }
 	.tip-right[data-tip]::after { left: calc(100% + 8px); top: 50%; translate: -2px -50%; }
 	[data-tip]:hover::after, [data-tip]:focus-visible::after { opacity: 1; translate: -50% 0; transition-delay: 500ms; }
 	.tip-right[data-tip]:hover::after, .tip-right[data-tip]:focus-visible::after { translate: 0 -50%; }

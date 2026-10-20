@@ -244,14 +244,14 @@
 			{/if}
 			<div class="top">
 				<p class="name">{now.title}</p>
-				<IconButton icon="x" label="Close the trailer" variant="glass" size="lg" tipSide="below" onclick={() => void close()} />
+				<IconButton icon="x" label="Close the trailer" variant="glass" size="lg" tipSide="below-end" onclick={() => void close()} />
 			</div>
 			<div class="bar">
 				<IconButton icon={paused ? 'play' : 'pause'} label={paused ? 'Play' : 'Pause'} variant="glass" size="lg" tipSide="above" onclick={togglePlay} />
 				<span class="t">{clock(time)}</span>
 				<input class="seek" type="range" min="0" max={Math.max(duration, 1)} step="0.1" value={time} aria-label="Seek" aria-valuetext="{clock(time)} of {clock(duration)}" oninput={seek} style:--p="{duration ? (time / duration) * 100 : 0}%" />
 				<span class="t">{clock(duration)}</span>
-				<IconButton icon={muted ? 'soundOff' : 'sound'} label={muted ? 'Turn sound on' : 'Turn sound off'} variant="glass" size="lg" tipSide="above" aria-pressed={!muted} onclick={toggleSound} />
+				<IconButton icon={muted ? 'soundOff' : 'sound'} label={muted ? 'Turn sound on' : 'Turn sound off'} variant="glass" size="lg" tipSide="above" onclick={toggleSound} />
 			</div>
 		</div>
 	{/if}

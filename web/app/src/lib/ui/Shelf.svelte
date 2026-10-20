@@ -5,9 +5,11 @@
 	import IconButton from './IconButton.svelte';
 	import { nearView, setShelfNear } from '../lazy-art.ts';
 	import { mountNow, nextLimit, ROW_FIRST } from '../row-window.ts';
+	import { rove } from '../rove.ts';
 
 	// A titled horizontal row: native scroll with snap, arrow buttons on hover
-	// (desktop), arrow keys scroll when the row has focus, optional See all ›.
+	// (desktop), one tab stop per row with arrow keys between cards (rove.ts),
+	// optional See all ›.
 	let {
 		title,
 		href,
@@ -97,11 +99,6 @@
 	function page(dir: 1 | -1) {
 		scroller?.scrollBy({ left: dir * scroller.clientWidth * 0.9, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
 	}
-	function key(e: KeyboardEvent) {
-		if (e.target !== scroller) return;
-		if (e.key === 'ArrowRight') { e.preventDefault(); page(1); }
-		if (e.key === 'ArrowLeft') { e.preventDefault(); page(-1); }
-	}
 </script>
 
 <section class="ui-shelf" id={anchor} style="--item: {item}" use:nearView={() => (near = true)} use:soon>
@@ -118,8 +115,7 @@
 		<div class="sk {placeholder}" class:one={lines === 1} aria-hidden="true"></div>
 	{:else}
 	<div class="wrap">
-		<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
-		<div class="row" use:dragScroll bind:this={scroller} onscroll={measure} onkeydown={key} tabindex="0" role="group" aria-labelledby="{id}-t">
+		<div class="row" use:dragScroll use:rove bind:this={scroller} onscroll={measure} role="group" aria-labelledby="{id}-t">
 			{#if items && card}{#each shown as it, i (keyOf(it, i))}{@render card(it, i)}{/each}{:else}{@render children?.()}{/if}
 		</div>
 		<span class="arrow left" class:hide={atStart}><IconButton icon="chevronLeft" label="Scroll {title} back" variant="tinted" tabindex={-1} tooltip={false} onclick={() => page(-1)} /></span>
@@ -152,7 +148,6 @@
 	.sk.wide { --art: calc(var(--w) * 9 / 16); --text-h: 0px; }
 	@media (max-width: 767px) { .sk { --w: calc(var(--item) * .78); } }
 	.row > :global(*) { scroll-snap-align: start; }
-	.row:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
 	.arrow { position: absolute; top: calc(50% - 26px); opacity: 0; transition: opacity var(--dur-fast) ease; }
 	.arrow :global(.ui-ibtn) { width: 40px; height: 40px; box-shadow: var(--shadow-lift); background: var(--surface-1); color: var(--text); }
 	.left { left: -12px; }
