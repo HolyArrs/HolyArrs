@@ -1,16 +1,15 @@
 <script lang="ts">
 	import IconButton from './IconButton.svelte';
+	import SearchField from './SearchField.svelte';
 
 	// The 56px translucent bar above the content (tablet and desktop):
-	// sidebar toggle when collapsed, back/forward on detail pages, a search
-	// icon that opens the Search page (hidden there: the page has the one
-	// field), live connection and downloads.
+	// sidebar toggle when collapsed, back/forward on detail pages, the one
+	// search field in the centre, live connection and downloads.
 	let {
 		showToggle,
 		controls,
 		ontoggle,
 		history = false,
-		searchHref,
 		searchKey,
 		live,
 		downloads,
@@ -20,8 +19,6 @@
 		controls: string;
 		ontoggle: () => void;
 		history?: boolean;
-		/** The Search page; none on the Search page itself. */
-		searchHref?: string;
 		searchKey: string;
 		live?: { state: 'off' | 'connecting' | 'live' | 'reconnecting'; word: string };
 		downloads?: { count: number; href: string };
@@ -37,8 +34,8 @@
 			<IconButton icon="chevronRight" label="Forward" onclick={() => window.history.forward()} />
 		{/if}
 	</div>
+	<div class="centre"><SearchField {searchKey} /></div>
 	<div class="trail">
-		{#if searchHref}<IconButton icon="search" href={searchHref} label="Search ({searchKey})" />{/if}
 		{#if live}
 			<span class="live {live.state}" title={live.word}><i aria-hidden="true"></i><span class="sr-only">{live.word}</span></span>
 		{/if}
@@ -50,7 +47,7 @@
 
 <style>
 	.ui-topbar {
-		position: sticky; top: 0; z-index: 30; height: var(--topbar); display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px;
+		position: sticky; top: 0; z-index: 30; height: var(--topbar); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px;
 		padding: 0 var(--gutter); background: color-mix(in srgb, var(--bg) 82%, transparent);
 		backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid var(--line);
 	}

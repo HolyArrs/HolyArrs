@@ -4,7 +4,7 @@
 	import SidebarItem from './SidebarItem.svelte';
 	import type { NavItem, NavSection } from './nav.ts';
 
-	// The macOS-style sidebar (spec §4): brand, Search row, sections, account
+	// The macOS-style sidebar (spec §4): brand, sections, account
 	// footer. One selected fill slides between rows.
 	let {
 		id = 'sidebar',
@@ -15,10 +15,7 @@
 		link,
 		brandHref,
 		markSrc,
-		searchKey,
 		ontoggle,
-		searchHref,
-		searchCurrent = false,
 		onpick,
 		toggle = $bindable(),
 		footer
@@ -34,11 +31,7 @@
 		link: (href: string) => string;
 		brandHref: string;
 		markSrc: string;
-		searchKey: string;
 		ontoggle: () => void;
-		/** The Search page: a link, the page holds the one search field. */
-		searchHref: string;
-		searchCurrent?: boolean;
 		onpick?: () => void;
 		toggle?: HTMLElement;
 		footer?: Snippet;
@@ -73,7 +66,6 @@
 			<IconButton bind:node={toggle} icon="sidebar" label={collapsed ? 'Show sidebar' : 'Hide sidebar'} aria-expanded={!collapsed} aria-controls={id} tipSide={collapsed ? 'right' : 'below'} onclick={ontoggle} />
 		</span>
 	</div>
-	<div class="search"><SidebarItem icon="search" label="Search" kbd={searchKey} href={searchHref} current={searchCurrent} {collapsed} onclick={onpick} testid="sidebar-search" /></div>
 	<nav aria-label="Main" class="scroll">
 		<div class="list" bind:this={list}>
 			<span class="pill" class:on={pill.on} class:still={pill.still} style="transform: translateY({pill.top}px); height: {pill.height}px" aria-hidden="true"></span>
@@ -122,7 +114,6 @@
 	.collapsed .brand { width: 40px; justify-content: center; }
 	.collapsed .tog { display: none; }
 	.collapsed .brand .word { display: none; }
-	.search { margin-bottom: 8px; }
 	.scroll { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; margin: 0 -4px; padding: 0 4px; scrollbar-width: thin; }
 	.list { position: relative; }
 	.pill { position: absolute; z-index: 0; left: 0; right: 0; top: 0; border-radius: 9px; background: var(--surface-3); opacity: 0; transition: transform var(--dur) var(--ease-spring), height var(--dur) var(--ease-spring), opacity var(--dur-fast) ease; }

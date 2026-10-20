@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { to } from '#lib/paths.ts';
-	import { onMount, tick } from 'svelte';
+	import { onMount, tick, untrack } from 'svelte';
+	import { focusField, searchField, searchHooks } from '#lib/search-field.svelte.ts';
+	import SearchField from '#lib/ui/SearchField.svelte';
 	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { api, message, ApiError } from '#lib/api.ts';
@@ -8,7 +10,7 @@
 	import Icon, { type IconName } from '#lib/Icon.svelte';
 	import { session } from '#lib/session.svelte.ts';
 	import BrowseTile from '#lib/ui/BrowseTile.svelte';
-	import MosaicReveal from '#lib/ui/MosaicReveal.svelte';
+	import MosaicReveal, { clearedAt } from '#lib/ui/MosaicReveal.svelte';
 	import { browseCols, browseHref, browsePath, browseType, readMood, tileHue, type BrowseAnswer, type BrowseTile as Tile, type MoodView } from '#lib/search-browse.ts';
 	import { reducedMotion } from '#lib/motion.ts';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
@@ -32,7 +34,8 @@
 	import { discoverCard, genrePath, ownedMark, type GenreAnswer, type ProviderItem } from '#lib/explore.ts';
 	import { audienceOf } from '#lib/title-status.ts';
 
-	// Search is a page: one field, centred and pinned; the words and the scope
+	// Search is a page; its one field is the top bar's (lib/search-field.svelte.ts;
+	// on phones, where the top bar is hidden, a copy sits at the page top). The words and the scope
 	// live in the address (?q=, ?kind=). Before typing it shows recent searches
 	// (this device, per user) and the Browse grid (genres and their moods, per
 	// tab); a mood tile opens a mood view here (?mood=&genre=&type=). Results
@@ -40,7 +43,8 @@
 
 	type Card = { key: string; type: Exclude<SearchScope, 'all'>; name: string; year?: number; image?: string | null; href: string; owned: CardOwned | null; preview?: { kind: 'movie' | 'show'; tmdb: string; year?: number }; artist?: LookupArtist; subtitle?: string };
 
-	let term = $state(page.url.searchParams.get('q') ?? '');
+	// The words live in the shared field (top bar); a direct link fills it from ?q=.
+	if (!searchField.term.trim()) searchField.term = page.url.searchParams.get('q') ?? '';
 	let scope = $state<SearchScope>(readScope(page.url.searchParams.get('kind')));
 	let busy = $state(false);
 	let error = $state('');
@@ -52,12 +56,23 @@
 	let mood = $state<MoodView | null>(readMood(page.url.searchParams));
 	let moodItems = $state<ProviderItem[] | null>(null);
 	let moodGenre = $state('');
-	// The entry: a mosaic dissolve and the tiles rising row by row; a fade under reduced motion.
+	// The entry: a mosaic dissolve down the whole visible page, the tiles rising
+	// row by row behind it; under reduced motion the dissolve alone.
 	const calm = reducedMotion();
-	let revealing = $state(!calm);
+	let revealing = $state(true);
+	const t0 = typeof performance === 'undefined' ? 0 : performance.now();
+	// Each tile starts rising so it lands just as the sweep clears its row.
+	function landing(node: HTMLElement) {
+		if (calm) return;
+		const top = document.querySelector('.ui-topbar')?.getBoundingClientRect().bottom ?? 0;
+		const r = node.getBoundingClientRect();
+		const f = (r.top + r.height * 0.35 - top) / Math.max(1, innerHeight - top);
+		if (f > 1.05) return;
+		node.style.setProperty('--land', `${Math.max(0, clearedAt(f) - (performance.now() - t0) - 300)}ms`);
+		node.classList.add('lands');
+	}
 	let cols = $state(6);
 	let recent = $state<string[]>([]);
-	let input = $state<HTMLInputElement>();
 	const beginSearch = createLatestOnly();
 	const who = $derived(audienceOf(session.can));
 	const manage = $derived(session.can('manage_library'));
@@ -100,14 +115,23 @@
 	// ── Searching ──────────────────────────────────────────────────────────
 	const ownAddresses = new Set<string>();
 	function writeAddress() {
-		const url = scopeAddress(page.url, scope, term);
-		if (term.trim() || !mood) for (const k of ['mood', 'genre', 'type']) url.searchParams.delete(k);
+		const url = scopeAddress(page.url, scope, searchField.term);
+		if (searchField.term.trim() || !mood) for (const k of ['mood', 'genre', 'type']) url.searchParams.delete(k);
 		if (url.href === page.url.href) return;
 		ownAddresses.add(url.href);
 		void goto(url, { replace: true, shallow: true });
 	}
 
 	let timer: ReturnType<typeof setTimeout> | undefined;
+	// Results follow the shared field as you type (any page's top bar).
+	let lastTerm = untrack(() => searchField.term);
+	$effect(() => {
+		const t = searchField.term;
+		if (t === lastTerm) return;
+		lastTerm = t;
+		if (!t.trim()) void run();
+		else typed();
+	});
 	function typed() {
 		clearTimeout(timer);
 		timer = setTimeout(() => void run(), 250);
@@ -116,7 +140,7 @@
 	async function run(e?: SubmitEvent) {
 		e?.preventDefault();
 		clearTimeout(timer);
-		const q = term.trim();
+		const q = searchField.term.trim();
 		writeAddress();
 		const isLatest = beginSearch();
 		error = '';
@@ -193,7 +217,7 @@
 		saveRecent();
 	}
 	function pickRecent(q: string) {
-		term = q;
+		searchField.term = q;
 		void run();
 	}
 
@@ -214,7 +238,7 @@
 		}
 	}
 	$effect(() => {
-		if (!term.trim() && !mood) void loadTiles(browseFor);
+		if (!searchField.term.trim() && !mood) void loadTiles(browseFor);
 	});
 
 	// ── A mood view: that mood row of the genre page, as a grid ─────────────
@@ -241,16 +265,6 @@
 	});
 	const moodCards = $derived((moodItems ?? []).map((item) => ({ item, c: discoverCard(item, 'search-mood') })));
 
-	function keyed(e: KeyboardEvent) {
-		// Escape clears the words; with nothing left it leaves the field.
-		if (e.key !== 'Escape') return;
-		if (term) {
-			e.preventDefault();
-			term = '';
-			void run();
-		} else input?.blur();
-	}
-
 	onMount(() => {
 		loadRecent();
 		const sync = () => (cols = browseCols(innerWidth));
@@ -261,9 +275,13 @@
 			api.get<{ pick_rules: PickRulesView[] }>('/pick-rules').then((r) => (rules = r.pick_rules)).catch(() => {});
 			api.get<MusicSettings>('/settings/music').then((r) => (musicDefaults = r)).catch(() => {});
 		}
-		if (term.trim()) void run();
-		void tick().then(() => input?.focus());
+		if (searchField.term.trim()) void run();
+		searchHooks.submit = () => void run(new SubmitEvent('submit'));
+		searchHooks.blur = blurred;
+		void tick().then(() => { if (!(document.activeElement instanceof HTMLInputElement)) focusField(); });
 		return () => {
+			searchHooks.submit = searchHooks.blur = undefined;
+			searchField.term = '';
 			clearTimeout(timer);
 			removeEventListener('resize', sync);
 		};
@@ -276,16 +294,16 @@
 		const q = dest.url.searchParams.get('q') ?? '';
 		const s = readScope(dest.url.searchParams.get('kind'));
 		mood = readMood(dest.url.searchParams);
-		void tick().then(() => input?.focus());
-		if (q === term && s === scope) return;
-		term = q;
+		void tick().then(() => focusField());
+		if (q === searchField.term && s === scope) return;
+		searchField.term = lastTerm = q;
 		scope = s;
 		void run();
 	});
 
 	// Leaving the box after a search counts it as a recent one.
 	function blurred() {
-		if (searched && searched === term.trim()) remember(searched);
+		if (searched && searched === searchField.term.trim()) remember(searched);
 	}
 
 	// ── Music: artists are added or asked for here ─────────────────────────
@@ -336,14 +354,7 @@
 
 <section class="search" class:calm data-testid="search-page">
 	<h1 class="sr-only">Search</h1>
-	<div class="sp-field">
-		<form class="box" role="search" onsubmit={run}>
-			<span class="sp-ic" aria-hidden="true"><Icon name="search" size={20} /></span>
-			<label class="sr-only" for="q">Search for a title, an artist or a person</label>
-			<input id="q" bind:this={input} type="search" bind:value={term} oninput={typed} onblur={blurred} onkeydown={keyed} placeholder="Shows, movies, music and people" autocomplete="off" spellcheck="false" enterkeyhint="search" data-testid="search-box" />
-			{#if term}<button type="button" class="clear" aria-label="Clear the search" onclick={() => { term = ''; void run(); input?.focus(); }}><Icon name="x" size={16} /></button>{/if}
-		</form>
-	</div>
+	<div class="phone-field"><SearchField searchKey="" testid="search-box-phone" id="q-phone" /></div>
 	<MetadataNotice />
 
 	{#if scopeOptions.length > 2}
@@ -353,17 +364,17 @@
 	{/if}
 
 	<div class="results" aria-live="polite" aria-busy={busy}>
-		{#if !term.trim() && mood}
+		{#if !searchField.term.trim() && mood}
 			<section class="mood" aria-labelledby="mood-h" data-testid="search-mood">
 				<div class="mood-head">
 					<Button variant="plain" icon="chevronLeft" href={to(`/search${scope === 'all' ? '' : `?kind=${scope}`}`)}>Browse</Button>
 					<h2 id="mood-h" class="h1">{mood.mood}</h2>
-					<p class="muted">{moodGenre ? `${moodGenre} · ` : ''}{mood.type === 'shows' ? 'Shows' : 'Movies'}</p>
+					<p class="muted">{moodGenre ? `${moodGenre} · ` : ''}{mood.type === 'shows' ? 'Shows' : mood.type === 'all' ? 'Movies and shows' : 'Movies'}</p>
 				</div>
 				{#if moodItems === null}
 					<p class="muted searching">Finding {mood.mood.toLowerCase()} titles…</p>
 				{:else if moodCards.length === 0}
-					<div class="empty"><h2 class="h2">Nothing here yet</h2><p class="muted">No {mood.type === 'shows' ? 'shows' : 'movies'} fit this mood right now. Try the genre page instead.</p><Button variant="secondary" href={to(`/explore?type=${mood.type}&genre=${mood.genre}`)}>Open {moodGenre || 'the genre'}</Button></div>
+					<div class="empty"><h2 class="h2">Nothing here yet</h2><p class="muted">No {mood.type === 'shows' ? 'shows' : mood.type === 'all' ? 'titles' : 'movies'} fit this mood right now. Try the genre page instead.</p><Button variant="secondary" href={to(mood.type === 'all' ? `/explore?genre=${mood.genre}` : `/explore?type=${mood.type}&genre=${mood.genre}`)}>Open {moodGenre || 'the genre'}</Button></div>
 				{:else}
 					<ul class="grid">
 						{#each moodCards as { item, c } (c.key)}
@@ -372,7 +383,7 @@
 					</ul>
 				{/if}
 			</section>
-		{:else if !term.trim()}
+		{:else if !searchField.term.trim()}
 			{#if recent.length}
 				<section class="recent" aria-labelledby="recent-h">
 					<div class="recent-head">
@@ -388,12 +399,12 @@
 				<h2 id="browse-h" class="h1">Browse</h2>
 				{#if tiles === null}
 					<ul class="tiles" aria-hidden="true">
-						{#each Array(cols * 2) as _, i (i)}<li class="ghost"></li>{/each}
+						{#each Array(cols * 2) as _, i (i)}<li class="ghost" use:landing></li>{/each}
 					</ul>
 				{:else if tiles.length}
 					<ul class="tiles">
 						{#each tiles as t, i (`${t.kind}:${t.genre}:${t.mood ?? ''}`)}
-							<li><BrowseTile name={t.name} href={to(browseHref(t))} image={t.backdrop} hue={tileHue(t.name)} row={Math.min(6, Math.floor(i / cols))} /></li>
+							<li use:landing><BrowseTile name={t.name} href={to(browseHref(t))} image={t.backdrop} hue={tileHue(t.name)} row={Math.min(6, Math.floor(i / cols))} /></li>
 						{/each}
 					</ul>
 				{:else}
@@ -405,7 +416,7 @@
 		{:else if error && total === 0}
 			<p class="notice bad" role="alert">{plainReason(error).text}</p>
 		{:else if total === 0 && (pending || busy)}
-			<p class="muted searching">Searching for “{term.trim()}”…</p>
+			<p class="muted searching">Searching for “{searchField.term.trim()}”…</p>
 		{:else if total === 0 && searched}
 			<div class="empty" data-testid="search-empty">
 				<h2 class="h2">Nothing found for “{searched}”</h2>
@@ -450,16 +461,9 @@
 	.search { --title-item: max(200px, calc((100vw - 96px) / 5.16)); display: flex; flex-direction: column; gap: 24px; padding-bottom: 48px; min-width: 0; }
 	@media (max-width: 1279px) { .search { --title-item: max(180px, calc((100vw - 64px) / 4.2)); } }
 	@media (max-width: 767px) { .search { --title-item: calc((100vw - 40px) / 2.3); } }
-	/* The one search field: page top centre, pinned under the top bar with the Explore glass look. */
-	.sp-field { position: sticky; top: calc(var(--topbar) + 12px); z-index: 22; display: flex; justify-content: center; margin-top: 20px; pointer-events: none; }
-	.box { position: relative; display: flex; align-items: center; max-width: 680px; width: 100%; pointer-events: auto; border-radius: 999px; box-shadow: 0 10px 30px rgb(0 0 0 / 0.22), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
-	.sp-ic { position: absolute; z-index: 1; left: 16px; display: grid; color: var(--text-muted); pointer-events: none; }
-	.box input { flex: 1; min-width: 0; height: 56px; padding: 0 52px 0 48px; border: 1px solid transparent; border-radius: 999px; background: color-mix(in srgb, var(--surface-2) 78%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); color: var(--text); font: var(--t-title3); font-weight: 400; }
-	.box input::-webkit-search-cancel-button { display: none; }
-	.box input:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.clear { position: absolute; z-index: 1; right: 6px; display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 999px; background: none; color: var(--text-muted); cursor: pointer; }
-	.clear:hover { color: var(--text); }
-	.clear:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	/* Phones only: the top bar (and its field) is hidden under 768 px. */
+	.phone-field { display: none; }
+	@media (max-width: 767px) { .phone-field { position: sticky; top: 8px; z-index: 22; display: flex; justify-content: center; } .phone-field :global(.ui-search) { width: 100%; } }
 	/* The same floating glass pill as Explore's type switch. */
 	.types { display: flex; justify-content: center; pointer-events: none; }
 	.types :global(.ui-seg) { pointer-events: auto; border-radius: 999px; padding: 3px; background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
@@ -481,12 +485,9 @@
 	.mood-head { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-bottom: 8px; }
 	.mood-head p { margin: 0; }
 	.mood { display: flex; flex-direction: column; gap: 16px; }
-	/* The entry: the tiles rise in row by row behind the mosaic. */
+	/* The entry: the tiles rise row by row behind the mosaic (landing() sets each delay). */
 	@keyframes rise { from { opacity: 0; transform: translateY(18px) scale(0.985); } }
-	@keyframes fade { from { opacity: 0; } }
-	.search:not(.calm) .tiles :global(.ui-btile) { animation: rise 420ms var(--ease-out) both; animation-delay: calc(60ms + var(--row) * 55ms); }
-	.search:not(.calm) .ghost { animation: rise 420ms var(--ease-out) both; }
-	.search.calm { animation: fade 150ms ease both; }
+	.search:not(.calm) .tiles :global(.lands) { animation: rise 420ms var(--ease-out) both; animation-delay: var(--land, 0ms); }
 	.n { font: var(--t-callout); font-variant-numeric: tabular-nums; }
 	.muted { color: var(--text-muted); }
 	.recent { display: flex; flex-direction: column; gap: 12px; }

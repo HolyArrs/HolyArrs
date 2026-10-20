@@ -32,6 +32,7 @@
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { trackInputModality } from '#lib/focus.ts';
+	import { focusField, searchField } from '#lib/search-field.svelte.ts';
 	import {
 		buildNav,
 		currentHref,
@@ -169,10 +170,10 @@
 			e.preventDefault();
 			void toggleSidebar();
 		} else if ((mod && (e.key === 'k' || e.key === 'K')) || (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey && !typingIn(e.target))) {
-			// Ctrl+K and / open the Search page from anywhere (its box takes focus).
+			// Ctrl+K and / focus the one search field (the top bar; on phones the Search page's) and open Search.
 			e.preventDefault();
-			if (path.startsWith('/search')) { const q = document.getElementById('q') as HTMLInputElement | null; q?.focus(); q?.select(); }
-			else void goto(to('/search'));
+			const shown = focusField(true);
+			if (!path.startsWith('/search')) void goto(to(shown && searchField.term.trim() ? `/search?q=${encodeURIComponent(searchField.term.trim())}` : '/search'), { reset: !shown });
 		} else if (e.key === 'Escape' && overlayOpen) {
 			void closeOverlay();
 		}
@@ -374,11 +375,8 @@
 				{link}
 				{brandHref}
 				markSrc={to(mark)}
-				{searchKey}
 				bind:toggle={sidebarToggle}
 				ontoggle={toggleSidebar}
-				searchHref={to('/search')}
-				searchCurrent={path.startsWith('/search')}
 				onpick={() => void closeOverlay(false)}
 				footer={account}
 			/>
@@ -390,7 +388,6 @@
 				bind:toggle={topToggle}
 				ontoggle={toggleSidebar}
 				history={detail}
-				searchHref={collapsed && !path.startsWith('/search') ? to('/search') : undefined}
 				{searchKey}
 				live={allowed('manage_library') ? { state: live.status.state, word: liveWord } : undefined}
 				downloads={allowed('manage_library') && !offPartName(partsNow.answer, '/downloads') ? { count: 0, href: to('/downloads') } : undefined}
