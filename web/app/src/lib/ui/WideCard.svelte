@@ -6,6 +6,8 @@
 	import { sized } from '../tmdb-image.ts';
 	import { shelfNear, whenLoaded } from '../lazy-art.ts';
 	import { press, viewTransitionName } from '../motion.ts';
+	import HoverPreview from './HoverPreview.svelte';
+	import { dwell, finePointer, HOVER_DELAY } from '../trailer.ts';
 
 	// 16:9 card for episodes and downloads: progress line along the art's
 	// bottom edge, overlay badges, title and a meta line below.
@@ -24,7 +26,8 @@
 		kind,
 		action,
 		statusTestid,
-		badgesAt = 'top'
+		badgesAt = 'top',
+		preview
 	}: {
 		title: string;
 		href?: string;
@@ -45,7 +48,29 @@
 		statusTestid?: string;
 		/** Where the badges sit on the art. */
 		badgesAt?: 'top' | 'bottom';
+		/** Desktop: after a short hover or keyboard focus, open the expanded card (trailer, genres). */
+		preview?: { kind: 'movie' | 'show'; tmdb: string; year?: number } | null;
 	} = $props();
+	// The expanded card, as on PosterCard.
+	let root = $state<HTMLElement>();
+	let open = $state(false);
+	const opener = dwell(HOVER_DELAY, () => (open = true));
+	const closer = dwell(140, () => (open = false));
+	function enter() {
+		if (!preview || !finePointer()) return;
+		closer.cancel();
+		if (!open) opener.start();
+	}
+	function leave() {
+		opener.cancel();
+		if (open) closer.start();
+	}
+	function shut() {
+		opener.cancel();
+		closer.cancel();
+		open = false;
+	}
+	$effect(() => () => shut());
 	let failed = $state(false);
 	// The name tile shows until the picture has loaded; in a row the picture
 	// waits until the row is near the screen.
@@ -55,7 +80,8 @@
 	const pct = $derived(progress === undefined ? undefined : Math.max(0, Math.min(100, progress)));
 </script>
 
-<div class="ui-wide" style:width>
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div class="ui-wide" style:width bind:this={root} onpointerenter={enter} onpointerleave={leave} onfocusin={(e) => (e.target as HTMLElement)?.matches?.(':focus-visible') && enter()} onfocusout={(e) => !root?.contains(e.relatedTarget as Node) && leave()} onpointerdown={() => opener.cancel()}>
 	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} use:press={'card'}>
 		<span class="art" class:low={badgesAt === 'bottom' && (badges.length || status)} use:viewTransitionName={vtName}>
 			{#if !image || failed || !loaded}<span class="ph" aria-hidden="true"><span class="ph-ic"><Icon name={kindIcon} size={20} /></span><span class="ph-t">{title}</span></span>{/if}
@@ -76,6 +102,10 @@
 	</svelte:element>
 	{#if action}<span class="act">{@render action()}</span>{/if}
 </div>
+
+{#if open && preview && root}
+	<HoverPreview anchor={root} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} {image} onenter={() => closer.cancel()} onleave={leave} onclose={shut} />
+{/if}
 
 <style>
 	.ui-wide { position: relative; min-width: 0; }

@@ -130,7 +130,27 @@ export function playerBusy(): boolean {
 	return playing !== null;
 }
 
-export const HERO_DELAY = 2500;
+const SOUND_KEY = 'holyarrs.trailer.sound';
+
+/** Whether the person turned trailer sound on earlier in this browser session. */
+export function soundWanted(): boolean {
+	try {
+		return sessionStorage.getItem(SOUND_KEY) === 'on';
+	} catch {
+		return false;
+	}
+}
+
+export function setSoundWanted(on: boolean) {
+	try {
+		if (on) sessionStorage.setItem(SOUND_KEY, 'on');
+		else sessionStorage.removeItem(SOUND_KEY);
+	} catch {
+		/* private mode: not remembered */
+	}
+}
+
+export const HERO_DELAY = 1500;
 export const HOVER_DELAY = 800;
 
 /** Where a hover card of size w×h opens, kept inside the viewport (8px margin). */

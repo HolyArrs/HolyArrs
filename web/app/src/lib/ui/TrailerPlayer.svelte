@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import IconButton from './IconButton.svelte';
-	import { claimPlayer, embedUrl } from '../trailer.ts';
+	import { claimPlayer, embedUrl, setSoundWanted, soundWanted } from '../trailer.ts';
 	import type { TrailerSource } from '../autoplay.svelte.ts';
 
 	// A muted trailer over the hero or hover card art. Tries each source in
@@ -30,6 +30,8 @@
 
 	let at = $state(0);
 	let shown = $state(false);
+	// Trailers start muted; turning the sound on is remembered for this
+	// browser session, and later trailers then unmute once they play.
 	let muted = $state(true);
 	let run = $state(0);
 	let done = $state(false);
@@ -80,8 +82,27 @@
 		clearGuard();
 		if (stopped) return;
 		release ??= claimPlayer(stop);
+		const first = !shown;
 		shown = true;
 		onplaying?.();
+		if (first && muted && soundWanted() && hasAudio()) unmute();
+	}
+
+	function hasAudio() {
+		return !(src?.kind === 'direct' && !src.audio);
+	}
+
+	// Unmuting without a recent click may pause the video; then it stays muted.
+	function unmute() {
+		muted = false;
+		if (video) {
+			const v = video;
+			v.muted = false;
+			if (v.paused) {
+				v.muted = muted = true;
+				void v.play().catch(() => {});
+			}
+		} else post('unMute');
 	}
 
 	function ended() {
@@ -119,12 +140,18 @@
 		frame?.contentWindow?.postMessage(JSON.stringify({ event: 'listening', id: 'holyarrs', channel: 'widget' }), 'https://www.youtube-nocookie.com');
 	}
 
-	function toggleMute() {
+	function toggleMute(e?: MouseEvent) {
+		// The hover card's art is a link: the button must not follow it.
+		e?.preventDefault();
+		e?.stopPropagation();
 		muted = !muted;
 		if (video) video.muted = muted;
 		else post(muted ? 'mute' : 'unMute');
+		setSoundWanted(!muted);
 	}
-	function replay() {
+	function replay(e?: MouseEvent) {
+		e?.preventDefault();
+		e?.stopPropagation();
 		muted = true;
 		stopped = false;
 		done = false;
@@ -174,8 +201,8 @@
 	{/key}
 </div>
 {#if controls}
-	<div class="ctl" class:on={shown}>
-		{#if shown && !(src?.kind === 'direct' && !src.audio)}
+	<div class="ctl" class:on={shown} data-testid="trailer-sound">
+		{#if shown && hasAudio()}
 			<IconButton icon={muted ? 'soundOff' : 'sound'} label={muted ? 'Turn sound on' : 'Turn sound off'} variant="glass" size="md" tipSide="above" aria-pressed={!muted} onclick={toggleMute} />
 		{:else if done && sources.length > 0}
 			<IconButton icon="replay" label="Play the trailer again" variant="glass" size="md" tipSide="above" onclick={replay} />
