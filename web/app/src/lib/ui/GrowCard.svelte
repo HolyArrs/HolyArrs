@@ -9,7 +9,7 @@
 	import { sized } from '../tmdb-image.ts';
 	import { autoplayHere, loadUISettings, trailerSources, type TrailerSource } from '../autoplay.svelte.ts';
 	import { openTheater } from '../theater.svelte.ts';
-	import { flipTransform, growPlacement, GROW_MS, GROW_SCALE, SHRINK_MS, TRAILER_AFTER, type Growth, type Rect } from '../grow.ts';
+	import { flipTransform, growPlacement, GROW_MS, GROW_SCALE, GROW_WIDTH, SHRINK_MS, TRAILER_AFTER, type Growth, type Rect } from '../grow.ts';
 
 	// The wide card grown in place, Netflix style: the card itself (same
 	// picture, same logo, same badges) scales up about 1.5x over its
@@ -123,7 +123,7 @@
 		const a = from();
 		const panel = card.querySelector<HTMLElement>('.panel')?.offsetHeight ?? 0;
 		const row = (anchor.closest('.row') ?? anchor.closest('main'))?.getBoundingClientRect();
-		return growPlacement({ left: a.left, top: a.top, width: a.width, height: a.height }, panel, { width: document.documentElement.clientWidth, height: window.innerHeight }, row ? { left: row.left, right: row.right } : undefined);
+		return growPlacement({ left: a.left, top: a.top, width: a.width, height: a.height }, panel, { width: document.documentElement.clientWidth, height: window.innerHeight }, row ? { left: row.left, right: row.right } : undefined, { min: GROW_WIDTH, max: GROW_WIDTH });
 	}
 
 	/** The clip that shows only the picture (the start and end of the grow). */
@@ -265,7 +265,7 @@
 	data-testid="grow-card"
 	style:left="{g?.left ?? -9999}px"
 	style:top="{g?.top ?? -9999}px"
-	style:width="{g?.width ?? from().width * GROW_SCALE}px"
+	style:width="{g?.width ?? GROW_WIDTH}px"
 	onpointerenter={onenter}
 	onpointerleave={onleave}
 	onfocusin={onenter}

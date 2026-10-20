@@ -7,6 +7,7 @@
 	import { autoplayHere, loadUISettings, trailerSources, type TrailerSource } from '../autoplay.svelte.ts';
 	import { placeCard } from '../trailer.ts';
 	import { sized } from '../tmdb-image.ts';
+	import { GROW_WIDTH } from '../grow.ts';
 
 	// The Netflix-style expanded card: opened over a poster after a hover or
 	// keyboard-focus delay (PosterCard decides when), a scaled-up card with a
@@ -54,8 +55,8 @@
 	function place() {
 		if (!card) return;
 		const a = anchor.getBoundingClientRect();
-		// About twice the poster width, so the card is bigger than the poster it grows from, like Netflix; it starts at the poster's own size.
-		W = Math.round(Math.min(440, Math.max(320, a.width * 2)));
+		// One width for every hover card (GROW_WIDTH), bigger than the poster it grows from, like Netflix; it starts at the poster's own size.
+		W = Math.min(GROW_WIDTH, document.documentElement.clientWidth - 16);
 		from = Math.min(1, a.width / W);
 		const h = card.offsetHeight;
 		const row = (anchor.closest('.row') ?? anchor.closest('main'))?.getBoundingClientRect();

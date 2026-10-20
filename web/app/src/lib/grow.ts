@@ -22,6 +22,8 @@ export interface Growth {
 }
 
 export const GROW_SCALE = 1.5;
+/** Every hover card grows to this one width (a 276 px card x 1.5), whatever row it is in. */
+export const GROW_WIDTH = 414;
 export const GROW_MIN = 240;
 export const GROW_MAX = 560;
 export const GROW_MS = 220;
