@@ -843,10 +843,10 @@ export function serviceChips(rows: ServiceTopRow[], mine: number[]): ServiceTopR
 /** serviceLabel is the line under the row title for one service's list. */
 export function serviceLabel(r: Pick<ServiceTopRow, 'source' | 'name' | 'age_seconds' | 'fetched_at'>): string {
 	if (r.source !== 'streaming-availability') return `Popular on ${r.name}`;
-	if (r.age_seconds < 24 * 3600) return `Trending now on ${r.name} · via Streaming Availability`;
+	if (r.age_seconds < 24 * 3600) return `Trending now on ${r.name}`;
 	const d = new Date(r.fetched_at);
 	const when = Number.isNaN(d.getTime()) ? 'recently' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
-	return `Trending on ${r.name} as of ${when} · via Streaming Availability`;
+	return `Trending on ${r.name} as of ${when}`;
 }
 
 // ---- Genre pages ----

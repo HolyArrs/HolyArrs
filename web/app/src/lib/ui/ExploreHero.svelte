@@ -76,7 +76,7 @@
 
 <style>
 	.about { min-height: calc(16px * 1.45 * 3); }
-	.info { display: inline-flex; align-items: center; min-height: 44px; padding: 0 20px; border-radius: var(--r-pill); background: rgb(255 255 255 / 16%); border: 1px solid rgb(255 255 255 / 22%); color: #fff; font: var(--t-headline); -webkit-backdrop-filter: blur(18px) saturate(160%); backdrop-filter: blur(18px) saturate(160%); transition: background var(--dur-fast) var(--ease-out), transform var(--dur-instant) var(--ease-out); }
+	.info { display: inline-flex; align-items: center; min-height: var(--hero-btn, 44px); padding: 0 clamp(20px, 1.4vw, 32px); font-size: clamp(16px, 1vw, 22px) !important; border-radius: var(--r-pill); background: rgb(255 255 255 / 16%); border: 1px solid rgb(255 255 255 / 22%); color: #fff; font: var(--t-headline); -webkit-backdrop-filter: blur(18px) saturate(160%); backdrop-filter: blur(18px) saturate(160%); transition: background var(--dur-fast) var(--ease-out), transform var(--dur-instant) var(--ease-out); }
 	.info:hover { background: rgb(255 255 255 / 26%); }
 	.info:active { transform: scale(.97); }
 	.info:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff; }

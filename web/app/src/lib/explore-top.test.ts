@@ -51,10 +51,10 @@ describe('per-service top lists', () => {
 		expect(serviceChips(rows, []).map((r) => r.service)).toEqual([8, 9, 337]);
 	});
 	it('labels today, an older list, and TMDB popularity', () => {
-		expect(serviceLabel(row(8, 'Netflix'))).toBe('Trending now on Netflix · via Streaming Availability');
-		expect(serviceLabel({ ...row(8, 'Netflix'), age_seconds: 2 * 86400 })).toBe('Trending on Netflix as of Oct 18 · via Streaming Availability');
+		expect(serviceLabel(row(8, 'Netflix'))).toBe('Trending now on Netflix');
+		expect(serviceLabel({ ...row(8, 'Netflix'), age_seconds: 2 * 86400 })).toBe('Trending on Netflix as of Oct 18');
 		expect(serviceLabel({ ...row(386, 'Peacock'), source: 'tmdb-popular' })).toBe('Popular on Peacock');
-		expect(serviceLabel(row(43, 'Starz'))).toBe('Trending now on Starz · via Streaming Availability');
+		expect(serviceLabel(row(43, 'Starz'))).toBe('Trending now on Starz');
 		expect(serviceLabel({ ...row(73, 'Tubi'), source: 'tmdb-popular' })).toBe('Popular on Tubi');
 	});
 });

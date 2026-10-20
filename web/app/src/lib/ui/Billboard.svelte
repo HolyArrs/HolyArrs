@@ -233,10 +233,14 @@
 	.heading :global(.bb-name) { font-family: var(--font-display, var(--font-ui)); font-weight: 800; font-size: clamp(36px, 4.6vw, 64px); line-height: 1; letter-spacing: -0.03em; text-wrap: balance; overflow-wrap: anywhere; text-shadow: 0 2px 30px rgb(0 0 0 / 35%); }
 	.heading :global(.bb-logo img) { display: block; max-width: 100%; max-height: var(--title-h); width: auto; height: auto; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 4px 24px rgb(0 0 0 / 45%)); }
 	.meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
-	.meta :global(p) { margin: 0; font: 600 15px/1.35 var(--font-ui); color: rgb(255 255 255 / 92%); font-variant-numeric: tabular-nums; text-shadow: 0 1px 2px rgb(0 0 0 / 60%); }
+	.meta :global(p) { margin: 0; font: 600 clamp(15px, .9vw, 22px)/1.35 var(--font-ui); color: rgb(255 255 255 / 92%); font-variant-numeric: tabular-nums; text-shadow: 0 1px 2px rgb(0 0 0 / 60%); }
 	.fold :global(.bb-desc) { margin: 0; font: 400 clamp(13px, 1.05vw, 16px)/1.45 var(--font-ui); color: rgb(255 255 255 / 92%); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; max-width: 100%; text-shadow: 0 1px 2px rgb(0 0 0 / 60%); }
 	.fold :global(.bb-desc.open) { -webkit-line-clamp: unset; line-clamp: unset; display: block; }
-	.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 4px; }
+	/* Netflix sizes the billboard's buttons and facts with the window (measured at 2048 px: 48 px pills, 18 px facts). */
+	.actions { --hero-btn: clamp(44px, 2.35vw, 60px); display: flex; flex-wrap: wrap; align-items: center; gap: clamp(10px, .6vw, 14px); margin-top: 4px; }
+	.actions :global(.ui-act) { height: var(--hero-btn); min-width: var(--hero-btn); font-size: clamp(16px, 1vw, 22px); }
+	.actions :global(.ui-act.round) { width: var(--hero-btn); }
+	.actions :global(.ui-ibtn) { width: var(--hero-btn); height: var(--hero-btn); }
 	.ui-billboard :global(.ui-trailer + .shade) { z-index: 1; }
 	.ui-billboard :global(.ctl) { z-index: 4; bottom: clamp(24px, 3.4vw, 44px); right: clamp(20px, 4vw, 56px); }
 	@media (max-width: 767px) {
