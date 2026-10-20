@@ -55,6 +55,8 @@ type Server struct {
 	Restart func()
 	// Secrets stores the encrypted settings.
 	Secrets *secrets.Vault
+	// TraktBase is the Trakt API address for reviews; empty is the real one.
+	TraktBase string
 	// MetadataUp reports whether the metadata server answers (cached
 	// about a minute); nil counts as up.
 	MetadataUp func(context.Context) bool
@@ -294,6 +296,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}", a.metadataDetails)
 	m.HandleFunc("GET /api/v1/metadata/show/{tmdb_id}/seasons/{number}", a.metadataSeason)
 	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}/more-from", a.metadataMoreFrom)
+	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}/reviews", a.metadataReviews)
 	m.HandleFunc("GET /api/v1/trailer/batch", a.trailerBatch)
 	m.HandleFunc("GET /api/v1/trailer/{kind}/{tmdb_id}", a.trailerStream)
 	m.HandleFunc("GET /api/v1/trailer/stream/{id}/manifest.m3u8", a.trailerManifest)
@@ -315,6 +318,8 @@ func (a *API) Handler() http.Handler {
 	if a.s.Secrets != nil {
 		m.HandleFunc("GET /api/v1/settings/trakt-key", a.getTraktKey)
 		m.HandleFunc("PUT /api/v1/settings/trakt-key", a.putTraktKey)
+		m.HandleFunc("GET /api/v1/settings/trakt-token", a.getTraktToken)
+		m.HandleFunc("PUT /api/v1/settings/trakt-token", a.putTraktToken)
 		m.HandleFunc("GET /api/v1/settings/tvdb-key", a.getTVDBKey)
 		m.HandleFunc("PUT /api/v1/settings/tvdb-key", a.putTVDBKey)
 		m.HandleFunc("GET /api/v1/settings/theaudiodb-key", a.getAudioDBKey)

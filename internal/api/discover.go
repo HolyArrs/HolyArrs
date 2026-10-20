@@ -43,6 +43,7 @@ type discoverEntry struct {
 	details  *metadata.Details
 	services []metadata.WatchService
 	episodes []metadata.DetailEpisode
+	reviews  *metadata.ReviewPage
 }
 
 // discoverState holds the row cache and each person's request times.
