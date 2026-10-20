@@ -259,16 +259,16 @@
 
 <style>
 	:global(html.scroll-held) { overflow: hidden; padding-right: var(--held-scrollbar, 0px); }
-	.ui-theater { position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; color: var(--on-art); overflow: hidden; }
+	.ui-theater { position: fixed; inset: 0; width: auto; height: auto; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; color: var(--on-art); overflow: hidden; }
 	.ui-theater::backdrop { background: var(--on-art-scrim); }
-	.ui-theater:fullscreen { width: 100vw; height: 100vh; }
+	.ui-theater:fullscreen { width: 100%; height: 100%; }
 	.stage { position: absolute; inset: 0; background: #000; transform-origin: 0 0; overflow: hidden; container-type: size; }
 	video, iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; object-fit: contain; background: #000; }
 	iframe { pointer-events: none; }
 	.catch { position: absolute; inset: 0; border: 0; background: transparent; padding: 0; }
 	.top, .bar { position: absolute; left: 0; right: 0; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 20px clamp(16px, 3vw, 40px); transition: opacity 400ms var(--ease-out), transform 400ms var(--ease-out); }
 	.top { top: 0; justify-content: space-between; background: linear-gradient(to bottom, var(--on-art-scrim-mid), var(--on-art-scrim-none)); }
-	.bar { bottom: 0; padding-bottom: max(20px, env(safe-area-inset-bottom)); background: linear-gradient(to top, var(--on-art-scrim), var(--on-art-scrim-none)); }
+	.bar { bottom: 0; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); overflow: visible; background: linear-gradient(to top, var(--on-art-scrim), var(--on-art-scrim-none)); }
 	.idle .top { opacity: 0; transform: translateY(-8px); }
 	.idle .bar { opacity: 0; transform: translateY(8px); }
 	.idle { cursor: none; }
