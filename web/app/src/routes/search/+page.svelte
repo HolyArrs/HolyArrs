@@ -60,6 +60,21 @@
 	// row by row behind it; under reduced motion the dissolve alone.
 	const calm = reducedMotion();
 	let revealing = $state(true);
+	// Search is a layer: Close, Escape on an empty field or Back returns to the
+	// page you came from (its history entry, so its scroll comes back too).
+	// Typing replaces the address, so only links inside Search add entries.
+	let cameFrom = false;
+	let depth = 0;
+	let leaving = $state(false);
+	function exit() {
+		if (leaving) return;
+		revealing = false;
+		leaving = true;
+	}
+	function left() {
+		if (cameFrom) history.go(-(depth + 1));
+		else void goto(to('/'));
+	}
 	const t0 = typeof performance === 'undefined' ? 0 : performance.now();
 	// Each tile starts rising so it lands just as the sweep clears its row.
 	function landing(node: HTMLElement) {
@@ -278,9 +293,10 @@
 		if (searchField.term.trim()) void run();
 		searchHooks.submit = () => void run(new SubmitEvent('submit'));
 		searchHooks.blur = blurred;
+		searchHooks.exit = exit;
 		void tick().then(() => { if (!(document.activeElement instanceof HTMLInputElement)) focusField(); });
 		return () => {
-			searchHooks.submit = searchHooks.blur = undefined;
+			searchHooks.submit = searchHooks.blur = searchHooks.exit = undefined;
 			searchField.term = '';
 			clearTimeout(timer);
 			removeEventListener('resize', sync);
@@ -288,8 +304,15 @@
 	});
 
 	// A new ?q= from elsewhere (Ctrl+K, a link) runs it; our own address writes do nothing.
-	afterNavigate(({ from, to: dest }) => {
+	afterNavigate(({ from, to: dest, type }) => {
 		if (!from || !dest) return;
+		if (!from.url.pathname.endsWith('/search')) {
+			cameFrom = true;
+			depth = 0;
+			return;
+		}
+		if (type === 'popstate') depth = Math.max(0, depth - 1);
+		else if (type === 'link') depth++;
 		if (ownAddresses.delete(dest.url.href)) return;
 		const q = dest.url.searchParams.get('q') ?? '';
 		const s = readScope(dest.url.searchParams.get('kind'));
@@ -354,7 +377,8 @@
 
 <section class="search" class:calm data-testid="search-page">
 	<h1 class="sr-only">Search</h1>
-	<div class="phone-field"><SearchField searchKey="" testid="search-box-phone" id="q-phone" /></div>
+	<div class="close-row"><Button variant="plain" icon="x" onclick={exit} data-testid="search-page-close">Close</Button></div>
+	<div class="phone-field"><SearchField searchKey="" testid="search-box-phone" id="q-phone" closable={false} /></div>
 	<MetadataNotice />
 
 	{#if scopeOptions.length > 2}
@@ -453,6 +477,7 @@
 </section>
 
 {#if revealing}<MosaicReveal ondone={() => (revealing = false)} />{/if}
+{#if leaving}<MosaicReveal reverse duration={500} ondone={left} />{/if}
 
 <AddArtistDialog bind:this={addArtist} {folders} {rules} defaults={musicDefaults} onadded={artistAdded} />
 <AskArtistDialog bind:this={askArtist} onasked={artistAsked} onrefused={artistRefused} />
@@ -461,6 +486,7 @@
 	.search { --title-item: max(200px, calc((100vw - 96px) / 5.16)); display: flex; flex-direction: column; gap: 24px; padding-bottom: 48px; min-width: 0; }
 	@media (max-width: 1279px) { .search { --title-item: max(180px, calc((100vw - 64px) / 4.2)); } }
 	@media (max-width: 767px) { .search { --title-item: calc((100vw - 40px) / 2.3); } }
+	.close-row { display: flex; justify-content: flex-end; margin-bottom: -16px; }
 	/* Phones only: the top bar (and its field) is hidden under 768 px. */
 	.phone-field { display: none; }
 	@media (max-width: 767px) { .phone-field { position: sticky; top: 8px; z-index: 22; display: flex; justify-content: center; } .phone-field :global(.ui-search) { width: 100%; } }

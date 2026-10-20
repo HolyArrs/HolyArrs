@@ -13,6 +13,11 @@ describe('search browse', () => {
 		expect(browseHref({ kind: 'movie', genre: 80 })).toBe('/explore?type=movies&genre=80');
 		expect(browseHref({ kind: 'show', genre: 80, mood: 'True crime' })).toBe('/search?mood=True+crime&genre=80&type=shows');
 	});
+	it('opens a merged genre under All', () => {
+		expect(browseHref({ kind: 'movie', genre: 878, both: true })).toBe('/explore?genre=878');
+		expect(browseHref({ kind: 'movie', genre: 14, mood: 'Dragons', both: true })).toBe('/search?mood=Dragons&genre=14&type=all');
+		expect(readMood(new URLSearchParams('mood=Dragons&genre=14&type=all'))).toEqual({ mood: 'Dragons', genre: 14, type: 'all' });
+	});
 	it('reads the mood view back, and nothing else', () => {
 		expect(readMood(new URLSearchParams('mood=Heist&genre=80&type=movies'))).toEqual({ mood: 'Heist', genre: 80, type: 'movies' });
 		expect(readMood(new URLSearchParams('mood=Heist&genre=x&type=movies'))).toBeNull();

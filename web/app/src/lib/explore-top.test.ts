@@ -33,6 +33,7 @@ describe('genre pages', () => {
 		expect(parseGenre('10765', 'shows')?.name).toBe('Sci-Fi & Fantasy');
 		expect(parseGenre(null, 'movies')).toBeNull();
 		expect(parseGenre('27', 'all')).toBeNull();
+		expect(parseGenre('878', 'all')?.name).toBe('Science Fiction');
 	});
 	it('builds the genre page path', () => {
 		expect(genrePath('movies', 27)).toBe('/explore/genre?type=movies&genre=27');

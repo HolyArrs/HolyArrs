@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
+	import { onMount, tick, untrack } from 'svelte';
 	import { anchorDelta, canReturn, putOffsets, readAnchor, readOffsets, type ExploreReturn } from '#lib/explore-return.ts';
 	import { page } from '$app/state';
 	import { goto, snapshot } from '$app/navigation';
@@ -225,10 +225,41 @@
 		const g = genre;
 		if (g && genreLoaded !== g.id) void loadGenre(g.id);
 	});
+	// Back from a genre page lands on the tab and the spot it was opened from: the address
+	// (tab included) maps to where the page stood when a genre was opened from it.
+	const spots = new Map<string, ExploreReturn>();
+	function rememberSpot() {
+		spots.set(new URL((page.shallow?.url ?? page.url).href).href, {
+			y: Math.round(scrollY),
+			rows: readOffsets(document),
+			anchor: readAnchor(document, document.querySelector('main')?.getBoundingClientRect().top ?? 0)
+		});
+	}
+	$effect(() => {
+		const u = page.shallow?.url ?? page.url;
+		untrack(() => {
+			const t = parseType(u.searchParams.get('type'), musicOn);
+			if (t !== type) {
+				type = t;
+				try {
+					localStorage.setItem(TYPE_KEY, t);
+				} catch {
+					/* the choice is a convenience */
+				}
+				void loadHead();
+			}
+			const spot = spots.get(u.href);
+			if (spot && !u.searchParams.has('genre')) {
+				spots.delete(u.href);
+				back = spot;
+			}
+		});
+	});
 	/** pickGenre opens a genre page (a new history entry, so Back returns); null clears it. */
 	function pickGenre(id: number | null, close?: () => void) {
 		close?.();
 		const url = new URL((page.shallow?.url ?? page.url).href);
+		if (id !== null) rememberSpot();
 		if (id === null) url.searchParams.delete('genre');
 		else url.searchParams.set('genre', String(id));
 		genreLoaded = null;
@@ -262,6 +293,7 @@
 		if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
 		e.preventDefault();
 		const t = genreTab(c);
+		rememberSpot();
 		if (type !== t) {
 			type = t;
 			try {
@@ -272,7 +304,8 @@
 			void loadHead();
 		}
 		const url = new URL((page.shallow?.url ?? page.url).href);
-		url.searchParams.set('type', t);
+		if (t === 'all') url.searchParams.delete('type');
+		else url.searchParams.set('type', t);
 		url.searchParams.set('genre', String(c.id));
 		genreLoaded = null;
 		void goto(url, { shallow: true, reset: false });

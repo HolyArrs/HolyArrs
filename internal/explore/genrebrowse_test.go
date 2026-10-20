@@ -108,3 +108,36 @@ func TestBrowseGenresTooFewAndCap(t *testing.T) {
 		t.Fatalf("cap: got %d", len(got))
 	}
 }
+
+func TestBrowseGenresMergeShowCombinedUnderAll(t *testing.T) {
+	items := append(movieSpread(),
+		browseItem("show", 500, 50, "Sci-Fi & Fantasy"),
+		browseItem("show", 501, 60, "Action & Adventure"),
+		browseItem("show", 502, 70, "War & Politics"),
+		browseItem("movie", 503, 40, "Fantasy"))
+	cards := BrowseGenres(browsePage(items...), "all", nil, false)
+	by := map[string]GenreCard{}
+	for _, c := range cards {
+		by[c.Name] = c
+	}
+	for _, n := range []string{"Sci-Fi & Fantasy", "Action & Adventure", "War & Politics"} {
+		if _, ok := by[n]; ok {
+			t.Fatalf("%q still a card under All: %v", n, names(cards))
+		}
+	}
+	if c, ok := by["Fantasy"]; !ok || c.Kind != "movie" || c.ID != 14 || !c.Both {
+		t.Fatalf("Fantasy card = %+v", c)
+	}
+	if c := by["Action"]; !c.Both || c.ID != 28 {
+		t.Fatalf("Action card = %+v", c)
+	}
+	if by["Drama"].Both {
+		t.Fatal("Drama is not merged")
+	}
+	// On the Shows tab the combined genre stays.
+	for _, c := range BrowseGenres(browsePage(items...), "shows", nil, false) {
+		if c.Both {
+			t.Fatalf("Both on Shows: %+v", c)
+		}
+	}
+}

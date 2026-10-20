@@ -15,6 +15,8 @@ type BrowseTile struct {
 	Name      string `json:"name"`
 	Backdrop  string `json:"backdrop"`
 	From      string `json:"from"`
+	// Both: the genre page holds movies and shows (type=all, the movie id).
+	Both bool `json:"both,omitempty"`
 }
 
 // kidMoodsOff are mood rows a Kid never sees, even under a kid-safe genre.
@@ -44,18 +46,21 @@ func BrowseTiles(pg Page, sw string, kid bool, moods func(genre string) []string
 					continue
 				}
 				seen[it.Key()] = true
-				for _, g := range it.Genres {
-					if genreID(it.Kind, g) == 0 || (kid && !kidGenres[g]) {
-						continue
+				for _, g0 := range it.Genres {
+					kind, names := mergeGenre(sw, it.Kind, g0)
+					for _, g := range names {
+						if genreID(kind, g) == 0 || (kid && !kidGenres[g]) {
+							continue
+						}
+						k := kind + "|" + g
+						c := by[k]
+						if c == nil {
+							c = &cand{kind: kind, name: g}
+							by[k] = c
+						}
+						c.weight += 1 + it.Pop/100
+						c.items = append(c.items, it)
 					}
-					k := it.Kind + "|" + g
-					c := by[k]
-					if c == nil {
-						c = &cand{kind: it.Kind, name: g}
-						by[k] = c
-					}
-					c.weight += 1 + it.Pop/100
-					c.items = append(c.items, it)
 				}
 			}
 		}
@@ -101,7 +106,8 @@ func BrowseTiles(pg Page, sw string, kid bool, moods func(genre string) []string
 		}
 		named[c.name] = true
 		id := genreID(c.kind, c.name)
-		out = append(out, BrowseTile{Kind: c.kind, Genre: id, GenreName: c.name, Name: c.name, Backdrop: it.Backdrop, From: it.Key()})
+		both := sw == "all" && ShowGenreFor(c.name) != ""
+		out = append(out, BrowseTile{Kind: c.kind, Genre: id, GenreName: c.name, Name: c.name, Backdrop: it.Backdrop, From: it.Key(), Both: both})
 		if moods == nil {
 			continue
 		}
@@ -114,7 +120,7 @@ func BrowseTiles(pg Page, sw string, kid bool, moods func(genre string) []string
 				break
 			}
 			named[m] = true
-			out = append(out, BrowseTile{Kind: c.kind, Genre: id, GenreName: c.name, Mood: m, Name: m, Backdrop: mi.Backdrop, From: mi.Key()})
+			out = append(out, BrowseTile{Kind: c.kind, Genre: id, GenreName: c.name, Mood: m, Name: m, Backdrop: mi.Backdrop, From: mi.Key(), Both: both})
 		}
 	}
 	return out

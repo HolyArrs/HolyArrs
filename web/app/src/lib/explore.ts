@@ -874,9 +874,13 @@ export function genresFor(t: ExploreType): Genre[] {
 	return t === 'movies' ? GENRES.movie : t === 'shows' ? GENRES.show : [];
 }
 
-/** parseGenre reads ?genre= for a tab: a known genre of that type, else null. */
+/** MERGED_GENRES: movie genres TV combines with another (TMDB's TV genres are combined); under All their page holds movies and shows. */
+const MERGED_GENRES = new Set([878, 14, 28, 12, 10752]);
+
+/** parseGenre reads ?genre= for a tab: a known genre of that type, else null. Under All only a merged genre (movie id) is one. */
 export function parseGenre(v: string | null | undefined, t: ExploreType): Genre | null {
 	const id = Number(v);
+	if (t === 'all') return MERGED_GENRES.has(id) ? (GENRES.movie.find((g) => g.id === id) ?? null) : null;
 	return genresFor(t).find((g) => g.id === id) ?? null;
 }
 

@@ -59,3 +59,17 @@ func TestBrowseTilesOneNameUnderAll(t *testing.T) {
 		t.Fatalf("tiles %+v", got)
 	}
 }
+
+func TestBrowseTilesMergeShowCombinedUnderAll(t *testing.T) {
+	pg := browsePage(
+		browseItem("show", 1, 50, "Sci-Fi & Fantasy"), browseItem("show", 2, 40, "Sci-Fi & Fantasy"),
+		browseItem("movie", 3, 30, "Science Fiction"), browseItem("show", 4, 20, "War & Politics"))
+	for _, tl := range BrowseTiles(pg, "all", false, nil) {
+		if tl.GenreName == "Sci-Fi & Fantasy" || tl.GenreName == "War & Politics" {
+			t.Fatalf("combined tile under All: %+v", tl)
+		}
+		if (tl.GenreName == "Science Fiction" || tl.GenreName == "War" || tl.GenreName == "Fantasy") && (!tl.Both || tl.Kind != "movie") {
+			t.Fatalf("merged tile = %+v", tl)
+		}
+	}
+}

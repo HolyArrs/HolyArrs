@@ -8,6 +8,8 @@ describe('genre row', () => {
 		expect(genreCardHref({ kind: 'movie', id: 27 })).toBe('/explore?type=movies&genre=27');
 		expect(genreCardHref({ kind: 'show', id: 10765 })).toBe('/explore?type=shows&genre=10765');
 		expect(genreRowPath('all')).toBe('/explore/genre-row?type=all');
+		// A merged genre (TV combines it) opens under All, movies and shows together.
+		expect(genreCardHref({ kind: 'movie', id: 878, both: true })).toBe('/explore?genre=878');
 	});
 
 	it('sits after row 6, past the first personal rows', () => {

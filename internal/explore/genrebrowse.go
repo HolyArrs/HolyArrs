@@ -11,6 +11,8 @@ type GenreCard struct {
 	Backdrop string `json:"backdrop"`
 	// From is the title the backdrop comes from (kind:tmdb id).
 	From string `json:"from"`
+	// Both: the genre page holds movies and shows (type=all, the movie id).
+	Both bool `json:"both,omitempty"`
 }
 
 // Genre row sizes: at most GenreRowMax cards; under GenreRowMin the row
@@ -57,18 +59,21 @@ func BrowseGenres(pg Page, sw string, taste []string, kid bool) []GenreCard {
 					continue
 				}
 				seen[it.Key()] = true
-				for _, g := range it.Genres {
-					if genreID(it.Kind, g) == 0 || (kid && !kidGenres[g]) {
-						continue
+				for _, g0 := range it.Genres {
+					kind, names := mergeGenre(sw, it.Kind, g0)
+					for _, g := range names {
+						if genreID(kind, g) == 0 || (kid && !kidGenres[g]) {
+							continue
+						}
+						k := kind + "|" + g
+						c := by[k]
+						if c == nil {
+							c = &cand{kind: kind, name: g}
+							by[k] = c
+						}
+						c.weight += 1 + it.Pop/100
+						c.items = append(c.items, it)
 					}
-					k := it.Kind + "|" + g
-					c := by[k]
-					if c == nil {
-						c = &cand{kind: it.Kind, name: g}
-						by[k] = c
-					}
-					c.weight += 1 + it.Pop/100
-					c.items = append(c.items, it)
 				}
 			}
 		}
@@ -119,7 +124,7 @@ func BrowseGenres(pg Page, sw string, taste []string, kid bool) []GenreCard {
 		for _, it := range items {
 			if !used[it.Backdrop] {
 				used[it.Backdrop] = true
-				out = append(out, GenreCard{Kind: c.kind, ID: genreID(c.kind, c.name), Name: c.name, Backdrop: it.Backdrop, From: it.Key()})
+				out = append(out, GenreCard{Kind: c.kind, ID: genreID(c.kind, c.name), Name: c.name, Backdrop: it.Backdrop, From: it.Key(), Both: sw == "all" && ShowGenreFor(c.name) != ""})
 				break
 			}
 		}

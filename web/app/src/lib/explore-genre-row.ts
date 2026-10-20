@@ -6,6 +6,8 @@ export interface GenreRowCard {
 	id: number;
 	name: string;
 	backdrop: string;
+	/** The genre page holds movies and shows: it opens under All (id is the movie genre's). */
+	both?: boolean;
 	/** The title the backdrop comes from (kind:tmdb id). */
 	from: string;
 }
@@ -26,11 +28,12 @@ export function genreRowPath(t: ExploreType): string {
 }
 
 /** genreTab is the tab whose genre page a card opens. */
-export const genreTab = (c: Pick<GenreRowCard, 'kind'>): 'movies' | 'shows' => (c.kind === 'show' ? 'shows' : 'movies');
+export const genreTab = (c: Pick<GenreRowCard, 'kind' | 'both'>): 'all' | 'movies' | 'shows' => (c.both ? 'all' : c.kind === 'show' ? 'shows' : 'movies');
 
 /** genreCardHref is the Explore genre page a card opens: the same URL the Genres picker sets. */
-export function genreCardHref(c: Pick<GenreRowCard, 'kind' | 'id'>): string {
-	return `/explore?${new URLSearchParams({ type: genreTab(c), genre: String(c.id) }).toString()}`;
+export function genreCardHref(c: Pick<GenreRowCard, 'kind' | 'id' | 'both'>): string {
+	const type = genreTab(c);
+	return `/explore?${new URLSearchParams(type === 'all' ? { genre: String(c.id) } : { type, genre: String(c.id) }).toString()}`;
 }
 
 /**

@@ -12,6 +12,30 @@ var Genres = map[string]map[int]string{
 		10751: "Family", 10762: "Kids", 9648: "Mystery", 10764: "Reality", 10765: "Sci-Fi & Fantasy", 10768: "War & Politics", 37: "Western"},
 }
 
+// showCombined maps a movie genre to the TV genre that combines it with
+// another (TMDB's TV genres are combined, its movie genres are separate).
+var showCombined = map[string]string{"Science Fiction": "Sci-Fi & Fantasy", "Fantasy": "Sci-Fi & Fantasy",
+	"Action": "Action & Adventure", "Adventure": "Action & Adventure", "War": "War & Politics"}
+
+// movieSplit is the other way: a combined TV genre's movie genres.
+var movieSplit = map[string][]string{"Sci-Fi & Fantasy": {"Science Fiction", "Fantasy"},
+	"Action & Adventure": {"Action", "Adventure"}, "War & Politics": {"War"}}
+
+// ShowGenreFor is the combined TV genre a movie genre merges with, "" when none.
+func ShowGenreFor(movieGenre string) string { return showCombined[movieGenre] }
+
+// mergeGenre says which genre cards an item's genre g counts for under
+// All: a combined TV genre counts for its movie genres (as movie genres),
+// any other genre for itself.
+func mergeGenre(sw, kind, g string) (string, []string) {
+	if sw == "all" && kind == "show" {
+		if m := movieSplit[g]; m != nil {
+			return "movie", m
+		}
+	}
+	return kind, []string{g}
+}
+
 // GenreName is the name of genre id for kind, "" when unknown.
 func GenreName(kind string, id int) string { return Genres[kind][id] }
 

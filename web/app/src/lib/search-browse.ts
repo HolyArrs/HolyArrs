@@ -10,6 +10,8 @@ export interface BrowseTile {
 	name: string;
 	backdrop: string;
 	from: string;
+	/** The genre page holds movies and shows (type all, the movie genre's id). */
+	both?: boolean;
 }
 
 export interface BrowseAnswer {
@@ -26,18 +28,19 @@ export function browseType(scope: string): ExploreType {
 	return scope === 'movie' ? 'movies' : scope === 'show' ? 'shows' : 'all';
 }
 
-const tabOf = (kind: BrowseTile['kind']): 'movies' | 'shows' => (kind === 'show' ? 'shows' : 'movies');
+const tabOf = (t: Pick<BrowseTile, 'kind' | 'both'>): 'all' | 'movies' | 'shows' => (t.both ? 'all' : t.kind === 'show' ? 'shows' : 'movies');
 
 /** browseHref: a genre tile opens the Explore genre page, a mood tile Search's mood view. */
-export function browseHref(t: Pick<BrowseTile, 'kind' | 'genre' | 'mood'>): string {
-	if (t.mood) return `/search?${new URLSearchParams({ mood: t.mood, genre: String(t.genre), type: tabOf(t.kind) }).toString()}`;
-	return `/explore?${new URLSearchParams({ type: tabOf(t.kind), genre: String(t.genre) }).toString()}`;
+export function browseHref(t: Pick<BrowseTile, 'kind' | 'genre' | 'mood' | 'both'>): string {
+	const type = tabOf(t);
+	if (t.mood) return `/search?${new URLSearchParams({ mood: t.mood, genre: String(t.genre), type }).toString()}`;
+	return `/explore?${new URLSearchParams(type === 'all' ? { genre: String(t.genre) } : { type, genre: String(t.genre) }).toString()}`;
 }
 
 export interface MoodView {
 	mood: string;
 	genre: number;
-	type: 'movies' | 'shows';
+	type: 'all' | 'movies' | 'shows';
 }
 
 /** readMood reads Search's mood view from the address; null when it is not one. */
@@ -45,7 +48,7 @@ export function readMood(p: Pick<URLSearchParams, 'get'>): MoodView | null {
 	const mood = p.get('mood')?.trim();
 	const genre = Number(p.get('genre'));
 	const type = p.get('type');
-	if (!mood || !Number.isInteger(genre) || genre <= 0 || (type !== 'movies' && type !== 'shows')) return null;
+	if (!mood || !Number.isInteger(genre) || genre <= 0 || (type !== 'all' && type !== 'movies' && type !== 'shows')) return null;
 	return { mood, genre, type };
 }
 
