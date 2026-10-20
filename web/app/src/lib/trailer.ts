@@ -133,7 +133,7 @@ export function playerBusy(): boolean {
 const SOUND_KEY = 'holyarrs.trailer.sound';
 
 /** Whether the person turned trailer sound on earlier in this browser session. */
-export function soundWanted(): boolean {
+export function soundOn(): boolean {
 	try {
 		return sessionStorage.getItem(SOUND_KEY) === 'on';
 	} catch {
@@ -141,7 +141,7 @@ export function soundWanted(): boolean {
 	}
 }
 
-export function setSoundWanted(on: boolean) {
+export function setSoundOn(on: boolean) {
 	try {
 		if (on) sessionStorage.setItem(SOUND_KEY, 'on');
 		else sessionStorage.removeItem(SOUND_KEY);

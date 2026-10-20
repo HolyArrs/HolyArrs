@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import IconButton from './IconButton.svelte';
-	import { claimPlayer, embedUrl, setSoundWanted, soundWanted } from '../trailer.ts';
+	import { claimPlayer, embedUrl, setSoundOn, soundOn } from '../trailer.ts';
 	import type { TrailerSource } from '../autoplay.svelte.ts';
 
 	// A muted trailer over the hero or hover card art. Tries each source in
@@ -85,7 +85,7 @@
 		const first = !shown;
 		shown = true;
 		onplaying?.();
-		if (first && muted && soundWanted() && hasAudio()) unmute();
+		if (first && muted && soundOn() && hasAudio()) unmute();
 	}
 
 	function hasAudio() {
@@ -147,7 +147,7 @@
 		muted = !muted;
 		if (video) video.muted = muted;
 		else post(muted ? 'mute' : 'unMute');
-		setSoundWanted(!muted);
+		setSoundOn(!muted);
 	}
 	function replay(e?: MouseEvent) {
 		e?.preventDefault();
