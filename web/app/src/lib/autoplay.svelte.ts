@@ -93,29 +93,76 @@ export function playable(s: Pick<Stream, 'type' | 'url' | 'mp4_url'>, hls = nati
 	return s.url || null;
 }
 
-// Warmed players: the first bytes (MP4 header, or the HLS manifest) load
-// while the dwell runs, so the real player starts from the browser cache.
-const warmed = new Map<string, HTMLVideoElement>();
-function warm(url: string) {
-	if (typeof document === 'undefined' || warmed.has(url)) return;
+// Warmed players: at hover start a hidden, muted <video> starts playing the
+// address, so it is already decoding when the card opens; the card's player
+// takes that element over (adoptWarm) and only fades it in. An address this
+// browser refuses (Chrome may refuse YouTube's HLS manifest: error 4) is
+// remembered, the next one is tried in the same element, and the card's
+// player skips it.
+interface Warm { v: HTMLVideoElement; url: string; t: ReturnType<typeof setTimeout>; dead?: boolean }
+const warmed = new Map<string, Warm>();
+const refused = new Set<string>();
+function drop(v: HTMLVideoElement) {
+	v.remove();
+	v.pause();
+	v.removeAttribute('src');
+	v.load();
+}
+function forget(w: Warm) {
+	// Emptying the element fires its error event: that is not a refusal.
+	w.dead = true;
+	clearTimeout(w.t);
+	for (const [k, x] of warmed) if (x === w) warmed.delete(k);
+}
+function warm(urls: string[]) {
+	const list = urls.filter((u) => !refused.has(u));
+	if (typeof document === 'undefined' || !list.length || list.some((u) => warmed.has(u))) return;
 	const v = document.createElement('video');
 	v.muted = true;
-	// auto: the HLS manifest and first segments (or the MP4's first
-	// bytes) are in the cache before the card opens.
+	v.playsInline = true;
+	v.loop = true;
 	v.preload = 'auto';
-	v.src = url;
-	warmed.set(url, v);
-	setTimeout(() => {
-		v.removeAttribute('src');
-		v.load();
-		warmed.delete(url);
-	}, 30_000);
-	while (warmed.size > 4) {
-		const [k, old] = warmed.entries().next().value as [string, HTMLVideoElement];
-		old.removeAttribute('src');
-		old.load();
-		warmed.delete(k);
+	// In the page (Chrome plays native HLS only in an attached element), unseen.
+	v.setAttribute('aria-hidden', 'true');
+	v.style.cssText = 'position:fixed;left:0;top:0;width:160px;height:90px;opacity:0.01;pointer-events:none;z-index:-1';
+	document.body.appendChild(v);
+	const w: Warm = { v, url: list[0], t: setTimeout(() => (forget(w), drop(v)), 10_000) };
+	let i = 0;
+	const go = () => {
+		w.url = list[i];
+		v.src = w.url;
+		void v.play().catch(() => {});
+	};
+	v.addEventListener('error', () => {
+		if (w.dead || v.getAttribute('src') !== w.url) return;
+		refused.add(w.url);
+		warmed.delete(w.url);
+		if (++i < list.length) go();
+		else (forget(w), drop(v));
+	});
+	for (const u of list) warmed.set(u, w);
+	go();
+	const all = new Set(warmed.values());
+	if (all.size > 3) {
+		const old = all.values().next().value as Warm;
+		forget(old);
+		drop(old.v);
 	}
+}
+
+/** hasWarm says whether a warmed element is ready to be taken for url. */
+export function hasWarm(url: string): boolean {
+	const w = warmed.get(url);
+	return !!w && w.url === url && !w.v.error && !w.dead;
+}
+
+/** adoptWarm hands over the warmed, already playing element for url (null: none). */
+export function adoptWarm(url: string): HTMLVideoElement | null {
+	const w = warmed.get(url);
+	if (!w || !hasWarm(url)) return null;
+	forget(w);
+	w.dead = false;
+	return w.v;
 }
 
 /**
@@ -127,8 +174,7 @@ export function prefetchTrailer(kind: 'movie' | 'show', tmdb: string) {
 	void loadUISettings().then(() => {
 		if (!autoplayHere()) return;
 		void directStream(kind, tmdb).then((s) => {
-			const u = s && playable(s);
-			if (u) warm(u);
+			if (s) warm(sourcesFor(s, undefined, nativeHLS(), soundOn()).flatMap((x) => (x.kind === 'direct' ? [x.url] : [])));
 		});
 	});
 }
@@ -227,7 +273,7 @@ function directStream(kind: 'movie' | 'show', tmdb: string, signal?: AbortSignal
  */
 export async function trailerSources(kind: 'movie' | 'show', tmdb: string, videos: Video[] | undefined, signal?: AbortSignal): Promise<TrailerSource[]> {
 	const s = await directStream(kind, tmdb, signal);
-	return sourcesFor(s, pickTrailer(videos, lang())?.key, nativeHLS(), soundOn());
+	return sourcesFor(s, pickTrailer(videos, lang())?.key, nativeHLS(), soundOn()).filter((x) => x.kind !== 'direct' || !refused.has(x.url));
 }
 
 /**

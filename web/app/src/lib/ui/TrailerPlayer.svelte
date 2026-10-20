@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { onDestroy } from 'svelte';
+	import { onDestroy, untrack } from 'svelte';
 	import IconButton from './IconButton.svelte';
 	import { claimPlayer, embedUrl, setSoundOn, soundOn } from '../trailer.ts';
-	import { hasSound, nativeHLS, onUnmute, type TrailerSource } from '../autoplay.svelte.ts';
+	import { adoptWarm, hasSound, hasWarm, nativeHLS, onUnmute, type TrailerSource } from '../autoplay.svelte.ts';
 	import { attachHLS } from '../hls-player.ts';
 
 	// A muted trailer over the hero or hover card art. Tries each source in
@@ -143,6 +143,38 @@
 			v.removeEventListener('error', fail);
 		};
 	});
+
+	// Hover cards: take over the element warmed at hover start (already
+	// playing, muted, unseen) instead of starting a new one.
+	// Untracked: the attachment must not run again (and drop the element) when state changes.
+	function takeWarm(node: HTMLVideoElement) {
+		return untrack(() => takeWarmNow(node));
+	}
+	function takeWarmNow(node: HTMLVideoElement) {
+		const url = src?.kind === 'direct' ? src.url : '';
+		const w = repeat && url ? adoptWarm(url) : null;
+		if (!w) return;
+		w.className = node.className;
+		w.removeAttribute('style');
+		w.removeAttribute('aria-hidden');
+		w.setAttribute('aria-label', node.getAttribute('aria-label') ?? '');
+		w.disablePictureInPicture = true;
+		// The rendered element got no address (warm below), so it is simply swapped out.
+		node.replaceWith(w);
+		video = w;
+		w.addEventListener('playing', started);
+		w.addEventListener('error', next);
+		if (!w.paused && w.readyState >= 3) started();
+		else void w.play().catch(() => {});
+		return () => {
+			w.removeEventListener('playing', started);
+			w.removeEventListener('error', next);
+			w.pause();
+			w.removeAttribute('src');
+			w.load();
+			w.remove();
+		};
+	}
 
 	function stop() {
 		stopped = true;
@@ -316,13 +348,14 @@
 
 <svelte:window onmessage={onMessage} />
 
-<div class="ui-trailer" class:shown bind:this={box}>
+<div class="ui-trailer" class:shown class:quick={repeat} bind:this={box}>
 	{#key `${at}:${run}`}
 		{#if src?.kind === 'direct'}
 			<!-- svelte-ignore a11y_media_has_caption -->
 			<video
 				bind:this={video}
-				src={src.url}
+				{@attach takeWarm}
+				src={repeat && hasWarm(src.url) ? undefined : src.url}
 				muted
 				autoplay
 				playsinline
@@ -396,6 +429,8 @@
 <style>
 	.ui-trailer { position: absolute; inset: 0; overflow: hidden; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); pointer-events: none; container-type: size; }
 	.ui-trailer.shown { opacity: 1; }
+	/* Hover cards: the picture is already moving; a short fade. */
+	.ui-trailer.quick { transition-duration: var(--dur-fast); }
 	video, iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; object-fit: cover; }
 	/* The embed is letterboxed 16:9; scale it to cover a wider or taller box. */
 	iframe { left: 50%; top: 50%; width: max(100%, 177.78cqh); height: max(100%, 56.25cqw); translate: -50% -50%; }
