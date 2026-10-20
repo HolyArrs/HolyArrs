@@ -56,6 +56,7 @@ type proxyStream struct {
 	last     time.Time
 	sent     int64
 	started  time.Time
+	retired  bool // replaced by a newer stream of the same person
 }
 
 type trailerProxy struct {
@@ -103,7 +104,7 @@ func (p *trailerProxy) begin(user int64, id string, now time.Time) (*proxyStream
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	s := p.streams[id]
-	if s == nil || s.user != user || now.After(s.expires) {
+	if s == nil || s.user != user || now.After(s.expires) || s.retired {
 		return nil, errNoStream
 	}
 	if !s.started.IsZero() && now.Sub(s.started) > proxyLife {
@@ -111,13 +112,24 @@ func (p *trailerProxy) begin(user int64, id string, now time.Time) (*proxyStream
 	}
 	if now.Sub(s.last) >= proxyIdle {
 		active, all := 0, 0
+		var oldest *proxyStream
 		for oid, o := range p.streams {
-			if oid != id && now.Sub(o.last) < proxyIdle {
+			if oid != id && !o.retired && now.Sub(o.last) < proxyIdle {
 				all++
 				if o.user == user {
 					active++
+					if oldest == nil || o.last.Before(oldest.last) {
+						oldest = o
+					}
 				}
 			}
+		}
+		// A person watches one trailer at a time: a new stream replaces their
+		// oldest (a hover card left a moment ago) instead of being refused.
+		if active >= proxyStreams && oldest != nil {
+			oldest.retired = true
+			active--
+			all--
 		}
 		if active >= proxyStreams || all >= proxyMaxActive {
 			return nil, errProxyBusy

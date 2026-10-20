@@ -187,8 +187,21 @@ func TestTrailerPassThroughCap(t *testing.T) {
 		}
 		p.done(7, s, 10)
 	}
-	if _, err := p.begin(7, ids[2], now); err != errProxyBusy {
+	// A third stream replaces the person's oldest instead of being refused;
+	// the replaced one is gone for good (no ping-pong between players).
+	if s, err := p.begin(7, ids[2], now.Add(time.Millisecond)); err != nil {
 		t.Fatalf("third stream: %v", err)
+	} else {
+		p.done(7, s, 0)
+	}
+	retired := 0
+	for _, id := range ids[:2] {
+		if _, err := p.begin(7, id, now); err == errNoStream {
+			retired++
+		}
+	}
+	if retired != 1 {
+		t.Fatalf("replaced streams: %d, want 1", retired)
 	}
 	if s, err := p.begin(8, p.register(8, "https://manifest.googlevideo.com/api/manifest/hls_variant/a/index.m3u8", exp), now); err != nil {
 		t.Fatalf("another person: %v", err)
