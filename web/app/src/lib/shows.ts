@@ -5,8 +5,8 @@ import { date } from './format.ts';
 
 /** seasonChoices are what Keep up to date covers when a show is added. */
 export const seasonChoices: [string, string, string][] = [
-	['all', 'Every season', 'Every episode of every season (specials stay off).'],
-	['future', 'Only new episodes', 'Episodes that have not aired yet, and every season to come.'],
+	['all', 'All seasons', 'Every episode of every season (specials stay off).'],
+	['future', 'Future seasons only', 'Nothing that is out already: only episodes airing from today on, and every season to come.'],
 	['latest', 'The latest season', 'Only the highest-numbered season.'],
 	['none', 'None for now', 'Add the show without keeping any season up to date; turn seasons on later.']
 ];

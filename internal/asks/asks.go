@@ -863,7 +863,7 @@ func label(a domain.Ask) string {
 		l += " (" + strconv.Itoa(*a.Year) + ")"
 	}
 	if a.Kind == "show" && len(a.Seasons) > 0 {
-		l += ", " + seasonWords(a.Seasons)
+		l += ", " + askSeasonWords(a)
 	}
 	if a.Kind == "artist" {
 		l += ", " + albumWords(a.Albums)

@@ -446,3 +446,71 @@ func TestRefreshKeepsSearchingAndHeldEpisodes(t *testing.T) {
 		}
 	}
 }
+
+// TestFutureSeasonsOnlyRefresh: a show added with Future seasons only
+// keeps wanting only what airs after it was added, and a new season the
+// source lists later is wanted.
+func TestFutureSeasonsOnlyRefresh(t *testing.T) {
+	svc, s, tmdb, _ := addShowService(t)
+	ctx := context.Background()
+	addShowFolder(t, s)
+	id, _, err := svc.AddShow(ctx, "tmdb:100", ShowAddOptions{Seasons: SeasonsFuture}, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ti domain.Title
+	_ = store.Get(ctx, s.Read(), "titles", id, &ti)
+	if ti.FutureFrom == nil || !ti.FutureFrom.Equal(now) {
+		t.Fatalf("future_from %v", ti.FutureFrom)
+	}
+	sh := labShow("tmdb", "100")
+	sh.Seasons = append(sh.Seasons, metadata.Season{Number: 3, Name: "Season 3"})
+	sh.Episodes = append(sh.Episodes,
+		metadata.Episode{Season: 1, Number: 3, Name: "Found late", AirDate: tm("2025-01-20T02:00:00Z"), ID: "tmdb-103"},
+		metadata.Episode{Season: 3, Number: 1, Name: "New season", AirDate: tm("2027-01-10T02:00:00Z"), ID: "tmdb-301"})
+	tmdb.set(sh, "tmdb:100", "tvdb:200", "imdb:tt0100")
+	if _, err := svc.RefreshShow(ctx, id, domain.System, nil); err != nil {
+		t.Fatal(err)
+	}
+	eps := episodes(t, s, id)
+	if eps["S01E03"].Keep || !eps["S03E01"].Keep || eps["S02E01"].Keep || !eps["S02E02"].Keep {
+		t.Fatalf("keep S01E03 %v S03E01 %v S02E01 %v S02E02 %v", eps["S01E03"].Keep, eps["S03E01"].Keep, eps["S02E01"].Keep, eps["S02E02"].Keep)
+	}
+	ss, _ := Seasons(ctx, s.Read(), id, now)
+	for _, se := range ss {
+		if want := se.Number >= 2; se.KeepUpToDate != want {
+			t.Errorf("season %d keep %v", se.Number, se.KeepUpToDate)
+		}
+	}
+}
+
+// TestKeepFutureOnExistingShow: a show already in the Library switched to
+// Future seasons only keeps what it kept, and now also wants episodes
+// still to air and new seasons.
+func TestKeepFutureOnExistingShow(t *testing.T) {
+	svc, s, _, _ := addShowService(t)
+	ctx := context.Background()
+	addShowFolder(t, s)
+	id, _, err := svc.AddShow(ctx, "tmdb:100", ShowAddOptions{Seasons: SeasonsNone, NewSeasons: "none"}, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := svc.KeepFuture(ctx, id, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	eps := episodes(t, s, id)
+	if eps["S01E01"].Keep || eps["S02E01"].Keep || !eps["S02E02"].Keep || !eps["S02E03"].Keep {
+		t.Fatalf("eps %+v", eps)
+	}
+	var ti domain.Title
+	_ = store.Get(ctx, s.Read(), "titles", id, &ti)
+	if !ti.KeepUpToDate || ti.NewPartsPolicy != "all" || ti.FutureFrom == nil || *ti.SeasonChoice != SeasonsFuture {
+		t.Fatalf("title %+v", ti)
+	}
+	ss, _ := Seasons(ctx, s.Read(), id, now)
+	for _, se := range ss {
+		if want := se.Number == 2; se.KeepUpToDate != want {
+			t.Errorf("season %d keep %v", se.Number, se.KeepUpToDate)
+		}
+	}
+}

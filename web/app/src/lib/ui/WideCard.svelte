@@ -78,7 +78,7 @@
 		/** Where the badges sit on the art. */
 		badgesAt?: 'top' | 'bottom';
 		/** Desktop: after a short hover or keyboard focus, open the expanded card (trailer, genres). */
-		preview?: { kind: 'movie' | 'show'; tmdb: string; year?: number } | null;
+		preview?: { kind: 'movie' | 'show'; tmdb: string; year?: number; titleId?: number } | null;
 		/**
 		 * Title cards (Explore and Home rows of movies and shows): the logo or
 		 * name sits over the picture, nothing below, and a hover grows the
@@ -237,7 +237,7 @@
 {/snippet}
 
 {#if open && preview && cover && artEl}
-	<GrowCard anchor={artEl} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} image={loaded && !failed ? art : null} logo={growLogo} lifted={!!strip && strip.kind !== 'top10'} {leaving} badge={marked ? wideBadges : undefined} action={growAction} onmore={onmore ? (r) => { shut(); onmore(r); } : undefined} onenter={() => { closer.cancel(); leaving = false; }} onleave={leave} onclose={(back) => { shut(); if (back) hit?.focus(); }} focusIn={byKey} ontab={tabOut} returnTo={hit} ongone={() => leaving && shut()} />
+	<GrowCard anchor={artEl} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} image={loaded && !failed ? art : null} logo={growLogo} lifted={!!strip && strip.kind !== 'top10'} {leaving} badge={marked ? wideBadges : undefined} action={growAction} followId={preview.titleId} onmore={onmore ? (r) => { shut(); onmore(r); } : undefined} onenter={() => { closer.cancel(); leaving = false; }} onleave={leave} onclose={(back) => { shut(); if (back) hit?.focus(); }} focusIn={byKey} ontab={tabOut} returnTo={hit} ongone={() => leaving && shut()} />
 {:else if open && preview && root}
 	<HoverPreview anchor={root} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} {image} badge={marked ? wideBadges : undefined} onenter={() => closer.cancel()} onleave={leave} onclose={shut} />
 {/if}

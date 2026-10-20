@@ -13,6 +13,7 @@
 	import { goto } from '$app/navigation';
 	import { to } from './paths.ts';
 	import { WORDS as ASKED } from './askedby.ts';
+	import { setFollow } from './follow.ts';
 
 	// Where Alerts reach this person (email, Discord).
 	let targets = $state<{ email: string; discord_id: string; new_episodes?: boolean }>({ email: '', discord_id: '', new_episodes: true });
@@ -26,6 +27,17 @@
 			toasts.push(message(err), 'fail');
 		}
 	}
+	// Follow: the shows and artists I follow.
+	type Followed = { title_id: number; kind: string; name: string; year?: number };
+	let follows = $state<Followed[]>([]);
+	async function unfollow(f: Followed) {
+		try {
+			await setFollow(api, f.title_id, false);
+			follows = follows.filter((x) => x.title_id !== f.title_id);
+		} catch (err) {
+			toasts.push(message(err), 'fail');
+		}
+	}
 	let tgBusy = $state(false);
 	let tgError = $state('');
 	onMount(() => {
@@ -35,6 +47,10 @@
 		api
 			.get<{ email: string; discord_id: string; new_episodes?: boolean }>('/my/alerts')
 			.then((r) => (targets = r))
+			.catch(() => {});
+		api
+			.get<{ follows: Followed[] }>('/my/follows')
+			.then((r) => (follows = r.follows))
 			.catch(() => {});
 		api
 			.get<{ show_my_name: boolean }>('/my/ask-privacy')
@@ -393,6 +409,22 @@
 	</SettingsCard>
 {/if}
 
+<SettingsCard id="follows-me" title="What you follow" description="You hear about new episodes and seasons of shows you follow, and new albums of artists you follow, here and where Alerts reach you. Follow from a title page.">
+	{#if follows.length}
+		<ul class="follows" data-testid="follows">
+			{#each follows as f (f.title_id)}
+				<li>
+					<a href={to(`/library/${f.title_id}`)}>{f.name}{#if f.year} ({f.year}){/if}</a>
+					<span class="small muted">{f.kind === 'artist' ? 'Artist' : 'Show'}</span>
+					<Button variant="plain" onclick={() => unfollow(f)}>Unfollow</Button>
+				</li>
+			{/each}
+		</ul>
+	{:else}
+		<p class="small muted">You follow nothing yet.</p>
+	{/if}
+</SettingsCard>
+
 <SettingsCard title="Password">
 	<form class="pw" onsubmit={changePassword} novalidate>
 		<input type="text" name="username" autocomplete="username" value={session.s.name} hidden readonly />
@@ -490,4 +522,7 @@
 			min-height: 44px;
 		}
 	}
+	.follows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+	.follows li { display: flex; align-items: center; gap: var(--s-3); min-height: 44px; }
+	.follows li a { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>

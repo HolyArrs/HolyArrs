@@ -1052,6 +1052,10 @@
           "decided_by": {
             "$ref": "#/components/schemas/Who"
           },
+          "future_only": {
+            "description": "A show's future seasons only: seasons and episodes that air from now on.",
+            "type": "boolean"
+          },
           "id": {
             "type": "integer"
           },
@@ -2281,6 +2285,43 @@
           },
           "path": {
             "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FollowState": {
+        "description": "Whether I follow a title.",
+        "properties": {
+          "following": {
+            "type": "boolean"
+          },
+          "title_id": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "Followed": {
+        "description": "A show or artist I follow.",
+        "properties": {
+          "followed_at": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "show",
+              "artist"
+            ],
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "title_id": {
+            "type": "integer"
+          },
+          "year": {
+            "type": "integer"
           }
         },
         "type": "object"
@@ -7763,6 +7804,10 @@
                       "type": "string"
                     },
                     "type": "array"
+                  },
+                  "future_only": {
+                    "description": "A show's future seasons only: seasons and episodes that air from now on.",
+                    "type": "boolean"
                   },
                   "id": {
                     "description": "tmdb:<n> for a movie; tmdb:, tvdb:, tvmaze: or imdb: for a show; mbid:<MusicBrainz artist id> for an artist.",
@@ -14785,6 +14830,39 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/my/follows": {
+      "get": {
+        "description": "The shows and artists I follow, by name.",
+        "operationId": "myFollows",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "follows": {
+                      "items": {
+                        "$ref": "#/components/schemas/Followed"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "What I follow."
+          }
+        },
+        "summary": "What I follow",
+        "tags": [
+          "Wishlist"
+        ],
+        "x-holyarrs-part": "wishlist",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/needs-decision": {
       "get": {
         "description": "Movies where HolyArrs ran out of Releases or hit a conflict, newest first, with the reason in plain words. count feeds the badge in the menu.",
@@ -20439,6 +20517,122 @@
         "summary": "Keep a movie copy and add another Version",
         "x-holyarrs-part": "title",
         "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/titles/{id}/follow": {
+      "delete": {
+        "description": "No more new-episode or new-album notices for this title.",
+        "operationId": "deleteFollow",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowState"
+                }
+              }
+            },
+            "description": "Not following."
+          },
+          "404": {
+            "description": "No such title."
+          }
+        },
+        "summary": "Stop following a title",
+        "tags": [
+          "Wishlist"
+        ],
+        "x-holyarrs-part": "wishlist",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "write"
+      },
+      "get": {
+        "description": "Following tells me about new episodes, seasons and albums; it asks for nothing.",
+        "operationId": "getFollow",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowState"
+                }
+              }
+            },
+            "description": "My follow state."
+          },
+          "404": {
+            "description": "No such title."
+          }
+        },
+        "summary": "Whether I follow a title",
+        "tags": [
+          "Wishlist"
+        ],
+        "x-holyarrs-part": "wishlist",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      },
+      "put": {
+        "description": "I hear about new episodes and seasons of a show, or new albums of an artist, in the app and through my channels, batched per title per hour. Nothing is asked for or added.",
+        "operationId": "putFollow",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowState"
+                }
+              }
+            },
+            "description": "Now following."
+          },
+          "400": {
+            "description": "Only a show or an artist can be followed."
+          },
+          "403": {
+            "description": "Above this account's limit."
+          },
+          "404": {
+            "description": "No such title."
+          }
+        },
+        "summary": "Follow a show or an artist",
+        "tags": [
+          "Wishlist"
+        ],
+        "x-holyarrs-part": "wishlist",
+        "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "write"
       }
     },

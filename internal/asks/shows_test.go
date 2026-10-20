@@ -487,3 +487,73 @@ func TestParallelAsksKeepEachKindLimit(t *testing.T) {
 		t.Fatalf("limits %+v", l)
 	}
 }
+
+// TestShowAskFutureSeasonsOnly: a Future seasons only ask is stored as
+// such, a whole-show ask does not join it, and approving adds the show
+// with only what is still to air wanted.
+func TestShowAskFutureSeasonsOnly(t *testing.T) {
+	r := showRig(t)
+	ctx := context.Background()
+	res, err := r.svc.AskShowFutureOnly(ctx, r.ana, "tmdb:100")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !res.Ask.FutureOnly || len(res.Ask.Seasons) != 0 {
+		t.Fatalf("ask %+v", res.Ask)
+	}
+	// bo asks for the future too: he joins.
+	if j, err := r.svc.AskShowFutureOnly(ctx, r.bo, "tvdb:200"); err != nil || j.Ask.ID != res.Ask.ID {
+		t.Fatalf("join %+v %v", j, err)
+	}
+	got, err := r.svc.Approve(ctx, res.Ask.ID, r.luis, ApproveOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if k := seasonKeeps(t, r.st, *got.TitleID); k[1] || !k[2] {
+		t.Fatalf("season switches %v", k)
+	}
+	var choice string
+	var past, ahead bool
+	_ = r.st.Read().QueryRow("SELECT season_choice FROM titles WHERE id = ?", *got.TitleID).Scan(&choice)
+	_ = r.st.Read().QueryRow("SELECT keep_up_to_date FROM items WHERE title_id = ? AND name = 'Return'", *got.TitleID).Scan(&past)
+	_ = r.st.Read().QueryRow("SELECT keep_up_to_date FROM items WHERE title_id = ? AND name = 'Far'", *got.TitleID).Scan(&ahead)
+	if choice != "future" || past || !ahead {
+		t.Fatalf("choice %q past %v ahead %v", choice, past, ahead)
+	}
+	// Asking for the future again joins the open approved ask.
+	if j, err := r.svc.AskShowFutureOnly(ctx, r.ana, "tmdb:100"); err != nil || j.Ask.ID != res.Ask.ID {
+		t.Fatalf("again: %+v %v", j, err)
+	}
+}
+
+// TestShowAskFutureOnlyForShowInLibrary: a show in the Library that keeps
+// nothing is switched to Future seasons only on approval.
+func TestShowAskFutureOnlyForShowInLibrary(t *testing.T) {
+	r := showRig(t)
+	ctx := context.Background()
+	tid, _, err := r.svc.Library.AddShow(ctx, "tmdb:100", library.ShowAddOptions{Seasons: "none", NewSeasons: "none"}, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// A whole-show ask waits; a future ask must not join it as the whole
+	// show, and a whole-show ask must not join a future one.
+	res, err := r.svc.AskShowFutureOnly(ctx, r.ana, "tmdb:100")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.svc.Approve(ctx, res.Ask.ID, r.luis, ApproveOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	if k := seasonKeeps(t, r.st, tid); k[1] || !k[2] {
+		t.Fatalf("season switches %v", k)
+	}
+	var policy string
+	_ = r.st.Read().QueryRow("SELECT new_parts_policy FROM titles WHERE id = ?", tid).Scan(&policy)
+	if policy != "all" {
+		t.Fatalf("policy %q", policy)
+	}
+	whole, err := r.svc.AskShow(ctx, r.bo, "tmdb:100", nil)
+	if err != nil || whole.Ask.ID == res.Ask.ID || whole.Ask.FutureOnly {
+		t.Fatalf("whole %+v %v", whole, err)
+	}
+}

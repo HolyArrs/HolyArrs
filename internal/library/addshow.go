@@ -248,9 +248,15 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 			return err
 		}
 		order, choice := opt.EpisodeOrder, opt.Seasons
+		var from *time.Time
+		if choice == SeasonsFuture {
+			f := now
+			from = &f
+			opt.NewSeasons = "all" // new seasons air later: wanted
+		}
 		t = domain.Title{Kind: "show", Aliases: []string{}, MetadataSource: opt.Source, EpisodeOrder: &order, KeepUpToDate: keep,
 			NewPartsPolicy: opt.NewSeasons, ReleaseGate: GateReleased, MusicTypes: []string{}, WhyAdded: opt.WhyAdded, Artwork: []string{},
-			State: "active", GateDriver: "none", SeasonChoice: &choice, RefreshedAt: &now}
+			State: "active", GateDriver: "none", SeasonChoice: &choice, FutureFrom: from, RefreshedAt: &now}
 		applyShow(&t, sh)
 		if _, err := store.Insert(tx, "titles", &t, by); err != nil {
 			return err
@@ -382,6 +388,42 @@ func (s *Service) SetSeason(ctx context.Context, titleID int64, number int, keep
 	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventSeasonChanged, TitleID: &titleID,
 		Summary: fmt.Sprintf("%s season %d: Keep up to date %s", t.Name, number, word), Data: map[string]any{"season": number, "keep_up_to_date": keep},
 		GroupKey: groupKey(titleID)})
+	return nil
+}
+
+// KeepFuture switches a show in the Library to Future seasons only: what it
+// keeps stays kept, episodes still to air (and their seasons) are kept up
+// to date, and seasons found later are wanted.
+func (s *Service) KeepFuture(ctx context.Context, titleID int64, by domain.Actor) error {
+	var t domain.Title
+	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
+		if err := store.Get(ctx, tx, "titles", titleID, &t); err != nil {
+			return err
+		}
+		if t.Kind != "show" {
+			return ErrNotShow
+		}
+		now := s.now()
+		choice := SeasonsFuture
+		t.KeepUpToDate, t.NewPartsPolicy, t.SeasonChoice, t.FutureFrom = true, "all", &choice, &now
+		if err := store.Update(tx, "titles", &t, by); err != nil {
+			return err
+		}
+		ts, who := store.FormatTime(now), actorText(by)
+		ahead := "(air_date IS NULL OR air_date > ?)"
+		if _, err := tx.Exec("UPDATE items SET keep_up_to_date = 1, updated_at = ?, updated_by = ? WHERE title_id = ? AND kind = 'episode' AND keep_up_to_date = 0 AND "+ahead,
+			ts, who, titleID, ts); err != nil {
+			return err
+		}
+		_, err := tx.Exec(`UPDATE parts SET keep_up_to_date = 1, updated_at = ?, updated_by = ? WHERE title_id = ? AND kind = 'season' AND number > 0 AND keep_up_to_date = 0
+			AND id IN (SELECT part_id FROM items WHERE title_id = ? AND kind = 'episode' AND `+ahead+`)`, ts, who, titleID, titleID, ts)
+		return err
+	})
+	if err != nil {
+		return err
+	}
+	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventSeasonChanged, TitleID: &titleID,
+		Summary: t.Name + ": Future seasons only", Data: map[string]any{"season_choice": SeasonsFuture}, GroupKey: groupKey(titleID)})
 	return nil
 }
 

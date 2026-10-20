@@ -53,6 +53,12 @@ func (s *Service) noteEpisodes(ctx context.Context, e domain.Event) error {
 				ON CONFLICT (slot_id) DO NOTHING`, now, id); err != nil {
 				return err
 			}
+			if _, err := tx.Exec(`INSERT INTO new_album_notices (title_id, part_id, arrived_at)
+				SELECT i.title_id, i.part_id, ? FROM slots s JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id
+				WHERE s.id = ? AND i.kind = 'track' AND t.kind = 'artist' AND i.part_id IS NOT NULL
+				ON CONFLICT (part_id) DO NOTHING`, now, id); err != nil {
+				return err
+			}
 		}
 		return nil
 	})
@@ -136,22 +142,26 @@ func EpisodeWords(n int, show string) string {
 	return strconv.Itoa(n) + " new episodes of " + show
 }
 
-// showPeople are the people on open or done asks for a show who want
-// new-episode notices, with their ask.
-func (s *Service) showPeople(ctx context.Context, titleID int64) ([]person, map[int64]int64, error) {
-	rows, err := s.Store.Read().QueryContext(ctx, `SELECT u.id, u.name, coalesce(x.email, ''), coalesce(x.discord_id, ''), min(a.id)
-		FROM asks a JOIN ask_people p ON p.ask_id = a.id JOIN users u ON u.id = p.user_id LEFT JOIN user_ask_settings x ON x.user_id = u.id
-		WHERE a.kind = 'show' AND a.title_id = ? AND a.state IN ('approved', 'available') AND coalesce(x.new_episodes, 1) = 1
-		GROUP BY u.id ORDER BY u.id`, titleID)
+// showPeople are the people on open or done asks for a show, and the
+// people who follow it, who want new-episode notices, with their ask (nil
+// for a follower who did not ask).
+func (s *Service) showPeople(ctx context.Context, titleID int64) ([]person, map[int64]*int64, error) {
+	rows, err := s.Store.Read().QueryContext(ctx, `SELECT u.id, u.name, coalesce(x.email, ''), coalesce(x.discord_id, ''), min(w.ask_id)
+		FROM (SELECT p.user_id, a.id AS ask_id FROM asks a JOIN ask_people p ON p.ask_id = a.id
+				WHERE a.kind = 'show' AND a.title_id = ? AND a.state IN ('approved', 'available')
+			UNION ALL SELECT f.user_id, NULL FROM follows f WHERE f.title_id = ?) w
+		JOIN users u ON u.id = w.user_id LEFT JOIN user_ask_settings x ON x.user_id = u.id
+		WHERE u.state != 'disabled' AND coalesce(x.new_episodes, 1) = 1
+		GROUP BY u.id ORDER BY u.id`, titleID, titleID)
 	if err != nil {
 		return nil, nil, err
 	}
 	defer rows.Close()
 	var out []person
-	asks := map[int64]int64{}
+	asks := map[int64]*int64{}
 	for rows.Next() {
 		var p person
-		var ask int64
+		var ask *int64
 		if err := rows.Scan(&p.ID, &p.Name, &p.Email, &p.DiscordID, &ask); err != nil {
 			return nil, nil, err
 		}

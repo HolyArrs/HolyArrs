@@ -288,6 +288,18 @@ func seasonKeep(t domain.Title, number, latest int, choice string, keepSpecials 
 	return t.NewPartsPolicy == "all"
 }
 
+// futureCut is the moment before which an episode is not wanted: now when
+// a show is added with Future seasons only, else its stored future_from.
+func futureCut(t domain.Title, choice string, now time.Time) *time.Time {
+	if choice == SeasonsFuture {
+		return &now
+	}
+	if choice == "" {
+		return t.FutureFrom
+	}
+	return nil
+}
+
 // activeStates are Slot states where a Download or File holds the episode.
 const holdingSlots = `file_id IS NOT NULL OR active_download_id IS NOT NULL OR held_release_id IS NOT NULL OR state IN ('searching', 'held', 'chosen', 'downloading', 'stalled', 'importing', 'needs_a_decision', 'in_library', 'better_wanted')`
 
@@ -511,7 +523,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Sho
 		}
 		season, number := e.Season, e.Number
 		keep := p.KeepUpToDate
-		if choice == SeasonsFuture && e.AirDate != nil && !e.AirDate.After(now) {
+		if cut := futureCut(t, choice, now); cut != nil && e.AirDate != nil && !e.AirDate.After(*cut) {
 			keep = false // future: only episodes still to air
 		}
 		it := &domain.Item{TitleID: t.ID, PartID: &p.ID, Kind: "episode", Numbers: domain.Numbers{Season: &season, Episode: &number, Absolute: absolute},
@@ -532,6 +544,25 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Sho
 			r := reason
 			if _, err := store.Insert(tx, "slots", &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: state, LastReason: &r}, by); err != nil {
 				return out, err
+			}
+		}
+	}
+	if choice == SeasonsFuture {
+		// Future seasons only: a season with nothing still to air is not wanted.
+		ahead := map[int]bool{}
+		listedIn := map[int]bool{}
+		for _, e := range eps {
+			listedIn[e.Season] = true
+			if e.AirDate == nil || e.AirDate.After(now) {
+				ahead[e.Season] = true
+			}
+		}
+		for n, p := range partBy {
+			if p.KeepUpToDate && listedIn[n] && !ahead[n] {
+				p.KeepUpToDate = false
+				if err := store.Update(tx, "parts", p, by); err != nil {
+					return out, err
+				}
 			}
 		}
 	}

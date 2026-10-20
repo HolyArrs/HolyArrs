@@ -5,6 +5,7 @@
 	import { richMetadata, type RichMeta } from './TitleHero.svelte';
 	import TrailerPlayer from './TrailerPlayer.svelte';
 	import Icon from '../Icon.svelte';
+	import { followHint, followLabel, setFollow } from '../follow.ts';
 	import { sized } from '../tmdb-image.ts';
 	import { autoplayHere, loadUISettings, trailerSources, type TrailerSource } from '../autoplay.svelte.ts';
 	import { openTheater } from '../theater.svelte.ts';
@@ -36,7 +37,8 @@
 		onmore,
 		focusIn = false,
 		ontab,
-		returnTo
+		returnTo,
+		followId
 	}: {
 		/** The card's picture box: the grown card starts exactly on it. */
 		anchor: HTMLElement;
@@ -68,7 +70,28 @@
 		ongone: () => void;
 		/** The ⌄ opens the More info panel here (Explore) instead of following href. */
 		onmore?: (from: DOMRect) => void;
+		/** A show in the Library: the bell follows it. */
+		followId?: number;
 	} = $props();
+
+	let following = $state(false);
+	let followBusy = $state(false);
+	$effect(() => {
+		const id = followId;
+		if (!id || kind !== 'show') return;
+		api.get<{ following: boolean }>(`/titles/${id}/follow`).then((r) => (following = r.following), () => {});
+	});
+	async function flipFollow() {
+		if (!followId) return;
+		followBusy = true;
+		try {
+			following = await setFollow(api, followId, !following);
+		} catch {
+			/* the bell stays as it was */
+		} finally {
+			followBusy = false;
+		}
+	}
 
 	let card = $state<HTMLElement>();
 	let g = $state<Growth | null>(null);
@@ -249,6 +272,7 @@
 	<div class="panel">
 		<div class="buttons">
 			{#if action}{@render action()}{/if}
+			{#if followId && kind === 'show'}<button type="button" class="more bell" class:on={following} aria-pressed={following} aria-label="{followLabel(following)} {title}" title={followHint('show', following)} disabled={followBusy} onclick={flipFollow} data-testid="grow-follow"><Icon name="bell" size={18} /></button>{/if}
 			{#if onmore}<button type="button" class="more" aria-label="More info about {title}" title="More info" aria-haspopup="dialog" onclick={() => card && onmore(card.getBoundingClientRect())}><Icon name="chevronDown" size={20} /></button>
 			{:else if href}<a class="more" {href} aria-label="More about {title}" title="More info"><Icon name="chevronDown" size={20} /></a>{/if}
 		</div>
@@ -295,6 +319,7 @@
 	.more { flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; color: var(--text); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--text) 40%, transparent); transition: box-shadow var(--dur-fast) ease, background-color var(--dur-fast) ease; }
 	.more:hover { box-shadow: inset 0 0 0 2px var(--text); background: var(--surface-2); }
 	.more:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.more.bell.on { background: var(--text); color: var(--bg); box-shadow: none; }
 	.title { margin: 2px 0 -4px; font: var(--t-headline); letter-spacing: -0.01em; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.facts, .tags { min-height: 18px; }
 	.facts { display: flex; align-items: center; gap: 6px; font: var(--t-footnote); color: var(--text-muted); font-variant-numeric: tabular-nums; }

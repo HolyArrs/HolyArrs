@@ -341,6 +341,7 @@ export interface Ask {
 	seasons?: number[];
 	/** For a show: "the whole show", "season 2", "seasons 1 and 2". */
 	season_words?: string;
+	future_only?: boolean;
 	/** An artist ask's albums; empty is the whole artist. */
 	albums?: AskAlbum[];
 	/** For an artist: "every album", or the albums' names. */
@@ -421,6 +422,7 @@ export type Moment =
 	| 'ask_turned_down'
 	| 'ask_ready'
 	| 'new_episodes'
+	| 'new_albums'
 	| 'grab'
 	| 'import'
 	| 'rename'
