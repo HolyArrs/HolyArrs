@@ -2,7 +2,7 @@
 // Search page, where the top bar is hidden). Its words are shared here so the
 // Search page can follow them as you type on any page.
 
-type Hooks = { submit?: () => void; blur?: () => void };
+type Hooks = { submit?: () => void; blur?: () => void; exit?: () => void };
 
 export const searchField = $state({ term: '' });
 
@@ -26,4 +26,41 @@ export function focusField(select = false): boolean {
 		return true;
 	}
 	return false;
+}
+
+let returnY = 0;
+let armed = false;
+/** rememberReturn notes (once per visit) the scroll of the page Search was opened from (call before leaving it). */
+export function rememberReturn() {
+	if (armed || typeof window === 'undefined') return;
+	armed = true;
+	returnY = window.scrollY;
+}
+/** forgetReturn ends a Search visit (the page closing), so the next visit notes its own spot. */
+export function forgetReturn() {
+	armed = false;
+}
+/** restoreReturn puts that scroll back once the page is long enough (its rows load late). */
+export function restoreReturn(fromPath: string) {
+	const y = returnY;
+	const t0 = performance.now();
+	const step = () => {
+		if (location.pathname === fromPath) return void requestAnimationFrame(step);
+		const room = document.documentElement.scrollHeight - innerHeight;
+		if (room >= y || performance.now() - t0 > 3000) return void scrollTo({ top: Math.min(y, room), behavior: 'instant' });
+		requestAnimationFrame(step);
+	};
+	requestAnimationFrame(step);
+}
+
+/** playFieldEntry brings the field in first on entering Search: a fade and a .985 → 1 scale, then a faint glow that fades. */
+export function playFieldEntry(calm: boolean) {
+	for (const el of fields) {
+		const form = el.closest('form');
+		if (!form || el.getClientRects().length === 0) continue;
+		form.style.willChange = 'transform, opacity';
+		const a = form.animate([{ opacity: 0.2, transform: calm ? 'none' : 'scale(0.985)' }, { opacity: 1, transform: 'none' }], { duration: 500, easing: 'cubic-bezier(.16,1,.3,1)' });
+		a.onfinish = a.oncancel = () => (form.style.willChange = '');
+		form.querySelector('.glow')?.animate([{ opacity: 0 }, { opacity: 1, offset: 0.35 }, { opacity: 0 }], { duration: 1400, easing: 'ease-out' });
+	}
 }

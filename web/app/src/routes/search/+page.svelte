@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { to } from '#lib/paths.ts';
 	import { onMount, tick, untrack } from 'svelte';
-	import { focusField, searchField, searchHooks } from '#lib/search-field.svelte.ts';
+	import { focusField, forgetReturn, playFieldEntry, restoreReturn, searchField, searchHooks } from '#lib/search-field.svelte.ts';
 	import SearchField from '#lib/ui/SearchField.svelte';
 	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
@@ -10,7 +10,7 @@
 	import Icon, { type IconName } from '#lib/Icon.svelte';
 	import { session } from '#lib/session.svelte.ts';
 	import BrowseTile from '#lib/ui/BrowseTile.svelte';
-	import MosaicReveal, { clearedAt } from '#lib/ui/MosaicReveal.svelte';
+	import MosaicReveal, { ENTER_DELAY, passAt } from '#lib/ui/MosaicReveal.svelte';
 	import { browseCols, browseHref, browsePath, browseType, readMood, tileHue, type BrowseAnswer, type BrowseTile as Tile, type MoodView } from '#lib/search-browse.ts';
 	import { reducedMotion } from '#lib/motion.ts';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
@@ -57,34 +57,53 @@
 	let moodItems = $state<ProviderItem[] | null>(null);
 	let moodGenre = $state('');
 	// The entry: a mosaic dissolve down the whole visible page, the tiles rising
-	// row by row behind it; under reduced motion the dissolve alone.
+	// row by row behind it; under reduced motion the band alone. Timing: a
+	// 120 ms hold, the band builds to ~900 ms, the last visible row lands by
+	// ~1.1 s, the field's glow settles by ~1.4 s. Only transform and opacity move.
 	const calm = reducedMotion();
 	let revealing = $state(true);
 	// Search is a layer: Close, Escape on an empty field or Back returns to the
-	// page you came from (its history entry, so its scroll comes back too).
-	// Typing replaces the address, so only links inside Search add entries.
-	let cameFrom = false;
+	// page you came from, at its scroll. Typing replaces the address, so only
+	// links inside Search add history entries (counted in depth).
+	let cameFrom = '';
 	let depth = 0;
 	let leaving = $state(false);
+	let covering = $state(false);
+	const LAND_MS = 520;
 	function exit() {
 		if (leaving) return;
 		revealing = false;
 		leaving = true;
+		// The tiles drop out quickly, last visible row first; the band then sweeps back up (ease-in).
+		const rows = calm ? [] : [...document.querySelectorAll<HTMLElement>('.search .tiles li, .search .grid li, .search .ui-shelf')].filter((n) => n.getBoundingClientRect().top < innerHeight);
+		const tops = [...new Set(rows.map((n) => Math.round(n.getBoundingClientRect().top)))].sort((x, y) => y - x);
+		for (const n of rows) {
+			const order = tops.indexOf(Math.round(n.getBoundingClientRect().top));
+			n.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(10px) scale(0.98)' }], { duration: 220, delay: order * 35, easing: 'cubic-bezier(.55,0,1,.45)', fill: 'forwards' });
+		}
+		setTimeout(() => (covering = true), calm ? 0 : 160);
 	}
 	function left() {
-		if (cameFrom) history.go(-(depth + 1));
-		else void goto(to('/'));
+		if (cameFrom) {
+			restoreReturn(location.pathname);
+			history.go(-(depth + 1));
+		} else void goto(to('/'));
 	}
 	const t0 = typeof performance === 'undefined' ? 0 : performance.now();
-	// Each tile starts rising so it lands just as the sweep clears its row.
-	function landing(node: HTMLElement) {
+	// Each tile enters behind the band: rows ~70 ms apart, ~25 ms left to right
+	// within a row, starting as the band passes it, bounded so the last lands by ~1.1 s.
+	function landing(node: HTMLElement, at: { row: number; col: number }) {
 		if (calm) return;
+		const elapsed = performance.now() - t0;
 		const top = document.querySelector('.ui-topbar')?.getBoundingClientRect().bottom ?? 0;
 		const r = node.getBoundingClientRect();
-		const f = (r.top + r.height * 0.35 - top) / Math.max(1, innerHeight - top);
-		if (f > 1.05) return;
-		node.style.setProperty('--land', `${Math.max(0, clearedAt(f) - (performance.now() - t0) - 300)}ms`);
-		node.classList.add('lands');
+		if (r.top > innerHeight) return;
+		const f = (r.top - top) / Math.max(1, innerHeight - top);
+		const start = Math.min(1100 - LAND_MS, Math.max(passAt(f), ENTER_DELAY + at.row * 70) + at.col * 25);
+		const delay = Math.max(0, start - elapsed);
+		node.style.willChange = 'transform, opacity';
+		const a = node.animate([{ opacity: 0, transform: 'translateY(14px) scale(0.97)' }, { opacity: 1, transform: 'none' }], { duration: LAND_MS, delay, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'backwards' });
+		a.onfinish = a.oncancel = () => (node.style.willChange = '');
 	}
 	let cols = $state(6);
 	let recent = $state<string[]>([]);
@@ -294,9 +313,11 @@
 		searchHooks.submit = () => void run(new SubmitEvent('submit'));
 		searchHooks.blur = blurred;
 		searchHooks.exit = exit;
-		void tick().then(() => { if (!(document.activeElement instanceof HTMLInputElement)) focusField(); });
+		if (!(document.activeElement instanceof HTMLInputElement)) focusField();
+		playFieldEntry(calm);
 		return () => {
 			searchHooks.submit = searchHooks.blur = searchHooks.exit = undefined;
+			forgetReturn();
 			searchField.term = '';
 			clearTimeout(timer);
 			removeEventListener('resize', sync);
@@ -307,7 +328,7 @@
 	afterNavigate(({ from, to: dest, type }) => {
 		if (!from || !dest) return;
 		if (!from.url.pathname.endsWith('/search')) {
-			cameFrom = true;
+			cameFrom = from.url.pathname;
 			depth = 0;
 			return;
 		}
@@ -423,12 +444,12 @@
 				<h2 id="browse-h" class="h1">Browse</h2>
 				{#if tiles === null}
 					<ul class="tiles" aria-hidden="true">
-						{#each Array(cols * 2) as _, i (i)}<li class="ghost" use:landing></li>{/each}
+						{#each Array(cols * 2) as _, i (i)}<li class="ghost" use:landing={{ row: Math.floor(i / cols), col: i % cols }}></li>{/each}
 					</ul>
 				{:else if tiles.length}
 					<ul class="tiles">
 						{#each tiles as t, i (`${t.kind}:${t.genre}:${t.mood ?? ''}`)}
-							<li use:landing><BrowseTile name={t.name} href={to(browseHref(t))} image={t.backdrop} hue={tileHue(t.name)} row={Math.min(6, Math.floor(i / cols))} /></li>
+							<li use:landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} href={to(browseHref(t))} image={t.backdrop} hue={tileHue(t.name)} row={Math.min(6, Math.floor(i / cols))} /></li>
 						{/each}
 					</ul>
 				{:else}
@@ -477,7 +498,7 @@
 </section>
 
 {#if revealing}<MosaicReveal ondone={() => (revealing = false)} />{/if}
-{#if leaving}<MosaicReveal reverse duration={500} ondone={left} />{/if}
+{#if covering}<MosaicReveal exit ondone={left} />{/if}
 
 <AddArtistDialog bind:this={addArtist} {folders} {rules} defaults={musicDefaults} onadded={artistAdded} />
 <AskArtistDialog bind:this={askArtist} onasked={artistAsked} onrefused={artistRefused} />
@@ -511,9 +532,6 @@
 	.mood-head { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-bottom: 8px; }
 	.mood-head p { margin: 0; }
 	.mood { display: flex; flex-direction: column; gap: 16px; }
-	/* The entry: the tiles rise row by row behind the mosaic (landing() sets each delay). */
-	@keyframes rise { from { opacity: 0; transform: translateY(18px) scale(0.985); } }
-	.search:not(.calm) .tiles :global(.lands) { animation: rise 420ms var(--ease-out) both; animation-delay: var(--land, 0ms); }
 	.n { font: var(--t-callout); font-variant-numeric: tabular-nums; }
 	.muted { color: var(--text-muted); }
 	.recent { display: flex; flex-direction: column; gap: 12px; }
