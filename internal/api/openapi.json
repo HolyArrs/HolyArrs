@@ -6129,6 +6129,42 @@
         },
         "type": "object"
       },
+      "TrailerStream": {
+        "properties": {
+          "audio": {
+            "description": "False for a picture-only stream (no sound to turn on).",
+            "type": "boolean"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "height": {
+            "type": "integer"
+          },
+          "key": {
+            "description": "The YouTube video, for the embedded player fallback.",
+            "type": "string"
+          },
+          "url": {
+            "description": "Direct H.264 MP4 address on YouTube's video servers (at most 720p).",
+            "type": "string"
+          },
+          "width": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "UISettings": {
+        "properties": {
+          "autoplay_trailers": {
+            "description": "Heroes and hover cards play a muted trailer by themselves. Default true. Never for Kid accounts or with Reduce motion.",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
       "VersionInput": {
         "properties": {
           "audio_languages": {
@@ -17289,6 +17325,74 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/settings/ui": {
+      "get": {
+        "description": "App-wide settings every browser reads, today whether trailers play by themselves.",
+        "operationId": "getUISettings",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UISettings"
+                }
+              }
+            },
+            "description": "The settings."
+          }
+        },
+        "summary": "App look settings",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      },
+      "put": {
+        "description": "A field left out keeps its value.",
+        "operationId": "putUISettings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UISettings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UISettings"
+                }
+              }
+            },
+            "description": "Saved."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "A value is not valid."
+          }
+        },
+        "summary": "Change the app look settings",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/shows": {
       "post": {
         "description": "Adds a show with which seasons to keep up to date, what happens to new seasons, its episode order and details source. Seasons, episodes and one Slot per episode are written at once; each episode is not out yet until it airs, then missing. A folder look follows as a Job. With search_on_add, the whole show is searched after the folder look, the same search POST /titles/{id}/search starts for a show. With more_versions, each extra Version (such as 4K) gets one Slot per episode too. A field the request leaves out (library_folder_id, pick_rules_id, keep_up_to_date, search_on_add) takes the saved Movies and TV default for shows, only when that default has been saved.",
@@ -20881,6 +20985,89 @@
           }
         },
         "summary": "The Top 10 on Netflix row",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/trailer/{kind}/{tmdb_id}": {
+      "get": {
+        "description": "The title's trailer (TMDB videos: an official Trailer, the language of ?language= or Accept-Language first) as a direct MP4 address resolved by yt-dlp (HOLYARRS_YTDLP or yt-dlp in PATH, 8 second limit). Only the address is kept in memory until shortly before it expires; no video passes through HolyArrs. Each person may start 12 resolves a minute. Kid accounts are refused.",
+        "operationId": "getTrailerStream",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tmdb_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrailerStream"
+                }
+              }
+            },
+            "description": "The stream."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad kind or id."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "A Kid account."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No trailer, no direct stream (yt-dlp missing or refused) or trailers turned off."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Too many resolves this minute."
+          }
+        },
+        "summary": "Trailer stream",
+        "tags": [
+          "Explore"
+        ],
         "x-holyarrs-part": "media",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "read"

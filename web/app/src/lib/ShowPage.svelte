@@ -383,6 +383,7 @@
 	title={title.name}
 	poster={title.artwork[0] ?? rich?.poster}
 	backdrop={title.backdrop ?? rich?.backdrop}
+	backdrops={rich?.backdrops}
 	logo={title.logo ?? rich?.logo}
 	crumbIcon="tv"
 	breadcrumb={[{ href: to(crumbFor('show').path), label: crumbFor('show').label }, { href: to(`/library/${title.id}`), label: title.year ? `${title.name} (${title.year})` : title.name }]}

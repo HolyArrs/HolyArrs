@@ -54,6 +54,7 @@
 	import MusicTrendingRows from '#lib/MusicTrendingRows.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
+	import ExploreHero from '#lib/ui/ExploreHero.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -365,6 +366,13 @@
 
 <svelte:head><title>Explore · HolyArrs</title></svelte:head>
 
+{#snippet heroAction(c: ExploreCard)}
+	{@const act = cardAction(c, { manage, ask: mayAsk })}
+	{#if act && cardTmdb(c)}
+		<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={asking === c.key || undefined} onclick={() => void quick(c, act)} />
+	{/if}
+{/snippet}
+
 {#snippet serviceTools()}
 	<div class="svc" data-testid="services-picker">
 		{#if picked === null}<p class="svc-hint">Pick the services you have</p>{/if}
@@ -411,24 +419,9 @@
 		{:else}
 			{#if hero.length}
 				{@const h = live(hero[heroAt % hero.length])}
-				{@const act = cardAction(h, { manage, ask: mayAsk })}
-				<!-- The hero's static layout; its motion and trailers live on another branch. -->
-				<section class="hero" data-testid="explore-hero" aria-label="Featured">
-					{#if h.wide ?? h.image}<img class="hero-art" src={h.wide ?? h.image} alt="" />{/if}
-					<div class="hero-words">
-						<h2>{h.name}</h2>
-						{#if h.year}<p class="hero-meta">{h.year} · {h.kind === 'show' ? 'Show' : 'Movie'}</p>{/if}
-						<div class="hero-acts">
-							{#if act && cardTmdb(h)}<button type="button" class="hero-ask" onclick={() => { count('hero', 'ask'); void quick(h, act); }}>{act === 'add' ? 'Add' : 'Ask for it'}</button>{/if}
-							{#if cardHref(h)}<a class="hero-more" href={cardHref(h)}>More info</a>{/if}
-						</div>
-					</div>
-					{#if hero.length > 1}
-						<div class="hero-dots" role="group" aria-label="Featured titles">
-							{#each hero as c, i (c.key)}<button type="button" aria-label={c.name} aria-pressed={i === heroAt % hero.length} onclick={() => (heroAt = i)}></button>{/each}
-						</div>
-					{/if}
-				</section>
+				<ExploreHero kind={h.kind === 'show' ? 'show' : 'movie'} tmdb={cardTmdb(h)} title={h.name} href={cardHref(h)} backdrop={h.wide ?? h.image} subtitle={h.year ? `${h.year} · ${h.kind === 'show' ? 'Show' : 'Movie'}` : h.subtitle} settled={headLoaded && !busy}>
+					{#snippet action()}{@render heroAction(h)}{/snippet}
+				</ExploreHero>
 			{/if}
 			{#if !rows.some((r) => r.type === 'top10')}<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} typePill={type === 'all'} initial={top10} />{/if}
 			{#each rows as row (row.id)}
@@ -454,6 +447,7 @@
 							owned={mark}
 							actionOnHover
 							vtName={c.vtName}
+							preview={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: cardTmdb(c), year: c.year } : undefined}
 						>
 							{#snippet action()}
 								{#if act && cardTmdb(c)}
@@ -508,21 +502,6 @@
 	.svc-chip.on { background: color-mix(in srgb, var(--accent) 18%, var(--surface-2)); box-shadow: inset 0 0 0 2px var(--accent); }
 	.svc-chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.sentinel { height: 1px; }
-	.hero { position: relative; overflow: hidden; border-radius: var(--r-card); background: var(--surface-2); aspect-ratio: 16 / 7; min-height: 280px; display: flex; align-items: flex-end; }
-	.hero-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-	.hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgb(0 0 0 / 0.72), transparent 60%); }
-	.hero-words { position: relative; z-index: 1; padding: 24px; color: #fff; display: flex; flex-direction: column; gap: 8px; max-width: 640px; }
-	.hero-words h2 { font: var(--t-title1, 700 32px/1.1 inherit); margin: 0; }
-	.hero-meta { opacity: 0.85; margin: 0; }
-	.hero-acts { display: flex; gap: 10px; margin-top: 6px; }
-	.hero-ask, .hero-more { min-height: 44px; padding: 0 20px; border-radius: 999px; font: inherit; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none; }
-	.hero-ask { background: #fff; color: #000; border: 0; cursor: pointer; }
-	.hero-more { background: rgb(255 255 255 / 0.18); color: #fff; }
-	.hero-ask:focus-visible, .hero-more:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.hero-dots { position: absolute; z-index: 1; right: 20px; bottom: 20px; display: flex; gap: 6px; }
-	.hero-dots button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 50%; background: rgb(255 255 255 / 0.45); cursor: pointer; }
-	.hero-dots button[aria-pressed='true'] { background: #fff; }
-	@media (max-width: 767px) { .hero { aspect-ratio: 4 / 5; min-height: 0; } .hero-words { padding: 16px; } .hero-words h2 { font-size: 24px; } }
 	.row-wrap { display: contents; }
 	.loading { display: flex; flex-direction: column; gap: 14px; }
 	.sk-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--shelf-gap); max-height: 250px; overflow: hidden; margin-bottom: 16px; }

@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -56,7 +58,30 @@ type Details struct {
 	People         []DetailPerson `json:"people"`
 	Seasons        []DetailSeason `json:"seasons,omitempty"`
 	Similar        []DiscoverItem `json:"similar"`
+	// Backdrops are up to maxBackdrops more wide pictures for the hero's
+	// slow crossfade, best voted first (the main backdrop not repeated).
+	Backdrops []string `json:"backdrops,omitempty"`
+	// Videos are the title's YouTube trailers and teasers as TMDB lists
+	// them; the app picks one (official trailer, the person's language first).
+	Videos []DetailVideo `json:"videos,omitempty"`
 }
+
+// DetailVideo is one YouTube video TMDB lists for a title.
+type DetailVideo struct {
+	Key      string `json:"key"`
+	Name     string `json:"name,omitempty"`
+	Type     string `json:"type"`
+	Official bool   `json:"official"`
+	Language string `json:"language,omitempty"`
+}
+
+const (
+	maxBackdrops = 4
+	maxVideos    = 12
+)
+
+// youTubeKey is the shape of a YouTube video id, so nothing else reaches an embed address.
+var youTubeKey = regexp.MustCompile(`^[A-Za-z0-9_-]{6,20}$`)
 
 // Discoverer lists discover rows and looks up details pages. Kind is
 // "movie" or "show"; ref is a TMDB id (similar); genre is a genre name.
@@ -337,9 +362,9 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 	if err != nil {
 		return Details{}, err
 	}
-	appendTo := "release_dates,images,credits,recommendations"
+	appendTo := "release_dates,images,credits,recommendations,videos"
 	if kind == "show" {
-		appendTo = "content_ratings,images,credits,recommendations"
+		appendTo = "content_ratings,images,credits,recommendations,videos"
 	}
 	b, err := t.get(ctx, "/"+tvPath(kind)+"/"+strconv.FormatInt(n, 10),
 		url.Values{"append_to_response": {appendTo}, "include_image_language": {"en,null"}})
@@ -371,6 +396,22 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 		Recommendations *struct {
 			Results []tmdbListItem `json:"results"`
 		} `json:"recommendations"`
+		Images *struct {
+			Backdrops []struct {
+				FilePath string  `json:"file_path"`
+				Vote     float64 `json:"vote_average"`
+			} `json:"backdrops"`
+		} `json:"images"`
+		Videos *struct {
+			Results []struct {
+				Key      string `json:"key"`
+				Name     string `json:"name"`
+				Site     string `json:"site"`
+				Type     string `json:"type"`
+				Official bool   `json:"official"`
+				Language string `json:"iso_639_1"`
+			} `json:"results"`
+		} `json:"videos"`
 	}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return Details{}, fmt.Errorf("TMDB: odd answer: %w", err)
@@ -420,6 +461,31 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 	}
 	for _, c := range raw.CreatedBy {
 		d.People = append(d.People, DetailPerson{Name: c.Name, Role: "creator", Profile: profile(c.ProfilePath)})
+	}
+	if raw.Images != nil {
+		bs := raw.Images.Backdrops
+		sort.SliceStable(bs, func(i, j int) bool { return bs[i].Vote > bs[j].Vote })
+		for _, b := range bs {
+			if len(d.Backdrops) == maxBackdrops {
+				break
+			}
+			u := t.images() + "/w1280" + b.FilePath
+			if b.FilePath == "" || u == d.Backdrop || slices.Contains(d.Backdrops, u) {
+				continue
+			}
+			d.Backdrops = append(d.Backdrops, u)
+		}
+	}
+	if raw.Videos != nil {
+		for _, v := range raw.Videos.Results {
+			if len(d.Videos) == maxVideos {
+				break
+			}
+			if v.Site != "YouTube" || (v.Type != "Trailer" && v.Type != "Teaser") || !youTubeKey.MatchString(v.Key) {
+				continue
+			}
+			d.Videos = append(d.Videos, DetailVideo{Key: v.Key, Name: v.Name, Type: v.Type, Official: v.Official, Language: v.Language})
+		}
 	}
 	d.Similar = []DiscoverItem{}
 	if raw.Recommendations != nil {

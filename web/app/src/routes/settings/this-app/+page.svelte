@@ -13,6 +13,31 @@
 	import { linkLabel, problems, runTone, runWord, splitStates, stateWord } from '#lib/health.ts';
 	import type { Health, HealthChecks, HealthStates, UpdateInfo } from '#lib/types.ts';
 	import { releaseLink, updateWords } from '#lib/update.ts';
+	import { setAutoplaySetting } from '#lib/autoplay.svelte.ts';
+
+	// Autoplay trailers: one app-wide switch, owner and settings people only.
+	let autoplay = $state<boolean | null>(null);
+	let autoplayBusy = $state(false);
+	async function loadAutoplay() {
+		try {
+			autoplay = (await api.get<{ autoplay_trailers: boolean }>('/settings/ui')).autoplay_trailers;
+		} catch {
+			autoplay = null;
+		}
+	}
+	async function saveAutoplay(on: boolean) {
+		autoplayBusy = true;
+		try {
+			autoplay = (await api.put<{ autoplay_trailers: boolean }>('/settings/ui', { autoplay_trailers: on })).autoplay_trailers;
+			setAutoplaySetting(autoplay);
+			toasts.push(autoplay ? 'Trailers play by themselves' : 'Trailers no longer play by themselves', 'ok');
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+			await loadAutoplay();
+		} finally {
+			autoplayBusy = false;
+		}
+	}
 
 	let health = $state<Health | null>(null);
 	let checks = $state<HealthChecks | null>(null);
@@ -83,6 +108,7 @@
 
 	onMount(() => {
 		void load();
+		if (session.can('settings')) void loadAutoplay();
 		const t = setInterval(load, 30000);
 		const offs = [live.on('health', load)];
 		return () => {
@@ -121,6 +147,16 @@
 			<dd>{health.live_clients} · this tab: {words(live.status.state)}</dd>
 		</dl>
 	</section>
+
+	{#if autoplay !== null}
+		<section class="card" id="autoplay-card" aria-labelledby="h-autoplay" data-testid="autoplay-setting">
+			<div class="card-head"><h2 id="h-autoplay" class="h2">Autoplay trailers</h2></div>
+			<label class="checkline">
+				<input type="checkbox" checked={autoplay} disabled={autoplayBusy} onchange={(e) => saveAutoplay(e.currentTarget.checked)} />
+				<span><b>Play trailers by themselves</b><br /><span class="hint">On Explore the featured title and the larger card that opens over a poster play a muted trailer. Never for Kid accounts, with Reduce motion on, or on slow or data-saving connections. Applies to everyone.</span></span>
+			</label>
+		</section>
+	{/if}
 
 	{#if update}
 		<section class="card" id="update-card" tabindex="-1" aria-labelledby="h-update" data-testid="update">

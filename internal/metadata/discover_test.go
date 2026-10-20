@@ -39,6 +39,9 @@ func fakeDiscoverTMDB(t *testing.T) *httptest.Server {
 			_, _ = w.Write([]byte(`{"id":7,"title":"Seven","release_date":"2020-02-02","runtime":99,"backdrop_path":"/b.jpg","genres":[{"name":"Drama"}],
 				"release_dates":{"results":[{"iso_3166_1":"US","release_dates":[{"type":3,"certification":"R","release_date":"2020-02-02"}]}]},
 				"credits":{"cast":[{"name":"Ann","character":"Hero","profile_path":"/a.jpg"}],"crew":[{"name":"Dee","job":"Director"}]},
+				"images":{"backdrops":[{"file_path":"/b.jpg","vote_average":9},{"file_path":"/x1.jpg","vote_average":2},{"file_path":"/x2.jpg","vote_average":5},{"file_path":"/x3.jpg","vote_average":4},{"file_path":"/x4.jpg","vote_average":3},{"file_path":"/x5.jpg","vote_average":1}]},
+				"videos":{"results":[{"key":"abcDEF12345","site":"YouTube","type":"Trailer","official":true,"iso_639_1":"en","name":"Official Trailer"},
+					{"key":"vim123456","site":"Vimeo","type":"Trailer"},{"key":"clip1234567","site":"YouTube","type":"Clip"},{"key":"bad key!","site":"YouTube","type":"Teaser"}]},
 				"recommendations":` + list(15, "title") + `}`))
 		case "/3/tv/8":
 			_, _ = w.Write([]byte(`{"id":8,"name":"Eight","first_air_date":"2021-01-01","created_by":[{"name":"Cee"}],
@@ -94,6 +97,12 @@ func TestTMDBDetails(t *testing.T) {
 	if d.Name != "Seven" || d.Year != 2020 || d.RuntimeMinutes != 99 || d.Rating != "R" || len(d.Similar) != 12 || len(d.People) != 2 ||
 		d.People[0] != (DetailPerson{Name: "Ann", Role: "actor", Character: "Hero", Profile: ImageBase + "/w185/a.jpg"}) || d.People[1].Role != "director" {
 		t.Fatalf("movie %+v", d)
+	}
+	if want := []string{ImageBase + "/w1280/x2.jpg", ImageBase + "/w1280/x3.jpg", ImageBase + "/w1280/x4.jpg", ImageBase + "/w1280/x1.jpg"}; fmt.Sprint(d.Backdrops) != fmt.Sprint(want) {
+		t.Fatalf("backdrops %v", d.Backdrops)
+	}
+	if len(d.Videos) != 1 || d.Videos[0] != (DetailVideo{Key: "abcDEF12345", Name: "Official Trailer", Type: "Trailer", Official: true, Language: "en"}) {
+		t.Fatalf("videos %+v", d.Videos)
 	}
 	s, err := p.Details(ctx, "show", "8")
 	if err != nil {
