@@ -126,6 +126,8 @@ type API struct {
 	top10 top10Cache
 	// music keeps the music trending lists for an hour.
 	music musicTrendCache
+	// explore runs the Explore pool job and keeps its lists and pages.
+	explore exploreState
 }
 
 // New makes the API.

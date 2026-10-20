@@ -25,6 +25,11 @@ type DiscoverItem struct {
 	Backdrop string   `json:"backdrop,omitempty"`
 	Overview string   `json:"overview,omitempty"`
 	Genres   []string `json:"genres"`
+	// What Explore scores with; not sent to the app.
+	Popularity  float64 `json:"-"`
+	VoteAverage float64 `json:"-"`
+	VoteCount   int     `json:"-"`
+	Released    string  `json:"-"` // YYYY-MM-DD
 }
 
 // DetailPerson is one credited person on a details page.
@@ -182,6 +187,10 @@ type tmdbListItem struct {
 	BackdropPath string  `json:"backdrop_path"`
 	GenreIDs     []int64 `json:"genre_ids"`
 	Adult        bool    `json:"adult"`
+	Popularity   float64 `json:"popularity"`
+	VoteAverage  float64 `json:"vote_average"`
+	VoteCount    int     `json:"vote_count"`
+	MediaType    string  `json:"media_type"`
 }
 
 func tvPath(kind string) string {
@@ -223,9 +232,9 @@ func (t *TMDB) items(kind string, list []tmdbListItem, names map[int64]string, n
 			continue
 		}
 		it := DiscoverItem{TMDBID: strconv.FormatInt(m.ID, 10), Kind: kind, Name: m.Title, Overview: m.Overview, Genres: []string{},
-			Year: yearOf(m.ReleaseDate)}
+			Year: yearOf(m.ReleaseDate), Released: m.ReleaseDate, Popularity: m.Popularity, VoteAverage: m.VoteAverage, VoteCount: m.VoteCount}
 		if kind == "show" {
-			it.Name, it.Year = m.Name, yearOf(m.FirstAirDate)
+			it.Name, it.Year, it.Released = m.Name, yearOf(m.FirstAirDate), m.FirstAirDate
 		}
 		if m.PosterPath != "" {
 			it.Poster = t.images() + "/w342" + m.PosterPath

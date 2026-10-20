@@ -597,6 +597,9 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	a := api.New(api.Server{Library: lib, Lists: ol, Store: s, Queue: q, Live: hub, Metadata: md, Version: version, Auth: au, Backups: bm, Restart: restart,
 		Secrets: vault, MetadataUp: hosted.Health.Up, Top10: hosted.Service.NetflixTop10, MusicTrending: hosted.Service.MusicTrending, Alerts: sender, Asks: wish, Search: sr, Downloads: dm, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
 		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase})
+	if !c.SafeMode {
+		a.StartExplore(ctx)
+	}
 	srv := newServer(c.Addr, urlbase.Handler(c.URLBase, compress.Handler(limitBodies(a.Handler()))))
 	ln, err := net.Listen("tcp", c.Addr)
 	if err != nil {
