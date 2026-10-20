@@ -10,7 +10,7 @@
 	import Icon, { type IconName } from '#lib/Icon.svelte';
 	import { session } from '#lib/session.svelte.ts';
 	import BrowseTile from '#lib/ui/BrowseTile.svelte';
-	import MosaicReveal, { ENTER_DELAY, passAt } from '#lib/ui/MosaicReveal.svelte';
+	import MosaicReveal, { ENTER_DELAY, ENTER_SWEEP, passAt } from '#lib/ui/MosaicReveal.svelte';
 	import { browseCols, browseHref, browsePath, browseType, readMood, tileHue, type BrowseAnswer, type BrowseTile as Tile, type MoodView } from '#lib/search-browse.ts';
 	import { reducedMotion } from '#lib/motion.ts';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
@@ -69,19 +69,14 @@
 	let depth = 0;
 	let leaving = $state(false);
 	let covering = $state(false);
-	const LAND_MS = 520;
+	const LAND_MS = 700;
 	function exit() {
 		if (leaving) return;
 		revealing = false;
 		leaving = true;
 		// The tiles drop out quickly, last visible row first; the band then sweeps back up (ease-in).
-		const rows = calm ? [] : [...document.querySelectorAll<HTMLElement>('.search .tiles li, .search .grid li, .search .ui-shelf')].filter((n) => n.getBoundingClientRect().top < innerHeight);
-		const tops = [...new Set(rows.map((n) => Math.round(n.getBoundingClientRect().top)))].sort((x, y) => y - x);
-		for (const n of rows) {
-			const order = tops.indexOf(Math.round(n.getBoundingClientRect().top));
-			n.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(10px) scale(0.98)' }], { duration: 220, delay: order * 35, easing: 'cubic-bezier(.55,0,1,.45)', fill: 'forwards' });
-		}
-		setTimeout(() => (covering = true), calm ? 0 : 160);
+		// The page stays put and the pixels cover it, bottom up.
+		covering = true;
 	}
 	function left() {
 		if (cameFrom) {
@@ -99,10 +94,13 @@
 		const r = node.getBoundingClientRect();
 		if (r.top > innerHeight) return;
 		const f = (r.top - top) / Math.max(1, innerHeight - top);
-		const start = Math.min(1100 - LAND_MS, Math.max(passAt(f), ENTER_DELAY + at.row * 70) + at.col * 25);
+		// The pixels themselves reveal the tile (it is already there under the
+		// mosaic); as the band passes its row the tile only settles a hair, so the
+		// page comes through the pixelation instead of after it.
+		const start = Math.min(ENTER_DELAY + ENTER_SWEEP - LAND_MS, passAt(Math.max(0, f)) + at.col * 18);
 		const delay = Math.max(0, start - elapsed);
-		node.style.willChange = 'transform, opacity';
-		const a = node.animate([{ opacity: 0, transform: 'translateY(14px) scale(0.97)' }, { opacity: 1, transform: 'none' }], { duration: LAND_MS, delay, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'backwards' });
+		node.style.willChange = 'transform';
+		const a = node.animate([{ transform: 'scale(1.025)' }, { transform: 'none' }], { duration: LAND_MS, delay, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'backwards' });
 		a.onfinish = a.oncancel = () => (node.style.willChange = '');
 	}
 	let cols = $state(6);

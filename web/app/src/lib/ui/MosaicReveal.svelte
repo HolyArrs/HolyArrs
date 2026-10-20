@@ -4,24 +4,26 @@
 	// soft band (FEATHER px tall) moves through it; squares inside the band fade
 	// and shrink (1 → 0.92) with a small seeded delay each, so the edge
 	// shimmers rather than wipes.
-	// Enter: 120 ms hold, then the band runs down over 780 ms on an expo-out
-	// curve (cubic-bezier(.16,1,.3,1)-like). Exit: the band runs back up over
+	// Enter: 120 ms hold, then the band runs down over 1600 ms on a gentle ease-in-out curve. Exit: the band runs back up over
 	// EXIT_MS on an ease-in curve (it accelerates away), building the cover.
 	export const ENTER_DELAY = 120;
-	export const ENTER_SWEEP = 1100;
-	export const EXIT_MS = 760;
+	export const ENTER_SWEEP = 1600;
+	export const EXIT_MS = 900;
 	export const FEATHER = 280;
-	const expoOut = (x: number) => (x >= 1 ? 1 : 1 - Math.pow(2, -10 * x));
+	// A gentle ease-in-out (cubic): the band travels down at a visible, even pace (expo-out was over in the first quarter).
+	const sweepEase = (x: number) => (x >= 1 ? 1 : x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 	const easeIn = (x: number) => x * x * x;
 
 	/** frontAt is the band's leading edge (0 top, 1 bottom of the cover) at ms after the entry starts. */
 	export function frontAt(ms: number): number {
-		return expoOut(Math.max(0, ms - ENTER_DELAY) / ENTER_SWEEP);
+		return sweepEase(Math.min(1, Math.max(0, ms - ENTER_DELAY) / ENTER_SWEEP));
 	}
 	/** passAt is when (ms after the entry starts) the band's edge reaches a height fraction f. */
 	export function passAt(f: number): number {
 		const e = Math.min(0.999, Math.max(0, f));
-		return ENTER_DELAY + (-Math.log2(1 - e) / 10) * ENTER_SWEEP;
+		// Inverse of sweepEase.
+		const x = e < 0.5 ? Math.cbrt(e / 4) : 1 - Math.cbrt(2 * (1 - e)) / 2;
+		return ENTER_DELAY + x * ENTER_SWEEP;
 	}
 	// A small seeded generator, so the shimmer is the same every time.
 	function seeded(seed: number) {
@@ -69,7 +71,8 @@
 		const jitter = new Float32Array(cols * rows);
 		for (let i = 0; i < jitter.length; i++) jitter[i] = rnd() * 0.9;
 		const H = box.height;
-		const travel = H + FEATHER;
+		// Far enough that the last row's slowest squares have fully settled before the canvas goes (no pop at the end).
+		const travel = H + FEATHER * 1.6;
 		let raf = 0;
 		const t0 = performance.now();
 		const total = exit ? EXIT_MS : ENTER_DELAY + ENTER_SWEEP;
