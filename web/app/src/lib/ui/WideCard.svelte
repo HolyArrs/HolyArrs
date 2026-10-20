@@ -12,9 +12,7 @@
 	import { prefetchTrailer, watchTrailer } from '../autoplay.svelte.ts';
 	import { dwell, finePointer, HOVER_DELAY } from '../trailer.ts';
 	import GrowCard from './GrowCard.svelte';
-	import { richMetadata } from './TitleHero.svelte';
-	import { api } from '../api.ts';
-	import { GROW_DELAY, logoQueue } from '../grow.ts';
+	import { GROW_DELAY } from '../grow.ts';
 	import { cardTemplate, type CardArtPick } from '../card-art.ts';
 
 	// 16:9 card for episodes and downloads: progress line along the art's
@@ -86,7 +84,7 @@
 		 * card itself in place (GrowCard) instead of opening a hover card.
 		 */
 		cover?: boolean;
-		/** The title logo (transparent PNG); else one is looked up as the card comes into view. */
+		/** The title logo (transparent PNG), from the row data. */
 		logo?: string | null;
 		/** The grown card's one-tap Ask/Add. */
 		growAction?: Snippet;
@@ -153,28 +151,14 @@
 	$effect(() => {
 		if (root && preview) return watchTrailer(root, preview.kind, preview.tmdb);
 	});
-	// Cover cards: the logo, looked up gently (a few at a time) once the card is on screen.
-	let foundLogo = $state<string | null>(null);
-	$effect(() => {
-		if (!cover || logo || pick || !preview || !root || typeof IntersectionObserver === 'undefined') return;
-		const p = preview;
-		let done = false;
-		const io = new IntersectionObserver(([e]) => {
-			if (!e.isIntersecting || done) return;
-			done = true;
-			io.disconnect();
-			void logoQueue(() => richMetadata(api.get, p.kind, p.tmdb)).then((m) => (foundLogo = m?.logo ?? null));
-		}, { rootMargin: '0px 200px' });
-		io.observe(root);
-		return () => io.disconnect();
-	});
+	// Cover cards take their logo from the row data (logo or the server's card_logo pick); a card never fetches a title's details for it.
 	let logoFailed = $state(false);
-	const shownLogo = $derived(logoFailed ? null : sized(logo ?? foundLogo, 'poster') || null);
+	const shownLogo = $derived(logoFailed ? null : sized(logo ?? null, 'poster') || null);
 	let failed = $state(false);
 	/** The server's picked picture failed to load (the template falls back). */
 	let pickFailed = $state(false);
 	// Title cards follow the card template: titled art, else logo, else name (all on the art).
-	const tpl = $derived(cover ? cardTemplate(pick, { backdrop: image, logo: logo ?? foundLogo }, { art: pickFailed, logo: logoFailed }) : null);
+	const tpl = $derived(cover ? cardTemplate(pick, { backdrop: image, logo: logo ?? null }, { art: pickFailed, logo: logoFailed }) : null);
 	const src = $derived(tpl ? tpl.image : (image ?? null));
 	// The card's rendered width picks the picture size (the grown card loads its own w1280).
 	let cw = $state(0);

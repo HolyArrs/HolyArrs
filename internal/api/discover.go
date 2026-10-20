@@ -431,6 +431,10 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 			coll = &collectionView{ID: c.ID, Name: c.Name, Parts: parts}
 		}
 	}
+	a.rowCardArt(r, similar)
+	if coll != nil {
+		a.rowCardArt(r, coll.Parts)
+	}
 	region := strings.ToUpper(r.URL.Query().Get("region"))
 	if !isCountry(region) {
 		region = "US"
@@ -460,6 +464,22 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 		Ask        *askBrief               `json:"ask"`
 		NeverAdd   bool                    `json:"never_add"`
 	}{Details: det, Quality: quality, Streaming: streaming, Collection: coll, Similar: similar, InLibrary: head.InLibrary, TitleID: head.TitleID, Ask: head.Ask, NeverAdd: never})
+}
+
+// rowCardArt gives a title page row its card pictures and logos from the
+// card_art table (one read for the row, no outside call), and queues the
+// titles without a pick for the paced filler.
+func (a *API) rowCardArt(r *http.Request, items []discoverItemView) {
+	a.fillCardArt(r, items)
+	var missing []explore.Item
+	for _, v := range items {
+		if v.CardArt.Logo == "" && v.CardArt.Art == "" {
+			missing = append(missing, explore.Item{Kind: v.Kind, TMDBID: v.TMDBID, Backdrop: v.Backdrop})
+		}
+	}
+	if len(missing) > 0 {
+		a.queueCardItems(context.WithoutCancel(r.Context()), missing)
+	}
 }
 
 // qualityWord names the best picture the Library has: 4K, HD, or nothing.
@@ -568,6 +588,7 @@ func (a *API) metadataMoreFrom(w http.ResponseWriter, r *http.Request) {
 			internal(w, err)
 			return
 		}
+		a.rowCardArt(r, out)
 	}
 	who := e.details.People[0]
 	a.exploreCaching(w, r, "")

@@ -106,9 +106,6 @@ export function queue(max = 4) {
 	};
 }
 
-/** Title logos for wide cards: four lookups at a time across the page. */
-export const logoQueue = queue(4);
-
 /** The CSS transform for a FLIP start (origin top left). */
 export function flipTransform(f: Growth['from']): string {
 	return `translate(${f.x.toFixed(2)}px, ${f.y.toFixed(2)}px) scale(${f.scale.toFixed(4)})`;

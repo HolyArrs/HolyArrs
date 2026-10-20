@@ -310,6 +310,21 @@ func TestMetadataDetails(t *testing.T) {
 	do(t, "GET", srv2.URL+"/api/v1/metadata/movie/11", "", 501)
 }
 
+func TestMetadataDetailsRowsCarryCardLogos(t *testing.T) {
+	f := newDiscoverTMDB(t)
+	srv, s := discoverRig(t, f.provider())
+	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
+		_, err := tx.Exec(`INSERT INTO card_art (kind, tmdb_id, lang, art, logo, has_title, fetched_at) VALUES ('movie', '12', 'en', '', 'https://img/logo12.png', 0, ?)`, store.FormatTime(time.Now()))
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	b := string(do(t, "GET", srv.URL+"/api/v1/metadata/movie/11", "", 200))
+	if !strings.Contains(b, `"card_logo":"https://img/logo12.png"`) {
+		t.Fatalf("similar logo missing %s", b)
+	}
+}
+
 func TestQualityWord(t *testing.T) {
 	for res, want := range map[int64]string{0: "", 480: "", 720: "HD", 1080: "HD", 2160: "4K", 4320: "4K"} {
 		if got := qualityWord(res); got != want {
