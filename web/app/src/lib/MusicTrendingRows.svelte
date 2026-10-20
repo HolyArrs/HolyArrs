@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Chip from './ui/Chip.svelte';
 	import { onMount } from 'svelte';
 	import { api, message } from './api.ts';
 	import { toasts } from './toasts.svelte.ts';
@@ -207,9 +208,10 @@
 		<!-- The chip bar keeps its height: placeholder chips until the genres are known. -->
 		{#if chips.length}
 			<div class="chips" role="group" aria-label="Genres" data-testid="music-genres">
-				<button type="button" class="chip" class:on={genre === ''} aria-pressed={genre === ''} onclick={() => chip('')}>All</button>
+				<!-- The same chips as the Movies and Shows genre picker. -->
+				<Chip label="All" selected={genre === ''} onclick={() => chip('')} />
 				{#each chips as g (g)}
-					<button type="button" class="chip" class:on={genre === g} aria-pressed={genre === g} onclick={() => chip(g)}>{g}</button>
+					<span class="cap"><Chip label={g} selected={genre === g} onclick={() => chip(g)} /></span>
 				{/each}
 			</div>
 		{:else}
@@ -295,6 +297,8 @@
 	.music { position: relative; display: flex; flex-direction: column; gap: 32px; }
 	.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-bottom: -12px; padding: 2px; }
 	.chips::-webkit-scrollbar { display: none; }
+	.chips :global(.ui-chip) { flex: none; }
+	.cap { display: contents; text-transform: capitalize; }
 	.chip { flex: none; font: inherit; font-size: 14px; font-weight: 500; text-transform: capitalize; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border, transparent); background: var(--surface-2); color: var(--text); cursor: pointer; }
 	.chips { height: 38px; flex: none; }
 	.chip { height: 34px; box-sizing: border-box; line-height: 20px; }
@@ -305,8 +309,6 @@
 	.sk-h { display: block; width: 220px; height: 46px; border-radius: 8px; background: var(--surface-2); }
 	.sk-tiles { display: grid; grid-auto-flow: column; grid-auto-columns: var(--explore-item); gap: var(--shelf-gap); padding: 6px 0 14px; }
 	.sk-tile { display: block; aspect-ratio: 1; margin-bottom: 45px; border-radius: var(--r-card); background: var(--surface-2); }
-	.chip.on { background: var(--text); color: var(--surface-1, var(--bg)); border-color: transparent; }
-	.chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.row { position: relative; min-width: 0; }
 	.pick { position: absolute; right: 0; top: 0; z-index: 1; display: flex; gap: 8px; align-items: center; }
 	.hero { position: relative; overflow: hidden; }

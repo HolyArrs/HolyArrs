@@ -750,6 +750,94 @@ export function serverRow(r: ServerRow): ExploreRow & { wide: boolean; type: str
 			const c = { ...discoverCard(d, r.id), wide: d.backdrop ?? null };
 			return { ...c, badges: factualBadges(c.badges) };
 		}),
-		keep: r.type === 'services' || r.type === 'top10'
+		keep: r.type === 'top_services'
 	};
+}
+
+// ---- Top on your services: one ranked row, a chip per service ----
+
+/** TopChip is a chip of the Top on your services row: all, or one service id. */
+export type TopChip = 'all' | number;
+
+/** NETFLIX_SERVICE is Netflix's service id; its chip uses Netflix's weekly Top 10. */
+export const NETFLIX_SERVICE = 8;
+
+export interface TopQuery {
+	type: ExploreType;
+	chip: TopChip;
+	services: number[];
+	region: string;
+	genre?: number;
+}
+
+export interface TopAnswer {
+	chip: string;
+	region: string;
+	/** netflix_top10: Netflix's own weekly list; popular: TMDB's most popular this week. */
+	source: 'netflix_top10' | 'popular';
+	week?: string;
+	items: (ProviderItem & { rank: number })[];
+}
+
+/** topPath is GET /explore/top for one chip. */
+export function topPath(q: TopQuery): string {
+	const p = new URLSearchParams({ type: q.type === 'music' ? 'all' : q.type, chip: String(q.chip), region: q.region });
+	if (q.services.length) p.set('services', q.services.join('|'));
+	if (q.genre && (q.type === 'movies' || q.type === 'shows')) p.set('genre', String(q.genre));
+	return `/explore/top?${p.toString()}`;
+}
+
+/** topChips: All my services, then each picked service in the picker's order. */
+export function topChips(picked: number[], shown: WatchService[]): { id: TopChip; name: string; logo?: string }[] {
+	const byId = new Map(shown.map((s) => [s.id, s]));
+	return [{ id: 'all' as TopChip, name: 'All my services' }, ...picked.filter((id) => byId.has(id)).map((id) => ({ id: id as TopChip, name: byId.get(id)!.name, logo: byId.get(id)!.logo }))];
+}
+
+/** topSource is the small line under the row title: where the list comes from, honestly named. */
+export function topSource(a: Pick<TopAnswer, 'source' | 'region'>, serviceName: string): string {
+	const where = a.region === 'global' ? 'worldwide' : a.region;
+	if (a.source === 'netflix_top10') return `Netflix's weekly Top 10 · ${where}`;
+	return `Most popular this week on ${serviceName} · ${where}`;
+}
+
+// ---- Genre pages ----
+
+export interface Genre {
+	id: number;
+	name: string;
+}
+
+/** GENRES: TMDB's genre lists per kind (its own fixed ids). */
+export const GENRES: Record<'movie' | 'show', Genre[]> = {
+	movie: [
+		[28, 'Action'], [12, 'Adventure'], [16, 'Animation'], [35, 'Comedy'], [80, 'Crime'], [99, 'Documentary'], [18, 'Drama'], [10751, 'Family'],
+		[14, 'Fantasy'], [36, 'History'], [27, 'Horror'], [10402, 'Music'], [9648, 'Mystery'], [10749, 'Romance'], [878, 'Science Fiction'],
+		[53, 'Thriller'], [10752, 'War'], [37, 'Western']
+	].map(([id, name]) => ({ id: id as number, name: name as string })),
+	show: [
+		[10759, 'Action & Adventure'], [16, 'Animation'], [35, 'Comedy'], [80, 'Crime'], [99, 'Documentary'], [18, 'Drama'], [10751, 'Family'],
+		[10762, 'Kids'], [9648, 'Mystery'], [10764, 'Reality'], [10765, 'Sci-Fi & Fantasy'], [10768, 'War & Politics'], [37, 'Western']
+	].map(([id, name]) => ({ id: id as number, name: name as string }))
+};
+
+/** genresFor: the picker's genres for a tab (none under All and Music). */
+export function genresFor(t: ExploreType): Genre[] {
+	return t === 'movies' ? GENRES.movie : t === 'shows' ? GENRES.show : [];
+}
+
+/** parseGenre reads ?genre= for a tab: a known genre of that type, else null. */
+export function parseGenre(v: string | null | undefined, t: ExploreType): Genre | null {
+	const id = Number(v);
+	return genresFor(t).find((g) => g.id === id) ?? null;
+}
+
+export interface GenreAnswer {
+	type: ExploreType;
+	genre: { id: number; name: string; kind: 'movie' | 'show' };
+	hero: ProviderItem[];
+	rows: ServerRow[];
+}
+
+export function genrePath(t: ExploreType, genre: number): string {
+	return `/explore/genre?${new URLSearchParams({ type: t, genre: String(genre) }).toString()}`;
 }

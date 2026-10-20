@@ -34,6 +34,10 @@
 		toggleService,
 		writeServices,
 		typeHref,
+		genrePath,
+		genresFor,
+		parseGenre,
+		type GenreAnswer,
 		type ExploreType,
 		type ExploreCard,
 		type ExploreRow,
@@ -52,7 +56,9 @@
 	import AskMovieDialog from '#lib/AskMovieDialog.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
-	import Top10Row from '#lib/Top10Row.svelte';
+	import TopServicesRow from '#lib/TopServicesRow.svelte';
+	import Popover from '#lib/ui/Popover.svelte';
+	import Chip from '#lib/ui/Chip.svelte';
 	import MusicTrendingRows from '#lib/MusicTrendingRows.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
@@ -76,7 +82,6 @@
 	/** The server-built page: the head in one answer, then tail pages as the page scrolls. */
 	let head = $state<(ExploreRow & { wide: boolean; type: string })[]>([]);
 	let tail = $state<(ExploreRow & { wide: boolean; type: string })[]>([]);
-	let top10 = $state<HeadAnswer['top10']>(null);
 	let hero = $state<ExploreCard[]>([]);
 	let heroAt = $state(0);
 	let headLoaded = $state(false);
@@ -128,6 +133,7 @@
 		const url = new URL((page.shallow?.url ?? page.url).href);
 		if (t === 'all') url.searchParams.delete('type');
 		else url.searchParams.set('type', t);
+		url.searchParams.delete('genre');
 		void goto(url, { replace: true, shallow: true, reset: false });
 		void loadHead();
 	}
@@ -164,7 +170,48 @@
 	$effect(() => onTheaterExit((o) => void goto(to(detailPath(o.kind, o.tmdb)))));
 
 	// Music shows only music rows: the movie and show rows (Top 10, services, Coming soon, Best new releases) never appear there.
-	const rows = $derived(type === 'music' ? [] : markTransitions(filterRows([...head, ...tail], type)));
+	// A genre page (Movies or Shows, ?genre=<TMDB id>) swaps the head and tail for its own rows.
+	const genre = $derived(parseGenre((page.shallow?.url ?? page.url).searchParams.get('genre'), type));
+	const genres = $derived(genresFor(type));
+	let genreRows = $state<(ExploreRow & { wide: boolean; type: string })[]>([]);
+	let genreHero = $state<ExploreCard[]>([]);
+	let genreLoaded = $state<number | null>(null);
+	let genreFailed = $state(false);
+	let genreAsk = 0;
+	async function loadGenre(id: number) {
+		const n = ++genreAsk;
+		genreFailed = false;
+		try {
+			const a = await api.get<GenreAnswer>(genrePath(type, id), gone.signal);
+			if (n !== genreAsk) return;
+			const got = a.rows.map(serverRow);
+			// Top on your services, in the genre, is the second row.
+			const marker = { id: 'top_services', type: 'top_services', title: 'Top on your services', cards: [], keep: true, wide: false };
+			genreRows = [...got.slice(0, 1), marker, ...got.slice(1)];
+			genreHero = (a.hero ?? []).map((d) => ({ ...discoverCard(d, 'hero'), wide: d.backdrop ?? null }));
+			heroAt = 0;
+			genreLoaded = id;
+		} catch {
+			if (n === genreAsk) genreFailed = true;
+		}
+	}
+	$effect(() => {
+		const g = genre;
+		if (g && genreLoaded !== g.id) void loadGenre(g.id);
+	});
+	/** pickGenre opens a genre page (a new history entry, so Back returns); null clears it. */
+	function pickGenre(id: number | null, close?: () => void) {
+		close?.();
+		const url = new URL((page.shallow?.url ?? page.url).href);
+		if (id === null) url.searchParams.delete('genre');
+		else url.searchParams.set('genre', String(id));
+		genreLoaded = null;
+		void goto(url, { shallow: true, reset: false });
+		scrollTo({ top: 0, behavior: 'instant' });
+	}
+	const genreOn = $derived(!!genre && type !== 'music');
+	const rows = $derived(type === 'music' ? [] : genreOn ? (genreLoaded === genre?.id ? markTransitions(genreRows) : []) : markTransitions(filterRows([...head, ...tail], type)));
+	const heroCards = $derived(genreOn ? genreHero : hero);
 	/** Big 4 shelves: the first personal row and Best new releases draw bigger cards. */
 
 	function readTop10Pick() {
@@ -202,7 +249,6 @@
 			const kept = stableRows(tries > 0 ? headOrder : [], a.head.map(serverRow), (r) => r.id);
 			headOrder = kept.order;
 			head = kept.rows;
-			top10 = a.top10 ? { ...a.top10, kind: q.top10Kind } : null;
 			hero = (a.hero ?? []).map((d) => ({ ...discoverCard(d, 'hero'), wide: d.backdrop ?? null }));
 			heroAt = 0;
 			tail = [];
@@ -384,8 +430,6 @@
 		}
 	}
 
-	const serviceCards = $derived(rows.find((r) => r.id === 'services')?.cards.slice(0, rowCap) ?? []);
-
 	function tapService(id: number) {
 		picked = toggleService(picked ?? [], id);
 		try {
@@ -425,21 +469,6 @@
 	{/if}
 {/snippet}
 
-{#snippet serviceTools()}
-	<div class="svc" data-testid="services-picker">
-		{#if picked === null}<p class="svc-hint">Pick the services you have</p>{/if}
-		<div class="chips" role="group" aria-label="Your streaming services">
-			{#each shownServices as sv (sv.id)}
-				{@const on = picked !== null && picked.includes(sv.id)}
-				<button type="button" class="svc-chip" class:on aria-pressed={on} onclick={() => tapService(sv.id)} title={sv.name}>
-					{#if sv.logo}<img src={sv.logo} alt="" width="28" height="28" loading="lazy" />{/if}
-					<span>{sv.name}</span>
-				</button>
-			{/each}
-		</div>
-		{#if serviceCards.length === 0}<p class="svc-hint">{usedServices.length ? 'Nothing found on these services.' : 'Pick a service to fill this row.'}</p>{/if}
-	</div>
-{/snippet}
 
 <!-- A card opened from a row is counted (to measure only). -->
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
@@ -448,7 +477,25 @@
 	<div class="types-mark" bind:this={typesMark} aria-hidden="true"></div>
 	<div class="types" class:stuck={typesStuck}>
 		<SegmentedControl options={typeOptions} value={type} label="Show" testid="explore-type" onchange={setType} />
+		{#if genres.length}
+			<div class="genre-pick" data-testid="genre-picker">
+				<Popover label="Genres" text={genre ? genre.name : 'Genres'} variant="button" align="end" width={340}>
+					{#snippet children(close)}
+						<div class="genre-list" role="group" aria-label="Genres">
+							{#each genres as g (g.id)}
+								<Chip label={g.name} selected={genre?.id === g.id} onclick={() => pickGenre(g.id, close)} />
+							{/each}
+						</div>
+					{/snippet}
+				</Popover>
+			</div>
+		{/if}
 	</div>
+	{#if genreOn && genre}
+		<div class="genre-on" data-testid="genre-on">
+			<Chip label={genre.name} selected onremove={() => pickGenre(null)} />
+		</div>
+	{/if}
 	<MetadataNotice />
 	{#if type === 'music'}<MusicTrendingRows {owned} {manage} {mayAsk} {folders} {rules} onadded={() => void load()} />{/if}
 
@@ -465,24 +512,31 @@
 					<div class="sk-row">{#each Array.from({ length: 7 }, (_, i) => i) as i (i)}<Skeleton shape="poster" />{/each}</div>
 				{/each}
 			</div>
+		{:else if genreOn && genreFailed}
+			<LoadError hasData={false} message="Could not load this genre." onretry={() => genre && void loadGenre(genre.id)} {busy} />
+		{:else if genreOn && rows.length === 0}
+			<div class="loading" aria-busy="true" aria-label="Loading">
+				{#each [0, 1] as r (r)}
+					<Skeleton width="200px" />
+					<div class="sk-row">{#each Array.from({ length: 7 }, (_, i) => i) as i (i)}<Skeleton shape="poster" />{/each}</div>
+				{/each}
+			</div>
 		{:else if rows.length === 0}
-			<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} initial={top10} />
+			<TopServicesRow {type} {picked} shown={shownServices} {region} {owned} {who} used={usedServices} ontoggle={tapService} />
 			<EmptyState icon="compass" title="Explore is getting ready" text="Rows fill in within a few minutes." action={{ label: 'Search', href: to('/search'), icon: 'search' }} />
 		{:else}
-			{#if hero.length}
-				{@const h = live(hero[heroAt % hero.length])}
+			{#if heroCards.length}
+				{@const h = live(heroCards[heroAt % heroCards.length])}
 				<ExploreHero kind={h.kind === 'show' ? 'show' : 'movie'} tmdb={cardTmdb(h)} title={h.name} href={cardHref(h)} backdrop={h.wide ?? h.image} vtName={h.vtName} subtitle={h.year ? `${h.year} · ${h.kind === 'show' ? 'Show' : 'Movie'}` : h.subtitle} settled={headLoaded && !busy}>
 					{#snippet action()}{@render heroAction(h)}{/snippet}
 				</ExploreHero>
 			{/if}
-			{#if !rows.some((r) => r.type === 'top10')}<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} initial={top10} />{/if}
 			{#each rows as row, ri (row.id)}
-				{#if row.type === 'top10'}
-					{@const k = row.id === 'top10_show' ? 'show' : row.id === 'top10_movie' ? 'movie' : type === 'shows' ? 'show' : type === 'movies' ? 'movie' : undefined}
-					<Top10Row lock={k} {owned} {who} initial={k && top10?.by_kind?.[k] ? { ...top10.by_kind[k], kind: k } : top10} />
+				{#if row.type === 'top_services'}
+					<TopServicesRow {type} {picked} shown={shownServices} {region} genre={genreOn ? genre : null} {owned} {who} used={usedServices} ontoggle={tapService} />
 				{:else}
 				<div class="row-wrap" class:wide-row={row.wide || row.cards.some((c) => wideKind(c.kind))} data-row={row.type ?? row.id} data-row-id={row.id} data-title-layer={row.titleLayer}>
-				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.cards.some((c) => wideKind(c.kind)) ? 'var(--title-item)' : 'var(--explore-item)'} tools={row.id === 'services' ? serviceTools : undefined}
+				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.cards.some((c) => wideKind(c.kind)) ? 'var(--title-item)' : 'var(--explore-item)'}
 					items={row.cards} key={(c) => c.key} defer={ri >= EAGER_ROWS} placeholder={row.wide || row.cards.some((c) => wideKind(c.kind)) ? 'wide' : 'poster'} lines={row.cards.some((c) => c.subtitle) ? 2 : 1}>
 					{#snippet card(raw: ExploreCard)}
 						{@const c = live(raw)}
@@ -531,7 +585,7 @@
 				</div>
 				{/if}
 			{/each}
-			{#if tailMore}<div class="sentinel" bind:this={sentinel} aria-hidden="true"></div>{/if}
+			{#if tailMore && !genreOn}<div class="sentinel" bind:this={sentinel} aria-hidden="true"></div>{/if}
 		{/if}
 	{/if}
 </div>
@@ -561,15 +615,10 @@
 	@media (max-width: 359px) {
 		.types :global(.ui-seg button span) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 	}
-	.svc { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-	.svc-hint { color: var(--text-muted); font: var(--t-callout); }
-	.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-inline: calc(var(--gutter) * -1); padding: 2px var(--gutter); }
-	.chips::-webkit-scrollbar { display: none; }
-	.svc-chip { flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px 0 8px; border-radius: 999px; background: var(--surface-2); color: var(--text); font: var(--t-callout); font-weight: 500; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent); transition: background-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease; }
-	.svc-chip img { width: 28px; height: 28px; border-radius: 7px; object-fit: cover; }
-	.svc-chip:hover { background: color-mix(in srgb, var(--text) 10%, var(--surface-2)); }
-	.svc-chip.on { background: color-mix(in srgb, var(--accent) 18%, var(--surface-2)); box-shadow: inset 0 0 0 2px var(--accent); }
-	.svc-chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.genre-pick { pointer-events: auto; margin-left: 8px; display: flex; align-items: center; }
+	.genre-pick :global(.trigger) { min-height: 44px; border-radius: 999px; padding: 0 16px; }
+	.genre-list { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; }
+	.genre-on { display: flex; justify-content: center; margin-top: -16px; }
 	.sentinel { height: 1px; }
 	.row-wrap { display: contents; }
 	/* Wide title rows sit almost edge to edge, as on Netflix: about 279px cards at a 1536px window with a 5px gap. */

@@ -32,8 +32,9 @@ describe('revision 4', () => {
 		const { factualBadges } = await import('./explore.ts');
 		expect(factualBadges(['New season', 'Leaving soon', '3 days left', 'Coming 12 Nov', 'In library', 'Asked', '4K'])).toEqual(['New season', 'Coming 12 Nov', 'In library', 'Asked', '4K']);
 	});
-	it('keeps the Top 10 marker row in place', () => {
-		const r = serverRow({ id: 'top10', type: 'top10', title: 'Top 10 today', items: [] });
+	it('keeps the Top on your services marker row in place', () => {
+		const r = serverRow({ id: 'top_services', type: 'top_services', title: 'Top on your services', items: [] });
 		expect(r.keep).toBe(true);
+		expect(serverRow({ id: 'top10', type: 'top10', title: 'Top 10 today', items: [] }).keep).toBe(false);
 	});
 });
