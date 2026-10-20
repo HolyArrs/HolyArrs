@@ -42,6 +42,7 @@ type discoverEntry struct {
 	items    []metadata.DiscoverItem
 	details  *metadata.Details
 	services []metadata.WatchService
+	episodes []metadata.DetailEpisode
 }
 
 // discoverState holds the row cache and each person's request times.
@@ -410,14 +411,110 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 	if det.People == nil {
 		det.People = []metadata.DetailPerson{}
 	}
+	type collectionView struct {
+		ID    string             `json:"id"`
+		Name  string             `json:"name"`
+		Parts []discoverItemView `json:"parts"`
+	}
+	var coll *collectionView
+	if c := e.details.Collection; c != nil {
+		parts, err := a.joinItems(r.Context(), a.kidItems(r.Context(), max, c.Parts, 0), me, len(c.Parts))
+		if err != nil {
+			internal(w, err)
+			return
+		}
+		if len(parts) > 1 {
+			coll = &collectionView{ID: c.ID, Name: c.Name, Parts: parts}
+		}
+	}
+	region := strings.ToUpper(r.URL.Query().Get("region"))
+	if !isCountry(region) {
+		region = "US"
+	}
+	streaming := det.Streaming[region]
+	if streaming == nil {
+		streaming = []metadata.WatchService{}
+	}
 	writeJSON(w, http.StatusOK, struct {
 		metadata.Details
-		Similar   []discoverItemView `json:"similar"`
-		InLibrary bool               `json:"in_library"`
-		TitleID   int64              `json:"title_id,omitempty"`
-		Ask       *askBrief          `json:"ask"`
-		NeverAdd  bool               `json:"never_add"`
-	}{Details: det, Similar: similar, InLibrary: head.InLibrary, TitleID: head.TitleID, Ask: head.Ask, NeverAdd: never})
+		Streaming  []metadata.WatchService `json:"streaming"`
+		Collection *collectionView         `json:"collection,omitempty"`
+		Similar    []discoverItemView      `json:"similar"`
+		InLibrary  bool                    `json:"in_library"`
+		TitleID    int64                   `json:"title_id,omitempty"`
+		Ask        *askBrief               `json:"ask"`
+		NeverAdd   bool                    `json:"never_add"`
+	}{Details: det, Streaming: streaming, Collection: coll, Similar: similar, InLibrary: head.InLibrary, TitleID: head.TitleID, Ask: head.Ask, NeverAdd: never})
+}
+
+// metadataSeason answers GET /api/v1/metadata/show/{tmdb_id}/seasons/{number}:
+// one season's episodes from TMDB (number, name, overview, runtime,
+// still, air_day), for a show in the Library or not. Cached 24 h. A Kid
+// only sees seasons of shows their limit allows.
+func (a *API) metadataSeason(w http.ResponseWriter, r *http.Request) {
+	id, num := r.PathValue("tmdb_id"), r.PathValue("number")
+	if n, err := strconv.ParseInt(id, 10, 64); err != nil || n <= 0 {
+		fail(w, http.StatusBadRequest, "tmdb_id must be a TMDB number")
+		return
+	}
+	season, err := strconv.Atoi(num)
+	if err != nil || season < 0 || season > 999 {
+		fail(w, http.StatusBadRequest, "number must be a season number")
+		return
+	}
+	if len(a.kindsOn("show")) == 0 {
+		fail(w, http.StatusConflict, "that part is off")
+		return
+	}
+	if a.kidLimited(w, r) {
+		return
+	}
+	l, ok := metadata.SeasonListerFor(r.Context(), a.s.Metadata)
+	if !ok {
+		fail(w, http.StatusNotImplemented, "Explore is not available here")
+		return
+	}
+	if max := a.kidMax(r); max != "" {
+		rating, inLibrary := a.libraryRating(r.Context(), "show", id)
+		if !inLibrary {
+			d, ok := metadata.DiscovererFor(r.Context(), a.s.Metadata)
+			if !ok {
+				fail(w, http.StatusNotImplemented, "Explore is not available here")
+				return
+			}
+			key := "details|show|" + id
+			e, cached := a.discover.get(key)
+			if !cached || time.Since(e.at) >= discoverTTL["details"] {
+				det, err := d.Details(r.Context(), "show", id)
+				if err != nil {
+					discoverFail(w, err)
+					return
+				}
+				e = discoverEntry{at: time.Now(), details: &det}
+				a.discover.put(key, e)
+			}
+			rating = e.details.Rating
+		}
+		if !ratings.Allows(max, "show", rating) {
+			fail(w, http.StatusForbidden, aboveLimit)
+			return
+		}
+	}
+	key := "season|" + id + "|" + strconv.Itoa(season)
+	e, cached := a.discover.get(key)
+	if !cached || time.Since(e.at) >= discoverTTL["details"] {
+		eps, err := l.SeasonEpisodes(r.Context(), id, season)
+		switch {
+		case err == nil:
+			e = discoverEntry{at: time.Now(), episodes: eps}
+			a.discover.put(key, e)
+		case !(cached && errors.Is(err, metadata.ErrRateLimited)):
+			discoverFail(w, err)
+			return
+		}
+	}
+	a.exploreCaching(w, r, "")
+	writeJSON(w, http.StatusOK, map[string]any{"tmdb_id": id, "season": season, "episodes": e.episodes})
 }
 
 // watchServices answers GET /api/v1/watch-services?region=<ISO>: the

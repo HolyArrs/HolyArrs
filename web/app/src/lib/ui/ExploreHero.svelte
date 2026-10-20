@@ -7,6 +7,7 @@
 	import { autoplayHere, loadUISettings, prefetchTrailer, trailerSources, type TrailerSource } from '../autoplay.svelte.ts';
 	import { dwell, heroPictures, HERO_DELAY } from '../trailer.ts';
 	import { sized } from '../tmdb-image.ts';
+	import { openTheater } from '../theater.svelte.ts';
 
 	// The Explore hero: one featured title, Layer 1 moving pictures at once,
 	// and (Layer 2) a muted trailer that fades in once the page has settled
@@ -21,7 +22,8 @@
 		subtitle,
 		settled = true,
 		badge,
-		action
+		action,
+		onmore
 	}: {
 		kind: 'movie' | 'show';
 		tmdb: string;
@@ -34,6 +36,8 @@
 		settled?: boolean;
 		badge?: Snippet;
 		action?: Snippet;
+		/** More info opens the panel on this page (a plain click); the link stays for new tabs. */
+		onmore?: (from: DOMRect) => void;
 	} = $props();
 
 	let box = $state<HTMLElement>();
@@ -45,6 +49,44 @@
 	let more = $state(false);
 	let text = $state<HTMLElement>();
 	let clamped = $state(false);
+	// Netflix: a few seconds into the trailer the words step back and the
+	// logo settles small in the lower left; a pointer over the hero, or the
+	// trailer ending, brings them back.
+	const QUIET_AFTER = 4000;
+	let quiet = $state(false);
+	let drop = $state(0);
+	let quietTimer: ReturnType<typeof setTimeout> | undefined;
+	let fades = $state<HTMLElement>();
+	function hush() {
+		clearTimeout(quietTimer);
+		quietTimer = setTimeout(() => {
+			if (!playing) return;
+			// The logo drops by the height of the words fading under it.
+			drop = fades ? fades.offsetHeight : 0;
+			quiet = true;
+		}, QUIET_AFTER);
+	}
+	function wake() {
+		if (quiet) quiet = false;
+		if (playing) hush();
+	}
+	$effect(() => {
+		if (playing) hush();
+		else {
+			clearTimeout(quietTimer);
+			quiet = false;
+		}
+		return () => clearTimeout(quietTimer);
+	});
+	function moreInfo(e: MouseEvent) {
+		if (!onmore || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+		e.preventDefault();
+		onmore((box ?? (e.currentTarget as HTMLElement)).getBoundingClientRect());
+	}
+	function expand(o: { source: TrailerSource; time: number; rect: DOMRect }) {
+		playing = false;
+		openTheater({ kind, tmdb, title, source: o.source, time: o.time, rect: { left: o.rect.left, top: o.rect.top, width: o.rect.width, height: o.rect.height }, from: 'hero' });
+	}
 
 	const pictures = $derived(heroPictures(meta?.backdrop ?? backdrop, meta?.backdrops).map((u) => sized(u, 'backdrop')));
 	const line = $derived([meta?.year, ...(meta?.genres ?? []).slice(0, 3)].filter(Boolean).join(' · ') || subtitle || '');
@@ -115,13 +157,14 @@
 	});
 </script>
 
-<section class="ui-xhero" bind:this={box} aria-label="Featured: {title}" data-testid="explore-hero">
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<section class="ui-xhero" class:quiet bind:this={box} onpointermove={wake} onfocusin={wake} style:--drop="{drop}px" aria-label="Featured: {title}" data-testid="explore-hero">
 	<div class="art" aria-hidden={!sources.length}>
 		{#if pictures.length}
 			{#key pictures[0]}<HeroMotion {pictures} position="70% 25%" paused={playing} />{/key}
 		{/if}
 		{#if sources.length}
-			<TrailerPlayer {sources} {title} onplaying={() => (playing = true)} onended={() => (playing = false)} onfail={() => (playing = false)} />
+			<TrailerPlayer {sources} {title} onexpand={expand} onplaying={() => (playing = true)} onended={() => (playing = false)} onfail={() => (playing = false)} />
 		{/if}
 		<div class="shade" class:playing></div>
 	</div>
@@ -131,6 +174,7 @@
 		{:else}
 			<h2 class="name">{title}</h2>
 		{/if}
+		<div class="fades" bind:this={fades}>
 		{#if line || badge}
 			<div class="meta">
 				{#if line}<p>{line}</p>{/if}
@@ -145,8 +189,9 @@
 				{#if clamped}<button class="more" type="button" aria-expanded={more} onclick={() => (more = !more)}>{more ? 'Show less' : 'Show more'}</button>{/if}
 			</div>
 		{/if}
+		</div>
 		<div class="actions">
-			{#if href}<a class="info" {href}>More info</a>{/if}
+			{#if href}<a class="info" {href} onclick={moreInfo} aria-haspopup={onmore ? 'dialog' : undefined}>More info</a>{/if}
 			{#if action}{@render action()}{/if}
 		</div>
 	</div>
@@ -171,9 +216,11 @@
 	}
 	.shade.playing { opacity: .55; }
 	.content { position: relative; width: min(560px, 100%); padding: 0 clamp(20px, 4vw, 56px) clamp(24px, 3.4vw, 44px); display: flex; flex-direction: column; gap: 10px; transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out); }
-	/* While the trailer plays the words step back (fade and settle), never move layout. */
-	.content.playing .about { opacity: 0; }
-	.about { transition: opacity var(--dur-slow) var(--ease-out); }
+	/* A few seconds into the trailer the words fade (never moving layout) and the logo settles small, lower left. */
+	.fades { display: flex; flex-direction: column; gap: 10px; transition: opacity 600ms var(--ease-out), transform 600ms var(--ease-out); }
+	.quiet .fades { opacity: 0; transform: translateY(12px); pointer-events: none; }
+	.content h2 { transform-origin: left bottom; transition: transform 800ms var(--ease-out); }
+	.quiet .content h2 { transform: translateY(calc(var(--drop) + 10px)) scale(.6); }
 	/* The title box and the overview keep their space while the details load, so nothing moves when they arrive. */
 	.content { --title-h: clamp(80px, 10vw, 140px); }
 	h2 { margin: 0; min-height: var(--title-h); display: flex; align-items: flex-end; }
@@ -197,5 +244,11 @@
 		.ui-xhero { height: auto; min-height: 420px; }
 		.content { padding: 0 var(--gutter) 24px; }
 	}
-	@media (prefers-reduced-motion: reduce) { .shade, .content, .about { transition: none; } }
+	@media (prefers-reduced-motion: reduce) {
+		.shade, .content { transition: none; }
+		.fades { transition: opacity 400ms linear; }
+		.quiet .fades { transform: none; }
+		.content h2 { transition: none; }
+		.quiet .content h2 { transform: none; }
+	}
 </style>

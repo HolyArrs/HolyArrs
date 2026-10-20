@@ -16,7 +16,8 @@
 		controls = true,
 		onfail,
 		onended,
-		onplaying
+		onplaying,
+		onexpand
 	}: {
 		sources: TrailerSource[];
 		title: string;
@@ -27,6 +28,8 @@
 		onfail?: () => void;
 		onended?: () => void;
 		onplaying?: () => void;
+		/** Clicking the playing trailer opens it full screen: the source, the time played and where it sits. */
+		onexpand?: (o: { source: TrailerSource; time: number; rect: DOMRect }) => void;
 	} = $props();
 
 	let at = $state(0);
@@ -38,6 +41,9 @@
 	let done = $state(false);
 	let video = $state<HTMLVideoElement>();
 	let frame = $state<HTMLIFrameElement>();
+	let box = $state<HTMLElement>();
+	/** Seconds played (the embed reports it in its info messages). */
+	let embedTime = 0;
 	const src = $derived(sources[at]);
 	const origin = typeof location !== 'undefined' ? location.origin : '';
 
@@ -247,6 +253,8 @@
 		} catch {
 			return;
 		}
+		const t = (d.info as { currentTime?: unknown } | undefined)?.currentTime;
+		if (typeof t === 'number') embedTime = t;
 		const state = d.event === 'onStateChange' ? d.info : d.event === 'infoDelivery' ? (d.info as { playerState?: number })?.playerState : undefined;
 		if (d.event === 'onError') next();
 		else if (state === 1 && !shown) started();
@@ -283,6 +291,19 @@
 		run += 1;
 	}
 
+	function expand(e: MouseEvent) {
+		e.preventDefault();
+		e.stopPropagation();
+		if (!src || !box || !onexpand) return;
+		const v = live();
+		const time = v ? v.currentTime : embedTime;
+		const rect = box.getBoundingClientRect();
+		// Full screen plays with sound: a picture-only direct trailer goes over pass-through.
+		const source: TrailerSource = swapped && up ? { kind: 'pass', url: up.url, key: src.key } : src.kind === 'direct' && !src.audio && src.pass ? { kind: 'pass', url: src.pass, key: src.key } : src;
+		stop();
+		onexpand({ source, time, rect });
+	}
+
 	onDestroy(() => {
 		stopped = true;
 		clearGuard();
@@ -293,7 +314,7 @@
 
 <svelte:window onmessage={onMessage} />
 
-<div class="ui-trailer" class:shown>
+<div class="ui-trailer" class:shown bind:this={box}>
 	{#key `${at}:${run}`}
 		{#if src?.kind === 'direct'}
 			<!-- svelte-ignore a11y_media_has_caption -->
@@ -356,6 +377,9 @@
 		{/if}
 	{/key}
 </div>
+{#if onexpand && shown}
+	<button type="button" class="expand" aria-label="Play the {title} trailer full screen" onclick={expand}></button>
+{/if}
 {#if controls}
 	<div class="ctl" class:on={shown} data-testid="trailer-sound">
 		{#if shown && hasAudio()}
@@ -375,6 +399,8 @@
 	/* The pass-through video waits unseen until it plays, then covers the direct one. */
 	video.up { opacity: 0; z-index: 1; }
 	video.up.swapped { opacity: 1; }
-	.ctl { position: absolute; right: 12px; bottom: 12px; z-index: 2; display: flex; gap: 8px; }
+	.expand { position: absolute; inset: 0; z-index: 2; padding: 0; border: 0; background: transparent; cursor: zoom-in; }
+	.expand:focus-visible { outline: none; box-shadow: inset 0 0 0 3px var(--on-art); }
+	.ctl { position: absolute; right: 12px; bottom: 12px; z-index: 3; display: flex; gap: 8px; }
 	@media (prefers-reduced-motion: reduce) { .ui-trailer { transition: none; } }
 </style>

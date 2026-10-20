@@ -64,6 +64,43 @@ type Details struct {
 	// Videos are the title's YouTube trailers and teasers as TMDB lists
 	// them; the app picks one (official trailer, the person's language first).
 	Videos []DetailVideo `json:"videos,omitempty"`
+	// Collection is the TMDB collection a movie belongs to, with its
+	// movies in release order (the movie itself included).
+	Collection *DetailCollection `json:"collection,omitempty"`
+	// Streaming is, per country, the subscription services TMDB lists the
+	// title on; the API answers only the asked region as "streaming".
+	Streaming map[string][]WatchService `json:"-"`
+}
+
+// DetailCollection is a movie's TMDB collection on a details page.
+type DetailCollection struct {
+	ID    string         `json:"id"`
+	Name  string         `json:"name"`
+	Parts []DiscoverItem `json:"parts"`
+}
+
+// DetailEpisode is one episode of a season on a details page.
+type DetailEpisode struct {
+	Number   int    `json:"number"`
+	Name     string `json:"name,omitempty"`
+	Overview string `json:"overview,omitempty"`
+	Runtime  int    `json:"runtime,omitempty"`
+	Still    string `json:"still,omitempty"`
+	AirDay   string `json:"air_day,omitempty"`
+}
+
+// SeasonLister lists one season's episodes of a show by TMDB id.
+type SeasonLister interface {
+	SeasonEpisodes(ctx context.Context, tmdbID string, season int) ([]DetailEpisode, error)
+}
+
+// SeasonListerFor returns the season surface selected for ctx.
+func SeasonListerFor(ctx context.Context, provider Provider) (SeasonLister, bool) {
+	if sw, ok := provider.(*Switch); ok {
+		provider = sw.pick(ctx)
+	}
+	l, ok := provider.(SeasonLister)
+	return l, ok
 }
 
 // DetailVideo is one YouTube video TMDB lists for a title.
@@ -426,6 +463,9 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 		d.DiscoverItem = DiscoverItem{TMDBID: tmdbID, Kind: kind, Name: mv.Name, Year: mv.Year, Poster: mv.Poster, Backdrop: mv.Backdrop,
 			Overview: mv.Overview, Genres: append([]string{}, mv.Genres...)}
 		d.Logo, d.RuntimeMinutes, d.Rating = mv.Logo, mv.Runtime, mv.Rating
+		if mv.Collection != nil {
+			d.Collection = t.collection(ctx, mv.Collection.ID, mv.Collection.Name, names)
+		}
 	} else {
 		var m tmdbShow
 		if err := json.Unmarshal(b, &m); err != nil {
@@ -487,9 +527,135 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 			d.Videos = append(d.Videos, DetailVideo{Key: v.Key, Name: v.Name, Type: v.Type, Official: v.Official, Language: v.Language})
 		}
 	}
+	d.Streaming = t.streaming(ctx, kind, n)
 	d.Similar = []DiscoverItem{}
 	if raw.Recommendations != nil {
 		d.Similar = t.items(kind, raw.Recommendations.Results, names, maxSimilar)
 	}
 	return d, nil
+}
+
+// maxStreaming caps the services listed per region; maxCollection the
+// movies of a collection.
+const (
+	maxStreaming  = 8
+	maxCollection = 20
+)
+
+// collection looks a TMDB collection up; nil when it cannot (the page
+// shows without it).
+func (t *TMDB) collection(ctx context.Context, id, name string, names map[int64]string) *DetailCollection {
+	if n, err := strconv.ParseInt(id, 10, 64); err != nil || n <= 0 {
+		return nil
+	}
+	b, err := t.get(ctx, "/collection/"+id, nil)
+	if err != nil {
+		return nil
+	}
+	var res struct {
+		Name  string         `json:"name"`
+		Parts []tmdbListItem `json:"parts"`
+	}
+	if json.Unmarshal(b, &res) != nil {
+		return nil
+	}
+	parts := t.items("movie", res.Parts, names, maxCollection)
+	sort.SliceStable(parts, func(i, j int) bool {
+		a, b := parts[i].Year, parts[j].Year
+		if a == 0 || b == 0 {
+			return a != 0
+		}
+		return a < b
+	})
+	if len(parts) < 2 {
+		return nil
+	}
+	if res.Name != "" {
+		name = res.Name
+	}
+	return &DetailCollection{ID: id, Name: name, Parts: parts}
+}
+
+// SeasonEpisodes lists one season of a show for its details page.
+func (t *TMDB) SeasonEpisodes(ctx context.Context, tmdbID string, season int) ([]DetailEpisode, error) {
+	n, err := strconv.ParseInt(tmdbID, 10, 64)
+	if err != nil || n <= 0 || season < 0 || season > 999 {
+		return nil, ErrNotFound
+	}
+	b, err := t.get(ctx, "/tv/"+strconv.FormatInt(n, 10)+"/season/"+strconv.Itoa(season), nil)
+	if err != nil {
+		return nil, err
+	}
+	var res struct {
+		Episodes []struct {
+			Number   int     `json:"episode_number"`
+			Name     string  `json:"name"`
+			Overview string  `json:"overview"`
+			AirDate  *string `json:"air_date"`
+			Runtime  int     `json:"runtime"`
+			Still    string  `json:"still_path"`
+		} `json:"episodes"`
+	}
+	if err := json.Unmarshal(b, &res); err != nil {
+		return nil, fmt.Errorf("TMDB: odd answer: %w", err)
+	}
+	out := []DetailEpisode{}
+	for _, e := range res.Episodes {
+		ep := DetailEpisode{Number: e.Number, Name: e.Name, Overview: e.Overview, Runtime: e.Runtime}
+		if e.Still != "" {
+			ep.Still = t.images() + "/w780" + e.Still
+		}
+		if e.AirDate != nil {
+			_, ep.AirDay = dayEnd(*e.AirDate)
+		}
+		out = append(out, ep)
+	}
+	return out, nil
+}
+
+// streaming reads where a title streams (subscription services, per
+// country); nil when it cannot (the page shows without it).
+func (t *TMDB) streaming(ctx context.Context, kind string, id int64) map[string][]WatchService {
+	b, err := t.get(ctx, "/"+tvPath(kind)+"/"+strconv.FormatInt(id, 10)+"/watch/providers", nil)
+	if err != nil {
+		return nil
+	}
+	var res struct {
+		Results map[string]struct {
+			Flatrate []struct {
+				ID       int64  `json:"provider_id"`
+				Name     string `json:"provider_name"`
+				Logo     string `json:"logo_path"`
+				Priority int    `json:"display_priority"`
+			} `json:"flatrate"`
+		} `json:"results"`
+	}
+	if json.Unmarshal(b, &res) != nil {
+		return nil
+	}
+	var out map[string][]WatchService
+	for region, r := range res.Results {
+		if !isRegion(region) {
+			continue
+		}
+		var list []WatchService
+		for _, p := range r.Flatrate {
+			if p.ID <= 0 || p.Name == "" || len(list) == maxStreaming {
+				continue
+			}
+			s := WatchService{ID: p.ID, Name: p.Name, Priority: p.Priority}
+			if p.Logo != "" {
+				s.Logo = t.images() + "/w92" + p.Logo
+			}
+			list = append(list, s)
+		}
+		if len(list) > 0 {
+			if out == nil {
+				out = map[string][]WatchService{}
+			}
+			sort.SliceStable(list, func(i, j int) bool { return list[i].Priority < list[j].Priority })
+			out[region] = list
+		}
+	}
+	return out
 }

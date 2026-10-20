@@ -63,6 +63,11 @@
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import type { IconName } from '#lib/Icon.svelte';
 	import { EAGER_ROWS, stableRows } from '#lib/row-window.ts';
+	import Icon from '#lib/Icon.svelte';
+	import MoreInfo from '#lib/ui/MoreInfo.svelte';
+	import Theater from '#lib/ui/Theater.svelte';
+	import { onTheaterExit } from '#lib/theater.svelte.ts';
+	import { bigRows, CARD_OPENS_KEY, parseTitleParam, readCardOpens, withTitle, type CardOpens, type InfoRef } from '#lib/more-info.ts';
 
 	let loaded = $state(false);
 	let failed = $state(false);
@@ -128,8 +133,55 @@
 		void loadHead();
 	}
 
+	// The More info panel: ?title=movie:123 in the address (shallow), so Back
+	// closes it and the link can be shared; the page keeps its place behind it.
+	const shownUrl = $derived(page.shallow?.url ?? page.url);
+	const info = $derived(parseTitleParam(shownUrl.searchParams.get('title')));
+	let infoFrom = $state<DOMRect | null>(null);
+	/** The panel was opened here (a history entry of ours), so closing it goes Back. */
+	let pushed = false;
+	$effect(() => {
+		if (!info) pushed = false;
+	});
+	function openInfo(r: InfoRef, from: DOMRect | null) {
+		infoFrom = from;
+		const url = withTitle(shownUrl.href, r);
+		if (info) return void goto(url, { shallow: true, replace: true, reset: false });
+		pushed = true;
+		void goto(url, { shallow: true, reset: false });
+	}
+	function closeInfo() {
+		if (pushed) {
+			pushed = false;
+			history.back();
+		} else void goto(withTitle(shownUrl.href, null), { shallow: true, replace: true, reset: false });
+	}
+	// A card click opens the title page, or the panel when this device prefers it.
+	let cardOpens = $state<CardOpens>('page');
+	function setCardOpens(v: CardOpens) {
+		cardOpens = v;
+		try {
+			localStorage.setItem(CARD_OPENS_KEY, v);
+		} catch {
+			/* the choice is a convenience */
+		}
+	}
+	/** infoHref is the panel's own address for a movie or show card (a real link: new tabs open the panel too). */
+	function infoHref(c: ExploreCard): string | undefined {
+		const tmdb = cardTmdb(c);
+		if (!tmdb || (c.kind !== 'movie' && c.kind !== 'show')) return undefined;
+		const u = withTitle(shownUrl.href, { kind: c.kind, tmdb });
+		return u.pathname + u.search;
+	}
+	// Leaving the full-screen trailer lands in the title's panel (from the panel itself: back to it as it was).
+	$effect(() => onTheaterExit((o) => {
+		if (o.from !== 'panel') openInfo({ kind: o.kind, tmdb: o.tmdb }, null);
+	}));
+
 	// Music shows only music rows: the movie and show rows (Top 10, services, Coming soon, Best new releases) never appear there.
 	const rows = $derived(type === 'music' ? [] : markTransitions(filterRows([...head, ...tail], type)));
+	/** Big 4 shelves: the first personal row and Best new releases draw bigger cards. */
+	const big = $derived(bigRows(rows));
 
 	function readTop10Pick() {
 		try {
@@ -214,6 +266,15 @@
 
 	function opened(e: MouseEvent) {
 		const el = e.target as Element | null;
+		// A card link to the panel (the device prefers it) opens it here, growing from the card.
+		const link = el?.closest?.('a[href]') as HTMLAnchorElement | null;
+		if (link && !e.defaultPrevented && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && link.closest('.row-wrap')) {
+			const r = parseTitleParam(new URL(link.href, location.href).searchParams.get('title'));
+			if (r) {
+				e.preventDefault();
+				openInfo(r, (link.querySelector('.art') ?? link).getBoundingClientRect());
+			}
+		}
 		const wrap = el?.closest?.('[data-row]');
 		const row = wrap?.getAttribute('data-row');
 		if (row && el?.closest('a')) count(row, 'open', wrap?.getAttribute('data-title-layer') ?? undefined);
@@ -371,6 +432,11 @@
 				/* nothing saved */
 			}
 		}
+		try {
+			cardOpens = readCardOpens(localStorage.getItem(CARD_OPENS_KEY));
+		} catch {
+			/* nothing saved */
+		}
 		void load();
 		void loadServices().then(() => void loadHead());
 		return () => {
@@ -435,7 +501,7 @@
 		{:else}
 			{#if hero.length}
 				{@const h = live(hero[heroAt % hero.length])}
-				<ExploreHero kind={h.kind === 'show' ? 'show' : 'movie'} tmdb={cardTmdb(h)} title={h.name} href={cardHref(h)} backdrop={h.wide ?? h.image} subtitle={h.year ? `${h.year} · ${h.kind === 'show' ? 'Show' : 'Movie'}` : h.subtitle} settled={headLoaded && !busy}>
+				<ExploreHero kind={h.kind === 'show' ? 'show' : 'movie'} tmdb={cardTmdb(h)} title={h.name} href={cardHref(h)} backdrop={h.wide ?? h.image} onmore={cardTmdb(h) ? (from) => openInfo({ kind: h.kind === 'show' ? 'show' : 'movie', tmdb: cardTmdb(h) }, from) : undefined} subtitle={h.year ? `${h.year} · ${h.kind === 'show' ? 'Show' : 'Movie'}` : h.subtitle} settled={headLoaded && !busy}>
 					{#snippet action()}{@render heroAction(h)}{/snippet}
 				</ExploreHero>
 			{/if}
@@ -445,14 +511,14 @@
 					<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} typePill={type === 'all'} initial={top10} />
 				{:else}
 				<div class="row-wrap" data-row={row.type ?? row.id} data-title-layer={row.titleLayer}>
-				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.cards.some((c) => wideKind(c.kind)) ? 'var(--title-item)' : 'var(--explore-item)'} tools={row.id === 'services' ? serviceTools : undefined}
+				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.cards.some((c) => wideKind(c.kind)) ? (big.has(row.id) ? 'var(--title-item-big)' : 'var(--title-item)') : 'var(--explore-item)'} tools={row.id === 'services' ? serviceTools : undefined}
 					items={row.cards} key={(c) => c.key} defer={ri >= EAGER_ROWS} placeholder={row.wide || row.cards.some((c) => wideKind(c.kind)) ? 'wide' : 'poster'} lines={row.cards.some((c) => c.subtitle) ? 2 : 1}>
 					{#snippet card(raw: ExploreCard)}
 						{@const c = live(raw)}
 						{@const act = cardAction(c, { manage, ask: mayAsk })}
 						{@const mark = ownedMark(c, ownedTitle(c, owned), who)}
 						{#if row.wide || wideKind(c.kind)}
-							<WideCard cover title={c.name} href={cardHref(c)} image={c.wide ?? c.image} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} fresh={c.fresh} owned={mark} typePill={type === 'all' ? c.kind : undefined} preview={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: cardTmdb(c), year: c.year } : undefined}>
+							<WideCard cover big={big.has(row.id)} title={c.name} href={(cardOpens === 'panel' ? infoHref(c) : undefined) ?? cardHref(c)} onmore={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? (from) => openInfo({ kind: c.kind as 'movie' | 'show', tmdb: cardTmdb(c) }, from) : undefined} image={c.wide ?? c.image} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} fresh={c.fresh} owned={mark} typePill={type === 'all' ? c.kind : undefined} preview={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: cardTmdb(c), year: c.year } : undefined}>
 								{#snippet growAction()}
 									{#if act && cardTmdb(c)}
 										<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={asking === c.key || undefined} onclick={() => { count(row.type ?? row.id, 'ask', row.titleLayer); void quick(c, act); }} />
@@ -495,6 +561,24 @@
 	{/if}
 </div>
 
+{#snippet infoAction(c: ExploreCard)}
+	{@const act = cardAction(c, { manage, ask: mayAsk })}
+	{#if act && cardTmdb(c)}
+		<button type="button" class="info-act" aria-haspopup="dialog" aria-busy={asking === c.key || undefined} data-testid="info-act" onclick={() => { count('more_info', 'ask'); void quick(c, act); }}>
+			<Icon name="plus" size={20} stroke={2.2} /><span>{act === 'add' ? 'Add' : 'Ask'}</span>
+		</button>
+	{/if}
+{/snippet}
+
+{#snippet infoCard(c: ExploreCard)}
+	<WideCard cover title={c.name} href={infoHref(c) ?? cardHref(c)} image={c.wide ?? c.image} kind={c.kind} badges={c.badges} badgesAt="bottom" fresh={c.fresh} owned={ownedMark(c, ownedTitle(c, owned), who)} />
+{/snippet}
+
+{#if info}
+	<MoreInfo ref={info} from={infoFrom} {region} {live} action={infoAction} card={infoCard} {cardOpens} onCardOpens={setCardOpens} onpick={openInfo} onclose={closeInfo} />
+{/if}
+<Theater />
+
 {#if manage}
 	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} onadded={(_m, t) => added(t)} />
 	<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} onadded={(_s, t) => added(t)} />
@@ -504,7 +588,7 @@
 {/if}
 
 <style>
-	.explore { container: explore / inline-size; --title-item: calc((100cqi - 5 * var(--shelf-gap)) / 5.5); --explore-item: 168px; display: flex; flex-direction: column; gap: 32px; padding-bottom: 48px; }
+	.explore { container: explore / inline-size; --title-item: calc((100cqi - 5 * var(--shelf-gap)) / 5.5); --title-item-big: calc((100cqi - 4 * var(--shelf-gap)) / 4.2); --explore-item: 168px; display: flex; flex-direction: column; gap: 32px; padding-bottom: 48px; }
 	.explore > :global(.ui-head) { margin-bottom: -8px; }
 	/* The type switch: in the page under the title; once scrolled past it floats as a glass pill under the top bar. */
 	.types-mark { height: 0; margin-top: -32px; }
@@ -532,5 +616,5 @@
 	.row-wrap { display: contents; }
 	.loading { display: flex; flex-direction: column; gap: 14px; }
 	.sk-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--shelf-gap); max-height: 250px; overflow: hidden; margin-bottom: 16px; }
-	@media (max-width: 767px) { .explore { --explore-item: 54vw; --title-item: calc((100cqi - var(--shelf-gap)) / 1.6 / .78); gap: 26px; } }
+	@media (max-width: 767px) { .explore { --explore-item: 54vw; --title-item: calc((100cqi - var(--shelf-gap)) / 1.6 / .78); --title-item-big: calc((100cqi - var(--shelf-gap)) / 1.08); gap: 26px; } }
 </style>

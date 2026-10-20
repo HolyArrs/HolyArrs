@@ -42,7 +42,14 @@ func fakeDiscoverTMDB(t *testing.T) *httptest.Server {
 				"images":{"backdrops":[{"file_path":"/b.jpg","vote_average":9},{"file_path":"/x1.jpg","vote_average":2},{"file_path":"/x2.jpg","vote_average":5},{"file_path":"/x3.jpg","vote_average":4},{"file_path":"/x4.jpg","vote_average":3},{"file_path":"/x5.jpg","vote_average":1}]},
 				"videos":{"results":[{"key":"abcDEF12345","site":"YouTube","type":"Trailer","official":true,"iso_639_1":"en","name":"Official Trailer"},
 					{"key":"vim123456","site":"Vimeo","type":"Trailer"},{"key":"clip1234567","site":"YouTube","type":"Clip"},{"key":"bad key!","site":"YouTube","type":"Teaser"}]},
+				"belongs_to_collection":{"id":70,"name":"Seven Set"},
 				"recommendations":` + list(15, "title") + `}`))
+		case "/3/movie/7/watch/providers":
+			_, _ = w.Write([]byte(`{"results":{"US":{"flatrate":[{"provider_id":8,"provider_name":"Netflix","logo_path":"/n.jpg","display_priority":2},{"provider_id":9,"provider_name":"Prime","display_priority":1}]},"GB":{"rent":[{"provider_id":2,"provider_name":"Apple"}]}}}`))
+		case "/3/collection/70":
+			_, _ = w.Write([]byte(`{"name":"The Seven Collection","parts":[{"id":72,"title":"Seven II","release_date":"2023-01-01","poster_path":"/s.jpg"},{"id":7,"title":"Seven","release_date":"2020-02-02","poster_path":"/s.jpg"}]}`))
+		case "/3/tv/8/season/1":
+			_, _ = w.Write([]byte(`{"episodes":[{"episode_number":1,"name":"Pilot","overview":"It starts.","air_date":"2021-01-01","runtime":50,"still_path":"/e1.jpg"},{"episode_number":2,"name":"Two","air_date":null}]}`))
 		case "/3/tv/8":
 			_, _ = w.Write([]byte(`{"id":8,"name":"Eight","first_air_date":"2021-01-01","created_by":[{"name":"Cee"}],
 				"content_ratings":{"results":[{"iso_3166_1":"US","rating":"TV-MA"}]},
@@ -117,6 +124,39 @@ func TestTMDBDetails(t *testing.T) {
 	}
 	if _, err := p.Details(ctx, "artist", "7"); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("kind %v", err)
+	}
+}
+
+func TestTMDBDetailsCollectionAndStreaming(t *testing.T) {
+	p := newTMDB(fakeDiscoverTMDB(t), fakeCred)
+	d, err := p.Details(context.Background(), "movie", "7")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if d.Collection == nil || d.Collection.Name != "The Seven Collection" || len(d.Collection.Parts) != 2 || d.Collection.Parts[0].TMDBID != "7" || d.Collection.Parts[1].Name != "Seven II" {
+		t.Fatalf("collection %+v", d.Collection)
+	}
+	us := d.Streaming["US"]
+	if len(us) != 2 || us[0].Name != "Prime" || us[1].Logo != ImageBase+"/w92/n.jpg" || d.Streaming["GB"] != nil {
+		t.Fatalf("streaming %+v", d.Streaming)
+	}
+}
+
+func TestTMDBSeasonEpisodes(t *testing.T) {
+	p := newTMDB(fakeDiscoverTMDB(t), fakeCred)
+	var _ SeasonLister = p
+	eps, err := p.SeasonEpisodes(context.Background(), "8", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(eps) != 2 || eps[0] != (DetailEpisode{Number: 1, Name: "Pilot", Overview: "It starts.", Runtime: 50, Still: ImageBase + "/w780/e1.jpg", AirDay: "2021-01-01"}) || eps[1].AirDay != "" {
+		t.Fatalf("episodes %+v", eps)
+	}
+	if _, err := p.SeasonEpisodes(context.Background(), "8", 5); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("missing season %v", err)
+	}
+	if _, err := p.SeasonEpisodes(context.Background(), "x", 1); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("bad id %v", err)
 	}
 }
 
