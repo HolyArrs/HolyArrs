@@ -1,7 +1,8 @@
 <script lang="ts">
 	import Button from '#lib/ui/Button.svelte';
 	import { to } from '#lib/paths.ts';
-	import { onMount, tick } from 'svelte';
+	import { onDestroy, onMount, tick } from 'svelte';
+	import IconButton from '#lib/ui/IconButton.svelte';
 	import { api, message } from '#lib/api.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
@@ -17,7 +18,7 @@
 	import { session } from '#lib/session.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { looksLikeId } from '#lib/plain.ts';
-	import { askedBy as askedByRaw, decided as decidedRaw, firstView, limitLines, limitKinds, viewCounts, type WishlistView } from '#lib/wishlist.ts';
+	import { askedBy as askedByRaw, askTab, askTabs, decided as decidedRaw, firstTab, limitLines, limitKinds, tabCounts, type AskTab } from '#lib/wishlist.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { inbox, markRead, refreshInbox } from '#lib/wishlist.svelte.ts';
 	import type { Ask, AskLimit, LibraryFolder, PickRulesView } from '#lib/types.ts';
@@ -29,19 +30,96 @@
 	let asks = $state<Ask[]>([]);
 	let loaded = $state(false);
 	let error = $state('');
-	let show = $state<WishlistView>('all');
+	let tab = $state<AskTab>('waiting');
+	let mineOnly = $state(false);
 	let kind = $state<'all' | 'movie' | 'show' | 'artist'>('all');
 	let limit = $state<AskLimit | null>(null);
 	// One line per kind whose part is on.
 	const onKinds = $derived(limitKinds.filter((k) => partsNow.answer?.parts.find((p) => p.part === k)?.on !== false));
 
 	const ofKind = $derived(kind === 'all' ? asks : asks.filter((a) => a.kind === kind));
-	const shown = $derived(
-		show === 'waiting' ? ofKind.filter((a) => a.state === 'asked') : show === 'mine' ? ofKind.filter((a) => a.mine) : ofKind
-	);
+	// A decision waiting out its Undo time already shows in its new tab.
+	type Pending = { mode: 'approve' | 'turn_down'; note: string; timer: ReturnType<typeof setTimeout> };
+	let pending = $state<Record<number, Pending>>({});
+	const viewOf = (a: Ask): Ask => {
+		const p = pending[a.id];
+		if (!p) return a;
+		return { ...a, state: p.mode === 'approve' ? 'approved' : 'turned_down', title_id: a.title_id ?? (p.mode === 'approve' ? -1 : undefined) };
+	};
+	const viewed = $derived((mineOnly ? ofKind.filter((a) => a.mine) : ofKind).map(viewOf));
+	const shown = $derived(viewed.filter((a) => askTab(a) === tab));
+	const tabs = $derived(askTabs.filter((t) => approver || t.tab !== 'failed'));
 	// The kind chips show once asks of more than one kind are listed.
 	const bothKinds = $derived(new Set(asks.map((a) => a.kind)).size > 1);
-	const counts = $derived(viewCounts(ofKind));
+	const counts = $derived(tabCounts(viewed));
+	// Bulk choice: waiting asks only.
+	let chosen = $state<Set<number>>(new Set());
+	const choosable = $derived(approver && tab === 'waiting');
+	const chosenAsks = $derived(shown.filter((a) => chosen.has(a.id)));
+	function toggleChosen(id: number) {
+		const next = new Set(chosen);
+		if (next.has(id)) next.delete(id);
+		else next.add(id);
+		chosen = next;
+	}
+	const UNDO_MS = 6000;
+
+	async function commit(id: number) {
+		const p = pending[id];
+		if (!p) return;
+		clearTimeout(p.timer);
+		delete pending[id];
+		try {
+			const path = `/asks/${id}/${p.mode === 'approve' ? 'approve' : 'turn-down'}`;
+			const r = await api.post<{ ask: Ask }>(path, p.mode === 'approve' ? { note: p.note, library_folder_id: 0, pick_rules_id: 0 } : { note: p.note });
+			const i = asks.findIndex((x) => x.id === r.ask.id);
+			if (i >= 0) asks[i] = r.ask;
+			void refreshInbox();
+		} catch (err) {
+			const a = asks.find((x) => x.id === id);
+			toasts.push(`${a?.name ?? 'The ask'} could not be ${p.mode === 'approve' ? 'approved' : 'turned down'}. ${message(err)}`, 'fail');
+		}
+	}
+
+	/** act decides a set of asks after an Undo window; the toast's Undo cancels them all. */
+	function act(list: Ask[], mode: 'approve' | 'turn_down', why = '') {
+		const ids = list.filter((a) => a.state === 'asked' && !pending[a.id]).map((a) => a.id);
+		if (!ids.length) return;
+		for (const id of ids) pending[id] = { mode, note: why, timer: setTimeout(() => void commit(id), UNDO_MS) };
+		chosen = new Set();
+		const one = list.length === 1 ? list[0].name : `${ids.length} asks`;
+		const verb = mode === 'approve' ? 'approved' : 'turned down';
+		toasts.push(`${one} ${ids.length === 1 && list.length === 1 ? 'is' : 'are'} ${verb}.`, 'ok', {
+			ms: UNDO_MS,
+			action: {
+				label: 'Undo',
+				run: () => {
+					for (const id of ids) {
+						const p = pending[id];
+						if (p) clearTimeout(p.timer);
+						delete pending[id];
+					}
+				}
+			}
+		});
+	}
+	// Leaving the page sends what is still waiting out its Undo time.
+	onDestroy(() => Object.keys(pending).forEach((id) => void commit(Number(id))));
+
+	// Turn down asks for an optional reason the asker sees.
+	let declineOpen = $state(false);
+	let declineList = $state<Ask[]>([]);
+	let declineWhy = $state('');
+	function askDecline(list: Ask[]) {
+		declineList = list;
+		declineWhy = '';
+		declineOpen = true;
+	}
+	function confirmDecline(e: SubmitEvent) {
+		e.preventDefault();
+		act(declineList, 'turn_down', declineWhy.trim());
+		declineOpen = false;
+	}
 	let selectedId = $state(0);
 	const selected = $derived(shown.find((a) => a.id === selectedId) ?? shown[0] ?? null);
 	let reviewHeading: HTMLHeadingElement | undefined = $state();
@@ -109,7 +187,7 @@
 
 	onMount(() => {
 		void load().then(() => {
-			if (approver) show = firstView(asks);
+			tab = firstTab(asks);
 		});
 		void refreshInbox();
 		if (session.can('manage_library')) {
@@ -277,11 +355,12 @@
 
 {#if bothKinds || asks.length}
 	<div class="toolbar">
-		{#if approver && asks.length}
-			<div class="chips" role="group" aria-label="Show">
-				<Chip label="Waiting" count={counts.waiting} selected={show === 'waiting'} onclick={() => (show = 'waiting')} />
-				<Chip label="Everyone's" count={counts.all} selected={show === 'all'} onclick={() => (show = 'all')} />
-				<Chip label="Mine" count={counts.mine} selected={show === 'mine'} onclick={() => (show = 'mine')} />
+		{#if asks.length}
+			<div class="chips tabs" role="group" aria-label="Show" data-testid="ask-tabs">
+				{#each tabs as t (t.tab)}
+					<Chip label={t.label} count={t.tab === 'waiting' && counts.waiting ? counts.waiting : undefined} selected={tab === t.tab} onclick={() => ((tab = t.tab), (chosen = new Set()))} />
+				{/each}
+				{#if approver}<Chip label="Mine" icon="user" selected={mineOnly} onclick={() => (mineOnly = !mineOnly)} />{/if}
 			</div>
 		{/if}
 		{#if bothKinds}
@@ -312,11 +391,36 @@
 				action={{ label: 'Search', href: to('/search') }}
 			/>
 		{:else if shown.length === 0}
-			<EmptyState compact icon="check" title={show === 'waiting' ? 'Nothing waits for approval.' : 'Nothing here.'} />
+			<EmptyState
+				compact
+				icon="check"
+				title={tab === 'waiting' ? 'Nothing waits for approval.' : tab === 'failed' ? 'Nothing failed.' : `Nothing ${askTabs.find((t) => t.tab === tab)?.label.toLowerCase()} yet.`}
+			/>
 		{:else}
+			{#if choosable}
+				<div class="bulk" class:on={chosenAsks.length > 0} data-testid="ask-bulk">
+					<label class="tick-all">
+						<input
+							type="checkbox"
+							checked={chosenAsks.length === shown.length}
+							indeterminate={chosenAsks.length > 0 && chosenAsks.length < shown.length}
+							onchange={(e) => (chosen = e.currentTarget.checked ? new Set(shown.map((a) => a.id)) : new Set())}
+						/>
+						{chosenAsks.length ? `${chosenAsks.length} chosen` : 'Choose all'}
+					</label>
+					{#if chosenAsks.length}
+						<Button size="sm" variant="primary" icon="check" type="button" onclick={() => act(chosenAsks, 'approve')}>Approve {chosenAsks.length}</Button>
+						<Button size="sm" icon="x" type="button" onclick={() => askDecline(chosenAsks)}>Turn down {chosenAsks.length}</Button>
+					{/if}
+				</div>
+			{/if}
 			<ul class="asks" aria-label="Wishlist requests">
 				{#each shown as a, i (a.id)}
-					<li class="ask rise" class:selected={selected?.id === a.id} style="--i: {i}" data-testid="ask">
+					<li class="ask rise" class:selected={selected?.id === a.id} class:chosen={chosen.has(a.id)} class:waiting={!!pending[a.id]} style="--i: {i}" data-testid="ask">
+						{#if a.poster}<div class="strip" aria-hidden="true" style:background-image={`url("${a.poster}")`}></div>{/if}
+						{#if choosable}
+							<input class="tick" type="checkbox" aria-label="Choose {a.name}" checked={chosen.has(a.id)} onchange={() => toggleChosen(a.id)} />
+						{/if}
 						<div class="art"><Poster src={a.poster} name={a.name} /></div>
 						<div class="body">
 							<div class="top">
@@ -341,9 +445,12 @@
 							{#if a.state === 'approved'}<p class="line muted">{approvedLine(a)}</p>{/if}
 							<div class="actions">
 								{#if approver && a.state === 'asked'}
-									<Button variant="primary" size="sm" icon="check" type="button" onclick={() => open(a, 'approve')}>Approve</Button>
-									<Button size="sm" icon="x" type="button" onclick={() => open(a, 'turn_down')}>Turn down</Button>
+									<span class="quick">
+										<IconButton icon="check" variant="glass" label="Approve {a.name}" data-testid="ask-approve" onclick={() => act([a], 'approve')} />
+										<IconButton icon="x" variant="glass" label="Turn down {a.name}" data-testid="ask-decline" onclick={() => askDecline([a])} />
+									</span>
 								{/if}
+								{#if pending[a.id]}<span class="muted pending">Sending in a moment…</span>{/if}
 								<button
 									class="inspect"
 									class:on={selected?.id === a.id}
@@ -392,7 +499,7 @@
 				{#if selected.state === 'approved'}<p class="line muted">{approvedLine(selected)}</p>{/if}
 				{#if approver && selected.state === 'asked'}
 					<div class="review-actions">
-						<Button variant="primary" icon="check" full type="button" onclick={() => selected && open(selected, 'approve')}>Approve</Button>
+						<Button variant="primary" icon="check" full type="button" onclick={() => selected && open(selected, 'approve')}>Approve with options</Button>
 						<Button icon="x" full type="button" onclick={() => selected && open(selected, 'turn_down')}>Turn down</Button>
 					</div>
 				{/if}
@@ -473,6 +580,24 @@
 	{/if}
 </Sheet>
 
+<Sheet
+	bind:open={declineOpen}
+	size="sm"
+	title={declineList.length === 1 ? `Turn down ${declineList[0].name}${year(declineList[0])}?` : `Turn down ${declineList.length} asks?`}
+	description="You can undo it for a few seconds."
+>
+	<form class="decide" onsubmit={confirmDecline}>
+		<div class="field">
+			<label for="dc-why">Why (optional, the people who asked see it)</label>
+			<textarea id="dc-why" class="input" rows="3" maxlength="500" bind:value={declineWhy} data-testid="decline-why"></textarea>
+		</div>
+		<div class="decide-actions">
+			<Button variant="plain" type="button" onclick={() => (declineOpen = false)}>Cancel</Button>
+			<Button variant="destructive" type="submit">Turn down</Button>
+		</div>
+	</form>
+</Sheet>
+
 <Sheet bind:open={takeBackOpen} onclose={takeBackClosed} size="sm" title={takeBackAsk ? `Take back ${takeBackAsk.name}${year(takeBackAsk)}?` : 'Take back'} description="It leaves the Wishlist. You can ask again later.">
 	{#if takeBackAsk}
 		{#if takeBackError}<p class="form-error" role="alert" data-testid="take-back-error">{takeBackError}</p>{/if}
@@ -492,7 +617,17 @@
 	.main-col, .side-col { min-width: 0; }
 	.side-col { position: sticky; top: calc(var(--topbar) + 16px); display: flex; flex-direction: column; gap: 16px; }
 	.asks { border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); overflow: hidden; }
-	.ask { display: flex; gap: 14px; padding: 14px 16px; transition: background var(--dur-fast) var(--ease-out); }
+	.ask { position: relative; isolation: isolate; display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px; transition: background var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out); }
+	.strip { position: absolute; inset: 0; z-index: -1; background-size: cover; background-position: center 30%; filter: blur(18px) saturate(1.2); opacity: 0.22; mask-image: linear-gradient(90deg, #000 0%, transparent 70%); pointer-events: none; }
+	.ask.chosen { background: var(--accent-soft); }
+	.ask.waiting { opacity: 0.7; }
+	.tick, .tick-all input { width: 18px; height: 18px; margin-top: 4px; flex: none; accent-color: var(--accent-fill); }
+	.bulk { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 44px; margin-bottom: 10px; padding: 6px 12px; border-radius: 999px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
+	.bulk.on { background: var(--surface-2); }
+	.tick-all { display: inline-flex; align-items: center; gap: 8px; margin-right: auto; font: var(--t-subhead); color: var(--text-muted); }
+	.tick-all input { margin-top: 0; }
+	.quick { display: inline-flex; gap: 6px; }
+	.pending { font: var(--t-footnote); }
 	.ask + .ask { border-top: 1px solid var(--line); }
 	.ask.selected { background: var(--surface-2); }
 	.art { width: 52px; flex: none; border-radius: 8px; overflow: hidden; align-self: flex-start; }

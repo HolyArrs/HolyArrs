@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { askTone, askedBy, decided, firstView, limitLine, limitLines, names, viewCounts, waitWords } from './wishlist.ts';
-import type { AskKindLimit, AskLimit } from './types.ts';
+import { askTab, askTone, askedBy, decided, firstTab, firstView, tabCounts, limitLine, limitLines, names, viewCounts, waitWords } from './wishlist.ts';
+import type { AskKindLimit, AskLimit, AskState } from './types.ts';
 
 describe('wishlist words', () => {
 	it('joins names', () => {
@@ -72,5 +72,23 @@ describe('wishlist views', () => {
 
 	it('opens on Mine only when the list is empty', () => {
 		expect(firstView([])).toBe('mine');
+	});
+});
+
+describe('ask tabs', () => {
+	const a = (state: AskState, title_id?: number) => ({ state, title_id });
+	it('puts each ask in one tab', () => {
+		expect(askTab(a('asked'))).toBe('waiting');
+		expect(askTab(a('approved', 4))).toBe('approved');
+		expect(askTab(a('approved'))).toBe('failed');
+		expect(askTab(a('turned_down'))).toBe('declined');
+		expect(askTab(a('available', 4))).toBe('done');
+	});
+	it('counts and picks the first tab with asks', () => {
+		const list = [a('approved', 1), a('available', 2), a('turned_down')];
+		expect(tabCounts(list)).toEqual({ waiting: 0, approved: 1, declined: 1, done: 1, failed: 0 });
+		expect(firstTab(list)).toBe('approved');
+		expect(firstTab([...list, a('asked')])).toBe('waiting');
+		expect(firstTab([])).toBe('waiting');
 	});
 });

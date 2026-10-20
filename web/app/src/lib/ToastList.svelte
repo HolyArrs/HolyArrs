@@ -19,7 +19,7 @@
 <div class="toasts" role="status" aria-live="polite">
 	{#each toasts.list as t (t.id)}
 		<div in:toastIn out:toastOut>
-			<Toast text={t.text} tone={t.tone} ondismiss={() => toasts.dismiss(t.id)} />
+			<Toast text={t.text} tone={t.tone} action={t.action ? { label: t.action.label, run: () => { t.action?.run(); toasts.dismiss(t.id); } } : undefined} ondismiss={() => toasts.dismiss(t.id)} />
 		</div>
 	{/each}
 </div>
