@@ -148,3 +148,69 @@ export function soonLine(first: { name: string; subtitle?: string } | undefined)
 	if (!first) return 'The next 30 days';
 	return first.subtitle ? `Next up: ${first.name}, ${first.subtitle}` : `Next up: ${first.name}`;
 }
+
+// ---- GET /home: the server's row order and the rows it fills ----
+
+/** HomeRow is one Home row, in the order the server sends. */
+export type HomeRow = 'welcome' | 'attention' | 'arrived' | 'approval' | 'asks' | 'new_season' | 'following' | 'soon' | 'missing' | 'discover';
+
+export interface HomeCard {
+	key: string;
+	kind: 'movie' | 'show' | 'artist';
+	title_id: number;
+	name: string;
+	year?: number;
+	/** What is new: "S5 · 3 new episodes", "Season 5 added", "New show", "3 new albums". */
+	line?: string;
+	href: string;
+	backdrop?: string;
+	poster?: string;
+	logo?: string;
+	season?: number;
+	albums?: { id: number; name: string; cover: string }[];
+	at?: string;
+}
+
+export interface AskProgress {
+	progress: number;
+	state: 'queued' | 'downloading';
+	eta?: number;
+}
+
+export interface HomeAnswer {
+	rows: HomeRow[];
+	owner: boolean;
+	kid: boolean;
+	arrived: HomeCard[];
+	new_seasons: HomeCard[];
+	following: HomeCard[];
+	soon: HomeCard[];
+	missing_count: number;
+	ask_progress: Record<string, AskProgress>;
+}
+
+/** fallbackRows is the order used while GET /home is unreachable: only the rows the page can fill itself. */
+export function fallbackRows(owner: boolean): HomeRow[] {
+	return owner ? ['attention', 'approval', 'asks', 'soon', 'discover'] : ['asks', 'soon', 'discover'];
+}
+
+/** homeStrip is the card's one strip saying what is new: the show's line, or the artist and their new albums. */
+export function homeStrip(c: Pick<HomeCard, 'kind' | 'name' | 'line'>): Fresh | null {
+	if (!c.line) return null;
+	if (c.kind === 'show') return { kind: c.line.startsWith('Season') && !c.line.includes('·') ? 'new_season' : 'new_episode', text: c.line };
+	if (c.kind === 'artist') return { kind: 'recently_added', text: `${c.name} · ${c.line}` };
+	return null;
+}
+
+/** askProgressLine is the live line under an ask that is downloading. */
+export function askProgressLine(p: AskProgress | undefined): string {
+	if (!p) return '';
+	if (p.state === 'queued') return 'Waiting to start';
+	const pct = Math.round(Math.max(0, Math.min(1, p.progress)) * 100);
+	return p.eta ? `Downloading ${pct}% · ${duration(p.eta)} left` : `Downloading ${pct}%`;
+}
+
+/** missingLine is the owner's compact Missing count. */
+export function missingLine(n: number): string {
+	return `${n} released ${n === 1 ? 'title has' : 'titles have'} no file yet`;
+}

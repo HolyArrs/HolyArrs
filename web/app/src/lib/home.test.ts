@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { arrivedAt, arrivedTitle, attention, downloadLine, downloadSubtitle, greetName, healthFix, homeFresh, isActive, mixLine, soonLine, splitArrivals } from './home.ts';
+import { arrivedAt, arrivedTitle, askProgressLine, attention, fallbackRows, homeStrip, missingLine, downloadLine, downloadSubtitle, greetName, healthFix, homeFresh, isActive, mixLine, soonLine, splitArrivals } from './home.ts';
 import type { HealthCheck } from './types.ts';
 
 const check = (key: string, state: HealthCheck['state'], kind: HealthCheck['kind'] = 'source'): HealthCheck => ({ id: 1, key, kind, subject: 'S', state, message: `${key} broke`, since: '', checked_at: '' });
@@ -66,5 +66,24 @@ describe('home rows', () => {
 		expect(arrivedTitle(now - 10 * 86400000, now)).toBe('Just arrived');
 		expect(soonLine({ name: 'Dune', subtitle: 'Fri' })).toBe('Next up: Dune, Fri');
 		expect(soonLine(undefined)).toBe('The next 30 days');
+	});
+	it('labels the server-filled Home cards', () => {
+		expect(homeStrip({ kind: 'show', name: 'Andor', line: 'S2 · 3 new episodes' })).toEqual({ kind: 'new_episode', text: 'S2 · 3 new episodes' });
+		expect(homeStrip({ kind: 'show', name: 'Andor', line: 'Season 2 added' })).toEqual({ kind: 'new_season', text: 'Season 2 added' });
+		expect(homeStrip({ kind: 'artist', name: 'Adele', line: '3 new albums' })).toEqual({ kind: 'recently_added', text: 'Adele · 3 new albums' });
+		expect(homeStrip({ kind: 'movie', name: 'Dune', line: 'New movie' })).toBeNull();
+	});
+
+	it('writes live ask progress and the Missing count', () => {
+		expect(askProgressLine({ progress: 0.42, state: 'downloading', eta: 600 })).toBe('Downloading 42% · 10m left');
+		expect(askProgressLine({ progress: 0, state: 'queued' })).toBe('Waiting to start');
+		expect(askProgressLine(undefined)).toBe('');
+		expect(missingLine(1)).toBe('1 released title has no file yet');
+		expect(missingLine(4)).toBe('4 released titles have no file yet');
+	});
+
+	it('keeps members off the owner rows while Home is unreachable', () => {
+		expect(fallbackRows(false)).toEqual(['asks', 'soon', 'discover']);
+		expect(fallbackRows(true)[0]).toBe('attention');
 	});
 });

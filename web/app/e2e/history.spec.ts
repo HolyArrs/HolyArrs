@@ -99,13 +99,6 @@ test('health: checks run on Health checks, show on Home, and their settings are 
 	await page.getByLabel('Alert after this many runs in a row').fill('2');
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
 
-	await page.goto('/');
-	const home = page.getByTestId('home-health');
-	// Health is a fact in the This HolyArrs panel; History links from Latest Events.
-	await expect(home.getByRole('heading', { name: 'This HolyArrs' })).toBeVisible();
-	await expect(home.getByText('Health', { exact: true })).toBeVisible();
-	await expect(home.getByRole('link', { name: 'All health checks' })).toBeVisible();
-	await expect(page.getByRole('region', { name: 'Latest Events' }).getByRole('link', { name: 'History' })).toBeVisible();
 });
 
 test('calendar: month and list views with cinema, digital and disc dates', async () => {

@@ -45,6 +45,7 @@
 		growAction,
 		onmore,
 		big = false,
+		inset,
 		art: pick
 	}: {
 		/** Title cards: the server's picture pick (card-art.ts). */
@@ -93,6 +94,8 @@
 		onmore?: (from: DOMRect) => void;
 		/** Big 4 shelves: a larger card (the row sets the width; the name grows with it). */
 		big?: boolean;
+		/** A small square picture over the art, bottom left (Home: an album cover on the artist's picture). */
+		inset?: string | null;
 	} = $props();
 	// The expanded card: a hover card (episodes, downloads) or the card grown in place (cover).
 	let root = $state<HTMLElement>();
@@ -214,6 +217,7 @@
 					{#each badges as b (b)}<Badge label={b} on="art" />{/each}
 				</span>
 			{/if}
+			{#if inset}<img class="inset" src={inset} alt="" loading="lazy" decoding="async" />{/if}
 			{#if marked}<CardBadges fresh={strip} owned={owned ?? null} />{/if}
 			{#if pct !== undefined}
 				<span class="line" role="progressbar" aria-label="{title} progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)} class:done={pct >= 100}><i style="width: {pct}%"></i></span>
@@ -276,6 +280,7 @@
 	.act.below { top: 42px; }
 	/* Title cards: the logo or name over a bottom scrim, nothing below; the grown card takes the card's place. */
 	.cover .art { margin-bottom: 0; }
+	.art img.inset { position: absolute; left: 8%; top: 50%; translate: 0 -50%; right: auto; bottom: auto; width: 34%; height: auto; aspect-ratio: 1; object-fit: cover; opacity: 1; border-radius: 6px; box-shadow: 0 6px 18px rgb(0 0 0 / .45); z-index: 1; }
 	.big .art { border-radius: var(--r-panel); }
 	.cover.grown .art { visibility: hidden; }
 	.scrim { position: absolute; inset: auto 0 0; height: 60%; background: linear-gradient(to top, rgb(0 0 0 / 0.66), rgb(0 0 0 / 0.18) 55%, transparent); pointer-events: none; }

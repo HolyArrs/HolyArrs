@@ -155,6 +155,7 @@ var RoutePerms = map[string]Perm{
 	// Looking at the Library and searching for titles.
 	"GET /api/v1/titles":                                   needSignedIn,
 	"GET /api/v1/library-summary":                          needSignedIn,
+	"GET /api/v1/home":                                     needSignedIn,
 	"GET /api/v1/titles/{id}":                              needSignedIn,
 	"GET /api/v1/artwork/{name}":                           needSignedIn,
 	"GET /api/v1/artwork/tmdb/{size}/{file}":               needSignedIn,
@@ -586,7 +587,7 @@ func init() {
 		"GET /api/v1/downloads", "GET /api/v1/downloads/view", "GET /api/v1/events",
 		"GET /api/v1/health", "GET /api/v1/health/checks",
 		"GET /api/v1/held", "GET /api/v1/imports", "GET /api/v1/jobs", "GET /api/v1/jobs/{id}",
-		"GET /api/v1/library-folders", "GET /api/v1/library-summary", "GET /api/v1/media-servers", "GET /api/v1/messages",
+		"GET /api/v1/library-folders", "GET /api/v1/library-summary", "GET /api/v1/home", "GET /api/v1/media-servers", "GET /api/v1/messages",
 		"GET /api/v1/metadata/search", "GET /api/v1/metadata/health", "GET /api/v1/metadata/{kind}/{tmdb_id}", "GET /api/v1/metadata/{kind}/{tmdb_id}/more-from", "GET /api/v1/metadata/{kind}/{tmdb_id}/reviews", "GET /api/v1/metadata/show/{tmdb_id}/seasons/{number}", "GET /api/v1/trailer/{kind}/{tmdb_id}", "GET /api/v1/trailer/batch", "GET /api/v1/trailer/stream/{id}/manifest.m3u8", "GET /api/v1/trailer/stream/{id}/seg/{n}", "GET /api/v1/settings/ui", "GET /api/v1/discover", "GET /api/v1/watch-services", "GET /api/v1/top10", "GET /api/v1/explore/head", "GET /api/v1/explore/tail", "GET /api/v1/explore/top", "GET /api/v1/explore/service-top", "GET /api/v1/explore/genre", "GET /api/v1/music-trending", "GET /api/v1/music-trending/art/{kind}/{mbid}", "GET /api/v1/explore/music", "GET /api/v1/my/alerts", "GET /api/v1/asked-by", "GET /api/v1/my/ask-privacy", "GET /api/v1/my/follows", "GET /api/v1/titles/{id}/follow", "GET /api/v1/needs-decision",
 		"GET /api/v1/never-add", "GET /api/v1/openapi.json", "GET /api/v1/outside-lists",
 		"GET /api/v1/parts", "GET /api/v1/pick-rules", "GET /api/v1/pick-rules/{id}", "GET /api/v1/rename", "GET /api/v1/searches",

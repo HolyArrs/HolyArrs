@@ -70,7 +70,7 @@ test('first run makes the owner, adds the key and folder, then returns Home', as
 	await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible();
 	await expect(page.locator('header.ui-head')).toContainText('luis');
 	await expect(page.getByText('Live', { exact: true })).toBeVisible();
-	const gettingStarted = page.getByRole('region', { name: 'Finish setting up HolyArrs' });
+	const gettingStarted = page.getByRole('region', { name: 'Welcome to HolyArrs' });
 	await expect(gettingStarted.getByText('1 of 4 done', { exact: true })).toBeVisible();
 	await expect(gettingStarted.getByText(/TMDB/)).toHaveCount(0);
 	await expect(page.getByText('Metadata server is down')).toHaveCount(0);

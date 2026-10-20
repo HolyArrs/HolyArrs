@@ -6,6 +6,7 @@
 	// and episode, air dates and why each episode is or is not looked for;
 	// Search now and Choose a release for the show, a season or an episode.
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { tick } from 'svelte';
 	import { reducedMotion } from './motion.ts';
 	import { api, message } from './api.ts';
@@ -254,9 +255,10 @@
 		}
 	}
 
-	// The season on screen: the first regular season until one is picked.
-	let picked = $state<number | null>(null);
-	const cur = $derived(picked ?? show?.seasons.find((x) => x.number > 0)?.number ?? show?.seasons[0]?.number ?? 0);
+	// The season on screen: ?season=N (Home's cards), else the first regular season until one is picked.
+	const askedSeason = Number(page.url.searchParams.get('season'));
+	let picked = $state<number | null>(Number.isInteger(askedSeason) && askedSeason > 0 ? askedSeason : null);
+	const cur = $derived((picked !== null && show?.seasons.some((x) => x.number === picked) ? picked : null) ?? show?.seasons.find((x) => x.number > 0)?.number ?? show?.seasons[0]?.number ?? 0);
 	const curSeason = $derived(show?.seasons.find((x) => x.number === cur));
 	$effect(() => {
 		const n = cur;

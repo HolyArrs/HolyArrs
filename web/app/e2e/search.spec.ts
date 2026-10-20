@@ -127,21 +127,6 @@ test('clear all empties the Turned down list', async () => {
 	await expect(page.getByText('Nothing is turned down')).toBeVisible();
 });
 
-test('Home shows a search running and then what it found, live', async ({ browser }) => {
-	await page.goto('/');
-	const home = page.getByTestId('home-searches');
-	await expect(home).toBeVisible();
-	const other = await fresh(browser);
-	await signIn(other, owner());
-	await openMovie(other, 'Northern Kettle');
-	await other.getByRole('button', { name: 'Search now' }).click();
-	// The fake Source takes a few seconds, so the search shows while it runs.
-	await expect(home.getByTestId('search-running').filter({ hasText: 'Northern Kettle' })).toBeVisible({ timeout: 10_000 });
-	await expect(home.getByTestId('search-found').filter({ hasText: 'Northern Kettle: found 3 Releases, 1 turned away, chose' })).toBeVisible({ timeout: 20_000 });
-	await expect(home.getByTestId('search-running').filter({ hasText: 'Northern Kettle' })).toHaveCount(0);
-	await other.context().close();
-});
-
 test('Settings > Search: the four settings are saved and a wrong interval is refused', async () => {
 	await page.goto('/settings/search');
 	await expect(page.getByRole('heading', { level: 1, name: 'Search' })).toBeVisible();
