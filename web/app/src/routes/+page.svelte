@@ -312,7 +312,7 @@
 							{@const mark = ownedMark(c, t, who)}
 							{@const fresh = homeFresh(t, dates)}
 							{#if c.kind !== 'artist'}
-								<WideCard cover title={c.name} kind={c.kind} typed row={type} href={c.titleId ? titleHref(c.titleId) : undefined} image={c.wide ?? w.backdrop ?? c.image} logo={w.logo} art={w.art} preview={w.preview} subtitle={c.subtitle} {fresh} owned={mark} vtName={c.vtName} />
+								<WideCard cover title={c.name} kind={c.kind} typed row={type} href={c.titleId ? titleHref(c.titleId) : undefined} image={c.wide ?? w.backdrop ?? c.image} logo={w.logo} art={w.art} preview={w.preview ? { ...w.preview, titleId: c.titleId ?? undefined } : null} subtitle={c.subtitle} {fresh} owned={mark} vtName={c.vtName} />
 							{:else}
 								<PosterCard title={c.name} kind={c.kind} typed row={type} href={c.titleId ? titleHref(c.titleId) : undefined} image={c.image} subtitle={c.subtitle} {fresh} owned={mark} vtName={c.vtName} />
 							{/if}

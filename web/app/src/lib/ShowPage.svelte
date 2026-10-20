@@ -21,6 +21,7 @@
 	import { loadAskedBy, type AskedByAnswer } from './askedby.ts';
 	import TitleHero, { richMetadata, shortFolder, type RichMeta } from './ui/TitleHero.svelte';
 	import LoadError from './ui/LoadError.svelte';
+	import FollowButton from './ui/FollowButton.svelte';
 	import ActionButton from './ui/ActionButton.svelte';
 	import ActionMenu from './ui/ActionMenu.svelte';
 	import Menu, { type MenuItem } from './ui/Menu.svelte';
@@ -432,6 +433,7 @@
 			<ActionButton icon="library" label="In Library: go to the Library section" caption="In Library" primary onclick={toLibrary} data-testid="hero-library" />
 			<ActionMenu label="More actions" caption="More" icon="more" items={heroItems} />
 		{/if}
+		<FollowButton titleId={title.id} kind="show" />
 	{/snippet}
 </TitleHero>
 

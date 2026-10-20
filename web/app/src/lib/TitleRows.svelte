@@ -82,7 +82,7 @@
 </script>
 
 {#snippet card({ c, item }: Pair)}
-	<WideCard cover title={c.name} href={hrefOf(item)} image={c.wide ?? c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} owned={ownedMark(c, undefined, who)} typed preview={{ kind: item.kind, tmdb: item.tmdb_id, year: item.year }} />
+	<WideCard cover title={c.name} href={hrefOf(item)} image={c.wide ?? c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} owned={ownedMark(c, undefined, who)} typed preview={{ kind: item.kind, tmdb: item.tmdb_id, year: item.year, titleId: item.title_id ?? undefined }} />
 {/snippet}
 
 {#if info?.streaming.length || shownDates.length}

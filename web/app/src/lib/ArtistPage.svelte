@@ -12,6 +12,7 @@
 	import Icon from './Icon.svelte';
 	import TitleHero, { shortFolder } from './ui/TitleHero.svelte';
 	import LoadError from './ui/LoadError.svelte';
+	import FollowButton from './ui/FollowButton.svelte';
 	import ActionButton from './ui/ActionButton.svelte';
 	import ActionMenu from './ui/ActionMenu.svelte';
 	import type { MenuItem } from './ui/Menu.svelte';
@@ -337,6 +338,7 @@
 		{:else if session.can('ask')}
 			<ActionButton icon="wish" label="Ask for albums" primary onclick={askMore} data-testid="ask-albums" />
 		{/if}
+		<FollowButton titleId={title.id} kind="artist" />
 	{/snippet}
 </TitleHero>
 

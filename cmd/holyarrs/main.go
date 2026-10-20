@@ -582,7 +582,10 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		if _, err := wish.CheckReady(ctx); err != nil {
 			return err
 		}
-		_, err := wish.SendEpisodeNotices(ctx)
+		if _, err := wish.SendEpisodeNotices(ctx); err != nil {
+			return err
+		}
+		_, err := wish.SendAlbumNotices(ctx)
 		return err
 	}})
 	wish.WatchEpisodes()

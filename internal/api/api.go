@@ -322,6 +322,7 @@ func (a *API) Handler() http.Handler {
 	}
 	a.askRoutes(m)
 	a.askedByRoutes(m)
+	a.followRoutes(m)
 	a.controlRoutes(m)
 	a.migrateRoutes(m)
 	a.moveRoutes(m)

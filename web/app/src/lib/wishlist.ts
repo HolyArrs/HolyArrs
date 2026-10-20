@@ -74,7 +74,8 @@ export const momentWords: Record<string, [string, string]> = {
 	ask_approved: ['Approved', 'To the people who asked.'],
 	ask_turned_down: ['Turned down', 'To the people who asked, with the note.'],
 	ask_ready: ['Ready', 'To the people who asked, once the files are in the Library (ready to watch or listen to).'],
-	new_episodes: ['New episodes', 'To the people who asked for a show: new episodes are in the Library, one notice per show per hour. Each person can turn these off in Account.'],
+	new_episodes: ['New episodes', 'To the people who asked for or follow a show: new episodes and seasons are in the Library, one notice per show per hour. Each person can turn these off in Account.'],
+	new_albums: ['New albums', 'To the people who follow an artist: a new album is in the Library, one notice per artist per hour.'],
 	grab: ['Sent to download', 'To the staff: a Release went to a Downloader.'],
 	import: ['In the Library', 'To the staff: files were placed (a better copy counts too).'],
 	rename: ['Renamed', 'To the staff: files got new names.'],
@@ -85,7 +86,7 @@ export const momentWords: Record<string, [string, string]> = {
 };
 
 /** askMoments go to the people who asked (and the staff for a new ask). */
-export const askMoments = ['ask_waiting', 'ask_approved', 'ask_turned_down', 'ask_ready', 'new_episodes'] as const;
+export const askMoments = ['ask_waiting', 'ask_approved', 'ask_turned_down', 'ask_ready', 'new_episodes', 'new_albums'] as const;
 /** libraryMoments go to the staff. */
 export const libraryMoments = ['grab', 'import', 'rename', 'add', 'delete', 'health', 'needs_decision'] as const;
 
