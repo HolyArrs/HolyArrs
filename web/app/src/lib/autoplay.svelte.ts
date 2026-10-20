@@ -81,7 +81,11 @@ interface Stream {
 export function nativeHLS(): boolean {
 	if (typeof document === 'undefined') return false;
 	try {
-		return document.createElement('video').canPlayType('application/vnd.apple.mpegurl') !== '';
+		if (document.createElement('video').canPlayType('application/vnd.apple.mpegurl') === '') return false;
+		// Chrome now answers "maybe" too, but its own HLS starts at the lowest
+		// quality and stalls on YouTube's mixed streams; only Apple's (Safari,
+		// iOS) is trusted. Elsewhere hls.js plays it.
+		return /apple/i.test(navigator.vendor ?? '') || typeof MediaSource === 'undefined';
 	} catch {
 		return false;
 	}
