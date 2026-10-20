@@ -309,3 +309,38 @@ func TestOldPoolRowsDropped(t *testing.T) {
 		}
 	}
 }
+
+// No two rows of one type sit back to back while another type is left
+// (audit 2026-10-20 M2: Because you have rows ran together).
+func TestNoSameTypeBackToBack(t *testing.T) {
+	for _, sw := range []string{"all", "movies", "shows"} {
+		for m := int64(1); m <= 20; m++ {
+			in := fullInput(sw, m)
+			in.Seeds = seedsN(10, m)
+			p, _ := build(t, in)
+			pg := AssembleTabAt(p, top10Both(), svcTopOf(p), m, Moment{})
+			all := append(append([]Row{}, pg.Head...), pg.Tail...)
+			for i := 1; i < len(all); i++ {
+				if all[i].Type != all[i-1].Type {
+					continue
+				}
+				other := false
+				for _, r := range all[i:] {
+					other = other || r.Type != all[i].Type
+				}
+				if other {
+					t.Fatalf("%s member %d: rows %d and %d are both %s", sw, m, i-1, i, all[i].Type)
+				}
+			}
+		}
+	}
+}
+
+// Best new releases and Because you have keep their own titles (M1).
+func TestHeadRowsKeepTitles(t *testing.T) {
+	pg := Page{Head: []Row{{ID: "best", Type: TypeBest, Title: "Best new releases"}, {ID: "because_have:movie:1", Type: TypeBecauseHave, SeedName: "Adolescence", Title: "Because you have Adolescence"}}}
+	got, _ := TitlePage(pg, TitleContext{Day: "2026-10-20"})
+	if got.Head[0].Title != "Best new releases" || got.Head[1].Title != "Because you have Adolescence" {
+		t.Fatalf("titles %q, %q", got.Head[0].Title, got.Head[1].Title)
+	}
+}

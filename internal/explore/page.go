@@ -325,12 +325,34 @@ func AssembleTabAt(p Pool, tops map[string][]Item, svcTop []Item, member int64, 
 		for _, r := range head {
 			place(r, true)
 		}
-		i := 0
-		for ; i < len(rest) && len(out.Head) < headMax; i++ {
-			place(rest[i], true)
+		// The rest in order, but never a row right under one of its type
+		// while another type is left (a skipped row could join two).
+		left := append([]Row{}, rest...)
+		next := func() Row {
+			last := ""
+			if n := len(out.Head) + len(out.Tail); n > 0 {
+				if len(out.Tail) > 0 {
+					last = out.Tail[len(out.Tail)-1].Type
+				} else {
+					last = out.Head[len(out.Head)-1].Type
+				}
+			}
+			k := 0
+			for j, r := range left {
+				if r.Type != last {
+					k = j
+					break
+				}
+			}
+			r := left[k]
+			left = append(left[:k], left[k+1:]...)
+			return r
 		}
-		for ; i < len(rest) && len(out.Tail) < out.Cap; i++ {
-			place(rest[i], false)
+		for len(left) > 0 && len(out.Head) < headMax {
+			place(next(), true)
+		}
+		for len(left) > 0 && len(out.Tail) < out.Cap {
+			place(next(), false)
 		}
 		return out, shown
 	}
