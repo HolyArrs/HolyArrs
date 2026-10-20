@@ -65,7 +65,7 @@
 		shown = firstItems.map((d) => cardIdentity(discoverCard(d, 'top_services')));
 	});
 	const source = $derived(!row ? '' : genre ? `Popular in ${genre.name.toLowerCase()} on ${row.name}` : serviceLabel(row));
-	const title = $derived(genre ? `Trending ${genre.name.toLowerCase()} on your services` : type === 'movies' || type === 'shows' ? `Trending ${type} on your services` : 'Trending on streaming');
+	const title = $derived(genre ? `Trending ${genre.name.toLowerCase()} on streaming` : type === 'movies' || type === 'shows' ? `Trending ${type} on streaming` : 'Trending on streaming');
 	const attribution = $derived(!genre && row?.source === 'streaming-availability' ? (answer?.attribution ?? '') : '');
 
 	let gone: AbortController | undefined;
