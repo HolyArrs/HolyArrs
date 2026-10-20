@@ -89,7 +89,15 @@
 
 	// switchToPass starts the relayed stream a little ahead of the direct
 	// one, waits for the direct one to reach it, then plays it with sound.
+	// ?trailerdebug=1 shows each step of the sound switch on screen.
+	const debugOn = typeof location !== 'undefined' && location.search.includes('trailerdebug');
+	let dbgLines = $state<string[]>([]);
+	function dbg(m: string) {
+		if (!debugOn) return;
+		dbgLines = [...dbgLines.slice(-11), `${(performance.now() / 1000).toFixed(1)}s ${m}`];
+	}
 	function switchToPass(url: string) {
+		dbg(`switch to sound stream (video=${!!video} up=${!!up})`);
 		if (!video || up) return;
 		up = { url, start: video.currentTime + 1.2 };
 	}
@@ -108,6 +116,7 @@
 			// After a few misses, take the sound stream where the picture is and
 			// start it now (a tiny hitch beats falling back to mute).
 			if (old.currentTime > v.currentTime + 0.05) {
+				dbg(`picture ahead ${(old.currentTime - v.currentTime).toFixed(2)}s, try ${tries + 1}`);
 				if (++tries <= 3) {
 					v.currentTime = old.currentTime + 0.8;
 					return;
@@ -115,7 +124,8 @@
 				v.currentTime = old.currentTime;
 				asked = performance.now();
 				v.muted = false;
-				v.play().catch(fail);
+				dbg('joining sound stream at picture time');
+				v.play().catch((e) => fail('play refused: ' + e?.name));
 				return;
 			}
 			const wait = () => {
@@ -123,7 +133,8 @@
 				if (old.currentTime + 0.02 < v.currentTime && !old.paused && !old.ended) return void requestAnimationFrame(wait);
 				asked = performance.now();
 				v.muted = false;
-				v.play().catch(fail);
+				dbg('sound stream ready, playing');
+				v.play().catch((e) => fail('play refused: ' + e?.name));
 			};
 			wait();
 		};
@@ -133,10 +144,12 @@
 			el?.setAttribute('data-switch-ms', String(Math.round(performance.now() - asked)));
 			el?.setAttribute('data-switch-drift-ms', String(Math.round(Math.abs((old?.currentTime ?? 0) - v.currentTime) * 1000)));
 			swapped = true;
+			dbg('SWAPPED: sound on');
 			old?.pause();
 		};
-		const fail = () => {
+		const fail = (why?: unknown) => {
 			if (gone) return;
+			dbg('FAIL ' + (typeof why === 'string' ? why : (v.error?.message || (why as Error)?.message || 'error event')));
 			gone = true;
 			dropUp();
 			// This trailer stays quiet; the person's sound choice is kept for the next one.
@@ -147,7 +160,7 @@
 		v.addEventListener('error', fail);
 		attachHLS(v, u.url, nativeHLS(), u.start)
 			.then((d) => (gone ? d() : (upDetach = d)))
-			.catch(fail);
+			.catch((e) => fail('attach: ' + (e as Error)?.message));
 		return () => {
 			gone = true;
 			v.removeEventListener('canplay', go);
@@ -262,11 +275,13 @@
 			return;
 		}
 		muted = false;
+		dbg(`direct unmute (live=${!!live()})`);
 		const lv = live();
 		if (lv) {
 			const v = lv;
 			v.muted = false;
 			if (v.paused) {
+				dbg('video paused by browser on unmute: back to mute');
 				v.muted = muted = true;
 				void v.play().catch(() => {});
 			}
@@ -335,6 +350,7 @@
 		// The hover card's art is a link: the button must not follow it.
 		e?.preventDefault();
 		e?.stopPropagation();
+		dbg(`sound button: ${muted ? 'unmute' : 'mute'} (src=${src?.kind}, swapped=${swapped})`);
 		setSoundOn(muted);
 		if (muted) return unmute();
 		muted = true;
@@ -475,7 +491,12 @@
 	</div>
 {/if}
 
+{#if debugOn && dbgLines.length}
+	<pre class="dbg">{dbgLines.join(String.fromCharCode(10))}</pre>
+{/if}
+
 <style>
+	.dbg { position: fixed; left: 8px; bottom: 8px; z-index: 99999; max-width: 520px; margin: 0; padding: 8px 10px; font: 12px/1.35 ui-monospace, monospace; color: #9f9; background: rgb(0 0 0 / 85%); border-radius: 8px; white-space: pre-wrap; pointer-events: none; }
 	.ui-trailer { position: absolute; inset: 0; overflow: hidden; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); pointer-events: none; container-type: size; }
 	.ui-trailer.shown { opacity: 1; }
 	/* Hover cards: the picture is already moving; a short fade. */
