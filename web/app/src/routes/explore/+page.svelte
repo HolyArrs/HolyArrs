@@ -9,48 +9,37 @@
 	import { session } from '#lib/session.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { refreshInbox } from '#lib/wishlist.svelte.ts';
-	import { ymd } from '#lib/calendar.ts';
 	import {
-		becauseYouHave,
 		cardAction,
 		cardTmdb,
-		comingSoon,
-		discoverCard,
-		discoverTitles,
-		fetchProviderRow,
-		fromPerson,
-		genreRows,
-		genresOf,
-		keepFull,
+		headPath,
 		liveCard,
 		matchOwned,
 		ownedIndex,
 		ownedMark,
 		ownedTitle,
 		markTransitions,
-		popularInHousehold,
-		recentlyAdded,
 		filterRows,
 		parseType,
 		pickerServices,
 		readServices,
+		serverRow,
 		serviceRegion,
 		SERVICES_KEY,
 		SERVICES_SHOWN,
+		tailPath,
 		toggleService,
 		writeServices,
 		typeHref,
-		typeKindOf,
 		type ExploreType,
 		type ExploreCard,
 		type ExploreRow,
-		type Facets,
+		type HeadAnswer,
+		type TailAnswer,
 		type WatchService
 	} from '#lib/explore.ts';
-	import { defaultRegion } from '#lib/top10.ts';
-	import type { ProviderRowQuery } from '#lib/explore.ts';
-	import type { PersonSummary } from '#lib/people.ts';
-	import type { Ask, AskState, CalendarEntry, GateDefaults, LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleView } from '#lib/types.ts';
+	import { defaultRegion, savedTop10 } from '#lib/top10.ts';
+	import type { Ask, AskState, GateDefaults, LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleView } from '#lib/types.ts';
 	import { seasonWords } from '#lib/shows.ts';
 	import { audienceOf } from '#lib/title-status.ts';
 	import AddMovieDialog from '#lib/AddMovieDialog.svelte';
@@ -77,10 +66,14 @@
 	let okOnce = $state(false);
 	let busy = $state(false);
 	let titles = $state<TitleView[]>([]);
-	let dates = $state<CalendarEntry[]>([]);
-	let asks = $state<Ask[]>([]);
-	let people = $state(new Map<number, string[]>());
-	let discovered = $state<ExploreRow[]>([]);
+	/** The server-built page: the head in one answer, then tail pages as the page scrolls. */
+	let head = $state<(ExploreRow & { wide: boolean; type: string })[]>([]);
+	let tail = $state<(ExploreRow & { wide: boolean; type: string })[]>([]);
+	let top10 = $state<HeadAnswer['top10']>(null);
+	let headLoaded = $state(false);
+	let tailPageNext = 0;
+	let tailMore = $state(false);
+	let tailBusy = false;
 	/** Cards asked for (with the ask state returned) or found in the Library on this page, so the card updates at once. */
 	let askedHere = $state(new Map<string, { ask?: AskState; titleId?: number }>());
 	let asking = $state('');
@@ -127,56 +120,89 @@
 		if (t === 'all') url.searchParams.delete('type');
 		else url.searchParams.set('type', t);
 		void goto(url, { replace: true, shallow: true, reset: false });
-		void loadKindRows(t);
+		void loadHead();
 	}
 
-	/** Provider rows asked for one kind, so a Movies or Shows row is full rather than half of a mixed one. */
-	let kindRowsGot = $state<Record<'movie' | 'show', ExploreRow[]>>({ movie: [], show: [] });
-	const kindAsked = new Set<string>();
-	async function loadKindRows(t: ExploreType) {
-		const kind = typeKindOf(t);
-		if ((kind !== 'movie' && kind !== 'show') || kindAsked.has(kind) || !discovered.length) return;
-		kindAsked.add(kind);
-		await Promise.all(
-			(['trending', 'best', 'upcoming'] as const).map((row) =>
-				fetchProviderRow({ row, kind }, api, gone.signal)
-					.then((got) => {
-						if (!got || gone.signal.aborted) return;
-						const r = { id: row, title: got.title ?? discoverTitles[row], cards: got.items.slice(0, rowCap).map((d) => discoverCard(d, row)) };
-						kindRowsGot = { ...kindRowsGot, [kind]: [...kindRowsGot[kind].filter((x) => x.id !== row), r] };
-					})
-					.catch(() => {})
-			)
-		);
+	const rows = $derived(markTransitions(filterRows([...head, ...tail], type)));
+
+	function readTop10Pick() {
+		try {
+			return savedTop10(localStorage.getItem('holyarrs.top10'));
+		} catch {
+			return savedTop10(null);
+		}
 	}
-	// The mixed rows came in after a type was picked (or the page opened on one).
+	const query = () => {
+		const t = readTop10Pick();
+		return { type, services: picked ?? [], region, top10Kind: type === 'shows' ? ('show' as const) : type === 'movies' ? ('movie' as const) : t.kind, top10Region: t.region };
+	};
+
+	let headAsk = 0;
+	let poll: ReturnType<typeof setTimeout> | undefined;
+	/** loadHead reads the head; while the server builds the pool it asks again every 5 s (at most 2 minutes). */
+	async function loadHead(tries = 0) {
+		if (type === 'music') return;
+		const n = ++headAsk;
+		clearTimeout(poll);
+		const q = query();
+		try {
+			const a = await api.get<HeadAnswer>(headPath(q), gone.signal);
+			if (n !== headAsk) return;
+			head = a.head.map(serverRow);
+			top10 = a.top10 ? { ...a.top10, kind: q.top10Kind } : null;
+			tail = [];
+			tailPageNext = 0;
+			tailMore = a.tail_rows > 0;
+			failed = false;
+			okOnce = true;
+			if (a.building && tries < 24) poll = setTimeout(() => void loadHead(tries + 1), 5000);
+		} catch {
+			if (n === headAsk) failed = true;
+		} finally {
+			if (n === headAsk) headLoaded = true;
+		}
+	}
+
+	async function loadTail() {
+		if (tailBusy || !tailMore || type === 'music') return;
+		tailBusy = true;
+		const n = headAsk;
+		try {
+			const a = await api.get<TailAnswer>(tailPath(query(), tailPageNext), gone.signal);
+			if (n !== headAsk) return;
+			tail = [...tail, ...a.rows.map(serverRow)];
+			tailPageNext++;
+			tailMore = a.more;
+		} catch {
+			tailMore = false;
+		} finally {
+			tailBusy = false;
+		}
+		// Still within 1.5 screens of the end (a tall screen): the next page too.
+		requestAnimationFrame(() => {
+			if (tailMore && sentinel && sentinel.getBoundingClientRect().top < innerHeight * 2.5) void loadTail();
+		});
+	}
+
+	// The tail loads when its sentinel comes within 1.5 screens.
+	let sentinel = $state<HTMLElement>();
 	$effect(() => {
-		if (discovered.length && type !== 'all') void loadKindRows(type);
+		if (!sentinel) return;
+		const io = new IntersectionObserver(([e]) => e.isIntersecting && void loadTail(), { rootMargin: '150% 0px' });
+		io.observe(sentinel);
+		return () => io.disconnect();
 	});
 
-	const facets = $derived(new Map<number, Facets>(titles.map((t) => [t.id, { genres: genresOf(t), people: people.get(t.id) ?? [] }])));
+	function opened(e: MouseEvent) {
+		const el = e.target as Element | null;
+		const row = el?.closest?.('[data-row]')?.getAttribute('data-row');
+		if (row && el?.closest('a')) count(row, 'open');
+	}
 
-	const rows = $derived.by(() => {
-		const because = becauseYouHave(titles, facets);
-		const person = fromPerson(titles, facets);
-		const k = typeKindOf(type);
-		const own = k === 'movie' || k === 'show' ? kindRowsGot[k] : [];
-		const [trending, best, upcoming, similar] = ['trending', 'best', 'upcoming', 'similar'].map((id) => own.find((r) => r.id === id) ?? discovered.find((r) => r.id === id));
-		return markTransitions(
-			filterRows(keepFull([
-				trending,
-				best,
-				services.length ? { id: 'services', title: 'On your services', cards: serviceCards, keep: true } : null,
-				{ id: 'soon', title: 'Coming soon', subtitle: 'From your calendar', href: to('/calendar'), cards: comingSoon(dates, titles) },
-				because && { id: 'because', title: `Because you have ${because.seed.name}`, cards: because.cards },
-				similar,
-				...genreRows(titles, facets),
-				{ id: 'household', title: 'Popular in your household', subtitle: 'What people here asked for most', href: to('/wishlist'), cards: popularInHousehold(asks, titles) },
-				person && { id: 'person', title: `From ${person.person}`, cards: person.cards },
-				upcoming
-			]), type)
-		);
-	});
+	/** count: a card opened or an ask started from a row, kept only to measure Explore. */
+	function count(rowType: string, event: 'open' | 'ask') {
+		void api.post('/explore/counts', { row_type: rowType, event }).catch(() => {});
+	}
 
 	/** Every card is matched against the Library (by TMDB or MusicBrainz id), so owned titles read as owned in every row. */
 	const owned = $derived(ownedIndex(titles));
@@ -262,64 +288,18 @@
 		void savedDefaults.load();
 	});
 
-	async function loadPeople(list: TitleView[]) {
-		// A few of the newest movies only: each one asks TMDB.
-		const movies = recentlyAdded(list.filter((t) => t.kind === 'movie' && t.ids?.tmdb), 6);
-		const got = await Promise.allSettled(movies.map((t) => api.get<{ people: { person: PersonSummary }[] }>(`/titles/${t.id}/people`, gone.signal)));
-		const next = new Map<number, string[]>();
-		got.forEach((g, i) => {
-			if (g.status === 'fulfilled') next.set(movies[i].id, (g.value.people ?? []).map((p) => p.person.name));
-		});
-		if (next.size && !gone.signal.aborted) people = next;
-	}
-
-	/** A discover row shows at most this many cards; a longer answer is cut. */
+	/** A row shows at most this many cards. */
 	const rowCap = 20;
-
-	async function loadProviderRows(list: Promise<TitleView[]>) {
-		const asks = [{ row: 'trending' as const }, { row: 'best' as const }, { row: 'upcoming' as const }];
-		const show = (q: ProviderRowQuery, got: Awaited<ReturnType<typeof fetchProviderRow>>, title?: string) => {
-			if (!got || gone.signal.aborted) return;
-			const row = { id: q.row, title: title ?? got.title ?? (discoverTitles as Record<string, string>)[q.row] ?? '', cards: got.items.slice(0, rowCap).map((d) => discoverCard(d, q.row)) };
-			discovered = [...discovered.filter((r) => r.id !== q.row), row];
-		};
-		// Ask one row first: a server without discover rows answers 404, and
-		// then the rest are not worth asking. Each row shows as soon as it comes.
-		const first = await fetchProviderRow(asks[0], api, gone.signal).catch(() => null);
-		if (!first) return;
-		show(asks[0], first);
-		const rest = asks.slice(1).map((q) => fetchProviderRow(q, api, gone.signal).then((g) => show(q, g)).catch(() => {}));
-		// "More like" needs the Library, which may still be on its way.
-		const seed = recentlyAdded((await list).filter((t) => t.kind === 'movie' || t.kind === 'show'), 1)[0];
-		if (seed) {
-			const q = { row: 'similar' as const, id: seed.id };
-			rest.push(fetchProviderRow(q, api, gone.signal).then((g) => show(q, g, `More like ${seed.name}`)).catch(() => {}));
-		}
-		await Promise.all(rest);
-	}
 
 	async function load() {
 		busy = true;
-		const from = ymd(new Date());
-		const until = ymd(new Date(Date.now() + 60 * 86400000));
-		// Every ask starts at once; discover rows do not wait for the Library.
-		const library = api.get<{ titles: TitleView[] }>('/titles');
-		if (!discovered.length) void loadProviderRows(library.then((r) => r.titles ?? []).catch(() => [])).catch(() => {});
-		const [ti, ca, as] = await Promise.allSettled([
-			library,
-			api.get<{ dates: CalendarEntry[] | null }>(`/calendar?from=${from}&to=${until}`),
-			mayAsk || session.can('approve') ? api.get<{ asks: Ask[] }>('/asks') : Promise.resolve(null)
-		]);
-		failed = ti.status === 'rejected';
-		if (ti.status === 'fulfilled') {
-			titles = ti.value.titles ?? [];
-			okOnce = true;
+		try {
+			titles = (await api.get<{ titles: TitleView[] }>('/titles')).titles ?? [];
+		} catch {
+			/* owned marks wait for the Library */
 		}
-		if (ca.status === 'fulfilled') dates = ca.value.dates ?? [];
-		if (as.status === 'fulfilled' && as.value) asks = as.value.asks ?? [];
 		loaded = true;
 		busy = false;
-		if (ti.status === 'fulfilled') void loadPeople(titles);
 	}
 
 	// "On your services": the streaming services this person has, picked
@@ -328,8 +308,6 @@
 	let services = $state<WatchService[]>([]);
 	/** null until the person picks once (the row then asks them to). */
 	let picked = $state<number[] | null>(null);
-	let serviceCards = $state<ExploreCard[]>([]);
-	let serviceBusy = $state(false);
 	const shownServices = $derived(pickerServices(services, picked ?? []));
 	/** The ids the row is filled from: the picked ones, else the region's top few. */
 	const usedServices = $derived(picked ?? shownServices.slice(0, SERVICES_SHOWN).map((s) => s.id));
@@ -347,26 +325,7 @@
 		}
 	}
 
-	let serviceAsk = 0;
-	async function fillServices(ids: number[], kind: 'movie' | 'show' | null) {
-		const n = ++serviceAsk;
-		if (!ids.length) return void (serviceCards = []);
-		serviceBusy = true;
-		try {
-			const got = await fetchProviderRow({ row: 'services', services: ids, region, ...(kind ? { kind } : {}) }, api, gone.signal);
-			if (n === serviceAsk) serviceCards = (got?.items ?? []).slice(0, rowCap).map((d) => discoverCard(d, 'services'));
-		} catch {
-			if (n === serviceAsk) serviceCards = [];
-		} finally {
-			if (n === serviceAsk) serviceBusy = false;
-		}
-	}
-	// Refills when the services or the type switch change.
-	$effect(() => {
-		const k = typeKindOf(type);
-		const ids = usedServices;
-		if (services.length && type !== 'music') void fillServices(ids, k === 'movie' || k === 'show' ? k : null);
-	});
+	const serviceCards = $derived(rows.find((r) => r.id === 'services')?.cards.slice(0, rowCap) ?? []);
 
 	function tapService(id: number) {
 		picked = toggleService(picked ?? [], id);
@@ -375,6 +334,7 @@
 		} catch {
 			/* the choice is a convenience */
 		}
+		void loadHead();
 	}
 
 	// Leaving Explore stops the TMDB-backed asks still on their way.
@@ -389,8 +349,11 @@
 			}
 		}
 		void load();
-		void loadServices();
-		return () => gone.abort();
+		void loadServices().then(() => void loadHead());
+		return () => {
+			clearTimeout(poll);
+			gone.abort();
+		};
 	});
 </script>
 
@@ -408,11 +371,13 @@
 				</button>
 			{/each}
 		</div>
-		{#if !serviceBusy && serviceCards.length === 0}<p class="svc-hint">{usedServices.length ? 'Nothing found on these services.' : 'Pick a service to fill this row.'}</p>{/if}
+		{#if serviceCards.length === 0}<p class="svc-hint">{usedServices.length ? 'Nothing found on these services.' : 'Pick a service to fill this row.'}</p>{/if}
 	</div>
 {/snippet}
 
-<div class="explore">
+<!-- A card opened from a row is counted (to measure only). -->
+<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+<div class="explore" onclick={opened}>
 	<PageHeader title="Explore" subtitle="Find something to watch or listen to next." />
 	<div class="types-mark" bind:this={typesMark} aria-hidden="true"></div>
 	<div class="types" class:stuck={typesStuck}>
@@ -425,7 +390,7 @@
 		<LoadError hasData={false} message="Could not load Explore." onretry={load} {busy} />
 	{:else}
 		{#if failed}<LoadError hasData={true} message="Could not refresh Explore." onretry={load} {busy} />{/if}
-		{#if !loaded && discovered.length === 0}
+		{#if !headLoaded}
 			<div class="loading" aria-busy="true" aria-label="Loading">
 				{#each [0, 1] as r (r)}
 					<Skeleton width="200px" />
@@ -433,15 +398,17 @@
 				{/each}
 			</div>
 		{:else if rows.length === 0}
-			<EmptyState icon="compass" title="Nothing to explore yet" text="Rows fill in as your Library grows." action={{ label: 'Search', href: to('/search'), icon: 'search' }} />
+			{#if type !== 'music'}<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} typePill={type === 'all'} initial={top10} />
+			<EmptyState icon="compass" title="Explore is getting ready" text="Rows fill in within a few minutes." action={{ label: 'Search', href: to('/search'), icon: 'search' }} />{/if}
 		{:else}
-			{#if type !== 'music'}<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} typePill={type === 'all'} />{/if}
+			{#if type !== 'music'}<Top10Row lock={type === 'movies' ? 'movie' : type === 'shows' ? 'show' : undefined} {owned} {who} typePill={type === 'all'} initial={top10} />{/if}
 			{#each rows as row (row.id)}
-				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.id === 'soon' ? 'var(--release-item)' : 'var(--explore-item)'} tools={row.id === 'services' ? serviceTools : undefined}>
+				<div class="row-wrap" data-row={row.type ?? row.id}>
+				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.wide ? 'var(--release-item)' : 'var(--explore-item)'} tools={row.id === 'services' ? serviceTools : undefined}>
 					{#each row.cards.map(live) as c (c.key)}
 						{@const act = cardAction(c, { manage, ask: mayAsk })}
 						{@const mark = ownedMark(c, ownedTitle(c, owned), who)}
-						{#if row.id === 'soon'}
+						{#if row.wide}
 							<WideCard title={c.name} href={cardHref(c)} image={c.wide} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} />
 						{:else}
 						<PosterCard
@@ -458,7 +425,7 @@
 						>
 							{#snippet action()}
 								{#if act && cardTmdb(c)}
-									<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={asking === c.key || undefined} onclick={() => void quick(c, act)} />
+									<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={asking === c.key || undefined} onclick={() => { count(row.type ?? row.id, 'ask'); void quick(c, act); }} />
 								{:else if act}
 									<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" href={searchHref(c)} />
 								{/if}
@@ -467,7 +434,9 @@
 						{/if}
 					{/each}
 				</Shelf>
+				</div>
 			{/each}
+			{#if tailMore && type !== 'music'}<div class="sentinel" bind:this={sentinel} aria-hidden="true"></div>{/if}
 		{/if}
 	{/if}
 </div>
@@ -505,6 +474,8 @@
 	.svc-chip:hover { background: color-mix(in srgb, var(--text) 10%, var(--surface-2)); }
 	.svc-chip.on { background: color-mix(in srgb, var(--accent) 18%, var(--surface-2)); box-shadow: inset 0 0 0 2px var(--accent); }
 	.svc-chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.sentinel { height: 1px; }
+	.row-wrap { display: contents; }
 	.loading { display: flex; flex-direction: column; gap: 14px; }
 	.sk-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--shelf-gap); max-height: 250px; overflow: hidden; margin-bottom: 16px; }
 	@media (max-width: 767px) { .explore { --explore-item: 54vw; gap: 26px; } }

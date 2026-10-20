@@ -4,7 +4,7 @@
 	import { detailPath, remember } from './title-details.ts';
 	import Shelf from './ui/Shelf.svelte';
 	import PosterCard from './ui/PosterCard.svelte';
-	import { defaultRegion, fetchTop10, top10Cards, type Top10Card, type Top10Kind } from './top10.ts';
+	import { defaultRegion, fetchTop10, top10Cards, type Top10Answer, type Top10Card, type Top10Kind } from './top10.ts';
 	import { matchOwned, ownedMark, ownedTitle, type OwnedIndex } from './explore.ts';
 	import type { Audience } from './title-status.ts';
 
@@ -13,7 +13,8 @@
 	const KEY = 'holyarrs.top10';
 	/** lock: Explore's type switch picked Movies or Shows, so this row follows it and hides its own toggle. */
 	/** owned and who: the Library, so the posters carry the same badges as the other rows; typePill shows the type pill (Explore's All). */
-	let { lock, owned, who = 'staff', typePill = false }: { lock?: Top10Kind; owned?: OwnedIndex; who?: Audience; typePill?: boolean } = $props();
+	/** initial: the list the Explore head answer brought (kind and region as saved here), so the first paint needs no request of its own. */
+	let { lock, owned, who = 'staff', typePill = false, initial = null }: { lock?: Top10Kind; owned?: OwnedIndex; who?: Audience; typePill?: boolean; initial?: (Top10Answer & { kind?: Top10Kind }) | null } = $props();
 	let own = $state<Top10Kind>('movie');
 	const kind = $derived(lock ?? own);
 	let region = $state('global');
@@ -36,7 +37,8 @@
 		gone?.abort();
 		gone = new AbortController();
 		const signal = gone.signal;
-		const a = await fetchTop10(kind, region, undefined, signal);
+		const given = initial && initial.items.length && initial.region === region && (initial.kind ?? kind) === kind ? initial : null;
+		const a = given ?? (await fetchTop10(kind, region, undefined, signal));
 		if (signal.aborted) return;
 		cards = a ? top10Cards(a) : [];
 		week = a?.week ?? '';

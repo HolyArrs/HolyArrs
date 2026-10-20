@@ -1,0 +1,21 @@
+import { describe, expect, it } from 'vitest';
+import { headPath, serverRow, tailPath } from './explore.ts';
+
+describe('server-built Explore', () => {
+	it('builds the head and tail paths', () => {
+		expect(headPath({ type: 'movies', services: [8, 9], region: 'US', top10Kind: 'movie', top10Region: 'US' })).toBe(
+			'/explore/head?type=movies&top10_kind=movie&top10_region=US&services=8%7C9&region=US'
+		);
+		expect(headPath({ type: 'all' })).toBe('/explore/head?type=all');
+		expect(tailPath({ type: 'shows' }, 2)).toBe('/explore/tail?type=shows&page=2');
+	});
+	it('keeps wide pictures for Coming soon only', () => {
+		const item = { tmdb_id: '1', kind: 'movie' as const, name: 'A', backdrop: 'b.jpg', poster: 'p.jpg', in_library: false };
+		const soon = serverRow({ id: 'coming_soon', type: 'coming_soon', title: 'Coming soon', wide: true, items: [item] });
+		expect(soon.wide).toBe(true);
+		expect(soon.cards[0].wide).toBe('b.jpg');
+		const other = serverRow({ id: 'best', type: 'best', title: 'Best new releases', items: [item] });
+		expect(other.cards[0].wide).toBeUndefined();
+		expect(other.cards[0].ref).toBe('tmdb:1');
+	});
+});

@@ -30,6 +30,20 @@ export function top10Cards(a: Top10Answer): Top10Card[] {
 	});
 }
 
+/** savedTop10 is the kind and region the Top 10 row last showed on this device. */
+export function savedTop10(raw: string | null): { kind: Top10Kind; region: string } {
+	let kind: Top10Kind = 'movie';
+	let region = defaultRegion();
+	try {
+		const v = JSON.parse(raw ?? 'null');
+		if (v?.kind === 'movie' || v?.kind === 'show') kind = v.kind;
+		if (typeof v?.region === 'string') region = v.region;
+	} catch {
+		/* nothing saved */
+	}
+	return { kind, region };
+}
+
 /** defaultRegion is the country of the first browser language that names one, else global. */
 export function defaultRegion(langs: readonly string[] = typeof navigator === 'undefined' ? [] : navigator.languages): string {
 	for (const l of langs) {

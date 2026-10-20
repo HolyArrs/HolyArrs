@@ -46,6 +46,9 @@ export interface ExploreRow {
 	cards: ExploreCard[];
 	/** Shown even with no cards (a row with its own picker). */
 	keep?: boolean;
+	/** Server rows: the row type, and wide cards (Coming soon). */
+	type?: string;
+	wide?: boolean;
 }
 
 /** Facets are what two titles can share: genres and people. */
@@ -637,4 +640,70 @@ export function matchOwned(c: ExploreCard, idx: OwnedIndex): ExploreCard {
 	const t = ownedTitle(c, idx);
 	if (!t || c.titleId === t.id) return c;
 	return { ...c, titleId: t.id, status: titleStatus(factsOf(t), 'staff').kind, statusLabel: undefined };
+}
+
+// ---- The server-built page: head in one request, tail by pages ----
+
+export interface ServerRow {
+	id: string;
+	type: string;
+	title: string;
+	wide?: boolean;
+	items: ProviderItem[];
+}
+export interface HeadAnswer {
+	type: ExploreType;
+	building: boolean;
+	seeds: number;
+	tail_cap: number;
+	tail_rows: number;
+	top10: (import('./top10.ts').Top10Answer & { kind?: 'movie' | 'show' }) | null;
+	head: ServerRow[];
+}
+export interface TailAnswer {
+	page: number;
+	more: boolean;
+	rows: ServerRow[];
+}
+export interface HeadQuery {
+	type: ExploreType;
+	services?: number[];
+	region?: string;
+	top10Kind?: 'movie' | 'show';
+	top10Region?: string;
+}
+
+function headParams(q: HeadQuery): URLSearchParams {
+	const p = new URLSearchParams({ type: q.type === 'music' ? 'all' : q.type });
+	if (q.top10Kind) p.set('top10_kind', q.top10Kind);
+	if (q.top10Region) p.set('top10_region', q.top10Region);
+	return p;
+}
+
+/** headPath: services are sent so the server builds On your services for them (empty = none picked). */
+export function headPath(q: HeadQuery): string {
+	const p = headParams(q);
+	if (q.services && q.region) {
+		p.set('services', q.services.join('|'));
+		p.set('region', q.region);
+	}
+	return `/explore/head?${p.toString()}`;
+}
+
+export function tailPath(q: HeadQuery, page: number): string {
+	const p = headParams(q);
+	p.set('page', String(page));
+	return `/explore/tail?${p.toString()}`;
+}
+
+/** serverRow turns a server row into an Explore row; Coming soon keeps its wide pictures. */
+export function serverRow(r: ServerRow): ExploreRow & { wide: boolean; type: string } {
+	return {
+		id: r.id,
+		type: r.type,
+		title: r.title,
+		wide: !!r.wide,
+		cards: r.items.map((d) => ({ ...discoverCard(d, r.id), ...(r.wide ? { wide: d.backdrop ?? null } : {}) })),
+		keep: r.type === 'services'
+	};
 }
