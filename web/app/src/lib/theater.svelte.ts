@@ -1,7 +1,7 @@
 // The full-screen trailer: one at a time, opened by clicking a playing
-// trailer (hero, hover card or the More info panel). Closing it hands the
-// title to whoever listens (Explore opens its More info panel), so the
-// trailer flows into the details, Netflix style.
+// trailer (hero, hover card or the More info panel). When the trailer ends
+// it hands the title to whoever listens (Explore opens the title page), so
+// it flows into the details; Esc and Close only close it.
 import type { TrailerSource } from './autoplay.svelte.ts';
 
 export type TheaterFrom = 'hero' | 'hover' | 'panel';
@@ -36,10 +36,11 @@ export function openTheater(o: TheaterOpen) {
 	theater.now = { ...o, returnTo: o.returnTo ?? was };
 }
 
-export function closeTheater() {
+/** closeTheater closes the full-screen trailer; handOff (the trailer ended) also runs the exit, while Esc and Close only close. */
+export function closeTheater(handOff = false) {
 	const o = theater.now;
 	theater.now = null;
-	if (o) exitTo?.(o);
+	if (o && handOff) exitTo?.(o);
 	// Focus back on the card or button that opened it, unless the exit (a panel, a page) took it.
 	requestAnimationFrame(() => {
 		const a = document.activeElement;

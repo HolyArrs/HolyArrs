@@ -11,7 +11,7 @@
 	// the window (and asks the browser for real full screen where allowed),
 	// plays with sound from where the small one was, and has our own small
 	// controls: play/pause, a seek bar, sound and close. Esc, close or the
-	// end of the trailer shrink it away and hand over to the More info panel.
+	// end of the trailer shrink it away; only the end hands over to the title.
 	let dialog = $state<HTMLDialogElement>();
 	let stage = $state<HTMLElement>();
 	let video = $state<HTMLVideoElement>();
@@ -82,7 +82,7 @@
 		if (!document.fullscreenElement && dialog?.open && !leaving) void close();
 	}
 
-	async function close() {
+	async function close(ended = false) {
 		if (leaving || !dialog) return;
 		leaving = true;
 		video?.pause();
@@ -96,7 +96,7 @@
 		release?.();
 		release = null;
 		clearInterval(tick);
-		closeTheater();
+		closeTheater(ended);
 	}
 
 	function wake() {
@@ -135,7 +135,7 @@
 		const state = d.event === 'onStateChange' ? d.info : info.playerState;
 		if (state === 1) paused = false;
 		else if (state === 2) paused = true;
-		else if (state === 0) void close();
+		else if (state === 0) void close(true);
 	}
 
 	function videoReady() {
@@ -233,7 +233,8 @@
 						idle = false;
 					}}
 					onvolumechange={() => (muted = video?.muted ?? false)}
-					onended={() => void close()}
+					onerror={() => (unavailable = true)}
+					onended={() => void close(true)}
 					onclick={togglePlay}
 				></video>
 			{:else}
@@ -248,12 +249,12 @@
 					onload={frameLoaded}
 				></iframe>
 				<button type="button" class="catch" aria-label={paused ? 'Play' : 'Pause'} onclick={togglePlay} tabindex="-1"></button>
-				{#if unavailable}
-					<div class="gone" role="status">
-						<p>This trailer can't play here.</p>
-						<button type="button" class="gone-close" onclick={() => void close()}>Close</button>
-					</div>
-				{/if}
+			{/if}
+			{#if unavailable}
+				<div class="gone" role="status">
+					<p>This trailer can't play here.</p>
+					<button type="button" class="gone-close" onclick={() => void close()}>Close</button>
+				</div>
 			{/if}
 			<div class="top">
 				<p class="name">{now.title}</p>
