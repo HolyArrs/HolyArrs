@@ -7,7 +7,10 @@
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import Icon, { type IconName } from '#lib/Icon.svelte';
 	import { session } from '#lib/session.svelte.ts';
-	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import BrowseTile from '#lib/ui/BrowseTile.svelte';
+	import MosaicReveal from '#lib/ui/MosaicReveal.svelte';
+	import { browseCols, browseHref, browsePath, browseType, readMood, tileHue, type BrowseAnswer, type BrowseTile as Tile, type MoodView } from '#lib/search-browse.ts';
+	import { reducedMotion } from '#lib/motion.ts';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
@@ -26,13 +29,14 @@
 	import { addRecent, readRecent, readScope, recentKey, scopeAddress, topMatches, type SearchScope } from '#lib/search.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { detailPath } from '#lib/title-details.ts';
-	import { discoverCard, fetchProviderRow, ownedMark, type ProviderItem } from '#lib/explore.ts';
+	import { discoverCard, genrePath, ownedMark, type GenreAnswer, type ProviderItem } from '#lib/explore.ts';
 	import { audienceOf } from '#lib/title-status.ts';
 
-	// Search, on the Explore card system: the words and the scope live in the
-	// address (?q=, ?kind=); before typing it shows recent searches (this
-	// device, per user) and what is trending; results come in as you type.
-	// Kid limits are applied by the server on every lookup used here.
+	// Search is a page: one field, centred and pinned; the words and the scope
+	// live in the address (?q=, ?kind=). Before typing it shows recent searches
+	// (this device, per user) and the Browse grid (genres and their moods, per
+	// tab); a mood tile opens a mood view here (?mood=&genre=&type=). Results
+	// come in as you type. Kid limits are applied by the server on every lookup.
 
 	type Card = { key: string; type: Exclude<SearchScope, 'all'>; name: string; year?: number; image?: string | null; href: string; owned: CardOwned | null; preview?: { kind: 'movie' | 'show'; tmdb: string; year?: number }; artist?: LookupArtist; subtitle?: string };
 
@@ -43,7 +47,15 @@
 	let noTMDB = $state(false);
 	let searched = $state('');
 	let groups = $state<Record<Card['type'], Card[] | null>>({ show: null, movie: null, music: null, people: null });
-	let trending = $state<ProviderItem[]>([]);
+	let tiles = $state<Tile[] | null>(null);
+	let tilesFor = '';
+	let mood = $state<MoodView | null>(readMood(page.url.searchParams));
+	let moodItems = $state<ProviderItem[] | null>(null);
+	let moodGenre = $state('');
+	// The entry: a mosaic dissolve and the tiles rising row by row; a fade under reduced motion.
+	const calm = reducedMotion();
+	let revealing = $state(!calm);
+	let cols = $state(6);
 	let recent = $state<string[]>([]);
 	let input = $state<HTMLInputElement>();
 	const beginSearch = createLatestOnly();
@@ -89,6 +101,7 @@
 	const ownAddresses = new Set<string>();
 	function writeAddress() {
 		const url = scopeAddress(page.url, scope, term);
+		if (term.trim() || !mood) for (const k of ['mood', 'genre', 'type']) url.searchParams.delete(k);
 		if (url.href === page.url.href) return;
 		ownAddresses.add(url.href);
 		void goto(url, { replace: true, shallow: true });
@@ -108,6 +121,7 @@
 		const isLatest = beginSearch();
 		error = '';
 		noTMDB = false;
+		if (q) mood = null;
 		if (!q) {
 			searched = '';
 			busy = false;
@@ -183,11 +197,65 @@
 		void run();
 	}
 
+	// ── Browse: the grid before typing, per tab (Movies and Shows only) ─────
+	const browseFor = $derived(browseType(scope));
+	async function loadTiles(t: ReturnType<typeof browseType>) {
+		if (tilesFor === t) return;
+		tilesFor = t;
+		tiles = null;
+		try {
+			const a = await api.get<BrowseAnswer>(browsePath(t));
+			if (tilesFor === t) tiles = (a.tiles ?? []).filter((x) => (x.kind === 'show' ? partOn('shows') : partOn('movies')));
+		} catch {
+			if (tilesFor === t) {
+				tiles = [];
+				tilesFor = '';
+			}
+		}
+	}
+	$effect(() => {
+		if (!term.trim() && !mood) void loadTiles(browseFor);
+	});
+
+	// ── A mood view: that mood row of the genre page, as a grid ─────────────
+	let moodFor = '';
+	async function loadMood(m: MoodView) {
+		const k = `${m.type}|${m.genre}|${m.mood}`;
+		if (moodFor === k) return;
+		moodFor = k;
+		moodItems = null;
+		try {
+			const a = await api.get<GenreAnswer>(genrePath(m.type, m.genre));
+			if (moodFor !== k) return;
+			moodGenre = a.genre?.name ?? '';
+			moodItems = a.rows.find((r) => r.type === 'mood' && r.title.toLowerCase() === m.mood.toLowerCase())?.items ?? [];
+		} catch {
+			if (moodFor === k) {
+				moodItems = [];
+				moodFor = '';
+			}
+		}
+	}
+	$effect(() => {
+		if (mood) void loadMood(mood);
+	});
+	const moodCards = $derived((moodItems ?? []).map((item) => ({ item, c: discoverCard(item, 'search-mood') })));
+
+	function keyed(e: KeyboardEvent) {
+		// Escape clears the words; with nothing left it leaves the field.
+		if (e.key !== 'Escape') return;
+		if (term) {
+			e.preventDefault();
+			term = '';
+			void run();
+		} else input?.blur();
+	}
+
 	onMount(() => {
 		loadRecent();
-		fetchProviderRow({ row: 'trending' })
-			.then((r) => (trending = r?.items ?? []))
-			.catch(() => {});
+		const sync = () => (cols = browseCols(innerWidth));
+		sync();
+		addEventListener('resize', sync);
 		if (manage) {
 			api.get<{ library_folders: LibraryFolder[] }>('/library-folders').then((r) => (folders = r.library_folders)).catch(() => {});
 			api.get<{ pick_rules: PickRulesView[] }>('/pick-rules').then((r) => (rules = r.pick_rules)).catch(() => {});
@@ -195,7 +263,10 @@
 		}
 		if (term.trim()) void run();
 		void tick().then(() => input?.focus());
-		return () => clearTimeout(timer);
+		return () => {
+			clearTimeout(timer);
+			removeEventListener('resize', sync);
+		};
 	});
 
 	// A new ?q= from elsewhere (Ctrl+K, a link) runs it; our own address writes do nothing.
@@ -204,6 +275,7 @@
 		if (ownAddresses.delete(dest.url.href)) return;
 		const q = dest.url.searchParams.get('q') ?? '';
 		const s = readScope(dest.url.searchParams.get('kind'));
+		mood = readMood(dest.url.searchParams);
 		void tick().then(() => input?.focus());
 		if (q === term && s === scope) return;
 		term = q;
@@ -244,8 +316,6 @@
 		if (typeof body.title_id === 'number') patchArtist(a, { title_id: body.title_id });
 	}
 
-	const trendCards = $derived(trending.map((item) => ({ item, c: discoverCard(item, 'search-trending') })));
-	const showTrending = $derived(trendCards.filter(({ item }) => (item.kind === 'show' ? partOn('shows') : partOn('movies'))));
 </script>
 
 <svelte:head><title>{searched ? `${searched} · Search` : 'Search'} · HolyArrs</title></svelte:head>
@@ -264,16 +334,17 @@
 	{/if}
 {/snippet}
 
-<section class="search">
-	<PageHeader title="Search" subtitle="Shows, movies, music and people. Press / or Ctrl K from anywhere." />
+<section class="search" class:calm data-testid="search-page">
+	<h1 class="sr-only">Search</h1>
+	<div class="bar">
+		<form class="box" role="search" onsubmit={run}>
+			<span class="ic" aria-hidden="true"><Icon name="search" size={20} /></span>
+			<label class="sr-only" for="q">Search for a title, an artist or a person</label>
+			<input id="q" bind:this={input} type="search" bind:value={term} oninput={typed} onblur={blurred} onkeydown={keyed} placeholder="Shows, movies, music and people" autocomplete="off" spellcheck="false" enterkeyhint="search" data-testid="search-box" />
+			{#if term}<button type="button" class="clear" aria-label="Clear the search" onclick={() => { term = ''; void run(); input?.focus(); }}><Icon name="x" size={16} /></button>{/if}
+		</form>
+	</div>
 	<MetadataNotice />
-
-	<form class="box" role="search" onsubmit={run}>
-		<span class="ic" aria-hidden="true"><Icon name="search" size={20} /></span>
-		<label class="sr-only" for="q">Search for a title, an artist or a person</label>
-		<input id="q" bind:this={input} type="search" bind:value={term} oninput={typed} onblur={blurred} placeholder="Dune, Harbour Lights, tmdb:693134 …" autocomplete="off" spellcheck="false" enterkeyhint="search" data-testid="search-box" />
-		{#if term}<button type="button" class="clear" aria-label="Clear the search" onclick={() => { term = ''; void run(); input?.focus(); }}><Icon name="x" size={16} /></button>{/if}
-	</form>
 
 	{#if scopeOptions.length > 2}
 		<div class="types">
@@ -282,7 +353,26 @@
 	{/if}
 
 	<div class="results" aria-live="polite" aria-busy={busy}>
-		{#if !term.trim()}
+		{#if !term.trim() && mood}
+			<section class="mood" aria-labelledby="mood-h" data-testid="search-mood">
+				<div class="mood-head">
+					<Button variant="plain" icon="chevronLeft" href={to(`/search${scope === 'all' ? '' : `?kind=${scope}`}`)}>Browse</Button>
+					<h2 id="mood-h" class="h1">{mood.mood}</h2>
+					<p class="muted">{moodGenre ? `${moodGenre} · ` : ''}{mood.type === 'shows' ? 'Shows' : 'Movies'}</p>
+				</div>
+				{#if moodItems === null}
+					<p class="muted searching">Finding {mood.mood.toLowerCase()} titles…</p>
+				{:else if moodCards.length === 0}
+					<div class="empty"><h2 class="h2">Nothing here yet</h2><p class="muted">No {mood.type === 'shows' ? 'shows' : 'movies'} fit this mood right now. Try the genre page instead.</p><Button variant="secondary" href={to(`/explore?type=${mood.type}&genre=${mood.genre}`)}>Open {moodGenre || 'the genre'}</Button></div>
+				{:else}
+					<ul class="grid">
+						{#each moodCards as { item, c } (c.key)}
+							<li><WideCard cover title={c.name} href={to(item.title_id ? `/library/${item.title_id}` : detailPath(item.kind, item.tmdb_id))} image={c.wide ?? c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} owned={ownedMark(c, undefined, who)} fresh={c.fresh} preview={{ kind: item.kind, tmdb: item.tmdb_id, year: item.year }} /></li>
+						{/each}
+					</ul>
+				{/if}
+			</section>
+		{:else if !term.trim()}
 			{#if recent.length}
 				<section class="recent" aria-labelledby="recent-h">
 					<div class="recent-head">
@@ -294,13 +384,22 @@
 					</div>
 				</section>
 			{/if}
-			{#if showTrending.length}
-				<Shelf title="Trending this week" item="var(--title-item)" placeholder="wide" lines={1}>
-					{#each showTrending as { item, c } (c.key)}
-						<WideCard cover title={c.name} href={to(item.title_id ? `/library/${item.title_id}` : detailPath(item.kind, item.tmdb_id))} image={c.wide ?? c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} owned={ownedMark(c, undefined, who)} fresh={c.fresh} typed preview={{ kind: item.kind, tmdb: item.tmdb_id, year: item.year }} />
-					{/each}
-				</Shelf>
-			{/if}
+			<section class="browse" aria-labelledby="browse-h" data-testid="search-browse">
+				<h2 id="browse-h" class="h1">Browse</h2>
+				{#if tiles === null}
+					<ul class="tiles" aria-hidden="true">
+						{#each Array(cols * 2) as _, i (i)}<li class="ghost"></li>{/each}
+					</ul>
+				{:else if tiles.length}
+					<ul class="tiles">
+						{#each tiles as t, i (`${t.kind}:${t.genre}:${t.mood ?? ''}`)}
+							<li><BrowseTile name={t.name} href={to(browseHref(t))} image={t.backdrop} hue={tileHue(t.name)} row={Math.min(6, Math.floor(i / cols))} /></li>
+						{/each}
+					</ul>
+				{:else}
+					<p class="muted">Genres show up here once Explore has titles to show.</p>
+				{/if}
+			</section>
 		{:else if noTMDB && total === 0}
 			<div class="empty"><h2 class="h2">The metadata server is down</h2><p class="muted">Searches and new artwork come back when it is. Try again in a minute.</p></div>
 		{:else if error && total === 0}
@@ -342,6 +441,8 @@
 	</div>
 </section>
 
+{#if revealing}<MosaicReveal ondone={() => (revealing = false)} />{/if}
+
 <AddArtistDialog bind:this={addArtist} {folders} {rules} defaults={musicDefaults} onadded={artistAdded} />
 <AskArtistDialog bind:this={askArtist} onasked={artistAsked} onrefused={artistRefused} />
 
@@ -349,16 +450,18 @@
 	.search { --title-item: max(200px, calc((100vw - 96px) / 5.16)); display: flex; flex-direction: column; gap: 24px; padding-bottom: 48px; min-width: 0; }
 	@media (max-width: 1279px) { .search { --title-item: max(180px, calc((100vw - 64px) / 4.2)); } }
 	@media (max-width: 767px) { .search { --title-item: calc((100vw - 40px) / 2.3); } }
-	.box { position: relative; display: flex; align-items: center; max-width: 760px; width: 100%; }
+	/* The one search field: page top centre, pinned under the top bar with the Explore glass look. */
+	.bar { position: sticky; top: calc(var(--topbar) + 12px); z-index: 22; display: flex; justify-content: center; margin-top: 20px; pointer-events: none; }
+	.box { position: relative; display: flex; align-items: center; max-width: 680px; width: 100%; pointer-events: auto; border-radius: 999px; box-shadow: 0 10px 30px rgb(0 0 0 / 0.22), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
 	.ic { position: absolute; left: 16px; display: grid; color: var(--text-muted); pointer-events: none; }
-	.box input { flex: 1; min-width: 0; height: 52px; padding: 0 48px 0 46px; border: 1px solid transparent; border-radius: 999px; background: var(--surface-2); color: var(--text); font: var(--t-title3); font-weight: 400; }
+	.box input { flex: 1; min-width: 0; height: 56px; padding: 0 52px 0 48px; border: 1px solid transparent; border-radius: 999px; background: color-mix(in srgb, var(--surface-2) 78%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); color: var(--text); font: var(--t-title3); font-weight: 400; }
 	.box input::-webkit-search-cancel-button { display: none; }
 	.box input:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.clear { position: absolute; right: 6px; display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 999px; background: none; color: var(--text-muted); cursor: pointer; }
 	.clear:hover { color: var(--text); }
 	.clear:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	/* The same floating glass pill as Explore's type switch. */
-	.types { position: sticky; top: calc(var(--topbar) + 10px); z-index: 20; display: flex; justify-content: center; pointer-events: none; }
+	.types { display: flex; justify-content: center; pointer-events: none; }
 	.types :global(.ui-seg) { pointer-events: auto; border-radius: 999px; padding: 3px; background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
 	.types :global(.ui-seg .thumb) { top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / var(--n)); border-radius: 999px; }
 	.types :global(.ui-seg button) { min-height: 44px; padding: 0 20px; border-radius: 999px; }
@@ -366,6 +469,24 @@
 	@media (max-width: 419px) { .types :global(.ui-seg button span) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } }
 	.results { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
 	.h2 { margin: 0; font: var(--t-title3); }
+	.h1 { margin: 0; font: var(--t-title1); letter-spacing: -0.02em; }
+	/* Browse: tall tiles, 6 / 5 / 4 / 3 / 2 across (browseCols matches), 24 px gaps. */
+	.browse { display: flex; flex-direction: column; gap: 16px; }
+	.tiles { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 24px; margin: 0; padding: 0; list-style: none; }
+	@media (max-width: 1439px) { .tiles { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+	@media (max-width: 1279px) { .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+	@media (max-width: 899px) { .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; } }
+	@media (max-width: 599px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; } }
+	.ghost { aspect-ratio: 3 / 4; border-radius: 16px; background: var(--surface-2); }
+	.mood-head { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-bottom: 8px; }
+	.mood-head p { margin: 0; }
+	.mood { display: flex; flex-direction: column; gap: 16px; }
+	/* The entry: the tiles rise in row by row behind the mosaic. */
+	@keyframes rise { from { opacity: 0; transform: translateY(18px) scale(0.985); } }
+	@keyframes fade { from { opacity: 0; } }
+	.search:not(.calm) .tiles :global(.ui-btile) { animation: rise 420ms var(--ease-out) both; animation-delay: calc(60ms + var(--row) * 55ms); }
+	.search:not(.calm) .ghost { animation: rise 420ms var(--ease-out) both; }
+	.search.calm { animation: fade 150ms ease both; }
 	.n { font: var(--t-callout); font-variant-numeric: tabular-nums; }
 	.muted { color: var(--text-muted); }
 	.recent { display: flex; flex-direction: column; gap: 12px; }

@@ -27,7 +27,6 @@
 	import SidebarItem from '#lib/ui/SidebarItem.svelte';
 	import TopBar from '#lib/ui/TopBar.svelte';
 	import TabBar, { type Tab } from '#lib/ui/TabBar.svelte';
-	import CommandPalette from '#lib/ui/CommandPalette.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
@@ -36,7 +35,6 @@
 	import {
 		buildNav,
 		currentHref,
-		destinations,
 		homeHref,
 		readSidebarPref,
 		shellMode,
@@ -160,11 +158,9 @@
 		return () => mq.forEach((m) => m.removeEventListener('change', sync));
 	});
 
-	// ⌘\ / Ctrl+\ toggles the sidebar; ⌘K / Ctrl+K opens the palette; Escape closes the overlay.
+	// ⌘\ / Ctrl+\ toggles the sidebar; ⌘K / Ctrl+K and / open the Search page; Escape closes the overlay.
 	const mac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 	const searchKey = mac ? '⌘K' : 'Ctrl K';
-	let paletteOpen = $state(false);
-	let paletteInitial = $state('');
 	const typingIn = (t: EventTarget | null) => t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
 	function keys(e: KeyboardEvent) {
 		if (!ready || bare) return;
@@ -175,8 +171,7 @@
 		} else if ((mod && (e.key === 'k' || e.key === 'K')) || (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey && !typingIn(e.target))) {
 			// Ctrl+K and / open the Search page from anywhere (its box takes focus).
 			e.preventDefault();
-			paletteOpen = false;
-			if (path.startsWith('/search')) document.getElementById('q')?.focus();
+			if (path.startsWith('/search')) { const q = document.getElementById('q') as HTMLInputElement | null; q?.focus(); q?.select(); }
 			else void goto(to('/search'));
 		} else if (e.key === 'Escape' && overlayOpen) {
 			void closeOverlay();
@@ -249,14 +244,6 @@
 	$effect(() => {
 		themeChoice = theme.choice;
 	});
-
-	const paletteItems = $derived(
-		destinations(sections, [
-			{ href: '/search', label: 'Search titles', icon: 'search', section: 'Go to' },
-			{ href: '/account', label: 'Account', icon: 'user', section: 'You' },
-			...(allowed('wishlist') && allowed('approve') && !offPartName(partsNow.answer, '/wishlist') ? [{ href: '/wishlist', label: 'Wishlist', icon: 'wish' as const, section: 'Manage' }] : [])
-		])
-	);
 
 	// ── Session, permissions and live data (unchanged rules) ──────────────
 	const offHere = $derived(offPartName(partsNow.answer, path));
@@ -388,7 +375,8 @@
 				{searchKey}
 				bind:toggle={sidebarToggle}
 				ontoggle={toggleSidebar}
-				onsearch={() => (paletteOpen = true)}
+				searchHref={to('/search')}
+				searchCurrent={path.startsWith('/search')}
 				onpick={() => void closeOverlay(false)}
 				footer={account}
 			/>
@@ -400,14 +388,7 @@
 				bind:toggle={topToggle}
 				ontoggle={toggleSidebar}
 				history={detail}
-				onsearch={() => {
-					paletteInitial = '';
-					paletteOpen = true;
-				}}
-				ontype={(t) => {
-					paletteInitial = t;
-					paletteOpen = true;
-				}}
+				searchHref={path.startsWith('/search') ? undefined : to('/search')}
 				{searchKey}
 				live={allowed('manage_library') ? { state: live.status.state, word: liveWord } : undefined}
 				downloads={allowed('manage_library') && !offPartName(partsNow.answer, '/downloads') ? { count: 0, href: to('/downloads') } : undefined}
@@ -421,7 +402,6 @@
 		</main>
 	</AppShell>
 
-	<CommandPalette bind:open={paletteOpen} initial={paletteInitial} items={paletteItems} go={(href) => void goto(link(href))} onsearch={(q) => void goto(to(`/search?q=${encodeURIComponent(q)}`))} />
 
 	<Sheet bind:open={moreOpen} title={manager ? 'Manage' : 'More'} size="sm">
 		<!-- Only while open, so a closed sheet adds no second copy of every place to the page. -->
