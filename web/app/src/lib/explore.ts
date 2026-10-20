@@ -890,3 +890,34 @@ export interface GenreAnswer {
 export function genrePath(t: ExploreType, genre: number): string {
 	return `/explore/genre?${new URLSearchParams({ type: t, genre: String(genre) }).toString()}`;
 }
+
+/** cardIdentity names a title across rows (row keys differ per row). */
+export function cardIdentity(c: Pick<ExploreCard, 'key' | 'kind' | 'ref' | 'titleId'>): string {
+	if (c.ref) return `${c.kind}:${c.ref}`;
+	if (c.titleId !== undefined) return `t${c.titleId}`;
+	return c.key;
+}
+
+/**
+ * dedupeTop shows a title once in the first n rows with cards, counting the
+ * titles already shown above them (taken: the hero and Trending on your
+ * services). A row never drops under min cards for it: past that the
+ * repeats stay.
+ */
+export function dedupeTop<R extends ExploreRow>(rows: R[], taken: Iterable<string> = [], n = 8, min = 6): R[] {
+	const seen = new Set(taken);
+	let at = 0;
+	return rows.map((r) => {
+		if (at >= n || r.cards.length === 0) return r;
+		at++;
+		const fresh = r.cards.filter((c) => !seen.has(cardIdentity(c)));
+		let cards = fresh;
+		if (fresh.length < Math.min(min, r.cards.length)) {
+			const room = Math.min(min, r.cards.length) - fresh.length;
+			const back = new Set(r.cards.filter((c) => seen.has(cardIdentity(c))).slice(0, room));
+			cards = r.cards.filter((c) => !seen.has(cardIdentity(c)) || back.has(c));
+		}
+		for (const c of cards) seen.add(cardIdentity(c));
+		return cards.length === r.cards.length ? r : { ...r, cards };
+	});
+}

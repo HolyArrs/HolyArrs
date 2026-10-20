@@ -22,6 +22,8 @@
 		ownedMark,
 		ownedTitle,
 		markTransitions,
+		cardIdentity,
+		dedupeTop,
 		filterRows,
 		parseType,
 		pickerServices,
@@ -164,7 +166,7 @@
 			putOffsets(document, v.rows);
 		});
 	});
-	// Leaving the full-screen trailer (hero or hover card) lands on the title's page.
+	// A full-screen trailer (hero or hover card) that plays to its end lands on the title's page; Esc only closes it.
 	$effect(() => onTheaterExit((o) => void goto(to(detailPath(o.kind, o.tmdb)))));
 
 	// Music shows only music rows: the movie and show rows (Top 10, services, Best new releases) never appear there.
@@ -208,8 +210,12 @@
 		scrollTo({ top: 0, behavior: 'instant' });
 	}
 	const genreOn = $derived(!!genre && type !== 'music');
-	const rows = $derived(type === 'music' ? [] : genreOn ? (genreLoaded === genre?.id ? markTransitions(genreRows) : []) : markTransitions(filterRows([...head, ...tail], type)));
 	const heroCards = $derived(genreOn ? genreHero : hero);
+	/** The titles of Trending on your services, as that row shows them now. */
+	let servicesShown = $state<string[]>([]);
+	// A title shows once in the first 8 rows, counting the hero and the services row.
+	const taken = $derived([...heroCards.map(cardIdentity), ...servicesShown]);
+	const rows = $derived(type === 'music' ? [] : markTransitions(dedupeTop(genreOn ? (genreLoaded === genre?.id ? genreRows : []) : filterRows([...head, ...tail], type), taken)));
 	/** Big 4 shelves: the first personal row and Best new releases draw bigger cards. */
 
 	function readTop10Pick() {
@@ -541,7 +547,7 @@
 			{#if picked === null && !genreOn}{@render pickServices()}{/if}
 			{#each rows as row, ri (row.id)}
 				{#if row.type === 'top_services'}
-					<TopServicesRow {type} {region} genre={genreOn ? genre : null} {owned} {who} used={usedServices} />
+					<TopServicesRow {type} {region} genre={genreOn ? genre : null} {owned} {who} used={usedServices} bind:shown={servicesShown} />
 				{:else}
 				<div class="row-wrap" class:wide-row={row.wide || row.cards.some((c) => wideKind(c.kind))} data-row={row.type ?? row.id} data-row-id={row.id} data-title-layer={row.titleLayer}>
 				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.cards.some((c) => wideKind(c.kind)) ? 'var(--title-item)' : 'var(--explore-item)'}

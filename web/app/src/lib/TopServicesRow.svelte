@@ -21,7 +21,8 @@
 		type OwnedIndex,
 		type ServiceTopAnswer,
 		type ServiceTopRow,
-		type TopAnswer
+		type TopAnswer,
+		cardIdentity
 	} from './explore.ts';
 	import type { Audience } from './title-status.ts';
 
@@ -35,7 +36,8 @@
 		region,
 		genre = null,
 		owned,
-		who = 'staff'
+		who = 'staff',
+		shown = $bindable([])
 	}: {
 		type: ExploreType;
 		/** The person's services, first in the chips. */
@@ -44,6 +46,8 @@
 		genre?: Genre | null;
 		owned?: OwnedIndex;
 		who?: Audience;
+		/** The first chip's titles (cardIdentity), so the rows below can skip them; a chip switch never moves them. */
+		shown?: string[];
 	} = $props();
 
 	type Ranked = ExploreCard & { rank: number };
@@ -56,6 +60,10 @@
 	const ranked = $derived(!genre && !!row?.ranked);
 	const items = $derived(genre ? (genreAnswer?.items ?? []) : (row?.items ?? []));
 	const cards = $derived<Ranked[]>(items.map((d) => ({ ...discoverCard(d, 'top_services'), key: `top-${d.kind}-${d.tmdb_id}`, rank: d.rank })));
+	const firstItems = $derived(genre ? (genreAnswer?.items ?? []) : (chips[0]?.items ?? []));
+	$effect(() => {
+		shown = firstItems.map((d) => cardIdentity(discoverCard(d, 'top_services')));
+	});
 	const source = $derived(!row ? '' : genre ? `Popular in ${genre.name.toLowerCase()} on ${row.name}` : serviceLabel(row));
 	const title = $derived(genre ? `Trending ${genre.name.toLowerCase()} on your services` : type === 'movies' || type === 'shows' ? `Trending ${type} on your services` : 'Trending on your services');
 	const attribution = $derived(!genre && row?.source === 'streaming-availability' ? (answer?.attribution ?? '') : '');

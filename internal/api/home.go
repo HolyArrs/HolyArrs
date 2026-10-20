@@ -163,6 +163,18 @@ func (a *API) home(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	// A show in New season is not repeated in Coming soon.
+	inSeasons := map[int64]bool{}
+	for _, c := range seasons {
+		inSeasons[c.TitleID] = true
+	}
+	kept := soon[:0]
+	for _, c := range soon {
+		if !inSeasons[c.TitleID] {
+			kept = append(kept, c)
+		}
+	}
+	soon = kept
 	progress, err := homeAskProgress(ctx, db, a.person(r).UserID)
 	if err != nil {
 		internal(w, err)

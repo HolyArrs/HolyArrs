@@ -604,6 +604,10 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 
 	// Cold start: only rows that need no Library.
 	final := []MusicRow{}
+	pageSeen := map[string]bool{}
+	if hero != nil && genre == "" {
+		pageSeen[hero.Key] = true
+	}
 	for _, row := range out {
 		if cold && !musicColdTypes[row.Type] {
 			continue
@@ -627,6 +631,19 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 			row.Items = kept
 		}
 		row.Items = uniqCards(row.Items)
+		// A title once in the first rows (hero included), unless that leaves
+		// the row under its minimum.
+		if len(final) < explore.HeadDedupe {
+			fresh := []MusicCard{}
+			for _, c := range row.Items {
+				if !pageSeen[c.Key] {
+					fresh = append(fresh, c)
+				}
+			}
+			if len(fresh) >= musicMinFor(row.Type, len(artists)) {
+				row.Items = fresh
+			}
+		}
 		if len(row.Items) > musicRowMax {
 			row.Items = row.Items[:musicRowMax]
 		}
@@ -635,6 +652,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 		}
 		for i := range row.Items {
 			row.Items[i].Fresh = a.musicFresh(row.Type, row.Items[i])
+			pageSeen[row.Items[i].Key] = true
 		}
 		final = append(final, row)
 	}
