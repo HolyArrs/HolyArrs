@@ -399,9 +399,9 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 	if err != nil {
 		return Details{}, err
 	}
-	appendTo := "release_dates,images,credits,recommendations,videos,watch/providers"
+	appendTo := "release_dates,images,credits,recommendations,videos"
 	if kind == "show" {
-		appendTo = "content_ratings,images,credits,recommendations,videos,watch/providers"
+		appendTo = "content_ratings,images,credits,recommendations,videos"
 	}
 	b, err := t.get(ctx, "/"+tvPath(kind)+"/"+strconv.FormatInt(n, 10),
 		url.Values{"append_to_response": {appendTo}, "include_image_language": {"en,null"}})
@@ -449,16 +449,6 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 				Language string `json:"iso_639_1"`
 			} `json:"results"`
 		} `json:"videos"`
-		Providers *struct {
-			Results map[string]struct {
-				Flatrate []struct {
-					ID       int64  `json:"provider_id"`
-					Name     string `json:"provider_name"`
-					Logo     string `json:"logo_path"`
-					Priority int    `json:"display_priority"`
-				} `json:"flatrate"`
-			} `json:"results"`
-		} `json:"watch/providers"`
 	}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return Details{}, fmt.Errorf("TMDB: odd answer: %w", err)
@@ -537,31 +527,7 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 			d.Videos = append(d.Videos, DetailVideo{Key: v.Key, Name: v.Name, Type: v.Type, Official: v.Official, Language: v.Language})
 		}
 	}
-	if raw.Providers != nil {
-		for region, r := range raw.Providers.Results {
-			if !isRegion(region) {
-				continue
-			}
-			var list []WatchService
-			for _, p := range r.Flatrate {
-				if p.ID <= 0 || p.Name == "" || len(list) == maxStreaming {
-					continue
-				}
-				s := WatchService{ID: p.ID, Name: p.Name, Priority: p.Priority}
-				if p.Logo != "" {
-					s.Logo = t.images() + "/w92" + p.Logo
-				}
-				list = append(list, s)
-			}
-			if len(list) > 0 {
-				if d.Streaming == nil {
-					d.Streaming = map[string][]WatchService{}
-				}
-				sort.SliceStable(list, func(i, j int) bool { return list[i].Priority < list[j].Priority })
-				d.Streaming[region] = list
-			}
-		}
-	}
+	d.Streaming = t.streaming(ctx, kind, n)
 	d.Similar = []DiscoverItem{}
 	if raw.Recommendations != nil {
 		d.Similar = t.items(kind, raw.Recommendations.Results, names, maxSimilar)
@@ -645,4 +611,51 @@ func (t *TMDB) SeasonEpisodes(ctx context.Context, tmdbID string, season int) ([
 		out = append(out, ep)
 	}
 	return out, nil
+}
+
+// streaming reads where a title streams (subscription services, per
+// country); nil when it cannot (the page shows without it).
+func (t *TMDB) streaming(ctx context.Context, kind string, id int64) map[string][]WatchService {
+	b, err := t.get(ctx, "/"+tvPath(kind)+"/"+strconv.FormatInt(id, 10)+"/watch/providers", nil)
+	if err != nil {
+		return nil
+	}
+	var res struct {
+		Results map[string]struct {
+			Flatrate []struct {
+				ID       int64  `json:"provider_id"`
+				Name     string `json:"provider_name"`
+				Logo     string `json:"logo_path"`
+				Priority int    `json:"display_priority"`
+			} `json:"flatrate"`
+		} `json:"results"`
+	}
+	if json.Unmarshal(b, &res) != nil {
+		return nil
+	}
+	var out map[string][]WatchService
+	for region, r := range res.Results {
+		if !isRegion(region) {
+			continue
+		}
+		var list []WatchService
+		for _, p := range r.Flatrate {
+			if p.ID <= 0 || p.Name == "" || len(list) == maxStreaming {
+				continue
+			}
+			s := WatchService{ID: p.ID, Name: p.Name, Priority: p.Priority}
+			if p.Logo != "" {
+				s.Logo = t.images() + "/w92" + p.Logo
+			}
+			list = append(list, s)
+		}
+		if len(list) > 0 {
+			if out == nil {
+				out = map[string][]WatchService{}
+			}
+			sort.SliceStable(list, func(i, j int) bool { return list[i].Priority < list[j].Priority })
+			out[region] = list
+		}
+	}
+	return out
 }

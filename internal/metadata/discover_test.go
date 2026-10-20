@@ -43,8 +43,9 @@ func fakeDiscoverTMDB(t *testing.T) *httptest.Server {
 				"videos":{"results":[{"key":"abcDEF12345","site":"YouTube","type":"Trailer","official":true,"iso_639_1":"en","name":"Official Trailer"},
 					{"key":"vim123456","site":"Vimeo","type":"Trailer"},{"key":"clip1234567","site":"YouTube","type":"Clip"},{"key":"bad key!","site":"YouTube","type":"Teaser"}]},
 				"belongs_to_collection":{"id":70,"name":"Seven Set"},
-				"watch/providers":{"results":{"US":{"flatrate":[{"provider_id":8,"provider_name":"Netflix","logo_path":"/n.jpg","display_priority":2},{"provider_id":9,"provider_name":"Prime","display_priority":1}]},"GB":{"rent":[{"provider_id":2,"provider_name":"Apple"}]}}},
 				"recommendations":` + list(15, "title") + `}`))
+		case "/3/movie/7/watch/providers":
+			_, _ = w.Write([]byte(`{"results":{"US":{"flatrate":[{"provider_id":8,"provider_name":"Netflix","logo_path":"/n.jpg","display_priority":2},{"provider_id":9,"provider_name":"Prime","display_priority":1}]},"GB":{"rent":[{"provider_id":2,"provider_name":"Apple"}]}}}`))
 		case "/3/collection/70":
 			_, _ = w.Write([]byte(`{"name":"The Seven Collection","parts":[{"id":72,"title":"Seven II","release_date":"2023-01-01","poster_path":"/s.jpg"},{"id":7,"title":"Seven","release_date":"2020-02-02","poster_path":"/s.jpg"}]}`))
 		case "/3/tv/8/season/1":

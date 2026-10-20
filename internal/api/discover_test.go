@@ -63,12 +63,14 @@ func newDiscoverTMDB(t *testing.T) *discoverTMDB {
 		case "/3/movie/11":
 			_, _ = w.Write([]byte(`{"id":11,"title":"M11","release_date":"2024-05-01","runtime":100,"genres":[{"name":"Drama"}],
 				"credits":{"cast":[{"name":"Ann","character":"Hero"}]},"belongs_to_collection":{"id":90,"name":"Set"},"recommendations":` + list(12, 13, 41) + `}`))
+		case "/3/tv/21/watch/providers":
+			_, _ = w.Write([]byte(`{"results":{"DE":{"flatrate":[{"provider_id":8,"provider_name":"Netflix"}]}}}`))
 		case "/3/collection/90":
 			_, _ = w.Write([]byte(`{"name":"The Set","parts":[{"id":11,"title":"M11","release_date":"2024-05-01","poster_path":"/p.jpg"},{"id":12,"title":"M12","release_date":"2025-05-01","poster_path":"/p.jpg"}]}`))
 		case "/3/tv/21/season/1":
 			_, _ = w.Write([]byte(`{"episodes":[{"episode_number":1,"name":"Pilot","runtime":42}]}`))
 		case "/3/tv/21":
-			_, _ = w.Write([]byte(`{"id":21,"name":"S21","watch/providers":{"results":{"DE":{"flatrate":[{"provider_id":8,"provider_name":"Netflix"}]}}},"seasons":[{"season_number":1,"episode_count":8,"air_date":"2022-01-01"}],"created_by":[{"name":"Cee"}]}`))
+			_, _ = w.Write([]byte(`{"id":21,"name":"S21","seasons":[{"season_number":1,"episode_count":8,"air_date":"2022-01-01"}],"created_by":[{"name":"Cee"}]}`))
 		default:
 			w.WriteHeader(404)
 		}
