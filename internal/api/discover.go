@@ -450,6 +450,96 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 	}{Details: det, Streaming: streaming, Collection: coll, Similar: similar, InLibrary: head.InLibrary, TitleID: head.TitleID, Ask: head.Ask, NeverAdd: never})
 }
 
+// moreFromMin is the fewest titles a More from row shows; fewer answer none.
+const moreFromMin = 4
+
+// metadataMoreFrom answers GET /api/v1/metadata/{kind}/{tmdb_id}/more-from:
+// the other movies the title's director made, or the other shows its
+// creator made, most popular first, with the Library and Wishlist joined.
+// Items is empty when fewer than four are left. Cached 24 h per title.
+func (a *API) metadataMoreFrom(w http.ResponseWriter, r *http.Request) {
+	kind, id := r.PathValue("kind"), r.PathValue("tmdb_id")
+	if kind != "movie" && kind != "show" {
+		fail(w, http.StatusBadRequest, "kind must be movie or show")
+		return
+	}
+	if n, err := strconv.ParseInt(id, 10, 64); err != nil || n <= 0 {
+		fail(w, http.StatusBadRequest, "tmdb_id must be a TMDB number")
+		return
+	}
+	if len(a.kindsOn(kind)) == 0 {
+		fail(w, http.StatusConflict, "that part is off")
+		return
+	}
+	if a.kidLimited(w, r) {
+		return
+	}
+	d, ok := metadata.DiscovererFor(r.Context(), a.s.Metadata)
+	l, ok2 := metadata.MadeByListerFor(r.Context(), a.s.Metadata)
+	if !ok || !ok2 {
+		fail(w, http.StatusNotImplemented, "Explore is not available here")
+		return
+	}
+	key := "morefrom|" + kind + "|" + id
+	e, cached := a.discover.get(key)
+	if !cached || time.Since(e.at) >= discoverTTL["details"] {
+		dkey := "details|" + kind + "|" + id
+		de, dcached := a.discover.get(dkey)
+		if !dcached || time.Since(de.at) >= discoverTTL["details"] {
+			det, err := d.Details(r.Context(), kind, id)
+			if err != nil {
+				discoverFail(w, err)
+				return
+			}
+			de = discoverEntry{at: time.Now(), details: &det}
+			a.discover.put(dkey, de)
+		}
+		role := "director"
+		if kind == "show" {
+			role = "creator"
+		}
+		var who metadata.DetailPerson
+		for _, p := range de.details.People {
+			if p.Role == role && p.ID != "" {
+				who = p
+				break
+			}
+		}
+		e = discoverEntry{at: time.Now(), details: &metadata.Details{People: []metadata.DetailPerson{who}}, items: []metadata.DiscoverItem{}}
+		if who.ID != "" {
+			items, err := l.MadeBy(r.Context(), kind, who.ID)
+			switch {
+			case err == nil:
+				for _, it := range items {
+					if it.TMDBID != id {
+						e.items = append(e.items, it)
+					}
+				}
+			case cached && errors.Is(err, metadata.ErrRateLimited):
+				e, _ = a.discover.get(key)
+			default:
+				discoverFail(w, err)
+				return
+			}
+		}
+		a.discover.put(key, e)
+	}
+	max := a.kidMax(r)
+	items := a.kidItems(r.Context(), max, e.items, 0)
+	out := []discoverItemView{}
+	if len(items) >= moreFromMin {
+		var err error
+		out, err = a.joinItems(r.Context(), items, a.person(r).UserID, len(items))
+		if err != nil {
+			internal(w, err)
+			return
+		}
+	}
+	who := e.details.People[0]
+	a.exploreCaching(w, r, "")
+	writeJSON(w, http.StatusOK, map[string]any{"person": who.Name, "role": who.Role, "items": out})
+}
+
 // metadataSeason answers GET /api/v1/metadata/show/{tmdb_id}/seasons/{number}:
 // one season's episodes from TMDB (number, name, overview, runtime,
 // still, air_day), for a show in the Library or not. Cached 24 h. A Kid

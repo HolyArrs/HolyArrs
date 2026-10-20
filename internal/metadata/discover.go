@@ -40,6 +40,8 @@ type DetailPerson struct {
 	Role      string `json:"role"` // actor, director, creator
 	Character string `json:"character,omitempty"`
 	Profile   string `json:"profile,omitempty"`
+	// ID is the TMDB person id, kept for directors and creators (More from).
+	ID string `json:"id,omitempty"`
 }
 
 // DetailSeason is one season of a show on a details page.
@@ -56,8 +58,10 @@ type Details struct {
 	RuntimeMinutes int            `json:"runtime_minutes,omitempty"`
 	Rating         string         `json:"rating,omitempty"`
 	People         []DetailPerson `json:"people"`
-	Seasons        []DetailSeason `json:"seasons,omitempty"`
-	Similar        []DiscoverItem `json:"similar"`
+	// Moods are up to three mood words from TMDB keywords and genres.
+	Moods   []string       `json:"moods"`
+	Seasons []DetailSeason `json:"seasons,omitempty"`
+	Similar []DiscoverItem `json:"similar"`
 	// Backdrops are up to maxBackdrops more wide pictures for the hero's
 	// slow crossfade, best voted first (the main backdrop not repeated).
 	Backdrops []string `json:"backdrops,omitempty"`
@@ -399,9 +403,9 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 	if err != nil {
 		return Details{}, err
 	}
-	appendTo := "release_dates,images,credits,recommendations,videos"
+	appendTo := "release_dates,images,credits,recommendations,videos,keywords"
 	if kind == "show" {
-		appendTo = "content_ratings,images,credits,recommendations,videos"
+		appendTo = "content_ratings,images,credits,recommendations,videos,keywords"
 	}
 	b, err := t.get(ctx, "/"+tvPath(kind)+"/"+strconv.FormatInt(n, 10),
 		url.Values{"append_to_response": {appendTo}, "include_image_language": {"en,null"}})
@@ -416,15 +420,25 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 				ProfilePath string `json:"profile_path"`
 			} `json:"cast"`
 			Crew []struct {
+				ID          int64  `json:"id"`
 				Name        string `json:"name"`
 				Job         string `json:"job"`
 				ProfilePath string `json:"profile_path"`
 			} `json:"crew"`
 		} `json:"credits"`
 		CreatedBy []struct {
+			ID          int64  `json:"id"`
 			Name        string `json:"name"`
 			ProfilePath string `json:"profile_path"`
 		} `json:"created_by"`
+		Keywords *struct {
+			Keywords []struct {
+				Name string `json:"name"`
+			} `json:"keywords"` // movies
+			Results []struct {
+				Name string `json:"name"`
+			} `json:"results"` // shows
+		} `json:"keywords"`
 		Seasons []struct {
 			Number       int    `json:"season_number"`
 			EpisodeCount int    `json:"episode_count"`
@@ -495,13 +509,23 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 		}
 		for _, c := range raw.Credits.Crew {
 			if c.Job == "Director" {
-				d.People = append(d.People, DetailPerson{Name: c.Name, Role: "director", Profile: profile(c.ProfilePath)})
+				d.People = append(d.People, DetailPerson{Name: c.Name, Role: "director", Profile: profile(c.ProfilePath), ID: personID(c.ID)})
 			}
 		}
 	}
 	for _, c := range raw.CreatedBy {
-		d.People = append(d.People, DetailPerson{Name: c.Name, Role: "creator", Profile: profile(c.ProfilePath)})
+		d.People = append(d.People, DetailPerson{Name: c.Name, Role: "creator", Profile: profile(c.ProfilePath), ID: personID(c.ID)})
 	}
+	var keywords []string
+	if raw.Keywords != nil {
+		for _, k := range raw.Keywords.Keywords {
+			keywords = append(keywords, k.Name)
+		}
+		for _, k := range raw.Keywords.Results {
+			keywords = append(keywords, k.Name)
+		}
+	}
+	d.Moods = Moods(keywords, d.Genres)
 	if raw.Images != nil {
 		bs := raw.Images.Backdrops
 		sort.SliceStable(bs, func(i, j int) bool { return bs[i].Vote > bs[j].Vote })
@@ -533,6 +557,77 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 		d.Similar = t.items(kind, raw.Recommendations.Results, names, maxSimilar)
 	}
 	return d, nil
+}
+
+// personID is a TMDB person id as text; empty when unknown.
+func personID(n int64) string {
+	if n <= 0 {
+		return ""
+	}
+	return strconv.FormatInt(n, 10)
+}
+
+// MadeByLister lists the movies one person directed or the shows they made.
+type MadeByLister interface {
+	MadeBy(ctx context.Context, kind, personID string) ([]DiscoverItem, error)
+}
+
+// MadeByListerFor returns the made-by surface selected for ctx.
+func MadeByListerFor(ctx context.Context, provider Provider) (MadeByLister, bool) {
+	if sw, ok := provider.(*Switch); ok {
+		provider = sw.pick(ctx)
+	}
+	c, ok := provider.(MadeByLister)
+	return c, ok
+}
+
+// maxCredits caps the titles MadeBy answers.
+const maxCredits = 40
+
+// MadeBy reads a person's movies (kind movie: directed) or shows (kind
+// show: created, executive produced or directed), most popular first,
+// each title once.
+func (t *TMDB) MadeBy(ctx context.Context, kind, personID string) ([]DiscoverItem, error) {
+	n, err := strconv.ParseInt(personID, 10, 64)
+	if err != nil || n <= 0 || (kind != "movie" && kind != "show") {
+		return nil, ErrNotFound
+	}
+	names, err := t.genreNames(ctx, kind)
+	if err != nil {
+		return nil, err
+	}
+	path := "/person/" + strconv.FormatInt(n, 10) + "/movie_credits"
+	if kind == "show" {
+		path = "/person/" + strconv.FormatInt(n, 10) + "/tv_credits"
+	}
+	b, err := t.get(ctx, path, nil)
+	if err != nil {
+		return nil, err
+	}
+	var res struct {
+		Crew []struct {
+			tmdbListItem
+			Job string `json:"job"`
+		} `json:"crew"`
+	}
+	if err := json.Unmarshal(b, &res); err != nil {
+		return nil, fmt.Errorf("TMDB: odd answer: %w", err)
+	}
+	seen := map[int64]bool{}
+	var list []tmdbListItem
+	for _, c := range res.Crew {
+		ok := c.Job == "Director"
+		if kind == "show" {
+			ok = c.Job == "Creator" || c.Job == "Executive Producer" || c.Job == "Director"
+		}
+		if !ok || seen[c.ID] {
+			continue
+		}
+		seen[c.ID] = true
+		list = append(list, c.tmdbListItem)
+	}
+	sort.SliceStable(list, func(i, j int) bool { return list[i].Popularity > list[j].Popularity })
+	return t.items(kind, list, names, maxCredits), nil
 }
 
 // maxStreaming caps the services listed per region; maxCollection the

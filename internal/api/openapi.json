@@ -13357,7 +13357,7 @@
     },
     "/api/v1/metadata/{kind}/{tmdb_id}": {
       "get": {
-        "description": "Returns a movie or show page from TMDB whether or not it is in the Library: tmdb_id, kind, name, year, overview, poster, backdrop, logo, genres, runtime_minutes, rating (US), people (name, role actor/director/creator, character, profile), seasons for shows (number, episode_count, year), similar (up to 12, same items as discover), collection for movies in a TMDB collection (id, name, parts in release order, the same items as similar), streaming (the subscription services TMDB lists it on in ?region=, a country code, US when missing), in_library, title_id, ask and never_add. Cached 24 h. For a Kid (a member with an age-rating limit), a title above their limit, or without a rating, answers 403 and similar holds only titles their limit allows.",
+        "description": "Returns a movie or show page from TMDB whether or not it is in the Library: tmdb_id, kind, name, year, overview, poster, backdrop, logo, genres, runtime_minutes, rating (US), people (name, role actor/director/creator, character, profile, id for directors and creators), moods (up to 3 mood words from TMDB keywords and genres; genre names when no keyword maps), seasons for shows (number, episode_count, year), similar (up to 12, same items as discover), collection for movies in a TMDB collection (id, name, parts in release order, the same items as similar), streaming (the subscription services TMDB lists it on in ?region=, a country code, US when missing), in_library, title_id, ask and never_add. Cached 24 h. For a Kid (a member with an age-rating limit), a title above their limit, or without a rating, answers 403 and similar holds only titles their limit allows.",
         "operationId": "metadataDetails",
         "parameters": [
           {
@@ -13389,6 +13389,73 @@
         "responses": {
           "200": {
             "description": "The details page."
+          },
+          "400": {
+            "description": "kind is not movie or show, or tmdb_id is not a number."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "This title is rated above what this account may see (a Kid account)."
+          },
+          "404": {
+            "description": "TMDB does not know it."
+          },
+          "409": {
+            "description": "The kind's part is off."
+          },
+          "429": {
+            "description": "A Kid account over 30 searches, lookups and Explore requests a minute; see Retry-After."
+          },
+          "501": {
+            "description": "TMDB is not set up."
+          },
+          "502": {
+            "description": "TMDB did not answer."
+          },
+          "503": {
+            "description": "TMDB is rate limited; see Retry-After."
+          }
+        },
+        "summary": "Details of a movie or show from TMDB",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/metadata/{kind}/{tmdb_id}/more-from": {
+      "get": {
+        "description": "Returns the other movies the title's director made (movie) or the other shows its creator made (show), most popular first: person, role (director or creator) and items (the same items as discover, the title itself left out). Items is empty when fewer than 4 are left. Cached 24 h. For a Kid, items holds only titles their limit allows.",
+        "operationId": "metadataMoreFrom",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tmdb_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The row."
           },
           "400": {
             "description": "kind is not movie or show, or tmdb_id is not a number."

@@ -38,7 +38,8 @@ func fakeDiscoverTMDB(t *testing.T) *httptest.Server {
 		case "/3/movie/7":
 			_, _ = w.Write([]byte(`{"id":7,"title":"Seven","release_date":"2020-02-02","runtime":99,"backdrop_path":"/b.jpg","genres":[{"name":"Drama"}],
 				"release_dates":{"results":[{"iso_3166_1":"US","release_dates":[{"type":3,"certification":"R","release_date":"2020-02-02"}]}]},
-				"credits":{"cast":[{"name":"Ann","character":"Hero","profile_path":"/a.jpg"}],"crew":[{"name":"Dee","job":"Director"}]},
+				"credits":{"cast":[{"name":"Ann","character":"Hero","profile_path":"/a.jpg"}],"crew":[{"id":31,"name":"Dee","job":"Director"}]},
+				"keywords":{"keywords":[{"name":"heist"},{"name":"bank robbery"},{"name":"double cross"},{"name":"time loop"}]},
 				"images":{"backdrops":[{"file_path":"/b.jpg","vote_average":9},{"file_path":"/x1.jpg","vote_average":2},{"file_path":"/x2.jpg","vote_average":5},{"file_path":"/x3.jpg","vote_average":4},{"file_path":"/x4.jpg","vote_average":3},{"file_path":"/x5.jpg","vote_average":1}]},
 				"videos":{"results":[{"key":"abcDEF12345","site":"YouTube","type":"Trailer","official":true,"iso_639_1":"en","name":"Official Trailer"},
 					{"key":"vim123456","site":"Vimeo","type":"Trailer"},{"key":"clip1234567","site":"YouTube","type":"Clip"},{"key":"bad key!","site":"YouTube","type":"Teaser"}]},
@@ -48,10 +49,16 @@ func fakeDiscoverTMDB(t *testing.T) *httptest.Server {
 			_, _ = w.Write([]byte(`{"results":{"US":{"flatrate":[{"provider_id":8,"provider_name":"Netflix","logo_path":"/n.jpg","display_priority":2},{"provider_id":9,"provider_name":"Prime","display_priority":1}]},"GB":{"rent":[{"provider_id":2,"provider_name":"Apple"}]}}}`))
 		case "/3/collection/70":
 			_, _ = w.Write([]byte(`{"name":"The Seven Collection","parts":[{"id":72,"title":"Seven II","release_date":"2023-01-01","poster_path":"/s.jpg"},{"id":7,"title":"Seven","release_date":"2020-02-02","poster_path":"/s.jpg"}]}`))
+		case "/3/person/31/movie_credits":
+			_, _ = w.Write([]byte(`{"cast":[{"id":50,"title":"Acted","popularity":99}],"crew":[{"id":7,"title":"Seven","job":"Director","popularity":5},
+				{"id":41,"title":"Low","job":"Director","popularity":1,"genre_ids":[18]},{"id":42,"title":"High","job":"Director","popularity":9},
+				{"id":42,"title":"High","job":"Writer","popularity":9},{"id":43,"title":"Wrote","job":"Writer","popularity":50}]}`))
+		case "/3/person/32/tv_credits":
+			_, _ = w.Write([]byte(`{"crew":[{"id":81,"name":"Made","job":"Creator","popularity":3},{"id":82,"name":"Sound","job":"Sound","popularity":30}]}`))
 		case "/3/tv/8/season/1":
 			_, _ = w.Write([]byte(`{"episodes":[{"episode_number":1,"name":"Pilot","overview":"It starts.","air_date":"2021-01-01","runtime":50,"still_path":"/e1.jpg"},{"episode_number":2,"name":"Two","air_date":null}]}`))
 		case "/3/tv/8":
-			_, _ = w.Write([]byte(`{"id":8,"name":"Eight","first_air_date":"2021-01-01","created_by":[{"name":"Cee"}],
+			_, _ = w.Write([]byte(`{"id":8,"name":"Eight","first_air_date":"2021-01-01","created_by":[{"id":32,"name":"Cee"}],"keywords":{"results":[{"name":"small town"}]},
 				"content_ratings":{"results":[{"iso_3166_1":"US","rating":"TV-MA"}]},
 				"seasons":[{"season_number":1,"episode_count":10,"air_date":"2021-01-01"}]}`))
 		case "/3/movie/429/recommendations":
@@ -124,6 +131,60 @@ func TestTMDBDetails(t *testing.T) {
 	}
 	if _, err := p.Details(ctx, "artist", "7"); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("kind %v", err)
+	}
+}
+
+func TestTMDBDetailsMoodsAndMadeBy(t *testing.T) {
+	p := newTMDB(fakeDiscoverTMDB(t), fakeCred)
+	ctx := context.Background()
+	d, err := p.Details(ctx, "movie", "7")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fmt.Sprint(d.Moods) != "[Exciting Mind-bending Emotional]" || d.People[1].ID != "31" || d.People[0].ID != "" {
+		t.Fatalf("moods %v people %+v", d.Moods, d.People)
+	}
+	s, err := p.Details(ctx, "show", "8")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fmt.Sprint(s.Moods) != "[Cozy]" || s.People[0].ID != "32" {
+		t.Fatalf("show moods %v people %+v", s.Moods, s.People)
+	}
+	var _ MadeByLister = p
+	m, err := p.MadeBy(ctx, "movie", "31")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(m) != 3 || m[0].Name != "High" || m[1].Name != "Seven" || m[2].Name != "Low" || fmt.Sprint(m[2].Genres) != "[Drama]" {
+		t.Fatalf("made by %+v", m)
+	}
+	sh, err := p.MadeBy(ctx, "show", "32")
+	if err != nil || len(sh) != 1 || sh[0].Name != "Made" || sh[0].Kind != "show" {
+		t.Fatalf("shows %+v %v", sh, err)
+	}
+	for _, c := range [][2]string{{"movie", "0"}, {"movie", "x"}, {"artist", "31"}} {
+		if _, err := p.MadeBy(ctx, c[0], c[1]); !errors.Is(err, ErrNotFound) {
+			t.Fatalf("%v: %v", c, err)
+		}
+	}
+}
+
+func TestMoods(t *testing.T) {
+	cases := []struct {
+		kw, genres []string
+		want       string
+	}{
+		{[]string{"haunted house", "ghost", "demonic possession"}, []string{"Horror"}, "[Scary]"},
+		{[]string{"satire", "small town", "christmas"}, []string{"Comedy"}, "[Cozy Witty]"},
+		{[]string{"award", "embrace", "glove"}, []string{"Drama", "Comedy", "Crime", "War"}, "[Drama Comedy Crime]"},
+		{nil, nil, "[]"},
+		{[]string{"murder", "conspiracy", "heist", "time travel", "romance", "zombie"}, []string{"Thriller"}, "[Suspenseful Exciting Romantic]"},
+	}
+	for _, c := range cases {
+		if got := fmt.Sprint(Moods(c.kw, c.genres)); got != c.want {
+			t.Errorf("Moods(%v, %v) = %s, want %s", c.kw, c.genres, got, c.want)
+		}
 	}
 }
 

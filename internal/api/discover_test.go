@@ -62,7 +62,7 @@ func newDiscoverTMDB(t *testing.T) *discoverTMDB {
 			_, _ = w.Write([]byte(list(41, 12)))
 		case "/3/movie/11":
 			_, _ = w.Write([]byte(`{"id":11,"title":"M11","release_date":"2024-05-01","runtime":100,"genres":[{"name":"Drama"}],
-				"credits":{"cast":[{"name":"Ann","character":"Hero"}]},"belongs_to_collection":{"id":90,"name":"Set"},"recommendations":` + list(12, 13, 41) + `}`))
+				"credits":{"cast":[{"name":"Ann","character":"Hero"}],"crew":[{"id":5,"name":"Dee","job":"Director"}]},"keywords":{"keywords":[{"name":"heist"}]},"belongs_to_collection":{"id":90,"name":"Set"},"recommendations":` + list(12, 13, 41) + `}`))
 		case "/3/tv/21/watch/providers":
 			_, _ = w.Write([]byte(`{"results":{"DE":{"flatrate":[{"provider_id":8,"provider_name":"Netflix"}]}}}`))
 		case "/3/collection/90":
@@ -70,7 +70,12 @@ func newDiscoverTMDB(t *testing.T) *discoverTMDB {
 		case "/3/tv/21/season/1":
 			_, _ = w.Write([]byte(`{"episodes":[{"episode_number":1,"name":"Pilot","runtime":42}]}`))
 		case "/3/tv/21":
-			_, _ = w.Write([]byte(`{"id":21,"name":"S21","seasons":[{"season_number":1,"episode_count":8,"air_date":"2022-01-01"}],"created_by":[{"name":"Cee"}]}`))
+			_, _ = w.Write([]byte(`{"id":21,"name":"S21","seasons":[{"season_number":1,"episode_count":8,"air_date":"2022-01-01"}],"created_by":[{"id":6,"name":"Cee"}]}`))
+		case "/3/person/5/movie_credits":
+			_, _ = w.Write([]byte(`{"crew":[{"id":11,"title":"M11","job":"Director","popularity":50},{"id":12,"title":"M12","job":"Director","popularity":9},
+				{"id":14,"title":"M14","job":"Director","popularity":7},{"id":15,"title":"M15","job":"Director","popularity":8},{"id":16,"title":"M16","job":"Director","popularity":1}]}`))
+		case "/3/person/6/tv_credits":
+			_, _ = w.Write([]byte(`{"crew":[{"id":21,"name":"S21","job":"Creator"},{"id":22,"name":"S22","job":"Creator"}]}`))
 		default:
 			w.WriteHeader(404)
 		}
@@ -303,6 +308,45 @@ func TestMetadataDetails(t *testing.T) {
 
 	srv2, _ := discoverRig(t, metadata.Lab())
 	do(t, "GET", srv2.URL+"/api/v1/metadata/movie/11", "", 501)
+}
+
+// route: GET /api/v1/metadata/{kind}/{tmdb_id}/more-from
+func TestMetadataMoreFrom(t *testing.T) {
+	f := newDiscoverTMDB(t)
+	srv, _ := discoverRig(t, f.provider())
+	var m struct {
+		Person string `json:"person"`
+		Role   string `json:"role"`
+		Items  []struct {
+			TMDBID    string `json:"tmdb_id"`
+			InLibrary bool   `json:"in_library"`
+		} `json:"items"`
+	}
+	b := do(t, "GET", srv.URL+"/api/v1/metadata/movie/11/more-from", "", 200)
+	if err := json.Unmarshal(b, &m); err != nil {
+		t.Fatal(err)
+	}
+	if m.Person != "Dee" || m.Role != "director" || len(m.Items) != 4 || m.Items[0].TMDBID != "12" || m.Items[1].TMDBID != "15" || m.Items[3].TMDBID != "16" {
+		t.Fatalf("more from %s", b)
+	}
+	if d := string(do(t, "GET", srv.URL+"/api/v1/metadata/movie/11", "", 200)); !strings.Contains(d, `"moods":["Exciting"`) {
+		t.Fatalf("moods %s", d)
+	}
+	before := f.hits.Load()
+	do(t, "GET", srv.URL+"/api/v1/metadata/movie/11/more-from", "", 200)
+	if f.hits.Load() != before {
+		t.Fatal("more from not cached")
+	}
+	// Under four titles: no row.
+	s := string(do(t, "GET", srv.URL+"/api/v1/metadata/show/21/more-from", "", 200))
+	if !strings.Contains(s, `"role":"creator"`) || !strings.Contains(s, `"items":[]`) {
+		t.Fatalf("show %s", s)
+	}
+	do(t, "GET", srv.URL+"/api/v1/metadata/artist/1/more-from", "", 400)
+	do(t, "GET", srv.URL+"/api/v1/metadata/movie/abc/more-from", "", 400)
+	do(t, "GET", srv.URL+"/api/v1/metadata/movie/404/more-from", "", 404)
+	srv2, _ := discoverRig(t, metadata.Lab())
+	do(t, "GET", srv2.URL+"/api/v1/metadata/movie/11/more-from", "", 501)
 }
 
 // route: GET /api/v1/metadata/show/{tmdb_id}/seasons/{number}
