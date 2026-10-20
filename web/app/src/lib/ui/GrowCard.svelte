@@ -100,6 +100,15 @@
 	let sources = $state<TrailerSource[]>([]);
 	let trailerOk = $state(false);
 	let playing = $state(false);
+	// Netflix holds the still art, badge and title for a beat after the card
+	// opens; the trailer (already playing underneath) fades in after that.
+	const HOLD_MS = 1200;
+	let held = $state(true);
+	onMount(() => {
+		const t = setTimeout(() => (held = false), HOLD_MS);
+		return () => clearTimeout(t);
+	});
+	const showing = $derived(playing && !held);
 	let shown = $state(false);
 	let logoFailed = $state(false);
 	let anim: Animation | null = null;
@@ -291,13 +300,13 @@
 		{#if pic}<img src={pic} alt="" decoding="async" />{/if}
 		{#if big}<img src={big} alt="" decoding="async" class="big" class:in={bigIn} onload={() => (bigIn = true)} />{/if}
 		{#if trailerOk && sources.length}
-			<TrailerPlayer {sources} {title} repeat onplaying={() => (playing = true)} onfail={() => (playing = false)} onended={() => (playing = false)} onexpand={(o) => { openTheater({ kind, tmdb, title, ...fromHandoff(o), from: 'hover', returnTo }); hideNow(); setTimeout(onclose, THEATER_GROW_MS + 50); }} />
+			<span class="tp" class:held={!showing}><TrailerPlayer {sources} {title} repeat onplaying={() => (playing = true)} onfail={() => (playing = false)} onended={() => (playing = false)} onexpand={(o) => { openTheater({ kind, tmdb, title, ...fromHandoff(o), from: 'hover', returnTo }); hideNow(); setTimeout(onclose, THEATER_GROW_MS + 50); }} /></span>
 		{/if}
-		<span class="scrim" class:playing aria-hidden="true"></span>
+		<span class="scrim" class:playing={showing} aria-hidden="true"></span>
 		<!-- The logo, else the name, stays over the trailer (card template). -->
-		{#if shownLogo}<span class="name" class:lifted class:playing aria-hidden="true"><img class="logo" src={shownLogo} alt="" onerror={() => (logoFailed = true)} /></span>
-		{:else}<span class="name" class:lifted class:playing aria-hidden="true"><span class="word">{title}</span></span>{/if}
-		{#if badge && g}<span class="badge" class:playing>{@render badge()}</span>{/if}
+		{#if shownLogo}<span class="name" class:lifted class:playing={showing} aria-hidden="true"><img class="logo" src={shownLogo} alt="" onerror={() => (logoFailed = true)} /></span>
+		{:else}<span class="name" class:lifted class:playing={showing} aria-hidden="true"><span class="word">{title}</span></span>{/if}
+		{#if badge && g}<span class="badge" class:playing={showing}>{@render badge()}</span>{/if}
 	</a>
 	<div class="panel">
 		<div class="buttons">
@@ -336,6 +345,8 @@
 	.name.lifted { bottom: 9%; }
 	.name.playing { transform: scale(.8); }
 	.badge.playing { opacity: 0; }
+	.tp { position: absolute; inset: 0; transition: opacity 500ms ease-out; }
+	.tp.held { opacity: 0; }
 	.word { font: 700 clamp(14px, 4.4cqw, 26px)/1.05 var(--font-display); letter-spacing: -0.02em; color: #fff; text-shadow: 0 2px 10px rgb(0 0 0 / 0.55); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 	.badge { transition: opacity 300ms ease-out; }
 	.scrim.playing { opacity: 0.5; }
