@@ -587,6 +587,27 @@ func TestKidMetadataDetailsIs403(t *testing.T) {
 	k.kai.call("GET", "/api/v1/metadata/show/4131", "", 200)
 }
 
+// A Kid's More from row: the source title's rating is gated like its
+// details, on a cold request and on one the cache already holds.
+func TestKidMoreFromIs403(t *testing.T) {
+	k := newKidRig(t)
+	const above = `{"error":"This title is rated above what this account may see."}`
+	// Cold: nothing cached yet (R in the Library; R and unrated from TMDB).
+	for _, p := range []string{"movie/4204", "movie/4211", "movie/4212"} {
+		if code, body := k.kai.get("/api/v1/metadata/" + p + "/more-from"); code != 403 || strings.TrimSpace(body) != above {
+			t.Errorf("cold %s: %d %s", p, code, body)
+		}
+	}
+	// Cached: a member warms the row first.
+	for _, p := range []string{"movie/4211", "movie/4204"} {
+		k.ana.call("GET", "/api/v1/metadata/"+p+"/more-from", "", 200)
+		if code, body := k.kai.get("/api/v1/metadata/" + p + "/more-from"); code != 403 || strings.TrimSpace(body) != above {
+			t.Errorf("cached %s: %d %s", p, code, body)
+		}
+	}
+	k.kai.call("GET", "/api/v1/metadata/movie/4101/more-from", "", 200)
+}
+
 func TestKidAsksAboveLimitAre403(t *testing.T) {
 	k := newKidRig(t)
 	const upTo = `{"error":"This account can ask only for titles rated up to PG."}`

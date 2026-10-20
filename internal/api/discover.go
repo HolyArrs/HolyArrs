@@ -505,7 +505,8 @@ func (a *API) metadataMoreFrom(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 		}
-		e = discoverEntry{at: time.Now(), details: &metadata.Details{People: []metadata.DetailPerson{who}}, items: []metadata.DiscoverItem{}}
+		// The source title's rating is kept so the Kid gate below runs on cache hits too.
+		e = discoverEntry{at: time.Now(), details: &metadata.Details{Rating: de.details.Rating, People: []metadata.DetailPerson{who}}, items: []metadata.DiscoverItem{}}
 		if who.ID != "" {
 			items, err := l.MadeBy(r.Context(), kind, who.ID)
 			switch {
@@ -525,6 +526,16 @@ func (a *API) metadataMoreFrom(w http.ResponseWriter, r *http.Request) {
 		a.discover.put(key, e)
 	}
 	max := a.kidMax(r)
+	if max != "" {
+		rating, inLibrary := a.libraryRating(r.Context(), kind, id)
+		if !inLibrary {
+			rating = e.details.Rating
+		}
+		if !ratings.Allows(max, kind, rating) {
+			fail(w, http.StatusForbidden, aboveLimit)
+			return
+		}
+	}
 	items := a.kidItems(r.Context(), max, e.items, 0)
 	out := []discoverItemView{}
 	if len(items) >= moreFromMin {
