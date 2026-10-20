@@ -105,7 +105,7 @@
 		</div>
 		<!-- A new list starts at rank 1, not where the last one was scrolled to. -->
 		{#key `${kind}|${region}|${week}`}
-		<Shelf title="Top 10 {kind === 'show' ? 'shows' : 'movies'} on Netflix {region === 'global' ? 'worldwide' : `in ${regionName(region)}`}" subtitle={weekText || undefined} item="calc(var(--explore-item, 180px) / 0.68)">
+		<Shelf title="Trending {kind === 'show' ? 'shows' : 'movies'} on Netflix {region === 'global' ? 'worldwide' : `in ${regionName(region)}`}" subtitle={weekText || undefined} item="calc(var(--explore-item, 180px) / 0.68)">
 			{#each cards as raw (raw.key)}
 				{@const c = owned ? { ...matchOwned(raw, owned), rank: raw.rank } : raw}
 				{@const mark = ownedMark(c, owned ? ownedTitle(c, owned) : undefined, who)}

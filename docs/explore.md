@@ -40,18 +40,18 @@ measure only. They never change what Explore shows.
 
 | Row | What it holds |
 | --- | --- |
-| Hero | Up to 6 titles that are not in your Library yet, taken from Top 10 and Trending, with **Ask** as the main button. |
+| Hero | Up to 6 titles that are not in your Library yet, taken from Trending now and Trending this week everywhere, with **Ask** as the main button. |
 | Just arrived | Titles added to the Library in the last 14 days, newest first (at least 3). |
-| Top 10 on Netflix | Netflix's weekly list, with big rank numbers. Pick movies or shows, and a region. |
+| Trending on Netflix | Netflix's current list, with big rank numbers. Pick movies or shows, and a region. |
 | Your asks, on the way | Your open asks and where each one is. Only shown when you have open asks. |
 | Top picks for you | From 3 seeds up. |
-| Trending this week | Trending titles for the week. |
+| Trending this week everywhere | TMDB trending titles for the week. |
 | Coming soon | Upcoming releases, as wide cards. |
 | The best tail row | The highest-scoring generated row moves up as the last head row. |
 
 When a row cannot fill, the next candidate moves up.
 
-Top 10 keeps every rank. A title the metadata server cannot match to a card
+The ranked row keeps every rank. A title the metadata server cannot match to a card
 shows as a name tile, and both seasons of a show are listed.
 
 ## Other rows
@@ -110,10 +110,10 @@ Each card carries at most two marks.
 - **Freshness strip.** One strip from the server, picked in this order: New
   Episode (a Library show with an episode in the last 7 days), New Season
   (started in the last 14 days), Recently Added (in the Library for under a
-  week), Top 10, Coming (this week) or Premieres (a date), Season N coming, and
+  week), Trending, Coming (this week) or Premieres (a date), Season N coming, and
   New Release (a movie or album out in the last 30 days). Music cards show
-  only Recently Added and New Release. The Top 10 row already shows its rank,
-  so it drops its own Top 10 strip.
+  only Recently Added and New Release. The ranked row already shows its rank,
+  so it drops its own Trending strip.
 - **Library icon.** A solid round mark at the top right says whether the
   title is in the Library, partly there, downloading (with a progress ring),
   asked for or turned down. On narrow cards it is only the icon, with the full
@@ -121,7 +121,7 @@ Each card carries at most two marks.
 - Under **All**, a small pill at the top left says Movie, Show or Music.
 
 Movie and show rows on Explore and Home use wide 16:9 cards with the title's
-logo (or name) over the backdrop. Top 10 uses tall cards with the rank, and
+logo (or name) over the backdrop. The ranked row uses tall cards with the rank, and
 albums and artists keep their square and round shapes.
 
 ### Hover and touch

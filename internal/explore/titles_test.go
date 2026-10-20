@@ -224,11 +224,11 @@ func TestLayerFallback(t *testing.T) {
 		t.Fatalf("taste, got %s %q", got.Layer, got.Title)
 	}
 	// Fixed head rows keep their title and get a subtitle.
-	top := Row{ID: TypeTop10, Type: TypeTop10, Title: "Top 10 today", Items: genreItems(10, []string{"Drama"})}
+	top := Row{ID: TypeTop10, Type: TypeTop10, Title: "Trending now", Items: genreItems(10, []string{"Drama"})}
 	c3 := ctxAt(plainMoment)
 	c3.Region = "US"
 	pg, _ := TitlePage(Page{Head: []Row{top}}, c3)
-	if pg.Head[0].Title != "Top 10 today" || pg.Head[0].Subtitle != "Today in the US" {
+	if pg.Head[0].Title != "Trending now" || pg.Head[0].Subtitle != "Today in the US" {
 		t.Fatalf("fixed row: %+v", pg.Head[0])
 	}
 }

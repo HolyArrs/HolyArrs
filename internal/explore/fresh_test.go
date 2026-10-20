@@ -30,7 +30,7 @@ func TestFreshRules(t *testing.T) {
 		{"season too old", FreshFacts{Kind: "show", SeasonStart: ago(14)}, ""},
 		{"recently added", FreshFacts{Kind: "movie", InLibrary: true, Added: ago(6)}, "Recently Added"},
 		{"added too old", FreshFacts{Kind: "movie", InLibrary: true, Added: ago(8)}, ""},
-		{"top 10", FreshFacts{Kind: "movie", Top10Rank: 3}, "Top 10"},
+		{"top 10", FreshFacts{Kind: "movie", Top10Rank: 3}, "Trending"},
 		{"rank 11", FreshFacts{Kind: "movie", Top10Rank: 11}, ""},
 		{"coming this week", FreshFacts{Kind: "movie", Released: time.Date(2026, 10, 23, 0, 0, 0, 0, time.UTC)}, "Coming Friday"},
 		{"coming in 7 days", FreshFacts{Kind: "movie", Released: freshNow.AddDate(0, 0, 7)}, "Coming Monday"},
@@ -62,7 +62,7 @@ func TestFreshPriority(t *testing.T) {
 		{func(*FreshFacts) {}, "New Episode"},
 		{func(f *FreshFacts) { f.LastEpisode = time.Time{} }, "New Season"},
 		{func(f *FreshFacts) { f.SeasonStart = time.Time{} }, "Recently Added"},
-		{func(f *FreshFacts) { f.Added = time.Time{} }, "Top 10"},
+		{func(f *FreshFacts) { f.Added = time.Time{} }, "Trending"},
 		{func(f *FreshFacts) { f.Top10Rank = 0 }, "Coming Thursday"},
 		{func(f *FreshFacts) { f.Released = time.Time{} }, "Season 4 coming"},
 	}

@@ -24,7 +24,7 @@ Unknown `row`, missing `id`/`g`: `400 {"error": "..."}`.
 ```json
 {
   "row": "trending",
-  "title": "Trending this week",
+  "title": "Trending this week everywhere",
   "items": [
     {
       "tmdb_id": "693134",

@@ -11579,7 +11579,7 @@
             "description": "Sign-in is required."
           }
         },
-        "summary": "Explore's Top on your services row",
+        "summary": "Explore's Trending on your services row",
         "x-holyarrs-part": "media",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "read"

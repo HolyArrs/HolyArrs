@@ -5,7 +5,7 @@ local build and has not been published to a registry.
 
 ## Explore and trailers
 
-- [Explore](explore.md): rows, the type switch, Top 10, badges, smart row
+- [Explore](explore.md): rows, the type switch, Trending rows, badges, smart row
   titles, new-episode notices and Asked by.
 - [Trailers](trailers.md): how trailers play, the settings and privacy.
 

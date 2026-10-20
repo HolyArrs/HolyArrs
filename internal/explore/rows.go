@@ -75,7 +75,7 @@ const (
 	TypeHousehold     = "household"
 	TypeDecade        = "decade"
 	TypeHidden        = "hidden"
-	// TypeTopServices is the ranked "Top on your services" row; the page
+	// TypeTopServices is the ranked "Trending on your services" row; the page
 	// fills it per chosen service (the head carries an empty marker).
 	TypeTopServices = "top_services"
 	// TypeMood and TypeClassics only show on a genre page.
@@ -321,11 +321,11 @@ func RowTitle(t, arg string) string {
 	case TypeYourAsks:
 		return "Your asks, on the way"
 	case TypeTop10:
-		return "Top 10 today"
+		return "Trending now"
 	case TypeTopPicks:
 		return "Top picks for you"
 	case TypeTrending:
-		return "Trending this week"
+		return "Trending this week everywhere"
 	case TypeServices:
 		return "On your services"
 	case TypeComingSoon:
@@ -349,7 +349,7 @@ func RowTitle(t, arg string) string {
 	case TypeHidden:
 		return "Hidden gems"
 	case TypeTopServices:
-		return "Top on your services"
+		return "Trending on your services"
 	}
 	return arg
 }

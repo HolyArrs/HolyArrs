@@ -15,11 +15,11 @@ describe('freshness strip', () => {
 		for (const k of ['new_episode', 'new_season', 'top10', 'coming', 'season_coming'] as const) expect(shownFresh(f(k), { music: true })).toBeNull();
 	});
 	it('the Top 10 row drops its own Top 10 tag', () => {
-		expect(shownFresh(f('top10', 'Top 10', 2), { top10Row: true })).toBeNull();
+		expect(shownFresh(f('top10', 'Trending', 2), { top10Row: true })).toBeNull();
 		expect(shownFresh(f('recently_added'), { top10Row: true })).not.toBeNull();
 	});
 	it('labels the rank', () => {
-		expect(freshLabel(f('top10', 'Top 10', 3))).toBe("Number 3 in this week's Top 10");
+		expect(freshLabel(f('top10', 'Trending', 3))).toBe('Number 3 in Trending now');
 		expect(freshLabel(f('coming', 'Coming Friday'))).toBe('Coming Friday');
 	});
 	it('priority order', () => {

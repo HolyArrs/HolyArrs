@@ -62,7 +62,7 @@ export function metaLine(kind: string | undefined, rest: readonly (string | numb
 
 /** freshLabel is the strip's accessible name. */
 export function freshLabel(f: Fresh): string {
-	if (f.kind === 'top10' && f.rank) return `Number ${f.rank} in this week's Top 10`;
+	if (f.kind === 'top10' && f.rank) return `Number ${f.rank} in Trending now`;
 	return f.text;
 }
 

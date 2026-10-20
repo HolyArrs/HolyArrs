@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { genrePath, genresFor, parseGenre, serviceChips, serviceLabel, serviceTopPath, topChips, topPath, topSource, type ServiceTopRow } from './explore.ts';
 
-describe('Top on your services', () => {
+describe('Trending on your services', () => {
 	it('asks for one chip, with the services, region and genre', () => {
 		expect(topPath({ type: 'movies', chip: 'all', services: [8, 337], region: 'US' })).toBe('/explore/top?type=movies&chip=all&region=US&services=8%7C337');
 		expect(topPath({ type: 'shows', chip: 8, services: [8], region: 'GB', genre: 18 })).toBe('/explore/top?type=shows&chip=8&region=GB&services=8&genre=18');
@@ -14,9 +14,9 @@ describe('Top on your services', () => {
 		expect(topChips([], shown).map((c) => c.id)).toEqual(['all']);
 	});
 	it('names the source honestly', () => {
-		expect(topSource({ source: 'netflix_top10', region: 'US' }, 'Netflix')).toBe("Netflix's weekly Top 10 · US");
-		expect(topSource({ source: 'popular', region: 'US' }, 'Disney+')).toBe('Most popular this week on Disney+ · US');
-		expect(topSource({ source: 'popular', region: 'US' }, 'your services')).toBe('Most popular this week on your services · US');
+		expect(topSource({ source: 'netflix_top10', region: 'US' }, 'Netflix')).toBe("Trending now on Netflix · US");
+		expect(topSource({ source: 'popular', region: 'US' }, 'Disney+')).toBe('Popular on Disney+ · US');
+		expect(topSource({ source: 'popular', region: 'US' }, 'your services')).toBe('Popular on your services · US');
 	});
 });
 
@@ -51,8 +51,8 @@ describe('per-service top lists', () => {
 		expect(serviceChips(rows, []).map((r) => r.service)).toEqual([8, 9, 337]);
 	});
 	it('labels today, an older list, and TMDB popularity', () => {
-		expect(serviceLabel(row(8, 'Netflix'))).toBe('Top on Netflix today · via Streaming Availability');
-		expect(serviceLabel({ ...row(8, 'Netflix'), age_seconds: 2 * 86400 })).toBe('Top on Netflix as of Oct 18 · via Streaming Availability');
+		expect(serviceLabel(row(8, 'Netflix'))).toBe('Trending now on Netflix · via Streaming Availability');
+		expect(serviceLabel({ ...row(8, 'Netflix'), age_seconds: 2 * 86400 })).toBe('Trending on Netflix as of Oct 18 · via Streaming Availability');
 		expect(serviceLabel({ ...row(386, 'Peacock'), source: 'tmdb-popular' })).toBe('Popular on Peacock');
 	});
 });

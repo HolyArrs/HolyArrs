@@ -134,7 +134,7 @@ func freshRule(k string, f FreshFacts, now time.Time) *Fresh {
 		}
 	case FreshTop10:
 		if f.Top10Rank >= 1 && f.Top10Rank <= 10 {
-			return &Fresh{Kind: k, Text: "Top 10", Rank: f.Top10Rank}
+			return &Fresh{Kind: k, Text: "Trending", Rank: f.Top10Rank}
 		}
 	case FreshComing:
 		if d, ok := daysAgo(f.Released, now); ok && d < 0 && d >= -365 {

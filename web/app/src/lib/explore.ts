@@ -473,7 +473,7 @@ export function liveCard(c: ExploreCard, here: { ask?: AskState; titleId?: numbe
 }
 
 export const discoverTitles: Record<Exclude<ProviderRowName, 'similar' | 'genre'>, string> = {
-	trending: 'Trending this week',
+	trending: 'Trending this week everywhere',
 	best: 'Best new releases',
 	services: 'On your services',
 	upcoming: 'Coming to cinemas'
@@ -687,7 +687,7 @@ export interface HeadAnswer {
 	tail_cap: number;
 	tail_rows: number;
 	top10: (import('./top10.ts').Top10Answer & { kind?: 'movie' | 'show'; by_kind?: Partial<Record<'movie' | 'show', import('./top10.ts').Top10Answer>> }) | null;
-	/** Up to 6 titles not in the Library (from Top 10 and Trending) for the hero. */
+	/** Up to 6 titles not in the Library (from Trending now and Trending this week everywhere) for the hero. */
 	hero?: ProviderItem[];
 	head: ServerRow[];
 }
@@ -796,8 +796,8 @@ export function topChips(picked: number[], shown: WatchService[]): { id: TopChip
 /** topSource is the small line under the row title: where the list comes from, honestly named. */
 export function topSource(a: Pick<TopAnswer, 'source' | 'region'>, serviceName: string): string {
 	const where = a.region === 'global' ? 'worldwide' : a.region;
-	if (a.source === 'netflix_top10') return `Netflix's weekly Top 10 · ${where}`;
-	return `Most popular this week on ${serviceName} · ${where}`;
+	if (a.source === 'netflix_top10') return `Trending now on Netflix · ${where}`;
+	return `Popular on ${serviceName} · ${where}`;
 }
 
 // ---- Per-service top lists (one answer, every service) ----
@@ -843,10 +843,10 @@ export function serviceChips(rows: ServiceTopRow[], mine: number[]): ServiceTopR
 /** serviceLabel is the line under the row title for one service's list. */
 export function serviceLabel(r: Pick<ServiceTopRow, 'source' | 'name' | 'age_seconds' | 'fetched_at'>): string {
 	if (r.source !== 'streaming-availability') return `Popular on ${r.name}`;
-	if (r.age_seconds < 24 * 3600) return `Top on ${r.name} today · via Streaming Availability`;
+	if (r.age_seconds < 24 * 3600) return `Trending now on ${r.name} · via Streaming Availability`;
 	const d = new Date(r.fetched_at);
 	const when = Number.isNaN(d.getTime()) ? 'recently' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
-	return `Top on ${r.name} as of ${when} · via Streaming Availability`;
+	return `Trending on ${r.name} as of ${when} · via Streaming Availability`;
 }
 
 // ---- Genre pages ----
