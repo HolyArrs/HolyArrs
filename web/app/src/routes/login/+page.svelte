@@ -399,7 +399,6 @@
 					{/if}
 				</div>
 			{/key}
-			<p class="foot">Your server: <span class="mono">{page.url.host}</span></p>
 		{/if}
 	</div>
 </main>
