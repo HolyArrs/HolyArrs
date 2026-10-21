@@ -161,7 +161,7 @@
 	});
 </script>
 
-<section class="ui-billboard" class:quiet class:reveal bind:this={box} aria-label={label} data-testid={testid}>
+<section class="ui-billboard" class:quiet class:reveal bind:this={box} data-hero aria-label={label} data-testid={testid}>
 	<div class="art" aria-hidden={!sources.length}>
 		{#if art}
 			{@render art()}

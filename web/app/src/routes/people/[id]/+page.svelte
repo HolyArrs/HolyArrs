@@ -178,7 +178,7 @@
 {:else if error}<p class="notice bad" role="alert"><Icon name="alert" size={17} /><span>{plainReason(error).text}</span></p>{/if}
 {#if busy && !data}<div class="hero" aria-busy="true"><div class="hero-in"><Skeleton shape="poster" /><Skeleton lines={4} /></div></div>{/if}
 {#if data}
-	<header class="hero">
+	<header class="hero" data-hero>
 		{#if hero}<img class="art" src={hero} alt="" decoding="async" />{/if}
 		<div class="shade" aria-hidden="true"></div>
 		<div class="hero-in">

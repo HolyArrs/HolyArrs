@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { nextBar, type BarState } from './scroll-bar.svelte.ts';
+import { nextBar, overHero, type BarState } from './scroll-bar.svelte.ts';
 
 const walk = (ys: number[], s: BarState = { hidden: false, anchor: 0 }) => ys.reduce(nextBar, s);
 
@@ -17,3 +17,9 @@ describe('nextBar', () => {
 	});
 });
 
+
+describe('overHero', () => {
+	it('is see-through while the hero shows under the bar', () => expect(overHero(600, 64)).toBe(true));
+	it('gets its glass back once the hero has scrolled by', () => expect(overHero(70, 64)).toBe(false));
+	it('pages without a hero keep the glass', () => expect(overHero(null, 64)).toBe(false));
+});

@@ -34,7 +34,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import { trackInputModality } from '#lib/focus.ts';
 	import { focusField, rememberReturn, searchField } from '#lib/search-field.svelte.ts';
-	import { installScrollBar, showBar } from '#lib/scroll-bar.svelte.ts';
+	import { checkHero, installScrollBar, showBar } from '#lib/scroll-bar.svelte.ts';
 	import {
 		buildNav,
 		currentHref,
@@ -204,6 +204,9 @@
 		if (!nav.willUnload) navStarted();
 	});
 	afterNavigate(() => {
+		// The new page's hero (if any) decides the bar's glass; it may load in a moment after.
+		for (const t of [0, 250, 800, 2000]) setTimeout(checkHero, t);
+
 		navEnded();
 		readLibraryResumeLinks();
 		moreOpen = false;

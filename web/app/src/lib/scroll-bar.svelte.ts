@@ -40,6 +40,20 @@ function apply(hidden: boolean) {
 	document.documentElement.classList.toggle('bar-hidden', hidden);
 }
 
+/** overHero is whether a page hero ([data-hero]) still shows under the bar: then the bar drops its glass and line. */
+export function overHero(heroBottom: number | null, barBottom: number): boolean {
+	return heroBottom !== null && heroBottom > barBottom + 24;
+}
+
+/** checkHero sets html.over-hero from the page's hero; the layout calls it after each navigation too. */
+export function checkHero() {
+	if (typeof document === 'undefined') return;
+	const h = document.querySelector('[data-hero]');
+	const bar = document.querySelector('.ui-topbar');
+	const over = overHero(h ? h.getBoundingClientRect().bottom : null, bar ? bar.getBoundingClientRect().height : 0);
+	document.documentElement.classList.toggle('over-hero', over);
+}
+
 /** showBar brings the bar back at once (Ctrl K, focus) and restarts the run from here. */
 export function showBar() {
 	if (typeof window === 'undefined') return;
@@ -55,6 +69,7 @@ export function installScrollBar(): () => void {
 		const next = nextBar(st, window.scrollY);
 		st = next.hidden && blocked() ? { hidden: false, anchor: window.scrollY } : next;
 		apply(st.hidden);
+		checkHero();
 	};
 	const onScroll = () => {
 		if (!queued) (queued = true), requestAnimationFrame(run);
@@ -62,6 +77,7 @@ export function installScrollBar(): () => void {
 	const onFocus = (e: FocusEvent) => e.target instanceof HTMLElement && e.target.closest('.ui-topbar') && showBar();
 	window.addEventListener('scroll', onScroll, { passive: true });
 	document.addEventListener('focusin', onFocus);
+	checkHero();
 	return () => {
 		window.removeEventListener('scroll', onScroll);
 		document.removeEventListener('focusin', onFocus);

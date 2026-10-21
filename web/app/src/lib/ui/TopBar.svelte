@@ -42,8 +42,11 @@
 		backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid var(--line);
 	}
 	/* Glides with the pills (--bar-glide, app.css): transform only, no fade. */
-	.ui-topbar { transition: transform var(--bar-glide); will-change: transform; }
+	.ui-topbar { will-change: transform; }
 	.ui-topbar.away { transform: translateY(-100%); pointer-events: none; }
+	/* Over a page hero the bar is see-through (no glass, no line); the glass fades in once the hero has scrolled by. */
+	.ui-topbar { transition: transform var(--bar-glide), background-color 400ms ease, border-color 400ms ease; }
+	:global(html.over-hero) .ui-topbar { background-color: transparent; border-bottom-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
 	@media (prefers-reduced-motion: reduce) { .ui-topbar { transition: none; } }
 	.lead, .trail { display: flex; align-items: center; gap: 4px; min-width: 0; }
 	@media (max-width: 767px) { .ui-topbar { display: none; } }
