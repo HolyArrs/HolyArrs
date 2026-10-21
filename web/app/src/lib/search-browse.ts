@@ -87,7 +87,8 @@ export function readMood(p: Pick<URLSearchParams, 'get'>): MoodView | null {
 }
 
 /** The tile hues: strong, distinct, readable under white type. */
-export const TILE_HUES = ['#d1344b', '#e0702a', '#c99a1c', '#5f9e2f', '#1f9e7a', '#1b8fb8', '#2f6fd8', '#5b4fd6', '#8e44c9', '#c23f9b', '#b5523a', '#3d7f8c', '#7a8b2a', '#a8376a'];
+// HolyArrs cinematic duotone (Luis, 2026-10-20): rich brand reds, with a few plum, rust and steel tones so neighbours differ.
+export const TILE_HUES = ['#d0202a', '#b3123e', '#8e1f4f', '#6d2a8a', '#c2410c', '#9f1d35', '#3f6a8a', '#b91c1c', '#7a1d6b', '#2c7a7b', '#c0263f', '#a3402b'];
 
 /** tileHue gives a category its own colour, the same on every visit (by its name). */
 export function tileHue(name: string): string {
