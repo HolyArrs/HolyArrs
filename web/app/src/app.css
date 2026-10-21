@@ -478,9 +478,9 @@ input[type='checkbox'], input[type='radio'], progress { accent-color: var(--acce
 @media (pointer: coarse) { .input { min-height: 44px; } }
 
 /* Scope pills pin under the top bar, and slide into its space when it hides on scroll (lib/scroll-bar). */
-[data-pin-pills] { position: sticky; top: calc(var(--topbar) + 10px); z-index: 20; transition: transform 240ms cubic-bezier(.22,1,.36,1); }
-[data-pin-pills] .ui-seg { transition: transform 240ms cubic-bezier(.22,1,.36,1), background-color 240ms ease, box-shadow 240ms ease; transform-origin: top center; }
-html.bar-hidden [data-pin-pills] { transform: translateY(calc(-1 * var(--topbar))); }
-html.bar-hidden [data-pin-pills] .ui-seg { transform: scale(0.82); background: color-mix(in srgb, var(--bg) 72%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: inset 0 -0.5px 0 var(--line), 0 0 0 0.5px color-mix(in srgb, var(--text) 12%, transparent), 0 8px 24px rgb(0 0 0 / 0.18); }
-@media (max-width: 767px) { [data-pin-pills] { top: 8px; } html.bar-hidden [data-pin-pills] { transform: none; } }
+[data-pin-pills] { position: sticky; top: calc(var(--topbar) + 10px); z-index: 20; transform: translateY(calc(-1 * var(--topbar) * var(--bar, 0))); will-change: transform; }
+/* The pills shrink and gain their glass in step with the bar (--bar 0 → 1, driven per frame by lib/scroll-bar). */
+[data-pin-pills] .ui-seg { transform: scale(calc(1 - 0.18 * var(--bar, 0))); transform-origin: top center; background: color-mix(in srgb, var(--bg) calc(40% + 32% * var(--bar, 0)), transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); transition: box-shadow 300ms ease; }
+html.bar-hidden [data-pin-pills] .ui-seg { box-shadow: inset 0 -0.5px 0 var(--line), 0 0 0 0.5px color-mix(in srgb, var(--text) 12%, transparent), 0 8px 24px rgb(0 0 0 / 0.18); }
+@media (max-width: 767px) { [data-pin-pills] { top: 8px; transform: none; } }
 @media (prefers-reduced-motion: reduce) { [data-pin-pills], [data-pin-pills] .ui-seg { transition: none; } }
