@@ -39,6 +39,15 @@ type musicTrendCache struct {
 	covers map[string]musicCover
 	// artMiss is when a picture was last not found, by "kind|mbid".
 	artMiss map[string]time.Time
+	// artBusy are pictures being fetched now, so a second ask waits for
+	// the first instead of fetching again.
+	artBusy map[string]*artFetch
+}
+
+type artFetch struct {
+	done       chan struct{}
+	name, path string
+	ok         bool
 }
 
 type musicCover struct {
@@ -206,6 +215,36 @@ const musicArtMissTTL = 6 * time.Hour
 // card is never blank. Misses are remembered a while (each costs outside
 // calls).
 func (a *API) musicTrendArtFile(ctx context.Context, kind, mbid string) (name, path string, ok bool) {
+	c := &a.music
+	key := kind + "|" + mbid
+	c.mu.Lock()
+	if f := c.artBusy[key]; f != nil {
+		c.mu.Unlock()
+		select {
+		case <-f.done:
+			if f.ok {
+				return f.name, f.path, true
+			}
+		case <-ctx.Done():
+			return "", "", false
+		}
+		return a.fetchMusicArt(ctx, kind, mbid)
+	}
+	if c.artBusy == nil {
+		c.artBusy = map[string]*artFetch{}
+	}
+	f := &artFetch{done: make(chan struct{})}
+	c.artBusy[key] = f
+	c.mu.Unlock()
+	f.name, f.path, f.ok = a.fetchMusicArt(ctx, kind, mbid)
+	c.mu.Lock()
+	delete(c.artBusy, key)
+	c.mu.Unlock()
+	close(f.done)
+	return f.name, f.path, f.ok
+}
+
+func (a *API) fetchMusicArt(ctx context.Context, kind, mbid string) (name, path string, ok bool) {
 	c := &a.music
 	c.mu.Lock()
 	it, known := c.names[kind+"|"+mbid]

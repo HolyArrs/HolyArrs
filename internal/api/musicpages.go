@@ -362,25 +362,15 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 	}
 	kid := a.kidMax(r) != ""
 	ctx := metadata.MemberLookup(r.Context())
-	art, err := a.s.Library.Artists.Artist(ctx, mbid)
-	if errors.Is(err, metadata.ErrArtistNotFound) {
-		fail(w, http.StatusNotFound, "no artist with that id")
-		return
-	}
-	if err != nil {
-		fail(w, http.StatusBadGateway, "the music source did not answer; try again shortly")
-		return
-	}
-	var dz metadata.DeezerProfile
-	var bio *metadata.WikiSummary
+	// Genres, links and similar artists need only the id: ask them while
+	// the artist itself is looked up.
 	var genres []string
 	var links []metadata.ArtistLink
+	var similar []PageArtist
 	var wg sync.WaitGroup
 	side, cancel := context.WithTimeout(ctx, 6*time.Second)
 	defer cancel()
-	wg.Add(3)
-	go func() { defer wg.Done(); dz = a.deezerProfile(side, art.Name) }()
-	go func() { defer wg.Done(); bio = a.artistBio(side, art.Name) }()
+	wg.Add(2)
 	go func() {
 		defer wg.Done()
 		if src, ok := a.genreProvider(); ok {
@@ -391,7 +381,21 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 			genres, _ = src.ArtistGenres(side, mbid)
 		}
 	}()
-	similar := a.similarArtists(ctx, mbid, 18)
+	go func() { defer wg.Done(); similar = a.similarArtists(ctx, mbid, 18) }()
+	art, err := a.s.Library.Artists.Artist(metadata.QuickArtist(ctx, 1500*time.Millisecond), mbid)
+	if errors.Is(err, metadata.ErrArtistNotFound) {
+		fail(w, http.StatusNotFound, "no artist with that id")
+		return
+	}
+	if err != nil {
+		fail(w, http.StatusBadGateway, "the music source did not answer; try again shortly")
+		return
+	}
+	var dz metadata.DeezerProfile
+	var bio *metadata.WikiSummary
+	wg.Add(2)
+	go func() { defer wg.Done(); dz = a.deezerProfile(side, art.Name) }()
+	go func() { defer wg.Done(); bio = a.artistBio(side, art.Name) }()
 	wg.Wait()
 	albums, t, err := a.pageAlbums(ctx, r, art, dz)
 	if err != nil {
@@ -444,8 +448,51 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 		v.Related = append(v.Related, PageArtist{MBID: l.MBID, Name: l.Name, Image: artPath("artist", l.MBID), Note: l.Type})
 	}
 	a.rememberMusicNames(names)
+	a.warmMusicArt(v)
 	w.Header().Set("Cache-Control", "private, max-age=60")
 	writeJSON(w, http.StatusOK, v)
+}
+
+// warmMusicArt starts fetching the page's pictures at once and several at a
+// time, so they are kept before the browser asks for each (it asks six at a
+// time, and each cold picture is a few outside calls).
+func (a *API) warmMusicArt(v ArtistPageView) {
+	const pre = "/api/v1/music-trending/art/"
+	var keys []string
+	add := func(img string) {
+		if rest, ok := strings.CutPrefix(img, pre); ok && len(keys) < 80 {
+			keys = append(keys, rest)
+		}
+	}
+	add(v.Image)
+	for _, al := range v.Albums {
+		add(al.Image)
+	}
+	for _, p := range v.Related {
+		add(p.Image)
+	}
+	for _, p := range v.Similar {
+		add(p.Image)
+	}
+	if len(keys) == 0 || a.s.Library == nil || a.s.Library.Artwork == nil {
+		return
+	}
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+		sem := make(chan struct{}, 8)
+		var wg sync.WaitGroup
+		for _, k := range keys {
+			kind, mbid, _ := strings.Cut(k, "/")
+			wg.Add(1)
+			sem <- struct{}{}
+			go func() {
+				defer func() { <-sem; wg.Done() }()
+				a.musicTrendArtFile(ctx, kind, mbid)
+			}()
+		}
+		wg.Wait()
+	}()
 }
 
 func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
@@ -465,7 +512,20 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 	}
 	kid := a.kidMax(r) != ""
 	ctx := metadata.MemberLookup(r.Context())
-	art, err := a.s.Library.Artists.Artist(ctx, artist)
+	// The pressings need only the album id: ask them while the artist is looked up.
+	var ps []metadata.Pressing
+	var psErr error
+	psDone := make(chan struct{})
+	go func() { defer close(psDone); ps, psErr = a.s.Library.Artists.Pressings(ctx, mbid) }()
+	defer func() { <-psDone }()
+	var similar []PageArtist
+	simDone := make(chan struct{})
+	go func() { defer close(simDone); similar = a.similarArtists(ctx, artist, 14) }()
+	defer func() { <-simDone }()
+	art, err := a.s.Library.Artists.Artist(metadata.QuickArtist(ctx, 1500*time.Millisecond), artist)
+	if err == nil && art.Partial && !hasAlbum(art, mbid) {
+		art, err = a.s.Library.Artists.Artist(ctx, artist)
+	}
 	if err != nil {
 		if errors.Is(err, metadata.ErrArtistNotFound) {
 			fail(w, http.StatusNotFound, "no artist with that id")
@@ -502,8 +562,8 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 			v.Artist.Image = img
 		}
 	}
-	ps, err := a.s.Library.Artists.Pressings(ctx, mbid)
-	if err != nil && len(ps) == 0 {
+	<-psDone
+	if psErr != nil && len(ps) == 0 {
 		v.Incomplete = true
 	}
 	main := mainPressing(ps)
@@ -552,13 +612,23 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 			v.MoreBy = append(v.MoreBy, al)
 		}
 	}
-	v.Similar = a.similarArtists(ctx, artist, 14)
+	<-simDone
+	v.Similar = similar
 	w.Header().Set("Cache-Control", "private, max-age=60")
 	writeJSON(w, http.StatusOK, v)
 }
 
 // mainPressing picks the edition to list: the earliest official one with
 // the most usual track count.
+func hasAlbum(art metadata.Artist, mbid string) bool {
+	for _, al := range art.Albums {
+		if strings.EqualFold(al.MBID, mbid) {
+			return true
+		}
+	}
+	return false
+}
+
 func mainPressing(ps []metadata.Pressing) *metadata.Pressing {
 	count := map[int]int{}
 	for _, p := range ps {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 )
 
 const (
@@ -98,6 +99,34 @@ func (m *serviceMusic) Artist(ctx context.Context, mbid string) (Artist, error) 
 	if m.direct == nil {
 		return artist, nil
 	}
+	if wait, ok := ctx.Value(quickArtistKey{}).(time.Duration); ok {
+		// A page view: MusicBrainz pages through release groups at one
+		// request a second, so wait only a while. The full lookup goes on
+		// and lands in the lookup cache for the next view.
+		type answer struct {
+			a   Artist
+			err error
+		}
+		done := make(chan answer, 1)
+		bg, stop := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Minute)
+		go func() {
+			defer stop()
+			a, err := m.direct.Artist(bg, mbid)
+			done <- answer{a, err}
+		}()
+		t := time.NewTimer(wait)
+		defer t.Stop()
+		select {
+		case d := <-done:
+			if d.err == nil && !d.a.Partial && validDirectArtist(d.a, mbid) {
+				return d.a, nil
+			}
+		case <-t.C:
+		case <-ctx.Done():
+			return Artist{}, ctx.Err()
+		}
+		return artist, nil
+	}
 	direct, directErr := m.direct.Artist(ctx, mbid)
 	if ctx.Err() != nil {
 		return Artist{}, ctx.Err()
@@ -106,6 +135,14 @@ func (m *serviceMusic) Artist(ctx context.Context, mbid string) (Artist, error) 
 		return direct, nil
 	}
 	return artist, nil
+}
+
+type quickArtistKey struct{}
+
+// QuickArtist marks ctx so Artist waits at most wait for the full
+// MusicBrainz album list before it answers with the metadata server's.
+func QuickArtist(ctx context.Context, wait time.Duration) context.Context {
+	return context.WithValue(ctx, quickArtistKey{}, wait)
 }
 
 func (m *serviceMusic) directArtist(ctx context.Context, mbid string) (Artist, error) {
