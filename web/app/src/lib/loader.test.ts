@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HOLD_MS, NAV_DELAY_MS, backoff, bootHold, isUserSwitch, remaining } from './loader.ts';
+import { ARRIVE_MS, GLIDE_MS, HOLD_MS, NAV_DELAY_MS, SIGNIN_HOLD_MS, VEIL_MS, backoff, handoffFrom, handoffTotal, bootHold, isUserSwitch, remaining } from './loader.ts';
 
 describe('loader timing', () => {
 	it('holds the screen for the rest of 2.2 s', () => {
@@ -35,5 +35,26 @@ describe('boot hold', () => {
 		expect(bootHold('navigate', '/library/45')).toBe(0);
 		expect(bootHold('navigate', '/title/show/203857')).toBe(0);
 		expect(bootHold(undefined, '/')).toBe(0);
+	});
+});
+
+describe('sign-in hand-off timing', () => {
+	it('starts the ring on the button centre at the button height', () => {
+		expect(handoffFrom({ left: 500, top: 600, width: 280, height: 52 }, 1280, 800)).toEqual({ x: 0, y: 226, s: 0.5 });
+	});
+	it('never scales the ring above full size or to nothing', () => {
+		expect(handoffFrom({ left: 0, top: 0, width: 10, height: 400 }, 100, 100).s).toBe(1);
+		expect(handoffFrom({ left: 0, top: 0, width: 10, height: 2 }, 100, 100).s).toBe(0.2);
+	});
+	it('lasts about 1.2 to 1.8 s when the app is ready instantly or soon', () => {
+		expect(handoffTotal(0)).toBe(VEIL_MS + SIGNIN_HOLD_MS + ARRIVE_MS);
+		expect(handoffTotal(0)).toBeGreaterThanOrEqual(1200);
+		expect(handoffTotal(800)).toBeLessThanOrEqual(1800);
+	});
+	it('the ring has landed before the app opens under it', () => {
+		expect(GLIDE_MS).toBeLessThanOrEqual(VEIL_MS);
+	});
+	it('reduced motion is a short crossfade', () => {
+		expect(handoffTotal(0, true)).toBeLessThan(500);
 	});
 });

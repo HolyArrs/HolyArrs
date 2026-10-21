@@ -11,6 +11,33 @@ export const SETUP_HOLD_MS = 1800;
 
 const LAST_USER = 'holyarrs-last-user';
 
+// Sign-in hand-off (one continuous move, about 1.2–1.6 s): the Orbit grows out
+// of the Sign in button and glides to the loader's centre while the panel and
+// art dissolve under a fading app-colour veil; the app then opens below it.
+/** The ring's glide from the button to the centre. */
+export const GLIDE_MS = 560;
+/** The veil and the dissolve: the app opens under the Orbit after this. */
+export const VEIL_MS = 560;
+/** Shortest time the Orbit rests at the centre once the app is opening, so it never blinks. */
+export const SIGNIN_HOLD_MS = 520;
+/** The Orbit's leave and the page's rise. */
+export const ARRIVE_MS = 420;
+const RING = 104;
+
+export interface Rect { left: number; top: number; width: number; height: number }
+
+/** FLIP start for the ring: from the centre of `from`, at its height, to the viewport centre at full size. */
+export function handoffFrom(from: Rect, vw: number, vh: number, ring = RING): { x: number; y: number; s: number } {
+	const s = Math.max(0.2, Math.min(1, from.height / ring));
+	return { x: from.left + from.width / 2 - vw / 2, y: from.top + from.height / 2 - vh / 2, s };
+}
+
+/** Total sign-in sequence for an app that is ready after `readyMs` (from the press). */
+export function handoffTotal(readyMs: number, reduced = false): number {
+	if (reduced) return 400;
+	return Math.max(VEIL_MS, readyMs) + SIGNIN_HOLD_MS + ARRIVE_MS;
+}
+
 /** A sign-in by someone other than the last person on this device. */
 export function isUserSwitch(last: string | null, name: string): boolean {
 	return !!last && !!name && last !== name;
@@ -45,10 +72,12 @@ let timer: ReturnType<typeof setTimeout> | undefined;
 let navTimer: ReturnType<typeof setTimeout> | undefined;
 
 function leave(node: HTMLElement): void {
+	const handoff = node.classList.contains('handoff');
 	node.classList.add('out');
+	if (handoff) arrive();
 	timer = setTimeout(() => {
 		node.hidden = true;
-		node.classList.remove('out', 'nav');
+		node.classList.remove('out', 'nav', 'handoff', 'veil');
 		say('');
 		full = false;
 	}, 280);
@@ -71,7 +100,7 @@ export function playLoader(line = '', holdMs = HOLD_MS): void {
 	hold = holdMs;
 	clearTimeout(timer);
 	clearTimeout(navTimer);
-	node.classList.remove('out', 'nav');
+	node.classList.remove('out', 'nav', 'handoff', 'veil');
 	node.hidden = false;
 	full = true;
 	shownAt = performance.now();
@@ -82,8 +111,49 @@ function say(text: string): void {
 	if (t) t.textContent = text; // plain text only
 }
 
-/** Play after a sign-in; says welcome when a different person signs in on this device. */
-export function playSignIn(name: string): void {
+/** The first page fades and rises in as the Orbit leaves (CSS in app.html). */
+function arrive(): void {
+	const root = document.documentElement;
+	if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+	root.classList.add('hl-arrive');
+	setTimeout(() => root.classList.remove('hl-arrive'), ARRIVE_MS + 80);
+}
+
+/**
+ * Start the sign-in hand-off: the Orbit grows from `from` (the Sign in
+ * button) and glides to the centre over a transparent veil that fades to
+ * the app colour. The same #hl element then serves as the boot loader.
+ */
+export function playHandoff(from: Rect | null, name: string): void {
+	const node = el();
+	if (!node) return;
+	const last = rememberUser(name);
+	const ring = node.querySelector<HTMLElement>('.hw');
+	clearTimeout(timer);
+	clearTimeout(navTimer);
+	node.classList.remove('out', 'nav');
+	node.classList.add('handoff');
+	node.hidden = false;
+	full = true;
+	hold = SIGNIN_HOLD_MS;
+	shownAt = performance.now() + VEIL_MS;
+	say(isUserSwitch(last, name) ? `Welcome, ${name}` : '');
+	if (!ring || !from) return;
+	const f = handoffFrom(from, innerWidth, innerHeight);
+	ring.style.transition = 'none';
+	ring.style.transform = `translate(${f.x}px, ${f.y}px) scale(${f.s})`;
+	ring.style.opacity = '0';
+	void ring.offsetWidth;
+	// Two frames: the start state must paint once, or nothing transitions out of display:none.
+	requestAnimationFrame(() => requestAnimationFrame(() => {
+		ring.style.transition = '';
+		ring.style.transform = '';
+		ring.style.opacity = '';
+		node.classList.add('veil');
+	}));
+}
+
+function rememberUser(name: string): string | null {
 	let last: string | null = null;
 	try {
 		last = localStorage.getItem(LAST_USER);
@@ -91,7 +161,13 @@ export function playSignIn(name: string): void {
 	} catch {
 		/* private window */
 	}
-	playLoader(isUserSwitch(last, name) ? `Welcome, ${name}` : '');
+	return last;
+}
+
+/** Play after a sign-in; says welcome when a different person signs in on this device. */
+export function playSignIn(name: string, holdMs = HOLD_MS): void {
+	const last = rememberUser(name);
+	playLoader(isUserSwitch(last, name) ? `Welcome, ${name}` : '', holdMs);
 }
 
 /** The server stopped answering: cover the app until it is back. */

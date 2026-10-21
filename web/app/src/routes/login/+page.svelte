@@ -4,7 +4,7 @@
 	import { to } from '#lib/paths.ts';
 	import { onMount, tick } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { loaderReady, playSignIn } from '#lib/loader.ts';
+	import { loaderReady, playHandoff, playSignIn, SIGNIN_HOLD_MS, VEIL_MS } from '#lib/loader.ts';
 	import { page } from '$app/state';
 	import { ApiError, message } from '#lib/api.ts';
 	import { session, type SignInResult } from '#lib/session.svelte.ts';
@@ -90,22 +90,24 @@
 		if (session.s.state !== 'signed_in') return;
 		if (left) return;
 		left = true;
-		// Success: the panel and the art dissolve, then the app opens with
-		// the loading screen once. Reduced motion goes straight on.
-		const open = () => {
-			playSignIn(session.s.name);
-			void goto(to(firstRun ? '/welcome?first=1' : next()), { replace: true }).finally(loaderReady);
-		};
-		if (calm) return open();
-		// The panel breaks into 24 px blocks; the dark closes over the art in
-		// the site's hero cells.
+		// Success, one continuous move: the Orbit grows out of the Sign in
+		// button and glides to the centre while the panel and the art dissolve
+		// under a veil in the app colour; the app opens under the same Orbit,
+		// which then leaves as the first page rises (lib/loader.ts).
+		const target = to(firstRun ? '/welcome?first=1' : next());
+		if (calm) {
+			playSignIn(session.s.name, SIGNIN_HOLD_MS); // reduced motion: a plain crossfade, no long hold
+			void goto(target, { replace: true }).finally(loaderReady);
+			return;
+		}
+		const btn = panelEl?.querySelector<HTMLElement>('button[type=submit]') ?? panelEl ?? null;
+		playHandoff(btn ? btn.getBoundingClientRect() : null, session.s.name);
 		leaving = true;
-		void tick().then(() =>
-			Promise.all([
-				panelEl ? blockDissolve(panelEl, { dir: -1, duration: 320, cell: 24 }) : null,
-				coverEl ? blockDissolve(coverEl, { dir: 1, duration: 380, delay: 180, cell: siteCell(window.innerWidth) }) : null
-			]).then(open)
-		);
+		void tick().then(() => {
+			if (panelEl) void blockDissolve(panelEl, { dir: -1, duration: 320, cell: 24 });
+			if (coverEl) void blockDissolve(coverEl, { dir: 1, duration: 380, delay: 120, cell: siteCell(window.innerWidth) });
+		});
+		setTimeout(() => void goto(target, { replace: true }).finally(loaderReady), VEIL_MS);
 	});
 
 	function took(r: SignInResult) {
@@ -452,11 +454,15 @@
 		position: fixed;
 		inset: 0;
 		z-index: 2;
-		background: #050507;
+		background: #0b0b0c;
 		pointer-events: none;
 		display: none;
 	}
 	.wrap.leaving .cover { display: block; }
+	:global(html[data-theme='light']) .cover { background: #f5f5f7; }
+	/* A 44 px blur re-rendered under a changing mask costs ~30 ms a frame; the
+	   panel is breaking up anyway, so it leaves on its solid fallback colour. */
+	.wrap.leaving .panel { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgb(18 18 22 / 0.92); }
 	@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
 		.panel { background: rgb(18 18 22 / 0.92); }
 	}

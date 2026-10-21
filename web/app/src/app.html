@@ -39,6 +39,15 @@
 			#hlr{min-height:36px;padding:0 16px;border:0;border-radius:10px;background:#d42d24;color:#fff;font:600 14px/1 system-ui,sans-serif;cursor:pointer}
 			#hlr[hidden]{display:none}
 			#hl.nav #hlr{display:none}
+			/* Sign-in hand-off (lib/loader.ts playHandoff): the veil fades to the app colour while the Orbit glides in from the button. */
+			#hl .hw{transition:transform .56s cubic-bezier(.22,1,.36,1),opacity .3s ease-out}
+			#hl.handoff{background-color:transparent;transition:background-color .56s cubic-bezier(.4,0,.2,1),opacity .42s cubic-bezier(.4,0,.2,1)}
+			#hl.handoff.veil{background-color:#0b0b0c}
+			[data-theme='light'] #hl.handoff.veil{background-color:#f5f5f7}
+			#hl.handoff.out .hw{transform:scale(.86);opacity:0;transition-duration:.42s}
+			html.hl-arrive #main{animation:hla .42s cubic-bezier(.22,1,.36,1) both}
+			@keyframes hla{from{opacity:0;transform:translateY(14px)}}
+			@media (prefers-reduced-motion:reduce){#hl .hw,#hl.handoff{transition:opacity .3s}}
 			@keyframes hlr{to{transform:rotate(360deg)}}
 			@keyframes hls{0%,100%{opacity:.8}50%{opacity:1}}
 			@keyframes hlf{from{opacity:0}}
