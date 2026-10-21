@@ -129,6 +129,15 @@ func (st *signinArtState) allow(addr string) bool {
 	return true
 }
 
+// signinClient keys the rate limit: the auth package's trusted-proxy
+// client key, or the peer address when no Auth is in front (tests).
+func (a *API) signinClient(r *http.Request) string {
+	if a.s.Auth != nil {
+		return a.s.Auth.ClientKey(r)
+	}
+	return remoteHost(r)
+}
+
 func remoteHost(r *http.Request) string {
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
@@ -153,7 +162,7 @@ func (a *API) signinArtRoutes(m *http.ServeMux) {
 // signinArt answers the sign-in page's pictures.
 func (a *API) signinArt(w http.ResponseWriter, r *http.Request) {
 	st := &a.signin
-	if !st.allow(remoteHost(r)) {
+	if !st.allow(a.signinClient(r)) {
 		w.Header().Set("Retry-After", "60")
 		writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many requests"})
 		return

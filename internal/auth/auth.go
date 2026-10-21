@@ -666,6 +666,27 @@ func (a *Auth) clientKey(r *http.Request) string {
 	return "ip:" + host
 }
 
+// ClientKey names the caller for rate limits: the peer address, or the
+// address a trusted proxy forwards (the last X-Forwarded-For entry, else
+// X-Real-IP). Forwarding headers from any other peer are ignored.
+func (a *Auth) ClientKey(r *http.Request) string {
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		host = r.RemoteAddr
+	}
+	if peer := net.ParseIP(host); peer != nil && a.trustedProxy(peer) {
+		client := strings.TrimSpace(r.Header.Get("X-Real-IP"))
+		if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+			parts := strings.Split(xff, ",")
+			client = strings.TrimSpace(parts[len(parts)-1])
+		}
+		if ip := net.ParseIP(client); ip != nil {
+			host = ip.String()
+		}
+	}
+	return "ip:" + host
+}
+
 // waitFor returns how long the key must still wait, or 0.
 func (a *Auth) waitFor(key string, free int) time.Duration {
 	f := a.fails[key]
