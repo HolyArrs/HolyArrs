@@ -326,7 +326,7 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 	a.exploreCaching(w, r, "private, no-cache")
 	st.write(w)
 	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "building": building, "seeds": pg.Seeds, "tail_cap": pg.Cap,
-		"tail_rows": len(pg.Tail), "top10": top10, "hero": hero, "head": head})
+		"tail_rows": len(pg.Tail), "top10": top10, "hero": hero, "head": head, "taste": pg.Taste})
 }
 
 // exploreTail answers GET /api/v1/explore/tail?page=n: the next 4 rows of

@@ -68,8 +68,10 @@
 	import PosterCard from '#lib/ui/PosterCard.svelte';
 	import ExploreHero from '#lib/ui/ExploreHero.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
-	import GenreCard from '#lib/ui/GenreCard.svelte';
-	import { genreCardHref, genreRowPath, genreRowSlot, genreTab, type GenreRowAnswer, type GenreRowCard } from '#lib/explore-genre-row.ts';
+	import CategoryStrip from '#lib/ui/CategoryStrip.svelte';
+	import { browsePath, browseSectionPath, type BrowseAnswer, type BrowseSectionAnswer, type BrowseTile } from '#lib/search-browse.ts';
+	import { dayKey, stripTiles, STRIP_ORDER } from '#lib/category-strip.ts';
+	import { top10Map, whyShown } from '#lib/why-shown.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
@@ -273,49 +275,42 @@
 	}
 	const genreOn = $derived(!!genre && type !== 'music');
 
-	// Browse by genre: one row of genre cards mid-page, asked for after the head so it never slows the first row.
-	let genreCards = $state<GenreRowCard[]>([]);
-	let genreCardsFor = '';
-	async function loadGenreCards(t: ExploreType) {
-		if (t === 'music' || genreCardsFor === t) return;
-		genreCardsFor = t;
-		genreCards = [];
+	// The category strip under the hero: the household's top Browse categories, from the
+	// Browse answers the server keeps warm. Hidden until they are ready (no ghosts).
+	let strip = $state<(BrowseTile & { section: string })[]>([]);
+	let stripFor = '';
+	async function loadStrip(t: ExploreType) {
+		if (t === 'music' || stripFor === t) return;
+		stripFor = t;
+		strip = [];
 		try {
-			const a = await api.get<GenreRowAnswer>(genreRowPath(t), gone.signal);
-			if (genreCardsFor === t) genreCards = a.genres ?? [];
+			// The fast genre tiles and every section the server has ready; a section still building is left out.
+			const [b, ...got] = await Promise.all([
+				api.get<BrowseAnswer>(browsePath(t), gone.signal),
+				...STRIP_ORDER.map((id) => api.get<BrowseSectionAnswer>(browseSectionPath(t, id), gone.signal).catch(() => null))
+			]);
+			if (stripFor !== t) return;
+			const sections: Record<string, BrowseTile[]> = {};
+			STRIP_ORDER.forEach((id, i) => {
+				const a = got[i];
+				sections[id] = a && !a.building ? (a.tiles ?? []) : [];
+			});
+			sections.genres = [...(b.tiles ?? []), ...sections.genres];
+			strip = stripTiles(sections, t, `${session.s.name}|${dayKey(new Date())}`);
 		} catch {
-			if (genreCardsFor === t) genreCardsFor = '';
+			if (stripFor === t) stripFor = '';
 		}
 	}
 	$effect(() => {
 		const t = type;
 		if (!headLoaded || genreOn || t === 'music') return;
-		const id = setTimeout(() => void loadGenreCards(t), 300);
+		const id = setTimeout(() => void loadStrip(t), 200);
 		return () => clearTimeout(id);
 	});
-	/** openGenreCard opens the card's genre page in place (under All, on its kind's tab). */
-	function openGenreCard(e: MouseEvent, c: GenreRowCard) {
-		if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-		e.preventDefault();
-		const t = genreTab(c);
-		rememberSpot();
-		if (type !== t) {
-			type = t;
-			try {
-				localStorage.setItem(TYPE_KEY, t);
-			} catch {
-				/* the choice is a convenience */
-			}
-			void loadHead();
-		}
-		const url = new URL((page.shallow?.url ?? page.url).href);
-		if (t === 'all') url.searchParams.delete('type');
-		else url.searchParams.set('type', t);
-		url.searchParams.set('genre', String(c.id));
-		genreLoaded = null;
-		void goto(url, { shallow: true, reset: false });
-		scrollTo({ top: 0, behavior: 'instant' });
-	}
+	// Hero badges: why the featured title shows (New season, its Top 10 rank, Picked for you).
+	let heroGenres = $state<Record<string, string[]>>({});
+	let taste = $state<string[]>([]);
+	let top10Ranks = $state<Map<string, number>>(new Map());
 	const heroCards = $derived(genreOn ? genreHero : hero);
 	/** The titles of Trending on streaming, as that row shows them now. */
 	let servicesShown = $state<string[]>([]);
@@ -323,7 +318,6 @@
 	const taken = $derived([...heroCards.map(cardIdentity), ...servicesShown]);
 	const rows = $derived(type === 'music' ? [] : markTransitions(dedupeTop(genreOn ? (genreLoaded === genre?.id ? genreRows : []) : filterRows([...head, ...tail], type), taken)));
 	/** Where Browse by genre goes: after this row index (-1: not shown). */
-	const genreSlot = $derived(genreOn || genreCards.length === 0 ? -1 : genreRowSlot(rows));
 	/** Big 4 shelves: the first personal row and Best new releases draw bigger cards. */
 
 	function readTop10Pick() {
@@ -362,6 +356,9 @@
 			headOrder = kept.order;
 			head = kept.rows;
 			hero = (a.hero ?? []).map((d) => ({ ...discoverCard(d, 'hero'), wide: d.backdrop ?? null }));
+			heroGenres = Object.fromEntries((a.hero ?? []).map((d) => [`${d.kind}:${d.tmdb_id}`, d.genres ?? []]));
+			taste = a.taste ?? [];
+			top10Ranks = top10Map([a.top10, ...Object.entries(a.top10?.by_kind ?? {}).map(([kind, l]) => (l ? { ...l, kind } : null))]);
 			heroAt = 0;
 			tail = [];
 			tailPageNext = 0;
@@ -650,8 +647,13 @@
 				{@const h = live(heroCards[heroAt % heroCards.length])}
 				<ExploreHero kind={h.kind === 'show' ? 'show' : 'movie'} tmdb={cardTmdb(h)} title={h.name} href={cardHref(h)} backdrop={h.wide ?? h.image} vtName={h.vtName} subtitle={h.year ? `${h.year} · ${h.kind === 'show' ? 'Show' : 'Movie'}` : h.subtitle} settled={headLoaded && !busy}>
 					{#snippet action()}{@render heroAction(h)}{/snippet}
+					{#snippet badge()}
+						{@const why = whyShown({ kind: h.kind, tmdb: cardTmdb(h) ?? '', genres: heroGenres[`${h.kind}:${cardTmdb(h)}`], fresh: h.fresh }, { top10: top10Ranks, top10Source: 'Netflix', taste })}
+						{#if why.length}<ul class="why" aria-label="Why it is featured">{#each why as w (w.kind)}<li class="why-{w.kind}">{w.text}</li>{/each}</ul>{/if}
+					{/snippet}
 				</ExploreHero>
 			{/if}
+			{#if !genreOn && strip.length}<CategoryStrip tiles={strip} {type} />{/if}
 			{#each rows as row, ri (row.id)}
 				{#if row.type === 'top_services'}
 					<TopServicesRow {type} {region} genre={genreOn ? genre : null} {owned} {who} used={usedServices} bind:shown={servicesShown} />
@@ -709,15 +711,6 @@
 				</Shelf>
 				</div>
 				{/if}
-				{#if ri === genreSlot}
-					<div class="row-wrap wide-row" data-row-id="genre_browse">
-						<Shelf title="Browse by genre" item="var(--title-item)" items={genreCards} key={(c) => `${c.kind}:${c.id}`} defer placeholder="wide" lines={1}>
-							{#snippet card(c: GenreRowCard)}
-								<GenreCard name={c.name} image={c.backdrop} href={to(genreCardHref(c))} onclick={(e) => openGenreCard(e, c)} />
-							{/snippet}
-						</Shelf>
-					</div>
-				{/if}
 			{/each}
 			{#if tailMore && !genreOn}<div class="sentinel" bind:this={sentinel} aria-hidden="true"></div>{/if}
 		{/if}
@@ -757,6 +750,10 @@
 	.types.stuck .genre-pick :global(.trigger) { background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
 	.genre-list { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; }
 	.sentinel { height: 1px; }
+	/* Hero badges, next to the facts line: small glass pills, the Top 10 one in the brand red. */
+	.why { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
+	.why li { font: 600 12px/1 var(--font-ui); letter-spacing: .02em; padding: 6px 10px; border-radius: 999px; color: #fff; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 22%); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+	.why li.why-top10 { background: color-mix(in srgb, var(--accent) 80%, transparent); border-color: transparent; }
 	.row-wrap { display: contents; }
 	/* Wide title rows sit almost edge to edge, as on Netflix: about 279px cards at a 1536px window with a 5px gap. */
 	@media (min-width: 768px) { .row-wrap.wide-row { --shelf-gap: 5px; } }
