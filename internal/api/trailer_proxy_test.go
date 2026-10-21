@@ -294,3 +294,40 @@ func TestTrailerPassThroughInstallCap(t *testing.T) {
 		q.done(1, s, 0)
 	}
 }
+
+// An idle restart clears a stream's own count, never the person's hourly bytes.
+func TestTrailerProxyPersonCapSurvivesIdle(t *testing.T) {
+	var p trailerProxy
+	now := time.Now()
+	id := p.register(1, "https://rr1---sn.googlevideo.com/m.m3u8", now.Add(time.Hour))
+	for i := 0; i < 5; i++ {
+		s, err := p.begin(1, id, now)
+		if err != nil {
+			if i >= 4 {
+				return
+			}
+			t.Fatalf("play %d refused early: %v", i, err)
+		}
+		p.done(1, s, proxyMaxStream)
+		now = now.Add(proxyIdle + time.Second)
+	}
+	t.Fatal("hourly cap never stopped the replays")
+}
+
+// A stream with a request still running is not idle, however long it has been quiet.
+func TestTrailerProxyBusyStreamNotFresh(t *testing.T) {
+	var p trailerProxy
+	now := time.Now()
+	id := p.register(1, "https://rr1---sn.googlevideo.com/m.m3u8", now.Add(time.Hour))
+	s, err := p.begin(1, id, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	started := s.started
+	if _, err := p.begin(1, id, now.Add(proxyIdle+time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	if !s.started.Equal(started) {
+		t.Fatal("a busy stream restarted its life")
+	}
+}

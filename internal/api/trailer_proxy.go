@@ -35,6 +35,8 @@ const (
 	proxyMaxStream = 1 << 30          // bytes one stream may relay in all
 	proxyMaxActive = 12               // streams the whole install may have going at once
 	proxyLife      = 20 * time.Minute // how long one stream may relay, from its first request
+	proxyUserBytes = 4 << 30          // bytes one person may relay per proxyUserSpan, whatever the streams
+	proxyUserSpan  = time.Hour
 )
 
 // trailerProxyClient fetches from YouTube; tests point it at a fake.
@@ -56,6 +58,14 @@ type proxyStream struct {
 	last     time.Time
 	sent     int64
 	started  time.Time
+	busy     int // its requests in flight
+}
+
+// proxyUse is a person's relayed bytes in the current span; a stream's idle
+// restart never clears it.
+type proxyUse struct {
+	since time.Time
+	bytes int64
 }
 
 type trailerProxy struct {
@@ -63,6 +73,7 @@ type trailerProxy struct {
 	streams  map[string]*proxyStream
 	byKey    map[string]string
 	inFlight map[int64]int
+	use      map[int64]*proxyUse
 }
 
 // register gives the person an opaque id for a manifest HolyArrs resolved
@@ -109,7 +120,19 @@ func (p *trailerProxy) begin(user int64, id string, now time.Time) (*proxyStream
 	// A stream left idle starts a new play: its life and byte count start
 	// over (the same manifest keeps its id, so the hero, the full-screen
 	// player and a later visit all share it).
-	fresh := now.Sub(s.last) >= proxyIdle
+	// A stream with a request still running is never idle.
+	fresh := s.busy == 0 && now.Sub(s.last) >= proxyIdle
+	if p.use == nil {
+		p.use = map[int64]*proxyUse{}
+	}
+	u := p.use[user]
+	if u == nil || now.Sub(u.since) >= proxyUserSpan {
+		u = &proxyUse{since: now}
+		p.use[user] = u
+	}
+	if u.bytes >= proxyUserBytes {
+		return nil, errProxyBusy
+	}
 	if !fresh && !s.started.IsZero() && now.Sub(s.started) > proxyLife {
 		return nil, errProxyBusy
 	}
@@ -131,6 +154,7 @@ func (p *trailerProxy) begin(user int64, id string, now time.Time) (*proxyStream
 		return nil, errProxyBusy
 	}
 	p.inFlight[user]++
+	s.busy++
 	s.last = now
 	if fresh || s.started.IsZero() {
 		s.started, s.sent = now, 0
@@ -142,7 +166,11 @@ func (p *trailerProxy) done(user int64, s *proxyStream, sent int64) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.inFlight[user]--
+	s.busy--
 	s.sent += sent
+	if u := p.use[user]; u != nil {
+		u.bytes += sent
+	}
 	s.last = time.Now()
 }
 
