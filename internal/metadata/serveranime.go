@@ -142,6 +142,9 @@ func (m AnimeMap) AltNames(name string) []string {
 	return out
 }
 
+// maxAnimeSeason bounds the TMDB season numbers taken from the server.
+const maxAnimeSeason = 1000
+
 // AnimeSeason is how one TMDB season of an anime maps: the AniList title
 // of that cour, and the absolute number of its first episode.
 type AnimeSeason struct {
@@ -174,7 +177,7 @@ func (m AnimeMap) Seasons(counts map[int]int) []AnimeSeason {
 	}
 	by := map[int]*AnimeSeason{}
 	for _, e := range m.Entries {
-		if e.TMDBSeason == nil || e.Absolute {
+		if e.TMDBSeason == nil || e.Absolute || *e.TMDBSeason < 0 || *e.TMDBSeason > maxAnimeSeason {
 			continue
 		}
 		n := *e.TMDBSeason
@@ -191,12 +194,27 @@ func (m AnimeMap) Seasons(counts map[int]int) []AnimeSeason {
 	}
 	slices.Sort(nums)
 	out := []AnimeSeason{}
-	abs := 1
-	for n := 1; len(nums) > 0 && n <= nums[len(nums)-1]; n++ {
-		if s := by[n]; s != nil {
-			s.AbsoluteFrom = abs
+	// Absolute numbers count the episodes of every earlier TMDB season
+	// (specials left out); only seasons that exist are walked.
+	var known []int
+	for n := range counts {
+		if n >= 1 && n <= maxAnimeSeason {
+			known = append(known, n)
 		}
-		abs += counts[n]
+	}
+	slices.Sort(known)
+	for _, n := range nums {
+		if n < 1 {
+			continue
+		}
+		abs := 1
+		for _, k := range known {
+			if k >= n {
+				break
+			}
+			abs += max(0, counts[k])
+		}
+		by[n].AbsoluteFrom = abs
 	}
 	for _, n := range nums {
 		s := by[n]

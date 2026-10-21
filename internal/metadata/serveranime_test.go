@@ -96,3 +96,14 @@ func TestLooksAnime(t *testing.T) {
 		}
 	}
 }
+
+// Season numbers come from the server: absurd ones are dropped and the
+// absolute count walks only the seasons that exist.
+func TestAnimeSeasonsBounded(t *testing.T) {
+	huge, neg, one, three := 2_000_000_000, -1, 1, 3
+	m := AnimeMap{Entries: []AnimeEntry{{AniList: 1, TMDBSeason: &one}, {AniList: 2, TMDBSeason: &three}, {AniList: 3, TMDBSeason: &huge}, {AniList: 4, TMDBSeason: &neg}}}
+	ss := m.Seasons(map[int]int{1: 10, 3: 5, huge: 9, -5: 4})
+	if len(ss) != 2 || ss[0].Number != 1 || ss[0].AbsoluteFrom != 1 || ss[1].Number != 3 || ss[1].AbsoluteFrom != 11 {
+		t.Fatalf("%+v", ss)
+	}
+}

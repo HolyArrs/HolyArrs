@@ -4,8 +4,10 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/CoderLuii/holyarrs/internal/ratings"
 )
 
 // animeView is a title page's anime answer: whether the title is anime,
@@ -34,9 +36,42 @@ func (a *API) metadataAnime(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "tmdb_id must be a TMDB number")
 		return
 	}
+	if len(a.kindsOn(kind)) == 0 {
+		fail(w, http.StatusConflict, "that part is off")
+		return
+	}
 	if a.kidLimited(w, r) {
 		return
 	}
+	// The Kid gate, as on the details page: a title above the limit (or
+	// with no known rating) answers nothing, not even its other names.
+	if max := a.kidMax(r); max != "" {
+		rating, inLibrary := a.libraryRating(r.Context(), kind, id)
+		if !inLibrary {
+			d, ok := metadata.DiscovererFor(r.Context(), a.s.Metadata)
+			if !ok {
+				fail(w, http.StatusForbidden, aboveLimit)
+				return
+			}
+			key := "details|" + kind + "|" + id
+			e, cached := a.discover.get(key)
+			if !cached || time.Since(e.at) >= discoverTTL["details"] {
+				det, err := d.Details(r.Context(), kind, id)
+				if err != nil {
+					fail(w, http.StatusForbidden, aboveLimit)
+					return
+				}
+				e = discoverEntry{at: time.Now(), details: &det}
+				a.discover.put(key, e)
+			}
+			rating = e.details.Rating
+		}
+		if rating == "" || !ratings.Allows(max, kind, rating) {
+			fail(w, http.StatusForbidden, aboveLimit)
+			return
+		}
+	}
+	a.exploreCaching(w, r, "")
 	out := animeView{AltNames: []string{}, Titles: []metadata.AnimeTitle{}, Seasons: []metadata.AnimeSeason{}}
 	name, counts := "", map[int]int{}
 	if e, ok := a.discover.get("details|" + kind + "|" + id); ok && e.details != nil {
