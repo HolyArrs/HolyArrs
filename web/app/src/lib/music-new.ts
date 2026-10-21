@@ -53,11 +53,12 @@ export const MUSIC_DECADES = ['2020s', '2010s', '2000s', '90s', '80s', '70s'];
 export const MUSIC_MOODS = ['chill', 'party', 'workout', 'focus', 'sad', 'romantic'];
 
 /** exploreLinks are the Explore more chips: genres, then decades and moods, into Search → Music. */
-export function exploreLinks(genres: string[]): { label: string; href: string; group: 'genre' | 'decade' | 'mood' }[] {
+export function exploreLinks(genres: string[]): { label: string; href: string; group: 'genre' | 'decade' | 'mood' | 'chart' }[] {
 	const link = (g: string) => to(`/search?kind=music&mgenre=${encodeURIComponent(g)}`);
 	return [
 		...genres.slice(0, 8).map((g) => ({ label: g, href: link(g), group: 'genre' as const })),
 		...MUSIC_DECADES.map((g) => ({ label: g, href: link(g), group: 'decade' as const })),
-		...MUSIC_MOODS.map((g) => ({ label: g, href: link(g), group: 'mood' as const }))
+		...MUSIC_MOODS.map((g) => ({ label: g, href: link(g), group: 'mood' as const })),
+		{ label: 'Top albums and artists', href: to('/explore?type=music'), group: 'chart' as const }
 	];
 }

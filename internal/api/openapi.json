@@ -11622,7 +11622,7 @@
     },
     "/api/v1/explore/new/music": {
       "get": {
-        "description": "New & Popular's Music tab: up to 6 hero albums (newness times popularity), then rows of at least 6: Fresh tracks (singles, 21 days), Out this week (7 days), Recently out (8 to 30 days), New from artists in your Library (30 days), Climbing now (this week's album chart, new first) and Coming soon (soonest first, following marks the member's follows). Nothing shows twice. The MusicBrainz and chart lists build in the background and are kept 12 hours; building says they are on their way. A Kid gets kid true and no rows.",
+        "description": "New & Popular's Music tab: up to 15 hero albums (newness times popularity), then rows of at least 6: Fresh tracks (singles, 21 days), Out this week (7 days), Recently out (8 to 45 days), New from artists in your Library (90 days, singles and EPs too), Climbing now (this week's album chart, new first) and Coming soon (next 60 days, soonest first, following marks the member's follows). Nothing shows twice. The MusicBrainz and chart lists build in the background and are kept 12 hours; building says they are on their way. A Kid gets kid true and no rows.",
         "responses": {
           "200": {
             "description": "kid, building, hero, rows and genres (Explore more topics)."

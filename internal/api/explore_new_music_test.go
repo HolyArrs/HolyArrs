@@ -24,7 +24,7 @@ func TestMusicNewWindows(t *testing.T) {
 	for _, c := range []struct {
 		d    int
 		want string
-	}{{0, "week"}, {-7, "week"}, {-8, "recent"}, {-30, "recent"}, {-31, ""}, {3, "coming"}} {
+	}{{0, "week"}, {-7, "week"}, {-8, "recent"}, {-45, "recent"}, {-46, "library"}, {-91, ""}, {3, "coming"}, {61, ""}} {
 		if got := musicNewWindow(nday(c.d), musicNewNow); got != c.want {
 			t.Errorf("%d days: %q, want %q", c.d, got, c.want)
 		}
@@ -53,10 +53,10 @@ func musicNewFixture() musicNewInput {
 			n++
 		}
 	}
-	add(12, "album", -2)  // this week
+	add(30, "album", -2)  // this week
 	add(10, "ep", -15)    // recently out
 	add(8, "single", -4)  // fresh tracks
-	add(7, "album", 20)   // coming
+	add(7, "album", 20) // coming
 	add(3, "album", -400) // too old
 	live := rel(500, "album", nday(-1), 1)
 	live.SecondaryTypes = []string{"live"}
@@ -66,7 +66,7 @@ func musicNewFixture() musicNewInput {
 		d.albums.Items = append(d.albums.Items, metadata.MusicTrendItem{Rank: i + 9, MBID: tmbid(700 + i), Title: fmt.Sprint("C", i), Artist: "B", ArtistMBID: tmbid(9002), Listens: 10})
 	}
 	d.artists.Items = []metadata.MusicTrendItem{{Rank: 1, MBID: tmbid(9001)}}
-	return musicNewInput{data: d, owned: map[string]int64{tmbid(9003): 7}, images: map[string]string{}, follows: map[string]bool{tmbid(31): true}}
+	return musicNewInput{data: d, owned: map[string]int64{tmbid(9003): 7}, images: map[string]string{}, follows: map[string]bool{tmbid(50): true}}
 }
 
 // Rows keep to their windows, nothing shows twice, small rows go.

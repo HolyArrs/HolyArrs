@@ -3,7 +3,6 @@
 	// biggest new albums, a compact list of fresh tracks, then album rows.
 	// Every action asks for (or adds) music; nothing here plays.
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
 	import { api, message } from './api.ts';
 	import { toasts } from './toasts.svelte.ts';
 	import { refreshInbox } from './wishlist.svelte.ts';
@@ -13,7 +12,6 @@
 	import Shelf from './ui/Shelf.svelte';
 	import PosterCard from './ui/PosterCard.svelte';
 	import IconButton from './ui/IconButton.svelte';
-	import Chip from './ui/Chip.svelte';
 	import EmptyState from './ui/EmptyState.svelte';
 	import AddArtistDialog from './AddArtistDialog.svelte';
 	import AskArtistDialog from './AskArtistDialog.svelte';
@@ -112,10 +110,29 @@
 		atStart = shelf.scrollLeft < 4;
 		atEnd = shelf.scrollLeft + shelf.clientWidth >= shelf.scrollWidth - 4;
 	}
-	function page(dir: 1 | -1) {
-		if (!shelf) return;
+	function page(dir: 1 | -1, el: HTMLElement | undefined = shelf) {
+		if (!el) return;
 		const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-		shelf.scrollBy({ left: dir * shelf.clientWidth, behavior: still ? 'auto' : 'smooth' });
+		el.scrollBy({ left: dir * el.clientWidth, behavior: still ? 'auto' : 'smooth' });
+	}
+	// Fresh tracks pages a whole set of columns at a time, like the hero.
+	let trackList = $state<HTMLElement>();
+	let tStart = $state(true);
+	let tEnd = $state(false);
+	function tEdges() {
+		if (!trackList) return;
+		tStart = trackList.scrollLeft < 4;
+		tEnd = trackList.scrollLeft + trackList.clientWidth >= trackList.scrollWidth - 4;
+	}
+	$effect(() => {
+		if (trackList) requestAnimationFrame(tEdges);
+	});
+	/** See all: one row as a grid, in place of the shelves. */
+	let allRow = $state<string | null>(null);
+	const all = $derived(answer?.rows.find((r) => r.id === allRow) ?? null);
+	function seeAll(id: string | null) {
+		allRow = id;
+		scrollTo({ top: 0 });
 	}
 	$effect(() => {
 		if (answer?.hero.length) requestAnimationFrame(edges);
@@ -126,6 +143,19 @@
 	const links = $derived(exploreLinks(answer?.genres ?? []));
 	const actLabel = (c: NewMusicCard) => (manage ? `Add ${c.artist || c.name}` : `Ask for ${c.name}`);
 </script>
+
+{#snippet albumCard(row: { type: string }, c: NewMusicCard)}
+	<PosterCard title={c.name} href={musicCardHref(c)} image={musicImage(c)} kind="artist" subtitle={rowNote(row, c) || undefined} shape="square" music actionOnHover
+		status={c.title_id && row.type === 'np_music_library' ? 'in_library' : undefined}>
+		{#snippet action()}
+			{#if c.upcoming}
+				<IconButton icon={c.following ? 'bellOn' : 'bell'} label={c.following ? `Following ${c.name}` : `Tell me when ${c.name} is out`} variant="glass" size="lg" aria-pressed={!!c.following} onclick={() => void follow(c)} />
+			{:else if canAct(c)}
+				<IconButton icon="plus" label={actLabel(c)} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={busy === c.key || undefined} onclick={() => void quick(c)} />
+			{/if}
+		{/snippet}
+	</PosterCard>
+{/snippet}
 
 {#if answer?.kid}
 	<EmptyState icon="music" title="Music is not shown on this account" text="Music has no age ratings, so it stays off for accounts with an age limit." />
@@ -138,6 +168,17 @@
 	</div>
 {:else if !answer.rows.length && !answer.hero.length}
 	<EmptyState icon="music" title="No new music yet" text="New releases fill in within a few minutes." />
+{:else if all}
+	<section class="see-all" data-testid="new-music-all">
+		<button class="back" type="button" onclick={() => seeAll(null)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" /></svg>New music</button>
+		<h2>{all.title}</h2>
+		<p class="sub">{all.reason}</p>
+		<ul class="grid">
+			{#each all.items as raw (raw.key)}
+				<li>{@render albumCard(all, live(raw))}</li>
+			{/each}
+		</ul>
+	</section>
 {:else}
 	<section class="music-new" data-testid="new-music">
 		{#if answer.hero.length}
@@ -170,35 +211,29 @@
 
 		{#if tracks}
 			<section class="tracks-row" aria-labelledby="np-tracks-h">
-				<header><h2 id="np-tracks-h">{tracks.title}</h2><p>{tracks.reason}</p></header>
-				<ol class="tracks" data-testid="new-music-tracks">
-					{#each tracks.items as raw (raw.key)}
-						{@const c = live(raw)}
-						<li class="track">
-							<img src={musicImage(c)} alt="" loading="lazy" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.visibility = 'hidden')} />
-							<a class="t-words" href={musicCardHref(c)}><span class="t-name">{c.name}</span><span class="t-artist">{rowNote(tracks, c)}</span></a>
-							{#if canAct(c)}<IconButton icon="plus" label={manage ? `Add ${c.artist}` : `Ask for ${c.name}`} size="sm" aria-haspopup="dialog" aria-busy={busy === c.key || undefined} onclick={() => void quick(c)} />{/if}
-						</li>
-					{/each}
-				</ol>
+				<header class="sh"><h2 id="np-tracks-h"><button type="button" onclick={() => seeAll(tracks.id)}>{tracks.title}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6l6 6-6 6" /></svg></button></h2><p>{tracks.reason}</p></header>
+				<div class="pager">
+					<ol class="tracks" bind:this={trackList} onscroll={tEdges} data-testid="new-music-tracks">
+						{#each tracks.items as raw (raw.key)}
+							{@const c = live(raw)}
+							<li class="track">
+								<img src={musicImage(c)} alt="" loading="lazy" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.visibility = 'hidden')} />
+								<a class="t-words" href={musicCardHref(c)}><span class="t-name">{c.name}</span><span class="t-artist">{rowNote(tracks, c)}</span></a>
+								{#if canAct(c)}<IconButton icon="more" label={manage ? `Add ${c.artist}` : `Ask for ${c.name}`} size="sm" aria-haspopup="dialog" aria-busy={busy === c.key || undefined} onclick={() => void quick(c)} />{/if}
+							</li>
+						{/each}
+					</ol>
+					<button class="paddle prev" class:show={!tStart} aria-label="Previous tracks" tabindex={tStart ? -1 : 0} onclick={() => page(-1, trackList)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" /></svg></button>
+					<button class="paddle next" class:show={!tEnd} aria-label="More tracks" tabindex={tEnd ? -1 : 0} onclick={() => page(1, trackList)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6l6 6-6 6" /></svg></button>
+				</div>
 			</section>
 		{/if}
 
 		{#each rows as row (row.id)}
 			<div class="row" data-row={row.type}>
-				<Shelf title={row.title} subtitle={row.reason} item="var(--explore-item)" items={row.items} key={(c) => c.key} placeholder="square" lines={2}>
+				<Shelf title={row.title} subtitle={row.reason} item="var(--album-item)" items={row.items} key={(c) => c.key} placeholder="square" lines={2} onseeall={() => seeAll(row.id)}>
 					{#snippet card(raw: NewMusicCard)}
-						{@const c = live(raw)}
-						<PosterCard title={c.name} href={musicCardHref(c)} image={musicImage(c)} kind="artist" subtitle={rowNote(row, c) || undefined} shape="square" music actionOnHover
-							status={c.title_id && row.type === 'np_music_library' ? 'in_library' : undefined}>
-							{#snippet action()}
-								{#if c.upcoming}
-									<IconButton icon={c.following ? 'bellOn' : 'bell'} label={c.following ? `Following ${c.name}` : `Tell me when ${c.name} is out`} variant="glass" size="lg" aria-pressed={!!c.following} onclick={() => void follow(c)} />
-								{:else if canAct(c)}
-									<IconButton icon="plus" label={actLabel(c)} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={busy === c.key || undefined} onclick={() => void quick(c)} />
-								{/if}
-							{/snippet}
-						</PosterCard>
+						{@render albumCard(row, live(raw))}
 					{/snippet}
 				</Shelf>
 			</div>
@@ -206,14 +241,9 @@
 
 		<nav class="more" aria-labelledby="np-more-h">
 			<h2 id="np-more-h">Explore more</h2>
-			{#each [['genre', 'Genres'], ['decade', 'Decades'], ['mood', 'Moods']] as [g, label] (g)}
-				{@const list = links.filter((l) => l.group === g)}
-				{#if list.length}
-					<div class="more-group" role="group" aria-label={label}>
-						{#each list as l (l.label)}<span class="cap"><Chip label={l.label} onclick={() => void goto(l.href)} /></span>{/each}
-					</div>
-				{/if}
-			{/each}
+			<div class="pills">
+				{#each links as l (l.group + l.label)}<a class="pill" href={l.href}><span class="cap">{l.label}</span><small>{l.group === 'genre' ? 'Genre' : l.group === 'decade' ? 'Decade' : l.group === 'mood' ? 'Mood' : 'Charts'}</small></a>{/each}
+			</div>
 		</nav>
 	</section>
 {/if}
@@ -225,10 +255,20 @@
 {/if}
 
 <style>
-	.music-new { display: flex; flex-direction: column; gap: 32px; }
+	.music-new { display: flex; flex-direction: column; gap: 48px; --shelf-gap: 20px; --album-item: calc((100cqi - 5 * 20px) / 6.35); }
+	@media (max-width: 1023px) { .music-new { --album-item: calc((100cqi - 3 * 20px) / 4.3); } }
+	@media (max-width: 640px) { .music-new { gap: 36px; --album-item: calc((100cqi - 20px) / 2.3); } }
+	/* One header for every shelf: a bold title with a chevron into See all. */
+	.sh h2 { margin: 0; }
+	.sh h2 button { display: inline-flex; align-items: center; gap: 2px; padding: 0; border: 0; background: none; color: var(--text); cursor: pointer; font: var(--t-title-3, 600 20px/1.3 var(--font-ui)); }
+	.sh h2 svg, .back svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; color: var(--text-muted); }
+	.sh p { margin: 2px 0 10px; color: var(--text-muted); font-size: 14px; }
+	.pager { position: relative; }
+	.pager:hover .paddle.show { opacity: 1; pointer-events: auto; }
+	.pager .paddle { top: 50%; }
 	/* Hero: a shelf of editorial cards, 3 to a screen with a peek of the next. */
 	.hero-wrap { position: relative; --h-cols: calc(31.5% - 13.33px); }
-	.hero { display: grid; grid-auto-flow: column; grid-auto-columns: var(--h-cols); gap: 20px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; padding: 4px 2px 10px; }
+	.hero { display: grid; grid-auto-flow: column; grid-auto-columns: var(--h-cols); gap: 20px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; padding: 4px 2px 10px; }
 	.hero::-webkit-scrollbar { display: none; }
 	.h-card { position: relative; scroll-snap-align: start; min-width: 0; }
 	.h-link { display: flex; flex-direction: column; color: var(--text); text-decoration: none; border-radius: 12px; }
@@ -239,10 +279,11 @@
 	.art { position: relative; display: block; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; background: var(--surface-2); transition: transform 0.25s ease, filter 0.25s ease, box-shadow 0.25s ease; }
 	.wide { width: 100%; height: 100%; object-fit: cover; }
 	.shade { position: absolute; inset: 0; background: linear-gradient(to top, rgb(0 0 0 / 0.6), transparent 45%); }
-	.note { position: absolute; left: 12px; right: 84px; bottom: 10px; color: #fff; font-size: 13px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	.cover { position: absolute; right: 12px; bottom: 10px; width: 60px; height: 60px; border-radius: 4px; object-fit: cover; box-shadow: 0 2px 10px rgb(0 0 0 / 0.4); }
+	.note { position: absolute; left: 12px; right: 136px; bottom: 10px; color: #fff; font-size: 13px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.cover { position: absolute; right: 64px; bottom: 10px; width: 60px; height: 60px; border-radius: 4px; object-fit: cover; box-shadow: 0 2px 10px rgb(0 0 0 / 0.4); }
 	.h-card:hover .art, .h-link:focus-visible .art { transform: translateY(-3px); filter: brightness(1.08); box-shadow: 0 10px 24px rgb(0 0 0 / 0.22); }
-	.h-act { position: absolute; top: calc(4.6em + 8px); right: 10px; opacity: 0; transition: opacity 0.2s ease; }
+	/* Ask/Add: a round glyph at the art's bottom-right, on hover or focus; the cover sits to its left. */
+	.h-act { position: absolute; bottom: 16px; right: 12px; opacity: 0; transition: opacity 0.2s ease; }
 	.h-card:hover .h-act, .h-card:focus-within .h-act { opacity: 1; }
 	.paddle { position: absolute; top: calc(50% + 2.3em); transform: translateY(-50%); width: 36px; height: 36px; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer; background: color-mix(in srgb, var(--surface-1, var(--bg)) 86%, transparent); color: var(--text); box-shadow: 0 2px 10px rgb(0 0 0 / 0.25); opacity: 0; pointer-events: none; transition: opacity 0.25s ease; z-index: 2; }
 	.paddle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -254,12 +295,14 @@
 	@media (max-width: 640px) { .hero-wrap { --h-cols: calc(100% / 1.1 - 10px); } .paddle { display: none; } }
 	@media (prefers-reduced-motion: reduce) { .hero { scroll-behavior: auto; } .art, .paddle, .h-act { transition: none; } .h-card:hover .art { transform: none; } }
 	/* Fresh tracks: a compact list, four lines to a column. */
-	.tracks-row header h2, .more h2 { margin: 0; font: var(--t-title-3, 600 20px/1.3 var(--font-ui)); }
-	.tracks-row header p { margin: 2px 0 10px; color: var(--text-muted); font-size: 14px; }
-	.tracks { list-style: none; margin: 0; padding: 0 0 6px; display: grid; grid-auto-flow: column; grid-template-rows: repeat(4, auto); grid-auto-columns: calc(25% - 12px); column-gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+	.more h2, .see-all h2 { margin: 0; font: var(--t-title-3, 600 20px/1.3 var(--font-ui)); }
+	.tracks { list-style: none; margin: 0; padding: 0; display: grid; grid-auto-flow: column; grid-template-rows: repeat(4, 55px); grid-auto-columns: calc(25% - 15px); column-gap: 20px; row-gap: 0; height: 220px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; }
+	@media (prefers-reduced-motion: reduce) { .tracks { scroll-behavior: auto; } }
 	.tracks::-webkit-scrollbar { display: none; }
-	.track { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 6px 0; border-bottom: 1px solid var(--border, color-mix(in srgb, var(--text) 10%, transparent)); scroll-snap-align: start; }
-	.track img { flex: none; width: 44px; height: 44px; border-radius: 4px; object-fit: cover; background: var(--surface-2); }
+	.track { display: flex; align-items: center; gap: 10px; min-width: 0; height: 55px; box-sizing: border-box; border-bottom: 1px solid var(--border, color-mix(in srgb, var(--text) 10%, transparent)); }
+	.track:nth-child(4n) { border-bottom-color: transparent; }
+	.track:nth-child(4n + 1) { scroll-snap-align: start; }
+	.track img { flex: none; width: 40px; height: 40px; border-radius: 4px; object-fit: cover; background: var(--surface-2); }
 	.t-words { flex: 1; min-width: 0; display: flex; flex-direction: column; color: var(--text); text-decoration: none; }
 	.t-name, .t-artist { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; line-height: 1.35; }
 	.t-artist { color: var(--text-muted); font-size: 13px; }
@@ -267,8 +310,17 @@
 	@media (max-width: 640px) { .tracks { grid-auto-columns: 88%; } }
 	.row { position: relative; min-width: 0; }
 	.more { display: flex; flex-direction: column; gap: 10px; }
-	.more-group { display: flex; flex-wrap: wrap; gap: 8px; }
-	.cap { display: contents; text-transform: capitalize; }
+	.pills { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+	.pill { display: flex; flex-direction: column; gap: 2px; padding: 14px 22px; border-radius: 999px; background: var(--surface-2); color: var(--text); text-decoration: none; font-size: 16px; font-weight: 600; transition: background-color 0.2s ease; }
+	.pill .cap { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.pill small { font-size: 12px; font-weight: 400; color: var(--text-muted); }
+	.pill:hover { background: var(--surface-3); }
+	.pill:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.see-all { display: flex; flex-direction: column; gap: 8px; }
+	.back { align-self: flex-start; display: inline-flex; align-items: center; gap: 2px; padding: 0; border: 0; background: none; color: var(--text-muted); cursor: pointer; font-size: 14px; }
+	.sub { margin: 0 0 12px; color: var(--text-muted); font-size: 14px; }
+	.grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 24px 20px; }
+	.cap { text-transform: capitalize; }
 	.loading { display: flex; flex-direction: column; gap: 12px; }
 	.hero-sk { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 	.hero-sk span { aspect-ratio: 16 / 9; border-radius: 10px; background: var(--surface-2); margin-top: 60px; }

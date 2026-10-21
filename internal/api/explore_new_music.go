@@ -26,13 +26,14 @@ import (
 const (
 	// Per-kind windows, in days: this week, recently out, singles, coming.
 	musicNewWeek    = 7
-	musicNewRecent  = 30
+	musicNewRecent  = 45
+	musicNewLibrary = 90
 	musicNewSingles = 21
-	musicNewAhead   = 120
+	musicNewAhead   = 60
 	// musicNewRowMin is the fewest cards a row shows; musicNewRowMax the most.
 	musicNewRowMin  = 6
 	musicNewRowMax  = 20
-	musicNewHeroMax = 6
+	musicNewHeroMax = 15
 	musicNewTTL     = 12 * time.Hour
 	// musicNewArtists caps the artists one MusicBrainz search names.
 	musicNewArtists = 40
@@ -136,8 +137,8 @@ func (a *API) buildMusicNew(ctx context.Context, now time.Time) *musicNewData {
 		from, to string
 		types    []string
 	}{
-		{day(-musicNewRecent), day(0), []string{"album", "ep"}},
-		{day(-musicNewSingles), day(0), []string{"single"}},
+		{day(-musicNewLibrary), day(0), []string{"album", "ep"}},
+		{day(-musicNewLibrary), day(0), []string{"single"}},
 		{day(1), day(musicNewAhead), []string{"album", "ep"}},
 	}
 	have := map[string]bool{}
@@ -166,7 +167,7 @@ type musicNewInput struct {
 	data    *musicNewData
 	owned   map[string]int64 // artist MBID → title id
 	images  map[string]string
-	library []MusicCard // Library albums out in the last 30 days
+	library []MusicCard // Library releases out in the last 90 days
 	follows map[string]bool
 }
 
@@ -197,12 +198,16 @@ func musicNewWindow(date string, now time.Time) string {
 	switch {
 	case !ok:
 		return ""
+	case days < -musicNewAhead:
+		return ""
 	case days < 0:
 		return "coming"
 	case days <= musicNewWeek:
 		return "week"
 	case days <= musicNewRecent:
 		return "recent"
+	case days <= musicNewLibrary:
+		return "library"
 	}
 	return ""
 }
@@ -287,10 +292,11 @@ func composeMusicNew(in musicNewInput, now time.Time) ([]MusicCard, []MusicRow) 
 			if k == "" {
 				k = c.Key
 			}
-			c.Badge = releaseBadge("album", false)
+			kind := strings.ToLower(c.Badge)
+			c.Badge = releaseBadge(kind, false)
 			c.Following = in.follows[c.MBID]
 			cards[k] = c
-			kinds[k] = "album"
+			kinds[k] = kind
 		} else {
 			lc := cards[c.MBID]
 			lc.TitleID, lc.PartID, lc.Key = c.TitleID, c.PartID, c.Key
@@ -364,21 +370,21 @@ func composeMusicNew(in musicNewInput, now time.Time) ([]MusicCard, []MusicRow) 
 	}
 	soonest := func(a, b string) bool { return cards[a].Date < cards[b].Date }
 	specs := []rowSpec{
-		{"np_music_library", "New from artists in your Library", "Out in the last 30 days from artists you have",
+		{"np_music_library", "New from artists in your Library", "Albums, EPs and singles from artists you have, out in the last 90 days",
 			func(k string, c MusicCard) bool {
 				w := musicNewWindow(c.Date, now)
-				return c.TitleID > 0 && (w == "week" || w == "recent")
+				return c.TitleID > 0 && (w == "week" || w == "recent" || w == "library")
 			}, nil},
 		{"np_music_week", "Out this week", "Albums and EPs out in the last 7 days, biggest first",
 			func(k string, c MusicCard) bool { return albumOrEP(k) && musicNewWindow(c.Date, now) == "week" }, nil},
-		{"np_music_recent", "Recently out", "Albums and EPs out 8 to 30 days ago",
+		{"np_music_recent", "Recently out", "Albums and EPs out 8 to 45 days ago",
 			func(k string, c MusicCard) bool { return albumOrEP(k) && musicNewWindow(c.Date, now) == "recent" }, nil},
 		{"np_music_tracks", "Fresh tracks", "New singles from artists people play",
 			func(k string, c MusicCard) bool {
 				d, ok := daysFrom(c.Date, now)
 				return kinds[k] == "single" && ok && d >= 0 && d <= musicNewSingles
 			}, nil},
-		{"np_music_coming", "Coming soon", "Albums with a release date ahead; follow one to hear when it is out",
+		{"np_music_coming", "Coming soon", "Albums out in the next 60 days; follow one to hear when it lands",
 			func(k string, c MusicCard) bool { return albumOrEP(k) && c.Upcoming }, soonest},
 	}
 	built := map[string]MusicRow{}
@@ -445,6 +451,12 @@ func musicNewTopics(rows []MusicRow, hero []MusicCard) []string {
 			}
 		}
 	}
+	// Only short, plain tags: some releases carry whole sentences as tags.
+	for g := range count {
+		if len(g) > 24 || strings.ContainsAny(g, ":—,;()") {
+			delete(count, g)
+		}
+	}
 	return topGenres(count, 8)
 }
 
@@ -494,9 +506,9 @@ func (a *API) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	ps, err := store.Select[domain.Part](ctx, db, "parts", `kind = 'album' AND dropped_at IS NULL AND release_date >= ? AND release_date <= ?
-		AND lower(coalesce(release_type, '')) IN ('album', 'ep') AND secondary_types = '[]' AND coalesce(release_date_precision, 'day') = 'day'
+		AND lower(coalesce(release_type, '')) IN ('album', 'ep', 'single') AND secondary_types = '[]' AND coalesce(release_date_precision, 'day') = 'day'
 		AND title_id IN (SELECT id FROM titles WHERE kind = 'artist' AND state != 'removed') ORDER BY release_date DESC, id`,
-		now.AddDate(0, 0, -musicNewRecent).Format("2006-01-02"), now.Format("2006-01-02T15:04:05Z"))
+		now.AddDate(0, 0, -musicNewLibrary).Format("2006-01-02"), now.Format("2006-01-02T15:04:05Z"))
 	if err != nil {
 		internal(w, err)
 		return
@@ -505,7 +517,7 @@ func (a *API) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
 		t := byTitle[p.TitleID]
 		rg := strings.ToLower(p.SourceIDs["musicbrainz"])
 		c := MusicCard{Key: "album:" + rg, Kind: "album", MBID: rg, Name: p.Name, Artist: t.Name, ArtistMBID: strings.ToLower(t.SourceIDs["musicbrainz"]),
-			TitleID: t.ID, PartID: p.ID, Date: dayOf(p.ReleaseDate), Genres: []string{}, ArtistImage: artistImage(t)}
+			TitleID: t.ID, PartID: p.ID, Date: dayOf(p.ReleaseDate), Genres: []string{}, ArtistImage: artistImage(t), Badge: strings.ToLower(derefStr(p.ReleaseType))}
 		if rg != "" {
 			c.Image = "/api/v1/music-trending/art/album/" + rg
 		} else {
