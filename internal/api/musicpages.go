@@ -347,6 +347,11 @@ func (a *API) similarArtists(ctx context.Context, mbid string, n int) []PageArti
 }
 
 func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
+	// Kid members get no music pages, as with the other music routes (explicit marks are incomplete).
+	if a.kidMax(r) != "" {
+		fail(w, http.StatusForbidden, aboveLimit)
+		return
+	}
 	mbid := strings.ToLower(r.PathValue("mbid"))
 	if !metadata.ValidMBID(mbid) {
 		fail(w, http.StatusBadRequest, "mbid must be a MusicBrainz artist id")
@@ -444,6 +449,11 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
+	// Kid members get no music pages, as with the other music routes (explicit marks are incomplete).
+	if a.kidMax(r) != "" {
+		fail(w, http.StatusForbidden, aboveLimit)
+		return
+	}
 	mbid := strings.ToLower(r.PathValue("mbid"))
 	artist := strings.ToLower(r.URL.Query().Get("artist"))
 	if !metadata.ValidMBID(mbid) || !metadata.ValidMBID(artist) {
