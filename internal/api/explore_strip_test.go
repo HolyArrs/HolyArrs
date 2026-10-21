@@ -143,3 +143,32 @@ func TestExploreStripCountsRoute(t *testing.T) {
 		t.Fatalf("%d rows after reset", n)
 	}
 }
+
+// Varying the rows never grows the strip cache past one entry per member,
+// tab and limit, and too many or too long rows are refused.
+func TestExploreStripCacheBounded(t *testing.T) {
+	a := &API{}
+	for i := 0; i < 1000; i++ {
+		rows := []string{"Row " + strconv.Itoa(i)}
+		keepStrip(a.stripMemberKey(7)+"shows|", stripEntry{at: time.Now(), sig: "d|" + stripRowsHash(rows)})
+	}
+	n := 0
+	stripAnswers.Range(func(k, _ any) bool {
+		if strings.HasPrefix(k.(string), a.stripMemberKey(7)) {
+			n++
+		}
+		return true
+	})
+	if n != 1 {
+		t.Fatalf("%d entries for one member and tab", n)
+	}
+	if stripRowsHash([]string{"B", "a"}) != stripRowsHash([]string{"A", "b"}) {
+		t.Fatal("hash not normalised")
+	}
+	for q, ok := range map[string]bool{"row=" + strings.Repeat("x", 81): false, "row=" + strings.Repeat("&row=x", 41): false, "row=a&row=b": true} {
+		r := httptest.NewRequest(http.MethodGet, "/x?"+q, nil)
+		if _, got := stripRows(r); got != ok {
+			t.Errorf("%.20s... = %v", q, got)
+		}
+	}
+}

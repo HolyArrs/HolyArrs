@@ -2,12 +2,15 @@ package api
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
 	"net/http"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -42,8 +45,11 @@ const (
 	stripRowLen  = 80
 )
 
+// stripEntry is a member's one kept strip per tab and limit; sig is the
+// day and a hash of the rows it was picked for.
 type stripEntry struct {
 	at    time.Time
+	sig   string
 	tiles []explore.CategoryTile
 }
 
@@ -73,18 +79,46 @@ func (a *API) forgetStrip(member int64) {
 	}
 }
 
-// stripRows are the row titles passed with row=, bounded.
-func stripRows(r *http.Request) []string {
+// stripRows are the row titles passed with row=; false when there are
+// more than stripRowsMax or one is longer than stripRowLen.
+func stripRows(r *http.Request) ([]string, bool) {
+	raw := r.URL.Query()["row"]
+	if len(raw) > stripRowsMax {
+		return nil, false
+	}
 	var out []string
-	for _, v := range r.URL.Query()["row"] {
-		if len(out) == stripRowsMax {
-			break
+	for _, v := range raw {
+		if len(v) > stripRowLen {
+			return nil, false
 		}
-		if v = strings.TrimSpace(v); v != "" && len(v) <= stripRowLen {
+		if v = strings.TrimSpace(v); v != "" {
 			out = append(out, v)
 		}
 	}
-	return out
+	return out, true
+}
+
+// stripRowsHash is a short hash of the rows, normalised and sorted.
+func stripRowsHash(rows []string) string {
+	n := make([]string, len(rows))
+	for i, v := range rows {
+		n[i] = strings.ToLower(v)
+	}
+	sort.Strings(n)
+	sum := sha256.Sum256([]byte(strings.Join(n, "|")))
+	return hex.EncodeToString(sum[:])[:16]
+}
+
+// keepStrip stores a member's strip (replacing their earlier one for the
+// tab and limit) and drops expired entries.
+func keepStrip(key string, e stripEntry) {
+	stripAnswers.Range(func(k, v any) bool {
+		if time.Since(v.(stripEntry).at) >= stripTTL {
+			stripAnswers.Delete(k)
+		}
+		return true
+	})
+	stripAnswers.Store(key, e)
 }
 
 // exploreStrip answers GET /api/v1/explore/strip?type=&row=: the member's
@@ -102,9 +136,14 @@ func (a *API) exploreStrip(w http.ResponseWriter, r *http.Request) {
 	moment, _ := exploreMoment(r, now)
 	member := a.person(r).UserID
 	max := a.kidMax(r)
-	rows := stripRows(r)
-	key := a.stripMemberKey(member) + fmt.Sprintf("%s|%s|%s|%s", sw, max, moment.Local.Format("2006-01-02"), strings.Join(rows, "\x00"))
-	if v, ok := stripAnswers.Load(key); ok && time.Since(v.(stripEntry).at) < stripTTL {
+	rows, ok := stripRows(r)
+	if !ok {
+		fail(w, http.StatusBadRequest, "at most 40 row values of up to 80 characters")
+		return
+	}
+	key := a.stripMemberKey(member) + sw + "|" + max
+	sig := moment.Local.Format("2006-01-02") + "|" + stripRowsHash(rows)
+	if v, ok := stripAnswers.Load(key); ok && v.(stripEntry).sig == sig && time.Since(v.(stripEntry).at) < stripTTL {
 		a.exploreCaching(w, r, "private, no-cache")
 		writeJSON(w, http.StatusOK, map[string]any{"type": sw, "tiles": v.(stripEntry).tiles, "partial": false})
 		return
@@ -161,7 +200,7 @@ func (a *API) exploreStrip(w http.ResponseWriter, r *http.Request) {
 	tiles := explore.PickStrip(explore.StripIn{Cands: cands, Taste: a.stripTaste(ctx, member, kid, now), Stats: stats, Recent: recent,
 		Rows: rows, Local: moment.Local, Seed: fmt.Sprintf("%d|%s", member, moment.Local.Format("2006-01-02")), Kid: kid, Max: explore.StripMax})
 	if complete {
-		stripAnswers.Store(key, stripEntry{at: time.Now(), tiles: tiles})
+		keepStrip(key, stripEntry{at: time.Now(), sig: sig, tiles: tiles})
 	}
 	a.exploreCaching(w, r, "private, no-cache")
 	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "tiles": tiles, "partial": !complete})
