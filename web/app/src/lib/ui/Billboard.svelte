@@ -71,6 +71,8 @@
 	let armed = $state(false);
 	let sources = $state<TrailerSource[]>([]);
 	let playing = $state(false);
+	// The trailer played to its end here: its own replay button is the way back in.
+	let ended = $state(false);
 	let phase = $state<HeroPhase>('still');
 	const words = heroQuiet((p) => (phase = p));
 	const quiet = $derived(!wordsShown(phase));
@@ -101,6 +103,7 @@
 	});
 	function heroPlaying() {
 		playing = true;
+		ended = false;
 		words.send('play');
 		if (resuming) {
 			resuming = false;
@@ -170,13 +173,13 @@
 		{/if}
 		{#if sources.length}
 			{#key resumeRun}
-			<TrailerPlayer {sources} {title} sharp pausable start={resumeAt} onexpand={expand} onplaying={heroPlaying} onended={() => ((playing = false), words.send('stop'))} onfail={() => ((playing = false), words.send('stop'))} />
+			<TrailerPlayer {sources} {title} sharp pausable start={resumeAt} onexpand={expand} onplaying={heroPlaying} onended={() => ((playing = false), (ended = true), words.send('stop'))} onfail={() => ((playing = false), words.send('stop'))} />
 			{/key}
 		{/if}
 		<div class="shade" class:playing></div>
 	</div>
 	{#if top}<div class="top">{@render top()}</div>{/if}
-	<div class="content" class:playing>
+	<div class="content" class:playing class:ended>
 		<div class="heading">{@render heading()}</div>
 		{#if meta}<div class="meta">{@render meta()}</div>{/if}
 		{#if fold}
@@ -211,8 +214,8 @@
 		transition: opacity var(--dur-slow) var(--ease-out);
 	}
 	.shade.playing { opacity: .85; }
-	/* While the trailer plays in the hero, its own controls (pause, sound, full screen) take over from a Trailer button. */
-	.content.playing :global([data-off-while-playing]) { display: none; }
+	/* While the trailer plays in the hero, or has played to its end, its own controls (pause, sound, full screen, replay) take over from a Trailer button. */
+	.content.playing :global([data-off-while-playing]), .content.ended :global([data-off-while-playing]) { display: none; }
 	/* Room for the breadcrumb, so a tall logo never runs under it. */
 	.ui-billboard:has(> .top) { padding-top: 60px; }
 	.ui-billboard:has(> .top) .heading :global(.bb-logo img) { max-height: min(var(--title-h), calc(100% - 8px)); }
