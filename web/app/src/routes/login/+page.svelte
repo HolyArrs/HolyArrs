@@ -2,7 +2,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { to } from '#lib/paths.ts';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { loaderReady, playSignIn } from '#lib/loader.ts';
 	import { page } from '$app/state';
@@ -11,7 +11,7 @@
 	import { safeNext } from '#lib/next.ts';
 	import SigninBackdrop from '#lib/SigninBackdrop.svelte';
 	import { providerTiles, type Way } from '#lib/signinArt.ts';
-	import { fly } from 'svelte/transition';
+	import { pixelTrail, pixelIn, blockDissolve, siteCell } from '#lib/pixelTrail.ts';
 
 	const MIN_LENGTH = $derived(session.s.minPassword);
 
@@ -45,8 +45,10 @@
 	// One key per step: the panel's content rises in when it changes.
 	const step = $derived(plexWaiting ? 'plex' : `${mode}-${via}`);
 	let calm = $state(false);
-	const rise = $derived(calm ? { duration: 0 } : { y: 10, duration: 320, opacity: 0 });
+	const rise = $derived({ duration: calm ? 0 : 300 });
 	let leaving = $state(false);
+	let panelEl = $state<HTMLDivElement>();
+	let coverEl = $state<HTMLDivElement>();
 	let left = false;
 
 	function next(): string {
@@ -95,8 +97,15 @@
 			void goto(to(firstRun ? '/welcome?first=1' : next()), { replace: true }).finally(loaderReady);
 		};
 		if (calm) return open();
+		// The panel breaks into 24 px blocks; the dark closes over the art in
+		// the site's hero cells.
 		leaving = true;
-		setTimeout(open, 560);
+		void tick().then(() =>
+			Promise.all([
+				panelEl ? blockDissolve(panelEl, { dir: -1, duration: 320, cell: 24 }) : null,
+				coverEl ? blockDissolve(coverEl, { dir: 1, duration: 380, delay: 180, cell: siteCell(window.innerWidth) }) : null
+			]).then(open)
+		);
 	});
 
 	function took(r: SignInResult) {
@@ -266,7 +275,8 @@
 
 <main class="wrap" class:leaving data-theme="dark">
 	<SigninBackdrop onrevealed={() => (entered = true)} />
-	<div class="panel" class:entered>
+	<div class="cover" bind:this={coverEl} aria-hidden="true"></div>
+	<div class="panel" class:entered bind:this={panelEl}>
 		<div class="brand">
 			<img src={to('/brand/mark-color-on-dark.svg')} alt="" width="30" height="30" />
 			<span>HolyArrs</span>
@@ -277,7 +287,7 @@
 			{#if ssoFinishing}<p class="small muted" role="status">Finishing your sign-in…</p>{/if}
 		{:else}
 			{#key step}
-				<div class="step" in:fly={rise}>
+				<div class="step" in:pixelIn={rise}>
 					{#if plexWaiting}
 						<div class="wait" role="status" aria-live="polite" data-testid="plex-wait">
 							<div class="ring" aria-hidden="true">
@@ -309,14 +319,14 @@
 								{#if error}
 									<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono"> ({waiting}s)</span>{/if}</p>
 								{/if}
-								<div class="submit"><Button variant="primary" size="lg" full type="submit" disabled={waiting > 0 || !otp.trim()} {busy}>Sign in</Button></div>
+								<div class="submit" use:pixelTrail={{ selector: '.ui-btn' }}><Button variant="primary" size="lg" full type="submit" disabled={waiting > 0 || !otp.trim()} {busy}>Sign in</Button></div>
 								<button class="link" type="button" onclick={restart}>Start again</button>
 							</form>
 						{:else}
 							{#if mode === 'login' && (via === 'password' || via === 'choose') && tiles.length}
 								<div class="provs" data-n={tiles.length} data-testid="signin-ways">
 									{#each tiles as t (t.way)}
-										<button class="prov" type="button" data-way={t.way} disabled={busy} onclick={() => press(t.way)}>
+										<button class="prov" type="button" use:pixelTrail data-way={t.way} disabled={busy} onclick={() => press(t.way)}>
 											{#if t.way === 'plex'}
 												<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#1f1f1f" /><path d="M8 5h4.6l5 7-5 7H8l5-7z" fill="#E5A00D" /></svg>
 											{:else if t.way === 'jellyfin'}
@@ -369,7 +379,7 @@
 									{#if error}
 										<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono"> ({waiting}s)</span>{/if}</p>
 									{/if}
-									<div class="submit">
+									<div class="submit" use:pixelTrail={{ selector: '.ui-btn' }}>
 										<Button variant="primary" size="lg" full type="submit" disabled={waiting > 0} {busy}>
 											{mode === 'setup' ? 'Make the owner and sign in' : via === 'jellyfin' || via === 'emby' ? `Sign in with ${wayWord[via]}` : 'Sign in'}
 										</Button>
@@ -436,24 +446,17 @@
 		transition: opacity 600ms cubic-bezier(0.2, 0.7, 0.2, 1) 200ms, transform 700ms cubic-bezier(0.2, 0.7, 0.2, 1) 200ms;
 	}
 	.panel.entered { opacity: 1; transform: none; }
-	/* Success: the panel dissolves, then the art fades to the app's dark. */
-	.wrap::after {
-		content: '';
+	/* Success: the panel breaks into blocks, then the dark closes over the
+	   art in the site's hero cells (blockDissolve masks both). */
+	.cover {
 		position: fixed;
 		inset: 0;
 		z-index: 2;
 		background: #050507;
-		opacity: 0;
 		pointer-events: none;
-		transition: opacity 380ms ease-in 180ms;
+		display: none;
 	}
-	.wrap.leaving::after { opacity: 1; }
-	.wrap.leaving .panel {
-		opacity: 0;
-		transform: scale(0.97);
-		filter: blur(10px);
-		transition: opacity 320ms ease-in, transform 360ms ease-in, filter 320ms ease-in;
-	}
+	.wrap.leaving .cover { display: block; }
 	@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
 		.panel { background: rgb(18 18 22 / 0.92); }
 	}
@@ -506,21 +509,13 @@
 	.or { display: flex; align-items: center; gap: 10px; margin: 18px 0; color: rgb(255 255 255 / 0.45); font: var(--t-footnote); }
 	.or::before, .or::after { content: ''; flex: 1; height: 1px; background: rgb(255 255 255 / 0.12); }
 
-	/* Hover lives on the buttons only: a 1 px lift, a soft glow and a neutral
-	   shimmer sweep. Focus rings come from :focus-visible (keyboard only). */
-	.prov::after,
-	.submit :global(.ui-btn)::after {
-		content: '';
-		position: absolute;
-		inset: 0;
-		border-radius: inherit;
-		background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / 0.16) 50%, transparent 65%);
-		background-size: 260% 100%;
-		background-position: 130% 0;
-		opacity: 0;
-		pointer-events: none;
-	}
-	.submit :global(.ui-btn) { position: relative; overflow: hidden; transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease; }
+	/* Hover lives on the buttons only: a 1 px lift, a soft glow and the
+	   site's pixel trail inside the button (pixelTrail.ts paints a canvas
+	   clipped to the button's radius). Focus rings come from :focus-visible. */
+	.submit :global(.ui-btn) { position: relative; overflow: hidden; isolation: isolate; transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease; }
+	.prov { isolation: isolate; }
+	.prov > :global(:not(canvas)),
+	.submit :global(.ui-btn > :not(canvas)) { position: relative; z-index: 1; }
 	@media (hover: hover) and (prefers-reduced-motion: no-preference) {
 		.prov:not(:disabled):hover,
 		.submit :global(.ui-btn:not(:disabled):hover) {
@@ -528,12 +523,6 @@
 			box-shadow: 0 6px 22px rgb(0 0 0 / 0.35), 0 0 18px rgb(255 255 255 / 0.08);
 		}
 		.prov:not(:disabled):hover { background: rgb(118 118 128 / 0.34); color: #fff; }
-		.prov:not(:disabled):hover::after,
-		.submit :global(.ui-btn:not(:disabled):hover)::after { animation: shimmer 640ms ease-out forwards; }
-	}
-	@keyframes shimmer {
-		from { opacity: 1; background-position: 130% 0; }
-		to { opacity: 1; background-position: -30% 0; }
 	}
 
 	.link {
@@ -554,7 +543,6 @@
 	.help summary::-webkit-details-marker { display: none; }
 	.help summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.help p { margin-top: 8px; }
-	.foot { margin-top: 14px; text-align: center; color: rgb(255 255 255 / 0.4); font: var(--t-caption1, 12px/1.3 var(--font-sans)); }
 
 	/* The waiting step: the provider's mark inside a turning ring. */
 	.wait { text-align: center; }
@@ -571,7 +559,7 @@
 	@keyframes orbit { to { transform: rotate(360deg); } }
 
 	@media (prefers-reduced-motion: reduce) {
-		.panel, .wrap.leaving .panel, .wrap::after { transition: none; }
+		.panel { transition: none; }
 		.panel { transform: none; }
 		.orbit { animation-duration: 2.4s; }
 	}

@@ -6,9 +6,11 @@
 	import { onMount, tick } from 'svelte';
 	import { api } from '#lib/api.ts';
 	import { pickArt, playlist, prepareSlide, type ArtPick, type ArtShot } from '#lib/signinArt.ts';
+	import { siteCell, pixelFor } from '#lib/pixelTrail.ts';
 
 	const CYCLE_MS = 12000; // Long enough to take each picture in; the zoom stays slow.
-	// The first picture resolves from coarse pixels to sharp, like the site's hero.
+	// The first picture resolves from the site's hero cells (width / 12-36)
+	// through its symbol pixel to sharp, in held steps (see pixelTrail.ts).
 	const MOSAIC_MS = 1050;
 
 	// onrevealed: the first picture is fully shown (or there is none); the card may enter.
@@ -54,12 +56,13 @@
 					const sctx = small.getContext('2d');
 					if (!sctx) return done();
 					const t0 = performance.now();
-					const start = Math.max(48, Math.round(Math.min(vw, vh) / 9));
+					const cell = siteCell(vw);
+					const steps = [cell, cell / 2, cell / 4, pixelFor(cell), 1].map((b) => Math.max(1, Math.round(b)));
 					let last = -1;
 					const frame = (now: number) => {
-						const k = Math.min(1, (now - t0) / MOSAIC_MS);
-						// Ease out: the coarse stage reads, then it sharpens quickly.
-						const block = Math.max(1, Math.round(start * Math.pow(1 - k, 2.2)));
+						const k = Math.max(0, Math.min(1, (now - t0) / MOSAIC_MS));
+						// The coarse stages hold longest, then it sharpens quickly.
+						const block = steps[Math.min(steps.length - 1, Math.floor(Math.pow(k, 0.8) * steps.length))];
 						if (block !== last) {
 							last = block;
 							const w = Math.max(1, Math.ceil(vw / block));
