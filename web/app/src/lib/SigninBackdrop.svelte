@@ -7,7 +7,7 @@
 	import { api } from '#lib/api.ts';
 	import { pickArt, playlist, prepareSlide, type ArtPick, type ArtShot } from '#lib/signinArt.ts';
 
-	const CYCLE_MS = 8000;
+	const CYCLE_MS = 12000; // Long enough to take each picture in; the zoom stays slow.
 
 	type Slide = { pick: ArtPick; shot: ArtShot; logo: string | null; key: number };
 	let layers = $state<Slide[]>([]);
