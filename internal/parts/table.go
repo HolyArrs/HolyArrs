@@ -107,6 +107,7 @@ var Routes = map[string]Owner{
 	"GET /api/v1/people/shelves":                        movies,
 	"GET /api/v1/people/shelves/{id}":                   movies,
 	"GET /api/v1/people/{id}":                           movies,
+	"GET /api/v1/wiki/{kind}/{id}":                      movies,
 	"POST /api/v1/people/{id}/movies/review":            movies,
 	"GET /api/v1/titles/{id}/people":                    ByTitle,
 	"PUT /api/v1/titles/{id}/files/{fid}/choices":       ByTitle,
