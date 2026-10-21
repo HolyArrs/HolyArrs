@@ -176,9 +176,10 @@
 		try {
 			localStorage.setItem(ONLY_KEY, v ? '1' : '0');
 		} catch {
-			/* a private window: the chip just is not remembered */
+			/* a private window: the choice just is not remembered */
 		}
 	}
+	const whereOptions: { value: 'everywhere' | 'library'; label: string }[] = [{ value: 'everywhere', label: 'Everywhere' }, { value: 'library', label: 'In your Library' }];
 	const markOf = (t: TitleView) => ownedMark({ key: String(t.id), kind: t.kind === 'show' ? 'show' : t.kind === 'artist' ? 'artist' : 'movie', name: t.name, titleId: t.id } as ExploreCard, t, who);
 	const libCards = $derived<Card[]>([
 		...(lib?.titles ?? []).map((t): Card => ({ key: `lt${t.id}`, type: t.kind === 'show' ? 'show' : t.kind === 'artist' ? 'music' : 'movie', titleId: t.id, name: t.name, year: t.year, image: t.backdrop ?? t.artwork[0], href: to(`/library/${t.id}`), owned: markOf(t), subtitle: libraryNote(t, [t.year, posterStatus(t, who)?.label].filter(Boolean).join(' · ')) })),
@@ -776,10 +777,14 @@
 	{#if scopeOptions.length > 2}
 		<div class="types" data-pin-pills>
 			<SegmentedControl options={scopeOptions} value={scope} label="Look in" testid="search-scope" onchange={setScope} />
-			<span class="only-lib"><Chip label="In Library" icon="check" selected={onlyLib} onclick={() => setOnlyLib(!onlyLib)} /></span>
 		</div>
-	{:else}
-		<div class="types"><span class="only-lib"><Chip label="In Library" icon="check" selected={onlyLib} onclick={() => setOnlyLib(!onlyLib)} /></span></div>
+	{/if}
+
+	{#if searchField.term.trim() && searched}
+		<div class="results-head" data-testid="search-results-head">
+			<p class="muted count">{total} {total === 1 ? 'result' : 'results'}</p>
+			<SegmentedControl size="sm" options={whereOptions} value={onlyLib ? 'library' : 'everywhere'} label="Show results from" testid="search-only-library" onchange={(v) => setOnlyLib(v === 'library')} />
+		</div>
 	{/if}
 
 	<div class="results" aria-live="polite" aria-busy={busy}>
@@ -1024,8 +1029,9 @@
 	.types :global(.ui-seg button) { min-height: 44px; padding: 0 20px; border-radius: 999px; }
 	@media (max-width: 767px) { .types :global(.ui-seg) { display: grid; width: 100%; } .types :global(.ui-seg button) { padding: 0 6px; } }
 	@media (max-width: 419px) { .types :global(.ui-seg button span) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } }
-	.types { gap: 8px; align-items: center; flex-wrap: wrap; }
-	.only-lib { pointer-events: auto; display: flex; }
+	.results-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; margin-bottom: -12px; }
+	.results-head .count { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.results-head :global(.ui-seg) { flex: none; }
 	.results { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
 	.h2 { margin: 0; font: var(--t-title3); }
 	.h1 { margin: 0; font: var(--t-title1); letter-spacing: -0.02em; }
