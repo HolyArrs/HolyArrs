@@ -648,7 +648,8 @@
 				</section>
 			{/if}
 			<section class="browse" aria-labelledby="browse-h" data-testid="search-browse">
-				<h2 id="browse-h" class="h1">{scope === 'people' ? 'Popular people' : 'Browse'}</h2>
+				<!-- On the sectioned tabs the section names head the page; "Browse" stays for screen readers only. -->
+				<h2 id="browse-h" class={scope === 'people' || scope === 'music' ? 'h1' : 'sr-only'}>{scope === 'people' ? 'Popular people' : 'Browse'}</h2>
 				{#if scope === 'people'}
 					<div class="chips people-chips" role="group" aria-label="Filter people">
 						{#each peopleChips as c (c.value)}<Chip label={c.label} selected={peopleFilter === c.value} onclick={() => { peopleFilter = c.value; void morePeople(); }} />{/each}
