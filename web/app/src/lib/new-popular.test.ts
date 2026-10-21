@@ -13,7 +13,7 @@ const card = (id: number, kind: 'movie' | 'show' = 'movie') => ({ key: `r-${kind
 
 describe('leaveOut', () => {
 	const cards = [1, 2, 3, 4, 5, 6, 7, 8].map((i) => card(i));
-	it('drops titles the page already shows, by identity or Top 10 key', () => {
+	it('drops titles the page already shows, by identity or kind:tmdb key', () => {
 		const got = leaveOut(cards, ['movie:tmdb:1', 'movie:2']);
 		expect(got.map((c) => c.ref)).toEqual(['tmdb:3', 'tmdb:4', 'tmdb:5', 'tmdb:6', 'tmdb:7', 'tmdb:8']);
 	});

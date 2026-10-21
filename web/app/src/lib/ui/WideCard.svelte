@@ -208,12 +208,12 @@
 			{#if src && !failed && near()}{#key art}<img src={art} class:in={loaded} alt="" loading="lazy" decoding="async" use:whenLoaded={() => (loaded = true)} onerror={artError} />{/key}{/if}
 			{#if tpl && (tpl.variant !== 'titled' || !loaded)}
 				<span class="scrim" aria-hidden="true"></span>
-				<span class="name" class:lifted={!!strip && strip.kind !== 'top10'} aria-hidden="true">
+				<span class="name" class:lifted={!!strip} aria-hidden="true">
 					{#if coverLogo}<img class="logo" src={cardLogo ?? coverLogo} alt="" loading="lazy" decoding="async" onerror={() => (logoFailed = true)} />{:else}<span class="word">{title}</span>{/if}
 				</span>
 			{/if}
 			{#if badges.length || status}
-				<span class="over" class:bottom={badgesAt === 'bottom'} class:pushed={badgesAt === 'top' && (!!owned || strip?.kind === 'top10')} class:lifted={badgesAt === 'bottom' && !!strip && strip.kind !== 'top10'}>
+				<span class="over" class:bottom={badgesAt === 'bottom'} class:pushed={badgesAt === 'top' && !!owned} class:lifted={badgesAt === 'bottom' && !!strip}>
 					{#if status}<StatusPill kind={status} label={statusLabel} percent={pct} on="art" testid={statusTestid} />{/if}
 					{#each badges as b (b)}<Badge label={b} on="art" />{/each}
 				</span>
@@ -242,7 +242,7 @@
 {/snippet}
 
 {#if open && preview && cover && artEl}
-	<GrowCard anchor={artEl} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} image={loaded && !failed ? art : null} logo={growLogo} lifted={!!strip && strip.kind !== 'top10'} {leaving} badge={marked ? wideBadges : undefined} action={growAction} followId={preview.titleId} {followTmdb} context={growContext} service={growService} onmore={onmore ? (r) => { shut(); onmore(r); } : undefined} onenter={() => { closer.cancel(); leaving = false; }} onleave={leave} onclose={(back) => { shut(); if (back) { hit?.focus(); opener.cancel(); } }} focusIn={byKey} ontab={tabOut} returnTo={hit} ongone={() => leaving && shut()} />
+	<GrowCard anchor={artEl} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} image={loaded && !failed ? art : null} logo={growLogo} lifted={!!strip} {leaving} badge={marked ? wideBadges : undefined} action={growAction} followId={preview.titleId} {followTmdb} context={growContext} service={growService} onmore={onmore ? (r) => { shut(); onmore(r); } : undefined} onenter={() => { closer.cancel(); leaving = false; }} onleave={leave} onclose={(back) => { shut(); if (back) { hit?.focus(); opener.cancel(); } }} focusIn={byKey} ontab={tabOut} returnTo={hit} ongone={() => leaving && shut()} />
 {:else if open && preview && root}
 	<HoverPreview anchor={root} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} {image} badge={marked ? wideBadges : undefined} onenter={() => closer.cancel()} onleave={leave} onclose={shut} />
 {/if}
@@ -291,20 +291,16 @@
 	.name { position: absolute; left: 6%; bottom: 9%; z-index: 1; width: 40%; height: 13cqw; display: flex; align-items: flex-end; justify-content: flex-start; pointer-events: none; }
 	.name.lifted { bottom: 20%; }
 	.word { font: 700 clamp(13px, 5.2cqw, 24px)/1.05 var(--font-display); letter-spacing: -0.02em; color: #fff; text-shadow: 0 2px 10px rgb(0 0 0 / 0.55); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-	/* Status mark, strip and Top 10 tag: 22px under 280px of card, 26px above (whole pixels). */
+	/* Status mark and strip: 22px under 280px of card, 26px above (whole pixels). */
 	.cover .art :global(.mark) { width: 22px; height: 22px; }
 	.cover .art :global(.mark svg) { width: 13px; height: 13px; }
 	.cover .art :global(.mark.downloading svg) { width: 18px; height: 18px; }
 	.cover .art :global(.fresh) { height: 14px; font-size: 10px; }
-	.cover .art :global(.top10) { width: 18px; height: 22px; font-size: 5px; }
-	.cover .art :global(.top10 b) { font-size: 10px; }
 	@container art (min-width: 280px) {
 		.cover .art :global(.mark) { width: 26px; height: 26px; }
 		.cover .art :global(.mark svg) { width: 15px; height: 15px; }
 		.cover .art :global(.mark.downloading svg) { width: 21px; height: 21px; }
 		.cover .art :global(.fresh) { height: 16px; font-size: 10px; }
-		.cover .art :global(.top10) { width: 21px; height: 26px; font-size: 6px; }
-		.cover .art :global(.top10 b) { font-size: 12px; }
 	}
 	.logo { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 2px 8px rgb(0 0 0 / 0.5)); }
 	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {

@@ -29,7 +29,7 @@ test('no CSP violations on Explore, More info, a trailer and a title page', asyn
 	const item = (i: number) => ({ tmdb_id: String(900002 + i), kind: 'movie', name: `Lab `, year: 2023, overview: 'A lab title.', poster: `https://image.tmdb.org/t/p/w500/p.jpg`, backdrop: `https://image.tmdb.org/t/p/original/b.jpg`, trailer_key: 'dQw4w9WgXcQ' });
 	await page.route('https://image.tmdb.org/**', (r) => r.fulfill({ body: tiny, contentType: 'image/png' }));
 	await page.route('**/api/v1/trailer/**', (r) => r.fulfill({ status: 404, json: { error: 'no direct stream' } }));
-	await page.route('**/api/v1/explore/head?**', (r) => r.fulfill({ json: { type: 'all', building: false, seeds: 0, tail_cap: 0, tail_rows: 0, top10: null, hero: [item(0), item(1)], head: [{ id: 'row0', type: 'genre', title: 'Row 0', items: Array.from({ length: 8 }, (_, i) => item(i)) }] } }));
+	await page.route('**/api/v1/explore/head?**', (r) => r.fulfill({ json: { type: 'all', building: false, seeds: 0, tail_cap: 0, tail_rows: 0, hero: [item(0), item(1)], head: [{ id: 'row0', type: 'genre', title: 'Row 0', items: Array.from({ length: 8 }, (_, i) => item(i)) }] } }));
 	await page.goto('/explore');
 	await expect(page.getByRole('heading', { level: 1, name: 'Explore' })).toBeVisible();
 	await page.waitForTimeout(9000);

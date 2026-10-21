@@ -1,9 +1,8 @@
-// Card badges: one freshness badge (from the server's `fresh`: a bottom strip,
-// or the small Top 10 corner tag) and one library status circle. The type is
+// Card badges: one freshness badge (from the server's `fresh`: a bottom strip) and one library status circle. The type is
 // a word on the metadata line, never a badge. Everything here is pure so the
 // cards stay the same everywhere.
 
-export type FreshKind = 'new_episode' | 'new_season' | 'recently_added' | 'top10' | 'coming' | 'season_coming' | 'new_release';
+export type FreshKind = 'new_episode' | 'new_season' | 'recently_added' | 'coming' | 'season_coming' | 'new_release';
 
 export interface Fresh {
 	kind: FreshKind;
@@ -11,7 +10,7 @@ export interface Fresh {
 	rank?: number;
 }
 
-export const FRESH_ORDER: readonly FreshKind[] = ['new_episode', 'new_season', 'recently_added', 'top10', 'coming', 'season_coming', 'new_release'];
+export const FRESH_ORDER: readonly FreshKind[] = ['new_episode', 'new_season', 'recently_added', 'coming', 'season_coming', 'new_release'];
 
 const MUSIC: readonly FreshKind[] = ['recently_added', 'new_release'];
 
@@ -21,7 +20,6 @@ const MUSIC: readonly FreshKind[] = ['recently_added', 'new_release'];
  * checks again so a cached answer never shows one.
  */
 export const ROW_SUPPRESS: Readonly<Record<string, readonly FreshKind[]>> = {
-	top10: ['top10'],
 	best: ['new_release'],
 	new_services: ['new_release'],
 	fresh: ['new_release'],
@@ -36,14 +34,12 @@ export const ROW_SUPPRESS: Readonly<Record<string, readonly FreshKind[]>> = {
 
 /**
  * shownFresh is the one badge a card shows, or null: music keeps Recently
- * Added and New Release only, and a row never repeats its own meaning (the
- * Top 10 row drops the Top 10 tag, Just arrived drops Recently Added...).
+ * Added and New Release only, and a row never repeats its own meaning (Just
+ * arrived drops Recently Added...).
  */
-export function shownFresh(f: Fresh | null | undefined, where: { music?: boolean; top10Row?: boolean; row?: string } = {}): Fresh | null {
+export function shownFresh(f: Fresh | null | undefined, where: { music?: boolean; row?: string } = {}): Fresh | null {
 	if (!f || !FRESH_ORDER.includes(f.kind) || !f.text) return null;
 	if (where.music && !MUSIC.includes(f.kind)) return null;
-	// The ranked-number style belongs to the Netflix Top 10 rows only, which draw the rank themselves.
-	if (f.kind === 'top10') return null;
 	if (where.row && ROW_SUPPRESS[where.row]?.includes(f.kind)) return null;
 	return f;
 }
@@ -62,7 +58,6 @@ export function metaLine(kind: string | undefined, rest: readonly (string | numb
 
 /** freshLabel is the strip's accessible name. */
 export function freshLabel(f: Fresh): string {
-	if (f.kind === 'top10' && f.rank) return `Number ${f.rank} in Trending now`;
 	return f.text;
 }
 
@@ -76,7 +71,7 @@ export function pickFresh(list: readonly (Fresh | null | undefined)[]): Fresh | 
 export type OwnState = 'available' | 'partial' | 'downloading' | 'requested' | 'declined';
 
 /** cardBadges caps a card at one freshness badge and one status circle; there is no type badge. */
-export function cardBadges(o: { fresh?: Fresh | null; owned?: { state: OwnState } | null; music?: boolean; top10Row?: boolean; row?: string }) {
+export function cardBadges(o: { fresh?: Fresh | null; owned?: { state: OwnState } | null; music?: boolean; row?: string }) {
 	return {
 		fresh: shownFresh(o.fresh, o),
 		owned: o.owned ?? null

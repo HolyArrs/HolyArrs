@@ -9,9 +9,8 @@
 
 	// The badges over a card's artwork, laid on the art box (it must be
 	// position: relative). Top-right: a solid round library status. The one
-	// freshness badge is either a thin accent strip flush with the bottom
-	// edge, or (Top 10) a tiny square tag in the top-left corner. Same on
-	// posters, wide cards, Top 10, hover cards and music.
+	// freshness badge is a thin accent strip flush with the bottom edge.
+	// Same on posters, wide cards, hover cards and music.
 	let { fresh = null, owned = null, size = 'md' }: { fresh?: Fresh | null; owned?: CardOwned | null; size?: 'sm' | 'md' } = $props();
 
 	/** Percent from a "Downloading 42%" label, for the ring. */
@@ -40,18 +39,14 @@
 	</span>
 {/if}
 
-{#if fresh?.kind === 'top10'}
-	<span class="top10" class:sm={size === 'sm'} role="img" aria-label={freshLabel(fresh)} title={freshLabel(fresh)} data-testid="card-fresh" data-kind="top10">
-		<span aria-hidden="true">TOP</span><b aria-hidden="true">10</b>
-	</span>
-{:else if fresh}
+{#if fresh}
 	<span class="fresh {fresh.kind}" class:sm={size === 'sm'} role="img" aria-label={freshLabel(fresh)} title={freshLabel(fresh)} data-testid="card-fresh" data-kind={fresh.kind}>
 		<span aria-hidden="true">{fresh.text}</span>
 	</span>
 {/if}
 
 <style>
-	.mark, .fresh, .top10 { position: absolute; z-index: 2; pointer-events: none; }
+	.mark, .fresh { position: absolute; z-index: 2; pointer-events: none; }
 	/* Status circle: solid fill, white glyph (amber carries dark ink). */
 	.mark {
 		right: 8px; top: 8px;
@@ -81,25 +76,11 @@
 		letter-spacing: 0.015em;
 		white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 	}
-	/* Top 10 tag: tiny square corner tag, TOP over 10, flush top-left. */
-	.top10 {
-		left: 0; top: 0;
-		width: 22px; height: 26px;
-		display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
-		border-radius: 0 0 2px 0;
-		background: var(--accent-fill);
-		color: var(--accent-ink, #fff);
-		font: 800 6.5px/1 var(--font-ui);
-		letter-spacing: 0.08em;
-	}
-	.top10 b { font-size: 12px; font-weight: 800; letter-spacing: -0.02em; line-height: 0.9; font-variant-numeric: tabular-nums; }
 	.sm.mark { width: 20px; height: 20px; right: 6px; top: 6px; }
 	.sm.mark :global(svg) { width: 12px; height: 12px; }
 	.sm.mark.downloading :global(svg) { width: 17px; height: 17px; }
 	.sm.fresh { height: 16px; font-size: 10px; padding: 0 5px; }
-	.sm.top10 { width: 18px; height: 22px; font-size: 5.5px; }
-	.sm.top10 b { font-size: 10px; }
 	@media (forced-colors: active) {
-		.mark, .fresh, .top10 { border: 1px solid CanvasText; }
+		.mark, .fresh { border: 1px solid CanvasText; }
 	}
 </style>

@@ -150,7 +150,7 @@
 					{#if ranked}
 						<div class="ranked">
 							<span class="rank" class:two={c.rank > 9} aria-hidden="true">{c.rank}</span>
-							<div class="pc"><PosterCard title={c.name} href={href(c)} image={c.image} kind={c.kind} owned={mark} fresh={c.fresh} top10Row {preview} /></div>
+							<div class="pc"><PosterCard title={c.name} href={href(c)} image={c.image} kind={c.kind} owned={mark} fresh={c.fresh} {preview} /></div>
 							<span class="sr">Number {c.rank}</span>
 						</div>
 					{:else}

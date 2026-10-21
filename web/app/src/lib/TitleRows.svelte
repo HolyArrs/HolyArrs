@@ -6,7 +6,7 @@
 	import { readInfo, type InfoDetails, type InfoKind } from './title-info.ts';
 	import { detailPath } from './title-details.ts';
 	import { discoverCard, ownedMark, serviceRegion, type ExploreCard, type ProviderItem } from './explore.ts';
-	import { defaultRegion } from './top10.ts';
+	import { defaultRegion } from './region.ts';
 	import { audienceOf } from './title-status.ts';
 	import Shelf from './ui/Shelf.svelte';
 	import WideCard from './ui/WideCard.svelte';

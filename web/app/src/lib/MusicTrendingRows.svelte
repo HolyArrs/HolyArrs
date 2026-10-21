@@ -5,7 +5,7 @@
 	import { toasts } from './toasts.svelte.ts';
 	import { refreshInbox } from './wishlist.svelte.ts';
 	import type { OwnedIndex } from './explore.ts';
-	import { defaultRegion } from './top10.ts';
+	import { defaultRegion } from './region.ts';
 	import { fetchMusicExplore, musicCardHref, musicCardNote, musicImage, releaseWords, type MusicCardData, type MusicExploreAnswer } from './music-trending.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './types.ts';
 	import Shelf from './ui/Shelf.svelte';
@@ -245,7 +245,7 @@
 		{#each answer?.rows ?? [] as row, ri (row.id)}
 			<div class="row">
 			{#if row.id === pickRow}
-				<!-- The chart region sits in its row's header, like the Top 10 region. -->
+				<!-- The chart region sits in its row's header. -->
 				<div class="pick">
 					<select aria-label="Chart region" bind:value={region} onchange={pick}>
 						{#each regions as r (r)}<option value={r}>{regionName(r)}</option>{/each}

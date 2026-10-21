@@ -11,7 +11,7 @@
 	import { cardAction, cardTmdb, discoverCard, liveCard, matchOwned, ownedIndex, ownedMark, ownedTitle, serverRow, serviceRegion, type ExploreCard, type ExploreRow, type WatchService } from '#lib/explore.ts';
 	import { cardServices, hasServiceChips, isRanked, newPath, newServicePath, parseNewType, pickService, type NewAnswer, type NewServiceAnswer, type NewType, type RailDay, type RailItem } from '#lib/new-popular.ts';
 	import { contextLine } from '#lib/grow-lines.ts';
-	import { defaultRegion } from '#lib/top10.ts';
+	import { defaultRegion } from '#lib/region.ts';
 	import type { Ask, AskState, GateDefaults, LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleView } from '#lib/types.ts';
 	import { seasonWords } from '#lib/shows.ts';
 	import { audienceOf } from '#lib/title-status.ts';
@@ -386,7 +386,7 @@
 							{@const rank = cards.indexOf(raw) + 1}
 							<div class="ranked">
 								<span class="rank" class:two={rank > 9} aria-hidden="true">{rank}</span>
-								<div class="pc"><PosterCard title={c.name} href={cardHref(c)} image={c.image} kind={c.kind} owned={mark} fresh={c.fresh} top10Row {preview} /></div>
+								<div class="pc"><PosterCard title={c.name} href={cardHref(c)} image={c.image} kind={c.kind} owned={mark} fresh={c.fresh} {preview} /></div>
 								<span class="sr-only">Number {rank}</span>
 							</div>
 						{:else if wide}

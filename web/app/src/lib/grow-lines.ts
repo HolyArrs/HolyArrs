@@ -112,9 +112,8 @@ const SEEDED = new Set(['because_have', 'because_asked', 'person', 'household'])
 /** whyShown: "#3 on Netflix today", "Because you have Slow Horses", "New season", or ''. */
 export function whyShown(w: WhyIn): string {
 	if (w.streaming?.rank) return `#${w.streaming.rank} on ${w.streaming.name} today`;
-	if (w.fresh?.kind === 'top10' && w.fresh.rank) return `#${w.fresh.rank} in Top 10 today`;
 	if (w.rowType && SEEDED.has(w.rowType) && w.rowTitle) return w.rowTitle;
-	if (w.fresh && w.fresh.kind !== 'top10' && w.fresh.text) return w.fresh.text;
+	if (w.fresh?.text) return w.fresh.text;
 	return '';
 }
 

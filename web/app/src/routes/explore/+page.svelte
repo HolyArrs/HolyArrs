@@ -50,7 +50,7 @@
 		type WatchService
 	} from '#lib/explore.ts';
 	import { contextLine } from '#lib/grow-lines.ts';
-	import { defaultRegion, savedTop10 } from '#lib/top10.ts';
+	import { defaultRegion } from '#lib/region.ts';
 	import type { Ask, AskState, GateDefaults, LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleView } from '#lib/types.ts';
 	import { seasonWords } from '#lib/shows.ts';
 	import { audienceOf } from '#lib/title-status.ts';
@@ -72,7 +72,7 @@
 	import { leaveOut, newHref, newServicesPath, type NewServicesAnswer } from '#lib/new-popular.ts';
 	import type { BrowseTile } from '#lib/search-browse.ts';
 	import { fromStrip, shownBatcher, stripKey, stripPath, stripRowNames, type StripAnswer } from '#lib/category-strip.ts';
-	import { top10Map, whyShown } from '#lib/why-shown.ts';
+	import { whyShown } from '#lib/why-shown.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
@@ -201,7 +201,7 @@
 	// A full-screen trailer (hero or hover card) that plays to its end lands on the title's page; Esc only closes it.
 	$effect(() => onTheaterExit((o) => goto(to(detailPath(o.kind, o.tmdb)))));
 
-	// Music shows only music rows: the movie and show rows (Top 10, services, Best new releases) never appear there.
+	// Music shows only music rows: the movie and show rows (services, Best new releases) never appear there.
 	// A genre page (Movies or Shows, ?genre=<TMDB id>) swaps the head and tail for its own rows.
 	const genre = $derived(parseGenre((page.shallow?.url ?? page.url).searchParams.get('genre'), type));
 	const genres = $derived(genresFor(type));
@@ -306,17 +306,16 @@
 		stripShown.flush();
 		void api.post('/explore/strip/counts', { event: 'open', categories: [stripKey(t)] }).catch(() => {});
 	}
-	// Hero badges: why the featured title shows (New season, its Top 10 rank, Picked for you).
+	// Hero badges: why the featured title shows (New season, Picked for you).
 	let heroGenres = $state<Record<string, string[]>>({});
 	let taste = $state<string[]>([]);
-	let top10Ranks = $state<Map<string, number>>(new Map());
 	const heroCards = $derived(genreOn ? genreHero : hero);
 	/** The titles of Trending on streaming, as that row shows them now. */
 	let servicesShown = $state<string[]>([]);
 	// A title shows once in the first 8 rows, counting the hero and the services row.
 	const taken = $derived([...heroCards.map(cardIdentity), ...servicesShown]);
 	// New on your services: one row from New & Popular's kept lists, right after Trending on
-	// streaming, leaving out what the hero, that row and Top 10 show (hidden under 6).
+	// streaming, leaving out what the hero and that row show (hidden under 6).
 	let newServices = $state<(ExploreRow & { wide: boolean; type: string }) | null>(null);
 	let newFor = '';
 	$effect(() => {
@@ -329,18 +328,11 @@
 			() => {}
 		);
 	});
-	const newCards = $derived(newServices && !genreOn ? leaveOut(newServices.cards, [...taken, ...top10Ranks.keys()]) : []);
+	const newCards = $derived(newServices && !genreOn ? leaveOut(newServices.cards, taken) : []);
 	const rows = $derived(type === 'music' ? [] : markTransitions(dedupeTop(genreOn ? (genreLoaded === genre?.id ? genreRows : []) : filterRows([...head, ...tail], type), taken)));
 	/** Where Browse by genre goes: after this row index (-1: not shown). */
 	/** Big 4 shelves: the first personal row and Best new releases draw bigger cards. */
 
-	function readTop10Pick() {
-		try {
-			return savedTop10(localStorage.getItem('holyarrs.top10'));
-		} catch {
-			return savedTop10(null);
-		}
-	}
 	const viewerZone = (() => {
 		try {
 			return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined;
@@ -348,10 +340,7 @@
 			return undefined;
 		}
 	})();
-	const query = () => {
-		const t = readTop10Pick();
-		return { type, services: picked ?? [], region, top10Kind: type === 'shows' ? ('show' as const) : type === 'movies' ? ('movie' as const) : t.kind, top10Region: t.region, tz: viewerZone };
-	};
+	const query = () => ({ type, services: picked ?? [], region, tz: viewerZone });
 
 	let headAsk = 0;
 	/** The head rows' order as first shown for this query; a rebuilt pool never moves them. */
@@ -372,7 +361,6 @@
 			hero = (a.hero ?? []).map((d) => ({ ...discoverCard(d, 'hero'), wide: d.backdrop ?? null }));
 			heroGenres = Object.fromEntries((a.hero ?? []).map((d) => [`${d.kind}:${d.tmdb_id}`, d.genres ?? []]));
 			taste = a.taste ?? [];
-			top10Ranks = top10Map([a.top10, ...Object.entries(a.top10?.by_kind ?? {}).map(([kind, l]) => (l ? { ...l, kind } : null))]);
 			heroAt = 0;
 			tail = [];
 			tailPageNext = 0;
@@ -687,7 +675,7 @@
 				<ExploreHero kind={h.kind === 'show' ? 'show' : 'movie'} tmdb={cardTmdb(h)} title={h.name} href={cardHref(h)} backdrop={h.wide ?? h.image} vtName={h.vtName} subtitle={h.year ? `${h.year} · ${h.kind === 'show' ? 'Show' : 'Movie'}` : h.subtitle} settled={headLoaded && !busy}>
 					{#snippet action()}{@render heroAction(h)}{/snippet}
 					{#snippet badge()}
-						{@const why = whyShown({ kind: h.kind, tmdb: cardTmdb(h) ?? '', genres: heroGenres[`${h.kind}:${cardTmdb(h)}`], fresh: h.fresh }, { top10: top10Ranks, top10Source: 'Netflix', taste })}
+						{@const why = whyShown({ kind: h.kind, tmdb: cardTmdb(h) ?? '', genres: heroGenres[`${h.kind}:${cardTmdb(h)}`], fresh: h.fresh }, { taste })}
 						{#if why.length}<ul class="why" aria-label="Why it is featured">{#each why as w (w.kind)}<li class="why-{w.kind}">{w.text}</li>{/each}</ul>{/if}
 					{/snippet}
 				</ExploreHero>
@@ -790,10 +778,9 @@
 	.types.stuck .genre-pick :global(.trigger) { background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
 	.genre-list { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; }
 	.sentinel { height: 1px; }
-	/* Hero badges, next to the facts line: small glass pills, the Top 10 one in the brand red. */
+	/* Hero badges, next to the facts line: small glass pills. */
 	.why { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
 	.why li { font: 600 12px/1 var(--font-ui); letter-spacing: .02em; padding: 6px 10px; border-radius: 999px; color: #fff; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 22%); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
-	.why li.why-top10 { background: color-mix(in srgb, var(--accent) 80%, transparent); border-color: transparent; }
 	.row-wrap { display: contents; }
 	/* Wide title rows sit almost edge to edge, as on Netflix: about 279px cards at a 1536px window with a 5px gap. */
 	@media (min-width: 768px) { .row-wrap.wide-row { --shelf-gap: 5px; } }

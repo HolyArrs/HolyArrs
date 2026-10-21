@@ -36,7 +36,6 @@
 		preview,
 		fresh,
 		music = false,
-		top10Row = false,
 		action
 	}: {
 		title: string;
@@ -68,8 +67,6 @@
 		row?: string;
 		/** Music cards keep Recently Added and New Release only. */
 		music?: boolean;
-		/** In the Top 10 row, which shows the rank already. */
-		top10Row?: boolean;
 		action?: Snippet;
 	} = $props();
 
@@ -152,7 +149,7 @@
 	// The type leads the metadata line ("Show · 2024"); never twice.
 	const typedWord = $derived(typed ? typeWord(kind) : '');
 	const sub = $derived(typedWord && subtitle === typedWord ? undefined : subtitle);
-	const strip = $derived(progress === undefined ? shownFresh(fresh, { music, top10Row, row }) : null);
+	const strip = $derived(progress === undefined ? shownFresh(fresh, { music, row }) : null);
 	let failed = $state(false);
 	// The name tile shows until the picture has loaded; in a row the picture
 	// waits until the row is near the screen.
@@ -178,7 +175,7 @@
 				<img src={pic} class:in={loaded} alt="" loading="lazy" decoding="async" use:whenLoaded={() => (loaded = true)} onerror={() => (failed = true)} />
 			{/if}
 			{#if badges.length || status}
-				<span class="over" class:pushed={strip?.kind === 'top10'}>
+				<span class="over">
 					{#if status}<StatusPill kind={status} label={statusLabel} on="art" />{/if}
 					{#each badges as b (b)}<Badge label={b} on="art" />{/each}
 				</span>
@@ -189,7 +186,7 @@
 		<span class="t" title={title}>{title}</span>
 		{#if typedWord || sub}<span class="s">{#if typedWord}<span class="ty">{typedWord}</span>{#if sub}<span class="dot" aria-hidden="true">·</span>{/if}{/if}{sub ?? ''}</span>{/if}
 	</svelte:element>
-	{#if action && showAction}<span class="act-layer" class:hover-only={actionOnHover} class:over-strip={!!strip && strip.kind !== 'top10'}><span class="act">{@render action()}</span></span>{/if}
+	{#if action && showAction}<span class="act-layer" class:hover-only={actionOnHover} class:over-strip={!!strip}><span class="act">{@render action()}</span></span>{/if}
 </div>
 
 {#snippet ownBadge()}
@@ -225,7 +222,6 @@
 	.s { color: var(--text-muted); font: var(--t-footnote); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.act-layer { position: absolute; inset: 0 0 auto; aspect-ratio: var(--poster-ratio); pointer-events: none; }
 	.act { position: absolute; right: 8px; bottom: 8px; pointer-events: auto; }
-	.over.pushed { top: 34px; }
 	/* The round action sits above the freshness strip, never on it. */
 	.act-layer.over-strip .act { bottom: 24px; }
 	@media (hover: hover) and (pointer: fine) {

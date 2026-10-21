@@ -503,7 +503,7 @@ export interface WatchService {
 /** SERVICES_SHOWN: how many services the picker offers (the region's best known first). */
 export const SERVICES_SHOWN = 6;
 
-/** serviceRegion: the person's country (as for Top 10), else US. */
+/** serviceRegion: the person's country, else US. */
 export function serviceRegion(r: string): string {
 	return /^[A-Z]{2}$/.test(r) ? r : 'US';
 }
@@ -697,7 +697,6 @@ export interface HeadAnswer {
 	seeds: number;
 	tail_cap: number;
 	tail_rows: number;
-	top10: (import('./top10.ts').Top10Answer & { kind?: 'movie' | 'show'; by_kind?: Partial<Record<'movie' | 'show', import('./top10.ts').Top10Answer>> }) | null;
 	/** Up to 6 titles not in the Library (from Trending now and Trending this week everywhere) for the hero. */
 	hero?: ProviderItem[];
 	/** The household's taste genres, strongest first (hero badges). */
@@ -713,16 +712,12 @@ export interface HeadQuery {
 	type: ExploreType;
 	services?: number[];
 	region?: string;
-	top10Kind?: 'movie' | 'show';
-	top10Region?: string;
 	/** The viewer's time zone (IANA), so row titles fit their time of day. */
 	tz?: string;
 }
 
 function headParams(q: HeadQuery): URLSearchParams {
 	const p = new URLSearchParams({ type: q.type === 'music' ? 'all' : q.type });
-	if (q.top10Kind) p.set('top10_kind', q.top10Kind);
-	if (q.top10Region) p.set('top10_region', q.top10Region);
 	if (q.tz) p.set('tz', q.tz);
 	return p;
 }
@@ -772,9 +767,6 @@ export function serverRow(r: ServerRow): ExploreRow & { wide: boolean; type: str
 /** TopChip is a chip of the Top on your services row: all, or one service id. */
 export type TopChip = 'all' | number;
 
-/** NETFLIX_SERVICE is Netflix's service id; its chip uses Netflix's weekly Top 10. */
-export const NETFLIX_SERVICE = 8;
-
 export interface TopQuery {
 	type: ExploreType;
 	chip: TopChip;
@@ -786,9 +778,8 @@ export interface TopQuery {
 export interface TopAnswer {
 	chip: string;
 	region: string;
-	/** netflix_top10: Netflix's own weekly list; popular: TMDB's most popular this week. */
-	source: 'netflix_top10' | 'popular';
-	week?: string;
+	/** popular: TMDB's most popular this week on the service. */
+	source: 'popular';
 	items: (ProviderItem & { rank: number })[];
 }
 
@@ -809,7 +800,6 @@ export function topChips(picked: number[], shown: WatchService[]): { id: TopChip
 /** topSource is the small line under the row title: where the list comes from, honestly named. */
 export function topSource(a: Pick<TopAnswer, 'source' | 'region'>, serviceName: string): string {
 	const where = a.region === 'global' ? 'worldwide' : a.region;
-	if (a.source === 'netflix_top10') return `Trending now on Netflix · ${where}`;
 	return `Popular on ${serviceName} · ${where}`;
 }
 

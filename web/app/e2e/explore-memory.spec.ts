@@ -29,7 +29,7 @@ function exploreHead(route: Route, libraryId: number) {
 			in_library: i === 0, ...(i === 0 ? { title_id: libraryId } : {})
 		}))
 	}));
-	return route.fulfill({ json: { type: 'all', building: false, seeds: 0, tail_cap: 0, tail_rows: 0, top10: null, hero: [], head } });
+	return route.fulfill({ json: { type: 'all', building: false, seeds: 0, tail_cap: 0, tail_rows: 0, hero: [], head } });
 }
 
 async function metrics(cdp: CDPSession): Promise<Metrics> {

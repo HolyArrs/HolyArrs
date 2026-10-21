@@ -14,7 +14,6 @@ describe('Trending on streaming', () => {
 		expect(topChips([], shown).map((c) => c.id)).toEqual(['all']);
 	});
 	it('names the source honestly', () => {
-		expect(topSource({ source: 'netflix_top10', region: 'US' }, 'Netflix')).toBe("Trending now on Netflix · US");
 		expect(topSource({ source: 'popular', region: 'US' }, 'Disney+')).toBe('Popular on Disney+ · US');
 		expect(topSource({ source: 'popular', region: 'US' }, 'your services')).toBe('Popular on your services · US');
 	});

@@ -3,8 +3,8 @@ import { headPath, serverRow, tailPath } from './explore.ts';
 
 describe('server-built Explore', () => {
 	it('builds the head and tail paths', () => {
-		expect(headPath({ type: 'movies', services: [8, 9], region: 'US', top10Kind: 'movie', top10Region: 'US' })).toBe(
-			'/explore/head?type=movies&top10_kind=movie&top10_region=US&services=8%7C9&region=US'
+		expect(headPath({ type: 'movies', services: [8, 9], region: 'US' })).toBe(
+			'/explore/head?type=movies&services=8%7C9&region=US'
 		);
 		expect(headPath({ type: 'all' })).toBe('/explore/head?type=all');
 		expect(tailPath({ type: 'shows' }, 2)).toBe('/explore/tail?type=shows&page=2');

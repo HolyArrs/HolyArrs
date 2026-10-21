@@ -73,14 +73,14 @@ export function isRanked(rowType: string): boolean {
 	return rowType === 'np_top_shows' || rowType === 'np_top_movies';
 }
 
-/** The key Explore's Top 10 uses ("movie:123"), from a card. */
+/** A card's "kind:tmdb" key ("movie:123"). */
 function plainKey(c: Pick<ExploreCard, 'kind' | 'ref'>): string {
 	return c.ref?.startsWith('tmdb:') ? `${c.kind}:${c.ref.slice(5)}` : '';
 }
 
 /**
  * leaveOut drops cards already shown elsewhere on the page (by cardIdentity
- * or by Top 10's "kind:tmdb" key) and returns [] when fewer than min remain.
+ * or by a "kind:tmdb" key) and returns [] when fewer than min remain.
  */
 export function leaveOut<C extends Pick<ExploreCard, 'key' | 'kind' | 'ref' | 'titleId'>>(cards: readonly C[], taken: Iterable<string>, min = NEW_ROW_MIN): C[] {
 	const seen = new Set(taken);
