@@ -10,7 +10,7 @@
 	import CardBadges, { type CardOwned } from './CardBadges.svelte';
 	import { freshLabel, shownFresh, typeWord, type Fresh } from '../fresh.ts';
 	import { prefetchTrailer, watchTrailer } from '../autoplay.svelte.ts';
-	import { dwell, finePointer, HOVER_DELAY } from '../trailer.ts';
+	import { dwell, finePointer, HOVER_DELAY, scrollHold } from '../trailer.ts';
 	import GrowCard from './GrowCard.svelte';
 	import { GROW_DELAY } from '../grow.ts';
 	import { cardTemplate, type CardArtPick } from '../card-art.ts';
@@ -116,7 +116,7 @@
 	// A card is a title card or not for its whole life: the delays are read once.
 	// svelte-ignore state_referenced_locally
 	const opener = dwell(cover ? GROW_DELAY : HOVER_DELAY, () => {
-		if (dragging()) return;
+		if (dragging() || scrollHold()) return;
 		leaving = false;
 		open = true;
 	});
@@ -124,7 +124,7 @@
 	const closer = dwell(cover ? 60 : 140, () => (cover ? (leaving = true) : (open = false)));
 	const dragging = () => !!root?.closest('.dragging');
 	function enter() {
-		if (!preview || !finePointer() || dragging()) return;
+		if (!preview || !finePointer() || dragging() || scrollHold()) return;
 		closer.cancel();
 		if (open && leaving) leaving = false;
 		if (!open) {
@@ -201,7 +201,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="ui-wide" class:cover class:big class:grown={cover && open} style:width bind:this={root} onpointerenter={() => ((byKey = false), enter())} onpointerleave={leave} onfocusin={(e) => (e.target as HTMLElement)?.matches?.(':focus-visible') && ((byKey = true), enter())} onfocusout={(e) => !root?.contains(e.relatedTarget as Node) && leave()} onpointerdown={() => opener.cancel()}>
+<div class="ui-wide" class:cover class:big class:grown={cover && open} style:width bind:this={root} onpointerenter={() => ((byKey = false), enter())} onpointermove={(e) => (e.movementX || e.movementY) && !open && !opener.pending && ((byKey = false), enter())} onpointerleave={leave} onfocusin={(e) => (e.target as HTMLElement)?.matches?.(':focus-visible') && ((byKey = true), enter())} onfocusout={(e) => !root?.contains(e.relatedTarget as Node) && leave()} onpointerdown={() => opener.cancel()}>
 	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} role={href ? undefined : 'group'} bind:this={hit} use:press={'card'} aria-label={cover ? [title, typedWord, sub, strip && freshLabel(strip)].filter(Boolean).join(', ') : undefined} title={cover ? title : undefined}>
 		<span class="art" class:low={badgesAt === 'bottom' && (badges.length || status)} use:viewTransitionName={vtName} bind:this={artEl}>
 			{#if !src || failed || !loaded}<span class="ph" aria-hidden="true">{#if !cover}<span class="ph-ic"><Icon name={kindIcon} size={20} /></span><span class="ph-t">{title}</span>{/if}</span>{/if}

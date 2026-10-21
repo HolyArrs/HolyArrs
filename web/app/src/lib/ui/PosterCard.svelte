@@ -11,7 +11,7 @@
 	import { shelfNear, whenLoaded } from '../lazy-art.ts';
 	import GrowCard from './GrowCard.svelte';
 	import { prefetchTrailer, watchTrailer } from '../autoplay.svelte.ts';
-	import { dwell, finePointer } from '../trailer.ts';
+	import { dwell, finePointer, scrollHold } from '../trailer.ts';
 	import { GROW_DELAY } from '../grow.ts';
 
 	// 2:3 poster with title below. Lifts on hover; artwork zooms inside its frame.
@@ -84,6 +84,7 @@
 	let open = $state(false);
 	let leaving = $state(false);
 	const opener = dwell(GROW_DELAY, () => {
+		if (scrollHold()) return;
 		leaving = false;
 		open = true;
 	});
@@ -95,7 +96,7 @@
 	const showAction = $derived(!!action && (!lazyAction || hot));
 	function enter() {
 		hot = true;
-		if (!preview || !finePointer()) return;
+		if (!preview || !finePointer() || scrollHold()) return;
 		closer.cancel();
 		if (open && leaving) leaving = false;
 		if (!open) {
@@ -167,7 +168,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="ui-poster" class:square={shape === 'square'} class:round={shape === 'round'} style:width bind:this={root} onpointerenter={() => ((byKey = false), enter())} onpointerleave={leave} onfocusin={focusIn} onfocusout={focusOut} onpointerdown={() => opener.cancel()}>
+<div class="ui-poster" class:square={shape === 'square'} class:round={shape === 'round'} style:width bind:this={root} onpointerenter={() => ((byKey = false), enter())} onpointermove={(e) => (e.movementX || e.movementY) && !open && !opener.pending && ((byKey = false), enter())} onpointerleave={leave} onfocusin={focusIn} onfocusout={focusOut} onpointerdown={() => opener.cancel()}>
 	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} bind:this={hit} use:press={'card'}>
 		<span class="art" use:viewTransitionName={vtName} bind:this={artEl}>
 			{#if !image || failed || !loaded}

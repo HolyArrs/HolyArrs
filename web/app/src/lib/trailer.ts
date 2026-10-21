@@ -118,6 +118,20 @@ export function finePointer(): boolean {
 	return typeof window !== 'undefined' && (window.matchMedia?.('(hover: hover) and (pointer: fine)').matches ?? false);
 }
 
+// A card under a resting pointer must not grow because the page scrolled under it:
+// after a scroll, hover waits until the pointer itself moves.
+let lastScroll = -Infinity;
+let movedSinceScroll = true;
+if (typeof window !== 'undefined') {
+	window.addEventListener('scroll', () => ((lastScroll = performance.now()), (movedSinceScroll = false)), { passive: true, capture: true });
+	window.addEventListener('pointermove', (e) => (e.movementX || e.movementY) && (movedSinceScroll = true), { passive: true, capture: true });
+}
+
+/** True while the page scrolls, and after it until the pointer moves: hover cards stay shut. */
+export function scrollHold(): boolean {
+	return !movedSinceScroll || performance.now() - lastScroll < 150;
+}
+
 /**
  * dwell runs fire after ms unless cancelled first: the hover and in-view
  * delays. start again restarts; cancel is safe to call any time.
