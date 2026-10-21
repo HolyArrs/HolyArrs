@@ -35,6 +35,16 @@ export interface BrowseSectionAnswer {
 	type: ExploreType;
 	section: string;
 	tiles: BrowseTile[];
+	/** The server is still building the section: show ghost tiles and ask again. */
+	building?: boolean;
+}
+
+/** BROWSE_ROWS: a section first shows this many rows, then this many more each time its end nears the viewport. */
+export const BROWSE_ROWS = 2;
+
+/** shownCount is how many of a section's n tiles show with rows rows of cols (never fewer than one row's worth). */
+export function shownCount(n: number, cols: number, rows: number): number {
+	return Math.min(n, Math.max(1, cols) * Math.max(1, rows));
 }
 
 export function browseSectionPath(t: ExploreType, section: string): string {

@@ -11,7 +11,7 @@
 	import { session } from '#lib/session.svelte.ts';
 	import BrowseTile from '#lib/ui/BrowseTile.svelte';
 	import MosaicReveal, { ENTER_DELAY, ENTER_SWEEP, passAt } from '#lib/ui/MosaicReveal.svelte';
-	import { browseCategoryPath, browseCols, browseHref, browsePath, browseSectionPath, browseType, musicTiles, readCategory, readMood, strictTiles, tileHue, type PlainTile, type BrowseAnswer, type BrowseSection, type BrowseSectionAnswer, type BrowseTile as Tile, type CategoryView, type MoodView } from '#lib/search-browse.ts';
+	import { browseCategoryPath, browseCols, browseHref, browsePath, browseSectionPath, browseType, BROWSE_ROWS, musicTiles, readCategory, readMood, shownCount, strictTiles, tileHue, type PlainTile, type BrowseAnswer, type BrowseSection, type BrowseSectionAnswer, type BrowseTile as Tile, type CategoryView, type MoodView } from '#lib/search-browse.ts';
 	import { reducedMotion } from '#lib/motion.ts';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -103,6 +103,8 @@
 	function landing(node: HTMLElement, at: { row: number; col: number }) {
 		if (calm) return;
 		const elapsed = performance.now() - t0;
+		// The first screen only: tiles that arrive after the entry just appear.
+		if (elapsed > ENTER_DELAY + ENTER_SWEEP) return;
 		const top = document.querySelector('.ui-topbar')?.getBoundingClientRect().bottom ?? 0;
 		const r = node.getBoundingClientRect();
 		if (r.top > innerHeight) return;
@@ -274,6 +276,7 @@
 		tiles = null;
 		sections = [];
 		sectionTiles = {};
+		sectionRows = {};
 		try {
 			const a = await api.get<BrowseAnswer>(browsePath(t));
 			if (tilesFor !== t) return;
@@ -287,13 +290,30 @@
 		}
 	}
 	// A section loads once, in order (the server keeps backdrops unique across them).
+	// While the server is still building it, ghost tiles show and the page asks again.
 	const sectionBusy = new Set<string>();
+	// Rows shown per section: BROWSE_ROWS first, more as its end nears the viewport.
+	let sectionRows = $state<Record<string, number>>({});
+	const rowsOf = (id: string) => sectionRows[id] ?? BROWSE_ROWS;
+	function moreRows(node: HTMLElement, id: string) {
+		if (typeof IntersectionObserver === 'undefined') {
+			sectionRows = { ...sectionRows, [id]: 1000 };
+			return;
+		}
+		const io = new IntersectionObserver((e) => { if (e.some((x) => x.isIntersecting)) sectionRows = { ...sectionRows, [id]: rowsOf(id) + BROWSE_ROWS }; }, { rootMargin: '0px 0px 600px 0px' });
+		io.observe(node);
+		return { destroy: () => io.disconnect() };
+	}
 	async function loadSection(id: string) {
 		const t = tilesFor as ReturnType<typeof browseType> | '';
 		if (!t || sectionTiles[id] !== undefined || sectionBusy.has(`${t}|${id}`)) return;
 		sectionBusy.add(`${t}|${id}`);
 		try {
 			const a = await api.get<BrowseSectionAnswer>(browseSectionPath(t, id));
+			if (a.building) {
+				setTimeout(() => { if (tilesFor === t) void loadSection(id); }, 2500);
+				return;
+			}
 			if (tilesFor === t) sectionTiles = { ...sectionTiles, [id]: a.tiles ?? [] };
 		} catch {
 			if (tilesFor === t) sectionTiles = { ...sectionTiles, [id]: [] };
@@ -301,13 +321,16 @@
 			sectionBusy.delete(`${t}|${id}`);
 		}
 	}
-	// The sections shown: every loaded one, then the next to load (its sentinel).
+	// The sections shown: every loaded one, then the next to load (its sentinel)
+	// once the one before shows all its rows.
 	const shownSections = $derived.by(() => {
 		const out: { s: BrowseSection; tiles: Tile[] | null }[] = [];
 		for (const s of sections) {
 			const got = sectionTiles[s.id];
 			out.push({ s, tiles: got ?? null });
 			if (got === undefined) break;
+			const n = s.id === 'genres' ? (tiles?.length ?? 0) + (got ?? []).length : (got ?? []).length;
+			if (shownCount(n, cols, rowsOf(s.id)) < n) break;
 		}
 		return out;
 	});
@@ -614,7 +637,7 @@
 	<MetadataNotice />
 
 	{#if scopeOptions.length > 2}
-		<div class="types">
+		<div class="types" data-pin-pills>
 			<SegmentedControl options={scopeOptions} value={scope} label="Look in" testid="search-scope" onchange={setScope} />
 		</div>
 	{/if}
@@ -758,7 +781,8 @@
 					</ul>
 				{:else if genreTiles.length || sections.length}
 					{#each shownSections as { s, tiles: st } (s.id)}
-						{@const list = s.id === 'genres' ? genreTiles : (st ?? [])}
+						{@const all = s.id === 'genres' ? genreTiles : (st ?? [])}
+						{@const list = all.slice(0, shownCount(all.length, cols, rowsOf(s.id)))}
 						{#if list.length}
 							<section class="browse-section" aria-labelledby={`browse-${s.id}-h`} data-testid={`search-browse-${s.id}`}>
 								<h3 id={`browse-${s.id}-h`} class="h1">{s.title}</h3>
@@ -767,10 +791,18 @@
 										<li use:landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} href={to(browseHref(t, browseFor))} image={t.backdrop} hue={tileHue(t.name)} row={Math.min(6, Math.floor(i / cols))} /></li>
 									{/each}
 								</ul>
+								{#if list.length < all.length}<div class="more" use:moreRows={s.id}></div>{/if}
 							</section>
 						{/if}
 						{#if st === null}
-							<div class="more" use:near={s.id} aria-live="polite">{#if s.id !== 'genres'}<span class="muted">Loading {s.title.toLowerCase()}</span>{/if}</div>
+							<div class="more" use:near={s.id} aria-live="polite">
+								{#if s.id !== 'genres'}
+									<section class="browse-section" aria-label={`Loading ${s.title.toLowerCase()}`}>
+										<h3 class="h1">{s.title}</h3>
+										<ul class="tiles" aria-hidden="true">{#each Array(cols * BROWSE_ROWS) as _, i (i)}<li class="ghost"></li>{/each}</ul>
+									</section>
+								{/if}
+							</div>
 						{/if}
 					{/each}
 					{#if !sections.length}

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import IconButton from './IconButton.svelte';
 	import SearchField from './SearchField.svelte';
+	import { topBar } from '#lib/scroll-bar.svelte.ts';
 
 	// The 56px translucent bar above the content (tablet and desktop):
 	// sidebar toggle when collapsed, back/forward on detail pages, the one
@@ -22,7 +23,7 @@
 	} = $props();
 </script>
 
-<header class="ui-topbar">
+<header class="ui-topbar" class:away={topBar.hidden}>
 	<div class="lead">
 		{#if showToggle}<IconButton bind:node={toggle} icon="sidebar" label="Show sidebar" aria-expanded={false} aria-controls={controls} onclick={ontoggle} />{/if}
 		{#if history}
@@ -39,7 +40,10 @@
 		position: sticky; top: 0; z-index: 30; height: var(--topbar); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px;
 		padding: 0 var(--gutter); background: color-mix(in srgb, var(--bg) 82%, transparent);
 		backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid var(--line);
+		transition: transform 200ms cubic-bezier(.22,1,.36,1), opacity 200ms cubic-bezier(.22,1,.36,1);
 	}
+	.ui-topbar.away { transform: translateY(-100%); opacity: 0; pointer-events: none; transition-duration: 240ms; }
+	@media (prefers-reduced-motion: reduce) { .ui-topbar { transition: none; } }
 	.lead, .trail { display: flex; align-items: center; gap: 4px; min-width: 0; }
 	@media (max-width: 767px) { .ui-topbar { display: none; } }
 </style>

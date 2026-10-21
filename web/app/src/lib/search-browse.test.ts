@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { browseCategoryPath, browseCols, browseHref, browsePath, browseSectionPath, browseType, musicTiles, readCategory, readMood, strictTiles, tileHue, TILE_HUES } from './search-browse.ts';
+import { browseCategoryPath, browseCols, browseHref, browsePath, browseSectionPath, browseType, BROWSE_ROWS, musicTiles, readCategory, readMood, shownCount, strictTiles, tileHue, TILE_HUES } from './search-browse.ts';
 
 describe('search browse', () => {
 	it('asks per tab, Movies and Shows only', () => {
@@ -59,5 +59,15 @@ describe('strict Browse per type', () => {
 		const card = (key: string, image: string, genres: string[]) => ({ key, kind: 'artist' as const, mbid: key, name: key, image, genres });
 		const out = musicTiles({ genres: ['rock', 'jazz', 'folk'], hero: null, rows: [{ id: 'r', type: 'x', title: 'x', reason: '', shape: 'round', items: [card('a', '/a.jpg', ['rock']), card('b', '/b.jpg', ['rock', 'jazz'])] }] }, (g) => `/m/${g}`, (c) => c.image ?? null);
 		expect(out.map((x) => [x.name, x.image, x.href])).toEqual([['Rock', '/a.jpg', '/m/rock'], ['Jazz', '/b.jpg', '/m/jazz']]);
+	});
+});
+
+describe('Browse rows as you scroll', () => {
+	it('shows two rows first, then more rows, never past the section', () => {
+		expect(BROWSE_ROWS).toBe(2);
+		expect(shownCount(40, 6, BROWSE_ROWS)).toBe(12);
+		expect(shownCount(40, 6, BROWSE_ROWS * 2)).toBe(24);
+		expect(shownCount(40, 6, 10)).toBe(40);
+		expect(shownCount(5, 0, 0)).toBe(1);
 	});
 });

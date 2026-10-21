@@ -34,6 +34,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import { trackInputModality } from '#lib/focus.ts';
 	import { focusField, rememberReturn, searchField } from '#lib/search-field.svelte.ts';
+	import { installScrollBar, showBar } from '#lib/scroll-bar.svelte.ts';
 	import {
 		buildNav,
 		currentHref,
@@ -149,6 +150,7 @@
 	}
 
 	onMount(trackInputModality);
+	onMount(installScrollBar);
 	onMount(() => {
 		void session.load();
 		readLibraryResumeLinks();
@@ -174,6 +176,7 @@
 		} else if ((mod && (e.key === 'k' || e.key === 'K')) || (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey && !typingIn(e.target))) {
 			// Ctrl+K and / focus the one search field (the top bar; on phones the Search page's) and open Search.
 			e.preventDefault();
+			showBar();
 			if (!path.startsWith('/search')) rememberReturn();
 			const shown = focusField(true);
 			if (!path.startsWith('/search')) void goto(to(shown && searchField.term.trim() ? `/search?q=${encodeURIComponent(searchField.term.trim())}` : '/search'), { reset: !shown });

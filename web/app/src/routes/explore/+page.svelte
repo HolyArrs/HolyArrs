@@ -581,7 +581,7 @@
 <div class="explore" onclick={opened}>
 	<PageHeader title="Explore" subtitle="Find something to watch or listen to next." />
 	<div class="types-mark" bind:this={typesMark} aria-hidden="true"></div>
-	<div class="types" class:stuck={typesStuck}>
+	<div class="types" class:stuck={typesStuck} data-pin-pills>
 		<SegmentedControl options={typeOptions} value={type} label="Show" testid="explore-type" announce={(l) => `Showing ${l}`} onchange={setType} />
 		{#if genres.length}
 			<div class="genre-pick" data-testid="genre-picker">
