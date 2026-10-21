@@ -62,7 +62,8 @@
 		calendarDay: 'M5 6.5h14v12.5H5zM5 10h14M9 4.5v3M15 4.5v3',
 		sound: 'M4.5 9.5h3l4.5-4v13l-4.5-4h-3zM15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11',
 		soundOff: 'M4.5 9.5h3l4.5-4v13l-4.5-4h-3zM15.5 9.5l5 5M20.5 9.5l-5 5',
-		replay: 'M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4.5v4.5H9'
+		replay: 'M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4.5v4.5H9',
+		expand: 'M14 4.5h5.5V10M19.5 4.5l-6 6M10 19.5H4.5V14M4.5 19.5l6-6'
 	} as const;
 	export type IconName = keyof typeof paths;
 </script>

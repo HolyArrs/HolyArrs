@@ -296,11 +296,11 @@
 	onfocusout={focusout}
 	onkeydown={keydown}
 >
-	<a class="media" href={href} tabindex="-1">
+	<a class="media" href={href} aria-label={href ? `Open ${title}` : undefined}>
 		{#if pic}<img src={pic} alt="" decoding="async" />{/if}
 		{#if big}<img src={big} alt="" decoding="async" class="big" class:in={bigIn} onload={() => (bigIn = true)} />{/if}
 		{#if trailerOk && sources.length}
-			<span class="tp" class:held={!showing}><TrailerPlayer {sources} {title} repeat onplaying={() => (playing = true)} onfail={() => (playing = false)} onended={() => (playing = false)} onexpand={(o) => { openTheater({ kind, tmdb, title, ...fromHandoff(o), from: 'hover', returnTo }); hideNow(); setTimeout(onclose, THEATER_GROW_MS + 50); }} /></span>
+			<span class="tp" class:held={!showing}><TrailerPlayer {sources} {title} repeat corner onplaying={() => (playing = true)} onfail={() => (playing = false)} onended={() => (playing = false)} onexpand={(o) => { openTheater({ kind, tmdb, title, ...fromHandoff(o), from: 'hover', returnTo }); hideNow(); setTimeout(onclose, THEATER_GROW_MS + 50); }} /></span>
 		{/if}
 		<span class="scrim" class:playing={showing} aria-hidden="true"></span>
 		<!-- The logo, else the name, stays over the trailer (card template). -->
@@ -347,6 +347,9 @@
 	.badge.playing { opacity: 0; }
 	.tp { position: absolute; inset: 0; transition: opacity 500ms ease-out; }
 	.tp.held { opacity: 0; }
+	/* The expand button shows while the card is hovered or focused. */
+	.ui-grow :global(.corner) { opacity: 0; transition: opacity var(--dur-fast) ease; }
+	.ui-grow:hover :global(.corner), .ui-grow:focus-within :global(.corner) { opacity: 1; }
 	.word { font: 700 clamp(14px, 4.4cqw, 26px)/1.05 var(--font-display); letter-spacing: -0.02em; color: #fff; text-shadow: 0 2px 10px rgb(0 0 0 / 0.55); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 	.badge { transition: opacity 300ms ease-out; }
 	.scrim.playing { opacity: 0.5; }

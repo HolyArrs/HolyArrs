@@ -1,3 +1,8 @@
+<script lang="ts" module>
+	/** The rows already loaded when Explore was left, so Back shows them at once (no re-fetch flash). */
+	let kept: { key: string; at: number; rows: unknown } | null = null;
+</script>
+
 <script lang="ts">
 	import { onMount, tick, untrack } from 'svelte';
 	import { anchorDelta, canReturn, putOffsets, readAnchor, readOffsets, type ExploreReturn } from '#lib/explore-return.ts';
@@ -371,6 +376,18 @@
 		}
 	}
 
+	/** reuseKept puts back the rows from the last visit (same query, under 10 minutes old). */
+	function reuseKept() {
+		const k = kept;
+		kept = null;
+		if (!k || Date.now() - k.at > 600_000 || k.key !== JSON.stringify(query())) return false;
+		const r = k.rows as { head: typeof head; tail: typeof tail; hero: typeof hero; heroAt: number; tailPageNext: number; tailMore: boolean; headOrder: string[] };
+		({ head, tail, hero, heroAt, tailPageNext, tailMore, headOrder } = r);
+		okOnce = true;
+		headLoaded = true;
+		return true;
+	}
+
 	async function loadTail() {
 		if (tailBusy || !tailMore || type === 'music') return;
 		tailBusy = true;
@@ -556,11 +573,12 @@
 		void load();
 		// The head only needs the saved picks, not the service list: both go at once.
 		readPicked();
-		void loadHead();
+		if (!reuseKept()) void loadHead();
 		void loadServices();
 		return () => {
 			clearTimeout(poll);
 			gone.abort();
+			if (headLoaded && !failed && type !== 'music') kept = { key: JSON.stringify(query()), at: Date.now(), rows: $state.snapshot({ head, tail, hero, heroAt, tailPageNext, tailMore, headOrder }) };
 		};
 	});
 </script>

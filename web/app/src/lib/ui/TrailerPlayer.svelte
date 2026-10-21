@@ -21,8 +21,11 @@
 		onplaying,
 		onexpand,
 		start = 0,
-		sharp = false
+		sharp = false,
+		corner = false
 	}: {
+		/** Full screen from a small expand button in the corner (hover cards); a click on the picture is left to the card's link. */
+		corner?: boolean;
 		sources: TrailerSource[];
 		title: string;
 		/** Loop (hover cards); the hero ends and shows its pictures again. */
@@ -378,6 +381,7 @@
 			// The full-screen click too: the card's link must not open the title page under the player.
 			if (expandBtn && (e.target as Element | null)?.closest?.('button.expand') === expandBtn) {
 				e.stopImmediatePropagation();
+				if (corner) ctlAt = 0;
 				return expand(e);
 			}
 			const b = (e.target as Element | null)?.closest?.('button[data-act]');
@@ -556,7 +560,7 @@
 		{/if}
 	{/key}
 </div>
-{#if onexpand && shown}
+{#if onexpand && shown && !corner}
 	<button type="button" class="expand" aria-label="Play the {title} trailer full screen" bind:this={expandBtn} onclick={expand}></button>
 {/if}
 {#if controls}
@@ -568,6 +572,9 @@
 			<IconButton icon={heard ? 'sound' : 'soundOff'} label={heard ? 'Turn sound off' : 'Turn sound on'} variant="glass" size="md" tipSide="above" data-act="sound" />
 		{:else if done && sources.length > 0}
 			<IconButton icon="replay" label="Play the trailer again" variant="glass" size="md" tipSide="above" data-act="replay" />
+		{/if}
+		{#if onexpand && shown && corner}
+			<IconButton icon="expand" label="Play trailer full screen" variant="glass" size="md" tipSide="above" class="expand corner" bind:node={expandBtn} data-testid="trailer-expand" />
 		{/if}
 	</div>
 {/if}
@@ -591,5 +598,7 @@
 	.expand { position: absolute; inset: 0; z-index: 2; padding: 0; border: 0; background: transparent; cursor: pointer; }
 	.expand:focus-visible { outline: none; box-shadow: inset 0 0 0 3px var(--on-art); }
 	.ctl { position: absolute; right: 12px; bottom: 12px; z-index: 4; display: flex; gap: 8px; }
+	/* The corner expand: a 44 px target, shown while the card is hovered or focused. */
+	.ctl :global(.corner) { width: 44px; height: 44px; }
 	@media (prefers-reduced-motion: reduce) { .ui-trailer { transition: none; } }
 </style>
