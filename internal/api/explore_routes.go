@@ -39,18 +39,18 @@ func exploreSwitch(v string) (string, bool) {
 // explorePageFor assembles the member's page: today's pool, else the
 // newest older one, else cold-start rows from the list cache. It never
 // waits for outside calls; a missing or stale pool is queued instead.
-func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64, sw, topKind, topRegion string) (explore.Page, map[string]any, bool, error) {
+func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64, sw string) (explore.Page, bool, error) {
 	now := a.exploreNow()
 	day := explore.Day(now)
 	moment, tz := exploreMoment(r, now)
 	// Trending on streaming, as kept (never fetched here; warmed at
 	// start): the rows under it skip its titles.
 	svcTop := a.keptServiceTop(strings.ToUpper(r.URL.Query().Get("region")), sw)
-	key := strconv.FormatInt(member, 10) + "|" + sw + "|" + topKind + "|" + topRegion + "|" + tz
+	key := strconv.FormatInt(member, 10) + "|" + sw + "|" + tz
 	e := &a.explore
 	pool, stale, err := a.readPool(ctx, member, sw, day, false)
 	if err != nil {
-		return explore.Page{}, nil, false, err
+		return explore.Page{}, false, err
 	}
 	building := false
 	if pool == nil || stale || pool.Version != explore.PoolVersion {
@@ -60,7 +60,7 @@ func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64,
 	}
 	if pool == nil {
 		if pool, _, err = a.readPool(ctx, member, sw, day, true); err != nil {
-			return explore.Page{}, nil, false, err
+			return explore.Page{}, false, err
 		}
 	}
 	if pool != nil {
@@ -68,14 +68,14 @@ func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64,
 		got, ok := e.pages[key]
 		e.mu.Unlock()
 		if ok && now.Sub(got.at) < explorePageTTL && got.built.Equal(pool.Built) {
-			pg, err := a.titleExplore(ctx, member, got.page, moment, topRegion)
-			return pg, got.top10, building, err
+			pg, err := a.titleExplore(ctx, member, got.page, moment)
+			return pg, building, err
 		}
 	}
 	if pool == nil {
 		m, err := a.loadMember(ctx, member)
 		if err != nil && err != sql.ErrNoRows {
-			return explore.Page{}, nil, false, err
+			return explore.Page{}, false, err
 		}
 		// The cold head is built from the Library, the asks and whatever
 		// lists are cached (memory or SQLite), with no outside call.
@@ -90,51 +90,21 @@ func (a *API) explorePageFor(ctx context.Context, r *http.Request, member int64,
 		}
 		cold, err := explore.Build(ctx, exploreSource{a: a, cacheOnly: true}, in)
 		if err != nil {
-			return explore.Page{}, nil, false, err
+			return explore.Page{}, false, err
 		}
 		pool = &cold
 	}
-	// Top 10 per kind the tab shows (All: both, as two rows). top10 is the
-	// asked kind's list, with every kind's list under by_kind.
-	var top10 map[string]any
-	tops := map[string][]explore.Item{}
-	if a.s.Top10 != nil && topKind != "" {
-		lang := ""
-		if topRegion == "global" {
-			lang = "en"
-		}
-		byKind := map[string]any{}
-		for _, kind := range explore.Kinds(sw) {
-			status, _, body := a.top10Answer(ctx, r, kind, topRegion, lang)
-			if status != http.StatusOK {
-				continue
-			}
-			byKind[kind] = body
-			for _, v := range body["items"].([]top10View) {
-				if v.TMDBID != "" {
-					tops[kind] = append(tops[kind], explore.Item{TMDBID: v.TMDBID, Kind: v.Kind, Name: v.Name, Poster: v.Poster, Backdrop: v.Backdrop, Owned: v.InLibrary})
-				}
-			}
-		}
-		if body, ok := byKind[topKind].(map[string]any); ok {
-			top10 = map[string]any{}
-			for k, v := range body {
-				top10[k] = v
-			}
-			top10["by_kind"] = byKind
-		}
-	}
-	pg := explore.AssembleTabAt(*pool, tops, svcTop, member, moment)
+	pg := explore.AssembleTabAt(*pool, svcTop, member, moment)
 	e.mu.Lock()
 	if e.pages == nil || len(e.pages) >= 1000 {
 		e.pages = map[string]explorePage{}
 	}
 	if !building || pool.Date == day {
-		e.pages[key] = explorePage{at: now, built: pool.Built, page: pg, top10: top10}
+		e.pages[key] = explorePage{at: now, built: pool.Built, page: pg}
 	}
 	e.mu.Unlock()
-	pg, err = a.titleExplore(ctx, member, pg, moment, topRegion)
-	return pg, top10, building, err
+	pg, err = a.titleExplore(ctx, member, pg, moment)
+	return pg, building, err
 }
 
 // exploreViews joins rows with the Library; a Kid's rows are filtered
@@ -211,44 +181,20 @@ func rowTypes(rows []exploreRowView) []string {
 	return out
 }
 
-// exploreParams reads the type switch and the Top 10 choice shared by the
-// head and the tail.
-func exploreParams(w http.ResponseWriter, r *http.Request) (sw, topKind, topRegion string, ok bool) {
-	q := r.URL.Query()
-	sw, ok = exploreSwitch(q.Get("type"))
+// exploreParams reads the type switch shared by the head and the tail.
+func exploreParams(w http.ResponseWriter, r *http.Request) (sw string, ok bool) {
+	sw, ok = exploreSwitch(r.URL.Query().Get("type"))
 	if !ok {
 		fail(w, http.StatusBadRequest, "type must be all, movies or shows")
-		return
 	}
-	topKind = q.Get("top10_kind")
-	switch {
-	case sw == "movies":
-		topKind = "movie"
-	case sw == "shows":
-		topKind = "show"
-	case topKind == "":
-		topKind = "movie"
-	}
-	if topKind != "movie" && topKind != "show" {
-		fail(w, http.StatusBadRequest, "top10_kind must be movie or show")
-		return "", "", "", false
-	}
-	topRegion = strings.ToUpper(q.Get("top10_region"))
-	if topRegion == "" || topRegion == "GLOBAL" {
-		topRegion = "global"
-	} else if !isCountry(topRegion) {
-		fail(w, http.StatusBadRequest, "top10_region must be global or a country code")
-		return "", "", "", false
-	}
-	return sw, topKind, topRegion, true
+	return sw, ok
 }
 
-// exploreHead answers GET /api/v1/explore/head: the Top 10 list and the
-// head rows in one answer, from the stored pool. building says a pool is
+// exploreHead answers GET /api/v1/explore/head: the head rows in one answer, from the stored pool. building says a pool is
 // on its way (the page may ask again shortly).
 func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 	st := newServerTiming()
-	sw, topKind, topRegion, ok := exploreParams(w, r)
+	sw, ok := exploreParams(w, r)
 	if !ok {
 		return
 	}
@@ -282,16 +228,14 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 			a.markMemberStale(r.Context(), me, a.exploreNow())
 		}
 	}
-	pg, top10, building, err := a.explorePageFor(r.Context(), r, me, sw, topKind, topRegion)
+	pg, building, err := a.explorePageFor(r.Context(), r, me, sw)
 	if err != nil {
 		internal(w, err)
 		return
 	}
 	st.mark("page")
-	r = r.WithContext(withTop10Ranks(r.Context(), top10Ranks(top10)))
-	// Top 10 stays in its slot as an empty marker (the page draws it from
-	// top10); the hero is up to 6 titles not in the Library from Top 10 and
-	// Trending, with Ask as its action.
+	// The hero is up to 6 titles not in the Library from Trending, with Ask
+	// as its action.
 	head := []exploreRowView{}
 	for _, row := range pg.Head {
 		if row.Type == explore.TypeTopServices {
@@ -326,13 +270,13 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 	a.exploreCaching(w, r, "private, no-cache")
 	st.write(w)
 	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "building": building, "seeds": pg.Seeds, "tail_cap": pg.Cap,
-		"tail_rows": len(pg.Tail), "top10": top10, "hero": hero, "head": head, "taste": pg.Taste})
+		"tail_rows": len(pg.Tail), "hero": hero, "head": head, "taste": pg.Taste})
 }
 
 // exploreTail answers GET /api/v1/explore/tail?page=n: the next 4 rows of
 // the generated tail; more says another page follows.
 func (a *API) exploreTail(w http.ResponseWriter, r *http.Request) {
-	sw, topKind, topRegion, ok := exploreParams(w, r)
+	sw, ok := exploreParams(w, r)
 	if !ok {
 		return
 	}
@@ -345,12 +289,11 @@ func (a *API) exploreTail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	me := a.person(r).UserID
-	pg, top10, _, err := a.explorePageFor(r.Context(), r, me, sw, topKind, topRegion)
+	pg, _, err := a.explorePageFor(r.Context(), r, me, sw)
 	if err != nil {
 		internal(w, err)
 		return
 	}
-	r = r.WithContext(withTop10Ranks(r.Context(), top10Ranks(top10)))
 	slice, more := pg.TailSlice(n)
 	rows, err := a.exploreViews(r.Context(), r, slice)
 	if err != nil {

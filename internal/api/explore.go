@@ -68,7 +68,6 @@ type explorePage struct {
 	at    time.Time
 	built time.Time
 	page  explore.Page
-	top10 map[string]any
 }
 
 // exploreState is the pool job and its caches.
@@ -119,7 +118,6 @@ func (a *API) StartExplore(ctx context.Context) {
 	a.s.Store.OnEvent(a.musicOnEvent)
 	go supervisor.Guard("explore-music-warm", func() { a.warmMusic(ctx) })
 	go supervisor.Guard("explore", func() { a.exploreLoop(ctx) })
-	go supervisor.Guard("explore-top10-warm", func() { a.warmTop10(ctx) })
 	go supervisor.Guard("explore-service-top-warm", func() { a.warmServiceTop(ctx) })
 	go supervisor.Guard("explore-genre-warm", func() { a.warmGenres(ctx) })
 	startBackdropDark(ctx)

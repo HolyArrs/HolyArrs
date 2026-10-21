@@ -18,6 +18,9 @@ import (
 // server changes it a few times a day at most.
 const musicTrendTTL = time.Hour
 
+// musicTrendMiss is how long a missing list or a failed read is remembered.
+const musicTrendMiss = 5 * time.Minute
+
 const musicTrendMax = 300
 
 type musicTrendEntry struct {
@@ -112,7 +115,7 @@ func (a *API) cachedMusicTrend(ctx context.Context, kind, region string) (metada
 	c.mu.Lock()
 	e, ok := c.lists[key]
 	c.mu.Unlock()
-	if ok && ((e.err == nil && time.Since(e.at) < musicTrendTTL) || (e.err != nil && time.Since(e.at) < top10Miss)) {
+	if ok && ((e.err == nil && time.Since(e.at) < musicTrendTTL) || (e.err != nil && time.Since(e.at) < musicTrendMiss)) {
 		return e.list, e.err
 	}
 	l, err := a.s.MusicTrending(ctx, kind, region)

@@ -610,7 +610,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	reg.Set(supervisor.StageKey("events"), "stage", "Event hooks", supervisor.Running, "")
 	defer wish.Wait()
 	a := api.New(api.Server{Library: lib, Lists: ol, Store: s, Queue: q, Live: hub, Metadata: md, Version: version, Auth: au, Backups: bm, Restart: restart,
-		Secrets: vault, TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MetadataUp: hosted.Health.Up, Top10: hosted.Service.NetflixTop10, ServiceTop: hosted.Service.ServiceTop, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
+		Secrets: vault, TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MetadataUp: hosted.Health.Up, ServiceTop: hosted.Service.ServiceTop, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
 			t, err := hosted.Service.TrailerPick(ctx, kind, id, lang)
 			return t.Key, err
 		}, AnimeMap: hosted.Service.AnimeMap, MusicTrending: hosted.Service.MusicTrending, MusicSimilar: hosted.Service.MusicSimilar, MusicCover: hosted.Service.MusicCover, ExtraArt: hosted.Service.Art, ExtraRatings: hosted.Service.Ratings, Alerts: sender, Asks: wish, Search: sr, Downloads: dm, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,

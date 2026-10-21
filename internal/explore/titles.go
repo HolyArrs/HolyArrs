@@ -361,8 +361,6 @@ type TitleContext struct {
 	Recent map[string]string
 	// Today is row id -> template id already chosen today.
 	Today map[string]string
-	// Region is the Top 10 region (global or a country code).
-	Region string
 	// Service names the member's one service, when there is just one.
 	Service string
 }

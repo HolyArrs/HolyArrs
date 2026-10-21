@@ -366,7 +366,6 @@ var Routes = map[string]Owner{
 	"GET /api/v1/trailer/stream/{id}/seg/{n}":              Media,
 	"GET /api/v1/discover":                                 Media,
 	"GET /api/v1/watch-services":                           Media,
-	"GET /api/v1/top10":                                    Media,
 	"GET /api/v1/explore/head":                             Media,
 	"GET /api/v1/explore/tail":                             Media,
 	"GET /api/v1/explore/top":                              Media,

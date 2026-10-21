@@ -124,7 +124,7 @@ func keepStrip(key string, e stripEntry) {
 // exploreStrip answers GET /api/v1/explore/strip?type=&row=: the member's
 // category strip, in order.
 func (a *API) exploreStrip(w http.ResponseWriter, r *http.Request) {
-	sw, topKind, topRegion, ok := exploreParams(w, r)
+	sw, ok := exploreParams(w, r)
 	if !ok {
 		return
 	}
@@ -148,7 +148,7 @@ func (a *API) exploreStrip(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{"type": sw, "tiles": v.(stripEntry).tiles, "partial": false})
 		return
 	}
-	pg, page, kid, err := a.browsePage(ctx, r, sw, topKind, topRegion)
+	pg, page, kid, err := a.browsePage(ctx, r, sw)
 	if err != nil {
 		internal(w, err)
 		return

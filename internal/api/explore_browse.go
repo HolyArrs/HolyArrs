@@ -251,8 +251,8 @@ func (b *browseBuild) start(page []explore.BrowseTile) {
 }
 
 // browsePage is the member's filtered page and its fast genre tiles.
-func (a *API) browsePage(ctx context.Context, r *http.Request, sw, topKind, topRegion string) (explore.Page, []explore.BrowseTile, bool, error) {
-	pg, _, _, err := a.explorePageFor(ctx, r, a.person(r).UserID, sw, topKind, topRegion)
+func (a *API) browsePage(ctx context.Context, r *http.Request, sw string) (explore.Page, []explore.BrowseTile, bool, error) {
+	pg, _, err := a.explorePageFor(ctx, r, a.person(r).UserID, sw)
 	if err != nil {
 		return pg, nil, false, err
 	}
@@ -390,7 +390,7 @@ func (a *API) browseSectionTiles(ctx context.Context, r *http.Request, sw string
 // backdrop; no backdrop repeats across the tab's sections; a Kid gets
 // kid-safe categories only.
 func (a *API) searchBrowseSection(w http.ResponseWriter, r *http.Request) {
-	sw, topKind, topRegion, ok := exploreParams(w, r)
+	sw, ok := exploreParams(w, r)
 	if !ok {
 		return
 	}
@@ -406,7 +406,7 @@ func (a *API) searchBrowseSection(w http.ResponseWriter, r *http.Request) {
 	if a.kidLimited(w, r) {
 		return
 	}
-	pg, page, kid, err := a.browsePage(r.Context(), r, sw, topKind, topRegion)
+	pg, page, kid, err := a.browsePage(r.Context(), r, sw)
 	if err != nil {
 		internal(w, err)
 		return

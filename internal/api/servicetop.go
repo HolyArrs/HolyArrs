@@ -13,6 +13,17 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 )
 
+// rankedView is one ranked card of a top row.
+type rankedView struct {
+	discoverItemView
+	Rank   int    `json:"rank"`
+	Season string `json:"season_title,omitempty"`
+}
+
+func isCountry(r string) bool {
+	return len(r) == 2 && r[0] >= 'A' && r[0] <= 'Z' && r[1] >= 'A' && r[1] <= 'Z'
+}
+
 // serviceTopTTL is how long the metadata server's per-service lists are
 // kept; the server refreshes them every 12 hours.
 const serviceTopTTL = 12 * time.Hour
@@ -129,7 +140,7 @@ type serviceTopView struct {
 	// Ranked is true for the service's own top list; TMDB popularity is
 	// not a ranking.
 	Ranked bool        `json:"ranked"`
-	Items  []top10View `json:"items"`
+	Items  []rankedView `json:"items"`
 }
 
 func serviceKind(k string) string {
@@ -216,10 +227,10 @@ func (a *API) exploreServiceTop(w http.ResponseWriter, r *http.Request) {
 	}
 	views := []serviceTopView{}
 	for _, sv := range list.Services {
-		v := serviceTopView{Service: serviceTopProviders[sv.Service], Key: sv.Service, Name: sv.Name, Source: sv.Source, FetchedAt: sv.FetchedAt, AgeSeconds: sv.AgeSeconds, Stale: sv.Stale, Ranked: sv.Source == "streaming-availability", Items: []top10View{}}
+		v := serviceTopView{Service: serviceTopProviders[sv.Service], Key: sv.Service, Name: sv.Name, Source: sv.Source, FetchedAt: sv.FetchedAt, AgeSeconds: sv.AgeSeconds, Stale: sv.Stale, Ranked: sv.Source == "streaming-availability", Items: []rankedView{}}
 		for _, it := range sv.Items {
 			if j, ok := byKey[serviceKind(it.Kind)+strconv.FormatInt(it.TMDBID, 10)]; ok && len(v.Items) < topServicesMax {
-				v.Items = append(v.Items, top10View{discoverItemView: j, Rank: len(v.Items) + 1})
+				v.Items = append(v.Items, rankedView{discoverItemView: j, Rank: len(v.Items) + 1})
 			}
 		}
 		if v.Service != 0 && len(v.Items) > 0 {

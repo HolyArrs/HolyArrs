@@ -30,8 +30,6 @@ func TestFreshRules(t *testing.T) {
 		{"season too old", FreshFacts{Kind: "show", SeasonStart: ago(14)}, ""},
 		{"recently added", FreshFacts{Kind: "movie", InLibrary: true, Added: ago(6)}, "Recently Added"},
 		{"added too old", FreshFacts{Kind: "movie", InLibrary: true, Added: ago(8)}, ""},
-		{"top 10", FreshFacts{Kind: "movie", Top10Rank: 3}, "Trending"},
-		{"rank 11", FreshFacts{Kind: "movie", Top10Rank: 11}, ""},
 		{"coming this week", FreshFacts{Kind: "movie", Released: time.Date(2026, 10, 23, 0, 0, 0, 0, time.UTC)}, "Coming Friday"},
 		{"coming in 7 days", FreshFacts{Kind: "movie", Released: freshNow.AddDate(0, 0, 7)}, "Coming Monday"},
 		{"premieres later", FreshFacts{Kind: "show", Released: time.Date(2026, 11, 24, 0, 0, 0, 0, time.UTC)}, "Premieres Nov 24"},
@@ -42,7 +40,6 @@ func TestFreshRules(t *testing.T) {
 		{"show is no release", FreshFacts{Kind: "show", Released: ago(3)}, ""},
 		{"music added", FreshFacts{Kind: "album", Music: true, InLibrary: true, Added: ago(2)}, "Recently Added"},
 		{"music release", FreshFacts{Kind: "album", Music: true, Released: ago(2)}, "New Release"},
-		{"music no top 10", FreshFacts{Kind: "album", Music: true, Top10Rank: 1}, ""},
 		{"nothing", FreshFacts{Kind: "movie"}, ""},
 	}
 	for _, c := range cases {
@@ -53,7 +50,7 @@ func TestFreshRules(t *testing.T) {
 }
 
 func TestFreshPriority(t *testing.T) {
-	all := FreshFacts{Kind: "show", InLibrary: true, LastEpisode: ago(1), SeasonStart: ago(2), Added: ago(1), Top10Rank: 1,
+	all := FreshFacts{Kind: "show", InLibrary: true, LastEpisode: ago(1), SeasonStart: ago(2), Added: ago(1),
 		Released: freshNow.AddDate(0, 0, 3), NextSeason: freshNow.AddDate(0, 1, 0), NextSeasonNumber: 4}
 	steps := []struct {
 		drop func(*FreshFacts)
@@ -62,8 +59,7 @@ func TestFreshPriority(t *testing.T) {
 		{func(*FreshFacts) {}, "New Episode"},
 		{func(f *FreshFacts) { f.LastEpisode = time.Time{} }, "New Season"},
 		{func(f *FreshFacts) { f.SeasonStart = time.Time{} }, "Recently Added"},
-		{func(f *FreshFacts) { f.Added = time.Time{} }, "Trending"},
-		{func(f *FreshFacts) { f.Top10Rank = 0 }, "Coming Thursday"},
+		{func(f *FreshFacts) { f.Added = time.Time{} }, "Coming Thursday"},
 		{func(f *FreshFacts) { f.Released = time.Time{} }, "Season 4 coming"},
 	}
 	f := all
@@ -72,10 +68,6 @@ func TestFreshPriority(t *testing.T) {
 		if got := text(PickFresh(f, freshNow)); got != s.want {
 			t.Fatalf("got %q, want %q", got, s.want)
 		}
-	}
-	m := FreshFacts{Kind: "movie", Top10Rank: 2, Released: ago(3)}
-	if b := PickFresh(m, freshNow); b == nil || b.Kind != FreshTop10 || b.Rank != 2 {
-		t.Fatalf("Top 10 outranks New Release: %+v", b)
 	}
 }
 
@@ -92,13 +84,6 @@ func TestParseDay(t *testing.T) {
 
 func TestRowSuppress(t *testing.T) {
 	now := time.Date(2026, 10, 19, 12, 0, 0, 0, time.UTC)
-	top := FreshFacts{Kind: "movie", Top10Rank: 3, Released: now.AddDate(0, 0, -3)}
-	if b := PickFreshIn(top, now, "top10"); b == nil || b.Kind != FreshNewRelease {
-		t.Fatalf("top10 row: want the next strip, got %+v", b)
-	}
-	if b := PickFreshIn(top, now, ""); b == nil || b.Kind != FreshTop10 {
-		t.Fatalf("other row: want top10, got %+v", b)
-	}
 	rel := FreshFacts{Kind: "movie", Released: now.AddDate(0, 0, -3)}
 	for _, row := range []string{TypeBest, TypeNewServices, "fresh", "new_from"} {
 		if b := PickFreshIn(rel, now, row); b != nil {
@@ -128,7 +113,7 @@ func TestRowSuppress(t *testing.T) {
 
 func TestOneStrip(t *testing.T) {
 	now := time.Date(2026, 10, 19, 12, 0, 0, 0, time.UTC)
-	all := FreshFacts{Kind: "show", InLibrary: true, Added: now, LastEpisode: now, SeasonStart: now, Top10Rank: 1, Released: now.AddDate(0, 0, -2)}
+	all := FreshFacts{Kind: "show", InLibrary: true, Added: now, LastEpisode: now, SeasonStart: now, Released: now.AddDate(0, 0, -2)}
 	for row := range RowSuppress {
 		b := PickFreshIn(all, now, row)
 		if b != nil && Suppressed(row, b.Kind) {

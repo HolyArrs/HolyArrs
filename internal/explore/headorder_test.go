@@ -114,7 +114,7 @@ func TestHeadOrderTabs(t *testing.T) {
 		t.Run(c.sw, func(t *testing.T) {
 			p, _ := build(t, fullInput(c.sw, 4))
 			svc := svcTopOf(p)
-			pg := AssembleTabAt(p, top10Both(), svc, 4, Moment{})
+			pg := AssembleTabAt(p, svc, 4, Moment{})
 			got := headIDs(pg.Head)
 			if len(got) < len(c.want) || !slices.Equal(got[:len(c.want)], c.want) {
 				t.Fatalf("head %v, want %v first", got, c.want)
@@ -142,7 +142,7 @@ func TestFinishTheCollection(t *testing.T) {
 	parts, _ := (&fakeSource{}).List(context.Background(), Request{List: "collection", Kind: "movie", Ref: "77", Scope: ScopeShared})
 	in.Owned[parts[0].Key()] = true
 	p, _ := build(t, in)
-	pg := AssembleTabAt(p, top10Both(), nil, 4, Moment{})
+	pg := AssembleTabAt(p, nil, 4, Moment{})
 	for _, r := range pg.Head {
 		if r.Type != TypeCollection {
 			continue
@@ -167,7 +167,7 @@ func TestHeadOrderCold(t *testing.T) {
 		t.Run(sw, func(t *testing.T) {
 			p, _ := build(t, Input{Member: 7, Switch: sw})
 			svc := svcTopOf(p)
-			pg := AssembleTabAt(p, top10Both(), svc, 7, Moment{})
+			pg := AssembleTabAt(p, svc, 7, Moment{})
 			got := slotsOf(pg.Head)
 			if got[0] != TypeTopServices {
 				t.Fatalf("head %v", got)
@@ -205,7 +205,7 @@ func TestHeadOrderKid(t *testing.T) {
 			in := fullInput("all", 9)
 			in.Kid, in.Allow = true, c.allow
 			p, _ := build(t, in)
-			pg := AssembleTabAt(p, top10Both(), nil, 9, Moment{})
+			pg := AssembleTabAt(p, nil, 9, Moment{})
 			got := headIDs(pg.Head)
 			want := []string{TypeTopServices, TypeTopPicks, TypePopularGenre + ":Family", TypePopularGenre + ":Animation", TypeBecauseHave}
 			if c.hh {
@@ -242,7 +242,7 @@ func TestHeadDedupeSpreadMembers(t *testing.T) {
 			}
 			p, _ := build(t, in)
 			svc := svcTopOf(p)
-			checkPage(t, fmt.Sprintf("%s member %d", sw, m), AssembleTabAt(p, top10Both(), svc, m, Moment{}), svc)
+			checkPage(t, fmt.Sprintf("%s member %d", sw, m), AssembleTabAt(p, svc, m, Moment{}), svc)
 		}
 	}
 }
@@ -292,7 +292,7 @@ func TestChartMostlyOnServices(t *testing.T) {
 		}
 	}
 	svc := trending[:len(trending)-3]
-	pg := AssembleTabAt(p, top10Both(), svc, 4, Moment{})
+	pg := AssembleTabAt(p, svc, 4, Moment{})
 	if !slices.Contains(slotsOf(pg.Head), TypeTrending) {
 		t.Fatalf("trending gone: %v", slotsOf(pg.Head))
 	}
@@ -302,7 +302,7 @@ func TestChartMostlyOnServices(t *testing.T) {
 func TestOldPoolRowsDropped(t *testing.T) {
 	p, _ := build(t, fullInput("all", 4))
 	p.Rows = append(p.Rows, Row{ID: "just_arrived", Type: "just_arrived", Items: genreItems(10, []string{"Drama"})})
-	pg := AssembleTabAt(p, top10Both(), nil, 4, Moment{})
+	pg := AssembleTabAt(p, nil, 4, Moment{})
 	for _, r := range append(append([]Row{}, pg.Head...), pg.Tail...) {
 		if r.Type == "just_arrived" {
 			t.Fatal("old row shown")
@@ -318,7 +318,7 @@ func TestNoSameTypeBackToBack(t *testing.T) {
 			in := fullInput(sw, m)
 			in.Seeds = seedsN(10, m)
 			p, _ := build(t, in)
-			pg := AssembleTabAt(p, top10Both(), svcTopOf(p), m, Moment{})
+			pg := AssembleTabAt(p, svcTopOf(p), m, Moment{})
 			all := append(append([]Row{}, pg.Head...), pg.Tail...)
 			for i := 1; i < len(all); i++ {
 				if all[i].Type != all[i-1].Type {

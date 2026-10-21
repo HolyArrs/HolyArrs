@@ -74,14 +74,6 @@ func build(t *testing.T, in Input) (Pool, *fakeSource) {
 	return p, src
 }
 
-func top10() []Item {
-	var out []Item
-	for i := 0; i < 10; i++ {
-		out = append(out, Item{TMDBID: fmt.Sprint(i + 1), Kind: "movie", Name: fmt.Sprint("Top", i)})
-	}
-	return out
-}
-
 func order(rows []Row) []string {
 	var ids []string
 	for _, r := range rows {
@@ -91,13 +83,13 @@ func order(rows []Row) []string {
 }
 
 // Criterion 2: no title twice in the first HeadDedupe rows; none more
-// than twice on the page; repeats at least 4 rows apart. Top 10 rows keep
+// than twice on the page; repeats at least 4 rows apart. Top rows keep
 // every title and are left out of the count, but rows under them skip
 // their titles in the first HeadDedupe rows. 50 generated members.
 func TestDedupFiftyMembers(t *testing.T) {
 	for m := int64(1); m <= 50; m++ {
 		p, _ := build(t, Input{Member: m, Seeds: seedsN(int(m%15), m), Services: "8|9", Region: "US"})
-		pg := Assemble(p, top10(), m)
+		pg := Assemble(p, m)
 		at := map[string][]int{}
 		rows := append(append([]Row{}, pg.Head...), pg.Tail...)
 		topAt := map[string]int{}
@@ -107,7 +99,7 @@ func TestDedupFiftyMembers(t *testing.T) {
 			}
 			for _, it := range r.Items {
 				if j, ok := topAt[it.Key()]; ok && j < i && i < HeadDedupe {
-					t.Fatalf("member %d row %s repeats Top 10 title %s", m, r.ID, it.Key())
+					t.Fatalf("member %d row %s repeats top title %s", m, r.ID, it.Key())
 				}
 			}
 			inRow := map[string]bool{}
@@ -144,7 +136,7 @@ func TestDedupFiftyMembers(t *testing.T) {
 // its minimum, and no personal row.
 func TestColdStart(t *testing.T) {
 	p, _ := build(t, Input{Member: 1})
-	pg := Assemble(p, top10(), 1)
+	pg := Assemble(p, 1)
 	if len(pg.Head) != HeadRows {
 		t.Fatalf("head %d rows: %v", len(pg.Head), order(pg.Head))
 	}
@@ -152,7 +144,8 @@ func TestColdStart(t *testing.T) {
 		t.Fatalf("tail %d rows: %v", len(pg.Tail), order(pg.Tail))
 	}
 	for _, r := range append(pg.Head, pg.Tail...) {
-		if len(r.Items) < MinItems(r.Type) {
+		// The page fills Trending on streaming itself.
+		if r.Type != TypeTopServices && len(r.Items) < MinItems(r.Type) {
 			t.Fatalf("row %s under its minimum", r.ID)
 		}
 		if Personal(r.Type) || strings.Contains(strings.ToLower(r.Title), "for you") || strings.Contains(r.Title, "Because") || strings.Contains(r.Title, "More from") {
@@ -171,13 +164,13 @@ func TestStableWithinDay(t *testing.T) {
 	p1, _ := build(t, in)
 	in.Today = &p1
 	p2, _ := build(t, in)
-	a, b := Assemble(p1, top10(), 3), Assemble(p2, top10(), 3)
+	a, b := Assemble(p1, 3), Assemble(p2, 3)
 	if fmt.Sprint(order(a.Head), order(a.Tail)) != fmt.Sprint(order(b.Head), order(b.Tail)) {
 		t.Fatal("two calls on the same day differ")
 	}
 	next := Input{Member: 3, Seeds: seedsN(12, 3), Now: day0.Add(24 * time.Hour), Prev: &p1}
 	p3, _ := build(t, next)
-	c := Assemble(p3, top10(), 3)
+	c := Assemble(p3, 3)
 	if fmt.Sprint(order(a.Tail)) == fmt.Sprint(order(c.Tail)) {
 		t.Fatal("the next day did not move any tail row")
 	}
@@ -231,10 +224,10 @@ func TestKidFilters(t *testing.T) {
 	}
 	// Candidate stage alone.
 	p, _ := build(t, Input{Member: 9, Kid: true, Seeds: seedsN(5, 9), Allow: allow})
-	check("candidate", Assemble(p, nil, 9))
+	check("candidate", Assemble(p, 9))
 	// Response stage alone.
 	p, _ = build(t, Input{Member: 9, Kid: true, Seeds: seedsN(5, 9)})
-	check("response", Assemble(p, nil, 9).Filter(allow))
+	check("response", Assemble(p, 9).Filter(allow))
 	if TailCap(12, true) != 8 {
 		t.Fatal("Kid tail not capped at 8")
 	}
@@ -262,7 +255,7 @@ func TestPrivacyOfRequests(t *testing.T) {
 func TestPerMemberOrder(t *testing.T) {
 	p1, _ := build(t, Input{Member: 1, Seeds: seedsN(6, 1)})
 	p2, _ := build(t, Input{Member: 2, Seeds: seedsN(6, 2)})
-	a, b := Assemble(p1, top10(), 1), Assemble(p2, top10(), 2)
+	a, b := Assemble(p1, 1), Assemble(p2, 2)
 	// H1 Trending on streaming, H2 Top picks.
 	if a.Head[1].Type != TypeTopPicks || b.Head[1].Type != TypeTopPicks {
 		t.Fatalf("H2 is not Top picks: %s %s", a.Head[1].Type, b.Head[1].Type)
@@ -282,7 +275,7 @@ func TestTailLength(t *testing.T) {
 	for _, c := range []struct{ seeds, max, floor int }{{2, 8, 1}, {5, 20, 1}, {12, 40, 14}} {
 		p, _ := build(t, Input{Member: 5, Seeds: seedsN(c.seeds, 5), Services: "8|9", Region: "US",
 			OwnedPeople: map[string]int{"Ann": 3, "Bo": 2, "Cy": 2, "Di": 2}, OwnedDecadeGenre: map[string]int{"1990s|Drama": 4, "2000s|Comedy": 3}, Members: 2, Household: household(5)})
-		pg := Assemble(p, top10(), 5)
+		pg := Assemble(p, 5)
 		if len(pg.Tail) > c.max || len(pg.Tail) < c.floor {
 			t.Fatalf("%d seeds: %d tail rows, want %d-%d (%v)", c.seeds, len(pg.Tail), c.floor, c.max, order(pg.Tail))
 		}
@@ -291,7 +284,7 @@ func TestTailLength(t *testing.T) {
 
 func TestDiversityNoSameTypeBackToBack(t *testing.T) {
 	p, _ := build(t, Input{Member: 6, Seeds: seedsN(12, 6)})
-	pg := Assemble(p, top10(), 6)
+	pg := Assemble(p, 6)
 	types := map[string]int{}
 	for _, r := range pg.Tail {
 		types[r.Type]++
@@ -342,15 +335,6 @@ func TestFranchise(t *testing.T) {
 	if (Item{Kind: "movie", Name: "X", Collection: 9}).Franchise() != "c9" {
 		t.Fatal("collection not used")
 	}
-}
-
-func top10Both() map[string][]Item {
-	out := map[string][]Item{}
-	for i := 0; i < 10; i++ {
-		out["movie"] = append(out["movie"], Item{TMDBID: fmt.Sprint(i + 1), Kind: "movie", Name: fmt.Sprint("Top", i)})
-		out["show"] = append(out["show"], Item{TMDBID: fmt.Sprint(i + 1), Kind: "show", Name: fmt.Sprint("TopShow", i)})
-	}
-	return out
 }
 
 func slotsOf(rows []Row) []string {

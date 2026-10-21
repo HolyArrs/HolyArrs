@@ -29,10 +29,10 @@ func exploreMoment(r *http.Request, now time.Time) (explore.Moment, string) {
 
 // titleExplore gives the page's rows their titles from the member's
 // title memory, and remembers the templates it showed today.
-func (a *API) titleExplore(ctx context.Context, member int64, pg explore.Page, m explore.Moment, region string) (explore.Page, error) {
+func (a *API) titleExplore(ctx context.Context, member int64, pg explore.Page, m explore.Moment) (explore.Page, error) {
 	day := m.Local.Format("2006-01-02")
 	from := m.Local.AddDate(0, 0, -(explore.NoRepeatDays - 1)).Format("2006-01-02")
-	c := explore.TitleContext{Member: member, Kid: pg.Kid, Moment: m, Day: day, Taste: pg.Taste, Region: region,
+	c := explore.TitleContext{Member: member, Kid: pg.Kid, Moment: m, Day: day, Taste: pg.Taste,
 		Recent: map[string]string{}, Today: map[string]string{}}
 	rows, err := a.s.Store.Read().QueryContext(ctx, "SELECT row_id, template_id, day FROM explore_titles WHERE member_id = ? AND day >= ?", member, from)
 	if err != nil {

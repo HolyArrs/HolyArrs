@@ -11,14 +11,13 @@ const (
 	FreshNewEpisode    = "new_episode"
 	FreshNewSeason     = "new_season"
 	FreshRecentlyAdded = "recently_added"
-	FreshTop10         = "top10"
 	FreshComing        = "coming"
 	FreshSeasonComing  = "season_coming"
 	FreshNewRelease    = "new_release"
 )
 
 // FreshOrder is the priority: a card shows the first rule that holds.
-var FreshOrder = []string{FreshNewEpisode, FreshNewSeason, FreshRecentlyAdded, FreshTop10, FreshComing, FreshSeasonComing, FreshNewRelease}
+var FreshOrder = []string{FreshNewEpisode, FreshNewSeason, FreshRecentlyAdded, FreshComing, FreshSeasonComing, FreshNewRelease}
 
 // Fresh is the one freshness strip on a card.
 type Fresh struct {
@@ -42,8 +41,6 @@ type FreshFacts struct {
 	NextSeasonNumber int
 	// Released is the movie's release, or the show's first air date.
 	Released time.Time
-	// Top10Rank is the rank in this week's Top 10 for the region, 0 if not in it.
-	Top10Rank int
 	// Music cards only use Recently added and New release.
 	Music bool
 }
@@ -74,7 +71,6 @@ func within(t, now time.Time, days int) bool {
 // Release in Best new releases). Keys are Explore, discover and music row
 // types; a row not listed suppresses nothing.
 var RowSuppress = map[string][]string{
-	"top10":         {FreshTop10},
 	TypeBest:        {FreshNewRelease},
 	TypeNewServices: {FreshNewRelease},
 	"fresh":         {FreshNewRelease}, // music: New this week
@@ -133,10 +129,6 @@ func freshRule(k string, f FreshFacts, now time.Time) *Fresh {
 	case FreshRecentlyAdded:
 		if f.InLibrary && within(f.Added, now, 7) {
 			return &Fresh{Kind: k, Text: "Recently Added"}
-		}
-	case FreshTop10:
-		if f.Top10Rank >= 1 && f.Top10Rank <= 10 {
-			return &Fresh{Kind: k, Text: "Trending", Rank: f.Top10Rank}
 		}
 	case FreshComing:
 		if d, ok := daysAgo(f.Released, now); ok && d < 0 && d >= -365 {

@@ -218,30 +218,25 @@ func (l *ledger) record(r Row, at int) {
 	}
 }
 
-// Assemble builds the page from a pool and the region's Top 10 (5.5, 6):
+// Assemble builds the page from a pool (5.5, 6):
 // the tab's head slots (HeadOrder), then the best tail rows; a slot that
 // cannot fill is skipped. The tail follows rowScore order, capped by seed
 // count.
-func Assemble(p Pool, top10 []Item, member int64) Page {
-	return AssembleAt(p, top10, member, Moment{})
+func Assemble(p Pool, member int64) Page {
+	return AssembleAt(p, member, Moment{})
 }
 
 // AssembleAt is Assemble with the viewer's moment, which may lift a fitting
 // tail row's score by at most BoostMax (time and occasion never change a
-// row's items). The Top 10 items are split by kind.
-func AssembleAt(p Pool, top10 []Item, member int64, m Moment) Page {
-	tops := map[string][]Item{}
-	for _, it := range top10 {
-		tops[it.Kind] = append(tops[it.Kind], it)
-	}
-	return AssembleTabAt(p, tops, nil, member, m)
+// row's items).
+func AssembleAt(p Pool, member int64, m Moment) Page {
+	return AssembleTabAt(p, nil, member, m)
 }
 
-// AssembleTabAt builds the page from a pool, the region's Top 10 per kind
-// ("movie", "show") and the titles of Trending on streaming (svcTop:
+// AssembleTabAt builds the page from a pool and the titles of Trending on streaming (svcTop:
 // the rows under it never repeat them in the first HeadDedupe rows), in
 // the tab's head order (HeadOrder), with the charts spread apart.
-func AssembleTabAt(p Pool, tops map[string][]Item, svcTop []Item, member int64, m Moment) Page {
+func AssembleTabAt(p Pool, svcTop []Item, member int64, m Moment) Page {
 	pg := Page{Seeds: p.Seeds, Cap: TailCap(p.Seeds, p.Kid), Kid: p.Kid, Taste: p.Taste, Leans: p.Leans}
 	by := map[string]Row{}
 	var tail []Row
@@ -256,13 +251,8 @@ func AssembleTabAt(p Pool, tops map[string][]Item, svcTop []Item, member int64, 
 		}
 	}
 	ordered := orderTail(tail, member, p.Date, m, p.Kid)
-	// The marker carries the Netflix Top 10 titles (for the hero only); the
-	// page fills the row itself, so it is never deduped against.
-	var marker []Item
-	for _, kind := range Kinds(p.Switch) {
-		marker = append(marker, tops[kind]...)
-	}
-	by[TypeTopServices] = Row{ID: TypeTopServices, Type: TypeTopServices, Title: TabTitle(TypeTopServices, p.Switch), Items: marker}
+	// The page fills this row itself, so it is never deduped against.
+	by[TypeTopServices] = Row{ID: TypeTopServices, Type: TypeTopServices, Title: TabTitle(TypeTopServices, p.Switch)}
 	if t, ok := by[TypeTrending]; ok {
 		t.Title = TabTitle(TypeTrending, p.Switch)
 		by[TypeTrending] = t

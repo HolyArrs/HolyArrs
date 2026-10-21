@@ -60,9 +60,6 @@ type Server struct {
 	// MetadataUp reports whether the metadata server answers (cached
 	// about a minute); nil counts as up.
 	MetadataUp func(context.Context) bool
-	// Top10 reads a Netflix Top 10 list from the metadata server; nil
-	// hides the row.
-	Top10 func(ctx context.Context, kind, region, lang string) (metadata.Top10, error)
 	// ServiceTop reads every streaming service's top list for a region
 	// from the metadata server; nil leaves the row empty.
 	ServiceTop func(ctx context.Context, region string) (metadata.ServiceTop, error)
@@ -143,8 +140,6 @@ type API struct {
 	rated ratingState
 	// status keeps the Settings status answer for 30 seconds.
 	status statusCache
-	// top10 keeps the Netflix Top 10 lists for an hour.
-	top10 top10Cache
 	// serviceTop keeps the per-service top lists for 12 hours.
 	serviceTop serviceTopCache
 	// music keeps the music trending lists for an hour.
@@ -321,7 +316,6 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("PUT /api/v1/settings/ui", a.putUISettings)
 	m.HandleFunc("GET /api/v1/discover", a.discoverRow)
 	m.HandleFunc("GET /api/v1/watch-services", a.watchServices)
-	m.HandleFunc("GET /api/v1/top10", a.top10List)
 	m.HandleFunc("GET /api/v1/explore/head", a.exploreHead)
 	m.HandleFunc("GET /api/v1/explore/tail", a.exploreTail)
 	m.HandleFunc("GET /api/v1/explore/top", a.exploreTop)

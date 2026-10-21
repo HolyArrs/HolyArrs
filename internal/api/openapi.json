@@ -11561,7 +11561,7 @@
     },
     "/api/v1/explore/head": {
       "get": {
-        "description": "The Top 10 list and the head rows from the member's stored pool, in one answer. building is true while a pool is on its way.",
+        "description": "The head rows from the member's stored pool, in one answer. building is true while a pool is on its way.",
         "responses": {
           "200": {
             "description": "The head"
@@ -11791,7 +11791,7 @@
     },
     "/api/v1/explore/top": {
       "get": {
-        "description": "The ranked row for one chip (all or a service id). Netflix with no genre is its weekly Top 10; other services and All my services are TMDB's most popular on them in the region, kept a week, merged by popularity.",
+        "description": "The ranked row for one chip (all or a service id). Every service, Netflix included, and All my services are TMDB's most popular on them in the region, kept a week, merged by popularity.",
         "responses": {
           "200": {
             "description": "The row."
@@ -16410,7 +16410,7 @@
     },
     "/api/v1/people/shelves": {
       "get": {
-        "description": "Lists Search's People sections that have at least 8 people with pictures, in order: From your Library (the actors, directors and composers most in the Library titles this member may see) and In what's hot right now (the leads of this week's trending and Top 10 titles; none for a Kid). Each section says how many people it holds per department (Acting, Directing, Sound) so a filter with too few can be hidden. Kept 12 hours.",
+        "description": "Lists Search's People sections that have at least 8 people with pictures, in order: From your Library (the actors, directors and composers most in the Library titles this member may see) and In what's hot right now (the leads of this week's trending titles; none for a Kid). Each section says how many people it holds per department (Acting, Directing, Sound) so a filter with too few can be hidden. Kept 12 hours.",
         "responses": {
           "200": {
             "description": "The sections, with per-department counts."
@@ -22515,36 +22515,6 @@
         "x-holyarrs-part": "title",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "write"
-      }
-    },
-    "/api/v1/top10": {
-      "get": {
-        "description": "Returns Netflix's weekly Top 10 as the HolyArrs metadata server keeps it (kind=movie or show; region=global or a two-letter country code the server lists; lang=en or non-en for global, default en). Answers week, region, regions and up to 10 items, each a discover item (tmdb_id, kind, name, poster, in_library, title_id, ask) plus rank and season_title. Titles without a TMDB match, Never-add items and kinds whose part is off are left out; one card per title, with its best rank. Lists are cached an hour, misses five minutes. Each person may ask 30 times a minute, shared with Explore rows. For a Kid, only items their limit allows are listed.",
-        "operationId": "top10List",
-        "responses": {
-          "200": {
-            "description": "week, region, regions and items."
-          },
-          "400": {
-            "description": "Unknown kind, region or lang."
-          },
-          "401": {
-            "description": "Sign-in is required."
-          },
-          "404": {
-            "description": "No list for that region, or no metadata server."
-          },
-          "429": {
-            "description": "Over 30 requests a minute; see Retry-After."
-          },
-          "502": {
-            "description": "The metadata server did not answer."
-          }
-        },
-        "summary": "The Top 10 on Netflix row",
-        "x-holyarrs-part": "media",
-        "x-holyarrs-permission": "signed_in",
-        "x-holyarrs-scope": "read"
       }
     },
     "/api/v1/trailer/batch": {

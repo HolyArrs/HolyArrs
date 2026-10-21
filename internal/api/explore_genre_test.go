@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/CoderLuii/holyarrs/internal/metadata"
 )
 
 func getJSON(t *testing.T, url string, want int) map[string]any {
@@ -41,14 +40,10 @@ func (f *recordingTMDB) asked(part string) int {
 
 // route: GET /api/v1/explore/top
 // One ranked row per chip: All my services merges the picked services by
-// popularity (top 10, each once), one service asks TMDB for that service,
-// Netflix uses Netflix's weekly Top 10; lists are kept a week.
+// popularity (top 10, each once), one service (Netflix too) asks TMDB for
+// that service; lists are kept a week.
 func TestExploreTopOnYourServices(t *testing.T) {
 	a, _, f := exploreRig(t)
-	a.s.Top10 = func(_ context.Context, kind, region, lang string) (metadata.Top10, error) {
-		return metadata.Top10{Week: "2026-10-18", Regions: []string{"global", "US"}, Items: []metadata.Top10Item{
-			{Rank: 1, TMDBID: 501, Title: "One"}, {Rank: 2, TMDBID: 502, Title: "Two"}, {Rank: 3, TMDBID: 503, Title: "Three"}}}, nil
-	}
 	srv := httptest.NewServer(a.Handler())
 	defer srv.Close()
 	base := srv.URL + "/api/v1/explore/top"
@@ -83,10 +78,10 @@ func TestExploreTopOnYourServices(t *testing.T) {
 		t.Fatalf("one service %v %v", one, f.urls)
 	}
 
+	// Netflix is like every other service: the daily list on Netflix.
 	nf := getJSON(t, base+"?type=shows&chip=8&services=8|337&region=US", 200)
-	got := nf["items"].([]any)
-	if nf["source"] != "netflix_top10" || nf["week"] != "2026-10-18" || len(got) != 3 || got[0].(map[string]any)["tmdb_id"] != "501" {
-		t.Fatalf("netflix chip %v", nf)
+	if nf["source"] != "popular" || nf["week"] != nil || len(nf["items"].([]any)) != 10 {
+		t.Fatalf("netflix chip %v %v", nf, f.urls)
 	}
 
 	// In a genre the Netflix chip is TMDB popularity on Netflix within it.

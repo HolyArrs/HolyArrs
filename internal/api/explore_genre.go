@@ -92,15 +92,7 @@ func (a *API) exploreTop(w http.ResponseWriter, r *http.Request) {
 	if chip == "all" {
 		providers = services
 	}
-	out := map[string]any{"chip": chip, "region": region, "source": "popular", "items": []top10View{}}
-	if chip == netflixService && genre == "" && a.s.Top10 != nil {
-		if items, week, ok := a.netflixTop(r, kinds, region); ok {
-			out["source"], out["week"], out["items"] = "netflix_top10", week, items
-			a.exploreCaching(w, r, "private, max-age=300")
-			writeJSON(w, http.StatusOK, out)
-			return
-		}
-	}
+	out := map[string]any{"chip": chip, "region": region, "source": "popular", "items": []rankedView{}}
 	if providers == "" || len(kinds) == 0 {
 		a.exploreCaching(w, r, "private, max-age=300")
 		writeJSON(w, http.StatusOK, out)
@@ -122,13 +114,13 @@ func (a *API) exploreTop(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
-	items := []top10View{}
+	items := []rankedView{}
 	if len(views) == 1 {
 		for i, v := range views[0].Items {
 			if i == topServicesMax {
 				break
 			}
-			items = append(items, top10View{discoverItemView: v, Rank: i + 1})
+			items = append(items, rankedView{discoverItemView: v, Rank: i + 1})
 		}
 	}
 	a.fillTopArt(r, items)
@@ -144,62 +136,8 @@ func kinds0(kinds []string, sw string) string {
 	return explore.Kinds(sw)[0]
 }
 
-// netflixTop is Netflix's weekly Top 10 for the kinds (the region's list,
-// else worldwide); two kinds take turns by rank and are numbered again.
-func (a *API) netflixTop(r *http.Request, kinds []string, region string) ([]top10View, string, bool) {
-	var lists [][]top10View
-	week := ""
-	for _, k := range kinds {
-		for _, reg := range []string{region, "global"} {
-			lang := ""
-			if reg == "global" {
-				lang = "en"
-			}
-			status, _, body := a.top10Answer(r.Context(), r, k, reg, lang)
-			if status != http.StatusOK {
-				continue
-			}
-			var got []top10View
-			for _, v := range body["items"].([]top10View) {
-				if v.TMDBID != "" {
-					got = append(got, v)
-				}
-			}
-			if len(got) > 0 {
-				lists = append(lists, got)
-				week, _ = body["week"].(string)
-				break
-			}
-		}
-	}
-	if len(lists) == 0 {
-		return nil, "", false
-	}
-	out := []top10View{}
-	seen := map[string]bool{}
-	for i := 0; len(out) < topServicesMax; i++ {
-		added := false
-		for _, l := range lists {
-			if i < len(l) && len(out) < topServicesMax {
-				added = true
-				if seen[l[i].Kind+l[i].TMDBID] {
-					continue
-				}
-				seen[l[i].Kind+l[i].TMDBID] = true
-				v := l[i]
-				v.Rank = len(out) + 1
-				out = append(out, v)
-			}
-		}
-		if !added {
-			break
-		}
-	}
-	return out, week, true
-}
-
 // fillTopArt adds trailer keys and card art to ranked items.
-func (a *API) fillTopArt(r *http.Request, items []top10View) {
+func (a *API) fillTopArt(r *http.Request, items []rankedView) {
 	views := make([]discoverItemView, len(items))
 	for i := range items {
 		views[i] = items[i].discoverItemView

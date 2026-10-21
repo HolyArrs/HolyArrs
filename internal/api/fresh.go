@@ -9,8 +9,6 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 )
 
-type top10RanksKey struct{}
-
 type freshRowKey struct{}
 
 // withFreshRow names the row type the cards are joined for, so their strip
@@ -24,34 +22,10 @@ func freshRowOf(ctx context.Context) string {
 	return s
 }
 
-// withTop10Ranks carries this week's Top 10 ranks (kind:tmdb -> rank) for
-// the member's region, so cards in other rows can show the Top 10 tag.
-func withTop10Ranks(ctx context.Context, ranks map[string]int) context.Context {
-	return context.WithValue(ctx, top10RanksKey{}, ranks)
-}
-
-func top10RankOf(ctx context.Context, key string) int {
-	m, _ := ctx.Value(top10RanksKey{}).(map[string]int)
-	return m[key]
-}
-
-// top10Ranks reads the ranks from a Top 10 answer body.
-func top10Ranks(body map[string]any) map[string]int {
-	out := map[string]int{}
-	items, _ := body["items"].([]top10View)
-	for _, v := range items {
-		k := v.Kind + ":" + v.TMDBID
-		if v.TMDBID != "" && (out[k] == 0 || v.Rank < out[k]) {
-			out[k] = v.Rank
-		}
-	}
-	return out
-}
-
 // cardFresh is the card's one freshness strip: the Library's dates when
 // the title is in it, else the release date the list gave.
 func (a *API) cardFresh(ctx context.Context, it metadata.DiscoverItem, titleID int64) (*explore.Fresh, error) {
-	f := explore.FreshFacts{Kind: it.Kind, InLibrary: titleID != 0, Released: explore.ParseDay(it.Released), Top10Rank: top10RankOf(ctx, it.Kind+":"+it.TMDBID)}
+	f := explore.FreshFacts{Kind: it.Kind, InLibrary: titleID != 0, Released: explore.ParseDay(it.Released)}
 	now := a.exploreNow()
 	if titleID != 0 {
 		db := a.s.Store.Read()

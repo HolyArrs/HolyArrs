@@ -13,7 +13,7 @@ import (
 // (the same cached page the head and tail read, so no outside call). The
 // page asks for it after the head, so it never slows the first row.
 func (a *API) exploreGenreRow(w http.ResponseWriter, r *http.Request) {
-	sw, topKind, topRegion, ok := exploreParams(w, r)
+	sw, ok := exploreParams(w, r)
 	if !ok {
 		return
 	}
@@ -21,7 +21,7 @@ func (a *API) exploreGenreRow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	me := a.person(r).UserID
-	pg, _, _, err := a.explorePageFor(r.Context(), r, me, sw, topKind, topRegion)
+	pg, _, err := a.explorePageFor(r.Context(), r, me, sw)
 	if err != nil {
 		internal(w, err)
 		return
@@ -69,14 +69,14 @@ func (a *API) genreRowPage(ctx context.Context, r *http.Request, pg explore.Page
 // backdrop; TV's combined genres come split, as categories). The other
 // sections load from /explore/browse/section as the grid scrolls.
 func (a *API) searchBrowse(w http.ResponseWriter, r *http.Request) {
-	sw, topKind, topRegion, ok := exploreParams(w, r)
+	sw, ok := exploreParams(w, r)
 	if !ok {
 		return
 	}
 	if a.kidLimited(w, r) {
 		return
 	}
-	_, tiles, _, err := a.browsePage(r.Context(), r, sw, topKind, topRegion)
+	_, tiles, _, err := a.browsePage(r.Context(), r, sw)
 	if err != nil {
 		internal(w, err)
 		return

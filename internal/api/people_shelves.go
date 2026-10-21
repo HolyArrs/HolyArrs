@@ -225,17 +225,6 @@ func (a *API) hotShelf(ctx context.Context, missed *atomic.Int32) []shelfPerson 
 			}
 		}
 		lists = append(lists, l)
-		if a.s.Top10 != nil {
-			var t []hot
-			if top, err := a.cachedTop10(ctx, kind, "global", "en"); err == nil {
-				for _, it := range top.Items {
-					if it.TMDBID > 0 {
-						t = append(t, hot{kind, strconv.FormatInt(it.TMDBID, 10), it.Title})
-					}
-				}
-			}
-			lists = append(lists, t)
-		}
 	}
 	// One title from each list in turn, each title once, up to 24.
 	titles, seen := []hot{}, map[string]bool{}
