@@ -39,11 +39,13 @@
 {#if on === 'art'}
 	<ArtPill text={label ?? statusWord(kind, percent)} icon={glyphs[kind]} tone={artTone[tones[kind]]} percent={kind === 'downloading' ? percent : undefined} {testid} />
 {:else}
-	<span class="ui-pill {tones[kind]} {on}" data-testid={testid}><i aria-hidden="true"></i>{label ?? statusWord(kind, percent)}</span>
+	<span class="ui-pill {tones[kind]} {on}" data-testid={testid}><i aria-hidden="true"></i><span class="t">{label ?? statusWord(kind, percent)}</span></span>
 {/if}
 
 <style>
-	.ui-pill { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px 0 8px; border-radius: 999px; background: var(--surface-2); color: var(--text); font: var(--t-subhead); white-space: nowrap; font-variant-numeric: tabular-nums; }
+	.ui-pill { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px 0 8px; border-radius: 999px; background: var(--surface-2); color: var(--text); font: var(--t-subhead); white-space: nowrap; font-variant-numeric: tabular-nums; max-width: 100%; min-width: 0; }
+	/* A long label (two Versions' states) ends in an ellipsis instead of pushing the page wider. */
+	.t { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 	i { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); flex: none; }
 	.ok i { background: var(--ok); }
 	.wait i { background: var(--wait); }

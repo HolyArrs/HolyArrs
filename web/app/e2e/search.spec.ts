@@ -217,8 +217,8 @@ test('no serious accessibility issues on the filled search screens', async () =>
 	await scan('choose dialog');
 	await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
 	await page.goto('/');
-	await expect(page.getByTestId('search-found').first()).toBeVisible();
-	await scan('Home with searches');
+	await expect(page.getByRole('heading', { level: 1 })).toContainText('Home');
+	await scan('Home');
 });
 
 test('phone width: the search screens fit', async ({ browser }) => {

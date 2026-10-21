@@ -15,8 +15,8 @@ type Paced struct {
 	// Burst is how many calls may go at once after a quiet spell (default
 	// 1); the long-run rate stays one per Gap.
 	Burst int
-	mu     sync.Mutex
-	next   time.Time
+	mu    sync.Mutex
+	next  time.Time
 	// Calls counts the calls let through.
 	Calls int
 }

@@ -71,9 +71,7 @@ test('Choose a release on the album page: verdicts, a Release turned down, the F
 	await expect(page.getByTestId('track-state')).toHaveText(Array(4).fill(/Chosen|Downloading/), { timeout: 20_000 });
 });
 
-test('Home and the Turned down list name the artist and the album', async () => {
-	await page.goto('/');
-	await expect(page.getByText(/Tin Lanterns – Harbour Songs: found 3 Releases/).first()).toBeVisible({ timeout: 15_000 });
+test('the Turned down list names the artist and the album', async () => {
 	await page.goto('/library/turned-down');
 	const row = page.getByTestId('listed-release').filter({ hasText: '[128kbps]' });
 	await expect(row.getByTestId('listed-for')).toHaveText('Tin Lanterns – Harbour Songs');

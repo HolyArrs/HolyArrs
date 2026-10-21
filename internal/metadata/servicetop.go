@@ -23,15 +23,15 @@ type ServiceTopItem struct {
 // streaming-availability (that service's own top today) or tmdb-popular
 // (TMDB's most popular on it, for Peacock, which the API does not cover).
 type ServiceTopList struct {
-	Service   string           `json:"service"`
-	Name      string           `json:"name"`
-	FetchedAt string           `json:"fetched_at"`
+	Service   string `json:"service"`
+	Name      string `json:"name"`
+	FetchedAt string `json:"fetched_at"`
 	// AgeSeconds is the list's age when the server built the answer;
 	// Stale is true after 14 days (still served).
-	AgeSeconds int64 `json:"age_seconds"`
-	Stale      bool  `json:"stale"`
-	Source    string           `json:"source"`
-	Items     []ServiceTopItem `json:"items"`
+	AgeSeconds int64            `json:"age_seconds"`
+	Stale      bool             `json:"stale"`
+	Source     string           `json:"source"`
+	Items      []ServiceTopItem `json:"items"`
 }
 
 // ServiceTop is every service's list for one region.

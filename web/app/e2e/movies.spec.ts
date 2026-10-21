@@ -170,27 +170,18 @@ test('add a movie with a second 4K Version; the Movie page shows both and can ad
 	await expect(page.getByRole('button', { name: /^Version actions for Main/ })).toHaveCount(0);
 });
 
-test('the search palette shows Library and movie results; a movie not in the Library opens its details with Add', async () => {
+test('the top-bar search opens Search with Library results; a movie not in the Library opens its details with Add', async () => {
 	await page.goto('/');
-	// Ctrl+K now opens the Search page; the top bar's search button opens the palette.
-	await page.getByRole('button', { name: /^Search…/ }).first().click();
-	const box = page.getByRole('combobox', { name: 'Search titles or go to a place' });
+	// The one search field sits in the top bar; typing opens the Search page with the words.
+	const box = page.getByTestId('search-box');
+	await box.click();
+	await expect(page).toHaveURL(/\/search/);
 	await box.fill('Paper Harbour');
-	const library = page.getByTestId('palette-library');
-	await expect(library.getByRole('option', { name: /Paper Harbour/ })).toContainText('In Library');
-	await expect(page.getByRole('option', { name: 'See all results for “Paper Harbour”' })).toBeVisible();
-	// The Movies / TV shows / Music filter narrows the grouped results to one kind.
-	const filter = page.getByTestId('palette-filter');
-	await expect(filter.getByRole('radio', { name: 'All', exact: true })).toHaveAttribute('aria-checked', 'true');
-	await filter.getByRole('radio', { name: 'TV shows', exact: true }).click();
-	await expect(page.getByTestId('palette-movies')).toHaveCount(0);
-	await expect(library.getByRole('option', { name: /Paper Harbour/ })).toHaveCount(0);
-	await filter.getByRole('radio', { name: 'All', exact: true }).click();
-	await expect(library.getByRole('option', { name: /Paper Harbour/ })).toContainText('In Library');
-	await expect(box).toBeFocused();
-	await box.press('ArrowDown');
-	await box.press('Enter');
-	await expect(page).toHaveURL(/\/library\/\d+$/);
+	await expect(page).toHaveURL(/q=Paper/);
+	const card = page.getByRole('main').getByRole('link', { name: /^Paper Harbour,/ }).first();
+	await expect(card).toBeVisible();
+	await card.click();
+	await expect(page.getByRole('heading', { level: 1 })).toContainText('Paper Harbour');
 
 	// Iron Lullaby is not in the Library yet (downloaders.spec adds it later).
 	await page.goto('/title/movie/900011');

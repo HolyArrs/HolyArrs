@@ -70,7 +70,7 @@ export async function openSeason(page: Page, index: number): Promise<Locator> {
 		await seg.getByRole('radio').nth(index).click();
 		await expect(seg.getByRole('radio').nth(index)).toHaveAttribute('aria-checked', 'true');
 	} else {
-		await page.getByRole('button', { name: 'Pick a season' }).click();
+		await page.getByTestId('season-picker').getByRole('button').first().click();
 		await page.getByRole('menu', { name: 'Pick a season' }).getByRole('menuitemradio').nth(index).click();
 	}
 	return page.getByTestId('season');
@@ -84,9 +84,16 @@ export async function openSeasonNamed(page: Page, name: string): Promise<Locator
 		const radio = seg.getByRole('radio', { name, exact: true });
 		await radio.click();
 		await expect(radio).toHaveAttribute('aria-checked', 'true');
+	} else if (!(await page.getByTestId('season-picker').getByRole('button').count())) {
+		// One season: the picker is just its name.
+		await expect(page.getByTestId('season-picker')).toContainText(name);
 	} else {
-		await page.getByRole('button', { name: 'Pick a season' }).click();
-		await page.getByRole('menu', { name: 'Pick a season' }).getByRole('menuitemradio', { name, exact: true }).click();
+		const pick = page.getByTestId('season-picker').getByRole('button').first();
+		// The show opens on its newest season; the airing one carries a New mark.
+		if ((await pick.textContent())?.trim() !== name) {
+			await pick.click();
+			await page.getByRole('menu', { name: 'Pick a season' }).getByRole('menuitemradio', { name: new RegExp(`^${name}( New)?$`) }).click();
+		}
 	}
 	return page.getByTestId('season');
 }
@@ -96,7 +103,8 @@ export async function seasonCount(page: Page): Promise<number> {
 	await expect(page.getByTestId('season')).toBeVisible();
 	const seg = page.getByRole('radiogroup', { name: 'Season' });
 	if (await seg.count()) return seg.getByRole('radio').count();
-	await page.getByRole('button', { name: 'Pick a season' }).click();
+	if (!(await page.getByTestId('season-picker').getByRole('button').count())) return 1;
+	await page.getByTestId('season-picker').getByRole('button').first().click();
 	const n = await page.getByRole('menu', { name: 'Pick a season' }).getByRole('menuitemradio').count();
 	await page.keyboard.press('Escape');
 	return n;

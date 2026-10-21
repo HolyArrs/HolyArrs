@@ -159,10 +159,7 @@ test('the owner approves from a phone: the movie is added and kim is told', asyn
 	const asks = own.getByTestId('title-asks');
 	await expect(asks).toContainText('kim');
 	await expect(asks).toContainText('Approved by luis');
-	// Home's Latest Events names them too; it keeps the newest twelve, so the
-	// full count comes from the Events list.
-	await own.goto('/');
-	await expect(own.getByText('kim asked for Copper Lighthouse (2017)').first()).toBeVisible();
+	// The Events list names them (Home no longer has a Latest Events row).
 	// kim asked, took it back and asked again: two ask events, the take-back between them.
 	const events = ((await (await own.request.get('/api/v1/events?limit=200')).json()) as { events: { Summary: string }[] }).events.map((e) => e.Summary);
 	expect(events.filter((e) => /asked for Copper Lighthouse/.test(e))).toHaveLength(2);

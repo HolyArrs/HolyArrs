@@ -95,7 +95,7 @@ test('seasons and episodes turn on and off; each episode says its state and why'
 
 	const eps = (await openSeason(own, 2)).getByTestId('episode');
 	await expect(eps).toHaveCount(2);
-	await expect(eps.nth(0)).toContainText('S02E01');
+	await expect(eps.nth(0)).toContainText('Episode 1');
 	await expect(eps.nth(0)).toContainText('Return of the Fog');
 	await expect(eps.nth(0)).toContainText('Missing');
 	await expect(eps.nth(1)).toContainText('Not out yet');

@@ -106,10 +106,10 @@ test('the desktop menu reaches every destination and Back works', async () => {
 		await expect(page.locator('.ui-sidebar a[aria-current="page"]')).toHaveCount(1);
 	}
 	// Search lives in the top bar; the rest are one level down.
-	await page.getByRole('button', { name: /^Search…/ }).first().click();
-	await page.getByRole('combobox', { name: 'Search titles or go to a place' }).fill('Search');
-	await page.getByRole('dialog').getByRole('option', { name: /^Search/ }).first().click();
+	await page.getByTestId('search-box').click();
 	await expect(page).toHaveURL(/\/search/);
+	await page.getByTestId('search-close').click();
+	await expect(page).not.toHaveURL(/\/search/);
 	await nav.getByRole('link', { name: 'Downloads', exact: true }).click();
 	await page.locator('main').getByRole('link', { name: 'Needs a decision' }).first().click();
 	await expect(page).toHaveURL(/\/downloads\/decide$/);
@@ -218,7 +218,7 @@ test('search, add a movie, and the Library updates live', async ({ browser }) =>
 	await page.keyboard.press('Escape');
 });
 
-test('Home reads a bounded Library summary', async () => {
+test('Home reads its rows from one bounded answer', async () => {
 	const fullLibrary: string[] = [];
 	const record = (request: import('@playwright/test').Request) => {
 		if (new URL(request.url()).pathname === '/api/v1/titles') fullLibrary.push(request.url());
@@ -227,11 +227,12 @@ test('Home reads a bounded Library summary', async () => {
 	await page.waitForLoadState('networkidle');
 	page.on('request', record);
 	try {
-		const response = page.waitForResponse((answer) => new URL(answer.url()).pathname === '/api/v1/library-summary' && answer.status() === 200);
+		const response = page.waitForResponse((answer) => new URL(answer.url()).pathname === '/api/v1/home' && answer.status() === 200);
 		await page.goto('/');
-		const summary = await (await response).json();
-		expect(summary.missing.length).toBeLessThanOrEqual(8);
-		await expect(page.locator('header.ui-head')).toContainText(`${summary.total} ${summary.total === 1 ? 'title' : 'titles'} in your Library`);
+		const home = await (await response).json();
+		expect(Array.isArray(home.rows)).toBe(true);
+		await expect(page.getByRole('heading', { level: 1 })).toContainText('Home');
+		if (home.rows.includes('missing') && home.missing_count) await expect(page.getByTestId('home-missing')).toBeVisible();
 		expect(fullLibrary).toEqual([]);
 	} finally {
 		page.off('request', record);

@@ -79,13 +79,13 @@ test('Explore gives memory back after 20 rounds', async ({ browser }) => {
 	console.log(`explore memory\n${table.join('\n')}`);
 	for (const k of ['heap', 'nodes', 'listeners'] as const) expect(after[k], `${k}: ${table.join('; ')}`).toBeLessThanOrEqual(base[k] * 1.1);
 
-	// Row cards ask the artwork cache for a row-sized TMDB picture (w342
-	// posters, w780 backdrops), never a full-size one.
+	// Row cards ask the artwork cache for a picture sized to the card
+	// (w92-w342 posters and logos, w300 or w780 backdrops), never a full-size one.
 	await page.getByRole('navigation', { name: 'Main' }).first().getByRole('link', { name: 'Explore', exact: true }).click();
 	const tmdbImg = page.locator('main img[src*="/artwork/tmdb/"]').first();
 	await expect(tmdbImg).toBeAttached();
 	const srcs = await page.locator('main img[src*="/artwork/tmdb/"]').evaluateAll((els) => els.map((e) => (e as HTMLImageElement).getAttribute('src') ?? ''));
-	expect(srcs.filter((s) => !/\/artwork\/tmdb\/(w342|w780)\//.test(s))).toEqual([]);
+	expect(srcs.filter((s) => !/\/artwork\/tmdb\/(w92|w154|w185|w300|w342|w780)\//.test(s))).toEqual([]);
 
 	await context.close();
 });

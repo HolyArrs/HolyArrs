@@ -48,7 +48,8 @@ test('history: every step is listed with filters by kind, movie and date, and pa
 	await page.getByRole('checkbox', { name: 'Renamed' }).check();
 	await expect(page).toHaveURL(/kinds=rename/);
 	await expect(rows.first()).toBeVisible();
-	for (const k of await rows.evaluateAll((els) => els.map((e) => e.getAttribute('data-kind')))) expect(k).toMatch(/^rename/);
+	// The list reloads after the address changes; wait for the filtered rows.
+	await expect.poll(async () => (await rows.evaluateAll((els) => els.map((e) => e.getAttribute('data-kind')))).every((k) => /^rename/.test(k ?? ''))).toBe(true);
 	// Why and where: the reasons and paths of a row.
 	await rows.first().getByRole('button', { name: 'Why and where' }).click();
 	await expect(rows.first().locator('dl')).toContainText('From');

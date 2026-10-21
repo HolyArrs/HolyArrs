@@ -44,7 +44,7 @@ type homeViewer struct {
 // server does not fill (asks, approval) is listed and the web
 // app hides it when it has nothing.
 type homeHas struct {
-	Empty                                             bool // nothing in the Library and nobody asked yet
+	Empty                                                   bool // nothing in the Library and nobody asked yet
 	Attention, Arrived, NewSeason, Following, Soon, Missing bool
 }
 

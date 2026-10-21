@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Locator, type Page } from '@playwright/test';
-import { noSidewaysScroll, owner, signIn, openFromSearch } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn, openFromSearch, openSeasonNamed } from './helpers.ts';
 
 // Searching shows (3.2.2 to 3.2.5) against the fake Torznab Source in
 // fakes.mjs: a show search answers per episode (a 1080p and a 720p web
@@ -34,11 +34,7 @@ async function openShow(p: Page, name: string) {
 
 // One season shows at a time: pick it in the Season control.
 async function openSeason(p: Page, name: string) {
-	await expect(p.getByTestId('season')).toBeVisible();
-	const radio = p.getByRole('radiogroup', { name: 'Season' }).getByRole('radio', { name, exact: true });
-	await radio.click();
-	await expect(radio).toHaveAttribute('aria-checked', 'true');
-	const s = p.getByTestId('season');
+	const s = await openSeasonNamed(p, name);
 	await expect(s.getByTestId('episode').first()).toBeVisible();
 	return s;
 }
@@ -115,7 +111,7 @@ test('Choose a release for a season: the season pack fills both episodes with on
 test('a Release turned down for an episode is never picked again for it; Search now takes the next one', async () => {
 	await openShow(page, 'Harbour Lights');
 	const s2 = await openSeason(page, 'Season 2');
-	const ep = s2.getByTestId('episode').filter({ hasText: 'S02E01' });
+	const ep = s2.getByTestId('episode').filter({ has: s2.page().getByRole('button', { name: 'Episode actions for S02E01' }) });
 	await expect(ep.getByTestId('episode-state')).toHaveText('Missing');
 	await (await episodeMenu(ep)).getByRole('menuitem', { name: 'Choose a release' }).click();
 	const panel = page.getByTestId('show-releases');
@@ -135,9 +131,6 @@ test('a Release turned down for an episode is never picked again for it; Search 
 	await (await episodeMenu(ep)).getByRole('menuitem', { name: 'Search now' }).click();
 	await expect(ep.getByTestId('episode-state')).toHaveText(/Chosen|Downloading/, { timeout: 20_000 });
 
-	// Home names the show and the episode.
-	await page.goto('/');
-	await expect(page.getByText(/Harbour Lights S02E01: found 2 Releases, 1 turned away, chose Harbour\.Lights\.S02E01\.720p/)).toBeVisible({ timeout: 15_000 });
 
 	// The Turned down list says what it was turned down for; take it off.
 	await page.goto('/library/turned-down');

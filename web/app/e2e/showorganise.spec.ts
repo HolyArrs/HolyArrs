@@ -87,7 +87,7 @@ test('Rename files on the show page renames the adopted episodes to the episode 
 
 test('deleting one episode of a multi-episode file keeps the file; deleting the season holds its files', async () => {
 	const s1 = await openSeasonNamed(page, 'Season 1');
-	await expect(s1.getByTestId('episode').filter({ hasText: 'S01E02' })).toBeVisible();
+	await expect(s1.getByTestId('episode').filter({ has: s1.page().getByRole('button', { name: 'Episode actions for S01E02' }) })).toBeVisible();
 	await episodeAction(page, 'S01E02', 'Delete S01E02');
 	const dialog = page.getByTestId('show-delete');
 	await expect(dialog.getByRole('heading', { level: 2 })).toHaveText('Delete Quarry Bells S01E02?');
@@ -118,7 +118,7 @@ test('deleting one episode of a multi-episode file keeps the file; deleting the 
 
 test('an episode History link lists only that episode, named on each row', async () => {
 	const s1 = await openSeasonNamed(page, 'Season 1');
-	await expect(s1.getByTestId('episode').filter({ hasText: 'S01E02' })).toBeVisible();
+	await expect(s1.getByTestId('episode').filter({ has: s1.page().getByRole('button', { name: 'Episode actions for S01E02' }) })).toBeVisible();
 	await episodeAction(page, 'S01E02', 'History');
 	await expect(page).toHaveURL(/episode=\d+/);
 	await expect(page.getByTestId('episode-filter')).toContainText('Only S01E02 Dust of Quarry Bells');
