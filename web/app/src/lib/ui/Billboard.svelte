@@ -211,6 +211,8 @@
 		transition: opacity var(--dur-slow) var(--ease-out);
 	}
 	.shade.playing { opacity: .85; }
+	/* While the trailer plays in the hero, its own controls (pause, sound, full screen) take over from a Trailer button. */
+	.content.playing :global([data-off-while-playing]) { display: none; }
 	/* Room for the breadcrumb, so a tall logo never runs under it. */
 	.ui-billboard:has(> .top) { padding-top: 60px; }
 	.ui-billboard:has(> .top) .heading :global(.bb-logo img) { max-height: min(var(--title-h), calc(100% - 8px)); }

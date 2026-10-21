@@ -237,7 +237,7 @@
 		{#snippet actions()}
 			{@render actionRow?.()}
 			{#if kind && tmdb && videos?.length}
-				<ActionButton icon="play" label="Play the trailer" caption="Trailer" pill={still} onclick={playTrailer} busy={opening} data-testid="hero-trailer" />
+				<ActionButton icon="play" label="Play the trailer" caption="Trailer" pill={still} onclick={playTrailer} busy={opening} data-testid="hero-trailer" data-off-while-playing />
 			{/if}
 		{/snippet}
 	</Billboard>
