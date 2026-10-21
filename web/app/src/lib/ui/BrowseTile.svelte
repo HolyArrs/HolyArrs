@@ -42,6 +42,14 @@
 		position: absolute; left: 14px; right: 14px; bottom: 14px; font: 700 clamp(16px, 0.7vw + 8px, 22px) / 1.12 var(--font-display); letter-spacing: -0.015em;
 		text-shadow: 0 1px 10px rgb(0 0 0 / 0.45); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; hyphens: auto;
 	}
+	/* Light mode: the same tile colour as a soft wash over a brighter grey picture (dark mode keeps the duotone). */
+	:global([data-theme='light']) .ui-btile:not(.plain) .art { background: color-mix(in srgb, var(--hue) 35%, #fff); }
+	:global([data-theme='light']) .ui-btile:not(.plain) img { filter: grayscale(1) contrast(1.2) brightness(1.02); }
+	:global([data-theme='light']) .ui-btile:not(.plain) .wash { background: var(--hue); mix-blend-mode: color; opacity: 0.9; }
+	:global([data-theme='light']) .ui-btile:not(.plain) .shade { background: linear-gradient(to top, color-mix(in srgb, var(--hue) 45%, #000) 0%, color-mix(in srgb, var(--hue) 25%, transparent) 40%, transparent 70%); opacity: 0.85; }
+	:global([data-theme='light']) .ui-btile:not(.plain):is(:hover, :focus-visible) img { filter: none; }
+	:global([data-theme='light']) .ui-btile:not(.plain):is(:hover, :focus-visible) .wash { opacity: 0; }
+	:global([data-theme='light']) .ui-btile:not(.plain):is(:hover, :focus-visible) .shade { background: linear-gradient(to top, rgb(0 0 0 / 0.7) 0%, transparent 55%); }
 	/* People: black and white at rest (a slight contrast lift), no colour wash. */
 	.plain img { filter: grayscale(1) contrast(1.12); }
 	.plain .wash { display: none; }

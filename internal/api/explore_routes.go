@@ -293,19 +293,7 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 	// top10); the hero is up to 6 titles not in the Library from Top 10 and
 	// Trending, with Ask as its action.
 	head := []exploreRowView{}
-	var heroRow explore.Row
-	for _, t := range []string{explore.TypeTrending, explore.TypeTopServices} {
-		for _, row := range pg.Head {
-			if row.Type != t {
-				continue
-			}
-			for _, it := range row.Items {
-				if len(heroRow.Items) < 6 && !it.Owned && !containsItem(heroRow.Items, it.Key()) {
-					heroRow.Items = append(heroRow.Items, it)
-				}
-			}
-		}
-	}
+	heroRow := explore.Row{Items: pickHero(pg.Head, sw == "all")}
 	for _, row := range pg.Head {
 		if row.Type == explore.TypeTopServices {
 			// The page fills this row itself (GET /explore/service-top).
@@ -452,6 +440,59 @@ func exploreTrailerTitles(hero []discoverItemView, head []exploreRowView) [][2]s
 			}
 			add(v)
 		}
+	}
+	return out
+}
+
+// heroCount is how many titles the Explore hero cycles through.
+const heroCount = 6
+
+// pickHero picks the hero: titles not in the Library from Trending, then
+// Trending on streaming. On All it leaves out each kind's first heroCount
+// (what the Movies and TV shows heroes lead with) and alternates a movie and
+// a show, so All opens on titles of its own; it falls back to the left-out
+// ones only when too few are left.
+func pickHero(head []explore.Row, all bool) []explore.Item {
+	var cands []explore.Item
+	for _, t := range []string{explore.TypeTrending, explore.TypeTopServices} {
+		for _, row := range head {
+			if row.Type != t {
+				continue
+			}
+			for _, it := range row.Items {
+				if !it.Owned && !containsItem(cands, it.Key()) {
+					cands = append(cands, it)
+				}
+			}
+		}
+	}
+	if !all {
+		return cands[:min(len(cands), heroCount)]
+	}
+	seen := map[string]int{}
+	byKind := map[string][]explore.Item{}
+	var spare []explore.Item
+	for _, it := range cands {
+		if seen[it.Kind] < heroCount {
+			seen[it.Kind]++
+			spare = append(spare, it)
+			continue
+		}
+		byKind[it.Kind] = append(byKind[it.Kind], it)
+	}
+	var out []explore.Item
+	for i := 0; len(out) < heroCount && (i < len(byKind["movie"]) || i < len(byKind["show"])); i++ {
+		for _, k := range []string{"movie", "show"} {
+			if i < len(byKind[k]) && len(out) < heroCount {
+				out = append(out, byKind[k][i])
+			}
+		}
+	}
+	for _, it := range spare {
+		if len(out) >= heroCount {
+			break
+		}
+		out = append(out, it)
 	}
 	return out
 }
