@@ -86,6 +86,12 @@ type Server struct {
 	// from the metadata server; nil (or a source off there) shows neither.
 	ExtraArt     func(ctx context.Context, kind, id string) (metadata.ServerArt, error)
 	ExtraRatings func(ctx context.Context, kind, id string) (metadata.ServerRatings, error)
+	// WikiTitle and WikiPerson read awards and the Wikipedia bio from the
+	// metadata server; AwardWinners its award-winning TMDB IDs (the Award
+	// winners collection). nil hides them.
+	WikiTitle    func(ctx context.Context, kind, id string) (metadata.WikiEntity, error)
+	WikiPerson   func(ctx context.Context, id string) (metadata.WikiEntity, error)
+	AwardWinners func(ctx context.Context, kind string) ([]metadata.AwardWinner, error)
 	// Library runs adding, editing and refreshing; New makes one when nil.
 	Library *library.Service
 	// Lists reads Outside lists; New makes one without keys when nil.
@@ -347,6 +353,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/explore/music", a.exploreMusic)
 	m.HandleFunc("GET /api/v1/music-trending/art/{kind}/{mbid}", a.musicTrendArt)
 	m.HandleFunc("GET /api/v1/extras/{kind}/{id}", a.titleExtras)
+	m.HandleFunc("GET /api/v1/wiki/{kind}/{id}", a.wikiFacts)
 	if a.s.Secrets != nil {
 		m.HandleFunc("GET /api/v1/settings/trakt-key", a.getTraktKey)
 		m.HandleFunc("PUT /api/v1/settings/trakt-key", a.putTraktKey)

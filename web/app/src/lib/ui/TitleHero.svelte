@@ -56,6 +56,7 @@
 	import StatusPill, { type StatusKind } from './StatusPill.svelte';
 	import { viewTransitionName } from '../motion.ts';
 	import { sized } from '../tmdb-image.ts';
+	import { awardsTip, loadWikiFacts, type WikiFacts } from '../wiki-facts.ts';
 	import Billboard from './Billboard.svelte';
 	import ActionButton from './ActionButton.svelte';
 	import { heroPictures } from '../trailer.ts';
@@ -140,6 +141,19 @@
 	// A very wide wordmark (over 6:1) would come out a thin line in the logo box: it gets a floor height and more width.
 	let wideLogo = $state(false);
 	let posterFailed = $state(false);
+
+	// Awards from Wikidata (metadata server): a badge like "Oscar winner" or
+	// "3 Emmys", the awards listed on hover.
+	let wiki = $state<WikiFacts>({ badges: [], awards: [], bio: null });
+	$effect(() => {
+		const k = kind;
+		const t = tmdb;
+		wiki = { badges: [], awards: [], bio: null };
+		if (!k || !t) return;
+		let live = true;
+		void loadWikiFacts(api.get, k, t).then((f) => live && (wiki = f));
+		return () => (live = false);
+	});
 
 	// fanart.tv art and outside ratings (metadata server, when its keys are set):
 	// the fanart logo only when TMDB has none or its logo fails to load.
@@ -265,6 +279,7 @@
 			{#if certification}<span class="b cert" title="Age rating">{certification}</span>{/if}
 			{#if scoreText}<span class="b score" title="Score out of 10"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 .8l1.6 3.3 3.6.5-2.6 2.5.6 3.6L6 9l-3.2 1.7.6-3.6L.8 4.6l3.6-.5z" fill="currentColor" /></svg>{scoreText}</span>{/if}
 			<RatingsStrip scores={extras.scores} />
+			{#each wiki.badges.slice(0, 2) as b (b)}<span class="b award" title={awardsTip(wiki.awards)} data-testid="award-badge"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1h6v2.4a3 3 0 0 1-6 0zM3 2H1.2v.8A2 2 0 0 0 3 4.8M9 2h1.8v.8A2 2 0 0 1 9 4.8M5.3 6.3h1.4v2.2H5.3zM3.6 8.5h4.8V11H3.6z" fill="currentColor" /></svg>{b}</span>{/each}
 			{#each badges as b (b)}<span class="b">{b}</span>{/each}
 			{#if status}<StatusPill kind={status} {percent} label={statusLabel} on="art" />{/if}
 		{/snippet}
@@ -300,6 +315,7 @@
 	.here:hover { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
 	.chip:focus-visible, .here:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff; border-radius: 999px; }
 	.b { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 7px; border-radius: 5px; border: 1px solid rgb(255 255 255 / 55%); color: rgb(255 255 255 / 92%); font: 700 11.5px/1 var(--font-ui); letter-spacing: .03em; white-space: nowrap; font-variant-numeric: tabular-nums; }
+	.b.award { border-color: rgb(245 197 24 / 75%); color: #f5c518; }
 	.cert { border-width: 1.5px; border-color: rgb(255 255 255 / 80%); }
 	.score { border-radius: 999px; padding: 0 9px 0 7px; background: rgb(255 255 255 / 12%); border-color: rgb(255 255 255 / 30%); }
 	.score svg { color: #f5c518; }

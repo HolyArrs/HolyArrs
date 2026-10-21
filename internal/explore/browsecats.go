@@ -249,7 +249,7 @@ var Categories = []Category{
 
 	// Collections.
 	cat("books", "collections", "Based on a book", true, kwq("based on novel or book", "based on novel", "based on young adult novel")),
-	movieCat("awards", "collections", "Award winners", false, kwq("oscar (award)", "academy award winner", "golden globe winner", "palme d'or")),
+	cat("awards", "collections", "Award winners", false, kwq("oscar (award)", "academy award winner", "golden globe winner", "palme d'or")),
 	cat("comics", "collections", "Based on comics", true, kwq("based on comic", "based on manga", "based on graphic novel")),
 	showCat("limited", "collections", "Limited series", false, kwq("miniseries", "limited series")),
 	cat("anime", "collections", "Anime", true, CatQuery{Lang: "ja", Genres: "16"}),

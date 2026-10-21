@@ -267,6 +267,14 @@ func (a *API) browsePage(ctx context.Context, r *http.Request, sw string) (explo
 // popularity), without titles above the rating limit max. Never-add
 // titles are left to browseDropNever.
 func (a *API) browseItems(ctx context.Context, src exploreSource, c explore.Category, sw string, kid bool, max string) ([]explore.Item, error) {
+	if c.ID == "awards" {
+		if merged, ok, err := a.awardItems(ctx, src, c, sw, kid); ok {
+			if err != nil || max == "" {
+				return merged, err
+			}
+			return keepItems(merged, a.kidItems(ctx, max, itemRefs(merged), 0)), nil
+		}
+	}
 	var lists [][]explore.Item
 	for _, q := range c.Requests(sw, kid) {
 		items, err := src.List(ctx, q)

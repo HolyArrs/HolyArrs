@@ -20,6 +20,7 @@
 	import { followLabel, movieFollowHint, setFollow } from '#lib/follow.ts';
 	import { byDecade, personChips, runReviewed, type FilmSort, type FilmographyPage, type PersonMovie, type PersonRole } from '#lib/people.ts';
 	import type { AskLimit } from '#lib/types.ts';
+	import { loadWikiFacts, type WikiFacts } from '#lib/wiki-facts.ts';
 
 	const id = page.params.id ?? '';
 	const SORT_KEY = 'holyarrs.people.sort';
@@ -43,6 +44,9 @@
 	let asking = $state('');
 	let done = $state<Record<string, string>>({});
 	let bioOpen = $state(false);
+	// Awards, death date and the Wikipedia bio (Wikidata via the metadata server).
+	let wiki = $state<WikiFacts>({ badges: [], awards: [], bio: null });
+	const bio = $derived(wiki.bio?.extract || data?.person.biography || '');
 	// Follow state of the Coming soon movies not in the Library, by TMDB id.
 	let follows = $state<Record<string, boolean>>({});
 	let followBusy = $state('');
@@ -133,7 +137,8 @@
 		if (!p) return [];
 		const known = data?.known_for?.[0]?.name;
 		const born = p.birthday ? new Date(`${p.birthday}T00:00:00Z`).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : '';
-		return [known ? `Known for ${known}` : p.department, born ? `Born ${born}` : '', p.birthplace ? `From ${p.birthplace}` : ''].filter(Boolean) as string[];
+		const died = wiki.died && wiki.died.length === 10 ? new Date(`${wiki.died}T00:00:00Z`).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : wiki.died ?? '';
+		return [known ? `Known for ${known}` : p.department, born ? `Born ${born}` : '', p.birthplace ? `From ${p.birthplace}` : wiki.birth_place ? `From ${wiki.birth_place}` : '', died ? `Died ${died}` : ''].filter(Boolean) as string[];
 	});
 	const decades = $derived.by(() => {
 		const g = byDecade(movies);
@@ -143,6 +148,7 @@
 
 	onMount(() => {
 		void load();
+		void loadWikiFacts(api.get, 'person', id).then((f) => (wiki = f));
 		if (session.can('ask') && !session.can('manage_library')) void api.get<AskLimit>('/asks/limit').then((r) => (limit = r)).catch(() => {});
 	});
 </script>
@@ -186,10 +192,11 @@
 			<div class="who">
 				<h1>{data.person.name}</h1>
 				{#if facts.length}<p class="facts">{facts.join(' · ')}</p>{/if}
-				{#if chips.length}<ul class="chips" aria-label="At a glance">{#each chips as c (c)}<li>{c}</li>{/each}</ul>{/if}
-				{#if data.person.biography}
-					<p class="bio" class:open={bioOpen}>{data.person.biography}</p>
+				{#if chips.length || wiki.badges.length}<ul class="chips" aria-label="At a glance">{#each wiki.badges.slice(0, 3) as c (c)}<li class="award" data-testid="award-badge">{c}</li>{/each}{#each chips as c (c)}<li>{c}</li>{/each}</ul>{/if}
+				{#if bio}
+					<p class="bio" class:open={bioOpen}>{bio}</p>
 					<button class="more" type="button" onclick={() => (bioOpen = !bioOpen)}>{bioOpen ? 'Less' : 'More'}</button>
+					{#if wiki.bio}<p class="credit" data-testid="wiki-credit">From <a href={wiki.bio.url} target="_blank" rel="noopener noreferrer">Wikipedia</a>, <a href={wiki.bio.license_url || 'https://creativecommons.org/licenses/by-sa/4.0/'} target="_blank" rel="noopener noreferrer license">CC BY-SA</a></p>{/if}
 				{/if}
 			</div>
 		</div>
@@ -251,6 +258,9 @@
 	.chips li { padding: 5px 12px; border-radius: 999px; background: rgb(255 255 255 / .14); backdrop-filter: blur(12px); font: var(--t-footnote); font-weight: 600; font-variant-numeric: tabular-nums; }
 	.bio { margin: 0; max-width: 72ch; font: var(--t-callout); line-height: 1.55; color: var(--on-art); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 	.bio.open { display: block; }
+	.credit { margin: 4px 0 0; font: var(--t-caption, 12px/1.4 var(--font-ui)); color: var(--on-art); opacity: .7; }
+	.credit a { color: inherit; text-decoration: underline; }
+	.chips li.award { color: #f5c518; }
 	.more { align-self: flex-start; padding: 0; border: 0; background: none; color: var(--on-art); font: var(--t-subhead); font-weight: 600; cursor: pointer; text-decoration: underline; }
 	.block { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 	.block h2 { margin: 0; font: var(--t-title2); }
