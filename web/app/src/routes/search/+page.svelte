@@ -315,6 +315,7 @@
 	function clearRecent() {
 		recent = [];
 		saveRecent();
+		focusField();
 	}
 	function pickRecent(q: string) {
 		searchField.term = q;
@@ -771,7 +772,7 @@
 {#snippet libraryRow()}
 	{#if libCards.length}
 		<div data-testid="search-library-row">
-			<Shelf title="In your Library" subtitle={String(libCards.length)} item="var(--title-item)" placeholder="wide" lines={1}>
+			<Shelf title="In your Library" item="var(--title-item)" placeholder="wide" lines={1}>
 				{#each libCards as c (c.key)}<WideCard cover title={c.name} href={c.href} image={c.image} kind={c.type === 'music' ? 'artist' : c.type === 'people' ? undefined : c.type} subtitle={c.subtitle} owned={c.owned} typed={scope === 'all'} />{/each}
 			</Shelf>
 		</div>
@@ -860,8 +861,8 @@
 			{#if recent.length}
 				<section class="recent" aria-labelledby="recent-h">
 					<div class="recent-head">
-						<h2 id="recent-h" class="h2">Recent searches</h2>
-						<Button variant="plain" onclick={clearRecent}>Clear</Button>
+						<h2 id="recent-h" class="sec">Recent searches</h2>
+						<button type="button" class="clear-all" onclick={clearRecent}>Clear<span class="sr-only"> recent searches</span></button>
 					</div>
 					<div class="chips">
 						{#each recent as q (q)}<Chip label={q} icon="clock" onclick={() => pickRecent(q)} />{/each}
@@ -999,7 +1000,7 @@
 			{#each order as t (t)}
 				{@const g = wider[t]}
 				{#if g?.length}
-					<Shelf title={labels[t]} subtitle={String(g.length)} item="var(--title-item)" placeholder="wide" lines={1} onseeall={() => setScope(t)}>
+					<Shelf title={labels[t]} item="var(--title-item)" placeholder="wide" lines={1} onseeall={() => setScope(t)}>
 						{#each g as c (c.key)}{@render card(c)}{/each}
 					</Shelf>
 				{/if}
@@ -1008,7 +1009,7 @@
 			{@const g = wider[scope] ?? []}
 			{@render libraryRow()}
 			{#if g.length}
-				<h2 class="h2">{labels[scope]} <span class="muted n">{g.length}</span></h2>
+				<h2 class="sec">{labels[scope]}</h2>
 				<ul class="grid">
 					{#each g as c (c.key)}<li>{@render card(c)}</li>{/each}
 				</ul>
@@ -1046,6 +1047,7 @@
 	.results { display: flex; flex-direction: column; gap: 32px; min-width: 0; transition: opacity 160ms ease-out; }
 	.results.holding { opacity: 0.6; }
 	.h2 { margin: 0; font: var(--t-title3); }
+	.sec { margin: 0; font: var(--t-title2); letter-spacing: var(--t-title2-track); }
 	.h1 { margin: 0; font: var(--t-title1); letter-spacing: -0.02em; }
 	/* Browse: tall tiles, 6 / 5 / 4 / 3 / 2 across (browseCols matches), 24 px gaps. */
 	.browse { display: flex; flex-direction: column; gap: 16px; }
@@ -1064,10 +1066,13 @@
 	.mood-head { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-bottom: 8px; }
 	.mood-head p { margin: 0; }
 	.mood { display: flex; flex-direction: column; gap: 16px; }
-	.n { font: var(--t-callout); font-variant-numeric: tabular-nums; }
 	.muted { color: var(--text-muted); }
 	.recent { display: flex; flex-direction: column; gap: 12px; }
-	.recent-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 760px; }
+	/* The same head as a Shelf row: the name at the left, its action at the right edge like See all. */
+	.recent-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+	.clear-all { display: inline-flex; align-items: center; min-height: 44px; flex: none; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--accent-text); font: var(--t-callout); font-weight: 500; cursor: pointer; }
+	.clear-all:hover { text-decoration: underline; text-underline-offset: 3px; }
+	.clear-all:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.chips { display: flex; flex-wrap: wrap; gap: 8px; }
 	.people-chips { margin: 0 0 16px; }
 	.more { min-height: 40px; display: grid; place-items: center; padding: 16px 0; }

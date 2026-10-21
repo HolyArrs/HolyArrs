@@ -43,6 +43,14 @@
 		} else el?.blur();
 	}
 	const here = $derived(appPath(page.url.pathname).startsWith('/search'));
+	// On Search one round × does both jobs, as Escape does: it clears the words, then (empty) closes Search.
+	const one = $derived(here && closable);
+	function clearOrClose() {
+		if (searchField.term) {
+			searchField.term = '';
+			el?.focus();
+		} else searchHooks.exit?.();
+	}
 </script>
 
 <form class="ui-search" role="search" onsubmit={submitted}>
@@ -50,12 +58,12 @@
 	<span class="ic" aria-hidden="true"><Icon name="search" size={18} /></span>
 	<label class="sr-only" for={id}>Search for a title, an artist or a person</label>
 	<input {id} bind:this={el} type="search" bind:value={searchField.term} oninput={typed} onfocus={focused} onclick={focused} onblur={() => searchHooks.blur?.()} onkeydown={keyed} placeholder="Shows, movies and people" autocomplete="off" spellcheck="false" enterkeyhint="search" data-testid={testid} />
-	{#if searchField.term}
+	{#if searchField.term && !one}
 		<button type="button" class="clear" aria-label="Clear the search" onclick={() => { searchField.term = ''; el?.focus(); }}><Icon name="x" size={14} /></button>
 	{:else if !here}
 		<kbd class="hint" aria-hidden="true">{searchKey}</kbd>
 	{/if}
-	{#if here && closable}<button type="button" class="close" aria-label="Close Search" title="Close Search" data-testid="search-close" onclick={() => searchHooks.exit?.()}><Icon name="x" size={16} /></button>{/if}
+	{#if one}<button type="button" class="close" aria-label={searchField.term ? 'Clear the search' : 'Close Search'} title={searchField.term ? 'Clear the search' : 'Close Search'} data-testid="search-close" onclick={clearOrClose}><Icon name="x" size={16} /></button>{/if}
 </form>
 
 <style>
