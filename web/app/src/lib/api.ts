@@ -83,12 +83,45 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o)) {
 		return data as T;
 	}
 
+	// Identical GETs share one answer while it is in flight and for a moment
+	// after, so parts of one page asking the same thing cost one request.
+	// Any change (POST, PUT, DELETE) forgets them. Each caller gets its own copy.
+	const shared = new Map<string, { p: Promise<unknown>; done: number }>();
+	const keep = 1500;
+
+	function get<T>(path: string, signal?: AbortSignal): Promise<T> {
+		const now = Date.now();
+		let hit = shared.get(path);
+		if (!hit || (hit.done && now - hit.done > keep)) {
+			const entry = { p: request<unknown>(path), done: 0 };
+			entry.p.then(
+				() => (entry.done = Date.now()),
+				() => shared.get(path) === entry && shared.delete(path)
+			);
+			shared.set(path, entry);
+			hit = entry;
+		}
+		const copy = hit.p.then((v) => (v === undefined ? v : structuredClone(v)) as T);
+		if (!signal) return copy;
+		if (signal.aborted) return Promise.reject(signal.reason ?? new DOMException('Aborted', 'AbortError'));
+		return new Promise<T>((resolve, reject) => {
+			const stop = () => reject(signal.reason ?? new DOMException('Aborted', 'AbortError'));
+			signal.addEventListener('abort', stop, { once: true });
+			copy.then(resolve, reject).finally(() => signal.removeEventListener('abort', stop));
+		});
+	}
+
+	function change<T>(path: string, opts: RequestOptions): Promise<T> {
+		shared.clear();
+		return request<T>(path, opts).finally(() => shared.clear());
+	}
+
 	return {
-		request,
-		get: <T>(p: string, signal?: AbortSignal) => request<T>(p, { signal }),
-		post: <T>(p: string, body?: unknown) => request<T>(p, { method: 'POST', body }),
-		put: <T>(p: string, body?: unknown) => request<T>(p, { method: 'PUT', body }),
-		del: <T = void>(p: string) => request<T>(p, { method: 'DELETE' }),
+		request: <T>(path: string, opts: RequestOptions = {}) => ((opts.method ?? 'GET') === 'GET' && opts.raw === undefined && opts.body === undefined ? get<T>(path, opts.signal) : change<T>(path, opts)),
+		get,
+		post: <T>(p: string, body?: unknown) => change<T>(p, { method: 'POST', body }),
+		put: <T>(p: string, body?: unknown) => change<T>(p, { method: 'PUT', body }),
+		del: <T = void>(p: string) => change<T>(p, { method: 'DELETE' }),
 		setCsrf(v: string) {
 			csrf = v;
 		},

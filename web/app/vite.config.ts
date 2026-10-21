@@ -11,7 +11,8 @@ export default defineConfig({
 		sveltekit({
 			adapter: adapter({ pages: '../dist', assets: '../dist', fallback: 'index.html', strict: true }),
 			paths: { relative: false },
-			output: { bundleStrategy: 'single' },
+			// Each page loads only its own code (plus the shared shell) instead of one bundle for every page.
+			output: { bundleStrategy: 'split' },
 			version: { name: 'holyarrs' }
 		})
 	],

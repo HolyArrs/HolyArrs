@@ -6,6 +6,28 @@ function reply(status: number, body?: unknown, headers: Record<string, string> =
 }
 
 describe('api client', () => {
+	it('shares one request between identical reads and forgets it after a change', async () => {
+		const f = vi.fn(async () => reply(200, { n: [1] }));
+		const c = createClient(f);
+		const [a, b] = await Promise.all([c.get<{ n: number[] }>('/x'), c.get<{ n: number[] }>('/x')]);
+		expect(f).toHaveBeenCalledTimes(1);
+		a.n.push(2);
+		expect(b.n).toEqual([1]);
+		await c.get('/x');
+		expect(f).toHaveBeenCalledTimes(1);
+		await c.post('/y', {});
+		await c.get('/x');
+		expect(f).toHaveBeenCalledTimes(3);
+	});
+
+	it('does not keep a failed read', async () => {
+		const f = vi.fn(async () => reply(500, { error: 'no' }));
+		const c = createClient(f);
+		await expect(c.get('/x')).rejects.toBeInstanceOf(ApiError);
+		await expect(c.get('/x')).rejects.toBeInstanceOf(ApiError);
+		expect(f).toHaveBeenCalledTimes(2);
+	});
+
 	it('prefixes /api/v1 and parses JSON', async () => {
 		const f = vi.fn(async () => reply(200, { titles: [] }));
 		const c = createClient(f);

@@ -135,7 +135,8 @@ func TestMusicAPI(t *testing.T) {
 		Source  string         `json:"source"`
 	}
 	_ = json.Unmarshal(do(t, "GET", u+"/artists/lookup?term=lab", "", 200), &look)
-	if look.Source != "musicbrainz" || len(look.Artists) != 1 || look.Artists[0].MBID != apiArtist || look.Artists[0].Albums != nil || look.Artists[0].TitleID != 0 {
+	if look.Source != "musicbrainz" || len(look.Artists) != 1 || look.Artists[0].MBID != apiArtist || look.Artists[0].Albums != nil || look.Artists[0].TitleID != 0 ||
+		look.Artists[0].Image != "/api/v1/music-trending/art/artist/"+apiArtist {
 		t.Fatalf("lookup %+v", look)
 	}
 	_ = json.Unmarshal(do(t, "GET", u+"/artists/lookup?term=mbid:"+apiArtist, "", 200), &look)

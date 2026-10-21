@@ -117,6 +117,15 @@ type pageCache struct {
 	mu   sync.Mutex
 	bios map[string]pageBio
 	dz   map[string]pageDeezer
+	tags map[string]pageTags
+}
+
+// pageTags are an artist's genres and linked artists (one MusicBrainz call,
+// which its limiter spaces a second apart), kept so a page seen again is quick.
+type pageTags struct {
+	genres []string
+	links  []metadata.ArtistLink
+	at     time.Time
 }
 
 type pageBio struct {
@@ -129,7 +138,39 @@ type pageDeezer struct {
 	at time.Time
 }
 
-var musicPages = &pageCache{bios: map[string]pageBio{}, dz: map[string]pageDeezer{}}
+var musicPages = &pageCache{bios: map[string]pageBio{}, dz: map[string]pageDeezer{}, tags: map[string]pageTags{}}
+
+// artistTags looks up an artist's genres and links, kept 12 hours.
+func (a *API) artistTags(ctx context.Context, mbid string) ([]string, []metadata.ArtistLink) {
+	src, ok := a.genreProvider()
+	if !ok {
+		return nil, nil
+	}
+	c := musicPages
+	c.mu.Lock()
+	e, hit := c.tags[mbid]
+	c.mu.Unlock()
+	if hit && time.Since(e.at) < 12*time.Hour {
+		return e.genres, e.links
+	}
+	var genres []string
+	var links []metadata.ArtistLink
+	var err error
+	if gl, ok := src.(genreLinkSource); ok {
+		genres, links, err = gl.ArtistGenresLinks(ctx, mbid)
+	} else {
+		genres, err = src.ArtistGenres(ctx, mbid)
+	}
+	if err == nil && ctx.Err() == nil {
+		c.mu.Lock()
+		if len(c.tags) > 2000 {
+			c.tags = map[string]pageTags{}
+		}
+		c.tags[mbid] = pageTags{genres: genres, links: links, at: time.Now()}
+		c.mu.Unlock()
+	}
+	return genres, links
+}
 
 func (a *API) musicPageRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/music/artists/{mbid}", a.artistPage)
@@ -373,13 +414,7 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		if src, ok := a.genreProvider(); ok {
-			if gl, ok := src.(genreLinkSource); ok {
-				genres, links, _ = gl.ArtistGenresLinks(side, mbid)
-				return
-			}
-			genres, _ = src.ArtistGenres(side, mbid)
-		}
+		genres, links = a.artistTags(side, mbid)
 	}()
 	go func() { defer wg.Done(); similar = a.similarArtists(ctx, mbid, 18) }()
 	art, err := a.s.Library.Artists.Artist(metadata.QuickArtist(ctx, 1500*time.Millisecond), mbid)

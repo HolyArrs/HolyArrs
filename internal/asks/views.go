@@ -3,6 +3,7 @@ package asks
 import (
 	"context"
 	"database/sql"
+	"strings"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
@@ -37,22 +38,24 @@ type View struct {
 	// FutureOnly: the show's future seasons only.
 	FutureOnly bool `json:"future_only"`
 	// Albums are the albums of an artist asked for; empty: the whole artist.
-	Albums       []domain.AskAlbum `json:"albums"`
-	AlbumWords   string            `json:"album_words,omitempty"`
-	Name         string            `json:"name"`
-	Year         *int              `json:"year,omitempty"`
-	Poster       string            `json:"poster,omitempty"`
-	State        string            `json:"state"`
-	StateLabel   string            `json:"state_label"`
-	TitleID      *int64            `json:"title_id,omitempty"`
-	AskedBy      Who               `json:"asked_by"`
-	AskedAt      time.Time         `json:"asked_at"`
-	People       []Asker           `json:"people"` // everyone who asked, first one first
-	DecidedBy    *Who              `json:"decided_by,omitempty"`
-	DecidedAt    *time.Time        `json:"decided_at,omitempty"`
-	Note         string            `json:"note,omitempty"`
-	AutoApproved bool              `json:"auto_approved"`
-	AvailableAt  *time.Time        `json:"available_at,omitempty"`
+	Albums []domain.AskAlbum `json:"albums"`
+	// ArtistID is an artist ask's MusicBrainz id, for its page and picture.
+	ArtistID     string     `json:"artist_id,omitempty"`
+	AlbumWords   string     `json:"album_words,omitempty"`
+	Name         string     `json:"name"`
+	Year         *int       `json:"year,omitempty"`
+	Poster       string     `json:"poster,omitempty"`
+	State        string     `json:"state"`
+	StateLabel   string     `json:"state_label"`
+	TitleID      *int64     `json:"title_id,omitempty"`
+	AskedBy      Who        `json:"asked_by"`
+	AskedAt      time.Time  `json:"asked_at"`
+	People       []Asker    `json:"people"` // everyone who asked, first one first
+	DecidedBy    *Who       `json:"decided_by,omitempty"`
+	DecidedAt    *time.Time `json:"decided_at,omitempty"`
+	Note         string     `json:"note,omitempty"`
+	AutoApproved bool       `json:"auto_approved"`
+	AvailableAt  *time.Time `json:"available_at,omitempty"`
 	// Mine says the person reading asked for it too (set by the API).
 	Mine bool `json:"mine"`
 }
@@ -65,9 +68,14 @@ func (s *Service) Views(ctx context.Context, where string, args ...any) ([]View,
 		return nil, err
 	}
 	out := []View{}
+	names := map[int64]string{}
 	userName := func(id int64) string {
+		if n, ok := names[id]; ok {
+			return n
+		}
 		var n string
 		_ = db.QueryRowContext(ctx, "SELECT name FROM users WHERE id = ?", id).Scan(&n)
+		names[id] = n
 		return n
 	}
 	for _, a := range as {
@@ -86,6 +94,13 @@ func (s *Service) Views(ctx context.Context, where string, args ...any) ([]View,
 		}
 		if a.Kind == "artist" {
 			v.AlbumWords = albumWords(a.Albums)
+			v.ArtistID = a.SourceIDs["musicbrainz"]
+			if v.ArtistID == "" {
+				v.ArtistID = strings.TrimPrefix(a.Ref, "mbid:")
+			}
+			if v.Poster == "" && v.ArtistID != "" {
+				v.Poster = "/api/v1/music-trending/art/artist/" + v.ArtistID
+			}
 			if a.State == domain.AskAvailable {
 				v.StateLabel = "Ready to listen"
 			}

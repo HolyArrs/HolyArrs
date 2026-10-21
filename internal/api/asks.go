@@ -105,6 +105,14 @@ func (a *API) askViews(r *http.Request, where string, args ...any) ([]asks.View,
 		return nil, err
 	}
 	me := a.person(r).UserID
+	// Artist asks show the picture route's artist picture; let it serve them.
+	var names []nameKey
+	for _, v := range vs {
+		if v.Kind == "artist" && v.ArtistID != "" {
+			names = append(names, nameKey{kind: "artist", mbid: strings.ToLower(v.ArtistID), name: v.Name})
+		}
+	}
+	a.rememberMusicNames(names)
 	for i := range vs {
 		for _, p := range vs[i].People {
 			vs[i].Mine = vs[i].Mine || p.ID == me

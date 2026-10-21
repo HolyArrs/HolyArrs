@@ -181,6 +181,8 @@ export interface LookupArtist {
 	country?: string;
 	status: string;
 	score?: number;
+	/** the artist's picture (music picture route) */
+	image?: string;
 	title_id?: number;
 	never_add?: boolean;
 	ask?: { id: number; state: AskState; state_label: string; mine: boolean; people: number; albums?: AskAlbum[] };

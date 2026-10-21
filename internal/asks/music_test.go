@@ -370,3 +370,18 @@ func TestArtistAskRefusesAlbumNotInLibraryYet(t *testing.T) {
 		t.Fatalf("album the Library does not know yet: %v", err)
 	}
 }
+
+func TestArtistAskViewHasArtistIDAndPicture(t *testing.T) {
+	r := musicRig(t)
+	ctx := context.Background()
+	if _, err := r.svc.AskArtist(ctx, r.ana, "mbid:"+mArtist, []string{mLive}); err != nil {
+		t.Fatal(err)
+	}
+	vs, err := r.svc.Views(ctx, "a.kind = 'artist'")
+	if err != nil || len(vs) != 1 {
+		t.Fatalf("views %+v %v", vs, err)
+	}
+	if v := vs[0]; v.ArtistID != mArtist || v.Poster != "/api/v1/music-trending/art/artist/"+mArtist {
+		t.Fatalf("artist ask view %+v", v)
+	}
+}

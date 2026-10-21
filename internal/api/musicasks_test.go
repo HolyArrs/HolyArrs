@@ -196,3 +196,25 @@ func TestArtistLookupListsEveryOpenAsk(t *testing.T) {
 		t.Fatalf("asks %+v ask %+v", got.Asks, got.Ask)
 	}
 }
+
+// Home's "Waiting for approval" shelf shows artist asks with a picture.
+func TestArtistAskListHasPicture(t *testing.T) {
+	r := newMusicAskRig(t)
+	r.ana.call("POST", "/api/v1/asks", `{"kind":"artist","id":"mbid:`+apiArtist+`"}`, 201)
+	var out struct {
+		Asks []asks.View `json:"asks"`
+	}
+	if err := json.Unmarshal(r.owner.call("GET", "/api/v1/asks?kind=artist", "", 200), &out); err != nil || len(out.Asks) != 1 {
+		t.Fatalf("asks %+v %v", out, err)
+	}
+	v := out.Asks[0]
+	if v.ArtistID != apiArtist || v.Poster != "/api/v1/music-trending/art/artist/"+apiArtist {
+		t.Fatalf("artist ask %+v", v)
+	}
+	r.api.music.mu.Lock()
+	_, known := r.api.music.names["artist|"+apiArtist]
+	r.api.music.mu.Unlock()
+	if !known {
+		t.Fatal("the picture route does not know the asked artist")
+	}
+}

@@ -63,6 +63,8 @@ type ArtistResult struct {
 	metadata.Artist
 	TitleID  int64 `json:"title_id,omitempty"` // set when already in the Library
 	NeverAdd bool  `json:"never_add,omitempty"`
+	// Image is the artist's picture (the music picture route).
+	Image string `json:"image,omitempty"`
 	// Ask is the open ask for the artist the person is part of (the oldest),
 	// else the oldest open ask, if any; Asks lists every open ask for it.
 	Ask  *askBrief  `json:"ask,omitempty"`
@@ -182,11 +184,17 @@ func (a *API) lookupArtists(w http.ResponseWriter, r *http.Request) {
 	}
 	out := []ArtistResult{}
 	db := a.s.Store.Read()
+	var names []nameKey
 	withAlbums := r.URL.Query().Get("albums") == "true"
 	for _, ar := range found {
 		albums := ar.Albums
 		ar.Albums = nil
 		v := ArtistResult{Artist: ar}
+		if metadata.ValidMBID(ar.MBID) {
+			id := strings.ToLower(ar.MBID)
+			v.Image = artPath("artist", id)
+			names = append(names, nameKey{kind: "artist", mbid: id, name: ar.Name})
+		}
 		if v.TitleID, err = library.ArtistByMBID(r.Context(), db, ar.MBID); err != nil {
 			internal(w, err)
 			return
@@ -212,6 +220,7 @@ func (a *API) lookupArtists(w http.ResponseWriter, r *http.Request) {
 		}
 		out = append(out, v)
 	}
+	a.rememberMusicNames(names)
 	writeJSON(w, http.StatusOK, map[string]any{"artists": out, "source": "musicbrainz"})
 }
 
