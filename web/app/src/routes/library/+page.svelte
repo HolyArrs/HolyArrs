@@ -20,7 +20,9 @@
 	import Poster from '#lib/Poster.svelte';
 	import Icon from '#lib/Icon.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
-	import PosterCard from '#lib/ui/PosterCard.svelte';
+	import LibraryPoster from '#lib/ui/LibraryPoster.svelte';
+	import { flip } from 'svelte/animate';
+	import { barOf, detailLabels, flipFrom, loadPosterDetail, needsAttention, savePosterDetail, type PosterDetail } from '#lib/library-poster.ts';
 	import BannerArt from '#lib/ui/BannerArt.svelte';
 	import ColumnChooser from '#lib/ui/ColumnChooser.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
@@ -167,19 +169,40 @@
 	// Columns that do not fit scroll sideways rather than squeeze the art.
 	let density = $state<Density>('large');
 	let posterSize = $state<PosterSize>('m');
+	let posterDetail = $state<PosterDetail>('status');
 	$effect(() => {
 		const me = myId;
 		density = loadDensity(me);
 		posterSize = loadPosterSize(me);
+		posterDetail = loadPosterDetail(me);
 	});
 	function setDensity(d: Density) {
 		density = d;
 		saveDensity(myId, d);
 	}
+	let gridEl = $state<HTMLElement>();
+	/** Glide the posters on screen from where they were to where they land (size changes). */
+	async function glide(change: () => void) {
+		const items = gridEl && !reducedMotion() ? [...gridEl.children].filter((el): el is HTMLElement => el instanceof HTMLElement) : [];
+		const vh = window.innerHeight;
+		const before = new Map(items.map((el) => [el, el.getBoundingClientRect()] as const).filter(([, r]) => r.bottom > -200 && r.top < vh + 200));
+		change();
+		await tick();
+		for (const [el, a] of before) {
+			const b = el.getBoundingClientRect();
+			const from = flipFrom(a, b);
+			if (from) el.animate([{ transform: from, transformOrigin: '0 0' }, { transform: 'none', transformOrigin: '0 0' }], { duration: 240, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+		}
+	}
 	function setPosterSize(z: PosterSize) {
-		posterSize = z;
+		void glide(() => (posterSize = z));
 		savePosterSize(myId, z);
 	}
+	function setPosterDetail(d: PosterDetail) {
+		posterDetail = d;
+		savePosterDetail(myId, d);
+	}
+	const flipMs = () => (reducedMotion() ? 0 : 240);
 	const bannerW = $derived(bannerWidth(listWidth, density));
 	const bannerH = $derived(bannerHeight(bannerW));
 	const shownCols = $derived(chosenCols);
@@ -189,7 +212,10 @@
 	const tableMin = $derived(tableMinWidth(colWidths));
 	const sizeItems = $derived<MenuItem[]>(
 		view === 'posters'
-			? [{ kind: 'heading', label: 'Poster size' }, ...(['s', 'm', 'l'] as const).map((z) => ({ label: posterLabels[z], checked: posterSize === z, onselect: () => setPosterSize(z) }))]
+			? [
+					{ kind: 'heading', label: 'Poster size' }, ...(['s', 'm', 'l'] as const).map((z) => ({ label: posterLabels[z], checked: posterSize === z, onselect: () => setPosterSize(z) })),
+					{ kind: 'separator' }, { kind: 'heading', label: 'Poster details' }, ...(['title', 'status', 'full'] as const).map((d) => ({ label: detailLabels[d], checked: posterDetail === d, onselect: () => setPosterDetail(d) }))
+				] as MenuItem[]
 			: [{ kind: 'heading', label: 'Banner size' }, ...(['large', 'comfortable', 'compact'] as const).map((d) => ({ label: densityLabels[d], checked: density === d, onselect: () => setDensity(d) }))]
 	);
 	function setColumns(c: Column[]) {
@@ -632,12 +658,20 @@
 			default: return '';
 		}
 	}
-	function posterLines(t: TitleView): string[] {
-		const lines = [t.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date'];
-		if (t.pick_rules_name) lines.push(t.pick_rules_name);
-		if (t.kind === 'show' && t.show?.next_air_date) lines.push(`Next ${date(t.show.next_air_date)}`);
-		else if (t.added_at) lines.push(`Added ${date(t.added_at)}`);
-		return lines;
+	/** The "Everything" line under a poster: next airing for shows, else rules and quality. */
+	function posterExtra(t: TitleView): string {
+		if (t.kind === 'show' && t.show?.next_air_date) return `Next ${date(t.show.next_air_date)}`;
+		return [t.pick_rules_name, quality(t)].filter(Boolean).join(' · ');
+	}
+	/** The hover panel: quality and pick rules, next airing, added, who asked. */
+	function posterFacts(t: TitleView): string[] {
+		const asked = requestedBy(t);
+		return [
+			[quality(t), t.pick_rules_name].filter(Boolean).join(' · '),
+			t.kind === 'show' && t.show?.next_air_date ? `Next ${date(t.show.next_air_date)}` : '',
+			t.added_at ? `Added ${date(t.added_at)}` : '',
+			asked ? `Asked by ${asked}` : ''
+		].filter(Boolean);
 	}
 	function markOf(t: TitleView) {
 		const m = ownedMark({ key: String(t.id), kind: t.kind === 'show' ? 'show' : t.kind === 'artist' ? 'artist' : 'movie', name: t.name, titleId: t.id } as ExploreCard, t, who);
@@ -807,23 +841,16 @@
 				<EmptyState compact icon="search" title="Nothing matches this filter." action={filtersOn || q ? { label: 'Clear', onclick: clearFilters } : undefined} />
 			{:else if view === 'posters'}
 				{#if grouped}<p class="group-note">Grouped by series in the Banners and Overview views.</p>{/if}
-				<ul class="grid" style="--poster-min: {posterMin[posterSize]}px" aria-label="{kindTitle} titles">
-					{#each shown as t, i (t.id)}
+				<ul class="grid" class:selecting style="--poster-min: {posterMin[posterSize]}px" aria-label="{kindTitle} titles" bind:this={gridEl}>
+					{#each shown as t (t.id)}
 						{@const p = progressOf(t)}
-						{@const requester = requestedBy(t)}
-						<li class="item rise" data-testid="library-card" data-title-id={t.id} data-letter={letterOf(sortName(t.name))} class:selected={picked.has(t.id)} class:last-opened={lastOpenedId === t.id} style="--i: {Math.min(i, 8)}">
-							<PosterCard title={t.name} href={titleLink(t.id)} image={posterSrc(t.artwork[0], posterMin[posterSize])} subtitle={[t.year, t.kind === 'movie' ? '' : kindLabel[t.kind]].filter(Boolean).join(' · ')} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} owned={markOf(t)} vtName={artName(t.id)} />
-							<span class="meter {tone(t)}" role="img" aria-label={progressText(t) || (p.have ? 'In the Library' : 'Not in the Library yet')}><i style="width: {p.total ? (p.have / p.total) * 100 : 0}%"></i></span>
-							<ul class="lines">{#each posterLines(t) as line, j (j)}<li class:kept={j === 0 && t.keep_up_to_date}>{line}</li>{/each}</ul>
+						{@const ls = who === 'staff' ? libraryState(t) : null}
+						<li class="item" animate:flip={{ duration: flipMs, easing: (x) => 1 - Math.pow(1 - x, 3) }} data-testid="library-card" data-title-id={t.id} data-letter={letterOf(sortName(t.name))} class:selected={picked.has(t.id)} class:last-opened={lastOpenedId === t.id}>
+							<LibraryPoster title={t.name} year={t.year} href={titleLink(t.id)} image={posterSrc(t.artwork[0], posterMin[posterSize])} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} vtName={artName(t.id)} status={ls} attention={needsAttention(ls)} bar={barOf(ls, p.have, p.total)} detail={posterDetail} extra={posterExtra(t)} facts={posterFacts(t)} kept={t.keep_up_to_date} canManage={session.can('manage_library')} {selecting} selected={picked.has(t.id)} onsearch={() => searchTitles([t.id])} onkeep={(k) => setKeep([t.id], k)} />
 							{#if selecting}
 								<button type="button" class="pick" aria-pressed={picked.has(t.id)} aria-label="Select {t.name}" onclick={() => togglePick(t.id)} data-testid="library-pick"><span class="pick-dot" aria-hidden="true">{#if picked.has(t.id)}<Icon name="check" size={14} stroke={3} />{/if}</span></button>
 							{/if}
-							{#if lastOpenedId === t.id || requester}
-								<div class="card-notes">
-									{#if lastOpenedId === t.id}<span class="last-opened-label" data-testid="last-opened">Last opened</span>{/if}
-									{#if requester}<span class="requester" data-testid="requested-by">Asked by {requester}</span>{/if}
-								</div>
-							{/if}
+							{#if lastOpenedId === t.id}<span class="last-opened-label" data-testid="last-opened">Last opened</span>{/if}
 						</li>
 					{/each}
 				</ul>
@@ -1136,18 +1163,20 @@
 
 	/* Posters */
 	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--poster-min, 172px), 1fr)); gap: 26px 18px; margin: 0; padding: 0; list-style: none; }
-	.grid > li { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 6px; content-visibility: auto; contain-intrinsic-size: auto 340px; scroll-margin-top: 120px; }
-	.grid .meter { height: 3px; }
-	.lines { display: flex; flex-direction: column; gap: 1px; margin: 0; padding: 0; list-style: none; color: var(--text-muted); font: var(--t-footnote); }
-	.lines li { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.lines li.kept { color: var(--ok-text, var(--ok, #2fa36b)); }
+	/* Posters: no paint containment here, so the lift, tilt and shadow are never clipped. */
+	.grid > li { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 4px; scroll-margin-top: 120px; }
+	.grid > li:hover, .grid > li:focus-within { z-index: 2; }
 	.grid > li.last-opened { outline: 2px solid var(--text-muted); outline-offset: 4px; border-radius: var(--r-card); }
 	.grid > li.selected { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: var(--r-card); }
 	.pick { position: absolute; inset: 0 0 auto 0; aspect-ratio: 2 / 3; z-index: 3; display: block; padding: 0; border: 0; border-radius: var(--r-card); background: transparent; cursor: pointer; }
 	.pick[aria-pressed='true'] { background: rgb(0 0 0 / 30%); box-shadow: inset 0 0 0 3px var(--accent); }
 	.pick:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.pick-dot { position: absolute; left: 8px; top: 8px; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; border: 2px solid #fff; background: rgb(0 0 0 / 35%); color: #fff; }
-	.pick[aria-pressed='true'] .pick-dot { background: var(--accent-fill); border-color: var(--accent-fill); color: var(--accent-ink, #fff); }
+	.pick[aria-pressed='true'] .pick-dot { background: var(--accent-fill); border-color: var(--accent-fill); color: var(--accent-ink, #fff); animation: pick-pop 260ms var(--ease-spring); }
+	.grid .pick { animation: pick-in 180ms var(--ease-out); }
+	@keyframes pick-pop { from { transform: scale(0.6); } }
+	@keyframes pick-in { from { opacity: 0; } }
+	@media (prefers-reduced-motion: reduce) { .pick[aria-pressed='true'] .pick-dot, .grid .pick { animation: none; } }
 	.pick-box { width: 18px; height: 18px; accent-color: var(--accent); }
 	.card-notes { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
 	.requester { color: var(--text-muted); font: var(--t-footnote); overflow-wrap: anywhere; }
