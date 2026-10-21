@@ -40,7 +40,7 @@ type DetailPerson struct {
 	Role      string `json:"role"` // actor, director, creator
 	Character string `json:"character,omitempty"`
 	Profile   string `json:"profile,omitempty"`
-	// ID is the TMDB person id, kept for directors and creators (More from).
+	// ID is the TMDB person id: actors link to their page; directors and creators also feed More from.
 	ID string `json:"id,omitempty"`
 }
 
@@ -431,6 +431,7 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 		Language    string   `json:"original_language"`
 		Credits     *struct {
 			Cast []struct {
+				ID          int64  `json:"id"`
 				Name        string `json:"name"`
 				Character   string `json:"character"`
 				ProfilePath string `json:"profile_path"`
@@ -523,7 +524,7 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 			if i == maxCast {
 				break
 			}
-			d.People = append(d.People, DetailPerson{Name: c.Name, Role: "actor", Character: c.Character, Profile: profile(c.ProfilePath)})
+			d.People = append(d.People, DetailPerson{Name: c.Name, Role: "actor", Character: c.Character, Profile: profile(c.ProfilePath), ID: personID(c.ID)})
 		}
 		for _, c := range raw.Credits.Crew {
 			if c.Job == "Director" {
@@ -728,6 +729,39 @@ func (t *TMDB) SeasonEpisodes(ctx context.Context, tmdbID string, season int) ([
 	return out, nil
 }
 
+// WatchLister reads where one title streams, per country (TMDB watch
+// providers, JustWatch data).
+type WatchLister interface {
+	WatchProviders(ctx context.Context, kind, tmdbID string) (map[string][]WatchService, error)
+}
+
+// WatchListerFor returns the watch providers surface selected for ctx.
+func WatchListerFor(ctx context.Context, provider Provider) (WatchLister, bool) {
+	if sw, ok := provider.(*Switch); ok {
+		provider = sw.pick(ctx)
+	}
+	l, ok := provider.(WatchLister)
+	return l, ok
+}
+
+// WatchProviders reads a title's subscription services per country; an
+// empty map when it streams nowhere.
+func (t *TMDB) WatchProviders(ctx context.Context, kind, tmdbID string) (map[string][]WatchService, error) {
+	n, err := strconv.ParseInt(tmdbID, 10, 64)
+	if err != nil || n <= 0 || (kind != "movie" && kind != "show") {
+		return nil, ErrNotFound
+	}
+	b, err := t.get(ctx, "/"+tvPath(kind)+"/"+strconv.FormatInt(n, 10)+"/watch/providers", nil)
+	if err != nil {
+		return nil, err
+	}
+	out := t.streamingFrom(b)
+	if out == nil {
+		out = map[string][]WatchService{}
+	}
+	return out, nil
+}
+
 // streaming reads where a title streams (subscription services, per
 // country); nil when it cannot (the page shows without it).
 func (t *TMDB) streaming(ctx context.Context, kind string, id int64) map[string][]WatchService {
@@ -735,6 +769,11 @@ func (t *TMDB) streaming(ctx context.Context, kind string, id int64) map[string]
 	if err != nil {
 		return nil
 	}
+	return t.streamingFrom(b)
+}
+
+// streamingFrom reads a watch providers answer; nil when odd or empty.
+func (t *TMDB) streamingFrom(b []byte) map[string][]WatchService {
 	var res struct {
 		Results map[string]struct {
 			Flatrate []struct {
