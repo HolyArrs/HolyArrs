@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -53,21 +52,15 @@ func signinRig(t *testing.T, titles [][2]string) (*API, *int) {
 		}, nil
 	}
 	a.signin.trending = func(_ context.Context, kind string) ([]metadata.DiscoverItem, error) {
-		if kind == "movie" {
-			return []metadata.DiscoverItem{{Kind: "movie", TMDBID: "900", Name: "Trend A"}, {Kind: "movie", TMDBID: "901", Name: "Trend R"}}, nil
+		var out []metadata.DiscoverItem
+		for i := 0; i < 8; i++ {
+			id := strconv.Itoa(900 + i)
+			if kind == "show" {
+				id = strconv.Itoa(950 + i)
+			}
+			out = append(out, metadata.DiscoverItem{Kind: kind, TMDBID: id, Name: "Trend " + id, Popularity: float64(100 - i)})
 		}
-		return []metadata.DiscoverItem{{Kind: "show", TMDBID: "902", Name: "Trend S"}, {Kind: "show", TMDBID: "903", Name: "Trend Unrated"}}, nil
-	}
-	a.signin.rating = func(_ context.Context, kind, id string) (string, error) {
-		switch id {
-		case "900":
-			return "PG", nil
-		case "901":
-			return "R", nil
-		case "902":
-			return "TV-G", nil
-		}
-		return "", errors.New("no rating")
+		return out, nil
 	}
 	return a, &calls
 }
@@ -90,31 +83,27 @@ func getSigninArt(t *testing.T, a *API, addr string) (*httptest.ResponseRecorder
 }
 
 // route: GET /api/v1/public/signin-art
-// The Library is used when 6 or more kid-safe titles qualify; mature and
-// unrated titles never appear, and the answer holds picture addresses only.
-func TestSigninArtLibraryKidSafe(t *testing.T) {
-	titles := [][2]string{{"movie", "G"}, {"movie", "PG"}, {"movie", "PG-13"}, {"show", "TV-PG"}, {"show", "TV-Y7"}, {"show", "TV-G"},
-		{"movie", "R"}, {"movie", "NC-17"}, {"show", "TV-14"}, {"show", "TV-MA"}, {"movie", ""}, {"movie", "NR"}}
-	a, _ := signinRig(t, titles)
+// By default the art is trending titles (no rating check, mature titles
+// included), at least 12 shots, and the answer holds picture addresses only.
+func TestSigninArtTrendingDefault(t *testing.T) {
+	a, _ := signinRig(t, [][2]string{{"movie", "R"}, {"show", "TV-MA"}, {"movie", ""}})
 	w, shots := getSigninArt(t, a, "10.0.0.1")
 	if w.Code != 200 {
 		t.Fatalf("code %d: %s", w.Code, w.Body)
 	}
-	if len(shots) != 6 {
-		t.Fatalf("want the 6 kid-safe titles, got %d", len(shots))
+	if len(shots) < 12 {
+		t.Fatalf("want at least 12 trending shots, got %d", len(shots))
 	}
 	for _, s := range shots {
-		id := strings.TrimSuffix(strings.TrimPrefix(s.Backdrop.URL, metadata.ImageBase+"/original/b"), ".jpg")
-		n, _ := strconv.Atoi(id)
-		if n < 100 || n > 105 {
-			t.Fatalf("a title above the limit or unrated was used: %s", s.Backdrop.URL)
+		if !strings.Contains(s.Backdrop.URL, "/b9") {
+			t.Fatalf("Library art shown while off: %s", s.Backdrop.URL)
 		}
 		if s.Backdrop.W != 3840 || s.Poster == nil || !strings.HasSuffix(s.Logo, ".png") {
 			t.Fatalf("shot: %+v", s)
 		}
 	}
 	body := w.Body.String()
-	for _, leak := range []string{"Secret", "name", "tmdb_id", "count", "rating", "\"id\""} {
+	for _, leak := range []string{"Secret", "Trend", "name", "tmdb_id", "count", "rating", "\"id\""} {
 		if strings.Contains(body, leak) {
 			t.Fatalf("answer leaks %q: %s", leak, body)
 		}
@@ -126,47 +115,39 @@ func TestSigninArtLibraryKidSafe(t *testing.T) {
 	}
 }
 
-// Fewer than 6 Library titles, or Library art turned off, uses trending
-// titles, still kid-safe.
-func TestSigninArtTrendingFallback(t *testing.T) {
-	a, _ := signinRig(t, [][2]string{{"movie", "PG"}, {"movie", "G"}})
-	_, shots := getSigninArt(t, a, "10.0.0.2")
-	got := map[string]bool{}
-	for _, s := range shots {
-		got[s.Backdrop.URL] = true
-	}
-	if len(shots) != 2 || !got[metadata.ImageBase+"/original/b900.jpg"] || !got[metadata.ImageBase+"/original/b902.jpg"] {
-		t.Fatalf("want trending 900 and 902 only, got %+v", shots)
-	}
-
-	many := [][2]string{{"movie", "G"}, {"movie", "PG"}, {"movie", "PG-13"}, {"show", "TV-PG"}, {"show", "TV-Y7"}, {"show", "TV-G"}}
-	b, _ := signinRig(t, many)
-	put := httptest.NewRequest("PUT", "/api/v1/settings/ui", strings.NewReader(`{"signin_library_art": false}`))
+// With Library art on, Library titles (any rating) come first, topped up
+// with trending titles.
+func TestSigninArtLibraryOn(t *testing.T) {
+	a, _ := signinRig(t, [][2]string{{"movie", "R"}, {"show", "TV-MA"}})
+	put := httptest.NewRequest("PUT", "/api/v1/settings/ui", strings.NewReader(`{"signin_library_art": true}`))
 	pw := httptest.NewRecorder()
-	b.Handler().ServeHTTP(pw, put)
-	if pw.Code != 200 || b.uiSettings(context.Background()).SigninLibraryArt {
-		t.Fatalf("turning Library art off: %d %s", pw.Code, pw.Body)
+	a.Handler().ServeHTTP(pw, put)
+	if pw.Code != 200 || !a.uiSettings(context.Background()).SigninLibraryArt {
+		t.Fatalf("turning Library art on: %d %s", pw.Code, pw.Body)
 	}
-	_, shots = getSigninArt(t, b, "10.0.0.3")
+	_, shots := getSigninArt(t, a, "10.0.0.3")
+	lib := 0
 	for _, s := range shots {
-		if !strings.Contains(s.Backdrop.URL, "/b90") {
-			t.Fatalf("Library art shown while off: %s", s.Backdrop.URL)
+		if strings.Contains(s.Backdrop.URL, "/b10") {
+			lib++
 		}
+	}
+	if lib != 2 || len(shots) != signinArtMax {
+		t.Fatalf("want 2 Library shots topped up to %d, got %d Library of %d", signinArtMax, lib, len(shots))
 	}
 }
 
-// The setting defaults to on.
-func TestSigninArtDefaultOn(t *testing.T) {
+// The setting defaults to off.
+func TestSigninArtDefaultOff(t *testing.T) {
 	a, _ := signinRig(t, nil)
-	if !a.uiSettings(context.Background()).SigninLibraryArt {
-		t.Fatal("Library art should default to on")
+	if a.uiSettings(context.Background()).SigninLibraryArt {
+		t.Fatal("Library art should default to off")
 	}
 }
 
 // The answer is cached; each address gets a budget a minute.
 func TestSigninArtCacheAndRateLimit(t *testing.T) {
-	titles := [][2]string{{"movie", "G"}, {"movie", "PG"}, {"movie", "PG-13"}, {"show", "TV-PG"}, {"show", "TV-Y7"}, {"show", "TV-G"}}
-	a, calls := signinRig(t, titles)
+	a, calls := signinRig(t, nil)
 	now := time.Date(2026, 10, 21, 12, 0, 0, 0, time.UTC)
 	a.signin.now = func() time.Time { return now }
 	for i := 0; i < signinArtPerMinute; i++ {
@@ -174,7 +155,7 @@ func TestSigninArtCacheAndRateLimit(t *testing.T) {
 			t.Fatalf("call %d: %d", i, w.Code)
 		}
 	}
-	if *calls != 6 {
+	if *calls != 16 {
 		t.Fatalf("the answer was not cached: %d image calls", *calls)
 	}
 	w, _ := getSigninArt(t, a, "10.0.0.9")

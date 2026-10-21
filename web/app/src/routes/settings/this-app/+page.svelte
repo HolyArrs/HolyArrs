@@ -22,14 +22,14 @@
 	let autoplayBusy = $state(false);
 	// Keep yt-dlp up to date: the weekly update from yt-dlp's own releases.
 	let keepYTDLP = $state(true);
-	// Show Library art on the sign-in page (kid-safe titles; off: trending).
-	let signinArt = $state(true);
+	// Show Library art on the sign-in page (off: trending only).
+	let signinArt = $state(false);
 	async function loadAutoplay() {
 		try {
 			const s = await api.get<{ autoplay_trailers: boolean; keep_ytdlp_updated?: boolean; signin_library_art?: boolean }>('/settings/ui');
 			autoplay = s.autoplay_trailers;
 			keepYTDLP = s.keep_ytdlp_updated !== false;
-			signinArt = s.signin_library_art !== false;
+			signinArt = s.signin_library_art === true;
 		} catch {
 			autoplay = null;
 		}
@@ -248,7 +248,7 @@
 			</label>
 			<label class="checkline" data-testid="signin-art-setting">
 				<input type="checkbox" checked={signinArt} disabled={autoplayBusy} onchange={(e) => saveSigninArt(e.currentTarget.checked)} />
-				<span><b>Show Library art on the sign-in page</b><br /><span class="hint">The sign-in page shows wide pictures from your Library, kid-safe titles only (G to PG-13 and up to TV-PG, never unrated). Anyone who opens the page can see them. Off, or with fewer than 6 such titles, it shows trending titles instead.</span></span>
+				<span><b>Show Library art on the sign-in page</b><br /><span class="hint">The sign-in page shows trending movies and shows from TMDB. On, it shows wide pictures from your Library first. Anyone who opens the page can see them, and no rating filter applies.</span></span>
 			</label>
 		</section>
 	{/if}

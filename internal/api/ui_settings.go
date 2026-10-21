@@ -28,8 +28,8 @@ type UISettings struct {
 	// KeepYTDLPUpdated: "Keep yt-dlp up to date", the weekly update from
 	// yt-dlp's official releases. Default on.
 	KeepYTDLPUpdated bool `json:"keep_ytdlp_updated"`
-	// SigninLibraryArt: "Show Library art on the sign-in page" (kid-safe
-	// titles only). Off shows trending titles instead. Default on.
+	// SigninLibraryArt: "Show Library art on the sign-in page" (Library
+	// titles first). Off shows trending titles only. Default off.
 	SigninLibraryArt bool `json:"signin_library_art"`
 }
 
@@ -39,7 +39,7 @@ func (a *API) uiSettings(ctx context.Context) UISettings {
 	_ = a.s.Store.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = ?", SettingYTDLPUpdate).Scan(&u)
 	var l string
 	_ = a.s.Store.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = ?", settingSigninLibraryArt).Scan(&l)
-	return UISettings{AutoplayTrailers: v != "off", KeepYTDLPUpdated: u != "off", SigninLibraryArt: l != "off"}
+	return UISettings{AutoplayTrailers: v != "off", KeepYTDLPUpdated: u != "off", SigninLibraryArt: l == "on"}
 }
 
 // KeepYTDLPUpdated reads "Keep yt-dlp up to date" (for the weekly job).

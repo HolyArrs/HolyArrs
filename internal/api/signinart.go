@@ -12,28 +12,22 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/metadata"
-	"github.com/CoderLuii/holyarrs/internal/ratings"
 )
 
 // The sign-in page's art: one wide picture at a time behind the card. The
 // route is public (nobody is signed in yet), so the answer holds picture
 // addresses and sizes only: no names, ids, counts or anything else.
 //
-// The pictures come from the Library (when the owner leaves "Show Library
-// art on the sign-in page" on) and fall back to trending titles. Either way
-// only kid-safe titles are used: movies up to PG-13, shows up to TV-PG, and
-// never a title without a rating.
+// The pictures are TMDB's trending movies and shows this week, by
+// popularity (like Overseerr). The owner can turn on "Show Library art on
+// the sign-in page" (default off) to put Library titles first. There is no
+// rating filter on this page's art.
 
 const (
-	// signinArtMin is how many Library titles must qualify before the
-	// Library is used instead of trending titles.
-	signinArtMin = 6
 	// signinArtMax is how many pictures one answer holds.
 	signinArtMax = 12
 	// signinArtLookups caps the image list calls one build makes.
-	signinArtLookups = 24
-	// signinRatingLookups caps the rating calls one trending build makes.
-	signinRatingLookups = 24
+	signinArtLookups = 40
 	// signinArtTTL is how long a built answer is kept.
 	signinArtTTL = 6 * time.Hour
 	// signinArtEmptyTTL is how long an empty answer is kept (outside down).
@@ -80,7 +74,6 @@ type signinArtState struct {
 	// Test hooks; nil uses the metadata provider.
 	images   func(ctx context.Context, kind, tmdbID string) (metadata.CardImages, error)
 	trending func(ctx context.Context, kind string) ([]metadata.DiscoverItem, error)
-	rating   func(ctx context.Context, kind, tmdbID string) (string, error)
 	now      func() time.Time
 }
 
@@ -95,18 +88,7 @@ type signinArtCached struct {
 	until time.Time
 }
 
-// kidSafeArt says a title with that rating may be shown before sign-in.
-func kidSafeArt(kind, rating string) bool {
-	switch kind {
-	case "movie":
-		return ratings.Allows("PG-13", kind, rating)
-	case "show":
-		return ratings.Allows("TV-PG", kind, rating)
-	}
-	return false
-}
-
-// signinLibraryArt reads "Show Library art on the sign-in page" (default on).
+// signinLibraryArt reads "Show Library art on the sign-in page" (default off).
 func (a *API) signinLibraryArt(ctx context.Context) bool {
 	return a.uiSettings(ctx).SigninLibraryArt
 }
@@ -208,8 +190,16 @@ func (a *API) signinShots(ctx context.Context) []signinShot {
 	if lib {
 		shots = a.librarySigninShots(bctx)
 	}
-	if len(shots) < signinArtMin {
-		shots = a.trendingSigninShots(bctx)
+	if len(shots) < signinArtMax {
+		seen := map[string]bool{}
+		for _, x := range shots {
+			seen[x.Backdrop.URL] = true
+		}
+		for _, x := range a.trendingSigninShots(bctx) {
+			if len(shots) < signinArtMax && !seen[x.Backdrop.URL] {
+				shots = append(shots, x)
+			}
+		}
 	}
 	if shots == nil {
 		shots = []signinShot{}
@@ -235,18 +225,18 @@ func (a *API) signinShots(ctx context.Context) []signinShot {
 
 type signinRef struct{ kind, tmdbID string }
 
-// librarySigninShots picks kid-safe Library movies and shows.
+// librarySigninShots picks Library movies and shows.
 func (a *API) librarySigninShots(ctx context.Context) []signinShot {
-	rows, err := a.s.Store.Read().QueryContext(ctx, `SELECT kind, rating, COALESCE(json_extract(source_ids, '$.tmdb'), '')
-		FROM titles WHERE kind IN ('movie', 'show') AND state != 'removed' AND trim(COALESCE(rating, '')) != '' LIMIT 2000`)
+	rows, err := a.s.Store.Read().QueryContext(ctx, `SELECT kind, COALESCE(json_extract(source_ids, '$.tmdb'), '')
+		FROM titles WHERE kind IN ('movie', 'show') AND state != 'removed' LIMIT 2000`)
 	if err != nil {
 		a.signin.fail()
 		return nil
 	}
 	var refs []signinRef
 	for rows.Next() {
-		var kind, rating, id string
-		if rows.Scan(&kind, &rating, &id) == nil && id != "" && kidSafeArt(kind, rating) {
+		var kind, id string
+		if rows.Scan(&kind, &id) == nil && id != "" {
 			refs = append(refs, signinRef{kind, id})
 		}
 	}
@@ -255,7 +245,7 @@ func (a *API) librarySigninShots(ctx context.Context) []signinShot {
 	return a.shotsFor(ctx, refs)
 }
 
-// trendingSigninShots picks kid-safe trending movies and shows.
+// trendingSigninShots picks trending movies and shows.
 func (a *API) trendingSigninShots(ctx context.Context) []signinShot {
 	st := &a.signin
 	list := st.trending
@@ -268,15 +258,6 @@ func (a *API) trendingSigninShots(ctx context.Context) []signinShot {
 		list = func(ctx context.Context, kind string) ([]metadata.DiscoverItem, error) {
 			return d.Discover(ctx, "trending", kind, "", "")
 		}
-	}
-	rate := st.rating
-	if rate == nil {
-		rt, ok := metadata.RaterFor(ctx, a.s.Metadata)
-		if !ok {
-			st.fail()
-			return nil
-		}
-		rate = rt.Rating
 	}
 	var items []metadata.DiscoverItem
 	for _, kind := range []string{"movie", "show"} {
@@ -291,29 +272,14 @@ func (a *API) trendingSigninShots(ctx context.Context) []signinShot {
 	slices.SortStableFunc(items, func(x, y metadata.DiscoverItem) int { return cmp.Compare(x.Popularity, y.Popularity) * -1 })
 	var cand []signinRef
 	for _, it := range items {
-		if len(cand) >= signinRatingLookups {
+		if len(cand) >= signinArtLookups {
 			break
 		}
 		if it.TMDBID != "" && (it.Kind == "movie" || it.Kind == "show") {
 			cand = append(cand, signinRef{it.Kind, it.TMDBID})
 		}
 	}
-	safe := make([]bool, len(cand))
-	parallel(ctx, len(cand), func(i int) {
-		r, err := rate(ctx, cand[i].kind, cand[i].tmdbID)
-		if err != nil {
-			st.fail()
-			return
-		}
-		safe[i] = kidSafeArt(cand[i].kind, r)
-	})
-	var refs []signinRef
-	for i, ref := range cand {
-		if safe[i] {
-			refs = append(refs, ref)
-		}
-	}
-	return a.shotsFor(ctx, refs)
+	return a.shotsFor(ctx, cand)
 }
 
 // shotsFor looks up each title's images until signinArtMax slides qualify.
