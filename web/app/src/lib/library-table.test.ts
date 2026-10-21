@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { TitleView } from './types.ts';
-import { applyLayout, columnsFor, filterCounts, loadColumns, loadSaved, moveColumn, noFilter, passes, saveColumns, saveSaved, sortTitles, type FilterContext } from './library-table.ts';
+import { applyLayout, columnsFor, filterCounts, loadColumns, loadSaved, moveColumn, noFilter, passes, saveColumns, saveSaved, sortTitles, tableMinWidth, type FilterContext } from './library-table.ts';
 
 function memory() {
 	const m = new Map<string, string>();
@@ -106,5 +106,14 @@ describe('saved filters', () => {
 		expect(loadSaved(3, 'movie', store)).toEqual([]);
 		store.setItem('holyarrs.library-filters.3.movie', JSON.stringify([{ name: 'Old', filter: { status: 'have' } }, { bad: 1 }]));
 		expect(loadSaved(3, 'movie', store)).toEqual([{ name: 'Old', filter: { ...noFilter, status: 'have' } }]);
+	});
+});
+
+describe('tableMinWidth', () => {
+	it('adds column floors, gaps and padding', () => {
+		expect(tableMinWidth(['420px', '28px', 'minmax(180px, 1fr)', '200px'])).toBe(420 + 28 + 180 + 200 + 48 + 20);
+	});
+	it('ignores widths with no px floor', () => {
+		expect(tableMinWidth(['1fr'], 16, 0)).toBe(0);
 	});
 });

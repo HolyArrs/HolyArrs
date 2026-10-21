@@ -45,7 +45,8 @@
 	let host = $state<HTMLElement | null>(null);
 	let near = $state(false);
 	let banner = $state<string | null>(null);
-	let loaded = $state(false);
+	// Which picture finished loading; a new src shows the shimmer again.
+	let loadedSrc = $state('');
 	let broken = $state(false);
 
 	const extrasKind = $derived(title.kind === 'artist' ? 'artist' : title.kind === 'show' ? 'show' : 'movie');
@@ -58,6 +59,7 @@
 	const src = $derived(bannerSrc(banner && !broken ? banner : fallback, shown));
 	const logoSrc = $derived(bannerSrc(title.logo ?? '', shown * 0.5));
 	const usingBanner = $derived(!!banner && !broken);
+	const loaded = $derived(!!src && loadedSrc === src);
 
 	$effect(() => {
 		if (eager) {
@@ -93,15 +95,11 @@
 			live = false;
 		};
 	});
-	$effect(() => {
-		src;
-		loaded = false;
-	});
 </script>
 
 <span class="banner" class:ready={banner !== null && (loaded || !src)} class:wide={usingBanner} bind:this={host} bind:clientWidth={cw} aria-hidden="true">
 	{#if banner !== null && src}
-		<img {src} alt="" loading="lazy" decoding="async" onload={() => (loaded = true)} onerror={() => (usingBanner ? (broken = true) : (loaded = true))} />
+		<img {src} alt="" decoding="async" onload={(e) => (loadedSrc = (e.currentTarget as HTMLImageElement).getAttribute('src') ?? '')} onerror={() => (usingBanner ? (broken = true) : (loadedSrc = src))} />
 	{/if}
 	{#if banner !== null && !usingBanner}
 		<span class="veil"></span>

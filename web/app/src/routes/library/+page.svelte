@@ -11,7 +11,8 @@
 	import { exceptionChip, filters, posterStatus, firstOfLetter, kinds, letterOf, letters, matchesTitleQuery, missingEpisodes, ofKind, titleQuery, type Filter, type Kind } from '#lib/library.ts';
 	import {
 		activeCount, columnSort, sortName, filterCounts, loadColumns, loadSaved, noFilter, passes, progressOf, releaseDate, saveColumns, saveSaved, sortLabels, sortTitles, sortsFor, startDir, columnsFor, defaultSort,
-		type Column, type FilterContext, type FilterState, type Kept, type LibKind, type SavedFilter, type SortDir, type SortKey
+		type Column, type FilterContext, type FilterState, type Kept, type LibKind, type SavedFilter, type SortDir, type SortKey,
+		tableMinWidth
 	} from '#lib/library-table.ts';
 	import { reducedMotion } from '#lib/motion.ts';
 	import { episodeLabel, showProgress } from '#lib/shows.ts';
@@ -182,7 +183,10 @@
 	const bannerW = $derived(bannerWidth(listWidth, density));
 	const bannerH = $derived(bannerHeight(bannerW));
 	const shownCols = $derived(chosenCols);
-	const gridCols = $derived(`${bannerW}px 28px minmax(220px, 1fr) ${kind === 'all' ? '' : shownCols.map((c) => c.width).join(' ')}`);
+	const colWidths = $derived([`${bannerW}px`, '28px', 'minmax(180px, 1fr)', ...(kind === 'all' ? [] : shownCols.map((c) => c.width))]);
+	const gridCols = $derived(colWidths.join(' '));
+	// One width for every row (header included), so columns line up.
+	const tableMin = $derived(tableMinWidth(colWidths));
 	const sizeItems = $derived<MenuItem[]>(
 		view === 'posters'
 			? [{ kind: 'heading', label: 'Poster size' }, ...(['s', 'm', 'l'] as const).map((z) => ({ label: posterLabels[z], checked: posterSize === z, onselect: () => setPosterSize(z) }))]
@@ -824,7 +828,7 @@
 					{/each}
 				</ul>
 			{:else}
-				<div class="rows {view}" class:has-select={selecting} style="--cols: {gridCols}" bind:this={listEl} bind:clientWidth={listWidth} role="list" aria-label="{kindTitle} titles">
+				<div class="rows {view}" class:has-select={selecting} style="--cols: {gridCols}; --table-min: {tableMin}px" bind:this={listEl} bind:clientWidth={listWidth} role="list" aria-label="{kindTitle} titles">
 					{#if view === 'table' && !phone}
 						<div class="row head" role="presentation">
 							<span class="h banner-h">Banner</span>
@@ -884,7 +888,7 @@
 													{:else}<span class="keep" class:on={t.keep_up_to_date} aria-label={t.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date'} role="img"><Icon name={t.keep_up_to_date ? 'bellOn' : 'bell'} size={16} /></span>{/if}
 												</span>
 												<span class="name">
-													<a href={titleLink(t.id)} tabindex="-1">{t.name}</a>
+													<a href={titleLink(t.id)} tabindex="-1" title={t.name}>{t.name}</a>
 													<span class="sub">
 														{#if kind === 'all'}{kindLabel[t.kind]}{#if t.year} · {t.year}{/if}{/if}
 														{#if st && (kind === 'all' || phone || !shownCols.some((c) => c.id === 'status'))}<StatusPill kind={st.kind} label={st.label} />{/if}
@@ -926,7 +930,7 @@
 											<div class="ov">
 												<a class="ov-poster" href={titleLink(t.id)} tabindex="-1"><Poster src={t.artwork[0]} name={t.name} /></a>
 												<div class="ov-main">
-													<h3><a href={titleLink(t.id)} tabindex="-1">{t.name}</a>{#if t.year}<span class="yr">{t.year}</span>{/if}</h3>
+													<h3><a href={titleLink(t.id)} tabindex="-1" title={t.name}>{t.name}</a>{#if t.year}<span class="yr">{t.year}</span>{/if}</h3>
 													<p class="ov-text">{t.overview || 'No description yet.'}</p>
 													<span class="meter {tone(t)}" aria-hidden="true"><i style="width: {p.total ? (p.have / p.total) * 100 : 0}%"></i></span>
 													<span class="sr-only">{progressText(t)}</span>
@@ -1044,7 +1048,8 @@
 	/* Banner table */
 	.rows { min-width: 0; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card); overflow: clip; }
 	.rows.table { overflow-x: auto; }
-	.row { display: grid; grid-template-columns: var(--cols); align-items: center; gap: 0 16px; min-height: var(--row-h, 100px); padding: 0 20px 0 0; min-width: max-content; }
+	.row { display: grid; grid-template-columns: var(--cols); align-items: center; gap: 0 16px; min-height: var(--row-h, 100px); padding: 0 20px 0 0; width: 100%; box-sizing: border-box; }
+	.rows.table > .row.head, .rows.table > .body { min-width: var(--table-min); }
 	.row.head { position: sticky; top: 0; z-index: 2; min-height: 38px; padding-top: 0; padding-bottom: 0; padding-left: 0; background: var(--surface-1); border-bottom: 1px solid var(--line); }
 	.h { color: var(--text-muted); font: var(--t-footnote); font-weight: 600; text-align: left; white-space: nowrap; }
 	.h.num, .c.num { text-align: right; justify-self: end; }
@@ -1069,7 +1074,7 @@
 	.entry:hover .art :global(img:not(.logo)) { filter: brightness(1.12) saturate(1.05); }
 	@media (prefers-reduced-motion: no-preference) { .entry:hover .art :global(img:not(.logo)) { scale: 1.02; } }
 	.name { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-	.name a { color: var(--text); font: var(--t-title3, var(--t-headline)); font-weight: 600; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.name a { color: var(--text); font: var(--t-title3, var(--t-headline)); font-weight: 600; text-decoration: none; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
 	.name a:hover { text-decoration: underline; text-underline-offset: 3px; }
 	.sub { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--text-muted); font: var(--t-footnote); }
 	.sub:empty { display: none; }
@@ -1184,6 +1189,7 @@
 		.rail { top: 64px; padding: 2px 0; }
 		.rail-l { font-size: 10px; min-height: 18px; }
 		.rows.table { overflow: clip; }
+		.rows.table > .body { min-width: 0; }
 		.row { grid-template-columns: 1fr auto; grid-template-areas: 'art art' 'name acts'; gap: 10px 8px; min-width: 0; padding: 0 12px 12px; }
 		.row > .art { margin: 0 -12px; }
 		.rows.table .row { min-height: 0; }

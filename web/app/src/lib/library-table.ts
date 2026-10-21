@@ -332,3 +332,13 @@ export function saveSaved(member: number | undefined, kind: string, list: SavedF
 		// Not remembered in a private window.
 	}
 }
+
+/**
+ * tableMinWidth is the narrowest a table row may get: the smallest width of
+ * every column (px, or a minmax's floor) plus the gaps and the end padding.
+ * Every row uses it, so all rows share one width and the columns line up.
+ */
+export function tableMinWidth(widths: string[], gap = 16, pad = 20): number {
+	const sum = widths.reduce((n, w) => n + (Number(/(\d+(?:\.\d+)?)px/.exec(w)?.[1]) || 0), 0);
+	return Math.ceil(sum + gap * Math.max(0, widths.length - 1) + pad);
+}
