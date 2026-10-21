@@ -32,6 +32,13 @@ type Person struct {
 	Birthplace string  `json:"birthplace,omitempty"`
 	Profile    string  `json:"profile,omitempty"`
 	KnownFor   []Movie `json:"known_for"`
+	// Adult is TMDB's adult flag; it never leaves the server.
+	Adult bool `json:"-"`
+}
+
+// PopularPeopler is the optional popular-people surface (TMDB's popular list).
+type PopularPeopler interface {
+	PopularPeople(ctx context.Context, page int) (PersonPage, error)
 }
 
 // PersonPage is one provider search page.

@@ -15901,6 +15901,38 @@
         "x-holyarrs-scope": "control"
       }
     },
+    "/api/v1/people/popular": {
+      "get": {
+        "description": "Returns TMDB's popular people (adult-flagged people are left out) with TMDB attribution, for Search's People tab. For a Kid, known_for holds only movies in the Library that their limit allows.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "maximum": 500,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Popular people and provider page totals."
+          },
+          "400": {
+            "description": "The page is invalid."
+          },
+          "503": {
+            "description": "People lookup is unavailable for the configured movie metadata provider."
+          }
+        },
+        "summary": "Popular people",
+        "x-holyarrs-part": "movies",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/people/search": {
       "get": {
         "description": "Searches TMDB people by name and includes TMDB attribution. For a Kid (a member with an age-rating limit), known_for holds only movies in the Library that their limit allows.",

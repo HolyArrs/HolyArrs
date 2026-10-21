@@ -103,6 +103,7 @@ var Routes = map[string]Owner{
 	"GET /api/v1/titles/{id}/copies":                    ByTitle,
 	"POST /api/v1/titles/{id}/versions/{vid}/adopt":     ByTitle,
 	"GET /api/v1/people/search":                         movies,
+	"GET /api/v1/people/popular":                        movies,
 	"GET /api/v1/people/{id}":                           movies,
 	"POST /api/v1/people/{id}/movies/review":            movies,
 	"GET /api/v1/titles/{id}/people":                    ByTitle,

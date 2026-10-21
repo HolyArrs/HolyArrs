@@ -71,6 +71,13 @@ func (f *fakePeople) ShowPeople(_ context.Context, id string) ([]metadata.MovieP
 	return []metadata.MoviePersonCredit{{Person: metadata.Person{ID: "12", Name: "Sam Lane", KnownFor: []metadata.Movie{}}, Roles: []string{"Actor"}, Characters: []string{"Jo"}}}, nil
 }
 
+func (f *fakePeople) PopularPeople(_ context.Context, page int) (metadata.PersonPage, error) {
+	if f.fail {
+		return metadata.PersonPage{}, metadata.ErrNoAccess
+	}
+	return metadata.PersonPage{People: []metadata.Person{{ID: "21", Name: "Pat Star", Department: "Acting", KnownFor: []metadata.Movie{}}}, Page: page, TotalPages: 5, TotalResults: 100}, nil
+}
+
 func peopleRig(t *testing.T, p metadata.Provider) (*httptest.Server, *store.Store) {
 	t.Helper()
 	s, err := store.Open(t.TempDir(), store.Options{})
@@ -198,4 +205,19 @@ func TestPeopleErrorsStayBounded(t *testing.T) {
 		t.Fatalf("error %s", b)
 	}
 	_ = errors.Is(metadata.ErrNoAccess, metadata.ErrNoAccess)
+}
+
+// route: GET /api/v1/people/popular
+func TestPopularPeople(t *testing.T) {
+	p := &fakePeople{Static: metadata.Lab()}
+	srv, _ := peopleRig(t, p)
+	b := string(do(t, "GET", srv.URL+"/api/v1/people/popular?page=2", "", 200))
+	if !strings.Contains(b, `"name":"Pat Star"`) || !strings.Contains(b, `"page":2`) {
+		t.Fatalf("popular %s", b)
+	}
+	do(t, "GET", srv.URL+"/api/v1/people/popular?page=0", "", 400)
+	p.fail = true
+	do(t, "GET", srv.URL+"/api/v1/people/popular", "", 503)
+	srv2, _ := peopleRig(t, metadata.Lab())
+	do(t, "GET", srv2.URL+"/api/v1/people/popular", "", 503)
 }

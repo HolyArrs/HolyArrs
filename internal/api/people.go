@@ -15,6 +15,7 @@ import (
 
 func (a *API) peopleRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/people/search", a.searchPeople)
+	m.HandleFunc("GET /api/v1/people/popular", a.popularPeople)
 	m.HandleFunc("GET /api/v1/people/{id}", a.getPerson)
 	m.HandleFunc("POST /api/v1/people/{id}/movies/review", a.reviewPersonMovies)
 	m.HandleFunc("GET /api/v1/titles/{id}/people", a.titlePeople)
@@ -62,6 +63,39 @@ func (a *API) searchPeople(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	result, err := p.SearchPeople(r.Context(), q, page)
+	if err != nil {
+		peopleError(w, err)
+		return
+	}
+	if result.People == nil {
+		result.People = []metadata.Person{}
+	}
+	for i := range result.People {
+		a.kidKnownFor(r.Context(), a.kidMax(r), &result.People[i])
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"people": result.People, "page": result.Page, "total_pages": result.TotalPages,
+		"total_results": result.TotalResults, "attribution": metadata.Attribution})
+}
+
+// popularPeople answers GET /api/v1/people/popular?page=: TMDB's popular
+// people for Search's People tab. Adult-flagged people never appear (the
+// provider drops them); a Kid's known_for is cut like a search's.
+func (a *API) popularPeople(w http.ResponseWriter, r *http.Request) {
+	page, pageOK := intQuery(r, "page", 1, 500)
+	if !pageOK {
+		fail(w, http.StatusBadRequest, "page must be 1..500")
+		return
+	}
+	p, ok := a.peopleProvider(r, w)
+	if !ok {
+		return
+	}
+	pop, ok := p.(metadata.PopularPeopler)
+	if !ok {
+		fail(w, http.StatusServiceUnavailable, "popular people are unavailable for this movie metadata provider")
+		return
+	}
+	result, err := pop.PopularPeople(r.Context(), page)
 	if err != nil {
 		peopleError(w, err)
 		return

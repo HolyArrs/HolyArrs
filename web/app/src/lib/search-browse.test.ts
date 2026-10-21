@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { browseCols, browseHref, browsePath, browseType, readMood, tileHue, TILE_HUES } from './search-browse.ts';
+import { browseCols, browseHref, browsePath, browseType, musicTiles, readMood, strictTiles, tileHue, TILE_HUES } from './search-browse.ts';
 
 describe('search browse', () => {
 	it('asks per tab, Movies and Shows only', () => {
@@ -31,5 +31,24 @@ describe('search browse', () => {
 	});
 	it('matches the grid breakpoints', () => {
 		expect([375, 700, 1024, 1300, 1440, 1920].map(browseCols)).toEqual([2, 3, 4, 5, 6, 6]);
+	});
+});
+
+describe('strict Browse per type', () => {
+	const t = (kind: 'movie' | 'show', both = false) => ({ kind, genre: 1, genre_name: 'Drama', name: 'Drama', backdrop: 'b', from: 'f', both });
+	it('keeps only the tab own kind; All keeps every tile', () => {
+		const all = [t('movie'), t('show'), t('movie', true)];
+		expect(strictTiles(all, 'movies').every((x) => x.kind === 'movie')).toBe(true);
+		expect(strictTiles(all, 'shows')).toHaveLength(1);
+		expect(strictTiles(all, 'all')).toHaveLength(3);
+	});
+	it('links under a tab always open that tab', () => {
+		expect(browseHref(t('show', true), 'shows')).toBe('/explore?type=shows&genre=1');
+		expect(browseHref(t('movie'), 'movies')).toBe('/explore?type=movies&genre=1');
+	});
+	it('music tiles use a picture of the genre, each once', () => {
+		const card = (key: string, image: string, genres: string[]) => ({ key, kind: 'artist' as const, mbid: key, name: key, image, genres });
+		const out = musicTiles({ genres: ['rock', 'jazz', 'folk'], hero: null, rows: [{ id: 'r', type: 'x', title: 'x', reason: '', shape: 'round', items: [card('a', '/a.jpg', ['rock']), card('b', '/b.jpg', ['rock', 'jazz'])] }] }, (g) => `/m/${g}`, (c) => c.image ?? null);
+		expect(out.map((x) => [x.name, x.image, x.href])).toEqual([['Rock', '/a.jpg', '/m/rock'], ['Jazz', '/b.jpg', '/m/jazz']]);
 	});
 });

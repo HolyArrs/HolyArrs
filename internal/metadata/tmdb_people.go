@@ -21,11 +21,12 @@ type tmdbPerson struct {
 	Birthplace string      `json:"place_of_birth"`
 	Profile    string      `json:"profile_path"`
 	KnownFor   []tmdbMovie `json:"known_for"`
+	Adult      bool        `json:"adult"`
 }
 
 func (p tmdbPerson) person(images string) Person {
 	out := Person{ID: strconv.FormatInt(p.ID, 10), Name: p.Name, Department: p.Department, Biography: p.Biography,
-		Birthday: p.Birthday, Birthplace: p.Birthplace, KnownFor: []Movie{}}
+		Birthday: p.Birthday, Birthplace: p.Birthplace, KnownFor: []Movie{}, Adult: p.Adult}
 	if p.Deathday != nil {
 		out.Deathday = *p.Deathday
 	}
@@ -80,6 +81,33 @@ func (t *TMDB) SearchPeople(ctx context.Context, query string, page int) (Person
 	out := PersonPage{People: []Person{}, Page: res.Page, TotalPages: res.TotalPages, TotalResults: res.TotalResults}
 	for _, p := range res.Results {
 		if p.ID > 0 && p.Name != "" {
+			out.People = append(out.People, p.person(t.images()))
+		}
+	}
+	return out, nil
+}
+
+// PopularPeople returns TMDB's popular people (adult-flagged ones left out).
+func (t *TMDB) PopularPeople(ctx context.Context, page int) (PersonPage, error) {
+	if page < 1 || page > 500 {
+		return PersonPage{}, ErrNotFound
+	}
+	b, err := t.get(ctx, "/person/popular", url.Values{"page": {strconv.Itoa(page)}})
+	if err != nil {
+		return PersonPage{}, err
+	}
+	var res struct {
+		Results      []tmdbPerson `json:"results"`
+		Page         int          `json:"page"`
+		TotalPages   int          `json:"total_pages"`
+		TotalResults int          `json:"total_results"`
+	}
+	if err := json.Unmarshal(b, &res); err != nil {
+		return PersonPage{}, fmt.Errorf("TMDB: odd answer: %w", err)
+	}
+	out := PersonPage{People: []Person{}, Page: res.Page, TotalPages: res.TotalPages, TotalResults: res.TotalResults}
+	for _, p := range res.Results {
+		if p.ID > 0 && p.Name != "" && !p.Adult {
 			out.People = append(out.People, p.person(t.images()))
 		}
 	}

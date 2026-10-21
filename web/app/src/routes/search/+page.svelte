@@ -11,7 +11,7 @@
 	import { session } from '#lib/session.svelte.ts';
 	import BrowseTile from '#lib/ui/BrowseTile.svelte';
 	import MosaicReveal, { ENTER_DELAY, ENTER_SWEEP, passAt } from '#lib/ui/MosaicReveal.svelte';
-	import { browseCols, browseHref, browsePath, browseType, readMood, tileHue, type BrowseAnswer, type BrowseTile as Tile, type MoodView } from '#lib/search-browse.ts';
+	import { browseCols, browseHref, browsePath, browseType, musicTiles, readMood, strictTiles, tileHue, type PlainTile, type BrowseAnswer, type BrowseTile as Tile, type MoodView } from '#lib/search-browse.ts';
 	import { reducedMotion } from '#lib/motion.ts';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -23,6 +23,7 @@
 	import { plainReason } from '#lib/plain.ts';
 	import type { Ask, LibraryFolder, LookupArtist, LookupMovie, LookupShow, MusicSettings, PickRulesView, TitleView } from '#lib/types.ts';
 	import type { PersonSummary } from '#lib/people.ts';
+	import { fetchMusicExplore, musicCardHref, musicCardNote, musicImage, type MusicCardData } from '#lib/music-trending.ts';
 	import { refreshInbox } from '#lib/wishlist.svelte.ts';
 	import AddArtistDialog from '#lib/AddArtistDialog.svelte';
 	import AskArtistDialog from '#lib/AskArtistDialog.svelte';
@@ -51,6 +52,10 @@
 	let noTMDB = $state(false);
 	let searched = $state('');
 	let groups = $state<Record<Card['type'], Card[] | null>>({ show: null, movie: null, music: null, people: null });
+	let plainTiles = $state<PlainTile[] | null>(null);
+	let plainFor = '';
+	let mgenre = $state<string | null>(page.url.searchParams.get('mgenre')?.trim() || null);
+	let mgenreCards = $state<(MusicCardData & { note?: string })[] | null>(null);
 	let tiles = $state<Tile[] | null>(null);
 	let tilesFor = '';
 	let mood = $state<MoodView | null>(readMood(page.url.searchParams));
@@ -113,13 +118,13 @@
 	const scopeOptions = $derived(
 		([
 			{ value: 'all', label: 'All', icon: 'grid' },
-			{ value: 'show', label: 'Shows', icon: 'tv' },
+			{ value: 'people', label: 'People', icon: 'people' },
 			{ value: 'movie', label: 'Movies', icon: 'film' },
-			{ value: 'music', label: 'Music', icon: 'music' },
-			{ value: 'people', label: 'People', icon: 'people' }
+			{ value: 'show', label: 'TV shows', icon: 'tv' },
+			{ value: 'music', label: 'Music', icon: 'music' }
 		] as { value: SearchScope; label: string; icon: IconName }[]).filter((o) => (o.value === 'show' ? partOn('shows') : o.value === 'movie' ? partOn('movies') : o.value === 'music' ? partOn('music') : true))
 	);
-	const labels: Record<Card['type'], string> = { show: 'Shows', movie: 'Movies', music: 'Music', people: 'People' };
+	const labels: Record<Card['type'], string> = { show: 'TV shows', movie: 'Movies', music: 'Music', people: 'People' };
 	const order = $derived(scopeOptions.map((o) => o.value).filter((v): v is Card['type'] => v !== 'all'));
 
 	// ── Library marking: one mark for every card, as on Explore ────────────
@@ -148,7 +153,7 @@
 	const ownAddresses = new Set<string>();
 	function writeAddress() {
 		const url = scopeAddress(page.url, scope, searchField.term);
-		if (searchField.term.trim() || !mood) for (const k of ['mood', 'genre', 'type']) url.searchParams.delete(k);
+		if (searchField.term.trim() || !(mood || mgenre)) for (const k of ['mood', 'genre', 'type', 'mgenre']) url.searchParams.delete(k);
 		if (url.href === page.url.href) return;
 		ownAddresses.add(url.href);
 		void goto(url, { replace: true, shallow: true });
@@ -177,7 +182,7 @@
 		const isLatest = beginSearch();
 		error = '';
 		noTMDB = false;
-		if (q) mood = null;
+		if (q) mood = mgenre = null;
 		if (!q) {
 			searched = '';
 			busy = false;
@@ -261,7 +266,7 @@
 		tiles = null;
 		try {
 			const a = await api.get<BrowseAnswer>(browsePath(t));
-			if (tilesFor === t) tiles = (a.tiles ?? []).filter((x) => (x.kind === 'show' ? partOn('shows') : partOn('movies')));
+			if (tilesFor === t) tiles = strictTiles(a.tiles ?? [], t).filter((x) => (x.kind === 'show' ? partOn('shows') : partOn('movies')));
 		} catch {
 			if (tilesFor === t) {
 				tiles = [];
@@ -269,8 +274,52 @@
 			}
 		}
 	}
+	// People and Music have their own tiles: popular people, and the music genres Explore Music names.
+	async function loadPlain(s: 'people' | 'music') {
+		if (plainFor === s) return;
+		plainFor = s;
+		plainTiles = null;
+		try {
+			if (s === 'people') {
+				const r = await api.get<{ people: PersonSummary[] }>('/people/popular');
+				if (plainFor === s) plainTiles = r.people.filter((p) => p.profile).map((p) => ({ key: `p${p.id}`, name: p.name, href: to(`/people/${encodeURIComponent(p.id)}`), image: p.profile as string }));
+			} else {
+				const r = await fetchMusicExplore('', 'global');
+				if (plainFor === s) plainTiles = musicTiles(r, (g) => to(`/search?kind=music&mgenre=${encodeURIComponent(g)}`), musicImage);
+			}
+		} catch {
+			if (plainFor === s) {
+				plainTiles = [];
+				plainFor = '';
+			}
+		}
+	}
 	$effect(() => {
-		if (!searchField.term.trim() && !mood) void loadTiles(browseFor);
+		if (searchField.term.trim() || mood || mgenre) return;
+		if (scope === 'people' || scope === 'music') void loadPlain(scope);
+		else void loadTiles(browseFor);
+	});
+
+	// A music genre view: that genre's Explore Music cards, as a grid.
+	let mgenreFor = '';
+	async function loadMgenre(g: string) {
+		if (mgenreFor === g) return;
+		mgenreFor = g;
+		mgenreCards = null;
+		try {
+			const r = await fetchMusicExplore(g, 'global');
+			if (mgenreFor !== g) return;
+			const seen = new Set<string>();
+			mgenreCards = r.rows.flatMap((row) => row.items.map((c) => ({ ...c, note: musicCardNote(row, c) }))).filter((c) => !seen.has(c.key) && !!seen.add(c.key));
+		} catch {
+			if (mgenreFor === g) {
+				mgenreCards = [];
+				mgenreFor = '';
+			}
+		}
+	}
+	$effect(() => {
+		if (mgenre && !searchField.term.trim()) void loadMgenre(mgenre);
 	});
 
 	// ── A mood view: that mood row of the genre page, as a grid ─────────────
@@ -336,6 +385,7 @@
 		const q = dest.url.searchParams.get('q') ?? '';
 		const s = readScope(dest.url.searchParams.get('kind'));
 		mood = readMood(dest.url.searchParams);
+		mgenre = dest.url.searchParams.get('mgenre')?.trim() || null;
 		void tick().then(() => focusField());
 		if (q === searchField.term && s === scope) return;
 		searchField.term = lastTerm = q;
@@ -407,7 +457,26 @@
 	{/if}
 
 	<div class="results" aria-live="polite" aria-busy={busy}>
-		{#if !searchField.term.trim() && mood}
+		{#if !searchField.term.trim() && mgenre}
+			<section class="mood" aria-labelledby="mgenre-h" data-testid="search-music-genre">
+				<div class="mood-head">
+					<Button variant="plain" icon="chevronLeft" href={to('/search?kind=music')}>Browse</Button>
+					<h2 id="mgenre-h" class="h1">{mgenre.replace(/\b\w/g, (m) => m.toUpperCase())}</h2>
+					<p class="muted">Music</p>
+				</div>
+				{#if mgenreCards === null}
+					<p class="muted searching">Finding {mgenre} music…</p>
+				{:else if mgenreCards.length === 0}
+					<div class="empty"><h2 class="h2">Nothing here yet</h2><p class="muted">No {mgenre} music to show right now.</p></div>
+				{:else}
+					<ul class="grid">
+						{#each mgenreCards as c (c.key)}
+							<li><WideCard cover title={c.name} href={musicCardHref(c)} image={musicImage(c)} kind="artist" subtitle={c.note || c.artist} owned={c.title_id ? inLibrary : null} /></li>
+						{/each}
+					</ul>
+				{/if}
+			</section>
+		{:else if !searchField.term.trim() && mood}
 			<section class="mood" aria-labelledby="mood-h" data-testid="search-mood">
 				<div class="mood-head">
 					<Button variant="plain" icon="chevronLeft" href={to(`/search${scope === 'all' ? '' : `?kind=${scope}`}`)}>Browse</Button>
@@ -439,15 +508,29 @@
 				</section>
 			{/if}
 			<section class="browse" aria-labelledby="browse-h" data-testid="search-browse">
-				<h2 id="browse-h" class="h1">Browse</h2>
-				{#if tiles === null}
+				<h2 id="browse-h" class="h1">{scope === 'people' ? 'Popular people' : 'Browse'}</h2>
+				{#if scope === 'people' || scope === 'music'}
+					{#if plainTiles === null}
+						<ul class="tiles" aria-hidden="true">
+							{#each Array(cols * 2) as _, i (i)}<li class="ghost" use:landing={{ row: Math.floor(i / cols), col: i % cols }}></li>{/each}
+						</ul>
+					{:else if plainTiles.length}
+						<ul class="tiles">
+							{#each plainTiles as t, i (t.key)}
+								<li use:landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} href={t.href} image={t.image} hue={scope === 'people' ? '#555b66' : tileHue(t.name)} plain={scope === 'people'} row={Math.min(6, Math.floor(i / cols))} /></li>
+							{/each}
+						</ul>
+					{:else}
+						<p class="muted">{scope === 'people' ? 'Search for an actor, director or artist' : 'Music genres show up here once Explore has something to show.'}</p>
+					{/if}
+				{:else if tiles === null}
 					<ul class="tiles" aria-hidden="true">
 						{#each Array(cols * 2) as _, i (i)}<li class="ghost" use:landing={{ row: Math.floor(i / cols), col: i % cols }}></li>{/each}
 					</ul>
 				{:else if tiles.length}
 					<ul class="tiles">
 						{#each tiles as t, i (`${t.kind}:${t.genre}:${t.mood ?? ''}`)}
-							<li use:landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} href={to(browseHref(t))} image={t.backdrop} hue={tileHue(t.name)} row={Math.min(6, Math.floor(i / cols))} /></li>
+							<li use:landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} href={to(browseHref(t, browseFor))} image={t.backdrop} hue={tileHue(t.name)} row={Math.min(6, Math.floor(i / cols))} /></li>
 						{/each}
 					</ul>
 				{:else}

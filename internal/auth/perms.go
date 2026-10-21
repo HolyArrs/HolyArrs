@@ -112,6 +112,7 @@ var RoutePerms = map[string]Perm{
 	"GET /api/v1/titles/{id}/copies":                    PermManageLibrary,
 	"POST /api/v1/titles/{id}/versions/{vid}/adopt":     PermManageLibrary,
 	"GET /api/v1/people/search":                         needSignedIn,
+	"GET /api/v1/people/popular":                        needSignedIn,
 	"GET /api/v1/people/{id}":                           needSignedIn,
 	"POST /api/v1/people/{id}/movies/review":            needSignedIn,
 	"GET /api/v1/titles/{id}/people":                    needSignedIn,
@@ -578,6 +579,7 @@ func init() {
 	for _, r := range []string{
 		"GET /api/v1/titles/{id}/copies",
 		"GET /api/v1/people/search",
+		"GET /api/v1/people/popular",
 		"GET /api/v1/people/{id}",
 		"GET /api/v1/titles/{id}/people",
 		"GET /api/v1/collections",

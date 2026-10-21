@@ -25,7 +25,7 @@ export function kindOptions(on: (part: KindPart) => boolean): { value: SearchKin
 
 // ── The Search page (Explore card system) ────────────────────────────────
 export type SearchScope = 'all' | 'show' | 'movie' | 'music' | 'people';
-const scopes: SearchScope[] = ['all', 'show', 'movie', 'music', 'people'];
+const scopes: SearchScope[] = ['all', 'people', 'movie', 'show', 'music'];
 
 /** readScope reads ?kind=; anything unknown is All. */
 export function readScope(v: string | null): SearchScope {

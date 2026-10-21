@@ -1,4 +1,5 @@
 import type { ExploreType } from './explore.ts';
+import type { MusicCardData, MusicExploreAnswer } from './music-trending.ts';
 
 /** One tile of Search's Browse grid (GET /explore/browse): a genre, or one of its mood rows. */
 export interface BrowseTile {
@@ -28,11 +29,44 @@ export function browseType(scope: string): ExploreType {
 	return scope === 'movie' ? 'movies' : scope === 'show' ? 'shows' : 'all';
 }
 
+/** strictTiles: under Movies only movie tiles, under TV shows only TV ones; All keeps every (merged) tile. */
+export function strictTiles(tiles: BrowseTile[], tab: ExploreType): BrowseTile[] {
+	if (tab === 'movies') return tiles.filter((t) => t.kind === 'movie');
+	if (tab === 'shows') return tiles.filter((t) => t.kind === 'show');
+	return tiles;
+}
+
+/** A plain Browse tile (People, Music): a picture, a name and where it opens. */
+export interface PlainTile {
+	key: string;
+	name: string;
+	href: string;
+	image: string;
+}
+
+/** musicTiles: one tile per music genre the Explore Music answer names, its art an album cover or artist picture of that genre (each picture once). */
+export function musicTiles(a: Pick<MusicExploreAnswer, 'genres' | 'rows' | 'hero'>, open: (genre: string) => string, pic: (c: MusicCardData) => string | null): PlainTile[] {
+	const cards = [...(a.hero ? [a.hero] : []), ...a.rows.flatMap((r) => r.items)];
+	const used = new Set<string>();
+	const out: PlainTile[] = [];
+	for (const g of a.genres ?? []) {
+		const hit = cards.find((c) => {
+			const p = pic(c);
+			return !!p && !used.has(p) && (c.genres ?? []).some((x) => x.toLowerCase() === g.toLowerCase());
+		});
+		const image = hit ? pic(hit) : null;
+		if (!image) continue;
+		used.add(image);
+		out.push({ key: `music:${g}`, name: g.replace(/\b\w/g, (m) => m.toUpperCase()), href: open(g), image });
+	}
+	return out;
+}
+
 const tabOf = (t: Pick<BrowseTile, 'kind' | 'both'>): 'all' | 'movies' | 'shows' => (t.both ? 'all' : t.kind === 'show' ? 'shows' : 'movies');
 
 /** browseHref: a genre tile opens the Explore genre page, a mood tile Search's mood view. */
-export function browseHref(t: Pick<BrowseTile, 'kind' | 'genre' | 'mood' | 'both'>): string {
-	const type = tabOf(t);
+export function browseHref(t: Pick<BrowseTile, 'kind' | 'genre' | 'mood' | 'both'>, tab?: ExploreType): string {
+	const type = tab === 'movies' || tab === 'shows' ? tab : tabOf(t);
 	if (t.mood) return `/search?${new URLSearchParams({ mood: t.mood, genre: String(t.genre), type }).toString()}`;
 	return `/explore?${new URLSearchParams(type === 'all' ? { genre: String(t.genre) } : { type, genre: String(t.genre) }).toString()}`;
 }
