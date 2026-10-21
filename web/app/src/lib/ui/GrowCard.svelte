@@ -317,7 +317,7 @@
 	<div class="panel">
 		<div class="buttons">
 			{#if action}{@render action()}{/if}
-			{#if followTarget}<button type="button" class="more bell" class:on={following} aria-pressed={following} aria-label="{followLabel(following)} {title}" title={bellHint} disabled={followBusy} onclick={flipFollow} data-testid="grow-follow"><Icon name="bell" size={18} /></button>{/if}
+			{#if followTarget}<button type="button" class="more bell" class:on={following} aria-pressed={following} aria-label="{followLabel(following)} {title}" title={bellHint} disabled={followBusy} onclick={flipFollow} data-testid="grow-follow"><Icon name={following ? 'bellOn' : 'bell'} size={18} /></button>{/if}
 			{#if onmore}<button type="button" class="more info" aria-label="More info about {title}" title="More info" aria-haspopup="dialog" onclick={() => card && onmore(card.getBoundingClientRect())}><Icon name="chevronDown" size={20} /></button>
 			{:else if href}<a class="more info" {href} aria-label="More about {title}" title="More info"><Icon name="chevronDown" size={20} /></a>{/if}
 		</div>
