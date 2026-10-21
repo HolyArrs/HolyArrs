@@ -23,6 +23,7 @@
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import NewRail from '#lib/ui/NewRail.svelte';
+	import MusicNewTab from '#lib/MusicNewTab.svelte';
 	import ExploreHero from '#lib/ui/ExploreHero.svelte';
 	import { whyShown, type Why } from '#lib/why-shown.ts';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
@@ -41,11 +42,12 @@
 	const mayAsk = $derived(session.can('ask'));
 	const who = $derived(audienceOf(session.can));
 
-	let type = $state<NewType>(parseNewType(page.url.searchParams.get('type')));
+	let type = $state<NewType>(parseNewType(page.url.searchParams.get('type') ?? page.url.searchParams.get('kind')));
 	const typeOptions: { value: NewType; label: string; icon: IconName }[] = [
 		{ value: 'all', label: 'All', icon: 'grid' },
 		{ value: 'shows', label: 'TV shows', icon: 'tv' },
-		{ value: 'movies', label: 'Movies', icon: 'film' }
+		{ value: 'movies', label: 'Movies', icon: 'film' },
+		{ value: 'music', label: 'Music', icon: 'music' }
 	];
 
 	let rows = $state<Row[]>([]);
@@ -80,8 +82,9 @@
 		const url = new URL((page.shallow?.url ?? page.url).href);
 		if (t === 'all') url.searchParams.delete('type');
 		else url.searchParams.set('type', t);
+		url.searchParams.delete('kind');
 		void goto(url, { replace: true, shallow: true, reset: false });
-		void loadFirst();
+		if (t !== 'music') void loadFirst();
 	}
 
 	/** loadFirst reads page 0; while lists are still building it asks again every 3 s (at most a minute). */
@@ -247,7 +250,7 @@
 
 	onMount(() => {
 		void loadTitles();
-		void loadFirst();
+		if (type !== 'music') void loadFirst();
 		api.get<{ services: WatchService[] }>(`/watch-services?region=${region}`, gone.signal).then((r) => (services = r.services ?? [])).catch(() => {});
 		return () => {
 			clearTimeout(poll);
@@ -328,7 +331,9 @@
 	</div>
 	<MetadataNotice />
 
-	{#if failed && rows.length === 0}
+	{#if type === 'music'}
+		<MusicNewTab {manage} {mayAsk} {folders} {rules} />
+	{:else if failed && rows.length === 0}
 		<LoadError hasData={false} message="Could not load New & Popular." onretry={() => void loadFirst()} busy={false} />
 	{:else if !loaded}
 		<div class="loading" aria-busy="true" aria-label="Loading">

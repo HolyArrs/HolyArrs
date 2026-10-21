@@ -1,0 +1,657 @@
+package api
+
+import (
+	"context"
+	"database/sql"
+	"encoding/json"
+	"errors"
+	"math"
+	"net/http"
+	"sort"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/CoderLuii/holyarrs/internal/parts"
+	"github.com/CoderLuii/holyarrs/internal/store"
+)
+
+// New & Popular → Music: new albums, EPs and singles to ask for (or add).
+// MusicBrainz release dates say what is new, the trending lists what is
+// big; the lists are built in the background and kept 12 hours, so a
+// visit never waits on MusicBrainz.
+
+const (
+	// Per-kind windows, in days: this week, recently out, singles, coming.
+	musicNewWeek    = 7
+	musicNewRecent  = 30
+	musicNewSingles = 21
+	musicNewAhead   = 120
+	// musicNewRowMin is the fewest cards a row shows; musicNewRowMax the most.
+	musicNewRowMin  = 6
+	musicNewRowMax  = 20
+	musicNewHeroMax = 6
+	musicNewTTL     = 12 * time.Hour
+	// musicNewArtists caps the artists one MusicBrainz search names.
+	musicNewArtists = 40
+)
+
+// musicNewData is one build of the lists every member shares.
+type musicNewData struct {
+	at       time.Time
+	releases []metadata.NewRelease // albums, EPs and singles, out or coming
+	fresh    metadata.MusicTrend   // notable new albums, with listens
+	albums   metadata.MusicTrend   // this week's album chart
+	artists  metadata.MusicTrend   // this week's artist chart
+}
+
+type musicNewStore struct {
+	mu       sync.Mutex
+	data     *musicNewData
+	building bool
+	landed   time.Time
+}
+
+var musicNew musicNewStore
+
+type releaseSource interface {
+	ReleasesBetween(ctx context.Context, from, to string, types, artists []string, limit int) ([]metadata.NewRelease, error)
+}
+
+// warmMusicNew starts a build when there is none or it is older than the
+// TTL; it never waits.
+func (a *API) warmMusicNew() *musicNewData {
+	if p, _ := parts.ForTitleKind("artist"); !a.partIsOn(p) {
+		return nil
+	}
+	musicNew.mu.Lock()
+	defer musicNew.mu.Unlock()
+	d := musicNew.data
+	if (d == nil || time.Since(d.at) > musicNewTTL) && !musicNew.building {
+		musicNew.building = true
+		go func() {
+			nd := a.buildMusicNew(context.Background(), time.Now().UTC())
+			musicNew.mu.Lock()
+			musicNew.data, musicNew.building = nd, false
+			musicNew.mu.Unlock()
+		}()
+	}
+	return d
+}
+
+// buildMusicNew reads the trending lists, then asks MusicBrainz (paced by
+// its shared limiter) for releases by notable artists in each window.
+func (a *API) buildMusicNew(ctx context.Context, now time.Time) *musicNewData {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	defer cancel()
+	d := &musicNewData{at: now}
+	if a.s.MusicTrending != nil {
+		d.fresh, _ = a.cachedMusicTrend(ctx, "fresh", "global")
+		d.albums, _ = a.cachedMusicTrend(ctx, "album", "global")
+		d.artists, _ = a.cachedMusicTrend(ctx, "artist", "global")
+	}
+	var src releaseSource
+	if a.s.Library != nil && a.s.Library.Artists != nil {
+		src, _ = a.s.Library.Artists.(releaseSource)
+	}
+	if src == nil {
+		return d
+	}
+	// Notable artists: the Library's, then the charts'.
+	var ids []string
+	seen := map[string]bool{}
+	addID := func(id string) {
+		id = strings.ToLower(id)
+		if metadata.ValidMBID(id) && !seen[id] {
+			seen[id] = true
+			ids = append(ids, id)
+		}
+	}
+	if rows, err := a.s.Store.Read().QueryContext(ctx, `SELECT json_extract(source_ids, '$.musicbrainz') FROM titles
+		WHERE kind = 'artist' AND state != 'removed' AND json_extract(source_ids, '$.musicbrainz') IS NOT NULL ORDER BY id DESC LIMIT 80`); err == nil {
+		for rows.Next() {
+			var id string
+			if rows.Scan(&id) == nil {
+				addID(id)
+			}
+		}
+		rows.Close()
+	}
+	for _, l := range []metadata.MusicTrend{d.artists, d.fresh, d.albums} {
+		for _, it := range l.Items {
+			if l.Kind == "artist" {
+				addID(it.MBID)
+			} else {
+				addID(it.ArtistMBID)
+			}
+		}
+	}
+	if len(ids) > 3*musicNewArtists {
+		ids = ids[:3*musicNewArtists]
+	}
+	day := func(n int) string { return now.AddDate(0, 0, n).Format("2006-01-02") }
+	windows := []struct {
+		from, to string
+		types    []string
+	}{
+		{day(-musicNewRecent), day(0), []string{"album", "ep"}},
+		{day(-musicNewSingles), day(0), []string{"single"}},
+		{day(1), day(musicNewAhead), []string{"album", "ep"}},
+	}
+	have := map[string]bool{}
+	for _, w := range windows {
+		for i := 0; i < len(ids); i += musicNewArtists {
+			list, err := src.ReleasesBetween(ctx, w.from, w.to, w.types, ids[i:min(i+musicNewArtists, len(ids))], 100)
+			if err != nil {
+				if errors.Is(err, metadata.ErrServiceBusy) || ctx.Err() != nil {
+					return d
+				}
+				continue
+			}
+			for _, r := range list {
+				if !have[r.MBID] {
+					have[r.MBID] = true
+					d.releases = append(d.releases, r)
+				}
+			}
+		}
+	}
+	return d
+}
+
+// musicNewInput is what one member's page is built from.
+type musicNewInput struct {
+	data    *musicNewData
+	owned   map[string]int64 // artist MBID → title id
+	images  map[string]string
+	library []MusicCard // Library albums out in the last 30 days
+	follows map[string]bool
+}
+
+func daysFrom(date string, now time.Time) (int, bool) {
+	t, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		return 0, false
+	}
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	return int(today.Sub(t).Hours() / 24), true
+}
+
+// musicNewScore is newness × popularity: newness halves after a week,
+// popularity grows with listens and with a charting or Library artist.
+func musicNewScore(c MusicCard, artistBoost float64, now time.Time) float64 {
+	days, ok := daysFrom(c.Date, now)
+	if !ok || days < 0 {
+		return 0
+	}
+	newness := 1 / (1 + float64(days)/musicNewWeek)
+	pop := 1 + math.Log10(1+float64(c.Listens)) + artistBoost
+	return newness * pop
+}
+
+// musicNewWindow says which row an out release belongs to by its age.
+func musicNewWindow(date string, now time.Time) string {
+	days, ok := daysFrom(date, now)
+	switch {
+	case !ok:
+		return ""
+	case days < 0:
+		return "coming"
+	case days <= musicNewWeek:
+		return "week"
+	case days <= musicNewRecent:
+		return "recent"
+	}
+	return ""
+}
+
+func releaseBadge(kind string, upcoming bool) string {
+	switch {
+	case upcoming && kind == "ep":
+		return "EP coming"
+	case upcoming:
+		return "Album coming"
+	case kind == "ep":
+		return "New EP"
+	case kind == "single":
+		return "New single"
+	}
+	return "New album"
+}
+
+// composeMusicNew builds the hero and rows: scored, deduped across rows
+// (hero, Library, this week, recent, singles, climbing, coming), and a
+// row under musicNewRowMin left out.
+func composeMusicNew(in musicNewInput, now time.Time) ([]MusicCard, []MusicRow) {
+	boost := map[string]float64{}
+	if in.data != nil {
+		for _, it := range in.data.artists.Items {
+			if it.Rank > 0 {
+				boost[strings.ToLower(it.MBID)] = math.Max(boost[strings.ToLower(it.MBID)], 2*(1-float64(it.Rank)/200))
+			}
+		}
+	}
+	for id := range in.owned {
+		boost[id] += 1
+	}
+	listens := map[string]int64{}
+	cards := map[string]MusicCard{}
+	card := func(mbid, name, artist, artistMBID, date, kind string, tags []string) MusicCard {
+		c := MusicCard{Key: "album:" + mbid, Kind: "album", MBID: mbid, Name: name, Artist: artist, ArtistMBID: artistMBID, Date: date,
+			Image: "/api/v1/music-trending/art/album/" + mbid, Genres: append([]string{}, tags...)}
+		if c.Genres == nil {
+			c.Genres = []string{}
+		}
+		if id, ok := in.owned[artistMBID]; ok {
+			c.TitleID = id
+		}
+		if img := in.images[artistMBID]; img != "" {
+			c.ArtistImage = img
+		} else {
+			c.ArtistImage = "/api/v1/music-trending/art/artist/" + artistMBID
+		}
+		days, _ := daysFrom(date, now)
+		c.Upcoming = days < 0
+		c.Badge = releaseBadge(kind, c.Upcoming)
+		c.Following = in.follows[mbid]
+		return c
+	}
+	kinds := map[string]string{}
+	if in.data != nil {
+		for _, l := range []metadata.MusicTrend{in.data.fresh, in.data.albums} {
+			for _, it := range l.Items {
+				listens[strings.ToLower(it.MBID)] += it.Listens
+			}
+		}
+		for _, r := range in.data.releases {
+			if len(r.SecondaryTypes) > 0 {
+				continue // live, compilation, remix: not new music
+			}
+			cards[r.MBID] = card(r.MBID, r.Name, r.Artist, r.ArtistMBID, r.ReleaseDate, r.PrimaryType, r.Tags)
+			kinds[r.MBID] = r.PrimaryType
+		}
+		for _, it := range in.data.fresh.Items {
+			id := strings.ToLower(it.MBID)
+			if _, ok := cards[id]; ok || len(it.ReleaseDate) != 10 || !metadata.ValidMBID(id) || it.Title == "" {
+				continue
+			}
+			cards[id] = card(id, it.Title, it.Artist, strings.ToLower(it.ArtistMBID), it.ReleaseDate, "album", it.Tags)
+			kinds[id] = "album"
+		}
+	}
+	for _, c := range in.library {
+		if _, ok := cards[c.MBID]; !ok || c.MBID == "" {
+			k := c.MBID
+			if k == "" {
+				k = c.Key
+			}
+			c.Badge = releaseBadge("album", false)
+			c.Following = in.follows[c.MBID]
+			cards[k] = c
+			kinds[k] = "album"
+		} else {
+			lc := cards[c.MBID]
+			lc.TitleID, lc.PartID, lc.Key = c.TitleID, c.PartID, c.Key
+			cards[c.MBID] = lc
+		}
+	}
+	score := map[string]float64{}
+	for k, c := range cards {
+		c.Listens = listens[c.MBID]
+		cards[k] = c
+		score[k] = musicNewScore(c, boost[c.ArtistMBID], now)
+	}
+	sorted := func(keep func(k string, c MusicCard) bool, by func(a, b string) bool) []string {
+		var ks []string
+		for k, c := range cards {
+			if keep(k, c) {
+				ks = append(ks, k)
+			}
+		}
+		sort.Slice(ks, func(i, j int) bool {
+			if by != nil && by(ks[i], ks[j]) != by(ks[j], ks[i]) {
+				return by(ks[i], ks[j])
+			}
+			if score[ks[i]] != score[ks[j]] {
+				return score[ks[i]] > score[ks[j]]
+			}
+			return ks[i] < ks[j]
+		})
+		return ks
+	}
+	seen := map[string]bool{}
+	take := func(ks []string, max int) []MusicCard {
+		out := []MusicCard{}
+		for _, k := range ks {
+			if len(out) >= max {
+				break
+			}
+			if seen[cards[k].Key] || seen[cards[k].MBID] {
+				continue
+			}
+			out = append(out, cards[k])
+		}
+		return out
+	}
+	mark := func(l []MusicCard) {
+		for _, c := range l {
+			seen[c.Key], seen[c.MBID] = true, true
+		}
+	}
+	albumOrEP := func(k string) bool { return kinds[k] == "album" || kinds[k] == "ep" }
+
+	// Hero: the biggest new albums and EPs of the week (of the month when
+	// the week is thin), only ones a chart or Library knows.
+	big := func(k string, c MusicCard, win string) bool {
+		w := musicNewWindow(c.Date, now)
+		return albumOrEP(k) && (w == "week" || (win == "recent" && w == "recent")) && (c.Listens > 0 || boost[c.ArtistMBID] > 0)
+	}
+	hero := take(sorted(func(k string, c MusicCard) bool { return big(k, c, "week") }, nil), musicNewHeroMax)
+	if len(hero) < 3 {
+		hero = take(sorted(func(k string, c MusicCard) bool { return big(k, c, "recent") }, nil), musicNewHeroMax)
+	}
+	if len(hero) < 3 {
+		hero = []MusicCard{}
+	}
+	mark(hero)
+
+	type rowSpec struct {
+		id, title, reason string
+		keep              func(k string, c MusicCard) bool
+		by                func(a, b string) bool
+	}
+	soonest := func(a, b string) bool { return cards[a].Date < cards[b].Date }
+	specs := []rowSpec{
+		{"np_music_library", "New from artists in your Library", "Out in the last 30 days from artists you have",
+			func(k string, c MusicCard) bool {
+				w := musicNewWindow(c.Date, now)
+				return c.TitleID > 0 && (w == "week" || w == "recent")
+			}, nil},
+		{"np_music_week", "Out this week", "Albums and EPs out in the last 7 days, biggest first",
+			func(k string, c MusicCard) bool { return albumOrEP(k) && musicNewWindow(c.Date, now) == "week" }, nil},
+		{"np_music_recent", "Recently out", "Albums and EPs out 8 to 30 days ago",
+			func(k string, c MusicCard) bool { return albumOrEP(k) && musicNewWindow(c.Date, now) == "recent" }, nil},
+		{"np_music_tracks", "Fresh tracks", "New singles from artists people play",
+			func(k string, c MusicCard) bool {
+				d, ok := daysFrom(c.Date, now)
+				return kinds[k] == "single" && ok && d >= 0 && d <= musicNewSingles
+			}, nil},
+		{"np_music_coming", "Coming soon", "Albums with a release date ahead; follow one to hear when it is out",
+			func(k string, c MusicCard) bool { return albumOrEP(k) && c.Upcoming }, soonest},
+	}
+	built := map[string]MusicRow{}
+	for _, s := range specs {
+		items := take(sorted(s.keep, s.by), musicNewRowMax)
+		if len(items) < musicNewRowMin {
+			continue
+		}
+		mark(items)
+		built[s.id] = MusicRow{ID: s.id, Type: s.id, Title: s.title, Reason: s.reason, Shape: "square", Items: items}
+	}
+	// Climbing now: this week's album chart, the recent ones first.
+	if in.data != nil {
+		var climb []MusicCard
+		var later []MusicCard
+		for _, it := range in.data.albums.Items {
+			id := strings.ToLower(it.MBID)
+			if !metadata.ValidMBID(id) || seen[id] || it.Title == "" {
+				continue
+			}
+			c, ok := cards[id]
+			if !ok {
+				c = card(id, it.Title, it.Artist, strings.ToLower(it.ArtistMBID), it.ReleaseDate, "album", it.Tags)
+				c.Badge = ""
+			}
+			c.Listens, c.Rank = it.Listens, it.Rank
+			if w := musicNewWindow(c.Date, now); w == "week" || w == "recent" {
+				climb = append(climb, c)
+			} else {
+				later = append(later, c)
+			}
+		}
+		climb = append(climb, later...)
+		if len(climb) > musicNewRowMax {
+			climb = climb[:musicNewRowMax]
+		}
+		if len(climb) >= musicNewRowMin {
+			mark(climb)
+			built["np_music_climbing"] = MusicRow{ID: "np_music_climbing", Type: "np_music_climbing", Title: "Climbing now", Reason: "The most played albums this week, new ones first", Shape: "square", Items: climb}
+		}
+	}
+	rows := []MusicRow{}
+	for _, id := range []string{"np_music_tracks", "np_music_week", "np_music_recent", "np_music_library", "np_music_climbing", "np_music_coming"} {
+		if r, ok := built[id]; ok {
+			rows = append(rows, r)
+		}
+	}
+	return hero, rows
+}
+
+// musicNewTopics are the Explore more chips: the new releases' top genres,
+// then decades and moods, each a Search → Music genre link.
+func musicNewTopics(rows []MusicRow, hero []MusicCard) []string {
+	count := map[string]int{}
+	for _, c := range hero {
+		for _, g := range c.Genres {
+			count[g]++
+		}
+	}
+	for _, r := range rows {
+		for _, c := range r.Items {
+			for _, g := range c.Genres {
+				count[g]++
+			}
+		}
+	}
+	return topGenres(count, 8)
+}
+
+// exploreNewMusic answers GET /api/v1/explore/new/music: New & Popular's
+// Music tab. building says the shared lists are still on their way (ask
+// again shortly); kid is true for an account with an age limit.
+func (a *API) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
+	if p, _ := parts.ForTitleKind("artist"); !a.partIsOn(p) {
+		fail(w, http.StatusNotFound, "music is turned off")
+		return
+	}
+	empty := map[string]any{"kid": false, "building": false, "hero": []MusicCard{}, "rows": []MusicRow{}, "genres": []string{}}
+	// Music has no ratings, so a Kid limit shows none of it (as on Explore → Music).
+	if a.kidMax(r) != "" {
+		empty["kid"] = true
+		writeJSON(w, http.StatusOK, empty)
+		return
+	}
+	if !a.discover.allow(a.person(r).UserID, time.Now()) {
+		w.Header().Set("Retry-After", "60")
+		fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
+		return
+	}
+	ctx := r.Context()
+	now := time.Now().UTC()
+	a.landAlbumFollows(ctx, now)
+	d := a.warmMusicNew()
+	if d == nil {
+		empty["building"] = true
+		a.exploreCaching(w, r, "private, no-cache")
+		writeJSON(w, http.StatusOK, empty)
+		return
+	}
+	db := a.s.Store.Read()
+	in := musicNewInput{data: d, owned: map[string]int64{}, images: map[string]string{}, follows: map[string]bool{}}
+	titles, err := store.Select[domain.Title](ctx, db, "titles", "kind = 'artist' AND state != 'removed' ORDER BY id")
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	byTitle := map[int64]domain.Title{}
+	for _, t := range titles {
+		byTitle[t.ID] = t
+		if id := strings.ToLower(t.SourceIDs["musicbrainz"]); id != "" {
+			in.owned[id] = t.ID
+			in.images[id] = artistImage(t)
+		}
+	}
+	ps, err := store.Select[domain.Part](ctx, db, "parts", `kind = 'album' AND dropped_at IS NULL AND release_date >= ? AND release_date <= ?
+		AND lower(coalesce(release_type, '')) IN ('album', 'ep') AND secondary_types = '[]' AND coalesce(release_date_precision, 'day') = 'day'
+		AND title_id IN (SELECT id FROM titles WHERE kind = 'artist' AND state != 'removed') ORDER BY release_date DESC, id`,
+		now.AddDate(0, 0, -musicNewRecent).Format("2006-01-02"), now.Format("2006-01-02T15:04:05Z"))
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	for _, p := range ps {
+		t := byTitle[p.TitleID]
+		rg := strings.ToLower(p.SourceIDs["musicbrainz"])
+		c := MusicCard{Key: "album:" + rg, Kind: "album", MBID: rg, Name: p.Name, Artist: t.Name, ArtistMBID: strings.ToLower(t.SourceIDs["musicbrainz"]),
+			TitleID: t.ID, PartID: p.ID, Date: dayOf(p.ReleaseDate), Genres: []string{}, ArtistImage: artistImage(t)}
+		if rg != "" {
+			c.Image = "/api/v1/music-trending/art/album/" + rg
+		} else {
+			c.Key = "part:" + strings.TrimSpace(p.Name)
+		}
+		in.library = append(in.library, c)
+	}
+	if rows, err := db.QueryContext(ctx, "SELECT mbid FROM album_follows WHERE user_id = ?", a.person(r).UserID); err == nil {
+		for rows.Next() {
+			var id string
+			if rows.Scan(&id) == nil {
+				in.follows[id] = true
+			}
+		}
+		rows.Close()
+	}
+	hero, rows := composeMusicNew(in, now)
+	var names []nameKey
+	for _, c := range hero {
+		names = append(names, nameKey{"album", c.MBID, c.Name, c.Artist}, nameKey{"artist", c.ArtistMBID, c.Artist, ""})
+	}
+	for _, row := range rows {
+		for _, c := range row.Items {
+			names = append(names, nameKey{"album", c.MBID, c.Name, c.Artist})
+		}
+	}
+	a.rememberMusicNames(names)
+	a.exploreCaching(w, r, "private, no-cache")
+	writeJSON(w, http.StatusOK, map[string]any{"kid": false, "building": false, "hero": hero, "rows": rows, "genres": musicNewTopics(rows, hero)})
+}
+
+// landAlbumFollows tells people waiting for an album that it is out (an
+// in-app message), then ends those follows. At most every 10 minutes.
+func (a *API) landAlbumFollows(ctx context.Context, now time.Time) {
+	musicNew.mu.Lock()
+	if now.Sub(musicNew.landed) < 10*time.Minute {
+		musicNew.mu.Unlock()
+		return
+	}
+	musicNew.landed = now
+	musicNew.mu.Unlock()
+	today := now.Format("2006-01-02")
+	_ = a.s.Store.Write(ctx, func(tx *sql.Tx) error {
+		rows, err := tx.Query("SELECT user_id, mbid, name, artist FROM album_follows WHERE release_date <= ?", today)
+		if err != nil {
+			return err
+		}
+		type land struct {
+			user               int64
+			mbid, name, artist string
+		}
+		var all []land
+		for rows.Next() {
+			var l land
+			if rows.Scan(&l.user, &l.mbid, &l.name, &l.artist) == nil {
+				all = append(all, l)
+			}
+		}
+		rows.Close()
+		at := store.FormatTime(now)
+		for _, l := range all {
+			if _, err := tx.Exec("INSERT INTO messages (created_at, user_id, kind, text) VALUES (?, ?, 'ready', ?)", at, l.user, l.name+" by "+l.artist+" is out. Ask for it from New & Popular → Music."); err != nil {
+				return err
+			}
+		}
+		_, err = tx.Exec("DELETE FROM album_follows WHERE release_date <= ?", today)
+		return err
+	})
+}
+
+// Album follows: an album not out yet, by MusicBrainz release group.
+
+func (a *API) albumFollowState(w http.ResponseWriter, r *http.Request, mbid string) {
+	var n int
+	if err := a.s.Store.Read().QueryRowContext(r.Context(), "SELECT count(*) FROM album_follows WHERE user_id = ? AND mbid = ?", a.person(r).UserID, mbid).Scan(&n); err != nil {
+		internal(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"mbid": mbid, "following": n > 0})
+}
+
+func albumMBID(w http.ResponseWriter, r *http.Request) (string, bool) {
+	id := strings.ToLower(r.PathValue("mbid"))
+	if !metadata.ValidMBID(id) {
+		fail(w, http.StatusBadRequest, "mbid must be a MusicBrainz release group id")
+		return "", false
+	}
+	return id, true
+}
+
+func (a *API) getAlbumFollow(w http.ResponseWriter, r *http.Request) {
+	if id, ok := albumMBID(w, r); ok {
+		a.albumFollowState(w, r, id)
+	}
+}
+
+func (a *API) putAlbumFollow(w http.ResponseWriter, r *http.Request) {
+	id, ok := albumMBID(w, r)
+	if !ok {
+		return
+	}
+	if a.kidMax(r) != "" {
+		fail(w, http.StatusForbidden, "music is not shown on this account")
+		return
+	}
+	var body struct {
+		Name        string `json:"name"`
+		Artist      string `json:"artist"`
+		ReleaseDate string `json:"release_date"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&body); err != nil {
+		fail(w, http.StatusBadRequest, `send {"name": "...", "artist": "...", "release_date": "YYYY-MM-DD"}`)
+		return
+	}
+	body.Name, body.Artist = strings.TrimSpace(body.Name), strings.TrimSpace(body.Artist)
+	days, okDate := daysFrom(body.ReleaseDate, time.Now().UTC())
+	if body.Name == "" || body.Artist == "" || len(body.Name) > 300 || len(body.Artist) > 300 || !okDate {
+		fail(w, http.StatusBadRequest, "name, artist and release_date (YYYY-MM-DD) are needed")
+		return
+	}
+	if days >= 0 {
+		fail(w, http.StatusConflict, "that album is out already")
+		return
+	}
+	if err := a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
+		_, err := tx.Exec(`INSERT INTO album_follows (user_id, mbid, name, artist, release_date, created_at) VALUES (?, ?, ?, ?, ?, ?)
+			ON CONFLICT DO NOTHING`, a.person(r).UserID, id, body.Name, body.Artist, body.ReleaseDate, store.FormatTime(time.Now()))
+		return err
+	}); err != nil {
+		internal(w, err)
+		return
+	}
+	a.albumFollowState(w, r, id)
+}
+
+func (a *API) deleteAlbumFollow(w http.ResponseWriter, r *http.Request) {
+	id, ok := albumMBID(w, r)
+	if !ok {
+		return
+	}
+	if err := a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
+		_, err := tx.Exec("DELETE FROM album_follows WHERE user_id = ? AND mbid = ?", a.person(r).UserID, id)
+		return err
+	}); err != nil {
+		internal(w, err)
+		return
+	}
+	a.albumFollowState(w, r, id)
+}

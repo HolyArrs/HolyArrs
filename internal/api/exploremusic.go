@@ -61,6 +61,10 @@ type MusicCard struct {
 	Note string `json:"note,omitempty"`
 	// Fresh is the card's freshness strip (Recently Added, New Release).
 	Fresh *explore.Fresh `json:"fresh,omitempty"`
+	// Badge names a new release (New album, New EP, Album coming).
+	Badge string `json:"badge,omitempty"`
+	// Following: the member waits for this album (New & Popular, Coming soon).
+	Following bool `json:"following,omitempty"`
 }
 
 // MusicRow is one row of Explore â†’ Music.

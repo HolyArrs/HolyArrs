@@ -1,7 +1,7 @@
 // New & Popular: paths and the small pure rules the page and Explore share.
 import { cardIdentity, type ExploreCard, type ProviderItem, type ServerRow } from './explore.ts';
 
-export type NewType = 'all' | 'movies' | 'shows';
+export type NewType = 'all' | 'movies' | 'shows' | 'music';
 
 /** A row needs this many cards to show. */
 export const NEW_ROW_MIN = 6;
@@ -35,7 +35,7 @@ export interface NewServicesAnswer {
 
 /** parseNewType reads ?type= (anything else is All). */
 export function parseNewType(v: string | null): NewType {
-	return v === 'movies' || v === 'shows' ? v : 'all';
+	return v === 'movies' || v === 'shows' || v === 'music' ? v : 'all';
 }
 
 export function newPath(t: NewType, page: number): string {

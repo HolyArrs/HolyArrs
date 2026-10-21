@@ -11620,6 +11620,29 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/explore/new/music": {
+      "get": {
+        "description": "New & Popular's Music tab: up to 6 hero albums (newness times popularity), then rows of at least 6: Fresh tracks (singles, 21 days), Out this week (7 days), Recently out (8 to 30 days), New from artists in your Library (30 days), Climbing now (this week's album chart, new first) and Coming soon (soonest first, following marks the member's follows). Nothing shows twice. The MusicBrainz and chart lists build in the background and are kept 12 hours; building says they are on their way. A Kid gets kid true and no rows.",
+        "responses": {
+          "200": {
+            "description": "kid, building, hero, rows and genres (Explore more topics)."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          },
+          "404": {
+            "description": "Music is turned off."
+          },
+          "429": {
+            "description": "Too many Explore requests."
+          }
+        },
+        "summary": "New & Popular music",
+        "x-holyarrs-part": "music",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/explore/new/service": {
       "get": {
         "description": "One service's own list for a New & Popular chip, from the built page (kept 6 hours; no extra Streaming Availability reads). id is the service (TMDB watch-provider id); row is services (the default: up to 20 new titles, the service's adds topped up from TMDB's newest on it, Library titles last), hot_shows or hot_movies (the service's chart, new titles only). Kid limit and never-add apply.",
@@ -13528,6 +13551,98 @@
           "Wishlist"
         ],
         "x-holyarrs-part": "wishlist",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/metadata/album/{mbid}/follow": {
+      "delete": {
+        "description": "Stop waiting for an album.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mbid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "mbid and following."
+          },
+          "400": {
+            "description": "mbid is not valid."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          }
+        },
+        "summary": "Stop following an album",
+        "x-holyarrs-part": "music",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "write"
+      },
+      "get": {
+        "description": "Whether the member waits for an album (a MusicBrainz release group) to come out.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mbid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "mbid and following."
+          },
+          "400": {
+            "description": "mbid is not valid."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          }
+        },
+        "summary": "Whether you follow an album",
+        "x-holyarrs-part": "music",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      },
+      "put": {
+        "description": "Follow an album that is not out yet; on its release day the member gets a message and the follow ends. Body: name, artist and release_date (YYYY-MM-DD). Not for a Kid.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mbid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "mbid and following."
+          },
+          "400": {
+            "description": "mbid or the body is not valid."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          },
+          "403": {
+            "description": "Music is not shown on this account."
+          },
+          "409": {
+            "description": "The album is out already."
+          }
+        },
+        "summary": "Follow an album not out yet",
+        "x-holyarrs-part": "music",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "write"
       }

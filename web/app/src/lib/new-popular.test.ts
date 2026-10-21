@@ -32,6 +32,7 @@ describe('paths and helpers', () => {
 		expect(newHref('movies')).toBe('/new?type=movies');
 		expect(newHref('music')).toBe('/new');
 		expect(parseNewType('x')).toBe('all');
+		expect(parseNewType('music')).toBe('music');
 		expect(isRanked('np_top_shows')).toBe(true);
 	});
 	it('lists services once, in order', () => {

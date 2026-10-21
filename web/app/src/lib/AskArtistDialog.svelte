@@ -22,8 +22,8 @@
 	let busy = $state(false);
 	let error = $state('');
 
-	/** open shows the dialog for one artist and reads its albums. */
-	export async function open(a: LookupArtist) {
+	/** open shows the dialog for one artist and reads its albums; album (a release group) starts picked when given. */
+	export async function open(a: LookupArtist, album?: string) {
 		picked = a;
 		albums = null;
 		whole = true;
@@ -33,6 +33,10 @@
 		try {
 			const r = await api.get<{ artists: LookupArtist[] }>(`/artists/lookup?term=${encodeURIComponent(`mbid:${a.mbid}`)}&albums=true`);
 			albums = r.artists[0]?.ask_albums ?? [];
+			if (album && albums.some((x) => x.mbid === album)) {
+				whole = false;
+				chosen = [album];
+			}
 			if (r.artists[0]) picked = { ...a, ...r.artists[0] };
 		} catch (err) {
 			albums = [];
