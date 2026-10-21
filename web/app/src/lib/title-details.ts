@@ -3,6 +3,7 @@
 // backend branch adds it); on 404 the page falls back to a lookup by id,
 // which also says whether the Library has it and who asked.
 import { ApiError } from './api.ts';
+import { shownScore } from './rating.ts';
 import type { AskBrief, LookupMovie, LookupShow } from './types.ts';
 
 export type DetailKind = 'movie' | 'show';
@@ -69,7 +70,10 @@ const list = (v: unknown): Raw[] => (Array.isArray(v) ? (v.filter((x) => x && ty
 /** fromMetadata reads a /metadata/{kind}/{tmdb} answer, tolerating missing fields. */
 export function fromMetadata(kind: DetailKind, tmdb: string, raw: Raw): TitleDetails {
 	const genres = Array.isArray(raw.genres) ? raw.genres.map((g) => (typeof g === 'string' ? g : str((g as Raw)?.name))).filter((g): g is string => !!g) : [];
-	const rating = str(raw.rating) ?? (num(raw.vote_average) ? `${(raw.vote_average as number).toFixed(1)}/10` : undefined);
+	const votes = num(raw.vote_count) ?? num(raw.votes);
+	const own = str(raw.rating);
+	const stars = shownScore(num(raw.vote_average) ?? num(raw.score), votes);
+	const rating = own && !/\/\s*10$/.test(own) ? own : stars !== undefined ? `${stars.toFixed(1)}/10` : undefined;
 	return {
 		kind,
 		tmdb,

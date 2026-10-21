@@ -25,6 +25,8 @@ type Page struct {
 	// Kid and Taste carry the pool's Kid flag and taste for titling.
 	Kid   bool     `json:"-"`
 	Taste []string `json:"-"`
+	// Leans are the genres the household leans on (Pool.Leans).
+	Leans []string `json:"-"`
 }
 
 // jitter is hash(member, date, row) mapped to 0.95-1.05, stable in a day.
@@ -240,7 +242,7 @@ func AssembleAt(p Pool, top10 []Item, member int64, m Moment) Page {
 // the rows under it never repeat them in the first HeadDedupe rows), in
 // the tab's head order (HeadOrder), with the charts spread apart.
 func AssembleTabAt(p Pool, tops map[string][]Item, svcTop []Item, member int64, m Moment) Page {
-	pg := Page{Seeds: p.Seeds, Cap: TailCap(p.Seeds, p.Kid), Kid: p.Kid, Taste: p.Taste}
+	pg := Page{Seeds: p.Seeds, Cap: TailCap(p.Seeds, p.Kid), Kid: p.Kid, Taste: p.Taste, Leans: p.Leans}
 	by := map[string]Row{}
 	var tail []Row
 	for _, r := range p.Rows {

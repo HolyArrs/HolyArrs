@@ -17,6 +17,7 @@
 
 	export type RichMeta = { backdrop?: string; logo?: string; poster?: string; genres: string[]; runtime?: number; certification?: string; score?: number; overview?: string; year?: number; backdrops: string[]; videos: Video[]; moods?: string[]; quality?: string };
 	import type { Video } from '../trailer.ts';
+	import { shownScore } from '../rating.ts';
 	type Raw = Record<string, unknown>;
 	const s = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined);
 	const n = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : undefined);
@@ -38,7 +39,7 @@
 					const backdrops = Array.isArray(raw.backdrops) ? raw.backdrops.filter((b): b is string => typeof b === 'string') : [];
 					const moods = Array.isArray(raw.moods) ? raw.moods.filter((m): m is string => typeof m === 'string' && !!m.trim()) : [];
 					const videos = Array.isArray(raw.videos) ? (raw.videos as Video[]).filter((v) => v && typeof v.key === 'string') : [];
-					return { backdrop: s(raw.backdrop), logo: s(raw.logo), poster: s(raw.poster), genres, runtime: n(raw.runtime_minutes) ?? n(raw.runtime), certification: rating, score: n(raw.vote_average) ?? n(raw.score), overview: s(raw.overview), year: n(raw.year), backdrops, videos, moods, quality: s(raw.quality) };
+					return { backdrop: s(raw.backdrop), logo: s(raw.logo), poster: s(raw.poster), genres, runtime: n(raw.runtime_minutes) ?? n(raw.runtime), certification: rating, score: shownScore(n(raw.vote_average) ?? n(raw.score), n(raw.vote_count) ?? n(raw.votes)), overview: s(raw.overview), year: n(raw.year), backdrops, videos, moods, quality: s(raw.quality) };
 				})
 				.catch(() => null);
 			metaCache.set(key, p);

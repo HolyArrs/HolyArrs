@@ -293,7 +293,6 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 	// top10); the hero is up to 6 titles not in the Library from Top 10 and
 	// Trending, with Ask as its action.
 	head := []exploreRowView{}
-	heroRow := explore.Row{Items: pickHero(pg.Head, sw == "all")}
 	for _, row := range pg.Head {
 		if row.Type == explore.TypeTopServices {
 			// The page fills this row itself (GET /explore/service-top).
@@ -307,30 +306,20 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 		}
 		head = append(head, views...)
 	}
-	heroViews, err := a.exploreViews(r.Context(), r, []explore.Row{heroRow})
+	hero, err := a.exploreHero(r, pg, sw == "all", me)
 	if err != nil {
 		internal(w, err)
 		return
-	}
-	hero := []discoverItemView{}
-	if len(heroViews) == 1 {
-		for _, v := range heroViews[0].Items {
-			if !v.InLibrary {
-				hero = append(hero, v)
-			}
-		}
 	}
 	st.mark("views")
 	a.exploreCount(r.Context(), me, "shown", rowTypes(head))
 	a.exploreTitleCount(r.Context(), me, "shown", rowLayers(head))
 	st.mark("counts")
 	a.prefetchTrailers(r, exploreTrailerTitles(hero, head))
-	a.fillTrailerKeys(r, hero)
 	for i := range head {
 		a.fillTrailerKeys(r, head[i].Items)
 	}
 	st.mark("trailers")
-	a.fillCardArt(r, hero)
 	a.fillRowsCardArt(r, head)
 	st.mark("cardart")
 	a.exploreCaching(w, r, "private, no-cache")
@@ -405,14 +394,6 @@ func (a *API) exploreCounts(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func containsItem(items []explore.Item, key string) bool {
-	for _, it := range items {
-		if it.Key() == key {
-			return true
-		}
-	}
-	return false
-}
 
 // exploreTrailerTitles are the titles whose trailers are looked up ahead of
 // time: the hero first, then the first 4 cards of the first 3 rows.
@@ -444,55 +425,69 @@ func exploreTrailerTitles(hero []discoverItemView, head []exploreRowView) [][2]s
 	return out
 }
 
-// heroCount is how many titles the Explore hero cycles through.
-const heroCount = 6
-
-// pickHero picks the hero: titles not in the Library from Trending, then
-// Trending on streaming. On All it leaves out each kind's first heroCount
-// (what the Movies and TV shows heroes lead with) and alternates a movie and
-// a show, so All opens on titles of its own; it falls back to the left-out
-// ones only when too few are left.
-func pickHero(head []explore.Row, all bool) []explore.Item {
-	var cands []explore.Item
-	for _, t := range []string{explore.TypeTrending, explore.TypeTopServices} {
-		for _, row := range head {
-			if row.Type != t {
-				continue
-			}
-			for _, it := range row.Items {
-				if !it.Owned && !containsItem(cands, it.Key()) {
-					cands = append(cands, it)
-				}
-			}
+// exploreHero picks the hero (explore.PickHero) from a pool of candidates
+// that pass the quality gate: a known trailer, a logo and a backdrop. When
+// trailers are off or too few are known yet, art-only titles top it up.
+func (a *API) exploreHero(r *http.Request, pg explore.Page, all bool, me int64) ([]discoverItemView, error) {
+	n := explore.HeroPool
+	if all {
+		n += 2 * explore.HeroShuffleTop
+	}
+	cands := explore.HeroRank(explore.HeroCandidates(pg.Head, pg.Leans, n), pg.Taste)
+	views, err := a.exploreViews(r.Context(), r, []explore.Row{{Items: cands}})
+	if err != nil || len(views) != 1 {
+		return []discoverItemView{}, err
+	}
+	byKey := map[string]discoverItemView{}
+	var titles [][2]string
+	for _, v := range views[0].Items {
+		if !v.InLibrary {
+			byKey[v.Kind+":"+v.TMDBID] = v
+			titles = append(titles, [2]string{v.Kind, v.TMDBID})
 		}
 	}
-	if !all {
-		return cands[:min(len(cands), heroCount)]
-	}
-	seen := map[string]int{}
-	byKind := map[string][]explore.Item{}
-	var spare []explore.Item
+	a.prefetchTrailers(r, titles)
+	vs := make([]discoverItemView, 0, len(byKey))
 	for _, it := range cands {
-		if seen[it.Kind] < heroCount {
-			seen[it.Kind]++
-			spare = append(spare, it)
-			continue
+		if v, ok := byKey[it.Key()]; ok {
+			vs = append(vs, v)
 		}
-		byKind[it.Kind] = append(byKind[it.Kind], it)
 	}
-	var out []explore.Item
-	for i := 0; len(out) < heroCount && (i < len(byKind["movie"]) || i < len(byKind["show"])); i++ {
-		for _, k := range []string{"movie", "show"} {
-			if i < len(byKind[k]) && len(out) < heroCount {
-				out = append(out, byKind[k][i])
+	a.fillTrailerKeys(r, vs)
+	a.fillCardArt(r, vs)
+	items := map[string]explore.Item{}
+	for _, it := range cands {
+		items[it.Key()] = it
+	}
+	var ready, artOnly []explore.Item
+	for _, v := range vs {
+		it := items[v.Kind+":"+v.TMDBID]
+		switch {
+		case !heroArtReady(v):
+		case v.TrailerKey != "":
+			ready = append(ready, it)
+		default:
+			artOnly = append(artOnly, it)
+		}
+	}
+	if len(ready) < explore.HeroCount/2 {
+		ready = append(ready, artOnly...)
+	}
+	day := explore.Day(a.exploreNow())
+	picked := explore.PickHero(ready, all, me, day)
+	out := make([]discoverItemView, 0, len(picked))
+	for _, it := range picked {
+		for _, v := range vs {
+			if v.Kind+":"+v.TMDBID == it.Key() {
+				out = append(out, v)
+				break
 			}
 		}
 	}
-	for _, it := range spare {
-		if len(out) >= heroCount {
-			break
-		}
-		out = append(out, it)
-	}
-	return out
+	return out, nil
+}
+
+// heroArtReady says the hero card has a logo and a backdrop.
+func heroArtReady(v discoverItemView) bool {
+	return v.CardArt.Logo != "" && (v.Backdrop != "" || v.CardArt.Art != "")
 }

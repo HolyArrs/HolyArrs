@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { api } from './api.ts';
 	import { date } from './format.ts';
+	import { shownScore } from './rating.ts';
 	import { ordersOf, orderWord, pillState, reviewsPath, scoreText, spread, votesText, type Review, type ReviewsAnswer } from './title-reviews.ts';
 
 	// Ratings & reviews: a pill per source the server has set up (TMDB
@@ -100,7 +101,7 @@
 		</div>
 
 		<div class="score-row">
-			{#if answer.score > 0}
+			{#if shownScore(answer.score, answer.votes) !== undefined}
 				<p class="score"><span class="star" aria-hidden="true">★</span> <b>{scoreText(answer.score)}</b><span class="of"> / 10</span></p>
 				<p class="muted votes">{votesText(answer.votes)} on {sourceName}</p>
 			{:else}

@@ -128,7 +128,10 @@ type Pool struct {
 	Kid     bool   `json:"kid"`
 	Rows    []Row  `json:"rows"`
 	// Taste are the member's strongest genres, for taste-match titles.
-	Taste []string  `json:"taste,omitempty"`
+	Taste []string `json:"taste,omitempty"`
+	// Leans are the genres at LeanShare or more of the member's taste (the
+	// hero's genre exclusions skip them).
+	Leans []string  `json:"leans,omitempty"`
 	Built time.Time `json:"built"`
 }
 
@@ -510,6 +513,7 @@ func Build(ctx context.Context, src Source, in Input) (Pool, error) {
 	}
 	pool.Rows = rows
 	pool.Taste = profile.TopGenres(3, 0.15)
+	pool.Leans = profile.TopGenres(100, LeanShare)
 	if len(errs) > 0 && len(rows) == 0 {
 		return pool, fmt.Errorf("explore: no rows: %s", errs[0])
 	}

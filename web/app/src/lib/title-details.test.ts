@@ -13,12 +13,14 @@ describe('title details', () => {
 			year: 2021,
 			genres: [{ name: 'Science Fiction' }, 'Drama'],
 			vote_average: 7.84,
+			vote_count: 900,
 			cast: [{ name: 'Zendaya', character: 'Chani' }, { character: 'nobody' }],
 			similar: [{ id: 2, title: 'Arrival', year: 2016 }, { name: 'no id' }]
 		});
 		expect(d.name).toBe('Dune');
 		expect(d.genres).toEqual(['Science Fiction', 'Drama']);
 		expect(d.rating).toBe('7.8/10');
+		expect(fromMetadata('movie', '1', { title: 'Few', vote_average: 9.1, vote_count: 24 }).rating).toBeUndefined();
 		expect(d.cast).toEqual([{ name: 'Zendaya', role: 'Chani', image: undefined, id: undefined }]);
 		expect(d.similar).toEqual([{ kind: 'movie', tmdb: '2', name: 'Arrival', year: 2016, poster: undefined }]);
 	});
