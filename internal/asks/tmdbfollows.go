@@ -124,12 +124,7 @@ func (s *Service) FollowMovieTMDB(ctx context.Context, p Person, tmdbID string) 
 	if !tmdbIDOK(tmdbID) {
 		return ErrBadTMDBID
 	}
-	if id, err := s.libraryMovie(ctx, tmdbID); err != nil || id != 0 {
-		if err == nil {
-			err = ErrInLibrary
-		}
-		return err
-	}
+	// The limit first, so an over-limit movie answers the same whether or not it is in the Library.
 	if p.MaxRating != "" {
 		m, err := s.Metadata.Movie(ctx, "tmdb:"+tmdbID)
 		if err != nil {
@@ -138,6 +133,12 @@ func (s *Service) FollowMovieTMDB(ctx context.Context, p Person, tmdbID string) 
 		if err := overLimit(p, "movie", m.Rating); err != nil {
 			return err
 		}
+	}
+	if id, err := s.libraryMovie(ctx, tmdbID); err != nil || id != 0 {
+		if err == nil {
+			err = ErrInLibrary
+		}
+		return err
 	}
 	now := store.FormatTime(s.now())
 	return s.Store.Write(ctx, func(tx *sql.Tx) error {
