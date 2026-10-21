@@ -170,7 +170,7 @@
 		{/if}
 		{#if sources.length}
 			{#key resumeRun}
-			<TrailerPlayer {sources} {title} pausable start={resumeAt} onexpand={expand} onplaying={heroPlaying} onended={() => ((playing = false), words.send('stop'))} onfail={() => ((playing = false), words.send('stop'))} />
+			<TrailerPlayer {sources} {title} sharp pausable start={resumeAt} onexpand={expand} onplaying={heroPlaying} onended={() => ((playing = false), words.send('stop'))} onfail={() => ((playing = false), words.send('stop'))} />
 			{/key}
 		{/if}
 		<div class="shade" class:playing></div>

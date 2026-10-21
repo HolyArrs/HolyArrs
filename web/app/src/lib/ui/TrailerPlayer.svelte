@@ -4,7 +4,7 @@
 	import { claimPlayer, embedUrl, setSoundOn, soundOn } from '../trailer.ts';
 	import { adoptWarm, hasSound, hasWarm, nativeHLS, onUnmute, type TrailerSource } from '../autoplay.svelte.ts';
 	import type { TheaterHandoff } from '../theater.svelte.ts';
-	import { attachHLS } from '../hls-player.ts';
+	import { attachHLS, playerTarget } from '../hls-player.ts';
 
 	// A muted trailer over the hero or hover card art. Tries each source in
 	// order (our own <video> on the direct stream, then the privacy-enhanced
@@ -20,7 +20,8 @@
 		onended,
 		onplaying,
 		onexpand,
-		start = 0
+		start = 0,
+		sharp = false
 	}: {
 		sources: TrailerSource[];
 		title: string;
@@ -37,7 +38,11 @@
 		onexpand?: (o: TheaterHandoff) => void;
 		/** Seconds to start from (a hero carrying on where the full-screen player left off). */
 		start?: number;
+		/** Fetch a picture as tall as the player needs, up to 1080p (the hero); else at most 720p (hover cards). */
+		sharp?: boolean;
 	} = $props();
+	/** target is the tallest stream level worth fetching here. */
+	const target = () => (sharp && box ? playerTarget(box.clientWidth, box.clientHeight, 'cover') : 720);
 	/** Read once: a later change never seeks a running player. */
 	const startAt = untrack(() => start);
 	let seeded = false;
@@ -97,7 +102,7 @@
 		const v = video;
 		if (!v || src?.kind !== 'pass') return;
 		let gone = false;
-		attachHLS(v, src.url, nativeHLS(), seeded ? 0 : ((seeded = true), startAt > 0.5 ? startAt : 0))
+		attachHLS(v, src.url, nativeHLS(), seeded ? 0 : ((seeded = true), startAt > 0.5 ? startAt : 0), target())
 			.then((d) => (gone ? d() : (detach = d)))
 			.catch(() => !gone && next());
 		return () => {
@@ -191,7 +196,7 @@
 		v.addEventListener('canplay', go);
 		v.addEventListener('playing', playing);
 		v.addEventListener('error', fail);
-		attachHLS(v, u.url, nativeHLS(), u.start)
+		attachHLS(v, u.url, nativeHLS(), u.start, target())
 			.then((d) => (gone ? d() : (upDetach = d)))
 			.catch((e) => fail('attach: ' + (e as Error)?.message));
 		return () => {

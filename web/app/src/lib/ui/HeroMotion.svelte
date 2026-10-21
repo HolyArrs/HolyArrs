@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { viewTransitionName } from '../motion.ts';
+	import { sharpen } from '../tmdb-image.ts';
 
 	// Layer 1 of every hero: the backdrop at once (from the artwork cache),
 	// a slow Ken Burns zoom-and-pan, and a crossfade through the title's
@@ -36,14 +37,38 @@
 	let visible = $state(true);
 	let still = $state(false);
 	const shown = $derived(more ? pictures : pictures.slice(0, 1));
+	// The small picture paints at once; the one sized to the rendered width
+	// (w1280 or original on wide screens) replaces it once it has loaded.
+	let wide = $state(0);
+	let sharp = $state<Record<string, string>>({});
+	$effect(() => {
+		if (!wide) return;
+		const gone: HTMLImageElement[] = [];
+		for (const p of shown) {
+			const s = sharpen(p, wide);
+			if (s === p || untrack(() => sharp[p]) === s) continue;
+			const im = new Image();
+			im.decoding = 'async';
+			im.onload = () => im.decode().catch(() => {}).then(() => (sharp[p] = s));
+			im.src = s;
+			gone.push(im);
+		}
+		return () => gone.forEach((im) => (im.onload = null));
+	});
 
 	onMount(() => {
 		still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+		const ro = new ResizeObserver(([e]) => {
+			const w = Math.round(e.contentRect.width);
+			if (w > wide) wide = w;
+		});
+		if (box) ro.observe(box);
 		const io = new IntersectionObserver(([e]) => (visible = e.isIntersecting), { threshold: 0.2 });
 		if (box) io.observe(box);
 		const t = setTimeout(() => (more = true), Math.min(every, 4000));
 		return () => {
 			io.disconnect();
+			ro.disconnect();
 			clearTimeout(t);
 		};
 	});
@@ -77,7 +102,7 @@
 	{#each shown as p, i (p)}
 		<div class="frame" class:on={i === active} style:--kb-delay="{-(i * 7)}s" style:--kb-dir={i % 2 ? 'alternate-reverse' : 'alternate'}>
 			<img
-				src={p}
+				src={sharp[p] ?? p}
 				alt=""
 				decoding="async"
 				fetchpriority={i === 0 ? 'high' : 'low'}

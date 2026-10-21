@@ -17,8 +17,9 @@ function loadHls(): Promise<typeof HlsType> {
 	return loading;
 }
 
-/** attachHLS plays url on video from start seconds; the answer detaches. */
-export async function attachHLS(video: HTMLVideoElement, url: string, native: boolean, start = 0): Promise<() => void> {
+/** attachHLS plays url on video from start seconds; the answer detaches.
+ * target is the tallest picture worth fetching (playerTarget; hover cards keep 720). */
+export async function attachHLS(video: HTMLVideoElement, url: string, native: boolean, start = 0, target = 720): Promise<() => void> {
 	if (native) {
 		if (start > 0) video.addEventListener('loadedmetadata', () => (video.currentTime = start), { once: true });
 		video.src = url;
@@ -31,11 +32,15 @@ export async function attachHLS(video: HTMLVideoElement, url: string, native: bo
 	if (!Hls.isSupported()) throw new Error('no MediaSource');
 	const hls = new Hls({ startPosition: start, maxBufferLength: 20, capLevelToPlayerSize: false, enableWorker: true });
 	// YouTube's stream mixes H.264, VP9 and AV1 at the same sizes; switching
-	// codec mid-play stalls the picture. Keep H.264 only and start near 720p.
+	// codec mid-play stalls the picture. Keep H.264 only, start at the tallest
+	// that fits the player and let ABR move only up to that.
 	hls.on(Hls.Events.MANIFEST_PARSED, () => {
-		const { drop, start: at } = planLevels(hls.levels.map((l) => ({ codec: l.videoCodec ?? l.codecSet ?? '', height: l.height })));
+		const { drop, start: at } = planLevels(hls.levels.map((l) => ({ codec: l.videoCodec ?? l.codecSet ?? '', height: l.height })), target);
 		for (const i of drop) hls.removeLevel(i);
-		if (at >= 0) hls.startLevel = hls.nextLevel = at;
+		if (at >= 0) {
+			hls.autoLevelCapping = at;
+			hls.startLevel = hls.nextLevel = at;
+		}
 	});
 	// It also carries auto-dubbed audio next to the original: keep the original.
 	hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, () => {
@@ -54,23 +59,29 @@ export async function attachHLS(video: HTMLVideoElement, url: string, native: bo
 	return () => hls.destroy();
 }
 
+/** playerTarget is the picture height a player of w×h css pixels needs at
+ * the pixel ratio: cover fills the box (a hero), contain fits in it (full
+ * screen). Capped at 1080: never 4K. */
+export function playerTarget(w: number, h: number, fit: 'cover' | 'contain', ratio = globalThis.devicePixelRatio || 1): number {
+	const tall = fit === 'cover' ? Math.max(h, (w * 9) / 16) : Math.min(h, (w * 9) / 16);
+	return Math.min(1080, Math.max(360, Math.ceil(tall * ratio)));
+}
+
 /** planLevels keeps H.264 levels only (when there are any): the indexes to
- * drop, highest first, and the start level among those left (the tallest at
- * or under 720p, else the shortest). */
-export function planLevels(levels: { codec: string; height: number }[]): { drop: number[]; start: number } {
+ * drop, highest first, and the start level among those left (the shortest
+ * that covers target, up to 1080p), which is also the ABR cap. */
+export function planLevels(levels: { codec: string; height: number }[], target = 720): { drop: number[]; start: number } {
+	target = Math.min(target, 1080);
 	const avc = (c: string) => c.toLowerCase().startsWith('avc1');
 	const keep = levels.map((l, i) => ({ ...l, i })).filter((l) => avc(l.codec));
 	if (!keep.length) return { drop: [], start: -1 };
 	const drop = levels.map((l, i) => (avc(l.codec) ? -1 : i)).filter((i) => i >= 0).reverse();
-	let start = -1;
-	let best = -1;
-	keep.forEach((l, k) => {
-		if (l.height <= 720 && l.height > best) {
-			best = l.height;
-			start = k;
-		}
-	});
-	return { drop, start: start >= 0 ? start : 0 };
+	// The shortest level that still covers the target (never above 1080p),
+	// else the tallest under it, else the shortest.
+	const fits = keep.map((l, k) => ({ h: l.height, k })).filter((l) => l.h <= 1080);
+	const cover = fits.filter((l) => l.h >= target).sort((a, b) => a.h - b.h)[0];
+	const under = fits.sort((a, b) => b.h - a.h)[0];
+	return { drop, start: (cover ?? under)?.k ?? 0 };
 }
 
 /** originalAudio picks the track that is not an auto-dub: the default one, else the first such. */

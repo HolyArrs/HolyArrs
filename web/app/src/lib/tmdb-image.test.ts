@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { pick, sized } from './tmdb-image.ts';
+import { heroSize, pick, sharpen, sized } from './tmdb-image.ts';
 import { setBase } from './paths.ts';
 
 describe('sized', () => {
@@ -34,5 +34,16 @@ describe('pick', () => {
 		expect(pick('backdrop', 900, 2)).toBe(780);
 		expect(pick('poster', 400, 3)).toBe(342);
 		expect(pick('backdrop')).toBe(780);
+	});
+});
+
+describe('hero backdrops', () => {
+	it('size to the rendered width at the pixel ratio', () => {
+		expect(heroSize(700, 1)).toBe('w780');
+		expect(heroSize(1536, 1)).toBe('w1280');
+		expect(heroSize(1000, 2)).toBe('original');
+		expect(heroSize(3440, 1)).toBe('original');
+		expect(sharpen('/api/v1/artwork/tmdb/w780/b.jpg', 3440, 1)).toBe('/api/v1/artwork/tmdb/original/b.jpg');
+		expect(sharpen('/x/y.jpg', 3440, 1)).toBe('/x/y.jpg');
 	});
 });

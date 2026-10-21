@@ -59,8 +59,8 @@ var ytdlpRun = func() (bin string, pre []string, ok bool) {
 // TrailerStream is the answer of GET /trailer/{kind}/{tmdb_id}.
 type TrailerStream struct {
 	// Type is hls (URL is YouTube's adaptive HLS manifest with sound, which
-	// starts low and steps up) or mp4 (URL is an H.264 MP4 of at most 720p:
-	// the muxed one when offered, else picture only).
+	// starts low and steps up) or mp4 (URL is an H.264 MP4: up to 1080p
+	// muxed when offered, else picture only at most 720p).
 	Type      string    `json:"type"`
 	URL       string    `json:"url"`
 	ExpiresAt time.Time `json:"expires_at"`
@@ -600,11 +600,16 @@ func resolveTrailer(ctx context.Context, bin string, pre []string, key string, n
 		if hls == "" && strings.Contains(f.ManifestURL, "/hls_variant/") && googlevideo(f.ManifestURL) {
 			hls = f.ManifestURL
 		}
-		if f.Ext != "mp4" || !strings.HasPrefix(f.VCodec, "avc1") || (f.Protocol != "" && f.Protocol != "https") || f.Height > 720 || !googlevideo(f.URL) {
+		if f.Ext != "mp4" || !strings.HasPrefix(f.VCodec, "avc1") || (f.Protocol != "" && f.Protocol != "https") || f.Height > 1080 || !googlevideo(f.URL) {
 			continue
 		}
 		// The muxed MP4 (sound) first, else the tallest picture-only one.
+		// Up to 1080p with sound (rare on YouTube; HLS is the usual 1080p
+		// path), picture-only stays at 720p.
 		withSound := f.ACodec != "" && f.ACodec != "none"
+		if !withSound && f.Height > 720 {
+			continue
+		}
 		r := f.Height
 		if withSound {
 			r += 10000

@@ -30,3 +30,15 @@ export function sized(url: string | null | undefined, as: 'poster' | 'backdrop' 
 	const m = url ? tmdb.exec(url) : null;
 	return m ? to(`/api/v1/artwork/tmdb/w${pick(as, css)}/${m[1]}`) : (url ?? '');
 }
+
+/** heroSize is the TMDB size a hero backdrop css pixels wide needs at the
+ * pixel ratio: w780, w1280, else original past 1600 pixels. */
+export function heroSize(css: number, ratio = globalThis.devicePixelRatio || 1): string {
+	const need = css * ratio;
+	return need <= 780 ? 'w780' : need <= 1600 ? 'w1280' : 'original';
+}
+
+/** sharpen moves an artwork-cache TMDB address (from sized) to heroSize; other addresses stay. */
+export function sharpen(url: string, css: number, ratio = globalThis.devicePixelRatio || 1): string {
+	return url.replace(/(\/api\/v1\/artwork\/tmdb\/)(?:w\d+|original)(\/[^/]+)$/, `$1${heroSize(css, ratio)}$2`);
+}

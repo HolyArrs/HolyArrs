@@ -5,7 +5,7 @@
 	import { embedUrl, setSoundOn } from '../trailer.ts';
 	import { flipFrames, reducedMotion, THEATER_CHROME_MS, THEATER_EASE, THEATER_FADE_MS, THEATER_GROW_MS, THEATER_SHRINK_MS, type Box } from '../motion.ts';
 	import { nativeHLS } from '../autoplay.svelte.ts';
-	import { attachHLS } from '../hls-player.ts';
+	import { attachHLS, playerTarget } from '../hls-player.ts';
 
 	// The full-screen trailer, one shared element from the card to full screen
 	// and back (Netflix): the picture grows out of the small player's rect
@@ -94,7 +94,7 @@
 		if (!v || s?.kind !== 'pass') return;
 		let gone = false;
 		let detach: (() => void) | null = null;
-		attachHLS(v, s.url, nativeHLS(), now?.time ?? 0)
+		attachHLS(v, s.url, nativeHLS(), now?.time ?? 0, playerTarget(window.innerWidth, window.innerHeight, 'contain'))
 			.then((d) => (gone ? d() : (detach = d)))
 			.catch(() => {});
 		return () => {
