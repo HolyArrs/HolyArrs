@@ -598,7 +598,5 @@
 	.expand { position: absolute; inset: 0; z-index: 2; padding: 0; border: 0; background: transparent; cursor: pointer; }
 	.expand:focus-visible { outline: none; box-shadow: inset 0 0 0 3px var(--on-art); }
 	.ctl { position: absolute; right: 12px; bottom: 12px; z-index: 4; display: flex; gap: 8px; }
-	/* The corner expand: a 44 px target, shown while the card is hovered or focused. */
-	.ctl :global(.corner) { width: 44px; height: 44px; }
 	@media (prefers-reduced-motion: reduce) { .ui-trailer { transition: none; } }
 </style>
