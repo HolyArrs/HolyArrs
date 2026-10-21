@@ -30,7 +30,7 @@
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import { SkTitle } from '#lib/ui/sk/index.ts';
 	import StatusPill, { type StatusKind } from '#lib/ui/StatusPill.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import ProgressBar from '#lib/ui/ProgressBar.svelte';
@@ -521,10 +521,7 @@
 {:else if error && !title}
 	<LoadError hasData={false} message={error} onretry={() => load()} />
 {:else if !title}
-	<div class="tp" aria-busy="true">
-		<Skeleton shape="block" height="min(52vw, 520px)" />
-		<Skeleton lines={3} />
-	</div>
+	<SkTitle />
 {:else if title.kind === 'show'}
 	<ShowPage {title} onchange={(t) => (title = t)} {error} onretry={() => load('title')} />
 {:else if title.kind === 'artist'}

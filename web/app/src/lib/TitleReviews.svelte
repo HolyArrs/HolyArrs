@@ -149,7 +149,7 @@
 					{/each}
 				</ul>
 				{#if shown < reviews.length || answer.page < answer.pages}
-					<button type="button" class="btn ghost" disabled={loading} onclick={more}>{loading ? 'Loading…' : 'More reviews'}</button>
+					<button type="button" class="btn ghost" disabled={loading} aria-busy={loading} onclick={more}>More reviews</button>
 				{/if}
 			{:else if !loading}
 				<p class="muted">No written reviews on {sourceName} yet.</p>

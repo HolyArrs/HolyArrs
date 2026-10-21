@@ -7,7 +7,7 @@
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
-	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import { SkGrid, SkRail, SkRowTitle } from '#lib/ui/sk/index.ts';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
 	import BrowseTile from '#lib/ui/BrowseTile.svelte';
@@ -126,6 +126,11 @@
 	};
 
 	const hero = $derived(data?.known_for?.find((m) => m.backdrop)?.backdrop ?? null);
+	let heroIn = $state(false);
+	$effect(() => {
+		void hero;
+		heroIn = false;
+	});
 	const chips = $derived(personChips(data?.stats, data?.library?.length ?? 0, data?.asked?.length ?? 0));
 	const facts = $derived.by(() => {
 		const p = data?.person;
@@ -156,7 +161,7 @@
 	}
 </script>
 
-<svelte:head><title>{data?.person.name ?? 'Person'} · HolyArrs</title></svelte:head>
+<svelte:head><title>{data?.person.name ?? 'Person'} · HolyArrs</title>{#if hero}<link rel="preload" as="image" href={hero} />{/if}</svelte:head>
 
 {#snippet filmCard(m: PersonMovie)}
 	<WideCard cover title={m.name} href={href(m)} image={m.backdrop || m.poster} kind="movie" subtitle={roleLine(m) || undefined} owned={owned(m)} preview={{ kind: 'movie', tmdb: m.ids.tmdb, year: m.year || undefined, titleId: m.title_id }}>
@@ -185,10 +190,27 @@
 <div class="person">
 {#if error && !data}<LoadError hasData={false} message={plainReason(error).text} onretry={load} {busy} />
 {:else if error}<p class="notice bad" role="alert"><Icon name="alert" size={17} /><span>{plainReason(error).text}</span></p>{/if}
-{#if busy && !data}<div class="hero" aria-busy="true"><div class="hero-in"><Skeleton shape="poster" /><Skeleton lines={4} /></div></div>{/if}
+{#if busy && !data}
+	<!-- Person-shaped placeholder: the same hero (portrait, name, facts, chips, bio), then Known for and the filmography. -->
+	<div class="sk-page" aria-busy="true" aria-label="Loading this person" data-testid="person-skeleton">
+		<div class="hero" data-theme="dark">
+			<div class="hero-in">
+				<span class="sk portrait-sk"></span>
+				<div class="who">
+					<span class="sk sk-line" style="height: clamp(32px, 5vw, 56px); width: min(420px, 80%); border-radius: 10px"></span>
+					<span class="sk sk-line" style="width: 220px"></span>
+					<span class="chips-sk"><span class="sk"></span><span class="sk"></span><span class="sk"></span></span>
+					<span class="sk sk-line"></span><span class="sk sk-line"></span><span class="sk sk-line" style="width: 60%"></span>
+				</div>
+			</div>
+		</div>
+		<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="130px" />
+		<div class="block"><SkRowTitle width="150px" /><SkGrid kind="wide" min="var(--title-item)" count={10} /></div>
+	</div>
+{/if}
 {#if data}
 	<header class="hero" data-hero>
-		{#if hero}<img class="art" src={hero} alt="" decoding="async" />{/if}
+		{#if hero}<img class="art" class:in={heroIn} src={hero} alt="" decoding="async" fetchpriority="high" onload={() => (heroIn = true)} onerror={() => (heroIn = false)} />{/if}
 		<div class="shade" aria-hidden="true"></div>
 		{#if from?.label}<nav class="crumbs" aria-label="Breadcrumb"><a class="chip" href={from.path} onclick={stepBack} data-testid="person-back"><Icon name={fromIcon(from.path) ?? 'chevronLeft'} size={14} />{from.label}</a></nav>{/if}
 		<div class="hero-in">
@@ -252,6 +274,14 @@
 	/* The hero stays dark in both themes, like the title pages. */
 	.hero { position: relative; isolation: isolate; min-height: clamp(380px, 38vw, 560px); display: flex; align-items: flex-end; overflow: hidden; margin: calc(var(--s-6) * -1) calc(var(--gutter) * -1) 0; background: var(--on-art-ink); color: var(--on-art); }
 	.art { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
+	/* The hero image fades in over 400 ms once loaded (Silhouette image rules). */
+	.art { opacity: 0; transition: opacity 400ms ease-out; }
+	.art.in { opacity: 1; }
+	.sk-page { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
+	.portrait-sk { aspect-ratio: var(--poster-ratio); width: 100%; }
+	.chips-sk { display: flex; gap: 8px; }
+	.chips-sk .sk { width: 84px; height: 28px; border-radius: 999px; }
+	.who .sk-line { width: 100%; max-width: 72ch; }
 	.shade { position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, var(--on-art-scrim) 0%, var(--on-art-scrim-mid) 38%, var(--on-art-scrim-none) 72%), linear-gradient(to right, var(--on-art-scrim-mid) 0%, var(--on-art-scrim-none) 60%); }
 	.hero-in { width: 100%; display: grid; grid-template-columns: clamp(120px, 14vw, 200px) minmax(0, 720px); gap: clamp(18px, 3vw, 36px); align-items: end; padding: clamp(20px, 4vw, 48px); }
 	.portrait { border-radius: var(--r-card); overflow: hidden; box-shadow: 0 18px 48px rgb(0 0 0 / .5); }

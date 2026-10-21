@@ -9,7 +9,6 @@
 	import { api, message } from './api.ts';
 	import { secondVersion } from './library.ts';
 	import { detailsSources, episodeOrders, seasonChoices } from './shows.ts';
-	import Skeleton from './ui/Skeleton.svelte';
 	import { builtInDefaults, startChoices } from './title-defaults.ts';
 	import { savedDefaults } from './title-defaults.svelte.ts';
 	import type { LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleDefaults, TitleView } from './types.ts';
@@ -119,7 +118,7 @@
 <Sheet bind:open={sheetOpen} title={picked ? `Add ${picked.name}` : 'Add'}>
 	<MetadataNotice />
 	{#if picked && !ready}
-		<div aria-busy="true" aria-label="Loading the defaults"><Skeleton lines={4} /></div>
+		<div class="form-sk" aria-busy="true" aria-label="Loading the defaults">{#each [0, 1, 2] as i (i)}<span class="sk sk-line" style="width: 30%; height: 11px"></span><span class="sk" style="height: 44px; border-radius: var(--r-btn); margin-bottom: 8px"></span>{/each}</div>
 	{:else if picked}
 		<form id="add-show-title" class="sheet-form" onsubmit={add}>
 			{#if showFolders.length === 0}
@@ -235,4 +234,5 @@
 		display: block;
 		margin-top: var(--s-3);
 	}
+	.form-sk { display: flex; flex-direction: column; gap: 8px; }
 </style>

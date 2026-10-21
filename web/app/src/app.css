@@ -389,26 +389,9 @@ select.input {
 	color: var(--text);
 }
 
-/* Skeleton while loading */
-.sk {
-	position: relative;
-	overflow: hidden;
-	background: var(--surface-2);
-	border-radius: var(--r-card);
-}
-.sk::after {
-	content: '';
-	position: absolute;
-	inset: 0;
-	background: linear-gradient(100deg, transparent 20%, var(--surface-3) 50%, transparent 80%);
-	transform: translateX(-100%);
-	animation: shimmer 1.2s linear infinite;
-}
-@keyframes shimmer {
-	to {
-		transform: translateX(100%);
-	}
-}
+/* Skeleton while loading: the Silhouette shimmer lives in lib/tokens.css (.sk). */
+.sk { position: relative; overflow: hidden; }
+
 @keyframes rise {
 	from {
 		opacity: 0;

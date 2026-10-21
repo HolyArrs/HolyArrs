@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Orbit, SkRail } from './ui/sk/index.ts';
 	// New & Popular → Music: a shelf of large editorial cards for the week's
 	// biggest new albums, a compact list of fresh tracks, then album rows.
 	// Every action asks for (or adds) music; nothing here plays.
@@ -163,8 +164,9 @@
 	<EmptyState icon="music" title="Could not load new music" text="The music lists did not answer. Try again shortly." />
 {:else if !answer || (answer.building && !answer.rows.length)}
 	<div class="loading" aria-busy="true" aria-label="Loading new music">
-		<div class="hero-sk">{#each [0, 1, 2] as i (i)}<span></span>{/each}</div>
-		{#if answer?.building}<p class="hint">New releases are being gathered. This takes a minute the first time.</p>{/if}
+		<div class="hero-sk">{#each [0, 1, 2] as i (i)}<span class="sk"></span>{/each}</div>
+		{#if answer?.building}<Orbit status="New releases are being gathered. This takes a minute the first time." />{/if}
+		<SkRail kind="poster" count={9} titleWidth="160px" />
 	</div>
 {:else if !answer.rows.length && !answer.hero.length}
 	<EmptyState icon="music" title="No new music yet" text="New releases fill in within a few minutes." />
@@ -325,7 +327,6 @@
 	.cap { text-transform: capitalize; }
 	.loading { display: flex; flex-direction: column; gap: 12px; }
 	.hero-sk { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-	.hero-sk span { aspect-ratio: 16 / 9; border-radius: 10px; background: var(--surface-2); margin-top: 60px; }
-	.hint { color: var(--text-muted); font-size: 14px; margin: 0; }
+	.hero-sk span { aspect-ratio: 16 / 9; border-radius: 10px; margin-top: 60px; }
 	@media (max-width: 640px) { .hero-sk { grid-template-columns: 1fr; } .hero-sk span:nth-child(n + 2) { display: none; } }
 </style>

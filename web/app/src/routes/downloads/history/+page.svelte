@@ -14,7 +14,7 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import { SkTableRow } from '#lib/ui/sk/index.ts';
 	import Poster from '#lib/Poster.svelte';
 	import { createLatestOnly, dateRangeProblem, details, filterParams, groupDownloads, groupLabel, historyQuery, kindGroups, kindTone, pageLine, readFilter, type HistoryFilter } from '#lib/history.ts';
 	import type { EventPage, EventRecord, TitleView } from '#lib/types.ts';
@@ -160,7 +160,7 @@
 	{#if error && events.length === 0}
 		<LoadError hasData={false} message="History could not be loaded." onretry={load} />
 	{:else if !loaded}
-		<div class="loading" aria-label="Loading history"><Skeleton shape="block" height="56px" /><Skeleton shape="block" height="56px" /><Skeleton shape="block" height="56px" /></div>
+		<div class="loading" aria-busy="true" aria-label="Loading history">{#each Array.from({ length: 8 }, (_, i) => i) as i (i)}<SkTableRow cols={3} height={56} />{/each}</div>
 	{:else if events.length === 0}
 		<EmptyState icon="clock" title={filtered ? 'Nothing matches' : 'No history yet'} text={filtered ? 'No Event matches these filters.' : 'Every search, download, import, rename and delete writes a row here.'} />
 	{:else}
@@ -245,7 +245,7 @@
 	legend { padding: 0; margin-bottom: 8px; }
 	.chips { display: flex; flex-wrap: wrap; gap: 8px; }
 	.episode-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font: var(--t-callout); }
-	.loading { display: grid; gap: 8px; }
+	.loading { display: grid; gap: 0; }
 	.sec { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin-bottom: 8px; }
 	.sec h2 { font: var(--t-title3); letter-spacing: var(--t-title3-track); }
 	.count { color: var(--text-muted); font: var(--t-subhead); font-weight: 400; font-variant-numeric: tabular-nums; }

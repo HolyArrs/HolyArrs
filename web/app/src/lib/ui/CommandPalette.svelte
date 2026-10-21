@@ -2,7 +2,7 @@
 	import Icon from '../Icon.svelte';
 	import Poster from '../Poster.svelte';
 	import Sheet from './Sheet.svelte';
-	import Skeleton from './Skeleton.svelte';
+	import { SkTableRow } from './sk/index.ts';
 	import SegmentedControl from './SegmentedControl.svelte';
 	import { kindOptions } from '../search.ts';
 	import { api } from '../api.ts';
@@ -208,7 +208,7 @@
 				<div role="group" aria-labelledby="{id}-g-{s.id}" data-testid="palette-{s.id}">
 					<p class="sh" id="{id}-g-{s.id}">{s.label}</p>
 					{#if s.state === 'loading'}
-						<div class="skel" aria-hidden="true"><Skeleton lines={2} /></div>
+						<div class="skel" aria-hidden="true"><SkTableRow cols={0} height={52} /><SkTableRow cols={0} height={52} /></div>
 					{:else if s.state === 'error'}
 						<p class="note">Could not search {s.label.toLowerCase()} right now.</p>
 					{:else if !s.hits.length}

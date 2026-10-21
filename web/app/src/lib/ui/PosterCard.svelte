@@ -169,7 +169,7 @@
 	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} bind:this={hit} use:press={'card'}>
 		<span class="art" use:viewTransitionName={vtName} bind:this={artEl}>
 			{#if !image || failed || !loaded}
-				<span class="ph" aria-hidden="true"><span class="ph-ic"><Icon name={kindIcon} size={22} /></span><span class="ph-t">{title}</span></span>
+				<span class="ph" class:shine={!!image && !failed && !loaded} aria-hidden="true"><span class="ph-ic"><Icon name={kindIcon} size={22} /></span><span class="ph-t">{title}</span></span>
 			{/if}
 			{#if image && !failed && near()}
 				<img src={pic} class:in={loaded} alt="" loading="lazy" decoding="async" use:whenLoaded={() => (loaded = true)} onerror={() => (failed = true)} />
@@ -205,13 +205,15 @@
 	.square, .round { --poster-ratio: 1; }
 	.round .art { border-radius: 50%; }
 	.art { position: relative; display: block; container: art / inline-size; aspect-ratio: var(--poster-ratio); margin-bottom: 8px; border-radius: var(--r-card); overflow: hidden; background: var(--surface-2); box-shadow: var(--shadow-card); transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out); }
-	img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--dur) ease, transform var(--dur-slow) var(--ease-out); }
+	img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 240ms ease-out, transform var(--dur-slow) var(--ease-out); }
 	img.in { opacity: 1; }
 	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
 		a.hit:hover .art { transform: translateY(var(--lift)); box-shadow: var(--shadow-lift); }
 		a.hit:hover img, a.hit:hover .ph { transform: scale(1.03); }
 	}
 	.ph { transition: transform var(--dur-slow) var(--ease-out); }
+	/* While the picture loads, the name tile carries the shared Silhouette sweep. */
+	.ph.shine::after { content: ''; position: absolute; inset: 0; background-image: linear-gradient(100deg, transparent 30%, var(--sk-hi) 50%, transparent 70%); background-size: 200vw 100%; background-repeat: no-repeat; background-attachment: fixed; animation: sk-sweep 1.6s ease-in-out infinite; opacity: .7; pointer-events: none; }
 	.ph { position: absolute; inset: 0; overflow: hidden; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 10px; padding: 14px; color: var(--text); background: radial-gradient(120% 90% at 0% 0%, var(--accent-soft), transparent 60%), linear-gradient(160deg, var(--surface-2), var(--surface-3)); }
 	.ph-ic { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: var(--surface-1); color: var(--text-muted); box-shadow: var(--shadow-card); }
 	.ph-t { max-width: 100%; min-width: 0; font: var(--t-headline); letter-spacing: -0.01em; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }

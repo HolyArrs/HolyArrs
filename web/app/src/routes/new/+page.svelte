@@ -32,6 +32,8 @@
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import { Silhouette, SkHero, SkRail, SkWide } from '#lib/ui/sk/index.ts';
+	import { buildingStatus } from '#lib/silhouette.ts';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import type { IconName } from '#lib/Icon.svelte';
@@ -61,6 +63,8 @@
 	let busy = false;
 	let ask = 0;
 	let poll: ReturnType<typeof setTimeout> | undefined;
+	/** The try number while the server says the lists are still building (0 = not building). */
+	let building = $state(0);
 	const gone = new AbortController();
 
 	// The pills float once their spot scrolls under the top bar (as on Explore).
@@ -101,7 +105,8 @@
 			next = 1;
 			more = a.more;
 			failed = false;
-			if (a.building && tries < 20) poll = setTimeout(() => void loadFirst(tries + 1), 3000);
+			building = a.building && tries < 20 ? tries + 1 : 0;
+			if (building) poll = setTimeout(() => void loadFirst(tries + 1), 3000);
 		} catch {
 			if (n === ask) failed = true;
 		} finally {
@@ -335,13 +340,24 @@
 		<MusicNewTab {manage} {mayAsk} {folders} {rules} />
 	{:else if failed && rows.length === 0}
 		<LoadError hasData={false} message="Could not load New & Popular." onretry={() => void loadFirst()} busy={false} />
-	{:else if !loaded}
-		<div class="loading" aria-busy="true" aria-label="Loading">
-			{#each [0, 1] as r (r)}
-				<Skeleton width="200px" />
-				<div class="sk-row">{#each Array.from({ length: 6 }, (_, i) => i) as i (i)}<Skeleton shape="poster" />{/each}</div>
-			{/each}
-		</div>
+	{:else if !loaded || (building && rows.length === 0)}
+		<!-- New & Popular-shaped placeholder: hero, the This week rail, then wide rows. "Building" answers show the try count. -->
+		<Silhouette loading={true} label="Loading New & Popular" status={building ? buildingStatus(building, 'New & Popular') : 'Loading New & Popular…'} onretry={() => void loadFirst()}>
+			{#snippet skeleton()}
+				<div class="np-sk" data-testid="new-skeleton">
+					<SkHero />
+					<div class="rail-sk">
+						<span class="sk sk-line" style="width: 96px; margin: 0 20px 10px"></span>
+						<div class="rail-track">
+							<span class="when"><span class="sk" style="height: 28px; width: 56px"></span><span class="sk sk-line" style="width: 48px; height: 10px"></span></span>
+							{#each Array.from({ length: 6 }, (_, i) => i) as i (i)}<span class="rail-t"><SkWide /><span class="sk sk-line" style="width: 70%; height: 10px"></span></span>{/each}
+						</div>
+					</div>
+					<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="200px" />
+					<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="160px" />
+				</div>
+			{/snippet}
+		</Silhouette>
 	{:else if rows.length === 0}
 		<EmptyState icon="compass" title="New & Popular is getting ready" text="Rows fill in within a few minutes." action={{ label: 'Explore', href: to('/explore'), icon: 'compass' }} />
 	{:else}
@@ -447,7 +463,10 @@
 	.why { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
 	.why li { font: 600 12px/1 var(--font-ui); letter-spacing: .02em; padding: 6px 10px; border-radius: 999px; color: #fff; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 22%); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
 	.why li.why-top10 { background: color-mix(in srgb, var(--accent) 80%, transparent); border-color: transparent; }
-	.loading { display: flex; flex-direction: column; gap: 14px; }
-	.sk-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--shelf-gap); max-height: 250px; overflow: hidden; margin-bottom: 16px; }
+	.np-sk { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
+	.rail-sk { border-radius: 20px; padding: 16px 0 14px; background: color-mix(in srgb, var(--surface-2) 72%, transparent); overflow: hidden; }
+	.rail-track { display: flex; gap: var(--shelf-gap, 12px); padding: 4px 20px; }
+	.rail-track .when { flex: none; width: 74px; display: flex; flex-direction: column; gap: 6px; }
+	.rail-t { flex: none; width: var(--rail-item, 240px); display: flex; flex-direction: column; gap: 6px; }
 	@media (max-width: 767px) { .np { --explore-item: 54vw; --title-item: calc((100cqi - var(--shelf-gap)) / 1.6 / .78); gap: 26px; } }
 </style>

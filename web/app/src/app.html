@@ -35,6 +35,10 @@
 			#hl.nav{background:rgba(0,0,0,.32);animation:hlf .2s}
 			#hl.nav .hw{width:56px;height:56px}
 			#hl.out{opacity:0;pointer-events:none}
+			#hlt{max-width:min(360px,80vw);text-align:center}
+			#hlr{min-height:36px;padding:0 16px;border:0;border-radius:10px;background:#d42d24;color:#fff;font:600 14px/1 system-ui,sans-serif;cursor:pointer}
+			#hlr[hidden]{display:none}
+			#hl.nav #hlr{display:none}
 			@keyframes hlr{to{transform:rotate(360deg)}}
 			@keyframes hls{0%,100%{opacity:.8}50%{opacity:1}}
 			@keyframes hlf{from{opacity:0}}
@@ -47,6 +51,21 @@
 		<div id="hl" role="status" aria-label="HolyArrs is loading">
 			<div class="hw"><svg class="ms" viewBox="0 0 100 100" aria-hidden="true"><defs><clipPath id="hlc"><rect x="17.5" y="17.5" width="65" height="65" rx="4" transform="rotate(45 50 50)" /></clipPath></defs><circle cx="50" cy="50" r="46" fill="none" stroke="#7c7c80" stroke-opacity=".3" stroke-width="1.6" /><g class="m"><g transform="translate(14 14) scale(.72)"><rect x="17.5" y="17.5" width="65" height="65" rx="4" transform="rotate(45 50 50)" fill="none" stroke="#3a3d44" stroke-width="2.2" /><g clip-path="url(#hlc)"><rect width="100" height="100" fill="#1c1d21" /><path d="M50 0C42 18 46 32 58 41C70 50 66 70 54 100L110 100L110 0Z" fill="#f23a2e" /><path d="M50 0C42 18 46 32 58 41C70 50 66 70 54 100L110 100L110 0Z" fill="#55585e" transform="rotate(180 50 50)" /></g><path d="M50 26.8Q54.5 44.3 72 48.8Q54.5 53.3 50 70.8Q45.5 53.3 28 48.8Q45.5 44.3 50 26.8Z" fill="#fff" /></g></g></svg><svg class="rs" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="none" stroke="#ff453a" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="60 229" /></svg></div>
 			<p id="hlt"></p>
+			<button id="hlr" type="button" hidden onclick="location.reload()">Reload</button>
 		</div>
+		<script>
+			// Boot Orbit words (lib/silhouette.ts bootLine): a status after 3 s, a reload after 10 s.
+			(function () {
+				var hl = document.getElementById('hl'), t = document.getElementById('hlt'), r = document.getElementById('hlr');
+				function up() { return hl && !hl.hidden && !hl.classList.contains('nav') && !hl.classList.contains('out'); }
+				setTimeout(function () { if (up() && t && !t.textContent) { t.textContent = 'Starting HolyArrs…'; t.dataset.boot = '1'; } }, 3000);
+				setTimeout(function () {
+					if (!up()) return;
+					if (t && (!t.textContent || t.dataset.boot)) t.textContent = 'This is taking longer than usual. The server may still be starting.';
+					if (r) r.hidden = false;
+				}, 10000);
+				new MutationObserver(function () { if (hl.hidden && r) r.hidden = true; }).observe(hl, { attributes: true, attributeFilter: ['hidden'] });
+			})();
+		</script>
 	</body>
 </html>

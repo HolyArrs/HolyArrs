@@ -75,7 +75,7 @@
 	import { whyShown } from '#lib/why-shown.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import { SkRail } from '#lib/ui/sk/index.ts';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import type { IconName } from '#lib/Icon.svelte';
@@ -651,20 +651,18 @@
 	{:else}
 		{#if failed}<LoadError hasData={true} message="Could not refresh Explore." onretry={load} {busy} />{/if}
 		{#if !headLoaded}
-			<div class="loading" aria-busy="true" aria-label="Loading">
-				{#each [0, 1] as r (r)}
-					<Skeleton width="200px" />
-					<div class="sk-row">{#each Array.from({ length: 7 }, (_, i) => i) as i (i)}<Skeleton shape="poster" />{/each}</div>
-				{/each}
+			<div class="loading" aria-busy="true" aria-label="Loading Explore" data-testid="explore-skeleton">
+				<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="200px" />
+				<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="160px" />
+				<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="180px" />
 			</div>
 		{:else if genreOn && genreFailed}
 			<LoadError hasData={false} message="Could not load this genre." onretry={() => genre && void loadGenre(genre.id)} {busy} />
 		{:else if genreOn && rows.length === 0}
-			<div class="loading" aria-busy="true" aria-label="Loading">
-				{#each [0, 1] as r (r)}
-					<Skeleton width="200px" />
-					<div class="sk-row">{#each Array.from({ length: 7 }, (_, i) => i) as i (i)}<Skeleton shape="poster" />{/each}</div>
-				{/each}
+			<div class="loading" aria-busy="true" aria-label="Loading Explore" data-testid="explore-skeleton">
+				<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="200px" />
+				<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="160px" />
+				<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="180px" />
 			</div>
 		{:else if rows.length === 0}
 			<TopServicesRow {type} {region} {owned} {who} used={usedServices} />
@@ -784,7 +782,7 @@
 	.row-wrap { display: contents; }
 	/* Wide title rows sit almost edge to edge, as on Netflix: about 279px cards at a 1536px window with a 5px gap. */
 	@media (min-width: 768px) { .row-wrap.wide-row { --shelf-gap: 5px; } }
-	.loading { display: flex; flex-direction: column; gap: 14px; }
-	.sk-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--shelf-gap); max-height: 250px; overflow: hidden; margin-bottom: 16px; }
+	.loading { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
+	@media (min-width: 768px) { .loading { --shelf-gap: 5px; } }
 	@media (max-width: 767px) { .explore { --explore-item: 54vw; --title-item: calc((100cqi - var(--shelf-gap)) / 1.6 / .78); gap: 26px; } }
 </style>

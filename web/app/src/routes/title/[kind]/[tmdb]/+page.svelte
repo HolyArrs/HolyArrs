@@ -23,7 +23,7 @@
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import { SkTitle } from '#lib/ui/sk/index.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import AddMovieDialog from '#lib/AddMovieDialog.svelte';
 	import { savedDefaults } from '#lib/title-defaults.svelte.ts';
@@ -184,10 +184,7 @@
 {:else if error && !details}
 	<LoadError hasData={false} message="Could not load this title. {error}" onretry={() => void load(kind, tmdb)} />
 {:else if !details || !details.name}
-	<div class="loading" aria-label="Loading the title">
-		<Skeleton shape="block" height="420px" />
-		<Skeleton lines={3} />
-	</div>
+	<SkTitle />
 {:else}
 	{@const d = details}
 	<article class="tp" data-testid="title-detail">
@@ -275,7 +272,6 @@
 {/if}
 
 <style>
-	.loading { display: flex; flex-direction: column; gap: 16px; }
 	.all-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 18px 14px; margin: 0; padding: 0; list-style: none; }
 	.all-grid.people { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
 	.attribution { color: var(--text-muted); font: var(--t-footnote); }

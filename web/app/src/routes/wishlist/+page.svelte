@@ -11,7 +11,7 @@
 	import Menu from '#lib/ui/Menu.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import { SkTableRow } from '#lib/ui/sk/index.ts';
 	import Poster from '#lib/Poster.svelte';
 	import { ago, dateTime } from '#lib/format.ts';
 	import { live } from '#lib/live.svelte.ts';
@@ -380,7 +380,7 @@
 		{#if error}
 			<LoadError hasData={false} message="Your Wishlist could not be loaded. {error}" onretry={load} />
 		{:else if !loaded}
-			<div aria-label="Loading Wishlist"><Skeleton shape="block" height="320px" /></div>
+			<div aria-busy="true" aria-label="Loading Wishlist">{#each Array.from({ length: 6 }, (_, i) => i) as i (i)}<SkTableRow cols={2} height={88} />{/each}</div>
 		{:else if asks.length === 0}
 			<EmptyState
 				icon="wish"

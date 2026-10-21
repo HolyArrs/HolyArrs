@@ -19,7 +19,7 @@
 	import ListRow from '#lib/ui/ListRow.svelte';
 	import StatusPill from '#lib/ui/StatusPill.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import { Silhouette, SkRail } from '#lib/ui/sk/index.ts';
 	import Icon from '#lib/Icon.svelte';
 
 	// Home is "my stuff": the server sends the row order per person (GET /home);
@@ -147,13 +147,6 @@
 		{#if failed}<div class="banner"><LoadError hasData={true} message="Could not refresh Home." onretry={retry} busy={retrying} /></div>{/if}
 		<MetadataNotice />
 
-		{#if !loaded}
-			<section class="loading" aria-label="Loading" aria-busy="true">
-				<Skeleton width="180px" />
-				<div class="sk-row">{#each Array.from({ length: 6 }, (_, i) => i) as i (i)}<Skeleton shape="poster" />{/each}</div>
-			</section>
-		{/if}
-
 		{#snippet wideRow(cards: HomeCard[], type: string, opts: { title: string; subtitle?: string; href?: string })}
 			{#if cards.length}
 				<div class="wide-row" data-testid={type}>
@@ -167,6 +160,15 @@
 			{/if}
 		{/snippet}
 
+		<Silhouette loading={!loaded} label="Loading Home" status="Loading Home…" onretry={retry}>
+			{#snippet skeleton()}
+				<!-- Home-shaped placeholder: the wide rows Home opens with. -->
+				<div class="home-sk" data-testid="home-skeleton">
+					<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="200px" />
+					<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="150px" />
+					<SkRail kind="poster" item="var(--poster-item)" count={9} titleWidth="120px" />
+				</div>
+			{/snippet}
 		{#each rows as row (row)}
 			{#if row === 'welcome'}
 				{#if owner}
@@ -263,6 +265,7 @@
 				<a class="discover" href={to('/explore')}>Find more to ask for <span aria-hidden="true">→</span></a>
 			{/if}
 		{/each}
+		</Silhouette>
 	{/if}
 </div>
 
@@ -273,8 +276,8 @@
 	.banner { margin-bottom: -16px; }
 	.wide-row { display: contents; }
 	@media (min-width: 768px) { .wide-row { --shelf-gap: 5px; } }
-	.loading { display: flex; flex-direction: column; gap: 14px; }
-	.sk-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--shelf-gap); max-height: 260px; overflow: hidden; }
+	.home-sk { display: flex; flex-direction: column; gap: var(--home-gap); min-width: 0; }
+	@media (min-width: 768px) { .home-sk { --shelf-gap: 5px; } }
 
 	.setup { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(260px, 1fr); gap: 0; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card); outline: 1px solid var(--line); overflow: hidden; }
 	.setup-main { padding: clamp(20px, 3vw, 32px); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }

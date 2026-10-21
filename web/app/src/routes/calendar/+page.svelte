@@ -17,7 +17,6 @@
 	import Icon from '#lib/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
 	import {
 		byDay,
@@ -330,7 +329,16 @@
 </section>
 
 {#if !loaded}
-	<Skeleton shape="block" height="420px" />
+	<!-- Week-grid placeholder: seven day columns with a few event bars, the real grid's size. -->
+	<div class="weeks-sk" aria-busy="true" aria-label="Loading the calendar" data-testid="calendar-skeleton">
+	{#each [0, 1, 2] as w (w)}
+	<div class="week week-sk">
+		{#each Array.from({ length: 7 }, (_, i) => i) as d (d)}
+			<div class="wday"><span class="sk sk-line" style="width: 40%; height: 10px"></span><span class="sk sk-line" style="width: 28px; height: 22px"></span>{#each Array.from({ length: (d * 5) % 3 + 1 }, (_, i) => i) as i (i)}<span class="sk" style="height: 26px; border-radius: 6px"></span>{/each}</div>
+		{/each}
+	</div>
+	{/each}
+	</div>
 {:else if error && entries.length === 0}
 	<LoadError hasData={false} message="Calendar could not be loaded." onretry={load} />
 {:else if libraryEmpty}
@@ -405,11 +413,11 @@
 	</div>
 {/if}
 
-{#if feedLoaded && feedError}
+{#if loaded && feedLoaded && feedError}
 	<div class="feed-gap"><LoadError hasData message="Phone calendar could not be loaded." onretry={loadFeed} /></div>
 {/if}
 
-{#if feedLoaded && feedNeedsProof}
+{#if loaded && feedLoaded && feedNeedsProof}
 	<section class="feed" aria-labelledby="h-feed-proof">
 		<h2 id="h-feed-proof">Confirm your password to manage the phone calendar</h2>
 		<p class="muted">The feed status and its controls are protected. Confirm your HolyArrs password in My account, then return here.</p>
@@ -417,7 +425,7 @@
 	</section>
 {/if}
 
-{#if feed}
+{#if loaded && feed}
 	<section class="feed" aria-labelledby="h-feed" data-testid="cal-feed">
 		<h2 id="h-feed">Phone calendar</h2>
 		<p class="muted">
@@ -554,4 +562,5 @@
 		.segs, .segs > :global(.ui-seg) { width: 100%; }
 		.acts > :global(*) { flex: 1 1 100%; }
 	}
+	.weeks-sk { display: flex; flex-direction: column; gap: 16px; }
 </style>

@@ -6,7 +6,6 @@
 	import { api, message } from './api.ts';
 	import { plainReason } from './plain.ts';
 	import { loadChoices, saveChoices, secondVersion } from './library.ts';
-	import Skeleton from './ui/Skeleton.svelte';
 	import { builtInDefaults, gateChoices as gates, startChoices } from './title-defaults.ts';
 	import { savedDefaults } from './title-defaults.svelte.ts';
 	import type { LibraryFolder, LookupMovie, PickRulesView, TitleDefaults, TitleView } from './types.ts';
@@ -107,7 +106,7 @@
 <Sheet bind:open={addOpen} title={picked ? `Add ${picked.name}` : 'Add a movie'}>
 	<MetadataNotice />
 	{#if picked && !ready}
-		<div aria-busy="true" aria-label="Loading the defaults"><Skeleton lines={4} /></div>
+		<div class="form-sk" aria-busy="true" aria-label="Loading the defaults">{#each [0, 1, 2] as i (i)}<span class="sk sk-line" style="width: 30%; height: 11px"></span><span class="sk" style="height: 44px; border-radius: var(--r-btn); margin-bottom: 8px"></span>{/each}</div>
 	{:else if picked}
 		<form id="add-movie" class="sheet-form" onsubmit={add}>
 			{#if movieFolders.length === 0}
@@ -196,4 +195,5 @@
 	.form-error { margin: 8px 0 0; color: var(--fail); font: var(--t-callout); }
 	.more { margin: 12px 0 0; padding: 12px 0 0 16px; border: 0; border-left: 2px solid var(--line-strong); }
 	.ul { text-decoration: underline; color: var(--text); }
+	.form-sk { display: flex; flex-direction: column; gap: 8px; }
 </style>

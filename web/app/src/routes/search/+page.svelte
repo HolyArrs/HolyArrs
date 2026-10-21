@@ -31,6 +31,7 @@
 	import WideCard from '#lib/ui/WideCard.svelte';
 	import type { CardOwned } from '#lib/ui/CardBadges.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
+	import { Orbit, SkRail, SkGrid } from '#lib/ui/sk/index.ts';
 	import { plainReason } from '#lib/plain.ts';
 	import type { Ask, LibraryFolder, LookupArtist, LookupMovie, LookupShow, MusicSettings, PickRulesView, TitleView } from '#lib/types.ts';
 	import type { PersonSummary } from '#lib/people.ts';
@@ -185,7 +186,16 @@
 	const markOf = (t: TitleView) => ownedMark({ key: String(t.id), kind: t.kind === 'show' ? 'show' : t.kind === 'artist' ? 'artist' : 'movie', name: t.name, titleId: t.id } as ExploreCard, t, who);
 	// While a search runs and nothing has come back yet, the page keeps what it showed before.
 	const freshTotal = $derived(order.reduce((n, t) => n + (groups[t]?.length ?? 0), 0) + (lib ? lib.titles.length + lib.albums.length + lib.people.length : 0));
-	const waiting = $derived(!!searchField.term.trim() && freshTotal === 0 && (order.some((t) => groups[t] === null) || busy));
+	// Results land together: the skeleton stays until every group answered, so rows never push
+	// each other down (loading audit #1). A slow group stops holding the rest after 2.5 s.
+	let settleCap = $state(false);
+	$effect(() => {
+		void searchField.term;
+		settleCap = false;
+		const t = setTimeout(() => (settleCap = true), 2500);
+		return () => clearTimeout(t);
+	});
+	const waiting = $derived(!!searchField.term.trim() && (order.some((t) => groups[t] === null) || busy || lib === null) && (freshTotal === 0 || !settleCap));
 	const holding = $derived(waiting && !!stale);
 	const shownGroups = $derived(holding && stale ? stale.groups : groups);
 	const shownLib = $derived(holding && stale ? stale.lib : lib);
@@ -768,6 +778,19 @@
 	{/if}
 {/snippet}
 
+{#snippet resultsSkeleton()}
+	<!-- Results-shaped placeholder while a search runs: rows of wide cards where the results will land. -->
+	<div class="results-sk" aria-busy="true" aria-label="Searching" data-testid="search-skeleton">
+		{#if scope === 'all'}
+			<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="140px" />
+			<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="90px" />
+			<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="110px" />
+		{:else}
+			<SkGrid kind="wide" min="var(--title-item)" count={12} />
+		{/if}
+	</div>
+{/snippet}
+
 {#snippet libraryRow()}
 	{#if libCards.length}
 		<div data-testid="search-library-row">
@@ -790,9 +813,9 @@
 		</div>
 	{/if}
 
-	{#if searchField.term.trim() && searched}
+	{#if searchField.term.trim()}
 		<div class="results-head" data-testid="search-results-head">
-			<p class="muted count">{total} {total === 1 ? 'result' : 'results'}</p>
+			<p class="muted count" style:visibility={waiting || !searched ? 'hidden' : null}>{total} {total === 1 ? 'result' : 'results'}</p>
 			<SegmentedControl size="sm" options={whereOptions} value={onlyLib ? 'library' : 'everywhere'} label="Show results from" testid="search-only-library" onchange={(v) => setOnlyLib(v === 'library')} />
 		</div>
 	{/if}
@@ -807,7 +830,7 @@
 					<p class="muted">Music</p>
 				</div>
 				{#if mgenreCards === null}
-					<p class="muted searching">Finding {mgenre} music…</p>
+					<div class="grid-sk" aria-busy="true" aria-label="Loading titles"><SkGrid kind="wide" min="var(--title-item)" count={12} /></div>
 				{:else if mgenreCards.length === 0}
 					<div class="empty"><h2 class="h2">Nothing here yet</h2><p class="muted">No {mgenre} music to show right now.</p></div>
 				{:else}
@@ -826,7 +849,7 @@
 					<p class="muted">{cat.type === 'shows' ? 'Shows' : cat.type === 'all' ? 'Movies and shows' : 'Movies'}</p>
 				</div>
 				{#if catItems === null}
-					<p class="muted searching">Finding titles…</p>
+					<div class="grid-sk" aria-busy="true" aria-label="Loading titles"><SkGrid kind="wide" min="var(--title-item)" count={12} /></div>
 				{:else if catCards.length === 0}
 					<div class="empty"><h2 class="h2">Nothing here yet</h2><p class="muted">No titles fit this right now.</p></div>
 				{:else}
@@ -845,7 +868,7 @@
 					<p class="muted">{moodGenre ? `${moodGenre} · ` : ''}{mood.type === 'shows' ? 'Shows' : mood.type === 'all' ? 'Movies and shows' : 'Movies'}</p>
 				</div>
 				{#if moodItems === null}
-					<p class="muted searching">Finding {mood.mood.toLowerCase()} titles…</p>
+					<div class="grid-sk" aria-busy="true" aria-label="Loading titles"><SkGrid kind="wide" min="var(--title-item)" count={12} /></div>
 				{:else if moodCards.length === 0}
 					<div class="empty"><h2 class="h2">Nothing here yet</h2><p class="muted">No {mood.type === 'shows' ? 'shows' : mood.type === 'all' ? 'titles' : 'movies'} fit this mood right now. Try the genre page instead.</p><Button variant="secondary" href={to(mood.type === 'all' ? `/explore?genre=${mood.genre}` : `/explore?type=${mood.type}&genre=${mood.genre}`)}>Open {moodGenre || 'the genre'}</Button></div>
 				{:else}
@@ -856,7 +879,9 @@
 					</ul>
 				{/if}
 			</section>
-		{:else if !searchField.term.trim() || (waiting && !stale)}
+		{:else if waiting && !stale}
+			{@render resultsSkeleton()}
+		{:else if !searchField.term.trim()}
 			{#if recent.length}
 				<section class="recent" aria-labelledby="recent-h">
 					<div class="recent-head">
@@ -879,7 +904,7 @@
 				{#if scope === 'people'}
 					{#if shelves === null}
 						<ul class="tiles" aria-hidden="true">
-							{#each Array(cols * 2) as _, i (i)}<li class="ghost" use:landing={{ row: Math.floor(i / cols), col: i % cols }}></li>{/each}
+							{#each Array(cols * 2) as _, i (i)}<li class="ghost sk" use:landing={{ row: Math.floor(i / cols), col: i % cols }}></li>{/each}
 						</ul>
 					{:else}
 						{#each shownShelves as { s, people } (s.id)}
@@ -898,7 +923,7 @@
 								</section>
 							{/if}
 							{#if people === null}
-								<div class="more" use:nearShelf={s.id} aria-live="polite"><span class="muted">Loading {s.title.toLowerCase()}</span></div>
+								<div class="more" use:nearShelf={s.id} aria-hidden="true"><ul class="tiles">{#each Array(cols) as _, i (i)}<li class="ghost sk"></li>{/each}</ul></div>
 							{/if}
 						{/each}
 						{#if shelvesDone && (!peopleEnd || peopleShown.length >= SHELF_MIN)}
@@ -911,7 +936,7 @@
 										{/each}
 									</ul>
 								{/if}
-								<div bind:this={peopleSentinel} class="more" aria-live="polite">{#if peopleBusy}<span class="muted">Loading more people</span>{/if}</div>
+								<div bind:this={peopleSentinel} class="more" aria-busy={peopleBusy}>{#if peopleBusy}<Orbit />{/if}</div>
 							</section>
 						{:else if shelvesDone && !shownShelves.some((x) => (x.people?.length ?? 0) >= SHELF_MIN)}
 							<p class="muted">Search for an actor, director or artist</p>
@@ -920,7 +945,7 @@
 				{:else if scope === 'music'}
 					{#if plainTiles === null}
 						<ul class="tiles" aria-hidden="true">
-							{#each Array(cols * 2) as _, i (i)}<li class="ghost" use:landing={{ row: Math.floor(i / cols), col: i % cols }}></li>{/each}
+							{#each Array(cols * 2) as _, i (i)}<li class="ghost sk" use:landing={{ row: Math.floor(i / cols), col: i % cols }}></li>{/each}
 						</ul>
 					{:else if plainTiles.length}
 						<ul class="tiles">
@@ -933,7 +958,7 @@
 					{/if}
 				{:else if tiles === null}
 					<ul class="tiles" aria-hidden="true">
-						{#each Array(cols * 2) as _, i (i)}<li class="ghost" use:landing={{ row: Math.floor(i / cols), col: i % cols }}></li>{/each}
+						{#each Array(cols * 2) as _, i (i)}<li class="ghost sk" use:landing={{ row: Math.floor(i / cols), col: i % cols }}></li>{/each}
 					</ul>
 				{:else if genreTiles.length || sections.length}
 					{#each shownSections as { s, tiles: st } (s.id)}
@@ -955,7 +980,7 @@
 								{#if s.id !== 'genres'}
 									<section class="browse-section" aria-label={`Loading ${s.title.toLowerCase()}`}>
 										<h3 class="h1">{s.title}</h3>
-										<ul class="tiles" aria-hidden="true">{#each Array(cols * BROWSE_ROWS) as _, i (i)}<li class="ghost"></li>{/each}</ul>
+										<ul class="tiles" aria-hidden="true">{#each Array(cols * BROWSE_ROWS) as _, i (i)}<li class="ghost sk"></li>{/each}</ul>
 									</section>
 								{/if}
 							</div>
@@ -977,7 +1002,7 @@
 		{:else if error && total === 0}
 			<p class="notice bad" role="alert">{plainReason(error).text}</p>
 		{:else if total === 0 && (pending || busy)}
-			<p class="muted searching">Searching for “{searchField.term.trim()}”…</p>
+			{@render resultsSkeleton()}
 		{:else if total === 0 && searched}
 			<div class="empty" data-testid="search-empty">
 				<h2 class="h2">Nothing found for “{searched}”</h2>
@@ -1057,10 +1082,11 @@
 	.browse-section { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
 	.browse-section:first-of-type { margin-top: 0; }
 	.browse-section h3 { margin: 0; }
-	/* Ghost tiles wait 200 ms before showing: a quick answer never flashes them. */
-	.ghost { aspect-ratio: 3 / 4; border-radius: 16px; background: var(--surface-2); animation: ghost-in 160ms ease-out 200ms both; }
-	@keyframes ghost-in { from { opacity: 0; } }
-	@media (prefers-reduced-motion: reduce) { .ghost { animation-duration: 1ms; } }
+	/* Ghost tiles use the shared Silhouette shimmer (tokens.css .sk), sized like BrowseTile. */
+	.ghost { aspect-ratio: 3 / 4; border-radius: 16px; }
+	.more .tiles { width: 100%; }
+	.grid-sk { min-width: 0; }
+	.results-sk { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
 	.mood-head { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-bottom: 8px; }
 	.mood-head p { margin: 0; }
 	.mood { display: flex; flex-direction: column; gap: 16px; }
@@ -1074,7 +1100,6 @@
 	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--title-item), 1fr)); gap: 16px 5px; margin: -16px 0 0; padding: 0; list-style: none; }
 	.empty { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; max-width: 640px; }
 	.tips { margin: 0; padding-left: 20px; color: var(--text-muted); font: var(--t-body); display: grid; gap: 4px; }
-	.searching { margin: 0; }
 	.notice { margin: 0; padding: 10px 12px; border-radius: var(--r-btn); background: var(--surface-2); font: var(--t-callout); }
 	.notice.bad { color: var(--fail); }
 </style>
