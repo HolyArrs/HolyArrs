@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/CoderLuii/holyarrs/internal/auth"
+
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 )
 
@@ -65,5 +67,50 @@ func TestTitleExtrasEmptyWhenOff(t *testing.T) {
 	b := string(do(t, "GET", srv.URL+"/api/v1/extras/movie/9", "", 200))
 	if b != "{\"scores\":[]}\n" {
 		t.Fatalf("%q", b)
+	}
+}
+
+// A Kid gets extras only for titles under their limit, even when the answer
+// is already cached for someone else; music never passes a limit.
+func TestTitleExtrasKidGate(t *testing.T) {
+	titleExtrasCache.seen = map[string]extrasEntry{}
+	md := animeTMDB(t)
+	_, st := discoverRig(t, md)
+	asked := 0
+	a := New(Server{Store: st, Metadata: md, Version: "test",
+		ExtraArt: func(_ context.Context, kind, id string) (metadata.ServerArt, error) {
+			asked++
+			return metadata.ServerArt{Logo: "https://assets.fanart.tv/l.png"}, nil
+		}})
+	call := func(who *auth.Who, kind, id string) int {
+		r := httptest.NewRequest("GET", "/api/v1/extras/"+kind+"/"+id, nil)
+		r.SetPathValue("kind", kind)
+		r.SetPathValue("id", id)
+		if who != nil {
+			r = r.WithContext(auth.ContextWith(r.Context(), *who))
+		}
+		w := httptest.NewRecorder()
+		a.titleExtras(w, r)
+		return w.Code
+	}
+	kid := &auth.Who{UserID: 7, Role: auth.RoleMember, MaxRating: "TV-Y7"}
+	owner := &auth.Who{UserID: 1, Role: auth.RoleOwner}
+	// The owner fills the cache for a title above the Kid's limit.
+	if c := call(owner, "show", "9400"); c != 200 {
+		t.Fatalf("owner %d", c)
+	}
+	for _, id := range []string{"9400", "9100", "404404"} {
+		if c := call(kid, "show", id); c != 403 {
+			t.Fatalf("kid %s: %d", id, c)
+		}
+	}
+	if c := call(kid, "artist", "5b11f4ce-a62d-471e-81fc-a69a8278c7da"); c != 403 {
+		t.Fatalf("kid artist %d", c)
+	}
+	if c := call(kid, "show", "9300"); c != 200 {
+		t.Fatalf("kid under the limit %d", c)
+	}
+	if asked != 2 {
+		t.Fatalf("server asked %d", asked)
 	}
 }

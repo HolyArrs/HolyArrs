@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/CoderLuii/holyarrs/internal/parts"
+	"github.com/CoderLuii/holyarrs/internal/ratings"
 )
 
 // TitleExtras is the optional extra artwork (fanart.tv) and outside
@@ -66,6 +68,47 @@ func (a *API) titleExtras(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "unknown title")
 		return
 	}
+	// Part and Kid gates come before the shared cache: its key does not
+	// carry the Kid limit.
+	if p, _ := parts.ForTitleKind(kind); !a.partIsOn(p) {
+		fail(w, http.StatusConflict, "that part is off")
+		return
+	}
+	if a.kidLimited(w, r) {
+		return
+	}
+	if max := a.kidMax(r); max != "" {
+		// Music never passes a limit (see ratings).
+		if kind == "artist" {
+			fail(w, http.StatusForbidden, aboveLimit)
+			return
+		}
+		rating, inLibrary := a.libraryRating(r.Context(), kind, id)
+		if !inLibrary {
+			d, ok := metadata.DiscovererFor(r.Context(), a.s.Metadata)
+			if !ok {
+				fail(w, http.StatusForbidden, aboveLimit)
+				return
+			}
+			dkey := "details|" + kind + "|" + id
+			e, cached := a.discover.get(dkey)
+			if !cached || time.Since(e.at) >= discoverTTL["details"] {
+				det, err := d.Details(r.Context(), kind, id)
+				if err != nil {
+					fail(w, http.StatusForbidden, aboveLimit)
+					return
+				}
+				e = discoverEntry{at: time.Now(), details: &det}
+				a.discover.put(dkey, e)
+			}
+			rating = e.details.Rating
+		}
+		if rating == "" || !ratings.Allows(max, kind, rating) {
+			fail(w, http.StatusForbidden, aboveLimit)
+			return
+		}
+	}
+	a.exploreCaching(w, r, "")
 	key := kind + ":" + id
 	c := titleExtrasCache
 	c.mu.Lock()
