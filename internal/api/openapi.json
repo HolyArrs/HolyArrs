@@ -23487,8 +23487,15 @@
             }
           }
         ],
-        "responses": {},
-        "summary": "",
+        "responses": {
+          "200": {
+            "description": "Badges, awards, life facts and the Wikipedia bio; empty when unknown"
+          },
+          "400": {
+            "description": "Unknown kind or id"
+          }
+        },
+        "summary": "Awards (Wikidata) and the Wikipedia bio for a movie, show or person",
         "x-holyarrs-part": "movies",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "read"
