@@ -263,10 +263,12 @@ export function phaseTone(phase: string): Tone {
 	return 'wait';
 }
 
+/** nowPhases are the phases on the Downloads page's "Now" list; the sidebar badge counts the same set. */
+export const nowPhases: ReadonlySet<string> = new Set(['waiting', 'downloading', 'stalled', 'paused', 'waiting_to_import', 'importing']);
+
 /** split puts rows still in motion first, the finished ones after. */
 export function split(rows: DownloadRow[]): { now: DownloadRow[]; past: DownloadRow[] } {
-	const moving = new Set(['waiting', 'downloading', 'stalled', 'paused', 'waiting_to_import', 'importing']);
-	return { now: rows.filter((r) => moving.has(r.phase)), past: rows.filter((r) => !moving.has(r.phase)) };
+	return { now: rows.filter((r) => nowPhases.has(r.phase)), past: rows.filter((r) => !nowPhases.has(r.phase)) };
 }
 
 export interface RemoveChoice {
