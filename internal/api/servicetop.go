@@ -293,7 +293,8 @@ func (a *API) streamingMarks(region string, services []int) map[string]streaming
 }
 
 // fillStreaming marks the cards whose title is on one of the member's
-// services (explore_prefs), from memory: one small read, no outside call.
+// services (explore_prefs), from memory: one small read; titles whose
+// watch providers are not kept yet are read in the background.
 func (a *API) fillStreaming(r *http.Request, rows []exploreRowView) {
 	if a.s.Store == nil {
 		return
@@ -308,14 +309,29 @@ func (a *API) fillStreaming(r *http.Request, rows []exploreRowView) {
 			ids = append(ids, n)
 		}
 	}
-	marks := a.streamingMarks(strings.ToUpper(region), ids)
-	if len(marks) == 0 {
+	region = strings.ToUpper(region)
+	var keys []string
+	for i := range rows {
+		for _, it := range rows[i].Items {
+			keys = append(keys, it.Kind+":"+it.TMDBID)
+		}
+	}
+	// TMDB watch providers first; a service's own top list adds its rank
+	// (and covers titles not read yet).
+	watch := a.watchOnMarks(region, ids, keys)
+	top := a.streamingMarks(region, ids)
+	if len(watch) == 0 && len(top) == 0 {
 		return
 	}
 	for i := range rows {
 		for j := range rows[i].Items {
 			it := &rows[i].Items[j]
-			if m, ok := marks[it.Kind+":"+it.TMDBID]; ok {
+			k := it.Kind + ":" + it.TMDBID
+			m, ok := watch[k]
+			if t, onTop := top[k]; onTop && (!ok || t.Service == m.Service) {
+				m, ok = t, true
+			}
+			if ok {
 				it.Streaming = &m
 			}
 		}

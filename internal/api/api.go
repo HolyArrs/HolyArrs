@@ -146,6 +146,8 @@ type API struct {
 	status statusCache
 	// serviceTop keeps the per-service top lists for 12 hours.
 	serviceTop serviceTopCache
+	// watchOn keeps each title's TMDB watch providers per region a day.
+	watchOn watchOnCache
 	// music keeps the music trending lists for an hour.
 	music musicTrendCache
 	// musicx keeps artist genres and similar artists for Explore → Music.
