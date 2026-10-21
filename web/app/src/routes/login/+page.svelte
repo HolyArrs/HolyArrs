@@ -46,11 +46,16 @@
 		return safeNext(n);
 	}
 
+	// The card enters once the backdrop's mosaic has resolved; never later than 2.2 s.
+	let entered = $state(false);
 	onMount(() => {
+		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) entered = true;
+		const late = setTimeout(() => (entered = true), 2200);
 		const t = setInterval(() => (now = Date.now()), 1000);
 		if (page.url.searchParams.get('sso') === 'finish') void finishOIDC();
 		return () => {
 			clearInterval(t);
+			clearTimeout(late);
 			clearInterval(plexTimer);
 		};
 	});
@@ -242,8 +247,8 @@
 </svelte:head>
 
 <main class="wrap" data-theme="dark">
-	<SigninBackdrop />
-	<div class="panel rise">
+	<SigninBackdrop onrevealed={() => (entered = true)} />
+	<div class="panel" class:entered>
 		<div class="brand">
 			<img src={to('/brand/mark-color-on-dark.svg')} alt="" width="40" height="40" />
 			<span>HolyArrs</span>
@@ -403,10 +408,33 @@
 		width: min(calc(clamp(360px, 26vw, 480px) / var(--z)), calc(100% / var(--z)));
 		padding: clamp(24px, 4vw, 36px);
 		border-radius: var(--r-modal);
-		background: rgb(18 18 22 / 0.62);
-		-webkit-backdrop-filter: blur(28px) saturate(1.4);
-		backdrop-filter: blur(28px) saturate(1.4);
-		box-shadow: 0 30px 80px rgb(0 0 0 / 0.5), inset 0 0 0 1px rgb(255 255 255 / 0.09);
+		/* Dark hairline and soft dark shadow, no light rim: reads on bright art. */
+		background: rgb(14 14 18 / 0.7);
+		-webkit-backdrop-filter: blur(40px) saturate(1.25) brightness(0.82);
+		backdrop-filter: blur(40px) saturate(1.25) brightness(0.82);
+		border: 1px solid rgb(255 255 255 / 0.07);
+		box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35), 0 24px 70px rgb(0 0 0 / 0.55), 0 6px 18px rgb(0 0 0 / 0.35);
+		opacity: 0;
+		transform: translateY(14px);
+		transition: opacity 600ms cubic-bezier(0.2, 0.7, 0.2, 1) 200ms, transform 700ms cubic-bezier(0.2, 0.7, 0.2, 1) 200ms;
+	}
+	.panel.entered { opacity: 1; transform: none; }
+	@media (prefers-reduced-motion: reduce) {
+		.panel { transition: none; transform: none; }
+	}
+	/* Hover lives on the buttons only: a soft glow and a 1 px lift. Focus rings
+	   come from :focus-visible, so they show for the keyboard only. */
+	.panel :global(.ui-btn) { transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease; }
+	@media (hover: hover) {
+		.panel :global(.submit .ui-btn:not(:disabled):hover),
+		.ways :global(.way:not(.way-password):not(:disabled):hover) {
+			transform: translateY(-1px);
+			box-shadow: 0 6px 22px rgb(0 0 0 / 0.35), 0 0 22px color-mix(in srgb, var(--accent) 35%, transparent);
+		}
+		.ways :global(.way.way-plex:not(:disabled):hover) { box-shadow: 0 6px 22px rgb(0 0 0 / 0.35), 0 0 22px rgb(229 160 13 / 0.4); }
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.panel :global(.ui-btn:hover) { transform: none !important; }
 	}
 	@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
 		.panel { background: rgb(18 18 22 / 0.92); }
@@ -479,7 +507,8 @@
 			margin-top: 30dvh;
 			border-radius: 22px 22px 0 0;
 			padding: 22px max(20px, env(safe-area-inset-right)) max(24px, calc(env(safe-area-inset-bottom) + 16px)) max(20px, env(safe-area-inset-left));
-			box-shadow: 0 -20px 60px rgb(0 0 0 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.1);
+			border-width: 1px 0 0;
+			box-shadow: 0 -20px 60px rgb(0 0 0 / 0.45);
 		}
 		.brand { margin-bottom: 10px; }
 		.lead { margin-bottom: 18px; }
