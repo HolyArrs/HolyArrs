@@ -40,6 +40,9 @@ func peopleTMDB(t *testing.T) *TMDB {
 					{"id":104,"title":"Other Job","release_date":"2023-01-01","job":"Producer"},
 					{"id":102,"title":"South Wind","release_date":"2020-05-01","job":"Director"}]
 			}`))
+		case "/3/person/11/tv_credits":
+			_, _ = w.Write([]byte(`{"cast":[{"id":201,"name":"Ice Road"},{"id":201,"name":"Ice Road"},{"id":202,"name":"Harbor"}],
+				"crew":[{"id":203,"name":"Lantern","job":"Director"},{"id":204,"name":"Paper","job":"Producer"}]}`))
 		case "/3/movie/101/credits":
 			_, _ = w.Write([]byte(`{
 				"cast":[{"id":11,"name":"Alex Kim","known_for_department":"Acting","character":"Lee","profile_path":"/alex.jpg"},{"id":11,"name":"Alex Kim","character":"Narrator"}],
@@ -118,5 +121,14 @@ func TestTMDBMoviePeopleDeduplicatesAndKeepsDirectorsOnly(t *testing.T) {
 	}
 	if !reflect.DeepEqual(got[0].Roles, []string{"Actor", "Director"}) || !reflect.DeepEqual(got[0].Characters, []string{"Lee", "Narrator"}) || !reflect.DeepEqual(got[1].Roles, []string{"Director"}) {
 		t.Fatalf("roles %+v", got)
+	}
+}
+
+func TestTMDBPersonShowCount(t *testing.T) {
+	p := peopleTMDB(t)
+	var _ PersonShowCounter = p
+	// Each show once (repeat cast rows are episodes); directing counts, producing does not.
+	if n, err := p.PersonShowCount(context.Background(), "tmdb:11"); err != nil || n != 3 {
+		t.Fatalf("shows %d %v", n, err)
 	}
 }

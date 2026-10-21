@@ -421,3 +421,47 @@ func (t *TMDB) TitleCrew(ctx context.Context, kind, id string) (TitleCrew, error
 	}
 	return out, nil
 }
+
+// PersonShowCounter is the optional surface that counts a person's TV
+// credits (acting or directing), each show once however many episodes.
+type PersonShowCounter interface {
+	PersonShowCount(ctx context.Context, id string) (int, error)
+}
+
+// PersonShowCounterFor returns the show-count surface selected for ctx.
+func PersonShowCounterFor(ctx context.Context, provider Provider) (PersonShowCounter, bool) {
+	if sw, ok := provider.(*Switch); ok {
+		provider = sw.pick(ctx)
+	}
+	p, ok := provider.(PersonShowCounter)
+	return p, ok
+}
+
+// PersonShowCount counts the distinct shows in TMDB's TV credits, as an
+// actor or a director.
+func (t *TMDB) PersonShowCount(ctx context.Context, id string) (int, error) {
+	n, err := tmdbNumericID(id)
+	if err != nil {
+		return 0, err
+	}
+	b, err := t.get(ctx, "/person/"+strconv.FormatInt(n, 10)+"/tv_credits", nil)
+	if err != nil {
+		return 0, err
+	}
+	var res struct{ Cast, Crew []tmdbCredit }
+	if err := json.Unmarshal(b, &res); err != nil {
+		return 0, fmt.Errorf("TMDB: odd answer: %w", err)
+	}
+	seen := map[int64]bool{}
+	for _, c := range res.Cast {
+		if c.ID > 0 {
+			seen[c.ID] = true
+		}
+	}
+	for _, c := range res.Crew {
+		if c.ID > 0 && c.Job == "Director" {
+			seen[c.ID] = true
+		}
+	}
+	return len(seen), nil
+}

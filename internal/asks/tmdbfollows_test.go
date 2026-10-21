@@ -86,3 +86,47 @@ func TestLandingDropsFollowersOverTheirLimit(t *testing.T) {
 		t.Fatalf("%d waiting follows left", n)
 	}
 }
+
+func TestFollowMovieByTMDBLandsOnce(t *testing.T) {
+	r := newRig(t)
+	ctx := context.Background()
+	kid := r.bo
+	kid.MaxRating = "PG"
+	r.svc.Metadata.(*metadata.Static).Movies[1].Rating = "R"
+	if err := r.svc.FollowMovieTMDB(ctx, kid, "900002"); !errors.Is(err, ErrAboveLimit) {
+		t.Fatalf("kid follows an R movie: %v", err)
+	}
+	if err := r.svc.FollowMovieTMDB(ctx, r.ana, "abc"); !errors.Is(err, ErrBadTMDBID) {
+		t.Fatalf("bad id: %v", err)
+	}
+	if err := r.svc.FollowMovieTMDB(ctx, r.ana, "900002"); err != nil {
+		t.Fatal(err)
+	}
+	if on, _ := r.svc.IsFollowingMovieTMDB(ctx, r.ana.UserID, "900002"); !on {
+		t.Fatal("not following")
+	}
+	if on, _ := r.svc.IsFollowingMovieTMDB(ctx, r.luis.UserID, "900002"); on {
+		t.Fatal("a movie follow is per person")
+	}
+	tid, _, err := r.svc.Library.Add(ctx, movie("Paper Harbour", 2023, "900002"), library.AddOptions{}, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n, err := r.svc.LandTMDBFollows(ctx, tid); err != nil || n != 1 {
+		t.Fatalf("told %d %v", n, err)
+	}
+	r.svc.Wait()
+	if on, _ := r.svc.IsFollowingMovieTMDB(ctx, r.ana.UserID, "900002"); on {
+		t.Fatal("the follow should end once the movie lands")
+	}
+	var msgs int
+	if err := r.st.Read().QueryRow("SELECT count(*) FROM messages WHERE user_id = ? AND kind = 'ready' AND title_id = ?", r.ana.UserID, tid).Scan(&msgs); err != nil || msgs != 1 {
+		t.Fatalf("messages %d %v", msgs, err)
+	}
+	if n, _ := r.svc.LandTMDBFollows(ctx, tid); n != 0 {
+		t.Fatal("told twice")
+	}
+	if err := r.svc.FollowMovieTMDB(ctx, r.ana, "900002"); !errors.Is(err, ErrInLibrary) {
+		t.Fatalf("in the Library: %v", err)
+	}
+}

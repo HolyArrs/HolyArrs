@@ -17,6 +17,7 @@
 	import { to } from '#lib/paths.ts';
 	import { plainReason } from '#lib/plain.ts';
 	import { detailPath } from '#lib/title-details.ts';
+	import { followLabel, movieFollowHint, setFollow } from '#lib/follow.ts';
 	import { byDecade, personChips, runReviewed, type FilmSort, type FilmographyPage, type PersonMovie, type PersonRole } from '#lib/people.ts';
 	import type { AskLimit } from '#lib/types.ts';
 
@@ -42,6 +43,9 @@
 	let asking = $state('');
 	let done = $state<Record<string, string>>({});
 	let bioOpen = $state(false);
+	// Follow state of the Coming soon movies not in the Library, by TMDB id.
+	let follows = $state<Record<string, boolean>>({});
+	let followBusy = $state('');
 	let loadRevision = 0;
 	const action = $derived(session.can('manage_library') ? 'add' : session.can('ask') ? 'ask' : null);
 
@@ -58,10 +62,31 @@
 			// The personal rows stay as the first answer drew them (all roles).
 			data = data && role !== 'all' ? { ...first, library: data.library, asked: data.asked, known_for: data.known_for, coming_soon: data.coming_soon, often_with: data.often_with, stats: data.stats } : first;
 			movies = all;
+			if (role === 'all') void loadFollows(first.coming_soon ?? []);
 		} catch (err) {
 			if (revision === loadRevision) error = message(err);
 		} finally {
 			if (revision === loadRevision) busy = false;
+		}
+	}
+
+	async function loadFollows(list: PersonMovie[]) {
+		if (session.s.state !== 'signed_in') return;
+		const want = list.filter((m) => !m.title_id && !(m.ids.tmdb in follows));
+		const got = await Promise.all(want.map((m) => api.get<{ following: boolean }>(`/metadata/movie/${encodeURIComponent(m.ids.tmdb)}/follow`).then((r) => r.following).catch(() => false)));
+		follows = { ...follows, ...Object.fromEntries(want.map((m, i) => [m.ids.tmdb, got[i]])) };
+	}
+
+	async function flipFollow(m: PersonMovie) {
+		if (followBusy) return;
+		followBusy = m.ids.tmdb;
+		try {
+			const on = await setFollow(api, { tmdb: m.ids.tmdb, kind: 'movie' }, !follows[m.ids.tmdb]);
+			follows = { ...follows, [m.ids.tmdb]: on };
+		} catch (err) {
+			error = message(err);
+		} finally {
+			followBusy = '';
 		}
 	}
 
@@ -131,6 +156,10 @@
 				<IconButton icon="plus" label={action === 'add' ? `Add ${m.name}` : `Ask for ${m.name}`} variant="glass" size="lg" aria-busy={asking === m.ids.tmdb || undefined} onclick={() => quick(m)} />
 			{:else}
 				<IconButton icon="play" label="Open {m.name}" variant="glass" size="lg" href={href(m)} />
+			{/if}
+			{#if !m.title_id && m.ids.tmdb in follows}
+				{@const on = follows[m.ids.tmdb]}
+				<IconButton icon="bell" label="{followLabel(on)} {m.name}" title={movieFollowHint(m.name, on)} variant="glass" size="lg" aria-pressed={on} aria-busy={followBusy === m.ids.tmdb || undefined} onclick={() => flipFollow(m)} />
 			{/if}
 		{/snippet}
 	</WideCard>

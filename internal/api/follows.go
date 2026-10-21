@@ -15,6 +15,57 @@ func (a *API) followRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/metadata/show/{tmdb_id}/follow", a.getShowFollow)
 	m.HandleFunc("PUT /api/v1/metadata/show/{tmdb_id}/follow", a.putShowFollow)
 	m.HandleFunc("DELETE /api/v1/metadata/show/{tmdb_id}/follow", a.deleteShowFollow)
+	m.HandleFunc("GET /api/v1/metadata/movie/{tmdb_id}/follow", a.getMovieFollow)
+	m.HandleFunc("PUT /api/v1/metadata/movie/{tmdb_id}/follow", a.putMovieFollow)
+	m.HandleFunc("DELETE /api/v1/metadata/movie/{tmdb_id}/follow", a.deleteMovieFollow)
+}
+
+// Follow a movie by TMDB id: one not in the Library (often not out yet);
+// the person hears once when it lands, then the follow ends.
+
+func (a *API) movieFollowState(w http.ResponseWriter, r *http.Request, tmdbID string) {
+	on, err := a.s.Asks.IsFollowingMovieTMDB(r.Context(), a.person(r).UserID, tmdbID)
+	if errors.Is(err, asks.ErrBadTMDBID) {
+		fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"tmdb_id": tmdbID, "following": on})
+}
+
+func (a *API) getMovieFollow(w http.ResponseWriter, r *http.Request) {
+	a.movieFollowState(w, r, r.PathValue("tmdb_id"))
+}
+
+func (a *API) putMovieFollow(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("tmdb_id")
+	switch err := a.s.Asks.FollowMovieTMDB(r.Context(), a.person(r), id); {
+	case errors.Is(err, asks.ErrBadTMDBID):
+		fail(w, http.StatusBadRequest, err.Error())
+	case errors.Is(err, asks.ErrInLibrary):
+		fail(w, http.StatusConflict, err.Error())
+	case errors.Is(err, asks.ErrAboveLimit):
+		fail(w, http.StatusForbidden, err.Error())
+	case err != nil:
+		internal(w, err)
+	default:
+		a.movieFollowState(w, r, id)
+	}
+}
+
+func (a *API) deleteMovieFollow(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("tmdb_id")
+	switch err := a.s.Asks.UnfollowMovieTMDB(r.Context(), a.person(r).UserID, id); {
+	case errors.Is(err, asks.ErrBadTMDBID):
+		fail(w, http.StatusBadRequest, err.Error())
+	case err != nil:
+		internal(w, err)
+	default:
+		a.movieFollowState(w, r, id)
+	}
 }
 
 // Follow by TMDB id: a show not in the Library yet can be followed; the

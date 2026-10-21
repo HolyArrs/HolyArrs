@@ -46,5 +46,7 @@ describe('person page helpers', () => {
 	it('builds at most four hero chips and hides empty ones', () => {
 		expect(personChips({ first_year: 2001, last_year: 2026, active: true, films: 52, rating: 6.84, rated: 30 }, 4, 1)).toEqual(['2001–now', '52 films', '★ 6.8 avg', '4 in your Library · 1 asked']);
 		expect(personChips({ first_year: 1990, last_year: 1999, active: false, films: 1 }, 0, 0)).toEqual(['1990–1999', '1 film']);
+		expect(personChips({ active: true, films: 52, shows: 16, titles: 68 }, 0, 0)).toEqual(['68 titles · 52 films · 16 shows']);
+		expect(personChips({ active: false, films: 0, shows: 1 }, 0, 0)).toEqual(['1 title · 1 show']);
 	});
 });

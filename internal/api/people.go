@@ -177,12 +177,15 @@ func movieReleased(m metadata.Movie, now time.Time) (time.Time, bool) {
 // personStats is the hero's strip: years active, film count and the
 // average audience score of acting credits with at least 25 votes.
 type personStats struct {
-	FirstYear int     `json:"first_year,omitempty"`
-	LastYear  int     `json:"last_year,omitempty"`
-	Active    bool    `json:"active"`
-	Films     int     `json:"films"`
-	Rating    float64 `json:"rating,omitempty"`
-	Rated     int     `json:"rated,omitempty"`
+	FirstYear int  `json:"first_year,omitempty"`
+	LastYear  int  `json:"last_year,omitempty"`
+	Active    bool `json:"active"`
+	Films     int  `json:"films"`
+	// Shows counts TV credits, each show once; Titles is films plus shows.
+	Shows  int     `json:"shows,omitempty"`
+	Titles int     `json:"titles,omitempty"`
+	Rating float64 `json:"rating,omitempty"`
+	Rated  int     `json:"rated,omitempty"`
 }
 
 func peopleStats(credits []metadata.PersonMovieCredit, now time.Time) personStats {
@@ -208,39 +211,84 @@ func peopleStats(credits []metadata.PersonMovieCredit, now time.Time) personStat
 }
 
 // coStars counts the other people named on this person's Library titles
-// (the cast stored with each title) and looks the most frequent ones up,
-// so the page can show who they often work with.
+// (the cast stored with each movie and show this member may see) and looks
+// the most frequent ones up, so the page can show who they often work
+// with. A title counts when its stored cast names the person or it is one
+// of their movie credits. Fewer than four found people show nothing.
 func (a *API) coStars(r *http.Request, p metadata.PeopleProvider, self string, titles []peopleMovieView) []metadata.Person {
-	counts, order := map[string]int{}, []string{}
-	db := a.s.Store.Read()
+	out := []metadata.Person{}
+	if p == nil {
+		return out
+	}
+	ids := map[int64]bool{}
 	for _, t := range titles {
+		ids[t.TitleID] = true
+	}
+	where := "t.kind IN ('movie', 'show') AND t.state != 'removed'"
+	clause, args := kidSQL(a.kidMax(r))
+	if clause != "" {
+		where += " AND " + clause
+	}
+	rows, err := a.s.Store.Read().QueryContext(r.Context(), "SELECT t.id, t.people FROM titles t WHERE "+where+" ORDER BY t.id", args...)
+	if err != nil {
+		return out
+	}
+	counts, order := map[string]int{}, []string{}
+	for rows.Next() {
+		var id int64
 		var raw string
-		if err := db.QueryRowContext(r.Context(), "SELECT people FROM titles WHERE id = ?", t.TitleID).Scan(&raw); err != nil {
+		if rows.Scan(&id, &raw) != nil {
 			continue
 		}
 		var names []string
 		if json.Unmarshal([]byte(raw), &names) != nil {
 			continue
 		}
+		mine := ids[id]
 		for _, n := range names {
-			if n == "" || strings.EqualFold(n, self) {
+			mine = mine || strings.EqualFold(strings.TrimSpace(n), self)
+		}
+		if !mine {
+			continue
+		}
+		seen := map[string]bool{}
+		for _, n := range names {
+			n = strings.TrimSpace(n)
+			k := strings.ToLower(n)
+			if n == "" || strings.EqualFold(n, self) || seen[k] {
 				continue
 			}
+			seen[k] = true
 			if counts[n] == 0 {
 				order = append(order, n)
 			}
 			counts[n]++
 		}
 	}
+	rows.Close()
 	sort.SliceStable(order, func(i, j int) bool { return counts[order[i]] > counts[order[j]] })
-	out := []metadata.Person{}
-	for _, n := range order[:min(len(order), 8)] {
-		found, err := p.SearchPeople(r.Context(), n, 1)
-		if err != nil || len(found.People) == 0 || !strings.EqualFold(found.People[0].Name, n) {
-			continue
+	order = order[:min(len(order), 12)]
+	found := make([]*metadata.Person, len(order))
+	eachLimited(len(order), func(i int) {
+		got, err := p.SearchPeople(r.Context(), order[i], 1)
+		if err != nil {
+			return
 		}
-		found.People[0].KnownFor = []metadata.Movie{}
-		out = append(out, found.People[0])
+		for _, m := range got.People {
+			if strings.EqualFold(m.Name, order[i]) {
+				m.KnownFor = []metadata.Movie{}
+				found[i] = &m
+				return
+			}
+		}
+	})
+	for _, m := range found {
+		if m != nil && len(out) < 8 {
+			out = append(out, *m)
+		}
+	}
+	if len(out) < 4 {
+		return []metadata.Person{}
 	}
 	return out
 }
@@ -355,6 +403,13 @@ func (a *API) getPerson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	now := time.Now().UTC()
+	stats := peopleStats(credits.Movies, now)
+	// TV credits only count for members without a Kid limit (a Kid sees Library movies only).
+	if c, ok := metadata.PersonShowCounterFor(r.Context(), a.s.Metadata); ok && a.kidMax(r) == "" {
+		if n, err := c.PersonShowCount(r.Context(), "tmdb:"+r.PathValue("id")); err == nil && n > 0 {
+			stats.Shows, stats.Titles = n, stats.Films+n
+		}
+	}
 	library, asked, soon := []peopleMovieView{}, []peopleMovieView{}, []peopleMovieView{}
 	for _, v := range all {
 		if _, out := movieReleased(v.Movie, now); !out && v.Year >= now.Year() {
@@ -380,7 +435,7 @@ func (a *API) getPerson(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"person": person, "movies": views, "page": page, "page_size": size,
 		"total_pages": totalPages, "total_results": total, "complete": credits.Complete, "provider_pages": credits.ProviderPages,
 		"library": library, "asked": asked, "known_for": known, "coming_soon": soon,
-		"stats": peopleStats(credits.Movies, now), "often_with": a.coStars(r, p, person.Name, library), "attribution": metadata.Attribution})
+		"stats": stats, "often_with": a.coStars(r, p, person.Name, library), "attribution": metadata.Attribution})
 }
 
 func (a *API) reviewPersonMovies(w http.ResponseWriter, r *http.Request) {

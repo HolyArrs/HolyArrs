@@ -33,6 +33,7 @@ describe('follow', () => {
 	it('follows a show not in the Library by its TMDB id', () => {
 		expect(followPath({ tmdb: '203857' })).toBe('/metadata/show/203857/follow');
 		expect(followPath({ titleId: 3 })).toBe('/titles/3/follow');
+		expect(followPath({ tmdb: '1061474', kind: 'movie' })).toBe('/metadata/movie/1061474/follow');
 		expect(followHint('show', false, true)).toBe('Follow to hear about it when it lands and about new seasons. Nothing is asked for.');
 	});
 });

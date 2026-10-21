@@ -17,12 +17,17 @@ export function followHint(kind: string, on: boolean, waiting = false): string {
 	return on ? `You hear about ${what}. Tap to stop.` : `Follow to hear about ${what}. Nothing is asked for.`;
 }
 
-/** What is followed: a Library title, or a show by TMDB id (not in the Library yet). */
-export type FollowTarget = { titleId: number } | { tmdb: string };
+/** What is followed: a Library title, or a show (or a movie not out yet) by TMDB id. */
+export type FollowTarget = { titleId: number } | { tmdb: string; kind?: 'show' | 'movie' };
 
-/** followPath is the follow address of a Library title or of a show by TMDB id. */
+/** followPath is the follow address of a Library title or of a show or movie by TMDB id. */
 export function followPath(t: FollowTarget): string {
-	return 'titleId' in t ? `/titles/${t.titleId}/follow` : `/metadata/show/${encodeURIComponent(t.tmdb)}/follow`;
+	return 'titleId' in t ? `/titles/${t.titleId}/follow` : `/metadata/${t.kind ?? 'show'}/${encodeURIComponent(t.tmdb)}/follow`;
+}
+
+/** movieFollowHint says what following a movie that is not in the Library yet tells you. */
+export function movieFollowHint(name: string, on: boolean): string {
+	return on ? `You hear when ${name} is in the Library. Tap to stop.` : `Follow ${name} to hear when it is out and in the Library. Nothing is asked for.`;
 }
 
 /** setFollow follows (on) or unfollows a title; it returns the new state. */

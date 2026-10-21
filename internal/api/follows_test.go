@@ -7,6 +7,7 @@ import (
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/library"
+	"github.com/CoderLuii/holyarrs/internal/metadata"
 )
 
 // route: PUT /api/v1/titles/{id}/follow
@@ -96,4 +97,44 @@ func TestFollowShowByTMDBOverHTTP(t *testing.T) {
 	if state(r.ana) {
 		t.Fatal("still following")
 	}
+}
+
+// route: PUT /api/v1/metadata/movie/{tmdb_id}/follow
+// route: DELETE /api/v1/metadata/movie/{tmdb_id}/follow
+// route: GET /api/v1/metadata/movie/{tmdb_id}/follow
+func TestFollowMovieByTMDBOverHTTP(t *testing.T) {
+	r := newAskRig(t)
+	path := "/api/v1/metadata/movie/900005/follow"
+	state := func(s *signedIn) bool {
+		var x struct {
+			Following bool `json:"following"`
+		}
+		_ = json.Unmarshal(s.call("GET", path, "", 200), &x)
+		return x.Following
+	}
+	if state(r.ana) {
+		t.Fatal("following before")
+	}
+	r.ana.call("PUT", path, "", 200)
+	if !state(r.ana) {
+		t.Fatal("not following")
+	}
+	r.ana.call("PUT", "/api/v1/metadata/movie/abc/follow", "", 400)
+	r.ana.call("DELETE", path, "", 200)
+	if state(r.ana) {
+		t.Fatal("still following")
+	}
+	r.ana.call("PUT", path, "", 200)
+	tid, _, err := r.asks.Library.Add(context.Background(), metadata.Movie{Name: "Quiet Orchard", Year: 2022, IDs: map[string]string{"tmdb": "900005"}},
+		library.AddOptions{}, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n, err := r.asks.LandTMDBFollows(context.Background(), tid); err != nil || n != 1 {
+		t.Fatalf("landed %d %v", n, err)
+	}
+	if state(r.ana) {
+		t.Fatal("the follow should end once the movie lands")
+	}
+	r.ana.call("PUT", path, "", 409)
 }
