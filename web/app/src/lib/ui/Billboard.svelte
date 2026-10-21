@@ -71,6 +71,8 @@
 	let armed = $state(false);
 	let sources = $state<TrailerSource[]>([]);
 	let playing = $state(false);
+	// The trailer already played to its end here: scrolling away and back never starts it again (Replay or Trailer does).
+	let finished = $state(false);
 
 	let phase = $state<HeroPhase>('still');
 	const words = heroQuiet((p) => (phase = p));
@@ -116,11 +118,14 @@
 		sources = [];
 		armed = false;
 		playing = false;
+		finished = false;
 		words.send('reset');
 	});
 
 	$effect(() => {
-		if (trailer && settled && inView) {
+		// Played to the end and still here: keep it as it is (its Replay button stays).
+		if (finished && inView) return;
+		if (trailer && settled && inView && !finished) {
 			wait.start();
 			// The lookup starts now, not after the dwell.
 			prefetchTrailer(kind!, tmdb!);
@@ -171,7 +176,7 @@
 		{/if}
 		{#if sources.length}
 			{#key resumeRun}
-			<TrailerPlayer {sources} {title} sharp pausable start={resumeAt} onexpand={expand} onplaying={heroPlaying} onended={() => ((playing = false), words.send('stop'))} onfail={() => ((playing = false), words.send('stop'))} />
+			<TrailerPlayer {sources} {title} sharp pausable start={resumeAt} onexpand={expand} onplaying={heroPlaying} onended={() => ((playing = false), (finished = true), words.send('stop'))} onfail={() => ((playing = false), words.send('stop'))} />
 			{/key}
 		{/if}
 		<div class="shade" class:playing></div>
