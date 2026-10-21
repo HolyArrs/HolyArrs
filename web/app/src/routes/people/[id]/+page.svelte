@@ -163,8 +163,6 @@
 		{#snippet growAction()}
 			{#if action && !m.title_id && !m.ask && !m.never_add && !done[m.ids.tmdb]}
 				<IconButton icon="plus" label={action === 'add' ? `Add ${m.name}` : `Ask for ${m.name}`} variant="glass" size="lg" aria-busy={asking === m.ids.tmdb || undefined} onclick={() => quick(m)} />
-			{:else}
-				<IconButton icon="play" label="Open {m.name}" variant="glass" size="lg" href={href(m)} />
 			{/if}
 			{#if !m.title_id && m.ids.tmdb in follows}
 				{@const on = follows[m.ids.tmdb]}

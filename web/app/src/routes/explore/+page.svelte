@@ -600,8 +600,6 @@
 					{#snippet growAction()}
 						{#if act && cardTmdb(c)}
 							<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={asking === c.key || undefined} onclick={() => void quick(c, act)} />
-						{:else}
-							<IconButton icon="play" label="Open {c.name}" variant="glass" size="lg" href={cardHref(c) ?? searchHref(c)} />
 						{/if}
 					{/snippet}
 				</WideCard>
@@ -667,7 +665,7 @@
 				{/each}
 			</div>
 		{:else if rows.length === 0}
-			<TopServicesRow {type} {region} {owned} {who} used={usedServices} />
+			<TopServicesRow {type} {region} {owned} {who} used={usedServices} ask={heroAction} />
 			<EmptyState icon="compass" title="Explore is getting ready" text="Rows fill in within a few minutes." action={{ label: 'Search', href: to('/search'), icon: 'search' }} />
 		{:else}
 			{#if heroCards.length}
@@ -683,7 +681,7 @@
 			{#if !genreOn && strip.length}<CategoryStrip tiles={strip} {type} onopen={stripOpened} />{/if}
 			{#each rows as row, ri (row.id)}
 				{#if row.type === 'top_services'}
-					<TopServicesRow {type} {region} genre={genreOn ? genre : null} {owned} {who} used={usedServices} bind:shown={servicesShown} seeAll={genreOn ? undefined : to(newHref(type))} />
+					<TopServicesRow {type} {region} genre={genreOn ? genre : null} {owned} {who} used={usedServices} bind:shown={servicesShown} seeAll={genreOn ? undefined : to(newHref(type))} ask={heroAction} />
 					{#if newServices && newCards.length}{@render newServicesRow(newServices, newCards)}{/if}
 				{:else}
 				<div class="row-wrap" class:wide-row={row.wide || row.cards.some((c) => wideKind(c.kind))} data-row={row.type ?? row.id} data-row-id={row.id} data-title-layer={row.titleLayer}>
@@ -701,12 +699,6 @@
 								{#snippet growAction()}
 									{#if act && cardTmdb(c)}
 										<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={asking === c.key || undefined} onclick={() => { count(row.type ?? row.id, 'ask', row.titleLayer); void quick(c, act); }} />
-									{:else if mark?.state === 'available' || mark?.state === 'partial' || mark?.state === 'downloading'}
-										<IconButton icon="check" label="In Library" variant="glass" size="lg" href={cardHref(c) ?? searchHref(c)} />
-									{:else if mark?.state === 'requested'}
-										<IconButton icon="check" label="Asked" variant="glass" size="lg" href={cardHref(c) ?? searchHref(c)} />
-									{:else}
-										<IconButton icon="play" label="Open {c.name}" variant="glass" size="lg" href={cardHref(c) ?? searchHref(c)} />
 									{/if}
 								{/snippet}
 							</WideCard>

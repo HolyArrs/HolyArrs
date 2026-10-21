@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
+	import { untrack, type Snippet } from 'svelte';
 	import { to } from './paths.ts';
 	import { api } from './api.ts';
 	import { detailPath, remember } from './title-details.ts';
@@ -38,7 +38,8 @@
 		owned,
 		who = 'staff',
 		shown = $bindable([]),
-		seeAll
+		seeAll,
+		ask
 	}: {
 		type: ExploreType;
 		/** The person's services, first in the chips. */
@@ -51,6 +52,8 @@
 		shown?: string[];
 		/** Where the row's See all goes (New & Popular). */
 		seeAll?: string;
+		/** The page's Ask / Add button for a card, the same one its other rows use (on hover and in the hover card). */
+		ask?: Snippet<[ExploreCard]>;
 	} = $props();
 
 	type Ranked = ExploreCard & { rank: number };
@@ -147,14 +150,15 @@
 					{@const c = owned ? { ...matchOwned(raw, owned), rank: raw.rank } : raw}
 					{@const mark = ownedMark(c, owned ? ownedTitle(c, owned) : undefined, who)}
 					{@const preview = c.ref?.startsWith('tmdb:') && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: c.ref.slice(5) } : undefined}
+					{#snippet cardAsk()}{@render ask?.(c)}{/snippet}
 					{#if ranked}
 						<div class="ranked">
 							<span class="rank" class:two={c.rank > 9} aria-hidden="true">{c.rank}</span>
-							<div class="pc"><PosterCard title={c.name} href={href(c)} image={c.image} kind={c.kind} owned={mark} fresh={c.fresh} {preview} /></div>
+							<div class="pc"><PosterCard title={c.name} href={href(c)} image={c.image} kind={c.kind} owned={mark} fresh={c.fresh} {preview} action={ask ? cardAsk : undefined} actionOnHover /></div>
 							<span class="sr">Number {c.rank}</span>
 						</div>
 					{:else}
-						<PosterCard title={c.name} href={href(c)} image={c.image} kind={c.kind} owned={mark} fresh={c.fresh} {preview} />
+						<PosterCard title={c.name} href={href(c)} image={c.image} kind={c.kind} owned={mark} fresh={c.fresh} {preview} action={ask ? cardAsk : undefined} actionOnHover />
 					{/if}
 				{/snippet}
 			</Shelf>

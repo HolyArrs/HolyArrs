@@ -3,7 +3,9 @@
 	import { api } from '../api.ts';
 	import { richMetadata, type RichMeta } from './TitleHero.svelte';
 	import TrailerPlayer from './TrailerPlayer.svelte';
-	import Icon from '../Icon.svelte';
+	import IconButton from './IconButton.svelte';
+	import type { CardOwned } from './CardBadges.svelte';
+	import Icon, { type IconName } from '../Icon.svelte';
 	import { followHint, followLabel, followPath, movieFollowHint, setFollow, type FollowTarget } from '../follow.ts';
 	import { fitTags, growFacts } from '../grow-lines.ts';
 	import { sized } from '../tmdb-image.ts';
@@ -42,7 +44,8 @@
 		followId,
 		followTmdb = false,
 		context = null,
-		service = null
+		service = null,
+		owned = null
 	}: {
 		/** The card's picture box: the grown card starts exactly on it. */
 		anchor: HTMLElement;
@@ -82,6 +85,8 @@
 		context?: { text: string; kind: 'house' | 'why' } | null;
 		/** On one of the member's streaming services: its logo ends the facts line. */
 		service?: { name: string; logo?: string } | null;
+		/** The card's own library state: it fills the first button slot when the caller's action shows nothing. */
+		owned?: CardOwned | null;
 	} = $props();
 
 	let following = $state(false);
@@ -214,7 +219,8 @@
 		return { destroy: () => node.remove() };
 	}
 
-	const focusables = () => (card ? [...card.querySelectorAll<HTMLElement>('a[href]:not([tabindex="-1"]), button:not([disabled])')] : []);
+	// Shown buttons only: the stand-in state button is in the DOM but hidden when the caller's action shows.
+	const focusables = () => (card ? [...card.querySelectorAll<HTMLElement>('a[href]:not([tabindex="-1"]), button:not([disabled])')].filter((e) => e.getClientRects().length > 0) : []);
 	function keydown(e: KeyboardEvent) {
 		// The portal sits outside the row: hand the row's arrow keys back to it (rove.ts), from the card.
 		if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) {
@@ -280,6 +286,10 @@
 	// Mood words the genres support (server moods, checked again), else genres: shown when there is no context line.
 	const tags = $derived(fitTags(meta?.moods, meta?.genres));
 	const bellHint = $derived(kind === 'movie' ? movieFollowHint(title, following) : followHint('show', following));
+	// The first button is never missing (Netflix's first slot): Ask or Add when the caller has it, else the
+	// title's state in the same shape as the card's badge, else the bell, else a plain Open.
+	const STATE_ICON: Partial<Record<CardOwned['state'], IconName>> = { available: 'check', partial: 'partOwned', downloading: 'download', requested: 'clock' };
+	const stateIcon = $derived(owned ? STATE_ICON[owned.state] : undefined);
 </script>
 
 <svelte:window onkeydown={(e) => e.key === 'Escape' && onclose(!!card?.contains(document.activeElement))} />
@@ -317,6 +327,9 @@
 	<div class="panel">
 		<div class="buttons">
 			{#if action}{@render action()}{/if}
+			<!-- Stands in only while it is the row's first button (CSS), so an action that renders nothing never leaves a hole. -->
+			{#if href && stateIcon && owned}<IconButton class="state" icon={stateIcon} label={owned.label} variant="glass" size="lg" {href} />
+			{:else if href && !followTarget}<IconButton class="state" icon="arrow" label="Open {title}" variant="glass" size="lg" {href} />{/if}
 			{#if followTarget}<button type="button" class="more bell" class:on={following} aria-pressed={following} aria-label="{followLabel(following)} {title}" title={bellHint} disabled={followBusy} onclick={flipFollow} data-testid="grow-follow"><Icon name={following ? 'bellOn' : 'bell'} size={18} /></button>{/if}
 			{#if onmore}<button type="button" class="more info" aria-label="More info about {title}" title="More info" aria-haspopup="dialog" onclick={() => card && onmore(card.getBoundingClientRect())}><Icon name="chevronDown" size={20} /></button>
 			{:else if href}<a class="more info" {href} aria-label="More about {title}" title="More info"><Icon name="chevronDown" size={20} /></a>{/if}
@@ -375,6 +388,7 @@
 	.more:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.more.bell.on { background: var(--text); color: var(--bg); box-shadow: none; }
 	.more.info { margin-left: auto; }
+	.buttons :global(.state:not(:first-child)) { display: none; }
 	/* Every panel button is the same 40px round (the Ask/Add one included). */
 	.buttons :global(.ui-ibtn) { width: 40px; height: 40px; flex: none; }
 	.buttons :global(.ui-ibtn:focus-visible) { outline: none; box-shadow: var(--focus-ring); }

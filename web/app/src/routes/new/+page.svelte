@@ -314,12 +314,6 @@
 {#snippet hoverAction(c: ExploreCard, act: 'add' | 'ask' | null, mark: ReturnType<typeof ownedMark>)}
 	{#if act && cardTmdb(c)}
 		<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={asking === c.key || undefined} onclick={() => void quick(c, act)} />
-	{:else if mark?.state === 'available' || mark?.state === 'partial' || mark?.state === 'downloading'}
-		<IconButton icon="check" label="In Library" variant="glass" size="lg" href={cardHref(c) ?? searchHref(c)} />
-	{:else if mark?.state === 'requested'}
-		<IconButton icon="check" label="Asked" variant="glass" size="lg" href={cardHref(c) ?? searchHref(c)} />
-	{:else}
-		<IconButton icon="play" label="Open {c.name}" variant="glass" size="lg" href={cardHref(c) ?? searchHref(c)} />
 	{/if}
 {/snippet}
 
