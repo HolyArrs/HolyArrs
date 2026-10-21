@@ -360,6 +360,8 @@ var Routes = map[string]Owner{
 	"GET /api/v1/metadata/{kind}/{tmdb_id}":                Media,
 	"GET /api/v1/metadata/{kind}/{tmdb_id}/more-from":      Media,
 	"GET /api/v1/metadata/{kind}/{tmdb_id}/reviews":        Media,
+	"GET /api/v1/metadata/{kind}/{tmdb_id}/anime":          Media,
+	"GET /api/v1/extras/{kind}/{id}":                       Media,
 	"GET /api/v1/metadata/show/{tmdb_id}/seasons/{number}": shows,
 	"GET /api/v1/trailer/batch":                            Media,
 	"GET /api/v1/trailer/{kind}/{tmdb_id}":                 Media,

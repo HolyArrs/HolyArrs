@@ -9,6 +9,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 )
 
+// route: GET /api/v1/extras/{kind}/{id}
 func TestTitleExtrasFiltersScoresAndFallsBack(t *testing.T) {
 	titleExtrasCache.seen = map[string]extrasEntry{}
 	asked := 0

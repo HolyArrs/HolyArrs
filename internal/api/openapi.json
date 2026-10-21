@@ -11829,11 +11829,18 @@
             }
           }
         ],
-        "responses": {},
-        "summary": "",
-        "x-holyarrs-part": "",
-        "x-holyarrs-permission": "owner",
-        "x-holyarrs-scope": "admin"
+        "responses": {
+          "200": {
+            "description": "Extra scores and art; empty when the sources are off"
+          },
+          "400": {
+            "description": "Unknown kind or id"
+          }
+        },
+        "summary": "Extra art and scores for a movie, show or artist (fanart.tv, MDBList)",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
       }
     },
     "/api/v1/files/{id}/subtitles/choices": {
@@ -14221,11 +14228,18 @@
             }
           }
         ],
-        "responses": {},
-        "summary": "",
-        "x-holyarrs-part": "",
-        "x-holyarrs-permission": "owner",
-        "x-holyarrs-scope": "admin"
+        "responses": {
+          "200": {
+            "description": "Whether the title is anime, its mapped seasons and alternate names"
+          },
+          "400": {
+            "description": "Unknown kind or id"
+          }
+        },
+        "summary": "Anime check for a show or movie: mapped seasons and alternate names",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
       }
     },
     "/api/v1/metadata/{kind}/{tmdb_id}/more-from": {
