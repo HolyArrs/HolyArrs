@@ -4,15 +4,13 @@
 
 	// The 56px translucent bar above the content (tablet and desktop):
 	// sidebar toggle when collapsed, back/forward on detail pages, the one
-	// search field in the centre, live connection and downloads.
+	// search field in the centre.
 	let {
 		showToggle,
 		controls,
 		ontoggle,
 		history = false,
 		searchKey,
-		live,
-		downloads,
 		toggle = $bindable()
 	}: {
 		showToggle: boolean;
@@ -20,8 +18,6 @@
 		ontoggle: () => void;
 		history?: boolean;
 		searchKey: string;
-		live?: { state: 'off' | 'connecting' | 'live' | 'reconnecting'; word: string };
-		downloads?: { count: number; href: string };
 		toggle?: HTMLElement;
 	} = $props();
 </script>
@@ -35,14 +31,7 @@
 		{/if}
 	</div>
 	<div class="centre"><SearchField {searchKey} /></div>
-	<div class="trail">
-		{#if live}
-			<span class="live {live.state}" title={live.word}><i aria-hidden="true"></i><span class="sr-only">{live.word}</span></span>
-		{/if}
-		{#if downloads}
-			<IconButton icon="download" href={downloads.href} label={downloads.count > 0 ? `Downloads, ${downloads.count} active` : 'Downloads'} badge={downloads.count} />
-		{/if}
-	</div>
+	<div class="trail"></div>
 </header>
 
 <style>
@@ -52,10 +41,5 @@
 		backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid var(--line);
 	}
 	.lead, .trail { display: flex; align-items: center; gap: 4px; min-width: 0; }
-	.trail { justify-content: flex-end; gap: 10px; }
-	.live { width: 28px; height: 28px; display: grid; place-items: center; }
-	.live i { width: 8px; height: 8px; border-radius: 50%; background: var(--text-faint); }
-	.live.live i { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 22%, transparent); }
-	.live.connecting i, .live.reconnecting i { background: var(--wait); }
 	@media (max-width: 767px) { .ui-topbar { display: none; } }
 </style>

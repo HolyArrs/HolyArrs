@@ -37,7 +37,6 @@ test('the app works under /holyarrs behind a proxy', async ({ page }) => {
 	await page.getByLabel(/^Name/).fill('Movies');
 	await page.getByRole('button', { name: 'Add folder and open Home' }).click();
 	await expect(page).toHaveURL(`${root}/`);
-	await expect(page.getByText('Live', { exact: true })).toBeVisible();
 
 	await page.goto(`${root}/settings`);
 	await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();

@@ -19,6 +19,7 @@
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { inbox, refreshInbox } from '#lib/wishlist.svelte.ts';
 	import { decisions, refreshDecisions } from '#lib/decisions.svelte.ts';
+	import { activeDownloads, refreshActiveDownloads, resetActiveDownloads } from '#lib/activeDownloads.svelte.ts';
 	import { partsNow, refreshParts } from '#lib/parts.svelte.ts';
 	import { offPartName } from '#lib/parts.ts';
 	import { navigateWithTransition } from '#lib/motion.ts';
@@ -75,6 +76,7 @@
 			kinds,
 			approvals: inbox.waiting,
 			decisions: decisions.count,
+			active: activeDownloads,
 			unread: inbox.unread,
 			kid: session.kid
 		})
@@ -322,6 +324,38 @@
 		};
 	});
 
+	// Active downloads for the Downloads row: the live stream says when
+	// something moved; a 15 s poll runs only while the tab is visible.
+	$effect(() => {
+		if (!decisionsOn || offPartName(partsNow.answer, '/downloads')) {
+			resetActiveDownloads();
+			return;
+		}
+		let timer: ReturnType<typeof setTimeout> | undefined;
+		const soon = () => {
+			if (timer) return;
+			timer = setTimeout(() => {
+				timer = undefined;
+				void refreshActiveDownloads();
+			}, 800);
+		};
+		void refreshActiveDownloads();
+		const offs = ['download', 'slot', 'import', 'resync'].map((t) => live.on(t, soon));
+		const poll = setInterval(() => {
+			if (document.visibilityState === 'visible') void refreshActiveDownloads();
+		}, 15_000);
+		const visible = () => {
+			if (document.visibilityState === 'visible') void refreshActiveDownloads();
+		};
+		document.addEventListener('visibilitychange', visible);
+		return () => {
+			offs.forEach((off) => off());
+			clearInterval(poll);
+			clearTimeout(timer);
+			document.removeEventListener('visibilitychange', visible);
+		};
+	});
+
 	async function signOut() {
 		try {
 			await session.logout();
@@ -331,7 +365,6 @@
 		}
 	}
 
-	const liveWord = $derived({ off: 'Live updates off', connecting: 'Connecting', live: 'Live', reconnecting: 'Reconnecting' }[live.status.state]);
 	const detail = $derived(path.split('/').filter(Boolean).length >= 2);
 </script>
 
@@ -390,8 +423,6 @@
 				ontoggle={toggleSidebar}
 				history={detail}
 				{searchKey}
-				live={allowed('manage_library') ? { state: live.status.state, word: liveWord } : undefined}
-				downloads={allowed('manage_library') && !offPartName(partsNow.answer, '/downloads') ? { count: 0, href: to('/downloads') } : undefined}
 			/>
 		{/snippet}
 		{#snippet tabbar()}<TabBar items={tabs} />{/snippet}

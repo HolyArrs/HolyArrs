@@ -14,6 +14,8 @@ export interface NavItem {
 	also?: string[];
 	badge?: number;
 	badgeLabel?: string;
+	/** Overall progress, 0-100, drawn as a ring around the icon. */
+	ring?: number;
 }
 
 export interface NavSection {
@@ -30,6 +32,8 @@ export interface NavInput {
 	kinds: ('movie' | 'show' | 'artist')[];
 	approvals: number;
 	decisions: number;
+	/** Downloads moving now and their average percent (staff only). */
+	active?: { count: number; percent: number };
 	unread: number;
 	/** A Kid (age-rating limit) never sees music: it carries no rating. */
 	kid?: boolean;
@@ -40,6 +44,12 @@ const kindItems: Record<'movie' | 'show' | 'artist', NavItem> = {
 	show: { href: '/library?kind=show', label: 'TV shows', icon: 'tv', need: null },
 	artist: { href: '/library?kind=artist', label: 'Music', icon: 'music', need: null }
 };
+
+function downloadsBadge(input: NavInput): Pick<NavItem, 'badge' | 'badgeLabel' | 'ring'> {
+	const a = input.active;
+	if (a && a.count > 0) return { badge: a.count, badgeLabel: `${a.count} active, ${a.percent}%`, ring: a.percent };
+	return { badge: input.decisions, badgeLabel: `${input.decisions} need a decision` };
+}
 
 /** buildNav returns the sections this person may see, empty ones left out. */
 export function buildNav(input: NavInput): NavSection[] {
@@ -78,7 +88,7 @@ export function buildNav(input: NavInput): NavSection[] {
 			label: 'Manage',
 			items: input.allowed('manage') || input.allowed('staff')
 				? [
-						{ href: '/downloads', label: 'Downloads', icon: 'download', need: 'manage_library', also: ['/downloads/decide'], badge: input.decisions, badgeLabel: `${input.decisions} need a decision` },
+						{ href: '/downloads', label: 'Downloads', icon: 'download', need: 'manage_library', also: ['/downloads/decide'], ...downloadsBadge(input) },
 						{ href: '/wishlist', label: 'Approvals', icon: 'inbox', need: 'approve', badge: input.approvals, badgeLabel: `${input.approvals} waiting` },
 						{ href: '/downloads/history', label: 'History', icon: 'clock', need: 'manage_library' },
 						{ href: '/library/held', label: 'Library tools', icon: 'tools', need: 'manage_library', also: ['/library/turned-down', '/library/rename', '/library/import', '/library/missing-subtitles', '/library/copies'] },

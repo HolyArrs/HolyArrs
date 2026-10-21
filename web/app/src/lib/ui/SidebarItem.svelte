@@ -12,6 +12,7 @@
 		collapsed = false,
 		badge = 0,
 		badgeLabel,
+		ring,
 		kbd,
 		onclick,
 		testid,
@@ -24,6 +25,8 @@
 		collapsed?: boolean;
 		badge?: number;
 		badgeLabel?: string;
+		/** Overall progress 0-100: a ring around the icon. Decorative; the name carries the words. */
+		ring?: number;
 		kbd?: string;
 		onclick?: (e: MouseEvent) => void;
 		testid?: string;
@@ -50,7 +53,10 @@
 </script>
 
 {#snippet body()}
-	<span class="ic"><Icon name={icon} size={19} /></span>
+	<span class="ic">
+		{#if ring !== undefined}<svg class="ring" viewBox="0 0 28 28" aria-hidden="true" data-testid="nav-ring"><circle class="track" cx="14" cy="14" r="12" /><circle class="arc" cx="14" cy="14" r="12" pathLength="100" stroke-dasharray="{Math.min(Math.max(ring, 0), 100)} 100" /></svg>{/if}
+		<Icon name={icon} size={19} />
+	</span>
 	<span class="label">{label}</span>
 	{#if kbd}<kbd class="label" aria-hidden="true">{kbd}</kbd>{/if}
 	{#if badge > 0}<b class="count" aria-hidden="true" data-testid={badgeTestid}>{badge > 99 ? '99+' : badge}</b>{/if}
@@ -70,7 +76,11 @@
 	}
 	.ui-sbi:hover:not(.current) { background: color-mix(in srgb, var(--surface-3) 70%, transparent); }
 	.ui-sbi:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
-	.ic { flex: none; width: 24px; display: grid; place-items: center; color: var(--text-muted); transition: color var(--dur-fast); }
+	.ic { position: relative; flex: none; width: 24px; display: grid; place-items: center; color: var(--text-muted); transition: color var(--dur-fast); }
+	.ring { position: absolute; inset: -2px; width: 28px; height: 28px; transform: rotate(-90deg); fill: none; stroke-width: 2; pointer-events: none; }
+	.ring .track { stroke: var(--line); }
+	.ring .arc { stroke: var(--accent); stroke-linecap: round; transition: stroke-dasharray var(--dur) ease; }
+	@media (prefers-reduced-motion: reduce) { .ring .arc { transition: none; } }
 	.current { font-weight: 600; }
 	.current .ic { color: var(--accent); }
 	.label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; transition: opacity var(--dur-fast) ease var(--label-delay, 0ms); }
