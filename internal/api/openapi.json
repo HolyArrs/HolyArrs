@@ -15420,6 +15420,80 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/music/albums/{mbid}": {
+      "get": {
+        "description": "One album (MusicBrainz release group) by artist=<mbid>: type, date, label, explicit, Library state, the tracklist of its usual edition with have per track when the Library keeps it, other editions, more by the artist and similar artists. 403 for an explicit album under a Kid limit.",
+        "operationId": "musicAlbumPage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mbid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The album page."
+          },
+          "400": {
+            "description": "Not a MusicBrainz id."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          },
+          "404": {
+            "description": "Music is off, or no such artist or album."
+          },
+          "502": {
+            "description": "The music source did not answer."
+          }
+        },
+        "summary": "An album's page",
+        "x-holyarrs-part": "",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/music/artists/{mbid}": {
+      "get": {
+        "description": "Any MusicBrainz artist, in the Library or not: name, genres, picture, the English Wikipedia summary (CC BY-SA 4.0), every album (newest first) on a shelf (albums, singles, live, other) with its Library state, explicit mark (from Deezer) and follow, the latest release, top songs (Deezer popularity) each tied to its album when known, similar artists and related acts. have and total count studio albums, EPs and singles. A Kid limit leaves out explicit albums and songs.",
+        "operationId": "musicArtistPage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mbid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The artist page."
+          },
+          "400": {
+            "description": "Not a MusicBrainz id."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          },
+          "404": {
+            "description": "Music is off, or no such artist or album."
+          },
+          "502": {
+            "description": "The music source did not answer."
+          }
+        },
+        "summary": "An artist's page",
+        "x-holyarrs-part": "",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/my/alerts": {
       "get": {
         "description": "My email address and Discord user id.",

@@ -217,8 +217,11 @@ export function musicCardNote(row: Pick<MusicRowData, 'type'>, c: MusicCardData)
 	return by;
 }
 
-/** musicCardHref: a Library album opens its album page, a Library artist its page, anything else the artist search. */
+/** musicCardHref: an album opens its album page, an artist the artist page (any artist, in the Library or not); without MusicBrainz ids the Library page or the artist search. */
 export function musicCardHref(c: MusicCardData): string {
+	if (c.kind === 'album' && c.mbid && c.artist_mbid) return to(`/music/album/${c.mbid}?artist=${c.artist_mbid}`);
+	const artist = c.kind === 'artist' ? c.mbid || c.artist_mbid : c.artist_mbid;
+	if (artist) return to(`/music/artist/${artist}`);
 	if (c.title_id && c.part_id && c.kind === 'album') return to(`/library/${c.title_id}/albums/${c.part_id}`);
 	if (c.title_id) return to(`/library/${c.title_id}`);
 	return to(`/search?q=${encodeURIComponent(c.artist || c.name)}&kind=music`);

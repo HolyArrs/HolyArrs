@@ -31,6 +31,8 @@ type ArtistImages struct {
 	TTL     time.Duration
 	// UserAgent names HolyArrs to Deezer (UserAgentFor).
 	UserAgent string
+	// WikiBase is Wikipedia's REST address for artist bios (default WikiBioBase).
+	WikiBase string
 
 	once sync.Once
 	g    *getter

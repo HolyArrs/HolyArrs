@@ -36,6 +36,7 @@
 	import type { Ask, LibraryFolder, LookupArtist, LookupMovie, LookupShow, MusicSettings, PickRulesView, TitleView } from '#lib/types.ts';
 	import type { PersonSummary } from '#lib/people.ts';
 	import { byDept, chipDept, PEOPLE_ROWS, SHELF_MIN, visibleChips, type PeopleFilter, type ShelfMeta, type ShelfPerson } from '#lib/people-shelves.ts';
+	import { artistHref } from '#lib/music-pages.ts';
 	import { fetchMusicExplore, musicCardHref, musicCardNote, musicImage, type MusicCardData } from '#lib/music-trending.ts';
 	import { refreshInbox } from '#lib/wishlist.svelte.ts';
 	import AddArtistDialog from '#lib/AddArtistDialog.svelte';
@@ -171,7 +172,7 @@
 		const tmdb = s.ids.tmdb;
 		return { key: `s${s.source}${s.ids[s.source] ?? s.name}${i}`, type: 'show', titleId: s.title_id || undefined, name: s.name, year: s.year, subtitle: s.year ? String(s.year) : undefined, image: s.poster, href: to(s.title_id ? `/library/${s.title_id}` : tmdb ? detailPath('show', tmdb) : `/search?q=${encodeURIComponent(s.name)}&kind=show`), owned: s.title_id ? inLibrary : askMark(s.ask), preview: tmdb ? { kind: 'show', tmdb, year: s.year, titleId: s.title_id || undefined } : undefined, ec: tmdb ? asCard(`s${s.source}${s.ids[s.source] ?? s.name}${i}`, 'show', s.name, s.year, tmdb, s.title_id || undefined, s.ask) : undefined };
 	};
-	const artistCard = (a: LookupArtist): Card => ({ key: `a${a.mbid}`, type: 'music', titleId: a.title_id || undefined, name: a.name, subtitle: a.disambiguation || [a.type, a.country].filter(Boolean).join(' · ') || undefined, href: a.title_id ? to(`/library/${a.title_id}`) : '', owned: a.title_id ? inLibrary : askMark(a.ask), artist: a });
+	const artistCard = (a: LookupArtist): Card => ({ key: `a${a.mbid}`, type: 'music', titleId: a.title_id || undefined, name: a.name, subtitle: a.disambiguation || [a.type, a.country].filter(Boolean).join(' · ') || undefined, href: artistHref(a.mbid), owned: a.title_id ? inLibrary : askMark(a.ask), artist: a });
 	const personCard = (p: PersonSummary): Card => ({ key: `p${p.id}`, type: 'people', name: p.name, subtitle: p.department, image: p.profile, href: to(`/people/${encodeURIComponent(p.id)}`), owned: null });
 
 	// ── In your Library: local matches first, left out of the wider results ──

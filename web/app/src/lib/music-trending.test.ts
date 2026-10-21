@@ -88,10 +88,12 @@ describe('Explore music cards', () => {
 		expect(musicCardNote({ type: 'classic' }, { ...base, kind: 'album', artist: 'Radiohead', date: '1997-05-21' })).toBe('Radiohead · 1997');
 	});
 
-	it('opens Library albums and artists, else the artist search', () => {
-		expect(musicCardHref({ ...base, kind: 'album', title_id: 4, part_id: 9 })).toMatch(/\/library\/4\/albums\/9$/);
-		expect(musicCardHref({ ...base, kind: 'artist', title_id: 4 })).toMatch(/\/library\/4$/);
-		expect(musicCardHref({ ...base, kind: 'album', artist: 'BTS' })).toMatch(/\/search\?q=BTS&kind=music$/);
+	it('opens the album and artist pages, else Library pages or the artist search', () => {
+		expect(musicCardHref({ ...base, kind: 'album', mbid: arirang, artist_mbid: bts })).toBe(`/music/album/${arirang}?artist=${bts}`);
+		expect(musicCardHref({ ...base, kind: 'artist', mbid: bts, title_id: 4 })).toBe(`/music/artist/${bts}`);
+		expect(musicCardHref({ ...base, kind: 'album', mbid: '', title_id: 4, part_id: 9 })).toMatch(/\/library\/4\/albums\/9$/);
+		expect(musicCardHref({ ...base, mbid: '', kind: 'artist', title_id: 4 })).toMatch(/\/library\/4$/);
+		expect(musicCardHref({ ...base, mbid: '', kind: 'album', artist: 'BTS' })).toMatch(/\/search\?q=BTS&kind=music$/);
 	});
 
 	it('reads the rows for a chip and region', async () => {
