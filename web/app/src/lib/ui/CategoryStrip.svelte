@@ -12,15 +12,17 @@
 	// a dark, grey still of the category's art; on hover or focus the still
 	// comes up in its own colour and the word breathes open. A small crimson
 	// section label sits over the name; then All categories (Search Browse).
-	let { tiles, type }: { tiles: (BrowseTile & { section: string })[]; type: ExploreType } = $props();
-	type Entry = { key: string; name: string; label: string; href: string; art: string; all?: boolean };
+	// onopen hears which tile was opened (the strip learns from it); the look is unchanged.
+	let { tiles, type, onopen }: { tiles: (BrowseTile & { section: string })[]; type: ExploreType; onopen?: (t: BrowseTile & { section: string }) => void } = $props();
+	type Entry = { key: string; name: string; label: string; href: string; art: string; all?: boolean; tile?: BrowseTile & { section: string } };
 	const entries = $derived<Entry[]>([
 		...tiles.map((t) => ({
 			key: t.category ?? `${t.kind}:${t.genre}:${t.mood ?? ''}`,
 			name: t.name,
 			label: SECTION_LABEL[t.section] ?? '',
 			href: to(browseHref(t, type)),
-			art: t.backdrop ? fitTile(t.backdrop, 240, false) : ''
+			art: t.backdrop ? fitTile(t.backdrop, 240, false) : '',
+			tile: t
 		})),
 		{ key: 'all', name: 'All categories', label: 'Browse', href: to(type === 'movies' ? '/search?kind=movie' : type === 'shows' ? '/search?kind=show' : '/search'), art: '', all: true }
 	]);
@@ -29,7 +31,7 @@
 <div class="cat-strip" data-row-id="category_strip">
 	<Shelf title="Categories" item="clamp(184px, 15vw, 236px)" items={entries} key={(e) => e.key} lines={1}>
 		{#snippet card(e: Entry)}
-			<a class="cat" class:all={e.all} href={e.href} style="--chars: {Math.max(e.name.length, 6)}">
+			<a class="cat" class:all={e.all} href={e.href} style="--chars: {Math.max(e.name.length, 6)}" onclick={() => e.tile && onopen?.(e.tile)}>
 				{#if e.art}<img class="art" src={e.art} alt="" loading="lazy" decoding="async" />{/if}
 				<span class="txt">
 					<small>{e.label}</small>

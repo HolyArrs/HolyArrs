@@ -62,9 +62,12 @@ type Details struct {
 	Votes  int            `json:"votes,omitempty"`
 	People []DetailPerson `json:"people"`
 	// Moods are up to three mood words from TMDB keywords and genres.
-	Moods   []string       `json:"moods"`
-	Seasons []DetailSeason `json:"seasons,omitempty"`
-	Similar []DiscoverItem `json:"similar"`
+	Moods []string `json:"moods"`
+	// Keywords are the title's TMDB keyword names (the Explore strip's
+	// keyword taste; not answered by the API).
+	Keywords []string       `json:"-"`
+	Seasons  []DetailSeason `json:"seasons,omitempty"`
+	Similar  []DiscoverItem `json:"similar"`
 	// Backdrops are up to maxBackdrops more wide pictures for the hero's
 	// slow crossfade, best voted first (the main backdrop not repeated).
 	Backdrops []string `json:"backdrops,omitempty"`
@@ -536,6 +539,7 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 		}
 	}
 	d.Moods = Moods(keywords, d.Genres)
+	d.Keywords = keywords
 	if raw.Images != nil {
 		bs := raw.Images.Backdrops
 		sort.SliceStable(bs, func(i, j int) bool { return bs[i].Vote > bs[j].Vote })

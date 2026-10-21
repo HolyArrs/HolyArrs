@@ -40,6 +40,19 @@
 			toasts.push(message(err), 'fail');
 		}
 	}
+	// Reset my recommendations: Explore's category strip forgets what it learned from my opens.
+	let resetBusy = $state(false);
+	async function resetRecommendations() {
+		resetBusy = true;
+		try {
+			await api.del('/explore/strip/counts');
+			toasts.push('Your recommendations start fresh.', 'ok');
+		} catch (err) {
+			toasts.push(message(err), 'fail');
+		} finally {
+			resetBusy = false;
+		}
+	}
 	let tgBusy = $state(false);
 	let tgError = $state('');
 	onMount(() => {
@@ -431,6 +444,10 @@
 	{:else}
 		<p class="small muted">You follow nothing yet.</p>
 	{/if}
+</SettingsCard>
+
+<SettingsCard id="recommendations-me" title="Recommendations" description="Explore's category strip learns from the categories you open. This stays on this server. Reset it to start fresh.">
+	<Button variant="plain" onclick={resetRecommendations} busy={resetBusy} data-testid="reset-recommendations">Reset my recommendations</Button>
 </SettingsCard>
 
 <SettingsCard title="Password">

@@ -11666,6 +11666,55 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/explore/strip": {
+      "get": {
+        "description": "Up to 18 Browse categories for the member, in order: scored by their own asks and follows (the household Library weaker), keyword overlap, popularity, the season and hour, fresh releases and their own strip opens; about a fifth are categories they were not shown in the last 7 days. At most 3 per section, one per near-duplicate group; categories the row titles passed as row= already name go last. A Kid gets kid-safe categories only. partial: some Browse sections are still building.",
+        "responses": {
+          "200": {
+            "description": "The strip's tiles."
+          },
+          "400": {
+            "description": "type is not valid."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          }
+        },
+        "summary": "The Explore category strip",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/explore/strip/counts": {
+      "delete": {
+        "description": "Reset my recommendations: clears what the category strip learned from the member's shown and opened tiles.",
+        "responses": {
+          "204": {
+            "description": "Cleared"
+          }
+        },
+        "summary": "Reset the strip's counts",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "write"
+      },
+      "post": {
+        "description": "Adds to the member's category strip counts: event shown with the categories the strip showed (1 to 40), or open with the one tile opened. The counts stay on this server and reorder only this member's strip; kept 90 days.",
+        "responses": {
+          "204": {
+            "description": "Counted"
+          },
+          "400": {
+            "description": "The event or a category is not valid."
+          }
+        },
+        "summary": "Count category strip tiles shown or opened",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/explore/tail": {
       "get": {
         "description": "The next 4 generated tail rows (page from 0); more says another page follows.",

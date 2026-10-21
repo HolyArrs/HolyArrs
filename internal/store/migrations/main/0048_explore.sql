@@ -19,7 +19,8 @@ CREATE TABLE explore_prefs (
     region    TEXT NOT NULL DEFAULT ''
 );
 -- Counts kept to measure Explore, never to reorder it: per member, row
--- type and day. Kept 90 days, shown to the owner only.
+-- type and day. Kept 90 days, shown to the owner only. (The category
+-- strip may reorder from its own counts, explore_category_counts, 0057.)
 CREATE TABLE explore_counts (
     member_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     row_type  TEXT NOT NULL,

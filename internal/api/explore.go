@@ -316,6 +316,9 @@ func (a *API) exploreDaily(ctx context.Context) {
 		if _, err := tx.Exec("DELETE FROM explore_title_counts WHERE day < ?", explore.Day(now.AddDate(0, 0, -90))); err != nil {
 			return err
 		}
+		if _, err := tx.Exec("DELETE FROM explore_category_counts WHERE day < ?", explore.Day(now.AddDate(0, 0, -90))); err != nil {
+			return err
+		}
 		_, err := tx.Exec("DELETE FROM explore_counts WHERE day < ?", explore.Day(now.AddDate(0, 0, -90)))
 		return err
 	})

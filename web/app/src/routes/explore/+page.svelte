@@ -70,8 +70,8 @@
 	import WideCard from '#lib/ui/WideCard.svelte';
 	import CategoryStrip from '#lib/ui/CategoryStrip.svelte';
 	import { leaveOut, newHref, newServicesPath, type NewServicesAnswer } from '#lib/new-popular.ts';
-	import { browsePath, browseSectionPath, type BrowseAnswer, type BrowseSectionAnswer, type BrowseTile } from '#lib/search-browse.ts';
-	import { dayKey, stripTiles, STRIP_ORDER } from '#lib/category-strip.ts';
+	import type { BrowseTile } from '#lib/search-browse.ts';
+	import { fromStrip, shownBatcher, stripKey, stripPath, stripRowNames, type StripAnswer } from '#lib/category-strip.ts';
 	import { top10Map, whyShown } from '#lib/why-shown.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -285,19 +285,11 @@
 		stripFor = t;
 		strip = [];
 		try {
-			// The fast genre tiles and every section the server has ready; a section still building is left out.
-			const [b, ...got] = await Promise.all([
-				api.get<BrowseAnswer>(browsePath(t), gone.signal),
-				...STRIP_ORDER.map((id) => api.get<BrowseSectionAnswer>(browseSectionPath(t, id), gone.signal).catch(() => null))
-			]);
+			// Picked for this member on the server from the Browse sections it has ready; the rows below are passed so it skips what they show.
+			const a = await api.get<StripAnswer>(stripPath(t, stripRowNames(head), viewerZone), gone.signal);
 			if (stripFor !== t) return;
-			const sections: Record<string, BrowseTile[]> = {};
-			STRIP_ORDER.forEach((id, i) => {
-				const a = got[i];
-				sections[id] = a && !a.building ? (a.tiles ?? []) : [];
-			});
-			sections.genres = [...(b.tiles ?? []), ...sections.genres];
-			strip = stripTiles(sections, t, `${session.s.name}|${dayKey(new Date())}`);
+			strip = fromStrip(a.tiles ?? []);
+			stripShown.add(strip.map(stripKey));
 		} catch {
 			if (stripFor === t) stripFor = '';
 		}
@@ -308,6 +300,12 @@
 		const id = setTimeout(() => void loadStrip(t), 200);
 		return () => clearTimeout(id);
 	});
+	// The strip learns from its own counts: the tiles shown (batched) and the one opened.
+	const stripShown = shownBatcher((categories) => void api.post('/explore/strip/counts', { event: 'shown', categories }).catch(() => {}));
+	function stripOpened(t: BrowseTile) {
+		stripShown.flush();
+		void api.post('/explore/strip/counts', { event: 'open', categories: [stripKey(t)] }).catch(() => {});
+	}
 	// Hero badges: why the featured title shows (New season, its Top 10 rank, Picked for you).
 	let heroGenres = $state<Record<string, string[]>>({});
 	let taste = $state<string[]>([]);
@@ -590,6 +588,7 @@
 		void loadServices();
 		return () => {
 			clearTimeout(poll);
+			stripShown.flush();
 			gone.abort();
 			if (headLoaded && !failed && type !== 'music') kept = { key: JSON.stringify(query()), at: Date.now(), rows: $state.snapshot({ head, tail, hero, heroAt, tailPageNext, tailMore, headOrder }) };
 		};
@@ -693,7 +692,7 @@
 					{/snippet}
 				</ExploreHero>
 			{/if}
-			{#if !genreOn && strip.length}<CategoryStrip tiles={strip} {type} />{/if}
+			{#if !genreOn && strip.length}<CategoryStrip tiles={strip} {type} onopen={stripOpened} />{/if}
 			{#each rows as row, ri (row.id)}
 				{#if row.type === 'top_services'}
 					<TopServicesRow {type} {region} genre={genreOn ? genre : null} {owned} {who} used={usedServices} bind:shown={servicesShown} seeAll={genreOn ? undefined : to(newHref(type))} />

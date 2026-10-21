@@ -100,3 +100,65 @@ export function stripTiles(sections: Readonly<Record<string, readonly BrowseTile
 	}
 	return out;
 }
+
+/** StripAnswer is GET /explore/strip: the member's strip, picked and ordered on the server. */
+export interface StripAnswer {
+	type: ExploreType;
+	tiles: BrowseTile[];
+	/** Some Browse sections were still building. */
+	partial?: boolean;
+}
+
+/** stripRowNames are the titles of the rows below, trimmed, once each, at most 40 of up to 80 characters. */
+export function stripRowNames(rows: readonly { title?: string }[]): string[] {
+	const out: string[] = [];
+	for (const r of rows) {
+		const t = (r.title ?? '').trim();
+		if (t && t.length <= 80 && !out.includes(t)) out.push(t);
+		if (out.length === 40) break;
+	}
+	return out;
+}
+
+/** stripPath asks for the strip with the rows below (so it skips what they show) and the viewer's time zone. */
+export function stripPath(t: ExploreType, rows: readonly string[], tz?: string): string {
+	const p = new URLSearchParams({ type: t });
+	for (const r of rows) p.append('row', r);
+	if (tz) p.set('tz', tz);
+	return `/explore/strip?${p.toString()}`;
+}
+
+/** stripKey is what the strip counts a tile by: its category id, or a genre tile's lower-case name. */
+export function stripKey(t: Pick<BrowseTile, 'category' | 'name'>): string {
+	return t.category || t.name.toLowerCase();
+}
+
+/** fromStrip makes the answer's tiles the strip's: an empty category id is dropped, the section kept. */
+export function fromStrip(tiles: readonly BrowseTile[]): (BrowseTile & { section: string })[] {
+	return tiles.map(({ category, ...t }) => ({ ...t, ...(category ? { category } : {}), section: t.section ?? 'genres' }));
+}
+
+/**
+ * shownBatcher gathers the keys of tiles the strip showed and sends them
+ * once, after delay ms of quiet (each key once per batch, at most 40).
+ */
+export function shownBatcher(send: (keys: string[]) => void, delay = 1500) {
+	let keys: string[] = [];
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	const flush = () => {
+		if (timer) clearTimeout(timer);
+		timer = undefined;
+		if (!keys.length) return;
+		const out = keys.slice(0, 40);
+		keys = [];
+		send(out);
+	};
+	return {
+		add(more: readonly string[]) {
+			for (const k of more) if (!keys.includes(k)) keys.push(k);
+			if (timer) clearTimeout(timer);
+			timer = setTimeout(flush, delay);
+		},
+		flush
+	};
+}

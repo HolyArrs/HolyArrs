@@ -223,6 +223,9 @@ var Categories = []Category{
 	cat("90s", "eras", "90s", false, years(1990, 1999)),
 	cat("2000s", "eras", "2000s", false, years(2000, 2009)),
 	cat("2010s", "eras", "2010s", false, years(2010, 2019)),
+	// Kid-safe eras: animation and family films by release years.
+	cat("classic-animation", "eras", "Classic animation", true, CatQuery{Genres: "16", To: "1999-12-31"}),
+	cat("90s-family", "eras", "90s family", true, CatQuery{Genres: "10751", From: "1990-01-01", To: "1999-12-31"}),
 
 	// Around the world (original language).
 	cat("korean", "world", "Korean", false, lang("ko")),
@@ -239,6 +242,10 @@ var Categories = []Category{
 	cat("portuguese", "world", "Portuguese", false, lang("pt")),
 	cat("chinese", "world", "Chinese", false, lang("zh")),
 	cat("turkish", "world", "Turkish", false, lang("tr")),
+	// Kid-safe: animated adventures from around the world.
+	cat("french-animation", "world", "French animation", true, CatQuery{Lang: "fr", Genres: "16"}),
+	cat("japanese-family", "world", "Japanese family films", true, CatQuery{Lang: "ja", Genres: "10751"}),
+	cat("world-adventures", "world", "Animated adventures", true, CatQuery{Genres: "16,12", Keywords: kw("around the world", "travel", "journey")}),
 
 	// Collections.
 	cat("books", "collections", "Based on a book", true, kwq("based on novel or book", "based on novel", "based on young adult novel")),
@@ -248,6 +255,10 @@ var Categories = []Category{
 	cat("anime", "collections", "Anime", true, CatQuery{Lang: "ja", Genres: "16"}),
 	cat("remakes", "collections", "Remakes", false, kwq("remake")),
 	cat("video-games", "collections", "Based on a video game", true, kwq("based on video game")),
+	{ID: "halloween", Section: "collections", Name: "Halloween", Kid: true, Months: []time.Month{time.October},
+		Movie: &CatQuery{Keywords: kw("halloween")}, Show: &CatQuery{Keywords: kw("halloween")}},
+	{ID: "summer", Section: "collections", Name: "Summer & beach", Kid: true, Months: []time.Month{time.June, time.July, time.August},
+		Movie: &CatQuery{Keywords: kw("beach", "summer", "summer vacation", "surfing")}, Show: &CatQuery{Keywords: kw("beach", "summer", "summer vacation")}},
 	{ID: "holiday", Section: "collections", Name: "Holiday", Kid: true, Months: []time.Month{time.November, time.December},
 		Movie: &CatQuery{Keywords: kw("christmas", "holiday", "thanksgiving", "santa claus")},
 		Show:  &CatQuery{Keywords: kw("christmas", "holiday", "santa claus")}},
