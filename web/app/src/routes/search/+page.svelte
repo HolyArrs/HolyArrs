@@ -65,6 +65,8 @@
 	let noTMDB = $state(false);
 	let searched = $state('');
 	let groups = $state<Record<Card['type'], Card[] | null>>({ show: null, movie: null, music: null, people: null });
+	/** What was on screen when the current search started: kept up until the new answers arrive. */
+	let stale = $state.raw<{ groups: Record<Card['type'], Card[] | null>; lib: LibraryAnswer | null } | null>(null);
 	let plainTiles = $state<PlainTile[] | null>(null);
 	let plainFor = '';
 	let mgenre = $state<string | null>(page.url.searchParams.get('mgenre')?.trim() || null);
@@ -181,13 +183,19 @@
 	}
 	const whereOptions: { value: 'everywhere' | 'library'; label: string }[] = [{ value: 'everywhere', label: 'Everywhere' }, { value: 'library', label: 'In your Library' }];
 	const markOf = (t: TitleView) => ownedMark({ key: String(t.id), kind: t.kind === 'show' ? 'show' : t.kind === 'artist' ? 'artist' : 'movie', name: t.name, titleId: t.id } as ExploreCard, t, who);
+	// While a search runs and nothing has come back yet, the page keeps what it showed before.
+	const freshTotal = $derived(order.reduce((n, t) => n + (groups[t]?.length ?? 0), 0) + (lib ? lib.titles.length + lib.albums.length + lib.people.length : 0));
+	const waiting = $derived(!!searchField.term.trim() && freshTotal === 0 && (order.some((t) => groups[t] === null) || busy));
+	const holding = $derived(waiting && !!stale);
+	const shownGroups = $derived(holding && stale ? stale.groups : groups);
+	const shownLib = $derived(holding && stale ? stale.lib : lib);
 	const libCards = $derived<Card[]>([
-		...(lib?.titles ?? []).map((t): Card => ({ key: `lt${t.id}`, type: t.kind === 'show' ? 'show' : t.kind === 'artist' ? 'music' : 'movie', titleId: t.id, name: t.name, year: t.year, image: t.backdrop ?? t.artwork[0], href: to(`/library/${t.id}`), owned: markOf(t), subtitle: libraryNote(t, [t.year, posterStatus(t, who)?.label].filter(Boolean).join(' · ')) })),
-		...(lib?.albums ?? []).map((a): Card => ({ key: `la${a.id}`, type: 'music', name: a.name, href: to(`/library/${a.title_id}`), owned: inLibrary, subtitle: [a.artist, a.year].filter(Boolean).join(' · ') })),
-		...(lib?.people ?? []).map((p): Card => ({ key: `lp${p.name}`, type: 'people', name: p.name, href: to(`/library/${p.titles[0]?.id}`), owned: null, subtitle: p.titles.map((x) => x.name).slice(0, 2).join(', ') }))
+		...(shownLib?.titles ?? []).map((t): Card => ({ key: `lt${t.id}`, type: t.kind === 'show' ? 'show' : t.kind === 'artist' ? 'music' : 'movie', titleId: t.id, name: t.name, year: t.year, image: t.backdrop ?? t.artwork[0], href: to(`/library/${t.id}`), owned: markOf(t), subtitle: libraryNote(t, [t.year, posterStatus(t, who)?.label].filter(Boolean).join(' · ')) })),
+		...(shownLib?.albums ?? []).map((a): Card => ({ key: `la${a.id}`, type: 'music', name: a.name, href: to(`/library/${a.title_id}`), owned: inLibrary, subtitle: [a.artist, a.year].filter(Boolean).join(' · ') })),
+		...(shownLib?.people ?? []).map((p): Card => ({ key: `lp${p.name}`, type: 'people', name: p.name, href: to(`/library/${p.titles[0]?.id}`), owned: null, subtitle: p.titles.map((x) => x.name).slice(0, 2).join(', ') }))
 	]);
-	const libIds = $derived(new Set((lib?.titles ?? []).map((t) => t.id)));
-	const wider = $derived(Object.fromEntries(order.map((t) => [t, onlyLib ? [] : (groups[t] ?? []).filter((c) => !c.titleId || !libIds.has(c.titleId))])) as Record<Card['type'], Card[]>);
+	const libIds = $derived(new Set((shownLib?.titles ?? []).map((t) => t.id)));
+	const wider = $derived(Object.fromEntries(order.map((t) => [t, onlyLib ? [] : (shownGroups[t] ?? []).filter((c) => !c.titleId || !libIds.has(c.titleId))])) as Record<Card['type'], Card[]>);
 	const lists = $derived(order.map((t) => wider[t] ?? []));
 	const top = $derived(topMatches(lists.filter((_, i) => order[i] !== 'people'), 6));
 	const total = $derived(lists.reduce((n, g) => n + g.length, 0) + libCards.length);
@@ -229,11 +237,13 @@
 		if (q) mood = mgenre = cat = null;
 		if (!q) {
 			lib = null;
+			stale = null;
 			searched = '';
 			busy = false;
 			return;
 		}
 		if (e) remember(q);
+		stale = total > 0 ? { groups: shownGroups, lib: shownLib } : null;
 		busy = true;
 		const want = scope === 'all' ? order : order.filter((t) => t === scope);
 		const next: Record<Card['type'], Card[] | null> = { show: null, movie: null, music: null, people: null };
@@ -787,7 +797,8 @@
 		</div>
 	{/if}
 
-	<div class="results" aria-live="polite" aria-busy={busy}>
+	<div class="results" class:holding aria-live="polite" aria-busy={busy}>
+		{#if waiting}<p class="sr-only">Searching for “{searchField.term.trim()}”…</p>{/if}
 		{#if !searchField.term.trim() && mgenre}
 			<section class="mood" aria-labelledby="mgenre-h" data-testid="search-music-genre">
 				<div class="mood-head">
@@ -845,7 +856,7 @@
 					</ul>
 				{/if}
 			</section>
-		{:else if !searchField.term.trim()}
+		{:else if !searchField.term.trim() || (waiting && !stale)}
 			{#if recent.length}
 				<section class="recent" aria-labelledby="recent-h">
 					<div class="recent-head">
@@ -1032,7 +1043,8 @@
 	.results-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; margin-bottom: -12px; }
 	.results-head .count { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.results-head :global(.ui-seg) { flex: none; }
-	.results { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
+	.results { display: flex; flex-direction: column; gap: 32px; min-width: 0; transition: opacity 160ms ease-out; }
+	.results.holding { opacity: 0.6; }
 	.h2 { margin: 0; font: var(--t-title3); }
 	.h1 { margin: 0; font: var(--t-title1); letter-spacing: -0.02em; }
 	/* Browse: tall tiles, 6 / 5 / 4 / 3 / 2 across (browseCols matches), 24 px gaps. */

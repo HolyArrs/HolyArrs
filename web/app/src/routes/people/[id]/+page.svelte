@@ -22,18 +22,11 @@
 	import type { AskLimit } from '#lib/types.ts';
 	import { licenseURL, loadWikiFacts, wikipediaURL, type WikiFacts } from '#lib/wiki-facts.ts';
 	import { cameFrom, fromIcon } from '#lib/came-from.svelte.ts';
+	import { peopleSort, takePrefetched } from '#lib/person-prefetch.ts';
 
 	const id = page.params.id ?? '';
 	const SORT_KEY = 'holyarrs.people.sort';
-	const sorts: FilmSort[] = ['oldest', 'newest', 'popular'];
-	function savedSort(): FilmSort {
-		try {
-			const v = localStorage.getItem(SORT_KEY) as FilmSort | null;
-			return v && sorts.includes(v) ? v : 'oldest';
-		} catch {
-			return 'oldest';
-		}
-	}
+	const savedSort = peopleSort;
 	let role = $state<PersonRole>('all');
 	let sort = $state<FilmSort>(savedSort());
 	let data = $state<FilmographyPage | null>(null);
@@ -60,7 +53,8 @@
 		error = '';
 		try {
 			const base = `/people/${encodeURIComponent(id)}?role=${role}&sort=${sort}&page_size=100`;
-			const first = await api.get<FilmographyPage>(`${base}&page=1`);
+			// Opened from a face the pointer rested on: the first page is usually already here.
+			const first = await ((role === 'all' && takePrefetched(`${base}&page=1`)) || api.get<FilmographyPage>(`${base}&page=1`));
 			let all = first.movies;
 			for (let p = 2; p <= first.total_pages; p++) all = all.concat((await api.get<FilmographyPage>(`${base}&page=${p}`)).movies);
 			if (revision !== loadRevision) return;
