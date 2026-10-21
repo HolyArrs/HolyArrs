@@ -17,7 +17,7 @@
 	import { to } from '#lib/paths.ts';
 	import { plainReason } from '#lib/plain.ts';
 	import { detailPath } from '#lib/title-details.ts';
-	import { followLabel, movieFollowHint, setFollow } from '#lib/follow.ts';
+	import { followsByTmdb } from '#lib/explore.ts';
 	import { byDecade, personChips, runReviewed, type FilmSort, type FilmographyPage, type PersonMovie, type PersonRole } from '#lib/people.ts';
 	import type { AskLimit } from '#lib/types.ts';
 	import { licenseURL, loadWikiFacts, wikipediaURL, type WikiFacts } from '#lib/wiki-facts.ts';
@@ -42,10 +42,11 @@
 	let wiki = $state<WikiFacts>({ badges: [], awards: [], bio: null });
 	const bio = $derived(wiki.bio?.extract || data?.person.biography || '');
 	// Follow state of the Coming soon movies not in the Library, by TMDB id.
-	let follows = $state<Record<string, boolean>>({});
-	let followBusy = $state('');
 	let loadRevision = 0;
 	const action = $derived(session.can('manage_library') ? 'add' : session.can('ask') ? 'ask' : null);
+
+	/** Coming soon movies: their hover card's bell follows them (GrowCard's own bell, after the state). */
+	const coming = $derived(new Set((data?.coming_soon ?? []).map((m) => m.ids.tmdb)));
 
 	async function load() {
 		const revision = ++loadRevision;
@@ -61,31 +62,10 @@
 			// The personal rows stay as the first answer drew them (all roles).
 			data = data && role !== 'all' ? { ...first, library: data.library, asked: data.asked, known_for: data.known_for, coming_soon: data.coming_soon, often_with: data.often_with, stats: data.stats } : first;
 			movies = all;
-			if (role === 'all') void loadFollows(first.coming_soon ?? []);
 		} catch (err) {
 			if (revision === loadRevision) error = message(err);
 		} finally {
 			if (revision === loadRevision) busy = false;
-		}
-	}
-
-	async function loadFollows(list: PersonMovie[]) {
-		if (session.s.state !== 'signed_in') return;
-		const want = list.filter((m) => !m.title_id && !(m.ids.tmdb in follows));
-		const got = await Promise.all(want.map((m) => api.get<{ following: boolean }>(`/metadata/movie/${encodeURIComponent(m.ids.tmdb)}/follow`).then((r) => r.following).catch(() => false)));
-		follows = { ...follows, ...Object.fromEntries(want.map((m, i) => [m.ids.tmdb, got[i]])) };
-	}
-
-	async function flipFollow(m: PersonMovie) {
-		if (followBusy) return;
-		followBusy = m.ids.tmdb;
-		try {
-			const on = await setFollow(api, { tmdb: m.ids.tmdb, kind: 'movie' }, !follows[m.ids.tmdb]);
-			follows = { ...follows, [m.ids.tmdb]: on };
-		} catch (err) {
-			error = message(err);
-		} finally {
-			followBusy = '';
 		}
 	}
 
@@ -159,14 +139,11 @@
 <svelte:head><title>{data?.person.name ?? 'Person'} · HolyArrs</title></svelte:head>
 
 {#snippet filmCard(m: PersonMovie)}
-	<WideCard cover title={m.name} href={href(m)} image={m.backdrop || m.poster} kind="movie" subtitle={roleLine(m) || undefined} owned={owned(m)} preview={{ kind: 'movie', tmdb: m.ids.tmdb, year: m.year || undefined, titleId: m.title_id }}>
+	<WideCard cover title={m.name} href={href(m)} image={m.backdrop || m.poster} kind="movie" subtitle={roleLine(m) || undefined} owned={owned(m)} preview={{ kind: 'movie', tmdb: m.ids.tmdb, year: m.year || undefined, titleId: m.title_id }}
+		followTmdb={!m.title_id && (coming.has(m.ids.tmdb) || followsByTmdb({ kind: 'movie', titleId: m.title_id, year: m.year }))}>
 		{#snippet growAction()}
 			{#if action && !m.title_id && !m.ask && !m.never_add && !done[m.ids.tmdb]}
 				<IconButton icon="plus" label={action === 'add' ? `Add ${m.name}` : `Ask for ${m.name}`} variant="glass" size="lg" aria-busy={asking === m.ids.tmdb || undefined} onclick={() => quick(m)} />
-			{/if}
-			{#if !m.title_id && m.ids.tmdb in follows}
-				{@const on = follows[m.ids.tmdb]}
-				<IconButton icon="bell" label="{followLabel(on)} {m.name}" title={movieFollowHint(m.name, on)} variant="glass" size="lg" aria-pressed={on} aria-busy={followBusy === m.ids.tmdb || undefined} onclick={() => flipFollow(m)} />
 			{/if}
 		{/snippet}
 	</WideCard>

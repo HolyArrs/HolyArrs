@@ -10,6 +10,7 @@
 		discoverCard,
 		matchOwned,
 		ownedMark,
+		followsByTmdb,
 		ownedTitle,
 		serviceChips,
 		serviceLabel,
@@ -149,16 +150,16 @@
 				{#snippet card(raw: Ranked)}
 					{@const c = owned ? { ...matchOwned(raw, owned), rank: raw.rank } : raw}
 					{@const mark = ownedMark(c, owned ? ownedTitle(c, owned) : undefined, who)}
-					{@const preview = c.ref?.startsWith('tmdb:') && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: c.ref.slice(5) } : undefined}
+					{@const preview = c.ref?.startsWith('tmdb:') && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: c.ref.slice(5), year: c.year, titleId: c.titleId } : undefined}
 					{#snippet cardAsk()}{@render ask?.(c)}{/snippet}
 					{#if ranked}
 						<div class="ranked">
 							<span class="rank" class:two={c.rank > 9} aria-hidden="true">{c.rank}</span>
-							<div class="pc"><PosterCard title={c.name} href={href(c)} image={c.image} kind={c.kind} owned={mark} fresh={c.fresh} {preview} action={ask ? cardAsk : undefined} actionOnHover /></div>
+							<div class="pc"><PosterCard title={c.name} href={href(c)} image={c.image} kind={c.kind} owned={mark} fresh={c.fresh} {preview} action={ask ? cardAsk : undefined} actionOnHover followTmdb={followsByTmdb(c)} /></div>
 							<span class="sr">Number {c.rank}</span>
 						</div>
 					{:else}
-						<PosterCard title={c.name} href={href(c)} image={c.image} kind={c.kind} owned={mark} fresh={c.fresh} {preview} action={ask ? cardAsk : undefined} actionOnHover />
+						<PosterCard title={c.name} href={href(c)} image={c.image} kind={c.kind} owned={mark} fresh={c.fresh} {preview} action={ask ? cardAsk : undefined} actionOnHover followTmdb={followsByTmdb(c)} />
 					{/if}
 				{/snippet}
 			</Shelf>

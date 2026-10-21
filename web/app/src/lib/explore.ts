@@ -375,6 +375,11 @@ export function cardAction(c: ExploreCard, can: { manage: boolean; ask: boolean 
 	return null;
 }
 
+/** followsByTmdb: the hover card's bell follows a title not in the Library by TMDB id: a show, or a movie not out yet. */
+export function followsByTmdb(c: Pick<ExploreCard, 'kind' | 'titleId' | 'fresh' | 'year'>): boolean {
+	return !c.titleId && (c.kind === 'show' || c.fresh?.kind === 'coming' || (!!c.year && c.year > new Date().getFullYear()));
+}
+
 /** cardTmdb is the TMDB id of a movie or show card not in the Library, or ''. */
 export function cardTmdb(c: Pick<ExploreCard, 'kind' | 'ref'>): string {
 	if ((c.kind !== 'movie' && c.kind !== 'show') || !c.ref?.startsWith('tmdb:')) return '';
