@@ -65,6 +65,10 @@ type MusicCard struct {
 	Badge string `json:"badge,omitempty"`
 	// Following: the member waits for this album (New & Popular, Coming soon).
 	Following bool `json:"following,omitempty"`
+	// Explicit: the release has explicit lyrics (the "E" mark; Deezer says so).
+	Explicit bool `json:"explicit,omitempty"`
+	// Track names a song on a Fresh tracks line; the card asks for its album.
+	Track string `json:"track,omitempty"`
 }
 
 // MusicRow is one row of Explore â†’ Music.

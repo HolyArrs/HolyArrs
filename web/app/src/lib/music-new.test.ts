@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { exploreLinks, eyebrow, heroNote, rowNote, type NewMusicCard } from './music-new.ts';
+import { cardBadges, exploreLinks, eyebrow, heroNote, rowNote, type NewMusicCard } from './music-new.ts';
 
 const now = new Date(2026, 9, 21, 12);
 const card = (x: Partial<NewMusicCard>): NewMusicCard => ({ key: 'album:a', kind: 'album', mbid: 'a', name: 'A', artist: 'Ann', genres: [], ...x });
@@ -19,6 +19,10 @@ describe('music new', () => {
 		expect(rowNote({ type: 'np_music_tracks' }, card({ date: '2026-10-19' }), now)).toBe('Ann · 2 days ago');
 		expect(rowNote({ type: 'np_music_climbing' }, card({ date: '2026-10-19' }), now)).toBe('Ann');
 		expect(rowNote({ type: 'np_music_coming' }, card({ date: '2026-11-07' }), now)).toMatch(/^Ann · Out /);
+	});
+	it('marks explicit albums with E', () => {
+		expect(cardBadges(card({ explicit: true }))).toEqual(['E']);
+		expect(cardBadges(card({}))).toEqual([]);
 	});
 	it('links Explore more into Search → Music', () => {
 		const l = exploreLinks(['indie rock']);

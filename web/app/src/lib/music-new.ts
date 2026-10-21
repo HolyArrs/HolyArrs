@@ -2,7 +2,13 @@
 import type { MusicCardData, MusicRowData } from './music-trending.ts';
 import { to } from './paths.ts';
 
-export type NewMusicCard = MusicCardData & { badge?: string; following?: boolean };
+/** explicit: explicit lyrics (the "E" mark); track: a Fresh tracks song, the card asks for its album. */
+export type NewMusicCard = MusicCardData & { badge?: string; following?: boolean; explicit?: boolean; track?: string };
+
+/** cardBadges are the art badges of a New music album card: the explicit "E" only. */
+export function cardBadges(c: Pick<NewMusicCard, 'explicit'>): string[] {
+	return c.explicit ? ['E'] : [];
+}
 
 export interface NewMusicAnswer {
 	kid: boolean;

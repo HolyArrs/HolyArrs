@@ -72,6 +72,10 @@ type Server struct {
 	// MusicTrending reads a music trending list from the metadata server;
 	// nil hides the rows.
 	MusicTrending func(ctx context.Context, kind, region string) (metadata.MusicTrend, error)
+	// MusicNew reads a new music window (tracks, week, recent, upcoming)
+	// from the metadata server; nil leaves New & Popular → Music to
+	// MusicBrainz alone.
+	MusicNew func(ctx context.Context, window string) (metadata.MusicNew, error)
 	// MusicSimilar reads similar artists from the metadata server; nil has
 	// no Because you have or Fans of rows.
 	MusicSimilar func(ctx context.Context, mbid string) ([]metadata.SimilarArtist, error)

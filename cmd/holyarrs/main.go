@@ -613,7 +613,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		Secrets: vault, TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MetadataUp: hosted.Health.Up, ServiceTop: hosted.Service.ServiceTop, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
 			t, err := hosted.Service.TrailerPick(ctx, kind, id, lang)
 			return t.Key, err
-		}, AnimeMap: hosted.Service.AnimeMap, MusicTrending: hosted.Service.MusicTrending, MusicSimilar: hosted.Service.MusicSimilar, MusicCover: hosted.Service.MusicCover, ExtraArt: hosted.Service.Art, ExtraRatings: hosted.Service.Ratings, Alerts: sender, Asks: wish, Search: sr, Downloads: dm, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
+		}, AnimeMap: hosted.Service.AnimeMap, MusicTrending: hosted.Service.MusicTrending, MusicNew: hosted.Service.MusicNewWindow, MusicSimilar: hosted.Service.MusicSimilar, MusicCover: hosted.Service.MusicCover, ExtraArt: hosted.Service.Art, ExtraRatings: hosted.Service.Ratings, Alerts: sender, Asks: wish, Search: sr, Downloads: dm, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
 		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase})
 	if !c.SafeMode {
 		a.StartExplore(ctx)

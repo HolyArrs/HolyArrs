@@ -218,3 +218,47 @@ func TestAlbumFollow(t *testing.T) {
 		t.Fatal("unfollow")
 	}
 }
+
+// The metadata server's windows add releases, the explicit mark, Deezer
+// popularity, and feed Fresh tracks from the track chart.
+func TestComposeMusicNewFromServer(t *testing.T) {
+	in := musicNewFixture()
+	srv := map[string][]metadata.MusicNewItem{}
+	for i := 0; i < 8; i++ {
+		srv["tracks"] = append(srv["tracks"], metadata.MusicNewItem{MBID: tmbid(800 + i), Title: fmt.Sprint("Album", i), Artist: "Dz", Track: fmt.Sprint("Song", i), ReleaseDate: nday(-3), Explicit: i == 0, Popularity: i + 1})
+	}
+	srv["week"] = []metadata.MusicNewItem{{MBID: tmbid(900), Title: "Deezer Pick", Artist: "Dz", ArtistMBID: tmbid(9100), ReleaseDate: nday(-1), Type: "album", Explicit: true, Popularity: 1}}
+	srv["upcoming"] = []metadata.MusicNewItem{{MBID: tmbid(901), Title: "Soon", Artist: "Dz", ReleaseDate: nday(10), Type: "ep"}, {MBID: tmbid(902), Title: "Too far", Artist: "Dz", ReleaseDate: nday(80), Type: "album"}}
+	in.data.server = srv
+	hero, rows := composeMusicNew(in, musicNewNow)
+	all := map[string]MusicCard{}
+	for _, c := range hero {
+		all[c.MBID] = c
+	}
+	var tracks MusicRow
+	for _, r := range rows {
+		if r.ID == "np_music_tracks" {
+			tracks = r
+			continue
+		}
+		for _, c := range r.Items {
+			all[c.MBID] = c
+		}
+	}
+	if p, ok := all[tmbid(900)]; !ok || !p.Explicit || p.Badge != "New album" {
+		t.Fatalf("server pick %+v", p)
+	}
+	inHero := false
+	for _, c := range hero {
+		inHero = inHero || c.MBID == tmbid(900)
+	}
+	if !inHero {
+		t.Fatal("the week's top Deezer pick is not in the hero")
+	}
+	if _, ok := all[tmbid(902)]; ok {
+		t.Fatal("a release past the Coming soon window shows")
+	}
+	if len(tracks.Items) != 8 || tracks.Items[0].Name != "Song0" || tracks.Items[0].Track != "Song0" || !tracks.Items[0].Explicit || tracks.Items[0].MBID != tmbid(800) || tracks.Items[0].Note != "From Album0" {
+		t.Fatalf("tracks %+v", tracks.Items)
+	}
+}

@@ -46,6 +46,9 @@ type musicNewData struct {
 	fresh    metadata.MusicTrend   // notable new albums, with listens
 	albums   metadata.MusicTrend   // this week's album chart
 	artists  metadata.MusicTrend   // this week's artist chart
+	// server is the metadata server's new music windows (ListenBrainz fresh
+	// releases and Deezer's editorial and charts), by window.
+	server map[string][]metadata.MusicNewItem
 }
 
 type musicNewStore struct {
@@ -92,6 +95,14 @@ func (a *API) buildMusicNew(ctx context.Context, now time.Time) *musicNewData {
 		d.fresh, _ = a.cachedMusicTrend(ctx, "fresh", "global")
 		d.albums, _ = a.cachedMusicTrend(ctx, "album", "global")
 		d.artists, _ = a.cachedMusicTrend(ctx, "artist", "global")
+	}
+	if a.s.MusicNew != nil {
+		d.server = map[string][]metadata.MusicNewItem{}
+		for _, w := range []string{"tracks", "week", "recent", "upcoming"} {
+			if l, err := a.s.MusicNew(ctx, w); err == nil {
+				d.server[w] = l.Items
+			}
+		}
 	}
 	var src releaseSource
 	if a.s.Library != nil && a.s.Library.Artists != nil {
@@ -264,6 +275,9 @@ func composeMusicNew(in musicNewInput, now time.Time) ([]MusicCard, []MusicRow) 
 		return c
 	}
 	kinds := map[string]string{}
+	// pop lifts a release Deezer's editorial or charts rank (position 1 most).
+	pop := map[string]float64{}
+	explicit := map[string]bool{}
 	if in.data != nil {
 		for _, l := range []metadata.MusicTrend{in.data.fresh, in.data.albums} {
 			for _, it := range l.Items {
@@ -284,6 +298,28 @@ func composeMusicNew(in musicNewInput, now time.Time) ([]MusicCard, []MusicRow) 
 			}
 			cards[id] = card(id, it.Title, it.Artist, strings.ToLower(it.ArtistMBID), it.ReleaseDate, "album", it.Tags)
 			kinds[id] = "album"
+		}
+		for _, w := range []string{"week", "recent", "upcoming"} {
+			for _, it := range in.data.server[w] {
+				id := strings.ToLower(it.MBID)
+				if !metadata.ValidMBID(id) || it.Title == "" || musicNewWindow(it.ReleaseDate, now) == "" {
+					continue
+				}
+				if it.Popularity > 0 {
+					pop[id] = math.Max(pop[id], math.Max(0.2, 2*(1-float64(it.Popularity)/200)))
+				}
+				explicit[id] = explicit[id] || it.Explicit
+				listens[id] += it.Listens
+				if _, ok := cards[id]; ok {
+					continue
+				}
+				kind := strings.ToLower(it.Type)
+				if kind != "ep" && kind != "single" {
+					kind = "album"
+				}
+				cards[id] = card(id, it.Title, it.Artist, strings.ToLower(it.ArtistMBID), it.ReleaseDate, kind, nil)
+				kinds[id] = kind
+			}
 		}
 	}
 	for _, c := range in.library {
@@ -306,8 +342,9 @@ func composeMusicNew(in musicNewInput, now time.Time) ([]MusicCard, []MusicRow) 
 	score := map[string]float64{}
 	for k, c := range cards {
 		c.Listens = listens[c.MBID]
+		c.Explicit = c.Explicit || explicit[c.MBID]
 		cards[k] = c
-		score[k] = musicNewScore(c, boost[c.ArtistMBID], now)
+		score[k] = musicNewScore(c, boost[c.ArtistMBID]+pop[c.MBID], now)
 	}
 	sorted := func(keep func(k string, c MusicCard) bool, by func(a, b string) bool) []string {
 		var ks []string
@@ -352,7 +389,7 @@ func composeMusicNew(in musicNewInput, now time.Time) ([]MusicCard, []MusicRow) 
 	// the week is thin), only ones a chart or Library knows.
 	big := func(k string, c MusicCard, win string) bool {
 		w := musicNewWindow(c.Date, now)
-		return albumOrEP(k) && (w == "week" || (win == "recent" && w == "recent")) && (c.Listens > 0 || boost[c.ArtistMBID] > 0)
+		return albumOrEP(k) && (w == "week" || (win == "recent" && w == "recent")) && (c.Listens > 0 || boost[c.ArtistMBID] > 0 || pop[c.MBID] > 0)
 	}
 	hero := take(sorted(func(k string, c MusicCard) bool { return big(k, c, "week") }, nil), musicNewHeroMax)
 	if len(hero) < 3 {
@@ -388,7 +425,32 @@ func composeMusicNew(in musicNewInput, now time.Time) ([]MusicCard, []MusicRow) 
 			func(k string, c MusicCard) bool { return albumOrEP(k) && c.Upcoming }, soonest},
 	}
 	built := map[string]MusicRow{}
+	// Fresh tracks: Deezer's track chart (new albums first) when the
+	// metadata server has it; each line asks for the track's album.
+	if in.data != nil && len(in.data.server["tracks"]) > 0 {
+		var items []MusicCard
+		for _, it := range in.data.server["tracks"] {
+			id := strings.ToLower(it.MBID)
+			if len(items) >= musicNewRowMax || !metadata.ValidMBID(id) || it.Track == "" || seen["track:"+id+":"+it.Track] {
+				continue
+			}
+			c, ok := cards[id]
+			if !ok {
+				c = card(id, it.Title, it.Artist, strings.ToLower(it.ArtistMBID), it.ReleaseDate, "single", nil)
+			}
+			c.Key, c.Name, c.Track, c.Note = "track:"+id+":"+it.Track, it.Track, it.Track, "From "+it.Title
+			c.Explicit, c.Rank = c.Explicit || it.Explicit, it.Popularity
+			seen[c.Key] = true
+			items = append(items, c)
+		}
+		if len(items) >= musicNewRowMin {
+			built["np_music_tracks"] = MusicRow{ID: "np_music_tracks", Type: "np_music_tracks", Title: "Fresh tracks", Reason: "The most played songs right now, new ones first", Shape: "square", Items: items}
+		}
+	}
 	for _, s := range specs {
+		if _, ok := built[s.id]; ok {
+			continue
+		}
 		items := take(sorted(s.keep, s.by), musicNewRowMax)
 		if len(items) < musicNewRowMin {
 			continue

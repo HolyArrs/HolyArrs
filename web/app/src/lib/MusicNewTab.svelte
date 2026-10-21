@@ -7,7 +7,7 @@
 	import { toasts } from './toasts.svelte.ts';
 	import { refreshInbox } from './wishlist.svelte.ts';
 	import { musicCardHref, musicImage } from './music-trending.ts';
-	import { exploreLinks, eyebrow, heroNote, newMusicPath, rowNote, type NewMusicAnswer, type NewMusicCard } from './music-new.ts';
+	import { cardBadges, exploreLinks, eyebrow, heroNote, newMusicPath, rowNote, type NewMusicAnswer, type NewMusicCard } from './music-new.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './types.ts';
 	import Shelf from './ui/Shelf.svelte';
 	import PosterCard from './ui/PosterCard.svelte';
@@ -145,7 +145,7 @@
 </script>
 
 {#snippet albumCard(row: { type: string }, c: NewMusicCard)}
-	<PosterCard title={c.name} href={musicCardHref(c)} image={musicImage(c)} kind="artist" subtitle={rowNote(row, c) || undefined} shape="square" music actionOnHover
+	<PosterCard title={c.name} href={musicCardHref(c)} image={musicImage(c)} kind="artist" subtitle={rowNote(row, c) || undefined} badges={cardBadges(c)} shape="square" music actionOnHover
 		status={c.title_id && row.type === 'np_music_library' ? 'in_library' : undefined}>
 		{#snippet action()}
 			{#if c.upcoming}
@@ -189,7 +189,7 @@
 						<article class="h-card" role="listitem">
 							<a class="h-link" href={musicCardHref(c)}>
 								<span class="eyebrow">{eyebrow(c)}</span>
-								<span class="h-title">{c.name}</span>
+								<span class="h-title">{#if c.explicit}<span class="explicit" title="Explicit" aria-label="Explicit">E</span>{/if}{c.name}</span>
 								<span class="h-artist">{c.artist}</span>
 								<span class="art">
 									<img class="wide" src={musicImage({ image: c.artist_image || c.image })} alt="" loading="lazy" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.visibility = 'hidden')} />
@@ -218,7 +218,7 @@
 							{@const c = live(raw)}
 							<li class="track">
 								<img src={musicImage(c)} alt="" loading="lazy" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.visibility = 'hidden')} />
-								<a class="t-words" href={musicCardHref(c)}><span class="t-name">{c.name}</span><span class="t-artist">{rowNote(tracks, c)}</span></a>
+								<a class="t-words" href={musicCardHref(c)}><span class="t-name">{#if c.explicit}<span class="explicit" title="Explicit" aria-label="Explicit">E</span>{/if}{c.name}</span><span class="t-artist">{rowNote(tracks, c)}</span></a>
 								{#if canAct(c)}<IconButton icon="more" label={manage ? `Add ${c.artist}` : `Ask for ${c.name}`} size="sm" aria-haspopup="dialog" aria-busy={busy === c.key || undefined} onclick={() => void quick(c)} />{/if}
 							</li>
 						{/each}
@@ -306,6 +306,8 @@
 	.t-words { flex: 1; min-width: 0; display: flex; flex-direction: column; color: var(--text); text-decoration: none; }
 	.t-name, .t-artist { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; line-height: 1.35; }
 	.t-artist { color: var(--text-muted); font-size: 13px; }
+	/* Explicit lyrics: a small boxed E before the name, as music stores show it. */
+	.explicit { display: inline-grid; place-items: center; inline-size: 14px; block-size: 14px; margin-inline-end: 6px; border-radius: 3px; background: var(--text-muted); color: var(--bg, #000); font-size: 10px; font-weight: 600; line-height: 1; vertical-align: 1px; }
 	@media (max-width: 1023px) { .tracks { grid-auto-columns: calc(50% - 8px); } }
 	@media (max-width: 640px) { .tracks { grid-auto-columns: 88%; } }
 	.row { position: relative; min-width: 0; }
