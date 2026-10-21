@@ -62,6 +62,8 @@
 	import { autoplayHere, loadUISettings, trailerSources } from '../autoplay.svelte.ts';
 	import { openTheater } from '../theater.svelte.ts';
 	import { api } from '../api.ts';
+	import { loadExtras, type Extras } from '../outside-ratings.ts';
+	import RatingsStrip from './RatingsStrip.svelte';
 
 	// The title page hero (movie, show, artist, album, not-yet-added titles):
 	// the Explore billboard (Billboard.svelte), so moving from Explore to a
@@ -76,6 +78,7 @@
 		title,
 		kind,
 		tmdb,
+		mbid,
 		backdrop,
 		backdrops = [],
 		poster,
@@ -101,6 +104,8 @@
 		/** A movie or show: the muted trailer and the Trailer button. */
 		kind?: 'movie' | 'show';
 		tmdb?: string | null;
+		/** An artist's MusicBrainz id: fanart.tv pictures when the artist has none. */
+		mbid?: string | null;
 		backdrop?: string | null;
 		/** More backdrops for the slow crossfade (Layer 1). */
 		backdrops?: string[];
@@ -136,10 +141,28 @@
 	let wideLogo = $state(false);
 	let posterFailed = $state(false);
 
-	const wide = $derived(backdrop && !backdropFailed && !cover ? backdrop : null);
+	// fanart.tv art and outside ratings (metadata server, when its keys are set):
+	// the fanart logo only when TMDB has none or its logo fails to load.
+	let extras = $state<Extras>({ backgrounds: [], scores: [] });
+	let fanartLogoFailed = $state(false);
+	$effect(() => {
+		const k = kind ?? (mbid ? 'artist' : undefined);
+		const id = kind ? tmdb : mbid;
+		extras = { backgrounds: [], scores: [] };
+		fanartLogoFailed = false;
+		if (!k || !id) return;
+		let live = true;
+		void loadExtras(api.get, k, id).then((e) => live && (extras = e));
+		return () => (live = false);
+	});
+	const shownLogo = $derived(logo && !logoFailed ? logo : extras.logo && !fanartLogoFailed ? extras.logo : null);
+	const heroBackdrop = $derived(backdrop || (mbid ? extras.backgrounds[0] : null));
+	const heroPoster = $derived(poster || (mbid ? extras.thumb : null));
+
+	const wide = $derived(heroBackdrop && !backdropFailed && !cover ? heroBackdrop : null);
 	const pictures = $derived(wide ? heroPictures(wide, backdrops).map((u) => sized(u, 'backdrop')) : []);
 	// No backdrop: the poster (or the cover) itself, cropped and darkened.
-	const stand = $derived(cover ?? (!wide && poster && !posterFailed ? poster : null));
+	const stand = $derived(cover ?? (!wide && heroPoster && !posterFailed ? heroPoster : null));
 
 	const scoreText = $derived(score ? (Math.round(score * 10) / 10).toFixed(1) : '');
 	// The first crumb is the page you came from (Search, Explore, a person…), stepping back there with its scroll and state; a fresh visit keeps the page's own.
@@ -231,8 +254,8 @@
 			{#if cover}
 				<img class="cover" src={cover} alt="" decoding="async" use:viewTransitionName={vtName} />
 			{/if}
-			{#if logo && !logoFailed}
-				<h1 class="bb-logo" class:wide={wideLogo}><img src={logo} alt={title} onload={(e) => { const i = e.currentTarget as HTMLImageElement; wideLogo = i.naturalHeight > 0 && i.naturalWidth / i.naturalHeight > 6; }} onerror={() => (logoFailed = true)} /></h1>
+			{#if shownLogo}
+				<h1 class="bb-logo" class:wide={wideLogo}><img src={shownLogo} alt={title} onload={(e) => { const i = e.currentTarget as HTMLImageElement; wideLogo = i.naturalHeight > 0 && i.naturalWidth / i.naturalHeight > 6; }} onerror={() => (shownLogo === logo ? (logoFailed = true) : (fanartLogoFailed = true))} /></h1>
 			{:else}
 				<h1 class="bb-name" class:short={!!cover}>{title}</h1>
 			{/if}
@@ -241,6 +264,7 @@
 			{#if facts.length}<p>{facts.join(' · ')}</p>{/if}
 			{#if certification}<span class="b cert" title="Age rating">{certification}</span>{/if}
 			{#if scoreText}<span class="b score" title="Score out of 10"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 .8l1.6 3.3 3.6.5-2.6 2.5.6 3.6L6 9l-3.2 1.7.6-3.6L.8 4.6l3.6-.5z" fill="currentColor" /></svg>{scoreText}</span>{/if}
+			<RatingsStrip scores={extras.scores} />
 			{#each badges as b (b)}<span class="b">{b}</span>{/each}
 			{#if status}<StatusPill kind={status} {percent} label={statusLabel} on="art" />{/if}
 		{/snippet}

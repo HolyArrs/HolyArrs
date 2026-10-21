@@ -238,6 +238,12 @@ func (a *API) musicTrendArtFile(ctx context.Context, kind, mbid string) (name, p
 		if artist(it.Name) {
 			return name, path, true
 		}
+		// fanart.tv's artist thumb, when the metadata server has a key for it.
+		if a.s.ExtraArt != nil {
+			if art, err := a.s.ExtraArt(ctx, "artist", mbid); err == nil && keep(art.Thumb) {
+				return name, path, true
+			}
+		}
 	case "album":
 		src, found := a.albumCover(ctx, mbid, it)
 		if !found {

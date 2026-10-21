@@ -318,6 +318,7 @@
 	poster={title.artwork[0]}
 	backdrop={title.backdrop}
 	logo={title.logo}
+	mbid={artist?.mbid}
 	square
 	crumbIcon="music"
 	breadcrumb={[{ href: to(crumbFor('artist').path), label: crumbFor('artist').label }, { href: to(`/library/${title.id}`), label: title.name }]}

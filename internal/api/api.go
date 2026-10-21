@@ -78,6 +78,10 @@ type Server struct {
 	// MusicCover reads an album cover URL from the metadata server; nil uses
 	// only the Cover Art Archive.
 	MusicCover func(ctx context.Context, mbid, artist, title string) (string, error)
+	// ExtraArt and ExtraRatings read fanart.tv artwork and outside ratings
+	// from the metadata server; nil (or a source off there) shows neither.
+	ExtraArt     func(ctx context.Context, kind, id string) (metadata.ServerArt, error)
+	ExtraRatings func(ctx context.Context, kind, id string) (metadata.ServerRatings, error)
 	// Library runs adding, editing and refreshing; New makes one when nil.
 	Library *library.Service
 	// Lists reads Outside lists; New makes one without keys when nil.
@@ -338,6 +342,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/music-trending", a.musicTrending)
 	m.HandleFunc("GET /api/v1/explore/music", a.exploreMusic)
 	m.HandleFunc("GET /api/v1/music-trending/art/{kind}/{mbid}", a.musicTrendArt)
+	m.HandleFunc("GET /api/v1/extras/{kind}/{id}", a.titleExtras)
 	if a.s.Secrets != nil {
 		m.HandleFunc("GET /api/v1/settings/trakt-key", a.getTraktKey)
 		m.HandleFunc("PUT /api/v1/settings/trakt-key", a.putTraktKey)
