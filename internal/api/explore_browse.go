@@ -239,6 +239,24 @@ type browseBuild struct {
 
 var browseBuilds sync.Map
 
+// sweepBrowseBuilds forgets builds older than browseTTL (all but keep), so
+// the map does not grow with every member, switch and limit ever seen.
+func sweepBrowseBuilds(keep any) {
+	browseBuilds.Range(func(k, v any) bool {
+		if k == keep {
+			return true
+		}
+		b := v.(*browseBuild)
+		b.mu.Lock()
+		stale := time.Since(b.at) >= browseTTL
+		b.mu.Unlock()
+		if stale {
+			browseBuilds.CompareAndDelete(k, v)
+		}
+		return true
+	})
+}
+
 // browseStart resets b from the member's page: the page's genre tiles take
 // their backdrops and names first.
 func (b *browseBuild) start(page []explore.BrowseTile) {
@@ -332,7 +350,10 @@ var errBrowseBuilding = errors.New("browse section building")
 func (a *API) browseSectionTiles(ctx context.Context, r *http.Request, sw string, kid bool, pg explore.Page, page []explore.BrowseTile, id string) ([]explore.CategoryTile, error) {
 	max := a.kidMax(r)
 	key := fmt.Sprintf("%p|%d|%s|%t|%s", a, a.person(r).UserID, sw, kid, max)
-	v, _ := browseBuilds.LoadOrStore(key, &browseBuild{})
+	v, loaded := browseBuilds.LoadOrStore(key, &browseBuild{})
+	if !loaded {
+		sweepBrowseBuilds(key)
+	}
 	b := v.(*browseBuild)
 	b.mu.Lock()
 	defer b.mu.Unlock()
