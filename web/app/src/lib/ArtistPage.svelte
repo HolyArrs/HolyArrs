@@ -2,6 +2,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import { peopleNames } from './plain.ts';
 	import { to } from './paths.ts';
+	import { albumHref } from './music-pages.ts';
 	// One artist: its albums with their kinds, dates and state, Keep up to
 	// date per artist and album, the album kinds it includes, and who asked.
 	// Search now looks for every missing album; each album has its own
@@ -107,6 +108,8 @@
 	}
 	// The discography: one wide-card row per kind; Missing only keeps what is not all here yet.
 	let missingOnly = $state(false);
+	/** albumLink opens the album page when both MusicBrainz ids are known, else the Library album page. */
+	const albumLink = (a: AlbumSummary) => (a.mbid && title.ids?.musicbrainz ? albumHref(a.mbid, title.ids.musicbrainz) : to(`/library/${title.id}/albums/${a.id}`));
 	const notHere = (a: AlbumSummary) => a.in_library === 0 || a.missing > 0;
 	const missingCount = $derived((albums ?? []).filter(notHere).length);
 	const rows = $derived(discography((albums ?? []).filter((a) => !missingOnly || notHere(a))));
@@ -351,7 +354,7 @@
 	{@const st = albumStateOf(a)}
 	<WideCard
 		title={a.name}
-		href={to(`/library/${title.id}/albums/${a.id}`)}
+		href={albumLink(a)}
 		image={albumCover(a.id)}
 		kind="artist"
 		subtitle={[albumYear(a.release_date), albumKind(a)].filter(Boolean).join(' · ')}
@@ -440,7 +443,7 @@
 						{@const st = albumStateOf(a)}
 						<li class="album" data-testid="album">
 							<div class="grow album-copy">
-								<a class="album-name" href={to(`/library/${title.id}/albums/${a.id}`)}><b>{a.name}</b></a>
+								<a class="album-name" href={albumLink(a)}><b>{a.name}</b></a>
 								{#if a.disambiguation}<span class="xs muted"> ({a.disambiguation})</span>{/if}
 								<p class="xs muted album-meta">{[albumYear(a.release_date), albumKind(a), a.dropped ? 'no longer listed' : ''].filter(Boolean).join(' · ')}</p>
 								<p class="xs muted album-availability" data-testid="album-line">{albumLine(a)}</p>

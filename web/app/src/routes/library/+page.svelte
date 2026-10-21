@@ -17,6 +17,7 @@
 	import { reducedMotion } from '#lib/motion.ts';
 	import { episodeLabel, showProgress } from '#lib/shows.ts';
 	import { artistProgress } from '#lib/music.ts';
+	import { artistHref } from '#lib/music-pages.ts';
 	import Poster from '#lib/Poster.svelte';
 	import Icon from '#lib/Icon.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
@@ -846,7 +847,7 @@
 						{@const p = progressOf(t)}
 						{@const ls = who === 'staff' ? libraryState(t) : null}
 						<li class="item" animate:flip={{ duration: flipMs, easing: (x) => 1 - Math.pow(1 - x, 3) }} data-testid="library-card" data-title-id={t.id} data-letter={letterOf(sortName(t.name))} class:selected={picked.has(t.id)} class:last-opened={lastOpenedId === t.id}>
-							<LibraryPoster title={t.name} year={t.year} href={titleLink(t.id)} image={posterSrc(t.artwork[0], posterMin[posterSize])} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} vtName={artName(t.id)} status={ls} attention={needsAttention(ls)} bar={barOf(ls, p.have, p.total)} detail={posterDetail} extra={posterExtra(t)} facts={posterFacts(t)} kept={t.keep_up_to_date} canManage={session.can('manage_library')} {selecting} selected={picked.has(t.id)} onsearch={() => searchTitles([t.id])} onkeep={(k) => setKeep([t.id], k)} />
+							<LibraryPoster title={t.name} year={t.year} href={t.kind === 'artist' && t.ids?.musicbrainz ? artistHref(t.ids.musicbrainz) : titleLink(t.id)} image={posterSrc(t.artwork[0], posterMin[posterSize])} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} vtName={artName(t.id)} status={ls} attention={needsAttention(ls)} bar={barOf(ls, p.have, p.total)} detail={posterDetail} extra={posterExtra(t)} facts={posterFacts(t)} kept={t.keep_up_to_date} canManage={session.can('manage_library')} {selecting} selected={picked.has(t.id)} onsearch={() => searchTitles([t.id])} onkeep={(k) => setKeep([t.id], k)} />
 							{#if selecting}
 								<button type="button" class="pick" aria-pressed={picked.has(t.id)} aria-label="Select {t.name}" onclick={() => togglePick(t.id)} data-testid="library-pick"><span class="pick-dot" aria-hidden="true">{#if picked.has(t.id)}<Icon name="check" size={14} stroke={3} />{/if}</span></button>
 							{/if}
