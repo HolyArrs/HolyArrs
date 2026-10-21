@@ -494,7 +494,21 @@ func detailsTTL(e discoverEntry) time.Duration {
 	if e.details != nil && e.details.CollectionMissed {
 		return collectionRetry
 	}
+	if e.details != nil && peopleWithoutIDs(e.details.People) {
+		return 0
+	}
 	return discoverTTL["details"]
+}
+
+// peopleWithoutIDs is true for details cached before people carried their
+// TMDB ids: credits with no id at all, so the page is read again.
+func peopleWithoutIDs(people []metadata.DetailPerson) bool {
+	for _, p := range people {
+		if p.ID != "" {
+			return false
+		}
+	}
+	return len(people) > 0
 }
 
 // qualityWord names the best picture the Library has: 4K, HD, or nothing.

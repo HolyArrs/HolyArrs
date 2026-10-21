@@ -38,7 +38,7 @@ func fakeDiscoverTMDB(t *testing.T) *httptest.Server {
 		case "/3/movie/7":
 			_, _ = w.Write([]byte(`{"id":7,"title":"Seven","release_date":"2020-02-02","runtime":99,"backdrop_path":"/b.jpg","genres":[{"name":"Drama"}],
 				"release_dates":{"results":[{"iso_3166_1":"US","release_dates":[{"type":3,"certification":"R","release_date":"2020-02-02"}]}]},
-				"credits":{"cast":[{"name":"Ann","character":"Hero","profile_path":"/a.jpg"}],"crew":[{"id":31,"name":"Dee","job":"Director"}]},
+				"credits":{"cast":[{"id":21,"name":"Ann","character":"Hero","profile_path":"/a.jpg"}],"crew":[{"id":31,"name":"Dee","job":"Director"}]},
 				"keywords":{"keywords":[{"name":"heist"},{"name":"bank robbery"},{"name":"double cross"},{"name":"time loop"}]},
 				"images":{"backdrops":[{"file_path":"/b.jpg","vote_average":9},{"file_path":"/x1.jpg","vote_average":2},{"file_path":"/x2.jpg","vote_average":5},{"file_path":"/x3.jpg","vote_average":4},{"file_path":"/x4.jpg","vote_average":3},{"file_path":"/x5.jpg","vote_average":1}]},
 				"videos":{"results":[{"key":"abcDEF12345","site":"YouTube","type":"Trailer","official":true,"iso_639_1":"en","name":"Official Trailer"},
@@ -109,7 +109,7 @@ func TestTMDBDetails(t *testing.T) {
 		t.Fatal(err)
 	}
 	if d.Name != "Seven" || d.Year != 2020 || d.RuntimeMinutes != 99 || d.Rating != "R" || len(d.Similar) != 12 || len(d.People) != 2 ||
-		d.People[0] != (DetailPerson{Name: "Ann", Role: "actor", Character: "Hero", Profile: ImageBase + "/w185/a.jpg"}) || d.People[1].Role != "director" {
+		d.People[0] != (DetailPerson{Name: "Ann", Role: "actor", Character: "Hero", Profile: ImageBase + "/w185/a.jpg", ID: "21"}) || d.People[1].Role != "director" {
 		t.Fatalf("movie %+v", d)
 	}
 	if want := []string{ImageBase + "/w1280/x2.jpg", ImageBase + "/w1280/x3.jpg", ImageBase + "/w1280/x4.jpg", ImageBase + "/w1280/x1.jpg"}; fmt.Sprint(d.Backdrops) != fmt.Sprint(want) {
@@ -141,7 +141,7 @@ func TestTMDBDetailsMoodsAndMadeBy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if fmt.Sprint(d.Moods) != "[Drama]" || d.People[1].ID != "31" || d.People[0].ID != "" {
+	if fmt.Sprint(d.Moods) != "[Drama]" || d.People[1].ID != "31" || d.People[0].ID != "21" {
 		t.Fatalf("moods %v people %+v", d.Moods, d.People)
 	}
 	s, err := p.Details(ctx, "show", "8")

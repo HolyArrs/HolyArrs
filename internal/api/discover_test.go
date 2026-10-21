@@ -436,3 +436,18 @@ func TestDetailsWithMissedCollectionAreKeptBriefly(t *testing.T) {
 		t.Fatalf("details kept %v", got)
 	}
 }
+
+// Details cached before cast ids were kept are read again; ones with ids keep their TTL.
+func TestDetailsTTLRefreshesPeopleWithoutIDs(t *testing.T) {
+	old := discoverEntry{details: &metadata.Details{People: []metadata.DetailPerson{{Name: "Ann", Role: "actor"}}}}
+	if got := detailsTTL(old); got != 0 {
+		t.Fatalf("no ids: ttl %v, want 0", got)
+	}
+	fresh := discoverEntry{details: &metadata.Details{People: []metadata.DetailPerson{{Name: "Ann", Role: "actor", ID: "21"}}}}
+	if got := detailsTTL(fresh); got != discoverTTL["details"] {
+		t.Fatalf("with ids: ttl %v", got)
+	}
+	if got := detailsTTL(discoverEntry{details: &metadata.Details{}}); got != discoverTTL["details"] {
+		t.Fatalf("no people: ttl %v", got)
+	}
+}
