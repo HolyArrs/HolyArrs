@@ -1057,7 +1057,10 @@
 	.browse-section { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
 	.browse-section:first-of-type { margin-top: 0; }
 	.browse-section h3 { margin: 0; }
-	.ghost { aspect-ratio: 3 / 4; border-radius: 16px; background: var(--surface-2); }
+	/* Ghost tiles wait 200 ms before showing: a quick answer never flashes them. */
+	.ghost { aspect-ratio: 3 / 4; border-radius: 16px; background: var(--surface-2); animation: ghost-in 160ms ease-out 200ms both; }
+	@keyframes ghost-in { from { opacity: 0; } }
+	@media (prefers-reduced-motion: reduce) { .ghost { animation-duration: 1ms; } }
 	.mood-head { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-bottom: 8px; }
 	.mood-head p { margin: 0; }
 	.mood { display: flex; flex-direction: column; gap: 16px; }

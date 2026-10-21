@@ -1,5 +1,6 @@
 <script lang="ts">
-	// Placeholder while content loads: one subtle sweep every 1.4s.
+	// Placeholder while content loads: one subtle sweep every 1.4s. It waits 200 ms before it shows,
+	// so content that arrives quickly never flashes a placeholder first.
 	let {
 		shape = 'line',
 		width,
@@ -18,7 +19,7 @@
 
 <style>
 	.stack { display: flex; flex-direction: column; gap: 8px; }
-	.ui-sk { position: relative; display: block; overflow: hidden; background: var(--surface-2); }
+	.ui-sk { position: relative; display: block; overflow: hidden; background: var(--surface-2); animation: sk-in 160ms ease-out 200ms both; }
 	.ui-sk::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 25%, var(--surface-3) 50%, transparent 75%); transform: translateX(-100%); animation: sweep 1.4s ease-in-out infinite; }
 	.line { height: 12px; width: 100%; border-radius: 6px; }
 	.block { height: 80px; width: 100%; border-radius: var(--r-card); }
@@ -26,5 +27,6 @@
 	.wide { aspect-ratio: var(--wide-ratio); width: 100%; border-radius: var(--r-card); }
 	.circle { width: 64px; height: 64px; border-radius: 50%; }
 	@keyframes sweep { to { transform: translateX(100%); } }
-	@media (prefers-reduced-motion: reduce) { .ui-sk::after { animation: none; display: none; } }
+	@keyframes sk-in { from { opacity: 0; } }
+	@media (prefers-reduced-motion: reduce) { .ui-sk { animation-duration: 1ms; } .ui-sk::after { animation: none; display: none; } }
 </style>
