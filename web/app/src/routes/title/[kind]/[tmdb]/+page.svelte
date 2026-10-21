@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
+	import { goto, snapshot } from '$app/navigation';
 	import { to } from '#lib/paths.ts';
 	import { api, message, ApiError } from '#lib/api.ts';
 	import { session } from '#lib/session.svelte.ts';
@@ -39,6 +39,22 @@
 	const kind = $derived(page.params.kind ?? '');
 	const tmdb = $derived(page.params.tmdb ?? '');
 	let details = $state<TitleDetails | null>(null);
+	// Back from a person (or any page opened here) lands where the page was:
+	// rows below the hero load late, so the scroll is put back as they arrive.
+	snapshot<number>({
+		capture: () => Math.round(scrollY),
+		restore: (y) => {
+			if (!y) return;
+			const until = Date.now() + 4000;
+			const put = () => {
+				if (document.documentElement.scrollHeight >= y + innerHeight) return scrollTo({ top: y, behavior: 'instant' });
+				if (Date.now() < until) requestAnimationFrame(put);
+				else scrollTo({ top: y, behavior: 'instant' });
+			};
+			put();
+			for (const ms of [300, 900]) setTimeout(() => Math.abs(scrollY - y) > 4 && document.documentElement.scrollHeight >= y + innerHeight && scrollTo({ top: y, behavior: 'instant' }), ms);
+		}
+	});
 	let loading = $state(true);
 	let error = $state('');
 	let missing = $state(false);

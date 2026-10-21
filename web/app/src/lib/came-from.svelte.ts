@@ -18,7 +18,9 @@ function read(): Record<string, CameFrom> {
 
 function index(): string | null {
 	const s = history.state as Record<string, unknown> | null;
-	const i = s?.['sveltekit:history'];
+	// Older SvelteKit keeps the index at 'sveltekit:history'; newer under 'sveltekit:metadata'.historyIndex.
+	const meta = s?.['sveltekit:metadata'] as Record<string, unknown> | undefined;
+	const i = s?.['sveltekit:history'] ?? meta?.historyIndex;
 	return typeof i === 'number' ? String(i) : null;
 }
 

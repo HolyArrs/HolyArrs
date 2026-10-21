@@ -10,6 +10,8 @@ export interface InfoPerson {
 	role: string;
 	character?: string;
 	profile?: string;
+	/** TMDB person id, for the link to their page. */
+	id?: string;
 }
 export interface InfoSeason {
 	number: number;
@@ -61,7 +63,7 @@ export const MAX_CAST = 8;
 
 /** readInfo reads a /metadata/{kind}/{tmdb} answer, tolerating missing fields. */
 export function readInfo(kind: InfoKind, tmdb: string, raw: Raw): InfoDetails {
-	const people = arr(raw.people).map((p) => ({ name: str(p.name) ?? '', role: str(p.role) ?? 'actor', character: str(p.character), profile: str(p.profile) })).filter((p) => p.name);
+	const people = arr(raw.people).map((p) => ({ name: str(p.name) ?? '', role: str(p.role) ?? 'actor', character: str(p.character), profile: str(p.profile), id: str(p.id) })).filter((p) => p.name);
 	const items = (v: unknown) => arr(v).filter((s) => str(s.tmdb_id) && str(s.name)) as unknown as ProviderItem[];
 	const coll = raw.collection && typeof raw.collection === 'object' ? (raw.collection as Raw) : null;
 	const parts = coll ? items(coll.parts) : [];
