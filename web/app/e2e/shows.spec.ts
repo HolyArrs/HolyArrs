@@ -48,7 +48,7 @@ test('the owner adds a Library folder for shows', async () => {
 test('the owner finds a show and adds it with only the latest season kept', async () => {
 	// Search switches between movies and shows and keeps the choice in the address.
 	await own.goto('/search?q=harbour');
-	await own.getByRole('radio', { name: 'Shows', exact: true }).click();
+	await own.getByRole('radio', { name: 'TV shows', exact: true }).click();
 	await expect(own).toHaveURL(/kind=show/);
 	await expect(own.getByRole('main').getByRole('link', { name: 'Harbour Lights,' }).first()).toBeVisible();
 	await axe(own, 'search shows');
