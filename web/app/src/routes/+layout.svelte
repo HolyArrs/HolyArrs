@@ -35,6 +35,7 @@
 	import { trackInputModality } from '#lib/focus.ts';
 	import { focusField, rememberReturn, searchField } from '#lib/search-field.svelte.ts';
 	import { checkHero, installScrollBar, showBar } from '#lib/scroll-bar.svelte.ts';
+	import { arrived, leaving } from '#lib/came-from.svelte.ts';
 	import {
 		buildNav,
 		currentHref,
@@ -202,8 +203,10 @@
 	});
 	beforeNavigate((nav) => {
 		if (!nav.willUnload) navStarted();
+		leaving();
 	});
-	afterNavigate(() => {
+	afterNavigate((nav) => {
+		arrived(nav.type);
 		// The new page's hero (if any) decides the bar's glass; it may load in a moment after.
 		for (const t of [0, 250, 800, 2000]) setTimeout(checkHero, t);
 

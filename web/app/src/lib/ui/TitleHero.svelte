@@ -51,6 +51,7 @@
 
 <script lang="ts">
 	import { onMount, type Snippet } from 'svelte';
+	import { cameFrom, fromIcon } from '../came-from.svelte.ts';
 	import Icon, { type IconName } from '../Icon.svelte';
 	import StatusPill, { type StatusKind } from './StatusPill.svelte';
 	import { viewTransitionName } from '../motion.ts';
@@ -141,7 +142,16 @@
 	const stand = $derived(cover ?? (!wide && poster && !posterFailed ? poster : null));
 
 	const scoreText = $derived(score ? (Math.round(score * 10) / 10).toFixed(1) : '');
-	const crumbHome = $derived(breadcrumb[0]);
+	// The first crumb is the page you came from (Search, Explore, a person…), stepping back there with its scroll and state; a fresh visit keeps the page's own.
+	const from = $derived.by(() => (void breadcrumb, cameFrom()));
+	const fromSelf = $derived(!!from && !!breadcrumb.at(-1)?.href && from.path.split('?')[0] === breadcrumb.at(-1)!.href.split('?')[0]);
+	const crumbHome = $derived(from && !fromSelf && from.label ? { href: from.path, label: from.label } : breadcrumb[0]);
+	const homeIcon = $derived(from && !fromSelf && from.label ? (fromIcon(from.path) ?? crumbIcon) : crumbIcon);
+	function stepBack(e: MouseEvent) {
+		if (!from || fromSelf || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+		e.preventDefault();
+		history.back();
+	}
 	const crumbRest = $derived(breadcrumb.slice(1));
 
 	// The Trailer button shows once the title has a trailer; it opens the theater.
@@ -206,7 +216,7 @@
 			{#if crumbHome}
 				<nav class="crumbs" aria-label="Breadcrumb">
 					<ol>
-						<li><a class="chip" href={crumbHome.href} aria-current={crumbRest.length ? undefined : 'page'}><Icon name={crumbIcon} size={14} />{crumbHome.label}</a></li>
+						<li><a class="chip" href={crumbHome.href} onclick={stepBack} aria-current={crumbRest.length ? undefined : 'page'}><Icon name={homeIcon} size={14} />{crumbHome.label}</a></li>
 						{#each crumbRest as c, i (i)}
 							<li>
 								<span class="sep" aria-hidden="true">›</span>
