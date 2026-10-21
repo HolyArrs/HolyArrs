@@ -40,6 +40,7 @@
 	import { ownedMark, type ExploreCard } from '#lib/explore.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { deleteBody } from '#lib/organise.ts';
+	import { bannerHeight, bannerWidth, densityLabels, loadDensity, loadPosterSize, posterLabels, posterMin, saveDensity, savePosterSize, type Density, type PosterSize } from '#lib/library-art.ts';
 
 	type View = 'table' | 'posters' | 'overview';
 
@@ -155,20 +156,33 @@
 	const chosenCols = $derived(columns.filter((c) => c.on));
 	// Columns that do not fit the width wait until the window is wider (the
 	// banner and the title always stay); the header says how many wait.
-	const bannerW = $derived(Math.max(190, Math.min(370, Math.round(listWidth * 0.24))));
-	const shownCols = $derived.by(() => {
-		let room = listWidth - (28 + bannerW + 180 + 104 + 24 + 14 * 4);
-		const out: Column[] = [];
-		for (const c of chosenCols) {
-			const w = parseInt(c.width.replace(/^minmax\(/, ''), 10) || 120;
-			if (w + 14 > room) break;
-			room -= w + 14;
-			out.push(c);
-		}
-		return out;
+	// The art is the hero of each row: the banner column takes its share of
+	// the width (by density) and its 1000x185 shape sets the row height.
+	// Columns that do not fit scroll sideways rather than squeeze the art.
+	let density = $state<Density>('large');
+	let posterSize = $state<PosterSize>('m');
+	$effect(() => {
+		const me = myId;
+		density = loadDensity(me);
+		posterSize = loadPosterSize(me);
 	});
-	const hiddenCols = $derived(chosenCols.length - shownCols.length);
-	const gridCols = $derived(`28px ${bannerW}px minmax(180px, 1fr) ${kind === 'all' ? '' : shownCols.map((c) => c.width).join(' ')} 104px`);
+	function setDensity(d: Density) {
+		density = d;
+		saveDensity(myId, d);
+	}
+	function setPosterSize(z: PosterSize) {
+		posterSize = z;
+		savePosterSize(myId, z);
+	}
+	const bannerW = $derived(bannerWidth(listWidth, density));
+	const bannerH = $derived(bannerHeight(bannerW));
+	const shownCols = $derived(chosenCols);
+	const gridCols = $derived(`${bannerW}px 28px minmax(220px, 1fr) ${kind === 'all' ? '' : shownCols.map((c) => c.width).join(' ')}`);
+	const sizeItems = $derived<MenuItem[]>(
+		view === 'posters'
+			? [{ kind: 'heading', label: 'Poster size' }, ...(['s', 'm', 'l'] as const).map((z) => ({ label: posterLabels[z], checked: posterSize === z, onselect: () => setPosterSize(z) }))]
+			: [{ kind: 'heading', label: 'Banner size' }, ...(['large', 'comfortable', 'compact'] as const).map((d) => ({ label: densityLabels[d], checked: density === d, onselect: () => setDensity(d) }))]
+	);
 	function setColumns(c: Column[]) {
 		columns = c;
 		saveColumns(myId, libKind, c);
@@ -328,7 +342,7 @@
 	let listTop = $state(0);
 	const heights = new SvelteMap<string, number>();
 	const phone = $derived(listWidth < 640);
-	const guess = $derived(view === 'overview' ? 168 : phone ? Math.round((listWidth - 24) * 7 / 37) + 92 : 86);
+	const guess = $derived(view === 'overview' ? 168 : phone ? Math.round((listWidth - 24) * 185 / 1000) + 92 : bannerH);
 	const offsets = $derived.by(() => {
 		const out = new Array<number>(entries.length + 1);
 		out[0] = 0;
@@ -728,6 +742,7 @@
 
 	<div class="toolbar" role="toolbar" aria-label="Library view">
 		<SegmentedControl label="View" value={view} options={[{ value: 'table', label: 'Banners', icon: 'menu' }, { value: 'posters', label: 'Posters', icon: 'grid' }, { value: 'overview', label: 'Overview', icon: 'info' }]} onchange={(v) => setView(v)} />
+		{#if view !== 'overview' && !(view === 'table' && phone)}<Menu label="Art size" variant="button" text={view === 'posters' ? posterLabels[posterSize].replace(' posters', '') : densityLabels[density]} icon="chevronDown" items={sizeItems} width={200} align="start" />{/if}
 		<Menu label="Sort titles" variant="button" text="{sortLabels[sort.key]} {sort.dir === 'asc' ? '↑' : '↓'}" icon="chevronUpDown" items={sortItems} width={220} align="start" />
 		<span class="filter-btn" class:on={filtersOn > 0}>
 			<Menu label="Filter" variant="button" text={filtersOn ? `Filter · ${filtersOn}` : 'Filter'} icon="chevronDown" items={filterItems} width={280} align="start" />
@@ -758,9 +773,9 @@
 		<div class="content">
 			{#if !loaded}
 				{#if view === 'posters'}
-					<ul class="grid" aria-hidden="true">{#each Array(12) as _, i (i)}<li><Skeleton shape="poster" /><Skeleton width="70%" /></li>{/each}</ul>
+					<ul class="grid" style="--poster-min: {posterMin[posterSize]}px" aria-hidden="true">{#each Array(12) as _, i (i)}<li><Skeleton shape="poster" /><Skeleton width="70%" /></li>{/each}</ul>
 				{:else}
-					<div class="rows" aria-hidden="true">{#each Array(8) as _, i (i)}<div class="sk-row"><span class="sk-banner"><Skeleton shape="block" height="100%" /></span><Skeleton width="40%" /><Skeleton width="60%" /></div>{/each}</div>
+					<div class="rows" style="--bw: {bannerW}px" aria-hidden="true">{#each Array(8) as _, i (i)}<div class="sk-row"><span class="sk-banner"><Skeleton shape="block" height="100%" /></span><Skeleton width="40%" /><Skeleton width="60%" /></div>{/each}</div>
 				{/if}
 			{:else if error}
 				<LoadError hasData={false} message={plainReason(error).text} onretry={retryLoad} />
@@ -776,7 +791,7 @@
 				<EmptyState compact icon="search" title="Nothing matches this filter." action={filtersOn || q ? { label: 'Clear', onclick: clearFilters } : undefined} />
 			{:else if view === 'posters'}
 				{#if grouped}<p class="group-note">Grouped by series in the Banners and Overview views.</p>{/if}
-				<ul class="grid" aria-label="{kindTitle} titles">
+				<ul class="grid" style="--poster-min: {posterMin[posterSize]}px" aria-label="{kindTitle} titles">
 					{#each shown as t, i (t.id)}
 						{@const p = progressOf(t)}
 						{@const requester = requestedBy(t)}
@@ -800,8 +815,8 @@
 				<div class="rows {view}" class:has-select={selecting} style="--cols: {gridCols}" bind:this={listEl} bind:clientWidth={listWidth} role="list" aria-label="{kindTitle} titles">
 					{#if view === 'table' && !phone}
 						<div class="row head" role="presentation">
+							<span class="h banner-h">Banner</span>
 							<span></span>
-							<span class="h">Banner</span>
 							<button type="button" class="h sort" aria-label="Sort by name" aria-pressed={sort.key === 'name'} onclick={() => setSort('name')}>Title{#if sort.key === 'name'}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
 							{#if kind !== 'all'}
 								{#each shownCols as c (c.id)}
@@ -813,7 +828,6 @@
 									{/if}
 								{/each}
 							{/if}
-							<span class="h more-cols">{#if hiddenCols > 0 && kind !== 'all'}+{hiddenCols} wider{/if}</span>
 						</div>
 					{/if}
 					<div class="body" style:height={virtual ? `${offsets[entries.length]}px` : undefined}>
@@ -850,12 +864,12 @@
 										onclick={(ev) => rowClick(ev, t)}
 									>
 										{#if view === 'table'}
-											<div class="row">
+											<div class="row" style:--row-h="{bannerH}px">
+												<span class="art"><BannerArt title={t} width={phone ? listWidth : bannerW} /></span>
 												<span class="state" title={t.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date'}>
 													{#if selecting}<input type="checkbox" class="pick-box" checked={picked.has(t.id)} aria-label="Select {t.name}" tabindex="-1" onchange={() => togglePick(t.id)} data-testid="library-pick" />
 													{:else}<span class="keep" class:on={t.keep_up_to_date} aria-label={t.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date'} role="img"><Icon name={t.keep_up_to_date ? 'bellOn' : 'bell'} size={16} /></span>{/if}
 												</span>
-												<span class="art"><BannerArt title={t} /></span>
 												<span class="name">
 													<a href={titleLink(t.id)} tabindex="-1">{t.name}</a>
 													<span class="sub">
@@ -880,9 +894,9 @@
 												{/if}
 												<span class="acts">
 													{#if canManage && !selecting}
-														<IconButton icon="search" size="sm" label="Search now for {t.name}" onclick={() => searchTitles([t.id])} />
-														<IconButton icon="refresh" size="sm" label="Refresh {t.name}" onclick={() => refreshTitle(t)} />
-														<IconButton icon="tools" size="sm" label="Edit {t.name}" href={titleLink(t.id)} />
+														<IconButton icon="search" size="sm" tipSide="below-end" label="Search now for {t.name}" onclick={() => searchTitles([t.id])} />
+														<IconButton icon="refresh" size="sm" tipSide="below-end" label="Refresh {t.name}" onclick={() => refreshTitle(t)} />
+														<IconButton icon="tools" size="sm" tipSide="below-end" label="Edit {t.name}" href={titleLink(t.id)} />
 													{/if}
 												</span>
 												{#if kind === 'all' || phone}<span class="sr-only">{progressText(t)}</span>{/if}
@@ -1008,11 +1022,11 @@
 	/* Banner table */
 	.rows { min-width: 0; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card); overflow: clip; }
 	.rows.table { overflow-x: auto; }
-	.row { display: grid; grid-template-columns: var(--cols); align-items: center; gap: 0 14px; min-height: 86px; padding: 8px 12px; min-width: max-content; }
-	.row.head { position: sticky; top: 0; z-index: 2; min-height: 38px; padding-top: 0; padding-bottom: 0; background: var(--surface-1); border-bottom: 1px solid var(--line); }
+	.row { display: grid; grid-template-columns: var(--cols); align-items: center; gap: 0 16px; min-height: var(--row-h, 100px); padding: 0 20px 0 0; min-width: max-content; }
+	.row.head { position: sticky; top: 0; z-index: 2; min-height: 38px; padding-top: 0; padding-bottom: 0; padding-left: 0; background: var(--surface-1); border-bottom: 1px solid var(--line); }
 	.h { color: var(--text-muted); font: var(--t-footnote); font-weight: 600; text-align: left; white-space: nowrap; }
 	.h.num, .c.num { text-align: right; justify-self: end; }
-	.more-cols { justify-self: end; font-weight: 400; }
+	.banner-h { padding-left: 14px; }
 	.sort { display: inline-flex; align-items: center; gap: 4px; padding: 6px 0; border: 0; background: none; cursor: pointer; }
 	.sort.num { justify-content: flex-end; }
 	.sort[aria-pressed='true'] { color: var(--text); }
@@ -1028,9 +1042,12 @@
 	.state { display: grid; place-items: center; }
 	.keep { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; color: var(--text-muted); }
 	.keep.on { color: var(--ok, #2fa36b); background: color-mix(in srgb, var(--ok, #2fa36b) 14%, transparent); }
-	.art { display: block; min-width: 0; }
+	.art { display: block; min-width: 0; align-self: stretch; --banner-r: 0; }
+	.art :global(img:not(.logo)) { transition: opacity 240ms var(--ease-out), filter var(--dur-fast) var(--ease-out), scale 400ms var(--ease-out); }
+	.entry:hover .art :global(img:not(.logo)) { filter: brightness(1.12) saturate(1.05); }
+	@media (prefers-reduced-motion: no-preference) { .entry:hover .art :global(img:not(.logo)) { scale: 1.02; } }
 	.name { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-	.name a { color: var(--text); font: var(--t-headline); font-weight: 600; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.name a { color: var(--text); font: var(--t-title3, var(--t-headline)); font-weight: 600; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.name a:hover { text-decoration: underline; text-underline-offset: 3px; }
 	.sub { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--text-muted); font: var(--t-footnote); }
 	.sub:empty { display: none; }
@@ -1039,7 +1056,8 @@
 	.c.path { color: var(--text-muted); font: var(--t-footnote); font-family: var(--font-mono, ui-monospace, monospace); direction: rtl; text-align: left; }
 	.prog { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; }
 	.num-t { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
-	.acts { display: flex; justify-content: flex-end; gap: 2px; opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
+	.acts { position: absolute; right: 10px; top: calc(var(--row-h, 100px) / 2); translate: 0 -50%; z-index: 1; display: flex; gap: 2px; padding: 4px; border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 88%, transparent); box-shadow: var(--shadow-card); backdrop-filter: blur(8px); opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
+	.acts:empty { display: none; }
 	.entry:hover .acts, .entry:focus-within .acts { opacity: 1; }
 	@media (hover: none) { .acts { opacity: 1; } }
 
@@ -1072,13 +1090,13 @@
 	.ov-pick { position: absolute; right: 14px; top: 14px; }
 
 	/* Loading rows match the banner shape */
-	.sk-row { display: grid; grid-template-columns: clamp(220px, 26vw, 370px) 1fr 1fr; align-items: center; gap: 16px; padding: 8px 12px 8px 54px; min-height: 86px; }
+	.sk-row { display: grid; grid-template-columns: var(--bw, 420px) 1fr 1fr; align-items: center; gap: 16px 60px; padding: 0 20px 0 0; }
 	.sk-row + .sk-row { border-top: 1px solid var(--line); }
-	.sk-banner { display: block; aspect-ratio: 37 / 7; }
-	.sk-banner :global(.ui-sk) { height: 100%; border-radius: 8px; }
+	.sk-banner { display: block; aspect-ratio: 1000 / 185; }
+	.sk-banner :global(.ui-sk) { height: 100%; border-radius: 0; }
 
 	/* Posters */
-	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(164px, 1fr)); gap: 26px 18px; margin: 0; padding: 0; list-style: none; }
+	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--poster-min, 172px), 1fr)); gap: 26px 18px; margin: 0; padding: 0; list-style: none; }
 	.grid > li { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 6px; content-visibility: auto; contain-intrinsic-size: auto 340px; scroll-margin-top: 120px; }
 	.grid .meter { height: 3px; }
 	.lines { display: flex; flex-direction: column; gap: 1px; margin: 0; padding: 0; list-style: none; color: var(--text-muted); font: var(--t-footnote); }
@@ -1122,8 +1140,7 @@
 	.fold-note { margin: 0; color: var(--text-muted); font: var(--t-callout); }
 	.empty-more { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 
-	@media (min-width: 1400px) { .grid { grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); } }
-
+	
 	/* Phones: each row becomes a banner card; posters stay a grid. */
 	@media (max-width: 639px) {
 		.toolbar { position: static; }
@@ -1133,19 +1150,21 @@
 		.rail { top: 64px; padding: 2px 0; }
 		.rail-l { font-size: 10px; min-height: 18px; }
 		.rows.table { overflow: clip; }
-		.row { grid-template-columns: 1fr auto; grid-template-areas: 'art art' 'name acts'; gap: 10px 8px; min-width: 0; padding: 12px; }
+		.row { grid-template-columns: 1fr auto; grid-template-areas: 'art art' 'name acts'; gap: 10px 8px; min-width: 0; padding: 0 12px 12px; }
+		.row > .art { margin: 0 -12px; }
+		.rows.table .row { min-height: 0; }
 		.row > .state { position: absolute; right: 20px; top: 20px; z-index: 1; }
 		.row > .state .keep { background: rgb(0 0 0 / 55%); color: #fff; }
 		.row > .state .keep.on { background: color-mix(in srgb, var(--ok, #2fa36b) 85%, #000); color: #fff; }
 		.row > .art { grid-area: art; }
 		.row > .name { grid-area: name; }
-		.row > .acts { grid-area: acts; opacity: 1; }
+		.row > .acts { grid-area: acts; position: static; translate: none; padding: 0; background: none; box-shadow: none; backdrop-filter: none; opacity: 1; }
 		.row > .c { display: none; }
 		.ov { grid-template-columns: 72px minmax(0, 1fr); }
 		.ov-facts { grid-column: 1 / -1; }
-		.grid { grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 18px 12px; }
+		.grid { grid-template-columns: repeat(auto-fill, minmax(calc(var(--poster-min, 172px) * 0.66), 1fr)); gap: 18px 12px; }
 		.fold, .row-notes { padding-left: 12px; }
-		.sk-row { grid-template-columns: 1fr; padding: 12px; }
+		.sk-row { grid-template-columns: 1fr; padding: 0 0 12px; }
 		.sk-row > :global(.stack), .sk-row > :global(.line) { display: none; }
 	}
 </style>
