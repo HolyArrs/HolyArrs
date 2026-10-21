@@ -298,3 +298,28 @@ func TestStripColdStartAndKid(t *testing.T) {
 		}
 	}
 }
+
+// A partial answer (only some sections built) and the full one after it
+// both keep at most stripSectionCap tiles per section.
+func TestStripSectionCapPartialThenFull(t *testing.T) {
+	all := stripFixture(false)
+	var partial []StripCand
+	for _, c := range all {
+		if c.Tile.Section == "genres" || c.Tile.Section == "moods" {
+			partial = append(partial, c)
+		}
+	}
+	for _, cands := range [][]StripCand{partial, all} {
+		in := stripIn(cands)
+		in.Recent = map[string]bool{}
+		per := map[string]int{}
+		for _, x := range PickStrip(in) {
+			per[x.Section]++
+		}
+		for s, n := range per {
+			if n > stripSectionCap {
+				t.Fatalf("%d candidates: section %s has %d", len(cands), s, n)
+			}
+		}
+	}
+}

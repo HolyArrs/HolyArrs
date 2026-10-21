@@ -440,8 +440,9 @@ func PickStrip(in StripIn) []CategoryTile {
 			explore = append(explore, c)
 		}
 	}
-	// Short: fill by score, then let a section go over its cap, then the
-	// categories the rows below already show.
+	// Short: fill by score, then with the categories the rows below already
+	// show. The section cap always holds (a strip from few built sections
+	// is shorter rather than lopsided).
 	fill := func(sectionCap int, rows bool) {
 		for _, x := range list {
 			if len(main)+len(explore) >= max {
@@ -454,8 +455,7 @@ func PickStrip(in StripIn) []CategoryTile {
 		}
 	}
 	fill(stripSectionCap, false)
-	fill(max, false)
-	fill(max, true)
+	fill(stripSectionCap, true)
 	// The explore tiles sit among the others (every fifth place from the third).
 	out := make([]CategoryTile, 0, max)
 	ei := 0
