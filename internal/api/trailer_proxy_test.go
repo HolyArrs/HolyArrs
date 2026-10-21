@@ -272,7 +272,25 @@ func TestTrailerPassThroughInstallCap(t *testing.T) {
 	if _, err := p.begin(99, p.register(99, manifest("a"), exp), now); err != errProxyBusy {
 		t.Fatalf("over the install cap: %v", err)
 	}
-	if _, err := p.begin(1, p.register(1, manifest("a"), exp), now.Add(proxyLife+time.Second)); err != errProxyBusy {
+	// Relaying without a break past proxyLife is refused...
+	var q trailerProxy
+	id := q.register(1, manifest("a"), exp)
+	at := now
+	for ; at.Sub(now) <= proxyLife; at = at.Add(proxyIdle / 2) {
+		s, err := q.begin(1, id, at)
+		if err != nil {
+			t.Fatalf("at %v: %v", at.Sub(now), err)
+		}
+		q.done(1, s, 0)
+		s.last = at // done stamps the wall clock
+	}
+	if _, err := q.begin(1, id, at); err != errProxyBusy {
 		t.Fatalf("past the stream life: %v", err)
+	}
+	// ...but the same trailer played again later (same id) starts afresh.
+	if s, err := q.begin(1, id, at.Add(proxyIdle)); err != nil {
+		t.Fatalf("a new play of an old stream: %v", err)
+	} else {
+		q.done(1, s, 0)
 	}
 }

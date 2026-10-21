@@ -114,6 +114,11 @@ func (a *API) buildShared(ctx context.Context, s *browseShared, sw string, kid b
 			if err != nil {
 				failed.Store(true)
 			}
+			if warm {
+				// The warm-up learns the top backdrops' brightness first, so
+				// the pickers skip too-dark art.
+				sampleBackdrops(ctx, items, 4)
+			}
 			res[i] = explore.CategoryResult{Cat: c, Items: items}
 		}(i, c)
 		if warm {

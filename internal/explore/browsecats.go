@@ -417,7 +417,7 @@ func PickCategoryTiles(res []CategoryResult, taste []string, used, skip map[stri
 	})
 	out := []CategoryTile{}
 	for _, s := range list {
-		for _, it := range s.withBackdrop {
+		for _, it := range darkLast(s.withBackdrop) {
 			if used[it.Backdrop] {
 				continue
 			}
@@ -429,6 +429,28 @@ func PickCategoryTiles(res []CategoryResult, taste []string, used, skip map[stri
 		}
 	}
 	return out
+}
+
+// DarkBackdrop reports a backdrop known to be too dark to read as a tile
+// (the server sets it from a small cached sample; nil: none is).
+var DarkBackdrop func(backdrop string) bool
+
+// darkLast is items with the too-dark backdrops moved to the end (kept
+// only for when nothing brighter is left), order otherwise kept.
+func darkLast(items []Item) []Item {
+	if DarkBackdrop == nil {
+		return items
+	}
+	out := make([]Item, 0, len(items))
+	var dim []Item
+	for _, it := range items {
+		if DarkBackdrop(it.Backdrop) {
+			dim = append(dim, it)
+		} else {
+			out = append(out, it)
+		}
+	}
+	return append(out, dim...)
 }
 
 // combinedShowGenres are TV genres the Browse splits in two (their tiles

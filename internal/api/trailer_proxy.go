@@ -106,10 +106,14 @@ func (p *trailerProxy) begin(user int64, id string, now time.Time) (*proxyStream
 	if s == nil || s.user != user || now.After(s.expires) {
 		return nil, errNoStream
 	}
-	if !s.started.IsZero() && now.Sub(s.started) > proxyLife {
+	// A stream left idle starts a new play: its life and byte count start
+	// over (the same manifest keeps its id, so the hero, the full-screen
+	// player and a later visit all share it).
+	fresh := now.Sub(s.last) >= proxyIdle
+	if !fresh && !s.started.IsZero() && now.Sub(s.started) > proxyLife {
 		return nil, errProxyBusy
 	}
-	if now.Sub(s.last) >= proxyIdle {
+	if fresh {
 		active, all := 0, 0
 		for oid, o := range p.streams {
 			if oid != id && now.Sub(o.last) < proxyIdle {
@@ -123,13 +127,13 @@ func (p *trailerProxy) begin(user int64, id string, now time.Time) (*proxyStream
 			return nil, errProxyBusy
 		}
 	}
-	if p.inFlight[user] >= proxyRequests || s.sent >= proxyMaxStream {
+	if p.inFlight[user] >= proxyRequests || (!fresh && s.sent >= proxyMaxStream) {
 		return nil, errProxyBusy
 	}
 	p.inFlight[user]++
 	s.last = now
-	if s.started.IsZero() {
-		s.started = now
+	if fresh || s.started.IsZero() {
+		s.started, s.sent = now, 0
 	}
 	return s, nil
 }

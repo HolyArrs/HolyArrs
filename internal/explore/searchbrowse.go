@@ -87,7 +87,7 @@ func BrowseTiles(pg Page, sw string, kid bool, moods func(genre string) []string
 	used := map[string]bool{}
 	named := map[string]bool{}
 	pick := func(c *cand) (Item, bool) {
-		for _, it := range c.items {
+		for _, it := range darkLast(c.items) {
 			if !used[it.Backdrop] {
 				used[it.Backdrop] = true
 				return it, true
