@@ -18,8 +18,9 @@ import (
 // this reads as an empty box behind a tile's name.
 const backdropDarkLuma = 40
 
-// backdropLuma caches each sampled backdrop's brightness (-1: sample failed).
-var backdropLuma sync.Map
+// backdropLuma caches each sampled backdrop's brightness (-1: sample failed),
+// for a week and at most 50,000 backdrops.
+var backdropLuma = newTTLMap(7*24*time.Hour, 50000)
 
 // backdropSampling is the one sample worker's queue.
 var backdropSampling = make(chan string, 512)

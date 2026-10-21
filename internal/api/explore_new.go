@@ -86,15 +86,16 @@ type newPageCache struct {
 var newPages newPageCache
 
 // heroShown is each member's latest Explore hero (member id -> []explore.Item),
-// so New & Popular's hero shows other titles.
-var heroShown sync.Map
+// so New & Popular's hero shows other titles. Entries expire after a day.
+var heroShown = newTTLMap(24*time.Hour, 10000)
 
 // newHeroMax is how many titles New & Popular's hero rotates through.
 const newHeroMax = 6
 
 // newHeroKeys keeps the hero picked for a built page (page cache key ->
-// kind:tmdb set), so every page of rows leaves those titles out.
-var newHeroKeys sync.Map
+// kind:tmdb set), so every page of rows leaves those titles out. Entries
+// expire with the page cache.
+var newHeroKeys = newTTLMap(explorePageTTL, 2000)
 
 // newHero picks the hero: the best-scoring new titles of the rail, the
 // services row and the hot and new rows that pass Explore's quality gate
