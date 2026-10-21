@@ -472,6 +472,8 @@ type SeasonSummary struct {
 	Missing      int        `json:"missing"`       // aired, kept up to date, no file yet
 	BetterWanted int        `json:"better_wanted"` // in the Library, a better copy is sought
 	NotOutYet    int        `json:"not_out_yet"`
+	Downloading  int        `json:"downloading"` // a copy is on the way (downloading, stalled, importing)
+	Failed       int        `json:"failed"`      // the download failed or its import needs a decision
 	NextAirDate  *time.Time `json:"next_air_date,omitempty"`
 	Dropped      bool       `json:"dropped,omitempty"`
 }
@@ -532,6 +534,10 @@ func Seasons(ctx context.Context, db store.Lister, titleID int64, now time.Time)
 			ss.BetterWanted++
 		case domain.SlotNotOutYet:
 			ss.NotOutYet++
+		case domain.SlotChosen, domain.SlotDownloading, domain.SlotStalled, domain.SlotImporting:
+			ss.Downloading++
+		case domain.SlotFailed, domain.SlotNeedsADecision:
+			ss.Failed++
 		case domain.SlotWanted:
 			if keep {
 				ss.Missing++

@@ -10,7 +10,7 @@
 	import { bytes, date } from '#lib/format.ts';
 	import { exceptionChip, filters, posterStatus, firstOfLetter, kinds, letterOf, letters, matchesTitleQuery, missingEpisodes, ofKind, titleQuery, type Filter, type Kind } from '#lib/library.ts';
 	import {
-		activeCount, columnSort, sortName, filterCounts, loadColumns, loadSaved, noFilter, passes, progressOf, releaseDate, saveColumns, saveSaved, sortLabels, sortTitles, sortsFor, startDir, columnsFor,
+		activeCount, columnSort, sortName, filterCounts, loadColumns, loadSaved, noFilter, passes, progressOf, releaseDate, saveColumns, saveSaved, sortLabels, sortTitles, sortsFor, startDir, columnsFor, defaultSort,
 		type Column, type FilterContext, type FilterState, type Kept, type LibKind, type SavedFilter, type SortDir, type SortKey
 	} from '#lib/library-table.ts';
 	import { reducedMotion } from '#lib/motion.ts';
@@ -36,6 +36,8 @@
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { audienceOf, audienceStatus } from '#lib/title-status.ts';
+	import { libraryState } from '#lib/library-state.ts';
+	import { quality } from '#lib/explore.ts';
 	import type { EpisodeView, TitleView } from '#lib/types.ts';
 	import type { MovieCollection, CollectionDetail } from '#lib/collections.ts';
 	import { ownedMark, type ExploreCard } from '#lib/explore.ts';
@@ -79,9 +81,10 @@
 	}
 	function readSort(p: Pick<URLSearchParams, 'get'>, k: Kind): { key: SortKey; dir: SortDir } {
 		const key = p.get('sort') as SortKey;
-		const ok = sortsFor(k === 'all' ? 'all' : k).includes(key) ? key : 'name';
+		const d = defaultSort(k === 'all' ? 'all' : k);
+		const ok = sortsFor(k === 'all' ? 'all' : k).includes(key) ? key : d.key;
 		const dir = p.get('dir');
-		return { key: ok, dir: dir === 'asc' || dir === 'desc' ? dir : startDir(ok) };
+		return { key: ok, dir: dir === 'asc' || dir === 'desc' ? dir : ok === d.key ? d.dir : startDir(ok) };
 	}
 	let kind = $state<Kind>(readKind(page.url.searchParams.get('kind')));
 	let filter = $state<FilterState>(readFilter(page.url.searchParams));
@@ -105,8 +108,9 @@
 		set('requester', filter.asker === 'anyone' ? null : filter.asker);
 		set('series', filter.series ? String(filter.series) : null);
 		set('q', q || null);
-		set('sort', sort.key === 'name' ? null : sort.key);
-		set('dir', sort.dir === startDir(sort.key) ? null : sort.dir);
+		const d = defaultSort(kind === 'all' ? 'all' : kind);
+		set('sort', sort.key === d.key ? null : sort.key);
+		set('dir', sort.dir === (sort.key === d.key ? d.dir : startDir(sort.key)) ? null : sort.dir);
 		set('group', groupSeries ? 'series' : null);
 		url.searchParams.delete('layout');
 		void goto(url, { replace: true, shallow: true, reset: false });
@@ -611,6 +615,16 @@
 			}
 			case 'albums': return t.artist ? `${t.artist.included}/${t.artist.albums}` : '';
 			case 'latest': return date(t.artist?.next_release);
+			case 'status': return libraryState(t)?.label ?? '';
+			case 'requested': return requestedBy(t);
+			case 'quality': {
+				const have = quality(t);
+				const want = t.versions?.[0]?.label;
+				return have || want ? `${have ?? '—'} → ${want ?? '—'}` : '';
+			}
+			case 'kept': return t.keep_up_to_date ? 'Yes' : 'No';
+			case 'showstate': return t.show?.status === 'ended' ? 'Ended' : t.show?.status ? 'Continuing' : '';
+			case 'activity': return date(t.last_activity);
 			default: return '';
 		}
 	}
@@ -622,7 +636,9 @@
 		return lines;
 	}
 	function markOf(t: TitleView) {
-		return ownedMark({ key: String(t.id), kind: t.kind === 'show' ? 'show' : t.kind === 'artist' ? 'artist' : 'movie', name: t.name, titleId: t.id } as ExploreCard, t, who);
+		const m = ownedMark({ key: String(t.id), kind: t.kind === 'show' ? 'show' : t.kind === 'artist' ? 'artist' : 'movie', name: t.name, titleId: t.id } as ExploreCard, t, who);
+		const ls = who === 'staff' ? libraryState(t) : null;
+		return m && ls ? { ...m, label: ls.label } : m;
 	}
 	const isProgressCol = (c: Column) => c.id === 'episodes' || c.id === 'tracks';
 
@@ -838,6 +854,7 @@
 								{:else}
 									{@const t = e.t}
 									{@const st = exceptionChip(filter.status, posterStatus(t, who))}
+									{@const ls = libraryState(t)}
 									{@const p = progressOf(t)}
 									{@const requester = requestedBy(t)}
 									{@const fold = filter.status === 'missing' && t.kind === 'show' && (t.show?.missing ?? 0) > 0}
@@ -870,14 +887,22 @@
 													<a href={titleLink(t.id)} tabindex="-1">{t.name}</a>
 													<span class="sub">
 														{#if kind === 'all'}{kindLabel[t.kind]}{#if t.year} · {t.year}{/if}{/if}
-														{#if st}<StatusPill kind={st.kind} label={st.label} />{/if}
-														{#if t.asks?.some((ask) => ask.state === 'approved' && ask.title_id === t.id)}<StatusPill kind="approved" testid="request-approved" />{/if}
+														{#if st && (kind === 'all' || phone || !shownCols.some((c) => c.id === 'status'))}<StatusPill kind={st.kind} label={st.label} />{/if}
 													</span>
 													{#if phone}<span class="facts">{chosenCols.slice(0, 3).map((c) => (isProgressCol(c) ? `${p.have}/${p.total}` : cell(t, c))).filter(Boolean).join(' · ')}</span>{/if}
 												</span>
 												{#if kind !== 'all'}
 													{#each shownCols as c (c.id)}
-														{#if isProgressCol(c)}
+														{#if c.id === 'status'}
+															<span class="c lstate {ls?.tone ?? 'idle'}" data-testid="library-status" data-state={ls?.key}>
+																{#if ls}
+																	<span class="ls-line"><Icon name={ls.icon} size={15} /><span class="ls-t">{ls.label}</span></span>
+																	{#if ls.percent !== undefined}<span class="meter ls-bar" aria-hidden="true"><i style="width: {ls.percent}%"></i></span>{/if}
+																{:else}—{/if}
+															</span>
+														{:else if c.id === 'kept'}
+															<span class="c keep-c" title={t.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date'}><span class="keep" class:on={t.keep_up_to_date} role="img" aria-label={t.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date'}><Icon name={t.keep_up_to_date ? 'bellOn' : 'bell'} size={16} /></span></span>
+														{:else if isProgressCol(c)}
 															<span class="c prog">
 																<span class="meter {tone(t)}"><i style="width: {p.total ? (p.have / p.total) * 100 : 0}%"></i></span>
 																<span class="num-t">{p.have}/{p.total}</span>
@@ -1052,6 +1077,19 @@
 	.c { min-width: 0; color: var(--text); font: var(--t-callout); font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.c.path { color: var(--text-muted); font: var(--t-footnote); font-family: var(--font-mono, ui-monospace, monospace); direction: rtl; text-align: left; }
 	.prog { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; }
+	.lstate { display: flex; flex-direction: column; gap: 5px; }
+	.ls-line { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+	.ls-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.lstate.ok .ls-line :global(svg) { color: var(--ok); }
+	.lstate.info .ls-line :global(svg) { color: var(--info); }
+	.lstate.wait .ls-line :global(svg) { color: var(--wait); }
+	.lstate.fail { color: var(--fail-text); }
+	.lstate.idle { color: var(--text-muted); }
+	.ls-bar { max-width: 140px; }
+	.lstate.info .ls-bar i { background: var(--info); }
+	.lstate.fail .ls-bar i { background: var(--fail); }
+	.lstate.idle .ls-bar i { background: var(--text-faint); }
+	.keep-c { display: flex; }
 	.num-t { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
 	.acts { position: absolute; right: 10px; top: calc(var(--row-h, 100px) / 2); translate: 0 -50%; z-index: 1; display: flex; gap: 2px; padding: 4px; border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 88%, transparent); box-shadow: var(--shadow-card); backdrop-filter: blur(8px); opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
 	.acts:empty { display: none; }

@@ -29,7 +29,9 @@ describe('column layout', () => {
 	});
 	it('drops unknown columns and keeps ones added since', () => {
 		const got = applyLayout('artist', [{ id: 'size', on: false }, { id: 'nope' as never, on: true }]);
-		expect(got[0]).toMatchObject({ id: 'size', on: false });
+		// A column added since goes in at its starting place: Status stays first.
+		expect(got[0]).toMatchObject({ id: 'status', on: true });
+		expect(got.find((c) => c.id === 'size')).toMatchObject({ on: false });
 		expect(got.map((c) => c.id).sort()).toEqual(columnsFor('artist').map((c) => c.id).sort());
 	});
 	it('survives broken storage', () => {
@@ -39,7 +41,7 @@ describe('column layout', () => {
 	it('moves a column within bounds', () => {
 		const ids = (c: ReturnType<typeof columnsFor>) => c.map((x) => x.id);
 		const base = columnsFor('movie');
-		expect(ids(moveColumn(base, 0, 99)).at(-1)).toBe('year');
+		expect(ids(moveColumn(base, 0, 99)).at(-1)).toBe('status');
 		expect(moveColumn(base, -1, 2)).toBe(base);
 	});
 });

@@ -572,7 +572,9 @@ func summarise(p domain.Part, ps []domain.AlbumPressing, ts []trackState) AlbumS
 // ArtistTotals are an artist's album and track counts, as Albums would sum them.
 type ArtistTotals struct {
 	Albums, Included, Tracks, InLibrary, Missing, NotOutYet, BetterWanted int
-	NextRelease                                                           *time.Time
+	// Downloading counts tracks on the way; Failed, failed or waiting on a decision.
+	Downloading, Failed int
+	NextRelease         *time.Time
 }
 
 // Totals counts an artist's albums and tracks in two aggregate queries, so
@@ -591,10 +593,12 @@ func Totals(ctx context.Context, db store.Querier, titleID int64, now time.Time)
 		}
 	}
 	err = db.QueryRowContext(ctx, `SELECT count(*), COALESCE(sum(s.state IN (?, ?)), 0), COALESCE(sum(s.state = ?), 0),
-		COALESCE(sum(s.state = ?), 0), COALESCE(sum(s.state = ? AND i.keep_up_to_date), 0) FROM items i
+		COALESCE(sum(s.state = ?), 0), COALESCE(sum(s.state = ? AND i.keep_up_to_date), 0),
+		COALESCE(sum(s.state IN (?, ?, ?, ?)), 0), COALESCE(sum(s.state IN (?, ?)), 0) FROM items i
 		LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = (SELECT id FROM versions WHERE title_id = ? ORDER BY is_main DESC, id LIMIT 1)
 		WHERE i.title_id = ? AND i.kind = 'track' AND i.part_id IN (SELECT id FROM parts WHERE title_id = ? AND kind = 'album')`,
-		domain.SlotInLibrary, domain.SlotBetterWanted, domain.SlotBetterWanted, domain.SlotNotOutYet, domain.SlotWanted, titleID, titleID, titleID).
-		Scan(&t.Tracks, &t.InLibrary, &t.BetterWanted, &t.NotOutYet, &t.Missing)
+		domain.SlotInLibrary, domain.SlotBetterWanted, domain.SlotBetterWanted, domain.SlotNotOutYet, domain.SlotWanted,
+		domain.SlotChosen, domain.SlotDownloading, domain.SlotStalled, domain.SlotImporting, domain.SlotFailed, domain.SlotNeedsADecision, titleID, titleID, titleID).
+		Scan(&t.Tracks, &t.InLibrary, &t.BetterWanted, &t.NotOutYet, &t.Missing, &t.Downloading, &t.Failed)
 	return t, err
 }

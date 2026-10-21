@@ -3,6 +3,7 @@
 import type { TitleView } from './types.ts';
 import type { StatusKind } from './ui/StatusPill.svelte';
 import { audienceStatus, factsOf, titleStatus, type Audience, type TitleStatus } from './title-status.ts';
+import { libraryState } from './library-state.ts';
 
 export type Filter = 'all' | 'missing' | 'not_out_yet' | 'better' | 'have';
 
@@ -199,12 +200,17 @@ export function exceptionChip<T extends { kind: StatusKind; label: string }>(f: 
 }
 
 /**
- * posterStatus is the one status a Library poster or row shows, in the
- * shared words of title-status.ts. A show or an artist with missing
+ * posterStatus is the one status a Library poster or row shows: for staff
+ * the Library state, for members the shared words of title-status.ts. A show or an artist with missing
  * episodes or tracks puts the count on the shared word ("Missing · 3
  * episodes"); null when nothing is kept yet.
  */
 export function posterStatus(t: TitleView, who: Audience): TitleStatus | null {
+	// Staff see the Library state (library-state.ts), the same words as the Status column.
+	if (who === 'staff') {
+		const ls = libraryState(t);
+		return ls ? { kind: ls.pill, label: ls.label } : null;
+	}
 	const facts = factsOf(t);
 	if (t.kind !== 'show' && t.kind !== 'artist') return titleStatus({ ...facts, titleKind: 'movie' }, who);
 	const s = t.kind === 'show' ? t.show : t.artist;

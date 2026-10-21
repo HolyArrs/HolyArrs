@@ -306,6 +306,8 @@ type ArtistInfo struct {
 	Missing         int        `json:"missing"`
 	NotOutYet       int        `json:"not_out_yet"`
 	BetterWanted    int        `json:"better_wanted"`
+	Downloading     int        `json:"downloading"`
+	Failed          int        `json:"failed"`
 	NextRelease     *time.Time `json:"next_release,omitempty"`
 }
 
@@ -324,7 +326,8 @@ func (a *API) artistInfo(ctx context.Context, t domain.Title) (*ArtistInfo, erro
 	return &ArtistInfo{MBID: t.SourceIDs["musicbrainz"], Type: strOr(t.ArtistType), Disambiguation: strOr(t.Disambiguation), Status: t.Status,
 		AlbumChoice: strOr(t.AlbumChoice), NewAlbums: library.NewAlbumsOf(t.NewPartsPolicy), AlbumTypes: listOr(t.MusicTypes),
 		SecondaryTypes: listOr(t.MusicSecondary), ReleaseStatuses: listOr(t.MusicStatuses), Albums: n.Albums, Included: n.Included,
-		Tracks: n.Tracks, InLibrary: n.InLibrary, Missing: n.Missing, NotOutYet: n.NotOutYet, BetterWanted: n.BetterWanted, NextRelease: n.NextRelease}, nil
+		Tracks: n.Tracks, InLibrary: n.InLibrary, Missing: n.Missing, NotOutYet: n.NotOutYet, BetterWanted: n.BetterWanted,
+		Downloading: n.Downloading, Failed: n.Failed, NextRelease: n.NextRelease}, nil
 }
 
 // listAlbums lists an artist's albums, newest first; ?included=true leaves

@@ -144,7 +144,7 @@ describe('library letters and quiet states', () => {
 		const show = (s: Partial<NonNullable<TitleView['show']>>): TitleView => ({ ...title('Harbour Lights'), kind: 'show', slots: [], show: { details_source: '', episode_order: '', new_seasons: '', status: '', seasons: [{ aired: 6 } as never], episodes: 6, missing: 0, not_out_yet: 0, in_library: 0, better_wanted: 0, ...s } });
 
 		it('gives a movie one status in the shared words', () => {
-			expect(posterStatus(title('A', 'in_library', 'wanted'), 'staff')).toEqual({ kind: 'in_library', label: 'In your Library' });
+			expect(posterStatus(title('A', 'in_library', 'wanted'), 'staff')).toEqual({ kind: 'in_library', label: 'In Library' });
 			expect(posterStatus(title('A', 'in_library'), 'member')).toEqual({ kind: 'in_library', label: 'Ready to watch' });
 			expect(posterStatus(title('A', 'wanted'), 'staff')).toEqual({ kind: 'missing', label: 'Missing' });
 			expect(posterStatus(title('A', 'not_out_yet'), 'staff')?.kind).toBe('coming_soon');
@@ -165,7 +165,7 @@ describe('library letters and quiet states', () => {
 			expect(posterStatus(show({ missing: 1 }), 'staff')?.label).toBe('Missing · 1 episode');
 			expect(posterStatus(show({ missing: 3 }), 'member')).toEqual({ kind: 'requested', label: 'Requested · 3 episodes' });
 			expect(posterStatus(show({ in_library: 6 }), 'member')).toEqual({ kind: 'in_library', label: 'Ready to watch' });
-			expect(posterStatus(show({ not_out_yet: 2 }), 'staff')).toEqual({ kind: 'coming_soon', label: 'Coming soon' });
+			expect(posterStatus(show({ not_out_yet: 2 }), 'staff')).toEqual({ kind: 'coming_soon', label: 'Not out yet' });
 			expect(posterStatus(show({}), 'staff')).toBeNull();
 		});
 

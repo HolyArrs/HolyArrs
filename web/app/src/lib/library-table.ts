@@ -3,12 +3,13 @@
 // saved filters. Kept apart from the page so it can be tested.
 import type { TitleView } from './types.ts';
 import { matches, type Filter } from './library.ts';
+import { libraryState } from './library-state.ts';
 
 export type LibKind = 'movie' | 'show' | 'artist';
 
 export type ColumnId =
-	| 'network' | 'rules' | 'next' | 'last' | 'seasons' | 'episodes' | 'added' | 'year' | 'size' | 'genres' | 'rating' | 'path'
-	| 'release' | 'runtime' | 'series' | 'albums' | 'tracks' | 'latest';
+	| 'status' | 'network' | 'rules' | 'next' | 'last' | 'seasons' | 'episodes' | 'added' | 'year' | 'size' | 'genres' | 'rating' | 'path'
+	| 'release' | 'runtime' | 'series' | 'albums' | 'tracks' | 'latest' | 'requested' | 'quality' | 'kept' | 'showstate' | 'activity';
 
 export interface Column {
 	id: ColumnId;
@@ -22,43 +23,62 @@ export interface Column {
 
 const col = (id: ColumnId, label: string, width: string, on: boolean, numeric = false): Column => ({ id, label, width, on, numeric });
 
-/** columnsFor is each library's columns in their starting order, with the ones shown at first switched on. */
+/**
+ * columnsFor is each library's columns in their starting order, with the
+ * ones shown at first switched on (releases/library-columns-20261021).
+ * Status always comes first after the banner.
+ */
 export function columnsFor(kind: LibKind): Column[] {
 	if (kind === 'show')
 		return [
+			col('status', 'Status', '200px', true),
 			col('episodes', 'Episodes', '150px', true),
 			col('next', 'Next episode', '118px', true, true),
-			col('network', 'Network', '120px', true),
 			col('rules', 'Pick rules', '120px', true),
+			col('size', 'Size', '84px', true, true),
+			col('added', 'Added', '104px', true, true),
+			col('network', 'Network', '120px', false),
 			col('seasons', 'Seasons', '76px', false, true),
 			col('last', 'Last aired', '110px', false, true),
-			col('added', 'Added', '104px', false, true),
 			col('year', 'Year', '64px', false, true),
-			col('size', 'Size', '84px', true, true),
 			col('genres', 'Genres', '160px', false),
 			col('rating', 'Age rating', '88px', false),
+			col('requested', 'Requested by', '130px', false),
+			col('quality', 'Quality', '120px', false),
+			col('kept', 'Kept up to date', '72px', false),
+			col('showstate', 'Show state', '100px', false),
+			col('activity', 'Last activity', '110px', false, true),
 			col('path', 'Folder', 'minmax(160px, 1fr)', false)
 		];
 	if (kind === 'artist')
 		return [
-			col('albums', 'Albums', '84px', true, true),
+			col('status', 'Status', '200px', true),
 			col('tracks', 'Tracks', '150px', true),
 			col('latest', 'Next release', '118px', true, true),
 			col('size', 'Size', '84px', true, true),
 			col('added', 'Added', '104px', true, true),
-			col('rules', 'Pick rules', '120px', false),
+			col('rules', 'Pick rules', '120px', true),
+			col('albums', 'Albums', '84px', false, true),
+			col('requested', 'Requested by', '130px', false),
+			col('kept', 'Kept up to date', '72px', false),
+			col('activity', 'Last activity', '110px', false, true),
 			col('path', 'Folder', 'minmax(160px, 1fr)', false)
 		];
 	return [
-		col('year', 'Year', '64px', true, true),
+		col('status', 'Status', '200px', true),
 		col('release', 'Out', '176px', true),
 		col('rules', 'Pick rules', '120px', true),
-		col('runtime', 'Runtime', '84px', false, true),
 		col('size', 'Size', '84px', true, true),
+		col('added', 'Added', '104px', true, true),
+		col('year', 'Year', '64px', true, true),
+		col('runtime', 'Runtime', '84px', false, true),
 		col('rating', 'Age rating', '88px', false),
-		col('added', 'Added', '104px', false, true),
 		col('series', 'Movie series', '160px', false),
 		col('genres', 'Genres', '160px', false),
+		col('requested', 'Requested by', '130px', false),
+		col('quality', 'Quality', '120px', false),
+		col('kept', 'Kept up to date', '72px', false),
+		col('activity', 'Last activity', '110px', false, true),
 		col('path', 'Folder', 'minmax(160px, 1fr)', false)
 	];
 }
@@ -72,8 +92,8 @@ export function columnsKey(member: number | undefined, kind: LibKind): string {
 
 /**
  * applyLayout puts a saved layout over a library's columns: saved order and
- * on/off first, then any column added since (at the end, with its
- * starting choice). Unknown ids are dropped.
+ * on/off first; a column added since goes in at its starting place (so
+ * Status lands first), with its starting choice. Unknown ids are dropped.
  */
 export function applyLayout(kind: LibKind, saved: ColumnLayout | null | undefined): Column[] {
 	const base = columnsFor(kind);
@@ -86,7 +106,9 @@ export function applyLayout(kind: LibKind, saved: ColumnLayout | null | undefine
 		out.push({ ...c, on: !!s.on });
 		byId.delete(s.id);
 	}
-	for (const c of base) if (byId.has(c.id)) out.push(c);
+	base.forEach((c, i) => {
+		if (byId.has(c.id)) out.splice(Math.min(i, out.length), 0, c);
+	});
 	return out;
 }
 
@@ -117,24 +139,25 @@ export function moveColumn(cols: Column[], from: number, to: number): Column[] {
 
 // ── Sorting ─────────────────────────────────────────────────────────────
 
-export type SortKey = 'name' | 'year' | 'added' | 'size' | 'next' | 'last' | 'progress' | 'release' | 'runtime' | 'network' | 'rules';
+export type SortKey = 'status' | 'name' | 'year' | 'added' | 'size' | 'next' | 'last' | 'progress' | 'release' | 'runtime' | 'network' | 'rules';
 export type SortDir = 'asc' | 'desc';
 
 export const sortLabels: Record<SortKey, string> = {
-	name: 'Name', year: 'Year', added: 'Added', size: 'Size', next: 'Next episode', last: 'Last aired',
+	status: 'Status', name: 'Name', year: 'Year', added: 'Added', size: 'Size', next: 'Next episode', last: 'Last aired',
 	progress: 'Progress', release: 'Out date', runtime: 'Runtime', network: 'Network', rules: 'Pick rules'
 };
 
 /** sortsFor lists the sorts a library offers. */
 export function sortsFor(kind: LibKind | 'all'): SortKey[] {
-	if (kind === 'show') return ['name', 'next', 'last', 'progress', 'added', 'year', 'size', 'network', 'rules'];
-	if (kind === 'artist') return ['name', 'progress', 'added', 'size', 'next'];
-	if (kind === 'movie') return ['name', 'year', 'release', 'added', 'size', 'runtime', 'rules'];
+	if (kind === 'show') return ['status', 'name', 'next', 'last', 'progress', 'added', 'year', 'size', 'network', 'rules'];
+	if (kind === 'artist') return ['status', 'name', 'progress', 'added', 'size', 'next'];
+	if (kind === 'movie') return ['status', 'name', 'year', 'release', 'added', 'size', 'runtime', 'rules'];
 	return ['name', 'year', 'added', 'size'];
 }
 
 /** The column each sort belongs to, so a column header can sort. */
 export const columnSort: Partial<Record<ColumnId, SortKey>> = {
+	status: 'status',
 	year: 'year', added: 'added', size: 'size', next: 'next', last: 'last', episodes: 'progress', tracks: 'progress',
 	release: 'release', runtime: 'runtime', network: 'network', rules: 'rules', latest: 'next'
 };
@@ -169,6 +192,7 @@ function nextDate(t: TitleView): string | undefined {
  */
 function sortValue(t: TitleView, key: SortKey): number | string | null {
 	switch (key) {
+		case 'status': return libraryState(t)?.rank ?? null;
 		case 'name': return sortName(t.name);
 		case 'year': return t.year ?? null;
 		case 'added': return time(t.added_at) || null;
@@ -202,7 +226,12 @@ export function sortTitles(ts: TitleView[], key: SortKey, dir: SortDir = 'asc'):
 
 /** The sort each key starts with when picked: newest first for dates and sizes, soonest first for what is coming. */
 export function startDir(key: SortKey): SortDir {
-	return key === 'name' || key === 'next' || key === 'network' || key === 'rules' || key === 'progress' ? 'asc' : 'desc';
+	return key === 'status' || key === 'name' || key === 'next' || key === 'network' || key === 'rules' || key === 'progress' ? 'asc' : 'desc';
+}
+
+/** defaultSort is each library's starting sort: newest added for movies and music, soonest next episode for TV. */
+export function defaultSort(kind: LibKind | 'all'): { key: SortKey; dir: SortDir } {
+	return kind === 'show' ? { key: 'next', dir: 'asc' } : kind === 'all' ? { key: 'name', dir: 'asc' } : { key: 'added', dir: 'desc' };
 }
 
 // ── Filters ─────────────────────────────────────────────────────────────

@@ -55,6 +55,8 @@ export interface TitleView {
 	added_at?: string;
 	/** Every kept file together, in bytes. */
 	size_bytes?: number;
+	/** The newest grab or import. */
+	last_activity?: string;
 	versions: VersionView[];
 	slots: SlotView[];
 	/** Wishlist asks that led to it: who asked and who decided. */
@@ -83,6 +85,9 @@ export interface ArtistInfo {
 	missing: number;
 	not_out_yet: number;
 	better_wanted: number;
+	/** Tracks on the way, and tracks whose download failed or needs a decision. */
+	downloading?: number;
+	failed?: number;
 	next_release?: string;
 }
 
@@ -205,6 +210,8 @@ export interface SeasonSummary {
 	missing: number;
 	not_out_yet: number;
 	better_wanted: number;
+	downloading?: number;
+	failed?: number;
 	next_air_date?: string;
 	dropped?: boolean;
 }
@@ -225,6 +232,9 @@ export interface ShowInfo {
 	not_out_yet: number;
 	in_library: number;
 	better_wanted: number;
+	/** Episodes on the way, and episodes whose download failed or needs a decision. */
+	downloading?: number;
+	failed?: number;
 	next_air_date?: string;
 	season_count?: number;
 	last_air_date?: string;

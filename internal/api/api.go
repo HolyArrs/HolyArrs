@@ -310,6 +310,7 @@ func (a *API) Handler() http.Handler {
 	a.feedRoutes(m)
 	a.showRoutes(m)
 	a.musicRoutes(m)
+	a.musicPageRoutes(m)
 	a.subtitleRoutes(m)
 	a.importSecretsRoutes(m)
 	a.thisAppRoutes(m)
@@ -485,6 +486,8 @@ type TitleView struct {
 	// every file kept for it, across all Versions (Library table columns).
 	AddedAt   time.Time `json:"added_at"`
 	SizeBytes int64     `json:"size_bytes"`
+	// LastActivity is the newest grab or import for the title, if any.
+	LastActivity *time.Time `json:"last_activity,omitempty"`
 	// Versions are the wanted copies (main first), such as HD and 4K.
 	Versions []VersionView `json:"versions"`
 	Slots    []SlotView    `json:"slots"`
@@ -514,6 +517,8 @@ type ShowInfo struct {
 	NotOutYet     int                     `json:"not_out_yet"`
 	InLibrary     int                     `json:"in_library"`
 	BetterWanted  int                     `json:"better_wanted"`
+	Downloading   int                     `json:"downloading"`
+	Failed        int                     `json:"failed"`
 	NextAirDate   *time.Time              `json:"next_air_date,omitempty"`
 	// SeasonCount counts numbered seasons (specials left out); LastAirDate
 	// is the most recent episode that has aired.
@@ -544,6 +549,8 @@ func (a *API) showInfo(ctx context.Context, t domain.Title) (*ShowInfo, error) {
 		si.NotOutYet += s.NotOutYet
 		si.InLibrary += s.InLibrary
 		si.BetterWanted += s.BetterWanted
+		si.Downloading += s.Downloading
+		si.Failed += s.Failed
 		if s.NextAirDate != nil && (si.NextAirDate == nil || s.NextAirDate.Before(*si.NextAirDate)) {
 			si.NextAirDate = s.NextAirDate
 		}
@@ -594,6 +601,9 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 	now := time.Now()
 	var err error
 	if v.SizeBytes, err = titleSize(ctx, db, t.ID); err != nil {
+		return v, err
+	}
+	if v.LastActivity, err = titleActivity(ctx, db, t.ID); err != nil {
 		return v, err
 	}
 	if t.Kind == "artist" {
