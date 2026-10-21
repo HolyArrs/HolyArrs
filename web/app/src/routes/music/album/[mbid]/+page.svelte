@@ -19,14 +19,19 @@
 	import { plainReason } from '#lib/plain.ts';
 	import { cameFrom, fromIcon } from '#lib/came-from.svelte.ts';
 	import { albumYear } from '#lib/music.ts';
-	import { albumHref, appPicture, artistHref, kindWord, length, owned, type AlbumPageData, type PageAlbum } from '#lib/music-pages.ts';
+	import { SkRail, SkTrackRow } from '#lib/ui/sk/index.ts';
+	import { albumHref, appPicture, artistHref, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist } from '#lib/music-pages.ts';
 	import type { LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 
 	// An album's page: the cover large over its own blurred colours, the tracklist
 	// with what the Library has, its other editions, and where to go next.
 	const mbid = $derived((page.params.mbid ?? '').toLowerCase());
 	const artist = $derived((page.url.searchParams.get('artist') ?? '').toLowerCase());
+	// Hero first: the core answer draws the cover, name and artist; the full
+	// answer (tracks, editions, more by) and the similar artists follow.
+	let core = $state<AlbumCoreData | null>(null);
 	let data = $state<AlbumPageData | null>(null);
+	let similar = $state<PageArtist[] | null>(null);
 	let error = $state('');
 	let busy = $state(false);
 	let lookup = $state<LookupArtist | null>(null);
@@ -41,28 +46,32 @@
 	const manage = $derived(session.can('manage_library'));
 	const mayAsk = $derived(session.can('ask'));
 
-	async function load() {
+	function load() {
 		const want = `${mbid}|${artist}`;
+		const still = () => want === `${mbid}|${artist}`;
 		busy = true;
 		error = '';
-		try {
-			const d = await api.get<AlbumPageData>(`/music/albums/${mbid}?artist=${artist}`);
-			if (want !== `${mbid}|${artist}`) return;
-			data = d;
-			void api.get<{ artists: LookupArtist[] }>(`/artists/lookup?term=${encodeURIComponent(`mbid:${artist}`)}`).then((r) => {
-				if (want === `${mbid}|${artist}`) lookup = r.artists[0] ?? null;
-			}).catch(() => {});
-		} catch (e) {
-			if (want === `${mbid}|${artist}`) error = message(e);
-		} finally {
-			busy = false;
-		}
+		// All at once: the hero, the tracks, the similar artists and the ask state.
+		void api.get<AlbumCoreData>(`/music/albums/${mbid}?part=core&artist=${artist}`).then((c) => still() && !data && (core = c)).catch(() => {});
+		void api.get<{ similar: PageArtist[] }>(`/music/artists/${artist}?part=similar&n=14`).then((r) => still() && (similar = r.similar)).catch(() => still() && (similar = []));
+		void api.get<{ artists: LookupArtist[] }>(`/artists/lookup?term=${encodeURIComponent(`mbid:${artist}`)}`).then((r) => {
+			if (still()) lookup = r.artists[0] ?? null;
+		}).catch(() => {});
+		void api.get<AlbumPageData>(`/music/albums/${mbid}?artist=${artist}&similar=0`).then((d) => {
+			if (still()) data = d;
+		}).catch((e) => {
+			if (still()) error = message(e);
+		}).finally(() => {
+			if (still()) busy = false;
+		});
 	}
 
 	$effect(() => {
 		void mbid;
 		void artist;
+		core = null;
 		data = null;
+		similar = null;
 		lookup = null;
 		coverIn = false;
 		askedHere = false;
@@ -77,7 +86,8 @@
 		}
 	});
 
-	const cover = $derived(appPicture(data?.image));
+	const hero = $derived<AlbumCoreData | null>(data ?? core);
+	const cover = $derived(appPicture(hero?.image));
 	const titleId = $derived(data?.title_id || lookup?.title_id || 0);
 	const asked = $derived(askedHere || !!lookup?.ask?.albums?.some((a) => a.mbid === mbid) || (!!lookup?.ask && !lookup.ask.albums?.length));
 	const status = $derived(data ? owned(data, asked) : null);
@@ -102,7 +112,7 @@
 
 	function onAsked(_a: LookupArtist, r: { ask: { name: string }; joined: boolean }) {
 		askedHere = true;
-		toasts.push(r.joined ? 'Someone asked already; you are on the ask too.' : `Asked for ${data?.name}. You will hear when it is approved.`, 'ok');
+		toasts.push(r.joined ? 'Someone asked already; you are on the ask too.' : `Asked for ${hero?.name}. You will hear when it is approved.`, 'ok');
 		void refreshInbox();
 	}
 
@@ -116,7 +126,7 @@
 	}
 </script>
 
-<svelte:head><title>{data?.name ?? 'Album'} · HolyArrs</title>{#if cover}<link rel="preload" as="image" href={cover} />{/if}</svelte:head>
+<svelte:head><title>{hero?.name ?? 'Album'} · HolyArrs</title>{#if cover}<link rel="preload" as="image" href={cover} />{/if}</svelte:head>
 
 {#snippet albumCard(a: PageAlbum)}
 	<PosterCard title={a.name} href={albumHref(a.mbid, artist)} image={appPicture(a.image)} kind="artist" shape="square" music
@@ -125,33 +135,39 @@
 
 <div class="album">
 	{#if error && !data}<LoadError hasData={false} message={plainReason(error).text} onretry={load} {busy} />{/if}
-	<PageLoader loading={!data && !error} label="Loading this album" onretry={load}>
-		{#if data}
+	<PageLoader loading={!hero && !error} label="Loading this album" onretry={load}>
+		{#if hero && !(error && !data)}
 			<header class="hero" data-hero>
 				{#if cover}<img class="wash" src={cover} alt="" aria-hidden="true" />{/if}
 				<div class="shade" aria-hidden="true"></div>
 				{#if from?.label}<nav class="crumbs" aria-label="Breadcrumb"><a class="chip" href={from.path} onclick={stepBack} data-testid="album-back"><Icon name={fromIcon(from.path) ?? 'chevronLeft'} size={14} />{from.label}</a></nav>{/if}
 				<div class="hero-in">
 					<div class="cover" class:in={coverIn}>
-						{#if cover}<img src={cover} alt={`${data.name} cover`} width="320" height="320" decoding="async" fetchpriority="high" onload={() => (coverIn = true)} />{:else}<Icon name="music" size={48} />{/if}
+						{#if cover}<img src={cover} alt={`${hero.name} cover`} width="320" height="320" decoding="async" fetchpriority="high" onload={() => (coverIn = true)} />{:else}<Icon name="music" size={48} />{/if}
 					</div>
 					<div class="words">
-						<p class="kind">{kindWord(data)}</p>
-						<h1>{#if data.explicit}<span class="e big" aria-label="Explicit">E</span>{/if}{data.name}</h1>
-						<a class="by" href={artistHref(data.artist.mbid)}>
-							<img src={appPicture(data.artist.image)} alt="" width="28" height="28" />{data.artist.name}
+						<p class="kind">{kindWord(hero)}</p>
+						<h1>{#if data?.explicit}<span class="e big" aria-label="Explicit">E</span>{/if}{hero.name}</h1>
+						<a class="by" href={artistHref(hero.artist.mbid)}>
+							<img src={appPicture(hero.artist.image)} alt="" width="28" height="28" />{hero.artist.name}
 						</a>
-						<p class="meta">{meta.join(' · ')}</p>
+						{#if data}<p class="meta">{meta.join(' · ')}</p>{:else}<p class="meta"><span class="sk sk-line meta-sk" aria-hidden="true"></span></p>{/if}
 						<div class="actions">
 							{#if titleId || manage || mayAsk}
 								<Button variant="primary" icon={titleId ? 'library' : asked ? 'check' : 'plus'} disabled={!titleId && (asked || !lookup)} onclick={act} data-testid="album-ask">{cta}</Button>
 							{/if}
-							{#if status}<span class="pill {status.state}" data-testid="album-state">{status.label}{#if data.part_id && data.tracks.length} · {haveCount} of {data.tracks.length} tracks{/if}</span>{/if}
+							{#if status && data}<span class="pill {status.state}" data-testid="album-state">{status.label}{#if data.part_id && data.tracks.length} · {haveCount} of {data.tracks.length} tracks{/if}</span>{/if}
 						</div>
 					</div>
 				</div>
 			</header>
 
+			{#if !data}
+				<section class="block" aria-busy="true" aria-label="Loading the tracks">
+					<div class="tracks">{#each Array.from({ length: 10 }, (_, i) => i) as i (i)}<SkTrackRow height={48} />{/each}</div>
+				</section>
+				<div class="sq-rail"><SkRail item="var(--music-item)" titleWidth="200px" /></div>
+			{:else}
 			<section class="block">
 				<h2 class="sr-only">Tracks</h2>
 				{#if data.incomplete || !data.tracks.length}<p class="note">The tracklist is not known yet.</p>{/if}
@@ -188,10 +204,14 @@
 				</Shelf>
 			{/if}
 
-			{#if data.similar.length}
+			{/if}
+
+			{#if similar === null}
+				<SkRail kind="person" item="128px" titleWidth="200px" />
+			{:else if similar.length}
 				<section class="block">
-					<h2>If you like {data.artist.name}</h2>
-					<ul class="circles">{#each data.similar as p (p.mbid)}<li><PersonCircle name={p.name} image={appPicture(p.image)} href={artistHref(p.mbid)} size={112} /></li>{/each}</ul>
+					<h2>If you like {hero.artist.name}</h2>
+					<ul class="circles">{#each similar as p (p.mbid)}<li><PersonCircle name={p.name} image={appPicture(p.image)} href={artistHref(p.mbid)} size={112} /></li>{/each}</ul>
 				</section>
 			{/if}
 
@@ -247,6 +267,8 @@
 	.editions li { display: inline-flex; align-items: baseline; gap: 8px; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line-strong); font: var(--t-subhead); font-weight: 600; }
 	.editions span { color: var(--text-muted); font: var(--t-footnote); }
 	.circles { display: flex; gap: 18px; overflow-x: auto; margin: 0; padding: 4px 2px 8px; list-style: none; scrollbar-width: none; }
+	.meta-sk { display: inline-block; width: 220px; height: 14px; max-width: 100%; }
+	.sq-rail { --poster-ratio: 1; }
 	.attribution { margin: 0; color: var(--text-muted); font: var(--t-footnote); }
 	@media (max-width: 767px) {
 		.album { --music-item: calc((100cqi - var(--shelf-gap, 12px)) / 2.3); gap: 26px; }

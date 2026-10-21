@@ -43,6 +43,20 @@ export interface WikiBio {
 	license_url: string;
 }
 
+/** ArtistCoreData is the hero's quick answer (?part=core); the full answer extends it. */
+export interface ArtistCoreData {
+	mbid: string;
+	name: string;
+	type?: string;
+	country?: string;
+	disambiguation?: string;
+	status?: string;
+	image: string;
+	title_id?: number;
+	bio: WikiBio | null;
+	kid: boolean;
+}
+
 export interface ArtistPageData {
 	mbid: string;
 	name: string;
@@ -71,6 +85,19 @@ export interface PageTrack {
 	length_ms?: number;
 	explicit?: boolean;
 	have?: 'in_library' | 'downloading' | 'missing' | '';
+}
+
+/** AlbumCoreData is the album hero's quick answer (?part=core). */
+export interface AlbumCoreData {
+	mbid: string;
+	name: string;
+	type: string;
+	secondary_types: string[];
+	release_date?: string;
+	disambiguation?: string;
+	image: string;
+	artist: PageArtist;
+	kid: boolean;
 }
 
 export interface AlbumPageData extends PageAlbum {

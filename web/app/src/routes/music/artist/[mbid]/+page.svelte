@@ -22,13 +22,18 @@
 	import { cameFrom, fromIcon } from '#lib/came-from.svelte.ts';
 	import { albumYear } from '#lib/music.ts';
 	import { releaseWords } from '#lib/music-trending.ts';
-	import { albumHref, appPicture, artistHref, haveLine, kindWord, length, owned, shelves, type ArtistPageData, type PageAlbum } from '#lib/music-pages.ts';
+	import { SkRail, SkRowTitle, SkTrackRow } from '#lib/ui/sk/index.ts';
+	import { albumHref, appPicture, artistHref, haveLine, kindWord, length, owned, shelves, type ArtistCoreData, type ArtistPageData, type PageAlbum, type PageArtist } from '#lib/music-pages.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 
 	// An artist's page: any MusicBrainz artist, in the Library or not. HolyArrs asks
 	// for music; it does not play it, so songs lead to asking for their album.
 	const mbid = $derived((page.params.mbid ?? '').toLowerCase());
+	// Hero first: the core answer (name, picture, bio) draws the hero; the full
+	// answer (albums, songs, links) and the similar artists fill the shelves.
+	let core = $state<ArtistCoreData | null>(null);
 	let data = $state<ArtistPageData | null>(null);
+	let similar = $state<PageArtist[] | null>(null);
 	let error = $state('');
 	let busy = $state(false);
 	let lookup = $state<LookupArtist | null>(null);
@@ -47,34 +52,52 @@
 
 	const manage = $derived(session.can('manage_library'));
 	const mayAsk = $derived(session.can('ask'));
-	const titleId = $derived(data?.title_id || lookup?.title_id || 0);
+	const hero = $derived<ArtistCoreData | null>(data ?? core);
+	const titleId = $derived(hero?.title_id || lookup?.title_id || 0);
 
-	async function load() {
+	function load() {
 		const want = mbid;
 		busy = true;
 		error = '';
-		try {
-			const d = await api.get<ArtistPageData>(`/music/artists/${want}`);
+		let followAsked = false;
+		const askFollow = (id?: number) => {
+			if (!id || followAsked) return;
+			followAsked = true;
+			void api.get<{ following: boolean }>(`/titles/${id}/follow`).then((r) => want === mbid && (following = r.following)).catch(() => {});
+		};
+		// All at once: the hero, the shelves, the similar artists, the artwork and the ask state.
+		const coreAsk = api.get<ArtistCoreData>(`/music/artists/${want}?part=core`).then((c) => {
+			if (want !== mbid) return;
+			if (!data) core = c;
+			askFollow(c.title_id);
+		});
+		const fullAsk = api.get<ArtistPageData>(`/music/artists/${want}?similar=0`).then((d) => {
 			if (want !== mbid) return;
 			data = d;
 			follows = new Map(d.albums.filter((a) => a.upcoming).map((a) => [a.mbid, !!a.following]));
-			if (!d.kid) void api.get<typeof art>(`/extras/artist/${want}`).then((x) => want === mbid && (art = x)).catch(() => {});
-			void api.get<{ artists: LookupArtist[] }>(`/artists/lookup?term=${encodeURIComponent(`mbid:${want}`)}`).then((r) => {
-				if (want !== mbid) return;
-				lookup = r.artists[0] ?? null;
-				asked = new Set((lookup?.ask?.albums ?? []).map((a) => a.mbid));
-			}).catch(() => {});
-			if (d.title_id) void api.get<{ following: boolean }>(`/titles/${d.title_id}/follow`).then((r) => (following = r.following)).catch(() => {});
-		} catch (e) {
-			if (want === mbid) error = message(e);
-		} finally {
+			askFollow(d.title_id);
+		});
+		void api.get<{ similar: PageArtist[] }>(`/music/artists/${want}?part=similar`).then((r) => want === mbid && (similar = r.similar)).catch(() => want === mbid && (similar = []));
+		void api.get<typeof art>(`/extras/artist/${want}`).then((x) => want === mbid && (art = x)).catch(() => {});
+		void api.get<{ artists: LookupArtist[] }>(`/artists/lookup?term=${encodeURIComponent(`mbid:${want}`)}`).then((r) => {
+			if (want !== mbid) return;
+			lookup = r.artists[0] ?? null;
+			asked = new Set((lookup?.ask?.albums ?? []).map((a) => a.mbid));
+		}).catch(() => {});
+		void Promise.allSettled([coreAsk, fullAsk]).then(([c, f]) => {
+			if (want !== mbid) return;
 			busy = false;
-		}
+			// The shelves failing shows the error; the core failing alone is quiet (the full answer has the hero too).
+			if (f.status === 'rejected') error = message(f.reason);
+			else if (c.status === 'rejected' && !data) error = message(c.reason);
+		});
 	}
 
 	$effect(() => {
 		void mbid;
+		core = null;
 		data = null;
+		similar = null;
 		lookup = null;
 		art = {};
 		following = null;
@@ -93,11 +116,11 @@
 	});
 
 	const background = $derived(art.backgrounds?.[0] ?? null);
-	const picture = $derived(appPicture(data?.image));
+	const picture = $derived(appPicture(hero?.image));
 	const facts = $derived.by(() => {
-		if (!data) return [];
-		const type = data.type ? data.type.charAt(0).toUpperCase() + data.type.slice(1) : '';
-		return [type, data.country, data.status === 'ended' ? 'Disbanded or retired' : '', data.genres.slice(0, 3).join(', ')].filter(Boolean) as string[];
+		if (!hero) return [];
+		const type = hero.type ? hero.type.charAt(0).toUpperCase() + hero.type.slice(1) : '';
+		return [type, hero.country, hero.status === 'ended' ? 'Disbanded or retired' : '', (data?.genres ?? []).slice(0, 3).join(', ')].filter(Boolean) as string[];
 	});
 	const groups = $derived(data ? shelves(data.albums) : []);
 	const soon = $derived(data?.albums.filter((a) => a.upcoming) ?? []);
@@ -136,7 +159,7 @@
 		const on = !follows.get(a.mbid);
 		follows = new Map([...follows, [a.mbid, on]]);
 		try {
-			if (on) await api.put(`/metadata/album/${a.mbid}/follow`, { name: a.name, artist: data?.name ?? '', release_date: a.release_date ?? '' });
+			if (on) await api.put(`/metadata/album/${a.mbid}/follow`, { name: a.name, artist: hero?.name ?? '', release_date: a.release_date ?? '' });
 			else await api.del(`/metadata/album/${a.mbid}/follow`);
 			toasts.push(on ? `You will hear when ${a.name} is out.` : `Stopped following ${a.name}.`, 'ok');
 		} catch (e) {
@@ -156,7 +179,7 @@
 	}
 </script>
 
-<svelte:head><title>{data?.name ?? 'Artist'} · HolyArrs</title></svelte:head>
+<svelte:head><title>{hero?.name ?? 'Artist'} · HolyArrs</title></svelte:head>
 
 {#snippet albumCard(a: PageAlbum)}
 	<PosterCard title={a.name} href={albumHref(a.mbid, mbid)} image={appPicture(a.image)} kind="artist" shape="square" music actionOnHover
@@ -164,16 +187,16 @@
 		badges={a.explicit ? ['E'] : undefined} owned={owned(a, albumAsked(a))}>
 		{#snippet action()}
 			{#if !titleId && !albumAsked(a) && (manage || mayAsk)}
-				<IconButton icon="plus" label={manage ? `Add ${data?.name}` : `Ask for ${a.name}`} variant="glass" size="lg" aria-haspopup="dialog" onclick={() => askAlbum(a)} />
+				<IconButton icon="plus" label={manage ? `Add ${hero?.name}` : `Ask for ${a.name}`} variant="glass" size="lg" aria-haspopup="dialog" onclick={() => askAlbum(a)} />
 			{/if}
 		{/snippet}
 	</PosterCard>
 {/snippet}
 
 <div class="artist">
-	{#if error && !data}<LoadError hasData={false} message={plainReason(error).text} onretry={load} {busy} />{/if}
-	<PageLoader loading={!data && !error} label="Loading this artist" onretry={load}>
-		{#if data}
+	{#if error && !hero}<LoadError hasData={false} message={plainReason(error).text} onretry={load} {busy} />{/if}
+	<PageLoader loading={!hero && !error} label="Loading this artist" onretry={load}>
+		{#if hero}
 			<header class="hero" data-hero>
 				{#if background}
 					<img class="art" class:in={heroIn} src={background} alt="" decoding="async" fetchpriority="high" onload={() => (heroIn = true)} onerror={() => (heroIn = false)} />
@@ -186,12 +209,12 @@
 					{#if picture}<img class="photo" src={picture} alt="" width="160" height="160" />{/if}
 					<div class="who">
 						{#if art.logo && !logoFailed}
-							<h1 class="logo"><img src={art.logo} alt={data.name} onerror={() => (logoFailed = true)} /></h1>
+							<h1 class="logo"><img src={art.logo} alt={hero.name} onerror={() => (logoFailed = true)} /></h1>
 						{:else}
-							<h1>{data.name}</h1>
+							<h1>{hero.name}</h1>
 						{/if}
 						{#if facts.length}<p class="facts">{facts.join(' · ')}</p>{/if}
-						{#if data.total}<p class="have" data-testid="artist-have"><Icon name="music" size={14} />{haveLine(data.have, data.total)}</p>{/if}
+						{#if data?.total}<p class="have" data-testid="artist-have"><Icon name="music" size={14} />{haveLine(data.have, data.total)}</p>{/if}
 						<div class="actions">
 							{#if titleId}
 								<Button variant="primary" icon="library" href={to(`/library/${titleId}`)}>{cta}</Button>
@@ -200,18 +223,31 @@
 								<Button variant="primary" icon={lookup?.ask ? 'check' : 'plus'} disabled={!!lookup?.ask || !lookup} onclick={() => askAlbum()} data-testid="artist-ask">{cta}</Button>
 							{/if}
 						</div>
-						{#if data.bio}
-							<p class="bio" class:open={bioOpen}>{data.bio.extract}</p>
+						{#if hero.bio}
+							<p class="bio" class:open={bioOpen}>{hero.bio.extract}</p>
 							<div class="bio-foot">
 								<button class="more" type="button" onclick={() => (bioOpen = !bioOpen)} aria-expanded={bioOpen}>{bioOpen ? 'Less' : 'More'}</button>
-								<p class="credit" data-testid="wiki-credit">From <a href={wikipediaURL(data.bio.url) || 'https://en.wikipedia.org/'} target="_blank" rel="noopener noreferrer">Wikipedia</a>, <a href={licenseURL(data.bio.license_url)} target="_blank" rel="noopener noreferrer license">CC BY-SA</a></p>
+								<p class="credit" data-testid="wiki-credit">From <a href={wikipediaURL(hero.bio.url) || 'https://en.wikipedia.org/'} target="_blank" rel="noopener noreferrer">Wikipedia</a>, <a href={licenseURL(hero.bio.license_url)} target="_blank" rel="noopener noreferrer license">CC BY-SA</a></p>
 							</div>
+						{:else if !data}
+							<span class="bio-sk" aria-hidden="true"><span class="sk sk-line"></span><span class="sk sk-line"></span><span class="sk sk-line short"></span></span>
 						{/if}
 					</div>
 				</div>
 			</header>
 
-			{#if data.latest || data.top.length}
+			{#if !data}
+				{#if !error}
+					<section class="lead" aria-busy="true" aria-label="Loading albums and songs">
+						<div class="latest"><SkRowTitle width="140px" /><div class="latest-card sk-latest"><span class="sk sq"></span><span class="sk-lines"><span class="sk sk-line"></span><span class="sk sk-line"></span><span class="sk sk-line short"></span></span></div></div>
+						<div class="top"><SkRowTitle width="120px" /><div class="sk-songs">{#each Array.from({ length: 8 }, (_, i) => i) as i (i)}<SkTrackRow height={58} />{/each}</div></div>
+					</section>
+					<div class="sq-rail"><SkRail item="var(--music-item)" titleWidth="110px" /></div>
+					<div class="sq-rail"><SkRail item="var(--music-item)" titleWidth="160px" /></div>
+				{:else}
+					<LoadError hasData={true} message={plainReason(error).text} onretry={load} {busy} />
+				{/if}
+			{:else if data.latest || data.top.length}
 				<section class="lead">
 					{#if data.latest}
 						{@const l = data.latest}
@@ -257,6 +293,7 @@
 				</section>
 			{/if}
 
+			{#if data}
 			{#each groups as g (g.shelf)}
 				<Shelf title={g.title} item="var(--music-item)" items={g.albums} key={(a) => a.mbid} placeholder="square" lines={1}>
 					{#snippet card(a: PageAlbum)}{@render albumCard(a)}{/snippet}
@@ -285,10 +322,14 @@
 				</section>
 			{/if}
 
-			{#if data.similar.length}
+			{/if}
+
+			{#if similar === null}
+				<SkRail kind="person" item="128px" titleWidth="150px" />
+			{:else if similar.length}
 				<section class="block">
 					<h2>Similar artists</h2>
-					<ul class="circles">{#each data.similar as p (p.mbid)}<li><PersonCircle name={p.name} image={appPicture(p.image)} href={artistHref(p.mbid)} size={112} /></li>{/each}</ul>
+					<ul class="circles">{#each similar as p (p.mbid)}<li><PersonCircle name={p.name} image={appPicture(p.image)} href={artistHref(p.mbid)} size={112} /></li>{/each}</ul>
 				</section>
 			{/if}
 
@@ -359,8 +400,17 @@
 	.soon li { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 10px; border-radius: var(--r-card); background: var(--surface-1, var(--surface-2)); }
 	.soon img { width: 72px; height: 72px; border-radius: 8px; object-fit: cover; background: var(--surface-2); }
 	.circles { display: flex; gap: 18px; overflow-x: auto; margin: 0; padding: 4px 2px 8px; list-style: none; scrollbar-width: none; }
+	.bio-sk { display: flex; flex-direction: column; gap: 8px; max-width: 72ch; margin-top: 4px; }
+	.bio-sk .sk-line { height: 14px; width: 100%; }
+	.bio-sk .short { width: 55%; }
+	.sk-latest .sq { width: 148px; height: 148px; border-radius: var(--r-card); }
+	.sk-lines { display: flex; flex-direction: column; gap: 8px; }
+	.sk-lines .sk-line { height: 13px; width: 80%; }
+	.sk-lines .short { width: 45%; }
+	.sk-songs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; }
+	.sq-rail { --poster-ratio: 1; }
 	.attribution { margin: 0; color: var(--text-muted); font: var(--t-footnote); }
-	@media (max-width: 1100px) { .songs { grid-template-columns: minmax(0, 1fr); } }
+	@media (max-width: 1100px) { .songs, .sk-songs { grid-template-columns: minmax(0, 1fr); } }
 	@media (max-width: 767px) {
 		.artist { --music-item: calc((100cqi - var(--shelf-gap, 12px)) / 2.3); gap: 28px; }
 		.hero-in { grid-template-columns: minmax(0, 1fr); }

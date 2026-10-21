@@ -5,9 +5,11 @@ import (
 	"errors"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/library"
@@ -340,12 +342,7 @@ func (a *API) pageAlbums(ctx context.Context, r *http.Request, art metadata.Arti
 			return nil, nil, err
 		}
 	}
-	explicit := map[string]bool{}
-	for _, d := range dz.Albums {
-		if d.Explicit {
-			explicit[metadata.SongKey(d.Title)] = true
-		}
-	}
+	explicit := explicitAlbums(dz.Albums)
 	follows := a.albumFollows(ctx, a.person(r).UserID)
 	today := time.Now().UTC().Format("2006-01-02")
 	names := []nameKey{{kind: "artist", mbid: strings.ToLower(art.MBID), name: art.Name}}
@@ -353,7 +350,7 @@ func (a *API) pageAlbums(ctx context.Context, r *http.Request, art metadata.Arti
 	for _, al := range art.Albums {
 		id := strings.ToLower(al.MBID)
 		p := PageAlbum{MBID: id, Name: al.Name, Type: al.PrimaryType, SecondaryTypes: listOr(al.SecondaryTypes), ReleaseDate: al.ReleaseDate,
-			Disambiguation: al.Disambiguation, Shelf: shelfOf(al), Image: artPath("album", id), Explicit: explicit[metadata.SongKey(al.Name)],
+			Disambiguation: al.Disambiguation, Shelf: shelfOf(al), Image: artPath("album", id), Explicit: explicit(al.Name),
 			Upcoming: al.ReleaseDate != "" && len(al.ReleaseDate) == 10 && al.ReleaseDate > today, Following: follows[id]}
 		if s, ok := have[id]; ok {
 			p.State, p.PartID = pageState(s, busy[s.ID]), s.ID
@@ -366,6 +363,43 @@ func (a *API) pageAlbums(ctx context.Context, r *http.Request, art metadata.Arti
 	a.rememberMusicNames(names)
 	sort.SliceStable(out, func(i, j int) bool { return out[i].ReleaseDate > out[j].ReleaseDate })
 	return out, t, nil
+}
+
+// explicitAlbums says which album names Deezer marks explicit. A name with
+// the same words in brackets ("Aerodynamic (Slum Village remix)") matches
+// exactly; the bare name ("Aerodynamic") matches by its base only when
+// every Deezer album with that base is explicit, so one explicit remix does
+// not mark the clean original.
+func explicitAlbums(albums []metadata.DeezerAlbum) func(name string) bool {
+	full := map[string]bool{}
+	base := map[string]int{} // 1: all explicit so far, -1: a clean one seen
+	for _, d := range albums {
+		full[fullAlbumKey(d.Title)] = d.Explicit
+		k := metadata.SongKey(d.Title)
+		switch {
+		case !d.Explicit:
+			base[k] = -1
+		case base[k] == 0:
+			base[k] = 1
+		}
+	}
+	return func(name string) bool {
+		if v, ok := full[fullAlbumKey(name)]; ok {
+			return v
+		}
+		return base[metadata.SongKey(name)] == 1
+	}
+}
+
+// fullAlbumKey keeps the words in brackets, unlike SongKey.
+func fullAlbumKey(s string) string {
+	var b strings.Builder
+	for _, r := range strings.ToLower(s) {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
 }
 
 func (a *API) similarArtists(ctx context.Context, mbid string, n int) []PageArtist {
@@ -388,6 +422,14 @@ func (a *API) similarArtists(ctx context.Context, mbid string, n int) []PageArti
 }
 
 func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
+	switch r.URL.Query().Get("part") {
+	case "core":
+		a.artistCore(w, r)
+		return
+	case "similar":
+		a.artistSimilar(w, r)
+		return
+	}
 	// Kid members get no music pages, as with the other music routes (explicit marks are incomplete).
 	if a.kidMax(r) != "" {
 		fail(w, http.StatusForbidden, aboveLimit)
@@ -407,7 +449,7 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 	// the artist itself is looked up.
 	var genres []string
 	var links []metadata.ArtistLink
-	var similar []PageArtist
+	similar := []PageArtist{}
 	var wg sync.WaitGroup
 	side, cancel := context.WithTimeout(ctx, 6*time.Second)
 	defer cancel()
@@ -488,26 +530,45 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, v)
 }
 
-// warmMusicArt starts fetching the page's pictures at once and several at a
-// time, so they are kept before the browser asks for each (it asks six at a
-// time, and each cold picture is a few outside calls).
+// warmArtMax caps the pictures one page view warms: each cold one is a
+// metadata server call, and an install may make 120 a minute, so warming
+// a whole discography would make the page's own lookups wait.
+const warmArtMax = 28
+
+// warmMusicArt starts fetching the pictures the page shows first (the
+// artist, the latest release, the top songs' albums, the first albums and
+// singles, the first similar artists) a few at a time, so they are kept
+// before the browser asks for each. The rest load as the person scrolls.
 func (a *API) warmMusicArt(v ArtistPageView) {
 	const pre = "/api/v1/music-trending/art/"
 	var keys []string
+	seen := map[string]bool{}
 	add := func(img string) {
-		if rest, ok := strings.CutPrefix(img, pre); ok && len(keys) < 80 {
+		if rest, ok := strings.CutPrefix(img, pre); ok && len(keys) < warmArtMax && !seen[rest] {
+			seen[rest] = true
 			keys = append(keys, rest)
 		}
 	}
 	add(v.Image)
-	for _, al := range v.Albums {
-		add(al.Image)
+	if v.Latest != nil {
+		add(v.Latest.Image)
 	}
-	for _, p := range v.Related {
-		add(p.Image)
+	for _, s := range v.Top {
+		add(s.Image)
 	}
-	for _, p := range v.Similar {
-		add(p.Image)
+	for _, shelf := range []string{"albums", "singles"} {
+		n := 0
+		for _, al := range v.Albums {
+			if al.Shelf == shelf && !al.Upcoming && n < 8 {
+				add(al.Image)
+				n++
+			}
+		}
+	}
+	for i, p := range v.Similar {
+		if i < 6 {
+			add(p.Image)
+		}
 	}
 	if len(keys) == 0 || a.s.Library == nil || a.s.Library.Artwork == nil {
 		return
@@ -515,7 +576,10 @@ func (a *API) warmMusicArt(v ArtistPageView) {
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()
-		sem := make(chan struct{}, 8)
+		// Three at a time: the metadata server takes eight calls at once per
+		// install, and the page's own lookups must not wait behind pictures
+		// (a refused lookup waits a second, then falls back to MusicBrainz).
+		sem := make(chan struct{}, 3)
 		var wg sync.WaitGroup
 		for _, k := range keys {
 			kind, mbid, _ := strings.Cut(k, "/")
@@ -531,6 +595,10 @@ func (a *API) warmMusicArt(v ArtistPageView) {
 }
 
 func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Query().Get("part") == "core" {
+		a.albumCore(w, r)
+		return
+	}
 	// Kid members get no music pages, as with the other music routes (explicit marks are incomplete).
 	if a.kidMax(r) != "" {
 		fail(w, http.StatusForbidden, aboveLimit)
@@ -553,9 +621,14 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 	psDone := make(chan struct{})
 	go func() { defer close(psDone); ps, psErr = a.s.Library.Artists.Pressings(ctx, mbid) }()
 	defer func() { <-psDone }()
-	var similar []PageArtist
+	similar := []PageArtist{}
 	simDone := make(chan struct{})
-	go func() { defer close(simDone); similar = a.similarArtists(ctx, artist, 14) }()
+	go func() {
+		defer close(simDone)
+		if r.URL.Query().Get("similar") != "0" {
+			similar = a.similarArtists(ctx, artist, 14)
+		}
+	}()
 	defer func() { <-simDone }()
 	art, err := a.s.Library.Artists.Artist(metadata.QuickArtist(ctx, 1500*time.Millisecond), artist)
 	if err == nil && art.Partial && !hasAlbum(art, mbid) {
@@ -604,11 +677,19 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 	main := mainPressing(ps)
 	// Deezer's album: label and explicit marks per track.
 	var dzInfo metadata.DeezerAlbumInfo
+	// The same name with the same words in brackets first, else the same base name.
+	pick := int64(0)
 	for _, d := range dz.Albums {
-		if metadata.SongKey(d.Title) == metadata.SongKey(me.Name) {
-			dzInfo, _ = a.s.Library.ArtistImages.AlbumInfo(ctx, d.ID)
+		if fullAlbumKey(d.Title) == fullAlbumKey(me.Name) {
+			pick = d.ID
 			break
 		}
+		if pick == 0 && metadata.SongKey(d.Title) == metadata.SongKey(me.Name) {
+			pick = d.ID
+		}
+	}
+	if pick != 0 {
+		dzInfo, _ = a.s.Library.ArtistImages.AlbumInfo(ctx, pick)
 	}
 	v.Label = dzInfo.Label
 	have := map[string]string{}
@@ -633,15 +714,7 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 			v.Explicit = true
 		}
 	}
-	seen := map[string]bool{}
-	for _, p := range ps {
-		l := editionLabel(p)
-		if seen[l] || p.Status != "" && p.Status != "official" {
-			continue
-		}
-		seen[l] = true
-		v.Editions = append(v.Editions, PageEdition{MBID: p.MBID, Label: l, Tracks: len(p.Tracks), Date: p.Date})
-	}
+	v.Editions = editions(ps)
 	for _, al := range albums {
 		if al.MBID != mbid && (al.Shelf == "albums" || al.Shelf == "singles") && !(kid && al.Explicit) && len(v.MoreBy) < 20 {
 			v.MoreBy = append(v.MoreBy, al)
@@ -734,10 +807,242 @@ func (a *API) trackStates(ctx context.Context, partID int64) map[string]string {
 	return out
 }
 
+// editionWords mark a disambiguation that names an edition a person
+// would choose (deluxe, remaster); others name a pressing plant, a
+// country or a catalogue number and are left off.
+var editionWords = []string{"deluxe", "edition", "remaster", "anniversary", "expanded", "collector", "bonus", "special", "version", "mono", "stereo",
+	"clean", "explicit", "box", "super", "complete", "tour", "reissue", "japan", "live", "acoustic", "instrumental", "demo"}
+
 func editionLabel(p metadata.Pressing) string {
 	l := p.Name
-	if p.Disambiguation != "" {
-		l += " (" + p.Disambiguation + ")"
+	d := strings.ToLower(p.Disambiguation)
+	for _, w := range editionWords {
+		if strings.Contains(d, w) {
+			return l + " (" + p.Disambiguation + ")"
+		}
 	}
 	return l
+}
+
+// editions lists the album's official editions: one per name and track
+// count (pressings of the same edition fold into one, with the earliest
+// date), the earliest first.
+func editions(ps []metadata.Pressing) []PageEdition {
+	out := []PageEdition{}
+	at := map[string]int{}
+	for _, p := range ps {
+		if p.Status != "" && p.Status != "official" || len(p.Tracks) == 0 {
+			continue
+		}
+		l := editionLabel(p)
+		k := fullAlbumKey(l) + "|" + strconv.Itoa(len(p.Tracks))
+		if i, ok := at[k]; ok {
+			if p.Date != "" && (out[i].Date == "" || p.Date < out[i].Date) {
+				out[i].Date, out[i].MBID = p.Date, p.MBID
+			}
+			continue
+		}
+		at[k] = len(out)
+		out = append(out, PageEdition{MBID: p.MBID, Label: l, Tracks: len(p.Tracks), Date: p.Date})
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		a, b := out[i].Date, out[j].Date
+		if a == "" || b == "" {
+			return a != ""
+		}
+		return a < b
+	})
+	return out
+}
+
+// ArtistCoreView answers GET /api/v1/music/artists/{mbid}?part=core: what the
+// hero needs (name, picture, facts, bio, the Library's artist), answered
+// from what is kept or one quick lookup. The shelves come from the full
+// page (?similar=0) and ?part=similar, asked at the same time.
+type ArtistCoreView struct {
+	MBID           string                `json:"mbid"`
+	Name           string                `json:"name"`
+	Type           string                `json:"type,omitempty"`
+	Country        string                `json:"country,omitempty"`
+	Disambiguation string                `json:"disambiguation,omitempty"`
+	Status         string                `json:"status,omitempty"`
+	Image          string                `json:"image"`
+	TitleID        int64                 `json:"title_id,omitempty"`
+	Bio            *metadata.WikiSummary `json:"bio"`
+	Kid            bool                  `json:"kid"`
+}
+
+// coreBioWait is how long, from the request, the hero waits for a bio not
+// kept yet; the full page brings it when this runs out.
+const coreBioWait = 450 * time.Millisecond
+
+// knownName is a name the pages or Explore already showed for this id.
+func (a *API) knownName(kind, mbid string) string {
+	c := &a.music
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.names[kind+"|"+mbid].Name
+}
+
+// musicPageGate checks the person, the id and that music is on.
+func (a *API) musicPageGate(w http.ResponseWriter, r *http.Request) (string, bool) {
+	// Kid members get no music pages, as with the other music routes (explicit marks are incomplete).
+	if a.kidMax(r) != "" {
+		fail(w, http.StatusForbidden, aboveLimit)
+		return "", false
+	}
+	mbid := strings.ToLower(r.PathValue("mbid"))
+	if !metadata.ValidMBID(mbid) {
+		fail(w, http.StatusBadRequest, "mbid must be a MusicBrainz id")
+		return "", false
+	}
+	return mbid, a.musicPageOpen(w)
+}
+
+func (a *API) artistCore(w http.ResponseWriter, r *http.Request) {
+	mbid, ok := a.musicPageGate(w, r)
+	if !ok {
+		return
+	}
+	ctx := metadata.MemberLookup(r.Context())
+	bioBy := time.After(coreBioWait)
+	t, err := a.libraryArtist(ctx, mbid)
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	v := ArtistCoreView{MBID: mbid, Image: artPath("artist", mbid)}
+	if t != nil {
+		v.TitleID, v.Name = t.ID, t.Name
+		if img := artistImage(*t); img != "" {
+			v.Image = img
+		}
+	}
+	if v.Name == "" {
+		v.Name = a.knownName("artist", mbid)
+	}
+	// The bio needs only the name: start it at once when the name is known.
+	bioDone := make(chan *metadata.WikiSummary, 1)
+	startBio := func(name string) {
+		go func() {
+			b, cancel := context.WithTimeout(context.WithoutCancel(ctx), 6*time.Second)
+			defer cancel()
+			bioDone <- a.artistBio(b, name)
+		}()
+	}
+	if v.Name != "" {
+		startBio(v.Name)
+	}
+	// Wait 0: the metadata server's answer (kept for popular artists); the
+	// full MusicBrainz list goes on for the full page. With the name known
+	// already, the facts (kind, country) may come with the full page instead.
+	wait := 3 * time.Second
+	if v.Name != "" {
+		wait = 300 * time.Millisecond
+	}
+	quick, cancel := context.WithTimeout(metadata.QuickArtist(ctx, 0), wait)
+	defer cancel()
+	art, err := a.s.Library.Artists.Artist(quick, mbid)
+	switch {
+	case errors.Is(err, metadata.ErrArtistNotFound):
+		fail(w, http.StatusNotFound, "no artist with that id")
+		return
+	case err != nil && v.Name == "":
+		fail(w, http.StatusBadGateway, "the music source did not answer; try again shortly")
+		return
+	case err == nil:
+		if v.Name == "" {
+			startBio(art.Name)
+		}
+		v.Name, v.Type, v.Country, v.Disambiguation, v.Status = art.Name, art.Type, art.Country, art.Disambiguation, art.Status
+	}
+	select {
+	case v.Bio = <-bioDone:
+	case <-bioBy:
+	}
+	a.rememberMusicNames([]nameKey{{kind: "artist", mbid: mbid, name: v.Name}})
+	w.Header().Set("Cache-Control", "private, max-age=60")
+	writeJSON(w, http.StatusOK, v)
+}
+
+// artistSimilar answers GET /api/v1/music/artists/{mbid}?part=similar[&n=14].
+func (a *API) artistSimilar(w http.ResponseWriter, r *http.Request) {
+	mbid, ok := a.musicPageGate(w, r)
+	if !ok {
+		return
+	}
+	n := 18
+	if r.URL.Query().Get("n") == "14" {
+		n = 14
+	}
+	list := a.similarArtists(metadata.MemberLookup(r.Context()), mbid, n)
+	a.warmMusicArt(ArtistPageView{Similar: list})
+	w.Header().Set("Cache-Control", "private, max-age=300")
+	writeJSON(w, http.StatusOK, map[string]any{"similar": list})
+}
+
+// AlbumCoreView answers GET /api/v1/music/albums/{mbid}?part=core&artist=: the
+// album hero (name, kind, date, cover, artist), from the metadata server's
+// answer for the artist or the names the artist page and Explore kept.
+type AlbumCoreView struct {
+	MBID           string     `json:"mbid"`
+	Name           string     `json:"name"`
+	Type           string     `json:"type,omitempty"`
+	SecondaryTypes []string   `json:"secondary_types"`
+	ReleaseDate    string     `json:"release_date,omitempty"`
+	Disambiguation string     `json:"disambiguation,omitempty"`
+	Image          string     `json:"image"`
+	Artist         PageArtist `json:"artist"`
+	Kid            bool       `json:"kid"`
+}
+
+func (a *API) albumCore(w http.ResponseWriter, r *http.Request) {
+	mbid, ok := a.musicPageGate(w, r)
+	if !ok {
+		return
+	}
+	artist := strings.ToLower(r.URL.Query().Get("artist"))
+	if !metadata.ValidMBID(artist) {
+		fail(w, http.StatusBadRequest, "send the album's and its artist's MusicBrainz ids (?artist=)")
+		return
+	}
+	ctx := metadata.MemberLookup(r.Context())
+	v := AlbumCoreView{MBID: mbid, Image: artPath("album", mbid), SecondaryTypes: []string{}, Artist: PageArtist{MBID: artist, Image: artPath("artist", artist)}}
+	if t, err := a.libraryArtist(ctx, artist); err == nil && t != nil {
+		v.Artist.Name = t.Name
+		if img := artistImage(*t); img != "" {
+			v.Artist.Image = img
+		}
+	}
+	// The names Explore and the artist page kept answer at once; the
+	// metadata server adds the kind and date when it answers quickly.
+	wait := 3 * time.Second
+	if a.knownName("album", mbid) != "" {
+		wait = 300 * time.Millisecond
+	}
+	quick, cancel := context.WithTimeout(metadata.QuickArtist(ctx, 0), wait)
+	defer cancel()
+	if art, err := a.s.Library.Artists.Artist(quick, artist); err == nil {
+		if v.Artist.Name == "" {
+			v.Artist.Name = art.Name
+		}
+		for _, al := range art.Albums {
+			if strings.EqualFold(al.MBID, mbid) {
+				v.Name, v.Type, v.SecondaryTypes, v.ReleaseDate, v.Disambiguation = al.Name, al.PrimaryType, listOr(al.SecondaryTypes), al.ReleaseDate, al.Disambiguation
+			}
+		}
+	}
+	if v.Name == "" {
+		v.Name = a.knownName("album", mbid)
+	}
+	if v.Artist.Name == "" {
+		v.Artist.Name = a.knownName("artist", artist)
+	}
+	if v.Name == "" {
+		// Not in the kept list (a long discography): the full page answers.
+		fail(w, http.StatusNotFound, "this album is not kept yet; the full page answers")
+		return
+	}
+	w.Header().Set("Cache-Control", "private, max-age=60")
+	writeJSON(w, http.StatusOK, v)
 }
