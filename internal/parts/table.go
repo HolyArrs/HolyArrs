@@ -394,6 +394,8 @@ var Routes = map[string]Owner{
 	"PUT /api/v1/metadata/album/{mbid}/follow":             music,
 	"DELETE /api/v1/metadata/album/{mbid}/follow":          music,
 	"GET /api/v1/music-trending/art/{kind}/{mbid}":         music,
+	"GET /api/v1/music/artists/{mbid}":                     music,
+	"GET /api/v1/music/albums/{mbid}":                      music,
 	"GET /api/v1/settings/release-gate":                    movies,
 	"PUT /api/v1/settings/release-gate":                    movies,
 
@@ -498,6 +500,8 @@ var Screens = map[string]Owner{
 	"/library/missing-subtitles":   subtitles,
 	"/search":                      Media,
 	"/title/[kind]/[tmdb]":         Media,
+	"/music/artist/[mbid]":         music,
+	"/music/album/[mbid]":          music,
 	"/calendar":                    Media,
 	"/wishlist":                    wishlist,
 	"/settings":                    Core,

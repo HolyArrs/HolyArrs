@@ -15452,7 +15452,7 @@
           }
         },
         "summary": "An album's page",
-        "x-holyarrs-part": "",
+        "x-holyarrs-part": "music",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "read"
       }
@@ -15489,7 +15489,7 @@
           }
         },
         "summary": "An artist's page",
-        "x-holyarrs-part": "",
+        "x-holyarrs-part": "music",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "read"
       }

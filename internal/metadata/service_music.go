@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -13,9 +14,60 @@ const (
 	serviceTrackLimit       = 10000
 )
 
+const (
+	detachedArtistTimeout = 45 * time.Second
+	detachedArtistLimit   = 4
+)
+
 type serviceMusic struct {
 	service *Service
 	direct  ArtistProvider
+
+	mu       sync.Mutex
+	inflight map[string]*artistFlight
+	slots    chan struct{}
+}
+
+// artistFlight is one detached full artist lookup that every request for the
+// same MBID shares.
+type artistFlight struct {
+	done chan struct{}
+	a    Artist
+	err  error
+}
+
+// detachedArtist joins the in-flight full lookup for mbid or starts one. It
+// returns nil when none runs and all detached slots are taken.
+func (m *serviceMusic) detachedArtist(ctx context.Context, mbid string) *artistFlight {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if f, ok := m.inflight[mbid]; ok {
+		return f
+	}
+	if m.slots == nil {
+		m.slots = make(chan struct{}, detachedArtistLimit)
+	}
+	select {
+	case m.slots <- struct{}{}:
+	default:
+		return nil
+	}
+	if m.inflight == nil {
+		m.inflight = map[string]*artistFlight{}
+	}
+	f := &artistFlight{done: make(chan struct{})}
+	m.inflight[mbid] = f
+	bg, stop := context.WithTimeout(context.WithoutCancel(ctx), detachedArtistTimeout)
+	go func() {
+		defer stop()
+		f.a, f.err = m.direct.Artist(bg, mbid)
+		m.mu.Lock()
+		delete(m.inflight, mbid)
+		m.mu.Unlock()
+		<-m.slots
+		close(f.done)
+	}()
+	return f
 }
 
 // Artists uses the optional standalone service while retaining the direct
@@ -103,23 +155,17 @@ func (m *serviceMusic) Artist(ctx context.Context, mbid string) (Artist, error) 
 		// A page view: MusicBrainz pages through release groups at one
 		// request a second, so wait only a while. The full lookup goes on
 		// and lands in the lookup cache for the next view.
-		type answer struct {
-			a   Artist
-			err error
+		f := m.detachedArtist(ctx, mbid)
+		if f == nil {
+			return artist, nil
 		}
-		done := make(chan answer, 1)
-		bg, stop := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Minute)
-		go func() {
-			defer stop()
-			a, err := m.direct.Artist(bg, mbid)
-			done <- answer{a, err}
-		}()
+		done := f.done
 		t := time.NewTimer(wait)
 		defer t.Stop()
 		select {
-		case d := <-done:
-			if d.err == nil && !d.a.Partial && validDirectArtist(d.a, mbid) {
-				return d.a, nil
+		case <-done:
+			if f.err == nil && !f.a.Partial && validDirectArtist(f.a, mbid) {
+				return f.a, nil
 			}
 		case <-t.C:
 		case <-ctx.Done():
