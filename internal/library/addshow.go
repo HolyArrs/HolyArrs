@@ -214,6 +214,7 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 	if err != nil {
 		return 0, 0, err
 	}
+	aliases := s.animeAliases(ctx, "show", sh.IDs["tmdb"], sh.Name)
 	ns, err := naming.Read(ctx, db)
 	if err != nil {
 		return 0, 0, err
@@ -254,7 +255,7 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 			from = &f
 			opt.NewSeasons = "all" // new seasons air later: wanted
 		}
-		t = domain.Title{Kind: "show", Aliases: []string{}, MetadataSource: opt.Source, EpisodeOrder: &order, KeepUpToDate: keep,
+		t = domain.Title{Kind: "show", Aliases: aliases, MetadataSource: opt.Source, EpisodeOrder: &order, KeepUpToDate: keep,
 			NewPartsPolicy: opt.NewSeasons, ReleaseGate: GateReleased, MusicTypes: []string{}, WhyAdded: opt.WhyAdded, Artwork: []string{},
 			State: "active", GateDriver: "none", SeasonChoice: &choice, FutureFrom: from, RefreshedAt: &now}
 		applyShow(&t, sh)

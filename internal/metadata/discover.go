@@ -67,7 +67,10 @@ type Details struct {
 	// keyword taste; not answered by the API).
 	Keywords []string       `json:"-"`
 	Seasons  []DetailSeason `json:"seasons,omitempty"`
-	Similar  []DiscoverItem `json:"similar"`
+	// OriginCountry and OriginalLanguage tell anime apart (LooksAnime).
+	OriginCountry    []string       `json:"origin_country,omitempty"`
+	OriginalLanguage string         `json:"original_language,omitempty"`
+	Similar          []DiscoverItem `json:"similar"`
 	// Backdrops are up to maxBackdrops more wide pictures for the hero's
 	// slow crossfade, best voted first (the main backdrop not repeated).
 	Backdrops []string `json:"backdrops,omitempty"`
@@ -422,8 +425,10 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 		return Details{}, err
 	}
 	var raw struct {
-		VoteAverage float64 `json:"vote_average"`
-		VoteCount   int     `json:"vote_count"`
+		VoteAverage float64  `json:"vote_average"`
+		VoteCount   int      `json:"vote_count"`
+		Origin      []string `json:"origin_country"`
+		Language    string   `json:"original_language"`
 		Credits     *struct {
 			Cast []struct {
 				Name        string `json:"name"`
@@ -478,7 +483,7 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return Details{}, fmt.Errorf("TMDB: odd answer: %w", err)
 	}
-	d := Details{Score: float64(int(raw.VoteAverage*10+0.5)) / 10, Votes: raw.VoteCount}
+	d := Details{Score: float64(int(raw.VoteAverage*10+0.5)) / 10, Votes: raw.VoteCount, OriginCountry: raw.Origin, OriginalLanguage: raw.Language}
 	if kind == "movie" {
 		var m tmdbMovie
 		if err := json.Unmarshal(b, &m); err != nil {

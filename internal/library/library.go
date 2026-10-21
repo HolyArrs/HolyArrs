@@ -57,6 +57,8 @@ type AddOptions struct {
 	ReleaseGate     string `json:"release_gate"`
 	GateDelayDays   *int   `json:"gate_delay_days"`
 	SearchOnAdd     bool   `json:"search_on_add"`
+	// Aliases are the movie's other titles (an anime's AniList titles).
+	Aliases []string `json:"-"`
 	// MoreVersions are extra wanted copies (for example 4K) next to the main one.
 	MoreVersions []VersionInput `json:"more_versions"`
 	// WhyAdded records why the movie was added (by_hand when empty).
@@ -239,6 +241,7 @@ func AddMovie(ctx context.Context, s *store.Store, m metadata.Movie, opt AddOpti
 	}
 	ds := Dates{Cinema: m.CinemaDate, Digital: m.DigitalDate, Physical: m.PhysicalDate}
 	driver, opens := Gate(gate, delay, ds)
+	aliases := append([]string{}, opt.Aliases...)
 	state := domain.SlotNotOutYet
 	if GateOpen(driver, opens, now) {
 		state = domain.SlotWanted
@@ -268,7 +271,7 @@ func AddMovie(ctx context.Context, s *store.Store, m metadata.Movie, opt AddOpti
 		} else if err := pickRulesFor(tx, &prID, "movie"); err != nil {
 			return err
 		}
-		t := &domain.Title{Kind: "movie", Aliases: []string{}, MetadataSource: "tmdb", KeepUpToDate: keep, NewPartsPolicy: "all",
+		t := &domain.Title{Kind: "movie", Aliases: aliases, MetadataSource: "tmdb", KeepUpToDate: keep, NewPartsPolicy: "all",
 			ReleaseGate: gate, GateDelayDays: delay, MusicTypes: []string{}, WhyAdded: opt.WhyAdded, Artwork: []string{},
 			State: "active", GateDriver: driver, GateOpensAt: opens}
 		applyMovie(t, m, now)

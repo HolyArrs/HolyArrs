@@ -430,6 +430,17 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		Artwork: &library.ArtworkCache{Dir: filepath.Join(c.ConfigDir, "artwork"), Allowed: append([]string{metadata.ImageBase + "/", "https://assets.fanart.tv/"}, pictureHosts...),
 			HTTP: artworkHTTP}}
 	lib.Shows = showMD
+	lib.AnimeNames = func(ctx context.Context, kind, tmdbID, name string) []string {
+		by := "tmdb_tv"
+		if kind == "movie" {
+			by = "tmdb_movie"
+		}
+		m, err := hosted.Service.AnimeMap(ctx, by, tmdbID)
+		if err != nil {
+			return nil
+		}
+		return m.AltNames(name)
+	}
 	lib.Artists = artistMD
 	lib.Register(q)
 	// Artists still without a picture get one soon after start, apart from
@@ -602,7 +613,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		Secrets: vault, TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MetadataUp: hosted.Health.Up, Top10: hosted.Service.NetflixTop10, ServiceTop: hosted.Service.ServiceTop, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
 			t, err := hosted.Service.TrailerPick(ctx, kind, id, lang)
 			return t.Key, err
-		}, MusicTrending: hosted.Service.MusicTrending, MusicSimilar: hosted.Service.MusicSimilar, MusicCover: hosted.Service.MusicCover, ExtraArt: hosted.Service.Art, ExtraRatings: hosted.Service.Ratings, Alerts: sender, Asks: wish, Search: sr, Downloads: dm, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
+		}, AnimeMap: hosted.Service.AnimeMap, MusicTrending: hosted.Service.MusicTrending, MusicSimilar: hosted.Service.MusicSimilar, MusicCover: hosted.Service.MusicCover, ExtraArt: hosted.Service.Art, ExtraRatings: hosted.Service.Ratings, Alerts: sender, Asks: wish, Search: sr, Downloads: dm, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
 		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase})
 	if !c.SafeMode {
 		a.StartExplore(ctx)

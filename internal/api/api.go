@@ -69,6 +69,9 @@ type Server struct {
 	// TrailerPick reads the metadata server's trailer key for a title
 	// (kind movie or show); nil uses only TMDB's videos.
 	TrailerPick func(ctx context.Context, kind, id, lang string) (string, error)
+	// AnimeMap reads the metadata server's anime ID mapping (by tmdb_tv,
+	// tmdb_movie, tvdb, anilist or mal); nil maps nothing.
+	AnimeMap func(ctx context.Context, by, id string) (metadata.AnimeMap, error)
 	// MusicTrending reads a music trending list from the metadata server;
 	// nil hides the rows.
 	MusicTrending func(ctx context.Context, kind, region string) (metadata.MusicTrend, error)
@@ -309,6 +312,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/metadata/show/{tmdb_id}/seasons/{number}", a.metadataSeason)
 	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}/more-from", a.metadataMoreFrom)
 	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}/reviews", a.metadataReviews)
+	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}/anime", a.metadataAnime)
 	m.HandleFunc("GET /api/v1/trailer/batch", a.trailerBatch)
 	m.HandleFunc("GET /api/v1/trailer/{kind}/{tmdb_id}", a.trailerStream)
 	m.HandleFunc("GET /api/v1/trailer/stream/{id}/manifest.m3u8", a.trailerManifest)

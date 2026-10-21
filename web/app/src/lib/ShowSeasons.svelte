@@ -5,6 +5,7 @@
 	import SeasonPicker from './SeasonPicker.svelte';
 	import Skeleton from './ui/Skeleton.svelte';
 	import { newSeason, newestSeason, seasonName } from './shows.ts';
+	import { animeEpisode, animePath, seasonAnimeLine, type AnimeView } from './anime.ts';
 
 	// Episodes of a show that is not in the Library, from TMDB: the season
 	// picker (newest season first, marked New while it airs) and the season's
@@ -28,13 +29,30 @@
 			});
 		return () => ctl.abort();
 	});
+	// Anime: the AniList titles and how TMDB seasons map onto the cours
+	// (absolute numbers, later cours inside one season). Best effort.
+	let anime = $state<AnimeView | null>(null);
+	$effect(() => {
+		const id = tmdb;
+		const ctl = new AbortController();
+		anime = null;
+		api.get<AnimeView>(animePath('show', id), ctl.signal)
+			.then((v) => (anime = v.anime ? v : null))
+			.catch(() => {});
+		return () => ctl.abort();
+	});
 	const list = $derived(eps[cur]);
 	const rows = $derived<EpisodeRow[]>(
 		Array.isArray(list)
-			? list.map((e) => ({ key: e.number, number: String(e.number), name: e.name || `Episode ${e.number}`, still: e.still, runtime: e.runtime, when: e.air_day ? date(e.air_day) : 'No air date yet', overview: e.overview }))
+			? list.map((e) => {
+				const abs = anime ? animeEpisode(anime, cur, e.number).absolute : undefined;
+				const when = e.air_day ? date(e.air_day) : 'No air date yet';
+				return { key: e.number, number: String(e.number), name: e.name || `Episode ${e.number}`, still: e.still, runtime: e.runtime, when: abs ? `${when} · Absolute ${abs}` : when, overview: e.overview };
+			})
 			: []
 	);
 	const curSeason = $derived(seasons.find((s) => s.number === cur));
+	const animeLine = $derived(curSeason ? seasonAnimeLine(anime, cur, curSeason.episodes) : '');
 </script>
 
 {#if seasons.length}
@@ -46,6 +64,8 @@
 			</div>
 		</div>
 		{#if curSeason}<p class="xs muted" data-testid="season-line">{curSeason.episodes} {curSeason.episodes === 1 ? 'episode' : 'episodes'}{curSeason.year ? ` · ${curSeason.year}` : ''}</p>{/if}
+		{#if anime?.alt_names.length}<p class="xs muted" data-testid="anime-names">Also known as {anime.alt_names.join(' · ')}</p>{/if}
+		{#if animeLine}<p class="xs muted" data-testid="anime-season">{animeLine}</p>{/if}
 		{#if list === 'error'}
 			<p class="small muted">The episodes of {seasonName(cur)} could not be read; try again shortly.</p>
 		{:else if list}
@@ -58,5 +78,5 @@
 
 <style>
 	.sk { display: flex; flex-direction: column; gap: 12px; }
-	[data-testid='season-line'] { margin: 0 0 4px; }
+	[data-testid='season-line'], [data-testid='anime-names'], [data-testid='anime-season'] { margin: 0 0 4px; }
 </style>

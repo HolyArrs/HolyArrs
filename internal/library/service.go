@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -52,8 +53,24 @@ type Service struct {
 	CoverArtBase string
 	// SavePath is the Downloader save folder named at start, for health checks.
 	SavePath string
+	// AnimeNames gives an anime's other titles (AniList romaji, English,
+	// native) by kind (movie, show) and TMDB id, kept as the Title's aliases
+	// so Library search and release matching find them; nil or none: no
+	// aliases.
+	AnimeNames func(ctx context.Context, kind, tmdbID, name string) []string
 	// Now is the clock (time.Now when nil).
 	Now func() time.Time
+}
+
+// animeAliases are the anime's other titles, or an empty list.
+func (s *Service) animeAliases(ctx context.Context, kind, tmdbID, name string) []string {
+	if s.AnimeNames == nil || tmdbID == "" {
+		return []string{}
+	}
+	if names := s.AnimeNames(ctx, kind, tmdbID, name); len(names) > 0 {
+		return names
+	}
+	return []string{}
 }
 
 func (s *Service) now() time.Time {
@@ -108,6 +125,9 @@ func (s *Service) downloadPaths(ctx context.Context) []string {
 // Add adds a movie and queues its details refresh, which is followed by a
 // folder scan and, when asked, a search (Radarr's order for a new movie).
 func (s *Service) Add(ctx context.Context, m metadata.Movie, opt AddOptions, by domain.Actor) (int64, int64, error) {
+	if slices.Contains(m.Genres, "Animation") {
+		opt.Aliases = s.animeAliases(ctx, "movie", m.IDs["tmdb"], m.Name)
+	}
 	id, err := AddMovie(ctx, s.Store, m, opt, s.downloadPaths(ctx), s.now(), by)
 	if err != nil {
 		return 0, 0, err
