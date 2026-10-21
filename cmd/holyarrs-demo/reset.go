@@ -140,7 +140,7 @@ func (w *world) removeFiles() (int, int) {
 		return strings.Count(dirs[i], string(filepath.Separator)) > strings.Count(dirs[j], string(filepath.Separator))
 	})
 	keep := map[string]bool{w.o.MediaRoot: true, w.Downloads: true}
-	for _, k := range []string{"movies", "tv", "music"} {
+	for _, k := range []string{"movies", "tv", "shows", "music"} {
 		keep[filepath.Join(w.o.MediaRoot, k)] = true
 	}
 	for _, d := range dirs {

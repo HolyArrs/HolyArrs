@@ -95,7 +95,7 @@ func (w *world) recordDirs(dir string) {
 			break
 		}
 		made = append(made, d)
-		if parent := filepath.Dir(d); parent == filepath.Join(w.o.MediaRoot, "movies") || parent == filepath.Join(w.o.MediaRoot, "tv") ||
+		if parent := filepath.Dir(d); parent == filepath.Join(w.o.MediaRoot, "movies") || parent == filepath.Join(w.o.MediaRoot, "tv") || parent == filepath.Join(w.o.MediaRoot, "shows") ||
 			parent == filepath.Join(w.o.MediaRoot, "music") || parent == w.Downloads {
 			break
 		}

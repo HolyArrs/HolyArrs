@@ -29,6 +29,11 @@ const placeholderMark = "HolyArrs demo placeholder"
 type payload struct {
 	Files []string // relative to the Release folder
 	Fail  bool     // the download fails instead
+	// State, when set, leaves the download unfinished in that Downloader
+	// state (queued, downloading, paused) at Progress, with no files.
+	State    string
+	Progress float64
+	Speed    int64
 }
 
 // fakeEngine stands in for the lab qBittorrent while seed runs: a Release
@@ -67,7 +72,13 @@ func (f *fakeEngine) Add(_ context.Context, r downloader.AddRequest) (string, er
 	if p.Fail {
 		j.State, j.Progress, j.Detail = downloader.StateFailed, 0.37, "error"
 	}
-	if !p.Fail {
+	if p.State != "" {
+		j.State, j.Progress, j.Speed, j.Size = p.State, p.Progress, p.Speed, 8<<30
+		if p.Speed > 0 {
+			j.ETA = int64(float64(j.Size) * (1 - p.Progress) / float64(p.Speed))
+		}
+	}
+	if !p.Fail && p.State == "" {
 		if err := os.MkdirAll(root, 0o755); err != nil {
 			return "", err
 		}

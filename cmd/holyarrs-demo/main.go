@@ -19,7 +19,9 @@ func usage() {
   doctor  -config DIR          run every health check once and explain the results
   seed    -config DIR ...      add the demo library (see -h)
   seed    -config DIR -reset-demo   remove only what seed added
-  seed    -config DIR -init-lab     mark the folder as the lab's (once, by hand)`)
+  seed    -config DIR -init-lab     mark the folder as the lab's (once, by hand)
+  showcase [-runtime DIR] [-reset]  fill the stopped redesign showcase (18728) with every Library state
+  showcase -runtime DIR -init       mark a showcase runtime folder (once, by hand)`)
 }
 
 func main() {
@@ -55,6 +57,13 @@ func main() {
 			os.Exit(2)
 		}
 		err = doctor(ctx, c, os.Stdout)
+	case "showcase":
+		so, perr := parseShowcase(os.Args[2:])
+		if perr != nil {
+			fmt.Fprintln(os.Stderr, perr)
+			os.Exit(2)
+		}
+		err = showcaseCommand(ctx, so, os.Stdout)
 	case "seed":
 		c, perr := parseCommon("seed", os.Args[2:])
 		if perr != nil {
