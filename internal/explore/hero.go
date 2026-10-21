@@ -43,7 +43,8 @@ func HeroExcluded(genres, leans []string) bool {
 }
 
 // HeroCandidates are up to n titles not in the Library from Trending, then
-// Trending on streaming, without the genres HeroExcluded leaves out.
+// Trending on streaming, with known genres and without the ones
+// HeroExcluded leaves out.
 func HeroCandidates(head []Row, leans []string, n int) []Item {
 	var out []Item
 	seen := map[string]bool{}
@@ -56,7 +57,7 @@ func HeroCandidates(head []Row, leans []string, n int) []Item {
 				if len(out) >= n {
 					return out
 				}
-				if it.Owned || seen[it.Key()] || HeroExcluded(it.Genres, leans) {
+				if it.Owned || seen[it.Key()] || len(it.Genres) == 0 || HeroExcluded(it.Genres, leans) {
 					continue
 				}
 				seen[it.Key()] = true

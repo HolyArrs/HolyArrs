@@ -36,6 +36,10 @@ func TestHeroCandidatesSourcesOrderAndOwned(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("got %v, want %v", got, want)
 	}
+	head = append(head, Row{Type: TypeTrending, Items: []Item{{TMDBID: "x", Kind: "movie"}}})
+	if got := keys(HeroCandidates(head, nil, 10)); len(got) != 3 {
+		t.Fatalf("unknown genres kept: %v", got)
+	}
 	if n := len(HeroCandidates(head, nil, 2)); n != 2 {
 		t.Fatalf("pool cap: got %d", n)
 	}
