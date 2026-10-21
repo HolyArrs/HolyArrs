@@ -58,7 +58,6 @@
 	import AddShowDialog from '#lib/AddShowDialog.svelte';
 	import AskShowDialog from '#lib/AskShowDialog.svelte';
 	import AskMovieDialog from '#lib/AskMovieDialog.svelte';
-	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import TopServicesRow from '#lib/TopServicesRow.svelte';
 	import Popover from '#lib/ui/Popover.svelte';
@@ -597,7 +596,8 @@
 <!-- A card opened from a row is counted (to measure only). -->
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 <div class="explore" onclick={opened}>
-	<PageHeader title="Explore" subtitle="Find something to watch or listen to next." />
+	<!-- The sidebar and the pills say where you are; the page opens straight on its pills and hero. -->
+	<h1 class="sr-only">Explore</h1>
 	<div class="types-mark" bind:this={typesMark} aria-hidden="true"></div>
 	<div class="types" class:stuck={typesStuck} data-pin-pills>
 		<SegmentedControl options={typeOptions} value={type} label="Show" testid="explore-type" announce={(l) => `Showing ${l}`} onchange={setType} />
