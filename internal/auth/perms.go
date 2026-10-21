@@ -139,7 +139,7 @@ var RoutePerms = map[string]Perm{
 	"GET /api/v1/auth/oidc/callback":  NeedPublic,
 	"POST /api/v1/auth/oidc/finish":   NeedPublic,
 	"POST /api/v1/auth/forward/login": NeedPublic,
-	// The sign-in page's art: picture addresses only, kid-safe titles.
+	// The sign-in page's art: picture addresses only, any rating (like Overseerr).
 	"GET /api/v1/public/signin-art": NeedPublic,
 
 	// My account.
