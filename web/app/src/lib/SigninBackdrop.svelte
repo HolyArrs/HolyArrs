@@ -5,11 +5,11 @@
 	// picture is chosen for this screen (size x DPR) so it is never blurry.
 	import { onMount } from 'svelte';
 	import { api } from '#lib/api.ts';
-	import { pickArt, playlist, type ArtPick, type ArtShot } from '#lib/signinArt.ts';
+	import { pickArt, playlist, prepareSlide, type ArtPick, type ArtShot } from '#lib/signinArt.ts';
 
 	const CYCLE_MS = 8000;
 
-	type Slide = { pick: ArtPick; shot: ArtShot; key: number };
+	type Slide = { pick: ArtPick; shot: ArtShot; logo: string | null; key: number };
 	let layers = $state<Slide[]>([]);
 	let shown = $state(false);
 	let still = $state(false);
@@ -46,10 +46,11 @@
 			if (!list.length || gone) return;
 			for (let tries = 0; tries < list.length; tries++) {
 				at = (at + 1) % list.length;
-				const { shot, pick } = list[at];
-				if (await ready(pick.url)) {
+				// Backdrop and logo load together and switch as one unit.
+				const got = await prepareSlide(list[at], ready);
+				if (got) {
 					if (gone) return;
-					const slide = { pick, shot, key: ++n };
+					const slide = { ...got, key: ++n };
 					layers = [...layers.slice(-1), slide];
 					shown = true;
 					break;
@@ -128,10 +129,16 @@
 				style:object-position={l.pick.position}
 				style:--kb-dur="{CYCLE_MS + 1600}ms"
 			/>
-			<img class="logo" src={l.shot.logo} alt="" decoding="async" />
 		</div>
 	{/each}
 	<div class="shade"></div>
+	<!-- Logos sit above the scrim in their own stack, keyed to the same slide
+	     as the picture: the old one fades out while the new one fades in. -->
+	{#each layers as l, i (l.key)}
+		{#if l.logo}
+			<img class="logo" class:top={i === layers.length - 1} src={l.logo} alt="" decoding="async" />
+		{/if}
+	{/each}
 </div>
 
 <style>
@@ -148,6 +155,8 @@
 	.layer {
 		position: absolute;
 		inset: 0;
+		z-index: 1;
+		isolation: isolate;
 		opacity: 0;
 		animation: fade-in 1.6s ease-in-out forwards;
 	}
@@ -164,29 +173,38 @@
 	}
 	.logo {
 		position: absolute;
-		left: max(32px, env(safe-area-inset-left));
-		bottom: max(32px, env(safe-area-inset-bottom));
-		z-index: 2;
-		max-width: min(200px, 22vw);
-		max-height: 72px;
+		left: max(clamp(24px, 3.2vw, 72px), env(safe-area-inset-left));
+		bottom: max(clamp(24px, 4.5vh, 64px), env(safe-area-inset-bottom));
+		z-index: 3;
+		width: auto;
+		height: auto;
+		max-width: clamp(160px, 16vw, 420px);
+		max-height: clamp(56px, 11vh, 160px);
 		object-fit: contain;
 		object-position: left bottom;
-		opacity: 0.88;
-		filter: drop-shadow(0 2px 12px rgb(0 0 0 / 0.6));
+		filter: drop-shadow(0 2px 14px rgb(0 0 0 / 0.65));
+		opacity: 0;
+		animation: logo-out 1.6s ease-in-out forwards;
 	}
-	/* Heavy enough that the card always reads: a darker right side where the
-	   card sits, and a floor for the logo. */
+	.logo.top { animation: logo-in 1.6s ease-in-out forwards; }
+	/* The scrim: a soft vignette, a darker pool behind the centred card so it
+	   reads on bright frames, and a floor for the logo. */
 	.shade {
 		position: absolute;
 		inset: 0;
-		z-index: 1;
+		z-index: 2;
 		background:
-			linear-gradient(90deg, rgb(5 5 7 / 0.25) 0%, rgb(5 5 7 / 0.35) 45%, rgb(5 5 7 / 0.82) 100%),
-			linear-gradient(0deg, rgb(5 5 7 / 0.75) 0%, rgb(5 5 7 / 0) 35%),
-			linear-gradient(180deg, rgb(5 5 7 / 0.45) 0%, rgb(5 5 7 / 0) 25%);
+			radial-gradient(ellipse 46% 62% at 50% 50%, rgb(5 5 7 / 0.55) 0%, rgb(5 5 7 / 0.3) 60%, rgb(5 5 7 / 0) 100%),
+			radial-gradient(ellipse 120% 100% at 50% 45%, rgb(5 5 7 / 0) 45%, rgb(5 5 7 / 0.6) 100%),
+			linear-gradient(0deg, rgb(5 5 7 / 0.7) 0%, rgb(5 5 7 / 0) 32%),
+			linear-gradient(180deg, rgb(5 5 7 / 0.35) 0%, rgb(5 5 7 / 0) 22%);
 	}
+	@keyframes logo-in { from { opacity: 0; } to { opacity: 0.92; } }
+	@keyframes logo-out { from { opacity: 0.92; } to { opacity: 0; } }
 	.still .pic { animation: none; transform: none; }
 	.still .layer { animation: none; opacity: 1; }
+	.still .logo { animation: none; opacity: 0; }
+	.still .logo.top { opacity: 0.92; }
 	@keyframes ken-burns {
 		from { transform: scale(1); }
 		to { transform: scale(1.06); }
@@ -196,6 +214,8 @@
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.pic, .layer { animation: none !important; transform: none !important; opacity: 1; }
+		.logo { animation: none !important; opacity: 0; }
+		.logo.top { opacity: 0.92; }
 		.art { transition: none; }
 	}
 	/* Phones: the card is a bottom sheet, so the logo goes to the top. */
@@ -205,7 +225,7 @@
 			bottom: auto;
 			left: max(20px, env(safe-area-inset-left));
 			max-width: 44vw;
-			max-height: 48px;
+			max-height: 56px;
 			object-position: left top;
 		}
 		.shade {

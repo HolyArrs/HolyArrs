@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { coverNeed, pickArt, playlist, providerButtons, sized, type ArtShot } from './signinArt.ts';
+import { describe, expect, it, vi } from 'vitest';
+import { coverNeed, pickArt, playlist, prepareSlide, providerButtons, sized, type ArtShot } from './signinArt.ts';
 
 const B = 'https://image.tmdb.org/t/p/original/';
 const shot = (bw: number, pw?: number): ArtShot => ({
@@ -76,5 +76,50 @@ describe('providerButtons', () => {
 			'Use a HolyArrs account'
 		]);
 		expect(providerButtons(['plex']).map((b) => b.way)).toEqual(['plex']);
+	});
+});
+
+describe('prepareSlide: backdrop and logo switch as one unit', () => {
+	const totoro: ArtShot = { backdrop: { url: 'https://image.tmdb.org/t/p/original/totoro.jpg', w: 3840, h: 2160 }, logo: 'https://image.tmdb.org/t/p/original/totoro-logo.png' };
+	const entry = { shot: totoro, pick: pickArt(totoro, { vw: 1920, vh: 1080, dpr: 1 })! };
+
+	it('preloads both the picture and the logo before resolving', async () => {
+		const loaded: string[] = [];
+		let release!: () => void;
+		const gate = new Promise<void>((r) => (release = r));
+		const load = async (url: string) => {
+			loaded.push(url);
+			if (url.includes('logo')) await gate;
+			return true;
+		};
+		let done = false;
+		const p = prepareSlide(entry, load).then((s) => ((done = true), s));
+		await Promise.resolve();
+		expect(loaded).toEqual([entry.pick.url, totoro.logo]);
+		await new Promise((r) => setTimeout(r, 0));
+		expect(done).toBe(false); // still waiting on the logo
+		release();
+		const s = await p;
+		expect(s?.pick.url).toBe(entry.pick.url);
+		expect(s?.logo).toBe(totoro.logo);
+		expect(s?.shot).toBe(totoro);
+	});
+
+	it('shows no logo when the title has none, never another title\'s', async () => {
+		const bare = { ...entry, shot: { ...totoro, logo: '' } };
+		const load = vi.fn(async () => true);
+		const s = await prepareSlide(bare, load);
+		expect(s?.logo).toBeNull();
+		expect(load).toHaveBeenCalledTimes(1);
+	});
+
+	it('drops a broken logo but keeps the picture', async () => {
+		const s = await prepareSlide(entry, async (u) => !u.includes('logo'));
+		expect(s?.logo).toBeNull();
+		expect(s?.pick.url).toBe(entry.pick.url);
+	});
+
+	it('skips the slide when the picture fails', async () => {
+		expect(await prepareSlide(entry, async (u) => u.includes('logo'))).toBeNull();
 	});
 });

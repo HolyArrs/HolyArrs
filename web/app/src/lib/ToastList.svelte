@@ -15,6 +15,7 @@
 		metadataOutage,
 		watchMetadata
 	} from './metadata-health.svelte.ts';
+	import { session } from './session.svelte.ts';
 
 	// All notifications drop in from the top centre, under the top bar, with a
 	// soft spring; reduced motion fades only.
@@ -49,21 +50,23 @@
 		return () => clearTimeout(t);
 	});
 
-	onMount(() => {
-		const stop = watchMetadata();
-		return () => {
-			stop();
-			clearTimeout(shrinkTimer);
-		};
+	// Health checks need a signed-in session (the endpoint answers 401
+	// before sign-in, which would read as an outage). Sign-in itself never
+	// needs metadata, so nothing is checked or shown until signed in.
+	const signedIn = $derived(session.s.state === 'signed_in');
+	$effect(() => {
+		if (!signedIn) return;
+		return watchMetadata();
 	});
+	onMount(() => () => clearTimeout(shrinkTimer));
 </script>
 
 <div class="toasts" role="status" aria-live="polite">
-	{#if downShown}
+	{#if signedIn && downShown}
 		<div class="slot" in:toastIn out:toastOut data-testid="metadata-down">
 			<Toast tone="warn" icon="cloudOff" title={METADATA_DOWN_TITLE} text={METADATA_DOWN} time="now" {compact} onexpand={openCard} ondismiss={dismissMetadataDown} />
 		</div>
-	{:else if back}
+	{:else if signedIn && back}
 		<div class="slot" in:toastIn out:toastOut data-testid="metadata-back">
 			<Toast tone="ok" icon="check" title={METADATA_BACK} text="Search and new artwork are back." time="now" ondismiss={clearMetadataBack} />
 		</div>

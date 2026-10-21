@@ -99,3 +99,22 @@ export function providerButtons(ways: readonly Way[]): ProviderButton[] {
 	const order: Way[] = ['plex', 'jellyfin', 'emby', 'oidc', 'forward_auth', 'password'];
 	return order.filter((w) => ways.includes(w)).map((way) => ({ way, label: LABELS[way] }));
 }
+
+/** One slide, ready to show: backdrop and logo of the same title, both loaded. */
+export type ReadySlide = { shot: ArtShot; pick: ArtPick; logo: string | null };
+
+/**
+ * Loads the backdrop and the logo of one title together and returns them as
+ * one unit, or null when the backdrop fails (the caller moves on). A missing
+ * or broken logo gives logo null: the slide shows no logo rather than another
+ * title's. Nothing is shown until both loads have settled.
+ */
+export async function prepareSlide(
+	entry: { shot: ArtShot; pick: ArtPick },
+	load: (url: string) => Promise<boolean>
+): Promise<ReadySlide | null> {
+	const logoUrl = typeof entry.shot.logo === 'string' && entry.shot.logo.trim() ? entry.shot.logo : '';
+	const [pic, logo] = await Promise.all([load(entry.pick.url), logoUrl ? load(logoUrl) : Promise.resolve(false)]);
+	if (!pic) return null;
+	return { shot: entry.shot, pick: entry.pick, logo: logo ? logoUrl : null };
+}

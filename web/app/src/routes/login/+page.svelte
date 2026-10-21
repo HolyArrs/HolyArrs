@@ -387,8 +387,8 @@
 		position: relative;
 		min-height: 100dvh;
 		display: grid;
-		place-items: center end;
-		padding: clamp(16px, 5vw, 48px) clamp(16px, 7vw, 120px);
+		place-items: center;
+		padding: clamp(16px, 5vh, 48px) clamp(16px, 5vw, 96px);
 		background: #050507;
 		color: var(--text);
 		isolation: isolate;
@@ -396,7 +396,11 @@
 	.panel {
 		position: relative;
 		z-index: 1;
-		width: min(420px, 100%);
+		/* Visual width clamp(360px, 26vw, 480px); type and inputs scale with
+		   --z on big screens (zoom multiplies the width, so divide it out). */
+		--z: 1;
+		zoom: var(--z);
+		width: min(calc(clamp(360px, 26vw, 480px) / var(--z)), calc(100% / var(--z)));
 		padding: clamp(24px, 4vw, 36px);
 		border-radius: var(--r-modal);
 		background: rgb(18 18 22 / 0.62);
@@ -462,14 +466,15 @@
 	}
 	@keyframes orbit { to { transform: rotate(360deg); } }
 	@media (prefers-reduced-motion: reduce) { .orbit { animation-duration: 2.4s; } }
-	/* Tablets and narrow windows: the card centred. */
-	@media (max-width: 900px) {
-		.wrap { place-items: center; }
-	}
+	/* Large screens: type, inputs and spacing grow with the card. */
+	@media (min-width: 1600px) and (min-height: 760px) { .panel { --z: 1.08; } }
+	@media (min-width: 2200px) and (min-height: 1000px) { .panel { --z: 1.2; } }
+	@media (min-width: 3000px) and (min-height: 1300px) { .panel { --z: 1.32; } }
 	/* Phones: a full-width bottom sheet over the art, clear of the home bar. */
 	@media (max-width: 600px) {
 		.wrap { place-items: end stretch; padding: 0; }
 		.panel {
+			--z: 1;
 			width: 100%;
 			margin-top: 30dvh;
 			border-radius: 22px 22px 0 0;
