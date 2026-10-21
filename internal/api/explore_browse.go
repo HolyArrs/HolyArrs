@@ -93,7 +93,7 @@ func (a *API) browseItems(ctx context.Context, r *http.Request, src exploreSourc
 
 // browseSectionTiles builds the sections up to id (in order) and returns id's tiles.
 func (a *API) browseSectionTiles(ctx context.Context, r *http.Request, sw string, kid bool, pg explore.Page, page []explore.BrowseTile, id string) ([]explore.CategoryTile, error) {
-	key := fmt.Sprintf("%p|%d|%s|%t", a, a.person(r).UserID, sw, kid)
+	key := fmt.Sprintf("%p|%d|%s|%t|%s", a, a.person(r).UserID, sw, kid, a.kidMax(r))
 	v, _ := browseBuilds.LoadOrStore(key, &browseBuild{})
 	b := v.(*browseBuild)
 	b.mu.Lock()
