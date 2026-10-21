@@ -69,6 +69,7 @@
 	import ExploreHero from '#lib/ui/ExploreHero.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
 	import CategoryStrip from '#lib/ui/CategoryStrip.svelte';
+	import { leaveOut, newHref, newServicesPath, type NewServicesAnswer } from '#lib/new-popular.ts';
 	import { browsePath, browseSectionPath, type BrowseAnswer, type BrowseSectionAnswer, type BrowseTile } from '#lib/search-browse.ts';
 	import { dayKey, stripTiles, STRIP_ORDER } from '#lib/category-strip.ts';
 	import { top10Map, whyShown } from '#lib/why-shown.ts';
@@ -316,6 +317,21 @@
 	let servicesShown = $state<string[]>([]);
 	// A title shows once in the first 8 rows, counting the hero and the services row.
 	const taken = $derived([...heroCards.map(cardIdentity), ...servicesShown]);
+	// New on your services: one row from New & Popular's kept lists, right after Trending on
+	// streaming, leaving out what the hero, that row and Top 10 show (hidden under 6).
+	let newServices = $state<(ExploreRow & { wide: boolean; type: string }) | null>(null);
+	let newFor = '';
+	$effect(() => {
+		const t = type;
+		if (!headLoaded || t === 'music' || newFor === t) return;
+		newFor = t;
+		newServices = null;
+		api.get<NewServicesAnswer>(newServicesPath(t), gone.signal).then(
+			(a) => newFor === t && (newServices = serverRow(a.row)),
+			() => {}
+		);
+	});
+	const newCards = $derived(newServices && !genreOn ? leaveOut(newServices.cards, [...taken, ...top10Ranks.keys()]) : []);
 	const rows = $derived(type === 'music' ? [] : markTransitions(dedupeTop(genreOn ? (genreLoaded === genre?.id ? genreRows : []) : filterRows([...head, ...tail], type), taken)));
 	/** Where Browse by genre goes: after this row index (-1: not shown). */
 	/** Big 4 shelves: the first personal row and Best new releases draw bigger cards. */
@@ -583,6 +599,30 @@
 <svelte:head><title>Explore · HolyArrs</title></svelte:head>
 
 
+{#snippet newServicesRow(row: ExploreRow & { type: string }, cards: ExploreCard[])}
+	<div class="row-wrap wide-row" data-row={row.type} data-row-id={row.id}>
+		<Shelf title={row.title} href={to(newHref(type))} item="var(--title-item)" items={cards} key={(c) => c.key} placeholder="wide" lines={1}>
+			{#snippet card(raw: ExploreCard)}
+				{@const c = live(raw)}
+				{@const act = cardAction(c, { manage, ask: mayAsk })}
+				{@const mark = ownedMark(c, ownedTitle(c, owned), who)}
+				<WideCard cover title={c.name} href={cardHref(c)} image={c.wide ?? c.image} art={c.art} kind={c.kind} badges={c.badges} badgesAt="bottom" vtName={c.vtName} fresh={c.fresh} owned={mark} typed row={row.type} preview={cardTmdb(c) ? { kind: c.kind as 'movie' | 'show', tmdb: cardTmdb(c), year: c.year, titleId: c.titleId } : undefined}
+					growService={c.streaming ? { name: c.streaming.name, logo: services.find((s) => s.id === c.streaming?.service)?.logo } : null}
+					growContext={contextLine({ state: mark?.state, label: mark?.label, mine: c.mine, fresh: c.fresh }, { rowType: row.type, rowTitle: row.title, fresh: c.fresh, streaming: c.streaming })}
+					followTmdb={!c.titleId && c.kind === 'show'}>
+					{#snippet growAction()}
+						{#if act && cardTmdb(c)}
+							<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={asking === c.key || undefined} onclick={() => void quick(c, act)} />
+						{:else}
+							<IconButton icon="play" label="Open {c.name}" variant="glass" size="lg" href={cardHref(c) ?? searchHref(c)} />
+						{/if}
+					{/snippet}
+				</WideCard>
+			{/snippet}
+		</Shelf>
+	</div>
+{/snippet}
+
 {#snippet heroAction(c: ExploreCard)}
 	{@const act = cardAction(c, { manage, ask: mayAsk })}
 	{#if act && cardTmdb(c)}
@@ -656,7 +696,8 @@
 			{#if !genreOn && strip.length}<CategoryStrip tiles={strip} {type} />{/if}
 			{#each rows as row, ri (row.id)}
 				{#if row.type === 'top_services'}
-					<TopServicesRow {type} {region} genre={genreOn ? genre : null} {owned} {who} used={usedServices} bind:shown={servicesShown} />
+					<TopServicesRow {type} {region} genre={genreOn ? genre : null} {owned} {who} used={usedServices} bind:shown={servicesShown} seeAll={genreOn ? undefined : to(newHref(type))} />
+					{#if newServices && newCards.length}{@render newServicesRow(newServices, newCards)}{/if}
 				{:else}
 				<div class="row-wrap" class:wide-row={row.wide || row.cards.some((c) => wideKind(c.kind))} data-row={row.type ?? row.id} data-row-id={row.id} data-title-layer={row.titleLayer}>
 				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.cards.some((c) => wideKind(c.kind)) ? 'var(--title-item)' : 'var(--explore-item)'}

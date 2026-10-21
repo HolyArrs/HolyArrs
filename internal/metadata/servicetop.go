@@ -32,6 +32,18 @@ type ServiceTopList struct {
 	Stale      bool             `json:"stale"`
 	Source     string           `json:"source"`
 	Items      []ServiceTopItem `json:"items"`
+	// New are the titles newly added to the service in the last 14 days,
+	// newest first (Streaming Availability services only).
+	New []ServiceNewItem `json:"new,omitempty"`
+}
+
+// ServiceNewItem is one title newly added to a service.
+type ServiceNewItem struct {
+	TMDBID     int64  `json:"tmdb_id"`
+	Kind       string `json:"kind"`
+	Title      string `json:"title"`
+	PosterPath string `json:"poster_path"`
+	AddedAt    string `json:"added_at"`
 }
 
 // ServiceTop is every service's list for one region.

@@ -34,7 +34,7 @@ func ExploreListerFor(ctx context.Context, provider Provider) (ExploreLister, bo
 	return l, ok
 }
 
-var exploreListPath = regexp.MustCompile(`^/((movie|tv)/[1-9][0-9]{0,11}/(recommendations|similar)|discover/(movie|tv)|trending/(movie|tv)/week|movie/upcoming|tv/on_the_air)$`)
+var exploreListPath = regexp.MustCompile(`^/((movie|tv)/[1-9][0-9]{0,11}/(recommendations|similar)|discover/(movie|tv)|trending/(movie|tv)/week|movie/upcoming|movie/now_playing|tv/on_the_air)$`)
 
 // ExploreList reads one allowed TMDB list.
 func (t *TMDB) ExploreList(ctx context.Context, kind, path string, q url.Values) ([]DiscoverItem, error) {

@@ -37,7 +37,8 @@
 		genre = null,
 		owned,
 		who = 'staff',
-		shown = $bindable([])
+		shown = $bindable([]),
+		seeAll
 	}: {
 		type: ExploreType;
 		/** The person's services, first in the chips. */
@@ -48,6 +49,8 @@
 		who?: Audience;
 		/** The first chip's titles (cardIdentity), so the rows below can skip them; a chip switch never moves them. */
 		shown?: string[];
+		/** Where the row's See all goes (New & Popular). */
+		seeAll?: string;
 	} = $props();
 
 	type Ranked = ExploreCard & { rank: number };
@@ -139,7 +142,7 @@
 	<section class="top" data-testid="top-services-row" data-row="top_services">
 		<!-- A new list starts at rank 1, not where the last one was scrolled to. -->
 		{#key `${row?.service ?? ''}|${type}|${genre?.id ?? ''}`}
-			<Shelf {title} subtitle={source || undefined} {tools} item={ranked ? 'calc(var(--explore-item, 180px) / 0.68)' : 'var(--explore-item, 180px)'} items={cards} key={(c) => c.key} placeholder="poster">
+			<Shelf {title} subtitle={source || undefined} {tools} href={seeAll} item={ranked ? 'calc(var(--explore-item, 180px) / 0.68)' : 'var(--explore-item, 180px)'} items={cards} key={(c) => c.key} placeholder="poster">
 				{#snippet card(raw: Ranked)}
 					{@const c = owned ? { ...matchOwned(raw, owned), rank: raw.rank } : raw}
 					{@const mark = ownedMark(c, owned ? ownedTitle(c, owned) : undefined, who)}

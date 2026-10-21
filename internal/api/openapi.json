@@ -11597,6 +11597,52 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/explore/new": {
+      "get": {
+        "description": "New & Popular: rows of titles out in about the last 90 days (new on the member's services, today's top 10s, new episodes, cinemas, picks), each title once, rows under 6 left out; 5 rows on page 0, then 4 a page. building says lists are still on their way.",
+        "responses": {
+          "200": {
+            "description": "A page of rows, more and building."
+          },
+          "400": {
+            "description": "type or page is not valid."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          },
+          "429": {
+            "description": "Too many Explore requests."
+          }
+        },
+        "summary": "The New & Popular page",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/explore/new/services": {
+      "get": {
+        "description": "The titles newly added to the member's streaming services in their region (last 14 days), for Explore's New on your services row.",
+        "responses": {
+          "200": {
+            "description": "The row."
+          },
+          "400": {
+            "description": "type or page is not valid."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          },
+          "429": {
+            "description": "Too many Explore requests."
+          }
+        },
+        "summary": "New on your services",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/explore/service-top": {
       "get": {
         "description": "Every streaming service's top list for a region in one answer (from the metadata server, kept 12 hours): source streaming-availability (the service's own top today) or tmdb-popular (TMDB's most popular on it, Peacock only). Each list keeps the service's order, split by type, at most 10 titles, with fetched_at, age_seconds and stale (over 14 days); ranked is false for tmdb-popular. attribution must be shown with the lists.",

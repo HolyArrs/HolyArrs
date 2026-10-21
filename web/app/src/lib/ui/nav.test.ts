@@ -10,7 +10,7 @@ const labels = (input: NavInput) => buildNav(input).map((s) => [s.label, s.items
 describe('buildNav', () => {
 	it('gives owners every section, with Approvals under Manage', () => {
 		expect(labels(owner)).toEqual([
-			[null, ['Home', 'Explore']],
+			[null, ['Home', 'Explore', 'New & Popular']],
 			['Library', ['Movies', 'TV shows', 'Music', 'Movie series']],
 			['Your stuff', ['Calendar']],
 			['Manage', ['Downloads', 'Approvals', 'History', 'Library tools', 'Settings']]
@@ -21,7 +21,7 @@ describe('buildNav', () => {
 	});
 	it('hides Manage from members but keeps Home', () => {
 		expect(labels(member)).toEqual([
-			[null, ['Home', 'Explore']],
+			[null, ['Home', 'Explore', 'New & Popular']],
 			['Library', ['Movies', 'TV shows', 'Music', 'Movie series']],
 			['Your stuff', ['Wishlist']]
 		]);
