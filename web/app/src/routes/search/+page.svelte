@@ -505,7 +505,9 @@
 	.search { --title-item: max(200px, calc((100vw - 96px) / 5.16)); display: flex; flex-direction: column; gap: 24px; padding-bottom: 48px; min-width: 0; }
 	@media (max-width: 1279px) { .search { --title-item: max(180px, calc((100vw - 64px) / 4.2)); } }
 	@media (max-width: 767px) { .search { --title-item: calc((100vw - 40px) / 2.3); } }
-	.close-row { display: flex; justify-content: flex-end; margin-bottom: -16px; }
+	/* Desktop closes from the × in the top-bar field; phones (no top bar) keep this one. */
+	.close-row { display: none; }
+	@media (max-width: 767px) { .close-row { display: flex; justify-content: flex-end; margin-bottom: -16px; } }
 	/* Phones only: the top bar (and its field) is hidden under 768 px. */
 	.phone-field { display: none; }
 	@media (max-width: 767px) { .phone-field { position: sticky; top: 8px; z-index: 22; display: flex; justify-content: center; } .phone-field :global(.ui-search) { width: 100%; } }
