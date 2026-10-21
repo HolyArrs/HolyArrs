@@ -600,11 +600,19 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 		AddedAt: t.CreatedAt}
 	now := time.Now()
 	var err error
-	if v.SizeBytes, err = titleSize(ctx, db, t.ID); err != nil {
-		return v, err
-	}
-	if v.LastActivity, err = titleActivity(ctx, db, t.ID); err != nil {
-		return v, err
+	facts := factsOf(ctx)
+	if facts != nil {
+		v.SizeBytes = facts.sizes[t.ID]
+		if at, ok := facts.activity[t.ID]; ok {
+			v.LastActivity = &at
+		}
+	} else {
+		if v.SizeBytes, err = titleSize(ctx, db, t.ID); err != nil {
+			return v, err
+		}
+		if v.LastActivity, err = titleActivity(ctx, db, t.ID); err != nil {
+			return v, err
+		}
 	}
 	if t.Kind == "artist" {
 		v.Stage, v.GateOpen = t.Status, true
@@ -624,8 +632,10 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 		v.GateReason = gateReason(t, v.GateOpen)
 	}
 	v.Versions = []VersionView{}
-	vs, err := store.Select[domain.Version](ctx, db, "versions", "title_id = ? ORDER BY is_main DESC, id", t.ID)
-	if err != nil {
+	var vs []domain.Version
+	if facts != nil {
+		vs = facts.versions[t.ID]
+	} else if vs, err = store.Select[domain.Version](ctx, db, "versions", "title_id = ? ORDER BY is_main DESC, id", t.ID); err != nil {
 		return v, err
 	}
 	for _, ver := range vs {
@@ -729,7 +739,11 @@ func (a *API) listTitles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out := []TitleView{}
-	ctx := withLookupMemo(r.Context())
+	ctx, err := withTitleFacts(withLookupMemo(r.Context()), a.s.Store.Read())
+	if err != nil {
+		internal(w, err)
+		return
+	}
 	for _, t := range ts {
 		if p, ok := parts.ForTitleKind(t.Kind); ok && !a.partIsOn(p) && !a.s.Parts.SafeMode {
 			continue // its part is off: hidden, not removed (safe mode lists every title)
