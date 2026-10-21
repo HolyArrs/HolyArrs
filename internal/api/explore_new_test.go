@@ -12,6 +12,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/auth"
 	"github.com/CoderLuii/holyarrs/internal/explore"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
 // newNow is the rig's clock: the fake TMDB dates every title 2026-09-01.
@@ -257,5 +258,81 @@ func TestKidExploreNew(t *testing.T) {
 	}
 	if !strings.Contains(string(b), "rows") && code == 200 {
 		t.Fatalf("answer %s", b)
+	}
+}
+
+// route: GET /api/v1/explore/new/service
+// A service chip's own list: up to 20 new titles of that service (more
+// than its share of the mixed row), every card on that service, Library
+// titles last; the hot row is that service's chart, new only; bad asks 400.
+func TestExploreNewServiceList(t *testing.T) {
+	a, srv, reads := newRig(t)
+	ts := store.FormatTime(newNow)
+	if err := a.s.Store.Write(context.Background(), func(tx *sql.Tx) error {
+		_, err := tx.Exec(`INSERT INTO titles (created_at, created_by, updated_at, updated_by, kind, name, sort_name, source_ids, metadata_source, why_added, state)
+			VALUES (?, 1, ?, 1, 'show', 'S1612', 'S1612', '{"tmdb":"1612"}', 'tmdb', 'by_hand', 'active')`, ts, ts)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	base := srv.URL + "/api/v1/explore/new/service?id=8&type=all"
+	var row map[string]any
+	for i := 0; i < 40; i++ {
+		body := getJSON(t, base, 200)
+		row = body["row"].(map[string]any)
+		if body["building"] != true {
+			break
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	items := row["items"].([]any)
+	if len(items) < 12 || len(items) > 20 {
+		t.Fatalf("service list has %d", len(items))
+	}
+	lib := false
+	for _, it := range items {
+		m := it.(map[string]any)
+		if m["streaming"].(map[string]any)["service"] != float64(8) || m["fresh"] == nil {
+			t.Fatalf("item %v", m)
+		}
+		if m["in_library"] == true {
+			lib = true
+		} else if lib {
+			t.Fatalf("a title after a Library title: %v", m)
+		}
+	}
+	// S1612 leads the list without the Library; owned, it goes last (and
+	// past the 20 when the service has 20 others).
+	if first := items[0].(map[string]any); first["tmdb_id"] == "1612" {
+		t.Fatal("the Library title still leads")
+	}
+	hot := getJSON(t, srv.URL+"/api/v1/explore/new/service?id=8&type=shows&row=hot_shows", 200)["row"].(map[string]any)
+	for i, it := range hot["items"].([]any) {
+		m := it.(map[string]any)
+		if m["kind"] != "show" || m["streaming"].(map[string]any)["rank"] != float64(i+1) {
+			t.Fatalf("hot item %v", m)
+		}
+	}
+	if n := len(getJSON(t, srv.URL+"/api/v1/explore/new/service?id=999&type=all", 200)["row"].(map[string]any)["items"].([]any)); n != 0 {
+		t.Fatalf("unknown service has %d", n)
+	}
+	if *reads != 1 {
+		t.Fatalf("service lists read %d times", *reads)
+	}
+	for _, bad := range []string{"?type=all", "?id=x", "?id=8&row=nope", "?id=8&type=x"} {
+		getJSON(t, srv.URL+"/api/v1/explore/new/service"+bad, 400)
+	}
+}
+
+// A Kid's service list never shows a title over their limit.
+func TestKidExploreNewService(t *testing.T) {
+	k := newKidRig(t)
+	newPages = newPageCache{}
+	code, b := k.kai.get("/api/v1/explore/new/service?id=8&type=all")
+	if code != 200 && code != 403 {
+		t.Fatalf("kid service list %d", code)
+	}
+	if hit := mentionsBlocked(string(b)); hit != "" {
+		t.Fatalf("kid sees %s: %s", hit, b)
 	}
 }

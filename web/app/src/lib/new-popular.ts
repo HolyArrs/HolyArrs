@@ -46,6 +46,23 @@ export function newServicesPath(t: string): string {
 	return `/explore/new/services?type=${t === 'movies' || t === 'shows' ? t : 'all'}`;
 }
 
+export interface NewServiceAnswer {
+	type: string;
+	service: number;
+	building: boolean;
+	row: ServerRow;
+}
+
+/** The server's name for a chip row (services, hot_shows, hot_movies). */
+export function serviceRowName(rowType: string): string {
+	return rowType === 'np_top_shows' ? 'hot_shows' : rowType === 'np_top_movies' ? 'hot_movies' : 'services';
+}
+
+/** newServicePath asks for one service's own list on a chip row. */
+export function newServicePath(t: NewType, service: number, rowType: string): string {
+	return `/explore/new/service?id=${service}&type=${t}&row=${serviceRowName(rowType)}`;
+}
+
 /** The New & Popular link for an Explore tab (music has none: All). */
 export function newHref(t: string): string {
 	return t === 'movies' || t === 'shows' ? `/new?type=${t}` : '/new';

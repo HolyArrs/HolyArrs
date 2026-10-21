@@ -321,6 +321,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/explore/genre-row", a.exploreGenreRow)
 	m.HandleFunc("GET /api/v1/explore/new", a.exploreNew)
 	m.HandleFunc("GET /api/v1/explore/new/services", a.exploreNewServices)
+	m.HandleFunc("GET /api/v1/explore/new/service", a.exploreNewService)
 	m.HandleFunc("GET /api/v1/explore/browse", a.searchBrowse)
 	m.HandleFunc("GET /api/v1/explore/browse/section", a.searchBrowseSection)
 	m.HandleFunc("GET /api/v1/explore/browse/category", a.searchBrowseCategory)

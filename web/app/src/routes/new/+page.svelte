@@ -9,7 +9,7 @@
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { refreshInbox } from '#lib/wishlist.svelte.ts';
 	import { cardAction, cardTmdb, discoverCard, liveCard, matchOwned, ownedIndex, ownedMark, ownedTitle, serverRow, serviceRegion, type ExploreCard, type ExploreRow, type WatchService } from '#lib/explore.ts';
-	import { cardServices, hasServiceChips, isRanked, newPath, parseNewType, pickService, type NewAnswer, type NewType, type RailDay, type RailItem } from '#lib/new-popular.ts';
+	import { cardServices, hasServiceChips, isRanked, newPath, newServicePath, parseNewType, pickService, type NewAnswer, type NewServiceAnswer, type NewType, type RailDay, type RailItem } from '#lib/new-popular.ts';
 	import { contextLine } from '#lib/grow-lines.ts';
 	import { defaultRegion } from '#lib/top10.ts';
 	import type { Ask, AskState, GateDefaults, LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleView } from '#lib/types.ts';
@@ -74,6 +74,9 @@
 
 	function setType(t: NewType) {
 		type = t;
+		svcLists = new Map();
+		svcGen++;
+		svcPicks = new Map();
 		const url = new URL((page.shallow?.url ?? page.url).href);
 		if (t === 'all') url.searchParams.delete('type');
 		else url.searchParams.set('type', t);
@@ -135,7 +138,27 @@
 	// Service chips on the services and hot and new rows: one service at a time, or all (per row).
 	let svcPicks = $state(new Map<string, number | null>());
 	const svcPick = (row: string) => svcPicks.get(row) ?? null;
-	const setPick = (row: string, s: number | null) => (svcPicks = new Map([...svcPicks, [row, s]]));
+	// Each chip loads its service's own list (row type:service -> cards; null while loading).
+	let svcLists = $state(new Map<string, ExploreCard[] | null>());
+	let svcGen = 0;
+	function setPick(row: Row, s: number | null) {
+		svcPicks = new Map([...svcPicks, [row.id, s]]);
+		if (s === null) return;
+		const k = `${row.type}:${s}`;
+		if (svcLists.has(k)) return;
+		svcLists = new Map([...svcLists, [k, null]]);
+		const n = svcGen;
+		api.get<NewServiceAnswer>(newServicePath(type, s, row.type), gone.signal)
+			.then((a) => {
+				if (n === svcGen) svcLists = new Map([...svcLists, [k, serverRow(a.row).cards]]);
+			})
+			.catch(() => {
+				if (n !== svcGen) return;
+				// Fall back to the shared row's cards for that service.
+				svcLists = new Map([...svcLists, [k, pickService(row.cards, s)]]);
+			});
+	}
+	const ghosts = (n: number): ExploreCard[] => Array.from({ length: n }, (_, i) => ({ key: `ghost-${i}`, kind: 'movie', name: '', badges: [] }) as ExploreCard);
 	const region = serviceRegion(defaultRegion());
 	let services = $state<WatchService[]>([]);
 	const logo = (id: number | undefined) => services.find((s) => s.id === id)?.logo;
@@ -235,8 +258,11 @@
 	const wideKind = (k: string): boolean => k === 'movie' || k === 'show';
 	function shown(row: Row): ExploreCard[] {
 		if (!hasServiceChips(row.type)) return row.cards;
-		const cards = pickService(row.cards, svcPick(row.id));
-		return isRanked(row.type) ? cards.slice(0, 10) : cards;
+		const s = svcPick(row.id);
+		if (s === null) return isRanked(row.type) ? row.cards.slice(0, 10) : row.cards;
+		const got = svcLists.get(`${row.type}:${s}`);
+		if (!got) return ghosts(isRanked(row.type) ? 6 : 8);
+		return isRanked(row.type) ? got.slice(0, 10) : got;
 	}
 	/** railCard is a rail title as a row card (the same card and hover preview as every row). */
 	const railCard = (it: RailItem): ExploreCard => ({ ...discoverCard(it, 'np_rail'), wide: it.backdrop ?? null });
@@ -331,19 +357,22 @@
 		{/if}
 		{#each rows as row (row.id)}
 			{@const cards = shown(row)}
-			{@const wide = !isRanked(row.type) && cards.some((c) => wideKind(c.kind))}
+			{@const wide = !isRanked(row.type) && row.cards.some((c) => wideKind(c.kind))}
 			{@const chips = hasServiceChips(row.type) ? cardServices(row.cards) : []}
 			<div class="row-wrap" class:wide-row={wide} data-row={row.type} data-row-id={row.id}>
 				{#snippet tools()}
 					<div class="chips" role="group" aria-label="Services">
-						<Chip label="All" selected={svcPick(row.id) === null} onclick={() => setPick(row.id, null)} />
-						{#each chips as s (s.service)}<Chip label={s.name} selected={svcPick(row.id) === s.service} onclick={() => setPick(row.id, s.service)} />{/each}
+						<Chip label="All" selected={svcPick(row.id) === null} onclick={() => setPick(row, null)} />
+						{#each chips as s (s.service)}<Chip label={s.name} selected={svcPick(row.id) === s.service} onclick={() => setPick(row, s.service)} />{/each}
 					</div>
 				{/snippet}
 				<Shelf title={row.title} subtitle={row.subtitle} tools={chips.length > 1 ? tools : undefined}
 					item={isRanked(row.type) ? 'calc(var(--explore-item) / 0.68)' : wide ? 'var(--title-item)' : 'var(--explore-item)'}
 					items={cards} key={(c) => c.key} placeholder={wide ? 'wide' : 'poster'} lines={cards.some((c) => c.subtitle) ? 2 : 1}>
 					{#snippet card(raw: ExploreCard)}
+						{#if raw.key.startsWith('ghost-')}
+							<div class="ghost" class:pc-ghost={isRanked(row.type)}><Skeleton shape={wide ? 'wide' : 'poster'} /><Skeleton width="70%" /></div>
+						{:else}
 						{@const c = live(raw)}
 						{@const act = cardAction(c, { manage, ask: mayAsk })}
 						{@const mark = ownedMark(c, ownedTitle(c, owned), who)}
@@ -363,6 +392,7 @@
 									{#if act && cardTmdb(c)}<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" onclick={() => void quick(c, act)} />{/if}
 								{/snippet}
 							</PosterCard>
+						{/if}
 						{/if}
 					{/snippet}
 				</Shelf>
@@ -403,6 +433,9 @@
 	.rank.two { font-size: 36cqw; letter-spacing: -0.12em; }
 	.pc { position: relative; z-index: 1; margin-left: 32%; width: 68%; min-width: 0; }
 	.sentinel { height: 1px; }
+	/* Ghost cards while a chip's list loads, the same size as the cards they stand for. */
+	.ghost { display: flex; flex-direction: column; gap: 8px; }
+	.ghost.pc-ghost { margin-left: 32%; width: 68%; }
 	/* The rail's cards are as wide as a Hot and new card. */
 	.np { --rail-item: calc(var(--explore-item) / 0.68); }
 	/* Hero badges (as on Explore): small glass pills, the chart one in the brand red. */

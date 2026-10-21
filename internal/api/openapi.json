@@ -11620,6 +11620,29 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/explore/new/service": {
+      "get": {
+        "description": "One service's own list for a New & Popular chip, from the built page (kept 6 hours; no extra Streaming Availability reads). id is the service (TMDB watch-provider id); row is services (the default: up to 20 new titles, the service's adds topped up from TMDB's newest on it, Library titles last), hot_shows or hot_movies (the service's chart, new titles only). Kid limit and never-add apply.",
+        "responses": {
+          "200": {
+            "description": "type, service, building and row (each card's streaming is the service)."
+          },
+          "400": {
+            "description": "id, row or type is not valid."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          },
+          "429": {
+            "description": "Too many Explore requests."
+          }
+        },
+        "summary": "One service's new titles",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/explore/new/services": {
       "get": {
         "description": "The best-scoring new titles of New & Popular's services row (at most 12, at most 3 per service), for Explore's New on your services row.",

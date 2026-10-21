@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { cardServices, dayOffset, hasServiceChips, isRanked, leaveOut, newHref, newPath, newServicesPath, parseNewType, pickService, railBell, railLabel } from './new-popular.ts';
+import { cardServices, dayOffset, hasServiceChips, isRanked, leaveOut, newHref, newPath, newServicePath, newServicesPath, parseNewType, pickService, railBell, railLabel } from './new-popular.ts';
+
+describe('newServicePath', () => {
+	it('names the chip row for the server', () => {
+		expect(newServicePath('all', 8, 'np_services')).toBe('/explore/new/service?id=8&type=all&row=services');
+		expect(newServicePath('shows', 337, 'np_top_shows')).toBe('/explore/new/service?id=337&type=shows&row=hot_shows');
+		expect(newServicePath('movies', 9, 'np_top_movies')).toBe('/explore/new/service?id=9&type=movies&row=hot_movies');
+	});
+});
 
 const card = (id: number, kind: 'movie' | 'show' = 'movie') => ({ key: `r-${kind}-${id}`, kind, ref: `tmdb:${id}`, name: `T${id}` });
 

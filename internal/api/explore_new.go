@@ -49,6 +49,12 @@ type newPage struct {
 	picked bool
 	// key is the page cache key (member, switch, Kid limit, region, day).
 	key string
+	// perService is each chip row's own list per service id (row type ->
+	// service -> titles), so a chip shows that service's titles, not a
+	// filter of the shared row.
+	perService map[string]map[int][]explore.Item
+	// svcNames names each service id on the page.
+	svcNames map[int]string
 }
 
 // newRailDay is one day of the This week rail.
@@ -497,7 +503,11 @@ func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string)
 		return p, false
 	}
 	order, svcNew, added, top := a.newServiceLists(ctx, h, kinds)
-	pg := newPage{facts: map[string]explore.NewFact{}, scores: map[string]float64{}, marks: map[string]streamingMark{}, picked: len(h.services) > 0, key: key}
+	pg := newPage{facts: map[string]explore.NewFact{}, scores: map[string]float64{}, marks: map[string]streamingMark{}, picked: len(h.services) > 0, key: key,
+		perService: map[string]map[int][]explore.Item{explore.TypeNPServices: {}, explore.TypeNPTopShows: {}, explore.TypeNPTopFilms: {}}, svcNames: map[int]string{}}
+	for _, s := range order {
+		pg.svcNames[s.Service] = s.Name
+	}
 	facts := newFacts{now: now, m: pg.facts}
 	for k, at := range added {
 		facts.put(k, explore.NewFact{Kind: explore.NewService, At: at})
@@ -618,6 +628,7 @@ func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string)
 			}
 		}
 		perService = append(perService, l)
+		pg.perService[explore.TypeNPServices][s.Service] = l
 	}
 	addRow("np_services", explore.TypeNPServices, "Fresh on your services", explore.RankMerge(perService, explore.NewRowCap[explore.TypeNPServices]))
 	// Hot and new: each service's real chart, new titles only, topped up from
@@ -627,6 +638,10 @@ func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string)
 			continue
 		}
 		marks, charts := newCharts(top, h, k)
+		typ := explore.TypeNPTopFilms
+		if k == "show" {
+			typ = explore.TypeNPTopShows
+		}
 		var lists2 [][]explore.Item
 		for i, c := range charts {
 			l := fresh(c)
@@ -638,6 +653,7 @@ func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string)
 				}
 			}
 			lists2 = append(lists2, l)
+			pg.perService[typ][marks[i].Service] = l
 		}
 		hot := explore.RankMerge(lists2, 10)
 		have := map[string]bool{}
@@ -1029,4 +1045,65 @@ func (a *API) exploreNewServices(w http.ResponseWriter, r *http.Request) {
 	}
 	a.exploreCaching(w, r, "private, max-age=300")
 	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "row": row})
+}
+
+// newServiceRows names the chip rows exploreNewService answers for.
+var newServiceRows = map[string]string{"services": explore.TypeNPServices, "hot_shows": explore.TypeNPTopShows, "hot_movies": explore.TypeNPTopFilms}
+
+// exploreNewService answers GET /api/v1/explore/new/service?id=&type=&row=:
+// one service's own list for a chip row (row services, the default: up to
+// 20 new titles, Library titles last; hot_shows or hot_movies: that
+// service's chart, new titles only). From the built page (kept 6 hours), so
+// it never asks Streaming Availability again.
+func (a *API) exploreNewService(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	if err != nil || id <= 0 {
+		fail(w, http.StatusBadRequest, "id must be a service id")
+		return
+	}
+	name := r.URL.Query().Get("row")
+	if name == "" {
+		name = "services"
+	}
+	typ, ok := newServiceRows[name]
+	if !ok {
+		fail(w, http.StatusBadRequest, "row must be services, hot_shows or hot_movies")
+		return
+	}
+	sw, ok := a.newParams(w, r)
+	if !ok {
+		return
+	}
+	pg, building := a.newRows(r.Context(), r, a.person(r).UserID, sw)
+	items := pg.perService[typ][id]
+	row := exploreRowView{ID: typ + "_" + strconv.Itoa(id), Type: typ, Items: []discoverItemView{}}
+	views, err := a.newViews(r, []explore.Row{{ID: row.ID, Type: typ, Items: items}}, pg, 1)
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	if len(views) == 1 {
+		row = views[0]
+	}
+	var mark streamingMark
+	if n, ok := pg.svcNames[id]; ok {
+		mark = streamingMark{Service: id, Name: n}
+	}
+	// Library titles last (the Library join may know more than the page).
+	sort.SliceStable(row.Items, func(i, j int) bool { return !row.Items[i].InLibrary && row.Items[j].InLibrary })
+	for i := range row.Items {
+		m := mark
+		if typ != explore.TypeNPServices {
+			m.Rank = i + 1
+		}
+		if m.Service != 0 {
+			row.Items[i].Streaming = &m
+		}
+	}
+	cache := "private, max-age=21600"
+	if building {
+		cache = "private, no-cache"
+	}
+	a.exploreCaching(w, r, cache)
+	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "service": id, "building": building, "row": row})
 }
