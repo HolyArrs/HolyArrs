@@ -42,3 +42,17 @@ export function heroSize(css: number, ratio = globalThis.devicePixelRatio || 1):
 export function sharpen(url: string, css: number, ratio = globalThis.devicePixelRatio || 1): string {
 	return url.replace(/(\/api\/v1\/artwork\/tmdb\/)(?:w\d+|original)(\/[^/]+)$/, `$1${heroSize(css, ratio)}$2`);
 }
+
+const anyTmdb = /^(.*?\/(?:t\/p|api\/v1\/artwork\/tmdb))\/(?:w\d+|h\d+|original)\/([A-Za-z0-9_-]+\.(?:jpg|png|webp))$/;
+
+/** fitTile swaps a TMDB picture's size for one that covers a tall tile css
+ * pixels wide at the screen's pixel ratio: profiles (people) w185, w500 or
+ * original; backdrops w780, w1280 or original. Other pictures are left as they are. */
+export function fitTile(url: string, css: number, person: boolean, ratio = globalThis.devicePixelRatio || 1): string {
+	const m = anyTmdb.exec(url);
+	if (!m || !(css > 0)) return url;
+	const need = css * ratio;
+	// A tall 3:4 tile: a profile is cut by height, a backdrop fills by height (16:9, so about 2.4x the tile width).
+	const size = person ? (need <= 185 ? 'w185' : need <= 500 ? 'w500' : 'original') : need * 2.4 <= 780 ? 'w780' : need * 2.4 <= 1280 ? 'w1280' : 'original';
+	return `${m[1]}/${size}/${m[2]}`;
+}

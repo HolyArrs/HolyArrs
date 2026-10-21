@@ -1,17 +1,23 @@
 <script lang="ts">
+	import { fitTile } from '../tmdb-image.ts';
 	// A Search Browse tile: a tall 3:4 picture in grey under the category's own
 	// colour wash, the name bottom-left in bold white. Hover lifts it a little.
 	let { name, href, image, hue, row = 0, plain = false }: { name: string; href: string; image: string; hue: string; row?: number; plain?: boolean } = $props();
 	let loaded = $state(false);
 	let img = $state<HTMLImageElement>();
+	// The picture in the size this tile is shown at on this screen: TMDB
+	// profile sizes for people (w185, w500, original), backdrop sizes for
+	// genres (w780, w1280, original).
+	let tileW = $state(0);
+	const src = $derived(fitTile(image, tileW, plain));
 	$effect(() => {
 		if (img?.complete && img.naturalWidth > 0) loaded = true;
 	});
 </script>
 
-<a class="ui-btile" class:plain {href} style="--hue: {hue}; --row: {row}" data-testid="browse-tile">
+<a bind:clientWidth={tileW} class="ui-btile" class:plain {href} style="--hue: {hue}; --row: {row}" data-testid="browse-tile">
 	<span class="art">
-		<img bind:this={img} src={image} alt="" loading="lazy" decoding="async" class:in={loaded} onload={() => (loaded = true)} />
+		<img bind:this={img} src={src} alt="" loading="lazy" decoding="async" class:in={loaded} onload={() => (loaded = true)} />
 		<span class="wash" aria-hidden="true"></span>
 		<span class="shade" aria-hidden="true"></span>
 		<span class="name">{name}</span>
