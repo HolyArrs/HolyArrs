@@ -169,14 +169,22 @@
 			const d = moved ? null : anchorDelta(document, v.anchor);
 			if (d) scrollBy({ top: d, behavior: 'instant' });
 		};
-		fix();
-		for (const ms of [120, 400, 900]) setTimeout(fix, ms);
-		setTimeout(() => {
+		const done = () => {
 			removeEventListener('wheel', stop);
 			removeEventListener('touchstart', stop);
 			removeEventListener('keydown', stop);
-		}, 1000);
+		};
+		fix();
+		const timers = [120, 400, 900].map((ms) => setTimeout(fix, ms));
+		timers.push(setTimeout(done, 1000));
+		// Leaving the page inside that second must not nudge the next page's scroll.
+		settleCancel = () => {
+			timers.forEach(clearTimeout);
+			done();
+		};
 	}
+	let settleCancel: (() => void) | null = null;
+	$effect(() => () => settleCancel?.());
 	$effect(() => {
 		const v = back;
 		if (!v || !headLoaded) return;
