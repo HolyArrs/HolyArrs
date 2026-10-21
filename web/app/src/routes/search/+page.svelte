@@ -202,6 +202,14 @@
 	});
 	const waiting = $derived(!!searchField.term.trim() && (order.some((t) => groups[t] === null) || busy || lib === null) && (freshTotal === 0 || !settleCap));
 	const holding = $derived(waiting && !!stale);
+	// A fresh search keeps the page you were on until its answer is slow: the skeleton shows once the
+	// request has been out 200 ms (the 250 ms typing pause doesn't count), so a quick answer swaps straight in.
+	let slow = $state(false);
+	$effect(() => {
+		if (!(waiting && !stale && busy)) return void (slow = false);
+		const t = setTimeout(() => (slow = true), 200);
+		return () => clearTimeout(t);
+	});
 	const shownGroups = $derived(holding && stale ? stale.groups : groups);
 	const shownLib = $derived(holding && stale ? stale.lib : lib);
 	const libCards = $derived<Card[]>([
@@ -903,9 +911,9 @@
 					</ul>
 				{/if}
 			</section>
-		{:else if waiting && !stale}
+		{:else if waiting && !stale && slow}
 			{@render resultsSkeleton()}
-		{:else if !searchField.term.trim()}
+		{:else if !searchField.term.trim() || (waiting && !stale)}
 			{#if recent.length}
 				<section class="recent" aria-labelledby="recent-h">
 					<div class="recent-head">
