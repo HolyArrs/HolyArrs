@@ -1,24 +1,75 @@
 <script lang="ts">
-	import { fly } from 'svelte/transition';
-	import { cubicOut } from 'svelte/easing';
+	import { onMount } from 'svelte';
+	import { fly, fade } from 'svelte/transition';
+	import { backOut, cubicOut } from 'svelte/easing';
 	import { toasts } from './toasts.svelte';
 	import Toast from './ui/Toast.svelte';
 	import { reducedMotion } from './motion.ts';
+	import {
+		METADATA_BACK,
+		METADATA_DOWN,
+		METADATA_DOWN_TITLE,
+		clearMetadataBack,
+		dismissMetadataDown,
+		metadataDownShown,
+		metadataOutage,
+		watchMetadata
+	} from './metadata-health.svelte.ts';
 
-	// Slide up 12px and fade (spec §3); no travel with reduced motion.
+	// All notifications drop in from the top centre, under the top bar, with a
+	// soft spring; reduced motion fades only.
 	function toastIn(node: Element) {
-		const reduce = reducedMotion();
-		return fly(node, { y: reduce ? 0 : 12, duration: reduce ? 0 : 240, easing: cubicOut });
+		if (reducedMotion()) return fade(node, { duration: 160 });
+		return fly(node, { y: -24, duration: 420, easing: backOut });
 	}
 	function toastOut(node: Element) {
-		const reduce = reducedMotion();
-		return fly(node, { y: reduce ? 0 : 6, duration: reduce ? 0 : 150 });
+		if (reducedMotion()) return fade(node, { duration: 120 });
+		return fly(node, { y: -16, duration: 180, easing: cubicOut });
 	}
+
+	// Metadata outage: full card, shrinks to a pill after 6 s, tap to open again.
+	const downShown = $derived(metadataDownShown());
+	let compact = $state(false);
+	let shrinkTimer: ReturnType<typeof setTimeout> | undefined;
+	function openCard() {
+		compact = false;
+		clearTimeout(shrinkTimer);
+		shrinkTimer = setTimeout(() => (compact = true), 6000);
+	}
+	$effect(() => {
+		if (downShown) openCard();
+		else clearTimeout(shrinkTimer);
+	});
+
+	// Recovery: a short green note, gone after 3 s.
+	const back = $derived(metadataOutage.back > 0);
+	$effect(() => {
+		if (!back) return;
+		const t = setTimeout(clearMetadataBack, 3000);
+		return () => clearTimeout(t);
+	});
+
+	onMount(() => {
+		const stop = watchMetadata();
+		return () => {
+			stop();
+			clearTimeout(shrinkTimer);
+		};
+	});
 </script>
 
 <div class="toasts" role="status" aria-live="polite">
+	{#if downShown}
+		<div class="slot" in:toastIn out:toastOut data-testid="metadata-down">
+			<Toast tone="warn" icon="cloudOff" title={METADATA_DOWN_TITLE} text={METADATA_DOWN} time="now" {compact} onexpand={openCard} ondismiss={dismissMetadataDown} />
+		</div>
+	{:else if back}
+		<div class="slot" in:toastIn out:toastOut data-testid="metadata-back">
+			<Toast tone="ok" icon="check" title={METADATA_BACK} text="Search and new artwork are back." time="now" ondismiss={clearMetadataBack} />
+		</div>
+	{/if}
 	{#each toasts.list as t (t.id)}
-		<div in:toastIn out:toastOut>
+		<div class="slot" in:toastIn out:toastOut>
 			<Toast text={t.text} tone={t.tone} action={t.action ? { label: t.action.label, run: () => { t.action?.run(); toasts.dismiss(t.id); } } : undefined} ondismiss={() => toasts.dismiss(t.id)} />
 		</div>
 	{/each}
@@ -29,17 +80,13 @@
 		position: fixed;
 		z-index: 90;
 		left: 50%;
-		bottom: var(--s-6);
+		top: calc(var(--topbar) + var(--s-2) + env(safe-area-inset-top));
 		transform: translateX(-50%);
 		display: flex;
 		flex-direction: column;
 		gap: var(--s-2);
-		width: min(440px, calc(100vw - 32px));
+		width: min(400px, calc(100vw - 32px));
 		pointer-events: none;
 	}
-	@media (max-width: 767px) {
-		.toasts {
-			bottom: calc(var(--tabbar) + var(--s-3) + env(safe-area-inset-bottom));
-		}
-	}
+	.slot { display: flex; flex-direction: column; }
 </style>

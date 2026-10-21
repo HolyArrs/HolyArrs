@@ -1,12 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { checkMetadata, metadataHealth, METADATA_DOWN } from '#lib/metadata-health.svelte.ts';
+	import { checkMetadata } from '#lib/metadata-health.svelte.ts';
 
+	// Asks for a fresh health answer where metadata matters. The outage itself
+	// shows as a notification (ToastList), not as a banner on the page.
 	onMount(() => {
 		void checkMetadata();
 	});
 </script>
-
-{#if !metadataHealth.up}
-	<p class="notice warn metadata-down" role="status">{METADATA_DOWN}</p>
-{/if}
