@@ -11444,7 +11444,7 @@
     },
     "/api/v1/explore/browse": {
       "get": {
-        "description": "Search's Browse tiles for the tab: every genre with a title that has a backdrop on the member's page, biggest first, each followed by its mood rows (the genre page's mood rows). Each tile has kind, genre (TMDB id), genre_name, mood (mood tiles only), name, backdrop and from. A Kid gets only kid-safe genres and moods.",
+        "description": "Search's Browse for the tab: the section headings (id and title) and the Genres section's fast tiles from the member's page, each genre with at least 12 titles that have a backdrop (TV's combined genres come split, as categories). Each tile has kind, genre (TMDB id), genre_name, name, backdrop and from. A Kid gets only kid-safe genres.",
         "responses": {
           "200": {
             "description": "The tiles."
@@ -11456,7 +11456,50 @@
             "description": "Sign-in is required."
           }
         },
-        "summary": "Search Browse tiles (genres and moods)",
+        "summary": "Search Browse sections and genre tiles",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/explore/browse/category": {
+      "get": {
+        "description": "A Browse category's titles for the tab (type all, movies or shows; id from a section tile's category), most popular first, up to 40, without titles above a Kid's limit or marked never-add.",
+        "responses": {
+          "200": {
+            "description": "The category and its items."
+          },
+          "400": {
+            "description": "type is not valid."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          },
+          "404": {
+            "description": "No such category for this tab or person."
+          }
+        },
+        "summary": "Search Browse category titles",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/explore/browse/section": {
+      "get": {
+        "description": "One Browse section's category tiles (section: genres, moods, stories, worlds, eras, world or collections). A category shows only with at least 12 titles that have a backdrop; no backdrop repeats across the tab's sections; ordered by household taste, then popularity. Each tile adds category, section and count. A Kid gets kid-safe categories only.",
+        "responses": {
+          "200": {
+            "description": "The section's tiles."
+          },
+          "400": {
+            "description": "type or section is not valid."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          }
+        },
+        "summary": "Search Browse section tiles",
         "x-holyarrs-part": "media",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "read"

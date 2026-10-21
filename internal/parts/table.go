@@ -371,6 +371,8 @@ var Routes = map[string]Owner{
 	"GET /api/v1/explore/genre":                            Media,
 	"GET /api/v1/explore/genre-row":                        Media,
 	"GET /api/v1/explore/browse":                           Media,
+	"GET /api/v1/explore/browse/section":                   Media,
+	"GET /api/v1/explore/browse/category":                  Media,
 	"POST /api/v1/explore/counts":                          Media,
 	"GET /api/v1/explore/title-stats":                      Media,
 	"GET /api/v1/music-trending":                           music,

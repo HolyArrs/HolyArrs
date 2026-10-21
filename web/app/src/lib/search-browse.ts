@@ -13,11 +13,49 @@ export interface BrowseTile {
 	from: string;
 	/** The genre page holds movies and shows (type all, the movie genre's id). */
 	both?: boolean;
+	/** Set on category tiles (GET /explore/browse/section): the category id, its section and title count. */
+	category?: string;
+	section?: string;
+	count?: number;
+}
+
+/** One heading of the Browse grid. */
+export interface BrowseSection {
+	id: string;
+	title: string;
 }
 
 export interface BrowseAnswer {
 	type: ExploreType;
 	tiles: BrowseTile[];
+	sections?: BrowseSection[];
+}
+
+export interface BrowseSectionAnswer {
+	type: ExploreType;
+	section: string;
+	tiles: BrowseTile[];
+}
+
+export function browseSectionPath(t: ExploreType, section: string): string {
+	return `/explore/browse/section?${new URLSearchParams({ type: t, section }).toString()}`;
+}
+
+export function browseCategoryPath(t: ExploreType, id: string): string {
+	return `/explore/browse/category?${new URLSearchParams({ type: t, id }).toString()}`;
+}
+
+export interface CategoryView {
+	id: string;
+	type: 'all' | 'movies' | 'shows';
+}
+
+/** readCategory reads Search's category view from the address (?cat=&type=); null when it is not one. */
+export function readCategory(p: Pick<URLSearchParams, 'get'>): CategoryView | null {
+	const id = p.get('cat')?.trim();
+	const type = p.get('type');
+	if (!id || !/^[a-z0-9-]{1,40}$/.test(id) || (type !== 'all' && type !== 'movies' && type !== 'shows')) return null;
+	return { id, type };
 }
 
 export function browsePath(t: ExploreType): string {
@@ -65,7 +103,8 @@ export function musicTiles(a: Pick<MusicExploreAnswer, 'genres' | 'rows' | 'hero
 const tabOf = (t: Pick<BrowseTile, 'kind' | 'both'>): 'all' | 'movies' | 'shows' => (t.both ? 'all' : t.kind === 'show' ? 'shows' : 'movies');
 
 /** browseHref: a genre tile opens the Explore genre page, a mood tile Search's mood view. */
-export function browseHref(t: Pick<BrowseTile, 'kind' | 'genre' | 'mood' | 'both'>, tab?: ExploreType): string {
+export function browseHref(t: Pick<BrowseTile, 'kind' | 'genre' | 'mood' | 'both' | 'category'>, tab?: ExploreType): string {
+	if (t.category) return `/search?${new URLSearchParams({ cat: t.category, type: tab === 'movies' || tab === 'shows' || tab === 'all' ? tab : t.kind === 'show' ? 'shows' : 'movies' }).toString()}`;
 	const type = tab === 'movies' || tab === 'shows' ? tab : tabOf(t);
 	if (t.mood) return `/search?${new URLSearchParams({ mood: t.mood, genre: String(t.genre), type }).toString()}`;
 	return `/explore?${new URLSearchParams(type === 'all' ? { genre: String(t.genre) } : { type, genre: String(t.genre) }).toString()}`;

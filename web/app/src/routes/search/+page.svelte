@@ -11,7 +11,7 @@
 	import { session } from '#lib/session.svelte.ts';
 	import BrowseTile from '#lib/ui/BrowseTile.svelte';
 	import MosaicReveal, { ENTER_DELAY, ENTER_SWEEP, passAt } from '#lib/ui/MosaicReveal.svelte';
-	import { browseCols, browseHref, browsePath, browseType, musicTiles, readMood, strictTiles, tileHue, type PlainTile, type BrowseAnswer, type BrowseTile as Tile, type MoodView } from '#lib/search-browse.ts';
+	import { browseCategoryPath, browseCols, browseHref, browsePath, browseSectionPath, browseType, musicTiles, readCategory, readMood, strictTiles, tileHue, type PlainTile, type BrowseAnswer, type BrowseSection, type BrowseSectionAnswer, type BrowseTile as Tile, type CategoryView, type MoodView } from '#lib/search-browse.ts';
 	import { reducedMotion } from '#lib/motion.ts';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -61,6 +61,13 @@
 	let mood = $state<MoodView | null>(readMood(page.url.searchParams));
 	let moodItems = $state<ProviderItem[] | null>(null);
 	let moodGenre = $state('');
+	// Browse sections after the page's genre tiles (Moods, Stories…), each loaded as the grid nears it;
+	// a category tile opens a category view here (?cat=&type=).
+	let sections = $state<BrowseSection[]>([]);
+	let sectionTiles = $state<Record<string, Tile[] | null>>({});
+	let cat = $state<CategoryView | null>(readCategory(page.url.searchParams));
+	let catItems = $state<ProviderItem[] | null>(null);
+	let catName = $state('');
 	// The entry: a mosaic dissolve down the whole visible page, the tiles rising
 	// row by row behind it; under reduced motion the band alone. Timing: a
 	// 120 ms hold, the band builds to ~900 ms, the last visible row lands by
@@ -153,7 +160,7 @@
 	const ownAddresses = new Set<string>();
 	function writeAddress() {
 		const url = scopeAddress(page.url, scope, searchField.term);
-		if (searchField.term.trim() || !(mood || mgenre)) for (const k of ['mood', 'genre', 'type', 'mgenre']) url.searchParams.delete(k);
+		if (searchField.term.trim() || !(mood || mgenre || cat)) for (const k of ['mood', 'genre', 'type', 'mgenre', 'cat']) url.searchParams.delete(k);
 		if (url.href === page.url.href) return;
 		ownAddresses.add(url.href);
 		void goto(url, { replace: true, shallow: true });
@@ -182,7 +189,7 @@
 		const isLatest = beginSearch();
 		error = '';
 		noTMDB = false;
-		if (q) mood = mgenre = null;
+		if (q) mood = mgenre = cat = null;
 		if (!q) {
 			searched = '';
 			busy = false;
@@ -264,15 +271,54 @@
 		if (tilesFor === t) return;
 		tilesFor = t;
 		tiles = null;
+		sections = [];
+		sectionTiles = {};
 		try {
 			const a = await api.get<BrowseAnswer>(browsePath(t));
-			if (tilesFor === t) tiles = strictTiles(a.tiles ?? [], t).filter((x) => (x.kind === 'show' ? partOn('shows') : partOn('movies')));
+			if (tilesFor !== t) return;
+			tiles = strictTiles(a.tiles ?? [], t).filter((x) => (x.kind === 'show' ? partOn('shows') : partOn('movies')));
+			sections = a.sections ?? [];
 		} catch {
 			if (tilesFor === t) {
 				tiles = [];
 				tilesFor = '';
 			}
 		}
+	}
+	// A section loads once, in order (the server keeps backdrops unique across them).
+	const sectionBusy = new Set<string>();
+	async function loadSection(id: string) {
+		const t = tilesFor as ReturnType<typeof browseType> | '';
+		if (!t || sectionTiles[id] !== undefined || sectionBusy.has(`${t}|${id}`)) return;
+		sectionBusy.add(`${t}|${id}`);
+		try {
+			const a = await api.get<BrowseSectionAnswer>(browseSectionPath(t, id));
+			if (tilesFor === t) sectionTiles = { ...sectionTiles, [id]: a.tiles ?? [] };
+		} catch {
+			if (tilesFor === t) sectionTiles = { ...sectionTiles, [id]: [] };
+		} finally {
+			sectionBusy.delete(`${t}|${id}`);
+		}
+	}
+	// The sections shown: every loaded one, then the next to load (its sentinel).
+	const shownSections = $derived.by(() => {
+		const out: { s: BrowseSection; tiles: Tile[] | null }[] = [];
+		for (const s of sections) {
+			const got = sectionTiles[s.id];
+			out.push({ s, tiles: got ?? null });
+			if (got === undefined) break;
+		}
+		return out;
+	});
+	const genreTiles = $derived([...(tiles ?? []), ...(sectionTiles.genres ?? [])]);
+	function near(node: HTMLElement, id: string) {
+		if (typeof IntersectionObserver === 'undefined') {
+			void loadSection(id);
+			return;
+		}
+		const io = new IntersectionObserver((e) => { if (e.some((x) => x.isIntersecting)) void loadSection(id); }, { rootMargin: '0px 0px 900px 0px' });
+		io.observe(node);
+		return { destroy: () => io.disconnect() };
 	}
 	// People: TMDB's popular people, 20 a page, up to 150, loaded as the grid nears the bottom.
 	// The Actors and Directors chips filter what is loaded, and keep loading until each has ~30.
@@ -346,7 +392,7 @@
 		}
 	}
 	$effect(() => {
-		if (searchField.term.trim() || mood || mgenre) return;
+		if (searchField.term.trim() || mood || mgenre || cat) return;
 		if (scope === 'people' || scope === 'music') void loadPlain(scope);
 		else void loadTiles(browseFor);
 	});
@@ -395,6 +441,29 @@
 	$effect(() => {
 		if (mood) void loadMood(mood);
 	});
+	// ── A category view: that Browse category's titles, as a grid ──────────
+	let catFor = '';
+	async function loadCat(c: CategoryView) {
+		const k = `${c.type}|${c.id}`;
+		if (catFor === k) return;
+		catFor = k;
+		catItems = null;
+		try {
+			const a = await api.get<{ name: string; items: ProviderItem[] }>(browseCategoryPath(c.type, c.id));
+			if (catFor !== k) return;
+			catName = a.name;
+			catItems = a.items ?? [];
+		} catch {
+			if (catFor === k) {
+				catItems = [];
+				catFor = '';
+			}
+		}
+	}
+	$effect(() => {
+		if (cat && !searchField.term.trim()) void loadCat(cat);
+	});
+	const catCards = $derived((catItems ?? []).map((item) => ({ item, c: discoverCard(item, 'search-category') })));
 	const moodCards = $derived((moodItems ?? []).map((item) => ({ item, c: discoverCard(item, 'search-mood') })));
 
 	onMount(() => {
@@ -436,6 +505,7 @@
 		const q = dest.url.searchParams.get('q') ?? '';
 		const s = readScope(dest.url.searchParams.get('kind'));
 		mood = readMood(dest.url.searchParams);
+		cat = readCategory(dest.url.searchParams);
 		mgenre = dest.url.searchParams.get('mgenre')?.trim() || null;
 		void tick().then(() => focusField());
 		if (q === searchField.term && s === scope) return;
@@ -527,6 +597,25 @@
 					</ul>
 				{/if}
 			</section>
+		{:else if !searchField.term.trim() && cat}
+			<section class="mood" aria-labelledby="cat-h" data-testid="search-category">
+				<div class="mood-head">
+					<Button variant="plain" icon="chevronLeft" href={to(`/search${cat.type === 'movies' ? '?kind=movie' : cat.type === 'shows' ? '?kind=show' : ''}`)}>Browse</Button>
+					<h2 id="cat-h" class="h1">{catName || 'Browse'}</h2>
+					<p class="muted">{cat.type === 'shows' ? 'Shows' : cat.type === 'all' ? 'Movies and shows' : 'Movies'}</p>
+				</div>
+				{#if catItems === null}
+					<p class="muted searching">Finding titles…</p>
+				{:else if catCards.length === 0}
+					<div class="empty"><h2 class="h2">Nothing here yet</h2><p class="muted">No titles fit this right now.</p></div>
+				{:else}
+					<ul class="grid">
+						{#each catCards as { item, c } (c.key)}
+							<li><WideCard cover title={c.name} href={to(item.title_id ? `/library/${item.title_id}` : detailPath(item.kind, item.tmdb_id))} image={c.wide ?? c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} owned={ownedMark(c, undefined, who)} fresh={c.fresh} preview={{ kind: item.kind, tmdb: item.tmdb_id, year: item.year }} /></li>
+						{/each}
+					</ul>
+				{/if}
+			</section>
 		{:else if !searchField.term.trim() && mood}
 			<section class="mood" aria-labelledby="mood-h" data-testid="search-mood">
 				<div class="mood-head">
@@ -589,12 +678,30 @@
 					<ul class="tiles" aria-hidden="true">
 						{#each Array(cols * 2) as _, i (i)}<li class="ghost" use:landing={{ row: Math.floor(i / cols), col: i % cols }}></li>{/each}
 					</ul>
-				{:else if tiles.length}
-					<ul class="tiles">
-						{#each tiles as t, i (`${t.kind}:${t.genre}:${t.mood ?? ''}`)}
-							<li use:landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} href={to(browseHref(t, browseFor))} image={t.backdrop} hue={tileHue(t.name)} row={Math.min(6, Math.floor(i / cols))} /></li>
-						{/each}
-					</ul>
+				{:else if genreTiles.length || sections.length}
+					{#each shownSections as { s, tiles: st } (s.id)}
+						{@const list = s.id === 'genres' ? genreTiles : (st ?? [])}
+						{#if list.length}
+							<section class="browse-section" aria-labelledby={`browse-${s.id}-h`} data-testid={`search-browse-${s.id}`}>
+								<h3 id={`browse-${s.id}-h`} class="h1">{s.title}</h3>
+								<ul class="tiles">
+									{#each list as t, i (`${t.category ?? ''}:${t.kind}:${t.genre}:${t.mood ?? ''}`)}
+										<li use:landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} href={to(browseHref(t, browseFor))} image={t.backdrop} hue={tileHue(t.name)} row={Math.min(6, Math.floor(i / cols))} /></li>
+									{/each}
+								</ul>
+							</section>
+						{/if}
+						{#if st === null}
+							<div class="more" use:near={s.id} aria-live="polite">{#if s.id !== 'genres'}<span class="muted">Loading {s.title.toLowerCase()}</span>{/if}</div>
+						{/if}
+					{/each}
+					{#if !sections.length}
+						<ul class="tiles">
+							{#each genreTiles as t, i (`${t.kind}:${t.genre}:${t.mood ?? ''}`)}
+								<li use:landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} href={to(browseHref(t, browseFor))} image={t.backdrop} hue={tileHue(t.name)} row={Math.min(6, Math.floor(i / cols))} /></li>
+							{/each}
+						</ul>
+					{/if}
 				{:else}
 					<p class="muted">Genres show up here once Explore has titles to show.</p>
 				{/if}
@@ -673,6 +780,9 @@
 	@media (max-width: 1279px) { .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 	@media (max-width: 899px) { .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; } }
 	@media (max-width: 599px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; } }
+	.browse-section { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+	.browse-section:first-of-type { margin-top: 0; }
+	.browse-section h3 { margin: 0; }
 	.ghost { aspect-ratio: 3 / 4; border-radius: 16px; background: var(--surface-2); }
 	.mood-head { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-bottom: 8px; }
 	.mood-head p { margin: 0; }

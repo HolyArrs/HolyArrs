@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { browseCols, browseHref, browsePath, browseType, musicTiles, readMood, strictTiles, tileHue, TILE_HUES } from './search-browse.ts';
+import { browseCategoryPath, browseCols, browseHref, browsePath, browseSectionPath, browseType, musicTiles, readCategory, readMood, strictTiles, tileHue, TILE_HUES } from './search-browse.ts';
 
 describe('search browse', () => {
 	it('asks per tab, Movies and Shows only', () => {
@@ -12,6 +12,15 @@ describe('search browse', () => {
 	it('opens the genre page or the mood view', () => {
 		expect(browseHref({ kind: 'movie', genre: 80 })).toBe('/explore?type=movies&genre=80');
 		expect(browseHref({ kind: 'show', genre: 80, mood: 'True crime' })).toBe('/search?mood=True+crime&genre=80&type=shows');
+	});
+	it('asks for sections and categories, and opens a category view', () => {
+		expect(browseSectionPath('shows', 'moods')).toBe('/explore/browse/section?type=shows&section=moods');
+		expect(browseCategoryPath('all', 'heists')).toBe('/explore/browse/category?type=all&id=heists');
+		expect(browseHref({ kind: 'show', genre: 0, category: 'sitcoms' }, 'shows')).toBe('/search?cat=sitcoms&type=shows');
+		expect(browseHref({ kind: 'movie', genre: 0, category: 'heists' }, 'all')).toBe('/search?cat=heists&type=all');
+		expect(readCategory(new URLSearchParams('cat=heists&type=all'))).toEqual({ id: 'heists', type: 'all' });
+		expect(readCategory(new URLSearchParams('cat=Bad%20id&type=all'))).toBeNull();
+		expect(readCategory(new URLSearchParams('cat=heists&type=music'))).toBeNull();
 	});
 	it('opens a merged genre under All', () => {
 		expect(browseHref({ kind: 'movie', genre: 878, both: true })).toBe('/explore?genre=878');

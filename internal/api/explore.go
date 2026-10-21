@@ -473,6 +473,21 @@ func (s exploreSource) List(ctx context.Context, q explore.Request) ([]explore.I
 	return f.items, nil
 }
 
+// keywordIDs keeps TMDB keyword ids by name (they never change), so a
+// keyword is looked up once per run.
+var keywordIDs sync.Map
+
+func keywordID(ctx context.Context, kf metadata.KeywordFinder, name string) (int64, error) {
+	if id, ok := keywordIDs.Load(name); ok {
+		return id.(int64), nil
+	}
+	id, err := kf.KeywordID(ctx, name)
+	if err == nil {
+		keywordIDs.Store(name, id)
+	}
+	return id, err
+}
+
 // listerSource maps a Request to TMDB lists.
 type listerSource struct{ l metadata.ExploreLister }
 
@@ -523,7 +538,7 @@ func (s listerSource) List(ctx context.Context, q explore.Request) ([]explore.It
 			}
 			var ids []string
 			for _, name := range strings.Split(q.Keywords, "|") {
-				id, kerr := kf.KeywordID(ctx, name)
+				id, kerr := keywordID(ctx, kf, name)
 				if kerr != nil {
 					return nil, kerr
 				}
@@ -535,6 +550,19 @@ func (s listerSource) List(ctx context.Context, q explore.Request) ([]explore.It
 				return []explore.Item{}, nil
 			}
 			v.Set("with_keywords", strings.Join(ids, "|"))
+		}
+		if q.Genres != "" {
+			v.Set("with_genres", q.Genres)
+		}
+		if q.Without != "" {
+			v.Set("without_genres", q.Without)
+		}
+		if q.Lang != "" {
+			v.Set("with_original_language", q.Lang)
+		}
+		if q.Cert != "" && q.Kind == "movie" {
+			v.Set("certification_country", "US")
+			v.Set("certification.lte", q.Cert)
 		}
 		if q.Sort == "rating" {
 			v.Set("sort_by", "vote_average.desc")

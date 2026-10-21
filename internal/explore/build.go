@@ -32,12 +32,19 @@ type Request struct {
 	Sort             string // popularity (default) or rating
 	// Keywords are TMDB keyword names joined by "|" (any of them).
 	Keywords string
+	// Browse category filters: Genres and Without are raw TMDB genre ids
+	// ("|" any, "," all), Lang an original language, Cert the highest US
+	// movie certification.
+	Genres, Without, Lang, Cert string
 	// Scope is ScopeShared for region-wide lists; it is not part of the
 	// cache key, so it never splits a shared list.
 	Scope string
 }
 
 func (q Request) String() string {
+	if q.Genres != "" || q.Without != "" || q.Lang != "" || q.Cert != "" {
+		return fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%.1f|%d|%d|%s|%s|g=%s|w=%s|l=%s|c=%s", q.List, q.Kind, q.Ref, q.Genre, q.From, q.To, q.Services, q.Region, q.MinVote, q.MinVotes, q.MaxVotes, q.Sort, q.Keywords, q.Genres, q.Without, q.Lang, q.Cert)
+	}
 	if q.Keywords != "" {
 		return fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%.1f|%d|%d|%s|%s", q.List, q.Kind, q.Ref, q.Genre, q.From, q.To, q.Services, q.Region, q.MinVote, q.MinVotes, q.MaxVotes, q.Sort, q.Keywords)
 	}

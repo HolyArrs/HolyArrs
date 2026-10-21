@@ -320,6 +320,8 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/explore/genre", a.exploreGenre)
 	m.HandleFunc("GET /api/v1/explore/genre-row", a.exploreGenreRow)
 	m.HandleFunc("GET /api/v1/explore/browse", a.searchBrowse)
+	m.HandleFunc("GET /api/v1/explore/browse/section", a.searchBrowseSection)
+	m.HandleFunc("GET /api/v1/explore/browse/category", a.searchBrowseCategory)
 	m.HandleFunc("POST /api/v1/explore/counts", a.exploreCounts)
 	m.HandleFunc("GET /api/v1/explore/title-stats", a.exploreTitleStats)
 	m.HandleFunc("GET /api/v1/music-trending", a.musicTrending)
