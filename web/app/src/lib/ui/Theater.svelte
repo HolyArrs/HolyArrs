@@ -316,7 +316,7 @@
 					onvolumechange={() => (muted = video?.muted ?? false)}
 					onerror={() => (unavailable = true)}
 					onended={() => void close(true)}
-					onclick={togglePlay}
+					onclick={wake}
 				></video>
 			{:else}
 				<iframe
@@ -335,7 +335,7 @@
 			{/if}
 			</div>
 			{#if src.kind === 'embed'}
-				<button type="button" class="catch" aria-label={paused ? 'Play' : 'Pause'} onclick={togglePlay} tabindex="-1"></button>
+				<button type="button" class="catch" aria-label="Show the controls" onclick={wake} tabindex="-1"></button>
 			{/if}
 			{#if unavailable}
 				<div class="gone" role="status">
@@ -375,6 +375,8 @@
 	.gone { position: absolute; inset: 0; z-index: 3; display: grid; place-content: center; justify-items: center; gap: 16px; background: #0b0b0c; color: var(--on-art); text-align: center; }
 	.gone p { margin: 0; font: var(--t-title3); }
 	.gone-close { min-height: 44px; padding: 0 22px; border: 0; border-radius: var(--r-pill); background: #fff; color: #000; font: var(--t-headline); cursor: pointer; }
+	/* A click on the picture only brings the controls back (pause is the button or Space); focus rings show for the keyboard only. */
+	dialog:focus, dialog :focus:not(:focus-visible) { outline: none; }
 	.catch { position: absolute; inset: 0; border: 0; background: transparent; padding: 0; }
 	.top, .bar { position: absolute; left: 0; right: 0; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 20px clamp(16px, 3vw, 40px); transition: opacity 240ms var(--ease-out), transform 240ms var(--ease-out); }
 	.top { top: 0; justify-content: space-between; background: linear-gradient(to bottom, var(--on-art-scrim-mid), var(--on-art-scrim-none)); }
