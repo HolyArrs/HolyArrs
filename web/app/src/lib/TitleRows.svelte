@@ -5,13 +5,15 @@
 	import { session } from './session.svelte.ts';
 	import { readInfo, type InfoDetails, type InfoKind } from './title-info.ts';
 	import { detailPath } from './title-details.ts';
-	import { discoverCard, ownedMark, serviceRegion, type ExploreCard, type ProviderItem } from './explore.ts';
+	import { discoverCard, followsByTmdb, ownedMark, serviceRegion, type ExploreCard, type ProviderItem } from './explore.ts';
 	import { defaultRegion } from './region.ts';
 	import { audienceOf } from './title-status.ts';
 	import Shelf from './ui/Shelf.svelte';
 	import WideCard from './ui/WideCard.svelte';
 	import Sheet from './ui/Sheet.svelte';
 	import TitleReviews from './TitleReviews.svelte';
+	import QuickAsk from './QuickAsk.svelte';
+	import IconButton from './ui/IconButton.svelte';
 
 	// The requester rows of a movie or show page, read from the details
 	// answer (GET /metadata/{kind}/{tmdb}), in page order: Where to watch,
@@ -77,10 +79,18 @@
 	const more = $derived(moreFrom && moreFrom.items.length >= 4 ? pairsOf(moreFrom.items, 'more-from') : []);
 	const hrefOf = (item: ProviderItem) => (item.title_id ? to(`/library/${item.title_id}`) : to(detailPath(item.kind, item.tmdb_id)));
 	let allSimilar = $state(false);
+	/** The + on a card asks or adds as on Explore. */
+	let flow: ReturnType<typeof QuickAsk> | undefined = $state();
 </script>
 
-{#snippet card({ c, item }: Pair)}
-	<WideCard cover title={c.name} href={hrefOf(item)} image={c.wide ?? c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} owned={ownedMark(c, undefined, who)} typed preview={{ kind: item.kind, tmdb: item.tmdb_id, year: item.year, titleId: item.title_id ?? undefined }} />
+{#snippet card({ c: raw, item }: Pair)}
+	{@const c = flow ? flow.live(raw) : raw}
+	{@const act = flow?.action(c) ?? null}
+	<WideCard cover title={c.name} href={hrefOf(item)} image={c.wide ?? c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} owned={ownedMark(c, undefined, who)} typed preview={{ kind: item.kind, tmdb: item.tmdb_id, year: item.year, titleId: c.titleId }} followTmdb={followsByTmdb(c)}>
+		{#snippet growAction()}
+			{#if act}<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => void flow?.open(c, act)} />{/if}
+		{/snippet}
+	</WideCard>
 {/snippet}
 
 {#if info?.streaming.length}
@@ -123,6 +133,8 @@
 		{#each more.slice(0, 18) as p (p.c.key)}{@render card(p)}{/each}
 	</Shelf>
 {/if}
+
+<QuickAsk bind:this={flow} />
 
 <style>
 	.stream { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 6px; padding: 0; list-style: none; }

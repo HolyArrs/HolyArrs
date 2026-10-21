@@ -1,0 +1,116 @@
+<script lang="ts">
+	import { api, message } from './api.ts';
+	import { session } from './session.svelte.ts';
+	import { toasts } from './toasts.svelte.ts';
+	import { refreshInbox } from './wishlist.svelte.ts';
+	import { loadDetails } from './title-details.ts';
+	import { cardAction, cardTmdb, liveCard, type ExploreCard } from './explore.ts';
+	import { seasonWords } from './shows.ts';
+	import { savedDefaults } from './title-defaults.svelte.ts';
+	import type { Ask, AskState, GateDefaults, LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleView } from './types.ts';
+	import AddMovieDialog from './AddMovieDialog.svelte';
+	import AddShowDialog from './AddShowDialog.svelte';
+	import AskShowDialog from './AskShowDialog.svelte';
+	import AskMovieDialog from './AskMovieDialog.svelte';
+
+	// The round + on a movie or show card, shared by every page with title cards:
+	// it never adds or asks in one click but opens a confirm sheet (seasons for
+	// shows; Library folder and Pick rules for people who manage). The card
+	// follows what happened here at once through live().
+	let { onadded }: { onadded?: (t: TitleView) => void } = $props();
+
+	const manage = $derived(session.can('manage_library'));
+	const mayAsk = $derived(session.can('ask'));
+
+	let folders = $state<LibraryFolder[]>([]);
+	let rules = $state<PickRulesView[]>([]);
+	let gateDefault = $state('released');
+	let showDefaults = $state<ShowSettings | null>(null);
+	let addMovie: ReturnType<typeof AddMovieDialog> | undefined = $state();
+	let addShow: ReturnType<typeof AddShowDialog> | undefined = $state();
+	let askShow: ReturnType<typeof AskShowDialog> | undefined = $state();
+	let askMovie: ReturnType<typeof AskMovieDialog> | undefined = $state();
+	/** Cards asked for (with the ask state returned) or found in the Library here, by card key. */
+	let askedHere = $state(new Map<string, { ask?: AskState; titleId?: number }>());
+	let asking = $state('');
+	/** Which card the sheet is for, so the card updates once it is asked or added. */
+	let current: ExploreCard | null = null;
+
+	/** The card as it stands after anything asked or added here. */
+	export function live(c: ExploreCard): ExploreCard {
+		return liveCard(c, askedHere.get(c.key));
+	}
+
+	/** Add, Ask or nothing for this card and this person. */
+	export function action(c: ExploreCard): 'add' | 'ask' | null {
+		return cardTmdb(c) ? cardAction(live(c), { manage, ask: mayAsk }) : null;
+	}
+
+	/** The Library folders and Pick rules the add sheets offer, for other add sheets on the page (music). */
+	export function addChoices(): { folders: LibraryFolder[]; rules: PickRulesView[] } {
+		return { folders, rules };
+	}
+
+	/** Whether this card's sheet is loading. */
+	export function busy(c: ExploreCard): boolean {
+		return asking === c.key;
+	}
+
+	export async function open(c: ExploreCard, act: 'add' | 'ask') {
+		const tmdb = cardTmdb(c);
+		if (!tmdb || asking) return;
+		current = c;
+		if (act === 'ask' && c.kind === 'movie') return askMovie?.open({ tmdb, name: c.name, year: c.year, ask: c.ask });
+		asking = c.key;
+		try {
+			const d = await loadDetails(api.get, c.kind as 'movie' | 'show', tmdb);
+			if (!d) return void toasts.push(`Could not find ${c.name}. Try Search.`, 'fail');
+			if (d.titleId) return void toasts.push(`${c.name} is in your Library already.`, 'ok');
+			if (act === 'add' && d.movie) addMovie?.open(d.movie);
+			else if (act === 'add' && d.show) addShow?.open(d.show);
+			else if (d.show) askShow?.open(d.show);
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		} finally {
+			asking = '';
+		}
+	}
+
+	function asked(r: { ask: Ask; joined: boolean }, what: string) {
+		if (current) askedHere = new Map([...askedHere, [current.key, { ask: r.ask.state }]]);
+		if (r.ask.state === 'approved') toasts.push(`${what} is approved; HolyArrs is looking for it.`, 'ok');
+		else if (r.joined) toasts.push(`Someone asked for ${what} already; you are on the ask too.`, 'ok');
+		else toasts.push(`Asked for ${what}. You will hear when it is approved.`, 'ok');
+		void refreshInbox();
+	}
+
+	/** refused: the server says the title is in the Library already (409), so the card says so. */
+	function refused(body: Record<string, unknown>) {
+		if (current && typeof body.title_id === 'number') askedHere = new Map([...askedHere, [current.key, { titleId: body.title_id }]]);
+	}
+
+	function added(t: TitleView) {
+		if (current) askedHere = new Map([...askedHere, [current.key, { titleId: t.id }]]);
+		toasts.push(`${t.name} is in your Library.`, 'ok');
+		onadded?.(t);
+	}
+
+	$effect(() => {
+		if (!manage) return;
+		api.get<{ library_folders: LibraryFolder[] }>('/library-folders').then((r) => (folders = r.library_folders)).catch(() => {});
+		api.get<{ pick_rules: PickRulesView[] }>('/pick-rules').then((r) => (rules = r.pick_rules)).catch(() => {});
+		api.get<GateDefaults>('/settings/release-gate').then((r) => (gateDefault = r.release_gate)).catch(() => {});
+		api.get<ShowSettings>('/settings/shows').then((r) => (showDefaults = r)).catch(() => {});
+		// The add dialogs wait for the saved defaults; fetched once for this visit.
+		savedDefaults.forget();
+		void savedDefaults.load();
+	});
+</script>
+
+{#if manage}
+	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} onadded={(_m, t) => added(t)} />
+	<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} onadded={(_s, t) => added(t)} />
+{:else if mayAsk}
+	<AskMovieDialog bind:this={askMovie} onasked={(_m, r) => asked(r, r.ask.name)} onrefused={(_m, body) => refused(body)} />
+	<AskShowDialog bind:this={askShow} onasked={(_s: LookupShow, r) => asked(r, `${r.ask.name} (${seasonWords(r.ask.seasons)})`)} onrefused={(_s: LookupShow, body: Record<string, unknown>) => refused(body)} />
+{/if}

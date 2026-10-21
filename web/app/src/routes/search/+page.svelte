@@ -40,12 +40,14 @@
 	import { refreshInbox } from '#lib/wishlist.svelte.ts';
 	import AddArtistDialog from '#lib/AddArtistDialog.svelte';
 	import AskArtistDialog from '#lib/AskArtistDialog.svelte';
+	import QuickAsk from '#lib/QuickAsk.svelte';
+	import IconButton from '#lib/ui/IconButton.svelte';
 	import { albumWords } from '#lib/music.ts';
 	import { createLatestOnly } from '#lib/history.ts';
 	import { addRecent, libraryNote, readRecent, readScope, recentKey, scopeAddress, topMatches, type SearchScope } from '#lib/search.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { detailPath } from '#lib/title-details.ts';
-	import { discoverCard, genrePath, ownedMark, type ExploreCard, type GenreAnswer, type ProviderItem } from '#lib/explore.ts';
+	import { discoverCard, followsByTmdb, genrePath, ownedMark, type ExploreCard, type GenreAnswer, type ProviderItem } from '#lib/explore.ts';
 	import { audienceOf } from '#lib/title-status.ts';
 	import { posterStatus } from '#lib/library.ts';
 
@@ -56,7 +58,7 @@
 	// tab); a mood tile opens a mood view here (?mood=&genre=&type=). Results
 	// come in as you type. Kid limits are applied by the server on every lookup.
 
-	type Card = { key: string; type: Exclude<SearchScope, 'all'>; titleId?: number; name: string; year?: number; image?: string | null; href: string; owned: CardOwned | null; preview?: { kind: 'movie' | 'show'; tmdb: string; year?: number }; artist?: LookupArtist; subtitle?: string };
+	type Card = { key: string; type: Exclude<SearchScope, 'all'>; titleId?: number; name: string; year?: number; image?: string | null; href: string; owned: CardOwned | null; preview?: { kind: 'movie' | 'show'; tmdb: string; year?: number; titleId?: number }; artist?: LookupArtist; subtitle?: string; /** A movie or show as an Explore card, for its Add or Ask. */ ec?: ExploreCard };
 
 	// The words live in the shared field (top bar); a direct link fills it from ?q=.
 	if (!searchField.term.trim()) searchField.term = page.url.searchParams.get('q') ?? '';
@@ -158,13 +160,16 @@
 		if (!ask || ask.state === 'turned_down') return null;
 		return { state: 'requested', label: ask.state === 'approved' ? 'Approved, waiting for a copy' : 'Requested' };
 	}
+	/** asCard: a search result as an Explore card, so its + adds or asks the same way. */
+	const asCard = (key: string, kind: 'movie' | 'show', name: string, year: number | undefined, tmdb: string, titleId: number | undefined, ask: LookupMovie['ask']): ExploreCard =>
+		({ key, kind, name, year, titleId, ref: `tmdb:${tmdb}`, status: titleId ? 'in_library' : undefined, badges: [], mine: !!ask?.mine, ask: ask && ask.state !== 'turned_down' ? ask : undefined });
 	const movieCard = (m: LookupMovie): Card | null =>
 		m.ids.tmdb
-			? { key: `m${m.ids.tmdb}`, type: 'movie', titleId: m.title_id || undefined, name: m.name, year: m.year || undefined, subtitle: m.year ? String(m.year) : undefined, image: m.poster, href: to(m.title_id ? `/library/${m.title_id}` : detailPath('movie', m.ids.tmdb)), owned: m.title_id ? inLibrary : askMark(m.ask), preview: { kind: 'movie', tmdb: m.ids.tmdb, year: m.year || undefined } }
+			? { key: `m${m.ids.tmdb}`, type: 'movie', titleId: m.title_id || undefined, name: m.name, year: m.year || undefined, subtitle: m.year ? String(m.year) : undefined, image: m.poster, href: to(m.title_id ? `/library/${m.title_id}` : detailPath('movie', m.ids.tmdb)), owned: m.title_id ? inLibrary : askMark(m.ask), preview: { kind: 'movie', tmdb: m.ids.tmdb, year: m.year || undefined, titleId: m.title_id || undefined }, ec: asCard(`m${m.ids.tmdb}`, 'movie', m.name, m.year || undefined, m.ids.tmdb, m.title_id || undefined, m.ask) }
 			: null;
 	const showCard = (s: LookupShow, i: number): Card => {
 		const tmdb = s.ids.tmdb;
-		return { key: `s${s.source}${s.ids[s.source] ?? s.name}${i}`, type: 'show', titleId: s.title_id || undefined, name: s.name, year: s.year, subtitle: s.year ? String(s.year) : undefined, image: s.poster, href: to(s.title_id ? `/library/${s.title_id}` : tmdb ? detailPath('show', tmdb) : `/search?q=${encodeURIComponent(s.name)}&kind=show`), owned: s.title_id ? inLibrary : askMark(s.ask), preview: tmdb ? { kind: 'show', tmdb, year: s.year } : undefined };
+		return { key: `s${s.source}${s.ids[s.source] ?? s.name}${i}`, type: 'show', titleId: s.title_id || undefined, name: s.name, year: s.year, subtitle: s.year ? String(s.year) : undefined, image: s.poster, href: to(s.title_id ? `/library/${s.title_id}` : tmdb ? detailPath('show', tmdb) : `/search?q=${encodeURIComponent(s.name)}&kind=show`), owned: s.title_id ? inLibrary : askMark(s.ask), preview: tmdb ? { kind: 'show', tmdb, year: s.year, titleId: s.title_id || undefined } : undefined, ec: tmdb ? asCard(`s${s.source}${s.ids[s.source] ?? s.name}${i}`, 'show', s.name, s.year, tmdb, s.title_id || undefined, s.ask) : undefined };
 	};
 	const artistCard = (a: LookupArtist): Card => ({ key: `a${a.mbid}`, type: 'music', titleId: a.title_id || undefined, name: a.name, subtitle: a.disambiguation || [a.type, a.country].filter(Boolean).join(' · ') || undefined, href: a.title_id ? to(`/library/${a.title_id}`) : '', owned: a.title_id ? inLibrary : askMark(a.ask), artist: a });
 	const personCard = (p: PersonSummary): Card => ({ key: `p${p.id}`, type: 'people', name: p.name, subtitle: p.department, image: p.profile, href: to(`/people/${encodeURIComponent(p.id)}`), owned: null });
@@ -200,7 +205,7 @@
 	const shownGroups = $derived(holding && stale ? stale.groups : groups);
 	const shownLib = $derived(holding && stale ? stale.lib : lib);
 	const libCards = $derived<Card[]>([
-		...(shownLib?.titles ?? []).map((t): Card => ({ key: `lt${t.id}`, type: t.kind === 'show' ? 'show' : t.kind === 'artist' ? 'music' : 'movie', titleId: t.id, name: t.name, year: t.year, image: t.backdrop ?? t.artwork[0], href: to(`/library/${t.id}`), owned: markOf(t), subtitle: libraryNote(t, [t.year, posterStatus(t, who)?.label].filter(Boolean).join(' · ')) })),
+		...(shownLib?.titles ?? []).map((t): Card => ({ key: `lt${t.id}`, type: t.kind === 'show' ? 'show' : t.kind === 'artist' ? 'music' : 'movie', titleId: t.id, name: t.name, year: t.year, image: t.backdrop ?? t.artwork[0], href: to(`/library/${t.id}`), owned: markOf(t), preview: t.ids?.tmdb && t.kind !== 'artist' ? { kind: t.kind === 'show' ? 'show' : 'movie', tmdb: t.ids.tmdb, year: t.year, titleId: t.id } : undefined, subtitle: libraryNote(t, [t.year, posterStatus(t, who)?.label].filter(Boolean).join(' · ')) })),
 		...(shownLib?.albums ?? []).map((a): Card => ({ key: `la${a.id}`, type: 'music', name: a.name, href: to(`/library/${a.title_id}`), owned: inLibrary, subtitle: [a.artist, a.year].filter(Boolean).join(' · ') })),
 		...(shownLib?.people ?? []).map((p): Card => ({ key: `lp${p.name}`, type: 'people', name: p.name, href: to(`/library/${p.titles[0]?.id}`), owned: null, subtitle: p.titles.map((x) => x.name).slice(0, 2).join(', ') }))
 	]);
@@ -325,6 +330,7 @@
 	function clearRecent() {
 		recent = [];
 		saveRecent();
+		focusField();
 	}
 	function pickRecent(q: string) {
 		searchField.term = q;
@@ -738,6 +744,8 @@
 	let musicDefaults = $state<MusicSettings | null>(null);
 	let addArtist: ReturnType<typeof AddArtistDialog> | undefined = $state();
 	let askArtist: ReturnType<typeof AskArtistDialog> | undefined = $state();
+	/** The + on a movie or show card asks or adds as on Explore. */
+	let flow: ReturnType<typeof QuickAsk> | undefined = $state();
 	function patchArtist(a: LookupArtist, change: Partial<LookupArtist>) {
 		const list = groups.music;
 		if (!list) return;
@@ -764,6 +772,18 @@
 
 <svelte:head><title>{searched ? `${searched} · Search` : 'Search'} · HolyArrs</title></svelte:head>
 
+{#snippet plus(c: ExploreCard, act: 'add' | 'ask')}
+	<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => void flow?.open(c, act)} />
+{/snippet}
+
+{#snippet discover(item: ProviderItem, raw: ExploreCard)}
+	{@const c = flow ? flow.live(raw) : raw}
+	{@const act = flow?.action(c) ?? null}
+	<WideCard cover title={c.name} href={to(item.title_id ? `/library/${item.title_id}` : detailPath(item.kind, item.tmdb_id))} image={c.wide ?? c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} owned={ownedMark(c, undefined, who)} fresh={c.fresh} preview={{ kind: item.kind, tmdb: item.tmdb_id, year: item.year, titleId: c.titleId }} followTmdb={followsByTmdb(c)}>
+		{#snippet growAction()}{#if act}{@render plus(c, act)}{/if}{/snippet}
+	</WideCard>
+{/snippet}
+
 {#snippet card(c: Card)}
 	{@const a = c.artist}
 	{#if a && !a.title_id && !a.never_add && (manage || (session.can('ask') && !a.ask?.mine))}
@@ -774,7 +794,11 @@
 			{/snippet}
 		</WideCard>
 	{:else}
-		<WideCard cover title={c.name} href={c.href || undefined} image={c.image} kind={c.type === 'music' ? 'artist' : c.type === 'people' ? undefined : c.type} subtitle={c.subtitle} owned={c.owned} typed={scope === 'all'} preview={c.preview} />
+		{@const e = c.ec && flow ? flow.live(c.ec) : c.ec}
+		{@const act = e ? (flow?.action(e) ?? null) : null}
+		<WideCard cover title={c.name} href={c.href || undefined} image={c.image} kind={c.type === 'music' ? 'artist' : c.type === 'people' ? undefined : c.type} subtitle={c.subtitle} owned={e && e !== c.ec ? ownedMark(e, undefined, who) : c.owned} typed={scope === 'all'} preview={c.preview} followTmdb={!!e && followsByTmdb(e)}>
+			{#snippet growAction()}{#if e && act}{@render plus(e, act)}{/if}{/snippet}
+		</WideCard>
 	{/if}
 {/snippet}
 
@@ -794,8 +818,8 @@
 {#snippet libraryRow()}
 	{#if libCards.length}
 		<div data-testid="search-library-row">
-			<Shelf title="In your Library" subtitle={String(libCards.length)} item="var(--title-item)" placeholder="wide" lines={1}>
-				{#each libCards as c (c.key)}<WideCard cover title={c.name} href={c.href} image={c.image} kind={c.type === 'music' ? 'artist' : c.type === 'people' ? undefined : c.type} subtitle={c.subtitle} owned={c.owned} typed={scope === 'all'} />{/each}
+			<Shelf title="In your Library" item="var(--title-item)" placeholder="wide" lines={1}>
+				{#each libCards as c (c.key)}<WideCard cover title={c.name} href={c.href} image={c.image} kind={c.type === 'music' ? 'artist' : c.type === 'people' ? undefined : c.type} subtitle={c.subtitle} owned={c.owned} typed={scope === 'all'} preview={c.preview} />{/each}
 			</Shelf>
 		</div>
 	{/if}
@@ -855,7 +879,7 @@
 				{:else}
 					<ul class="grid">
 						{#each catCards as { item, c } (c.key)}
-							<li><WideCard cover title={c.name} href={to(item.title_id ? `/library/${item.title_id}` : detailPath(item.kind, item.tmdb_id))} image={c.wide ?? c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} owned={ownedMark(c, undefined, who)} fresh={c.fresh} preview={{ kind: item.kind, tmdb: item.tmdb_id, year: item.year }} /></li>
+							<li>{@render discover(item, c)}</li>
 						{/each}
 					</ul>
 				{/if}
@@ -874,7 +898,7 @@
 				{:else}
 					<ul class="grid">
 						{#each moodCards as { item, c } (c.key)}
-							<li><WideCard cover title={c.name} href={to(item.title_id ? `/library/${item.title_id}` : detailPath(item.kind, item.tmdb_id))} image={c.wide ?? c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} owned={ownedMark(c, undefined, who)} fresh={c.fresh} preview={{ kind: item.kind, tmdb: item.tmdb_id, year: item.year }} /></li>
+							<li>{@render discover(item, c)}</li>
 						{/each}
 					</ul>
 				{/if}
@@ -885,8 +909,8 @@
 			{#if recent.length}
 				<section class="recent" aria-labelledby="recent-h">
 					<div class="recent-head">
-						<h2 id="recent-h" class="h2">Recent searches</h2>
-						<Button variant="plain" onclick={clearRecent}>Clear</Button>
+						<h2 id="recent-h" class="sec">Recent searches</h2>
+						<button type="button" class="clear-all" onclick={clearRecent}>Clear<span class="sr-only"> recent searches</span></button>
 					</div>
 					<div class="chips">
 						{#each recent as q (q)}<Chip label={q} icon="clock" onclick={() => pickRecent(q)} />{/each}
@@ -1024,7 +1048,7 @@
 			{#each order as t (t)}
 				{@const g = wider[t]}
 				{#if g?.length}
-					<Shelf title={labels[t]} subtitle={String(g.length)} item="var(--title-item)" placeholder="wide" lines={1} onseeall={() => setScope(t)}>
+					<Shelf title={labels[t]} item="var(--title-item)" placeholder="wide" lines={1} onseeall={() => setScope(t)}>
 						{#each g as c (c.key)}{@render card(c)}{/each}
 					</Shelf>
 				{/if}
@@ -1033,7 +1057,7 @@
 			{@const g = wider[scope] ?? []}
 			{@render libraryRow()}
 			{#if g.length}
-				<h2 class="h2">{labels[scope]} <span class="muted n">{g.length}</span></h2>
+				<h2 class="sec">{labels[scope]}</h2>
 				<ul class="grid">
 					{#each g as c (c.key)}<li>{@render card(c)}</li>{/each}
 				</ul>
@@ -1047,6 +1071,7 @@
 
 <AddArtistDialog bind:this={addArtist} {folders} {rules} defaults={musicDefaults} onadded={artistAdded} />
 <AskArtistDialog bind:this={askArtist} onasked={artistAsked} onrefused={artistRefused} />
+<QuickAsk bind:this={flow} />
 
 <style>
 	.search { --title-item: max(200px, calc((100vw - 96px) / 5.16)); display: flex; flex-direction: column; gap: 24px; padding-bottom: 48px; min-width: 0; }
@@ -1071,6 +1096,7 @@
 	.results { display: flex; flex-direction: column; gap: 32px; min-width: 0; transition: opacity 160ms ease-out; }
 	.results.holding { opacity: 0.6; }
 	.h2 { margin: 0; font: var(--t-title3); }
+	.sec { margin: 0; font: var(--t-title2); letter-spacing: var(--t-title2-track); }
 	.h1 { margin: 0; font: var(--t-title1); letter-spacing: -0.02em; }
 	/* Browse: tall tiles, 6 / 5 / 4 / 3 / 2 across (browseCols matches), 24 px gaps. */
 	.browse { display: flex; flex-direction: column; gap: 16px; }
@@ -1090,10 +1116,13 @@
 	.mood-head { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-bottom: 8px; }
 	.mood-head p { margin: 0; }
 	.mood { display: flex; flex-direction: column; gap: 16px; }
-	.n { font: var(--t-callout); font-variant-numeric: tabular-nums; }
 	.muted { color: var(--text-muted); }
 	.recent { display: flex; flex-direction: column; gap: 12px; }
-	.recent-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 760px; }
+	/* The same head as a Shelf row: the name at the left, its action at the right edge like See all. */
+	.recent-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+	.clear-all { display: inline-flex; align-items: center; min-height: 44px; flex: none; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--accent-text); font: var(--t-callout); font-weight: 500; cursor: pointer; }
+	.clear-all:hover { text-decoration: underline; text-underline-offset: 3px; }
+	.clear-all:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.chips { display: flex; flex-wrap: wrap; gap: 8px; }
 	.people-chips { margin: 0 0 16px; }
 	.more { min-height: 40px; display: grid; place-items: center; padding: 16px 0; }

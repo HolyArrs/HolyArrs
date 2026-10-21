@@ -242,7 +242,7 @@
 {/snippet}
 
 {#if open && preview && cover && artEl}
-	<GrowCard anchor={artEl} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} image={loaded && !failed ? art : null} logo={growLogo} lifted={!!strip} {leaving} badge={marked ? wideBadges : undefined} action={growAction} followId={preview.titleId} {followTmdb} context={growContext} service={growService} onmore={onmore ? (r) => { shut(); onmore(r); } : undefined} onenter={() => { closer.cancel(); leaving = false; }} onleave={leave} onclose={(back) => { shut(); if (back) { hit?.focus(); opener.cancel(); } }} focusIn={byKey} ontab={tabOut} returnTo={hit} ongone={() => leaving && shut()} />
+	<GrowCard anchor={artEl} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} image={loaded && !failed ? art : null} logo={growLogo} lifted={!!strip} {leaving} badge={marked ? wideBadges : undefined} action={growAction} owned={owned ?? null} followId={preview.titleId} {followTmdb} context={growContext} service={growService} onmore={onmore ? (r) => { shut(); onmore(r); } : undefined} onenter={() => { closer.cancel(); leaving = false; }} onleave={leave} onclose={(back) => { shut(); if (back) { hit?.focus(); opener.cancel(); } }} focusIn={byKey} ontab={tabOut} returnTo={hit} ongone={() => leaving && shut()} />
 {:else if open && preview && root}
 	<HoverPreview anchor={root} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} {image} badge={marked ? wideBadges : undefined} onenter={() => closer.cancel()} onleave={leave} onclose={shut} />
 {/if}

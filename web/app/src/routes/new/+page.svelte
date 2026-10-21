@@ -8,7 +8,7 @@
 	import { session } from '#lib/session.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { refreshInbox } from '#lib/wishlist.svelte.ts';
-	import { cardAction, cardTmdb, discoverCard, liveCard, matchOwned, ownedIndex, ownedMark, ownedTitle, serverRow, serviceRegion, type ExploreCard, type ExploreRow, type WatchService } from '#lib/explore.ts';
+	import { cardAction, cardTmdb, followsByTmdb, discoverCard, liveCard, matchOwned, ownedIndex, ownedMark, ownedTitle, serverRow, serviceRegion, type ExploreCard, type ExploreRow, type WatchService } from '#lib/explore.ts';
 	import { cardServices, hasServiceChips, isRanked, newPath, newServicePath, parseNewType, pickService, type NewAnswer, type NewServiceAnswer, type NewType, type RailDay, type RailItem } from '#lib/new-popular.ts';
 	import { contextLine } from '#lib/grow-lines.ts';
 	import { defaultRegion } from '#lib/region.ts';
@@ -16,10 +16,7 @@
 	import { seasonWords } from '#lib/shows.ts';
 	import { audienceOf } from '#lib/title-status.ts';
 	import { savedDefaults } from '#lib/title-defaults.svelte.ts';
-	import AddMovieDialog from '#lib/AddMovieDialog.svelte';
-	import AddShowDialog from '#lib/AddShowDialog.svelte';
-	import AskShowDialog from '#lib/AskShowDialog.svelte';
-	import AskMovieDialog from '#lib/AskMovieDialog.svelte';
+	import QuickAsk from '#lib/QuickAsk.svelte';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import NewRail from '#lib/ui/NewRail.svelte';
@@ -173,11 +170,11 @@
 
 	let titles = $state<TitleView[]>([]);
 	const owned = $derived(ownedIndex(titles));
-	let askedHere = $state(new Map<string, { ask?: AskState; titleId?: number }>());
-	let asking = $state('');
+	let flow: ReturnType<typeof QuickAsk> | undefined = $state();
 	function live(c: ExploreCard): ExploreCard {
-		return matchOwned(liveCard(c, askedHere.get(c.key)), owned);
+		return matchOwned(flow ? flow.live(c) : c, owned);
 	}
+	const quick = (c: ExploreCard, act: 'add' | 'ask') => void flow?.open(c, act);
 	async function loadTitles() {
 		try {
 			titles = (await api.get<{ titles: TitleView[] }>('/titles')).titles ?? [];
@@ -198,60 +195,6 @@
 	function searchHref(c: ExploreCard): string {
 		return to(`/search?q=${encodeURIComponent(c.name)}${c.kind === 'show' ? '&kind=show' : ''}`);
 	}
-
-	let folders = $state<LibraryFolder[]>([]);
-	let rules = $state<PickRulesView[]>([]);
-	let gateDefault = $state('released');
-	let showDefaults = $state<ShowSettings | null>(null);
-	let addMovie: ReturnType<typeof AddMovieDialog> | undefined = $state();
-	let addShow: ReturnType<typeof AddShowDialog> | undefined = $state();
-	let askShow: ReturnType<typeof AskShowDialog> | undefined = $state();
-	let askMovie: ReturnType<typeof AskMovieDialog> | undefined = $state();
-	let current: ExploreCard | null = null;
-
-	async function quick(c: ExploreCard, act: 'add' | 'ask') {
-		const tmdb = cardTmdb(c);
-		if (!tmdb || asking) return;
-		current = c;
-		if (act === 'ask' && c.kind === 'movie') return askMovie?.open({ tmdb, name: c.name, year: c.year, ask: c.ask });
-		asking = c.key;
-		try {
-			const d = await loadDetails(api.get, c.kind as 'movie' | 'show', tmdb);
-			if (!d) return void toasts.push(`Could not find ${c.name}. Try Search.`, 'fail');
-			if (d.titleId) return void toasts.push(`${c.name} is in your Library already.`, 'ok');
-			if (act === 'add' && d.movie) addMovie?.open(d.movie);
-			else if (act === 'add' && d.show) addShow?.open(d.show);
-			else if (d.show) askShow?.open(d.show);
-		} catch (e) {
-			toasts.push(message(e), 'fail');
-		} finally {
-			asking = '';
-		}
-	}
-	function askedToast(r: { ask: Ask; joined: boolean }, what: string) {
-		if (current) askedHere = new Map([...askedHere, [current.key, { ask: r.ask.state }]]);
-		if (r.ask.state === 'approved') toasts.push(`${what} is approved; HolyArrs is looking for it.`, 'ok');
-		else if (r.joined) toasts.push(`Someone asked for ${what} already; you are on the ask too.`, 'ok');
-		else toasts.push(`Asked for ${what}. You will hear when it is approved.`, 'ok');
-		void refreshInbox();
-	}
-	function refused(body: Record<string, unknown>) {
-		if (current && typeof body.title_id === 'number') askedHere = new Map([...askedHere, [current.key, { titleId: body.title_id }]]);
-	}
-	function added(t: TitleView) {
-		toasts.push(`${t.name} is in your Library.`, 'ok');
-		void loadTitles();
-	}
-
-	$effect(() => {
-		if (!manage) return;
-		api.get<{ library_folders: LibraryFolder[] }>('/library-folders').then((r) => (folders = r.library_folders)).catch(() => {});
-		api.get<{ pick_rules: PickRulesView[] }>('/pick-rules').then((r) => (rules = r.pick_rules)).catch(() => {});
-		api.get<GateDefaults>('/settings/release-gate').then((r) => (gateDefault = r.release_gate)).catch(() => {});
-		api.get<ShowSettings>('/settings/shows').then((r) => (showDefaults = r)).catch(() => {});
-		savedDefaults.forget();
-		void savedDefaults.load();
-	});
 
 	onMount(() => {
 		void loadTitles();
@@ -307,7 +250,7 @@
 		<WideCard cover title={c.name} href={cardHref(c)} image={c.wide ?? c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} fresh={c.fresh} owned={mark} typed row={rowType} {preview}
 			growService={c.streaming ? { name: c.streaming.name, logo: logo(c.streaming.service) } : null}
 			growContext={contextLine({ state: mark?.state, label: mark?.label, mine: c.mine, fresh: c.fresh }, { rowType, rowTitle, fresh: c.fresh, streaming: c.streaming })}
-			followTmdb={!c.titleId && (c.kind === 'show' || c.fresh?.kind === 'coming' || (!!c.year && c.year > new Date().getFullYear()))}>
+			followTmdb={followsByTmdb(c)}>
 			{#snippet growAction()}{@render hoverAction(c, act, mark)}{/snippet}
 		</WideCard>
 		{#if (rowType === 'np_services' || rowType === 'np_rail') && c.streaming && logo(c.streaming.service)}
@@ -318,13 +261,7 @@
 
 {#snippet hoverAction(c: ExploreCard, act: 'add' | 'ask' | null, mark: ReturnType<typeof ownedMark>)}
 	{#if act && cardTmdb(c)}
-		<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={asking === c.key || undefined} onclick={() => void quick(c, act)} />
-	{:else if mark?.state === 'available' || mark?.state === 'partial' || mark?.state === 'downloading'}
-		<IconButton icon="check" label="In Library" variant="glass" size="lg" href={cardHref(c) ?? searchHref(c)} />
-	{:else if mark?.state === 'requested'}
-		<IconButton icon="check" label="Asked" variant="glass" size="lg" href={cardHref(c) ?? searchHref(c)} />
-	{:else}
-		<IconButton icon="play" label="Open {c.name}" variant="glass" size="lg" href={cardHref(c) ?? searchHref(c)} />
+		<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => void quick(c, act)} />
 	{/if}
 {/snippet}
 
@@ -337,7 +274,7 @@
 	<MetadataNotice />
 
 	{#if type === 'music'}
-		<MusicNewTab {manage} {mayAsk} {folders} {rules} />
+		<MusicNewTab {manage} {mayAsk} folders={flow?.addChoices().folders ?? []} rules={flow?.addChoices().rules ?? []} />
 	{:else if failed && rows.length === 0}
 		<LoadError hasData={false} message="Could not load New & Popular." onretry={() => void loadFirst()} busy={false} />
 	{:else}
@@ -387,13 +324,15 @@
 							{@const rank = cards.indexOf(raw) + 1}
 							<div class="ranked">
 								<span class="rank" class:two={rank > 9} aria-hidden="true">{rank}</span>
-								<div class="pc"><PosterCard title={c.name} href={cardHref(c)} image={c.image} kind={c.kind} owned={mark} fresh={c.fresh} {preview} /></div>
+								<div class="pc"><PosterCard title={c.name} href={cardHref(c)} image={c.image} kind={c.kind} owned={mark} fresh={c.fresh} actionOnHover {preview} followTmdb={followsByTmdb(c)}>
+									{#snippet action()}{@render hoverAction(c, act, mark)}{/snippet}
+								</PosterCard></div>
 								<span class="sr-only">Number {rank}</span>
 							</div>
 						{:else if wide}
 							{@render wideCard(raw, row.type, row.title)}
 						{:else}
-							<PosterCard title={c.name} href={cardHref(c)} image={c.image} kind={c.kind} subtitle={c.subtitle} badges={c.badges} typed row={row.type} owned={mark} fresh={c.fresh} actionOnHover vtName={c.vtName} {preview}>
+							<PosterCard title={c.name} href={cardHref(c)} image={c.image} kind={c.kind} subtitle={c.subtitle} badges={c.badges} typed row={row.type} owned={mark} fresh={c.fresh} actionOnHover vtName={c.vtName} {preview} followTmdb={followsByTmdb(c)}>
 								{#snippet action()}
 									{#if act && cardTmdb(c)}<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" onclick={() => void quick(c, act)} />{/if}
 								{/snippet}
@@ -410,13 +349,7 @@
 	{/if}
 </div>
 
-{#if manage}
-	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} onadded={(_m, t) => added(t)} />
-	<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} onadded={(_s, t) => added(t)} />
-{:else if mayAsk}
-	<AskMovieDialog bind:this={askMovie} onasked={(_m, r) => askedToast(r, r.ask.name)} onrefused={(_m, body) => refused(body)} />
-	<AskShowDialog bind:this={askShow} onasked={(_s: LookupShow, r) => askedToast(r, `${r.ask.name} (${seasonWords(r.ask.seasons)})`)} onrefused={(_s: LookupShow, body: Record<string, unknown>) => refused(body)} />
-{/if}
+<QuickAsk bind:this={flow} onadded={() => void loadTitles()} />
 
 <style>
 	/* The same sizes and type as Explore. */

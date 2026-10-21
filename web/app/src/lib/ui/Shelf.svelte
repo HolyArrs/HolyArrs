@@ -102,7 +102,7 @@
 </script>
 
 <section class="ui-shelf" id={anchor} style="--item: {item}" use:nearView={() => (near = true)} use:soon>
-	<header>
+	<header class:bare={!subtitle}>
 		<div>
 			<h2 id="{id}-t">{#if href}<a href={href}>{title}</a>{:else}{title}{/if}</h2>
 			{#if subtitle}<p>{subtitle}</p>{/if}
@@ -127,6 +127,8 @@
 <style>
 	.ui-shelf { min-width: 0; }
 	header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+	/* A name with no line under it: See all sits level with the name. */
+	header.bare { align-items: center; }
 	.tools { flex: 1 0 100%; min-width: 0; }
 	h2 { font: var(--t-title2); letter-spacing: var(--t-title2-track); }
 	h2 a:hover { color: var(--accent-text); }

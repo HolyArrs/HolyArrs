@@ -36,7 +36,9 @@
 		preview,
 		fresh,
 		music = false,
-		action
+		action,
+		growAction,
+		followTmdb = false
 	}: {
 		title: string;
 		href?: string;
@@ -58,7 +60,7 @@
 		/** Music: square for albums, round for artists (same width as a poster). */
 		shape?: 'poster' | 'square' | 'round';
 		/** Desktop: after a short hover or keyboard focus, open the expanded card (trailer, genres). */
-		preview?: { kind: 'movie' | 'show'; tmdb: string; year?: number } | null;
+		preview?: { kind: 'movie' | 'show'; tmdb: string; year?: number; titleId?: number } | null;
 		/** The server's one freshness strip (bottom centre of the art). */
 		fresh?: Fresh | null;
 		/** Put the type (Movie, Show) first on the metadata line. */
@@ -68,6 +70,10 @@
 		/** Music cards keep Recently Added and New Release only. */
 		music?: boolean;
 		action?: Snippet;
+		/** The expanded card's first button when it differs from the poster's own (a ranked poster shows none). */
+		growAction?: Snippet;
+		/** The grown card's bell follows the title by TMDB id (a show, or a movie not out yet). */
+		followTmdb?: boolean;
 	} = $props();
 
 	// The expanded card: pointer: fine only, after HOVER_DELAY; leaving both
@@ -194,7 +200,7 @@
 {/snippet}
 
 {#if open && preview && artEl}
-	<GrowCard anchor={artEl} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} image={null} {leaving} badge={owned || strip ? ownBadge : undefined} {action} onenter={() => { closer.cancel(); leaving = false; }} onleave={leave} onclose={(back) => { shut(); if (back) { hit?.focus(); opener.cancel(); } }} focusIn={byKey} ontab={tabOut} returnTo={hit} ongone={() => leaving && shut()} />
+	<GrowCard anchor={artEl} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} image={null} {leaving} badge={owned || strip ? ownBadge : undefined} action={growAction ?? action} owned={owned ?? null} followId={preview.titleId} {followTmdb} onenter={() => { closer.cancel(); leaving = false; }} onleave={leave} onclose={(back) => { shut(); if (back) { hit?.focus(); opener.cancel(); } }} focusIn={byKey} ontab={tabOut} returnTo={hit} ongone={() => leaving && shut()} />
 {/if}
 
 <style>
