@@ -79,11 +79,11 @@ func (a *API) searchPeople(w http.ResponseWriter, r *http.Request) {
 
 // popularPeople answers GET /api/v1/people/popular?page=: TMDB's popular
 // people for Search's People tab. Adult-flagged people never appear (the
-// provider drops them); a Kid's known_for is cut like a search's.
+// provider drops them; page is 1..8, 20 a page); a Kid's known_for is cut like a search's.
 func (a *API) popularPeople(w http.ResponseWriter, r *http.Request) {
-	page, pageOK := intQuery(r, "page", 1, 500)
+	page, pageOK := intQuery(r, "page", 1, 8)
 	if !pageOK {
-		fail(w, http.StatusBadRequest, "page must be 1..500")
+		fail(w, http.StatusBadRequest, "page must be 1..8")
 		return
 	}
 	p, ok := a.peopleProvider(r, w)

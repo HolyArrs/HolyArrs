@@ -42,9 +42,9 @@
 		position: absolute; left: 14px; right: 14px; bottom: 14px; font: 700 clamp(16px, 0.7vw + 8px, 22px) / 1.12 var(--font-display); letter-spacing: -0.015em;
 		text-shadow: 0 1px 10px rgb(0 0 0 / 0.45); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; hyphens: auto;
 	}
-	/* People: the photo stays in colour under a very light wash. */
-	.plain img { filter: none; }
-	.plain .wash { opacity: 0.12; }
+	/* People: black and white at rest (a slight contrast lift), no colour wash. */
+	.plain img { filter: grayscale(1) contrast(1.12); }
+	.plain .wash { display: none; }
 	.plain .shade { background: linear-gradient(to top, rgb(0 0 0 / 0.7) 0%, transparent 55%); }
 	@media (max-width: 599px) { .name { left: 12px; right: 12px; bottom: 10px; } }
 	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
@@ -53,6 +53,7 @@
 	}
 	/* Hover or keyboard focus: the picture in its own full colour at once, no tint and no fade. */
 	.ui-btile:hover img, .ui-btile:focus-visible img { filter: none; }
+	.plain img { transition: opacity var(--dur) ease, transform var(--dur-slow) var(--ease-out); }
 	.ui-btile:hover .wash, .ui-btile:focus-visible .wash { opacity: 0; }
 	.ui-btile:hover .shade, .ui-btile:focus-visible .shade { background: linear-gradient(to top, rgb(0 0 0 / 0.7) 0%, transparent 55%); }
 </style>

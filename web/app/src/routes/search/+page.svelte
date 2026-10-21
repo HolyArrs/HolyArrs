@@ -274,6 +274,58 @@
 			}
 		}
 	}
+	// People: TMDB's popular people, 20 a page, up to 150, loaded as the grid nears the bottom.
+	// The Actors and Directors chips filter what is loaded, and keep loading until each has ~30.
+	const PEOPLE_MAX = 150;
+	const PEOPLE_PAGES = 8;
+	const PEOPLE_WANT = 30;
+	type PeopleFilter = 'popular' | 'actors' | 'directors';
+	const peopleChips: { value: PeopleFilter; label: string; dept: string }[] = [
+		{ value: 'popular', label: 'Popular', dept: '' },
+		{ value: 'actors', label: 'Actors', dept: 'Acting' },
+		{ value: 'directors', label: 'Directors', dept: 'Directing' }
+	];
+	let peopleAll = $state<PersonSummary[] | null>(null);
+	let peoplePage = 0;
+	let peopleBusy = $state(false);
+	let peopleEnd = $state(false);
+	let peopleFilter = $state<PeopleFilter>('popular');
+	let peopleSentinel = $state<HTMLElement>();
+	const peopleShown = $derived.by(() => {
+		const dept = peopleChips.find((c) => c.value === peopleFilter)?.dept ?? '';
+		return (peopleAll ?? []).filter((p) => !dept || p.department === dept);
+	});
+	const peopleTiles = $derived<PlainTile[] | null>(peopleAll === null ? null : peopleShown.map((p) => ({ key: `p${p.id}`, name: p.name, href: to(`/people/${encodeURIComponent(p.id)}`), image: p.profile as string })));
+	const peopleWantsMore = () => !peopleEnd && (peopleAll?.length ?? 0) < PEOPLE_MAX && peopleShown.length < (peopleFilter === 'popular' ? PEOPLE_MAX : PEOPLE_WANT);
+	async function morePeople() {
+		if (peopleBusy || peopleEnd) return;
+		peopleBusy = true;
+		try {
+			while (peopleWantsMore() || peopleAll === null) {
+				const r = await api.get<{ people: PersonSummary[]; page: number; total_pages: number }>(`/people/popular?page=${peoplePage + 1}`);
+				peoplePage = r.page || peoplePage + 1;
+				const have = new Set((peopleAll ?? []).map((p) => p.id));
+				const fresh = r.people.filter((p) => p.profile && !have.has(p.id) && have.add(p.id));
+				peopleAll = [...(peopleAll ?? []), ...fresh].slice(0, PEOPLE_MAX);
+				if (peoplePage >= PEOPLE_PAGES || peoplePage >= (r.total_pages || PEOPLE_PAGES) || r.people.length === 0 || peopleAll.length >= PEOPLE_MAX) peopleEnd = true;
+				if (peopleFilter === 'popular') break;
+			}
+		} catch {
+			peopleEnd = true;
+			peopleAll ??= [];
+		} finally {
+			peopleBusy = false;
+		}
+	}
+	// The next page loads when the grid's end comes within a screen; a fresh observer after each load re-checks a short grid.
+	$effect(() => {
+		void peopleAll?.length;
+		void peopleFilter;
+		if (scope !== 'people' || !peopleSentinel || peopleEnd || typeof IntersectionObserver === 'undefined') return;
+		const io = new IntersectionObserver((e) => { if (e.some((x) => x.isIntersecting)) void morePeople(); }, { rootMargin: '0px 0px 800px 0px' });
+		io.observe(peopleSentinel);
+		return () => io.disconnect();
+	});
 	// People and Music have their own tiles: popular people, and the music genres Explore Music names.
 	async function loadPlain(s: 'people' | 'music') {
 		if (plainFor === s) return;
@@ -281,8 +333,7 @@
 		plainTiles = null;
 		try {
 			if (s === 'people') {
-				const r = await api.get<{ people: PersonSummary[] }>('/people/popular');
-				if (plainFor === s) plainTiles = r.people.filter((p) => p.profile).map((p) => ({ key: `p${p.id}`, name: p.name, href: to(`/people/${encodeURIComponent(p.id)}`), image: p.profile as string }));
+				await morePeople();
 			} else {
 				const r = await fetchMusicExplore('', 'global');
 				if (plainFor === s) plainTiles = musicTiles(r, (g) => to(`/search?kind=music&mgenre=${encodeURIComponent(g)}`), musicImage);
@@ -509,17 +560,28 @@
 			{/if}
 			<section class="browse" aria-labelledby="browse-h" data-testid="search-browse">
 				<h2 id="browse-h" class="h1">{scope === 'people' ? 'Popular people' : 'Browse'}</h2>
+				{#if scope === 'people'}
+					<div class="chips people-chips" role="group" aria-label="Filter people">
+						{#each peopleChips as c (c.value)}<Chip label={c.label} selected={peopleFilter === c.value} onclick={() => { peopleFilter = c.value; void morePeople(); }} />{/each}
+					</div>
+				{/if}
 				{#if scope === 'people' || scope === 'music'}
-					{#if plainTiles === null}
+					{#if (scope === 'people' ? peopleTiles : plainTiles) === null}
 						<ul class="tiles" aria-hidden="true">
 							{#each Array(cols * 2) as _, i (i)}<li class="ghost" use:landing={{ row: Math.floor(i / cols), col: i % cols }}></li>{/each}
 						</ul>
-					{:else if plainTiles.length}
+					{:else if (scope === 'people' ? peopleTiles : plainTiles)?.length}
 						<ul class="tiles">
-							{#each plainTiles as t, i (t.key)}
+							{#each (scope === 'people' ? peopleTiles : plainTiles) ?? [] as t, i (t.key)}
 								<li use:landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} href={t.href} image={t.image} hue={scope === 'people' ? '#555b66' : tileHue(t.name)} plain={scope === 'people'} row={Math.min(6, Math.floor(i / cols))} /></li>
 							{/each}
 						</ul>
+						{#if scope === 'people'}
+							<div bind:this={peopleSentinel} class="more" aria-live="polite">{#if peopleBusy}<span class="muted">Loading more people</span>{/if}</div>
+						{/if}
+					{:else if scope === 'people' && peopleBusy}
+						<p class="muted" aria-live="polite">Loading more people</p>
+						<div bind:this={peopleSentinel} class="more"></div>
 					{:else}
 						<p class="muted">{scope === 'people' ? 'Search for an actor, director or artist' : 'Music genres show up here once Explore has something to show.'}</p>
 					{/if}
@@ -620,6 +682,8 @@
 	.recent { display: flex; flex-direction: column; gap: 12px; }
 	.recent-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 760px; }
 	.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+	.people-chips { margin: 0 0 16px; }
+	.more { min-height: 40px; display: grid; place-items: center; padding: 16px 0; }
 	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--title-item), 1fr)); gap: 16px 5px; margin: -16px 0 0; padding: 0; list-style: none; }
 	.empty { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; max-width: 640px; }
 	.tips { margin: 0; padding-left: 20px; color: var(--text-muted); font: var(--t-body); display: grid; gap: 4px; }

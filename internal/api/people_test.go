@@ -216,6 +216,8 @@ func TestPopularPeople(t *testing.T) {
 		t.Fatalf("popular %s", b)
 	}
 	do(t, "GET", srv.URL+"/api/v1/people/popular?page=0", "", 400)
+	do(t, "GET", srv.URL+"/api/v1/people/popular?page=8", "", 200)
+	do(t, "GET", srv.URL+"/api/v1/people/popular?page=9", "", 400)
 	p.fail = true
 	do(t, "GET", srv.URL+"/api/v1/people/popular", "", 503)
 	srv2, _ := peopleRig(t, metadata.Lab())
