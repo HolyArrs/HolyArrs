@@ -352,7 +352,7 @@ func TestMetadataMoreFrom(t *testing.T) {
 	if m.Person != "Dee" || m.Role != "director" || len(m.Items) != 4 || m.Items[0].TMDBID != "12" || m.Items[1].TMDBID != "15" || m.Items[3].TMDBID != "16" {
 		t.Fatalf("more from %s", b)
 	}
-	if d := string(do(t, "GET", srv.URL+"/api/v1/metadata/movie/11", "", 200)); !strings.Contains(d, `"moods":["Exciting"`) {
+	if d := string(do(t, "GET", srv.URL+"/api/v1/metadata/movie/11", "", 200)); !strings.Contains(d, `"moods":["Drama"]`) {
 		t.Fatalf("moods %s", d)
 	}
 	before := f.hits.Load()

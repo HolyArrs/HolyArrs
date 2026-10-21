@@ -321,6 +321,7 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 	}
 	st.mark("trailers")
 	a.fillRowsCardArt(r, head)
+	a.fillStreaming(r, head)
 	st.mark("cardart")
 	a.exploreCaching(w, r, "private, no-cache")
 	st.write(w)
@@ -362,6 +363,7 @@ func (a *API) exploreTail(w http.ResponseWriter, r *http.Request) {
 		a.fillTrailerKeys(r, rows[i].Items)
 	}
 	a.fillRowsCardArt(r, rows)
+	a.fillStreaming(r, rows)
 	a.exploreCaching(w, r, "private, no-cache")
 	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "page": n, "more": more, "rows": rows})
 }

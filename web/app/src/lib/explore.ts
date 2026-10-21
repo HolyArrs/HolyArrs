@@ -42,6 +42,8 @@ export interface ExploreCard {
 	fresh?: Fresh | null;
 	/** The wide card's picture, picked on the server (card system). */
 	art?: CardArtPick;
+	/** On one of the member's streaming services. */
+	streaming?: CardStreaming;
 }
 
 export interface ExploreRow {
@@ -413,6 +415,14 @@ export interface ProviderItem {
 	card_art?: string;
 	card_logo?: string;
 	art_has_title?: boolean;
+	/** Explore: the member's streaming service the title is on (kept lists only). */
+	streaming?: CardStreaming;
+}
+/** CardStreaming: on one of the member's services; rank is that service's own top today. */
+export interface CardStreaming {
+	service: number;
+	name: string;
+	rank?: number;
 }
 export interface ProviderRowAnswer {
 	row: ProviderRowName;
@@ -457,6 +467,7 @@ export function discoverCard(d: ProviderItem, row: string): ExploreCard {
 		art: pickFrom(d),
 		mine: !!d.ask?.mine,
 		ask: d.ask && d.ask.state !== 'turned_down' ? d.ask : undefined,
+		...(d.streaming ? { streaming: d.streaming } : {}),
 		...(d.ask?.state === 'turned_down' ? { declined: true } : {})
 	};
 }
@@ -689,6 +700,8 @@ export interface HeadAnswer {
 	top10: (import('./top10.ts').Top10Answer & { kind?: 'movie' | 'show'; by_kind?: Partial<Record<'movie' | 'show', import('./top10.ts').Top10Answer>> }) | null;
 	/** Up to 6 titles not in the Library (from Trending now and Trending this week everywhere) for the hero. */
 	hero?: ProviderItem[];
+	/** The household's taste genres, strongest first (hero badges). */
+	taste?: string[];
 	head: ServerRow[];
 }
 export interface TailAnswer {

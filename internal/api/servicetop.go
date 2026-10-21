@@ -230,3 +230,83 @@ func (a *API) exploreServiceTop(w http.ResponseWriter, r *http.Request) {
 	a.exploreCaching(w, r, "private, max-age=300")
 	writeJSON(w, http.StatusOK, out)
 }
+
+// streamingMark says a card's title is on one of the member's streaming
+// services in their region, from the kept per-service lists only. Rank is
+// set when that list is the service's own top today.
+type streamingMark struct {
+	Service int    `json:"service"`
+	Name    string `json:"name"`
+	Rank    int    `json:"rank,omitempty"`
+}
+
+// streamingMarks maps kind:tmdb to the first of the member's services
+// (in their order) whose kept list has it. It never fetches.
+func (a *API) streamingMarks(region string, services []int) map[string]streamingMark {
+	if region == "" || len(services) == 0 {
+		return nil
+	}
+	c := &a.serviceTop
+	c.mu.Lock()
+	e, ok := c.regions[region]
+	c.mu.Unlock()
+	if !ok || e.err != nil {
+		return nil
+	}
+	out := map[string]streamingMark{}
+	for _, id := range services {
+		for _, sv := range e.list.Services {
+			if serviceTopProviders[sv.Service] != id {
+				continue
+			}
+			for i, it := range sv.Items {
+				if it.TMDBID <= 0 {
+					continue
+				}
+				key := serviceKind(it.Kind) + ":" + strconv.FormatInt(it.TMDBID, 10)
+				if _, seen := out[key]; seen {
+					continue
+				}
+				m := streamingMark{Service: id, Name: sv.Name}
+				if sv.Source == "streaming-availability" {
+					m.Rank = it.Rank
+					if m.Rank <= 0 {
+						m.Rank = i + 1
+					}
+				}
+				out[key] = m
+			}
+		}
+	}
+	return out
+}
+
+// fillStreaming marks the cards whose title is on one of the member's
+// services (explore_prefs), from memory: one small read, no outside call.
+func (a *API) fillStreaming(r *http.Request, rows []exploreRowView) {
+	if a.s.Store == nil {
+		return
+	}
+	var services, region string
+	if err := a.s.Store.Read().QueryRowContext(r.Context(), "SELECT services, region FROM explore_prefs WHERE member_id = ?", a.person(r).UserID).Scan(&services, &region); err != nil {
+		return
+	}
+	var ids []int
+	for _, s := range strings.Split(services, "|") {
+		if n, err := strconv.Atoi(strings.TrimSpace(s)); err == nil && n > 0 {
+			ids = append(ids, n)
+		}
+	}
+	marks := a.streamingMarks(strings.ToUpper(region), ids)
+	if len(marks) == 0 {
+		return
+	}
+	for i := range rows {
+		for j := range rows[i].Items {
+			it := &rows[i].Items[j]
+			if m, ok := marks[it.Kind+":"+it.TMDBID]; ok {
+				it.Streaming = &m
+			}
+		}
+	}
+}

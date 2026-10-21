@@ -44,7 +44,10 @@
 		onmore,
 		big = false,
 		inset,
-		art: pick
+		art: pick,
+		growContext = null,
+		growService = null,
+		followTmdb = false
 	}: {
 		/** Title cards: the server's picture pick (card-art.ts). */
 		art?: CardArtPick;
@@ -94,6 +97,12 @@
 		big?: boolean;
 		/** A small square picture over the art, bottom left (Home: an album cover on the artist's picture). */
 		inset?: string | null;
+		/** The grown card's context line (household status, else why shown). */
+		growContext?: { text: string; kind: 'house' | 'why' } | null;
+		/** The grown card's streaming service (logo at the end of the facts). */
+		growService?: { name: string; logo?: string } | null;
+		/** The grown card's bell follows the title by TMDB id (a show, or a movie not out yet). */
+		followTmdb?: boolean;
 	} = $props();
 	// The expanded card: a hover card (episodes, downloads) or the card grown in place (cover).
 	let root = $state<HTMLElement>();
@@ -233,7 +242,7 @@
 {/snippet}
 
 {#if open && preview && cover && artEl}
-	<GrowCard anchor={artEl} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} image={loaded && !failed ? art : null} logo={growLogo} lifted={!!strip && strip.kind !== 'top10'} {leaving} badge={marked ? wideBadges : undefined} action={growAction} followId={preview.titleId} onmore={onmore ? (r) => { shut(); onmore(r); } : undefined} onenter={() => { closer.cancel(); leaving = false; }} onleave={leave} onclose={(back) => { shut(); if (back) { hit?.focus(); opener.cancel(); } }} focusIn={byKey} ontab={tabOut} returnTo={hit} ongone={() => leaving && shut()} />
+	<GrowCard anchor={artEl} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} image={loaded && !failed ? art : null} logo={growLogo} lifted={!!strip && strip.kind !== 'top10'} {leaving} badge={marked ? wideBadges : undefined} action={growAction} followId={preview.titleId} {followTmdb} context={growContext} service={growService} onmore={onmore ? (r) => { shut(); onmore(r); } : undefined} onenter={() => { closer.cancel(); leaving = false; }} onleave={leave} onclose={(back) => { shut(); if (back) { hit?.focus(); opener.cancel(); } }} focusIn={byKey} ontab={tabOut} returnTo={hit} ongone={() => leaving && shut()} />
 {:else if open && preview && root}
 	<HoverPreview anchor={root} kind={preview.kind} tmdb={preview.tmdb} year={preview.year} {title} {href} {image} badge={marked ? wideBadges : undefined} onenter={() => closer.cancel()} onleave={leave} onclose={shut} />
 {/if}

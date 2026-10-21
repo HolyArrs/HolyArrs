@@ -15,7 +15,7 @@
 		return parts[parts.length - 1] ?? '';
 	}
 
-	export type RichMeta = { backdrop?: string; logo?: string; poster?: string; genres: string[]; runtime?: number; certification?: string; score?: number; overview?: string; year?: number; backdrops: string[]; videos: Video[]; moods?: string[]; quality?: string };
+	export type RichMeta = { backdrop?: string; logo?: string; poster?: string; genres: string[]; runtime?: number; certification?: string; score?: number; overview?: string; year?: number; backdrops: string[]; videos: Video[]; moods?: string[]; quality?: string; seasons?: number };
 	import type { Video } from '../trailer.ts';
 	import { shownScore } from '../rating.ts';
 	type Raw = Record<string, unknown>;
@@ -39,7 +39,7 @@
 					const backdrops = Array.isArray(raw.backdrops) ? raw.backdrops.filter((b): b is string => typeof b === 'string') : [];
 					const moods = Array.isArray(raw.moods) ? raw.moods.filter((m): m is string => typeof m === 'string' && !!m.trim()) : [];
 					const videos = Array.isArray(raw.videos) ? (raw.videos as Video[]).filter((v) => v && typeof v.key === 'string') : [];
-					return { backdrop: s(raw.backdrop), logo: s(raw.logo), poster: s(raw.poster), genres, runtime: n(raw.runtime_minutes) ?? n(raw.runtime), certification: rating, score: shownScore(n(raw.vote_average) ?? n(raw.score), n(raw.vote_count) ?? n(raw.votes)), overview: s(raw.overview), year: n(raw.year), backdrops, videos, moods, quality: s(raw.quality) };
+					return { backdrop: s(raw.backdrop), logo: s(raw.logo), poster: s(raw.poster), genres, runtime: n(raw.runtime_minutes) ?? n(raw.runtime), certification: rating, score: shownScore(n(raw.vote_average) ?? n(raw.score), n(raw.vote_count) ?? n(raw.votes)), overview: s(raw.overview), year: n(raw.year), backdrops, videos, moods, quality: s(raw.quality), seasons: Array.isArray(raw.seasons) ? raw.seasons.filter((x) => n((x as Raw)?.number)).length || undefined : n(raw.number_of_seasons) };
 				})
 				.catch(() => null);
 			metaCache.set(key, p);

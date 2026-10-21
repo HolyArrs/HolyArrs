@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { metaLine } from '../fresh.ts';
 	import { onDestroy, onMount, type Snippet } from 'svelte';
 	import { api } from '../api.ts';
 	import { richMetadata, type RichMeta } from './TitleHero.svelte';
 	import TrailerPlayer from './TrailerPlayer.svelte';
 	import Icon from '../Icon.svelte';
-	import { followHint, followLabel, setFollow } from '../follow.ts';
+	import { followHint, followLabel, followPath, movieFollowHint, setFollow, type FollowTarget } from '../follow.ts';
+	import { fitTags, growFacts } from '../grow-lines.ts';
 	import { sized } from '../tmdb-image.ts';
 	import { autoplayHere, loadUISettings, trailerSources, type TrailerSource } from '../autoplay.svelte.ts';
 	import { fromHandoff, openTheater } from '../theater.svelte.ts';
@@ -39,7 +39,10 @@
 		focusIn = false,
 		ontab,
 		returnTo,
-		followId
+		followId,
+		followTmdb = false,
+		context = null,
+		service = null
 	}: {
 		/** The card's picture box: the grown card starts exactly on it. */
 		anchor: HTMLElement;
@@ -73,20 +76,29 @@
 		onmore?: (from: DOMRect) => void;
 		/** A show in the Library: the bell follows it. */
 		followId?: number;
+		/** A show, or a movie not out yet, not in the Library: the bell follows it by TMDB id. */
+		followTmdb?: boolean;
+		/** The one line under the facts: the household's status, else why the card is shown. */
+		context?: { text: string; kind: 'house' | 'why' } | null;
+		/** On one of the member's streaming services: its logo ends the facts line. */
+		service?: { name: string; logo?: string } | null;
 	} = $props();
 
 	let following = $state(false);
 	let followBusy = $state(false);
+	// The bell: a Library show by its id; a show or a movie not out yet by TMDB id (FollowShowTMDB, FollowMovieTMDB).
+	const followTarget = $derived<FollowTarget | null>(followId && kind === 'show' ? { titleId: followId } : followTmdb ? { tmdb, kind } : null);
 	$effect(() => {
-		const id = followId;
-		if (!id || kind !== 'show') return;
-		api.get<{ following: boolean }>(`/titles/${id}/follow`).then((r) => (following = r.following), () => {});
+		const t = followTarget;
+		if (!t) return;
+		api.get<{ following: boolean }>(followPath(t)).then((r) => (following = r.following), () => {});
 	});
 	async function flipFollow() {
-		if (!followId) return;
+		const t = followTarget;
+		if (!t) return;
 		followBusy = true;
 		try {
-			following = await setFollow(api, followId, !following);
+			following = await setFollow(api, t, !following);
 		} catch {
 			/* the bell stays as it was */
 		} finally {
@@ -263,17 +275,11 @@
 	const pic = $derived(image ?? (meta?.backdrop ? sized(meta.backdrop, 'backdrop') || null : null));
 	const big = $derived(pic && /\/artwork\/tmdb\/w(?:300|780)\//.test(pic) ? pic.replace(/\/w(?:300|780)\//, '/w1280/') : null);
 	const shownLogo = $derived(logoFailed ? null : logo ? logo : meta?.logo ? sized(meta.logo, 'poster') : null);
-	function runtime(m?: number) {
-		if (!m) return '';
-		const h = Math.floor(m / 60);
-		return h ? `${h}h ${m % 60}m` : `${m}m`;
-	}
-	// Netflix's line: Movie · R · 1h 49m · HD/4K (the quality only when the Library has it).
-	// TMDB's score, small, after the age rating.
-	const stars = $derived(meta?.score ? `★ ${(Math.round(meta.score * 10) / 10).toFixed(1)}` : undefined);
-	const facts = $derived(metaLine(kind, [meta?.certification, stars, kind === 'movie' ? runtime(meta?.runtime) : undefined, meta?.quality]));
-	// Mood words from the server (TMDB keywords mapped to our moods), else genres.
-	const tags = $derived((meta?.moods?.length ? meta.moods : (meta?.genres ?? [])).slice(0, 3));
+	// The facts: 2024 · 3 seasons · TV-PG · ★ 6.8 (shows), 2024 · 1h 46m · PG-13 · ★ 6.6 (movies); the star only with 25 votes (shownScore).
+	const facts = $derived(growFacts({ kind, year: meta?.year ?? year, seasons: meta?.seasons, runtime: meta?.runtime, certification: meta?.certification, score: meta?.score }));
+	// Mood words the genres support (server moods, checked again), else genres: shown when there is no context line.
+	const tags = $derived(fitTags(meta?.moods, meta?.genres));
+	const bellHint = $derived(kind === 'movie' ? movieFollowHint(title, following) : followHint('show', following));
 </script>
 
 <svelte:window onkeydown={(e) => e.key === 'Escape' && onclose(!!card?.contains(document.activeElement))} />
@@ -311,16 +317,18 @@
 	<div class="panel">
 		<div class="buttons">
 			{#if action}{@render action()}{/if}
-			{#if followId && kind === 'show'}<button type="button" class="more bell" class:on={following} aria-pressed={following} aria-label="{followLabel(following)} {title}" title={followHint('show', following)} disabled={followBusy} onclick={flipFollow} data-testid="grow-follow"><Icon name="bell" size={18} /></button>{/if}
-			{#if onmore}<button type="button" class="more" aria-label="More info about {title}" title="More info" aria-haspopup="dialog" onclick={() => card && onmore(card.getBoundingClientRect())}><Icon name="chevronDown" size={20} /></button>
-			{:else if href}<a class="more" {href} aria-label="More about {title}" title="More info"><Icon name="chevronDown" size={20} /></a>{/if}
+			{#if followTarget}<button type="button" class="more bell" class:on={following} aria-pressed={following} aria-label="{followLabel(following)} {title}" title={bellHint} disabled={followBusy} onclick={flipFollow} data-testid="grow-follow"><Icon name="bell" size={18} /></button>{/if}
+			{#if onmore}<button type="button" class="more info" aria-label="More info about {title}" title="More info" aria-haspopup="dialog" onclick={() => card && onmore(card.getBoundingClientRect())}><Icon name="chevronDown" size={20} /></button>
+			{:else if href}<a class="more info" {href} aria-label="More about {title}" title="More info"><Icon name="chevronDown" size={20} /></a>{/if}
 		</div>
 		<p class="title" title={title}>{title}</p>
-		<!-- Both lines always take their room, so the panel's height is known before the facts arrive. -->
-		<p class="facts">
-			{#each facts as f, i (f)}{#if i}<i aria-hidden="true">·</i>{/if}<span class:rating={f === meta?.certification} class:q={f === meta?.quality} class:stars={f === stars}>{f}</span>{/each}
+		<!-- At most two lines, always in this order and always taking their room: the facts (the service logo ends it), then one context line. -->
+		<p class="facts" data-testid="grow-facts">
+			{#each facts as f, i (f.part)}{#if i}<i aria-hidden="true">·</i>{/if}<span class:rating={f.part === 'rating'} class:stars={f.part === 'stars'}>{f.text}</span>{/each}
+			{#if service}<span class="svc" title="On {service.name}">{#if service.logo}<img src={service.logo} alt="" />{/if}<span class={service.logo ? 'sr' : 'svc-word'}>On {service.name}</span></span>{/if}
 		</p>
-		<p class="tags">{#each tags as t, i (t)}{#if i}<i aria-hidden="true">·</i>{/if}<span>{t}</span>{/each}</p>
+		{#if context}<p class="ctx" class:why={context.kind === 'why'} data-testid="grow-context">{context.text}</p>
+		{:else}<p class="tags">{#each tags as t, i (t)}{#if i}<i aria-hidden="true">·</i>{/if}<span>{t}</span>{/each}</p>{/if}
 	</div>
 </div>
 
@@ -366,9 +374,19 @@
 	.more:hover { box-shadow: inset 0 0 0 2px var(--text); background: var(--surface-2); }
 	.more:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.more.bell.on { background: var(--text); color: var(--bg); box-shadow: none; }
+	.more.info { margin-left: auto; }
+	/* Every panel button is the same 40px round (the Ask/Add one included). */
+	.buttons :global(.ui-ibtn) { width: 40px; height: 40px; flex: none; }
+	.buttons :global(.ui-ibtn:focus-visible) { outline: none; box-shadow: var(--focus-ring); }
 	.title { margin: 2px 0 -4px; font: var(--t-headline); letter-spacing: -0.01em; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.facts, .tags { min-height: 18px; }
-	.facts { display: flex; align-items: center; gap: 6px; font: var(--t-footnote); color: var(--text-muted); font-variant-numeric: tabular-nums; }
+	.facts, .tags, .ctx { min-height: 18px; }
+	.ctx { margin: 0; font: var(--t-footnote); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.ctx.why { color: var(--text-muted); }
+	.svc { display: inline-flex; align-items: center; margin-left: 4px; flex: none; }
+	.svc img { display: block; width: 18px; height: 18px; border-radius: 4px; object-fit: cover; box-shadow: 0 0 0 1px var(--line); }
+	.svc-word { color: var(--text); }
+	.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+	.facts { display: flex; align-items: center; gap: 6px; margin: 0; white-space: nowrap; overflow: hidden; font: var(--t-footnote); color: var(--text-muted); font-variant-numeric: tabular-nums; }
 	.rating { padding: 0 5px; border: 1px solid color-mix(in srgb, var(--text) 45%, transparent); border-radius: 3px; color: var(--text); font-size: 11px; line-height: 16px; }
 	.stars { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
 	.tags { display: flex; flex-wrap: nowrap; overflow: hidden; white-space: nowrap; align-items: center; gap: 6px; font: var(--t-footnote); color: var(--text); }

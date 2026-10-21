@@ -141,14 +141,14 @@ func TestTMDBDetailsMoodsAndMadeBy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if fmt.Sprint(d.Moods) != "[Exciting Mind-bending Emotional]" || d.People[1].ID != "31" || d.People[0].ID != "" {
+	if fmt.Sprint(d.Moods) != "[Drama]" || d.People[1].ID != "31" || d.People[0].ID != "" {
 		t.Fatalf("moods %v people %+v", d.Moods, d.People)
 	}
 	s, err := p.Details(ctx, "show", "8")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if fmt.Sprint(s.Moods) != "[Cozy]" || s.People[0].ID != "32" {
+	if fmt.Sprint(s.Moods) != "[]" || s.People[0].ID != "32" {
 		t.Fatalf("show moods %v people %+v", s.Moods, s.People)
 	}
 	var _ MadeByLister = p
@@ -175,11 +175,13 @@ func TestMoods(t *testing.T) {
 		kw, genres []string
 		want       string
 	}{
-		{[]string{"haunted house", "ghost", "demonic possession"}, []string{"Horror"}, "[Scary]"},
+		{[]string{"haunted house", "ghost", "demonic possession"}, []string{"Horror"}, "[Scary Horror]"},
 		{[]string{"satire", "small town", "christmas"}, []string{"Comedy"}, "[Cozy Witty]"},
 		{[]string{"award", "embrace", "glove"}, []string{"Drama", "Comedy", "Crime", "War"}, "[Drama Comedy Crime]"},
 		{nil, nil, "[]"},
-		{[]string{"murder", "conspiracy", "heist", "time travel", "romance", "zombie"}, []string{"Thriller"}, "[Suspenseful Exciting Romantic]"},
+		{[]string{"murder", "conspiracy", "heist", "time travel", "romance", "zombie"}, []string{"Thriller"}, "[Suspenseful Thriller]"},
+		{[]string{"wrestling", "sports entertainment", "underdog"}, []string{"Reality", "Talk"}, "[Sports Reality Talk]"},
+		{[]string{"biography", "based on true story"}, []string{"Drama"}, "[Inspiring Drama]"},
 	}
 	for _, c := range cases {
 		if got := fmt.Sprint(Moods(c.kw, c.genres)); got != c.want {

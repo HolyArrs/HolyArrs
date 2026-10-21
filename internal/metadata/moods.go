@@ -24,7 +24,7 @@ var moodWords = []struct {
 	{"Mind-bending", []string{"time travel", "time loop", "parallel", "alternate reality", "dream", "mind", "twist", "surreal", "simulation", "multiverse", "nonlinear"}},
 	{"Cozy", []string{"cozy", "christmas", "holiday", "small town", "baking", "village", "gentle", "slice of life"}},
 	{"Gritty", []string{"gritty", "gangster", "drug", "mafia", "crime", "prison", "violence", "corruption", "cartel", "war", "brutal"}},
-	{"Inspiring", []string{"inspiring", "inspirational", "biography", "based on true story", "underdog", "sports", "triumph", "overcoming"}},
+	{"Inspiring", []string{"inspiring", "inspirational", "biography", "based on true story", "underdog", "triumph", "overcoming"}},
 	{"Scary", []string{"horror", "ghost", "haunted", "demon", "monster", "slasher", "zombie", "possession", "supernatural", "creature"}},
 }
 
@@ -37,15 +37,42 @@ var genreMoods = map[string][]string{
 	"Science Fiction": {"Mind-bending"}, "Sci-Fi & Fantasy": {"Mind-bending"}, "War": {"Gritty"}, "War & Politics": {"Gritty"},
 }
 
-// Moods turns a title's TMDB keywords and genres into up to three mood
-// words, most matched first. Only keywords pick a mood; genres add weight
-// and top the list up. With no keyword match it answers the genres.
+// plainGenres are TMDB genres that carry no mood of their own (a talk
+// show, the news, reality TV): a keyword mood on them is not trusted.
+var plainGenres = map[string]bool{"Reality": true, "Talk": true, "News": true, "Soap": true}
+
+// topicWords are plain subject words read from keywords; they stand in
+// with the genres when no mood fits (WWE Raw: Sports, Reality).
+var topicWords = []struct {
+	topic string
+	parts []string
+}{
+	{"Sports", []string{"sports", "sport", "wrestling", "football", "basketball", "baseball", "boxing", "soccer", "olympic", "racing"}},
+	{"Music", []string{"concert", "musical", "music"}},
+	{"Cooking", []string{"cooking", "chef", "baking competition"}},
+}
+
+// Moods turns a title's TMDB keywords and genres into up to three words,
+// most matched first. A mood needs its genre to lean to it or two of its
+// keywords; plain genres (Reality, Talk, News, Soap) take no mood. When
+// fewer than two moods fit, topic words and the genres top the list up.
 func Moods(keywords, genres []string) []string {
 	score := map[string]int{}
 	order := map[string]int{}
 	for i, m := range moodWords {
 		order[m.mood] = i
 	}
+	lean := map[string]bool{}
+	plain := false
+	for _, g := range genres {
+		if plainGenres[g] {
+			plain = true
+		}
+		for _, m := range genreMoods[g] {
+			lean[m] = true
+		}
+	}
+	var topics []string
 	for _, k := range keywords {
 		k = strings.ToLower(k)
 		for _, m := range moodWords {
@@ -56,36 +83,58 @@ func Moods(keywords, genres []string) []string {
 				}
 			}
 		}
-	}
-	if len(score) == 0 {
-		out := []string{}
-		for _, g := range genres {
-			if len(out) == maxMoods {
-				break
+		for _, t := range topicWords {
+			for _, p := range t.parts {
+				if strings.Contains(" "+k, " "+p) && !contains(topics, t.topic) {
+					topics = append(topics, t.topic)
+					break
+				}
 			}
-			out = append(out, g)
+		}
+	}
+	out := []string{}
+	if !plain {
+		for m, s := range score {
+			if lean[m] || s >= 4 {
+				out = append(out, m)
+			}
+		}
+		for _, g := range genres {
+			for _, m := range genreMoods[g] {
+				score[m]++
+			}
+		}
+		sort.Slice(out, func(i, j int) bool {
+			if score[out[i]] != score[out[j]] {
+				return score[out[i]] > score[out[j]]
+			}
+			return order[out[i]] < order[out[j]]
+		})
+	}
+	if len(out) >= 2 {
+		if len(out) > maxMoods {
+			out = out[:maxMoods]
 		}
 		return out
 	}
-	for _, g := range genres {
-		for _, m := range genreMoods[g] {
-			score[m]++
+	for _, w := range append(topics, genres...) {
+		if len(out) == maxMoods {
+			break
 		}
-	}
-	out := make([]string, 0, len(score))
-	for m := range score {
-		out = append(out, m)
-	}
-	sort.Slice(out, func(i, j int) bool {
-		if score[out[i]] != score[out[j]] {
-			return score[out[i]] > score[out[j]]
+		if !contains(out, w) {
+			out = append(out, w)
 		}
-		return order[out[i]] < order[out[j]]
-	})
-	if len(out) > maxMoods {
-		out = out[:maxMoods]
 	}
 	return out
+}
+
+func contains(list []string, w string) bool {
+	for _, x := range list {
+		if x == w {
+			return true
+		}
+	}
+	return false
 }
 
 // SubMood is one mood row inside a genre: our own label and the TMDB
