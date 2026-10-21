@@ -38,6 +38,13 @@ const (
 	signinArtTTL = 6 * time.Hour
 	// signinArtEmptyTTL is how long an empty answer is kept (outside down).
 	signinArtEmptyTTL = 5 * time.Minute
+	// signinArtRetryTTL is how long an empty answer caused by an error or
+	// timeout is kept before the next try.
+	signinArtRetryTTL = 15 * time.Second
+	// signinArtWorkers is how many image lookups run at once.
+	signinArtWorkers = 6
+	// signinPickTTL is how long one title's pick is kept.
+	signinPickTTL = 24 * time.Hour
 	// signinArtMinWidth is the smallest native backdrop width used at all.
 	signinArtMinWidth = 1280
 	// signinArtPerMinute is each address's calls a minute.
@@ -65,6 +72,9 @@ type signinArtState struct {
 	build sync.Mutex // one build at a time
 	mu    sync.Mutex
 	cache map[bool]signinArtCached // by "Library art on"
+	picks map[signinRef]signinPick // per-title picks
+	// failed marks a build that hit an error or timeout (not cached long).
+	failed bool
 	hits  map[string][]time.Time
 
 	// Test hooks; nil uses the metadata provider.
@@ -72,6 +82,12 @@ type signinArtState struct {
 	trending func(ctx context.Context, kind string) ([]metadata.DiscoverItem, error)
 	rating   func(ctx context.Context, kind, tmdbID string) (string, error)
 	now      func() time.Time
+}
+
+type signinPick struct {
+	shot  signinShot
+	ok    bool
+	until time.Time
 }
 
 type signinArtCached struct {
@@ -141,6 +157,15 @@ func remoteHost(r *http.Request) string {
 
 func (a *API) signinArtRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/public/signin-art", a.signinArt)
+	// Warm the cache in the background so the first visitor sees art.
+	go func() {
+		for _, wait := range []time.Duration{3 * time.Second, 30 * time.Second, 2 * time.Minute} {
+			time.Sleep(wait)
+			if a.s.Store == nil || len(a.signinShots(context.Background())) > 0 {
+				return
+			}
+		}
+	}()
 }
 
 // signinArt answers the sign-in page's pictures.
@@ -176,6 +201,9 @@ func (a *API) signinShots(ctx context.Context) []signinShot {
 	}
 	bctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 20*time.Second)
 	defer cancel()
+	st.mu.Lock()
+	st.failed = false
+	st.mu.Unlock()
 	var shots []signinShot
 	if lib {
 		shots = a.librarySigninShots(bctx)
@@ -187,8 +215,14 @@ func (a *API) signinShots(ctx context.Context) []signinShot {
 		shots = []signinShot{}
 	}
 	ttl := signinArtTTL
+	st.mu.Lock()
+	failed := st.failed || bctx.Err() != nil
+	st.mu.Unlock()
 	if len(shots) == 0 {
 		ttl = signinArtEmptyTTL
+		if failed {
+			ttl = signinArtRetryTTL
+		}
 	}
 	st.mu.Lock()
 	if st.cache == nil {
@@ -206,6 +240,7 @@ func (a *API) librarySigninShots(ctx context.Context) []signinShot {
 	rows, err := a.s.Store.Read().QueryContext(ctx, `SELECT kind, rating, COALESCE(json_extract(source_ids, '$.tmdb'), '')
 		FROM titles WHERE kind IN ('movie', 'show') AND state != 'removed' AND trim(COALESCE(rating, '')) != '' LIMIT 2000`)
 	if err != nil {
+		a.signin.fail()
 		return nil
 	}
 	var refs []signinRef
@@ -227,6 +262,7 @@ func (a *API) trendingSigninShots(ctx context.Context) []signinShot {
 	if list == nil {
 		d, ok := metadata.DiscovererFor(ctx, a.s.Metadata)
 		if !ok {
+			st.fail()
 			return nil
 		}
 		list = func(ctx context.Context, kind string) ([]metadata.DiscoverItem, error) {
@@ -237,6 +273,7 @@ func (a *API) trendingSigninShots(ctx context.Context) []signinShot {
 	if rate == nil {
 		rt, ok := metadata.RaterFor(ctx, a.s.Metadata)
 		if !ok {
+			st.fail()
 			return nil
 		}
 		rate = rt.Rating
@@ -244,23 +281,36 @@ func (a *API) trendingSigninShots(ctx context.Context) []signinShot {
 	var items []metadata.DiscoverItem
 	for _, kind := range []string{"movie", "show"} {
 		got, err := list(ctx, kind)
-		if err == nil {
-			items = append(items, got...)
+		if err != nil {
+			st.fail()
+			continue
 		}
+		items = append(items, got...)
 	}
 	// Most popular first, movies and shows together.
 	slices.SortStableFunc(items, func(x, y metadata.DiscoverItem) int { return cmp.Compare(x.Popularity, y.Popularity) * -1 })
-	var refs []signinRef
-	for i, it := range items {
-		if i >= signinRatingLookups || ctx.Err() != nil {
+	var cand []signinRef
+	for _, it := range items {
+		if len(cand) >= signinRatingLookups {
 			break
 		}
-		if it.TMDBID == "" || (it.Kind != "movie" && it.Kind != "show") {
-			continue
+		if it.TMDBID != "" && (it.Kind == "movie" || it.Kind == "show") {
+			cand = append(cand, signinRef{it.Kind, it.TMDBID})
 		}
-		r, err := rate(ctx, it.Kind, it.TMDBID)
-		if err == nil && kidSafeArt(it.Kind, r) {
-			refs = append(refs, signinRef{it.Kind, it.TMDBID})
+	}
+	safe := make([]bool, len(cand))
+	parallel(ctx, len(cand), func(i int) {
+		r, err := rate(ctx, cand[i].kind, cand[i].tmdbID)
+		if err != nil {
+			st.fail()
+			return
+		}
+		safe[i] = kidSafeArt(cand[i].kind, r)
+	})
+	var refs []signinRef
+	for i, ref := range cand {
+		if safe[i] {
+			refs = append(refs, ref)
 		}
 	}
 	return a.shotsFor(ctx, refs)
@@ -272,26 +322,78 @@ func (a *API) shotsFor(ctx context.Context, refs []signinRef) []signinShot {
 	if look == nil {
 		src, ok := metadata.CardArterFor(ctx, a.s.Metadata)
 		if !ok {
+			a.signin.fail()
 			return nil
 		}
 		look = func(ctx context.Context, kind, id string) (metadata.CardImages, error) {
 			return src.CardImages(ctx, kind, id, "en")
 		}
 	}
-	var out []signinShot
-	for i, ref := range refs {
-		if i >= signinArtLookups || len(out) >= signinArtMax || ctx.Err() != nil {
-			break
+	st := &a.signin
+	if len(refs) > signinArtLookups {
+		refs = refs[:signinArtLookups]
+	}
+	picks := make([]signinPick, len(refs))
+	parallel(ctx, len(refs), func(i int) {
+		ref := refs[i]
+		now := st.clock()
+		st.mu.Lock()
+		p, hit := st.picks[ref]
+		st.mu.Unlock()
+		if hit && now.Before(p.until) {
+			picks[i] = p
+			return
 		}
 		im, err := look(ctx, ref.kind, ref.tmdbID)
 		if err != nil {
-			continue
+			st.fail()
+			return
 		}
-		if s, ok := pickSigninShot(im); ok {
-			out = append(out, s)
+		s, ok := pickSigninShot(im)
+		p = signinPick{shot: s, ok: ok, until: now.Add(signinPickTTL)}
+		picks[i] = p
+		st.mu.Lock()
+		if st.picks == nil || len(st.picks) > 4096 {
+			st.picks = map[signinRef]signinPick{}
+		}
+		st.picks[ref] = p
+		st.mu.Unlock()
+	})
+	var out []signinShot
+	for _, p := range picks {
+		if p.ok && len(out) < signinArtMax {
+			out = append(out, p.shot)
 		}
 	}
 	return out
+}
+
+// fail marks the running build as hit by an error.
+func (st *signinArtState) fail() {
+	st.mu.Lock()
+	st.failed = true
+	st.mu.Unlock()
+}
+
+// parallel runs fn for 0..n-1 on signinArtWorkers goroutines, skipping
+// the rest once ctx is done.
+func parallel(ctx context.Context, n int, fn func(i int)) {
+	next := make(chan int)
+	var wg sync.WaitGroup
+	for w := 0; w < min(signinArtWorkers, n); w++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for i := range next {
+				fn(i)
+			}
+		}()
+	}
+	for i := 0; i < n && ctx.Err() == nil; i++ {
+		next <- i
+	}
+	close(next)
+	wg.Wait()
 }
 
 // originalURL turns a sized TMDB picture address into its original one.
