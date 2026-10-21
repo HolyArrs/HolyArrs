@@ -122,6 +122,7 @@ func (a *API) StartExplore(ctx context.Context) {
 	go supervisor.Guard("explore-top10-warm", func() { a.warmTop10(ctx) })
 	go supervisor.Guard("explore-service-top-warm", func() { a.warmServiceTop(ctx) })
 	go supervisor.Guard("explore-genre-warm", func() { a.warmGenres(ctx) })
+	startBackdropDark(ctx)
 	go supervisor.Guard("explore-browse-warm", func() { a.warmBrowse(ctx) })
 }
 
