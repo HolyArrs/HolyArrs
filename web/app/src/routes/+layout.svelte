@@ -473,6 +473,8 @@
 	.skip { position: fixed; left: 12px; top: -80px; z-index: 100; background: var(--accent-fill); color: var(--text-on-red); padding: 12px 16px; border-radius: var(--r-btn); }
 	.skip:focus-visible { top: 12px; }
 	main { min-width: 0; padding: var(--s-6) var(--gutter) var(--s-16); outline: none; view-transition-name: page; }
+	/* Focus lands on main after a page change (for screen readers); it never draws a ring around the page. */
+	main:focus, main:focus-visible { outline: none; box-shadow: none; }
 	.part-off { max-width: 40rem; margin: var(--s-8) auto; padding: var(--s-6); border: 1px solid var(--line); border-radius: var(--r-card); }
 	.part-off p { margin-top: var(--s-3); }
 	.who { display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0; color: var(--text-muted); }
