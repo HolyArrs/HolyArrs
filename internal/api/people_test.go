@@ -135,15 +135,17 @@ func TestPersonFilmographyJoinsOwnedNeverAddAndAskWithStablePages(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	b := string(do(t, "GET", srv.URL+"/api/v1/people/11?role=all&page=1&page_size=2", "", 200))
+	b := string(do(t, "GET", srv.URL+"/api/v1/people/11?role=all&sort=newest&page=1&page_size=2", "", 200))
 	if !strings.Contains(b, `"title_id":1`) || !strings.Contains(b, `"never_add":true`) || !strings.Contains(b, `"complete":false`) || !strings.Contains(b, `"total_pages":2`) {
 		t.Fatalf("filmography %s", b)
 	}
-	b = string(do(t, "GET", srv.URL+"/api/v1/people/11?role=all&page=2&page_size=2", "", 200))
+	b = string(do(t, "GET", srv.URL+"/api/v1/people/11?role=all&sort=newest&page=2&page_size=2", "", 200))
 	if !strings.Contains(b, `"state":"asked"`) {
 		t.Fatalf("second filmography page %s", b)
 	}
-	b = string(do(t, "GET", srv.URL+"/api/v1/people/11?role=director&page=1&page_size=10", "", 200))
+	b = string(do(t, "GET", srv.URL+"/api/v1/people/11?role=director&sort=newest&page=1&page_size=10", "", 200))
+	// Only the filmography page counts here; the personal rows repeat titles.
+	b = b[strings.Index(b, `"movies":`):strings.Index(b, `"often_with":`)]
 	if strings.Contains(b, `"name":"Beta"`) || strings.Count(b, `"name":"Alpha"`) != 1 || strings.Count(b, `"name":"Gamma"`) != 1 {
 		t.Fatalf("director filter %s", b)
 	}

@@ -143,10 +143,17 @@ type tmdbCredit struct {
 	Profile     string `json:"profile_path"`
 	Character   string `json:"character"`
 	Job         string `json:"job"`
+	// Movie credits carry their own art and TMDB's popularity score.
+	PosterPath   string  `json:"poster_path"`
+	BackdropPath string  `json:"backdrop_path"`
+	Popularity   float64 `json:"popularity"`
+	VoteAverage  float64 `json:"vote_average"`
+	VoteCount    int     `json:"vote_count"`
 }
 
 func (c tmdbCredit) movie(images string) Movie {
-	return (tmdbMovie{ID: c.ID, Title: c.Title, ReleaseDate: c.ReleaseDate}).movie(images)
+	return (tmdbMovie{ID: c.ID, Title: c.Title, ReleaseDate: c.ReleaseDate, PosterPath: c.PosterPath,
+		tmdbExtras: tmdbExtras{BackdropPath: c.BackdropPath}}).movie(images)
 }
 
 func (c tmdbCredit) person(images string) Person {
@@ -182,7 +189,8 @@ func (t *TMDB) PersonMovies(ctx context.Context, id string) (PersonMoviePage, er
 		}
 		v := byID[c.ID]
 		if v == nil {
-			v = &PersonMovieCredit{Movie: c.movie(t.images()), Roles: []string{}, Characters: []string{}}
+			v = &PersonMovieCredit{Movie: c.movie(t.images()), Roles: []string{}, Characters: []string{}, Popularity: c.Popularity,
+				VoteAverage: c.VoteAverage, VoteCount: c.VoteCount}
 			byID[c.ID] = v
 		}
 		v.Roles = addUnique(v.Roles, role)

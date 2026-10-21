@@ -3,44 +3,61 @@
 	import { page } from '$app/state';
 	import { api, message } from '#lib/api.ts';
 	import { session } from '#lib/session.svelte.ts';
-	import FilmographyList from '#lib/FilmographyList.svelte';
 	import Poster from '#lib/Poster.svelte';
-	import Button from '#lib/ui/Button.svelte';
-	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import Shelf from '#lib/ui/Shelf.svelte';
+	import WideCard from '#lib/ui/WideCard.svelte';
+	import BrowseTile from '#lib/ui/BrowseTile.svelte';
+	import IconButton from '#lib/ui/IconButton.svelte';
+	import type { CardOwned } from '#lib/ui/CardBadges.svelte';
 	import Icon from '#lib/Icon.svelte';
 	import { to } from '#lib/paths.ts';
 	import { plainReason } from '#lib/plain.ts';
-	import { actionableSelection, normalizeSelection, runReviewed, type FilmographyPage, type PersonMovie, type PersonRole, type ReviewedResult } from '#lib/people.ts';
+	import { detailPath } from '#lib/title-details.ts';
+	import { byDecade, personChips, runReviewed, type FilmSort, type FilmographyPage, type PersonMovie, type PersonRole } from '#lib/people.ts';
 	import type { AskLimit } from '#lib/types.ts';
 
 	const id = page.params.id ?? '';
+	const SORT_KEY = 'holyarrs.people.sort';
+	const sorts: FilmSort[] = ['oldest', 'newest', 'popular'];
+	function savedSort(): FilmSort {
+		try {
+			const v = localStorage.getItem(SORT_KEY) as FilmSort | null;
+			return v && sorts.includes(v) ? v : 'oldest';
+		} catch {
+			return 'oldest';
+		}
+	}
 	let role = $state<PersonRole>('all');
-	let current = $state(1);
+	let sort = $state<FilmSort>(savedSort());
 	let data = $state<FilmographyPage | null>(null);
-	let selected = $state<string[]>([]);
-	let reviewed = $state<PersonMovie[] | null>(null);
-	let results = $state<ReviewedResult[]>([]);
+	// Every credit for the role, in the server's sort order (fetched page by page).
+	let movies = $state<PersonMovie[]>([]);
 	let limit = $state<AskLimit | null>(null);
 	let busy = $state(false);
-	let submitting = $state(false);
 	let error = $state('');
+	let asking = $state('');
+	let done = $state<Record<string, string>>({});
+	let bioOpen = $state(false);
 	let loadRevision = 0;
-	const canSubmit = $derived(session.can('manage_library') || session.can('ask'));
-	const action = $derived(session.can('manage_library') ? 'add' : 'ask');
+	const action = $derived(session.can('manage_library') ? 'add' : session.can('ask') ? 'ask' : null);
 
-	async function load(pageNumber = current) {
+	async function load() {
 		const revision = ++loadRevision;
 		busy = true;
 		error = '';
 		try {
-			const next = await api.get<FilmographyPage>(`/people/${encodeURIComponent(id)}?role=${role}&page=${pageNumber}&page_size=24`);
+			const base = `/people/${encodeURIComponent(id)}?role=${role}&sort=${sort}&page_size=100`;
+			const first = await api.get<FilmographyPage>(`${base}&page=1`);
+			let all = first.movies;
+			for (let p = 2; p <= first.total_pages; p++) all = all.concat((await api.get<FilmographyPage>(`${base}&page=${p}`)).movies);
 			if (revision !== loadRevision) return;
-			data = next;
-			current = pageNumber;
+			// The personal rows stay as the first answer drew them (all roles).
+			data = data && role !== 'all' ? { ...first, library: data.library, asked: data.asked, known_for: data.known_for, coming_soon: data.coming_soon, often_with: data.often_with, stats: data.stats } : first;
+			movies = all;
 		} catch (err) {
 			if (revision === loadRevision) error = message(err);
 		} finally {
@@ -48,41 +65,56 @@
 		}
 	}
 
-	function select(tmdb: string, checked: boolean) {
-		selected = checked ? normalizeSelection([...selected, tmdb]) : selected.filter((id) => id !== tmdb);
-		reviewed = null;
-		results = [];
-	}
-
-	async function changeRole(next: PersonRole) {
+	function changeRole(next: PersonRole) {
 		role = next;
-		selected = [];
-		reviewed = null;
-		results = [];
-		await load(1);
+		void load();
 	}
-
-	async function review() {
-		busy = true;
-		error = '';
+	function changeSort(next: FilmSort) {
+		sort = next;
 		try {
-			const r = await api.post<{ movies: PersonMovie[]; automatic_future_credits: boolean }>(`/people/${encodeURIComponent(id)}/movies/review`, { tmdb_ids: selected });
-			reviewed = r.movies;
-		} catch (err) {
-			error = message(err);
-		} finally {
-			busy = false;
+			localStorage.setItem(SORT_KEY, next);
+		} catch {
+			/* private window: the choice lasts this visit */
 		}
+		void load();
 	}
 
-	async function submitReviewed() {
-		if (!reviewed) return;
-		submitting = true;
-		results = await runReviewed((path, body) => api.post(path, body), action, actionableSelection(reviewed));
-		submitting = false;
-		if (action === 'ask') void api.get<AskLimit>('/asks/limit').then((r) => (limit = r)).catch(() => {});
-		await load(current);
+	async function quick(m: PersonMovie) {
+		if (!action || asking) return;
+		asking = m.ids.tmdb;
+		const [r] = await runReviewed((path, body) => api.post(path, body), action, [m.ids.tmdb]);
+		asking = '';
+		done = { ...done, [m.ids.tmdb]: r?.ok ? (action === 'add' ? 'Added' : 'Asked') : (r?.error ?? 'Not sent') };
+		if (action === 'ask') void api.get<AskLimit>('/asks/limit').then((x) => (limit = x)).catch(() => {});
 	}
+
+	const inLibrary: CardOwned = { state: 'available', label: 'In your Library' };
+	function owned(m: PersonMovie): CardOwned | null {
+		if (m.title_id) return inLibrary;
+		if (done[m.ids.tmdb] === 'Asked' || done[m.ids.tmdb] === 'Added') return { state: 'requested', label: 'Requested' };
+		if (!m.ask || m.ask.state === 'turned_down') return null;
+		return { state: 'requested', label: m.ask.state === 'approved' ? 'Approved, waiting for a copy' : 'Requested' };
+	}
+	const href = (m: PersonMovie) => to(m.title_id ? `/library/${m.title_id}` : detailPath('movie', m.ids.tmdb));
+	const roleLine = (m: PersonMovie) => {
+		const who = m.characters?.length ? m.characters.join(' / ') : m.roles?.includes('Director') ? 'Director' : '';
+		return [who, m.year ? String(m.year) : ''].filter(Boolean).join(' · ');
+	};
+
+	const hero = $derived(data?.known_for?.find((m) => m.backdrop)?.backdrop ?? null);
+	const chips = $derived(personChips(data?.stats, data?.library?.length ?? 0, data?.asked?.length ?? 0));
+	const facts = $derived.by(() => {
+		const p = data?.person;
+		if (!p) return [];
+		const known = data?.known_for?.[0]?.name;
+		const born = p.birthday ? new Date(`${p.birthday}T00:00:00Z`).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : '';
+		return [known ? `Known for ${known}` : p.department, born ? `Born ${born}` : '', p.birthplace ? `From ${p.birthplace}` : ''].filter(Boolean) as string[];
+	});
+	const decades = $derived.by(() => {
+		const g = byDecade(movies);
+		if (sort !== 'popular') return g;
+		return g.sort((a, b) => (a.label === 'Coming soon' ? 1 : b.label === 'Coming soon' ? -1 : b.label.localeCompare(a.label)));
+	});
 
 	onMount(() => {
 		void load();
@@ -92,78 +124,120 @@
 
 <svelte:head><title>{data?.person.name ?? 'Person'} · HolyArrs</title></svelte:head>
 
-<div class="workspace">
-<PageHeader title={data?.person.name ?? 'Person'} subtitle={data ? `${data.person.department || 'Department unavailable'}${data.person.birthplace ? ` · ${data.person.birthplace}` : ''}` : undefined} back={{ href: to('/people'), label: 'People' }} />
-{#if error && !data}<LoadError hasData={false} message={plainReason(error).text} onretry={() => load(current)} {busy} />
+{#snippet filmCard(m: PersonMovie)}
+	<WideCard cover title={m.name} href={href(m)} image={m.backdrop || m.poster} kind="movie" subtitle={roleLine(m) || undefined} owned={owned(m)} preview={{ kind: 'movie', tmdb: m.ids.tmdb, year: m.year || undefined, titleId: m.title_id }}>
+		{#snippet growAction()}
+			{#if action && !m.title_id && !m.ask && !m.never_add && !done[m.ids.tmdb]}
+				<IconButton icon="plus" label={action === 'add' ? `Add ${m.name}` : `Ask for ${m.name}`} variant="glass" size="lg" aria-busy={asking === m.ids.tmdb || undefined} onclick={() => quick(m)} />
+			{:else}
+				<IconButton icon="play" label="Open {m.name}" variant="glass" size="lg" href={href(m)} />
+			{/if}
+		{/snippet}
+	</WideCard>
+{/snippet}
+
+{#snippet row(title: string, list: PersonMovie[] | undefined, anchor: string)}
+	{#if list?.length}
+		<Shelf {title} {anchor} item="var(--title-item)" items={list} key={(m) => m.ids.tmdb} placeholder="wide" lines={1}>
+			{#snippet card(m: PersonMovie)}{@render filmCard(m)}{/snippet}
+		</Shelf>
+	{/if}
+{/snippet}
+
+<div class="person">
+{#if error && !data}<LoadError hasData={false} message={plainReason(error).text} onretry={load} {busy} />
 {:else if error}<p class="notice bad" role="alert"><Icon name="alert" size={17} /><span>{plainReason(error).text}</span></p>{/if}
-{#if busy && !data}<div class="person-head" aria-busy="true"><Skeleton shape="poster" /><Skeleton lines={4} /></div>{/if}
+{#if busy && !data}<div class="hero" aria-busy="true"><div class="hero-in"><Skeleton shape="poster" /><Skeleton lines={4} /></div></div>{/if}
 {#if data}
-	<div class="person-head">
-		<div class="portrait"><Poster src={data.person.profile} name={data.person.name} /></div>
-		<div class="who">
-			{#if data.person.biography}<p class="bio">{data.person.biography}</p>{/if}
+	<header class="hero">
+		{#if hero}<img class="art" src={hero} alt="" decoding="async" />{/if}
+		<div class="shade" aria-hidden="true"></div>
+		<div class="hero-in">
+			<div class="portrait"><Poster src={data.person.profile} name={data.person.name} /></div>
+			<div class="who">
+				<h1>{data.person.name}</h1>
+				{#if facts.length}<p class="facts">{facts.join(' · ')}</p>{/if}
+				{#if chips.length}<ul class="chips" aria-label="At a glance">{#each chips as c (c)}<li>{c}</li>{/each}</ul>{/if}
+				{#if data.person.biography}
+					<p class="bio" class:open={bioOpen}>{data.person.biography}</p>
+					<button class="more" type="button" onclick={() => (bioOpen = !bioOpen)}>{bioOpen ? 'Less' : 'More'}</button>
+				{/if}
+			</div>
 		</div>
-	</div>
+	</header>
 
-	<div class="toolbar">
-		<SegmentedControl label="Credit role" value={role} options={[{ value: 'all', label: 'All' }, { value: 'actor', label: 'Actor' }, { value: 'director', label: 'Director' }]} onchange={(v) => changeRole(v as PersonRole)} />
-		{#if selected.length}<Button variant="primary" onclick={review} disabled={busy}>Review {selected.length} selected</Button>{/if}
-	</div>
-
-	{#if !data.complete}<p class="notice">The provider returns this filmography as one unpaged list and does not promise it is complete.</p>{/if}
 	{#if limit && action === 'ask' && !limit.no_limit && !limit.movies.no_limit}
 		<p class="note">Movie asks this rolling week: {limit.movies.used} used, {limit.movies.left} left.</p>
 	{/if}
 
-	<h2 class="sr-only">Movies</h2>
-	<FilmographyList movies={data.movies} {selected} selectable={canSubmit} onselect={select} />
-	{#if !data.movies.length}<EmptyState compact icon="film" title="No movies match this role on this page." />{/if}
+	{@render row('Coming soon', data.coming_soon, 'person-soon')}
+	{@render row('Known for', data.known_for, 'person-known')}
+	{@render row('In your Library', data.library, 'person-library')}
+	{@render row('You asked for', data.asked, 'person-asked')}
 
-	<nav class="pages" aria-label="Filmography pages">
-		<Button icon="chevronLeft" disabled={busy || current <= 1} onclick={() => load(current - 1)}>Previous</Button>
-		<span class="note">Page {current}{#if data.total_pages} of {data.total_pages}{/if}</span>
-		<Button iconAfter="chevronRight" disabled={busy || current >= data.total_pages} onclick={() => load(current + 1)}>Next</Button>
-	</nav>
-
-	{#if reviewed}
-		<section class="card review" aria-labelledby="review-title">
-			<h2 id="review-title">Review {reviewed.length} movie{reviewed.length === 1 ? '' : 's'}</h2>
-			<p>Only these movies will be {action === 'add' ? 'added' : 'asked for'}. Future credits are not followed automatically.</p>
-			<ul>{#each reviewed as movie (movie.ids.tmdb)}<li>{movie.name}{#if movie.year} ({movie.year}){/if}</li>{/each}</ul>
-			<Button variant="primary" disabled={!actionableSelection(reviewed).length} busy={submitting} onclick={submitReviewed}>{action === 'add' ? 'Add reviewed movies' : 'Ask for reviewed movies'}</Button>
+	{#if data.often_with?.length}
+		<section class="block" aria-labelledby="with-title">
+			<h2 id="with-title">Often works with</h2>
+			<ul class="tiles">
+				{#each data.often_with as p (p.id)}
+					<li><BrowseTile name={p.name} href={to(`/people/${p.id.replace(/^tmdb:/, '')}`)} image={p.profile ?? ''} hue="#555b66" plain /></li>
+				{/each}
+			</ul>
 		</section>
 	{/if}
-	{#if results.length}
-		<section class="card" aria-labelledby="results-title">
-			<h2 id="results-title">Results</h2>
-			<ul class="results">{#each results as result}<li class:failed={!result.ok}>{result.tmdb_id}: {result.ok ? 'Submitted' : result.error}</li>{/each}</ul>
-		</section>
-	{/if}
-	<p class="attribution">{data.attribution}</p>
+
+	<section class="block" aria-labelledby="films-title">
+		<div class="toolbar">
+			<h2 id="films-title">Filmography</h2>
+			<div class="controls">
+				<SegmentedControl label="Credit role" value={role} options={[{ value: 'all', label: 'All' }, { value: 'actor', label: 'Actor' }, { value: 'director', label: 'Director' }]} onchange={(v) => changeRole(v as PersonRole)} />
+				<SegmentedControl label="Sort" value={sort} options={[{ value: 'oldest', label: 'Oldest first' }, { value: 'newest', label: 'Newest first' }, { value: 'popular', label: 'Popular' }]} onchange={(v) => changeSort(v as FilmSort)} />
+			</div>
+		</div>
+		{#each decades as g (g.label)}
+			<h3 class="decade">{g.label}</h3>
+			<ul class="grid" aria-busy={busy || undefined}>
+				{#each g.movies as m (m.ids.tmdb)}<li>{@render filmCard(m)}</li>{/each}
+			</ul>
+		{/each}
+		{#if !movies.length && !busy}<EmptyState compact icon="film" title="No movies match this role." />{/if}
+	</section>
+
+	<p class="attribution">{#if !data.complete}Credits as the provider lists them; it may not be complete. {/if}{data.attribution}</p>
 {/if}
 </div>
 
 <style>
-	.workspace { display: flex; flex-direction: column; gap: 16px; padding-bottom: 48px; min-width: 0; }
-	.person-head { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 24px; align-items: start; }
-	.portrait { width: 140px; border-radius: var(--r-card); overflow: hidden; box-shadow: var(--shadow-card); }
-	.who { min-width: 0; }
-	.bio { margin: 0; max-width: 76ch; font: var(--t-body); line-height: 1.6; text-wrap: pretty; }
+	.person { --title-item: max(200px, calc((100vw - 96px) / 5.16)); display: flex; flex-direction: column; gap: 32px; padding-bottom: 48px; min-width: 0; }
+	/* The hero stays dark in both themes, like the title pages. */
+	.hero { position: relative; isolation: isolate; min-height: clamp(380px, 38vw, 560px); display: flex; align-items: flex-end; overflow: hidden; margin: calc(var(--s-6) * -1) calc(var(--gutter) * -1) 0; background: var(--on-art-ink); color: var(--on-art); }
+	.art { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
+	.shade { position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, var(--on-art-scrim) 0%, var(--on-art-scrim-mid) 38%, var(--on-art-scrim-none) 72%), linear-gradient(to right, var(--on-art-scrim-mid) 0%, var(--on-art-scrim-none) 60%); }
+	.hero-in { width: 100%; display: grid; grid-template-columns: clamp(120px, 14vw, 200px) minmax(0, 720px); gap: clamp(18px, 3vw, 36px); align-items: end; padding: clamp(20px, 4vw, 48px); }
+	.portrait { border-radius: var(--r-card); overflow: hidden; box-shadow: 0 18px 48px rgb(0 0 0 / .5); }
+	.who { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+	h1 { margin: 0; font: var(--t-large-title); font-family: var(--font-display); font-size: clamp(32px, 5vw, 60px); letter-spacing: var(--t-large-title-track); text-wrap: balance; }
+	.facts { margin: 0; color: var(--on-art-muted); font: var(--t-subhead); }
+	.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 0; padding: 0; list-style: none; }
+	.chips li { padding: 5px 12px; border-radius: 999px; background: rgb(255 255 255 / .14); backdrop-filter: blur(12px); font: var(--t-footnote); font-weight: 600; font-variant-numeric: tabular-nums; }
+	.bio { margin: 0; max-width: 72ch; font: var(--t-callout); line-height: 1.55; color: var(--on-art); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+	.bio.open { display: block; }
+	.more { align-self: flex-start; padding: 0; border: 0; background: none; color: var(--on-art); font: var(--t-subhead); font-weight: 600; cursor: pointer; text-decoration: underline; }
+	.block { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+	.block h2 { margin: 0; font: var(--t-title2); }
 	.toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-	.pages { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+	.controls { display: flex; flex-wrap: wrap; gap: 10px; }
+	.decade { margin: 8px 0 0; font: var(--t-title3); color: var(--text-muted); font-variant-numeric: tabular-nums; }
+	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--title-item), 1fr)); gap: 16px 5px; margin: 0; padding: 0; list-style: none; }
+	.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
 	.note { margin: 0; color: var(--text-muted); font: var(--t-subhead); font-weight: 400; font-variant-numeric: tabular-nums; }
 	.notice { display: flex; align-items: center; gap: 8px; margin: 0; padding: 10px 12px; border-radius: var(--r-btn); background: var(--surface-2); font: var(--t-callout); }
 	.notice.bad { color: var(--fail); }
-	.card { margin: 0; padding: 16px 20px 20px; border: 0; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-card); font: var(--t-callout); }
-	.card h2 { margin: 0 0 8px; font: var(--t-title3); }
-	.card p, .card ul { margin: 0 0 12px; }
-	.card ul { padding-left: 20px; }
-	.failed { color: var(--fail); }
 	.attribution { margin: 0; color: var(--text-muted); font: var(--t-footnote); }
-	@media (max-width: 560px) {
-		.person-head { grid-template-columns: 96px minmax(0, 1fr); gap: 14px; }
-		.portrait { width: 96px; }
-
-		.toolbar :global(.ui-btn) { width: 100%; }
+	@media (max-width: 767px) {
+		.person { --title-item: calc((100cqi - var(--shelf-gap, 12px)) / 1.6 / .78); gap: 26px; }
+		.hero-in { grid-template-columns: 96px minmax(0, 1fr); }
+		.grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); }
+		.tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 	}
 </style>

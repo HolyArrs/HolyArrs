@@ -54,6 +54,10 @@ type PersonMovieCredit struct {
 	Movie      Movie    `json:"movie"`
 	Roles      []string `json:"roles"`
 	Characters []string `json:"characters"`
+	Popularity float64  `json:"popularity,omitempty"`
+	// TMDB's audience score for the movie and how many votes it rests on.
+	VoteAverage float64 `json:"vote_average,omitempty"`
+	VoteCount   int     `json:"vote_count,omitempty"`
 }
 
 // PersonMoviePage is the provider's unpaged credit result. Complete remains

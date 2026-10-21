@@ -20,6 +20,9 @@ export type PersonMovie = {
 	year: number;
 	overview: string;
 	poster?: string;
+	backdrop?: string;
+	cinema_date?: string;
+	popularity?: number;
 	ids: Record<string, string>;
 	roles?: string[];
 	characters?: string[];
@@ -45,8 +48,46 @@ export type FilmographyPage = {
 	total_results: number;
 	complete: boolean;
 	provider_pages: number;
+	library?: PersonMovie[];
+	asked?: PersonMovie[];
+	known_for?: PersonMovie[];
+	coming_soon?: PersonMovie[];
+	often_with?: PersonSummary[];
+	stats?: PersonStats;
 	attribution: string;
 };
+
+export type PersonStats = { first_year?: number; last_year?: number; active: boolean; films: number; rating?: number; rated?: number };
+
+export type FilmSort = 'oldest' | 'newest' | 'popular';
+
+/** The hero's chips: years active, films, average score, household. */
+export function personChips(s: PersonStats | undefined, library: number, asked: number): string[] {
+	if (!s) return [];
+	const out: string[] = [];
+	if (s.first_year) out.push(`${s.first_year}–${s.active ? 'now' : s.last_year}`);
+	if (s.films) out.push(`${s.films} film${s.films === 1 ? '' : 's'}`);
+	if (s.rating && s.rated) out.push(`★ ${s.rating.toFixed(1)} avg`);
+	const home = [library ? `${library} in your Library` : '', asked ? `${asked} asked` : ''].filter(Boolean).join(' · ');
+	if (home) out.push(home);
+	return out;
+}
+
+/** Credits grouped under decade headings, in the order they arrive; undated ones under "Coming soon". */
+export function byDecade(movies: PersonMovie[]): { label: string; movies: PersonMovie[] }[] {
+	const groups: { label: string; movies: PersonMovie[] }[] = [];
+	const at = new Map<string, number>();
+	for (const m of movies) {
+		const label = m.year ? `${Math.floor(m.year / 10) * 10}s` : 'Coming soon';
+		let i = at.get(label);
+		if (i === undefined) {
+			i = groups.push({ label, movies: [] }) - 1;
+			at.set(label, i);
+		}
+		groups[i].movies.push(m);
+	}
+	return groups;
+}
 
 export type ReviewedResult = { tmdb_id: string; ok: boolean; error?: string };
 
