@@ -393,6 +393,7 @@
 			if (act === 'sound') toggleMute();
 			else if (act === 'pause') togglePause();
 			else if (act === 'replay') replay();
+			else if (act === 'expand') ((ctlAt = 0), expand(e));
 		};
 		window.addEventListener('click', take, true);
 		return () => window.removeEventListener('click', take, true);
@@ -572,6 +573,10 @@
 			<IconButton icon={heard ? 'sound' : 'soundOff'} label={heard ? 'Turn sound off' : 'Turn sound on'} variant="glass" size="md" tipSide="above" data-act="sound" />
 		{:else if done && sources.length > 0}
 			<IconButton icon="replay" label="Play the trailer again" variant="glass" size="md" tipSide="above" data-act="replay" />
+		{/if}
+		{#if onexpand && shown && !corner}
+			<!-- Heroes: a click on the picture opens full screen too; this is the visible way in. -->
+			<IconButton icon="expand" label="Play trailer full screen" variant="glass" size="md" tipSide="above" data-act="expand" data-testid="trailer-expand" />
 		{/if}
 		{#if onexpand && shown && corner}
 			<IconButton icon="expand" label="Play trailer full screen" variant="glass" size="md" tipSide="above" class="expand corner" bind:node={expandBtn} data-testid="trailer-expand" />
