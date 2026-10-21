@@ -1,6 +1,6 @@
 <script lang="ts">
 	// The sign-in page's cinematic backdrop: one full-bleed picture at a
-	// time, a slow Ken Burns move and a crossfade every 8 s. The card paints
+	// time, a slow Ken Burns move and a crossfade every 12 s. The card paints
 	// first; the art fades in once its first picture has decoded. Each
 	// picture is chosen for this screen (size x DPR) so it is never blurry.
 	import { onMount, tick } from 'svelte';

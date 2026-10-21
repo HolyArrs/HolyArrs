@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { coverNeed, pickArt, playlist, prepareSlide, providerButtons, sized, type ArtShot } from './signinArt.ts';
+import { coverNeed, pickArt, playlist, prepareSlide, providerButtons, providerTiles, sized, type ArtShot } from './signinArt.ts';
 
 const B = 'https://image.tmdb.org/t/p/original/';
 const shot = (bw: number, pw?: number): ArtShot => ({
@@ -121,5 +121,19 @@ describe('prepareSlide: backdrop and logo switch as one unit', () => {
 
 	it('skips the slide when the picture fails', async () => {
 		expect(await prepareSlide(entry, async (u) => u.includes('logo'))).toBeNull();
+	});
+});
+
+describe('providerTiles', () => {
+	it('shows only the enabled outside ways, in order, with short names', () => {
+		const t = providerTiles(['password', 'oidc', 'plex', 'emby']);
+		expect(t.map((x) => x.way)).toEqual(['plex', 'emby', 'oidc']);
+		expect(t.map((x) => x.label)).toEqual(['Plex', 'Emby', 'Single sign-on']);
+	});
+	it('a single tile says Continue with', () => {
+		expect(providerTiles(['jellyfin', 'password'])).toEqual([{ way: 'jellyfin', name: 'Jellyfin', label: 'Continue with Jellyfin' }]);
+	});
+	it('password only gives no tiles', () => {
+		expect(providerTiles(['password'])).toEqual([]);
 	});
 });

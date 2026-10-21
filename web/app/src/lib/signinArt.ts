@@ -118,3 +118,21 @@ export async function prepareSlide(
 	if (!pic) return null;
 	return { shot: entry.shot, pick: entry.pick, logo: logo ? logoUrl : null };
 }
+
+/** A provider tile on the card: the short name when several share the row, the full "Continue with" when one stands alone. */
+export type ProviderTile = { way: Exclude<Way, 'password'>; name: string; label: string };
+
+const NAMES: Record<Exclude<Way, 'password'>, string> = {
+	plex: 'Plex',
+	jellyfin: 'Jellyfin',
+	emby: 'Emby',
+	oidc: 'Single sign-on',
+	forward_auth: 'Trusted proxy'
+};
+
+/** The tile row: only the outside ways the owner turned on, in a fixed order. */
+export function providerTiles(ways: readonly Way[]): ProviderTile[] {
+	const order = ['plex', 'jellyfin', 'emby', 'oidc', 'forward_auth'] as const;
+	const on = order.filter((w) => ways.includes(w));
+	return on.map((way) => ({ way, name: NAMES[way], label: on.length > 1 ? NAMES[way] : `Continue with ${NAMES[way]}` }));
+}
