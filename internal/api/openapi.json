@@ -12974,6 +12974,27 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/library/search": {
+      "get": {
+        "description": "Search's In your Library row. Reads only the local database: Library titles by name, original name, aliases and year (accents and case folded), albums of Library artists and people credited in Library titles. kind is all, movie, show, music or people. Kid limits and parts that are off hide titles.",
+        "operationId": "librarySearch",
+        "responses": {
+          "200": {
+            "description": "titles (in the same view as GET /titles), albums (id, title_id, name, artist, year) and people (name and the Library titles they are credited in), at most 24 of each."
+          },
+          "400": {
+            "description": "kind is not all, movie, show, music or people, or the query is longer than 256 characters or 16 words."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          }
+        },
+        "summary": "Search the Library",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/links/{kind}/{id}/restart": {
       "post": {
         "description": "Reconnects one linked app and leaves the others alone: a Downloader is signed in again and checked, a Source is tested now, a media server or subtitle site is tested again. Answers what that app's own test answers. Needs the owner or an admin; an API key needs the control scope. Writes a control_used Event (who, what, when).",

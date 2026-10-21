@@ -218,6 +218,7 @@ func actor(r *http.Request) domain.Actor {
 func (a *API) Handler() http.Handler {
 	m := http.NewServeMux()
 	m.HandleFunc("GET /api/v1/titles", a.listTitles)
+	m.HandleFunc("GET /api/v1/library/search", a.librarySearch)
 	m.HandleFunc("GET /api/v1/library-summary", a.librarySummary)
 	m.HandleFunc("GET /api/v1/home", a.home)
 	m.HandleFunc("POST /api/v1/titles", a.addTitle)

@@ -71,3 +71,30 @@ export function topMatches<T>(groups: T[][], max = 6): T[] {
 	}
 	return out;
 }
+
+/** LibraryHit is the slice of a Library title the "In your Library" row reads. */
+export type LibraryHit = {
+	kind: string;
+	slots?: { state: string; download?: { active?: boolean } | null }[] | null;
+	show?: { seasons: { number: number }[]; missing: number } | null;
+	artist?: { albums: number; missing: number } | null;
+};
+
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+/**
+ * libraryNote is a Library card's state line in Search: "Downloading",
+ * "Missing 2 episodes", or what is kept ("4 seasons · up to date").
+ */
+export function libraryNote(t: LibraryHit, fallback = ''): string {
+	if ((t.slots ?? []).some((s) => s.download?.active || s.state === 'downloading' || s.state === 'importing')) return 'Downloading';
+	if (t.kind === 'show' && t.show) {
+		if (t.show.missing > 0) return `Missing ${plural(t.show.missing, 'episode')}`;
+		return `${plural(t.show.seasons.filter((s) => s.number > 0).length, 'season')} · up to date`;
+	}
+	if (t.kind === 'artist' && t.artist) {
+		if (t.artist.missing > 0) return `Missing ${plural(t.artist.missing, 'track')}`;
+		return `${plural(t.artist.albums, 'album')} · up to date`;
+	}
+	return fallback;
+}

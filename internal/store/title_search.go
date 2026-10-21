@@ -14,7 +14,7 @@ import (
 
 var ErrTitleSearchQuery = errors.New("find by name accepts at most 256 characters and 16 words")
 
-// SearchTitles matches literal word prefixes in local names, aliases and years.
+// SearchTitles matches literal word prefixes in local names, original names, aliases and years.
 func (s *Store) SearchTitles(ctx context.Context, query string) ([]domain.Title, error) {
 	if utf8.RuneCountInString(query) > 256 {
 		return nil, ErrTitleSearchQuery
@@ -56,7 +56,7 @@ func (s *Store) RebuildTitleSearch(ctx context.Context) error {
 		}
 		_, err := tx.ExecContext(ctx, `INSERT INTO title_search(rowid, name, sort_name, aliases, year)
 			SELECT id, name, sort_name,
-				coalesce((SELECT group_concat(value, ' ') FROM json_each(titles.aliases)), ''), year
+				trim(coalesce(original_name, '') || ' ' || coalesce((SELECT group_concat(value, ' ') FROM json_each(titles.aliases)), '')), year
 			FROM titles`)
 		return err
 	})

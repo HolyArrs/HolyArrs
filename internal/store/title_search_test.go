@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io/fs"
 	"path/filepath"
 	"reflect"
@@ -170,4 +171,48 @@ func TestTitleSearchMigrationAndIndexMaintenance(t *testing.T) {
 		t.Fatal("cancelled rebuild succeeded")
 	}
 	match("city", 1)
+}
+
+func TestSearchTitlesOriginalNameAccentsAndYear(t *testing.T) {
+	s, err := Open(t.TempDir(), Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	orig := "Le Fabuleux Destin d'Amélie Poulain"
+	add := func(name string, year int, original *string) {
+		t.Helper()
+		title := domain.Title{Kind: "movie", Name: name, SortName: name, Year: &year, OriginalName: original, MetadataSource: "tmdb", WhyAdded: "by_hand", State: "active",
+			NewPartsPolicy: "all", ReleaseGate: "released", GateDriver: "none", Status: "released"}
+		if err := s.Write(context.Background(), func(tx *sql.Tx) error { _, err := Insert(tx, "titles", &title, domain.System); return err }); err != nil {
+			t.Fatal(err)
+		}
+	}
+	add("Amelie", 2001, &orig)
+	add("Dune", 1984, nil)
+	add("Dune", 2021, nil)
+	names := func(q string) []string {
+		t.Helper()
+		ts, err := s.SearchTitles(context.Background(), q)
+		if err != nil {
+			t.Fatal(err)
+		}
+		out := []string{}
+		for _, x := range ts {
+			out = append(out, fmt.Sprintf("%s %d", x.Name, *x.Year))
+		}
+		return out
+	}
+	for q, want := range map[string][]string{
+		"fabuleux":  {"Amelie 2001"},
+		"AMÉLIE":    {"Amelie 2001"},
+		"poulain":   {"Amelie 2001"},
+		"dune 2021": {"Dune 2021"},
+		"DÜNE":      {"Dune 1984", "Dune 2021"},
+		"dune 1999": {},
+	} {
+		if got := names(q); !reflect.DeepEqual(got, want) {
+			t.Errorf("%q: got %q, want %q", q, got, want)
+		}
+	}
 }

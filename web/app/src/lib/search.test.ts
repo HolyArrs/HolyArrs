@@ -47,3 +47,15 @@ describe('search page scope and recents', () => {
 		expect(topMatches([[], []])).toEqual([]);
 	});
 });
+
+import { libraryNote } from './search.ts';
+
+describe('libraryNote', () => {
+	it('says what a Library title is doing', () => {
+		expect(libraryNote({ kind: 'show', show: { seasons: [{ number: 0 }, { number: 1 }, { number: 2 }, { number: 3 }, { number: 4 }], missing: 0 } })).toBe('4 seasons · up to date');
+		expect(libraryNote({ kind: 'show', show: { seasons: [{ number: 1 }], missing: 2 } })).toBe('Missing 2 episodes');
+		expect(libraryNote({ kind: 'movie', slots: [{ state: 'downloading' }] }, 'In your Library')).toBe('Downloading');
+		expect(libraryNote({ kind: 'movie', slots: [] }, 'In your Library')).toBe('In your Library');
+		expect(libraryNote({ kind: 'artist', artist: { albums: 1, missing: 0 } })).toBe('1 album · up to date');
+	});
+});

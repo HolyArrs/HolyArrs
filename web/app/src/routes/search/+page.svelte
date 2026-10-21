@@ -1,9 +1,20 @@
+<script module lang="ts">
+	// Back to Search reuses what was on screen: the answers kept when Search was
+	// left, for that history entry and address only (a fresh visit loads anew).
+	let kept: { key: string; data: unknown } | null = null;
+	function entryKey(): string {
+		if (typeof history === 'undefined') return '';
+		const i = (history.state as Record<string, unknown> | null)?.['sveltekit:history'];
+		return typeof i === 'number' ? `${i}|${location.pathname}${location.search}` : '';
+	}
+</script>
+
 <script lang="ts">
 	import { to } from '#lib/paths.ts';
 	import { onMount, tick, untrack } from 'svelte';
 	import { focusField, forgetReturn, playFieldEntry, restoreReturn, searchField, searchHooks } from '#lib/search-field.svelte.ts';
 	import SearchField from '#lib/ui/SearchField.svelte';
-	import { afterNavigate, goto } from '$app/navigation';
+	import { afterNavigate, beforeNavigate, goto, snapshot } from '$app/navigation';
 	import { page } from '$app/state';
 	import { api, message, ApiError } from '#lib/api.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
@@ -30,11 +41,12 @@
 	import AskArtistDialog from '#lib/AskArtistDialog.svelte';
 	import { albumWords } from '#lib/music.ts';
 	import { createLatestOnly } from '#lib/history.ts';
-	import { addRecent, readRecent, readScope, recentKey, scopeAddress, topMatches, type SearchScope } from '#lib/search.ts';
+	import { addRecent, libraryNote, readRecent, readScope, recentKey, scopeAddress, topMatches, type SearchScope } from '#lib/search.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { detailPath } from '#lib/title-details.ts';
-	import { discoverCard, genrePath, ownedMark, type GenreAnswer, type ProviderItem } from '#lib/explore.ts';
+	import { discoverCard, genrePath, ownedMark, type ExploreCard, type GenreAnswer, type ProviderItem } from '#lib/explore.ts';
 	import { audienceOf } from '#lib/title-status.ts';
+	import { posterStatus } from '#lib/library.ts';
 
 	// Search is a page; its one field is the top bar's (lib/search-field.svelte.ts;
 	// on phones, where the top bar is hidden, a copy sits at the page top). The words and the scope
@@ -43,7 +55,7 @@
 	// tab); a mood tile opens a mood view here (?mood=&genre=&type=). Results
 	// come in as you type. Kid limits are applied by the server on every lookup.
 
-	type Card = { key: string; type: Exclude<SearchScope, 'all'>; name: string; year?: number; image?: string | null; href: string; owned: CardOwned | null; preview?: { kind: 'movie' | 'show'; tmdb: string; year?: number }; artist?: LookupArtist; subtitle?: string };
+	type Card = { key: string; type: Exclude<SearchScope, 'all'>; titleId?: number; name: string; year?: number; image?: string | null; href: string; owned: CardOwned | null; preview?: { kind: 'movie' | 'show'; tmdb: string; year?: number }; artist?: LookupArtist; subtitle?: string };
 
 	// The words live in the shared field (top bar); a direct link fills it from ?q=.
 	if (!searchField.term.trim()) searchField.term = page.url.searchParams.get('q') ?? '';
@@ -101,7 +113,7 @@
 	// Each tile enters behind the band: rows ~70 ms apart, ~25 ms left to right
 	// within a row, starting as the band passes it, bounded so the last lands by ~1.1 s.
 	function landing(node: HTMLElement, at: { row: number; col: number }) {
-		if (calm) return;
+		if (calm || restored) return;
 		const elapsed = performance.now() - t0;
 		// The first screen only: tiles that arrive after the entry just appear.
 		if (elapsed > ENTER_DELAY + ENTER_SWEEP) return;
@@ -145,18 +157,39 @@
 	}
 	const movieCard = (m: LookupMovie): Card | null =>
 		m.ids.tmdb
-			? { key: `m${m.ids.tmdb}`, type: 'movie', name: m.name, year: m.year || undefined, subtitle: m.year ? String(m.year) : undefined, image: m.poster, href: to(m.title_id ? `/library/${m.title_id}` : detailPath('movie', m.ids.tmdb)), owned: m.title_id ? inLibrary : askMark(m.ask), preview: { kind: 'movie', tmdb: m.ids.tmdb, year: m.year || undefined } }
+			? { key: `m${m.ids.tmdb}`, type: 'movie', titleId: m.title_id || undefined, name: m.name, year: m.year || undefined, subtitle: m.year ? String(m.year) : undefined, image: m.poster, href: to(m.title_id ? `/library/${m.title_id}` : detailPath('movie', m.ids.tmdb)), owned: m.title_id ? inLibrary : askMark(m.ask), preview: { kind: 'movie', tmdb: m.ids.tmdb, year: m.year || undefined } }
 			: null;
 	const showCard = (s: LookupShow, i: number): Card => {
 		const tmdb = s.ids.tmdb;
-		return { key: `s${s.source}${s.ids[s.source] ?? s.name}${i}`, type: 'show', name: s.name, year: s.year, subtitle: s.year ? String(s.year) : undefined, image: s.poster, href: to(s.title_id ? `/library/${s.title_id}` : tmdb ? detailPath('show', tmdb) : `/search?q=${encodeURIComponent(s.name)}&kind=show`), owned: s.title_id ? inLibrary : askMark(s.ask), preview: tmdb ? { kind: 'show', tmdb, year: s.year } : undefined };
+		return { key: `s${s.source}${s.ids[s.source] ?? s.name}${i}`, type: 'show', titleId: s.title_id || undefined, name: s.name, year: s.year, subtitle: s.year ? String(s.year) : undefined, image: s.poster, href: to(s.title_id ? `/library/${s.title_id}` : tmdb ? detailPath('show', tmdb) : `/search?q=${encodeURIComponent(s.name)}&kind=show`), owned: s.title_id ? inLibrary : askMark(s.ask), preview: tmdb ? { kind: 'show', tmdb, year: s.year } : undefined };
 	};
-	const artistCard = (a: LookupArtist): Card => ({ key: `a${a.mbid}`, type: 'music', name: a.name, subtitle: a.disambiguation || [a.type, a.country].filter(Boolean).join(' · ') || undefined, href: a.title_id ? to(`/library/${a.title_id}`) : '', owned: a.title_id ? inLibrary : askMark(a.ask), artist: a });
+	const artistCard = (a: LookupArtist): Card => ({ key: `a${a.mbid}`, type: 'music', titleId: a.title_id || undefined, name: a.name, subtitle: a.disambiguation || [a.type, a.country].filter(Boolean).join(' · ') || undefined, href: a.title_id ? to(`/library/${a.title_id}`) : '', owned: a.title_id ? inLibrary : askMark(a.ask), artist: a });
 	const personCard = (p: PersonSummary): Card => ({ key: `p${p.id}`, type: 'people', name: p.name, subtitle: p.department, image: p.profile, href: to(`/people/${encodeURIComponent(p.id)}`), owned: null });
 
-	const lists = $derived(order.map((t) => groups[t] ?? []));
+	// ── In your Library: local matches first, left out of the wider results ──
+	type LibraryAnswer = { titles: TitleView[]; albums: { id: number; title_id: number; name: string; artist: string; year?: number }[]; people: { name: string; titles: { id: number; name: string; kind: string }[] }[] };
+	let lib = $state<LibraryAnswer | null>(null);
+	const ONLY_KEY = 'holyarrs.search.only-library';
+	let onlyLib = $state(false);
+	function setOnlyLib(v: boolean) {
+		onlyLib = v;
+		try {
+			localStorage.setItem(ONLY_KEY, v ? '1' : '0');
+		} catch {
+			/* a private window: the chip just is not remembered */
+		}
+	}
+	const markOf = (t: TitleView) => ownedMark({ key: String(t.id), kind: t.kind === 'show' ? 'show' : t.kind === 'artist' ? 'artist' : 'movie', name: t.name, titleId: t.id } as ExploreCard, t, who);
+	const libCards = $derived<Card[]>([
+		...(lib?.titles ?? []).map((t): Card => ({ key: `lt${t.id}`, type: t.kind === 'show' ? 'show' : t.kind === 'artist' ? 'music' : 'movie', titleId: t.id, name: t.name, year: t.year, image: t.backdrop ?? t.artwork[0], href: to(`/library/${t.id}`), owned: markOf(t), subtitle: libraryNote(t, [t.year, posterStatus(t, who)?.label].filter(Boolean).join(' · ')) })),
+		...(lib?.albums ?? []).map((a): Card => ({ key: `la${a.id}`, type: 'music', name: a.name, href: to(`/library/${a.title_id}`), owned: inLibrary, subtitle: [a.artist, a.year].filter(Boolean).join(' · ') })),
+		...(lib?.people ?? []).map((p): Card => ({ key: `lp${p.name}`, type: 'people', name: p.name, href: to(`/library/${p.titles[0]?.id}`), owned: null, subtitle: p.titles.map((x) => x.name).slice(0, 2).join(', ') }))
+	]);
+	const libIds = $derived(new Set((lib?.titles ?? []).map((t) => t.id)));
+	const wider = $derived(Object.fromEntries(order.map((t) => [t, onlyLib ? [] : (groups[t] ?? []).filter((c) => !c.titleId || !libIds.has(c.titleId))])) as Record<Card['type'], Card[]>);
+	const lists = $derived(order.map((t) => wider[t] ?? []));
 	const top = $derived(topMatches(lists.filter((_, i) => order[i] !== 'people'), 6));
-	const total = $derived(lists.reduce((n, g) => n + g.length, 0));
+	const total = $derived(lists.reduce((n, g) => n + g.length, 0) + libCards.length);
 	const pending = $derived(order.some((t) => groups[t] === null));
 
 	// ── Searching ──────────────────────────────────────────────────────────
@@ -194,6 +227,7 @@
 		noTMDB = false;
 		if (q) mood = mgenre = cat = null;
 		if (!q) {
+			lib = null;
 			searched = '';
 			busy = false;
 			return;
@@ -205,6 +239,14 @@
 		for (const t of order) next[t] = want.includes(t) ? null : [];
 		groups = next;
 		const enc = encodeURIComponent(q);
+		lib = null;
+		api.get<LibraryAnswer>(`/library/search?q=${enc}&kind=${scope}`)
+			.then((r) => {
+				if (isLatest()) lib = r;
+			})
+			.catch(() => {
+				if (isLatest()) lib = { titles: [], albums: [], people: [] };
+			});
 		const jobs: Record<Card['type'], () => Promise<Card[]>> = {
 			movie: () => api.get<{ movies: LookupMovie[] }>(`/titles/lookup?term=${enc}`).then((r) => r.movies.map(movieCard).filter((c): c is Card => !!c)),
 			show: () => api.get<{ shows: LookupShow[] }>(`/shows/lookup?term=${enc}`).then((r) => r.shows.map(showCard)),
@@ -531,7 +573,92 @@
 	const catCards = $derived((catItems ?? []).map((item) => ({ item, c: discoverCard(item, 'search-category') })));
 	const moodCards = $derived((moodItems ?? []).map((item) => ({ item, c: discoverCard(item, 'search-mood') })));
 
+	// ── Back restores Search exactly ───────────────────────────────────────
+	// The answers come from `kept` (no refetch, no entry animation); the
+	// snapshot holds the spot: scroll, loaded Browse sections and rows, people
+	// pages and the chip. The scroll comes back once the page is tall enough.
+	const kept0 = kept && kept.key === entryKey() ? (kept.data as ReturnType<typeof keep>) : null;
+	kept = null;
+	let restored = !!kept0;
+	function keep() {
+		return $state.snapshot({ groups, lib, searched, tiles, tilesFor, sections, sectionTiles, sectionRows, plainTiles, plainFor, shelves, shelfPeople, shelfRows, peopleAll, peoplePage, peopleEnd, peopleFilter, catItems, catFor, catName, moodItems, moodFor, moodGenre, mgenreCards, mgenreFor });
+	}
+	if (kept0) {
+		const k = kept0;
+		groups = k.groups;
+		lib = k.lib;
+		searched = k.searched;
+		tiles = k.tiles;
+		tilesFor = k.tilesFor;
+		sections = k.sections;
+		sectionTiles = k.sectionTiles;
+		sectionRows = k.sectionRows;
+		plainTiles = k.plainTiles;
+		plainFor = k.plainFor;
+		shelves = k.shelves;
+		shelfPeople = k.shelfPeople;
+		shelfRows = k.shelfRows;
+		peopleAll = k.peopleAll;
+		peoplePage = k.peoplePage;
+		peopleEnd = k.peopleEnd;
+		peopleFilter = k.peopleFilter;
+		catItems = k.catItems;
+		catFor = k.catFor;
+		catName = k.catName;
+		moodItems = k.moodItems;
+		moodFor = k.moodFor;
+		moodGenre = k.moodGenre;
+		mgenreCards = k.mgenreCards;
+		mgenreFor = k.mgenreFor;
+		revealing = false;
+	}
+	beforeNavigate(({ to: dest }) => {
+		if (dest?.url.pathname === location.pathname) return;
+		const key = entryKey();
+		kept = key ? { key, data: keep() } : null;
+	});
+	type SearchReturn = { y: number; sections: string[]; rows: Record<string, number>; peoplePages: number; only: boolean };
+	let backTo = $state<SearchReturn | null>(null);
+	let backTries = 0;
+	snapshot<SearchReturn>({
+		id: 'search',
+		capture: () => ({ y: Math.round(scrollY), sections: Object.keys(sectionTiles), rows: { ...sectionRows }, peoplePages: peoplePage, only: onlyLib }),
+		restore: (v) => {
+			if (!v) return;
+			restored = true;
+			revealing = false;
+			onlyLib = v.only;
+			sectionRows = { ...v.rows, ...sectionRows };
+			if (v.y > 0) backTo = v;
+		}
+	});
+	$effect(() => {
+		const v = backTo;
+		if (!v) return;
+		void [lib, groups, tiles, sections, sectionTiles, sectionRows, plainTiles, shelves, shelfPeople, peopleAll, catItems, moodItems, mgenreCards];
+		void tick().then(() => {
+			if (backTo !== v) return;
+			const short = document.documentElement.scrollHeight < v.y + innerHeight - 1;
+			if (short && backTries++ < 20) {
+				// Load what was loaded before: the next Browse section, or the next page of people.
+				const next = v.sections.find((id) => sectionTiles[id] === undefined);
+				if (next) void loadSection(next);
+				else if (scope === 'people' && peoplePage < v.peoplePages) void morePeople();
+				else setTimeout(() => backTo === v && (backTo = { ...v }), 150);
+				return;
+			}
+			backTo = null;
+			backTries = 0;
+			scrollTo({ top: v.y, behavior: 'instant' });
+		});
+	});
+
 	onMount(() => {
+		try {
+			onlyLib = localStorage.getItem(ONLY_KEY) === '1';
+		} catch {
+			/* a private window: the chip starts off */
+		}
 		loadRecent();
 		const sync = () => (cols = browseCols(innerWidth));
 		sync();
@@ -541,12 +668,12 @@
 			api.get<{ pick_rules: PickRulesView[] }>('/pick-rules').then((r) => (rules = r.pick_rules)).catch(() => {});
 			api.get<MusicSettings>('/settings/music').then((r) => (musicDefaults = r)).catch(() => {});
 		}
-		if (searchField.term.trim()) void run();
+		if (searchField.term.trim() && !kept0) void run();
 		searchHooks.submit = () => void run(new SubmitEvent('submit'));
 		searchHooks.blur = blurred;
 		searchHooks.exit = exit;
 		if (!(document.activeElement instanceof HTMLInputElement)) focusField();
-		playFieldEntry(calm);
+		playFieldEntry(calm || restored);
 		return () => {
 			searchHooks.submit = searchHooks.blur = searchHooks.exit = undefined;
 			forgetReturn();
@@ -630,6 +757,16 @@
 	{/if}
 {/snippet}
 
+{#snippet libraryRow()}
+	{#if libCards.length}
+		<div data-testid="search-library-row">
+			<Shelf title="In your Library" subtitle={String(libCards.length)} item="var(--title-item)" placeholder="wide" lines={1}>
+				{#each libCards as c (c.key)}<WideCard cover title={c.name} href={c.href} image={c.image} kind={c.type === 'music' ? 'artist' : c.type === 'people' ? undefined : c.type} subtitle={c.subtitle} owned={c.owned} typed={scope === 'all'} />{/each}
+			</Shelf>
+		</div>
+	{/if}
+{/snippet}
+
 <section class="search" class:calm data-testid="search-page">
 	<h1 class="sr-only">Search</h1>
 	<div class="close-row"><Button variant="plain" icon="x" onclick={exit} data-testid="search-page-close">Close</Button></div>
@@ -639,7 +776,10 @@
 	{#if scopeOptions.length > 2}
 		<div class="types" data-pin-pills>
 			<SegmentedControl options={scopeOptions} value={scope} label="Look in" testid="search-scope" onchange={setScope} />
+			<span class="only-lib"><Chip label="In Library" icon="check" selected={onlyLib} onclick={() => setOnlyLib(!onlyLib)} /></span>
 		</div>
+	{:else}
+		<div class="types"><span class="only-lib"><Chip label="In Library" icon="check" selected={onlyLib} onclick={() => setOnlyLib(!onlyLib)} /></span></div>
 	{/if}
 
 	<div class="results" aria-live="polite" aria-busy={busy}>
@@ -834,13 +974,14 @@
 				{#if manage}<Button variant="primary" icon="search" href={to('/settings/sources')}>Search indexers for “{searched}”</Button>{/if}
 			</div>
 		{:else if scope === 'all'}
+			{@render libraryRow()}
 			{#if top.length}
 				<Shelf title="Top matches" item="var(--title-item)" placeholder="wide" lines={1}>
 					{#each top as c (c.key)}{@render card(c)}{/each}
 				</Shelf>
 			{/if}
 			{#each order as t (t)}
-				{@const g = groups[t]}
+				{@const g = wider[t]}
 				{#if g?.length}
 					<Shelf title={labels[t]} subtitle={String(g.length)} item="var(--title-item)" placeholder="wide" lines={1} onseeall={() => setScope(t)}>
 						{#each g as c (c.key)}{@render card(c)}{/each}
@@ -848,11 +989,14 @@
 				{/if}
 			{/each}
 		{:else}
-			{@const g = groups[scope] ?? []}
-			<h2 class="h2">{labels[scope]} <span class="muted n">{g.length}</span></h2>
-			<ul class="grid">
-				{#each g as c (c.key)}<li>{@render card(c)}</li>{/each}
-			</ul>
+			{@const g = wider[scope] ?? []}
+			{@render libraryRow()}
+			{#if g.length}
+				<h2 class="h2">{labels[scope]} <span class="muted n">{g.length}</span></h2>
+				<ul class="grid">
+					{#each g as c (c.key)}<li>{@render card(c)}</li>{/each}
+				</ul>
+			{/if}
 		{/if}
 	</div>
 </section>
@@ -880,6 +1024,8 @@
 	.types :global(.ui-seg button) { min-height: 44px; padding: 0 20px; border-radius: 999px; }
 	@media (max-width: 767px) { .types :global(.ui-seg) { display: grid; width: 100%; } .types :global(.ui-seg button) { padding: 0 6px; } }
 	@media (max-width: 419px) { .types :global(.ui-seg button span) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } }
+	.types { gap: 8px; align-items: center; flex-wrap: wrap; }
+	.only-lib { pointer-events: auto; display: flex; }
 	.results { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
 	.h2 { margin: 0; font: var(--t-title3); }
 	.h1 { margin: 0; font: var(--t-title1); letter-spacing: -0.02em; }
