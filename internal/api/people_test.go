@@ -75,7 +75,16 @@ func (f *fakePeople) PopularPeople(_ context.Context, page int) (metadata.Person
 	if f.fail {
 		return metadata.PersonPage{}, metadata.ErrNoAccess
 	}
-	return metadata.PersonPage{People: []metadata.Person{{ID: "21", Name: "Pat Star", Department: "Acting", KnownFor: []metadata.Movie{}}}, Page: page, TotalPages: 5, TotalResults: 100}, nil
+	if page > 1 {
+		return metadata.PersonPage{Page: page, TotalPages: 8}, nil
+	}
+	return metadata.PersonPage{People: []metadata.Person{
+		{ID: "30", Name: "Spike Lowvote", Department: "Acting", Profile: "/p/s.jpg", Popularity: 400, KnownForVotes: []int{1200, 40}, KnownFor: []metadata.Movie{}},
+		{ID: "31", Name: "No Picture", Department: "Acting", Popularity: 90, KnownForVotes: []int{30000}, KnownFor: []metadata.Movie{}},
+		{ID: "32", Name: "Never Known", Department: "Acting", Profile: "/p/n.jpg", Popularity: 300, KnownForVotes: []int{900}, KnownFor: []metadata.Movie{}},
+		{ID: "33", Name: "Adult One", Department: "Acting", Profile: "/p/a.jpg", Adult: true, KnownForVotes: []int{9000}, KnownFor: []metadata.Movie{}},
+		{ID: "21", Name: "Pat Star", Department: "Acting", Profile: "/p/p.jpg", Popularity: 20, KnownForVotes: []int{25000, 18000, 9000}, KnownFor: []metadata.Movie{}},
+	}, Page: page, TotalPages: 8, TotalResults: 160}, nil
 }
 
 func peopleRig(t *testing.T, p metadata.Provider) (*httptest.Server, *store.Store) {
@@ -213,14 +222,20 @@ func TestPeopleErrorsStayBounded(t *testing.T) {
 func TestPopularPeople(t *testing.T) {
 	p := &fakePeople{Static: metadata.Lab()}
 	srv, _ := peopleRig(t, p)
-	b := string(do(t, "GET", srv.URL+"/api/v1/people/popular?page=2", "", 200))
-	if !strings.Contains(b, `"name":"Pat Star"`) || !strings.Contains(b, `"page":2`) {
+	b := string(do(t, "GET", srv.URL+"/api/v1/people/popular", "", 200))
+	star, spike := strings.Index(b, "Pat Star"), strings.Index(b, "Spike Lowvote")
+	if star < 0 || spike < star || strings.Contains(b, "No Picture") || strings.Contains(b, "Never Known") || strings.Contains(b, "Adult One") || !strings.Contains(b, `"total_pages":1`) {
 		t.Fatalf("popular %s", b)
+	}
+	b = string(do(t, "GET", srv.URL+"/api/v1/people/popular?page=2", "", 200))
+	if !strings.Contains(b, `"people":[]`) || !strings.Contains(b, `"page":2`) {
+		t.Fatalf("popular page 2 %s", b)
 	}
 	do(t, "GET", srv.URL+"/api/v1/people/popular?page=0", "", 400)
 	do(t, "GET", srv.URL+"/api/v1/people/popular?page=8", "", 200)
 	do(t, "GET", srv.URL+"/api/v1/people/popular?page=9", "", 400)
 	p.fail = true
+	srv, _ = peopleRig(t, p)
 	do(t, "GET", srv.URL+"/api/v1/people/popular", "", 503)
 	srv2, _ := peopleRig(t, metadata.Lab())
 	do(t, "GET", srv2.URL+"/api/v1/people/popular", "", 503)

@@ -22,6 +22,17 @@ type tmdbPerson struct {
 	Profile    string      `json:"profile_path"`
 	KnownFor   []tmdbMovie `json:"known_for"`
 	Adult      bool        `json:"adult"`
+	Popularity float64     `json:"popularity"`
+}
+
+// tmdbKnownVotes reads only the vote counts of a popular page's known_for
+// titles, shows included (their names sit under "name", not "title").
+type tmdbKnownVotes struct {
+	Results []struct {
+		KnownFor []struct {
+			VoteCount int `json:"vote_count"`
+		} `json:"known_for"`
+	} `json:"results"`
 }
 
 func (p tmdbPerson) person(images string) Person {
@@ -105,10 +116,19 @@ func (t *TMDB) PopularPeople(ctx context.Context, page int) (PersonPage, error) 
 	if err := json.Unmarshal(b, &res); err != nil {
 		return PersonPage{}, fmt.Errorf("TMDB: odd answer: %w", err)
 	}
+	var votes tmdbKnownVotes
+	_ = json.Unmarshal(b, &votes)
 	out := PersonPage{People: []Person{}, Page: res.Page, TotalPages: res.TotalPages, TotalResults: res.TotalResults}
-	for _, p := range res.Results {
+	for i, p := range res.Results {
 		if p.ID > 0 && p.Name != "" && !p.Adult {
-			out.People = append(out.People, p.person(t.images()))
+			person := p.person(t.images())
+			person.Popularity = p.Popularity
+			if i < len(votes.Results) {
+				for _, k := range votes.Results[i].KnownFor {
+					person.KnownForVotes = append(person.KnownForVotes, k.VoteCount)
+				}
+			}
+			out.People = append(out.People, person)
 		}
 	}
 	return out, nil
@@ -311,6 +331,93 @@ func (t *TMDB) ShowPeople(ctx context.Context, id string) ([]MoviePersonCredit, 
 			v.Characters = addUnique(v.Characters, r.Character)
 		}
 		out = append(out, v)
+	}
+	return out, nil
+}
+
+// TitleCrew is a title's billed cast in billing order, its directors and
+// its composers (TMDB's "Sound" people), for the People shelves.
+type TitleCrew struct {
+	Cast      []Person
+	Directors []Person
+	Composers []Person
+}
+
+// TitleCrewer is the optional surface behind the People shelves. kind is
+// movie or show; id is "tmdb:<n>".
+type TitleCrewer interface {
+	TitleCrew(ctx context.Context, kind, id string) (TitleCrew, error)
+}
+
+// TitleCrewerFor returns the title-crew surface selected for ctx.
+func TitleCrewerFor(ctx context.Context, provider Provider) (TitleCrewer, bool) {
+	if sw, ok := provider.(*Switch); ok {
+		provider = sw.pick(ctx)
+	}
+	p, ok := provider.(TitleCrewer)
+	return p, ok
+}
+
+func composerJob(job string) bool {
+	return job == "Original Music Composer" || job == "Music" || job == "Composer"
+}
+
+// TitleCrew reads the same credits answers MoviePeople and ShowPeople use,
+// so a title already looked at costs no new call.
+func (t *TMDB) TitleCrew(ctx context.Context, kind, id string) (TitleCrew, error) {
+	n, err := tmdbNumericID(id)
+	if err != nil {
+		return TitleCrew{}, err
+	}
+	path := "/movie/" + strconv.FormatInt(n, 10) + "/credits"
+	if kind == "show" {
+		path = "/tv/" + strconv.FormatInt(n, 10) + "/aggregate_credits"
+	}
+	b, err := t.get(ctx, path, nil)
+	if err != nil {
+		return TitleCrew{}, err
+	}
+	var res struct {
+		Cast []struct {
+			tmdbCredit
+			Order int `json:"order"`
+		}
+		Crew []struct {
+			tmdbCredit
+			Jobs []struct {
+				Job string `json:"job"`
+			} `json:"jobs"`
+		}
+	}
+	if err := json.Unmarshal(b, &res); err != nil {
+		return TitleCrew{}, fmt.Errorf("TMDB: odd answer: %w", err)
+	}
+	sort.SliceStable(res.Cast, func(i, j int) bool { return res.Cast[i].Order < res.Cast[j].Order })
+	out := TitleCrew{Cast: []Person{}, Directors: []Person{}, Composers: []Person{}}
+	seen := map[string]bool{}
+	for _, c := range res.Cast {
+		if c.ID > 0 && c.Name != "" && !seen["a"+strconv.FormatInt(c.ID, 10)] {
+			seen["a"+strconv.FormatInt(c.ID, 10)] = true
+			out.Cast = append(out.Cast, c.person(t.images()))
+		}
+	}
+	for _, c := range res.Crew {
+		jobs := []string{c.Job}
+		for _, j := range c.Jobs {
+			jobs = append(jobs, j.Job)
+		}
+		for _, job := range jobs {
+			key := strconv.FormatInt(c.ID, 10)
+			switch {
+			case c.ID <= 0 || c.Name == "":
+			case job == "Director" && kind != "show" && !seen["d"+key]:
+				seen["d"+key] = true
+				out.Directors = append(out.Directors, c.person(t.images()))
+			case composerJob(job) && !seen["s"+key]:
+				seen["s"+key] = true
+				out.Composers = append(out.Composers, c.person(t.images()))
+			}
+		}
 	}
 	return out, nil
 }

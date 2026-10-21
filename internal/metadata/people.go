@@ -34,6 +34,10 @@ type Person struct {
 	KnownFor   []Movie `json:"known_for"`
 	// Adult is TMDB's adult flag; it never leaves the server.
 	Adult bool `json:"-"`
+	// Popularity and KnownForVotes (vote counts of every known_for title,
+	// movies and shows) feed the server's fame ranking; never sent.
+	Popularity    float64 `json:"-"`
+	KnownForVotes []int   `json:"-"`
 }
 
 // PopularPeopler is the optional popular-people surface (TMDB's popular list).

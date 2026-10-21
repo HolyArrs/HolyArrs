@@ -2,7 +2,8 @@
 	import { fitTile } from '../tmdb-image.ts';
 	// A Search Browse tile: a tall 3:4 picture in grey under the category's own
 	// colour wash, the name bottom-left in bold white. Hover lifts it a little.
-	let { name, href, image, hue, row = 0, plain = false }: { name: string; href: string; image: string; hue: string; row?: number; plain?: boolean } = $props();
+	// note is an optional short line under the name (People sections: "6 titles").
+	let { name, href, image, hue, row = 0, plain = false, note = '' }: { name: string; href: string; image: string; hue: string; row?: number; plain?: boolean; note?: string } = $props();
 	let loaded = $state(false);
 	let img = $state<HTMLImageElement>();
 	// The picture in the size this tile is shown at on this screen: TMDB
@@ -20,7 +21,8 @@
 		<img bind:this={img} src={src} alt="" loading="lazy" decoding="async" class:in={loaded} onload={() => (loaded = true)} />
 		<span class="wash" aria-hidden="true"></span>
 		<span class="shade" aria-hidden="true"></span>
-		<span class="name">{name}</span>
+		<span class="name" class:noted={note}>{name}</span>
+		{#if note}<span class="note">{note}</span>{/if}
 	</span>
 </a>
 
@@ -54,7 +56,9 @@
 	.plain img { filter: grayscale(1) contrast(1.12); }
 	.plain .wash { display: none; }
 	.plain .shade { background: linear-gradient(to top, rgb(0 0 0 / 0.7) 0%, transparent 55%); }
-	@media (max-width: 599px) { .name { left: 12px; right: 12px; bottom: 10px; } }
+	.name.noted { bottom: 36px; -webkit-line-clamp: 2; line-clamp: 2; }
+	.note { position: absolute; left: 14px; right: 14px; bottom: 14px; font: 500 13px / 1.3 var(--font-body, inherit); color: rgb(255 255 255 / 0.82); text-shadow: 0 1px 8px rgb(0 0 0 / 0.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	@media (max-width: 599px) { .name { left: 12px; right: 12px; bottom: 10px; } .name.noted { bottom: 30px; } .note { left: 12px; right: 12px; bottom: 10px; font-size: 12px; } }
 	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
 		.ui-btile:hover .art { transform: translateY(-4px); box-shadow: var(--shadow-lift); }
 		.ui-btile:hover img { transform: scale(1.04); }

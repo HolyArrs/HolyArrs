@@ -23,6 +23,7 @@
 	import { plainReason } from '#lib/plain.ts';
 	import type { Ask, LibraryFolder, LookupArtist, LookupMovie, LookupShow, MusicSettings, PickRulesView, TitleView } from '#lib/types.ts';
 	import type { PersonSummary } from '#lib/people.ts';
+	import { byDept, chipDept, PEOPLE_ROWS, SHELF_MIN, visibleChips, type PeopleFilter, type ShelfMeta, type ShelfPerson } from '#lib/people-shelves.ts';
 	import { fetchMusicExplore, musicCardHref, musicCardNote, musicImage, type MusicCardData } from '#lib/music-trending.ts';
 	import { refreshInbox } from '#lib/wishlist.svelte.ts';
 	import AddArtistDialog from '#lib/AddArtistDialog.svelte';
@@ -325,21 +326,62 @@
 	const PEOPLE_MAX = 150;
 	const PEOPLE_PAGES = 8;
 	const PEOPLE_WANT = 30;
-	type PeopleFilter = 'popular' | 'actors' | 'directors';
-	const peopleChips: { value: PeopleFilter; label: string; dept: string }[] = [
-		{ value: 'popular', label: 'Popular', dept: '' },
-		{ value: 'actors', label: 'Actors', dept: 'Acting' },
-		{ value: 'directors', label: 'Directors', dept: 'Directing' }
-	];
+	// Ahead of the popular list: From your Library and In what's hot right now, each loaded as it nears
+	// and shown a few rows at a time; a section or chip with fewer than eight people stays hidden.
+	let shelves = $state<ShelfMeta[] | null>(null);
+	let shelfPeople = $state<Record<string, ShelfPerson[]>>({});
+	let shelfRows = $state<Record<string, number>>({});
+	const shelfBusy = new Set<string>();
+	async function loadShelves() {
+		try {
+			shelves = (await api.get<{ shelves: ShelfMeta[] }>('/people/shelves')).shelves ?? [];
+		} catch {
+			shelves = [];
+		}
+	}
+	async function loadShelf(id: string) {
+		if (shelfBusy.has(id) || shelfPeople[id]) return;
+		shelfBusy.add(id);
+		try {
+			const r = await api.get<{ people: ShelfPerson[] }>(`/people/shelves/${encodeURIComponent(id)}`);
+			shelfPeople = { ...shelfPeople, [id]: (r.people ?? []).filter((p) => p.profile) };
+		} catch {
+			shelfPeople = { ...shelfPeople, [id]: [] };
+		} finally {
+			shelfBusy.delete(id);
+		}
+	}
+	// The sections shown: every loaded one, then the next to load (its sentinel); the popular list follows once all are in.
+	const shownShelves = $derived.by(() => {
+		const out: { s: ShelfMeta; people: ShelfPerson[] | null }[] = [];
+		for (const s of shelves ?? []) {
+			const got = shelfPeople[s.id];
+			out.push({ s, people: got ? byDept(got, chipDept(peopleFilter)) : null });
+			if (!got) break;
+		}
+		return out;
+	});
+	const shelvesDone = $derived(shelves !== null && (shelves ?? []).every((s) => shelfPeople[s.id]));
+	const shelfTiles = (people: ShelfPerson[], id: string) => people.slice(0, (shelfRows[id] ?? PEOPLE_ROWS) * cols).map((p) => ({ key: `p${p.id}`, name: p.name, note: p.note, href: to(`/people/${encodeURIComponent(p.id)}`), image: p.profile }));
+	function nearShelf(node: HTMLElement, id: string) {
+		const go = () => (shelfPeople[id] ? (shelfRows = { ...shelfRows, [id]: (shelfRows[id] ?? PEOPLE_ROWS) + PEOPLE_ROWS }) : void loadShelf(id));
+		if (typeof IntersectionObserver === 'undefined') {
+			go();
+			return;
+		}
+		const io = new IntersectionObserver((e) => { if (e.some((x) => x.isIntersecting)) go(); }, { rootMargin: '0px 0px 600px 0px' });
+		io.observe(node);
+		return { destroy: () => io.disconnect() };
+	}
 	let peopleAll = $state<PersonSummary[] | null>(null);
 	let peoplePage = 0;
 	let peopleBusy = $state(false);
 	let peopleEnd = $state(false);
 	let peopleFilter = $state<PeopleFilter>('popular');
 	let peopleSentinel = $state<HTMLElement>();
+	const peopleChips = $derived(visibleChips(shelves ?? [], peopleAll ?? []));
 	const peopleShown = $derived.by(() => {
-		const dept = peopleChips.find((c) => c.value === peopleFilter)?.dept ?? '';
-		return (peopleAll ?? []).filter((p) => !dept || p.department === dept);
+		return byDept(peopleAll ?? [], chipDept(peopleFilter));
 	});
 	const peopleTiles = $derived<PlainTile[] | null>(peopleAll === null ? null : peopleShown.map((p) => ({ key: `p${p.id}`, name: p.name, href: to(`/people/${encodeURIComponent(p.id)}`), image: p.profile as string })));
 	const peopleWantsMore = () => !peopleEnd && (peopleAll?.length ?? 0) < PEOPLE_MAX && peopleShown.length < (peopleFilter === 'popular' ? PEOPLE_MAX : PEOPLE_WANT);
@@ -379,7 +421,7 @@
 		plainTiles = null;
 		try {
 			if (s === 'people') {
-				await morePeople();
+				await loadShelves();
 			} else {
 				const r = await fetchMusicExplore('', 'global');
 				if (plainFor === s) plainTiles = musicTiles(r, (g) => to(`/search?kind=music&mgenre=${encodeURIComponent(g)}`), musicImage);
@@ -649,31 +691,66 @@
 			{/if}
 			<section class="browse" aria-labelledby="browse-h" data-testid="search-browse">
 				<!-- On the sectioned tabs the section names head the page; "Browse" stays for screen readers only. -->
-				<h2 id="browse-h" class={scope === 'people' || scope === 'music' ? 'h1' : 'sr-only'}>{scope === 'people' ? 'Popular people' : 'Browse'}</h2>
+				<h2 id="browse-h" class={scope === 'music' ? 'h1' : 'sr-only'}>{scope === 'people' ? 'People' : 'Browse'}</h2>
 				{#if scope === 'people'}
 					<div class="chips people-chips" role="group" aria-label="Filter people">
 						{#each peopleChips as c (c.value)}<Chip label={c.label} selected={peopleFilter === c.value} onclick={() => { peopleFilter = c.value; void morePeople(); }} />{/each}
 					</div>
 				{/if}
-				{#if scope === 'people' || scope === 'music'}
-					{#if (scope === 'people' ? peopleTiles : plainTiles) === null}
+				{#if scope === 'people'}
+					{#if shelves === null}
 						<ul class="tiles" aria-hidden="true">
 							{#each Array(cols * 2) as _, i (i)}<li class="ghost" use:landing={{ row: Math.floor(i / cols), col: i % cols }}></li>{/each}
 						</ul>
-					{:else if (scope === 'people' ? peopleTiles : plainTiles)?.length}
+					{:else}
+						{#each shownShelves as { s, people } (s.id)}
+							{#if people && people.length >= SHELF_MIN}
+								{@const shown = shelfTiles(people, s.id)}
+								<section class="browse-section" aria-labelledby={`people-${s.id}-h`} data-testid={`search-people-${s.id}`}>
+									<h3 id={`people-${s.id}-h`} class="h1">{s.title}</h3>
+									<ul class="tiles">
+										{#each shown as t, i (t.key)}
+											<li use:landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} note={t.note} href={t.href} image={t.image} hue="#555b66" plain row={Math.min(6, Math.floor(i / cols))} /></li>
+										{/each}
+									</ul>
+									{#if shown.length < people.length}
+										{#key shelfRows[s.id]}<div class="more" use:nearShelf={s.id}></div>{/key}
+									{/if}
+								</section>
+							{/if}
+							{#if people === null}
+								<div class="more" use:nearShelf={s.id} aria-live="polite"><span class="muted">Loading {s.title.toLowerCase()}</span></div>
+							{/if}
+						{/each}
+						{#if shelvesDone && (!peopleEnd || peopleShown.length >= SHELF_MIN)}
+							<section class="browse-section" aria-labelledby="people-popular-h" data-testid="search-people-popular">
+								<h3 id="people-popular-h" class="h1">Popular</h3>
+								{#if peopleTiles && peopleTiles.length >= SHELF_MIN}
+									<ul class="tiles">
+										{#each peopleTiles as t, i (t.key)}
+											<li use:landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} href={t.href} image={t.image} hue="#555b66" plain row={Math.min(6, Math.floor(i / cols))} /></li>
+										{/each}
+									</ul>
+								{/if}
+								<div bind:this={peopleSentinel} class="more" aria-live="polite">{#if peopleBusy}<span class="muted">Loading more people</span>{/if}</div>
+							</section>
+						{:else if shelvesDone && !shownShelves.some((x) => (x.people?.length ?? 0) >= SHELF_MIN)}
+							<p class="muted">Search for an actor, director or artist</p>
+						{/if}
+					{/if}
+				{:else if scope === 'music'}
+					{#if plainTiles === null}
+						<ul class="tiles" aria-hidden="true">
+							{#each Array(cols * 2) as _, i (i)}<li class="ghost" use:landing={{ row: Math.floor(i / cols), col: i % cols }}></li>{/each}
+						</ul>
+					{:else if plainTiles.length}
 						<ul class="tiles">
-							{#each (scope === 'people' ? peopleTiles : plainTiles) ?? [] as t, i (t.key)}
-								<li use:landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} href={t.href} image={t.image} hue={scope === 'people' ? '#555b66' : tileHue(t.name)} plain={scope === 'people'} row={Math.min(6, Math.floor(i / cols))} /></li>
+							{#each plainTiles as t, i (t.key)}
+								<li use:landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} href={t.href} image={t.image} hue={tileHue(t.name)} row={Math.min(6, Math.floor(i / cols))} /></li>
 							{/each}
 						</ul>
-						{#if scope === 'people'}
-							<div bind:this={peopleSentinel} class="more" aria-live="polite">{#if peopleBusy}<span class="muted">Loading more people</span>{/if}</div>
-						{/if}
-					{:else if scope === 'people' && peopleBusy}
-						<p class="muted" aria-live="polite">Loading more people</p>
-						<div bind:this={peopleSentinel} class="more"></div>
 					{:else}
-						<p class="muted">{scope === 'people' ? 'Search for an actor, director or artist' : 'Music genres show up here once Explore has something to show.'}</p>
+						<p class="muted">Music genres show up here once Explore has something to show.</p>
 					{/if}
 				{:else if tiles === null}
 					<ul class="tiles" aria-hidden="true">

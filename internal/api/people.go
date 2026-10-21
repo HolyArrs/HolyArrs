@@ -19,6 +19,8 @@ import (
 func (a *API) peopleRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/people/search", a.searchPeople)
 	m.HandleFunc("GET /api/v1/people/popular", a.popularPeople)
+	m.HandleFunc("GET /api/v1/people/shelves", a.peopleShelves)
+	m.HandleFunc("GET /api/v1/people/shelves/{id}", a.peopleShelfOne)
 	m.HandleFunc("GET /api/v1/people/{id}", a.getPerson)
 	m.HandleFunc("POST /api/v1/people/{id}/movies/review", a.reviewPersonMovies)
 	m.HandleFunc("GET /api/v1/titles/{id}/people", a.titlePeople)
@@ -80,11 +82,12 @@ func (a *API) searchPeople(w http.ResponseWriter, r *http.Request) {
 		"total_results": result.TotalResults, "attribution": metadata.Attribution})
 }
 
-// popularPeople answers GET /api/v1/people/popular?page=: TMDB's popular
-// people for Search's People tab. Adult-flagged people never appear (the
-// provider drops them; page is 1..8, 20 a page); a Kid's known_for is cut like a search's.
+// popularPeople answers GET /api/v1/people/popular?page=: Search's People
+// tab popular list, re-ranked by fame from TMDB's first eight popular pages
+// (20 a page). Adult people and people without a picture or a well-known
+// title never appear; a Kid's known_for is cut like a search's.
 func (a *API) popularPeople(w http.ResponseWriter, r *http.Request) {
-	page, pageOK := intQuery(r, "page", 1, 8)
+	page, pageOK := intQuery(r, "page", 1, popularPages)
 	if !pageOK {
 		fail(w, http.StatusBadRequest, "page must be 1..8")
 		return
@@ -98,19 +101,21 @@ func (a *API) popularPeople(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusServiceUnavailable, "popular people are unavailable for this movie metadata provider")
 		return
 	}
-	result, err := pop.PopularPeople(r.Context(), page)
+	pool, err := a.popularPool(r.Context(), p, pop)
 	if err != nil {
 		peopleError(w, err)
 		return
 	}
-	if result.People == nil {
-		result.People = []metadata.Person{}
+	people := []metadata.Person{}
+	if from := (page - 1) * popularPageSize; from < len(pool) {
+		people = append(people, pool[from:min(len(pool), from+popularPageSize)]...)
 	}
-	for i := range result.People {
-		a.kidKnownFor(r.Context(), a.kidMax(r), &result.People[i])
+	for i := range people {
+		a.kidKnownFor(r.Context(), a.kidMax(r), &people[i])
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"people": result.People, "page": result.Page, "total_pages": result.TotalPages,
-		"total_results": result.TotalResults, "attribution": metadata.Attribution})
+	total := (len(pool) + popularPageSize - 1) / popularPageSize
+	writeJSON(w, http.StatusOK, map[string]any{"people": people, "page": page, "total_pages": total,
+		"total_results": len(pool), "attribution": metadata.Attribution})
 }
 
 type peopleMovieView struct {

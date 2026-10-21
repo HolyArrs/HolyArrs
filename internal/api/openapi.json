@@ -15946,14 +15946,14 @@
     },
     "/api/v1/people/popular": {
       "get": {
-        "description": "Returns TMDB's popular people (adult-flagged people are left out) with TMDB attribution, for Search's People tab. For a Kid, known_for holds only movies in the Library that their limit allows.",
+        "description": "Returns Search's People tab popular list with TMDB attribution: TMDB's first eight popular pages re-ranked by fame (vote counts of each person's known titles, a little TMDB popularity, and a boost for people in the Library or today's trending casts), 20 a page, kept 24 hours. Adult people, people without a picture and people with no known title of 1,000 votes are left out. For a Kid, known_for holds only movies in the Library that their limit allows.",
         "parameters": [
           {
             "in": "query",
             "name": "page",
             "required": false,
             "schema": {
-              "maximum": 500,
+              "maximum": 8,
               "minimum": 1,
               "type": "integer"
             }
@@ -16012,6 +16012,53 @@
           }
         },
         "summary": "Search people",
+        "x-holyarrs-part": "movies",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/people/shelves": {
+      "get": {
+        "description": "Lists Search's People sections that have at least 8 people with pictures, in order: From your Library (the actors, directors and composers most in the Library titles this member may see) and In what's hot right now (the leads of this week's trending and Top 10 titles; none for a Kid). Each section says how many people it holds per department (Acting, Directing, Sound) so a filter with too few can be hidden. Kept 12 hours.",
+        "responses": {
+          "200": {
+            "description": "The sections, with per-department counts."
+          },
+          "503": {
+            "description": "People lookup is unavailable for the configured movie metadata provider."
+          }
+        },
+        "summary": "People sections",
+        "x-holyarrs-part": "movies",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/people/shelves/{id}": {
+      "get": {
+        "description": "Returns one People section (library or hot): each person's id, name, department, picture and the line under their name (\"6 titles\", \"Starring in <title>\"). Writers and creators are left out. Kept 12 hours per age-rating limit.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The section's people, most relevant first."
+          },
+          "404": {
+            "description": "No such section."
+          },
+          "503": {
+            "description": "People lookup is unavailable for the configured movie metadata provider."
+          }
+        },
+        "summary": "One People section",
         "x-holyarrs-part": "movies",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "read"
