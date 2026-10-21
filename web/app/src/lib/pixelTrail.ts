@@ -105,12 +105,96 @@ export function focusPattern(g: Grid) {
 
 const calmQuery = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// Svelte action: a pixel trail inside one button, clipped to its shape.
+// Timings for the button effects (ms).
+export const SWEEP_MS = 520;
+export const BURST_MS = 350;
+export const BUSY_MS = 1100;
+export const FLICKER_MS = 320;
+export type Side = 'left' | 'right' | 'top' | 'bottom';
+
+// Which edge the pointer came in through (vertical distances scaled to the width).
+export function entrySide(w: number, h: number, x: number, y: number): Side {
+	const k = w / Math.max(1, h);
+	const d: Record<Side, number> = { left: x, right: w - x, top: y * k, bottom: (h - y) * k };
+	return (Object.keys(d) as Side[]).reduce((a, b) => (d[b] < d[a] ? b : a));
+}
+
+// The hover sweep: a two-cell band of symbols crossing the whole button
+// from `side`, k 0..1. Lit cells then fade with the normal decay.
+export function sweep(g: Grid, side: Side, k: number) {
+	const across = side === 'left' || side === 'right' ? g.cols : g.rows;
+	const front = k * (across + 2) - 1;
+	for (let r = 0; r < g.rows; r++)
+		for (let c = 0; c < g.cols; c++) {
+			const p = side === 'left' ? c : side === 'right' ? g.cols - 1 - c : side === 'top' ? r : g.rows - 1 - r;
+			const d = front - p;
+			if (d >= 0 && d < 2) {
+				const i = r * g.cols + c;
+				g.energy[i] = Math.max(g.energy[i], d < 1 ? 1 : 0.5);
+			}
+		}
+}
+
+// The ambient shimmer while hovered or focused: a slow diagonal swell, low.
+export function ambient(g: Grid, t: number) {
+	for (let r = 0; r < g.rows; r++)
+		for (let c = 0; c < g.cols; c++) {
+			const s = Math.sin(c * 0.55 + r * 0.8 - t * 0.0021);
+			if (s > 0.6) {
+				const i = r * g.cols + c;
+				g.energy[i] = Math.max(g.energy[i], 0.08 + (s - 0.6) * 0.45);
+			}
+		}
+}
+
+// The press burst: a ring of symbols from (x, y) out past the farthest corner, k 0..1.
+export function burst(g: Grid, x: number, y: number, k: number) {
+	const w = g.cols * g.cell;
+	const h = g.rows * g.cell;
+	const far = Math.max(Math.hypot(x, y), Math.hypot(w - x, y), Math.hypot(x, h - y), Math.hypot(w - x, h - y));
+	const rad = k * (far + g.cell);
+	for (let r = 0; r < g.rows; r++)
+		for (let c = 0; c < g.cols; c++) {
+			const d = Math.hypot((c + 0.5) * g.cell - x, (r + 0.5) * g.cell - y);
+			if (Math.abs(d - rad) < g.cell * 0.9) {
+				const i = r * g.cols + c;
+				g.energy[i] = Math.max(g.energy[i], 1 - k * 0.35);
+			}
+		}
+}
+
+// The busy shimmer: a soft band looping left to right, phase 0..1.
+export function busyBand(g: Grid, phase: number) {
+	const front = phase * (g.cols + 4) - 2;
+	for (let r = 0; r < g.rows; r++)
+		for (let c = 0; c < g.cols; c++) {
+			const d = Math.abs(c - front);
+			if (d < 2) {
+				const i = r * g.cols + c;
+				g.energy[i] = Math.max(g.energy[i], 0.5 * (1 - d / 2) + 0.06);
+			}
+		}
+}
+
+// The failure flicker: a seeded scatter of cells, a new one per step.
+export function flicker(g: Grid, step: number) {
+	const order = blockOrder(g.energy.length, 11 + step * 7);
+	for (let i = 0; i < g.energy.length; i++) if (order[i] < 0.35) g.energy[i] = Math.max(g.energy[i], 0.75);
+}
+
+export type TrailOpts = { selector?: string; color?: string; busy?: boolean; fail?: number };
+
+// Svelte action: the pixel layer inside one button, clipped to its shape.
 // `node` may wrap the button; the first match of `selector` hosts the canvas.
-// Idle at 0 fps: frames run only while cells are lit.
-export function pixelTrail(node: HTMLElement, opts: { selector?: string; color?: string } = {}) {
+// Hover / keyboard focus: a sweep from the entry side, then an ambient
+// shimmer; the pointer trail adds on top. Press (pointer, Enter, Space or a
+// form submit): a burst from the press point with a 0.97 press. `busy`: a
+// looping band. `fail` (a counter): a shake and a flicker.
+// Frames run only while hovered, focused, busy or cells are lit: 0 fps idle.
+// Reduced motion: nothing runs (the page keeps a static press and the spinner).
+export function pixelTrail(node: HTMLElement, opts: TrailOpts = {}) {
 	const host = (opts.selector ? node.querySelector<HTMLElement>(opts.selector) : null) ?? node;
-	const color = opts.color ?? '#ffffff';
+	let color = opts.color ?? '#ffffff';
 	const canvas = document.createElement('canvas');
 	canvas.className = 'px-trail';
 	canvas.setAttribute('aria-hidden', 'true');
@@ -121,7 +205,17 @@ export function pixelTrail(node: HTMLElement, opts: { selector?: string; color?:
 	let lastT = 0;
 	let lastP: { x: number; y: number } | undefined;
 	let dpr = 1;
+	let hovered = false;
+	let focused = false;
+	let busy = false;
+	let busyT0 = 0;
+	let failN = opts.fail ?? 0;
+	let sw: { side: Side; t0: number } | undefined;
+	let bu: { x: number; y: number; t0: number } | undefined;
+	let fl: { t0: number; step: number } | undefined;
+	let lastPress = 0;
 	const fine = matchMedia('(hover: hover) and (pointer: fine)');
+	const disabled = () => (host as HTMLButtonElement).disabled;
 
 	function size() {
 		const r = host.getBoundingClientRect();
@@ -135,6 +229,12 @@ export function pixelTrail(node: HTMLElement, opts: { selector?: string; color?:
 			g = buttonGrid(w, h);
 		}
 	}
+	// offsetWidth ignores the hover lift's transform scale; map client px to layout px.
+	function local(e: { clientX: number; clientY: number }) {
+		const r = host.getBoundingClientRect();
+		const sx = host.offsetWidth / r.width || 1;
+		return { x: (e.clientX - r.left) * sx, y: (e.clientY - r.top) * sx };
+	}
 	function draw() {
 		const ctx = canvas.getContext('2d');
 		if (!ctx || !g) return;
@@ -146,7 +246,41 @@ export function pixelTrail(node: HTMLElement, opts: { selector?: string; color?:
 		if (!g) return;
 		const dt = lastT ? Math.min(0.05, (now - lastT) / 1000) : 1 / 60;
 		lastT = now;
-		const on = decay(g, dt);
+		let on = decay(g, dt);
+		if (sw) {
+			const k = (now - sw.t0) / SWEEP_MS;
+			if (k >= 1) sw = undefined;
+			else {
+				sweep(g, sw.side, Math.max(0, k));
+				on = true;
+			}
+		}
+		if (bu) {
+			const k = (now - bu.t0) / BURST_MS;
+			if (k >= 1) bu = undefined;
+			else {
+				burst(g, bu.x, bu.y, Math.max(0, k));
+				on = true;
+			}
+		}
+		if (fl) {
+			const step = Math.floor((now - fl.t0) / (FLICKER_MS / 4));
+			if (step >= 4) fl = undefined;
+			else {
+				if (step !== fl.step) {
+					fl.step = step;
+					if (step % 2 === 0) flicker(g, step);
+				}
+				on = true;
+			}
+		}
+		if (busy) {
+			busyBand(g, ((now - busyT0) % BUSY_MS) / BUSY_MS);
+			on = true;
+		} else if ((hovered || focused) && !sw && !disabled()) {
+			ambient(g, now);
+			on = true;
+		}
 		draw();
 		if (on && !document.hidden) frame = requestAnimationFrame(loop);
 		else lastT = 0;
@@ -154,47 +288,114 @@ export function pixelTrail(node: HTMLElement, opts: { selector?: string; color?:
 	function queue() {
 		if (!frame) frame = requestAnimationFrame(loop);
 	}
-	function move(e: PointerEvent) {
-		if (calmQuery() || !fine.matches || (e.pointerType && e.pointerType !== 'mouse' && e.pointerType !== 'pen')) return;
-		if ((host as HTMLButtonElement).disabled) return;
+	function startSweep(side: Side) {
 		size();
 		if (!g) return;
-		// offsetWidth ignores the hover lift's transform scale; map client px to layout px.
-		const r = host.getBoundingClientRect();
-		const sx = host.offsetWidth / r.width || 1;
-		const x = (e.clientX - r.left) * sx;
-		const y = (e.clientY - r.top) * sx;
+		sw = { side, t0: performance.now() };
+		queue();
+	}
+	function enter(e: PointerEvent) {
+		if (calmQuery() || !fine.matches || e.pointerType !== 'mouse' || disabled()) return;
+		hovered = true;
+		size();
+		const p = local(e);
+		startSweep(entrySide(host.offsetWidth, host.offsetHeight, p.x, p.y));
+	}
+	function move(e: PointerEvent) {
+		if (calmQuery() || !fine.matches || (e.pointerType && e.pointerType !== 'mouse' && e.pointerType !== 'pen')) return;
+		if (disabled()) return;
+		size();
+		if (!g) return;
+		hovered = true;
+		const { x, y } = local(e);
 		stampPath(g, lastP, x, y);
 		lastP = { x, y };
 		queue();
 	}
 	function leave() {
 		lastP = undefined; // the lit cells fade on their own
+		hovered = false;
 	}
-	function focus() {
-		if (!host.matches(':focus-visible')) return;
+	function pressAt(x: number, y: number) {
+		if (calmQuery()) return;
 		size();
 		if (!g) return;
-		cancelAnimationFrame(frame);
-		frame = 0;
-		focusPattern(g);
-		draw();
+		lastPress = performance.now();
+		bu = { x, y, t0: lastPress };
+		host.animate([{ transform: 'scale(1)' }, { transform: 'scale(0.97)', offset: 0.35 }, { transform: 'scale(1)' }], { duration: BURST_MS, easing: 'cubic-bezier(.2,.7,.3,1)', composite: 'add' });
+		queue();
+	}
+	function down(e: PointerEvent) {
+		if (e.button !== 0 || disabled()) return;
+		const p = local(e);
+		pressAt(p.x, p.y);
+	}
+	function key(e: KeyboardEvent) {
+		if (e.repeat || (e.key !== 'Enter' && e.key !== ' ') || disabled()) return;
+		pressAt(host.offsetWidth / 2, host.offsetHeight / 2);
+	}
+	// Enter inside a field submits the form without touching the button.
+	const form = host instanceof HTMLButtonElement && host.type === 'submit' ? host.form : null;
+	function submitted() {
+		if (performance.now() - lastPress < 400) return;
+		pressAt(host.offsetWidth / 2, host.offsetHeight / 2);
+	}
+	function focus() {
+		if (calmQuery() || !host.matches(':focus-visible')) return;
+		focused = true;
+		startSweep('left');
 	}
 	function blur() {
-		if (g) g.energy.fill(0);
-		draw();
+		focused = false;
 	}
+	function fail() {
+		if (calmQuery()) return;
+		size();
+		if (!g) return;
+		fl = { t0: performance.now(), step: -1 };
+		host.animate(
+			[{ transform: 'translateX(0)' }, { transform: 'translateX(-6px)' }, { transform: 'translateX(5px)' }, { transform: 'translateX(-3px)' }, { transform: 'translateX(2px)' }, { transform: 'translateX(0)' }],
+			{ duration: 360, easing: 'ease-out', composite: 'add' }
+		);
+		queue();
+	}
+	function setBusy(b: boolean) {
+		if (b === busy) return;
+		busy = b;
+		if (b && !calmQuery()) {
+			size();
+			busyT0 = performance.now();
+			queue();
+		}
+	}
+	host.addEventListener('pointerenter', enter);
 	host.addEventListener('pointermove', move);
 	host.addEventListener('pointerleave', leave);
+	host.addEventListener('pointerdown', down);
+	host.addEventListener('keydown', key);
 	host.addEventListener('focus', focus);
 	host.addEventListener('blur', blur);
+	form?.addEventListener('submit', submitted);
+	setBusy(!!opts.busy);
 	return {
+		update(o: TrailOpts = {}) {
+			color = o.color ?? '#ffffff';
+			setBusy(!!o.busy);
+			const n = o.fail ?? 0;
+			// The page may pass 0 while another button owns failures; only a new high counts.
+			if (n > failN) fail();
+			failN = Math.max(failN, n);
+		},
 		destroy() {
 			cancelAnimationFrame(frame);
+			host.removeEventListener('pointerenter', enter);
 			host.removeEventListener('pointermove', move);
 			host.removeEventListener('pointerleave', leave);
+			host.removeEventListener('pointerdown', down);
+			host.removeEventListener('keydown', key);
 			host.removeEventListener('focus', focus);
 			host.removeEventListener('blur', blur);
+			form?.removeEventListener('submit', submitted);
 			canvas.remove();
 		}
 	};

@@ -80,7 +80,17 @@ function leave(node: HTMLElement): void {
 		node.classList.remove('out', 'nav', 'handoff', 'veil');
 		say('');
 		full = false;
+		settle();
 	}, 280);
+}
+
+// While a sign-in hand-off plays, the first page waits with its heavy work.
+let handoffWait: Promise<void> | null = null;
+let settle: () => void = () => {};
+
+/** Resolves once the sign-in hand-off has fully left (at once when none is playing). */
+export function afterHandoff(): Promise<void> {
+	return handoffWait ?? Promise.resolve();
 }
 
 /** The app is ready: hide the full screen once its hold has passed. */
@@ -134,6 +144,14 @@ export function playHandoff(from: Rect | null, name: string): void {
 	node.classList.remove('out', 'nav');
 	node.classList.add('handoff');
 	node.hidden = false;
+	if (!handoffWait)
+		handoffWait = new Promise<void>((done) => {
+			settle = () => {
+				handoffWait = null;
+				settle = () => {};
+				done();
+			};
+		});
 	full = true;
 	hold = SIGNIN_HOLD_MS;
 	shownAt = performance.now() + VEIL_MS;

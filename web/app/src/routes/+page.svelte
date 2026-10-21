@@ -2,6 +2,7 @@
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/api.ts';
+	import { afterHandoff } from '#lib/loader.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { greeting } from '#lib/format.ts';
@@ -83,8 +84,14 @@
 	}
 
 	async function loadAll() {
+		// The first screen (the Home answer) loads now; the bigger asks wait until
+		// the sign-in hand-off has left, so its frames stay smooth.
+		const first = loadHome().then(() => {
+			if (home) loaded = true;
+		});
+		await afterHandoff();
 		const [, fo, dl, he, ch, as] = await Promise.allSettled([
-			loadHome(),
+			first,
 			manager ? api.get<{ library_folders: LibraryFolder[] }>('/library-folders') : Promise.resolve(null),
 			// Members may only read the Library and their own asks (perms.go); the rest needs manage_library.
 			manager ? api.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=50') : Promise.resolve(null),

@@ -21,6 +21,11 @@
 	let code = $state('');
 	let error = $state('');
 	let busy = $state(false);
+	// Counts failed sign-ins; each new one shakes and flickers the pressed button.
+	let failN = $state(0);
+	let lastWay = $state<Way | ''>('');
+	// A tile that signs in by itself (not the form) owns the busy and failure looks.
+	const tileWay = $derived(lastWay === 'plex' || lastWay === 'oidc' || lastWay === 'forward_auth');
 	let waitUntil = $state(0);
 	let now = $state(Date.now());
 
@@ -118,6 +123,7 @@
 	}
 
 	function failed(err: unknown) {
+		failN++;
 		if (err instanceof ApiError && err.status === 429) {
 			waitUntil = Date.now() + (err.retryAfter ?? 30) * 1000;
 			now = Date.now();
@@ -128,6 +134,7 @@
 	}
 
 	async function submit(e: SubmitEvent) {
+		lastWay = '';
 		e.preventDefault();
 		error = '';
 		if (mode === 'setup') {
@@ -163,6 +170,7 @@
 	}
 
 	async function submitCode(e: SubmitEvent) {
+		lastWay = '';
 		e.preventDefault();
 		error = '';
 		busy = true;
@@ -193,6 +201,7 @@
 	}
 
 	function press(w: Way) {
+		lastWay = w;
 		if (w === 'plex') void plex();
 		else if (w === 'oidc') void oidc();
 		else if (w === 'forward_auth') void forwardAuth();
@@ -321,14 +330,14 @@
 								{#if error}
 									<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono"> ({waiting}s)</span>{/if}</p>
 								{/if}
-								<div class="submit" use:pixelTrail={{ selector: '.ui-btn' }}><Button variant="primary" size="lg" full type="submit" disabled={waiting > 0 || !otp.trim()} {busy}>Sign in</Button></div>
+								<div class="submit" use:pixelTrail={{ selector: '.ui-btn', busy: busy && !tileWay, fail: tileWay ? 0 : failN }}><Button variant="primary" size="lg" full type="submit" disabled={waiting > 0 || !otp.trim()} {busy}>Sign in</Button></div>
 								<button class="link" type="button" onclick={restart}>Start again</button>
 							</form>
 						{:else}
 							{#if mode === 'login' && (via === 'password' || via === 'choose') && tiles.length}
 								<div class="provs" data-n={tiles.length} data-testid="signin-ways">
 									{#each tiles as t (t.way)}
-										<button class="prov" type="button" use:pixelTrail data-way={t.way} disabled={busy} onclick={() => press(t.way)}>
+										<button class="prov" type="button" use:pixelTrail={{ busy: busy && lastWay === t.way, fail: lastWay === t.way ? failN : 0 }} data-way={t.way} disabled={busy} onclick={() => press(t.way)}>
 											{#if t.way === 'plex'}
 												<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#1f1f1f" /><path d="M8 5h4.6l5 7-5 7H8l5-7z" fill="#E5A00D" /></svg>
 											{:else if t.way === 'jellyfin'}
@@ -381,7 +390,7 @@
 									{#if error}
 										<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono"> ({waiting}s)</span>{/if}</p>
 									{/if}
-									<div class="submit" use:pixelTrail={{ selector: '.ui-btn' }}>
+									<div class="submit" use:pixelTrail={{ selector: '.ui-btn', busy: busy && !tileWay, fail: tileWay ? 0 : failN }}>
 										<Button variant="primary" size="lg" full type="submit" disabled={waiting > 0} {busy}>
 											{mode === 'setup' ? 'Make the owner and sign in' : via === 'jellyfin' || via === 'emby' ? `Sign in with ${wayWord[via]}` : 'Sign in'}
 										</Button>
@@ -568,6 +577,9 @@
 		.panel { transition: none; }
 		.panel { transform: none; }
 		.orbit { animation-duration: 2.4s; }
+		/* A static press: no scale, just a dimmer face; busy keeps the Button spinner. */
+		.prov:active:not(:disabled),
+		.submit :global(.ui-btn:active:not(:disabled)) { transform: none; filter: brightness(0.86); }
 	}
 	/* Large screens: type, inputs and spacing grow with the panel. */
 	@media (min-width: 1600px) and (min-height: 760px) { .panel { --z: 1.08; } }
