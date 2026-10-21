@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -81,10 +82,25 @@ func (s *Service) wikiEntity(ctx context.Context, path string) (WikiEntity, erro
 	if err := s.wikiGet(ctx, path, 1<<20, &out); err != nil {
 		return WikiEntity{}, err
 	}
-	if out.Summary != nil && (!strings.HasPrefix(out.Summary.URL, "https://en.wikipedia.org/") || out.Summary.Extract == "") {
+	if out.Summary != nil && (!wikipediaURL(out.Summary.URL) || out.Summary.Extract == "") {
 		out.Summary = nil
 	}
+	if out.Summary != nil && !strings.HasPrefix(out.Summary.LicenseURL, "https://creativecommons.org/") {
+		out.Summary.LicenseURL = ccBySA
+	}
 	return out, nil
+}
+
+const ccBySA = "https://creativecommons.org/licenses/by-sa/4.0/"
+
+// wikipediaURL reports an https link on a *.wikipedia.org host.
+func wikipediaURL(raw string) bool {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return false
+	}
+	h := strings.ToLower(u.Hostname())
+	return u.Scheme == "https" && u.User == nil && (h == "wikipedia.org" || strings.HasSuffix(h, ".wikipedia.org"))
 }
 
 // AwardWinners reads the server's award-winning TMDB IDs for a kind (movie

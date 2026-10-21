@@ -15,6 +15,10 @@ func TestWikidataReadsServer(t *testing.T) {
 			_, _ = w.Write([]byte(`{"qid":"Q1079","tallies":[{"family":"emmy","wins":15,"nominations":40}],"awards":[{"name":"Primetime Emmy Award for Outstanding Drama Series","family":"emmy","won":true,"year":2013}]}`))
 		case "/v1/wikidata/person/31?":
 			_, _ = w.Write([]byte(`{"qid":"Q2263","born":"1956-07-09","summary":{"extract":"An actor.","url":"https://en.wikipedia.org/wiki/Tom_Hanks","license":"CC BY-SA 4.0"}}`))
+		case "/v1/wikidata/person/33?":
+			_, _ = w.Write([]byte(`{"qid":"Q3","summary":{"extract":"x","url":"https://en.wikipedia.org/wiki/X","license_url":"javascript:alert(1)"}}`))
+		case "/v1/wikidata/person/34?":
+			_, _ = w.Write([]byte(`{"qid":"Q4","summary":{"extract":"x","url":"javascript:alert(1)//en.wikipedia.org/"}}`))
 		case "/v1/wikidata/person/32?":
 			_, _ = w.Write([]byte(`{"qid":"Q1","summary":{"extract":"x","url":"https://evil.test/"}}`))
 		case "/v1/wikidata/award-winners?kind=movie":
@@ -34,6 +38,12 @@ func TestWikidataReadsServer(t *testing.T) {
 	}
 	if p, _ := s.WikiPerson(ctx, "32"); p.Summary != nil {
 		t.Fatal("kept a bio that is not from Wikipedia")
+	}
+	if p, _ := s.WikiPerson(ctx, "33"); p.Summary == nil || p.Summary.LicenseURL != "https://creativecommons.org/licenses/by-sa/4.0/" {
+		t.Fatalf("license link not replaced: %+v", p.Summary)
+	}
+	if p, _ := s.WikiPerson(ctx, "34"); p.Summary != nil {
+		t.Fatal("kept a javascript: page link")
 	}
 	if _, err := s.WikiTitle(ctx, "movie", "1"); !errors.Is(err, ErrNotFound) {
 		t.Fatal(err)

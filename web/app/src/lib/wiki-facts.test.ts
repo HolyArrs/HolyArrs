@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { awardsTip, cleanWikiFacts, loadWikiFacts } from './wiki-facts.ts';
+import { awardsTip, cleanWikiFacts, licenseURL, loadWikiFacts, wikipediaURL } from './wiki-facts.ts';
 
 describe('wiki facts', () => {
 	it('keeps badges, awards and a licensed Wikipedia bio', () => {
@@ -19,6 +19,15 @@ describe('wiki facts', () => {
 		expect(cleanWikiFacts({ bio: { extract: 'x', url: 'https://evil.test/', license: 'CC BY-SA 4.0' } }).bio).toBeNull();
 		expect(cleanWikiFacts({ bio: { extract: 'x', url: 'https://en.wikipedia.org/wiki/X' } }).bio).toBeNull();
 		expect(cleanWikiFacts(null)).toEqual({ badges: [], awards: [], bio: null });
+	});
+
+	it('never keeps a script or off-site link', () => {
+		const f = cleanWikiFacts({ bio: { extract: 'x', url: 'https://de.wikipedia.org/wiki/X', license: 'CC BY-SA 4.0', license_url: 'javascript:alert(1)' } });
+		expect(f.bio?.license_url).toBe('https://creativecommons.org/licenses/by-sa/4.0/');
+		expect(f.bio?.url).toBe('https://de.wikipedia.org/wiki/X');
+		for (const bad of ['javascript:alert(1)', 'http://en.wikipedia.org/wiki/X', 'https://en.wikipedia.org.evil.test/', 'https://evil.test/?en.wikipedia.org']) expect(wikipediaURL(bad)).toBe('');
+		expect(licenseURL('https://creativecommons.org/licenses/by-sa/3.0/')).toBe('https://creativecommons.org/licenses/by-sa/3.0/');
+		expect(licenseURL('https://creativecommons.org.evil.test/')).toBe('https://creativecommons.org/licenses/by-sa/4.0/');
 	});
 
 	it('lists major awards first for the hover', () => {

@@ -10,6 +10,21 @@ const EMPTY: WikiFacts = { badges: [], awards: [], bio: null };
 
 const str = (v: unknown) => (typeof v === 'string' ? v : '');
 
+export const CC_BY_SA = 'https://creativecommons.org/licenses/by-sa/4.0/';
+
+/** wikipediaURL keeps an https link on a *.wikipedia.org host, else ''. */
+export function wikipediaURL(v: unknown): string {
+	try {
+		const u = new URL(str(v));
+		return u.protocol === 'https:' && (u.hostname === 'wikipedia.org' || u.hostname.endsWith('.wikipedia.org')) ? u.href : '';
+	} catch {
+		return '';
+	}
+}
+
+/** licenseURL keeps a Creative Commons https link, else the CC BY-SA 4.0 one. */
+export const licenseURL = (v: unknown) => (str(v).startsWith('https://creativecommons.org/') && !/[\s"<>]/.test(str(v)) ? str(v) : CC_BY_SA);
+
 /** cleanWikiFacts keeps sane badges and awards and a Wikipedia bio only with its link and license. */
 export function cleanWikiFacts(raw: unknown): WikiFacts {
 	if (!raw || typeof raw !== 'object') return EMPTY;
@@ -19,8 +34,8 @@ export function cleanWikiFacts(raw: unknown): WikiFacts {
 		.filter((a): a is WikiAward => !!a && typeof a === 'object' && typeof (a as WikiAward).name === 'string' && (a as WikiAward).name !== '')
 		.map((a) => ({ name: a.name, family: str(a.family), won: a.won === true, year: Number.isFinite(a.year) ? a.year : 0, for_work: str(a.for_work) }));
 	const b = r.bio as Record<string, unknown> | null | undefined;
-	const bio = b && typeof b === 'object' && str(b.extract) && str(b.url).startsWith('https://en.wikipedia.org/') && str(b.license)
-		? { title: str(b.title), extract: str(b.extract), url: str(b.url), license: str(b.license), license_url: str(b.license_url), attribution: str(b.attribution) }
+	const bio = b && typeof b === 'object' && str(b.extract) && wikipediaURL(b.url) && str(b.license)
+		? { title: str(b.title), extract: str(b.extract), url: wikipediaURL(b.url), license: str(b.license), license_url: licenseURL(b.license_url), attribution: str(b.attribution) }
 		: null;
 	return { badges, awards, born: str(r.born) || undefined, died: str(r.died) || undefined, birth_place: str(r.birth_place) || undefined, death_place: str(r.death_place) || undefined, bio };
 }

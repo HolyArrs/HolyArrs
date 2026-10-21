@@ -20,7 +20,7 @@
 	import { followLabel, movieFollowHint, setFollow } from '#lib/follow.ts';
 	import { byDecade, personChips, runReviewed, type FilmSort, type FilmographyPage, type PersonMovie, type PersonRole } from '#lib/people.ts';
 	import type { AskLimit } from '#lib/types.ts';
-	import { loadWikiFacts, type WikiFacts } from '#lib/wiki-facts.ts';
+	import { licenseURL, loadWikiFacts, wikipediaURL, type WikiFacts } from '#lib/wiki-facts.ts';
 
 	const id = page.params.id ?? '';
 	const SORT_KEY = 'holyarrs.people.sort';
@@ -196,7 +196,7 @@
 				{#if bio}
 					<p class="bio" class:open={bioOpen}>{bio}</p>
 					<button class="more" type="button" onclick={() => (bioOpen = !bioOpen)}>{bioOpen ? 'Less' : 'More'}</button>
-					{#if wiki.bio}<p class="credit" data-testid="wiki-credit">From <a href={wiki.bio.url} target="_blank" rel="noopener noreferrer">Wikipedia</a>, <a href={wiki.bio.license_url || 'https://creativecommons.org/licenses/by-sa/4.0/'} target="_blank" rel="noopener noreferrer license">CC BY-SA</a></p>{/if}
+					{#if wiki.bio}<p class="credit" data-testid="wiki-credit">From <a href={wikipediaURL(wiki.bio.url) || 'https://en.wikipedia.org/'} target="_blank" rel="noopener noreferrer">Wikipedia</a>, <a href={licenseURL(wiki.bio.license_url)} target="_blank" rel="noopener noreferrer license">CC BY-SA</a></p>{/if}
 				{/if}
 			</div>
 		</div>
