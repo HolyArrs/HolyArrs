@@ -28,13 +28,18 @@ type UISettings struct {
 	// KeepYTDLPUpdated: "Keep yt-dlp up to date", the weekly update from
 	// yt-dlp's official releases. Default on.
 	KeepYTDLPUpdated bool `json:"keep_ytdlp_updated"`
+	// SigninLibraryArt: "Show Library art on the sign-in page" (kid-safe
+	// titles only). Off shows trending titles instead. Default on.
+	SigninLibraryArt bool `json:"signin_library_art"`
 }
 
 func (a *API) uiSettings(ctx context.Context) UISettings {
 	var v, u string
 	_ = a.s.Store.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = ?", settingAutoplay).Scan(&v)
 	_ = a.s.Store.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = ?", SettingYTDLPUpdate).Scan(&u)
-	return UISettings{AutoplayTrailers: v != "off", KeepYTDLPUpdated: u != "off"}
+	var l string
+	_ = a.s.Store.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = ?", settingSigninLibraryArt).Scan(&l)
+	return UISettings{AutoplayTrailers: v != "off", KeepYTDLPUpdated: u != "off", SigninLibraryArt: l != "off"}
 }
 
 // KeepYTDLPUpdated reads "Keep yt-dlp up to date" (for the weekly job).
@@ -48,11 +53,12 @@ func (a *API) putUISettings(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		AutoplayTrailers *bool `json:"autoplay_trailers"`
 		KeepYTDLPUpdated *bool `json:"keep_ytdlp_updated"`
+		SigninLibraryArt *bool `json:"signin_library_art"`
 	}
-	if !decode(w, r, &in, `send {"autoplay_trailers": true, "keep_ytdlp_updated": true}`) {
+	if !decode(w, r, &in, `send {"autoplay_trailers": true, "keep_ytdlp_updated": true, "signin_library_art": true}`) {
 		return
 	}
-	for key, on := range map[string]*bool{settingAutoplay: in.AutoplayTrailers, SettingYTDLPUpdate: in.KeepYTDLPUpdated} {
+	for key, on := range map[string]*bool{settingAutoplay: in.AutoplayTrailers, SettingYTDLPUpdate: in.KeepYTDLPUpdated, settingSigninLibraryArt: in.SigninLibraryArt} {
 		if on == nil {
 			continue
 		}

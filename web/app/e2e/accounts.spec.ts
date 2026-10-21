@@ -140,7 +140,7 @@ test('sign in with Jellyfin makes a member', async ({ browser }) => {
 
 	const mum = await fresh(browser);
 	await mum.goto('/login');
-	await mum.getByRole('button', { name: 'Sign in with Jellyfin' }).click();
+	await mum.getByRole('button', { name: 'Continue with Jellyfin' }).click();
 	await mum.getByLabel('Name').fill(mediaUser.name);
 	await mum.getByLabel('Password', { exact: true }).fill('not it');
 	await mum.getByRole('button', { name: 'Sign in with Jellyfin' }).click();
@@ -163,7 +163,7 @@ test('sign in with Plex makes a member (fake Plex)', async ({ browser }) => {
 	const kid = await fresh(browser);
 	await kid.goto('/login');
 	const popup = kid.waitForEvent('popup');
-	await kid.getByRole('button', { name: 'Sign in with Plex' }).click();
+	await kid.getByRole('button', { name: 'Continue with Plex' }).click();
 	await (await popup).waitForLoadState().catch(() => {});
 	await expect(kid).toHaveURL(/\/$/, { timeout: 15_000 });
 	await expect(kid.getByRole('button', { name: 'Account and appearance' })).toBeVisible();

@@ -22,11 +22,14 @@
 	let autoplayBusy = $state(false);
 	// Keep yt-dlp up to date: the weekly update from yt-dlp's own releases.
 	let keepYTDLP = $state(true);
+	// Show Library art on the sign-in page (kid-safe titles; off: trending).
+	let signinArt = $state(true);
 	async function loadAutoplay() {
 		try {
-			const s = await api.get<{ autoplay_trailers: boolean; keep_ytdlp_updated?: boolean }>('/settings/ui');
+			const s = await api.get<{ autoplay_trailers: boolean; keep_ytdlp_updated?: boolean; signin_library_art?: boolean }>('/settings/ui');
 			autoplay = s.autoplay_trailers;
 			keepYTDLP = s.keep_ytdlp_updated !== false;
+			signinArt = s.signin_library_art !== false;
 		} catch {
 			autoplay = null;
 		}
@@ -36,6 +39,18 @@
 		try {
 			keepYTDLP = (await api.put<{ keep_ytdlp_updated: boolean }>('/settings/ui', { keep_ytdlp_updated: on })).keep_ytdlp_updated;
 			toasts.push(keepYTDLP ? 'yt-dlp stays up to date' : 'yt-dlp is no longer updated automatically', 'ok');
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+			await loadAutoplay();
+		} finally {
+			autoplayBusy = false;
+		}
+	}
+	async function saveSigninArt(on: boolean) {
+		autoplayBusy = true;
+		try {
+			signinArt = (await api.put<{ signin_library_art: boolean }>('/settings/ui', { signin_library_art: on })).signin_library_art;
+			toasts.push(signinArt ? 'The sign-in page shows Library art' : 'The sign-in page shows trending art', 'ok');
 		} catch (e) {
 			toasts.push(message(e), 'fail');
 			await loadAutoplay();
@@ -230,6 +245,10 @@
 			<label class="checkline" data-testid="ytdlp-update-setting">
 				<input type="checkbox" checked={keepYTDLP} disabled={autoplayBusy} onchange={(e) => saveKeepYTDLP(e.currentTarget.checked)} />
 				<span><b>Keep yt-dlp up to date</b><br /><span class="hint">Trailers are found with yt-dlp. Once a week HolyArrs fetches its newest official release, checks it and keeps the previous copy if the new one does not work. Its version and the last update show under Health.</span></span>
+			</label>
+			<label class="checkline" data-testid="signin-art-setting">
+				<input type="checkbox" checked={signinArt} disabled={autoplayBusy} onchange={(e) => saveSigninArt(e.currentTarget.checked)} />
+				<span><b>Show Library art on the sign-in page</b><br /><span class="hint">The sign-in page shows wide pictures from your Library, kid-safe titles only (G to PG-13 and up to TV-PG, never unrated). Anyone who opens the page can see them. Off, or with fewer than 6 such titles, it shows trending titles instead.</span></span>
 			</label>
 		</section>
 	{/if}

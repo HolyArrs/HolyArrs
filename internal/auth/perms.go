@@ -139,6 +139,8 @@ var RoutePerms = map[string]Perm{
 	"GET /api/v1/auth/oidc/callback":  NeedPublic,
 	"POST /api/v1/auth/oidc/finish":   NeedPublic,
 	"POST /api/v1/auth/forward/login": NeedPublic,
+	// The sign-in page's art: picture addresses only, kid-safe titles.
+	"GET /api/v1/public/signin-art": NeedPublic,
 
 	// My account.
 	"GET /api/v1/auth/me":                       needSelf,
@@ -570,6 +572,7 @@ var RouteScopes = map[string]string{
 	"GET /api/v1/auth/state":              ScopeAdmin, // public; a key never needs it
 	"GET /api/v1/auth/invites/{token}":    ScopeAdmin, // public; a key never needs it
 	"GET /api/v1/auth/oidc/callback":      ScopeAdmin, // public; a key never needs it
+	"GET /api/v1/public/signin-art":       ScopeAdmin, // public; a key never needs it
 
 	// The move tool: what old apps hold (people, emails, links) is admin.
 	"POST /api/v1/migrate/probe":            ScopeAdmin,

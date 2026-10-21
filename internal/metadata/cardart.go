@@ -24,12 +24,16 @@ type CardImage struct {
 	Lang  *string `json:"iso_639_1"`
 	Vote  float64 `json:"vote_average"`
 	Width int     `json:"width"`
+	// Height is the native height in pixels (the sign-in art's quality gate).
+	Height int `json:"height,omitempty"`
 }
 
 // CardImages is a title's backdrops and logos, as listed by the source.
 type CardImages struct {
 	Backdrops []CardImage `json:"backdrops"`
 	Logos     []CardImage `json:"logos"`
+	// Posters are listed for the sign-in art's phone (portrait) picture.
+	Posters []CardImage `json:"posters,omitempty"`
 }
 
 // CardArter lists a title's images in one call.
@@ -71,6 +75,9 @@ func (t *TMDB) CardImages(ctx context.Context, kind, tmdbID, lang string) (CardI
 	}
 	for i := range out.Logos {
 		out.Logos[i].Path = t.images() + "/w500" + out.Logos[i].Path
+	}
+	for i := range out.Posters {
+		out.Posters[i].Path = t.images() + "/w500" + out.Posters[i].Path
 	}
 	return out, nil
 }

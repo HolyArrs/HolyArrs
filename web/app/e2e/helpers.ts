@@ -30,6 +30,9 @@ export function owner(): Owner {
 export async function signIn(page: Page, o: Owner) {
 	await page.goto('/login');
 	await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+	// With other ways on, the card lists buttons first.
+	const local = page.getByRole('button', { name: 'Use a HolyArrs account' });
+	if (await local.isVisible()) await local.click();
 	await page.getByLabel('Name').fill(o.name);
 	await page.getByLabel('Password', { exact: true }).fill(o.password);
 	await page.getByRole('button', { name: 'Sign in', exact: true }).click();

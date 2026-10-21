@@ -293,7 +293,7 @@ func public(r *http.Request) bool {
 	case "GET /healthz", "HEAD /healthz", "GET /login", "GET /api/v1/auth/state",
 		"POST /api/v1/auth/login", "POST /api/v1/auth/setup", "POST /api/v1/auth/login/two-factor",
 		"POST /api/v1/auth/oidc/start", "GET /api/v1/auth/oidc/callback", "POST /api/v1/auth/oidc/finish",
-		"POST /api/v1/auth/forward/login",
+		"POST /api/v1/auth/forward/login", "GET /api/v1/public/signin-art",
 		"POST /api/v1/auth/plex/start", "POST /api/v1/auth/plex/finish",
 		"POST /api/v1/auth/media-server/jellyfin", "POST /api/v1/auth/media-server/emby",
 		// The calendar feed checks its own key (phones cannot sign in).

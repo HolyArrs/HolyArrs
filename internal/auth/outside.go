@@ -385,7 +385,13 @@ func (a *Auth) fetch(ctx context.Context, method, u string, hdr map[string]strin
 type pin struct {
 	ip      string
 	expires time.Time
+	// checked is the last time Plex was asked about this pin; checks
+	// closer than pinCheckGap answer 429 (the page polls every 2 s).
+	checked time.Time
 }
+
+// pinCheckGap is the shortest time between two checks of one pin.
+const pinCheckGap = time.Second
 
 func (a *Auth) plexHeaders(ctx context.Context) map[string]string {
 	return map[string]string{"X-Plex-Product": product, "X-Plex-Client-Identifier": a.clientID(ctx)}
@@ -448,9 +454,18 @@ func (a *Auth) plexFinish(w http.ResponseWriter, r *http.Request) {
 	a.mu.Lock()
 	p := a.pins[body.ID]
 	ok := p != nil && p.ip == a.clientKey(r) && a.now().Before(p.expires)
+	soon := ok && !p.checked.IsZero() && a.now().Sub(p.checked) < pinCheckGap
+	if ok && !soon {
+		p.checked = a.now()
+	}
 	a.mu.Unlock()
 	if !ok {
 		fail(w, http.StatusNotFound, "this Plex sign-in has ended; start again")
+		return
+	}
+	if soon {
+		w.Header().Set("Retry-After", "1")
+		fail(w, http.StatusTooManyRequests, "checking too often; wait a second")
 		return
 	}
 	var pinState struct {

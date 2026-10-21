@@ -509,6 +509,11 @@ func plexSignIn(t *testing.T, f *fixture, p *fakePlex) (*http.Client, int, strin
 	if resp, _ := call(t, c, "POST", f.srv.URL+"/api/v1/auth/plex/finish", `{"id":77}`, nil); resp.StatusCode != 202 {
 		t.Fatalf("waiting: %d", resp.StatusCode)
 	}
+	// One check a second per pin: a second check at once is refused.
+	if resp, _ := call(t, c, "POST", f.srv.URL+"/api/v1/auth/plex/finish", `{"id":77}`, nil); resp.StatusCode != 429 {
+		t.Fatalf("a check within a second: %d", resp.StatusCode)
+	}
+	f.clock.t = f.clock.t.Add(2 * time.Second)
 	p.confirmed.Store(true)
 	resp, out = call(t, c, "POST", f.srv.URL+"/api/v1/auth/plex/finish", `{"id":77}`, nil)
 	return c, resp.StatusCode, out

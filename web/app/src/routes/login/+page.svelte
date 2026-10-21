@@ -8,8 +8,9 @@
 	import { page } from '$app/state';
 	import { ApiError, message } from '#lib/api.ts';
 	import { session, type SignInResult } from '#lib/session.svelte.ts';
-	import { theme } from '#lib/theme.svelte.ts';
 	import { safeNext } from '#lib/next.ts';
+	import SigninBackdrop from '#lib/SigninBackdrop.svelte';
+	import { providerButtons, type Way } from '#lib/signinArt.ts';
 
 	const MIN_LENGTH = $derived(session.s.minPassword);
 
@@ -22,8 +23,9 @@
 	let waitUntil = $state(0);
 	let now = $state(Date.now());
 
-	// Which way: the HolyArrs password, or a Jellyfin or Emby account.
-	let via = $state<'password' | 'jellyfin' | 'emby'>('password');
+	// Which way: the list of buttons, the HolyArrs password, or a Jellyfin
+	// or Emby account. With only the password on, the form shows at once.
+	let chosen = $state<'choose' | 'password' | 'jellyfin' | 'emby'>('choose');
 	// Set once the first step passed and a two-factor code is needed.
 	let ticket = $state('');
 	let otp = $state('');
@@ -33,9 +35,10 @@
 
 	const mode = $derived(session.s.state === 'needs_setup' ? 'setup' : ticket ? 'code' : 'login');
 	const waiting = $derived(Math.max(0, Math.ceil((waitUntil - now) / 1000)));
-	const mark = $derived(theme.value === 'light' ? '/brand/mark-color.svg' : '/brand/mark-color-on-dark.svg');
 	const wayWord = { jellyfin: 'Jellyfin', emby: 'Emby' } as const;
 	const outside = $derived(session.s.ways.filter((w) => w !== 'password'));
+	const buttons = $derived(providerButtons(session.s.ways as Way[]));
+	const via = $derived(chosen === 'choose' && !outside.length ? 'password' : chosen);
 
 	function next(): string {
 		const n = page.url.searchParams.get('next') ?? '/';
@@ -110,7 +113,7 @@
 				await session.setup(code.trim(), name.trim(), pw);
 			}
 			else if (via === 'password') took(await session.login(name.trim(), pw));
-			else took(await session.mediaServer(via, name.trim(), pw));
+			else if (via !== 'choose') took(await session.mediaServer(via, name.trim(), pw));
 		} catch (err) {
 			if (err instanceof ApiError && err.status === 409 && mode === 'setup') {
 				error = 'The owner is already set up. Sign in instead.';
@@ -149,9 +152,22 @@
 		pw = '';
 	}
 
-	function pick(w: 'password' | 'jellyfin' | 'emby') {
-		via = w;
+	function pick(w: 'choose' | 'password' | 'jellyfin' | 'emby') {
+		chosen = w;
 		error = '';
+		pw = '';
+	}
+
+	function press(w: Way) {
+		if (w === 'plex') void plex();
+		else if (w === 'oidc') void oidc();
+		else if (w === 'forward_auth') void forwardAuth();
+		else pick(w);
+	}
+
+	function cancelPlex() {
+		clearInterval(plexTimer);
+		plexWaiting = false;
 	}
 
 	async function plex() {
@@ -225,10 +241,11 @@
 	<title>{mode === 'setup' ? 'Set up HolyArrs' : 'Sign in'} · HolyArrs</title>
 </svelte:head>
 
-<main class="wrap">
+<main class="wrap" data-theme="dark">
+	<SigninBackdrop />
 	<div class="panel rise">
 		<div class="brand">
-			<img src={to(mark)} alt="" width="44" height="44" />
+			<img src={to('/brand/mark-color-on-dark.svg')} alt="" width="40" height="40" />
 			<span>HolyArrs</span>
 		</div>
 
@@ -242,8 +259,10 @@
 					First start. Make the owner account: the one person who runs this HolyArrs.
 				{:else if mode === 'code'}
 					Type the six-digit code from your authenticator app, or one of your backup codes.
-				{:else if via !== 'password'}
+				{:else if via === 'jellyfin' || via === 'emby'}
 					Sign in with your {wayWord[via]} name and password.
+				{:else if via === 'choose'}
+					Welcome back. Choose how to sign in.
 				{:else}
 					Welcome back.
 				{/if}
@@ -263,6 +282,36 @@
 					<div class="submit"><Button variant="primary" size="lg" full type="submit" disabled={waiting > 0 || !otp.trim()} {busy}>Sign in</Button></div>
 					<div class="again"><Button variant="plain" full type="button" onclick={restart}>Start again</Button></div>
 				</form>
+			{:else if mode === 'login' && via === 'choose'}
+				<div class="ways" data-testid="signin-ways">
+					{#each buttons as b (b.way)}
+						{#if b.way === 'plex' && plexWaiting}
+							<div class="plex-wait" role="status" aria-live="polite">
+								<span class="orbit" aria-hidden="true"></span>
+								<span><b>Waiting for Plex…</b><br /><span class="xs">Finish signing in on the Plex window that opened, then come back here.</span></span>
+								<Button variant="plain" size="sm" type="button" onclick={cancelPlex}>Cancel</Button>
+							</div>
+						{:else}
+							<Button
+								full
+								size="lg"
+								variant={b.way === 'password' ? 'plain' : 'secondary'}
+								class="way way-{b.way}"
+								type="button"
+								data-way={b.way}
+								disabled={busy}
+								onclick={() => press(b.way)}
+							>
+								{b.label}
+							</Button>
+						{/if}
+					{/each}
+					{#if error}
+						<p class="form-error" role="alert">
+							{error}{#if waiting > 0}<span class="mono"> ({waiting}s)</span>{/if}
+						</p>
+					{/if}
+				</div>
 			{:else}
 				<form onsubmit={submit} novalidate>
 					{#if mode === 'setup'}
@@ -305,35 +354,16 @@
 
 					<div class="submit">
 						<Button variant="primary" size="lg" full type="submit" disabled={waiting > 0} {busy}>
-							{mode === 'setup' ? 'Make the owner and sign in' : via === 'password' ? 'Sign in' : `Sign in with ${wayWord[via]}`}
+							{mode === 'setup' ? 'Make the owner and sign in' : via === 'jellyfin' || via === 'emby' ? `Sign in with ${wayWord[via]}` : 'Sign in'}
 						</Button>
 					</div>
+					{#if mode === 'login' && outside.length}
+						<div class="again"><Button variant="plain" full type="button" onclick={() => pick('choose')}>Other ways to sign in</Button></div>
+					{/if}
 				</form>
+			{/if}
 
-				{#if mode === 'login' && outside.length}
-					<div class="ways">
-						<p class="or"><span>or</span></p>
-						{#if via !== 'password'}
-							<Button full type="button" onclick={() => pick('password')}>Sign in with a HolyArrs password</Button>
-						{/if}
-						{#each outside as w (w)}
-							{#if w === 'plex'}
-								<Button full type="button" onclick={plex} disabled={plexWaiting} aria-busy={plexWaiting}>
-									{plexWaiting ? 'Waiting for Plex…' : 'Sign in with Plex'}
-								</Button>
-							{:else if (w === 'jellyfin' || w === 'emby') && via !== w}
-								<Button full type="button" onclick={() => pick(w)}>Sign in with {wayWord[w]}</Button>
-							{:else if w === 'oidc'}
-								<Button full type="button" onclick={oidc} disabled={busy} aria-busy={busy}>Sign in with single sign-on</Button>
-							{:else if w === 'forward_auth'}
-								<Button full type="button" onclick={forwardAuth} disabled={busy} aria-busy={busy}>Sign in through the trusted proxy</Button>
-							{/if}
-						{/each}
-						{#if plexWaiting}<p class="xs muted" role="status">Finish signing in on the Plex page that opened, then come back here.</p>{/if}
-					</div>
-				{/if}
-
-				{#if mode === 'login'}
+			{#if mode === 'login' && via === 'password'}
 					<details class="help small muted">
 						<summary>Forgot the password?</summary>
 						<p>
@@ -346,37 +376,48 @@
 						</p>
 					</details>
 				{/if}
-			{/if}
 		{/if}
 	</div>
 </main>
 
 <style>
+	/* Direction B: one cinematic backdrop, the card on frosted glass. The
+	   page stays dark in light mode too (data-theme on the wrapper). */
 	.wrap {
+		position: relative;
 		min-height: 100dvh;
 		display: grid;
-		place-items: center;
-		padding: clamp(16px, 5vw, 48px);
-		background: radial-gradient(120% 80% at 50% 0%, var(--accent-soft), transparent 60%), var(--bg);
+		place-items: center end;
+		padding: clamp(16px, 5vw, 48px) clamp(16px, 7vw, 120px);
+		background: #050507;
+		color: var(--text);
+		isolation: isolate;
 	}
 	.panel {
+		position: relative;
+		z-index: 1;
 		width: min(420px, 100%);
-		padding: clamp(24px, 5vw, 40px);
+		padding: clamp(24px, 4vw, 36px);
 		border-radius: var(--r-modal);
-		background: var(--surface-1);
-		box-shadow: var(--shadow-modal), 0 0 0 1px var(--line);
+		background: rgb(18 18 22 / 0.62);
+		-webkit-backdrop-filter: blur(28px) saturate(1.4);
+		backdrop-filter: blur(28px) saturate(1.4);
+		box-shadow: 0 30px 80px rgb(0 0 0 / 0.5), inset 0 0 0 1px rgb(255 255 255 / 0.09);
+	}
+	@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+		.panel { background: rgb(18 18 22 / 0.92); }
 	}
 	.brand {
 		display: flex;
-		flex-direction: column;
 		align-items: center;
+		justify-content: center;
 		gap: 10px;
-		margin-bottom: 20px;
+		margin-bottom: 18px;
 		font: var(--t-headline);
-		color: var(--text-muted);
+		color: rgb(255 255 255 / 0.78);
 	}
-	.title { font: var(--t-title1); letter-spacing: var(--t-title1-track); text-align: center; }
-	.lead { margin: 8px 0 24px; color: var(--text-muted); font: var(--t-callout); text-align: center; }
+	.title { font: var(--t-title1); letter-spacing: var(--t-title1-track); text-align: center; color: #fff; }
+	.lead { margin: 8px 0 24px; color: rgb(255 255 255 / 0.72); font: var(--t-callout); text-align: center; }
 	.panel :global(.field + .field) { margin-top: 14px; }
 	.pw { position: relative; display: flex; align-items: center; }
 	.pw .input { padding-right: 52px; }
@@ -389,11 +430,53 @@
 	.help summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; justify-content: center; border-radius: var(--r-sm); color: var(--accent-text); font-weight: 500; }
 	.help summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.help p { margin-top: 8px; }
-	.ways { display: grid; gap: 8px; margin-top: 20px; }
-	.or { display: flex; align-items: center; gap: 12px; color: var(--text-muted); font: var(--t-footnote); }
-	.or::before, .or::after { content: ''; flex: 1; height: 1px; background: var(--line); }
-	@media (max-width: 480px) {
-		.wrap { place-items: start center; padding: 24px 16px; }
-		.panel { box-shadow: none; background: transparent; padding: 8px 0; }
+	.ways { display: grid; gap: 10px; }
+	.ways :global(.way) { min-height: 48px; }
+	.ways :global(.way:not(.way-password)) { background: rgb(255 255 255 / 0.1); border-color: rgb(255 255 255 / 0.14); color: #fff; }
+	.ways :global(.way:not(.way-password):hover) { background: rgb(255 255 255 / 0.16); }
+	/* Plex's own amber, used only to label its button. */
+	.ways :global(.way.way-plex) { background: #e5a00d; border-color: #e5a00d; color: #1b1300; }
+	.ways :global(.way.way-plex:hover) { background: #f0ad1f; }
+	.ways :global(.way-password) { margin-top: 4px; }
+	.plex-wait {
+		display: grid;
+		grid-template-columns: auto 1fr auto;
+		align-items: center;
+		gap: 12px;
+		min-height: 48px;
+		padding: 10px 12px;
+		border-radius: var(--r-btn);
+		background: rgb(229 160 13 / 0.14);
+		box-shadow: inset 0 0 0 1px rgb(229 160 13 / 0.45);
+		color: #fff;
+		font: var(--t-footnote);
+	}
+	/* The 22 px ring the Orbit uses inside buttons. */
+	.orbit {
+		width: 22px;
+		height: 22px;
+		border-radius: 50%;
+		border: 2px solid rgb(255 255 255 / 0.25);
+		border-top-color: #e5a00d;
+		animation: orbit 0.9s linear infinite;
+	}
+	@keyframes orbit { to { transform: rotate(360deg); } }
+	@media (prefers-reduced-motion: reduce) { .orbit { animation-duration: 2.4s; } }
+	/* Tablets and narrow windows: the card centred. */
+	@media (max-width: 900px) {
+		.wrap { place-items: center; }
+	}
+	/* Phones: a full-width bottom sheet over the art, clear of the home bar. */
+	@media (max-width: 600px) {
+		.wrap { place-items: end stretch; padding: 0; }
+		.panel {
+			width: 100%;
+			margin-top: 30dvh;
+			border-radius: 22px 22px 0 0;
+			padding: 22px max(20px, env(safe-area-inset-right)) max(24px, calc(env(safe-area-inset-bottom) + 16px)) max(20px, env(safe-area-inset-left));
+			box-shadow: 0 -20px 60px rgb(0 0 0 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.1);
+		}
+		.brand { margin-bottom: 10px; }
+		.lead { margin-bottom: 18px; }
 	}
 </style>
