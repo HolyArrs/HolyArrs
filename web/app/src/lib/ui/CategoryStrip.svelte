@@ -10,7 +10,7 @@
 
 	// The category strip under the Explore hero: heavy condensed wordmarks over
 	// a dark, grey still of the category's art; on hover or focus the still
-	// warms into a brand-red duotone and the word breathes open. A small crimson
+	// comes up in its own colour and the word breathes open. A small crimson
 	// section label sits over the name; then All categories (Search Browse).
 	let { tiles, type }: { tiles: (BrowseTile & { section: string })[]; type: ExploreType } = $props();
 	type Entry = { key: string; name: string; label: string; href: string; art: string; all?: boolean };
@@ -52,10 +52,8 @@
 		border-radius: 14px; color: #fff; background: #120a0b; border: 1px solid rgba(255, 255, 255, .07);
 		transition: transform .45s var(--ease-tile), box-shadow .45s var(--ease-tile), border-color .45s var(--ease-tile);
 	}
-	/* At rest a grey, dim still; the duotone layers wait underneath. */
-	.art { position: absolute; inset: 0; z-index: -3; width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.2); opacity: .3; transition: opacity .5s var(--ease-tile), transform .7s var(--ease-tile); }
-	/* Duotone: the red wash multiplies the grey still into crimson to deep red. */
-	.cat::before { content: ''; position: absolute; inset: 0; z-index: -2; background: linear-gradient(120deg, #8e0f17, #d0202a); mix-blend-mode: multiply; opacity: 0; transition: opacity .5s var(--ease-tile); }
+	/* At rest a grey, dim still; on hover it comes up in its own colour. */
+	.art { position: absolute; inset: 0; z-index: -3; width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.2); opacity: .3; transition: opacity .5s var(--ease-tile), filter .5s var(--ease-tile), transform .7s var(--ease-tile); }
 	/* The dark glass from the left keeps the wordmark legible. */
 	.cat::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, #0b0708 22%, rgba(11, 7, 8, .35) 70%, transparent); transition: opacity .5s var(--ease-tile); }
 	.txt { position: absolute; left: 14px; right: 12px; bottom: 10px; display: flex; flex-direction: column; gap: 4px; }
@@ -66,12 +64,9 @@
 		font: 400 min(34px, calc((100cqi - 30px) / (var(--chars) * .52))) / .9 Anton, var(--font-ui), sans-serif;
 		letter-spacing: .005em; transform-origin: left bottom; transition: transform .5s var(--ease-tile), letter-spacing .5s var(--ease-tile);
 	}
-	.cat:is(:hover, :focus-visible) .art { opacity: .9; transform: scale(1.08); }
-	.cat:is(:hover, :focus-visible)::before { opacity: 1; }
-	.cat:is(:hover, :focus-visible)::after { opacity: .55; }
-	.cat:is(:hover, :focus-visible) strong { transform: scale(1.035); }
-	.cat:is(:hover, :focus-visible) small { color: #ffc9cb; }
-	.cat:hover { transform: translateY(-2px); border-color: rgba(208, 32, 42, .5); box-shadow: 0 12px 26px -14px rgba(208, 32, 42, .75); }
+	.cat:is(:hover, :focus-visible) .art { opacity: .6; filter: none; transform: scale(1.08); }
+	.cat:is(:hover, :focus-visible) strong { transform: scale(1.02); }
+	.cat:hover { transform: translateY(-2px); }
 	.cat:active { transform: scale(.98); }
 	.cat:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--bg, #0b0708), 0 0 0 4px #d0202a; }
 	.cat:focus:not(:focus-visible) { outline: none; }
