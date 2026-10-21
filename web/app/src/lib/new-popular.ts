@@ -15,6 +15,8 @@ export interface NewAnswer {
 	services_set?: boolean;
 	/** This week (page 0 only): days -3 to +7. */
 	rail?: RailDay[];
+	/** The hero (page 0 only): up to 6 new titles with a trailer, logo and backdrop. */
+	hero?: ProviderItem[];
 	rows: ServerRow[];
 }
 

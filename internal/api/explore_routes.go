@@ -477,6 +477,7 @@ func (a *API) exploreHero(r *http.Request, pg explore.Page, all bool, me int64) 
 	}
 	day := explore.Day(a.exploreNow())
 	picked := explore.PickHero(ready, all, me, day)
+	heroShown.Store(me, picked) // New & Popular's hero leaves these out
 	out := make([]discoverItemView, 0, len(picked))
 	for _, it := range picked {
 		for _, v := range vs {

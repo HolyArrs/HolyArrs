@@ -8,7 +8,7 @@
 	import { session } from '#lib/session.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { refreshInbox } from '#lib/wishlist.svelte.ts';
-	import { cardAction, cardTmdb, liveCard, matchOwned, ownedIndex, ownedMark, ownedTitle, serverRow, serviceRegion, type ExploreCard, type ExploreRow, type WatchService } from '#lib/explore.ts';
+	import { cardAction, cardTmdb, discoverCard, liveCard, matchOwned, ownedIndex, ownedMark, ownedTitle, serverRow, serviceRegion, type ExploreCard, type ExploreRow, type WatchService } from '#lib/explore.ts';
 	import { cardServices, hasServiceChips, isRanked, newPath, parseNewType, pickService, type NewAnswer, type NewType, type RailDay, type RailItem } from '#lib/new-popular.ts';
 	import { contextLine } from '#lib/grow-lines.ts';
 	import { defaultRegion } from '#lib/top10.ts';
@@ -23,6 +23,8 @@
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import NewRail from '#lib/ui/NewRail.svelte';
+	import ExploreHero from '#lib/ui/ExploreHero.svelte';
+	import { whyShown, type Why } from '#lib/why-shown.ts';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
@@ -48,6 +50,8 @@
 
 	let rows = $state<Row[]>([]);
 	let rail = $state<RailDay[]>([]);
+	let hero = $state<ExploreCard[]>([]);
+	let heroAt = $state(0);
 	let loaded = $state(false);
 	let failed = $state(false);
 	let more = $state(false);
@@ -86,6 +90,8 @@
 			if (n !== ask) return;
 			rows = a.rows.map(serverRow);
 			rail = a.rail ?? [];
+			hero = (a.hero ?? []).map((d) => ({ ...discoverCard(d, 'np_hero'), wide: d.backdrop ?? null }));
+			heroAt = nextHero(hero.length);
 			next = 1;
 			more = a.more;
 			failed = false;
@@ -232,14 +238,49 @@
 		const cards = pickService(row.cards, svcPick(row.id));
 		return isRanked(row.type) ? cards.slice(0, 10) : cards;
 	}
-	function railHref(it: RailItem): string | undefined {
-		if (it.in_library && it.title_id !== undefined) return to(`/library/${it.title_id}`);
-		remember(it.kind, it.tmdb_id, { name: it.name, year: it.year, poster: it.poster ?? null });
-		return to(detailPath(it.kind, it.tmdb_id));
+	/** railCard is a rail title as a row card (the same card and hover preview as every row). */
+	const railCard = (it: RailItem): ExploreCard => ({ ...discoverCard(it, 'np_rail'), wide: it.backdrop ?? null });
+
+	/** nextHero rotates the hero through its titles, one step a visit. */
+	function nextHero(n: number): number {
+		if (n < 2) return 0;
+		try {
+			const at = (Number(sessionStorage.getItem('np-hero-at') ?? '-1') + 1) % n;
+			sessionStorage.setItem('np-hero-at', String(at));
+			return at;
+		} catch {
+			return 0;
+		}
+	}
+	/** heroWhy: New season, the title's place on its service's chart, else New this week. */
+	function heroWhy(h: ExploreCard): Why[] {
+		const out = whyShown({ kind: h.kind, tmdb: cardTmdb(h) ?? '', fresh: h.fresh });
+		const rank = h.streaming?.rank;
+		if (rank && rank <= 10 && h.streaming && !out.some((w) => w.kind === 'top10')) out.push({ kind: 'top10', text: `#${rank} on ${h.streaming.name}` });
+		if (!out.length && h.fresh && h.fresh.kind !== 'coming') out.unshift({ kind: 'new_season', text: 'New this week' });
+		return out.slice(0, 2);
 	}
 </script>
 
 <svelte:head><title>New & Popular · HolyArrs</title></svelte:head>
+
+{#snippet wideCard(raw: ExploreCard, rowType: string, rowTitle: string)}
+	{@const c = live(raw)}
+	{@const act = cardAction(c, { manage, ask: mayAsk })}
+	{@const mark = ownedMark(c, ownedTitle(c, owned), who)}
+	{@const preview = cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: cardTmdb(c), year: c.year, titleId: c.titleId } : undefined}
+	<div class="logo-wrap">
+		<WideCard cover title={c.name} href={cardHref(c)} image={c.wide ?? c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} fresh={c.fresh} owned={mark} typed row={rowType} {preview}
+			growService={c.streaming ? { name: c.streaming.name, logo: logo(c.streaming.service) } : null}
+			growContext={contextLine({ state: mark?.state, label: mark?.label, mine: c.mine, fresh: c.fresh }, { rowType, rowTitle, fresh: c.fresh, streaming: c.streaming })}
+			followTmdb={!c.titleId && (c.kind === 'show' || c.fresh?.kind === 'coming' || (!!c.year && c.year > new Date().getFullYear()))}>
+			{#snippet growAction()}{@render hoverAction(c, act, mark)}{/snippet}
+		</WideCard>
+		{#if (rowType === 'np_services' || rowType === 'np_rail') && c.streaming && logo(c.streaming.service)}
+			<img class="svc-logo" src={logo(c.streaming.service)} alt="On {c.streaming.name}" title={c.streaming.name} loading="lazy" />
+		{/if}
+	</div>
+{/snippet}
 
 {#snippet hoverAction(c: ExploreCard, act: 'add' | 'ask' | null, mark: ReturnType<typeof ownedMark>)}
 	{#if act && cardTmdb(c)}
@@ -260,7 +301,6 @@
 		<SegmentedControl options={typeOptions} value={type} label="Show" testid="new-type" announce={(l) => `Showing ${l}`} onchange={setType} />
 	</div>
 	<MetadataNotice />
-	{#if rail.length > 0}<NewRail days={rail} href={railHref} {logo} />{/if}
 
 	{#if failed && rows.length === 0}
 		<LoadError hasData={false} message="Could not load New & Popular." onretry={() => void loadFirst()} busy={false} />
@@ -274,6 +314,21 @@
 	{:else if rows.length === 0}
 		<EmptyState icon="compass" title="New & Popular is getting ready" text="Rows fill in within a few minutes." action={{ label: 'Explore', href: to('/explore'), icon: 'compass' }} />
 	{:else}
+		{#if hero.length}
+			{@const h = live(hero[heroAt % hero.length])}
+			<ExploreHero kind={h.kind === 'show' ? 'show' : 'movie'} tmdb={cardTmdb(h)} title={h.name} href={cardHref(h)} backdrop={h.wide ?? h.image} vtName={h.vtName} subtitle={h.year ? `${h.year} · ${h.kind === 'show' ? 'Show' : 'Movie'}` : h.subtitle} settled={loaded}>
+				{#snippet action()}{@render hoverAction(h, cardAction(h, { manage, ask: mayAsk }), null)}{/snippet}
+				{#snippet badge()}
+					{@const why = heroWhy(h)}
+					{#if why.length}<ul class="why" aria-label="Why it is featured">{#each why as w (w.text)}<li class="why-{w.kind}">{w.text}</li>{/each}</ul>{/if}
+				{/snippet}
+			</ExploreHero>
+		{/if}
+		{#if rail.length > 0}
+			<NewRail days={rail}>
+				{#snippet card(it: RailItem)}{@render wideCard(railCard(it), 'np_rail', 'This week')}{/snippet}
+			</NewRail>
+		{/if}
 		{#each rows as row (row.id)}
 			{@const cards = shown(row)}
 			{@const wide = !isRanked(row.type) && cards.some((c) => wideKind(c.kind))}
@@ -301,17 +356,7 @@
 								<span class="sr-only">Number {rank}</span>
 							</div>
 						{:else if wide}
-							<div class="logo-wrap">
-								<WideCard cover title={c.name} href={cardHref(c)} image={c.wide ?? c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} badges={c.badges} badgesAt="bottom" vtName={c.vtName} fresh={c.fresh} owned={mark} typed row={row.type} {preview}
-									growService={c.streaming ? { name: c.streaming.name, logo: logo(c.streaming.service) } : null}
-									growContext={contextLine({ state: mark?.state, label: mark?.label, mine: c.mine, fresh: c.fresh }, { rowType: row.type, rowTitle: row.title, fresh: c.fresh, streaming: c.streaming })}
-									followTmdb={!c.titleId && (c.kind === 'show' || c.fresh?.kind === 'coming' || (!!c.year && c.year > new Date().getFullYear()))}>
-									{#snippet growAction()}{@render hoverAction(c, act, mark)}{/snippet}
-								</WideCard>
-								{#if row.type === 'np_services' && c.streaming && logo(c.streaming.service)}
-									<img class="svc-logo" src={logo(c.streaming.service)} alt="On {c.streaming.name}" title={c.streaming.name} loading="lazy" />
-								{/if}
-							</div>
+							{@render wideCard(raw, row.type, row.title)}
 						{:else}
 							<PosterCard title={c.name} href={cardHref(c)} image={c.image} kind={c.kind} subtitle={c.subtitle} badges={c.badges} typed row={row.type} owned={mark} fresh={c.fresh} actionOnHover vtName={c.vtName} {preview}>
 								{#snippet action()}
@@ -358,6 +403,12 @@
 	.rank.two { font-size: 36cqw; letter-spacing: -0.12em; }
 	.pc { position: relative; z-index: 1; margin-left: 32%; width: 68%; min-width: 0; }
 	.sentinel { height: 1px; }
+	/* The rail's cards are as wide as a Hot and new card. */
+	.np { --rail-item: calc(var(--explore-item) / 0.68); }
+	/* Hero badges (as on Explore): small glass pills, the chart one in the brand red. */
+	.why { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
+	.why li { font: 600 12px/1 var(--font-ui); letter-spacing: .02em; padding: 6px 10px; border-radius: 999px; color: #fff; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 22%); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+	.why li.why-top10 { background: color-mix(in srgb, var(--accent) 80%, transparent); border-color: transparent; }
 	.loading { display: flex; flex-direction: column; gap: 14px; }
 	.sk-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--shelf-gap); max-height: 250px; overflow: hidden; margin-bottom: 16px; }
 	@media (max-width: 767px) { .np { --explore-item: 54vw; --title-item: calc((100cqi - var(--shelf-gap)) / 1.6 / .78); gap: 26px; } }

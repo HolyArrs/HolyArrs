@@ -47,6 +47,8 @@ type newPage struct {
 	marks  map[string]streamingMark
 	// picked says the member chose their services.
 	picked bool
+	// key is the page cache key (member, switch, Kid limit, region, day).
+	key string
 }
 
 // newRailDay is one day of the This week rail.
@@ -76,6 +78,101 @@ type newPageCache struct {
 }
 
 var newPages newPageCache
+
+// heroShown is each member's latest Explore hero (member id -> []explore.Item),
+// so New & Popular's hero shows other titles.
+var heroShown sync.Map
+
+// newHeroMax is how many titles New & Popular's hero rotates through.
+const newHeroMax = 6
+
+// newHeroKeys keeps the hero picked for a built page (page cache key ->
+// kind:tmdb set), so every page of rows leaves those titles out.
+var newHeroKeys sync.Map
+
+// newHero picks the hero: the best-scoring new titles of the rail, the
+// services row and the hot and new rows that pass Explore's quality gate
+// (a trailer, a logo and a backdrop), leaving out Explore's own hero.
+func (a *API) newHero(r *http.Request, pg newPage, me int64) ([]discoverItemView, error) {
+	skip := map[string]bool{}
+	if v, ok := heroShown.Load(me); ok {
+		for _, it := range v.([]explore.Item) {
+			skip[it.Key()] = true
+		}
+	}
+	var cands []explore.Item
+	seen := map[string]bool{}
+	take := func(it explore.Item) {
+		if !seen[it.Key()] && !skip[it.Key()] && pg.scores[it.Key()] > 0 {
+			seen[it.Key()] = true
+			cands = append(cands, it)
+		}
+	}
+	for _, d := range pg.rail {
+		for _, it := range d.Items {
+			take(it.Item)
+		}
+	}
+	for _, row := range pg.rows {
+		if row.Type == explore.TypeNPServices || row.Type == explore.TypeNPTopShows || row.Type == explore.TypeNPTopFilms {
+			for _, it := range row.Items {
+				take(it)
+			}
+		}
+	}
+	explore.SortByScore(cands, func(it explore.Item) float64 { return pg.scores[it.Key()] })
+	cands = cands[:min(len(cands), 24)]
+	views, err := a.exploreViews(r.Context(), r, []explore.Row{{Items: cands}})
+	if err != nil || len(views) != 1 {
+		return []discoverItemView{}, err
+	}
+	var vs []discoverItemView
+	var titles [][2]string
+	for _, v := range views[0].Items {
+		if !v.InLibrary {
+			vs = append(vs, v)
+			titles = append(titles, [2]string{v.Kind, v.TMDBID})
+		}
+	}
+	a.prefetchTrailers(r, titles)
+	a.fillTrailerKeys(r, vs)
+	a.fillCardArt(r, vs)
+	now := a.exploreNow().UTC()
+	out := []discoverItemView{}
+	for _, v := range vs {
+		if len(out) == newHeroMax || v.TrailerKey == "" || !heroArtReady(v) {
+			continue
+		}
+		k := v.Kind + ":" + v.TMDBID
+		if f := newFresh(pg.facts[k], now); f != nil {
+			v.Fresh = f
+		}
+		if m, ok := pg.marks[k]; ok {
+			v.Streaming = &m
+		}
+		out = append(out, v)
+	}
+	return out, nil
+}
+
+// withoutHero drops the hero's titles from rows.
+func withoutHero(rows []explore.Row, hero map[string]bool) []explore.Row {
+	if len(hero) == 0 {
+		return rows
+	}
+	out := make([]explore.Row, 0, len(rows))
+	for _, r := range rows {
+		items := make([]explore.Item, 0, len(r.Items))
+		for _, it := range r.Items {
+			if !hero[it.Key()] {
+				items = append(items, it)
+			}
+		}
+		r.Items = items
+		out = append(out, r)
+	}
+	return out
+}
 
 func (c *newPageCache) get(key string) (newPage, bool) {
 	c.mu.Lock()
@@ -400,7 +497,7 @@ func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string)
 		return p, false
 	}
 	order, svcNew, added, top := a.newServiceLists(ctx, h, kinds)
-	pg := newPage{facts: map[string]explore.NewFact{}, scores: map[string]float64{}, marks: map[string]streamingMark{}, picked: len(h.services) > 0}
+	pg := newPage{facts: map[string]explore.NewFact{}, scores: map[string]float64{}, marks: map[string]streamingMark{}, picked: len(h.services) > 0, key: key}
 	facts := newFacts{now: now, m: pg.facts}
 	for k, at := range added {
 		facts.put(k, explore.NewFact{Kind: explore.NewService, At: at})
@@ -851,8 +948,25 @@ func (a *API) exploreNew(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	pg, building := a.newRows(r.Context(), r, a.person(r).UserID, sw)
-	rows := pg.rows
+	me := a.person(r).UserID
+	pg, building := a.newRows(r.Context(), r, me, sw)
+	var hero []discoverItemView
+	if n == 0 {
+		if hero, err = a.newHero(r, pg, me); err != nil {
+			internal(w, err)
+			return
+		}
+		keys := map[string]bool{}
+		for _, v := range hero {
+			keys[v.Kind+":"+v.TMDBID] = true
+		}
+		newHeroKeys.Store(pg.key, keys)
+	}
+	heroKeys := map[string]bool{}
+	if v, ok := newHeroKeys.Load(pg.key); ok {
+		heroKeys = v.(map[string]bool)
+	}
+	rows := withoutHero(pg.rows, heroKeys)
 	from, to := 0, newFirstRows
 	if n > 0 {
 		from = newFirstRows + (n-1)*newPageRows
@@ -866,6 +980,7 @@ func (a *API) exploreNew(w http.ResponseWriter, r *http.Request) {
 	}
 	body := map[string]any{"type": sw, "page": n, "more": to < len(rows), "building": building, "services_set": pg.picked, "rows": views}
 	if n == 0 {
+		body["hero"] = hero
 		rail, err := a.newRailViews(r, pg.rail)
 		if err != nil {
 			internal(w, err)
