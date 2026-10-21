@@ -69,8 +69,8 @@ export function buildNav(input: NavInput): NavSection[] {
 			id: 'library',
 			label: 'Library',
 			items: [
-				...input.kinds.filter((k) => !(input.kid && k === 'artist')).map((k) => kindItems[k]),
-				...(input.kinds.includes('movie') ? [{ href: '/library/collections', label: 'Movie series', icon: 'grid', need: null } as NavItem] : [])
+				// Movie series live in the Library's Filter menu and its Group by series choice.
+				...input.kinds.filter((k) => !(input.kid && k === 'artist')).map((k) => kindItems[k])
 			]
 		},
 		{

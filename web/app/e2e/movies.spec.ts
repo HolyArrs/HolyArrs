@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { owner, signIn, libraryStatus, addFromSearch, openFromSearch } from './helpers.ts';
+import { owner, signIn, libraryStatus, libraryView, addFromSearch, openFromSearch } from './helpers.ts';
 
 // Add-movie screen, Library screen and Movie page against the fake TMDB in
 // fakes.mjs. Runs after the other projects, so the owner and the Movies
@@ -57,6 +57,7 @@ test('add by tmdb: and imdb: id; the last Release gate is remembered, the rest s
 
 test('Library filters, find by name, posters and list', async () => {
 	await page.goto('/library');
+	await libraryView(page, 'Posters');
 	const grid = page.locator('.grid .item');
 	await expect(grid).toHaveCount(4);
 	await libraryStatus(page, 'not_out_yet');
@@ -76,13 +77,13 @@ test('Library filters, find by name, posters and list', async () => {
 	await expect(grid).toHaveCount(1);
 	await page.getByLabel('Find in the Library').fill('');
 
-	await page.getByRole('radio', { name: 'Table', exact: true }).click();
+	await libraryView(page, 'Banners');
 	await expect(page.getByTestId('library-row')).toHaveCount(4);
 	await page.reload();
 	// remembered
-	await expect(page.getByRole('radio', { name: 'Table', exact: true })).toHaveAttribute('aria-checked', 'true');
+	await expect(page.getByRole('radio', { name: 'Banners', exact: true })).toHaveAttribute('aria-checked', 'true');
 	await expect(page.getByTestId('library-row')).toHaveCount(4);
-	await page.getByRole('radio', { name: 'Grid' }).click();
+	await libraryView(page, 'Posters');
 	await expect(grid).toHaveCount(4);
 });
 

@@ -17,8 +17,11 @@ import (
 // ratings (MDBList) for a title page. Empty fields mean none: the page
 // keeps TMDB's art and hides the ratings strip.
 type TitleExtras struct {
-	Logo        string         `json:"logo,omitempty"`
-	Thumb       string         `json:"thumb,omitempty"`
+	Logo  string `json:"logo,omitempty"`
+	Thumb string `json:"thumb,omitempty"`
+	// Banner is the wide fanart.tv banner (about 1000x185) the Library
+	// table shows per row; empty when fanart has none.
+	Banner      string         `json:"banner,omitempty"`
 	Backgrounds []string       `json:"backgrounds,omitempty"`
 	Scores      []OutsideScore `json:"scores"`
 }
@@ -126,7 +129,7 @@ func (a *API) titleExtras(w http.ResponseWriter, r *http.Request) {
 	if a.s.ExtraArt != nil {
 		art, err := a.s.ExtraArt(ctx, kind, id)
 		if err == nil {
-			v.Logo, v.Thumb, v.Backgrounds = art.Logo, art.Thumb, art.Backgrounds
+			v.Logo, v.Thumb, v.Banner, v.Backgrounds = art.Logo, art.Thumb, art.Banner, art.Backgrounds
 		}
 		settled = settled && (err == nil || errors.Is(err, metadata.ErrNotFound))
 	}

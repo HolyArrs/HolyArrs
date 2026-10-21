@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { join } from 'node:path';
-import { moviesDir, noSidewaysScroll, owner, signIn, libraryStatus, openApprovals, openSeason, seasonCount, episodeAction, episodeKept, libraryKind, addFromSearch, openFromSearch, seasonKept, toggleSeasonKept } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, libraryStatus, openApprovals, openSeason, seasonCount, episodeAction, episodeKept, libraryKind, libraryView, addFromSearch, openFromSearch, seasonKept, toggleSeasonKept } from './helpers.ts';
 
 // Shows (2.2.5 to 2.2.10): the owner adds a show folder and a show from
 // Search (the fake TMDB knows Harbour Lights, Lantern Street and Moss
@@ -114,6 +114,7 @@ test('shows sit in the Library next to movies, with kinds and state filters', as
 	await own.goto('/library');
 	await libraryKind(own, /^Shows/);
 	await expect(own).toHaveURL(/kind=show/);
+	await libraryView(own, 'Posters');
 	const card = own.getByTestId('library-card').filter({ hasText: 'Harbour Lights' });
 	await expect(card).toContainText('Show');
 	// Posters carry only the status circle now; the Missing filter below proves the state.
@@ -121,21 +122,22 @@ test('shows sit in the Library next to movies, with kinds and state filters', as
 	await libraryStatus(own, 'missing');
 	await expect(card).toBeVisible();
 	// In the Missing list a show folds its missing episodes under one row.
-	await own.getByRole('radiogroup', { name: 'View' }).getByRole('radio', { name: 'Table' }).click();
+	await libraryView(own, 'Banners');
 	const missingRow = own.getByTestId('library-row').filter({ hasText: 'Harbour Lights' });
 	await missingRow.getByTestId('missing-fold').click();
 	await expect(missingRow.getByTestId('missing-fold')).toHaveAttribute('aria-expanded', 'true');
 	await expect(missingRow.getByTestId('missing-episode').first()).toContainText(/S\d\dE\d\d/);
-	await own.getByRole('radiogroup', { name: 'View' }).getByRole('radio', { name: 'Grid' }).click();
+	await libraryView(own, 'Posters');
 	await libraryStatus(own, 'not_out_yet');
 	await expect(card).toBeVisible();
 	await libraryStatus(own, 'better');
 	await expect(card).toHaveCount(0);
 	await libraryStatus(own, 'all');
-	await own.getByRole('radiogroup', { name: 'View' }).getByRole('radio', { name: 'Table' }).click();
+	await libraryView(own, 'Banners');
 	await expect(own.getByTestId('library-row').filter({ hasText: 'Harbour Lights' })).toContainText('aired episodes in the Library');
-	await own.getByRole('radiogroup', { name: 'View' }).getByRole('radio', { name: 'Grid' }).click();
+	await libraryView(own, 'Posters');
 	await libraryKind(own, /^Movies/);
+	await libraryView(own, 'Posters');
 	await expect(card).toHaveCount(0);
 	await expect(own.getByTestId('library-card').filter({ hasText: 'Quiet Orchard' })).toBeVisible();
 	await libraryKind(own, /^Everything/);

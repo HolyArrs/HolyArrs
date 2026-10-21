@@ -11,18 +11,18 @@ describe('buildNav', () => {
 	it('gives owners every section, with Approvals under Manage', () => {
 		expect(labels(owner)).toEqual([
 			[null, ['Home', 'Explore', 'New & Popular']],
-			['Library', ['Movies', 'TV shows', 'Music', 'Movie series']],
+			['Library', ['Movies', 'TV shows', 'Music']],
 			['Your stuff', ['Calendar']],
 			['Manage', ['Downloads', 'Approvals', 'History', 'Library tools', 'Settings']]
 		]);
 	});
 	it('hides Music from a Kid, because music has no age ratings', () => {
-		expect(labels({ ...member, kid: true })[1]).toEqual(['Library', ['Movies', 'TV shows', 'Movie series']]);
+		expect(labels({ ...member, kid: true })[1]).toEqual(['Library', ['Movies', 'TV shows']]);
 	});
 	it('hides Manage from members but keeps Home', () => {
 		expect(labels(member)).toEqual([
 			[null, ['Home', 'Explore', 'New & Popular']],
-			['Library', ['Movies', 'TV shows', 'Music', 'Movie series']],
+			['Library', ['Movies', 'TV shows', 'Music']],
 			['Your stuff', ['Wishlist']]
 		]);
 	});
@@ -71,7 +71,7 @@ describe('palette', () => {
 		expect(list.at(-1)?.label).toBe('Account');
 	});
 	it('ranks starts-with before contains', () => {
-		expect(filterDestinations(list, 'mo').map((d) => d.label).slice(0, 2)).toEqual(['Movies', 'Movie series']);
+		expect(filterDestinations(list, 'mo').map((d) => d.label).slice(0, 2)).toEqual(['Movies']);
 		expect(filterDestinations(list, 'shows').map((d) => d.label)).toEqual(['TV shows']);
 		expect(filterDestinations(list, 'zzz')).toEqual([]);
 		expect(filterDestinations(list, ' ')).toHaveLength(list.length);

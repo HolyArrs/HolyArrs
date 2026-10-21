@@ -36,10 +36,16 @@ export async function signIn(page: Page, o: Owner) {
 	await expect(page).toHaveURL(/\/$/);
 }
 
-/** libraryStatus picks a Library status filter from the Status chips (all, missing, not_out_yet, better, have). */
+/** libraryStatus picks a Library status from the toolbar's Filter menu (all, missing, not_out_yet, better, have). */
 export async function libraryStatus(scope: Page | Locator, value: 'all' | 'missing' | 'not_out_yet' | 'better' | 'have') {
 	const names = { all: /^All/, missing: /^Missing/, not_out_yet: /^Not out yet/, better: /^Better copy wanted/, have: /^In library/ };
-	await scope.getByRole('group', { name: 'Status' }).getByRole('button', { name: names[value] }).click();
+	await scope.getByRole('button', { name: /^Filter/ }).click();
+	await scope.getByRole('menu', { name: 'Filter' }).getByRole('menuitemradio', { name: names[value] }).click();
+}
+
+/** libraryView switches the Library between Banners, Posters and Overview. */
+export async function libraryView(scope: Page | Locator, name: 'Banners' | 'Posters' | 'Overview') {
+	await scope.getByRole('radiogroup', { name: 'View' }).getByRole('radio', { name, exact: true }).click();
 }
 
 /** openApprovals reaches the Wishlist as an approver on a phone: Manage tab, then Approvals. */
@@ -138,9 +144,10 @@ export async function episodeKept(page: Page, code: string): Promise<boolean> {
 	return v === 'true';
 }
 
-/** libraryKind picks a kind from the Library page's Kind chips. */
+/** libraryKind opens one library the way the sidebar does (Movies, Shows, Music; Everything is the plain /library). */
 export async function libraryKind(page: Page, name: RegExp) {
-	await page.getByRole('group', { name: 'Kind' }).getByRole('button', { name }).click();
+	const kind = name.test('Shows') ? 'show' : name.test('Music') ? 'artist' : name.test('Movies') ? 'movie' : '';
+	await page.goto(kind ? `/library?kind=${kind}` : '/library');
 }
 
 /** signOut uses the account menu (sidebar) or, on a phone, the More sheet. */

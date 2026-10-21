@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { join } from 'node:path';
-import { moviesDir, noSidewaysScroll, owner, signIn, openApprovals, libraryKind, libraryStatus, titleAction, openAdvanced, openFromSearch } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, openApprovals, libraryKind, libraryStatus, libraryView, titleAction, openAdvanced, openFromSearch } from './helpers.ts';
 
 // Music (2.3.4 to 2.3.8): the owner adds a music folder, looks at Settings >
 // Music, adds Tin Lanterns from Search (the fake MusicBrainz knows it and
@@ -145,13 +145,14 @@ test('artists sit in the Library with a Music kind', async () => {
 	await own.goto('/library');
 	await libraryKind(own, /^Music/);
 	await expect(own).toHaveURL(/kind=artist/);
+	await libraryView(own, 'Posters');
 	const card = own.getByTestId('library-card').filter({ hasText: 'Tin Lanterns' });
 	await expect(card).toContainText('Artist');
 	// Posters carry only the status circle now.
 	await expect(own.getByTestId('library-card').filter({ hasText: 'Harbour Lights' })).toHaveCount(0);
-	await own.getByRole('radiogroup', { name: 'View' }).getByRole('radio', { name: 'Table' }).click();
+	await libraryView(own, 'Banners');
 	await expect(own.getByTestId('library-row').filter({ hasText: 'Tin Lanterns' })).toContainText('tracks in the Library');
-	await own.getByRole('radiogroup', { name: 'View' }).getByRole('radio', { name: 'Grid' }).click();
+	await libraryView(own, 'Posters');
 	await libraryKind(own, /^Everything/);
 	await axe(own, 'library with music');
 });

@@ -1,0 +1,73 @@
+<script lang="ts">
+	import Popover from './Popover.svelte';
+	import Icon from '../Icon.svelte';
+	import { moveColumn, type Column } from '../library-table.ts';
+
+	// Show or hide the Library table's columns and put them in order: drag
+	// a row, or focus its handle and press the up and down arrows.
+	let { columns, onchange, onreset }: { columns: Column[]; onchange: (c: Column[]) => void; onreset: () => void } = $props();
+
+	let dragFrom = $state<number | null>(null);
+	let dragOver = $state<number | null>(null);
+	let list = $state<HTMLElement | null>(null);
+	let said = $state('');
+
+	function toggle(i: number) {
+		onchange(columns.map((c, j) => (j === i ? { ...c, on: !c.on } : c)));
+	}
+	function drop(i: number) {
+		if (dragFrom !== null) onchange(moveColumn(columns, dragFrom, i));
+		dragFrom = dragOver = null;
+	}
+	function handleKey(e: KeyboardEvent, i: number) {
+		const to = e.key === 'ArrowUp' ? i - 1 : e.key === 'ArrowDown' ? i + 1 : -1;
+		if (to < 0 || to >= columns.length) return;
+		e.preventDefault();
+		onchange(moveColumn(columns, i, to));
+		said = `${columns[i].label} moved to place ${to + 1} of ${columns.length}`;
+		requestAnimationFrame(() => list?.querySelectorAll<HTMLElement>('.grip')[to]?.focus());
+	}
+</script>
+
+<Popover label="Columns" icon="eye" text="Columns" variant="button" width={260} align="end">
+	{#snippet children()}
+		<div class="chooser">
+			<p class="head">Columns <span>drag to reorder</span></p>
+			<ul bind:this={list}>
+				{#each columns as c, i (c.id)}
+					<li
+						class:over={dragOver === i && dragFrom !== i}
+						class:dragging={dragFrom === i}
+						draggable="true"
+						ondragstart={(e) => { dragFrom = i; e.dataTransfer?.setData('text/plain', c.id); }}
+						ondragover={(e) => { e.preventDefault(); dragOver = i; }}
+						ondragleave={() => (dragOver = dragOver === i ? null : dragOver)}
+						ondrop={(e) => { e.preventDefault(); drop(i); }}
+						ondragend={() => (dragFrom = dragOver = null)}
+					>
+						<label><input type="checkbox" checked={c.on} onchange={() => toggle(i)} /> <span>{c.label}</span></label>
+						<button type="button" class="grip" aria-label="Move {c.label}: up and down arrows" onkeydown={(e) => handleKey(e, i)}><Icon name="menu" size={15} /></button>
+					</li>
+				{/each}
+			</ul>
+			<button type="button" class="reset" onclick={onreset}>Reset columns</button>
+			<span class="sr-only" aria-live="polite">{said}</span>
+		</div>
+	{/snippet}
+</Popover>
+
+<style>
+	.chooser { display: flex; flex-direction: column; gap: 4px; }
+	.head { display: flex; justify-content: space-between; align-items: baseline; margin: 2px 8px 6px; font: var(--t-footnote); font-weight: 600; color: var(--text-muted); }
+	.head span { font-weight: 400; }
+	ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
+	li { display: flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 2px 0 8px; border-radius: 8px; cursor: grab; }
+	li:hover { background: var(--surface-3); }
+	li.over { box-shadow: inset 0 2px 0 var(--accent); }
+	li.dragging { opacity: .45; }
+	label { flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0; font: var(--t-callout); cursor: pointer; }
+	input { width: 16px; height: 16px; accent-color: var(--accent); }
+	.grip { display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 6px; background: none; color: var(--text-muted); cursor: grab; }
+	.grip:focus-visible, .reset:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.reset { margin-top: 4px; padding: 8px; border: 0; border-top: 1px solid var(--line); background: none; color: var(--accent); font: var(--t-callout); text-align: left; cursor: pointer; }
+</style>

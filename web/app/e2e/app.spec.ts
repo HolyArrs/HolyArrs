@@ -1,6 +1,6 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { moviesDir, newOwner, owner, setupCode, signIn, signOut, noSidewaysScroll, libraryStatus, addFromSearch } from './helpers.ts';
+import { moviesDir, newOwner, owner, setupCode, signIn, signOut, noSidewaysScroll, libraryStatus, libraryView, addFromSearch } from './helpers.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -260,6 +260,7 @@ test('Library search debounces the indexed query and ignores stale results', asy
 	});
 
 	const find = page.getByLabel('Find in the Library');
+	await libraryView(page, 'Posters');
 	const cards = page.getByTestId('library-card');
 	await find.fill('alias café');
 	await page.waitForTimeout(100);

@@ -160,6 +160,8 @@ type API struct {
 	musicx musicExplore
 	// musicAns keeps each member's Explore → Music answers a minute.
 	musicAns musicAnswers
+	// signin keeps the sign-in page's art and its per-address budget.
+	signin signinArtState
 	// explore runs the Explore pool job and keeps its lists and pages.
 	explore   exploreState
 	genreRows genreRowCache
@@ -325,6 +327,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/trailer/stream/{id}/manifest.m3u8", a.trailerManifest)
 	m.HandleFunc("GET /api/v1/trailer/stream/{id}/seg/{n}", a.trailerSegment)
 	m.HandleFunc("GET /api/v1/settings/ui", a.getUISettings)
+	a.signinArtRoutes(m)
 	m.HandleFunc("PUT /api/v1/settings/ui", a.putUISettings)
 	m.HandleFunc("GET /api/v1/discover", a.discoverRow)
 	m.HandleFunc("GET /api/v1/watch-services", a.watchServices)
@@ -478,6 +481,10 @@ type TitleView struct {
 	RuntimeMinutes int      `json:"runtime_minutes,omitempty"`
 	Rating         string   `json:"rating,omitempty"`
 	People         []string `json:"people"`
+	// AddedAt is when the title joined the Library; SizeBytes is the sum of
+	// every file kept for it, across all Versions (Library table columns).
+	AddedAt   time.Time `json:"added_at"`
+	SizeBytes int64     `json:"size_bytes"`
 	// Versions are the wanted copies (main first), such as HD and 4K.
 	Versions []VersionView `json:"versions"`
 	Slots    []SlotView    `json:"slots"`
@@ -508,6 +515,10 @@ type ShowInfo struct {
 	InLibrary     int                     `json:"in_library"`
 	BetterWanted  int                     `json:"better_wanted"`
 	NextAirDate   *time.Time              `json:"next_air_date,omitempty"`
+	// SeasonCount counts numbered seasons (specials left out); LastAirDate
+	// is the most recent episode that has aired.
+	SeasonCount int        `json:"season_count"`
+	LastAirDate *time.Time `json:"last_air_date,omitempty"`
 }
 
 func strOr(p *string) string {
@@ -525,6 +536,9 @@ func (a *API) showInfo(ctx context.Context, t domain.Title) (*ShowInfo, error) {
 	si := &ShowInfo{DetailsSource: t.MetadataSource, EpisodeOrder: strOr(t.EpisodeOrder), SeasonChoice: strOr(t.SeasonChoice), NewSeasons: t.NewPartsPolicy,
 		Status: t.Status, Network: strOr(t.Network), AirTime: strOr(t.AirTime), TimeZone: strOr(t.TimeZone), Seasons: ss}
 	for _, s := range ss {
+		if s.Number > 0 {
+			si.SeasonCount++
+		}
 		si.Episodes += s.Episodes
 		si.Missing += s.Missing
 		si.NotOutYet += s.NotOutYet
@@ -533,6 +547,9 @@ func (a *API) showInfo(ctx context.Context, t domain.Title) (*ShowInfo, error) {
 		if s.NextAirDate != nil && (si.NextAirDate == nil || s.NextAirDate.Before(*si.NextAirDate)) {
 			si.NextAirDate = s.NextAirDate
 		}
+	}
+	if si.LastAirDate, err = lastAired(ctx, a.s.Store.Read(), t.ID, time.Now()); err != nil {
+		return nil, err
 	}
 	return si, nil
 }
@@ -572,8 +589,13 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 		KeepUpToDate: t.KeepUpToDate, WhyAdded: t.WhyAdded, ReleaseGate: t.ReleaseGate, GateDelayDays: t.GateDelayDays,
 		GateDriver: t.GateDriver, GateOpensAt: t.GateOpensAt, CinemaDate: t.CinemaDate, DigitalDate: t.DigitalDate,
 		PhysicalDate: t.PhysicalDate, RefreshedAt: t.RefreshedAt, DroppedAt: t.DroppedAt, Artwork: artworkLinks(t.Artwork),
-		Backdrop: t.Backdrop, Logo: t.Logo, Genres: nonNil(t.Genres), RuntimeMinutes: t.RuntimeMinutes, Rating: t.Rating, People: nonNil(t.People)}
+		Backdrop: t.Backdrop, Logo: t.Logo, Genres: nonNil(t.Genres), RuntimeMinutes: t.RuntimeMinutes, Rating: t.Rating, People: nonNil(t.People),
+		AddedAt: t.CreatedAt}
 	now := time.Now()
+	var err error
+	if v.SizeBytes, err = titleSize(ctx, db, t.ID); err != nil {
+		return v, err
+	}
 	if t.Kind == "artist" {
 		v.Stage, v.GateOpen = t.Status, true
 		v.GateReason = "Each album is wanted once it is out (its release date has passed)."

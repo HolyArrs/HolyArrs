@@ -51,6 +51,10 @@ export interface TitleView {
 	runtime_minutes?: number;
 	/** Age rating, e.g. PG-13. */
 	rating?: string;
+	/** When it joined the Library. */
+	added_at?: string;
+	/** Every kept file together, in bytes. */
+	size_bytes?: number;
 	versions: VersionView[];
 	slots: SlotView[];
 	/** Wishlist asks that led to it: who asked and who decided. */
@@ -222,6 +226,8 @@ export interface ShowInfo {
 	in_library: number;
 	better_wanted: number;
 	next_air_date?: string;
+	season_count?: number;
+	last_air_date?: string;
 }
 
 export interface EpisodeSlot {
