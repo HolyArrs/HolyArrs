@@ -10,6 +10,7 @@ import (
 
 	"github.com/CoderLuii/holyarrs/internal/explore"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/CoderLuii/holyarrs/internal/ratings"
 )
 
 // WikiFacts is a title's or person's awards and Wikipedia bio for the page
@@ -50,6 +51,12 @@ func (a *API) wikiFacts(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "unknown title or person")
 		return
 	}
+	// The Kid gate comes before the shared cache: its key does not carry
+	// the Kid limit (the same gate as extras and strip).
+	if a.kidLimited(w, r) || kind != "person" && !a.wikiKidAllows(w, r, kind, id) {
+		return
+	}
+	a.exploreCaching(w, r, "")
 	key := kind + ":" + id
 	c := wikiFactsCache
 	c.mu.Lock()
@@ -94,6 +101,40 @@ func (a *API) wikiFacts(w http.ResponseWriter, r *http.Request) {
 	c.seen[key] = wikiEntry{v: v, at: time.Now()}
 	c.mu.Unlock()
 	writeJSON(w, http.StatusOK, v)
+}
+
+// wikiKidAllows checks a movie or show against the Kid limit, as extras
+// does; it writes 403 and returns false when the title is above it.
+func (a *API) wikiKidAllows(w http.ResponseWriter, r *http.Request, kind, id string) bool {
+	max := a.kidMax(r)
+	if max == "" {
+		return true
+	}
+	rating, inLibrary := a.libraryRating(r.Context(), kind, id)
+	if !inLibrary {
+		d, ok := metadata.DiscovererFor(r.Context(), a.s.Metadata)
+		if !ok {
+			fail(w, http.StatusForbidden, aboveLimit)
+			return false
+		}
+		dkey := "details|" + kind + "|" + id
+		e, cached := a.discover.get(dkey)
+		if !cached || time.Since(e.at) >= discoverTTL["details"] {
+			det, err := d.Details(r.Context(), kind, id)
+			if err != nil {
+				fail(w, http.StatusForbidden, aboveLimit)
+				return false
+			}
+			e = discoverEntry{at: time.Now(), details: &det}
+			a.discover.put(dkey, e)
+		}
+		rating = e.details.Rating
+	}
+	if rating == "" || !ratings.Allows(max, kind, rating) {
+		fail(w, http.StatusForbidden, aboveLimit)
+		return false
+	}
+	return true
 }
 
 type awardSet struct {
