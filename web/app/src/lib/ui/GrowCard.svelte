@@ -288,7 +288,7 @@
 	const bellHint = $derived(kind === 'movie' ? movieFollowHint(title, following) : followHint('show', following));
 	// The first button is never missing (Netflix's first slot): Ask or Add when the caller has it, else the
 	// title's state in the same shape as the card's badge, else the bell, else a plain Open.
-	const STATE_ICON: Partial<Record<CardOwned['state'], IconName>> = { available: 'check', partial: 'partOwned', downloading: 'download', requested: 'clock' };
+	const STATE_ICON: Partial<Record<CardOwned['state'], IconName>> = { available: 'check', partial: 'dash', downloading: 'download', requested: 'clock' };
 	const stateIcon = $derived(owned ? STATE_ICON[owned.state] : undefined);
 </script>
 
@@ -329,7 +329,7 @@
 			{#if action}{@render action()}{/if}
 			<!-- Stands in only while it is the row's first button (CSS), so an action that renders nothing never leaves a hole. -->
 			{#if href && stateIcon && owned}<IconButton class="state" icon={stateIcon} label={owned.label} variant="glass" size="lg" {href} />
-			{:else if href && !followTarget}<IconButton class="state" icon="arrow" label="Open {title}" variant="glass" size="lg" {href} />{/if}
+			{:else if href && !followTarget}<IconButton class="state" icon="arrow" label="Go to {title}" variant="glass" size="lg" {href} />{/if}
 			{#if followTarget}<button type="button" class="more bell" class:on={following} aria-pressed={following} aria-label="{followLabel(following)} {title}" title={bellHint} disabled={followBusy} onclick={flipFollow} data-testid="grow-follow"><Icon name={following ? 'bellOn' : 'bell'} size={18} /></button>{/if}
 			{#if onmore}<button type="button" class="more info" aria-label="More info about {title}" title="More info" aria-haspopup="dialog" onclick={() => card && onmore(card.getBoundingClientRect())}><Icon name="chevronDown" size={20} /></button>
 			{:else if href}<a class="more info" {href} aria-label="More about {title}" title="More info"><Icon name="chevronDown" size={20} /></a>{/if}

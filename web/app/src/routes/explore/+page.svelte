@@ -608,6 +608,9 @@
 	</div>
 {/snippet}
 
+<!-- A row outside this page (Trending on streaming) asks with the card as this page last saw it, so the button goes once asked. -->
+{#snippet rowAsk(c: ExploreCard)}{@render heroAction(live(c))}{/snippet}
+
 {#snippet heroAction(c: ExploreCard)}
 	{@const act = cardAction(c, { manage, ask: mayAsk })}
 	{#if act && cardTmdb(c)}
@@ -665,7 +668,7 @@
 				{/each}
 			</div>
 		{:else if rows.length === 0}
-			<TopServicesRow {type} {region} {owned} {who} used={usedServices} ask={heroAction} />
+			<TopServicesRow {type} {region} {owned} {who} used={usedServices} ask={rowAsk} />
 			<EmptyState icon="compass" title="Explore is getting ready" text="Rows fill in within a few minutes." action={{ label: 'Search', href: to('/search'), icon: 'search' }} />
 		{:else}
 			{#if heroCards.length}
@@ -681,7 +684,7 @@
 			{#if !genreOn && strip.length}<CategoryStrip tiles={strip} {type} onopen={stripOpened} />{/if}
 			{#each rows as row, ri (row.id)}
 				{#if row.type === 'top_services'}
-					<TopServicesRow {type} {region} genre={genreOn ? genre : null} {owned} {who} used={usedServices} bind:shown={servicesShown} seeAll={genreOn ? undefined : to(newHref(type))} ask={heroAction} />
+					<TopServicesRow {type} {region} genre={genreOn ? genre : null} {owned} {who} used={usedServices} bind:shown={servicesShown} seeAll={genreOn ? undefined : to(newHref(type))} ask={rowAsk} />
 					{#if newServices && newCards.length}{@render newServicesRow(newServices, newCards)}{/if}
 				{:else}
 				<div class="row-wrap" class:wide-row={row.wide || row.cards.some((c) => wideKind(c.kind))} data-row={row.type ?? row.id} data-row-id={row.id} data-title-layer={row.titleLayer}>

@@ -62,6 +62,7 @@
 		appearance: 'M12 3.5a8.5 8.5 0 1 1 0 17zM12 3.5a8.5 8.5 0 1 0 0 17',
 		// Badge glyphs: drawn inside a 4–20 box so they sit optically centred in a pill.
 		owned: 'M5.5 12.5l4 4 9-9.5',
+		dash: 'M6.5 12h11',
 		partOwned: 'M12 4a8 8 0 1 1 0 16 8 8 0 0 1 0-16zM12 4v16M12 8.5h5M12 12h6M12 15.5h5',
 		waiting: 'M12 4a8 8 0 1 1 0 16 8 8 0 0 1 0-16zM12 8v4l2.5 2',
 		declined: 'M12 4a8 8 0 1 1 0 16 8 8 0 0 1 0-16zM6.4 6.4l11.2 11.2',
