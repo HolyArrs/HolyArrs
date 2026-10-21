@@ -20,7 +20,8 @@
 	$effect(() => {
 		const n = cur;
 		const id = tmdb;
-		if (eps[n]) return;
+		// No seasons yet (or a fallback 0 the show doesn't have): asking would 404.
+		if (eps[n] || !seasons.some((s) => s.number === n)) return;
 		const ctl = new AbortController();
 		api.get<{ episodes?: Ep[] }>(`/metadata/show/${encodeURIComponent(id)}/seasons/${n}`, ctl.signal)
 			.then((r) => (eps[n] = r.episodes ?? []))

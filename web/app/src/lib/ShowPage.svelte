@@ -269,7 +269,7 @@
 	$effect(() => {
 		const n = cur;
 		const tmdb = title.ids?.tmdb;
-		if (!tmdb || synopses[n]) return;
+		if (!tmdb || synopses[n] || !show?.seasons.some((x) => x.number === n)) return;
 		const ctl = new AbortController();
 		api.get<{ episodes?: { number: number; overview?: string }[] }>(`/metadata/show/${encodeURIComponent(tmdb)}/seasons/${n}`, ctl.signal)
 			.then((r) => (synopses[n] = Object.fromEntries((r.episodes ?? []).filter((e) => e.overview).map((e) => [e.number, e.overview as string]))))
