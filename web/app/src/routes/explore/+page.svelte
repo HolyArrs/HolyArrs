@@ -76,6 +76,7 @@
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import { SkRail } from '#lib/ui/sk/index.ts';
+	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import type { IconName } from '#lib/Icon.svelte';
@@ -650,13 +651,8 @@
 		<LoadError hasData={false} message="Could not load Explore." onretry={load} {busy} />
 	{:else}
 		{#if failed}<LoadError hasData={true} message="Could not refresh Explore." onretry={load} {busy} />{/if}
-		{#if !headLoaded}
-			<div class="loading" aria-busy="true" aria-label="Loading Explore" data-testid="explore-skeleton">
-				<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="200px" />
-				<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="160px" />
-				<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="180px" />
-			</div>
-		{:else if genreOn && genreFailed}
+		<PageLoader loading={!headLoaded} label="Loading Explore" onretry={load}>
+		{#if genreOn && genreFailed}
 			<LoadError hasData={false} message="Could not load this genre." onretry={() => genre && void loadGenre(genre.id)} {busy} />
 		{:else if genreOn && rows.length === 0}
 			<div class="loading" aria-busy="true" aria-label="Loading Explore" data-testid="explore-skeleton">
@@ -740,6 +736,7 @@
 			{/each}
 			{#if tailMore && !genreOn}<div class="sentinel" bind:this={sentinel} aria-hidden="true"></div>{/if}
 		{/if}
+		</PageLoader>
 	{/if}
 </div>
 

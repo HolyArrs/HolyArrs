@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { onMount } from 'svelte';
 	import { api, ApiError, message } from '#lib/api.ts';
 	import { to } from '#lib/paths.ts';
@@ -9,7 +10,6 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
@@ -83,9 +83,9 @@
 
 {#if error && !rules}
 	<LoadError hasData={false} message={error} onretry={load} busy={loading} />
-{:else if !rules}
-	<Skeleton shape="block" height="180px" />
 {:else}
+<PageLoader loading={!rules} label="Loading pick rules" onretry={load}>
+{#if rules}
 	{#if error}<LoadError hasData message={error} onretry={load} busy={loading} />{/if}
 	<SettingsCard id="pick-rules-card" title="Your Pick rules" description="Each Library folder has its own Pick rules, and a title can use other ones.">
 		{#if rules.length === 0}
@@ -126,6 +126,8 @@
 		{#if mayEdit}<p class="hint">Change opens the steps, traits, sizes and waits of one set. Ready-made rules keep their name and kinds; make a copy to start your own from one.</p>
 		{:else}<p class="hint" data-testid="read-only">You can see Pick rules here. Changing them takes the settings permission.</p>{/if}
 	</SettingsCard>
+{/if}
+</PageLoader>
 {/if}
 
 <Sheet bind:open={removeOpen} title="Remove these Pick rules?" description={removing?.name} size="sm">

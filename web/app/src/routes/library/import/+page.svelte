@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
@@ -10,7 +11,6 @@
 	import Button from '#lib/ui/Button.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import ProgressBar from '#lib/ui/ProgressBar.svelte';
-	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import Badge from '#lib/ui/Badge.svelte';
 	import { session } from '#lib/session.svelte.ts';
 	import {
@@ -212,9 +212,8 @@
 	are. You can rename them later from Rename files.</span>
 </p>
 
-{#if !loaded}
-	<div class="card"><Skeleton lines={4} /></div>
-{:else if !folders.length}
+<PageLoader loading={!loaded} label="Loading folders">
+{#if !folders.length}
 	<EmptyState icon="folder" title="No Library folder yet" text="Add the folder that holds your movies, shows or music first." action={session.can('settings') ? { label: 'Library folders', href: to('/settings/library-folders') } : undefined} />
 {:else}
 	<section class="card" aria-labelledby="h-pick">
@@ -402,6 +401,7 @@
 		</section>
 	{/if}
 {/if}
+</PageLoader>
 </div>
 
 <style>

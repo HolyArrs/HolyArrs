@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
 	import { to } from '#lib/paths.ts';
@@ -7,7 +8,6 @@
 	import ListRow from '#lib/ui/ListRow.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import Badge from '#lib/ui/Badge.svelte';
 	import { plainReason } from '#lib/plain.ts';
 
@@ -35,9 +35,8 @@
 	{#if error}
 		<LoadError hasData={collections.length > 0} message={plainReason(error).text} onretry={load} />
 	{/if}
-	{#if !loaded}
-		<div class="rows">{#each Array(4) as _, i (i)}<Skeleton height="56px" />{/each}</div>
-	{:else if !error && collections.length === 0}
+	<PageLoader loading={!loaded} label="Loading collections">
+	{#if !error && collections.length === 0}
 		<EmptyState icon="film" title="No movie series yet" text="Movie series show up once movies in your Library are known to belong together." />
 	{:else if collections.length}
 		<ul class="rows">
@@ -50,6 +49,7 @@
 			{/each}
 		</ul>
 	{/if}
+	</PageLoader>
 </div>
 
 <style>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
 	import { session } from '#lib/session.svelte.ts';
@@ -7,7 +8,6 @@
 	import Button from '#lib/ui/Button.svelte';
 	import Badge from '#lib/ui/Badge.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
-	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import Icon from '#lib/Icon.svelte';
 	import { plainReason } from '#lib/plain.ts';
 	import { codecLabel, copiesQuery, copyCodecs, copyKey, copySorts, toggleCopy, type CopyCodec, type CopySearchPreview, type CopySearchResult, type CopySelection, type CopySort, type LibraryCopyPage } from '#lib/library-copies.ts';
@@ -129,9 +129,8 @@
 		</section>
 	{/if}
 
-	{#if !loaded}
-		<div class="table-wrap"><Skeleton lines={5} /></div>
-	{:else if page.copies.length === 0}
+	<PageLoader loading={!loaded} label="Loading copies">
+	{#if page.copies.length === 0}
 		<EmptyState compact icon="film" title="No movie files match these filters." />
 	{:else}
 		<div class="table-wrap">
@@ -157,6 +156,7 @@
 			<Button iconAfter="chevronRight" disabled={last >= page.total || busy} onclick={() => move(pageSize)}>Next</Button>
 		</nav>
 	{/if}
+	</PageLoader>
 {/if}
 </div>
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { peopleNames } from '#lib/plain.ts';
 	import { to } from '#lib/paths.ts';
 	import { page } from '$app/state';
@@ -30,7 +31,6 @@
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { SkTitle } from '#lib/ui/sk/index.ts';
 	import StatusPill, { type StatusKind } from '#lib/ui/StatusPill.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import ProgressBar from '#lib/ui/ProgressBar.svelte';
@@ -520,9 +520,10 @@
 	</EmptyState>
 {:else if error && !title}
 	<LoadError hasData={false} message={error} onretry={() => load()} />
-{:else if !title}
-	<SkTitle />
-{:else if title.kind === 'show'}
+{:else}
+<PageLoader loading={!title} label="Loading the title" onretry={() => load()}>
+{#if title}
+{#if title.kind === 'show'}
 	<ShowPage {title} onchange={(t) => (title = t)} {error} onretry={() => load('title')} />
 {:else if title.kind === 'artist'}
 	<ArtistPage {title} onchange={(t) => (title = t)} {error} onretry={() => load('title')} />
@@ -774,6 +775,9 @@
 			</LibrarySection>
 		{/if}
 	</div>
+{/if}
+{/if}
+</PageLoader>
 {/if}
 
 <dialog bind:this={chooseDialog} aria-labelledby="choose-title" class="modal">

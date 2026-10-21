@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onDestroy, onMount, tick } from 'svelte';
@@ -11,7 +12,6 @@
 	import Menu from '#lib/ui/Menu.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { SkTableRow } from '#lib/ui/sk/index.ts';
 	import Poster from '#lib/Poster.svelte';
 	import { ago, dateTime } from '#lib/format.ts';
 	import { live } from '#lib/live.svelte.ts';
@@ -379,9 +379,9 @@
 	<div class="main-col">
 		{#if error}
 			<LoadError hasData={false} message="Your Wishlist could not be loaded. {error}" onretry={load} />
-		{:else if !loaded}
-			<div aria-busy="true" aria-label="Loading Wishlist">{#each Array.from({ length: 6 }, (_, i) => i) as i (i)}<SkTableRow cols={2} height={88} />{/each}</div>
-		{:else if asks.length === 0}
+		{:else}
+		<PageLoader loading={!loaded} label="Loading Wishlist">
+		{#if asks.length === 0}
 			<EmptyState
 				icon="wish"
 				title="Nothing on the Wishlist yet"
@@ -475,6 +475,8 @@
 					</li>
 				{/each}
 			</ul>
+		{/if}
+		</PageLoader>
 		{/if}
 	</div>
 

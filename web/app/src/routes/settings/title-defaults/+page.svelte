@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageLoader from '#lib/ui/PageLoader.svelte';
 	// Settings > Movies and TV defaults: what a new movie or show gets (folder,
 	// Pick rules, Keep up to date, Search when added), with the Release gate
 	// and the show choices behind Advanced. Three server routes, one form.
@@ -15,7 +16,6 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import type { GateDefaults, LibraryFolder, PickRulesView, ShowSettings, TitleDefaults } from '#lib/types.ts';
 
 	interface Parts {
@@ -96,9 +96,8 @@
 
 <PageHeader title="Movies and TV defaults" subtitle="What a new movie or show gets. The add dialog starts from these, and you can still change them there for one title." />
 
-{#if loading && !form && !loadError}
-	<div class="loading" aria-busy="true"><Skeleton shape="block" height="220px" /><Skeleton shape="block" height="220px" /></div>
-{:else if !form}
+<PageLoader loading={loading && !form && !loadError} label="Loading title defaults">
+{#if !form}
 	<LoadError hasData={false} message={loadError} onretry={load} busy={loading} />
 {:else}
 	{#if !mayEdit}<p class="hint" data-testid="read-only">You can see these defaults. Changing them takes the settings permission.</p>{/if}
@@ -193,11 +192,11 @@
 	</form>
 	{#if mayEdit}<SaveBar {dirty} form="title-defaults-form" saving={busy} ondiscard={() => (form = JSON.parse(saved))} />{/if}
 {/if}
+</PageLoader>
 
 <style>
 	/* The fieldset only turns the form read only; it adds no box of its own. */
 	.all { display: contents; border: 0; padding: 0; margin: 0; }
-	.loading { display: flex; flex-direction: column; gap: 16px; }
 	.narrow { max-width: 160px; }
 	.where { margin-top: 4px; }
 	.where a { color: var(--accent-text); font-weight: 600; }

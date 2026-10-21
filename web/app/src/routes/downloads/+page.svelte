@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount, tick } from 'svelte';
 	import { api, message } from '#lib/api.ts';
@@ -19,7 +20,6 @@
 	import Menu from '#lib/ui/Menu.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { SkTableRow } from '#lib/ui/sk/index.ts';
 	import type { ImportRecord, TitleView } from '#lib/types.ts';
 
 	let rows = $state<DownloadRow[]>([]);
@@ -261,11 +261,8 @@
 	{/if}
 {/snippet}
 
-{#if !loaded}
-	<div class="loading" aria-busy="true" aria-label="Loading downloads" data-testid="downloads-skeleton">
-		{#each Array.from({ length: 6 }, (_, i) => i) as i (i)}<SkTableRow cols={3} height={72} />{/each}
-	</div>
-{:else if error && rows.length === 0 && imports.length === 0}
+<PageLoader loading={!loaded} label="Loading Downloads">
+{#if error && rows.length === 0 && imports.length === 0}
 	<LoadError hasData={false} message="Downloads could not be loaded." onretry={load} />
 {:else if rows.length === 0 && imports.length === 0}
 	<EmptyState icon="download" title="No downloads yet" text="When HolyArrs chooses a Release for a movie or an episode, it sends it to a Downloader and you can watch it here, live." action={{ label: 'Add media', href: to('/search'), icon: 'search' }} />
@@ -316,6 +313,7 @@
 		{/if}
 	</div>
 {/if}
+</PageLoader>
 
 {#if !wide}
 	<Sheet bind:open={detailOpen} title="Download details" size="md">
@@ -350,7 +348,6 @@
 </Sheet>
 
 <style>
-	.loading { display: grid; gap: 0; max-width: 980px; }
 	.aside-link { text-align: center; margin-top: -24px; }
 	.aside-link a { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent-text); font: var(--t-callout); font-weight: 500; }
 	.work { display: grid; gap: 24px; align-items: start; }

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { to } from '#lib/paths.ts';
 	// Missing subtitles: every movie and episode missing a wished subtitle,
 	// by language, kind and show; Search all with its progress, or one row.
@@ -15,7 +16,6 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import ProgressBar from '#lib/ui/ProgressBar.svelte';
-	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import { plainReason } from '#lib/plain.ts';
 	import Icon from '#lib/Icon.svelte';
 	import { jobsDone, langName, missingName, missingQuery, missingWords, wantLabel, type Language, type MissingRow, type MissingTitle } from '#lib/subtitles.ts';
@@ -191,9 +191,9 @@
 
 {#if error}
 	<LoadError hasData={false} message={plainReason(error).text} onretry={load} />
-{:else if !loaded}
-	<div class="rows-list"><Skeleton lines={4} /></div>
-{:else if total === 0}
+{:else}
+<PageLoader loading={!loaded} label="Loading missing subtitles">
+{#if total === 0}
 	<EmptyState
 		icon="subtitle"
 		title={language || kind || title ? 'Nothing missing here' : 'No subtitles missing'}
@@ -230,6 +230,8 @@
 			<Button iconAfter="chevronRight" disabled={pages.next === null} onclick={() => go(pages.next)}>More</Button>
 		</nav>
 	{/if}
+{/if}
+</PageLoader>
 {/if}
 </div>
 

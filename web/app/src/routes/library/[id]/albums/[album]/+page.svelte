@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { to } from '#lib/paths.ts';
@@ -18,7 +19,6 @@
 	import LibrarySection from '#lib/ui/LibrarySection.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
-	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import { crumbFor, pageSections } from '#lib/title-page.ts';
 	import { audienceStatus } from '#lib/title-status.ts';
 	import { reducedMotion } from '#lib/motion.ts';
@@ -205,9 +205,9 @@
 	</EmptyState>
 {:else if error}
 	<p class="notice bad" role="alert">{error}</p>
-{:else if !album}
-	<div class="tp" aria-busy="true"><Skeleton shape="block" height="min(52vw, 520px)" /><Skeleton lines={3} /></div>
 {:else}
+<PageLoader loading={!album} label="Loading the album">
+{#if album}
 	{@const st = albumStateOf(album)}
 	<div class="tp">
 		<TitleHero
@@ -372,6 +372,8 @@
 			</dialog>
 		{/if}
 	</div>
+{/if}
+</PageLoader>
 {/if}
 
 <style>

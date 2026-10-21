@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
@@ -15,7 +16,6 @@
 	import StatusPill, { type StatusKind } from '#lib/ui/StatusPill.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { SkTableRow } from '#lib/ui/sk/index.ts';
 	import EditionDecision from '#lib/EditionDecision.svelte';
 	import Poster from '#lib/Poster.svelte';
 	import type { TitleView } from '#lib/types.ts';
@@ -128,9 +128,8 @@
 	</div>
 {/snippet}
 
-{#if !loaded}
-	<div class="loading" aria-busy="true" aria-label="Loading decisions">{#each Array.from({ length: 5 }, (_, i) => i) as i (i)}<SkTableRow cols={2} height={72} />{/each}</div>
-{:else if error && decisions.items.length === 0}
+<PageLoader loading={!loaded} label="Loading decisions">
+{#if error && decisions.items.length === 0}
 	<LoadError hasData={false} message="Decisions could not be loaded." onretry={load} />
 {:else if decisions.items.length === 0}
 	<EmptyState icon="check" title="Nothing needs you" text="When HolyArrs runs out of Releases for a movie, an episode or a track, or an import cannot finish, it waits here for you." action={{ label: 'Downloads', href: to('/downloads'), icon: 'download' }} />
@@ -197,9 +196,9 @@
 		</ul>
 	</section>
 {/if}
+</PageLoader>
 
 <style>
-	.loading { display: grid; gap: 0; max-width: 980px; }
 	.sec { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 	.sec h2 { font: var(--t-title3); letter-spacing: var(--t-title3-track); }
 	.count { min-width: 24px; height: 24px; padding: 0 8px; display: inline-grid; place-items: center; border-radius: 999px; background: var(--accent-soft); color: var(--accent-text); font: var(--t-subhead); font-weight: 600; font-variant-numeric: tabular-nums; }

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
@@ -14,7 +15,6 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { SkTableRow } from '#lib/ui/sk/index.ts';
 	import Poster from '#lib/Poster.svelte';
 	import { createLatestOnly, dateRangeProblem, details, filterParams, groupDownloads, groupLabel, historyQuery, kindGroups, kindTone, pageLine, readFilter, type HistoryFilter } from '#lib/history.ts';
 	import type { EventPage, EventRecord, TitleView } from '#lib/types.ts';
@@ -159,9 +159,9 @@
 {#if !dateProblem}
 	{#if error && events.length === 0}
 		<LoadError hasData={false} message="History could not be loaded." onretry={load} />
-	{:else if !loaded}
-		<div class="loading" aria-busy="true" aria-label="Loading history">{#each Array.from({ length: 8 }, (_, i) => i) as i (i)}<SkTableRow cols={3} height={56} />{/each}</div>
-	{:else if events.length === 0}
+	{:else}
+	<PageLoader loading={!loaded} label="Loading history">
+	{#if events.length === 0}
 		<EmptyState icon="clock" title={filtered ? 'Nothing matches' : 'No history yet'} text={filtered ? 'No Event matches these filters.' : 'Every search, download, import, rename and delete writes a row here.'} />
 	{:else}
 		{#if error}<LoadError hasData message="History could not be loaded." onretry={load} />{/if}
@@ -229,6 +229,8 @@
 				<Button variant="secondary" iconAfter="chevronRight" disabled={filter.offset + events.length >= total} onclick={() => apply({ offset: filter.offset + limit })}>Older</Button>
 			</nav>
 		</section>
+	{/if}
+	</PageLoader>
 	{/if}
 {/if}
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onMount, tick, untrack } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
@@ -771,13 +772,8 @@
 
 	<div class:has-rail={railOn} class="with-rail">
 		<div class="content">
-			{#if !loaded}
-				{#if view === 'posters'}
-					<ul class="grid" style="--poster-min: {posterMin[posterSize]}px" aria-hidden="true">{#each Array(12) as _, i (i)}<li><Skeleton shape="poster" /><Skeleton width="70%" /></li>{/each}</ul>
-				{:else}
-					<div class="rows" style="--bw: {bannerW}px" aria-hidden="true">{#each Array(8) as _, i (i)}<div class="sk-row"><span class="sk-banner"><Skeleton shape="block" height="100%" /></span><Skeleton width="40%" /><Skeleton width="60%" /></div>{/each}</div>
-				{/if}
-			{:else if error}
+			<PageLoader loading={!loaded} label="Loading the Library" onretry={retryLoad}>
+			{#if error}
 				<LoadError hasData={false} message={plainReason(error).text} onretry={retryLoad} />
 			{:else if titles.length === 0}
 				<EmptyState icon="library" title="Your Library is empty" text={session.can('manage_library') ? 'Find a movie, a show or an artist on the Search page and add it. HolyArrs then keeps it up to date.' : 'Nothing has been added yet. Look for a movie, a show or an artist on the Search page.'} action={{ label: 'Search for a movie', href: to('/search'), icon: 'search' }} />
@@ -951,6 +947,7 @@
 					</div>
 				</div>
 			{/if}
+			</PageLoader>
 		</div>
 		{#if railOn && loaded && !error}{@render letterRail()}{/if}
 	</div>
@@ -1091,7 +1088,6 @@
 
 	/* Loading rows match the banner shape */
 	.sk-row { display: grid; grid-template-columns: var(--bw, 420px) 1fr 1fr; align-items: center; gap: 16px 60px; padding: 0 20px 0 0; }
-	.sk-row + .sk-row { border-top: 1px solid var(--line); }
 	.sk-banner { display: block; aspect-ratio: 1000 / 185; }
 	.sk-banner :global(.ui-sk) { height: 100%; border-radius: 0; }
 

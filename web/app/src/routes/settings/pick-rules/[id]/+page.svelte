@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageLoader from '#lib/ui/PageLoader.svelte';
 	// One set of Pick rules: name and kinds, quality steps and Good enough,
 	// traits and points, Must have and Never, size, waiting and language.
 	// "new" starts a set; ?from=<id> starts it as a copy of another.
@@ -42,7 +43,6 @@
 	import Chip from '#lib/ui/Chip.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import type { PickRulesBody, PickRulesDetail, PickRulesUse } from '#lib/types.ts';
 
 	interface Form {
@@ -262,9 +262,8 @@
 	{/snippet}
 </PageHeader>
 
-{#if !loaded}
-	<div class="loading" aria-busy="true"><Skeleton shape="block" height="160px" /><Skeleton shape="block" height="260px" /></div>
-{:else if id === null && !mayEdit}
+<PageLoader loading={!loaded} label="Loading the rule">
+{#if id === null && !mayEdit}
 	<EmptyState icon="star" title="Making Pick rules takes the settings permission" text="You can see the Pick rules there are." action={{ label: 'All Pick rules', href: to('/settings/pick-rules') }} />
 {:else if gone}
 	<EmptyState icon="star" title="These Pick rules are gone" text="They may have been removed on another device." action={{ label: 'All Pick rules', href: to('/settings/pick-rules') }} />
@@ -443,6 +442,7 @@
 	</form>
 	{#if mayEdit}<SaveBar {dirty} form="pick-rules-form" saving={busy} label={id === null ? 'Make these Pick rules' : 'Save'} ondiscard={() => start(JSON.parse(saved))} />{/if}
 {/if}
+</PageLoader>
 
 <style>
 	/* The fieldset only turns the form read only; it adds no box of its own. */

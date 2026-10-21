@@ -32,7 +32,7 @@
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
-	import { Silhouette, SkHero, SkRail, SkWide } from '#lib/ui/sk/index.ts';
+	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { buildingStatus } from '#lib/silhouette.ts';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
@@ -340,27 +340,12 @@
 		<MusicNewTab {manage} {mayAsk} {folders} {rules} />
 	{:else if failed && rows.length === 0}
 		<LoadError hasData={false} message="Could not load New & Popular." onretry={() => void loadFirst()} busy={false} />
-	{:else if !loaded || (building && rows.length === 0)}
-		<!-- New & Popular-shaped placeholder: hero, the This week rail, then wide rows. "Building" answers show the try count. -->
-		<Silhouette loading={true} label="Loading New & Popular" status={building ? buildingStatus(building, 'New & Popular') : 'Loading New & Popular…'} onretry={() => void loadFirst()}>
-			{#snippet skeleton()}
-				<div class="np-sk" data-testid="new-skeleton">
-					<SkHero />
-					<div class="rail-sk">
-						<span class="sk sk-line" style="width: 96px; margin: 0 20px 10px"></span>
-						<div class="rail-track">
-							<span class="when"><span class="sk" style="height: 28px; width: 56px"></span><span class="sk sk-line" style="width: 48px; height: 10px"></span></span>
-							{#each Array.from({ length: 6 }, (_, i) => i) as i (i)}<span class="rail-t"><SkWide /><span class="sk sk-line" style="width: 70%; height: 10px"></span></span>{/each}
-						</div>
-					</div>
-					<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="200px" />
-					<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="160px" />
-				</div>
-			{/snippet}
-		</Silhouette>
-	{:else if rows.length === 0}
-		<EmptyState icon="compass" title="New & Popular is getting ready" text="Rows fill in within a few minutes." action={{ label: 'Explore', href: to('/explore'), icon: 'compass' }} />
 	{:else}
+		<!-- Main data loading: the shared page Orbit. "Building" answers show the try count. -->
+		<PageLoader loading={!loaded || (building > 0 && rows.length === 0)} label="Loading New & Popular" status={building ? buildingStatus(building, 'New & Popular') : ''} immediate={building > 0} onretry={() => void loadFirst()}>
+		{#if rows.length === 0}
+		<EmptyState icon="compass" title="New & Popular is getting ready" text="Rows fill in within a few minutes." action={{ label: 'Explore', href: to('/explore'), icon: 'compass' }} />
+		{:else}
 		{#if hero.length}
 			{@const h = live(hero[heroAt % hero.length])}
 			<ExploreHero kind={h.kind === 'show' ? 'show' : 'movie'} tmdb={cardTmdb(h)} title={h.name} href={cardHref(h)} backdrop={h.wide ?? h.image} vtName={h.vtName} subtitle={h.year ? `${h.year} · ${h.kind === 'show' ? 'Show' : 'Movie'}` : h.subtitle} settled={loaded}>
@@ -420,6 +405,8 @@
 			</div>
 		{/each}
 		{#if more}<div class="sentinel" bind:this={sentinel} aria-hidden="true"></div>{/if}
+		{/if}
+		</PageLoader>
 	{/if}
 </div>
 
@@ -463,10 +450,5 @@
 	.why { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
 	.why li { font: 600 12px/1 var(--font-ui); letter-spacing: .02em; padding: 6px 10px; border-radius: 999px; color: #fff; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 22%); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
 	.why li.why-top10 { background: color-mix(in srgb, var(--accent) 80%, transparent); border-color: transparent; }
-	.np-sk { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
-	.rail-sk { border-radius: 20px; padding: 16px 0 14px; background: color-mix(in srgb, var(--surface-2) 72%, transparent); overflow: hidden; }
-	.rail-track { display: flex; gap: var(--shelf-gap, 12px); padding: 4px 20px; }
-	.rail-track .when { flex: none; width: 74px; display: flex; flex-direction: column; gap: 6px; }
-	.rail-t { flex: none; width: var(--rail-item, 240px); display: flex; flex-direction: column; gap: 6px; }
 	@media (max-width: 767px) { .np { --explore-item: 54vw; --title-item: calc((100cqi - var(--shelf-gap)) / 1.6 / .78); gap: 26px; } }
 </style>

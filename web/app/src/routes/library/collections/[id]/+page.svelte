@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { api, message } from '#lib/api.ts';
@@ -8,7 +9,6 @@
 	import Button from '#lib/ui/Button.svelte';
 	import StatusPill from '#lib/ui/StatusPill.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import Icon from '#lib/Icon.svelte';
 	import { plainReason } from '#lib/plain.ts';
 	import { collectionBody, collectionResultLine, collectionStart, type CollectionChoice, type CollectionDetail, type CollectionReview } from '#lib/collections.ts';
@@ -67,9 +67,7 @@
 {:else if error}
 	<p class="alert" role="alert"><Icon name="alert" size={17} /><span>{plainReason(error).text}</span></p>
 {/if}
-{#if !detail && !error}
-	<div class="card"><Skeleton lines={4} /></div>
-{/if}
+<PageLoader loading={!detail && !error} label="Loading the collection">
 {#if detail}
 	<ul class="card titles">
 		{#each detail.titles as title (title.id)}
@@ -115,6 +113,7 @@
 		<section class="card choices" aria-live="polite"><h2>Movie series removal finished</h2>{#each review.results ?? [] as result}<p class:bad-text={result.status === 'failed'}>{collectionResultLine(result)}</p>{/each}<div class="actions"><Button onclick={retry}>Review remaining movies</Button><Button variant="plain" href={to('/library/collections')}>Back to movie series</Button></div></section>
 	{/if}
 {/if}
+</PageLoader>
 </div>
 
 <style>

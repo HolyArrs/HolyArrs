@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { page } from '$app/state';
 	import { goto, snapshot } from '$app/navigation';
 	import { to } from '#lib/paths.ts';
@@ -23,7 +24,6 @@
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { SkTitle } from '#lib/ui/sk/index.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import AddMovieDialog from '#lib/AddMovieDialog.svelte';
 	import { savedDefaults } from '#lib/title-defaults.svelte.ts';
@@ -183,9 +183,9 @@
 	<EmptyState icon="search" title="We could not find this title" text="It may have been removed from the movie and show database. Try searching for it by name." action={{ label: 'Search', href: to('/search') }} />
 {:else if error && !details}
 	<LoadError hasData={false} message="Could not load this title. {error}" onretry={() => void load(kind, tmdb)} />
-{:else if !details || !details.name}
-	<SkTitle />
 {:else}
+<PageLoader loading={!details || !details.name} label="Loading the title" onretry={() => void load(kind, tmdb)}>
+{#if details}
 	{@const d = details}
 	<article class="tp" data-testid="title-detail">
 		<TitleHero
@@ -260,6 +260,8 @@
 
 		<p class="attribution">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
 	</article>
+{/if}
+</PageLoader>
 {/if}
 
 {#if manage}
