@@ -23,7 +23,7 @@ describe('search kinds', () => {
 	});
 });
 
-import { addRecent, readRecent, readScope, scopeAddress, topMatches, RECENT_MAX } from './search.ts';
+import { addRecent, rankTop, readRecent, readScope, scopeAddress, topMatches, RECENT_MAX } from './search.ts';
 
 describe('search page scope and recents', () => {
 	it('reads and writes the scope in the address', () => {
@@ -45,6 +45,12 @@ describe('search page scope and recents', () => {
 	it('takes top matches from each group in turn', () => {
 		expect(topMatches([[1, 2, 3], [10], [20, 21]], 5)).toEqual([1, 10, 20, 2, 21]);
 		expect(topMatches([[], []])).toEqual([]);
+	});
+	it('puts exact-name hits first in Top matches', () => {
+		const n = (name: string) => ({ name });
+		expect(rankTop([[n('Vera Drake'), n('Drake & Josh')], [n('Drake')]], ' drake ', 3).map((c) => c.name)).toEqual(['Drake', 'Vera Drake', 'Drake & Josh']);
+		expect(rankTop([[n('Drake')], [n('Drake'), n('Drake'), n('X')]], 'drake', 4).map((c) => c.name)).toEqual(['Drake', 'Drake', 'Drake', 'X']);
+		expect(rankTop([[n('A')], [n('B')]], '', 6).map((c) => c.name)).toEqual(['A', 'B']);
 	});
 });
 

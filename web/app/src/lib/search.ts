@@ -72,6 +72,19 @@ export function topMatches<T>(groups: T[][], max = 6): T[] {
 	return out;
 }
 
+/**
+ * rankTop puts hits whose name is exactly the typed words first ("drake" → Drake before
+ * Vera Drake), keeping the interleaved order otherwise. Exact hits deeper in a group are pulled up, one per group.
+ */
+export function rankTop<T extends { name: string }>(groups: T[][], term: string, max = 6): T[] {
+	const want = term.trim().toLocaleLowerCase();
+	const exact = (c: T) => !!want && c.name.trim().toLocaleLowerCase() === want;
+	// One exact hit per group: a dozen same-named bands must not crowd out the rest.
+	const first = groups.map((g) => g.find(exact)).filter((c): c is T => !!c);
+	const rest = topMatches(groups.map((g) => g.filter((c) => !first.includes(c))), max);
+	return [...first, ...rest].slice(0, max);
+}
+
 /** LibraryHit is the slice of a Library title the "In your Library" row reads. */
 export type LibraryHit = {
 	kind: string;

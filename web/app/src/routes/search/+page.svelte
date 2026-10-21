@@ -45,7 +45,7 @@
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { albumWords } from '#lib/music.ts';
 	import { createLatestOnly } from '#lib/history.ts';
-	import { addRecent, libraryNote, readRecent, readScope, recentKey, scopeAddress, topMatches, type SearchScope } from '#lib/search.ts';
+	import { addRecent, libraryNote, readRecent, rankTop, readScope, recentKey, scopeAddress, type SearchScope } from '#lib/search.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { detailPath } from '#lib/title-details.ts';
 	import { discoverCard, followsByTmdb, genrePath, ownedMark, type ExploreCard, type GenreAnswer, type ProviderItem } from '#lib/explore.ts';
@@ -221,7 +221,7 @@
 	const libIds = $derived(new Set((shownLib?.titles ?? []).map((t) => t.id)));
 	const wider = $derived(Object.fromEntries(order.map((t) => [t, onlyLib ? [] : (shownGroups[t] ?? []).filter((c) => !c.titleId || !libIds.has(c.titleId))])) as Record<Card['type'], Card[]>);
 	const lists = $derived(order.map((t) => wider[t] ?? []));
-	const top = $derived(topMatches(lists.filter((_, i) => order[i] !== 'people'), 6));
+	const top = $derived(rankTop(lists.filter((_, i) => order[i] !== 'people'), searched, 6));
 	const total = $derived(lists.reduce((n, g) => n + g.length, 0) + libCards.length);
 	const pending = $derived(order.some((t) => groups[t] === null));
 
