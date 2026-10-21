@@ -209,8 +209,8 @@ for (const viewport of viewports) {
 	test.describe(`${viewport.name} community browsing`, () => {
 		test.use({ viewport: { width: viewport.width, height: viewport.height } });
 
-		test('disambiguates a person by stable identity, reviews missing movies, and follows title credits', async ({ page }, testInfo) => {
-			const mocked = await signedInCommunity(page);
+		test('disambiguates a person by stable identity, shows the card filmography, and follows title credits', async ({ page }, testInfo) => {
+			await signedInCommunity(page);
 			await page.goto('/people');
 			await page.getByLabel('Person name').fill('Alex Kim');
 			await page.getByRole('button', { name: 'Search', exact: true }).click();
@@ -219,17 +219,15 @@ for (const viewport of viewports) {
 			await expect(director).toHaveAttribute('href', '/people/202');
 			await director.click();
 			await expect(page).toHaveURL(/\/people\/202$/);
-			await expect(page.getByRole('link', { name: 'In Library' })).toHaveAttribute('href', '/library/77');
-			await expect(page.getByText('Missing', { exact: true })).toHaveCount(2);
-			await page.getByLabel('Select Second Light').check();
-			await page.getByLabel('Select Third Light').check();
-			await page.getByRole('button', { name: 'Review 2 selected' }).click();
-			const review = page.getByRole('region', { name: 'Review 2 movies' });
-			await expect(review).toContainText('Future credits are not followed automatically.');
-			await review.getByRole('button', { name: 'Add reviewed movies' }).click();
-			await expect(page.getByRole('heading', { name: 'Results' })).toBeVisible();
-			expect(mocked.added).toEqual(['tmdb:602', 'tmdb:603']);
-			await expect(page.getByText('603: The weekly fixture limit was reached.')).toBeVisible();
+			await expect(page.getByRole('heading', { level: 1, name: 'Alex Kim' })).toBeVisible();
+			// The filmography is a grid of cards: the owned film opens its Library page, the others open their title page.
+			const filmography = page.getByRole('region', { name: 'Filmography' });
+			await expect(filmography.locator('a[href$="/library/77"]')).toHaveAttribute('aria-label', /^North Star/);
+			await expect(filmography.locator('a[href$="/title/movie/602"]')).toHaveAttribute('aria-label', /^Second Light/);
+			await expect(filmography.locator('a[href$="/title/movie/603"]')).toHaveAttribute('aria-label', /^Third Light/);
+			// Selecting and reviewing movies on this page was removed on purpose.
+			await expect(page.getByRole('button', { name: /^Review \d+ selected$/ })).toHaveCount(0);
+			await expect(page.getByLabel('Select Second Light')).toHaveCount(0);
 
 			await page.goto('/library/77');
 			await expect(page.getByRole('heading', { level: 1, name: 'North Star' })).toBeVisible();

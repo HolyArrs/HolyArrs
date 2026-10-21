@@ -215,6 +215,10 @@ test("the move screen at phone width, and accessibility", async ({
   ).toBeVisible();
   await phone.getByRole("button", { name: "Add a path rule" }).click();
   await noSidewaysScroll(phone);
+  // Let the phone header's fade finish so axe reads settled colours.
+  await phone.evaluate(() =>
+    Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))),
+  );
   const a11y = await new AxeBuilder({ page: phone }).include("main").analyze();
   expect(
     a11y.violations.map(

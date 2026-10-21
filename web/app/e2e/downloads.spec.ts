@@ -64,8 +64,7 @@ test('Remove asks first, starts from the settings and can turn the Release down 
 	await expect(gone.getByTestId('row-state')).toHaveText('Removed');
 	// The cam copy is the only one left and the Pick rules refuse it: the
 	// movie now needs a decision, and the menu says so.
-	await expect(page.getByTestId('nav-decide')).toHaveText('1', { timeout: 30_000 });
-	await expect(page.getByTestId('decide-count')).toHaveText('1');
+	await expect(page.getByTestId('decide-count')).toHaveText('1', { timeout: 30_000 });
 });
 
 test('Needs a decision says why and offers every choice; stopping clears the badge', async () => {
@@ -82,13 +81,13 @@ test('Needs a decision says why and offers every choice; stopping clears the bad
 	await card.getByRole('button', { name: 'Search again' }).click();
 	await expect(page.getByText('Searching again for Iron Lullaby.')).toBeVisible();
 	await expect(card).toBeVisible({ timeout: 30_000 });
-	await expect(page.getByTestId('nav-decide')).toHaveText('1', { timeout: 30_000 });
+	await expect(page.getByTestId('decide-count')).toHaveText('1', { timeout: 30_000 });
 
 	page.once('dialog', (d) => d.accept());
 	await card.getByRole('button', { name: 'Stop looking' }).click();
 	await expect(page.getByText('Stopped looking for Iron Lullaby.')).toBeVisible();
 	await expect(page.getByText('Nothing needs you')).toBeVisible();
-	await expect(page.getByTestId('nav-decide')).toBeHidden();
+	await expect(page.getByTestId('decide-count')).toBeHidden();
 });
 
 test('both screens pass the accessibility scan and fit a phone', async ({ browser }) => {
