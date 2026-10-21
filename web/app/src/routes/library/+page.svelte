@@ -40,7 +40,7 @@
 	import { ownedMark, type ExploreCard } from '#lib/explore.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { deleteBody } from '#lib/organise.ts';
-	import { bannerHeight, bannerWidth, densityLabels, loadDensity, loadPosterSize, posterLabels, posterMin, saveDensity, savePosterSize, type Density, type PosterSize } from '#lib/library-art.ts';
+	import { bannerHeight, bannerWidth, densityLabels, loadDensity, loadPosterSize, posterLabels, posterMin, posterSrc, saveDensity, savePosterSize, type Density, type PosterSize } from '#lib/library-art.ts';
 
 	type View = 'table' | 'posters' | 'overview';
 
@@ -796,7 +796,7 @@
 						{@const p = progressOf(t)}
 						{@const requester = requestedBy(t)}
 						<li class="item rise" data-testid="library-card" data-title-id={t.id} data-letter={letterOf(sortName(t.name))} class:selected={picked.has(t.id)} class:last-opened={lastOpenedId === t.id} style="--i: {Math.min(i, 8)}">
-							<PosterCard title={t.name} href={titleLink(t.id)} image={t.artwork[0]} subtitle={[t.year, t.kind === 'movie' ? '' : kindLabel[t.kind]].filter(Boolean).join(' · ')} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} owned={markOf(t)} vtName={artName(t.id)} />
+							<PosterCard title={t.name} href={titleLink(t.id)} image={posterSrc(t.artwork[0], posterMin[posterSize])} subtitle={[t.year, t.kind === 'movie' ? '' : kindLabel[t.kind]].filter(Boolean).join(' · ')} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} owned={markOf(t)} vtName={artName(t.id)} />
 							<span class="meter {tone(t)}" role="img" aria-label={progressText(t) || (p.have ? 'In the Library' : 'Not in the Library yet')}><i style="width: {p.total ? (p.have / p.total) * 100 : 0}%"></i></span>
 							<ul class="lines">{#each posterLines(t) as line, j (j)}<li class:kept={j === 0 && t.keep_up_to_date}>{line}</li>{/each}</ul>
 							{#if selecting}

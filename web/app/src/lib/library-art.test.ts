@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bannerHeight, bannerSrc, bannerWidth, loadDensity, loadPosterSize, saveDensity, savePosterSize, tmdbFor } from './library-art.ts';
+import { bannerHeight, bannerSrc, bannerWidth, loadDensity, loadPosterSize, saveDensity, savePosterSize, posterSrc, tmdbFor } from './library-art.ts';
 
 function mem() {
 	const m = new Map<string, string>();
@@ -53,4 +53,11 @@ describe('remembered per member', () => {
 		s.setItem('holyarrs.library-density.1', 'huge');
 		expect(loadDensity(1, s)).toBe('large');
 	});
+});
+
+describe('posterSrc', () => {
+	const u = 'https://image.tmdb.org/t/p/w342/abc.jpg';
+	it('keeps small posters light at 1x', () => expect(posterSrc(u, 132, 1)).toContain('/w342/'));
+	it('sharpens large posters on 2x screens', () => expect(posterSrc(u, 232, 2)).toContain('/w780/'));
+	it('uses the original on 3x screens', () => expect(posterSrc(u, 232, 3)).toContain('/original/'));
 });

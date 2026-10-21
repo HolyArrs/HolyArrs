@@ -52,6 +52,18 @@ export function bannerSrc(url: string, css: number, ratio = globalThis.devicePix
 	return `${m[1]}/${tmdbFor(css, ratio)}/${m[2]}`;
 }
 
+/**
+ * posterSrc sizes a TMDB poster for a grid column at least css pixels wide
+ * (columns can stretch up to about 1.6x their minimum before another fits).
+ */
+export function posterSrc(url: string, css: number, ratio = globalThis.devicePixelRatio || 1): string {
+	const m = url ? anyTmdb.exec(url) : null;
+	if (!m || !(css > 0)) return url;
+	const need = css * 1.6 * ratio;
+	const size = need <= 342 ? 'w342' : need <= 500 ? 'w500' : need <= 780 ? 'w780' : 'original';
+	return `${m[1]}/${size}/${m[2]}`;
+}
+
 type Store = Pick<Storage, 'getItem' | 'setItem'> | undefined;
 const key = (what: string, member: number | undefined) => `holyarrs.library-${what}.${member ?? 'me'}`;
 
