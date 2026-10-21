@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cardServices, isRanked, leaveOut, newHref, newPath, newServicesPath, parseNewType } from './new-popular.ts';
+import { cardServices, dayOffset, hasServiceChips, isRanked, leaveOut, newHref, newPath, newServicesPath, parseNewType, pickService, railBell, railLabel } from './new-popular.ts';
 
 const card = (id: number, kind: 'movie' | 'show' = 'movie') => ({ key: `r-${kind}-${id}`, kind, ref: `tmdb:${id}`, name: `T${id}` });
 
@@ -29,5 +29,44 @@ describe('paths and helpers', () => {
 	it('lists services once, in order', () => {
 		const s = cardServices([{ streaming: { service: 8, name: 'Netflix' } }, {}, { streaming: { service: 8, name: 'Netflix' } }, { streaming: { service: 337, name: 'Disney+' } }]);
 		expect(s.map((x) => x.service)).toEqual([8, 337]);
+	});
+});
+
+describe('service chips', () => {
+	const cs = [
+		{ streaming: { service: 8, name: 'Netflix', rank: 1 } },
+		{ streaming: { service: 337, name: 'Disney+' } },
+		{},
+		{ streaming: { service: 8, name: 'Netflix', rank: 2 } }
+	];
+	it('services and both hot and new rows draw chips', () => {
+		expect(hasServiceChips('np_services')).toBe(true);
+		expect(hasServiceChips('np_top_shows')).toBe(true);
+		expect(hasServiceChips('np_picks')).toBe(false);
+	});
+	it('a chip keeps that service in order; all keeps everything', () => {
+		expect(pickService(cs, 8).map((c) => c.streaming?.rank)).toEqual([1, 2]);
+		expect(pickService(cs, null)).toHaveLength(4);
+	});
+});
+
+describe('This week rail', () => {
+	const today = new Date(2026, 9, 21); // Wed Oct 21 (local)
+	it('counts days from today', () => {
+		expect(dayOffset('2026-10-21', today)).toBe(0);
+		expect(dayOffset('2026-10-18', today)).toBe(-3);
+		expect(dayOffset('2026-10-28', today)).toBe(7);
+		expect(dayOffset('2026-11-01', today)).toBe(11);
+	});
+	it('names the near days and the weekday after', () => {
+		expect(railLabel('2026-10-21', today)).toEqual({ big: 'Today', small: 'Wed Oct 21' });
+		expect(railLabel('2026-10-20', today).big).toBe('Yesterday');
+		expect(railLabel('2026-10-22', today).big).toBe('Tomorrow');
+		expect(railLabel('2026-10-24', today)).toEqual({ big: 'Sat', small: 'Oct 24' });
+	});
+	it('a bell on what is coming, Coming when it is in the Library, nothing once out', () => {
+		expect(railBell({ upcoming: true, in_library: false, kind: 'movie' })).toBe('bell');
+		expect(railBell({ upcoming: true, in_library: true, kind: 'show' })).toBe('coming');
+		expect(railBell({ upcoming: false, in_library: false, kind: 'show' })).toBeNull();
 	});
 });

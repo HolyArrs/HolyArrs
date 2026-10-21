@@ -29,7 +29,11 @@ type Request struct {
 	MinVote          float64
 	MinVotes         int
 	MaxVotes         int
-	Sort             string // popularity (default) or rating
+	Sort             string // popularity (default), rating or recent (newest out first)
+	// AirFrom and AirTo (shows) keep shows with an episode airing in that
+	// window; Types (movies) reads From and To as release dates of those
+	// TMDB release types ("4|3": digital or cinema) in Region.
+	AirFrom, AirTo, Types string
 	// Keywords are TMDB keyword names joined by "|" (any of them).
 	Keywords string
 	// Browse category filters: Genres and Without are raw TMDB genre ids
@@ -42,6 +46,9 @@ type Request struct {
 }
 
 func (q Request) String() string {
+	if q.AirFrom != "" || q.AirTo != "" || q.Types != "" {
+		return fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%.1f|%d|%d|%s|%s|a=%s-%s|t=%s", q.List, q.Kind, q.Ref, q.Genre, q.From, q.To, q.Services, q.Region, q.MinVote, q.MinVotes, q.MaxVotes, q.Sort, q.Keywords, q.AirFrom, q.AirTo, q.Types)
+	}
 	if q.Genres != "" || q.Without != "" || q.Lang != "" || q.Cert != "" {
 		return fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%.1f|%d|%d|%s|%s|g=%s|w=%s|l=%s|c=%s", q.List, q.Kind, q.Ref, q.Genre, q.From, q.To, q.Services, q.Region, q.MinVote, q.MinVotes, q.MaxVotes, q.Sort, q.Keywords, q.Genres, q.Without, q.Lang, q.Cert)
 	}

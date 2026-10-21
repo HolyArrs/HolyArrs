@@ -11599,10 +11599,10 @@
     },
     "/api/v1/explore/new": {
       "get": {
-        "description": "New & Popular: rows of titles out in about the last 90 days (new on the member's services, today's top 10s, new episodes, cinemas, picks), each title once, rows under 6 left out; 5 rows on page 0, then 4 a page. building says lists are still on their way.",
+        "description": "New & Popular, newness first: every title is new in one way inside its window (added to a service 14 days, released 45, new season 30, new episode 14, new series 60) and ranked by freshness, then popularity, then the household's suit. Rows: fresh on your services, hot and new shows and movies, your shows' new episodes, made for you, first seasons, in cinemas, just out in the household's genre, critics' new favourites, new from abroad; each title once, rows under 6 left out; 5 rows on page 0, then 4 a page. Page 0 also carries rail (This week: days -3 to +7, each {day, items} with what, following and upcoming). services_set says the member picked services; building says lists are still on their way.",
         "responses": {
           "200": {
-            "description": "A page of rows, more and building."
+            "description": "A page of rows, more, building, services_set and (page 0) rail."
           },
           "400": {
             "description": "type or page is not valid."
@@ -11622,7 +11622,7 @@
     },
     "/api/v1/explore/new/services": {
       "get": {
-        "description": "The titles newly added to the member's streaming services in their region (last 14 days), for Explore's New on your services row.",
+        "description": "The best-scoring new titles of New & Popular's services row (at most 12, at most 3 per service), for Explore's New on your services row.",
         "responses": {
           "200": {
             "description": "The row."

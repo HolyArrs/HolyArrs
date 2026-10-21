@@ -9,7 +9,7 @@
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { refreshInbox } from '#lib/wishlist.svelte.ts';
 	import { cardAction, cardTmdb, liveCard, matchOwned, ownedIndex, ownedMark, ownedTitle, serverRow, serviceRegion, type ExploreCard, type ExploreRow, type WatchService } from '#lib/explore.ts';
-	import { cardServices, isRanked, newPath, parseNewType, type NewAnswer, type NewType } from '#lib/new-popular.ts';
+	import { cardServices, hasServiceChips, isRanked, newPath, parseNewType, pickService, type NewAnswer, type NewType, type RailDay, type RailItem } from '#lib/new-popular.ts';
 	import { contextLine } from '#lib/grow-lines.ts';
 	import { defaultRegion } from '#lib/top10.ts';
 	import type { Ask, AskState, GateDefaults, LibraryFolder, LookupShow, PickRulesView, ShowSettings, TitleView } from '#lib/types.ts';
@@ -22,6 +22,7 @@
 	import AskMovieDialog from '#lib/AskMovieDialog.svelte';
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
+	import NewRail from '#lib/ui/NewRail.svelte';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
@@ -46,6 +47,7 @@
 	];
 
 	let rows = $state<Row[]>([]);
+	let rail = $state<RailDay[]>([]);
 	let loaded = $state(false);
 	let failed = $state(false);
 	let more = $state(false);
@@ -83,6 +85,7 @@
 			const a = await api.get<NewAnswer>(newPath(type, 0), gone.signal);
 			if (n !== ask) return;
 			rows = a.rows.map(serverRow);
+			rail = a.rail ?? [];
 			next = 1;
 			more = a.more;
 			failed = false;
@@ -123,8 +126,10 @@
 		return () => io.disconnect();
 	});
 
-	// Service chips on the "Just landed" row: one service at a time, or all.
-	let svcPick = $state<number | null>(null);
+	// Service chips on the services and hot and new rows: one service at a time, or all (per row).
+	let svcPicks = $state(new Map<string, number | null>());
+	const svcPick = (row: string) => svcPicks.get(row) ?? null;
+	const setPick = (row: string, s: number | null) => (svcPicks = new Map([...svcPicks, [row, s]]));
 	const region = serviceRegion(defaultRegion());
 	let services = $state<WatchService[]>([]);
 	const logo = (id: number | undefined) => services.find((s) => s.id === id)?.logo;
@@ -223,8 +228,14 @@
 
 	const wideKind = (k: string): boolean => k === 'movie' || k === 'show';
 	function shown(row: Row): ExploreCard[] {
-		if (row.type !== 'np_services' || svcPick === null) return row.cards;
-		return row.cards.filter((c) => c.streaming?.service === svcPick);
+		if (!hasServiceChips(row.type)) return row.cards;
+		const cards = pickService(row.cards, svcPick(row.id));
+		return isRanked(row.type) ? cards.slice(0, 10) : cards;
+	}
+	function railHref(it: RailItem): string | undefined {
+		if (it.in_library && it.title_id !== undefined) return to(`/library/${it.title_id}`);
+		remember(it.kind, it.tmdb_id, { name: it.name, year: it.year, poster: it.poster ?? null });
+		return to(detailPath(it.kind, it.tmdb_id));
 	}
 </script>
 
@@ -249,6 +260,7 @@
 		<SegmentedControl options={typeOptions} value={type} label="Show" testid="new-type" announce={(l) => `Showing ${l}`} onchange={setType} />
 	</div>
 	<MetadataNotice />
+	{#if rail.length > 0}<NewRail days={rail} href={railHref} {logo} />{/if}
 
 	{#if failed && rows.length === 0}
 		<LoadError hasData={false} message="Could not load New & Popular." onretry={() => void loadFirst()} busy={false} />
@@ -265,12 +277,12 @@
 		{#each rows as row (row.id)}
 			{@const cards = shown(row)}
 			{@const wide = !isRanked(row.type) && cards.some((c) => wideKind(c.kind))}
-			{@const chips = row.type === 'np_services' ? cardServices(row.cards) : []}
+			{@const chips = hasServiceChips(row.type) ? cardServices(row.cards) : []}
 			<div class="row-wrap" class:wide-row={wide} data-row={row.type} data-row-id={row.id}>
 				{#snippet tools()}
 					<div class="chips" role="group" aria-label="Services">
-						<Chip label="All" selected={svcPick === null} onclick={() => (svcPick = null)} />
-						{#each chips as s (s.service)}<Chip label={s.name} selected={svcPick === s.service} onclick={() => (svcPick = s.service)} />{/each}
+						<Chip label="All" selected={svcPick(row.id) === null} onclick={() => setPick(row.id, null)} />
+						{#each chips as s (s.service)}<Chip label={s.name} selected={svcPick(row.id) === s.service} onclick={() => setPick(row.id, s.service)} />{/each}
 					</div>
 				{/snippet}
 				<Shelf title={row.title} subtitle={row.subtitle} tools={chips.length > 1 ? tools : undefined}
@@ -282,7 +294,7 @@
 						{@const mark = ownedMark(c, ownedTitle(c, owned), who)}
 						{@const preview = cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: cardTmdb(c), year: c.year, titleId: c.titleId } : undefined}
 						{#if isRanked(row.type)}
-							{@const rank = row.cards.indexOf(raw) + 1}
+							{@const rank = cards.indexOf(raw) + 1}
 							<div class="ranked">
 								<span class="rank" class:two={rank > 9} aria-hidden="true">{rank}</span>
 								<div class="pc"><PosterCard title={c.name} href={cardHref(c)} image={c.image} kind={c.kind} owned={mark} fresh={c.fresh} top10Row {preview} /></div>

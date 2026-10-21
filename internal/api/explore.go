@@ -582,6 +582,18 @@ func (s listerSource) List(ctx context.Context, q explore.Request) ([]explore.It
 		if q.Sort == "rating" {
 			v.Set("sort_by", "vote_average.desc")
 		}
+		if q.Sort == "recent" {
+			v.Set("sort_by", "primary_release_date.desc")
+			if q.Kind == "show" {
+				v.Set("sort_by", "first_air_date.desc")
+			}
+		}
+		if q.AirFrom != "" && q.Kind == "show" {
+			v.Set("air_date.gte", q.AirFrom)
+		}
+		if q.AirTo != "" && q.Kind == "show" {
+			v.Set("air_date.lte", q.AirTo)
+		}
 		if q.Genre != "" {
 			id, gerr := s.l.GenreID(ctx, q.Kind, q.Genre)
 			if gerr != nil {
@@ -595,6 +607,13 @@ func (s listerSource) List(ctx context.Context, q explore.Request) ([]explore.It
 		date := "primary_release_date"
 		if q.Kind == "show" {
 			date = "first_air_date"
+		} else if q.Types != "" {
+			// Regional release dates of those types (digital, cinema).
+			date = "release_date"
+			v.Set("with_release_type", q.Types)
+			if q.Region != "" {
+				v.Set("region", q.Region)
+			}
 		}
 		if q.From != "" {
 			v.Set(date+".gte", q.From)
