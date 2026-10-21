@@ -41,9 +41,9 @@
 		padding: 0 var(--gutter); background: color-mix(in srgb, var(--bg) 82%, transparent);
 		backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid var(--line);
 	}
-	/* Follows the scroll frame by frame (--bar, lib/scroll-bar), so no transition of its own. */
-	.ui-topbar { transform: translateY(calc(-100% * var(--bar, 0))); will-change: transform; }
-	.ui-topbar.away { pointer-events: none; }
+	/* Glides with the pills (--bar-glide, app.css): transform only, no fade. */
+	.ui-topbar { transition: transform var(--bar-glide); will-change: transform; }
+	.ui-topbar.away { transform: translateY(-100%); pointer-events: none; }
 	@media (prefers-reduced-motion: reduce) { .ui-topbar { transition: none; } }
 	.lead, .trail { display: flex; align-items: center; gap: 4px; min-width: 0; }
 	@media (max-width: 767px) { .ui-topbar { display: none; } }

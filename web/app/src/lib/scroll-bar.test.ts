@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { nextBar, nextProgress, settleTarget, type BarState } from './scroll-bar.svelte.ts';
+import { nextBar, type BarState } from './scroll-bar.svelte.ts';
 
 const walk = (ys: number[], s: BarState = { hidden: false, anchor: 0 }) => ys.reduce(nextBar, s);
 
@@ -17,16 +17,3 @@ describe('nextBar', () => {
 	});
 });
 
-describe('nextProgress', () => {
-	it('moves with the scroll', () => expect(nextProgress(0, 32, 200)).toBe(0.5));
-	it('stays within 0 and 1', () => {
-		expect(nextProgress(0.9, 64, 300)).toBe(1);
-		expect(nextProgress(0.1, -64, 300)).toBe(0);
-	});
-	it('is fully shown at the top', () => expect(nextProgress(1, 10, 0)).toBe(0));
-	it('settles away past halfway, shown otherwise', () => {
-		expect(settleTarget(0.6, 400)).toBe(1);
-		expect(settleTarget(0.4, 400)).toBe(0);
-		expect(settleTarget(0.9, 40)).toBe(0);
-	});
-});
