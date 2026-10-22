@@ -22,7 +22,7 @@
 	// Over art it becomes the shared glass pill with a line glyph instead of the dot.
 	import ArtPill from './ArtPill.svelte';
 	import type { IconName } from '../Icon.svelte';
-	let { kind, percent, label, on = 'surface', testid }: { kind: StatusKind; percent?: number; label?: string; on?: 'surface' | 'art'; testid?: string } = $props();
+	let { kind, percent, label, on = 'surface', compact = false, testid }: { kind: StatusKind; percent?: number; label?: string; on?: 'surface' | 'art'; /** Over art only: glyph alone, the word stays as its name. */ compact?: boolean; testid?: string } = $props();
 	const glyphs: Record<StatusKind, IconName> = {
 		in_library: 'owned',
 		downloading: 'download',
@@ -37,7 +37,7 @@
 </script>
 
 {#if on === 'art'}
-	<ArtPill text={label ?? statusWord(kind, percent)} icon={glyphs[kind]} tone={artTone[tones[kind]]} percent={kind === 'downloading' ? percent : undefined} {testid} />
+	<ArtPill text={label ?? statusWord(kind, percent)} icon={glyphs[kind]} tone={artTone[tones[kind]]} percent={kind === 'downloading' ? percent : undefined} {compact} label={compact ? (label ?? statusWord(kind, percent)) : undefined} {testid} />
 {:else}
 	<span class="ui-pill {tones[kind]} {on}" data-testid={testid}><i aria-hidden="true"></i><span class="t">{label ?? statusWord(kind, percent)}</span></span>
 {/if}

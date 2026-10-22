@@ -192,7 +192,7 @@
 			{/if}
 			{#if badges.length || status}
 				<span class="over">
-					{#if status}<StatusPill kind={status} label={statusLabel} on="art" />{/if}
+					{#if status}<StatusPill kind={status} label={statusLabel} on="art" compact={shape === 'round'} />{/if}
 					{#each badges as b (b)}<Badge label={b} on="art" />{/each}
 				</span>
 			{/if}
@@ -234,6 +234,8 @@
 	.ph-ic { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: var(--surface-1); color: var(--text-muted); box-shadow: var(--shadow-card); }
 	.ph-t { max-width: 100%; min-width: 0; font: var(--t-headline); letter-spacing: -0.01em; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 	.over { position: absolute; left: 8px; right: 8px; top: 8px; display: flex; flex-wrap: nowrap; align-items: center; gap: 4px; }
+	/* A circle clips corners: its status sits centred on the top edge, glyph only. */
+	.round .over { justify-content: center; top: 6px; }
 	.prog { position: absolute; left: 8px; right: 8px; bottom: 8px; }
 	.t { font: var(--t-subhead); font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.s .dot { opacity: 0.7; margin: 0 0.3em; }
