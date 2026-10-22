@@ -180,7 +180,7 @@
 	const personCard = (p: PersonSummary): Card => ({ key: `p${p.id}`, type: 'people', name: p.name, subtitle: p.department, image: p.profile, href: to(`/people/${encodeURIComponent(p.id)}`), owned: null });
 
 	// ── In your Library: local matches first, left out of the wider results ──
-	type LibraryAnswer = { titles: TitleView[]; albums: { id: number; title_id: number; name: string; artist: string; year?: number }[]; people: { name: string; titles: { id: number; name: string; kind: string }[] }[] };
+	type LibraryAnswer = { titles: TitleView[]; albums: { id: number; title_id: number; name: string; artist: string; year?: number; image?: string }[]; people: { name: string; titles: { id: number; name: string; kind: string }[] }[] };
 	let lib = $state<LibraryAnswer | null>(null);
 	const ONLY_KEY = 'holyarrs.search.only-library';
 	let onlyLib = $state(false);
@@ -219,7 +219,7 @@
 	const shownLib = $derived(holding && stale ? stale.lib : lib);
 	const libCards = $derived<Card[]>([
 		...(shownLib?.titles ?? []).map((t): Card => ({ key: `lt${t.id}`, type: t.kind === 'show' ? 'show' : t.kind === 'artist' ? 'music' : 'movie', titleId: t.id, name: t.name, year: t.year, image: t.backdrop ?? t.artwork[0], href: to(`/library/${t.id}`), owned: markOf(t), preview: t.ids?.tmdb && t.kind !== 'artist' ? { kind: t.kind === 'show' ? 'show' : 'movie', tmdb: t.ids.tmdb, year: t.year, titleId: t.id } : undefined, subtitle: libraryNote(t, [t.year, posterStatus(t, who)?.label].filter(Boolean).join(' · ')) })),
-		...(shownLib?.albums ?? []).map((a): Card => ({ key: `la${a.id}`, type: 'music', name: a.name, href: to(`/library/${a.title_id}`), owned: inLibrary, subtitle: [a.artist, a.year].filter(Boolean).join(' · ') })),
+		...(shownLib?.albums ?? []).map((a): Card => ({ key: `la${a.id}`, type: 'music', name: a.name, image: a.image ? to(a.image) : undefined, href: to(`/library/${a.title_id}`), owned: inLibrary, subtitle: [a.artist, a.year].filter(Boolean).join(' · ') })),
 		...(shownLib?.people ?? []).map((p): Card => ({ key: `lp${p.name}`, type: 'people', name: p.name, href: to(`/library/${p.titles[0]?.id}`), owned: null, subtitle: p.titles.map((x) => x.name).slice(0, 2).join(', ') }))
 	]);
 	const libIds = $derived(new Set((shownLib?.titles ?? []).map((t) => t.id)));

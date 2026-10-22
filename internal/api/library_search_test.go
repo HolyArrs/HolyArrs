@@ -21,7 +21,7 @@ func TestLibrarySearch(t *testing.T) {
 		}{
 			{"UPDATE titles SET original_name = 'Prairie Douce', year = 2021, people = '[\"Zoë Ward\",\"Ann Lee\"]' WHERE id = ?", []any{k.ids["Gentle Meadow"]}},
 			{"UPDATE titles SET people = '[\"Zoë Ward\"]' WHERE id = ?", []any{k.ids["Iron Verdict"]}},
-			{`INSERT INTO parts(created_at, created_by, updated_at, updated_by, title_id, kind, name) VALUES ('2026-01-01T00:00:00Z', '{}', '2026-01-01T00:00:00Z', '{}', 9105, 'album', 'Static Ünder Glass')`, nil},
+			{`INSERT INTO parts(created_at, created_by, updated_at, updated_by, title_id, kind, name, source_ids) VALUES ('2026-01-01T00:00:00Z', '{}', '2026-01-01T00:00:00Z', '{}', 9105, 'album', 'Static Ünder Glass', '{"musicbrainz":"AbC-1"}')`, nil},
 		} {
 			if _, err := tx.Exec(q.sql, q.args...); err != nil {
 				return err
@@ -67,6 +67,8 @@ func TestLibrarySearch(t *testing.T) {
 	sameNames(t, "music scope", names(ask(k.owner, "q=static&kind=music")), "Loud Static")
 	if a := ask(k.owner, "q=under&kind=music"); len(a.Albums) != 1 || a.Albums[0].Artist != "Loud Static" {
 		t.Fatalf("album by folded name: %+v", a.Albums)
+	} else if a.Albums[0].Image != musicArtPrefix+"album/abc-1" {
+		t.Fatalf("album cover route %q", a.Albums[0].Image)
 	}
 	if a := ask(k.owner, "q=under&kind=movie"); len(a.Albums) != 0 {
 		t.Fatalf("albums in the movies scope: %+v", a.Albums)

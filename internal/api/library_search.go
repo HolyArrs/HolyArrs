@@ -24,6 +24,8 @@ type LibraryAlbum struct {
 	Name    string `json:"name"`
 	Artist  string `json:"artist"`
 	Year    int    `json:"year,omitempty"`
+	// Image is the album's cover through the music picture route.
+	Image string `json:"image,omitempty"`
 }
 
 // LibraryPerson is a person credited in Library titles that a search matched.
@@ -125,6 +127,7 @@ func (a *API) libraryAlbums(r *http.Request, words []string, visible func(domain
 	}
 	artists := map[int64]*domain.Title{}
 	out := []LibraryAlbum{}
+	var names []nameKey
 	for _, p := range ps {
 		if len(out) == librarySearchMax {
 			break
@@ -147,8 +150,15 @@ func (a *API) libraryAlbums(r *http.Request, words []string, visible func(domain
 		if p.ReleaseDate != nil {
 			al.Year = p.ReleaseDate.Year()
 		}
+		if rg := strings.ToLower(p.SourceIDs["musicbrainz"]); rg != "" {
+			al.Image = musicArtPrefix + "album/" + rg
+			names = append(names, nameKey{kind: "album", mbid: rg, name: p.Name, artist: t.Name})
+		}
 		out = append(out, al)
 	}
+	// The covers come from the same chain and prefetch as Explore's rows.
+	a.rememberMusicNames(names)
+	a.warmMusicNames(names)
 	return out, nil
 }
 
