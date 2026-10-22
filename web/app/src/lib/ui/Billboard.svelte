@@ -78,7 +78,12 @@
 	const words = heroQuiet((p) => (phase = p));
 	const quiet = $derived(!wordsShown(phase));
 	$effect(() => () => words.dispose());
-	const trailer = $derived(!!kind && !!tmdb);
+	// The trailer (its lookup and its first segments) waits for the first
+	// paint and the hero picture, so it never competes with them or the rows.
+	let painted = $state(false);
+	let artLoaded = $state(false);
+	const artReady = $derived(artLoaded || !!art || !pictures.length);
+	const trailer = $derived(!!kind && !!tmdb && painted && artReady);
 	const wait = dwell(HERO_DELAY, () => (armed = true));
 
 	function expand(o: TheaterHandoff) {
@@ -155,7 +160,14 @@
 		return () => ctl.abort();
 	});
 
+	// A new picture: wait for it again.
+	$effect(() => {
+		void pictures[0];
+		artLoaded = false;
+	});
+
 	onMount(() => {
+		requestAnimationFrame(() => requestAnimationFrame(() => (painted = true)));
 		const io = new IntersectionObserver(([e]) => (inView = e.isIntersecting && e.intersectionRatio >= 0.6), { threshold: [0, 0.6, 1] });
 		if (box) io.observe(box);
 		const vis = () => document.hidden && (armed = false);
@@ -172,7 +184,7 @@
 		{#if art}
 			{@render art()}
 		{:else if pictures.length}
-			{#key pictures[0]}<HeroMotion {pictures} {vtName} {position} paused={playing} onerror={onpictureerror} />{/key}
+			{#key pictures[0]}<HeroMotion {pictures} {vtName} {position} paused={playing} onerror={onpictureerror} onload={() => (artLoaded = true)} />{/key}
 		{/if}
 		{#if sources.length}
 			{#key resumeRun}

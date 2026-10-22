@@ -14,7 +14,8 @@
 		filter,
 		every = 9000,
 		paused = false,
-		onerror
+		onerror,
+		onload
 	}: {
 		/** Already-sized addresses; the first shows straight away. */
 		pictures: string[];
@@ -27,6 +28,8 @@
 		paused?: boolean;
 		/** The first picture failed. */
 		onerror?: () => void;
+		/** The first picture has loaded (or failed): the hero has painted. */
+		onload?: () => void;
 	} = $props();
 
 	let box = $state<HTMLElement>();
@@ -91,9 +94,10 @@
 
 	function loaded(i: number) {
 		ready[i] = true;
+		if (i === 0) onload?.();
 	}
 	function failed(i: number) {
-		if (i === 0) onerror?.();
+		if (i === 0) (onerror?.(), onload?.());
 		ready[i] = false;
 	}
 </script>
