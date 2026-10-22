@@ -342,30 +342,48 @@ func (m *serviceMusic) Pressings(ctx context.Context, albumMBID string) ([]Press
 	if err != nil {
 		return m.fallbackPressings(ctx, albumMBID, nil, err)
 	}
-	// Ask for the releases a few at a time (an album can have a hundred),
-	// then read them in order so the result and its first error are the same
-	// as asking one by one.
+	if len(releaseIDs) > serviceReleaseLimit {
+		return m.fallbackPressings(ctx, albumMBID, nil, ErrServiceIncomplete)
+	}
+	// Ask for the releases a few at a time (an album can have a hundred) and
+	// read them in order as they land, so the result and its first error are
+	// the same as asking one by one. At most servicePressingFetches answers
+	// are held unread; the first error or the track cap stops the rest.
 	type fetched struct {
 		item serviceItem
 		err  error
 	}
-	got := make([]fetched, len(releaseIDs))
+	fctx, stop := context.WithCancel(ctx)
 	var wg sync.WaitGroup
-	slots := make(chan struct{}, servicePressingFetches)
-	for i, id := range releaseIDs {
+	defer func() { stop(); wg.Wait() }()
+	got := make([]chan fetched, len(releaseIDs))
+	launch := func(i int) {
+		if i >= len(releaseIDs) {
+			return
+		}
+		got[i] = make(chan fetched, 1)
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			slots <- struct{}{}
-			defer func() { <-slots }()
-			got[i].item, got[i].err = m.service.detail(ctx, "musicbrainz", "release", id)
+			var f fetched
+			f.item, f.err = m.service.detail(fctx, "musicbrainz", "release", releaseIDs[i])
+			got[i] <- f
 		}()
 	}
-	wg.Wait()
+	for i := 0; i < servicePressingFetches; i++ {
+		launch(i)
+	}
 	out := make([]Pressing, 0, len(releaseIDs))
 	totalTracks := 0
 	for i := range releaseIDs {
-		release, err := got[i].item, got[i].err
+		f := <-got[i]
+		got[i] = nil
+		release, err := f.item, f.err
+		if err == nil {
+			launch(i + servicePressingFetches)
+		} else {
+			stop()
+		}
 		if err != nil {
 			return m.fallbackPressings(ctx, albumMBID, out, err)
 		}

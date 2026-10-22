@@ -360,3 +360,58 @@ func mustJSON(t *testing.T, v any) json.RawMessage {
 	}
 	return b
 }
+
+func TestServicePressingsOversizedReleaseListFetchesNoRelease(t *testing.T) {
+	var releaseHits atomic.Int32
+	releases := []any{}
+	for i := 0; i <= serviceReleaseLimit; i++ {
+		releases = append(releases, map[string]any{"id": fmt.Sprintf("b0000000-0000-4000-8000-%012d", i)})
+	}
+	s := testService(t, func(w http.ResponseWriter, r *http.Request) {
+		id := musicRequestID(r)
+		if id == serviceAlbumID {
+			serviceReply(w, "musicbrainz", id, musicItem(id, "release-group", "Album", map[string]any{"id": id, "releases": releases}))
+			return
+		}
+		releaseHits.Add(1)
+		w.WriteHeader(http.StatusNotFound)
+	})
+	direct := &serviceDirectMusic{pressings: []Pressing{{MBID: servicePressingID, Name: "Direct"}}}
+	got, err := s.Artists(direct).Pressings(context.Background(), serviceAlbumID)
+	if err != nil || len(got) != 1 || got[0].Name != "Direct" || releaseHits.Load() != 0 {
+		t.Fatalf("oversized list: %#v, %v, release hits %d", got, err, releaseHits.Load())
+	}
+}
+
+func TestServicePressingsTrackCapStopsFetchingRest(t *testing.T) {
+	const n = 60
+	perRelease := serviceTrackLimit/10 + 1 // the cap passes inside the tenth release
+	var releaseHits atomic.Int32
+	releases := []any{}
+	for i := 0; i < n; i++ {
+		releases = append(releases, map[string]any{"id": fmt.Sprintf("b0000000-0000-4000-8000-%012d", i)})
+	}
+	tracks := []any{}
+	for j := 0; j < perRelease; j++ {
+		tracks = append(tracks, map[string]any{"id": fmt.Sprintf("c0000000-0000-4000-8000-%012d", j), "position": j + 1, "title": "T", "length": 1000,
+			"recording": map[string]any{"id": fmt.Sprintf("d0000000-0000-4000-8000-%012d", j), "title": "T", "length": 1000}})
+	}
+	s := testService(t, func(w http.ResponseWriter, r *http.Request) {
+		id := musicRequestID(r)
+		if id == serviceAlbumID {
+			serviceReply(w, "musicbrainz", id, musicItem(id, "release-group", "Album", map[string]any{"id": id, "releases": releases}))
+			return
+		}
+		releaseHits.Add(1)
+		serviceReply(w, "musicbrainz", id, musicItem(id, "release", "Pressing", map[string]any{
+			"id": id, "title": "Pressing", "release-group": map[string]any{"id": serviceAlbumID},
+			"media": []any{map[string]any{"position": 1, "track-count": perRelease, "tracks": tracks}},
+		}))
+	})
+	if _, err := s.Artists(nil).Pressings(context.Background(), serviceAlbumID); err == nil {
+		t.Fatal("expected the track cap to stop the list")
+	}
+	if hits := releaseHits.Load(); hits > 10+servicePressingFetches {
+		t.Fatalf("asked for %d releases after the cap; want at most %d", hits, 10+servicePressingFetches)
+	}
+}
