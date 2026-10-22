@@ -34,6 +34,9 @@
 		{#each sources as s (s.name)}
 			<li>
 				<a href={s.site} target="_blank" rel="noopener noreferrer"><b>{s.name}</b></a>
+				{#if s.name === 'TMDB'}
+					<a class="tmdb-logo" href={s.site} target="_blank" rel="noopener noreferrer"><img src="/brand/tmdb-logo-short.svg" alt="TMDB" width="110" height="14" data-testid="tmdb-logo" /></a>
+				{/if}
 				<span class="small">{s.gives}</span>
 				<span class="xs muted">Licence or terms: <a href={s.termsURL} target="_blank" rel="noopener noreferrer license">{s.terms}</a></span>
 			</li>
@@ -53,6 +56,11 @@
 		padding: 0;
 		display: grid;
 		gap: var(--s-3);
+	}
+	.tmdb-logo img {
+		display: block;
+		height: 14px;
+		width: auto;
 	}
 	.sources li {
 		display: grid;
