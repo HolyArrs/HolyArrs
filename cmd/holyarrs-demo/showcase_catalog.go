@@ -136,6 +136,7 @@ type showcaseArtist struct {
 	Name        string
 	Scenario    string
 	Albums      int      // studio albums kept
+	AllBut      int      // keep every studio album except the newest AllBut (overrides Albums)
 	NewAlbums   string   // all, new, none
 	Complete    bool     // every kept album has placeholder tracks
 	Downloading bool     // the newest kept album is downloading
@@ -168,4 +169,18 @@ var showcaseArtistList = []showcaseArtist{
 	{MBID: "afb680f2-b6eb-4cd7-a70b-a63b25c763d5", Name: "Bruno Mars", Scenario: "pop: every album on disk", Albums: 30, NewAlbums: "new", Complete: true},
 	{MBID: "63aa26c3-d59b-4da4-84ac-716b54f1ef4d", Name: "Tame Impala", Scenario: "electronic/indie: asked for by a member", Ask: true},
 	{MBID: "5b11f4ce-a62d-471e-81fc-a69a8278c7da", Name: "Nirvana", Scenario: "rock: albums kept, none on disk", Albums: 3, NewAlbums: "none"},
+	// Music part 3 (2026-10-22): artists from the Apple album charts with a
+	// studio album out in the last 30 days (New from your artists), and
+	// artists with all but their newest album on disk (Finish the set).
+	{MBID: "fd87acc7-e0a0-4a45-bc2a-d2ab5c10be68", Name: "Fontaines D.C.", Scenario: "new album 2026-10-15; older albums on disk", AllBut: 1, NewAlbums: "new", Complete: true},
+	{MBID: "afb6cc6d-a060-4f5e-bc3a-00d4b6832e41", Name: "Remi Wolf", Scenario: "new album 2026-10-09; older albums on disk", AllBut: 1, NewAlbums: "new", Complete: true},
+	{MBID: "396a9525-0994-4542-b480-c4587feeb476", Name: "Tinashe", Scenario: "new album 2026-09-25; older albums on disk", AllBut: 1, NewAlbums: "new", Complete: true},
+	{MBID: "e5712ceb-c37a-4c49-a11c-ccf4e21852d4", Name: "Troye Sivan", Scenario: "new album 2026-10-09; older albums on disk", AllBut: 1, NewAlbums: "new", Complete: true},
+	{MBID: "a6623d39-2d8e-4f70-8242-0a9553b91e50", Name: "The Avalanches", Scenario: "new album 2026-10-16; older albums on disk", AllBut: 1, NewAlbums: "new", Complete: true},
+	{MBID: "82e454e2-38ee-4e69-89a6-cc65167753d1", Name: "Chase & Status", Scenario: "new album 2026-10-09; older albums on disk", AllBut: 1, NewAlbums: "new", Complete: true},
+	{MBID: "bc883961-64d4-46b3-8b1c-64009854291c", Name: "Jamie T", Scenario: "new album 2026-10-09; older albums on disk", AllBut: 1, NewAlbums: "new", Complete: true},
+	{MBID: "6925db17-f35e-42f3-a4eb-84ee6bf5d4b0", Name: "Olivia Rodrigo", Scenario: "all but the newest album on disk", AllBut: 1, NewAlbums: "new", Complete: true},
+	{MBID: "3478a5d1-bd96-4584-aa54-4d6e0a329658", Name: "Sam Fender", Scenario: "all but the newest album on disk", AllBut: 1, NewAlbums: "new", Complete: true},
+	{MBID: "7eb1ce54-a355-41f9-8d68-e018b096d427", Name: "Harry Styles", Scenario: "all but the newest album on disk", AllBut: 1, NewAlbums: "new", Complete: true},
+	{MBID: "a2a3f910-b188-43e7-81d0-f1ac2a2f3e12", Name: "Noah Kahan", Scenario: "all but the newest album on disk", AllBut: 1, NewAlbums: "new", Complete: true},
 }

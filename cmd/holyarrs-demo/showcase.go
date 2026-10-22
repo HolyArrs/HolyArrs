@@ -609,7 +609,7 @@ func (w *world) showcaseArtists(ctx context.Context) error {
 			w.skip("artist %s: %v", e.Name, err)
 			continue
 		}
-		kept := w.keepAlbums(ctx, id, e.Albums)
+		kept := w.keepAlbums(ctx, id, e.Albums, e.AllBut)
 		if _, err := w.lib.RefreshArtist(ctx, id, w.by, nil); err != nil {
 			w.say("   %s: refresh: %v", e.Name, err)
 		}
@@ -629,8 +629,9 @@ func (w *world) showcaseArtists(ctx context.Context) error {
 	return nil
 }
 
-// keepAlbums keeps up to n studio albums spread over the career.
-func (w *world) keepAlbums(ctx context.Context, id int64, n int) int {
+// keepAlbums keeps up to n studio albums spread over the career, or with
+// allBut every studio album except the newest allBut.
+func (w *world) keepAlbums(ctx context.Context, id int64, n, allBut int) int {
 	parts, err := store.Select[domain.Part](ctx, w.s.Read(), "parts",
 		"title_id = ? AND kind = 'album' AND included = 1 AND release_type = 'album' AND release_date IS NOT NULL AND release_date < ? ORDER BY release_date",
 		id, store.FormatTime(time.Now()))
@@ -638,7 +639,14 @@ func (w *world) keepAlbums(ctx context.Context, id int64, n int) int {
 		return 0
 	}
 	kept := 0
-	for _, i := range spread(len(parts), n) {
+	idx := spread(len(parts), n)
+	if allBut > 0 {
+		idx = nil
+		for i := 0; i < len(parts)-allBut; i++ {
+			idx = append(idx, i)
+		}
+	}
+	for _, i := range idx {
 		keep := true
 		if _, err := w.lib.SetAlbum(ctx, parts[i].ID, &keep, 0, w.by); err == nil {
 			kept++
