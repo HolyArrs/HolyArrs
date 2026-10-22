@@ -86,7 +86,7 @@
 	}
 
 	onMount(() => {
-		const mq = window.matchMedia('(min-width: 1024px)');
+		const mq = window.matchMedia('(min-width: 1200px)');
 		const fit = () => {
 			wide = mq.matches;
 			if (wide) detailOpen = false;
