@@ -81,6 +81,9 @@ func (a *API) musicOnEvent(ev domain.Event) {
 	case domain.EventAskMade, domain.EventAskJoined, domain.EventTitleAdded:
 		a.forgetMusicAnswers()
 	}
+	if ev.Kind == domain.EventTitleAdded || ev.Kind == domain.EventTitleRemoved {
+		a.musicv2.cand.Forget("lib:")
+	}
 }
 
 // writeMusicAnswer writes the answer, and keeps it when it is complete.

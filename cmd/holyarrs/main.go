@@ -613,7 +613,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		Secrets: vault, TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MetadataUp: hosted.Health.Up, ServiceTop: hosted.Service.ServiceTop, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
 			t, err := hosted.Service.TrailerPick(ctx, kind, id, lang)
 			return t.Key, err
-		}, AnimeMap: hosted.Service.AnimeMap, MusicTrending: hosted.Service.MusicTrending, MusicNew: hosted.Service.MusicNewWindow, MusicSimilar: hosted.Service.MusicSimilar, MusicCover: hosted.Service.MusicCover, ExtraArt: hosted.Service.Art, ExtraRatings: hosted.Service.Ratings, WikiTitle: hosted.Service.WikiTitle, WikiPerson: hosted.Service.WikiPerson, AwardWinners: hosted.Service.AwardWinners, Alerts: sender, Asks: wish, Search: sr, Downloads: dm, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
+		}, AnimeMap: hosted.Service.AnimeMap, MusicTrending: hosted.Service.MusicTrending, MusicNew: hosted.Service.MusicNewWindow, MusicSimilar: hosted.Service.MusicSimilar, MusicCharts: hosted.Service.MusicCharts, MusicGenres: hosted.Service.MusicGenreList, MusicRowsV2: flagOn("music_rows_v2"), MusicCover: hosted.Service.MusicCover, ExtraArt: hosted.Service.Art, ExtraRatings: hosted.Service.Ratings, WikiTitle: hosted.Service.WikiTitle, WikiPerson: hosted.Service.WikiPerson, AwardWinners: hosted.Service.AwardWinners, Alerts: sender, Asks: wish, Search: sr, Downloads: dm, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
 		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase})
 	if !c.SafeMode {
 		a.StartExplore(ctx)
@@ -842,4 +842,15 @@ func resetOwner(args []string) int {
 	}
 	log.Printf("reset-owner: the owner is now %q; sign in again everywhere", name)
 	return 0
+}
+
+// flagOn reports whether a feature flag is listed in HOLYARRS_FLAGS
+// (comma separated, e.g. "music_rows_v2").
+func flagOn(name string) bool {
+	for _, f := range strings.Split(os.Getenv("HOLYARRS_FLAGS"), ",") {
+		if strings.TrimSpace(f) == name {
+			return true
+		}
+	}
+	return false
 }

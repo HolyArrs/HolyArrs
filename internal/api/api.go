@@ -79,6 +79,14 @@ type Server struct {
 	// MusicSimilar reads similar artists from the metadata server; nil has
 	// no Because you have or Fans of rows.
 	MusicSimilar func(ctx context.Context, mbid string) ([]metadata.SimilarArtist, error)
+	// MusicCharts and MusicGenres read the metadata server's region charts
+	// (with P and F) and genre tiles for the music_rows_v2 rows; nil leaves
+	// those rows out.
+	MusicCharts func(ctx context.Context, region, kind, genre string) (metadata.MusicChart, error)
+	MusicGenres func(ctx context.Context, region string) (metadata.MusicGenres, error)
+	// MusicRowsV2 is flag music_rows_v2: Explore → Music from the
+	// 2026-10-22 plan's rows; off keeps the old row builder.
+	MusicRowsV2 bool
 	// MusicCover reads an album cover URL from the metadata server; nil uses
 	// only the Cover Art Archive.
 	MusicCover func(ctx context.Context, mbid, artist, title string) (string, error)
@@ -160,6 +168,8 @@ type API struct {
 	musicx musicExplore
 	// musicAns keeps each member's Explore → Music answers a minute.
 	musicAns musicAnswers
+	// musicv2 holds the music_rows_v2 cache layers.
+	musicv2 musicV2State
 	// signin keeps the sign-in page's art and its per-address budget.
 	signin signinArtState
 	// explore runs the Explore pool job and keeps its lists and pages.

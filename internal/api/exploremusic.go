@@ -69,6 +69,8 @@ type MusicCard struct {
 	Explicit bool `json:"explicit,omitempty"`
 	// Track names a song on a Fresh tracks line; the card asks for its album.
 	Track string `json:"track,omitempty"`
+	// Hue is a genre tile's colour index (music_rows_v2).
+	Hue *int `json:"hue,omitempty"`
 }
 
 // MusicRow is one row of Explore â†’ Music.
@@ -302,6 +304,10 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 	if !a.discover.allow(a.person(r).UserID, time.Now()) {
 		w.Header().Set("Retry-After", "60")
 		fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
+		return
+	}
+	if a.s.MusicRowsV2 {
+		a.exploreMusicV2(w, r)
 		return
 	}
 	q := r.URL.Query()
