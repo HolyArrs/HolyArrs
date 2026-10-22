@@ -175,7 +175,7 @@ func (a *API) warmMusic(ctx context.Context) {
 		if ctx.Err() != nil {
 			return
 		}
-		_, _, _ = a.musicTrendArtFile(ctx, k[0], k[1])
+		_, _, _ = a.musicTrendArtFile(ctx, k[0], k[1], "250")
 		select {
 		case <-ctx.Done():
 			return

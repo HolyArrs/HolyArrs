@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -168,7 +169,7 @@ func (a *API) musicTrendArt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	kind, mbid := r.PathValue("kind"), strings.ToLower(r.PathValue("mbid"))
-	name, p, ok := a.musicTrendArtFile(r.Context(), kind, mbid)
+	name, p, ok := a.musicTrendArtFile(r.Context(), kind, mbid, coverSize(r))
 	if !ok {
 		http.NotFound(w, r)
 		return
@@ -214,9 +215,9 @@ const musicArtMissTTL = 6 * time.Hour
 // album. An album no cover source has shows its artist's picture, so the
 // card is never blank. Misses are remembered a while (each costs outside
 // calls).
-func (a *API) musicTrendArtFile(ctx context.Context, kind, mbid string) (name, path string, ok bool) {
+func (a *API) musicTrendArtFile(ctx context.Context, kind, mbid, size string) (name, path string, ok bool) {
 	c := &a.music
-	key := kind + "|" + mbid
+	key := kind + "|" + mbid + "|" + size
 	c.mu.Lock()
 	if f := c.artBusy[key]; f != nil {
 		c.mu.Unlock()
@@ -228,7 +229,7 @@ func (a *API) musicTrendArtFile(ctx context.Context, kind, mbid string) (name, p
 		case <-ctx.Done():
 			return "", "", false
 		}
-		return a.fetchMusicArt(ctx, kind, mbid)
+		return a.fetchMusicArt(ctx, kind, mbid, size)
 	}
 	if c.artBusy == nil {
 		c.artBusy = map[string]*artFetch{}
@@ -236,7 +237,7 @@ func (a *API) musicTrendArtFile(ctx context.Context, kind, mbid string) (name, p
 	f := &artFetch{done: make(chan struct{})}
 	c.artBusy[key] = f
 	c.mu.Unlock()
-	f.name, f.path, f.ok = a.fetchMusicArt(ctx, kind, mbid)
+	f.name, f.path, f.ok = a.fetchMusicArt(ctx, kind, mbid, size)
 	c.mu.Lock()
 	delete(c.artBusy, key)
 	c.mu.Unlock()
@@ -244,7 +245,7 @@ func (a *API) musicTrendArtFile(ctx context.Context, kind, mbid string) (name, p
 	return f.name, f.path, f.ok
 }
 
-func (a *API) fetchMusicArt(ctx context.Context, kind, mbid string) (name, path string, ok bool) {
+func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name, path string, ok bool) {
 	c := &a.music
 	c.mu.Lock()
 	it, known := c.names[kind+"|"+mbid]
@@ -295,6 +296,7 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid string) (name, path 
 			}
 			src = strings.TrimRight(base, "/") + "/release-group/" + url.PathEscape(mbid) + "/front-250"
 		}
+		src = sizedCover(src, size)
 		if keep(src) || artist(it.Artist) {
 			return name, path, true
 		}
@@ -308,4 +310,27 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid string) (name, path 
 		c.mu.Unlock()
 	}
 	return "", "", false
+}
+
+// coverSize reads the ?size= a cover is asked at: 250 (the default), 500
+// for sharp tiles, 1200 for heroes.
+func coverSize(r *http.Request) string {
+	switch s := r.URL.Query().Get("size"); s {
+	case "500", "1200":
+		return s
+	}
+	return "250"
+}
+
+// caaThumb matches a Cover Art Archive picture with or without its
+// thumbnail suffix.
+var caaThumb = regexp.MustCompile(`^(https?://(?:www\.)?coverartarchive\.org/release(?:-group)?/[^/]+/(?:front|back|\d+))(?:-(?:250|500|1200))?(?:\.jpg)?$`)
+
+// sizedCover points a Cover Art Archive cover at the thumbnail size asked
+// for; each size is its own artwork cache file. Other sources stay as they are.
+func sizedCover(src, size string) string {
+	if m := caaThumb.FindStringSubmatch(src); m != nil {
+		return m[1] + "-" + size
+	}
+	return src
 }

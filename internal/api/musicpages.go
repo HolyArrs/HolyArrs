@@ -587,7 +587,7 @@ func (a *API) warmMusicArt(v ArtistPageView) {
 			sem <- struct{}{}
 			go func() {
 				defer func() { <-sem; wg.Done() }()
-				a.musicTrendArtFile(ctx, kind, mbid)
+				a.musicTrendArtFile(ctx, kind, mbid, "250")
 			}()
 		}
 		wg.Wait()

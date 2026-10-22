@@ -41,6 +41,7 @@ func (a *API) albumCoverArt(w http.ResponseWriter, r *http.Request) {
 		}
 		src = strings.TrimRight(base, "/") + "/release-group/" + url.PathEscape(mbid) + "/front-250"
 	}
+	src = sizedCover(src, coverSize(r))
 	if src == "" {
 		http.NotFound(w, r)
 		return
