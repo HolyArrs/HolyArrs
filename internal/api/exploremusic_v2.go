@@ -32,6 +32,8 @@ type musicV2State struct {
 	days musicscore.Days
 	// seedLog keeps each member's Since you have seeds per day (v3).
 	seedLog musicSeedLog
+	// clearing is set while a debounced day-order clear is pending.
+	clearing atomic.Bool
 	// now is the clock (tests); nil is time.Now.
 	now func() time.Time
 }

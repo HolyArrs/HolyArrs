@@ -59,8 +59,9 @@ type DayKey struct {
 }
 
 // Days is layer 2: the row and item order per member per day. It is
-// dropped on a date change or by Invalidate (a follow, a cold-start
-// unlock); asks, adds and approvals never touch it.
+// dropped on a date change, by Invalidate (a follow, a cold-start unlock)
+// or by Clear (a music title added or removed); asks and approvals never
+// touch it.
 type Days struct {
 	mu sync.Mutex
 	m  map[DayKey]any
@@ -98,6 +99,13 @@ func (d *Days) Invalidate(member int64) {
 			delete(d.m, k)
 		}
 	}
+}
+
+// Clear drops every member's orders (a Library change is the household's).
+func (d *Days) Clear() {
+	d.mu.Lock()
+	d.m = nil
+	d.mu.Unlock()
 }
 
 // Day is the calendar day (UTC) of now.

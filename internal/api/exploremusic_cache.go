@@ -83,7 +83,27 @@ func (a *API) musicOnEvent(ev domain.Event) {
 	}
 	if ev.Kind == domain.EventTitleAdded || ev.Kind == domain.EventTitleRemoved {
 		a.musicv2.cand.Forget("lib:")
+		// A music title changes the household's rows: drop only the day
+		// orders (chart candidates stay), once per burst of adds, so the
+		// next visit rebuilds them instead of tomorrow.
+		if ev.Kind == domain.EventTitleRemoved || ev.Data["album_types"] != nil {
+			a.clearMusicDaysSoon()
+		}
 	}
+}
+
+// musicDayDebounce gathers a burst of adds (an import, a batch) into one
+// clear of the day orders.
+var musicDayDebounce = 3 * time.Second
+
+func (a *API) clearMusicDaysSoon() {
+	if !a.musicv2.clearing.CompareAndSwap(false, true) {
+		return
+	}
+	time.AfterFunc(musicDayDebounce, func() {
+		a.musicv2.clearing.Store(false)
+		a.musicv2.days.Clear()
+	})
 }
 
 // writeMusicAnswer writes the answer, and keeps it when it is complete.
