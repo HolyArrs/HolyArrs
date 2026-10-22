@@ -13,7 +13,7 @@ let page: Page;
 
 async function openMovie(p: Page, name: string) {
 	await p.goto('/library');
-	await p.locator('.grid .item', { hasText: name }).click();
+	await p.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: name }).click();
 	await expect(p.getByRole('heading', { level: 1 })).toContainText(name);
 }
 
@@ -190,7 +190,7 @@ test('a member sees none of the search screens', async ({ browser }) => {
 	await m.goto('/library');
 	await expect(m.getByRole('link', { name: 'Held', exact: true })).toHaveCount(0);
 	await expect(m.getByRole('link', { name: 'Library tools' })).toHaveCount(0);
-	await m.locator('.grid .item', { hasText: 'Quiet Orchard' }).click();
+	await m.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: 'Quiet Orchard' }).click();
 	await expect(m.getByRole('heading', { level: 1 })).toContainText('Quiet Orchard');
 	for (const b of ['Search now', 'Choose a release']) await expect(m.getByRole('button', { name: b })).toHaveCount(0);
 	await expect(m.getByTestId('release')).toHaveCount(0);

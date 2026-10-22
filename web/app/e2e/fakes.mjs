@@ -487,6 +487,8 @@ export function startFakes() {
 			return send(res, 401, 'Error processing request.', 'text/plain');
 		}
 		if (req.method === 'POST' && req.url === '/Sessions/Logout') return send(res, 204, '');
+		// The address test in Settings asks the open server info, as a real Jellyfin answers it.
+		if (req.method === 'GET' && req.url === '/System/Info/Public') return send(res, 200, { ServerName: 'Fake Jellyfin', Version: '10.9.0', ProductName: 'Jellyfin Server', Id: 'fake-jellyfin' });
 		// Current Jellyfin uses the MediaBrowser Authorization token for server calls.
 		const serverCall = ['/System/Info', '/Library/Media/Updated', '/Library/Refresh'].includes(req.url ?? '');
 		if (serverCall && (!req.headers.authorization?.startsWith('MediaBrowser ') || !req.headers.authorization.includes(`Token="${jellyKey}"`))) return send(res, 401, '');

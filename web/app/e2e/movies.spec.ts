@@ -58,7 +58,7 @@ test('add by tmdb: and imdb: id; the last Release gate is remembered, the rest s
 test('Library filters, find by name, posters and list', async () => {
 	await page.goto('/library');
 	await libraryView(page, 'Posters');
-	const grid = page.locator('.grid .item');
+	const grid = page.locator('[data-testid="library-card"], [data-testid="library-row"]');
 	await expect(grid).toHaveCount(4);
 	await libraryStatus(page, 'not_out_yet');
 	await expect(page).toHaveURL(/show=not_out_yet/);
@@ -89,7 +89,7 @@ test('Library filters, find by name, posters and list', async () => {
 
 test('Movie page: dates, why, file, refresh and edit', async () => {
 	await page.goto('/library');
-	await page.locator('.grid .item', { hasText: 'Paper Harbour' }).click();
+	await page.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: 'Paper Harbour' }).click();
 	await expect(page.getByRole('heading', { level: 1 })).toContainText('Paper Harbour');
 	await expect(page.getByTestId('gate-reason')).toContainText('open since 2023-07-01');
 	await expect(page.getByRole('heading', { name: 'About' })).toBeVisible();
@@ -125,9 +125,9 @@ test('a member sees the movie but none of the staff controls', async ({ browser 
 	await expect(m).toHaveURL(/\/$/);
 
 	await m.goto('/library');
-	await expect(m.locator('.grid .item')).toHaveCount(4);
+	await expect(m.locator('[data-testid="library-card"], [data-testid="library-row"]')).toHaveCount(4);
 	await expect(m.getByRole('link', { name: 'Add a movie' })).toHaveCount(0);
-	await m.locator('.grid .item', { hasText: 'The Lantern Keepers' }).click();
+	await m.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: 'The Lantern Keepers' }).click();
 	await expect(m.getByRole('heading', { level: 1 })).toContainText('The Lantern Keepers');
 	// The Library section (gate, Versions, Releases) is for people who manage the Library.
 	await expect(m.getByTestId('gate-reason')).toHaveCount(0);

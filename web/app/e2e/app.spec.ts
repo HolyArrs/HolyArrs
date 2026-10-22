@@ -89,7 +89,7 @@ test('sign out, wrong password, then sign in', async () => {
 test('the desktop menu reaches every destination and Back works', async () => {
 	const nav = page.getByRole('navigation', { name: 'Main' }).first();
 	const places: [string, RegExp, string][] = [
-		['Movies', /\/library\?kind=movie$/, 'Library'],
+		['Movies', /\/library\?kind=movie$/, 'Movies'],
 		['Downloads', /\/downloads$/, 'Downloads'],
 		['Calendar', /\/calendar$/, 'Calendar'],
 		['History', /\/downloads\/history$/, 'History'],
@@ -208,7 +208,7 @@ test('search, add a movie, and the Library updates live', async ({ browser }) =>
 	await dialog.getByRole('button', { name: 'Add to Library' }).click();
 	await expect(page).toHaveURL(/\/library\/\d+/);
 
-	await expect(watcher.locator('.grid .item').first()).toBeVisible();
+	await expect(watcher.locator('[data-testid="library-card"], [data-testid="library-row"]').first()).toBeVisible();
 	await watcher.close();
 
 	await expect(page.getByTestId('search-now')).toBeVisible();
@@ -298,8 +298,8 @@ test('Library search debounces the indexed query and ignores stale results', asy
 
 	await find.fill('broken');
 	await expect(page.getByRole('alert')).toContainText('Library search failed.');
-	// The Kind chips and the layout switch stay usable after a failed search.
-	await expect(page.getByRole('group', { name: 'Kind' })).toBeVisible();
+	// The Filter menu and the layout switch stay usable after a failed search.
+	await expect(page.getByRole('button', { name: 'Filter' })).toBeVisible();
 	await expect(page.getByRole('radiogroup', { name: 'View' })).toBeVisible();
 	await page.unroute('**/api/v1/titles?*');
 });

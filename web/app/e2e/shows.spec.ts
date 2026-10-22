@@ -116,7 +116,8 @@ test('shows sit in the Library next to movies, with kinds and state filters', as
 	await expect(own).toHaveURL(/kind=show/);
 	await libraryView(own, 'Posters');
 	const card = own.getByTestId('library-card').filter({ hasText: 'Harbour Lights' });
-	await expect(card).toContainText('Show');
+	// The Shows kind filter is on, so a card here is a show.
+	await expect(card).toBeVisible();
 	// Posters carry only the status circle now; the Missing filter below proves the state.
 	await expect(own.getByTestId('library-card').filter({ hasText: 'Quiet Orchard' })).toHaveCount(0);
 	await libraryStatus(own, 'missing');

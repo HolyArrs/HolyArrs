@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Locator, type Page } from '@playwright/test';
-import { noSidewaysScroll, owner, signIn, openAdvanced, titleAction } from './helpers.ts';
+import { noSidewaysScroll, owner, signIn, openAdvanced, titleAction, openInLibrary } from './helpers.ts';
 
 // Searching albums (3.3.3, 3.3.4) against the fake Torznab Source in
 // fakes.mjs: an album search answers with a FLAC copy, an MP3 320 copy and
@@ -29,9 +29,11 @@ const release = (scope: Locator, part: string) => scope.getByTestId('release').f
 
 async function openAlbum(p: Page, artist: string, album: string) {
 	await p.goto('/library?kind=artist');
-	await p.locator('.grid .item', { hasText: artist }).click();
+	await p.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: artist }).click();
 	await expect(p.getByRole('heading', { level: 1, name: artist })).toBeVisible();
 	await p.getByRole('link', { name: album, exact: true }).click();
+	await expect(p.getByRole('heading', { level: 1, name: new RegExp(album) })).toBeVisible();
+	await openInLibrary(p);
 	await expect(p.getByRole('heading', { level: 1, name: new RegExp(album) })).toBeVisible();
 }
 
@@ -83,7 +85,7 @@ test('the Turned down list names the artist and the album', async () => {
 
 test('the artist page searches every missing album, or one', async () => {
 	await page.goto('/library?kind=artist');
-	await page.locator('.grid .item', { hasText: 'Tin Lanterns' }).click();
+	await page.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: 'Tin Lanterns' }).click();
 	await titleAction(page, 'More actions', 'Search now');
 	await expect(page.getByRole('status')).toContainText(/Searching for \d+ albums?|No album is missing a track/);
 	const row = page.getByTestId('album').filter({ hasText: 'Night Ferry' });

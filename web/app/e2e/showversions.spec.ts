@@ -26,7 +26,7 @@ async function axe(p: Page, where: string) {
 
 async function openShow(p: Page) {
 	await p.goto('/library');
-	await p.locator('.grid .item', { hasText: 'Tidal Atlas' }).click();
+	await p.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: 'Tidal Atlas' }).click();
 	await expect(p.getByRole('heading', { level: 1 })).toContainText('Tidal Atlas');
 }
 

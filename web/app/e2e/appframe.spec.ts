@@ -51,7 +51,9 @@ test('signed-in devices: see them and sign the others out', async ({ browser }) 
 test('the sign-in page says how to reset the owner', async ({ browser }) => {
 	const p = await (await browser.newContext()).newPage();
 	await p.goto('/login');
-	await p.getByText('Forgot the password?').click();
+	const useAccount = p.getByRole('button', { name: 'Use a HolyArrs account' });
+	if (await useAccount.isVisible()) await useAccount.click();
+	await p.getByText('Forgot password?').click();
 	await expect(p.getByTestId('reset-owner-help')).toContainText('reset-owner');
 	await p.context().close();
 });
@@ -112,6 +114,8 @@ test('a newer release shows a notice; off asks nothing', async () => {
 		await expect(page.getByTestId('savebar')).toHaveCount(0);
 	};
 	await page.goto('/settings/health');
+	// The page shows its settings once they load; then open Advanced.
+	await page.locator('details.advanced').first().waitFor();
 	await openAdvanced(page);
 	await page.getByLabel('The release feed may be on the local network').check();
 	await saved();

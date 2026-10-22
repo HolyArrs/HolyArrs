@@ -42,8 +42,10 @@ const pages = [
 ];
 
 async function scan(page: Page, where: string) {
+	// The sign-in card enters once its backdrop resolves (at most 2.2 s).
+	if (new URL(page.url()).pathname.endsWith('/login')) await page.waitForFunction(() => !document.querySelector('.panel:not(.entered)'));
 	// Let entry fades finish so colours are measured at rest.
-	await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
+	await page.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => undefined))));
 	const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
 	const msg = r.violations.map((v) => `${v.id}: ${v.help}\n  ${v.nodes.slice(0, 5).map((n) => n.target.join(' ')).join('\n  ')}`).join('\n');
 	if (r.violations.length) console.log(`AXE ${where}\n${msg}`);

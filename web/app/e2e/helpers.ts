@@ -201,3 +201,9 @@ export async function addFromSearch(page: Page, words: string, name: string, kin
 	await page.getByRole('button', { name: `Add ${name}` }).click();
 	return page.getByRole('dialog');
 }
+
+/** openInLibrary steps from a music page (artist or album, found in Search or the Library) to its Library page. */
+export async function openInLibrary(page: Page) {
+	await page.getByRole('button', { name: 'Open in Library' }).click();
+	await expect(page).toHaveURL(/\/library\/\d+/);
+}

@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { join } from 'node:path';
-import { moviesDir, noSidewaysScroll, owner, signIn, openApprovals, libraryKind, libraryStatus, libraryView, titleAction, openAdvanced, openFromSearch } from './helpers.ts';
+import { moviesDir, noSidewaysScroll, owner, signIn, openApprovals, libraryKind, libraryStatus, libraryView, titleAction, openAdvanced, openFromSearch, openInLibrary } from './helpers.ts';
 
 // Music (2.3.4 to 2.3.8): the owner adds a music folder, looks at Settings >
 // Music, adds Tin Lanterns from Search (the fake MusicBrainz knows it and
@@ -91,6 +91,8 @@ test('the owner finds an artist and adds it from Search', async () => {
 	await own.getByRole('main').getByRole('link', { name: 'Tin Lanterns,' }).first().click();
 
 	// The artist page: albums with kinds, dates and state, and Search now.
+	await expect(own.getByRole('heading', { level: 1, name: 'Tin Lanterns' })).toBeVisible();
+	await openInLibrary(own);
 	await expect(own.getByRole('heading', { level: 1, name: 'Tin Lanterns' })).toBeVisible();
 	await own.getByRole('button', { name: 'More actions', exact: true }).click();
 	await expect(own.getByRole('menuitem', { name: 'Search now', exact: true })).toBeVisible();

@@ -143,7 +143,7 @@ test('the Downloaders page and a downloading movie pass the accessibility scan a
 		for (const where of ['/settings/downloaders', 'movie']) {
 			if (where === 'movie') {
 				await p.goto('/library');
-				await p.locator('.grid .item', { hasText: 'Iron Lullaby' }).click();
+				await p.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: 'Iron Lullaby' }).click();
 				await expect(p.getByTestId('download')).toBeVisible();
 			} else {
 				await p.goto(where);
@@ -165,7 +165,7 @@ test('the Downloaders page and a downloading movie pass the accessibility scan a
 	await p.getByRole('button', { name: 'Add a Downloader' }).click();
 	await noSidewaysScroll(p);
 	await p.goto('/library');
-	await p.locator('.grid .item', { hasText: 'Iron Lullaby' }).click();
+	await p.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: 'Iron Lullaby' }).click();
 	await expect(p.getByTestId('download')).toBeVisible();
 	await noSidewaysScroll(p);
 	await phone.close();

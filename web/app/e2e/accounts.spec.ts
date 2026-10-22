@@ -136,6 +136,8 @@ test('sign in with Jellyfin makes a member', async ({ browser }) => {
 	await card.getByLabel('Jellyfin server address').fill(`http://127.0.0.1:${jellyfinPort}`);
 	await card.getByLabel('Who may join the first time').selectOption('everyone');
 	await card.getByRole('button', { name: 'Save' }).click();
+	// Letting everyone join asks once before it is saved.
+	await own.getByRole('button', { name: 'Let everyone join' }).click();
 	await expect(own.getByText('Jellyfin sign-in saved.')).toBeVisible();
 
 	const mum = await fresh(browser);
@@ -155,15 +157,17 @@ test('sign in with Plex makes a member (fake Plex)', async ({ browser }) => {
 	await own.goto('/settings/sign-in');
 	const card = own.locator('section', { has: own.getByRole('heading', { name: 'Sign in with Plex' }) });
 	await card.getByText('Show the Plex button on the sign-in page').click();
+	await card.getByText('Advanced: type the server id').click();
 	await card.getByLabel('Server id people must share (optional)').fill('fake-server');
 	await card.getByLabel('Who may join the first time').selectOption('everyone');
 	await card.getByRole('button', { name: 'Save' }).click();
+	await own.getByRole('button', { name: 'Let everyone join' }).click();
 	await expect(own.getByText('Plex sign-in saved.')).toBeVisible();
 
 	const kid = await fresh(browser);
 	await kid.goto('/login');
 	const popup = kid.waitForEvent('popup');
-	await kid.getByRole('button', { name: 'Continue with Plex' }).click();
+	await kid.getByRole('button', { name: 'Plex', exact: true }).click();
 	await (await popup).waitForLoadState().catch(() => {});
 	await expect(kid).toHaveURL(/\/$/, { timeout: 15_000 });
 	await expect(kid.getByRole('button', { name: 'Account and appearance' })).toBeVisible();

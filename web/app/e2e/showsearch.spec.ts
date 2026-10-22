@@ -28,7 +28,7 @@ const release = (scope: Locator, part: string) => scope.getByTestId('release').f
 
 async function openShow(p: Page, name: string) {
 	await p.goto('/library');
-	await p.locator('.grid .item', { hasText: name }).click();
+	await p.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: name }).click();
 	await expect(p.getByRole('heading', { level: 1 })).toContainText(name);
 }
 

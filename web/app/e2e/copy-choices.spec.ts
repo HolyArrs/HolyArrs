@@ -29,7 +29,9 @@ async function enterApp(page: import('@playwright/test').Page) {
 
 async function paperHarbour(page: import('@playwright/test').Page): Promise<string> {
 	await page.goto('/library');
-	let movie = page.locator('a[href^="/library/"]', { hasText: 'Paper Harbour' }).first();
+	// Wait for the Library to load (its title count shows) before asking whether the movie is there.
+	await expect(page.getByText(/^\d+ titles?$/)).toBeVisible();
+	const movie = page.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: 'Paper Harbour' }).first();
 	if ((await movie.count()) === 0) {
 		const dialog = await addFromSearch(page, 'paper harbour', 'Paper Harbour');
 		await dialog.getByLabel('Search when added').uncheck();
@@ -37,9 +39,9 @@ async function paperHarbour(page: import('@playwright/test').Page): Promise<stri
 		await expect(page).toHaveURL(/\/library\/\d+/);
 		return new URL(page.url()).pathname;
 	}
-	const href = await movie.getAttribute('href');
-	expect(href).toBeTruthy();
-	return href!;
+	const id = await movie.getAttribute('data-title-id');
+	expect(id).toBeTruthy();
+	return `/library/${id}`;
 }
 
 test('copy controls show inspected facts and require explicit choices', async ({ page }) => {

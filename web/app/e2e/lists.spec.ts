@@ -38,8 +38,8 @@ test('a TMDB list adds its movies by itself and skips the Never-add list', async
 	await expect(row.getByTestId('list-result')).toContainText('1 on the Never-add list');
 
 	await page.goto('/library');
-	await expect(page.locator('.grid .item', { hasText: 'Ember Road' })).toBeVisible();
-	await expect(page.locator('.grid .item', { hasText: 'Salt Choir' })).toHaveCount(0);
+	await expect(page.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: 'Ember Road' })).toBeVisible();
+	await expect(page.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: 'Salt Choir' })).toHaveCount(0);
 });
 
 test('a Trakt list needs the Trakt key, then adds its movie', async () => {
@@ -60,7 +60,7 @@ test('a Trakt list needs the Trakt key, then adds its movie', async () => {
 	await row.getByRole('button', { name: 'Read now' }).click();
 	await expect(row.getByTestId('list-result')).toContainText('1 added', { timeout: 15_000 });
 	await page.goto('/library');
-	await expect(page.locator('.grid .item', { hasText: 'Northern Kettle' })).toBeVisible();
+	await expect(page.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: 'Northern Kettle' })).toBeVisible();
 });
 
 test('change, turn off and remove a list; take a movie off the Never-add list', async () => {
