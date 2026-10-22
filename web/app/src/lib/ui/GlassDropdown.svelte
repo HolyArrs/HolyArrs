@@ -30,8 +30,8 @@
 	.word { padding: 4px 12px; border-radius: 6px; font: 600 14px/1.2 var(--font-ui); color: var(--text); cursor: pointer; }
 	.rule { height: 1px; margin: 6px 8px; background: color-mix(in srgb, var(--text) 12%, transparent); }
 	.row { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 6px 8px; border-radius: 6px; color: var(--text); text-decoration: none; }
-	.on { background: var(--accent); color: var(--accent-text, #fff); }
-	.on .sub { color: inherit; opacity: 0.85; }
+	.on { background: var(--accent-fill); color: var(--text-on-red, #fff); }
+	.on .sub { color: inherit; opacity: 1; }
 	.art { flex: none; width: 44px; height: 44px; border-radius: 4px; overflow: hidden; background: var(--surface-3); }
 	.art.round { border-radius: 999px; }
 	.art img { width: 100%; height: 100%; object-fit: cover; }
