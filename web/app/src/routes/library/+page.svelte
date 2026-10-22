@@ -94,14 +94,14 @@
 	let filter = $state<FilterState>(readFilter(page.url.searchParams));
 	let sort = $state(readSort(page.url.searchParams, readKind(page.url.searchParams.get('kind'))));
 	let q = $state(page.url.searchParams.get('q')?.slice(0, 256) ?? '');
-	let groupSeries = $state(page.url.searchParams.get('group') === 'series');
+	let groupSets = $state(page.url.searchParams.get('group') === 'series');
 	$effect(() => {
 		const p = params();
 		kind = readKind(p.get('kind'));
 		filter = readFilter(p);
 		sort = readSort(p, kind);
 		q = p.get('q')?.slice(0, 256) ?? '';
-		groupSeries = p.get('group') === 'series';
+		groupSets = p.get('group') === 'series';
 	});
 	function syncUrl() {
 		const url = new URL((page.shallow?.url ?? page.url).href);
@@ -115,7 +115,7 @@
 		const d = defaultSort(kind === 'all' ? 'all' : kind);
 		set('sort', sort.key === d.key ? null : sort.key);
 		set('dir', sort.dir === (sort.key === d.key ? d.dir : startDir(sort.key)) ? null : sort.dir);
-		set('group', groupSeries ? 'series' : null);
+		set('group', groupSets ? 'series' : null);
 		url.searchParams.delete('layout');
 		void goto(url, { replace: true, shallow: true, reset: false });
 	}
@@ -228,7 +228,7 @@
 	let series = $state<MovieCollection[]>([]);
 	let seriesOfTitle = $state<Map<number, number>>(new Map());
 	let seriesLoaded = false;
-	async function loadSeries() {
+	async function loadSets() {
 		if (seriesLoaded || !moviesOn) return;
 		seriesLoaded = true;
 		try {
@@ -243,7 +243,7 @@
 		}
 	}
 	$effect(() => {
-		if (mounted && (kind === 'movie' || kind === 'all')) void loadSeries();
+		if (mounted && (kind === 'movie' || kind === 'all')) void loadSets();
 	});
 	const seriesName = (id: number) => series.find((s) => s.id === id)?.name ?? 'Movie series';
 
@@ -328,7 +328,7 @@
 		{ kind: 'separator' },
 		{ label: 'Ascending', icon: 'chevronUpDown', checked: sort.dir === 'asc', onselect: () => setSort(sort.key, 'asc') },
 		{ label: 'Descending', icon: 'chevronUpDown', checked: sort.dir === 'desc', onselect: () => setSort(sort.key, 'desc') },
-		...(kind === 'movie' ? ([{ kind: 'separator' }, { label: 'Group by series', icon: 'grid', checked: groupSeries, onselect: () => { groupSeries = !groupSeries; syncUrl(); } }] as MenuItem[]) : [])
+		...(kind === 'movie' ? ([{ kind: 'separator' }, { label: 'Group by series', icon: 'grid', checked: groupSets, onselect: () => { groupSets = !groupSets; syncUrl(); } }] as MenuItem[]) : [])
 	]);
 	const addItems = $derived<MenuItem[]>([
 		...(partOn('movies') ? ([{ label: 'Add a movie', icon: 'film', href: to('/search') }] as MenuItem[]) : []),
@@ -350,18 +350,18 @@
 
 	// ── Entries: rows, with series headers when grouped ──
 	type Entry = { type: 'head'; key: string; id: number; name: string; count: number } | { type: 'row'; key: string; t: TitleView };
-	const grouped = $derived(groupSeries && kind === 'movie');
+	const grouped = $derived(groupSets && kind === 'movie');
 	const entries = $derived.by<Entry[]>(() => {
 		if (!grouped) return shown.map((t) => ({ type: 'row', key: `r${t.id}`, t }));
-		const bySeries = new Map<number, TitleView[]>();
+		const bySet = new Map<number, TitleView[]>();
 		const loose: TitleView[] = [];
 		for (const t of shown) {
 			const s = seriesOfTitle.get(t.id);
-			if (s) bySeries.set(s, [...(bySeries.get(s) ?? []), t]);
+			if (s) bySet.set(s, [...(bySet.get(s) ?? []), t]);
 			else loose.push(t);
 		}
 		const out: Entry[] = [];
-		for (const [id, ts] of [...bySeries].sort((a, b) => seriesName(a[0]).localeCompare(seriesName(b[0])))) {
+		for (const [id, ts] of [...bySet].sort((a, b) => seriesName(a[0]).localeCompare(seriesName(b[0])))) {
 			out.push({ type: 'head', key: `h${id}`, id, name: seriesName(id), count: ts.length });
 			for (const t of ts) out.push({ type: 'row', key: `r${t.id}`, t });
 		}
@@ -858,7 +858,7 @@
 					{/each}
 				</ul>
 			{:else}
-				<div class="rows {view}" class:has-select={selecting} style="--cols: {gridCols}; --table-min: {tableMin}px" bind:this={listEl} bind:clientWidth={listWidth} role="list" aria-label="{kindTitle} titles">
+				<div class="rows {view}" class:has-select={selecting} style="--cols: {gridCols}; --table-min: {tableMin}px" bind:this={listEl} bind:clientWidth={listWidth}>
 					{#if view === 'table' && !phone}
 						<div class="row head" role="presentation">
 							<span class="h banner-h">Banner</span>
@@ -877,7 +877,7 @@
 						</div>
 					{/if}
 					<div class="body" style:height={virtual ? `${offsets[entries.length]}px` : undefined}>
-						<div style:transform={virtual ? `translateY(${offsets[range.start]}px)` : undefined}>
+						<div style:transform={virtual ? `translateY(${offsets[range.start]}px)` : undefined} role="list" aria-label="{kindTitle} titles">
 							{#each slice as e (e.key)}
 								{#if e.type === 'head'}
 									<div class="series-head" use:measure={e.key} data-key={e.key}>
