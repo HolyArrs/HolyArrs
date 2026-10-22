@@ -237,7 +237,7 @@
 	.top :global(:is(a, span, p, button, li)) { text-shadow: 0 1px 3px rgb(0 0 0 / 80%), 0 0 12px rgb(0 0 0 / 50%); }
 	.top { position: absolute; top: clamp(14px, 2vw, 24px); left: clamp(20px, 2vw, 40px); right: 16px; z-index: 2; }
 	/* Netflix keeps the billboard's words in the left ~40%, so the picture stays open. */
-	.content { position: relative; width: clamp(320px, 40%, 600px); padding: 0 clamp(20px, 2vw, 40px) clamp(24px, 2.6vw, 50px); display: flex; flex-direction: column; gap: 10px; transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out); }
+	.content { position: relative; width: clamp(320px, max(40%, min(500px, 60%)), 600px); padding: 0 clamp(20px, 2vw, 40px) clamp(24px, 2.6vw, 50px); display: flex; flex-direction: column; gap: 10px; transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out); }
 	/* About 6 s into the trailer the overview folds (height and opacity, ~1 s ease) and
 	   the logo glides down with it; it unfolds the same way. */
 	.fold { display: grid; min-height: 0; grid-template-rows: minmax(0, 1fr); opacity: 1; transition: grid-template-rows 1100ms var(--ease-hero, cubic-bezier(.4, 0, .2, 1)), opacity 650ms var(--ease-hero, cubic-bezier(.4, 0, .2, 1)); }
