@@ -91,7 +91,7 @@ func GenreAffinity(aff map[string]float64, shares map[string]map[string]float64)
 	for a, gs := range shares {
 		A := aff[a]
 		for g, sh := range gs {
-			if sh <= 0 {
+			if sh <= 0 || g == "" {
 				continue
 			}
 			w[g] += A * sh

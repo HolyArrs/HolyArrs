@@ -907,6 +907,9 @@ func (a *API) personalMusicRows(ctx context.Context, member int64, region, date 
 			return gs[i].g < gs[j].g
 		})
 		for _, x := range gs[:min(3, len(gs))] {
+			if x.g == "" {
+				continue
+			}
 			name, slug := x.g, ""
 			for _, t := range in.tiles {
 				if musicscore.ItemGenre(map[string]float64{x.g: 1}, []string{t.Name, t.Slug}) > 0 {
@@ -945,7 +948,10 @@ func (a *API) personalMusicRows(ctx context.Context, member int64, region, date 
 				cards = append(cards, p.c)
 				sc = append(sc, in.scored(p.c, musicscore.ScoreGenreShelf(P[p.c.MBID], x.v, p.m), in.affMBID[p.c.ArtistMBID], x.v, ""))
 			}
-			label := strings.ToUpper(name[:1]) + name[1:]
+			if name == "" {
+				continue
+			}
+			label := musicscore.Label(name)
 			in.add(MusicRow{ID: "shelf:" + x.g, Type: "genre_shelf", Title: label + " for you", Reason: "One of your top genres: its chart and your artists in it", Shape: "square"},
 				musicscore.Row{Prior: musicscore.PriorMixed}, cards, sc, true, false)
 		}

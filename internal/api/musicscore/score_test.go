@@ -130,3 +130,22 @@ func mustDay(s string) time.Time {
 	d, _ := time.Parse("2006-01-02", s)
 	return d
 }
+
+func TestEmptyAndNonASCIIGenres(t *testing.T) {
+	sh := Shares(map[string]int{"": 5, " ": 2, "électro": 3})
+	if _, ok := sh[""]; ok || !near(sh["électro"], 0.3) {
+		t.Fatalf("shares %v", sh)
+	}
+	g := GenreAffinity(map[string]float64{"a": 1, "b": 1}, map[string]map[string]float64{"a": {"": 1, "électro": 1}, "b": {"": 1, "électro": 1}})
+	if _, ok := g[""]; ok || g["électro"] != 1 {
+		t.Fatalf("G %v", g)
+	}
+	for in, want := range map[string]string{"": "", "électro": "Électro", "ß": "ß", "rock": "Rock"} {
+		if got := Label(in); got != want {
+			t.Errorf("Label(%q) = %q, want %q", in, got, want)
+		}
+	}
+	if bad := string([]byte{0xff, 'a'}); Label(bad) != bad {
+		t.Error("invalid UTF-8 must stay as it is")
+	}
+}

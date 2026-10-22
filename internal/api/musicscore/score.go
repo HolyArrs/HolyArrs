@@ -4,6 +4,8 @@ import (
 	"math"
 	"sort"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 )
 
 // Phase 3 (plan 2026-10-22 §2.1, §2.3, §2.6): the row formulas, the
@@ -54,8 +56,8 @@ func Shares(votes map[string]int) map[string]float64 {
 		return out
 	}
 	for g, n := range votes {
-		if n >= 1 {
-			out[GenreKey(g)] += float64(n) / float64(total)
+		if k := GenreKey(g); n >= 1 && k != "" {
+			out[k] += float64(n) / float64(total)
 		}
 	}
 	return out
@@ -187,4 +189,14 @@ func Items(list []Scored) []Item {
 		out[i] = x.Item
 	}
 	return out
+}
+
+// Label capitalises a genre name's first letter (rune-safe); empty stays
+// empty.
+func Label(name string) string {
+	r, n := utf8.DecodeRuneInString(name)
+	if n == 0 || r == utf8.RuneError {
+		return name
+	}
+	return string(unicode.ToUpper(r)) + name[n:]
 }
