@@ -2,7 +2,7 @@
 import { to } from './paths.ts';
 
 export type PageAlbumState = 'complete' | 'partial' | 'missing' | 'downloading' | 'not_out_yet' | 'not_included' | '';
-export type Shelf = 'albums' | 'singles' | 'live' | 'other';
+export type Shelf = 'albums' | 'singles' | 'compilations' | 'live' | 'other';
 
 export interface PageAlbum {
 	mbid: string;
@@ -76,6 +76,21 @@ export interface ArtistPageData {
 	similar: PageArtist[];
 	related: PageArtist[];
 	kid: boolean;
+	/** What "Ask for all missing" asks: released items the Library does not keep. */
+	missing?: { count: number; size_bytes: number; albums: string[] };
+}
+
+/** PageCredit is a release on another artist's page or a neighbour's top album. */
+export interface PageCredit extends PageAlbum {
+	artist_mbid: string;
+	artist_name: string;
+	listeners?: number;
+}
+
+/** ArtistMoreData answers ?part=more: Essential albums (ids) and Appears on. */
+export interface ArtistMoreData {
+	essential: string[];
+	appears_on: PageCredit[];
 }
 
 export interface PageTrack {
@@ -100,13 +115,22 @@ export interface AlbumCoreData {
 	kid: boolean;
 }
 
+/** PageEdition is one edition of an album, with its own track list. */
+export interface PageEdition {
+	mbid: string;
+	label: string;
+	tracks: number;
+	date?: string;
+	list?: PageTrack[];
+}
+
 export interface AlbumPageData extends PageAlbum {
 	artist: PageArtist;
 	title_id?: number;
 	label?: string;
 	length_ms: number;
 	tracks: PageTrack[];
-	editions: { mbid: string; label: string; tracks: number; date?: string }[];
+	editions: PageEdition[];
 	more_by: PageAlbum[];
 	similar: PageArtist[];
 	kid: boolean;
@@ -170,7 +194,8 @@ export const kept = (a: Pick<PageAlbum, 'state'>) => !!a.state && a.state !== 'n
 export const SHELVES: { shelf: Shelf; title: string }[] = [
 	{ shelf: 'albums', title: 'Albums' },
 	{ shelf: 'singles', title: 'EPs and singles' },
-	{ shelf: 'live', title: 'Live and compilations' },
+	{ shelf: 'compilations', title: 'Compilations' },
+	{ shelf: 'live', title: 'Live' },
 	{ shelf: 'other', title: 'Soundtracks, remixes and more' }
 ];
 
@@ -202,4 +227,10 @@ export function kindWord(a: Pick<PageAlbum, 'type' | 'secondary_types'>): string
 export function haveLine(have: number, total: number): string {
 	if (!total) return '';
 	return `On HolyArrs: ${have} of ${total} ${total === 1 ? 'release' : 'releases'}`;
+}
+
+/** aboutSize writes a byte count as "about 1.2 GB" for the confirm line. */
+export function aboutSize(bytes: number): string {
+	if (bytes >= 1 << 30) return `about ${(bytes / (1 << 30)).toFixed(1)} GB`;
+	return `about ${Math.max(1, Math.round(bytes / (1 << 20)))} MB`;
 }
