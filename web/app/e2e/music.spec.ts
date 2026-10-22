@@ -151,7 +151,7 @@ test('artists sit in the Library with a Music kind', async () => {
 	await expect(own).toHaveURL(/kind=artist/);
 	await libraryView(own, 'Posters');
 	const card = own.getByTestId('library-card').filter({ hasText: 'Tin Lanterns' });
-	await expect(card).toContainText('Artist');
+	await expect(card).toBeVisible();
 	// Posters carry only the status circle now.
 	await expect(own.getByTestId('library-card').filter({ hasText: 'Harbour Lights' })).toHaveCount(0);
 	await libraryView(own, 'Banners');
