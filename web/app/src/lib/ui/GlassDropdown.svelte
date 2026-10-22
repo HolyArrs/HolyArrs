@@ -33,9 +33,10 @@
 	/* On a phone the field sits in a sticky strip where the blur does not
 	   reach the page, so the results below showed through; use the solid fill. */
 	@media (max-width: 767px) { .glass { background: var(--surface-2); } }
-	.word { padding: 4px 12px; border-radius: 6px; font: 600 14px/1.2 var(--font-ui); color: var(--text); cursor: pointer; }
+	.word { display: flex; align-items: center; min-height: 32px; padding: 0 8px; border-radius: 6px; font: 600 14px/1.2 var(--font-ui); color: var(--text); cursor: pointer; }
 	.rule { height: 1px; margin: 6px 8px; background: color-mix(in srgb, var(--text) 12%, transparent); }
 	.row { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 6px 8px; border-radius: 6px; color: var(--text); text-decoration: none; }
+	@media (hover: hover) { .word:not(.on):hover, .row:not(.on):hover { background: color-mix(in srgb, var(--text) 7%, transparent); } }
 	.on { background: var(--accent-fill); color: var(--text-on-red, #fff); }
 	.on .sub { color: inherit; opacity: 1; }
 	.art { flex: none; width: 44px; height: 44px; border-radius: 4px; overflow: hidden; background: var(--surface-3); }
