@@ -57,9 +57,11 @@
 		error = '';
 		// All at once: the hero, the tracks, the similar artists and the ask state.
 		void api.get<AlbumCoreData>(`/music/albums/${mbid}?part=core&artist=${artist}`).then((c) => still() && !data && (core = c)).catch(() => {});
-		void api.get<{ similar: PageArtist[] }>(`/music/artists/${artist}?part=similar&n=14`).then((r) => still() && (similar = r.similar)).catch(() => still() && (similar = []));
+		// A bare album link has no artist: skip the artist calls instead of asking for /music/artists/.
+		if (!artist) similar = [];
+		else void api.get<{ similar: PageArtist[] }>(`/music/artists/${artist}?part=similar&n=14`).then((r) => still() && (similar = r.similar)).catch(() => still() && (similar = []));
 		void api.get<{ near: PageCredit[] }>(`/music/albums/${mbid}?part=near&artist=${artist}`).then((r) => still() && (near = r.near)).catch(() => still() && (near = []));
-		void api.get<{ artists: LookupArtist[] }>(`/artists/lookup?term=${encodeURIComponent(`mbid:${artist}`)}`).then((r) => {
+		if (artist) void api.get<{ artists: LookupArtist[] }>(`/artists/lookup?term=${encodeURIComponent(`mbid:${artist}`)}`).then((r) => {
 			if (still()) lookup = r.artists[0] ?? null;
 		}).catch(() => {});
 		void api.get<AlbumPageData>(`/music/albums/${mbid}?artist=${artist}&similar=0`).then((d) => {
