@@ -38,9 +38,14 @@
 <style>
 	.ui-topbar {
 		position: sticky; top: 0; z-index: 30; height: var(--topbar); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px;
-		padding: 0 var(--gutter); background: color-mix(in srgb, var(--bg) 82%, transparent);
-		backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid var(--line);
+		padding: 0 var(--gutter); background: color-mix(in srgb, var(--bg) 82%, transparent); border-bottom: 1px solid var(--line);
 	}
+	/* The blur sits on a layer behind the bar, not on the bar itself: a
+	   backdrop-filter on the bar would make it a backdrop root, so the search
+	   dropdown's own glass could not see the page below and the page showed
+	   through it. */
+	.ui-topbar::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); }
+	:global(html.over-hero) .ui-topbar::before { -webkit-backdrop-filter: none; backdrop-filter: none; }
 	/* Glides with the pills (--bar-glide, app.css): transform only, no fade. */
 	.ui-topbar { will-change: transform; }
 	.ui-topbar.away { transform: translateY(-100%); pointer-events: none; }
