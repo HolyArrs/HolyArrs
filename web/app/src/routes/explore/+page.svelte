@@ -697,6 +697,8 @@
 	/* Reduced motion: the same compact size, without the animation. */
 	@media (prefers-reduced-motion: reduce) { .types :global(.ui-seg), .types :global(.ui-seg .thumb), .genre-pick { transition: none; } }
 	@media (max-width: 767px) { .types :global(.ui-seg) { display: grid; width: 100%; } .types :global(.ui-seg button) { padding: 0 8px; } }
+	/* Phones: the words win, the glyphs step aside, so no label is clipped. */
+	@media (min-width: 360px) and (max-width: 479px) { .types :global(.ui-seg button svg) { display: none; } }
 	@media (max-width: 359px) {
 		.types :global(.ui-seg button span) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 	}
