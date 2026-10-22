@@ -549,7 +549,6 @@ export function writeServices(region: string, ids: number[], raw: string | null)
 // ---- The type switch (All · Movies · Shows · Music) ----
 
 export type ExploreType = 'all' | 'movies' | 'shows' | 'music';
-export const exploreTypes: ExploreType[] = ['all', 'movies', 'shows', 'music'];
 const typeKind: Record<Exclude<ExploreType, 'all'>, CardKind> = { movies: 'movie', shows: 'show', music: 'artist' };
 /** The shelves that hold one kind only, and the type they belong to. */
 const kindRows: Record<string, Exclude<ExploreType, 'all'>> = { movies: 'movies', shows: 'shows', music: 'music' };

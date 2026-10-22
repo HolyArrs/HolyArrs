@@ -46,10 +46,6 @@ export function setTheme(t: ThemeChoice) {
 	}
 }
 
-export function toggleTheme() {
-	setTheme(theme.value === 'dark' ? 'light' : 'dark');
-}
-
 // Follow the system while the person has not picked one.
 if (typeof matchMedia !== 'undefined') {
 	try {

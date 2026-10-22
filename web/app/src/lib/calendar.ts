@@ -9,8 +9,6 @@ export const kindWord: Record<CalendarEntry['kind'], string> = {
 	episode: 'Episode',
 	album: 'Album release'
 };
-export const kindShort: Record<CalendarEntry['kind'], string> = { cinema: 'Cinema', digital: 'Digital', physical: 'Disc', episode: 'Episode', album: 'Album' };
-
 /** Which titles the calendar shows. */
 export type TitlesShown = 'all' | 'movies' | 'shows' | 'music';
 

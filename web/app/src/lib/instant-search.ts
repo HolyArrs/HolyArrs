@@ -27,17 +27,10 @@ export interface Section {
 	more?: string;
 }
 
-export const sectionLabels: Record<SectionId, string> = { library: 'Library', movies: 'Movies', shows: 'TV shows', music: 'Music' };
 export const PER_SECTION = 5;
-
-const kindWords: Record<string, string> = { movie: 'Movie', show: 'TV show', artist: 'Artist' };
 
 export function searchPath(q: string, kind?: 'show' | 'music'): string {
 	return `/search?q=${encodeURIComponent(q.trim())}${kind ? `&kind=${kind}` : ''}`;
-}
-
-export function libraryHits(titles: TitleView[]): Hit[] {
-	return titles.slice(0, PER_SECTION).map((t) => ({ key: `l${t.id}`, name: t.name, year: t.year, kindWord: kindWords[t.kind] ?? 'Title', poster: t.artwork?.[0], href: `/library/${t.id}`, inLibrary: true }));
 }
 
 /** libraryByTmdb maps "kind:tmdb" to a Library title id, to mark online hits. */

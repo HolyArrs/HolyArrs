@@ -35,15 +35,6 @@ export function setAutoplaySetting(on: boolean) {
 	state.loaded = true;
 }
 
-export const uiSettings = {
-	get autoplay() {
-		return state.autoplay;
-	},
-	get loaded() {
-		return state.loaded;
-	}
-};
-
 /** autoplayHere says whether Layer 2 may start in this browser for this person. */
 export function autoplayHere(): boolean {
 	return state.loaded && mayAutoplay({ setting: state.autoplay, kid: session.kid, pref: autoplayPref(), ...browserConditions() });
