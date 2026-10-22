@@ -11,6 +11,7 @@
 	import Icon from '#lib/Icon.svelte';
 	import type { ApiKey } from '#lib/types.ts';
 	import { session } from '#lib/session.svelte.ts';
+	import Sheet from '#lib/ui/Sheet.svelte';
 
 	let skipLocal = $state(false);
 	let loaded = $state(false);
@@ -43,6 +44,7 @@
 		plex: Way;
 		jellyfin: Way;
 		emby: Way;
+		plex_owner?: { linked: boolean; name: string; can_import: boolean };
 	}
 	const blank = (): Way => ({ on: false, url: '', server_id: '', join: 'nobody', allow: '' });
 	let ways = $state<Record<WayName, Way>>({ plex: blank(), jellyfin: blank(), emby: blank() });
@@ -52,19 +54,170 @@
 	let savingWay = $state<WayName | ''>('');
 	const isOwner = $derived(session.s.role === 'owner');
 	const wayWord: Record<WayName, string> = { plex: 'Plex', jellyfin: 'Jellyfin', emby: 'Emby' };
+	// The join rule as last saved: opening a way to everyone needs a confirm step.
+	let savedJoin = $state<Record<WayName, Way['join']>>({ plex: 'nobody', jellyfin: 'nobody', emby: 'nobody' });
+	let plexOwner = $state({ linked: false, name: '', can_import: false });
+
+	// (a) Link my Plex account: a PIN the owner confirms on plex.tv themselves.
+	let linking = $state(false);
+	let linkNote = $state('');
+	let plexServers = $state<{ id: string; name: string }[]>([]);
+	type LinkDone = { name: string; servers: { id: string; name: string }[] };
+	async function linkPlex() {
+		linking = true;
+		linkNote = 'Confirm on the Plex page that opened. This waits up to 10 minutes.';
+		const win = window.open('about:blank', 'plex-link', 'width=600,height=720');
+		try {
+			const r = await api.post<{ id: number; auth_url: string }>('/auth/plex/link/start', {});
+			if (win) win.location.href = r.auth_url;
+			else linkNote = 'Your browser blocked the Plex window. Allow pop-ups for HolyArrs and try again.';
+			const until = Date.now() + 10 * 60 * 1000;
+			while (Date.now() < until) {
+				await new Promise((ok) => setTimeout(ok, 2000));
+				let done: LinkDone | { waiting: true };
+				try {
+					done = await api.post<LinkDone | { waiting: true }>('/auth/plex/link/finish', { id: r.id });
+				} catch (err) {
+					if (err instanceof ApiError && err.status === 429) continue;
+					throw err;
+				}
+				if ('waiting' in done) continue;
+				plexServers = done.servers;
+				plexOwner = { linked: true, name: done.name, can_import: true };
+				if (!ways.plex.server_id && done.servers.length === 1) ways.plex.server_id = done.servers[0].id;
+				linkNote = done.servers.length ? 'Linked. Pick the server people must share, then Save.' : 'Linked. Plex lists no server you own.';
+				toasts.push(`Plex account ${done.name} linked.`, 'ok');
+				return;
+			}
+			linkNote = 'The Plex sign-in timed out. Start again.';
+		} catch (err) {
+			linkNote = strongNote(err);
+		} finally {
+			linking = false;
+			try {
+				win?.close();
+			} catch {
+				// the window may already be gone
+			}
+		}
+	}
+	async function unlinkPlex() {
+		if (!confirm('Unlink your Plex account? HolyArrs forgets the Plex key it kept for importing people.')) return;
+		try {
+			plexOwner = await api.del<{ linked: boolean; name: string; can_import: boolean }>('/auth/plex/link');
+			plexServers = [];
+			toasts.push('Plex account unlinked.', 'ok');
+		} catch (err) {
+			toasts.push(strongNote(err), 'fail');
+		}
+	}
+
+	// (b) Test a Jellyfin or Emby address from the server side.
+	let testing = $state<WayName | ''>('');
+	let tested = $state<Partial<Record<WayName, { ok: boolean; text: string }>>>({});
+	async function testUrl(w: WayName) {
+		testing = w;
+		try {
+			const r = await api.post<{ ok: boolean; name?: string; version?: string; product?: string; message?: string }>(`/auth/media-server/${w}/test`, { url: ways[w].url });
+			tested[w] = r.ok ? { ok: true, text: `Found ${r.name || 'a server'}${r.version ? ` (${r.product || wayWord[w]} ${r.version})` : ''}.` } : { ok: false, text: r.message || 'No answer.' };
+		} catch (err) {
+			tested[w] = { ok: false, text: strongNote(err) };
+		} finally {
+			testing = '';
+		}
+	}
+
+	// (c) Import members: a preview list, then the owner confirms.
+	interface Candidate {
+		id: string;
+		name: string;
+		email?: string;
+		kid: boolean;
+		server_admin: boolean;
+		linked_to?: string;
+	}
+	let importFor = $state<WayName | ''>('');
+	let importOpen = $state(false);
+	let importName = $state('');
+	let importPass = $state('');
+	let importBusy = $state(false);
+	let importNote = $state('');
+	let candidates = $state<Candidate[] | null>(null);
+	let picked = $state<Record<string, { on: boolean; kid: boolean }>>({});
+	let lastCount = $state<Partial<Record<WayName, number>>>({});
+	function openImport(w: WayName) {
+		importFor = w;
+		candidates = null;
+		importNote = '';
+		importName = '';
+		importPass = '';
+		importOpen = true;
+		if (w === 'plex') void preview();
+	}
+	async function preview(e?: SubmitEvent) {
+		e?.preventDefault();
+		if (!importFor) return;
+		const w = importFor;
+		importBusy = true;
+		importNote = '';
+		try {
+			const body = w === 'plex' ? {} : { name: importName, password: importPass };
+			const r = await api.post<{ people: Candidate[] }>(`/auth/import/${w}/preview`, body);
+			importPass = '';
+			candidates = r.people;
+			lastCount[w] = r.people.length;
+			picked = Object.fromEntries(r.people.map((p) => [p.id, { on: !p.linked_to, kid: p.kid }]));
+		} catch (err) {
+			importNote = strongNote(err);
+		} finally {
+			importBusy = false;
+		}
+	}
+	const pickedCount = $derived(candidates ? candidates.filter((p) => !p.linked_to && picked[p.id]?.on).length : 0);
+	async function runImport() {
+		if (!candidates || !importFor) return;
+		const people = candidates.filter((p) => !p.linked_to && picked[p.id]?.on).map((p) => ({ id: p.id, kid: picked[p.id].kid }));
+		importBusy = true;
+		try {
+			const r = await api.post<{ made: string[]; skipped: number }>(`/auth/import/${importFor}`, { people });
+			toasts.push(r.made.length ? `Made ${r.made.length} ${r.made.length === 1 ? 'person' : 'people'}: ${r.made.join(', ')}.` : 'Nobody new to make.', 'ok');
+			importOpen = false;
+		} catch (err) {
+			importNote = strongNote(err);
+		} finally {
+			importBusy = false;
+		}
+	}
+
+	// (d) Opening a way to everyone asks first.
+	let everyoneFor = $state<WayName | ''>('');
+	let everyoneOpen = $state(false);
+	function everyoneText(w: WayName): string {
+		const n = lastCount[w];
+		const who = w === 'plex' ? (ways.plex.server_id ? 'everyone your Plex server is shared with' : 'every Plex account') : `everyone with an account on your ${wayWord[w]} server`;
+		return `This lets ${who} make a HolyArrs account the first time they sign in${n !== undefined ? ` (the last import list showed ${n} ${n === 1 ? 'person' : 'people'})` : ''}. They join as Members who may ask for titles.`;
+	}
 
 	function took(r: SignInSettings) {
 		skipLocal = r.skip_login_local_network;
 		requireAdmins = r.require_two_factor_admins;
 		minLength = r.min_password_length ?? 4;
 		ways = { plex: { ...blank(), ...r.plex }, jellyfin: { ...blank(), ...r.jellyfin }, emby: { ...blank(), ...r.emby } };
+		savedJoin = { plex: ways.plex.join, jellyfin: ways.jellyfin.join, emby: ways.emby.join };
+		if (r.plex_owner) plexOwner = r.plex_owner;
 	}
 
-	async function saveWay(w: WayName, e: SubmitEvent) {
-		e.preventDefault();
+	async function saveWay(w: WayName, e?: SubmitEvent, confirmed = false) {
+		e?.preventDefault();
+		if (ways[w].join === 'everyone' && savedJoin[w] !== 'everyone' && !confirmed) {
+			everyoneFor = w;
+			everyoneOpen = true;
+			return;
+		}
+		everyoneOpen = false;
 		savingWay = w;
 		try {
-			took(await api.put<SignInSettings>('/auth/settings', { [w]: ways[w] }));
+			took(await api.put<SignInSettings>('/auth/settings', { [w]: ways[w], ...(confirmed ? { confirm_everyone: true } : {}) }));
 			toasts.push(`${wayWord[w]} sign-in saved.`, 'ok');
 		} catch (err) {
 			toasts.push(strongNote(err), 'fail');
@@ -240,13 +393,40 @@
 						<span>Show the {wayWord[w]} button on the sign-in page</span>
 					</label>
 					{#if w === 'plex'}
-						<Field id="{w}-server" label="Server id people must share (optional)" hint="Your Plex server's machine identifier. When set, only people your server is shared with may join.">
-							<input id="{w}-server" class="input mono" bind:value={ways[w].server_id} maxlength="200" spellcheck="false" />
-						</Field>
+						<div class="link-row">
+							{#if plexOwner.linked}
+								<p class="small">Linked to the Plex account <b>{plexOwner.name}</b>.</p>
+								{#if isOwner}<Button variant="plain" type="button" onclick={unlinkPlex}>Unlink</Button>{/if}
+							{:else}
+								<p class="small muted">Link your own Plex account to pick your server from a list and import the people you share it with.</p>
+							{/if}
+							{#if isOwner}
+								<Button type="button" onclick={linkPlex} disabled={linking} aria-busy={linking}>{plexOwner.linked ? 'Link again' : 'Link my Plex account'}</Button>
+							{/if}
+						</div>
+						{#if linkNote}<p class="hint" role="status">{linkNote}</p>{/if}
+						{#if plexServers.length}
+							<Field id="{w}-pick" label="Server people must share">
+								<select id="{w}-pick" class="input" bind:value={ways[w].server_id}>
+									<option value="">Any server (no share check)</option>
+									{#each plexServers as sv (sv.id)}<option value={sv.id}>{sv.name}</option>{/each}
+								</select>
+							</Field>
+						{/if}
+						<details class="adv">
+							<summary class="small">Advanced: type the server id</summary>
+							<Field id="{w}-server" label="Server id people must share (optional)" hint="Your Plex server's machine identifier. When set, only people your server is shared with may join.">
+								<input id="{w}-server" class="input mono" bind:value={ways[w].server_id} maxlength="200" spellcheck="false" />
+							</Field>
+						</details>
 					{:else}
 						<Field id="{w}-url" label="{wayWord[w]} server address">
-							<input id="{w}-url" class="input mono" bind:value={ways[w].url} placeholder="http://192.168.1.10:8096" maxlength="500" spellcheck="false" />
+							<div class="row">
+								<input id="{w}-url" class="input mono grow" bind:value={ways[w].url} oninput={() => (tested[w] = undefined)} placeholder="http://192.168.1.10:8096" maxlength="500" spellcheck="false" />
+								<Button type="button" onclick={() => testUrl(w)} disabled={!ways[w].url || testing === w} aria-busy={testing === w}>Test</Button>
+							</div>
 						</Field>
+						{#if tested[w]}<p class="notice {tested[w]?.ok ? 'ok' : 'warn'}" role="status">{tested[w]?.text}</p>{/if}
 					{/if}
 					<Field id="{w}-join" label="Who may join the first time" hint="New people join as Members who may ask for titles. Change them on the Users page.">
 						<select id="{w}-join" class="input" bind:value={ways[w].join}>
@@ -261,7 +441,15 @@
 						</Field>
 					{/if}
 					{#if isOwner}
-						<Button variant="primary" type="submit" disabled={savingWay === w} aria-busy={savingWay === w}>Save</Button>
+						<div class="row">
+							<Button variant="primary" type="submit" disabled={savingWay === w} aria-busy={savingWay === w}>Save</Button>
+							<Button
+								type="button"
+								onclick={() => openImport(w)}
+								disabled={w === 'plex' ? !plexOwner.can_import : !ways[w].url}
+								title={w === 'plex' && !plexOwner.can_import ? 'Link your Plex account first' : undefined}>Import members</Button
+							>
+						</div>
 					{/if}
 				</fieldset>
 			</form>
@@ -270,8 +458,8 @@
 
 	<SettingsCard id="proxy-card" title="Trusted proxies">
 		<p class="small muted" style="margin-top: var(--s-2)">
-			If HolyArrs sits behind a reverse proxy, list the proxy addresses in <code>HOLYARRS_TRUSTED_PROXIES</code> and extra host
-			names in <code>HOLYARRS_ALLOWED_HOSTS</code> when you start it. Editing them here comes in a later stage.
+			Set when HolyArrs starts, not here: list your reverse proxy addresses in <code>HOLYARRS_TRUSTED_PROXIES</code> and extra host
+			names in <code>HOLYARRS_ALLOWED_HOSTS</code>. Without a proxy, nothing is needed.
 		</p>
 	</SettingsCard>
 
@@ -317,7 +505,80 @@
 	</SettingsCard>
 {/if}
 
+<Sheet bind:open={importOpen} title={importFor ? `Import members from ${wayWord[importFor]}` : 'Import members'} size="md">
+	{#if importFor && importFor !== 'plex' && !candidates}
+		<form class="imp" onsubmit={preview}>
+			<p class="small muted">Sign in once as an admin of your {wayWord[importFor]} server to list its people. HolyArrs ends that session right after and keeps neither the name nor the password.</p>
+			<Field id="imp-name" label="Admin name"><input id="imp-name" class="input" bind:value={importName} autocomplete="off" required maxlength="128" /></Field>
+			<Field id="imp-pass" label="Admin password"><input id="imp-pass" class="input" type="password" bind:value={importPass} autocomplete="off" maxlength="256" /></Field>
+			<Button variant="primary" type="submit" disabled={importBusy || !importName} aria-busy={importBusy}>Show people</Button>
+		</form>
+	{:else if !candidates}
+		{#if !importNote}<SkSettings rows={3} />{/if}
+	{:else if candidates.length === 0}
+		<p class="small muted">Nobody to import: the server lists no one else.</p>
+	{:else}
+		<p class="small muted">Nothing is made until you press Import. People join as Members who may ask for titles; Kid means asks only, rated PG or lower. Server admins do not become HolyArrs admins.</p>
+		<ul class="rows imp-list">
+			{#each candidates as p (p.id)}
+				<li>
+					<label class="checkline grow">
+						<input type="checkbox" bind:checked={picked[p.id].on} disabled={!!p.linked_to} />
+						<span>
+							<span class="name">{p.name}</span>
+							{#if p.email}<span class="xs muted"> {p.email}</span>{/if}
+							{#if p.linked_to}<span class="xs muted"> · already {p.linked_to}</span>{/if}
+							{#if p.server_admin}<span class="chip">server admin</span>{/if}
+						</span>
+					</label>
+					<label class="checkline xs"><input type="checkbox" bind:checked={picked[p.id].kid} disabled={!!p.linked_to || !picked[p.id].on} /> Kid</label>
+				</li>
+			{/each}
+		</ul>
+	{/if}
+	{#if importNote}<p class="notice warn" role="alert">{importNote}</p>{/if}
+	{#snippet footer()}
+		<Button variant="plain" type="button" onclick={() => (importOpen = false)}>Cancel</Button>
+		{#if candidates && candidates.length}
+			<Button variant="primary" type="button" onclick={runImport} disabled={importBusy || pickedCount === 0} aria-busy={importBusy}>Import {pickedCount}</Button>
+		{/if}
+	{/snippet}
+</Sheet>
+
+<Sheet bind:open={everyoneOpen} title="Let everyone join?" size="sm">
+	{#if everyoneFor}<p class="small">{everyoneText(everyoneFor)}</p>{/if}
+	{#snippet footer()}
+		<Button variant="plain" type="button" onclick={() => (everyoneOpen = false)}>Cancel</Button>
+		<Button variant="primary" type="button" onclick={() => everyoneFor && saveWay(everyoneFor, undefined, true)}>Let everyone join</Button>
+	{/snippet}
+</Sheet>
+
 <style>
+	.link-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--s-3);
+	}
+	.adv summary {
+		cursor: pointer;
+		color: var(--text-muted);
+	}
+	.imp {
+		display: grid;
+		gap: var(--s-3);
+	}
+	.imp :global(button) {
+		justify-self: start;
+	}
+	.imp-list li {
+		display: flex;
+		align-items: center;
+		gap: var(--s-3);
+	}
+	.imp-list .chip {
+		margin-left: 6px;
+	}
 	.passwords fieldset {
 		border: 0;
 		padding: 0;
