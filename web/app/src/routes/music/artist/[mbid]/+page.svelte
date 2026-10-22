@@ -36,9 +36,10 @@
 	let data = $state<ArtistPageData | null>(null);
 	let similar = $state<PageArtist[] | null>(null);
 	let more = $state<ArtistMoreData | null>(null);
-	let shelfPick = $state<ShelfKind | 'all'>('all');
+	let shelfPick = $state<ShelfKind | 'all'>('albums');
 	let havePick = $state<'all' | 'have' | 'missing'>('all');
 	let confirmAll = $state(false);
+	let discoAll = $state(false);
 	let askingAll = $state(false);
 	let aboutEl: HTMLElement | undefined = $state();
 	let error = $state('');
@@ -107,7 +108,8 @@
 		data = null;
 		similar = null;
 		more = null;
-		shelfPick = 'all';
+		shelfPick = 'albums';
+		discoAll = false;
 		havePick = 'all';
 		confirmAll = false;
 		lookup = null;
@@ -138,6 +140,11 @@
 	// The discography chips: only kinds this artist has; have/missing by Library state.
 	const kinds = $derived(SHELVES.filter((s) => released.some((a) => a.shelf === s.shelf)));
 	const disco = $derived(released.filter((a) => (shelfPick === 'all' || a.shelf === shelfPick) && (havePick === 'all' || (havePick === 'have' ? a.state === 'complete' || a.state === 'partial' : !(a.state === 'complete' || a.state === 'partial')))));
+	// Albums first when the artist has any; a long list shows 18 until Show all.
+	const shown = $derived(discoAll ? disco : disco.slice(0, 18));
+	$effect(() => {
+		if (data && shelfPick !== 'all' && !kinds.some((k) => k.shelf === shelfPick)) shelfPick = 'all';
+	});
 	const essential = $derived.by(() => {
 		if (!data || !more) return [];
 		const by = new Map(data.albums.map((a) => [a.mbid, a]));
@@ -363,7 +370,8 @@
 							<Chip label="Missing" icon="dash" selected={havePick === 'missing'} onclick={() => (havePick = havePick === 'missing' ? 'all' : 'missing')} />
 						</div>
 						{#if disco.length}
-							<ul class="grid">{#each disco as a, i (a.mbid)}<li>{@render albumCard(a, i < 6)}</li>{/each}</ul>
+							<ul class="grid">{#each shown as a, i (a.mbid)}<li>{@render albumCard(a, i < 6)}</li>{/each}</ul>
+							{#if disco.length > shown.length}<div><Button onclick={() => (discoAll = true)}>Show all {disco.length}</Button></div>{/if}
 						{:else}
 							<p class="quiet">Nothing here with these filters.</p>
 						{/if}
@@ -450,7 +458,7 @@
 	.hero { --hero-ink: #07080a; position: relative; isolation: isolate; min-height: clamp(460px, 52vw, 640px); display: flex; align-items: flex-end; justify-content: center; overflow: hidden; margin: calc(var(--s-6) * -1) calc(var(--gutter) * -1) 0; background: var(--hero-ink); color: #fff; }
 	.stage { position: absolute; inset: -6%; z-index: -2; animation: pan 48s ease-in-out infinite alternate; }
 	.art { width: 100%; height: 100%; object-fit: cover; object-position: center 22%; opacity: 0; transition: opacity 600ms ease-out; }
-	.art.in { opacity: .55; }
+	.art.in { opacity: .45; }
 	.art.soft { filter: blur(56px) saturate(150%); transform: scale(1.3); }
 	.art.soft.in { opacity: .6; }
 	@keyframes pan { from { transform: scale(1.04) translate3d(-2%, -1%, 0); } to { transform: scale(1.12) translate3d(2%, 1.5%, 0); } }
