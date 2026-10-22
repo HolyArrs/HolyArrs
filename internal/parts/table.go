@@ -509,6 +509,7 @@ var Screens = map[string]Owner{
 	"/search":                      Media,
 	"/title/[kind]/[tmdb]":         Media,
 	"/music/artist/[mbid]":         music,
+	"/music/genre/[slug]":          music,
 	"/music/album/[mbid]":          music,
 	"/calendar":                    Media,
 	"/wishlist":                    wishlist,
