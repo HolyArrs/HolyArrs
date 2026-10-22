@@ -7,7 +7,9 @@
 	import type { OwnedIndex } from './explore.ts';
 	import { defaultRegion } from './region.ts';
 	import { coverFor } from './music-pages.ts';
-	import { fetchMusicExplore, musicCardHref, musicCardNote, musicImage, releaseWords, type MusicCardData, type MusicExploreAnswer } from './music-trending.ts';
+	import { fetchMusicExplore, genreHref, musicCardHref, musicCardNote, musicImage, musicStatus, releaseWords, songAskHref, type MusicCardData, type MusicExploreAnswer } from './music-trending.ts';
+	import GenreTile from './ui/GenreTile.svelte';
+	import SongLine from './ui/SongLine.svelte';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './types.ts';
 	import Shelf from './ui/Shelf.svelte';
 	import PosterCard from './ui/PosterCard.svelte';
@@ -205,9 +207,11 @@
 {#if answer?.kid}
 	<EmptyState icon="music" title="Music is not shown on this account" text="Music has no age ratings, so it stays off for accounts with an age limit." />
 {:else if answer || !failed}
-	<section class="music" data-testid="music-trending" aria-busy={!answer || undefined}>
-		<!-- The chip bar keeps its height: placeholder chips until the genres are known. -->
-		{#if chips.length}
+	<section class="music" class:v2={answer?.v2} data-testid="music-trending" aria-busy={!answer || undefined}>
+		<!-- The chip bar keeps its height: placeholder chips until the genres are known. The v2 rows have genre tiles instead. -->
+		{#if answer?.v2}
+			<!-- no chips -->
+		{:else if chips.length}
 			<div class="chips" role="group" aria-label="Genres" data-testid="music-genres">
 				<!-- The same chips as the Movies and Shows genre picker. -->
 				<Chip label="All" selected={genre === ''} onclick={() => chip('')} />
@@ -245,6 +249,23 @@
 		{/if}
 
 		{#each answer?.rows ?? [] as row, ri (row.id)}
+			{#if row.shape === 'tile' || row.shape === 'song'}
+			<section class="row plain" data-testid="music-row-{row.type}">
+				<h2 class="rhead">{row.title}</h2>
+				{#if row.shape === 'tile'}
+					<div class="tiles">
+						{#each row.items as c (c.key)}<GenreTile name={c.name} href={genreHref(c)} hue={c.hue ?? 0} art={c.image ?? ''} />{/each}
+					</div>
+				{:else}
+					<div class="songs">
+						{#each row.items as c (c.key)}
+							{@const sc = coverFor(c.image ? (c.image.startsWith('/') ? musicImage(c) : c.image) : null, 44)}
+							<SongLine title={c.track || c.name} artist={c.artist ?? ''} image={sc.src} explicit={c.explicit} href={songAskHref(c)} askHref={songAskHref(c)} />
+						{/each}
+					</div>
+				{/if}
+			</section>
+			{:else}
 			<div class="row">
 			{#if row.id === pickRow}
 				<!-- The chart region sits in its row's header. -->
@@ -266,7 +287,8 @@
 						srcset={cv.srcset}
 						kind="artist"
 						subtitle={musicCardNote(row, c) || undefined}
-						status={c.kind === 'artist' && c.title_id && row.type !== 'your_asks' ? 'in_library' : undefined}
+						badges={c.explicit ? ['E'] : []}
+						status={answer?.v2 ? (row.type !== 'your_asks' ? musicStatus(c) : undefined) : c.kind === 'artist' && c.title_id && row.type !== 'your_asks' ? 'in_library' : undefined}
 						shape={c.kind === 'album' ? 'square' : 'round'}
 						fresh={c.fresh}
 						music
@@ -281,6 +303,7 @@
 				{/snippet}
 			</Shelf>
 			</div>
+			{/if}
 		{/each}
 
 		{#if answer && answer.rows.length === 0 && !hero}
@@ -314,6 +337,14 @@
 	.sk-tiles { display: grid; grid-auto-flow: column; grid-auto-columns: var(--explore-item); gap: var(--shelf-gap); padding: 6px 0 14px; }
 	.sk-tile { display: block; aspect-ratio: 1; margin-bottom: 45px; border-radius: var(--r-card); background: var(--surface-2); }
 	.row { position: relative; min-width: 0; }
+	/* music_rows_v2: one card size (200), genre tiles 5/3/2 columns, song lines 3 columns. */
+	@media (min-width: 768px) { .music.v2 { --explore-item: 200px; } }
+	.plain { display: flex; flex-direction: column; gap: 12px; }
+	.rhead { margin: 0; font-size: 17px; font-weight: 700; }
+	.tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+	.songs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 16px; }
+	@media (max-width: 1023px) { .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } .songs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+	@media (max-width: 640px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .songs { grid-template-columns: minmax(0, 1fr); } }
 	.pick { position: absolute; right: 0; top: 0; z-index: 1; display: flex; gap: 8px; align-items: center; }
 	.hero { position: relative; overflow: hidden; }
 	.hero.bare { justify-content: flex-start; }

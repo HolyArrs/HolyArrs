@@ -115,7 +115,7 @@ export function newFromYourArtists(entries: CalendarEntry[], now = new Date(), d
 
 export interface MusicCardData {
 	key: string;
-	kind: 'album' | 'artist';
+	kind: 'album' | 'artist' | 'song' | 'genre';
 	mbid: string;
 	name: string;
 	artist?: string;
@@ -136,6 +136,12 @@ export interface MusicCardData {
 	fresh?: Fresh | null;
 	/** The card's own reason line, when the server gives one. */
 	note?: string;
+	/** Explicit lyrics: the "E" mark. */
+	explicit?: boolean;
+	/** A song line's song (the line asks for its album). */
+	track?: string;
+	/** A genre tile's colour index (flag music_rows_v2). */
+	hue?: number;
 }
 
 export interface MusicRowData {
@@ -143,11 +149,13 @@ export interface MusicRowData {
 	type: string;
 	title: string;
 	reason: string;
-	shape: 'square' | 'round';
+	shape: 'square' | 'round' | 'tile' | 'song';
 	items: MusicCardData[];
 }
 
 export interface MusicExploreAnswer {
+	/** The music_rows_v2 rows (genre tiles and song lines, no genre chips). */
+	v2?: boolean;
 	kid: boolean;
 	cold: boolean;
 	genres: string[];
@@ -213,8 +221,34 @@ export function musicCardNote(row: Pick<MusicRowData, 'type'>, c: MusicCardData)
 			return [by, listeners(c.listen_count)].filter(Boolean).join(' · ');
 		case 'missing':
 			return [by, c.date ? c.date.slice(0, 4) : ''].filter(Boolean).join(' · ');
+		case 'coming_soon':
+			return [by, c.date ? releaseWords(c.date) : ''].filter(Boolean).join(' · ');
 	}
 	return by;
+}
+
+/** musicStatus is a card's state chip (music_rows_v2): have, asked or approved. */
+export function musicStatus(c: Pick<MusicCardData, 'state'>): 'in_library' | 'requested' | 'approved' | undefined {
+	switch (c.state) {
+		case 'have':
+			return 'in_library';
+		case 'asked':
+			return 'requested';
+		case 'approved':
+			return 'approved';
+	}
+	return undefined;
+}
+
+/** genreHref opens a genre tile: Search, music scope, until genre pages exist. */
+export function genreHref(c: Pick<MusicCardData, 'name'>): string {
+	return to(`/search?q=${encodeURIComponent(c.name)}&kind=music`);
+}
+
+/** songAskHref: a song line asks for its album, so it opens the artist (or a search for the song). */
+export function songAskHref(c: Pick<MusicCardData, 'artist_mbid' | 'artist' | 'name'>): string {
+	if (c.artist_mbid) return to(`/music/artist/${c.artist_mbid}`);
+	return to(`/search?q=${encodeURIComponent(`${c.artist ?? ''} ${c.name}`.trim())}&kind=music`);
 }
 
 /** musicCardHref: an album opens its album page, an artist the artist page (any artist, in the Library or not); without MusicBrainz ids the Library page or the artist search. */
