@@ -324,6 +324,9 @@ func (m *serviceMusic) AlbumArtist(ctx context.Context, albumMBID string) (strin
 	return "", ErrArtistNotFound
 }
 
+// servicePressingFetches is how many releases of one album are asked at once.
+const servicePressingFetches = 8
+
 func (m *serviceMusic) Pressings(ctx context.Context, albumMBID string) ([]Pressing, error) {
 	if !ValidMBID(albumMBID) {
 		return nil, ErrArtistNotFound
@@ -339,10 +342,30 @@ func (m *serviceMusic) Pressings(ctx context.Context, albumMBID string) ([]Press
 	if err != nil {
 		return m.fallbackPressings(ctx, albumMBID, nil, err)
 	}
+	// Ask for the releases a few at a time (an album can have a hundred),
+	// then read them in order so the result and its first error are the same
+	// as asking one by one.
+	type fetched struct {
+		item serviceItem
+		err  error
+	}
+	got := make([]fetched, len(releaseIDs))
+	var wg sync.WaitGroup
+	slots := make(chan struct{}, servicePressingFetches)
+	for i, id := range releaseIDs {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			slots <- struct{}{}
+			defer func() { <-slots }()
+			got[i].item, got[i].err = m.service.detail(ctx, "musicbrainz", "release", id)
+		}()
+	}
+	wg.Wait()
 	out := make([]Pressing, 0, len(releaseIDs))
 	totalTracks := 0
-	for _, id := range releaseIDs {
-		release, err := m.service.detail(ctx, "musicbrainz", "release", id)
+	for i := range releaseIDs {
+		release, err := got[i].item, got[i].err
 		if err != nil {
 			return m.fallbackPressings(ctx, albumMBID, out, err)
 		}
