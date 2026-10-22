@@ -447,7 +447,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 		c := MusicCard{Key: "album:" + strconv.FormatInt(p.ID, 10), Kind: "album", MBID: rg, Name: p.Name, Artist: m.name, ArtistMBID: m.mbid, TitleID: m.id, PartID: p.ID, Date: dayOf(p.ReleaseDate)}
 		if rg != "" {
 			c.Image = "/api/v1/music-trending/art/album/" + rg
-			names = append(names, nameKey{"album", rg, p.Name, m.name})
+			names = append(names, nameKey{"album", rg, p.Name, m.name, ""})
 		}
 		return tag(c)
 	}
@@ -510,7 +510,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 		for i, c := range trendAlbums[:min(len(trendAlbums), 6)] {
 			c = tag(c)
 			c.ArtistImage = "/api/v1/music-trending/art/artist/" + c.ArtistMBID
-			names = append(names, nameKey{"artist", c.ArtistMBID, c.Artist, ""})
+			names = append(names, nameKey{"artist", c.ArtistMBID, c.Artist, "", ""})
 			if i == 0 {
 				hero = &c
 			} else {
@@ -540,7 +540,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 			if len(c.Genres) == 0 {
 				c.Genres = s.genres // like its seed until its own are known
 			}
-			names = append(names, nameKey{"artist", x.MBID, x.Name, ""})
+			names = append(names, nameKey{"artist", x.MBID, x.Name, "", ""})
 			items = append(items, c)
 			if _, ok := pool[x.MBID]; !ok {
 				pool[x.MBID] = c
@@ -713,7 +713,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 	a.writeMusicAnswer(w, key, map[string]any{"kid": false, "cold": cold, "genres": top, "genre": genre, "region": region, "regions": regions, "hero": hero, "hero_alts": heroAlts, "rows": final}, complete, now)
 }
 
-type nameKey struct{ kind, mbid, name, artist string }
+type nameKey struct{ kind, mbid, name, artist, cover string }
 
 // rememberMusicNames lets the picture route serve these albums and artists.
 func (a *API) rememberMusicNames(list []nameKey) {
@@ -731,10 +731,107 @@ func (a *API) rememberMusicNames(list []nameKey) {
 			continue
 		}
 		k := n.kind + "|" + n.mbid
-		if _, ok := c.names[k]; !ok {
-			c.names[k] = metadata.MusicTrendItem{MBID: n.mbid, Name: n.name, Title: n.name, Artist: n.artist}
+		old, ok := c.names[k]
+		if !ok {
+			c.names[k] = metadata.MusicTrendItem{MBID: n.mbid, Name: n.name, Title: n.name, Artist: n.artist, Cover: n.cover}
+			continue
+		}
+		// A later list may know what the first did not (the artist of a
+		// soundtrack, a song's cover): the name searches need the artist.
+		if old.Artist == "" && n.artist != "" {
+			old.Artist = n.artist
+		}
+		if old.Cover == "" && n.cover != "" {
+			old.Cover = n.cover
+		}
+		if old.Name == "" && old.Title == "" {
+			old.Name, old.Title = n.name, n.name
+		}
+		c.names[k] = old
+	}
+}
+
+// musicArtPrefix is the picture route every music card points at.
+const musicArtPrefix = "/api/v1/music-trending/art/"
+
+// rememberMusicCards lets the picture route serve every album and artist
+// these rows show, then fetches their pictures in the background, so the
+// cards and circles get art from the same cover chain as the charts.
+func (a *API) rememberMusicCards(rows []MusicRow, extra ...MusicCard) {
+	var names []nameKey
+	add := func(img, name, artist string) {
+		rest, ok := strings.CutPrefix(img, musicArtPrefix)
+		if !ok {
+			return
+		}
+		kind, mbid, _ := strings.Cut(rest, "/")
+		if kind == "artist" {
+			artist = ""
+		}
+		names = append(names, nameKey{kind: kind, mbid: mbid, name: name, artist: artist})
+	}
+	card := func(c MusicCard) {
+		name := c.Name
+		if c.Kind == "song" {
+			return // a song's picture is its own cover link
+		}
+		add(c.Image, name, c.Artist)
+		add(c.ArtistImage, c.Artist, "")
+		if c.ArtistMBID != "" && c.Artist != "" {
+			add(musicArtPrefix+"artist/"+c.ArtistMBID, c.Artist, "")
 		}
 	}
+	for _, r := range rows {
+		for _, c := range r.Items {
+			card(c)
+		}
+	}
+	for _, c := range extra {
+		card(c)
+	}
+	a.rememberMusicNames(names)
+	a.warmMusicNames(names)
+}
+
+// musicWarmTTL is how long a queued card picture is not queued again.
+const musicWarmTTL = 10 * time.Minute
+
+// warmMusicNames fetches the pictures of these names into the artwork cache
+// in the background (albums at 250 and 500, artists at 250), two at a time.
+func (a *API) warmMusicNames(list []nameKey) {
+	if a.s.Library == nil || a.s.Library.Artwork == nil {
+		return
+	}
+	c := &a.music
+	now := time.Now()
+	var albums, artists []metadata.MusicTrendItem
+	c.mu.Lock()
+	if c.warmed == nil || len(c.warmed) > 20000 {
+		c.warmed = map[string]time.Time{}
+	}
+	for _, n := range list {
+		k := n.kind + "|" + n.mbid
+		if at, ok := c.warmed[k]; (ok && now.Sub(at) < musicWarmTTL) || n.mbid == "" {
+			continue
+		}
+		c.warmed[k] = now
+		switch n.kind {
+		case "album":
+			albums = append(albums, metadata.MusicTrendItem{MBID: n.mbid})
+		case "artist":
+			artists = append(artists, metadata.MusicTrendItem{MBID: n.mbid})
+		}
+	}
+	c.mu.Unlock()
+	if len(albums)+len(artists) == 0 {
+		return
+	}
+	c.prefetching.Add(1)
+	go func() {
+		defer c.prefetching.Done()
+		a.prefetchMusicArt("album", albums)
+		a.prefetchMusicArt("artist", artists)
+	}()
 }
 
 func chartReason(region, what string) string {

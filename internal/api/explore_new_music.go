@@ -605,11 +605,11 @@ func (a *API) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
 	}
 	var names []nameKey
 	for _, c := range hero {
-		names = append(names, nameKey{"album", c.MBID, c.Name, c.Artist}, nameKey{"artist", c.ArtistMBID, c.Artist, ""})
+		names = append(names, nameKey{"album", c.MBID, c.Name, c.Artist, ""}, nameKey{"artist", c.ArtistMBID, c.Artist, "", ""})
 	}
 	for _, row := range rows {
 		for _, c := range row.Items {
-			names = append(names, nameKey{"album", c.MBID, c.Name, c.Artist})
+			names = append(names, nameKey{"album", c.MBID, c.Name, c.Artist, ""})
 		}
 	}
 	a.rememberMusicNames(names)

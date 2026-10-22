@@ -43,6 +43,9 @@ type musicTrendCache struct {
 	// artBusy are pictures being fetched now, so a second ask waits for
 	// the first instead of fetching again.
 	artBusy map[string]*artFetch
+	// warmed is when a card picture was last queued for prefetch, by
+	// "kind|mbid", so a page shown again does not queue it again.
+	warmed map[string]time.Time
 	// prefetching counts background picture fetches (tests wait on it).
 	prefetching sync.WaitGroup
 }
@@ -219,7 +222,7 @@ func (a *API) musicTrendArt(w http.ResponseWriter, r *http.Request) {
 }
 
 // albumCover asks the metadata server's cover chain for an album, kept a
-// month when found and a day when no source has one. found is false when
+// month when found and minutes (musicArtMissTTL) when no source has one. found is false when
 // the server could not answer, so the caller tries the Cover Art Archive.
 func (a *API) albumCover(ctx context.Context, mbid string, it metadata.MusicTrendItem) (src string, found bool) {
 	if a.s.MusicCover == nil {
@@ -229,7 +232,7 @@ func (a *API) albumCover(ctx context.Context, mbid string, it metadata.MusicTren
 	c.mu.Lock()
 	e, ok := c.covers[mbid]
 	c.mu.Unlock()
-	if ok && ((e.src != "" && time.Since(e.at) < 30*24*time.Hour) || (e.src == "" && time.Since(e.at) < 24*time.Hour)) {
+	if ok && ((e.src != "" && time.Since(e.at) < 30*24*time.Hour) || (e.src == "" && time.Since(e.at) < musicArtMissTTL)) {
 		return e.src, true
 	}
 	title := it.Title
@@ -240,6 +243,11 @@ func (a *API) albumCover(ctx context.Context, mbid string, it metadata.MusicTren
 	if err != nil && !errors.Is(err, metadata.ErrNotFound) {
 		return "", false
 	}
+	if src == "" && (it.Artist == "" || title == "") {
+		// Without names the server only asks the Cover Art Archive; keep
+		// no answer, so a later ask with names runs the whole chain.
+		return "", true
+	}
 	c.mu.Lock()
 	if c.covers == nil || len(c.covers) > 20000 {
 		c.covers = map[string]musicCover{}
@@ -249,8 +257,9 @@ func (a *API) albumCover(ctx context.Context, mbid string, it metadata.MusicTren
 	return src, true
 }
 
-// musicArtMissTTL is how long a picture no source has is not asked again.
-const musicArtMissTTL = 6 * time.Hour
+// musicArtMissTTL is how long a picture no source has is not asked again:
+// minutes, so a brand-new release's cover shows once a source has it.
+const musicArtMissTTL = 10 * time.Minute
 
 // musicTrendArtFile finds and keeps the picture of a named artist or
 // album. An album no cover source has shows its artist's picture, so the
@@ -353,10 +362,15 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name,
 		if try(it.Cover) {
 			return name, path, true
 		}
-		if src, found := a.albumCover(ctx, mbid, it); found && try(src) {
-			return name, path, true
+		// A top song's release without a MusicBrainz id has only its own
+		// cover link and the artist's picture.
+		isMBID := metadata.ValidMBID(mbid)
+		if isMBID {
+			if src, found := a.albumCover(ctx, mbid, it); found && try(src) {
+				return name, path, true
+			}
 		}
-		if try(caa) || artist(it.Artist) {
+		if (isMBID && try(caa)) || artist(it.Artist) {
 			return name, path, true
 		}
 	}

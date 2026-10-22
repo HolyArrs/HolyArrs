@@ -265,7 +265,7 @@ func (m *musicCtx) listCards(l metadata.MusicTrend, kind string) []MusicCard {
 			continue
 		}
 		c.Image = "/api/v1/music-trending/art/" + kind + "/" + c.MBID
-		*m.names = append(*m.names, nameKey{kind, c.MBID, c.Name, c.Artist})
+		*m.names = append(*m.names, nameKey{kind, c.MBID, c.Name, c.Artist, ""})
 		c = m.tag(c)
 		for _, t := range it.Tags {
 			if !hasGenre(c.Genres, t) {
@@ -443,7 +443,7 @@ func (a *API) moreMusicRows(ctx context.Context, m *musicCtx, out []MusicRow) []
 				}
 				seen[l.MBID] = true
 				c := m.tag(MusicCard{Kind: "artist", MBID: l.MBID, Name: l.Name, Artist: l.Name, ArtistMBID: l.MBID, Image: "/api/v1/music-trending/art/artist/" + l.MBID, Note: "With " + ar.name})
-				*m.names = append(*m.names, nameKey{"artist", l.MBID, l.Name, ""})
+				*m.names = append(*m.names, nameKey{"artist", l.MBID, l.Name, "", ""})
 				items = append(items, c)
 			}
 		}
@@ -547,7 +547,7 @@ func (a *API) moreMusicRows(ctx context.Context, m *musicCtx, out []MusicRow) []
 		for _, t := range ts {
 			for _, al := range found[t.ID][:min(1, len(found[t.ID]))] {
 				c := MusicCard{Kind: "album", MBID: al.MBID, Name: al.Name, Date: al.ReleaseDate, Image: "/api/v1/music-trending/art/album/" + al.MBID, Note: "From " + t.Name, Genres: []string{"soundtrack"}}
-				*m.names = append(*m.names, nameKey{"album", al.MBID, al.Name, ""})
+				*m.names = append(*m.names, nameKey{"album", al.MBID, al.Name, "", ""})
 				items = append(items, c)
 			}
 		}

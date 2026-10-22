@@ -414,6 +414,11 @@ func (a *API) exploreMusicV2(w http.ResponseWriter, r *http.Request) {
 	if regions == nil {
 		regions = []string{}
 	}
+	if hero != nil {
+		a.rememberMusicCards(out, append([]MusicCard{*hero}, alts...)...)
+	} else {
+		a.rememberMusicCards(out, alts...)
+	}
 	a.exploreCaching(w, r, "private, no-cache")
 	writeJSON(w, http.StatusOK, map[string]any{"v2": true, "kid": false, "cold": ord.Cold, "genres": []string{}, "genre": "", "region": region, "regions": regions, "hero": hero, "hero_alts": alts, "rows": out})
 }

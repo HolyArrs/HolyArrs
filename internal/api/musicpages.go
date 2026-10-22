@@ -2,6 +2,8 @@ package api
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"errors"
 	"net/http"
 	"sort"
@@ -245,6 +247,13 @@ func isVideo(al metadata.Album) bool {
 }
 
 func artPath(kind, mbid string) string { return "/api/v1/music-trending/art/" + kind + "/" + mbid }
+
+// songArtID names the release of a top song that has no MusicBrainz id in
+// the discography, for the picture route ("song-" and 24 hex digits).
+func songArtID(artist, album, cover string) string {
+	sum := sha1.Sum([]byte(strings.ToLower(artist) + "|" + strings.ToLower(album) + "|" + cover))
+	return "song-" + hex.EncodeToString(sum[:12])
+}
 
 func (a *API) musicPageOpen(w http.ResponseWriter) bool {
 	if p, _ := parts.ForTitleKind("artist"); !a.partIsOn(p) {
@@ -588,6 +597,7 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	v.Albums = kept
+	var songNames []nameKey
 	for _, s := range dz.Top {
 		if kid && s.Explicit {
 			continue
@@ -595,9 +605,17 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 		song := PageSong{Title: s.Title, LengthMS: s.LengthMS, Explicit: s.Explicit, Album: s.Album, Image: s.Cover}
 		if al, ok := byName[metadata.SongKey(s.Album)]; ok {
 			song.AlbumMBID, song.Image = al.MBID, al.Image
+		} else if s.Album != "" || s.Cover != "" {
+			// A song whose release is not in the discography (a feature, a
+			// single) still gets its release's art through the picture
+			// route: its own cover link first, then the artist's picture.
+			id := songArtID(art.Name, s.Album, s.Cover)
+			song.Image = artPath("album", id)
+			songNames = append(songNames, nameKey{kind: "album", mbid: id, name: s.Album, artist: art.Name, cover: s.Cover})
 		}
 		v.Top = append(v.Top, song)
 	}
+	a.rememberMusicNames(songNames)
 	var names []nameKey
 	for _, l := range links {
 		names = append(names, nameKey{kind: "artist", mbid: l.MBID, name: l.Name})
