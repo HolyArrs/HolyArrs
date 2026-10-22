@@ -7,7 +7,7 @@
 	import type { OwnedIndex } from './explore.ts';
 	import { defaultRegion } from './region.ts';
 	import { coverFor } from './music-pages.ts';
-	import { fetchMusicExplore, genreHref, musicCardHref, musicCardNote, musicImage, musicStatus, releaseWords, songAskHref, type MusicCardData, type MusicExploreAnswer } from './music-trending.ts';
+	import { fetchMusicExplore, fetchMusicGenre, genreHref, musicCardHref, musicCardNote, musicImage, musicStatus, releaseWords, songAskHref, type MusicCardData, type MusicExploreAnswer } from './music-trending.ts';
 	import GenreTile from './ui/GenreTile.svelte';
 	import SongLine from './ui/SongLine.svelte';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './types.ts';
@@ -30,8 +30,9 @@
 		mayAsk,
 		folders,
 		rules,
-		onadded
-	}: { owned: OwnedIndex; manage: boolean; mayAsk: boolean; folders: LibraryFolder[]; rules: PickRulesView[]; onadded?: (t: TitleView) => void } = $props();
+		onadded,
+		slug = ''
+	}: { owned: OwnedIndex; manage: boolean; mayAsk: boolean; folders: LibraryFolder[]; rules: PickRulesView[]; onadded?: (t: TitleView) => void; /** A Music genre page: that genre's rows instead of Explore's. */ slug?: string } = $props();
 
 	let region = $state('global');
 	let genre = $state('');
@@ -66,9 +67,9 @@
 		gone = new AbortController();
 		const signal = gone.signal;
 		try {
-			const a = await fetchMusicExplore(genre, region, api, signal);
+			const a = slug ? await fetchMusicGenre(slug, region, api, signal) : await fetchMusicExplore(genre, region, api, signal);
 			if (signal.aborted) return;
-			const at = `${genre}|${region}`;
+			const at = `${slug}|${genre}|${region}`;
 			if (at !== orderFor) {
 				order = [];
 				orderFor = at;
@@ -111,7 +112,7 @@
 		void load();
 		// Genres fill in the background on a first visit: look again once.
 		const again = setTimeout(() => {
-			if (!genre && chips.length === 0) void load();
+			if (!slug && !genre && chips.length === 0) void load();
 		}, 20000);
 		if (manage) api.get<MusicSettings>('/settings/music').then((r) => (defaults = r)).catch(() => {});
 		return () => {
@@ -208,6 +209,13 @@
 	<EmptyState icon="music" title="Music is not shown on this account" text="Music has no age ratings, so it stays off for accounts with an age limit." />
 {:else if answer || !failed}
 	<section class="music" class:v2={answer?.v2} data-testid="music-trending" aria-busy={!answer || undefined}>
+		{#if slug}
+			<!-- A genre page's band: its tile's hue and grey art, the genre's name. -->
+			<div class="band" style:--hue={`hsl(${((((answer?.tile?.hue ?? 0) % 24) + 24) % 24) * 15} 52% 36%)`} data-testid="music-genre-band">
+				{#if answer?.tile?.image}<img src={musicImage(answer.tile)} alt="" onerror={(e) => ((e.currentTarget as HTMLImageElement).hidden = true)} />{/if}
+				<h1>{answer?.tile?.name ?? ''}</h1>
+			</div>
+		{/if}
 		<!-- The chip bar keeps its height: placeholder chips until the genres are known. The v2 rows have genre tiles instead. -->
 		{#if answer?.v2}
 			<!-- no chips -->
@@ -254,7 +262,7 @@
 				<h2 class="rhead">{row.title}</h2>
 				{#if row.shape === 'tile'}
 					<div class="tiles">
-						{#each row.items as c (c.key)}<GenreTile name={c.name} href={genreHref(c)} hue={c.hue ?? 0} art={c.image ?? ''} />{/each}
+						{#each row.items as c (c.key)}<GenreTile name={c.name} href={genreHref(c)} hue={c.hue ?? 0} art={c.image ? (musicImage(c) ?? '') : ''} />{/each}
 					</div>
 				{:else}
 					<div class="songs">
@@ -307,7 +315,7 @@
 		{/each}
 
 		{#if answer && answer.rows.length === 0 && !hero}
-			<EmptyState icon="music" title={genre ? `Nothing tagged ${genre} yet` : 'Music rows are getting ready'} text={genre ? 'Pick another genre, or All.' : 'Charts and suggestions fill in within a few minutes.'} />
+			<EmptyState icon="music" title={slug ? `Nothing charting in ${answer.tile?.name ?? 'this genre'} yet` : genre ? `Nothing tagged ${genre} yet` : 'Music rows are getting ready'} text={genre ? 'Pick another genre, or All.' : 'Charts and suggestions fill in within a few minutes.'} />
 		{/if}
 	</section>
 {:else if failed}
@@ -342,6 +350,10 @@
 	.plain { display: flex; flex-direction: column; gap: 12px; }
 	.rhead { margin: 0; font-size: 17px; font-weight: 700; }
 	.tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+	/* A Music genre page's band: the tile's look (hue, grey art at .55, radius 10), wider. */
+	.band { position: relative; display: flex; align-items: flex-end; min-height: 180px; padding: 20px 24px; border-radius: 10px; overflow: hidden; background: var(--hue); color: #fff; }
+	.band img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.55; }
+	.band h1 { position: relative; margin: 0; font-size: clamp(28px, 4vw, 44px); font-weight: 800; line-height: 1.1; text-shadow: 0 1px 2px rgb(0 0 0 / 0.35); }
 	.songs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 16px; }
 	@media (max-width: 1023px) { .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } .songs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 	@media (max-width: 640px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .songs { grid-template-columns: minmax(0, 1fr); } }

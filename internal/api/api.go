@@ -84,6 +84,9 @@ type Server struct {
 	// those rows out.
 	MusicCharts func(ctx context.Context, region, kind, genre string) (metadata.MusicChart, error)
 	MusicGenres func(ctx context.Context, region string) (metadata.MusicGenres, error)
+	// MusicGenreTile reads a genre tile's grey picture (Phase 2); nil
+	// keeps every tile a flat hue.
+	MusicGenreTile func(ctx context.Context, slug, version string) ([]byte, error)
 	// MusicRowsV2 is flag music_rows_v2: Explore → Music from the
 	// 2026-10-22 plan's rows; off keeps the old row builder.
 	MusicRowsV2 bool
@@ -170,6 +173,8 @@ type API struct {
 	musicAns musicAnswers
 	// musicv2 holds the music_rows_v2 cache layers.
 	musicv2 musicV2State
+	// genreArt keeps genre tile pictures.
+	genreArt musicGenreArtCache
 	// signin keeps the sign-in page's art and its per-address budget.
 	signin signinArtState
 	// explore runs the Explore pool job and keeps its lists and pages.
@@ -366,6 +371,8 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/music-trending", a.musicTrending)
 	m.HandleFunc("GET /api/v1/explore/music", a.exploreMusic)
 	m.HandleFunc("GET /api/v1/music-trending/art/{kind}/{mbid}", a.musicTrendArt)
+	m.HandleFunc("GET /api/v1/music/genre/{slug}", a.musicGenrePage)
+	m.HandleFunc("GET /api/v1/music/genre-art/{slug}", a.musicGenreArt)
 	m.HandleFunc("GET /api/v1/extras/{kind}/{id}", a.titleExtras)
 	m.HandleFunc("GET /api/v1/wiki/{kind}/{id}", a.wikiFacts)
 	if a.s.Secrets != nil {

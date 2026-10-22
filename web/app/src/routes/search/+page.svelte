@@ -21,6 +21,7 @@
 	import Icon, { type IconName } from '#lib/Icon.svelte';
 	import { session } from '#lib/session.svelte.ts';
 	import BrowseTile from '#lib/ui/BrowseTile.svelte';
+	import GenreTile from '#lib/ui/GenreTile.svelte';
 	import MosaicReveal, { ENTER_DELAY, ENTER_SWEEP, passAt } from '#lib/ui/MosaicReveal.svelte';
 	import { browseCategoryPath, browseCols, browseHref, browsePath, browseSectionPath, browseType, BROWSE_ROWS, musicTiles, readCategory, readMood, shownCount, strictTiles, tileHue, type PlainTile, type BrowseAnswer, type BrowseSection, type BrowseSectionAnswer, type BrowseTile as Tile, type CategoryView, type MoodView } from '#lib/search-browse.ts';
 	import { reducedMotion } from '#lib/motion.ts';
@@ -37,7 +38,7 @@
 	import type { PersonSummary } from '#lib/people.ts';
 	import { byDept, chipDept, PEOPLE_ROWS, SHELF_MIN, visibleChips, type PeopleFilter, type ShelfMeta, type ShelfPerson } from '#lib/people-shelves.ts';
 	import { appPicture, artistHref } from '#lib/music-pages.ts';
-	import { fetchMusicExplore, musicCardHref, musicCardNote, musicImage, type MusicCardData } from '#lib/music-trending.ts';
+	import { fetchMusicExplore, genreHref, musicCardHref, musicCardNote, musicImage, type MusicCardData } from '#lib/music-trending.ts';
 	import { refreshInbox } from '#lib/wishlist.svelte.ts';
 	import AddArtistDialog from '#lib/AddArtistDialog.svelte';
 	import AskArtistDialog from '#lib/AskArtistDialog.svelte';
@@ -72,6 +73,8 @@
 	/** What was on screen when the current search started: kept up until the new answers arrive. */
 	let stale = $state.raw<{ groups: Record<Card['type'], Card[] | null>; lib: LibraryAnswer | null } | null>(null);
 	let plainTiles = $state<PlainTile[] | null>(null);
+	/** Music scope with the v2 rows: the genre tiles (hue and grey art), each opening its Music genre page. */
+	let musicGenres = $state<MusicCardData[]>([]);
 	let plainFor = '';
 	let mgenre = $state<string | null>(page.url.searchParams.get('mgenre')?.trim() || null);
 	let mgenreCards = $state<(MusicCardData & { note?: string })[] | null>(null);
@@ -525,7 +528,8 @@
 				await loadShelves();
 			} else {
 				const r = await fetchMusicExplore('', 'global');
-				if (plainFor === s) plainTiles = musicTiles(r, (g) => to(`/search?kind=music&mgenre=${encodeURIComponent(g)}`), musicImage);
+				if (plainFor === s && r.v2) musicGenres = r.rows.find((row) => row.shape === 'tile')?.items ?? [];
+				if (plainFor === s) plainTiles = musicGenres.length ? [] : musicTiles(r, (g) => to(`/search?kind=music&mgenre=${encodeURIComponent(g)}`), musicImage);
 			}
 		} catch {
 			if (plainFor === s) {
@@ -617,7 +621,7 @@
 	kept = null;
 	let restored = !!kept0;
 	function keep() {
-		return $state.snapshot({ groups, lib, searched, tiles, tilesFor, sections, sectionTiles, sectionRows, plainTiles, plainFor, shelves, shelfPeople, shelfRows, peopleAll, peoplePage, peopleEnd, peopleFilter, catItems, catFor, catName, moodItems, moodFor, moodGenre, mgenreCards, mgenreFor });
+		return $state.snapshot({ groups, lib, searched, tiles, tilesFor, sections, sectionTiles, sectionRows, plainTiles, plainFor, musicGenres, shelves, shelfPeople, shelfRows, peopleAll, peoplePage, peopleEnd, peopleFilter, catItems, catFor, catName, moodItems, moodFor, moodGenre, mgenreCards, mgenreFor });
 	}
 	if (kept0) {
 		const k = kept0;
@@ -630,6 +634,7 @@
 		sectionTiles = k.sectionTiles;
 		sectionRows = k.sectionRows;
 		plainTiles = k.plainTiles;
+		musicGenres = k.musicGenres ?? [];
 		plainFor = k.plainFor;
 		shelves = k.shelves;
 		shelfPeople = k.shelfPeople;
@@ -976,7 +981,11 @@
 						{/if}
 					{/if}
 				{:else if scope === 'music'}
-					{#if plainTiles === null}
+					{#if musicGenres.length}
+						<div class="gtiles" data-testid="music-genre-tiles">
+							{#each musicGenres as c (c.key)}<GenreTile name={c.name} href={genreHref(c)} hue={c.hue ?? 0} art={c.image ? (musicImage(c) ?? '') : ''} />{/each}
+						</div>
+					{:else if plainTiles === null}
 						<ul class="tiles" aria-hidden="true">
 							{#each Array(cols * 2) as _, i (i)}<li class="ghost sk" use:landing={{ row: Math.floor(i / cols), col: i % cols }}></li>{/each}
 						</ul>
@@ -1083,6 +1092,10 @@
 <QuickAsk bind:this={flow} />
 
 <style>
+	/* Music genre tiles: 16:9, 5/3/2 columns, as on Explore → Music. */
+	.gtiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+	@media (max-width: 1023px) { .gtiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+	@media (max-width: 640px) { .gtiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 	.search { --title-item: max(200px, calc((100vw - 96px) / 5.16)); display: flex; flex-direction: column; gap: 24px; padding-bottom: 48px; min-width: 0; }
 	@media (max-width: 1279px) { .search { --title-item: max(180px, calc((100vw - 64px) / 4.2)); } }
 	@media (max-width: 767px) { .search { --title-item: calc((100vw - 40px) / 2.3); } }

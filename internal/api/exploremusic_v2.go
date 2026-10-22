@@ -526,7 +526,7 @@ func (a *API) buildMusicV2(ctx context.Context, member int64, region string, lib
 			musicscore.Row{Anchor: true, Prior: musicscore.PriorPersonal, ArtistRow: true}, fresh, scores)
 	}
 
-	// Row 4: genre tiles (flat hue until the tile art lands).
+	// Row 4: genre tiles (grey art on the hue, or the flat hue).
 	{
 		var cards []MusicCard
 		var scores []float64
@@ -535,7 +535,7 @@ func (a *API) buildMusicV2(ctx context.Context, member int64, region string, lib
 				break
 			}
 			hue := g.Hue
-			cards = append(cards, MusicCard{Key: "genre:" + g.Slug, Kind: "genre", MBID: g.Slug, Name: g.Name, Hue: &hue, Image: g.Art, Genres: []string{g.Slug}})
+			cards = append(cards, MusicCard{Key: "genre:" + g.Slug, Kind: "genre", MBID: g.Slug, Name: g.Name, Hue: &hue, Image: musicGenreArt(g), Genres: []string{g.Slug}})
 			scores = append(scores, 1)
 		}
 		addRow(MusicRow{ID: "genres", Type: "genres", Title: "Genres", Reason: "The genres charting in your region", Shape: "tile"},

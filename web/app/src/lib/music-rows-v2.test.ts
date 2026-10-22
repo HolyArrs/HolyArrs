@@ -12,7 +12,8 @@ describe('music_rows_v2 helpers', () => {
 		expect(songAskHref({ artist_mbid: 'abc', name: 'Song' })).toContain('/music/artist/abc');
 		expect(songAskHref({ artist: 'Band', name: 'Song' })).toContain('/search?q=Band%20Song&kind=music');
 	});
-	it('opens a genre tile in music search', () => {
+	it('opens a genre tile on its Music genre page', () => {
+		expect(genreHref({ name: 'Hip-Hop/Rap', kind: 'genre', mbid: 'hip-hop-rap' })).toContain('/music/genre/hip-hop-rap');
 		expect(genreHref({ name: 'Hip-Hop/Rap' })).toContain('/search?q=Hip-Hop%2FRap&kind=music');
 	});
 	it('says when a coming album is out', () => {

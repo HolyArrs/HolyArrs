@@ -166,6 +166,13 @@ export interface MusicExploreAnswer {
 	/** The hero's stand-ins, next newest first: the page shows the first whose cover loads. */
 	hero_alts?: MusicCardData[];
 	rows: MusicRowData[];
+	/** A Music genre page's own tile (name, hue, art) for its header band. */
+	tile?: MusicCardData;
+}
+
+/** fetchMusicGenre reads a Music genre page's rows (Music only; Movies and Shows keep their own genre pages). */
+export async function fetchMusicGenre(slug: string, region: string, client: Pick<Client, 'get'> = api, signal?: AbortSignal): Promise<MusicExploreAnswer> {
+	return client.get<MusicExploreAnswer>(`/music/genre/${encodeURIComponent(slug)}?${new URLSearchParams({ region })}`, signal);
 }
 
 /** fetchMusicExplore reads the Music rows for a genre chip ('' is all) and chart region. */
@@ -241,7 +248,8 @@ export function musicStatus(c: Pick<MusicCardData, 'state'>): 'in_library' | 're
 }
 
 /** genreHref opens a genre tile: Search, music scope, until genre pages exist. */
-export function genreHref(c: Pick<MusicCardData, 'name'>): string {
+export function genreHref(c: Pick<MusicCardData, 'name'> & Partial<Pick<MusicCardData, 'kind' | 'mbid'>>): string {
+	if (c.kind === 'genre' && c.mbid) return to(`/music/genre/${encodeURIComponent(c.mbid)}`);
 	return to(`/search?q=${encodeURIComponent(c.name)}&kind=music`);
 }
 

@@ -106,3 +106,32 @@ func (s *Service) MusicGenreList(ctx context.Context, region string) (MusicGenre
 	}
 	return out, nil
 }
+
+// MusicGenreTile reads a genre's tile picture (a grey JPEG, at most 40 KB)
+// at the version tag the genre list named.
+func (s *Service) MusicGenreTile(ctx context.Context, slug, version string) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	tok, err := s.access(ctx)
+	if err != nil || tok == "" || strings.ContainsAny(tok, "\r\n") {
+		return nil, ErrServiceAccess
+	}
+	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, s.base+"/v1/music/genres/tile/"+url.PathEscape(slug)+".jpg?"+url.Values{"v": {version}}.Encode(), nil)
+	req.Header.Set("Authorization", "Bearer "+tok)
+	resp, err := s.http.Do(req)
+	if err != nil {
+		return nil, ErrServiceUnavailable
+	}
+	defer resp.Body.Close()
+	switch {
+	case resp.StatusCode == http.StatusNotFound:
+		return nil, ErrNotFound
+	case resp.StatusCode != http.StatusOK || !strings.HasPrefix(resp.Header.Get("Content-Type"), "image/jpeg"):
+		return nil, ErrServiceUnavailable
+	}
+	b, err := io.ReadAll(io.LimitReader(resp.Body, 64<<10))
+	if err != nil {
+		return nil, ErrServiceUnavailable
+	}
+	return b, nil
+}
