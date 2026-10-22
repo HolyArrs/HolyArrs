@@ -283,7 +283,7 @@
 					</select>
 				</div>
 			{/if}
-			<Shelf title={row.type === 'popular_country' ? `Popular in ${regionName(row.id.split(':')[1] ?? '')}` : row.title} subtitle={row.type === 'popular_country' ? `This week's top albums in ${regionName(row.id.split(':')[1] ?? '')}` : row.reason} item="var(--explore-item)"
+			<Shelf title={row.type === 'popular_country' ? `Popular in ${regionName(row.id.split(':')[1] ?? '')}` : row.title} subtitle={row.type === 'popular_country' ? `This week's top albums in ${regionName(row.id.split(':')[1] ?? '')}` : row.reason} item={answer?.v2 && row.shape === 'round' ? 'var(--music-circle, 88px)' : 'var(--explore-item)'}
 				items={row.items} key={(c) => c.key} defer={ri >= EAGER_ROWS} placeholder={row.shape === 'square' ? 'square' : 'round'} lines={row.items.some((c) => musicCardNote(row, c)) ? 2 : 1}>
 				{#snippet card(raw: MusicCardData)}
 					{@const c = live(raw)}

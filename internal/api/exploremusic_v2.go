@@ -28,6 +28,10 @@ const (
 type musicV2State struct {
 	cand musicscore.Candidates
 	days musicscore.Days
+	// seedLog keeps each member's Since you have seeds per day (v3).
+	seedLog musicSeedLog
+	// now is the clock (tests); nil is time.Now.
+	now func() time.Time
 }
 
 // musicV2Order is layer 2: one member's answer for one day, before state.
@@ -278,6 +282,9 @@ func dayAt(now time.Time, d int) string { return now.UTC().AddDate(0, 0, d).Form
 func (a *API) exploreMusicV2(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	now := time.Now().UTC()
+	if a.musicv2.now != nil {
+		now = a.musicv2.now().UTC()
+	}
 	member := a.person(r).UserID
 	region := strings.ToUpper(r.URL.Query().Get("region"))
 	if region == "" || region == "GLOBAL" || !isCountry(region) {
@@ -298,7 +305,11 @@ func (a *API) exploreMusicV2(w http.ResponseWriter, r *http.Request) {
 	if v, ok := a.musicv2.days.Get(key); ok {
 		ord = v.(*musicV2Order)
 	} else {
-		ord = a.buildMusicV2(ctx, member, region, lib, acts, now)
+		if a.s.MusicRowsV3 {
+			ord = a.buildMusicV3(ctx, member, region, lib, acts, now)
+		} else {
+			ord = a.buildMusicV2(ctx, member, region, lib, acts, now)
+		}
 		a.musicv2.days.Put(key, ord)
 	}
 	// Layer 3: state chips and the member's asks, read live.
@@ -352,6 +363,9 @@ func (a *API) exploreMusicV2(w http.ResponseWriter, r *http.Request) {
 	}
 	if anchors == 0 && len(asksRow.Items) > 0 {
 		out = append([]MusicRow{asksRow}, out...)
+	}
+	if a.s.MusicRowsV3 {
+		sinkAsked(out)
 	}
 	var hero *MusicCard
 	if ord.Hero != nil {

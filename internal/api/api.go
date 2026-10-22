@@ -90,6 +90,16 @@ type Server struct {
 	// MusicRowsV2 is flag music_rows_v2: Explore → Music from the
 	// 2026-10-22 plan's rows; off keeps the old row builder.
 	MusicRowsV2 bool
+	// MusicRowsV3 is flag music_rows_v3 (Phase 3): the v2 rows with their
+	// scores, plus the similarity, genre and guest rows; off keeps the
+	// Phase 1 rows. It needs MusicRowsV2.
+	MusicRowsV3 bool
+	// MusicListeners, MusicSimilarSet and MusicArtistData read the metadata
+	// server's batch artist data for the scored rows; nil leaves P at the
+	// charts and the similarity rows out.
+	MusicListeners  func(ctx context.Context, ids []string) (map[string]int64, error)
+	MusicSimilarSet func(ctx context.Context, seeds []string) (map[string][]metadata.MusicSimilarScore, error)
+	MusicArtistData func(ctx context.Context, ids []string) ([]metadata.MusicArtistData, error)
 	// MusicCover reads an album cover URL from the metadata server; nil uses
 	// only the Cover Art Archive.
 	MusicCover func(ctx context.Context, mbid, artist, title string) (string, error)

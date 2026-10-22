@@ -32,7 +32,7 @@ func (c *Candidates) Get(key string, now time.Time) (any, bool) {
 func (c *Candidates) Put(key string, v any, ttl time.Duration, now time.Time) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if c.m == nil || len(c.m) > 2000 {
+	if c.m == nil || len(c.m) > 20000 {
 		c.m = map[string]candEntry{}
 	}
 	c.m[key] = candEntry{v, now.Add(ttl)}
