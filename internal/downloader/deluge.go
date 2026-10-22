@@ -502,13 +502,6 @@ func (d *Deluge) status(ctx context.Context, id string) (delugeTorrent, error) {
 	return torrent, nil
 }
 
-type delugeFile struct {
-	Path     string  `json:"path"`
-	Name     string  `json:"name"`
-	Size     int64   `json:"size"`
-	Progress float64 `json:"progress"`
-}
-
 func safeDelugeFileName(name string) string {
 	name = strings.ReplaceAll(name, `\`, "/")
 	name = strings.TrimLeft(name, "/")
