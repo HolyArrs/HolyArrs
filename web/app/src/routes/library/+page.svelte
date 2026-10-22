@@ -967,7 +967,7 @@
 												</div>
 												<dl class="ov-facts">
 													<dt>Kept up to date</dt><dd>{t.keep_up_to_date ? 'Yes' : 'No'}</dd>
-													{#each shownCols.filter((c) => !isProgressCol(c)).slice(0, 4) as c (c.id)}{#if cell(t, c)}<dt>{c.label}</dt><dd>{cell(t, c)}</dd>{/if}{/each}
+													{#each shownCols.filter((c) => !isProgressCol(c) && !(st && c.id === 'status')).slice(0, 4) as c (c.id)}{#if cell(t, c)}<dt>{c.label}</dt><dd>{cell(t, c)}</dd>{/if}{/each}
 													{#if st}<dt>Status</dt><dd><StatusPill kind={st.kind} label={st.label} /></dd>{/if}
 												</dl>
 												{#if selecting}<input type="checkbox" class="pick-box ov-pick" checked={picked.has(t.id)} aria-label="Select {t.name}" tabindex="-1" onchange={() => togglePick(t.id)} data-testid="library-pick" />{/if}
