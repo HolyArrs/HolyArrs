@@ -10,6 +10,7 @@
 	import PosterCard from '#lib/ui/PosterCard.svelte';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import Chip from '#lib/ui/Chip.svelte';
 	import Icon from '#lib/Icon.svelte';
 	import AskArtistDialog from '#lib/AskArtistDialog.svelte';
 	import AddArtistDialog from '#lib/AddArtistDialog.svelte';
@@ -20,8 +21,8 @@
 	import { cameFrom, fromIcon } from '#lib/came-from.svelte.ts';
 	import { albumYear } from '#lib/music.ts';
 	import { SkRail, SkTrackRow } from '#lib/ui/sk/index.ts';
-	import { albumHref, appPicture, artistHref, coverFor, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist } from '#lib/music-pages.ts';
-	import type { LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
+	import { albumHref, appPicture, artistHref, coverFor, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist, type PageCredit, type PageTrack } from '#lib/music-pages.ts';
+	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 
 	// An album's page: the cover large over its own blurred colours, the tracklist
 	// with what the Library has, its other editions, and where to go next.
@@ -42,6 +43,9 @@
 	let askDialog: ReturnType<typeof AskArtistDialog> | undefined = $state();
 	let addDialog: ReturnType<typeof AddArtistDialog> | undefined = $state();
 	let askedHere = $state(false);
+	let near = $state<PageCredit[] | null>(null);
+	let edition = $state('');
+	let asking = $state(false);
 
 	const manage = $derived(session.can('manage_library'));
 	const mayAsk = $derived(session.can('ask'));
@@ -54,6 +58,7 @@
 		// All at once: the hero, the tracks, the similar artists and the ask state.
 		void api.get<AlbumCoreData>(`/music/albums/${mbid}?part=core&artist=${artist}`).then((c) => still() && !data && (core = c)).catch(() => {});
 		void api.get<{ similar: PageArtist[] }>(`/music/artists/${artist}?part=similar&n=14`).then((r) => still() && (similar = r.similar)).catch(() => still() && (similar = []));
+		void api.get<{ near: PageCredit[] }>(`/music/albums/${mbid}?part=near&artist=${artist}`).then((r) => still() && (near = r.near)).catch(() => still() && (near = []));
 		void api.get<{ artists: LookupArtist[] }>(`/artists/lookup?term=${encodeURIComponent(`mbid:${artist}`)}`).then((r) => {
 			if (still()) lookup = r.artists[0] ?? null;
 		}).catch(() => {});
@@ -72,6 +77,8 @@
 		core = null;
 		data = null;
 		similar = null;
+		near = null;
+		edition = '';
 		lookup = null;
 		coverIn = false;
 		askedHere = false;
@@ -91,12 +98,16 @@
 	const titleId = $derived(data?.title_id || lookup?.title_id || 0);
 	const asked = $derived(askedHere || !!lookup?.ask?.albums?.some((a) => a.mbid === mbid) || (!!lookup?.ask && !lookup.ask.albums?.length));
 	const status = $derived(data ? owned(data, asked) : null);
+	// The editions switcher: the picked edition's own list, else the main one.
+	const picked = $derived(data?.editions.find((e) => e.mbid === edition) ?? null);
+	const list = $derived<PageTrack[]>(picked?.list?.length ? picked.list : (data?.tracks ?? []));
 	const discs = $derived.by(() => {
-		const m = new Map<number, AlbumPageData['tracks']>();
-		for (const t of data?.tracks ?? []) m.set(t.disc, [...(m.get(t.disc) ?? []), t]);
+		const m = new Map<number, PageTrack[]>();
+		for (const t of list) m.set(t.disc, [...(m.get(t.disc) ?? []), t]);
 		return [...m.entries()];
 	});
-	const haveCount = $derived(data?.tracks.filter((t) => t.have === 'in_library').length ?? 0);
+	const haveCount = $derived(list.filter((t) => t.have === 'in_library').length);
+	const missingCount = $derived(list.filter((t) => t.have === 'missing').length);
 	const meta = $derived.by(() => {
 		if (!data) return [];
 		const n = data.tracks.length;
@@ -107,7 +118,22 @@
 		if (titleId) return void goto(to(data?.part_id ? `/library/${titleId}/albums/${data.part_id}` : `/library/${titleId}`));
 		if (!lookup) return void toasts.push('Still reading this artist; try again in a moment.', 'fail');
 		if (manage) addDialog?.open(lookup);
+		else if (edition) void askEdition();
 		else askDialog?.open(lookup, mbid);
+	}
+
+	/** A member who picked an edition asks for this album in that edition. */
+	async function askEdition() {
+		if (asking || !lookup) return;
+		asking = true;
+		try {
+			const r = await api.post<{ ask: Ask; joined: boolean }>('/asks', { kind: 'artist', id: `mbid:${artist}`, albums: [mbid], editions: { [mbid]: edition } });
+			onAsked(lookup, r);
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		} finally {
+			asking = false;
+		}
 	}
 
 	function onAsked(_a: LookupArtist, r: { ask: { name: string }; joined: boolean }) {
@@ -155,7 +181,7 @@
 						{#if data}<p class="meta">{meta.join(' · ')}</p>{:else}<p class="meta"><span class="sk sk-line meta-sk" aria-hidden="true"></span></p>{/if}
 						<div class="actions">
 							{#if titleId || manage || mayAsk}
-								<Button variant="primary" icon={titleId ? 'library' : asked ? 'check' : 'plus'} disabled={!titleId && (asked || !lookup)} onclick={act} data-testid="album-ask">{cta}</Button>
+								<Button variant="primary" icon={titleId ? 'library' : asked ? 'check' : 'plus'} disabled={!titleId && (asked || !lookup || asking)} onclick={act} data-testid="album-ask">{cta}</Button>
 							{/if}
 							{#if status && data}<span class="pill {status.state}" data-testid="album-state">{status.label}{#if data.part_id && data.tracks.length} · {haveCount} of {data.tracks.length} tracks{/if}</span>{/if}
 						</div>
@@ -170,8 +196,18 @@
 				<div class="sq-rail"><SkRail item="var(--music-item)" titleWidth="200px" /></div>
 			{:else}
 			<section class="block">
-				<h2 class="sr-only">Tracks</h2>
-				{#if data.incomplete || !data.tracks.length}<p class="note">The tracklist is not known yet.</p>{/if}
+								{#if data.incomplete || !data.tracks.length}<p class="note">The tracklist is not known yet.</p>{/if}
+				<div class="row-head">
+					<h2>Tracks</h2>
+					{#if data.part_id && list.length}<p class="count" data-testid="album-have">{haveCount} have · {missingCount} missing</p>{/if}
+				</div>
+				{#if data.editions.length > 1}
+					<div class="chips" role="toolbar" aria-label="Editions" data-testid="album-editions">
+						<Chip label="Usual" selected={!edition} onclick={() => (edition = '')} />
+						{#each data.editions as ed (ed.mbid)}<Chip label={`${ed.label} · ${ed.tracks}`} selected={edition === ed.mbid} onclick={() => (edition = ed.mbid)} />{/each}
+					</div>
+					{#if edition && !titleId && mayAsk && !manage}<p class="note">Asking now asks for this edition.</p>{/if}
+				{/if}
 				{#each discs as [disc, tracks] (disc)}
 					{#if discs.length > 1}<h3 class="disc">Disc {disc}</h3>{/if}
 					<ol class="tracks">
@@ -192,11 +228,17 @@
 				{/each}
 			</section>
 
-			{#if data.editions.length > 1}
-				<section class="block">
-					<h2>Other editions</h2>
-					<ul class="editions">{#each data.editions as ed (ed.mbid)}<li title={ed.date ?? ''}>{ed.label}<span>{ed.tracks} tracks{ed.date ? ` · ${ed.date.slice(0, 4)}` : ''}</span></li>{/each}</ul>
-				</section>
+{#if data}
+			<section class="block">
+				<h2>Details</h2>
+				<dl class="kv">
+					{#if data.release_date}<div><dt>Released</dt><dd>{data.release_date}</dd></div>{/if}
+					<div><dt>Kind</dt><dd>{kindWord(data)}</dd></div>
+					{#if data.label}<div><dt>Label</dt><dd>{data.label}</dd></div>{/if}
+					{#if list.length}<div><dt>Tracks</dt><dd>{list.length}{data.length_ms ? ` · ${length(data.length_ms, true)}` : ''}</dd></div>{/if}
+					{#if data.editions.length}<div><dt>Editions</dt><dd>{data.editions.length}</dd></div>{/if}
+				</dl>
+			</section>
 			{/if}
 
 			{#if data.more_by.length}
@@ -205,6 +247,15 @@
 				</Shelf>
 			{/if}
 
+			{/if}
+
+			{#if near?.length}
+				<Shelf title="Fans also like" item="var(--music-item)" items={near} key={(a) => a.mbid} placeholder="square" lines={2}>
+					{#snippet card(a: PageCredit)}
+						{@const c = coverFor(appPicture(a.image), 200)}
+						<PosterCard title={a.name} href={albumHref(a.mbid, a.artist_mbid)} image={c.src} srcset={c.srcset} kind="artist" shape="square" music subtitle={a.artist_name} badges={a.explicit ? ['E'] : undefined} />
+					{/snippet}
+				</Shelf>
 			{/if}
 
 			{#if similar === null}
@@ -264,9 +315,12 @@
 	.t-have.downloading { color: var(--accent); }
 	.t-len { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; text-align: right; }
 	.note { margin: 0; color: var(--text-muted); font: var(--t-subhead); }
-	.editions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
-	.editions li { display: inline-flex; align-items: baseline; gap: 8px; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line-strong); font: var(--t-subhead); font-weight: 600; }
-	.editions span { color: var(--text-muted); font: var(--t-footnote); }
+	.row-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; max-width: 980px; }
+	.count { margin: 0; color: var(--text-muted); font: var(--t-subhead); font-variant-numeric: tabular-nums; }
+	.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+	.kv { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; max-width: 980px; }
+	.kv dt { color: var(--text-muted); font: var(--t-footnote); text-transform: uppercase; letter-spacing: .05em; }
+	.kv dd { margin: 2px 0 0; font: var(--t-callout); }
 	.circles { display: flex; gap: 18px; overflow-x: auto; margin: 0; padding: 4px 2px 8px; list-style: none; scrollbar-width: none; }
 	.meta-sk { display: inline-block; width: 220px; height: 14px; max-width: 100%; }
 	.sq-rail { --poster-ratio: 1; }
