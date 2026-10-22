@@ -56,7 +56,7 @@
 
   /* Older type names (aliases). */
   --text-xs: 12px; --text-sm: 14px; --text-base: 15px; --text-md: 16px;
-  --text-lg: 19px; --text-xl: 22px; --text-2xl: 28px; --text-3xl: 34px;
+  --text-xl: 22px; --text-2xl: 28px; --text-3xl: 34px;
   --leading-tight: 1.2; --leading: 1.5;
   --weight-regular: 400; --weight-medium: 500; --weight-semibold: 600; --weight-bold: 700;
   --tracking-display: -0.02em;
@@ -76,12 +76,9 @@
   --sidebar-collapsed: 72px;
   --topbar: 56px;
   --rail: var(--sidebar-collapsed);
-  --context-sidebar: calc(var(--sidebar-expanded) - var(--sidebar-collapsed));
   --sidebar: var(--sidebar-expanded);
   --poster-ratio: 2 / 3;
   --wide-ratio: 16 / 9;
-  /* Release rows: about 2.5 wide cards at 1440, 1.2 at 390 (Shelf shrinks by .78 on phones). */
-  --release-item: clamp(370px, 31vw, 460px);
 
   /* Motion. */
   --dur-instant: 90ms; --dur-fast: 150ms; --dur: 240ms; --dur-slow: 360ms; --dur-page: 300ms;
@@ -196,18 +193,13 @@
 /* Aliases that point at themed values. Declared on every themed element so a
    nested data-theme wrapper resolves them against its own colours. */
 :root, [data-theme] {
-  --nav-active: var(--accent-text);
-  --accent-hover: var(--accent-fill-hover);
   --ha-red: var(--accent);
   --ha-red-hover: var(--accent-soft);
   --ha-red-press: var(--accent-fill);
   --ha-red-deep: var(--accent-fill-hover);
   --ha-red-soft: var(--accent-soft);
   --ha-steel: var(--text-faint);
-  --ha-charcoal: var(--text);
-  --shadow-control: var(--shadow-card);
   --shadow-panel: var(--shadow-card);
-  --shadow-float: var(--shadow-lift);
   --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
   /* Silhouette shimmer: a brand-tinted base and one shared sweep. */
   --sk-base: color-mix(in oklab, var(--surface-2), var(--accent) 3%);

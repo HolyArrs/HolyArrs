@@ -113,23 +113,6 @@ img {
 }
 
 /* Headings */
-.page-head {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: flex-end;
-	justify-content: space-between;
-	gap: var(--s-4);
-	margin-bottom: var(--s-6);
-}
-.page-head h1 {
-	font: var(--weight-semibold) var(--text-2xl) / var(--leading-tight) var(--font-display);
-	letter-spacing: var(--tracking-display);
-}
-.page-head p {
-	margin-top: var(--s-2);
-	color: var(--text-muted);
-	max-width: 62ch;
-}
 .h2 {
 	font: var(--weight-semibold) 22px / var(--leading-tight) var(--font-display);
 	letter-spacing: var(--tracking-display);
@@ -448,7 +431,7 @@ input, select, textarea { min-width: 0; }
 textarea.input { min-height: 7rem; padding-block: var(--s-3); resize: vertical; }
 input[type='checkbox'], input[type='radio'], progress { accent-color: var(--accent-fill); }
 :where(h1, h2, h3, p, label, dd, .notice, .form-error, .hint) { overflow-wrap: anywhere; }
-:where(.row, .page-head, .card-head) > * { min-width: 0; }
+:where(.row, .card-head) > * { min-width: 0; }
 .notice > .icon { flex: none; }
 :where(button, input, select, textarea):disabled { opacity: .6; }
 :where(dialog) { max-width: calc(100vw - 2rem); max-height: calc(100dvh - 2rem); overflow: auto; }
