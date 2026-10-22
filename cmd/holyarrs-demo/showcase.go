@@ -43,6 +43,7 @@ type showcaseOptions struct {
 	Runtime string // the runtime folder: config, movies, shows, music, downloads inside
 	AppURL  string // where the showcase backend answers when it runs
 	Reset   bool   // wipe the showcase Library, then seed again
+	Live    bool   // music part only, while the backend runs (no stop check, no config lock)
 	Init    bool   // mark the runtime folder as the showcase's and stop
 }
 
@@ -56,6 +57,7 @@ func parseShowcase(args []string) (showcaseOptions, error) {
 	fs.StringVar(&o.Runtime, "runtime", def, "the showcase runtime folder (config, movies, shows, music, downloads)")
 	fs.StringVar(&o.AppURL, "app-url", "http://127.0.0.1:18728", "the showcase backend; it must be stopped")
 	fs.BoolVar(&o.Reset, "reset", false, "wipe every title, ask and stand-in download in the showcase, then seed again")
+	fs.BoolVar(&o.Live, "live", false, "seed only the music part (folders, members, artists, activity, asks) while the showcase backend runs; not with -reset or -init")
 	fs.BoolVar(&o.Init, "init", false, "mark the runtime folder as the showcase's ("+showcaseMarker+") and stop")
 	if err := fs.Parse(args); err != nil {
 		return o, err
@@ -98,8 +100,13 @@ func checkShowcase(o showcaseOptions) error {
 }
 
 func showcaseCommand(ctx context.Context, o showcaseOptions, out io.Writer) error {
-	if err := checkStopped(ctx, o.AppURL, false); err != nil {
-		return err
+	if o.Live && (o.Reset || o.Init) {
+		return errors.New("-live cannot be combined with -reset or -init; stop the backend for those")
+	}
+	if !o.Live {
+		if err := checkStopped(ctx, o.AppURL, false); err != nil {
+			return err
+		}
 	}
 	if o.Init {
 		base := strings.ToLower(filepath.Base(filepath.Clean(o.Runtime)))
@@ -116,11 +123,13 @@ func showcaseCommand(ctx context.Context, o showcaseOptions, out io.Writer) erro
 		return err
 	}
 	cfg := filepath.Join(o.Runtime, "config")
-	unlock, err := lockConfig(cfg)
-	if err != nil {
-		return err
+	if !o.Live {
+		unlock, err := lockConfig(cfg)
+		if err != nil {
+			return err
+		}
+		defer unlock()
 	}
-	defer unlock()
 	lo := options{ConfigDir: cfg, MediaRoot: o.Runtime, DownloadsDir: filepath.Join(o.Runtime, "downloads")}
 	w, err := openWorld(ctx, lo, providers{}, out)
 	if err != nil {
@@ -139,7 +148,7 @@ func showcaseCommand(ctx context.Context, o showcaseOptions, out io.Writer) erro
 		return err
 	}
 	w.lib.Metadata, w.lib.Shows, w.lib.Artists = p.Movies, p.Shows, p.Artists
-	return w.showcaseSeed(ctx)
+	return w.showcaseSeed(ctx, o.Live)
 }
 
 // showcaseProviders reach TMDB through the HolyArrs metadata server with
@@ -270,7 +279,7 @@ func ownerPerson(ctx context.Context, db store.Querier) (asks.Person, error) {
 
 // showcaseSeed adds each scenario once; a scenario already recorded in the
 // seed record is skipped, so running it again adds nothing twice.
-func (w *world) showcaseSeed(ctx context.Context) error {
+func (w *world) showcaseSeed(ctx context.Context, musicOnly bool) error {
 	start := time.Now()
 	steps := []struct {
 		name string
@@ -287,6 +296,9 @@ func (w *world) showcaseSeed(ctx context.Context) error {
 		{"asks", w.showcaseAsks},
 	}
 	for _, st := range steps {
+		if musicOnly && !map[string]bool{"library folders": true, "members": true, "artists": true, "activity": true, "asks": true}[st.name] {
+			continue
+		}
 		w.say("== %s", st.name)
 		if err := st.fn(ctx); err != nil {
 			_ = w.saveManifest(ctx)
@@ -609,6 +621,7 @@ func (w *world) showcaseArtists(ctx context.Context) error {
 			}
 		}
 		w.m.Titles[key] = id
+		_ = w.saveManifest(ctx)
 		var future int
 		_ = w.s.Read().QueryRowContext(ctx, "SELECT count(*) FROM parts WHERE title_id = ? AND kind = 'album' AND release_date > ?", id, store.FormatTime(time.Now())).Scan(&future)
 		w.say("   %-48s %s (%d albums kept, %d not out yet)", e.Name, e.Scenario, kept, future)
@@ -956,6 +969,32 @@ func (w *world) showcaseAsks(ctx context.Context) error {
 			w.say("   %-48s asked by %s", e.Name, p.Name)
 		}
 		w.m.Steps[key] = true
+	}
+	// Follows of artists now in the Library (the owner's and a member's), so
+	// the "New from your artists" row has followed artists to draw on.
+	for _, e := range showcaseArtistList {
+		id, _ := library.ArtistByMBID(ctx, w.s.Read(), e.MBID) // the current Library title (adopt can replace the id)
+		if id != 0 {
+			w.m.Titles["artist:"+e.MBID] = id
+		}
+		for _, who := range e.Follow {
+			key := "follow artist " + e.MBID + " " + who
+			if id == 0 || w.m.Steps[key] {
+				continue
+			}
+			p := owner
+			if who != "owner" {
+				if p, err = w.member(ctx, who); err != nil {
+					return fmt.Errorf("member %s: %w", who, err)
+				}
+			}
+			if err := svc.Follow(ctx, p, id); err != nil {
+				w.skip("follow %s by %s: %v", e.Name, p.Name, err)
+				continue
+			}
+			w.say("   %-48s followed by %s", e.Name, p.Name)
+			w.m.Steps[key] = true
+		}
 	}
 	return nil
 }

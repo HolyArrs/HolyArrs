@@ -135,11 +135,12 @@ type showcaseArtist struct {
 	MBID        string
 	Name        string
 	Scenario    string
-	Albums      int    // studio albums kept
-	NewAlbums   string // all, new, none
-	Complete    bool   // every kept album has placeholder tracks
-	Downloading bool   // the newest kept album is downloading
-	Ask         bool   // asked for by a member instead of added
+	Albums      int      // studio albums kept
+	NewAlbums   string   // all, new, none
+	Complete    bool     // every kept album has placeholder tracks
+	Downloading bool     // the newest kept album is downloading
+	Ask         bool     // asked for by a member (Maya) instead of added
+	Follow      []string // who follows the artist once it is in the Library: "owner" or a member name
 }
 
 var showcaseArtistList = []showcaseArtist{
@@ -147,7 +148,24 @@ var showcaseArtistList = []showcaseArtist{
 	{MBID: "a74b1b7f-71a5-4011-9441-d0b5e4122711", Name: "Radiohead", Scenario: "albums missing", Albums: 5, NewAlbums: "new"},
 	{MBID: "83d91898-7763-47d7-b03b-b92132375c47", Name: "Pink Floyd", Scenario: "albums missing", Albums: 4, NewAlbums: "none"},
 	{MBID: "056e4f3e-d505-4dad-8ec1-d04f521cbb56", Name: "Daft Punk", Scenario: "album downloading", Albums: 3, NewAlbums: "new", Downloading: true},
-	{MBID: "20244d07-534f-4eff-b4d4-930878889970", Name: "Taylor Swift", Scenario: "new albums kept; upcoming album when MusicBrainz lists one", Albums: 3, NewAlbums: "all"},
+	{MBID: "20244d07-534f-4eff-b4d4-930878889970", Name: "Taylor Swift", Scenario: "new albums kept; upcoming album when MusicBrainz lists one", Albums: 3, NewAlbums: "all", Follow: []string{"Maya"}},
 	{MBID: "f4abc0b5-3f7a-4eff-8f78-ac078dbce533", Name: "Billie Eilish", Scenario: "asked for by a member", Ask: true},
 	{MBID: "381086ea-f511-4aba-bdf9-71c753dc5077", Name: "Kendrick Lamar", Scenario: "asked for by a member", Ask: true},
+	// Music part 2 (2026-10-22): well-known artists so the personal Explore
+	// music rows have something to show. "Albums: 30" keeps every studio album.
+	{MBID: "ada7a83c-e3e1-40f1-93f9-3e73dbc9298a", Name: "Arctic Monkeys", Scenario: "indie: 4 albums on disk, the rest missing", Albums: 4, NewAlbums: "new", Complete: true, Follow: []string{"owner"}},
+	{MBID: "b8a7c51f-362c-4dcb-a259-bc6e0095f0a6", Name: "Ed Sheeran", Scenario: "pop: 3 albums on disk, the rest missing", Albums: 3, NewAlbums: "new", Complete: true, Follow: []string{"Maya"}},
+	{MBID: "0383dadf-2a4e-4d10-a46a-e9e041da8eb3", Name: "Queen", Scenario: "rock: 5 albums on disk, the rest missing", Albums: 5, NewAlbums: "none", Complete: true, Follow: []string{"Maya"}},
+	{MBID: "cc197bad-dc9c-440d-a5b5-d52ba2e14234", Name: "Coldplay", Scenario: "rock: 4 albums on disk, the rest missing", Albums: 4, NewAlbums: "new", Complete: true, Follow: []string{"owner"}},
+	{MBID: "b95ce3ff-3d05-4e87-9e01-c97b66af13d4", Name: "Eminem", Scenario: "hip-hop: 5 albums on disk, the rest missing", Albums: 5, NewAlbums: "none", Complete: true},
+	{MBID: "9fff2f8a-21e6-47de-a2b8-7f449929d43f", Name: "Drake", Scenario: "hip-hop: 4 albums on disk, the rest missing", Albums: 4, NewAlbums: "new", Complete: true, Follow: []string{"owner"}},
+	{MBID: "164f0d73-1234-4e2c-8743-d77bf2191051", Name: "Kanye West", Scenario: "hip-hop: 3 albums on disk, the rest missing", Albums: 3, NewAlbums: "none", Complete: true},
+	{MBID: "73e5e69d-3554-40d8-8516-00cb38737a1c", Name: "Rihanna", Scenario: "R&B: 4 albums on disk, the rest missing", Albums: 4, NewAlbums: "none", Complete: true},
+	{MBID: "859d0860-d480-4efd-970c-c05d5f1776b8", Name: "Beyoncé", Scenario: "R&B: 3 albums on disk, the rest missing", Albums: 3, NewAlbums: "new", Complete: true},
+	{MBID: "c8b03190-306c-4120-bb0b-6f2ebfc06ea9", Name: "The Weeknd", Scenario: "R&B: 3 albums on disk, the rest missing", Albums: 3, NewAlbums: "new", Complete: true, Follow: []string{"owner", "Maya"}},
+	{MBID: "b1e26560-60e5-4236-bbdb-9aa5a8d5ee19", Name: "Post Malone", Scenario: "hip-hop/pop: every album on disk", Albums: 30, NewAlbums: "new", Complete: true},
+	{MBID: "b7539c32-53e7-4908-bda3-81449c367da6", Name: "Lana Del Rey", Scenario: "indie: every album on disk", Albums: 30, NewAlbums: "new", Complete: true, Follow: []string{"owner"}},
+	{MBID: "afb680f2-b6eb-4cd7-a70b-a63b25c763d5", Name: "Bruno Mars", Scenario: "pop: every album on disk", Albums: 30, NewAlbums: "new", Complete: true},
+	{MBID: "63aa26c3-d59b-4da4-84ac-716b54f1ef4d", Name: "Tame Impala", Scenario: "electronic/indie: asked for by a member", Ask: true},
+	{MBID: "5b11f4ce-a62d-471e-81fc-a69a8278c7da", Name: "Nirvana", Scenario: "rock: albums kept, none on disk", Albums: 3, NewAlbums: "none"},
 }
