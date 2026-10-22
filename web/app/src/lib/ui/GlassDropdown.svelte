@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { roundArt, stateWord, subline, suggestHref, type SuggestAnswer } from '../live-search.ts';
 	import { appPicture } from '../music-pages.ts';
+	import Icon, { type IconName } from '../Icon.svelte';
+	// No art yet: the row shows its kind's glyph, the same stand-in the posters use.
+	const glyph: Record<string, IconName> = { movie: 'film', show: 'tv', person: 'user', artist: 'user', album: 'music', song: 'music' };
 
 	// The live search dropdown (music plan Phase 4): a glass panel under the
 	// field. Word completions first, then rich rows with 44 px art (round for
@@ -18,7 +21,7 @@
 	{#each answer.items as r, j (r.kind + r.name + (r.sub ?? '') + j)}
 		{@const i = words.length + j}
 		<a id="{id}-{i}" role="option" aria-selected={active === i} class="row" class:on={active === i} href={suggestHref(r)} data-testid="suggest-row" data-kind={r.kind} tabindex="-1" onpointerdown={(e) => e.preventDefault()} onclick={(e) => { e.preventDefault(); onpick(suggestHref(r)); }}>
-			<span class="art" class:round={roundArt(r.kind)}>{#if r.art}<img src={appPicture(r.art)} alt="" loading="lazy" decoding="async" />{/if}</span>
+			<span class="art" class:round={roundArt(r.kind)}>{#if r.art}<img src={appPicture(r.art)} alt="" loading="lazy" decoding="async" />{:else}<span class="ph" aria-hidden="true"><Icon name={glyph[r.kind] ?? 'music'} size={18} /></span>{/if}</span>
 			<span class="text"><span class="name">{r.name}</span><span class="sub">{subline(r)}</span></span>
 			{#if r.state}<span class="chip {r.state}">{stateWord[r.state]}</span>{/if}
 		</a>
@@ -38,6 +41,7 @@
 	.art { flex: none; width: 44px; height: 44px; border-radius: 4px; overflow: hidden; background: var(--surface-3); }
 	.art.round { border-radius: 999px; }
 	.art img { width: 100%; height: 100%; object-fit: cover; }
+	.ph { width: 100%; height: 100%; display: grid; place-items: center; color: var(--text-muted); }
 	.text { display: grid; min-width: 0; flex: 1; }
 	.name { font: 600 14px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.sub { font-size: 13px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
