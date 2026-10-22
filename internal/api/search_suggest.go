@@ -166,7 +166,27 @@ wait:
 		}
 	}
 	words, items := pickSuggest(mergeSuggest(rows), q)
+	a.coverSuggestAlbums(items)
 	writeJSON(w, http.StatusOK, map[string]any{"q": q, "completions": words, "items": items})
+}
+
+// coverSuggestAlbums points every album row without art at the music
+// picture route, registers it there with its names and prefetches it, so a
+// missing album gets a cover from the same chain as Explore's rows.
+func (a *API) coverSuggestAlbums(items []SuggestRow) {
+	var names []nameKey
+	for i := range items {
+		r := &items[i]
+		if r.Kind != "album" || r.Art != "" || r.MBID == "" {
+			continue
+		}
+		r.Art = musicArtPrefix + "album/" + r.MBID
+		names = append(names, nameKey{kind: "album", mbid: r.MBID, name: r.Name, artist: r.Sub})
+	}
+	if len(names) > 0 {
+		a.rememberMusicNames(names)
+		a.warmMusicNames(names)
+	}
 }
 
 // mergeSuggest drops an outside row that a Library row already shows (same

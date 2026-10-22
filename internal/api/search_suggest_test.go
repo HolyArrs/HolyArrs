@@ -166,3 +166,29 @@ func TestSuggestScoreAndPick(t *testing.T) {
 		t.Fatalf("pick %v %+v", words, out)
 	}
 }
+
+// A missing album without a cover gets the music picture route, and the
+// route knows its names (the same chain as Explore's rows).
+func TestSuggestMissingAlbumGetsCoverRoute(t *testing.T) {
+	r := newAskRig(t)
+	items := []SuggestRow{
+		{Kind: "album", Name: "Radial", Sub: "Lab Band", MBID: "abc", State: "missing"},
+		{Kind: "album", Name: "Kept", Sub: "Lab Band", MBID: "def", Art: "https://x/y.jpg"},
+		{Kind: "album", Name: "No id", Sub: "Lab Band"},
+		{Kind: "song", Name: "Song", MBID: "ghi"},
+	}
+	r.api.coverSuggestAlbums(items)
+	if items[0].Art != musicArtPrefix+"album/abc" {
+		t.Fatalf("missing album art %q", items[0].Art)
+	}
+	if items[1].Art != "https://x/y.jpg" || items[2].Art != "" || items[3].Art != "" {
+		t.Fatalf("other rows changed: %+v", items[1:])
+	}
+	r.api.music.mu.Lock()
+	n := r.api.music.names["album|abc"]
+	r.api.music.mu.Unlock()
+	if n.Title != "Radial" || n.Artist != "Lab Band" {
+		t.Fatalf("route names %+v", n)
+	}
+	r.api.music.prefetching.Wait()
+}
