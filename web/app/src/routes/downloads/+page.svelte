@@ -414,7 +414,7 @@
 	@media (max-width: 640px) {
 		.dl { grid-template-columns: 40px minmax(0, 1fr); gap: 12px; }
 		.art { width: 40px; }
-		.top { flex-direction: column; align-items: stretch; gap: 6px; }
+		.top { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 6px; }
 		.top > :global(.ui-pill) { align-self: flex-start; }
 		.acts { grid-column: 1 / -1; justify-content: space-between; gap: 6px; }
 		.acts > :global(.ui-btn) { flex: 1 1 auto; min-height: 44px; }
