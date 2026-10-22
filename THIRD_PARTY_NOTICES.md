@@ -1,6 +1,6 @@
 # Third-party notices
 
-HolyArrs is free software under the GPL-3.0 (see `LICENSE`). It shows information from outside services and is built with open-source parts. Each keeps its own rights. The same list of data sources is shown in the app under Settings → Credits.
+HolyArrs is free software under the GPL-3.0 (see `LICENSE`). It shows information from outside services and is built with open-source parts. Each keeps its own rights.
 
 ## Data sources
 
@@ -21,8 +21,6 @@ HolyArrs is free software under the GPL-3.0 (see `LICENSE`). It shows informatio
 | [AniList](https://anilist.co/) | Anime details | [AniList API terms](https://docs.anilist.co/guide/terms-of-use) |
 | [Anime-Lists](https://github.com/Anime-Lists/anime-lists) and [Fribb anime-lists](https://github.com/Fribb/anime-lists) | Links between anime IDs on different sites | See each project |
 | [YouTube](https://www.youtube.com/) | Trailers | [YouTube terms](https://www.youtube.com/t/terms) |
-
-The TMDB logo (`web/app/static/brand/tmdb-logo-short.svg`, the "Alt short" blue logo, unaltered) was downloaded from TMDB's logos page, https://www.themoviedb.org/about/logos-attribution. Its gradient reads on light and dark backgrounds. It is shown on the Credits page under the [TMDB API terms](https://www.themoviedb.org/api-terms-of-use): it identifies the use of TMDB, stays smaller than HolyArrs branding and is not modified.
 
 This product uses the TMDB API but is not endorsed or certified by TMDB. None of the sources above endorse HolyArrs.
 

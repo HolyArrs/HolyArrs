@@ -17,7 +17,6 @@ const e = (href: string, anchor: string, label: string, words = '', advanced = f
 export const settingIndex: SettingEntry[] = [
 	// General
 	e('/settings/appearance', 'theme', 'Theme', 'appearance light dark automatic mode colours colors night'),
-	e('/settings/credits', 'credits-card', 'Credits', 'credits licences licenses attribution wikipedia tmdb musicbrainz data sources about'),
 	e('/settings/this-app', 'h-about-card', 'Version', 'about holyarrs build database schema uptime url base'),
 	e('/settings/this-app', 'update-card', 'Updates', 'update new version release check for updates'),
 	e('/settings/this-app', 'storage-card', 'Storage', 'paths config folder disk free space where things are stored'),
