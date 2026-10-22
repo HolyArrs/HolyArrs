@@ -62,10 +62,6 @@ type ShowDefaults struct {
 	WaitMinutes  int    `json:"episode_wait_minutes"` // after the air time before an episode is wanted
 }
 
-var showKeys = map[string]string{"season_choice": "show_season_choice", "new_seasons": "show_new_seasons",
-	"episode_order": "show_episode_order", "details_source": "show_details_source", "keep_specials": "keep_specials",
-	"episode_wait_minutes": "episode_wait_minutes"}
-
 // ReadShowDefaults reads the show settings; unset or odd values take the
 // recommended defaults (all seasons, new seasons kept, aired order, TMDB,
 // specials off, no wait).
