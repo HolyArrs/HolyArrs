@@ -20,7 +20,7 @@
 	import { followsByTmdb } from '#lib/explore.ts';
 	import { byDecade, personChips, runReviewed, type FilmSort, type FilmographyPage, type PersonMovie, type PersonRole } from '#lib/people.ts';
 	import type { AskLimit } from '#lib/types.ts';
-	import { licenseURL, loadWikiFacts, wikipediaURL, type WikiFacts } from '#lib/wiki-facts.ts';
+	import { loadWikiFacts, type WikiFacts } from '#lib/wiki-facts.ts';
 	import { cameFrom, fromIcon } from '#lib/came-from.svelte.ts';
 	import { peopleSort, takePrefetched } from '#lib/person-prefetch.ts';
 
@@ -180,7 +180,6 @@
 				{#if bio}
 					<p class="bio" class:open={bioOpen}>{bio}</p>
 					<button class="more" type="button" onclick={() => (bioOpen = !bioOpen)}>{bioOpen ? 'Less' : 'More'}</button>
-					{#if wiki.bio}<p class="credit" data-testid="wiki-credit">From <a href={wikipediaURL(wiki.bio.url) || 'https://en.wikipedia.org/'} target="_blank" rel="noopener noreferrer">Wikipedia</a>, <a href={licenseURL(wiki.bio.license_url)} target="_blank" rel="noopener noreferrer license">CC BY-SA</a></p>{/if}
 				{/if}
 			</div>
 		</div>
@@ -250,8 +249,6 @@
 	.chips li { padding: 5px 12px; border-radius: 999px; background: rgb(255 255 255 / .14); backdrop-filter: blur(12px); font: var(--t-footnote); font-weight: 600; font-variant-numeric: tabular-nums; }
 	.bio { margin: 0; max-width: 72ch; font: var(--t-callout); line-height: 1.55; color: var(--on-art); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 	.bio.open { display: block; }
-	.credit { margin: 4px 0 0; font: var(--t-caption, 12px/1.4 var(--font-ui)); color: var(--on-art); opacity: .7; }
-	.credit a { color: inherit; text-decoration: underline; }
 	.chips li.award { color: #f5c518; }
 	.more { align-self: flex-start; padding: 0; border: 0; background: none; color: var(--on-art); font: var(--t-subhead); font-weight: 600; cursor: pointer; text-decoration: underline; }
 	.block { display: flex; flex-direction: column; gap: 14px; min-width: 0; }

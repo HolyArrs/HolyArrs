@@ -18,7 +18,6 @@
 	import { refreshInbox } from '#lib/wishlist.svelte.ts';
 	import { to } from '#lib/paths.ts';
 	import { plainReason } from '#lib/plain.ts';
-	import { licenseURL, wikipediaURL } from '#lib/wiki-facts.ts';
 	import { cameFrom, fromIcon } from '#lib/came-from.svelte.ts';
 	import { albumYear } from '#lib/music.ts';
 	import { releaseWords } from '#lib/music-trending.ts';
@@ -424,7 +423,6 @@
 							<p class="bio" class:open={bioOpen}>{hero.bio.extract}</p>
 							<div class="bio-foot">
 								<button class="more" type="button" onclick={() => (bioOpen = !bioOpen)} aria-expanded={bioOpen}>{bioOpen ? 'Less' : 'More'}</button>
-								<p class="credit" data-testid="wiki-credit">From <a href={wikipediaURL(hero.bio.url) || 'https://en.wikipedia.org/'} target="_blank" rel="noopener noreferrer">Wikipedia</a>, <a href={licenseURL(hero.bio.license_url)} target="_blank" rel="noopener noreferrer license">CC BY-SA</a></p>
 							</div>
 						</div>
 					{:else if !data}
@@ -522,8 +520,6 @@
 	.bio.open { display: block; }
 	.bio-foot { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-top: 8px; }
 	.more { padding: 0; border: 0; background: none; color: var(--text); font: var(--t-subhead); font-weight: 600; cursor: pointer; text-decoration: underline; }
-	.credit { margin: 0; font: var(--t-caption, 12px/1.4 var(--font-ui)); color: var(--text-muted); }
-	.credit a { color: inherit; text-decoration: underline; }
 	.kv { margin: 0; display: flex; flex-direction: column; gap: 12px; }
 	.kv dt { color: var(--text-muted); font: var(--t-footnote); text-transform: uppercase; letter-spacing: .05em; }
 	.kv dd { margin: 2px 0 0; font: var(--t-callout); }
