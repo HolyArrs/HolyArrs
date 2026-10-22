@@ -440,7 +440,9 @@ func (a *Auth) importPeople(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		People []struct {
 			ID  string `json:"id"`
-			Kid bool   `json:"kid"`
+			Kid *bool  `json:"kid"` // left out: follow the server's restricted flag
+			// ClearKid confirms importing a restricted server account as an adult.
+			ClearKid bool `json:"confirm_not_kid"`
 		} `json:"people"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10)).Decode(&body); err != nil || len(body.People) == 0 || len(body.People) > 500 {
@@ -457,6 +459,12 @@ func (a *Auth) importPeople(w http.ResponseWriter, r *http.Request) {
 	if offer == nil {
 		fail(w, http.StatusConflict, "the list has run out; show it again")
 		return
+	}
+	for _, pick := range body.People {
+		if p, ok := offer.people[pick.ID]; ok && p.Kid && pick.Kid != nil && !*pick.Kid && !pick.ClearKid {
+			fail(w, http.StatusConflict, p.Name+" is restricted on the server; confirm before importing them as an adult")
+			return
+		}
 	}
 	kidPerms := permsJSON([]Perm{PermAsk})
 	made, skipped := []string{}, 0
@@ -490,7 +498,11 @@ func (a *Auth) importPeople(w http.ResponseWriter, r *http.Request) {
 				name = fmt.Sprintf("%s-%d", base, i)
 			}
 			u := &domain.User{Name: name, Role: RoleMember, State: "active", Perms: permsJSON(DefaultPerms(RoleMember))}
-			if pick.Kid {
+			kid := p.Kid
+			if pick.Kid != nil {
+				kid = *pick.Kid // clearing a restricted flag was confirmed above
+			}
+			if kid {
 				u.Perms, u.MaxRating = kidPerms, "PG"
 			}
 			id, err := store.Insert(tx, "users", u, Actor(ctx))

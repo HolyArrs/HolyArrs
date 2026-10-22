@@ -88,7 +88,11 @@ func TestOwnerLinksPlexAndImports(t *testing.T) {
 	if resp.StatusCode != 200 || !strings.Contains(out, `"name":"ana"`) || !strings.Contains(out, `"kid":true`) || strings.Contains(out, "elsewhere") {
 		t.Fatalf("preview: %d %s", resp.StatusCode, out)
 	}
-	resp, out = own.do(t, f, "POST", "/api/v1/auth/import/plex", `{"people":[{"id":"21"},{"id":"22","kid":true},{"id":"999"}]}`)
+	if resp, _ := own.do(t, f, "POST", "/api/v1/auth/import/plex", `{"people":[{"id":"22","kid":false}]}`); resp.StatusCode != 409 {
+		t.Fatalf("restricted cleared without confirm: %d", resp.StatusCode)
+	}
+	// Restricted on Plex: a kid unless the request says otherwise.
+	resp, out = own.do(t, f, "POST", "/api/v1/auth/import/plex", `{"people":[{"id":"21"},{"id":"22"},{"id":"999"}]}`)
 	if resp.StatusCode != 200 || !strings.Contains(out, `"skipped":1`) {
 		t.Fatalf("import: %d %s", resp.StatusCode, out)
 	}
