@@ -126,6 +126,8 @@ test('the owner finds an artist and adds it from Search', async () => {
 test('the album page lists tracks and Pressings, and the owner picks another Pressing', async () => {
 	await own.getByTestId('album').filter({ hasText: 'Harbour Songs' }).getByRole('link', { name: 'Harbour Songs' }).click();
 	await expect(own.getByRole('heading', { level: 1, name: /Harbour Songs/ })).toBeVisible();
+	await openInLibrary(own);
+	await expect(own.getByRole('heading', { level: 1, name: /Harbour Songs/ })).toBeVisible();
 	await expect(own.getByTestId('pressing')).toHaveCount(3);
 	await expect(own.getByTestId('track')).toHaveCount(3);
 	await expect(own.getByTestId('track').first()).toContainText('Song 1.1');
