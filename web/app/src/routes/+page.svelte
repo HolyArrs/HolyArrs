@@ -305,6 +305,12 @@
 	.detail p { margin-top: 4px; font-family: var(--font-mono); overflow-wrap: anywhere; }
 	/* Management widgets: calm grouped lists, a hairline and no lift, like Settings. */
 	.attention .list { border-radius: var(--r-panel); background: var(--surface-1); box-shadow: inset 0 0 0 1px var(--line); padding: 4px; }
+	/* On a phone the pill and action left the title one letter wide: put them on their own line under it. */
+	@media (max-width: 599px) {
+		.attention :global(.ui-row) { flex-wrap: wrap; row-gap: 0; }
+		.attention :global(.ui-row > .main) { flex-basis: 100%; }
+		.attention :global(.ui-row > .trail) { padding: 0 0 4px 52px; }
+	}
 	.go { display: inline-flex; align-items: center; gap: 2px; color: var(--accent-text); font: var(--t-subhead); font-weight: 600; }
 	.more { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent-text); font: var(--t-callout); font-weight: 500; }
 	.more:hover { text-decoration: underline; text-underline-offset: 3px; }
