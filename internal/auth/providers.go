@@ -365,7 +365,7 @@ func (a *Auth) plexPeople(w http.ResponseWriter, r *http.Request) ([]importPerso
 func (a *Auth) serverPeople(w http.ResponseWriter, r *http.Request, kind string) ([]importPerson, bool) {
 	ctx := r.Context()
 	v := a.way(ctx, kind)
-	if v.URL == "" {
+	if _, err := checkServerURL(v.URL); err != nil {
 		fail(w, http.StatusConflict, "give the "+kind+" server address first")
 		return nil, false
 	}
@@ -387,7 +387,7 @@ func (a *Auth) serverPeople(w http.ResponseWriter, r *http.Request, kind string)
 		} `json:"User"`
 		AccessToken string `json:"AccessToken"`
 	}
-	code, err := a.fetch(ctx, http.MethodPost, v.URL+"/Users/AuthenticateByName", hdr, map[string]string{"Username": c.Name, "Pw": c.Password}, &got)
+	code, err := a.serverFetch(ctx, http.MethodPost, v.URL+"/Users/AuthenticateByName", hdr, map[string]string{"Username": c.Name, "Pw": c.Password}, &got)
 	if err != nil {
 		fail(w, http.StatusBadGateway, "the "+kind+" server did not answer")
 		return nil, false
@@ -402,7 +402,7 @@ func (a *Auth) serverPeople(w http.ResponseWriter, r *http.Request, kind string)
 	}
 	th := map[string]string{"Authorization": fmt.Sprintf("%s, Token=%q", authz, got.AccessToken), "X-Emby-Token": got.AccessToken}
 	defer func() {
-		_, _ = a.fetch(context.WithoutCancel(ctx), http.MethodPost, v.URL+"/Sessions/Logout", th, nil, nil)
+		_, _ = a.serverFetch(context.WithoutCancel(ctx), http.MethodPost, v.URL+"/Sessions/Logout", th, nil, nil)
 	}()
 	if !got.User.Policy.IsAdministrator {
 		fail(w, http.StatusForbidden, "this account is not an admin on the "+kind+" server")
@@ -416,7 +416,7 @@ func (a *Auth) serverPeople(w http.ResponseWriter, r *http.Request, kind string)
 			IsDisabled      bool `json:"IsDisabled"`
 		} `json:"Policy"`
 	}
-	code, err = a.fetch(ctx, http.MethodGet, v.URL+"/Users", th, nil, &users)
+	code, err = a.serverFetch(ctx, http.MethodGet, v.URL+"/Users", th, nil, &users)
 	if err != nil || code/100 != 2 {
 		fail(w, http.StatusBadGateway, "the "+kind+" server did not list its users")
 		return nil, false

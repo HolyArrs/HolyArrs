@@ -216,6 +216,25 @@ func TestJellyfinImportNeedsAnAdmin(t *testing.T) {
 	}
 }
 
+func TestJellyfinImportDoesNotFollowRedirects(t *testing.T) {
+	var leaked atomic.Int32
+	elsewhere := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { leaked.Add(1) }))
+	t.Cleanup(elsewhere.Close)
+	ms := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, elsewhere.URL+r.URL.Path, http.StatusTemporaryRedirect)
+	}))
+	t.Cleanup(ms.Close)
+	f := gated(t, Options{})
+	own := ownerOf(t, f)
+	own.do(t, f, "PUT", "/api/v1/auth/settings", `{"jellyfin":{"on":true,"url":"`+ms.URL+`","join":"nobody"}}`)
+	if resp, _ := own.do(t, f, "POST", "/api/v1/auth/import/jellyfin/preview", `{"name":"admin","password":"right"}`); resp.StatusCode/100 == 2 {
+		t.Fatalf("redirected import: %d", resp.StatusCode)
+	}
+	if leaked.Load() != 0 {
+		t.Fatal("the admin password followed a redirect")
+	}
+}
+
 func TestEveryoneNeedsConfirming(t *testing.T) {
 	f := gated(t, Options{})
 	own := ownerOf(t, f)

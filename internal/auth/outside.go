@@ -354,6 +354,16 @@ func (a *Auth) outsideDone(w http.ResponseWriter, r *http.Request, provider stri
 
 // fetch makes one call to an outside service and decodes a JSON answer.
 func (a *Auth) fetch(ctx context.Context, method, u string, hdr map[string]string, body any, out any) (int, error) {
+	return a.call(ctx, a.http, method, u, hdr, body, out)
+}
+
+// serverFetch is fetch for a Jellyfin or Emby server the admin typed in.
+// It never follows a redirect, so a password is only sent to that address.
+func (a *Auth) serverFetch(ctx context.Context, method, u string, hdr map[string]string, body any, out any) (int, error) {
+	return a.call(ctx, a.server, method, u, hdr, body, out)
+}
+
+func (a *Auth) call(ctx context.Context, c *http.Client, method, u string, hdr map[string]string, body any, out any) (int, error) {
 	var rd io.Reader
 	if body != nil {
 		b, _ := json.Marshal(body)
@@ -372,7 +382,7 @@ func (a *Auth) fetch(ctx context.Context, method, u string, hdr map[string]strin
 	for k, v := range hdr {
 		req.Header.Set(k, v)
 	}
-	resp, err := a.http.Do(req)
+	resp, err := c.Do(req)
 	if err != nil {
 		return 0, err
 	}
@@ -595,7 +605,7 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 		} `json:"User"`
 		AccessToken string `json:"AccessToken"`
 	}
-	code, err := a.fetch(ctx, http.MethodPost, v.URL+"/Users/AuthenticateByName", hdr, map[string]string{"Username": c.Name, "Pw": c.Password}, &got)
+	code, err := a.serverFetch(ctx, http.MethodPost, v.URL+"/Users/AuthenticateByName", hdr, map[string]string{"Username": c.Name, "Pw": c.Password}, &got)
 	if err != nil {
 		log.Printf("auth: %s sign-in: %v", kind, err)
 		fail(w, http.StatusBadGateway, "the "+kind+" server did not answer; ask the owner")
@@ -615,7 +625,7 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 		// HolyArrs does not keep the server's token: end that session now.
 		lh := map[string]string{"Authorization": fmt.Sprintf("%s, Token=%q", authz, got.AccessToken)}
 		lh["X-Emby-Token"] = got.AccessToken
-		_, _ = a.fetch(context.WithoutCancel(ctx), http.MethodPost, v.URL+"/Sessions/Logout", lh, nil, nil)
+		_, _ = a.serverFetch(context.WithoutCancel(ctx), http.MethodPost, v.URL+"/Sessions/Logout", lh, nil, nil)
 	}
 	if got.User.Policy.IsDisabled {
 		fail(w, http.StatusForbidden, "this account is turned off on the "+kind+" server")

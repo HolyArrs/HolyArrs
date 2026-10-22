@@ -120,6 +120,7 @@ type Auth struct {
 	pins            map[int64]*pin
 	offers          map[string]*importOffer // last import preview per provider
 	tester          *http.Client            // address tests (providers.go)
+	server          *http.Client            // Jellyfin/Emby calls; never follows redirects
 	proxies         []*net.IPNet
 	checks          chan struct{}
 	safeMode        bool
@@ -147,6 +148,9 @@ func New(s *store.Store, opt Options) *Auth {
 	if a.http == nil {
 		a.http = &http.Client{Timeout: 15 * time.Second}
 	}
+	server := *a.http
+	server.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	a.server = &server
 	if a.plexURL == "" {
 		a.plexURL = os.Getenv(EnvPlexURL)
 	}
