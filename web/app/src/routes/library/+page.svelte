@@ -298,22 +298,24 @@
 	}
 	const sameFilter = (a: FilterState, b: FilterState) => a.status === b.status && a.kept === b.kept && a.asker === b.asker && a.series === b.series;
 
+	// Counts stay blank until the Library has loaded, so a 0 only ever means 0.
+	const countHint = (n: number) => (loaded ? String(n) : undefined);
 	const filterItems = $derived.by<MenuItem[]>(() => {
 		const items: MenuItem[] = [{ kind: 'heading', label: 'Status' }];
-		for (const [f, label] of filters) items.push({ label, hint: String(counts.status[f]), checked: filter.status === f, onselect: () => setFilter({ status: f }) });
+		for (const [f, label] of filters) items.push({ label, hint: countHint(counts.status[f]), checked: filter.status === f, onselect: () => setFilter({ status: f }) });
 		items.push({ kind: 'separator' }, { kind: 'heading', label: 'Keep up to date' });
-		items.push({ label: 'Kept up to date', hint: String(counts.kept.on), checked: filter.kept === 'on', onselect: () => setFilter({ kept: filter.kept === 'on' ? 'any' : 'on' }) });
-		items.push({ label: 'Not kept up to date', hint: String(counts.kept.off), checked: filter.kept === 'off', onselect: () => setFilter({ kept: filter.kept === 'off' ? 'any' : 'off' }) });
+		items.push({ label: 'Kept up to date', hint: countHint(counts.kept.on), checked: filter.kept === 'on', onselect: () => setFilter({ kept: filter.kept === 'on' ? 'any' : 'on' }) });
+		items.push({ label: 'Not kept up to date', hint: countHint(counts.kept.off), checked: filter.kept === 'off', onselect: () => setFilter({ kept: filter.kept === 'off' ? 'any' : 'off' }) });
 		if (askers.length || myId) {
 			items.push({ kind: 'separator' }, { kind: 'heading', label: 'Asked by' });
 			items.push({ label: 'Anyone', checked: filter.asker === 'anyone', onselect: () => setFilter({ asker: 'anyone' }) });
-			if (myId) items.push({ label: 'Me', hint: String(counts.askers.get(myId) ?? 0), checked: filter.asker === 'me', onselect: () => setFilter({ asker: 'me' }) });
-			for (const p of askers) if (p.id !== myId) items.push({ label: p.name, hint: String(counts.askers.get(p.id) ?? 0), checked: filter.asker === String(p.id), onselect: () => setFilter({ asker: String(p.id) }) });
+			if (myId) items.push({ label: 'Me', hint: countHint(counts.askers.get(myId) ?? 0), checked: filter.asker === 'me', onselect: () => setFilter({ asker: 'me' }) });
+			for (const p of askers) if (p.id !== myId) items.push({ label: p.name, hint: countHint(counts.askers.get(p.id) ?? 0), checked: filter.asker === String(p.id), onselect: () => setFilter({ asker: String(p.id) }) });
 		}
 		if ((kind === 'movie' || kind === 'all') && series.length) {
 			items.push({ kind: 'separator' }, { kind: 'heading', label: 'Movie series' });
 			items.push({ label: 'Every movie', checked: !filter.series, onselect: () => setFilter({ series: 0 }) });
-			for (const s of series.toSorted((a, b) => a.name.localeCompare(b.name))) items.push({ label: s.name, hint: String(counts.series.get(s.id) ?? 0), checked: filter.series === s.id, onselect: () => setFilter({ series: s.id }) });
+			for (const s of series.toSorted((a, b) => a.name.localeCompare(b.name))) items.push({ label: s.name, hint: countHint(counts.series.get(s.id) ?? 0), checked: filter.series === s.id, onselect: () => setFilter({ series: s.id }) });
 		}
 		items.push({ kind: 'separator' }, { kind: 'heading', label: 'Saved filters' });
 		for (const s of saved) items.push({ label: s.name, icon: 'star', checked: sameFilter(s.filter, filter), onselect: () => setFilter(s.filter) });
