@@ -38,10 +38,24 @@ func (s *Service) AskArtist(ctx context.Context, p Person, id string, albums []s
 	if !ok {
 		return Result{}, library.ErrBadArtistID
 	}
-	return s.askArtist(ctx, p, mbid, albums, false)
+	return s.askArtist(ctx, p, mbid, albums, nil, false)
 }
 
-func (s *Service) askArtist(ctx context.Context, p Person, mbid string, albums []string, retried bool) (Result, error) {
+// AskArtistEditions asks for albums as AskArtist does, with an edition
+// (a MusicBrainz release id) per album where the person picked one; the
+// approval chooses that edition for the album.
+func (s *Service) AskArtistEditions(ctx context.Context, p Person, id string, albums []string, editions map[string]string) (Result, error) {
+	if p.MaxRating != "" {
+		return Result{}, overLimit(p, "artist", "")
+	}
+	mbid, ok := library.ArtistMBID(id)
+	if !ok {
+		return Result{}, library.ErrBadArtistID
+	}
+	return s.askArtist(ctx, p, mbid, albums, editions, false)
+}
+
+func (s *Service) askArtist(ctx context.Context, p Person, mbid string, albums []string, editions map[string]string, retried bool) (Result, error) {
 	if s.Library == nil || s.Library.Artists == nil {
 		return Result{}, library.ErrNoMusicSource
 	}
@@ -52,6 +66,9 @@ func (s *Service) askArtist(ctx context.Context, p Person, mbid string, albums [
 	want, err := pickAlbums(albums, ar.Albums)
 	if err != nil {
 		return Result{}, err
+	}
+	for i := range want {
+		want[i].Edition = strings.ToLower(editions[want[i].MBID])
 	}
 	db := s.Store.Read()
 	tid, err := library.ArtistByMBID(ctx, db, ar.MBID)
@@ -79,7 +96,7 @@ func (s *Service) askArtist(ctx context.Context, p Person, mbid string, albums [
 		if o.State == domain.AskAsked {
 			res, err := s.joinWiderArtist(ctx, p, o, want)
 			if errors.Is(err, ErrNotOpen) && !retried {
-				return s.askArtist(ctx, p, mbid, albums, true)
+				return s.askArtist(ctx, p, mbid, albums, editions, true)
 			}
 			return res, err
 		}
@@ -126,7 +143,7 @@ func (s *Service) askArtist(ctx context.Context, p Person, mbid string, albums [
 		return err
 	})
 	if errors.Is(err, errAskedMeanwhile) && !retried {
-		return s.askArtist(ctx, p, mbid, albums, true)
+		return s.askArtist(ctx, p, mbid, albums, editions, true)
 	}
 	if err != nil {
 		return Result{}, err
@@ -402,6 +419,13 @@ func (s *Service) addArtistForAsk(ctx context.Context, a domain.Ask, set Setting
 		if _, err := s.Library.SetAlbum(ctx, p.ID, &on, 0, by.actor()); err != nil {
 			return 0, err
 		}
+		if ed := askedEdition(p.SourceIDs["musicbrainz"], a.Albums); ed != "" {
+			// The edition picked on the album page; an edition the source no
+			// longer lists leaves the usual choice.
+			if _, err := s.Library.ChooseEdition(ctx, p.ID, ed, by.actor()); err != nil {
+				log.Printf("asks: edition %s of %s: %v", ed, p.Name, err)
+			}
+		}
 	}
 	return tid, nil
 }
@@ -443,4 +467,13 @@ func albumWords(albums []domain.AskAlbum) string {
 		return strings.Join(names[:n-1], ", ") + " and " + names[n-1]
 	}
 	return albums[0].Name + ", " + albums[1].Name + " and " + strconv.Itoa(n-2) + " more albums"
+}
+
+// askedEdition is the edition the ask picked for this album, or "".
+func askedEdition(album string, as []domain.AskAlbum) string {
+	i := slices.IndexFunc(as, func(w domain.AskAlbum) bool { return strings.EqualFold(w.MBID, album) })
+	if i < 0 {
+		return ""
+	}
+	return as[i].Edition
 }

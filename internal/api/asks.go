@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -207,8 +208,14 @@ func (a *API) makeAsk(w http.ResponseWriter, r *http.Request) {
 		// FutureOnly asks a show for its future seasons only (no seasons list).
 		FutureOnly bool     `json:"future_only"`
 		Albums     []string `json:"albums"` // an artist's albums (MusicBrainz ids); empty or missing: the whole artist
+		// Editions picks an edition per asked album: album id to release id.
+		Editions map[string]string `json:"editions"`
 	}
 	if !decode(w, r, &body, askHelp) {
+		return
+	}
+	if len(body.Editions) > 0 && body.Kind != "artist" {
+		fail(w, http.StatusBadRequest, askHelp)
 		return
 	}
 	// No one can ask for a title of a part that is off.
@@ -256,7 +263,16 @@ func (a *API) makeAsk(w http.ResponseWriter, r *http.Request) {
 		if !mayApprove(r) {
 			ctx = metadata.MemberLookup(ctx) // behind the refresh and staff at MusicBrainz
 		}
-		res, err = a.s.Asks.AskArtist(ctx, a.person(r), "mbid:"+num, body.Albums)
+		ed := map[string]string{}
+		for al, rel := range body.Editions {
+			al, rel = strings.ToLower(strings.TrimSpace(al)), strings.ToLower(strings.TrimSpace(rel))
+			if !metadata.ValidMBID(al) || !metadata.ValidMBID(rel) || !slices.ContainsFunc(body.Albums, func(x string) bool { return strings.EqualFold(strings.TrimSpace(x), al) }) {
+				fail(w, http.StatusBadRequest, askHelp)
+				return
+			}
+			ed[al] = rel
+		}
+		res, err = a.s.Asks.AskArtistEditions(ctx, a.person(r), "mbid:"+num, body.Albums, ed)
 	default:
 		fail(w, http.StatusBadRequest, askHelp)
 		return
@@ -272,7 +288,7 @@ func (a *API) makeAsk(w http.ResponseWriter, r *http.Request) {
 	a.answerAsk(w, r, code, res.Ask.ID, map[string]any{"joined": res.Joined, "already": res.Already})
 }
 
-const askHelp = `send {"id": "tmdb:<number>"} for a movie, {"kind": "show", "id": "tmdb:<n>" (or tvdb:, tvmaze:, imdb:), "seasons": [1, 2]} for a show (no seasons: the whole show; "future_only": true instead of seasons: the future seasons only), or {"kind": "artist", "id": "mbid:<MusicBrainz artist id>", "albums": ["<MusicBrainz album id>"]} for music (no albums: the whole artist)`
+const askHelp = `send {"id": "tmdb:<number>"} for a movie, {"kind": "show", "id": "tmdb:<n>" (or tvdb:, tvmaze:, imdb:), "seasons": [1, 2]} for a show (no seasons: the whole show; "future_only": true instead of seasons: the future seasons only), or {"kind": "artist", "id": "mbid:<MusicBrainz artist id>", "albums": ["<MusicBrainz album id>"], "editions": {"<album id>": "<release id>"}} for music (no albums: the whole artist; editions optional)`
 
 func (a *API) askLimit(w http.ResponseWriter, r *http.Request) {
 	l, err := a.s.Asks.LimitOf(r.Context(), a.person(r))

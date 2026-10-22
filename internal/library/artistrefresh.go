@@ -602,3 +602,57 @@ func Totals(ctx context.Context, db store.Querier, titleID int64, now time.Time)
 		Scan(&t.Tracks, &t.InLibrary, &t.BetterWanted, &t.NotOutYet, &t.Missing, &t.Downloading, &t.Failed)
 	return t, err
 }
+
+// ChooseEdition makes the album's chosen Pressing the edition with this
+// MusicBrainz release id (a person's choice, kept by later refreshes). When
+// the album's Pressings are not read yet they are read first. It reports
+// whether the edition was found and chosen.
+func (s *Service) ChooseEdition(ctx context.Context, partID int64, release string, by domain.Actor) (bool, error) {
+	find := func() (int64, error) {
+		var id int64
+		err := s.Store.Read().QueryRowContext(ctx, "SELECT id FROM pressings WHERE part_id = ? AND lower(mbid) = lower(?) AND dropped_at IS NULL", partID, release).Scan(&id)
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, nil
+		}
+		return id, err
+	}
+	id, err := find()
+	if err != nil {
+		return false, err
+	}
+	if id == 0 {
+		var p domain.Part
+		var t domain.Title
+		if err := store.Get(ctx, s.Store.Read(), "parts", partID, &p); err != nil {
+			return false, err
+		}
+		if err := store.Get(ctx, s.Store.Read(), "titles", p.TitleID, &t); err != nil {
+			return false, err
+		}
+		src, err := s.artists()
+		if err != nil {
+			return false, err
+		}
+		defs, err := ReadMusicDefaults(ctx, s.Store.Read())
+		if err != nil {
+			return false, err
+		}
+		ps, err := src.Pressings(ctx, p.SourceIDs["musicbrainz"])
+		cut := errors.Is(err, metadata.ErrListCut)
+		if err != nil && !cut || len(ps) == 0 {
+			return false, err
+		}
+		now := time.Now().UTC()
+		if err := s.Store.Write(ctx, func(tx *sql.Tx) error {
+			_, err := syncPressingsTx(ctx, tx, t, partID, ps, cut, defs.PressingRule, now, by)
+			return err
+		}); err != nil {
+			return false, err
+		}
+		if id, err = find(); err != nil || id == 0 {
+			return false, err
+		}
+	}
+	_, err = s.SetAlbum(ctx, partID, nil, id, by)
+	return err == nil, err
+}

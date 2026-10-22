@@ -591,6 +591,8 @@ type AskAlbum struct {
 	MBID string `json:"mbid"`
 	Name string `json:"name"`
 	Year int    `json:"year,omitempty"`
+	// Edition is the release (MusicBrainz id) picked on the album page; empty: the usual choice.
+	Edition string `json:"edition,omitempty"`
 }
 
 // Alert is an outgoing message channel: a Discord link or an email server.
