@@ -1,0 +1,1 @@
+import{T as e,U as t,V as n,jt as r,lt as i,rt as a,st as o}from"../chunks/DOoThjEd.js";import"../chunks/-VsyxGZp.js";import{t as s}from"../chunks/CuGunn5x.js";var c=t(`<div class="account-view svelte-8i5vi8"><!></div>`);function l(t){var l=c();e(`8i5vi8`,e=>{a(()=>{o.title=`My account · HolyArrs`})});var u=i(l);s(u,{}),r(l),n(t,l)}export{l as component};

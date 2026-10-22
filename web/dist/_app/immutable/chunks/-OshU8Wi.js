@@ -1,0 +1,1 @@
+function e(e=typeof navigator>`u`?[]:navigator.languages){for(let t of e){let e=/^[a-z]{2,3}-([A-Za-z]{2})$/.exec(t);if(e)return e[1].toUpperCase()}return`global`}export{e as t};

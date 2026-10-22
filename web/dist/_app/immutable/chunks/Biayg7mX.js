@@ -1,0 +1,1 @@
+import{pt as e}from"./DOoThjEd.js";import{n as t}from"./-CU2KpuK.js";var n=e({answer:null});async function r(){try{n.answer=await t.get(`/parts`)}catch{}}export{r as n,n as t};

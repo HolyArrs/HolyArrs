@@ -1,0 +1,1 @@
+import{H as e,I as t,V as n,ut as r}from"../chunks/DOoThjEd.js";function i(i,a){var o=e(),s=r(o);t(s,()=>a.children),n(i,o)}export{i as component};
