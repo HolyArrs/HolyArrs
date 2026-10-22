@@ -94,6 +94,11 @@ type Server struct {
 	// scores, plus the similarity, genre and guest rows; off keeps the
 	// Phase 1 rows. It needs MusicRowsV2.
 	MusicRowsV3 bool
+	// MusicRowsV6 is flag music_rows_v6 (Phase 6): Fresh & Trending → Music
+	// from the region charts (Spotlight, Fresh songs, Out this week, Top
+	// albums, Climbing, Coming soon) and the Rising row on Explore → Music
+	// (with MusicRowsV3). Off keeps both as they were.
+	MusicRowsV6 bool
 	// MusicListeners, MusicSimilarSet and MusicArtistData read the metadata
 	// server's batch artist data for the scored rows; nil leaves P at the
 	// charts and the similarity rows out.

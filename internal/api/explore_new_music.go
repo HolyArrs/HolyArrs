@@ -596,7 +596,13 @@ func (a *API) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
 		}
 		rows.Close()
 	}
-	hero, rows := composeMusicNew(in, now)
+	var hero []MusicCard
+	var rows []MusicRow
+	if a.s.MusicRowsV6 {
+		hero, rows = a.musicTrendingRows(ctx, r, in, now)
+	} else {
+		hero, rows = composeMusicNew(in, now)
+	}
 	var names []nameKey
 	for _, c := range hero {
 		names = append(names, nameKey{"album", c.MBID, c.Name, c.Artist}, nameKey{"artist", c.ArtistMBID, c.Artist, ""})

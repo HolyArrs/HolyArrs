@@ -52,7 +52,7 @@ export function rowNote(row: Pick<MusicRowData, 'type'>, c: NewMusicCard, now = 
 	}
 	const d = c.date ? daysAgo(c.date, now) : null;
 	const when = d === null ? '' : d <= 0 ? 'Today' : d === 1 ? 'Yesterday' : `${d} days ago`;
-	return [c.artist, row.type === 'np_music_climbing' ? '' : when].filter(Boolean).join(' · ');
+	return [c.artist, row.type === 'np_music_climbing' ? (c.note ?? '') : when].filter(Boolean).join(' · ');
 }
 
 export const MUSIC_DECADES = ['2020s', '2010s', '2000s', '90s', '80s', '70s'];

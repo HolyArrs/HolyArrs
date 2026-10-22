@@ -957,6 +957,11 @@ func (a *API) personalMusicRows(ctx context.Context, member int64, region, date 
 		}
 	}
 
+	// Row 13 (Phase 6, flag music_rows_v6): Rising in your genres.
+	if a.s.MusicRowsV6 {
+		a.risingRow(ctx, region, now, in)
+	}
+
 	// Row 14: Guest spots, release groups crediting a Library artist who is
 	// not the primary artist, not had; 0.6·A + 0.4·P.
 	{

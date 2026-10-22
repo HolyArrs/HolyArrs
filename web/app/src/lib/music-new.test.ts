@@ -18,6 +18,7 @@ describe('music new', () => {
 	it('says when on row lines', () => {
 		expect(rowNote({ type: 'np_music_tracks' }, card({ date: '2026-10-19' }), now)).toBe('Ann · 2 days ago');
 		expect(rowNote({ type: 'np_music_climbing' }, card({ date: '2026-10-19' }), now)).toBe('Ann');
+		expect(rowNote({ type: 'np_music_climbing' }, card({ date: '2026-10-19', note: 'Up 4 · #9' }), now)).toBe('Ann · Up 4 · #9');
 		expect(rowNote({ type: 'np_music_coming' }, card({ date: '2026-11-07' }), now)).toMatch(/^Ann · Out /);
 	});
 	it('marks explicit albums with E', () => {

@@ -259,8 +259,8 @@
 {/if}
 
 <style>
-	.music-new { display: flex; flex-direction: column; gap: 48px; --shelf-gap: 20px; --album-item: calc((100cqi - 5 * 20px) / 6.35); }
-	@media (max-width: 1023px) { .music-new { --album-item: calc((100cqi - 3 * 20px) / 4.3); } }
+	.music-new { display: flex; flex-direction: column; gap: 48px; --shelf-gap: 20px; --album-item: 200px; }
+	@media (max-width: 767px) { .music-new { --album-item: calc((100cqi - 3 * 20px) / 4.3); } }
 	@media (max-width: 640px) { .music-new { gap: 36px; --album-item: calc((100cqi - 20px) / 2.3); } }
 	/* One header for every shelf: a bold title with a chevron into See all. */
 	.sh h2 { margin: 0; }
@@ -298,15 +298,15 @@
 	@media (max-width: 1023px) { .hero-wrap { --h-cols: calc(48% - 10px); } }
 	@media (max-width: 640px) { .hero-wrap { --h-cols: calc(100% / 1.1 - 10px); } .paddle { display: none; } }
 	@media (prefers-reduced-motion: reduce) { .hero { scroll-behavior: auto; } .art, .paddle, .h-act { transition: none; } .h-card:hover .art { transform: none; } }
-	/* Fresh tracks: a compact list, four lines to a column. */
+	/* Fresh tracks: song lines (56 tall, 44 art, no dividers), four to a column. */
 	.more h2, .see-all h2 { margin: 0; font: var(--t-title-3, 600 20px/1.3 var(--font-ui)); }
-	.tracks { list-style: none; margin: 0; padding: 0; display: grid; grid-auto-flow: column; grid-template-rows: repeat(4, 55px); grid-auto-columns: calc(25% - 15px); column-gap: 20px; row-gap: 0; height: 220px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; }
+	.tracks { list-style: none; margin: 0; padding: 0; display: grid; grid-auto-flow: column; grid-template-rows: repeat(4, 56px); grid-auto-columns: calc(25% - 15px); column-gap: 20px; row-gap: 0; height: 224px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; }
 	@media (prefers-reduced-motion: reduce) { .tracks { scroll-behavior: auto; } }
 	.tracks::-webkit-scrollbar { display: none; }
-	.track { display: flex; align-items: center; gap: 10px; min-width: 0; height: 55px; box-sizing: border-box; border-bottom: 1px solid var(--border, color-mix(in srgb, var(--text) 10%, transparent)); }
-	.track:nth-child(4n) { border-bottom-color: transparent; }
+	.track { display: flex; align-items: center; gap: 10px; min-width: 0; height: 56px; padding: 0 8px; box-sizing: border-box; border-radius: 7px; }
+	.track:hover { background: rgb(255 255 255 / 0.12); }
 	.track:nth-child(4n + 1) { scroll-snap-align: start; }
-	.track img { flex: none; width: 40px; height: 40px; border-radius: 4px; object-fit: cover; background: var(--surface-2); }
+	.track img { flex: none; width: 44px; height: 44px; border-radius: 4px; object-fit: cover; background: var(--surface-2); }
 	.t-words { flex: 1; min-width: 0; display: flex; flex-direction: column; color: var(--text); text-decoration: none; }
 	.t-name, .t-artist { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; line-height: 1.35; }
 	.t-artist { color: var(--text-muted); font-size: 13px; }

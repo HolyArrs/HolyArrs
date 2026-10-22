@@ -27,6 +27,9 @@ type MusicChartItem struct {
 	F7         float64  `json:"f7"`
 	F14        float64  `json:"f14"`
 	F60        float64  `json:"f60"`
+	// RankAgo is the rank 7 days ago (0: not charted then); nil until the
+	// server keeps 7 days of ranks, so ΔR rows stay hidden.
+	RankAgo *int `json:"rank_7d_ago,omitempty"`
 }
 
 // MusicChart is GET /v1/music/charts.
