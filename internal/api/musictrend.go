@@ -43,6 +43,8 @@ type musicTrendCache struct {
 	// artBusy are pictures being fetched now, so a second ask waits for
 	// the first instead of fetching again.
 	artBusy map[string]*artFetch
+	// prefetching counts background picture fetches (tests wait on it).
+	prefetching sync.WaitGroup
 }
 
 type artFetch struct {
@@ -156,7 +158,46 @@ func (a *API) cachedMusicTrend(ctx context.Context, kind, region string) (metada
 	for _, it := range l.Items {
 		c.names[kind+"|"+it.MBID] = it
 	}
+	if err == nil && len(l.Items) > 0 {
+		c.prefetching.Add(1)
+		go func() {
+			defer c.prefetching.Done()
+			a.prefetchMusicArt(kind, l.Items)
+		}()
+	}
 	return l, err
+}
+
+// prefetchMusicArt fetches a fresh list's pictures into the artwork cache
+// in the background, in the sizes the cards ask for (albums 250 and 500,
+// artists the default), two at a time.
+func (a *API) prefetchMusicArt(kind string, items []metadata.MusicTrendItem) {
+	if a.s.Library == nil || a.s.Library.Artwork == nil {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+	defer cancel()
+	sizes := []string{"250"}
+	if kind == "album" {
+		sizes = []string{"250", "500"}
+	}
+	sem := make(chan struct{}, 2)
+	var wg sync.WaitGroup
+	// One item's sizes in turn: sizes can share a picture file.
+	for _, it := range items {
+		if ctx.Err() != nil {
+			break
+		}
+		sem <- struct{}{}
+		wg.Add(1)
+		go func(mbid string) {
+			defer func() { <-sem; wg.Done() }()
+			for _, size := range sizes {
+				a.musicTrendArtFile(ctx, kind, mbid, size)
+			}
+		}(it.MBID)
+	}
+	wg.Wait()
 }
 
 // musicTrendArt answers GET /api/v1/music-trending/art/{kind}/{mbid}: the
@@ -278,7 +319,8 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name,
 	}
 	switch kind {
 	case "artist":
-		if artist(it.Name) {
+		// The chart's own picture first, then the artist-picture chain.
+		if keep(it.Image) || artist(it.Name) {
 			return name, path, true
 		}
 		// fanart.tv's artist thumb, when the metadata server has a key for it.
@@ -288,16 +330,33 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name,
 			}
 		}
 	case "album":
-		src, found := a.albumCover(ctx, mbid, it)
-		if !found {
-			base := lib.CoverArtBase
-			if base == "" {
-				base = library.CoverArtBase
-			}
-			src = strings.TrimRight(base, "/") + "/release-group/" + url.PathEscape(mbid) + "/front-250"
+		// Every source before the name tile: the chart's cover link, the
+		// metadata server's cover chain, the Cover Art Archive, then the
+		// artist's picture.
+		base := lib.CoverArtBase
+		if base == "" {
+			base = library.CoverArtBase
 		}
-		src = sizedCover(src, size)
-		if keep(src) || artist(it.Artist) {
+		caa := strings.TrimRight(base, "/") + "/release-group/" + url.PathEscape(mbid) + "/front-250"
+		tried := map[string]bool{}
+		try := func(src string) bool {
+			if src == "" {
+				return false
+			}
+			src = sizedCover(src, size)
+			if tried[src] {
+				return false
+			}
+			tried[src] = true
+			return keep(src)
+		}
+		if try(it.Cover) {
+			return name, path, true
+		}
+		if src, found := a.albumCover(ctx, mbid, it); found && try(src) {
+			return name, path, true
+		}
+		if try(caa) || artist(it.Artist) {
 			return name, path, true
 		}
 	}

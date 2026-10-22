@@ -23,6 +23,10 @@ type MusicTrendItem struct {
 	// ReleaseDate and Tags come on the fresh and classic lists.
 	ReleaseDate string   `json:"release_date"`
 	Tags        []string `json:"tags"`
+	// Cover (albums) and Image (artists) are the chart source's picture
+	// links, when the metadata server has them.
+	Cover string `json:"cover"`
+	Image string `json:"image"`
 }
 
 // MusicTrend is one music trending list as the metadata server keeps it:

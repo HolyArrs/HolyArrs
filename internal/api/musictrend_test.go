@@ -119,7 +119,8 @@ func TestMusicTrendArtUsesCoverChain(t *testing.T) {
 		return "", metadata.ErrNotFound
 	}
 	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{pics.URL + "/"}, HTTP: pics.Client()}
-	srv := httptest.NewServer(New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), MusicTrending: trend, MusicCover: cover, Library: &library.Service{Store: s, Artwork: art, CoverArtBase: pics.URL}, Version: "test"}).Handler())
+	api := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), MusicTrending: trend, MusicCover: cover, Library: &library.Service{Store: s, Artwork: art, CoverArtBase: pics.URL}, Version: "test"})
+	srv := httptest.NewServer(api.Handler())
 	defer srv.Close()
 	code := func(id string) int {
 		resp, err := http.Get(srv.URL + "/api/v1/music-trending/art/album/" + id)
@@ -131,6 +132,11 @@ func TestMusicTrendArtUsesCoverChain(t *testing.T) {
 	}
 	if resp, err := http.Get(srv.URL + "/api/v1/music-trending?kind=album"); err != nil || resp.StatusCode != 200 {
 		t.Fatalf("list %v", err)
+	}
+	// The fresh list's covers are fetched in the background.
+	api.music.prefetching.Wait()
+	if _, ok := art.Path(library.ArtworkName(pics.URL + "/apple/600x600bb.jpg")); !ok {
+		t.Fatal("cover not prefetched")
 	}
 	if c := code(trendGroup); c != 200 {
 		t.Fatalf("chain cover %d", c)
@@ -178,4 +184,35 @@ func TestMusicTrendingKidLimited(t *testing.T) {
 	}
 	k.kai.call("GET", "/api/v1/music-trending/art/album/"+trendGroup, "", 404)
 	k.ana.call("GET", "/api/v1/music-trending/art/album/"+trendGroup, "", 200)
+}
+
+func TestMusicTrendArtPrefersChartCover(t *testing.T) {
+	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
+	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/chart.jpg" {
+			w.WriteHeader(404)
+			return
+		}
+		w.Header().Set("Content-Type", "image/jpeg")
+		_, _ = w.Write([]byte("ÿØÿ synthetic"))
+	}))
+	defer pics.Close()
+	trend := func(_ context.Context, kind, region string) (metadata.MusicTrend, error) {
+		return metadata.MusicTrend{Kind: kind, Region: region, Items: []metadata.MusicTrendItem{{Rank: 1, MBID: trendGroup, Title: "ARIRANG", Artist: "BTS", Cover: pics.URL + "/chart.jpg"}}}, nil
+	}
+	var asked atomic.Int32
+	cover := func(context.Context, string, string, string) (string, error) { asked.Add(1); return "", metadata.ErrNotFound }
+	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{pics.URL + "/"}, HTTP: pics.Client()}
+	api := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), MusicTrending: trend, MusicCover: cover, Library: &library.Service{Store: s, Artwork: art, CoverArtBase: pics.URL}, Version: "test"})
+	srv := httptest.NewServer(api.Handler())
+	defer srv.Close()
+	if resp, err := http.Get(srv.URL + "/api/v1/music-trending?kind=album"); err != nil || resp.StatusCode != 200 {
+		t.Fatalf("list %v", err)
+	}
+	api.music.prefetching.Wait()
+	resp, err := http.Get(srv.URL + "/api/v1/music-trending/art/album/" + trendGroup + "?size=500")
+	if err != nil || resp.StatusCode != 200 || asked.Load() != 0 {
+		t.Fatalf("chart cover not used: %v %d asked %d", err, resp.StatusCode, asked.Load())
+	}
+	resp.Body.Close()
 }
