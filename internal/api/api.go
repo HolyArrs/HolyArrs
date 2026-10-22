@@ -100,6 +100,14 @@ type Server struct {
 	MusicListeners  func(ctx context.Context, ids []string) (map[string]int64, error)
 	MusicSimilarSet func(ctx context.Context, seeds []string) (map[string][]metadata.MusicSimilarScore, error)
 	MusicArtistData func(ctx context.Context, ids []string) ([]metadata.MusicArtistData, error)
+	// LiveSearch is flag live_search (music plan Phase 4): the search
+	// field's dropdown, GET /api/v1/search/suggest; off answers 404 and
+	// the field shows no dropdown.
+	LiveSearch bool
+	// MusicSuggest reads the metadata server's suggest index (charted
+	// artists, albums and songs); nil leaves the dropdown to the Library
+	// and TMDB.
+	MusicSuggest func(ctx context.Context, q string) ([]metadata.MusicSuggestion, error)
 	// MusicCover reads an album cover URL from the metadata server; nil uses
 	// only the Cover Art Archive.
 	MusicCover func(ctx context.Context, mbid, artist, title string) (string, error)
@@ -260,6 +268,7 @@ func (a *API) Handler() http.Handler {
 	m := http.NewServeMux()
 	m.HandleFunc("GET /api/v1/titles", a.listTitles)
 	m.HandleFunc("GET /api/v1/library/search", a.librarySearch)
+	m.HandleFunc("GET /api/v1/search/suggest", a.searchSuggest)
 	m.HandleFunc("GET /api/v1/library-summary", a.librarySummary)
 	m.HandleFunc("GET /api/v1/home", a.home)
 	m.HandleFunc("POST /api/v1/titles", a.addTitle)

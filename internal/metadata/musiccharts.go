@@ -135,3 +135,27 @@ func (s *Service) MusicGenreTile(ctx context.Context, slug, version string) ([]b
 	}
 	return b, nil
 }
+
+// MusicSuggestion is one row of the metadata server's suggest index
+// (charted artists, albums and songs; no MusicBrainz call there).
+type MusicSuggestion struct {
+	Kind       string  `json:"kind"` // artist, album, song
+	Name       string  `json:"name"`
+	Artist     string  `json:"artist_name,omitempty"`
+	MBID       string  `json:"mbid,omitempty"`
+	ArtistMBID string  `json:"artist_mbid,omitempty"`
+	Cover      string  `json:"cover,omitempty"`
+	P          float64 `json:"p"`
+}
+
+// MusicSuggest reads GET /v1/music/suggest?q= (at most 10 rows). The
+// caller's context bounds it; live typing gives it well under a second.
+func (s *Service) MusicSuggest(ctx context.Context, q string) ([]MusicSuggestion, error) {
+	var out struct {
+		Items []MusicSuggestion `json:"items"`
+	}
+	if err := s.musicGet(ctx, "/v1/music/suggest", url.Values{"q": {q}}, &out); err != nil {
+		return nil, err
+	}
+	return out.Items, nil
+}

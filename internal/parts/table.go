@@ -291,6 +291,7 @@ var Routes = map[string]Owner{
 	// Shared by Movies, Shows and Music.
 	"GET /api/v1/titles":                      Media,
 	"GET /api/v1/library/search":              Media,
+	"GET /api/v1/search/suggest":              Media,
 	"GET /api/v1/library-summary":             Media,
 	"GET /api/v1/home":                        Media,
 	"POST /api/v1/titles/refresh":             Media,

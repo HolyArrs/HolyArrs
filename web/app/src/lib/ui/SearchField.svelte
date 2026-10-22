@@ -4,6 +4,9 @@
 	import Icon from '../Icon.svelte';
 	import { appPath, to } from '../paths.ts';
 	import { registerField, rememberReturn, searchField, searchHooks } from '../search-field.svelte.ts';
+	import { api } from '../api.ts';
+	import { createSuggest, step, suggestHref, type SuggestAnswer } from '../live-search.ts';
+	import GlassDropdown from './GlassDropdown.svelte';
 
 	// The one search field (spec: top bar, centre). Typing or Enter anywhere
 	// opens the Search page with the words; a focus or click on an empty field
@@ -21,11 +24,43 @@
 		rememberReturn();
 		void goto(to(t ? `/search?q=${encodeURIComponent(t)}` : '/search'), { reset: false }).then(() => scrollTo(0, 0));
 	}
+	// Live search: the glass dropdown under the field (shared by every page).
+	let answer = $state<SuggestAnswer | null>(null);
+	let active = $state(-1);
+	const listId = $derived(`${id}-suggest`);
+	const suggest = createSuggest(
+		(q, signal) => api.get<SuggestAnswer>(`/search/suggest?q=${encodeURIComponent(q)}${kindParam()}`, signal),
+		(a) => {
+			answer = a && (a.completions.length || a.items.length) ? a : null;
+			active = -1;
+		}
+	);
+	function kindParam() {
+		const k = page.url.searchParams.get('kind');
+		return appPath(page.url.pathname).startsWith('/search') && k && ['movie', 'show', 'music', 'people'].includes(k) ? `&kind=${k}` : '';
+	}
+	const count = $derived(answer ? answer.completions.length + answer.items.length : 0);
+	function close() {
+		suggest.clear();
+	}
+	function pick(href: string) {
+		close();
+		el?.blur();
+		void goto(href);
+	}
+	function word(w: string) {
+		searchField.term = w;
+		close();
+		if (onSearch()) searchHooks.submit?.();
+		else open(w);
+	}
 	function typed() {
 		open(searchField.term);
+		suggest.type(searchField.term);
 	}
 	function submitted(e: SubmitEvent) {
 		e.preventDefault();
+		close();
 		if (onSearch()) searchHooks.submit?.();
 		else open(searchField.term);
 	}
@@ -33,7 +68,24 @@
 		if (!searchField.term.trim()) open('');
 	}
 	function keyed(e: KeyboardEvent) {
+		if (answer && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+			e.preventDefault();
+			active = step(active, count, e.key === 'ArrowDown' ? 1 : -1);
+			return;
+		}
+		if (answer && e.key === 'Enter' && active >= 0) {
+			e.preventDefault();
+			const n = answer.completions.length;
+			if (active < n) word(answer.completions[active]);
+			else pick(suggestHrefAt(active - n));
+			return;
+		}
 		if (e.key !== 'Escape') return;
+		if (answer) {
+			e.preventDefault();
+			close();
+			return;
+		}
 		if (searchField.term) {
 			e.preventDefault();
 			searchField.term = '';
@@ -42,10 +94,14 @@
 			searchHooks.exit();
 		} else el?.blur();
 	}
+	function suggestHrefAt(j: number) {
+		return answer ? suggestHref(answer.items[j]) : '';
+	}
 	const here = $derived(appPath(page.url.pathname).startsWith('/search'));
 	// On Search one round × does both jobs, as Escape does: it clears the words, then (empty) closes Search.
 	const one = $derived(here && closable);
 	function clearOrClose() {
+		close();
 		if (searchField.term) {
 			searchField.term = '';
 			el?.focus();
@@ -57,13 +113,14 @@
 	<span class="glow" aria-hidden="true"></span>
 	<span class="ic" aria-hidden="true"><Icon name="search" size={18} /></span>
 	<label class="sr-only" for={id}>Search for a title, an artist or a person</label>
-	<input {id} bind:this={el} type="search" bind:value={searchField.term} oninput={typed} onfocus={focused} onclick={focused} onblur={() => searchHooks.blur?.()} onkeydown={keyed} placeholder="Shows, movies and people" autocomplete="off" spellcheck="false" enterkeyhint="search" data-testid={testid} />
+	<input {id} bind:this={el} type="search" bind:value={searchField.term} oninput={typed} onfocus={focused} onclick={focused} onblur={() => { close(); searchHooks.blur?.(); }} role="combobox" aria-expanded={!!answer} aria-controls={answer ? listId : undefined} aria-autocomplete="list" aria-activedescendant={answer && active >= 0 ? `${listId}-${active}` : undefined} onkeydown={keyed} placeholder="Shows, movies and people" autocomplete="off" spellcheck="false" enterkeyhint="search" data-testid={testid} />
 	{#if searchField.term && !one}
-		<button type="button" class="clear" aria-label="Clear the search" onclick={() => { searchField.term = ''; el?.focus(); }}><Icon name="x" size={14} /></button>
+		<button type="button" class="clear" aria-label="Clear the search" onclick={() => { searchField.term = ''; close(); el?.focus(); }}><Icon name="x" size={14} /></button>
 	{:else if !here}
 		<kbd class="hint" aria-hidden="true">{searchKey}</kbd>
 	{/if}
 	{#if one}<button type="button" class="close" aria-label={searchField.term ? 'Clear the search' : 'Close Search'} title={searchField.term ? 'Clear the search' : 'Close Search'} data-testid="search-close" onclick={clearOrClose}><Icon name="x" size={16} /></button>{/if}
+	{#if answer}<GlassDropdown {answer} {active} id={listId} onpick={pick} onword={word} />{/if}
 </form>
 
 <style>

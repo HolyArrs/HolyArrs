@@ -46,6 +46,7 @@
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { albumWords } from '#lib/music.ts';
 	import { createLatestOnly } from '#lib/history.ts';
+	import { live } from '#lib/live-search.ts';
 	import { addRecent, libraryNote, readRecent, rankTop, readScope, recentKey, scopeAddress, type SearchScope } from '#lib/search.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { detailPath } from '#lib/title-details.ts';
@@ -250,10 +251,14 @@
 	});
 	function typed() {
 		clearTimeout(timer);
-		timer = setTimeout(() => void run(), 250);
+		timer = setTimeout(() => void run(undefined, false), 250);
 	}
 
-	async function run(e?: SubmitEvent) {
+	// Typing never asks MusicBrainz while live search is on (or not known
+	// yet): the Music group waits for Enter (or a page opened with the
+	// words) and the dropdown shows the music matches meanwhile. Movies,
+	// shows and people follow typing as before.
+	async function run(e?: SubmitEvent, full = true) {
 		e?.preventDefault();
 		clearTimeout(timer);
 		const q = searchField.term.trim();
@@ -272,7 +277,8 @@
 		if (e) remember(q);
 		stale = total > 0 ? { groups: shownGroups, lib: shownLib } : null;
 		busy = true;
-		const want = scope === 'all' ? order : order.filter((t) => t === scope);
+		const holdMusic = !full && live.on !== false;
+		const want = (scope === 'all' ? order : order.filter((t) => t === scope)).filter((t) => !(holdMusic && t === 'music'));
 		const next: Record<Card['type'], Card[] | null> = { show: null, movie: null, music: null, people: null };
 		for (const t of order) next[t] = want.includes(t) ? null : [];
 		groups = next;
