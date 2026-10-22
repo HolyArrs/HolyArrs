@@ -2,6 +2,7 @@
 // {"topic": "...", "data": ...}; pages subscribe to the topics they show.
 // "resync" means the stream lost messages, so every listener reloads.
 import { to } from './paths.ts';
+import { api } from './api.ts';
 
 export type LiveState = 'off' | 'connecting' | 'live' | 'reconnecting';
 export type Listener = (data: unknown, topic: string) => void;
@@ -42,6 +43,8 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 		}
 		if (typeof msg.topic !== 'string') return;
 		status.last = Date.now();
+		// Something changed on the server: listeners must read fresh answers, not shared ones.
+		api.forget();
 		emit(msg.topic, msg.data);
 	}
 

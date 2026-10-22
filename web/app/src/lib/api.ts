@@ -126,6 +126,8 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o)) {
 			csrf = v;
 		},
 		csrf: () => csrf,
+		/** forget drops shared reads, for news of a change made somewhere else (the live stream). */
+		forget: () => shared.clear(),
 		onSignedOut(fn: (() => void) | null) {
 			signedOut = fn;
 		}
