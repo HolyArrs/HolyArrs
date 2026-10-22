@@ -255,7 +255,7 @@ func (s *Service) handleScan(ctx context.Context, r *jobs.Run) error {
 	}
 	r.SetResult(map[string]any{"versions": out})
 	s.event(ctx, &domain.Event{Actor: jobActor(r), Kind: domain.EventFolderScanned, TitleID: &titleID, JobID: &r.Job.ID,
-		Summary: "Looked at the movie folder", Data: map[string]any{"versions": out}, GroupKey: "title:" + strconv.FormatInt(titleID, 10)})
+		Summary: "Looked at the folder", Data: map[string]any{"versions": out}, GroupKey: "title:" + strconv.FormatInt(titleID, 10)})
 	return s.next(ctx, r, titleID)
 }
 
