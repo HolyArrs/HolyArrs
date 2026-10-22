@@ -111,6 +111,7 @@
 				decoding="async"
 				fetchpriority={i === 0 ? 'high' : 'low'}
 				loading={i === 0 ? 'eager' : 'lazy'}
+				class:in={ready[i]}
 				style:object-position={position}
 				style:filter
 				use:viewTransitionName={i === 0 ? vtName : undefined}
@@ -132,7 +133,11 @@
 		animation: kb 26s var(--ease-in-out) var(--kb-delay, 0s) infinite var(--kb-dir, alternate) both;
 		will-change: transform;
 		backface-visibility: hidden;
+		opacity: 0;
+		transition: opacity var(--dur-slow, 400ms) var(--ease-out);
 	}
+	/* Fades in once loaded; the frame is fixed size, so nothing shifts. */
+	img.in { opacity: 1; }
 	@keyframes kb {
 		from { transform: scale(1.02) translate3d(0, 0, 0); }
 		to { transform: scale(1.1) translate3d(-2.2%, -1.4%, 0); }

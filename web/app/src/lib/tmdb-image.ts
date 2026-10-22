@@ -56,3 +56,17 @@ export function fitTile(url: string, css: number, person: boolean, ratio = globa
 	const size = person ? (need <= 185 ? 'w185' : need <= 500 ? 'w500' : 'original') : need * 2.4 <= 780 ? 'w780' : need * 2.4 <= 1280 ? 'w1280' : 'original';
 	return `${m[1]}/${size}/${m[2]}`;
 }
+
+const warmed = new Set<string>();
+/** preloadHero starts fetching a title hero's backdrop at the size the hero
+ * will ask for (the page width), so it is in the cache when the hero renders. */
+export function preloadHero(backdrop: string | null | undefined): void {
+	if (!backdrop || typeof window === 'undefined') return;
+	const url = sharpen(sized(backdrop, 'backdrop'), window.innerWidth);
+	if (!url || warmed.has(url)) return;
+	warmed.add(url);
+	const im = new Image();
+	im.decoding = 'async';
+	im.fetchPriority = 'high';
+	im.src = url;
+}

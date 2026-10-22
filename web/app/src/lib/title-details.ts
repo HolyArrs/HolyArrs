@@ -143,3 +143,21 @@ export function metaLine(d: Pick<TitleDetails, 'kind' | 'year' | 'runtime' | 'ge
 	if (d.network) out.push(d.network);
 	return [...out, ...d.genres.slice(0, 3)];
 }
+
+/** While a mouse pointer rests on a link to a title page, its hero backdrop
+ * (when already known) starts loading. Returns the cleanup. */
+export function installHeroPrefetch(preload: (backdrop: string | null | undefined) => void): () => void {
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	const over = (e: PointerEvent) => {
+		if (e.pointerType !== 'mouse') return;
+		clearTimeout(timer);
+		const a = (e.target as Element | null)?.closest?.('a[href]');
+		const m = a?.getAttribute('href')?.match(/\/title\/(movie|show)\/(\d+)/);
+		if (m) timer = setTimeout(() => preload(remembered(m[1] as DetailKind, m[2])?.backdrop), 80);
+	};
+	window.addEventListener('pointerover', over, { capture: true, passive: true });
+	return () => {
+		clearTimeout(timer);
+		window.removeEventListener('pointerover', over, { capture: true });
+	};
+}

@@ -9,6 +9,7 @@
 	import { refreshInbox } from '#lib/wishlist.svelte.ts';
 	import { seasonWords } from '#lib/shows.ts';
 	import { detailPath, isDetailKind, loadDetails, remembered, type TitleDetails } from '#lib/title-details.ts';
+	import { preloadHero } from '#lib/tmdb-image.ts';
 	import type { Ask, GateDefaults, LibraryFolder, LookupMovie, LookupShow, PickRulesView, ShowSettings, TitleView } from '#lib/types.ts';
 	import TitleHero, { richMetadata, runtimeWords, type RichMeta } from '#lib/ui/TitleHero.svelte';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
@@ -84,6 +85,8 @@
 			return;
 		}
 		const first = remembered(k, id);
+		// The hero backdrop starts loading before the details answer arrives.
+		preloadHero(first?.backdrop);
 		details = first ? { kind: k, tmdb: id, name: '', genres: [], cast: [], similar: [], ...first } : null;
 		loading = true;
 		error = '';
@@ -92,6 +95,7 @@
 		try {
 			const d = await loadDetails(api.get, k, id);
 			if (k !== kind || id !== tmdb) return;
+			preloadHero(d?.backdrop);
 			if (!d) {
 				missing = !details;
 				return;

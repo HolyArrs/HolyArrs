@@ -24,6 +24,8 @@
 	import { offPartName } from '#lib/parts.ts';
 	import { navigateWithTransition } from '#lib/motion.ts';
 	import { installPersonPrefetch } from '#lib/person-prefetch.ts';
+	import { installHeroPrefetch } from '#lib/title-details.ts';
+	import { preloadHero } from '#lib/tmdb-image.ts';
 	import AppShell from '#lib/ui/AppShell.svelte';
 	import Sidebar from '#lib/ui/Sidebar.svelte';
 	import SidebarItem from '#lib/ui/SidebarItem.svelte';
@@ -154,6 +156,7 @@
 	onMount(trackInputModality);
 	onMount(installScrollBar);
 	onMount(installPersonPrefetch);
+	onMount(() => installHeroPrefetch(preloadHero));
 	onMount(() => {
 		void session.load();
 		readLibraryResumeLinks();
