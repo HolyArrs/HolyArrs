@@ -532,7 +532,7 @@ func TestPlexSignInJoinsAsMember(t *testing.T) {
 	if _, code, out := plexSignIn(t, f, p); code != 403 {
 		t.Fatalf("not on the list: %d %s", code, out)
 	}
-	own.do(t, f, "PUT", "/api/v1/auth/settings", `{"plex":{"on":true,"server_id":"other-server","join":"everyone"}}`)
+	own.do(t, f, "PUT", "/api/v1/auth/settings", `{"plex":{"on":true,"server_id":"other-server","join":"everyone"},"confirm_everyone":true}`)
 	if _, code, _ := plexSignIn(t, f, p); code != 403 {
 		t.Fatalf("does not share the server: %d", code)
 	}
@@ -570,7 +570,7 @@ func TestPlexPinBelongsToItsStarter(t *testing.T) {
 	p := newFakePlex(t)
 	f := gated(t, Options{PlexURL: p.srv.URL})
 	own := ownerOf(t, f)
-	own.do(t, f, "PUT", "/api/v1/auth/settings", `{"plex":{"on":true,"server_id":"machine-1","join":"everyone"}}`)
+	own.do(t, f, "PUT", "/api/v1/auth/settings", `{"plex":{"on":true,"server_id":"machine-1","join":"everyone"},"confirm_everyone":true}`)
 	for range pinsPerIP {
 		call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/plex/start", "", nil)
 	}
@@ -633,7 +633,7 @@ func TestMediaServerSignIn(t *testing.T) {
 			if resp, out := own.do(t, f, "PUT", "/api/v1/auth/settings", `{"`+kind+`":{"on":true,"url":"file:///etc"}}`); resp.StatusCode != 400 {
 				t.Fatalf("odd address accepted: %d %s", resp.StatusCode, out)
 			}
-			own.do(t, f, "PUT", "/api/v1/auth/settings", `{"`+kind+`":{"on":true,"url":"`+ms.URL+`/","join":"everyone"}}`)
+			own.do(t, f, "PUT", "/api/v1/auth/settings", `{"`+kind+`":{"on":true,"url":"`+ms.URL+`/","join":"everyone"},"confirm_everyone":true}`)
 			if _, code := login("mum", "wrong"); code != 401 {
 				t.Fatalf("wrong password: %d", code)
 			}
@@ -666,7 +666,7 @@ func TestMediaServerSignIn(t *testing.T) {
 func TestPlexEveryoneNeedsAServer(t *testing.T) {
 	f := gated(t, Options{PlexURL: "http://127.0.0.1:1"})
 	own := ownerOf(t, f)
-	if resp, _ := own.do(t, f, "PUT", "/api/v1/auth/settings", `{"plex":{"on":true,"join":"everyone"}}`); resp.StatusCode != 400 {
+	if resp, _ := own.do(t, f, "PUT", "/api/v1/auth/settings", `{"plex":{"on":true,"join":"everyone"},"confirm_everyone":true}`); resp.StatusCode != 400 {
 		t.Fatalf("every Plex account could join: %d", resp.StatusCode)
 	}
 }

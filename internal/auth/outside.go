@@ -122,6 +122,7 @@ func (a *Auth) getSettings(w http.ResponseWriter, r *http.Request) {
 		ProviderPlex:       a.way(ctx, ProviderPlex),
 		ProviderJellyfin:   a.way(ctx, ProviderJellyfin),
 		ProviderEmby:       a.way(ctx, ProviderEmby),
+		"plex_owner":       a.plexOwner(ctx),
 	})
 }
 
@@ -136,6 +137,9 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 		Plex         *WayView `json:"plex"`
 		Jellyfin     *WayView `json:"jellyfin"`
 		Emby         *WayView `json:"emby"`
+		// ConfirmEveryone must be true to open a way to everyone the
+		// server lets in, when it was not open to everyone already.
+		ConfirmEveryone bool `json:"confirm_everyone"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10)).Decode(&body); err != nil ||
 		(body.SkipLocal == nil && body.RequireAdmin == nil && body.MinPassword == nil && body.Plex == nil && body.Jellyfin == nil && body.Emby == nil) {
@@ -213,6 +217,10 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 				fail(w, http.StatusBadRequest, p+" address must look like http://192.168.1.10:8096")
 				return
 			}
+		}
+		if v.Join == JoinEveryone && !body.ConfirmEveryone && a.way(r.Context(), p).Join != JoinEveryone {
+			fail(w, http.StatusConflict, "letting everyone from "+p+" join needs confirming: send confirm_everyone")
+			return
 		}
 		if p == ProviderPlex && v.Join == JoinEveryone && strings.TrimSpace(v.ServerID) == "" {
 			// Without a server to share, everyone would mean every Plex account in the world.
@@ -388,6 +396,7 @@ type pin struct {
 	// checked is the last time Plex was asked about this pin; checks
 	// closer than pinCheckGap answer 429 (the page polls every 2 s).
 	checked time.Time
+	link    bool // the owner linking their account in Settings, not a sign-in
 }
 
 // pinCheckGap is the shortest time between two checks of one pin.
@@ -403,6 +412,12 @@ func (a *Auth) plexStart(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusNotFound, "sign-in with Plex is off")
 		return
 	}
+	a.startPin(w, r, false)
+}
+
+// startPin asks Plex for a PIN and answers with the page to confirm it on.
+func (a *Auth) startPin(w http.ResponseWriter, r *http.Request, link bool) {
+	ctx := r.Context()
 	ip := a.clientKey(r)
 	now := a.now()
 	a.mu.Lock()
@@ -431,7 +446,7 @@ func (a *Auth) plexStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.mu.Lock()
-	a.pins[got.ID] = &pin{ip: ip, expires: now.Add(pinLife)}
+	a.pins[got.ID] = &pin{ip: ip, expires: now.Add(pinLife), link: link}
 	a.mu.Unlock()
 	q := url.Values{"clientID": {a.clientID(ctx)}, "code": {got.Code}, "context[device][product]": {product}}
 	writeJSON(w, http.StatusOK, map[string]any{"id": got.ID, "auth_url": a.plexApp + "/auth#?" + q.Encode()})
@@ -444,55 +459,19 @@ func (a *Auth) plexFinish(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusNotFound, "sign-in with Plex is off")
 		return
 	}
-	var body struct {
-		ID int64 `json:"id"`
-	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<10)).Decode(&body); err != nil {
-		fail(w, http.StatusBadRequest, `send {"id": ...}`)
-		return
-	}
-	a.mu.Lock()
-	p := a.pins[body.ID]
-	ok := p != nil && p.ip == a.clientKey(r) && a.now().Before(p.expires)
-	soon := ok && !p.checked.IsZero() && a.now().Sub(p.checked) < pinCheckGap
-	if ok && !soon {
-		p.checked = a.now()
-	}
-	a.mu.Unlock()
+	tok, ok := a.checkPin(w, r, false)
 	if !ok {
-		fail(w, http.StatusNotFound, "this Plex sign-in has ended; start again")
 		return
-	}
-	if soon {
-		w.Header().Set("Retry-After", "1")
-		fail(w, http.StatusTooManyRequests, "checking too often; wait a second")
-		return
-	}
-	var pinState struct {
-		AuthToken string `json:"authToken"`
 	}
 	hdr := a.plexHeaders(ctx)
-	code, err := a.fetch(ctx, http.MethodGet, a.plexURL+"/api/v2/pins/"+strconv.FormatInt(body.ID, 10), hdr, nil, &pinState)
-	if err != nil || code/100 != 2 {
-		log.Printf("auth: plex pin check: status %d: %v", code, err)
-		fail(w, http.StatusBadGateway, "Plex did not answer; try again in a moment")
-		return
-	}
-	if pinState.AuthToken == "" {
-		writeJSON(w, http.StatusAccepted, map[string]bool{"waiting": true})
-		return
-	}
-	a.mu.Lock()
-	delete(a.pins, body.ID) // one pin, one sign-in
-	a.mu.Unlock()
-	hdr["X-Plex-Token"] = pinState.AuthToken
+	hdr["X-Plex-Token"] = tok
 	var user struct {
 		ID       int64  `json:"id"`
 		UUID     string `json:"uuid"`
 		Username string `json:"username"`
 		Email    string `json:"email"`
 	}
-	code, err = a.fetch(ctx, http.MethodGet, a.plexURL+"/api/v2/user", hdr, nil, &user)
+	code, err := a.fetch(ctx, http.MethodGet, a.plexURL+"/api/v2/user", hdr, nil, &user)
 	if err != nil || code/100 != 2 || user.ID == 0 {
 		log.Printf("auth: plex user: status %d: %v", code, err)
 		fail(w, http.StatusBadGateway, "Plex did not say who you are; try again")
@@ -521,6 +500,55 @@ func (a *Auth) plexFinish(w http.ResponseWriter, r *http.Request) {
 	}
 	id, name, err := a.linkedUser(ctx, ProviderPlex, extID, user.Username, mayJoin)
 	a.outsideDone(w, r, ProviderPlex, id, name, err)
+}
+
+// checkPin asks Plex whether the person confirmed the PIN. It returns the
+// token once they did; otherwise it has answered (waiting, ended, too soon).
+// A PIN started to link the owner's account cannot sign anyone in, and the
+// other way round.
+func (a *Auth) checkPin(w http.ResponseWriter, r *http.Request, link bool) (string, bool) {
+	ctx := r.Context()
+	var body struct {
+		ID int64 `json:"id"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<10)).Decode(&body); err != nil {
+		fail(w, http.StatusBadRequest, `send {"id": ...}`)
+		return "", false
+	}
+	a.mu.Lock()
+	p := a.pins[body.ID]
+	ok := p != nil && p.link == link && p.ip == a.clientKey(r) && a.now().Before(p.expires)
+	soon := ok && !p.checked.IsZero() && a.now().Sub(p.checked) < pinCheckGap
+	if ok && !soon {
+		p.checked = a.now()
+	}
+	a.mu.Unlock()
+	if !ok {
+		fail(w, http.StatusNotFound, "this Plex sign-in has ended; start again")
+		return "", false
+	}
+	if soon {
+		w.Header().Set("Retry-After", "1")
+		fail(w, http.StatusTooManyRequests, "checking too often; wait a second")
+		return "", false
+	}
+	var pinState struct {
+		AuthToken string `json:"authToken"`
+	}
+	code, err := a.fetch(ctx, http.MethodGet, a.plexURL+"/api/v2/pins/"+strconv.FormatInt(body.ID, 10), a.plexHeaders(ctx), nil, &pinState)
+	if err != nil || code/100 != 2 {
+		log.Printf("auth: plex pin check: status %d: %v", code, err)
+		fail(w, http.StatusBadGateway, "Plex did not answer; try again in a moment")
+		return "", false
+	}
+	if pinState.AuthToken == "" {
+		writeJSON(w, http.StatusAccepted, map[string]bool{"waiting": true})
+		return "", false
+	}
+	a.mu.Lock()
+	delete(a.pins, body.ID) // one pin, one use
+	a.mu.Unlock()
+	return pinState.AuthToken, true
 }
 
 func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {

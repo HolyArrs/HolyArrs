@@ -118,6 +118,8 @@ type Auth struct {
 	plexApp         string
 	tickets         map[string]*ticket
 	pins            map[int64]*pin
+	offers          map[string]*importOffer // last import preview per provider
+	tester          *http.Client            // address tests (providers.go)
 	proxies         []*net.IPNet
 	checks          chan struct{}
 	safeMode        bool
@@ -141,6 +143,7 @@ func New(s *store.Store, opt Options) *Auth {
 		a.now = time.Now
 	}
 	a.vault, a.http, a.plexURL, a.plexApp, a.safeMode = opt.Vault, opt.HTTP, opt.PlexURL, opt.PlexAppURL, opt.SafeMode
+	a.tester = testClient()
 	if a.http == nil {
 		a.http = &http.Client{Timeout: 15 * time.Second}
 	}
@@ -547,6 +550,7 @@ func (a *Auth) Routes(m *http.ServeMux) {
 	a.userRoutes(m)
 	a.sessionRoutes(m)
 	a.outsideRoutes(m)
+	a.providerRoutes(m)
 	a.ssoRoutes(m)
 }
 

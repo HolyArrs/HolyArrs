@@ -431,6 +431,13 @@ var RoutePerms = map[string]Perm{
 
 	// Owner only: how people sign in, and putting a backup back.
 	"PUT /api/v1/auth/settings": needOwner,
+	// Setting up outside sign-in: link the owner's Plex, test an address, import people.
+	"POST /api/v1/auth/plex/link/start":          needOwner,
+	"POST /api/v1/auth/plex/link/finish":         needOwner,
+	"DELETE /api/v1/auth/plex/link":              needOwner,
+	"POST /api/v1/auth/media-server/{kind}/test": needOwner,
+	"POST /api/v1/auth/import/{kind}/preview":    needOwner,
+	"POST /api/v1/auth/import/{kind}":            needOwner,
 	// The secrets file and the old-app keys it saves are the owner's.
 	"POST /api/v1/settings/import-secrets": needOwner,
 	"GET /api/v1/migrate/saved-keys":       needOwner,

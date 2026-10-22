@@ -8316,6 +8316,170 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/auth/import/{kind}": {
+      "post": {
+        "description": "Makes a Member (or a Kid: asks only, PG) for each picked person from the last preview and links them. Never makes admins.",
+        "operationId": "importPeople",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "people": {
+                    "items": {
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "kid": {
+                          "type": "boolean"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Done."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad list."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The preview ran out."
+          }
+        },
+        "summary": "Import picked people",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/auth/import/{kind}/preview": {
+      "post": {
+        "description": "Plex: the people the linked owner account shares with (uses the kept token). Jellyfin or Emby: send an admin name and password once; the session is ended after listing. Nothing is made yet.",
+        "operationId": "importPreview",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Done."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Wrong name or password."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Link Plex or set the address first."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The server did not answer."
+          }
+        },
+        "summary": "List people to import",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/auth/invites/{token}": {
       "get": {
         "description": "What an invite link offers (role, note and age-rating limit: max_rating, rating_country); open without sign-in.",
@@ -8800,6 +8964,76 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/auth/media-server/{kind}/test": {
+      "post": {
+        "description": "Asks the address for its public server info (5 s limit, no redirects, no link-local or multicast addresses). Answers ok with the server name and version, or ok false with a reason.",
+        "operationId": "mediaServerTest",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "url": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Done."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not an address."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not jellyfin or emby."
+          }
+        },
+        "summary": "Test a Jellyfin or Emby address",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/auth/oidc/callback": {
       "get": {
         "description": "Checks the fixed callback origin and path, browser state and verified identity token. Stores a one-use result and redirects to a fixed app page; this GET never creates accounts, links or sessions.",
@@ -9045,6 +9279,146 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/auth/plex/link": {
+      "delete": {
+        "description": "Removes the owner's Plex link and empties the kept token.",
+        "operationId": "plexUnlink",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Done."
+          }
+        },
+        "summary": "Unlink the owner's Plex account",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/auth/plex/link/finish": {
+      "post": {
+        "description": "Checks the PIN; 202 while it waits. On success links the Plex account to the owner, keeps the Plex token only in the encrypted vault, and lists the servers the owner owns (id and name).",
+        "operationId": "plexLinkFinish",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Done."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The PIN ended."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "That Plex account belongs to another user."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Checking too often."
+          }
+        },
+        "summary": "Finish linking the owner's Plex account",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/auth/plex/link/start": {
+      "post": {
+        "description": "Owner only, with a password sign-in. Answers a PIN id and the plex.tv page where the owner confirms it.",
+        "operationId": "plexLinkStart",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Done."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Needs a password sign-in."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Plex did not answer."
+          }
+        },
+        "summary": "Start linking the owner's Plex account",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/auth/plex/start": {
       "post": {
         "description": "Starts a plex.tv PIN for signing in with Plex (when turned on).",
@@ -9230,7 +9604,7 @@
     },
     "/api/v1/auth/settings": {
       "get": {
-        "description": "Sign-in ways, local-network sign-in, two-factor rules and min_password_length (the shortest new password allowed; 4 by default).",
+        "description": "Sign-in ways, local-network sign-in, two-factor rules and min_password_length (the shortest new password allowed; 4 by default). plex_owner says whether the owner's Plex account is linked (never the token).",
         "operationId": "getAuthSettings",
         "responses": {
           "200": {
@@ -9253,7 +9627,7 @@
         "x-holyarrs-scope": "admin"
       },
       "put": {
-        "description": "Owner only. min_password_length takes 4 to 64; it counts for new passwords (setup, invites, password changes, reset-owner).",
+        "description": "Owner only. min_password_length takes 4 to 64; it counts for new passwords (setup, invites, password changes, reset-owner). Turning a sign-in way to join \"everyone\" when it was not already needs confirm_everyone: true (409 otherwise).",
         "operationId": "putAuthSettings",
         "requestBody": {
           "content": {
