@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -92,6 +93,7 @@ func (a *API) musicBatch(ctx context.Context, prefix string, ids []string, chunk
 		miss = miss[len(part):]
 		got, err := fetch(ctx, part)
 		if err != nil {
+			markMusicMiss(ctx)
 			continue
 		}
 		for _, id := range part {
@@ -170,6 +172,7 @@ func (a *API) musicGenreChartOf(ctx context.Context, region, slug string, now ti
 	}
 	c, err := a.s.MusicCharts(ctx, region, "albums", slug)
 	if err != nil {
+		markMusicMiss(ctx)
 		return nil
 	}
 	a.musicv2.cand.Put(key, c.Items, musicChartTTL, now)
@@ -622,6 +625,23 @@ type personalIn struct {
 	add            func(meta MusicRow, row musicscore.Row, cards []MusicCard, list []musicscore.Scored, rank, personal bool)
 }
 
+// nearTasteOK reports whether a similar artist may be suggested for a
+// seed: not the seed, not in the Library (had or followed), not linked by a
+// MusicBrainz relation to a Library artist (members, own groups, charity
+// and collective credits), and not a collective credit by name.
+func nearTasteOK(id, name, seed string, lib map[string]int, related map[string]bool) bool {
+	if id == "" || id == seed || related[id] {
+		return false
+	}
+	if _, ok := lib[id]; ok {
+		return false
+	}
+	return !collectiveName.MatchString(name)
+}
+
+// collectiveName matches charity and various-artists credits.
+var collectiveName = regexp.MustCompile(`(?i)^(various artists|artists (stand up|for|against|united)\b)|\b(all[- ]stars|aid)$`)
+
 // musicGuestTypes are the release group kinds a guest spot can be.
 var musicGuestTypes = map[string]bool{"album": true, "ep": true, "single": true}
 
@@ -652,26 +672,34 @@ func (a *API) personalMusicRows(ctx context.Context, member int64, region, date 
 		seedIDs = append(seedIDs, s.ar.mbid)
 	}
 	sim := a.musicSimilarOf(ctx, seedIDs, now)
-	links := a.linksOf(seedIDs)
-	// S per seed and artist: ListenBrainz (normalised) and MB relations.
+	// MusicBrainz relations (members, the artist's own groups, side
+	// projects, charity and collective credits) are not taste: they only
+	// rule artists out. S comes from ListenBrainz similarity alone, and
+	// never names an artist already in the Library (had or followed).
+	var libIDs []string
+	for _, ar := range lib.artists {
+		if ar.mbid != "" {
+			libIDs = append(libIDs, ar.mbid)
+		}
+	}
+	related := map[string]bool{}
+	for _, l := range a.linksOf(libIDs) {
+		for _, x := range l {
+			related[strings.ToLower(x.MBID)] = true
+		}
+	}
+	// S per seed and artist: ListenBrainz (normalised).
 	S := map[string]map[string]float64{}
 	names := map[string]string{}
 	for _, s := range seeds {
 		m := map[string]float64{}
 		for _, x := range sim[s.ar.mbid] {
 			id := strings.ToLower(x.MBID)
-			m[id] = musicscore.Similarity(x.S, false)
-			names[id] = x.Name
-		}
-		for _, l := range links[s.ar.mbid] {
-			id := strings.ToLower(l.MBID)
-			if id == "" || id == s.ar.mbid {
+			if !nearTasteOK(id, x.Name, s.ar.mbid, lib.byMBID, related) {
 				continue
 			}
-			m[id] = musicscore.Similarity(m[id], true)
-			if names[id] == "" {
-				names[id] = l.Name
-			}
+			m[id] = musicscore.Similarity(x.S, false)
+			names[id] = x.Name
 		}
 		S[s.ar.mbid] = m
 	}
@@ -725,7 +753,7 @@ func (a *API) personalMusicRows(ctx context.Context, member int64, region, date 
 			return nil
 		}
 		for i, al := range d.Albums {
-			if al.Type == "album" && len(al.Artists) > 0 && al.Artists[0] == id && !in.hadAlbum[al.MBID] {
+			if al.Type == "album" && !nonStudioTitle(al.Title) && len(al.Artists) > 0 && al.Artists[0] == id && !in.hadAlbum[al.MBID] {
 				return &d.Albums[i]
 			}
 		}

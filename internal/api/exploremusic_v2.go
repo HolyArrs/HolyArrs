@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/api/musicscore"
@@ -87,7 +89,7 @@ func (a *API) musicLibrary(ctx context.Context, now time.Time) (*musicLib, error
 	}
 	rows.Close()
 	ps, err := db.QueryContext(ctx, `SELECT p.id, p.title_id, p.name, coalesce(json_extract(p.source_ids, '$.musicbrainz'), ''), lower(coalesce(p.release_type, '')),
-		p.secondary_types != '[]', coalesce(substr(p.release_date, 1, 10), '')
+		coalesce(p.secondary_types, '[]') NOT IN ('[]', 'null', ''), coalesce(substr(p.release_date, 1, 10), '')
 		FROM parts p JOIN titles t ON t.id = p.title_id
 		WHERE t.kind = 'artist' AND t.state != 'removed' AND p.kind = 'album' AND p.dropped_at IS NULL ORDER BY p.id`)
 	if err != nil {
@@ -98,6 +100,9 @@ func (a *API) musicLibrary(ctx context.Context, now time.Time) (*musicLib, error
 		var al musicLibAlbum
 		if ps.Scan(&al.partID, &al.titleID, &al.name, &al.mbid, &al.kind, &al.secondary, &al.date) == nil {
 			al.mbid = strings.ToLower(al.mbid)
+			// A title that names a demo, bootleg or outtake set is not a
+			// studio album, whatever MusicBrainz's types say.
+			al.secondary = al.secondary || nonStudioTitle(al.name)
 			lib.albums = append(lib.albums, al)
 			if lib.hadParts[al.partID] {
 				had[al.titleID]++
@@ -254,6 +259,7 @@ func (a *API) musicChartOf(ctx context.Context, region, kind string, now time.Ti
 	}
 	c, err := a.s.MusicCharts(ctx, region, kind, "")
 	if err != nil {
+		markMusicMiss(ctx)
 		return nil
 	}
 	a.musicv2.cand.Put(key, c.Items, musicChartTTL, now)
@@ -270,10 +276,30 @@ func (a *API) musicGenreTiles(ctx context.Context, region string, now time.Time)
 	}
 	g, err := a.s.MusicGenres(ctx, region)
 	if err != nil {
+		markMusicMiss(ctx)
 		return nil
 	}
 	a.musicv2.cand.Put(key, g.Genres, musicChartTTL, now)
 	return g.Genres
+}
+
+// nonStudioWords are title words that mark a release as demos, bootlegs,
+// outtakes or other non-studio sets.
+var nonStudioWords = regexp.MustCompile(`(?i)\b(demos?|bootlegs?|outtakes?|unreleased|rehearsals?|b-sides|leaked|snippets?)\b`)
+
+// nonStudioTitle reports whether an album title is clearly not a studio
+// album (MusicBrainz sometimes leaves such release groups untyped).
+func nonStudioTitle(name string) bool { return nonStudioWords.MatchString(name) }
+
+// musicMiss records that a build lost a source; layer 2 does not keep it.
+type musicMiss struct{ failed atomic.Bool }
+
+type musicMissKey struct{}
+
+func markMusicMiss(ctx context.Context) {
+	if m, ok := ctx.Value(musicMissKey{}).(*musicMiss); ok {
+		m.failed.Store(true)
+	}
 }
 
 func dayAt(now time.Time, d int) string { return now.UTC().AddDate(0, 0, d).Format("2006-01-02") }
@@ -305,12 +331,18 @@ func (a *API) exploreMusicV2(w http.ResponseWriter, r *http.Request) {
 	if v, ok := a.musicv2.days.Get(key); ok {
 		ord = v.(*musicV2Order)
 	} else {
+		// A build that lost a source (a failed or cancelled fetch) is
+		// answered but not kept, so the next visit builds the full rows.
+		miss := &musicMiss{}
+		bctx := context.WithValue(ctx, musicMissKey{}, miss)
 		if a.s.MusicRowsV3 {
-			ord = a.buildMusicV3(ctx, member, region, lib, acts, now)
+			ord = a.buildMusicV3(bctx, member, region, lib, acts, now)
 		} else {
-			ord = a.buildMusicV2(ctx, member, region, lib, acts, now)
+			ord = a.buildMusicV2(bctx, member, region, lib, acts, now)
 		}
-		a.musicv2.days.Put(key, ord)
+		if ctx.Err() == nil && !miss.failed.Load() {
+			a.musicv2.days.Put(key, ord)
+		}
 	}
 	// Layer 3: state chips and the member's asks, read live.
 	state := func(c MusicCard) MusicCard {
