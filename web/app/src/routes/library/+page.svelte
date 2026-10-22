@@ -881,7 +881,7 @@
 							{#each slice as e (e.key)}
 								{#if e.type === 'head'}
 									<div class="series-head" use:measure={e.key} data-key={e.key}>
-										<h3>{e.name}</h3>
+										<h2>{e.name}</h2>
 										<span>{e.count} in the Library</span>
 										{#if e.id}<a href={to(`/library/collections/${e.id}`)}>Open series</a>{/if}
 									</div>
@@ -958,9 +958,9 @@
 											</div>
 										{:else}
 											<div class="ov">
-												<a class="ov-poster" href={titleLink(t.id)} tabindex="-1"><Poster src={t.artwork[0]} name={t.name} /></a>
+												<a class="ov-poster" href={titleLink(t.id)} tabindex="-1" aria-hidden="true"><Poster src={t.artwork[0]} name={t.name} /></a>
 												<div class="ov-main">
-													<h3><a href={titleLink(t.id)} tabindex="-1" title={t.name}>{t.name}</a>{#if t.year}<span class="yr">{t.year}</span>{/if}</h3>
+													<h2><a href={titleLink(t.id)} tabindex="-1" title={t.name}>{t.name}</a>{#if t.year}<span class="yr">{t.year}</span>{/if}</h2>
 													<p class="ov-text">{t.overview || 'No description yet.'}</p>
 													<span class="meter {tone(t)}" aria-hidden="true"><i style="width: {p.total ? (p.have / p.total) * 100 : 0}%"></i></span>
 													<span class="sr-only">{progressText(t)}</span>
@@ -1141,7 +1141,7 @@
 	.meter.none i { background: var(--text-muted); }
 
 	.series-head { display: flex; align-items: baseline; gap: 12px; padding: 18px 16px 10px; background: var(--surface-2); border-top: 1px solid var(--line); }
-	.series-head h3 { margin: 0; font: var(--t-headline); }
+	.series-head h2 { margin: 0; font: var(--t-headline); }
 	.series-head span { color: var(--text-muted); font: var(--t-footnote); }
 	.series-head a { margin-left: auto; color: var(--accent); font: var(--t-footnote); font-weight: 600; }
 
@@ -1149,8 +1149,8 @@
 	.ov { display: grid; grid-template-columns: 92px minmax(0, 1fr) 240px; gap: 18px; padding: 14px 16px; }
 	.ov-poster { display: block; border-radius: 8px; overflow: hidden; }
 	.ov-main { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-	.ov h3 { margin: 0; font: var(--t-title3); display: flex; align-items: baseline; gap: 10px; }
-	.ov h3 a { color: var(--text); text-decoration: none; }
+	.ov h2 { margin: 0; font: var(--t-title3); display: flex; align-items: baseline; gap: 10px; }
+	.ov h2 a { color: var(--text); text-decoration: none; }
 	.yr { color: var(--text-muted); font: var(--t-callout); }
 	.ov-text { margin: 0; color: var(--text-muted); font: var(--t-callout); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 	.ov .meter { max-width: 280px; margin-top: auto; }
@@ -1195,7 +1195,7 @@
 
 	/* A to Z */
 	.rail { position: sticky; top: calc(var(--topbar, 0px) + 72px); display: flex; flex-direction: column; align-items: stretch; padding: 4px 0; border-radius: 999px; background: var(--surface-1); box-shadow: var(--shadow-card); }
-	.rail-l { display: grid; place-items: center; min-height: 22px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text); font: 600 11px/1 var(--font-ui); cursor: pointer; }
+	.rail-l { display: grid; place-items: center; min-height: 24px; /* WCAG 2.5.8: each letter is at least a 24px target. */ padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text); font: 600 11px/1 var(--font-ui); cursor: pointer; }
 	.rail-l:hover:not(:disabled) { background: var(--surface-2); color: var(--accent); }
 	.rail-l:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.rail-l:disabled { color: var(--text-muted); opacity: .45; cursor: default; }
