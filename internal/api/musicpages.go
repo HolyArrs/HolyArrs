@@ -670,7 +670,7 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 	}
 	mbid := strings.ToLower(r.PathValue("mbid"))
 	artist := strings.ToLower(r.URL.Query().Get("artist"))
-	if !metadata.ValidMBID(mbid) || !metadata.ValidMBID(artist) {
+	if !metadata.ValidMBID(mbid) || (artist != "" && !metadata.ValidMBID(artist)) {
 		fail(w, http.StatusBadRequest, "send the album's and its artist's MusicBrainz ids (?artist=)")
 		return
 	}
@@ -679,6 +679,13 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 	}
 	kid := a.kidMax(r) != ""
 	ctx := metadata.MemberLookup(r.Context())
+	if artist == "" {
+		// A bare album link: find the artist from the album itself.
+		if artist = a.albumArtistOf(ctx, mbid); artist == "" {
+			fail(w, http.StatusNotFound, "no album with that id, or its artist is unknown")
+			return
+		}
+	}
 	// The pressings need only the album id: ask them while the artist is looked up.
 	var ps []metadata.Pressing
 	var psErr error
@@ -949,6 +956,24 @@ func (a *API) knownName(kind, mbid string) string {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.names[kind+"|"+mbid].Name
+}
+
+// albumArtistOf names an album's artist when the link did not: from the
+// names Explore kept, else from the music source.
+func (a *API) albumArtistOf(ctx context.Context, mbid string) string {
+	c := &a.music
+	c.mu.Lock()
+	id := strings.ToLower(c.names["album|"+mbid].ArtistMBID)
+	c.mu.Unlock()
+	if metadata.ValidMBID(id) {
+		return id
+	}
+	if f, ok := a.s.Library.Artists.(metadata.AlbumArtistFinder); ok {
+		if id, err := f.AlbumArtist(ctx, mbid); err == nil {
+			return id
+		}
+	}
+	return ""
 }
 
 // musicPageGate checks the person, the id and that music is on.

@@ -304,6 +304,26 @@ type serviceRecordingData struct {
 	Length *int   `json:"length"`
 }
 
+// AlbumArtist reads the artist credit the metadata server keeps for the
+// album, else asks MusicBrainz directly.
+func (m *serviceMusic) AlbumArtist(ctx context.Context, albumMBID string) (string, error) {
+	if !ValidMBID(albumMBID) {
+		return "", ErrArtistNotFound
+	}
+	sctx, cancel := serviceContext(ctx)
+	item, err := m.service.detail(sctx, "musicbrainz", "release-group", strings.ToLower(albumMBID))
+	cancel()
+	if err == nil {
+		if id, err := firstCreditID(item.SourceData); err == nil {
+			return id, nil
+		}
+	}
+	if f, ok := m.direct.(AlbumArtistFinder); ok {
+		return f.AlbumArtist(ctx, albumMBID)
+	}
+	return "", ErrArtistNotFound
+}
+
 func (m *serviceMusic) Pressings(ctx context.Context, albumMBID string) ([]Pressing, error) {
 	if !ValidMBID(albumMBID) {
 		return nil, ErrArtistNotFound

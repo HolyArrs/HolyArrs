@@ -107,6 +107,41 @@ type ArtistProvider interface {
 	Pressings(ctx context.Context, albumMBID string) ([]Pressing, error)
 }
 
+// AlbumArtistFinder names the main artist of an album (release group),
+// for an album link that came without its artist.
+type AlbumArtistFinder interface {
+	AlbumArtist(ctx context.Context, albumMBID string) (string, error)
+}
+
+// AlbumArtist returns the first credited artist's id of an album.
+func (m *MusicBrainz) AlbumArtist(ctx context.Context, albumMBID string) (string, error) {
+	if !ValidMBID(albumMBID) {
+		return "", ErrArtistNotFound
+	}
+	b, err := m.get(ctx, "/ws/2/release-group/"+strings.ToLower(albumMBID), url.Values{"inc": {"artist-credits"}})
+	if err != nil {
+		return "", err
+	}
+	return firstCreditID(b)
+}
+
+func firstCreditID(b []byte) (string, error) {
+	var rg struct {
+		Credit []struct {
+			Artist struct {
+				ID string `json:"id"`
+			} `json:"artist"`
+		} `json:"artist-credit"`
+	}
+	if err := json.Unmarshal(b, &rg); err != nil {
+		return "", fmt.Errorf("MusicBrainz: odd answer: %w", err)
+	}
+	if len(rg.Credit) == 0 || !ValidMBID(rg.Credit[0].Artist.ID) {
+		return "", ErrArtistNotFound
+	}
+	return strings.ToLower(rg.Credit[0].Artist.ID), nil
+}
+
 var mbidRe = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 
 // ValidMBID reports whether id looks like a MusicBrainz id.

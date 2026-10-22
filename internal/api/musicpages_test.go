@@ -59,7 +59,14 @@ func TestMusicPages(t *testing.T) {
 		t.Fatalf("album core %+v", acore)
 	}
 
-	do(t, "GET", u+"/albums/"+apiAlbum, "", 400)
+	// A bare album link finds its artist; an unknown album is not found.
+	var bare AlbumPageView
+	_ = json.Unmarshal(do(t, "GET", u+"/albums/"+apiAlbum, "", 200), &bare)
+	if bare.Name != "First Light" || bare.Artist.MBID != apiArtist || bare.Artist.Name != "Lab Band" {
+		t.Fatalf("bare album page %+v", bare)
+	}
+	do(t, "GET", u+"/albums/f0000000-0000-0000-0000-0000000000ff", "", 404)
+	do(t, "GET", u+"/albums/"+apiAlbum+"?artist=nope", "", 400)
 	do(t, "GET", u+"/albums/"+apiSoon+"?artist="+apiAlbum, "", 404)
 	var al AlbumPageView
 	_ = json.Unmarshal(do(t, "GET", u+"/albums/"+apiAlbum+"?artist="+apiArtist, "", 200), &al)

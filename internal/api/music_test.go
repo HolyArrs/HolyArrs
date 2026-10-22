@@ -70,6 +70,20 @@ func (f *fakeArtists) Pressings(_ context.Context, mbid string) ([]metadata.Pres
 	return f.pressings[mbid], f.err
 }
 
+// AlbumArtist finds the album among the fixed artists' albums.
+func (f *fakeArtists) AlbumArtist(_ context.Context, album string) (string, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for id, a := range f.artists {
+		for _, al := range a.Albums {
+			if al.MBID == album {
+				return id, nil
+			}
+		}
+	}
+	return "", metadata.ErrArtistNotFound
+}
+
 const (
 	apiArtist = "a0000000-0000-0000-0000-0000000000aa"
 	apiAlbum  = "10000000-0000-0000-0000-0000000000aa"
