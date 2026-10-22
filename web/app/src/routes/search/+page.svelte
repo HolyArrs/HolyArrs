@@ -890,7 +890,7 @@
 				<div class="mood-head">
 					<Button variant="plain" icon="chevronLeft" href={to(`/search${cat.type === 'movies' ? '?kind=movie' : cat.type === 'shows' ? '?kind=show' : ''}`)}>Browse</Button>
 					<h2 id="cat-h" class="h1">{catName || 'Browse'}</h2>
-					<p class="muted">{cat.type === 'shows' ? 'Shows' : cat.type === 'all' ? 'Movies and shows' : 'Movies'}</p>
+					<p class="muted">{cat.type === 'shows' ? 'TV shows' : cat.type === 'all' ? 'Movies and TV shows' : 'Movies'}</p>
 				</div>
 				{#if catItems === null}
 					<div class="grid-sk" aria-busy="true" aria-label="Loading titles"><SkGrid kind="wide" min="var(--title-item)" count={12} /></div>
@@ -909,7 +909,7 @@
 				<div class="mood-head">
 					<Button variant="plain" icon="chevronLeft" href={to(`/search${scope === 'all' ? '' : `?kind=${scope}`}`)}>Browse</Button>
 					<h2 id="mood-h" class="h1">{mood.mood}</h2>
-					<p class="muted">{moodGenre ? `${moodGenre} · ` : ''}{mood.type === 'shows' ? 'Shows' : mood.type === 'all' ? 'Movies and shows' : 'Movies'}</p>
+					<p class="muted">{moodGenre ? `${moodGenre} · ` : ''}{mood.type === 'shows' ? 'TV shows' : mood.type === 'all' ? 'Movies and TV shows' : 'Movies'}</p>
 				</div>
 				{#if moodItems === null}
 					<div class="grid-sk" aria-busy="true" aria-label="Loading titles"><SkGrid kind="wide" min="var(--title-item)" count={12} /></div>

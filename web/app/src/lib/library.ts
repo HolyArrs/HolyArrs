@@ -23,7 +23,7 @@ export type Kind = 'all' | 'movie' | 'show' | 'artist';
 export const kinds: [Kind, string][] = [
 	['all', 'Everything'],
 	['movie', 'Movies'],
-	['show', 'Shows'],
+	['show', 'TV shows'],
 	['artist', 'Music']
 ];
 

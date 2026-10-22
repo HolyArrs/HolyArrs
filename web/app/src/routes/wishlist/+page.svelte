@@ -367,7 +367,7 @@
 			<div class="chips" role="group" aria-label="Kind">
 				<Chip label="Everything" selected={kind === 'all'} onclick={() => (kind = 'all')} />
 				<Chip label="Movies" selected={kind === 'movie'} onclick={() => (kind = 'movie')} />
-				<Chip label="Shows" selected={kind === 'show'} onclick={() => (kind = 'show')} />
+				<Chip label="TV shows" selected={kind === 'show'} onclick={() => (kind = 'show')} />
 				<Chip label="Music" selected={kind === 'artist'} onclick={() => (kind = 'artist')} />
 			</div>
 		{/if}

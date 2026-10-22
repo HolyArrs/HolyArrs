@@ -118,7 +118,7 @@
 			<Field id="lf-kind" label="Holds" hint="Movies, shows and music each get their own folders.">
 				<select id="lf-kind" class="input" bind:value={kind}>
 					<option value="movie">Movies</option>
-					<option value="show">Shows</option>
+					<option value="show">TV shows</option>
 					<option value="music">Music</option>
 				</select>
 			</Field>
@@ -127,7 +127,7 @@
 			</Field>
 			<div class="field">
 				<label for="lf-label">Name <span class="muted">(optional)</span></label>
-				<input id="lf-label" class="input" bind:value={label} placeholder={kind === 'show' ? 'Shows' : kind === 'music' ? 'Music' : 'Movies'} maxlength="64" />
+				<input id="lf-label" class="input" bind:value={label} placeholder={kind === 'show' ? 'TV shows' : kind === 'music' ? 'Music' : 'Movies'} maxlength="64" />
 			</div>
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">

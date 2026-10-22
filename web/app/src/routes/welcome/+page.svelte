@@ -29,7 +29,7 @@
 
 	const choices: { part: 'movies' | 'shows' | 'music' | 'subtitles'; label: string }[] = [
 		{ part: 'movies', label: 'Movies' },
-		{ part: 'shows', label: 'Shows' },
+		{ part: 'shows', label: 'TV shows' },
 		{ part: 'music', label: 'Music' },
 		{ part: 'subtitles', label: 'Subtitles' }
 	];
@@ -154,7 +154,7 @@
 				<label for="lf-kind">Holds</label>
 				<select id="lf-kind" class="input" bind:value={folderKind}>
 					<option value="movie">Movies</option>
-					<option value="show">Shows</option>
+					<option value="show">TV shows</option>
 					<option value="music">Music</option>
 				</select>
 			</div>
@@ -164,7 +164,7 @@
 			</div>
 			<div class="field">
 				<label for="lf-label">Name <span class="muted">(optional)</span></label>
-				<input id="lf-label" class="input" bind:value={folderName} placeholder={folderKind === 'show' ? 'Shows' : folderKind === 'music' ? 'Music' : 'Movies'} maxlength="64" />
+				<input id="lf-label" class="input" bind:value={folderName} placeholder={folderKind === 'show' ? 'TV shows' : folderKind === 'music' ? 'Music' : 'Movies'} maxlength="64" />
 			</div>
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 			<div class="go"><Button variant="primary" size="lg" full type="submit" disabled={busy} aria-busy={busy}>Add folder and open Home</Button></div>

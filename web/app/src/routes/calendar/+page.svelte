@@ -306,7 +306,7 @@
 			options={[
 				{ value: 'all', label: 'Everything' },
 				{ value: 'movies', label: 'Movies' },
-				{ value: 'shows', label: 'Shows' },
+				{ value: 'shows', label: 'TV shows' },
 				{ value: 'music', label: 'Music' }
 			]}
 		/>

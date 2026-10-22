@@ -120,7 +120,7 @@
 		([
 			{ value: 'all', label: 'All', icon: 'grid' },
 			{ value: 'movies', label: 'Movies', icon: 'film' },
-			{ value: 'shows', label: 'Shows', icon: 'tv' },
+			{ value: 'shows', label: 'TV shows', icon: 'tv' },
 			{ value: 'music', label: 'Music', icon: 'music' }
 		] as { value: ExploreType; label: string; icon: IconName }[]).filter((o) => o.value !== 'music' || musicOn)
 	);
