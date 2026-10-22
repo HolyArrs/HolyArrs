@@ -326,11 +326,27 @@ func coverSize(r *http.Request) string {
 // thumbnail suffix.
 var caaThumb = regexp.MustCompile(`^(https?://(?:www\.)?coverartarchive\.org/release(?:-group)?/[^/]+/(?:front|back|\d+))(?:-(?:250|500|1200))?(?:\.jpg)?$`)
 
-// sizedCover points a Cover Art Archive cover at the thumbnail size asked
-// for; each size is its own artwork cache file. Other sources stay as they are.
+// Deezer CDN and iTunes covers carry their size in the path.
+var (
+	dzThumb = regexp.MustCompile(`^(https?://[a-z0-9-]+\.dzcdn\.net/images/(?:cover|artist)/[0-9a-f]+/)\d+x\d+(-.*)?$`)
+	itThumb = regexp.MustCompile(`^(https?://[a-z0-9-]+\.mzstatic\.com/image/thumb/.+/)\d+x\d+(bb|cc)?(\.(?:jpg|png|webp))$`)
+)
+
+// sizedCover points a Cover Art Archive, Deezer or iTunes cover at the size
+// asked for; each size is its own artwork cache file. Other sources stay as they are.
 func sizedCover(src, size string) string {
 	if m := caaThumb.FindStringSubmatch(src); m != nil {
 		return m[1] + "-" + size
+	}
+	if m := dzThumb.FindStringSubmatch(src); m != nil {
+		return m[1] + size + "x" + size + m[2]
+	}
+	if m := itThumb.FindStringSubmatch(src); m != nil {
+		bb := m[2]
+		if bb == "" {
+			bb = "bb"
+		}
+		return m[1] + size + "x" + size + bb + m[3]
 	}
 	return src
 }

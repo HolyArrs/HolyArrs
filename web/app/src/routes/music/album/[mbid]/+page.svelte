@@ -130,7 +130,7 @@
 
 {#snippet albumCard(a: PageAlbum)}
 	{@const c = coverFor(appPicture(a.image), 200)}
-	<PosterCard title={a.name} href={albumHref(a.mbid, artist)} image={c.src} srcset={c.srcset} sizes="200px" kind="artist" shape="square" music
+	<PosterCard title={a.name} href={albumHref(a.mbid, artist)} image={c.src} srcset={c.srcset} kind="artist" shape="square" music
 		subtitle={[albumYear(a.release_date), kindWord(a)].filter(Boolean).join(' · ')} badges={a.explicit ? ['E'] : undefined} owned={owned(a)} />
 {/snippet}
 

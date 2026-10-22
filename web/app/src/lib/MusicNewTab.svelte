@@ -8,6 +8,7 @@
 	import { toasts } from './toasts.svelte.ts';
 	import { refreshInbox } from './wishlist.svelte.ts';
 	import { musicCardHref, musicImage } from './music-trending.ts';
+	import { coverFor } from './music-pages.ts';
 	import { cardBadges, exploreLinks, eyebrow, heroNote, newMusicPath, rowNote, type NewMusicAnswer, type NewMusicCard } from './music-new.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './types.ts';
 	import Shelf from './ui/Shelf.svelte';
@@ -146,7 +147,8 @@
 </script>
 
 {#snippet albumCard(row: { type: string }, c: NewMusicCard)}
-	<PosterCard title={c.name} href={musicCardHref(c)} image={musicImage(c)} kind="artist" subtitle={rowNote(row, c) || undefined} badges={cardBadges(c)} shape="square" music actionOnHover
+	{@const cv = coverFor(musicImage(c), 200)}
+	<PosterCard title={c.name} href={musicCardHref(c)} image={cv.src} srcset={cv.srcset} kind="artist" subtitle={rowNote(row, c) || undefined} badges={cardBadges(c)} shape="square" music actionOnHover
 		status={c.title_id && row.type === 'np_music_library' ? 'in_library' : undefined}>
 		{#snippet action()}
 			{#if c.upcoming}

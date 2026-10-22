@@ -183,7 +183,7 @@
 
 {#snippet albumCard(a: PageAlbum, eager = false)}
 	{@const c = coverFor(appPicture(a.image), 200)}
-	<PosterCard title={a.name} href={albumHref(a.mbid, mbid)} image={c.src} srcset={c.srcset} sizes="200px" {eager} kind="artist" shape="square" music actionOnHover
+	<PosterCard title={a.name} href={albumHref(a.mbid, mbid)} image={c.src} srcset={c.srcset} {eager} kind="artist" shape="square" music actionOnHover
 		subtitle={[albumYear(a.release_date), a.shelf === 'albums' ? '' : kindWord(a)].filter(Boolean).join(' · ') || undefined}
 		badges={a.explicit ? ['E'] : undefined} owned={owned(a, albumAsked(a))}>
 		{#snippet action()}
@@ -255,7 +255,7 @@
 						<div class="latest">
 							<h2>Latest release</h2>
 							<a class="latest-card" href={albumHref(l.mbid, mbid)}>
-								<img src={appPicture(l.image)} alt="" width="200" height="200" loading="lazy" decoding="async" />
+								<img src={coverFor(appPicture(l.image), 200).src} srcset={coverFor(appPicture(l.image), 200).srcset} sizes="200px" alt="" width="200" height="200" loading="lazy" decoding="async" />
 								<span class="l-meta">
 									<span class="l-date">{l.release_date ? new Date(`${l.release_date.padEnd(10, '-01').slice(0, 10)}T00:00:00Z`).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: l.release_date.length === 10 ? 'numeric' : undefined, timeZone: 'UTC' }) : ''}</span>
 									<span class="l-name">{#if l.explicit}<span class="e" aria-label="Explicit">E</span>{/if}{l.name}</span>

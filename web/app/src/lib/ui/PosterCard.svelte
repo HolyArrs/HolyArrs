@@ -175,6 +175,8 @@
 		if (root) cw = root.clientWidth;
 	});
 	const pic = $derived(sized(image, 'poster', cw));
+	// Sized covers: the measured width is the display size, so big tiles pick 500 or 1200.
+	const shownSizes = $derived(srcset && cw ? `${cw}px` : sizes);
 	const kindIcon = $derived<IconName>(kind === 'show' || kind === 'episode' ? 'tv' : kind === 'artist' ? 'music' : 'film');
 </script>
 
@@ -185,8 +187,8 @@
 			{#if !image || failed || !loaded}
 				<span class="ph" class:shine={!!image && !failed && !loaded} aria-hidden="true"><span class="ph-ic"><Icon name={kindIcon} size={22} /></span><span class="ph-t">{title}</span></span>
 			{/if}
-			{#if image && !failed && near()}
-				<img src={pic} {srcset} {sizes} class:in={loaded} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async" use:whenLoaded={() => (loaded = true)} onerror={() => (failed = true)} />
+			{#if image && !failed && near() && (!srcset || cw)}
+				<img src={pic} {srcset} sizes={shownSizes} class:in={loaded} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async" use:whenLoaded={() => (loaded = true)} onerror={() => (failed = true)} />
 			{/if}
 			{#if badges.length || status}
 				<span class="over">

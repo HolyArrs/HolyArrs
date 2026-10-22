@@ -6,6 +6,7 @@
 	import { refreshInbox } from './wishlist.svelte.ts';
 	import type { OwnedIndex } from './explore.ts';
 	import { defaultRegion } from './region.ts';
+	import { coverFor } from './music-pages.ts';
 	import { fetchMusicExplore, musicCardHref, musicCardNote, musicImage, releaseWords, type MusicCardData, type MusicExploreAnswer } from './music-trending.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './types.ts';
 	import Shelf from './ui/Shelf.svelte';
@@ -229,7 +230,8 @@
 		{#if answer && hero && heroPick}
 			<a class="hero" class:bare={!heroPick.cover} href={musicCardHref(hero)} data-testid="music-hero">
 				{#if heroPick.cover}
-					<span class="cover"><img src={musicImage(hero)} alt="" /></span>
+					{@const hc = coverFor(musicImage(hero), 120)}
+					<span class="cover"><img src={hc.src} srcset={hc.srcset} sizes="120px" alt="" /></span>
 				{:else if hero.artist_image}
 					<!-- No album cover anywhere: the artist's picture, blurred, behind the title. -->
 					<img class="backdrop" src={musicImage({ image: hero.artist_image })} alt="" aria-hidden="true" onerror={(e) => ((e.currentTarget as HTMLImageElement).hidden = true)} />
@@ -256,10 +258,12 @@
 				items={row.items} key={(c) => c.key} defer={ri >= EAGER_ROWS} placeholder={row.shape === 'square' ? 'square' : 'round'} lines={row.items.some((c) => musicCardNote(row, c)) ? 2 : 1}>
 				{#snippet card(raw: MusicCardData)}
 					{@const c = live(raw)}
+					{@const cv = coverFor(musicImage(c), 200)}
 					<PosterCard
 						title={c.name}
 						href={musicCardHref(c)}
-						image={musicImage(c)}
+						image={cv.src}
+						srcset={cv.srcset}
 						kind="artist"
 						subtitle={musicCardNote(row, c) || undefined}
 						status={c.kind === 'artist' && c.title_id && row.type !== 'your_asks' ? 'in_library' : undefined}

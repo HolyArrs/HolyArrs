@@ -6,12 +6,18 @@ const al = (over: Partial<PageAlbum>): PageAlbum => ({ mbid: 'm', name: 'N', typ
 describe('music pages', () => {
 	it('sizes Cover Art Archive covers 250 or 500 by display size', () => {
 		const u = 'https://coverartarchive.org/release-group/abc/front';
-		expect(coverFor(u, 200, 1)).toEqual({ src: `${u}-250`, srcset: `${u}-250 250w, ${u}-500 500w` });
+		expect(coverFor(u, 200, 1)).toEqual({ src: `${u}-250`, srcset: `${u}-250 250w, ${u}-500 500w, ${u}-1200 1200w` });
 		expect(coverFor(`${u}-250`, 200, 2).src).toBe(`${u}-500`);
 		const p = '/api/v1/music-trending/art/album/abc';
-		expect(coverFor(p, 200, 1)).toEqual({ src: `${p}?size=250`, srcset: `${p}?size=250 250w, ${p}?size=500 500w` });
+		expect(coverFor(p, 200, 1)).toEqual({ src: `${p}?size=250`, srcset: `${p}?size=250 250w, ${p}?size=500 500w, ${p}?size=1200 1200w` });
 		expect(coverFor(p, 200, 2).src).toBe(`${p}?size=500`);
 		expect(coverFor(p, 320, 2).src).toBe(`${p}?size=1200`);
+		const dz = 'https://cdn-images.dzcdn.net/images/cover/ab12/';
+		expect(coverFor(`${dz}1000x1000-000000-80-0-0.jpg`, 464, 1).src).toBe(`${dz}500x500-000000-80-0-0.jpg`);
+		expect(coverFor(`${dz}500x500-000000-80-0-0.jpg`, 464, 2).srcset).toContain(`${dz}1200x1200-000000-80-0-0.jpg 1200w`);
+		const it = 'https://is1-ssl.mzstatic.com/image/thumb/Music/v4/x.png/';
+		expect(coverFor(`${it}100x100bb.jpg`, 200, 1).src).toBe(`${it}250x250bb.jpg`);
+		expect(coverFor(`${it}600x600bb.jpg`, 600, 1).src).toBe(`${it}1200x1200bb.jpg`);
 		expect(coverFor('/api/v1/music-trending/art/artist/abc', 200)).toEqual({ src: '/api/v1/music-trending/art/artist/abc' });
 	});
 	it('links artists and albums by MusicBrainz id', () => {
