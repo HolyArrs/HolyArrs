@@ -157,6 +157,11 @@ func TestMediaServerAddressTest(t *testing.T) {
 	if code, out := test(ms.URL + "/away"); code != 200 || !strings.Contains(out, `"ok":false`) {
 		t.Fatalf("redirect followed: %d %s", code, out)
 	}
+	notJf := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { http.Error(w, "gone", 418) }))
+	t.Cleanup(notJf.Close)
+	if code, out := test(notJf.URL); code != 200 || !strings.Contains(out, `"ok":false`) || strings.Contains(out, "418") || strings.Contains(out, "status") {
+		t.Fatalf("other answer leaks detail: %d %s", code, out)
+	}
 	if code, out := test("http://169.254.169.254"); code != 200 || !strings.Contains(out, `"ok":false`) {
 		t.Fatalf("link-local: %d %s", code, out)
 	}

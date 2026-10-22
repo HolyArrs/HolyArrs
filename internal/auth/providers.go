@@ -261,7 +261,7 @@ func (a *Auth) mediaServerTest(w http.ResponseWriter, r *http.Request) {
 	}
 	data, _ := io.ReadAll(io.LimitReader(resp.Body, testMax))
 	if resp.StatusCode/100 != 2 || json.Unmarshal(data, &info) != nil || info.ID == "" {
-		writeJSON(w, http.StatusOK, map[string]any{"ok": false, "message": fmt.Sprintf("Something answered (status %d), but it does not look like a %s server.", resp.StatusCode, kind)})
+		writeJSON(w, http.StatusOK, map[string]any{"ok": false, "message": "Something answered, but it does not look like a "+kind+" server."})
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "name": truncate(info.ServerName, 120), "version": truncate(info.Version, 40), "product": truncate(info.ProductName, 60)})
