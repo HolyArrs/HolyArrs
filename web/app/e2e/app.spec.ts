@@ -132,7 +132,7 @@ test('empty pages say what to do next', async () => {
 	await expect(page.getByRole('heading', { name: 'Nothing coming up' })).toBeVisible();
 	await page.goto('/search');
 	await expect(page.getByRole('heading', { name: 'Search', level: 1 })).toBeVisible();
-	await expect(page.getByRole('searchbox', { name: 'Search for a title, an artist or a person' })).toBeVisible();
+	await expect(page.getByRole('combobox', { name: 'Search for a title, an artist or a person' })).toBeVisible();
 });
 
 test('settings pages render their forms', async () => {
