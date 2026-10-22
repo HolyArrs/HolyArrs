@@ -45,7 +45,7 @@ test('first run makes the owner, adds the key and folder, then returns Home', as
 	await expect(page).toHaveURL(/\/welcome\?first=1$/);
 	await expect(page.getByRole('heading', { name: 'What do you use?', level: 1 })).toBeVisible();
 	await expect(page.getByLabel('Movies', { exact: true })).toBeChecked();
-	await expect(page.getByLabel('Shows', { exact: true })).toBeChecked();
+	await expect(page.getByLabel('TV shows', { exact: true })).toBeChecked();
 	await expect(page.getByLabel('Music', { exact: true })).not.toBeChecked();
 	await expect(page.getByLabel('No, just me')).toBeChecked();
 	await scanFirstRun();

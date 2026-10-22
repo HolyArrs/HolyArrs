@@ -110,7 +110,7 @@ test('"Just movies" on the first-run step is one click, and everything comes bac
 	await page.goto('/welcome');
 	await expect(page.getByRole('heading', { name: 'What do you use?', level: 1 })).toBeVisible();
 	await expect(page.getByLabel('Movies', { exact: true })).toBeChecked();
-	await expect(page.getByLabel('Shows', { exact: true })).toBeChecked();
+	await expect(page.getByLabel('TV shows', { exact: true })).toBeChecked();
 	await expect(page.getByLabel('Music', { exact: true })).not.toBeChecked();
 	await page.getByRole('button', { name: 'Just movies' }).click();
 	await expect(page).toHaveURL(/\/$/);
