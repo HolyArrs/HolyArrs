@@ -203,7 +203,9 @@ func (a *API) similarTo(seeds []string, wait time.Duration) map[string][]metadat
 		return out
 	}
 	c := &a.musicx
-	var pending []*musicSimilarEntry
+	// pending holds the done channels, taken under the lock: fetchSimilar
+	// clears e.done under the lock, so reading it later would race.
+	var pending []chan struct{}
 	c.mu.Lock()
 	if c.similar == nil {
 		c.similar = map[string]*musicSimilarEntry{}
@@ -221,7 +223,7 @@ func (a *API) similarTo(seeds []string, wait time.Duration) map[string][]metadat
 			go a.fetchSimilar(id, e)
 		}
 		if e.done != nil {
-			pending = append(pending, e)
+			pending = append(pending, e.done)
 		}
 		entries[id] = e
 	}
@@ -231,9 +233,9 @@ func (a *API) similarTo(seeds []string, wait time.Duration) map[string][]metadat
 	timer := time.NewTimer(wait)
 	defer timer.Stop()
 wait:
-	for _, e := range pending {
+	for _, done := range pending {
 		select {
-		case <-e.done:
+		case <-done:
 		case <-timer.C:
 			break wait
 		}
