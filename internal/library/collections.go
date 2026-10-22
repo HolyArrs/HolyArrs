@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
@@ -24,6 +25,9 @@ type MovieCollection struct {
 	SourceID    string `json:"source_id"`
 	Name        string `json:"name"`
 	OwnedTitles int    `json:"owned_titles"`
+	// TitleIDs lists the owned movies (list answer only), so the Library can
+	// tag series without asking for every collection.
+	TitleIDs []int64 `json:"title_ids,omitempty"`
 }
 
 type CollectionFile struct {
@@ -77,7 +81,7 @@ type CollectionReview struct {
 // owned movie. Provider membership is persisted separately; this read never
 // invents membership from names or folders.
 func ListCollections(ctx context.Context, db reader) ([]MovieCollection, error) {
-	rows, err := db.QueryContext(ctx, `SELECT c.id, c.source_id, c.name, count(t.id)
+	rows, err := db.QueryContext(ctx, `SELECT c.id, c.source_id, c.name, count(t.id), group_concat(t.id)
 		FROM movie_collections c
 		JOIN movie_collection_titles ct ON ct.collection_id = c.id
 		JOIN titles t ON t.id = ct.title_id AND t.kind = 'movie' AND t.state != 'removed'
@@ -89,8 +93,14 @@ func ListCollections(ctx context.Context, db reader) ([]MovieCollection, error) 
 	out := []MovieCollection{}
 	for rows.Next() {
 		var c MovieCollection
-		if err := rows.Scan(&c.ID, &c.SourceID, &c.Name, &c.OwnedTitles); err != nil {
+		var ids string
+		if err := rows.Scan(&c.ID, &c.SourceID, &c.Name, &c.OwnedTitles, &ids); err != nil {
 			return nil, err
+		}
+		for _, s := range strings.Split(ids, ",") {
+			if id, err := strconv.ParseInt(s, 10, 64); err == nil {
+				c.TitleIDs = append(c.TitleIDs, id)
+			}
 		}
 		out = append(out, c)
 	}

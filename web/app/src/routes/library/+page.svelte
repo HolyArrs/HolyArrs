@@ -233,8 +233,10 @@
 		seriesLoaded = true;
 		try {
 			const list = (await api.get<{ collections: MovieCollection[] }>('/collections')).collections;
-			const details = await Promise.all(list.map((c) => api.get<CollectionDetail>(`/collections/${c.id}`).catch(() => null)));
+			// The list carries each series' movie ids; older servers need one read per series.
+			const details = list.every((c) => c.title_ids) ? [] : await Promise.all(list.map((c) => api.get<CollectionDetail>(`/collections/${c.id}`).catch(() => null)));
 			const map = new Map<number, number>();
+			for (const c of list) for (const id of c.title_ids ?? []) map.set(id, c.id);
 			for (const d of details) for (const t of d?.titles ?? []) map.set(t.id, d!.id);
 			series = list;
 			seriesOfTitle = map;

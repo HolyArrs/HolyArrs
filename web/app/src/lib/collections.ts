@@ -3,6 +3,8 @@ export interface MovieCollection {
 	source_id: string;
 	name: string;
 	owned_titles: number;
+	/** Owned movie ids; only on the list answer. */
+	title_ids?: number[];
 }
 
 export interface CollectionFile {

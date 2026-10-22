@@ -32,6 +32,10 @@ func (a *API) listCollections(w http.ResponseWriter, r *http.Request) {
 			}
 			if len(d.Titles) > 0 {
 				c.OwnedTitles = len(d.Titles)
+				c.TitleIDs = c.TitleIDs[:0]
+				for _, t := range d.Titles {
+					c.TitleIDs = append(c.TitleIDs, t.ID)
+				}
 				kept = append(kept, c)
 			}
 		}
