@@ -1057,7 +1057,7 @@
 				<ul class="tips">
 					<li>Check the spelling, or use fewer words.</li>
 					<li>Add the year, such as “Dune 2021”.</li>
-					<li>Paste an id: tmdb:693134, tvmaze:82 or mbid:…</li>
+					<li>Paste an id, such as tmdb:693134 or tvmaze:82.</li>
 				</ul>
 				{#if scope !== 'all'}<Button variant="secondary" onclick={() => setScope('all')}>Look everywhere</Button>{/if}
 				{#if manage}<Button variant="primary" icon="search" href={to('/settings/sources')}>Search indexers for “{searched}”</Button>{/if}
@@ -1156,7 +1156,8 @@
 	.more { min-height: 40px; display: grid; place-items: center; padding: 16px 0; }
 	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--title-item), 1fr)); gap: 16px 5px; margin: -16px 0 0; padding: 0; list-style: none; }
 	.empty { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; max-width: 640px; }
-	.tips { margin: 0; padding-left: 20px; color: var(--text-muted); font: var(--t-body); display: grid; gap: 4px; }
+	.tips { margin: 0; padding-left: 1.2em; list-style: disc; color: var(--text-muted); font: var(--t-body); display: grid; gap: 4px; }
+	.tips li::marker { color: var(--text-faint, var(--text-muted)); }
 	.notice { margin: 0; padding: 10px 12px; border-radius: var(--r-btn); background: var(--surface-2); font: var(--t-callout); }
 	.notice.bad { color: var(--fail); }
 </style>
