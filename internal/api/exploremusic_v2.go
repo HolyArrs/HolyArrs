@@ -538,7 +538,7 @@ func (a *API) buildMusicV2(ctx context.Context, member int64, region string, lib
 			cards = append(cards, MusicCard{Key: "genre:" + g.Slug, Kind: "genre", MBID: g.Slug, Name: g.Name, Hue: &hue, Image: g.Art, Genres: []string{g.Slug}})
 			scores = append(scores, 1)
 		}
-		addRow(MusicRow{ID: "genres", Type: "genres", Title: "Browse by genre", Reason: "The genres charting in your region", Shape: "tile"},
+		addRow(MusicRow{ID: "genres", Type: "genres", Title: "Genres", Reason: "The genres charting in your region", Shape: "tile"},
 			musicscore.Row{Anchor: true, Prior: musicscore.PriorMixed, ArtistRow: true}, cards, scores)
 	}
 
