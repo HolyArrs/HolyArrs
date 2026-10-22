@@ -15870,6 +15870,8 @@
     },
     "/api/v1/music/genre-art/{slug}": {
       "get": {
+        "description": "The grey 16:9 picture of a genre tile (at most 40 KB) at version v, from the metadata server; the app paints the genre's hue under it. Served with a week-long private cache header.",
+        "operationId": "musicGenreArt",
         "parameters": [
           {
             "in": "path",
@@ -15880,8 +15882,18 @@
             }
           }
         ],
-        "responses": {},
-        "summary": "",
+        "responses": {
+          "200": {
+            "description": "The picture (image/jpeg)."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          },
+          "404": {
+            "description": "No picture for this genre."
+          }
+        },
+        "summary": "A Music genre tile picture",
         "x-holyarrs-part": "music",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "read"
@@ -15889,6 +15901,8 @@
     },
     "/api/v1/music/genre/{slug}": {
       "get": {
+        "description": "The rows of one Music genre (slug from the genre tiles; region a two-letter country or global): hero (Spotlight, top charted albums by freshness and popularity), genre_new, genre_top, genre_yours (Library artists in the genre), genre_missing (their studio albums not had or asked for), genre_artists (popular artists not in the Library) and genre_soon, plus tile (name, hue, picture). Accounts with an age limit get kid=true and no rows. Music only; Movies and Shows genre pages are separate.",
+        "operationId": "musicGenrePage",
         "parameters": [
           {
             "in": "path",
@@ -15899,8 +15913,21 @@
             }
           }
         ],
-        "responses": {},
-        "summary": "",
+        "responses": {
+          "200": {
+            "description": "The genre's rows."
+          },
+          "400": {
+            "description": "Not a genre slug."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          },
+          "404": {
+            "description": "The genre is not charting in this region."
+          }
+        },
+        "summary": "A Music genre page",
         "x-holyarrs-part": "music",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "read"
