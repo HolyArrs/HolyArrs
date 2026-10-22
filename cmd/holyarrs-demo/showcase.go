@@ -594,8 +594,19 @@ func (w *world) showcaseArtists(ctx context.Context) error {
 	}
 	for _, e := range showcaseArtistList {
 		key := "artist:" + e.MBID
-		if w.m.Titles[key] != 0 || e.Ask {
+		if e.Ask {
 			continue
+		}
+		if w.m.Titles[key] != 0 {
+			// A complete artist whose album track lists timed out has
+			// fewer albums on disk than planned: redo it (and its follows).
+			if !e.Complete || !w.artistShort(ctx, e) {
+				continue
+			}
+			w.say("   %s: albums missing on disk, redoing", e.Name)
+			for _, who := range e.Follow {
+				delete(w.m.Steps, "follow artist "+e.MBID+" "+who)
+			}
 		}
 		old, err := library.ArtistByMBID(ctx, w.s.Read(), e.MBID)
 		if err != nil {
@@ -700,14 +711,44 @@ func (w *world) adoptArtist(ctx context.Context, lf domain.LibraryFolder, id int
 	if _, err := w.lib.Remove(ctx, id, library.RemoveChoice{}, true, w.by); err != nil {
 		return id, err
 	}
-	res, err := w.lib.Adopt(ctx, lf.ID, []library.AdoptChoice{{Folder: folder, ID: e.MBID}}, w.by)
-	if err != nil {
-		return 0, err
+	// MusicBrainz track lists time out often: a failed adopt is undone and
+	// tried again, three times in all.
+	for try := 1; ; try++ {
+		res, err := w.lib.Adopt(ctx, lf.ID, []library.AdoptChoice{{Folder: folder, ID: e.MBID}}, w.by)
+		if err != nil {
+			return 0, err
+		}
+		if len(res) == 1 && res[0].Error == "" && res[0].TitleID != 0 {
+			return res[0].TitleID, nil
+		}
+		if try == 3 || len(res) != 1 || res[0].TitleID == 0 {
+			return 0, fmt.Errorf("adopt %s: %+v", folder, res)
+		}
+		w.say("   %s: adopt try %d: %s; trying again", e.Name, try, res[0].Error)
+		if _, err := w.lib.Remove(ctx, res[0].TitleID, library.RemoveChoice{}, true, w.by); err != nil {
+			return res[0].TitleID, err
+		}
 	}
-	if len(res) != 1 || res[0].Error != "" || res[0].TitleID == 0 {
-		return 0, fmt.Errorf("adopt %s: %+v", folder, res)
+}
+
+// artistShort reports whether a complete artist has fewer studio albums
+// on disk than its scenario keeps.
+func (w *world) artistShort(ctx context.Context, e showcaseArtist) bool {
+	id, err := library.ArtistByMBID(ctx, w.s.Read(), e.MBID)
+	if err != nil || id == 0 {
+		return true
 	}
-	return res[0].TitleID, nil
+	var n, had int
+	_ = w.s.Read().QueryRowContext(ctx, `SELECT count(*), coalesce(sum(EXISTS (SELECT 1 FROM items i JOIN slots s ON s.item_id = i.id
+		WHERE i.part_id = p.id AND i.kind = 'track' AND s.file_id IS NOT NULL)), 0)
+		FROM parts p WHERE p.title_id = ? AND p.kind = 'album' AND p.dropped_at IS NULL AND p.release_type = 'album'
+		AND coalesce(p.secondary_types, '[]') IN ('[]', 'null', '') AND p.release_date IS NOT NULL AND p.release_date < ?`,
+		id, store.FormatTime(time.Now())).Scan(&n, &had)
+	want := min(e.Albums, n)
+	if e.AllBut > 0 {
+		want = n - e.AllBut
+	}
+	return had < want
 }
 
 // safeName drops characters Windows does not allow in a file name.

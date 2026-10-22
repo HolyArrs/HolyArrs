@@ -182,5 +182,7 @@ var showcaseArtistList = []showcaseArtist{
 	{MBID: "6925db17-f35e-42f3-a4eb-84ee6bf5d4b0", Name: "Olivia Rodrigo", Scenario: "all but the newest album on disk", AllBut: 1, NewAlbums: "new", Complete: true},
 	{MBID: "3478a5d1-bd96-4584-aa54-4d6e0a329658", Name: "Sam Fender", Scenario: "all but the newest album on disk", AllBut: 1, NewAlbums: "new", Complete: true},
 	{MBID: "7eb1ce54-a355-41f9-8d68-e018b096d427", Name: "Harry Styles", Scenario: "all but the newest album on disk", AllBut: 1, NewAlbums: "new", Complete: true},
+	{MBID: "b29020d6-5dbf-4c99-b16f-c009f8a712ff", Name: "Steve Lacy", Scenario: "all but the newest album on disk", AllBut: 1, NewAlbums: "new", Complete: true},
+	{MBID: "1882fe91-cdd9-49c9-9956-8e06a3810bd4", Name: "Sabrina Carpenter", Scenario: "all but the newest album on disk", AllBut: 1, NewAlbums: "new", Complete: true},
 	{MBID: "a2a3f910-b188-43e7-81d0-f1ac2a2f3e12", Name: "Noah Kahan", Scenario: "all but the newest album on disk", AllBut: 1, NewAlbums: "new", Complete: true},
 }
