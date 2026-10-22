@@ -366,7 +366,8 @@
 	.art.square, .d-art.square { --poster-ratio: 1; }
 	.body { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 	.top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-	.names { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
+	.names { display: flex; flex-direction: column; min-width: 0; flex: 1 1 12rem; }
+	.top { flex-wrap: wrap; }
 	/* The state reads in full; the long release name gives way first. */
 	.top > :global(.ui-pill) { flex-shrink: 0; }
 	.nm { color: var(--text); font: var(--t-headline); font-size: 15px; overflow-wrap: anywhere; }
