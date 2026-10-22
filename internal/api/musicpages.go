@@ -29,7 +29,7 @@ type PageAlbum struct {
 	SecondaryTypes []string `json:"secondary_types"`
 	ReleaseDate    string   `json:"release_date,omitempty"`
 	Disambiguation string   `json:"disambiguation,omitempty"`
-	// Shelf: albums, singles (EPs and singles), live (live and compilations), other.
+	// Shelf: albums, singles (EPs and singles), compilations, live, other.
 	Shelf    string `json:"shelf"`
 	Image    string `json:"image"`
 	Explicit bool   `json:"explicit,omitempty"`
@@ -79,6 +79,33 @@ type ArtistPageView struct {
 	Similar        []PageArtist          `json:"similar"`
 	Related        []PageArtist          `json:"related"`
 	Kid            bool                  `json:"kid"`
+	// Missing is what "Ask for all missing" asks: the released albums,
+	// EPs and singles the Library does not keep, and about how big.
+	Missing PageMissing `json:"missing"`
+}
+
+// PageMissing is the confirm line of "Ask for all missing": N releases, about
+// SizeBytes, and their ids (the ask carries exactly these).
+type PageMissing struct {
+	Count     int      `json:"count"`
+	SizeBytes int64    `json:"size_bytes"`
+	Albums    []string `json:"albums"`
+}
+
+// The size guess per release for the confirm line: a lossless album and a
+// short release (EP or single). Shown as "about", never used to pick copies.
+const (
+	missingAlbumBytes  = 450 << 20
+	missingSingleBytes = 90 << 20
+)
+
+// PageCredit is a release on another artist's page or a neighbour's top
+// album: the album and whose it is.
+type PageCredit struct {
+	PageAlbum
+	ArtistMBID string `json:"artist_mbid"`
+	ArtistName string `json:"artist_name"`
+	Listeners  int64  `json:"listeners,omitempty"`
 }
 
 // PageTrack is one track on the album page.
@@ -98,6 +125,8 @@ type PageEdition struct {
 	Label  string `json:"label"`
 	Tracks int    `json:"tracks"`
 	Date   string `json:"date,omitempty"`
+	// List is this edition's tracklist, with the Library's have per track.
+	List []PageTrack `json:"list"`
 }
 
 // AlbumPageView answers GET /api/v1/music/albums/{mbid}?artist=<mbid>.
@@ -182,7 +211,9 @@ func (a *API) musicPageRoutes(m *http.ServeMux) {
 func shelfOf(al metadata.Album) string {
 	for _, s := range al.SecondaryTypes {
 		switch strings.ToLower(s) {
-		case "live", "compilation":
+		case "compilation":
+			return "compilations"
+		case "live":
 			return "live"
 		case "soundtrack", "remix", "dj-mix", "mixtape/street":
 			return "other"
@@ -198,6 +229,19 @@ func shelfOf(al metadata.Album) string {
 		return "singles"
 	}
 	return "other"
+}
+
+// isVideo is a release group that is a video; the pages leave them out.
+func isVideo(al metadata.Album) bool {
+	if strings.EqualFold(al.PrimaryType, "video") {
+		return true
+	}
+	for _, s := range al.SecondaryTypes {
+		if strings.EqualFold(s, "video") {
+			return true
+		}
+	}
+	return false
 }
 
 func artPath(kind, mbid string) string { return "/api/v1/music-trending/art/" + kind + "/" + mbid }
@@ -348,6 +392,9 @@ func (a *API) pageAlbums(ctx context.Context, r *http.Request, art metadata.Arti
 	names := []nameKey{{kind: "artist", mbid: strings.ToLower(art.MBID), name: art.Name}}
 	out := make([]PageAlbum, 0, len(art.Albums))
 	for _, al := range art.Albums {
+		if isVideo(al) {
+			continue // music videos are never shown or asked for
+		}
 		id := strings.ToLower(al.MBID)
 		p := PageAlbum{MBID: id, Name: al.Name, Type: al.PrimaryType, SecondaryTypes: listOr(al.SecondaryTypes), ReleaseDate: al.ReleaseDate,
 			Disambiguation: al.Disambiguation, Shelf: shelfOf(al), Image: artPath("album", id), Explicit: explicit(al.Name),
@@ -429,6 +476,9 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 	case "similar":
 		a.artistSimilar(w, r)
 		return
+	case "more":
+		a.artistMore(w, r)
+		return
 	}
 	// Kid members get no music pages, as with the other music routes (explicit marks are incomplete).
 	if a.kidMax(r) != "" {
@@ -480,7 +530,8 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	v := ArtistPageView{MBID: mbid, Name: art.Name, Type: art.Type, Country: art.Country, Disambiguation: art.Disambiguation, Status: art.Status,
-		Genres: listOr(genres), Image: artPath("artist", mbid), Bio: bio, Similar: similar, Related: []PageArtist{}, Top: []PageSong{}, Kid: kid}
+		Genres: listOr(genres), Image: artPath("artist", mbid), Bio: bio, Similar: similar, Related: []PageArtist{}, Top: []PageSong{}, Kid: kid,
+		Missing: PageMissing{Albums: []string{}}}
 	if t != nil {
 		v.TitleID = t.ID
 		if img := artistImage(*t); img != "" {
@@ -498,6 +549,15 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 			v.Total++
 			if al.State == "complete" || al.State == "partial" {
 				v.Have++
+			}
+			if !al.Upcoming && (al.State == "" || al.State == "not_included") {
+				v.Missing.Count++
+				v.Missing.Albums = append(v.Missing.Albums, al.MBID)
+				if al.Shelf == "albums" {
+					v.Missing.SizeBytes += missingAlbumBytes
+				} else {
+					v.Missing.SizeBytes += missingSingleBytes
+				}
 			}
 		}
 		if k := metadata.SongKey(al.Name); byName[k].MBID == "" || al.Shelf == "albums" {
@@ -595,8 +655,12 @@ func (a *API) warmMusicArt(v ArtistPageView) {
 }
 
 func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Query().Get("part") == "core" {
+	switch r.URL.Query().Get("part") {
+	case "core":
 		a.albumCore(w, r)
+		return
+	case "near":
+		a.albumNear(w, r)
 		return
 	}
 	// Kid members get no music pages, as with the other music routes (explicit marks are incomplete).
@@ -715,6 +779,9 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	v.Editions = editions(ps)
+	for i := range v.Editions {
+		v.Editions[i].List = editionTracks(ps, v.Editions[i].MBID, have, me.PartID != 0)
+	}
 	for _, al := range albums {
 		if al.MBID != mbid && (al.Shelf == "albums" || al.Shelf == "singles") && !(kid && al.Explicit) && len(v.MoreBy) < 20 {
 			v.MoreBy = append(v.MoreBy, al)
@@ -1045,4 +1112,131 @@ func (a *API) albumCore(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Cache-Control", "private, max-age=60")
 	writeJSON(w, http.StatusOK, v)
+}
+
+// editionTracks lists one edition's tracks with the Library's have per
+// track (by recording id, else by name), as the main list does.
+func editionTracks(ps []metadata.Pressing, mbid string, have map[string]string, kept bool) []PageTrack {
+	out := []PageTrack{}
+	for _, p := range ps {
+		if p.MBID != mbid {
+			continue
+		}
+		for _, tr := range p.Tracks {
+			pt := PageTrack{Disc: tr.Disc, Number: tr.Number, Name: tr.Name, LengthMS: tr.LengthMS}
+			if kept {
+				pt.Have = "missing"
+				if s, ok := have[strings.ToLower(tr.RecordingID)]; ok {
+					pt.Have = s
+				} else if s, ok := have["n:"+metadata.SongKey(tr.Name)]; ok {
+					pt.Have = s
+				}
+			}
+			out = append(out, pt)
+		}
+		break
+	}
+	return out
+}
+
+// musicCreditTypes are the release kinds Appears on and the neighbours'
+// albums may show (never videos).
+var musicCreditTypes = map[string]bool{"album": true, "ep": true, "single": true}
+
+func creditOf(al metadata.MusicTopAlbum) PageCredit {
+	id := strings.ToLower(al.MBID)
+	c := PageCredit{PageAlbum: PageAlbum{MBID: id, Name: al.Title, Type: al.Type, SecondaryTypes: []string{}, ReleaseDate: al.Date, Image: artPath("album", id)}, Listeners: al.Listeners}
+	c.Shelf = "albums"
+	if al.Type != "album" {
+		c.Shelf = "singles"
+	}
+	if len(al.Artists) > 0 {
+		c.ArtistMBID = strings.ToLower(al.Artists[0])
+	}
+	if len(al.ArtistNames) > 0 {
+		c.ArtistName = al.ArtistNames[0]
+	}
+	return c
+}
+
+// artistMore answers GET /api/v1/music/artists/{mbid}?part=more: the
+// Essential albums (the artist's own albums by listeners, at most 6) and
+// Appears on (releases led by another artist that credit this one), from
+// the metadata server's artist data. Empty lists when it has none.
+func (a *API) artistMore(w http.ResponseWriter, r *http.Request) {
+	mbid, ok := a.musicPageGate(w, r)
+	if !ok {
+		return
+	}
+	ctx, cancel := context.WithTimeout(metadata.MemberLookup(r.Context()), 4*time.Second)
+	defer cancel()
+	essential, appears := []string{}, []PageCredit{}
+	if d := a.musicArtistDataOf(ctx, []string{mbid}, time.Now())[mbid]; d != nil {
+		own := []metadata.MusicTopAlbum{}
+		seen := map[string]bool{}
+		for _, al := range d.Albums {
+			if !musicCreditTypes[al.Type] || seen[al.MBID] {
+				continue
+			}
+			seen[al.MBID] = true
+			lead := len(al.Artists) == 0 || strings.EqualFold(al.Artists[0], mbid)
+			switch {
+			case lead && al.Type == "album":
+				own = append(own, al)
+			case !lead && len(appears) < 20:
+				appears = append(appears, creditOf(al))
+			}
+		}
+		sort.SliceStable(own, func(i, j int) bool { return own[i].Listeners > own[j].Listeners })
+		for i := 0; i < len(own) && i < 6; i++ {
+			essential = append(essential, strings.ToLower(own[i].MBID))
+		}
+	}
+	w.Header().Set("Cache-Control", "private, max-age=300")
+	writeJSON(w, http.StatusOK, map[string]any{"essential": essential, "appears_on": appears})
+}
+
+// albumNear answers GET /api/v1/music/albums/{mbid}?part=near&artist=: the
+// top album (by listeners) of each artist like this one, at most 14.
+func (a *API) albumNear(w http.ResponseWriter, r *http.Request) {
+	mbid, ok := a.musicPageGate(w, r)
+	if !ok {
+		return
+	}
+	artist := strings.ToLower(r.URL.Query().Get("artist"))
+	if !metadata.ValidMBID(artist) {
+		fail(w, http.StatusBadRequest, "send the album's and its artist's MusicBrainz ids (?artist=)")
+		return
+	}
+	ctx, cancel := context.WithTimeout(metadata.MemberLookup(r.Context()), 5*time.Second)
+	defer cancel()
+	near := []PageCredit{}
+	sim := a.similarArtists(ctx, artist, 14)
+	ids := make([]string, 0, len(sim))
+	for _, p := range sim {
+		ids = append(ids, p.MBID)
+	}
+	data := a.musicArtistDataOf(ctx, ids, time.Now())
+	for _, p := range sim {
+		d := data[p.MBID]
+		if d == nil {
+			continue
+		}
+		var best *metadata.MusicTopAlbum
+		for i, al := range d.Albums {
+			if al.Type != "album" || strings.EqualFold(al.MBID, mbid) || len(al.Artists) > 0 && !strings.EqualFold(al.Artists[0], p.MBID) {
+				continue
+			}
+			if best == nil || al.Listeners > best.Listeners {
+				best = &d.Albums[i]
+			}
+		}
+		if best != nil {
+			c := creditOf(*best)
+			c.ArtistMBID, c.ArtistName = p.MBID, p.Name
+			near = append(near, c)
+		}
+	}
+	w.Header().Set("Cache-Control", "private, max-age=300")
+	writeJSON(w, http.StatusOK, map[string]any{"near": near})
 }
