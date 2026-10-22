@@ -100,6 +100,22 @@ func TestServesUnderAURLBase(t *testing.T) {
 	if w.Code != 200 || strings.Contains(w.Body.String(), "url(/_app/") || !strings.HasPrefix(w.Header().Get("Content-Type"), "text/css") {
 		t.Fatalf("css %d %s", w.Code, w.Header().Get("Content-Type"))
 	}
+	// Split scripts list the chunks they preload from the root.
+	var js string
+	_ = fs.WalkDir(Files, "_app/immutable/entry", func(p string, d fs.DirEntry, err error) error {
+		if err == nil && strings.HasSuffix(p, ".js") {
+			if b, _ := fs.ReadFile(Files, p); strings.Contains(string(b), `"/_app/`) {
+				js = "/" + p
+			}
+		}
+		return nil
+	})
+	if js != "" {
+		w := get("/holyarrs" + js)
+		if w.Code != 200 || strings.Contains(w.Body.String(), `"/_app/`) || !strings.Contains(w.Header().Get("Content-Type"), "javascript") {
+			t.Fatalf("script %s %d %s", js, w.Code, w.Header().Get("Content-Type"))
+		}
+	}
 	if get("/library").Code != 404 {
 		t.Fatal("outside the base served")
 	}

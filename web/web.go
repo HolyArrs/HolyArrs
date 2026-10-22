@@ -114,14 +114,19 @@ func Handler() http.Handler {
 			} else {
 				w.Header().Set("Cache-Control", "no-cache")
 			}
-			// Styles name their fonts from the root: put the base in.
-			if base := urlbase.From(r.Context()); base != "" && path.Ext(p) == ".css" {
+			// Styles name their fonts from the root, and the split scripts list
+			// the chunks they preload from the root: put the base in.
+			if base := urlbase.From(r.Context()); base != "" && (path.Ext(p) == ".css" || path.Ext(p) == ".js") {
 				b, err := fs.ReadFile(Files, name)
 				if err != nil {
 					http.NotFound(w, r)
 					return
 				}
-				w.Header().Set("Content-Type", "text/css; charset=utf-8")
+				if path.Ext(p) == ".css" {
+					w.Header().Set("Content-Type", "text/css; charset=utf-8")
+				} else {
+					w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+				}
 				_, _ = w.Write(WithBase(b, base))
 				return
 			}
