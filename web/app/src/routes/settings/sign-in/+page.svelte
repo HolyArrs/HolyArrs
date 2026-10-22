@@ -218,6 +218,14 @@
 		savingWay = w;
 		try {
 			took(await api.put<SignInSettings>('/auth/settings', { [w]: ways[w], ...(confirmed ? { confirm_everyone: true } : {}) }));
+			// An address never tested, or whose test failed: save anyway, test it now, warn when it does not answer.
+			if (w !== 'plex' && ways[w].url && !tested[w]?.ok) {
+				await testUrl(w);
+				if (!tested[w]?.ok) {
+					toasts.push(`${wayWord[w]} sign-in saved, but this address did not answer the test. People can't sign in with ${wayWord[w]} until it does.`, 'fail', { ms: 10000 });
+					return;
+				}
+			}
 			toasts.push(`${wayWord[w]} sign-in saved.`, 'ok');
 		} catch (err) {
 			toasts.push(strongNote(err), 'fail');
@@ -426,7 +434,8 @@
 								<Button type="button" onclick={() => testUrl(w)} disabled={!ways[w].url || testing === w} aria-busy={testing === w}>Test</Button>
 							</div>
 						</Field>
-						{#if tested[w]}<p class="notice {tested[w]?.ok ? 'ok' : 'warn'}" role="status">{tested[w]?.text}</p>{/if}
+						{#if tested[w]}<p class="notice {tested[w]?.ok ? 'ok' : 'warn'}" role="status">{tested[w]?.text}</p>
+						{:else if ways[w].url}<p class="notice warn" data-testid="{w}-untested">Not tested yet. Save runs the test; you can save even if it fails.</p>{/if}
 					{/if}
 					<Field id="{w}-join" label="Who may join the first time" hint="New people join as Members who may ask for titles. Change them on the Users page.">
 						<select id="{w}-join" class="input" bind:value={ways[w].join}>
