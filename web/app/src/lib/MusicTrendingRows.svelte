@@ -347,7 +347,7 @@
 	.row { position: relative; min-width: 0; }
 	/* music_rows_v2: one card size (200), genre tiles 5/3/2 columns, song lines 3 columns. */
 	@media (min-width: 768px) { .music.v2 { --explore-item: 200px; } }
-	.plain { display: flex; flex-direction: column; gap: 12px; }
+	.plain { display: flex; flex-direction: column; align-items: stretch; gap: 12px; }
 	.rhead { margin: 0; font-size: 17px; font-weight: 700; }
 	.tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
 	/* A Music genre page's band: the tile's look (hue, grey art at .55, radius 10), wider. */
