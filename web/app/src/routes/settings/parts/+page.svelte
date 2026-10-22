@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -134,7 +135,7 @@
 {:else if error}
 	<p class="notice bad" role="alert">{error}</p>
 {:else if !parts}
-	<div class="sk" style="height: 240px"></div>
+	<SkSettings rows={3} />
 {:else}
 	{#if safeMode}
 		<p class="notice warn" data-testid="parts-safe-mode">

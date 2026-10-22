@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
@@ -283,7 +284,7 @@
 <PageHeader title="Move from other apps" subtitle="Bring a setup over from the apps HolyArrs replaces. Read them, look at the plan, try it, then move. Media files are never moved or renamed, and the old apps are never changed." />
 
 {#if !loaded}
-	<div class="sk" style="height: 200px"></div>
+	<SkSettings rows={2} />
 {:else if loadError}
 	<p class="notice bad" role="alert">{loadError}</p>
 {:else}

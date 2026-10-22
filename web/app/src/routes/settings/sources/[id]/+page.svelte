@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import { to } from '#lib/paths.ts';
@@ -45,7 +46,7 @@
 {#if error}
 	<p class="notice bad" role="alert">{error}</p>
 {:else if !src}
-	<div class="sk" style="height: 200px"></div>
+	<SkSettings rows={2} />
 {:else}
 	<PageHeader back={{ href: to('/settings/sources'), label: 'Sources' }} title={src.name} subtitle={`${words(src.format)} · ${words(src.protocol)} · priority ${src.priority} · ${uses(src)}`}>
 		{#snippet actions()}

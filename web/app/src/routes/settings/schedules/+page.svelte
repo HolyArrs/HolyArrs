@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -104,7 +105,7 @@
 {#if error}
 	<p class="notice bad" role="alert">{error}</p>
 {:else if !rows}
-	<div class="sk" style="height: 320px"></div>
+	<SkSettings rows={4} />
 {:else}
 	<div data-testid="schedules">
 		<SettingsCard title="Scheduled work">

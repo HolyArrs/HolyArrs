@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
@@ -171,7 +172,7 @@
 <PageHeader title="Sign-in and security" subtitle="Who can open HolyArrs, how they sign in, and keys for scripts and other apps." />
 
 {#if !loaded}
-	<div class="sk" style="height: 240px"></div>
+	<SkSettings rows={3} />
 {:else}
 	<SettingsCard id="local-card" title="Local network">
 		{#if error}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
@@ -121,7 +122,7 @@
 </PageHeader>
 
 {#if !loaded}
-	<div class="sk" style="height: 200px"></div>
+	<SkSettings rows={2} />
 {:else if missing}
 	<EmptyState icon="archive" title="Backups are off in this build">
 		<p>This HolyArrs runs without its backup manager.</p>

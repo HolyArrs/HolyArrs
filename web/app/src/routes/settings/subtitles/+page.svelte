@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
@@ -185,7 +186,7 @@
 <PageHeader title="Subtitles" subtitle="Which subtitles every movie and show should have, how good a match must be, and where HolyArrs looks." />
 
 {#if !loaded}
-	<div class="sk" style="height: 200px"></div>
+	<SkSettings rows={2} />
 {:else if error && !settings}
 	<p class="notice bad" role="alert">{error}</p>
 {:else if settings}

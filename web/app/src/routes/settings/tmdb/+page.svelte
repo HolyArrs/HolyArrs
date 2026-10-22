@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { onMount } from 'svelte';
@@ -26,7 +27,7 @@
 <PageHeader title="Metadata" subtitle="Movie, show and music names, dates and pictures come from the HolyArrs metadata server. Nothing to set up." />
 
 {#if !loaded}
-	<div class="sk" style="height: 120px"></div>
+	<SkSettings rows={2} />
 {:else}
 	<section class="card" id="metadata-card" tabindex="-1" aria-labelledby="h-server">
 		<div class="card-head">

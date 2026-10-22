@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
@@ -174,7 +175,7 @@
 <PageHeader title="Naming and files" subtitle="How movie, episode and track files and folders are named, and how HolyArrs looks after the disk." />
 
 {#if !loaded}
-	<div class="sk" style="height: 320px"></div>
+	<SkSettings rows={4} />
 {:else}
 	<form class="sc-form stack" id="naming-form" onsubmit={save} aria-label="Naming and files">
 		<SettingsCard id="movie-names" title="Movie names" description="How a movie's file and folder are named.">

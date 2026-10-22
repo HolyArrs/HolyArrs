@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -89,7 +90,7 @@
 <PageHeader title="Wishlist rules" subtitle="How many movies, shows and albums people may ask for, and what an approved ask gets." />
 
 {#if !loaded}
-	<div class="sk" style="height: 240px"></div>
+	<SkSettings rows={3} />
 {:else}
 	<form class="sc-form" id="wishlist-form" onsubmit={save} aria-label="Wishlist rules">
 		<SettingsCard id="weekly-limits" title="Weekly limits" description="How many asks each person may make in 7 days.">

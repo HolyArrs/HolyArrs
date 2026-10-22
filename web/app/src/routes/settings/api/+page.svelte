@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
@@ -99,7 +100,7 @@
 		{#if error}
 			<p class="form-error" role="alert">{error}</p>
 		{:else if !spec}
-			<div class="sk" style="height: 200px"></div>
+			<SkSettings rows={2} />
 		{:else}
 			<Field id="api-q" label="Find a route">
 				<input id="api-q" class="input" type="search" bind:value={q} placeholder="For example downloads" autocomplete="off" />

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
@@ -95,7 +96,7 @@
 <PageHeader title="Search" subtitle="How HolyArrs looks for Releases by itself." />
 
 {#if !loaded}
-	<div class="sk" style="height: 240px"></div>
+	<SkSettings rows={3} />
 {:else}
 	<form class="sc-form" id="search-form" onsubmit={save} aria-label="Search settings">
 		<SettingsCard id="nightly" title="Nightly search" description="Once a day HolyArrs looks for what is missing, by itself.">

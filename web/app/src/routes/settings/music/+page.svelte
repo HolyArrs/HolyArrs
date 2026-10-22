@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -59,7 +60,7 @@
 <PageHeader title="Music defaults" subtitle="What a new artist gets, which Pressing an album follows, and where artist and album details come from." />
 
 {#if !loaded}
-	<div class="sk" style="height: 240px"></div>
+	<SkSettings rows={3} />
 {:else}
 	<form class="sc-form" id="music-form" onsubmit={save} aria-label="Music defaults">
 		<SettingsCard id="new-artist" title="A new artist" description="What every artist you add gets, unless you choose otherwise when adding.">

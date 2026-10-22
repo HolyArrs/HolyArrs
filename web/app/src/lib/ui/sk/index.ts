@@ -11,3 +11,4 @@ export { default as SkTableRow } from './SkTableRow.svelte';
 export { default as SkTrackRow } from './SkTrackRow.svelte';
 export { default as SkGrid } from './SkGrid.svelte';
 export { default as SkTitle } from './SkTitle.svelte';
+export { default as SkSettings } from './SkSettings.svelte';

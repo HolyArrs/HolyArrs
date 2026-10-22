@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
@@ -98,7 +99,7 @@
 {#if error}
 	<p class="notice bad" role="alert">{error}</p>
 {:else if !checks}
-	<div class="sk" style="height: 240px"></div>
+	<SkSettings rows={3} />
 {:else}
 	<section class="card" id="health-checks-card" aria-labelledby="h-checks" data-testid="health-checks" tabindex="-1">
 		<div class="card-head">

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
@@ -178,7 +179,7 @@
 {#if error}
 	<p class="notice bad" role="alert">{error}</p>
 {:else if !loaded}
-	<div class="sk" style="height: 120px"></div>
+	<SkSettings rows={2} />
 {:else if servers.length === 0 && !editing}
 	<EmptyState icon="film" title="No media servers yet">
 		<p>Add your Plex, Jellyfin or Emby server and new movies show up there by themselves.</p>

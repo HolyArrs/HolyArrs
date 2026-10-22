@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
@@ -290,7 +291,7 @@
 <PageHeader title="Users and roles" subtitle="Invite family and friends, and choose what each one may do." />
 
 {#if !loaded}
-	<div class="sk" style="height: 240px"></div>
+	<SkSettings rows={3} />
 {:else if error}
 	<p class="notice bad" role="alert">{error}</p>
 {:else}
