@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { albumHref, artistHref, haveLine, kindWord, length, owned, shelves, type PageAlbum } from './music-pages.ts';
+import { albumHref, artistHref, coverFor, haveLine, kindWord, length, owned, shelves, type PageAlbum } from './music-pages.ts';
 
 const al = (over: Partial<PageAlbum>): PageAlbum => ({ mbid: 'm', name: 'N', type: 'album', secondary_types: [], shelf: 'albums', image: '', ...over });
 
 describe('music pages', () => {
+	it('sizes Cover Art Archive covers 250 or 500 by display size', () => {
+		const u = 'https://coverartarchive.org/release-group/abc/front';
+		expect(coverFor(u, 200, 1)).toEqual({ src: `${u}-250`, srcset: `${u}-250 250w, ${u}-500 500w` });
+		expect(coverFor(`${u}-250`, 200, 2).src).toBe(`${u}-500`);
+		expect(coverFor('/api/v1/music-trending/art/album/abc', 200)).toEqual({ src: '/api/v1/music-trending/art/album/abc' });
+	});
 	it('links artists and albums by MusicBrainz id', () => {
 		expect(artistHref('abc')).toMatch(/\/music\/artist\/abc$/);
 		expect(albumHref('x', 'y')).toMatch(/\/music\/album\/x\?artist=y$/);

@@ -38,8 +38,16 @@
 		music = false,
 		action,
 		growAction,
-		followTmdb = false
+		followTmdb = false,
+		srcset,
+		sizes,
+		eager = false
 	}: {
+		/** Sized alternatives for image (music covers), with the display sizes. */
+		srcset?: string;
+		sizes?: string;
+		/** Above the fold (the first row): load at once. */
+		eager?: boolean;
 		title: string;
 		href?: string;
 		image?: string | null;
@@ -178,7 +186,7 @@
 				<span class="ph" class:shine={!!image && !failed && !loaded} aria-hidden="true"><span class="ph-ic"><Icon name={kindIcon} size={22} /></span><span class="ph-t">{title}</span></span>
 			{/if}
 			{#if image && !failed && near()}
-				<img src={pic} class:in={loaded} alt="" loading="lazy" decoding="async" use:whenLoaded={() => (loaded = true)} onerror={() => (failed = true)} />
+				<img src={pic} {srcset} {sizes} class:in={loaded} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async" use:whenLoaded={() => (loaded = true)} onerror={() => (failed = true)} />
 			{/if}
 			{#if badges.length || status}
 				<span class="over">

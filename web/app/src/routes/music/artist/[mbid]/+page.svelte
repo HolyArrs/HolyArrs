@@ -23,7 +23,7 @@
 	import { albumYear } from '#lib/music.ts';
 	import { releaseWords } from '#lib/music-trending.ts';
 	import { SkRail, SkRowTitle, SkTrackRow } from '#lib/ui/sk/index.ts';
-	import { albumHref, appPicture, artistHref, haveLine, kindWord, length, owned, shelves, type ArtistCoreData, type ArtistPageData, type PageAlbum, type PageArtist } from '#lib/music-pages.ts';
+	import { albumHref, appPicture, artistHref, coverFor, haveLine, kindWord, length, owned, shelves, type ArtistCoreData, type ArtistPageData, type PageAlbum, type PageArtist } from '#lib/music-pages.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 
 	// An artist's page: any MusicBrainz artist, in the Library or not. HolyArrs asks
@@ -181,8 +181,9 @@
 
 <svelte:head><title>{hero?.name ?? 'Artist'} · HolyArrs</title></svelte:head>
 
-{#snippet albumCard(a: PageAlbum)}
-	<PosterCard title={a.name} href={albumHref(a.mbid, mbid)} image={appPicture(a.image)} kind="artist" shape="square" music actionOnHover
+{#snippet albumCard(a: PageAlbum, eager = false)}
+	{@const c = coverFor(appPicture(a.image), 200)}
+	<PosterCard title={a.name} href={albumHref(a.mbid, mbid)} image={c.src} srcset={c.srcset} sizes="200px" {eager} kind="artist" shape="square" music actionOnHover
 		subtitle={[albumYear(a.release_date), a.shelf === 'albums' ? '' : kindWord(a)].filter(Boolean).join(' · ') || undefined}
 		badges={a.explicit ? ['E'] : undefined} owned={owned(a, albumAsked(a))}>
 		{#snippet action()}
@@ -254,7 +255,7 @@
 						<div class="latest">
 							<h2>Latest release</h2>
 							<a class="latest-card" href={albumHref(l.mbid, mbid)}>
-								<img src={appPicture(l.image)} alt="" width="200" height="200" loading="lazy" />
+								<img src={appPicture(l.image)} alt="" width="200" height="200" loading="lazy" decoding="async" />
 								<span class="l-meta">
 									<span class="l-date">{l.release_date ? new Date(`${l.release_date.padEnd(10, '-01').slice(0, 10)}T00:00:00Z`).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: l.release_date.length === 10 ? 'numeric' : undefined, timeZone: 'UTC' }) : ''}</span>
 									<span class="l-name">{#if l.explicit}<span class="e" aria-label="Explicit">E</span>{/if}{l.name}</span>
@@ -271,7 +272,7 @@
 								{#each data.top.slice(0, 8) as s, i (s.title + i)}
 									<li>
 										<span class="n">{i + 1}</span>
-										{#if s.image}<img src={appPicture(s.image)} alt="" width="40" height="40" loading="lazy" />{:else}<span class="ph"></span>{/if}
+										{#if s.image}<img src={coverFor(appPicture(s.image), 40).src} alt="" width="40" height="40" loading="lazy" decoding="async" />{:else}<span class="ph"></span>{/if}
 										<span class="s-words">
 											<span class="s-name">{#if s.explicit}<span class="e" aria-label="Explicit">E</span>{/if}{s.title}</span>
 											{#if s.album_mbid}<a class="s-album" href={albumHref(s.album_mbid, mbid)}>{s.album}</a>{:else}<span class="s-album">{s.album}</span>{/if}
@@ -294,9 +295,9 @@
 			{/if}
 
 			{#if data}
-			{#each groups as g (g.shelf)}
+			{#each groups as g, gi (g.shelf)}
 				<Shelf title={g.title} item="var(--music-item)" items={g.albums} key={(a) => a.mbid} placeholder="square" lines={1}>
-					{#snippet card(a: PageAlbum)}{@render albumCard(a)}{/snippet}
+					{#snippet card(a: PageAlbum, i: number)}{@render albumCard(a, gi === 0 && i < 6)}{/snippet}
 				</Shelf>
 			{/each}
 
@@ -306,7 +307,7 @@
 					<ul class="soon">
 						{#each soon as a (a.mbid)}
 							<li>
-								<a href={albumHref(a.mbid, mbid)}><img src={appPicture(a.image)} alt="" width="72" height="72" loading="lazy" /></a>
+								<a href={albumHref(a.mbid, mbid)}><img src={coverFor(appPicture(a.image), 72).src} alt="" width="72" height="72" loading="lazy" decoding="async" /></a>
 								<span class="soon-words"><a class="s-name" href={albumHref(a.mbid, mbid)}>{a.name}</a><span class="s-album">{kindWord(a)} · {releaseWords(a.release_date ?? '')}</span></span>
 								{#if !data.kid}<IconButton icon={follows.get(a.mbid) ? 'bellOn' : 'bell'} label={follows.get(a.mbid) ? `Stop following ${a.name}` : `Tell me when ${a.name} is out`} aria-pressed={!!follows.get(a.mbid)} onclick={() => followAlbum(a)} />{/if}
 							</li>

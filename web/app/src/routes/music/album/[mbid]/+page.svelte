@@ -20,7 +20,7 @@
 	import { cameFrom, fromIcon } from '#lib/came-from.svelte.ts';
 	import { albumYear } from '#lib/music.ts';
 	import { SkRail, SkTrackRow } from '#lib/ui/sk/index.ts';
-	import { albumHref, appPicture, artistHref, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist } from '#lib/music-pages.ts';
+	import { albumHref, appPicture, artistHref, coverFor, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist } from '#lib/music-pages.ts';
 	import type { LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 
 	// An album's page: the cover large over its own blurred colours, the tracklist
@@ -129,7 +129,8 @@
 <svelte:head><title>{hero?.name ?? 'Album'} · HolyArrs</title>{#if cover}<link rel="preload" as="image" href={cover} />{/if}</svelte:head>
 
 {#snippet albumCard(a: PageAlbum)}
-	<PosterCard title={a.name} href={albumHref(a.mbid, artist)} image={appPicture(a.image)} kind="artist" shape="square" music
+	{@const c = coverFor(appPicture(a.image), 200)}
+	<PosterCard title={a.name} href={albumHref(a.mbid, artist)} image={c.src} srcset={c.srcset} sizes="200px" kind="artist" shape="square" music
 		subtitle={[albumYear(a.release_date), kindWord(a)].filter(Boolean).join(' · ')} badges={a.explicit ? ['E'] : undefined} owned={owned(a)} />
 {/snippet}
 
@@ -143,7 +144,7 @@
 				{#if from?.label}<nav class="crumbs" aria-label="Breadcrumb"><a class="chip" href={from.path} onclick={stepBack} data-testid="album-back"><Icon name={fromIcon(from.path) ?? 'chevronLeft'} size={14} />{from.label}</a></nav>{/if}
 				<div class="hero-in">
 					<div class="cover" class:in={coverIn}>
-						{#if cover}<img src={cover} alt={`${hero.name} cover`} width="320" height="320" decoding="async" fetchpriority="high" onload={() => (coverIn = true)} />{:else}<Icon name="music" size={48} />{/if}
+						{#if cover}<img src={coverFor(cover, 320).src} srcset={coverFor(cover, 320).srcset} sizes="320px" alt={`${hero.name} cover`} width="320" height="320" decoding="async" fetchpriority="high" onload={() => (coverIn = true)} />{:else}<Icon name="music" size={48} />{/if}
 					</div>
 					<div class="words">
 						<p class="kind">{kindWord(hero)}</p>

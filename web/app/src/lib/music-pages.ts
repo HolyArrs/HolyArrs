@@ -120,6 +120,16 @@ export const albumHref = (mbid: string, artist: string) => to(`/music/album/${mb
 /** appPicture puts a server picture path under the app's base path; outside URLs stay. */
 export const appPicture = (src: string | undefined | null) => (!src ? null : src.startsWith('/') ? to(src) : src);
 
+const caa = /^(https?:\/\/(?:www\.)?coverartarchive\.org\/release(?:-group)?\/[^/]+\/(?:front|back|\d+))(?:-(?:250|500|1200))?(?:\.jpg)?$/;
+/** coverFor sizes a Cover Art Archive cover for a tile css pixels wide:
+ * the 250 thumbnail when it is enough at this pixel ratio, else 500, with a
+ * srcset of both. Other pictures (our own artwork paths) stay as they are. */
+export function coverFor(src: string | null | undefined, css: number, ratio = globalThis.devicePixelRatio || 1): { src: string | null; srcset?: string } {
+	const m = src ? caa.exec(src) : null;
+	if (!m) return { src: src ?? null };
+	return { src: `${m[1]}-${css * ratio <= 250 ? 250 : 500}`, srcset: `${m[1]}-250 250w, ${m[1]}-500 500w` };
+}
+
 /** owned is the card's status pill for an album's Library state. */
 export function owned(a: Pick<PageAlbum, 'state'>, asked = false): { state: 'available' | 'partial' | 'downloading' | 'requested'; label: string } | null {
 	switch (a.state) {
