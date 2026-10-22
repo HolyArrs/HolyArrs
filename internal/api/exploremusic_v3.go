@@ -980,6 +980,9 @@ func (a *API) personalMusicRows(ctx context.Context, member int64, region, date 
 				continue
 			}
 			label := musicscore.Label(name)
+			if slug == "" {
+				label = musicscore.GenreName(x.g)
+			}
 			in.add(MusicRow{ID: "shelf:" + x.g, Type: "genre_shelf", Title: label + " for you", Reason: "One of your top genres: its chart and your artists in it", Shape: "square"},
 				musicscore.Row{Prior: musicscore.PriorMixed}, cards, sc, true, false)
 		}

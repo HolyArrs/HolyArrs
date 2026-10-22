@@ -200,3 +200,58 @@ func Label(name string) string {
 	}
 	return string(unicode.ToUpper(r)) + name[n:]
 }
+
+// genreSpecial spells words and tags a plain title-case gets wrong.
+var genreSpecial = map[string]string{
+	"hip hop": "Hip-Hop", "hiphop": "Hip-Hop", "hip-hop": "Hip-Hop",
+	"r&b": "R&B", "rnb": "R&B", "r'n'b": "R&B", "k-pop": "K-Pop", "kpop": "K-Pop",
+	"j-pop": "J-Pop", "jpop": "J-Pop", "j-rock": "J-Rock", "c-pop": "C-Pop",
+	"edm": "EDM", "uk": "UK", "us": "US", "dj": "DJ", "idm": "IDM", "ebm": "EBM",
+	"lo-fi": "Lo-Fi", "lofi": "Lo-Fi", "drum and bass": "Drum and Bass", "dnb": "Drum and Bass",
+	"and": "and", "n": "n", "of": "of",
+}
+
+// genreSuffixes are the second halves of tags written as one word
+// ("alternativerock", "synthpop").
+var genreSuffixes = []string{"rock", "pop", "metal", "punk", "hop", "soul", "folk", "jazz", "house", "funk", "country"}
+
+// GenreName is a display name for a raw genre tag with no tile to take a
+// name from: "alternativerock" → "Alternative Rock", "hip hop" → "Hip-Hop".
+func GenreName(tag string) string {
+	t := strings.ToLower(strings.TrimSpace(strings.ReplaceAll(tag, "_", " ")))
+	if s, ok := genreSpecial[t]; ok {
+		return s
+	}
+	var out []string
+	for i, w := range strings.Fields(t) {
+		if s, ok := genreSpecial[w]; ok && (i > 0 || s != strings.ToLower(s)) {
+			out = append(out, s)
+			continue
+		}
+		parts := []string{w}
+		if !strings.Contains(w, "-") {
+			for _, suf := range genreSuffixes {
+				if len(w) > len(suf)+2 && strings.HasSuffix(w, suf) {
+					head := w[:len(w)-len(suf)]
+					if s, ok := genreSpecial[head]; ok && s != strings.ToLower(s) {
+						head = s
+					}
+					parts = []string{head, suf}
+					break
+				}
+			}
+		}
+		for _, p := range parts {
+			if s, ok := genreSpecial[p]; ok && s != strings.ToLower(s) {
+				out = append(out, s)
+				continue
+			}
+			segs := strings.Split(p, "-")
+			for j, sg := range segs {
+				segs[j] = Label(sg)
+			}
+			out = append(out, strings.Join(segs, "-"))
+		}
+	}
+	return strings.Join(out, " ")
+}
