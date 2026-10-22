@@ -465,7 +465,26 @@ func (a *API) similarArtists(ctx context.Context, mbid string, n int) []PageArti
 		out = append(out, PageArtist{MBID: id, Name: s.Name, Image: artPath("artist", id)})
 	}
 	a.rememberMusicNames(names)
+	a.prefetchSimilarArt(out)
 	return out
+}
+
+// prefetchSimilarArt fetches every similar artist's picture into the
+// artwork cache in the background, through the same chain as the other
+// music covers, so "Fans also like" arrives without placeholders.
+func (a *API) prefetchSimilarArt(list []PageArtist) {
+	if len(list) == 0 || a.s.Library == nil || a.s.Library.Artwork == nil {
+		return
+	}
+	items := make([]metadata.MusicTrendItem, 0, len(list))
+	for _, p := range list {
+		items = append(items, metadata.MusicTrendItem{MBID: p.MBID, Name: p.Name})
+	}
+	a.music.prefetching.Add(1)
+	go func() {
+		defer a.music.prefetching.Done()
+		a.prefetchMusicArt("artist", items)
+	}()
 }
 
 func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {

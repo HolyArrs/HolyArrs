@@ -3,10 +3,14 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"path/filepath"
 	"strconv"
 	"testing"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
+	"github.com/CoderLuii/holyarrs/internal/library"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 )
 
@@ -144,5 +148,35 @@ func TestEditionsFoldPressings(t *testing.T) {
 	}
 	if s != want {
 		t.Fatalf("editions\n got %s\nwant %s", s, want)
+	}
+}
+
+func TestSimilarArtistArtPrefetched(t *testing.T) {
+	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
+	const seed, like = "33333333-3333-4333-8333-333333333333", "44444444-4444-4444-8444-444444444444"
+	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/jpeg")
+		_, _ = w.Write([]byte("\xff\xd8\xff synthetic"))
+	}))
+	defer pics.Close()
+	similar := func(_ context.Context, mbid string) ([]metadata.SimilarArtist, error) {
+		return []metadata.SimilarArtist{{MBID: like, Name: "Like Band", Score: 9}}, nil
+	}
+	extra := func(_ context.Context, kind, id string) (metadata.ServerArt, error) {
+		if kind != "artist" || id != like {
+			return metadata.ServerArt{}, metadata.ErrNotFound
+		}
+		return metadata.ServerArt{Thumb: pics.URL + "/thumb.jpg"}, nil
+	}
+	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{pics.URL + "/"}, HTTP: pics.Client()}
+	a := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), MusicSimilar: similar, ExtraArt: extra,
+		Library: &library.Service{Store: s, Artwork: art}, Version: "test"})
+	list := a.similarArtists(context.Background(), seed, 14)
+	if len(list) != 1 || list[0].Image != "/api/v1/music-trending/art/artist/"+like {
+		t.Fatalf("similar %+v", list)
+	}
+	a.music.prefetching.Wait()
+	if _, ok := art.Path(library.ArtworkName(pics.URL + "/thumb.jpg")); !ok {
+		t.Fatal("similar artist picture not prefetched")
 	}
 }
