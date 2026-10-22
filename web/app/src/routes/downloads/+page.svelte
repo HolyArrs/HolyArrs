@@ -397,7 +397,7 @@
 	.d-title { font: var(--t-title3); overflow-wrap: anywhere; border-radius: 6px; }
 	.d-title:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.d-sub { font: var(--t-callout); color: var(--text-muted); }
-	.facts { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; margin: 0; padding-top: 12px; border-top: 1px solid var(--line); font: var(--t-callout); }
+	.facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 12px; margin: 0; padding-top: 12px; border-top: 1px solid var(--line); font: var(--t-callout); }
 	.facts dt { color: var(--text-muted); }
 	.facts dd { margin: 0; font-family: inherit; text-align: right; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 	.d-acts { display: grid; gap: 8px; }
