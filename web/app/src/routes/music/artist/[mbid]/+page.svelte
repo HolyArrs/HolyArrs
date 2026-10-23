@@ -575,13 +575,14 @@
 	.crumbs { position: absolute; top: clamp(14px, 2vw, 22px); left: clamp(20px, 4vw, 48px); z-index: 1; }
 	.chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 10px; border-radius: 999px; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); color: #fff; font: 600 13px/1.2 var(--font-ui); }
 	.chip:hover { background: rgb(255 255 255 / 24%); }
-	.hero-in { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 72px 20px clamp(28px, 4vw, 44px); text-align: center; max-width: 900px; }
+	.hero-in { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 72px 20px clamp(16px, 2vw, 24px); text-align: center; max-width: 900px; }
 	.photo { width: 184px; height: 184px; border-radius: 50%; object-fit: cover; box-shadow: 0 30px 80px rgb(0 0 0 / .6), 0 0 0 1px rgb(255 255 255 / .14); margin-bottom: 6px; }
 	.photo.crop { object-position: 50% 22%; }
 	.photo.initials { display: grid; place-items: center; background: rgb(255 255 255 / .08); backdrop-filter: blur(12px); color: rgb(255 255 255 / .9); font-size: 64px; font-weight: 700; letter-spacing: .02em; }
 	h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: clamp(34px, 4.6vw, 56px); line-height: 1.05; letter-spacing: -.02em; text-wrap: balance; }
 	h1.logo img { display: block; max-width: min(440px, 80vw); max-height: 120px; object-fit: contain; filter: drop-shadow(0 4px 18px rgb(0 0 0 / .45)); }
-	.under-hero { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 18px 20px 8px; text-align: center; }
+	.under-hero { --hero-ink: #07080a; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 2px 20px 0; margin-bottom: calc(var(--s-6) * -.5); text-align: center; }
+	.under-hero .round { margin-top: 2px; }
 	.facts { margin: 0; color: rgb(255 255 255 / .7); font: var(--t-subhead); }
 	.round { display: flex; align-items: center; gap: 18px; margin-top: 8px; }
 	.rb { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgb(255 255 255 / .2); background: rgb(255 255 255 / .12); color: #fff; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); cursor: pointer; transition: transform 160ms var(--ease-out), background 160ms; }
