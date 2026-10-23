@@ -43,6 +43,9 @@ type ArtworkCache struct {
 // ErrArtworkURL means a picture URL is not from an allowed place.
 var ErrArtworkURL = errors.New("picture URL is not from an allowed host")
 
+// serverPictureKeep is how long a metadata server picture is used before it is asked again.
+const serverPictureKeep = 24 * time.Hour
+
 // ArtworkName is the cache file name for a picture URL.
 func ArtworkName(url string) string {
 	h := sha256.Sum256([]byte(url))
@@ -93,7 +96,9 @@ func (c *ArtworkCache) FetchUnless(ctx context.Context, url string, reject func(
 	}
 	name := ArtworkName(url)
 	path := filepath.Join(c.Dir, name)
-	if _, err := os.Stat(path); err == nil {
+	// The metadata server may pick a newer photo under the same address,
+	// so its pictures are asked again once a day.
+	if st, err := os.Stat(path); err == nil && !(strings.Contains(url, "/v1/img/") && time.Since(st.ModTime()) > serverPictureKeep) {
 		return name, nil
 	}
 	if err := os.MkdirAll(c.Dir, 0o750); err != nil {
