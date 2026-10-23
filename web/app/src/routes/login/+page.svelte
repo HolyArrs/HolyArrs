@@ -670,35 +670,37 @@
 	@media (min-width: 1600px) and (min-height: 760px) { .panel { --z: 1.08; } }
 	@media (min-width: 2200px) and (min-height: 1000px) { .panel { --z: 1.2; } }
 	@media (min-width: 3000px) and (min-height: 1300px) { .panel { --z: 1.32; } }
-	/* Phones: the desktop card, floating low over full-bleed art with 16 px of
+	/* Phones: the desktop card, floating low over full-bleed art with 24 px of
 	   art on every side; it rides above the keyboard (--kb) with a smooth lift. */
 	@media (max-width: 600px) {
 		.wrap {
 			--fr: 0px;
 			place-items: end center;
-			padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, calc(env(safe-area-inset-bottom) + 8px)) max(16px, env(safe-area-inset-left));
+			padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, calc(env(safe-area-inset-bottom) + 12px)) max(24px, env(safe-area-inset-left));
 		}
 		.panel {
 			--z: 1;
 			width: 100%;
 			max-width: 440px;
-			padding: 26px 22px 20px;
+			padding: 16px 16px 6px;
 			border-radius: 24px;
 			transform: translateY(calc(-1 * var(--kb, 0px)));
 			transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
 		}
-		.brand { gap: 9px; margin-bottom: 16px; font-size: 20px; }
-		.brand img { width: 30px; height: 30px; }
-		.title { font-size: 24px; }
-		.lead { margin: 6px 0 16px; }
-		.title + :not(.lead) { margin-top: 16px; }
-		.panel :global(.field + .field) { margin-top: 10px; }
+		.brand { gap: 8px; margin-bottom: 6px; font-size: 18px; }
+		.brand img { width: 26px; height: 26px; }
+		.title { font-size: 20px; line-height: 1.15; }
+		.lead { margin: 4px 0 10px; }
+		.title + :not(.lead) { margin-top: 8px; }
+		.panel :global(.field) { gap: 2px; }
+		.panel :global(.field label) { font-size: 14px; line-height: 1.25; }
+		.panel :global(.field + .field) { margin-top: 6px; }
 		.panel :global(.input), .submit :global(.ui-btn), .prov { min-height: 48px; }
-		.submit { margin-top: 16px; }
+		.submit { margin-top: 10px; }
 		.submit :global(.ui-btn) { width: 100%; }
 		.prov { min-height: 64px; }
-		.or { margin: 14px 0; }
-		.link { min-height: 44px; margin-top: 6px; }
-		.help { margin-top: 6px; }
+		.or { margin: 10px 0; }
+		.link { min-height: 40px; margin-bottom: 0; margin-top: 0; }
+		.help { margin-top: 2px; }
 	}
 </style>
