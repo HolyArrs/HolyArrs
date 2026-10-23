@@ -173,3 +173,5 @@ export function waveLevel(ms: number, f: number, jitter = 0): number {
 	const s = Math.min(1, Math.max(0, (p - f) / WAVE_BAND));
 	return s >= 1 ? 4 : Math.floor(s * 4);
 }
+/** Fired on window (and html[data-signin-gl] set) once the wave shader is compiled or not needed; the panel stagger waits for it. */
+export const SIGNIN_GL_EVENT = 'holyarrs:signin-gl';

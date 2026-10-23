@@ -1,4 +1,4 @@
-<script lang="ts">
+﻿<script lang="ts">
 	// The sign-in page's cinematic backdrop: one full-bleed picture at a
 	// time, a slow Ken Burns move and a crossfade every 12 s.
 	//
@@ -23,6 +23,7 @@
 		WAVE_DONE_MS,
 		WAVE_JITTER_MS,
 		WAVE_MS,
+		SIGNIN_GL_EVENT,
 		pickArt,
 		playlist,
 		prepareSlide,
@@ -181,9 +182,10 @@ void main() {
 		vec2 g = vec2(COLS, COLS * seedSize.y / seedSize.x);
 		vec2 uv = (floor((p - org) / (seedSize * k) * g) + 0.5) / g;
 		col = textureLod(seedTex, uv, max(0.0, log2(seedSize.x / COLS))).rgb;
-	} else if (lv < 2.0) col = block(p, ${WAVE_BLOCKS[0].toFixed(1)});
-	else if (lv < 3.0) col = block(p, ${WAVE_BLOCKS[1].toFixed(1)});
-	else col = block(p, ${WAVE_BLOCKS[2].toFixed(1)});
+	} else {
+		// One sampling path for the three square sizes: a third of the code for the driver to compile (D3D compiles it on the GPU thread).
+		col = block(p, lv < 2.0 ? ${WAVE_BLOCKS[0].toFixed(1)} : lv < 3.0 ? ${WAVE_BLOCKS[1].toFixed(1)} : ${WAVE_BLOCKS[2].toFixed(1)});
+	}
 	o = vec4(col, 1.0);
 }`;
 
@@ -193,6 +195,12 @@ void main() {
 		img.decoding = 'async';
 		img.src = src;
 		return img.decode().then(() => img);
+	}
+
+	/** Lets the panel stagger start (routes/login waits for this so it never runs into a GPU compile). */
+	function glReady() {
+		document.documentElement.dataset.signinGl = '1';
+		window.dispatchEvent(new Event(SIGNIN_GL_EVENT));
 	}
 
 	function reveal(node: HTMLElement, seed: Seed | null) {
@@ -207,6 +215,7 @@ void main() {
 			unseed();
 		};
 		if (!pic || !canvas || !gl || !seed || still) {
+			glReady();
 			// No WebGL or reduced motion: sharp as soon as the picture is decoded.
 			if (pic) pic.decode().then(sharp, sharp);
 			else sharp();
@@ -220,25 +229,58 @@ void main() {
 			gl.attachShader(prog, sh);
 		}
 		gl.linkProgram(prog);
-		if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
-			pic.decode().then(sharp, sharp);
-			return {};
+		// Frames wait for the GPU process while it compiles: once three frames
+		// in a row come on time, the compile is behind us.
+		{
+			let last = 0;
+			let calm = 0;
+			const watch = (now: number) => {
+				calm = last && now - last < 20 ? calm + 1 : 0;
+				last = now;
+				if (calm >= 3) glReady();
+				else requestAnimationFrame(watch);
+			};
+			requestAnimationFrame(watch);
 		}
-		gl.useProgram(prog);
-		const buf = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-		const loc = gl.getAttribLocation(prog, 'a');
-		gl.enableVertexAttribArray(loc);
-		gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-		const u = (n: string) => gl.getUniformLocation(prog, n);
-		gl.uniform1i(u('seedTex'), 0);
-		gl.uniform1i(u('detTex'), 1);
+		// The shader compiles on a driver thread where the browser allows it
+		// (KHR_parallel_shader_compile): asking for the link status at once
+		// would block the main thread in the middle of app boot. Until it is
+		// linked, frame 0's CSS mosaic simply stays up.
+		const par = gl.getExtension('KHR_parallel_shader_compile');
+		let linked = false;
+		function link(): boolean | null {
+			if (linked) return true;
+			if (par && !gl!.getProgramParameter(prog, par.COMPLETION_STATUS_KHR)) return null;
+			if (!gl!.getProgramParameter(prog, gl!.LINK_STATUS)) return false;
+			linked = true;
+			setup();
+			return true;
+		}
+		const locs = new Map<string, WebGLUniformLocation | null>();
+		const u = (n: string) => {
+			if (!locs.has(n)) locs.set(n, gl!.getUniformLocation(prog, n));
+			return locs.get(n)!;
+		};
+		// Texture sizes wait here until the program is linked.
+		let seedSize = [1, 1];
+		let detSize = [1, 1];
 		const pos = (canvas.dataset.pos ?? '50% 50%').split(/\s+/).map((v) => parseFloat(v) / 100);
-		gl.uniform2f(u('pos'), pos[0] ?? 0.5, pos[1] ?? 0.5);
+		function setup() {
+			gl!.useProgram(prog);
+			gl!.bindBuffer(gl!.ARRAY_BUFFER, gl!.createBuffer());
+			gl!.bufferData(gl!.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl!.STATIC_DRAW);
+			const a = gl!.getAttribLocation(prog, 'a');
+			gl!.enableVertexAttribArray(a);
+			gl!.vertexAttribPointer(a, 2, gl!.FLOAT, false, 0, 0);
+			gl!.uniform1i(u('seedTex'), 0);
+			gl!.uniform1i(u('detTex'), 1);
+			gl!.uniform2f(u('pos'), pos[0] ?? 0.5, pos[1] ?? 0.5);
+			fit();
+		}
 
 		const size = { w: 0, h: 0, dpr: 1 };
 		function fit() {
+			if (!linked) return;
 			// The Ken Burns box at scale 1 (offsetWidth ignores the transform).
 			size.w = node.offsetWidth || innerWidth;
 			size.h = node.offsetHeight || innerHeight;
@@ -251,6 +293,9 @@ void main() {
 			gl!.viewport(0, 0, canvas!.width, canvas!.height);
 			gl!.uniform2f(u('view'), size.w, size.h);
 			gl!.uniform1f(u('dpr'), size.dpr);
+			centre();
+		}
+		function centre() {
 			// The ring starts at the panel's centre and ends at the farthest corner.
 			const r = document.querySelector('[data-signin-panel]')?.getBoundingClientRect();
 			const box = node.getBoundingClientRect();
@@ -283,11 +328,11 @@ void main() {
 			.then((img) => {
 				if (stop) return;
 				const s = texture(0, img, img.naturalWidth, img.naturalHeight, !seed.t24);
-				gl!.uniform2f(u('seedSize'), s.w, s.h);
+				seedSize = [s.w, s.h];
 				seedReady = true;
 				if (!detReady) {
 					const d = texture(1, img, img.naturalWidth, img.naturalHeight, !seed.t24);
-					gl!.uniform2f(u('detSize'), d.w, d.h);
+					detSize = [d.w, d.h];
 				}
 			})
 			.catch(() => {});
@@ -297,7 +342,7 @@ void main() {
 				.then((img) => {
 					if (stop || full) return;
 					const d = texture(1, img, img.naturalWidth, img.naturalHeight, true);
-					gl!.uniform2f(u('detSize'), d.w, d.h);
+					detSize = [d.w, d.h];
 					detReady = true;
 				})
 				.catch(() => {});
@@ -309,23 +354,35 @@ void main() {
 			.then((b) => {
 				if (stop) return;
 				const d = texture(1, b, b.width, b.height, true);
-				gl!.uniform2f(u('detSize'), d.w, d.h);
+				detSize = [d.w, d.h];
 				detReady = full = true;
 			})
 			.catch(() => {
 				if (!stop) sharp();
 			});
 
-		fit();
 		let start = 0; // when the wave started (0: not yet)
 		const t0 = performance.now();
 		let raf = 0;
 		function frame(now: number) {
 			if (stop) return;
-			if (seedReady) {
+			// The first status query is a sync round trip to the GPU process, which
+			// waits out the compile; asked only once the still hold is over, the
+			// compile has long finished and the answer is instant.
+			const ok = seedReady && now - t0 >= REVEAL_HOLD_MS ? link() : null;
+			if (ok === false) {
+				pic!.decode().then(sharp, sharp);
+				return;
+			}
+			if (ok) {
 				// The wave runs once the full picture is in and the still hold is over.
-				if (!start && full && now - t0 >= REVEAL_HOLD_MS) start = now;
+				if (!start && full && now - t0 >= REVEAL_HOLD_MS) {
+					start = now;
+					centre(); // the panel has its final size now (the form has replaced the placeholder)
+				}
 				const t = start ? now - start : 0;
+				gl!.uniform2f(u('seedSize'), seedSize[0], seedSize[1]);
+				gl!.uniform2f(u('detSize'), detSize[0], detSize[1]);
 				gl!.uniform1f(u('t'), t);
 				gl!.drawArrays(gl!.TRIANGLES, 0, 3);
 				if (!node.classList.contains('mosaic')) node.classList.add('mosaic');
@@ -561,6 +618,9 @@ void main() {
 		pointer-events: none;
 	}
 	.kb:global(.mosaic) .mz { opacity: 1; }
+	/* The slow zoom waits for the canvas: app.html's frame-0 mosaic is unscaled,
+	   so the hand-over lands on the same pixels (no 1-3 px jump at the edges). */
+	.layer.first .kb:not(:global(.mosaic)):not(:global(.sharp)) { animation-play-state: paused; }
 	/* Until the mosaic has its first frame, nothing sharp peeks through. */
 	.kb:not(:global(.mosaic)):not(:global(.sharp)) .pic { opacity: 0; }
 	.kb:global(.sharp) .mz { display: none; }

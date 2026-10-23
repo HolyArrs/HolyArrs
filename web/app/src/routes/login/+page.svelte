@@ -10,7 +10,7 @@
 	import { session, type SignInResult } from '#lib/session.svelte.ts';
 	import { safeNext } from '#lib/next.ts';
 	import SigninBackdrop from '#lib/SigninBackdrop.svelte';
-	import { providerTiles, type Way } from '#lib/signinArt.ts';
+	import { SIGNIN_GL_EVENT, providerTiles, type Way } from '#lib/signinArt.ts';
 	import { pixelTrail, pixelIn, blockDissolve, siteCell } from '#lib/pixelTrail.ts';
 
 	const MIN_LENGTH = $derived(session.s.minPassword);
@@ -72,6 +72,12 @@
 	// stagger (logo, tiles, "or", fields, button: 70 ms apart, done in about
 	// 1 s). Focus goes to the name field at once, so typing never waits.
 	let intro = $state(true);
+	// The stagger waits (paused, at its first frame) while the wallpaper's
+	// wave shader compiles: on a first visit the GPU is busy with it for about
+	// 100 ms, and a fade caught in that would hitch. SigninBackdrop signals
+	// when it is done; repeat visits (shader cached) wait two frames at most.
+	let glWait = $state(true);
+	const GL_WAIT_CAP_MS = 450;
 	let staggered = false;
 	$effect(() => {
 		if (staggered || session.s.state === 'unknown' || !panelEl) return;
@@ -93,10 +99,16 @@
 	});
 	onMount(() => {
 		calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		const go = () => (glWait = false);
+		if (calm || document.documentElement.dataset.signinGl) go();
+		window.addEventListener(SIGNIN_GL_EVENT, go, { once: true });
+		const cap = setTimeout(go, GL_WAIT_CAP_MS);
 		const t = setInterval(() => (now = Date.now()), 1000);
 		if (page.url.searchParams.get('sso') === 'finish') void finishOIDC();
 		return () => {
 			clearInterval(t);
+			clearTimeout(cap);
+			window.removeEventListener(SIGNIN_GL_EVENT, go);
 			clearInterval(plexTimer);
 			// Elsewhere the boot screen works as usual (reconnecting, slow page changes).
 			document.documentElement.classList.remove('hl-skip');
@@ -313,14 +325,15 @@
 <main class="wrap" class:leaving data-theme="dark">
 	<SigninBackdrop />
 	<div class="cover" bind:this={coverEl} aria-hidden="true"></div>
-	<div class="panel" class:intro bind:this={panelEl} data-signin-panel>
+	<div class="panel" class:intro class:gl-wait={glWait} bind:this={panelEl} data-signin-panel>
 		<div class="brand">
 			<img src={to('/brand/mark-color-on-dark.svg')} alt="" width="30" height="30" />
 			<span>HolyArrs</span>
 		</div>
 
 		{#if session.s.state === 'unknown' || ssoFinishing}
-			<div class="sk" style="height: 260px; border-radius: var(--r-card)"></div>
+			<!-- As tall as the usual sign-in form, so the card does not jump when the session answers. -->
+			<div class="sk" style="height: 311px; border-radius: var(--r-card)"></div>
 			{#if ssoFinishing}<p class="small muted" role="status">Finishing your sign-in…</p>{/if}
 		{:else}
 			{#key step}
@@ -472,6 +485,8 @@
 			animation: part-in 460ms cubic-bezier(0.22, 1, 0.36, 1) calc(90ms + var(--i, 1) * 70ms) both;
 		}
 	}
+	.gl-wait .brand,
+	.gl-wait :is(.title, .lead, .provs, .or, .field, .submit, .step .link, .help) { animation-play-state: paused; }
 	@keyframes brand-in { from { opacity: 0; transform: scale(0.96); } }
 	@keyframes part-in { from { opacity: 0; transform: translateY(6px); } }
 	/* app.html painted the wallpaper's mosaic behind the page: let it show. */
