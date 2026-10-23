@@ -50,7 +50,13 @@
 	// One key per step: the panel's content rises in when it changes.
 	const step = $derived(plexWaiting ? 'plex' : `${mode}-${via}`);
 	let calm = $state(false);
-	const rise = $derived({ duration: calm ? 0 : 300 });
+	// The first step is there on the first frame; only later step changes rise in.
+	let firstStep = '';
+	const rise = $derived.by(() => {
+		if (session.s.state === 'unknown') return { duration: 0 };
+		if (!firstStep) firstStep = step;
+		return { duration: calm || step === firstStep ? 0 : 300 };
+	});
 	let leaving = $state(false);
 	let panelEl = $state<HTMLDivElement>();
 	let coverEl = $state<HTMLDivElement>();
@@ -62,18 +68,24 @@
 		return safeNext(n);
 	}
 
-	// The card enters once the backdrop's mosaic has resolved; never later than 2.2 s.
-	let entered = $state(false);
+	// The card is there on the first frame, ready to type: focus goes to the name field.
+	let focusedOnce = false;
+	$effect(() => {
+		if (focusedOnce || session.s.state === 'unknown' || !panelEl) return;
+		const field = panelEl.querySelector<HTMLInputElement>('#name');
+		if (!field) return;
+		focusedOnce = true;
+		if (!document.activeElement || document.activeElement === document.body) field.focus({ preventScroll: true });
+	});
 	onMount(() => {
 		calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-		if (calm) entered = true;
-		const late = setTimeout(() => (entered = true), 2200);
 		const t = setInterval(() => (now = Date.now()), 1000);
 		if (page.url.searchParams.get('sso') === 'finish') void finishOIDC();
 		return () => {
 			clearInterval(t);
-			clearTimeout(late);
 			clearInterval(plexTimer);
+			// Elsewhere the boot screen works as usual (reconnecting, slow page changes).
+			document.documentElement.classList.remove('hl-skip');
 		};
 	});
 
@@ -285,9 +297,9 @@
 </svelte:head>
 
 <main class="wrap" class:leaving data-theme="dark">
-	<SigninBackdrop onrevealed={() => (entered = true)} />
+	<SigninBackdrop />
 	<div class="cover" bind:this={coverEl} aria-hidden="true"></div>
-	<div class="panel" class:entered bind:this={panelEl}>
+	<div class="panel" bind:this={panelEl}>
 		<div class="brand">
 			<img src={to('/brand/mark-color-on-dark.svg')} alt="" width="30" height="30" />
 			<span>HolyArrs</span>
@@ -452,11 +464,7 @@
 		backdrop-filter: blur(44px) saturate(1.3) brightness(0.82);
 		border: 1px solid rgb(255 255 255 / 0.07);
 		box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35), 0 30px 90px rgb(0 0 0 / 0.55), 0 6px 18px rgb(0 0 0 / 0.35);
-		opacity: 0;
-		transform: translateY(16px);
-		transition: opacity 600ms cubic-bezier(0.2, 0.7, 0.2, 1) 200ms, transform 700ms cubic-bezier(0.2, 0.7, 0.2, 1) 200ms;
 	}
-	.panel.entered { opacity: 1; transform: none; }
 	/* Success: the panel breaks into blocks, then the dark closes over the
 	   art in the site's hero cells (blockDissolve masks both). */
 	.cover {
