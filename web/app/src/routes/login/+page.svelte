@@ -473,7 +473,9 @@
 		min-height: 100dvh;
 		display: grid;
 		place-items: center;
-		padding: clamp(16px, 5vh, 48px) clamp(16px, 5vw, 96px);
+		/* --fr mirrors the edge frame's thickness (SigninPortals), so the panel clears it. */
+		--fr: 14px;
+		padding: calc(clamp(16px, 5vh, 48px) + var(--fr)) calc(clamp(16px, 5vw, 96px) + var(--fr));
 		background: #050507;
 		color: var(--text);
 		isolation: isolate;
@@ -643,20 +645,25 @@
 		.prov:active:not(:disabled),
 		.submit :global(.ui-btn:active:not(:disabled)) { transform: none; filter: brightness(0.86); }
 	}
+	@media (min-width: 601px) { .wrap { --fr: 18px; } }
+	@media (min-width: 1280px) { .wrap { --fr: 22px; } }
+	@media (min-width: 1440px) { .wrap { --fr: 24px; } }
+	@media (min-width: 1920px) { .wrap { --fr: 32px; } }
+	@media (min-width: 2560px) { .wrap { --fr: 40px; } }
 	/* Large screens: type, inputs and spacing grow with the panel. */
 	@media (min-width: 1600px) and (min-height: 760px) { .panel { --z: 1.08; } }
 	@media (min-width: 2200px) and (min-height: 1000px) { .panel { --z: 1.2; } }
 	@media (min-width: 3000px) and (min-height: 1300px) { .panel { --z: 1.32; } }
 	/* Phones: a full-width bottom sheet over the art, clear of the home bar. */
 	@media (max-width: 600px) {
-		.wrap { place-items: end stretch; padding: 0; }
+		.wrap { place-items: end stretch; padding: 0 var(--fr) var(--fr); }
 		.panel {
 			--z: 1;
 			width: 100%;
 			margin-top: 34dvh;
-			border-radius: 26px 26px 0 0;
+			border-radius: 26px 26px 22px 22px;
 			padding: 28px max(30px, env(safe-area-inset-right)) max(30px, calc(env(safe-area-inset-bottom) + 18px)) max(30px, env(safe-area-inset-left));
-			border-width: 1px 0 0;
+			border-width: 1px;
 			box-shadow: 0 -20px 60px rgb(0 0 0 / 0.45);
 		}
 		/* Compact: the art keeps the top half. The mark sits on the art just above

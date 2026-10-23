@@ -362,8 +362,8 @@
 <canvas class="portals" bind:this={canvas} aria-hidden="true"></canvas>
 
 <style>
-	/* The coderluii.dev frame: 8 px, 10 at 1280, 12 at 1440, 18 at 1920; square corners. */
-	.edge, .portals { --frame: 8px; --frame-r: 16px; position: fixed; inset: 0; pointer-events: none; z-index: 2; }
+	/* The coderluii.dev frame: 14 px phone, 18 at 601, 22 at 1280, 24 at 1440, 32 at 1920, 40 at 2560. */
+	.edge, .portals { --frame: 14px; --frame-r: 22px; position: fixed; inset: 0; pointer-events: none; z-index: 2; }
 	/* Clipped in script to the viewport minus a rounded window (radius in the
 	   panel's family). Solid: the page background token --bg. Glass: the
 	   panel's own material, the same blur, saturation and tint. */
@@ -376,11 +376,12 @@
 	@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
 		.edge.glass { background: rgb(18 18 22 / 0.92); }
 	}
-	@media (min-width: 601px) { .edge, .portals { --frame-r: 20px; } }
+	@media (min-width: 601px) { .edge, .portals { --frame: 18px; --frame-r: 26px; } }
 	/* Its own compositor layer, so redrawing it never touches the panel's blur. */
 	.portals { width: 100%; height: 100%; will-change: transform; transform: translateZ(0); }
-	@media (min-width: 1280px) { .edge, .portals { --frame: 10px; --frame-r: 22px; } }
-	@media (min-width: 1440px) { .edge, .portals { --frame: 12px; --frame-r: 26px; } }
-	@media (min-width: 1920px) { .edge, .portals { --frame: 18px; --frame-r: 28px; } }
+	@media (min-width: 1280px) { .edge, .portals { --frame: 22px; --frame-r: 30px; } }
+	@media (min-width: 1440px) { .edge, .portals { --frame: 24px; --frame-r: 34px; } }
+	@media (min-width: 1920px) { .edge, .portals { --frame: 32px; --frame-r: 38px; } }
+	@media (min-width: 2560px) { .edge, .portals { --frame: 40px; --frame-r: 44px; } }
 	@media (prefers-reduced-motion: reduce) { .portals { display: none; } }
 </style>
