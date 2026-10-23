@@ -298,11 +298,11 @@ func (a *API) musicTrendArtFile(ctx context.Context, kind, mbid, size string) (n
 func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name, path string, ok bool) {
 	c := &a.music
 	c.mu.Lock()
-	it, known := c.names[kind+"|"+mbid]
+	it := c.names[kind+"|"+mbid]
 	missAt, missed := c.artMiss[kind+"|"+mbid]
 	c.mu.Unlock()
 	lib := a.s.Library
-	if !known || lib == nil || lib.Artwork == nil || (missed && time.Since(missAt) < musicArtMissTTL) {
+	if lib == nil || lib.Artwork == nil || (missed && time.Since(missAt) < musicArtMissTTL) {
 		return "", "", false
 	}
 	keep := func(src string) bool {
@@ -341,6 +341,11 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name,
 			art, _ = a.s.ExtraArt(ctx, "artist", mbid)
 			if keep(art.Thumb) {
 				return name, path, true
+			}
+			for _, th := range art.Thumbs {
+				if keep(th) {
+					return name, path, true
+				}
 			}
 		}
 		if lib.ArtistImages != nil && metadata.ValidMBID(mbid) {

@@ -1,0 +1,7 @@
+{
+  "tool_name": "PowerShell",
+  "tool_input_preview": "{\"command\":\"cd C:\\\\HolyForge\\\\coderluii\\\\cl\\\\holyarrs\\\\worktrees\\\\apple-direction\\\\web\\\\app; npx vitest run 2>&1 | Select-String 'Tests|Failed|FAIL' | select -First 8\",\"timeout\":300000}",
+  "error": "Exit code 1\n ❯ src/lib/signinArt.test.ts (28 tests | 1 failed) 67ms\r\n⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯\r\n FAIL  src/lib/signinArt.test.ts > pickArt > iPhone 390x844 at DPR 3 uses the \r\nposter\r\n Test Files  1 failed | 105 passed (106)\r\n      Tests  1 failed | 816 passed (817)\r\n   Duration  1.84s (import 37%, transform 37%, tests 18%, worker 8%)",
+  "timestamp": "2026-10-23T06:57:08.357Z",
+  "retry_count": 1
+}

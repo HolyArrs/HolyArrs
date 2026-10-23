@@ -1,0 +1,10 @@
+{"t":0,"agent":"a29c04e","agent_type":"architect","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"aa5f262","agent_type":"test-engineer","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a29c04e","agent_type":"architect","event":"agent_stop","success":true,"duration_ms":46339}
+{"t":0,"agent":"aa5f262","agent_type":"test-engineer","event":"agent_stop","success":true,"duration_ms":376247}
+{"t":0,"agent":"a400bb3","agent_type":"executor","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a400bb3","agent_type":"executor","event":"agent_stop","success":true,"duration_ms":776932}
+{"t":0,"agent":"a400bb3","agent_type":"executor","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a400bb3","agent_type":"executor","event":"agent_stop","success":true,"duration_ms":12095}
+{"t":0,"agent":"a400bb3","agent_type":"executor","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a400bb3","agent_type":"executor","event":"agent_stop","success":true,"duration_ms":837586}

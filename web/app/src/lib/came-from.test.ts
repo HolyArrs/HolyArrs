@@ -27,3 +27,11 @@ describe('came-from history index', () => {
 		for (const k of ['sessionStorage', 'document', 'location', 'history']) delete g[k];
 	});
 });
+
+import { isAuthPath as _isAuth } from './came-from.svelte';
+describe('auth routes', () => {
+	it('are never a came-from page', () => {
+		for (const p of ['/login', '/welcome', '/login?next=/', '/welcome/x']) expect(_isAuth(p)).toBe(true);
+		for (const p of ['/explore/music', '/search', '/']) expect(_isAuth(p)).toBe(false);
+	});
+});

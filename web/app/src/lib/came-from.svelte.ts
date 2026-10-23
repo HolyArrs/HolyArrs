@@ -29,9 +29,18 @@ export function pageLabel(title: string): string {
 	return title.split(' · ')[0].trim();
 }
 
+/** isAuthPath is true for sign-in, welcome and other auth pages, which are never a place to go back to. */
+export function isAuthPath(path: string): boolean {
+	return /^\/(login|welcome|logout|signin|sign-in|signup|setup|auth)(\/|$|\?)/.test(path);
+}
+
 /** leaving notes the page being left (the layout calls it before each navigation). */
 export function leaving() {
 	if (typeof document === 'undefined') return;
+	if (isAuthPath(location.pathname)) {
+		before = null;
+		return;
+	}
 	before = { path: location.pathname + location.search, label: pageLabel(document.title) };
 }
 
@@ -52,7 +61,8 @@ export function arrived(type: string) {
 export function cameFrom(): CameFrom | null {
 	if (typeof history === 'undefined') return null;
 	const i = index();
-	return i === null ? null : (read()[i] ?? null);
+	const found = i === null ? null : (read()[i] ?? null);
+	return found && isAuthPath(found.path) ? null : found;
 }
 
 /** fromIcon picks the breadcrumb icon for a page path. */
