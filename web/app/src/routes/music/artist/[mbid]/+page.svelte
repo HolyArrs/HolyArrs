@@ -23,6 +23,10 @@
 	import { releaseWords } from '#lib/music/music-trending.ts';
 	import { SkRail, SkRowTitle, SkTrackRow } from '#lib/ui/sk/index.ts';
 	import Chip from '#lib/ui/Chip.svelte';
+	import { attachHLS, playerTarget } from '#lib/hls-player.ts';
+	import { autoplayPref, browserConditions } from '#lib/trailer.ts';
+	import { loadUISettings, nativeHLS, uiAutoplaySetting } from '#lib/autoplay.svelte.ts';
+	import { heroVideoAllowed, heroVideoStart, type HeroVideo } from '#lib/music/hero-video.ts';
 	import { aboutSize, albumHref, appPicture, artistHref, artistKind, countryName, initialsOf, coverFor, haveLine, kindWord, length, owned, SHELVES, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 
@@ -48,6 +52,10 @@
 	let following = $state<boolean | null>(null);
 	let bioOpen = $state(false);
 	let heroIn = $state(false);
+	// The hero's music video (muted, looping, relayed); none keeps the photo.
+	let heroVideo = $state<HeroVideo | null>(null);
+	let videoEl: HTMLVideoElement | undefined = $state();
+	let videoIn = $state(false);
 	let logoFailed = $state(false);
 	let folders = $state<LibraryFolder[]>([]);
 	let rules = $state<PickRulesView[]>([]);
@@ -115,9 +123,51 @@
 		art = {};
 		following = null;
 		heroIn = false;
+		heroVideo = null;
+		videoIn = false;
 		logoFailed = false;
 		bioOpen = false;
 		void load();
+	});
+
+	// Ask for a video once the hero shows, only where it may play.
+	$effect(() => {
+		const want = mbid;
+		if (!hero || hero.mbid !== want || heroVideo) return;
+		let gone = false;
+		void loadUISettings().then(() => {
+			if (gone || want !== mbid || !heroVideoAllowed({ setting: uiAutoplaySetting(), kid: session.kid, pref: autoplayPref(), ...browserConditions() })) return;
+			void api.get<HeroVideo>(`/music/artists/${want}?part=video`).then((v) => !gone && want === mbid && v?.proxy_url && (heroVideo = v)).catch(() => {});
+		});
+		return () => (gone = true);
+	});
+
+	// Play it on the stage; an error drops back to the photo.
+	$effect(() => {
+		const v = heroVideo;
+		const el = videoEl;
+		if (!v || !el) return;
+		let detach: (() => void) | null = null;
+		let stopped = false;
+		const fail = () => {
+			videoIn = false;
+			heroVideo = null;
+		};
+		el.muted = true;
+		el.addEventListener('error', fail);
+		const box = el.getBoundingClientRect();
+		void attachHLS(el, v.proxy_url, nativeHLS(), heroVideoStart(v), playerTarget(box.width, box.height, 'cover'))
+			.then((d) => {
+				if (stopped) return d();
+				detach = d;
+				void el.play().catch(fail);
+			})
+			.catch(fail);
+		return () => {
+			stopped = true;
+			el.removeEventListener('error', fail);
+			detach?.();
+		};
 	});
 
 	onMount(() => {
@@ -274,6 +324,9 @@
 						{#key heroSrc}
 							<img class="art" class:soft={heroSoft} class:in={heroIn} src={heroSrc} alt="" decoding="async" fetchpriority="high" onload={() => (heroIn = true)} onerror={() => { heroIn = false; heroTry++; }} />
 						{/key}
+					{/if}
+					{#if heroVideo}
+						<video class="clip" class:in={videoIn} bind:this={videoEl} muted loop playsinline disablepictureinpicture preload="auto" onplaying={() => (videoIn = true)} data-testid="artist-hero-video"></video>
 					{/if}
 				</div>
 				<div class="shade" aria-hidden="true"></div>
@@ -482,6 +535,9 @@
 	.art.soft.in { opacity: .6; }
 	@keyframes pan { from { transform: scale(1.04) translate3d(-2%, -1%, 0); } to { transform: scale(1.12) translate3d(2%, 1.5%, 0); } }
 	@media (prefers-reduced-motion: reduce) { .stage { animation: none; } }
+	/* The music video sits over the photo and fades in once it plays. */
+	.clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 900ms ease-out; pointer-events: none; }
+	.clip.in { opacity: .55; }
 	.shade { position: absolute; inset: 0; z-index: -1; background: radial-gradient(ellipse 60% 55% at 50% 42%, rgb(7 8 10 / 0) 0%, rgb(7 8 10 / .55) 70%, var(--hero-ink) 100%), linear-gradient(to top, var(--hero-ink) 0%, rgb(7 8 10 / 0) 45%); }
 	.crumbs { position: absolute; top: clamp(14px, 2vw, 22px); left: clamp(20px, 4vw, 48px); z-index: 1; }
 	.chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 10px; border-radius: 999px; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); color: #fff; font: 600 13px/1.2 var(--font-ui); }

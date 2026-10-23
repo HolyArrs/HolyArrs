@@ -35,6 +35,11 @@ export function setAutoplaySetting(on: boolean) {
 	state.loaded = true;
 }
 
+/** uiAutoplaySetting is the owner's "Autoplay trailers" setting (on until loaded). */
+export function uiAutoplaySetting(): boolean {
+	return state.autoplay;
+}
+
 /** autoplayHere says whether Layer 2 may start in this browser for this person. */
 export function autoplayHere(): boolean {
 	return state.loaded && mayAutoplay({ setting: state.autoplay, kid: session.kid, pref: autoplayPref(), ...browserConditions() });
