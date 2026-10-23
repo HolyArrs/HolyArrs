@@ -554,8 +554,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 11px;
-		margin-bottom: 22px;
+		gap: 14px;
+		margin-bottom: 28px;
 		font: 650 24px/1 var(--font-ui);
 		letter-spacing: -0.015em;
 		color: #fff;
@@ -564,7 +564,7 @@
 	@media (max-width: 600px) { .panel > .sk { height: 289px; } }
 	.title { font: var(--t-title1); letter-spacing: var(--t-title1-track); text-align: center; color: #fff; }
 	.lead { margin: 8px 0 20px; color: rgb(255 255 255 / 0.68); font: var(--t-callout); text-align: center; }
-	.title + :not(.lead) { margin-top: 20px; }
+	.title + :not(.lead) { margin-top: 26px; }
 	.panel :global(.field + .field) { margin-top: 12px; }
 	/* Labels, hints and errors centre like the title and button; typing stays left. */
 	.panel :global(.field) { text-align: center; }
@@ -682,21 +682,21 @@
 			--z: 1;
 			width: 100%;
 			max-width: 440px;
-			padding: 16px 16px 6px;
+			padding: 14px 16px 4px;
 			border-radius: 24px;
 			transform: translateY(calc(-1 * var(--kb, 0px)));
 			transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
 		}
-		.brand { gap: 8px; margin-bottom: 6px; font-size: 18px; }
+		.brand { gap: 12px; margin-bottom: 16px; font-size: 18px; }
 		.brand img { width: 26px; height: 26px; }
 		.title { font-size: 20px; line-height: 1.15; }
 		.lead { margin: 4px 0 10px; }
-		.title + :not(.lead) { margin-top: 8px; }
+		.title + :not(.lead) { margin-top: 16px; }
 		.panel :global(.field) { gap: 2px; }
 		.panel :global(.field label) { font-size: 14px; line-height: 1.25; }
-		.panel :global(.field + .field) { margin-top: 6px; }
+		.panel :global(.field + .field) { margin-top: 4px; }
 		.panel :global(.input), .submit :global(.ui-btn), .prov { min-height: 48px; }
-		.submit { margin-top: 10px; }
+		.submit { margin-top: 8px; }
 		.submit :global(.ui-btn) { width: 100%; }
 		.prov { min-height: 64px; }
 		.or { margin: 10px 0; }
