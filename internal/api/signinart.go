@@ -164,7 +164,8 @@ func remoteHost(r *http.Request) string {
 
 func (a *API) signinArtRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/public/signin-art", a.signinArt)
-	m.HandleFunc("GET "+signinPicPath+"{size}/{file}", a.signinPic)
+	// A literal pattern (= signinPicPath + "{size}/{file}"): the route tests read it from the source.
+	m.HandleFunc("GET /api/v1/public/signin-pic/t/p/{size}/{file}", a.signinPic)
 	web.SetLoginSeed(func(r *http.Request) []byte { return a.signinSeedJSON(r.Context()) })
 	// Warm the cache in the background so the first visitor sees art.
 	go func() {
