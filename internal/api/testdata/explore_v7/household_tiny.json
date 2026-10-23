@@ -1,0 +1,41 @@
+{
+ "artists": [
+  {
+   "a": 0.5,
+   "genres": {
+    "rock": 3
+   },
+   "mbid": "a00000c8-0000-4000-8000-0000000000c8",
+   "name": "Tiny 0",
+   "similar": []
+  },
+  {
+   "a": 0.5,
+   "genres": {
+    "jazz": 3
+   },
+   "mbid": "a00000c9-0000-4000-8000-0000000000c9",
+   "name": "Tiny 1",
+   "similar": []
+  },
+  {
+   "a": 0.5,
+   "genres": {
+    "techno": 3
+   },
+   "mbid": "a00000ca-0000-4000-8000-0000000000ca",
+   "name": "Tiny 2",
+   "similar": []
+  },
+  {
+   "a": 0.5,
+   "genres": {
+    "country": 3
+   },
+   "mbid": "a00000cb-0000-4000-8000-0000000000cb",
+   "name": "Tiny 3",
+   "similar": []
+  }
+ ],
+ "note": "4 artists in 4 genres: no mix"
+}
