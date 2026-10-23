@@ -301,8 +301,10 @@
 			}
 			raf = requestAnimationFrame(loop);
 		}
+		// Phones skip the portals: the card is small and the run would crowd the fields.
+		const phone = () => window.innerWidth <= 600;
 		function start() {
-			if (raf || document.hidden || motion.matches) return;
+			if (raf || document.hidden || motion.matches || phone()) return;
 			last = 0;
 			raf = requestAnimationFrame(loop);
 		}
@@ -329,7 +331,14 @@
 		let rt: ReturnType<typeof setTimeout> | undefined;
 		function onResize() {
 			clearTimeout(rt);
-			rt = setTimeout(measure, 150);
+			rt = setTimeout(() => {
+				measure();
+				if (phone()) {
+					stop();
+					ctx!.setTransform(1, 0, 0, 1, 0, 0);
+					ctx!.clearRect(0, 0, cv.width, cv.height);
+				} else start();
+			}, 150);
 		}
 
 		measure();
