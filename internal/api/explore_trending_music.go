@@ -31,6 +31,18 @@ type musicTrendingInput struct {
 	owned       map[string]int64 // Library artist MBID → title id
 	follows     map[string]bool  // album MBIDs the member follows
 	ownedImages map[string]string
+	// From the prebuilt New & Popular data: the metadata server's new
+	// music windows, the fresh list, and the Library's own new releases.
+	server  map[string][]metadata.MusicNewItem
+	fresh   []metadata.MusicTrendItem
+	library []MusicCard
+	// genreCharts are the album charts of the household's top genres.
+	genreCharts []genreChart
+}
+
+type genreChart struct {
+	name  string
+	items []metadata.MusicChartItem
 }
 
 // albumRanks are a chart's ranks for musicscore.RanksReady.
@@ -61,7 +73,11 @@ func composeMusicTrending(in musicTrendingInput, now time.Time) ([]MusicCard, []
 		return seen[c.Key] || (c.MBID != "" && seen["rg:"+c.MBID]) || seen["fold:"+fold(c.Name, c.Artist)]
 	}
 	mark := func(c MusicCard) {
-		seen[c.Key], seen["fold:"+fold(c.Name, c.Artist)] = true, true
+		seen[c.Key] = true
+		if c.Kind == "song" {
+			return // a song line never hides its album
+		}
+		seen["fold:"+fold(c.Name, c.Artist)] = true
 		if c.MBID != "" {
 			seen["rg:"+c.MBID] = true
 		}
@@ -87,13 +103,19 @@ func composeMusicTrending(in musicTrendingInput, now time.Time) ([]MusicCard, []
 	var rows []MusicRow
 	add := func(id, title, reason string, cards []MusicCard) {
 		var items []MusicCard
+		inRow := map[string]bool{}
 		for _, c := range cards {
 			if len(items) >= musicNewRowMax {
 				break
 			}
-			if taken(c) {
+			k := c.Key
+			if c.MBID != "" {
+				k = "rg:" + c.MBID
+			}
+			if taken(c) || inRow[k] || inRow["fold:"+fold(c.Name, c.Artist)] {
 				continue
 			}
+			inRow[k], inRow["fold:"+fold(c.Name, c.Artist)] = true, true
 			items = append(items, c)
 		}
 		if len(items) < musicNewRowMin {
@@ -236,6 +258,134 @@ func composeMusicTrending(in musicTrendingInput, now time.Time) ([]MusicCard, []
 		add("np_music_week", "Out this week", "Albums and EPs out in the last 7 days: charting, or by artists many people listen to", byScore(l))
 	}
 
+	// The wider pool of new releases: MusicBrainz, the metadata server's
+	// windows, the fresh list and the Library, one card per release group.
+	type newCand struct {
+		c    MusicCard
+		kind string
+		v    float64
+	}
+	pool := map[string]*newCand{}
+	var poolKeys []string
+	put := func(id, name, artist, artistMBID, date, kind string, tags []string, explicit bool, v float64) {
+		id, artistMBID, kind = strings.ToLower(id), strings.ToLower(artistMBID), strings.ToLower(kind)
+		if !metadata.ValidMBID(id) || name == "" || len(date) != 10 {
+			return
+		}
+		if kind != "ep" && kind != "single" {
+			kind = "album"
+		}
+		if x := pool[id]; x != nil {
+			x.v = max(x.v, v)
+			x.c.Explicit = x.c.Explicit || explicit
+			return
+		}
+		days, _ := daysFrom(date, now)
+		c := withLibrary(MusicCard{Key: "album:" + id, Kind: "album", MBID: id, Name: name, Artist: artist, ArtistMBID: artistMBID, Date: date,
+			Image: "/api/v1/music-trending/art/album/" + id, Upcoming: days < 0, Badge: releaseBadge(kind, days < 0), Following: in.follows[id], Explicit: explicit, Genres: append([]string{}, tags...)})
+		if c.Genres == nil {
+			c.Genres = []string{}
+		}
+		if p, ok := chartP[id]; ok {
+			v = max(v, p)
+		}
+		if p, ok := chartP["fold:"+fold(name, artist)]; ok {
+			v = max(v, p)
+		}
+		pool[id] = &newCand{c, kind, v}
+		poolKeys = append(poolKeys, id)
+	}
+	for _, r := range in.releases {
+		if len(r.SecondaryTypes) == 0 {
+			put(r.MBID, r.Name, r.Artist, r.ArtistMBID, r.ReleaseDate, r.PrimaryType, r.Tags, false, 0)
+		}
+	}
+	for _, w := range []string{"week", "recent", "upcoming"} {
+		for _, it := range in.server[w] {
+			v := 0.0
+			if it.Popularity > 0 {
+				v = max(0.05, 1-float64(it.Popularity)/200)
+			}
+			put(it.MBID, it.Title, it.Artist, it.ArtistMBID, it.ReleaseDate, it.Type, nil, it.Explicit, v)
+		}
+	}
+	for _, it := range in.fresh {
+		put(it.MBID, it.Title, it.Artist, it.ArtistMBID, it.ReleaseDate, "album", it.Tags, false, 0)
+	}
+	for _, c := range in.library {
+		if x := pool[c.MBID]; x != nil {
+			x.c.TitleID, x.c.PartID = c.TitleID, c.PartID
+			continue
+		}
+		if c.MBID != "" {
+			put(c.MBID, c.Name, c.Artist, c.ArtistMBID, c.Date, c.Badge, c.Genres, c.Explicit, 0)
+			if x := pool[strings.ToLower(c.MBID)]; x != nil {
+				x.c.TitleID, x.c.PartID = c.TitleID, c.PartID
+			}
+		}
+	}
+	pick := func(keep func(x *newCand, days int) bool) []MusicCard {
+		var l []scoredCard
+		for _, k := range poolKeys {
+			x := pool[k]
+			if days, ok := daysFrom(x.c.Date, now); ok && keep(x, days) {
+				fr := musicscore.Freshness(x.c.Date, 30, now)
+				if days < 0 {
+					fr = 0
+				}
+				l = append(l, scoredCard{x.c, 0.6*x.v + 0.3*fr + 0.1*boolScore(x.c.TitleID > 0)})
+			}
+		}
+		return byScore(l)
+	}
+	has := func(id string) bool {
+		for _, r := range rows {
+			if r.ID == id {
+				return true
+			}
+		}
+		return false
+	}
+	// Best new songs from the metadata server's track chart, when the
+	// region chart had too few fresh songs.
+	if !has("np_music_tracks") {
+		var l []MusicCard
+		for _, it := range in.server["tracks"] {
+			if it.Track == "" {
+				continue
+			}
+			id := strings.ToLower(it.MBID)
+			c := withLibrary(MusicCard{Kind: "song", MBID: id, Name: it.Track, Track: it.Track, Note: "From " + it.Title, Artist: it.Artist, ArtistMBID: strings.ToLower(it.ArtistMBID), Date: it.ReleaseDate,
+				Rank: it.Popularity, Explicit: it.Explicit, Image: "/api/v1/music-trending/art/album/" + id, Genres: []string{}})
+			c.Key = "song:" + strings.ToLower(it.Artist+"|"+it.Track)
+			l = append(l, c)
+		}
+		add("np_music_tracks", "Best new songs", "The most played new songs right now; each one asks for its album", l)
+	}
+	if !has("np_music_tracks") {
+		var l []scoredCard
+		per := map[string]bool{}
+		for _, it := range in.songs {
+			a := strings.ToLower(it.Artist)
+			if it.Date == "" || it.Date < now.AddDate(0, 0, -musicNewAhead).Format("2006-01-02") || per[a] {
+				continue
+			}
+			per[a] = true
+			c := MusicCard{Kind: "song", Name: it.Title, Track: it.Title, Artist: it.Artist, ArtistMBID: strings.ToLower(it.ArtistMBID), Date: it.Date, Rank: it.Rank, Explicit: it.Explicit, Image: it.Cover, Genres: append([]string{}, it.Genres...)}
+			c.Key = "song:" + strings.ToLower(it.Artist+"|"+it.Title)
+			l = append(l, scoredCard{withLibrary(c), musicscore.ScoreFreshSong(it.P, musicscore.Freshness(it.Date, musicNewAhead, now))})
+		}
+		add("np_music_tracks", "Best new songs", "New songs on the chart from the last two months; each one asks for its album", byScore(l))
+	}
+	add("np_music_library", "New from your artists", "Albums, EPs and singles from artists in your Library, out in the last 90 days",
+		pick(func(x *newCand, d int) bool { return x.c.TitleID > 0 && d >= 0 && d <= musicNewLibrary }))
+	if !has("np_music_week") {
+		add("np_music_week", "New this week", "Albums and EPs out in the last 7 days",
+			pick(func(x *newCand, d int) bool { return x.kind != "single" && d >= 0 && d <= musicNewWeek }))
+	}
+	add("np_music_recent", "Recent releases", "Albums and EPs out in the last 30 days",
+		pick(func(x *newCand, d int) bool { return x.kind != "single" && d >= 0 && d <= 30 }))
+
 	// Climbing: ΔR over the 7 kept chart days, biggest gain first; hidden
 	// until every chart item has a rank from 7 days ago. No gain, no card.
 	if musicscore.RanksReady(albumRanks(in.albums)) {
@@ -266,6 +416,53 @@ func composeMusicTrending(in musicTrendingInput, now time.Time) ([]MusicCard, []
 		add("np_music_top", title, chartReason(in.region, "Chart"), l)
 	}
 
+	add("np_music_short", "Singles & EPs", "New singles and EPs from the last 45 days",
+		pick(func(x *newCand, d int) bool { return x.kind != "album" && d >= 0 && d <= musicNewRecent }))
+	// New in <genre>: the household's top genres, one row each.
+	{
+		var all []MusicCard
+		for _, k := range poolKeys {
+			all = append(all, pool[k].c)
+		}
+		cards := map[string]MusicCard{}
+		for i, c := range all {
+			cards[fmt.Sprint(i)] = c
+		}
+		for _, g := range musicNewTopGenres(cards, 3) {
+			g := g
+			add("np_music_genre_"+musicSlug(g), "New in "+g, "New releases tagged "+g, pick(func(x *newCand, d int) bool {
+				if d < 0 || d > musicNewRecent {
+					return false
+				}
+				for _, t := range x.c.Genres {
+					if strings.EqualFold(t, g) {
+						return true
+					}
+				}
+				return false
+			}))
+		}
+		// Too few tagged releases: the genre's own chart, newest first.
+		for _, gc := range in.genreCharts {
+			id := "np_music_genre_" + musicSlug(gc.name)
+			if has(id) {
+				continue
+			}
+			var l []scoredCard
+			for _, it := range gc.items {
+				c := chartCard(it)
+				fr := musicscore.Freshness(it.Date, 365, now)
+				l = append(l, scoredCard{c, 0.5*it.P + 0.5*fr})
+			}
+			add(id, "New in "+gc.name, gc.name+" albums on the chart, the newest first", byScore(l))
+		}
+		for i := range rows {
+			if strings.HasPrefix(rows[i].ID, "np_music_genre_") {
+				rows[i].Type = "np_music_genre"
+			}
+		}
+	}
+
 	// Coming soon: albums and EPs due within 60 days, 0.7·[A > 0] + 0.3·P
 	// (A > 0: a Library artist; P is the artist's best chart P).
 	{
@@ -282,6 +479,13 @@ func composeMusicTrending(in musicTrendingInput, now time.Time) ([]MusicCard, []
 				Image: "/api/v1/music-trending/art/album/" + id, Upcoming: true, Badge: releaseBadge(kind, true), Following: in.follows[id], Genres: append([]string{}, r.Tags...)})
 			_, owned := in.owned[artist]
 			l = append(l, scoredCard{c, musicscore.ScoreComingTrending(owned, pcBest[artist])})
+		}
+		for _, k := range poolKeys {
+			x := pool[k]
+			if days, ok := daysFrom(x.c.Date, now); ok && days < 0 && -days <= musicNewAhead && x.kind != "single" {
+				_, owned := in.owned[x.c.ArtistMBID]
+				l = append(l, scoredCard{x.c, musicscore.ScoreComingTrending(owned, pcBest[x.c.ArtistMBID])})
+			}
 		}
 		add("np_music_coming", "Coming soon", "Albums out in the next 60 days; your artists first, then the ones charting", byScore(l))
 	}
@@ -300,8 +504,9 @@ func (a *API) musicTrendingRows(ctx context.Context, r *http.Request, in musicNe
 	}
 	t := musicTrendingInput{region: region, owned: in.owned, follows: in.follows, ownedImages: in.images,
 		albums: a.musicChartOf(ctx, region, "albums", now), songs: a.musicChartOf(ctx, region, "songs", now)}
+	t.library = in.library
 	if in.data != nil {
-		t.releases = in.data.releases
+		t.releases, t.server, t.fresh = in.data.releases, in.data.server, in.data.fresh.Items
 	}
 	var ids []string
 	for _, rel := range t.releases {
@@ -309,7 +514,20 @@ func (a *API) musicTrendingRows(ctx context.Context, r *http.Request, in musicNe
 			ids = append(ids, strings.ToLower(rel.ArtistMBID))
 		}
 	}
+	for i, g := range a.musicGenreTiles(ctx, region, now) {
+		if i >= 3 {
+			break
+		}
+		t.genreCharts = append(t.genreCharts, genreChart{g.Name, a.musicGenreChart(ctx, region, "albums", g.Slug, now)})
+	}
 	sort.Strings(ids)
 	t.listeners = a.musicListenersOf(ctx, ids, now)
 	return composeMusicTrending(t, now)
+}
+
+func boolScore(b bool) float64 {
+	if b {
+		return 1
+	}
+	return 0
 }
