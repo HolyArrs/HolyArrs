@@ -684,6 +684,19 @@ const warmArtMax = 28
 // singles, the first similar artists) a few at a time, so they are kept
 // before the browser asks for each. The rest load as the person scrolls.
 func (a *API) warmMusicArt(v ArtistPageView) {
+	// The whole page's artists and covers are stored by the low-priority
+	// pool, so the next click (a similar or related artist) is instant.
+	var all []string
+	for _, p := range v.Similar {
+		all = append(all, p.Image)
+	}
+	for _, p := range v.Related {
+		all = append(all, p.Image)
+	}
+	for _, al := range v.Albums {
+		all = append(all, al.Image)
+	}
+	a.warmArtPaths(all...)
 	const pre = "/api/v1/music-trending/art/"
 	var keys []string
 	seen := map[string]bool{}

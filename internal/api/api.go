@@ -184,6 +184,7 @@ type API struct {
 	trailerKeys trailerKeyCache
 	// ahead runs music fetch-ahead; ctl keeps the server's switch.
 	ahead musicAhead
+	artWarm artWarmer
 	ctl   musicControl
 	// artistVideos keeps each artist's music videos an hour.
 	artistVideos artistVideoCache

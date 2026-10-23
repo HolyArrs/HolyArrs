@@ -738,6 +738,12 @@ type nameKey struct{ kind, mbid, name, artist, cover string }
 
 // rememberMusicNames lets the picture route serve these albums and artists.
 func (a *API) rememberMusicNames(list []nameKey) {
+	a.rememberNames(list)
+	// Every row and page that lists them also gets their pictures stored.
+	a.warmArtItems(list)
+}
+
+func (a *API) rememberNames(list []nameKey) {
 	c := &a.music
 	c.mu.Lock()
 	defer c.mu.Unlock()
