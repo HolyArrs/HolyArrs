@@ -97,7 +97,12 @@
 		flip = up !== (placement === 'above');
 		let left = align === 'start' ? b.left : b.right - w;
 		left = Math.max(8, Math.min(left, vw - 8 - w));
-		pos = up ? `left: ${left}px; bottom: ${vh - b.top + 6}px;` : `left: ${left}px; top: ${b.bottom + 6}px;`;
+		// A transformed ancestor (the pinned pills slide with the top bar) becomes the
+		// containing block of a fixed panel; measure from it so the panel still lands on the button.
+		const p = panel.offsetParent;
+		const o = p && p !== document.body && p !== document.documentElement ? p.getBoundingClientRect() : { left: 0, top: 0, bottom: vh };
+		left -= o.left;
+		pos = up ? `left: ${left}px; bottom: ${o.bottom - b.top + 6}px;` : `left: ${left}px; top: ${b.bottom - o.top + 6}px;`;
 	}
 	$effect(() => {
 		if (!open || !panel) return;
