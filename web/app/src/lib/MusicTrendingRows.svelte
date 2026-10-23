@@ -284,8 +284,8 @@
 									<img class="photo" class:in={photoOk[c.key]} src={art} alt="" loading="lazy" decoding="async" onload={(e) => ((e.currentTarget as HTMLImageElement).naturalWidth >= 400 && (photoOk[c.key] = true))} />
 								{/if}
 								{#if photoOk[c.key] && cv.src && !noCover[c.key]}<img class="mini" src={coverFor(musicImage(c), 60).src} alt="" loading="lazy" decoding="async" />{/if}
-								{#if caption(c)}<span class="cap-line" class:with-mini={photoOk[c.key] && !noCover[c.key]}>{caption(c)}</span>{/if}
 							</span>
+							{#if caption(c)}<span class="cap-below">{caption(c)}</span>{/if}
 						</a>
 					{/each}
 				</Shelf>
@@ -418,8 +418,7 @@
 	.photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; opacity: 0; transition: opacity .3s ease; }
 	.photo.in { opacity: 1; }
 	.mini { position: absolute; right: 12px; bottom: 10px; z-index: 1; width: 56px; height: 56px; border-radius: 4px; object-fit: cover; box-shadow: 0 2px 10px rgb(0 0 0 / .45); }
-	.cap-line.with-mini { padding-right: 80px; }
-	.cap-line { position: absolute; left: 0; right: 0; bottom: 0; padding: 28px 14px 11px; font-size: 13px; font-weight: 500; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: linear-gradient(0deg, rgb(0 0 0 / .62), transparent); }
+	.cap-below { display: block; margin-top: 8px; color: var(--text-muted); font-size: 13px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.sk-spot { display: grid; grid-auto-flow: column; grid-auto-columns: var(--spot-item); gap: var(--shelf-gap, 16px); overflow: hidden; padding-top: 58px; }
 	.sk-card { display: flex; flex-direction: column; gap: 6px; }
 	.sk-k, .sk-t, .sk-img { display: block; border-radius: 6px; background: var(--surface-2); }

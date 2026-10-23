@@ -37,15 +37,6 @@ export function heroNote(c: NewMusicCard, now = new Date()): string {
 	return when ? `New ${what}, ${when}` : `New ${what}`;
 }
 
-/** shortNote is heroNote in a few words, to fit beside the small cover (caption option A). */
-export function shortNote(c: NewMusicCard, now = new Date()): string {
-	const d = c.date ? daysAgo(c.date, now) : null;
-	const ago = d === null || d < 0 ? '' : d === 0 ? 'today' : d === 1 ? 'yesterday' : d <= 7 ? 'this week' : d < 60 ? `${Math.round(d / 7)} weeks ago` : `${Math.round(d / 30)} months ago`;
-	if (c.title_id) return ago ? `In your Library · ${ago}` : 'In your Library';
-	if (c.rank && c.rank <= 50) return `#${c.rank} this week`;
-	return d !== null && d < 0 ? `Out in ${-d} day${d === -1 ? '' : 's'}` : ago ? `New · ${ago}` : 'New';
-}
-
 /** eyebrow is the small label above a hero card. */
 export function eyebrow(c: NewMusicCard, now = new Date()): string {
 	const d = c.date ? daysAgo(c.date, now) : null;
