@@ -1,89 +1,22 @@
 <script lang="ts">
 	// The sign-in page's cinematic backdrop: one full-bleed picture at a
-	// time, a slow Ken Burns move and a crossfade every 12 s. The card paints
-	// first; the art fades in once its first picture has decoded. Each
-	// picture is chosen for this screen (size x DPR) so it is never blurry.
-	import { onMount, tick } from 'svelte';
+	// time, a slow Ken Burns move and a crossfade every 12 s. The card is
+	// there on the first frame over plain dark; the first picture crossfades
+	// in (about 300 ms) once it has decoded. Each picture is chosen for this
+	// screen (size x DPR) so it is never blurry. The last list is kept on
+	// this device so a repeat visit starts its picture at once (app.html
+	// preloads it before any script).
+	import { onMount } from 'svelte';
 	import { api } from '#lib/api.ts';
 	import { pickArt, playlist, prepareSlide, type ArtPick, type ArtShot } from '#lib/signinArt.ts';
-	import { siteCell, pixelFor } from '#lib/pixelTrail.ts';
 
 	const CYCLE_MS = 12000; // Long enough to take each picture in; the zoom stays slow.
-	// The first picture resolves from the site's hero cells (width / 12-36)
-	// through its symbol pixel to sharp, in held steps (see pixelTrail.ts).
-	const MOSAIC_MS = 1050;
+	const CACHE = 'holyarrs-signin-art';
 
-	// onrevealed: the first picture is fully shown (or there is none); the card may enter.
-	let { onrevealed }: { onrevealed?: () => void } = $props();
-
-	type Slide = { pick: ArtPick; shot: ArtShot; logo: string | null; key: number };
+	type Slide = { pick: ArtPick; shot: ArtShot; logo: string | null; key: number; first: boolean };
 	let layers = $state<Slide[]>([]);
-	let shown = $state(false);
 	let still = $state(false);
-	let mosaic = $state(false);
-	let canvas = $state<HTMLCanvasElement>();
 	let n = 0;
-	let told = false;
-	function reveal() {
-		if (told) return;
-		told = true;
-		onrevealed?.();
-	}
-
-	// Draws the picture as object-fit: cover would, at a coarse block size, and
-	// steps the blocks down to one pixel. Then the real picture shows beneath.
-	function pixelate(url: string, position: string): Promise<void> {
-		return new Promise((done) => {
-			const c = canvas;
-			const ctx = c?.getContext('2d');
-			if (!c || !ctx) return done();
-			const img = new Image();
-			img.decoding = 'async';
-			img.src = url;
-			img.decode().then(
-				() => {
-					const vw = window.innerWidth;
-					const vh = window.innerHeight;
-					c.width = vw;
-					c.height = vh;
-					const s = Math.max(vw / img.naturalWidth, vh / img.naturalHeight);
-					const dw = img.naturalWidth * s;
-					const dh = img.naturalHeight * s;
-					const [px, py] = (position || '50% 50%').split(' ').map((p) => (parseFloat(p) || 50) / 100);
-					const dx = (vw - dw) * (px ?? 0.5);
-					const dy = (vh - dh) * (py ?? 0.5);
-					const small = document.createElement('canvas');
-					const sctx = small.getContext('2d');
-					if (!sctx) return done();
-					const t0 = performance.now();
-					const cell = siteCell(vw);
-					const steps = [cell, cell / 2, cell / 4, pixelFor(cell), 1].map((b) => Math.max(1, Math.round(b)));
-					let last = -1;
-					const frame = (now: number) => {
-						const k = Math.max(0, Math.min(1, (now - t0) / MOSAIC_MS));
-						// The coarse stages hold longest, then it sharpens quickly.
-						const block = steps[Math.min(steps.length - 1, Math.floor(Math.pow(k, 0.8) * steps.length))];
-						if (block !== last) {
-							last = block;
-							const w = Math.max(1, Math.ceil(vw / block));
-							const h = Math.max(1, Math.ceil(vh / block));
-							small.width = w;
-							small.height = h;
-							sctx.imageSmoothingEnabled = true;
-							sctx.drawImage(img, dx / block, dy / block, dw / block, dh / block);
-							ctx.imageSmoothingEnabled = false;
-							ctx.clearRect(0, 0, vw, vh);
-							ctx.drawImage(small, 0, 0, w, h, 0, 0, w * block, h * block);
-						}
-						if (k < 1) requestAnimationFrame(frame);
-						else done();
-					};
-					requestAnimationFrame(frame);
-				},
-				() => done()
-			);
-		});
-	}
 
 	function screen() {
 		return { vw: window.innerWidth, vh: window.innerHeight, dpr: window.devicePixelRatio || 1 };
@@ -101,8 +34,25 @@
 		}
 	}
 
+	function readCache(): ArtShot[] {
+		try {
+			const v = JSON.parse(localStorage.getItem(CACHE) ?? 'null');
+			return Array.isArray(v?.shots) ? v.shots : [];
+		} catch {
+			return [];
+		}
+	}
+
+	function writeCache(shots: ArtShot[], first: string) {
+		try {
+			localStorage.setItem(CACHE, JSON.stringify({ shots, first }));
+		} catch {
+			/* private window or full storage: the next visit fetches again */
+		}
+	}
+
 	onMount(() => {
-		let shots: ArtShot[] = [];
+		let shots = readCache();
 		let at = -1;
 		let timer: ReturnType<typeof setTimeout> | undefined;
 		let gone = false;
@@ -111,30 +61,26 @@
 
 		// The next slide sharp enough for the screen as it is now; its picture
 		// is loaded and decoded before it is shown.
+		let busy = false;
 		async function advance() {
 			const list = playlist(shots, screen());
-			if (!list.length || gone) return;
+			if (!list.length || gone || busy) return;
+			busy = true;
 			for (let tries = 0; tries < list.length; tries++) {
 				at = (at + 1) % list.length;
 				// Backdrop and logo load together and switch as one unit.
 				const got = await prepareSlide(list[at], ready);
 				if (got) {
-					if (gone) return;
-					const slide = { ...got, key: ++n };
-					const first = !told;
-					if (first && !still) mosaic = true;
-					layers = [...layers.slice(-1), slide];
-					shown = true;
-					if (first && !still) {
-						await tick();
-						await pixelate(slide.pick.url, slide.pick.position ?? '');
-						mosaic = false;
-					}
-					reveal();
+					if (gone) break;
+					const first = !layers.length;
+					layers = [...layers.slice(-1), { ...got, key: ++n, first }];
+					// Next visit: preload the picture after this one, so the page turns over.
+					const after = list[(at + 1) % list.length];
+					writeCache(shots, after.pick.url);
 					break;
 				}
 			}
-			reveal();
+			busy = false;
 			if (!still && list.length > 1) schedule();
 		}
 		function schedule() {
@@ -167,18 +113,37 @@
 			}, 400);
 		}
 
-		// Start after the card has painted, in idle time.
-		const start = () =>
-			api
-				.get<{ shots: ArtShot[] }>('/public/signin-art')
-				.then((r) => {
-					shots = Array.isArray(r?.shots) ? r.shots : [];
-					return advance();
-				})
-				.catch(() => {
-					/* no art: the page stays plain dark */
-				});
-		const idle = 'requestIdleCallback' in window ? window.requestIdleCallback(() => void start(), { timeout: 600 }) : setTimeout(start, 200);
+		// A repeat visit starts from the kept list straight away; a first visit
+		// fetches the list now (not in idle time). A fresh list replaces the kept
+		// one for the next slides.
+		if (shots.length) {
+			const list = playlist(shots, screen());
+			const want = (() => {
+				try {
+					return JSON.parse(localStorage.getItem(CACHE) ?? 'null')?.first;
+				} catch {
+					return undefined;
+				}
+			})();
+			const i = list.findIndex((e) => e.pick.url === want);
+			at = i > 0 ? i - 1 : -1;
+			void advance();
+		}
+		api
+			.get<{ shots: ArtShot[] }>('/public/signin-art')
+			.then((r) => {
+				const fresh = Array.isArray(r?.shots) ? r.shots : [];
+				if (!fresh.length || gone) return;
+				const had = layers.length > 0 || busy;
+				shots = fresh;
+				if (!had) {
+					at = -1;
+					void advance();
+				} else writeCache(shots, playlist(shots, screen())[0]?.pick.url ?? '');
+			})
+			.catch(() => {
+				/* no art: the page stays plain dark */
+			});
 
 		document.addEventListener('visibilitychange', onVisible);
 		motion.addEventListener('change', onMotion);
@@ -187,7 +152,6 @@
 			gone = true;
 			clearTimeout(timer);
 			clearTimeout(resizeT);
-			if ('cancelIdleCallback' in window && typeof idle === 'number') window.cancelIdleCallback(idle);
 			document.removeEventListener('visibilitychange', onVisible);
 			motion.removeEventListener('change', onMotion);
 			window.removeEventListener('resize', onResize);
@@ -195,10 +159,9 @@
 	});
 </script>
 
-<div class="art" class:shown class:still class:mosaic aria-hidden="true" data-testid="signin-art">
-	<canvas bind:this={canvas} class="px" class:on={mosaic}></canvas>
+<div class="art" class:still aria-hidden="true" data-testid="signin-art">
 	{#each layers as l, i (l.key)}
-		<div class="layer" class:top={i === layers.length - 1}>
+		<div class="layer" class:top={i === layers.length - 1} class:first={l.first}>
 			<img
 				class="pic"
 				src={l.pick.url}
@@ -228,26 +191,7 @@
 		z-index: 0;
 		overflow: hidden;
 		background: #050507;
-		opacity: 0;
-		transition: opacity 1.2s ease;
 	}
-	.art.shown { opacity: 1; }
-	/* First load: the pixel canvas covers the picture, then fades off it. */
-	.art.mosaic { transition: none; }
-	.art.mosaic .layer.top { animation: none; opacity: 1; }
-	.art.mosaic .logo { opacity: 0; animation: none; }
-	.px {
-		position: absolute;
-		inset: 0;
-		z-index: 2;
-		width: 100%;
-		height: 100%;
-		image-rendering: pixelated;
-		opacity: 0;
-		transition: opacity 260ms ease-out;
-		pointer-events: none;
-	}
-	.px.on { opacity: 1; transition: none; background: #050507; }
 	.layer {
 		position: absolute;
 		inset: 0;
@@ -256,6 +200,8 @@
 		opacity: 0;
 		animation: fade-in 1.6s ease-in-out forwards;
 	}
+	/* The first picture comes up from plain dark quickly; later ones crossfade slowly. */
+	.layer.first { animation-duration: 300ms; animation-timing-function: ease-out; }
 	.layer:not(.top) { animation: none; opacity: 1; }
 	.pic {
 		position: absolute;
