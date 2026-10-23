@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/CoderLuii/holyarrs/internal/music"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -39,7 +40,7 @@ func TestMusicCardsUseCoverChain(t *testing.T) {
 		return pics.URL + "/dz/" + mbid + ".jpg", nil
 	}
 	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{pics.URL + "/"}, HTTP: pics.Client()}
-	api := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), MusicCover: cover, Library: &library.Service{Store: s, Artwork: art, CoverArtBase: pics.URL}, Version: "test"})
+	api := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), Library: &library.Service{Store: s, Artwork: art, CoverArtBase: pics.URL}, Version: "test", Deps: music.Deps{MusicCover: cover}})
 	srv := httptest.NewServer(api.Handler())
 	defer srv.Close()
 	code := func(id string) int {
@@ -95,10 +96,10 @@ func TestMusicCoverMissIsShort(t *testing.T) {
 	}
 	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
 	var asked atomic.Int32
-	api := New(Server{Store: s, MusicCover: func(context.Context, string, string, string) (string, error) {
+	api := New(Server{Store: s, Version: "test", Deps: music.Deps{MusicCover: func(context.Context, string, string, string) (string, error) {
 		asked.Add(1)
 		return "", metadata.ErrNotFound
-	}, Version: "test"})
+	}}})
 	it := metadata.MusicTrendItem{Title: "New", Artist: "Someone"}
 	api.albumCover(context.Background(), trendGroup, it)
 	api.albumCover(context.Background(), trendGroup, it)

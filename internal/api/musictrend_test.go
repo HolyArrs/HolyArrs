@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"github.com/CoderLuii/holyarrs/internal/music"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -41,7 +42,7 @@ func TestMusicTrendingListsAndPictures(t *testing.T) {
 	}))
 	defer cover.Close()
 	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{cover.URL + "/release-group/"}, HTTP: cover.Client()}
-	srv := httptest.NewServer(New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), MusicTrending: trend, Library: &library.Service{Store: s, Artwork: art, CoverArtBase: cover.URL}, Version: "test"}).Handler())
+	srv := httptest.NewServer(New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), Library: &library.Service{Store: s, Artwork: art, CoverArtBase: cover.URL}, Version: "test", Deps: music.Deps{MusicTrending: trend}}).Handler())
 	defer srv.Close()
 	get := func(q string, want int) map[string]any {
 		t.Helper()
@@ -119,7 +120,7 @@ func TestMusicTrendArtUsesCoverChain(t *testing.T) {
 		return "", metadata.ErrNotFound
 	}
 	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{pics.URL + "/"}, HTTP: pics.Client()}
-	api := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), MusicTrending: trend, MusicCover: cover, Library: &library.Service{Store: s, Artwork: art, CoverArtBase: pics.URL}, Version: "test"})
+	api := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), Library: &library.Service{Store: s, Artwork: art, CoverArtBase: pics.URL}, Version: "test", Deps: music.Deps{MusicTrending: trend, MusicCover: cover}})
 	srv := httptest.NewServer(api.Handler())
 	defer srv.Close()
 	code := func(id string) int {
@@ -201,9 +202,12 @@ func TestMusicTrendArtPrefersChartCover(t *testing.T) {
 		return metadata.MusicTrend{Kind: kind, Region: region, Items: []metadata.MusicTrendItem{{Rank: 1, MBID: trendGroup, Title: "ARIRANG", Artist: "BTS", Cover: pics.URL + "/chart.jpg"}}}, nil
 	}
 	var asked atomic.Int32
-	cover := func(context.Context, string, string, string) (string, error) { asked.Add(1); return "", metadata.ErrNotFound }
+	cover := func(context.Context, string, string, string) (string, error) {
+		asked.Add(1)
+		return "", metadata.ErrNotFound
+	}
 	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{pics.URL + "/"}, HTTP: pics.Client()}
-	api := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), MusicTrending: trend, MusicCover: cover, Library: &library.Service{Store: s, Artwork: art, CoverArtBase: pics.URL}, Version: "test"})
+	api := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), Library: &library.Service{Store: s, Artwork: art, CoverArtBase: pics.URL}, Version: "test", Deps: music.Deps{MusicTrending: trend, MusicCover: cover}})
 	srv := httptest.NewServer(api.Handler())
 	defer srv.Close()
 	if resp, err := http.Get(srv.URL + "/api/v1/music-trending?kind=album"); err != nil || resp.StatusCode != 200 {

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/CoderLuii/holyarrs/internal/music"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -145,8 +146,8 @@ func TestExploreMusicRows(t *testing.T) {
 		return out, nil
 	}
 	genres := &genreArtists{fakeArtists: apiMusic()}
-	srv := httptest.NewServer(New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), MusicTrending: trend, MusicSimilar: similar,
-		Library: &library.Service{Store: s, Artists: genres}, Version: "test"}).Handler())
+	srv := httptest.NewServer(New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(),
+		Library: &library.Service{Store: s, Artists: genres}, Version: "test", Deps: music.Deps{MusicTrending: trend, MusicSimilar: similar}}).Handler())
 	defer srv.Close()
 	get := func(q string) musicRowsAnswer {
 		t.Helper()
@@ -279,7 +280,7 @@ func TestExploreMusicColdStart(t *testing.T) {
 		return l, nil
 	}
 	genres := &genreArtists{fakeArtists: apiMusic()}
-	srv := httptest.NewServer(New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), MusicTrending: trend, Library: &library.Service{Store: s, Artists: genres}, Version: "test"}).Handler())
+	srv := httptest.NewServer(New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), Library: &library.Service{Store: s, Artists: genres}, Version: "test", Deps: music.Deps{MusicTrending: trend}}).Handler())
 	defer srv.Close()
 	read := func() musicRowsAnswer {
 		resp, err := http.Get(srv.URL + "/api/v1/explore/music?region=FR")

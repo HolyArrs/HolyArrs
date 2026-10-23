@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/CoderLuii/holyarrs/internal/music"
 	"runtime"
 	"strings"
 	"sync/atomic"
@@ -39,18 +40,17 @@ func TestMusicWarmUpDoesNotRunWhenMusicIsOff(t *testing.T) {
 	t.Cleanup(func() { _ = s.Close() })
 	var calls atomic.Int32
 	a := New(Server{Store: s, Parts: musicOffControl(t, s), Version: "test",
-		MusicTrending: func(context.Context, string, string) (metadata.MusicTrend, error) {
+
+		Deps: music.Deps{MusicTrending: func(context.Context, string, string) (metadata.MusicTrend, error) {
 			calls.Add(1)
 			return metadata.MusicTrend{}, nil
-		},
-		MusicCharts: func(context.Context, string, string, string) (metadata.MusicChart, error) {
+		}, MusicCharts: func(context.Context, string, string, string) (metadata.MusicChart, error) {
 			calls.Add(1)
 			return metadata.MusicChart{}, nil
-		},
-		MusicCover: func(context.Context, string, string, string) (string, error) {
+		}, MusicCover: func(context.Context, string, string, string) (string, error) {
 			calls.Add(1)
 			return "", nil
-		},
+		}},
 	})
 	pc := a.s.Parts
 	for _, l := range a.MusicLoops() {

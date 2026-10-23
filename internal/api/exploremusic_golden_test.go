@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/CoderLuii/holyarrs/internal/music"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -56,7 +57,7 @@ func musicShape(m musicRowsAnswer) string {
 func TestExploreMusicFlagOffGolden(t *testing.T) {
 	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
 	genres := &genreArtists{fakeArtists: apiMusic()}
-	srv := httptest.NewServer(New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), MusicTrending: coldTrend, Library: &library.Service{Store: s, Artists: genres}, Version: "test"}).Handler())
+	srv := httptest.NewServer(New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), Library: &library.Service{Store: s, Artists: genres}, Version: "test", Deps: music.Deps{MusicTrending: coldTrend}}).Handler())
 	defer srv.Close()
 	read := func() musicRowsAnswer {
 		resp, err := http.Get(srv.URL + "/api/v1/explore/music?region=FR&hour=10")

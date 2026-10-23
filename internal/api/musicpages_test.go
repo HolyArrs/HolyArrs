@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"github.com/CoderLuii/holyarrs/internal/music"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -169,8 +170,8 @@ func TestSimilarArtistArtPrefetched(t *testing.T) {
 		return metadata.ServerArt{Thumb: pics.URL + "/thumb.jpg"}, nil
 	}
 	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{pics.URL + "/"}, HTTP: pics.Client()}
-	a := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), MusicSimilar: similar, ExtraArt: extra,
-		Library: &library.Service{Store: s, Artwork: art}, Version: "test"})
+	a := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), ExtraArt: extra,
+		Library: &library.Service{Store: s, Artwork: art}, Version: "test", Deps: music.Deps{MusicSimilar: similar}})
 	list := a.similarArtists(context.Background(), seed, 14)
 	if len(list) != 1 || list[0].Image != "/api/v1/music-trending/art/artist/"+like {
 		t.Fatalf("similar %+v", list)
