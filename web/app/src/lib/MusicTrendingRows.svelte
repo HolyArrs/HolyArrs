@@ -168,44 +168,19 @@
 		void load();
 	}
 
-	/** The hero candidates: the newest album first, then its stand-ins. */
+	/** The Spotlight row (Apple "New" style): the hero first, then its stand-ins. */
 	const heroes = $derived(answer?.hero ? [answer.hero, ...(answer.hero_alts ?? [])] : []);
-	/** The hero shown: the first candidate whose cover loads, else the first one over its artist's picture. */
-	let heroPick = $state<{ card: MusicCardData; cover: boolean } | null>(null);
-	let heroFor = '';
-	function loads(src: string | null): Promise<boolean> {
-		if (!src) return Promise.resolve(false);
-		return new Promise((done) => {
-			const im = new Image();
-			im.onload = () => done(im.naturalWidth > 0);
-			im.onerror = () => done(false);
-			im.src = src;
-		});
+	/** Spotlight covers that failed to load: the card falls back to its artist's picture. */
+	let noCover = $state<Record<string, boolean>>({});
+	/** Spotlight artist photos that loaded at a usable size (400 px wide or more). */
+	let photoOk = $state<Record<string, boolean>>({});
+	function kicker(c: MusicCardData): string {
+		return c.kicker || (c.title_id ? 'New album' : 'Top album');
 	}
-	$effect(() => {
-		const list = heroes;
-		const at = list.map((c) => c.key).join('|');
-		if (at === heroFor) return;
-		heroFor = at;
-		if (!list.length) return void (heroPick = null);
-		heroPick = null;
-		void (async () => {
-			for (const c of list) {
-				if (await loads(musicImage(c))) {
-					if (heroFor === at) heroPick = { card: c, cover: true };
-					return;
-				}
-				if (heroFor !== at) return;
-			}
-			if (heroFor === at) heroPick = { card: list[0], cover: false };
-		})();
-	});
-	const hero = $derived(heroPick?.card ?? null);
-	const heroNote = $derived.by(() => {
-		if (!hero) return '';
-		if (!hero.title_id) return `${hero.artist} · number ${hero.rank ?? 1} on this week's album chart`;
-		return ['From an artist you have', hero.artist, hero.date ? releaseWords(hero.date) : ''].filter(Boolean).join(' · ');
-	});
+	function caption(c: MusicCardData): string {
+		if (!c.title_id) return c.rank ? `Number ${c.rank} on this week's album chart` : '';
+		return ['From an artist you have', c.date ? releaseWords(c.date) : ''].filter(Boolean).join(' · ');
+	}
 	const regions = $derived(answer?.regions ?? []);
 	/** The row whose header carries the chart region: Popular in <country>, else Top albums. */
 	const pickRow = $derived(regions.length > 1 ? ((answer?.rows.find((r) => r.type === 'popular_country') ?? answer?.rows.find((r) => r.type === 'top_albums'))?.id ?? '') : '');
@@ -236,8 +211,8 @@
 		{:else}
 			<div class="chips" aria-hidden="true">{#each [52, 64, 88, 72, 96, 60] as w (w)}<span class="chip sk-chip" style:width="{w}px"></span>{/each}</div>
 		{/if}
-		{#if !answer || (heroes.length && !heroPick)}
-			<div class="hero sk-hero" aria-hidden="true"><span class="cover"></span></div>
+		{#if !answer}
+			<div class="sk-spot" aria-hidden="true">{#each [0, 1, 2, 3] as i (i)}<span class="sk-card"><span class="sk-k"></span><span class="sk-t"></span><span class="sk-img"></span></span>{/each}</div>
 		{/if}
 		{#if !answer}
 			{#each [0, 1] as r (r)}
@@ -245,21 +220,33 @@
 			{/each}
 		{/if}
 
-		{#if answer && hero && heroPick}
-			<a class="hero" class:bare={!heroPick.cover} href={musicCardHref(hero)} data-testid="music-hero">
-				{#if heroPick.cover}
-					{@const hc = coverFor(musicImage(hero), 120)}
-					<span class="cover"><img src={hc.src} srcset={hc.srcset} sizes="120px" alt="" /></span>
-				{:else if hero.artist_image}
-					<!-- No album cover anywhere: the artist's picture, blurred, behind the title. -->
-					<img class="backdrop" src={musicImage({ image: hero.artist_image })} alt="" aria-hidden="true" onerror={(e) => ((e.currentTarget as HTMLImageElement).hidden = true)} />
-				{/if}
-				<span class="words">
-					<span class="eyebrow">New album</span>
-					<strong>{hero.name}</strong>
-					<span class="note">{heroNote}</span>
-				</span>
-			</a>
+		{#if answer && heroes.length}
+			<div class="spot" data-testid="music-hero">
+				<Shelf title="Spotlight" item="var(--spot-item)">
+					{#each heroes as c (c.key)}
+						{@const cv = coverFor(musicImage(c), 430)}
+						{@const art = c.artist_image ? musicImage({ image: c.artist_image }) : null}
+						<a class="feature" href={musicCardHref(c)}>
+							<span class="kicker">{kicker(c)}</span>
+							<strong class="ftitle">{c.name}</strong>
+							<span class="fsub">{c.artist ?? ''}</span>
+							<span class="frame">
+								{#if cv.src && !noCover[c.key]}
+									<!-- The square cover on a blurred, darker copy of itself fills the wide frame. -->
+									<img class="blur" src={coverFor(musicImage(c), 120).src} alt="" aria-hidden="true" loading="lazy" decoding="async" />
+									<img class="sq" src={cv.src} srcset={cv.srcset} sizes="240px" alt="" loading="lazy" decoding="async" onerror={() => (noCover[c.key] = true)} />
+								{/if}
+								{#if art}
+									<!-- The artist's photo, when there is one, over all of it; the cover then sits small in the corner (as New & Popular). -->
+									<img class="photo" class:in={photoOk[c.key]} src={art} alt="" loading="lazy" decoding="async" onload={(e) => ((e.currentTarget as HTMLImageElement).naturalWidth >= 400 && (photoOk[c.key] = true))} />
+								{/if}
+								{#if photoOk[c.key] && cv.src && !noCover[c.key]}<img class="mini" src={coverFor(musicImage(c), 60).src} alt="" loading="lazy" decoding="async" />{/if}
+								{#if caption(c)}<span class="cap-line" class:with-mini={photoOk[c.key] && !noCover[c.key]}>{caption(c)}</span>{/if}
+							</span>
+						</a>
+					{/each}
+				</Shelf>
+			</div>
 		{/if}
 
 		{#if stripGenres.length}<MusicGenreTiles genres={stripGenres} allHref={to('/search?kind=music')} />{/if}
@@ -316,7 +303,7 @@
 			{/if}
 		{/each}
 
-		{#if answer && answer.rows.length === 0 && !hero}
+		{#if answer && answer.rows.length === 0 && !heroes.length}
 			<EmptyState icon="music" title={slug ? `Nothing charting in ${answer.tile?.name ?? 'this genre'} yet` : genre ? `Nothing tagged ${genre} yet` : 'Music rows are getting ready'} text={genre ? 'Pick another genre, or All.' : 'Charts and suggestions fill in within a few minutes.'} />
 		{/if}
 	</section>
@@ -340,7 +327,6 @@
 	.chips { height: 38px; flex: none; }
 	.chip { height: 34px; box-sizing: border-box; line-height: 20px; }
 	.sk-chip { display: block; padding: 0; border-color: transparent; cursor: default; }
-	.sk-hero { height: 152px; box-sizing: border-box; }
 	/* A loading row: the header and one row of square cards, at the real row's height. */
 	.sk-shelf { display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
 	.sk-h { display: block; width: 220px; height: 46px; border-radius: 8px; background: var(--surface-2); }
@@ -361,24 +347,34 @@
 	@media (max-width: 1023px) { .songs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 	@media (max-width: 640px) { .songs { grid-template-columns: minmax(0, 1fr); } }
 	.pick { position: absolute; right: 0; top: 0; z-index: 1; display: flex; gap: 8px; align-items: center; }
-	.hero { position: relative; overflow: hidden; }
-	.hero.bare { justify-content: flex-start; }
-	.backdrop { position: absolute; inset: -24px; width: calc(100% + 48px); height: calc(100% + 48px); object-fit: cover; filter: blur(22px) brightness(0.55) saturate(1.2); transform: scale(1.05); }
-	.hero.bare .words { position: relative; color: #fff; }
-	.hero.bare .eyebrow, .hero.bare .note { color: rgb(255 255 255 / 0.8); }
-	.hero { box-sizing: border-box; height: 152px; display: flex; gap: 20px; align-items: center; padding: 16px; border-radius: var(--r-card); background: var(--surface-2); color: var(--text); text-decoration: none; max-width: 640px; }
-	.hero:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.cover { flex: none; width: 120px; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: var(--surface-3); }
-	.cover img { width: 100%; height: 100%; object-fit: cover; }
-	.words { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-	.eyebrow { font: var(--t-caption, 12px/1.3 inherit); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
-	.words strong { font-size: 22px; line-height: 1.2; }
-	.note { color: var(--text-muted); }
+	/* Spotlight: Apple "New"-style feature cards, label and title above a wide 16:9 picture. */
+	.music { --spot-item: min(86vw, 430px); }
+	.spot :global(.ui-shelf-head), .spot :global(header) { margin-bottom: 2px; }
+	.feature { display: flex; flex-direction: column; min-width: 0; color: var(--text); text-decoration: none; border-radius: 14px; }
+	.feature:focus-visible { outline: none; }
+	.feature:focus-visible .frame { box-shadow: var(--focus-ring); }
+	.kicker { font: 700 11px/1.2 var(--font-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); }
+	.ftitle { margin-top: 4px; font-size: 20px; line-height: 1.2; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.fsub { font-size: 15px; line-height: 1.3; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.frame { position: relative; display: block; margin-top: 10px; aspect-ratio: 3 / 2; border-radius: 14px; overflow: hidden; isolation: isolate; background: var(--surface-2); transition: transform .35s cubic-bezier(.16, 1, .3, 1), box-shadow .35s; }
+	.feature:hover .frame { transform: translateY(-2px); box-shadow: 0 14px 28px -16px rgb(0 0 0 / .7); }
+	.blur { position: absolute; inset: -20%; width: 140%; height: 140%; object-fit: cover; filter: blur(28px) saturate(1.3) brightness(.7); z-index: -1; }
+	.sq { position: absolute; top: 50%; left: 50%; height: 78%; aspect-ratio: 1; translate: -50% -50%; object-fit: cover; border-radius: 8px; box-shadow: 0 12px 30px -8px rgb(0 0 0 / .65); }
+	.photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; opacity: 0; transition: opacity .3s ease; }
+	.photo.in { opacity: 1; }
+	.mini { position: absolute; right: 12px; bottom: 10px; z-index: 1; width: 56px; height: 56px; border-radius: 4px; object-fit: cover; box-shadow: 0 2px 10px rgb(0 0 0 / .45); }
+	.cap-line.with-mini { padding-right: 80px; }
+	.cap-line { position: absolute; left: 0; right: 0; bottom: 0; padding: 28px 14px 11px; font-size: 13px; font-weight: 500; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: linear-gradient(0deg, rgb(0 0 0 / .62), transparent); }
+	.sk-spot { display: grid; grid-auto-flow: column; grid-auto-columns: var(--spot-item); gap: var(--shelf-gap, 16px); overflow: hidden; padding-top: 58px; }
+	.sk-card { display: flex; flex-direction: column; gap: 6px; }
+	.sk-k, .sk-t, .sk-img { display: block; border-radius: 6px; background: var(--surface-2); }
+	.sk-k { width: 80px; height: 12px; }
+	.sk-t { width: 60%; height: 40px; }
+	.sk-img { aspect-ratio: 3 / 2; border-radius: 14px; margin-top: 4px; }
+	@media (prefers-reduced-motion: reduce) { .frame { transition: none; } .feature:hover .frame { transform: none; } }
 	select { font: inherit; font-size: 13px; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--border, transparent); background: var(--surface-2); color: var(--text); max-width: 160px; }
 	@media (max-width: 640px) {
-		.hero, .sk-hero { gap: 14px; padding: 12px; height: 112px; }
-		.cover { width: 88px; }
-		.words strong { font-size: 18px; }
+		.ftitle { font-size: 18px; }
 		.pick { position: static; margin-bottom: 8px; justify-content: flex-end; }
 	}
 	@media (max-width: 767px) { .music { gap: 26px; } }

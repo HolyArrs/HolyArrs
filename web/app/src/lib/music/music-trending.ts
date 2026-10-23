@@ -125,6 +125,8 @@ export interface MusicCardData {
 	image?: string;
 	/** The artist's picture, on hero candidates (shown blurred when no album cover loads). */
 	artist_image?: string;
+	/** A Spotlight card's label above its title (New album, Climbing). */
+	kicker?: string;
 	/** YYYY-MM-DD: when it arrived, comes out or was asked for. */
 	date?: string;
 	state?: string;
