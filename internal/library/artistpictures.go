@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"net/url"
-	"strings"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/jobs"
@@ -19,8 +18,7 @@ import (
 // start and on its 6-hour schedule). It never waits on MusicBrainz.
 const KindArtistPictures = "artist_pictures"
 
-// CoverArtBase is the Cover Art Archive, whose album covers are the last
-// picture source for an artist.
+// CoverArtBase is the Cover Art Archive (album covers).
 const CoverArtBase = "https://coverartarchive.org"
 
 // Picture sources, as recorded in the Job result.
@@ -37,8 +35,8 @@ const emptyArtwork = "(artwork IS NULL OR artwork IN ('', '[]', 'null'))"
 // returns the source that filled the artwork ("" when none did or it was
 // already there). The sources, in order: TheAudioDB (only with a key set;
 // by MusicBrainz id, then by name), which also gives the wide backdrop
-// and the logo; Deezer;
-// the cover of the artist's earliest studio album. Artwork, backdrop or
+// and the logo; then the Deezer artist or Wikidata picture the artist's
+// MusicBrainz links name (never a name search, never an album cover). Artwork, backdrop or
 // logo already set is never replaced. A source that is down is skipped.
 func (s *Service) FillArtistPictures(ctx context.Context, titleID int64, by domain.Actor) (string, error) {
 	var t domain.Title
@@ -71,49 +69,12 @@ func (s *Service) FillArtistPictures(ctx context.Context, titleID int64, by doma
 		}
 	}
 	if needArt && filled == "" && s.ArtistImages != nil {
-		pic, err := s.ArtistImages.Image(ctx, t.Name)
-		if err != nil {
-			log.Printf("library: Deezer picture for artist %d: %v", titleID, err)
-		}
-		if pic != "" && s.fillArt(ctx, titleID, pic, by) {
+		if pic := s.artistPictureByIDs(ctx, mbid); pic != "" && s.fillArt(ctx, titleID, pic, by) {
 			filled = SourceDeezer
 		}
 	}
-	if needArt && filled == "" && s.CoverArtBase != "" {
-		ids, err := studioAlbums(ctx, s.Store.Read(), titleID)
-		if err != nil {
-			return "", err
-		}
-		for _, rg := range ids {
-			if s.fillArt(ctx, titleID, strings.TrimRight(s.CoverArtBase, "/")+"/release-group/"+url.PathEscape(rg)+"/front-500", by) {
-				filled = SourceCoverArt
-				break
-			}
-		}
-	}
+	// No album cover stands in for the artist: no picture beats a wrong one.
 	return filled, ctx.Err()
-}
-
-// studioAlbums are the MusicBrainz ids of an artist's studio albums out
-// already, earliest first (at most three).
-func studioAlbums(ctx context.Context, db *sql.DB, titleID int64) ([]string, error) {
-	rows, err := db.QueryContext(ctx, `SELECT json_extract(source_ids, '$.musicbrainz') FROM parts
-		WHERE title_id = ? AND kind = 'album' AND lower(COALESCE(release_type, '')) = 'album' AND secondary_types = '[]'
-		AND dropped_at IS NULL AND json_extract(source_ids, '$.musicbrainz') IS NOT NULL
-		ORDER BY release_date IS NULL, release_date, id LIMIT 3`, titleID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var out []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		out = append(out, id)
-	}
-	return out, rows.Err()
 }
 
 // fillArt caches the picture and keeps it as the artwork if the artwork is

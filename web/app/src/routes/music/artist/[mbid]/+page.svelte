@@ -23,7 +23,7 @@
 	import { releaseWords } from '#lib/music/music-trending.ts';
 	import { SkRail, SkRowTitle, SkTrackRow } from '#lib/ui/sk/index.ts';
 	import Chip from '#lib/ui/Chip.svelte';
-	import { aboutSize, albumHref, appPicture, artistHref, coverFor, haveLine, kindWord, length, owned, SHELVES, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
+	import { aboutSize, albumHref, appPicture, artistHref, artistKind, countryName, initialsOf, coverFor, haveLine, kindWord, length, owned, SHELVES, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 
 	// An artist's page: any MusicBrainz artist, in the Library or not. HolyArrs asks
@@ -128,12 +128,26 @@
 		}
 	});
 
-	const background = $derived(art.backgrounds?.[0] ?? null);
 	const picture = $derived(appPicture(hero?.image));
+	// The hero never stays empty: each wide photo in turn, then a soft crop of the artist's photo.
+	const heroList = $derived([...(art.backgrounds ?? []), ...(picture ? [picture] : [])]);
+	let heroTry = $state(0);
+	$effect(() => {
+		void heroList.length;
+		void mbid;
+		heroTry = 0;
+	});
+	const heroSrc = $derived(heroList[heroTry] ?? null);
+	const heroSoft = $derived(!!heroSrc && heroSrc === picture && !(art.backgrounds ?? []).includes(heroSrc));
+	// A picture that fails (none by the artist's id) shows initials, never a stranger.
+	let photoFailed = $state(false);
+	$effect(() => {
+		void picture;
+		photoFailed = false;
+	});
 	const facts = $derived.by(() => {
 		if (!hero) return [];
-		const type = hero.type ? hero.type.charAt(0).toUpperCase() + hero.type.slice(1) : '';
-		return [type, hero.country, hero.status === 'ended' ? 'Disbanded or retired' : '', (data?.genres ?? []).slice(0, 3).join(', ')].filter(Boolean) as string[];
+		return [artistKind(hero.type), countryName(hero.country), hero.status === 'ended' ? 'Disbanded or retired' : '', (data?.genres ?? []).slice(0, 3).join(', ')].filter(Boolean) as string[];
 	});
 	const released = $derived(data?.albums.filter((a) => !a.upcoming) ?? []);
 	// The discography chips: only kinds this artist has; have/missing by Library state.
@@ -249,16 +263,16 @@
 		{#if hero}
 			<header class="hero" data-hero>
 				<div class="stage" aria-hidden="true">
-					{#if background}
-						<img class="art" class:in={heroIn} src={background} alt="" decoding="async" fetchpriority="high" onload={() => (heroIn = true)} onerror={() => (heroIn = false)} />
-					{:else if picture}
-						<img class="art soft" class:in={heroIn} src={picture} alt="" decoding="async" onload={() => (heroIn = true)} onerror={() => (heroIn = false)} />
+					{#if heroSrc}
+						{#key heroSrc}
+							<img class="art" class:soft={heroSoft} class:in={heroIn} src={heroSrc} alt="" decoding="async" fetchpriority="high" onload={() => (heroIn = true)} onerror={() => { heroIn = false; heroTry++; }} />
+						{/key}
 					{/if}
 				</div>
 				<div class="shade" aria-hidden="true"></div>
 				{#if from?.label}<nav class="crumbs" aria-label="Breadcrumb"><a class="chip" href={from.path} onclick={stepBack} data-testid="artist-back"><Icon name={fromIcon(from.path) ?? 'chevronLeft'} size={14} />{from.label}</a></nav>{/if}
 				<div class="hero-in">
-					{#if picture}<img class="photo" src={picture} alt="" width="184" height="184" />{/if}
+					{#if picture && !photoFailed}<img class="photo" src={picture} alt="" width="184" height="184" onerror={() => (photoFailed = true)} />{:else}<div class="photo initials" aria-hidden="true">{initialsOf(hero.name)}</div>{/if}
 					{#if art.logo && !logoFailed}
 						<h1 class="logo"><img src={art.logo} alt={hero.name} onerror={() => (logoFailed = true)} /></h1>
 					{:else}
@@ -431,8 +445,8 @@
 						<p class="quiet">No write-up for this artist yet.</p>
 					{/if}
 					<dl class="kv">
-						{#if hero.type}<div><dt>Kind</dt><dd>{hero.type.charAt(0).toUpperCase() + hero.type.slice(1)}</dd></div>{/if}
-						{#if hero.country}<div><dt>From</dt><dd>{hero.country}</dd></div>{/if}
+						{#if hero.type}<div><dt>Kind</dt><dd>{artistKind(hero.type)}</dd></div>{/if}
+						{#if hero.country}<div><dt>From</dt><dd>{countryName(hero.country)}</dd></div>{/if}
 						{#if data?.genres.length}<div><dt>Genres</dt><dd>{data.genres.slice(0, 4).join(', ')}</dd></div>{/if}
 						{#if data?.total}<div><dt>Releases</dt><dd>{data.total}</dd></div>{/if}
 					</dl>
@@ -467,6 +481,7 @@
 	.chip:hover { background: rgb(255 255 255 / 24%); }
 	.hero-in { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 72px 20px clamp(28px, 4vw, 44px); text-align: center; max-width: 900px; }
 	.photo { width: 184px; height: 184px; border-radius: 50%; object-fit: cover; box-shadow: 0 30px 80px rgb(0 0 0 / .6), 0 0 0 1px rgb(255 255 255 / .14); margin-bottom: 6px; }
+	.photo.initials { display: grid; place-items: center; background: rgb(255 255 255 / .08); backdrop-filter: blur(12px); color: rgb(255 255 255 / .9); font-size: 64px; font-weight: 700; letter-spacing: .02em; }
 	h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: clamp(34px, 4.6vw, 56px); line-height: 1.05; letter-spacing: -.02em; text-wrap: balance; }
 	h1.logo img { display: block; max-width: min(440px, 80vw); max-height: 120px; object-fit: contain; filter: drop-shadow(0 4px 18px rgb(0 0 0 / .45)); }
 	.facts { margin: 0; color: rgb(255 255 255 / .7); font: var(--t-subhead); }

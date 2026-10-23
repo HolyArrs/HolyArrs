@@ -205,7 +205,7 @@ func (a *API) prefetchMusicArt(kind string, items []metadata.MusicTrendItem) {
 
 // musicTrendArt answers GET /api/v1/music-trending/art/{kind}/{mbid}: the
 // picture of an artist or album from a cached trending list, through the
-// artwork cache. Artists use the artist-picture chain's Deezer search;
+// artwork cache. Artists are found by their MusicBrainz id;
 // albums the Cover Art Archive's release group front cover.
 func (a *API) musicTrendArt(w http.ResponseWriter, r *http.Request) {
 	if a.kidMax(r) != "" {
@@ -328,13 +328,28 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name,
 	}
 	switch kind {
 	case "artist":
-		// The chart's own picture first, then the artist-picture chain.
-		if keep(it.Image) || artist(it.Name) {
+		// The artist is known by its id, never by its name alone (two
+		// artists can share a name): the chart's own picture, fanart.tv's
+		// thumb by MusicBrainz id, the Deezer artist and Wikidata picture
+		// its MusicBrainz links name, then fanart.tv's wide photo (the
+		// circle crops it). No album cover, and no picture beats a wrong one.
+		if keep(it.Image) {
 			return name, path, true
 		}
-		// fanart.tv's artist thumb, when the metadata server has a key for it.
+		var art metadata.ServerArt
 		if a.s.ExtraArt != nil {
-			if art, err := a.s.ExtraArt(ctx, "artist", mbid); err == nil && keep(art.Thumb) {
+			art, _ = a.s.ExtraArt(ctx, "artist", mbid)
+			if keep(art.Thumb) {
+				return name, path, true
+			}
+		}
+		if lib.ArtistImages != nil && metadata.ValidMBID(mbid) {
+			if keep(lib.ArtistImages.PictureByIDs(ctx, a.artistIDs(ctx, mbid))) {
+				return name, path, true
+			}
+		}
+		for _, bg := range art.Backgrounds {
+			if keep(bg) {
 				return name, path, true
 			}
 		}

@@ -234,3 +234,36 @@ export function aboutSize(bytes: number): string {
 	if (bytes >= 1 << 30) return `about ${(bytes / (1 << 30)).toFixed(1)} GB`;
 	return `about ${Math.max(1, Math.round(bytes / (1 << 20)))} MB`;
 }
+
+/** artistKind says what kind of act an artist is, in our words: a person is a solo artist; a group, orchestra or choir is a group. */
+export function artistKind(type?: string): string {
+	switch ((type ?? '').toLowerCase()) {
+		case 'person':
+			return 'Solo artist';
+		case 'group':
+		case 'orchestra':
+		case 'choir':
+			return 'Group';
+		case '':
+			return '';
+		default:
+			return 'Artist';
+	}
+}
+
+/** countryName spells out a two-letter country code (CA: Canada); other codes stay as they are. */
+export function countryName(code?: string): string {
+	const c = (code ?? '').trim();
+	if (!/^[A-Za-z]{2}$/.test(c)) return c;
+	try {
+		return new Intl.DisplayNames(['en'], { type: 'region' }).of(c.toUpperCase()) ?? c;
+	} catch {
+		return c;
+	}
+}
+
+/** initialsOf is up to two initials of a name, for a round photo with no picture. */
+export function initialsOf(name?: string): string {
+	const words = (name ?? '').split(/\s+/).map((w) => w.replace(/[^\p{L}\p{N}]/gu, '')).filter(Boolean);
+	return words.slice(0, 2).map((w) => [...w][0].toUpperCase()).join('');
+}

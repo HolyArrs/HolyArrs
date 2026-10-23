@@ -16,7 +16,8 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
-// fakePictures is a fake Deezer artist search that also serves the picture.
+// fakePictures is a fake Deezer (an artist by id, and a search that finds
+// an impostor of the same name) that also serves the pictures.
 // asked, when set, counts the requests.
 func fakePictures(t *testing.T, down *atomic.Bool, asked ...*atomic.Int32) *httptest.Server {
 	t.Helper()
@@ -31,9 +32,13 @@ func fakePictures(t *testing.T, down *atomic.Bool, asked ...*atomic.Int32) *http
 		}
 		switch r.URL.Path {
 		case "/search/artist":
+			// Another artist with the same name: never used.
 			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write([]byte(`{"data":[{"name":"Lab Band","picture_xl":"` + srv.URL + `/pic/lab-band.jpg"}]}`))
-		case "/pic/lab-band.jpg":
+			_, _ = w.Write([]byte(`{"data":[{"id":99,"name":"Lab Band","picture_xl":"` + srv.URL + `/pic/impostor.jpg"}]}`))
+		case "/artist/27":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"id":27,"name":"Lab Band","picture_xl":"` + srv.URL + `/pic/lab-band.jpg"}`))
+		case "/pic/lab-band.jpg", "/pic/impostor.jpg":
 			w.Header().Set("Content-Type", "image/jpeg")
 			_, _ = w.Write([]byte("\xff\xd8\xff\xe0" + strings.Repeat("x", 200)))
 		default:
@@ -83,6 +88,9 @@ func TestArtistImageOnAdd(t *testing.T) {
 	art := artworkOf(t, s, id)
 	if len(art) != 1 || !strings.HasPrefix(art[0], "poster:") {
 		t.Fatalf("artwork %v", art)
+	}
+	if want := "poster:" + ArtworkName(svc.ArtistImages.BaseURL+"/pic/lab-band.jpg"); art[0] != want {
+		t.Fatalf("artwork %v, want the linked artist's %s, not the same-named impostor's", art, want)
 	}
 }
 

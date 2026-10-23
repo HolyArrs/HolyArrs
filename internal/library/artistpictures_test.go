@@ -59,13 +59,18 @@ func newPictureWorld(t *testing.T) *pictureWorld {
 			_, _ = rw.Write([]byte(`{"artists":[{"strArtist":"Lab Band","strMusicBrainzID":"` + labArtist + `","strArtistThumb":"` + base +
 				`/adb-thumb.jpg","strArtistFanart":"` + base + `/fanart.jpg","strArtistLogo":"` + base + `/logo.png"}]}`))
 		case p == "/search/artist":
+			// A name search would find a same-named impostor: never asked.
+			w.log("search")
+			rw.Header().Set("Content-Type", "application/json")
+			_, _ = rw.Write([]byte(`{"data":[{"id":99,"name":"Lab Band","picture_xl":"` + w.srv.URL + `/pic/impostor.jpg"}]}`))
+		case p == "/artist/27":
 			w.log("deezer")
 			rw.Header().Set("Content-Type", "application/json")
 			if !w.deezer {
-				_, _ = rw.Write([]byte(`{"data":[]}`))
+				_, _ = rw.Write([]byte(`{"error":{"type":"DataException","code":800}}`))
 				return
 			}
-			_, _ = rw.Write([]byte(`{"data":[{"name":"Lab Band","picture_xl":"` + w.srv.URL + `/pic/deezer.jpg"}]}`))
+			_, _ = rw.Write([]byte(`{"id":27,"name":"Lab Band","picture_xl":"` + w.srv.URL + `/pic/deezer.jpg"}`))
 		case strings.HasPrefix(p, "/caa/release-group/"):
 			w.log("caa:" + strings.TrimSuffix(strings.TrimPrefix(p, "/caa/release-group/"), "/front-500"))
 			if !w.caa {
@@ -111,8 +116,8 @@ func addBareArtist(t *testing.T, svc *Service) int64 {
 }
 
 // TestArtistPicturesOrder: TheAudioDB is asked first and, when it has the
-// artist, fills the poster, backdrop and logo; Deezer comes next; the
-// earliest studio album's cover is the last resort.
+// artist, fills the poster, backdrop and logo; the Deezer artist its
+// MusicBrainz links name comes next. No name search, no album cover.
 func TestArtistPicturesOrder(t *testing.T) {
 	ctx := context.Background()
 	for _, tc := range []struct {
@@ -123,8 +128,9 @@ func TestArtistPicturesOrder(t *testing.T) {
 	}{
 		{"audiodb", true, true, true, "theaudiodb", "audiodb", true},
 		{"deezer", false, true, true, "deezer", "audiodb,audiodb,deezer", false},
-		{"cover", false, false, true, "coverartarchive", "audiodb,audiodb,deezer,caa:" + rgOld, false},
-		{"none", false, false, false, "", "audiodb,audiodb,deezer,caa:" + rgOld, false},
+		// An album cover never stands in for the artist.
+		{"cover", false, false, true, "", "audiodb,audiodb,deezer", false},
+		{"none", false, false, false, "", "audiodb,audiodb,deezer", false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			svc, s, _, _ := musicService(t)
@@ -139,7 +145,7 @@ func TestArtistPicturesOrder(t *testing.T) {
 			if src != tc.source {
 				t.Fatalf("source %q, want %q (asked %s)", src, tc.source, w.order())
 			}
-			if !strings.HasPrefix(w.order(), tc.order) {
+			if w.order() != tc.order && !(tc.source == "theaudiodb" && strings.HasPrefix(w.order(), tc.order)) {
 				t.Fatalf("asked %s, want %s", w.order(), tc.order)
 			}
 			ti := titleOf(t, s, id)
@@ -157,13 +163,13 @@ func TestArtistPicturesOrder(t *testing.T) {
 }
 
 // TestArtistPicturesNoKey: with no TheAudioDB key it is never asked; the
-// order is Deezer, then the album cover.
+// Deezer artist by id is all that is asked.
 func TestArtistPicturesNoKey(t *testing.T) {
 	ctx := context.Background()
 	for _, tc := range []struct {
 		deezer       bool
 		source, want string
-	}{{true, "deezer", "deezer"}, {false, "coverartarchive", "deezer,caa:" + rgOld}} {
+	}{{true, "deezer", "deezer"}, {false, "", "deezer"}} {
 		svc, s, _, _ := musicService(t)
 		id := addBareArtist(t, svc)
 		w := newPictureWorld(t)

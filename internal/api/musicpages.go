@@ -150,6 +150,7 @@ type pageCache struct {
 	mu   sync.Mutex
 	bios map[string]pageBio
 	dz   map[string]pageDeezer
+	ids  map[string]pageIDs
 	tags map[string]pageTags
 }
 
@@ -267,8 +268,46 @@ func (a *API) musicPageOpen(w http.ResponseWriter) bool {
 	return true
 }
 
-func (a *API) deezerProfile(ctx context.Context, name string) metadata.DeezerProfile {
-	key := strings.ToLower(name)
+// artistIDs reads an artist's Deezer and Wikidata ids from its MusicBrainz
+// links, kept a day (misses an hour).
+func (a *API) artistIDs(ctx context.Context, mbid string) metadata.ArtistIDs {
+	mbid = strings.ToLower(mbid)
+	c := musicPages
+	c.mu.Lock()
+	e, ok := c.ids[mbid]
+	c.mu.Unlock()
+	if ok && (time.Since(e.at) < time.Hour || (e.v != metadata.ArtistIDs{} && time.Since(e.at) < 24*time.Hour)) {
+		return e.v
+	}
+	if a.s.Library == nil {
+		return metadata.ArtistIDs{}
+	}
+	src, ok := a.s.Library.Artists.(metadata.ArtistIDSource)
+	if !ok {
+		return metadata.ArtistIDs{}
+	}
+	ids, err := src.ArtistIDs(ctx, mbid)
+	if err == nil || errors.Is(err, metadata.ErrArtistNotFound) {
+		c.mu.Lock()
+		if c.ids == nil || len(c.ids) > 5000 {
+			c.ids = map[string]pageIDs{}
+		}
+		c.ids[mbid] = pageIDs{v: ids, at: time.Now()}
+		c.mu.Unlock()
+	}
+	return ids
+}
+
+type pageIDs struct {
+	v  metadata.ArtistIDs
+	at time.Time
+}
+
+// deezerProfile is the artist's Deezer profile: by the Deezer id from its
+// MusicBrainz links, else by exact name with album titles that agree.
+func (a *API) deezerProfile(ctx context.Context, mbid string, art metadata.Artist) metadata.DeezerProfile {
+	name := art.Name
+	key := strings.ToLower(mbid)
 	c := musicPages
 	c.mu.Lock()
 	e, ok := c.dz[key]
@@ -279,8 +318,13 @@ func (a *API) deezerProfile(ctx context.Context, name string) metadata.DeezerPro
 	if a.s.Library == nil || a.s.Library.ArtistImages == nil {
 		return metadata.DeezerProfile{}
 	}
-	p, err := a.s.Library.ArtistImages.Profile(ctx, name)
-	if err == nil {
+	albums := make([]string, 0, len(art.Albums))
+	for _, al := range art.Albums {
+		albums = append(albums, al.Name)
+	}
+	p, err := a.s.Library.ArtistImages.ProfileFor(ctx, name, a.artistIDs(ctx, mbid).Deezer, albums)
+	// No sure match is not kept: the artist's links may come on the next view.
+	if err == nil && p.ID != 0 {
 		c.mu.Lock()
 		if len(c.dz) > 2000 {
 			c.dz = map[string]pageDeezer{}
@@ -549,7 +593,7 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 	var dz metadata.DeezerProfile
 	var bio *metadata.WikiSummary
 	wg.Add(2)
-	go func() { defer wg.Done(); dz = a.deezerProfile(side, art.Name) }()
+	go func() { defer wg.Done(); dz = a.deezerProfile(side, mbid, art) }()
 	go func() { defer wg.Done(); bio = a.artistBio(side, art.Name) }()
 	wg.Wait()
 	albums, t, err := a.pageAlbums(ctx, r, art, dz)
@@ -750,7 +794,7 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadGateway, "the music source did not answer; try again shortly")
 		return
 	}
-	dz := a.deezerProfile(ctx, art.Name)
+	dz := a.deezerProfile(ctx, artist, art)
 	albums, t, err := a.pageAlbums(ctx, r, art, dz)
 	if err != nil {
 		internal(w, err)
@@ -1251,9 +1295,16 @@ func (a *API) artistMore(w http.ResponseWriter, r *http.Request) {
 		}
 		a.warmCredits(appears)
 		sort.SliceStable(own, func(i, j int) bool { return own[i].Listeners > own[j].Listeners })
+		// The Essential albums' covers go through the cover chain now, so
+		// no card waits on (or misses) a cold picture.
+		warm := []PageCredit{}
 		for i := 0; i < len(own) && i < 6; i++ {
 			essential = append(essential, strings.ToLower(own[i].MBID))
+			c := creditOf(own[i])
+			c.MBID = strings.ToLower(c.MBID)
+			warm = append(warm, c)
 		}
+		a.warmCredits(warm)
 	}
 	w.Header().Set("Cache-Control", "private, max-age=300")
 	writeJSON(w, http.StatusOK, map[string]any{"essential": essential, "appears_on": appears})

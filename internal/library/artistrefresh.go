@@ -92,7 +92,7 @@ func (s *Service) RefreshArtist(ctx context.Context, titleID int64, by domain.Ac
 		return out, err
 	}
 	if len(t.Artwork) == 0 {
-		s.artistPicture(ctx, titleID, t.Name, by)
+		s.artistPicture(ctx, titleID, t.SourceIDs["musicbrainz"], by)
 	}
 	albums, err := store.Select[domain.Part](ctx, s.Store.Read(), "parts", "title_id = ? AND kind = 'album' AND included = 1 AND dropped_at IS NULL ORDER BY release_date, id", titleID)
 	if err != nil {

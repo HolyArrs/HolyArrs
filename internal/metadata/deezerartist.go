@@ -89,6 +89,12 @@ func (d *ArtistImages) Profile(ctx context.Context, name string) (DeezerProfile,
 	if p.ID == 0 {
 		return p, nil
 	}
+	d.fillProfile(ctx, &p)
+	return p, nil
+}
+
+// fillProfile reads the top songs and albums of the Deezer artist p.ID.
+func (d *ArtistImages) fillProfile(ctx context.Context, p *DeezerProfile) {
 	id := strconv.FormatInt(p.ID, 10)
 	var top struct {
 		Data []struct {
@@ -120,7 +126,6 @@ func (d *ArtistImages) Profile(ctx context.Context, name string) (DeezerProfile,
 			p.Albums = append(p.Albums, DeezerAlbum{ID: a.ID, Title: a.Title, Explicit: a.Explicit, Cover: a.Cover, Date: a.Date})
 		}
 	}
-	return p, nil
 }
 
 // AlbumInfo reads one Deezer album's label and its tracks' explicit marks.

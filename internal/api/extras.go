@@ -140,7 +140,15 @@ func (a *API) titleExtras(w http.ResponseWriter, r *http.Request) {
 		}
 		settled = settled && (err == nil || errors.Is(err, metadata.ErrNotFound))
 	}
+	// An artist with no wide photo is asked again on the next view: the
+	// server's art source may only have been out of budget for a moment.
+	if kind == "artist" && len(v.Backgrounds) == 0 {
+		settled = false
+	}
 	if !settled {
+		// A hiccup's empty answer is never kept, not even by the browser:
+		// the artist hero would stay without its wide photo.
+		w.Header().Set("Cache-Control", "no-store")
 		writeJSON(w, http.StatusOK, v)
 		return
 	}

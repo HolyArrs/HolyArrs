@@ -287,16 +287,29 @@ func (s *Service) AddArtist(ctx context.Context, id string, opt ArtistAddOptions
 // artistPicture finds an artist's picture and keeps it as the artist's
 // artwork. Nothing found, or the picture source down, changes nothing and
 // fails nothing.
-func (s *Service) artistPicture(ctx context.Context, titleID int64, name string, by domain.Actor) {
+func (s *Service) artistPicture(ctx context.Context, titleID int64, mbid string, by domain.Actor) {
 	if s.ArtistImages == nil || s.Artwork == nil {
 		return
 	}
-	pic, err := s.ArtistImages.Image(ctx, name)
-	if err != nil {
-		log.Printf("library: picture for artist %d: %v", titleID, err)
-		return
+	if pic := s.artistPictureByIDs(ctx, mbid); pic != "" {
+		s.cachePoster(ctx, titleID, pic, by)
 	}
-	s.cachePoster(ctx, titleID, pic, by)
+}
+
+// artistPictureByIDs is the artist's picture from the Deezer artist or
+// Wikidata item its MusicBrainz links name: by id, never by name, as two
+// artists can share a name.
+func (s *Service) artistPictureByIDs(ctx context.Context, mbid string) string {
+	src, ok := s.Artists.(metadata.ArtistIDSource)
+	if !ok || s.ArtistImages == nil || !metadata.ValidMBID(mbid) {
+		return ""
+	}
+	ids, err := src.ArtistIDs(ctx, mbid)
+	if err != nil {
+		log.Printf("library: links of artist %s: %v", mbid, err)
+		return ""
+	}
+	return s.ArtistImages.PictureByIDs(ctx, ids)
 }
 
 // ArtistSync says what one sync of an artist's albums, Pressings and

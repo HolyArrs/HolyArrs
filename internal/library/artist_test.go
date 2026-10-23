@@ -30,6 +30,14 @@ type fakeMusic struct {
 	partial  bool
 }
 
+// ArtistIDs: every fake artist links Deezer artist 27 (labDeezerID).
+func (f *fakeMusic) ArtistIDs(_ context.Context, mbid string) (metadata.ArtistIDs, error) {
+	return metadata.ArtistIDs{Deezer: labDeezerID}, nil
+}
+
+// labDeezerID is the Deezer artist the fake MusicBrainz links Lab Band to.
+const labDeezerID = 27
+
 func (f *fakeMusic) SearchArtists(_ context.Context, q string) ([]metadata.Artist, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()

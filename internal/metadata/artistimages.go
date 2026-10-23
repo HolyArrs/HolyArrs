@@ -33,6 +33,8 @@ type ArtistImages struct {
 	UserAgent string
 	// WikiBase is Wikipedia's REST address for artist bios (default WikiBioBase).
 	WikiBase string
+	// WikidataBase is Wikidata's API for artist pictures (default WikidataBase).
+	WikidataBase string
 
 	once sync.Once
 	g    *getter
