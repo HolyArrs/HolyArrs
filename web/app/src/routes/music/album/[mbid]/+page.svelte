@@ -56,6 +56,13 @@
 		busy = true;
 		error = '';
 		// All at once: the hero, the tracks, the similar artists and the ask state.
+		void api.get<AlbumPageData>(`/music/albums/${mbid}?artist=${artist}&similar=0`).then((d) => {
+			if (still()) data = d;
+		}).catch((e) => {
+			if (still()) error = message(e);
+		}).finally(() => {
+			if (still()) busy = false;
+		});
 		void api.get<AlbumCoreData>(`/music/albums/${mbid}?part=core&artist=${artist}`).then((c) => still() && !data && (core = c)).catch(() => {});
 		// A bare album link has no artist: skip the artist calls instead of asking for /music/artists/.
 		if (!artist) similar = [];
@@ -64,13 +71,6 @@
 		if (artist) void api.get<{ artists: LookupArtist[] }>(`/artists/lookup?term=${encodeURIComponent(`mbid:${artist}`)}`).then((r) => {
 			if (still()) lookup = r.artists[0] ?? null;
 		}).catch(() => {});
-		void api.get<AlbumPageData>(`/music/albums/${mbid}?artist=${artist}&similar=0`).then((d) => {
-			if (still()) data = d;
-		}).catch((e) => {
-			if (still()) error = message(e);
-		}).finally(() => {
-			if (still()) busy = false;
-		});
 	}
 
 	$effect(() => {
@@ -167,8 +167,6 @@
 	<PageLoader loading={!hero && !error} label="Loading this album" onretry={load}>
 		{#if hero && !(error && !data)}
 			<header class="hero" data-hero>
-				{#if cover}<img class="wash" src={cover} alt="" aria-hidden="true" />{/if}
-				<div class="shade" aria-hidden="true"></div>
 				{#if from?.label}<nav class="crumbs" aria-label="Breadcrumb"><a class="chip" href={from.path} onclick={stepBack} data-testid="album-back"><Icon name={fromIcon(from.path) ?? 'chevronLeft'} size={14} />{from.label}</a></nav>{/if}
 				<div class="hero-in">
 					<div class="cover" class:in={coverIn}>
