@@ -45,7 +45,7 @@ type Deluge struct {
 // NewDeluge makes an engine for a Deluge Web UI at base.
 func NewDeluge(base, pass string, h *http.Client) *Deluge {
 	if h == nil {
-		h = &http.Client{Timeout: 15 * time.Second}
+		h = &http.Client{Timeout: clientTimeout}
 	}
 	c := *h
 	if c.Jar == nil {

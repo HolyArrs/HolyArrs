@@ -186,7 +186,7 @@ type API struct {
 	ahead musicAhead
 	artWarm artWarmer
 	ctl   musicControl
-	// artistVideos keeps each artist's music videos an hour.
+	// artistVideos keeps each artist's music videos (see music_video.go).
 	artistVideos artistVideoCache
 }
 

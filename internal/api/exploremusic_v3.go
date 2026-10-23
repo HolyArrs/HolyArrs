@@ -25,6 +25,9 @@ import (
 const (
 	musicArtistTTL = 7 * 24 * time.Hour // similarity and listeners: weekly
 	musicMissTTL   = time.Hour
+	// musicEmptyTTL keeps an empty value (no similar artists, 0 listeners,
+	// no genres or albums) only minutes (cache audit 2026-10-23).
+	musicEmptyTTL = 10 * time.Minute
 	musicSeedsTop  = 10
 	musicSimilarS  = 0.3
 )
@@ -126,7 +129,11 @@ func (a *API) musicBatch(ctx context.Context, prefix string, ids []string, chunk
 				return
 			}
 			for _, id := range part {
-				if v, ok := got[id]; ok && v != nil {
+				if v, ok := got[id]; ok && v != nil && musicEmpty(v) {
+					// Empty is not final: used now, asked again soon, never on disk.
+					out[id] = v
+					a.musicv2.cand.Put(prefix+id, v, musicEmptyTTL, now)
+				} else if ok && v != nil {
 					out[id] = v
 					fetched[id] = v
 					a.musicv2.cand.Put(prefix+id, v, musicArtistTTL, now)
@@ -139,6 +146,19 @@ func (a *API) musicBatch(ctx context.Context, prefix string, ids []string, chunk
 	wg.Wait()
 	a.musicDiskWrite(ctx, prefix, fetched, now)
 	return out
+}
+
+// musicEmpty says a layer-1 value holds nothing yet.
+func musicEmpty(v any) bool {
+	switch x := v.(type) {
+	case int64:
+		return x == 0
+	case []metadata.MusicSimilarScore:
+		return len(x) == 0
+	case *metadata.MusicArtistData:
+		return x == nil || len(x.Genres) == 0 && len(x.Albums) == 0
+	}
+	return false
 }
 
 func (a *API) musicListenersOf(ctx context.Context, ids []string, now time.Time) map[string]int64 {

@@ -26,7 +26,7 @@ type Sabnzbd struct {
 // NewSabnzbd makes an engine for the SABnzbd at base (such as http://sabnzbd:8080).
 func NewSabnzbd(base, key string, h *http.Client) *Sabnzbd {
 	if h == nil {
-		h = &http.Client{Timeout: 15 * time.Second}
+		h = &http.Client{Timeout: clientTimeout}
 	}
 	return &Sabnzbd{base: strings.TrimRight(base, "/"), key: key, http: h}
 }

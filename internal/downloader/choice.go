@@ -19,6 +19,10 @@ import (
 )
 
 // Back-off after a Downloader fails: 1 minute, doubling, at most 30.
+// clientTimeout bounds one call to a download client; a busy NAS client
+// (a recheck running) can take longer than 15 s to answer.
+const clientTimeout = 30 * time.Second
+
 const (
 	backoffFirst = time.Minute
 	backoffMost  = 30 * time.Minute
@@ -46,7 +50,7 @@ func Client(base string, allowLocal bool) *http.Client {
 		return d.DialContext(ctx, network, addr)
 	}
 	return &http.Client{
-		Timeout:   15 * time.Second,
+		Timeout:   clientTimeout,
 		Transport: &http.Transport{Proxy: nil, DialContext: dial, TLSHandshakeTimeout: 10 * time.Second, MaxIdleConnsPerHost: 2},
 		CheckRedirect: func(r *http.Request, via []*http.Request) error {
 			if r.URL.Host != host || r.URL.Scheme != scheme || len(via) > 3 {

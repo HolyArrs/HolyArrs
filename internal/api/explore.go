@@ -47,11 +47,11 @@ const exploreListBurst = 10
 // exploreListTTL is how long one outside list is kept for pool builds.
 var exploreListTTL = map[string]time.Duration{
 	"trending": 6 * time.Hour, "upcoming": 12 * time.Hour, "best": 24 * time.Hour, "now_playing": 12 * time.Hour,
-	"similar": 24 * time.Hour, "discover": 12 * time.Hour, "person": 7 * 24 * time.Hour,
+	"similar": 24 * time.Hour, "discover": 12 * time.Hour, "person": 24 * time.Hour,
 	// weekly is a discover list kept a week (Top on your services).
 	"weekly": 7 * 24 * time.Hour,
-	// A collection's movies rarely change.
-	"collection": 7 * 24 * time.Hour,
+	// A new film joins a collection now and then; a day is soon enough.
+	"collection": 24 * time.Hour,
 }
 
 type poolKey struct {

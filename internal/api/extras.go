@@ -153,9 +153,7 @@ func (a *API) titleExtras(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c.mu.Lock()
-	if len(c.seen) > 5000 {
-		c.seen = map[string]extrasEntry{}
-	}
+	keepUnder(c.seen, 5000, func(e extrasEntry) time.Time { return e.at })
 	c.seen[key] = extrasEntry{v: v, at: time.Now()}
 	c.mu.Unlock()
 	writeJSON(w, http.StatusOK, v)

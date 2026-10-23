@@ -29,7 +29,7 @@ type Qbittorrent struct {
 // NewQbittorrent makes an engine for the Web UI at base (such as http://qbittorrent:8090).
 func NewQbittorrent(base string, h *http.Client) *Qbittorrent {
 	if h == nil {
-		h = &http.Client{Timeout: 15 * time.Second}
+		h = &http.Client{Timeout: clientTimeout}
 	}
 	return &Qbittorrent{base: strings.TrimRight(base, "/"), http: h}
 }

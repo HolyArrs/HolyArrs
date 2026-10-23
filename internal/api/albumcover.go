@@ -48,7 +48,9 @@ func (a *API) albumCoverArt(w http.ResponseWriter, r *http.Request) {
 	}
 	name := library.ArtworkName(src)
 	path, ok := lib.Artwork.Path(name)
-	if !ok {
+	if ok {
+		lib.Artwork.Recheck(src, nil)
+	} else {
 		if _, err := lib.Artwork.Fetch(r.Context(), src); err != nil {
 			http.Error(w, "picture unavailable", http.StatusNotFound)
 			return

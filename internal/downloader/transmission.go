@@ -43,7 +43,7 @@ func transmissionDefinitelyRefused(err error) bool {
 
 func NewTransmission(base, user, pass string, h *http.Client) *Transmission {
 	if h == nil {
-		h = &http.Client{Timeout: 15 * time.Second}
+		h = &http.Client{Timeout: clientTimeout}
 	}
 	base = strings.TrimRight(base, "/")
 	u, err := url.Parse(base)

@@ -71,7 +71,7 @@ func TestMusicTrendingListsAndPictures(t *testing.T) {
 		t.Fatalf("artists %+v", b)
 	}
 	resp, err := http.Get(srv.URL + "/api/v1/music-trending/art/album/" + trendGroup)
-	if err != nil || resp.StatusCode != 200 || resp.Header.Get("Cache-Control") != "private, max-age=31536000, immutable" {
+	if err != nil || resp.StatusCode != 200 || resp.Header.Get("Cache-Control") != "private, max-age=86400" {
 		t.Fatalf("cover %v %d", err, resp.StatusCode)
 	}
 	resp.Body.Close()

@@ -651,9 +651,17 @@ func (a *API) tmdbArtwork(w http.ResponseWriter, r *http.Request) {
 }
 
 // serveArtwork sends a cached picture as it is stored (no re-compression).
-// Cache names come from the picture's address, so a name never holds other
-// bytes: browsers may keep it for a year, and the name is its ETag.
+// Cache names come from the picture's address. Where the address names
+// the bytes (TMDB, fanart.tv, Deezer) browsers keep it a year; a picture
+// from a stable address (a cover that may change in place) is kept a day
+// and then revalidated with an ETag that follows the file.
 func serveArtwork(w http.ResponseWriter, r *http.Request, name, p string) {
+	if library.StableFile(p) {
+		if st, err := os.Stat(p); err == nil {
+			serveArtworkCached(w, r, strings.TrimSuffix(name, filepath.Ext(name))+"-"+strconv.FormatInt(st.ModTime().Unix(), 36)+filepath.Ext(name), p, "private, max-age=86400")
+			return
+		}
+	}
 	serveArtworkCached(w, r, name, p, "private, max-age=31536000, immutable")
 }
 

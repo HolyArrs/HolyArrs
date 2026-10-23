@@ -38,12 +38,14 @@ type ArtworkCache struct {
 	// Redirects are checked against Allowed either way.
 	HTTP *http.Client
 	mu   sync.Mutex
+	// checking holds the addresses being re-checked in the background.
+	checking map[string]bool
 }
 
 // ErrArtworkURL means a picture URL is not from an allowed place.
 var ErrArtworkURL = errors.New("picture URL is not from an allowed host")
 
-// serverPictureKeep is how long a metadata server picture is used before it is asked again.
+// serverPictureKeep is how long a picture at a stable address is used before it is checked again.
 const serverPictureKeep = 24 * time.Hour
 
 // ArtworkName is the cache file name for a picture URL.
@@ -89,21 +91,104 @@ func (c *ArtworkCache) Fetch(ctx context.Context, url string) (string, error) {
 var ErrArtworkRejected = errors.New("picture: rejected")
 
 // FetchUnless is Fetch, but nothing is stored when reject (given the
-// response headers) says the answer is only a stand-in.
+// response headers) says the answer is only a stand-in. The metadata
+// server's own stand-in (X-Metadata-Placeholder) is always refused.
 func (c *ArtworkCache) FetchUnless(ctx context.Context, url string, reject func(http.Header) bool) (string, error) {
 	if !c.allowed(url) {
 		return "", ErrArtworkURL
 	}
 	name := ArtworkName(url)
 	path := filepath.Join(c.Dir, name)
-	// The metadata server may pick a newer photo under the same address,
-	// so its pictures are asked again once a day.
-	if st, err := os.Stat(path); err == nil && !(strings.Contains(url, "/v1/img/") && time.Since(st.ModTime()) > serverPictureKeep) {
+	// A stored picture answers at once; one whose address may later show
+	// another picture is re-checked in the background.
+	if _, err := os.Stat(path); err == nil {
+		c.Recheck(url, reject)
 		return name, nil
 	}
 	if err := os.MkdirAll(c.Dir, 0o750); err != nil {
 		return "", err
 	}
+	if _, err := c.download(ctx, url, reject, ""); err != nil {
+		return "", err
+	}
+	return name, nil
+}
+
+// StableArtworkURL says the picture at url may change while its address
+// stays the same (Cover Art Archive fronts, the metadata server's cover
+// and unversioned picture routes). TMDB, fanart.tv and Deezer names change
+// with the picture.
+func StableArtworkURL(url string) bool {
+	u, err := neturl.Parse(url)
+	if err != nil {
+		return false
+	}
+	switch p := u.Path; {
+	case strings.Contains(p, "/v1/img/"):
+		return u.Query().Get("v") == ""
+	case strings.Contains(p, "/v1/music/cover/"), strings.Contains(p, "/release-group/"), strings.Contains(p, "/release/"):
+		return true
+	}
+	return false
+}
+
+// StableFile says the stored picture at path came from a stable address
+// (it has a check file), so its bytes may be replaced in place.
+func StableFile(path string) bool {
+	_, err := os.Stat(filepath.Join(filepath.Dir(path), checkName(filepath.Base(path))))
+	return err == nil
+}
+
+// checkName is the hidden file beside a picture that keeps its ETag; its
+// time is when the picture was last checked.
+func checkName(name string) string { return ".chk-" + name }
+
+// Recheck asks the source again, in the background and at most daily, for a
+// stored picture whose address is stable: the ETag is sent, so an unchanged
+// picture costs a 304 and no download. Pages never wait on it.
+func (c *ArtworkCache) Recheck(url string, reject func(http.Header) bool) {
+	if !StableArtworkURL(url) || !c.allowed(url) {
+		return
+	}
+	chk := filepath.Join(c.Dir, checkName(ArtworkName(url)))
+	if st, err := os.Stat(chk); err == nil && time.Since(st.ModTime()) < serverPictureKeep {
+		return
+	}
+	c.mu.Lock()
+	if c.checking == nil {
+		c.checking = map[string]bool{}
+	}
+	if c.checking[url] {
+		c.mu.Unlock()
+		return
+	}
+	c.checking[url] = true
+	c.mu.Unlock()
+	go func() {
+		defer func() {
+			c.mu.Lock()
+			delete(c.checking, url)
+			c.mu.Unlock()
+		}()
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		etag, _ := os.ReadFile(chk)
+		if _, err := c.download(ctx, url, reject, string(etag)); err != nil {
+			// Try again in an hour; the stored picture keeps answering.
+			at := time.Now().Add(time.Hour - serverPictureKeep)
+			if os.Chtimes(chk, at, at) != nil {
+				_ = os.WriteFile(chk, etag, 0o640)
+				_ = os.Chtimes(chk, at, at)
+			}
+		}
+	}()
+}
+
+// download fetches url into the cache (with If-None-Match when etag is
+// set) and records its ETag and check time; a 304 only marks the check.
+func (c *ArtworkCache) download(ctx context.Context, url string, reject func(http.Header) bool, etag string) (int, error) {
+	name := ArtworkName(url)
+	path := filepath.Join(c.Dir, name)
 	base := c.HTTP
 	if base == nil {
 		base = ArtworkClient()
@@ -118,25 +203,36 @@ func (c *ArtworkCache) FetchUnless(ctx context.Context, url string, reject func(
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return "", err
+		return 0, err
+	}
+	if etag != "" {
+		req.Header.Set("If-None-Match", etag)
 	}
 	resp, err := cl.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("picture: %w", err)
+		return 0, fmt.Errorf("picture: %w", err)
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("picture: answered %d", resp.StatusCode)
+	chk := filepath.Join(c.Dir, checkName(name))
+	if resp.StatusCode == http.StatusNotModified && etag != "" {
+		now := time.Now()
+		if os.Chtimes(chk, now, now) != nil {
+			_ = os.WriteFile(chk, []byte(etag), 0o640)
+		}
+		return resp.StatusCode, nil
 	}
-	if reject != nil && reject(resp.Header) {
-		return "", ErrArtworkRejected
+	if resp.StatusCode != http.StatusOK {
+		return resp.StatusCode, fmt.Errorf("picture: answered %d", resp.StatusCode)
+	}
+	if resp.Header.Get("X-Metadata-Placeholder") != "" || (reject != nil && reject(resp.Header)) {
+		return resp.StatusCode, ErrArtworkRejected
 	}
 	if ct := resp.Header.Get("Content-Type"); ct != "" && !strings.HasPrefix(ct, "image/") {
-		return "", fmt.Errorf("picture: not an image (%s)", ct)
+		return resp.StatusCode, fmt.Errorf("picture: not an image (%s)", ct)
 	}
 	tmp, err := os.CreateTemp(c.Dir, ".part-*")
 	if err != nil {
-		return "", err
+		return resp.StatusCode, err
 	}
 	n, err := io.Copy(tmp, io.LimitReader(resp.Body, maxPicture+1))
 	_ = tmp.Close()
@@ -145,14 +241,17 @@ func (c *ArtworkCache) FetchUnless(ctx context.Context, url string, reject func(
 	}
 	if err != nil {
 		_ = os.Remove(tmp.Name())
-		return "", err
+		return resp.StatusCode, err
 	}
 	if err := os.Rename(tmp.Name(), path); err != nil {
 		_ = os.Remove(tmp.Name())
-		return "", err
+		return resp.StatusCode, err
+	}
+	if StableArtworkURL(url) {
+		_ = os.WriteFile(chk, []byte(resp.Header.Get("ETag")), 0o640)
 	}
 	c.trim()
-	return name, nil
+	return resp.StatusCode, nil
 }
 
 // Path returns the file for a cache name and marks it used; ok is false

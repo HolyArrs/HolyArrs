@@ -151,9 +151,7 @@ func (a *API) warmArtistExtras(ctx context.Context, mbid string) {
 	}
 	if len(art.Backgrounds) > 0 {
 		c.mu.Lock()
-		if len(c.seen) > 5000 {
-			c.seen = map[string]extrasEntry{}
-		}
+		keepUnder(c.seen, 5000, func(e extrasEntry) time.Time { return e.at })
 		c.seen[key] = extrasEntry{v: TitleExtras{Logo: art.Logo, Thumb: art.Thumb, Banner: art.Banner, Backgrounds: art.Backgrounds, Scores: []OutsideScore{}}, at: time.Now()}
 		c.mu.Unlock()
 	}

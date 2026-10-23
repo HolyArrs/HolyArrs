@@ -19,12 +19,12 @@ import (
 
 // Wide title cards show their title on the art (docs/design-review/apple/
 // spec.md, card system). The picture is chosen on the server once per
-// title and language, kept 30 days in card_art, and handed out with the
+// title and language, kept 7 days in card_art, and handed out with the
 // Explore and Home answers. Page loads only read the table; the image
 // lists are fetched by the Explore pool job, one paced call per title.
 
 const (
-	cardArtTTL = 30 * 24 * time.Hour
+	cardArtTTL = 7 * 24 * time.Hour
 	// cardArtGap spaces the image list calls of the pool job.
 	cardArtGap = 400 * time.Millisecond
 	// cardArtLangTTL is how long a language asked by a page keeps being filled.

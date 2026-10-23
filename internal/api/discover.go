@@ -497,6 +497,10 @@ func detailsTTL(e discoverEntry) time.Duration {
 	if e.details != nil && peopleWithoutIDs(e.details.People) {
 		return 0
 	}
+	if e.details != nil && len(e.details.Videos) == 0 {
+		// No trailer yet: asked again soon (the server may find a season's).
+		return 15 * time.Minute
+	}
 	return discoverTTL["details"]
 }
 

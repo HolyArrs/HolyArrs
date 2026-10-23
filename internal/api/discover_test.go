@@ -432,7 +432,7 @@ func TestDetailsWithMissedCollectionAreKeptBriefly(t *testing.T) {
 	if got := detailsTTL(discoverEntry{details: &metadata.Details{CollectionMissed: true}}); got != collectionRetry {
 		t.Fatalf("missed collection kept %v", got)
 	}
-	if got := detailsTTL(discoverEntry{details: &metadata.Details{}}); got != discoverTTL["details"] {
+	if got := detailsTTL(discoverEntry{details: &metadata.Details{Videos: []metadata.DetailVideo{{Key: "k"}}}}); got != discoverTTL["details"] {
 		t.Fatalf("details kept %v", got)
 	}
 }
@@ -443,11 +443,11 @@ func TestDetailsTTLRefreshesPeopleWithoutIDs(t *testing.T) {
 	if got := detailsTTL(old); got != 0 {
 		t.Fatalf("no ids: ttl %v, want 0", got)
 	}
-	fresh := discoverEntry{details: &metadata.Details{People: []metadata.DetailPerson{{Name: "Ann", Role: "actor", ID: "21"}}}}
+	fresh := discoverEntry{details: &metadata.Details{Videos: []metadata.DetailVideo{{Key: "k"}}, People: []metadata.DetailPerson{{Name: "Ann", Role: "actor", ID: "21"}}}}
 	if got := detailsTTL(fresh); got != discoverTTL["details"] {
 		t.Fatalf("with ids: ttl %v", got)
 	}
-	if got := detailsTTL(discoverEntry{details: &metadata.Details{}}); got != discoverTTL["details"] {
+	if got := detailsTTL(discoverEntry{details: &metadata.Details{Videos: []metadata.DetailVideo{{Key: "k"}}}}); got != discoverTTL["details"] {
 		t.Fatalf("no people: ttl %v", got)
 	}
 }

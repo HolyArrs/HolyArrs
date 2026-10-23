@@ -46,7 +46,7 @@ type NZBGet struct {
 // NewNZBGet makes an engine for the NZBGet control address.
 func NewNZBGet(base, user, pass string, h *http.Client) *NZBGet {
 	if h == nil {
-		h = &http.Client{Timeout: 15 * time.Second}
+		h = &http.Client{Timeout: clientTimeout}
 	}
 	return &NZBGet{base: strings.TrimRight(base, "/"), user: user, pass: pass, http: h}
 }

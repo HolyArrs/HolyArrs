@@ -33,7 +33,16 @@ type ArtistVideoView struct {
 	ExpiresAt time.Time `json:"expires_at"`
 }
 
-const artistVideosKeep = time.Hour
+// A non-empty list is kept on disk and re-checked daily in the background
+// (the page never waits on that check); an empty list is re-asked after a
+// few minutes; a pending or failed answer is not kept (cache audit
+// 2026-10-23).
+const (
+	artistVideosFresh = 24 * time.Hour
+	artistVideosEmpty = 5 * time.Minute
+	artistVideosDisk  = 30 * 24 * time.Hour
+	artistVideosMax   = 2000
+)
 
 type artistVideoList struct {
 	at   time.Time
@@ -41,31 +50,133 @@ type artistVideoList struct {
 }
 
 type artistVideoCache struct {
-	mu sync.Mutex
-	m  map[string]artistVideoList
+	mu   sync.Mutex
+	m    map[string]artistVideoList
+	busy map[string]bool
+	now  func() time.Time
 }
 
-// videosOf reads the artist's videos, kept an hour (none: kept too).
+func (c *artistVideoCache) clock() time.Time {
+	if c.now != nil {
+		return c.now()
+	}
+	return time.Now()
+}
+
+func (c *artistVideoCache) putLocked(k string, e artistVideoList) {
+	if c.m == nil {
+		c.m = map[string]artistVideoList{}
+	}
+	if _, has := c.m[k]; !has {
+		keepUnder(c.m, artistVideosMax, func(v artistVideoList) time.Time { return v.at })
+	}
+	c.m[k] = e
+}
+
+type storedVideos struct {
+	At     time.Time               `json:"at"`
+	Videos []metadata.ArtistVideo `json:"videos"`
+}
+
+func videoDiskKey(mbid string) string { return "artistvideos|" + mbid }
+
+// keepVideos stores a list in memory, and on disk when it is not empty.
+func (a *API) keepVideos(ctx context.Context, mbid string, e artistVideoList) {
+	c := &a.artistVideos
+	c.mu.Lock()
+	c.putLocked(mbid, e)
+	c.mu.Unlock()
+	if a.s.Store == nil {
+		return
+	}
+	lc := store.LookupCache{Store: a.s.Store}
+	if len(e.list) == 0 {
+		_ = lc.Put(context.WithoutCancel(ctx), videoDiskKey(mbid), []byte("{}"), e.at, e.at)
+		return
+	}
+	if b, err := json.Marshal(storedVideos{At: e.at, Videos: e.list}); err == nil {
+		_ = lc.Put(context.WithoutCancel(ctx), videoDiskKey(mbid), b, e.at, e.at.Add(artistVideosDisk))
+	}
+}
+
+// videosOf reads the artist's videos: memory, then disk, then the server.
 func (a *API) videosOf(ctx context.Context, mbid string) []metadata.ArtistVideo {
 	c := &a.artistVideos
-	now := time.Now()
+	now := c.clock()
 	c.mu.Lock()
 	e, ok := c.m[mbid]
 	c.mu.Unlock()
-	if ok && now.Sub(e.at) < artistVideosKeep {
-		return e.list
+	if !ok && a.s.Store != nil {
+		if b, found, _ := (store.LookupCache{Store: a.s.Store}).Get(ctx, videoDiskKey(mbid), time.Now()); found {
+			var sv storedVideos
+			if json.Unmarshal(b, &sv) == nil && len(sv.Videos) > 0 {
+				e, ok = artistVideoList{at: sv.At, list: sv.Videos}, true
+				c.mu.Lock()
+				c.putLocked(mbid, e)
+				c.mu.Unlock()
+			}
+		}
 	}
-	l, err := a.s.ArtistVideos(ctx, mbid)
-	if err != nil && ctx.Err() != nil {
+	switch {
+	case ok && len(e.list) > 0:
+		if now.Sub(e.at) >= artistVideosFresh {
+			a.recheckVideos(mbid)
+		}
+		return e.list
+	case ok && now.Sub(e.at) < artistVideosEmpty:
 		return nil
 	}
-	c.mu.Lock()
-	if c.m == nil || len(c.m) > 2000 {
-		c.m = map[string]artistVideoList{}
+	l, err := a.s.ArtistVideos(ctx, mbid)
+	if err != nil {
+		return nil
 	}
-	c.m[mbid] = artistVideoList{at: now, list: l}
-	c.mu.Unlock()
+	a.keepVideos(ctx, mbid, artistVideoList{at: now, list: l})
 	return l
+}
+
+// recheckVideos asks the server again in the background; a failed or empty
+// answer keeps the list it has.
+func (a *API) recheckVideos(mbid string) {
+	c := &a.artistVideos
+	c.mu.Lock()
+	if c.busy == nil {
+		c.busy = map[string]bool{}
+	}
+	if c.busy[mbid] {
+		c.mu.Unlock()
+		return
+	}
+	c.busy[mbid] = true
+	c.mu.Unlock()
+	go func() {
+		defer func() {
+			c.mu.Lock()
+			delete(c.busy, mbid)
+			c.mu.Unlock()
+		}()
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		l, err := a.s.ArtistVideos(ctx, mbid)
+		if err == nil && len(l) > 0 {
+			a.keepVideos(ctx, mbid, artistVideoList{at: c.clock(), list: l})
+		}
+	}()
+}
+
+// dropVideo removes a video that would not play from the kept list.
+func (a *API) dropVideo(ctx context.Context, mbid, id string) []metadata.ArtistVideo {
+	c := &a.artistVideos
+	c.mu.Lock()
+	e := c.m[mbid]
+	c.mu.Unlock()
+	kept := make([]metadata.ArtistVideo, 0, len(e.list))
+	for _, v := range e.list {
+		if v.ID != id {
+			kept = append(kept, v)
+		}
+	}
+	a.keepVideos(ctx, mbid, artistVideoList{at: e.at, list: kept})
+	return kept
 }
 
 // videoStart picks the start point: the server's most replayed point,
@@ -108,20 +219,34 @@ func (a *API) artistVideo(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusNotFound, "no video")
 		return
 	}
-	v := vids[rand.IntN(len(vids))]
-	ckey := "musicvideo|" + v.ID
-	now := time.Now()
-	if _, ok := a.trailers.get(ckey, now); !ok && !a.trailerStored(r.Context(), ckey, now) && !a.trailers.inFlight(ckey) {
-		if !a.trailers.allow(a.person(r).UserID, now) {
-			w.Header().Set("Retry-After", "60")
-			fail(w, http.StatusTooManyRequests, "too many videos; try again in a minute")
+	// A video that will not play is dropped and another one is tried.
+	var v metadata.ArtistVideo
+	var s TrailerStream
+	for tries := 0; ; tries++ {
+		if len(vids) == 0 || tries >= 4 {
+			fail(w, http.StatusNotFound, "no direct stream")
 			return
 		}
-	}
-	s, err := a.resolveMusicVideo(r.Context(), v.ID)
-	if err != nil || s.Type != "hls" {
-		fail(w, http.StatusNotFound, "no direct stream")
-		return
+		v = vids[rand.IntN(len(vids))]
+		ckey := "musicvideo|" + v.ID
+		now := time.Now()
+		if _, ok := a.trailers.get(ckey, now); !ok && !a.trailerStored(r.Context(), ckey, now) && !a.trailers.inFlight(ckey) {
+			if !a.trailers.allow(a.person(r).UserID, now) {
+				w.Header().Set("Retry-After", "60")
+				fail(w, http.StatusTooManyRequests, "too many videos; try again in a minute")
+				return
+			}
+		}
+		var err error
+		s, err = a.resolveMusicVideo(r.Context(), v.ID)
+		if err == nil && s.Type == "hls" {
+			break
+		}
+		if r.Context().Err() != nil {
+			fail(w, http.StatusNotFound, "no direct stream")
+			return
+		}
+		vids = a.dropVideo(r.Context(), mbid, v.ID)
 	}
 	id := a.trailerRelay.register(a.person(r).UserID, s.URL, s.ExpiresAt)
 	if id == "" {

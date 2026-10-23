@@ -85,8 +85,15 @@ func musicGenreArts(g metadata.MusicGenre) []string {
 // musicGenreArtCache keeps tile pictures by slug and version.
 type musicGenreArtCache struct {
 	mu   sync.Mutex
-	pics map[string][]byte
+	pics map[string]genrePic
 }
+
+type genrePic struct {
+	b  []byte
+	at time.Time
+}
+
+const genreArtMax = 200
 
 // musicGenreArt answers GET /api/v1/music/genre-art/{slug}?v=: the grey
 // tile picture from the metadata server, kept in memory.
@@ -109,24 +116,31 @@ func (a *API) musicGenreArt(w http.ResponseWriter, r *http.Request) {
 	key := name + "?" + v
 	c := &a.genreArt
 	c.mu.Lock()
-	pic, ok := c.pics[key]
+	got, ok := c.pics[key]
 	c.mu.Unlock()
+	pic := got.b
 	if !ok {
-		got, err := a.s.MusicGenreTile(r.Context(), name, v)
+		fetched, err := a.s.MusicGenreTile(r.Context(), name, v)
 		if err != nil {
 			http.NotFound(w, r)
 			return
 		}
-		pic = got
+		pic = fetched
 		c.mu.Lock()
-		if c.pics == nil || len(c.pics) > 200 {
-			c.pics = map[string][]byte{}
+		if c.pics == nil {
+			c.pics = map[string]genrePic{}
 		}
-		c.pics[key] = pic
+		keepUnder(c.pics, genreArtMax, func(p genrePic) time.Time { return p.at })
+		c.pics[key] = genrePic{b: pic, at: time.Now()}
 		c.mu.Unlock()
 	}
 	w.Header().Set("Content-Type", "image/jpeg")
-	w.Header().Set("Cache-Control", "private, max-age=604800, immutable")
+	if v != "" {
+		// v is the picture's content version: a new picture gets a new URL.
+		w.Header().Set("Cache-Control", "private, max-age=604800, immutable")
+	} else {
+		w.Header().Set("Cache-Control", "private, max-age=3600")
+	}
 	_, _ = w.Write(pic)
 }
 

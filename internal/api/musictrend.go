@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/url"
@@ -13,6 +14,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/library"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/parts"
+	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
 // musicTrendTTL is how long a music trending list is kept; the metadata
@@ -234,7 +236,7 @@ func (a *API) musicTrendArt(w http.ResponseWriter, r *http.Request) {
 }
 
 // albumCover asks the metadata server's cover chain for an album, kept a
-// month when found and minutes (musicArtMissTTL) when no source has one. found is false when
+// week when found (memory and disk) and minutes (musicArtMissTTL) when no source has one. found is false when
 // the server could not answer, so the caller tries the Cover Art Archive.
 func (a *API) albumCover(ctx context.Context, mbid string, it metadata.MusicTrendItem) (src string, found bool) {
 	if a.s.MusicCover == nil {
@@ -244,7 +246,18 @@ func (a *API) albumCover(ctx context.Context, mbid string, it metadata.MusicTren
 	c.mu.Lock()
 	e, ok := c.covers[mbid]
 	c.mu.Unlock()
-	if ok && ((e.src != "" && time.Since(e.at) < 30*24*time.Hour) || (e.src == "" && time.Since(e.at) < musicArtMissTTL)) {
+	if !ok && a.s.Store != nil {
+		if b, found, _ := (store.LookupCache{Store: a.s.Store}).Get(ctx, "musiccover|"+mbid, time.Now()); found {
+			var d musicCoverDisk
+			if json.Unmarshal(b, &d) == nil && d.Src != "" {
+				e, ok = musicCover{src: d.Src, at: d.At}, true
+				c.mu.Lock()
+				a.keepCoverLocked(mbid, e)
+				c.mu.Unlock()
+			}
+		}
+	}
+	if ok && ((e.src != "" && time.Since(e.at) < musicCoverKeep) || (e.src == "" && time.Since(e.at) < musicArtMissTTL)) {
 		return e.src, true
 	}
 	title := it.Title
@@ -260,14 +273,37 @@ func (a *API) albumCover(ctx context.Context, mbid string, it metadata.MusicTren
 		// no answer, so a later ask with names runs the whole chain.
 		return "", true
 	}
+	now := time.Now()
 	c.mu.Lock()
-	if c.covers == nil || len(c.covers) > 20000 {
-		c.covers = map[string]musicCover{}
-	}
-	c.covers[mbid] = musicCover{src: src, at: time.Now()}
+	a.keepCoverLocked(mbid, musicCover{src: src, at: now})
 	c.mu.Unlock()
+	if src != "" && a.s.Store != nil {
+		if b, err := json.Marshal(musicCoverDisk{Src: src, At: now}); err == nil {
+			_ = store.LookupCache{Store: a.s.Store}.Put(context.WithoutCancel(ctx), "musiccover|"+mbid, b, now, now.Add(musicCoverKeep))
+		}
+	}
 	return src, true
 }
+
+type musicCoverDisk struct {
+	Src string    `json:"src"`
+	At  time.Time `json:"at"`
+}
+
+func (a *API) keepCoverLocked(mbid string, e musicCover) {
+	c := &a.music
+	if c.covers == nil {
+		c.covers = map[string]musicCover{}
+	}
+	if _, has := c.covers[mbid]; !has {
+		keepUnder(c.covers, 20000, func(m musicCover) time.Time { return m.at })
+	}
+	c.covers[mbid] = e
+}
+
+// musicCoverKeep is how long a found album cover is used before it is
+// asked again; found covers are kept on disk too, so a restart keeps them.
+const musicCoverKeep = 7 * 24 * time.Hour
 
 // musicArtMissTTL is how long a picture no source has is not asked again:
 // minutes, so a brand-new release's cover shows once a source has it.
@@ -345,6 +381,7 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name,
 		}
 		name = library.ArtworkName(src)
 		if path, ok = lib.Artwork.Path(name); ok {
+			lib.Artwork.Recheck(src, serverPlaceholder)
 			return true
 		}
 		if _, err := lib.Artwork.FetchUnless(ctx, src, serverPlaceholder); err != nil {

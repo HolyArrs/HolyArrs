@@ -64,7 +64,7 @@ func TestAlbumCoverServesTheCachedCover(t *testing.T) {
 		t.Fatalf("albums %+v", albums.Albums)
 	}
 	resp, err := http.Get(fmt.Sprintf("%s/albums/%d/cover", u, with))
-	if err != nil || resp.StatusCode != 200 || resp.Header.Get("Cache-Control") != "private, max-age=31536000, immutable" {
+	if err != nil || resp.StatusCode != 200 || resp.Header.Get("Cache-Control") != "private, max-age=86400" {
 		t.Fatalf("cover %v %d", err, resp.StatusCode)
 	}
 	resp.Body.Close()
