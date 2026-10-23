@@ -33,3 +33,22 @@ func TestArtAndRatingsReadServer(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// TestArtArtistUsesMusicRoute: the server's route is /v1/art/music; the
+// artist kind must never reach it as /v1/art/artist.
+func TestArtArtistUsesMusicRoute(t *testing.T) {
+	const mbid = "5b11f4ce-a62d-471e-81fc-a69a8278c7da"
+	var asked string
+	s := testService(t, func(w http.ResponseWriter, r *http.Request) {
+		asked = r.URL.Path
+		if r.URL.Path != "/v1/art/music/"+mbid {
+			w.WriteHeader(400)
+			return
+		}
+		_, _ = w.Write([]byte(`{"thumbs":["https://assets.fanart.tv/fanart/music/a.jpg"]}`))
+	})
+	a, err := s.Art(context.Background(), "artist", mbid)
+	if err != nil || asked != "/v1/art/music/"+mbid || len(a.Thumbs) != 1 {
+		t.Fatalf("asked %q: %+v %v", asked, a, err)
+	}
+}
