@@ -40,6 +40,8 @@ type musicV2State struct {
 	cursorMu  sync.Mutex
 	// clearing is set while a debounced day-order clear is pending.
 	clearing atomic.Bool
+	// refreshing holds the plans being rebuilt behind a plan read from disk.
+	refreshing sync.Map
 	// now is the clock (tests); nil is time.Now.
 	now func() time.Time
 }

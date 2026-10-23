@@ -646,19 +646,17 @@ func (a *API) exploreMusicV7(w http.ResponseWriter, r *http.Request) {
 		offset = c.Offset
 	} else if cp, ok := a.musicv2.plans.Current(key, now); ok {
 		p = cp
-	} else {
-		miss := &musicMiss{}
-		bctx := context.WithValue(ctx, musicMissKey{}, miss)
-		ord := a.buildMusicV3(bctx, member, region, lib, acts, now)
-		if ord.v7 == nil {
-			ord.v7 = &musicV7Cand{metas: map[string]MusicRow{}, cards: map[string]map[string]MusicCard{}}
-		}
+	} else if snap, ok := a.loadMusicV7Snap(ctx, member, region, key.Date, lib, now); ok {
+		// Kept on disk (a restart): served at once, rebuilt behind when old.
+		ord := snap.order()
 		p = musicscore.NewPlan(ord.v7.rows, musicV7Head, musicV7Max, member, key.Date, ord.v7.seen)
 		p.Meta = ord
-		p.Partial = miss.failed.Load()
-		if ctx.Err() == nil {
-			a.musicv2.plans.Put(key, p, now)
+		a.musicv2.plans.Put(key, p, now)
+		if now.Sub(snap.Built) >= musicV7SnapFresh || now.Before(snap.Built) {
+			a.refreshMusicV7(member, region, key, now)
 		}
+	} else {
+		p = a.buildMusicV7Plan(ctx, member, region, key, lib, acts, now)
 	}
 	ord := p.Meta.(*musicV2Order)
 	var rows []musicscore.Row
@@ -750,10 +748,11 @@ func (a *API) exploreMusicV7(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"v2": true, "v7": true, "kid": false, "cold": ord.Cold, "genres": []string{}, "genre": "", "region": region, "regions": regions, "hero": hero, "hero_alts": alts, "rows": out, "next": next, "total": p.Total()})
 }
 
-// prewarmMusicV7 runs after the Music read-ahead's prebuild: one household
-// build (member 0, worldwide) fills layer 1 with the artist data,
-// similarity and listeners the v7 families read, so a member's first page
-// of the day needs few or no metadata requests. No plan is kept.
+// prewarmMusicV7 runs a second after Music starts and after each Music
+// read-ahead prebuild: one household build (member 0, worldwide) fills
+// layer 1 (memory and disk) with the artist data, similarity and listeners
+// the v7 families read, so a member's first page of the day needs few or no
+// metadata requests. The household plan is kept like a visit's.
 func (a *API) prewarmMusicV7(ctx context.Context) {
 	if !a.s.MusicRowsV7 || !a.s.MusicRowsV3 || a.s.Store == nil {
 		return
@@ -767,5 +766,6 @@ func (a *API) prewarmMusicV7(ctx context.Context) {
 	if err != nil {
 		return
 	}
-	_ = a.buildMusicV3(ctx, 0, "global", lib, acts, now)
+	key := musicscore.PlanKey{Member: 0, Date: musicscore.Day(now), View: "global"}
+	a.buildMusicV7Plan(ctx, 0, "global", key, lib, acts, now)
 }

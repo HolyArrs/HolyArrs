@@ -8,6 +8,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -155,8 +156,11 @@ func v7Rig(t *testing.T, name string) (*askRig, *int, *v7Household) {
 		by[fx.Others[i].MBID] = &fx.Others[i]
 	}
 	calls := 0
+	var callsMu sync.Mutex
 	r.api.s.MusicListeners = func(_ context.Context, ids []string) (map[string]int64, error) {
+		callsMu.Lock()
 		calls++
+		callsMu.Unlock()
 		out := map[string]int64{}
 		for _, id := range ids {
 			if a := by[id]; a != nil {
@@ -166,7 +170,9 @@ func v7Rig(t *testing.T, name string) (*askRig, *int, *v7Household) {
 		return out, nil
 	}
 	r.api.s.MusicSimilarSet = func(_ context.Context, seeds []string) (map[string][]metadata.MusicSimilarScore, error) {
+		callsMu.Lock()
 		calls++
+		callsMu.Unlock()
 		out := map[string][]metadata.MusicSimilarScore{}
 		for _, s := range seeds {
 			if a := by[s]; a != nil {
@@ -178,7 +184,9 @@ func v7Rig(t *testing.T, name string) (*askRig, *int, *v7Household) {
 		return out, nil
 	}
 	r.api.s.MusicArtistData = func(_ context.Context, ids []string) ([]metadata.MusicArtistData, error) {
+		callsMu.Lock()
 		calls++
+		callsMu.Unlock()
 		var out []metadata.MusicArtistData
 		for _, id := range ids {
 			d := metadata.MusicArtistData{MBID: id}

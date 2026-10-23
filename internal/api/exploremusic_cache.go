@@ -30,6 +30,8 @@ const (
 	musicGenreWait = 1500 * time.Millisecond
 	// musicWarmDelay lets the program finish starting before the read-ahead.
 	musicWarmDelay = 5 * time.Second
+	// musicV7WarmDelay is the wait before the v7 prewarm at start.
+	musicV7WarmDelay = time.Second
 )
 
 type musicAnswer struct {
@@ -107,7 +109,7 @@ func (a *API) clearMusicDaysSoon() {
 	time.AfterFunc(musicDayDebounce, func() {
 		a.musicv2.clearing.Store(false)
 		a.musicv2.days.Clear()
-		a.musicv2.plans.MarkStale(-1)
+		a.forgetMusicV7Snaps(-1)
 	})
 }
 
@@ -157,6 +159,14 @@ func (a *API) genresFilling() bool {
 // Control, so they run only while Music is on and stop when it is turned off.
 func (a *API) MusicLoops() []supervisor.Loop {
 	return []supervisor.Loop{{Name: "music_warm", Label: "Music read-ahead", Run: func(ctx context.Context) error {
+		// Explore → Music v7 first: its layer 1 is read back from disk (or
+		// fetched) within seconds of start, before the slower read-ahead.
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-time.After(musicV7WarmDelay):
+		}
+		a.prewarmMusicV7(ctx)
 		a.warmMusic(ctx)
 		for ctx.Err() == nil {
 			a.prebuildMusic(ctx)

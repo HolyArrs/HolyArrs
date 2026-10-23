@@ -70,7 +70,9 @@ func dayBefore(date string) string {
 }
 
 // musicBatch reads ids through layer 1, one entry per id: found answers a
-// week, ids the server left out an hour, errors not kept.
+// week, ids the server left out an hour, errors not kept. Layer 1 is kept on
+// disk too (lookup_cache), so a restart reads it back instead of the
+// metadata server; the missing chunks are fetched a few at a time.
 func (a *API) musicBatch(ctx context.Context, prefix string, ids []string, chunk int, now time.Time, fetch func(context.Context, []string) (map[string]any, error)) map[string]any {
 	out := map[string]any{}
 	var miss []string
@@ -88,23 +90,54 @@ func (a *API) musicBatch(ctx context.Context, prefix string, ids []string, chunk
 		}
 		miss = append(miss, id)
 	}
+	if len(miss) > 0 {
+		disk := a.musicDiskRead(ctx, prefix, miss, now)
+		rest := miss[:0:0]
+		for _, id := range miss {
+			if v, ok := disk[id]; ok {
+				out[id] = v
+				a.musicv2.cand.Put(prefix+id, v, musicArtistTTL, now)
+				continue
+			}
+			rest = append(rest, id)
+		}
+		miss = rest
+	}
+	var parts [][]string
 	for len(miss) > 0 {
 		part := miss[:min(chunk, len(miss))]
 		miss = miss[len(part):]
-		got, err := fetch(ctx, part)
-		if err != nil {
-			markMusicMiss(ctx)
-			continue
-		}
-		for _, id := range part {
-			if v, ok := got[id]; ok && v != nil {
-				out[id] = v
-				a.musicv2.cand.Put(prefix+id, v, musicArtistTTL, now)
-			} else {
-				a.musicv2.cand.Put(prefix+id, nil, musicMissTTL, now)
-			}
-		}
+		parts = append(parts, part)
 	}
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, musicBatchParallel)
+	fetched := map[string]any{}
+	for _, part := range parts {
+		wg.Add(1)
+		sem <- struct{}{}
+		go func(part []string) {
+			defer func() { <-sem; wg.Done() }()
+			got, err := fetch(ctx, part)
+			mu.Lock()
+			defer mu.Unlock()
+			if err != nil {
+				markMusicMiss(ctx)
+				return
+			}
+			for _, id := range part {
+				if v, ok := got[id]; ok && v != nil {
+					out[id] = v
+					fetched[id] = v
+					a.musicv2.cand.Put(prefix+id, v, musicArtistTTL, now)
+				} else {
+					a.musicv2.cand.Put(prefix+id, nil, musicMissTTL, now)
+				}
+			}
+		}(part)
+	}
+	wg.Wait()
+	a.musicDiskWrite(ctx, prefix, fetched, now)
 	return out
 }
 
