@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
-	musicscore "github.com/CoderLuii/holyarrs/internal/music/score"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
+	musicscore "github.com/CoderLuii/holyarrs/internal/music/score"
 )
 
 // Explore → Music, flag music_rows_v3 (plan 2026-10-22, Phase 3): the v2

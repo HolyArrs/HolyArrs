@@ -11,8 +11,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	musicscore "github.com/CoderLuii/holyarrs/internal/music/score"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
+	musicscore "github.com/CoderLuii/holyarrs/internal/music/score"
 )
 
 // Explore → Music, flag music_rows_v2 (plan 2026-10-22, Phase 1): eight
@@ -22,9 +22,9 @@ import (
 // live on every answer, so an ask moves a chip and never the order.
 
 const (
-	musicChartTTL   = 6 * time.Hour
+	musicChartTTL     = 6 * time.Hour
 	musicGenreListTTL = 15 * time.Minute
-	musicLibraryTTL = 5 * time.Minute
+	musicLibraryTTL   = 5 * time.Minute
 )
 
 // musicV2State is the flag's cache layers.
