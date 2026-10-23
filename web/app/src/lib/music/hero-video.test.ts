@@ -6,9 +6,11 @@ const base = { setting: true, kid: false, reducedMotion: false };
 describe('heroVideoAllowed', () => {
 	it('plays on a plain desktop', () => expect(heroVideoAllowed(base)).toBe(true));
 	it('never for Kid accounts', () => expect(heroVideoAllowed({ ...base, kid: true, pref: 'always' })).toBe(false));
-	it('respects reduced motion and data saver, even with always', () => {
-		expect(heroVideoAllowed({ ...base, reducedMotion: true, pref: 'always' })).toBe(false);
-		expect(heroVideoAllowed({ ...base, saveData: true, pref: 'always' })).toBe(false);
+	it('follows the trailers: reduced motion, data saver and phones stay still unless this device says always', () => {
+		expect(heroVideoAllowed({ ...base, reducedMotion: true })).toBe(false);
+		expect(heroVideoAllowed({ ...base, saveData: true })).toBe(false);
+		expect(heroVideoAllowed({ ...base, phone: true })).toBe(false);
+		expect(heroVideoAllowed({ ...base, reducedMotion: true, pref: 'always' })).toBe(true);
 	});
 	it('stays off with trailers off, never, or a slow connection', () => {
 		expect(heroVideoAllowed({ ...base, setting: false })).toBe(false);

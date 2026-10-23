@@ -24,6 +24,7 @@
 	import { offPartName } from '#lib/parts.ts';
 	import { navigateWithTransition } from '#lib/motion.ts';
 	import { installPersonPrefetch } from '#lib/person-prefetch.ts';
+	import { installArtistVideoPrefetch } from '#lib/music/artist-video-prefetch.ts';
 	import { installHeroPrefetch } from '#lib/title-details.ts';
 	import { preloadHero } from '#lib/tmdb-image.ts';
 	import AppShell from '#lib/ui/AppShell.svelte';
@@ -157,6 +158,7 @@
 	onMount(trackInputModality);
 	onMount(installScrollBar);
 	onMount(installPersonPrefetch);
+	onMount(installArtistVideoPrefetch);
 	onMount(() => installHeroPrefetch(preloadHero));
 	onMount(() => {
 		void session.load();

@@ -5,6 +5,7 @@ import { api } from './api.ts';
 import { session } from './session.svelte.ts';
 import { autoplayPref, browserConditions, finePointer, mayAutoplay, pickTrailer, soundOn, type Video } from './trailer.ts';
 import { prefetchQueue } from './trailer-prefetch.ts';
+import type { HeroVideo } from './music/hero-video.ts';
 
 export interface UISettings {
 	autoplay_trailers: boolean;
@@ -194,11 +195,14 @@ const fresh = (s: Stream | null | undefined) => !!s?.url && Date.parse(s.expires
 export const IN_VIEW_MS = 300;
 const batch = prefetchQueue({
 	send: async (ids) => {
-		const b = await api.get<{ streams: Record<string, Stream>; pending: string[] }>(`/trailer/batch?ids=${ids.map(encodeURIComponent).join(',')}&language=${lang()}`);
+		const b = await api.get<{ streams: Record<string, Stream>; videos?: Record<string, HeroVideo>; pending: string[] }>(`/trailer/batch?ids=${ids.map(encodeURIComponent).join(',')}&language=${lang()}`);
 		for (const [id, s] of Object.entries(b?.streams ?? {})) {
 			if (fresh(s) && !streams.has(id)) streams.set(id, Promise.resolve(s));
 		}
-		return (b?.pending ?? []).filter((id) => !streams.has(id));
+		for (const [id, v] of Object.entries(b?.videos ?? {})) {
+			if (freshVideo(v) && !artistVideos.has(id)) artistVideos.set(id, Promise.resolve(v));
+		}
+		return (b?.pending ?? []).filter((id) => !streams.has(id) && !artistVideos.has(id));
 	}
 });
 let seen: IntersectionObserver | null = null;
@@ -211,8 +215,16 @@ const viewIds = new WeakMap<Element, string>();
  * never for Kid accounts, reduced motion or saved data). The answer stops watching.
  */
 export function watchTrailer(el: Element, kind: 'movie' | 'show', tmdb: string): () => void {
-	if (!tmdb || typeof IntersectionObserver === 'undefined' || !finePointer()) return () => {};
-	const id = `${kind}:${tmdb}`;
+	return tmdb ? watchId(el, `${kind}:${tmdb}`) : () => {};
+}
+
+/** watchArtistVideo is watchTrailer for an artist's music video (artist:mbid). */
+export function watchArtistVideo(el: Element, mbid: string): () => void {
+	return mbid ? watchId(el, `artist:${mbid}`) : () => {};
+}
+
+function watchId(el: Element, id: string): () => void {
+	if (typeof IntersectionObserver === 'undefined' || !finePointer()) return () => {};
 	seen ??= new IntersectionObserver(
 		(entries) => {
 			for (const e of entries) {
@@ -320,4 +332,48 @@ export function onUnmute(src: TrailerSource | undefined): 'unmute' | 'switch' | 
 /** hasSound says whether the sound button shows for this source. */
 export function hasSound(src: TrailerSource | undefined): boolean {
 	return onUnmute(src) !== 'none';
+}
+
+// Artists' music videos go the trailers' way: named in view (the batch),
+// looked up at hover start, and kept here for the artist page, whose hero
+// then starts without waiting on the lookup.
+const artistVideos = new Map<string, Promise<HeroVideo | null>>();
+
+const freshVideo = (v: HeroVideo | null | undefined) => !!v?.proxy_url && (!v.expires_at || Date.parse(v.expires_at) > Date.now() + 60_000);
+
+/** artistVideo asks for the artist's music video once (null: none). */
+export function artistVideo(mbid: string, signal?: AbortSignal): Promise<HeroVideo | null> {
+	const k = `artist:${mbid}`;
+	let p = artistVideos.get(k);
+	if (p) {
+		const was = p;
+		p = p.then((v) => {
+			if (freshVideo(v)) return v;
+			if (artistVideos.get(k) === was) artistVideos.delete(k);
+			return v ? artistVideo(mbid, signal) : null;
+		});
+		return p;
+	}
+	const ctl = new AbortController();
+	const t = setTimeout(() => ctl.abort(), 30_000);
+	signal?.addEventListener('abort', () => ctl.abort(), { once: true });
+	p = api
+		.get<HeroVideo>(`/music/artists/${encodeURIComponent(mbid)}?part=video`, ctl.signal)
+		.then((v) => (freshVideo(v) ? v : null))
+		.catch(() => null)
+		.finally(() => clearTimeout(t));
+	const mine = p;
+	p.then((v) => {
+		if (!v && artistVideos.get(k) === mine) artistVideos.delete(k);
+	});
+	artistVideos.set(k, p);
+	return p;
+}
+
+/** prefetchArtistVideo is prefetchTrailer for an artist: the lookup starts at hover start. */
+export function prefetchArtistVideo(mbid: string) {
+	if (!mbid) return;
+	void loadUISettings().then(() => {
+		if (autoplayHere()) void artistVideo(mbid);
+	});
 }

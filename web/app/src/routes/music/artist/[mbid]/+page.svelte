@@ -25,9 +25,9 @@
 	import { SkRail, SkRowTitle, SkTrackRow } from '#lib/ui/sk/index.ts';
 	import Chip from '#lib/ui/Chip.svelte';
 	import { attachHLS, playerTarget } from '#lib/hls-player.ts';
-	import { autoplayPref, browserConditions } from '#lib/trailer.ts';
-	import { loadUISettings, nativeHLS, uiAutoplaySetting } from '#lib/autoplay.svelte.ts';
-	import { heroVideoAllowed, heroVideoStart, type HeroVideo } from '#lib/music/hero-video.ts';
+	import { HERO_DELAY } from '#lib/trailer.ts';
+	import { artistVideo, autoplayHere, loadUISettings, nativeHLS } from '#lib/autoplay.svelte.ts';
+	import { heroVideoStart, type HeroVideo } from '#lib/music/hero-video.ts';
 	import { aboutSize, albumHref, appPicture, artistHref, artistKind, countryName, initialsOf, coverFor, haveLine, kindWord, length, owned, SHELVES, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 
@@ -150,16 +150,26 @@
 		void load();
 	});
 
-	// Ask for a video once the hero shows, only where it may play.
+	// As with a trailer hero: the beat (HERO_DELAY) starts when the hero
+	// shows, and the video (looked up ahead of time when it could be) is
+	// asked for at the same moment, only where trailers may autoplay.
+	let beatDone = $state(false);
+	$effect(() => {
+		const want = mbid;
+		if (!hero || hero.mbid !== want) return;
+		beatDone = false;
+		const beat = setTimeout(() => (beatDone = true), HERO_DELAY);
+		return () => clearTimeout(beat);
+	});
 	$effect(() => {
 		const want = mbid;
 		if (!hero || hero.mbid !== want || heroVideo) return;
-		let gone = false;
+		const ctl = new AbortController();
 		void loadUISettings().then(() => {
-			if (gone || want !== mbid || !heroVideoAllowed({ setting: uiAutoplaySetting(), kid: session.kid, pref: autoplayPref(), ...browserConditions() })) return;
-			void api.get<HeroVideo>(`/music/artists/${want}?part=video`).then((v) => !gone && want === mbid && v?.proxy_url && (heroVideo = v)).catch(() => {});
+			if (ctl.signal.aborted || want !== mbid || !autoplayHere()) return;
+			void artistVideo(want, ctl.signal).then((v) => !ctl.signal.aborted && want === mbid && v?.proxy_url && (heroVideo = v));
 		});
-		return () => (gone = true);
+		return () => ctl.abort();
 	});
 
 	// Play it on the stage; an error drops back to the photo.
@@ -169,7 +179,6 @@
 		if (!v || !el) return;
 		let detach: (() => void) | null = null;
 		let stopped = false;
-		let wait: ReturnType<typeof setTimeout> | undefined;
 		const fail = () => {
 			videoIn = false;
 			heroVideo = null;
@@ -180,16 +189,24 @@
 			.then((d) => {
 				if (stopped) return d();
 				detach = d;
-				// A short beat on the photo and name before the video takes over.
-				wait = setTimeout(() => !stopped && void el.play().catch(fail), 1500);
+				attached = true;
 			})
 			.catch(fail);
 		return () => {
 			stopped = true;
-			clearTimeout(wait);
+			attached = false;
 			el.removeEventListener('error', fail);
 			detach?.();
 		};
+	});
+
+	// The photo and name hold for the beat; then the video takes over.
+	let attached = $state(false);
+	$effect(() => {
+		if (attached && beatDone && videoEl && heroVideo) void videoEl.play().catch(() => {
+			videoIn = false;
+			heroVideo = null;
+		});
 	});
 
 	onMount(() => {
@@ -567,7 +584,8 @@
 	@keyframes pan { from { transform: scale(1.04) translate3d(-2%, -1%, 0); } to { transform: scale(1.12) translate3d(2%, 1.5%, 0); } }
 	@media (prefers-reduced-motion: reduce) { .stage { animation: none; } }
 	/* The music video sits over the photo and fades in once it plays. */
-	.clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 900ms ease-out; pointer-events: none; }
+	.clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); pointer-events: none; }
+	@media (prefers-reduced-motion: reduce) { .clip { transition: none; } }
 	.clip.in { opacity: 1; }
 	.hero { transition: min-height 900ms var(--ease-out); }
 	.hero.vid { min-height: min(56.25vw, 86vh); }
