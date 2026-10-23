@@ -74,6 +74,7 @@
 		else el.webkitEnterFullscreen?.();
 	}
 	let videoIn = $state(false);
+	const videoOn = $derived(videoIn && !videoPaused);
 	let logoFailed = $state(false);
 	let folders = $state<LibraryFolder[]>([]);
 	let rules = $state<PickRulesView[]>([]);
@@ -167,6 +168,7 @@
 		if (!v || !el) return;
 		let detach: (() => void) | null = null;
 		let stopped = false;
+		let wait: ReturnType<typeof setTimeout> | undefined;
 		const fail = () => {
 			videoIn = false;
 			heroVideo = null;
@@ -177,11 +179,13 @@
 			.then((d) => {
 				if (stopped) return d();
 				detach = d;
-				void el.play().catch(fail);
+				// A short beat on the photo and name before the video takes over.
+				wait = setTimeout(() => !stopped && void el.play().catch(fail), 1500);
 			})
 			.catch(fail);
 		return () => {
 			stopped = true;
+			clearTimeout(wait);
 			el.removeEventListener('error', fail);
 			detach?.();
 		};
@@ -335,15 +339,15 @@
 	{#if error && !hero}<LoadError hasData={false} message={plainReason(error).text} onretry={load} {busy} />{/if}
 	<PageLoader loading={!hero && !error} label="Loading this artist" onretry={load}>
 		{#if hero}
-			<header class="hero" class:vid={videoIn} data-hero>
+			<header class="hero" class:vid={videoOn} data-hero>
 				<div class="stage" aria-hidden="true">
 					{#if heroSrc}
 						{#key heroSrc}
-							<img class="art" class:soft={heroSoft} class:in={heroIn} class:under={videoIn} src={heroSrc} alt="" decoding="async" fetchpriority="high" onload={() => (heroIn = true)} onerror={() => { heroIn = false; heroTry++; }} />
+							<img class="art" class:soft={heroSoft} class:in={heroIn} class:under={videoOn} src={heroSrc} alt="" decoding="async" fetchpriority="high" onload={() => (heroIn = true)} onerror={() => { heroIn = false; heroTry++; }} />
 						{/key}
 					{/if}
 					{#if heroVideo}
-						<video class="clip" class:in={videoIn} bind:this={videoEl} muted loop playsinline disablepictureinpicture preload="auto" onplaying={() => { videoIn = true; videoPaused = false; }} onpause={() => (videoPaused = true)} onvolumechange={() => videoEl && (videoMuted = videoEl.muted)} data-testid="artist-hero-video"></video>
+						<video class="clip" class:in={videoOn} bind:this={videoEl} muted loop playsinline disablepictureinpicture preload="auto" onplaying={() => { videoIn = true; videoPaused = false; }} onpause={() => (videoPaused = true)} onplay={() => (videoPaused = false)} onvolumechange={() => videoEl && (videoMuted = videoEl.muted)} data-testid="artist-hero-video"></video>
 					{/if}
 				</div>
 				<div class="shade" aria-hidden="true"></div>
