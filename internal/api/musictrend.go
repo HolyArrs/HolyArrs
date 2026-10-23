@@ -120,6 +120,15 @@ func (a *API) musicTrending(w http.ResponseWriter, r *http.Request) {
 			out = append(out, v)
 		}
 	}
+	// Like every music row: the listed artists' and albums' art is warmed.
+	warm := make([]nameKey, 0, 2*len(out))
+	for _, v := range out {
+		warm = append(warm, nameKey{kind: kind, mbid: v.MBID})
+		if v.ArtistMBID != "" {
+			warm = append(warm, nameKey{kind: "artist", mbid: v.ArtistMBID})
+		}
+	}
+	a.warmArtItems(warm)
 	a.exploreCaching(w, r, "private, max-age=300")
 	writeJSON(w, http.StatusOK, map[string]any{"kind": kind, "region": list.Region, "source": list.Source, "regions": list.Regions, "items": out})
 }

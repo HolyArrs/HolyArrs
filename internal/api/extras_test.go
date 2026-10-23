@@ -3,7 +3,9 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 
 	"github.com/CoderLuii/holyarrs/internal/auth"
@@ -112,5 +114,71 @@ func TestTitleExtrasKidGate(t *testing.T) {
 	}
 	if asked != 2 {
 		t.Fatalf("server asked %d", asked)
+	}
+}
+
+// route: GET /api/v1/extras/{kind}/{id}
+// A cold artist through the real metadata client: the server first answers
+// 404 (or 429, its install limit), then 200. The first app answer is empty
+// and never cached; the next ask gets the wide photo and the logo.
+func TestTitleExtrasColdArtistThenArt(t *testing.T) {
+	for _, first := range []int{404, 429, 503} {
+		titleExtrasCache.seen = map[string]extrasEntry{}
+		var n atomic.Int32
+		md := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if n.Add(1) == 1 {
+				w.Header().Set("Retry-After", "1")
+				w.WriteHeader(first)
+				return
+			}
+			_, _ = w.Write([]byte(`{"logo":"https://assets.fanart.tv/l.png","backgrounds":["https://assets.fanart.tv/b.jpg"]}`))
+		}))
+		svc, err := metadata.NewService(metadata.ServiceOptions{URL: md.URL, AllowLocal: true, HTTP: &http.Client{}, Access: func(context.Context) (string, error) { return "t", nil }})
+		if err != nil {
+			t.Fatal(err)
+		}
+		srv := httptest.NewServer(New(Server{Version: "test", ExtraArt: svc.Art}).Handler())
+		const p = "/api/v1/extras/artist/c8b03190-306c-4120-bb0b-6f2ebfc06ea9"
+		res, err := http.Get(srv.URL + p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var v TitleExtras
+		_ = json.NewDecoder(res.Body).Decode(&v)
+		res.Body.Close()
+		if len(v.Backgrounds) != 0 || res.Header.Get("Cache-Control") != "no-store" {
+			t.Fatalf("%d: cold answer %+v %q", first, v, res.Header.Get("Cache-Control"))
+		}
+		v = TitleExtras{}
+		_ = json.Unmarshal(do(t, "GET", srv.URL+p, "", 200), &v)
+		if v.Logo == "" || len(v.Backgrounds) != 1 {
+			t.Fatalf("%d: second answer %+v", first, v)
+		}
+		srv.Close()
+		md.Close()
+	}
+}
+
+// The server's 202 (art fetch still running) is waited on inside the same
+// answer: the first view already gets the art.
+func TestTitleExtrasWaitsOnPendingArt(t *testing.T) {
+	titleExtrasCache.seen = map[string]extrasEntry{}
+	var n atomic.Int32
+	md := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if n.Add(1) == 1 {
+			w.Header().Set("Retry-After", "1")
+			w.WriteHeader(202)
+			return
+		}
+		_, _ = w.Write([]byte(`{"logo":"https://assets.fanart.tv/l.png","backgrounds":["https://assets.fanart.tv/b.jpg"]}`))
+	}))
+	defer md.Close()
+	svc, _ := metadata.NewService(metadata.ServiceOptions{URL: md.URL, AllowLocal: true, HTTP: &http.Client{}, Access: func(context.Context) (string, error) { return "t", nil }})
+	srv := httptest.NewServer(New(Server{Version: "test", ExtraArt: svc.Art}).Handler())
+	defer srv.Close()
+	var v TitleExtras
+	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/extras/artist/c8b03190-306c-4120-bb0b-6f2ebfc06ea9", "", 200), &v)
+	if len(v.Backgrounds) != 1 {
+		t.Fatalf("%+v", v)
 	}
 }

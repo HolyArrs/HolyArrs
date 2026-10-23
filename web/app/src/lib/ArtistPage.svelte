@@ -2,7 +2,6 @@
 	import Button from '#lib/ui/Button.svelte';
 	import { peopleNames } from './plain.ts';
 	import { to } from './paths.ts';
-	import { albumHref } from './music/music-pages.ts';
 	// One artist: its albums with their kinds, dates and state, Keep up to
 	// date per artist and album, the album kinds it includes, and who asked.
 	// Search now looks for every missing album; each album has its own
@@ -11,20 +10,13 @@
 	import { live } from './live.svelte.ts';
 	import { ago, date, dateTime } from './format.ts';
 	import Icon from './Icon.svelte';
-	import TitleHero, { shortFolder } from './ui/TitleHero.svelte';
+	import { shortFolder } from './ui/TitleHero.svelte';
+	import MusicArtistPage, { type ArtistLibrary } from './music/MusicArtistPage.svelte';
 	import LoadError from './ui/LoadError.svelte';
-	import FollowButton from './ui/FollowButton.svelte';
-	import ActionButton from './ui/ActionButton.svelte';
-	import ActionMenu from './ui/ActionMenu.svelte';
 	import type { MenuItem } from './ui/Menu.svelte';
-	import SimilarShelf from './SimilarShelf.svelte';
 	import LibrarySection from './ui/LibrarySection.svelte';
 	import TitleSection from './ui/TitleSection.svelte';
-	import SectionNav from './ui/SectionNav.svelte';
-	import Shelf from './ui/Shelf.svelte';
-	import WideCard from './ui/WideCard.svelte';
 	import { reducedMotion } from './motion.ts';
-	import { artName, crumbFor, pageSections } from './title-page.ts';
 	import './title-page.css';
 	import { session } from './session.svelte.ts';
 	import { audienceStatus } from './title-status.ts';
@@ -43,10 +35,7 @@
 		albumWords,
 		albumYear,
 		artistProgress,
-		albumCover,
 		artistSearchToast,
-		discography,
-		latestRelease,
 		extraKinds,
 		mainKinds,
 		newAlbumChoices,
@@ -86,7 +75,6 @@
 	let historyTotal = $state(0);
 	let asker: ReturnType<typeof AskArtistDialog> | undefined = $state();
 	const visibleDisambiguation = $derived(artist?.disambiguation?.trim() ?? '');
-	const heroMeta = $derived(['Artist', artist?.type ? artist.type.charAt(0).toUpperCase() + artist.type.slice(1) : '', artist ? (artist.status === 'ended' ? 'No longer active' : 'Still active') : ''].filter(Boolean));
 	const heroKind = $derived(artist?.missing ? 'missing' : 'in_library');
 	// One status vocabulary (title-status.ts); staff also see how many are missing.
 	const heroWords = $derived(audienceStatus(heroKind, staff ? 'staff' : 'member', { tracked: true, titleKind: 'artist' }));
@@ -102,18 +90,25 @@
 		{ kind: 'separator' },
 		{ label: 'Delete artist', icon: 'trash', destructive: true, onselect: () => deleter?.open() }
 	]);
+	// The one artist page (MusicArtistPage) shows the hero, the discography,
+	// similar artists and About; these are the Library's own parts of it.
+	const lib = $derived<ArtistLibrary>({
+		titleId: title.id,
+		staff,
+		menu: heroItems,
+		progress: staff ? artistProgress(artist) : '',
+		status: staff && artist?.missing ? `${artist.missing} missing` : heroWords.label,
+		note: visibleDisambiguation,
+		nextRelease: artist?.next_release ? date(artist.next_release) : undefined,
+		onLibrary: toLibrary,
+		onAsk: session.can('ask') ? askMore : undefined
+	});
 	function toLibrary() {
 		const h = document.getElementById('h-library');
 		h?.closest('section')?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
 	}
-	// The discography: one wide-card row per kind; Missing only keeps what is not all here yet.
-	let missingOnly = $state(false);
-	/** albumLink opens the album page when both MusicBrainz ids are known, else the Library album page. */
-	const albumLink = (a: AlbumSummary) => (a.mbid && title.ids?.musicbrainz ? albumHref(a.mbid, title.ids.musicbrainz) : to(`/library/${title.id}/albums/${a.id}`));
-	const notHere = (a: AlbumSummary) => a.in_library === 0 || a.missing > 0;
-	const missingCount = $derived((albums ?? []).filter(notHere).length);
-	const rows = $derived(discography((albums ?? []).filter((a) => !missingOnly || notHere(a))));
-	const latest = $derived(missingOnly ? null : latestRelease(albums ?? []));
+	/** albumLink opens the Library album page (its files and Pressings). */
+	const albumLink = (a: AlbumSummary) => to(`/library/${title.id}/albums/${a.id}`);
 
 	// Rename files and delete (4.15.4): the rename preview for this artist,
 	// and the delete dialog for the artist.
@@ -315,92 +310,10 @@
 	}
 </script>
 
-<div class="tp">
-<TitleHero
-	title={title.name}
-	poster={title.artwork[0]}
-	backdrop={title.backdrop}
-	logo={title.logo}
-	mbid={artist?.mbid}
-	square
-	crumbIcon="music"
-	breadcrumb={[{ href: to(crumbFor('artist').path), label: crumbFor('artist').label }, { href: to(`/library/${title.id}`), label: title.name }]}
-	meta={heroMeta}
-	status={heroWords.kind}
-	statusLabel={staff && artist?.missing ? `${artist.missing} missing` : heroWords.label}
-	description={visibleDisambiguation}
-	vtName={artName(title.id)}
->
-	{#snippet byline()}
-		{#if staff}<span class="tp-progress" data-testid="artist-progress">{artistProgress(artist)}</span>{/if}
-		{#if artist?.next_release}<span><b>Next album:</b> {date(artist.next_release)}</span>{/if}
-	{/snippet}
-	{#snippet actions()}
-		{#if staff}
-			<ActionButton icon="library" label="In Library: go to the Library section" caption="In Library" primary onclick={toLibrary} data-testid="hero-library" />
-			<ActionMenu label="More actions" caption="More" icon="more" items={heroItems} />
-		{:else if session.can('ask')}
-			<ActionButton icon="wish" label="Ask for albums" primary onclick={askMore} data-testid="ask-albums" />
-		{/if}
-		<FollowButton titleId={title.id} kind="artist" />
-	{/snippet}
-</TitleHero>
-
+<MusicArtistPage mbid={artist?.mbid ?? ''} library={lib}>
+{#snippet below()}
+<div class="tp lib-below">
 {#if loadErr || error}<LoadError hasData message={loadErr || error} onretry={() => void retry()} busy={retrying} />{/if}
-
-<SectionNav items={pageSections('artist', { manage: staff })} />
-
-{#snippet albumCard(a: AlbumSummary)}
-	{@const st = albumStateOf(a)}
-	<WideCard
-		title={a.name}
-		href={albumLink(a)}
-		image={albumCover(a.id)}
-		kind="artist"
-		subtitle={[albumYear(a.release_date), albumKind(a)].filter(Boolean).join(' · ')}
-		owned={a.in_library > 0 ? { state: a.missing ? 'partial' : 'available', label: a.missing ? `${a.in_library} of ${a.tracks} tracks here` : 'In your Library' } : staff && a.included ? { state: 'requested', label: st.label } : null}
-	/>
-{/snippet}
-
-{#if albums === null}
-	<div class="sk" style="height: 160px" aria-busy="true"></div>
-{:else if albums.length === 0}
-	<p class="small muted">No albums yet. A refresh adds them once MusicBrainz lists them.</p>
-{:else}
-	{#if latest}
-		<section class="tp-section latest" aria-labelledby="h-latest">
-			<h2 id="h-latest" class="tp-h2">Latest release</h2>
-			<div class="latest-card">{@render albumCard(latest)}</div>
-		</section>
-	{/if}
-	<div class="disc" id="h-discography">
-		{#if missingCount}
-			<div class="disc-tools">
-				<button type="button" class="pill" aria-pressed={missingOnly} onclick={() => (missingOnly = !missingOnly)} data-testid="missing-only">Missing only <span class="n">{missingCount}</span></button>
-			</div>
-		{/if}
-		{#each rows as g (g.row)}
-			<Shelf title={g.label} item="var(--title-item)" placeholder="wide" lines={1} anchor="disc-{g.row}">
-				{#each g.albums as a (a.id)}{@render albumCard(a)}{/each}
-			</Shelf>
-		{:else}
-			<p class="small muted">Nothing missing.</p>
-		{/each}
-	</div>
-{/if}
-
-<SimilarShelf {title} />
-
-<TitleSection id="h-about" title="About">
-	<dl class="tp-about">
-		{#if artist?.type}<dt>Kind</dt><dd>{artist.type.charAt(0).toUpperCase() + artist.type.slice(1)}</dd>{/if}
-		<dt>Active</dt>
-		<dd>{artist?.status === 'ended' ? 'No longer active' : 'Still active'}</dd>
-		<dt>Albums</dt>
-		<dd>{albums?.length ?? artist?.albums ?? 0}</dd>
-		{#if artist?.next_release}<dt>Next album</dt><dd>{date(artist.next_release)}</dd>{/if}
-	</dl>
-</TitleSection>
 
 {#if title.asks?.length}
 	<TitleSection id="h-artist-asks" title="Wishlist" testid="title-asks">
@@ -510,6 +423,8 @@
 	</LibrarySection>
 {/if}
 </div>
+{/snippet}
+</MusicArtistPage>
 
 {#if !staff && session.can('ask')}
 	<AskArtistDialog bind:this={asker} onasked={asked} />
@@ -739,7 +654,5 @@
 			font-weight: var(--weight-medium);
 		}
 	}
-	.latest-card { width: min(100%, calc(var(--title-item) * 1.0)); }
-	.disc { display: flex; flex-direction: column; gap: clamp(28px, 4vw, 44px); }
-	.disc-tools { display: flex; gap: 8px; margin-bottom: calc(clamp(28px, 4vw, 44px) * -0.6); }
+	.lib-below { display: flex; flex-direction: column; gap: 40px; }
 </style>

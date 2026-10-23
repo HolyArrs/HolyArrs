@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -117,5 +118,55 @@ func TestMusicGenreKidFirst(t *testing.T) {
 	page := s[strings.Index(s, "func (a *API) musicGenrePage"):]
 	if strings.Index(page, "a.kidMax(r)") > strings.Index(page, "a.musicGenreTiles") {
 		t.Fatal("the Kid check must run before any music is read")
+	}
+}
+
+// A genre page warms the art (photo, wide photo, logo) of every artist and
+// album it lists, like every other music row.
+func TestMusicGenrePageWarmsArt(t *testing.T) {
+	now := time.Now().UTC()
+	r := newMusicAskRig(t)
+	loadHousehold(t, r.st, now)
+	r.api.s.MusicRowsV2 = true
+	r.api.s.MusicCharts, r.api.s.MusicGenres = fakeCharts(now)
+	var mu sync.Mutex
+	warmed := map[artWarmKey]bool{}
+	r.api.artWarm.do = func(_ context.Context, k artWarmKey) {
+		mu.Lock()
+		warmed[k] = true
+		mu.Unlock()
+	}
+	var m musicRowsAnswer
+	if err := json.Unmarshal(r.ana.call("GET", "/api/v1/music/genre/pop?region=US", "", 200), &m); err != nil {
+		t.Fatal(err)
+	}
+	want := map[artWarmKey]bool{}
+	for _, row := range m.Rows {
+		for _, c := range row.Items {
+			if c.ArtistMBID != "" {
+				want[artWarmKey{"artist", c.ArtistMBID}] = true
+			}
+		}
+	}
+	if len(want) == 0 {
+		t.Fatal("no artists listed")
+	}
+	deadline := time.Now().Add(3 * time.Second)
+	for {
+		mu.Lock()
+		missing := 0
+		for k := range want {
+			if !warmed[k] {
+				missing++
+			}
+		}
+		mu.Unlock()
+		if missing == 0 {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("%d of %d listed artists not warmed", missing, len(want))
+		}
+		time.Sleep(20 * time.Millisecond)
 	}
 }

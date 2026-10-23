@@ -198,6 +198,31 @@ func (a *API) musicGenrePage(w http.ResponseWriter, r *http.Request) {
 	for i := range alts {
 		alts[i] = musicCardState(alts[i], lib, acts)
 	}
+	// Every listed artist and album gets its pictures and art warmed, so the
+	// artist page opened from here has its wide photo and logo at once.
+	var names []nameKey
+	note := func(c MusicCard) {
+		if c.Kind == "album" && c.MBID != "" {
+			names = append(names, nameKey{"album", c.MBID, c.Name, c.Artist, ""})
+		}
+		if c.ArtistMBID != "" {
+			names = append(names, nameKey{"artist", c.ArtistMBID, c.Artist, "", ""})
+		} else if c.Kind == "artist" && c.MBID != "" {
+			names = append(names, nameKey{"artist", c.MBID, c.Name, "", ""})
+		}
+	}
+	if hero != nil {
+		note(*hero)
+	}
+	for _, c := range alts {
+		note(c)
+	}
+	for _, row := range rows {
+		for _, c := range row.Items {
+			note(c)
+		}
+	}
+	a.rememberMusicNames(names)
 	hue := tile.Hue
 	a.exploreCaching(w, r, "private, no-cache")
 	writeJSON(w, http.StatusOK, map[string]any{"v2": true, "kid": false, "cold": false, "genres": []string{}, "genre": slug, "region": region, "regions": []string{},
