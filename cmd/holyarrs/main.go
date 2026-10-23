@@ -615,7 +615,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 			t, err := hosted.Service.TrailerPick(ctx, kind, id, lang)
 			return t.Key, err
 		}, AnimeMap: hosted.Service.AnimeMap, LiveSearch: flagOn("live_search"), ExtraArt: hosted.Service.Art, ExtraRatings: hosted.Service.Ratings, WikiTitle: hosted.Service.WikiTitle, WikiPerson: hosted.Service.WikiPerson, AwardWinners: hosted.Service.AwardWinners, Alerts: sender, Asks: wish, Search: sr, Downloads: dm, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
-		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase, Deps: music.Deps{MusicTrending: hosted.Service.MusicTrending, MusicNew: hosted.Service.MusicNewWindow, MusicSimilar: hosted.Service.MusicSimilar, MusicCharts: hosted.Service.MusicCharts, MusicGenres: hosted.Service.MusicGenreList, MusicGenreTile: hosted.Service.MusicGenreTile, MusicRowsV2: flagOn("music_rows_v2"), MusicRowsV3: flagOn("music_rows_v3"), MusicRowsV6: flagOn("music_rows_v6"), MusicListeners: hosted.Service.MusicListeners, MusicSimilarSet: hosted.Service.MusicSimilarSet, MusicArtistData: hosted.Service.MusicArtistData, MusicSuggest: hosted.Service.MusicSuggest, MusicCover: hosted.Service.MusicCover}})
+		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase, Deps: music.Deps{MusicTrending: hosted.Service.MusicTrending, MusicNew: hosted.Service.MusicNewWindow, MusicSimilar: hosted.Service.MusicSimilar, MusicCharts: hosted.Service.MusicCharts, MusicGenres: hosted.Service.MusicGenreList, MusicGenreTile: hosted.Service.MusicGenreTile, MusicRowsV2: flagOn("music_rows_v2"), MusicRowsV3: flagOn("music_rows_v3"), MusicRowsV6: flagOn("music_rows_v6"), MusicRowsV7: flagOn("music_rows_v7"), MusicListeners: hosted.Service.MusicListeners, MusicSimilarSet: hosted.Service.MusicSimilarSet, MusicArtistData: hosted.Service.MusicArtistData, MusicSuggest: hosted.Service.MusicSuggest, MusicCover: hosted.Service.MusicCover}})
 	if !c.SafeMode {
 		a.StartExplore(ctx)
 	}
@@ -680,7 +680,7 @@ func artistImages() (*metadata.ArtistImages, []string) {
 	t.Proxy = nil // the policy must see the real address
 	t.DialContext = source.PolicyDialer(source.PublicOnly).DialContext
 	return &metadata.ArtistImages{BaseURL: metadata.DeezerBase, HTTP: &http.Client{Transport: t}},
-		[]string{"https://cdn-images.dzcdn.net/images/artist/", "https://e-cdns-images.dzcdn.net/images/artist/"}
+		[]string{"https://cdn-images.dzcdn.net/images/artist/", "https://e-cdns-images.dzcdn.net/images/artist/", metadata.CommonsThumbBase + "/"}
 }
 
 // artistPictureSources are TheAudioDB and the Cover Art Archive, the first

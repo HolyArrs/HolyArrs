@@ -158,6 +158,7 @@ func (a *API) putFollow(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 	default:
 		a.musicv2.days.Invalidate(a.person(r).UserID)
+	a.musicv2.plans.MarkStale(a.person(r).UserID)
 		a.followState(w, r, t.ID)
 	}
 }
@@ -172,5 +173,6 @@ func (a *API) deleteFollow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.musicv2.days.Invalidate(a.person(r).UserID)
+	a.musicv2.plans.MarkStale(a.person(r).UserID)
 	a.followState(w, r, t.ID)
 }

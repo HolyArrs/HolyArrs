@@ -597,7 +597,7 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 	if !ord.Cold {
 		a.personalMusicRows(ctx, member, region, date, lib, acts, now, personalIn{
 			aff: aff, affMBID: affMBID, artistOf: artistOf, hadMBID: hadMBID, hadAlbum: hadAlbum, G: G, shares: shares, primary: primary,
-			data: data, chartP: chartP, pcBest: pcBest, albumListeners: albumListeners, tiles: tiles, latest: latest, released: released,
+			data: data, chartP: chartP, pcBest: pcBest, explicit: chartExplicit(albums), albumListeners: albumListeners, tiles: tiles, latest: latest, released: released,
 			albumCard: albumCard, chartCard: chartCard, scored: scored, sharesOf: sharesOf,
 			add: func(meta MusicRow, row musicscore.Row, cards []MusicCard, list []musicscore.Scored, rank, personal bool) {
 				addRow(meta, row, cards, list, rank, personal)
@@ -611,6 +611,24 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 	for _, b := range rows {
 		byID[b.meta.ID] = b
 		raw = append(raw, b.row)
+	}
+	if a.s.MusicRowsV7 {
+		// v7 keeps the raw rows: the day's plan orders and fills them.
+		c := &musicV7Cand{metas: map[string]MusicRow{}, cards: map[string]map[string]MusicCard{}, seen: seen}
+		for _, b := range rows {
+			r := b.row
+			r.Family, r.Disc = musicV7Family(b.meta)
+			c.rows = append(c.rows, r)
+			c.metas[r.ID], c.cards[r.ID] = b.meta, b.cards
+		}
+		ord.v7 = c
+		ord.Rows = []MusicRow{}
+		if a.s.MusicTrending != nil {
+			if l, err := a.cachedMusicTrend(ctx, "album", "global"); err == nil {
+				ord.Regions = l.Regions
+			}
+		}
+		return ord
 	}
 	for _, r := range musicscore.Dedup(musicscore.Order(raw, member, date), seen) {
 		b := byID[r.ID]
@@ -653,6 +671,8 @@ type personalIn struct {
 	scored         func(c MusicCard, score, A, gItem float64, genre string) musicscore.Scored
 	sharesOf       func(*metadata.MusicArtistData) (map[string]float64, string)
 	add            func(meta MusicRow, row musicscore.Row, cards []MusicCard, list []musicscore.Scored, rank, personal bool)
+	// explicit marks charted albums with explicit lyrics (v7 families).
+	explicit map[string]bool
 }
 
 // nearTasteOK reports whether a similar artist may be suggested for a
@@ -816,7 +836,11 @@ func (a *API) personalMusicRows(ctx context.Context, member int64, region, date 
 		return c
 	}
 
-	// Row 9: Since you have {X}, 0.5·S + 0.3·P + 0.2·G_item.
+	// Row 9: Since you have {X}, 0.5·S + 0.3·P + 0.2·G_item (v7: the
+	// Because you have rows take its place).
+	if a.s.MusicRowsV7 {
+		since = nil
+	}
 	for _, s := range since {
 		type cand struct {
 			id string
@@ -1069,5 +1093,13 @@ func (a *API) personalMusicRows(ctx context.Context, member int64, region, date 
 		}
 		in.add(MusicRow{ID: "guest_spots", Type: "guest_spots", Title: "Guest spots", Reason: "Releases your artists appear on", Shape: "square"},
 			musicscore.Row{Prior: musicscore.PriorPersonal}, cards, sc, true, true)
+	}
+
+	if a.s.MusicRowsV7 {
+		top := make([]musicLibArtist, len(seeds))
+		for i, s := range seeds {
+			top[i] = s.ar
+		}
+		a.musicV7Rows(ctx, member, date, lib, acts, now, in, top, yesterday)
 	}
 }

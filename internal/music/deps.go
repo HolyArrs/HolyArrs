@@ -41,6 +41,11 @@ type Deps struct {
 	// albums, Climbing, Coming soon) and the Rising row on Explore → Music
 	// (with MusicRowsV3). Off keeps both as they were.
 	MusicRowsV6 bool
+	// MusicRowsV7 is flag music_rows_v7 (plan 2026-10-23): Explore → Music
+	// as a daily row plan of up to 30 rows, served 6 at a time with a cursor,
+	// plus mixes, Because you have, Deep cuts, Turning N and Together with
+	// (with MusicRowsV3). Off keeps the v3/v6 page.
+	MusicRowsV7 bool
 	// MusicListeners, MusicSimilarSet and MusicArtistData read the metadata
 	// server's batch artist data for the scored rows; nil leaves P at the
 	// charts and the similarity rows out.

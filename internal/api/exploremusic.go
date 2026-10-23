@@ -312,6 +312,10 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
 		return
 	}
+	if a.s.MusicRowsV2 && a.s.MusicRowsV3 && a.s.MusicRowsV7 {
+		a.exploreMusicV7(w, r)
+		return
+	}
 	if a.s.MusicRowsV2 {
 		a.exploreMusicV2(w, r)
 		return

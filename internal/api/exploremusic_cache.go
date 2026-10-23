@@ -107,6 +107,7 @@ func (a *API) clearMusicDaysSoon() {
 	time.AfterFunc(musicDayDebounce, func() {
 		a.musicv2.clearing.Store(false)
 		a.musicv2.days.Clear()
+		a.musicv2.plans.MarkStale(-1)
 	})
 }
 

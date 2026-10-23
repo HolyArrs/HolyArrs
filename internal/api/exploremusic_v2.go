@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -33,6 +34,10 @@ type musicV2State struct {
 	days musicscore.Days
 	// seedLog keeps each member's Since you have seeds per day (v3).
 	seedLog musicSeedLog
+	// plans holds the v7 row plans; cursorKey signs their cursors.
+	plans     musicscore.PlanStore
+	cursorKey []byte
+	cursorMu  sync.Mutex
 	// clearing is set while a debounced day-order clear is pending.
 	clearing atomic.Bool
 	// now is the clock (tests); nil is time.Now.
@@ -46,6 +51,8 @@ type musicV2Order struct {
 	Rows    []MusicRow
 	Regions []string
 	Cold    bool
+	// v7 is the raw candidate rows (flag music_rows_v7).
+	v7 *musicV7Cand
 }
 
 // musicLib is the library snapshot the rows are built from (layer 1).
