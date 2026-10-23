@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/CoderLuii/holyarrs/internal/parts"
 	"github.com/CoderLuii/holyarrs/internal/urlbase"
 )
 
@@ -17,7 +19,10 @@ const trailerBatchMax = 40
 // looked up ahead of time (ask again, or ask the single route on hover).
 type trailerBatchView struct {
 	Streams map[string]TrailerStream `json:"streams"`
-	Pending []string                 `json:"pending"`
+	// Videos are artists' music videos ("artist:mbid") already looked up,
+	// as the artist page's ?part=video answers them.
+	Videos  map[string]ArtistVideoView `json:"videos"`
+	Pending []string                   `json:"pending"`
 }
 
 // trailerBatch answers the cards on screen at once: known streams come back
@@ -45,11 +50,37 @@ func (a *API) trailerBatch(w http.ResponseWriter, r *http.Request) {
 	}
 	lang := trailerLanguage(r)
 	now := time.Now()
-	out := trailerBatchView{Streams: map[string]TrailerStream{}, Pending: []string{}}
+	out := trailerBatchView{Streams: map[string]TrailerStream{}, Videos: map[string]ArtistVideoView{}, Pending: []string{}}
 	var ahead [][2]string
+	var artists []string
 	seen := map[string]bool{}
 	for _, id := range ids {
 		kind, tmdb, ok := strings.Cut(id, ":")
+		if kind == "artist" {
+			mbid := strings.ToLower(tmdb)
+			if !metadata.ValidMBID(mbid) {
+				fail(w, http.StatusBadRequest, "ids must name 1 to "+strconv.Itoa(trailerBatchMax)+" titles as kind:tmdb_id or artist:mbid")
+				return
+			}
+			if seen[id] || !a.artistVideosOn() {
+				continue
+			}
+			seen[id] = true
+			switch e, kept := a.keptVideos(r.Context(), mbid); {
+			case kept && len(e.list) == 0:
+				// No videos (for now): nothing to wait for.
+			default:
+				if v, s, ready := a.readyVideo(r.Context(), e.list); ready {
+					if view, ok := a.videoView(r, v, s); ok {
+						out.Videos[id] = view
+						continue
+					}
+				}
+				out.Pending = append(out.Pending, id)
+				artists = append(artists, mbid)
+			}
+			continue
+		}
 		n, err := strconv.ParseInt(tmdb, 10, 64)
 		if !ok || (kind != "movie" && kind != "show") || err != nil || n <= 0 {
 			fail(w, http.StatusBadRequest, "ids must name 1 to "+strconv.Itoa(trailerBatchMax)+" titles as kind:tmdb_id")
@@ -81,6 +112,14 @@ func (a *API) trailerBatch(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	a.prefetchTrailers(r, ahead)
+	a.prefetchArtistVideos(r, artists)
 	w.Header().Set("Cache-Control", "private, no-store")
 	writeJSON(w, http.StatusOK, out)
+}
+
+// artistVideosOn says whether artist music videos can play here: music on,
+// a music source and a metadata server that lists videos.
+func (a *API) artistVideosOn() bool {
+	p, _ := parts.ForTitleKind("artist")
+	return a.partIsOn(p) && a.s.Library != nil && a.s.Library.Artists != nil && a.s.ArtistVideos != nil
 }

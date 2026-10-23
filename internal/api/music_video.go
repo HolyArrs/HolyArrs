@@ -74,7 +74,7 @@ func (c *artistVideoCache) putLocked(k string, e artistVideoList) {
 }
 
 type storedVideos struct {
-	At     time.Time               `json:"at"`
+	At     time.Time              `json:"at"`
 	Videos []metadata.ArtistVideo `json:"videos"`
 }
 
@@ -99,10 +99,10 @@ func (a *API) keepVideos(ctx context.Context, mbid string, e artistVideoList) {
 	}
 }
 
-// videosOf reads the artist's videos: memory, then disk, then the server.
-func (a *API) videosOf(ctx context.Context, mbid string) []metadata.ArtistVideo {
+// keptVideos reads the artist's videos from memory, then disk; ok is false
+// when neither has an answer.
+func (a *API) keptVideos(ctx context.Context, mbid string) (artistVideoList, bool) {
 	c := &a.artistVideos
-	now := c.clock()
 	c.mu.Lock()
 	e, ok := c.m[mbid]
 	c.mu.Unlock()
@@ -117,6 +117,14 @@ func (a *API) videosOf(ctx context.Context, mbid string) []metadata.ArtistVideo 
 			}
 		}
 	}
+	return e, ok
+}
+
+// videosOf reads the artist's videos: memory, then disk, then the server.
+func (a *API) videosOf(ctx context.Context, mbid string) []metadata.ArtistVideo {
+	c := &a.artistVideos
+	now := c.clock()
+	e, ok := a.keptVideos(ctx, mbid)
 	switch {
 	case ok && len(e.list) > 0:
 		if now.Sub(e.at) >= artistVideosFresh {
@@ -210,19 +218,22 @@ func (a *API) artistVideo(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusNotFound, "no video")
 		return
 	}
-	if _, _, found := ytdlpRun(); !found {
-		fail(w, http.StatusNotFound, "no direct stream")
-		return
-	}
 	vids := a.videosOf(metadata.MemberLookup(r.Context()), mbid)
 	if len(vids) == 0 {
 		fail(w, http.StatusNotFound, "no video")
 		return
 	}
-	// A video that will not play is dropped and another one is tried.
-	var v metadata.ArtistVideo
-	var s TrailerStream
-	for tries := 0; ; tries++ {
+	// A video whose stream was looked up ahead of time answers at once;
+	// else one is picked, and one that will not play is dropped and
+	// another one is tried.
+	v, s, ready := a.readyVideo(r.Context(), vids)
+	if !ready {
+		if _, _, found := ytdlpRun(); !found {
+			fail(w, http.StatusNotFound, "no direct stream")
+			return
+		}
+	}
+	for tries := 0; !ready; tries++ {
 		if len(vids) == 0 || tries >= 4 {
 			fail(w, http.StatusNotFound, "no direct stream")
 			return
@@ -248,18 +259,93 @@ func (a *API) artistVideo(w http.ResponseWriter, r *http.Request) {
 		}
 		vids = a.dropVideo(r.Context(), mbid, v.ID)
 	}
-	id := a.trailerRelay.register(a.person(r).UserID, s.URL, s.ExpiresAt)
-	if id == "" {
+	view, ok := a.videoView(r, v, s)
+	if !ok {
 		fail(w, http.StatusNotFound, "no direct stream")
 		return
+	}
+	w.Header().Set("Cache-Control", "private, no-store")
+	writeJSON(w, http.StatusOK, view)
+}
+
+// videoView relays the stream for this person and describes it.
+func (a *API) videoView(r *http.Request, v metadata.ArtistVideo, s TrailerStream) (ArtistVideoView, bool) {
+	id := a.trailerRelay.register(a.person(r).UserID, s.URL, s.ExpiresAt)
+	if id == "" {
+		return ArtistVideoView{}, false
 	}
 	dur := v.Duration
 	if dur <= 0 {
 		dur = s.Duration
 	}
-	w.Header().Set("Cache-Control", "private, no-store")
-	writeJSON(w, http.StatusOK, ArtistVideoView{Key: v.ID, ProxyURL: urlbase.From(r.Context()) + "/api/v1/trailer/stream/" + id + "/manifest.m3u8",
-		Start: videoStart(v, s), Duration: dur, ExpiresAt: s.ExpiresAt})
+	return ArtistVideoView{Key: v.ID, ProxyURL: urlbase.From(r.Context()) + "/api/v1/trailer/stream/" + id + "/manifest.m3u8",
+		Start: videoStart(v, s), Duration: dur, ExpiresAt: s.ExpiresAt}, true
+}
+
+// videoKnown reads a video's stream from memory or SQLite only; known
+// with a zero stream means it has no direct stream (for now).
+func (a *API) videoKnown(ctx context.Context, id string) (TrailerStream, bool) {
+	ckey := "musicvideo|" + id
+	now := time.Now()
+	e, ok := a.trailers.get(ckey, now)
+	if !ok && a.trailerStored(ctx, ckey, now) {
+		e, ok = a.trailers.get(ckey, now)
+	}
+	if !ok || !e.miss.IsZero() || e.s.Type != "hls" {
+		return TrailerStream{}, ok
+	}
+	return e.s, true
+}
+
+// readyVideo is the first of the videos whose stream is already known.
+func (a *API) readyVideo(ctx context.Context, vids []metadata.ArtistVideo) (metadata.ArtistVideo, TrailerStream, bool) {
+	for _, v := range vids {
+		if s, _ := a.videoKnown(ctx, v.ID); s.URL != "" {
+			return v, s, true
+		}
+	}
+	return metadata.ArtistVideo{}, TrailerStream{}, false
+}
+
+// prefetchArtistVideos looks artists' music video streams up ahead of time,
+// exactly as prefetchTrailers does for trailers: one after another, within
+// the install's ahead-of-time budget, never for Kid accounts or with
+// trailers off. Only the stream address is resolved; nothing is downloaded.
+func (a *API) prefetchArtistVideos(r *http.Request, mbids []string) {
+	if len(mbids) == 0 || a.kidMax(r) != "" || !a.uiSettings(r.Context()).AutoplayTrailers || a.s.ArtistVideos == nil {
+		return
+	}
+	if _, _, ok := ytdlpRun(); !ok {
+		return
+	}
+	ctx := metadata.MemberLookup(context.WithoutCancel(r.Context()))
+	go func() {
+		for _, mbid := range mbids {
+			vids := a.videosOf(ctx, mbid)
+			if _, _, ok := a.readyVideo(ctx, vids); ok || len(vids) == 0 {
+				continue
+			}
+			// The first video that has not failed is the one made ready.
+			var next string
+			for _, v := range vids {
+				if _, known := a.videoKnown(ctx, v.ID); !known {
+					next = v.ID
+					break
+				}
+			}
+			if next == "" || a.trailers.inFlight("musicvideo|"+next) {
+				continue
+			}
+			if !a.trailers.allowAhead(time.Now()) {
+				return
+			}
+			lctx, cancel := context.WithTimeout(ctx, 40*time.Second)
+			if _, err := a.resolveMusicVideo(lctx, next); err != nil && lctx.Err() == nil {
+				a.dropVideo(ctx, mbid, next)
+			}
+			cancel()
+		}
+	}()
 }
 
 // resolveMusicVideo resolves one YouTube video like a trailer: memory,
