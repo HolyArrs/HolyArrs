@@ -219,7 +219,7 @@ func (a *API) musicGenreChart(ctx context.Context, region, kind, slug string, no
 	if err != nil {
 		return nil
 	}
-	a.musicv2.cand.Put(key, c.Items, musicChartTTL, now)
+	a.musicv2.cand.Put(key, c.Items, spread(musicChartTTL, 0.25), now)
 	return c.Items
 }
 

@@ -724,6 +724,12 @@ func (a *API) exploreMusicV7(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	a.rememberMusicCards(out)
+	if more {
+		// The next page's albums and artists are fetched ahead while this
+		// one is read (nothing while Music's loop is off).
+		nextPage := offset/musicscore.PlanBatch + 1
+		go func() { a.queueAhead(musicV7PagesAhead(p, nextPage, 1)) }()
+	}
 	a.exploreCaching(w, r, "private, no-cache")
 	if offset > 0 {
 		writeJSON(w, http.StatusOK, map[string]any{"v2": true, "v7": true, "rows": out, "next": next, "total": p.Total()})
@@ -767,5 +773,12 @@ func (a *API) prewarmMusicV7(ctx context.Context) {
 		return
 	}
 	key := musicscore.PlanKey{Member: 0, Date: musicscore.Day(now), View: "global"}
-	a.buildMusicV7Plan(ctx, 0, "global", key, lib, acts, now)
+	p := a.buildMusicV7Plan(ctx, 0, "global", key, lib, acts, now)
+	if p != nil && p.Meta != nil {
+		// The first pages' albums and artists: details and pictures ahead.
+		a.queueAhead(musicV7PagesAhead(p, 0, musicV7AheadPages))
+	}
 }
+
+// musicV7AheadPages is how many v7 pages the prewarm fetches ahead.
+const musicV7AheadPages = 3

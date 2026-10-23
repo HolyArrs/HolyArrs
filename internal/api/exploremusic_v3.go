@@ -208,7 +208,7 @@ func (a *API) musicGenreChartOf(ctx context.Context, region, slug string, now ti
 		markMusicMiss(ctx)
 		return nil
 	}
-	a.musicv2.cand.Put(key, c.Items, musicChartTTL, now)
+	a.musicv2.cand.Put(key, c.Items, spread(musicChartTTL, 0.25), now)
 	return c.Items
 }
 

@@ -76,8 +76,8 @@ func (a *API) refreshMusicNew(ctx context.Context) bool {
 }
 
 // prebuildMusic builds New & Popular → Music, Explore Music's charts and
-// every genre page, then fetches the covers they show. One thing at a
-// time, so upstream limits are kept.
+// every genre page, then fetches ahead the details and covers of what they
+// show (music_ahead.go). One thing at a time, so upstream limits are kept.
 func (a *API) prebuildMusic(ctx context.Context) {
 	a.loadMusicNew()
 	a.refreshMusicNew(ctx)
@@ -137,20 +137,5 @@ func (a *API) prebuildMusic(ctx context.Context) {
 			}
 		}
 	}
-	seen := map[[2]string]bool{}
-	for _, k := range art {
-		if seen[k] {
-			continue
-		}
-		seen[k] = true
-		if ctx.Err() != nil {
-			return
-		}
-		_, _, _ = a.musicTrendArtFile(ctx, k[0], k[1], "250")
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(musicArtWarmGap):
-		}
-	}
+	a.fetchAhead(ctx, aheadOf(art))
 }

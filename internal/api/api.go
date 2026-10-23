@@ -87,6 +87,12 @@ type Server struct {
 	WikiTitle    func(ctx context.Context, kind, id string) (metadata.WikiEntity, error)
 	WikiPerson   func(ctx context.Context, id string) (metadata.WikiEntity, error)
 	AwardWinners func(ctx context.Context, kind string) ([]metadata.AwardWinner, error)
+	// MusicControl reads the metadata server's switch for fetch-ahead
+	// (on, slow, off); ArtistVideos an artist's official music videos.
+	// nil, or an older server without them, keeps fetch-ahead on and the
+	// artist hero a photo.
+	MusicControl func(ctx context.Context) (metadata.Control, error)
+	ArtistVideos func(ctx context.Context, mbid string) ([]metadata.ArtistVideo, error)
 	// Library runs adding, editing and refreshing; New makes one when nil.
 	Library *library.Service
 	// Lists reads Outside lists; New makes one without keys when nil.
@@ -172,6 +178,9 @@ type API struct {
 	trailerRelay trailerProxy
 	// trailerKeys keeps each title's YouTube key (also in lookup_cache).
 	trailerKeys trailerKeyCache
+	// ahead runs music fetch-ahead; ctl keeps the server's switch.
+	ahead musicAhead
+	ctl   musicControl
 }
 
 // New makes the API.

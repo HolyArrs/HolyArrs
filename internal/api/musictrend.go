@@ -130,7 +130,8 @@ func (a *API) cachedMusicTrend(ctx context.Context, kind, region string) (metada
 	c.mu.Lock()
 	e, ok := c.lists[key]
 	c.mu.Unlock()
-	if ok && ((e.err == nil && time.Since(e.at) < musicTrendTTL) || (e.err != nil && time.Since(e.at) < musicTrendMiss)) {
+	// Each kept list expires at its own time (an hour, give or take 15 min).
+	if ok && ((e.err == nil && time.Since(e.at) < spreadAt(musicTrendTTL, e.at, 0.25)) || (e.err != nil && time.Since(e.at) < musicTrendMiss)) {
 		return e.list, e.err
 	}
 	l, err := a.s.MusicTrending(ctx, kind, region)

@@ -166,14 +166,17 @@ func (a *API) MusicLoops() []supervisor.Loop {
 			return nil
 		case <-time.After(musicV7WarmDelay):
 		}
+		a.beginAhead(ctx)
+		defer a.endAhead()
 		a.prewarmMusicV7(ctx)
 		a.warmMusic(ctx)
 		for ctx.Err() == nil {
 			a.prebuildMusic(ctx)
 			a.prewarmMusicV7(ctx)
+			// Jittered (±90 min on 3 h) and stretched by the server's switch.
 			select {
 			case <-ctx.Done():
-			case <-time.After(musicPrebuildEvery):
+			case <-time.After(musicPrebuildGap(a.musicSwitch(ctx, time.Now()))):
 			}
 		}
 		return nil
