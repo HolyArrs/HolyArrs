@@ -175,3 +175,31 @@ export function waveLevel(ms: number, f: number, jitter = 0): number {
 }
 /** Fired on window (and html[data-signin-gl] set) once the wave shader is compiled or not needed; the panel stagger waits for it. */
 export const SIGNIN_GL_EVENT = 'holyarrs:signin-gl';
+
+// Later picture changes: a softer, quicker mosaic dissolve from an edge or corner.
+export const CYCLE_MS = 20000;
+export const SWAP_MS = 1200;
+export const SWAP_BLOCK = 56; // CSS px: larger than the first reveal's 36 px blocks
+export const SWAP_BAND = 0.35;
+export const SWAP_JITTER_MS = 90;
+export const SWAP_DONE_MS = SWAP_MS + SWAP_JITTER_MS;
+export const IDLE_MS = 5000; // the cycle resumes this long after the last interaction
+/** Where a swap's wave starts, as a fraction of the screen (edges and corners). */
+export const SWAP_ORIGINS: readonly (readonly [number, number])[] = [
+	[0, 0.5], [1, 0.5], [0.5, 0], [0.5, 1], [0, 0], [1, 0], [0, 1], [1, 1]
+];
+/** A random origin index, never the same as the last one. */
+export function nextOrigin(last: number, rnd: () => number = Math.random): number {
+	const n = SWAP_ORIGINS.length;
+	if (last < 0 || last >= n) return Math.floor(rnd() * n) % n;
+	return (last + 1 + (Math.floor(rnd() * (n - 1)) % (n - 1))) % n;
+}
+/** Swap easing: fast start, slow settle (cubic ease-out). */
+export function swapEase(p: number): number {
+	const c = Math.min(1, Math.max(0, p));
+	return 1 - Math.pow(1 - c, 3);
+}
+/** True when the user is mid-interaction, so the picture must not change. */
+export function interacting(now: number, lastInput: number, fieldFocused: boolean, engaged: boolean): boolean {
+	return (engaged && fieldFocused) || now - lastInput < IDLE_MS;
+}

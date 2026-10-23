@@ -165,3 +165,29 @@ describe('radial wave', () => {
 		expect(easeOut(2)).toBe(1);
 	});
 });
+
+import { nextOrigin, swapEase, interacting, SWAP_ORIGINS, IDLE_MS } from './signinArt.ts';
+describe('swap helpers', () => {
+	it('never picks the same origin twice in a row', () => {
+		let last = -1;
+		for (let i = 0; i < 500; i++) {
+			const o = nextOrigin(last);
+			expect(o).not.toBe(last);
+			expect(o).toBeGreaterThanOrEqual(0);
+			expect(o).toBeLessThan(SWAP_ORIGINS.length);
+			last = o;
+		}
+		expect(nextOrigin(3, () => 0.9999)).not.toBe(3);
+	});
+	it('eases fast then settles', () => {
+		expect(swapEase(0)).toBe(0);
+		expect(swapEase(1)).toBe(1);
+		expect(swapEase(0.25)).toBeGreaterThan(0.5);
+	});
+	it('pauses while typing and for 5 s after', () => {
+		expect(interacting(10000, 9000, false, true)).toBe(true);
+		expect(interacting(10000 + IDLE_MS, 10000, false, true)).toBe(false);
+		expect(interacting(99999, 0, true, true)).toBe(true);
+		expect(interacting(99999, 0, true, false)).toBe(false);
+	});
+});

@@ -1,6 +1,6 @@
 ﻿<script lang="ts">
 	// The sign-in page's cinematic backdrop: one full-bleed picture at a
-	// time, a slow Ken Burns move and a crossfade every 12 s.
+	// time, a slow Ken Burns move and a soft mosaic dissolve every 20 s.
 	//
 	// The first picture never comes up from black. Frame 0 is a coarse mosaic
 	// of it (24 blocks across), painted by app.html from a thumbnail kept on
@@ -24,6 +24,16 @@
 		WAVE_JITTER_MS,
 		WAVE_MS,
 		SIGNIN_GL_EVENT,
+		CYCLE_MS,
+		SWAP_BAND,
+		SWAP_BLOCK,
+		SWAP_DONE_MS,
+		SWAP_JITTER_MS,
+		SWAP_MS,
+		SWAP_ORIGINS,
+		interacting,
+		nextOrigin,
+		swapEase,
 		pickArt,
 		playlist,
 		prepareSlide,
@@ -32,13 +42,12 @@
 		type ArtShot
 	} from '#lib/signinArt.ts';
 
-	const CYCLE_MS = 12000; // Long enough to take each picture in; the zoom stays slow.
 	const CACHE = 'holyarrs-signin-art';
 	const SEED = 'holyarrs-signin-seed'; // the style element app.html adds for the first frame
 
 	/** The first slide's mosaic sources: the 24 px frame-0 thumbnail when kept, and a small copy for detail until the full picture is in. */
 	type Seed = { t24: string | null; small: string };
-	type Slide = { pick: ArtPick; shot: ArtShot; logo: string | null; key: number; first: boolean; seed: Seed | null };
+	type Slide = { pick: ArtPick; shot: ArtShot; logo: string | null; key: number; first: boolean; seed: Seed | null; origin: number };
 	type Thumb = { url: string; t24: string; t64: string; pos: string };
 	let layers = $state<Slide[]>([]);
 	let still = $state(false);
@@ -406,6 +415,151 @@ void main() {
 		};
 	}
 
+	// Later changes: the same mosaic language, softer and quicker. The new
+	// picture dissolves in over the old one through large (56 px), low-contrast
+	// blocks, in a wave from one edge or corner, over about 1.2 s on a quartic
+	// ease-out. Each block fades in as its own average colour, then resolves to
+	// the sharp picture underneath it. The canvas sits in the new picture's
+	// Ken Burns box, so at the hand-over the <img> lands on the same pixels.
+	const SWAP_FRAG = `#version 300 es
+precision highp float;
+uniform sampler2D tex;
+uniform vec2 view;
+uniform vec2 texSize;
+uniform vec2 pos;
+uniform vec2 origin;
+uniform float maxD;
+uniform float pr;
+uniform float px;
+out vec4 o;
+const float B = ${SWAP_BLOCK.toFixed(1)};
+const float BAND = ${SWAP_BAND.toFixed(3)};
+float hash(vec2 c) { return fract(sin(dot(c, vec2(127.1, 311.7))) * 43758.5453); }
+void main() {
+	vec2 p = vec2(gl_FragCoord.x, view.y * px - gl_FragCoord.y) / px;
+	float k = max(view.x / texSize.x, view.y / texSize.y);
+	vec2 org = (view - texSize * k) * pos;
+	vec2 cell = floor(p / B);
+	float f = distance((cell + 0.5) * B, origin) / maxD + (hash(cell) * 2.0 - 1.0) * ${(SWAP_JITTER_MS / SWAP_MS).toFixed(3)};
+	float s = clamp((pr * (1.0 + BAND) - f) / BAND, 0.0, 1.0);
+	if (s <= 0.0) { o = vec4(0.0); return; }
+	vec2 c = (cell + 0.5) * B;
+	vec3 blk = textureLod(tex, (c - org) / (texSize * k), max(0.0, log2(B / k))).rgb;
+	vec3 sharp = texture(tex, (p - org) / (texSize * k)).rgb;
+	// Low contrast: each block is its average pulled towards the sharp pixel, then it clears into the sharp picture.
+	vec3 col = mix(mix(blk, sharp, 0.35), sharp, smoothstep(0.45, 1.0, s));
+	float a = smoothstep(0.0, 0.5, s);
+	o = vec4(col * a, a);
+}`;
+
+	function swap(node: HTMLElement, origin: number) {
+		const pic = node.querySelector<HTMLImageElement>('img.pic');
+		const canvas = node.querySelector<HTMLCanvasElement>('canvas.mz');
+		let stop = false;
+		const done = () => {
+			stop = true;
+			node.classList.remove('mosaic');
+			node.classList.add('sharp');
+		};
+		const gl = canvas?.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: false });
+		if (!pic || !canvas || !gl) {
+			done();
+			return {};
+		}
+		const prog = gl.createProgram()!;
+		for (const [type, src] of [[gl.VERTEX_SHADER, VERT], [gl.FRAGMENT_SHADER, SWAP_FRAG]] as const) {
+			const sh = gl.createShader(type)!;
+			gl.shaderSource(sh, src);
+			gl.compileShader(sh);
+			gl.attachShader(prog, sh);
+		}
+		gl.linkProgram(prog);
+		const par = gl.getExtension('KHR_parallel_shader_compile');
+		const u = (n: string) => gl.getUniformLocation(prog, n);
+		const w = node.offsetWidth || innerWidth;
+		const h = node.offsetHeight || innerHeight;
+		const px = Math.min(2, window.devicePixelRatio || 1);
+		canvas.width = Math.ceil(w * px);
+		canvas.height = Math.ceil(h * px);
+		const [ox, oy] = SWAP_ORIGINS[origin] ?? [0.5, 0.5];
+		const cx = ox * w;
+		const cy = oy * h;
+		const maxD = Math.max(Math.hypot(cx, cy), Math.hypot(w - cx, cy), Math.hypot(cx, h - cy), Math.hypot(w - cx, h - cy));
+		const pos = (canvas.dataset.pos ?? '50% 50%').split(/\s+/).map((v) => parseFloat(v) / 100);
+		let texSize: [number, number] | null = null;
+		// The picture is already decoded (prepareSlide); a CORS-mode copy comes from the cache.
+		loadImage(pic.currentSrc || pic.src)
+			.then((img) => createImageBitmap(img, { resizeWidth: Math.min(Math.ceil(w * px), img.naturalWidth), resizeQuality: 'high' }))
+			.then((b) => {
+				if (stop) return;
+				const tx = gl.createTexture();
+				gl.activeTexture(gl.TEXTURE0);
+				gl.bindTexture(gl.TEXTURE_2D, tx);
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, b);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+				gl.generateMipmap(gl.TEXTURE_2D);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+				texSize = [b.width, b.height];
+			})
+			.catch(() => {
+				if (!stop) done();
+			});
+		let ready = false;
+		let start = 0;
+		let raf = 0;
+		function frame(now: number) {
+			if (stop) return;
+			if (!ready && texSize) {
+				if (par && !gl!.getProgramParameter(prog, par.COMPLETION_STATUS_KHR)) {
+					raf = requestAnimationFrame(frame);
+					return;
+				}
+				if (!gl!.getProgramParameter(prog, gl!.LINK_STATUS)) return done();
+				gl!.useProgram(prog);
+				gl!.bindBuffer(gl!.ARRAY_BUFFER, gl!.createBuffer());
+				gl!.bufferData(gl!.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl!.STATIC_DRAW);
+				const a = gl!.getAttribLocation(prog, 'a');
+				gl!.enableVertexAttribArray(a);
+				gl!.vertexAttribPointer(a, 2, gl!.FLOAT, false, 0, 0);
+				gl!.viewport(0, 0, canvas!.width, canvas!.height);
+				gl!.uniform1i(u('tex'), 0);
+				gl!.uniform2f(u('view'), w, h);
+				gl!.uniform2f(u('texSize'), texSize[0], texSize[1]);
+				gl!.uniform2f(u('pos'), pos[0] ?? 0.5, pos[1] ?? 0.5);
+				gl!.uniform2f(u('origin'), cx, cy);
+				gl!.uniform1f(u('maxD'), maxD);
+				gl!.uniform1f(u('px'), px);
+				ready = true;
+				start = now;
+				node.classList.add('mosaic');
+			}
+			if (ready) {
+				const t = now - start;
+				gl!.uniform1f(u('pr'), swapEase(t / SWAP_MS));
+				gl!.drawArrays(gl!.TRIANGLES, 0, 3);
+				if (t >= SWAP_DONE_MS) return done();
+			}
+			raf = requestAnimationFrame(frame);
+		}
+		raf = requestAnimationFrame(frame);
+		// Never stuck: if the GPU never answers, the picture simply shows.
+		const guard = setTimeout(() => !ready && done(), 1500);
+		return {
+			destroy() {
+				stop = true;
+				clearTimeout(guard);
+				cancelAnimationFrame(raf);
+				gl.getExtension('WEBGL_lose_context')?.loseContext();
+			}
+		};
+	}
+
+	function slide(node: HTMLElement, l: Slide) {
+		return l.first ? reveal(node, l.seed) : l.origin >= 0 ? swap(node, l.origin) : reveal(node, null);
+	}
+
 	onMount(() => {
 		const kept = readKept();
 		// A first-ever visit: the list and thumbnails the server put in the page (app.html).
@@ -428,6 +582,7 @@ void main() {
 		// exception when its thumbnail is kept: its mosaic shows straight away
 		// and refines as the picture arrives.
 		let busy = false;
+		let origin = -1;
 		async function advance() {
 			const list = playlist(shots, screen());
 			if (!list.length || gone || busy) return;
@@ -443,7 +598,7 @@ void main() {
 				const seed: Seed | null = !first ? null : { t24: kept?.t24 ?? null, small: kept?.t64 ?? sized(p.url, p.kind === 'poster' ? 342 : 300) };
 				if (seed) {
 					const key = ++n;
-					layers = [{ ...list[at], logo: null, key, first, seed }];
+					layers = [{ ...list[at], logo: null, key, first, seed, origin: -1 }];
 					const got = await prepareSlide(list[at], ready);
 					if (gone) break;
 					if (!got) {
@@ -456,7 +611,9 @@ void main() {
 					const got = await prepareSlide(list[at], ready);
 					if (!got) continue;
 					if (gone) break;
-					layers = [...layers.slice(-1), { ...got, key: ++n, first, seed: null }];
+					// Never the same edge or corner twice in a row; no mosaic with reduced motion.
+					origin = still ? -1 : nextOrigin(origin);
+					layers = [...layers.slice(-1), { ...got, key: ++n, first, seed: null, origin }];
 				}
 				// Next visit: start from the picture after this one, so the page turns over.
 				const after = list[(at + 1) % list.length];
@@ -474,22 +631,41 @@ void main() {
 				break;
 			}
 			busy = false;
-			if (!still && list.length > 1) schedule();
+			if (list.length > 1) schedule();
 		}
 		function schedule() {
 			clearTimeout(timer);
-			timer = setTimeout(() => {
-				if (document.hidden) return; // resumes on visibilitychange
-				void advance();
-			}, CYCLE_MS);
+			timer = setTimeout(tick, CYCLE_MS);
+		}
+		// Never change the picture while the user is signing in: a field they
+		// focused or typed in (a password manager filling counts as input) holds
+		// the cycle; it resumes 5 s after the last interaction or blur. The
+		// name field's own auto-focus does not count.
+		let lastInput = 0;
+		let engaged = false;
+		const isField = (el: Element | null) => !!el && el.matches('input, textarea, select, [contenteditable="true"]');
+		function tick() {
+			if (document.hidden) return; // resumes on visibilitychange
+			const busyUser = interacting(performance.now(), lastInput, isField(document.activeElement), engaged);
+			if (busyUser) {
+				clearTimeout(timer);
+				timer = setTimeout(tick, 1000);
+				return;
+			}
+			void advance();
+		}
+		function onInteract() {
+			engaged = true;
+			lastInput = performance.now();
+		}
+		function onBlur() {
+			lastInput = performance.now();
 		}
 		function onVisible() {
-			if (!document.hidden && !still && shots.length > 1) schedule();
+			if (!document.hidden && shots.length > 1) schedule();
 		}
 		function onMotion() {
 			still = motion.matches;
-			if (still) clearTimeout(timer);
-			else schedule();
 		}
 		let resizeT: ReturnType<typeof setTimeout> | undefined;
 		function onResize() {
@@ -532,6 +708,8 @@ void main() {
 			});
 
 		document.addEventListener('visibilitychange', onVisible);
+		for (const e of ['keydown', 'input', 'pointerdown', 'paste'] as const) document.addEventListener(e, onInteract, true);
+		document.addEventListener('focusout', onBlur, true);
 		motion.addEventListener('change', onMotion);
 		window.addEventListener('resize', onResize);
 		return () => {
@@ -540,6 +718,8 @@ void main() {
 			clearTimeout(resizeT);
 			unseed();
 			document.removeEventListener('visibilitychange', onVisible);
+			for (const e of ['keydown', 'input', 'pointerdown', 'paste'] as const) document.removeEventListener(e, onInteract, true);
+			document.removeEventListener('focusout', onBlur, true);
 			motion.removeEventListener('change', onMotion);
 			window.removeEventListener('resize', onResize);
 		};
@@ -548,8 +728,8 @@ void main() {
 
 <div class="art" class:still aria-hidden="true" data-testid="signin-art">
 	{#each layers as l, i (l.key)}
-		<div class="layer" class:top={i === layers.length - 1} class:first={l.first}>
-			<div class="kb" style:--kb-dur="{CYCLE_MS + 1600}ms" use:reveal={l.first ? l.seed : null}>
+		<div class="layer" class:top={i === layers.length - 1} class:first={l.first} class:swap={l.origin >= 0}>
+			<div class="kb" style:--kb-dur="{CYCLE_MS + 1600}ms" use:slide={l}>
 				<img
 					class="pic"
 					src={l.pick.url}
@@ -559,7 +739,7 @@ void main() {
 					data-need={l.pick.need}
 					style:object-position={l.pick.position}
 				/>
-				{#if l.first}
+				{#if l.first || l.origin >= 0}
 					<canvas class="mz" data-pos={l.pick.position}></canvas>
 				{/if}
 			</div>
@@ -593,7 +773,7 @@ void main() {
 	}
 	/* The first picture is there at once, as its own mosaic (no fade from
 	   dark); later ones crossfade slowly. */
-	.layer.first { animation: none; opacity: 1; }
+	.layer.first, .layer.swap { animation: none; opacity: 1; }
 	.layer:not(.top) { animation: none; opacity: 1; }
 	/* The slow zoom moves the picture and its mosaic together. */
 	.kb {
@@ -624,6 +804,9 @@ void main() {
 	/* Until the mosaic has its first frame, nothing sharp peeks through. */
 	.kb:not(:global(.mosaic)):not(:global(.sharp)) .pic { opacity: 0; }
 	.kb:global(.sharp) .mz { display: none; }
+	/* A change: the old picture stays sharp underneath until the wave is done;
+	   the new one is only the canvas's blocks until then (no cut). */
+	.layer.swap .kb:not(:global(.sharp)) .pic { opacity: 0; }
 	/* A repeat visit: app.html painted the thumbnail behind the page, so the
 	   dark backgrounds stay clear until the mosaic takes over. */
 	:global(html.sa-seeded) .art { background: transparent; }
@@ -658,7 +841,8 @@ void main() {
 	@keyframes logo-in { from { opacity: 0; } to { opacity: 0.92; } }
 	@keyframes logo-out { from { opacity: 0.92; } to { opacity: 0; } }
 	.still .kb { animation: none; transform: none; }
-	.still .layer { animation: none; opacity: 1; }
+	.still .layer:not(.first) { animation: fade-in 2.4s ease-in-out forwards; }
+	.still .layer:not(.top) { animation: none; opacity: 1; }
 	.still .logo { animation: none; opacity: 0; }
 	.still .logo.top { opacity: 0.92; }
 	@keyframes ken-burns {
