@@ -37,7 +37,7 @@ export const LEG_S = LEAD_S + (COUNT - 1) * SPACING_S + TRAVEL_S + 0.1 + CLOSE_S
  * first symbol arrives and close after the last one falls in.
  */
 export function holeAt(local: number, role: 'from' | 'to'): { s: number; squash: number } {
-	const openAt = role === 'from' ? 0 : LEAD_S + TRAVEL_S - OPEN_S - 0.2;
+	const openAt = role === 'from' ? 0 : LEAD_S + 0.6 * TRAVEL_S - OPEN_S; // fully open before the first symbol arrives (0.82 of its run)
 	const closeAt = role === 'from' ? (COUNT - 1) * SPACING_S + LEAD_S + 0.5 : LEAD_S + (COUNT - 1) * SPACING_S + TRAVEL_S + 0.1;
 	if (local < openAt || local >= closeAt + CLOSE_S) return { s: 0, squash: 0 };
 	if (local < openAt + OPEN_S) {

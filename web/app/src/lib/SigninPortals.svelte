@@ -10,7 +10,7 @@
 	// the user is signing in; off with reduced motion.
 	import { onMount } from 'svelte';
 	import { MASKS } from '#lib/pixelTrail.ts';
-	import { interacting } from '#lib/signinArt.ts';
+	import { IDLE_MS } from '#lib/signinArt.ts';
 	import { legAt, holeAt, symbolAt, easeInOutSine, clamp01, COUNT } from '#lib/signinPortals.ts';
 
 	let canvas: HTMLCanvasElement | undefined = $state();
@@ -252,11 +252,14 @@
 			for (let i = 0; i < COUNT; i++) {
 				const p = symbolAt(leg.local, i);
 				if (p === null) continue;
-				const [px, py] = legPoint(k, easeInOutSine(p));
+				// Travel fills 0.08..0.82 of the symbol's time; it rises out of the
+				// first hole before, and after it sits over the far hole's centre and
+				// sinks into its depth (shrinks, blurs, fades).
+				const u = easeInOutSine(clamp01((p - 0.08) / 0.74));
+				const [px, py] = legPoint(k, u);
 				const tt = t * 1000 + i * 290;
 				const ox = px - pcx, oy = py - pcy, ol = Math.hypot(ox, oy) || 1;
-				// Rising out of the hole and diving into the next: scale and focus.
-				const grow = Math.min(clamp01(p / 0.1), clamp01((1 - p) / 0.1));
+				const grow = Math.min(clamp01(p / 0.08), 1 - easeInOutSine(clamp01((p - 0.82) / 0.18)));
 				const bob = Math.sin(tt / 170) * 1.2 * grow;
 				const x = px + (ox / ol) * bob, y = py + (oy / ol) * bob;
 				const sc = (0.15 + 0.85 * grow);
@@ -274,13 +277,14 @@
 
 		// A clock that only moves while the page is visible and the user is idle.
 		let clock = 0, last = 0, raf = 0, lastInput = -1e9, engaged = false;
-		const isField = (el: Element | null) => !!el && el.matches('input, textarea, select, [contenteditable="true"]');
 		function loop(now: number) {
 			raf = 0;
 			if (document.hidden || motion.matches) return;
 			const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
 			last = now;
-			if (!interacting(now, lastInput, isField(document.activeElement), engaged)) clock += dt;
+			// Pause only while typing: focus alone (the name field is focused on
+			// load, autofill fires input) never stops the loop for good.
+			if (now - lastInput >= IDLE_MS) clock += dt;
 			draw(clock);
 			raf = requestAnimationFrame(loop);
 		}
