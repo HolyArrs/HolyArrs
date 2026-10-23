@@ -63,6 +63,8 @@ type MusicCard struct {
 	Fresh *explore.Fresh `json:"fresh,omitempty"`
 	// Badge names a new release (New album, New EP, Album coming).
 	Badge string `json:"badge,omitempty"`
+	// Kicker is a Spotlight card's label above its title (New album, Climbing).
+	Kicker string `json:"kicker,omitempty"`
 	// Following: the member waits for this album (New & Popular, Coming soon).
 	Following bool `json:"following,omitempty"`
 	// Explicit: the release has explicit lyrics (the "E" mark; Deezer says so).

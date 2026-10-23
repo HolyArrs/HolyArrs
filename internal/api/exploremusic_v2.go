@@ -23,6 +23,7 @@ import (
 
 const (
 	musicChartTTL   = 6 * time.Hour
+	musicGenreListTTL = 15 * time.Minute
 	musicLibraryTTL = 5 * time.Minute
 )
 
@@ -281,7 +282,8 @@ func (a *API) musicGenreTiles(ctx context.Context, region string, now time.Time)
 		markMusicMiss(ctx)
 		return nil
 	}
-	a.musicv2.cand.Put(key, g.Genres, musicChartTTL, now)
+	// Short-lived, so new tile art from the metadata server shows soon.
+	a.musicv2.cand.Put(key, g.Genres, musicGenreListTTL, now)
 	return g.Genres
 }
 

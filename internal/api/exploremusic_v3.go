@@ -400,25 +400,55 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 			}
 		}
 	}
-	if len(heroes) == 0 {
-		var recent, top []MusicCard
-		for _, it := range albums {
-			c := chartCard(it)
-			if c.MBID == "" {
-				continue
-			}
-			c.ArtistImage = "/api/v1/music-trending/art/artist/" + c.ArtistMBID
-			if it.Date >= from && len(recent) < 3 {
-				recent = append(recent, c)
-			}
-			if len(top) < 3 {
-				top = append(top, c)
-			}
+	// The Spotlight row (Apple "New" style): your artists' new releases
+	// first, then chart new releases, climbers and the top, 8 at most,
+	// one card per album and per artist.
+	const heroMax = 8
+	kindOf := map[string]string{}
+	for _, al := range lib.albums {
+		if al.mbid != "" {
+			kindOf["album:"+al.mbid] = al.kind
 		}
-		heroes = recent
-		if len(heroes) == 0 {
-			heroes = top
+	}
+	for i := range heroes {
+		heroes[i].Kicker = "New " + map[string]string{"single": "single", "ep": "EP"}[kindOf[heroes[i].Key]]
+		if heroes[i].Kicker == "New " {
+			heroes[i].Kicker = "New album"
 		}
+	}
+	if len(heroes) > 5 {
+		heroes = heroes[:5]
+	}
+	inHero := map[string]bool{}
+	byArtist := map[string]bool{}
+	for _, c := range heroes {
+		inHero[c.Key] = true
+		inHero[fullAlbumKey(c.Name)+"|"+fullAlbumKey(c.Artist)] = true
+		byArtist[strings.ToLower(c.Artist)] = true
+	}
+	addHero := func(it metadata.MusicChartItem, kicker string) {
+		c := chartCard(it)
+		fold := fullAlbumKey(c.Name) + "|" + fullAlbumKey(c.Artist)
+		if len(heroes) >= heroMax || c.MBID == "" || inHero[c.Key] || inHero[fold] || byArtist[strings.ToLower(c.Artist)] {
+			return
+		}
+		c.ArtistImage = "/api/v1/music-trending/art/artist/" + c.ArtistMBID
+		c.Kicker = kicker
+		inHero[c.Key], inHero[fold], byArtist[strings.ToLower(c.Artist)] = true, true, true
+		heroes = append(heroes, c)
+	}
+	for _, it := range albums {
+		if it.Date >= from && it.Date <= today {
+			addHero(it, "New album")
+		}
+	}
+	for _, it := range albums {
+		if it.RankAgo != nil && (*it.RankAgo == 0 || *it.RankAgo-it.Rank >= 5) {
+			addHero(it, "Climbing")
+		}
+	}
+	for _, it := range albums {
+		addHero(it, "Top album")
 	}
 	if len(heroes) > 0 {
 		ord.Hero, ord.Alts = &heroes[0], heroes[1:]
