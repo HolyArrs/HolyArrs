@@ -444,6 +444,11 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	lib.Artists = artistMD
 	lib.Register(q)
+	// Once per install: grey stand-ins stored before they were refused are
+	// removed, so the picture run below fetches the real ones.
+	if n, err := lib.HealServerPlaceholders(ctx); err != nil || n > 0 {
+		log.Printf("artwork: %d placeholder pictures removed, error %v", n, err)
+	}
 	// Artists still without a picture get one soon after start, apart from
 	// the slower MusicBrainz refresh.
 	if _, _, err := q.Enqueue(ctx, library.KindArtistPictures, nil, map[string]any{"startup": true}, library.KindArtistPictures, domain.System); err != nil {
