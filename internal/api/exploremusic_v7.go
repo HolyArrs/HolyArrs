@@ -213,7 +213,7 @@ func (a *API) musicV7Rows(ctx context.Context, member int64, date string, lib *m
 	}
 
 	// Mixes (§2).
-	for _, m := range mixes {
+	for mi, m := range mixes {
 		seeds, sum, smax, names, ids := mixCands(m)
 		for _, sd := range seeds {
 			seedUsed[sd] = true
@@ -266,7 +266,9 @@ func (a *API) musicV7Rows(ctx context.Context, member int64, date string, lib *m
 			from = append(from, nameOf[sd])
 		}
 		in.add(MusicRow{ID: "mix:" + m.Lead, Type: "mix", Title: musicscore.MixTitle(m, nameOf[m.Lead]), Reason: "From " + joinNames(from) + " in your Library", Shape: "square"},
-			musicscore.Row{Prior: musicscore.PriorPersonal, Min: 8}, cards, sc, true, true)
+			// Mixes keep the member's ΣA order: each later mix's prior is a
+			// step lower, so a member's own taste leads.
+			musicscore.Row{Prior: musicscore.PriorPersonal - 0.05*float64(mi), Min: 8}, cards, sc, true, true)
 	}
 
 	// Because you have {X} ×4: top-A artists, day-rotated among the top 8,

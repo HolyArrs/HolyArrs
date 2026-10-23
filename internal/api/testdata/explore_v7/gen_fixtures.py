@@ -69,9 +69,9 @@ def household(per_group, groups_n, follows, two_members=False, empty=False, seed
             for k in range(4):
                 an += 1
                 a["albums"].append({"name": f"Artist {g}-{j} Record {k}", "mbid": mbid("c", an), "type": "album",
-                                    "date": f"{2004 + (j + 3 * k) % 18}-0{1 + k}-1{k}", "have": k < 2 and not two_members,
+                                    "date": f"{2004 + (j + 3 * k) % 18}-0{1 + k}-1{k}", "have": k < (1 if two_members else 2),
                                     "listeners": 40000 - 9000 * k - 10 * j})
-            if j % 5 == 0:  # a new release in the last weeks
+            if j % 5 == 0 or two_members and j % 2 == 0:  # a new release in the last weeks
                 an += 1
                 a["albums"].append({"name": f"Artist {g}-{j} New", "mbid": mbid("c", an), "type": "album", "days": -3 - j % 20, "listeners": 500})
             if j % 7 == 1:  # coming soon
@@ -110,7 +110,7 @@ dump("household_large.json", large)
 two = household(12, 2, 8, two_members=True)
 for i, a in enumerate(two["artists"]):
     a["genres"] = {"heavy metal": 9, "thrash metal": 3} if i < 12 else {"jazz": 9, "bebop": 3}
-two["note"] = "member luis follows 8 metal artists, ana 8 jazz artists, bo nothing; nothing had"
+two["note"] = "member luis follows 8 metal artists, ana 8 jazz artists, bo nothing; one album had per artist"
 dump("household_two_members.json", two)
 
 empty = household(0, 0, 0, empty=True)

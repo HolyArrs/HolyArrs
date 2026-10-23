@@ -4,7 +4,7 @@
    "albums": [
     {
      "date": "2004-01-10",
-     "have": false,
+     "have": true,
      "listeners": 40000,
      "mbid": "c0000097-0000-4000-8000-000000000097",
      "name": "Artist 0-0 Record 0",
@@ -224,7 +224,7 @@
    "albums": [
     {
      "date": "2005-01-10",
-     "have": false,
+     "have": true,
      "listeners": 39990,
      "mbid": "c000009c-0000-4000-8000-00000000009c",
      "name": "Artist 0-1 Record 0",
@@ -444,7 +444,7 @@
    "albums": [
     {
      "date": "2006-01-10",
-     "have": false,
+     "have": true,
      "listeners": 39980,
      "mbid": "c00000a1-0000-4000-8000-0000000000a1",
      "name": "Artist 0-2 Record 0",
@@ -475,9 +475,16 @@
      "type": "album"
     },
     {
+     "days": -5,
+     "listeners": 500,
+     "mbid": "c00000a5-0000-4000-8000-0000000000a5",
+     "name": "Artist 0-2 New",
+     "type": "album"
+    },
+    {
      "date": "2001-10-30",
      "listeners": 29998,
-     "mbid": "c00000a5-0000-4000-8000-0000000000a5",
+     "mbid": "c00000a6-0000-4000-8000-0000000000a6",
      "name": "Artist 0-2 Classic",
      "type": "album"
     }
@@ -664,9 +671,9 @@
    "albums": [
     {
      "date": "2007-01-10",
-     "have": false,
+     "have": true,
      "listeners": 39970,
-     "mbid": "c00000a6-0000-4000-8000-0000000000a6",
+     "mbid": "c00000a7-0000-4000-8000-0000000000a7",
      "name": "Artist 0-3 Record 0",
      "type": "album"
     },
@@ -674,7 +681,7 @@
      "date": "2010-02-11",
      "have": false,
      "listeners": 30970,
-     "mbid": "c00000a7-0000-4000-8000-0000000000a7",
+     "mbid": "c00000a8-0000-4000-8000-0000000000a8",
      "name": "Artist 0-3 Record 1",
      "type": "album"
     },
@@ -682,7 +689,7 @@
      "date": "2013-03-12",
      "have": false,
      "listeners": 21970,
-     "mbid": "c00000a8-0000-4000-8000-0000000000a8",
+     "mbid": "c00000a9-0000-4000-8000-0000000000a9",
      "name": "Artist 0-3 Record 2",
      "type": "album"
     },
@@ -690,7 +697,7 @@
      "date": "2016-04-13",
      "have": false,
      "listeners": 12970,
-     "mbid": "c00000a9-0000-4000-8000-0000000000a9",
+     "mbid": "c00000aa-0000-4000-8000-0000000000aa",
      "name": "Artist 0-3 Record 3",
      "type": "album"
     }
@@ -861,9 +868,9 @@
    "albums": [
     {
      "date": "2008-01-10",
-     "have": false,
+     "have": true,
      "listeners": 39960,
-     "mbid": "c00000aa-0000-4000-8000-0000000000aa",
+     "mbid": "c00000ab-0000-4000-8000-0000000000ab",
      "name": "Artist 0-4 Record 0",
      "type": "album"
     },
@@ -871,7 +878,7 @@
      "date": "2011-02-11",
      "have": false,
      "listeners": 30960,
-     "mbid": "c00000ab-0000-4000-8000-0000000000ab",
+     "mbid": "c00000ac-0000-4000-8000-0000000000ac",
      "name": "Artist 0-4 Record 1",
      "type": "album"
     },
@@ -879,7 +886,7 @@
      "date": "2014-03-12",
      "have": false,
      "listeners": 21960,
-     "mbid": "c00000ac-0000-4000-8000-0000000000ac",
+     "mbid": "c00000ad-0000-4000-8000-0000000000ad",
      "name": "Artist 0-4 Record 2",
      "type": "album"
     },
@@ -887,8 +894,15 @@
      "date": "2017-04-13",
      "have": false,
      "listeners": 12960,
-     "mbid": "c00000ad-0000-4000-8000-0000000000ad",
+     "mbid": "c00000ae-0000-4000-8000-0000000000ae",
      "name": "Artist 0-4 Record 3",
+     "type": "album"
+    },
+    {
+     "days": -7,
+     "listeners": 500,
+     "mbid": "c00000af-0000-4000-8000-0000000000af",
+     "name": "Artist 0-4 New",
      "type": "album"
     }
    ],
@@ -908,7 +922,7 @@
      ],
      "date": "2019-03-03",
      "listeners": 300,
-     "mbid": "d000c3fe-0000-4000-8000-00000000c3fe",
+     "mbid": "d000c400-0000-4000-8000-00000000c400",
      "title": "Other 0-15 feat. Artist 0-4",
      "type": "single"
     }
@@ -1074,9 +1088,9 @@
    "albums": [
     {
      "date": "2009-01-10",
-     "have": false,
+     "have": true,
      "listeners": 39950,
-     "mbid": "c00000af-0000-4000-8000-0000000000af",
+     "mbid": "c00000b1-0000-4000-8000-0000000000b1",
      "name": "Artist 0-5 Record 0",
      "type": "album"
     },
@@ -1084,7 +1098,7 @@
      "date": "2012-02-11",
      "have": false,
      "listeners": 30950,
-     "mbid": "c00000b0-0000-4000-8000-0000000000b0",
+     "mbid": "c00000b2-0000-4000-8000-0000000000b2",
      "name": "Artist 0-5 Record 1",
      "type": "album"
     },
@@ -1092,7 +1106,7 @@
      "date": "2015-03-12",
      "have": false,
      "listeners": 21950,
-     "mbid": "c00000b1-0000-4000-8000-0000000000b1",
+     "mbid": "c00000b3-0000-4000-8000-0000000000b3",
      "name": "Artist 0-5 Record 2",
      "type": "album"
     },
@@ -1100,14 +1114,14 @@
      "date": "2018-04-13",
      "have": false,
      "listeners": 12950,
-     "mbid": "c00000b2-0000-4000-8000-0000000000b2",
+     "mbid": "c00000b4-0000-4000-8000-0000000000b4",
      "name": "Artist 0-5 Record 3",
      "type": "album"
     },
     {
      "days": -8,
      "listeners": 500,
-     "mbid": "c00000b3-0000-4000-8000-0000000000b3",
+     "mbid": "c00000b5-0000-4000-8000-0000000000b5",
      "name": "Artist 0-5 New",
      "type": "album"
     }
@@ -1278,9 +1292,9 @@
    "albums": [
     {
      "date": "2010-01-10",
-     "have": false,
+     "have": true,
      "listeners": 39940,
-     "mbid": "c00000b4-0000-4000-8000-0000000000b4",
+     "mbid": "c00000b6-0000-4000-8000-0000000000b6",
      "name": "Artist 0-6 Record 0",
      "type": "album"
     },
@@ -1288,7 +1302,7 @@
      "date": "2013-02-11",
      "have": false,
      "listeners": 30940,
-     "mbid": "c00000b5-0000-4000-8000-0000000000b5",
+     "mbid": "c00000b7-0000-4000-8000-0000000000b7",
      "name": "Artist 0-6 Record 1",
      "type": "album"
     },
@@ -1296,7 +1310,7 @@
      "date": "2016-03-12",
      "have": false,
      "listeners": 21940,
-     "mbid": "c00000b6-0000-4000-8000-0000000000b6",
+     "mbid": "c00000b8-0000-4000-8000-0000000000b8",
      "name": "Artist 0-6 Record 2",
      "type": "album"
     },
@@ -1304,8 +1318,15 @@
      "date": "2019-04-13",
      "have": false,
      "listeners": 12940,
-     "mbid": "c00000b7-0000-4000-8000-0000000000b7",
+     "mbid": "c00000b9-0000-4000-8000-0000000000b9",
      "name": "Artist 0-6 Record 3",
+     "type": "album"
+    },
+    {
+     "days": -9,
+     "listeners": 500,
+     "mbid": "c00000ba-0000-4000-8000-0000000000ba",
+     "name": "Artist 0-6 New",
      "type": "album"
     }
    ],
@@ -1475,9 +1496,9 @@
    "albums": [
     {
      "date": "2011-01-10",
-     "have": false,
+     "have": true,
      "listeners": 39930,
-     "mbid": "c00000b8-0000-4000-8000-0000000000b8",
+     "mbid": "c00000bb-0000-4000-8000-0000000000bb",
      "name": "Artist 0-7 Record 0",
      "type": "album"
     },
@@ -1485,7 +1506,7 @@
      "date": "2014-02-11",
      "have": false,
      "listeners": 30930,
-     "mbid": "c00000b9-0000-4000-8000-0000000000b9",
+     "mbid": "c00000bc-0000-4000-8000-0000000000bc",
      "name": "Artist 0-7 Record 1",
      "type": "album"
     },
@@ -1493,7 +1514,7 @@
      "date": "2017-03-12",
      "have": false,
      "listeners": 21930,
-     "mbid": "c00000ba-0000-4000-8000-0000000000ba",
+     "mbid": "c00000bd-0000-4000-8000-0000000000bd",
      "name": "Artist 0-7 Record 2",
      "type": "album"
     },
@@ -1501,7 +1522,7 @@
      "date": "2020-04-13",
      "have": false,
      "listeners": 12930,
-     "mbid": "c00000bb-0000-4000-8000-0000000000bb",
+     "mbid": "c00000be-0000-4000-8000-0000000000be",
      "name": "Artist 0-7 Record 3",
      "type": "album"
     }
@@ -1672,9 +1693,9 @@
    "albums": [
     {
      "date": "2012-01-10",
-     "have": false,
+     "have": true,
      "listeners": 39920,
-     "mbid": "c00000bc-0000-4000-8000-0000000000bc",
+     "mbid": "c00000bf-0000-4000-8000-0000000000bf",
      "name": "Artist 0-8 Record 0",
      "type": "album"
     },
@@ -1682,7 +1703,7 @@
      "date": "2015-02-11",
      "have": false,
      "listeners": 30920,
-     "mbid": "c00000bd-0000-4000-8000-0000000000bd",
+     "mbid": "c00000c0-0000-4000-8000-0000000000c0",
      "name": "Artist 0-8 Record 1",
      "type": "album"
     },
@@ -1690,7 +1711,7 @@
      "date": "2018-03-12",
      "have": false,
      "listeners": 21920,
-     "mbid": "c00000be-0000-4000-8000-0000000000be",
+     "mbid": "c00000c1-0000-4000-8000-0000000000c1",
      "name": "Artist 0-8 Record 2",
      "type": "album"
     },
@@ -1698,21 +1719,28 @@
      "date": "2021-04-13",
      "have": false,
      "listeners": 12920,
-     "mbid": "c00000bf-0000-4000-8000-0000000000bf",
+     "mbid": "c00000c2-0000-4000-8000-0000000000c2",
      "name": "Artist 0-8 Record 3",
+     "type": "album"
+    },
+    {
+     "days": -11,
+     "listeners": 500,
+     "mbid": "c00000c3-0000-4000-8000-0000000000c3",
+     "name": "Artist 0-8 New",
      "type": "album"
     },
     {
      "days": 28,
      "listeners": 0,
-     "mbid": "c00000c0-0000-4000-8000-0000000000c0",
+     "mbid": "c00000c4-0000-4000-8000-0000000000c4",
      "name": "Artist 0-8 Soon",
      "type": "album"
     },
     {
      "date": "2006-11-05",
      "listeners": 29992,
-     "mbid": "c00000c1-0000-4000-8000-0000000000c1",
+     "mbid": "c00000c5-0000-4000-8000-0000000000c5",
      "name": "Artist 0-8 Classic",
      "type": "album"
     }
@@ -1883,9 +1911,9 @@
    "albums": [
     {
      "date": "2013-01-10",
-     "have": false,
+     "have": true,
      "listeners": 39910,
-     "mbid": "c00000c2-0000-4000-8000-0000000000c2",
+     "mbid": "c00000c6-0000-4000-8000-0000000000c6",
      "name": "Artist 0-9 Record 0",
      "type": "album"
     },
@@ -1893,7 +1921,7 @@
      "date": "2016-02-11",
      "have": false,
      "listeners": 30910,
-     "mbid": "c00000c3-0000-4000-8000-0000000000c3",
+     "mbid": "c00000c7-0000-4000-8000-0000000000c7",
      "name": "Artist 0-9 Record 1",
      "type": "album"
     },
@@ -1901,7 +1929,7 @@
      "date": "2019-03-12",
      "have": false,
      "listeners": 21910,
-     "mbid": "c00000c4-0000-4000-8000-0000000000c4",
+     "mbid": "c00000c8-0000-4000-8000-0000000000c8",
      "name": "Artist 0-9 Record 2",
      "type": "album"
     },
@@ -1909,7 +1937,7 @@
      "date": "2004-04-13",
      "have": false,
      "listeners": 12910,
-     "mbid": "c00000c5-0000-4000-8000-0000000000c5",
+     "mbid": "c00000c9-0000-4000-8000-0000000000c9",
      "name": "Artist 0-9 Record 3",
      "type": "album"
     }
@@ -2080,9 +2108,9 @@
    "albums": [
     {
      "date": "2014-01-10",
-     "have": false,
+     "have": true,
      "listeners": 39900,
-     "mbid": "c00000c6-0000-4000-8000-0000000000c6",
+     "mbid": "c00000ca-0000-4000-8000-0000000000ca",
      "name": "Artist 0-10 Record 0",
      "type": "album"
     },
@@ -2090,7 +2118,7 @@
      "date": "2017-02-11",
      "have": false,
      "listeners": 30900,
-     "mbid": "c00000c7-0000-4000-8000-0000000000c7",
+     "mbid": "c00000cb-0000-4000-8000-0000000000cb",
      "name": "Artist 0-10 Record 1",
      "type": "album"
     },
@@ -2098,7 +2126,7 @@
      "date": "2020-03-12",
      "have": false,
      "listeners": 21900,
-     "mbid": "c00000c8-0000-4000-8000-0000000000c8",
+     "mbid": "c00000cc-0000-4000-8000-0000000000cc",
      "name": "Artist 0-10 Record 2",
      "type": "album"
     },
@@ -2106,14 +2134,14 @@
      "date": "2005-04-13",
      "have": false,
      "listeners": 12900,
-     "mbid": "c00000c9-0000-4000-8000-0000000000c9",
+     "mbid": "c00000cd-0000-4000-8000-0000000000cd",
      "name": "Artist 0-10 Record 3",
      "type": "album"
     },
     {
      "days": -13,
      "listeners": 500,
-     "mbid": "c00000ca-0000-4000-8000-0000000000ca",
+     "mbid": "c00000ce-0000-4000-8000-0000000000ce",
      "name": "Artist 0-10 New",
      "type": "album"
     }
@@ -2284,9 +2312,9 @@
    "albums": [
     {
      "date": "2015-01-10",
-     "have": false,
+     "have": true,
      "listeners": 39890,
-     "mbid": "c00000cb-0000-4000-8000-0000000000cb",
+     "mbid": "c00000cf-0000-4000-8000-0000000000cf",
      "name": "Artist 0-11 Record 0",
      "type": "album"
     },
@@ -2294,7 +2322,7 @@
      "date": "2018-02-11",
      "have": false,
      "listeners": 30890,
-     "mbid": "c00000cc-0000-4000-8000-0000000000cc",
+     "mbid": "c00000d0-0000-4000-8000-0000000000d0",
      "name": "Artist 0-11 Record 1",
      "type": "album"
     },
@@ -2302,7 +2330,7 @@
      "date": "2021-03-12",
      "have": false,
      "listeners": 21890,
-     "mbid": "c00000cd-0000-4000-8000-0000000000cd",
+     "mbid": "c00000d1-0000-4000-8000-0000000000d1",
      "name": "Artist 0-11 Record 2",
      "type": "album"
     },
@@ -2310,7 +2338,7 @@
      "date": "2006-04-13",
      "have": false,
      "listeners": 12890,
-     "mbid": "c00000ce-0000-4000-8000-0000000000ce",
+     "mbid": "c00000d2-0000-4000-8000-0000000000d2",
      "name": "Artist 0-11 Record 3",
      "type": "album"
     }
@@ -2481,9 +2509,9 @@
    "albums": [
     {
      "date": "2004-01-10",
-     "have": false,
+     "have": true,
      "listeners": 40000,
-     "mbid": "c0000165-0000-4000-8000-000000000165",
+     "mbid": "c0000169-0000-4000-8000-000000000169",
      "name": "Artist 1-0 Record 0",
      "type": "album"
     },
@@ -2491,7 +2519,7 @@
      "date": "2007-02-11",
      "have": false,
      "listeners": 31000,
-     "mbid": "c0000166-0000-4000-8000-000000000166",
+     "mbid": "c000016a-0000-4000-8000-00000000016a",
      "name": "Artist 1-0 Record 1",
      "type": "album"
     },
@@ -2499,7 +2527,7 @@
      "date": "2010-03-12",
      "have": false,
      "listeners": 22000,
-     "mbid": "c0000167-0000-4000-8000-000000000167",
+     "mbid": "c000016b-0000-4000-8000-00000000016b",
      "name": "Artist 1-0 Record 2",
      "type": "album"
     },
@@ -2507,14 +2535,14 @@
      "date": "2013-04-13",
      "have": false,
      "listeners": 13000,
-     "mbid": "c0000168-0000-4000-8000-000000000168",
+     "mbid": "c000016c-0000-4000-8000-00000000016c",
      "name": "Artist 1-0 Record 3",
      "type": "album"
     },
     {
      "days": -3,
      "listeners": 500,
-     "mbid": "c0000169-0000-4000-8000-000000000169",
+     "mbid": "c000016d-0000-4000-8000-00000000016d",
      "name": "Artist 1-0 New",
      "type": "album"
     }
@@ -2701,9 +2729,9 @@
    "albums": [
     {
      "date": "2005-01-10",
-     "have": false,
+     "have": true,
      "listeners": 39990,
-     "mbid": "c000016a-0000-4000-8000-00000000016a",
+     "mbid": "c000016e-0000-4000-8000-00000000016e",
      "name": "Artist 1-1 Record 0",
      "type": "album"
     },
@@ -2711,7 +2739,7 @@
      "date": "2008-02-11",
      "have": false,
      "listeners": 30990,
-     "mbid": "c000016b-0000-4000-8000-00000000016b",
+     "mbid": "c000016f-0000-4000-8000-00000000016f",
      "name": "Artist 1-1 Record 1",
      "type": "album"
     },
@@ -2719,7 +2747,7 @@
      "date": "2011-03-12",
      "have": false,
      "listeners": 21990,
-     "mbid": "c000016c-0000-4000-8000-00000000016c",
+     "mbid": "c0000170-0000-4000-8000-000000000170",
      "name": "Artist 1-1 Record 2",
      "type": "album"
     },
@@ -2727,14 +2755,14 @@
      "date": "2014-04-13",
      "have": false,
      "listeners": 12990,
-     "mbid": "c000016d-0000-4000-8000-00000000016d",
+     "mbid": "c0000171-0000-4000-8000-000000000171",
      "name": "Artist 1-1 Record 3",
      "type": "album"
     },
     {
      "days": 21,
      "listeners": 0,
-     "mbid": "c000016e-0000-4000-8000-00000000016e",
+     "mbid": "c0000172-0000-4000-8000-000000000172",
      "name": "Artist 1-1 Soon",
      "type": "album"
     }
@@ -2921,9 +2949,9 @@
    "albums": [
     {
      "date": "2006-01-10",
-     "have": false,
+     "have": true,
      "listeners": 39980,
-     "mbid": "c000016f-0000-4000-8000-00000000016f",
+     "mbid": "c0000173-0000-4000-8000-000000000173",
      "name": "Artist 1-2 Record 0",
      "type": "album"
     },
@@ -2931,7 +2959,7 @@
      "date": "2009-02-11",
      "have": false,
      "listeners": 30980,
-     "mbid": "c0000170-0000-4000-8000-000000000170",
+     "mbid": "c0000174-0000-4000-8000-000000000174",
      "name": "Artist 1-2 Record 1",
      "type": "album"
     },
@@ -2939,7 +2967,7 @@
      "date": "2012-03-12",
      "have": false,
      "listeners": 21980,
-     "mbid": "c0000171-0000-4000-8000-000000000171",
+     "mbid": "c0000175-0000-4000-8000-000000000175",
      "name": "Artist 1-2 Record 2",
      "type": "album"
     },
@@ -2947,14 +2975,21 @@
      "date": "2015-04-13",
      "have": false,
      "listeners": 12980,
-     "mbid": "c0000172-0000-4000-8000-000000000172",
+     "mbid": "c0000176-0000-4000-8000-000000000176",
      "name": "Artist 1-2 Record 3",
+     "type": "album"
+    },
+    {
+     "days": -5,
+     "listeners": 500,
+     "mbid": "c0000177-0000-4000-8000-000000000177",
+     "name": "Artist 1-2 New",
      "type": "album"
     },
     {
      "date": "2001-10-30",
      "listeners": 29998,
-     "mbid": "c0000173-0000-4000-8000-000000000173",
+     "mbid": "c0000178-0000-4000-8000-000000000178",
      "name": "Artist 1-2 Classic",
      "type": "album"
     }
@@ -3141,9 +3176,9 @@
    "albums": [
     {
      "date": "2007-01-10",
-     "have": false,
+     "have": true,
      "listeners": 39970,
-     "mbid": "c0000174-0000-4000-8000-000000000174",
+     "mbid": "c0000179-0000-4000-8000-000000000179",
      "name": "Artist 1-3 Record 0",
      "type": "album"
     },
@@ -3151,7 +3186,7 @@
      "date": "2010-02-11",
      "have": false,
      "listeners": 30970,
-     "mbid": "c0000175-0000-4000-8000-000000000175",
+     "mbid": "c000017a-0000-4000-8000-00000000017a",
      "name": "Artist 1-3 Record 1",
      "type": "album"
     },
@@ -3159,7 +3194,7 @@
      "date": "2013-03-12",
      "have": false,
      "listeners": 21970,
-     "mbid": "c0000176-0000-4000-8000-000000000176",
+     "mbid": "c000017b-0000-4000-8000-00000000017b",
      "name": "Artist 1-3 Record 2",
      "type": "album"
     },
@@ -3167,7 +3202,7 @@
      "date": "2016-04-13",
      "have": false,
      "listeners": 12970,
-     "mbid": "c0000177-0000-4000-8000-000000000177",
+     "mbid": "c000017c-0000-4000-8000-00000000017c",
      "name": "Artist 1-3 Record 3",
      "type": "album"
     }
@@ -3338,9 +3373,9 @@
    "albums": [
     {
      "date": "2008-01-10",
-     "have": false,
+     "have": true,
      "listeners": 39960,
-     "mbid": "c0000178-0000-4000-8000-000000000178",
+     "mbid": "c000017d-0000-4000-8000-00000000017d",
      "name": "Artist 1-4 Record 0",
      "type": "album"
     },
@@ -3348,7 +3383,7 @@
      "date": "2011-02-11",
      "have": false,
      "listeners": 30960,
-     "mbid": "c0000179-0000-4000-8000-000000000179",
+     "mbid": "c000017e-0000-4000-8000-00000000017e",
      "name": "Artist 1-4 Record 1",
      "type": "album"
     },
@@ -3356,7 +3391,7 @@
      "date": "2014-03-12",
      "have": false,
      "listeners": 21960,
-     "mbid": "c000017a-0000-4000-8000-00000000017a",
+     "mbid": "c000017f-0000-4000-8000-00000000017f",
      "name": "Artist 1-4 Record 2",
      "type": "album"
     },
@@ -3364,8 +3399,15 @@
      "date": "2017-04-13",
      "have": false,
      "listeners": 12960,
-     "mbid": "c000017b-0000-4000-8000-00000000017b",
+     "mbid": "c0000180-0000-4000-8000-000000000180",
      "name": "Artist 1-4 Record 3",
+     "type": "album"
+    },
+    {
+     "days": -7,
+     "listeners": 500,
+     "mbid": "c0000181-0000-4000-8000-000000000181",
+     "name": "Artist 1-4 New",
      "type": "album"
     }
    ],
@@ -3385,7 +3427,7 @@
      ],
      "date": "2019-03-03",
      "listeners": 300,
-     "mbid": "d000c4cc-0000-4000-8000-00000000c4cc",
+     "mbid": "d000c4d2-0000-4000-8000-00000000c4d2",
      "title": "Other 1-15 feat. Artist 1-4",
      "type": "single"
     }
@@ -3551,9 +3593,9 @@
    "albums": [
     {
      "date": "2009-01-10",
-     "have": false,
+     "have": true,
      "listeners": 39950,
-     "mbid": "c000017d-0000-4000-8000-00000000017d",
+     "mbid": "c0000183-0000-4000-8000-000000000183",
      "name": "Artist 1-5 Record 0",
      "type": "album"
     },
@@ -3561,7 +3603,7 @@
      "date": "2012-02-11",
      "have": false,
      "listeners": 30950,
-     "mbid": "c000017e-0000-4000-8000-00000000017e",
+     "mbid": "c0000184-0000-4000-8000-000000000184",
      "name": "Artist 1-5 Record 1",
      "type": "album"
     },
@@ -3569,7 +3611,7 @@
      "date": "2015-03-12",
      "have": false,
      "listeners": 21950,
-     "mbid": "c000017f-0000-4000-8000-00000000017f",
+     "mbid": "c0000185-0000-4000-8000-000000000185",
      "name": "Artist 1-5 Record 2",
      "type": "album"
     },
@@ -3577,14 +3619,14 @@
      "date": "2018-04-13",
      "have": false,
      "listeners": 12950,
-     "mbid": "c0000180-0000-4000-8000-000000000180",
+     "mbid": "c0000186-0000-4000-8000-000000000186",
      "name": "Artist 1-5 Record 3",
      "type": "album"
     },
     {
      "days": -8,
      "listeners": 500,
-     "mbid": "c0000181-0000-4000-8000-000000000181",
+     "mbid": "c0000187-0000-4000-8000-000000000187",
      "name": "Artist 1-5 New",
      "type": "album"
     }
@@ -3755,9 +3797,9 @@
    "albums": [
     {
      "date": "2010-01-10",
-     "have": false,
+     "have": true,
      "listeners": 39940,
-     "mbid": "c0000182-0000-4000-8000-000000000182",
+     "mbid": "c0000188-0000-4000-8000-000000000188",
      "name": "Artist 1-6 Record 0",
      "type": "album"
     },
@@ -3765,7 +3807,7 @@
      "date": "2013-02-11",
      "have": false,
      "listeners": 30940,
-     "mbid": "c0000183-0000-4000-8000-000000000183",
+     "mbid": "c0000189-0000-4000-8000-000000000189",
      "name": "Artist 1-6 Record 1",
      "type": "album"
     },
@@ -3773,7 +3815,7 @@
      "date": "2016-03-12",
      "have": false,
      "listeners": 21940,
-     "mbid": "c0000184-0000-4000-8000-000000000184",
+     "mbid": "c000018a-0000-4000-8000-00000000018a",
      "name": "Artist 1-6 Record 2",
      "type": "album"
     },
@@ -3781,8 +3823,15 @@
      "date": "2019-04-13",
      "have": false,
      "listeners": 12940,
-     "mbid": "c0000185-0000-4000-8000-000000000185",
+     "mbid": "c000018b-0000-4000-8000-00000000018b",
      "name": "Artist 1-6 Record 3",
+     "type": "album"
+    },
+    {
+     "days": -9,
+     "listeners": 500,
+     "mbid": "c000018c-0000-4000-8000-00000000018c",
+     "name": "Artist 1-6 New",
      "type": "album"
     }
    ],
@@ -3952,9 +4001,9 @@
    "albums": [
     {
      "date": "2011-01-10",
-     "have": false,
+     "have": true,
      "listeners": 39930,
-     "mbid": "c0000186-0000-4000-8000-000000000186",
+     "mbid": "c000018d-0000-4000-8000-00000000018d",
      "name": "Artist 1-7 Record 0",
      "type": "album"
     },
@@ -3962,7 +4011,7 @@
      "date": "2014-02-11",
      "have": false,
      "listeners": 30930,
-     "mbid": "c0000187-0000-4000-8000-000000000187",
+     "mbid": "c000018e-0000-4000-8000-00000000018e",
      "name": "Artist 1-7 Record 1",
      "type": "album"
     },
@@ -3970,7 +4019,7 @@
      "date": "2017-03-12",
      "have": false,
      "listeners": 21930,
-     "mbid": "c0000188-0000-4000-8000-000000000188",
+     "mbid": "c000018f-0000-4000-8000-00000000018f",
      "name": "Artist 1-7 Record 2",
      "type": "album"
     },
@@ -3978,7 +4027,7 @@
      "date": "2020-04-13",
      "have": false,
      "listeners": 12930,
-     "mbid": "c0000189-0000-4000-8000-000000000189",
+     "mbid": "c0000190-0000-4000-8000-000000000190",
      "name": "Artist 1-7 Record 3",
      "type": "album"
     }
@@ -4149,9 +4198,9 @@
    "albums": [
     {
      "date": "2012-01-10",
-     "have": false,
+     "have": true,
      "listeners": 39920,
-     "mbid": "c000018a-0000-4000-8000-00000000018a",
+     "mbid": "c0000191-0000-4000-8000-000000000191",
      "name": "Artist 1-8 Record 0",
      "type": "album"
     },
@@ -4159,7 +4208,7 @@
      "date": "2015-02-11",
      "have": false,
      "listeners": 30920,
-     "mbid": "c000018b-0000-4000-8000-00000000018b",
+     "mbid": "c0000192-0000-4000-8000-000000000192",
      "name": "Artist 1-8 Record 1",
      "type": "album"
     },
@@ -4167,7 +4216,7 @@
      "date": "2018-03-12",
      "have": false,
      "listeners": 21920,
-     "mbid": "c000018c-0000-4000-8000-00000000018c",
+     "mbid": "c0000193-0000-4000-8000-000000000193",
      "name": "Artist 1-8 Record 2",
      "type": "album"
     },
@@ -4175,21 +4224,28 @@
      "date": "2021-04-13",
      "have": false,
      "listeners": 12920,
-     "mbid": "c000018d-0000-4000-8000-00000000018d",
+     "mbid": "c0000194-0000-4000-8000-000000000194",
      "name": "Artist 1-8 Record 3",
+     "type": "album"
+    },
+    {
+     "days": -11,
+     "listeners": 500,
+     "mbid": "c0000195-0000-4000-8000-000000000195",
+     "name": "Artist 1-8 New",
      "type": "album"
     },
     {
      "days": 28,
      "listeners": 0,
-     "mbid": "c000018e-0000-4000-8000-00000000018e",
+     "mbid": "c0000196-0000-4000-8000-000000000196",
      "name": "Artist 1-8 Soon",
      "type": "album"
     },
     {
      "date": "2006-11-05",
      "listeners": 29992,
-     "mbid": "c000018f-0000-4000-8000-00000000018f",
+     "mbid": "c0000197-0000-4000-8000-000000000197",
      "name": "Artist 1-8 Classic",
      "type": "album"
     }
@@ -4360,9 +4416,9 @@
    "albums": [
     {
      "date": "2013-01-10",
-     "have": false,
+     "have": true,
      "listeners": 39910,
-     "mbid": "c0000190-0000-4000-8000-000000000190",
+     "mbid": "c0000198-0000-4000-8000-000000000198",
      "name": "Artist 1-9 Record 0",
      "type": "album"
     },
@@ -4370,7 +4426,7 @@
      "date": "2016-02-11",
      "have": false,
      "listeners": 30910,
-     "mbid": "c0000191-0000-4000-8000-000000000191",
+     "mbid": "c0000199-0000-4000-8000-000000000199",
      "name": "Artist 1-9 Record 1",
      "type": "album"
     },
@@ -4378,7 +4434,7 @@
      "date": "2019-03-12",
      "have": false,
      "listeners": 21910,
-     "mbid": "c0000192-0000-4000-8000-000000000192",
+     "mbid": "c000019a-0000-4000-8000-00000000019a",
      "name": "Artist 1-9 Record 2",
      "type": "album"
     },
@@ -4386,7 +4442,7 @@
      "date": "2004-04-13",
      "have": false,
      "listeners": 12910,
-     "mbid": "c0000193-0000-4000-8000-000000000193",
+     "mbid": "c000019b-0000-4000-8000-00000000019b",
      "name": "Artist 1-9 Record 3",
      "type": "album"
     }
@@ -4557,9 +4613,9 @@
    "albums": [
     {
      "date": "2014-01-10",
-     "have": false,
+     "have": true,
      "listeners": 39900,
-     "mbid": "c0000194-0000-4000-8000-000000000194",
+     "mbid": "c000019c-0000-4000-8000-00000000019c",
      "name": "Artist 1-10 Record 0",
      "type": "album"
     },
@@ -4567,7 +4623,7 @@
      "date": "2017-02-11",
      "have": false,
      "listeners": 30900,
-     "mbid": "c0000195-0000-4000-8000-000000000195",
+     "mbid": "c000019d-0000-4000-8000-00000000019d",
      "name": "Artist 1-10 Record 1",
      "type": "album"
     },
@@ -4575,7 +4631,7 @@
      "date": "2020-03-12",
      "have": false,
      "listeners": 21900,
-     "mbid": "c0000196-0000-4000-8000-000000000196",
+     "mbid": "c000019e-0000-4000-8000-00000000019e",
      "name": "Artist 1-10 Record 2",
      "type": "album"
     },
@@ -4583,14 +4639,14 @@
      "date": "2005-04-13",
      "have": false,
      "listeners": 12900,
-     "mbid": "c0000197-0000-4000-8000-000000000197",
+     "mbid": "c000019f-0000-4000-8000-00000000019f",
      "name": "Artist 1-10 Record 3",
      "type": "album"
     },
     {
      "days": -13,
      "listeners": 500,
-     "mbid": "c0000198-0000-4000-8000-000000000198",
+     "mbid": "c00001a0-0000-4000-8000-0000000001a0",
      "name": "Artist 1-10 New",
      "type": "album"
     }
@@ -4761,9 +4817,9 @@
    "albums": [
     {
      "date": "2015-01-10",
-     "have": false,
+     "have": true,
      "listeners": 39890,
-     "mbid": "c0000199-0000-4000-8000-000000000199",
+     "mbid": "c00001a1-0000-4000-8000-0000000001a1",
      "name": "Artist 1-11 Record 0",
      "type": "album"
     },
@@ -4771,7 +4827,7 @@
      "date": "2018-02-11",
      "have": false,
      "listeners": 30890,
-     "mbid": "c000019a-0000-4000-8000-00000000019a",
+     "mbid": "c00001a2-0000-4000-8000-0000000001a2",
      "name": "Artist 1-11 Record 1",
      "type": "album"
     },
@@ -4779,7 +4835,7 @@
      "date": "2021-03-12",
      "have": false,
      "listeners": 21890,
-     "mbid": "c000019b-0000-4000-8000-00000000019b",
+     "mbid": "c00001a3-0000-4000-8000-0000000001a3",
      "name": "Artist 1-11 Record 2",
      "type": "album"
     },
@@ -4787,7 +4843,7 @@
      "date": "2006-04-13",
      "have": false,
      "listeners": 12890,
-     "mbid": "c000019c-0000-4000-8000-00000000019c",
+     "mbid": "c00001a4-0000-4000-8000-0000000001a4",
      "name": "Artist 1-11 Record 3",
      "type": "album"
     }
@@ -4978,7 +5034,7 @@
    "Artist 0-7"
   ]
  },
- "note": "member luis follows 8 metal artists, ana 8 jazz artists, bo nothing; nothing had",
+ "note": "member luis follows 8 metal artists, ana 8 jazz artists, bo nothing; one album had per artist",
  "others": [
   {
    "albums": [
@@ -6805,14 +6861,14 @@
     {
      "date": "2010-05-01",
      "listeners": 9000,
-     "mbid": "d00000cf-0000-4000-8000-0000000000cf",
+     "mbid": "d00000d3-0000-4000-8000-0000000000d3",
      "title": "Other 1-0 LP0",
      "type": "album"
     },
     {
      "date": "2011-05-02",
      "listeners": 8999,
-     "mbid": "d00000d0-0000-4000-8000-0000000000d0",
+     "mbid": "d00000d4-0000-4000-8000-0000000000d4",
      "title": "Other 1-0 LP1",
      "type": "album"
     }
@@ -6830,14 +6886,14 @@
     {
      "date": "2011-05-01",
      "listeners": 8900,
-     "mbid": "d00000d1-0000-4000-8000-0000000000d1",
+     "mbid": "d00000d5-0000-4000-8000-0000000000d5",
      "title": "Other 1-1 LP0",
      "type": "album"
     },
     {
      "date": "2012-05-02",
      "listeners": 8899,
-     "mbid": "d00000d2-0000-4000-8000-0000000000d2",
+     "mbid": "d00000d6-0000-4000-8000-0000000000d6",
      "title": "Other 1-1 LP1",
      "type": "album"
     }
@@ -6855,14 +6911,14 @@
     {
      "date": "2012-05-01",
      "listeners": 8800,
-     "mbid": "d00000d3-0000-4000-8000-0000000000d3",
+     "mbid": "d00000d7-0000-4000-8000-0000000000d7",
      "title": "Other 1-2 LP0",
      "type": "album"
     },
     {
      "date": "2013-05-02",
      "listeners": 8799,
-     "mbid": "d00000d4-0000-4000-8000-0000000000d4",
+     "mbid": "d00000d8-0000-4000-8000-0000000000d8",
      "title": "Other 1-2 LP1",
      "type": "album"
     }
@@ -6880,14 +6936,14 @@
     {
      "date": "2013-05-01",
      "listeners": 8700,
-     "mbid": "d00000d5-0000-4000-8000-0000000000d5",
+     "mbid": "d00000d9-0000-4000-8000-0000000000d9",
      "title": "Other 1-3 LP0",
      "type": "album"
     },
     {
      "date": "2014-05-02",
      "listeners": 8699,
-     "mbid": "d00000d6-0000-4000-8000-0000000000d6",
+     "mbid": "d00000da-0000-4000-8000-0000000000da",
      "title": "Other 1-3 LP1",
      "type": "album"
     }
@@ -6905,14 +6961,14 @@
     {
      "date": "2014-05-01",
      "listeners": 8600,
-     "mbid": "d00000d7-0000-4000-8000-0000000000d7",
+     "mbid": "d00000db-0000-4000-8000-0000000000db",
      "title": "Other 1-4 LP0",
      "type": "album"
     },
     {
      "date": "2015-05-02",
      "listeners": 8599,
-     "mbid": "d00000d8-0000-4000-8000-0000000000d8",
+     "mbid": "d00000dc-0000-4000-8000-0000000000dc",
      "title": "Other 1-4 LP1",
      "type": "album"
     }
@@ -6930,14 +6986,14 @@
     {
      "date": "2015-05-01",
      "listeners": 8500,
-     "mbid": "d00000d9-0000-4000-8000-0000000000d9",
+     "mbid": "d00000dd-0000-4000-8000-0000000000dd",
      "title": "Other 1-5 LP0",
      "type": "album"
     },
     {
      "date": "2016-05-02",
      "listeners": 8499,
-     "mbid": "d00000da-0000-4000-8000-0000000000da",
+     "mbid": "d00000de-0000-4000-8000-0000000000de",
      "title": "Other 1-5 LP1",
      "type": "album"
     }
@@ -6955,14 +7011,14 @@
     {
      "date": "2016-05-01",
      "listeners": 8400,
-     "mbid": "d00000db-0000-4000-8000-0000000000db",
+     "mbid": "d00000df-0000-4000-8000-0000000000df",
      "title": "Other 1-6 LP0",
      "type": "album"
     },
     {
      "date": "2017-05-02",
      "listeners": 8399,
-     "mbid": "d00000dc-0000-4000-8000-0000000000dc",
+     "mbid": "d00000e0-0000-4000-8000-0000000000e0",
      "title": "Other 1-6 LP1",
      "type": "album"
     }
@@ -6980,14 +7036,14 @@
     {
      "date": "2017-05-01",
      "listeners": 8300,
-     "mbid": "d00000dd-0000-4000-8000-0000000000dd",
+     "mbid": "d00000e1-0000-4000-8000-0000000000e1",
      "title": "Other 1-7 LP0",
      "type": "album"
     },
     {
      "date": "2018-05-02",
      "listeners": 8299,
-     "mbid": "d00000de-0000-4000-8000-0000000000de",
+     "mbid": "d00000e2-0000-4000-8000-0000000000e2",
      "title": "Other 1-7 LP1",
      "type": "album"
     }
@@ -7005,14 +7061,14 @@
     {
      "date": "2018-05-01",
      "listeners": 8200,
-     "mbid": "d00000df-0000-4000-8000-0000000000df",
+     "mbid": "d00000e3-0000-4000-8000-0000000000e3",
      "title": "Other 1-8 LP0",
      "type": "album"
     },
     {
      "date": "2019-05-02",
      "listeners": 8199,
-     "mbid": "d00000e0-0000-4000-8000-0000000000e0",
+     "mbid": "d00000e4-0000-4000-8000-0000000000e4",
      "title": "Other 1-8 LP1",
      "type": "album"
     }
@@ -7030,14 +7086,14 @@
     {
      "date": "2019-05-01",
      "listeners": 8100,
-     "mbid": "d00000e1-0000-4000-8000-0000000000e1",
+     "mbid": "d00000e5-0000-4000-8000-0000000000e5",
      "title": "Other 1-9 LP0",
      "type": "album"
     },
     {
      "date": "2020-05-02",
      "listeners": 8099,
-     "mbid": "d00000e2-0000-4000-8000-0000000000e2",
+     "mbid": "d00000e6-0000-4000-8000-0000000000e6",
      "title": "Other 1-9 LP1",
      "type": "album"
     }
@@ -7055,14 +7111,14 @@
     {
      "date": "2020-05-01",
      "listeners": 8000,
-     "mbid": "d00000e3-0000-4000-8000-0000000000e3",
+     "mbid": "d00000e7-0000-4000-8000-0000000000e7",
      "title": "Other 1-10 LP0",
      "type": "album"
     },
     {
      "date": "2021-05-02",
      "listeners": 7999,
-     "mbid": "d00000e4-0000-4000-8000-0000000000e4",
+     "mbid": "d00000e8-0000-4000-8000-0000000000e8",
      "title": "Other 1-10 LP1",
      "type": "album"
     }
@@ -7080,14 +7136,14 @@
     {
      "date": "2021-05-01",
      "listeners": 7900,
-     "mbid": "d00000e5-0000-4000-8000-0000000000e5",
+     "mbid": "d00000e9-0000-4000-8000-0000000000e9",
      "title": "Other 1-11 LP0",
      "type": "album"
     },
     {
      "date": "2022-05-02",
      "listeners": 7899,
-     "mbid": "d00000e6-0000-4000-8000-0000000000e6",
+     "mbid": "d00000ea-0000-4000-8000-0000000000ea",
      "title": "Other 1-11 LP1",
      "type": "album"
     }
@@ -7105,14 +7161,14 @@
     {
      "date": "2022-05-01",
      "listeners": 7800,
-     "mbid": "d00000e7-0000-4000-8000-0000000000e7",
+     "mbid": "d00000eb-0000-4000-8000-0000000000eb",
      "title": "Other 1-12 LP0",
      "type": "album"
     },
     {
      "date": "2023-05-02",
      "listeners": 7799,
-     "mbid": "d00000e8-0000-4000-8000-0000000000e8",
+     "mbid": "d00000ec-0000-4000-8000-0000000000ec",
      "title": "Other 1-12 LP1",
      "type": "album"
     }
@@ -7130,14 +7186,14 @@
     {
      "date": "2023-05-01",
      "listeners": 7700,
-     "mbid": "d00000e9-0000-4000-8000-0000000000e9",
+     "mbid": "d00000ed-0000-4000-8000-0000000000ed",
      "title": "Other 1-13 LP0",
      "type": "album"
     },
     {
      "date": "2010-05-02",
      "listeners": 7699,
-     "mbid": "d00000ea-0000-4000-8000-0000000000ea",
+     "mbid": "d00000ee-0000-4000-8000-0000000000ee",
      "title": "Other 1-13 LP1",
      "type": "album"
     }
@@ -7155,14 +7211,14 @@
     {
      "date": "2010-05-01",
      "listeners": 7600,
-     "mbid": "d00000eb-0000-4000-8000-0000000000eb",
+     "mbid": "d00000ef-0000-4000-8000-0000000000ef",
      "title": "Other 1-14 LP0",
      "type": "album"
     },
     {
      "date": "2011-05-02",
      "listeners": 7599,
-     "mbid": "d00000ec-0000-4000-8000-0000000000ec",
+     "mbid": "d00000f0-0000-4000-8000-0000000000f0",
      "title": "Other 1-14 LP1",
      "type": "album"
     }
@@ -7180,14 +7236,14 @@
     {
      "date": "2011-05-01",
      "listeners": 7500,
-     "mbid": "d00000ed-0000-4000-8000-0000000000ed",
+     "mbid": "d00000f1-0000-4000-8000-0000000000f1",
      "title": "Other 1-15 LP0",
      "type": "album"
     },
     {
      "date": "2012-05-02",
      "listeners": 7499,
-     "mbid": "d00000ee-0000-4000-8000-0000000000ee",
+     "mbid": "d00000f2-0000-4000-8000-0000000000f2",
      "title": "Other 1-15 LP1",
      "type": "album"
     }
@@ -7205,14 +7261,14 @@
     {
      "date": "2012-05-01",
      "listeners": 7400,
-     "mbid": "d00000ef-0000-4000-8000-0000000000ef",
+     "mbid": "d00000f3-0000-4000-8000-0000000000f3",
      "title": "Other 1-16 LP0",
      "type": "album"
     },
     {
      "date": "2013-05-02",
      "listeners": 7399,
-     "mbid": "d00000f0-0000-4000-8000-0000000000f0",
+     "mbid": "d00000f4-0000-4000-8000-0000000000f4",
      "title": "Other 1-16 LP1",
      "type": "album"
     }
@@ -7230,14 +7286,14 @@
     {
      "date": "2013-05-01",
      "listeners": 7300,
-     "mbid": "d00000f1-0000-4000-8000-0000000000f1",
+     "mbid": "d00000f5-0000-4000-8000-0000000000f5",
      "title": "Other 1-17 LP0",
      "type": "album"
     },
     {
      "date": "2014-05-02",
      "listeners": 7299,
-     "mbid": "d00000f2-0000-4000-8000-0000000000f2",
+     "mbid": "d00000f6-0000-4000-8000-0000000000f6",
      "title": "Other 1-17 LP1",
      "type": "album"
     }
@@ -7255,14 +7311,14 @@
     {
      "date": "2014-05-01",
      "listeners": 7200,
-     "mbid": "d00000f3-0000-4000-8000-0000000000f3",
+     "mbid": "d00000f7-0000-4000-8000-0000000000f7",
      "title": "Other 1-18 LP0",
      "type": "album"
     },
     {
      "date": "2015-05-02",
      "listeners": 7199,
-     "mbid": "d00000f4-0000-4000-8000-0000000000f4",
+     "mbid": "d00000f8-0000-4000-8000-0000000000f8",
      "title": "Other 1-18 LP1",
      "type": "album"
     }
@@ -7280,14 +7336,14 @@
     {
      "date": "2015-05-01",
      "listeners": 7100,
-     "mbid": "d00000f5-0000-4000-8000-0000000000f5",
+     "mbid": "d00000f9-0000-4000-8000-0000000000f9",
      "title": "Other 1-19 LP0",
      "type": "album"
     },
     {
      "date": "2016-05-02",
      "listeners": 7099,
-     "mbid": "d00000f6-0000-4000-8000-0000000000f6",
+     "mbid": "d00000fa-0000-4000-8000-0000000000fa",
      "title": "Other 1-19 LP1",
      "type": "album"
     }
@@ -7305,14 +7361,14 @@
     {
      "date": "2016-05-01",
      "listeners": 7000,
-     "mbid": "d00000f7-0000-4000-8000-0000000000f7",
+     "mbid": "d00000fb-0000-4000-8000-0000000000fb",
      "title": "Other 1-20 LP0",
      "type": "album"
     },
     {
      "date": "2017-05-02",
      "listeners": 6999,
-     "mbid": "d00000f8-0000-4000-8000-0000000000f8",
+     "mbid": "d00000fc-0000-4000-8000-0000000000fc",
      "title": "Other 1-20 LP1",
      "type": "album"
     }
@@ -7330,14 +7386,14 @@
     {
      "date": "2017-05-01",
      "listeners": 6900,
-     "mbid": "d00000f9-0000-4000-8000-0000000000f9",
+     "mbid": "d00000fd-0000-4000-8000-0000000000fd",
      "title": "Other 1-21 LP0",
      "type": "album"
     },
     {
      "date": "2018-05-02",
      "listeners": 6899,
-     "mbid": "d00000fa-0000-4000-8000-0000000000fa",
+     "mbid": "d00000fe-0000-4000-8000-0000000000fe",
      "title": "Other 1-21 LP1",
      "type": "album"
     }
@@ -7355,14 +7411,14 @@
     {
      "date": "2018-05-01",
      "listeners": 6800,
-     "mbid": "d00000fb-0000-4000-8000-0000000000fb",
+     "mbid": "d00000ff-0000-4000-8000-0000000000ff",
      "title": "Other 1-22 LP0",
      "type": "album"
     },
     {
      "date": "2019-05-02",
      "listeners": 6799,
-     "mbid": "d00000fc-0000-4000-8000-0000000000fc",
+     "mbid": "d0000100-0000-4000-8000-000000000100",
      "title": "Other 1-22 LP1",
      "type": "album"
     }
@@ -7380,14 +7436,14 @@
     {
      "date": "2019-05-01",
      "listeners": 6700,
-     "mbid": "d00000fd-0000-4000-8000-0000000000fd",
+     "mbid": "d0000101-0000-4000-8000-000000000101",
      "title": "Other 1-23 LP0",
      "type": "album"
     },
     {
      "date": "2020-05-02",
      "listeners": 6699,
-     "mbid": "d00000fe-0000-4000-8000-0000000000fe",
+     "mbid": "d0000102-0000-4000-8000-000000000102",
      "title": "Other 1-23 LP1",
      "type": "album"
     }
@@ -7405,14 +7461,14 @@
     {
      "date": "2020-05-01",
      "listeners": 6600,
-     "mbid": "d00000ff-0000-4000-8000-0000000000ff",
+     "mbid": "d0000103-0000-4000-8000-000000000103",
      "title": "Other 1-24 LP0",
      "type": "album"
     },
     {
      "date": "2021-05-02",
      "listeners": 6599,
-     "mbid": "d0000100-0000-4000-8000-000000000100",
+     "mbid": "d0000104-0000-4000-8000-000000000104",
      "title": "Other 1-24 LP1",
      "type": "album"
     }
@@ -7430,14 +7486,14 @@
     {
      "date": "2021-05-01",
      "listeners": 6500,
-     "mbid": "d0000101-0000-4000-8000-000000000101",
+     "mbid": "d0000105-0000-4000-8000-000000000105",
      "title": "Other 1-25 LP0",
      "type": "album"
     },
     {
      "date": "2022-05-02",
      "listeners": 6499,
-     "mbid": "d0000102-0000-4000-8000-000000000102",
+     "mbid": "d0000106-0000-4000-8000-000000000106",
      "title": "Other 1-25 LP1",
      "type": "album"
     }
@@ -7455,14 +7511,14 @@
     {
      "date": "2022-05-01",
      "listeners": 6400,
-     "mbid": "d0000103-0000-4000-8000-000000000103",
+     "mbid": "d0000107-0000-4000-8000-000000000107",
      "title": "Other 1-26 LP0",
      "type": "album"
     },
     {
      "date": "2023-05-02",
      "listeners": 6399,
-     "mbid": "d0000104-0000-4000-8000-000000000104",
+     "mbid": "d0000108-0000-4000-8000-000000000108",
      "title": "Other 1-26 LP1",
      "type": "album"
     }
@@ -7480,14 +7536,14 @@
     {
      "date": "2023-05-01",
      "listeners": 6300,
-     "mbid": "d0000105-0000-4000-8000-000000000105",
+     "mbid": "d0000109-0000-4000-8000-000000000109",
      "title": "Other 1-27 LP0",
      "type": "album"
     },
     {
      "date": "2010-05-02",
      "listeners": 6299,
-     "mbid": "d0000106-0000-4000-8000-000000000106",
+     "mbid": "d000010a-0000-4000-8000-00000000010a",
      "title": "Other 1-27 LP1",
      "type": "album"
     }
@@ -7505,14 +7561,14 @@
     {
      "date": "2010-05-01",
      "listeners": 6200,
-     "mbid": "d0000107-0000-4000-8000-000000000107",
+     "mbid": "d000010b-0000-4000-8000-00000000010b",
      "title": "Other 1-28 LP0",
      "type": "album"
     },
     {
      "date": "2011-05-02",
      "listeners": 6199,
-     "mbid": "d0000108-0000-4000-8000-000000000108",
+     "mbid": "d000010c-0000-4000-8000-00000000010c",
      "title": "Other 1-28 LP1",
      "type": "album"
     }
@@ -7530,14 +7586,14 @@
     {
      "date": "2011-05-01",
      "listeners": 6100,
-     "mbid": "d0000109-0000-4000-8000-000000000109",
+     "mbid": "d000010d-0000-4000-8000-00000000010d",
      "title": "Other 1-29 LP0",
      "type": "album"
     },
     {
      "date": "2012-05-02",
      "listeners": 6099,
-     "mbid": "d000010a-0000-4000-8000-00000000010a",
+     "mbid": "d000010e-0000-4000-8000-00000000010e",
      "title": "Other 1-29 LP1",
      "type": "album"
     }
@@ -7555,14 +7611,14 @@
     {
      "date": "2012-05-01",
      "listeners": 6000,
-     "mbid": "d000010b-0000-4000-8000-00000000010b",
+     "mbid": "d000010f-0000-4000-8000-00000000010f",
      "title": "Other 1-30 LP0",
      "type": "album"
     },
     {
      "date": "2013-05-02",
      "listeners": 5999,
-     "mbid": "d000010c-0000-4000-8000-00000000010c",
+     "mbid": "d0000110-0000-4000-8000-000000000110",
      "title": "Other 1-30 LP1",
      "type": "album"
     }
@@ -7580,14 +7636,14 @@
     {
      "date": "2013-05-01",
      "listeners": 5900,
-     "mbid": "d000010d-0000-4000-8000-00000000010d",
+     "mbid": "d0000111-0000-4000-8000-000000000111",
      "title": "Other 1-31 LP0",
      "type": "album"
     },
     {
      "date": "2014-05-02",
      "listeners": 5899,
-     "mbid": "d000010e-0000-4000-8000-00000000010e",
+     "mbid": "d0000112-0000-4000-8000-000000000112",
      "title": "Other 1-31 LP1",
      "type": "album"
     }
@@ -7605,14 +7661,14 @@
     {
      "date": "2014-05-01",
      "listeners": 5800,
-     "mbid": "d000010f-0000-4000-8000-00000000010f",
+     "mbid": "d0000113-0000-4000-8000-000000000113",
      "title": "Other 1-32 LP0",
      "type": "album"
     },
     {
      "date": "2015-05-02",
      "listeners": 5799,
-     "mbid": "d0000110-0000-4000-8000-000000000110",
+     "mbid": "d0000114-0000-4000-8000-000000000114",
      "title": "Other 1-32 LP1",
      "type": "album"
     }
@@ -7630,14 +7686,14 @@
     {
      "date": "2015-05-01",
      "listeners": 5700,
-     "mbid": "d0000111-0000-4000-8000-000000000111",
+     "mbid": "d0000115-0000-4000-8000-000000000115",
      "title": "Other 1-33 LP0",
      "type": "album"
     },
     {
      "date": "2016-05-02",
      "listeners": 5699,
-     "mbid": "d0000112-0000-4000-8000-000000000112",
+     "mbid": "d0000116-0000-4000-8000-000000000116",
      "title": "Other 1-33 LP1",
      "type": "album"
     }
@@ -7655,14 +7711,14 @@
     {
      "date": "2016-05-01",
      "listeners": 5600,
-     "mbid": "d0000113-0000-4000-8000-000000000113",
+     "mbid": "d0000117-0000-4000-8000-000000000117",
      "title": "Other 1-34 LP0",
      "type": "album"
     },
     {
      "date": "2017-05-02",
      "listeners": 5599,
-     "mbid": "d0000114-0000-4000-8000-000000000114",
+     "mbid": "d0000118-0000-4000-8000-000000000118",
      "title": "Other 1-34 LP1",
      "type": "album"
     }
@@ -7680,14 +7736,14 @@
     {
      "date": "2017-05-01",
      "listeners": 5500,
-     "mbid": "d0000115-0000-4000-8000-000000000115",
+     "mbid": "d0000119-0000-4000-8000-000000000119",
      "title": "Other 1-35 LP0",
      "type": "album"
     },
     {
      "date": "2018-05-02",
      "listeners": 5499,
-     "mbid": "d0000116-0000-4000-8000-000000000116",
+     "mbid": "d000011a-0000-4000-8000-00000000011a",
      "title": "Other 1-35 LP1",
      "type": "album"
     }
@@ -7705,14 +7761,14 @@
     {
      "date": "2018-05-01",
      "listeners": 5400,
-     "mbid": "d0000117-0000-4000-8000-000000000117",
+     "mbid": "d000011b-0000-4000-8000-00000000011b",
      "title": "Other 1-36 LP0",
      "type": "album"
     },
     {
      "date": "2019-05-02",
      "listeners": 5399,
-     "mbid": "d0000118-0000-4000-8000-000000000118",
+     "mbid": "d000011c-0000-4000-8000-00000000011c",
      "title": "Other 1-36 LP1",
      "type": "album"
     }
@@ -7730,14 +7786,14 @@
     {
      "date": "2019-05-01",
      "listeners": 5300,
-     "mbid": "d0000119-0000-4000-8000-000000000119",
+     "mbid": "d000011d-0000-4000-8000-00000000011d",
      "title": "Other 1-37 LP0",
      "type": "album"
     },
     {
      "date": "2020-05-02",
      "listeners": 5299,
-     "mbid": "d000011a-0000-4000-8000-00000000011a",
+     "mbid": "d000011e-0000-4000-8000-00000000011e",
      "title": "Other 1-37 LP1",
      "type": "album"
     }
@@ -7755,14 +7811,14 @@
     {
      "date": "2020-05-01",
      "listeners": 5200,
-     "mbid": "d000011b-0000-4000-8000-00000000011b",
+     "mbid": "d000011f-0000-4000-8000-00000000011f",
      "title": "Other 1-38 LP0",
      "type": "album"
     },
     {
      "date": "2021-05-02",
      "listeners": 5199,
-     "mbid": "d000011c-0000-4000-8000-00000000011c",
+     "mbid": "d0000120-0000-4000-8000-000000000120",
      "title": "Other 1-38 LP1",
      "type": "album"
     }
@@ -7780,14 +7836,14 @@
     {
      "date": "2021-05-01",
      "listeners": 5100,
-     "mbid": "d000011d-0000-4000-8000-00000000011d",
+     "mbid": "d0000121-0000-4000-8000-000000000121",
      "title": "Other 1-39 LP0",
      "type": "album"
     },
     {
      "date": "2022-05-02",
      "listeners": 5099,
-     "mbid": "d000011e-0000-4000-8000-00000000011e",
+     "mbid": "d0000122-0000-4000-8000-000000000122",
      "title": "Other 1-39 LP1",
      "type": "album"
     }
@@ -7805,14 +7861,14 @@
     {
      "date": "2022-05-01",
      "listeners": 5000,
-     "mbid": "d000011f-0000-4000-8000-00000000011f",
+     "mbid": "d0000123-0000-4000-8000-000000000123",
      "title": "Other 1-40 LP0",
      "type": "album"
     },
     {
      "date": "2023-05-02",
      "listeners": 4999,
-     "mbid": "d0000120-0000-4000-8000-000000000120",
+     "mbid": "d0000124-0000-4000-8000-000000000124",
      "title": "Other 1-40 LP1",
      "type": "album"
     }
@@ -7830,14 +7886,14 @@
     {
      "date": "2023-05-01",
      "listeners": 4900,
-     "mbid": "d0000121-0000-4000-8000-000000000121",
+     "mbid": "d0000125-0000-4000-8000-000000000125",
      "title": "Other 1-41 LP0",
      "type": "album"
     },
     {
      "date": "2010-05-02",
      "listeners": 4899,
-     "mbid": "d0000122-0000-4000-8000-000000000122",
+     "mbid": "d0000126-0000-4000-8000-000000000126",
      "title": "Other 1-41 LP1",
      "type": "album"
     }
@@ -7855,14 +7911,14 @@
     {
      "date": "2010-05-01",
      "listeners": 4800,
-     "mbid": "d0000123-0000-4000-8000-000000000123",
+     "mbid": "d0000127-0000-4000-8000-000000000127",
      "title": "Other 1-42 LP0",
      "type": "album"
     },
     {
      "date": "2011-05-02",
      "listeners": 4799,
-     "mbid": "d0000124-0000-4000-8000-000000000124",
+     "mbid": "d0000128-0000-4000-8000-000000000128",
      "title": "Other 1-42 LP1",
      "type": "album"
     }
@@ -7880,14 +7936,14 @@
     {
      "date": "2011-05-01",
      "listeners": 4700,
-     "mbid": "d0000125-0000-4000-8000-000000000125",
+     "mbid": "d0000129-0000-4000-8000-000000000129",
      "title": "Other 1-43 LP0",
      "type": "album"
     },
     {
      "date": "2012-05-02",
      "listeners": 4699,
-     "mbid": "d0000126-0000-4000-8000-000000000126",
+     "mbid": "d000012a-0000-4000-8000-00000000012a",
      "title": "Other 1-43 LP1",
      "type": "album"
     }
@@ -7905,14 +7961,14 @@
     {
      "date": "2012-05-01",
      "listeners": 4600,
-     "mbid": "d0000127-0000-4000-8000-000000000127",
+     "mbid": "d000012b-0000-4000-8000-00000000012b",
      "title": "Other 1-44 LP0",
      "type": "album"
     },
     {
      "date": "2013-05-02",
      "listeners": 4599,
-     "mbid": "d0000128-0000-4000-8000-000000000128",
+     "mbid": "d000012c-0000-4000-8000-00000000012c",
      "title": "Other 1-44 LP1",
      "type": "album"
     }
@@ -7930,14 +7986,14 @@
     {
      "date": "2013-05-01",
      "listeners": 4500,
-     "mbid": "d0000129-0000-4000-8000-000000000129",
+     "mbid": "d000012d-0000-4000-8000-00000000012d",
      "title": "Other 1-45 LP0",
      "type": "album"
     },
     {
      "date": "2014-05-02",
      "listeners": 4499,
-     "mbid": "d000012a-0000-4000-8000-00000000012a",
+     "mbid": "d000012e-0000-4000-8000-00000000012e",
      "title": "Other 1-45 LP1",
      "type": "album"
     }
@@ -7955,14 +8011,14 @@
     {
      "date": "2014-05-01",
      "listeners": 4400,
-     "mbid": "d000012b-0000-4000-8000-00000000012b",
+     "mbid": "d000012f-0000-4000-8000-00000000012f",
      "title": "Other 1-46 LP0",
      "type": "album"
     },
     {
      "date": "2015-05-02",
      "listeners": 4399,
-     "mbid": "d000012c-0000-4000-8000-00000000012c",
+     "mbid": "d0000130-0000-4000-8000-000000000130",
      "title": "Other 1-46 LP1",
      "type": "album"
     }
@@ -7980,14 +8036,14 @@
     {
      "date": "2015-05-01",
      "listeners": 4300,
-     "mbid": "d000012d-0000-4000-8000-00000000012d",
+     "mbid": "d0000131-0000-4000-8000-000000000131",
      "title": "Other 1-47 LP0",
      "type": "album"
     },
     {
      "date": "2016-05-02",
      "listeners": 4299,
-     "mbid": "d000012e-0000-4000-8000-00000000012e",
+     "mbid": "d0000132-0000-4000-8000-000000000132",
      "title": "Other 1-47 LP1",
      "type": "album"
     }
@@ -8005,14 +8061,14 @@
     {
      "date": "2016-05-01",
      "listeners": 4200,
-     "mbid": "d000012f-0000-4000-8000-00000000012f",
+     "mbid": "d0000133-0000-4000-8000-000000000133",
      "title": "Other 1-48 LP0",
      "type": "album"
     },
     {
      "date": "2017-05-02",
      "listeners": 4199,
-     "mbid": "d0000130-0000-4000-8000-000000000130",
+     "mbid": "d0000134-0000-4000-8000-000000000134",
      "title": "Other 1-48 LP1",
      "type": "album"
     }
@@ -8030,14 +8086,14 @@
     {
      "date": "2017-05-01",
      "listeners": 4100,
-     "mbid": "d0000131-0000-4000-8000-000000000131",
+     "mbid": "d0000135-0000-4000-8000-000000000135",
      "title": "Other 1-49 LP0",
      "type": "album"
     },
     {
      "date": "2018-05-02",
      "listeners": 4099,
-     "mbid": "d0000132-0000-4000-8000-000000000132",
+     "mbid": "d0000136-0000-4000-8000-000000000136",
      "title": "Other 1-49 LP1",
      "type": "album"
     }
@@ -8055,14 +8111,14 @@
     {
      "date": "2018-05-01",
      "listeners": 4000,
-     "mbid": "d0000133-0000-4000-8000-000000000133",
+     "mbid": "d0000137-0000-4000-8000-000000000137",
      "title": "Other 1-50 LP0",
      "type": "album"
     },
     {
      "date": "2019-05-02",
      "listeners": 3999,
-     "mbid": "d0000134-0000-4000-8000-000000000134",
+     "mbid": "d0000138-0000-4000-8000-000000000138",
      "title": "Other 1-50 LP1",
      "type": "album"
     }
@@ -8080,14 +8136,14 @@
     {
      "date": "2019-05-01",
      "listeners": 3900,
-     "mbid": "d0000135-0000-4000-8000-000000000135",
+     "mbid": "d0000139-0000-4000-8000-000000000139",
      "title": "Other 1-51 LP0",
      "type": "album"
     },
     {
      "date": "2020-05-02",
      "listeners": 3899,
-     "mbid": "d0000136-0000-4000-8000-000000000136",
+     "mbid": "d000013a-0000-4000-8000-00000000013a",
      "title": "Other 1-51 LP1",
      "type": "album"
     }
@@ -8105,14 +8161,14 @@
     {
      "date": "2020-05-01",
      "listeners": 3800,
-     "mbid": "d0000137-0000-4000-8000-000000000137",
+     "mbid": "d000013b-0000-4000-8000-00000000013b",
      "title": "Other 1-52 LP0",
      "type": "album"
     },
     {
      "date": "2021-05-02",
      "listeners": 3799,
-     "mbid": "d0000138-0000-4000-8000-000000000138",
+     "mbid": "d000013c-0000-4000-8000-00000000013c",
      "title": "Other 1-52 LP1",
      "type": "album"
     }
@@ -8130,14 +8186,14 @@
     {
      "date": "2021-05-01",
      "listeners": 3700,
-     "mbid": "d0000139-0000-4000-8000-000000000139",
+     "mbid": "d000013d-0000-4000-8000-00000000013d",
      "title": "Other 1-53 LP0",
      "type": "album"
     },
     {
      "date": "2022-05-02",
      "listeners": 3699,
-     "mbid": "d000013a-0000-4000-8000-00000000013a",
+     "mbid": "d000013e-0000-4000-8000-00000000013e",
      "title": "Other 1-53 LP1",
      "type": "album"
     }
@@ -8155,14 +8211,14 @@
     {
      "date": "2022-05-01",
      "listeners": 3600,
-     "mbid": "d000013b-0000-4000-8000-00000000013b",
+     "mbid": "d000013f-0000-4000-8000-00000000013f",
      "title": "Other 1-54 LP0",
      "type": "album"
     },
     {
      "date": "2023-05-02",
      "listeners": 3599,
-     "mbid": "d000013c-0000-4000-8000-00000000013c",
+     "mbid": "d0000140-0000-4000-8000-000000000140",
      "title": "Other 1-54 LP1",
      "type": "album"
     }
@@ -8180,14 +8236,14 @@
     {
      "date": "2023-05-01",
      "listeners": 3500,
-     "mbid": "d000013d-0000-4000-8000-00000000013d",
+     "mbid": "d0000141-0000-4000-8000-000000000141",
      "title": "Other 1-55 LP0",
      "type": "album"
     },
     {
      "date": "2010-05-02",
      "listeners": 3499,
-     "mbid": "d000013e-0000-4000-8000-00000000013e",
+     "mbid": "d0000142-0000-4000-8000-000000000142",
      "title": "Other 1-55 LP1",
      "type": "album"
     }
@@ -8205,14 +8261,14 @@
     {
      "date": "2010-05-01",
      "listeners": 3400,
-     "mbid": "d000013f-0000-4000-8000-00000000013f",
+     "mbid": "d0000143-0000-4000-8000-000000000143",
      "title": "Other 1-56 LP0",
      "type": "album"
     },
     {
      "date": "2011-05-02",
      "listeners": 3399,
-     "mbid": "d0000140-0000-4000-8000-000000000140",
+     "mbid": "d0000144-0000-4000-8000-000000000144",
      "title": "Other 1-56 LP1",
      "type": "album"
     }
@@ -8230,14 +8286,14 @@
     {
      "date": "2011-05-01",
      "listeners": 3300,
-     "mbid": "d0000141-0000-4000-8000-000000000141",
+     "mbid": "d0000145-0000-4000-8000-000000000145",
      "title": "Other 1-57 LP0",
      "type": "album"
     },
     {
      "date": "2012-05-02",
      "listeners": 3299,
-     "mbid": "d0000142-0000-4000-8000-000000000142",
+     "mbid": "d0000146-0000-4000-8000-000000000146",
      "title": "Other 1-57 LP1",
      "type": "album"
     }
@@ -8255,14 +8311,14 @@
     {
      "date": "2012-05-01",
      "listeners": 3200,
-     "mbid": "d0000143-0000-4000-8000-000000000143",
+     "mbid": "d0000147-0000-4000-8000-000000000147",
      "title": "Other 1-58 LP0",
      "type": "album"
     },
     {
      "date": "2013-05-02",
      "listeners": 3199,
-     "mbid": "d0000144-0000-4000-8000-000000000144",
+     "mbid": "d0000148-0000-4000-8000-000000000148",
      "title": "Other 1-58 LP1",
      "type": "album"
     }
@@ -8280,14 +8336,14 @@
     {
      "date": "2013-05-01",
      "listeners": 3100,
-     "mbid": "d0000145-0000-4000-8000-000000000145",
+     "mbid": "d0000149-0000-4000-8000-000000000149",
      "title": "Other 1-59 LP0",
      "type": "album"
     },
     {
      "date": "2014-05-02",
      "listeners": 3099,
-     "mbid": "d0000146-0000-4000-8000-000000000146",
+     "mbid": "d000014a-0000-4000-8000-00000000014a",
      "title": "Other 1-59 LP1",
      "type": "album"
     }
@@ -8305,21 +8361,21 @@
     {
      "date": "2014-05-01",
      "listeners": 3000,
-     "mbid": "d0000147-0000-4000-8000-000000000147",
+     "mbid": "d000014b-0000-4000-8000-00000000014b",
      "title": "Other 1-60 LP0",
      "type": "album"
     },
     {
      "date": "2015-05-02",
      "listeners": 2999,
-     "mbid": "d0000148-0000-4000-8000-000000000148",
+     "mbid": "d000014c-0000-4000-8000-00000000014c",
      "title": "Other 1-60 LP1",
      "type": "album"
     },
     {
      "date": "2016-05-03",
      "listeners": 2998,
-     "mbid": "d0000149-0000-4000-8000-000000000149",
+     "mbid": "d000014d-0000-4000-8000-00000000014d",
      "title": "Other 1-60 LP2",
      "type": "album"
     }
@@ -8337,21 +8393,21 @@
     {
      "date": "2015-05-01",
      "listeners": 2900,
-     "mbid": "d000014a-0000-4000-8000-00000000014a",
+     "mbid": "d000014e-0000-4000-8000-00000000014e",
      "title": "Other 1-61 LP0",
      "type": "album"
     },
     {
      "date": "2016-05-02",
      "listeners": 2899,
-     "mbid": "d000014b-0000-4000-8000-00000000014b",
+     "mbid": "d000014f-0000-4000-8000-00000000014f",
      "title": "Other 1-61 LP1",
      "type": "album"
     },
     {
      "date": "2017-05-03",
      "listeners": 2898,
-     "mbid": "d000014c-0000-4000-8000-00000000014c",
+     "mbid": "d0000150-0000-4000-8000-000000000150",
      "title": "Other 1-61 LP2",
      "type": "album"
     }
@@ -8369,21 +8425,21 @@
     {
      "date": "2016-05-01",
      "listeners": 2800,
-     "mbid": "d000014d-0000-4000-8000-00000000014d",
+     "mbid": "d0000151-0000-4000-8000-000000000151",
      "title": "Other 1-62 LP0",
      "type": "album"
     },
     {
      "date": "2017-05-02",
      "listeners": 2799,
-     "mbid": "d000014e-0000-4000-8000-00000000014e",
+     "mbid": "d0000152-0000-4000-8000-000000000152",
      "title": "Other 1-62 LP1",
      "type": "album"
     },
     {
      "date": "2018-05-03",
      "listeners": 2798,
-     "mbid": "d000014f-0000-4000-8000-00000000014f",
+     "mbid": "d0000153-0000-4000-8000-000000000153",
      "title": "Other 1-62 LP2",
      "type": "album"
     }
@@ -8401,21 +8457,21 @@
     {
      "date": "2017-05-01",
      "listeners": 2700,
-     "mbid": "d0000150-0000-4000-8000-000000000150",
+     "mbid": "d0000154-0000-4000-8000-000000000154",
      "title": "Other 1-63 LP0",
      "type": "album"
     },
     {
      "date": "2018-05-02",
      "listeners": 2699,
-     "mbid": "d0000151-0000-4000-8000-000000000151",
+     "mbid": "d0000155-0000-4000-8000-000000000155",
      "title": "Other 1-63 LP1",
      "type": "album"
     },
     {
      "date": "2019-05-03",
      "listeners": 2698,
-     "mbid": "d0000152-0000-4000-8000-000000000152",
+     "mbid": "d0000156-0000-4000-8000-000000000156",
      "title": "Other 1-63 LP2",
      "type": "album"
     }
@@ -8433,21 +8489,21 @@
     {
      "date": "2018-05-01",
      "listeners": 2600,
-     "mbid": "d0000153-0000-4000-8000-000000000153",
+     "mbid": "d0000157-0000-4000-8000-000000000157",
      "title": "Other 1-64 LP0",
      "type": "album"
     },
     {
      "date": "2019-05-02",
      "listeners": 2599,
-     "mbid": "d0000154-0000-4000-8000-000000000154",
+     "mbid": "d0000158-0000-4000-8000-000000000158",
      "title": "Other 1-64 LP1",
      "type": "album"
     },
     {
      "date": "2020-05-03",
      "listeners": 2598,
-     "mbid": "d0000155-0000-4000-8000-000000000155",
+     "mbid": "d0000159-0000-4000-8000-000000000159",
      "title": "Other 1-64 LP2",
      "type": "album"
     }
@@ -8465,21 +8521,21 @@
     {
      "date": "2019-05-01",
      "listeners": 2500,
-     "mbid": "d0000156-0000-4000-8000-000000000156",
+     "mbid": "d000015a-0000-4000-8000-00000000015a",
      "title": "Other 1-65 LP0",
      "type": "album"
     },
     {
      "date": "2020-05-02",
      "listeners": 2499,
-     "mbid": "d0000157-0000-4000-8000-000000000157",
+     "mbid": "d000015b-0000-4000-8000-00000000015b",
      "title": "Other 1-65 LP1",
      "type": "album"
     },
     {
      "date": "2021-05-03",
      "listeners": 2498,
-     "mbid": "d0000158-0000-4000-8000-000000000158",
+     "mbid": "d000015c-0000-4000-8000-00000000015c",
      "title": "Other 1-65 LP2",
      "type": "album"
     }
@@ -8497,21 +8553,21 @@
     {
      "date": "2020-05-01",
      "listeners": 2400,
-     "mbid": "d0000159-0000-4000-8000-000000000159",
+     "mbid": "d000015d-0000-4000-8000-00000000015d",
      "title": "Other 1-66 LP0",
      "type": "album"
     },
     {
      "date": "2021-05-02",
      "listeners": 2399,
-     "mbid": "d000015a-0000-4000-8000-00000000015a",
+     "mbid": "d000015e-0000-4000-8000-00000000015e",
      "title": "Other 1-66 LP1",
      "type": "album"
     },
     {
      "date": "2022-05-03",
      "listeners": 2398,
-     "mbid": "d000015b-0000-4000-8000-00000000015b",
+     "mbid": "d000015f-0000-4000-8000-00000000015f",
      "title": "Other 1-66 LP2",
      "type": "album"
     }
@@ -8529,21 +8585,21 @@
     {
      "date": "2021-05-01",
      "listeners": 2300,
-     "mbid": "d000015c-0000-4000-8000-00000000015c",
+     "mbid": "d0000160-0000-4000-8000-000000000160",
      "title": "Other 1-67 LP0",
      "type": "album"
     },
     {
      "date": "2022-05-02",
      "listeners": 2299,
-     "mbid": "d000015d-0000-4000-8000-00000000015d",
+     "mbid": "d0000161-0000-4000-8000-000000000161",
      "title": "Other 1-67 LP1",
      "type": "album"
     },
     {
      "date": "2023-05-03",
      "listeners": 2298,
-     "mbid": "d000015e-0000-4000-8000-00000000015e",
+     "mbid": "d0000162-0000-4000-8000-000000000162",
      "title": "Other 1-67 LP2",
      "type": "album"
     }
@@ -8561,21 +8617,21 @@
     {
      "date": "2022-05-01",
      "listeners": 2200,
-     "mbid": "d000015f-0000-4000-8000-00000000015f",
+     "mbid": "d0000163-0000-4000-8000-000000000163",
      "title": "Other 1-68 LP0",
      "type": "album"
     },
     {
      "date": "2023-05-02",
      "listeners": 2199,
-     "mbid": "d0000160-0000-4000-8000-000000000160",
+     "mbid": "d0000164-0000-4000-8000-000000000164",
      "title": "Other 1-68 LP1",
      "type": "album"
     },
     {
      "date": "2010-05-03",
      "listeners": 2198,
-     "mbid": "d0000161-0000-4000-8000-000000000161",
+     "mbid": "d0000165-0000-4000-8000-000000000165",
      "title": "Other 1-68 LP2",
      "type": "album"
     }
@@ -8593,21 +8649,21 @@
     {
      "date": "2023-05-01",
      "listeners": 2100,
-     "mbid": "d0000162-0000-4000-8000-000000000162",
+     "mbid": "d0000166-0000-4000-8000-000000000166",
      "title": "Other 1-69 LP0",
      "type": "album"
     },
     {
      "date": "2010-05-02",
      "listeners": 2099,
-     "mbid": "d0000163-0000-4000-8000-000000000163",
+     "mbid": "d0000167-0000-4000-8000-000000000167",
      "title": "Other 1-69 LP1",
      "type": "album"
     },
     {
      "date": "2011-05-03",
      "listeners": 2098,
-     "mbid": "d0000164-0000-4000-8000-000000000164",
+     "mbid": "d0000168-0000-4000-8000-000000000168",
      "title": "Other 1-69 LP2",
      "type": "album"
     }

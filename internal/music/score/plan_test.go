@@ -221,3 +221,25 @@ func TestPlanStoreVersions(t *testing.T) {
 		t.Fatal("plan kept past 04:00 next day")
 	}
 }
+
+func TestPlanSeedOnceAndMixGate(t *testing.T) {
+	rows := planRows(map[string]int{"a": 1, "b": 1, "c": 1}, nil)
+	rows[0].Seed, rows[1].Seed = "x", "x" // two rows want one seed
+	mix := Row{ID: "mix:1", Family: "mix", Prior: PriorPersonal, Min: 8}
+	for k := 0; k < 7; k++ {
+		mix.Items = append(mix.Items, Item{Key: fmt.Sprint("m", k), Artist: fmt.Sprint("ma", k), Score: 0.99})
+	}
+	got := NewPlan(append(rows, mix), nil, planMax, 1, "2026-10-23", nil).All(nil)
+	seeds := 0
+	for _, r := range got {
+		if r.Seed == "x" {
+			seeds++
+		}
+		if r.ID == "mix:1" {
+			t.Fatal("a mix with 7 items passed its gate of 8")
+		}
+	}
+	if seeds != 1 {
+		t.Fatalf("seed x used by %d rows", seeds)
+	}
+}

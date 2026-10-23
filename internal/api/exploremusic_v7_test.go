@@ -417,3 +417,139 @@ func chipless(t *testing.T, b []byte) string {
 	out, _ := json.Marshal(m)
 	return string(out)
 }
+
+// route: GET /api/v1/explore/music (music_rows_v7 seeds)
+func TestExploreMusicV7Seeds(t *testing.T) {
+	r, _, fx := v7Rig(t, "household_ten.json")
+	byName := map[string]string{}
+	for _, a := range fx.Artists {
+		byName[a.Name] = a.MBID
+	}
+	seedsOf := func() (because []string, all map[string]int) {
+		all = map[string]int{}
+		pages, _ := v7Pages(t, r.owner, "US")
+		for _, row := range v7Rows(pages) {
+			switch row.Type {
+			case "because", "together":
+				id := row.ID[strings.Index(row.ID, ":")+1:]
+				all[id]++
+				if row.Type == "because" {
+					because = append(because, id)
+				}
+			case "mix":
+				// "From A, B and C in your Library"
+				names := strings.TrimSuffix(strings.TrimPrefix(row.Reason, "From "), " in your Library")
+				for _, n := range strings.FieldsFunc(strings.ReplaceAll(names, " and ", ","), func(c rune) bool { return c == ',' }) {
+					all[byName[strings.TrimSpace(n)]]++
+				}
+			}
+		}
+		return because, all
+	}
+	day1, all := seedsOf()
+	if len(day1) == 0 {
+		t.Fatal("no Because rows")
+	}
+	for id, n := range all {
+		if n > 1 {
+			t.Fatalf("seed %s in %d rows", id, n)
+		}
+	}
+	// The next day never reuses yesterday's Because seeds.
+	r.api.musicv2.now = func() time.Time { return v7Fixed.AddDate(0, 0, 1) }
+	day2, _ := seedsOf()
+	for _, a := range day2 {
+		for _, b := range day1 {
+			if a == b {
+				t.Fatalf("seed %s on two days running", a)
+			}
+		}
+	}
+}
+// route: GET /api/v1/explore/music (music_rows_v7 Turning N)
+func TestExploreMusicV7Anniversary(t *testing.T) {
+	notes := func(at time.Time) string {
+		r, _, _ := v7Rig(t, "household_large.json")
+		r.api.musicv2.now = func() time.Time { return at }
+		pages, _ := v7Pages(t, r.owner, "US")
+		var out []string
+		for _, row := range v7Rows(pages) {
+			if row.Type == "anniversary" {
+				for _, c := range row.Items {
+					if lib := c.State; lib == "have" {
+						t.Fatalf("had album %s in Turning N", c.Name)
+					}
+					out = append(out, c.Note)
+				}
+			}
+		}
+		return strings.Join(out, "|")
+	}
+	if n := notes(v7Fixed); !strings.Contains(n, "25 years on Oct 30") {
+		t.Fatalf("2001-10-30 not in Turning N on 2026-10-23: %q", n)
+	}
+	if n := notes(time.Date(2026, 12, 15, 12, 0, 0, 0, time.UTC)); strings.Contains(n, "Oct 30") {
+		t.Fatalf("2001-10-30 still in Turning N on 2026-12-15: %q", n)
+	}
+}
+// route: GET /api/v1/explore/music (music_rows_v7 households)
+func TestExploreMusicV7Households(t *testing.T) {
+	r, _, _ := v7Rig(t, "household_two_members.json")
+	look := func(who *signedIn) (mixes, because []string, rows []MusicRow) {
+		pages, _ := v7Pages(t, who, "US")
+		rows = v7Rows(pages)
+		noAlbumTwice(t, rows)
+		for _, row := range rows {
+			switch row.Type {
+			case "mix":
+				mixes = append(mixes, row.Title)
+			case "because":
+				because = append(because, row.ID)
+			}
+		}
+		return mixes, because, rows
+	}
+	m1, b1, _ := look(r.owner)
+	m2, b2, _ := look(r.ana)
+	if len(m1) == 0 || len(m2) == 0 || m1[0] == m2[0] {
+		t.Fatalf("metal and jazz members share a first mix: %v / %v", m1, m2)
+	}
+	for _, x := range b1 {
+		for _, y := range b2 {
+			if x == y {
+				t.Fatalf("both members got %s", x)
+			}
+		}
+	}
+	// bo has no acts of his own: household rows, labelled as such.
+	_, _, rows := look(r.bo)
+	found := false
+	for _, row := range rows {
+		if row.ID == "new_from" {
+			found = strings.HasPrefix(row.Reason, "Followed in your household")
+		}
+	}
+	if !found {
+		var ids []string
+		for _, row := range rows {
+			ids = append(ids, row.ID+"="+row.Reason)
+		}
+		t.Fatalf("bo's New from your artists is not the household fallback: %q", ids)
+	}
+
+	// Empty library: cold rows only, at most 12, one answer, no empty row.
+	e, _, _ := v7Rig(t, "household_empty.json")
+	pages, _ := v7Pages(t, e.owner, "US")
+	if len(pages) != 1 || pages[0].Next != "" {
+		t.Fatalf("cold start paged: %d pages", len(pages))
+	}
+	cold := map[string]bool{"genres": true, "fresh_songs": true, "top_albums": true, "coming_soon": true}
+	if len(pages[0].Rows) > musicV7Few || len(pages[0].Rows) == 0 {
+		t.Fatalf("cold rows = %d", len(pages[0].Rows))
+	}
+	for _, row := range pages[0].Rows {
+		if len(row.Items) == 0 || !cold[row.Type] {
+			t.Fatalf("cold start row %s (%d items)", row.ID, len(row.Items))
+		}
+	}
+}
