@@ -654,6 +654,10 @@ func (a *API) tmdbArtwork(w http.ResponseWriter, r *http.Request) {
 // Cache names come from the picture's address, so a name never holds other
 // bytes: browsers may keep it for a year, and the name is its ETag.
 func serveArtwork(w http.ResponseWriter, r *http.Request, name, p string) {
+	serveArtworkCached(w, r, name, p, "private, max-age=31536000, immutable")
+}
+
+func serveArtworkCached(w http.ResponseWriter, r *http.Request, name, p, cacheControl string) {
 	f, err := os.Open(p)
 	if err != nil {
 		http.NotFound(w, r)
@@ -661,7 +665,7 @@ func serveArtwork(w http.ResponseWriter, r *http.Request, name, p string) {
 	}
 	defer f.Close()
 	h := w.Header()
-	h.Set("Cache-Control", "private, max-age=31536000, immutable")
+	h.Set("Cache-Control", cacheControl)
 	h.Set("ETag", `"`+strings.TrimSuffix(name, filepath.Ext(name))+`"`)
 	if ct := mime.TypeByExtension(filepath.Ext(name)); ct != "" {
 		h.Set("Content-Type", ct)

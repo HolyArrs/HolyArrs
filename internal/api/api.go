@@ -80,6 +80,10 @@ type Server struct {
 	// ExtraArt and ExtraRatings read fanart.tv artwork and outside ratings
 	// from the metadata server; nil (or a source off there) shows neither.
 	ExtraArt     func(ctx context.Context, kind, id string) (metadata.ServerArt, error)
+	// ImageBase is the metadata server's picture origin ("<server>/v1/img");
+	// its sharp artist photo is the first choice for every artist picture.
+	// Empty skips it.
+	ImageBase string
 	ExtraRatings func(ctx context.Context, kind, id string) (metadata.ServerRatings, error)
 	// WikiTitle and WikiPerson read awards and the Wikipedia bio from the
 	// metadata server; AwardWinners its award-winning TMDB IDs (the Award

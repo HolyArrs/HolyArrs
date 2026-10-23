@@ -79,6 +79,15 @@ func TMDBArtworkURL(base, size, file string) (string, bool) {
 // Fetch stores the picture at url (when not already there) and returns its
 // cache name.
 func (c *ArtworkCache) Fetch(ctx context.Context, url string) (string, error) {
+	return c.FetchUnless(ctx, url, nil)
+}
+
+// ErrArtworkRejected means reject said the answer was not a real picture.
+var ErrArtworkRejected = errors.New("picture: rejected")
+
+// FetchUnless is Fetch, but nothing is stored when reject (given the
+// response headers) says the answer is only a stand-in.
+func (c *ArtworkCache) FetchUnless(ctx context.Context, url string, reject func(http.Header) bool) (string, error) {
 	if !c.allowed(url) {
 		return "", ErrArtworkURL
 	}
@@ -113,6 +122,9 @@ func (c *ArtworkCache) Fetch(ctx context.Context, url string) (string, error) {
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("picture: answered %d", resp.StatusCode)
+	}
+	if reject != nil && reject(resp.Header) {
+		return "", ErrArtworkRejected
 	}
 	if ct := resp.Header.Get("Content-Type"); ct != "" && !strings.HasPrefix(ct, "image/") {
 		return "", fmt.Errorf("picture: not an image (%s)", ct)

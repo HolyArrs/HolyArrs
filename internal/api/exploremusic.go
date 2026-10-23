@@ -1,6 +1,7 @@
 package api
 
 import (
+	"net/url"
 	"context"
 	"net/http"
 	"sort"
@@ -282,11 +283,23 @@ type musicArtist struct {
 	genres []string
 }
 
+// artistImage is the picture link of a library artist: the picture route
+// (the metadata server's sharp photo first) when the artist has a
+// MusicBrainz id, with the saved library artwork as the route's fallback;
+// without an id, the saved artwork alone.
 func artistImage(t domain.Title) string {
+	saved := ""
 	if l := artworkLinks(t.Artwork); len(l) > 0 && strings.HasPrefix(l[0], "/api/v1/artwork/") {
-		return l[0]
+		saved = l[0]
 	}
-	return ""
+	mbid := strings.ToLower(t.SourceIDs["musicbrainz"])
+	if !metadata.ValidMBID(mbid) {
+		return saved
+	}
+	if saved == "" {
+		return musicArtPrefix + "artist/" + mbid
+	}
+	return musicArtPrefix + "artist/" + mbid + "?fallback=" + url.QueryEscape(saved)
 }
 
 func dayOf(t *time.Time) string {

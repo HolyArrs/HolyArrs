@@ -216,7 +216,18 @@ func (a *API) musicTrendArt(w http.ResponseWriter, r *http.Request) {
 	kind, mbid := r.PathValue("kind"), strings.ToLower(r.PathValue("mbid"))
 	name, p, ok := a.musicTrendArtFile(r.Context(), kind, mbid, coverSize(r))
 	if !ok {
+		// A library artist's saved picture stands in when no source has one.
+		if fb := r.URL.Query().Get("fallback"); kind == "artist" && strings.HasPrefix(fb, "/api/v1/artwork/") && !strings.Contains(fb, "//") && !strings.Contains(fb, "..") {
+			http.Redirect(w, r, fb, http.StatusFound)
+			return
+		}
 		http.NotFound(w, r)
+		return
+	}
+	if kind == "artist" {
+		// Artist photos used to be cached as immutable; they now revalidate
+		// (the ETag is the file name), so a sharper photo replaces an old one.
+		serveArtworkCached(w, r, name, p, "private, max-age=600, must-revalidate")
 		return
 	}
 	serveArtwork(w, r, name, p)
@@ -296,6 +307,26 @@ func (a *API) musicTrendArtFile(ctx context.Context, kind, mbid, size string) (n
 	return f.name, f.path, f.ok
 }
 
+// serverPlaceholder says a metadata server picture answer is only its
+// stand-in for a photo it does not have yet.
+func serverPlaceholder(h http.Header) bool {
+	return h.Get("X-Metadata-Placeholder") != ""
+}
+
+// serverArtistPhotoURL is the metadata server's sharp, scored photo of an
+// artist: 500 for circles and cards, 1200 when the big size is asked. A miss
+// answers a placeholder, which keep refuses, so the other sources run.
+func (a *API) serverArtistPhotoURL(_ context.Context, mbid, size string) string {
+	if a.s.ImageBase == "" || !metadata.ValidMBID(mbid) {
+		return ""
+	}
+	px := "500"
+	if size == "1200" {
+		px = "1200"
+	}
+	return strings.TrimRight(a.s.ImageBase, "/") + "/artist/" + mbid + "/" + px + ".jpg"
+}
+
 func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name, path string, ok bool) {
 	c := &a.music
 	c.mu.Lock()
@@ -316,7 +347,7 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name,
 		if path, ok = lib.Artwork.Path(name); ok {
 			return true
 		}
-		if _, err := lib.Artwork.Fetch(ctx, src); err != nil {
+		if _, err := lib.Artwork.FetchUnless(ctx, src, serverPlaceholder); err != nil {
 			return false
 		}
 		path, ok = lib.Artwork.Path(name)
@@ -336,6 +367,9 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name,
 		// thumb by MusicBrainz id, the Deezer artist and Wikidata picture
 		// its MusicBrainz links name, then fanart.tv's wide photo (the
 		// circle crops it). No album cover, and no picture beats a wrong one.
+		if keep(a.serverArtistPhotoURL(ctx, mbid, size)) {
+			return name, path, true
+		}
 		if keep(it.Image) {
 			return name, path, true
 		}
