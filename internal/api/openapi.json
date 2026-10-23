@@ -6384,6 +6384,77 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/account/avatar": {
+      "delete": {
+        "description": "Removes the signed-in person's picture; the app shows their initial again.",
+        "operationId": "removeMyAvatar",
+        "responses": {
+          "204": {
+            "description": "Removed (also when there was none)."
+          }
+        },
+        "summary": "Remove my profile picture",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "self",
+        "x-holyarrs-scope": "write"
+      },
+      "put": {
+        "description": "The request body is a JPEG, PNG or WebP picture up to 5 MB and 8000 pixels a side. The middle square is kept, shrunk to 256 by 256 and stored as a JPEG.",
+        "operationId": "setMyAvatar",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "{\"avatar\": address of the new picture}"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The picture could not be read or is too large."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Over 5 MB."
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not a JPEG, PNG or WebP picture."
+          }
+        },
+        "summary": "Set my profile picture",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "self",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/albums/{id}": {
       "get": {
         "description": "The album summary and every Pressing (chosen first) with status, country, date, formats and track list.",
@@ -23873,6 +23944,55 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "users",
         "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/users/{id}/avatar": {
+      "get": {
+        "description": "The 256 by 256 JPEG of an active person, with an ETag; a matching If-None-Match answers 304.",
+        "operationId": "getUserAvatar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "The picture."
+          },
+          "304": {
+            "description": "Not changed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No picture."
+          }
+        },
+        "summary": "A person's profile picture",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
       }
     },
     "/api/v1/users/{id}/sessions": {
