@@ -195,6 +195,13 @@
 
 	onMount(() => {
 		const kept = readKept();
+		// A first-ever visit: the list and thumbnails the server put in the page (app.html).
+		const inline = (window as { __holyarrsSigninInline?: { shots: ArtShot[]; thumb: Thumb } }).__holyarrsSigninInline;
+		if (!kept.thumb && inline?.thumb && Array.isArray(inline.shots)) {
+			kept.shots = inline.shots;
+			kept.thumb = inline.thumb;
+			kept.first = inline.thumb.url;
+		}
 		let shots = kept.shots;
 		thumb = kept.thumb;
 		let at = -1;

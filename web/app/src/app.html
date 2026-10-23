@@ -10,6 +10,7 @@
 		<link rel="icon" href="/favicon.ico" sizes="any" />
 		<link rel="apple-touch-icon" href="/brand/apple-touch-icon-180.png" />
 		<title>HolyArrs</title>
+		<!--holyarrs-signin-seed-->
 		<script>
 			try {
 				var requested = new URLSearchParams(location.search).get('theme');
@@ -24,7 +25,26 @@
 			if (/\/login\/?$/.test(location.pathname)) {
 				document.documentElement.classList.add('hl-skip');
 				try {
-					var a = JSON.parse(localStorage.getItem('holyarrs-signin-art') || 'null');
+					var a = null;
+					try { a = JSON.parse(localStorage.getItem('holyarrs-signin-art') || 'null'); } catch (e) {}
+					// A first-ever visit: the server put the first slide's thumbnails in the page.
+					var inl = document.getElementById('holyarrs-signin-inline');
+					if (!(a && a.thumb) && inl) {
+						var d = JSON.parse(inl.textContent || 'null'), s0 = d && d.shots && d.shots[0];
+						if (s0 && d.seed) {
+							var vw = innerWidth, vh = innerHeight, dpr = Math.max(1, devicePixelRatio || 1);
+							var fit = function (im) { return im && im.w > 0 && im.h > 0 && im.w >= Math.ceil(Math.max(vw, (vh * im.w) / im.h) * dpr); };
+							// Same choice as lib/signinArt.ts pickArt: tall screens take the poster.
+							var kind = vw / vh < 0.8 && d.seed.poster && fit(s0.poster) ? 'poster' : fit(s0.backdrop) ? 'backdrop' : '';
+							var im = kind && s0[kind];
+							if (im && d.seed[kind]) {
+								var big = vw > 1920 || dpr > 1, sz = kind === 'poster' ? [500, 780] : [780, 1280], need = Math.ceil(Math.max(vw, (vh * im.w) / im.h) * dpr), u = im.url;
+								if (!big) for (var i = 0; i < sz.length; i++) if (sz[i] >= need && sz[i] <= im.w) { u = im.url.replace(/\/t\/p\/[^/]+\//, '/t/p/w' + sz[i] + '/'); break; }
+								a = { first: u, thumb: { url: u, t24: d.seed[kind].t24, t64: d.seed[kind].t64, pos: kind === 'poster' ? '50% 20%' : '50% 30%' } };
+								window.__holyarrsSigninInline = { shots: d.shots, thumb: a.thumb };
+							}
+						}
+					}
 					if (a && typeof a.first === 'string' && /^https:\/\/image\.tmdb\.org\//.test(a.first)) {
 						var l = document.createElement('link');
 						l.rel = 'preload'; l.as = 'image'; l.href = a.first; l.fetchPriority = 'high';
