@@ -336,7 +336,7 @@
 	{#if error && !hero}<LoadError hasData={false} message={plainReason(error).text} onretry={load} {busy} />{/if}
 	<PageLoader loading={!hero && !error} label="Loading this artist" onretry={load}>
 		{#if hero}
-			<header class="hero" data-hero>
+			<header class="hero" class:vid={videoIn} data-hero>
 				<div class="stage" aria-hidden="true">
 					{#if heroSrc}
 						{#key heroSrc}
@@ -565,6 +565,9 @@
 	/* The music video sits over the photo and fades in once it plays. */
 	.clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 900ms ease-out; pointer-events: none; }
 	.clip.in { opacity: 1; }
+	.hero { transition: min-height 900ms var(--ease-out); }
+	.hero.vid { min-height: min(56.25vw, 86vh); }
+	.hero.vid .stage { inset: 0; animation: none; }
 	.vctl { position: absolute; right: clamp(16px, 4vw, 48px); bottom: clamp(16px, 2.5vw, 28px); z-index: 2; display: flex; gap: 8px; }
 	.vctl button { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); color: #fff; cursor: pointer; transition: background .2s; }
 	.vctl button:hover { background: rgb(255 255 255 / 26%); }
