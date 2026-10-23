@@ -47,7 +47,7 @@
 					}
 					if (a && typeof a.first === 'string' && /^https:\/\/image\.tmdb\.org\//.test(a.first)) {
 						var l = document.createElement('link');
-						l.rel = 'preload'; l.as = 'image'; l.href = a.first; l.fetchPriority = 'high';
+						l.rel = 'preload'; l.as = 'image'; l.href = a.first; l.fetchPriority = 'high'; l.crossOrigin = 'anonymous';
 						document.head.appendChild(l);
 						// First frame: the photo as a coarse mosaic (its kept 24 px thumbnail,
 						// scaled up hard-edged); SigninBackdrop refines it to sharp.

@@ -1,7 +1,7 @@
 // Times the sign-in reveal: first frame, panel, name field, and every frame of
 // the wallpaper's mosaic reveal. Usage: node scripts/measure-signin-reveal.mjs <width> <height> <outdir>
 import { chromium } from 'playwright';
-const [w = '1440', h = '900', out = '.', mode = 'shots'] = process.argv.slice(2);
+const [w = '1440', h = '900', out = '.', mode = 'shots', at = '0,300,800,1500,2500'] = process.argv.slice(2);
 const url = 'http://127.0.0.1:18729/login';
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: +w, height: +h } });
@@ -33,7 +33,7 @@ const probe = () =>
 for (const run of ['cold', 'warm']) {
 	await page.goto(url, { waitUntil: 'commit' });
 	const marks = { panel: null, input: null, mosaic: null, sharp: null, seededFirstFrame: null };
-	const stamps = [0, 300, 800, 1500, 2500];
+	const stamps = at.split(',').map(Number);
 	let shotN = 0;
 	const t0 = Date.now();
 	while (Date.now() - t0 < 6000) {
@@ -53,7 +53,7 @@ for (const run of ['cold', 'warm']) {
 	const gaps = frames.slice(1).map((t, i) => t - frames[i]);
 	const inReveal = gaps.filter((_, i) => frames[i] >= (marks.mosaic ?? 0) && frames[i] <= (marks.sharp ?? 4000));
 	const over = (a, ms) => a.filter((g) => g > ms).length;
-	console.log(JSON.stringify({ size: `${w}x${h}`, run, ...marks, frames: inReveal.length, maxGapMs: Math.round(Math.max(0, ...inReveal) * 10) / 10, over20: over(inReveal, 20), over34: over(inReveal, 34), slowAt: gaps.map((g, i) => [Math.round(frames[i]), Math.round(g)]).filter(([t, g]) => g > 20 && t > (marks.mosaic ?? 0) - 50 && t < (marks.sharp ?? 4000)) }));
+	console.log(JSON.stringify({ size: `${w}x${h}`, run, ...marks, frames: inReveal.length, maxGapMs: Math.round(Math.max(0, ...inReveal) * 10) / 10, over17: over(inReveal, 17.5), over20: over(inReveal, 20), over34: over(inReveal, 34), slowAt: gaps.map((g, i) => [Math.round(frames[i]), Math.round(g)]).filter(([t, g]) => g > 20 && t > (marks.mosaic ?? 0) - 50 && t < (marks.sharp ?? 4000)) }));
 	// The thumbnail for the next visit is made 3.2 s after the first picture shows.
 	await page.waitForTimeout(3000);
 }

@@ -60,13 +60,18 @@ function signinSeed() {
 					.catch(() => '')
 					.then((block) => {
 						if (block) {
-							const end = res.end.bind(res);
-							res.end = (chunk: unknown, ...rest: unknown[]) => {
-								if (typeof chunk === 'string' && chunk.includes(seedMark)) chunk = chunk.replace(seedMark, block);
-								else if (Buffer.isBuffer(chunk) && chunk.includes(seedMark)) chunk = Buffer.from(chunk.toString().replace(seedMark, block));
-								if (chunk && res.getHeader?.('content-length')) res.removeHeader('content-length');
-								return end(chunk, ...rest);
+							// SvelteKit may send the page through write() or end(); fill the mark in either.
+							const fill = (chunk: unknown) => {
+								if (typeof chunk === 'string' && chunk.includes(seedMark)) return chunk.replace(seedMark, block);
+								if (chunk instanceof Uint8Array && Buffer.from(chunk).includes(seedMark)) return Buffer.from(Buffer.from(chunk).toString().replace(seedMark, block));
+								return chunk;
 							};
+							const write = res.write.bind(res);
+							const end = res.end.bind(res);
+							const setHeader = res.setHeader.bind(res);
+							res.setHeader = (k: string, v: unknown) => (k.toLowerCase() === 'content-length' ? res : setHeader(k, v));
+							res.write = (chunk: unknown, ...rest: unknown[]) => write(fill(chunk), ...rest);
+							res.end = (chunk: unknown, ...rest: unknown[]) => end(fill(chunk), ...rest);
 						}
 						next();
 					});

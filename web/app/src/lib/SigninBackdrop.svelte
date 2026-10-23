@@ -48,6 +48,7 @@
 
 	async function ready(url: string): Promise<boolean> {
 		const img = new Image();
+		img.crossOrigin = 'anonymous'; // the same cache entry as the reveal's WebGL copy
 		img.decoding = 'async';
 		img.src = url;
 		try {
@@ -142,7 +143,8 @@ vec3 block(vec2 p, float b) {
 	return textureLod(detTex, uv, max(0.0, log2(b * dpr / (k * dpr)))).rgb;
 }
 void main() {
-	vec2 p = vec2(gl_FragCoord.x, view.y * dpr - gl_FragCoord.y) / dpr;
+	// One canvas pixel is dpr CSS px square (3): every block size is a whole number of them.
+	vec2 p = vec2(gl_FragCoord.x, ceil(view.y / dpr) - gl_FragCoord.y) * dpr;
 	vec2 cell = floor(p / ${WAVE_BLOCKS[0].toFixed(1)});
 	float j = (hash(cell) * 2.0 - 1.0) * JIT;
 	float f = distance((cell + 0.5) * ${WAVE_BLOCKS[0].toFixed(1)}, centre) / maxD;
@@ -166,6 +168,7 @@ void main() {
 
 	function loadImage(src: string): Promise<HTMLImageElement> {
 		const img = new Image();
+		img.crossOrigin = 'anonymous'; // WebGL only takes CORS pictures (TMDB answers CORS)
 		img.decoding = 'async';
 		img.src = src;
 		return img.decode().then(() => img);
@@ -174,8 +177,10 @@ void main() {
 	function reveal(node: HTMLElement, seed: Seed | null) {
 		const pic = node.querySelector<HTMLImageElement>('img.pic');
 		const canvas = node.querySelector<HTMLCanvasElement>('canvas.mz');
+		let stop = false;
 		const gl = canvas?.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: false });
 		const sharp = () => {
+			stop = true;
 			node.classList.remove('mosaic');
 			node.classList.add('sharp');
 			unseed();
@@ -216,9 +221,12 @@ void main() {
 			// The Ken Burns box at scale 1 (offsetWidth ignores the transform).
 			size.w = node.offsetWidth || innerWidth;
 			size.h = node.offsetHeight || innerHeight;
-			size.dpr = Math.min(2, devicePixelRatio || 1);
-			canvas!.width = Math.round(size.w * size.dpr);
-			canvas!.height = Math.round(size.h * size.dpr);
+			// Blocks are 6 px or more, so the canvas draws at 3 CSS px a pixel (9x fewer fragments) and is scaled up hard-edged.
+			size.dpr = 3;
+			canvas!.width = Math.ceil(size.w / size.dpr);
+			canvas!.height = Math.ceil(size.h / size.dpr);
+			canvas!.style.width = canvas!.width * size.dpr + 'px';
+			canvas!.style.height = canvas!.height * size.dpr + 'px';
 			gl!.viewport(0, 0, canvas!.width, canvas!.height);
 			gl!.uniform2f(u('view'), size.w, size.h);
 			gl!.uniform1f(u('dpr'), size.dpr);
@@ -245,7 +253,6 @@ void main() {
 			return { w, h };
 		}
 
-		let stop = false;
 		let seedReady = false;
 		let detReady = false;
 		let full = false;
@@ -273,10 +280,11 @@ void main() {
 					detReady = true;
 				})
 				.catch(() => {});
-		// The full picture, shrunk off the main thread so a 4K original never costs a frame.
-		pic
-			.decode()
-			.then(() => createImageBitmap(pic, { resizeWidth: Math.min(2048, pic.naturalWidth), resizeQuality: 'high' }))
+		// The full picture, shrunk off the main thread so a 4K original never costs a frame. The finest block is 6 px,
+		// so 512 texels across is more than any screen's mosaic needs and uploads in well under a frame.
+		// A CORS copy of the same address (the browser cache answers it; WebGL refuses non-CORS pictures).
+		loadImage(pic.currentSrc || pic.src)
+			.then((img) => createImageBitmap(img, { resizeWidth: Math.min(512, img.naturalWidth), resizeQuality: 'high' }))
 			.then((b) => {
 				if (stop) return;
 				const d = texture(1, b, b.width, b.height, true);
@@ -527,6 +535,7 @@ void main() {
 	}
 	.mz {
 		object-fit: fill;
+		image-rendering: pixelated;
 		opacity: 0;
 		pointer-events: none;
 	}
