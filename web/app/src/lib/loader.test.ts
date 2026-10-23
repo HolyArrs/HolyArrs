@@ -31,7 +31,8 @@ describe('loader moments', () => {
 describe('boot hold', () => {
 	it('holds only on a full refresh or the sign-in page', () => {
 		expect(bootHold('reload', '/library/45')).toBe(HOLD_MS);
-		expect(bootHold('navigate', '/login')).toBe(HOLD_MS);
+		expect(bootHold('navigate', '/login')).toBe(0);
+		expect(bootHold('reload', '/login')).toBe(0);
 		expect(bootHold('navigate', '/library/45')).toBe(0);
 		expect(bootHold('navigate', '/title/show/203857')).toBe(0);
 		expect(bootHold(undefined, '/')).toBe(0);

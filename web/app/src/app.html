@@ -19,12 +19,26 @@
 				if (t !== 'dark' && t !== 'light') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 				document.documentElement.dataset.theme = t;
 			} catch (e) {}
+			// The sign-in page paints its panel on the first frame: no boot Orbit,
+			// and the last wallpaper starts loading before any app script.
+			if (/\/login\/?$/.test(location.pathname)) {
+				document.documentElement.classList.add('hl-skip');
+				try {
+					var a = JSON.parse(localStorage.getItem('holyarrs-signin-art') || 'null');
+					if (a && typeof a.first === 'string' && /^https:\/\/image\.tmdb\.org\//.test(a.first)) {
+						var l = document.createElement('link');
+						l.rel = 'preload'; l.as = 'image'; l.href = a.first; l.fetchPriority = 'high';
+						document.head.appendChild(l);
+					}
+				} catch (e) {}
+			}
 		</script>
 		%sveltekit.head%
 		<style>
 			#hl{position:fixed;inset:0;z-index:2147483000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#0b0b0c;transition:opacity .25s ease-out}
 			[data-theme='light'] #hl{background:#f5f5f7}
 			#hl[hidden]{display:none}
+			html.hl-skip #hl:not(.handoff){display:none}
 			#hlt{margin:0;font:500 15px/1.3 system-ui,sans-serif;color:#a1a1a6;min-height:1.3em}
 			#hl svg{overflow:visible}
 			/* The ring and the pulse animate whole HTML-level boxes (outer <svg>s), so the compositor keeps them moving while the app's JS boots. */
@@ -68,6 +82,7 @@
 			// Boot Orbit words (lib/silhouette.ts bootLine): a status after 3 s, a reload after 10 s.
 			(function () {
 				var hl = document.getElementById('hl'), t = document.getElementById('hlt'), r = document.getElementById('hlr');
+				if (document.documentElement.classList.contains('hl-skip')) hl.hidden = true;
 				function up() { return hl && !hl.hidden && !hl.classList.contains('nav') && !hl.classList.contains('out'); }
 				setTimeout(function () { if (up() && t && !t.textContent) { t.textContent = 'Starting HolyArrs…'; t.dataset.boot = '1'; } }, 3000);
 				setTimeout(function () {

@@ -50,11 +50,12 @@ export function remaining(shownAt: number, now: number, hold = HOLD_MS): number 
 
 /**
  * bootHold is the page-load hold: the full ~2.2 s only for a full refresh
- * (reload) or the sign-in page; any other load (a link to a title, an
+ * (reload); the sign-in page skips the screen (app.html); any other load (a link to a title, an
  * in-app address opened fresh) lets the screen go on the first content paint.
  */
 export function bootHold(navType: string | undefined, path: string): number {
-	return navType === 'reload' || /\/login\/?$/.test(path) ? HOLD_MS : 0;
+	if (/\/login\/?$/.test(path)) return 0; // the sign-in page never shows the boot Orbit
+	return navType === 'reload' ? HOLD_MS : 0;
 }
 
 function pageHold(): number {
@@ -67,7 +68,7 @@ const el = () => (typeof document === 'undefined' ? null : document.getElementBy
 let shownAt = 0; // page load: time zero of performance.now()
 let hold = pageHold();
 let reconnecting = false;
-let full = true; // the full screen is up (page load or sign-in)
+let full = !el()?.hidden; // the full screen is up (page load or sign-in); app.html hides it on /login
 let timer: ReturnType<typeof setTimeout> | undefined;
 let navTimer: ReturnType<typeof setTimeout> | undefined;
 
