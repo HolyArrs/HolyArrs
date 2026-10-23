@@ -94,6 +94,9 @@ func (s *Service) Ratings(ctx context.Context, kind, id string) (ServerRatings, 
 func (s *Service) extra(ctx context.Context, path string, out any) error {
 	ctx, cancel := context.WithTimeout(ctx, 6*time.Second)
 	defer cancel()
+	if IsAhead(ctx) && s.hold.held(time.Now()) {
+		return ErrServiceBusy
+	}
 	tok, err := s.access(ctx)
 	if err != nil || tok == "" || strings.ContainsAny(tok, "\r\n") {
 		return ErrServiceAccess
@@ -101,6 +104,7 @@ func (s *Service) extra(ctx context.Context, path string, out any) error {
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, s.base+path, nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	req.Header.Set("Accept", "application/json")
+	aheadRequest(ctx, req)
 	resp, err := s.http.Do(req)
 	if err != nil {
 		return ErrServiceUnavailable
@@ -110,6 +114,7 @@ func (s *Service) extra(ctx context.Context, path string, out any) error {
 	case resp.StatusCode == http.StatusNotFound:
 		return ErrNotFound
 	case resp.StatusCode == http.StatusTooManyRequests:
+		s.hold.set(resp.Header.Get("Retry-After"), nil, time.Now())
 		return ErrServiceBusy
 	case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
 		return ErrServiceAccess

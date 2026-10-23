@@ -40,6 +40,7 @@ type Service struct {
 	base   string
 	access func(context.Context) (string, error)
 	http   *http.Client
+	hold   serviceHold
 }
 
 func NewService(o ServiceOptions) (*Service, error) {
@@ -247,6 +248,9 @@ func (s *Service) get(ctx context.Context, path, provider, id string, q url.Valu
 	if ctx.Err() != nil {
 		return out, ctx.Err()
 	}
+	if IsAhead(ctx) && s.hold.held(time.Now()) {
+		return out, ErrServiceBusy
+	}
 	tok, e := s.access(ctx)
 	if e != nil || tok == "" || len(tok) > 4096 || strings.ContainsAny(tok, "\r\n") {
 		if ctx.Err() != nil {
@@ -295,6 +299,7 @@ func (s *Service) get(ctx context.Context, path, provider, id string, q url.Valu
 		req.Header.Set("Authorization", "Bearer "+tok)
 		req.Header.Set("Accept", "application/json")
 		req.Header.Set("Cache-Control", "no-cache")
+		aheadRequest(ctx, req)
 		resp, e := s.http.Do(req)
 		if e != nil {
 			stop()
@@ -332,6 +337,7 @@ func (s *Service) get(ctx context.Context, path, provider, id string, q url.Valu
 			return out, ErrNotFound
 		case http.StatusTooManyRequests, http.StatusServiceUnavailable:
 			if attempt == 1 {
+				s.hold.set(resp.Header.Get("Retry-After"), body, time.Now())
 				if resp.StatusCode == 429 {
 					return out, ErrServiceBusy
 				}
