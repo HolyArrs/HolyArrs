@@ -40,6 +40,18 @@ type Row struct {
 	// Seed is the artist a seeded row is about (at most one row each).
 	Seed  string
 	Items []Item
+	// Family groups rows for the v7 plan's variety rules (music_rows_v7);
+	// empty means the row's ID. Disc marks a discovery row.
+	Family string
+	Disc   bool
+}
+
+// family is the row's family, its ID when none is set.
+func (r Row) family() string {
+	if r.Family != "" {
+		return r.Family
+	}
+	return r.ID
 }
 
 // Gate is the fewest items a row needs; 0 means the default 6.
