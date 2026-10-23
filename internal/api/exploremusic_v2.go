@@ -588,7 +588,7 @@ func (a *API) buildMusicV2(ctx context.Context, member int64, region string, lib
 				break
 			}
 			hue := g.Hue
-			cards = append(cards, MusicCard{Key: "genre:" + g.Slug, Kind: "genre", MBID: g.Slug, Name: g.Name, Hue: &hue, Image: musicGenreArt(g), Genres: []string{g.Slug}})
+			cards = append(cards, MusicCard{Key: "genre:" + g.Slug, Kind: "genre", MBID: g.Slug, Name: g.Name, Hue: &hue, Image: musicGenreArt(g), Images: musicGenreArts(g), Genres: []string{g.Slug}})
 			scores = append(scores, 1)
 		}
 		addRow(MusicRow{ID: "genres", Type: "genres", Title: "Genres", Reason: "The genres charting in your region", Shape: "tile"},

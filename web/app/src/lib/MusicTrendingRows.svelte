@@ -8,7 +8,8 @@
 	import { defaultRegion } from './region.ts';
 	import { coverFor } from './music/music-pages.ts';
 	import { fetchMusicExplore, fetchMusicGenre, genreHref, musicCardHref, musicCardNote, musicImage, musicStatus, releaseWords, songAskHref, type MusicCardData, type MusicExploreAnswer } from './music/music-trending.ts';
-	import CategoryStrip from './ui/CategoryStrip.svelte';
+	import MusicGenreTiles from './ui/MusicGenreTiles.svelte';
+	import { to } from './paths.ts';
 	import SongLine from './ui/SongLine.svelte';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './types.ts';
 	import Shelf from './ui/Shelf.svelte';
@@ -34,13 +35,13 @@
 		slug = '',
 		genres = $bindable([])
 	}: { owned: OwnedIndex; manage: boolean; mayAsk: boolean; folders: LibraryFolder[]; rules: PickRulesView[]; onadded?: (t: TitleView) => void; /** A Music genre page: that genre's rows instead of Explore's. */ slug?: string; /** The genre tiles, for Explore's Genres button. */ genres?: StripGenre[] } = $props();
-	type StripGenre = { key: string; name: string; href: string; art: string; hue: number };
+	type StripGenre = { key: string; name: string; href: string; art: string; images?: string[]; hue: number };
 
 	let region = $state('global');
 	let genre = $state('');
 	let answer = $state<MusicExploreAnswer | null>(null);
 	// Genres show as the Movies and Shows category strip under the hero, not as a row.
-	const stripGenres = $derived<StripGenre[]>((answer?.rows ?? []).filter((r) => r.shape === 'tile').flatMap((r) => r.items).map((c) => ({ key: c.key, name: c.name, href: genreHref(c), art: c.image ? (musicImage(c) ?? '') : '', hue: c.hue ?? 0 })));
+	const stripGenres = $derived<StripGenre[]>((answer?.rows ?? []).filter((r) => r.shape === 'tile').flatMap((r) => r.items).map((c) => ({ key: c.key, name: c.name, href: genreHref(c), art: c.image ? (musicImage(c) ?? '') : '', hue: c.hue ?? 0, images: c.images ?? [] })));
 	$effect(() => { genres = stripGenres; });
 	let chips = $state<string[]>([]);
 	/** The rows' order as first shown this visit (per genre and region), so later answers never move them. */
@@ -261,7 +262,7 @@
 			</a>
 		{/if}
 
-		{#if stripGenres.length}<CategoryStrip genres={stripGenres} type="music" />{/if}
+		{#if stripGenres.length}<MusicGenreTiles genres={stripGenres} allHref={to('/search?kind=music')} />{/if}
 
 		{#each (answer?.rows ?? []).filter((r) => r.shape !== 'tile') as row, ri (row.id)}
 			{#if row.shape === 'song'}

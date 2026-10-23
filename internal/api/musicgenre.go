@@ -60,6 +60,28 @@ func musicGenreArt(g metadata.MusicGenre) string {
 	return "/api/v1/music/genre-art/" + g.Slug + "?v=" + url.QueryEscape(u.Query().Get("v"))
 }
 
+// musicGenreArts is a genre's slideshow in the app: photo 0 is the same
+// link as musicGenreArt, the others add n=1..3.
+func musicGenreArts(g metadata.MusicGenre) []string {
+	const pre = "/v1/music/genres/tile/"
+	var out []string
+	for i, a := range g.Arts {
+		if i > 3 || !strings.HasPrefix(a, pre) {
+			continue
+		}
+		u, err := url.Parse(a)
+		if err != nil {
+			continue
+		}
+		link := "/api/v1/music/genre-art/" + g.Slug + "?v=" + url.QueryEscape(u.Query().Get("v"))
+		if i > 0 {
+			link += "&n=" + strconv.Itoa(i)
+		}
+		out = append(out, link)
+	}
+	return out
+}
+
 // musicGenreArtCache keeps tile pictures by slug and version.
 type musicGenreArtCache struct {
 	mu   sync.Mutex
@@ -70,17 +92,27 @@ type musicGenreArtCache struct {
 // tile picture from the metadata server, kept in memory.
 func (a *API) musicGenreArt(w http.ResponseWriter, r *http.Request) {
 	slug, v := r.PathValue("slug"), r.URL.Query().Get("v")
+	n, _ := strconv.Atoi(r.URL.Query().Get("n"))
+	if n < 0 || n > 3 {
+		http.NotFound(w, r)
+		return
+	}
 	if a.kidMax(r) != "" || !musicSlugRe.MatchString(slug) || len(v) > 32 || a.s.MusicGenreTile == nil {
 		http.NotFound(w, r)
 		return
 	}
-	key := slug + "?" + v
+	// Photo n of the slideshow is "<slug>.<n>" on the metadata server.
+	name := slug
+	if n > 0 {
+		name += "." + strconv.Itoa(n)
+	}
+	key := name + "?" + v
 	c := &a.genreArt
 	c.mu.Lock()
 	pic, ok := c.pics[key]
 	c.mu.Unlock()
 	if !ok {
-		got, err := a.s.MusicGenreTile(r.Context(), slug, v)
+		got, err := a.s.MusicGenreTile(r.Context(), name, v)
 		if err != nil {
 			http.NotFound(w, r)
 			return
@@ -155,7 +187,7 @@ func (a *API) musicGenrePage(w http.ResponseWriter, r *http.Request) {
 	hue := tile.Hue
 	a.exploreCaching(w, r, "private, no-cache")
 	writeJSON(w, http.StatusOK, map[string]any{"v2": true, "kid": false, "cold": false, "genres": []string{}, "genre": slug, "region": region, "regions": []string{},
-		"tile": MusicCard{Key: "genre:" + slug, Kind: "genre", MBID: slug, Name: tile.Name, Hue: &hue, Image: musicGenreArt(*tile), Genres: []string{slug}},
+		"tile": MusicCard{Key: "genre:" + slug, Kind: "genre", MBID: slug, Name: tile.Name, Hue: &hue, Image: musicGenreArt(*tile), Images: musicGenreArts(*tile), Genres: []string{slug}},
 		"hero": hero, "hero_alts": alts, "rows": rows})
 }
 

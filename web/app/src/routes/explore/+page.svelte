@@ -66,6 +66,7 @@
 	import ExploreHero from '#lib/ui/ExploreHero.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
 	import CategoryStrip from '#lib/ui/CategoryStrip.svelte';
+	import MusicGenreTiles from '#lib/ui/MusicGenreTiles.svelte';
 	import { leaveOut, newHref, newServicesPath, type NewServicesAnswer } from '#lib/new-popular.ts';
 	import type { BrowseTile } from '#lib/search-browse.ts';
 	import { fromStrip, shownBatcher, stripKey, stripPath, stripRowNames, type StripAnswer } from '#lib/category-strip.ts';
@@ -212,7 +213,7 @@
 	// A genre page (Movies or Shows, ?genre=<TMDB id>) swaps the head and tail for its own rows.
 	const genre = $derived(parseGenre((page.shallow?.url ?? page.url).searchParams.get('genre'), type));
 	const genres = $derived(genresFor(type));
-	let musicGenres = $state<{ key: string; name: string; href: string; art: string; hue: number }[]>([]);
+	let musicGenres = $state<{ key: string; name: string; href: string; art: string; images?: string[]; hue: number }[]>([]);
 	let genreRows = $state<(ExploreRow & { wide: boolean; type: string })[]>([]);
 	let genreHero = $state<ExploreCard[]>([]);
 	let genreLoaded = $state<number | null>(null);
@@ -580,10 +581,8 @@
 			<div class="genre-pick" data-testid="genre-picker">
 				<Popover label="Genres" text="Genres" variant="button" align="end" width={340}>
 					{#snippet children(close)}
-						<div class="genre-list" role="group" aria-label="Genres">
-							{#each musicGenres as g (g.key)}
-								<Chip label={g.name} onclick={() => { close(); void goto(g.href); }} />
-							{/each}
+						<div class="genre-tiles" role="group" aria-label="Genres">
+							<MusicGenreTiles genres={musicGenres} allHref={to('/search?kind=music')} compact onopen={close} />
 						</div>
 					{/snippet}
 				</Popover>
@@ -724,6 +723,7 @@
 	.types.stuck .genre-pick { transform: scale(0.9); }
 	.types.stuck .genre-pick :global(.trigger) { background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
 	.genre-list { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; }
+	.genre-tiles { padding: 12px; max-height: min(70vh, 560px); overflow-y: auto; }
 	.sentinel { height: 1px; }
 	/* Hero badges, next to the facts line: small glass pills. */
 	.why { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }

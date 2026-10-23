@@ -85,6 +85,9 @@ func TestMusicGenreArtLink(t *testing.T) {
 	if !genreMatch("hip-hop", "hip-hop-rap") || genreMatch("pop", "k-pop") || musicSlug("R&B/Soul") != "randb-soul" {
 		t.Fatal("genre names")
 	}
+	if got := musicGenreArts(metadata.MusicGenre{Slug: "pop", Arts: []string{"/v1/music/genres/tile/pop.jpg?v=a1", "/v1/music/genres/tile/pop.2.jpg?v=b2", "https://x/y.jpg"}}); len(got) != 2 || got[0] != "/api/v1/music/genre-art/pop?v=a1" || got[1] != "/api/v1/music/genre-art/pop?v=b2&n=1" {
+		t.Fatalf("arts: %v", got)
+	}
 }
 
 // route: GET /api/v1/music/genre-art/{slug}

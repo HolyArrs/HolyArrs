@@ -47,6 +47,8 @@ type MusicGenre struct {
 	Hue   int    `json:"hue"`
 	Count int    `json:"count"`
 	Art   string `json:"art"`
+	// Arts is the slideshow (1 to 4 artist photos); Art is the first.
+	Arts []string `json:"arts,omitempty"`
 }
 
 // MusicGenres is GET /v1/music/genres.

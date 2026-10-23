@@ -71,6 +71,8 @@ type MusicCard struct {
 	Track string `json:"track,omitempty"`
 	// Hue is a genre tile's colour index (music_rows_v2).
 	Hue *int `json:"hue,omitempty"`
+	// Images is a genre tile's slideshow of artist photos (Image is the first).
+	Images []string `json:"images,omitempty"`
 }
 
 // MusicRow is one row of Explore â†’ Music.

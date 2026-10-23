@@ -142,6 +142,8 @@ export interface MusicCardData {
 	track?: string;
 	/** A genre tile's colour index (flag music_rows_v2). */
 	hue?: number;
+	/** A genre tile's slideshow of artist photos (image is the first). */
+	images?: string[];
 }
 
 export interface MusicRowData {

@@ -455,7 +455,7 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 				break
 			}
 			hue := x.g.Hue
-			c := MusicCard{Key: "genre:" + x.g.Slug, Kind: "genre", MBID: x.g.Slug, Name: x.g.Name, Hue: &hue, Image: musicGenreArt(x.g), Genres: []string{x.g.Slug}}
+			c := MusicCard{Key: "genre:" + x.g.Slug, Kind: "genre", MBID: x.g.Slug, Name: x.g.Name, Hue: &hue, Image: musicGenreArt(x.g), Images: musicGenreArts(x.g), Genres: []string{x.g.Slug}}
 			cards = append(cards, c)
 			sc = append(sc, musicscore.Scored{Item: musicscore.Item{Key: c.Key, Score: 1}})
 		}
