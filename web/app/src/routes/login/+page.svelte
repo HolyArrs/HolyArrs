@@ -511,6 +511,12 @@
 		border: 1px solid rgb(255 255 255 / 0.07);
 		box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35), 0 30px 90px rgb(0 0 0 / 0.55), 0 6px 18px rgb(0 0 0 / 0.35);
 	}
+	/* Dev comparison (?panel=blur, set by SigninPortals): a heavier frosted material. */
+	.panel[data-mat='blur'] {
+		background: rgb(40 40 48 / 0.32);
+		-webkit-backdrop-filter: blur(80px) saturate(1.3) brightness(0.62);
+		backdrop-filter: blur(80px) saturate(1.3) brightness(0.62);
+	}
 	/* Success: the panel breaks into blocks, then the dark closes over the
 	   art in the site's hero cells (blockDissolve masks both). */
 	.cover {

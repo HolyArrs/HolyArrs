@@ -1,6 +1,6 @@
 <script lang="ts">
 	// The sign-in page's edge frame and panel portals. A solid frame sits
-	// inset on every browser edge (as on coderluii.dev). From 5 s in, a hole
+	// inset on every browser edge (as on coderluii.dev). From 11 s in, a hole
 	// tears open in the sign-in panel's glass near one corner, inside its
 	// padding; the page's media symbols (film frame, music note, play;
 	// lib/pixelTrail.ts) rise out of it, run along the padding band to a hole
@@ -14,6 +14,9 @@
 	import { legAt, holeAt, symbolAt, easeInOutSine, clamp01, COUNT } from '#lib/signinPortals.ts';
 
 	let canvas: HTMLCanvasElement | undefined = $state();
+	let edgeEl: HTMLDivElement | undefined = $state();
+	// Dev comparison toggles (query only): ?frame=glass|solid, ?panel=glass|blur.
+	let frame = $state<'glass' | 'solid'>('glass');
 	// The page forces dark on <main>; the frame follows the app's real theme.
 	let theme = $state<'light' | 'dark'>('dark');
 
@@ -25,6 +28,10 @@
 		const sys = window.matchMedia('(prefers-color-scheme: dark)');
 		const readTheme = () => (theme = html.dataset.theme === 'light' ? 'light' : html.dataset.theme === 'dark' ? 'dark' : sys.matches ? 'dark' : 'light');
 		readTheme();
+		const q = new URLSearchParams(location.search);
+		if (q.get('frame') === 'solid') frame = 'solid';
+		const panelMat = q.get('panel') === 'blur' ? 'blur' : 'glass';
+		document.querySelector<HTMLElement>('[data-signin-panel]')?.setAttribute('data-mat', panelMat);
 		const mo = new MutationObserver(readTheme);
 		mo.observe(html, { attributes: true, attributeFilter: ['data-theme'] });
 		sys.addEventListener('change', readTheme);
@@ -61,14 +68,49 @@
 			const a = getComputedStyle(cv).getPropertyValue('--accent').trim();
 			if (/^#[0-9a-f]{6}$/i.test(a)) accent = a;
 			measurePanel();
+			shapeEdge();
 			PX = Math.max(1, Math.round((box.band * 0.6) / 8));
 			sprites = MASKS.map((m) => sprite(m));
 			soft = MASKS.map((m) => sprite(m, 2.5));
 		}
 
+		// The frame's inner window has rounded corners: an even-odd path, the
+		// viewport minus a rounded rectangle inset by the frame width.
+		function shapeEdge() {
+			if (!edgeEl) return;
+			const cs = getComputedStyle(edgeEl);
+			const f = parseFloat(cs.getPropertyValue('--frame')) || 8;
+			const r = parseFloat(cs.getPropertyValue('--frame-r')) || 20;
+			const W = window.innerWidth, H = window.innerHeight;
+			const x0 = f, y0 = f, x1 = W - f, y1 = H - f;
+			const d = `M0 0H${W}V${H}H0Z M${x0 + r} ${y0}H${x1 - r}A${r} ${r} 0 0 1 ${x1} ${y0 + r}V${y1 - r}A${r} ${r} 0 0 1 ${x1 - r} ${y1}H${x0 + r}A${r} ${r} 0 0 1 ${x0} ${y1 - r}V${y0 + r}A${r} ${r} 0 0 1 ${x0 + r} ${y0}Z`;
+			edgeEl.style.clipPath = `path(evenodd, '${d}')`;
+		}
+
 		// The path runs inside the panel, along the middle of its padding band,
 		// rounded like the panel's own corners. Corners counter-clockwise from
 		// top right (TR, TL, BL, BR); a hole sits mid-arc at each corner.
+		let panelEl: HTMLElement | null = null, pz = 1, pl = 0, pt = 0;
+		let holes: string[] = [];
+		let maskOn = false;
+		// The holes are true cuts: the panel (with its backdrop blur and tint)
+		// is masked away there, so the live wallpaper shows through, sharp and
+		// always aligned with its zoom and crossfade.
+		const MASK_PROPS = ['mask-image', '-webkit-mask-image', 'mask-composite', '-webkit-mask-composite'];
+		function applyMask() {
+			if (!panelEl) return;
+			if (!holes.length) {
+				if (maskOn) for (const k of MASK_PROPS) panelEl.style.removeProperty(k);
+				maskOn = false;
+				return;
+			}
+			const img = holes.join(', ');
+			panelEl.style.setProperty('mask-image', img);
+			panelEl.style.setProperty('-webkit-mask-image', img);
+			panelEl.style.setProperty('mask-composite', 'intersect');
+			panelEl.style.setProperty('-webkit-mask-composite', 'source-in');
+			maskOn = true;
+		}
 		let box = { x0: 0, y0: 0, x1: 0, y1: 0, r: [0, 0, 0, 0], band: 0 };
 		function measurePanel() {
 			const el = document.querySelector<HTMLElement>('[data-signin-panel]');
@@ -85,6 +127,10 @@
 			const i = band / 2;
 			const rad = [cs.borderTopRightRadius, cs.borderTopLeftRadius, cs.borderBottomLeftRadius, cs.borderBottomRightRadius].map((v) => Math.max(4, px(v) - i));
 			box = { x0: left + i, y0: b.top + i, x1: right - i, y1: bottom - i, r: rad, band };
+			panelEl = el;
+			pz = z;
+			pl = b.left;
+			pt = b.top;
 		}
 		const MID = (k: number) => -Math.PI / 4 - (k * Math.PI) / 2;
 		function centre(k: number): [number, number] {
@@ -112,61 +158,46 @@
 			return [bx + rb * Math.cos(a), by + rb * Math.sin(a)];
 		}
 
-		// A cut in the glass: dark depth, shadow under the far (top) rim, a thin
-		// highlight where light catches the near (bottom) rim, a slightly torn
-		// edge while it tears open or seals.
-		function holePath(r: number, tear: number, seed: number) {
-			ctx!.beginPath();
-			for (let j = 0; j <= 28; j++) {
-				const a = (j / 28) * Math.PI * 2;
-				const rr = r * (1 + tear * (0.09 * Math.sin(a * 5 + seed) + 0.05 * Math.sin(a * 9 - seed * 2)));
-				const x = rr * Math.cos(a), y = rr * Math.sin(a);
-				if (j) ctx!.lineTo(x, y);
-				else ctx!.moveTo(x, y);
-			}
-			ctx!.closePath();
-		}
-		function drawHole(x: number, y: number, s: number, squash: number, seed: number) {
+		// A cut in the glass: the panel is masked away inside (applyMask), and
+		// the canvas adds the rim: an inner shadow under the far (top) edge and a
+		// bright highlight where light catches the near (bottom) cut edge.
+		function drawHole(x: number, y: number, s: number, squash: number) {
 			if (s <= 0.001) return;
 			const r = Math.max(5, box.band * 0.4) * s;
 			if (r < 1) return;
-			const tear = Math.min(1, Math.abs(squash) * 6 + (1 - Math.min(1, s)) * 1.2);
+			const rx = r * (1 + squash), ry = r * (1 - squash);
+			const lx = (x - pl) / pz, ly = (y - pt) / pz;
+			holes.push(`radial-gradient(${(rx / pz).toFixed(2)}px ${(ry / pz).toFixed(2)}px at ${lx.toFixed(2)}px ${ly.toFixed(2)}px, transparent 94%, #000 100%)`);
 			const c = ctx!;
 			c.save();
 			c.translate(x, y);
 			c.scale(1 + squash, 1 - squash);
-			holePath(r, tear, seed);
-			const depth = c.createRadialGradient(0, r * 0.35, 0, 0, 0, r);
-			depth.addColorStop(0, '#000');
-			depth.addColorStop(0.7, '#050506');
-			depth.addColorStop(1, '#141417');
-			c.fillStyle = depth;
-			c.fill();
+			c.beginPath();
+			c.arc(0, 0, r, 0, Math.PI * 2);
 			c.save();
 			c.clip();
-			// Inner shadow on the far rim.
-			c.lineWidth = r * 0.9;
-			c.strokeStyle = 'rgb(0 0 0 / 0.7)';
-			c.beginPath();
-			c.arc(0, r * 0.55, r * 1.25, Math.PI * 1.15, Math.PI * 1.85);
-			c.stroke();
-			// A faint accent glow deep inside.
-			const glow = c.createRadialGradient(0, r * 0.2, 0, 0, r * 0.2, r * 0.8);
-			glow.addColorStop(0, accent + '44');
-			glow.addColorStop(1, accent + '00');
-			c.fillStyle = glow;
+			// Inner shadow on the far rim: the glass's thickness.
+			const sh = c.createLinearGradient(0, -r, 0, -r * 0.3);
+			sh.addColorStop(0, 'rgb(0 0 0 / 0.55)');
+			sh.addColorStop(1, 'rgb(0 0 0 / 0)');
+			c.fillStyle = sh;
 			c.fillRect(-r, -r, r * 2, r * 2);
-			c.restore();
-			// Light catching the near rim.
-			c.lineWidth = 1;
-			c.strokeStyle = 'rgb(255 255 255 / 0.55)';
+			c.lineWidth = Math.max(1.5, r * 0.18);
+			c.strokeStyle = 'rgb(0 0 0 / 0.35)';
 			c.beginPath();
-			c.arc(0, 0, r - 0.5, Math.PI * 0.15, Math.PI * 0.85);
+			c.arc(0, 0, r, Math.PI * 1.05, Math.PI * 1.95);
+			c.stroke();
+			c.restore();
+			// Light catching the cut edge.
+			c.lineWidth = 1.25;
+			c.strokeStyle = 'rgb(255 255 255 / 0.7)';
+			c.beginPath();
+			c.arc(0, 0, r - 0.6, Math.PI * 0.12, Math.PI * 0.88);
 			c.stroke();
 			c.lineWidth = 0.75;
-			c.strokeStyle = 'rgb(0 0 0 / 0.5)';
+			c.strokeStyle = 'rgb(255 255 255 / 0.18)';
 			c.beginPath();
-			c.arc(0, 0, r - 0.4, Math.PI * 1.15, Math.PI * 1.85);
+			c.arc(0, 0, r - 0.4, Math.PI * 1.1, Math.PI * 1.9);
 			c.stroke();
 			c.restore();
 		}
@@ -174,15 +205,17 @@
 		function draw(t: number) {
 			ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
 			ctx!.clearRect(0, 0, w, h);
+			holes = [];
 			const leg = legAt(t, 4);
-			if (!leg || !box.r) return;
+			if (!leg || !box.r) return applyMask();
 			const k = leg.index;
 			const [ax, ay] = cornerPoint(k);
 			const [bx, by] = cornerPoint(k + 1);
 			const a = holeAt(leg.local, 'from');
 			const b = holeAt(leg.local, 'to');
-			drawHole(ax, ay, a.s, a.squash, k);
-			drawHole(bx, by, b.s, b.squash, k + 1.7);
+			drawHole(ax, ay, a.s, a.squash);
+			drawHole(bx, by, b.s, b.squash);
+			applyMask();
 			const pcx = (box.x0 + box.x1) / 2, pcy = (box.y0 + box.y1) / 2;
 			const half = 4 * PX + 6;
 			for (let i = 0; i < COUNT; i++) {
@@ -238,6 +271,8 @@
 				stop();
 				ctx!.setTransform(1, 0, 0, 1, 0, 0);
 				ctx!.clearRect(0, 0, cv.width, cv.height);
+				holes = [];
+				applyMask();
 			} else start();
 		}
 		function onInteract() {
@@ -256,6 +291,8 @@
 		measure();
 		const panel = document.querySelector('[data-signin-panel]');
 		const ro = new ResizeObserver(() => measurePanel());
+		const edgeObs = new ResizeObserver(() => shapeEdge());
+		if (edgeEl) edgeObs.observe(edgeEl);
 		if (panel) ro.observe(panel);
 		start();
 		document.addEventListener('visibilitychange', onVisible);
@@ -265,7 +302,10 @@
 		window.addEventListener('resize', onResize);
 		return () => {
 			stop();
+			holes = [];
+			applyMask();
 			ro.disconnect();
+			edgeObs.disconnect();
 			mo.disconnect();
 			sys.removeEventListener('change', readTheme);
 			clearTimeout(rt);
@@ -278,17 +318,28 @@
 	});
 </script>
 
-<div class="edge" data-theme={theme} aria-hidden="true"></div>
+<div class="edge" class:glass={frame === 'glass'} data-theme={theme} bind:this={edgeEl} aria-hidden="true"></div>
 <canvas class="portals" bind:this={canvas} aria-hidden="true"></canvas>
 
 <style>
 	/* The coderluii.dev frame: 8 px, 10 at 1280, 12 at 1440, 18 at 1920; square corners. */
-	.edge, .portals { --frame: 8px; position: fixed; inset: 0; pointer-events: none; z-index: 2; }
-	/* The page background token of the app's theme: --bg (#ffffff light, #0b0b0c dark). */
-	.edge { border: var(--frame) solid var(--bg); }
+	.edge, .portals { --frame: 8px; --frame-r: 16px; position: fixed; inset: 0; pointer-events: none; z-index: 2; }
+	/* Clipped in script to the viewport minus a rounded window (radius in the
+	   panel's family). Solid: the page background token --bg. Glass: the
+	   panel's own material, the same blur, saturation and tint. */
+	.edge { background: var(--bg); }
+	.edge.glass {
+		background: rgb(14 14 18 / 0.46);
+		-webkit-backdrop-filter: blur(40px) saturate(1.7) brightness(0.72);
+		backdrop-filter: blur(40px) saturate(1.7) brightness(0.72);
+	}
+	@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+		.edge.glass { background: rgb(18 18 22 / 0.92); }
+	}
+	@media (min-width: 601px) { .edge, .portals { --frame-r: 20px; } }
 	.portals { width: 100%; height: 100%; }
-	@media (min-width: 1280px) { .edge, .portals { --frame: 10px; } }
-	@media (min-width: 1440px) { .edge, .portals { --frame: 12px; } }
-	@media (min-width: 1920px) { .edge, .portals { --frame: 18px; } }
+	@media (min-width: 1280px) { .edge, .portals { --frame: 10px; --frame-r: 22px; } }
+	@media (min-width: 1440px) { .edge, .portals { --frame: 12px; --frame-r: 26px; } }
+	@media (min-width: 1920px) { .edge, .portals { --frame: 18px; --frame-r: 28px; } }
 	@media (prefers-reduced-motion: reduce) { .portals { display: none; } }
 </style>
