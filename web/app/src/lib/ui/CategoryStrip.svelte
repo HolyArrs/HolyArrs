@@ -13,9 +13,17 @@
 	// comes up in its own colour and the word breathes open. A small crimson
 	// section label sits over the name; then All categories (Search Browse).
 	// onopen hears which tile was opened (the strip learns from it); the look is unchanged.
-	let { tiles, type, onopen }: { tiles: (BrowseTile & { section: string })[]; type: ExploreType; onopen?: (t: BrowseTile & { section: string }) => void } = $props();
-	type Entry = { key: string; name: string; label: string; href: string; art: string; all?: boolean; tile?: BrowseTile & { section: string } };
-	const entries = $derived<Entry[]>([
+	// Music passes genres instead of tiles: the same tile, its grey art (or a
+	// gradient in the genre's hue when there is none or it fails to load).
+	type Genre = { key: string; name: string; href: string; art: string; hue: number };
+	let { tiles = [], genres, type, onopen }: { tiles?: (BrowseTile & { section: string })[]; genres?: Genre[]; type: ExploreType; onopen?: (t: BrowseTile & { section: string }) => void } = $props();
+	type Entry = { key: string; name: string; label: string; href: string; art: string; all?: boolean; tile?: BrowseTile & { section: string }; tint?: string };
+	const tint = (hue: number) => `hsl(${(((hue % 24) + 24) % 24) * 15} 52% 36%)`;
+	let failed = $state<Record<string, boolean>>({});
+	const entries = $derived<Entry[]>(genres ? [
+		...genres.map((g) => ({ key: g.key, name: g.name, label: 'Genre', href: g.href, art: g.art, tint: tint(g.hue) })),
+		{ key: 'all', name: 'All genres', label: 'Browse', href: to('/search?kind=music'), art: '', all: true }
+	] : [
 		...tiles.map((t) => ({
 			key: t.category ?? `${t.kind}:${t.genre}:${t.mood ?? ''}`,
 			name: t.name,
@@ -31,8 +39,8 @@
 <div class="cat-strip" data-row-id="category_strip">
 	<Shelf title="Categories" item="clamp(184px, 15vw, 236px)" items={entries} key={(e) => e.key} lines={1}>
 		{#snippet card(e: Entry)}
-			<a class="cat" class:all={e.all} href={e.href} style="--chars: {Math.max(e.name.length, 6)}" onclick={() => e.tile && onopen?.(e.tile)}>
-				{#if e.art}<img class="art" src={e.art} alt="" loading="lazy" decoding="async" />{/if}
+			<a class="cat" class:all={e.all} class:tinted={e.tint && (!e.art || failed[e.key])} href={e.href} style="--chars: {Math.max(e.name.length, 6)}" style:--tint={e.tint} onclick={() => e.tile && onopen?.(e.tile)}>
+				{#if e.art && !failed[e.key]}<img class="art" src={e.art} alt="" loading="lazy" decoding="async" onerror={() => (failed[e.key] = true)} />{/if}
 				<span class="txt">
 					<small>{e.label}</small>
 					<strong>{e.name}{#if e.all}<Icon name="chevronRight" size={18} />{/if}</strong>
@@ -74,6 +82,8 @@
 	.cat:focus:not(:focus-visible) { outline: none; }
 	.cat.all { background: linear-gradient(120deg, #3a0609, #120a0b 70%); }
 	.cat.all small { color: #ffc9cb; }
+	/* A music genre with no picture: its hue as a dark gradient, never a broken image. */
+	.cat.tinted { background: linear-gradient(120deg, color-mix(in srgb, var(--tint) 70%, #120a0b), #120a0b 75%); }
 	/* Light mode: the tile keeps its dark glass; a soft lift seats it on the light page. */
 	:global(:root[data-theme='light']) .cat { box-shadow: 0 6px 18px -10px rgba(20, 8, 9, .45); border-color: rgba(0, 0, 0, .12); }
 	@media (prefers-color-scheme: light) { :global(:root:not([data-theme='dark'])) .cat { box-shadow: 0 6px 18px -10px rgba(20, 8, 9, .45); border-color: rgba(0, 0, 0, .12); } }
