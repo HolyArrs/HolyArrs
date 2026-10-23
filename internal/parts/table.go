@@ -129,6 +129,7 @@ var Routes = map[string]Owner{
 	"GET /api/v1/openapi.json":                   Core,
 	"GET /api/v1/auth/state":                     Core,
 	"GET /api/v1/public/signin-art":              Core,
+	"GET /api/v1/public/signin-pic/t/p/{size}/{file}": Core,
 	"POST /api/v1/auth/setup":                    Core,
 	"POST /api/v1/auth/login":                    Core,
 	"POST /api/v1/auth/reauth":                   Core,

@@ -307,6 +307,10 @@ func public(r *http.Request) bool {
 		"GET /api/v1/calendar/feed.ics", "HEAD /api/v1/calendar/feed.ics":
 		return true
 	}
+	// The sign-in page's pictures (the handler serves only its own art).
+	if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/api/v1/public/signin-pic/t/p/") {
+		return true
+	}
 	// Invite links: the page and the two calls it makes.
 	if rest, ok := strings.CutPrefix(r.URL.Path, "/api/v1/auth/invites/"); ok && rest != "" && !strings.Contains(rest, "/") &&
 		(r.Method == http.MethodGet || r.Method == http.MethodPost) {

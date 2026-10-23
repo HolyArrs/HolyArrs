@@ -77,7 +77,7 @@ func (a *API) signinSeedJSON(ctx context.Context) []byte {
 		}
 	}
 	// json.Marshal escapes <, > and &, so the text is safe inside <script>.
-	b, err := json.Marshal(map[string]any{"shots": shots, "seed": seed})
+	b, err := json.Marshal(map[string]any{"shots": publicShots(shots), "seed": seed})
 	if err != nil {
 		return nil
 	}

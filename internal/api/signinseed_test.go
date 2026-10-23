@@ -66,7 +66,7 @@ func TestSigninSeedInlinesFirstSlideThumbnails(t *testing.T) {
 	if err := json.Unmarshal(got, &body); err != nil {
 		t.Fatal(err)
 	}
-	if len(body.Shots) != len(shots) || body.Shots[0].Backdrop.URL != shots[0].Backdrop.URL {
+	if len(body.Shots) != len(shots) || body.Shots[0].Backdrop.URL != publicShots(shots)[0].Backdrop.URL {
 		t.Fatalf("shots %+v", body.Shots)
 	}
 	for _, k := range []string{"backdrop", "poster"} {

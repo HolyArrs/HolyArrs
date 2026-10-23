@@ -141,6 +141,8 @@ var RoutePerms = map[string]Perm{
 	"POST /api/v1/auth/forward/login": NeedPublic,
 	// The sign-in page's art: picture addresses only, any rating (like Overseerr).
 	"GET /api/v1/public/signin-art": NeedPublic,
+	// Its pictures, same-origin; only the files the answer above holds.
+	"GET /api/v1/public/signin-pic/t/p/{size}/{file}": NeedPublic,
 
 	// My account.
 	"GET /api/v1/auth/me":                       needSelf,
@@ -585,6 +587,7 @@ var RouteScopes = map[string]string{
 	"GET /api/v1/auth/invites/{token}":    ScopeAdmin, // public; a key never needs it
 	"GET /api/v1/auth/oidc/callback":      ScopeAdmin, // public; a key never needs it
 	"GET /api/v1/public/signin-art":       ScopeAdmin, // public; a key never needs it
+	"GET /api/v1/public/signin-pic/t/p/{size}/{file}": ScopeAdmin, // public; a key never needs it
 
 	// The move tool: what old apps hold (people, emails, links) is admin.
 	"POST /api/v1/migrate/probe":            ScopeAdmin,

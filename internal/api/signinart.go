@@ -6,11 +6,13 @@ import (
 	"math/rand/v2"
 	"net"
 	"net/http"
+	"path"
 	"slices"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/CoderLuii/holyarrs/internal/library"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/web"
 )
@@ -44,6 +46,12 @@ const (
 	signinArtMinWidth = 1280
 	// signinArtPerMinute is each address's calls a minute.
 	signinArtPerMinute = 20
+	// signinPicPerMinute is each address's picture loads a minute.
+	signinPicPerMinute = 240
+	// signinPicPath is where the sign-in pictures are served, same-origin,
+	// through the artwork cache (TMDB sends no CORS header, and the reveal
+	// draws the picture on a canvas).
+	signinPicPath = "/api/v1/public/signin-pic/t/p/"
 	// settingSigninLibraryArt is the this_app setting key.
 	settingSigninLibraryArt = "signin_library_art"
 )
@@ -71,6 +79,7 @@ type signinArtState struct {
 	// failed marks a build that hit an error or timeout (not cached long).
 	failed bool
 	hits  map[string][]time.Time
+	pics  map[string][]time.Time // picture loads, by address
 
 	// Test hooks; nil uses the metadata provider.
 	images   func(ctx context.Context, kind, tmdbID string) (metadata.CardImages, error)
@@ -103,27 +112,33 @@ func (st *signinArtState) clock() time.Time {
 
 // allow counts one call from addr; false past the minute budget.
 func (st *signinArtState) allow(addr string) bool {
+	return st.allowIn(&st.hits, addr, signinArtPerMinute)
+}
+
+// allowIn counts one call from addr in hits; false past limit a minute.
+func (st *signinArtState) allowIn(hits *map[string][]time.Time, addr string, limit int) bool {
 	st.mu.Lock()
 	defer st.mu.Unlock()
-	if st.hits == nil {
-		st.hits = map[string][]time.Time{}
+	if *hits == nil {
+		*hits = map[string][]time.Time{}
 	}
+	h := *hits
 	now := st.clock()
-	kept := st.hits[addr][:0]
-	for _, t := range st.hits[addr] {
+	kept := h[addr][:0]
+	for _, t := range h[addr] {
 		if now.Sub(t) < time.Minute {
 			kept = append(kept, t)
 		}
 	}
-	if len(kept) >= signinArtPerMinute {
-		st.hits[addr] = kept
+	if len(kept) >= limit {
+		h[addr] = kept
 		return false
 	}
-	st.hits[addr] = append(kept, now)
-	if len(st.hits) > 4096 { // forget idle addresses
-		for k, v := range st.hits {
+	h[addr] = append(kept, now)
+	if len(h) > 4096 { // forget idle addresses
+		for k, v := range h {
 			if len(v) == 0 || now.Sub(v[len(v)-1]) >= time.Minute {
-				delete(st.hits, k)
+				delete(h, k)
 			}
 		}
 	}
@@ -149,6 +164,7 @@ func remoteHost(r *http.Request) string {
 
 func (a *API) signinArtRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/public/signin-art", a.signinArt)
+	m.HandleFunc("GET "+signinPicPath+"{size}/{file}", a.signinPic)
 	web.SetLoginSeed(func(r *http.Request) []byte { return a.signinSeedJSON(r.Context()) })
 	// Warm the cache in the background so the first visitor sees art.
 	go func() {
@@ -171,7 +187,100 @@ func (a *API) signinArt(w http.ResponseWriter, r *http.Request) {
 	}
 	shots := a.signinShots(r.Context())
 	w.Header().Set("Cache-Control", "private, max-age=600")
-	writeJSON(w, http.StatusOK, map[string]any{"shots": shots})
+	writeJSON(w, http.StatusOK, map[string]any{"shots": publicShots(shots)})
+}
+
+// signinPicSizes are the TMDB sizes the sign-in pictures are served at:
+// thumbnails (w300, w342), posters (w500, w780), backdrops (w780, w1280)
+// and logos (w500). Never the original (up to 3840 px).
+var signinPicSizes = map[string]bool{"w300": true, "w342": true, "w500": true, "w780": true, "w1280": true}
+
+// publicURL turns a TMDB picture address into its same-origin sign-in
+// address; original becomes the largest served size for its kind.
+func publicURL(u, largest string) string {
+	rest, ok := strings.CutPrefix(u, metadata.ImageBase+"/")
+	if !ok {
+		return ""
+	}
+	size, file, ok := strings.Cut(rest, "/")
+	if !ok || file == "" || strings.Contains(file, "/") {
+		return ""
+	}
+	if !signinPicSizes[size] {
+		size = largest
+	}
+	return signinPicPath + size + "/" + file
+}
+
+// publicShots is the answer as the browser sees it: same-origin addresses.
+func publicShots(shots []signinShot) []signinShot {
+	out := make([]signinShot, 0, len(shots))
+	for _, s := range shots {
+		x := signinShot{Backdrop: s.Backdrop, Logo: publicURL(s.Logo, "w500")}
+		x.Backdrop.URL = publicURL(s.Backdrop.URL, "w1280")
+		if s.Poster != nil {
+			p := *s.Poster
+			p.URL = publicURL(p.URL, "w780")
+			x.Poster = &p
+		}
+		out = append(out, x)
+	}
+	return out
+}
+
+// signinPicFile reports whether file is one of the pictures a sign-in
+// answer holds (the allow list: anything else is refused, so this public
+// route is no open proxy).
+func (st *signinArtState) signinPicFile(file string) bool {
+	st.mu.Lock()
+	defer st.mu.Unlock()
+	for _, c := range st.cache {
+		for _, s := range c.shots {
+			for _, u := range []string{s.Backdrop.URL, s.Logo} {
+				if path.Base(u) == file {
+					return true
+				}
+			}
+			if s.Poster != nil && path.Base(s.Poster.URL) == file {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// signinPic serves one sign-in picture through the artwork cache.
+func (a *API) signinPic(w http.ResponseWriter, r *http.Request) {
+	st := &a.signin
+	if !st.allowIn(&st.pics, a.signinClient(r), signinPicPerMinute) {
+		w.Header().Set("Retry-After", "60")
+		http.Error(w, "too many requests", http.StatusTooManyRequests)
+		return
+	}
+	size, file := r.PathValue("size"), r.PathValue("file")
+	if !signinPicSizes[size] || !st.signinPicFile(file) || a.s.Library == nil || a.s.Library.Artwork == nil {
+		http.NotFound(w, r)
+		return
+	}
+	src, ok := library.TMDBArtworkURL(metadata.ImageBase, size, file)
+	if !ok {
+		http.NotFound(w, r)
+		return
+	}
+	c := a.s.Library.Artwork
+	name := library.ArtworkName(src)
+	p, ok := c.Path(name)
+	if !ok {
+		if _, err := c.Fetch(r.Context(), src); err != nil {
+			http.Error(w, "picture unavailable", http.StatusBadGateway)
+			return
+		}
+		if p, ok = c.Path(name); !ok {
+			http.NotFound(w, r)
+			return
+		}
+	}
+	serveArtwork(w, r, name, p)
 }
 
 // signinShots returns the cached answer, building it when stale.
