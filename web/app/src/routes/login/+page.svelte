@@ -501,7 +501,7 @@
 		--z: 1;
 		zoom: var(--z);
 		width: min(calc(clamp(360px, 24vw, 440px) / var(--z)), calc(100% / var(--z)));
-		padding: 28px 28px 22px;
+		padding: 34px 34px 32px;
 		border-radius: 28px;
 		/* Glass: a light tint over a deep blur, so the wallpaper's colour comes
 		   through; the darkening brightness() keeps white text above AA on bright art. */
@@ -655,7 +655,7 @@
 			width: 100%;
 			margin-top: 34dvh;
 			border-radius: 26px 26px 0 0;
-			padding: 20px max(22px, env(safe-area-inset-right)) max(22px, calc(env(safe-area-inset-bottom) + 14px)) max(22px, env(safe-area-inset-left));
+			padding: 28px max(30px, env(safe-area-inset-right)) max(30px, calc(env(safe-area-inset-bottom) + 18px)) max(30px, env(safe-area-inset-left));
 			border-width: 1px 0 0;
 			box-shadow: 0 -20px 60px rgb(0 0 0 / 0.45);
 		}

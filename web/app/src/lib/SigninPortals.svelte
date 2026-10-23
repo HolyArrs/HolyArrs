@@ -94,7 +94,7 @@
 		// blur re-render and the panel flicker at each trip's ends. Each hole is
 		// drawn on this canvas, above the panel, as the matching patch of the
 		// wallpaper (same picture, zoom, crossfade and scrim), plus its rim.
-		let box = { x0: 0, y0: 0, x1: 0, y1: 0, r: [0, 0, 0, 0], band: 0 };
+		let box = { x0: 0, y0: 0, x1: 0, y1: 0, r: [0, 0, 0, 0], band: 0, out: [0, 0, 0, 0], ro: [0, 0, 0, 0] };
 		function measurePanel() {
 			const el = document.querySelector<HTMLElement>('[data-signin-panel]');
 			if (!el) return;
@@ -109,7 +109,8 @@
 			const band = Math.min(px(cs.paddingTop), px(cs.paddingLeft) - (left - b.left), px(cs.paddingRight) - (b.right - right), px(cs.paddingBottom) - (b.bottom - bottom));
 			const i = band / 2;
 			const rad = [cs.borderTopRightRadius, cs.borderTopLeftRadius, cs.borderBottomLeftRadius, cs.borderBottomRightRadius].map((v) => Math.max(4, px(v) - i));
-			box = { x0: left + i, y0: b.top + i, x1: right - i, y1: bottom - i, r: rad, band };
+			const ro = [cs.borderTopRightRadius, cs.borderTopLeftRadius, cs.borderBottomLeftRadius, cs.borderBottomRightRadius].map((v) => px(v));
+			box = { x0: left + i, y0: b.top + i, x1: right - i, y1: bottom - i, r: rad, band, out: [left, b.top, right, bottom], ro };
 		}
 		const MID = (k: number) => -Math.PI / 4 - (k * Math.PI) / 2;
 		function centre(k: number): [number, number] {
@@ -118,9 +119,13 @@
 			const q = r[k];
 			return k === 0 ? [x1 - q, y0 + q] : k === 1 ? [x0 + q, y0 + q] : k === 2 ? [x0 + q, y1 - q] : [x1 - q, y1 - q];
 		}
-		function cornerPoint(k: number): [number, number] {
-			const [cx, cy] = centre(k), q = box.r[k % 4];
-			return [cx + q * Math.cos(MID(k)), cy + q * Math.sin(MID(k))];
+		// Where a hole opens: on the corner's diagonal, deep enough that at least
+		// 9 px of clear glass remains between its rim and both panel edges and the
+		// rounded corner (and the content, which starts one padding in).
+		function holeCentre(k: number): [number, number] {
+			const [ox0, oy0, ox1, oy1] = box.out, q = box.ro[k % 4], R = holeR();
+			const c = Math.max(R + 9, q - (q - R - 9) / Math.SQRT2);
+			return k % 4 === 0 ? [ox1 - c, oy0 + c] : k % 4 === 1 ? [ox0 + c, oy0 + c] : k % 4 === 2 ? [ox0 + c, oy1 - c] : [ox1 - c, oy1 - c];
 		}
 		// Leg k (corner k to k+1) at arclength fraction u: half arc, edge, half arc.
 		function legPoint(k: number, u: number): [number, number] {
@@ -140,12 +145,9 @@
 		// A cut in the glass: the panel is never touched; the canvas paints the wallpaper inside, and
 		// the canvas adds the rim: an inner shadow under the far (top) edge and a
 		// bright highlight where light catches the near (bottom) cut edge.
-		// 24-32 px across (20 on phones), and always fully inside the panel: the
-		// centre sits on the padding band's midline, so the radius stays under
-		// half the band (2 px clear of the edge, the corner arc and the content).
+		// 22-24 px across (18 on phones); see holeCentre for the clear glass.
 		function holeR() {
-			const want = w <= 600 ? 10 : w >= 1440 ? 16 : w >= 1280 ? 14 : 12;
-			return Math.max(4, Math.min(want, box.band / 2 - 2));
+			return w <= 600 ? 9 : w >= 1440 ? 12 : 11;
 		}
 		// The wallpaper under (x, y): each layer's picture where its zoom has it
 		// now, at its crossfade opacity, then the scrim's darkness at that spot.
@@ -242,8 +244,8 @@
 			const leg = legAt(t, 4);
 			if (!leg || !box.r) return;
 			const k = leg.index;
-			const [ax, ay] = cornerPoint(k);
-			const [bx, by] = cornerPoint(k + 1);
+			const [ax, ay] = holeCentre(k);
+			const [bx, by] = holeCentre(k + 1);
 			const a = holeAt(leg.local, 'from');
 			const b = holeAt(leg.local, 'to');
 			drawHole(ax, ay, a.s, a.squash);
@@ -257,7 +259,12 @@
 				// first hole before, and after it sits over the far hole's centre and
 				// sinks into its depth (shrinks, blurs, fades).
 				const u = easeInOutSine(clamp01((p - 0.08) / 0.74));
-				const [px, py] = legPoint(k, u);
+				const [lx, ly] = legPoint(k, u);
+				// Ease from the hole centre onto the band path and back off it.
+				const sm = (v: number) => v * v * (3 - 2 * v);
+				const wt = sm(clamp01(u / 0.14)) * sm(clamp01((1 - u) / 0.14));
+				const [hx, hy] = u < 0.5 ? [ax, ay] : [bx, by];
+				const px = hx + (lx - hx) * wt, py = hy + (ly - hy) * wt;
 				const tt = t * 1000 + i * 290;
 				const ox = px - pcx, oy = py - pcy, ol = Math.hypot(ox, oy) || 1;
 				const grow = Math.min(clamp01(p / 0.08), 1 - easeInOutSine(clamp01((p - 0.82) / 0.18)));
