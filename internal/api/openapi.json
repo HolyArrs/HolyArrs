@@ -17465,6 +17465,8 @@
     },
     "/api/v1/public/signin-pic/t/p/{size}/{file}": {
       "get": {
+        "description": "One sign-in backdrop, poster or logo picture, served from this server's artwork cache so the page never loads pictures from another site; open to everyone. Only the sizes and files the sign-in art list hands out.",
+        "operationId": "signinPic",
         "parameters": [
           {
             "in": "path",
@@ -17483,8 +17485,27 @@
             }
           }
         ],
-        "responses": {},
-        "summary": "",
+        "responses": {
+          "200": {
+            "content": {
+              "image/*": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "The picture."
+          },
+          "404": {
+            "description": "Not a sign-in picture."
+          }
+        },
+        "security": [],
+        "summary": "Sign-in page picture",
+        "tags": [
+          "Sign-in"
+        ],
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "public",
         "x-holyarrs-scope": "admin"
