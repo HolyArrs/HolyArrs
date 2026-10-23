@@ -14,6 +14,7 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/compress"
@@ -72,7 +73,32 @@ func Page(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-cache")
 	b = WithBase(b, urlbase.From(r.Context()))
 	w.Header().Set("Content-Security-Policy", CSP(b))
+	b = withLoginSeed(b, r)
 	_, _ = w.Write(b)
+}
+
+// LoginSeedMark is where index.html takes the sign-in page's first-frame data.
+const LoginSeedMark = "<!--holyarrs-signin-seed-->"
+
+var loginSeed atomic.Pointer[func(*http.Request) []byte]
+
+// SetLoginSeed sets what fills LoginSeedMark on /login: JSON that is already
+// safe inside a script element, or nil for nothing.
+func SetLoginSeed(f func(*http.Request) []byte) { loginSeed.Store(&f) }
+
+// withLoginSeed puts the sign-in seed into the page for /login only, as a
+// data block: it never runs, so the script policy stays the same.
+func withLoginSeed(b []byte, r *http.Request) []byte {
+	f := loginSeed.Load()
+	if f == nil || !strings.HasSuffix(strings.TrimSuffix(r.URL.Path, "/"), "/login") || !bytes.Contains(b, []byte(LoginSeedMark)) {
+		return b
+	}
+	j := (*f)(r)
+	if len(j) == 0 {
+		return b
+	}
+	tag := append(append([]byte(`<script type="application/json" id="holyarrs-signin-inline">`), j...), "</script>"...)
+	return bytes.Replace(b, []byte(LoginSeedMark), tag, 1)
 }
 
 // WithBase puts base in front of the built app's own links: scripts,

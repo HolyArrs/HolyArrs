@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/CoderLuii/holyarrs/web"
 )
 
 // The sign-in page's art: one wide picture at a time behind the card. The
@@ -148,6 +149,7 @@ func remoteHost(r *http.Request) string {
 
 func (a *API) signinArtRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/public/signin-art", a.signinArt)
+	web.SetLoginSeed(func(r *http.Request) []byte { return a.signinSeedJSON(r.Context()) })
 	// Warm the cache in the background so the first visitor sees art.
 	go func() {
 		for _, wait := range []time.Duration{3 * time.Second, 30 * time.Second, 2 * time.Minute} {
@@ -229,6 +231,7 @@ func (a *API) signinShots(ctx context.Context) []signinShot {
 	}
 	st.cache[lib] = signinArtCached{shots: shots, until: st.clock().Add(ttl)}
 	st.mu.Unlock()
+	a.warmSigninSeed(shots)
 	return shots
 }
 

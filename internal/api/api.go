@@ -161,6 +161,8 @@ type API struct {
 	genreArt musicGenreArtCache
 	// signin keeps the sign-in page's art and its per-address budget.
 	signin signinArtState
+	// signinSeed keeps the first sign-in slide's tiny thumbnails.
+	signinSeed signinSeedState
 	// explore runs the Explore pool job and keeps its lists and pages.
 	explore   exploreState
 	genreRows genreRowCache
