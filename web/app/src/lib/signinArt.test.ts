@@ -27,10 +27,10 @@ describe('sized', () => {
 });
 
 describe('pickArt', () => {
-	it('1920x1080 at DPR 1 takes the original (over 1280 needed)', () => {
+	it('1920x1080 at DPR 1 takes w1280, never the original', () => {
 		const p = pickArt(shot(3840), { vw: 1920, vh: 1080, dpr: 1 })!;
-		expect(p.url).toBe(B + 'b.jpg');
-		expect(p.width).toBeGreaterThanOrEqual(p.need);
+		expect(p.url).toBe('https://image.tmdb.org/t/p/w1280/b.jpg');
+		expect(p.width).toBe(1280);
 	});
 	it('a small DPR 1 window takes a TMDB size that still covers it', () => {
 		const p = pickArt(shot(3840), { vw: 1200, vh: 700, dpr: 1 })!;
@@ -41,23 +41,21 @@ describe('pickArt', () => {
 		const s = { vw: 3440, vh: 1440, dpr: 1 };
 		expect(pickArt(shot(1920), s)).toBeNull();
 		const p = pickArt(shot(3840), s)!;
-		expect(p.url).toBe(B + 'b.jpg');
-		expect(p.width).toBeGreaterThanOrEqual(3440);
+		expect(p.url).toContain('/w1280/');
 	});
 	it('5120x1440 takes a 5120 backdrop, and only falls back to 3840 when none is sharp enough', () => {
 		const s = { vw: 5120, vh: 1440, dpr: 1 };
 		expect(pickArt(shot(3840), s)).toBeNull();
-		expect(pickArt(shot(5120), s)!.width).toBe(5120);
+		expect(pickArt(shot(5120), s)!.width).toBe(1280);
 		const list = playlist([shot(1920), shot(3840)], s);
 		expect(list).toHaveLength(1);
-		expect(list[0].pick.width).toBe(3840);
-		expect(playlist([shot(3840), shot(5120)], s).map((x) => x.pick.width)).toEqual([5120]);
+		expect(list[0].shot.backdrop.w).toBe(3840);
+		expect(playlist([shot(3840), shot(5120)], s).map((x) => x.shot.backdrop.w)).toEqual([5120]);
 	});
 	it('iPhone 390x844 at DPR 3 uses the poster', () => {
 		const p = pickArt(shot(3840, 2000), { vw: 390, vh: 844, dpr: 3 })!;
 		expect(p.kind).toBe('poster');
-		expect(p.url).toBe(B + 'p.jpg');
-		expect(p.width).toBeGreaterThanOrEqual(p.need);
+		expect(p.url).toBe('https://image.tmdb.org/t/p/w780/p.jpg');
 	});
 	it('iPhone without a sharp poster skips the title instead of stretching', () => {
 		expect(pickArt(shot(3840, 780), { vw: 390, vh: 844, dpr: 3 })).toBeNull();

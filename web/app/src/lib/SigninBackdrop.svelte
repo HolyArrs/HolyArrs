@@ -13,6 +13,7 @@
 	// picture is chosen for this screen (size x DPR) so it is never blurry.
 	import { onMount } from 'svelte';
 	import { api } from '#lib/api.ts';
+	import { to } from '#lib/paths.ts';
 	import {
 		REVEAL_HOLD_MS,
 		SEED_COLS,
@@ -47,16 +48,36 @@
 	}
 
 	async function ready(url: string): Promise<boolean> {
-		const img = new Image();
-		img.crossOrigin = 'anonymous'; // the same cache entry as the reveal's WebGL copy
-		img.decoding = 'async';
-		img.src = url;
-		try {
-			await img.decode();
-			return true;
-		} catch {
-			return false;
+		// CORS mode: the same cache entry as the reveal's WebGL copy. The
+		// pictures are same-origin, so this never needs a CORS header; should
+		// it fail anyway, a plain load still shows the photo (no reveal).
+		for (const cors of [true, false]) {
+			const img = new Image();
+			if (cors) img.crossOrigin = 'anonymous';
+			img.decoding = 'async';
+			img.src = url;
+			try {
+				await img.decode();
+				return true;
+			} catch {
+				/* try the plain load */
+			}
 		}
+		return false;
+	}
+
+	/** Same-origin pictures only (lists kept from before held TMDB addresses), under the app's base path. */
+	const local = (u: unknown) => typeof u === 'string' && u.startsWith('/') && !u.startsWith('//');
+	function ownShots(list: unknown, prefix: boolean): ArtShot[] {
+		if (!Array.isArray(list)) return [];
+		const at = (u: string) => (prefix ? to(u) : u);
+		return list
+			.filter((x: ArtShot) => local(x?.backdrop?.url))
+			.map((x: ArtShot) => ({
+				backdrop: { ...x.backdrop, url: at(x.backdrop.url) },
+				poster: x.poster && local(x.poster.url) ? { ...x.poster, url: at(x.poster.url) } : undefined,
+				logo: local(x.logo) ? at(x.logo) : ''
+			}));
 	}
 
 	function readKept(): { shots: ArtShot[]; first?: string; thumb: Thumb | null } {
@@ -64,7 +85,7 @@
 			const v = JSON.parse(localStorage.getItem(CACHE) ?? 'null');
 			const t = v?.thumb;
 			const ok = t && typeof t.url === 'string' && /^data:image\/jpeg;base64,/.test(t.t64 ?? '');
-			return { shots: Array.isArray(v?.shots) ? v.shots : [], first: v?.first, thumb: ok ? t : null };
+			return { shots: ownShots(v?.shots, false), first: v?.first, thumb: ok && local(t.url) ? t : null };
 		} catch {
 			return { shots: [], thumb: null };
 		}
@@ -80,7 +101,7 @@
 	}
 
 	// A tiny copy of the next visit's first picture: 24 and 64 px wide JPEGs
-	// (about 2 KB together). TMDB answers CORS, so the canvas can be read back.
+	// (about 2 KB together). The picture is same-origin, so the canvas can be read back.
 	async function makeThumb(pick: ArtPick): Promise<Thumb | null> {
 		const img = new Image();
 		img.crossOrigin = 'anonymous';
@@ -168,7 +189,7 @@ void main() {
 
 	function loadImage(src: string): Promise<HTMLImageElement> {
 		const img = new Image();
-		img.crossOrigin = 'anonymous'; // WebGL only takes CORS pictures (TMDB answers CORS)
+		img.crossOrigin = 'anonymous'; // WebGL only takes CORS-clean pictures (same-origin here)
 		img.decoding = 'async';
 		img.src = src;
 		return img.decode().then(() => img);
@@ -270,7 +291,7 @@ void main() {
 				}
 			})
 			.catch(() => {});
-		// Detail until the full picture is in: the 64 px thumbnail or TMDB's small size.
+		// Detail until the full picture is in: the 64 px thumbnail or the small size.
 		if (seed.t24)
 			loadImage(seed.small)
 				.then((img) => {
@@ -282,7 +303,7 @@ void main() {
 				.catch(() => {});
 		// The full picture, shrunk off the main thread so a 4K original never costs a frame. The finest block is 6 px,
 		// so 512 texels across is more than any screen's mosaic needs and uploads in well under a frame.
-		// A CORS copy of the same address (the browser cache answers it; WebGL refuses non-CORS pictures).
+		// A CORS-mode copy of the same address (the browser cache answers it); on any failure the plain <img> shows.
 		loadImage(pic.currentSrc || pic.src)
 			.then((img) => createImageBitmap(img, { resizeWidth: Math.min(512, img.naturalWidth), resizeQuality: 'high' }))
 			.then((b) => {
@@ -332,8 +353,8 @@ void main() {
 		const kept = readKept();
 		// A first-ever visit: the list and thumbnails the server put in the page (app.html).
 		const inline = (window as { __holyarrsSigninInline?: { shots: ArtShot[]; thumb: Thumb } }).__holyarrsSigninInline;
-		if (!kept.thumb && inline?.thumb && Array.isArray(inline.shots)) {
-			kept.shots = inline.shots;
+		if (!kept.thumb && inline?.thumb && Array.isArray(inline.shots) && local(inline.thumb.url)) {
+			kept.shots = ownShots(inline.shots, false);
 			kept.thumb = inline.thumb;
 			kept.first = inline.thumb.url;
 		}
@@ -358,8 +379,8 @@ void main() {
 				at = (at + 1) % list.length;
 				const first = !layers.length;
 				// The first slide's mosaic shows at once: from the kept thumbnail,
-				// or on a first visit from TMDB's small size (a few KB, loads well
-				// before the full picture). Display only, so no CORS is needed.
+				// or on a first visit from the small size (a few KB, loads well
+				// before the full picture).
 				const p = list[at].pick;
 				const kept = thumb?.url === p.url ? thumb : null;
 				const seed: Seed | null = !first ? null : { t24: kept?.t24 ?? null, small: kept?.t64 ?? sized(p.url, p.kind === 'poster' ? 342 : 300) };
@@ -440,7 +461,7 @@ void main() {
 		api
 			.get<{ shots: ArtShot[] }>('/public/signin-art')
 			.then((r) => {
-				const fresh = Array.isArray(r?.shots) ? r.shots : [];
+				const fresh = ownShots(r?.shots, true);
 				if (!fresh.length || gone) return;
 				const had = layers.length > 0 || busy;
 				shots = fresh;

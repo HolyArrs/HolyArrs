@@ -5,7 +5,6 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<meta name="color-scheme" content="dark light" />
 		<meta name="referrer" content="no-referrer" />
-		<link rel="preconnect" href="https://image.tmdb.org" />
 		<link rel="icon" href="/brand/favicon.svg" type="image/svg+xml" />
 		<link rel="icon" href="/favicon.ico" sizes="any" />
 		<link rel="apple-touch-icon" href="/brand/apple-touch-icon-180.png" />
@@ -38,14 +37,16 @@
 							var kind = vw / vh < 0.8 && d.seed.poster && fit(s0.poster) ? 'poster' : fit(s0.backdrop) ? 'backdrop' : '';
 							var im = kind && s0[kind];
 							if (im && d.seed[kind]) {
-								var big = vw > 1920 || dpr > 1, sz = kind === 'poster' ? [500, 780] : [780, 1280], need = Math.ceil(Math.max(vw, (vh * im.w) / im.h) * dpr), u = im.url;
-								if (!big) for (var i = 0; i < sz.length; i++) if (sz[i] >= need && sz[i] <= im.w) { u = im.url.replace(/\/t\/p\/[^/]+\//, '/t/p/w' + sz[i] + '/'); break; }
+								var sz = kind === 'poster' ? [500, 780] : [780, 1280], need = Math.ceil(Math.max(vw, (vh * im.w) / im.h) * dpr), pw = 0;
+								// Same as lib/signinArt.ts pickSize: the smallest served size that covers, else the largest.
+								for (var i = 0; i < sz.length; i++) if (sz[i] <= im.w) { pw = sz[i]; if (sz[i] >= need) break; }
+								var u = pw ? im.url.replace(/\/t\/p\/[^/]+\//, '/t/p/w' + pw + '/') : im.url;
 								a = { first: u, thumb: { url: u, t24: d.seed[kind].t24, t64: d.seed[kind].t64, pos: kind === 'poster' ? '50% 20%' : '50% 30%' } };
 								window.__holyarrsSigninInline = { shots: d.shots, thumb: a.thumb };
 							}
 						}
 					}
-					if (a && typeof a.first === 'string' && /^https:\/\/image\.tmdb\.org\//.test(a.first)) {
+					if (a && typeof a.first === 'string' && /^\/[^\/]/.test(a.first) && a.first.indexOf('/api/v1/public/signin-pic/') >= 0) {
 						var l = document.createElement('link');
 						l.rel = 'preload'; l.as = 'image'; l.href = a.first; l.fetchPriority = 'high'; l.crossOrigin = 'anonymous';
 						document.head.appendChild(l);

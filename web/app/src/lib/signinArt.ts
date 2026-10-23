@@ -1,13 +1,14 @@
 // Sign-in art: which picture, at which size, for this screen. The server
-// answers original picture addresses with their native size; this file picks
-// the one that stays sharp on the screen it is shown on.
+// answers same-origin picture addresses (its artwork cache, since TMDB sends
+// no CORS header and the reveal draws on a canvas) with each picture's native
+// size; this file picks the served size for the screen it is shown on.
 
 export type ArtImage = { url: string; w: number; h: number };
 export type ArtShot = { backdrop: ArtImage; poster?: ArtImage; logo: string };
 export type Screen = { vw: number; vh: number; dpr: number };
 
 export type ArtPick = {
-	/** The address to load (a TMDB size or the original). */
+	/** The address to load (one of the served sizes). */
 	url: string;
 	/** Native width of the chosen size, in pixels. */
 	width: number;
@@ -32,16 +33,17 @@ export function coverNeed(img: { w: number; h: number }, s: Screen): number {
 	return Math.ceil(cssWidth * Math.max(1, s.dpr));
 }
 
-/** A TMDB address at another size: /t/p/original/x.jpg -> /t/p/w1280/x.jpg. */
+/** A picture address at another size: /t/p/w780/x.jpg -> /t/p/w1280/x.jpg. */
 export function sized(url: string, size: number | 'original'): string {
 	return url.replace(/\/t\/p\/[^/]+\//, `/t/p/${size === 'original' ? 'original' : 'w' + size}/`);
 }
 
-function pickSize(img: ArtImage, kind: ArtPick['kind'], need: number, s: Screen): { url: string; width: number } {
-	// Big or dense screens always get the original.
-	if (s.vw > 1920 || s.dpr > 1) return { url: sized(img.url, 'original'), width: img.w };
-	for (const w of SIZES[kind]) if (w >= need && w <= img.w) return { url: sized(img.url, w), width: w };
-	return { url: sized(img.url, 'original'), width: img.w };
+function pickSize(img: ArtImage, kind: ArtPick['kind'], need: number): { url: string; width: number } {
+	// The smallest served size that covers the screen, else the largest
+	// (originals, up to 3840 px, are never loaded on this page).
+	const fits = SIZES[kind].filter((w) => w <= img.w);
+	const w = fits.find((x) => x >= need) ?? fits.at(-1) ?? SIZES[kind][0];
+	return { url: sized(img.url, w), width: w };
 }
 
 /**
@@ -60,7 +62,7 @@ export function pickArt(shot: ArtShot, s: Screen, floor = 0): ArtPick | null {
 		const need = coverNeed(img, s);
 		const enough = floor > 0 ? Math.min(need, floor) : need;
 		if (img.w < enough) continue;
-		const { url, width } = pickSize(img, kind, need, s);
+		const { url, width } = pickSize(img, kind, need);
 		return { url, width, need, kind, position: kind === 'poster' ? '50% 20%' : '50% 30%' };
 	}
 	return null;
