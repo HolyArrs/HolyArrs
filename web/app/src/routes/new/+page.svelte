@@ -6,6 +6,7 @@
 	import { detailPath, loadDetails, remember } from '#lib/title-details.ts';
 	import { api, message } from '#lib/api.ts';
 	import { session } from '#lib/session.svelte.ts';
+	import { partOff, partOn } from '#lib/parts.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { refreshInbox } from '#lib/wishlist.svelte.ts';
 	import { cardAction, cardTmdb, followsByTmdb, discoverCard, liveCard, matchOwned, ownedIndex, ownedMark, ownedTitle, serverRow, serviceRegion, type ExploreCard, type ExploreRow, type WatchService } from '#lib/explore.ts';
@@ -42,12 +43,18 @@
 	const who = $derived(audienceOf(session.can));
 
 	let type = $state<NewType>(parseNewType(page.url.searchParams.get('type') ?? page.url.searchParams.get('kind')));
-	const typeOptions: { value: NewType; label: string; icon: IconName }[] = [
-		{ value: 'all', label: 'All', icon: 'grid' },
-		{ value: 'shows', label: 'TV shows', icon: 'tv' },
-		{ value: 'movies', label: 'Movies', icon: 'film' },
-		{ value: 'music', label: 'Music', icon: 'music' }
-	];
+	const typeOptions = $derived(
+		([
+			{ value: 'all', label: 'All', icon: 'grid' },
+			{ value: 'shows', label: 'TV shows', icon: 'tv' },
+			{ value: 'movies', label: 'Movies', icon: 'film' },
+			{ value: 'music', label: 'Music', icon: 'music' }
+		] as { value: NewType; label: string; icon: IconName }[]).filter((o) => o.value !== 'music' || partOn('music'))
+	);
+	// Music turned off while picked falls back to All.
+	$effect(() => {
+		if (type === 'music' && partOff('music')) setType('all');
+	});
 
 	let rows = $state<Row[]>([]);
 	let rail = $state<RailDay[]>([]);

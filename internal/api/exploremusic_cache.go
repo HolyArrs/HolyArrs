@@ -77,6 +77,9 @@ func (a *API) forgetMusicAnswers() {
 
 // musicOnEvent forgets the kept answers when an ask or a title changes what they show.
 func (a *API) musicOnEvent(ev domain.Event) {
+	if !a.partIsOn(parts.Music) {
+		return
+	}
 	switch ev.Kind {
 	case domain.EventAskMade, domain.EventAskJoined, domain.EventTitleAdded:
 		a.forgetMusicAnswers()

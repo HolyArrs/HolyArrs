@@ -3,9 +3,7 @@ import { owner, signIn } from './helpers.ts';
 
 // Music off leaks nothing: with Music turned off in Settings > Parts and
 // controls, no screen shows music, the music pages and routes give the
-// parts-off answer, and browsing never asks a music endpoint. Assertions
-// that fail today are marked test.fail() naming the leak; the music
-// restructure turns them back on.
+// parts-off answer, and browsing never asks a music endpoint.
 test.describe.configure({ mode: 'serial' });
 
 let page: Page;
@@ -79,8 +77,6 @@ test('Explore opened with type=music falls back and shows no music rows', async 
 });
 
 test('New & Popular has no Music tab', async () => {
-	// Leak: routes/new/+page.svelte:45-50 lists the Music tab without checking the Music part.
-	test.fail();
 	await visit('/new');
 	await expect(musicRadio()).toHaveCount(0);
 });
@@ -114,8 +110,6 @@ test('the Library has no Music', async () => {
 });
 
 test('Calendar offers no music', async () => {
-	// Leak: routes/calendar/+page.svelte:303-311 always offers the Music choice.
-	test.fail();
 	await visit('/calendar');
 	await expect(page.getByTestId('cal-titles')).toBeVisible();
 	await expect(page.getByTestId('cal-titles').getByRole('radio', { name: 'Music', exact: true })).toHaveCount(0);
@@ -128,9 +122,6 @@ test('Downloads shows no music', async () => {
 });
 
 test('no music endpoint is asked while browsing Home, Explore, New & Popular, Search and Library', async () => {
-	// Leak: /search?q= asks /api/v1/artists/lookup. routes/search/+page.svelte:149 counts a
-	// part as on until the parts answer arrives, so the search at :281/:297 includes music.
-	test.fail();
 	seen.length = 0;
 	for (const path of ['/', '/explore', '/new', '/search', '/search?q=salt', '/library']) await visit(path);
 	expect(musicHits()).toEqual([]);

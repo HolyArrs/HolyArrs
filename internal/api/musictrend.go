@@ -175,7 +175,7 @@ func (a *API) cachedMusicTrend(ctx context.Context, kind, region string) (metada
 // in the background, in the sizes the cards ask for (albums 250 and 500,
 // artists the default), two at a time.
 func (a *API) prefetchMusicArt(kind string, items []metadata.MusicTrendItem) {
-	if a.s.Library == nil || a.s.Library.Artwork == nil {
+	if !a.partIsOn(parts.Music) || a.s.Library == nil || a.s.Library.Artwork == nil {
 		return
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)

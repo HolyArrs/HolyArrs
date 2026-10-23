@@ -482,7 +482,7 @@ func (a *API) similarArtists(ctx context.Context, mbid string, n int) []PageArti
 // artwork cache in the background, through the same chain as the other
 // music covers, so "Fans also like" arrives without placeholders.
 func (a *API) prefetchSimilarArt(list []PageArtist) {
-	if len(list) == 0 || a.s.Library == nil || a.s.Library.Artwork == nil {
+	if len(list) == 0 || !a.partIsOn(parts.Music) || a.s.Library == nil || a.s.Library.Artwork == nil {
 		return
 	}
 	items := make([]metadata.MusicTrendItem, 0, len(list))

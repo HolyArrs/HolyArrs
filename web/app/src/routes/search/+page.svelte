@@ -48,7 +48,7 @@
 	import { createLatestOnly } from '#lib/history.ts';
 	import { live } from '#lib/live-search.ts';
 	import { addRecent, libraryNote, readRecent, rankTop, readScope, recentKey, scopeAddress, type SearchScope } from '#lib/search.ts';
-	import { partsNow } from '#lib/parts.svelte.ts';
+	import { partOn, partsNow, refreshParts } from '#lib/parts.svelte.ts';
 	import { detailPath } from '#lib/title-details.ts';
 	import { discoverCard, followsByTmdb, genrePath, ownedMark, type ExploreCard, type GenreAnswer, type ProviderItem } from '#lib/explore.ts';
 	import { audienceOf } from '#lib/title-status.ts';
@@ -146,7 +146,6 @@
 	const who = $derived(audienceOf(session.can));
 	const manage = $derived(session.can('manage_library'));
 
-	const partOn = (name: string) => partsNow.answer?.parts.find((p) => p.part === name)?.on !== false;
 	const scopeOptions = $derived(
 		([
 			{ value: 'all', label: 'All', icon: 'grid' },
@@ -264,6 +263,11 @@
 		const q = searchField.term.trim();
 		writeAddress();
 		const isLatest = beginSearch();
+		// Which parts are on decides which groups to ask; wait for the answer once.
+		if (!partsNow.answer) {
+			await refreshParts();
+			if (!isLatest()) return;
+		}
 		error = '';
 		noTMDB = false;
 		if (q) mood = mgenre = cat = null;

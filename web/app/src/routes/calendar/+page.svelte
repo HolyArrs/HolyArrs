@@ -6,6 +6,7 @@
 	import { api, message, ApiError } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
+	import { partOff, partOn } from '#lib/parts.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { date } from '#lib/format.ts';
 	import { inLibraryWord } from '#lib/library.ts';
@@ -85,6 +86,10 @@
 	let newLink = $state('');
 	let feedBusy = $state(false);
 
+	// Music turned off while picked falls back to Everything.
+	$effect(() => {
+		if (which === 'music' && partOff('music')) which = 'all';
+	});
 	const shown = $derived(entries.filter((e) => kinds[e.kind] && shows(e, which) && passes(e, { keptOnly, haveOnly })));
 	const todayKey = ymd(now);
 	const layout = $derived(stacked(week, shown, todayKey));
@@ -307,7 +312,7 @@
 				{ value: 'all', label: 'Everything' },
 				{ value: 'movies', label: 'Movies' },
 				{ value: 'shows', label: 'TV shows' },
-				{ value: 'music', label: 'Music' }
+				...(partOn('music') ? [{ value: 'music', label: 'Music' }] : [])
 			]}
 		/>
 		<SegmentedControl label="View" testid="cal-view" value={view} onchange={(v) => pickView(v as CalendarView)} options={[{ value: 'week', label: 'Weeks' }, { value: 'list', label: 'List' }]} />

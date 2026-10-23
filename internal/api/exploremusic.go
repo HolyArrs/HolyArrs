@@ -799,7 +799,7 @@ const musicWarmTTL = 10 * time.Minute
 // warmMusicNames fetches the pictures of these names into the artwork cache
 // in the background (albums at 250 and 500, artists at 250), two at a time.
 func (a *API) warmMusicNames(list []nameKey) {
-	if a.s.Library == nil || a.s.Library.Artwork == nil {
+	if !a.partIsOn(parts.Music) || a.s.Library == nil || a.s.Library.Artwork == nil {
 		return
 	}
 	c := &a.music

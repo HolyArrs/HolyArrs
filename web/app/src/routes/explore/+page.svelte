@@ -8,7 +8,7 @@
 	import { anchorDelta, canReturn, putOffsets, readAnchor, readOffsets, type ExploreReturn } from '#lib/explore-return.ts';
 	import { page } from '$app/state';
 	import { goto, snapshot } from '$app/navigation';
-	import { partsNow } from '#lib/parts.svelte.ts';
+	import { partOff, partOn } from '#lib/parts.svelte.ts';
 	import { to } from '#lib/paths.ts';
 	import { detailPath, loadDetails, remember } from '#lib/title-details.ts';
 	import { api, message } from '#lib/api.ts';
@@ -114,7 +114,9 @@
 
 	// The type switch: in the URL (?type=, none for All) and remembered on this device.
 	const TYPE_KEY = 'holyarrs.explore.type';
-	const musicOn = $derived(partsNow.answer?.parts.find((p) => p.part === 'music')?.on !== false);
+	// The tab waits for the parts answer; a saved Music pick is kept until Music is known off.
+	const musicOn = $derived(partOn('music'));
+	const musicKept = $derived(!partOff('music'));
 	let type = $state<ExploreType>(parseType(page.url.searchParams.get('type')));
 	const typeOptions = $derived(
 		([
@@ -126,7 +128,7 @@
 	);
 	// Music turned off while picked falls back to All.
 	$effect(() => {
-		if (type === 'music' && !musicOn) setType('all');
+		if (type === 'music' && !musicKept) setType('all');
 	});
 
 	function setType(t: ExploreType) {
@@ -251,7 +253,7 @@
 	$effect(() => {
 		const u = page.shallow?.url ?? page.url;
 		untrack(() => {
-			const t = parseType(u.searchParams.get('type'), musicOn);
+			const t = parseType(u.searchParams.get('type'), musicKept);
 			if (t !== type) {
 				type = t;
 				try {
@@ -508,7 +510,7 @@
 	onMount(() => {
 		if (!page.url.searchParams.has('type')) {
 			try {
-				const saved = parseType(localStorage.getItem(TYPE_KEY), musicOn);
+				const saved = parseType(localStorage.getItem(TYPE_KEY), musicKept);
 				if (saved !== 'all') setType(saved);
 			} catch {
 				/* nothing saved */
