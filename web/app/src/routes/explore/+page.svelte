@@ -59,7 +59,6 @@
 	import MetadataNotice from '#lib/MetadataNotice.svelte';
 	import TopServicesRow from '#lib/TopServicesRow.svelte';
 	import Popover from '#lib/ui/Popover.svelte';
-	import Chip from '#lib/ui/Chip.svelte';
 	import MusicTrendingRows from '#lib/MusicTrendingRows.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
@@ -68,7 +67,8 @@
 	import CategoryStrip from '#lib/ui/CategoryStrip.svelte';
 	import MusicGenreTiles from '#lib/ui/MusicGenreTiles.svelte';
 	import { leaveOut, newHref, newServicesPath, type NewServicesAnswer } from '#lib/new-popular.ts';
-	import type { BrowseTile } from '#lib/search-browse.ts';
+	import { browsePath, browseSectionPath, tileHue, type BrowseAnswer, type BrowseSectionAnswer, type BrowseTile } from '#lib/search-browse.ts';
+	import { fitTile } from '#lib/tmdb-image.ts';
 	import { fromStrip, shownBatcher, stripKey, stripPath, stripRowNames, type StripAnswer } from '#lib/category-strip.ts';
 	import { whyShown } from '#lib/why-shown.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
@@ -284,6 +284,49 @@
 		scrollTo({ top: 0, behavior: 'instant' });
 	}
 	const genreOn = $derived(!!genre && type !== 'music');
+
+	// The Genres picker for Movies and TV: the Music tile look, each genre over the
+	// backdrop Search's Browse grid uses for it (read when the picker first opens).
+	let browseArt = $state<Record<string, Record<string, string>>>({});
+	async function loadBrowseArt(t: typeof type) {
+		if (t !== 'movies' && t !== 'shows') return;
+		if (browseArt[t]) return;
+		browseArt = { ...browseArt, [t]: {} };
+		try {
+			// The same tiles Search's Browse grid shows: its first answer, then its Genres section.
+			const [a, more] = await Promise.all([api.get<BrowseAnswer>(browsePath(t)), api.get<BrowseSectionAnswer>(browseSectionPath(t, 'genres')).catch(() => null)]);
+			const art: Record<string, string> = {};
+			for (const x of [...(a.tiles ?? []), ...(more?.tiles ?? [])]) {
+				if (x.mood || !x.backdrop) continue;
+				const src = fitTile(x.backdrop, 130, false);
+				art[`id:${x.genre}`] ??= src;
+				art[`name:${x.genre_name.toLowerCase()}`] ??= src;
+				art[`name:${x.name.toLowerCase()}`] ??= src;
+			}
+			browseArt = { ...browseArt, [t]: art };
+		} catch {
+			// No art: the tiles keep their colour.
+		}
+	}
+	const genreTiles = $derived(genres.map((g) => ({ key: String(g.id), name: g.name, href: '', art: browseArt[type]?.[`id:${g.id}`] ?? browseArt[type]?.[`name:${g.name.toLowerCase()}`] ?? '', hue: 0, tint: tileHue(g.name) })));
+	// The picker spans from the left edge of the type pills to the Genres button's right edge.
+	let typesBox = $state<HTMLElement>();
+	let pickW = $state(340);
+	function measurePick() {
+		// The left edge of the first pill (All), the right edge of the Genres button.
+		const first = typesBox?.querySelector('.ui-seg button');
+		const pick = typesBox?.querySelector('.genre-pick .trigger');
+		if (!first || !pick) return;
+		pickW = Math.round(pick.getBoundingClientRect().right - first.getBoundingClientRect().left);
+	}
+	$effect(() => {
+		if (!typesBox) return;
+		measurePick();
+		const ro = new ResizeObserver(measurePick);
+		ro.observe(typesBox);
+		addEventListener('resize', measurePick);
+		return () => { ro.disconnect(); removeEventListener('resize', measurePick); };
+	});
 
 	// The category strip under the hero: the household's top Browse categories, from the
 	// Browse answers the server keeps warm. Hidden until they are ready (no ghosts).
@@ -574,28 +617,25 @@
 	<!-- The sidebar and the pills say where you are; the page opens straight on its pills and hero. -->
 	<h1 class="sr-only">Explore</h1>
 	<div class="types-mark" bind:this={typesMark} aria-hidden="true"></div>
-	<div class="types" class:stuck={typesStuck} data-pin-pills>
+	<div class="types" class:stuck={typesStuck} data-pin-pills bind:this={typesBox} onpointerdowncapture={measurePick} onkeydowncapture={measurePick}>
 		<SegmentedControl options={typeOptions} value={type} label="Show" testid="explore-type" announce={(l) => `Showing ${l}`} onchange={setType} />
 		{#if type === 'music' && musicGenres.length}
 			<!-- Music: the same Genres button; a genre opens its page. -->
 			<div class="genre-pick" data-testid="genre-picker">
-				<Popover label="Genres" text="Genres" variant="button" align="end" width={340}>
+				<Popover label="Genres" text="Genres" variant="button" align="end" width={pickW}>
 					{#snippet children(close)}
 						<div class="genre-tiles" role="group" aria-label="Genres">
-							<MusicGenreTiles genres={musicGenres} allHref={to('/search?kind=music')} compact onopen={close} />
+							<MusicGenreTiles genres={musicGenres} allHref={to('/search?kind=music')} compact all={false} onopen={close} />
 						</div>
 					{/snippet}
 				</Popover>
 			</div>
 		{:else if genres.length}
 			<div class="genre-pick" data-testid="genre-picker">
-				<Popover label="Genres" text={genre ? genre.name : 'Genres'} variant="button" align="end" width={340}>
+				<Popover label="Genres" text={genre ? genre.name : 'Genres'} variant="button" align="end" width={pickW} onopen={() => void loadBrowseArt(type)}>
 					{#snippet children(close)}
-						<div class="genre-list" role="group" aria-label="Genres">
-							<Chip label="All genres" selected={!genre} onclick={() => pickGenre(null, close)} />
-							{#each genres as g (g.id)}
-								<Chip label={g.name} selected={genre?.id === g.id} onclick={() => pickGenre(g.id, close)} />
-							{/each}
+						<div class="genre-tiles" role="group" aria-label="Genres">
+							<MusicGenreTiles genres={genreTiles} allHref="" compact all={false} selected={genre ? String(genre.id) : ''} onpick={(k) => pickGenre(k === null ? null : Number(k), close)} />
 						</div>
 					{/snippet}
 				</Popover>
@@ -722,8 +762,12 @@
 	.genre-pick :global(.trigger) { min-height: 44px; border-radius: 999px; padding: 0 16px; font: 600 14px/1 var(--font-ui); background: var(--surface-2); color: var(--text); }
 	.types.stuck .genre-pick { transform: scale(0.9); }
 	.types.stuck .genre-pick :global(.trigger) { background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
-	.genre-list { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; }
-	.genre-tiles { padding: 12px; max-height: min(70vh, 560px); overflow-y: auto; }
+	/* The picker panel is the one scroll: a thin themed bar, never taller than the screen allows. */
+	.genre-pick :global(.panel) { max-height: min(calc(100dvh - var(--topbar, 64px) - 96px), 560px); padding: 0; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 28%, transparent) transparent; }
+	.genre-pick :global(.panel::-webkit-scrollbar) { width: 8px; }
+	.genre-pick :global(.panel::-webkit-scrollbar-thumb) { border-radius: 8px; background: color-mix(in srgb, var(--text) 28%, transparent); }
+	.genre-tiles { padding: 14px; }
+	@media (max-width: 767px) { .genre-pick :global(.panel) { max-width: calc(100vw - 16px); } .genre-tiles { padding: 10px; } }
 	.sentinel { height: 1px; }
 	/* Hero badges, next to the facts line: small glass pills. */
 	.why { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }

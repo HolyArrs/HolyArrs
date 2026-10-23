@@ -10,12 +10,63 @@
 	// loads and decodes the next photo before it fades, and rests while off screen,
 	// in a hidden tab, or with reduced motion. No photos: the colour's gradient.
 	// The last tile, All genres, is a 2x2 collage of the first four genres' photos.
-	type Genre = { key: string; name: string; href: string; art: string; images?: string[]; hue: number };
-	let { genres, allHref, compact = false, onopen }: { genres: Genre[]; allHref: string; compact?: boolean; onopen?: () => void } = $props();
+	// The Genres button's picker (compact) also serves Movies and TV: their tiles bring
+	// a tint colour and a backdrop, All genres comes first, and a pick may stay on the
+	// page (onpick) instead of following the link.
+	type Genre = { key: string; name: string; href: string; art: string; images?: string[]; hue: number; tint?: string };
+	let {
+		genres,
+		allHref,
+		compact = false,
+		onopen,
+		onpick,
+		selected,
+		title = 'Genres',
+		all: withAll = true
+	}: {
+		genres: Genre[];
+		allHref: string;
+		compact?: boolean;
+		onopen?: () => void;
+		/** A pick handled on the page: the genre's key, or null for All genres. */
+		onpick?: (key: string | null) => void;
+		/** The active genre's key ('' for All genres); undefined marks none. */
+		selected?: string;
+		/** The row's title (Explore more: Decades, Moods, Charts). */
+		title?: string;
+		/** Whether the All genres tile shows. */
+		all?: boolean;
+	} = $props();
+
+	function chosen(e: MouseEvent, key: string | null) {
+		if (onpick) {
+			e.preventDefault();
+			onpick(key);
+		}
+		onopen?.();
+	}
+	const tint = (g: Genre) => g.tint ?? `var(${genreTintToken(slugOf(g.key), g.hue)})`;
+
+	// Arrow keys move through the picker's grid: left and right by one, up and down by a row.
+	function gridKeys(e: KeyboardEvent) {
+		const keys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+		if (!keys.includes(e.key)) return;
+		const grid = e.currentTarget as HTMLElement;
+		const list = [...grid.querySelectorAll<HTMLElement>(':scope > a.tile')];
+		const i = list.indexOf(document.activeElement as HTMLElement);
+		if (i < 0) return;
+		const cols = Math.max(1, list.filter((el) => el.offsetTop === list[0].offsetTop).length);
+		const step: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -cols, ArrowDown: cols, Home: -i, End: list.length - 1 - i };
+		const to = i + step[e.key];
+		if (to < 0 || to >= list.length) return;
+		e.preventDefault();
+		list[to].focus();
+		list[to].scrollIntoView({ block: 'nearest' });
+	}
 
 	const slugOf = (key: string) => key.replace(/^genre:/, '');
 	const photos = (g: Genre) => (g.images?.length ? g.images : g.art ? [g.art] : []).map((u) => to(u));
-	const collage = $derived(genres.slice(0, 4).map((g) => ({ key: g.key, src: photos(g)[0] ?? '', tone: genreTintToken(slugOf(g.key), g.hue) })));
+	const collage = $derived(genres.slice(0, 4).map((g) => ({ key: g.key, src: photos(g)[0] ?? '', tone: tint(g) })));
 	let failedAll = $state<Record<string, boolean>>({});
 
 	// One tile's slideshow, as an action on its element.
@@ -64,9 +115,10 @@
 </script>
 
 {#snippet tiles()}
+	{#if compact && withAll}{@render all()}{/if}
 	{#each genres as g (g.key)}
 		{@const srcs = photos(g)}
-		<a class="tile" href={g.href} style:--g="var({genreTintToken(slugOf(g.key), g.hue)})" onclick={() => onopen?.()}>
+		<a class="tile" class:bare={!srcs.length} class:on={selected === g.key} aria-current={selected === g.key ? 'page' : undefined} href={g.href} style:--g={tint(g)} onclick={(e) => chosen(e, g.key)}>
 			<span class="show" use:show={srcs}>
 				{#each srcs as s, i (s)}
 					<!-- Only the first photo is requested now; the others load just before their fade. -->
@@ -76,10 +128,14 @@
 			<strong>{g.name}</strong>
 		</a>
 	{/each}
-	<a class="tile all" href={allHref} onclick={() => onopen?.()}>
+	{#if !compact && withAll}{@render all()}{/if}
+{/snippet}
+
+{#snippet all()}
+	<a class="tile all" class:on={selected === ''} aria-current={selected === '' ? 'page' : undefined} href={allHref} onclick={(e) => chosen(e, null)}>
 		<span class="quad" aria-hidden="true">
 			{#each collage as c (c.key)}
-				<span class="q" style:--g="var({c.tone})">{#if c.src && !failedAll[c.key]}<img src={c.src} alt="" loading="lazy" decoding="async" draggable="false" onerror={() => (failedAll[c.key] = true)} />{/if}</span>
+				<span class="q" style:--g={c.tone}>{#if c.src && !failedAll[c.key]}<img src={c.src} alt="" loading="lazy" decoding="async" draggable="false" onerror={() => (failedAll[c.key] = true)} />{/if}</span>
 			{/each}
 		</span>
 		<span class="txt"><small>Browse</small><strong>All genres<Icon name="chevronRight" size={compact ? 14 : 18} /></strong></span>
@@ -87,9 +143,10 @@
 {/snippet}
 
 {#if compact}
-	<div class="mgt compact" data-testid="music-genre-tiles">{@render tiles()}</div>
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="mgt compact" data-testid="music-genre-tiles" onkeydown={gridKeys}>{@render tiles()}</div>
 {:else}
-	<div data-testid="music-genre-tiles"><Shelf title="Genres" item="250px">{@render tiles()}</Shelf></div>
+	<div data-testid="music-genre-tiles"><Shelf {title} item="250px">{@render tiles()}</Shelf></div>
 {/if}
 
 <style>
@@ -109,7 +166,12 @@
 		}
 	}
 	/* The picker is a grid of two columns; on Explore the tiles sit in a Shelf row (250 wide, 16:9). */
-	.mgt { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	/* The picker: a wide grid, 5 to 6 across on a desktop, 2 to 3 on a phone. */
+	/* One grid on every tab: 5 across on a desktop, 3 on a tablet, 2 on a phone. */
+	.mgt { display: grid; gap: 10px; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+	@media (max-width: 1023px) { .mgt { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+	@media (max-width: 559px) { .mgt { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } }
+	.tile.on { box-shadow: 0 0 0 2px var(--bg, #0b0708), 0 0 0 4px #d0202a; }
 	.tile {
 		position: relative; isolation: isolate; display: block; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 12px; color: #fff;
 		background: linear-gradient(135deg, var(--g, var(--mg-charcoal)), color-mix(in srgb, var(--g, var(--mg-charcoal)) 55%, #000));
@@ -122,6 +184,8 @@
 	/* A scrim from the bottom keeps the label at AA contrast over any photo. */
 	.tile::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, rgba(0, 0, 0, .62), rgba(0, 0, 0, .12) 55%, transparent); }
 	strong { position: absolute; left: 12px; right: 10px; bottom: 9px; font: 700 clamp(14px, 1.25vw, 17px) / 1.15 var(--font-ui); letter-spacing: .005em; overflow-wrap: anywhere; display: flex; align-items: center; gap: 2px; }
+	/* No photos: a clean colour tile with a large label. */
+	.bare strong { font-size: clamp(20px, 1.9vw, 26px); letter-spacing: -.01em; text-transform: capitalize; }
 	.compact strong { left: 9px; bottom: 7px; font-size: 13px; }
 	.tile:is(:hover, :focus-visible) { transform: translateY(-2px); box-shadow: 0 10px 22px -12px rgba(0, 0, 0, .6); }
 	.tile:active { transform: scale(.98); }
