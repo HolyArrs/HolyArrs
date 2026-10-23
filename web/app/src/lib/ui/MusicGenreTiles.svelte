@@ -1,9 +1,10 @@
 <script lang="ts">
 	import Icon from '../Icon.svelte';
+	import Shelf from './Shelf.svelte';
 	import { to } from '../paths.ts';
 	import { genreTintToken } from '../music/genre-tint.ts';
 
-	// The Music genre tiles (Explore's grid and the Genres button's picker): a
+	// The Music genre tiles (Explore's Genres row and the Genres button's picker): a
 	// 16:9 tile in the genre's own colour with its artist photos laid over it in
 	// grey, crossfading one to the next. Each tile runs on its own random timer,
 	// loads and decodes the next photo before it fades, and rests while off screen,
@@ -62,7 +63,7 @@
 	}
 </script>
 
-<div class="mgt" class:compact data-testid="music-genre-tiles">
+{#snippet tiles()}
 	{#each genres as g (g.key)}
 		{@const srcs = photos(g)}
 		<a class="tile" href={g.href} style:--g="var({genreTintToken(slugOf(g.key), g.hue)})" onclick={() => onopen?.()}>
@@ -83,7 +84,13 @@
 		</span>
 		<span class="txt"><small>Browse</small><strong>All genres<Icon name="chevronRight" size={compact ? 14 : 18} /></strong></span>
 	</a>
-</div>
+{/snippet}
+
+{#if compact}
+	<div class="mgt compact" data-testid="music-genre-tiles">{@render tiles()}</div>
+{:else}
+	<div data-testid="music-genre-tiles"><Shelf title="Genres" item="250px">{@render tiles()}</Shelf></div>
+{/if}
 
 <style>
 	/* Our own palette: deep hues around the HolyArrs red, one fixed colour per genre. Light mode steps a little brighter. */
@@ -101,12 +108,8 @@
 			--mg-midnight: #3a4190; --mg-magenta: #a82a92; --mg-forest: #26734a; --mg-indigo: #6030a0; --mg-blue: #2a67a0; --mg-charcoal: #4f484c; --mg-rust: #944a24;
 		}
 	}
-	/* 5, 4, 3, then 2 columns by the room there is; tiles are 16:9 and at most 250 wide. */
-	.mgt { container-type: inline-size; display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 250px)); justify-content: start; padding-inline: var(--page-gutter, 0); }
-	@container (min-width: 560px) { .mgt:not(.compact) { grid-template-columns: repeat(3, minmax(0, 250px)); } }
-	@container (min-width: 820px) { .mgt:not(.compact) { grid-template-columns: repeat(4, minmax(0, 250px)); } }
-	@container (min-width: 1100px) { .mgt:not(.compact) { grid-template-columns: repeat(5, minmax(0, 250px)); } }
-	.mgt.compact { gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); padding-inline: 0; }
+	/* The picker is a grid of two columns; on Explore the tiles sit in a Shelf row (250 wide, 16:9). */
+	.mgt { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 	.tile {
 		position: relative; isolation: isolate; display: block; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 12px; color: #fff;
 		background: linear-gradient(135deg, var(--g, var(--mg-charcoal)), color-mix(in srgb, var(--g, var(--mg-charcoal)) 55%, #000));
