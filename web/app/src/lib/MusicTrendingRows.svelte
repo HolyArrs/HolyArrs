@@ -358,7 +358,7 @@
 	.fsub { font-size: 15px; line-height: 1.3; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.frame { position: relative; display: block; margin-top: 10px; aspect-ratio: 3 / 2; border-radius: 14px; overflow: hidden; isolation: isolate; background: var(--surface-2); transition: transform .35s cubic-bezier(.16, 1, .3, 1), box-shadow .35s; }
 	.feature:hover .frame { transform: translateY(-2px); box-shadow: 0 14px 28px -16px rgb(0 0 0 / .7); }
-	.blur { position: absolute; inset: -20%; width: 140%; height: 140%; object-fit: cover; filter: blur(28px) saturate(1.3) brightness(.7); z-index: -1; }
+	.blur { position: absolute; inset: 0; width: 100%; height: 100%; transform: scale(1.35); object-fit: cover; filter: blur(28px) saturate(1.3) brightness(.7); z-index: -1; }
 	.sq { position: absolute; top: 50%; left: 50%; height: 78%; aspect-ratio: 1; translate: -50% -50%; object-fit: cover; border-radius: 8px; box-shadow: 0 12px 30px -8px rgb(0 0 0 / .65); }
 	.photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; opacity: 0; transition: opacity .3s ease; }
 	.photo.in { opacity: 1; }

@@ -186,7 +186,7 @@
 	strong { position: absolute; left: 12px; right: 10px; bottom: 9px; font: 700 clamp(14px, 1.25vw, 17px) / 1.15 var(--font-ui); letter-spacing: .005em; overflow-wrap: anywhere; display: flex; align-items: center; gap: 2px; }
 	/* No photos: a clean colour tile with a large label. */
 	.bare strong { font-size: clamp(20px, 1.9vw, 26px); letter-spacing: -.01em; text-transform: capitalize; }
-	.compact strong { left: 9px; bottom: 7px; font-size: 13px; }
+	.compact strong { left: 8px; right: 6px; bottom: 6px; font-size: 12px; overflow-wrap: normal; }
 	.tile:is(:hover, :focus-visible) { transform: translateY(-2px); box-shadow: 0 10px 22px -12px rgba(0, 0, 0, .6); }
 	.tile:active { transform: scale(.98); }
 	.tile:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--bg, #0b0708), 0 0 0 4px #d0202a; }

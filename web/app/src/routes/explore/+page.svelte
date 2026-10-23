@@ -317,7 +317,10 @@
 		const first = typesBox?.querySelector('.ui-seg button');
 		const pick = typesBox?.querySelector('.genre-pick .trigger');
 		if (!first || !pick) return;
-		pickW = Math.round(pick.getBoundingClientRect().right - first.getBoundingClientRect().left);
+		// The pill row shrinks (scale .9) once it floats; the panel sits inside that scale, so undo it.
+		const box = typesBox!.querySelector<HTMLElement>('.genre-pick')!;
+		const k = box.getBoundingClientRect().width / (box.offsetWidth || 1) || 1;
+		pickW = Math.round((pick.getBoundingClientRect().right - first.getBoundingClientRect().left) / k);
 	}
 	$effect(() => {
 		if (!typesBox) return;
