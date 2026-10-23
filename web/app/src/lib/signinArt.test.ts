@@ -69,7 +69,7 @@ describe('pickArt', () => {
 	it('iPhone 390x844 at DPR 3 uses the poster', () => {
 		const p = pickArt(shot(3840, 2000), { vw: 390, vh: 844, dpr: 3 })!;
 		expect(p.kind).toBe('poster');
-		expect(p.url).toBe('https://image.tmdb.org/t/p/w780/p.jpg');
+		expect(p.url).toBe('https://image.tmdb.org/t/p/original/p.jpg');
 	});
 	it('iPhone without a sharp poster skips the title instead of stretching', () => {
 		expect(pickArt(shot(3840, 780), { vw: 390, vh: 844, dpr: 3 })).toBeNull();

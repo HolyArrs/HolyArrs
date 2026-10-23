@@ -29,8 +29,8 @@ export const ULTRAWIDE_FLOOR = 3840;
 
 /** The slow zoom's end scale: the picture must stay sharp at it. */
 export const ZOOM = 1.06;
-/** Served sizes per kind; 0 is the original (backdrops only, up to 3840 px). */
-const SIZES: Record<ArtPick['kind'], number[]> = { backdrop: [780, 1280, 0], poster: [500, 780] };
+/** Served sizes per kind; 0 is the original (backdrops up to 3840 px, posters for dense phones). */
+const SIZES: Record<ArtPick['kind'], number[]> = { backdrop: [780, 1280, 0], poster: [500, 780, 0] };
 
 /** Device pixels a cover-fit picture of w x h spans across, on the screen. */
 export function coverNeed(img: { w: number; h: number }, s: Screen): number {
@@ -45,10 +45,10 @@ export function sized(url: string, size: number | 'original'): string {
 
 function pickSize(img: ArtImage, kind: ArtPick['kind'], need: number): { url: string; width: number } {
 	// The smallest served size that covers the screen at the zoom's end,
-	// else the largest (the original, for backdrops).
+	// else the largest (the original).
 	const fits = SIZES[kind].map((w) => w || img.w).filter((w) => w <= img.w);
 	const w = fits.find((x) => x >= Math.ceil(need * ZOOM)) ?? fits.at(-1) ?? SIZES[kind][0];
-	const original = kind === 'backdrop' && w === img.w && !SIZES[kind].includes(w);
+	const original = w === img.w && !SIZES[kind].includes(w);
 	return { url: sized(img.url, original ? 'original' : w), width: w };
 }
 

@@ -59,11 +59,13 @@ func TestSigninPicServesOnlyItsOwnArt(t *testing.T) {
 	if c := get(signinPicPath + "original/" + filepath.Base(s.Backdrop.URL)); c != 200 {
 		t.Fatalf("own backdrop at original: %d", c)
 	}
+	if c := get(signinPicPath + "original/" + filepath.Base(s.Poster.URL)); c != 200 {
+		t.Fatalf("own poster at original: %d", c)
+	}
 	before := hits.Load()
 	for _, p := range []string{
 		signinPicPath + "w1280/notlisted.jpg",
 		signinPicPath + "original/" + filepath.Base(s.Logo),
-		signinPicPath + "original/" + filepath.Base(s.Poster.URL),
 		signinPicPath + "w3840/" + filepath.Base(s.Backdrop.URL),
 		signinPicPath + "w1280/" + url.PathEscape("https://evil.example/x.jpg"),
 		signinPicPath + "w1280/..%2f..%2fetc%2fpasswd",

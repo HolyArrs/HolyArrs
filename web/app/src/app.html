@@ -40,7 +40,8 @@
 								var sz = kind === 'poster' ? [500, 780] : [780, 1280], need = Math.ceil(Math.max(vw, (vh * im.w) / im.h) * dpr), pw = 0;
 								// Same as lib/signinArt.ts pickSize: the smallest served size that covers, else the largest.
 								for (var i = 0; i < sz.length; i++) if (sz[i] <= im.w) { pw = sz[i]; if (sz[i] >= need) break; }
-								var u = pw ? im.url.replace(/\/t\/p\/[^/]+\//, '/t/p/w' + pw + '/') : im.url;
+								if (pw < need && im.w > pw) pw = -1;
+								var u = pw < 0 ? im.url.replace(/\/t\/p\/[^/]+\//, '/t/p/original/') : pw ? im.url.replace(/\/t\/p\/[^/]+\//, '/t/p/w' + pw + '/') : im.url;
 								a = { first: u, thumb: { url: u, t24: d.seed[kind].t24, t64: d.seed[kind].t64, pos: kind === 'poster' ? '50% 20%' : '50% 30%' } };
 								window.__holyarrsSigninInline = { shots: d.shots, thumb: a.thumb };
 							}

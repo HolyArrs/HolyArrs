@@ -194,7 +194,7 @@ func (a *API) signinArt(w http.ResponseWriter, r *http.Request) {
 // signinPicSizes are the TMDB sizes the sign-in pictures are served at:
 // thumbnails (w300, w342), posters (w500, w780), backdrops (w780, w1280)
 // and logos (w500). The original (up to 3840 px) is served for picked
-// backdrops only, for wide or high-density screens.
+// backdrops and posters, for wide or high-density screens.
 var signinPicSizes = map[string]bool{"w300": true, "w342": true, "w500": true, "w780": true, "w1280": true, "original": true}
 
 // publicURL turns a TMDB picture address into its same-origin sign-in
@@ -233,13 +233,16 @@ func publicShots(shots []signinShot) []signinShot {
 // signinPicFile reports whether file is one of the pictures a sign-in
 // answer holds (the allow list: anything else is refused, so this public
 // route is no open proxy).
-// The original size is allowed for backdrops only.
+// The original size is allowed for backdrops and posters, not logos.
 func (st *signinArtState) signinPicFile(size, file string) bool {
 	st.mu.Lock()
 	defer st.mu.Unlock()
 	for _, c := range st.cache {
 		for _, s := range c.shots {
 			if path.Base(s.Backdrop.URL) == file {
+				return true
+			}
+			if s.Poster != nil && path.Base(s.Poster.URL) == file {
 				return true
 			}
 			if size == "original" {
