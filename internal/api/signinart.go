@@ -43,7 +43,7 @@ const (
 	// signinPickTTL is how long one title's pick is kept.
 	signinPickTTL = 24 * time.Hour
 	// signinArtMinWidth is the smallest native backdrop width used at all.
-	signinArtMinWidth = 1280
+	signinArtMinWidth = 1920
 	// signinArtPerMinute is each address's calls a minute.
 	signinArtPerMinute = 20
 	// signinPicPerMinute is each address's picture loads a minute.
@@ -193,8 +193,9 @@ func (a *API) signinArt(w http.ResponseWriter, r *http.Request) {
 
 // signinPicSizes are the TMDB sizes the sign-in pictures are served at:
 // thumbnails (w300, w342), posters (w500, w780), backdrops (w780, w1280)
-// and logos (w500). Never the original (up to 3840 px).
-var signinPicSizes = map[string]bool{"w300": true, "w342": true, "w500": true, "w780": true, "w1280": true}
+// and logos (w500). The original (up to 3840 px) is served for picked
+// backdrops only, for wide or high-density screens.
+var signinPicSizes = map[string]bool{"w300": true, "w342": true, "w500": true, "w780": true, "w1280": true, "original": true}
 
 // publicURL turns a TMDB picture address into its same-origin sign-in
 // address; original becomes the largest served size for its kind.
@@ -207,7 +208,7 @@ func publicURL(u, largest string) string {
 	if !ok || file == "" || strings.Contains(file, "/") {
 		return ""
 	}
-	if !signinPicSizes[size] {
+	if !signinPicSizes[size] || size == "original" {
 		size = largest
 	}
 	return signinPicPath + size + "/" + file
@@ -232,15 +233,20 @@ func publicShots(shots []signinShot) []signinShot {
 // signinPicFile reports whether file is one of the pictures a sign-in
 // answer holds (the allow list: anything else is refused, so this public
 // route is no open proxy).
-func (st *signinArtState) signinPicFile(file string) bool {
+// The original size is allowed for backdrops only.
+func (st *signinArtState) signinPicFile(size, file string) bool {
 	st.mu.Lock()
 	defer st.mu.Unlock()
 	for _, c := range st.cache {
 		for _, s := range c.shots {
-			for _, u := range []string{s.Backdrop.URL, s.Logo} {
-				if path.Base(u) == file {
-					return true
-				}
+			if path.Base(s.Backdrop.URL) == file {
+				return true
+			}
+			if size == "original" {
+				continue
+			}
+			if path.Base(s.Logo) == file {
+				return true
 			}
 			if s.Poster != nil && path.Base(s.Poster.URL) == file {
 				return true
@@ -259,7 +265,7 @@ func (a *API) signinPic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	size, file := r.PathValue("size"), r.PathValue("file")
-	if !signinPicSizes[size] || !st.signinPicFile(file) || a.s.Library == nil || a.s.Library.Artwork == nil {
+	if !signinPicSizes[size] || !st.signinPicFile(size, file) || a.s.Library == nil || a.s.Library.Artwork == nil {
 		http.NotFound(w, r)
 		return
 	}
@@ -497,16 +503,27 @@ func originalURL(p string) (string, bool) {
 	return metadata.ImageBase + "/original/" + file, true
 }
 
-// pickSigninShot picks the widest textless backdrop (at least
-// signinArtMinWidth), the widest textless poster and the logo (English,
+// pickSigninShot picks the textless backdrop (at least signinArtMinWidth
+// wide) closest to 16:9, then the widest, then the best voted; the widest textless poster and the logo (English,
 // else no language; PNG only). A title without a textless backdrop or a
 // logo does not qualify.
 func pickSigninShot(im metadata.CardImages) (signinShot, bool) {
-	widest := func(list []metadata.CardImage, minW int) *signinImage {
+	// wide16x9 reports a 16:9 picture (within 2%).
+	wide16x9 := func(x *metadata.CardImage) bool {
+		d := float64(x.Width)/float64(x.Height) - 16.0/9.0
+		return d < 0.036 && d > -0.036
+	}
+	widest := func(list []metadata.CardImage, minW int, prefer16x9 bool) *signinImage {
 		var best *metadata.CardImage
 		for i := range list {
 			x := &list[i]
 			if x.Lang != nil || x.Width < minW || x.Height <= 0 {
+				continue
+			}
+			if best != nil && prefer16x9 && wide16x9(x) != wide16x9(best) {
+				if wide16x9(x) {
+					best = x
+				}
 				continue
 			}
 			if best == nil || x.Width > best.Width || (x.Width == best.Width && x.Vote > best.Vote) {
@@ -522,7 +539,7 @@ func pickSigninShot(im metadata.CardImages) (signinShot, bool) {
 		}
 		return &signinImage{URL: u, W: best.Width, H: best.Height}
 	}
-	back := widest(im.Backdrops, signinArtMinWidth)
+	back := widest(im.Backdrops, signinArtMinWidth, true)
 	if back == nil {
 		return signinShot{}, false
 	}
@@ -545,5 +562,5 @@ func pickSigninShot(im metadata.CardImages) (signinShot, bool) {
 	if logo == "" {
 		return signinShot{}, false
 	}
-	return signinShot{Backdrop: *back, Poster: widest(im.Posters, 780), Logo: logo}, true
+	return signinShot{Backdrop: *back, Poster: widest(im.Posters, 780, false), Logo: logo}, true
 }
