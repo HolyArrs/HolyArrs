@@ -90,27 +90,10 @@
 		// The path runs inside the panel, along the middle of its padding band,
 		// rounded like the panel's own corners. Corners counter-clockwise from
 		// top right (TR, TL, BL, BR); a hole sits mid-arc at each corner.
-		let panelEl: HTMLElement | null = null, pz = 1, pl = 0, pt = 0;
-		let holes: string[] = [];
-		let maskOn = false;
-		// The holes are true cuts: the panel (with its backdrop blur and tint)
-		// is masked away there, so the live wallpaper shows through, sharp and
-		// always aligned with its zoom and crossfade.
-		const MASK_PROPS = ['mask-image', '-webkit-mask-image', 'mask-composite', '-webkit-mask-composite'];
-		function applyMask() {
-			if (!panelEl) return;
-			if (!holes.length) {
-				if (maskOn) for (const k of MASK_PROPS) panelEl.style.removeProperty(k);
-				maskOn = false;
-				return;
-			}
-			const img = holes.join(', ');
-			panelEl.style.setProperty('mask-image', img);
-			panelEl.style.setProperty('-webkit-mask-image', img);
-			panelEl.style.setProperty('mask-composite', 'intersect');
-			panelEl.style.setProperty('-webkit-mask-composite', 'source-in');
-			maskOn = true;
-		}
+		// The panel is never touched: masking its backdrop-filter layer made the
+		// blur re-render and the panel flicker at each trip's ends. Each hole is
+		// drawn on this canvas, above the panel, as the matching patch of the
+		// wallpaper (same picture, zoom, crossfade and scrim), plus its rim.
 		let box = { x0: 0, y0: 0, x1: 0, y1: 0, r: [0, 0, 0, 0], band: 0 };
 		function measurePanel() {
 			const el = document.querySelector<HTMLElement>('[data-signin-panel]');
@@ -127,10 +110,6 @@
 			const i = band / 2;
 			const rad = [cs.borderTopRightRadius, cs.borderTopLeftRadius, cs.borderBottomLeftRadius, cs.borderBottomRightRadius].map((v) => Math.max(4, px(v) - i));
 			box = { x0: left + i, y0: b.top + i, x1: right - i, y1: bottom - i, r: rad, band };
-			panelEl = el;
-			pz = z;
-			pl = b.left;
-			pt = b.top;
 		}
 		const MID = (k: number) => -Math.PI / 4 - (k * Math.PI) / 2;
 		function centre(k: number): [number, number] {
@@ -158,16 +137,65 @@
 			return [bx + rb * Math.cos(a), by + rb * Math.sin(a)];
 		}
 
-		// A cut in the glass: the panel is masked away inside (applyMask), and
+		// A cut in the glass: the panel is never touched; the canvas paints the wallpaper inside, and
 		// the canvas adds the rim: an inner shadow under the far (top) edge and a
 		// bright highlight where light catches the near (bottom) cut edge.
+		// 24-32 px across (20 on phones), and always fully inside the panel: the
+		// centre sits on the padding band's midline, so the radius stays under
+		// half the band (2 px clear of the edge, the corner arc and the content).
+		function holeR() {
+			const want = w <= 600 ? 10 : w >= 1440 ? 16 : w >= 1280 ? 14 : 12;
+			return Math.max(4, Math.min(want, box.band / 2 - 2));
+		}
+		// The wallpaper under (x, y): each layer's picture where its zoom has it
+		// now, at its crossfade opacity, then the scrim's darkness at that spot.
+		function paintWallpaper(c: CanvasRenderingContext2D, x: number, y: number, r: number) {
+			c.fillStyle = '#050507';
+			c.fillRect(x - r, y - r, r * 2, r * 2);
+			for (const layer of document.querySelectorAll<HTMLElement>('.art .layer')) {
+				const a = parseFloat(getComputedStyle(layer).opacity);
+				if (!(a > 0)) continue;
+				const pic = layer.querySelector<HTMLImageElement>('img.pic');
+				const mz = layer.querySelector<HTMLCanvasElement>('canvas.mz');
+				c.globalAlpha = a;
+				if (mz && getComputedStyle(mz).display !== 'none' && parseFloat(getComputedStyle(mz).opacity) > 0) {
+					const b = mz.getBoundingClientRect();
+					try { c.drawImage(mz, b.left, b.top, b.width, b.height); } catch { /* not ready */ }
+				}
+				if (pic && pic.complete && pic.naturalWidth && parseFloat(getComputedStyle(pic).opacity) > 0) {
+					const b = pic.getBoundingClientRect();
+					const k = Math.max(b.width / pic.naturalWidth, b.height / pic.naturalHeight);
+					const dw = pic.naturalWidth * k, dh = pic.naturalHeight * k;
+					const [px, py] = (getComputedStyle(pic).objectPosition || '50% 50%').split(/\s+/).map((v) => (Number.isNaN(parseFloat(v)) ? 50 : parseFloat(v)) / 100);
+					c.drawImage(pic, b.left + (b.width - dw) * px, b.top + (b.height - dh) * py, dw, dh);
+				}
+			}
+			c.globalAlpha = 1;
+			c.fillStyle = `rgb(5 5 7 / ${scrimAt(x, y).toFixed(3)})`;
+			c.fillRect(x - r, y - r, r * 2, r * 2);
+		}
+		// SigninBackdrop's .shade gradients, evaluated at one point (a hole is
+		// small enough that the scrim is flat across it).
+		function scrimAt(x: number, y: number) {
+			const u = x / w, v = y / h;
+			const ramp = (d: number, stops: [number, number][]) => {
+				if (d <= stops[0][0]) return stops[0][1];
+				for (let i = 1; i < stops.length; i++) if (d <= stops[i][0]) {
+					const [d0, a0] = stops[i - 1], [d1, a1] = stops[i];
+					return a0 + ((a1 - a0) * (d - d0)) / (d1 - d0);
+				}
+				return stops[stops.length - 1][1];
+			};
+			const over = (a: number, b: number) => a + b - a * b;
+			if (w <= 600) return over(ramp(v, [[0, 0.55], [0.22, 0]]), ramp(1 - v, [[0, 0.9], [0.45, 0.55], [0.75, 0.1], [1, 0.1]]));
+			const pool = ramp(Math.hypot((u - 0.5) / 0.46, (v - 0.5) / 0.62), [[0, 0.55], [0.6, 0.3], [1, 0]]);
+			const vig = ramp(Math.hypot((u - 0.5) / 1.2, (v - 0.45) / 1.0), [[0.45, 0], [1, 0.6]]);
+			return over(over(over(pool, vig), ramp(1 - v, [[0, 0.7], [0.32, 0]])), ramp(v, [[0, 0.35], [0.22, 0]]));
+		}
 		function drawHole(x: number, y: number, s: number, squash: number) {
 			if (s <= 0.001) return;
-			const r = Math.max(5, box.band * 0.4) * s;
-			if (r < 1) return;
-			const rx = r * (1 + squash), ry = r * (1 - squash);
-			const lx = (x - pl) / pz, ly = (y - pt) / pz;
-			holes.push(`radial-gradient(${(rx / pz).toFixed(2)}px ${(ry / pz).toFixed(2)}px at ${lx.toFixed(2)}px ${ly.toFixed(2)}px, transparent 94%, #000 100%)`);
+			const r = holeR() * s;
+			if (r < 0.5) return;
 			const c = ctx!;
 			c.save();
 			c.translate(x, y);
@@ -176,6 +204,11 @@
 			c.arc(0, 0, r, 0, Math.PI * 2);
 			c.save();
 			c.clip();
+			c.scale(1 / (1 + squash), 1 / (1 - squash));
+			c.translate(-x, -y);
+			paintWallpaper(c, x, y, r * 1.3);
+			c.translate(x, y);
+			c.scale(1 + squash, 1 - squash);
 			// Inner shadow on the far rim: the glass's thickness.
 			const sh = c.createLinearGradient(0, -r, 0, -r * 0.3);
 			sh.addColorStop(0, 'rgb(0 0 0 / 0.55)');
@@ -205,9 +238,8 @@
 		function draw(t: number) {
 			ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
 			ctx!.clearRect(0, 0, w, h);
-			holes = [];
 			const leg = legAt(t, 4);
-			if (!leg || !box.r) return applyMask();
+			if (!leg || !box.r) return;
 			const k = leg.index;
 			const [ax, ay] = cornerPoint(k);
 			const [bx, by] = cornerPoint(k + 1);
@@ -215,7 +247,6 @@
 			const b = holeAt(leg.local, 'to');
 			drawHole(ax, ay, a.s, a.squash);
 			drawHole(bx, by, b.s, b.squash);
-			applyMask();
 			const pcx = (box.x0 + box.x1) / 2, pcy = (box.y0 + box.y1) / 2;
 			const half = 4 * PX + 6;
 			for (let i = 0; i < COUNT; i++) {
@@ -271,8 +302,6 @@
 				stop();
 				ctx!.setTransform(1, 0, 0, 1, 0, 0);
 				ctx!.clearRect(0, 0, cv.width, cv.height);
-				holes = [];
-				applyMask();
 			} else start();
 		}
 		function onInteract() {
@@ -302,8 +331,6 @@
 		window.addEventListener('resize', onResize);
 		return () => {
 			stop();
-			holes = [];
-			applyMask();
 			ro.disconnect();
 			edgeObs.disconnect();
 			mo.disconnect();
@@ -337,7 +364,8 @@
 		.edge.glass { background: rgb(18 18 22 / 0.92); }
 	}
 	@media (min-width: 601px) { .edge, .portals { --frame-r: 20px; } }
-	.portals { width: 100%; height: 100%; }
+	/* Its own compositor layer, so redrawing it never touches the panel's blur. */
+	.portals { width: 100%; height: 100%; will-change: transform; transform: translateZ(0); }
 	@media (min-width: 1280px) { .edge, .portals { --frame: 10px; --frame-r: 22px; } }
 	@media (min-width: 1440px) { .edge, .portals { --frame: 12px; --frame-r: 26px; } }
 	@media (min-width: 1920px) { .edge, .portals { --frame: 18px; --frame-r: 28px; } }

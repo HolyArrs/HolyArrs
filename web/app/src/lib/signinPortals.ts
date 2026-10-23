@@ -3,13 +3,13 @@
 // screen edge to a hole in the next corner, falls in, and both holes close.
 // Pure functions so the timeline is unit tested.
 
-export const START_S = 11; // first leg, well after the page has settled
-export const LEG_GAP_S = 24; // one leg starts every 24 s: ~17 s of quiet between legs
+export const START_S = 9; // first leg, once the page has settled
+export const LEG_GAP_S = 16; // one leg starts every 16 s: ~11 s of quiet between legs
 export const COUNT = 7; // symbols per leg
-export const SPACING_S = 0.32; // between symbols leaving the hole
-export const TRAVEL_S = 3.6; // one symbol, hole to hole
-export const OPEN_S = 0.72;
-export const CLOSE_S = 0.72;
+export const SPACING_S = 0.24; // between symbols leaving the hole
+export const TRAVEL_S = 2.2; // one symbol, hole to hole
+export const OPEN_S = 0.6;
+export const CLOSE_S = 0.6;
 
 /** Corners clockwise from top right: TR, TL, BL, BR (the run goes TR→TL→BL→BR→TR). */
 export type Corner = 0 | 1 | 2 | 3;
@@ -47,8 +47,8 @@ export function holeAt(local: number, role: 'from' | 'to'): { s: number; squash:
 	}
 	if (local < closeAt) return { s: 1, squash: 0 };
 	const p = (local - closeAt) / CLOSE_S;
-	// Anticipation: swells a little, then snaps shut.
-	return { s: Math.max(0, 1 - easeInBack(p)), squash: -Math.sin(p * Math.PI) * 0.18 };
+	// Eases shut: zero speed at both ends, so nothing jumps.
+	return { s: 1 - easeInOutSine(p), squash: -Math.sin(p * Math.PI) * 0.08 };
 }
 
 /** Symbol i's progress along the edge (0..1), or null when not out. */

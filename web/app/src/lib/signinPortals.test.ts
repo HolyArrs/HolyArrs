@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { LEAD_S, legAt, holeAt, symbolAt, LEG_S, LEG_GAP_S, START_S, COUNT, TRAVEL_S, SPACING_S } from './signinPortals.ts';
 
 describe('signin portals timeline', () => {
-	it('starts 11 s in and loops the four legs with long rests', () => {
+	it('starts 9 s in and loops the four legs with long rests', () => {
 		expect(legAt(START_S - 0.1, 4)).toBeNull();
 		expect(legAt(START_S, 4)).toEqual({ index: 0, local: 0 });
 		expect(legAt(START_S + 3 * LEG_GAP_S + 1, 4)?.index).toBe(3);
@@ -10,8 +10,8 @@ describe('signin portals timeline', () => {
 	});
 	it('a leg finishes before the next one starts', () => {
 		expect(LEG_S).toBeLessThan(LEG_GAP_S);
-		expect(LEG_GAP_S - LEG_S).toBeGreaterThanOrEqual(15);
-		expect(LEG_GAP_S - LEG_S).toBeLessThanOrEqual(20);
+		expect(LEG_GAP_S - LEG_S).toBeGreaterThanOrEqual(10);
+		expect(LEG_GAP_S - LEG_S).toBeLessThanOrEqual(12);
 		expect(holeAt(LEG_S, 'to').s).toBe(0);
 		expect(holeAt(LEG_S, 'from').s).toBe(0);
 	});
