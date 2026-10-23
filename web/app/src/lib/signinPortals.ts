@@ -56,3 +56,14 @@ export function symbolAt(local: number, i: number): number | null {
 	const p = (local - LEAD_S - i * SPACING_S) / TRAVEL_S;
 	return p < 0 || p > 1 ? null : p;
 }
+
+/**
+ * Whether a keydown should pause the portals: only a real (trusted) printable or
+ * editing key typed into a text field. Synthetic events from password managers
+ * and autofill, and focus changes, never pause it.
+ */
+export function pausesPortals(e: { isTrusted: boolean; key?: string; ctrlKey?: boolean; metaKey?: boolean; altKey?: boolean }, inField: boolean): boolean {
+	if (!e.isTrusted || !inField || !e.key) return false;
+	if (e.ctrlKey || e.metaKey || e.altKey) return false;
+	return e.key.length === 1 || e.key === 'Backspace' || e.key === 'Delete';
+}

@@ -11,7 +11,7 @@
 	import { onMount } from 'svelte';
 	import { MASKS } from '#lib/pixelTrail.ts';
 	import { IDLE_MS } from '#lib/signinArt.ts';
-	import { legAt, holeAt, symbolAt, easeInOutSine, clamp01, COUNT } from '#lib/signinPortals.ts';
+	import { legAt, holeAt, symbolAt, easeInOutSine, clamp01, COUNT, pausesPortals } from '#lib/signinPortals.ts';
 
 	let canvas: HTMLCanvasElement | undefined = $state();
 	let edgeEl: HTMLDivElement | undefined = $state();
@@ -195,7 +195,8 @@
 		function drawHole(x: number, y: number, s: number, squash: number) {
 			if (s <= 0.001) return;
 			const r = holeR() * s;
-			if (r < 0.5) return;
+			// arc() throws IndexSizeError on a negative radius (r - 0.6 below).
+			if (!(r >= 1)) return;
 			const c = ctx!;
 			c.save();
 			c.translate(x, y);
@@ -276,16 +277,21 @@
 		}
 
 		// A clock that only moves while the page is visible and the user is idle.
-		let clock = 0, last = 0, raf = 0, lastInput = -1e9, engaged = false;
+		let clock = 0, last = 0, raf = 0, lastInput = -1e9;
 		function loop(now: number) {
 			raf = 0;
 			if (document.hidden || motion.matches) return;
 			const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
 			last = now;
-			// Pause only while typing: focus alone (the name field is focused on
-			// load, autofill fires input) never stops the loop for good.
+			// Pause only while the user types; it resumes IDLE_MS after the last key.
 			if (now - lastInput >= IDLE_MS) clock += dt;
-			draw(clock);
+			try {
+				draw(clock);
+			} catch {
+				// A bad frame must never stop the loop.
+				ctx!.setTransform(1, 0, 0, 1, 0, 0);
+				ctx!.globalAlpha = 1;
+			}
 			raf = requestAnimationFrame(loop);
 		}
 		function start() {
@@ -308,12 +314,10 @@
 				ctx!.clearRect(0, 0, cv.width, cv.height);
 			} else start();
 		}
-		function onInteract() {
-			engaged = true;
-			lastInput = performance.now();
-		}
-		function onBlur() {
-			if (engaged) lastInput = performance.now();
+		function onKey(e: KeyboardEvent) {
+			const t = e.target as HTMLElement | null;
+			const inField = !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+			if (pausesPortals(e, inField)) lastInput = performance.now();
 		}
 		let rt: ReturnType<typeof setTimeout> | undefined;
 		function onResize() {
@@ -329,8 +333,7 @@
 		if (panel) ro.observe(panel);
 		start();
 		document.addEventListener('visibilitychange', onVisible);
-		for (const e of ['keydown', 'input', 'paste'] as const) document.addEventListener(e, onInteract, true);
-		document.addEventListener('focusout', onBlur, true);
+		document.addEventListener('keydown', onKey, true);
 		motion.addEventListener('change', onMotion);
 		window.addEventListener('resize', onResize);
 		return () => {
@@ -341,8 +344,7 @@
 			sys.removeEventListener('change', readTheme);
 			clearTimeout(rt);
 			document.removeEventListener('visibilitychange', onVisible);
-			for (const e of ['keydown', 'input', 'paste'] as const) document.removeEventListener(e, onInteract, true);
-			document.removeEventListener('focusout', onBlur, true);
+			document.removeEventListener('keydown', onKey, true);
 			motion.removeEventListener('change', onMotion);
 			window.removeEventListener('resize', onResize);
 		};
