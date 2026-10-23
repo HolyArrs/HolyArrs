@@ -24,7 +24,7 @@
 	import { albumHref, appPicture, artistHref, coverFor, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist, type PageCredit, type PageTrack } from '#lib/music/music-pages.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 
-	// An album's page: the cover large over its own blurred colours, the tracklist
+	// An album's page: the cover beside its title and actions, the tracklist
 	// with what the Library has, its other editions, and where to go next.
 	const mbid = $derived((page.params.mbid ?? '').toLowerCase());
 	const artist = $derived((page.url.searchParams.get('artist') ?? '').toLowerCase());
@@ -282,28 +282,26 @@
 
 <style>
 	.album { --music-item: max(168px, calc((100vw - 96px) / 7.2)); display: flex; flex-direction: column; gap: 32px; padding-bottom: 48px; min-width: 0; }
-	.hero { position: relative; isolation: isolate; overflow: hidden; margin: calc(var(--s-6) * -1) calc(var(--gutter) * -1) 0; background: var(--on-art-ink); color: var(--on-art); }
-	/* The cover's own colours, blurred far past any detail, tint the hero. */
-	.wash { position: absolute; inset: -10%; z-index: -2; width: 120%; height: 120%; object-fit: cover; filter: blur(64px) saturate(160%); opacity: .75; }
-	.shade { position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, var(--on-art-scrim) 0%, var(--on-art-scrim-mid) 55%, rgb(0 0 0 / .25) 100%); }
-	.crumbs { position: absolute; top: clamp(14px, 2vw, 22px); left: clamp(20px, 4vw, 48px); z-index: 1; }
-	.chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 10px; border-radius: 999px; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); color: #fff; font: 600 13px/1.2 var(--font-ui); }
-	.chip:hover { background: rgb(255 255 255 / 24%); }
-	.hero-in { display: grid; grid-template-columns: clamp(200px, 24vw, 320px) minmax(0, 1fr); gap: clamp(20px, 3.5vw, 44px); align-items: end; padding: clamp(64px, 7vw, 96px) clamp(20px, 4vw, 48px) clamp(24px, 4vw, 44px); }
-	.cover { aspect-ratio: 1; display: grid; place-items: center; border-radius: 10px; overflow: hidden; background: rgb(255 255 255 / .08); box-shadow: 0 24px 64px rgb(0 0 0 / .55), 0 0 0 1px rgb(255 255 255 / .1); }
+	.hero { position: relative; margin: 0; color: var(--text); }
+	.crumbs { margin-bottom: 8px; }
+	.chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 10px; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 13px/1.2 var(--font-ui); }
+	.chip:hover { background: color-mix(in srgb, var(--text) 14%, transparent); }
+	.hero-in { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 32px; align-items: center; padding: 8px 0 8px; }
+	.cover { width: 240px; aspect-ratio: 1; display: grid; place-items: center; border-radius: 10px; overflow: hidden; background: var(--surface-1); box-shadow: 0 10px 30px rgb(0 0 0 / .35), 0 2px 6px rgb(0 0 0 / .2); }
 	.cover img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 400ms ease-out; }
 	.cover.in img { opacity: 1; }
-	.words { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
-	.kind { margin: 0; color: var(--on-art-muted); font: var(--t-footnote); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; }
-	h1 { margin: 0; font: var(--t-large-title); font-family: var(--font-display); font-size: clamp(30px, 4.6vw, 60px); letter-spacing: var(--t-large-title-track); text-wrap: balance; overflow-wrap: anywhere; }
-	.by { display: inline-flex; align-items: center; gap: 10px; align-self: flex-start; color: var(--on-art); font: var(--t-headline); }
-	.by img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; background: rgb(255 255 255 / .12); }
+	.words { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+	.kind { margin: 0; color: var(--text-muted); font: 600 12px/1.3 var(--font-ui); text-transform: uppercase; letter-spacing: .08em; }
+	h1 { margin: 0; font: 700 26px/1.15 var(--font-display); letter-spacing: -.01em; text-wrap: balance; overflow-wrap: anywhere; }
+	.by { display: inline-flex; align-items: center; gap: 8px; color: var(--accent); font: 400 20px/1.2 var(--font-ui); }
+	.by img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; background: var(--surface-1); }
 	.by:hover { text-decoration: underline; }
-	.meta { margin: 0; color: var(--on-art-muted); font: var(--t-subhead); font-variant-numeric: tabular-nums; }
-	.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 6px; }
-	.pill { padding: 6px 12px; border-radius: 999px; background: rgb(255 255 255 / .14); backdrop-filter: blur(12px); font: var(--t-footnote); font-weight: 600; font-variant-numeric: tabular-nums; }
+	.meta { margin: 0; color: var(--text-muted); font: 600 12px/1.4 var(--font-ui); font-variant-numeric: tabular-nums; }
+	.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 14px; }
+	.actions :global(button), .actions :global(a) { min-width: 130px; height: 36px; border-radius: 24px; }
+	.pill { padding: 6px 12px; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); font: var(--t-footnote); font-weight: 600; font-variant-numeric: tabular-nums; }
 	.e { display: inline-grid; place-items: center; width: 15px; height: 15px; margin-right: 8px; border-radius: 3px; background: var(--text-muted); color: var(--bg); font: 700 10px/1 var(--font-ui); vertical-align: 2px; }
-	.e.big { width: 26px; height: 26px; font-size: 15px; border-radius: 5px; background: rgb(255 255 255 / .7); color: #000; vertical-align: 8px; }
+	.e.big { width: 26px; height: 26px; font-size: 15px; border-radius: 5px; background: var(--text-muted); color: var(--bg); vertical-align: 6px; }
 	.block { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 	h2 { margin: 0; font: var(--t-title2); }
 	.disc { margin: 8px 0 0; font: var(--t-headline); color: var(--text-muted); }
@@ -329,10 +327,11 @@
 	.attribution { margin: 0; color: var(--text-muted); font: var(--t-footnote); }
 	@media (max-width: 767px) {
 		.album { --music-item: calc((100cqi - var(--shelf-gap, 12px)) / 2.3); gap: 26px; }
-		.hero-in { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; }
+		.hero-in { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; gap: 20px; }
 		.cover { width: min(260px, 70vw); }
-		.words { align-items: center; }
-		.by { align-self: center; }
-		.actions { justify-content: center; }
+		.words { align-items: center; width: 100%; }
+		.actions { flex-direction: column; align-items: stretch; width: 100%; }
+		.actions :global(button), .actions :global(a) { width: 100%; }
+		.pill { text-align: center; }
 	}
 </style>
