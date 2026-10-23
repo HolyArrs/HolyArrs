@@ -1,4 +1,6 @@
 <script lang="ts">
+	// Caption trial (?cap=a short, ?cap=b below the picture); remove once one is picked.
+	const capStyle = typeof location === 'undefined' ? '' : new URLSearchParams(location.search).get('cap') ?? '';
 	import { dragScroll } from '#lib/drag-scroll.ts';
 	import { Orbit, SkRail } from './ui/sk/index.ts';
 	// New & Popular → Music: a shelf of large editorial cards for the week's
@@ -10,7 +12,7 @@
 	import { refreshInbox } from './wishlist.svelte.ts';
 	import { musicCardHref, musicImage } from './music/music-trending.ts';
 	import { coverFor } from './music/music-pages.ts';
-	import { cardBadges, exploreLinks, eyebrow, heroNote, newMusicPath, rowNote, type NewMusicAnswer, type NewMusicCard } from './music/music-new.ts';
+	import { cardBadges, exploreLinks, eyebrow, heroNote, shortNote, newMusicPath, rowNote, type NewMusicAnswer, type NewMusicCard } from './music/music-new.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './types.ts';
 	import Shelf from './ui/Shelf.svelte';
 	import MusicGenreTiles from './ui/MusicGenreTiles.svelte';
@@ -232,9 +234,10 @@
 								<span class="art">
 									<img class="wide" src={musicImage({ image: c.artist_image || c.image })} alt="" loading="lazy" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.visibility = 'hidden')} />
 									<span class="shade"></span>
-									<span class="note">{heroNote(c)}</span>
+									{#if capStyle === 'a'}<span class="note">{shortNote(c)}</span>{:else if capStyle !== 'b'}<span class="note">{heroNote(c)}</span>{/if}
 									{#if c.image}<img class="cover" src={musicImage(c)} alt="" loading="lazy" onerror={(e) => ((e.currentTarget as HTMLImageElement).hidden = true)} />{/if}
 								</span>
+								{#if capStyle === 'b'}<span class="note-below">{heroNote(c)}</span>{/if}
 							</a>
 							{#if canAct(c)}
 								<span class="h-act"><IconButton icon="plus" label={actLabel(c)} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={busy === c.key || undefined} onclick={() => void quick(c)} /></span>
@@ -317,6 +320,7 @@
 	.art { position: relative; display: block; aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden; background: var(--surface-2); transition: transform 0.25s ease, filter 0.25s ease, box-shadow 0.25s ease; }
 	.wide { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
 	.shade { position: absolute; inset: 0; background: linear-gradient(to top, rgb(0 0 0 / 0.6), transparent 45%); }
+	.note-below { display: block; margin-top: 8px; color: var(--text-muted); font-size: 13px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.note { position: absolute; left: 12px; right: 136px; bottom: 10px; color: #fff; font-size: 13px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.cover { position: absolute; right: 64px; bottom: 10px; width: 60px; height: 60px; border-radius: 4px; object-fit: cover; box-shadow: 0 2px 10px rgb(0 0 0 / 0.4); }
 	.h-card:hover .art, .h-link:focus-visible .art { transform: translateY(-3px); filter: brightness(1.08); box-shadow: 0 10px 24px rgb(0 0 0 / 0.22); }
