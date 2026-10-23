@@ -327,13 +327,13 @@
 	<div class="cover" bind:this={coverEl} aria-hidden="true"></div>
 	<div class="panel" class:intro class:gl-wait={glWait} bind:this={panelEl} data-signin-panel>
 		<div class="brand">
-			<img src={to('/brand/mark-color-on-dark.svg')} alt="" width="30" height="30" />
+			<img src={to('/brand/mark-color-on-dark.svg')} alt="" width="36" height="36" />
 			<span>HolyArrs</span>
 		</div>
 
 		{#if session.s.state === 'unknown' || ssoFinishing}
 			<!-- As tall as the usual sign-in form, so the card does not jump when the session answers. -->
-			<div class="sk" style="height: 311px; border-radius: var(--r-card)"></div>
+			<div class="sk" style="border-radius: var(--r-card)"></div>
 			{#if ssoFinishing}<p class="small muted" role="status">Finishing your sign-in…</p>{/if}
 		{:else}
 			{#key step}
@@ -501,9 +501,11 @@
 		width: min(calc(clamp(360px, 24vw, 440px) / var(--z)), calc(100% / var(--z)));
 		padding: 28px 28px 22px;
 		border-radius: 28px;
-		background: rgb(14 14 18 / 0.72);
-		-webkit-backdrop-filter: blur(44px) saturate(1.3) brightness(0.82);
-		backdrop-filter: blur(44px) saturate(1.3) brightness(0.82);
+		/* Glass: a light tint over a deep blur, so the wallpaper's colour comes
+		   through; the darkening brightness() keeps white text above AA on bright art. */
+		background: rgb(14 14 18 / 0.46);
+		-webkit-backdrop-filter: blur(40px) saturate(1.7) brightness(0.72);
+		backdrop-filter: blur(40px) saturate(1.7) brightness(0.72);
 		border: 1px solid rgb(255 255 255 / 0.07);
 		box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35), 0 30px 90px rgb(0 0 0 / 0.55), 0 6px 18px rgb(0 0 0 / 0.35);
 	}
@@ -529,12 +531,14 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 9px;
-		margin-bottom: 20px;
-		font: 650 19px/1 var(--font-sans);
+		gap: 11px;
+		margin-bottom: 22px;
+		font: 650 24px/1 var(--font-ui);
 		letter-spacing: -0.015em;
 		color: #fff;
 	}
+	.panel > .sk { height: 311px; }
+	@media (max-width: 600px) { .panel > .sk { height: 289px; } }
 	.title { font: var(--t-title1); letter-spacing: var(--t-title1-track); text-align: center; color: #fff; }
 	.lead { margin: 8px 0 20px; color: rgb(255 255 255 / 0.68); font: var(--t-callout); text-align: center; }
 	.title + :not(.lead) { margin-top: 20px; }
@@ -562,7 +566,7 @@
 		border-radius: 16px;
 		background: rgb(118 118 128 / 0.22);
 		color: rgb(255 255 255 / 0.78);
-		font: 500 12px/1.2 var(--font-sans);
+		font: 500 12px/1.2 var(--font-ui);
 		cursor: pointer;
 		transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease, color 160ms ease;
 	}
@@ -599,12 +603,12 @@
 		border-radius: var(--r-sm);
 		background: none;
 		color: var(--accent-text);
-		font: 500 14px/1 var(--font-sans);
+		font: 500 14px/1 var(--font-ui);
 		cursor: pointer;
 	}
 	.link:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.help { margin-top: 12px; color: var(--text-muted); font: var(--t-footnote); }
-	.help summary { cursor: pointer; min-height: 36px; display: flex; align-items: center; justify-content: center; border-radius: var(--r-sm); color: var(--accent-text); font: 500 14px/1 var(--font-sans); list-style: none; }
+	.help summary { cursor: pointer; min-height: 36px; display: flex; align-items: center; justify-content: center; border-radius: var(--r-sm); color: var(--accent-text); font: 500 14px/1 var(--font-ui); list-style: none; }
 	.help summary::-webkit-details-marker { display: none; }
 	.help summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.help p { margin-top: 8px; }
@@ -641,13 +645,23 @@
 		.panel {
 			--z: 1;
 			width: 100%;
-			margin-top: 30dvh;
-			border-radius: 28px 28px 0 0;
-			padding: 12px max(22px, env(safe-area-inset-right)) max(22px, calc(env(safe-area-inset-bottom) + 14px)) max(22px, env(safe-area-inset-left));
+			margin-top: 34dvh;
+			border-radius: 26px 26px 0 0;
+			padding: 20px max(22px, env(safe-area-inset-right)) max(22px, calc(env(safe-area-inset-bottom) + 14px)) max(22px, env(safe-area-inset-left));
 			border-width: 1px 0 0;
 			box-shadow: 0 -20px 60px rgb(0 0 0 / 0.45);
 		}
-		.panel::before { content: ''; display: block; width: 36px; height: 5px; margin: 0 auto 14px; border-radius: 3px; background: rgb(255 255 255 / 0.28); }
-		.brand { margin-bottom: 14px; }
+		/* Compact: the art keeps the top half. The mark sits on the art just above
+		   the sheet (no drag handle: the sheet does not move). */
+		.brand { position: absolute; left: 0; right: 0; bottom: calc(100% + 18px); margin: 0; font-size: 26px; text-shadow: 0 2px 16px rgb(0 0 0 / 0.6); }
+		.brand img { width: 40px; height: 40px; filter: drop-shadow(0 2px 10px rgb(0 0 0 / 0.5)); }
+		.title { font-size: 24px; }
+		.lead { margin: 4px 0 14px; }
+		.title + :not(.lead) { margin-top: 14px; }
+		.panel :global(.field + .field) { margin-top: 10px; }
+		.submit { margin-top: 16px; }
+		.prov { min-height: 64px; }
+		.or { margin: 14px 0; }
+		.link, .help { margin-top: 6px; }
 	}
 </style>
