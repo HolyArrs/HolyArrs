@@ -172,6 +172,10 @@ export interface MusicExploreAnswer {
 	rows: MusicRowData[];
 	/** A Music genre page's own tile (name, hue, art) for its header band. */
 	tile?: MusicCardData;
+	/** music_rows_v7: the cursor for the next 6 rows ('' or absent: no more). */
+	next?: string;
+	/** music_rows_v7: the day's planned row count. */
+	total?: number;
 }
 
 /** fetchMusicGenre reads a Music genre page's rows (Music only; Movies and Shows keep their own genre pages). */
@@ -184,6 +188,11 @@ export async function fetchMusicExplore(genre: string, region: string, client: P
 	const q = new URLSearchParams({ region, hour: String(hour) });
 	if (genre) q.set('genre', genre);
 	return client.get<MusicExploreAnswer>(`/explore/music?${q}`, signal);
+}
+
+/** fetchMusicExploreMore reads the next 6 Music rows of the day's plan (music_rows_v7). */
+export async function fetchMusicExploreMore(cursor: string, region: string, client: Pick<Client, 'get'> = api, signal?: AbortSignal): Promise<MusicExploreAnswer> {
+	return client.get<MusicExploreAnswer>(`/explore/music?${new URLSearchParams({ region, cursor })}`, signal);
 }
 
 const askWords: Record<string, string> = { asked: 'Asked', approved: 'Approved, on the way', turned_down: 'Turned down', available: 'Arrived' };

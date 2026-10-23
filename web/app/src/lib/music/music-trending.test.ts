@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '../api.ts';
 import { matchOwned, ownedIndex } from '../explore.ts';
-import { fetchMusicExplore, fetchMusicTrend, listeners, releaseWords, musicCardHref, musicCardNote, musicTrendCards, newFromYourArtists, type MusicTrendAnswer } from './music-trending.ts';
+import { fetchMusicExplore, fetchMusicExploreMore, fetchMusicTrend, listeners, releaseWords, musicCardHref, musicCardNote, musicTrendCards, newFromYourArtists, type MusicTrendAnswer } from './music-trending.ts';
 import type { TitleView } from '../types.ts';
 
 const bts = '0d79fe8e-ba27-4859-bb8c-2f255f346853';
@@ -101,6 +101,13 @@ describe('Explore music cards', () => {
 		const client = { get: async <T,>(p: string) => ((asked = p), { kid: false, cold: true, genres: [], genre: '', hero: null, rows: [] } as T) };
 		await fetchMusicExplore('rock', 'FR', client, undefined, 21);
 		expect(asked).toBe('/explore/music?region=FR&hour=21&genre=rock');
+	});
+
+	it('reads the next rows with the cursor (music_rows_v7)', async () => {
+		let asked = '';
+		const client = { get: async <T,>(p: string) => ((asked = p), { kid: false, cold: false, genres: [], genre: '', hero: null, rows: [], next: '' } as T) };
+		await fetchMusicExploreMore('abc.def', 'US', client);
+		expect(asked).toBe('/explore/music?region=US&cursor=abc.def');
 	});
 });
 

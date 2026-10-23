@@ -7,7 +7,7 @@
 	import type { OwnedIndex } from './explore.ts';
 	import { defaultRegion } from './region.ts';
 	import { coverFor } from './music/music-pages.ts';
-	import { fetchMusicExplore, fetchMusicGenre, genreHref, musicCardHref, musicCardNote, musicImage, musicStatus, releaseWords, songAskHref, type MusicCardData, type MusicExploreAnswer } from './music/music-trending.ts';
+	import { fetchMusicExplore, fetchMusicExploreMore, fetchMusicGenre, genreHref, musicCardHref, musicCardNote, musicImage, musicStatus, releaseWords, songAskHref, type MusicCardData, type MusicExploreAnswer } from './music/music-trending.ts';
 	import MusicGenreTiles from './ui/MusicGenreTiles.svelte';
 	import { to } from './paths.ts';
 	import SongLine from './ui/SongLine.svelte';
@@ -57,6 +57,11 @@
 	let addArtist: ReturnType<typeof AddArtistDialog> | undefined = $state();
 	let askArtist: ReturnType<typeof AskArtistDialog> | undefined = $state();
 	let gone: AbortController | undefined;
+	/** music_rows_v7: the next rows' cursor, whether a batch is in flight, and batches read this visit. */
+	let next = $state('');
+	let more = $state(false);
+	let batches = 0;
+	let sentinel: HTMLDivElement | undefined = $state();
 
 	const names = typeof Intl !== 'undefined' && 'DisplayNames' in Intl ? new Intl.DisplayNames(undefined, { type: 'region' }) : null;
 	function regionName(r: string): string {
@@ -86,6 +91,11 @@
 			const keepHero = heroSlot && !a.hero && answer?.hero;
 			answer = { ...a, rows: kept.rows, hero: heroSlot ? (a.hero ?? answer?.hero ?? null) : null, hero_alts: keepHero ? answer?.hero_alts : a.hero_alts };
 			failed = false;
+			// music_rows_v7: read again the batches already shown (the plan is fixed for the day).
+			next = a.next ?? '';
+			const had = batches;
+			batches = 0;
+			while (next && batches < had && !signal.aborted) await moreRows(signal);
 			// Chips come from the unfiltered answer, so picking one keeps the rest.
 			if (!genre) chips = a.genres ?? [];
 			if (a.region && a.region !== region) region = a.region;
@@ -93,6 +103,39 @@
 			if (!signal.aborted) failed = true;
 		}
 	}
+
+	/** moreRows appends the next 6 rows of the day's plan (one batch in flight). */
+	async function moreRows(signal = gone?.signal) {
+		if (!next || more || !answer) return;
+		more = true;
+		try {
+			const m = await fetchMusicExploreMore(next, region, api, signal);
+			if (signal?.aborted || !answer) return;
+			const have = new Set(answer.rows.map((r) => r.id));
+			const rows = [...answer.rows, ...m.rows.filter((r) => !have.has(r.id))];
+			order = rows.map((r) => r.id);
+			answer = { ...answer, rows };
+			next = m.next ?? '';
+			batches++;
+		} catch {
+			// A cursor from an older plan (restart, new day): start over from page 1.
+			if (!signal?.aborted) {
+				next = '';
+				batches = 0;
+				void load();
+			}
+		} finally {
+			more = false;
+		}
+	}
+
+	// One viewport before the end, read the next batch.
+	$effect(() => {
+		if (!sentinel || !next || typeof IntersectionObserver === 'undefined') return;
+		const io = new IntersectionObserver((e) => e.some((x) => x.isIntersecting) && void moreRows(), { rootMargin: '0px 0px 100% 0px' });
+		io.observe(sentinel);
+		return () => io.disconnect();
+	});
 
 	function pick() {
 		try {
@@ -303,6 +346,17 @@
 			{/if}
 		{/each}
 
+		{#if next}
+			<!-- music_rows_v7: the next batch loads one viewport before the end; skeletons hold its place. -->
+			<div class="more" bind:this={sentinel} aria-busy={more || undefined}>
+				{#if more}
+					{#each [0, 1, 2, 3, 4, 5] as r (r)}
+						<div class="sk-shelf" aria-hidden="true"><span class="sk-h"></span><div class="sk-tiles">{#each Array.from({ length: 8 }, (_, i) => i) as i (i)}<span class="sk-tile"></span>{/each}</div></div>
+					{/each}
+				{/if}
+			</div>
+		{/if}
+
 		{#if answer && answer.rows.length === 0 && !heroes.length}
 			<EmptyState icon="music" title={slug ? `Nothing charting in ${answer.tile?.name ?? 'this genre'} yet` : genre ? `Nothing tagged ${genre} yet` : 'Music rows are getting ready'} text={genre ? 'Pick another genre, or All.' : 'Charts and suggestions fill in within a few minutes.'} />
 		{/if}
@@ -333,6 +387,7 @@
 	.sk-tiles { display: grid; grid-auto-flow: column; grid-auto-columns: var(--explore-item); gap: var(--shelf-gap); padding: 6px 0 14px; }
 	.sk-tile { display: block; aspect-ratio: 1; margin-bottom: 45px; border-radius: var(--r-card); background: var(--surface-2); }
 	.row { position: relative; min-width: 0; }
+	.more { display: flex; flex-direction: column; gap: 32px; min-height: 1px; }
 	/* music_rows_v2: one card size (200), song lines 3 columns. */
 	@media (min-width: 768px) { .music.v2 { --explore-item: 200px; } }
 	/* nowrap: the global .row utility wraps, and a wrapping column flexbox

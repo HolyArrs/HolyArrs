@@ -40,9 +40,9 @@ type v7Artist struct {
 		Name string  `json:"name"`
 		S    float64 `json:"s"`
 	} `json:"similar"`
-	Links  []metadata.ArtistLink   `json:"links"`
+	Links  []metadata.ArtistLink    `json:"links"`
 	Guest  []metadata.MusicTopAlbum `json:"guest"`
-	Albums []v7Album               `json:"albums"`
+	Albums []v7Album                `json:"albums"`
 }
 
 type v7Household struct {
