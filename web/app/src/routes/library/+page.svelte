@@ -16,8 +16,8 @@
 	} from '#lib/library-table.ts';
 	import { reducedMotion } from '#lib/motion.ts';
 	import { episodeLabel, showProgress } from '#lib/shows.ts';
-	import { artistProgress } from '#lib/music.ts';
-	import { artistHref } from '#lib/music-pages.ts';
+	import { artistProgress } from '#lib/music/music.ts';
+	import { artistHref } from '#lib/music/music-pages.ts';
 	import Poster from '#lib/Poster.svelte';
 	import Icon from '#lib/Icon.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';

@@ -29,7 +29,7 @@
 	import ShowDeleteDialog from '#lib/ShowDeleteDialog.svelte';
 	import ShowReleases from '#lib/ShowReleases.svelte';
 	import { toasts } from '#lib/toasts.svelte.ts';
-	import { albumCover, albumKind, albumLine, albumStateOf, albumYear, pressingLabel, pressingStatuses, trackLength, word } from '#lib/music.ts';
+	import { albumCover, albumKind, albumLine, albumStateOf, albumYear, pressingLabel, pressingStatuses, trackLength, word } from '#lib/music/music.ts';
 	import type { AlbumSummary, EventPage, EventRecord, PressingView, TitleView, TrackView } from '#lib/types.ts';
 
 	const titleId = $derived(Number(page.params.id));

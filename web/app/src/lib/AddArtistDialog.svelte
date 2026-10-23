@@ -7,7 +7,7 @@
 	// keep up to date, new albums, album kinds and Pressing statuses.
 	import { api, message } from './api.ts';
 	import { pickId } from './library.ts';
-	import { albumChoices, extraKinds, mainKinds, newAlbumChoices, pressingStatuses, toggle } from './music.ts';
+	import { albumChoices, extraKinds, mainKinds, newAlbumChoices, pressingStatuses, toggle } from './music/music.ts';
 	import type { LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './types.ts';
 
 	let {

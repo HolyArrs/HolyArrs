@@ -3,7 +3,7 @@
 	import Sheet from './ui/Sheet.svelte';
 	import Button from './ui/Button.svelte';
 	import { api, message, ApiError } from './api.ts';
-	import { albumKind, albumWords, albumYear } from './music.ts';
+	import { albumKind, albumWords, albumYear } from './music/music.ts';
 	import type { Ask, AskableAlbum, LookupArtist } from './types.ts';
 
 	let {

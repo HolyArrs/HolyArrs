@@ -1,10 +1,10 @@
 // Music trending: the metadata server's weekly lists (ListenBrainz
 // worldwide, Deezer's charts per country) as artist and album rows.
-import { api, ApiError, type Client } from './api.ts';
-import type { Fresh } from './fresh.ts';
-import { to } from './paths.ts';
-import type { ExploreCard } from './explore.ts';
-import type { CalendarEntry } from './types.ts';
+import { api, ApiError, type Client } from '../api.ts';
+import type { Fresh } from '../fresh.ts';
+import { to } from '../paths.ts';
+import type { ExploreCard } from '../explore.ts';
+import type { CalendarEntry } from '../types.ts';
 
 export type MusicTrendKind = 'artist' | 'album';
 

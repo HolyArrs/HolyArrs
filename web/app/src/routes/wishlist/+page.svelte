@@ -23,7 +23,7 @@
 	import { inbox, markRead, refreshInbox } from '#lib/wishlist.svelte.ts';
 	import type { Ask, AskLimit, LibraryFolder, PickRulesView } from '#lib/types.ts';
 	import { seasonWords } from '#lib/shows.ts';
-	import { albumWords } from '#lib/music.ts';
+	import { albumWords } from '#lib/music/music.ts';
 	import { titleStatus } from '#lib/title-status.ts';
 
 	const approver = $derived(session.can('approve'));

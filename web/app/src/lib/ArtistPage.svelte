@@ -2,7 +2,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import { peopleNames } from './plain.ts';
 	import { to } from './paths.ts';
-	import { albumHref } from './music-pages.ts';
+	import { albumHref } from './music/music-pages.ts';
 	// One artist: its albums with their kinds, dates and state, Keep up to
 	// date per artist and album, the album kinds it includes, and who asked.
 	// Search now looks for every missing album; each album has its own
@@ -53,7 +53,7 @@
 		pressingStatuses,
 		toggle,
 		word
-	} from './music.ts';
+	} from './music/music.ts';
 	import type { AlbumSummary, Ask, EventPage, EventRecord, LookupArtist, TitleView } from './types.ts';
 
 	let {

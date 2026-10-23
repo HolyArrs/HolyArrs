@@ -6,8 +6,8 @@
 	import { refreshInbox } from './wishlist.svelte.ts';
 	import type { OwnedIndex } from './explore.ts';
 	import { defaultRegion } from './region.ts';
-	import { coverFor } from './music-pages.ts';
-	import { fetchMusicExplore, fetchMusicGenre, genreHref, musicCardHref, musicCardNote, musicImage, musicStatus, releaseWords, songAskHref, type MusicCardData, type MusicExploreAnswer } from './music-trending.ts';
+	import { coverFor } from './music/music-pages.ts';
+	import { fetchMusicExplore, fetchMusicGenre, genreHref, musicCardHref, musicCardNote, musicImage, musicStatus, releaseWords, songAskHref, type MusicCardData, type MusicExploreAnswer } from './music/music-trending.ts';
 	import GenreTile from './ui/GenreTile.svelte';
 	import SongLine from './ui/SongLine.svelte';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './types.ts';

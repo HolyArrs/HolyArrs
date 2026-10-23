@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { roundArt, stateWord, subline, suggestHref, type SuggestAnswer } from '../live-search.ts';
-	import { appPicture } from '../music-pages.ts';
+	import { appPicture } from '../music/music-pages.ts';
 	import Icon, { type IconName } from '../Icon.svelte';
 	// No art yet: the row shows its kind's glyph, the same stand-in the posters use.
 	const glyph: Record<string, IconName> = { movie: 'film', show: 'tv', person: 'user', artist: 'user', album: 'music', song: 'music' };

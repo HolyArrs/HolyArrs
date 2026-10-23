@@ -19,11 +19,11 @@
 	import { to } from '#lib/paths.ts';
 	import { plainReason } from '#lib/plain.ts';
 	import { cameFrom, fromIcon } from '#lib/came-from.svelte.ts';
-	import { albumYear } from '#lib/music.ts';
-	import { releaseWords } from '#lib/music-trending.ts';
+	import { albumYear } from '#lib/music/music.ts';
+	import { releaseWords } from '#lib/music/music-trending.ts';
 	import { SkRail, SkRowTitle, SkTrackRow } from '#lib/ui/sk/index.ts';
 	import Chip from '#lib/ui/Chip.svelte';
-	import { aboutSize, albumHref, appPicture, artistHref, coverFor, haveLine, kindWord, length, owned, SHELVES, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type Shelf as ShelfKind } from '#lib/music-pages.ts';
+	import { aboutSize, albumHref, appPicture, artistHref, coverFor, haveLine, kindWord, length, owned, SHELVES, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 
 	// An artist's page: any MusicBrainz artist, in the Library or not. HolyArrs asks

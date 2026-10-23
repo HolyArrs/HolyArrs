@@ -37,14 +37,14 @@
 	import type { Ask, LibraryFolder, LookupArtist, LookupMovie, LookupShow, MusicSettings, PickRulesView, TitleView } from '#lib/types.ts';
 	import type { PersonSummary } from '#lib/people.ts';
 	import { byDept, chipDept, PEOPLE_ROWS, SHELF_MIN, visibleChips, type PeopleFilter, type ShelfMeta, type ShelfPerson } from '#lib/people-shelves.ts';
-	import { appPicture, artistHref } from '#lib/music-pages.ts';
-	import { fetchMusicExplore, genreHref, musicCardHref, musicCardNote, musicImage, type MusicCardData } from '#lib/music-trending.ts';
+	import { appPicture, artistHref } from '#lib/music/music-pages.ts';
+	import { fetchMusicExplore, genreHref, musicCardHref, musicCardNote, musicImage, type MusicCardData } from '#lib/music/music-trending.ts';
 	import { refreshInbox } from '#lib/wishlist.svelte.ts';
 	import AddArtistDialog from '#lib/AddArtistDialog.svelte';
 	import AskArtistDialog from '#lib/AskArtistDialog.svelte';
 	import QuickAsk from '#lib/QuickAsk.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import { albumWords } from '#lib/music.ts';
+	import { albumWords } from '#lib/music/music.ts';
 	import { createLatestOnly } from '#lib/history.ts';
 	import { live } from '#lib/live-search.ts';
 	import { addRecent, libraryNote, readRecent, rankTop, readScope, recentKey, scopeAddress, type SearchScope } from '#lib/search.ts';

@@ -7,9 +7,9 @@
 	import { api, message } from './api.ts';
 	import { toasts } from './toasts.svelte.ts';
 	import { refreshInbox } from './wishlist.svelte.ts';
-	import { musicCardHref, musicImage } from './music-trending.ts';
-	import { coverFor } from './music-pages.ts';
-	import { cardBadges, exploreLinks, eyebrow, heroNote, newMusicPath, rowNote, type NewMusicAnswer, type NewMusicCard } from './music-new.ts';
+	import { musicCardHref, musicImage } from './music/music-trending.ts';
+	import { coverFor } from './music/music-pages.ts';
+	import { cardBadges, exploreLinks, eyebrow, heroNote, newMusicPath, rowNote, type NewMusicAnswer, type NewMusicCard } from './music/music-new.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './types.ts';
 	import Shelf from './ui/Shelf.svelte';
 	import PosterCard from './ui/PosterCard.svelte';

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { ApiError } from './api.ts';
-import { matchOwned, ownedIndex } from './explore.ts';
+import { ApiError } from '../api.ts';
+import { matchOwned, ownedIndex } from '../explore.ts';
 import { fetchMusicExplore, fetchMusicTrend, listeners, releaseWords, musicCardHref, musicCardNote, musicTrendCards, newFromYourArtists, type MusicTrendAnswer } from './music-trending.ts';
-import type { TitleView } from './types.ts';
+import type { TitleView } from '../types.ts';
 
 const bts = '0d79fe8e-ba27-4859-bb8c-2f255f346853';
 const arirang = '21159e3f-172e-43f6-aa7d-8e06a81fea49';

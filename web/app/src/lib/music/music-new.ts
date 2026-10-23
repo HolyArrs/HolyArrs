@@ -1,6 +1,6 @@
 // New & Popular → Music: the answer, the hero's note and the Explore more links.
 import type { MusicCardData, MusicRowData } from './music-trending.ts';
-import { to } from './paths.ts';
+import { to } from '../paths.ts';
 
 /** explicit: explicit lyrics (the "E" mark); track: a Fresh tracks song, the card asks for its album. */
 export type NewMusicCard = MusicCardData & { badge?: string; following?: boolean; explicit?: boolean; track?: string };

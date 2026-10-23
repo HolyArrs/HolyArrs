@@ -19,9 +19,9 @@
 	import { to } from '#lib/paths.ts';
 	import { plainReason } from '#lib/plain.ts';
 	import { cameFrom, fromIcon } from '#lib/came-from.svelte.ts';
-	import { albumYear } from '#lib/music.ts';
+	import { albumYear } from '#lib/music/music.ts';
 	import { SkRail, SkTrackRow } from '#lib/ui/sk/index.ts';
-	import { albumHref, appPicture, artistHref, coverFor, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist, type PageCredit, type PageTrack } from '#lib/music-pages.ts';
+	import { albumHref, appPicture, artistHref, coverFor, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist, type PageCredit, type PageTrack } from '#lib/music/music-pages.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 
 	// An album's page: the cover large over its own blurred colours, the tracklist

@@ -5,7 +5,7 @@
 // TMDB; MusicBrainz is only asked by the full results page (Enter).
 import { to } from './paths.ts';
 import { detailPath } from './title-details.ts';
-import { albumHref, artistHref } from './music-pages.ts';
+import { albumHref, artistHref } from './music/music-pages.ts';
 
 export const SUGGEST_MIN = 2;
 export const SUGGEST_WAIT = 150;
