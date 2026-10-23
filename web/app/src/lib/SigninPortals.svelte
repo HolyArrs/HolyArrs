@@ -5,7 +5,7 @@
 	// padding; the page's media symbols (film frame, music note, play;
 	// lib/pixelTrail.ts) rise out of it, run along the padding band to a hole
 	// at the next corner (counter-clockwise from top right, one leg every
-	// 5 s) and dive in; both holes seal. Phones use the bottom sheet the same
+	// 5 s) and dive in; both holes seal. Phones use the floating card the same
 	// way. One canvas, time based; the clock stops while the tab is hidden or
 	// the user is signing in; off with reduced motion.
 	import { onMount } from 'svelte';
@@ -102,9 +102,9 @@
 			const cs = getComputedStyle(el);
 			const z = el.offsetWidth ? b.width / el.offsetWidth : 1;
 			const px = (v: string) => (parseFloat(v) || 0) * z;
-			// Clipped to the frame (the phone sheet runs under it at the sides and bottom).
-			const edge = document.querySelector('.edge');
-			const f = edge ? parseFloat(getComputedStyle(edge).borderTopWidth) || 0 : 0;
+			// Clipped to the frame (none on phones, where the edge is hidden).
+			const edge = document.querySelector<HTMLElement>('.edge');
+			const f = edge && getComputedStyle(edge).display !== 'none' ? parseFloat(getComputedStyle(edge).borderTopWidth) || 0 : 0;
 			const left = Math.max(b.left, f), right = Math.min(b.right, w - f), bottom = Math.min(b.bottom, h - f);
 			const band = Math.min(px(cs.paddingTop), px(cs.paddingLeft) - (left - b.left), px(cs.paddingRight) - (b.right - right), px(cs.paddingBottom) - (b.bottom - bottom));
 			const i = band / 2;
@@ -338,6 +338,17 @@
 		const edgeObs = new ResizeObserver(() => shapeEdge());
 		if (edgeEl) edgeObs.observe(edgeEl);
 		if (panel) ro.observe(panel);
+		// The phone card glides above the keyboard: follow it for the lift.
+		let follow = 0;
+		const vv = window.visualViewport;
+		const track = () => {
+			const until = performance.now() + 420;
+			cancelAnimationFrame(follow);
+			const step = () => { measurePanel(); if (performance.now() < until) follow = requestAnimationFrame(step); };
+			follow = requestAnimationFrame(step);
+		};
+		vv?.addEventListener('resize', track);
+		vv?.addEventListener('scroll', track);
 		start();
 		document.addEventListener('visibilitychange', onVisible);
 		document.addEventListener('keydown', onKey, true);
@@ -346,6 +357,9 @@
 		return () => {
 			stop();
 			ro.disconnect();
+			cancelAnimationFrame(follow);
+			vv?.removeEventListener('resize', track);
+			vv?.removeEventListener('scroll', track);
 			edgeObs.disconnect();
 			mo.disconnect();
 			sys.removeEventListener('change', readTheme);
@@ -376,7 +390,7 @@
 	@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
 		.edge.glass { background: rgb(18 18 22 / 0.92); }
 	}
-	/* Phones: full-bleed art, no frame (the portals still run in the sheet). */
+	/* Phones: full-bleed art, no frame (the portals still run in the card). */
 	@media (max-width: 600px) { .edge { display: none; } }
 	@media (min-width: 601px) { .edge, .portals { --frame: 18px; --frame-r: 26px; } }
 	/* Its own compositor layer, so redrawing it never touches the panel's blur. */
