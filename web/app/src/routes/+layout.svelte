@@ -390,7 +390,7 @@
 	<Menu label="{shownName}, {roleWord}: account and appearance" items={accountItems} variant="row" align="start" placement="above" width={240}>
 		{#snippet trigger()}
 			<span class="who" class:only={collapsed}>
-				<Avatar name={shownName} src={session.s.avatar} size={32} />
+				<Avatar name={shownName} src={session.s.avatar} size={collapsed ? 40 : 36} />
 				{#if !collapsed}
 					<span class="who-text"><span class="who-name">{shownName}</span><span class="who-role">{roleWord}</span></span>
 					<Icon name="chevronUpDown" size={15} />
