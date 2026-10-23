@@ -157,7 +157,13 @@ func (a *API) genresFilling() bool {
 func (a *API) MusicLoops() []supervisor.Loop {
 	return []supervisor.Loop{{Name: "music_warm", Label: "Music read-ahead", Run: func(ctx context.Context) error {
 		a.warmMusic(ctx)
-		<-ctx.Done()
+		for ctx.Err() == nil {
+			a.prebuildMusic(ctx)
+			select {
+			case <-ctx.Done():
+			case <-time.After(musicPrebuildEvery):
+			}
+		}
 		return nil
 	}}}
 }
