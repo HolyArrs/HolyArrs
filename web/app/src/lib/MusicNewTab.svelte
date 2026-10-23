@@ -12,6 +12,11 @@
 	import { cardBadges, exploreLinks, eyebrow, heroNote, newMusicPath, rowNote, type NewMusicAnswer, type NewMusicCard } from './music/music-new.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './types.ts';
 	import Shelf from './ui/Shelf.svelte';
+	import MusicGenreTiles from './ui/MusicGenreTiles.svelte';
+	import { fetchMusicExplore } from './music/music-trending.ts';
+	import { tileHue } from './search-browse.ts';
+	import { defaultRegion } from './region.ts';
+	import { to } from './paths.ts';
 	import PosterCard from './ui/PosterCard.svelte';
 	import IconButton from './ui/IconButton.svelte';
 	import EmptyState from './ui/EmptyState.svelte';
@@ -143,6 +148,34 @@
 	const tracks = $derived(answer?.rows.find((r) => r.type === 'np_music_tracks'));
 	const rows = $derived((answer?.rows ?? []).filter((r) => r.type !== 'np_music_tracks'));
 	const links = $derived(exploreLinks(answer?.genres ?? []));
+	// Explore more: one row of Explore's genre tiles per kind. A genre Explore knows
+	// brings its photos and colour; decades, moods and charts are colour tiles.
+	type Tile = { key: string; name: string; href: string; art: string; images?: string[]; hue: number; tint?: string };
+	let known = $state<Record<string, { art: string; images?: string[]; hue: number }>>({});
+	onMount(() => {
+		void fetchMusicExplore('', defaultRegion()).then(
+			(a) => {
+				const out: typeof known = {};
+				for (const c of a.rows.find((r) => r.shape === 'tile')?.items ?? []) out[c.name.toLowerCase()] = { art: c.image ?? '', images: c.images, hue: c.hue ?? 0 };
+				known = out;
+			},
+			() => {}
+		);
+	});
+	const moreRows = $derived(
+		(['genre', 'decade', 'mood', 'chart'] as const)
+			.map((group) => ({
+				group,
+				title: { genre: 'Genres', decade: 'Decades', mood: 'Moods', chart: 'Charts' }[group],
+				tiles: links
+					.filter((l) => l.group === group)
+					.map((l): Tile => {
+						const k = known[l.label.toLowerCase()];
+						return k ? { key: `genre:${l.label}`, name: l.label, href: l.href, ...k } : { key: `${group}:${l.label}`, name: l.label, href: l.href, art: '', hue: 0, tint: tileHue(l.label) };
+					})
+			}))
+			.filter((r) => r.tiles.length)
+	);
 	const actLabel = (c: NewMusicCard) => (manage ? `Add ${c.artist || c.name}` : `Ask for ${c.name}`);
 </script>
 
@@ -245,9 +278,9 @@
 
 		<nav class="more" aria-labelledby="np-more-h">
 			<h2 id="np-more-h">Explore more</h2>
-			<div class="pills">
-				{#each links as l (l.group + l.label)}<a class="pill" href={l.href}><span class="cap">{l.label}</span><small>{l.group === 'genre' ? 'Genre' : l.group === 'decade' ? 'Decade' : l.group === 'mood' ? 'Mood' : 'Charts'}</small></a>{/each}
-			</div>
+			{#each moreRows as r (r.group)}
+				<MusicGenreTiles title={r.title} genres={r.tiles} allHref={to('/search?kind=music')} all={r.group === 'genre'} />
+			{/each}
 		</nav>
 	</section>
 {/if}
@@ -280,8 +313,8 @@
 	.eyebrow { font: 600 11px/1.3 var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
 	.h-title { margin-top: 2px; font-size: 17px; line-height: 1.3; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.h-artist { font-size: 17px; line-height: 1.3; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 8px; }
-	.art { position: relative; display: block; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; background: var(--surface-2); transition: transform 0.25s ease, filter 0.25s ease, box-shadow 0.25s ease; }
-	.wide { width: 100%; height: 100%; object-fit: cover; }
+	.art { position: relative; display: block; aspect-ratio: 3 / 2; border-radius: 10px; overflow: hidden; background: var(--surface-2); transition: transform 0.25s ease, filter 0.25s ease, box-shadow 0.25s ease; }
+	.wide { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
 	.shade { position: absolute; inset: 0; background: linear-gradient(to top, rgb(0 0 0 / 0.6), transparent 45%); }
 	.note { position: absolute; left: 12px; right: 136px; bottom: 10px; color: #fff; font-size: 13px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.cover { position: absolute; right: 64px; bottom: 10px; width: 60px; height: 60px; border-radius: 4px; object-fit: cover; box-shadow: 0 2px 10px rgb(0 0 0 / 0.4); }
@@ -315,20 +348,13 @@
 	@media (max-width: 1023px) { .tracks { grid-auto-columns: calc(50% - 8px); } }
 	@media (max-width: 640px) { .tracks { grid-auto-columns: 88%; } }
 	.row { position: relative; min-width: 0; }
-	.more { display: flex; flex-direction: column; gap: 10px; }
-	.pills { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
-	.pill { display: flex; flex-direction: column; gap: 2px; padding: 14px 22px; border-radius: 999px; background: var(--surface-2); color: var(--text); text-decoration: none; font-size: 16px; font-weight: 600; transition: background-color 0.2s ease; }
-	.pill .cap { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	.pill small { font-size: 12px; font-weight: 400; color: var(--text-muted); }
-	.pill:hover { background: var(--surface-3); }
-	.pill:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.more { display: flex; flex-direction: column; gap: 24px; }
 	.see-all { display: flex; flex-direction: column; gap: 8px; }
 	.back { align-self: flex-start; display: inline-flex; align-items: center; gap: 2px; padding: 0; border: 0; background: none; color: var(--text-muted); cursor: pointer; font-size: 14px; }
 	.sub { margin: 0 0 12px; color: var(--text-muted); font-size: 14px; }
 	.grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 24px 20px; }
-	.cap { text-transform: capitalize; }
 	.loading { display: flex; flex-direction: column; gap: 12px; }
 	.hero-sk { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-	.hero-sk span { aspect-ratio: 16 / 9; border-radius: 10px; margin-top: 60px; }
+	.hero-sk span { aspect-ratio: 3 / 2; border-radius: 10px; margin-top: 60px; }
 	@media (max-width: 640px) { .hero-sk { grid-template-columns: 1fr; } .hero-sk span:nth-child(n + 2) { display: none; } }
 </style>

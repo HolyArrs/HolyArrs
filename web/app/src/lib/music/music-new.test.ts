@@ -32,4 +32,8 @@ describe('music new', () => {
 		expect(l.some((x) => x.group === 'decade')).toBe(true);
 		expect(l.some((x) => x.group === 'mood')).toBe(true);
 	});
+	it('keeps a decade out of the genres', () => {
+		const l = exploreLinks(['80s', 'pop']);
+		expect(l.filter((x) => x.label === '80s').map((x) => x.group)).toEqual(['decade']);
+	});
 });
