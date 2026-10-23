@@ -363,6 +363,9 @@
 					{:else}
 						<h1>{hero.name}</h1>
 					{/if}
+				</div>
+			</header>
+			<div class="under-hero">
 					{#if facts.length}<p class="facts">{facts.join(' · ')}</p>{/if}
 					<div class="round">
 						<button class="rb" type="button" aria-label="About {hero.name}" title="About" onclick={() => aboutEl?.scrollIntoView({ behavior: 'smooth', block: 'start' })}><Icon name="info" size={20} /></button>
@@ -377,8 +380,7 @@
 					</div>
 					{#if titleId || manage || mayAsk}<p class="cta-word">{cta}</p>{/if}
 					{#if data?.total}<p class="have" data-testid="artist-have"><Icon name="music" size={14} />{haveLine(data.have, data.total)}</p>{/if}
-				</div>
-			</header>
+			</div>
 
 			{#if !data}
 				{#if !error}
@@ -579,6 +581,7 @@
 	.photo.initials { display: grid; place-items: center; background: rgb(255 255 255 / .08); backdrop-filter: blur(12px); color: rgb(255 255 255 / .9); font-size: 64px; font-weight: 700; letter-spacing: .02em; }
 	h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: clamp(34px, 4.6vw, 56px); line-height: 1.05; letter-spacing: -.02em; text-wrap: balance; }
 	h1.logo img { display: block; max-width: min(440px, 80vw); max-height: 120px; object-fit: contain; filter: drop-shadow(0 4px 18px rgb(0 0 0 / .45)); }
+	.under-hero { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 18px 20px 8px; text-align: center; }
 	.facts { margin: 0; color: rgb(255 255 255 / .7); font: var(--t-subhead); }
 	.round { display: flex; align-items: center; gap: 18px; margin-top: 8px; }
 	.rb { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgb(255 255 255 / .2); background: rgb(255 255 255 / .12); color: #fff; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); cursor: pointer; transition: transform 160ms var(--ease-out), background 160ms; }
