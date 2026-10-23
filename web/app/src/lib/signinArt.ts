@@ -136,3 +136,30 @@ export function providerTiles(ways: readonly Way[]): ProviderTile[] {
 	const on = order.filter((w) => ways.includes(w));
 	return on.map((way) => ({ way, name: NAMES[way], label: on.length > 1 ? NAMES[way] : `Continue with ${NAMES[way]}` }));
 }
+
+/** Mosaic widths (in blocks across) the first wallpaper resolves through, coarse to fine. */
+export const MOSAIC_LEVELS = [24, 34, 48, 68, 96, 136, 192, 272] as const;
+/** Width of the kept thumbnail: levels up to this need no full picture. */
+export const THUMB_W = 64;
+/** The reveal: a short still hold on the coarse frame (the app boots under it), then a long ease-out to sharp. */
+export const REVEAL_HOLD_MS = 320;
+export const REVEAL_MS = 2000;
+
+/** Cubic ease-out: quick first refinements, a long settle into sharp. */
+export function easeOut(p: number): number {
+	const c = Math.min(1, Math.max(0, p));
+	return 1 - Math.pow(1 - c, 3);
+}
+
+/**
+ * Where the reveal is at ms after it started: the level shown underneath
+ * (lo), the finer one over it (hi, null once the next step is the sharp
+ * picture) and how far that top one has faded in (mix 0..1). done once sharp.
+ */
+export function revealAt(ms: number): { lo: number; hi: number | null; mix: number; done: boolean } {
+	const steps = MOSAIC_LEVELS.length; // the last step fades the last level away
+	const x = easeOut((ms - REVEAL_HOLD_MS) / REVEAL_MS) * steps;
+	if (x >= steps) return { lo: steps - 1, hi: null, mix: 1, done: true };
+	const lo = Math.floor(x);
+	return { lo, hi: lo + 1 < steps ? lo + 1 : null, mix: x - lo, done: false };
+}

@@ -137,3 +137,30 @@ describe('providerTiles', () => {
 		expect(providerTiles(['password'])).toEqual([]);
 	});
 });
+
+import { revealAt, easeOut, MOSAIC_LEVELS, REVEAL_HOLD_MS, REVEAL_MS } from './signinArt.ts';
+describe('mosaic reveal', () => {
+	it('holds the coarsest level first', () => {
+		expect(revealAt(0)).toEqual({ lo: 0, hi: 1, mix: 0, done: false });
+		expect(revealAt(REVEAL_HOLD_MS)).toEqual({ lo: 0, hi: 1, mix: 0, done: false });
+	});
+	it('only ever moves towards sharp', () => {
+		let last = -1;
+		for (let t = 0; t <= REVEAL_HOLD_MS + REVEAL_MS; t += 8) {
+			const r = revealAt(t);
+			const v = r.lo + r.mix;
+			expect(v).toBeGreaterThanOrEqual(last);
+			last = v;
+		}
+	});
+	it('ends sharp, with the last level fading out', () => {
+		expect(revealAt(REVEAL_HOLD_MS + REVEAL_MS).done).toBe(true);
+		const near = revealAt(REVEAL_HOLD_MS + REVEAL_MS - 400);
+		expect(near.lo).toBe(MOSAIC_LEVELS.length - 1);
+		expect(near.hi).toBeNull();
+	});
+	it('eases out', () => {
+		expect(easeOut(0.5)).toBeGreaterThan(0.8);
+		expect(easeOut(2)).toBe(1);
+	});
+});
