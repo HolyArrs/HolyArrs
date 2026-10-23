@@ -8,7 +8,7 @@
 	import { defaultRegion } from './region.ts';
 	import { coverFor } from './music/music-pages.ts';
 	import { fetchMusicExplore, fetchMusicGenre, genreHref, musicCardHref, musicCardNote, musicImage, musicStatus, releaseWords, songAskHref, type MusicCardData, type MusicExploreAnswer } from './music/music-trending.ts';
-	import GenreTile from './ui/GenreTile.svelte';
+	import CategoryStrip from './ui/CategoryStrip.svelte';
 	import SongLine from './ui/SongLine.svelte';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './types.ts';
 	import Shelf from './ui/Shelf.svelte';
@@ -31,12 +31,17 @@
 		folders,
 		rules,
 		onadded,
-		slug = ''
-	}: { owned: OwnedIndex; manage: boolean; mayAsk: boolean; folders: LibraryFolder[]; rules: PickRulesView[]; onadded?: (t: TitleView) => void; /** A Music genre page: that genre's rows instead of Explore's. */ slug?: string } = $props();
+		slug = '',
+		genres = $bindable([])
+	}: { owned: OwnedIndex; manage: boolean; mayAsk: boolean; folders: LibraryFolder[]; rules: PickRulesView[]; onadded?: (t: TitleView) => void; /** A Music genre page: that genre's rows instead of Explore's. */ slug?: string; /** The genre tiles, for Explore's Genres button. */ genres?: StripGenre[] } = $props();
+	type StripGenre = { key: string; name: string; href: string; art: string; hue: number };
 
 	let region = $state('global');
 	let genre = $state('');
 	let answer = $state<MusicExploreAnswer | null>(null);
+	// Genres show as the Movies and Shows category strip under the hero, not as a row.
+	const stripGenres = $derived<StripGenre[]>((answer?.rows ?? []).filter((r) => r.shape === 'tile').flatMap((r) => r.items).map((c) => ({ key: c.key, name: c.name, href: genreHref(c), art: c.image ? (musicImage(c) ?? '') : '', hue: c.hue ?? 0 })));
+	$effect(() => { genres = stripGenres; });
 	let chips = $state<string[]>([]);
 	/** The rows' order as first shown this visit (per genre and region), so later answers never move them. */
 	let order: string[] = [];
@@ -256,22 +261,18 @@
 			</a>
 		{/if}
 
-		{#each answer?.rows ?? [] as row, ri (row.id)}
-			{#if row.shape === 'tile' || row.shape === 'song'}
+		{#if stripGenres.length}<CategoryStrip genres={stripGenres} type="music" />{/if}
+
+		{#each (answer?.rows ?? []).filter((r) => r.shape !== 'tile') as row, ri (row.id)}
+			{#if row.shape === 'song'}
 			<section class="row plain" data-testid="music-row-{row.type}">
 				<h2 class="rhead">{row.title}</h2>
-				{#if row.shape === 'tile'}
-					<div class="tiles">
-						{#each row.items as c (c.key)}<GenreTile name={c.name} href={genreHref(c)} hue={c.hue ?? 0} art={c.image ? (musicImage(c) ?? '') : ''} />{/each}
-					</div>
-				{:else}
-					<div class="songs">
-						{#each row.items as c (c.key)}
-							{@const sc = coverFor(c.image ? (c.image.startsWith('/') ? musicImage(c) : c.image) : null, 44)}
-							<SongLine title={c.track || c.name} artist={c.artist ?? ''} image={sc.src} explicit={c.explicit} href={songAskHref(c)} askHref={songAskHref(c)} />
-						{/each}
-					</div>
-				{/if}
+				<div class="songs">
+					{#each row.items as c (c.key)}
+						{@const sc = coverFor(c.image ? (c.image.startsWith('/') ? musicImage(c) : c.image) : null, 44)}
+						<SongLine title={c.track || c.name} artist={c.artist ?? ''} image={sc.src} explicit={c.explicit} href={songAskHref(c)} askHref={songAskHref(c)} />
+					{/each}
+				</div>
 			</section>
 			{:else}
 			<div class="row">
@@ -345,20 +346,19 @@
 	.sk-tiles { display: grid; grid-auto-flow: column; grid-auto-columns: var(--explore-item); gap: var(--shelf-gap); padding: 6px 0 14px; }
 	.sk-tile { display: block; aspect-ratio: 1; margin-bottom: 45px; border-radius: var(--r-card); background: var(--surface-2); }
 	.row { position: relative; min-width: 0; }
-	/* music_rows_v2: one card size (200), genre tiles 5/3/2 columns, song lines 3 columns. */
+	/* music_rows_v2: one card size (200), song lines 3 columns. */
 	@media (min-width: 768px) { .music.v2 { --explore-item: 200px; } }
 	/* nowrap: the global .row utility wraps, and a wrapping column flexbox
 	   sizes the tile grid at its 0 px max-content width, so its rows collapse. */
 	.plain { display: flex; flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 12px; }
 	.rhead { margin: 0; font-size: 17px; font-weight: 700; }
-	.tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
 	/* A Music genre page's band: the tile's look (hue, grey art at .55, radius 10), wider. */
 	.band { position: relative; display: flex; align-items: flex-end; min-height: 180px; padding: 20px 24px; border-radius: 10px; overflow: hidden; background: var(--hue); color: #fff; }
 	.band img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.55; }
 	.band h1 { position: relative; margin: 0; font-size: clamp(28px, 4vw, 44px); font-weight: 800; line-height: 1.1; text-shadow: 0 1px 2px rgb(0 0 0 / 0.35); }
 	.songs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 16px; }
-	@media (max-width: 1023px) { .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } .songs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-	@media (max-width: 640px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .songs { grid-template-columns: minmax(0, 1fr); } }
+	@media (max-width: 1023px) { .songs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+	@media (max-width: 640px) { .songs { grid-template-columns: minmax(0, 1fr); } }
 	.pick { position: absolute; right: 0; top: 0; z-index: 1; display: flex; gap: 8px; align-items: center; }
 	.hero { position: relative; overflow: hidden; }
 	.hero.bare { justify-content: flex-start; }

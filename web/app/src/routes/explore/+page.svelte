@@ -212,6 +212,7 @@
 	// A genre page (Movies or Shows, ?genre=<TMDB id>) swaps the head and tail for its own rows.
 	const genre = $derived(parseGenre((page.shallow?.url ?? page.url).searchParams.get('genre'), type));
 	const genres = $derived(genresFor(type));
+	let musicGenres = $state<{ key: string; name: string; href: string; art: string; hue: number }[]>([]);
 	let genreRows = $state<(ExploreRow & { wide: boolean; type: string })[]>([]);
 	let genreHero = $state<ExploreCard[]>([]);
 	let genreLoaded = $state<number | null>(null);
@@ -574,7 +575,20 @@
 	<div class="types-mark" bind:this={typesMark} aria-hidden="true"></div>
 	<div class="types" class:stuck={typesStuck} data-pin-pills>
 		<SegmentedControl options={typeOptions} value={type} label="Show" testid="explore-type" announce={(l) => `Showing ${l}`} onchange={setType} />
-		{#if genres.length}
+		{#if type === 'music' && musicGenres.length}
+			<!-- Music: the same Genres button; a genre opens its page. -->
+			<div class="genre-pick" data-testid="genre-picker">
+				<Popover label="Genres" text="Genres" variant="button" align="end" width={340}>
+					{#snippet children(close)}
+						<div class="genre-list" role="group" aria-label="Genres">
+							{#each musicGenres as g (g.key)}
+								<Chip label={g.name} onclick={() => { close(); void goto(g.href); }} />
+							{/each}
+						</div>
+					{/snippet}
+				</Popover>
+			</div>
+		{:else if genres.length}
 			<div class="genre-pick" data-testid="genre-picker">
 				<Popover label="Genres" text={genre ? genre.name : 'Genres'} variant="button" align="end" width={340}>
 					{#snippet children(close)}
@@ -590,7 +604,7 @@
 		{/if}
 	</div>
 	<MetadataNotice />
-	{#if type === 'music'}<MusicTrendingRows {owned} {manage} {mayAsk} folders={flow?.addChoices().folders ?? []} rules={flow?.addChoices().rules ?? []} onadded={() => void load()} />{/if}
+	{#if type === 'music'}<MusicTrendingRows bind:genres={musicGenres} {owned} {manage} {mayAsk} folders={flow?.addChoices().folders ?? []} rules={flow?.addChoices().rules ?? []} onadded={() => void load()} />{/if}
 
 	{#if type === 'music'}
 		<!-- Music: the music rows above only. -->
