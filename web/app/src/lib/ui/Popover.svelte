@@ -51,7 +51,7 @@
 	export function close(returnFocus = true) {
 		if (!open) return;
 		open = false;
-		if (returnFocus) button?.focus();
+		if (returnFocus) button?.focus({ preventScroll: true });
 	}
 	function toggle() {
 		open = !open;
@@ -81,17 +81,37 @@
 
 	// Keep the panel on screen: a menu near the right edge of a phone would
 	// otherwise reach past it and make the whole page scroll sideways.
-	let nudge = $state(0);
+	// The panel floats above the page (fixed to the viewport), so a parent
+	// that clips its overflow (a hero card) never cuts it off or scrolls.
+	let pos = $state('');
+	let flip = $state(false);
+	function place() {
+		if (!button || !panel) return;
+		const b = button.getBoundingClientRect();
+		const vw = document.documentElement.clientWidth;
+		const vh = window.innerHeight;
+		const h = panel.offsetHeight;
+		const w = Math.min(width, vw - 24);
+		// Flip to the roomier side when the asked side has no space.
+		const up = placement === 'above' ? b.top - 6 >= h || b.top > vh - b.bottom : vh - b.bottom - 6 < h && b.top > vh - b.bottom;
+		flip = up !== (placement === 'above');
+		let left = align === 'start' ? b.left : b.right - w;
+		left = Math.max(8, Math.min(left, vw - 8 - w));
+		pos = up ? `left: ${left}px; bottom: ${vh - b.top + 6}px;` : `left: ${left}px; top: ${b.bottom + 6}px;`;
+	}
 	$effect(() => {
 		if (!open || !panel) return;
-		nudge = 0;
-		const r = panel.getBoundingClientRect();
-		const w = document.documentElement.clientWidth;
-		if (r.right > w - 8) nudge = Math.max(8 - r.left, w - 8 - r.right);
-		else if (r.left < 8) nudge = 8 - r.left;
+		place();
+		const again = () => place();
+		window.addEventListener('scroll', again, true);
+		window.addEventListener('resize', again);
+		return () => {
+			window.removeEventListener('scroll', again, true);
+			window.removeEventListener('resize', again);
+		};
 	});
 
-	const origin = $derived(`${placement === 'below' ? 'top' : 'bottom'} ${align === 'start' ? 'left' : 'right'}`);
+	const origin = $derived(`${(placement === 'below') !== flip ? 'top' : 'bottom'} ${align === 'start' ? 'left' : 'right'}`);
 	function popIn(node: Element) {
 		return scale(node, { start: 0.96, opacity: 0, duration: reducedMotion() ? 0 : 240, easing: backOut });
 	}
@@ -123,10 +143,10 @@
 		<div
 			bind:this={panel}
 			{id}
-			class="panel {placement} {align}"
+			class="panel"
 			role={panelRole === 'none' ? undefined : panelRole}
 			aria-label={label}
-			style="width: {width}px; translate: {nudge}px 0; transform-origin: {origin}"
+			style="width: {width}px; {pos} transform-origin: {origin}"
 			in:popIn
 			out:popOut
 		>
@@ -146,13 +166,9 @@
 	.row { width: 100%; min-height: 44px; padding: 6px 8px; border-radius: var(--r-btn); text-align: left; }
 	.row:hover, .row[aria-expanded='true'] { background: var(--surface-3); }
 	.panel {
-		position: absolute; z-index: 70; max-width: calc(100vw - 24px); max-height: min(70dvh, 480px); overflow: auto;
+		position: fixed; z-index: 70; max-width: calc(100vw - 24px); max-height: min(70dvh, 480px); overflow: auto;
 		padding: 6px; border-radius: 14px; background: var(--surface-1); color: var(--text);
 		box-shadow: var(--shadow-lift), 0 0 0 1px var(--line);
 	}
-	.below { top: calc(100% + 6px); }
-	.above { bottom: calc(100% + 6px); }
-	.start { left: 0; }
-	.end { right: 0; }
 	@media (pointer: coarse) { .icon { width: 44px; height: 44px; } .button { min-height: 44px; } }
 </style>

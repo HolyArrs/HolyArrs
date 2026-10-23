@@ -46,7 +46,7 @@
 		const list = entries(panel);
 		const first = startAtEnd ? list[list.length - 1] : (list.find((e) => e.getAttribute('aria-checked') === 'true') ?? list[0]);
 		startAtEnd = false;
-		first?.focus();
+		first?.focus({ preventScroll: true });
 	}
 	function triggerKey(e: KeyboardEvent) {
 		if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
@@ -54,7 +54,7 @@
 		const panel = document.getElementById((e.currentTarget as HTMLElement).getAttribute('aria-controls') ?? '');
 		if (open && panel) {
 			const list = entries(panel);
-			(e.key === 'ArrowUp' ? list[list.length - 1] : list[0])?.focus();
+			(e.key === 'ArrowUp' ? list[list.length - 1] : list[0])?.focus({ preventScroll: true });
 			return;
 		}
 		startAtEnd = e.key === 'ArrowUp';
@@ -72,7 +72,7 @@
 		else if (e.key === 'Tab') open = false;
 		if (to >= 0) {
 			e.preventDefault();
-			list[to]?.focus();
+			list[to]?.focus({ preventScroll: true });
 		}
 	}
 	function pick(item: Extract<MenuItem, { label: string; kind?: 'item' }>, close: () => void) {
