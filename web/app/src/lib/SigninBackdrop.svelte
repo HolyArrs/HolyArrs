@@ -198,6 +198,16 @@ void main() {
 	o = vec4(col, 1.0);
 }`;
 
+	/** Shows the full-size first picture once it is decoded (a crossfade over the lighter one). */
+	function hires(img: HTMLImageElement) {
+		let gone = false;
+		img.decode().then(
+			() => !gone && img.classList.add('in'),
+			() => {}
+		);
+		return { destroy: () => void (gone = true) };
+	}
+
 	function loadImage(src: string): Promise<HTMLImageElement> {
 		const img = new Image();
 		img.crossOrigin = 'anonymous'; // WebGL only takes CORS-clean pictures (same-origin here)
@@ -293,8 +303,8 @@ void main() {
 			// The Ken Burns box at scale 1 (offsetWidth ignores the transform).
 			size.w = node.offsetWidth || innerWidth;
 			size.h = node.offsetHeight || innerHeight;
-			// Blocks are 6 px or more, so the canvas draws at 3 CSS px a pixel (9x fewer fragments) and is scaled up hard-edged.
-			size.dpr = 3;
+			// The mosaic draws at the device pixel ratio (capped at 2 for speed), so its block edges are crisp.
+			size.dpr = 1 / Math.min(2, Math.max(1, window.devicePixelRatio || 1));
 			canvas!.width = Math.ceil(size.w / size.dpr);
 			canvas!.height = Math.ceil(size.h / size.dpr);
 			canvas!.style.width = canvas!.width * size.dpr + 'px';
@@ -599,7 +609,8 @@ void main() {
 				if (seed) {
 					const key = ++n;
 					layers = [{ ...list[at], logo: null, key, first, seed, origin: -1 }];
-					const got = await prepareSlide(list[at], ready);
+					// The lighter size first; the full one crossfades in once decoded.
+					const got = await prepareSlide({ ...list[at], pick: { ...p, url: p.low ?? p.url } }, ready);
 					if (gone) break;
 					if (!got) {
 						layers = [];
@@ -613,11 +624,17 @@ void main() {
 					if (gone) break;
 					// Never the same edge or corner twice in a row; no mosaic with reduced motion.
 					origin = still ? -1 : nextOrigin(origin);
-					layers = [...layers.slice(-1), { ...got, key: ++n, first, seed: null, origin }];
+					layers = [...layers.slice(-1), { ...got, pick: { ...got.pick, low: undefined }, key: ++n, first, seed: null, origin }];
 				}
 				// Next visit: start from the picture after this one, so the page turns over.
 				const after = list[(at + 1) % list.length];
 				writeCache(shots, after.pick.url);
+				// The next picture loads at full size well before its turn.
+				if (list.length > 1) {
+					setTimeout(() => {
+						if (!gone) void ready(after.pick.url);
+					}, CYCLE_MS / 2);
+				}
 				if (first && thumb?.url !== after.pick.url) {
 					// Its thumbnail is made after the reveal, off the busy first seconds.
 					setTimeout(() => {
@@ -732,13 +749,26 @@ void main() {
 			<div class="kb" style:--kb-dur="{CYCLE_MS + 1600}ms" use:slide={l}>
 				<img
 					class="pic"
-					src={l.pick.url}
+					src={l.first && l.pick.low ? l.pick.low : l.pick.url}
 					alt=""
 					decoding="async"
+					fetchpriority={l.first ? 'high' : 'auto'}
 					data-kind={l.pick.kind}
 					data-need={l.pick.need}
 					style:object-position={l.pick.position}
 				/>
+				{#if l.first && l.pick.low}
+					<img
+						class="pic hi"
+						src={l.pick.url}
+						alt=""
+						decoding="async"
+						fetchpriority="high"
+						data-hi
+						style:object-position={l.pick.position}
+						use:hires
+					/>
+				{/if}
 				{#if l.first || l.origin >= 0}
 					<canvas class="mz" data-pos={l.pick.position}></canvas>
 				{/if}
@@ -803,6 +833,9 @@ void main() {
 	.layer.first .kb:not(:global(.mosaic)):not(:global(.sharp)) { animation-play-state: paused; }
 	/* Until the mosaic has its first frame, nothing sharp peeks through. */
 	.kb:not(:global(.mosaic)):not(:global(.sharp)) .pic { opacity: 0; }
+	/* The full-size picture over the lighter one: a crossfade once decoded, no jump. */
+	.hi { opacity: 0; transition: opacity 0.9s ease-in-out; }
+	.kb .hi:global(.in) { opacity: 1; }
 	.kb:global(.sharp) .mz { display: none; }
 	/* A change: the old picture stays sharp underneath until the wave is done;
 	   the new one is only the canvas's blocks until then (no cut). */

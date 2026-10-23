@@ -10,6 +10,8 @@ export type Screen = { vw: number; vh: number; dpr: number };
 export type ArtPick = {
 	/** The address to load (one of the served sizes). */
 	url: string;
+	/** A lighter size shown first while url loads (the first slide), then crossfaded away. */
+	low?: string;
 	/** Native width of the chosen size, in pixels. */
 	width: number;
 	/** Pixels the picture covers on this screen (width), at this DPR. */
@@ -25,7 +27,10 @@ export const TALL = 0.8;
  * when nothing reaches the full need (ultrawide 5120 px screens). */
 export const ULTRAWIDE_FLOOR = 3840;
 
-const SIZES: Record<ArtPick['kind'], number[]> = { backdrop: [780, 1280], poster: [500, 780] };
+/** The slow zoom's end scale: the picture must stay sharp at it. */
+export const ZOOM = 1.06;
+/** Served sizes per kind; 0 is the original (backdrops only, up to 3840 px). */
+const SIZES: Record<ArtPick['kind'], number[]> = { backdrop: [780, 1280, 0], poster: [500, 780] };
 
 /** Device pixels a cover-fit picture of w x h spans across, on the screen. */
 export function coverNeed(img: { w: number; h: number }, s: Screen): number {
@@ -39,11 +44,12 @@ export function sized(url: string, size: number | 'original'): string {
 }
 
 function pickSize(img: ArtImage, kind: ArtPick['kind'], need: number): { url: string; width: number } {
-	// The smallest served size that covers the screen, else the largest
-	// (originals, up to 3840 px, are never loaded on this page).
-	const fits = SIZES[kind].filter((w) => w <= img.w);
-	const w = fits.find((x) => x >= need) ?? fits.at(-1) ?? SIZES[kind][0];
-	return { url: sized(img.url, w), width: w };
+	// The smallest served size that covers the screen at the zoom's end,
+	// else the largest (the original, for backdrops).
+	const fits = SIZES[kind].map((w) => w || img.w).filter((w) => w <= img.w);
+	const w = fits.find((x) => x >= Math.ceil(need * ZOOM)) ?? fits.at(-1) ?? SIZES[kind][0];
+	const original = kind === 'backdrop' && w === img.w && !SIZES[kind].includes(w);
+	return { url: sized(img.url, original ? 'original' : w), width: w };
 }
 
 /**
@@ -63,7 +69,8 @@ export function pickArt(shot: ArtShot, s: Screen, floor = 0): ArtPick | null {
 		const enough = floor > 0 ? Math.min(need, floor) : need;
 		if (img.w < enough) continue;
 		const { url, width } = pickSize(img, kind, need);
-		return { url, width, need, kind, position: kind === 'poster' ? '50% 20%' : '50% 30%' };
+		const low = width > 1280 && kind === 'backdrop' ? sized(img.url, 1280) : undefined;
+		return { url, low, width, need, kind, position: kind === 'poster' ? '50% 20%' : '50% 30%' };
 	}
 	return null;
 }

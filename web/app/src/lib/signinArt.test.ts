@@ -27,13 +27,27 @@ describe('sized', () => {
 });
 
 describe('pickArt', () => {
-	it('1920x1080 at DPR 1 takes w1280, never the original', () => {
+	it('1920x1080 at DPR 1 takes the original, with w1280 first', () => {
 		const p = pickArt(shot(3840), { vw: 1920, vh: 1080, dpr: 1 })!;
-		expect(p.url).toBe('https://image.tmdb.org/t/p/w1280/b.jpg');
-		expect(p.width).toBe(1280);
+		expect(p.url).toBe(B + 'b.jpg');
+		expect(p.width).toBe(3840);
+		expect(p.low).toBe('https://image.tmdb.org/t/p/w1280/b.jpg');
+	});
+	it('1440x900 at DPR 2 takes the original', () => {
+		expect(pickArt(shot(3840), { vw: 1440, vh: 900, dpr: 2 })!.url).toBe(B + 'b.jpg');
+	});
+	it('390 px wide at DPR 3 (1170 px) takes w1280', () => {
+		const p = pickArt(shot(3840), { vw: 390, vh: 200, dpr: 3 })!;
+		expect(p.url).toContain('/w1280/');
+		expect(p.low).toBeUndefined();
+	});
+	it('the size covers the screen at the end of the slow zoom', () => {
+		// 1200 * 1.06 = 1272: w1280 still covers it; 1220 * 1.06 does not.
+		expect(pickArt(shot(3840), { vw: 1200, vh: 600, dpr: 1 })!.width).toBe(1280);
+		expect(pickArt(shot(3840), { vw: 1220, vh: 600, dpr: 1 })!.width).toBe(3840);
 	});
 	it('a small DPR 1 window takes a TMDB size that still covers it', () => {
-		const p = pickArt(shot(3840), { vw: 1200, vh: 700, dpr: 1 })!;
+		const p = pickArt(shot(3840), { vw: 1100, vh: 600, dpr: 1 })!;
 		expect(p.url).toContain('/w1280/');
 		expect(p.width).toBeGreaterThanOrEqual(p.need);
 	});
@@ -41,12 +55,12 @@ describe('pickArt', () => {
 		const s = { vw: 3440, vh: 1440, dpr: 1 };
 		expect(pickArt(shot(1920), s)).toBeNull();
 		const p = pickArt(shot(3840), s)!;
-		expect(p.url).toContain('/w1280/');
+		expect(p.url).toBe(B + 'b.jpg');
 	});
 	it('5120x1440 takes a 5120 backdrop, and only falls back to 3840 when none is sharp enough', () => {
 		const s = { vw: 5120, vh: 1440, dpr: 1 };
 		expect(pickArt(shot(3840), s)).toBeNull();
-		expect(pickArt(shot(5120), s)!.width).toBe(1280);
+		expect(pickArt(shot(5120), s)!.width).toBe(5120);
 		const list = playlist([shot(1920), shot(3840)], s);
 		expect(list).toHaveLength(1);
 		expect(list[0].shot.backdrop.w).toBe(3840);
