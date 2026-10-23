@@ -137,29 +137,37 @@ export function providerTiles(ways: readonly Way[]): ProviderTile[] {
 	return on.map((way) => ({ way, name: NAMES[way], label: on.length > 1 ? NAMES[way] : `Continue with ${NAMES[way]}` }));
 }
 
-/** Mosaic widths (in blocks across) the first wallpaper resolves through, coarse to fine. */
-export const MOSAIC_LEVELS = [24, 34, 48, 68, 96, 136, 192, 272] as const;
-/** Width of the kept thumbnail: levels up to this need no full picture. */
+/** Width of the kept thumbnail (the reveal's detail source until the full picture is in). */
 export const THUMB_W = 64;
-/** The reveal: a short still hold on the coarse frame (the app boots under it), then a long ease-out to sharp. */
+/** Blocks across the first-frame mosaic (the 24 px thumbnail app.html paints). */
+export const SEED_COLS = 24;
+/** Square block sizes (CSS px) the wave steps through after the first-frame mosaic, then sharp. 36 is the Search sweep's cell. */
+export const WAVE_BLOCKS = [36, 12, 6] as const;
+/** A short still hold on the first frame (the app boots under it). */
 export const REVEAL_HOLD_MS = 320;
-export const REVEAL_MS = 2000;
+/** The ring's run from the panel centre to the farthest screen corner. */
+export const WAVE_MS = 1800;
+/** How wide the ring's sharpening edge is, as a share of that run. */
+export const WAVE_BAND = 0.3;
+/** Each 36 px cell starts up to this much early or late, so the ring's edge is ragged. */
+export const WAVE_JITTER_MS = 75;
+/** The wave is sharp everywhere from here on. */
+export const WAVE_DONE_MS = WAVE_MS + WAVE_JITTER_MS;
 
-/** Cubic ease-out: quick first refinements, a long settle into sharp. */
+/** Cubic ease-out: a fast start, a long settle. */
 export function easeOut(p: number): number {
 	const c = Math.min(1, Math.max(0, p));
 	return 1 - Math.pow(1 - c, 3);
 }
 
 /**
- * Where the reveal is at ms after it started: the level shown underneath
- * (lo), the finer one over it (hi, null once the next step is the sharp
- * picture) and how far that top one has faded in (mix 0..1). done once sharp.
+ * The level of one block at ms into the wave: 0 the first-frame mosaic,
+ * 1..3 the WAVE_BLOCKS sizes, 4 sharp. f is the block's distance from the
+ * panel centre (0) to the farthest corner (1); jitter its offset in ms.
+ * The shader in SigninBackdrop.svelte computes the same.
  */
-export function revealAt(ms: number): { lo: number; hi: number | null; mix: number; done: boolean } {
-	const steps = MOSAIC_LEVELS.length; // the last step fades the last level away
-	const x = easeOut((ms - REVEAL_HOLD_MS) / REVEAL_MS) * steps;
-	if (x >= steps) return { lo: steps - 1, hi: null, mix: 1, done: true };
-	const lo = Math.floor(x);
-	return { lo, hi: lo + 1 < steps ? lo + 1 : null, mix: x - lo, done: false };
+export function waveLevel(ms: number, f: number, jitter = 0): number {
+	const p = easeOut((ms + jitter) / WAVE_MS) * (1 + WAVE_BAND);
+	const s = Math.min(1, Math.max(0, (p - f) / WAVE_BAND));
+	return s >= 1 ? 4 : Math.floor(s * 4);
 }

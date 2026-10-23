@@ -2,25 +2,29 @@
 	// The sign-in page's cinematic backdrop: one full-bleed picture at a
 	// time, a slow Ken Burns move and a crossfade every 12 s.
 	//
-	// The first picture never comes up from black. It starts as a coarse
-	// mosaic of itself and resolves to sharp over about 2.3 s on an ease-out:
-	// two small canvases (24 to 272 blocks across) scaled up with
-	// image-rendering: pixelated, the finer level crossfading over the coarser
-	// one, and at the end the last level fading off the sharp picture. Per
-	// frame only opacity changes; a canvas is redrawn (a few hundred pixels)
-	// only when its level steps. A repeat visit seeds the mosaic from a 64 px
-	// thumbnail kept on this device, and app.html paints that thumbnail before
-	// any script, so the very first frame is the photo. Each picture is chosen
-	// for this screen (size x DPR) so it is never blurry.
+	// The first picture never comes up from black. Frame 0 is a coarse mosaic
+	// of it (24 blocks across), painted by app.html from a thumbnail kept on
+	// this device or put in the page by the server. It then resolves in a
+	// radial wave from the sign-in panel outward: square blocks (36, 12 and
+	// 6 px, the Search sweep's pixel language) sharpen ring by ring over about
+	// 1.8 s on an ease-out, each 36 px cell a little early or late so the ring
+	// is ragged. One WebGL canvas draws it in a single pass per frame; where
+	// the wave is done the canvas is clear and the real picture shows. Each
+	// picture is chosen for this screen (size x DPR) so it is never blurry.
 	import { onMount } from 'svelte';
 	import { api } from '#lib/api.ts';
 	import {
-		MOSAIC_LEVELS,
+		REVEAL_HOLD_MS,
+		SEED_COLS,
 		THUMB_W,
+		WAVE_BAND,
+		WAVE_BLOCKS,
+		WAVE_DONE_MS,
+		WAVE_JITTER_MS,
+		WAVE_MS,
 		pickArt,
 		playlist,
 		prepareSlide,
-		revealAt,
 		sized,
 		type ArtPick,
 		type ArtShot
@@ -30,7 +34,9 @@
 	const CACHE = 'holyarrs-signin-art';
 	const SEED = 'holyarrs-signin-seed'; // the style element app.html adds for the first frame
 
-	type Slide = { pick: ArtPick; shot: ArtShot; logo: string | null; key: number; first: boolean; seed: string | null };
+	/** The first slide's mosaic sources: the 24 px frame-0 thumbnail when kept, and a small copy for detail until the full picture is in. */
+	type Seed = { t24: string | null; small: string };
+	type Slide = { pick: ArtPick; shot: ArtShot; logo: string | null; key: number; first: boolean; seed: Seed | null };
 	type Thumb = { url: string; t24: string; t64: string; pos: string };
 	let layers = $state<Slide[]>([]);
 	let still = $state(false);
@@ -101,94 +107,215 @@
 		document.documentElement.classList.remove('sa-seeded');
 	}
 
-	// The mosaic reveal on the first slide. node holds the sharp picture and
-	// the two canvases. Levels finer than the thumbnail wait for the full
-	// picture: the clock holds rather than stretching the thumbnail.
-	function reveal(node: HTMLElement, seed: string | null) {
+	// The radial wave, in one fragment shader. Per pixel: its 36 px cell
+	// (jitter), its distance from the panel centre, so its level; level 0
+	// samples the 24-across frame-0 grid, levels 1-3 square screen blocks
+	// (mipmapped, so a block is the average of what it covers), level 4 is
+	// clear and the sharp <img> underneath shows. waveLevel in signinArt.ts is
+	// the same maths, unit tested.
+	const VERT = `#version 300 es
+in vec2 a;
+void main() { gl_Position = vec4(a, 0.0, 1.0); }`;
+	const FRAG = `#version 300 es
+precision highp float;
+uniform sampler2D seedTex;
+uniform sampler2D detTex;
+uniform vec2 view;
+uniform vec2 seedSize;
+uniform vec2 detSize;
+uniform vec2 pos;
+uniform vec2 centre;
+uniform float maxD;
+uniform float dpr;
+uniform float t;
+out vec4 o;
+const float WAVE = ${WAVE_MS.toFixed(1)};
+const float BAND = ${WAVE_BAND.toFixed(3)};
+const float JIT = ${WAVE_JITTER_MS.toFixed(1)};
+const float COLS = ${SEED_COLS.toFixed(1)};
+vec2 coverOrigin(vec2 s, out float k) { k = max(view.x / s.x, view.y / s.y); return (view - s * k) * pos; }
+float hash(vec2 c) { return fract(sin(dot(c, vec2(127.1, 311.7))) * 43758.5453); }
+vec3 block(vec2 p, float b) {
+	vec2 c = (floor(p / b) + 0.5) * b;
+	float k; vec2 org = coverOrigin(detSize, k);
+	vec2 uv = (c - org) / (detSize * k);
+	return textureLod(detTex, uv, max(0.0, log2(b * dpr / (k * dpr)))).rgb;
+}
+void main() {
+	vec2 p = vec2(gl_FragCoord.x, view.y * dpr - gl_FragCoord.y) / dpr;
+	vec2 cell = floor(p / ${WAVE_BLOCKS[0].toFixed(1)});
+	float j = (hash(cell) * 2.0 - 1.0) * JIT;
+	float f = distance((cell + 0.5) * ${WAVE_BLOCKS[0].toFixed(1)}, centre) / maxD;
+	float e = clamp((t + j) / WAVE, 0.0, 1.0);
+	float pr = (1.0 - pow(1.0 - e, 3.0)) * (1.0 + BAND);
+	float s = clamp((pr - f) / BAND, 0.0, 1.0);
+	if (s >= 1.0) { o = vec4(0.0); return; }
+	float lv = floor(s * 4.0);
+	vec3 col;
+	if (lv < 1.0) {
+		// The frame-0 grid: COLS blocks across the picture, cover-fit like app.html's background.
+		float k; vec2 org = coverOrigin(seedSize, k);
+		vec2 g = vec2(COLS, COLS * seedSize.y / seedSize.x);
+		vec2 uv = (floor((p - org) / (seedSize * k) * g) + 0.5) / g;
+		col = textureLod(seedTex, uv, max(0.0, log2(seedSize.x / COLS))).rgb;
+	} else if (lv < 2.0) col = block(p, ${WAVE_BLOCKS[0].toFixed(1)});
+	else if (lv < 3.0) col = block(p, ${WAVE_BLOCKS[1].toFixed(1)});
+	else col = block(p, ${WAVE_BLOCKS[2].toFixed(1)});
+	o = vec4(col, 1.0);
+}`;
+
+	function loadImage(src: string): Promise<HTMLImageElement> {
+		const img = new Image();
+		img.decoding = 'async';
+		img.src = src;
+		return img.decode().then(() => img);
+	}
+
+	function reveal(node: HTMLElement, seed: Seed | null) {
 		const pic = node.querySelector<HTMLImageElement>('img.pic');
-		const [lo, hi] = Array.from(node.querySelectorAll<HTMLCanvasElement>('canvas.mz'));
-		if (!pic || !lo || !hi || still) {
+		const canvas = node.querySelector<HTMLCanvasElement>('canvas.mz');
+		const gl = canvas?.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: false });
+		const sharp = () => {
+			node.classList.remove('mosaic');
 			node.classList.add('sharp');
-			if (still) pic?.decode().then(unseed, unseed);
+			unseed();
+		};
+		if (!pic || !canvas || !gl || !seed || still) {
+			// No WebGL or reduced motion: sharp as soon as the picture is decoded.
+			if (pic) pic.decode().then(sharp, sharp);
+			else sharp();
 			return {};
 		}
-		let src: CanvasImageSource | null = null;
-		let srcW = 0;
-		let srcH = 0;
-		let full = false;
+		const prog = gl.createProgram()!;
+		for (const [type, src] of [[gl.VERTEX_SHADER, VERT], [gl.FRAGMENT_SHADER, FRAG]] as const) {
+			const sh = gl.createShader(type)!;
+			gl.shaderSource(sh, src);
+			gl.compileShader(sh);
+			gl.attachShader(prog, sh);
+		}
+		gl.linkProgram(prog);
+		if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+			pic.decode().then(sharp, sharp);
+			return {};
+		}
+		gl.useProgram(prog);
+		const buf = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+		const loc = gl.getAttribLocation(prog, 'a');
+		gl.enableVertexAttribArray(loc);
+		gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+		const u = (n: string) => gl.getUniformLocation(prog, n);
+		gl.uniform1i(u('seedTex'), 0);
+		gl.uniform1i(u('detTex'), 1);
+		const pos = (canvas.dataset.pos ?? '50% 50%').split(/\s+/).map((v) => parseFloat(v) / 100);
+		gl.uniform2f(u('pos'), pos[0] ?? 0.5, pos[1] ?? 0.5);
+
+		const size = { w: 0, h: 0, dpr: 1 };
+		function fit() {
+			// The Ken Burns box at scale 1 (offsetWidth ignores the transform).
+			size.w = node.offsetWidth || innerWidth;
+			size.h = node.offsetHeight || innerHeight;
+			size.dpr = Math.min(2, devicePixelRatio || 1);
+			canvas!.width = Math.round(size.w * size.dpr);
+			canvas!.height = Math.round(size.h * size.dpr);
+			gl!.viewport(0, 0, canvas!.width, canvas!.height);
+			gl!.uniform2f(u('view'), size.w, size.h);
+			gl!.uniform1f(u('dpr'), size.dpr);
+			// The ring starts at the panel's centre and ends at the farthest corner.
+			const r = document.querySelector('[data-signin-panel]')?.getBoundingClientRect();
+			const box = node.getBoundingClientRect();
+			const sx = size.w / (box.width || size.w);
+			const cx = r ? (r.left + r.width / 2 - box.left) * sx : size.w / 2;
+			const cy = r ? (r.top + r.height / 2 - box.top) * sx : size.h / 2;
+			gl!.uniform2f(u('centre'), cx, cy);
+			gl!.uniform1f(u('maxD'), Math.max(Math.hypot(cx, cy), Math.hypot(size.w - cx, cy), Math.hypot(cx, size.h - cy), Math.hypot(size.w - cx, size.h - cy)));
+		}
+		function texture(unit: number, src: TexImageSource, w: number, h: number, mips: boolean) {
+			const tx = gl!.createTexture();
+			gl!.activeTexture(gl!.TEXTURE0 + unit);
+			gl!.bindTexture(gl!.TEXTURE_2D, tx);
+			gl!.pixelStorei(gl!.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+			gl!.texImage2D(gl!.TEXTURE_2D, 0, gl!.RGBA, gl!.RGBA, gl!.UNSIGNED_BYTE, src);
+			gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_S, gl!.CLAMP_TO_EDGE);
+			gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_T, gl!.CLAMP_TO_EDGE);
+			gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MAG_FILTER, gl!.NEAREST);
+			if (mips) gl!.generateMipmap(gl!.TEXTURE_2D);
+			gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MIN_FILTER, mips ? gl!.LINEAR_MIPMAP_LINEAR : gl!.NEAREST);
+			return { w, h };
+		}
+
 		let stop = false;
-		let gen = 0; // bumps when the source gets better, so the canvases redraw
-		const drawn = new WeakMap<HTMLCanvasElement, string>();
-		function draw(c: HTMLCanvasElement, level: number) {
-			if (!src) return;
-			const tag = `${level}:${gen}`;
-			if (drawn.get(c) === tag) return;
-			drawn.set(c, tag);
-			const w = Math.min(level, srcW);
-			const h = Math.max(1, Math.round((w * srcH) / srcW));
-			if (c.width !== w) c.width = w;
-			if (c.height !== h) c.height = h;
-			const g = c.getContext('2d');
-			if (!g) return;
-			g.imageSmoothingEnabled = true;
-			g.imageSmoothingQuality = 'high';
-			g.drawImage(src, 0, 0, w, h);
-		}
-		function use(img: CanvasImageSource, w: number, h: number, isFull: boolean) {
-			if (stop || full || !w) return;
-			src = img;
-			srcW = w;
-			srcH = h;
-			full = isFull;
-			gen++;
-		}
-		if (seed) {
-			const t = new Image();
-			t.src = seed;
-			t.decode().then(() => use(t, t.naturalWidth, t.naturalHeight, false), () => {});
-		}
-		// Shrinking a 4K original inside a frame costs ~100 ms; the browser
-		// makes a 2x copy of the finest level off the main thread instead.
-		const top = MOSAIC_LEVELS[MOSAIC_LEVELS.length - 1] * 2;
+		let seedReady = false;
+		let detReady = false;
+		let full = false;
+		// Frame 0's source: the kept 24 px thumbnail (drawn exactly as app.html
+		// painted it), else the small copy averaged down to the same grid.
+		loadImage(seed.t24 ?? seed.small)
+			.then((img) => {
+				if (stop) return;
+				const s = texture(0, img, img.naturalWidth, img.naturalHeight, !seed.t24);
+				gl!.uniform2f(u('seedSize'), s.w, s.h);
+				seedReady = true;
+				if (!detReady) {
+					const d = texture(1, img, img.naturalWidth, img.naturalHeight, !seed.t24);
+					gl!.uniform2f(u('detSize'), d.w, d.h);
+				}
+			})
+			.catch(() => {});
+		// Detail until the full picture is in: the 64 px thumbnail or TMDB's small size.
+		if (seed.t24)
+			loadImage(seed.small)
+				.then((img) => {
+					if (stop || full) return;
+					const d = texture(1, img, img.naturalWidth, img.naturalHeight, true);
+					gl!.uniform2f(u('detSize'), d.w, d.h);
+					detReady = true;
+				})
+				.catch(() => {});
+		// The full picture, shrunk off the main thread so a 4K original never costs a frame.
 		pic
 			.decode()
-			.then(() => createImageBitmap(pic, { resizeWidth: Math.min(top, pic.naturalWidth), resizeQuality: 'high' }))
-			.then(
-				(b) => use(b, b.width, b.height, true),
-				() => use(pic, pic.naturalWidth, pic.naturalHeight, true)
-			);
+			.then(() => createImageBitmap(pic, { resizeWidth: Math.min(2048, pic.naturalWidth), resizeQuality: 'high' }))
+			.then((b) => {
+				if (stop) return;
+				const d = texture(1, b, b.width, b.height, true);
+				gl!.uniform2f(u('detSize'), d.w, d.h);
+				detReady = full = true;
+			})
+			.catch(() => {
+				if (!stop) sharp();
+			});
 
-		let clock = 0;
-		let last = 0;
+		fit();
+		let start = 0; // when the wave started (0: not yet)
+		const t0 = performance.now();
 		let raf = 0;
 		function frame(now: number) {
 			if (stop) return;
-			const dt = last ? Math.min(now - last, 34) : 0;
-			last = now;
-			if (src) {
-				// Hold when the next step needs more pixels than we have yet.
-				const peek = revealAt(clock + dt);
-				const needs = peek.hi === null ? Infinity : MOSAIC_LEVELS[peek.hi];
-				if (full || needs <= srcW) clock += dt;
-				const r = revealAt(clock);
-				draw(lo, MOSAIC_LEVELS[r.lo]);
-				if (r.hi !== null) draw(hi, MOSAIC_LEVELS[r.hi]);
-				lo.style.opacity = r.hi === null ? String(1 - r.mix) : '1';
-				hi.style.opacity = r.hi === null ? '0' : String(r.mix);
+			if (seedReady) {
+				// The wave runs once the full picture is in and the still hold is over.
+				if (!start && full && now - t0 >= REVEAL_HOLD_MS) start = now;
+				const t = start ? now - start : 0;
+				gl!.uniform1f(u('t'), t);
+				gl!.drawArrays(gl!.TRIANGLES, 0, 3);
 				if (!node.classList.contains('mosaic')) node.classList.add('mosaic');
-				if (r.done) {
-					node.classList.replace('mosaic', 'sharp');
-					unseed();
+				if (start && t >= WAVE_DONE_MS) {
+					sharp();
 					return;
 				}
 			}
 			raf = requestAnimationFrame(frame);
 		}
 		raf = requestAnimationFrame(frame);
+		const onResize = () => fit();
+		window.addEventListener('resize', onResize);
 		return {
 			destroy() {
 				stop = true;
 				cancelAnimationFrame(raf);
+				window.removeEventListener('resize', onResize);
+				gl.getExtension('WEBGL_lose_context')?.loseContext();
 			}
 		};
 	}
@@ -226,7 +353,8 @@
 				// or on a first visit from TMDB's small size (a few KB, loads well
 				// before the full picture). Display only, so no CORS is needed.
 				const p = list[at].pick;
-				const seed = !first ? null : thumb?.url === p.url ? thumb.t64 : sized(p.url, p.kind === 'poster' ? 342 : 300);
+				const kept = thumb?.url === p.url ? thumb : null;
+				const seed: Seed | null = !first ? null : { t24: kept?.t24 ?? null, small: kept?.t64 ?? sized(p.url, p.kind === 'poster' ? 342 : 300) };
 				if (seed) {
 					const key = ++n;
 					layers = [{ ...list[at], logo: null, key, first, seed }];
@@ -346,8 +474,7 @@
 					style:object-position={l.pick.position}
 				/>
 				{#if l.first}
-					<canvas class="mz" style:object-position={l.pick.position}></canvas>
-					<canvas class="mz" style:object-position={l.pick.position}></canvas>
+					<canvas class="mz" data-pos={l.pick.position}></canvas>
 				{/if}
 			</div>
 		</div>
@@ -399,11 +526,11 @@
 		object-fit: cover;
 	}
 	.mz {
-		image-rendering: pixelated;
+		object-fit: fill;
 		opacity: 0;
-		will-change: opacity;
 		pointer-events: none;
 	}
+	.kb:global(.mosaic) .mz { opacity: 1; }
 	/* Until the mosaic has its first frame, nothing sharp peeks through. */
 	.kb:not(:global(.mosaic)):not(:global(.sharp)) .pic { opacity: 0; }
 	.kb:global(.sharp) .mz { display: none; }

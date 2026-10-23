@@ -138,26 +138,29 @@ describe('providerTiles', () => {
 	});
 });
 
-import { revealAt, easeOut, MOSAIC_LEVELS, REVEAL_HOLD_MS, REVEAL_MS } from './signinArt.ts';
-describe('mosaic reveal', () => {
-	it('holds the coarsest level first', () => {
-		expect(revealAt(0)).toEqual({ lo: 0, hi: 1, mix: 0, done: false });
-		expect(revealAt(REVEAL_HOLD_MS)).toEqual({ lo: 0, hi: 1, mix: 0, done: false });
+import { easeOut, waveLevel, WAVE_DONE_MS, WAVE_JITTER_MS, WAVE_MS } from './signinArt.ts';
+describe('radial wave', () => {
+	it('starts as the first-frame mosaic everywhere', () => {
+		for (const f of [0, 0.5, 1]) expect(waveLevel(0, f, -WAVE_JITTER_MS)).toBe(0);
 	});
-	it('only ever moves towards sharp', () => {
-		let last = -1;
-		for (let t = 0; t <= REVEAL_HOLD_MS + REVEAL_MS; t += 8) {
-			const r = revealAt(t);
-			const v = r.lo + r.mix;
-			expect(v).toBeGreaterThanOrEqual(last);
-			last = v;
+	it('sharpens near the panel first, then rings outward', () => {
+		const mid = WAVE_MS * 0.3;
+		expect(waveLevel(mid, 0)).toBeGreaterThan(waveLevel(mid, 0.6));
+		expect(waveLevel(mid, 0.6)).toBeGreaterThanOrEqual(waveLevel(mid, 1));
+	});
+	it('only ever moves towards sharp, one size at a time', () => {
+		for (const f of [0, 0.3, 0.7, 1]) {
+			let last = 0;
+			for (let t = 0; t <= WAVE_DONE_MS; t += 4) {
+				const l = waveLevel(t, f);
+				expect(l - last).toBeGreaterThanOrEqual(0);
+				expect(l - last).toBeLessThanOrEqual(1);
+				last = l;
+			}
 		}
 	});
-	it('ends sharp, with the last level fading out', () => {
-		expect(revealAt(REVEAL_HOLD_MS + REVEAL_MS).done).toBe(true);
-		const near = revealAt(REVEAL_HOLD_MS + REVEAL_MS - 400);
-		expect(near.lo).toBe(MOSAIC_LEVELS.length - 1);
-		expect(near.hi).toBeNull();
+	it('is sharp everywhere once done, jitter included', () => {
+		for (const f of [0, 0.5, 1]) for (const j of [-WAVE_JITTER_MS, 0, WAVE_JITTER_MS]) expect(waveLevel(WAVE_DONE_MS, f, j)).toBe(4);
 	});
 	it('eases out', () => {
 		expect(easeOut(0.5)).toBeGreaterThan(0.8);

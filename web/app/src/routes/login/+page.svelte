@@ -313,7 +313,7 @@
 <main class="wrap" class:leaving data-theme="dark">
 	<SigninBackdrop />
 	<div class="cover" bind:this={coverEl} aria-hidden="true"></div>
-	<div class="panel" class:intro bind:this={panelEl}>
+	<div class="panel" class:intro bind:this={panelEl} data-signin-panel>
 		<div class="brand">
 			<img src={to('/brand/mark-color-on-dark.svg')} alt="" width="30" height="30" />
 			<span>HolyArrs</span>
