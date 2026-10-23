@@ -10,6 +10,7 @@
 	import { session, type SignInResult } from '#lib/session.svelte.ts';
 	import { safeNext } from '#lib/next.ts';
 	import SigninBackdrop from '#lib/SigninBackdrop.svelte';
+	import SigninPortals from '#lib/SigninPortals.svelte';
 	import { SIGNIN_GL_EVENT, providerTiles, type Way } from '#lib/signinArt.ts';
 	import { pixelTrail, pixelIn, blockDissolve, siteCell } from '#lib/pixelTrail.ts';
 
@@ -461,6 +462,7 @@
 			{/key}
 		{/if}
 	</div>
+	<SigninPortals />
 </main>
 
 <style>
