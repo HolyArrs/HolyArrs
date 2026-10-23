@@ -376,6 +376,8 @@
 	@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
 		.edge.glass { background: rgb(18 18 22 / 0.92); }
 	}
+	/* Phones: full-bleed art, no frame (the portals still run in the sheet). */
+	@media (max-width: 600px) { .edge { display: none; } }
 	@media (min-width: 601px) { .edge, .portals { --frame: 18px; --frame-r: 26px; } }
 	/* Its own compositor layer, so redrawing it never touches the panel's blur. */
 	.portals { width: 100%; height: 100%; will-change: transform; transform: translateZ(0); }

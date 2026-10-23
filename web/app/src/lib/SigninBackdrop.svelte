@@ -904,7 +904,7 @@ void main() {
 		.shade {
 			background:
 				linear-gradient(180deg, rgb(5 5 7 / 0.55) 0%, rgb(5 5 7 / 0) 22%),
-				linear-gradient(0deg, rgb(5 5 7 / 0.9) 0%, rgb(5 5 7 / 0.55) 45%, rgb(5 5 7 / 0.1) 75%);
+				linear-gradient(0deg, rgb(5 5 7 / 0.55) 0%, rgb(5 5 7 / 0.2) 40%, rgb(5 5 7 / 0) 60%);
 		}
 	}
 </style>
