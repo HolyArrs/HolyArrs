@@ -160,6 +160,7 @@ func (a *API) MusicLoops() []supervisor.Loop {
 		a.warmMusic(ctx)
 		for ctx.Err() == nil {
 			a.prebuildMusic(ctx)
+			a.prewarmMusicV7(ctx)
 			select {
 			case <-ctx.Done():
 			case <-time.After(musicPrebuildEvery):

@@ -64,9 +64,8 @@ func chartExplicit(l []metadata.MusicChartItem) map[string]bool {
 }
 
 // musicV7Rows adds the v7 families to the build (personal households).
-// top is the day's top artists by A (highest first), yesterday the seeds
-// used yesterday.
-func (a *API) musicV7Rows(ctx context.Context, member int64, date string, lib *musicLib, acts *musicActs, now time.Time, in personalIn, top []musicLibArtist, yesterday map[string]bool) {
+// yesterday holds yesterday's seeds.
+func (a *API) musicV7Rows(ctx context.Context, member int64, date string, lib *musicLib, acts *musicActs, now time.Time, in personalIn, yesterday map[string]bool) {
 	today := dayAt(now, 0)
 	asked := func(mbid string) bool { return mbid != "" && acts.albumState[mbid] != "" }
 	nameOf := map[string]string{}
@@ -749,4 +748,24 @@ func (a *API) exploreMusicV7(w http.ResponseWriter, r *http.Request) {
 		a.rememberMusicCards(nil, append([]MusicCard{*hero}, alts...)...)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"v2": true, "v7": true, "kid": false, "cold": ord.Cold, "genres": []string{}, "genre": "", "region": region, "regions": regions, "hero": hero, "hero_alts": alts, "rows": out, "next": next, "total": p.Total()})
+}
+
+// prewarmMusicV7 runs after the Music read-ahead's prebuild: one household
+// build (member 0, worldwide) fills layer 1 with the artist data,
+// similarity and listeners the v7 families read, so a member's first page
+// of the day needs few or no metadata requests. No plan is kept.
+func (a *API) prewarmMusicV7(ctx context.Context) {
+	if !a.s.MusicRowsV7 || !a.s.MusicRowsV3 || a.s.Store == nil {
+		return
+	}
+	now := time.Now().UTC()
+	lib, err := a.musicLibrary(ctx, now)
+	if err != nil {
+		return
+	}
+	acts, err := a.musicActsOf(ctx, 0)
+	if err != nil {
+		return
+	}
+	_ = a.buildMusicV3(ctx, 0, "global", lib, acts, now)
 }

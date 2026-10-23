@@ -1096,10 +1096,6 @@ func (a *API) personalMusicRows(ctx context.Context, member int64, region, date 
 	}
 
 	if a.s.MusicRowsV7 {
-		top := make([]musicLibArtist, len(seeds))
-		for i, s := range seeds {
-			top[i] = s.ar
-		}
-		a.musicV7Rows(ctx, member, date, lib, acts, now, in, top, yesterday)
+		a.musicV7Rows(ctx, member, date, lib, acts, now, in, yesterday)
 	}
 }
