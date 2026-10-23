@@ -68,7 +68,21 @@
 		return safeNext(n);
 	}
 
-	// The card is there on the first frame, ready to type: focus goes to the name field.
+	// The card is there on the first frame; its contents come in as a soft
+	// stagger (logo, tiles, "or", fields, button: 70 ms apart, done in about
+	// 1 s). Focus goes to the name field at once, so typing never waits.
+	let intro = $state(true);
+	let staggered = false;
+	$effect(() => {
+		if (staggered || session.s.state === 'unknown' || !panelEl) return;
+		staggered = true;
+		const parts = panelEl.querySelectorAll<HTMLElement>(
+			'.title, .lead, .provs, .or, .field, .submit, .step .link, .help'
+		);
+		parts.forEach((el, i) => el.style.setProperty('--i', String(Math.min(i + 1, 9))));
+		// Later step changes use their own rise, not this entrance.
+		setTimeout(() => (intro = false), 1400);
+	});
 	let focusedOnce = false;
 	$effect(() => {
 		if (focusedOnce || session.s.state === 'unknown' || !panelEl) return;
@@ -299,7 +313,7 @@
 <main class="wrap" class:leaving data-theme="dark">
 	<SigninBackdrop />
 	<div class="cover" bind:this={coverEl} aria-hidden="true"></div>
-	<div class="panel" bind:this={panelEl}>
+	<div class="panel" class:intro bind:this={panelEl}>
 		<div class="brand">
 			<img src={to('/brand/mark-color-on-dark.svg')} alt="" width="30" height="30" />
 			<span>HolyArrs</span>
@@ -449,6 +463,19 @@
 		color: var(--text);
 		isolation: isolate;
 	}
+	/* The entrance: each part fades and lifts 6 px, 70 ms after the one
+	   before; the logo settles from a hair smaller instead. Opacity and
+	   transform only, so it stays on the compositor. */
+	@media (prefers-reduced-motion: no-preference) {
+		.intro .brand { animation: brand-in 520ms cubic-bezier(0.16, 1, 0.3, 1) 60ms both; }
+		.intro :is(.title, .lead, .provs, .or, .field, .submit, .step .link, .help) {
+			animation: part-in 460ms cubic-bezier(0.22, 1, 0.36, 1) calc(90ms + var(--i, 1) * 70ms) both;
+		}
+	}
+	@keyframes brand-in { from { opacity: 0; transform: scale(0.96); } }
+	@keyframes part-in { from { opacity: 0; transform: translateY(6px); } }
+	/* app.html painted the wallpaper's mosaic behind the page: let it show. */
+	:global(html.sa-seeded) .wrap { background: transparent; }
 	.panel {
 		position: relative;
 		z-index: 1;
