@@ -3688,7 +3688,7 @@
             "additionalProperties": {
               "type": "string"
             },
-            "description": "Every page of the web app (path, [x] for a changing segment) and its owner: core, media (on while any of Movies, Shows, Music is on), title (the title's kind decides) or a part.",
+            "description": "Every page of the web app (path, [x] for a changing segment) and its owner: core, media (on while any of Movies, TV shows, Music is on), title (the title's kind decides) or a part.",
             "type": "object"
           }
         },
@@ -13238,7 +13238,7 @@
             "description": "Sign-in is required."
           },
           "409": {
-            "description": "Movies, Shows and Music are all off."
+            "description": "Movies, TV shows and Music are all off."
           }
         },
         "summary": "Library count and missing movies for Home",
@@ -16667,7 +16667,7 @@
     },
     "/api/v1/parts": {
       "get": {
-        "description": "The five parts (Movies, Shows, Music, Subtitles, the Wishlist): whether each is on and its state (off, starting while a restart waits for its Jobs, running, retrying or failed when one of its stages is), and the table of which web pages belong to which part, so the screens hide the pages of parts that are off, and stages: the stage names that can be paused, resumed and restarted one by one. A route of a part that is off answers 409 with error \"this part is off\" (PartOff).",
+        "description": "The five parts (Movies, TV shows, Music, Subtitles, the Wishlist): whether each is on and its state (off, starting while a restart waits for its Jobs, running, retrying or failed when one of its stages is), and the table of which web pages belong to which part, so the screens hide the pages of parts that are off, and stages: the stage names that can be paused, resumed and restarted one by one. A route of a part that is off answers 409 with error \"this part is off\" (PartOff).",
         "operationId": "listParts",
         "responses": {
           "200": {
@@ -16774,7 +16774,7 @@
     },
     "/api/v1/parts/{part}/on": {
       "post": {
-        "description": "Turns the part on and saves it: its screens show, its stages start and its waiting Jobs run. Subtitles need Movies or Shows on; the Wishlist needs one of Movies, Shows or Music (refused with the reason otherwise). Refused in safe mode. Needs the owner or an admin; an API key needs the control scope. Writes a control_used Event (who, what, when).",
+        "description": "Turns the part on and saves it: its screens show, its stages start and its waiting Jobs run. Subtitles need Movies or TV shows on; the Wishlist needs one of Movies, TV shows or Music (refused with the reason otherwise). Refused in safe mode. Needs the owner or an admin; an API key needs the control scope. Writes a control_used Event (who, what, when).",
         "operationId": "partOn",
         "parameters": [
           {

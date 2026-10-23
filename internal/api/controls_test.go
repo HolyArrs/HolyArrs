@@ -227,7 +227,7 @@ func TestAskRefusedWhenItsPartIsOff(t *testing.T) {
 	u := f.srv.URL + "/api/v1/"
 	confirmTwice(t, u+"parts/subtitles/off", 200)
 	confirmTwice(t, u+"parts/shows/off", 200)
-	if b := do(t, "POST", u+"asks", `{"kind":"show","id":"tvmaze:1"}`, 409); !strings.Contains(string(b), "Shows is off") {
+	if b := do(t, "POST", u+"asks", `{"kind":"show","id":"tvmaze:1"}`, 409); !strings.Contains(string(b), "TV shows is off") {
 		t.Fatalf("show ask: %s", b)
 	}
 	confirmTwice(t, u+"parts/movies/off", 200)

@@ -38,7 +38,7 @@ func (a *API) controlRoutes(m *http.ServeMux) {
 func partOffBody(o parts.Owner) map[string]string {
 	name := "This part"
 	if o == parts.Media {
-		name = "Movies, Shows and Music are all off, so this"
+		name = "Movies, TV shows and Music are all off, so this"
 	} else if parts.Valid(parts.Part(o)) {
 		name = parts.Part(o).Label()
 	}

@@ -1,4 +1,4 @@
-// Parts (Movies, Shows, Music, Subtitles, the Wishlist) that can be turned
+// Parts (Movies, TV shows, Music, Subtitles, the Wishlist) that can be turned
 // off, and which page belongs to which part. The table lives in the server
 // (internal/parts) and comes with GET /api/v1/parts.
 
@@ -52,7 +52,7 @@ function screenRow(screens: Record<string, string>, path: string): string | null
 
 /**
  * offPartName says which part that is off a page belongs to ("Music", or
- * "Movies, Shows and Music" for shared pages when all three are off), or
+ * "Movies, TV shows and Music" for shared pages when all three are off), or
  * null when the page shows. Pages of one title are left to the title's own
  * answer, and nothing is hidden before the parts are known.
  */
@@ -62,7 +62,7 @@ export function offPartName(a: PartsAnswer | null, path: string): string | null 
 	const owner = screenOwner(a.screens, path);
 	if (!owner || owner === 'core' || owner === 'title') return null;
 	const on = (p: string) => a.parts.find((x) => x.part === p)?.on ?? true;
-	if (owner === 'media') return on('movies') || on('shows') || on('music') ? null : 'Movies, Shows and Music';
+	if (owner === 'media') return on('movies') || on('shows') || on('music') ? null : 'Movies, TV shows and Music';
 	if (on(owner)) return null;
 	return a.parts.find((x) => x.part === owner)?.name ?? owner;
 }
@@ -84,14 +84,14 @@ export const partNeeds: Record<PartName, string> = {
 	movies: '',
 	shows: '',
 	music: '',
-	subtitles: 'Needs Movies or Shows.',
-	wishlist: 'Needs Movies, Shows or Music.'
+	subtitles: 'Needs Movies or TV shows.',
+	wishlist: 'Needs Movies, TV shows or Music.'
 };
 
 /** needsProblem says why a wanted set of parts cannot be, or '' when it can. */
 export function needsProblem(want: Record<PartName, boolean>): string {
-	if (!want.movies && !want.shows && !want.music) return 'Pick at least one of Movies, Shows and Music.';
-	if (want.subtitles && !want.movies && !want.shows) return 'Subtitles need Movies or Shows.';
+	if (!want.movies && !want.shows && !want.music) return 'Pick at least one of Movies, TV shows and Music.';
+	if (want.subtitles && !want.movies && !want.shows) return 'Subtitles need Movies or TV shows.';
 	return '';
 }
 

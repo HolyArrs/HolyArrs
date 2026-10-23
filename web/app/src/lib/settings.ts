@@ -39,7 +39,7 @@ export const groups: Group[] = [
 export const sections: Section[] = [
 	{ href: '/settings/this-app', group: 'general', label: 'This app', icon: 'info', about: 'Version, updates, a health summary and where things are stored.' },
 	{ href: '/settings/appearance', group: 'general', label: 'Appearance', icon: 'appearance', about: 'Light, dark or automatic, in this browser.', need: 'self' },
-	{ href: '/settings/parts', group: 'general', label: 'Parts and controls', icon: 'tools', about: 'Turn Movies, Shows, Music, Subtitles and the Wishlist on or off; restart one part or stage.', need: 'users' },
+	{ href: '/settings/parts', group: 'general', label: 'Parts and controls', icon: 'tools', about: 'Turn Movies, TV shows, Music, Subtitles and the Wishlist on or off; restart one part or stage.', need: 'users' },
 	{ href: '/settings/schedules', group: 'general', label: 'Schedules', icon: 'calendar', about: 'Everything that runs on a timer: last and next run, Run now, and how often.' },
 
 	{ href: '/settings/library-folders', group: 'library', label: 'Library folders', icon: 'folder', about: 'Where finished movies, shows and music live, and their health.' },

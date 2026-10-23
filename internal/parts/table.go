@@ -29,7 +29,7 @@ func (p Part) Label() string {
 	case Movies:
 		return "Movies"
 	case Shows:
-		return "Shows"
+		return "TV shows"
 	case Music:
 		return "Music"
 	case Subtitles:
@@ -57,7 +57,7 @@ type Owner string
 const (
 	// Core is always on.
 	Core Owner = "core"
-	// Media is shared by Movies, Shows and Music: it is on while any of
+	// Media is shared by Movies, TV shows and Music: it is on while any of
 	// the three is on (searching, Downloads that need a decision, naming).
 	Media Owner = "media"
 	// ByTitle is decided by the title the request or Job is about: a
@@ -288,7 +288,7 @@ var Routes = map[string]Owner{
 	"GET /api/v1/migrate/moves/{id}/report": Core,
 	"POST /api/v1/migrate/moves/{id}/undo":  Core,
 
-	// Shared by Movies, Shows and Music.
+	// Shared by Movies, TV shows and Music.
 	"GET /api/v1/titles":                      Media,
 	"GET /api/v1/library/search":              Media,
 	"GET /api/v1/search/suggest":              Media,
@@ -577,7 +577,7 @@ var JobKinds = map[string]Owner{
 	// A move checks each part itself (a part that is off is left out).
 	"migrate_move": Core,
 	"migrate_undo": Core,
-	// Shared work: on while any of Movies, Shows and Music is on.
+	// Shared work: on while any of Movies, TV shows and Music is on.
 	"search_missing":     Media,
 	"feed_check":         Media,
 	"grab_held":          Media,

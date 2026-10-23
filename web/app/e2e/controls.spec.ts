@@ -18,7 +18,7 @@ test.beforeAll(async ({ browser }) => {
 	await signIn(page, owner());
 });
 
-const ids: Record<string, string> = { Movies: 'movies', Shows: 'shows', Music: 'music', Subtitles: 'subtitles', 'The Wishlist': 'wishlist' };
+const ids: Record<string, string> = { Movies: 'movies', 'TV shows': 'shows', Music: 'music', Subtitles: 'subtitles', 'The Wishlist': 'wishlist' };
 const part = (name: string) => page.locator(`[data-testid="part"][data-part="${ids[name]}"]`);
 
 async function confirm(label: RegExp) {
@@ -47,10 +47,10 @@ test('turn a part off and on, a refused switch, and the Events', async () => {
 	await part('Movies').getByRole('button', { name: 'Turn Movies off' }).click();
 	await confirm(/^Yes, turn movies off/);
 	await expect(part('Movies')).toHaveAttribute('data-state', 'off');
-	await part('Shows').getByRole('button', { name: 'Turn Shows off' }).click();
-	await confirm(/^Yes, turn shows off/);
-	await expect(page.getByRole('status').filter({ hasText: 'Subtitles need Movies or Shows' })).toBeVisible();
-	await expect(part('Shows')).not.toHaveAttribute('data-state', 'off');
+	await part('TV shows').getByRole('button', { name: 'Turn TV shows off' }).click();
+	await confirm(/^Yes, turn tv shows off/);
+	await expect(page.getByRole('status').filter({ hasText: 'Subtitles need Movies or TV shows' })).toBeVisible();
+	await expect(part('TV shows')).not.toHaveAttribute('data-state', 'off');
 
 	// Back on.
 	await part('Movies').getByRole('button', { name: 'Turn Movies on' }).click();
@@ -115,7 +115,7 @@ test('"Just movies" on the first-run step is one click, and everything comes bac
 	await page.getByRole('button', { name: 'Just movies' }).click();
 	await expect(page).toHaveURL(/\/$/);
 	await page.goto('/settings/parts');
-	for (const off of ['Shows', 'Music', 'Subtitles', 'The Wishlist']) await expect(part(off)).toHaveAttribute('data-state', 'off');
+	for (const off of ['TV shows', 'Music', 'Subtitles', 'The Wishlist']) await expect(part(off)).toHaveAttribute('data-state', 'off');
 	await expect(part('Movies')).not.toHaveAttribute('data-state', 'off');
 
 	// The same step turns everything back on.
@@ -125,7 +125,7 @@ test('"Just movies" on the first-run step is one click, and everything comes bac
 	await page.getByRole('button', { name: 'Continue' }).click();
 	await expect(page).toHaveURL(/\/$/);
 	await page.goto('/settings/parts');
-	for (const on of ['Movies', 'Shows', 'Music', 'Subtitles', 'The Wishlist']) await expect(part(on)).not.toHaveAttribute('data-state', 'off');
+	for (const on of ['Movies', 'TV shows', 'Music', 'Subtitles', 'The Wishlist']) await expect(part(on)).not.toHaveAttribute('data-state', 'off');
 });
 
 test('both screens at phone width, and accessibility', async ({ browser }) => {

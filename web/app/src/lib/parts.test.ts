@@ -13,7 +13,7 @@ const screens = {
 };
 
 function answer(off: PartName[]): PartsAnswer {
-	const names: Record<PartName, string> = { movies: 'Movies', shows: 'Shows', music: 'Music', subtitles: 'Subtitles', wishlist: 'The Wishlist' };
+	const names: Record<PartName, string> = { movies: 'Movies', shows: 'TV shows', music: 'Music', subtitles: 'Subtitles', wishlist: 'The Wishlist' };
 	return {
 		parts: (Object.keys(names) as PartName[]).map((p) => ({ part: p, name: names[p], on: !off.includes(p), state: off.includes(p) ? 'off' : 'running' })),
 		screens,
@@ -43,9 +43,9 @@ describe('pages of parts that are off', () => {
 		expect(offPartName(answer(['movies']), '/library/12')).toBeNull();
 		expect(offPartName(null, '/wishlist')).toBeNull();
 	});
-	it('hides shared pages only when Movies, Shows and Music are all off', () => {
+	it('hides shared pages only when Movies, TV shows and Music are all off', () => {
 		expect(offPartName(answer(['movies', 'shows']), '/library')).toBeNull();
-		expect(offPartName(answer(['movies', 'shows', 'music']), '/library')).toBe('Movies, Shows and Music');
+		expect(offPartName(answer(['movies', 'shows', 'music']), '/library')).toBe('Movies, TV shows and Music');
 	});
 });
 
@@ -54,9 +54,9 @@ describe('safe mode', () => {
 		const a = { ...answer(['movies', 'shows', 'music', 'subtitles', 'wishlist']), safe_mode: true, safe_screens: ['/library', '/library/[id]', '/library/[id]/albums/[album]'] };
 		expect(offPartName(a, '/library')).toBeNull();
 		expect(offPartName(a, '/library/12/albums/3')).toBeNull();
-		expect(offPartName(a, '/library/held')).toBe('Movies, Shows and Music');
+		expect(offPartName(a, '/library/held')).toBe('Movies, TV shows and Music');
 		expect(offPartName(a, '/settings/music')).toBe('Music');
-		expect(offPartName({ ...a, safe_mode: false }, '/library')).toBe('Movies, Shows and Music');
+		expect(offPartName({ ...a, safe_mode: false }, '/library')).toBe('Movies, TV shows and Music');
 	});
 });
 
@@ -81,7 +81,7 @@ describe('switching parts', () => {
 	it('says what cannot be', () => {
 		const none = { movies: false, shows: false, music: false, subtitles: false, wishlist: false };
 		expect(needsProblem(none)).toContain('at least one');
-		expect(needsProblem({ ...none, music: true, subtitles: true })).toBe('Subtitles need Movies or Shows.');
+		expect(needsProblem({ ...none, music: true, subtitles: true })).toBe('Subtitles need Movies or TV shows.');
 		expect(needsProblem({ ...none, music: true, wishlist: true })).toBe('');
 	});
 });

@@ -298,7 +298,7 @@ func TestRestartNeverCutsOffAJob(t *testing.T) {
 	}
 }
 
-// Subtitles need Movies or Shows; the Wishlist needs one of Movies, Shows
+// Subtitles need Movies or TV shows; the Wishlist needs one of Movies, Shows
 // and Music. A switch that breaks either is refused with the reason.
 func TestDependencies(t *testing.T) {
 	f := newFix(t)
@@ -320,7 +320,7 @@ func TestDependencies(t *testing.T) {
 	refused(Shows, false, "Turn Subtitles off first")
 	must(Subtitles, false)
 	must(Shows, false)
-	refused(Subtitles, true, "Turn Movies or Shows on first")
+	refused(Subtitles, true, "Turn Movies or TV shows on first")
 	refused(Music, false, "Turn the Wishlist off first")
 	must(Wishlist, false)
 	must(Music, false)

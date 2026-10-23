@@ -215,7 +215,7 @@ func (c *Control) startLocked(e *entry) error {
 
 func offReason(o Owner) string {
 	if o == Media {
-		return "Movies, Shows and Music are all off."
+		return "Movies, TV shows and Music are all off."
 	}
 	return Part(o).Label() + " is off."
 }
@@ -290,20 +290,20 @@ func needsLocked(on map[Part]bool, changed Part, turnOn bool) error {
 		switch changed {
 		case Subtitles:
 			if !on[Movies] && !on[Shows] {
-				return NeedsError{"Subtitles need Movies or Shows. Turn Movies or Shows on first."}
+				return NeedsError{"Subtitles need Movies or TV shows. Turn Movies or TV shows on first."}
 			}
 		case Wishlist:
 			if !media {
-				return NeedsError{"The Wishlist needs Movies, Shows or Music. Turn one of them on first."}
+				return NeedsError{"The Wishlist needs Movies, TV shows or Music. Turn one of them on first."}
 			}
 		}
 		return nil
 	}
 	if on[Subtitles] && !on[Movies] && !on[Shows] {
-		return NeedsError{"Subtitles need Movies or Shows, and " + changed.Label() + " is the last of them that is on. Turn Subtitles off first."}
+		return NeedsError{"Subtitles need Movies or TV shows, and " + changed.Label() + " is the last of them that is on. Turn Subtitles off first."}
 	}
 	if on[Wishlist] && !media {
-		return NeedsError{"The Wishlist needs Movies, Shows or Music, and " + changed.Label() + " is the last of them that is on. Turn the Wishlist off first."}
+		return NeedsError{"The Wishlist needs Movies, TV shows or Music, and " + changed.Label() + " is the last of them that is on. Turn the Wishlist off first."}
 	}
 	return nil
 }
@@ -532,7 +532,7 @@ func (c *Control) resumeLocked(e *entry) error {
 	}
 	if !c.ownerOnLocked(e.owner) {
 		if e.owner == Media {
-			return NeedsError{"Movies, Shows and Music are all off; turn one on first."}
+			return NeedsError{"Movies, TV shows and Music are all off; turn one on first."}
 		}
 		return OffError{Part(e.owner)}
 	}
@@ -558,7 +558,7 @@ func (c *Control) RestartStage(name string) error {
 	if !c.ownerOnLocked(e.owner) {
 		c.mu.Unlock()
 		if e.owner == Media {
-			return NeedsError{"Movies, Shows and Music are all off; turn one on first."}
+			return NeedsError{"Movies, TV shows and Music are all off; turn one on first."}
 		}
 		return OffError{Part(e.owner)}
 	}
