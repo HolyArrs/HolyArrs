@@ -1249,6 +1249,7 @@ func (a *API) artistMore(w http.ResponseWriter, r *http.Request) {
 				appears = append(appears, creditOf(al))
 			}
 		}
+		a.warmCredits(appears)
 		sort.SliceStable(own, func(i, j int) bool { return own[i].Listeners > own[j].Listeners })
 		for i := 0; i < len(own) && i < 6; i++ {
 			essential = append(essential, strings.ToLower(own[i].MBID))
@@ -1256,6 +1257,31 @@ func (a *API) artistMore(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Cache-Control", "private, max-age=300")
 	writeJSON(w, http.StatusOK, map[string]any{"essential": essential, "appears_on": appears})
+}
+
+// warmCredits lets the picture route serve these albums (their names and
+// artists feed the cover chain's name search) and fetches their covers
+// into the artwork cache in the background, so the shelf arrives without
+// placeholders. Without the names the picture route has nothing to ask.
+func (a *API) warmCredits(list []PageCredit) {
+	if len(list) == 0 {
+		return
+	}
+	names := make([]nameKey, 0, len(list))
+	items := make([]metadata.MusicTrendItem, 0, len(list))
+	for _, c := range list {
+		names = append(names, nameKey{kind: "album", mbid: c.MBID, name: c.Name, artist: c.ArtistName})
+		items = append(items, metadata.MusicTrendItem{MBID: c.MBID, Name: c.Name, Title: c.Name, Artist: c.ArtistName})
+	}
+	a.rememberMusicNames(names)
+	if !a.partIsOn(parts.Music) || a.s.Library == nil || a.s.Library.Artwork == nil {
+		return
+	}
+	a.music.prefetching.Add(1)
+	go func() {
+		defer a.music.prefetching.Done()
+		a.prefetchMusicArt("album", items)
+	}()
 }
 
 // albumNear answers GET /api/v1/music/albums/{mbid}?part=near&artist=: the
@@ -1299,6 +1325,7 @@ func (a *API) albumNear(w http.ResponseWriter, r *http.Request) {
 			near = append(near, c)
 		}
 	}
+	a.warmCredits(near)
 	w.Header().Set("Cache-Control", "private, max-age=300")
 	writeJSON(w, http.StatusOK, map[string]any{"near": near})
 }

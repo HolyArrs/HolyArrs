@@ -181,3 +181,34 @@ func TestSimilarArtistArtPrefetched(t *testing.T) {
 		t.Fatal("similar artist picture not prefetched")
 	}
 }
+
+// The album page's "Fans also like" and the artist page's "Appears on"
+// albums come from no list the picture route knew: they must be named
+// (so the cover chain can search by artist and title) and prefetched.
+func TestCreditCoversPrefetched(t *testing.T) {
+	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
+	const al = "55555555-5555-4555-8555-555555555555"
+	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/jpeg")
+		_, _ = w.Write([]byte("\xff\xd8\xff synthetic"))
+	}))
+	defer pics.Close()
+	var gotArtist, gotTitle string
+	cover := func(_ context.Context, mbid, artist, title string) (string, error) {
+		gotArtist, gotTitle = artist, title
+		return pics.URL + "/cover.jpg", nil
+	}
+	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{pics.URL + "/"}, HTTP: pics.Client()}
+	a := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(),
+		Library: &library.Service{Store: s, Artwork: art}, Version: "test", Deps: music.Deps{MusicCover: cover}})
+	c := creditOf(metadata.MusicTopAlbum{MBID: al, Title: "OK Computer", Type: "album"})
+	c.ArtistName = "Radiohead"
+	a.warmCredits([]PageCredit{c})
+	a.music.prefetching.Wait()
+	if gotArtist != "Radiohead" || gotTitle != "OK Computer" {
+		t.Fatalf("cover chain asked %q %q", gotArtist, gotTitle)
+	}
+	if _, ok := art.Path(library.ArtworkName(pics.URL + "/cover.jpg")); !ok {
+		t.Fatal("credit cover not prefetched")
+	}
+}
