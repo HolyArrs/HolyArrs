@@ -130,7 +130,8 @@ func (a *API) searchSuggest(w http.ResponseWriter, r *http.Request) {
 	}
 	kid := a.kidMax(r) != ""
 	// Music has no ratings, so a Kid limit shows none of it (as Explore does).
-	music := want("music") && on("artist") && !kid
+	mp := a.musicProvider()
+	music := want("music") && mp.On() && !kid
 	ctx, cancel := context.WithTimeout(r.Context(), suggestWait)
 	defer cancel()
 	results := make(chan []SuggestRow, 4)
@@ -140,7 +141,7 @@ func (a *API) searchSuggest(w http.ResponseWriter, r *http.Request) {
 		go func() { results <- f(ctx) }()
 	}
 	if music && a.s.MusicSuggest != nil {
-		run(func(ctx context.Context) []SuggestRow { return a.suggestMusicServer(ctx, r, q) })
+		run(func(ctx context.Context) []SuggestRow { return mp.Suggest(ctx, r, q) })
 	}
 	// TMDB is the existing search's source. A Kid's lookups stay on the full
 	// results page, where their rating checks and lookup limit run.

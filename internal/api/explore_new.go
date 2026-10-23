@@ -966,7 +966,7 @@ func (a *API) exploreNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	me := a.person(r).UserID
-	a.warmMusicNew() // the Music tab's lists build in the background
+	a.musicProvider().WarmNew() // the Music tab's lists build in the background (Music on)
 	pg, building := a.newRows(r.Context(), r, me, sw)
 	var hero []discoverItemView
 	if n == 0 {

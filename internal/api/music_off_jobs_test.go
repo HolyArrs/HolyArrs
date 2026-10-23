@@ -110,3 +110,28 @@ func TestMusicJobKindsAreOffWhenMusicIsOff(t *testing.T) {
 		}
 	}
 }
+
+// With Music off, the shared handlers' Music provider gives nothing and
+// starts no build; turned on, it answers again.
+func TestMusicProviderFollowsThePart(t *testing.T) {
+	s, err := store.Open(t.TempDir(), store.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = s.Close() })
+	a := New(Server{Store: s, Parts: musicOffControl(t, s), Version: "test"})
+	mp := a.musicProvider()
+	if mp.On() || mp.Suggest(context.Background(), nil, "salt") != nil {
+		t.Fatal("the Music provider answers with Music off")
+	}
+	mp.WarmNew()
+	if g := musicGoroutines(); g != "" {
+		t.Fatalf("WarmNew started music work with Music off:\n%s", g)
+	}
+	if err := a.s.Parts.Set(context.Background(), parts.Music, true, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	if !a.musicProvider().On() {
+		t.Fatal("the Music provider stays off with Music on")
+	}
+}
