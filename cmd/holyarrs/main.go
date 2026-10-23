@@ -618,6 +618,9 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if !c.SafeMode {
 		a.StartExplore(ctx)
 	}
+	for _, l := range a.MusicLoops() {
+		optional(l)
+	}
 	startYTDLP(ctx, c.ConfigDir, a, he)
 	srv := newServer(c.Addr, urlbase.Handler(c.URLBase, compress.Handler(limitBodies(a.Handler()))))
 	ln, err := net.Listen("tcp", c.Addr)

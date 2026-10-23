@@ -13,6 +13,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/parts"
 	"github.com/CoderLuii/holyarrs/internal/store"
+	"github.com/CoderLuii/holyarrs/internal/supervisor"
 )
 
 // Explore → Music answers are built once and kept a minute per member, so
@@ -151,15 +152,25 @@ func (a *API) genresFilling() bool {
 	return c.running
 }
 
+// MusicLoops are Music's background loops. Main adds them to the parts
+// Control, so they run only while Music is on and stop when it is turned off.
+func (a *API) MusicLoops() []supervisor.Loop {
+	return []supervisor.Loop{{Name: "music_warm", Label: "Music read-ahead", Run: func(ctx context.Context) error {
+		a.warmMusic(ctx)
+		<-ctx.Done()
+		return nil
+	}}}
+}
+
 // warmMusic reads ahead the genres of the Library's artists and of the
-// charts, once, shortly after start.
+// charts, once, shortly after Music starts.
 func (a *API) warmMusic(ctx context.Context) {
 	select {
 	case <-ctx.Done():
 		return
 	case <-time.After(musicWarmDelay):
 	}
-	if p, _ := parts.ForTitleKind("artist"); !a.partIsOn(p) {
+	if a.s.Store == nil {
 		return
 	}
 	if _, ok := a.genreProvider(); !ok {

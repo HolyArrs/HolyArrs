@@ -116,7 +116,6 @@ func (a *API) StartExplore(ctx context.Context) {
 	e.mu.Unlock()
 	a.s.Store.OnEvent(a.exploreOnEvent)
 	a.s.Store.OnEvent(a.musicOnEvent)
-	go supervisor.Guard("explore-music-warm", func() { a.warmMusic(ctx) })
 	go supervisor.Guard("explore", func() { a.exploreLoop(ctx) })
 	go supervisor.Guard("explore-service-top-warm", func() { a.warmServiceTop(ctx) })
 	go supervisor.Guard("explore-genre-warm", func() { a.warmGenres(ctx) })

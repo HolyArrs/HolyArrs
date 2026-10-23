@@ -2,6 +2,8 @@ package api
 
 import (
 	"context"
+	"runtime"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -26,8 +28,9 @@ func musicOffControl(t *testing.T, s *store.Store) *parts.Control {
 	return pc
 }
 
-// With Music off, the music chart and cover warm-up reads nothing from the
-// metadata server.
+// With Music off, the music loops are added to the parts Control but none
+// starts: no music goroutine runs and the metadata server is never asked.
+// Turning Music on starts them.
 func TestMusicWarmUpDoesNotRunWhenMusicIsOff(t *testing.T) {
 	s, err := store.Open(t.TempDir(), store.Options{})
 	if err != nil {
@@ -49,12 +52,47 @@ func TestMusicWarmUpDoesNotRunWhenMusicIsOff(t *testing.T) {
 			return "", nil
 		},
 	})
-	ctx, cancel := context.WithTimeout(context.Background(), musicWarmDelay+3*time.Second)
+	pc := a.s.Parts
+	for _, l := range a.MusicLoops() {
+		if owner := parts.Loops[l.Name]; owner != parts.Of(parts.Music) {
+			t.Fatalf("loop %s belongs to %q, not Music", l.Name, owner)
+		}
+		pc.Add(l, true)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	a.warmMusic(ctx)
+	pc.Start(ctx)
+	time.Sleep(musicWarmDelay + time.Second)
 	if n := calls.Load(); n != 0 {
 		t.Fatalf("music warm-up asked the metadata server %d times with Music off", n)
 	}
+	if g := musicGoroutines(); g != "" {
+		t.Fatalf("a music goroutine runs with Music off:\n%s", g)
+	}
+	if err := pc.Set(context.Background(), parts.Music, true, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	deadline := time.Now().Add(3 * time.Second)
+	for musicGoroutines() == "" {
+		if time.Now().After(deadline) {
+			t.Fatal("turning Music on did not start the music loops")
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+}
+
+// musicGoroutines returns the stacks of running goroutines that are in a
+// music loop, or "".
+func musicGoroutines() string {
+	buf := make([]byte, 1<<22)
+	buf = buf[:runtime.Stack(buf, true)]
+	var out []string
+	for _, g := range strings.Split(string(buf), "\n\n") {
+		if strings.Contains(g, "MusicLoops") || strings.Contains(g, ".warmMusic(") {
+			out = append(out, g)
+		}
+	}
+	return strings.Join(out, "\n\n")
 }
 
 // With Music off, the music Job kinds (artist refresh, artist pictures,
