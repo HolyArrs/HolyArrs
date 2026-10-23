@@ -3,13 +3,13 @@
 // screen edge to a hole in the next corner, falls in, and both holes close.
 // Pure functions so the timeline is unit tested.
 
-export const START_S = 5; // first leg, after the page has settled
-export const LEG_GAP_S = 5; // one leg starts every 5 s
+export const START_S = 11; // first leg, well after the page has settled
+export const LEG_GAP_S = 24; // one leg starts every 24 s: ~17 s of quiet between legs
 export const COUNT = 7; // symbols per leg
-export const SPACING_S = 0.2; // between symbols leaving the hole
-export const TRAVEL_S = 2.3; // one symbol, hole to hole
-export const OPEN_S = 0.42;
-export const CLOSE_S = 0.36;
+export const SPACING_S = 0.32; // between symbols leaving the hole
+export const TRAVEL_S = 3.6; // one symbol, hole to hole
+export const OPEN_S = 0.72;
+export const CLOSE_S = 0.72;
 
 /** Corners clockwise from top right: TR, TL, BL, BR (the run goes TR→TL→BL→BR→TR). */
 export type Corner = 0 | 1 | 2 | 3;
@@ -17,6 +17,7 @@ export type Corner = 0 | 1 | 2 | 3;
 export const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 export const easeInOutSine = (p: number) => -(Math.cos(Math.PI * p) - 1) / 2;
 export const easeOutBack = (p: number, s = 2.2) => 1 + (s + 1) * (p - 1) ** 3 + s * (p - 1) ** 2;
+export const easeOutCubic = (p: number) => 1 - (1 - p) ** 3;
 export const easeInBack = (p: number, s = 1.9) => (s + 1) * p ** 3 - s * p ** 2;
 
 /** Which leg runs at clock t (seconds since mount), and how far into it. Null before the first. */
@@ -27,8 +28,8 @@ export function legAt(t: number, legs: number): { index: number; local: number }
 }
 
 /** The whole leg: the last symbol lands, then the far hole closes. */
-export const LEAD_S = 0.18; // the first symbol leaves once the hole is half open
-export const LEG_S = LEAD_S + (COUNT - 1) * SPACING_S + TRAVEL_S + 0.05 + CLOSE_S;
+export const LEAD_S = 0.36; // the first symbol leaves once the hole is half open
+export const LEG_S = LEAD_S + (COUNT - 1) * SPACING_S + TRAVEL_S + 0.1 + CLOSE_S;
 
 /**
  * A hole's size (0 = shut) and squash at leg time `local`. `from` holes open at
@@ -36,13 +37,13 @@ export const LEG_S = LEAD_S + (COUNT - 1) * SPACING_S + TRAVEL_S + 0.05 + CLOSE_
  * first symbol arrives and close after the last one falls in.
  */
 export function holeAt(local: number, role: 'from' | 'to'): { s: number; squash: number } {
-	const openAt = role === 'from' ? 0 : LEAD_S + TRAVEL_S - OPEN_S - 0.1;
-	const closeAt = role === 'from' ? (COUNT - 1) * SPACING_S + 0.35 : LEAD_S + (COUNT - 1) * SPACING_S + TRAVEL_S + 0.05;
-	if (local < openAt || local > closeAt + CLOSE_S) return { s: 0, squash: 0 };
+	const openAt = role === 'from' ? 0 : LEAD_S + TRAVEL_S - OPEN_S - 0.2;
+	const closeAt = role === 'from' ? (COUNT - 1) * SPACING_S + LEAD_S + 0.5 : LEAD_S + (COUNT - 1) * SPACING_S + TRAVEL_S + 0.1;
+	if (local < openAt || local >= closeAt + CLOSE_S) return { s: 0, squash: 0 };
 	if (local < openAt + OPEN_S) {
 		const p = (local - openAt) / OPEN_S;
-		// Pops open past full size and settles; wide then tall as it does.
-		return { s: Math.max(0, easeOutBack(p)), squash: Math.sin(p * Math.PI) * 0.22 };
+		// Opens softly, a faint breath of squash on the way.
+		return { s: easeOutCubic(p), squash: Math.sin(p * Math.PI) * 0.06 };
 	}
 	if (local < closeAt) return { s: 1, squash: 0 };
 	const p = (local - closeAt) / CLOSE_S;
