@@ -44,6 +44,12 @@ func TestFakeYTDLP(t *testing.T) {
 	switch mode {
 	case "ok":
 		fmt.Printf(`{"formats":[{"format_id":"233","manifest_url":"https://manifest.googlevideo.com/api/manifest/hls_variant/expire/%d/id/x/file/index.m3u8","protocol":"m3u8_native"},%s]}`, exp+60, mp4)
+	case "heat", "plain":
+		heat := `,"heatmap":[{"start_time":0,"end_time":20,"value":0.3},{"start_time":80,"end_time":100,"value":1},{"start_time":100,"end_time":200,"value":0.5}]`
+		if mode == "plain" {
+			heat = ""
+		}
+		fmt.Printf(`{"duration":200%s,"formats":[{"format_id":"233","manifest_url":"https://manifest.googlevideo.com/api/manifest/hls_variant/expire/%d/id/x/file/index.m3u8","protocol":"m3u8_native"},%s]}`, heat, exp+60, mp4)
 	case "mp4":
 		fmt.Printf(`{"formats":[%s]}`, mp4)
 	case "odd":

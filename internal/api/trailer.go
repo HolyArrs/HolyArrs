@@ -80,6 +80,10 @@ type TrailerStream struct {
 	// for sound in browsers without native HLS and for viewers whose direct
 	// playback is refused. Given per person; never stored.
 	ProxyURL string `json:"proxy_url,omitempty"`
+	// Duration is the video's length and Peak its most replayed point
+	// (YouTube's heatmap), in seconds; 0 when yt-dlp gave none.
+	Duration float64 `json:"duration,omitempty"`
+	Peak     float64 `json:"peak,omitempty"`
 }
 
 type trailerEntry struct {
@@ -578,6 +582,12 @@ func resolveTrailer(ctx context.Context, bin string, pre []string, key string, n
 		return TrailerStream{}, errNoStream
 	}
 	var j struct {
+		Duration float64 `json:"duration"`
+		Heatmap  []struct {
+			Start float64 `json:"start_time"`
+			End   float64 `json:"end_time"`
+			Value float64 `json:"value"`
+		} `json:"heatmap"`
 		Formats []struct {
 			FormatID    string `json:"format_id"`
 			URL         string `json:"url"`
@@ -618,9 +628,17 @@ func resolveTrailer(ctx context.Context, bin string, pre []string, key string, n
 			mp4, w, h, rank, audio = f.URL, f.Width, f.Height, r, withSound
 		}
 	}
+	// The most replayed point: the start of the heatmap's highest part.
+	var peak, best float64
+	for _, m := range j.Heatmap {
+		if m.Value > best && m.Start >= 0 && (j.Duration <= 0 || m.Start < j.Duration) {
+			peak, best = m.Start, m.Value
+		}
+	}
+	dur := max(j.Duration, 0)
 	switch {
 	case hls != "":
-		s := TrailerStream{Type: "hls", URL: hls, ExpiresAt: trailerExpiry(hls, now), MP4URL: mp4, MP4Audio: audio, Width: w, Height: h, Key: key, Audio: true}
+		s := TrailerStream{Type: "hls", URL: hls, ExpiresAt: trailerExpiry(hls, now), MP4URL: mp4, MP4Audio: audio, Width: w, Height: h, Key: key, Audio: true, Duration: dur, Peak: peak}
 		if mp4 != "" {
 			if e := trailerExpiry(mp4, now); e.Before(s.ExpiresAt) {
 				s.ExpiresAt = e
@@ -628,7 +646,7 @@ func resolveTrailer(ctx context.Context, bin string, pre []string, key string, n
 		}
 		return s, nil
 	case mp4 != "":
-		return TrailerStream{Type: "mp4", URL: mp4, ExpiresAt: trailerExpiry(mp4, now), Width: w, Height: h, Key: key, Audio: audio}, nil
+		return TrailerStream{Type: "mp4", URL: mp4, ExpiresAt: trailerExpiry(mp4, now), Width: w, Height: h, Key: key, Audio: audio, Duration: dur, Peak: peak}, nil
 	}
 	return TrailerStream{}, errNoStream
 }

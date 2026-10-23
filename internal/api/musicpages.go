@@ -551,6 +551,9 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 	case "more":
 		a.artistMore(w, r)
 		return
+	case "video":
+		a.artistVideo(w, r)
+		return
 	}
 	// Kid members get no music pages, as with the other music routes (explicit marks are incomplete).
 	if a.kidMax(r) != "" {

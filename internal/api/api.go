@@ -181,6 +181,8 @@ type API struct {
 	// ahead runs music fetch-ahead; ctl keeps the server's switch.
 	ahead musicAhead
 	ctl   musicControl
+	// artistVideos keeps each artist's music videos an hour.
+	artistVideos artistVideoCache
 }
 
 // New makes the API.
