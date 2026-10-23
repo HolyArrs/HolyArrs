@@ -322,7 +322,7 @@
 				<div class="stage" aria-hidden="true">
 					{#if heroSrc}
 						{#key heroSrc}
-							<img class="art" class:soft={heroSoft} class:in={heroIn} src={heroSrc} alt="" decoding="async" fetchpriority="high" onload={() => (heroIn = true)} onerror={() => { heroIn = false; heroTry++; }} />
+							<img class="art" class:soft={heroSoft} class:in={heroIn} class:under={videoIn} src={heroSrc} alt="" decoding="async" fetchpriority="high" onload={() => (heroIn = true)} onerror={() => { heroIn = false; heroTry++; }} />
 						{/key}
 					{/if}
 					{#if heroVideo}
@@ -537,7 +537,8 @@
 	@media (prefers-reduced-motion: reduce) { .stage { animation: none; } }
 	/* The music video sits over the photo and fades in once it plays. */
 	.clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 900ms ease-out; pointer-events: none; }
-	.clip.in { opacity: .55; }
+	.clip.in { opacity: .7; }
+	.art.under, .art.soft.under { opacity: 0; transition-duration: 900ms; }
 	.shade { position: absolute; inset: 0; z-index: -1; background: radial-gradient(ellipse 60% 55% at 50% 42%, rgb(7 8 10 / 0) 0%, rgb(7 8 10 / .55) 70%, var(--hero-ink) 100%), linear-gradient(to top, var(--hero-ink) 0%, rgb(7 8 10 / 0) 45%); }
 	.crumbs { position: absolute; top: clamp(14px, 2vw, 22px); left: clamp(20px, 4vw, 48px); z-index: 1; }
 	.chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 10px; border-radius: 999px; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); color: #fff; font: 600 13px/1.2 var(--font-ui); }
