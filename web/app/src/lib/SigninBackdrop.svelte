@@ -891,7 +891,7 @@ void main() {
 		.logo.top { opacity: 0.92; }
 		.art { transition: none; }
 	}
-	/* Phones: the card is a bottom sheet, so the logo goes to the top. */
+	/* Phones: the card floats low, so the logo goes to the top. */
 	@media (max-width: 600px) {
 		.logo {
 			top: max(20px, env(safe-area-inset-top));

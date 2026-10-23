@@ -106,11 +106,13 @@
 		const cap = setTimeout(go, GL_WAIT_CAP_MS);
 		const t = setInterval(() => (now = Date.now()), 1000);
 		if (page.url.searchParams.get('sso') === 'finish') void finishOIDC();
-		// Phones: lift the sheet above the on-screen keyboard (--kb on <main>).
+		// Phones: lift the card above the on-screen keyboard (--kb on <main>).
 		const vv = window.visualViewport;
 		const lift = () => {
 			if (!vv || !panelEl) return;
-			const kb = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+			let kb = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+			// Never lift the card's top past 16 px of the visible area.
+			kb = Math.min(kb, Math.max(0, panelEl.offsetTop - 16));
 			panelEl.parentElement?.style.setProperty('--kb', `${kb}px`);
 		};
 		vv?.addEventListener('resize', lift);
@@ -668,67 +670,35 @@
 	@media (min-width: 1600px) and (min-height: 760px) { .panel { --z: 1.08; } }
 	@media (min-width: 2200px) and (min-height: 1000px) { .panel { --z: 1.2; } }
 	@media (min-width: 3000px) and (min-height: 1300px) { .panel { --z: 1.32; } }
-	/* Phones: a full-width bottom sheet over the art, clear of the home bar. */
+	/* Phones: the desktop card, floating low over full-bleed art with 16 px of
+	   art on every side; it rides above the keyboard (--kb) with a smooth lift. */
 	@media (max-width: 600px) {
-		/* Full-bleed art (no edge frame); the sheet rides above the keyboard (--kb). */
-		.wrap { --fr: 0px; place-items: end stretch; padding: 0 0 var(--kb, 0px); min-height: 100dvh; }
-		/* A frosted bottom sheet, about 40% tall. The glass is a layer that starts
-		   56 px above the sheet and fades in, so the art melts into it. */
+		.wrap {
+			--fr: 0px;
+			place-items: end center;
+			padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, calc(env(safe-area-inset-bottom) + 8px)) max(16px, env(safe-area-inset-left));
+		}
 		.panel {
 			--z: 1;
 			width: 100%;
-			border: 0;
-			border-radius: 24px 24px 0 0;
-			padding: 26px max(20px, env(safe-area-inset-right)) max(16px, calc(env(safe-area-inset-bottom) + 8px)) max(20px, env(safe-area-inset-left));
-			background: none;
-			-webkit-backdrop-filter: none;
-			backdrop-filter: none;
-			box-shadow: none;
+			max-width: 440px;
+			padding: 26px 22px 20px;
+			border-radius: 24px;
+			transform: translateY(calc(-1 * var(--kb, 0px)));
+			transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
 		}
-		.panel::before {
-			content: '';
-			position: absolute;
-			inset: -56px 0 0;
-			z-index: -1;
-			background: linear-gradient(180deg, rgb(14 14 18 / 0) 0, rgb(14 14 18 / 0.5) 56px, rgb(14 14 18 / 0.62) 100%);
-			-webkit-backdrop-filter: blur(40px) saturate(1.7) brightness(0.72);
-			backdrop-filter: blur(40px) saturate(1.7) brightness(0.72);
-			-webkit-mask-image: linear-gradient(180deg, transparent 0, #000 56px);
-			mask-image: linear-gradient(180deg, transparent 0, #000 56px);
-			pointer-events: none;
-		}
-		.panel[data-mat='blur']::before { -webkit-backdrop-filter: blur(80px) saturate(1.3) brightness(0.62); backdrop-filter: blur(80px) saturate(1.3) brightness(0.62); }
-		/* The grab handle. */
-		.panel::after {
-			content: '';
-			position: absolute;
-			top: 9px;
-			left: 50%;
-			width: 36px;
-			height: 5px;
-			margin-left: -18px;
-			border-radius: 3px;
-			background: rgb(255 255 255 / 0.32);
-		}
-		.wrap.leaving .panel { background: none; }
-		.wrap.leaving .panel::before { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgb(18 18 22 / 0.92); }
-		@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-			.panel { background: none; }
-			.panel::before { background: linear-gradient(180deg, rgb(18 18 22 / 0) 0, rgb(18 18 22 / 0.92) 56px); }
-		}
-		/* The sheet header: a small mark and name, off the art so it never sits on faces. */
-		.brand { gap: 8px; margin: 0 0 10px; font-size: 17px; }
-		.brand img { width: 26px; height: 26px; }
+		.brand { gap: 9px; margin-bottom: 16px; font-size: 20px; }
+		.brand img { width: 30px; height: 30px; }
 		.title { font-size: 24px; }
-		.lead { margin: 4px 0 14px; }
-		.title + :not(.lead) { margin-top: 14px; }
+		.lead { margin: 6px 0 16px; }
+		.title + :not(.lead) { margin-top: 16px; }
 		.panel :global(.field + .field) { margin-top: 10px; }
 		.panel :global(.input), .submit :global(.ui-btn), .prov { min-height: 48px; }
 		.submit { margin-top: 16px; }
 		.submit :global(.ui-btn) { width: 100%; }
 		.prov { min-height: 64px; }
-		.or { margin: 12px 0; }
-		.link { min-height: 44px; margin-top: 4px; }
-		.help { margin-top: 4px; }
+		.or { margin: 14px 0; }
+		.link { min-height: 44px; margin-top: 6px; }
+		.help { margin-top: 6px; }
 	}
 </style>
