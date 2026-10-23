@@ -55,6 +55,24 @@
 	// The hero's music video (muted, looping, relayed); none keeps the photo.
 	let heroVideo = $state<HeroVideo | null>(null);
 	let videoEl: HTMLVideoElement | undefined = $state();
+	let videoMuted = $state(true);
+	let videoPaused = $state(false);
+	function toggleMute() {
+		if (!videoEl) return;
+		videoEl.muted = !videoEl.muted;
+		videoMuted = videoEl.muted;
+	}
+	function togglePause() {
+		if (!videoEl) return;
+		if (videoEl.paused) void videoEl.play().catch(() => {});
+		else videoEl.pause();
+	}
+	function fullScreen() {
+		const el = videoEl as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | undefined;
+		if (!el) return;
+		if (el.requestFullscreen) void el.requestFullscreen().catch(() => {});
+		else el.webkitEnterFullscreen?.();
+	}
 	let videoIn = $state(false);
 	let logoFailed = $state(false);
 	let folders = $state<LibraryFolder[]>([]);
@@ -326,10 +344,17 @@
 						{/key}
 					{/if}
 					{#if heroVideo}
-						<video class="clip" class:in={videoIn} bind:this={videoEl} muted loop playsinline disablepictureinpicture preload="auto" onplaying={() => (videoIn = true)} data-testid="artist-hero-video"></video>
+						<video class="clip" class:in={videoIn} bind:this={videoEl} muted loop playsinline disablepictureinpicture preload="auto" onplaying={() => { videoIn = true; videoPaused = false; }} onpause={() => (videoPaused = true)} onvolumechange={() => videoEl && (videoMuted = videoEl.muted)} data-testid="artist-hero-video"></video>
 					{/if}
 				</div>
 				<div class="shade" aria-hidden="true"></div>
+				{#if heroVideo && videoIn}
+					<div class="vctl" data-testid="artist-hero-video-controls">
+						<button type="button" onclick={togglePause} aria-label={videoPaused ? 'Play video' : 'Pause video'}><Icon name={videoPaused ? 'play' : 'pause'} size={16} /></button>
+						<button type="button" onclick={toggleMute} aria-label={videoMuted ? 'Turn sound on' : 'Turn sound off'}><Icon name={videoMuted ? 'soundOff' : 'sound'} size={16} /></button>
+						<button type="button" onclick={fullScreen} aria-label="Full screen"><Icon name="expand" size={16} /></button>
+					</div>
+				{/if}
 				{#if from?.label}<nav class="crumbs" aria-label="Breadcrumb"><a class="chip" href={from.path} onclick={stepBack} data-testid="artist-back"><Icon name={fromIcon(from.path) ?? 'chevronLeft'} size={14} />{from.label}</a></nav>{/if}
 				<div class="hero-in">
 					{#if picture && !photoFailed}<img class="photo" src={picture} alt="" width="184" height="184" onerror={() => (photoFailed = true)} />{:else if wideFace && !wideFailed}<img class="photo crop" src={wideFace} alt="" width="184" height="184" onerror={() => (wideFailed = true)} />{:else}<div class="photo initials" aria-hidden="true">{initialsOf(hero.name)}</div>{/if}
@@ -537,7 +562,12 @@
 	@media (prefers-reduced-motion: reduce) { .stage { animation: none; } }
 	/* The music video sits over the photo and fades in once it plays. */
 	.clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 900ms ease-out; pointer-events: none; }
-	.clip.in { opacity: .7; }
+	.clip.in { opacity: 1; }
+	.vctl { position: absolute; right: clamp(16px, 4vw, 48px); bottom: clamp(16px, 2.5vw, 28px); z-index: 2; display: flex; gap: 8px; }
+	.vctl button { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); color: #fff; cursor: pointer; transition: background .2s; }
+	.vctl button:hover { background: rgb(255 255 255 / 26%); }
+	.vctl button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+	@media (max-width: 600px) { .vctl { bottom: 12px; right: 12px; gap: 6px; } .vctl button { width: 34px; height: 34px; } }
 	.art.under, .art.soft.under { opacity: 0; transition-duration: 900ms; }
 	.shade { position: absolute; inset: 0; z-index: -1; background: radial-gradient(ellipse 60% 55% at 50% 42%, rgb(7 8 10 / 0) 0%, rgb(7 8 10 / .55) 70%, var(--hero-ink) 100%), linear-gradient(to top, var(--hero-ink) 0%, rgb(7 8 10 / 0) 45%); }
 	.crumbs { position: absolute; top: clamp(14px, 2vw, 22px); left: clamp(20px, 4vw, 48px); z-index: 1; }
