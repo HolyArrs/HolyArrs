@@ -35,12 +35,14 @@ func (s *Service) MusicCover(ctx context.Context, mbid, artist, title string) (s
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	req.Header.Set("Accept", "application/json")
-	resp, err := s.http.Do(req)
+	resp, err := s.doPending(ctx, req)
 	if err != nil {
 		return "", ErrServiceUnavailable
 	}
 	defer resp.Body.Close()
 	switch {
+	case resp.StatusCode == http.StatusAccepted:
+		return "", ErrServicePending
 	case resp.StatusCode == http.StatusNotFound:
 		return "", ErrNotFound
 	case resp.StatusCode == http.StatusTooManyRequests:

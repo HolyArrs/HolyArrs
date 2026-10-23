@@ -54,12 +54,14 @@ func (s *Service) MusicTrending(ctx context.Context, kind, region string) (Music
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, s.base+"/v1/lists/music-trending?"+q.Encode(), nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	req.Header.Set("Accept", "application/json")
-	resp, err := s.http.Do(req)
+	resp, err := s.doPending(ctx, req)
 	if err != nil {
 		return out, ErrServiceUnavailable
 	}
 	defer resp.Body.Close()
 	switch {
+	case resp.StatusCode == http.StatusAccepted:
+		return out, ErrServicePending
 	case resp.StatusCode == http.StatusNotFound:
 		return out, ErrNotFound
 	case resp.StatusCode == http.StatusTooManyRequests:

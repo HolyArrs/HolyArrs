@@ -68,12 +68,14 @@ func (s *Service) musicGet(ctx context.Context, path string, q url.Values, out a
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, s.base+path+"?"+q.Encode(), nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	req.Header.Set("Accept", "application/json")
-	resp, err := s.http.Do(req)
+	resp, err := s.doPending(ctx, req)
 	if err != nil {
 		return ErrServiceUnavailable
 	}
 	defer resp.Body.Close()
 	switch {
+	case resp.StatusCode == http.StatusAccepted:
+		return ErrServicePending
 	case resp.StatusCode == http.StatusNotFound:
 		return ErrNotFound
 	case resp.StatusCode == http.StatusTooManyRequests:
@@ -123,7 +125,7 @@ func (s *Service) MusicGenreTile(ctx context.Context, slug, version string) ([]b
 	}
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, s.base+"/v1/music/genres/tile/"+url.PathEscape(slug)+".jpg?"+url.Values{"v": {version}}.Encode(), nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
-	resp, err := s.http.Do(req)
+	resp, err := s.doPending(ctx, req)
 	if err != nil {
 		return nil, ErrServiceUnavailable
 	}

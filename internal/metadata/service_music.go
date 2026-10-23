@@ -134,7 +134,7 @@ func (m *serviceMusic) Artist(ctx context.Context, mbid string) (Artist, error) 
 	ctx, cancel := serviceContext(ctx)
 	defer cancel()
 	item, err := m.service.detail(ctx, "musicbrainz", "artist", mbid)
-	if err != nil {
+	if err != nil && !(errors.Is(err, ErrServicePending) && item.Source != "") {
 		if m.direct != nil && serviceFallback(ctx, err) {
 			return m.directArtist(ctx, mbid)
 		}

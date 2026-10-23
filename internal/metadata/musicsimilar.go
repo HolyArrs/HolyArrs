@@ -32,12 +32,14 @@ func (s *Service) MusicSimilar(ctx context.Context, mbid string) ([]SimilarArtis
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, s.base+"/v1/music/similar/"+strings.ToLower(mbid), nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	req.Header.Set("Accept", "application/json")
-	resp, err := s.http.Do(req)
+	resp, err := s.doPending(ctx, req)
 	if err != nil {
 		return nil, ErrServiceUnavailable
 	}
 	defer resp.Body.Close()
 	switch {
+	case resp.StatusCode == http.StatusAccepted:
+		return nil, ErrServicePending
 	case resp.StatusCode == http.StatusNotFound:
 		return nil, ErrNotFound
 	case resp.StatusCode == http.StatusTooManyRequests:

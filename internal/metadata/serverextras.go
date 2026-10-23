@@ -105,12 +105,14 @@ func (s *Service) extra(ctx context.Context, path string, out any) error {
 	req.Header.Set("Authorization", "Bearer "+tok)
 	req.Header.Set("Accept", "application/json")
 	aheadRequest(ctx, req)
-	resp, err := s.http.Do(req)
+	resp, err := s.doPending(ctx, req)
 	if err != nil {
 		return ErrServiceUnavailable
 	}
 	defer resp.Body.Close()
 	switch {
+	case resp.StatusCode == http.StatusAccepted:
+		return ErrServicePending
 	case resp.StatusCode == http.StatusNotFound:
 		return ErrNotFound
 	case resp.StatusCode == http.StatusTooManyRequests:

@@ -23,6 +23,9 @@ var (
 	ErrServiceBusy        = errors.New("metadata service is busy; try again later")
 	ErrServiceInvalid     = errors.New("metadata service returned an invalid or expired answer")
 	ErrServiceIncomplete  = errors.New("metadata service does not supply the complete requested catalog")
+	// ErrServicePending means the server answered 202: the data is still
+	// being fetched. It is not a failure and its body is never final.
+	ErrServicePending = errors.New("metadata service is still fetching this; try again shortly")
 )
 
 // ServiceOptions requires the caller's address-policy HTTP client. The command
@@ -79,7 +82,7 @@ func serviceContext(ctx context.Context) (context.Context, context.CancelFunc) {
 }
 
 func serviceFallback(ctx context.Context, err error) bool {
-	return ctx.Err() == nil && (errors.Is(err, ErrServiceUnavailable) || errors.Is(err, ErrServiceBusy) || errors.Is(err, ErrServiceIncomplete) || errors.Is(err, outside.ErrSuppressed))
+	return ctx.Err() == nil && (errors.Is(err, ErrServiceUnavailable) || errors.Is(err, ErrServiceBusy) || errors.Is(err, ErrServicePending) || errors.Is(err, ErrServiceIncomplete) || errors.Is(err, outside.ErrSuppressed))
 }
 
 type serviceEnvelope struct {
@@ -210,6 +213,13 @@ func (s *Service) detail(ctx context.Context, provider, kind, id string) (servic
 	}
 	e, err := s.get(ctx, path, provider, strings.ToLower(id), nil)
 	if err != nil {
+		if errors.Is(err, ErrServicePending) {
+			// Partial answer: usable for display, never final.
+			var part serviceItem
+			if json.Unmarshal(e.Data, &part) == nil && part.Source == provider && part.Kind == kind && strings.EqualFold(part.SourceID, id) {
+				return part, err
+			}
+		}
 		return serviceItem{}, err
 	}
 	var item serviceItem
@@ -281,6 +291,7 @@ func (s *Service) get(ctx context.Context, path, provider, id string, q url.Valu
 	if len(q) > 0 {
 		u += "?" + q.Encode()
 	}
+	pending := 0
 	for attempt := 0; attempt < 2; attempt++ {
 		if ctx.Err() != nil {
 			return out, ctx.Err()
@@ -331,6 +342,20 @@ func (s *Service) get(ctx context.Context, path, provider, id string, q url.Valu
 				return out, ErrServiceInvalid
 			}
 			return out, nil
+		case http.StatusAccepted:
+			if pending >= pendingTries {
+				// Still not ready: hand back the partial data (never final).
+				var partial serviceEnvelope
+				if json.Unmarshal(body, &partial) == nil {
+					out = partial
+				}
+				return out, ErrServicePending
+			}
+			pending++
+			attempt--
+			if !pendingSleep(ctx, resp.Header.Get("Retry-After")) {
+				return out, ctx.Err()
+			}
 		case http.StatusUnauthorized, http.StatusForbidden:
 			return out, ErrServiceAccess
 		case http.StatusNotFound:
@@ -378,4 +403,46 @@ func serviceRetryAfter(value string, body []byte) time.Duration {
 		}
 	}
 	return delay + time.Duration(rand.IntN(100))*time.Millisecond
+}
+
+// pendingTries is how many times a 202 is re-asked inside one request.
+const pendingTries = 2
+
+// pendingDelay reads Retry-After for a 202, capped to 3 s so a page never
+// waits long on the server.
+func pendingDelay(value string) time.Duration {
+	n, err := strconv.Atoi(strings.TrimSpace(value))
+	if err != nil || n < 1 {
+		n = 2
+	}
+	return time.Duration(min(n, 3))*time.Second + time.Duration(rand.IntN(100))*time.Millisecond
+}
+
+func pendingSleep(ctx context.Context, retryAfter string) bool {
+	t := time.NewTimer(pendingDelay(retryAfter))
+	defer t.Stop()
+	select {
+	case <-ctx.Done():
+		return false
+	case <-t.C:
+		return true
+	}
+}
+
+// doPending sends req and, on 202, re-asks up to pendingTries times after
+// Retry-After. A 202 left over is returned unread for the caller to map to
+// ErrServicePending.
+func (s *Service) doPending(ctx context.Context, req *http.Request) (*http.Response, error) {
+	for i := 0; ; i++ {
+		resp, err := s.http.Do(req)
+		if err != nil || resp.StatusCode != http.StatusAccepted || i >= pendingTries {
+			return resp, err
+		}
+		ra := resp.Header.Get("Retry-After")
+		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 1<<16))
+		_ = resp.Body.Close()
+		if !pendingSleep(ctx, ra) {
+			return nil, ctx.Err()
+		}
+	}
 }
