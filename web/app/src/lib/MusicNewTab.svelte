@@ -313,7 +313,7 @@
 	.eyebrow { font: 600 11px/1.3 var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
 	.h-title { margin-top: 2px; font-size: 17px; line-height: 1.3; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.h-artist { font-size: 17px; line-height: 1.3; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 8px; }
-	.art { position: relative; display: block; aspect-ratio: 3 / 2; border-radius: 10px; overflow: hidden; background: var(--surface-2); transition: transform 0.25s ease, filter 0.25s ease, box-shadow 0.25s ease; }
+	.art { position: relative; display: block; aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden; background: var(--surface-2); transition: transform 0.25s ease, filter 0.25s ease, box-shadow 0.25s ease; }
 	.wide { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
 	.shade { position: absolute; inset: 0; background: linear-gradient(to top, rgb(0 0 0 / 0.6), transparent 45%); }
 	.note { position: absolute; left: 12px; right: 136px; bottom: 10px; color: #fff; font-size: 13px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -355,6 +355,6 @@
 	.grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 24px 20px; }
 	.loading { display: flex; flex-direction: column; gap: 12px; }
 	.hero-sk { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-	.hero-sk span { aspect-ratio: 3 / 2; border-radius: 10px; margin-top: 60px; }
+	.hero-sk span { aspect-ratio: 4 / 3; border-radius: 10px; margin-top: 60px; }
 	@media (max-width: 640px) { .hero-sk { grid-template-columns: 1fr; } .hero-sk span:nth-child(n + 2) { display: none; } }
 </style>
