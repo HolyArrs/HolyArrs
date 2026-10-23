@@ -21,6 +21,8 @@ export interface Me {
 	safe_mode?: boolean;
 	auth_method?: AuthMethod;
 	local_recent?: boolean;
+	/** Address of my profile picture, or null. */
+	avatar?: string | null;
 	/** Age-rating limit ('' = none; set means a Kid account). */
 	max_rating?: string;
 	rating_country?: string;
@@ -51,6 +53,8 @@ export function createSession(client: Client = defaultClient) {
 		mustTwoFactor: boolean;
 		authMethod: AuthMethod;
 		localRecent: boolean;
+		/** Address of my profile picture; null shows the initials. */
+		avatar: string | null;
 		/** Age-rating limit; '' means none. A Kid has one. */
 		maxRating: string;
 		ways: Way[];
@@ -68,6 +72,7 @@ export function createSession(client: Client = defaultClient) {
 		mustTwoFactor: false,
 		authMethod: '',
 		localRecent: false,
+		avatar: null,
 		maxRating: '',
 		ways: ['password'],
 		safeMode: false,
@@ -116,6 +121,7 @@ export function createSession(client: Client = defaultClient) {
 		s.mustTwoFactor = !!me.must_two_factor;
 		s.authMethod = me.auth_method ?? '';
 		s.localRecent = !!me.local_recent;
+		s.avatar = me.avatar ?? null;
 		s.maxRating = me.max_rating ?? '';
 		s.safeMode = !!me.safe_mode;
 		s.state = 'signed_in';
@@ -129,6 +135,7 @@ export function createSession(client: Client = defaultClient) {
 		s.perms = [];
 		s.authMethod = '';
 		s.localRecent = false;
+		s.avatar = null;
 		s.maxRating = '';
 		try {
 			const st = await client.get<AuthState>('/auth/state');
@@ -279,7 +286,11 @@ export function createSession(client: Client = defaultClient) {
 			return !!s.maxRating;
 		},
 		loadMinPassword,
-		loadWays
+		loadWays,
+		/** setAvatar remembers my picture's address after an upload or a removal. */
+		setAvatar(url: string | null) {
+			s.avatar = url;
+		}
 	};
 }
 

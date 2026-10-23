@@ -28,6 +28,7 @@
 	import { preloadHero } from '#lib/tmdb-image.ts';
 	import AppShell from '#lib/ui/AppShell.svelte';
 	import Sidebar from '#lib/ui/Sidebar.svelte';
+	import Avatar from '#lib/ui/Avatar.svelte';
 	import SidebarItem from '#lib/ui/SidebarItem.svelte';
 	import TopBar from '#lib/ui/TopBar.svelte';
 	import TabBar, { type Tab } from '#lib/ui/TabBar.svelte';
@@ -246,7 +247,6 @@
 	const roleWord = $derived({ owner: 'Owner', admin: 'Admin', member: 'Member' }[session.s.role] ?? 'Member');
 	// An id-like account name (preview-…, e2e-…) reads as "You".
 	const shownName = $derived(personName(session.s.name, 'You'));
-	const initials = $derived(shownName.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('') || '?');
 	const accountItems = $derived<MenuItem[]>([
 		{ label: 'Account', icon: 'user', href: to('/account') },
 		{ kind: 'separator' },
@@ -390,7 +390,7 @@
 	<Menu label="{shownName}, {roleWord}: account and appearance" items={accountItems} variant="row" align="start" placement="above" width={240}>
 		{#snippet trigger()}
 			<span class="who" class:only={collapsed}>
-				<span class="avatar" aria-hidden="true">{initials}</span>
+				<Avatar name={shownName} src={session.s.avatar} size={32} />
 				{#if !collapsed}
 					<span class="who-text"><span class="who-name">{shownName}</span><span class="who-role">{roleWord}</span></span>
 					<Icon name="chevronUpDown" size={15} />
@@ -489,7 +489,6 @@
 	.part-off p { margin-top: var(--s-3); }
 	.who { display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0; color: var(--text-muted); }
 	.who.only { justify-content: center; }
-	.avatar { width: 32px; height: 32px; flex: none; display: grid; place-items: center; border-radius: 50%; background: linear-gradient(150deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #000)); color: var(--text-on-red); font: 600 13px/1 var(--font-ui); }
 	.who-text { flex: 1; min-width: 0; display: flex; flex-direction: column; text-align: left; }
 	.who-name { color: var(--text); font: var(--t-subhead); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.who-role { font: var(--t-footnote); color: var(--text-muted); }

@@ -556,6 +556,7 @@ func (a *Auth) Routes(m *http.ServeMux) {
 	m.HandleFunc("PUT /api/v1/auth/settings", a.putSettings)
 	a.twoFactorRoutes(m)
 	a.userRoutes(m)
+	a.avatarRoutes(m)
 	a.sessionRoutes(m)
 	a.outsideRoutes(m)
 	a.providerRoutes(m)
@@ -913,7 +914,7 @@ func (a *Auth) me(w http.ResponseWriter, r *http.Request) {
 	who, _ := From(r.Context())
 	writeJSON(w, http.StatusOK, map[string]any{"id": who.UserID, "name": who.Name, "via": who.Via, "csrf": who.CSRF, "role": who.Role,
 		"perms": who.Effective(), "two_factor": who.TwoFactor, "must_two_factor": who.MustTwoFactor, "auth_method": who.AuthMethod,
-		"local_recent": who.LocalRecent, "safe_mode": a.safeMode, "max_rating": who.MaxRating, "rating_country": countryOr(who.RatingCountry)})
+		"local_recent": who.LocalRecent, "avatar": a.avatarOf(r.Context(), who.UserID), "safe_mode": a.safeMode, "max_rating": who.MaxRating, "rating_country": countryOr(who.RatingCountry)})
 }
 
 // Cleanup drops ended sessions.

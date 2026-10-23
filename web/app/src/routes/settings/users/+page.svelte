@@ -17,6 +17,7 @@
 	import { kindAsks } from '#lib/wishlist.ts';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import { kidLabel, ratingChoices } from '#lib/kid.ts';
+	import Avatar from '#lib/ui/Avatar.svelte';
 
 	interface User {
 		id: number;
@@ -28,6 +29,7 @@
 		password: boolean;
 		links: { provider: string; name: string }[];
 		created_at: string;
+		avatar?: string | null;
 		last_seen_at?: string;
 		max_rating?: string;
 		rating_country?: string;
@@ -346,6 +348,7 @@
 		<ul class="rows" style="margin-top: var(--s-3)">
 			{#each users as u (u.id)}
 				<li class="person">
+					<Avatar name={u.name} src={u.avatar} size={40} />
 					<div class="grow">
 						<div class="name">
 							{u.name}

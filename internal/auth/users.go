@@ -59,6 +59,7 @@ type UserView struct {
 	Password  bool       `json:"password"` // signs in with a HolyArrs password
 	Links     []LinkView `json:"links"`
 	CreatedAt string     `json:"created_at"`
+	Avatar    *string    `json:"avatar"` // the picture's address, or null
 	LastSeen  *string    `json:"last_seen_at,omitempty"`
 	// MaxRating is a Kid's age-rating limit ("" for no limit).
 	MaxRating     string `json:"max_rating"`
@@ -143,7 +144,8 @@ func serverError(w http.ResponseWriter, what string, err error) {
 
 func (a *Auth) listUsers(w http.ResponseWriter, r *http.Request) {
 	rows, err := a.s.Read().QueryContext(r.Context(), `SELECT u.id, u.name, u.role, u.state, u.perms, u.totp_secret_id IS NOT NULL,
-		u.password_hash != '', u.created_at, (SELECT max(last_seen_at) FROM sessions WHERE user_id = u.id), u.max_rating, u.rating_country
+		u.password_hash != '', u.created_at, (SELECT max(last_seen_at) FROM sessions WHERE user_id = u.id), u.max_rating, u.rating_country,
+		(SELECT etag FROM user_avatars WHERE user_id = u.id)
 		FROM users u ORDER BY CASE u.role WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 ELSE 2 END, u.name`)
 	if err != nil {
 		serverError(w, "users", err)
@@ -154,8 +156,8 @@ func (a *Auth) listUsers(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var u UserView
 		var perms string
-		var seen sql.NullString
-		if err := rows.Scan(&u.ID, &u.Name, &u.Role, &u.State, &perms, &u.TwoFactor, &u.Password, &u.CreatedAt, &seen, &u.MaxRating, &u.RatingCountry); err != nil {
+		var seen, tag sql.NullString
+		if err := rows.Scan(&u.ID, &u.Name, &u.Role, &u.State, &perms, &u.TwoFactor, &u.Password, &u.CreatedAt, &seen, &u.MaxRating, &u.RatingCountry, &tag); err != nil {
 			rows.Close()
 			serverError(w, "users", err)
 			return
@@ -163,6 +165,7 @@ func (a *Auth) listUsers(w http.ResponseWriter, r *http.Request) {
 		u.Perms = Who{Role: u.Role, Perms: parsePerms(perms)}.Effective()
 		u.RatingCountry = countryOr(u.RatingCountry)
 		u.Links = []LinkView{}
+		u.Avatar = avatarURL(u.ID, tag)
 		if seen.Valid {
 			u.LastSeen = &seen.String
 		}

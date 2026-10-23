@@ -159,6 +159,9 @@ var RoutePerms = map[string]Perm{
 	"GET /api/v1/auth/sessions":                 needSelf,
 	"DELETE /api/v1/auth/sessions":              needSelf,
 	"DELETE /api/v1/auth/sessions/{sid}":        needSelf,
+	"PUT /api/v1/account/avatar":                needSelf,
+	"DELETE /api/v1/account/avatar":             needSelf,
+	"GET /api/v1/users/{id}/avatar":             needSignedIn,
 
 	// Looking at the Library and searching for titles.
 	"GET /api/v1/titles":                                   needSignedIn,
@@ -648,7 +651,7 @@ func init() {
 		"GET /api/v1/titles", "GET /api/v1/library/search", "GET /api/v1/search/suggest", "GET /api/v1/titles/lookup", "GET /api/v1/titles/{id}",
 		"GET /api/v1/titles/{id}/albums", "GET /api/v1/titles/{id}/episodes", "GET /api/v1/titles/{id}/releases",
 		"GET /api/v1/titles/{id}/rename", "GET /api/v1/titles/{id}/seasons", "GET /api/v1/titles/{id}/subtitles",
-		"GET /api/v1/turned-down", "GET /api/v1/schedules", "GET /api/v1/app/update",
+		"GET /api/v1/turned-down", "GET /api/v1/users/{id}/avatar", "GET /api/v1/schedules", "GET /api/v1/app/update",
 	} {
 		ReadRoutes[r] = true
 	}

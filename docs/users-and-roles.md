@@ -65,6 +65,27 @@ Each person manages their own devices under **My account**.
 These changes require a password sign-in. A session admitted by the local
 network shortcut must sign in with a password first.
 
+## Profile pictures
+
+Everyone can set a picture for their own account on **My account > Profile
+picture**. Choose a JPEG, PNG or WebP file up to 5 MB, check the round preview,
+then select **Save picture**. HolyArrs crops the middle square, shrinks it to
+256 by 256 pixels and keeps it as a JPEG in its database. **Remove** takes it
+away. The picture replaces the coloured initials in the sidebar, on My account
+and on **Settings > Users**; anyone without a picture keeps the initials.
+
+For scripts:
+
+| Route | What it does |
+| --- | --- |
+| `PUT /api/v1/account/avatar` | Send the image file as the request body. Answers `{"avatar": "<address>"}`. 413 over 5 MB, 415 when it is not a JPEG, PNG or WebP picture. |
+| `DELETE /api/v1/account/avatar` | Removes your picture. |
+| `GET /api/v1/users/{id}/avatar` | The picture of a signed-in person, cached, or 404. |
+
+`GET /api/v1/auth/me` and `GET /api/v1/users` carry an `avatar` address, or
+`null` when there is no picture. Changes need the usual CSRF header, and an
+API key needs the write scope.
+
 ## Set up two-factor sign-in
 
 Each person manages their own two-factor sign-in under **My account**:

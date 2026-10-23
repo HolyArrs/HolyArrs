@@ -3,6 +3,7 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import Avatar from '#lib/ui/Avatar.svelte';
 	import { api, message, ApiError } from './api.ts';
 	import { session } from './session.svelte.ts';
 	import { toasts } from './toasts.svelte.ts';
@@ -269,6 +270,61 @@
 		}
 	}
 	let pref = $state<AutoplayPref>(autoplayPref());
+
+	// Profile picture: choose, see it in the circle, then save or cancel.
+	const AVATAR_MAX = 5 * 1024 * 1024;
+	let avatarInput: HTMLInputElement | undefined = $state();
+	let picked = $state<File | null>(null);
+	let preview = $state('');
+	let avatarBusy = $state(false);
+	function clearPick() {
+		if (preview) URL.revokeObjectURL(preview);
+		picked = null;
+		preview = '';
+		if (avatarInput) avatarInput.value = '';
+	}
+	function pickAvatar(e: Event) {
+		const f = (e.currentTarget as HTMLInputElement).files?.[0];
+		if (!f) return;
+		clearPick();
+		if (!/^image\/(jpeg|png|webp)$/.test(f.type)) {
+			toasts.push('Choose a JPEG, PNG or WebP picture.', 'fail');
+			return;
+		}
+		if (f.size > AVATAR_MAX) {
+			toasts.push('That picture is over 5 MB.', 'fail');
+			return;
+		}
+		picked = f;
+		preview = URL.createObjectURL(f);
+	}
+	async function saveAvatar() {
+		if (!picked) return;
+		avatarBusy = true;
+		try {
+			const r = await api.request<{ avatar: string | null }>('/account/avatar', { method: 'PUT', raw: picked });
+			session.setAvatar(r.avatar);
+			clearPick();
+			toasts.push('Profile picture saved.', 'ok');
+		} catch (err) {
+			toasts.push(message(err), 'fail');
+		} finally {
+			avatarBusy = false;
+		}
+	}
+	async function removeAvatar() {
+		avatarBusy = true;
+		try {
+			await api.del('/account/avatar');
+			session.setAvatar(null);
+			clearPick();
+			toasts.push('Profile picture removed.', 'ok');
+		} catch (err) {
+			toasts.push(message(err), 'fail');
+		} finally {
+			avatarBusy = false;
+		}
+	}
 </script>
 
 <PageHeader title="My account" subtitle="Your password, two-factor sign-in and the devices you are signed in on." />
@@ -281,6 +337,22 @@
 <SettingsCard title="Trailers on this device">
 	<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">Auto follows your system (reduced motion, data saver). Always plays them anyway; Never turns them off.</p>
 	<SegmentedControl label="Play trailers" options={[{ value: 'auto', label: 'Auto' }, { value: 'always', label: 'Always' }, { value: 'never', label: 'Never' }] as { value: AutoplayPref; label: string }[]} value={pref} onchange={(v) => { pref = v; setAutoplayPref(v); location.reload(); }} />
+</SettingsCard>
+
+<SettingsCard title="Profile picture" description="Shown in the sidebar and on the Users screen. Pick a JPEG, PNG or WebP picture up to 5 MB. It is cropped to a square around the middle.">
+	<div class="pfp">
+		<Avatar name={personName(session.s.name, 'You')} src={preview || session.s.avatar} size={96} label="Your profile picture" />
+		<div class="pfp-acts">
+			<input class="sr-only" type="file" accept="image/jpeg,image/png,image/webp" bind:this={avatarInput} onchange={pickAvatar} disabled={avatarBusy} aria-label="Choose a profile picture" />
+			{#if picked}
+				<Button variant="primary" type="button" onclick={saveAvatar} busy={avatarBusy}>Save picture</Button>
+				<Button variant="plain" type="button" onclick={clearPick} disabled={avatarBusy}>Cancel</Button>
+			{:else}
+				<Button variant="secondary" type="button" onclick={() => avatarInput?.click()} disabled={avatarBusy}>{session.s.avatar ? 'Change picture' : 'Upload picture'}</Button>
+				{#if session.s.avatar}<Button variant="plain" type="button" onclick={removeAvatar} disabled={avatarBusy}>Remove</Button>{/if}
+			{/if}
+		</div>
+	</div>
 </SettingsCard>
 
 <SettingsCard title="Signed in">
@@ -486,6 +558,8 @@
 
 <style>
 	.acct { display: flex; flex-direction: column; gap: 16px; }
+	.pfp { display: flex; align-items: center; gap: 20px; margin-top: var(--s-3); flex-wrap: wrap; }
+	.pfp-acts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 	.acct > :global(*) { margin: 0; }
 	code {
 		font-family: var(--font-mono);
