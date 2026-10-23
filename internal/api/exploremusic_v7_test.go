@@ -466,6 +466,7 @@ func TestExploreMusicV7Seeds(t *testing.T) {
 		}
 	}
 }
+
 // route: GET /api/v1/explore/music (music_rows_v7 Turning N)
 func TestExploreMusicV7Anniversary(t *testing.T) {
 	notes := func(at time.Time) string {
@@ -492,6 +493,7 @@ func TestExploreMusicV7Anniversary(t *testing.T) {
 		t.Fatalf("2001-10-30 still in Turning N on 2026-12-15: %q", n)
 	}
 }
+
 // route: GET /api/v1/explore/music (music_rows_v7 households)
 func TestExploreMusicV7Households(t *testing.T) {
 	r, _, _ := v7Rig(t, "household_two_members.json")
