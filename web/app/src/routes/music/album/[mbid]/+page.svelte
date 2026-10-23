@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { dragScroll } from '#lib/drag-scroll.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
@@ -263,7 +264,7 @@
 			{:else if similar.length}
 				<section class="block">
 					<h2>If you like {hero.artist.name}</h2>
-					<ul class="circles">{#each similar as p (p.mbid)}<li><PersonCircle name={p.name} image={appPicture(p.image)} href={artistHref(p.mbid)} size={88} /></li>{/each}</ul>
+					<ul class="circles" use:dragScroll>{#each similar as p (p.mbid)}<li><PersonCircle name={p.name} image={appPicture(p.image)} href={artistHref(p.mbid)} size={88} /></li>{/each}</ul>
 				</section>
 			{/if}
 

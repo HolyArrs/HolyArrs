@@ -142,9 +142,7 @@ export const artistHref = (mbid: string) => to(`/music/artist/${mbid}`);
 /** albumHref opens an album's page; the artist id says whose album it is. */
 export const albumHref = (mbid: string, artist: string) => to(`/music/album/${mbid}?artist=${artist}`);
 /** appPicture puts a server picture path under the app's base path; outside URLs stay. */
-// Bumped when artist photos change source, so browsers drop copies they were told to keep.
-const artistPhotoVersion = '3';
-const versioned = (src: string) => (src.includes('/music-trending/art/artist/') ? src + (src.includes('?') ? '&' : '?') + 'v=' + artistPhotoVersion : src);
+import { versioned } from './photo-version.ts';
 export const appPicture = (src: string | undefined | null) => (!src ? null : src.startsWith('/') ? to(versioned(src)) : src);
 
 const caa = /^(https?:\/\/(?:www\.)?coverartarchive\.org\/release(?:-group)?\/[^/]+\/(?:front|back|\d+))(?:-(?:250|500|1200))?(?:\.jpg)?$/;

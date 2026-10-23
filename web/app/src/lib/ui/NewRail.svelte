@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { dragScroll } from '#lib/drag-scroll.ts';
 	// This week: a date rail on New & Popular. Days 3 back to 7 ahead, each
 	// with a big day word and its titles beside it. The cards are the page's
 	// own (the same card and hover preview as every row, passed in as `card`);
@@ -15,7 +16,7 @@
 {#if days.length > 0}
 	<section class="rail" aria-labelledby="rail-title" data-testid="new-rail">
 		<h2 id="rail-title" class="rail-title">This week</h2>
-		<div class="track" role="list">
+		<div class="track" use:dragScroll role="list">
 			{#each days as d (d.day)}
 				{@const label = railLabel(d.day, today)}
 				{@const off = dayOffset(d.day, today)}

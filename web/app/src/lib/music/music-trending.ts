@@ -1,3 +1,4 @@
+import { versioned } from './photo-version.ts';
 // Music trending: the metadata server's weekly lists (ListenBrainz
 // worldwide, Deezer's charts per country) as artist and album rows.
 import { api, ApiError, type Client } from '../api.ts';
@@ -284,5 +285,5 @@ export function musicCardHref(c: MusicCardData): string {
 
 /** musicImage puts the server's picture path under the app's base path. */
 export function musicImage(c: Pick<MusicCardData, 'image'>): string | null {
-	return c.image ? to(c.image) : null;
+	return c.image ? to(c.image.startsWith('/') ? versioned(c.image) : c.image) : null;
 }

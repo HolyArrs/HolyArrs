@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { dragScroll } from '#lib/drag-scroll.ts';
 	import { Orbit, SkRail } from './ui/sk/index.ts';
 	// New & Popular → Music: a shelf of large editorial cards for the week's
 	// biggest new albums, a compact list of fresh tracks, then album rows.
@@ -220,7 +221,7 @@
 	<section class="music-new" data-testid="new-music">
 		{#if answer.hero.length}
 			<div class="hero-wrap">
-				<div class="hero" bind:this={shelf} onscroll={edges} role="list" aria-label="This week's biggest new releases" data-testid="new-music-hero">
+				<div class="hero" use:dragScroll bind:this={shelf} onscroll={edges} role="list" aria-label="This week's biggest new releases" data-testid="new-music-hero">
 					{#each answer.hero as raw (raw.key)}
 						{@const c = live(raw)}
 						<article class="h-card" role="listitem">
@@ -250,7 +251,7 @@
 			<section class="tracks-row" aria-labelledby="np-tracks-h">
 				<header class="sh"><h2 id="np-tracks-h"><button type="button" onclick={() => seeAll(tracks.id)}>{tracks.title}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6l6 6-6 6" /></svg></button></h2><p>{tracks.reason}</p></header>
 				<div class="pager">
-					<ol class="tracks" bind:this={trackList} onscroll={tEdges} data-testid="new-music-tracks">
+					<ol class="tracks" use:dragScroll bind:this={trackList} onscroll={tEdges} data-testid="new-music-tracks">
 						{#each tracks.items as raw (raw.key)}
 							{@const c = live(raw)}
 							<li class="track">

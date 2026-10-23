@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { dragScroll } from '#lib/drag-scroll.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
@@ -502,7 +503,7 @@
 			{:else if similar.length}
 				<section class="block">
 					<h2>Fans also like</h2>
-					<ul class="circles">{#each similar as p (p.mbid)}<li><PersonCircle name={p.name} image={appPicture(p.image)} href={artistHref(p.mbid)} size={152} /></li>{/each}</ul>
+					<ul class="circles" use:dragScroll>{#each similar as p (p.mbid)}<li><PersonCircle name={p.name} image={appPicture(p.image)} href={artistHref(p.mbid)} size={152} /></li>{/each}</ul>
 				</section>
 			{/if}
 
@@ -515,7 +516,7 @@
 			{#if data?.related.length}
 				<section class="block">
 					<h2>Bands and collaborators</h2>
-					<ul class="circles">{#each data.related as p (p.mbid)}<li><PersonCircle name={p.name} role={p.note} image={appPicture(p.image)} href={artistHref(p.mbid)} size={152} /></li>{/each}</ul>
+					<ul class="circles" use:dragScroll>{#each data.related as p (p.mbid)}<li><PersonCircle name={p.name} role={p.note} image={appPicture(p.image)} href={artistHref(p.mbid)} size={152} /></li>{/each}</ul>
 				</section>
 			{/if}
 
