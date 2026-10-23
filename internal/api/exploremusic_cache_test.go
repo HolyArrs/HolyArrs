@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/api/musicscore"
+	musicscore "github.com/CoderLuii/holyarrs/internal/music/score"
 	"github.com/CoderLuii/holyarrs/internal/domain"
 )
 
