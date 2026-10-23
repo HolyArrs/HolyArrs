@@ -29,6 +29,17 @@
 						var l = document.createElement('link');
 						l.rel = 'preload'; l.as = 'image'; l.href = a.first; l.fetchPriority = 'high';
 						document.head.appendChild(l);
+						// First frame: the photo as a coarse mosaic (its kept 24 px thumbnail,
+						// scaled up hard-edged); SigninBackdrop refines it to sharp.
+						var th = a.thumb;
+						if (th && th.url === a.first && /^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(th.t24 || '') && /^[0-9.% ]+$/.test(th.pos || '')) {
+							var still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+							var st = document.createElement('style');
+							st.id = 'holyarrs-signin-seed';
+							st.textContent = 'body::before{content:"";position:fixed;inset:0;z-index:0;background:#050507 url(' + th.t24 + ') ' + th.pos + '/cover no-repeat;image-rendering:' + (still ? 'auto' : 'pixelated') + '}';
+							document.head.appendChild(st);
+							document.documentElement.classList.add('sa-seeded');
+						}
 					}
 				} catch (e) {}
 			}
