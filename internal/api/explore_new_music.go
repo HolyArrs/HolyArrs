@@ -70,17 +70,13 @@ func (a *API) warmMusicNew() *musicNewData {
 	if p, _ := parts.ForTitleKind("artist"); !a.partIsOn(p) {
 		return nil
 	}
+	a.loadMusicNew()
 	musicNew.mu.Lock()
-	defer musicNew.mu.Unlock()
 	d := musicNew.data
-	if (d == nil || time.Since(d.at) > musicNewTTL) && !musicNew.building {
-		musicNew.building = true
-		go func() {
-			nd := a.buildMusicNew(context.Background(), time.Now().UTC())
-			musicNew.mu.Lock()
-			musicNew.data, musicNew.building = nd, false
-			musicNew.mu.Unlock()
-		}()
+	stale := (d == nil || time.Since(d.at) > musicNewTTL) && !musicNew.building
+	musicNew.mu.Unlock()
+	if stale {
+		go a.refreshMusicNew(context.Background())
 	}
 	return d
 }
@@ -458,6 +454,38 @@ func composeMusicNew(in musicNewInput, now time.Time) ([]MusicCard, []MusicRow) 
 		mark(items)
 		built[s.id] = MusicRow{ID: s.id, Type: s.id, Title: s.title, Reason: s.reason, Shape: "square", Items: items}
 	}
+	// Singles & EPs: the short releases the rows above left.
+	if items := take(sorted(func(k string, c MusicCard) bool {
+		d, ok := daysFrom(c.Date, now)
+		return (kinds[k] == "single" || kinds[k] == "ep") && ok && d >= 0 && d <= musicNewRecent
+	}, nil), musicNewRowMax); len(items) >= musicNewRowMin {
+		mark(items)
+		built["np_music_short"] = MusicRow{ID: "np_music_short", Type: "np_music_short", Title: "Singles & EPs", Reason: "New singles and EPs from the last 45 days", Shape: "square", Items: items}
+	}
+	// New in <genre>: the household's top genres (its artists' releases,
+	// else all new releases), one row each.
+	var genreRows []string
+	for _, g := range musicNewTopGenres(cards, 3) {
+		items := take(sorted(func(k string, c MusicCard) bool {
+			w := musicNewWindow(c.Date, now)
+			if w != "week" && w != "recent" && w != "library" {
+				return false
+			}
+			for _, t := range c.Genres {
+				if strings.EqualFold(t, g) {
+					return true
+				}
+			}
+			return false
+		}, nil), musicNewRowMax)
+		if len(items) < musicNewRowMin {
+			continue
+		}
+		mark(items)
+		id := "np_music_genre_" + musicSlug(g)
+		built[id] = MusicRow{ID: id, Type: "np_music_genre", Title: "New in " + g, Reason: "New releases tagged " + g, Shape: "square", Items: items}
+		genreRows = append(genreRows, id)
+	}
 	// Climbing now: this week's album chart, the recent ones first.
 	if in.data != nil {
 		var climb []MusicCard
@@ -489,12 +517,59 @@ func composeMusicNew(in musicNewInput, now time.Time) ([]MusicCard, []MusicRow) 
 		}
 	}
 	rows := []MusicRow{}
-	for _, id := range []string{"np_music_tracks", "np_music_week", "np_music_recent", "np_music_library", "np_music_climbing", "np_music_coming"} {
+	order := []string{"np_music_tracks", "np_music_library", "np_music_week", "np_music_recent", "np_music_climbing", "np_music_short"}
+	order = append(append(order, genreRows...), "np_music_coming")
+	for _, id := range order {
 		if r, ok := built[id]; ok {
 			rows = append(rows, r)
 		}
 	}
 	return hero, rows
+}
+
+// musicNewTopGenres are the most common tags of the Library artists'
+// new releases, else of all new releases; ties by name, so stable.
+func musicNewTopGenres(cards map[string]MusicCard, n int) []string {
+	count := func(lib bool) []string {
+		hits := map[string]int{}
+		name := map[string]string{}
+		for _, c := range cards {
+			if lib && c.TitleID == 0 {
+				continue
+			}
+			for _, t := range c.Genres {
+				k := strings.ToLower(strings.TrimSpace(t))
+				if k == "" {
+					continue
+				}
+				hits[k]++
+				if name[k] == "" {
+					name[k] = strings.ToUpper(k[:1]) + k[1:]
+				}
+			}
+		}
+		var ks []string
+		for k := range hits {
+			ks = append(ks, k)
+		}
+		sort.Slice(ks, func(i, j int) bool {
+			if hits[ks[i]] != hits[ks[j]] {
+				return hits[ks[i]] > hits[ks[j]]
+			}
+			return ks[i] < ks[j]
+		})
+		if len(ks) > n {
+			ks = ks[:n]
+		}
+		for i := range ks {
+			ks[i] = name[ks[i]]
+		}
+		return ks
+	}
+	if g := count(true); len(g) > 0 {
+		return g
+	}
+	return count(false)
 }
 
 // musicNewTopics are the Explore more chips: the new releases' top genres,
