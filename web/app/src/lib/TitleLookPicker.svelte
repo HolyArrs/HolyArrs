@@ -2,7 +2,7 @@
 	import SegmentedControl from './ui/SegmentedControl.svelte';
 	import { setTitleLook, titleLook, TITLE_LOOKS, type TitleLook } from './title-look.svelte.ts';
 
-	// A floating switch between the season layouts being compared.
+	// A floating switch between the options being compared under the title hero.
 	let value = $state<TitleLook>(titleLook.value);
 	$effect(() => {
 		if (value !== titleLook.value) setTitleLook(value);
@@ -10,7 +10,7 @@
 </script>
 
 <div class="look" data-testid="title-look">
-	<SegmentedControl options={TITLE_LOOKS} bind:value label="Season layout" size="sm" announce={(l) => `Showing layout ${l}`} />
+	<SegmentedControl options={TITLE_LOOKS} bind:value label="Layout under the hero" size="sm" announce={(l) => `Showing layout ${l}`} />
 </div>
 
 <style>

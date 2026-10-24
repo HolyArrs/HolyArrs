@@ -103,7 +103,8 @@
 		cover,
 		settled = true,
 		byline,
-		actions: actionRow
+		actions: actionRow,
+		ratings = true
 	}: {
 		title: string;
 		/** A movie or show: the muted trailer and the Trailer button. */
@@ -138,6 +139,8 @@
 		/** The status line under the hero, such as who asked. */
 		byline?: Snippet;
 		actions?: Snippet;
+		/** The score badge and outside ratings in the facts line (off when the page shows them below). */
+		ratings?: boolean;
 	} = $props();
 
 	let backdropFailed = $state(false);
@@ -281,8 +284,8 @@
 		{#snippet meta()}
 			{#if facts.length}<p>{facts.join(' · ')}</p>{/if}
 			{#if certification}<span class="b cert" title="Age rating">{certification}</span>{/if}
-			{#if scoreText}<span class="b score" title="Score out of 10"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 .8l1.6 3.3 3.6.5-2.6 2.5.6 3.6L6 9l-3.2 1.7.6-3.6L.8 4.6l3.6-.5z" fill="currentColor" /></svg>{scoreText}</span>{/if}
-			<RatingsStrip scores={extras.scores} />
+			{#if ratings && scoreText}<span class="b score" title="Score out of 10"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 .8l1.6 3.3 3.6.5-2.6 2.5.6 3.6L6 9l-3.2 1.7.6-3.6L.8 4.6l3.6-.5z" fill="currentColor" /></svg>{scoreText}</span>{/if}
+			{#if ratings}<RatingsStrip scores={extras.scores} />{/if}
 			{#each wiki.badges.slice(0, 2) as b (b)}<span class="b award" title={awardsTip(wiki.awards)} data-testid="award-badge"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1h6v2.4a3 3 0 0 1-6 0zM3 2H1.2v.8A2 2 0 0 0 3 4.8M9 2h1.8v.8A2 2 0 0 1 9 4.8M5.3 6.3h1.4v2.2H5.3zM3.6 8.5h4.8V11H3.6z" fill="currentColor" /></svg>{b}</span>{/each}
 			{#each badges as b (b)}<span class="b">{b}</span>{/each}
 			{#if status}<StatusPill kind={status} {percent} label={statusLabel} on="art" />{/if}

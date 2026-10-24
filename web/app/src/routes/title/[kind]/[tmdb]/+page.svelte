@@ -23,6 +23,8 @@
 	import { pageSections } from '#lib/title-page.ts';
 	import { tmdbArtName } from '#lib/explore.ts';
 	import SeasonFolds from '#lib/SeasonFolds.svelte';
+	import TitleScores from '#lib/TitleScores.svelte';
+	import { loadExtras, type OutsideScore } from '#lib/outside-ratings.ts';
 	import TitleLookPicker from '#lib/TitleLookPicker.svelte';
 	import { titleLook } from '#lib/title-look.svelte.ts';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
@@ -179,7 +181,7 @@
 	const networkOf = (d: TitleDetails) => d.network ?? d.show?.network ?? '';
 	// The hero says what it is (year, length or seasons, genres, age rating,
 	// scores); the details under the story say only what the hero does not.
-	// A show's seasons use the layout being compared (title-look.svelte.ts).
+	// The block under the hero uses the option being compared (title-look.svelte.ts).
 	const look = $derived(titleLook.value);
 	const personHref = (id?: string) => (id ? to(`/people/${id.replace(/^tmdb:/, '')}`) : undefined);
 	/** The director (movies) or creators (shows). */
@@ -205,6 +207,19 @@
 	const lang = $derived(langName(info?.originalLanguage));
 	const countries = $derived((info?.originCountry ?? []).map(countryName));
 	const network = $derived(details ? networkOf(details) : '');
+	// The scores, for the options that show them under the hero instead of in it.
+	let outside = $state<OutsideScore[]>([]);
+	$effect(() => {
+		const k = kind, id = tmdb;
+		outside = [];
+		if (!isDetailKind(k) || !id) return;
+		let live = true;
+		void loadExtras(api.get, k, id).then((x) => live && (outside = x.scores));
+		return () => (live = false);
+	});
+	const tmdbScore = $derived(rich?.score ?? scoreOf(details?.rating));
+	const hasScores = $derived(outside.length > 0 || !!tmdbScore);
+	const jumps = $derived(details ? pageSections(details.kind, { manage: false }) : []);
 	const hasFacts = $derived(!!(network || makers.length || lang || countries.length));
 	const crumbs = $derived(details ? [{ href: to('/explore'), label: 'Explore' }, { href: to(detailPath(details.kind, details.tmdb)), label: details.year ? `${details.name} (${details.year})` : details.name }] : []);
 </script>
@@ -233,6 +248,7 @@
 			crumbIcon={d.kind === 'show' ? 'tv' : 'compass'}
 			breadcrumb={crumbs}
 			meta={heroFacts(d)}
+			ratings={look === 'tiles'}
 			certification={rich?.certification ?? certOf(d.rating)}
 			score={rich?.score ?? scoreOf(d.rating)}
 			status={d.neverAdd || d.ask ? heroPill(d).kind : undefined}
@@ -256,8 +272,6 @@
 				{#if d.kind === 'show'}<FollowButton tmdb={d.tmdb} kind="show" />{/if}
 			{/snippet}
 		</TitleHero>
-
-		<SectionNav items={pageSections(d.kind, { manage: false })} />
 
 		{#snippet castRow()}
 			{#if d.cast.length}
@@ -283,22 +297,72 @@
 		{#snippet story()}
 			{#if d.overview}<p class="lead" data-testid="title-story">{d.overview}</p>{/if}
 		{/snippet}
-		<!-- The story, the details as one row of small columns, where to watch, then the seasons full width. -->
-		<div class="strip">
-			{@render story()}
+		{#snippet facts(as: 'rows' | 'cols')}
 			{#if hasFacts}
-				<dl class="inline-facts">
-					{#if network}<div><dt>Network</dt><dd>{network}</dd></div>{/if}
-					{#if makers.length}<div><dt>{madeBy}</dt><dd>{@render names(makers, 3)}</dd></div>{/if}
-					{#if lang}<div><dt>Language</dt><dd>{lang}</dd></div>{/if}
-					{#if countries.length}<div><dt>{countries.length > 1 ? 'Countries' : 'Country'}</dt><dd>{countries.join(', ')}</dd></div>{/if}
-				</dl>
+				{#if as === 'rows'}
+					<dl class="fact-list">
+						{#if network}<dt>Network</dt><dd>{network}</dd>{/if}
+						{#if makers.length}<dt>{madeBy}</dt><dd>{@render names(makers, 3)}</dd>{/if}
+						{#if lang}<dt>Language</dt><dd>{lang}</dd>{/if}
+						{#if countries.length}<dt>{countries.length > 1 ? 'Countries' : 'Country'}</dt><dd>{countries.join(', ')}</dd>{/if}
+					</dl>
+				{:else}
+					<dl class="inline-facts">
+						{#if network}<div><dt>Network</dt><dd>{network}</dd></div>{/if}
+						{#if makers.length}<div><dt>{madeBy}</dt><dd>{@render names(makers, 3)}</dd></div>{/if}
+						{#if lang}<div><dt>Language</dt><dd>{lang}</dd></div>{/if}
+						{#if countries.length}<div><dt>{countries.length > 1 ? 'Countries' : 'Country'}</dt><dd>{countries.join(', ')}</dd></div>{/if}
+					</dl>
+				{/if}
 			{/if}
+		{/snippet}
+		{#snippet where()}
 			{#if info?.streaming.length}
 				<div class="where-row" id="title-where"><span class="lbl">Where to watch</span>{@render services()}</div>
 			{/if}
-		</div>
-		{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} layout={look} />{/if}
+		{/snippet}
+
+		{#if look === 'strip'}
+			<!-- I2 · Strip: the story, then one band of big scores and the details, where to watch, and the jump buttons last, just above the seasons. -->
+			<div class="strip">
+				{@render story()}
+				{#if hasScores || hasFacts}
+					<div class="band">
+						{#if hasScores}<TitleScores scores={outside} tmdb={tmdbScore} variant="tiles" />{/if}
+						{#if hasScores && hasFacts}<span class="rule" aria-hidden="true"></span>{/if}
+						{@render facts('cols')}
+					</div>
+				{/if}
+				{@render where()}
+			</div>
+			<SectionNav items={jumps} />
+		{:else if look === 'tiles'}
+			<!-- I3 · Tiles: the scores stay in the hero; the jump buttons stick under the top bar; the story, then two cards: details and where to watch. -->
+			<div class="jump-bar"><SectionNav items={jumps} /></div>
+			{@render story()}
+			{#if hasFacts || info?.streaming.length}
+				<div class="tiles">
+					{#if hasFacts}<div class="tile"><p class="cap">Details</p>{@render facts('rows')}</div>{/if}
+					{#if info?.streaming.length}<div class="tile" id="title-where"><p class="cap">Where to watch</p>{@render services()}</div>{/if}
+				</div>
+			{/if}
+		{:else}
+			<!-- I1 · Card: the jump buttons first; the story and where to watch beside a card with the scores on top and the details under them. -->
+			<SectionNav items={jumps} />
+			<div class="card-layout" class:solo={!hasScores && !hasFacts}>
+				<div class="card-main">
+					{@render story()}
+					{@render where()}
+				</div>
+				{#if hasScores || hasFacts}
+					<aside class="score-card">
+						{#if hasScores}<div class="score-top"><TitleScores scores={outside} tmdb={tmdbScore} variant="chips" /></div>{/if}
+						{@render facts('rows')}
+					</aside>
+				{/if}
+			</div>
+		{/if}
+		{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
 		{@render castRow()}
 		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} />
 
@@ -315,7 +379,7 @@
 </PageLoader>
 {/if}
 
-{#if details?.kind === 'show'}<TitleLookPicker />{/if}
+<TitleLookPicker />
 
 {#if manage}
 	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} onadded={(_m, t) => added(t)} />
@@ -337,6 +401,29 @@
 	.svc { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
 	.svc li { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 4px 12px 4px 4px; border-radius: 999px; background: var(--surface-2); font: 500 14px/1 var(--font-ui); }
 	.svc img { width: 28px; height: 28px; border-radius: 7px; object-fit: cover; }
+	/* I1: the card beside the story. */
+	.card-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); gap: 20px clamp(28px, 4vw, 56px); align-items: start; }
+	.card-layout.solo { grid-template-columns: minmax(0, 1fr); }
+	.card-main { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+	.score-card { display: flex; flex-direction: column; padding: 6px 18px; border-radius: var(--r-card); background: var(--surface-1); border: 1px solid var(--line); }
+	.score-top { padding: 12px 0; }
+	.score-top + .fact-list { border-top: 1px solid var(--line); }
+	.fact-list { display: grid; grid-template-columns: auto minmax(0, 1fr); margin: 0; font: 400 14px/1.35 var(--font-ui); }
+	.fact-list dt { padding: 10px 0; color: var(--text); font-weight: 600; }
+	.fact-list dd { margin: 0; padding: 10px 0 10px 16px; color: var(--text-muted); text-align: right; overflow-wrap: anywhere; }
+	.fact-list dt:not(:first-of-type), .fact-list dt:not(:first-of-type) + dd { border-top: 1px solid var(--line); }
+	/* I2: one band of scores and details. */
+	.band { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 32px; padding: 16px 0; border-block: 1px solid var(--line); }
+	.band .inline-facts { padding: 0; border: 0; }
+	.rule { align-self: stretch; width: 1px; background: var(--line); }
+	/* I3: sticky jump buttons and two cards. */
+	.jump-bar { position: sticky; top: var(--topbar, 56px); z-index: 5; margin-block: calc(clamp(28px, 4vw, 44px) * -0.5); padding: 8px 0; background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); }
+	.jump-bar :global(.ui-secnav) { margin-top: 0; }
+	.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+	.tile { display: flex; flex-direction: column; gap: 8px; padding: 14px 18px; border-radius: var(--r-card); background: var(--surface-1); border: 1px solid var(--line); }
+	.cap { margin: 0; color: var(--text-muted); font: 600 11.5px/1.2 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
+	.tile .fact-list { font-size: 14px; }
+	@media (max-width: 899px) { .card-layout { grid-template-columns: minmax(0, 1fr); } .rule { display: none; } }
 	/* The details as one row of small columns. */
 	.strip { display: flex; flex-direction: column; gap: 20px; }
 	.inline-facts { display: flex; flex-wrap: wrap; gap: 14px 40px; margin: 0; padding: 16px 0; border-block: 1px solid var(--line); }

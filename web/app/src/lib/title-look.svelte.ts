@@ -1,20 +1,19 @@
-// Which season layout a show's title page uses while Luis compares them (?look=grid|row|cols).
-// The choice is kept per browser so every show opens in the same layout.
-import type { SeasonLayout } from './SeasonFolds.svelte';
-
-export type TitleLook = SeasonLayout;
+// Which option for the block under the title page hero is shown while Luis
+// compares them (?look=card|strip|tiles). The choice is kept per browser so
+// every title opens in the same option.
+export type TitleLook = 'card' | 'strip' | 'tiles';
 
 export const TITLE_LOOKS: { value: TitleLook; label: string }[] = [
-	{ value: 'grid', label: 'S1 · Grid' },
-	{ value: 'row', label: 'S2 · Row' },
-	{ value: 'cols', label: 'S3 · Columns' }
+	{ value: 'card', label: 'I1 · Card' },
+	{ value: 'strip', label: 'I2 · Strip' },
+	{ value: 'tiles', label: 'I3 · Tiles' }
 ];
 
-const KEY = 'holyarrs.season-look';
-const known = (v: string | null): v is TitleLook => v === 'grid' || v === 'row' || v === 'cols';
+const KEY = 'holyarrs.info-look';
+const known = (v: string | null): v is TitleLook => v === 'card' || v === 'strip' || v === 'tiles';
 
 function first(): TitleLook {
-	if (typeof window === 'undefined') return 'grid';
+	if (typeof window === 'undefined') return 'card';
 	const q = new URLSearchParams(location.search).get('look');
 	if (known(q)) return q;
 	try {
@@ -23,7 +22,7 @@ function first(): TitleLook {
 	} catch {
 		/* No storage: the default layout. */
 	}
-	return 'grid';
+	return 'card';
 }
 
 export const titleLook = $state({ value: first() });
