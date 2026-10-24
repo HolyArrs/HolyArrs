@@ -25,7 +25,9 @@
 	import TitleTrailers from '#lib/TitleTrailers.svelte';
 	import { loadExtras, type OutsideScore } from '#lib/outside-ratings.ts';
 	import { ratingPicks, shownRatings } from '#lib/rating-picks.svelte.ts';
-	import { loadWikiFacts, type WikiAward } from '#lib/wiki-facts.ts';
+	import { awardsTip, loadWikiFacts, type WikiAward } from '#lib/wiki-facts.ts';
+	import TitleLookPicker from '#lib/TitleLookPicker.svelte';
+	import { titleLook } from '#lib/title-look.svelte.ts';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -221,20 +223,20 @@
 	const fmtDay = (d?: string) => (d ? new Date(`${d}T00:00:00Z`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : '');
 	const money = (n?: number) => (n ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 }).format(n) : '');
 	const statusWord = (s?: string) => (!s || s === 'Released' ? '' : s.charAt(0) + s.slice(1).toLowerCase());
+	// Award badges ("3 Oscars"): in the hero, or under it with the facts line (H2).
 	let awards = $state<WikiAward[]>([]);
+	let awardBadges = $state<string[]>([]);
 	$effect(() => {
 		const k = kind, id = tmdb;
 		awards = [];
+		awardBadges = [];
 		if (!isDetailKind(k) || !id) return;
 		let live = true;
-		void loadWikiFacts(api.get, k, id).then((f) => live && (awards = f.awards));
+		void loadWikiFacts(api.get, k, id).then((f) => live && ((awards = f.awards), (awardBadges = f.badges.slice(0, 2))));
 		return () => (live = false);
 	});
-	const awardsLine = $derived.by(() => {
-		const won = awards.filter((a) => a.won).length;
-		const noms = awards.length - won;
-		return [won ? `${won} ${won === 1 ? 'win' : 'wins'}` : '', noms ? `${noms} ${noms === 1 ? 'nomination' : 'nominations'}` : ''].filter(Boolean).join(' · ');
-	});
+	// Where the facts line and tagline go while the options are compared (title-look.svelte.ts).
+	const look = $derived(titleLook.value);
 	const moreFacts = $derived.by((): [string, string][] => {
 		if (!info) return [];
 		const i = info;
@@ -257,7 +259,7 @@
 						['Budget', money(i.budget)],
 						['Box office', money(i.revenue)]
 					];
-		rows.push(['Awards', awardsLine], ['Original title', i.originalTitle ?? '']);
+		rows.push(['Original title', i.originalTitle ?? '']);
 		return rows.filter(([, v]) => v);
 	});
 	const tags = $derived((info?.keywords ?? []).slice(0, 10));
@@ -290,6 +292,8 @@
 			breadcrumb={crumbs}
 			meta={heroFacts(d)}
 			ratings={false}
+			showFacts={look !== 'swap'}
+			tagline={look === 'keep' ? undefined : info?.tagline}
 			certification={rich?.certification ?? certOf(d.rating)}
 			score={rich?.score ?? scoreOf(d.rating)}
 			status={d.neverAdd || d.ask ? heroPill(d).kind : undefined}
@@ -336,7 +340,15 @@
 			{/if}
 		{/snippet}
 		{#snippet story()}
-			{#if info?.tagline}<p class="tagline" data-testid="title-tagline">{info.tagline}</p>{/if}
+			{#if look === 'swap'}
+				<!-- H2: the hero's facts line, age rating and award badges sit here, the tagline is on the hero. -->
+				<p class="facts-line" data-testid="facts-line">
+					<span>{heroFacts(d).join(' · ')}</span>
+					{#if rich?.certification ?? certOf(d.rating)}<span class="fb cert">{rich?.certification ?? certOf(d.rating)}</span>{/if}
+					{#each awardBadges as b (b)}<span class="fb award" title={awardsTip(awards)}><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1h6v2.4a3 3 0 0 1-6 0zM3 2H1.2v.8A2 2 0 0 0 3 4.8M9 2h1.8v.8A2 2 0 0 1 9 4.8M5.3 6.3h1.4v2.2H5.3zM3.6 8.5h4.8V11H3.6z" fill="currentColor" /></svg>{b}</span>{/each}
+				</p>
+			{/if}
+			{#if look === 'keep' && info?.tagline}<p class="tagline" data-testid="title-tagline">{info.tagline}</p>{/if}
 			{#if d.overview}<p class="lead" data-testid="title-story">{d.overview}</p>{/if}
 		{/snippet}
 		{#snippet facts()}
@@ -396,6 +408,8 @@
 </PageLoader>
 {/if}
 
+<TitleLookPicker />
+
 {#if manage}
 	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} onadded={(_m, t) => added(t)} />
 	<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} onadded={(_s, t) => added(t)} />
@@ -430,6 +444,10 @@
 	/* The second row of facts sits under the band, sharing its bottom line. */
 	.more-facts { margin-top: -20px; border-top: 0; padding-top: 14px; }
 	.more-facts.alone { margin-top: 0; border-top: 1px solid var(--line); }
+	.facts-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 -8px; color: var(--text); font: 600 15px/1.4 var(--font-ui); }
+	.fb { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 7px; border-radius: 5px; border: 1.5px solid currentColor; font: 700 11.5px/1 var(--font-ui); letter-spacing: .03em; white-space: nowrap; }
+	.fb.award { border-color: rgb(196 150 10 / 70%); color: #a77c00; }
+	:global([data-theme='dark']) .fb.award { color: #f5c518; border-color: rgb(245 197 24 / 70%); }
 	.tagline { margin: 0 0 -8px; max-width: 72ch; color: var(--text-muted); font: italic 500 15px/1.4 var(--font-ui); }
 	.tagchips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
 	.tagchips li { display: inline-flex; align-items: center; min-height: 30px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--text); font: 500 13px/1 var(--font-ui); }

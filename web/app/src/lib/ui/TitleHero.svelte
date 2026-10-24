@@ -105,7 +105,9 @@
 		settled = true,
 		byline,
 		actions: actionRow,
-		ratings = true
+		ratings = true,
+		showFacts = true,
+		tagline
 	}: {
 		title: string;
 		/** A movie or show: the muted trailer and the Trailer button. */
@@ -142,6 +144,10 @@
 		actions?: Snippet;
 		/** The score badge and outside ratings in the facts line (off when the page shows them below). */
 		ratings?: boolean;
+		/** The facts line, age rating and award badges (off when the page shows them under the hero). */
+		showFacts?: boolean;
+		/** A tagline under the logo or title. */
+		tagline?: string | null;
 	} = $props();
 
 	let backdropFailed = $state(false);
@@ -283,13 +289,14 @@
 			{:else}
 				<h1 class="bb-name" class:short={!!cover}>{title}</h1>
 			{/if}
+			{#if tagline}<p class="hero-tagline" data-testid="hero-tagline">{tagline}</p>{/if}
 		{/snippet}
 		{#snippet meta()}
-			{#if facts.length}<p>{facts.join(' · ')}</p>{/if}
-			{#if certification}<span class="b cert" title="Age rating">{certification}</span>{/if}
+			{#if showFacts && facts.length}<p>{facts.join(' · ')}</p>{/if}
+			{#if showFacts && certification}<span class="b cert" title="Age rating">{certification}</span>{/if}
 			{#if ratings && scoreText}<span class="b score" title="Score out of 10"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 .8l1.6 3.3 3.6.5-2.6 2.5.6 3.6L6 9l-3.2 1.7.6-3.6L.8 4.6l3.6-.5z" fill="currentColor" /></svg>{scoreText}</span>{/if}
 			{#if ratings}<RatingsStrip scores={shown.scores} />{/if}
-			{#each wiki.badges.slice(0, 2) as b (b)}<span class="b award" title={awardsTip(wiki.awards)} data-testid="award-badge"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1h6v2.4a3 3 0 0 1-6 0zM3 2H1.2v.8A2 2 0 0 0 3 4.8M9 2h1.8v.8A2 2 0 0 1 9 4.8M5.3 6.3h1.4v2.2H5.3zM3.6 8.5h4.8V11H3.6z" fill="currentColor" /></svg>{b}</span>{/each}
+			{#each showFacts ? wiki.badges.slice(0, 2) : [] as b (b)}<span class="b award" title={awardsTip(wiki.awards)} data-testid="award-badge"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1h6v2.4a3 3 0 0 1-6 0zM3 2H1.2v.8A2 2 0 0 0 3 4.8M9 2h1.8v.8A2 2 0 0 1 9 4.8M5.3 6.3h1.4v2.2H5.3zM3.6 8.5h4.8V11H3.6z" fill="currentColor" /></svg>{b}</span>{/each}
 			{#each badges as b (b)}<span class="b">{b}</span>{/each}
 			{#if status}<StatusPill kind={status} {percent} label={statusLabel} on="art" />{/if}
 		{/snippet}
@@ -329,6 +336,7 @@
 	.cert { border-width: 1.5px; border-color: rgb(255 255 255 / 80%); }
 	.score { border-radius: 999px; padding: 0 9px 0 7px; background: rgb(255 255 255 / 12%); border-color: rgb(255 255 255 / 30%); }
 	.score svg { color: #f5c518; }
+	.hero-tagline { margin: 10px 0 0; max-width: 40ch; color: rgb(255 255 255 / 88%); font: italic 500 clamp(15px, 1.3vw, 18px)/1.35 var(--font-ui); text-shadow: 0 1px 3px rgb(0 0 0 / 55%); }
 	.story { max-width: 72ch; margin: var(--s-5) 0 0; font: 400 16px/1.55 var(--font-ui); color: var(--text); }
 	.ui-thero :global(.tp-member) { min-height: 44px; display: flex; align-items: center; }
 	.status-line { margin-top: var(--s-4); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; font: 500 15px/1.4 var(--font-ui); color: var(--text-muted); }
