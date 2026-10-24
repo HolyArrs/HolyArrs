@@ -572,7 +572,7 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 		if a.musicTplOn() {
 			if b := a.musicBundle(ctx, now); b != nil {
 				cards, sc = nil, nil
-				for _, t := range rowtpl.ExploreTiles(rowtpl.BrowseSections(b, now, strings.ToLower(region), nil)) {
+				for _, t := range rowtpl.ExploreTiles(a.tplVisible(ctx, b, region, nil, now)) {
 					hue := t.Hue
 					c := MusicCard{Key: t.Key, Kind: "genre", MBID: strings.TrimPrefix(t.Href, "/music/genre/"), Name: t.Name, Hue: &hue, Href: t.Href, Genres: []string{}}
 					if len(t.Covers) > 0 {

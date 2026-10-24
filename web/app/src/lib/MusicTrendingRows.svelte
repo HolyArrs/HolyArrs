@@ -48,7 +48,7 @@
 	const stripGenres = $derived<StripGenre[]>((answer?.rows ?? []).filter((r) => r.shape === 'tile').flatMap((r) => r.items).map((c) => ({ key: c.key, name: c.name, href: genreHref(c), art: c.image ? (musicImage(c) ?? '') : '', hue: c.hue ?? 0, images: c.images ?? [] })));
 	$effect(() => { genres = stripGenres.length ? stripGenres : browseTiles.map((t) => ({ key: t.key, name: t.name, href: t.href, art: t.cover, hue: t.hue, images: t.cover ? [t.cover] : [] })); });
 	// music_lists_v1: the genres row comes as the Browse grid (colour tiles with a tilted cover).
-	const browseTiles = $derived((answer?.rows ?? []).filter((r) => r.shape === 'grid').flatMap((r) => r.items).map((c) => ({ key: c.key, name: c.name, href: genreHref(c), hue: c.hue ?? 0, cover: c.cover || (c.image ? (musicImage(c) ?? '') : '') })));
+	const browseTiles = $derived((answer?.rows ?? []).filter((r) => r.shape === 'grid').flatMap((r) => r.items).map((c) => ({ key: c.key, name: c.name, href: c.href ? to(c.href) : genreHref(c), hue: c.hue ?? 0, cover: c.cover || (c.image ? (musicImage(c) ?? '') : '') })));
 	let chips = $state<string[]>([]);
 	/** The rows' order as first shown this visit (per genre and region), so later answers never move them. */
 	let order: string[] = [];
@@ -368,7 +368,18 @@
 			</div>
 		{/if}
 
-		{#if answer && answer.rows.length === 0 && !heroes.length}
+		{#if answer?.thin}
+			<!-- Row templates: too little music for this page yet; never a near-empty page. -->
+			<div class="thin" data-testid="music-thin">
+				<p class="thin-title">Not enough music here yet</p>
+				{#if answer.similar?.length}
+					<p class="thin-text">Try one of these instead:</p>
+					<ul>
+						{#each answer.similar as s (s.key)}<li><a href={to(s.href)}>{s.name}</a></li>{/each}
+					</ul>
+				{/if}
+			</div>
+		{:else if answer && answer.rows.length === 0 && !heroes.length}
 			<EmptyState icon="music" title={slug ? `Nothing charting in ${answer.tile?.name ?? 'this genre'} yet` : genre ? `Nothing tagged ${genre} yet` : 'Music rows are getting ready'} text={genre ? 'Pick another genre, or All.' : 'Charts and suggestions fill in within a few minutes.'} />
 		{/if}
 	</section>
@@ -443,4 +454,10 @@
 		.pick { position: static; margin-bottom: 8px; justify-content: flex-end; }
 	}
 	@media (max-width: 767px) { .music { gap: 26px; } }
+	.thin { display: flex; flex-direction: column; gap: 8px; padding: 24px 0; }
+	.thin-title { font: var(--t-title3); margin: 0; }
+	.thin-text { margin: 0; color: var(--text-2, inherit); }
+	.thin ul { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
+	.thin a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px; background: var(--surface-2, rgba(127, 127, 127, .15)); color: inherit; text-decoration: none; }
+	.thin a:hover { text-decoration: underline; }
 </style>

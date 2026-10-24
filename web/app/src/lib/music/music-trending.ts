@@ -149,6 +149,8 @@ export interface MusicCardData {
 	images?: string[];
 	/** A Browse tile's tilted album cover (flag music_lists_v1). */
 	cover?: string;
+	/** A Browse tile's own page when it is not a genre page (row templates). */
+	href?: string;
 }
 
 export interface MusicRowData {
@@ -173,6 +175,9 @@ export interface MusicExploreAnswer {
 	/** The hero's stand-ins, next newest first: the page shows the first whose cover loads. */
 	hero_alts?: MusicCardData[];
 	rows: MusicRowData[];
+	/** Row templates: the page has too little music yet (no rows); similar pages to try. */
+	thin?: boolean;
+	similar?: { key: string; name: string; href: string }[];
 	/** A Music genre page's own tile (name, hue, art) for its header band. */
 	tile?: MusicCardData;
 	/** music_rows_v7: the cursor for the next 6 rows ('' or absent: no more). */

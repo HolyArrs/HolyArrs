@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/metadata"
@@ -105,6 +106,34 @@ func (a *API) musicBundle(ctx context.Context, now time.Time) *rowtpl.Bundle {
 	a.musicv2.cand.Put("tpl:bundle", x, tplBundleTTL, now)
 	a.musicv2.cand.Put("tpl:last", x, tplKeepTTL, now)
 	return b
+}
+
+// tplCountsMu lets one count run at a time (it builds every Browse page).
+var tplCountsMu sync.Mutex
+
+// tplCounts answers each Browse page's row count for a region, as a member
+// with an empty library sees it: cached per region and bundle version for
+// 6 hours, so tiles appear by themselves once their data grows.
+func (a *API) tplCounts(ctx context.Context, b *rowtpl.Bundle, region string, now time.Time) map[string]int {
+	key := "tpl:counts:" + strings.ToLower(region) + ":" + b.Version
+	if v, ok := a.musicv2.cand.Get(key, now); ok {
+		return v.(map[string]int)
+	}
+	tplCountsMu.Lock()
+	defer tplCountsMu.Unlock()
+	if v, ok := a.musicv2.cand.Get(key, now); ok {
+		return v.(map[string]int)
+	}
+	counts := rowtpl.PageCounts(b, now, strings.ToLower(region), tplBlocks(a.musicShelvesOf(ctx, region, now)), rowtpl.BrowseKeys())
+	a.musicv2.cand.Put(key, counts, tplBundleTTL, now)
+	return counts
+}
+
+// tplVisible answers the Browse sections a member sees: tiles whose page
+// has enough rows, seasons inside their window.
+func (a *API) tplVisible(ctx context.Context, b *rowtpl.Bundle, region string, lib *rowtpl.Lib, now time.Time) []rowtpl.BrowseSection {
+	r := strings.ToLower(region)
+	return rowtpl.VisibleSections(rowtpl.BrowseSections(b, now, r, lib), a.tplCounts(ctx, b, region, now), now, r)
 }
 
 // tplKinds are the Browse page kinds the engine serves.
@@ -275,6 +304,12 @@ func (a *API) buildTplPage(ctx context.Context, member int64, kind, slug, region
 	if !found {
 		return nil, nil, nil, tile, false
 	}
+	hue := tplHue(key)
+	tile = MusicCard{Key: key, Kind: "genre", MBID: slug, Name: b.Names[key].Name, Hue: &hue, Genres: []string{}}
+	// Not enough data: no near-empty page (the caller writes the note).
+	if a.tplCounts(ctx, b, region, now)[key] < rowtpl.MinPageRows {
+		return nil, nil, nil, tile, true
+	}
 	sh := a.musicShelvesOf(ctx, region, now)
 	c := &rowtpl.Ctx{B: b, Kind: kindOfKey(key), Key: key, Region: strings.ToLower(region), Now: now, Member: member, Lib: a.musicTplLib(ctx, member, lib, acts, b, now), Blocks: tplBlocks(sh), CountryName: countryName}
 	if sh != nil {
@@ -296,10 +331,21 @@ func (a *API) buildTplPage(ctx context.Context, member int64, kind, slug, region
 		}
 		rows = append(rows, row)
 	}
-	hue := tplHue(key)
-	name := b.Names[key].Name
-	tile = MusicCard{Key: key, Kind: "genre", MBID: slug, Name: name, Hue: &hue, Genres: []string{}}
 	return hero, alts, rows, tile, true
+}
+
+// tplThin is the note for a page without enough data: links to up to 4
+// similar pages that are shown.
+func (a *API) tplThin(ctx context.Context, key, region string, now time.Time) []rowtpl.BrowseTile {
+	b := a.musicBundle(ctx, now)
+	if b == nil {
+		return []rowtpl.BrowseTile{}
+	}
+	out := rowtpl.Similar(b, key, a.tplVisible(ctx, b, region, nil, now), 4)
+	if out == nil {
+		out = []rowtpl.BrowseTile{}
+	}
+	return out
 }
 
 // buildTplWorld fills New & Popular ("new") or the world part of Explore
@@ -464,7 +510,11 @@ func (a *API) serveTplPage(w http.ResponseWriter, r *http.Request, kind, slug st
 		alts[i] = musicCardState(alts[i], lib, acts)
 	}
 	if rows == nil {
-		rows = []MusicRow{}
+		// Not enough music for this page yet: a short note and similar pages.
+		a.exploreCaching(w, r, "private, no-cache")
+		writeJSON(w, http.StatusOK, map[string]any{"v2": true, "kid": false, "cold": false, "genres": []string{}, "genre": slug, "kind": kind, "region": region, "regions": []string{},
+			"tile": tile, "hero": nil, "rows": []MusicRow{}, "thin": true, "similar": a.tplThin(ctx, tile.Key, region, now)})
+		return true
 	}
 	a.exploreCaching(w, r, "private, no-cache")
 	writeJSON(w, http.StatusOK, map[string]any{"v2": true, "kid": false, "cold": false, "genres": []string{}, "genre": slug, "kind": kind, "region": region, "regions": []string{},
@@ -502,5 +552,5 @@ func (a *API) musicBrowseTiles(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	a.exploreCaching(w, r, "private, no-cache")
-	writeJSON(w, http.StatusOK, map[string]any{"sections": rowtpl.BrowseSections(b, now, region, lib)})
+	writeJSON(w, http.StatusOK, map[string]any{"sections": a.tplVisible(ctx, b, region, lib, now)})
 }

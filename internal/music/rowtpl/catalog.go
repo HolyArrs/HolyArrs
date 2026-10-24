@@ -604,7 +604,7 @@ var Catalog = []Tpl{
 		fill(crossFill),
 	t("G05", "cr", 0.5, "GA", "{genre} {for}", "{genre} albums in styles that suit {activity}", "albums in the genre and the activity", "0.5 fit + 0.5 listens", "", "W").cross(map[byte]string{'G': "activity", 'A': "genre"}, 2).
 		fill(crossFill),
-	t("G06", "se", 0.6, "GS", "{season} {genre}", "{genre} albums {basis}", "albums in the genre and the season", "0.6 fit + 0.4 listens", "season on (genre page)", "W").cross(map[byte]string{'G': "season", 'S': "genre"}, 5).
+	t("G06", "se", 0.6, "GS", "{season} {genre}", "{genre} albums {basis}", "albums in the genre and the season", "0.6 fit + 0.4 listens", "season on (genre page)", "W").cross(map[byte]string{'G': "season", 'S': "genre"}, 7).
 		fill(crossFill),
 	t("G07", "di", 0.5, "G", "If you like {genre}, try {genre2}", "{genre2} albums by artists close to top {genre} artists", "a neighbour genre's albums by similar artists", "0.5 S + 0.5 listens", "not had", "W").slot("genre2", 1).need("lib").disc().
 		fill(func(c *Ctx, v string) L {
@@ -680,7 +680,7 @@ var Catalog = []Tpl{
 		fill(func(c *Ctx, _ string) L { return c.byLPT(c.in(palb(c), "facet:instrumental"), c.Key) }),
 	t("H10", "cr", 0.5, "MA", "{mood} {for}", "Albums {basis} and in styles that suit {activity}", "albums in the mood and the activity", "fit", "", "W").cross(map[byte]string{'M': "activity", 'A': "mood"}, 3).
 		fill(crossFill),
-	t("H11", "se", 0.6, "MS", "{mood} picks for {season}", "Albums {basis} that fit {season}", "albums in the mood and the season", "fit", "season on (mood page)", "Sn").cross(map[byte]string{'M': "season", 'S': "mood"}, 3).notWith("mood:sleep", "mood:focus", "mood:workout", "mood:throwback", "season:back-to-school").
+	t("H11", "se", 0.6, "MS", "{mood} picks for {season}", "Albums {basis} that fit {season}", "albums in the mood and the season", "fit", "season on (mood page)", "Sn").cross(map[byte]string{'M': "season", 'S': "mood"}, 4).notWith("mood:sleep", "mood:focus", "mood:workout", "mood:throwback", "season:back-to-school").
 		fill(crossFill),
 	t("H12", "di", 0.5, "M", "Hidden {mood} gems", "Well liked by those who play them, less played, {basis}", "the mood's mid-listened albums with loyal listeners", "0.5 fit + 0.5 novelty", "not had", "W").disc().
 		fill(gems),
@@ -715,7 +715,7 @@ var Catalog = []Tpl{
 		fill(func(c *Ctx, _ string) L {
 			return c.union2(c.charting(palb(c), c.region()), c.byP(c.onAnyChart(palb(c))))
 		}),
-	t("I05", "de", 0.5, "S", "{season} from the {decade}", "Albums from the {decade}, {basis}", "the season's albums in a decade", "listens", "", "W").slot("decade", 3).
+	t("I05", "de", 0.5, "S", "{season} from the {decade}", "Albums from the {decade}, {basis}", "the season's albums in a decade", "listens", "", "W").slot("decade", 4).
 		fill(func(c *Ctx, v string) L { return c.byLP(c.in(palb(c), v)) }),
 	t("I06", "nw", 0.6, "S", "New for {season}", "Out in the last year, {basis}", "the season's albums of the last year", "F365 × fit", "season on", "Sn").need("season").
 		fill(func(c *Ctx, _ string) L {
@@ -851,13 +851,13 @@ var Catalog = []Tpl{
 		fill(weekPlayed),
 	t("S02", "cl", 0.5, "S", "Modern {season} classics", "Long-loved albums from the last 5 to 15 years, {basis}", "the season's albums 5 to 15 years old", "listens", "5 to 15 years old", "W").
 		fill(modern),
-	t("S03", "de", 0.4, "S", "{season} in {year}", "The {year} albums with the most listeners, {basis}", "the season's albums from one year", "listens", "", "W").slot("year", 2).
+	t("S03", "de", 0.4, "S", "{season} in {year}", "The {year} albums with the most listeners, {basis}", "the season's albums from one year", "listens", "", "W").slot("year", 3).
 		fill(func(c *Ctx, v string) L { return c.byLP(c.inYear(palb(c), atoi(v))) }),
 	t("S04", "cl", 0.4, "S", "{season} debut albums", "Debut albums with the most listeners, {basis}", "the season's debut albums", "listens", "debuts", "W").
 		fill(func(c *Ctx, _ string) L { return c.byLP(c.debuts(palb(c))) }),
 	t("S05", "ar", 0.5, "S", "{season} artists on the charts", "Artists charting today whose albums are {basis}", "the season's charting artists", "popularity", "", "D").round().
 		fill(func(c *Ctx, _ string) L { return c.byP(c.onAnyChart(part(c))) }),
-	t("S06", "cr", 0.5, "S", "{season} {for}", "Albums {basis} and in styles that suit {activity}", "albums in the season and the activity", "fit", "", "W").cross(map[byte]string{'S': "activity"}, 2).
+	t("S06", "cr", 0.5, "S", "{season} {for}", "Albums {basis} and in styles that suit {activity}", "albums in the season and the activity", "fit", "", "W").cross(map[byte]string{'S': "activity"}, 3).
 		fill(crossFill),
 	t("S07", "co", 0.5, "S", "{season} big across {area}", "Charting in the most {area} countries, {basis}", "area charts in the season", "area score", "", "D").chart().slot("area", 2).vars("{season} across {area}").
 		fill(acrossArea),

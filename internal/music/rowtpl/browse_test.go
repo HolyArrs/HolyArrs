@@ -92,3 +92,50 @@ func TestExploreBrowseTiles(t *testing.T) {
 		t.Fatalf("season tile = %s, want Halloween on Oct 24", got[4].Key)
 	}
 }
+
+func TestVisibleSectionsHideThinPagesAndOutOfSeason(t *testing.T) {
+	secs := BrowseSections(browseBundle(), time.Date(2026, 10, 24, 12, 0, 0, 0, time.UTC), "us", nil)
+	counts := map[string]int{}
+	for _, s := range secs {
+		for _, tl := range s.Tiles {
+			counts[poolKey(tl.Key)] = 20
+		}
+	}
+	counts["genre:blues"] = 10       // thin: hidden
+	counts["season:christmas"] = 30  // upcoming (Nov 15, within 45 days): shown
+	counts["season:valentines"] = 30 // far off: hidden
+	vis := VisibleSections(secs, counts, time.Date(2026, 10, 24, 12, 0, 0, 0, time.UTC), "us")
+	shown := map[string]bool{}
+	for _, s := range vis {
+		for _, tl := range s.Tiles {
+			shown[tl.Key] = true
+		}
+	}
+	for k, want := range map[string]bool{"genre:pop": true, "genre:blues": false, "season:halloween": true, "season:christmas": true, "season:valentines": false, "season:fall": true, "activity:party": true} {
+		if shown[k] != want {
+			t.Errorf("%s shown = %v, want %v", k, shown[k], want)
+		}
+	}
+}
+
+func TestPageCounts(t *testing.T) {
+	b := fakeBundle()
+	got := PageCounts(b, time.Date(2026, 10, 24, 12, 0, 0, 0, time.UTC), "us", nil, []string{"genre:rock", "mood:chill", "genre:nope"})
+	if got["genre:rock"] < 12 || got["mood:chill"] == 0 || got["genre:nope"] != 0 {
+		t.Fatalf("counts = %v", got)
+	}
+}
+
+func TestSimilarPages(t *testing.T) {
+	b := browseBundle()
+	secs := BrowseSections(b, time.Date(2026, 10, 24, 12, 0, 0, 0, time.UTC), "us", nil)
+	got := Similar(b, "genre:blues", secs, 4)
+	if len(got) != 4 {
+		t.Fatalf("similar = %d", len(got))
+	}
+	for _, tl := range got {
+		if tl.Key == "genre:blues" || kindOf(tl.Key) != "genre" {
+			t.Fatalf("similar tile %s", tl.Key)
+		}
+	}
+}

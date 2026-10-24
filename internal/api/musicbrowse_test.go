@@ -32,6 +32,11 @@ func tplRig(t *testing.T) *askRig {
 }
 
 type tplAnswer struct {
+	Thin    bool `json:"thin"`
+	Similar []struct {
+		Key  string `json:"key"`
+		Href string `json:"href"`
+	} `json:"similar"`
 	Kind  string      `json:"kind"`
 	Tile  MusicCard   `json:"tile"`
 	Hero  *MusicCard  `json:"hero"`
@@ -92,16 +97,26 @@ func TestTplGenrePage(t *testing.T) {
 // route: GET /api/v1/music/browse/{kind}/{slug}
 func TestTplBrowsePages(t *testing.T) {
 	r := tplRig(t)
-	for _, c := range []struct {
-		path string
-		min  int
-	}{{"/api/v1/music/browse/mood/chill?region=US", 6}, {"/api/v1/music/browse/decade/90s?region=US", 6}, {"/api/v1/music/browse/activity/driving?region=US", 6}, {"/api/v1/music/browse/season/halloween?region=US", 1}} {
+	thin := 0
+	for _, path := range []string{"/api/v1/music/browse/mood/chill?region=US", "/api/v1/music/browse/decade/90s?region=US", "/api/v1/music/browse/activity/driving?region=US", "/api/v1/music/browse/season/halloween?region=US"} {
 		var a tplAnswer
-		if err := json.Unmarshal(r.owner.call("GET", c.path, "", 200), &a); err != nil {
+		if err := json.Unmarshal(r.owner.call("GET", path, "", 200), &a); err != nil {
 			t.Fatal(err)
 		}
-		a.Genre = c.path
-		checkTplRows(t, a, c.min)
+		a.Genre = path
+		// A page shows 12 rows or more, or none: a short note with similar
+		// pages instead of a near-empty page.
+		if a.Thin {
+			thin++
+			if len(a.Rows) != 0 || a.Similar == nil {
+				t.Fatalf("%s: thin page with %d rows, similar %v", path, len(a.Rows), a.Similar)
+			}
+			continue
+		}
+		checkTplRows(t, a, 12)
+	}
+	if thin == 0 {
+		t.Fatal("the small fixture should leave at least one page thin")
 	}
 	r.owner.call("GET", "/api/v1/music/browse/mood/nope?region=US", "", 404)
 	r.owner.call("GET", "/api/v1/music/browse/planet/x?region=US", "", 400)
@@ -123,11 +138,29 @@ func TestTplBrowseTiles(t *testing.T) {
 		t.Fatal(err)
 	}
 	n := 0
-	for _, s := range a.Sections {
-		n += len(s.Tiles)
+	for _, sec := range a.Sections {
+		for _, tl := range sec.Tiles {
+			n++
+			// Every shown tile opens a page with enough rows.
+			kind, slug, _ := strings.Cut(tl.Key, ":")
+			if kind == "decade" {
+				slug = slug[2:]
+			}
+			if tl.Key == "activity:party" {
+				kind, slug = "mood", "party"
+			}
+			path := "/api/v1/music/browse/" + kind + "/" + slug + "?region=us"
+			if kind == "genre" {
+				path = "/api/v1/music/genre/" + slug + "?region=us"
+			}
+			var p tplAnswer
+			if err := json.Unmarshal(r.owner.call("GET", path, "", 200), &p); err != nil || p.Thin || len(p.Rows) < 12 {
+				t.Fatalf("shown tile %s opens a page with %d rows (thin %v)", tl.Key, len(p.Rows), p.Thin)
+			}
+		}
 	}
-	if len(a.Sections) != 5 || n != 61 {
-		t.Fatalf("%d sections, %d tiles", len(a.Sections), n)
+	if n == 0 || n == 61 {
+		t.Fatalf("%d tiles shown: want only the pages with enough rows", n)
 	}
 }
 
@@ -299,7 +332,7 @@ func TestTplExploreAndNewMusic(t *testing.T) {
 			}
 		}
 	}
-	if tpl < 3 || grid != 8 {
+	if tpl < 3 || grid > 8 {
 		t.Fatalf("explore: %d engine rows, Browse row %d tiles", tpl, grid)
 	}
 	var n struct {

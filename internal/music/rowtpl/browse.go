@@ -181,3 +181,105 @@ func ExploreTiles(secs []BrowseSection) []BrowseTile {
 	}
 	return out
 }
+
+// MinPageRows is the fewest rows a Browse page needs to be shown: a tile
+// (and its page) with fewer is hidden until its data grows.
+const MinPageRows = 12
+
+// PageCounts builds each key's page the way a member with an empty
+// library sees it and answers its row count (0 for keys the bundle lacks).
+func PageCounts(b *Bundle, now time.Time, region string, blocks map[string][]string, keys []string) map[string]int {
+	out := map[string]int{}
+	for _, k := range keys {
+		if len(b.Keys[k]) == 0 {
+			out[k] = 0
+			continue
+		}
+		c := &Ctx{B: b, Kind: kindOf(k), Key: k, Region: region, Now: now, Blocks: blocks}
+		Spotlight(c)
+		out[k] = len(Build(c))
+	}
+	return out
+}
+
+// BrowseKeys answers every key a Browse tile opens.
+func BrowseKeys() []string {
+	var out []string
+	seen := map[string]bool{}
+	for _, s := range BrowseLayout {
+		for _, t := range s.Tiles {
+			if k := poolKey(t.Key); !seen[k] {
+				seen[k] = true
+				out = append(out, k)
+			}
+		}
+	}
+	return out
+}
+
+// VisibleSections keeps the tiles whose page has at least MinPageRows
+// rows, and the seasons that are on now or start within 45 days.
+func VisibleSections(secs []BrowseSection, counts map[string]int, now time.Time, region string) []BrowseSection {
+	if region == "" || region == "global" {
+		region = "us"
+	}
+	var out []BrowseSection
+	for _, s := range secs {
+		var ts []BrowseTile
+		for _, t := range s.Tiles {
+			if counts[poolKey(t.Key)] < MinPageRows {
+				continue
+			}
+			if s.ID == "seasons" && !SeasonShown(strings.TrimPrefix(t.Key, "season:"), now, region) {
+				continue
+			}
+			ts = append(ts, t)
+		}
+		if len(ts) > 0 {
+			out = append(out, BrowseSection{ID: s.ID, Title: s.Title, Tiles: ts})
+		}
+	}
+	return out
+}
+
+// SeasonShown reports a season that is on now or starts within 45 days.
+func SeasonShown(key string, now time.Time, region string) bool {
+	w, on := window(key, now, region)
+	return on || w.Start.Sub(dayOf(now)) <= 45*24*time.Hour
+}
+
+// Similar answers up to n shown tiles of the key's own kind, the ones
+// whose pools share most albums with the key's first.
+func Similar(b *Bundle, key string, shown []BrowseSection, n int) []BrowseTile {
+	mine := b.byKey[key]
+	type sc struct {
+		t BrowseTile
+		n int
+	}
+	var l []sc
+	for _, s := range shown {
+		for _, t := range s.Tiles {
+			k := poolKey(t.Key)
+			if k == key || kindOf(k) != kindOf(key) {
+				continue
+			}
+			common := 0
+			for i := range b.byKey[k] {
+				if _, ok := mine[i]; ok {
+					common++
+				}
+			}
+			l = append(l, sc{t, common})
+		}
+	}
+	for i := 1; i < len(l); i++ {
+		for j := i; j > 0 && l[j].n > l[j-1].n; j-- {
+			l[j], l[j-1] = l[j-1], l[j]
+		}
+	}
+	var out []BrowseTile
+	for _, x := range l[:min(n, len(l))] {
+		out = append(out, x.t)
+	}
+	return out
+}
