@@ -301,3 +301,15 @@ func TestDryRun(t *testing.T) {
 		_ = os.WriteFile(p, j, 0o644)
 	}
 }
+
+func TestTitleNames(t *testing.T) {
+	c := pageCtx(fakeBundle(), "genre", "genre:rock")
+	if got := c.country("cm"); got != "Cameroon" {
+		t.Fatalf("cm = %q", got)
+	}
+	for in, want := range map[string]string{"Chill": "chill", "Cloud rap": "cloud rap", "K-R&B": "K-R&B", "Regional Mexican": "Regional Mexican", "High-energy": "high-energy"} {
+		if got := lowerName(in); got != want {
+			t.Errorf("lowerName(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
