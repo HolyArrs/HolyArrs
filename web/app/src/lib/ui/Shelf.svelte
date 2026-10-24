@@ -25,6 +25,8 @@
 		defer = false,
 		placeholder = 'poster',
 		lines = 2,
+		whole = false,
+		centerFew = false,
 		children
 	}: {
 		title: string;
@@ -50,6 +52,10 @@
 		placeholder?: 'poster' | 'square' | 'round' | 'wide';
 		/** Text lines under each placeholder card: title only (1), or title and a note (2). */
 		lines?: 1 | 2;
+		/** Whole cards only (title pages): as many cards as fit at about `item` wide, sized to fill the row exactly, so none shows cut at the edge; the arrows and swipes move a page. */
+		whole?: boolean;
+		/** With `whole`: a row shorter than one page sits in the middle. */
+		centerFew?: boolean;
 		children?: Snippet;
 	} = $props();
 
@@ -66,8 +72,20 @@
 	const shown = $derived(items ? (items.length > limit ? items.slice(0, limit) : items) : []);
 	const more = $derived(!!items && items.length > limit);
 
+	// Whole cards: how many fit at about `item` wide (the probe has that width).
+	let probe = $state<HTMLElement>();
+	let per = $state(0);
+	let few = $state(false);
+	function fit() {
+		if (!whole || !scroller || !probe) return;
+		const gap = parseFloat(getComputedStyle(scroller).columnGap) || 0;
+		const want = probe.offsetWidth || 1;
+		per = Math.max(1, Math.round((scroller.clientWidth + gap) / (want + gap)));
+		few = scroller.children.length < per;
+	}
 	function measure() {
 		if (!scroller) return;
+		fit();
 		atStart = scroller.scrollLeft <= 2;
 		atEnd = !more && scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - 2;
 		if (items) limit = nextLimit(limit, items.length, scroller);
@@ -97,7 +115,9 @@
 		return () => ro.disconnect();
 	});
 	function page(dir: 1 | -1) {
-		scroller?.scrollBy({ left: dir * scroller.clientWidth * 0.9, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+		if (!scroller) return;
+		const step = whole ? scroller.clientWidth + (parseFloat(getComputedStyle(scroller).columnGap) || 0) : scroller.clientWidth * 0.9;
+		scroller.scrollBy({ left: dir * step, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
 	}
 </script>
 
@@ -114,7 +134,8 @@
 	{#if !mounted}
 		<div class="sk {placeholder}" class:one={lines === 1} aria-hidden="true"></div>
 	{:else}
-	<div class="wrap">
+	<div class="wrap" class:whole class:few={whole && centerFew && few} style={whole && per ? `--per: ${per}` : undefined}>
+		{#if whole}<span class="probe" bind:this={probe} aria-hidden="true"></span>{/if}
 		<div class="row" use:dragScroll use:rove bind:this={scroller} onscroll={measure} role="group" aria-labelledby="{id}-t">
 			{#if items && card}{#each shown as it, i (keyOf(it, i))}{@render card(it, i)}{/each}{:else}{@render children?.()}{/if}
 		</div>
@@ -160,5 +181,13 @@
 	@media (max-width: 767px) { .row { grid-auto-columns: calc(var(--item) * .78); } }
 	/* Mouse drag-to-scroll (drag-scroll.ts): a grab hand on rows that can scroll. */
 	.row:global(.dragging) { cursor: grabbing; user-select: none; }
+	/* Whole cards: the row keeps to the page edges and its cards share it exactly. */
+	.probe { position: absolute; visibility: hidden; height: 0; width: var(--item); pointer-events: none; }
+	@media (max-width: 767px) { .probe { width: calc(var(--item) * .78); } }
+	.whole .row { margin-inline: 0; padding-inline: 0; scroll-padding-inline: 0; grid-auto-columns: calc((100% - (var(--per, 1) - 1) * var(--shelf-gap)) / var(--per, 1)); }
+	.whole .row > :global(*) { width: 100%; min-width: 0; }
+	.whole.few .row { justify-content: center; }
+	.whole .left { left: -18px; }
+	.whole .right { right: -18px; }
 	.row:global(.dragging) :global(*) { pointer-events: none; }
 </style>

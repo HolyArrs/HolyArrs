@@ -142,13 +142,13 @@
 {#if !reviewsLast}<TitleReviews {kind} {tmdb} />{/if}
 
 {#if info?.collection && collection.length}
-	<Shelf title={info.collection.name} item="var(--title-item)" anchor="title-collection" placeholder="wide" lines={1}>
+	<Shelf title={info.collection.name} item="var(--title-item)" anchor="title-collection" placeholder="wide" lines={1} whole>
 		{#each collection as p (p.c.key)}{@render card(p)}{/each}
 	</Shelf>
 {/if}
 
 {#if similar.length}
-	<Shelf title="More like this" item="var(--title-item)" anchor="title-similar" placeholder="wide" lines={1} onseeall={similar.length > 6 ? () => (allSimilar = true) : undefined}>
+	<Shelf title="More like this" item="var(--title-item)" anchor="title-similar" placeholder="wide" lines={1} whole onseeall={similar.length > 6 ? () => (allSimilar = true) : undefined}>
 		{#each similar.slice(0, 18) as p (p.c.key)}{@render card(p)}{/each}
 	</Shelf>
 	<Sheet bind:open={allSimilar} title="More like this" size="lg">
@@ -159,13 +159,13 @@
 {/if}
 
 {#if more.length >= 4}
-	<Shelf title={kind === 'show' ? 'More from the creator' : 'More from the director'} subtitle={moreFrom?.person || undefined} item="var(--title-item)" anchor="title-more-from" placeholder="wide" lines={1}>
+	<Shelf title={kind === 'show' ? 'More from the creator' : 'More from the director'} subtitle={moreFrom?.person || undefined} item="var(--title-item)" anchor="title-more-from" placeholder="wide" lines={1} whole>
 		{#each more.slice(0, 18) as p (p.c.key)}{@render card(p)}{/each}
 	</Shelf>
 {/if}
 
 {#if lead && withLeadCards.length >= 4}
-	<Shelf title="More with {lead.name}" item="var(--title-item)" anchor="title-more-with" placeholder="wide" lines={1}>
+	<Shelf title="More with {lead.name}" item="var(--title-item)" anchor="title-more-with" placeholder="wide" lines={1} whole>
 		{#each withLeadCards.slice(0, 18) as p (p.c.key)}{@render card(p)}{/each}
 	</Shelf>
 {/if}

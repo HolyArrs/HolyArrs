@@ -79,7 +79,7 @@
 				<p class="small muted">The episodes of {seasonName(shown)} could not be read; try again shortly.</p>
 			{:else if Array.isArray(eps[shown])}
 				{#key shown}
-					<Shelf title="{seasonName(shown)} episodes" item="min(300px, 78vw)" placeholder="wide">
+					<Shelf title="{seasonName(shown)} episodes" item="260px" placeholder="wide" whole>
 						{#each cards(shown) as c (c.key)}
 							<article class="ep">
 								<span class="still">{#if c.still}<img src={sized(c.still, 'backdrop', 300)} alt="" loading="lazy" decoding="async" />{/if}</span>

@@ -35,7 +35,7 @@
 		<div class="sk-row">{#each [0, 1, 2, 3, 4] as i (i)}<Skeleton shape="circle" width="96px" height="96px" />{/each}</div>
 	</section>
 {:else if phase === 'ok' && people.length}
-	<Shelf title="Cast and crew" item="112px" anchor="title-cast" onseeall={() => (all = true)}>
+	<Shelf title="Cast and crew" item="112px" anchor="title-cast" whole onseeall={() => (all = true)}>
 		{#each people.slice(0, ROW) as c (c.person.id)}
 			<PersonCircle name={c.person.name} role={role(c)} image={c.person.profile} href={to(`/people/${encodeURIComponent(c.person.id)}`)} />
 		{/each}

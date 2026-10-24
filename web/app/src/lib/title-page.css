@@ -4,18 +4,18 @@
    Every title row uses the Explore wide card at Explore's own size token
    (routes/explore/+page.svelte, .explore --title-item): about 279px at a
    1536px window, never under 200px; on a phone 1.6 cards across. */
-.tp { container: tp / inline-size; --title-item: max(200px, calc((100vw - 96px) / 5.16)); display: flex; flex-direction: column; gap: clamp(28px, 4vw, 44px); min-width: 0; padding-bottom: 48px; }
+.tp { --tp-gap: clamp(24px, 3.4vw, 38px); container: tp / inline-size; --title-item: max(200px, calc((100vw - 96px) / 5.16)); display: flex; flex-direction: column; gap: var(--tp-gap); min-width: 0; padding-bottom: 48px; }
 /* Wide rows sit almost edge to edge, as on Explore. */
 @media (min-width: 768px) { .tp .ui-shelf:has(.ui-wide) { --shelf-gap: 5px; } }
 @media (max-width: 767px) { .tp { --title-item: calc((100cqi - var(--shelf-gap)) / 1.6 / .78); } }
-.tp > .ui-thero + * { margin-top: calc(clamp(28px, 4vw, 44px) * -0.4); }
+.tp > .ui-thero + * { margin-top: calc(var(--tp-gap) * -0.4); }
 .tp-h3 { margin: 0 0 10px; font: 700 17px/1.3 var(--font-ui); letter-spacing: -0.01em; }
 /* Where to stream beside the dates: one band, two columns. */
 .tp-band { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 20px 48px; padding: 18px 20px; border-radius: var(--r-card); background: var(--surface-1); }
 .tp-band:has(> :only-child) { grid-template-columns: 1fr; }
 .tp-band p { margin: 0; }
 .tp-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 320px); gap: clamp(28px, 4vw, 56px); align-items: start; }
-.tp-main, .tp-side { display: flex; flex-direction: column; gap: clamp(28px, 4vw, 44px); min-width: 0; }
+.tp-main, .tp-side { display: flex; flex-direction: column; gap: var(--tp-gap); min-width: 0; }
 .tp-section, .tp .card { margin: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; min-width: 0; }
 .tp-h2, .tp .card-title { font: var(--t-title-2, var(--weight-semibold) var(--text-xl) / 1.2 var(--font-display)); font-size: 22px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 14px; }
 .tp-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; margin-bottom: 14px; }
@@ -31,7 +31,7 @@
 .tp-dl-text { margin: 0; color: var(--text-muted); font: var(--t-subhead); min-width: 0; overflow-wrap: anywhere; flex: 1 1 240px; }
 .tp-dl .tp-bar { flex: 1 1 160px; max-width: 280px; }
 .tp-dl + .tp-dl { margin-top: -1px; }
-.tp-dls { display: flex; flex-direction: column; margin-top: calc(clamp(28px, 4vw, 44px) * -0.5); }
+.tp-dls { display: flex; flex-direction: column; margin-top: calc(var(--tp-gap) * -0.5); }
 
 /* About: a two-column definition list in the normal UI font. */
 .tp-about { display: grid; grid-template-columns: minmax(120px, max-content) minmax(0, 1fr); gap: 10px 28px; margin: 0; font: var(--t-body); }
@@ -62,7 +62,7 @@
 .tp [id] { scroll-margin-top: calc(var(--topbar, 56px) + 16px); }
 /* Phone: folded sections sit flush, one line between them. */
 @media (max-width: 767px) {
-	.ui-fold + .ui-fold { margin-top: calc(clamp(28px, 4vw, 44px) * -1 - 1px); }
+	.ui-fold + .ui-fold { margin-top: calc(var(--tp-gap) * -1 - 1px); }
 }
 
 /* Versions: one row (the main Version); See all lays every Version out. */
@@ -72,3 +72,6 @@
 .tp-vrow > li + li { border-top: 0; }
 .tp-vrow > li[hidden] { display: none; }
 .tp-vrow .tp-row-end { justify-content: flex-start; }
+
+/* Whole-card cast rows: a face is never wider than its share of the row. */
+.tp .ui-shelf .ui-person .ph { width: min(var(--size), 100% - 8px); height: auto; aspect-ratio: 1; }

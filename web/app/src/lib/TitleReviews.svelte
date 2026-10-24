@@ -2,12 +2,12 @@
 	import { api } from './api.ts';
 	import { date } from './format.ts';
 	import { shownScore } from './rating.ts';
-	import { ordersOf, orderWord, pillState, reviewsPath, scoreText, spread, votesText, type Review, type ReviewsAnswer } from './title-reviews.ts';
+	import { ordersOf, orderWord, pillState, reviewsPath, scoreText, votesText, type Review, type ReviewsAnswer } from './title-reviews.ts';
 	import Shelf from './ui/Shelf.svelte';
 	import Sheet from './ui/Sheet.svelte';
 
-	// Ratings & reviews as one row of cards: the source's score card first
-	// (score, votes, spread), then a card per written review, newest first;
+	// Ratings & reviews: the source's score in one line under the heading,
+	// then one row of cards, a card per written review, newest first;
 	// More on a card opens the whole review. A pill per source the server has
 	// set up (TMDB first). Reviews are other people's words: never HTML.
 	let { kind, tmdb }: { kind: 'movie' | 'show'; tmdb: string | null | undefined } = $props();
@@ -24,7 +24,6 @@
 
 	const ps = $derived(pillState(answer?.sources, picked));
 	const orders = $derived(ordersOf(answer?.sources, ps.active));
-	const bars = $derived(spread(answer?.distribution));
 	const sourceName = $derived(ps.pills.find((p) => p.id === ps.active)?.name ?? 'TMDB');
 	const moreToRead = $derived(!!answer && answer.page < answer.pages);
 
@@ -82,9 +81,17 @@
 
 {#if answer && (answer.score > 0 || reviews.length || ps.pills.length > 1)}
 	<div class="rv" data-testid="title-reviews">
-		<Shelf title="Ratings & reviews" anchor="title-reviews" item="min(340px, 84vw)">
+		<Shelf title="Ratings & reviews" anchor="title-reviews" item="340px" whole>
 			{#snippet tools()}
 				<div class="rbar">
+					<p class="sum" data-testid="review-score">
+						{#if answer && shownScore(answer.score, answer.votes) !== undefined}
+							<span class="star" aria-hidden="true">★</span><b>{scoreText(answer.score)}</b><span class="of">/10</span>
+							<span class="muted">{votesText(answer.votes)} on {sourceName}{typeof answer.watching === 'number' ? ` · ${answer.watching.toLocaleString()} watching now` : ''}</span>
+						{:else}
+							<span class="muted">No score on {sourceName} yet.</span>
+						{/if}
+					</p>
 					{#if ps.pills.length > 1}
 						<div class="pills" role="group" aria-label="Review source">
 							{#each ps.pills as p (p.id)}
@@ -101,23 +108,6 @@
 					{/if}
 				</div>
 			{/snippet}
-			<article class="rcard score-card">
-				<p class="src">{sourceName}</p>
-				{#if answer && shownScore(answer.score, answer.votes) !== undefined}
-					<p class="score"><span class="star" aria-hidden="true">★</span> <b>{scoreText(answer.score)}</b><span class="of"> / 10</span></p>
-					<p class="muted votes">{votesText(answer.votes)}</p>
-				{:else}
-					<p class="muted">No score on {sourceName} yet.</p>
-				{/if}
-				{#if bars.length}
-					<ol class="bars" aria-label="How people scored it">
-						{#each bars as b (b.point)}
-							<li title="{b.count.toLocaleString()} scored {b.point}"><span class="pt">{b.point}</span><span class="track"><span class="fill" style="width: {Math.max(b.share * 100, b.count ? 2 : 0)}%"></span></span></li>
-						{/each}
-					</ol>
-				{/if}
-				{#if typeof answer?.watching === 'number'}<p class="muted votes">{answer.watching.toLocaleString()} watching now</p>{/if}
-			</article>
 			{#if !answer?.reviews_hidden}
 				{#each reviews as r, i (i)}
 					<article class="rcard review">
@@ -156,23 +146,21 @@
 
 <style>
 	.rv { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-	.rbar { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+	.rbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+	.sum { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px; margin: 0 6px 0 0; font: var(--t-subhead); }
+	.sum b { font: 700 20px/1 var(--font-ui); letter-spacing: -0.01em; }
+	.sum .star { color: #f5c518; font-size: 16px; }
+	.sum .muted { margin-left: 4px; }
+	.sum .of { font-size: 13px; }
 	.pills { display: inline-flex; flex-wrap: wrap; gap: 6px; }
 	.pill { min-height: 32px; padding: 4px 14px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--text); font: var(--t-subhead); font-weight: 600; cursor: pointer; }
 	.pill[aria-pressed='true'] { background: var(--text); color: var(--bg); border-color: var(--text); }
-	/* One card size for the whole row: score card, reviews, More reviews. */
+	/* One card size for the whole row: reviews and More reviews. */
 	.rcard { position: relative; display: flex; flex-direction: column; gap: 10px; height: 236px; padding: 16px 18px; border-radius: var(--r-card); background: var(--surface-1); border: 1px solid var(--line); min-width: 0; transition: transform var(--dur) cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow var(--dur) var(--ease-out); }
 	.review:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift); }
 	.rcard p { margin: 0; }
-	.src { color: var(--text-muted); font: 600 12px/1 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
-	.score { font: 700 30px/1.1 var(--font-display, var(--font-ui)); letter-spacing: -0.02em; }
 	.star, .their [aria-hidden] { color: #f5c518; }
 	.of { color: var(--text-muted); font-weight: 500; font-size: 0.55em; }
-	.votes { font: var(--t-subhead); }
-	.bars { display: grid; gap: 3px; margin: 2px 0 0; padding: 0; list-style: none; }
-	.bars li { display: grid; grid-template-columns: 18px 1fr; align-items: center; gap: 8px; font: 500 11px/1 var(--font-ui); color: var(--text-muted); font-variant-numeric: tabular-nums; }
-	.track { height: 5px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
-	.fill { display: block; height: 100%; border-radius: 3px; background: #f5c518; }
 	.who { display: flex; align-items: center; gap: 10px; min-width: 0; }
 	.av { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: hsl(var(--h) 45% 38%); color: #fff; font: 700 14px/1 var(--font-ui); }
 	.id { display: flex; flex-direction: column; gap: 2px; min-width: 0; font: var(--t-subhead); }

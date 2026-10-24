@@ -23,8 +23,6 @@
 	import SeasonFolds from '#lib/SeasonFolds.svelte';
 	import TitleScores from '#lib/TitleScores.svelte';
 	import TitleTrailers from '#lib/TitleTrailers.svelte';
-	import TitleLookPicker from '#lib/TitleLookPicker.svelte';
-	import { titleLook } from '#lib/title-look.svelte.ts';
 	import { loadExtras, type OutsideScore } from '#lib/outside-ratings.ts';
 	import { ratingPicks, shownRatings } from '#lib/rating-picks.svelte.ts';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
@@ -218,8 +216,6 @@
 	// Only the ratings this browser picked (Settings › Appearance).
 	const picked = $derived(shownRatings(outside, rich?.score ?? scoreOf(details?.rating), ratingPicks.list));
 	const hasScores = $derived(picked.scores.length > 0 || !!picked.tmdb);
-	// Where the trailers show while the options are compared (title-look.svelte.ts).
-	const look = $derived(titleLook.value);
 	const hasFacts = $derived(!!(network || makers.length || lang || countries.length));
 	const crumbs = $derived(details ? [{ href: to('/explore'), label: 'Explore' }, { href: to(detailPath(details.kind, details.tmdb)), label: details.year ? `${details.name} (${details.year})` : details.name }] : []);
 </script>
@@ -275,7 +271,7 @@
 
 		{#snippet castRow()}
 			{#if d.cast.length}
-				<Shelf title="Cast and crew" item="112px" anchor="title-cast" onseeall={() => (allCast = true)}>
+				<Shelf title="Cast and crew" item="112px" anchor="title-cast" whole onseeall={() => (allCast = true)}>
 					{#each d.cast.slice(0, 12) as p, i (p.name + i)}
 						<PersonCircle name={p.name} role={p.role} image={p.image} href={personHref(p.id)} />
 					{/each}
@@ -308,7 +304,7 @@
 			{/if}
 		{/snippet}
 		{#snippet trailers()}
-			<TitleTrailers kind={d.kind} tmdb={d.tmdb} title={d.name} videos={rich?.videos ?? []} art={[d.backdrop, ...(rich?.backdrops ?? [])]} item={look === 'small' ? '220px' : '200px'} framed={look !== 'small'} />
+			<TitleTrailers kind={d.kind} tmdb={d.tmdb} title={d.name} videos={rich?.videos ?? []} art={[d.backdrop, ...(rich?.backdrops ?? [])]} />
 		{/snippet}
 		{#snippet where()}
 			{#if info?.streaming.length}
@@ -322,27 +318,13 @@
 			{@render facts()}
 		{/snippet}
 
-		{#if look !== 'small' && rich?.videos.length}
-			<!-- V2 / V3: the story, then one row split in half: the trailers on one side, the ratings, details and where to watch in a rounded panel on the other. -->
+		<!-- The story, one band of big scores and the details, where to watch, then the trailers. -->
+		<div class="strip">
 			{@render story()}
-			<div class="split" class:flip={look === 'right'} class:solo={!(hasScores || hasFacts || info?.streaming.length)}>
-				<div class="split-trailers">{@render trailers()}</div>
-				{#if hasScores || hasFacts || info?.streaming.length}
-					<div class="info-panel">
-						{#if hasScores || hasFacts}<div class="panel-band">{@render scoresAndFacts()}</div>{/if}
-						{@render where()}
-					</div>
-				{/if}
-			</div>
-		{:else}
-			<!-- V1: the story, one band of big scores and the details, where to watch, then a row of small trailer cards. -->
-			<div class="strip">
-				{@render story()}
-				{#if hasScores || hasFacts}<div class="band">{@render scoresAndFacts()}</div>{/if}
-				{@render where()}
-			</div>
-			{@render trailers()}
-		{/if}
+			{#if hasScores || hasFacts}<div class="band">{@render scoresAndFacts()}</div>{/if}
+			{@render where()}
+		</div>
+		{@render trailers()}
 		{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
 		{@render castRow()}
 		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} />
@@ -359,8 +341,6 @@
 {/if}
 </PageLoader>
 {/if}
-
-<TitleLookPicker />
 
 {#if manage}
 	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} onadded={(_m, t) => added(t)} />
@@ -382,22 +362,6 @@
 	.svc { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
 	.svc li { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 4px 12px 4px 4px; border-radius: 999px; background: var(--surface-2); font: 500 14px/1 var(--font-ui); }
 	.svc img { width: 28px; height: 28px; border-radius: 7px; object-fit: cover; }
-	/* V2 / V3: trailers and the info panel side by side. */
-	.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: stretch; }
-	.split.flip .split-trailers { order: 2; }
-	.split-trailers { min-width: 0; }
-	.split.solo { grid-template-columns: minmax(0, 1fr); }
-	/* The panel's content sits in its middle, so a title with few ratings or no streaming services leaves no lopsided gap. */
-	.info-panel { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 16px; padding: 18px 20px; border-radius: 22px; background: var(--surface-1); border: 1px solid var(--line); text-align: center; }
-	.panel-band { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
-	.panel-band .rule { display: none; }
-	.panel-band :global(.scores.tiles) { justify-content: center; }
-	.panel-band :global(.scores.tiles li) { justify-items: center; }
-	.panel-band .inline-facts { justify-content: center; width: 100%; padding: 14px 0 0; border: 0; border-top: 1px solid var(--line); gap: 12px 28px; }
-	.panel-band .inline-facts div { align-items: center; }
-	.info-panel .where-row { justify-content: center; }
-	.panel-band:only-child .inline-facts, .panel-band .inline-facts:first-child { padding-top: 0; border-top: 0; }
-	@media (max-width: 899px) { .split { grid-template-columns: minmax(0, 1fr); } .split.flip .split-trailers { order: 0; } }
 	/* One band of scores and details. */
 	.band { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 32px; padding: 16px 0; border-block: 1px solid var(--line); }
 	.band .inline-facts { padding: 0; border: 0; }
