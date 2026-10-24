@@ -482,6 +482,54 @@ func indexOf(id string) int {
 	return -1
 }
 
+// Cand is one candidate row before the plan orders and dedups it: its
+// raw items (best first) with their scores, and its text rendered on them.
+type Cand struct {
+	ID, Template  string
+	Title, Reason string
+	Shape, Family string
+	Chart, Disc   bool
+	Keep          bool
+	Prior         float64
+	Items         []int
+	Scores        []float64
+}
+
+// Candidates answers every template row that applies to the page with at
+// least RowMin raw items (for builders that run their own plan, like
+// Explore's).
+func Candidates(c *Ctx) []Cand {
+	var out []Cand
+	for _, tp := range Catalog {
+		if !c.applies(tp) {
+			continue
+		}
+		for _, v := range c.slotValues(tp) {
+			l := tp.Fill(c, v)
+			if !tp.Keep {
+				l = c.notHad(l)
+			}
+			if len(l) > rawMax {
+				l = l[:rawMax]
+			}
+			if len(l) < RowMin {
+				continue
+			}
+			id := tp.ID
+			if v != "" {
+				id += ":" + v
+			}
+			cd := Cand{ID: id, Template: tp.ID, Shape: shapeOr(tp.Shape), Family: tp.Fam, Chart: tp.Chart, Disc: tp.Disc, Keep: tp.Keep, Prior: tp.Prior, Items: l}
+			for _, i := range l {
+				cd.Scores = append(cd.Scores, c.itemScore(i, tp, v))
+			}
+			cd.Title, cd.Reason = c.render(tp, v, l[:min(20, len(l))], id)
+			out = append(out, cd)
+		}
+	}
+	return out
+}
+
 // Build fills the page: every template that applies, expanded over its
 // slot values, ordered and deduped by the v7 row plan; at most 30 rows,
 // each with at least RowMin items, 2 per artist and 5 artists (album rows).

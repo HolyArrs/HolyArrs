@@ -756,6 +756,9 @@ func (a *API) musicNewListRows(ctx context.Context, r *http.Request, in musicNew
 // musicV7HeadRows is the plan's fixed head: with music_lists_v1 the
 // region's top chart row follows New from your artists and Browse.
 func (a *API) musicV7HeadRows() []string {
+	if a.musicTplOn() {
+		return append(append([]string{}, musicV7Head...), "tpl:A01")
+	}
 	if a.s.MusicListsV1 && a.s.MusicShelves != nil {
 		return append(append([]string{}, musicV7Head...), "lists_top_now")
 	}

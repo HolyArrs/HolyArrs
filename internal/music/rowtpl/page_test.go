@@ -157,6 +157,22 @@ func TestLibraryKeys(t *testing.T) {
 	}
 }
 
+func TestCandidatesForExplore(t *testing.T) {
+	c := pageCtx(fakeBundle(), "explore", "")
+	cands := Candidates(c)
+	if len(cands) == 0 {
+		t.Fatal("no Explore candidates")
+	}
+	for _, cd := range cands {
+		if len(cd.Items) < RowMin || len(cd.Scores) != len(cd.Items) || cd.Title == "" || cd.Reason == "" || cd.Family == "" {
+			t.Fatalf("candidate %+v", cd.ID)
+		}
+		if cd.Template == "C01" || cd.Template == "B06" {
+			t.Fatalf("%s needs a library or the Explore builder", cd.Template)
+		}
+	}
+}
+
 func TestPageIsStableWithinADay(t *testing.T) {
 	b := fakeBundle()
 	a := Build(pageCtx(b, "genre", "genre:rock"))

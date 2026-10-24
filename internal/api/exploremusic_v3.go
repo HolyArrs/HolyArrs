@@ -682,7 +682,19 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 		})
 	}
 
-	if shelves != nil {
+	// The row template engine replaces the list rows when it has its
+	// catalog (kill switch music_rows_tpl_off keeps them).
+	tplDone := false
+	if a.musicTplOn() {
+		if b := a.musicBundle(ctx, now); b != nil {
+			for _, cd := range a.tplExploreCands(ctx, member, region, lib, acts, b, shelves, now) {
+				meta, row, cards, sc := tplV7Row(b, cd)
+				addRow(meta, row, cards, sc, false, false)
+			}
+			tplDone = true
+		}
+	}
+	if shelves != nil && !tplDone {
 		for _, d := range listRows(shelves) {
 			keep := func(c MusicCard) bool {
 				return d.Chart || c.Kind != "album" || !hadAlbum[c.MBID] && acts.albumState[c.MBID] == ""

@@ -8,7 +8,6 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/metadata"
@@ -35,8 +34,9 @@ const (
 )
 
 // tplFetch lets one bundle download run at a time; callers that wait read
-// the cache it filled (a single flight without a new dependency).
-var tplFetch sync.Mutex
+// the cache it filled (a single flight without a new dependency). A waiting
+// request whose own context ends gives up and answers without the bundle.
+var tplFetch = make(chan struct{}, 1)
 
 type tplBundle struct {
 	b    *rowtpl.Bundle
@@ -52,8 +52,12 @@ func (a *API) musicBundle(ctx context.Context, now time.Time) *rowtpl.Bundle {
 	if _, failed := a.musicv2.cand.Get("tpl:fail", now); failed {
 		return nil
 	}
-	tplFetch.Lock()
-	defer tplFetch.Unlock()
+	select {
+	case tplFetch <- struct{}{}:
+	case <-ctx.Done():
+		return nil
+	}
+	defer func() { <-tplFetch }()
 	// Another request may have filled the cache while this one waited.
 	if v, ok := a.musicv2.cand.Get("tpl:bundle", now); ok {
 		return v.(*tplBundle).b
@@ -74,8 +78,6 @@ func (a *API) musicBundle(ctx context.Context, now time.Time) *rowtpl.Bundle {
 	dctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
 	defer cancel()
 	body, tag, err := a.s.MusicPools(dctx, etag)
-	// A request that went away is no failure of the server: no mark.
-	callerGone := ctx.Err() != nil || errors.Is(err, context.Canceled)
 	switch {
 	case errors.Is(err, metadata.ErrNotModified) && last != nil:
 		a.musicv2.cand.Put("tpl:bundle", last, tplBundleTTL, now)
@@ -85,9 +87,9 @@ func (a *API) musicBundle(ctx context.Context, now time.Time) *rowtpl.Bundle {
 			a.musicv2.cand.Put("tpl:bundle", last, 10*time.Minute, now)
 			return last.b
 		}
-		if !callerGone {
-			a.musicv2.cand.Put("tpl:fail", true, tplFailTTL, now)
-		}
+		// The download's own result decides (the caller cannot cancel it):
+		// a failure, its own timeout included, is kept for minutes.
+		a.musicv2.cand.Put("tpl:fail", true, tplFailTTL, now)
 		return nil
 	}
 	b, err := rowtpl.ParseBundle(body)
@@ -335,6 +337,38 @@ func (a *API) buildTplWorld(ctx context.Context, r *http.Request, kind string, n
 		rows = append(rows, row)
 	}
 	return hero, rows, len(rows) > 0
+}
+
+// tplExploreCands answers the engine's Explore candidates (world rows and
+// the personal rows it owns; the Explore builder keeps its own).
+func (a *API) tplExploreCands(ctx context.Context, member int64, region string, lib *musicLib, acts *musicActs, b *rowtpl.Bundle, sh *metadata.MusicShelves, now time.Time) []rowtpl.Cand {
+	c := &rowtpl.Ctx{B: b, Kind: "explore", Region: strings.ToLower(region), Now: now, Member: member, Lib: a.musicTplLib(ctx, member, lib, acts, b, now), Blocks: tplBlocks(sh), CountryName: countryName}
+	if sh != nil {
+		c.Neighbor = sh.Neighbor
+	}
+	return rowtpl.Candidates(c)
+}
+
+// tplV7Row turns an engine candidate into a v7 plan row with its cards.
+func tplV7Row(b *rowtpl.Bundle, cd rowtpl.Cand) (MusicRow, musicscore.Row, []MusicCard, []musicscore.Scored) {
+	meta := MusicRow{ID: "tpl:" + cd.ID, Type: "tpl_" + cd.Family, Title: cd.Title, Reason: cd.Reason, Shape: cd.Shape}
+	row := musicscore.Row{Prior: musicscore.PriorMixed, Min: rowtpl.RowMin, ChartSet: true, Chart: cd.Chart, Shape: cd.Shape, ArtistRow: cd.Shape == "round"}
+	if cd.Shape != "round" {
+		row.MinArtists = rowtpl.MinArtists
+	}
+	var cards []MusicCard
+	var sc []musicscore.Scored
+	for k, i := range cd.Items {
+		card := tplCard(b.Items[i])
+		cards = append(cards, card)
+		item := musicscore.Item{Key: card.Key, Artist: card.ArtistMBID, Score: cd.Scores[k]}
+		if card.Kind == "album" {
+			item.Album = card.MBID
+			item.FoldKey = fullAlbumKey(card.Name) + "|" + fullAlbumKey(card.Artist)
+		}
+		sc = append(sc, musicscore.Scored{Item: item})
+	}
+	return meta, row, cards, sc
 }
 
 func kindOfKey(key string) string { k, _, _ := strings.Cut(key, ":"); return k }

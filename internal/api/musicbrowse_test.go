@@ -226,32 +226,51 @@ func TestTplBundleSingleFlightAndFailureCache(t *testing.T) {
 	}
 }
 
-// A cancelled request neither cancels the download nor leaves a fail mark.
-func TestTplCancelledRequestLeavesNoFailMark(t *testing.T) {
+// A cancelled caller never cancels the download; during a real failure it
+// still leaves the fail mark, so cancel-and-retry costs one download.
+func TestTplCancelledCallersDuringAFailure(t *testing.T) {
 	r := tplRig(t)
-	body, _ := os.ReadFile("testdata/music_pools_small.json")
-	var sawCancelled bool
-	fail := true
+	var calls int32
+	var sawCancelled atomic.Bool
 	r.api.s.MusicPools = func(ctx context.Context, _ string) ([]byte, string, error) {
-		sawCancelled = sawCancelled || ctx.Err() != nil
-		if fail {
-			return nil, "", context.Canceled
+		atomic.AddInt32(&calls, 1)
+		if ctx.Err() != nil {
+			sawCancelled.Store(true)
 		}
-		return body, `"fixture"`, nil
+		return nil, "", metadata.ErrServiceUnavailable
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-	if b := r.api.musicBundle(ctx, time.Now()); b != nil {
-		t.Fatal("bundle from a failed download")
+	for i := 0; i < 20; i++ {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		_ = r.api.musicBundle(ctx, time.Now())
+		_ = r.api.musicBundle(context.Background(), time.Now())
 	}
-	if sawCancelled {
-		t.Fatal("the download used the cancelled request context")
+	if n := atomic.LoadInt32(&calls); n != 1 {
+		t.Fatalf("%d downloads for 20 cancel-and-retry requests, want 1", n)
 	}
-	if _, marked := r.api.musicv2.cand.Get("tpl:fail", time.Now()); marked {
-		t.Fatal("a cancelled request left a fail mark")
+	if sawCancelled.Load() {
+		t.Fatal("the download used a cancelled request context")
 	}
-	fail = false
-	if b := r.api.musicBundle(context.Background(), time.Now()); b == nil {
-		t.Fatal("the next request did not download")
+	if _, marked := r.api.musicv2.cand.Get("tpl:fail", time.Now()); !marked {
+		t.Fatal("no fail mark after a real failure")
 	}
+}
+
+// A request waiting for the download gives up when its own context ends.
+func TestTplWaiterRespectsItsContext(t *testing.T) {
+	r := tplRig(t)
+	release := make(chan struct{})
+	r.api.s.MusicPools = func(context.Context, string) ([]byte, string, error) {
+		<-release
+		return nil, "", metadata.ErrServiceUnavailable
+	}
+	go func() { _ = r.api.musicBundle(context.Background(), time.Now()) }()
+	time.Sleep(20 * time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Millisecond)
+	defer cancel()
+	start := time.Now()
+	if b := r.api.musicBundle(ctx, time.Now()); b != nil || time.Since(start) > time.Second {
+		t.Fatalf("waiter got %v after %v", b, time.Since(start))
+	}
+	close(release)
 }
