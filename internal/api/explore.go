@@ -121,6 +121,11 @@ func (a *API) StartExplore(ctx context.Context) {
 	go supervisor.Guard("explore-genre-warm", func() { a.warmGenres(ctx) })
 	startBackdropDark(ctx)
 	go supervisor.Guard("explore-browse-warm", func() { a.warmBrowse(ctx) })
+	if a.musicTplOn() {
+		// The music catalog bundle is read once at start, so the first music
+		// page does not wait for its download.
+		go supervisor.Guard("music-bundle-warm", func() { a.musicBundle(ctx, time.Now().UTC()) })
+	}
 }
 
 // exploreOnEvent marks pools stale: an ask (or joining one) marks the
