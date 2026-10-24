@@ -347,16 +347,20 @@ func (a *API) buildMusicGenre(ctx context.Context, member int64, region string, 
 			if len(row.Items) >= musicscore.RowMax {
 				break
 			}
-			if seen[c.Key] {
+			if seen[c.Key] || dup(row.Items, c.Key) {
 				continue
 			}
-			seen[c.Key] = true
 			row.Items = append(row.Items, c)
 		}
-		// A row needs a few items to be worth its space.
-		if len(row.Items) >= 3 {
-			rows = append(rows, row)
+		// A row needs enough items to look full; a thin one is left out and
+		// its items stay free for the rows below.
+		if len(row.Items) < genreRowMin {
+			return
 		}
+		for _, c := range row.Items {
+			seen[c.Key] = true
+		}
+		rows = append(rows, row)
 	}
 	type scored struct {
 		c MusicCard
@@ -613,4 +617,16 @@ func (a *API) buildMusicGenre(ctx context.Context, member int64, region string, 
 		alts = []MusicCard{}
 	}
 	return hero, alts, rows
+}
+
+// genreRowMin is the fewest items a genre page row shows with.
+const genreRowMin = 6
+
+func dup(items []MusicCard, key string) bool {
+	for _, c := range items {
+		if c.Key == key {
+			return true
+		}
+	}
+	return false
 }
