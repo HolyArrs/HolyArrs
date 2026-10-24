@@ -1,6 +1,8 @@
 <script lang="ts">
 	import Icon from './Icon.svelte';
 	import Shelf from './ui/Shelf.svelte';
+	import IconButton from './ui/IconButton.svelte';
+	import { reducedMotion } from './motion.ts';
 	import { sized } from './tmdb-image.ts';
 	import { pickTrailer, type Video } from './trailer.ts';
 	import { trailerSources, type TrailerSource } from './autoplay.svelte.ts';
@@ -46,6 +48,37 @@
 	const sub = (v: Video) => [kindWord(v), langWord(v)].filter(Boolean).join(' · ');
 	const named = (v: Video) => v.name || `${title} ${kindWord(v).toLowerCase()}`;
 
+	// Framed: pages of whole cards (two, three when the panel is wide). Nothing
+	// shows cut at the edge; swiping or the arrows move one page and stop there.
+	const GAP = 12;
+	let row = $state<HTMLElement>();
+	let per = $state(2);
+	let page = $state(0);
+	const pages = $derived(Math.max(1, Math.ceil(list.length / per)));
+	const fillers = $derived((per - (list.length % per)) % per);
+	$effect(() => {
+		const el = row;
+		if (!el) return;
+		const measure = () => {
+			per = el.clientWidth >= 600 ? 3 : 2;
+			const step = el.clientWidth + GAP;
+			page = Math.min(pages - 1, Math.round(el.scrollLeft / step));
+		};
+		measure();
+		const ro = new ResizeObserver(measure);
+		ro.observe(el);
+		el.addEventListener('scroll', measure, { passive: true });
+		return () => {
+			ro.disconnect();
+			el.removeEventListener('scroll', measure);
+		};
+	});
+	function turn(dir: 1 | -1) {
+		if (!row) return;
+		const to = Math.max(0, Math.min(pages - 1, page + dir));
+		row.scrollTo({ left: to * (row.clientWidth + GAP), behavior: reducedMotion() ? 'auto' : 'smooth' });
+	}
+
 	let busy = $state('');
 	async function play(v: Video, e: MouseEvent) {
 		const el = e.currentTarget as HTMLElement;
@@ -65,7 +98,7 @@
 </script>
 
 {#snippet card(v: Video, i: number)}
-	<button type="button" class="tcard" onclick={(e) => play(v, e)} aria-busy={busy === v.key || undefined} aria-label="Play {named(v)}">
+	<button type="button" class="tcard" class:snap={i % per === 0} onclick={(e) => play(v, e)} aria-busy={busy === v.key || undefined} aria-label="Play {named(v)}">
 		<span class="pic">
 			{#if coverOf(v, i)}<img src={coverOf(v, i)} alt="" loading="lazy" decoding="async" onerror={() => (noCover[v.key] = true)} />{/if}
 			<span class="glyph" aria-hidden="true"><Icon name="play" size={14} /></span>
@@ -77,9 +110,19 @@
 
 {#if list.length && framed}
 	<section class="tpanel" aria-labelledby="h-trailers" id="title-trailers" data-testid="title-trailers">
-		<h2 class="cap" id="h-trailers">Trailers<span class="n">{list.length}</span></h2>
-		<div class="trow" style="--item: {item}">
+		<div class="thead">
+			<h2 class="cap" id="h-trailers">Trailers<span class="n">{list.length}</span></h2>
+			{#if pages > 1}
+				<div class="pager">
+					<span class="pos" aria-live="polite">{page + 1} / {pages}</span>
+					<IconButton icon="chevronLeft" label="Previous trailers" variant="tinted" size="sm" tooltip={false} disabled={page === 0} onclick={() => turn(-1)} />
+					<IconButton icon="chevronRight" label="Next trailers" variant="tinted" size="sm" tooltip={false} disabled={page >= pages - 1} onclick={() => turn(1)} />
+				</div>
+			{/if}
+		</div>
+		<div class="trow" bind:this={row} style="--per: {per}; --gap: {GAP}px">
 			{#each list as v, i (v.key)}{@render card(v, i)}{/each}
+			{#each { length: fillers } as _, i (i)}<span class="fill" aria-hidden="true"></span>{/each}
 		</div>
 	</section>
 {:else if list.length}
@@ -104,9 +147,14 @@
 	.tpanel { display: flex; flex-direction: column; gap: 14px; height: 100%; min-width: 0; padding: 18px 20px; border-radius: 22px; background: var(--surface-1); border: 1px solid var(--line); }
 	.cap { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--text-muted); font: 600 11.5px/1.2 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
 	.n { padding: 2px 7px; border-radius: 999px; background: var(--surface-2); letter-spacing: 0; }
-	.trow { display: grid; grid-auto-flow: column; grid-auto-columns: var(--item); gap: 12px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none; margin: 0 -20px; padding: 0 20px 2px; scroll-padding-inline: 20px; }
+	.thead { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 30px; }
+	.pager { display: inline-flex; align-items: center; gap: 6px; }
+	.pos { margin-right: 4px; color: var(--text-muted); font: 600 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
+	.pager :global(.ui-ibtn:disabled) { opacity: .35; cursor: default; }
+	/* Exactly --per whole cards across; a page snaps at its first card and swipes stop page by page. */
+	.trow { display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - (var(--per) - 1) * var(--gap)) / var(--per)); gap: var(--gap); overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none; }
 	.trow::-webkit-scrollbar { display: none; }
-	.trow > .tcard { scroll-snap-align: start; }
+	.trow > .snap { scroll-snap-align: start; scroll-snap-stop: always; }
 	.tpanel .pic { border-radius: 12px; }
 	@media (prefers-reduced-motion: reduce) { .pic img, .glyph { transition: none; } }
 </style>
