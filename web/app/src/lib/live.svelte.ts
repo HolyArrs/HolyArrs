@@ -50,14 +50,48 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 
 	let tries = 0;
 	let retry: ReturnType<typeof setTimeout> | undefined;
+	// A tab in the background lets go of its stream after a short while: the
+	// browser opens only six connections to one address, so open streams in
+	// background tabs would leave a new tab waiting forever. Back in front, the
+	// stream opens again and every listener reloads (it may have missed messages).
+	const PAUSE_AFTER = 10_000;
+	let paused = false;
+	let missed = false;
+	let hideTimer: ReturnType<typeof setTimeout> | undefined;
+	let watching = false;
+	function visibility() {
+		clearTimeout(hideTimer);
+		if (document.hidden) {
+			hideTimer = setTimeout(() => {
+				if (!document.hidden || status.state === 'off') return;
+				clearTimeout(retry);
+				src?.close();
+				src = null;
+				paused = true;
+			}, PAUSE_AFTER);
+		} else if (paused) {
+			paused = false;
+			missed = true;
+			start(true);
+		}
+	}
 
 	function start(again = false) {
 		if (src) return;
+		if (!watching && typeof document !== 'undefined') {
+			watching = true;
+			document.addEventListener('visibilitychange', visibility);
+		}
 		if (!again) status.state = 'connecting';
 		src = factory(to('/live'));
 		src.onopen = () => {
 			tries = 0;
 			status.state = 'live';
+			if (missed) {
+				missed = false;
+				api.forget();
+				emit('resync', null);
+			}
 		};
 		src.onerror = () => {
 			// Lost the server (restart, update): retry after 1 s, 2 s, 4 s… up to 15 s.
@@ -74,6 +108,8 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 
 	function stop() {
 		clearTimeout(retry);
+		clearTimeout(hideTimer);
+		paused = false;
 		src?.close();
 		src = null;
 		status.state = 'off';
