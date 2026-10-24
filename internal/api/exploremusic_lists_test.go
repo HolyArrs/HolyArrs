@@ -448,6 +448,15 @@ func TestNewMusicRecentFirstAndHonestLabels(t *testing.T) {
 		req := httptest.NewRequest("GET", "/api/v1/explore/new/music?region="+region, nil)
 		own := []MusicRow{{ID: "np_music_top", Type: "np_music_top", Title: "Top albums", Reason: "r", Shape: "square",
 			Items: []MusicCard{{Key: "album:" + mid('8', 1), Kind: "album", MBID: mid('8', 1), Name: "Old", Artist: "Z", Badge: "New album", Date: "2012-05-01"}}}}
+		var songs []MusicCard
+		for i := 0; i < 8; i++ {
+			d := v7Fixed.AddDate(0, 0, -10).Format("2006-01-02")
+			if i%2 == 0 {
+				d = "2025-03-01"
+			}
+			songs = append(songs, MusicCard{Key: fmt.Sprintf("track:%d", i), Kind: "album", MBID: mid('9', i), Name: fmt.Sprint("Song ", i), Artist: fmt.Sprint("S", i), Date: d})
+		}
+		own = append(own, MusicRow{ID: "np_music_tracks", Type: "np_music_tracks", Title: "Best new songs", Reason: "r", Shape: "song", Items: songs})
 		hero, rows := r.api.musicNewListRows(context.Background(), req, musicNewInput{}, nil, own, v7Fixed)
 		if len(hero) < 3 {
 			t.Fatalf("%q: hero %d", region, len(hero))
@@ -479,6 +488,15 @@ func TestNewMusicRecentFirstAndHonestLabels(t *testing.T) {
 				if recentPart && c.Kind == "album" {
 					if d, ok := listAge(c.Date, v7Fixed); !ok || d > listRecentDays {
 						t.Fatalf("%q: %s from %s in recent row %s", region, c.Name, c.Date, row.ID)
+					}
+				}
+			}
+		}
+		for _, row := range rows {
+			if row.ID == "np_music_tracks" {
+				for _, c := range row.Items {
+					if !listRecent(c.Date, listRecentDays, v7Fixed) {
+						t.Fatalf("%q: old song %s (%s) in Best new songs", region, c.Name, c.Date)
 					}
 				}
 			}

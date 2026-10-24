@@ -691,7 +691,8 @@ func (a *API) musicNewListRows(ctx context.Context, r *http.Request, in musicNew
 			}
 			var items []MusicCard
 			for _, c := range row.Items {
-				if !taken(c) {
+				// Best new songs is a new row: songs of the last 90 days only.
+				if !taken(c) && (row.ID != "np_music_tracks" || listRecent(c.Date, listRecentDays, now)) {
 					items = append(items, c)
 				}
 			}
