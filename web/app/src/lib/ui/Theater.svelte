@@ -144,7 +144,7 @@
 		clearTimeout(idleTimer);
 		const at = video ? video.currentTime : time;
 		// What the hero it lands in carries on with (same second, same sound).
-		theater.back = { kind: o.kind, tmdb: o.tmdb, time: at, muted, ended };
+		theater.back = { kind: o.kind, tmdb: o.tmdb, time: at, muted, ended, from: o.from };
 		if (document.fullscreenElement) await document.exitFullscreen().catch(() => {});
 		if (!reduce) await sleep(THEATER_CHROME_MS);
 		let target: Box | null = o.rect;

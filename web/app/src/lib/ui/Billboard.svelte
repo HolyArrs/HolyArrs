@@ -28,6 +28,7 @@
 		position = '70% 25%',
 		settled = true,
 		reveal = false,
+		once = false,
 		onpictureerror,
 		art,
 		top,
@@ -52,6 +53,8 @@
 		settled?: boolean;
 		/** Hover or focus brings folded words back (title pages). */
 		reveal?: boolean;
+		/** The trailer starts by itself once per visit: scrolling away and back leaves the pictures (title pages). */
+		once?: boolean;
 		onpictureerror?: () => void;
 		/** Art drawn instead of the pictures (an album cover, a poster). */
 		art?: Snippet;
@@ -73,6 +76,8 @@
 	let playing = $state(false);
 	// The trailer already played to its end here: scrolling away and back never starts it again (Replay or Trailer does).
 	let finished = $state(false);
+	// once: the trailer already started by itself on this visit.
+	let autoPlayed = $state(false);
 
 	let phase = $state<HeroPhase>('still');
 	const words = heroQuiet((p) => (phase = p));
@@ -100,7 +105,8 @@
 	$effect(() => {
 		if (!theater.back) return;
 		const b = takeBack(kind, tmdb);
-		if (!b || b.ended) return;
+		// A trailer picked from the page's trailer list is not the hero's: the hero stays still.
+		if (!b || b.ended || b.from === 'panel') return;
 		resumeAt = b.time + (THEATER_CHROME_MS + THEATER_SHRINK_MS) / 1000;
 		resumeRun += 1;
 		resuming = true;
@@ -109,6 +115,7 @@
 	});
 	function heroPlaying() {
 		playing = true;
+		autoPlayed = true;
 		words.send('play');
 		if (resuming) {
 			resuming = false;
@@ -124,13 +131,14 @@
 		armed = false;
 		playing = false;
 		finished = false;
+		autoPlayed = false;
 		words.send('reset');
 	});
 
 	$effect(() => {
 		// Played to the end and still here: keep it as it is (its Replay button stays).
 		if (finished && inView) return;
-		if (trailer && settled && inView && !finished) {
+		if (trailer && settled && inView && !finished && !(once && autoPlayed)) {
 			wait.start();
 			// The lookup starts now, not after the dwell.
 			prefetchTrailer(kind!, tmdb!);

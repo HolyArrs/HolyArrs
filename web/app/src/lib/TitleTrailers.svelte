@@ -4,7 +4,7 @@
 	import IconButton from './ui/IconButton.svelte';
 	import { reducedMotion } from './motion.ts';
 	import { sized } from './tmdb-image.ts';
-	import { pickTrailer, type Video } from './trailer.ts';
+	import { claimPlayer, pickTrailer, type Video } from './trailer.ts';
 	import { trailerSources, type TrailerSource } from './autoplay.svelte.ts';
 	import { openTheater } from './theater.svelte.ts';
 
@@ -89,6 +89,8 @@
 			let source: TrailerSource | undefined;
 			if (main && v.key === main.key) source = (await trailerSources(kind, tmdb, videos))[0];
 			source ??= { kind: 'embed', key: v.key };
+			// One video at a time: the hero's muted trailer stops for this one.
+			claimPlayer(() => {})();
 			const r = el.getBoundingClientRect();
 			openTheater({ kind, tmdb, title, source, time: 0, rect: { left: r.left, top: r.top, width: r.width, height: r.height }, from: 'panel', returnTo: el });
 		} finally {

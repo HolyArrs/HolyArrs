@@ -34,6 +34,8 @@ export interface TheaterBack {
 	time: number;
 	muted: boolean;
 	ended: boolean;
+	/** Where the closing trailer was opened; a hero carries on only from its own (hero) or a hover card. */
+	from?: TheaterFrom;
 }
 /** What a small player hands to the full-screen one when clicked. */
 export interface TheaterHandoff {

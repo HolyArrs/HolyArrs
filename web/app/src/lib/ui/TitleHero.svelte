@@ -255,7 +255,7 @@
 </script>
 
 <div class="ui-thero" class:square>
-	<Billboard label={title} testid="title-hero" {kind} {tmdb} {title} {videos} {pictures} {vtName} {settled} position="70% 30%" onpictureerror={() => (backdropFailed = true)} art={stand ? standArt : undefined}>
+	<Billboard label={title} testid="title-hero" {kind} {tmdb} {title} {videos} {pictures} {vtName} {settled} once position="70% 30%" onpictureerror={() => (backdropFailed = true)} art={stand ? standArt : undefined}>
 		{#snippet top()}
 			{#if crumbHome}
 				<nav class="crumbs" aria-label="Breadcrumb">
