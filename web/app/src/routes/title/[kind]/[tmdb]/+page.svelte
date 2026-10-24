@@ -21,7 +21,10 @@
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import SectionNav from '#lib/ui/SectionNav.svelte';
 	import { pageSections } from '#lib/title-page.ts';
-	import { tmdbArtName } from '#lib/explore.ts';
+	import { GENRES, tmdbArtName } from '#lib/explore.ts';
+	import SeasonFolds from '#lib/SeasonFolds.svelte';
+	import TitleLookPicker from '#lib/TitleLookPicker.svelte';
+	import { titleLook } from '#lib/title-look.svelte.ts';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -176,6 +179,17 @@
 	const networkOf = (d: TitleDetails) => d.network ?? d.show?.network ?? '';
 	const heroMeta = (d: TitleDetails) =>
 		[d.year ? String(d.year) : '', d.kind === 'show' && regular ? `${regular} ${regular === 1 ? 'season' : 'seasons'}` : '', d.kind === 'show' ? networkOf(d) : runtimeWords(d.runtime), ...d.genres.slice(0, d.kind === 'show' ? 2 : 3)].filter(Boolean);
+	// The layouts being compared (title-look.svelte.ts): A asks first, B is Apple's, C is Netflix's.
+	const look = $derived(titleLook.value);
+	/** A genre opens its Explore page when TMDB's list knows the name. */
+	const genreHref = (k: 'movie' | 'show', name: string) => {
+		const g = GENRES[k].find((x) => x.name.toLowerCase() === name.toLowerCase());
+		return g ? to(`/explore?${new URLSearchParams({ type: k === 'show' ? 'shows' : 'movies', genre: String(g.id) }).toString()}`) : undefined;
+	};
+	const personHref = (id?: string) => (id ? to(`/people/${id.replace(/^tmdb:/, '')}`) : undefined);
+	/** The director (movies) or creators (shows). */
+	const makers = $derived((info?.crew ?? []).filter((p) => p.role === (kind === 'show' ? 'creator' : 'director')));
+	const makerWord = $derived(kind === 'show' ? (makers.length > 1 ? 'Creators' : 'Creator') : makers.length > 1 ? 'Directors' : 'Director');
 	const crumbs = $derived(details ? [{ href: to('/explore'), label: 'Explore' }, { href: to(detailPath(details.kind, details.tmdb)), label: details.year ? `${details.name} (${details.year})` : details.name }] : []);
 </script>
 
@@ -230,43 +244,143 @@
 
 		<SectionNav items={pageSections(d.kind, { manage: false })} />
 
-		{#if d.kind === 'show'}<ShowSeasons tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
-
-		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info>
-			{#snippet middle()}
+		{#snippet castRow()}
 			{#if d.cast.length}
 				<Shelf title="Cast and crew" item="112px" anchor="title-cast" onseeall={() => (allCast = true)}>
 					{#each d.cast.slice(0, 12) as p, i (p.name + i)}
-						<PersonCircle name={p.name} role={p.role} image={p.image} href={p.id ? to(`/people/${p.id}`) : undefined} />
+						<PersonCircle name={p.name} role={p.role} image={p.image} href={personHref(p.id)} />
 					{/each}
 				</Shelf>
-				<Sheet bind:open={allCast} title="Cast and crew" size="lg">
-					<ul class="all-grid people">
-						{#each d.cast as p, i (p.name + i)}
-							<li><PersonCircle name={p.name} role={p.role} image={p.image} href={p.id ? to(`/people/${p.id}`) : undefined} /></li>
-						{/each}
-					</ul>
-				</Sheet>
 			{/if}
-			{/snippet}
-		</TitleRows>
+		{/snippet}
+		{#snippet genreChips()}
+			{#if d.genres.length}
+				<ul class="chips" aria-label="Genres">
+					{#each d.genres as g (g)}
+						{@const href = genreHref(d.kind, g)}
+						<li>{#if href}<a class="gchip" {href}>{g}</a>{:else}<span class="gchip">{g}</span>{/if}</li>
+					{/each}
+				</ul>
+			{/if}
+		{/snippet}
+		{#snippet names(list: { name: string; id?: string }[], max: number, all?: () => void)}
+			{#each list.slice(0, max) as p, i (p.name + i)}{#if i}{', '}{/if}{#if personHref(p.id)}<a href={personHref(p.id)}>{p.name}</a>{:else}{p.name}{/if}{/each}{#if all && list.length > max}{', '}<button type="button" class="linkish" onclick={all}>more</button>{/if}
+		{/snippet}
+		{#snippet genreLinks()}
+			{#each d.genres as g, i (g)}{#if i}{', '}{/if}{#if genreHref(d.kind, g)}<a href={genreHref(d.kind, g)}>{g}</a>{:else}{g}{/if}{/each}
+		{/snippet}
+		{#snippet services()}
+			{#if info?.streaming.length}
+				<ul class="svc">
+					{#each info.streaming as sv (sv.id)}
+						<li title={sv.name}>{#if sv.logo}<img src={sv.logo} alt="" width="28" height="28" loading="lazy" />{/if}<span>{sv.name}</span></li>
+					{/each}
+				</ul>
+			{/if}
+		{/snippet}
+		{#snippet factRows()}
+			{#if d.year}<dt>{d.kind === 'show' ? 'First aired' : 'Released'}</dt><dd>{d.year}</dd>{/if}
+			{#if d.kind === 'movie' && d.runtime}<dt>Runtime</dt><dd>{runtimeWords(d.runtime)}</dd>{/if}
+			{#if d.kind === 'show' && regular}<dt>Seasons</dt><dd>{regular}</dd>{/if}
+			{#if networkOf(d)}<dt>Network</dt><dd>{networkOf(d)}</dd>{/if}
+			{#if rich?.certification ?? certOf(d.rating)}<dt>Rated</dt><dd>{rich?.certification ?? certOf(d.rating)}</dd>{/if}
+			{#if makers.length}<dt>{makerWord}</dt><dd>{@render names(makers, 3)}</dd>{/if}
+			{#if d.genres.length}<dt>Genres</dt><dd>{@render genreLinks()}</dd>{/if}
+		{/snippet}
 
-		<TitleSection id="h-about" title="About">
-			<dl class="tp-about">
-				{#if d.year}<dt>{d.kind === 'show' ? 'First aired' : 'Released'}</dt><dd>{d.year}</dd>{/if}
-				{#if d.kind === 'movie' && d.runtime}<dt>Runtime</dt><dd>{runtimeWords(d.runtime)}</dd>{/if}
-				{#if d.kind === 'show' && regular}<dt>Seasons</dt><dd>{regular}</dd>{/if}
-				{#if networkOf(d)}<dt>Network</dt><dd>{networkOf(d)}</dd>{/if}
-				{#if rich?.certification ?? certOf(d.rating)}<dt>Rated</dt><dd>{rich?.certification ?? certOf(d.rating)}</dd>{/if}
-				{#if d.genres.length}<dt>Genres</dt><dd>{d.genres.join(', ')}</dd>{/if}
-			</dl>
-		</TitleSection>
+		{#if look === 'ask'}
+			<!-- A · Ask first: seasons and the facts side by side, as request apps lay it out. -->
+			<div class="tp-body look-a">
+				<div class="tp-main">
+					{@render genreChips()}
+					{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
+					{@render castRow()}
+				</div>
+				<aside class="tp-side">
+					<div class="facts" id="title-where">
+						<dl class="fact-list">{@render factRows()}</dl>
+						{#if info?.streaming.length}
+							<div class="fact-where"><h2 class="tp-h3">Where to watch</h2>{@render services()}</div>
+						{/if}
+					</div>
+				</aside>
+			</div>
+			<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} />
+		{:else if look === 'apple'}
+			<!-- B · Apple: names first, the photo cast row, then everything else; About as cards at the end. -->
+			{#if d.cast.length || makers.length}
+				<p class="credits">
+					{#if d.cast.length}<span><span class="lbl">Starring</span> {@render names(d.cast, 3)}</span>{/if}
+					{#if makers.length}<span><span class="lbl">{makerWord}</span> {@render names(makers, 2)}</span>{/if}
+				</p>
+			{/if}
+			{@render castRow()}
+			{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
+			<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} />
+			<TitleSection id="h-about" title="About">
+				<div class="about-cards">
+					<div class="acard">
+						<h3>{d.name}</h3>
+						{#if d.genres.length}<p class="cap">{d.genres.slice(0, 2).join(' · ')}</p>{/if}
+						{#if d.overview}<p class="clamp">{d.overview}</p>{/if}
+					</div>
+					{#if rich?.certification ?? certOf(d.rating)}
+						<div class="acard">
+							<p class="big"><span class="cert">{rich?.certification ?? certOf(d.rating)}</span></p>
+							<p class="cap">Age rating</p>
+							<p>{[d.year, d.kind === 'movie' ? runtimeWords(d.runtime) : regular ? `${regular} ${regular === 1 ? 'season' : 'seasons'}` : ''].filter(Boolean).join(' · ')}</p>
+						</div>
+					{/if}
+					{#if info?.streaming.length}
+						<div class="acard" id="title-where">
+							<p class="cap">Where to watch</p>
+							{@render services()}
+						</div>
+					{/if}
+				</div>
+				<dl class="tp-about about-cols">{@render factRows()}</dl>
+			</TitleSection>
+		{:else}
+			<!-- C · Netflix: a two-column strip of facts and linked names, episodes, more titles, About at the end. -->
+			<div class="strip">
+				<div class="strip-main">
+					{@render genreChips()}
+					{#if info?.streaming.length}<div id="title-where"><h2 class="tp-h3">Where to watch</h2>{@render services()}</div>{/if}
+				</div>
+				<div class="strip-side">
+					{#if d.cast.length}<p><span class="lbl">Cast:</span> {@render names(d.cast, 3, () => (allCast = true))}</p>{/if}
+					{#if d.genres.length}<p><span class="lbl">Genres:</span> {@render genreLinks()}</p>{/if}
+					{#if makers.length}<p><span class="lbl">{makerWord}:</span> {@render names(makers, 2)}</p>{/if}
+				</div>
+			</div>
+			{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
+			<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} reviewsLast />
+			<TitleSection id="h-about" title="About {d.name}">
+				<div class="nf-about">
+					{#if makers.length}<p><span class="lbl">{makerWord}:</span> {@render names(makers, 6)}</p>{/if}
+					{#if d.cast.length}<p><span class="lbl">Cast:</span> {@render names(d.cast, 40)}</p>{/if}
+					{#if d.genres.length}<p><span class="lbl">Genres:</span> {@render genreLinks()}</p>{/if}
+					{#if rich?.certification ?? certOf(d.rating)}<p><span class="lbl">Age rating:</span> <span class="cert">{rich?.certification ?? certOf(d.rating)}</span></p>{/if}
+					{#if networkOf(d)}<p><span class="lbl">Network:</span> {networkOf(d)}</p>{/if}
+				</div>
+			</TitleSection>
+		{/if}
+
+		<Sheet bind:open={allCast} title="Cast and crew" size="lg">
+			<ul class="all-grid people">
+				{#each d.cast as p, i (p.name + i)}
+					<li><PersonCircle name={p.name} role={p.role} image={p.image} href={personHref(p.id)} /></li>
+				{/each}
+			</ul>
+		</Sheet>
 
 		<p class="attribution">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
 	</article>
 {/if}
 </PageLoader>
 {/if}
+
+<TitleLookPicker />
 
 {#if manage}
 	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} onadded={(_m, t) => added(t)} />
@@ -281,4 +395,39 @@
 	.all-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 18px 14px; margin: 0; padding: 0; list-style: none; }
 	.all-grid.people { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
 	.attribution { color: var(--text-muted); font: var(--t-footnote); }
+	/* The layouts being compared. Linked names and genres read as text until hovered. */
+	.tp :global(:is(.credits, .strip-side, .nf-about, .fact-list, .about-cols) a), .linkish { color: var(--text); text-decoration: none; }
+	.tp :global(:is(.credits, .strip-side, .nf-about, .fact-list, .about-cols) a:hover), .linkish:hover { text-decoration: underline; text-underline-offset: 3px; }
+	.linkish { padding: 0; border: 0; background: none; color: var(--text); font: inherit; font-style: italic; cursor: pointer; }
+	.lbl { color: var(--text-muted); }
+	.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+	.gchip { display: inline-flex; align-items: center; min-height: 32px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-1); color: var(--text); font: 500 14px/1 var(--font-ui); transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) cubic-bezier(0.34, 1.56, 0.64, 1); }
+	a.gchip:hover { background: var(--surface-2); transform: translateY(-1px); }
+	.svc { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+	.svc li { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 4px 12px 4px 4px; border-radius: 999px; background: var(--surface-2); font: 500 14px/1 var(--font-ui); }
+	.svc img { width: 28px; height: 28px; border-radius: 7px; object-fit: cover; }
+	.cert { display: inline-flex; align-items: center; height: 22px; padding: 0 7px; border: 1.5px solid currentColor; border-radius: 5px; font: 700 12px/1 var(--font-ui); letter-spacing: .03em; }
+	/* A: the facts card beside the seasons. */
+	.look-a .tp-main { gap: 28px; }
+	.facts { display: flex; flex-direction: column; gap: 16px; padding: 16px 18px; border-radius: var(--r-card); background: var(--surface-1); border: 1px solid var(--line); position: sticky; top: calc(var(--topbar, 56px) + 16px); }
+	.fact-list { display: grid; grid-template-columns: auto minmax(0, 1fr); margin: 0; font: 400 14px/1.35 var(--font-ui); }
+	.fact-list :global(dt) { padding: 10px 0; color: var(--text); font-weight: 600; }
+	.fact-list :global(dd) { margin: 0; padding: 10px 0 10px 16px; color: var(--text-muted); text-align: right; overflow-wrap: anywhere; }
+	.fact-list :global(dt:not(:first-of-type)), .fact-list :global(dt:not(:first-of-type) + dd) { border-top: 1px solid var(--line); }
+	.fact-where .tp-h3 { font-size: 14px; }
+	/* B: Apple's names line and About cards. */
+	.credits { display: flex; flex-wrap: wrap; gap: 4px 28px; margin: 0; font: 500 15px/1.5 var(--font-ui); }
+	.about-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 14px; margin-bottom: 24px; }
+	.acard { display: flex; flex-direction: column; gap: 6px; min-height: 150px; padding: 16px 18px; border-radius: var(--r-card); background: var(--surface-1); border: 1px solid var(--line); }
+	.acard h3 { margin: 0; font: 700 18px/1.2 var(--font-ui); }
+	.acard p { margin: 0; }
+	.acard .cap { color: var(--text-muted); font: 600 11.5px/1.2 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
+	.acard .big { font: 700 20px/1 var(--font-ui); }
+	.clamp { color: var(--text-muted); font: 400 15px/1.45 var(--font-ui); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; overflow: hidden; }
+	/* C: Netflix's strip and About. */
+	.strip { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px 48px; align-items: start; }
+	.strip-main { display: flex; flex-direction: column; gap: 22px; }
+	.strip-side, .nf-about { display: flex; flex-direction: column; gap: 10px; font: 400 14.5px/1.45 var(--font-ui); }
+	.strip-side p, .nf-about p { margin: 0; }
+	@media (max-width: 767px) { .strip { grid-template-columns: minmax(0, 1fr); } .facts { position: static; } }
 </style>

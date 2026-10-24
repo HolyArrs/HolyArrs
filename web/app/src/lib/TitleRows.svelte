@@ -26,7 +26,9 @@
 		kind,
 		tmdb,
 		info = $bindable(null),
-		middle
+		middle,
+		band = true,
+		reviewsLast = false
 	}: {
 		kind: InfoKind;
 		tmdb: string | null | undefined;
@@ -34,6 +36,10 @@
 		info?: InfoDetails | null;
 		/** Between the band and the title rows (the cast). */
 		middle?: Snippet;
+		/** Where to stream as a band at the top (off when the page shows it elsewhere). */
+		band?: boolean;
+		/** Ratings & reviews after the title rows instead of before them. */
+		reviewsLast?: boolean;
 	} = $props();
 
 	const region = serviceRegion(defaultRegion());
@@ -93,7 +99,7 @@
 	</WideCard>
 {/snippet}
 
-{#if info?.streaming.length}
+{#if band && info?.streaming.length}
 	<section class="tp-band" aria-labelledby="title-where-h" id="title-where">
 		<div class="band-col">
 			<h2 class="tp-h3" id="title-where-h">Where to stream</h2>
@@ -108,7 +114,7 @@
 
 {#if middle}{@render middle()}{/if}
 
-<TitleReviews {kind} {tmdb} />
+{#if !reviewsLast}<TitleReviews {kind} {tmdb} />{/if}
 
 {#if info?.collection && collection.length}
 	<Shelf title={info.collection.name} item="var(--title-item)" anchor="title-collection" placeholder="wide" lines={1}>
@@ -132,6 +138,8 @@
 		{#each more.slice(0, 18) as p (p.c.key)}{@render card(p)}{/each}
 	</Shelf>
 {/if}
+
+{#if reviewsLast}<TitleReviews {kind} {tmdb} />{/if}
 
 <QuickAsk bind:this={flow} />
 
