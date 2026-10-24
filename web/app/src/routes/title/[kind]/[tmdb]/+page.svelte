@@ -22,6 +22,9 @@
 	import { tmdbArtName } from '#lib/explore.ts';
 	import SeasonFolds from '#lib/SeasonFolds.svelte';
 	import TitleScores from '#lib/TitleScores.svelte';
+	import TitleTrailers from '#lib/TitleTrailers.svelte';
+	import TitleLookPicker from '#lib/TitleLookPicker.svelte';
+	import { titleLook } from '#lib/title-look.svelte.ts';
 	import { loadExtras, type OutsideScore } from '#lib/outside-ratings.ts';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
@@ -213,6 +216,8 @@
 	});
 	const tmdbScore = $derived(rich?.score ?? scoreOf(details?.rating));
 	const hasScores = $derived(outside.length > 0 || !!tmdbScore);
+	// Where the trailers show while the options are compared (title-look.svelte.ts).
+	const look = $derived(titleLook.value);
 	const hasFacts = $derived(!!(network || makers.length || lang || countries.length));
 	const crumbs = $derived(details ? [{ href: to('/explore'), label: 'Explore' }, { href: to(detailPath(details.kind, details.tmdb)), label: details.year ? `${details.name} (${details.year})` : details.name }] : []);
 </script>
@@ -300,6 +305,9 @@
 				</dl>
 			{/if}
 		{/snippet}
+		{#snippet trailers()}
+			<TitleTrailers kind={d.kind} tmdb={d.tmdb} title={d.name} videos={rich?.videos ?? []} art={[d.backdrop, ...(rich?.backdrops ?? [])]} layout={look} />
+		{/snippet}
 		{#snippet where()}
 			{#if info?.streaming.length}
 				<div class="where-row" id="title-where"><span class="lbl">Where to watch</span>{@render services()}</div>
@@ -317,7 +325,9 @@
 				</div>
 			{/if}
 			{@render where()}
+			{#if look === 'chips'}{@render trailers()}{/if}
 		</div>
+		{#if look !== 'chips'}{@render trailers()}{/if}
 		{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
 		{@render castRow()}
 		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} />
@@ -334,6 +344,8 @@
 {/if}
 </PageLoader>
 {/if}
+
+<TitleLookPicker />
 
 {#if manage}
 	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} onadded={(_m, t) => added(t)} />
