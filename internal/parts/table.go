@@ -406,6 +406,8 @@ var Routes = map[string]Owner{
 	"DELETE /api/v1/metadata/album/{mbid}/follow":          music,
 	"GET /api/v1/music-trending/art/{kind}/{mbid}":         music,
 	"GET /api/v1/music/genre/{slug}":                       music,
+	"GET /api/v1/music/browse/{kind}/{slug}":               music,
+	"GET /api/v1/music/browse-tiles":                       music,
 	"GET /api/v1/music/genre-art/{slug}":                   music,
 	"GET /api/v1/music/artists/{mbid}":                     music,
 	"GET /api/v1/music/albums/{mbid}":                      music,

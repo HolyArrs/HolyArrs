@@ -15939,6 +15939,68 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/music/browse-tiles": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "The genre's rows."
+          },
+          "400": {
+            "description": "Not a genre slug."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          },
+          "404": {
+            "description": "The genre is not charting in this region."
+          }
+        },
+        "summary": "Search > Music Browse: genres, moods, seasons, decades and activities, each tile with its page and covers",
+        "x-holyarrs-part": "music",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/music/browse/{kind}/{slug}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The genre's rows."
+          },
+          "400": {
+            "description": "Not a genre slug."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          },
+          "404": {
+            "description": "The genre is not charting in this region."
+          }
+        },
+        "summary": "A Music Browse page (mood, season, decade, activity or genre) from the row templates: band, Spotlight and up to 30 rows",
+        "x-holyarrs-part": "music",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/music/genre-art/{slug}": {
       "get": {
         "description": "The grey 16:9 picture of a genre tile (at most 40 KB) at version v, from the metadata server; the app paints the genre's hue under it. Served with a week-long private cache header.",
