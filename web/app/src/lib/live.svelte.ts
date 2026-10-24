@@ -81,6 +81,8 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 		if (!watching && typeof document !== 'undefined') {
 			watching = true;
 			document.addEventListener('visibilitychange', visibility);
+			// A tab opened in the background never sees a change: start its countdown now.
+			if (document.hidden) queueMicrotask(visibility);
 		}
 		if (!again) status.state = 'connecting';
 		src = factory(to('/live'));
