@@ -30,12 +30,11 @@ export async function attachHLS(video: HTMLVideoElement, url: string, native: bo
 	}
 	const Hls = await loadHls();
 	if (!Hls.isSupported()) throw new Error('no MediaSource');
-	const hls = new Hls({ startPosition: start, maxBufferLength: 20, capLevelToPlayerSize: false, enableWorker: true });
+	const hls = new Hls({ startPosition: start, maxBufferLength: 20, capLevelToPlayerSize: false, enableWorker: true, abrEwmaDefaultEstimate: 8_000_000 });
 	// YouTube's stream mixes H.264, VP9 and AV1 at the same sizes; switching
-	// codec mid-play stalls the picture, so only H.264 stays. Like the big
-	// streaming apps: start at a light level so the picture shows fast, then
-	// let ABR climb up to what the player shows right now (its box, or the
-	// screen in full screen), and follow the player when it grows or shrinks.
+	// codec mid-play stalls the picture, so only H.264 stays. The cap is what
+	// the player shows right now (its box, or the screen in full screen) and
+	// follows it when it grows or shrinks.
 	let avc: { height: number }[] = [];
 	const recap = () => {
 		if (!avc.length) return;
@@ -47,8 +46,10 @@ export async function attachHLS(video: HTMLVideoElement, url: string, native: bo
 		for (const i of drop) hls.removeLevel(i);
 		avc = hls.levels.map((l) => ({ height: l.height }));
 		if (!avc.length) return;
-		hls.startLevel = hls.nextLevel = lightLevel(avc.map((l) => l.height));
+		// Start straight at the level for what is shown (a light start stayed
+		// low too long); full screen and resizes still move the cap.
 		recap();
+		hls.startLevel = hls.nextLevel = hls.autoLevelCapping;
 	});
 	const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(recap);
 	ro?.observe(video);
