@@ -91,6 +91,29 @@
 		videoMuted = videoEl.muted;
 		setSoundOn(!videoEl.muted);
 	}
+	// When a video ends: the artist's next unplayed video, else the same one again.
+	let playedVideos: string[] = [];
+	$effect(() => {
+		void mbid;
+		playedVideos = [];
+	});
+	async function nextVideo() {
+		const cur = heroVideo;
+		const el = videoEl;
+		if (!cur || !el) return;
+		if (!playedVideos.includes(cur.key)) playedVideos = [...playedVideos, cur.key];
+		const want = mbid;
+		const next = await api.get<HeroVideo>(`/music/artists/${want}?part=video&skip=${encodeURIComponent(playedVideos.join(','))}`).catch(() => null);
+		if (want !== mbid || heroVideo !== cur) return;
+		if (next?.proxy_url && next.key !== cur.key) {
+			heroVideo = next;
+			return;
+		}
+		// None left: start over from the first, repeating this one now.
+		playedVideos = [cur.key];
+		el.currentTime = heroVideoStart(cur);
+		void el.play().catch(() => {});
+	}
 	function togglePause() {
 		if (!videoEl) return;
 		if (videoEl.paused) void videoEl.play().catch(() => {});
@@ -425,7 +448,7 @@
 						{/key}
 					{/if}
 					{#if heroVideo}
-						<video class="clip" class:in={videoOn} bind:this={videoEl} muted loop playsinline disablepictureinpicture preload="auto" onplaying={() => { videoIn = true; videoPaused = false; }} onpause={() => (videoPaused = true)} onplay={() => (videoPaused = false)} onvolumechange={() => videoEl && (videoMuted = videoEl.muted)} data-testid="artist-hero-video"></video>
+						<video class="clip" class:in={videoOn} bind:this={videoEl} muted playsinline disablepictureinpicture preload="auto" onplaying={() => { videoIn = true; videoPaused = false; }} onpause={() => (videoPaused = true)} onended={() => void nextVideo()} onplay={() => (videoPaused = false)} onvolumechange={() => videoEl && (videoMuted = videoEl.muted)} data-testid="artist-hero-video"></video>
 					{/if}
 				</div>
 				<div class="shade" aria-hidden="true"></div>

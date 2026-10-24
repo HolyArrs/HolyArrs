@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"math/rand/v2"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -223,6 +224,15 @@ func (a *API) artistVideo(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusNotFound, "no video")
 		return
 	}
+	// ?skip=id,id names videos already played: the next one is another of the
+	// artist's videos, and none left answers 404 so the page repeats its last.
+	if skip := r.URL.Query().Get("skip"); skip != "" {
+		vids = withoutVideos(vids, strings.Split(skip, ","))
+		if len(vids) == 0 {
+			fail(w, http.StatusNotFound, "no more videos")
+			return
+		}
+	}
 	// A video whose stream was looked up ahead of time answers at once;
 	// else one is picked, and one that will not play is dropped and
 	// another one is tried.
@@ -426,4 +436,24 @@ func (a *API) lookupMusicVideo(ctx context.Context, pool chan struct{}, key, cke
 		}
 	}
 	return e, nil
+}
+
+// withoutVideos drops the listed video ids (at most 50 are honoured).
+func withoutVideos(vids []metadata.ArtistVideo, skip []string) []metadata.ArtistVideo {
+	if len(skip) > 50 {
+		skip = skip[:50]
+	}
+	drop := make(map[string]bool, len(skip))
+	for _, id := range skip {
+		if id = strings.TrimSpace(id); id != "" {
+			drop[id] = true
+		}
+	}
+	out := make([]metadata.ArtistVideo, 0, len(vids))
+	for _, v := range vids {
+		if !drop[v.ID] {
+			out = append(out, v)
+		}
+	}
+	return out
 }
