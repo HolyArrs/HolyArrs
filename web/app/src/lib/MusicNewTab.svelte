@@ -13,6 +13,7 @@
 	import { cardBadges, exploreLinks, eyebrow, heroNote, newMusicPath, rowNote, type NewMusicAnswer, type NewMusicCard } from './music/music-new.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './types.ts';
 	import Shelf from './ui/Shelf.svelte';
+	import MusicVideoRow from './ui/MusicVideoRow.svelte';
 	import MusicGenreTiles from './ui/MusicGenreTiles.svelte';
 	import { fetchMusicExplore } from './music/music-trending.ts';
 	import { tileHue } from './search-browse.ts';
@@ -268,6 +269,9 @@
 		{/if}
 
 		{#each rows as row (row.id)}
+			{#if row.shape === 'wide'}
+			<MusicVideoRow title={row.title} reason={row.reason} items={row.items} />
+			{:else}
 			<div class="row" data-row={row.type}>
 				<Shelf title={row.title} subtitle={row.reason} item="var(--album-item)" items={row.items} key={(c) => c.key} placeholder="square" lines={2} onseeall={() => seeAll(row.id)}>
 					{#snippet card(raw: NewMusicCard)}
@@ -275,6 +279,7 @@
 					{/snippet}
 				</Shelf>
 			</div>
+			{/if}
 		{/each}
 
 		<nav class="more" aria-labelledby="np-more-h">

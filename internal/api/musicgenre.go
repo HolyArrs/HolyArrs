@@ -424,6 +424,70 @@ func (a *API) buildMusicGenre(ctx context.Context, member int64, region string, 
 		}
 		add(MusicRow{ID: "genre_top", Type: "top_albums", Title: "Top " + g.Name + " albums", Reason: reason, Shape: "square"}, cards)
 	}
+	// World-list rows (music_lists_v1): the tile's editorial lists, and the
+	// region's charts filtered to the genre by the artists' genres.
+	shelves := a.musicShelvesOf(ctx, region, now)
+	if shelves != nil {
+		lt, hasTile := listTileOf(g.Slug)
+		name := g.Name
+		place := listPlace(shelves.Chart)
+		if hasTile {
+			var picks, artists []MusicCard
+			for _, it := range shelves.Blocks["tile:"+lt.Key] {
+				c := listCard(it)
+				picks = append(picks, c)
+				ar := strings.ToLower(it.ArtistMBID)
+				if it.Kind == "artist" {
+					ar = strings.ToLower(it.MBID)
+				}
+				if _, have := lib.byMBID[ar]; !have && metadata.ValidMBID(ar) {
+					artists = append(artists, artistCard(it.Artist, ar, 0, ""))
+				}
+			}
+			add(MusicRow{ID: "genre_picks", Type: "genre_picks", Title: name + " picks", Reason: "Picked from this week's " + lt.Name + " lists", Shape: "square"}, picks)
+			add(MusicRow{ID: "genre_to_know", Type: "genre_artists", Title: "Artists to know in " + name, Reason: "Artists on this week's " + lt.Name + " lists, not in your Library", Shape: "round"}, artists)
+		}
+		var ids []string
+		for _, b := range []string{"top_now", "albums_week", "climbing", "new_entries", "new_friday", "top_world", "albums_world", "big_new_albums"} {
+			for _, it := range shelves.Blocks[b] {
+				ids = append(ids, strings.ToLower(it.ArtistMBID), strings.ToLower(it.MBID))
+			}
+		}
+		gs := a.genresOf(ids)
+		inG := func(it metadata.MusicShelfItem) bool {
+			id := strings.ToLower(it.ArtistMBID)
+			if it.Kind == "artist" {
+				id = strings.ToLower(it.MBID)
+			}
+			for _, mg := range gs[id] {
+				sl := musicSlug(mg)
+				if genreMatch(sl, g.Slug) {
+					return true
+				}
+				for _, ts := range lt.Slugs {
+					if genreMatch(sl, ts) {
+						return true
+					}
+				}
+			}
+			return false
+		}
+		from := func(blocks ...string) []MusicCard {
+			var out []MusicCard
+			for _, b := range blocks {
+				for _, it := range shelves.Blocks[b] {
+					if inG(it) && metadata.ValidMBID(strings.ToLower(it.MBID)) {
+						out = append(out, listCard(it))
+					}
+				}
+			}
+			return out
+		}
+		add(MusicRow{ID: "genre_rising", Type: "genre_rising", Title: "Rising in " + name, Reason: "Climbing the charts " + place + " this week, " + name + " only", Shape: "square"}, from("climbing", "new_entries"))
+		add(MusicRow{ID: "genre_charts", Type: "genre_charts", Title: name + " on the charts", Reason: "On the charts " + place + " today, " + name + " only", Shape: "square"}, from("top_now", "albums_week", "big_new_albums"))
+		add(MusicRow{ID: "genre_friday", Type: "genre_friday", Title: "Out this Friday in " + name, Reason: "New albums and EPs from the last two weeks, " + name + " only", Shape: "square"}, from("new_friday"))
+		add(MusicRow{ID: "genre_world_lists", Type: "genre_world_lists", Title: name + " around the world", Reason: "On the charts worldwide today, " + name + " only", Shape: "square"}, from("top_world", "albums_world"))
+	}
 	// Your artists in {genre}: circles by affinity.
 	var mine []musicLibArtist
 	for _, ar := range lib.artists {
@@ -499,6 +563,26 @@ func (a *API) buildMusicGenre(ctx context.Context, member int64, region string, 
 			l = append(l, best[mb])
 		}
 		add(MusicRow{ID: "genre_artists", Type: "genre_artists", Title: "Popular " + g.Name + " artists", Reason: "Charting in " + g.Name + " and not in your Library", Shape: "round"}, byScore(l))
+	}
+	// Worldwide and songs rows: the global genre chart (other regions) and
+	// the artists behind the genre's top songs.
+	if region != "global" {
+		var cards []MusicCard
+		for _, it := range a.musicGenreChart(ctx, "global", "albums", g.Slug, now) {
+			if it.MBID != "" {
+				cards = append(cards, chartCard(it))
+			}
+		}
+		add(MusicRow{ID: "genre_worldwide", Type: "top_albums", Title: "Top " + g.Name + " albums worldwide", Reason: "This week's album chart worldwide, " + g.Name + " only", Shape: "square"}, cards)
+	}
+	{
+		var cards []MusicCard
+		for _, it := range songs {
+			if id := strings.ToLower(it.ArtistMBID); metadata.ValidMBID(id) {
+				cards = append(cards, artistCard(it.Artist, id, 0, ""))
+			}
+		}
+		add(MusicRow{ID: "genre_songs", Type: "genre_artists", Title: "Behind the top " + g.Name + " songs", Reason: "The artists of this week's most-played " + g.Name + " songs", Shape: "round"}, cards)
 	}
 	// Coming soon: your genre artists' albums out within 90 days.
 	{

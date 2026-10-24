@@ -10,6 +10,7 @@
 	import { fetchMusicExplore, fetchMusicExploreMore, fetchMusicGenre, genreHref, musicCardHref, musicCardNote, musicImage, musicStatus, releaseWords, songAskHref, type MusicCardData, type MusicExploreAnswer } from './music/music-trending.ts';
 	import MusicGenreTiles from './ui/MusicGenreTiles.svelte';
 	import MusicBrowseGrid from './ui/MusicBrowseGrid.svelte';
+	import MusicVideoRow from './ui/MusicVideoRow.svelte';
 	import { to } from './paths.ts';
 	import SongLine from './ui/SongLine.svelte';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './types.ts';
@@ -299,7 +300,9 @@
 		{#if browseTiles.length}<MusicBrowseGrid tiles={browseTiles} allHref={to('/search?kind=music')} />{/if}
 
 		{#each (answer?.rows ?? []).filter((r) => r.shape !== 'tile' && r.shape !== 'grid') as row, ri (row.id)}
-			{#if row.shape === 'song'}
+			{#if row.shape === 'wide'}
+			<MusicVideoRow title={row.title} reason={row.reason} items={row.items} />
+			{:else if row.shape === 'song'}
 			<section class="row plain" data-testid="music-row-{row.type}">
 				<h2 class="rhead">{row.title}</h2>
 				<div class="songs">

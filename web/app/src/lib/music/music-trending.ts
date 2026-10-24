@@ -156,7 +156,7 @@ export interface MusicRowData {
 	type: string;
 	title: string;
 	reason: string;
-	shape: 'square' | 'round' | 'tile' | 'song' | 'grid';
+	shape: 'square' | 'round' | 'tile' | 'song' | 'grid' | 'wide';
 	items: MusicCardData[];
 }
 

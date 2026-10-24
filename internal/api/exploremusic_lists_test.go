@@ -10,8 +10,11 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/metadata"
+	musicscore "github.com/CoderLuii/holyarrs/internal/music/score"
+	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
 // fakeShelves answers every region with the same blocks: 30 items each,
@@ -37,9 +40,14 @@ func fakeShelves(_ context.Context, region string) (metadata.MusicShelves, error
 			sh.Blocks[b] = append(sh.Blocks[b], album(start+i))
 		}
 	}
-	for _, b := range []string{"artists_week", "singles_artists"} {
+	for _, b := range []string{"artists_week", "singles_artists", "video_artists"} {
 		for i := 0; i < 30; i++ {
-			sh.Blocks[b] = append(sh.Blocks[b], artist(i+map[string]int{"artists_week": 0, "singles_artists": 15}[b]))
+			sh.Blocks[b] = append(sh.Blocks[b], artist(i+map[string]int{"artists_week": 0, "singles_artists": 15, "video_artists": 5}[b]))
+		}
+	}
+	for i, k := range []string{"pop", "rock", "latin", "chill", "party", "decades", "fresh_faces", "dance", "country"} {
+		for j := 0; j < 24; j++ {
+			sh.Blocks["tile:"+k] = append(sh.Blocks["tile:"+k], album(220+30*i+j))
 		}
 	}
 	return sh, nil
@@ -170,6 +178,7 @@ func TestListReasonsAreTemplates(t *testing.T) {
 				for _, slot := range []string{"{place2}", "{place}", "{neighbor}"} {
 					re = strings.ReplaceAll(re, regexp.QuoteMeta(slot), "(worldwide|in [A-Z][A-Za-z ]+|in the [A-Z][A-Za-z ]+)")
 				}
+				re = strings.ReplaceAll(re, regexp.QuoteMeta("{tile}"), `([A-Z][A-Za-z&\- ]+)`)
 				if regexp.MustCompile(re).MatchString(d.Reason) {
 					ok = true
 				}
@@ -247,4 +256,130 @@ func TestListAheadCoversEveryListCard(t *testing.T) {
 	if pages[0].Hero != nil && !ahead[aheadItem{"album", pages[0].Hero.MBID}] {
 		t.Fatal("hero not fetched ahead")
 	}
+}
+
+// Tile rows (editorial lists) on Explore: our names only, a reason each,
+// moods and genres; the video row only with artists whose videos are known.
+func TestExploreMusicTileAndVideoRows(t *testing.T) {
+	r := listRig(t, "household_empty.json")
+	pages, _ := v7Pages(t, r.owner, "US")
+	rows := v7Rows(pages)
+	noAlbumTwice(t, rows)
+	tiles := 0
+	for _, row := range rows {
+		if strings.HasPrefix(row.ID, "lists_tile_") {
+			tiles++
+			if strings.Contains(row.Title, "{") || row.Reason == "" {
+				t.Fatalf("tile row %+v", row)
+			}
+		}
+		if row.ID == "lists_videos" {
+			t.Fatal("video row without known videos")
+		}
+	}
+	if tiles < 6 || len(rows) < 25 {
+		t.Fatalf("%d tile rows, %d rows", tiles, len(rows))
+	}
+	// Known videos for 8 artists: the row shows, wide, only those artists.
+	r2 := listRig(t, "household_empty.json")
+	known := map[string]bool{}
+	r2.api.artistVideos.mu.Lock()
+	if r2.api.artistVideos.m == nil {
+		r2.api.artistVideos.m = map[string]artistVideoList{}
+	}
+	for i := 5; i < 13; i++ {
+		known[mid('6', i)] = true
+		r2.api.artistVideos.m[mid('6', i)] = artistVideoList{at: time.Now(), list: []metadata.ArtistVideo{{ID: "v" + fmt.Sprint(i)}}}
+	}
+	r2.api.artistVideos.mu.Unlock()
+	sh, _ := fakeShelves(context.Background(), "us")
+	var d listRowDef
+	for _, x := range listRows(&sh) {
+		if x.ID == "lists_videos" {
+			d = x
+		}
+	}
+	items := r2.api.listBlock(context.Background(), &sh, d)
+	if len(items) != 8 || listRowMeta(d).Shape != "wide" {
+		t.Fatalf("video items %d shape %s", len(items), listRowMeta(d).Shape)
+	}
+	for _, it := range items {
+		if !known[it.MBID] {
+			t.Fatalf("artist %s without videos in the row", it.Artist)
+		}
+	}
+}
+
+// New & Popular adds up to six "Big this week in {genre}" rows after the
+// chart rows, genres only.
+func TestNewMusicWeekRows(t *testing.T) {
+	r := listRig(t, "household_indie.json")
+	req := httptest.NewRequest("GET", "/api/v1/explore/new/music?region=US", nil)
+	_, rows := r.api.musicNewListRows(context.Background(), req, musicNewInput{}, nil, nil, v7Fixed)
+	week := 0
+	for _, row := range rows {
+		if strings.HasPrefix(row.ID, "lists_big_") {
+			week++
+			if strings.Contains(row.ID, "chill") || strings.Contains(row.ID, "party") {
+				t.Fatalf("mood in genre rows: %s", row.ID)
+			}
+		}
+	}
+	if week == 0 || week > listNewWeekRows || len(rows) < 18 {
+		t.Fatalf("%d week rows of %d", week, len(rows))
+	}
+	noAlbumTwice(t, rows)
+}
+
+func TestListTileOfSlug(t *testing.T) {
+	for slug, key := range map[string]string{"pop": "pop", "r-and-b": "rnb", "k-pop": "kpop", "electronic": "dance", "chill": "chill"} {
+		if lt, ok := listTileOf(slug); !ok || lt.Key != key {
+			t.Fatalf("%s -> %+v", slug, lt)
+		}
+	}
+	if _, ok := listTileOf("polka"); ok {
+		t.Fatal("polka has no tile")
+	}
+}
+
+// After a restart, kept plans built from older shelves are dropped so the
+// day's plan picks up the new list rows; unchanged shelves keep them.
+func TestListShelvesChangeWhileDownDropsKeptPlans(t *testing.T) {
+	r := listRig(t, "household_indie.json")
+	a := r.api
+	ctx := context.Background()
+	now := time.Now()
+	snap := musicSnapKey(1, "US")
+	put := func() {
+		_ = store.LookupCache{Store: a.s.Store}.Put(ctx, snap, []byte("{}"), now, now.Add(time.Hour))
+	}
+	kept := func() bool {
+		_, ok, _ := store.LookupCache{Store: a.s.Store}.Get(ctx, snap, now)
+		return ok
+	}
+	wait := func(want bool) {
+		for i := 0; i < 50 && kept() != want; i++ {
+			time.Sleep(20 * time.Millisecond)
+		}
+		if kept() != want {
+			t.Fatalf("kept plan present=%v, want %v", kept(), want)
+		}
+	}
+	// A restart with the same shelves as stored: the plan stays.
+	sh, _ := fakeShelves(ctx, "us")
+	_ = store.LookupCache{Store: a.s.Store}.Put(ctx, listSigPrefix+"shelves:us", []byte(sh.AsOf+"|"+fmt.Sprint(listCount(&sh))), now, now.Add(time.Hour))
+	put()
+	a.listSeen = nil
+	a.musicv2.cand = musicscore.Candidates{}
+	if a.musicShelvesOf(ctx, "us", now) == nil {
+		t.Fatal("no shelves")
+	}
+	time.Sleep(100 * time.Millisecond)
+	wait(true)
+	// Shelves changed while down: the kept plan goes.
+	_ = store.LookupCache{Store: a.s.Store}.Put(ctx, listSigPrefix+"shelves:us", []byte("2026-10-23|5"), now, now.Add(time.Hour))
+	a.listSeen = nil
+	a.musicv2.cand = musicscore.Candidates{}
+	a.musicShelvesOf(ctx, "us", now)
+	wait(false)
 }

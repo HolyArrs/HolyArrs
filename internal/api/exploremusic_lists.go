@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/CoderLuii/holyarrs/internal/store"
 	musicscore "github.com/CoderLuii/holyarrs/internal/music/score"
 )
 
@@ -48,19 +49,76 @@ func (a *API) musicShelvesOf(ctx context.Context, region string, now time.Time) 
 		a.listSeen = map[string]string{}
 	}
 	prev := a.listSeen[key]
-	changed := prev != sig
 	a.listSeen[key] = sig
 	a.musicv2.cursorMu.Unlock()
+	first := prev == ""
+	if first && a.s.Store != nil {
+		// After a restart: the shelves the kept plans were built from.
+		if b, ok, _ := (store.LookupCache{Store: a.s.Store}).Get(ctx, listSigPrefix+key, now); ok {
+			prev = string(b)
+		}
+	}
+	changed := prev != sig
 	if changed {
 		go a.queueAhead(listAhead(&sh))
+		go a.warmListVideos(&sh)
+		if a.s.Store != nil {
+			_ = store.LookupCache{Store: a.s.Store}.Put(context.WithoutCancel(ctx), listSigPrefix+key, []byte(sig), now, now.Add(30*24*time.Hour))
+		}
 	}
-	if changed && prev != "" {
-		// The server refreshed its lists: today's plans rebuild on the next
-		// visit so the new chart rows show.
+	if changed && (prev != "" || first) {
+		// The server refreshed its lists (also while this install was
+		// down): today's plans rebuild on the next visit so the new rows show.
 		go a.forgetMusicV7Snaps(-1)
 	}
 	return &sh
 }
+
+// listVideoWarm is how many video-row artists get their video list asked
+// ahead when shelves change (one server call each, one at a time).
+const listVideoWarm = 30
+
+// warmListVideos asks the video row's artists for their music videos
+// ahead, so the row shows once their videos are known.
+func (a *API) warmListVideos(sh *metadata.MusicShelves) {
+	if a.s.ArtistVideos == nil {
+		return
+	}
+	ctx := context.Background()
+	for i, it := range sh.Blocks["video_artists"] {
+		if i >= listVideoWarm {
+			break
+		}
+		id := strings.ToLower(it.MBID)
+		if !metadata.ValidMBID(id) {
+			continue
+		}
+		if _, ok := a.keptVideos(ctx, id); !ok {
+			a.videosOf(ctx, id)
+		}
+	}
+}
+
+// listBlock is a row's shelf items; the video row keeps only artists
+// whose music videos are already known (the card shows its picture until
+// the stream is ready).
+func (a *API) listBlock(ctx context.Context, sh *metadata.MusicShelves, d listRowDef) []metadata.MusicShelfItem {
+	items := sh.Blocks[d.Block]
+	if d.Block != "video_artists" {
+		return items
+	}
+	var out []metadata.MusicShelfItem
+	for _, it := range items {
+		if e, ok := a.keptVideos(ctx, strings.ToLower(it.MBID)); ok && len(e.list) > 0 {
+			out = append(out, it)
+		}
+	}
+	return out
+}
+
+// listSigPrefix keys the kept shelves signature per region (disk), so a
+// restart knows whether the kept plans predate the current shelves.
+const listSigPrefix = "listsig|"
 
 // listCount is the shelves' item count (part of their change signature).
 func listCount(sh *metadata.MusicShelves) int {
@@ -81,8 +139,17 @@ func listAhead(sh *metadata.MusicShelves) []aheadItem {
 			out = append(out, it)
 		}
 	}
+	names := make([]string, 0, len(sh.Blocks))
 	for _, d := range listTemplates {
-		for _, it := range sh.Blocks[d.Block] {
+		if !strings.HasPrefix(d.Block, "tile:") {
+			names = append(names, d.Block)
+		}
+	}
+	for _, t := range listTiles {
+		names = append(names, "tile:"+t.Key)
+	}
+	for _, name := range names {
+		for _, it := range sh.Blocks[name] {
 			id := strings.ToLower(it.MBID)
 			if it.Kind == "artist" {
 				add(aheadItem{"artist", id})
@@ -140,6 +207,69 @@ var listTemplates = []listRowDef{
 	{ID: "lists_number_ones", Block: "number_ones", Title: "Number ones this month", Reason: "Hit number one {place} in the last 30 days", Chart: true, Min: 6},
 	{ID: "lists_comebacks", Block: "comebacks", Title: "Big comebacks", Reason: "Back on the charts {place} after time away"},
 	{ID: "lists_neighbor", Block: "neighbor", Title: "Top {neighbor}", Reason: "The most-played songs {neighbor} today", Chart: true, Min: 10},
+	{ID: "lists_videos", Block: "video_artists", Title: "Music videos people watch", Reason: "Artists charting {place} this week, with their music videos", Min: 6},
+	// Tile rows: one per Browse tile with editorial lists ({tile} is our
+	// tile name; the block is "tile:" + the tile's key).
+	{ID: "lists_tile_", Block: "tile:genre", Title: "{tile} right now", Reason: "Picked from this week's {tile} lists, as the albums and artists behind the songs"},
+	{ID: "lists_tile_", Block: "tile:mood", Title: "{tile} picks", Reason: "Albums and artists from this week's {tile} lists"},
+	{ID: "lists_tile_", Block: "tile:decades", Title: "Throwback hits", Reason: "Older favourites from this week's throwback lists"},
+	{ID: "lists_tile_", Block: "tile:fresh", Title: "Fresh faces", Reason: "New artists picked on this week's discovery lists"},
+	{ID: "lists_big_", Block: "tile:week", Title: "Big this week in {tile}", Reason: "The albums and artists behind this week's {tile} lists"},
+}
+
+// listTile is one Browse tile with editorial lists: the server's block
+// key, our name, its template group and the genre slugs it stands for.
+type listTile struct {
+	Key, Name, Group string
+	Slugs            []string
+}
+
+// listTiles are the tiles in Explore order (biggest genres, then moods).
+var listTiles = []listTile{
+	{"pop", "Pop", "genre", []string{"pop"}},
+	{"latin", "Latin", "genre", []string{"latin", "reggaeton", "latin-pop"}},
+	{"rock", "Rock", "genre", []string{"rock"}},
+	{"country", "Country", "genre", []string{"country"}},
+	{"dance", "Dance & electronic", "genre", []string{"dance", "electronic", "edm", "house", "dance-pop"}},
+	{"rnb", "R&B", "genre", []string{"r-and-b", "rnb", "randb", "contemporary-r-and-b"}},
+	{"chill", "Chill", "mood", nil},
+	{"party", "Party", "mood", nil},
+	{"indie", "Indie", "genre", []string{"indie", "indie-pop", "indie-rock"}},
+	{"decades", "Throwback", "decades", nil},
+	{"fresh_faces", "Fresh faces", "fresh", nil},
+	{"kpop", "K-pop", "genre", []string{"k-pop", "kpop"}},
+	{"metal", "Metal", "genre", []string{"metal", "heavy-metal"}},
+	{"jazz", "Jazz", "genre", []string{"jazz"}},
+	{"workout", "Workout", "mood", nil},
+	{"love", "Love songs", "mood", nil},
+	{"alternative", "Alternative", "genre", []string{"alternative", "alternative-rock"}},
+	{"folk", "Folk & acoustic", "genre", []string{"folk", "acoustic"}},
+	{"soul", "Soul", "genre", []string{"soul"}},
+	{"classical", "Classical", "genre", []string{"classical"}},
+	{"punk", "Punk", "genre", []string{"punk", "pop-punk"}},
+	{"blues", "Blues", "genre", []string{"blues"}},
+	{"funk", "Funk & disco", "genre", []string{"funk", "disco"}},
+	{"ambient", "Ambient", "genre", []string{"ambient"}},
+	{"focus", "Focus", "mood", nil},
+	{"sleep", "Sleep", "mood", nil},
+	{"feelings", "Feelings", "mood", nil},
+	{"afro", "Afro", "genre", []string{"afrobeats", "afrobeat", "afro"}},
+	{"brazil", "Brazil", "genre", []string{"brazilian", "mpb", "sertanejo", "funk-carioca"}},
+}
+
+// listTileOf is the tile a genre page slug stands for.
+func listTileOf(slug string) (listTile, bool) {
+	for _, t := range listTiles {
+		if t.Key == slug {
+			return t, true
+		}
+		for _, s := range t.Slugs {
+			if s == slug {
+				return t, true
+			}
+		}
+	}
+	return listTile{}, false
 }
 
 // listRows renders the templates for one region's shelves; rows whose
@@ -156,6 +286,13 @@ func listRows(sh *metadata.MusicShelves) []listRowDef {
 	r := strings.NewReplacer("{place2}", place2, "{place}", place, "{neighbor}", listPlace(sh.Neighbor))
 	var out []listRowDef
 	for _, d := range listTemplates {
+		if strings.HasPrefix(d.Block, "tile:") {
+			// Explore's tile rows; "Big this week" rows are New & Popular's.
+			if d.Block != "tile:week" {
+				out = append(out, listTileRows(sh, d, d.Block[len("tile:"):])...)
+			}
+			continue
+		}
 		if len(sh.Blocks[d.Block]) == 0 {
 			continue
 		}
@@ -164,6 +301,25 @@ func listRows(sh *metadata.MusicShelves) []listRowDef {
 			d.Min = 8
 		}
 		out = append(out, d)
+	}
+	return out
+}
+
+// listTileRows renders one tile template for every tile of its group
+// with a block on the shelves.
+func listTileRows(sh *metadata.MusicShelves, d listRowDef, group string) []listRowDef {
+	var out []listRowDef
+	for _, t := range listTiles {
+		if group != "week" && t.Group != group || group == "week" && t.Group != "genre" || len(sh.Blocks["tile:"+t.Key]) == 0 {
+			continue
+		}
+		e := d
+		r := strings.NewReplacer("{tile}", t.Name)
+		e.ID, e.Block, e.Title, e.Reason = d.ID+t.Key, "tile:"+t.Key, r.Replace(d.Title), r.Replace(d.Reason)
+		if e.Min == 0 {
+			e.Min = 8
+		}
+		out = append(out, e)
 	}
 	return out
 }
@@ -274,8 +430,11 @@ func listHero(sh *metadata.MusicShelves, had func(string) bool, n int) []MusicCa
 // draws each card by its kind).
 func listRowMeta(d listRowDef) MusicRow {
 	shape := "square"
-	if d.Block == "artists_week" || d.Block == "singles_artists" {
+	switch d.Block {
+	case "artists_week", "singles_artists":
 		shape = "round"
+	case "video_artists":
+		shape = "wide"
 	}
 	return MusicRow{ID: d.ID, Type: d.ID, Title: d.Title, Reason: d.Reason, Shape: shape}
 }
@@ -320,6 +479,10 @@ const listPrior = 0.85
 var listNewOrder = []string{"lists_new_friday", "lists_top_now", "lists_top_world", "lists_climbing", "lists_new_entries", "lists_albums_week", "lists_albums_world",
 	"lists_artists_week", "lists_big_new", "lists_singles", "lists_long", "lists_neighbor", "lists_comebacks", "lists_number_ones"}
 
+// listNewWeekRows is how many "Big this week in {genre}" rows New &
+// Popular shows (§6 rows 15–20).
+const listNewWeekRows = 6
+
 // musicNewListRows leads New & Popular → Music with the world-list rows:
 // the Spotlight is the region's biggest charted albums, then the list rows
 // in §6 order, then the page's own rows; one seen set over the page, so no
@@ -360,13 +523,26 @@ func (a *API) musicNewListRows(ctx context.Context, r *http.Request, in musicNew
 	for _, d := range listRows(sh) {
 		defs[d.ID] = d
 	}
+	order := append([]string{}, listNewOrder...)
+	for _, d := range listTemplates {
+		if d.Block == "tile:week" {
+			// Big this week in {genre}: up to six genres, in tile order.
+			for i, e := range listTileRows(sh, d, "week") {
+				if i < listNewWeekRows {
+					defs[e.ID] = e
+					order = append(order, e.ID)
+				}
+			}
+		}
+	}
+	order = append(order, "lists_videos")
 	var out []MusicRow
-	for _, id := range listNewOrder {
+	for _, id := range order {
 		d, ok := defs[id]
 		if !ok {
 			continue
 		}
-		cards, sc := listCandidates(d, sh.Blocks[d.Block], nil)
+		cards, sc := listCandidates(d, a.listBlock(ctx, sh, d), nil)
 		byKey := map[string]MusicCard{}
 		for _, c := range cards {
 			byKey[c.Key] = c

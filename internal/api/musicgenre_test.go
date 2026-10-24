@@ -170,3 +170,44 @@ func TestMusicGenrePageWarmsArt(t *testing.T) {
 		time.Sleep(20 * time.Millisecond)
 	}
 }
+
+// With music_lists_v1 a genre page adds the tile's editorial picks, its
+// artists and the region's charts filtered to the genre: 8 rows or more.
+func TestMusicGenrePageListRows(t *testing.T) {
+	now := time.Now().UTC()
+	r := newMusicAskRig(t)
+	r.api.s.MusicRowsV2 = true
+	r.api.s.MusicCharts, r.api.s.MusicGenres = fakeCharts(now)
+	r.api.s.MusicListsV1 = true
+	r.api.s.MusicShelves = fakeShelves
+	r.api.musicx.mu.Lock()
+	r.api.musicx.genres = map[string]musicGenreEntry{}
+	for i := 0; i < 40; i++ {
+		r.api.musicx.genres[mid('6', i)] = musicGenreEntry{genres: []string{"pop"}, at: now}
+	}
+	r.api.musicx.mu.Unlock()
+	var m musicRowsAnswer
+	if err := json.Unmarshal(r.ana.call("GET", "/api/v1/music/genre/pop?region=US", "", 200), &m); err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range []string{"genre_picks", "genre_to_know", "genre_rising", "genre_charts"} {
+		if m.row(id) == nil {
+			t.Fatalf("no %s row: %d rows", id, len(m.Rows))
+		}
+	}
+	if len(m.Rows) < 8 {
+		t.Fatalf("%d rows", len(m.Rows))
+	}
+	seen := map[string]bool{}
+	for _, row := range m.Rows {
+		if row.Reason == "" {
+			t.Fatalf("%s without a reason", row.ID)
+		}
+		for _, c := range row.Items {
+			if seen[c.Key] {
+				t.Fatalf("%s twice", c.Key)
+			}
+			seen[c.Key] = true
+		}
+	}
+}

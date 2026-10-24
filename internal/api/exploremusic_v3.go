@@ -685,7 +685,7 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 			keep := func(c MusicCard) bool {
 				return d.Chart || c.Kind != "album" || !hadAlbum[c.MBID] && acts.albumState[c.MBID] == ""
 			}
-			cards, sc := listCandidates(d, shelves.Blocks[d.Block], keep)
+			cards, sc := listCandidates(d, a.listBlock(ctx, shelves, d), keep)
 			if len(sc) < d.Min || distinctArtists(sc) < 4 {
 				continue
 			}
