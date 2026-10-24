@@ -420,12 +420,30 @@ func LibraryKeys(b *Bundle, l *Lib) ([]string, string) {
 // marked seen, so no row repeats them.
 func Spotlight(c *Ctx) []int {
 	letter := pageLetter[c.Kind]
+	type src struct {
+		tp Tpl
+		v  string
+	}
+	var srcs []src
 	for _, h := range heads[letter] {
 		tp := Catalog[indexOf(h)]
 		if !c.applies(tp) {
 			continue
 		}
 		for _, v := range c.slotValues(tp) {
+			srcs = append(srcs, src{tp, v})
+		}
+	}
+	// Last resort: the page's (or the catalog's) most-listened albums.
+	srcs = append(srcs, src{Tpl{Fill: func(c *Ctx, _ string) L {
+		if c.Key == "" {
+			return c.byLP(c.albums(c.all()))
+		}
+		return c.byLP(palb(c))
+	}}, ""})
+	for _, sv := range srcs {
+		tp, v := sv.tp, sv.v
+		{
 			var out []int
 			artists := map[string]bool{}
 			for _, i := range c.notHad(c.albums(tp.Fill(c, v))) {

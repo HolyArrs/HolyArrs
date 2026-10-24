@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	musicscore "github.com/CoderLuii/holyarrs/internal/music/score"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
+	musicscore "github.com/CoderLuii/holyarrs/internal/music/score"
 )
 
 // Music genre pages (plan 2026-10-22, Phase 2, §2.8), Music only: built
@@ -158,8 +158,13 @@ func (a *API) musicGenrePage(w http.ResponseWriter, r *http.Request) {
 	}
 	// The row template engine serves the genres it has a key for; others
 	// keep this page.
-	if a.musicTplOn() && a.serveTplPage(w, r, "genre", slug) {
-		return
+	if a.musicTplOn() {
+		if !a.musicBrowseGate(w, r, map[string]any{"kid": true, "v2": true, "genres": []string{}, "genre": slug, "hero": nil, "rows": []MusicRow{}}) {
+			return
+		}
+		if a.serveTplPage(w, r, "genre", slug) {
+			return
+		}
 	}
 	ctx := r.Context()
 	now := time.Now().UTC()

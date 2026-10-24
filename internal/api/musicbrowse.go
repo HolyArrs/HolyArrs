@@ -8,11 +8,13 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/metadata"
-	musicscore "github.com/CoderLuii/holyarrs/internal/music/score"
 	"github.com/CoderLuii/holyarrs/internal/music/rowtpl"
+	musicscore "github.com/CoderLuii/holyarrs/internal/music/score"
+	"github.com/CoderLuii/holyarrs/internal/parts"
 )
 
 // The row template engine (music_lists_v1, plan 2026-10-24-music-row-
@@ -27,7 +29,14 @@ func (a *API) musicTplOn() bool {
 const (
 	tplBundleTTL = 6 * time.Hour
 	tplKeepTTL   = 7 * 24 * time.Hour
+	// tplFailTTL keeps a failed read (no copy to serve) for a few minutes,
+	// so page views never turn into a download each.
+	tplFailTTL = 5 * time.Minute
 )
+
+// tplFetch lets one bundle download run at a time; callers that wait read
+// the cache it filled (a single flight without a new dependency).
+var tplFetch sync.Mutex
 
 type tplBundle struct {
 	b    *rowtpl.Bundle
@@ -39,6 +48,18 @@ type tplBundle struct {
 func (a *API) musicBundle(ctx context.Context, now time.Time) *rowtpl.Bundle {
 	if v, ok := a.musicv2.cand.Get("tpl:bundle", now); ok {
 		return v.(*tplBundle).b
+	}
+	if _, failed := a.musicv2.cand.Get("tpl:fail", now); failed {
+		return nil
+	}
+	tplFetch.Lock()
+	defer tplFetch.Unlock()
+	// Another request may have filled the cache while this one waited.
+	if v, ok := a.musicv2.cand.Get("tpl:bundle", now); ok {
+		return v.(*tplBundle).b
+	}
+	if _, failed := a.musicv2.cand.Get("tpl:fail", now); failed {
+		return nil
 	}
 	var last *tplBundle
 	if v, ok := a.musicv2.cand.Get("tpl:last", now); ok {
@@ -58,13 +79,16 @@ func (a *API) musicBundle(ctx context.Context, now time.Time) *rowtpl.Bundle {
 			a.musicv2.cand.Put("tpl:bundle", last, 10*time.Minute, now)
 			return last.b
 		}
+		a.musicv2.cand.Put("tpl:fail", true, tplFailTTL, now)
 		return nil
 	}
 	b, err := rowtpl.ParseBundle(body)
 	if err != nil {
 		if last != nil {
+			a.musicv2.cand.Put("tpl:bundle", last, 10*time.Minute, now)
 			return last.b
 		}
+		a.musicv2.cand.Put("tpl:fail", true, tplFailTTL, now)
 		return nil
 	}
 	x := &tplBundle{b: b, etag: tag}
@@ -278,6 +302,27 @@ func countryName(code string) string {
 	return ""
 }
 
+// musicBrowseGate runs the checks every Browse music page runs first: music turned
+// on, no Kid limit (music has no ratings, so a Kid sees none of it; empty
+// is written), and the Explore pacing. It answers false when it wrote the
+// answer.
+func (a *API) musicBrowseGate(w http.ResponseWriter, r *http.Request, empty map[string]any) bool {
+	if p, _ := parts.ForTitleKind("artist"); !a.partIsOn(p) {
+		fail(w, http.StatusNotFound, "music is turned off")
+		return false
+	}
+	if a.kidMax(r) != "" {
+		writeJSON(w, http.StatusOK, empty)
+		return false
+	}
+	if !a.discover.allow(a.person(r).UserID, time.Now()) {
+		w.Header().Set("Retry-After", "60")
+		fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
+		return false
+	}
+	return true
+}
+
 // musicBrowsePage answers GET /api/v1/music/browse/{kind}/{slug}: a mood,
 // season, decade, activity or genre page from the row template engine.
 func (a *API) musicBrowsePage(w http.ResponseWriter, r *http.Request) {
@@ -286,8 +331,7 @@ func (a *API) musicBrowsePage(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "unknown page")
 		return
 	}
-	if a.kidMax(r) != "" {
-		writeJSON(w, http.StatusOK, map[string]any{"kid": true, "v2": true, "genres": []string{}, "genre": slug, "hero": nil, "rows": []MusicRow{}})
+	if !a.musicBrowseGate(w, r, map[string]any{"kid": true, "v2": true, "genres": []string{}, "genre": slug, "hero": nil, "rows": []MusicRow{}}) {
 		return
 	}
 	if !a.musicTplOn() {
@@ -299,6 +343,10 @@ func (a *API) musicBrowsePage(w http.ResponseWriter, r *http.Request) {
 
 // serveTplPage writes one engine page (shared with the genre route).
 func (a *API) serveTplPage(w http.ResponseWriter, r *http.Request, kind, slug string) bool {
+	if a.kidMax(r) != "" {
+		writeJSON(w, http.StatusOK, map[string]any{"kid": true, "v2": true, "genres": []string{}, "genre": slug, "hero": nil, "rows": []MusicRow{}})
+		return true
+	}
 	ctx := r.Context()
 	now := time.Now().UTC()
 	member := a.person(r).UserID
@@ -349,6 +397,9 @@ func (a *API) serveTplPage(w http.ResponseWriter, r *http.Request, kind, slug st
 // Search > Music Browse sections (genres, moods, seasons, decades,
 // activities) with their tiles' pages and covers.
 func (a *API) musicBrowseTiles(w http.ResponseWriter, r *http.Request) {
+	if !a.musicBrowseGate(w, r, map[string]any{"kid": true, "sections": []rowtpl.BrowseSection{}}) {
+		return
+	}
 	if !a.musicTplOn() {
 		fail(w, http.StatusNotFound, "music pages are off")
 		return
