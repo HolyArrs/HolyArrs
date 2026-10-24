@@ -32,16 +32,28 @@ export async function attachHLS(video: HTMLVideoElement, url: string, native: bo
 	if (!Hls.isSupported()) throw new Error('no MediaSource');
 	const hls = new Hls({ startPosition: start, maxBufferLength: 20, capLevelToPlayerSize: false, enableWorker: true });
 	// YouTube's stream mixes H.264, VP9 and AV1 at the same sizes; switching
-	// codec mid-play stalls the picture. Keep H.264 only, start at the tallest
-	// that fits the player and let ABR move only up to that.
+	// codec mid-play stalls the picture, so only H.264 stays. Like the big
+	// streaming apps: start at a light level so the picture shows fast, then
+	// let ABR climb up to what the player shows right now (its box, or the
+	// screen in full screen), and follow the player when it grows or shrinks.
+	let avc: { height: number }[] = [];
+	const recap = () => {
+		if (!avc.length) return;
+		const cap = capLevel(avc.map((l) => l.height), shownHeight(video));
+		if (hls.autoLevelCapping !== cap) hls.autoLevelCapping = cap;
+	};
 	hls.on(Hls.Events.MANIFEST_PARSED, () => {
-		const { drop, start: at } = planLevels(hls.levels.map((l) => ({ codec: l.videoCodec ?? l.codecSet ?? '', height: l.height })), target);
+		const { drop } = planLevels(hls.levels.map((l) => ({ codec: l.videoCodec ?? l.codecSet ?? '', height: l.height })), target);
 		for (const i of drop) hls.removeLevel(i);
-		if (at >= 0) {
-			hls.autoLevelCapping = at;
-			hls.startLevel = hls.nextLevel = at;
-		}
+		avc = hls.levels.map((l) => ({ height: l.height }));
+		if (!avc.length) return;
+		hls.startLevel = hls.nextLevel = lightLevel(avc.map((l) => l.height));
+		recap();
 	});
+	const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(recap);
+	ro?.observe(video);
+	document.addEventListener('fullscreenchange', recap);
+	window.addEventListener('resize', recap);
 	// It also carries auto-dubbed audio next to the original: keep the original.
 	hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, () => {
 		const i = originalAudio(hls.audioTracks.map((t) => ({ name: t.name ?? '', isDefault: !!t.default })));
@@ -56,7 +68,12 @@ export async function attachHLS(video: HTMLVideoElement, url: string, native: bo
 	if (typeof location !== 'undefined' && location.search.includes('trailerdebug')) (window as unknown as { __hls?: unknown[] }).__hls = [...((window as unknown as { __hls?: unknown[] }).__hls ?? []), hls];
 	hls.loadSource(url);
 	hls.attachMedia(video);
-	return () => hls.destroy();
+	return () => {
+		ro?.disconnect();
+		document.removeEventListener('fullscreenchange', recap);
+		window.removeEventListener('resize', recap);
+		hls.destroy();
+	};
 }
 
 /** playerTarget is the picture height a player of w×h css pixels needs at
@@ -75,6 +92,29 @@ export function screenTarget(fit: 'cover' | 'contain', ratio = globalThis.device
 	const w = Math.max(s?.width ?? 0, globalThis.innerWidth || 0);
 	const h = Math.max(s?.height ?? 0, globalThis.innerHeight || 0);
 	return playerTarget(w || 1280, h || 720, fit, ratio);
+}
+
+/** shownHeight is the picture height the video shows now, in device pixels:
+ * the screen in full screen, else its box (filled at 16:9). */
+export function shownHeight(video: HTMLVideoElement): number {
+	const ratio = globalThis.devicePixelRatio || 1;
+	const full = typeof document !== 'undefined' && document.fullscreenElement && (document.fullscreenElement === video || document.fullscreenElement.contains(video));
+	const w = full ? (globalThis.screen?.width ?? video.clientWidth) : video.clientWidth;
+	const h = full ? (globalThis.screen?.height ?? video.clientHeight) : video.clientHeight;
+	return Math.ceil(Math.max(h, (w * 9) / 16) * ratio);
+}
+
+/** lightLevel is the quick-start level: the first at least 360 tall, else the shortest. */
+export function lightLevel(heights: number[]): number {
+	const order = heights.map((h, i) => ({ h, i })).sort((a, b) => a.h - b.h);
+	return (order.find((l) => l.h >= 360) ?? order[0])?.i ?? 0;
+}
+
+/** capLevel is the tallest level worth climbing to: the shortest that covers
+ * what is shown, else the tallest there is. */
+export function capLevel(heights: number[], shown: number): number {
+	const order = heights.map((h, i) => ({ h, i })).sort((a, b) => a.h - b.h);
+	return (order.find((l) => l.h >= shown) ?? order[order.length - 1])?.i ?? -1;
 }
 
 /** planLevels keeps H.264 levels only (when there are any): the indexes to

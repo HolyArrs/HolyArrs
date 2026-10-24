@@ -65,3 +65,14 @@ describe('screenTarget', () => {
 		g.innerHeight = was.h;
 	});
 });
+
+describe('quick start, then climb', () => {
+	it('starts light and caps at what is shown', async () => {
+		const { lightLevel, capLevel } = await import('./hls-player.ts');
+		const hs = [144, 240, 360, 480, 720, 1080];
+		expect(hs[lightLevel(hs)]).toBe(360);
+		expect(hs[capLevel(hs, 700)]).toBe(720);
+		expect(hs[capLevel(hs, 1440)]).toBe(1080);
+		expect(hs[capLevel(hs, 300)]).toBe(360);
+	});
+});
