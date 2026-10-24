@@ -329,6 +329,25 @@
 		return [artistKind(hero.type), countryName(hero.country), hero.status === 'ended' ? 'Disbanded or retired' : '', (data?.genres ?? []).slice(0, 3).join(', ')].filter(Boolean) as string[];
 	});
 	const released = $derived(data?.albums.filter((a) => !a.upcoming) ?? []);
+	// The band under the hero: what this artist has put out, in big numbers.
+	const stats = $derived.by(() => {
+		if (!data) return [];
+		const plain = (t: string) => released.filter((a) => a.type?.toLowerCase() === t && !a.secondary_types?.length).length;
+		const years = released.map((a) => a.release_date?.slice(0, 4)).filter((y): y is string => !!y).sort();
+		const span = years.length ? (years[0] === years[years.length - 1] ? years[0] : `${years[0]}–${years[years.length - 1]}`) : '';
+		return [
+			{ v: String(released.length), l: released.length === 1 ? 'Release' : 'Releases' },
+			{ v: String(plain('album')), l: 'Albums' },
+			{ v: String(plain('ep')), l: 'EPs' },
+			{ v: String(plain('single')), l: 'Singles' },
+			{ v: span, l: 'Years active' }
+		].filter((x) => x.v && x.v !== '0');
+	});
+	// One sentence or two of the bio, under the facts; the full text is in About.
+	const bioLine = $derived(hero?.bio?.extract ? hero.bio.extract.split(/(?<=[.!?])\s+/).slice(0, 2).join(' ') : '');
+	// "0 of 113 tracks · 48 missing" said once, even when progress and status repeat a part.
+	const libLine = $derived(lib?.staff ? [...new Set([lib.progress, lib.status].filter(Boolean).flatMap((x) => String(x).split(' · ')))].join(' · ') : '');
+	const haveShare = $derived(data?.total ? Math.round((100 * (data.have ?? 0)) / data.total) : 0);
 	// The discography chips: only kinds this artist has; have/missing by Library state.
 	const kinds = $derived(SHELVES.filter((s) => released.some((a) => a.shelf === s.shelf)));
 	const disco = $derived(released.filter((a) => (shelfPick === 'all' || a.shelf === shelfPick) && (havePick === 'all' || (havePick === 'have' ? a.state === 'complete' || a.state === 'partial' : !(a.state === 'complete' || a.state === 'partial')))));
@@ -471,27 +490,38 @@
 			</header>
 			<div class="under-hero">
 					{#if facts.length}<p class="facts">{facts.join(' · ')}</p>{/if}
+					{#if bioLine}<p class="bioline">{bioLine} <button type="button" class="more" onclick={() => aboutEl?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>More</button></p>{/if}
+					{#if stats.length}
+						<dl class="stats" data-testid="artist-stats">
+							{#each stats as x (x.l)}<div><dt>{x.l}</dt><dd>{x.v}</dd></div>{/each}
+						</dl>
+					{/if}
 					<div class="round">
 						<button class="rb" type="button" aria-label="About {hero.name}" title="About" onclick={() => aboutEl?.scrollIntoView({ behavior: 'smooth', block: 'start' })}><Icon name="info" size={20} /></button>
 						{#if lib?.staff}
-							<button class="rb main" type="button" onclick={lib.onLibrary} aria-label="In Library: go to the Library section" title="In Library" data-testid="hero-library"><Icon name="library" size={26} /></button>
+							<button class="rb main pill" type="button" onclick={lib.onLibrary} aria-label="In Library: go to the Library section" data-testid="hero-library"><Icon name="library" size={18} /><span>In Library</span></button>
 						{:else if lib?.onAsk}
-							<button class="rb main" type="button" onclick={lib.onAsk} aria-label="Ask for albums" title="Ask for albums" data-testid="ask-albums"><Icon name="plus" size={26} /></button>
+							<button class="rb main pill" type="button" onclick={lib.onAsk} data-testid="ask-albums"><Icon name="plus" size={18} /><span>Ask for albums</span></button>
 						{:else if lib}
 							<span></span>
 						{:else if titleId}
-							<a class="rb main" href={to(`/library/${titleId}`)} aria-label="Open in Library" title="Open in Library"><Icon name="library" size={26} /></a>
+							<a class="rb main pill" href={to(`/library/${titleId}`)}><Icon name="library" size={18} /><span>Open in Library</span></a>
 						{:else if manage || mayAsk}
-							<button class="rb main" type="button" disabled={!!lookup?.ask || !lookup} onclick={() => askAlbum()} aria-label={cta} title={cta} data-testid="artist-ask"><Icon name={lookup?.ask ? 'check' : 'plus'} size={26} /></button>
+							<button class="rb main pill" type="button" disabled={!!lookup?.ask || !lookup} onclick={() => askAlbum()} data-testid="artist-ask"><Icon name={lookup?.ask ? 'check' : 'plus'} size={18} /><span>{cta}</span></button>
 						{/if}
 						{#if titleId && following !== null}
 							<button class="rb" type="button" class:on={following} aria-pressed={following} aria-label={following ? 'Following' : 'Follow'} title={following ? 'Following' : 'Follow'} onclick={toggleFollow}><Icon name={following ? 'bellOn' : 'bell'} size={20} /></button>
 						{/if}
 						{#if lib?.staff}<ActionMenu label="More actions" caption="More" icon="more" items={lib.menu} />{/if}
 					</div>
-					{#if lib}{#if lib.staff || lib.onAsk}<p class="cta-word">{lib.staff ? 'In Library' : 'Ask for albums'}</p>{/if}{:else if titleId || manage || mayAsk}<p class="cta-word">{cta}</p>{/if}
 					{#if lib?.note}<p class="facts">{lib.note}</p>{/if}
-					{#if lib?.staff && (lib.progress || lib.status)}<p class="have" data-testid="artist-progress">{[lib.progress, lib.status].filter(Boolean).join(' · ')}</p>{/if}
+					{#if libLine}
+						<div class="libline" data-testid="artist-progress">
+							<span class="libword">Your Library</span>
+							<span class="bar" aria-hidden="true"><i style="width: {haveShare}%"></i></span>
+							<span>{libLine}</span>
+						</div>
+					{/if}
 					{#if lib?.nextRelease}<p class="have" data-testid="artist-next">Next album: {lib.nextRelease}</p>{/if}
 					{#if data?.total}<p class="have" data-testid="artist-have"><Icon name="music" size={14} />{haveLine(data.have, data.total)}</p>{/if}
 			</div>
@@ -709,6 +739,19 @@
 	h1.logo img { display: block; max-width: min(440px, 80vw); max-height: 120px; object-fit: contain; filter: drop-shadow(0 4px 18px rgb(0 0 0 / .45)); }
 	.under-hero { --hero-ink: #07080a; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 2px 20px 0; margin-bottom: calc(var(--s-6) * -.5); text-align: center; }
 	.under-hero .round { margin-top: 2px; }
+	.bioline { margin: 2px 0 0; max-width: 64ch; color: rgb(255 255 255 / .78); font: var(--t-callout); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+	.bioline .more { color: #fff; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+	.stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 0; margin: 10px 0 4px; padding: 12px 0; border-block: 1px solid rgb(255 255 255 / .12); width: min(720px, 100%); }
+	.stats div { display: flex; flex-direction: column-reverse; align-items: center; gap: 2px; padding: 0 22px; border-left: 1px solid rgb(255 255 255 / .1); }
+	.stats div:first-child { border-left: 0; }
+	.stats dt { color: rgb(255 255 255 / .55); font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+	.stats dd { margin: 0; color: #fff; font: 700 22px/1.1 var(--font-ui); font-variant-numeric: tabular-nums; }
+	.rb.main.pill { display: inline-flex; align-items: center; gap: 8px; width: auto; height: 48px; padding: 0 22px; border-radius: 999px; font: 600 15px/1 var(--font-ui); white-space: nowrap; }
+	.libline { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; color: rgb(255 255 255 / .75); font: var(--t-footnote); }
+	.libword { color: #fff; font-weight: 600; }
+	.bar { width: 120px; height: 4px; border-radius: 99px; background: rgb(255 255 255 / .15); overflow: hidden; }
+	.bar i { display: block; height: 100%; background: #fff; border-radius: inherit; }
+	@media (max-width: 600px) { .stats div { padding: 4px 12px; } .stats dd { font-size: 18px; } }
 	.facts { margin: 0; color: rgb(255 255 255 / .7); font: var(--t-subhead); }
 	.round { display: flex; align-items: center; gap: 18px; margin-top: 8px; }
 	.rb { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgb(255 255 255 / .2); background: rgb(255 255 255 / .12); color: #fff; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); cursor: pointer; transition: transform 160ms var(--ease-out), background 160ms; }
