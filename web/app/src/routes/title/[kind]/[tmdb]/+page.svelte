@@ -190,6 +190,27 @@
 	/** The director (movies) or creators (shows). */
 	const makers = $derived((info?.crew ?? []).filter((p) => p.role === (kind === 'show' ? 'creator' : 'director')));
 	const makerWord = $derived(kind === 'show' ? (makers.length > 1 ? 'Creators' : 'Creator') : makers.length > 1 ? 'Directors' : 'Director');
+	// A: the hero says what it is (year, length or seasons, genres, age rating,
+	// scores); the details card beside the seasons holds only what the hero does not.
+	const heroFacts = (d: TitleDetails) =>
+		[d.year ? String(d.year) : '', d.kind === 'show' && regular ? `${regular} ${regular === 1 ? 'season' : 'seasons'}` : d.kind === 'movie' ? runtimeWords(d.runtime) : '', ...d.genres.slice(0, d.kind === 'show' ? 2 : 3)].filter(Boolean);
+	/** Mood words the hero's genres do not already say. */
+	const tagsOf = (d: TitleDetails) => (info?.moods ?? []).filter((m) => !d.genres.some((g) => g.toLowerCase() === m.toLowerCase()));
+	const langName = (code?: string) => {
+		if (!code) return '';
+		try {
+			return new Intl.DisplayNames(['en'], { type: 'language' }).of(code) ?? code;
+		} catch {
+			return code;
+		}
+	};
+	const countryName = (code: string) => {
+		try {
+			return new Intl.DisplayNames(['en'], { type: 'region' }).of(code) ?? code;
+		} catch {
+			return code;
+		}
+	};
 	const crumbs = $derived(details ? [{ href: to('/explore'), label: 'Explore' }, { href: to(detailPath(details.kind, details.tmdb)), label: details.year ? `${details.name} (${details.year})` : details.name }] : []);
 </script>
 
@@ -216,12 +237,12 @@
 			logo={rich?.logo}
 			crumbIcon={d.kind === 'show' ? 'tv' : 'compass'}
 			breadcrumb={crumbs}
-			meta={heroMeta(d)}
+			meta={look === 'ask' ? heroFacts(d) : heroMeta(d)}
 			certification={rich?.certification ?? certOf(d.rating)}
 			score={rich?.score ?? scoreOf(d.rating)}
 			status={d.neverAdd || d.ask ? heroPill(d).kind : undefined}
 			statusLabel={d.neverAdd || d.ask ? heroPill(d).label : undefined}
-			description={d.overview}
+			description={look === 'ask' ? undefined : d.overview}
 			vtName={tmdbArtName(d.kind, d.tmdb)}
 		>
 			{#snippet actions()}
@@ -289,22 +310,36 @@
 		{/snippet}
 
 		{#if look === 'ask'}
-			<!-- A · Ask first: seasons and the facts side by side, as request apps lay it out. -->
-			<div class="tp-body look-a">
+			<!-- A · Ask first: the story, tags and seasons on the left, the details card beside them; then the cast and every row full width. -->
+			{@const lang = langName(info?.originalLanguage)}
+			{@const hasCard = !!(networkOf(d) || makers.length || lang || info?.originCountry.length || info?.streaming.length)}
+			<div class="tp-body look-a" class:solo={!hasCard}>
 				<div class="tp-main">
-					{@render genreChips()}
+					{#if d.overview}<p class="lead" data-testid="title-story">{d.overview}</p>{/if}
+					{#if tagsOf(d).length}
+						<ul class="chips" aria-label="Tags">
+							{#each tagsOf(d) as m (m)}<li><span class="gchip">{m}</span></li>{/each}
+						</ul>
+					{/if}
 					{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
-					{@render castRow()}
 				</div>
-				<aside class="tp-side">
-					<div class="facts" id="title-where">
-						<dl class="fact-list">{@render factRows()}</dl>
-						{#if info?.streaming.length}
-							<div class="fact-where"><h2 class="tp-h3">Where to watch</h2>{@render services()}</div>
-						{/if}
-					</div>
-				</aside>
+				{#if hasCard}
+					<aside class="tp-side">
+						<div class="facts" id="title-where">
+							<dl class="fact-list">
+								{#if networkOf(d)}<dt>Network</dt><dd>{networkOf(d)}</dd>{/if}
+								{#if makers.length}<dt>{d.kind === 'show' ? 'Created by' : 'Directed by'}</dt><dd>{@render names(makers, 3)}</dd>{/if}
+								{#if lang}<dt>Language</dt><dd>{lang}</dd>{/if}
+								{#if info?.originCountry.length}<dt>{info.originCountry.length > 1 ? 'Countries' : 'Country'}</dt><dd>{info.originCountry.map(countryName).join(', ')}</dd>{/if}
+							</dl>
+							{#if info?.streaming.length}
+								<div class="fact-where"><h2 class="tp-h3">Where to watch</h2>{@render services()}</div>
+							{/if}
+						</div>
+					</aside>
+				{/if}
 			</div>
+			{@render castRow()}
 			<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} />
 		{:else if look === 'apple'}
 			<!-- B · Apple: names first, the photo cast row, then everything else; About as cards at the end. -->
@@ -406,7 +441,10 @@
 	.svc img { width: 28px; height: 28px; border-radius: 7px; object-fit: cover; }
 	.cert { display: inline-flex; align-items: center; height: 22px; padding: 0 7px; border: 1.5px solid currentColor; border-radius: 5px; font: 700 12px/1 var(--font-ui); letter-spacing: .03em; }
 	/* A: the facts card beside the seasons. */
-	.look-a .tp-main { gap: 28px; }
+	.look-a .tp-main { gap: 22px; }
+	.look-a.solo { grid-template-columns: minmax(0, 1fr); }
+	.lead { max-width: 72ch; margin: 0; font: 400 16px/1.55 var(--font-ui); color: var(--text); }
+	.fact-list:empty { display: none; }
 	.facts { display: flex; flex-direction: column; gap: 16px; padding: 16px 18px; border-radius: var(--r-card); background: var(--surface-1); border: 1px solid var(--line); position: sticky; top: calc(var(--topbar, 56px) + 16px); }
 	.fact-list { display: grid; grid-template-columns: auto minmax(0, 1fr); margin: 0; font: 400 14px/1.35 var(--font-ui); }
 	.fact-list :global(dt) { padding: 10px 0; color: var(--text); font-weight: 600; }

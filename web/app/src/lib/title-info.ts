@@ -49,6 +49,12 @@ export interface InfoDetails {
 	streaming: InfoService[];
 	similar: ProviderItem[];
 	collection: { name: string; parts: ProviderItem[] } | null;
+	/** Up to three mood words (TMDB keywords and genres). */
+	moods: string[];
+	/** ISO 639-1 code of the original language. */
+	originalLanguage?: string;
+	/** ISO 3166-1 codes of the countries it comes from. */
+	originCountry: string[];
 	titleId?: number;
 	head: ProviderItem;
 }
@@ -56,6 +62,7 @@ export interface InfoDetails {
 type Raw = Record<string, unknown>;
 const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined);
 const pos = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : undefined);
+const words = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && !!x.trim()) : []);
 const arr = (v: unknown): Raw[] => (Array.isArray(v) ? (v.filter((x) => x && typeof x === 'object') as Raw[]) : []);
 
 /** MAX_CAST round faces in a short row. */
@@ -91,6 +98,9 @@ export function readInfo(kind: InfoKind, tmdb: string, raw: Raw): InfoDetails {
 			.filter((s) => s.id && s.name),
 		similar: items(raw.similar),
 		collection: coll && parts.length > 1 ? { name: str(coll.name) ?? 'Collection', parts } : null,
+		moods: words(raw.moods),
+		originalLanguage: str(raw.original_language),
+		originCountry: words(raw.origin_country),
 		titleId,
 		head: {
 			tmdb_id: tmdb,
