@@ -64,9 +64,27 @@ type Details struct {
 	// Moods are up to three mood words from TMDB keywords and genres.
 	Moods []string `json:"moods"`
 	// Keywords are the title's TMDB keyword names (the Explore strip's
-	// keyword taste; not answered by the API).
-	Keywords []string       `json:"-"`
-	Seasons  []DetailSeason `json:"seasons,omitempty"`
+	// keyword taste, and the page's topic tags).
+	Keywords []string `json:"keywords,omitempty"`
+	// Status is TMDB's word for where the title stands: Released, In
+	// Production, Post Production (movies); Returning Series, Ended,
+	// Canceled (shows).
+	Status string `json:"status,omitempty"`
+	// Tagline is the title's one-line tagline.
+	Tagline string `json:"tagline,omitempty"`
+	// OriginalTitle is the title in its own language, only when it differs.
+	OriginalTitle string `json:"original_title,omitempty"`
+	// Budget and Revenue are a movie's, in US dollars (0: not known).
+	Budget  int64 `json:"budget,omitempty"`
+	Revenue int64 `json:"revenue,omitempty"`
+	// Studios are the first production companies, in TMDB's order.
+	Studios []string `json:"studios,omitempty"`
+	// Dates are a movie's US release dates (theaters, digital, disc) or a
+	// show's first and last air dates, as YYYY-MM-DD.
+	Dates *DetailDates `json:"dates,omitempty"`
+	// NextEpisode is a show's next episode to air, when TMDB knows one.
+	NextEpisode *DetailNextEpisode `json:"next_episode,omitempty"`
+	Seasons     []DetailSeason     `json:"seasons,omitempty"`
 	// OriginCountry and OriginalLanguage tell anime apart (LooksAnime).
 	OriginCountry    []string       `json:"origin_country,omitempty"`
 	OriginalLanguage string         `json:"original_language,omitempty"`
@@ -87,6 +105,27 @@ type Details struct {
 	// be read this time (the answer is then kept only briefly).
 	CollectionMissed bool `json:"-"`
 }
+
+// DetailDates are the dates a page shows: a movie's release in theaters,
+// digitally and on disc; a show's first and last air date.
+type DetailDates struct {
+	Theaters string `json:"theaters,omitempty"`
+	Digital  string `json:"digital,omitempty"`
+	Physical string `json:"physical,omitempty"`
+	FirstAir string `json:"first_air,omitempty"`
+	LastAir  string `json:"last_air,omitempty"`
+}
+
+// DetailNextEpisode is a show's next episode to air.
+type DetailNextEpisode struct {
+	Season  int    `json:"season"`
+	Episode int    `json:"episode"`
+	Name    string `json:"name,omitempty"`
+	AirDate string `json:"air_date,omitempty"`
+}
+
+// maxStudios is how many production companies a page names.
+const maxStudios = 3
 
 // DetailCollection is a movie's TMDB collection on a details page.
 type DetailCollection struct {
@@ -425,11 +464,31 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 		return Details{}, err
 	}
 	var raw struct {
-		VoteAverage float64  `json:"vote_average"`
-		VoteCount   int      `json:"vote_count"`
-		Origin      []string `json:"origin_country"`
-		Language    string   `json:"original_language"`
-		Credits     *struct {
+		VoteAverage   float64  `json:"vote_average"`
+		VoteCount     int      `json:"vote_count"`
+		Origin        []string `json:"origin_country"`
+		Language      string   `json:"original_language"`
+		Status        string   `json:"status"`
+		Tagline       string   `json:"tagline"`
+		OriginalTitle string   `json:"original_title"` // movies
+		OriginalName  string   `json:"original_name"`  // shows
+		Budget        int64    `json:"budget"`
+		Revenue       int64    `json:"revenue"`
+		Companies     []struct {
+			Name string `json:"name"`
+		} `json:"production_companies"`
+		FirstAirDate string `json:"first_air_date"`
+		LastAirDate  string `json:"last_air_date"`
+		NextEpisode  *struct {
+			Season  int    `json:"season_number"`
+			Episode int    `json:"episode_number"`
+			Name    string `json:"name"`
+			AirDate string `json:"air_date"`
+		} `json:"next_episode_to_air"`
+		ReleaseDates *struct {
+			Results []tmdbReleaseCountry `json:"results"`
+		} `json:"release_dates"`
+		Credits *struct {
 			Cast []struct {
 				ID          int64  `json:"id"`
 				Name        string `json:"name"`
@@ -484,7 +543,16 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return Details{}, fmt.Errorf("TMDB: odd answer: %w", err)
 	}
-	d := Details{Score: float64(int(raw.VoteAverage*10+0.5)) / 10, Votes: raw.VoteCount, OriginCountry: raw.Origin, OriginalLanguage: raw.Language}
+	d := Details{Score: float64(int(raw.VoteAverage*10+0.5)) / 10, Votes: raw.VoteCount, OriginCountry: raw.Origin, OriginalLanguage: raw.Language,
+		Status: raw.Status, Tagline: strings.TrimSpace(raw.Tagline), Budget: raw.Budget, Revenue: raw.Revenue}
+	for _, c := range raw.Companies {
+		if len(d.Studios) == maxStudios {
+			break
+		}
+		if n := strings.TrimSpace(c.Name); n != "" {
+			d.Studios = append(d.Studios, n)
+		}
+	}
 	if kind == "movie" {
 		var m tmdbMovie
 		if err := json.Unmarshal(b, &m); err != nil {
@@ -494,6 +562,12 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 		d.DiscoverItem = DiscoverItem{TMDBID: tmdbID, Kind: kind, Name: mv.Name, Year: mv.Year, Poster: mv.Poster, Backdrop: mv.Backdrop,
 			Overview: mv.Overview, Genres: append([]string{}, mv.Genres...)}
 		d.Logo, d.RuntimeMinutes, d.Rating = mv.Logo, mv.Runtime, mv.Rating
+		if o := strings.TrimSpace(raw.OriginalTitle); o != "" && !strings.EqualFold(o, mv.Name) {
+			d.OriginalTitle = o
+		}
+		if raw.ReleaseDates != nil {
+			d.Dates = releaseDates(raw.ReleaseDates.Results)
+		}
 		if mv.Collection != nil {
 			var read bool
 			d.Collection, read = t.collection(ctx, mv.Collection.ID, mv.Collection.Name, names)
@@ -508,6 +582,15 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 		d.DiscoverItem = DiscoverItem{TMDBID: tmdbID, Kind: kind, Name: sh.Name, Year: sh.Year, Poster: sh.Poster, Backdrop: sh.Backdrop,
 			Overview: sh.Overview, Genres: append([]string{}, sh.Genres...)}
 		d.Logo, d.RuntimeMinutes, d.Rating = sh.Logo, sh.Runtime, sh.Rating
+		if o := strings.TrimSpace(raw.OriginalName); o != "" && !strings.EqualFold(o, sh.Name) {
+			d.OriginalTitle = o
+		}
+		if raw.FirstAirDate != "" || raw.LastAirDate != "" {
+			d.Dates = &DetailDates{FirstAir: raw.FirstAirDate, LastAir: raw.LastAirDate}
+		}
+		if e := raw.NextEpisode; e != nil && e.AirDate != "" {
+			d.NextEpisode = &DetailNextEpisode{Season: e.Season, Episode: e.Episode, Name: strings.TrimSpace(e.Name), AirDate: e.AirDate}
+		}
 		for _, s := range raw.Seasons {
 			d.Seasons = append(d.Seasons, DetailSeason{Number: s.Number, EpisodeCount: s.EpisodeCount, Year: yearOf(s.AirDate)})
 		}
@@ -577,6 +660,53 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 		d.Similar = t.items(kind, raw.Recommendations.Results, names, maxSimilar)
 	}
 	return d, nil
+}
+
+// tmdbReleaseCountry is one country's release dates in TMDB's
+// release_dates answer.
+type tmdbReleaseCountry struct {
+	Country string `json:"iso_3166_1"`
+	Dates   []struct {
+		Date string `json:"release_date"`
+		Type int    `json:"type"`
+	} `json:"release_dates"`
+}
+
+// releaseDates picks a movie's US release in theaters (TMDB types 2 and 3),
+// digitally (4) and on disc (5), the earliest of each; with no US entry, the
+// earliest of each type anywhere. Nothing known answers nil.
+func releaseDates(results []tmdbReleaseCountry) *DetailDates {
+	pick := func(only string) *DetailDates {
+		out := DetailDates{}
+		earliest := func(cur *string, day string) {
+			if len(day) >= 10 && (*cur == "" || day[:10] < *cur) {
+				*cur = day[:10]
+			}
+		}
+		for _, c := range results {
+			if only != "" && c.Country != only {
+				continue
+			}
+			for _, d := range c.Dates {
+				switch d.Type {
+				case 2, 3:
+					earliest(&out.Theaters, d.Date)
+				case 4:
+					earliest(&out.Digital, d.Date)
+				case 5:
+					earliest(&out.Physical, d.Date)
+				}
+			}
+		}
+		if out == (DetailDates{}) {
+			return nil
+		}
+		return &out
+	}
+	if d := pick("US"); d != nil {
+		return d
+	}
+	return pick("")
 }
 
 // personID is a TMDB person id as text; empty when unknown.

@@ -25,6 +25,7 @@
 	import TitleTrailers from '#lib/TitleTrailers.svelte';
 	import { loadExtras, type OutsideScore } from '#lib/outside-ratings.ts';
 	import { ratingPicks, shownRatings } from '#lib/rating-picks.svelte.ts';
+	import { loadWikiFacts, type WikiAward } from '#lib/wiki-facts.ts';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -216,6 +217,50 @@
 	// Only the ratings this browser picked (Settings › Appearance).
 	const picked = $derived(shownRatings(outside, rich?.score ?? scoreOf(details?.rating), ratingPicks.list));
 	const hasScores = $derived(picked.scores.length > 0 || !!picked.tmdb);
+	// The second row of facts: dates, where the title stands, studio, money, awards, original title.
+	const fmtDay = (d?: string) => (d ? new Date(`${d}T00:00:00Z`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : '');
+	const money = (n?: number) => (n ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 }).format(n) : '');
+	const statusWord = (s?: string) => (!s || s === 'Released' ? '' : s.charAt(0) + s.slice(1).toLowerCase());
+	let awards = $state<WikiAward[]>([]);
+	$effect(() => {
+		const k = kind, id = tmdb;
+		awards = [];
+		if (!isDetailKind(k) || !id) return;
+		let live = true;
+		void loadWikiFacts(api.get, k, id).then((f) => live && (awards = f.awards));
+		return () => (live = false);
+	});
+	const awardsLine = $derived.by(() => {
+		const won = awards.filter((a) => a.won).length;
+		const noms = awards.length - won;
+		return [won ? `${won} ${won === 1 ? 'win' : 'wins'}` : '', noms ? `${noms} ${noms === 1 ? 'nomination' : 'nominations'}` : ''].filter(Boolean).join(' · ');
+	});
+	const moreFacts = $derived.by((): [string, string][] => {
+		if (!info) return [];
+		const i = info;
+		const studio = i.studios.filter((x) => x !== network);
+		const rows: [string, string][] =
+			kind === 'show'
+				? [
+						['Status', statusWord(i.status)],
+						['Next episode', i.nextEpisode ? `${fmtDay(i.nextEpisode.airDate)} · S${i.nextEpisode.season} E${i.nextEpisode.episode}` : ''],
+						['First aired', fmtDay(i.dates.firstAir)],
+						['Last aired', i.status === 'Ended' || i.status === 'Canceled' ? fmtDay(i.dates.lastAir) : ''],
+						[studio.length > 1 ? 'Studios' : 'Studio', studio.join(', ')]
+					]
+				: [
+						['Status', statusWord(i.status)],
+						['In theaters', fmtDay(i.dates.theaters)],
+						['Digital', fmtDay(i.dates.digital)],
+						['On disc', fmtDay(i.dates.physical)],
+						[studio.length > 1 ? 'Studios' : 'Studio', studio.join(', ')],
+						['Budget', money(i.budget)],
+						['Box office', money(i.revenue)]
+					];
+		rows.push(['Awards', awardsLine], ['Original title', i.originalTitle ?? '']);
+		return rows.filter(([, v]) => v);
+	});
+	const tags = $derived((info?.keywords ?? []).slice(0, 10));
 	const hasFacts = $derived(!!(network || makers.length || lang || countries.length));
 	const crumbs = $derived(details ? [{ href: to('/explore'), label: 'Explore' }, { href: to(detailPath(details.kind, details.tmdb)), label: details.year ? `${details.name} (${details.year})` : details.name }] : []);
 </script>
@@ -291,6 +336,7 @@
 			{/if}
 		{/snippet}
 		{#snippet story()}
+			{#if info?.tagline}<p class="tagline" data-testid="title-tagline">{info.tagline}</p>{/if}
 			{#if d.overview}<p class="lead" data-testid="title-story">{d.overview}</p>{/if}
 		{/snippet}
 		{#snippet facts()}
@@ -322,7 +368,15 @@
 		<div class="strip">
 			{@render story()}
 			{#if hasScores || hasFacts}<div class="band">{@render scoresAndFacts()}</div>{/if}
+			{#if moreFacts.length}
+				<dl class="inline-facts more-facts" class:alone={!hasScores && !hasFacts} data-testid="title-more-facts">
+					{#each moreFacts as [k, v] (k)}<div><dt>{k}</dt><dd>{v}</dd></div>{/each}
+				</dl>
+			{/if}
 			{@render where()}
+			{#if tags.length}
+				<div class="where-row" data-testid="title-tags"><span class="lbl">Tags</span><ul class="tagchips">{#each tags as t (t)}<li>{t}</li>{/each}</ul></div>
+			{/if}
 		</div>
 		{@render trailers()}
 		{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
@@ -373,6 +427,12 @@
 	.inline-facts div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 	.inline-facts dt { color: var(--text-muted); font: 600 11.5px/1.2 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
 	.inline-facts dd { margin: 0; color: var(--text); font: 500 15px/1.35 var(--font-ui); }
+	/* The second row of facts sits under the band, sharing its bottom line. */
+	.more-facts { margin-top: -20px; border-top: 0; padding-top: 14px; }
+	.more-facts.alone { margin-top: 0; border-top: 1px solid var(--line); }
+	.tagline { margin: 0 0 -8px; max-width: 72ch; color: var(--text-muted); font: italic 500 15px/1.4 var(--font-ui); }
+	.tagchips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+	.tagchips li { display: inline-flex; align-items: center; min-height: 30px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--text); font: 500 13px/1 var(--font-ui); }
 	.where-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; font: 500 14px/1 var(--font-ui); }
 	@media (max-width: 767px) { .inline-facts { gap: 12px 24px; } }
 </style>

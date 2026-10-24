@@ -55,6 +55,22 @@ export interface InfoDetails {
 	originalLanguage?: string;
 	/** ISO 3166-1 codes of the countries it comes from. */
 	originCountry: string[];
+	/** TMDB's status word: Released, In Production, Returning Series, Ended… */
+	status?: string;
+	tagline?: string;
+	/** The title in its own language, only when it differs. */
+	originalTitle?: string;
+	/** A movie's budget and box office, in US dollars. */
+	budget?: number;
+	revenue?: number;
+	/** The first production companies. */
+	studios: string[];
+	/** YYYY-MM-DD: a movie's release in theaters, digitally and on disc; a show's first and last air date. */
+	dates: { theaters?: string; digital?: string; physical?: string; firstAir?: string; lastAir?: string };
+	/** A show's next episode to air. */
+	nextEpisode?: { season: number; episode: number; name?: string; airDate: string };
+	/** TMDB keyword names (topic tags). */
+	keywords: string[];
 	titleId?: number;
 	head: ProviderItem;
 }
@@ -101,6 +117,15 @@ export function readInfo(kind: InfoKind, tmdb: string, raw: Raw): InfoDetails {
 		moods: words(raw.moods),
 		originalLanguage: str(raw.original_language),
 		originCountry: words(raw.origin_country),
+		status: str(raw.status),
+		tagline: str(raw.tagline),
+		originalTitle: str(raw.original_title),
+		budget: pos(raw.budget),
+		revenue: pos(raw.revenue),
+		studios: words(raw.studios),
+		dates: readDates(raw.dates),
+		nextEpisode: readNext(raw.next_episode),
+		keywords: words(raw.keywords),
 		titleId,
 		head: {
 			tmdb_id: tmdb,
@@ -114,6 +139,18 @@ export function readInfo(kind: InfoKind, tmdb: string, raw: Raw): InfoDetails {
 			ask: (raw.ask as ProviderItem['ask']) ?? undefined
 		} as ProviderItem
 	};
+}
+
+const day = (v: unknown) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v) ? v.slice(0, 10) : undefined);
+function readDates(v: unknown): InfoDetails['dates'] {
+	const d = v && typeof v === 'object' ? (v as Raw) : {};
+	return { theaters: day(d.theaters), digital: day(d.digital), physical: day(d.physical), firstAir: day(d.first_air), lastAir: day(d.last_air) };
+}
+function readNext(v: unknown): InfoDetails['nextEpisode'] {
+	if (!v || typeof v !== 'object') return undefined;
+	const e = v as Raw;
+	const airDate = day(e.air_date);
+	return airDate ? { season: typeof e.season === 'number' ? e.season : 0, episode: typeof e.episode === 'number' ? e.episode : 0, name: str(e.name), airDate } : undefined;
 }
 
 /** firstSeason is the season the picker starts on: season 1, else the first real one (specials last). */
