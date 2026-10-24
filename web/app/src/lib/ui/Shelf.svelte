@@ -187,7 +187,7 @@
 	.whole .row { margin-inline: 0; padding-inline: 0; scroll-padding-inline: 0; grid-auto-columns: calc((100% - (var(--per, 1) - 1) * var(--shelf-gap)) / var(--per, 1)); }
 	.whole .row > :global(*) { width: 100%; min-width: 0; }
 	.whole.few .row { justify-content: center; }
-	.whole .left { left: -18px; }
-	.whole .right { right: -18px; }
+	.whole .left { left: 4px; }
+	.whole .right { right: 4px; }
 	.row:global(.dragging) :global(*) { pointer-events: none; }
 </style>

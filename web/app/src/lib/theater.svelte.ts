@@ -6,7 +6,8 @@ import type { TrailerSource } from './autoplay.svelte.ts';
 
 export type TheaterFrom = 'hero' | 'hover' | 'panel';
 export interface TheaterOpen {
-	kind: 'movie' | 'show';
+	/** An artist's music video carries the artist's MusicBrainz id in `tmdb`. */
+	kind: 'movie' | 'show' | 'artist';
 	tmdb: string;
 	title: string;
 	source: TrailerSource;
@@ -31,7 +32,7 @@ export interface TheaterOpen {
  * landing: the player is closing over a page change (no page transition then).
  */
 export interface TheaterBack {
-	kind: 'movie' | 'show';
+	kind: 'movie' | 'show' | 'artist';
 	tmdb: string;
 	time: number;
 	muted: boolean;

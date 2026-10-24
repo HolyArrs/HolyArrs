@@ -48,6 +48,7 @@
 	import { aboutSize, albumHref, appPicture, artistHref, artistKind, countryName, initialsOf, coverFor, haveLine, kindWord, length, owned, SHELVES, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
+	import ArtistVideos from '#lib/ArtistVideos.svelte';
 	import type { Snippet } from 'svelte';
 
 
@@ -525,6 +526,9 @@
 					{#if lib?.nextRelease}<p class="have" data-testid="artist-next">Next album: {lib.nextRelease}</p>{/if}
 					{#if data?.total}<p class="have" data-testid="artist-have"><Icon name="music" size={14} />{haveLine(data.have, data.total)}</p>{/if}
 			</div>
+
+			<!-- Music videos sit under the artist's facts, where a title page has its trailers. -->
+			{#if hero}<ArtistVideos {mbid} artist={hero.name} {picture} />{/if}
 
 			{#if !data}
 				{#if !error}
