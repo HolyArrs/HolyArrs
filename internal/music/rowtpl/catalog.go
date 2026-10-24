@@ -31,6 +31,7 @@ type Tpl struct {
 	Keep              bool // chart rows keep had items (with the Have chip)
 	Need              string
 	Only              map[string]bool // page keys the row is limited to
+	NotWith           map[string]bool // cross values the row never takes
 	Fill              func(c *Ctx, v string) L
 }
 
@@ -50,6 +51,14 @@ func (x Tpl) chart() Tpl           { x.Chart, x.Keep = true, true; return x }
 func (x Tpl) disc() Tpl            { x.Disc = true; return x }
 func (x Tpl) need(n string) Tpl    { x.Need = n; return x }
 func (x Tpl) vars(v ...string) Tpl { x.Vars = v; return x }
+func (x Tpl) notWith(keys ...string) Tpl {
+	x.NotWith = map[string]bool{}
+	for _, k := range keys {
+		x.NotWith[k] = true
+	}
+	return x
+}
+
 func (x Tpl) only(keys ...string) Tpl {
 	x.Only = map[string]bool{}
 	for _, k := range keys {
@@ -671,7 +680,7 @@ var Catalog = []Tpl{
 		fill(func(c *Ctx, _ string) L { return c.byLPT(c.in(palb(c), "facet:instrumental"), c.Key) }),
 	t("H10", "cr", 0.5, "MA", "{mood} {for}", "Albums {basis} and in styles that suit {activity}", "albums in the mood and the activity", "fit", "", "W").cross(map[byte]string{'M': "activity", 'A': "mood"}, 3).
 		fill(crossFill),
-	t("H11", "se", 0.6, "MS", "{season} {mood}", "Albums {basis} that fit {season}", "albums in the mood and the season", "fit", "season on (mood page)", "Sn").cross(map[byte]string{'M': "season", 'S': "mood"}, 3).
+	t("H11", "se", 0.6, "MS", "{season} {mood}", "Albums {basis} that fit {season}", "albums in the mood and the season", "fit", "season on (mood page)", "Sn").cross(map[byte]string{'M': "season", 'S': "mood"}, 3).notWith("mood:sleep", "mood:focus", "mood:workout", "mood:throwback", "season:back-to-school").
 		fill(crossFill),
 	t("H12", "di", 0.5, "M", "Hidden {mood} gems", "Well liked by those who play them, less played, {basis}", "the mood's mid-listened albums with loyal listeners", "0.5 fit + 0.5 novelty", "not had", "W").disc().
 		fill(gems),

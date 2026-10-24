@@ -151,7 +151,13 @@ func (c *Ctx) slotValues(tp Tpl) []string {
 			}
 			cand = on
 		}
-		vals = c.enough(cand, func(v string) L { return c.in(palb(c), v) })
+		var keep []string
+		for _, k := range cand {
+			if !tp.NotWith[k] {
+				keep = append(keep, k)
+			}
+		}
+		vals = c.enough(keep, func(v string) L { return c.in(palb(c), v) })
 	case "decade":
 		vals = c.enough(c.keysOf("decade"), func(v string) L { return c.in(palb(c), v) })
 	case "sub":
@@ -652,21 +658,27 @@ func (c *Ctx) render(tp Tpl, v string, items []int, rowID string) (string, strin
 				vars["{genre2}"] = c.name(key)
 			}
 		case "mood":
-			vars["{mood}"] = c.name(key)
+			vars["{mood}"] = lowerName(c.name(key))
 		case "season":
 			vars["{season}"] = c.name(key)
+			if commonSeasons[key] {
+				vars["{season}"] = lowerName(c.name(key))
+			}
 		case "decade":
 			vars["{decade}"] = c.name(key)
 		case "activity":
 			vars["{activity}"] = strings.ToLower(c.name(key))
 			vars["{for}"] = forOf[key]
 		case "sub":
-			vars["{substyle}"] = c.name(key)
+			vars["{substyle}"] = lowerName(c.name(key))
 		}
 	}
 	if c.Key != "" {
 		set(c.Key)
 		vars["{name}"] = c.name(c.Key)
+		if k := kindOf(c.Key); k == "mood" || commonSeasons[c.Key] {
+			vars["{name}"] = lowerName(c.name(c.Key))
+		}
 	}
 	claim := c.Key
 	switch tp.Slot {
@@ -762,8 +774,38 @@ func (c *Ctx) country(code string) string {
 			return n
 		}
 	}
+	if n, ok := countryNames[strings.ToLower(code)]; ok {
+		return n
+	}
 	return strings.ToUpper(code)
 }
+
+// countryNames name the chart countries for titles (the API's own table
+// comes first).
+var countryNames = map[string]string{
+	"us": "the US", "gb": "the UK", "ca": "Canada", "au": "Australia", "nz": "New Zealand", "ie": "Ireland", "de": "Germany", "fr": "France", "es": "Spain", "it": "Italy",
+	"nl": "the Netherlands", "be": "Belgium", "at": "Austria", "ch": "Switzerland", "se": "Sweden", "no": "Norway", "dk": "Denmark", "fi": "Finland", "pt": "Portugal", "pl": "Poland",
+	"cz": "Czechia", "sk": "Slovakia", "hu": "Hungary", "ro": "Romania", "bg": "Bulgaria", "gr": "Greece", "hr": "Croatia", "si": "Slovenia", "rs": "Serbia", "ua": "Ukraine",
+	"lt": "Lithuania", "lv": "Latvia", "ee": "Estonia", "ru": "Russia", "cy": "Cyprus", "tr": "Turkey", "il": "Israel", "ae": "the UAE", "sa": "Saudi Arabia", "jo": "Jordan",
+	"lb": "Lebanon", "eg": "Egypt", "ma": "Morocco", "dz": "Algeria", "tn": "Tunisia", "ng": "Nigeria", "ke": "Kenya", "za": "South Africa", "ci": "Ivory Coast", "sn": "Senegal",
+	"cm": "Cameroon", "gh": "Ghana", "mx": "Mexico", "br": "Brazil", "ar": "Argentina", "co": "Colombia", "cl": "Chile", "pe": "Peru", "ec": "Ecuador", "ve": "Venezuela",
+	"do": "the Dominican Republic", "gt": "Guatemala", "cr": "Costa Rica", "pa": "Panama", "py": "Paraguay", "uy": "Uruguay", "bo": "Bolivia", "hn": "Honduras", "sv": "El Salvador",
+	"ni": "Nicaragua", "jm": "Jamaica", "jp": "Japan", "kr": "South Korea", "in": "India", "id": "Indonesia", "ph": "the Philippines", "my": "Malaysia", "sg": "Singapore",
+	"th": "Thailand", "vn": "Vietnam", "tw": "Taiwan", "hk": "Hong Kong", "pk": "Pakistan", "kz": "Kazakhstan", "lu": "Luxembourg", "is": "Iceland",
+}
+
+// lowerName writes a mood or style name for the middle of a title
+// ("chill", "cloud rap"); names with inner capitals stay ("K-R&B").
+func lowerName(n string) string {
+	r := []rune(n)
+	if len(r) > 1 && strings.ToLower(string(r[1:])) == string(r[1:]) {
+		return strings.ToLower(string(r[:1])) + string(r[1:])
+	}
+	return n
+}
+
+// commonSeasons are season names written in lower case mid-title.
+var commonSeasons = map[string]bool{"season:fall": true, "season:spring": true, "season:summer": true, "season:back-to-school": true}
 
 func (c *Ctx) place(code string) string {
 	if code == "" || code == "global" {
