@@ -16,8 +16,18 @@
 		title,
 		videos = [],
 		art = [],
-		item = '220px'
-	}: { kind: 'movie' | 'show'; tmdb: string; title: string; videos?: Video[]; art?: (string | null | undefined)[]; item?: string } = $props();
+		item = '220px',
+		framed = false
+	}: {
+		kind: 'movie' | 'show';
+		tmdb: string;
+		title: string;
+		videos?: Video[];
+		art?: (string | null | undefined)[];
+		item?: string;
+		/** In a rounded panel with a small label, matching the info panel beside it (the cards scroll inside it). */
+		framed?: boolean;
+	} = $props();
 
 	const main = $derived(pickTrailer(videos));
 	const list = $derived(main ? [main, ...videos.filter((v) => v.key !== main.key)] : videos);
@@ -54,19 +64,28 @@
 	}
 </script>
 
-{#if list.length}
+{#snippet card(v: Video, i: number)}
+	<button type="button" class="tcard" onclick={(e) => play(v, e)} aria-busy={busy === v.key || undefined} aria-label="Play {named(v)}">
+		<span class="pic">
+			{#if coverOf(v, i)}<img src={coverOf(v, i)} alt="" loading="lazy" decoding="async" onerror={() => (noCover[v.key] = true)} />{/if}
+			<span class="glyph" aria-hidden="true"><Icon name="play" size={14} /></span>
+		</span>
+		<span class="tname">{named(v)}</span>
+		<span class="xs muted">{sub(v)}</span>
+	</button>
+{/snippet}
+
+{#if list.length && framed}
+	<section class="tpanel" aria-labelledby="h-trailers" id="title-trailers" data-testid="title-trailers">
+		<h2 class="cap" id="h-trailers">Trailers<span class="n">{list.length}</span></h2>
+		<div class="trow" style="--item: {item}">
+			{#each list as v, i (v.key)}{@render card(v, i)}{/each}
+		</div>
+	</section>
+{:else if list.length}
 	<div class="trailers" data-testid="title-trailers">
 		<Shelf title="Trailers" anchor="title-trailers" {item} placeholder="wide">
-			{#each list as v, i (v.key)}
-				<button type="button" class="tcard" onclick={(e) => play(v, e)} aria-busy={busy === v.key || undefined} aria-label="Play {named(v)}">
-					<span class="pic">
-						{#if coverOf(v, i)}<img src={coverOf(v, i)} alt="" loading="lazy" decoding="async" onerror={() => (noCover[v.key] = true)} />{/if}
-						<span class="glyph" aria-hidden="true"><Icon name="play" size={14} /></span>
-					</span>
-					<span class="tname">{named(v)}</span>
-					<span class="xs muted">{sub(v)}</span>
-				</button>
-			{/each}
+			{#each list as v, i (v.key)}{@render card(v, i)}{/each}
 		</Shelf>
 	</div>
 {/if}
@@ -81,5 +100,13 @@
 	.tcard:hover .glyph { transform: scale(1.1); background: rgb(0 0 0 / 60%); }
 	.tcard:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 10px; }
 	.tname { font: 600 14px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	/* Framed: the info panel's look (surface, line, radius, small capital label). */
+	.tpanel { display: flex; flex-direction: column; gap: 14px; height: 100%; min-width: 0; padding: 18px 20px; border-radius: 22px; background: var(--surface-1); border: 1px solid var(--line); }
+	.cap { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--text-muted); font: 600 11.5px/1.2 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
+	.n { padding: 2px 7px; border-radius: 999px; background: var(--surface-2); letter-spacing: 0; }
+	.trow { display: grid; grid-auto-flow: column; grid-auto-columns: var(--item); gap: 12px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none; margin: 0 -20px; padding: 0 20px 2px; scroll-padding-inline: 20px; }
+	.trow::-webkit-scrollbar { display: none; }
+	.trow > .tcard { scroll-snap-align: start; }
+	.tpanel .pic { border-radius: 12px; }
 	@media (prefers-reduced-motion: reduce) { .pic img, .glyph { transition: none; } }
 </style>

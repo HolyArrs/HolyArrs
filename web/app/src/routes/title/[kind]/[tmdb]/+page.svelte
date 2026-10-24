@@ -306,7 +306,7 @@
 			{/if}
 		{/snippet}
 		{#snippet trailers()}
-			<TitleTrailers kind={d.kind} tmdb={d.tmdb} title={d.name} videos={rich?.videos ?? []} art={[d.backdrop, ...(rich?.backdrops ?? [])]} item={look === 'small' ? '220px' : '200px'} />
+			<TitleTrailers kind={d.kind} tmdb={d.tmdb} title={d.name} videos={rich?.videos ?? []} art={[d.backdrop, ...(rich?.backdrops ?? [])]} item={look === 'small' ? '220px' : '200px'} framed={look !== 'small'} />
 		{/snippet}
 		{#snippet where()}
 			{#if info?.streaming.length}
@@ -381,11 +381,9 @@
 	.svc li { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 4px 12px 4px 4px; border-radius: 999px; background: var(--surface-2); font: 500 14px/1 var(--font-ui); }
 	.svc img { width: 28px; height: 28px; border-radius: 7px; object-fit: cover; }
 	/* V2 / V3: trailers and the info panel side by side. */
-	.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+	.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: stretch; }
 	.split.flip .split-trailers { order: 2; }
 	.split-trailers { min-width: 0; }
-	/* Inside half a row the trailer row stays in its own column (no bleed into the gutter). */
-	.split-trailers :global(.ui-shelf .row) { margin-inline: 0; padding-inline: 0; scroll-padding-inline: 0; }
 	.info-panel { display: flex; flex-direction: column; gap: 16px; padding: 18px 20px; border-radius: 22px; background: var(--surface-1); border: 1px solid var(--line); }
 	.panel-band { display: flex; flex-wrap: wrap; gap: 16px 28px; }
 	.panel-band .rule { display: none; }
