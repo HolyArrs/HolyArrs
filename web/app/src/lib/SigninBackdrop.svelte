@@ -466,10 +466,21 @@ void main() {
 		const pic = node.querySelector<HTMLImageElement>('img.pic');
 		const canvas = node.querySelector<HTMLCanvasElement>('canvas.mz');
 		let stop = false;
+		// The picture sits at opacity 0 under the canvas, where the browser may skip
+		// decoding it. Decode it now and hand over (canvas off, picture on) only once
+		// it is ready, in one frame, so the old photo never shows through.
+		const decoded = pic ? pic.decode().catch(() => {}) : Promise.resolve();
+		let over = false;
 		const done = () => {
 			stop = true;
-			node.classList.remove('mosaic');
-			node.classList.add('sharp');
+			if (over) return;
+			over = true;
+			void decoded.then(() => {
+				requestAnimationFrame(() => {
+					node.classList.remove('mosaic');
+					node.classList.add('sharp');
+				});
+			});
 		};
 		const gl = canvas?.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: false });
 		if (!pic || !canvas || !gl) {
