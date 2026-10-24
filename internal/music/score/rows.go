@@ -52,7 +52,7 @@ type Row struct {
 	ChartSet   bool
 	Chart      bool
 	Shape      string
-	ScoreFn    func(unseen []Item) float64
+	ScoreFn    func(unseen []Item) float64 `json:"-"`
 	MinArtists int
 }
 

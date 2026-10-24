@@ -1,6 +1,7 @@
 package musicscore
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 )
@@ -90,5 +91,13 @@ func TestShapeRuleBringsACircleEvery8(t *testing.T) {
 	}
 	if pos < 0 || pos > 7 {
 		t.Fatalf("circle row at %d, want within the first 8", pos)
+	}
+}
+
+func TestRowWithScoreFnStoresAsJSON(t *testing.T) {
+	r := tplRow("a", "fa", 0.5)
+	r.ScoreFn = func([]Item) float64 { return 1 }
+	if _, err := json.Marshal(r); err != nil {
+		t.Fatalf("a plan row must store as JSON (plans go to disk): %v", err)
 	}
 }
