@@ -274,3 +274,47 @@ func TestTplWaiterRespectsItsContext(t *testing.T) {
 	}
 	close(release)
 }
+
+// route: GET /api/v1/explore/music with the engine: its rows join the day's
+// plan, no album repeats, and the Browse row has the 8 Browse tiles.
+func TestTplExploreAndNewMusic(t *testing.T) {
+	r := tplRig(t)
+	pages, _ := v7Pages(t, r.owner, "US")
+	rows := v7Rows(pages)
+	noAlbumTwice(t, rows)
+	tpl, grid := 0, 0
+	for _, row := range rows {
+		if strings.HasPrefix(row.ID, "tpl:") {
+			tpl++
+			if len(row.Items) < 8 || strings.TrimSpace(row.Reason) == "" {
+				t.Fatalf("%s: %d items, reason %q", row.ID, len(row.Items), row.Reason)
+			}
+		}
+		if row.Shape == "grid" {
+			grid = len(row.Items)
+			for _, c := range row.Items {
+				if c.Href == "" {
+					t.Fatalf("Browse tile %s has no page", c.Key)
+				}
+			}
+		}
+	}
+	if tpl < 3 || grid != 8 {
+		t.Fatalf("explore: %d engine rows, Browse row %d tiles", tpl, grid)
+	}
+	var n struct {
+		Rows []MusicRow `json:"rows"`
+	}
+	if err := json.Unmarshal(r.owner.call("GET", "/api/v1/explore/new/music?region=US", "", 200), &n); err != nil {
+		t.Fatal(err)
+	}
+	engine := 0
+	for _, row := range n.Rows {
+		if strings.HasPrefix(row.ID, "tpl:") {
+			engine++
+		}
+	}
+	if engine < 3 {
+		t.Fatalf("new & popular: %d engine rows", engine)
+	}
+}

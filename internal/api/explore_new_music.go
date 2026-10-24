@@ -620,6 +620,24 @@ func (a *API) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	now := time.Now().UTC()
 	a.landAlbumFollows(ctx, now)
+	// The row template engine fills New & Popular → Music when it has its
+	// catalog (kill switch music_rows_tpl_off keeps the list rows).
+	if a.musicTplOn() {
+		if hero, rows, ok := a.buildTplWorld(ctx, r, "new", now); ok {
+			var names []nameKey
+			for _, row := range append([]MusicRow{{Items: hero}}, rows...) {
+				for _, c := range row.Items {
+					if c.Kind == "album" {
+						names = append(names, nameKey{"album", c.MBID, c.Name, c.Artist, ""})
+					}
+				}
+			}
+			a.rememberMusicNames(names)
+			a.exploreCaching(w, r, "private, no-cache")
+			writeJSON(w, http.StatusOK, map[string]any{"kid": false, "building": false, "hero": hero, "rows": rows, "genres": musicNewTopics(rows, hero)})
+			return
+		}
+	}
 	d := a.warmMusicNew()
 	if d == nil {
 		empty["building"] = true
@@ -680,13 +698,6 @@ func (a *API) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
 	}
 	if a.s.MusicListsV1 {
 		hero, rows = a.musicNewListRows(ctx, r, in, hero, rows, now)
-	}
-	// The row template engine fills New & Popular → Music when it has its
-	// catalog (kill switch music_rows_tpl_off keeps the list rows).
-	if a.musicTplOn() {
-		if h, rs, ok := a.buildTplWorld(ctx, r, "new", now); ok {
-			hero, rows = h, rs
-		}
 	}
 	var names []nameKey
 	for _, c := range hero {
