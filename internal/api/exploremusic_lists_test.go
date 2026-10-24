@@ -149,10 +149,12 @@ func TestNewMusicListRowsLeadWithCharts(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v1/explore/new/music?region=US", nil)
 	existing := []MusicRow{{ID: "old", Type: "old", Title: "Old", Reason: "r", Shape: "square", Items: []MusicCard{listCard(metadata.MusicShelfItem{Kind: "album", MBID: mid('7', 0), Title: "Album 0", Artist: "Artist 0"})}}}
 	hero, rows := r.api.musicNewListRows(context.Background(), req, musicNewInput{}, nil, existing, v7Fixed)
-	if len(hero) < 3 || hero[0].MBID != mid('7', 0) {
-		t.Fatalf("hero is not the region's number one album: %+v", hero)
+	// The hero is the recent charting albums, momentum first (every
+	// fixture album is 4 days old).
+	if len(hero) < 3 || hero[0].Kind != "album" || hero[0].Kicker != "New album" {
+		t.Fatalf("hero is not recent charting albums: %+v", hero)
 	}
-	if len(rows) < 12 || rows[0].ID != "lists_new_friday" {
+	if len(rows) < 12 || rows[0].ID != "lists_new_charting" {
 		t.Fatalf("%d rows, first %v", len(rows), rowIDs(rows))
 	}
 	noAlbumTwice(t, rows)
@@ -382,4 +384,111 @@ func TestListShelvesChangeWhileDownDropsKeptPlans(t *testing.T) {
 	a.musicv2.cand = musicscore.Candidates{}
 	a.musicShelvesOf(ctx, "us", now)
 	wait(false)
+}
+
+// oldShelves is fakeShelves with every even item a 5,000-day-old album
+// that charts today and every odd one out 20 days ago.
+func oldShelves(ctx context.Context, region string) (metadata.MusicShelves, error) {
+	sh, _ := fakeShelves(ctx, region)
+	old := v7Fixed.AddDate(0, 0, -5000).Format("2006-01-02")
+	fresh := v7Fixed.AddDate(0, 0, -20).Format("2006-01-02")
+	for b, l := range sh.Blocks {
+		for i := range l {
+			if i%2 == 0 {
+				l[i].Date = old
+			} else {
+				l[i].Date = fresh
+			}
+		}
+		sh.Blocks[b] = l
+	}
+	return sh, nil
+}
+
+func TestListKickerSaysTheRealReason(t *testing.T) {
+	now := v7Fixed
+	old := metadata.MusicShelfItem{Kind: "album", Rank: 12, Date: now.AddDate(0, 0, -5000).Format("2006-01-02")}
+	if k := listKicker("top_world", "worldwide", old, now); k != "#12 worldwide" {
+		t.Fatalf("old chart album: %q", k)
+	}
+	if k := listKicker("top_now", "in the US", old, now); k != "#12 in the US" {
+		t.Fatalf("old chart album: %q", k)
+	}
+	if k := listKicker("climbing", "in the US", old, now); k != "Climbing" {
+		t.Fatalf("old climber: %q", k)
+	}
+	fresh := old
+	fresh.Date = now.AddDate(0, 0, -20).Format("2006-01-02")
+	if k := listKicker("top_world", "worldwide", fresh, now); k != "New album" {
+		t.Fatalf("new album: %q", k)
+	}
+	edge := old
+	edge.Date = now.AddDate(0, 0, -61).Format("2006-01-02")
+	if k := listKicker("albums_week", "", edge, now); strings.HasPrefix(k, "New") {
+		t.Fatalf("61 days old says %q", k)
+	}
+	cards := []MusicCard{
+		{Kicker: "New album", Badge: "New album", Date: now.AddDate(0, 0, -5000).Format("2006-01-02"), Rank: 3},
+		{Badge: "New EP", Date: "2012"},
+		{Kicker: "New album", Date: now.AddDate(0, 0, -10).Format("2006-01-02")},
+	}
+	honestLabels(cards, now)
+	if cards[0].Kicker != "#3 album this week" || cards[0].Badge != "" || cards[1].Badge != "" || cards[1].Kicker != "Popular now" || cards[2].Kicker != "New album" {
+		t.Fatalf("labels %+v", cards)
+	}
+}
+
+// New & Popular: the hero and the first rows are music out in the last 90
+// days; no card says New when it is older than 60 days; old chart hits only
+// in the popularity rows below; one album chart when worldwide.
+func TestNewMusicRecentFirstAndHonestLabels(t *testing.T) {
+	for _, region := range []string{"US", ""} {
+		r := listRig(t, "household_indie.json")
+		r.api.s.MusicShelves = oldShelves
+		req := httptest.NewRequest("GET", "/api/v1/explore/new/music?region="+region, nil)
+		own := []MusicRow{{ID: "np_music_top", Type: "np_music_top", Title: "Top albums", Reason: "r", Shape: "square",
+			Items: []MusicCard{{Key: "album:" + mid('8', 1), Kind: "album", MBID: mid('8', 1), Name: "Old", Artist: "Z", Badge: "New album", Date: "2012-05-01"}}}}
+		hero, rows := r.api.musicNewListRows(context.Background(), req, musicNewInput{}, nil, own, v7Fixed)
+		if len(hero) < 3 {
+			t.Fatalf("%q: hero %d", region, len(hero))
+		}
+		for _, c := range hero {
+			if d, ok := listAge(c.Date, v7Fixed); !ok || d > listRecentDays {
+				t.Fatalf("%q: hero %s from %s", region, c.Name, c.Date)
+			}
+		}
+		check := func(where string, c MusicCard) {
+			d, ok := listAge(c.Date, v7Fixed)
+			if (strings.HasPrefix(c.Kicker, "New") || strings.HasPrefix(c.Badge, "New")) && (!ok || d > listRecentDays) {
+				t.Fatalf("%q: %s labelled New from %s (%s)", region, c.Name, c.Date, where)
+			}
+		}
+		for _, c := range hero {
+			check("hero", c)
+		}
+		recentPart := true
+		world, week := false, false
+		for _, row := range rows {
+			if !strings.HasPrefix(row.ID, "lists_new") && row.ID != "lists_big_new" && !listNewOwnFirst(row.ID) {
+				recentPart = false
+			}
+			world = world || row.ID == "lists_albums_world"
+			week = week || row.ID == "lists_albums_week"
+			for _, c := range row.Items {
+				check(row.ID, c)
+				if recentPart && c.Kind == "album" {
+					if d, ok := listAge(c.Date, v7Fixed); !ok || d > listRecentDays {
+						t.Fatalf("%q: %s from %s in recent row %s", region, c.Name, c.Date, row.ID)
+					}
+				}
+			}
+		}
+		if rows[0].ID != "lists_new_charting" {
+			t.Fatalf("%q: first row %s", region, rows[0].ID)
+		}
+		if region == "" && world && week {
+			t.Fatal("worldwide page shows the week's album chart twice")
+		}
+		noAlbumTwice(t, rows)
+	}
 }

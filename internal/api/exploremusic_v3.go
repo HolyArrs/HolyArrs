@@ -520,6 +520,8 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 	for _, it := range albums {
 		addHero(it, "Top album")
 	}
+	// "New" only within 60 days of release; older cards say why they show.
+	honestLabels(heroes, now)
 	if len(heroes) > 0 {
 		ord.Hero, ord.Alts = &heroes[0], heroes[1:]
 		seen[heroes[0].Key] = true

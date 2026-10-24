@@ -40,7 +40,7 @@
 
 	async function load(tries = 0) {
 		try {
-			const a = await api.get<NewMusicAnswer>(newMusicPath, gone.signal);
+			const a = await api.get<NewMusicAnswer>(`${newMusicPath}?region=${encodeURIComponent(defaultRegion())}`, gone.signal);
 			answer = a;
 			failed = false;
 			if (a.building && tries < 30) poll = setTimeout(() => void load(tries + 1), 3000);

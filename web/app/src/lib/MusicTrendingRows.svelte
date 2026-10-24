@@ -7,6 +7,7 @@
 	import type { OwnedIndex } from './explore.ts';
 	import { defaultRegion } from './region.ts';
 	import { coverFor } from './music/music-pages.ts';
+	import { isNewRelease } from './music/music-new.ts';
 	import { fetchMusicExplore, fetchMusicExploreMore, fetchMusicGenre, genreHref, musicCardHref, musicCardNote, musicImage, musicStatus, releaseWords, songAskHref, type MusicCardData, type MusicExploreAnswer } from './music/music-trending.ts';
 	import MusicGenreTiles from './ui/MusicGenreTiles.svelte';
 	import MusicBrowseGrid from './ui/MusicBrowseGrid.svelte';
@@ -222,7 +223,9 @@
 	/** Spotlight artist photos that loaded at a usable size (400 px wide or more). */
 	let photoOk = $state<Record<string, boolean>>({});
 	function kicker(c: MusicCardData): string {
-		return c.kicker || (c.title_id ? 'New album' : 'Top album');
+		// "New album" only within 60 days of release; otherwise the real reason.
+		if (c.kicker && (!/^new\b/i.test(c.kicker) || isNewRelease(c.date))) return c.kicker;
+		return isNewRelease(c.date) ? 'New album' : c.rank ? 'Top album' : 'Popular now';
 	}
 	function caption(c: MusicCardData): string {
 		if (!c.title_id) return c.rank ? `Number ${c.rank} on this week's album chart` : '';

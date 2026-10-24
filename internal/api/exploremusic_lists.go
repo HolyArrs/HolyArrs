@@ -104,6 +104,16 @@ func (a *API) warmListVideos(sh *metadata.MusicShelves) {
 // the stream is ready).
 func (a *API) listBlock(ctx context.Context, sh *metadata.MusicShelves, d listRowDef) []metadata.MusicShelfItem {
 	items := sh.Blocks[d.Block]
+	if d.Block == "new_friday" || d.Block == "big_new_albums" {
+		// Rows meant to be new: releases of the last 90 days only.
+		var out []metadata.MusicShelfItem
+		for _, it := range items {
+			if listRecent(it.Date, listRecentDays, time.Now()) {
+				out = append(out, it)
+			}
+		}
+		return out
+	}
 	if d.Block != "video_artists" {
 		return items
 	}
@@ -293,7 +303,8 @@ func listRows(sh *metadata.MusicShelves) []listRowDef {
 			}
 			continue
 		}
-		if len(sh.Blocks[d.Block]) == 0 {
+		if len(sh.Blocks[d.Block]) == 0 || d.Block == "albums_world" && sh.Chart == "global" {
+			// Worldwide visitors: the week's album chart is already the world's.
 			continue
 		}
 		d.Title, d.Reason = r.Replace(d.Title), r.Replace(d.Reason)
@@ -483,10 +494,122 @@ var listNewOrder = []string{"lists_new_friday", "lists_top_now", "lists_top_worl
 // Popular shows (§6 rows 15–20).
 const listNewWeekRows = 6
 
-// musicNewListRows leads New & Popular → Music with the world-list rows:
-// the Spotlight is the region's biggest charted albums, then the list rows
-// in §6 order, then the page's own rows; one seen set over the page, so no
-// album shows twice.
+// listNewDays: a card says "New" only within 60 days of its first release.
+const listNewDays = 60
+
+// listRecentDays: rows meant to be new take releases of the last 90 days.
+const listRecentDays = 90
+
+// listAge is the days since a release date ("2026-10-02", "2026-10" or
+// "2026"; a partial date counts from its first day).
+func listAge(date string, now time.Time) (int, bool) {
+	for _, layout := range []string{"2006-01-02", "2006-01", "2006"} {
+		if len(date) >= len(layout) {
+			if t, err := time.Parse(layout, date[:len(layout)]); err == nil {
+				today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+				return int(today.Sub(t).Hours() / 24), true
+			}
+		}
+	}
+	return 0, false
+}
+
+// listRecent says a release is out (or due within a week) and at most
+// days old.
+func listRecent(date string, days int, now time.Time) bool {
+	d, ok := listAge(date, now)
+	return ok && d >= -7 && d <= days
+}
+
+// listKicker is a chart card's label from its real reason: "New album"
+// only within 60 days of release, else its chart place or why it shows.
+func listKicker(block, place string, it metadata.MusicShelfItem, now time.Time) string {
+	if it.Kind == "album" && listRecent(it.Date, listNewDays, now) {
+		return "New album"
+	}
+	switch block {
+	case "top_now", "top_world", "neighbor":
+		if it.Rank > 0 && it.Rank <= 50 {
+			return fmt.Sprintf("#%d %s", it.Rank, place)
+		}
+	case "climbing", "new_entries":
+		return "Climbing"
+	case "long_runners":
+		return "Still huge"
+	case "albums_week", "albums_world":
+		if it.Rank > 0 && it.Rank <= 50 {
+			return fmt.Sprintf("#%d album this week", it.Rank)
+		}
+	}
+	return "Popular now"
+}
+
+// honestLabels takes "New" off every card released more than 60 days ago
+// (or with no date): the label then says why the card is there.
+func honestLabels(cards []MusicCard, now time.Time) {
+	for i := range cards {
+		c := &cards[i]
+		if listRecent(c.Date, listNewDays, now) {
+			continue
+		}
+		if strings.HasPrefix(c.Kicker, "New") {
+			c.Kicker = "Popular now"
+			if c.Rank > 0 && c.Rank <= 50 {
+				c.Kicker = fmt.Sprintf("#%d album this week", c.Rank)
+			}
+		}
+		if strings.HasPrefix(c.Badge, "New") {
+			c.Badge = ""
+			if c.Kicker == "" {
+				c.Kicker = "Popular now"
+			}
+		}
+	}
+}
+
+// listRecentBlocks feed New & Popular's first rows and hero: chart albums
+// out in the last 90 days.
+var listRecentBlocks = []string{"big_new_albums", "new_friday", "new_entries", "climbing", "top_now", "top_world", "albums_week"}
+
+// listRecentDef is the "New and charting" row (rendered like a template).
+var listRecentDef = listRowDef{ID: "lists_new_charting", Block: "recent", Title: "New and charting", Reason: "Out in the last 90 days and on the charts {place}", Min: 8}
+
+// listRecentItems are the shelves' albums out in the last 90 days, once
+// each, by 0.6·M + 0.4·P (momentum first), with the block each came from.
+func listRecentItems(sh *metadata.MusicShelves, now time.Time) ([]metadata.MusicShelfItem, map[string]string) {
+	from := map[string]string{}
+	var out []metadata.MusicShelfItem
+	for _, b := range listRecentBlocks {
+		for _, it := range sh.Blocks[b] {
+			id := strings.ToLower(it.MBID)
+			if it.Kind != "album" || from[id] != "" || !listRecent(it.Date, listRecentDays, now) {
+				continue
+			}
+			from[id] = b
+			out = append(out, it)
+		}
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		return 0.6*out[i].M+0.4*out[i].P > 0.6*out[j].M+0.4*out[j].P
+	})
+	return out, from
+}
+
+// listNewOwnFirst are New & Popular's own rows of new releases: they
+// follow the recent list rows, above the popularity rows.
+func listNewOwnFirst(id string) bool {
+	switch id {
+	case "np_music_week", "np_music_recent", "np_music_library", "np_music_short", "np_music_coming":
+		return true
+	}
+	return strings.HasPrefix(id, "np_music_genre_")
+}
+
+// musicNewListRows leads New & Popular → Music with recent music: the hero
+// is the region's charting albums out in the last 90 days (momentum
+// first), then rows of recent releases, and only then the popularity rows
+// (charts, which hold older hits under labels that say so). One seen set
+// over the page, so no album shows twice.
 func (a *API) musicNewListRows(ctx context.Context, r *http.Request, in musicNewInput, hero []MusicCard, rows []MusicRow, now time.Time) ([]MusicCard, []MusicRow) {
 	region := strings.ToUpper(r.URL.Query().Get("region"))
 	if region == "" || region == "GLOBAL" || !isCountry(region) {
@@ -494,8 +617,10 @@ func (a *API) musicNewListRows(ctx context.Context, r *http.Request, in musicNew
 	}
 	sh := a.musicShelvesOf(ctx, region, now)
 	if sh == nil {
+		honestLabels(hero, now)
 		return hero, rows
 	}
+	place := listPlace(sh.Chart)
 	had := map[string]bool{}
 	for _, c := range in.library {
 		if c.MBID != "" {
@@ -512,37 +637,31 @@ func (a *API) musicNewListRows(ctx context.Context, r *http.Request, in musicNew
 	taken := func(c MusicCard) bool {
 		return seen[c.Key] || c.Kind == "album" && seen["fold:"+fullAlbumKey(c.Name)+"|"+fullAlbumKey(c.Artist)]
 	}
-	lead := listHero(sh, func(id string) bool { return had[id] }, 8)
+	recent, from := listRecentItems(sh, now)
+	// Hero: recent charting albums, one per artist, not-had first.
+	var lead []MusicCard
+	artists := map[string]bool{}
+	for _, wantHad := range []bool{false, true} {
+		for _, it := range recent {
+			c := listCard(it)
+			if len(lead) >= 8 || artists[c.ArtistMBID] || had[c.MBID] != wantHad {
+				continue
+			}
+			artists[c.ArtistMBID] = true
+			c.Kicker = listKicker(from[c.MBID], place, it, now)
+			lead = append(lead, c)
+		}
+	}
 	if len(lead) >= 3 {
 		hero = lead
 	}
+	honestLabels(hero, now)
 	for _, c := range hero {
 		mark(c)
 	}
-	defs := map[string]listRowDef{}
-	for _, d := range listRows(sh) {
-		defs[d.ID] = d
-	}
-	order := append([]string{}, listNewOrder...)
-	for _, d := range listTemplates {
-		if d.Block == "tile:week" {
-			// Big this week in {genre}: up to six genres, in tile order.
-			for i, e := range listTileRows(sh, d, "week") {
-				if i < listNewWeekRows {
-					defs[e.ID] = e
-					order = append(order, e.ID)
-				}
-			}
-		}
-	}
-	order = append(order, "lists_videos")
 	var out []MusicRow
-	for _, id := range order {
-		d, ok := defs[id]
-		if !ok {
-			continue
-		}
-		cards, sc := listCandidates(d, a.listBlock(ctx, sh, d), nil)
+	take := func(d listRowDef, items []metadata.MusicShelfItem) {
+		cards, sc := listCandidates(d, items, nil)
 		byKey := map[string]MusicCard{}
 		for _, c := range cards {
 			byKey[c.Key] = c
@@ -558,28 +677,77 @@ func (a *API) musicNewListRows(ctx context.Context, r *http.Request, in musicNew
 			row.Items = append(row.Items, c)
 		}
 		if len(row.Items) < d.Min || len(per) < 4 {
-			continue
+			return
 		}
 		for _, c := range row.Items {
 			mark(c)
 		}
 		out = append(out, row)
 	}
-	for _, row := range rows {
-		var items []MusicCard
-		for _, c := range row.Items {
-			if !taken(c) {
-				items = append(items, c)
+	own := func(first bool) {
+		for _, row := range rows {
+			if listNewOwnFirst(row.ID) != first {
+				continue
+			}
+			var items []MusicCard
+			for _, c := range row.Items {
+				if !taken(c) {
+					items = append(items, c)
+				}
+			}
+			if len(items) < min(6, len(row.Items)) {
+				continue
+			}
+			honestLabels(items, now)
+			for _, c := range items {
+				mark(c)
+			}
+			row.Items = items
+			out = append(out, row)
+		}
+	}
+	defs := map[string]listRowDef{}
+	for _, d := range listRows(sh) {
+		defs[d.ID] = d
+	}
+	recentRows := map[string]bool{"lists_new_friday": true, "lists_big_new": true, "lists_new_entries": true}
+	// 1. Recent: new and charting, out this Friday, biggest new albums,
+	// taking off; every item out in the last 90 days.
+	rd := listRecentDef
+	rd.Reason = strings.ReplaceAll(rd.Reason, "{place}", place)
+	take(rd, recent)
+	for _, id := range []string{"lists_new_friday", "lists_big_new", "lists_new_entries"} {
+		if d, ok := defs[id]; ok {
+			var items []metadata.MusicShelfItem
+			for _, it := range sh.Blocks[d.Block] {
+				if it.Kind == "album" && listRecent(it.Date, listRecentDays, now) {
+					items = append(items, it)
+				}
+			}
+			take(d, items)
+		}
+	}
+	// 2. The page's own new-release rows.
+	own(true)
+	// 3. Popularity rows: the charts (older hits welcome, labelled as chart
+	// rows), Big this week in {genre}, the page's other rows, the videos.
+	for _, id := range listNewOrder {
+		if d, ok := defs[id]; ok && !recentRows[id] {
+			take(d, a.listBlock(ctx, sh, d))
+		}
+	}
+	for _, d := range listTemplates {
+		if d.Block == "tile:week" {
+			for i, e := range listTileRows(sh, d, "week") {
+				if i < listNewWeekRows {
+					take(e, sh.Blocks[e.Block])
+				}
 			}
 		}
-		if len(items) < min(6, len(row.Items)) {
-			continue
-		}
-		for _, c := range items {
-			mark(c)
-		}
-		row.Items = items
-		out = append(out, row)
+	}
+	own(false)
+	if d, ok := defs["lists_videos"]; ok {
+		take(d, a.listBlock(ctx, sh, d))
 	}
 	return hero, out
 }
