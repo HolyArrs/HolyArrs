@@ -129,3 +129,6 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 }
 
 export const live = createLive();
+
+// Development: a hot update makes a new stream; the old one closes so open tabs do not pile up connections.
+if (import.meta.hot) import.meta.hot.dispose(() => live.stop());
