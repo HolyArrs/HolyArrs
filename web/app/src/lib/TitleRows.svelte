@@ -102,7 +102,6 @@
 					<li title={sv.name}>{#if sv.logo}<img src={sv.logo} alt="" width="32" height="32" loading="lazy" />{/if}<span>{sv.name}</span></li>
 				{/each}
 			</ul>
-			<p class="xs muted">In your region ({region}). Streaming data: JustWatch</p>
 		</div>
 	</section>
 {/if}
