@@ -1,19 +1,18 @@
 // Where a title page puts its facts line and tagline while Luis compares the
-// options (?look=keep|swap|both). The choice is kept per browser so every
+// options (?look=both|band). The choice is kept per browser so every
 // title opens with the same option.
-export type TitleLook = 'keep' | 'swap' | 'both';
+export type TitleLook = 'both' | 'band';
 
 export const TITLE_LOOKS: { value: TitleLook; label: string }[] = [
-	{ value: 'keep', label: 'H1 · Keep' },
-	{ value: 'swap', label: 'H2 · Swap' },
-	{ value: 'both', label: 'H3 · Both in hero' }
+	{ value: 'both', label: 'H3 · Facts in hero' },
+	{ value: 'band', label: 'H4 · Facts in band' }
 ];
 
-const KEY = 'holyarrs.hero-look';
-const known = (v: string | null): v is TitleLook => v === 'keep' || v === 'swap' || v === 'both';
+const KEY = 'holyarrs.hero-look-2';
+const known = (v: string | null): v is TitleLook => v === 'both' || v === 'band';
 
 function first(): TitleLook {
-	if (typeof window === 'undefined') return 'keep';
+	if (typeof window === 'undefined') return 'band';
 	const q = new URLSearchParams(location.search).get('look');
 	if (known(q)) return q;
 	try {
@@ -22,7 +21,7 @@ function first(): TitleLook {
 	} catch {
 		/* No storage: the default option. */
 	}
-	return 'keep';
+	return 'band';
 }
 
 export const titleLook = $state({ value: first() });
