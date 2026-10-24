@@ -323,7 +323,7 @@
 		{#if look !== 'small' && rich?.videos.length}
 			<!-- V2 / V3: the story, then one row split in half: the trailers on one side, the ratings, details and where to watch in a rounded panel on the other. -->
 			{@render story()}
-			<div class="split" class:flip={look === 'right'}>
+			<div class="split" class:flip={look === 'right'} class:solo={!(hasScores || hasFacts || info?.streaming.length)}>
 				<div class="split-trailers">{@render trailers()}</div>
 				{#if hasScores || hasFacts || info?.streaming.length}
 					<div class="info-panel">
@@ -384,10 +384,17 @@
 	.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: stretch; }
 	.split.flip .split-trailers { order: 2; }
 	.split-trailers { min-width: 0; }
-	.info-panel { display: flex; flex-direction: column; gap: 16px; padding: 18px 20px; border-radius: 22px; background: var(--surface-1); border: 1px solid var(--line); }
-	.panel-band { display: flex; flex-wrap: wrap; gap: 16px 28px; }
+	.split.solo { grid-template-columns: minmax(0, 1fr); }
+	/* The panel's content sits in its middle, so a title with few ratings or no streaming services leaves no lopsided gap. */
+	.info-panel { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 16px; padding: 18px 20px; border-radius: 22px; background: var(--surface-1); border: 1px solid var(--line); text-align: center; }
+	.panel-band { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
 	.panel-band .rule { display: none; }
-	.panel-band .inline-facts { width: 100%; padding: 14px 0 0; border: 0; border-top: 1px solid var(--line); gap: 12px 28px; }
+	.panel-band :global(.scores.tiles) { justify-content: center; }
+	.panel-band :global(.scores.tiles li) { justify-items: center; }
+	.panel-band .inline-facts { justify-content: center; width: 100%; padding: 14px 0 0; border: 0; border-top: 1px solid var(--line); gap: 12px 28px; }
+	.panel-band .inline-facts div { align-items: center; }
+	.info-panel .where-row { justify-content: center; }
+	.panel-band:only-child .inline-facts, .panel-band .inline-facts:first-child { padding-top: 0; border-top: 0; }
 	@media (max-width: 899px) { .split { grid-template-columns: minmax(0, 1fr); } .split.flip .split-trailers { order: 0; } }
 	/* One band of scores and details. */
 	.band { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 32px; padding: 16px 0; border-block: 1px solid var(--line); }
