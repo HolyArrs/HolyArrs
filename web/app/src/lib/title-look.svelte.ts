@@ -1,15 +1,15 @@
-// Which title page layout is shown while Luis compares them (?look=ask|apple|netflix).
+// Which version of title page layout A is shown while Luis compares them (?look=ask|stack|strip).
 // The choice is kept per browser so every title page opens in the same layout.
-export type TitleLook = 'ask' | 'apple' | 'netflix';
+export type TitleLook = 'ask' | 'stack' | 'strip';
 
 export const TITLE_LOOKS: { value: TitleLook; label: string }[] = [
-	{ value: 'ask', label: 'A · Ask' },
-	{ value: 'apple', label: 'B · Apple' },
-	{ value: 'netflix', label: 'C · Netflix' }
+	{ value: 'ask', label: 'A1 · Beside' },
+	{ value: 'stack', label: 'A2 · Stacked' },
+	{ value: 'strip', label: 'A3 · Strip' }
 ];
 
 const KEY = 'holyarrs.title-look';
-const known = (v: string | null): v is TitleLook => v === 'ask' || v === 'apple' || v === 'netflix';
+const known = (v: string | null): v is TitleLook => v === 'ask' || v === 'stack' || v === 'strip';
 
 function first(): TitleLook {
 	if (typeof window === 'undefined') return 'ask';
