@@ -53,6 +53,12 @@ type Deps struct {
 	// MusicShelves reads the metadata server's world-list shelves for a
 	// region; nil leaves the list rows out.
 	MusicShelves func(ctx context.Context, region string) (metadata.MusicShelves, error)
+	// MusicPools reads the metadata server's music catalog bundle (the row
+	// templates' data; conditional on etag); nil keeps today's list rows.
+	MusicPools func(ctx context.Context, etag string) ([]byte, string, error)
+	// MusicRowsTplOff is flag music_rows_tpl_off: the kill switch that keeps
+	// today's music_lists_v1 pages instead of the row template engine.
+	MusicRowsTplOff bool
 	// MusicListeners, MusicSimilarSet and MusicArtistData read the metadata
 	// server's batch artist data for the scored rows; nil leaves P at the
 	// charts and the similarity rows out.

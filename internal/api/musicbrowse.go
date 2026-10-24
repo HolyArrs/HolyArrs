@@ -1,0 +1,376 @@
+package api
+
+import (
+	"context"
+	"errors"
+	"hash/fnv"
+	"net/http"
+	"regexp"
+	"sort"
+	"strings"
+	"time"
+
+	"github.com/CoderLuii/holyarrs/internal/metadata"
+	musicscore "github.com/CoderLuii/holyarrs/internal/music/score"
+	"github.com/CoderLuii/holyarrs/internal/music/rowtpl"
+)
+
+// The row template engine (music_lists_v1, plan 2026-10-24-music-row-
+// templates): Browse pages for genres, moods, seasons, decades and
+// activities, filled from the server's catalog bundle.
+
+// musicTplOn reports whether the engine serves music pages.
+func (a *API) musicTplOn() bool {
+	return a.s.MusicListsV1 && !a.s.MusicRowsTplOff && a.s.MusicPools != nil
+}
+
+const (
+	tplBundleTTL = 6 * time.Hour
+	tplKeepTTL   = 7 * 24 * time.Hour
+)
+
+type tplBundle struct {
+	b    *rowtpl.Bundle
+	etag string
+}
+
+// musicBundle answers the catalog bundle: cached 6 hours, then re-read
+// with its ETag; a failed read keeps the last good copy for a week.
+func (a *API) musicBundle(ctx context.Context, now time.Time) *rowtpl.Bundle {
+	if v, ok := a.musicv2.cand.Get("tpl:bundle", now); ok {
+		return v.(*tplBundle).b
+	}
+	var last *tplBundle
+	if v, ok := a.musicv2.cand.Get("tpl:last", now); ok {
+		last = v.(*tplBundle)
+	}
+	etag := ""
+	if last != nil {
+		etag = last.etag
+	}
+	body, tag, err := a.s.MusicPools(ctx, etag)
+	switch {
+	case errors.Is(err, metadata.ErrNotModified) && last != nil:
+		a.musicv2.cand.Put("tpl:bundle", last, tplBundleTTL, now)
+		return last.b
+	case err != nil:
+		if last != nil {
+			a.musicv2.cand.Put("tpl:bundle", last, 10*time.Minute, now)
+			return last.b
+		}
+		return nil
+	}
+	b, err := rowtpl.ParseBundle(body)
+	if err != nil {
+		if last != nil {
+			return last.b
+		}
+		return nil
+	}
+	x := &tplBundle{b: b, etag: tag}
+	a.musicv2.cand.Put("tpl:bundle", x, tplBundleTTL, now)
+	a.musicv2.cand.Put("tpl:last", x, tplKeepTTL, now)
+	return b
+}
+
+// tplKinds are the Browse page kinds the engine serves.
+var tplKinds = map[string]bool{"genre": true, "mood": true, "season": true, "decade": true, "activity": true}
+
+var tplKeyRe = regexp.MustCompile(`^[a-z0-9-]{1,40}$`)
+
+// tplGenreAlias maps chart genre slugs (old genre page links) to our keys.
+var tplGenreAlias = map[string]string{
+	"hip-hop-rap": "hip-hop", "r-b-soul": "rnb", "r-and-b": "rnb", "rnb": "rnb", "dance": "dance", "electronic": "dance", "k-pop": "kpop",
+	"children-s-music": "kids", "soundtrack": "soundtracks", "singer-songwriter": "folk", "christian-gospel": "christian", "christian": "christian",
+	"gospel": "christian", "afrobeats": "afro", "african": "afro", "reggae": "reggae", "soul-funk": "soul-funk", "hard-rock": "rock", "indie-pop": "indie",
+	"latin": "latin", "pop-latino": "latin", "urbano-latino": "latin", "musica-mexicana": "latin", "alternative": "alternative",
+}
+
+// tplKey answers the bundle key for a page kind and slug, if the bundle has it.
+func tplKey(b *rowtpl.Bundle, kind, slug string) (string, bool) {
+	if kind == "activity" && slug == "party" {
+		kind = "mood"
+	}
+	if kind == "genre" {
+		if k, ok := tplGenreAlias[slug]; ok {
+			slug = k
+		}
+	}
+	if kind == "decade" && len(slug) == 3 && strings.HasSuffix(slug, "s") {
+		// "90s" → "1990s"
+		if slug[0] >= '6' {
+			slug = "19" + slug
+		} else {
+			slug = "20" + slug
+		}
+	}
+	key := kind + ":" + slug
+	_, ok := b.Names[key]
+	return key, ok && len(b.Keys[key]) > 0
+}
+
+// musicTplLib turns the member's library and acts into what the engine
+// reads: had and asked albums, artist affinity, similarity to the library,
+// library genres and decade, and up to 3 seeds.
+func (a *API) musicTplLib(ctx context.Context, member int64, lib *musicLib, acts *musicActs, b *rowtpl.Bundle, now time.Time) *rowtpl.Lib {
+	l := &rowtpl.Lib{Albums: map[string]bool{}, Asked: map[string]bool{}, Artists: map[string]float64{}, Sim: map[string]float64{}}
+	for _, ar := range lib.artists {
+		if ar.mbid == "" {
+			continue
+		}
+		x := musicscore.Acts{HaveAny: ar.hadAny, AlbumsHad: ar.had}
+		for u := range acts.follows[ar.id] {
+			x.Follows = x.Follows || u == member
+			x.OtherFollows = x.OtherFollows || u != member
+		}
+		for u := range acts.asked[ar.mbid] {
+			x.Asked = x.Asked || u == member
+			x.OtherAsked = x.OtherAsked || u != member
+		}
+		if f := musicscore.Affinity(x); f > 0 {
+			l.Artists[ar.mbid] = f
+		}
+	}
+	for _, al := range lib.albums {
+		if al.mbid != "" && lib.hadParts[al.partID] {
+			l.Albums[al.mbid] = true
+		}
+	}
+	for id, st := range acts.albumState {
+		if st != "" {
+			l.Asked[id] = true
+		}
+	}
+	if len(l.Artists) == 0 {
+		return l
+	}
+	type aa struct {
+		id string
+		a  float64
+	}
+	var top []aa
+	for id, f := range l.Artists {
+		top = append(top, aa{id, f})
+	}
+	sort.Slice(top, func(i, j int) bool {
+		if top[i].a != top[j].a {
+			return top[i].a > top[j].a
+		}
+		return top[i].id < top[j].id
+	})
+	var seedIDs []string
+	for _, x := range top[:min(12, len(top))] {
+		seedIDs = append(seedIDs, x.id)
+	}
+	sims := a.musicSimilarOf(ctx, seedIDs, now)
+	for _, id := range seedIDs {
+		for _, s := range sims[id] {
+			if s.S > l.Sim[s.MBID] {
+				l.Sim[s.MBID] = s.S
+			}
+		}
+	}
+	// Seeds: the day's 3 strongest artists that have similar artists.
+	names := map[string]string{}
+	for _, ar := range lib.artists {
+		names[ar.mbid] = ar.name
+	}
+	for _, id := range seedIDs {
+		if len(sims[id]) == 0 || len(l.Seeds) == 3 {
+			continue
+		}
+		sim := map[string]float64{}
+		for _, s := range sims[id] {
+			sim[s.MBID] = s.S
+		}
+		l.Seeds = append(l.Seeds, rowtpl.Seed{ID: id, Name: names[id], Similar: sim})
+	}
+	l.Genres, l.Decade = rowtpl.LibraryKeys(b, l)
+	return l
+}
+
+// tplCard is a bundle item as a Music card.
+func tplCard(it rowtpl.Item) MusicCard {
+	if it.Kind == "r" {
+		return MusicCard{Key: "artist:" + it.ID, Kind: "artist", MBID: it.ID, Name: it.Title, Artist: it.Title, ArtistMBID: it.ID, Image: "/api/v1/music-trending/art/artist/" + it.ID, Genres: []string{}}
+	}
+	c := MusicCard{Key: "album:" + it.ID, Kind: "album", MBID: it.ID, Name: it.Title, Artist: it.Artist, ArtistMBID: it.ArtistID, Date: it.Date, Image: "/api/v1/music-trending/art/album/" + it.ID, Genres: []string{}}
+	if it.ArtistID != "" {
+		c.ArtistImage = "/api/v1/music-trending/art/artist/" + it.ArtistID
+	}
+	return c
+}
+
+// tplBlocks turns a region's shelves into the engine's list blocks.
+func tplBlocks(sh *metadata.MusicShelves) map[string][]string {
+	if sh == nil {
+		return nil
+	}
+	out := map[string][]string{}
+	for name, items := range sh.Blocks {
+		for _, it := range items {
+			id := strings.ToLower(it.MBID)
+			if it.Kind == "artist" {
+				out[name] = append(out[name], "r:"+id)
+			} else {
+				out[name] = append(out[name], "a:"+id)
+			}
+		}
+	}
+	if sh.Season != "" {
+		out["season_key"] = []string{"season:" + sh.Season}
+	}
+	return out
+}
+
+// tplHue is a key's tile colour index (24 hues).
+func tplHue(key string) int {
+	h := fnv.New32a()
+	h.Write([]byte(key))
+	return int(h.Sum32() % 24)
+}
+
+// buildTplPage fills one Browse page: the Spotlight (hero and two more)
+// and up to 30 rows. ok is false when the engine or the key is missing.
+func (a *API) buildTplPage(ctx context.Context, member int64, kind, slug, region string, lib *musicLib, acts *musicActs, now time.Time) (hero *MusicCard, alts []MusicCard, rows []MusicRow, tile MusicCard, ok bool) {
+	b := a.musicBundle(ctx, now)
+	if b == nil {
+		return nil, nil, nil, tile, false
+	}
+	key, found := tplKey(b, kind, slug)
+	if !found {
+		return nil, nil, nil, tile, false
+	}
+	sh := a.musicShelvesOf(ctx, region, now)
+	c := &rowtpl.Ctx{B: b, Kind: kindOfKey(key), Key: key, Region: strings.ToLower(region), Now: now, Member: member, Lib: a.musicTplLib(ctx, member, lib, acts, b, now), Blocks: tplBlocks(sh), CountryName: countryName}
+	if sh != nil {
+		c.Neighbor = sh.Neighbor
+	}
+	spot := rowtpl.Spotlight(c)
+	for k, i := range spot {
+		card := tplCard(b.Items[i])
+		if k == 0 {
+			hero = &card
+		} else {
+			alts = append(alts, card)
+		}
+	}
+	for _, r := range rowtpl.Build(c) {
+		row := MusicRow{ID: "tpl:" + r.ID, Type: "tpl_" + strings.ToLower(r.Template), Title: r.Title, Reason: r.Reason, Shape: r.Shape}
+		for _, i := range r.Items {
+			row.Items = append(row.Items, tplCard(b.Items[i]))
+		}
+		rows = append(rows, row)
+	}
+	hue := tplHue(key)
+	name := b.Names[key].Name
+	tile = MusicCard{Key: key, Kind: "genre", MBID: slug, Name: name, Hue: &hue, Genres: []string{}}
+	return hero, alts, rows, tile, true
+}
+
+func kindOfKey(key string) string { k, _, _ := strings.Cut(key, ":"); return k }
+
+// countryName answers a country's name for titles ("the US").
+func countryName(code string) string {
+	if n, ok := listCountries[strings.ToLower(code)]; ok {
+		return n
+	}
+	return ""
+}
+
+// musicBrowsePage answers GET /api/v1/music/browse/{kind}/{slug}: a mood,
+// season, decade, activity or genre page from the row template engine.
+func (a *API) musicBrowsePage(w http.ResponseWriter, r *http.Request) {
+	kind, slug := r.PathValue("kind"), r.PathValue("slug")
+	if !tplKinds[kind] || !tplKeyRe.MatchString(slug) {
+		fail(w, http.StatusBadRequest, "unknown page")
+		return
+	}
+	if a.kidMax(r) != "" {
+		writeJSON(w, http.StatusOK, map[string]any{"kid": true, "v2": true, "genres": []string{}, "genre": slug, "hero": nil, "rows": []MusicRow{}})
+		return
+	}
+	if !a.musicTplOn() {
+		fail(w, http.StatusNotFound, "music pages are off")
+		return
+	}
+	a.serveTplPage(w, r, kind, slug)
+}
+
+// serveTplPage writes one engine page (shared with the genre route).
+func (a *API) serveTplPage(w http.ResponseWriter, r *http.Request, kind, slug string) bool {
+	ctx := r.Context()
+	now := time.Now().UTC()
+	member := a.person(r).UserID
+	region := strings.ToUpper(r.URL.Query().Get("region"))
+	if region == "" || region == "GLOBAL" || !isCountry(region) {
+		region = "global"
+	}
+	lib, err := a.musicLibrary(ctx, now)
+	if err != nil {
+		internal(w, err)
+		return true
+	}
+	acts, err := a.musicActsOf(ctx, member)
+	if err != nil {
+		internal(w, err)
+		return true
+	}
+	hero, alts, rows, tile, ok := a.buildTplPage(ctx, member, kind, slug, region, lib, acts, now)
+	if !ok {
+		if kind == "genre" {
+			return false
+		}
+		fail(w, http.StatusNotFound, "no such page")
+		return true
+	}
+	for i := range rows {
+		for j := range rows[i].Items {
+			rows[i].Items[j] = musicCardState(rows[i].Items[j], lib, acts)
+		}
+	}
+	if hero != nil {
+		h := musicCardState(*hero, lib, acts)
+		hero = &h
+	}
+	for i := range alts {
+		alts[i] = musicCardState(alts[i], lib, acts)
+	}
+	if rows == nil {
+		rows = []MusicRow{}
+	}
+	a.exploreCaching(w, r, "private, no-cache")
+	writeJSON(w, http.StatusOK, map[string]any{"v2": true, "kid": false, "cold": false, "genres": []string{}, "genre": slug, "kind": kind, "region": region, "regions": []string{},
+		"tile": tile, "hero": hero, "hero_alts": alts, "rows": rows})
+	return true
+}
+
+// musicBrowseTiles answers GET /api/v1/music/browse-tiles?region=: the
+// Search > Music Browse sections (genres, moods, seasons, decades,
+// activities) with their tiles' pages and covers.
+func (a *API) musicBrowseTiles(w http.ResponseWriter, r *http.Request) {
+	if !a.musicTplOn() {
+		fail(w, http.StatusNotFound, "music pages are off")
+		return
+	}
+	ctx := r.Context()
+	now := time.Now().UTC()
+	b := a.musicBundle(ctx, now)
+	if b == nil {
+		fail(w, http.StatusServiceUnavailable, "music catalog not ready")
+		return
+	}
+	region := strings.ToLower(r.URL.Query().Get("region"))
+	if region == "" || !isCountry(strings.ToUpper(region)) {
+		region = "global"
+	}
+	member := a.person(r).UserID
+	var lib *rowtpl.Lib
+	if ml, err := a.musicLibrary(ctx, now); err == nil {
+		if acts, err := a.musicActsOf(ctx, member); err == nil {
+			lib = a.musicTplLib(ctx, member, ml, acts, b, now)
+		}
+	}
+	a.exploreCaching(w, r, "private, no-cache")
+	writeJSON(w, http.StatusOK, map[string]any{"sections": rowtpl.BrowseSections(b, now, region, lib)})
+}

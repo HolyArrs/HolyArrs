@@ -32,6 +32,8 @@ type MusicShelves struct {
 	Region   string                      `json:"region"`
 	Chart    string                      `json:"chart_region"`
 	Neighbor string                      `json:"neighbor_region"`
+	// Season is the paid season the "tile:season" block holds.
+	Season string `json:"season"`
 	AsOf     string                      `json:"as_of"`
 	Blocks   map[string][]MusicShelfItem `json:"blocks"`
 }

@@ -378,6 +378,8 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/explore/music", a.exploreMusic)
 	m.HandleFunc("GET /api/v1/music-trending/art/{kind}/{mbid}", a.musicTrendArt)
 	m.HandleFunc("GET /api/v1/music/genre/{slug}", a.musicGenrePage)
+	m.HandleFunc("GET /api/v1/music/browse/{kind}/{slug}", a.musicBrowsePage)
+	m.HandleFunc("GET /api/v1/music/browse-tiles", a.musicBrowseTiles)
 	m.HandleFunc("GET /api/v1/music/genre-art/{slug}", a.musicGenreArt)
 	m.HandleFunc("GET /api/v1/extras/{kind}/{id}", a.titleExtras)
 	m.HandleFunc("GET /api/v1/wiki/{kind}/{id}", a.wikiFacts)

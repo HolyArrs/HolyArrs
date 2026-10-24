@@ -44,7 +44,28 @@ type Row struct {
 	// empty means the row's ID. Disc marks a discovery row.
 	Family string
 	Disc   bool
+	// Template rows (music_lists_v1 row templates): ChartSet makes Chart
+	// alone decide the "2 chart rows in any 6 slots" rule (else the
+	// Prior == PriorChart test applies); Shape "round" or "wide" counts for
+	// the shape rule; ScoreFn, when set, scores the row over its items not
+	// yet placed; MinArtists is the fewest artists a filled row needs.
+	ChartSet   bool
+	Chart      bool
+	Shape      string
+	ScoreFn    func(unseen []Item) float64
+	MinArtists int
 }
+
+// chartLike reports whether the row counts as a chart row for variety.
+func (r Row) chartLike() bool {
+	if r.ChartSet {
+		return r.Chart
+	}
+	return r.Prior == PriorChart
+}
+
+// shaped reports a circle or wide row.
+func (r Row) shaped() bool { return r.Shape == "round" || r.Shape == "wide" }
 
 // family is the row's family, its ID when none is set.
 func (r Row) family() string {

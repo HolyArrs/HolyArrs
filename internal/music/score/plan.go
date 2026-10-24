@@ -89,13 +89,18 @@ func (p *Plan) rOf(r Row) float64 {
 		return r.Prior * 0.5
 	}
 	var s []float64
+	var unseen []Item
 	for _, it := range r.Items {
 		if !p.taken(it) {
 			s = append(s, it.Score)
+			unseen = append(unseen, it)
 		}
 	}
 	if len(s) < r.Gate() {
 		return 0
+	}
+	if r.ScoreFn != nil {
+		return r.ScoreFn(unseen)
 	}
 	return Strength(s, r.Prior)
 }
@@ -150,10 +155,10 @@ func (p *Plan) fits(order []string, id string) bool {
 	if len(order) > 0 && p.rows[order[len(order)-1]].family() == fam {
 		return false
 	}
-	if r.Prior == PriorChart {
+	if r.chartLike() {
 		c := 0
 		for _, x := range order[max(0, len(order)-5):] {
-			if p.rows[x].Prior == PriorChart {
+			if p.rows[x].chartLike() {
 				c++
 			}
 		}
@@ -179,6 +184,15 @@ func (p *Plan) greedy(placed, pool []string) (slots, rest []string) {
 				}
 			}
 		}
+		if pick < 0 && len(order) >= 7 && !p.anyShaped(order[len(order)-7:]) {
+			// Shape rule: a circle or wide row in every 8 slots when one fits.
+			for i, id := range pool {
+				if p.rows[id].shaped() && p.fits(order, id) && p.rOf(p.rows[id]) > 0 {
+					pick = i
+					break
+				}
+			}
+		}
 		if pick < 0 {
 			for i, id := range pool {
 				if p.fits(order, id) {
@@ -195,6 +209,16 @@ func (p *Plan) greedy(placed, pool []string) (slots, rest []string) {
 		pool = append(pool[:pick], pool[pick+1:]...)
 	}
 	return slots, pool
+}
+
+// anyShaped reports whether any of the rows is a circle or wide row.
+func (p *Plan) anyShaped(ids []string) bool {
+	for _, id := range ids {
+		if p.rows[id].shaped() {
+			return true
+		}
+	}
+	return false
 }
 
 // take fills one row against the shared seen and seed sets; it commits only
@@ -226,7 +250,7 @@ func (p *Plan) take(r Row) (Row, bool) {
 			local["fold:"+it.FoldKey] = true
 		}
 	}
-	if !r.Passes(len(kept)) {
+	if !r.Passes(len(kept)) || r.MinArtists > 0 && len(per) < r.MinArtists {
 		return r, false
 	}
 	for k := range local {

@@ -156,6 +156,11 @@ func (a *API) musicGenrePage(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{"kid": true, "v2": true, "genres": []string{}, "genre": slug, "hero": nil, "rows": []MusicRow{}})
 		return
 	}
+	// The row template engine serves the genres it has a key for; others
+	// keep this page.
+	if a.musicTplOn() && a.serveTplPage(w, r, "genre", slug) {
+		return
+	}
 	ctx := r.Context()
 	now := time.Now().UTC()
 	member := a.person(r).UserID
