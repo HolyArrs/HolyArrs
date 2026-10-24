@@ -8,7 +8,7 @@
 	import { defaultRegion } from './region.ts';
 	import { coverFor } from './music/music-pages.ts';
 	import { isNewRelease } from './music/music-new.ts';
-	import { fetchMusicExplore, fetchMusicExploreMore, fetchMusicGenre, genreHref, musicCardHref, musicCardNote, musicImage, musicStatus, releaseWords, songAskHref, type MusicCardData, type MusicExploreAnswer } from './music/music-trending.ts';
+	import { fetchMusicExplore, fetchMusicExploreMore, fetchMusicPage, genreHref, musicCardHref, musicCardNote, musicImage, musicStatus, releaseWords, songAskHref, type MusicCardData, type MusicExploreAnswer, type MusicPageKind } from './music/music-trending.ts';
 	import MusicGenreTiles from './ui/MusicGenreTiles.svelte';
 	import MusicBrowseGrid from './ui/MusicBrowseGrid.svelte';
 	import MusicVideoRow from './ui/MusicVideoRow.svelte';
@@ -36,8 +36,9 @@
 		rules,
 		onadded,
 		slug = '',
+		kind = 'genre',
 		genres = $bindable([])
-	}: { owned: OwnedIndex; manage: boolean; mayAsk: boolean; folders: LibraryFolder[]; rules: PickRulesView[]; onadded?: (t: TitleView) => void; /** A Music genre page: that genre's rows instead of Explore's. */ slug?: string; /** The genre tiles, for Explore's Genres button. */ genres?: StripGenre[] } = $props();
+	}: { owned: OwnedIndex; manage: boolean; mayAsk: boolean; folders: LibraryFolder[]; rules: PickRulesView[]; onadded?: (t: TitleView) => void; /** A Music genre page: that genre's rows instead of Explore's. */ slug?: string; /** The page kind for slug (genre, mood, season, decade, activity). */ kind?: MusicPageKind; /** The genre tiles, for Explore's Genres button. */ genres?: StripGenre[] } = $props();
 	type StripGenre = { key: string; name: string; href: string; art: string; images?: string[]; hue: number };
 
 	let region = $state('global');
@@ -83,9 +84,9 @@
 		gone = new AbortController();
 		const signal = gone.signal;
 		try {
-			const a = slug ? await fetchMusicGenre(slug, region, api, signal) : await fetchMusicExplore(genre, region, api, signal);
+			const a = slug ? await fetchMusicPage(kind, slug, region, api, signal) : await fetchMusicExplore(genre, region, api, signal);
 			if (signal.aborted) return;
-			const at = `${slug}|${genre}|${region}`;
+			const at = `${kind}|${slug}|${genre}|${region}`;
 			if (at !== orderFor) {
 				order = [];
 				orderFor = at;

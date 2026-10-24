@@ -22,6 +22,7 @@
 	import { session } from '#lib/session.svelte.ts';
 	import BrowseTile from '#lib/ui/BrowseTile.svelte';
 	import GenreTile from '#lib/ui/GenreTile.svelte';
+	import MusicBrowseSections from '#lib/ui/MusicBrowseSections.svelte';
 	import MosaicReveal, { ENTER_DELAY, ENTER_SWEEP, passAt } from '#lib/ui/MosaicReveal.svelte';
 	import { browseCategoryPath, browseCols, browseHref, browsePath, browseSectionPath, browseType, BROWSE_ROWS, musicTiles, readCategory, readMood, shownCount, strictTiles, tileHue, type PlainTile, type BrowseAnswer, type BrowseSection, type BrowseSectionAnswer, type BrowseTile as Tile, type CategoryView, type MoodView } from '#lib/search-browse.ts';
 	import { reducedMotion } from '#lib/motion.ts';
@@ -76,6 +77,8 @@
 	let plainTiles = $state<PlainTile[] | null>(null);
 	/** Music scope with the v2 rows: the genre tiles (hue and grey art), each opening its Music genre page. */
 	let musicGenres = $state<MusicCardData[]>([]);
+	// music_lists_v1 row templates: the Browse sections (genres, moods, seasons, decades, activities).
+	let musicSections = $state<{ id: string; title: string; tiles: { key: string; name: string; href: string; hue: number; covers: string[] }[] }[]>([]);
 	let plainFor = '';
 	let mgenre = $state<string | null>(page.url.searchParams.get('mgenre')?.trim() || null);
 	let mgenreCards = $state<(MusicCardData & { note?: string })[] | null>(null);
@@ -537,6 +540,12 @@
 			if (s === 'people') {
 				await loadShelves();
 			} else {
+				const b = await api.get<{ sections: typeof musicSections }>(`/music/browse-tiles?${new URLSearchParams({ region: 'global' })}`).catch(() => null);
+				if (plainFor === s && b?.sections?.length) {
+					musicSections = b.sections;
+					plainTiles = [];
+					return;
+				}
 				const r = await fetchMusicExplore('', 'global');
 				if (plainFor === s && r.v2) musicGenres = (r.rows.find((row) => row.shape === 'tile' || row.shape === 'grid')?.items ?? []).map((c) => (c.image || !c.cover ? c : { ...c, image: c.cover }));
 				if (plainFor === s) plainTiles = musicGenres.length ? [] : musicTiles(r, (g) => to(`/search?kind=music&mgenre=${encodeURIComponent(g)}`), musicImage);
@@ -631,7 +640,7 @@
 	kept = null;
 	let restored = !!kept0;
 	function keep() {
-		return $state.snapshot({ groups, lib, searched, tiles, tilesFor, sections, sectionTiles, sectionRows, plainTiles, plainFor, musicGenres, shelves, shelfPeople, shelfRows, peopleAll, peoplePage, peopleEnd, peopleFilter, catItems, catFor, catName, moodItems, moodFor, moodGenre, mgenreCards, mgenreFor });
+		return $state.snapshot({ groups, lib, searched, tiles, tilesFor, sections, sectionTiles, sectionRows, plainTiles, plainFor, musicGenres, musicSections, shelves, shelfPeople, shelfRows, peopleAll, peoplePage, peopleEnd, peopleFilter, catItems, catFor, catName, moodItems, moodFor, moodGenre, mgenreCards, mgenreFor });
 	}
 	if (kept0) {
 		const k = kept0;
@@ -645,6 +654,7 @@
 		sectionRows = k.sectionRows;
 		plainTiles = k.plainTiles;
 		musicGenres = k.musicGenres ?? [];
+		musicSections = k.musicSections ?? [];
 		plainFor = k.plainFor;
 		shelves = k.shelves;
 		shelfPeople = k.shelfPeople;
@@ -991,7 +1001,9 @@
 						{/if}
 					{/if}
 				{:else if scope === 'music'}
-					{#if musicGenres.length}
+					{#if musicSections.length}
+						<MusicBrowseSections sections={musicSections} />
+					{:else if musicGenres.length}
 						<div class="gtiles" data-testid="music-genre-tiles">
 							{#each musicGenres as c (c.key)}<GenreTile name={c.name} href={genreHref(c)} hue={c.hue ?? 0} art={c.image ? (musicImage(c) ?? '') : ''} />{/each}
 						</div>

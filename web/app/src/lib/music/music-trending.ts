@@ -186,6 +186,15 @@ export async function fetchMusicGenre(slug: string, region: string, client: Pick
 	return client.get<MusicExploreAnswer>(`/music/genre/${encodeURIComponent(slug)}?${new URLSearchParams({ region })}`, signal);
 }
 
+/** A Music Browse page kind (music_lists_v1 row templates): genre pages keep their route; moods, seasons, decades and activities have their own. */
+export type MusicPageKind = 'genre' | 'mood' | 'season' | 'decade' | 'activity';
+
+/** fetchMusicPage reads one Music Browse page's rows. */
+export async function fetchMusicPage(kind: MusicPageKind, slug: string, region: string, client: Pick<Client, 'get'> = api, signal?: AbortSignal): Promise<MusicExploreAnswer> {
+	if (kind === 'genre') return fetchMusicGenre(slug, region, client, signal);
+	return client.get<MusicExploreAnswer>(`/music/browse/${kind}/${encodeURIComponent(slug)}?${new URLSearchParams({ region })}`, signal);
+}
+
 /** fetchMusicExplore reads the Music rows for a genre chip ('' is all) and chart region. */
 export async function fetchMusicExplore(genre: string, region: string, client: Pick<Client, 'get'> = api, signal?: AbortSignal, hour = new Date().getHours()): Promise<MusicExploreAnswer> {
 	const q = new URLSearchParams({ region, hour: String(hour) });

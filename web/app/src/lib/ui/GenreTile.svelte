@@ -6,10 +6,12 @@
 	// row (its aspect-ratio height is not counted), so the tiles collapsed.
 	let { name, href, hue, art = '' }: { name: string; href: string; hue: number; art?: string } = $props();
 	const colour = $derived(`hsl(${(((hue % 24) + 24) % 24) * 15} 52% 36%)`);
+	// A picture that fails to load leaves the flat hue (never a broken image).
+	let broken = $state(false);
 </script>
 
 <a class="ui-gtile" {href} style:--hue={colour} data-testid="genre-tile">
-	{#if art}<img src={art} alt="" loading="lazy" decoding="async" />{/if}
+	{#if art && !broken}<img src={art} alt="" loading="lazy" decoding="async" onerror={() => (broken = true)} />{/if}
 	<span class="name">{name}</span>
 </a>
 
