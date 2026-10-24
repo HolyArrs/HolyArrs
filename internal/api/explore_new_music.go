@@ -681,6 +681,13 @@ func (a *API) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
 	if a.s.MusicListsV1 {
 		hero, rows = a.musicNewListRows(ctx, r, in, hero, rows, now)
 	}
+	// The row template engine fills New & Popular → Music when it has its
+	// catalog (kill switch music_rows_tpl_off keeps the list rows).
+	if a.musicTplOn() {
+		if h, rs, ok := a.buildTplWorld(ctx, r, "new", now); ok {
+			hero, rows = h, rs
+		}
+	}
 	var names []nameKey
 	for _, c := range hero {
 		names = append(names, nameKey{"album", c.MBID, c.Name, c.Artist, ""}, nameKey{"artist", c.ArtistMBID, c.Artist, "", ""})

@@ -225,3 +225,33 @@ func TestTplBundleSingleFlightAndFailureCache(t *testing.T) {
 		t.Fatalf("%d downloads of a bad bundle, want 1", n)
 	}
 }
+
+// A cancelled request neither cancels the download nor leaves a fail mark.
+func TestTplCancelledRequestLeavesNoFailMark(t *testing.T) {
+	r := tplRig(t)
+	body, _ := os.ReadFile("testdata/music_pools_small.json")
+	var sawCancelled bool
+	fail := true
+	r.api.s.MusicPools = func(ctx context.Context, _ string) ([]byte, string, error) {
+		sawCancelled = sawCancelled || ctx.Err() != nil
+		if fail {
+			return nil, "", context.Canceled
+		}
+		return body, `"fixture"`, nil
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if b := r.api.musicBundle(ctx, time.Now()); b != nil {
+		t.Fatal("bundle from a failed download")
+	}
+	if sawCancelled {
+		t.Fatal("the download used the cancelled request context")
+	}
+	if _, marked := r.api.musicv2.cand.Get("tpl:fail", time.Now()); marked {
+		t.Fatal("a cancelled request left a fail mark")
+	}
+	fail = false
+	if b := r.api.musicBundle(context.Background(), time.Now()); b == nil {
+		t.Fatal("the next request did not download")
+	}
+}

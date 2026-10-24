@@ -69,7 +69,13 @@ func (a *API) musicBundle(ctx context.Context, now time.Time) *rowtpl.Bundle {
 	if last != nil {
 		etag = last.etag
 	}
-	body, tag, err := a.s.MusicPools(ctx, etag)
+	// The download is the whole household's: it never ends with the asking
+	// request, and has its own timeout.
+	dctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
+	defer cancel()
+	body, tag, err := a.s.MusicPools(dctx, etag)
+	// A request that went away is no failure of the server: no mark.
+	callerGone := ctx.Err() != nil || errors.Is(err, context.Canceled)
 	switch {
 	case errors.Is(err, metadata.ErrNotModified) && last != nil:
 		a.musicv2.cand.Put("tpl:bundle", last, tplBundleTTL, now)
@@ -79,7 +85,9 @@ func (a *API) musicBundle(ctx context.Context, now time.Time) *rowtpl.Bundle {
 			a.musicv2.cand.Put("tpl:bundle", last, 10*time.Minute, now)
 			return last.b
 		}
-		a.musicv2.cand.Put("tpl:fail", true, tplFailTTL, now)
+		if !callerGone {
+			a.musicv2.cand.Put("tpl:fail", true, tplFailTTL, now)
+		}
 		return nil
 	}
 	b, err := rowtpl.ParseBundle(body)
@@ -290,6 +298,43 @@ func (a *API) buildTplPage(ctx context.Context, member int64, kind, slug, region
 	name := b.Names[key].Name
 	tile = MusicCard{Key: key, Kind: "genre", MBID: slug, Name: name, Hue: &hue, Genres: []string{}}
 	return hero, alts, rows, tile, true
+}
+
+// buildTplWorld fills New & Popular ("new") or the world part of Explore
+// ("explore") from the engine: the Spotlight and up to 30 rows. ok is
+// false when the bundle is missing.
+func (a *API) buildTplWorld(ctx context.Context, r *http.Request, kind string, now time.Time) (hero []MusicCard, rows []MusicRow, ok bool) {
+	b := a.musicBundle(ctx, now)
+	if b == nil {
+		return nil, nil, false
+	}
+	member := a.person(r).UserID
+	region := strings.ToUpper(r.URL.Query().Get("region"))
+	if region == "" || region == "GLOBAL" || !isCountry(region) {
+		region = "global"
+	}
+	var lib *rowtpl.Lib
+	if ml, err := a.musicLibrary(ctx, now); err == nil {
+		if acts, err := a.musicActsOf(ctx, member); err == nil {
+			lib = a.musicTplLib(ctx, member, ml, acts, b, now)
+		}
+	}
+	sh := a.musicShelvesOf(ctx, region, now)
+	c := &rowtpl.Ctx{B: b, Kind: kind, Region: strings.ToLower(region), Now: now, Member: member, Lib: lib, Blocks: tplBlocks(sh), CountryName: countryName}
+	if sh != nil {
+		c.Neighbor = sh.Neighbor
+	}
+	for _, i := range rowtpl.Spotlight(c) {
+		hero = append(hero, tplCard(b.Items[i]))
+	}
+	for _, rw := range rowtpl.Build(c) {
+		row := MusicRow{ID: "tpl:" + rw.ID, Type: "tpl_" + strings.ToLower(rw.Template), Title: rw.Title, Reason: rw.Reason, Shape: rw.Shape}
+		for _, i := range rw.Items {
+			row.Items = append(row.Items, tplCard(b.Items[i]))
+		}
+		rows = append(rows, row)
+	}
+	return hero, rows, len(rows) > 0
 }
 
 func kindOfKey(key string) string { k, _, _ := strings.Cut(key, ":"); return k }
