@@ -47,7 +47,7 @@
 	const stripGenres = $derived<StripGenre[]>((answer?.rows ?? []).filter((r) => r.shape === 'tile').flatMap((r) => r.items).map((c) => ({ key: c.key, name: c.name, href: genreHref(c), art: c.image ? (musicImage(c) ?? '') : '', hue: c.hue ?? 0, images: c.images ?? [] })));
 	$effect(() => { genres = stripGenres.length ? stripGenres : browseTiles.map((t) => ({ key: t.key, name: t.name, href: t.href, art: '', hue: t.hue, images: [] })); });
 	// music_lists_v1: the genres row comes as the Browse grid (colour tiles with a tilted cover).
-	const browseTiles = $derived((answer?.rows ?? []).filter((r) => r.shape === 'grid').flatMap((r) => r.items).map((c) => ({ key: c.key, name: c.name, href: genreHref(c), hue: c.hue ?? 0, cover: c.cover ?? '' })));
+	const browseTiles = $derived((answer?.rows ?? []).filter((r) => r.shape === 'grid').flatMap((r) => r.items).map((c) => ({ key: c.key, name: c.name, href: genreHref(c), hue: c.hue ?? 0, cover: c.cover || (c.image ? (musicImage(c) ?? '') : '') })));
 	let chips = $state<string[]>([]);
 	/** The rows' order as first shown this visit (per genre and region), so later answers never move them. */
 	let order: string[] = [];

@@ -538,7 +538,7 @@
 				await loadShelves();
 			} else {
 				const r = await fetchMusicExplore('', 'global');
-				if (plainFor === s && r.v2) musicGenres = r.rows.find((row) => row.shape === 'tile')?.items ?? [];
+				if (plainFor === s && r.v2) musicGenres = (r.rows.find((row) => row.shape === 'tile' || row.shape === 'grid')?.items ?? []).map((c) => (c.image || !c.cover ? c : { ...c, image: c.cover }));
 				if (plainFor === s) plainTiles = musicGenres.length ? [] : musicTiles(r, (g) => to(`/search?kind=music&mgenre=${encodeURIComponent(g)}`), musicImage);
 			}
 		} catch {
