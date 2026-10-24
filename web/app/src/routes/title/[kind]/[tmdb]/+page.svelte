@@ -260,14 +260,42 @@
 						['Box office', money(i.revenue)]
 					];
 		rows.push(['Original title', i.originalTitle ?? '']);
-		// H4: the band takes the hero's facts, so language and country lead the second row.
-		if (look === 'band') rows.unshift(['Language', lang], [countries.length > 1 ? 'Countries' : 'Country', countries.join(', ')]);
 		return rows.filter(([, v]) => v);
 	});
 	const tags = $derived((info?.keywords ?? []).slice(0, 10));
 	const cert = $derived(details ? (rich?.certification ?? certOf(details.rating) ?? '') : '');
 	const lengthWord = $derived(details ? (details.kind === 'show' ? (regular ? `${regular} ${regular === 1 ? 'season' : 'seasons'}` : '') : runtimeWords(details.runtime)) : '');
-	const hasFacts = $derived(look === 'band' || !!(network || makers.length || lang || countries.length));
+ 	// Every detail in one list, in reading order; the grid lays them out in even columns.
+	type Fact = { label: string; kind: 'text' | 'makers' | 'cert' | 'awards'; value: string };
+	const facts = $derived.by((): Fact[] => {
+		if (!details) return [];
+		const d = details;
+		const out: Fact[] = [];
+		const t = (label: string, value: string | number | undefined | null) => value && out.push({ label, kind: 'text', value: String(value) });
+		if (look === 'band') {
+			t('Year', d.year);
+			t(d.kind === 'show' ? 'Seasons' : 'Length', lengthWord);
+			t(d.genres.length > 1 ? 'Genres' : 'Genre', d.genres.join(', '));
+			if (cert) out.push({ label: 'Rated', kind: 'cert', value: cert });
+			if (awardBadges.length) out.push({ label: 'Awards', kind: 'awards', value: awardBadges.join(', ') });
+		}
+		t('Network', network);
+		if (makers.length) out.push({ label: madeBy, kind: 'makers', value: makers.map((m) => m.name).join(', ') });
+		t('Language', lang);
+		t(countries.length > 1 ? 'Countries' : 'Country', countries.join(', '));
+		for (const [k, v] of moreFacts) t(k, v);
+		return out;
+	});
+	// Columns: as many as fit (150 px each, 130 on a phone), at least two. One item alone on the last
+	// row is avoided with one column fewer; when that does not help it spans two columns (factSpan).
+	let gridWidth = $state(0);
+	const factFit = $derived(Math.max(2, Math.floor((gridWidth + 28) / ((gridWidth < 600 ? 130 : 150) + 28)) || 2));
+	const factCols = $derived.by(() => {
+		const n = facts.length;
+		if (n <= factFit) return Math.max(1, n);
+		for (let c = factFit; c >= Math.max(2, factFit - 1); c--) if (n % c !== 1) return c;
+		return factFit;
+	});
 	const crumbs = $derived(details ? [{ href: to('/explore'), label: 'Explore' }, { href: to(detailPath(details.kind, details.tmdb)), label: details.year ? `${details.name} (${details.year})` : details.name }] : []);
 </script>
 
@@ -346,26 +374,6 @@
 		{#snippet story()}
 			{#if d.overview}<p class="lead" data-testid="title-story">{d.overview}</p>{/if}
 		{/snippet}
-		{#snippet facts()}
-			{#if hasFacts}
-				<dl class="inline-facts">
-					{#if look === 'band'}
-						<!-- H4: what the hero's facts line said, with the age rating and the awards. -->
-						{#if d.year}<div><dt>Year</dt><dd>{d.year}</dd></div>{/if}
-						{#if lengthWord}<div><dt>{d.kind === 'show' ? 'Seasons' : 'Length'}</dt><dd>{lengthWord}</dd></div>{/if}
-						{#if d.genres.length}<div><dt>{d.genres.length > 1 ? 'Genres' : 'Genre'}</dt><dd>{d.genres.join(', ')}</dd></div>{/if}
-						{#if cert}<div><dt>Rated</dt><dd><span class="fb cert">{cert}</span></dd></div>{/if}
-						{#if awardBadges.length}<div><dt>Awards</dt><dd class="awards" title={awardsTip(awards)}>{#each awardBadges as b (b)}<span class="fb award"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1h6v2.4a3 3 0 0 1-6 0zM3 2H1.2v.8A2 2 0 0 0 3 4.8M9 2h1.8v.8A2 2 0 0 1 9 4.8M5.3 6.3h1.4v2.2H5.3zM3.6 8.5h4.8V11H3.6z" fill="currentColor" /></svg>{b}</span>{/each}</dd></div>{/if}
-					{/if}
-					{#if network}<div><dt>Network</dt><dd>{network}</dd></div>{/if}
-					{#if makers.length}<div><dt>{madeBy}</dt><dd>{@render names(makers, 3)}</dd></div>{/if}
-					{#if look !== 'band'}
-						{#if lang}<div><dt>Language</dt><dd>{lang}</dd></div>{/if}
-						{#if countries.length}<div><dt>{countries.length > 1 ? 'Countries' : 'Country'}</dt><dd>{countries.join(', ')}</dd></div>{/if}
-					{/if}
-				</dl>
-			{/if}
-		{/snippet}
 		{#snippet trailers()}
 			<TitleTrailers kind={d.kind} tmdb={d.tmdb} title={d.name} videos={rich?.videos ?? []} art={[d.backdrop, ...(rich?.backdrops ?? [])]} />
 		{/snippet}
@@ -375,20 +383,28 @@
 			{/if}
 		{/snippet}
 
-		{#snippet scoresAndFacts()}
-			{#if hasScores}<TitleScores scores={picked.scores} tmdb={picked.tmdb} variant="tiles" />{/if}
-			{#if hasScores && hasFacts}<span class="rule" aria-hidden="true"></span>{/if}
-			{@render facts()}
-		{/snippet}
-
-		<!-- The story, one band of big scores and the details, where to watch, then the trailers. -->
+		<!-- The story; the ratings on their own row, then every detail in one even grid; where to watch; tags; then the trailers. -->
 		<div class="strip">
 			{@render story()}
-			{#if hasScores || hasFacts}<div class="band">{@render scoresAndFacts()}</div>{/if}
-			{#if moreFacts.length}
-				<dl class="inline-facts more-facts" class:alone={!hasScores && !hasFacts} data-testid="title-more-facts">
-					{#each moreFacts as [k, v] (k)}<div><dt>{k}</dt><dd>{v}</dd></div>{/each}
-				</dl>
+			{#if hasScores || facts.length}
+				<div class="infoblock" data-testid="title-info">
+					{#if hasScores}<div class="scores-row"><TitleScores scores={picked.scores} tmdb={picked.tmdb} variant="tiles" /></div>{/if}
+					{#if facts.length}
+						<dl class="facts-grid" style="--cols: {factCols}" bind:clientWidth={gridWidth} data-testid="title-facts">
+							{#each facts as f, i (f.label)}
+								<div class:span={i === facts.length - 1 && facts.length % factCols === 1 && factCols > 1}>
+									<dt>{f.label}</dt>
+									<dd>
+										{#if f.kind === 'makers'}{@render names(makers, 3)}
+										{:else if f.kind === 'cert'}<span class="fb cert">{f.value}</span>
+										{:else if f.kind === 'awards'}<span class="awards" title={awardsTip(awards)}>{#each awardBadges as b (b)}<span class="fb award"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1h6v2.4a3 3 0 0 1-6 0zM3 2H1.2v.8A2 2 0 0 0 3 4.8M9 2h1.8v.8A2 2 0 0 1 9 4.8M5.3 6.3h1.4v2.2H5.3zM3.6 8.5h4.8V11H3.6z" fill="currentColor" /></svg>{b}</span>{/each}</span>
+										{:else}{f.value}{/if}
+									</dd>
+								</div>
+							{/each}
+						</dl>
+					{/if}
+				</div>
 			{/if}
 			{@render where()}
 			{#if tags.length}
@@ -428,27 +444,23 @@
 	.all-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 18px 14px; margin: 0; padding: 0; list-style: none; }
 	.all-grid.people { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
 	/* Linked names read as text until hovered. */
-	.tp :global(.inline-facts a) { color: inherit; text-decoration: none; }
-	.tp :global(.inline-facts a:hover) { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
 	.lbl { color: var(--text-muted); }
 	.lead { max-width: 72ch; margin: 0; font: 400 16px/1.55 var(--font-ui); color: var(--text); }
 	.svc { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
 	.svc li { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 4px 12px 4px 4px; border-radius: 999px; background: var(--surface-2); font: 500 14px/1 var(--font-ui); }
 	.svc img { width: 28px; height: 28px; border-radius: 7px; object-fit: cover; }
-	/* One band of scores and details. */
-	.band { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 32px; padding: 16px 0; border-block: 1px solid var(--line); }
-	.band .inline-facts { padding: 0; border: 0; }
-	.rule { align-self: stretch; width: 1px; background: var(--line); }
-	@media (max-width: 899px) { .rule { display: none; } }
-	/* The details as one row of small columns. */
+	/* The ratings on their own row, then the details in one even grid: columns line up at every width. */
+	.infoblock { display: flex; flex-direction: column; border-block: 1px solid var(--line); }
+	.scores-row { padding: 16px 0; }
+	.scores-row + .facts-grid { border-top: 1px solid var(--line); }
+	.facts-grid { display: grid; grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); gap: 16px 28px; margin: 0; padding: 16px 0; }
+	.facts-grid > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+	.facts-grid > div.span { grid-column: span 2; }
+	.facts-grid dt { color: var(--text-muted); font: 600 11.5px/1.2 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
+	.facts-grid dd { margin: 0; color: var(--text); font: 500 15px/1.35 var(--font-ui); overflow-wrap: anywhere; }
+	.tp :global(.facts-grid a) { color: inherit; text-decoration: none; }
+	.tp :global(.facts-grid a:hover) { text-decoration: underline; text-underline-offset: 3px; }
 	.strip { display: flex; flex-direction: column; gap: 20px; }
-	.inline-facts { display: flex; flex-wrap: wrap; gap: 14px 40px; margin: 0; padding: 16px 0; border-block: 1px solid var(--line); }
-	.inline-facts div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-	.inline-facts dt { color: var(--text-muted); font: 600 11.5px/1.2 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
-	.inline-facts dd { margin: 0; color: var(--text); font: 500 15px/1.35 var(--font-ui); }
-	/* The second row of facts sits under the band, sharing its bottom line. */
-	.more-facts { margin-top: -20px; border-top: 0; padding-top: 14px; }
-	.more-facts.alone { margin-top: 0; border-top: 1px solid var(--line); }
 	.fb { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 7px; border-radius: 5px; border: 1.5px solid currentColor; font: 700 11.5px/1 var(--font-ui); letter-spacing: .03em; white-space: nowrap; }
 	.awards { display: flex; flex-wrap: wrap; gap: 6px; }
 	.fb.award { border-color: rgb(196 150 10 / 70%); color: #a77c00; }
@@ -456,5 +468,4 @@
 	.tagchips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
 	.tagchips li { display: inline-flex; align-items: center; min-height: 30px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--text); font: 500 13px/1 var(--font-ui); }
 	.where-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; font: 500 14px/1 var(--font-ui); }
-	@media (max-width: 767px) { .inline-facts { gap: 12px 24px; } }
 </style>
