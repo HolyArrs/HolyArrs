@@ -40,7 +40,7 @@ var musicV7Head = []string{"new_from", "genres"}
 // musicV7Max is each family's row maximum (others: 1).
 var musicV7Max = map[string]int{"mix": musicscore.MixMax, "because": 4, "genre_shelf": 3, "together": 2,
 	// Row template families (music_lists_v1 engine).
-	"tpl_ch": 5, "tpl_co": 3, "tpl_po": 3, "tpl_nw": 5, "tpl_cl": 5, "tpl_de": 3, "tpl_su": 4, "tpl_cr": 6, "tpl_se": 3, "tpl_ar": 4, "tpl_vi": 1, "tpl_di": 3, "tpl_pe": 6}
+	"tpl_yr": 1, "tpl_ch": 5, "tpl_co": 3, "tpl_po": 3, "tpl_nw": 5, "tpl_cl": 5, "tpl_de": 3, "tpl_su": 4, "tpl_cr": 6, "tpl_se": 3, "tpl_ar": 4, "tpl_vi": 1, "tpl_di": 3, "tpl_pe": 6}
 
 // musicV7Few is the row count a household answers in one response.
 const musicV7Few = 12

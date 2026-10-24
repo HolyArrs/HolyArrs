@@ -351,3 +351,43 @@ func TestTplExploreAndNewMusic(t *testing.T) {
 		t.Fatalf("new & popular: %d engine rows", engine)
 	}
 }
+
+// Every album the engine shows is listed for the picture route (it serves
+// only listed ids), Browse tile covers included.
+func TestTplCardsAreListedForPictures(t *testing.T) {
+	r := tplRig(t)
+	var a tplAnswer
+	if err := json.Unmarshal(r.owner.call("GET", "/api/v1/music/genre/rock?region=US", "", 200), &a); err != nil {
+		t.Fatal(err)
+	}
+	listed := func(kind, id string) bool {
+		r.api.music.mu.Lock()
+		defer r.api.music.mu.Unlock()
+		_, ok := r.api.music.names[kind+"|"+id]
+		return ok
+	}
+	for _, row := range a.Rows {
+		for _, c := range row.Items {
+			if !listed(c.Kind, c.MBID) {
+				t.Fatalf("%s %s (%s) not listed for its picture", c.Kind, c.Name, c.MBID)
+			}
+		}
+	}
+	var tiles struct {
+		Sections []struct {
+			Tiles []struct {
+				Covers []string `json:"covers"`
+			} `json:"tiles"`
+		} `json:"sections"`
+	}
+	_ = json.Unmarshal(r.owner.call("GET", "/api/v1/music/browse-tiles?region=us", "", 200), &tiles)
+	for _, s := range tiles.Sections {
+		for _, tl := range s.Tiles {
+			for _, c := range tl.Covers {
+				if id := strings.TrimPrefix(c, musicArtPrefix+"album/"); !listed("album", id) {
+					t.Fatalf("tile cover %s not listed", id)
+				}
+			}
+		}
+	}
+}

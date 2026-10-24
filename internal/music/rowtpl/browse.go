@@ -42,7 +42,7 @@ var BrowseLayout = []layoutSection{
 	{"genres", "Genres", tiles("genre", "pop", "Pop", "hip-hop", "Hip-hop", "rock", "Rock", "latin", "Latin", "rnb", "R&B", "country", "Country", "dance", "Dance & electronic", "indie", "Indie", "alternative", "Alternative", "metal", "Metal", "kpop", "K-pop", "afro", "Afro", "jazz", "Jazz", "classical", "Classical", "soul-funk", "Soul & funk", "folk", "Folk & acoustic", "reggae", "Reggae & Caribbean", "blues", "Blues", "punk", "Punk", "christian", "Christian & gospel", "soundtracks", "Soundtracks", "kids", "Kids & family")},
 	{"moods", "Moods", tiles("mood", "chill", "Chill", "party", "Party", "love", "Love", "sad", "Sad", "happy", "Happy", "focus", "Focus", "workout", "Workout", "sleep", "Sleep", "romance", "Romance", "energy", "High-energy", "throwback", "Throwback", "feel-good", "Feel-good")},
 	{"seasons", "Celebrations & seasons", tiles("season", "halloween", "Halloween", "christmas", "Christmas", "new-year", "New Year", "valentines", "Valentine's", "summer", "Summer", "dia-de-muertos", "Día de los Muertos", "lunar-new-year", "Lunar New Year", "pride", "Pride", "thanksgiving", "Thanksgiving", "back-to-school", "Back to school", "fall", "Fall", "spring", "Spring")},
-	{"decades", "Decades", tiles("decade", "1960s", "60s", "1970s", "70s", "1980s", "80s", "1990s", "90s", "2000s", "00s", "2010s", "10s", "2020s", "20s")},
+	{"decades", "Decades", tiles("decade", "1960s", "60s", "1970s", "70s", "1980s", "80s", "1990s", "90s", "2000s", "2000s", "2010s", "2010s", "2020s", "2020s")},
 	{"activities", "Activities", tiles("activity", "driving", "Driving", "cooking", "Cooking", "gaming", "Gaming", "studying", "Studying", "party", "Party", "gym", "Gym", "running", "Running", "home", "Chill at home")},
 }
 

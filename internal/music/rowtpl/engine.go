@@ -75,6 +75,7 @@ type Bundle struct {
 	Names   map[string]KeyInfo  `json:"names"`
 
 	byKey    map[string]map[int]Member
+	mainT    map[int]int // best genre fit per item (×1000)
 	artistIx map[string]int
 	albumIx  map[string]int
 	maxL     float64
@@ -100,6 +101,16 @@ func (b *Bundle) index() {
 			}
 		}
 		b.byKey[k] = m
+	}
+	b.mainT = map[int]int{}
+	for k, l := range b.Keys {
+		if strings.HasPrefix(k, "genre:") {
+			for _, x := range l {
+				if x.T > b.mainT[x.I] {
+					b.mainT[x.I] = x.T
+				}
+			}
+		}
 	}
 	b.artistIx, b.albumIx = map[string]int{}, map[string]int{}
 	for i, it := range b.Items {
@@ -247,6 +258,9 @@ func rank01(r int) float64 {
 func (c *Ctx) wp(i int) float64 { return rank01(c.it(i).R[rWeek]) }
 func (c *Ctx) mp(i int) float64 { return rank01(c.it(i).R[rMonth]) }
 func (c *Ctx) yp(i int) float64 { return rank01(c.it(i).R[rThisYear]) }
+
+// mainGenreT is the item's best genre fit.
+func (c *Ctx) mainGenreT(i int) float64 { return float64(c.B.mainT[i]) / 1000 }
 
 // t is the item's fit to a key.
 func (c *Ctx) t(i int, key string) float64 {

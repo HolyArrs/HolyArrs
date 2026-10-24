@@ -45,7 +45,7 @@ var heads = map[byte][]string{
 }
 
 // shortName is a key's name in titles.
-var shortName = map[string]string{"genre:dance": "Dance", "genre:folk": "Folk", "genre:reggae": "Reggae", "genre:christian": "Christian", "genre:kids": "Kids", "genre:soundtracks": "Soundtrack"}
+var shortName = map[string]string{"decade:2000s": "2000s", "decade:2010s": "2010s", "decade:2020s": "2020s", "genre:dance": "Dance", "genre:folk": "Folk", "genre:reggae": "Reggae", "genre:christian": "Christian", "genre:kids": "Kids", "genre:soundtracks": "Soundtrack"}
 
 // forOf is an activity's "for …" phrase.
 var forOf = map[string]string{"activity:driving": "for driving", "activity:cooking": "for cooking", "activity:gaming": "for gaming", "activity:studying": "for studying", "activity:gym": "for the gym", "activity:running": "for running", "activity:home": "for a night in", "activity:party": "for a party"}
@@ -61,6 +61,9 @@ var areas = map[string][]string{
 }
 
 var areaName = map[string]string{"north-america": "North America", "latin-america": "Latin America", "europe": "Europe", "africa": "Africa", "middle-east": "the Middle East", "asia-pacific": "Asia-Pacific"}
+
+// bigMarkets are the largest music markets, in order.
+var bigMarkets = []string{"us", "gb", "de", "jp", "fr", "br", "kr", "ca", "au", "mx", "it", "es", "nl", "se", "in"}
 
 var areaOrder = []string{"north-america", "latin-america", "europe", "africa", "middle-east", "asia-pacific"}
 
@@ -186,6 +189,8 @@ func (c *Ctx) slotValues(tp Tpl) []string {
 			vals = append(vals, x.k)
 		}
 	case "country":
+		// Countries near the viewer first, then the big markets; never an
+		// obscure chart first.
 		r := c.region()
 		count := map[string]int{}
 		src := palb(c)
@@ -199,14 +204,31 @@ func (c *Ctx) slotValues(tp Tpl) []string {
 				}
 			}
 		}
-		for cc := range count {
-			vals = append(vals, cc)
+		near := map[string]bool{}
+		for _, cc := range areas[areaOf(r)] {
+			near[cc] = true
+		}
+		rank := map[string]int{}
+		for i, cc := range bigMarkets {
+			rank[cc] = i + 1
+		}
+		for cc, n := range count {
+			if n >= RowMin && (near[cc] || rank[cc] > 0) {
+				vals = append(vals, cc)
+			}
 		}
 		sort.SliceStable(vals, func(i, j int) bool {
-			if count[vals[i]] != count[vals[j]] {
-				return count[vals[i]] > count[vals[j]]
+			a, b := vals[i], vals[j]
+			if near[a] != near[b] {
+				return near[a]
 			}
-			return vals[i] < vals[j]
+			if rank[a] != rank[b] {
+				if rank[a] == 0 || rank[b] == 0 {
+					return rank[a] != 0
+				}
+				return rank[a] < rank[b]
+			}
+			return a < b
 		})
 		vals = vals[:min(3, len(vals))]
 	case "area":
@@ -281,6 +303,16 @@ func (c *Ctx) slotValues(tp Tpl) []string {
 			return nil
 		}
 		for _, s := range c.Lib.Seeds {
+			// On a Browse page the seed must belong to the page's key.
+			if c.Key != "" {
+				i, ok := c.B.artistIx[s.ID]
+				if !ok {
+					continue
+				}
+				if _, in := c.B.byKey[c.Key][i]; !in {
+					continue
+				}
+			}
 			vals = append(vals, s.ID)
 		}
 	case "thisyear":

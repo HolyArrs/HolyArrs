@@ -382,7 +382,31 @@ func (a *API) buildTplWorld(ctx context.Context, r *http.Request, kind string, n
 		}
 		rows = append(rows, row)
 	}
+	a.rememberMusicCards(rows, hero...)
 	return hero, rows, len(rows) > 0
+}
+
+// tplRememberCovers lists the albums behind Browse tile covers, so the
+// picture route serves them (and fetches them ahead).
+func (a *API) tplRememberCovers(b *rowtpl.Bundle, secs []rowtpl.BrowseSection) {
+	byID := map[string]rowtpl.Item{}
+	for _, it := range b.Items {
+		if it.Kind == "a" {
+			byID[it.ID] = it
+		}
+	}
+	var names []nameKey
+	for _, s := range secs {
+		for _, t := range s.Tiles {
+			for _, c := range t.Covers {
+				id := strings.TrimPrefix(c, musicArtPrefix+"album/")
+				if it, ok := byID[id]; ok {
+					names = append(names, nameKey{kind: "album", mbid: id, name: it.Title, artist: it.Artist})
+				}
+			}
+		}
+	}
+	a.rememberMusicNames(names)
 }
 
 // tplExploreCands answers the engine's Explore candidates (world rows and
@@ -516,6 +540,13 @@ func (a *API) serveTplPage(w http.ResponseWriter, r *http.Request, kind, slug st
 			"tile": tile, "hero": nil, "rows": []MusicRow{}, "thin": true, "similar": a.tplThin(ctx, tile.Key, region, now)})
 		return true
 	}
+	// The picture route serves only listed albums and artists: list these
+	// (and fetch their pictures ahead).
+	extra := append([]MusicCard{}, alts...)
+	if hero != nil {
+		extra = append(extra, *hero)
+	}
+	a.rememberMusicCards(rows, extra...)
 	a.exploreCaching(w, r, "private, no-cache")
 	writeJSON(w, http.StatusOK, map[string]any{"v2": true, "kid": false, "cold": false, "genres": []string{}, "genre": slug, "kind": kind, "region": region, "regions": []string{},
 		"tile": tile, "hero": hero, "hero_alts": alts, "rows": rows})
@@ -552,5 +583,7 @@ func (a *API) musicBrowseTiles(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	a.exploreCaching(w, r, "private, no-cache")
-	writeJSON(w, http.StatusOK, map[string]any{"sections": a.tplVisible(ctx, b, region, lib, now)})
+	secs := a.tplVisible(ctx, b, region, lib, now)
+	a.tplRememberCovers(b, secs)
+	writeJSON(w, http.StatusOK, map[string]any{"sections": secs})
 }

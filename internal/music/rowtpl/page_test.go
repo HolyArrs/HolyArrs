@@ -325,3 +325,47 @@ func TestTitleNames(t *testing.T) {
 		}
 	}
 }
+
+func TestAtMostOneSingleYearRowPerPage(t *testing.T) {
+	for _, k := range []string{"genre:rock", "decade:1990s", "mood:chill"} {
+		c := pageCtx(fakeBundle(), kindOf(k), k)
+		n := 0
+		for _, r := range Build(c) {
+			if r.Family == "yr" {
+				n++
+			}
+		}
+		if n > 1 {
+			t.Fatalf("%s: %d single-year rows", k, n)
+		}
+	}
+}
+
+func TestCountryRowsPickNearOrBigMarkets(t *testing.T) {
+	c := pageCtx(fakeBundle(), "genre", "genre:rock")
+	for _, v := range c.slotValues(Catalog[indexOf("D05")]) {
+		near := false
+		for _, cc := range areas[areaOf("us")] {
+			near = near || cc == v
+		}
+		big := false
+		for _, cc := range bigMarkets {
+			big = big || cc == v
+		}
+		if !near && !big {
+			t.Fatalf("country %s is neither near nor a big market", v)
+		}
+	}
+}
+
+func TestSeedsBelongToThePage(t *testing.T) {
+	b := fakeBundle()
+	c := pageCtx(b, "genre", "genre:rock")
+	c.Lib = &Lib{Artists: map[string]float64{"ar001": 1}, Seeds: []Seed{{ID: "ar001", Name: "In"}, {ID: "zz-outside", Name: "Out"}}}
+	vals := c.slotValues(Catalog[indexOf("G13")])
+	for _, v := range vals {
+		if v == "zz-outside" {
+			t.Fatal("a seed outside the page's genre was used")
+		}
+	}
+}

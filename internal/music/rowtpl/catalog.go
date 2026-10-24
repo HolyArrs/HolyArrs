@@ -68,11 +68,19 @@ func (x Tpl) only(keys ...string) Tpl {
 }
 
 // familyMax caps rows per family on one page (personal: 10 on Explore).
-var familyMax = map[string]int{"ch": 5, "co": 3, "po": 3, "nw": 5, "cl": 5, "de": 3, "su": 4, "cr": 6, "se": 3, "ar": 4, "vi": 1, "di": 3, "pe": 6}
+var familyMax = map[string]int{"yr": 1, "ch": 5, "co": 3, "po": 3, "nw": 5, "cl": 5, "de": 3, "su": 4, "cr": 6, "se": 3, "ar": 4, "vi": 1, "di": 3, "pe": 6}
 
 // ---- fill helpers ----
 
-func pool(c *Ctx) L           { return c.key(c.Key) }
+func pool(c *Ctx) L {
+	l := c.key(c.Key)
+	if kindOf(c.Key) == "genre" {
+		// A genre page keeps items whose main genre it is (or nearly): an
+		// album tagged k-pop first and rap second stays on the K-pop page.
+		l = c.where(l, func(i int) bool { return c.t(i, c.Key) >= 0.9*c.mainGenreT(i) })
+	}
+	return l
+}
 func palb(c *Ctx) L           { return c.albums(pool(c)) }
 func part(c *Ctx) L           { return c.artists(pool(c)) }
 func kalb(c *Ctx, k string) L { return c.albums(c.key(k)) }
@@ -564,7 +572,7 @@ var Catalog = []Tpl{
 		fill(func(c *Ctx, _ string) L { return c.byLP(c.ageIn(palb(c), 5, 15)) }),
 	t("F05", "de", 0.5, "G", "{genre} from the {decade}", "Long-loved {genre} albums from the {decade}", "the genre's albums in a decade", "listens", "", "W").slot("decade", 3).
 		fill(func(c *Ctx, v string) L { return c.byLP(c.in(palb(c), v)) }),
-	t("F06", "cl", 0.5, "G", "Turning {n} this year: {genre}", "{genre} albums released {n} years ago", "the genre's albums from one year", "listens", "anniversary year", "Y").slot("n", 1).
+	t("F06", "yr", 0.5, "G", "Turning {n} this year: {genre}", "{genre} albums released {n} years ago", "the genre's albums from one year", "listens", "anniversary year", "Y").slot("n", 1).
 		fill(func(c *Ctx, v string) L { return c.byLP(c.inYear(palb(c), c.Now.Year()-atoi(v))) }),
 	t("F07", "di", 0.5, "G", "Hidden gems in {genre}", "Well liked by those who play them, less played overall", "the genre's mid-listened albums with loyal listeners", "0.5 fit + 0.5 novelty", "not had", "W").disc().
 		fill(func(c *Ctx, _ string) L {
@@ -587,7 +595,7 @@ var Catalog = []Tpl{
 		}),
 	t("F13", "cl", 0.4, "G", "Great first albums in {genre}", "Debut {genre} albums with the most listeners", "the genre's debut albums", "listens", "debuts", "W").
 		fill(func(c *Ctx, _ string) L { return c.byLP(c.debuts(palb(c))) }),
-	t("F14", "de", 0.4, "G", "{genre} in {year}", "The {genre} albums from {year} with the most listeners", "the genre's albums from one year", "listens", "", "W").slot("year", 2).
+	t("F14", "yr", 0.4, "G", "{genre} in {year}", "The {genre} albums from {year} with the most listeners", "the genre's albums from one year", "listens", "", "W").slot("year", 2).
 		fill(func(c *Ctx, v string) L { return c.byLP(c.inYear(palb(c), atoi(v))) }),
 
 	// ---- G. Genre page: styles, crossovers, people ----
@@ -746,7 +754,7 @@ var Catalog = []Tpl{
 		fill(func(c *Ctx, _ string) L { return c.byLP(palb(c)) }),
 	t("J02", "cr", 0.7, "D", "{decade} {genre} greats", "The {decade} {genre} albums with the most listeners", "the decade's albums in a genre", "listens", "", "W").cross(map[byte]string{'D': "genre"}, 6).
 		fill(func(c *Ctx, v string) L { return c.byLP(c.in(palb(c), v)) }),
-	t("J03", "de", 0.6, "D", "Biggest albums of {year}", "The {year} albums with the most listeners", "the albums of one year", "listens", "", "W").slot("year", 3).
+	t("J03", "yr", 0.6, "D", "Biggest albums of {year}", "The {year} albums with the most listeners", "the albums of one year", "listens", "", "W").slot("year", 3).
 		fill(func(c *Ctx, v string) L { return c.byLP(c.inYear(palb(c), atoi(v))) }),
 	t("J04", "ar", 0.6, "D", "{decade} icons", "Artists whose most-played albums came out in the {decade}", "artists by the year of their top album", "artist listens", "", "W").round().
 		fill(func(c *Ctx, _ string) L {
@@ -766,7 +774,7 @@ var Catalog = []Tpl{
 		fill(func(c *Ctx, _ string) L { return c.byLP(c.typ(palb(c), "EP")) }),
 	t("J09", "di", 0.5, "D", "{decade} hidden gems", "Well liked by those who play them, less played, from the {decade}", "the decade's mid-listened albums with loyal listeners", "0.5 fit + 0.5 novelty", "not had", "W").disc().
 		fill(gems),
-	t("J10", "cl", 0.5, "D", "{decade} albums turning {n}", "{decade} albums released {n} years ago", "the decade's albums from one year", "listens", "anniversary year", "Y").slot("n", 1).
+	t("J10", "yr", 0.5, "D", "{decade} albums turning {n}", "{decade} albums released {n} years ago", "the decade's albums from one year", "listens", "anniversary year", "Y").slot("n", 1).
 		fill(func(c *Ctx, v string) L { return c.byLP(c.inYear(palb(c), c.Now.Year()-atoi(v))) }),
 	t("J11", "ch", 0.5, "D", "{decade} on the charts now", "{decade} albums charting today", "the decade's albums on any chart", "popularity", "", "D").chart().
 		fill(func(c *Ctx, _ string) L { return c.byP(c.onAnyChart(palb(c))) }),
@@ -834,7 +842,7 @@ var Catalog = []Tpl{
 		fill(weekPlayed),
 	t("M02", "cl", 0.5, "M", "Modern {mood} classics", "Long-loved albums from the last 5 to 15 years, {basis}", "the mood's albums 5 to 15 years old", "listens", "5 to 15 years old", "W").
 		fill(modern),
-	t("M03", "de", 0.4, "M", "{mood} in {year}", "The {year} albums with the most listeners, {basis}", "the mood's albums from one year", "listens", "", "W").slot("year", 2).
+	t("M03", "yr", 0.4, "M", "{mood} in {year}", "The {year} albums with the most listeners, {basis}", "the mood's albums from one year", "listens", "", "W").slot("year", 2).
 		fill(func(c *Ctx, v string) L { return c.byLP(c.inYear(palb(c), atoi(v))) }),
 	t("M04", "cl", 0.4, "M", "{mood} debut albums", "Debut albums with the most listeners, {basis}", "the mood's debut albums", "listens", "debuts", "W").
 		fill(func(c *Ctx, _ string) L { return c.byLP(c.debuts(palb(c))) }),
@@ -851,7 +859,7 @@ var Catalog = []Tpl{
 		fill(weekPlayed),
 	t("S02", "cl", 0.5, "S", "Modern {season} classics", "Long-loved albums from the last 5 to 15 years, {basis}", "the season's albums 5 to 15 years old", "listens", "5 to 15 years old", "W").
 		fill(modern),
-	t("S03", "de", 0.4, "S", "{season} in {year}", "The {year} albums with the most listeners, {basis}", "the season's albums from one year", "listens", "", "W").slot("year", 3).
+	t("S03", "yr", 0.4, "S", "{season} in {year}", "The {year} albums with the most listeners, {basis}", "the season's albums from one year", "listens", "", "W").slot("year", 3).
 		fill(func(c *Ctx, v string) L { return c.byLP(c.inYear(palb(c), atoi(v))) }),
 	t("S04", "cl", 0.4, "S", "{season} debut albums", "Debut albums with the most listeners, {basis}", "the season's debut albums", "listens", "debuts", "W").
 		fill(func(c *Ctx, _ string) L { return c.byLP(c.debuts(palb(c))) }),
@@ -868,7 +876,7 @@ var Catalog = []Tpl{
 		fill(weekPlayed),
 	t("V02", "cl", 0.5, "A", "Modern classics {for}", "Long-loved albums from the last 5 to 15 years, in styles that suit {activity}", "the activity's albums 5 to 15 years old", "listens", "5 to 15 years old", "W").
 		fill(modern),
-	t("V03", "de", 0.4, "A", "{year} picks {for}", "The {year} albums with the most listeners, in styles that suit {activity}", "the activity's albums from one year", "listens", "", "W").slot("year", 2).
+	t("V03", "yr", 0.4, "A", "{year} picks {for}", "The {year} albums with the most listeners, in styles that suit {activity}", "the activity's albums from one year", "listens", "", "W").slot("year", 2).
 		fill(func(c *Ctx, v string) L { return c.byLP(c.inYear(palb(c), atoi(v))) }),
 	t("V04", "cl", 0.4, "A", "First albums {for}", "Debut albums with the most listeners, in styles that suit {activity}", "the activity's debut albums", "listens", "debuts", "W").
 		fill(func(c *Ctx, _ string) L { return c.byLP(c.debuts(palb(c))) }),

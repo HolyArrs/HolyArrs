@@ -624,15 +624,6 @@ func (a *API) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
 	// catalog (kill switch music_rows_tpl_off keeps the list rows).
 	if a.musicTplOn() {
 		if hero, rows, ok := a.buildTplWorld(ctx, r, "new", now); ok {
-			var names []nameKey
-			for _, row := range append([]MusicRow{{Items: hero}}, rows...) {
-				for _, c := range row.Items {
-					if c.Kind == "album" {
-						names = append(names, nameKey{"album", c.MBID, c.Name, c.Artist, ""})
-					}
-				}
-			}
-			a.rememberMusicNames(names)
 			a.exploreCaching(w, r, "private, no-cache")
 			writeJSON(w, http.StatusOK, map[string]any{"kid": false, "building": false, "hero": hero, "rows": rows, "genres": musicNewTopics(rows, hero)})
 			return
