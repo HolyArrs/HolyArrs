@@ -4,14 +4,19 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 )
+
+// signedVariants is how many variants the fake's freshly signed manifest lists.
+const signedVariants = 400
 
 // fakeYouTube plays YouTube's video servers for the relay: every
 // *.googlevideo.com address is sent to it. release holds the second half
@@ -19,8 +24,19 @@ import (
 func fakeYouTube(t *testing.T) (release chan struct{}) {
 	t.Helper()
 	release = make(chan struct{})
+	var signed atomic.Int32
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
+		case strings.Contains(r.URL.Path, "/hls_variant/signed/"):
+			// Like YouTube: every fetch signs its addresses afresh.
+			sig := signed.Add(1)
+			w.Header().Set("Content-Type", "application/vnd.apple.mpegurl")
+			var sb strings.Builder
+			sb.WriteString("#EXTM3U\n")
+			for i := range signedVariants {
+				fmt.Fprintf(&sb, "#EXT-X-STREAM-INF:BANDWIDTH=1000\nhttps://manifest.googlevideo.com/api/manifest/hls_playlist/id/x/itag/%d/sig/%d/index.m3u8\n", i, sig)
+			}
+			_, _ = w.Write([]byte(sb.String()))
 		case strings.Contains(r.URL.Path, "/hls_variant/"):
 			w.Header().Set("Content-Type", "application/vnd.apple.mpegurl")
 			_, _ = w.Write([]byte("#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1000,CODECS=\"avc1.4d401f,mp4a.40.2\"\nhttps://manifest.googlevideo.com/api/manifest/hls_playlist/id/x/itag/95/index.m3u8\n"))
@@ -159,15 +175,39 @@ func TestTrailerPassThroughRefusals(t *testing.T) {
 	evil := a.trailerRelay.register(a.person(httptest.NewRequest("GET", "/", nil)).UserID, "https://manifest.googlevideo.com/evil/index.m3u8", time.Now().Add(time.Hour))
 	do(t, "GET", srv.URL+"/api/v1/trailer/stream/"+evil+"/manifest.m3u8", "", 502)
 	base2, _ := url.Parse("https://manifest.googlevideo.com/a/b.m3u8")
-	if _, err := rewriteM3U8([]byte("#EXTM3U\n#EXT-X-MEDIA:TYPE=AUDIO,URI=\"https://evil.example.com/a.m3u8\"\n"), base2, "seg/", func(string) (int, bool) { return 0, true }); err == nil {
+	if _, err := rewriteM3U8([]byte("#EXTM3U\n#EXT-X-MEDIA:TYPE=AUDIO,URI=\"https://evil.example.com/a.m3u8\"\n"), base2, "seg/", func(string) int { return 0 }); err == nil {
 		t.Fatal("foreign URI attribute kept")
 	}
-	if _, err := rewriteM3U8([]byte("<html>"), base2, "seg/", func(string) (int, bool) { return 0, true }); err == nil {
+	if _, err := rewriteM3U8([]byte("<html>"), base2, "seg/", func(string) int { return 0 }); err == nil {
 		t.Fatal("not a playlist kept")
 	}
 	// Expired streams are gone.
 	old := a.trailerRelay.register(0, "https://manifest.googlevideo.com/api/manifest/hls_variant/old/index.m3u8", time.Now().Add(-time.Minute))
 	do(t, "GET", srv.URL+"/api/v1/trailer/stream/"+old+"/manifest.m3u8", "", 404)
+}
+
+// YouTube signs a manifest's addresses afresh on every fetch, so every play
+// brings new ones. A stream keeps the ones used last and lets the oldest go:
+// a replay is never refused, and a number let go answers 404, never another
+// address.
+func TestTrailerPassThroughReplays(t *testing.T) {
+	fakeYouTube(t)
+	srv, a := proxyRig(t)
+	id := a.trailerRelay.register(a.person(httptest.NewRequest("GET", "/", nil)).UserID, "https://manifest.googlevideo.com/api/manifest/hls_variant/signed/index.m3u8", time.Now().Add(time.Hour))
+	base := srv.URL + "/api/v1/trailer/stream/" + id + "/"
+	do(t, "GET", base+"manifest.m3u8", "", 200)
+	var last string
+	for range 2 * proxyMaxURLs / signedVariants {
+		list := strings.Split(strings.TrimSpace(string(do(t, "GET", base+"manifest.m3u8", "", 200))), "\n")
+		last = list[len(list)-1]
+		// The first play's first variant stays in use.
+		do(t, "GET", base+"seg/0", "", 200)
+	}
+	if n := len(a.trailerRelay.streams[id].index); n > proxyMaxURLs {
+		t.Fatalf("stream holds %d addresses", n)
+	}
+	do(t, "GET", base+last, "", 200)
+	do(t, "GET", base+"seg/1", "", 404)
 }
 
 // A person may have proxyStreams streams going at once; an idle one frees

@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"container/list"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
@@ -31,7 +32,7 @@ const (
 	proxyTimeout   = 60 * time.Second // one relayed request, start to end
 	proxyMaxBody   = 64 << 20         // one relayed answer
 	proxyMaxList   = 2 << 20          // one playlist
-	proxyMaxURLs   = 5000             // addresses one stream may hold
+	proxyMaxURLs   = 5000             // addresses one stream keeps (the one used longest ago goes first)
 	proxyMaxStream = 1 << 30          // bytes one stream may relay in all
 	proxyMaxActive = 12               // streams the whole install may have going at once
 	proxyLife      = 20 * time.Minute // how long one stream may relay, from its first request
@@ -53,12 +54,19 @@ type proxyStream struct {
 	user     int64
 	manifest string
 	expires  time.Time
-	urls     []string
-	index    map[string]int
+	addrs    map[int]*list.Element // its addresses by number
+	index    map[string]int        // its numbers by address
+	recent   list.List             // its addresses, the one used longest ago first
+	next     int                   // the number the next address gets
 	last     time.Time
 	sent     int64
 	started  time.Time
 	busy     int // its requests in flight
+}
+
+type proxyAddr struct {
+	n   int
+	url string
 }
 
 // proxyUse is a person's relayed bytes in the current span; a stream's idle
@@ -102,7 +110,7 @@ func (p *trailerProxy) register(user int64, manifest string, expires time.Time) 
 	b := make([]byte, 16)
 	_, _ = rand.Read(b)
 	id := hex.EncodeToString(b)
-	p.streams[id] = &proxyStream{user: user, manifest: manifest, expires: expires, index: map[string]int{}}
+	p.streams[id] = &proxyStream{user: user, manifest: manifest, expires: expires, addrs: map[int]*list.Element{}, index: map[string]int{}}
 	p.byKey[k] = id
 	return id
 }
@@ -174,50 +182,61 @@ func (p *trailerProxy) done(user int64, s *proxyStream, sent int64) {
 	s.last = time.Now()
 }
 
-// address is the stream's n-th address.
+// address is the stream's n-th address; using it keeps it longer.
 func (p *trailerProxy) address(s *proxyStream, n int) (string, bool) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if n < 0 || n >= len(s.urls) {
+	e := s.addrs[n]
+	if e == nil {
 		return "", false
 	}
-	return s.urls[n], true
+	s.recent.MoveToBack(e)
+	return e.Value.(proxyAddr).url, true
 }
 
-// add keeps an address for the stream and answers its number.
-func (p *trailerProxy) add(s *proxyStream, abs string) (int, bool) {
+// add keeps an address for the stream and answers its number. YouTube signs
+// a playlist's addresses afresh on every fetch, so every play brings new
+// ones: past proxyMaxURLs the one used longest ago goes. A number is never
+// given twice, so one let go answers 404, never another address.
+func (p *trailerProxy) add(s *proxyStream, abs string) int {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if n, ok := s.index[abs]; ok {
-		return n, true
+		s.recent.MoveToBack(s.addrs[n])
+		return n
 	}
-	if len(s.urls) >= proxyMaxURLs {
-		return 0, false
+	if s.recent.Len() >= proxyMaxURLs {
+		old := s.recent.Remove(s.recent.Front()).(proxyAddr)
+		delete(s.addrs, old.n)
+		delete(s.index, old.url)
 	}
-	s.urls = append(s.urls, abs)
-	s.index[abs] = len(s.urls) - 1
-	return len(s.urls) - 1, true
+	n := s.next
+	s.next++
+	s.addrs[n] = s.recent.PushBack(proxyAddr{n: n, url: abs})
+	s.index[abs] = n
+	return n
 }
 
 var m3u8URI = regexp.MustCompile(`URI="([^"]*)"`)
 
 // rewriteM3U8 points every address in a playlist at the relay: each one is
 // resolved against base, must be on YouTube's video servers, and becomes
-// prefix+<number>. A foreign address refuses the whole playlist.
-func rewriteM3U8(body []byte, base *url.URL, prefix string, add func(abs string) (int, bool)) ([]byte, error) {
+// prefix+<number>. A foreign address, or more than a stream keeps, refuses
+// the whole playlist.
+func rewriteM3U8(body []byte, base *url.URL, prefix string, add func(abs string) int) ([]byte, error) {
 	if !bytes.HasPrefix(bytes.TrimSpace(body), []byte("#EXTM3U")) {
 		return nil, errors.New("not a playlist")
 	}
+	count := 0
 	swap := func(ref string) (string, error) {
 		u, err := base.Parse(strings.TrimSpace(ref))
 		if err != nil || !googlevideo(u.String()) {
 			return "", errors.New("foreign address")
 		}
-		n, ok := add(u.String())
-		if !ok {
+		if count++; count > proxyMaxURLs {
 			return "", errors.New("too many addresses")
 		}
-		return prefix + strconv.Itoa(n), nil
+		return prefix + strconv.Itoa(add(u.String())), nil
 	}
 	var out bytes.Buffer
 	var bad error
@@ -318,7 +337,7 @@ func (a *API) relayPlaylist(w http.ResponseWriter, s *proxyStream, res *http.Res
 		return 0
 	}
 	base, _ := url.Parse(raw)
-	out, err := rewriteM3U8(body, base, prefix, func(abs string) (int, bool) { return a.trailerRelay.add(s, abs) })
+	out, err := rewriteM3U8(body, base, prefix, func(abs string) int { return a.trailerRelay.add(s, abs) })
 	if err != nil {
 		fail(w, http.StatusBadGateway, "trailer playlist refused")
 		return 0
