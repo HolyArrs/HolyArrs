@@ -306,7 +306,7 @@
 			{/if}
 		{/snippet}
 		{#snippet trailers()}
-			<TitleTrailers kind={d.kind} tmdb={d.tmdb} title={d.name} videos={rich?.videos ?? []} art={[d.backdrop, ...(rich?.backdrops ?? [])]} layout={look} />
+			<TitleTrailers kind={d.kind} tmdb={d.tmdb} title={d.name} videos={rich?.videos ?? []} art={[d.backdrop, ...(rich?.backdrops ?? [])]} item={look === 'small' ? '220px' : '200px'} />
 		{/snippet}
 		{#snippet where()}
 			{#if info?.streaming.length}
@@ -314,20 +314,33 @@
 			{/if}
 		{/snippet}
 
-		<!-- The story, one band of big scores and the details, then where to watch. -->
-		<div class="strip">
+		{#snippet scoresAndFacts()}
+			{#if hasScores}<TitleScores scores={outside} tmdb={tmdbScore} variant="tiles" />{/if}
+			{#if hasScores && hasFacts}<span class="rule" aria-hidden="true"></span>{/if}
+			{@render facts()}
+		{/snippet}
+
+		{#if look !== 'small' && rich?.videos.length}
+			<!-- V2 / V3: the story, then one row split in half: the trailers on one side, the ratings, details and where to watch in a rounded panel on the other. -->
 			{@render story()}
-			{#if hasScores || hasFacts}
-				<div class="band">
-					{#if hasScores}<TitleScores scores={outside} tmdb={tmdbScore} variant="tiles" />{/if}
-					{#if hasScores && hasFacts}<span class="rule" aria-hidden="true"></span>{/if}
-					{@render facts()}
-				</div>
-			{/if}
-			{@render where()}
-			{#if look === 'chips'}{@render trailers()}{/if}
-		</div>
-		{#if look !== 'chips'}{@render trailers()}{/if}
+			<div class="split" class:flip={look === 'right'}>
+				<div class="split-trailers">{@render trailers()}</div>
+				{#if hasScores || hasFacts || info?.streaming.length}
+					<div class="info-panel">
+						{#if hasScores || hasFacts}<div class="panel-band">{@render scoresAndFacts()}</div>{/if}
+						{@render where()}
+					</div>
+				{/if}
+			</div>
+		{:else}
+			<!-- V1: the story, one band of big scores and the details, where to watch, then a row of small trailer cards. -->
+			<div class="strip">
+				{@render story()}
+				{#if hasScores || hasFacts}<div class="band">{@render scoresAndFacts()}</div>{/if}
+				{@render where()}
+			</div>
+			{@render trailers()}
+		{/if}
 		{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
 		{@render castRow()}
 		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} />
@@ -367,6 +380,17 @@
 	.svc { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
 	.svc li { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 4px 12px 4px 4px; border-radius: 999px; background: var(--surface-2); font: 500 14px/1 var(--font-ui); }
 	.svc img { width: 28px; height: 28px; border-radius: 7px; object-fit: cover; }
+	/* V2 / V3: trailers and the info panel side by side. */
+	.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+	.split.flip .split-trailers { order: 2; }
+	.split-trailers { min-width: 0; }
+	/* Inside half a row the trailer row stays in its own column (no bleed into the gutter). */
+	.split-trailers :global(.ui-shelf .row) { margin-inline: 0; padding-inline: 0; scroll-padding-inline: 0; }
+	.info-panel { display: flex; flex-direction: column; gap: 16px; padding: 18px 20px; border-radius: 22px; background: var(--surface-1); border: 1px solid var(--line); }
+	.panel-band { display: flex; flex-wrap: wrap; gap: 16px 28px; }
+	.panel-band .rule { display: none; }
+	.panel-band .inline-facts { width: 100%; padding: 14px 0 0; border: 0; border-top: 1px solid var(--line); gap: 12px 28px; }
+	@media (max-width: 899px) { .split { grid-template-columns: minmax(0, 1fr); } .split.flip .split-trailers { order: 0; } }
 	/* One band of scores and details. */
 	.band { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 32px; padding: 16px 0; border-block: 1px solid var(--line); }
 	.band .inline-facts { padding: 0; border: 0; }

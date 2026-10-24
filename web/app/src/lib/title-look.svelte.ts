@@ -1,21 +1,19 @@
 // Where a title page shows its trailers while Luis compares the options
-// (?look=row|feature|chips). The choice is kept per browser so every title
+// (?look=small|left|right). The choice is kept per browser so every title
 // opens with the same option.
-import type { TrailerLayout } from './TitleTrailers.svelte';
-
-export type TitleLook = TrailerLayout;
+export type TitleLook = 'small' | 'left' | 'right';
 
 export const TITLE_LOOKS: { value: TitleLook; label: string }[] = [
-	{ value: 'row', label: 'T1 · Row' },
-	{ value: 'feature', label: 'T2 · Featured' },
-	{ value: 'chips', label: 'T3 · Pills' }
+	{ value: 'small', label: 'V1 · Small row' },
+	{ value: 'left', label: 'V2 · Left' },
+	{ value: 'right', label: 'V3 · Right' }
 ];
 
-const KEY = 'holyarrs.trailer-look';
-const known = (v: string | null): v is TitleLook => v === 'row' || v === 'feature' || v === 'chips';
+const KEY = 'holyarrs.trailer-look-2';
+const known = (v: string | null): v is TitleLook => v === 'small' || v === 'left' || v === 'right';
 
 function first(): TitleLook {
-	if (typeof window === 'undefined') return 'row';
+	if (typeof window === 'undefined') return 'small';
 	const q = new URLSearchParams(location.search).get('look');
 	if (known(q)) return q;
 	try {
@@ -24,7 +22,7 @@ function first(): TitleLook {
 	} catch {
 		/* No storage: the default option. */
 	}
-	return 'row';
+	return 'small';
 }
 
 export const titleLook = $state({ value: first() });
