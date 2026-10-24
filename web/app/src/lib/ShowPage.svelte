@@ -33,9 +33,8 @@
 	import TitleCast from './TitleCast.svelte';
 	import TitleRows from './TitleRows.svelte';
 	import LibrarySection from './ui/LibrarySection.svelte';
-	import { artName, crumbFor, pageSections, qualityBadges, slotKind } from './title-page.ts';
+	import { artName, crumbFor, qualityBadges, slotKind } from './title-page.ts';
 	import { audienceStatus } from './title-status.ts';
-	import SectionNav from './ui/SectionNav.svelte';
 	import TitleSection from './ui/TitleSection.svelte';
 	import './title-page.css';
 	import { session } from './session.svelte.ts';
@@ -491,8 +490,6 @@
 {#if !staff && session.can('ask')}<AskShowDialog bind:this={asker} onasked={asked} />{/if}
 
 {#if loadErr || error}<LoadError hasData message={loadErr || error} onretry={() => void retry()} busy={retrying} />{/if}
-
-<SectionNav items={pageSections('show', { manage: staff })} />
 
 <section class="tp-section" aria-labelledby="h-seasons">
 	<div class="tp-head">

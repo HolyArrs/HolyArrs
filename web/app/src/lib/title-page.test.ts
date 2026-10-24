@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { artName, crumbFor, pageSections, qualityBadges, similarTitles } from './title-page.ts';
+import { artName, crumbFor, qualityBadges, similarTitles } from './title-page.ts';
 import type { SlotView } from './types.ts';
 
 const slot = (s: Partial<SlotView>): SlotView => ({ id: 1, version: 'Main', version_id: 1, state: 'wanted', state_label: '', ...s });
@@ -38,21 +38,5 @@ describe('title page helpers', () => {
 
 	it('shares the poster transition name', () => {
 		expect(artName(12)).toBe('title-art-12');
-	});
-});
-
-describe('title page sections', () => {
-	it('lists a movie page in page order, with the staff sections for staff', () => {
-		expect(pageSections('movie', { manage: true }).map((s) => s.label)).toEqual(['Where to watch', 'Cast', 'Ratings & reviews', 'Collection', 'More like this', 'More from', 'About', 'Library']);
-	});
-	it('leaves the manager Library section out for requesters', () => {
-		expect(pageSections('movie', { manage: false }).map((s) => s.id)).toEqual(['title-where', 'title-cast', 'title-reviews', 'title-collection', 'title-similar', 'title-more-from', 'h-about']);
-		expect(pageSections('artist', { manage: false }).map((s) => s.id)).not.toContain('h-library');
-	});
-	it('starts a show page with its episodes and keeps Library last', () => {
-		const ids = pageSections('show', { manage: true }).map((s) => s.id);
-		expect(ids[0]).toBe('h-seasons');
-		expect(ids.at(-1)).toBe('h-library');
-		expect(pageSections('album', { manage: false }).map((s) => s.label)).toEqual(['Tracks', 'More by the artist', 'About']);
 	});
 });

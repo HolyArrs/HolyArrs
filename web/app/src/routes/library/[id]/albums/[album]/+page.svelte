@@ -14,12 +14,11 @@
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import type { MenuItem } from '#lib/ui/Menu.svelte';
-	import SectionNav from '#lib/ui/SectionNav.svelte';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import LibrarySection from '#lib/ui/LibrarySection.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
-	import { crumbFor, pageSections } from '#lib/title-page.ts';
+	import { crumbFor } from '#lib/title-page.ts';
 	import { audienceStatus } from '#lib/title-status.ts';
 	import { reducedMotion } from '#lib/motion.ts';
 	import '#lib/title-page.css';
@@ -234,8 +233,6 @@
 				{/if}
 			{/snippet}
 		</TitleHero>
-
-		<SectionNav items={pageSections('album', { manage: staff })} />
 
 		<TitleSection id="h-tracks" title="Tracks" primary>
 			{#if !tracks?.length}

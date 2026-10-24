@@ -19,8 +19,6 @@
 	import FollowButton from '#lib/ui/FollowButton.svelte';
 	import type { InfoDetails } from '#lib/title-info.ts';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
-	import SectionNav from '#lib/ui/SectionNav.svelte';
-	import { pageSections } from '#lib/title-page.ts';
 	import { tmdbArtName } from '#lib/explore.ts';
 	import SeasonFolds from '#lib/SeasonFolds.svelte';
 	import TitleScores from '#lib/TitleScores.svelte';
@@ -215,7 +213,6 @@
 	});
 	const tmdbScore = $derived(rich?.score ?? scoreOf(details?.rating));
 	const hasScores = $derived(outside.length > 0 || !!tmdbScore);
-	const jumps = $derived(details ? pageSections(details.kind, { manage: false }) : []);
 	const hasFacts = $derived(!!(network || makers.length || lang || countries.length));
 	const crumbs = $derived(details ? [{ href: to('/explore'), label: 'Explore' }, { href: to(detailPath(details.kind, details.tmdb)), label: details.year ? `${details.name} (${details.year})` : details.name }] : []);
 </script>
@@ -309,8 +306,7 @@
 			{/if}
 		{/snippet}
 
-		<!-- One quiet line of jump links, the story, one band of big scores and the details, then where to watch. -->
-		<SectionNav items={jumps} compact />
+		<!-- The story, one band of big scores and the details, then where to watch. -->
 		<div class="strip">
 			{@render story()}
 			{#if hasScores || hasFacts}

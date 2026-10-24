@@ -37,9 +37,8 @@
 	import TitleCast from '#lib/TitleCast.svelte';
 	import TitleRows from '#lib/TitleRows.svelte';
 	import LibrarySection from '#lib/ui/LibrarySection.svelte';
-	import { artName, crumbFor, pageSections, qualityBadges } from '#lib/title-page.ts';
+	import { artName, crumbFor, qualityBadges } from '#lib/title-page.ts';
 	import { audienceOf, factsOf, titleStatus } from '#lib/title-status.ts';
-	import SectionNav from '#lib/ui/SectionNav.svelte';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import type { MenuItem } from '#lib/ui/Menu.svelte';
 	import '#lib/title-page.css';
@@ -574,8 +573,6 @@
 		{/if}
 
 		{#if error}<LoadError hasData message={error} onretry={() => load()} />{/if}
-
-		<SectionNav items={pageSections('movie', { manage })} />
 
 		<TitleRows kind="movie" tmdb={title.ids?.tmdb}>
 			{#snippet middle()}{#key title!.id}<TitleCast titleId={title!.id} />{/key}{/snippet}
