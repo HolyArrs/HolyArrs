@@ -658,7 +658,6 @@
 
 			{#if below}{@render below()}{/if}
 
-			<p class="attribution">Albums from MusicBrainz; popularity and explicit marks from Deezer; artwork from fanart.tv and the Cover Art Archive.</p>
 		{/if}
 	</PageLoader>
 </div>
@@ -773,7 +772,6 @@
 	.sk-lines .short { width: 45%; }
 	.sk-songs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 24px; }
 	.sq-rail { --poster-ratio: 1; }
-	.attribution { margin: 0; color: var(--text-muted); font: var(--t-footnote); }
 	@media (max-width: 1280px) { .songs { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-flow: row; grid-template-rows: none; } .sk-songs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 	@media (max-width: 1000px) { .lead { grid-template-columns: minmax(0, 1fr); } }
 	@media (max-width: 767px) {

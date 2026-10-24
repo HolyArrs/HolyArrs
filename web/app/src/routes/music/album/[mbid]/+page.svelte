@@ -268,7 +268,6 @@
 				</section>
 			{/if}
 
-			<p class="attribution">Tracks and editions from MusicBrainz; label and explicit marks from Deezer; cover from the Cover Art Archive.</p>
 		{/if}
 	</PageLoader>
 </div>
@@ -323,7 +322,6 @@
 	.circles { display: flex; gap: 18px; overflow-x: auto; margin: 0; padding: 4px 2px 8px; list-style: none; scrollbar-width: none; }
 	.meta-sk { display: inline-block; width: 220px; height: 14px; max-width: 100%; }
 	.sq-rail { --poster-ratio: 1; }
-	.attribution { margin: 0; color: var(--text-muted); font: var(--t-footnote); }
 	@media (max-width: 767px) {
 		.album { --music-item: calc((100cqi - var(--shelf-gap, 12px)) / 2.3); gap: 26px; }
 		.hero-in { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; gap: 20px; }
