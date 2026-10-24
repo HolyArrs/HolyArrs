@@ -374,7 +374,6 @@
 			</ul>
 		</Sheet>
 
-		<p class="attribution">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
 	</article>
 {/if}
 </PageLoader>
@@ -394,7 +393,6 @@
 <style>
 	.all-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 18px 14px; margin: 0; padding: 0; list-style: none; }
 	.all-grid.people { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
-	.attribution { color: var(--text-muted); font: var(--t-footnote); }
 	/* The layouts being compared. Linked names and genres read as text until hovered. */
 	.tp :global(:is(.credits, .strip-side, .nf-about, .fact-list, .about-cols) a), .linkish { color: var(--text); text-decoration: none; }
 	.tp :global(:is(.credits, .strip-side, .nf-about, .fact-list, .about-cols) a:hover), .linkish:hover { text-decoration: underline; text-underline-offset: 3px; }

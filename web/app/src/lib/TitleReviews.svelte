@@ -143,7 +143,6 @@
 		</Shelf>
 		{#if !answer.reviews_hidden && !reviews.length && !loading}<p class="muted">No written reviews on {sourceName} yet.</p>{/if}
 		{#if failed}<p class="muted">{sourceName} did not answer; try again shortly.</p>{/if}
-		<p class="xs muted credit">{answer.reviews_hidden ? 'Score' : 'Reviews'} from {sourceName}.</p>
 	</div>
 	<Sheet bind:open={sheet} title={reading ? `Review by ${reading.author || 'Someone'}` : 'Review'} size="md">
 		{#if reading}
@@ -191,7 +190,6 @@
 	.plus { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--surface-2); font: 400 26px/1 var(--font-ui); }
 	.full { display: flex; flex-direction: column; gap: 14px; }
 	.whole { margin: 0; white-space: pre-line; overflow-wrap: anywhere; font: var(--t-body); }
-	.credit { margin: 0; }
 	.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 	@media (prefers-reduced-motion: reduce) { .rcard { transition: none; } }
 </style>

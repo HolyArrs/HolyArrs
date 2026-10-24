@@ -5,7 +5,6 @@
 	import { onMount } from 'svelte';
 	import { checkMetadata, metadataHealth, METADATA_DOWN } from '#lib/metadata-health.svelte.ts';
 
-	const NOTICE = 'This product uses the TMDB API but is not endorsed or certified by TMDB.';
 
 	let loaded = $state(false);
 	let checking = $state(false);
@@ -42,16 +41,3 @@
 		<Button variant="secondary" onclick={recheck} disabled={checking} aria-busy={checking} style="margin-top: var(--s-4)">Check again</Button>
 	</section>
 {/if}
-
-<p class="xs muted notice-line">
-	Movie data and pictures from <a href="https://www.themoviedb.org/" rel="noopener noreferrer" target="_blank">TMDB</a>. {NOTICE}
-</p>
-
-<style>
-	.notice-line {
-		margin-top: var(--s-6);
-	}
-	.notice-line a {
-		text-decoration: underline;
-	}
-</style>

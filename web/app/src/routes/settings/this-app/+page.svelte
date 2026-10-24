@@ -413,7 +413,7 @@
 	{/if}
 
 	<p class="xs muted" style="margin-top: var(--s-5)">
-		HolyArrs is free software under the GPL-3.0. Movie data from TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB.
+		HolyArrs is free software under the GPL-3.0.
 	</p>
 {/if}
 

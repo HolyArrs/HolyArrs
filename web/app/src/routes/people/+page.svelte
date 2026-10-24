@@ -71,7 +71,6 @@
 		<span class="count">Page {current}{#if result.total_pages} of {result.total_pages}{/if}</span>
 		<Button iconAfter="chevronRight" disabled={busy || current >= result.total_pages} onclick={() => search(undefined, current + 1)}>Next</Button>
 	</nav>
-	<p class="attribution">{result.attribution}</p>
 {:else if !error}
 	<EmptyState icon="people" title="Look for a person" text="Type a name above to see their movies." />
 {/if}
@@ -88,7 +87,6 @@
 	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 12px; }
 	.sk-card { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; padding: 12px; border-radius: var(--r-card); background: var(--surface-1); box-shadow: var(--shadow-card); }
 	.count { margin: 0; color: var(--text-muted); font: var(--t-subhead); font-weight: 400; font-variant-numeric: tabular-nums; }
-	.attribution { margin: 0; color: var(--text-muted); font: var(--t-footnote); }
 	.pages { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 	@media (max-width: 520px) { .searchbar { flex-wrap: wrap; } .searchbar :global(.ui-btn) { width: 100%; } }
 </style>

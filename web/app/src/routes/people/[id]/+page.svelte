@@ -222,7 +222,7 @@
 		{#if !movies.length && !busy}<EmptyState compact icon="film" title="No movies match this role." />{/if}
 	</section>
 
-	<p class="attribution">{#if !data.complete}Credits as the provider lists them; it may not be complete. {/if}{data.attribution}</p>
+	{#if !data.complete}<p class="attribution">This list may not be complete.</p>{/if}
 {/if}
 </PageLoader>
 </div>
