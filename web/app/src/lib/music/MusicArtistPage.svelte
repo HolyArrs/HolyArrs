@@ -42,7 +42,7 @@
 	import { SkRail, SkRowTitle, SkTrackRow } from '#lib/ui/sk/index.ts';
 	import Chip from '#lib/ui/Chip.svelte';
 	import { attachHLS, playerTarget } from '#lib/hls-player.ts';
-	import { HERO_DELAY } from '#lib/trailer.ts';
+	import { HERO_DELAY, setSoundOn, soundOn } from '#lib/trailer.ts';
 	import { artistVideo, autoplayHere, loadUISettings, nativeHLS } from '#lib/autoplay.svelte.ts';
 	import { heroVideoStart, type HeroVideo } from '#lib/music/hero-video.ts';
 	import { aboutSize, albumHref, appPicture, artistHref, artistKind, countryName, initialsOf, coverFor, haveLine, kindWord, length, owned, SHELVES, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
@@ -83,10 +83,13 @@
 	let videoEl: HTMLVideoElement | undefined = $state();
 	let videoMuted = $state(true);
 	let videoPaused = $state(false);
+	// Sound is one choice for the whole app (shared with trailers): turning it
+	// on or off here carries to every later video and trailer.
 	function toggleMute() {
 		if (!videoEl) return;
 		videoEl.muted = !videoEl.muted;
 		videoMuted = videoEl.muted;
+		setSoundOn(!videoEl.muted);
 	}
 	function togglePause() {
 		if (!videoEl) return;
@@ -219,6 +222,7 @@
 			heroVideo = null;
 		};
 		el.muted = true;
+		videoMuted = true;
 		el.addEventListener('error', fail);
 		void attachHLS(el, v.proxy_url, nativeHLS(), heroVideoStart(v), playerTarget(window.innerWidth, window.innerHeight, 'cover'))
 			.then((d) => {
@@ -238,10 +242,26 @@
 	// The photo and name hold for the beat; then the video takes over.
 	let attached = $state(false);
 	$effect(() => {
-		if (attached && beatDone && videoEl && heroVideo) void videoEl.play().catch(() => {
-			videoIn = false;
-			heroVideo = null;
-		});
+		if (!(attached && beatDone && videoEl && heroVideo)) return;
+		const el = videoEl;
+		void el
+			.play()
+			.then(() => {
+				// Sound was left on elsewhere: unmute. A browser that pauses an
+				// unmuted video without a recent click keeps it muted, and the
+				// button shows the truth either way.
+				if (!soundOn()) return;
+				el.muted = false;
+				if (el.paused) {
+					el.muted = true;
+					void el.play().catch(() => {});
+				}
+				videoMuted = el.muted;
+			})
+			.catch(() => {
+				videoIn = false;
+				heroVideo = null;
+			});
 	});
 
 	onMount(() => {
