@@ -247,7 +247,7 @@
 		const still = heroStill(hero);
 		try {
 			const s = await trailerSources(kind, tmdb, videos);
-			if (s[0]) openTheater({ kind, tmdb, title, source: s[0], time: 0, rect: r ? { left: r.left, top: r.top, width: r.width, height: r.height } : null, from: 'hero', still, returnTo: btn });
+			if (s[0]) openTheater({ kind, tmdb, title, source: s[0], fallbacks: s.slice(1), time: 0, rect: r ? { left: r.left, top: r.top, width: r.width, height: r.height } : null, from: 'hero', still, returnTo: btn });
 		} finally {
 			opening = false;
 		}

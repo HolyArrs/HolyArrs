@@ -138,6 +138,8 @@
 	$effect(() => {
 		// Played to the end and still here: keep it as it is (its Replay button stays).
 		if (finished && inView) return;
+		// once: the trailer that started by itself keeps playing while in view; it only never starts again.
+		if (once && autoPlayed && inView && armed) return;
 		if (trailer && settled && inView && !finished && !(once && autoPlayed)) {
 			wait.start();
 			// The lookup starts now, not after the dwell.

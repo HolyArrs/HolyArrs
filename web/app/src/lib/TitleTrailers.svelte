@@ -51,13 +51,13 @@
 		busy = v.key;
 		try {
 			// The main trailer can stream straight from the server's pick; the others play in the YouTube player.
-			let source: TrailerSource | undefined;
-			if (main && v.key === main.key) source = (await trailerSources(kind, tmdb, videos))[0];
-			source ??= { kind: 'embed', key: v.key };
+			let list: TrailerSource[] = [];
+			if (main && v.key === main.key) list = await trailerSources(kind, tmdb, videos);
+			const [source, ...fallbacks] = list.length ? list : [{ kind: 'embed', key: v.key } as TrailerSource];
 			// One video at a time: the hero's muted trailer stops for this one.
 			claimPlayer(() => {})();
 			const r = el.getBoundingClientRect();
-			openTheater({ kind, tmdb, title, source, time: 0, rect: { left: r.left, top: r.top, width: r.width, height: r.height }, from: 'panel', returnTo: el });
+			openTheater({ kind, tmdb, title, source, fallbacks, time: 0, rect: { left: r.left, top: r.top, width: r.width, height: r.height }, from: 'panel', returnTo: el });
 		} finally {
 			busy = '';
 		}
@@ -77,7 +77,7 @@
 
 {#if list.length}
 	<div class="trailers" data-testid="title-trailers">
-		<Shelf title="Trailers" anchor="title-trailers" {item} placeholder="wide" whole centerFew>
+		<Shelf title="Trailers" anchor="title-trailers" {item} placeholder="wide" whole>
 			{#each list as v, i (v.key)}{@render card(v, i)}{/each}
 		</Shelf>
 	</div>

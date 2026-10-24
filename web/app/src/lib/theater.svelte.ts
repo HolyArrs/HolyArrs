@@ -10,6 +10,8 @@ export interface TheaterOpen {
 	tmdb: string;
 	title: string;
 	source: TrailerSource;
+	/** Tried in order when the source cannot play (the relayed stream refused, say), before the player gives up. */
+	fallbacks?: TrailerSource[];
 	/** Seconds already played in the small player; the big one carries on from there. */
 	time: number;
 	/** Where the small player sat, so the big one grows from it. */

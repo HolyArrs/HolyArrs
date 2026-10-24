@@ -41,7 +41,14 @@
 	let tick: ReturnType<typeof setInterval> | undefined;
 	const origin = typeof location !== 'undefined' ? location.origin : '';
 	const now = $derived(theater.now);
-	const src = $derived(now?.source);
+	// The source, then its fallbacks one by one while they fail; "can't play here" only after the last.
+	let tried = $state(0);
+	const list = $derived(now ? [now.source, ...(now.fallbacks ?? [])] : []);
+	const src = $derived(list[Math.min(tried, list.length - 1)]);
+	function fail() {
+		if (tried + 1 < list.length) tried += 1;
+		else unavailable = true;
+	}
 
 	const vw = () => document.documentElement.clientWidth || window.innerWidth;
 	const vh = () => window.innerHeight;
@@ -96,7 +103,7 @@
 		let detach: (() => void) | null = null;
 		attachHLS(v, s.url, nativeHLS(), now?.time ?? 0, screenTarget('contain'))
 			.then((d) => (gone ? d() : (detach = d)))
-			.catch(() => {});
+			.catch(() => !gone && fail());
 		return () => {
 			gone = true;
 			detach?.();
@@ -107,6 +114,7 @@
 		if (!now || !dialog || dialog.open) return;
 		leaving = false;
 		unavailable = false;
+		tried = 0;
 		paused = false;
 		muted = now.muted ?? false;
 		time = now.time;
@@ -197,7 +205,7 @@
 			return;
 		}
 		if (d.event === 'onError') {
-			unavailable = true;
+			fail();
 			return;
 		}
 		const info = typeof d.info === 'object' && d.info ? d.info : {};
@@ -314,7 +322,7 @@
 						idle = false;
 					}}
 					onvolumechange={() => (muted = video?.muted ?? false)}
-					onerror={() => (unavailable = true)}
+					onerror={fail}
 					onended={() => void close(true)}
 					onclick={wake}
 				></video>
