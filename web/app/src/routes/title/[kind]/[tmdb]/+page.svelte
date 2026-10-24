@@ -177,9 +177,9 @@
 	const seasons = $derived(info?.seasons ?? []);
 	const regular = $derived(seasons.filter((s) => s.number > 0).length);
 	const networkOf = (d: TitleDetails) => d.network ?? d.show?.network ?? '';
-	// The versions of layout A being compared (title-look.svelte.ts). The hero
-	// says what it is (year, length or seasons, genres, age rating, scores);
-	// the details below say only what the hero does not.
+	// The hero says what it is (year, length or seasons, genres, age rating,
+	// scores); the details under the story say only what the hero does not.
+	// A show's seasons use the layout being compared (title-look.svelte.ts).
 	const look = $derived(titleLook.value);
 	const personHref = (id?: string) => (id ? to(`/people/${id.replace(/^tmdb:/, '')}`) : undefined);
 	/** The director (movies) or creators (shows). */
@@ -206,7 +206,6 @@
 	const countries = $derived((info?.originCountry ?? []).map(countryName));
 	const network = $derived(details ? networkOf(details) : '');
 	const hasFacts = $derived(!!(network || makers.length || lang || countries.length));
-	const hasCard = $derived(hasFacts || !!info?.streaming.length);
 	const crumbs = $derived(details ? [{ href: to('/explore'), label: 'Explore' }, { href: to(detailPath(details.kind, details.tmdb)), label: details.year ? `${details.name} (${details.year})` : details.name }] : []);
 </script>
 
@@ -284,67 +283,22 @@
 		{#snippet story()}
 			{#if d.overview}<p class="lead" data-testid="title-story">{d.overview}</p>{/if}
 		{/snippet}
-		{#snippet card()}
-			<div class="facts" id="title-where">
-				{#if hasFacts}
-					<dl class="fact-list">
-						{#if network}<dt>Network</dt><dd>{network}</dd>{/if}
-						{#if makers.length}<dt>{madeBy}</dt><dd>{@render names(makers, 3)}</dd>{/if}
-						{#if lang}<dt>Language</dt><dd>{lang}</dd>{/if}
-						{#if countries.length}<dt>{countries.length > 1 ? 'Countries' : 'Country'}</dt><dd>{countries.join(', ')}</dd>{/if}
-					</dl>
-				{/if}
-				{#if info?.streaming.length}
-					<div class="fact-where"><h2 class="tp-h3">Where to watch</h2>{@render services()}</div>
-				{/if}
-			</div>
-		{/snippet}
-		{#snippet folds()}
-			{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
-		{/snippet}
-
-		{#if look === 'stack'}
-			<!-- A2 · Stacked: the story and where to watch beside a small details card (about the same height), the seasons full width under them. -->
-			<div class="tp-body look-a stacked" class:solo={!hasFacts}>
-				<div class="tp-main">
-					{@render story()}
-					{#if info?.streaming.length}<div class="where-row" id="title-where"><span class="lbl">Where to watch</span>{@render services()}</div>{/if}
-				</div>
-				{#if hasFacts}<aside class="tp-side"><div class="facts"><dl class="fact-list">
-					{#if network}<dt>Network</dt><dd>{network}</dd>{/if}
-					{#if makers.length}<dt>{madeBy}</dt><dd>{@render names(makers, 3)}</dd>{/if}
-					{#if lang}<dt>Language</dt><dd>{lang}</dd>{/if}
-					{#if countries.length}<dt>{countries.length > 1 ? 'Countries' : 'Country'}</dt><dd>{countries.join(', ')}</dd>{/if}
-				</dl></div></aside>{/if}
-			</div>
-			{@render folds()}
-		{:else if look === 'strip'}
-			<!-- A3 · Strip: no side card; the details as one row of small columns under the story, the seasons full width. -->
-			<div class="strip">
-				{@render story()}
-				{#if hasFacts}
-					<dl class="inline-facts">
-						{#if network}<div><dt>Network</dt><dd>{network}</dd></div>{/if}
-						{#if makers.length}<div><dt>{madeBy}</dt><dd>{@render names(makers, 3)}</dd></div>{/if}
-						{#if lang}<div><dt>Language</dt><dd>{lang}</dd></div>{/if}
-						{#if countries.length}<div><dt>{countries.length > 1 ? 'Countries' : 'Country'}</dt><dd>{countries.join(', ')}</dd></div>{/if}
-					</dl>
-				{/if}
-				{#if info?.streaming.length}
-					<div class="where-row" id="title-where"><span class="lbl">Where to watch</span>{@render services()}</div>
-				{/if}
-			</div>
-			{@render folds()}
-		{:else}
-			<!-- A1 · Beside: the story and seasons on the left, the details card beside them (it stays in view while the seasons scroll). -->
-			<div class="tp-body look-a" class:solo={!hasCard}>
-				<div class="tp-main">
-					{@render story()}
-					{@render folds()}
-				</div>
-				{#if hasCard}<aside class="tp-side">{@render card()}</aside>{/if}
-			</div>
-		{/if}
+		<!-- The story, the details as one row of small columns, where to watch, then the seasons full width. -->
+		<div class="strip">
+			{@render story()}
+			{#if hasFacts}
+				<dl class="inline-facts">
+					{#if network}<div><dt>Network</dt><dd>{network}</dd></div>{/if}
+					{#if makers.length}<div><dt>{madeBy}</dt><dd>{@render names(makers, 3)}</dd></div>{/if}
+					{#if lang}<div><dt>Language</dt><dd>{lang}</dd></div>{/if}
+					{#if countries.length}<div><dt>{countries.length > 1 ? 'Countries' : 'Country'}</dt><dd>{countries.join(', ')}</dd></div>{/if}
+				</dl>
+			{/if}
+			{#if info?.streaming.length}
+				<div class="where-row" id="title-where"><span class="lbl">Where to watch</span>{@render services()}</div>
+			{/if}
+		</div>
+		{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} layout={look} />{/if}
 		{@render castRow()}
 		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} />
 
@@ -361,7 +315,7 @@
 </PageLoader>
 {/if}
 
-<TitleLookPicker />
+{#if details?.kind === 'show'}<TitleLookPicker />{/if}
 
 {#if manage}
 	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} onadded={(_m, t) => added(t)} />
@@ -376,29 +330,19 @@
 	.all-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 18px 14px; margin: 0; padding: 0; list-style: none; }
 	.all-grid.people { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
 	/* Layout A's details. Linked names read as text until hovered. */
-	.tp :global(:is(.fact-list, .inline-facts) a) { color: inherit; text-decoration: none; }
-	.tp :global(:is(.fact-list, .inline-facts) a:hover) { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+	.tp :global(.inline-facts a) { color: inherit; text-decoration: none; }
+	.tp :global(.inline-facts a:hover) { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
 	.lbl { color: var(--text-muted); }
 	.lead { max-width: 72ch; margin: 0; font: 400 16px/1.55 var(--font-ui); color: var(--text); }
 	.svc { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
 	.svc li { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 4px 12px 4px 4px; border-radius: 999px; background: var(--surface-2); font: 500 14px/1 var(--font-ui); }
 	.svc img { width: 28px; height: 28px; border-radius: 7px; object-fit: cover; }
-	/* A1 and A2: the details card. */
-	.look-a .tp-main { gap: 22px; }
-	.look-a.solo { grid-template-columns: minmax(0, 1fr); }
-	.facts { display: flex; flex-direction: column; gap: 16px; padding: 16px 18px; border-radius: var(--r-card); background: var(--surface-1); border: 1px solid var(--line); position: sticky; top: calc(var(--topbar, 56px) + 16px); }
-	.stacked .facts { position: static; }
-	.fact-list { display: grid; grid-template-columns: auto minmax(0, 1fr); margin: 0; font: 400 14px/1.35 var(--font-ui); }
-	.fact-list dt { padding: 10px 0; color: var(--text); font-weight: 600; }
-	.fact-list dd { margin: 0; padding: 10px 0 10px 16px; color: var(--text-muted); text-align: right; overflow-wrap: anywhere; }
-	.fact-list dt:not(:first-of-type), .fact-list dt:not(:first-of-type) + dd { border-top: 1px solid var(--line); }
-	.fact-where .tp-h3 { font-size: 14px; }
-	/* A3: the details as one row of small columns. */
+	/* The details as one row of small columns. */
 	.strip { display: flex; flex-direction: column; gap: 20px; }
 	.inline-facts { display: flex; flex-wrap: wrap; gap: 14px 40px; margin: 0; padding: 16px 0; border-block: 1px solid var(--line); }
 	.inline-facts div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 	.inline-facts dt { color: var(--text-muted); font: 600 11.5px/1.2 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
 	.inline-facts dd { margin: 0; color: var(--text); font: 500 15px/1.35 var(--font-ui); }
 	.where-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; font: 500 14px/1 var(--font-ui); }
-	@media (max-width: 767px) { .facts { position: static; } .inline-facts { gap: 12px 24px; } }
+	@media (max-width: 767px) { .inline-facts { gap: 12px 24px; } }
 </style>
