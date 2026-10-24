@@ -69,6 +69,7 @@
 	import { api } from '../api.ts';
 	import { loadExtras, type Extras } from '../outside-ratings.ts';
 	import RatingsStrip from './RatingsStrip.svelte';
+	import { ratingPicks, shownRatings } from '../rating-picks.svelte.ts';
 
 	// The title page hero (movie, show, artist, album, not-yet-added titles):
 	// the Explore billboard (Billboard.svelte), so moving from Explore to a
@@ -185,7 +186,9 @@
 	// No backdrop: the poster (or the cover) itself, cropped and darkened.
 	const stand = $derived(cover ?? (!wide && heroPoster && !posterFailed ? heroPoster : null));
 
-	const scoreText = $derived(score ? (Math.round(score * 10) / 10).toFixed(1) : '');
+	// Only the ratings this browser picked (Settings › Appearance).
+	const shown = $derived(shownRatings(extras.scores, score, ratingPicks.list));
+	const scoreText = $derived(shown.tmdb ? (Math.round(shown.tmdb * 10) / 10).toFixed(1) : '');
 	// The first crumb is the page you came from (Search, Explore, a person…), stepping back there with its scroll and state; a fresh visit keeps the page's own.
 	const from = $derived.by(() => (void breadcrumb, cameFrom()));
 	const fromSelf = $derived(!!from && !!breadcrumb.at(-1)?.href && from.path.split('?')[0] === breadcrumb.at(-1)!.href.split('?')[0]);
@@ -285,7 +288,7 @@
 			{#if facts.length}<p>{facts.join(' · ')}</p>{/if}
 			{#if certification}<span class="b cert" title="Age rating">{certification}</span>{/if}
 			{#if ratings && scoreText}<span class="b score" title="Score out of 10"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 .8l1.6 3.3 3.6.5-2.6 2.5.6 3.6L6 9l-3.2 1.7.6-3.6L.8 4.6l3.6-.5z" fill="currentColor" /></svg>{scoreText}</span>{/if}
-			{#if ratings}<RatingsStrip scores={extras.scores} />{/if}
+			{#if ratings}<RatingsStrip scores={shown.scores} />{/if}
 			{#each wiki.badges.slice(0, 2) as b (b)}<span class="b award" title={awardsTip(wiki.awards)} data-testid="award-badge"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1h6v2.4a3 3 0 0 1-6 0zM3 2H1.2v.8A2 2 0 0 0 3 4.8M9 2h1.8v.8A2 2 0 0 1 9 4.8M5.3 6.3h1.4v2.2H5.3zM3.6 8.5h4.8V11H3.6z" fill="currentColor" /></svg>{b}</span>{/each}
 			{#each badges as b (b)}<span class="b">{b}</span>{/each}
 			{#if status}<StatusPill kind={status} {percent} label={statusLabel} on="art" />{/if}

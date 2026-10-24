@@ -26,6 +26,7 @@
 	import TitleLookPicker from '#lib/TitleLookPicker.svelte';
 	import { titleLook } from '#lib/title-look.svelte.ts';
 	import { loadExtras, type OutsideScore } from '#lib/outside-ratings.ts';
+	import { ratingPicks, shownRatings } from '#lib/rating-picks.svelte.ts';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -214,8 +215,9 @@
 		void loadExtras(api.get, k, id).then((x) => live && (outside = x.scores));
 		return () => (live = false);
 	});
-	const tmdbScore = $derived(rich?.score ?? scoreOf(details?.rating));
-	const hasScores = $derived(outside.length > 0 || !!tmdbScore);
+	// Only the ratings this browser picked (Settings › Appearance).
+	const picked = $derived(shownRatings(outside, rich?.score ?? scoreOf(details?.rating), ratingPicks.list));
+	const hasScores = $derived(picked.scores.length > 0 || !!picked.tmdb);
 	// Where the trailers show while the options are compared (title-look.svelte.ts).
 	const look = $derived(titleLook.value);
 	const hasFacts = $derived(!!(network || makers.length || lang || countries.length));
@@ -315,7 +317,7 @@
 		{/snippet}
 
 		{#snippet scoresAndFacts()}
-			{#if hasScores}<TitleScores scores={outside} tmdb={tmdbScore} variant="tiles" />{/if}
+			{#if hasScores}<TitleScores scores={picked.scores} tmdb={picked.tmdb} variant="tiles" />{/if}
 			{#if hasScores && hasFacts}<span class="rule" aria-hidden="true"></span>{/if}
 			{@render facts()}
 		{/snippet}
