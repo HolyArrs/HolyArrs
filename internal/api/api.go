@@ -145,6 +145,9 @@ type Server struct {
 // API serves HTTP.
 type API struct {
 	s Server
+	// listSeen is each region's last world-list shelves signature
+	// (music_lists_v1), guarded by musicv2.cursorMu.
+	listSeen map[string]string
 	// lookups counts each person's music lookups in flight.
 	lookups inFlight
 	// confirm holds the two-step controls' confirmation ids.

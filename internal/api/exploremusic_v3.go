@@ -303,6 +303,8 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 			hadAlbum[al.mbid] = true
 		}
 	}
+	// World-list shelves (music_lists_v1); nil when off.
+	shelves := a.musicShelvesOf(ctx, region, now)
 
 	// Server data (layer 1): genre votes and top albums of library artists.
 	data := a.musicArtistDataOf(ctx, libIDs, now)
@@ -469,6 +471,21 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 			heroes[i].Kicker = "New album"
 		}
 	}
+	if shelves != nil {
+		// Biggest right now leads the Spotlight: the region's top charted
+		// albums, then the member's own new releases.
+		lead := listHero(shelves, func(id string) bool { return hadAlbum[id] }, 3)
+		taken := map[string]bool{}
+		for _, c := range lead {
+			taken[strings.ToLower(c.Artist)] = true
+		}
+		for _, c := range heroes {
+			if !taken[strings.ToLower(c.Artist)] {
+				lead = append(lead, c)
+			}
+		}
+		heroes = lead
+	}
 	if len(heroes) > 5 {
 		heroes = heroes[:5]
 	}
@@ -542,7 +559,12 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 			cards = append(cards, c)
 			sc = append(sc, musicscore.Scored{Item: musicscore.Item{Key: c.Key, Score: 1}})
 		}
-		addRow(MusicRow{ID: "genres", Type: "genres", Title: "Genres", Reason: "Your genres first, then the ones charting in your region", Shape: "tile"},
+		meta := MusicRow{ID: "genres", Type: "genres", Title: "Genres", Reason: "Your genres first, then the ones charting in your region", Shape: "tile"}
+		if shelves != nil {
+			meta.Title, meta.Shape = "Browse", "grid"
+			a.browseCovers(ctx, region, cards, now)
+		}
+		addRow(meta,
 			musicscore.Row{Anchor: true, Prior: musicscore.PriorMixed, ArtistRow: true}, cards, sc, false, false)
 	}
 
@@ -656,6 +678,19 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 				addRow(meta, row, cards, list, rank, personal)
 			},
 		})
+	}
+
+	if shelves != nil {
+		for _, d := range listRows(shelves) {
+			keep := func(c MusicCard) bool {
+				return d.Chart || c.Kind != "album" || !hadAlbum[c.MBID] && acts.albumState[c.MBID] == ""
+			}
+			cards, sc := listCandidates(d, shelves.Blocks[d.Block], keep)
+			if len(sc) < d.Min || distinctArtists(sc) < 4 {
+				continue
+			}
+			addRow(listRowMeta(d), musicscore.Row{Prior: listPrior, Min: d.Min, Family: "lists:" + d.ID}, cards, sc, false, false)
+		}
 	}
 
 	// Order (anchors first, then R), fill with one seen set, gate.

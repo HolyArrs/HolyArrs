@@ -649,7 +649,7 @@ func (a *API) exploreMusicV7(w http.ResponseWriter, r *http.Request) {
 	} else if snap, ok := a.loadMusicV7Snap(ctx, member, region, key.Date, lib, now); ok {
 		// Kept on disk (a restart): served at once, rebuilt behind when old.
 		ord := snap.order()
-		p = musicscore.NewPlan(ord.v7.rows, musicV7Head, musicV7Max, member, key.Date, ord.v7.seen)
+		p = musicscore.NewPlan(ord.v7.rows, a.musicV7HeadRows(), musicV7Max, member, key.Date, ord.v7.seen)
 		p.Meta = ord
 		a.musicv2.plans.Put(key, p, now)
 		if now.Sub(snap.Built) >= musicV7SnapFresh || now.Before(snap.Built) {
@@ -776,7 +776,12 @@ func (a *API) prewarmMusicV7(ctx context.Context) {
 	p := a.buildMusicV7Plan(ctx, 0, "global", key, lib, acts, now)
 	if p != nil && p.Meta != nil {
 		// The first pages' albums and artists: details and pictures ahead.
-		a.queueAhead(musicV7PagesAhead(p, 0, musicV7AheadPages))
+		pages := musicV7AheadPages
+		if a.s.MusicListsV1 {
+			// Every row of the plan: list rows show art at once on any page.
+			pages = musicscore.PlanMax / musicscore.PlanBatch
+		}
+		a.queueAhead(musicV7PagesAhead(p, 0, pages))
 	}
 }
 

@@ -46,6 +46,13 @@ type Deps struct {
 	// plus mixes, Because you have, Deep cuts, Turning N and Together with
 	// (with MusicRowsV3). Off keeps the v3/v6 page.
 	MusicRowsV7 bool
+	// MusicListsV1 is flag music_lists_v1 (plan 2026-10-24): world-list
+	// rows (charts turned into albums and artists) on Explore → Music and
+	// New & Popular → Music, from MusicShelves. Off keeps today's pages.
+	MusicListsV1 bool
+	// MusicShelves reads the metadata server's world-list shelves for a
+	// region; nil leaves the list rows out.
+	MusicShelves func(ctx context.Context, region string) (metadata.MusicShelves, error)
 	// MusicListeners, MusicSimilarSet and MusicArtistData read the metadata
 	// server's batch artist data for the scored rows; nil leaves P at the
 	// charts and the similarity rows out.

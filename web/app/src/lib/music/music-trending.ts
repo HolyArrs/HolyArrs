@@ -147,6 +147,8 @@ export interface MusicCardData {
 	hue?: number;
 	/** A genre tile's slideshow of artist photos (image is the first). */
 	images?: string[];
+	/** A Browse tile's tilted album cover (flag music_lists_v1). */
+	cover?: string;
 }
 
 export interface MusicRowData {
@@ -154,7 +156,7 @@ export interface MusicRowData {
 	type: string;
 	title: string;
 	reason: string;
-	shape: 'square' | 'round' | 'tile' | 'song';
+	shape: 'square' | 'round' | 'tile' | 'song' | 'grid';
 	items: MusicCardData[];
 }
 

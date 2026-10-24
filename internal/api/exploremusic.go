@@ -76,6 +76,9 @@ type MusicCard struct {
 	Hue *int `json:"hue,omitempty"`
 	// Images is a genre tile's slideshow of artist photos (Image is the first).
 	Images []string `json:"images,omitempty"`
+	// Cover is a Browse tile's tilted album cover (music_lists_v1): the
+	// genre's top charted album not used by another tile.
+	Cover string `json:"cover,omitempty"`
 }
 
 // MusicRow is one row of Explore â†’ Music.

@@ -9,6 +9,7 @@
 	import { coverFor } from './music/music-pages.ts';
 	import { fetchMusicExplore, fetchMusicExploreMore, fetchMusicGenre, genreHref, musicCardHref, musicCardNote, musicImage, musicStatus, releaseWords, songAskHref, type MusicCardData, type MusicExploreAnswer } from './music/music-trending.ts';
 	import MusicGenreTiles from './ui/MusicGenreTiles.svelte';
+	import MusicBrowseGrid from './ui/MusicBrowseGrid.svelte';
 	import { to } from './paths.ts';
 	import SongLine from './ui/SongLine.svelte';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './types.ts';
@@ -42,7 +43,9 @@
 	let answer = $state<MusicExploreAnswer | null>(null);
 	// Genres show as the Movies and Shows category strip under the hero, not as a row.
 	const stripGenres = $derived<StripGenre[]>((answer?.rows ?? []).filter((r) => r.shape === 'tile').flatMap((r) => r.items).map((c) => ({ key: c.key, name: c.name, href: genreHref(c), art: c.image ? (musicImage(c) ?? '') : '', hue: c.hue ?? 0, images: c.images ?? [] })));
-	$effect(() => { genres = stripGenres; });
+	$effect(() => { genres = stripGenres.length ? stripGenres : browseTiles.map((t) => ({ key: t.key, name: t.name, href: t.href, art: '', hue: t.hue, images: [] })); });
+	// music_lists_v1: the genres row comes as the Browse grid (colour tiles with a tilted cover).
+	const browseTiles = $derived((answer?.rows ?? []).filter((r) => r.shape === 'grid').flatMap((r) => r.items).map((c) => ({ key: c.key, name: c.name, href: genreHref(c), hue: c.hue ?? 0, cover: c.cover ?? '' })));
 	let chips = $state<string[]>([]);
 	/** The rows' order as first shown this visit (per genre and region), so later answers never move them. */
 	let order: string[] = [];
@@ -293,8 +296,9 @@
 		{/if}
 
 		{#if stripGenres.length}<MusicGenreTiles genres={stripGenres} allHref={to('/search?kind=music')} />{/if}
+		{#if browseTiles.length}<MusicBrowseGrid tiles={browseTiles} allHref={to('/search?kind=music')} />{/if}
 
-		{#each (answer?.rows ?? []).filter((r) => r.shape !== 'tile') as row, ri (row.id)}
+		{#each (answer?.rows ?? []).filter((r) => r.shape !== 'tile' && r.shape !== 'grid') as row, ri (row.id)}
 			{#if row.shape === 'song'}
 			<section class="row plain" data-testid="music-row-{row.type}">
 				<h2 class="rhead">{row.title}</h2>

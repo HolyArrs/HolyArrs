@@ -678,6 +678,9 @@ func (a *API) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
 	} else {
 		hero, rows = composeMusicNew(in, now)
 	}
+	if a.s.MusicListsV1 {
+		hero, rows = a.musicNewListRows(ctx, r, in, hero, rows, now)
+	}
 	var names []nameKey
 	for _, c := range hero {
 		names = append(names, nameKey{"album", c.MBID, c.Name, c.Artist, ""}, nameKey{"artist", c.ArtistMBID, c.Artist, "", ""})

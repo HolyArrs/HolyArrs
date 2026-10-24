@@ -204,7 +204,7 @@ func (a *API) buildMusicV7Plan(ctx context.Context, member int64, region string,
 	if ord.v7 == nil {
 		ord.v7 = &musicV7Cand{metas: map[string]MusicRow{}, cards: map[string]map[string]MusicCard{}}
 	}
-	p := musicscore.NewPlan(ord.v7.rows, musicV7Head, musicV7Max, member, key.Date, ord.v7.seen)
+	p := musicscore.NewPlan(ord.v7.rows, a.musicV7HeadRows(), musicV7Max, member, key.Date, ord.v7.seen)
 	p.Meta = ord
 	p.Partial = miss.failed.Load()
 	if ctx.Err() == nil {
