@@ -67,6 +67,16 @@ export function playerTarget(w: number, h: number, fit: 'cover' | 'contain', rat
 	return Math.min(1080, Math.max(360, Math.ceil(tall * ratio)));
 }
 
+/** screenTarget sizes a player that can go full screen by the whole screen,
+ * not the window: a small window on a big or ultrawide screen would
+ * otherwise lock the stream to a low level that full screen keeps. */
+export function screenTarget(fit: 'cover' | 'contain', ratio = globalThis.devicePixelRatio || 1): number {
+	const s = typeof screen === 'undefined' ? null : screen;
+	const w = Math.max(s?.width ?? 0, globalThis.innerWidth || 0);
+	const h = Math.max(s?.height ?? 0, globalThis.innerHeight || 0);
+	return playerTarget(w || 1280, h || 720, fit, ratio);
+}
+
 /** planLevels keeps H.264 levels only (when there are any): the indexes to
  * drop, highest first, and the start level among those left (the shortest
  * that covers target, up to 1080p), which is also the ABR cap. */

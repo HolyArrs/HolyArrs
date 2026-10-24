@@ -50,3 +50,18 @@ describe('relay stream levels', () => {
 		expect(originalAudio([{ name: 'fr - dubbed-auto', isDefault: true }, { name: 'Default', isDefault: false }])).toBe(1);
 	});
 });
+
+describe('screenTarget', () => {
+	it('sizes by the screen, not a small window', async () => {
+		const { screenTarget } = await import('./hls-player.ts');
+		const g = globalThis as unknown as { screen?: { width: number; height: number }; innerWidth: number; innerHeight: number };
+		const was = { screen: g.screen, w: g.innerWidth, h: g.innerHeight };
+		Object.defineProperty(globalThis, 'screen', { value: { width: 3440, height: 1440 }, configurable: true });
+		g.innerWidth = 1100;
+		g.innerHeight = 700;
+		expect(screenTarget('contain', 1)).toBe(1080);
+		Object.defineProperty(globalThis, 'screen', { value: was.screen, configurable: true });
+		g.innerWidth = was.w;
+		g.innerHeight = was.h;
+	});
+});

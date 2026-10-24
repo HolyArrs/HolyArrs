@@ -41,7 +41,7 @@
 	import { releaseWords } from '#lib/music/music-trending.ts';
 	import { SkRail, SkRowTitle, SkTrackRow } from '#lib/ui/sk/index.ts';
 	import Chip from '#lib/ui/Chip.svelte';
-	import { attachHLS, playerTarget } from '#lib/hls-player.ts';
+	import { attachHLS, screenTarget } from '#lib/hls-player.ts';
 	import { HERO_DELAY, setSoundOn, soundOn } from '#lib/trailer.ts';
 	import { artistVideo, autoplayHere, loadUISettings, nativeHLS } from '#lib/autoplay.svelte.ts';
 	import { heroVideoStart, type HeroVideo } from '#lib/music/hero-video.ts';
@@ -247,7 +247,7 @@
 		el.muted = true;
 		videoMuted = true;
 		el.addEventListener('error', fail);
-		void attachHLS(el, v.proxy_url, nativeHLS(), heroVideoStart(v), playerTarget(window.innerWidth, window.innerHeight, 'cover'))
+		void attachHLS(el, v.proxy_url, nativeHLS(), heroVideoStart(v), screenTarget('cover'))
 			.then((d) => {
 				if (stopped) return d();
 				detach = d;
