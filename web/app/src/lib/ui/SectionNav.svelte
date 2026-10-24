@@ -4,7 +4,8 @@
 
 	// In-page anchors under a title hero. A link only shows once its section
 	// is on the page; following one opens its disclosure on a phone.
-	let { items, label = 'On this page' }: { items: { id: string; label: string }[]; label?: string } = $props();
+	// compact: one quiet line of text links instead of pills.
+	let { items, label = 'On this page', compact = false }: { items: { id: string; label: string }[]; label?: string; compact?: boolean } = $props();
 
 	let present = $state<Set<string>>(new Set());
 	const shown = $derived(items.filter((i) => present.has(i.id)));
@@ -39,7 +40,7 @@
 </script>
 
 {#if shown.length > 1}
-	<nav class="ui-secnav" aria-label={label}>
+	<nav class="ui-secnav" class:compact aria-label={label}>
 		<ul>
 			{#each shown as s (s.id)}
 				<li><a href="#{s.id}" onclick={(e) => go(e, s.id)}>{s.label}</a></li>
@@ -55,4 +56,12 @@
 	a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: var(--r-pill); background: var(--surface-2); color: var(--text); font: var(--t-subhead); font-size: 14px; white-space: nowrap; transition: background var(--dur-fast) var(--ease-out); }
 	a:hover { background: var(--surface-3); }
 	a:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.compact { margin-bottom: calc(clamp(28px, 4vw, 44px) * -0.5); }
+	.compact ul { gap: 0; padding: 0; }
+	.compact li + li::before { content: '·'; padding: 0 2px; color: var(--text-muted); align-self: center; }
+	.compact li { display: inline-flex; }
+	.compact a { min-height: 32px; padding: 0 10px; border-radius: 8px; background: none; color: var(--text-muted); font: 500 14px/1 var(--font-ui); }
+	.compact li:first-child a { padding-left: 0; }
+	.compact a:hover { background: none; color: var(--text); }
+	@media (pointer: coarse) { .compact a { min-height: 44px; } }
 </style>

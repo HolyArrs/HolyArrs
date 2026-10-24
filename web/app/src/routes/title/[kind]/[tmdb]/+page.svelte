@@ -309,7 +309,8 @@
 			{/if}
 		{/snippet}
 
-		<!-- The story, then one band of big scores and the details, where to watch, and the jump buttons just above the seasons. -->
+		<!-- One quiet line of jump links, the story, one band of big scores and the details, then where to watch. -->
+		<SectionNav items={jumps} compact />
 		<div class="strip">
 			{@render story()}
 			{#if hasScores || hasFacts}
@@ -321,7 +322,6 @@
 			{/if}
 			{@render where()}
 		</div>
-		<SectionNav items={jumps} />
 		{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
 		{@render castRow()}
 		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} />
