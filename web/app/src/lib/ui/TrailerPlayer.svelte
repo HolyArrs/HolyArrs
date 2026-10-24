@@ -4,7 +4,7 @@
 	import { claimPlayer, embedUrl, setSoundOn, soundOn } from '../trailer.ts';
 	import { adoptWarm, hasSound, hasWarm, nativeHLS, onUnmute, type TrailerSource } from '../autoplay.svelte.ts';
 	import type { TheaterHandoff } from '../theater.svelte.ts';
-	import { attachHLS, playerTarget } from '../hls-player.ts';
+	import { attachHLS, screenTarget } from '../hls-player.ts';
 
 	// A muted trailer over the hero or hover card art. Tries each source in
 	// order (our own <video> on the direct stream, then the privacy-enhanced
@@ -45,7 +45,7 @@
 		sharp?: boolean;
 	} = $props();
 	/** target is the tallest stream level worth fetching here. */
-	const target = () => (sharp && box ? playerTarget(box.clientWidth, box.clientHeight, 'cover') : 720);
+	const target = () => screenTarget('cover');
 	/** Read once: a later change never seeks a running player. */
 	const startAt = untrack(() => start);
 	let seeded = false;
