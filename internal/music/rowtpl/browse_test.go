@@ -74,3 +74,21 @@ func TestBrowseTilesHaveNoNeighbourWithTheSameHue(t *testing.T) {
 		}
 	}
 }
+
+func TestExploreBrowseTiles(t *testing.T) {
+	secs := BrowseSections(browseBundle(), time.Date(2026, 10, 24, 12, 0, 0, 0, time.UTC), "us", nil)
+	got := ExploreTiles(secs)
+	if len(got) != 8 {
+		t.Fatalf("explore tiles = %d, want 8", len(got))
+	}
+	kinds := map[string]int{}
+	for _, tl := range got {
+		kinds[kindOf(tl.Key)]++
+	}
+	if kinds["genre"] != 4 || kinds["season"] != 1 || kinds["mood"] != 2 || kinds["decade"] != 1 {
+		t.Fatalf("kinds = %v, want 4 genres, 1 season, 2 moods, 1 decade", kinds)
+	}
+	if got[4].Key != "season:halloween" {
+		t.Fatalf("season tile = %s, want Halloween on Oct 24", got[4].Key)
+	}
+}

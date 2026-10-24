@@ -238,6 +238,30 @@ func TestDryRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	now := time.Now().UTC()
+	// Optional live shelves (ROWTPL_SHELVES): the region's list blocks.
+	var blocks map[string][]string
+	neighbor := ""
+	if sp := os.Getenv("ROWTPL_SHELVES"); sp != "" {
+		var sh struct {
+			Neighbor string `json:"neighbor_region"`
+			Blocks   map[string][]struct {
+				Kind string `json:"kind"`
+				MBID string `json:"mbid"`
+			} `json:"blocks"`
+		}
+		if b, err := os.ReadFile(sp); err == nil && json.Unmarshal(b, &sh) == nil {
+			blocks, neighbor = map[string][]string{}, sh.Neighbor
+			for k, l := range sh.Blocks {
+				for _, it := range l {
+					if it.Kind == "artist" {
+						blocks[k] = append(blocks[k], "r:"+strings.ToLower(it.MBID))
+					} else {
+						blocks[k] = append(blocks[k], "a:"+strings.ToLower(it.MBID))
+					}
+				}
+			}
+		}
+	}
 	type res struct {
 		Key     string   `json:"key"`
 		Rows    int      `json:"rows"`
@@ -260,7 +284,8 @@ func TestDryRun(t *testing.T) {
 		if kind == "explore" || kind == "new" {
 			key = ""
 		}
-		c := &Ctx{B: b, Kind: kind, Key: key, Region: "us", Now: now, Member: 1}
+		c := &Ctx{B: b, Kind: kind, Key: key, Region: "us", Now: now, Member: 1, Blocks: blocks, Neighbor: neighbor}
+		Spotlight(c)
 		rows := Build(c)
 		checkRows(t, c, rows)
 		r := res{Key: k, Rows: len(rows), MinRow: 99, Albums: len(c.albums(c.key(key)))}

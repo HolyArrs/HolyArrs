@@ -156,3 +156,28 @@ func Hues(n, cols int) []int {
 	}
 	return out
 }
+
+// ExploreTiles answers Explore's Browse row: the top 4 genres, the first
+// season (on now, else soon, else next), the top 2 moods and one decade.
+func ExploreTiles(secs []BrowseSection) []BrowseTile {
+	take := map[string]int{"genres": 4, "seasons": 1, "moods": 2, "decades": 1}
+	var out []BrowseTile
+	for _, id := range []string{"genres", "seasons", "moods", "decades"} {
+		for _, s := range secs {
+			if s.ID != id {
+				continue
+			}
+			for _, t := range s.Tiles {
+				if take[id] == 0 {
+					break
+				}
+				if id == "decades" && t.Key != "decade:1990s" && take[id] == 1 && len(s.Tiles) > 3 {
+					continue // the 90s: the decade most libraries and charts lean on
+				}
+				out = append(out, t)
+				take[id]--
+			}
+		}
+	}
+	return out
+}

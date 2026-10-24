@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/CoderLuii/holyarrs/internal/music/rowtpl"
 	musicscore "github.com/CoderLuii/holyarrs/internal/music/score"
 )
 
@@ -565,6 +566,23 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 		if shelves != nil {
 			meta.Title, meta.Shape = "Browse", "grid"
 			a.browseCovers(ctx, region, cards, now)
+		}
+		// Row templates: Explore's Browse row is 4 genres, the season, 2 moods
+		// and a decade from the Browse page, with their covers.
+		if a.musicTplOn() {
+			if b := a.musicBundle(ctx, now); b != nil {
+				cards, sc = nil, nil
+				for _, t := range rowtpl.ExploreTiles(rowtpl.BrowseSections(b, now, strings.ToLower(region), nil)) {
+					hue := t.Hue
+					c := MusicCard{Key: t.Key, Kind: "genre", MBID: strings.TrimPrefix(t.Href, "/music/genre/"), Name: t.Name, Hue: &hue, Href: t.Href, Genres: []string{}}
+					if len(t.Covers) > 0 {
+						c.Cover = t.Covers[0]
+					}
+					cards = append(cards, c)
+					sc = append(sc, musicscore.Scored{Item: musicscore.Item{Key: c.Key, Score: 1}})
+				}
+				meta.Title, meta.Shape, meta.Reason = "Browse", "grid", "Genres, the season, moods and decades"
+			}
 		}
 		addRow(meta,
 			musicscore.Row{Anchor: true, Prior: musicscore.PriorMixed, ArtistRow: true}, cards, sc, false, false)

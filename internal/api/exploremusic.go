@@ -79,6 +79,9 @@ type MusicCard struct {
 	// Cover is a Browse tile's tilted album cover (music_lists_v1): the
 	// genre's top charted album not used by another tile.
 	Cover string `json:"cover,omitempty"`
+	// Href is a Browse tile's page when it is not a genre page (row
+	// templates: moods, seasons, decades).
+	Href string `json:"href,omitempty"`
 }
 
 // MusicRow is one row of Explore â†’ Music.
