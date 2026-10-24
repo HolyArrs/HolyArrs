@@ -261,7 +261,11 @@ func (c *Ctx) artistOf(i int) string {
 	if it.Kind == "r" {
 		return it.ID
 	}
-	return it.ArtistID
+	if it.ArtistID != "" {
+		return it.ArtistID
+	}
+	// No artist id: the name stands in, so the per-artist cap still holds.
+	return "name:" + strings.ToLower(strings.TrimSpace(it.Artist))
 }
 
 // had reports an album the member has or asked for, or an artist they have.

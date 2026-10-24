@@ -680,7 +680,7 @@ var Catalog = []Tpl{
 		fill(func(c *Ctx, _ string) L { return c.byLPT(c.in(palb(c), "facet:instrumental"), c.Key) }),
 	t("H10", "cr", 0.5, "MA", "{mood} {for}", "Albums {basis} and in styles that suit {activity}", "albums in the mood and the activity", "fit", "", "W").cross(map[byte]string{'M': "activity", 'A': "mood"}, 3).
 		fill(crossFill),
-	t("H11", "se", 0.6, "MS", "{season} {mood}", "Albums {basis} that fit {season}", "albums in the mood and the season", "fit", "season on (mood page)", "Sn").cross(map[byte]string{'M': "season", 'S': "mood"}, 3).notWith("mood:sleep", "mood:focus", "mood:workout", "mood:throwback", "season:back-to-school").
+	t("H11", "se", 0.6, "MS", "{mood} picks for {season}", "Albums {basis} that fit {season}", "albums in the mood and the season", "fit", "season on (mood page)", "Sn").cross(map[byte]string{'M': "season", 'S': "mood"}, 3).notWith("mood:sleep", "mood:focus", "mood:workout", "mood:throwback", "season:back-to-school").
 		fill(crossFill),
 	t("H12", "di", 0.5, "M", "Hidden {mood} gems", "Well liked by those who play them, less played, {basis}", "the mood's mid-listened albums with loyal listeners", "0.5 fit + 0.5 novelty", "not had", "W").disc().
 		fill(gems),
@@ -688,7 +688,7 @@ var Catalog = []Tpl{
 		fill(func(c *Ctx, _ string) L { return c.byLPT(c.in(palb(c), "genre:soundtracks"), c.Key) }),
 	t("H14", "co", 0.5, "M", "{mood} big in {country}", "Charting in {country} today and {basis}", "the mood's albums on a country chart", "popularity there", "", "D").chart().slot("country", 1).
 		fill(func(c *Ctx, v string) L { return c.charting(palb(c), v) }),
-	t("H15", "ar", 0.5, "M", "Artists for {mood}", "Artists whose albums are {basis}", "the mood's artists", "0.6 fit + 0.4 listens", "", "W").round().
+	t("H15", "ar", 0.5, "M", "{mood} artists", "Artists whose albums are {basis}", "the mood's artists", "0.6 fit + 0.4 listens", "", "W").round().
 		fill(func(c *Ctx, _ string) L {
 			return c.by(part(c), func(i int) float64 { return 0.6*c.t(i, c.Key) + 0.4*c.lp(i) })
 		}),
@@ -836,7 +836,7 @@ var Catalog = []Tpl{
 		fill(modern),
 	t("M03", "de", 0.4, "M", "{mood} in {year}", "The {year} albums with the most listeners, {basis}", "the mood's albums from one year", "listens", "", "W").slot("year", 2).
 		fill(func(c *Ctx, v string) L { return c.byLP(c.inYear(palb(c), atoi(v))) }),
-	t("M04", "cl", 0.4, "M", "First albums, {mood}", "Debut albums with the most listeners, {basis}", "the mood's debut albums", "listens", "debuts", "W").
+	t("M04", "cl", 0.4, "M", "{mood} debut albums", "Debut albums with the most listeners, {basis}", "the mood's debut albums", "listens", "debuts", "W").
 		fill(func(c *Ctx, _ string) L { return c.byLP(c.debuts(palb(c))) }),
 	t("M05", "ar", 0.5, "M", "{mood} artists on the charts", "Artists charting today whose albums are {basis}", "the mood's charting artists", "popularity", "", "D").round().
 		fill(func(c *Ctx, _ string) L { return c.byP(c.onAnyChart(part(c))) }),
@@ -853,7 +853,7 @@ var Catalog = []Tpl{
 		fill(modern),
 	t("S03", "de", 0.4, "S", "{season} in {year}", "The {year} albums with the most listeners, {basis}", "the season's albums from one year", "listens", "", "W").slot("year", 2).
 		fill(func(c *Ctx, v string) L { return c.byLP(c.inYear(palb(c), atoi(v))) }),
-	t("S04", "cl", 0.4, "S", "First albums, {season}", "Debut albums with the most listeners, {basis}", "the season's debut albums", "listens", "debuts", "W").
+	t("S04", "cl", 0.4, "S", "{season} debut albums", "Debut albums with the most listeners, {basis}", "the season's debut albums", "listens", "debuts", "W").
 		fill(func(c *Ctx, _ string) L { return c.byLP(c.debuts(palb(c))) }),
 	t("S05", "ar", 0.5, "S", "{season} artists on the charts", "Artists charting today whose albums are {basis}", "the season's charting artists", "popularity", "", "D").round().
 		fill(func(c *Ctx, _ string) L { return c.byP(c.onAnyChart(part(c))) }),

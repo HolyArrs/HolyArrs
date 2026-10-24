@@ -302,6 +302,18 @@ func TestDryRun(t *testing.T) {
 	}
 }
 
+func TestAlbumsWithoutArtistIDStillCapPerArtist(t *testing.T) {
+	b := fakeBundle()
+	for i := range b.Items {
+		if b.Items[i].Kind == "a" && i%3 == 0 {
+			b.Items[i].ArtistID = ""
+		}
+	}
+	b.index()
+	c := pageCtx(b, "genre", "genre:rock")
+	checkRows(t, c, Build(c))
+}
+
 func TestTitleNames(t *testing.T) {
 	c := pageCtx(fakeBundle(), "genre", "genre:rock")
 	if got := c.country("cm"); got != "Cameroon" {
