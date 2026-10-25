@@ -50,14 +50,14 @@ type musicPreload struct {
 	seen    map[preloadKey]bool
 	// missed holds the items the server had no picture for yet; they are
 	// asked again musicPreloadRetry later (the server stores them meanwhile).
-	missed  []preloadKey
+	missed []preloadKey
 	// have holds the items whose pictures are stored (kept across bundle
 	// versions); engine rows show only those once a preload has run.
-	have    map[preloadKey]bool
+	have map[preloadKey]bool
 	// haveReady is set when a preload pass first finished: before that
 	// (start, the first pass running) rows are not checked against have.
 	haveReady bool
-	st      musicPreloadStatus
+	st        musicPreloadStatus
 	// warm stores one item's pictures; nil means the real ones (tests
 	// replace it).
 	warm func(ctx context.Context, k preloadKey) bool
