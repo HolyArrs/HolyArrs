@@ -54,6 +54,9 @@ type musicPreload struct {
 	// have holds the items whose pictures are stored (kept across bundle
 	// versions); engine rows show only those once a preload has run.
 	have    map[preloadKey]bool
+	// haveReady is set when a preload pass first finished: before that
+	// (start, the first pass running) rows are not checked against have.
+	haveReady bool
 	st      musicPreloadStatus
 	// warm stores one item's pictures; nil means the real ones (tests
 	// replace it).
@@ -129,14 +132,14 @@ func (a *API) tplMarkArt(kind, mbid string) {
 }
 
 // tplHasArt answers the engine's picture check for bundle b: items whose
-// pictures are stored. nil (no check) until a preload has stored any, so a
-// fresh install still shows its pages while the first preload runs.
+// pictures are stored. nil (no check) until a preload pass has finished, so
+// pages keep their rows while the first pass after a start runs.
 func (a *API) tplHasArt(b *rowtpl.Bundle) func(int) bool {
 	p := &a.musicPre
 	p.mu.Lock()
-	n := len(p.have)
+	ready := p.haveReady && len(p.have) > 0
 	p.mu.Unlock()
-	if n == 0 {
+	if !ready {
 		return nil
 	}
 	return func(i int) bool {
@@ -169,6 +172,7 @@ func (a *API) runPreload() {
 		if len(p.queue) == 0 {
 			p.running, p.st.Running = false, false
 			p.st.Finished = time.Now().UTC()
+			p.haveReady = true
 			if len(p.missed) > 0 {
 				ver := p.version
 				time.AfterFunc(musicPreloadRetry, func() { a.retryPreload(ver) })
