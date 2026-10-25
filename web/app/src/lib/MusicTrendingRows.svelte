@@ -7,6 +7,7 @@
 	import type { OwnedIndex } from './explore.ts';
 	import { defaultRegion } from './region.ts';
 	import { coverFor } from './music/music-pages.ts';
+	import { heroArtists, heroLine } from './music/page-hero.ts';
 	import { isNewRelease } from './music/music-new.ts';
 	import { fetchMusicExplore, fetchMusicExploreMore, fetchMusicPage, genreHref, musicCardHref, musicCardNote, musicImage, musicStatus, releaseWords, songAskHref, type MusicCardData, type MusicExploreAnswer, type MusicPageKind } from './music/music-trending.ts';
 	import MusicGenreTiles from './ui/MusicGenreTiles.svelte';
@@ -219,6 +220,15 @@
 
 	/** The Spotlight row (Apple "New" style): the hero first, then its stand-ins. */
 	const heroes = $derived(answer?.hero ? [answer.hero, ...(answer.hero_alts ?? [])] : []);
+	/** The page hero's collage: the Spotlight and first row's album covers (already stored). */
+	const heroCovers = $derived(
+		[...heroes, ...(answer?.rows[0]?.items ?? [])]
+			.filter((c) => c.kind === 'album' && c.image)
+			.slice(0, 5)
+			.map((c) => coverFor(musicImage(c), 250).src as string)
+	);
+	const bandHue = $derived(((((answer?.tile?.hue ?? 0) % 24) + 24) % 24) * 15);
+	const bandKind = $derived(({ genre: 'Genre', mood: 'Mood', season: 'Season', decade: 'Decade', activity: 'Activity' } as Record<string, string>)[(answer?.tile?.key ?? 'genre').split(':')[0]] ?? 'Genre');
 	/** Spotlight covers that failed to load: the card falls back to its artist's picture. */
 	let noCover = $state<Record<string, boolean>>({});
 	/** Spotlight artist photos that loaded at a usable size (400 px wide or more). */
@@ -243,9 +253,19 @@
 	<section class="music" class:v2={answer?.v2} data-testid="music-trending" aria-busy={!answer || undefined}>
 		{#if slug}
 			<!-- A genre page's band: its tile's hue and grey art, the genre's name. -->
-			<div class="band" style:--hue={`hsl(${((((answer?.tile?.hue ?? 0) % 24) + 24) % 24) * 15} 52% 36%)`} data-testid="music-genre-band">
-				{#if answer?.tile?.image}<img src={musicImage(answer.tile)} alt="" onerror={(e) => ((e.currentTarget as HTMLImageElement).hidden = true)} />{/if}
-				<h1>{answer?.tile?.name ?? ''}</h1>
+			<!-- The page hero: the tile's hue as a gradient behind a tilted collage of the page's top covers (preloaded), its words and leading artists, one stat line. -->
+			<div class="band" style:--hue={`hsl(${bandHue} 52% 36%)`} style:--hue2={`hsl(${(bandHue + 40) % 360} 60% 18%)`} data-testid="music-genre-band">
+				<div class="collage" aria-hidden="true">
+					{#each heroCovers as src (src)}<img {src} alt="" decoding="async" onerror={(e) => ((e.currentTarget as HTMLImageElement).hidden = true)} />{/each}
+				</div>
+				<div class="btext">
+					<span class="bkind">{bandKind}</span>
+					<h1>{answer?.tile?.name ?? ''}</h1>
+					{#if answer?.rows.length}
+						<p class="bline">{heroLine(answer?.tile?.key ?? '', answer?.tile?.name ?? '', heroArtists(heroes, answer.rows))}</p>
+						<p class="bstat">{answer.rows.length} rows · updated today{#if heroes[0]} · Top pick: {heroes[0].name}{/if}</p>
+					{/if}
+				</div>
 			</div>
 		{/if}
 		<!-- The chip bar keeps its height: placeholder chips until the genres are known. The v2 rows have genre tiles instead. -->
@@ -418,9 +438,22 @@
 	.plain { display: flex; flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 12px; }
 	.rhead { margin: 0; font-size: 17px; font-weight: 700; }
 	/* A Music genre page's band: the tile's look (hue, grey art at .55, radius 10), wider. */
-	.band { position: relative; display: flex; align-items: flex-end; min-height: 180px; padding: 20px 24px; border-radius: 10px; overflow: hidden; background: var(--hue); color: #fff; }
-	.band img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.55; }
-	.band h1 { position: relative; margin: 0; font-size: clamp(28px, 4vw, 44px); font-weight: 800; line-height: 1.1; text-shadow: 0 1px 2px rgb(0 0 0 / 0.35); }
+	.band { position: relative; display: flex; align-items: flex-end; min-height: 260px; padding: 28px 32px; border-radius: 14px; overflow: hidden; background: linear-gradient(135deg, var(--hue), var(--hue2)); color: #fff; isolation: isolate; }
+	.band::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgb(0 0 0 / .55) 0%, rgb(0 0 0 / .2) 55%, transparent 100%), linear-gradient(0deg, rgb(0 0 0 / .45), transparent 60%); }
+	.collage { position: absolute; z-index: -2; top: 50%; right: -2%; display: flex; gap: 14px; transform: translateY(-50%) rotate(-8deg); }
+	.collage img { width: clamp(110px, 14vw, 190px); aspect-ratio: 1; object-fit: cover; border-radius: 8px; box-shadow: 0 12px 30px rgb(0 0 0 / .45); opacity: .9; }
+	.collage img:nth-child(even) { transform: translateY(26px); }
+	.btext { position: relative; max-width: min(640px, 62%); display: flex; flex-direction: column; gap: 6px; }
+	.bkind { font: 600 12px/1 var(--font-ui); letter-spacing: .08em; text-transform: uppercase; opacity: .8; }
+	.band h1 { margin: 0; font-size: clamp(34px, 5vw, 60px); font-weight: 800; line-height: 1.02; letter-spacing: -.02em; text-shadow: 0 2px 8px rgb(0 0 0 / .35); }
+	.bline { margin: 4px 0 0; font: 500 clamp(14px, 1.2vw, 17px)/1.4 var(--font-ui); opacity: .95; }
+	.bstat { margin: 0; font: 400 13px/1.3 var(--font-ui); opacity: .75; }
+	@media (max-width: 600px) {
+		.band { min-height: 300px; padding: 20px; }
+		.collage { top: 8%; right: -18%; transform: rotate(-8deg); }
+		.collage img { width: 96px; }
+		.btext { max-width: 100%; }
+	}
 	.songs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 16px; }
 	@media (max-width: 1023px) { .songs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 	@media (max-width: 640px) { .songs { grid-template-columns: minmax(0, 1fr); } }
