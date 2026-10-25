@@ -286,6 +286,11 @@
 		for (const [k, v] of moreFacts) t(k, v);
 		return out;
 	});
+	// Decide in 5 s: a few key facts beside the ratings; everything else goes to About at the bottom.
+	const keyFacts = $derived(facts.filter((f) => f.kind === 'makers' || f.label === 'Network' || (f.label === 'Language' && info?.originalLanguage !== 'en')).slice(0, 4));
+	const aboutFacts = $derived(facts.filter((f) => !keyFacts.includes(f)));
+	let aboutWidth = $state(0);
+	const aboutCols = $derived(Math.max(2, Math.min(aboutFacts.length, Math.floor((aboutWidth + 28) / ((aboutWidth < 600 ? 130 : 150) + 28)) || 2)));
 	// Columns: as many as fit (150 px each, 130 on a phone), at least two. One item alone on the last
 	// row is avoided with one column fewer; when that does not help it spans two columns (factSpan).
 	let gridWidth = $state(0);
@@ -324,7 +329,7 @@
 			breadcrumb={crumbs}
 			meta={heroFacts(d)}
 			ratings={false}
-			showFacts={look === 'both'}
+			showFacts={look !== 'band'}
 			tagline={info?.tagline}
 			certification={rich?.certification ?? certOf(d.rating)}
 			score={rich?.score ?? scoreOf(d.rating)}
@@ -383,6 +388,43 @@
 			{/if}
 		{/snippet}
 
+		{#snippet grid(list: Fact[], cols: number)}
+			<dl class="facts-grid" style="--cols: {cols}">
+				{#each list as f, i (f.label)}
+					<div class:span={i === list.length - 1 && list.length % cols === 1 && cols > 1}>
+						<dt>{f.label}</dt>
+						<dd>
+							{#if f.kind === 'makers'}{@render names(makers, 3)}
+							{:else if f.kind === 'cert'}<span class="fb cert">{f.value}</span>
+							{:else}{f.value}{/if}
+						</dd>
+					</div>
+				{/each}
+			</dl>
+		{/snippet}
+		{#if look === 'decide'}
+		<!-- Decide in 5 s: the story and where to watch beside the ratings and a few key facts; then seasons, cast, trailers and rows; About at the bottom. -->
+		<div class="decide" data-testid="title-decide">
+			<div class="d-left">{@render story()}{@render where()}</div>
+			{#if hasScores || keyFacts.length}
+				<div class="d-right">
+					{#if hasScores}<TitleScores scores={picked.scores} tmdb={picked.tmdb} variant="tiles" />{/if}
+					{#if keyFacts.length}{@render grid(keyFacts, 2)}{/if}
+				</div>
+			{/if}
+		</div>
+		{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
+		{@render castRow()}
+		{@render trailers()}
+		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} />
+		{#if aboutFacts.length || tags.length}
+			<section class="about" bind:clientWidth={aboutWidth} data-testid="title-about">
+				<h2 class="tp-h2">About</h2>
+				{#if aboutFacts.length}{@render grid(aboutFacts, aboutCols)}{/if}
+				{#if tags.length}<ul class="tagchips">{#each tags.slice(0, 5) as t (t)}<li>{t}</li>{/each}</ul>{/if}
+			</section>
+		{/if}
+		{:else}
 		<!-- The story; the ratings on their own row, then every detail in one even grid; where to watch; tags; then the trailers. -->
 		<div class="strip">
 			{@render story()}
@@ -415,6 +457,7 @@
 		{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
 		{@render castRow()}
 		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} />
+		{/if}
 
 		<Sheet bind:open={allCast} title="Cast and crew" size="lg">
 			<ul class="all-grid people">
@@ -453,6 +496,12 @@
 	.infoblock { display: flex; flex-direction: column; border-block: 1px solid var(--line); }
 	.scores-row { padding: 16px 0; }
 	.scores-row + .facts-grid { border-top: 1px solid var(--line); }
+	.decide { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px 48px; align-items: start; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
+	.d-left, .d-right { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+	.d-right .facts-grid { padding: 14px 0 0; border-top: 1px solid var(--line); }
+	.about .facts-grid { padding-top: 0; }
+	.about .tagchips { margin-top: 8px; }
+	@media (max-width: 899px) { .decide { grid-template-columns: minmax(0, 1fr); } }
 	.facts-grid { display: grid; grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); gap: 16px 28px; margin: 0; padding: 16px 0; }
 	.facts-grid > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 	.facts-grid > div.span { grid-column: span 2; }
