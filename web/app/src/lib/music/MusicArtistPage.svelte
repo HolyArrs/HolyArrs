@@ -302,7 +302,15 @@
 		}
 	});
 
-	const picture = $derived(appPicture(hero?.image));
+	// The artist's photo. One the server has not stored yet is asked for
+	// again while the page is open (it fetches it right away, a user is
+	// waiting), and swaps in once stored: no reload needed.
+	let photoTry = $state(0);
+	const PHOTO_RETRY = [20000, 70000, 150000];
+	const picture = $derived.by(() => {
+		const p = appPicture(hero?.image);
+		return p && photoTry ? `${p}${p.includes('?') ? '&' : '?'}fresh=${photoTry}` : p;
+	});
 	// The hero never stays empty: each wide photo in turn, then a soft crop of the artist's photo.
 	const heroList = $derived([...(art.backgrounds ?? []), ...(picture ? [picture] : [])]);
 	let heroTry = $state(0);
@@ -323,6 +331,15 @@
 	$effect(() => {
 		void picture;
 		photoFailed = false;
+	});
+	$effect(() => {
+		void mbid;
+		photoTry = 0;
+	});
+	$effect(() => {
+		if (!photoFailed || photoTry >= PHOTO_RETRY.length) return;
+		const t = setTimeout(() => (photoTry += 1), PHOTO_RETRY[photoTry]);
+		return () => clearTimeout(t);
 	});
 	// No round photo: crop the wide hero photo into the circle (face sits upper middle); initials only with no image at all.
 	const wideFace = $derived((art.backgrounds ?? [])[0] ?? null);
@@ -466,7 +483,7 @@
 	{#if error && !hero}<LoadError hasData={false} message={plainReason(error).text} onretry={load} {busy} />{/if}
 	<PageLoader loading={!hero && !error} label="Loading this artist" onretry={load}>
 		{#if hero}
-			<header class="hero" class:vid={videoOn} data-hero>
+			<header class="hero" class:vid={videoOn} class:bare={!heroSrc && !heroVideo} data-hero>
 				<div class="stage" aria-hidden="true">
 					{#if heroSrc}
 						{#key heroSrc}
@@ -725,6 +742,9 @@
 	.clip.in { opacity: 1; }
 	.hero { transition: min-height 900ms var(--ease-out); }
 	.hero.vid { min-height: min(56.25vw, 86vh); }
+	/* No photo and no video: a compact header (name and initials), never a tall empty block. */
+	.hero.bare { min-height: 0; background: linear-gradient(180deg, color-mix(in srgb, var(--hero-ink) 60%, var(--surface-2)), var(--hero-ink)); }
+	.hero.bare .hero-in { padding-top: 56px; }
 	.hero.vid .stage { inset: 0; animation: none; }
 	/* Video on: photo and name settle smaller at the bottom so the video leads. */
 	.hero-in { transform-origin: 50% 100%; transition: transform 1100ms cubic-bezier(.22, 1, .36, 1) 250ms, opacity 600ms ease 250ms; will-change: transform; }

@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/CoderLuii/holyarrs/internal/library"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/music/rowtpl"
 	"github.com/CoderLuii/holyarrs/internal/parts"
@@ -160,27 +161,64 @@ func (a *API) tplMarkArt(kind, mbid string) {
 	p.mu.Unlock()
 }
 
-// tplHasArt answers the engine's picture check for bundle b: items whose
-// pictures are stored. nil (no check) until a preload pass has finished, so
-// pages keep their rows while the first pass after a start runs.
+// tplHasArt answers the engine's picture check for bundle b: an item whose
+// picture is stored (the preload or the picture route stored it, or its
+// file is in the artwork store). nil (no check) until a preload has stored
+// any picture, so a page never empties before the first one runs.
 func (a *API) tplHasArt(b *rowtpl.Bundle) func(int) bool {
 	p := &a.musicPre
 	p.mu.Lock()
-	ready := p.haveReady && len(p.have) > 0
+	ready := p.haveReady || len(p.have) > 0
 	p.mu.Unlock()
 	if !ready {
 		return nil
 	}
+	memo := map[int]bool{}
 	return func(i int) bool {
+		if v, ok := memo[i]; ok {
+			return v
+		}
 		it := b.Items[i]
 		k := preloadKey{"album", it.ID}
 		if it.Kind == "r" {
 			k.kind = "artist"
 		}
 		p.mu.Lock()
-		defer p.mu.Unlock()
-		return p.have[k]
+		v := p.have[k]
+		p.mu.Unlock()
+		if !v && a.localArt(k) {
+			v = true
+			p.mu.Lock()
+			p.markLocked(k)
+			p.mu.Unlock()
+		}
+		memo[i] = v
+		return v
 	}
+}
+
+// localArt reports a picture already in the artwork store (the server's
+// copy, at a card size).
+func (a *API) localArt(k preloadKey) bool {
+	lib := a.s.Library
+	if lib == nil || lib.Artwork == nil {
+		return false
+	}
+	var srcs []string
+	if k.kind == "artist" {
+		srcs = []string{a.serverArtistPhotoURL(context.Background(), k.mbid, "250")}
+	} else {
+		srcs = []string{a.serverAlbumCoverURL(k.mbid, "250"), a.serverAlbumCoverURL(k.mbid, "500")}
+	}
+	for _, src := range srcs {
+		if src == "" {
+			continue
+		}
+		if _, ok := lib.Artwork.Path(library.ArtworkName(src)); ok {
+			return true
+		}
+	}
+	return false
 }
 
 // tplPreloadStatus answers the preload's progress.

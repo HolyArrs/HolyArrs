@@ -225,6 +225,13 @@ func (a *API) musicTrendArt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	kind, mbid := r.PathValue("kind"), strings.ToLower(r.PathValue("mbid"))
+	if r.URL.Query().Get("fresh") != "" {
+		// An open page asks again for a picture the server was still
+		// storing: the remembered miss does not hold it back.
+		a.music.mu.Lock()
+		delete(a.music.artMiss, kind+"|"+mbid)
+		a.music.mu.Unlock()
+	}
 	name, p, ok := a.musicTrendArtFile(r.Context(), kind, mbid, coverSize(r))
 	if ok {
 		a.tplMarkArt(kind, mbid)
