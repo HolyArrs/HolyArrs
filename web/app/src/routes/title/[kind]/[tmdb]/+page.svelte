@@ -460,9 +460,12 @@
 			</dl>
 		{/snippet}
 		{#snippet factsLine(withGenres = true)}
+			{@const parts = withGenres ? heroFacts(d) : heroFacts(d).slice(0, heroFacts(d).length - d.genres.slice(0, d.kind === 'show' ? 2 : 3).length)}
+			<!-- One even row: every item, the age rating and each score apart by the same · and space. -->
 			<div class="calm-meta">
-				<span class="one" class:nowrap={!withGenres}>{(withGenres ? heroFacts(d) : heroFacts(d).slice(0, heroFacts(d).length - d.genres.slice(0, d.kind === 'show' ? 2 : 3).length)).join(' · ')}{#if cert}<span class="fb cert">{cert}</span>{/if}</span>
-				{#if !withGenres && hasScores}<span class="dot" aria-hidden="true">·</span><TitleScores scores={picked.scores} tmdb={picked.tmdb} variant="mono" />{/if}
+				{#each parts as f, i (i)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<span>{f}</span>{/each}
+				{#if cert}<span class="sep" aria-hidden="true">·</span><span class="fb cert">{cert}</span>{/if}
+				{#if !withGenres && hasScores}<span class="sep" aria-hidden="true">·</span><TitleScores scores={picked.scores} tmdb={picked.tmdb} variant="mono" />{/if}
 			</div>
 		{/snippet}
 		{#snippet credits()}
@@ -612,8 +615,7 @@
 	.d-left, .d-right { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 	.d-right .facts-grid { padding: 14px 0 0; border-top: 1px solid var(--line); }
 	.calm { display: flex; flex-direction: column; gap: 16px; max-width: 760px; padding-bottom: 8px; }
-	.calm-meta .one { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-	.calm-meta .one.nowrap { white-space: nowrap; }
+	.calm-meta .sep { margin: 0 8px; color: var(--text-faint); }
 	.credits { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: -4px 0 0; color: var(--text); font: 500 14px/1.45 var(--font-ui); }
 	.credits .cl, .side-credits dt { color: var(--text-muted); font-weight: 500; }
 	.credits a, .side-credits a { color: inherit; }
@@ -622,7 +624,7 @@
 	.side-credits div { display: flex; flex-wrap: wrap; gap: 0 6px; }
 	.side-credits dd { margin: 0; color: var(--text); }
 	@media (max-width: 899px) { .side { grid-template-columns: minmax(0, 1fr); } }
-	.calm-meta { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
+	.calm-meta { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 0; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
 	.calm .tagchips.quiet, .d-left .tagchips.quiet { margin-top: -6px; }
 	.about-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 28px 40px; }
 	.about-col h3 { margin: 0 0 12px; color: var(--text); font: 700 17px/1.2 var(--font-ui); }

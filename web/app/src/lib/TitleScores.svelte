@@ -12,9 +12,21 @@
 	const count = $derived(scores.length + (tmdbText ? 1 : 0));
 </script>
 
+{#snippet monoMark(source: string)}
+	<!-- One-color marks drawn in the text color: a tomato, a popcorn bucket, a star, a circled M, three dots, a circled tick. -->
+	{#if source === 'rt_critics'}<svg width="15" height="15" viewBox="0 0 12 12"><ellipse cx="6" cy="7.3" rx="4.9" ry="4.2" fill="currentColor" /><path d="M6 3.4C5.7 2.2 4.8 1.5 3.5 1.5c.6 1 1.4 1.6 2.5 1.9zm0 0c.3-1.2 1.2-1.9 2.5-1.9-.6 1-1.4 1.6-2.5 1.9z" fill="currentColor" /></svg>
+	{:else if source === 'rt_audience'}<svg width="15" height="15" viewBox="0 0 12 12"><circle cx="3.9" cy="3.9" r="1.7" fill="currentColor" /><circle cx="6" cy="3.2" r="1.8" fill="currentColor" /><circle cx="8.1" cy="3.9" r="1.7" fill="currentColor" /><path d="M2.3 5.4h7.4l-1 6.1H3.3z" fill="currentColor" /><path d="M5 6.2v4.6M7 6.2v4.6" stroke="var(--bg)" stroke-width=".8" /></svg>
+	{:else if source === 'tmdb'}<svg width="15" height="15" viewBox="0 0 12 12"><path d="M6 .8l1.6 3.3 3.6.5-2.6 2.5.6 3.6L6 9l-3.2 1.7.6-3.6L.8 4.6l3.6-.5z" fill="currentColor" /></svg>
+	{:else if source === 'metacritic'}<svg width="15" height="15" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5.1" fill="none" stroke="currentColor" stroke-width="1.2" /><path d="M3.7 8.1V4.3L6 6.9l2.3-2.6v3.8" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" /></svg>
+	{:else if source === 'letterboxd'}<svg width="17" height="15" viewBox="0 0 14 12"><circle cx="3" cy="6" r="2.4" fill="currentColor" opacity=".55" /><circle cx="7" cy="6" r="2.4" fill="currentColor" /><circle cx="11" cy="6" r="2.4" fill="currentColor" opacity=".55" /></svg>
+	{:else if source === 'trakt'}<svg width="15" height="15" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5.1" fill="none" stroke="currentColor" stroke-width="1.2" /><path d="M3.8 6.1l1.6 1.6 3-3.3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+	{:else}{marks[source]}{/if}
+{/snippet}
+
 {#snippet mark(source: string)}
 	<span class="mark {source}" aria-hidden="true">
-		{#if source === 'rt_critics'}<svg width="14" height="14" viewBox="0 0 12 12"><circle cx="6" cy="6.6" r="4.8" fill="#fa320a" /><path d="M5 1.4c.6.6 1 .9 1.8.7" stroke="#00912d" stroke-width="1.4" fill="none" stroke-linecap="round" /></svg>
+		{#if variant === 'mono'}{@render monoMark(source)}
+		{:else if source === 'rt_critics'}<svg width="14" height="14" viewBox="0 0 12 12"><circle cx="6" cy="6.6" r="4.8" fill="#fa320a" /><path d="M5 1.4c.6.6 1 .9 1.8.7" stroke="#00912d" stroke-width="1.4" fill="none" stroke-linecap="round" /></svg>
 		{:else if source === 'rt_audience'}<svg width="14" height="14" viewBox="0 0 12 12"><path d="M2.2 4.6h7.6l-1 6.4H3.2z" fill="#fa320a" /><circle cx="4" cy="3.6" r="1.6" fill="#f5e6c8" /><circle cx="6" cy="3" r="1.6" fill="#f5e6c8" /><circle cx="8" cy="3.6" r="1.6" fill="#f5e6c8" /></svg>
 		{:else if source === 'tmdb'}<svg width="14" height="14" viewBox="0 0 12 12"><path d="M6 .8l1.6 3.3 3.6.5-2.6 2.5.6 3.6L6 9l-3.2 1.7.6-3.6L.8 4.6l3.6-.5z" fill="#f5c518" /></svg>
 		{:else}{marks[source]}{/if}
@@ -49,14 +61,17 @@
 	.chips li { display: inline-flex; align-items: center; gap: 6px; }
 	.chips .n { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
-	/* mono: the chips line without the brand colors, to sit in a facts row. */
-	.mono { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+	/* mono: the chips without brand colors, joining the facts row around them
+	   (each score is an item of that row, with the same · and spacing). */
+	.mono { display: contents; }
 	.mono li { display: inline-flex; align-items: center; gap: 5px; color: var(--text-muted); }
+	.mono li + li { margin-left: 8px; }
+	.mono li + li::before { content: '·'; margin-right: 3px; color: var(--text-faint); }
 	.mono .v { font-size: 14px; font-weight: 600; color: var(--text); }
 	.mono .n { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-	.mono .mark { height: 16px; background: none; color: var(--text-muted); box-shadow: inset 0 0 0 1px currentColor; font-size: 9.5px; }
-	.mono .mark.rt_critics, .mono .mark.rt_audience, .mono .mark.tmdb { box-shadow: none; }
-	.mono .mark svg { filter: grayscale(1) brightness(1.5); opacity: .8; }
+	.mono .mark { height: 16px; min-width: 0; padding: 0; background: none; color: var(--text-muted); }
+	.mono .mark.imdb { padding: 0 4px; border-radius: 3px; background: var(--text-muted); color: var(--bg); font-size: 9.5px; letter-spacing: 0; }
+	.mono .mark.trakt:not(:has(svg)) { padding: 0 4px; border-radius: 3px; box-shadow: inset 0 0 0 1px currentColor; }
 
 	/* tiles: big numbers with the name under them. */
 	.tiles { display: flex; flex-wrap: wrap; gap: 14px 28px; }
