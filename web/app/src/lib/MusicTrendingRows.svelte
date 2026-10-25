@@ -229,7 +229,7 @@
 			.map((c) => coverFor(musicImage(c), 250).src as string)
 	);
 	const bandHue = $derived(((((answer?.tile?.hue ?? 0) % 24) + 24) % 24) * 15);
-	const bandKind = $derived(({ genre: 'Genre', mood: 'Mood', season: 'Season', decade: 'Decade', activity: 'Activity' } as Record<string, string>)[(answer?.tile?.key ?? 'genre').split(':')[0]] ?? 'Genre');
+	const bandKind = $derived(({ genre: 'Genre', mood: 'Mood', season: 'Season', decade: 'Decade', activity: 'Made for' } as Record<string, string>)[(answer?.tile?.key ?? 'genre').split(':')[0]] ?? 'Genre');
 	/** Spotlight covers that failed to load: the card falls back to its artist's picture. */
 	let noCover = $state<Record<string, boolean>>({});
 	/** Spotlight artist photos that loaded at a usable size (400 px wide or more). */

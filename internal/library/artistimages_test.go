@@ -16,8 +16,9 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
-// fakePictures is a fake Deezer (an artist by id, and a search that finds
-// an impostor of the same name) that also serves the pictures.
+// fakePictures is a fake metadata server picture store holding the lab
+// artist's photo; Deezer-style addresses (an artist by id, a name search
+// finding an impostor) are there too and must never be asked.
 // asked, when set, counts the requests.
 func fakePictures(t *testing.T, down *atomic.Bool, asked ...*atomic.Int32) *httptest.Server {
 	t.Helper()
@@ -31,6 +32,9 @@ func fakePictures(t *testing.T, down *atomic.Bool, asked ...*atomic.Int32) *http
 			return
 		}
 		switch r.URL.Path {
+		case "/v1/img/artist/" + labArtist + "/500.jpg":
+			w.Header().Set("Content-Type", "image/jpeg")
+			_, _ = w.Write([]byte("ÿØÿà" + strings.Repeat("s", 200)))
 		case "/search/artist":
 			// Another artist with the same name: never used.
 			w.Header().Set("Content-Type", "application/json")
@@ -51,7 +55,8 @@ func fakePictures(t *testing.T, down *atomic.Bool, asked ...*atomic.Int32) *http
 
 func withPictures(t *testing.T, svc *Service, srv *httptest.Server) {
 	svc.ArtistImages = &metadata.ArtistImages{BaseURL: srv.URL, Gap: time.Millisecond, Timeout: time.Second}
-	svc.Artwork = &ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{srv.URL + "/pic/"}, HTTP: &http.Client{}}
+	svc.ImageServer = srv.URL + "/v1/img"
+	svc.Artwork = &ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{srv.URL + "/"}, HTTP: &http.Client{}}
 }
 
 func artworkOf(t *testing.T, s *store.Store, id int64) []string {
@@ -89,8 +94,8 @@ func TestArtistImageOnAdd(t *testing.T) {
 	if len(art) != 1 || !strings.HasPrefix(art[0], "poster:") {
 		t.Fatalf("artwork %v", art)
 	}
-	if want := "poster:" + ArtworkName(svc.ArtistImages.BaseURL+"/pic/lab-band.jpg"); art[0] != want {
-		t.Fatalf("artwork %v, want the linked artist's %s, not the same-named impostor's", art, want)
+	if want := "poster:" + ArtworkName(svc.ImageServer+"/artist/"+labArtist+"/500.jpg"); art[0] != want {
+		t.Fatalf("artwork %v, want the server's stored photo %s", art, want)
 	}
 }
 
