@@ -176,11 +176,9 @@
 	// waits until the row is near the screen.
 	let loaded = $state(false);
 	const near = shelfNear();
-	// The card's rendered width picks the picture size.
+	// The card's rendered width picks the picture size; it is watched (not
+	// read once), so a card first laid out at width 0 still gets its picture.
 	let cw = $state(0);
-	$effect(() => {
-		if (root) cw = root.clientWidth;
-	});
 	// A picture that fails (a 404: the server has not stored it yet) shows
 	// the fallback picture at once, then the placeholder; no retry timer.
 	let second = $state(false);
@@ -192,18 +190,20 @@
 	const shownPic = $derived(pic);
 	const shownSet = $derived(second ? undefined : srcset);
 	// Sized covers: the measured width is the display size, so big tiles pick 500 or 1200.
+	const asking = $derived(!!image && !failed && near() && (!srcset || cw > 0));
 	const shownSizes = $derived(shownSet && cw ? `${cw}px` : sizes);
 	const kindIcon = $derived<IconName>(kind === 'show' || kind === 'episode' ? 'tv' : kind === 'artist' ? 'music' : 'film');
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="ui-poster" class:square={shape === 'square'} class:round={shape === 'round'} style:width bind:this={root} onpointerenter={() => ((byKey = false), enter())} onpointermove={(e) => (e.movementX || e.movementY) && !open && !opener.pending && ((byKey = false), enter())} onpointerleave={leave} onfocusin={focusIn} onfocusout={focusOut} onpointerdown={() => opener.cancel()}>
+<div class="ui-poster" class:square={shape === 'square'} class:round={shape === 'round'} style:width bind:this={root} bind:clientWidth={cw} onpointerenter={() => ((byKey = false), enter())} onpointermove={(e) => (e.movementX || e.movementY) && !open && !opener.pending && ((byKey = false), enter())} onpointerleave={leave} onfocusin={focusIn} onfocusout={focusOut} onpointerdown={() => opener.cancel()}>
 	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} bind:this={hit} use:press={'card'}>
 		<span class="art" use:viewTransitionName={vtName} bind:this={artEl}>
 			{#if !image || failed || !loaded}
-				<ArtPlaceholder name={title} shape={shape === 'round' ? 'circle' : shape} loading={!!image && !failed && !loaded} />
+				<!-- The shimmer only while a picture is really on its way; else the still initials. -->
+				<ArtPlaceholder name={title} shape={shape === 'round' ? 'circle' : shape} loading={asking && !loaded} />
 			{/if}
-			{#if image && !failed && near() && (!srcset || cw)}
+			{#if asking}
 				{#key shownPic}
 					<img src={shownPic} srcset={shownSet} sizes={shownSizes} class:in={loaded} alt="" loading={eager ? 'eager' : 'lazy'} fetchpriority={high ? 'high' : 'auto'} decoding="async" use:whenLoaded={() => (loaded = true)} onerror={broken} />
 				{/key}

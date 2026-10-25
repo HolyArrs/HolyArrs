@@ -321,7 +321,7 @@ func (a *API) buildTplPage(ctx context.Context, member int64, kind, slug, region
 		return nil, nil, nil, tile, true
 	}
 	sh := a.musicShelvesOf(ctx, region, now)
-	c := &rowtpl.Ctx{B: b, Kind: kindOfKey(key), Key: key, Region: strings.ToLower(region), Now: now, Member: member, Lib: a.musicTplLib(ctx, member, lib, acts, b, now), Blocks: tplBlocks(sh), CountryName: countryName}
+	c := &rowtpl.Ctx{B: b, Kind: kindOfKey(key), Key: key, Region: strings.ToLower(region), Now: now, Member: member, Lib: a.musicTplLib(ctx, member, lib, acts, b, now), Blocks: tplBlocks(sh), CountryName: countryName, HasArt: a.tplHasArt(b)}
 	if sh != nil {
 		c.Neighbor = sh.Neighbor
 	}
@@ -379,7 +379,7 @@ func (a *API) buildTplWorld(ctx context.Context, r *http.Request, kind string, n
 		}
 	}
 	sh := a.musicShelvesOf(ctx, region, now)
-	c := &rowtpl.Ctx{B: b, Kind: kind, Region: strings.ToLower(region), Now: now, Member: member, Lib: lib, Blocks: tplBlocks(sh), CountryName: countryName}
+	c := &rowtpl.Ctx{B: b, Kind: kind, Region: strings.ToLower(region), Now: now, Member: member, Lib: lib, Blocks: tplBlocks(sh), CountryName: countryName, HasArt: a.tplHasArt(b)}
 	if sh != nil {
 		c.Neighbor = sh.Neighbor
 	}
@@ -423,7 +423,7 @@ func (a *API) tplRememberCovers(b *rowtpl.Bundle, secs []rowtpl.BrowseSection) {
 // tplExploreCands answers the engine's Explore candidates (world rows and
 // the personal rows it owns; the Explore builder keeps its own).
 func (a *API) tplExploreCands(ctx context.Context, member int64, region string, lib *musicLib, acts *musicActs, b *rowtpl.Bundle, sh *metadata.MusicShelves, now time.Time) []rowtpl.Cand {
-	c := &rowtpl.Ctx{B: b, Kind: "explore", Region: strings.ToLower(region), Now: now, Member: member, Lib: a.musicTplLib(ctx, member, lib, acts, b, now), Blocks: tplBlocks(sh), CountryName: countryName}
+	c := &rowtpl.Ctx{B: b, Kind: "explore", Region: strings.ToLower(region), Now: now, Member: member, Lib: a.musicTplLib(ctx, member, lib, acts, b, now), Blocks: tplBlocks(sh), CountryName: countryName, HasArt: a.tplHasArt(b)}
 	if sh != nil {
 		c.Neighbor = sh.Neighbor
 	}

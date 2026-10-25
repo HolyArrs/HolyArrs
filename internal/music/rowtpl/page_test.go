@@ -414,3 +414,34 @@ func TestPageItemsHoldEveryShownItem(t *testing.T) {
 		}
 	}
 }
+
+// Items without a stored picture never fill a row (or the Spotlight): a row
+// that falls under RowMin without them drops.
+func TestRowsShowOnlyItemsWithPictures(t *testing.T) {
+	b := fakeBundle()
+	c := pageCtx(b, "genre", "genre:rock")
+	all := len(Build(c))
+	c = pageCtx(b, "genre", "genre:rock")
+	c.HasArt = func(i int) bool { return i%3 != 0 }
+	for _, i := range Spotlight(c) {
+		if i%3 == 0 {
+			t.Fatalf("spotlight item %d has no picture", i)
+		}
+	}
+	rows := Build(c)
+	for _, r := range rows {
+		if len(r.Items) < RowMin {
+			t.Fatalf("%s: %d items", r.ID, len(r.Items))
+		}
+		for _, i := range r.Items {
+			if i%3 == 0 {
+				t.Fatalf("%s: item %d has no picture", r.ID, i)
+			}
+		}
+	}
+	c = pageCtx(b, "genre", "genre:rock")
+	c.HasArt = func(int) bool { return false }
+	if n := len(Build(c)); n != 0 || all == 0 {
+		t.Fatalf("no pictures at all: %d rows (of %d)", n, all)
+	}
+}

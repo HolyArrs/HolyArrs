@@ -491,7 +491,7 @@ func Spotlight(c *Ctx) []int {
 		{
 			var out []int
 			artists := map[string]bool{}
-			for _, i := range c.notHad(c.albums(tp.Fill(c, v))) {
+			for _, i := range c.pictured(c.notHad(c.albums(tp.Fill(c, v)))) {
 				if a := c.artistOf(i); !artists[a] {
 					artists[a] = true
 					out = append(out, i)
@@ -554,6 +554,7 @@ func Candidates(c *Ctx) []Cand {
 			if !tp.Keep {
 				l = c.notHad(l)
 			}
+			l = c.pictured(l)
 			if len(l) > rawMax {
 				l = l[:rawMax]
 			}
@@ -632,6 +633,7 @@ func Build(c *Ctx) []Row {
 			if !tp.Keep {
 				l = c.notHad(l)
 			}
+			l = c.pictured(l)
 			if len(l) > rawMax {
 				l = l[:rawMax]
 			}

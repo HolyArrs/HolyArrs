@@ -225,6 +225,9 @@ func (a *API) musicTrendArt(w http.ResponseWriter, r *http.Request) {
 	}
 	kind, mbid := r.PathValue("kind"), strings.ToLower(r.PathValue("mbid"))
 	name, p, ok := a.musicTrendArtFile(r.Context(), kind, mbid, coverSize(r))
+	if ok {
+		a.tplMarkArt(kind, mbid)
+	}
 	if !ok {
 		// A library artist's saved picture stands in when no source has one.
 		if fb := r.URL.Query().Get("fallback"); kind == "artist" && strings.HasPrefix(fb, "/api/v1/artwork/") && !strings.Contains(fb, "//") && !strings.Contains(fb, "..") {

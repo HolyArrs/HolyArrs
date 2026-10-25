@@ -51,6 +51,9 @@ type musicPreload struct {
 	// missed holds the items the server had no picture for yet; they are
 	// asked again musicPreloadRetry later (the server stores them meanwhile).
 	missed  []preloadKey
+	// have holds the items whose pictures are stored (kept across bundle
+	// versions); engine rows show only those once a preload has run.
+	have    map[preloadKey]bool
 	st      musicPreloadStatus
 	// warm stores one item's pictures; nil means the real ones (tests
 	// replace it).
@@ -104,6 +107,47 @@ func (a *API) tplPreload(b *rowtpl.Bundle, region string) {
 	if len(p.queue) > 0 && !p.running {
 		p.running, p.st.Running = true, true
 		go supervisor.Guard("music-cover-preload", a.runPreload)
+	}
+}
+
+func (p *musicPreload) markLocked(k preloadKey) {
+	if p.have == nil {
+		p.have = map[preloadKey]bool{}
+	}
+	p.have[k] = true
+}
+
+// tplMarkArt records a stored picture (the picture route stored it).
+func (a *API) tplMarkArt(kind, mbid string) {
+	if kind != "album" && kind != "artist" {
+		return
+	}
+	p := &a.musicPre
+	p.mu.Lock()
+	p.markLocked(preloadKey{kind, mbid})
+	p.mu.Unlock()
+}
+
+// tplHasArt answers the engine's picture check for bundle b: items whose
+// pictures are stored. nil (no check) until a preload has stored any, so a
+// fresh install still shows its pages while the first preload runs.
+func (a *API) tplHasArt(b *rowtpl.Bundle) func(int) bool {
+	p := &a.musicPre
+	p.mu.Lock()
+	n := len(p.have)
+	p.mu.Unlock()
+	if n == 0 {
+		return nil
+	}
+	return func(i int) bool {
+		it := b.Items[i]
+		k := preloadKey{"album", it.ID}
+		if it.Kind == "r" {
+			k.kind = "artist"
+		}
+		p.mu.Lock()
+		defer p.mu.Unlock()
+		return p.have[k]
 	}
 }
 
@@ -250,6 +294,7 @@ func (a *API) preloadWarm(ver string, todo []preloadKey) {
 				if p.version == ver {
 					if ok {
 						p.st.Warmed++
+						p.markLocked(k)
 					} else {
 						p.st.Failed++
 						p.missed = append(p.missed, k)

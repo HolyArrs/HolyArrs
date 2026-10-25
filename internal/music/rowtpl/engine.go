@@ -157,6 +157,9 @@ type Ctx struct {
 	CountryName func(code string) string
 	// Seen holds item keys already on the page (the Spotlight).
 	Seen map[string]bool
+	// HasArt reports an item whose picture is stored (nil: all are); rows
+	// and the Spotlight show only those, never an item without a picture.
+	HasArt func(i int) bool
 }
 
 // Day is the build's UTC day.
@@ -168,6 +171,14 @@ func (c *Ctx) week() string {
 }
 
 func (c *Ctx) it(i int) *Item { return &c.B.Items[i] }
+
+// pictured keeps the items with a stored picture (all when HasArt is nil).
+func (c *Ctx) pictured(l L) L {
+	if c.HasArt == nil {
+		return l
+	}
+	return c.where(l, c.HasArt)
+}
 
 // Lookup answers a catalog album or artist by its MusicBrainz id.
 func (b *Bundle) Lookup(kind, id string) (Item, bool) {

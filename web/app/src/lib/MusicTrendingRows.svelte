@@ -306,14 +306,14 @@
 								{#if !cv.src || noCover[c.key]}<ArtPlaceholder name={c.name} shape="wide" />{/if}
 								{#if cv.src && !noCover[c.key]}
 									<!-- The square cover on a blurred, darker copy of itself fills the wide frame. -->
-									<img class="blur" src={coverFor(musicImage(c), 120).src} alt="" aria-hidden="true" loading="lazy" decoding="async" />
+									<img class="blur" src={coverFor(musicImage(c), 120).src} alt="" aria-hidden="true" decoding="async" />
 									<img class="sq" src={cv.src} srcset={cv.srcset} sizes="240px" alt="" fetchpriority="high" decoding="async" onerror={() => (noCover[c.key] = true)} />
 								{/if}
 								{#if art}
 									<!-- The artist's photo, when there is one, over all of it; the cover then sits small in the corner (as New & Popular). -->
-									<img class="photo" class:in={photoOk[c.key]} src={art} alt="" loading="lazy" decoding="async" onload={(e) => ((e.currentTarget as HTMLImageElement).naturalWidth >= 400 && (photoOk[c.key] = true))} />
+									<img class="photo" class:in={photoOk[c.key]} src={art} alt="" decoding="async" onload={(e) => ((e.currentTarget as HTMLImageElement).naturalWidth >= 400 && (photoOk[c.key] = true))} />
 								{/if}
-								{#if photoOk[c.key] && cv.src && !noCover[c.key]}<img class="mini" src={coverFor(musicImage(c), 60).src} alt="" loading="lazy" decoding="async" />{/if}
+								{#if photoOk[c.key] && cv.src && !noCover[c.key]}<img class="mini" src={coverFor(musicImage(c), 60).src} alt="" decoding="async" />{/if}
 							</span>
 							{#if caption(c)}<span class="cap-below">{caption(c)}</span>{/if}
 						</a>
