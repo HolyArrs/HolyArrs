@@ -22,6 +22,7 @@
 	import { cameFrom, fromIcon } from '#lib/came-from.svelte.ts';
 	import { albumYear } from '#lib/music/music.ts';
 	import { SkRail, SkTrackRow } from '#lib/ui/sk/index.ts';
+	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import { albumHref, appPicture, artistHref, coverFor, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist, type PageCredit, type PageTrack } from '#lib/music/music-pages.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 
@@ -97,7 +98,29 @@
 	});
 
 	const hero = $derived<AlbumCoreData | null>(data ?? core);
-	const cover = $derived(appPicture(hero?.image));
+	// A cover the server has not stored yet is asked for again while the
+	// page is open (20 s, 70 s, 150 s) and swaps in once stored; until then
+	// the placeholder shows.
+	const COVER_RETRY = [20000, 70000, 150000];
+	let coverTry = $state(0);
+	let coverFailed = $state(false);
+	const cover = $derived.by(() => {
+		const p = appPicture(hero?.image);
+		return p && coverTry ? `${p}${p.includes('?') ? '&' : '?'}fresh=${coverTry}` : p;
+	});
+	$effect(() => {
+		void hero?.mbid;
+		coverTry = 0;
+	});
+	$effect(() => {
+		void cover;
+		coverFailed = false;
+	});
+	$effect(() => {
+		if (!coverFailed || coverTry >= COVER_RETRY.length) return;
+		const t = setTimeout(() => (coverTry += 1), COVER_RETRY[coverTry]);
+		return () => clearTimeout(t);
+	});
 	const titleId = $derived(data?.title_id || lookup?.title_id || 0);
 	const asked = $derived(askedHere || !!lookup?.ask?.albums?.some((a) => a.mbid === mbid) || (!!lookup?.ask && !lookup.ask.albums?.length));
 	const status = $derived(data ? owned(data, asked) : null);
@@ -171,7 +194,7 @@
 				{#if from?.label}<nav class="crumbs" aria-label="Breadcrumb"><a class="chip" href={from.path} onclick={stepBack} data-testid="album-back"><Icon name={fromIcon(from.path) ?? 'chevronLeft'} size={14} />{from.label}</a></nav>{/if}
 				<div class="hero-in">
 					<div class="cover" class:in={coverIn}>
-						{#if cover}<img src={coverFor(cover, 320).src} srcset={coverFor(cover, 320).srcset} sizes="320px" alt={`${hero.name} cover`} width="320" height="320" decoding="async" fetchpriority="high" onload={() => (coverIn = true)} />{:else}<Icon name="music" size={48} />{/if}
+						{#if cover && !coverFailed}<img src={coverFor(cover, 320).src} srcset={coverFor(cover, 320).srcset} sizes="320px" alt={`${hero.name} cover`} width="320" height="320" decoding="async" fetchpriority="high" onload={() => (coverIn = true)} onerror={() => { coverIn = false; coverFailed = true; }} />{:else}<ArtPlaceholder name={hero.name} shape="square" />{/if}
 					</div>
 					<div class="words">
 						<p class="kind">{kindWord(hero)}</p>
@@ -285,7 +308,7 @@
 	.chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 10px; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 13px/1.2 var(--font-ui); }
 	.chip:hover { background: color-mix(in srgb, var(--text) 14%, transparent); }
 	.hero-in { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 32px; align-items: center; padding: 8px 0 8px; }
-	.cover { width: 240px; aspect-ratio: 1; display: grid; place-items: center; border-radius: 10px; overflow: hidden; background: var(--surface-1); box-shadow: 0 10px 30px rgb(0 0 0 / .35), 0 2px 6px rgb(0 0 0 / .2); }
+	.cover { position: relative; width: 240px; aspect-ratio: 1; display: grid; place-items: center; border-radius: 10px; overflow: hidden; background: var(--surface-1); box-shadow: 0 10px 30px rgb(0 0 0 / .35), 0 2px 6px rgb(0 0 0 / .2); }
 	.cover img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 400ms ease-out; }
 	.cover.in img { opacity: 1; }
 	.words { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
