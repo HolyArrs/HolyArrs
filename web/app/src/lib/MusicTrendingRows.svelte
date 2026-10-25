@@ -440,17 +440,17 @@
 	/* A Music genre page's band: the tile's look (hue, grey art at .55, radius 10), wider. */
 	.band { position: relative; display: flex; align-items: flex-end; min-height: 260px; padding: 28px 32px; border-radius: 14px; overflow: hidden; background: linear-gradient(135deg, var(--hue), var(--hue2)); color: #fff; isolation: isolate; }
 	.band::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgb(0 0 0 / .55) 0%, rgb(0 0 0 / .2) 55%, transparent 100%), linear-gradient(0deg, rgb(0 0 0 / .45), transparent 60%); }
-	.collage { position: absolute; z-index: -2; top: 50%; right: -2%; display: flex; gap: 14px; transform: translateY(-50%) rotate(-8deg); }
+	.collage { position: absolute; z-index: -2; top: 50%; left: 45%; right: -6%; display: flex; justify-content: flex-end; gap: 14px; overflow: hidden; transform: translateY(-50%) rotate(-8deg); -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 30%); mask-image: linear-gradient(90deg, transparent 0%, #000 30%); padding: 30px 0; }
 	.collage img { width: clamp(110px, 14vw, 190px); aspect-ratio: 1; object-fit: cover; border-radius: 8px; box-shadow: 0 12px 30px rgb(0 0 0 / .45); opacity: .9; }
 	.collage img:nth-child(even) { transform: translateY(26px); }
-	.btext { position: relative; max-width: min(640px, 62%); display: flex; flex-direction: column; gap: 6px; }
+	.btext { position: relative; max-width: min(640px, 44%); display: flex; flex-direction: column; gap: 6px; }
 	.bkind { font: 600 12px/1 var(--font-ui); letter-spacing: .08em; text-transform: uppercase; opacity: .8; }
 	.band h1 { margin: 0; font-size: clamp(34px, 5vw, 60px); font-weight: 800; line-height: 1.02; letter-spacing: -.02em; text-shadow: 0 2px 8px rgb(0 0 0 / .35); }
 	.bline { margin: 4px 0 0; font: 500 clamp(14px, 1.2vw, 17px)/1.4 var(--font-ui); opacity: .95; }
 	.bstat { margin: 0; font: 400 13px/1.3 var(--font-ui); opacity: .75; }
 	@media (max-width: 600px) {
 		.band { min-height: 300px; padding: 20px; }
-		.collage { top: 8%; right: -18%; transform: rotate(-8deg); }
+		.collage { top: 8%; left: auto; right: -18%; transform: rotate(-8deg); -webkit-mask-image: none; mask-image: none; padding: 0; overflow: visible; }
 		.collage img { width: 96px; }
 		.btext { max-width: 100%; }
 	}
