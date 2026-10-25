@@ -221,6 +221,7 @@
 	const picked = $derived(shownRatings(outside, rich?.score ?? scoreOf(details?.rating), ratingPicks.list));
 	const hasScores = $derived(picked.scores.length > 0 || !!picked.tmdb);
 	// The second row of facts: dates, where the title stands, studio, money, awards, original title.
+	const fmtMonth = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString(undefined, { month: 'short', year: 'numeric', timeZone: 'UTC' });
 	const fmtDay = (d?: string) => (d ? new Date(`${d}T00:00:00Z`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : '');
 	const money = (n?: number) => (n ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 }).format(n) : '');
 	const statusWord = (s?: string) => (!s || s === 'Released' ? '' : s.charAt(0) + s.slice(1).toLowerCase());
@@ -296,19 +297,26 @@
 		if (d.year) info1.push({ label: d.kind === 'show' ? 'Premiered' : 'Released', kind: 'text', value: String(d.year) });
 		if (lengthWord) info1.push({ label: d.kind === 'show' ? 'Seasons' : 'Run time', kind: 'text', value: lengthWord });
 		if (d.kind === 'show') {
+			// One size line for whoever approves: 73 episodes · ~55 min each · ~67 h in all.
 			const eps = seasons.filter((x) => x.number > 0).reduce((n, x) => n + (x.episodes ?? 0), 0);
-			if (eps) info1.push({ label: 'Episodes', kind: 'text', value: String(eps) });
-			if (info?.episodeRuntime) info1.push({ label: 'Episode length', kind: 'text', value: `~${runtimeWords(info.episodeRuntime)}` });
+			const per = info?.episodeRuntime ?? 0;
+			if (eps) info1.push({ label: 'Episodes', kind: 'text', value: [`${eps}`, per ? `~${runtimeWords(per)} each` : '', per ? `~${Math.round((eps * per) / 60)} h in all` : ''].filter(Boolean).join(' · ') });
 			if (info?.showType) info1.push({ label: 'Type', kind: 'text', value: info.showType });
 		}
 		if (cert) info1.push({ label: 'Rated', kind: 'text', value: cert });
-		info1.push(...pick(['Status', 'Next episode', 'First aired', 'Last aired', 'In theaters', 'Digital', 'On disc']));
+		// Status carries when an ended show stopped (Ended · May 2019).
+		const ended = info?.status === 'Ended' || info?.status === 'Canceled';
+		info1.push(...pick(['Status']).map((f) => (ended && info?.dates.lastAir ? { ...f, value: `${f.value} · ${fmtMonth(info.dates.lastAir)}` } : f)));
+		info1.push(...pick(['Next episode', 'In theaters', 'Digital', 'On disc']));
+		// No digital date yet for a movie still in (or coming to) theaters: say so.
+		const th = info?.dates.theaters;
+		if (d.kind === 'movie' && th && !info?.dates.digital && Date.parse(th) > Date.now() - 120 * 864e5) info1.push({ label: 'Digital', kind: 'text', value: `Not yet · in theaters ${fmtDay(th)}` });
 		info1.push(...pick(['Country', 'Countries']).map((f) => ({ ...f, label: f.label === 'Countries' ? 'Regions of origin' : 'Region of origin' })));
 		const spoken = info?.spokenLanguages ?? [];
 		if (spoken.length > 1) info1.push({ label: 'Spoken languages', kind: 'text', value: spoken.join(', ') });
 		else info1.push(...pick(['Language']).map((f) => ({ ...f, label: 'Original language' })));
 		info1.push(...pick(['Original title']));
-		const made = pick([madeBy, 'Network', 'Studio', 'Studios', 'Budget', 'Box office']);
+		const made = pick([madeBy, 'Network', 'Studio', 'Studios', 'Budget', 'Box office']).map((f) => (f.label === 'Studios' ? { ...f, value: f.value.split(', ').slice(0, 2).join(', ') } : f));
 		// Reception: every score this title has (not only the picked tiles), then its awards.
 		const t = (label: string, value: string): Fact => ({ label, kind: 'text', value });
 		const reception: Fact[] = [];
@@ -321,7 +329,9 @@
 		if (awardBadges.length) reception.push(t('Best known for', awardBadges.join(', ')));
 		const kinds: Fact[] = [];
 		if (d.genres.length) kinds.push(t(d.genres.length > 1 ? 'Genres' : 'Genre', d.genres.join(', ')));
-		if (tagsAt !== 'band' && tags.length) kinds.push(t('Themes', tags.join(', ')));
+		// Themes about the story only, not the film itself (credits stingers, adaptations, sequels).
+		const story = tags.filter((k) => !/stinger|^based on|sequel|remake|woman director|duringcredits|aftercredits/i.test(k));
+		if (tagsAt !== 'band' && story.length) kinds.push(t('Themes', story.join(', ')));
 		const groups = [
 			{ title: 'Information', rows: info1 },
 			{ title: 'Made by', rows: made },

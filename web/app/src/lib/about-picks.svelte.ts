@@ -7,14 +7,11 @@ export type AboutItem = { id: string; group: 'Information' | 'Made by' | 'Rating
 export const ABOUT_ITEMS: AboutItem[] = [
 	{ id: 'released', group: 'Information', name: 'Released or premiered', on: false },
 	{ id: 'length', group: 'Information', name: 'Run time or seasons', on: false },
-	{ id: 'episodes', group: 'Information', name: 'Episodes', on: true },
-	{ id: 'epLength', group: 'Information', name: 'Episode length', on: true },
+	{ id: 'episodes', group: 'Information', name: 'Episodes, length and total hours', on: true },
 	{ id: 'type', group: 'Information', name: 'Type of show', on: false },
 	{ id: 'rated', group: 'Information', name: 'Age rating', on: false },
-	{ id: 'status', group: 'Information', name: 'Status', on: true },
+	{ id: 'status', group: 'Information', name: 'Status (and when an ended show stopped)', on: true },
 	{ id: 'next', group: 'Information', name: 'Next episode', on: true },
-	{ id: 'firstAir', group: 'Information', name: 'First aired', on: false },
-	{ id: 'lastAir', group: 'Information', name: 'Last aired', on: false },
 	{ id: 'theaters', group: 'Information', name: 'In theaters', on: false },
 	{ id: 'digital', group: 'Information', name: 'Digital release', on: true },
 	{ id: 'disc', group: 'Information', name: 'On disc', on: false },
@@ -23,17 +20,17 @@ export const ABOUT_ITEMS: AboutItem[] = [
 	{ id: 'origTitle', group: 'Information', name: 'Original title', on: true },
 	{ id: 'makers', group: 'Made by', name: 'Director or creators', on: true },
 	{ id: 'network', group: 'Made by', name: 'Network', on: true },
-	{ id: 'studios', group: 'Made by', name: 'Studios', on: false },
+	{ id: 'studios', group: 'Made by', name: 'Studios', on: true },
 	{ id: 'budget', group: 'Made by', name: 'Budget', on: false },
 	{ id: 'boxOffice', group: 'Made by', name: 'Box office', on: false },
 	{ id: 'scores', group: 'Ratings', name: 'Every score', on: false },
-	{ id: 'awards', group: 'Ratings', name: 'Awards', on: true },
+	{ id: 'awards', group: 'Ratings', name: 'Awards', on: false },
 	{ id: 'genres', group: 'Feel', name: 'Genres', on: false },
-	{ id: 'themes', group: 'Feel', name: 'Themes', on: true }
+	{ id: 'themes', group: 'Feel', name: 'Themes', on: false }
 ];
 
 const DEFAULTS = ABOUT_ITEMS.filter((i) => i.on).map((i) => i.id);
-const KEY = 'holyarrs.about';
+const KEY = 'holyarrs.about-2';
 
 function stored(): string[] {
 	try {
@@ -66,8 +63,8 @@ export function resetAboutPicks() {
 }
 
 const BY_LABEL: Record<string, string> = {
-	Premiered: 'released', Released: 'released', Seasons: 'length', 'Run time': 'length', Episodes: 'episodes', 'Episode length': 'epLength', Type: 'type',
-	Rated: 'rated', Status: 'status', 'Next episode': 'next', 'First aired': 'firstAir', 'Last aired': 'lastAir', 'In theaters': 'theaters', Digital: 'digital',
+	Premiered: 'released', Released: 'released', Seasons: 'length', 'Run time': 'length', Episodes: 'episodes', Type: 'type',
+	Rated: 'rated', Status: 'status', 'Next episode': 'next', 'In theaters': 'theaters', Digital: 'digital',
 	'On disc': 'disc', 'Region of origin': 'region', 'Regions of origin': 'region', 'Original language': 'language', 'Spoken languages': 'language',
 	'Original title': 'origTitle', 'Directed by': 'makers', 'Created by': 'makers', Network: 'network', Studio: 'studios', Studios: 'studios',
 	Budget: 'budget', 'Box office': 'boxOffice', Awards: 'awards', 'Best known for': 'awards', Genre: 'genres', Genres: 'genres', Themes: 'themes'
