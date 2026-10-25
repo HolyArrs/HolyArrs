@@ -3,8 +3,9 @@
 
 	// A title's scores on the page (not over art): TMDB's star score first,
 	// then the outside ratings. chips: one line of marks and numbers; tiles:
-	// big numbers with a short name under each; list: name left, score right.
-	let { scores = [], tmdb, variant = 'chips' }: { scores?: OutsideScore[]; tmdb?: number | null; variant?: 'chips' | 'tiles' | 'list' } = $props();
+	// big numbers with a short name under each; list: name left, score right;
+	// mono: the chips line in one quiet color, for a facts row.
+	let { scores = [], tmdb, variant = 'chips' }: { scores?: OutsideScore[]; tmdb?: number | null; variant?: 'chips' | 'tiles' | 'list' | 'mono' } = $props();
 	const marks: Record<string, string> = { imdb: 'IMDb', metacritic: 'MC', letterboxd: 'LB', trakt: 'Trakt' };
 	const short: Record<string, string> = { imdb: 'IMDb', rt_critics: 'Critics', rt_audience: 'Audience', metacritic: 'Metacritic', letterboxd: 'Letterboxd', trakt: 'Trakt' };
 	const tmdbText = $derived(tmdb ? (Math.round(tmdb * 10) / 10).toFixed(1) : '');
@@ -47,6 +48,15 @@
 	.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 	.chips li { display: inline-flex; align-items: center; gap: 6px; }
 	.chips .n { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+	/* mono: the chips line without the brand colors, to sit in a facts row. */
+	.mono { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+	.mono li { display: inline-flex; align-items: center; gap: 5px; color: var(--text-muted); }
+	.mono .v { font-size: 14px; font-weight: 600; color: var(--text); }
+	.mono .n { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+	.mono .mark { height: 16px; background: none; color: var(--text-muted); box-shadow: inset 0 0 0 1px currentColor; font-size: 9.5px; }
+	.mono .mark.rt_critics, .mono .mark.rt_audience, .mono .mark.tmdb { box-shadow: none; }
+	.mono .mark svg { filter: grayscale(1) brightness(1.5); opacity: .8; }
 
 	/* tiles: big numbers with the name under them. */
 	.tiles { display: flex; flex-wrap: wrap; gap: 14px 28px; }

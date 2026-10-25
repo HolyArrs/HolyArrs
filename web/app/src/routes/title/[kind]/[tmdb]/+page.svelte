@@ -460,7 +460,10 @@
 			</dl>
 		{/snippet}
 		{#snippet factsLine(withGenres = true)}
-			<p class="calm-meta" class:one={!withGenres}>{(withGenres ? heroFacts(d) : heroFacts(d).slice(0, heroFacts(d).length - d.genres.slice(0, d.kind === 'show' ? 2 : 3).length)).join(' · ')}{#if cert}<span class="fb cert">{cert}</span>{/if}</p>
+			<div class="calm-meta">
+				<span class="one" class:nowrap={!withGenres}>{(withGenres ? heroFacts(d) : heroFacts(d).slice(0, heroFacts(d).length - d.genres.slice(0, d.kind === 'show' ? 2 : 3).length)).join(' · ')}{#if cert}<span class="fb cert">{cert}</span>{/if}</span>
+				{#if !withGenres && hasScores}<span class="dot" aria-hidden="true">·</span><TitleScores scores={picked.scores} tmdb={picked.tmdb} variant="mono" />{/if}
+			</div>
 		{/snippet}
 		{#snippet credits()}
 			{#if makers.length || stars.length}
@@ -491,7 +494,7 @@
 		{:else if look === 'side'}
 		<!-- Netflix-like: the story and scores left, short credits right. -->
 		<div class="side" data-testid="title-side">
-			<div class="d-left">{@render factsLine(false)}{@render story()}{@render tagLine()}{#if hasScores}<TitleScores scores={picked.scores} tmdb={picked.tmdb} variant="chips" />{/if}{@render where()}</div>
+			<div class="d-left">{@render factsLine(false)}{@render story()}{@render tagLine()}{@render where()}</div>
 			<dl class="side-credits">
 				{#if makers.length}<div><dt>{madeBy}</dt><dd>{@render names(makers, 2)}</dd></div>{/if}
 				{#if stars.length}<div><dt>Starring</dt><dd>{@render names(stars, 3)}</dd></div>{/if}
@@ -609,7 +612,8 @@
 	.d-left, .d-right { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 	.d-right .facts-grid { padding: 14px 0 0; border-top: 1px solid var(--line); }
 	.calm { display: flex; flex-direction: column; gap: 16px; max-width: 760px; padding-bottom: 8px; }
-	.calm-meta.one { flex-wrap: nowrap; white-space: nowrap; }
+	.calm-meta .one { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+	.calm-meta .one.nowrap { white-space: nowrap; }
 	.credits { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: -4px 0 0; color: var(--text); font: 500 14px/1.45 var(--font-ui); }
 	.credits .cl, .side-credits dt { color: var(--text-muted); font-weight: 500; }
 	.credits a, .side-credits a { color: inherit; }
