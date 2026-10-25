@@ -43,6 +43,7 @@
 		srcset,
 		sizes,
 		eager = false,
+		high = false,
 		fallback
 	}: {
 		/** Sized alternatives for image (music covers), with the display sizes. */
@@ -52,6 +53,8 @@
 		sizes?: string;
 		/** Above the fold (the first row): load at once. */
 		eager?: boolean;
+		/** Ask for the picture at high priority (the first screen). */
+		high?: boolean;
 		title: string;
 		href?: string;
 		image?: string | null;
@@ -202,7 +205,7 @@
 			{/if}
 			{#if image && !failed && near() && (!srcset || cw)}
 				{#key shownPic}
-					<img src={shownPic} srcset={shownSet} sizes={shownSizes} class:in={loaded} alt="" loading={eager ? 'eager' : 'lazy'} fetchpriority={eager ? 'high' : 'auto'} decoding="async" use:whenLoaded={() => (loaded = true)} onerror={broken} />
+					<img src={shownPic} srcset={shownSet} sizes={shownSizes} class:in={loaded} alt="" loading={eager ? 'eager' : 'lazy'} fetchpriority={high ? 'high' : 'auto'} decoding="async" use:whenLoaded={() => (loaded = true)} onerror={broken} />
 				{/key}
 			{/if}
 			{#if badges.length || status}

@@ -23,7 +23,7 @@
 	import EmptyState from './ui/EmptyState.svelte';
 	import AddArtistDialog from './AddArtistDialog.svelte';
 	import AskArtistDialog from './AskArtistDialog.svelte';
-	import { EAGER_ROWS, stableRows } from './row-window.ts';
+	import { stableRows } from './row-window.ts';
 
 	// Explore → Music. The server builds every row (personal first, then the
 	// charts, similar artists, missing albums and genre rows); genre chips
@@ -349,7 +349,7 @@
 				</div>
 			{/if}
 			<Shelf title={row.type === 'popular_country' ? `Popular in ${regionName(row.id.split(':')[1] ?? '')}` : row.title} subtitle={row.type === 'popular_country' ? `This week's top albums in ${regionName(row.id.split(':')[1] ?? '')}` : row.reason} item={answer?.v2 && row.shape === 'round' ? 'var(--music-circle, 152px)' : 'var(--explore-item)'}
-				items={row.items} key={(c) => c.key} defer={ri >= EAGER_ROWS} placeholder={row.shape === 'square' ? 'square' : 'round'} lines={row.items.some((c) => musicCardNote(row, c)) ? 2 : 1}>
+				items={row.items} key={(c) => c.key} defer={false} placeholder={row.shape === 'square' ? 'square' : 'round'} lines={row.items.some((c) => musicCardNote(row, c)) ? 2 : 1}>
 				{#snippet card(raw: MusicCardData)}
 					{@const c = live(raw)}
 					{@const cv = coverFor(musicImage(c), 200)}
@@ -359,7 +359,8 @@
 						image={cv.src}
 						srcset={cv.srcset}
 						fallback={c.kind === 'album' && c.artist_image ? musicImage({ image: c.artist_image }) : null}
-						eager={ri < 2}
+						eager
+						high={ri < 2}
 						kind="artist"
 						subtitle={musicCardNote(row, c) || undefined}
 						badges={c.explicit ? ['E'] : []}
