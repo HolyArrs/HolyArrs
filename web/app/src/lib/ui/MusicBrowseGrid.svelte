@@ -2,7 +2,6 @@
 	import Icon from '../Icon.svelte';
 	import { to } from '../paths.ts';
 	import { genreTintToken } from '../music/genre-tint.ts';
-	import { RETRY_MS, retried } from '../lazy-art.ts';
 	import ArtPlaceholder from './ArtPlaceholder.svelte';
 
 	// Explore → Music's Browse grid (flag music_lists_v1): one solid colour tile per
@@ -13,14 +12,8 @@
 	let { tiles, allHref }: { tiles: Tile[]; allHref: string } = $props();
 
 	const slugOf = (key: string) => key.replace(/^genre:/, '');
-	// A cover that fails is asked again twice (RETRY_MS) before the tile shows its colour alone.
+	// A cover that fails shows the placeholder at once.
 	let broken = $state<Record<string, boolean>>({});
-	let tries = $state<Record<string, number>>({});
-	function failed(key: string) {
-		const n = tries[key] ?? 0;
-		if (n < RETRY_MS.length) setTimeout(() => (tries[key] = n + 1), RETRY_MS[n]);
-		else broken[key] = true;
-	}
 </script>
 
 <section class="mbg" data-testid="music-browse-grid" aria-labelledby="mbg-t">
@@ -33,9 +26,7 @@
 			<a class="tile" href={t.href} style:--g="var({genreTintToken(slugOf(t.key), t.hue)})">
 				<strong>{t.name}</strong>
 				{#if t.cover && !broken[t.key]}
-					{#key tries[t.key] ?? 0}
-						<img class="cover" src={retried(to(t.cover), tries[t.key] ?? 0)} alt="" loading="lazy" decoding="async" draggable="false" onerror={() => failed(t.key)} />
-					{/key}
+						<img class="cover" src={to(t.cover)} alt="" loading="lazy" decoding="async" draggable="false" onerror={() => (broken[t.key] = true)} />
 				{:else}
 					<span class="cover ph"><ArtPlaceholder name={t.name} shape="square" /></span>
 				{/if}

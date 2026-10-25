@@ -39,16 +39,6 @@ export function nearView(node: Element, near: () => void) {
 	return { destroy: () => io.disconnect() };
 }
 
-/** RETRY_MS are the waits before a failed music picture is asked again
- * (twice): a cover the server is still storing shows once it is there. Then
- * the next picture, and the drawn tile only last. */
-export const RETRY_MS = [800, 2500];
-
-/** retried marks a picture address with its retry, so the browser asks again. */
-export function retried(src: string, n: number): string {
-	return n ? `${src}${src.includes('?') ? '&' : '?'}r=${n}` : src;
-}
-
 /** whenLoaded calls done once the picture has loaded, also when it came from the cache before the listener. */
 export function whenLoaded(img: HTMLImageElement, done: () => void) {
 	if (img.complete && img.naturalWidth > 0) {

@@ -9,7 +9,7 @@
 	import Icon, { type IconName } from '../Icon.svelte';
 	import { press, viewTransitionName } from '../motion.ts';
 	import { sized } from '../tmdb-image.ts';
-	import { RETRY_MS, retried, shelfNear, whenLoaded } from '../lazy-art.ts';
+	import { shelfNear, whenLoaded } from '../lazy-art.ts';
 	import GrowCard from './GrowCard.svelte';
 	import { prefetchTrailer, watchTrailer } from '../autoplay.svelte.ts';
 	import { dwell, finePointer, scrollHold } from '../trailer.ts';
@@ -178,25 +178,16 @@
 	$effect(() => {
 		if (root) cw = root.clientWidth;
 	});
-	// A music picture that fails is asked again twice (RETRY_MS), then the
-	// fallback picture shows; the name tile is the last resort.
-	let tries = $state(0);
+	// A picture that fails (a 404: the server has not stored it yet) shows
+	// the fallback picture at once, then the placeholder; no retry timer.
 	let second = $state(false);
-	let retry: ReturnType<typeof setTimeout> | undefined;
-	$effect(() => () => clearTimeout(retry));
 	function broken() {
-		if (music && !second && tries < RETRY_MS.length) {
-			const n = tries;
-			retry = setTimeout(() => (tries = n + 1), RETRY_MS[n]);
-		} else if (music && fallback && !second) {
-			second = true;
-		} else {
-			failed = true;
-		}
+		if (music && fallback && !second) second = true;
+		else failed = true;
 	}
 	const pic = $derived(second ? (fallback ?? null) : sized(image, 'poster', cw));
-	const shownPic = $derived(pic && !second ? retried(pic, tries) : pic);
-	const shownSet = $derived(second || !srcset ? undefined : tries ? srcset.split(', ').map((x) => x.replace(/^(\S+)/, (u) => retried(u, tries))).join(', ') : srcset);
+	const shownPic = $derived(pic);
+	const shownSet = $derived(second ? undefined : srcset);
 	// Sized covers: the measured width is the display size, so big tiles pick 500 or 1200.
 	const shownSizes = $derived(shownSet && cw ? `${cw}px` : sizes);
 	const kindIcon = $derived<IconName>(kind === 'show' || kind === 'episode' ? 'tv' : kind === 'artist' ? 'music' : 'film');
@@ -211,7 +202,7 @@
 			{/if}
 			{#if image && !failed && near() && (!srcset || cw)}
 				{#key shownPic}
-					<img src={shownPic} srcset={shownSet} sizes={shownSizes} class:in={loaded} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async" use:whenLoaded={() => (loaded = true)} onerror={broken} />
+					<img src={shownPic} srcset={shownSet} sizes={shownSizes} class:in={loaded} alt="" loading={eager ? 'eager' : 'lazy'} fetchpriority={eager ? 'high' : 'auto'} decoding="async" use:whenLoaded={() => (loaded = true)} onerror={broken} />
 				{/key}
 			{/if}
 			{#if badges.length || status}
