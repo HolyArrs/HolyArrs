@@ -294,10 +294,19 @@
 		const info1: Fact[] = [];
 		if (d.year) info1.push({ label: d.kind === 'show' ? 'Premiered' : 'Released', kind: 'text', value: String(d.year) });
 		if (lengthWord) info1.push({ label: d.kind === 'show' ? 'Seasons' : 'Run time', kind: 'text', value: lengthWord });
+		if (d.kind === 'show') {
+			const eps = seasons.filter((x) => x.number > 0).reduce((n, x) => n + (x.episodes ?? 0), 0);
+			if (eps) info1.push({ label: 'Episodes', kind: 'text', value: String(eps) });
+			if (info?.episodeRuntime) info1.push({ label: 'Episode length', kind: 'text', value: `~${runtimeWords(info.episodeRuntime)}` });
+			if (info?.showType) info1.push({ label: 'Type', kind: 'text', value: info.showType });
+		}
 		if (cert) info1.push({ label: 'Rated', kind: 'text', value: cert });
 		info1.push(...pick(['Status', 'Next episode', 'First aired', 'Last aired', 'In theaters', 'Digital', 'On disc']));
 		info1.push(...pick(['Country', 'Countries']).map((f) => ({ ...f, label: f.label === 'Countries' ? 'Regions of origin' : 'Region of origin' })));
-		info1.push(...pick(['Language']).map((f) => ({ ...f, label: 'Original language' })), ...pick(['Original title']));
+		const spoken = info?.spokenLanguages ?? [];
+		if (spoken.length > 1) info1.push({ label: 'Spoken languages', kind: 'text', value: spoken.join(', ') });
+		else info1.push(...pick(['Language']).map((f) => ({ ...f, label: 'Original language' })));
+		info1.push(...pick(['Original title']));
 		const made = pick([madeBy, 'Network', 'Studio', 'Studios', 'Budget', 'Box office']);
 		// Reception: every score this title has (not only the picked tiles), then its awards.
 		const t = (label: string, value: string): Fact => ({ label, kind: 'text', value });

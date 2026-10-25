@@ -65,6 +65,10 @@ export interface InfoDetails {
 	revenue?: number;
 	/** The first production companies. */
 	studios: string[];
+	/** A show's kind (Scripted, Miniseries…), usual episode length in minutes, and the languages spoken in it. */
+	showType?: string;
+	episodeRuntime?: number;
+	spokenLanguages: string[];
 	/** YYYY-MM-DD: a movie's release in theaters, digitally and on disc; a show's first and last air date. */
 	dates: { theaters?: string; digital?: string; physical?: string; firstAir?: string; lastAir?: string };
 	/** A show's next episode to air. */
@@ -123,6 +127,9 @@ export function readInfo(kind: InfoKind, tmdb: string, raw: Raw): InfoDetails {
 		budget: pos(raw.budget),
 		revenue: pos(raw.revenue),
 		studios: words(raw.studios),
+		showType: str(raw.show_type),
+		episodeRuntime: typeof raw.episode_runtime === 'number' && raw.episode_runtime > 0 ? raw.episode_runtime : undefined,
+		spokenLanguages: words(raw.spoken_languages),
 		dates: readDates(raw.dates),
 		nextEpisode: readNext(raw.next_episode),
 		keywords: words(raw.keywords),

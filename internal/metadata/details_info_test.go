@@ -25,7 +25,7 @@ func infoTMDB(t *testing.T) *httptest.Server {
 					{"iso_3166_1":"US","release_dates":[{"release_date":"2014-10-10T00:00:00.000Z","type":3},{"release_date":"2014-10-01T00:00:00.000Z","type":2},{"release_date":"2015-01-13T00:00:00.000Z","type":4},{"release_date":"2015-02-17T00:00:00.000Z","type":5}]}]},
 				"keywords":{"keywords":[{"name":"drummer"},{"name":"music school"}]}}`))
 		case strings.HasSuffix(r.URL.Path, "/tv/80"):
-			_, _ = w.Write([]byte(`{"id":80,"name":"Eighty","original_name":"Eighty","status":"Returning Series",
+			_, _ = w.Write([]byte(`{"id":80,"name":"Eighty","original_name":"Eighty","status":"Returning Series","type":"Miniseries","episode_run_time":[55,60],"spoken_languages":[{"english_name":"English"},{"english_name":"Dothraki"}],
 				"first_air_date":"2011-04-17","last_air_date":"2026-10-20",
 				"next_episode_to_air":{"season_number":3,"episode_number":4,"name":" The Return ","air_date":"2026-11-02"},
 				"production_companies":[{"name":"HBO"}],"keywords":{"results":[{"name":"dragon"}]}}`))
@@ -67,6 +67,9 @@ func TestTMDBDetailsInfo(t *testing.T) {
 	}
 	if s.Status != "Returning Series" || s.OriginalTitle != "" || !reflect.DeepEqual(s.Studios, []string{"HBO"}) {
 		t.Fatalf("show facts %+v", s)
+	}
+	if s.ShowType != "Miniseries" || s.EpisodeRuntime != 55 || !reflect.DeepEqual(s.SpokenLanguages, []string{"English", "Dothraki"}) {
+		t.Fatalf("show kind %q runtime %d spoken %v", s.ShowType, s.EpisodeRuntime, s.SpokenLanguages)
 	}
 	if s.Dates == nil || *s.Dates != (DetailDates{FirstAir: "2011-04-17", LastAir: "2026-10-20"}) {
 		t.Fatalf("show dates %+v", s.Dates)

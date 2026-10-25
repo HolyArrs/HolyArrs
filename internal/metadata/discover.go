@@ -79,6 +79,12 @@ type Details struct {
 	Revenue int64 `json:"revenue,omitempty"`
 	// Studios are the first production companies, in TMDB's order.
 	Studios []string `json:"studios,omitempty"`
+	// ShowType is TMDB's kind of show (Scripted, Miniseries, Reality…);
+	// EpisodeRuntime its usual episode length in minutes (0: not known).
+	ShowType       string `json:"show_type,omitempty"`
+	EpisodeRuntime int    `json:"episode_runtime,omitempty"`
+	// SpokenLanguages are the languages spoken in it, by English name.
+	SpokenLanguages []string `json:"spoken_languages,omitempty"`
 	// Dates are a movie's US release dates (theaters, digital, disc) or a
 	// show's first and last air dates, as YYYY-MM-DD.
 	Dates *DetailDates `json:"dates,omitempty"`
@@ -474,7 +480,12 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 		OriginalName  string   `json:"original_name"`  // shows
 		Budget        int64    `json:"budget"`
 		Revenue       int64    `json:"revenue"`
-		Companies     []struct {
+		ShowType      string   `json:"type"`             // shows: Scripted, Miniseries, Reality…
+		EpisodeTimes  []int    `json:"episode_run_time"` // shows, minutes
+		Spoken        []struct {
+			English string `json:"english_name"`
+		} `json:"spoken_languages"`
+		Companies []struct {
 			Name string `json:"name"`
 		} `json:"production_companies"`
 		FirstAirDate string `json:"first_air_date"`
@@ -545,6 +556,17 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 	}
 	d := Details{Score: float64(int(raw.VoteAverage*10+0.5)) / 10, Votes: raw.VoteCount, OriginCountry: raw.Origin, OriginalLanguage: raw.Language,
 		Status: raw.Status, Tagline: strings.TrimSpace(raw.Tagline), Budget: raw.Budget, Revenue: raw.Revenue}
+	if kind == "show" {
+		d.ShowType = strings.TrimSpace(raw.ShowType)
+		if len(raw.EpisodeTimes) > 0 && raw.EpisodeTimes[0] > 0 {
+			d.EpisodeRuntime = raw.EpisodeTimes[0]
+		}
+	}
+	for _, l := range raw.Spoken {
+		if n := strings.TrimSpace(l.English); n != "" && len(d.SpokenLanguages) < 6 {
+			d.SpokenLanguages = append(d.SpokenLanguages, n)
+		}
+	}
 	for _, c := range raw.Companies {
 		if len(d.Studios) == maxStudios {
 			break
