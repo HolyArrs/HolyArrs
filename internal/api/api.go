@@ -188,7 +188,9 @@ type API struct {
 	// ahead runs music fetch-ahead; ctl keeps the server's switch.
 	ahead musicAhead
 	artWarm artWarmer
-	ctl   musicControl
+	// musicPre stores every engine page's covers ahead (musicpreload.go).
+	musicPre musicPreload
+	ctl      musicControl
 	// artistVideos keeps each artist's music videos (see music_video.go).
 	artistVideos artistVideoCache
 }
@@ -1051,6 +1053,7 @@ func (a *API) health(w http.ResponseWriter, r *http.Request) {
 		"ok": ok, "version": a.s.Version, "schema": ver, "uptime_s": int(time.Since(a.s.Started).Seconds()),
 		"write_wait_p95_ms": float64(p95.Microseconds()) / 1000, "write_wait_samples": n, "writes": a.s.Store.WriteCount(),
 		"sources": srcs, "downloaders": dls, "live_clients": clients, "url_base": a.s.URLBase,
+		"music_covers": a.tplPreloadStatus(),
 	})
 }
 

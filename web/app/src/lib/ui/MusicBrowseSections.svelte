@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { to } from '../paths.ts';
+	import { RETRY_MS, retried } from '../lazy-art.ts';
 
 	// Search > Music Browse (music_lists_v1 row templates): titled sections of
 	// colour tiles, the name top left and one album cover turned in the
@@ -9,10 +10,20 @@
 	type Section = { id: string; title: string; tiles: Tile[] };
 	let { sections }: { sections: Section[] } = $props();
 
-	// Which cover each tile shows (index into covers; past the end = drawn).
+	// Which cover each tile shows (index into covers; past the end = drawn),
+	// and how often that cover was asked again (RETRY_MS) before the next.
 	let step = $state<Record<string, number>>({});
+	let tries = $state<Record<string, number>>({});
 	const coverOf = (t: Tile) => t.covers[step[t.key] ?? 0] ?? '';
-	const next = (t: Tile) => (step[t.key] = (step[t.key] ?? 0) + 1);
+	function next(t: Tile) {
+		const n = tries[t.key] ?? 0;
+		if (n < RETRY_MS.length) {
+			setTimeout(() => (tries[t.key] = n + 1), RETRY_MS[n]);
+			return;
+		}
+		tries[t.key] = 0;
+		step[t.key] = (step[t.key] ?? 0) + 1;
+	}
 	const tint = (hue: number) => `hsl(${(((hue % 24) + 24) % 24) * 15} 55% 30%)`;
 </script>
 
@@ -25,7 +36,9 @@
 					<a class="tile" href={to(t.href)} style:--g={tint(t.hue)} data-testid="music-browse-tile">
 						<strong>{t.name}</strong>
 						{#if coverOf(t)}
-							<img class="cover" src={to(coverOf(t))} alt="" loading="lazy" decoding="async" draggable="false" onerror={() => next(t)} />
+							{#key `${coverOf(t)}#${tries[t.key] ?? 0}`}
+								<img class="cover" src={retried(to(coverOf(t)), tries[t.key] ?? 0)} alt="" loading="lazy" decoding="async" draggable="false" onerror={() => next(t)} />
+							{/key}
 						{:else}
 							<span class="cover drawn" aria-hidden="true"></span>
 						{/if}

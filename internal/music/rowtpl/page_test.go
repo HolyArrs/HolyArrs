@@ -369,3 +369,48 @@ func TestSeedsBelongToThePage(t *testing.T) {
 		}
 	}
 }
+
+func TestLookupAnswersCatalogItems(t *testing.T) {
+	b := fakeBundle()
+	if it, ok := b.Lookup("album", "rg001"); !ok || it.Title != "Album 1" || it.Artist != "Artist 0" {
+		t.Fatalf("album %+v %v", it, ok)
+	}
+	if it, ok := b.Lookup("artist", "ar001"); !ok || it.Title != "Artist 1" {
+		t.Fatalf("artist %+v %v", it, ok)
+	}
+	if _, ok := b.Lookup("album", "ar001"); ok {
+		t.Fatal("an artist id answered as an album")
+	}
+	if _, ok := b.Lookup("album", "nope"); ok {
+		t.Fatal("unknown id answered")
+	}
+}
+
+// PageItems holds every item any member's page shows (with an empty
+// library): the Spotlight and every row, whatever the day's order.
+func TestPageItemsHoldEveryShownItem(t *testing.T) {
+	b := fakeBundle()
+	for _, key := range []string{"genre:rock", "mood:chill", "decade:1990s"} {
+		c := pageCtx(b, kindOf(key), key)
+		in := map[int]bool{}
+		for _, i := range PageItems(c) {
+			in[i] = true
+		}
+		for m := int64(1); m <= 6; m++ {
+			c := pageCtx(b, kindOf(key), key)
+			c.Member = m
+			for _, i := range Spotlight(c) {
+				if !in[i] {
+					t.Fatalf("%s member %d: spotlight item %d missing", key, m, i)
+				}
+			}
+			for _, r := range Build(c) {
+				for _, i := range r.Items {
+					if !in[i] {
+						t.Fatalf("%s member %d: %s item %d missing", key, m, r.ID, i)
+					}
+				}
+			}
+		}
+	}
+}

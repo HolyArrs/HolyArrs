@@ -167,7 +167,7 @@ func (a *API) cachedMusicTrend(ctx context.Context, kind, region string) (metada
 		delete(c.lists, oldest)
 	}
 	c.lists[key] = musicTrendEntry{at: time.Now(), list: l, err: err}
-	if len(c.names) > 20000 {
+	if len(c.names) > musicNamesMax {
 		c.names = map[string]metadata.MusicTrendItem{}
 	}
 	for _, it := range l.Items {
@@ -372,14 +372,32 @@ func (a *API) serverArtistPhotoURL(_ context.Context, mbid, size string) string 
 	return strings.TrimRight(a.s.ImageBase, "/") + "/artist/" + mbid + "/" + px + ".jpg"
 }
 
+// serverAlbumCoverURL is the metadata server's stored cover of an album at
+// the size asked (250, 500 or 1200).
+func (a *API) serverAlbumCoverURL(mbid, size string) string {
+	if a.s.ImageBase == "" || !metadata.ValidMBID(mbid) {
+		return ""
+	}
+	return strings.TrimRight(a.s.ImageBase, "/") + "/album/" + mbid + "/" + size + ".jpg"
+}
+
 func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name, path string, ok bool) {
 	c := &a.music
 	c.mu.Lock()
-	it, known := c.names[kind+"|"+mbid]
+	it, listed := c.names[kind+"|"+mbid]
 	// An artist page asks for its own artist by id, listed or not; any other picture is only for a listed id.
-	known = known || kind == "artist" && metadata.ValidMBID(mbid)
+	known := listed || kind == "artist" && metadata.ValidMBID(mbid)
 	missAt, missed := c.artMiss[kind+"|"+mbid]
 	c.mu.Unlock()
+	if !listed {
+		// Any catalog album or artist answers at once, listed by a page yet
+		// or not (no race with the page that lists it).
+		if b := a.musicPre.catalog.Load(); b != nil {
+			if ci, ok := b.Lookup(kind, mbid); ok {
+				it, known = metadata.MusicTrendItem{MBID: mbid, Name: ci.Title, Title: ci.Title, Artist: ci.Artist}, true
+			}
+		}
+	}
 	lib := a.s.Library
 	if !known || lib == nil || lib.Artwork == nil || (missed && time.Since(missAt) < musicArtMissTTL) {
 		return "", "", false
@@ -442,9 +460,23 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name,
 			}
 		}
 	case "album":
-		// Every source before the name tile: the chart's cover link, the
-		// metadata server's cover chain, the Cover Art Archive, then the
-		// artist's picture.
+		// The metadata server's stored copy first (fast, kept at the edge);
+		// an album it has not stored yet answers with a redirect, and every
+		// other source runs before the name tile: the chart's cover link,
+		// the server's cover chain, the Cover Art Archive, then the artist's
+		// picture.
+		if src := a.serverAlbumCoverURL(mbid, size); src != "" {
+			n := library.ArtworkName(src)
+			if p, found := lib.Artwork.Path(n); found {
+				lib.Artwork.Recheck(src, serverPlaceholder)
+				return n, p, true
+			}
+			if _, err := lib.Artwork.FetchStored(ctx, src, serverPlaceholder); err == nil {
+				if p, found := lib.Artwork.Path(n); found {
+					return n, p, true
+				}
+			}
+		}
 		base := lib.CoverArtBase
 		if base == "" {
 			base = library.CoverArtBase

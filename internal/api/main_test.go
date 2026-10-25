@@ -11,5 +11,7 @@ import (
 // never served to a test request.
 func TestMain(m *testing.M) {
 	wrapMux = routehits.Wrap
+	// The music cover preload runs only in the tests that ask for it.
+	musicPreloadOn = false
 	os.Exit(routehits.Check(m.Run(), "."))
 }

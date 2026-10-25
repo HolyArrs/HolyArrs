@@ -203,6 +203,21 @@ func PageCounts(b *Bundle, now time.Time, region string, blocks map[string][]str
 }
 
 // BrowseKeys answers every key a Browse tile opens.
+// ShownKeys answers the page keys of the sections' tiles, in order, once each.
+func ShownKeys(secs []BrowseSection) []string {
+	var out []string
+	seen := map[string]bool{}
+	for _, s := range secs {
+		for _, t := range s.Tiles {
+			if k := poolKey(t.Key); !seen[k] {
+				seen[k] = true
+				out = append(out, k)
+			}
+		}
+	}
+	return out
+}
+
 func BrowseKeys() []string {
 	var out []string
 	seen := map[string]bool{}

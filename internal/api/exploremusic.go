@@ -742,6 +742,11 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 
 type nameKey struct{ kind, mbid, name, artist, cover string }
 
+// musicNamesMax caps the listed albums and artists (the list starts over
+// past it); room for a household's open pages, catalog items aside (the
+// picture route finds those in the catalog).
+const musicNamesMax = 60000
+
 // rememberMusicNames lets the picture route serve these albums and artists.
 func (a *API) rememberMusicNames(list []nameKey) {
 	a.rememberNames(list)
@@ -756,7 +761,7 @@ func (a *API) rememberNames(list []nameKey) {
 	if c.names == nil {
 		c.lists, c.names = map[string]musicTrendEntry{}, map[string]metadata.MusicTrendItem{}
 	}
-	if len(c.names) > 20000 {
+	if len(c.names) > musicNamesMax {
 		c.names = map[string]metadata.MusicTrendItem{}
 	}
 	for _, n := range list {

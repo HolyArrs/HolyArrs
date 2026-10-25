@@ -707,6 +707,7 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 	tplDone := false
 	if a.musicTplOn() {
 		if b := a.musicBundle(ctx, now); b != nil {
+			a.tplPreload(b, region)
 			for _, cd := range a.tplExploreCands(ctx, member, region, lib, acts, b, shelves, now) {
 				meta, row, cards, sc := tplV7Row(b, cd)
 				addRow(meta, row, cards, sc, false, false)

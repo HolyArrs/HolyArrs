@@ -136,7 +136,11 @@ func (c *Ctx) enough(vals []string, f func(v string) L) []string {
 
 // slotValues answers the values a template expands over on this page, in
 // the week's rotation, at most Cap.
-func (c *Ctx) slotValues(tp Tpl) []string {
+func (c *Ctx) slotValues(tp Tpl) []string { return c.slotVals(tp, false) }
+
+// slotVals answers a template's slot values; all answers every value any
+// member may get (no weekly rotation, no cap).
+func (c *Ctx) slotVals(tp Tpl, all bool) []string {
 	letter := pageLetter[c.Kind]
 	var vals []string
 	switch tp.Slot {
@@ -320,6 +324,9 @@ func (c *Ctx) slotValues(tp Tpl) []string {
 	}
 	if len(vals) == 0 {
 		return nil
+	}
+	if all {
+		return vals
 	}
 	if tp.Slot != "genre" && tp.Slot != "libgenre" && tp.Slot != "mood" {
 		vals = rotate(vals, hash(strconv.FormatInt(c.Member, 10), c.week(), c.Key, tp.ID))
@@ -563,6 +570,42 @@ func Candidates(c *Ctx) []Cand {
 			}
 			cd.Title, cd.Reason = c.render(tp, v, l[:min(20, len(l))], id)
 			out = append(out, cd)
+		}
+	}
+	return out
+}
+
+// PageItems answers every item the page can show to anyone with an empty
+// library, best first: the Spotlight's sources and the whole candidate
+// list of every row that may fill (each member's rows are drawn from these
+// lists, whatever the day's order and dedup).
+func PageItems(c *Ctx) []int {
+	seen := map[int]bool{}
+	var out []int
+	add := func(l []int) {
+		for _, i := range l {
+			if !seen[i] {
+				seen[i] = true
+				out = append(out, i)
+			}
+		}
+	}
+	x := *c
+	x.Seen = nil
+	add(Spotlight(&x))
+	for _, tp := range Catalog {
+		if !c.applies(tp) {
+			continue
+		}
+		for _, v := range c.slotVals(tp, true) {
+			l := tp.Fill(c, v)
+			if !tp.Keep {
+				l = c.notHad(l)
+			}
+			if len(l) < RowMin {
+				continue
+			}
+			add(l[:min(rawMax, len(l))])
 		}
 	}
 	return out

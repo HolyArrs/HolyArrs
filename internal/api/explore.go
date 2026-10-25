@@ -114,6 +114,7 @@ func (a *API) StartExplore(ctx context.Context) {
 	e.started = true
 	e.wake = make(chan struct{}, 1)
 	e.mu.Unlock()
+	a.applyArtworkCap(ctx) // the picture cache size from Settings
 	a.s.Store.OnEvent(a.exploreOnEvent)
 	a.s.Store.OnEvent(a.musicOnEvent)
 	go supervisor.Guard("explore", func() { a.exploreLoop(ctx) })
@@ -124,7 +125,11 @@ func (a *API) StartExplore(ctx context.Context) {
 	if a.musicTplOn() {
 		// The music catalog bundle is read once at start, so the first music
 		// page does not wait for its download.
-		go supervisor.Guard("music-bundle-warm", func() { a.musicBundle(ctx, time.Now().UTC()) })
+		go supervisor.Guard("music-bundle-warm", func() {
+			// Then every engine page's covers are stored ahead (musicpreload.go):
+			// the household's own region joins when its pages are first asked.
+			a.tplPreload(a.musicBundle(ctx, time.Now().UTC()), "us")
+		})
 	}
 }
 

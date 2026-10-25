@@ -8,7 +8,7 @@
 	import Icon, { type IconName } from '../Icon.svelte';
 	import { press, viewTransitionName } from '../motion.ts';
 	import { sized } from '../tmdb-image.ts';
-	import { shelfNear, whenLoaded } from '../lazy-art.ts';
+	import { RETRY_MS, retried, shelfNear, whenLoaded } from '../lazy-art.ts';
 	import GrowCard from './GrowCard.svelte';
 	import { prefetchTrailer, watchTrailer } from '../autoplay.svelte.ts';
 	import { dwell, finePointer, scrollHold } from '../trailer.ts';
@@ -41,10 +41,13 @@
 		followTmdb = false,
 		srcset,
 		sizes,
-		eager = false
+		eager = false,
+		fallback
 	}: {
 		/** Sized alternatives for image (music covers), with the display sizes. */
 		srcset?: string;
+		/** Music: the next picture when image keeps failing (an album's artist photo). */
+		fallback?: string | null;
 		sizes?: string;
 		/** Above the fold (the first row): load at once. */
 		eager?: boolean;
@@ -174,9 +177,27 @@
 	$effect(() => {
 		if (root) cw = root.clientWidth;
 	});
-	const pic = $derived(sized(image, 'poster', cw));
+	// A music picture that fails is asked again twice (RETRY_MS), then the
+	// fallback picture shows; the name tile is the last resort.
+	let tries = $state(0);
+	let second = $state(false);
+	let retry: ReturnType<typeof setTimeout> | undefined;
+	$effect(() => () => clearTimeout(retry));
+	function broken() {
+		if (music && !second && tries < RETRY_MS.length) {
+			const n = tries;
+			retry = setTimeout(() => (tries = n + 1), RETRY_MS[n]);
+		} else if (music && fallback && !second) {
+			second = true;
+		} else {
+			failed = true;
+		}
+	}
+	const pic = $derived(second ? (fallback ?? null) : sized(image, 'poster', cw));
+	const shownPic = $derived(pic && !second ? retried(pic, tries) : pic);
+	const shownSet = $derived(second || !srcset ? undefined : tries ? srcset.split(', ').map((x) => x.replace(/^(\S+)/, (u) => retried(u, tries))).join(', ') : srcset);
 	// Sized covers: the measured width is the display size, so big tiles pick 500 or 1200.
-	const shownSizes = $derived(srcset && cw ? `${cw}px` : sizes);
+	const shownSizes = $derived(shownSet && cw ? `${cw}px` : sizes);
 	const kindIcon = $derived<IconName>(kind === 'show' || kind === 'episode' ? 'tv' : kind === 'artist' ? 'music' : 'film');
 </script>
 
@@ -188,7 +209,9 @@
 				<span class="ph" class:shine={!!image && !failed && !loaded} aria-hidden="true"><span class="ph-ic"><Icon name={kindIcon} size={22} /></span><span class="ph-t">{title}</span></span>
 			{/if}
 			{#if image && !failed && near() && (!srcset || cw)}
-				<img src={pic} {srcset} sizes={shownSizes} class:in={loaded} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async" use:whenLoaded={() => (loaded = true)} onerror={() => (failed = true)} />
+				{#key shownPic}
+					<img src={shownPic} srcset={shownSet} sizes={shownSizes} class:in={loaded} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async" use:whenLoaded={() => (loaded = true)} onerror={broken} />
+				{/key}
 			{/if}
 			{#if badges.length || status}
 				<span class="over">

@@ -47,6 +47,15 @@ type tplBundle struct {
 // musicBundle answers the catalog bundle: cached 6 hours, then re-read
 // with its ETag; a failed read keeps the last good copy for a week.
 func (a *API) musicBundle(ctx context.Context, now time.Time) *rowtpl.Bundle {
+	b := a.readMusicBundle(ctx, now)
+	if b != nil {
+		a.musicPre.catalog.Store(b)
+		a.tplPreload(b, "") // a new bundle's covers are stored again
+	}
+	return b
+}
+
+func (a *API) readMusicBundle(ctx context.Context, now time.Time) *rowtpl.Bundle {
 	if v, ok := a.musicv2.cand.Get("tpl:bundle", now); ok {
 		return v.(*tplBundle).b
 	}
@@ -300,6 +309,7 @@ func (a *API) buildTplPage(ctx context.Context, member int64, kind, slug, region
 	if b == nil {
 		return nil, nil, nil, tile, false
 	}
+	a.tplPreload(b, region)
 	key, found := tplKey(b, kind, slug)
 	if !found {
 		return nil, nil, nil, tile, false
@@ -361,6 +371,7 @@ func (a *API) buildTplWorld(ctx context.Context, r *http.Request, kind string, n
 	if region == "" || region == "GLOBAL" || !isCountry(region) {
 		region = "global"
 	}
+	a.tplPreload(b, region)
 	var lib *rowtpl.Lib
 	if ml, err := a.musicLibrary(ctx, now); err == nil {
 		if acts, err := a.musicActsOf(ctx, member); err == nil {
@@ -575,6 +586,7 @@ func (a *API) musicBrowseTiles(w http.ResponseWriter, r *http.Request) {
 	if region == "" || !isCountry(strings.ToUpper(region)) {
 		region = "global"
 	}
+	a.tplPreload(b, region)
 	member := a.person(r).UserID
 	var lib *rowtpl.Lib
 	if ml, err := a.musicLibrary(ctx, now); err == nil {

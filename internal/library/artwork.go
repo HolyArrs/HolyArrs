@@ -14,13 +14,15 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/source"
 )
 
-// DefaultArtworkCap is the artwork cache size cap (decision 0002, Images).
-const DefaultArtworkCap = 2 << 30
+// DefaultArtworkCap is the artwork cache size cap (decision 0002, Images;
+// 5 GB since 2026-10-24 so every music page's covers fit ahead).
+const DefaultArtworkCap = 5 << 30
 
 // maxPicture is the largest picture accepted.
 const maxPicture = 10 << 20
@@ -40,6 +42,14 @@ type ArtworkCache struct {
 	mu   sync.Mutex
 	// checking holds the addresses being re-checked in the background.
 	checking map[string]bool
+	// size is the cache's bytes, counted by the first trim and kept up by
+	// each download (listing a large cache takes seconds, so it is listed
+	// only when the count goes over the cap); trims counts the listings.
+	trimMu  sync.Mutex
+	setCap  atomic.Int64 // SetCap's cap, over Cap when set
+	size    int64
+	counted bool
+	trims   int
 }
 
 // ErrArtworkURL means a picture URL is not from an allowed place.
@@ -94,6 +104,20 @@ var ErrArtworkRejected = errors.New("picture: rejected")
 // response headers) says the answer is only a stand-in. The metadata
 // server's own stand-in (X-Metadata-Placeholder) is always refused.
 func (c *ArtworkCache) FetchUnless(ctx context.Context, url string, reject func(http.Header) bool) (string, error) {
+	return c.fetch(ctx, url, reject, true)
+}
+
+// ErrArtworkMoved means FetchStored's address answered with a redirect.
+var ErrArtworkMoved = errors.New("picture: moved")
+
+// FetchStored is FetchUnless without following a redirect: only a picture
+// the address answers itself is kept (the metadata server redirects an
+// album cover it has not stored yet; the caller then asks its other sources).
+func (c *ArtworkCache) FetchStored(ctx context.Context, url string, reject func(http.Header) bool) (string, error) {
+	return c.fetch(ctx, url, reject, false)
+}
+
+func (c *ArtworkCache) fetch(ctx context.Context, url string, reject func(http.Header) bool, follow bool) (string, error) {
 	if !c.allowed(url) {
 		return "", ErrArtworkURL
 	}
@@ -108,7 +132,7 @@ func (c *ArtworkCache) FetchUnless(ctx context.Context, url string, reject func(
 	if err := os.MkdirAll(c.Dir, 0o750); err != nil {
 		return "", err
 	}
-	if _, err := c.download(ctx, url, reject, ""); err != nil {
+	if _, err := c.download(ctx, url, reject, "", follow); err != nil {
 		return "", err
 	}
 	return name, nil
@@ -173,7 +197,7 @@ func (c *ArtworkCache) Recheck(url string, reject func(http.Header) bool) {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 		etag, _ := os.ReadFile(chk)
-		if _, err := c.download(ctx, url, reject, string(etag)); err != nil {
+		if _, err := c.download(ctx, url, reject, string(etag), true); err != nil {
 			// Try again in an hour; the stored picture keeps answering.
 			at := time.Now().Add(time.Hour - serverPictureKeep)
 			if os.Chtimes(chk, at, at) != nil {
@@ -186,7 +210,8 @@ func (c *ArtworkCache) Recheck(url string, reject func(http.Header) bool) {
 
 // download fetches url into the cache (with If-None-Match when etag is
 // set) and records its ETag and check time; a 304 only marks the check.
-func (c *ArtworkCache) download(ctx context.Context, url string, reject func(http.Header) bool, etag string) (int, error) {
+// Without follow a redirect answers ErrArtworkMoved.
+func (c *ArtworkCache) download(ctx context.Context, url string, reject func(http.Header) bool, etag string, follow bool) (int, error) {
 	name := ArtworkName(url)
 	path := filepath.Join(c.Dir, name)
 	base := c.HTTP
@@ -196,6 +221,9 @@ func (c *ArtworkCache) download(ctx context.Context, url string, reject func(htt
 	// Every redirect must stay on an allowed place too.
 	cl := *base
 	cl.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		if !follow {
+			return ErrArtworkMoved
+		}
 		if len(via) >= 5 || !c.allowed(req.URL.String()) {
 			return ErrArtworkURL
 		}
@@ -250,8 +278,45 @@ func (c *ArtworkCache) download(ctx context.Context, url string, reject func(htt
 	if StableArtworkURL(url) {
 		_ = os.WriteFile(chk, []byte(resp.Header.Get("ETag")), 0o640)
 	}
-	c.trim()
+	c.added(n)
 	return resp.StatusCode, nil
+}
+
+// added counts a stored picture's bytes; the cache is listed and trimmed
+// only before its size is known and when the count goes over the cap.
+func (c *ArtworkCache) added(n int64) {
+	c.mu.Lock()
+	c.size += n
+	over := !c.counted || c.size > c.limit()
+	c.mu.Unlock()
+	if over {
+		c.trim()
+	}
+}
+
+// SetCap changes the size cap while running (Settings); the next download
+// over it trims.
+func (c *ArtworkCache) SetCap(n int64) {
+	c.setCap.Store(n)
+	c.mu.Lock()
+	c.counted = false // count again, so a smaller cap trims at once
+	c.mu.Unlock()
+}
+
+func (c *ArtworkCache) limit() int64 {
+	if n := c.setCap.Load(); n > 0 {
+		return n
+	}
+	if c.Cap <= 0 {
+		return DefaultArtworkCap
+	}
+	return c.Cap
+}
+
+func (c *ArtworkCache) trimCount() int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.trims
 }
 
 // Path returns the file for a cache name and marks it used; ok is false
@@ -269,13 +334,17 @@ func (c *ArtworkCache) Path(name string) (string, bool) {
 	return p, true
 }
 
-// trim drops the least recently used pictures until the cache fits its cap.
+// trim counts the cache and, over its cap, drops the least recently used
+// pictures down to 90% of it (so the next downloads need no listing).
 func (c *ArtworkCache) trim() {
+	c.trimMu.Lock()
+	defer c.trimMu.Unlock()
+	limit := c.limit()
 	c.mu.Lock()
-	defer c.mu.Unlock()
-	limit := c.Cap
-	if limit <= 0 {
-		limit = DefaultArtworkCap
+	done := c.counted && c.size <= limit // another trim just ran
+	c.mu.Unlock()
+	if done {
+		return
 	}
 	es, err := os.ReadDir(c.Dir)
 	if err != nil {
@@ -297,15 +366,21 @@ func (c *ArtworkCache) trim() {
 			total += in.Size()
 		}
 	}
-	sort.Slice(fs, func(i, j int) bool { return fs[i].at.Before(fs[j].at) })
-	for _, x := range fs {
-		if total <= limit {
-			break
-		}
-		if os.Remove(x.path) == nil {
-			total -= x.size
+	if total > limit {
+		sort.Slice(fs, func(i, j int) bool { return fs[i].at.Before(fs[j].at) })
+		for _, x := range fs {
+			if total <= limit-limit/10 {
+				break
+			}
+			if os.Remove(x.path) == nil {
+				total -= x.size
+			}
 		}
 	}
+	c.mu.Lock()
+	c.size, c.counted = total, true
+	c.trims++
+	c.mu.Unlock()
 }
 
 // ArtworkClient is the client pictures are fetched with: public addresses

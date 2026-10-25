@@ -96,3 +96,76 @@ func TestStableAddressCoverRecheckedDaily(t *testing.T) {
 		t.Fatalf("not replaced: %q", b)
 	}
 }
+
+// FetchStored takes only a picture the address itself answers: the
+// metadata server redirects an album it has not stored, and that answer is
+// not kept (the caller's other sources run instead).
+func TestFetchStoredRefusesARedirect(t *testing.T) {
+	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/v1/img/album/moved/500.jpg" {
+			http.Redirect(w, r, "/elsewhere.jpg", http.StatusFound)
+			return
+		}
+		w.Header().Set("Content-Type", "image/jpeg")
+		_, _ = w.Write([]byte("cover"))
+	}))
+	defer pics.Close()
+	c := &ArtworkCache{Dir: t.TempDir(), Allowed: []string{pics.URL + "/"}, HTTP: &http.Client{}}
+	ctx := context.Background()
+	if name, err := c.FetchStored(ctx, pics.URL+"/v1/img/album/kept/500.jpg", nil); err != nil {
+		t.Fatal(err)
+	} else if _, ok := c.Path(name); !ok {
+		t.Fatal("stored picture not kept")
+	}
+	moved := pics.URL + "/v1/img/album/moved/500.jpg"
+	if _, err := c.FetchStored(ctx, moved, nil); err == nil {
+		t.Fatal("redirect taken")
+	}
+	if _, ok := c.Path(ArtworkName(moved)); ok {
+		t.Fatal("redirected picture kept")
+	}
+}
+
+// Listing a big cache takes seconds: the cache is listed once to count it,
+// then only when a download takes the count over the cap, and that trim
+// goes down to 90% of the cap so the next downloads list nothing.
+func TestTrimListsOnlyWhenOverTheCap(t *testing.T) {
+	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/jpeg")
+		_, _ = w.Write(make([]byte, 1000))
+	}))
+	defer pics.Close()
+	dir := t.TempDir()
+	c := &ArtworkCache{Dir: dir, Cap: 5500, Allowed: []string{pics.URL + "/"}, HTTP: &http.Client{}}
+	ctx := context.Background()
+	fetch := func(p string) {
+		t.Helper()
+		if _, err := c.Fetch(ctx, pics.URL+"/p/"+p+".jpg"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, p := range []string{"a", "b", "c", "d", "e"} {
+		fetch(p)
+	}
+	if n := c.trimCount(); n != 1 {
+		t.Fatalf("%d listings under the cap, want 1 (the first count)", n)
+	}
+	fetch("f") // 6000 > 5500: one trim, down to 4950 or less
+	if n := c.trimCount(); n != 2 {
+		t.Fatalf("%d listings, want 2", n)
+	}
+	es, _ := os.ReadDir(dir)
+	total := 0
+	for _, e := range es {
+		if in, err := e.Info(); err == nil && !e.IsDir() && e.Name()[0] != '.' {
+			total += int(in.Size())
+		}
+	}
+	if total > 4950 {
+		t.Fatalf("cache holds %d bytes after the trim, want 90%% of the cap or less", total)
+	}
+	fetch("g") // back to 5000: no listing
+	if n := c.trimCount(); n != 2 {
+		t.Fatalf("%d listings after a download under the cap, want 2", n)
+	}
+}

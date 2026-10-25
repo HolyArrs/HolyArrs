@@ -336,6 +336,7 @@
 						href={musicCardHref(c)}
 						image={cv.src}
 						srcset={cv.srcset}
+						fallback={c.kind === 'album' && c.artist_image ? musicImage({ image: c.artist_image }) : null}
 						kind="artist"
 						subtitle={musicCardNote(row, c) || undefined}
 						badges={c.explicit ? ['E'] : []}

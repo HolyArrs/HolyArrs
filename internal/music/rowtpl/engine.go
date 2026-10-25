@@ -169,6 +169,18 @@ func (c *Ctx) week() string {
 
 func (c *Ctx) it(i int) *Item { return &c.B.Items[i] }
 
+// Lookup answers a catalog album or artist by its MusicBrainz id.
+func (b *Bundle) Lookup(kind, id string) (Item, bool) {
+	ix := b.albumIx
+	if kind == "artist" {
+		ix = b.artistIx
+	}
+	if i, ok := ix[id]; ok {
+		return b.Items[i], true
+	}
+	return Item{}, false
+}
+
 func (c *Ctx) region() string {
 	if c.Region == "" || c.Region == "global" {
 		return "us"

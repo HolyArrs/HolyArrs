@@ -25,9 +25,12 @@
 	let keepYTDLP = $state(true);
 	// Show Library art on the sign-in page (off: trending only).
 	let signinArt = $state(false);
+	// Picture cache size (GB): covers and posters kept on this server.
+	let cacheGB = $state(5);
 	async function loadAutoplay() {
 		try {
-			const s = await api.get<{ autoplay_trailers: boolean; keep_ytdlp_updated?: boolean; signin_library_art?: boolean }>('/settings/ui');
+			const s = await api.get<{ autoplay_trailers: boolean; keep_ytdlp_updated?: boolean; signin_library_art?: boolean; artwork_cache_gb?: number }>('/settings/ui');
+			cacheGB = s.artwork_cache_gb ?? 5;
 			autoplay = s.autoplay_trailers;
 			keepYTDLP = s.keep_ytdlp_updated !== false;
 			signinArt = s.signin_library_art === true;
@@ -40,6 +43,18 @@
 		try {
 			keepYTDLP = (await api.put<{ keep_ytdlp_updated: boolean }>('/settings/ui', { keep_ytdlp_updated: on })).keep_ytdlp_updated;
 			toasts.push(keepYTDLP ? 'yt-dlp stays up to date' : 'yt-dlp is no longer updated automatically', 'ok');
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+			await loadAutoplay();
+		} finally {
+			autoplayBusy = false;
+		}
+	}
+	async function saveCacheGB(gb: number) {
+		autoplayBusy = true;
+		try {
+			cacheGB = (await api.put<{ artwork_cache_gb: number }>('/settings/ui', { artwork_cache_gb: gb })).artwork_cache_gb;
+			toasts.push(`Pictures may use up to ${cacheGB} GB`, 'ok');
 		} catch (e) {
 			toasts.push(message(e), 'fail');
 			await loadAutoplay();
@@ -250,6 +265,12 @@
 			<label class="checkline" data-testid="signin-art-setting">
 				<input type="checkbox" checked={signinArt} disabled={autoplayBusy} onchange={(e) => saveSigninArt(e.currentTarget.checked)} />
 				<span><b>Show Library art on the sign-in page</b><br /><span class="hint">The sign-in page shows trending movies and shows from TMDB. On, it shows wide pictures from your Library first. Anyone who opens the page can see them, and no rating filter applies.</span></span>
+			</label>
+			<label class="checkline" data-testid="artwork-cache-setting">
+				<select aria-label="Picture storage" value={cacheGB} disabled={autoplayBusy} onchange={(e) => saveCacheGB(Number(e.currentTarget.value))}>
+					{#each [1, 2, 5, 10, 20] as gb (gb)}<option value={gb}>{gb} GB</option>{/each}
+				</select>
+				<span><b>Picture storage</b><br /><span class="hint">Posters, covers and photos are kept on this server so pages open with their pictures. Past this size the pictures seen longest ago are removed; they come back when a page needs them.</span></span>
 			</label>
 		</section>
 	{/if}
