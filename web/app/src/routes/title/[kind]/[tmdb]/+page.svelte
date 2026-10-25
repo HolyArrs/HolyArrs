@@ -27,7 +27,7 @@
 	import { ratingPicks, shownRatings } from '#lib/rating-picks.svelte.ts';
 	import { awardsTip, loadWikiFacts, type WikiAward } from '#lib/wiki-facts.ts';
 	import TitleLookPicker from '#lib/TitleLookPicker.svelte';
-	import { titleLook } from '#lib/title-look.svelte.ts';
+	import { tagsAt as tagsSpot, titleLook } from '#lib/title-look.svelte.ts';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -290,8 +290,7 @@
 	const keyFacts = $derived(facts.filter((f) => f.kind === 'makers' || f.label === 'Network' || (f.label === 'Language' && info?.originalLanguage !== 'en')).slice(0, 4));
 	const aboutFacts = $derived(look === 'decide' ? facts.filter((f) => !keyFacts.includes(f)) : facts);
 	let aboutWidth = $state(0);
-	// Where the tags sit while Luis compares (?tags=band|top|row|text): under the story, or in About.
-	const tagsAt = typeof location === 'undefined' ? 'row' : (['band', 'top', 'row', 'text'].find((v) => v === new URLSearchParams(location.search).get('tags')) ?? 'row');
+	const tagsAt = $derived(tagsSpot.value);
 	const aboutCols = $derived(Math.max(2, Math.min(aboutFacts.length, Math.floor((aboutWidth + 28) / ((aboutWidth < 600 ? 130 : 150) + 28)) || 2)));
 	// Columns: as many as fit (150 px each, 130 on a phone), at least two. One item alone on the last
 	// row is avoided with one column fewer; when that does not help it spans two columns (factSpan).

@@ -36,3 +36,35 @@ export function setTitleLook(v: TitleLook) {
 		/* Kept for this visit only. */
 	}
 }
+
+// Where the tags sit (?tags=band|row|text|top), kept the same way.
+export type TagsAt = 'band' | 'row' | 'text' | 'top';
+export const TAG_SPOTS: { value: TagsAt; label: string }[] = [
+	{ value: 'band', label: 'T1 · Under story' },
+	{ value: 'row', label: 'T2 · About row' },
+	{ value: 'text', label: 'T3 · About text' },
+	{ value: 'top', label: 'T4 · About top' }
+];
+const TAGS_KEY = 'holyarrs.tags-at';
+const knownTags = (v: string | null): v is TagsAt => v === 'band' || v === 'row' || v === 'text' || v === 'top';
+function firstTags(): TagsAt {
+	if (typeof window === 'undefined') return 'row';
+	const q = new URLSearchParams(location.search).get('tags');
+	if (knownTags(q)) return q;
+	try {
+		const s = localStorage.getItem(TAGS_KEY);
+		if (knownTags(s)) return s;
+	} catch {
+		/* No storage: the default spot. */
+	}
+	return 'row';
+}
+export const tagsAt = $state({ value: firstTags() });
+export function setTagsAt(v: TagsAt) {
+	tagsAt.value = v;
+	try {
+		localStorage.setItem(TAGS_KEY, v);
+	} catch {
+		/* Kept for this visit only. */
+	}
+}
