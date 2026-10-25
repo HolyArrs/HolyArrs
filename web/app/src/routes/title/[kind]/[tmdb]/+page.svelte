@@ -220,6 +220,9 @@
 	const picked = $derived(shownRatings(outside, rich?.score ?? scoreOf(details?.rating), ratingPicks.list));
 	const hasScores = $derived(picked.scores.length > 0 || !!picked.tmdb);
 	// The second row of facts: dates, where the title stands, studio, money, awards, original title.
+	// One "Aired" line: Apr 2011 – May 2019, or Since Apr 2011 while it still runs.
+	const fmtMonth = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString(undefined, { month: 'short', year: 'numeric', timeZone: 'UTC' });
+	const aired = (from?: string, to?: string) => (!from ? '' : to ? `${fmtMonth(from)} – ${fmtMonth(to)}` : `Since ${fmtMonth(from)}`);
 	const fmtDay = (d?: string) => (d ? new Date(`${d}T00:00:00Z`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : '');
 	const money = (n?: number) => (n ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 }).format(n) : '');
 	const statusWord = (s?: string) => (!s || s === 'Released' ? '' : s.charAt(0) + s.slice(1).toLowerCase());
@@ -246,16 +249,15 @@
 				? [
 						['Status', statusWord(i.status)],
 						['Next episode', i.nextEpisode ? `${fmtDay(i.nextEpisode.airDate)} · S${i.nextEpisode.season} E${i.nextEpisode.episode}` : ''],
-						['First aired', fmtDay(i.dates.firstAir)],
-						['Last aired', i.status === 'Ended' || i.status === 'Canceled' ? fmtDay(i.dates.lastAir) : ''],
-						[studio.length > 1 ? 'Studios' : 'Studio', studio.join(', ')]
+						['Aired', aired(i.dates.firstAir, i.status === 'Ended' || i.status === 'Canceled' ? i.dates.lastAir : undefined)],
+						['Studio', studio.length > 1 ? `${studio[0]} +${studio.length - 1}` : (studio[0] ?? '')]
 					]
 				: [
 						['Status', statusWord(i.status)],
 						['In theaters', fmtDay(i.dates.theaters)],
 						['Digital', fmtDay(i.dates.digital)],
 						['On disc', fmtDay(i.dates.physical)],
-						[studio.length > 1 ? 'Studios' : 'Studio', studio.join(', ')],
+						['Studio', studio.length > 1 ? `${studio[0]} +${studio.length - 1}` : (studio[0] ?? '')],
 						['Budget', money(i.budget)],
 						['Box office', money(i.revenue)]
 					];
@@ -523,7 +525,7 @@
 	.calm-meta { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
 	.calm .tagchips.quiet, .d-left .tagchips.quiet { margin-top: -6px; }
 	.about-top { margin-bottom: 14px; }
-	.about-tags, .about-text { display: grid; gap: 6px; margin: 14px 0 0; padding-top: 14px; border-top: 1px solid var(--line); }
+	.about-tags, .about-text { display: grid; gap: 8px; margin: 18px 0 0; }
 	.about-text { color: var(--text); font: 500 14px/1.5 var(--font-ui); }
 	.about-lbl { display: block; color: var(--text-muted); font: 600 11.5px/1.2 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
 	.tagchips.quiet li { background: none; border: 1px solid var(--line); color: var(--text-muted); font-size: 12px; }
