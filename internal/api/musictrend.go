@@ -189,7 +189,8 @@ func (a *API) prefetchMusicArt(kind string, items []metadata.MusicTrendItem) {
 	if !a.partIsOn(parts.Music) || a.s.Library == nil || a.s.Library.Artwork == nil {
 		return
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+	// Nobody waits on a prefetch: marked ahead, never urgent at the server.
+	ctx, cancel := context.WithTimeout(metadata.Ahead(context.Background()), 15*time.Minute)
 	defer cancel()
 	sizes := []string{"250"}
 	if kind == "album" {
@@ -383,6 +384,24 @@ func (a *API) serverAlbumCoverURL(mbid, size string) string {
 	return strings.TrimRight(a.s.ImageBase, "/") + "/album/" + mbid + "/" + size + ".jpg"
 }
 
+// artTemporary reports a picture fetch error that says nothing about the
+// picture: a rate limit or server trouble (a 429 also slows the preload
+// down), or a network failure. A redirect (not stored yet), a 404 or a
+// stand-in is a real miss.
+func (a *API) artTemporary(err error) bool {
+	if err == nil || errors.Is(err, library.ErrArtworkMoved) || errors.Is(err, library.ErrArtworkRejected) || errors.Is(err, library.ErrArtworkURL) {
+		return false
+	}
+	var se *library.ArtworkStatusError
+	if errors.As(err, &se) {
+		if se.Code == 429 {
+			a.musicPre.slowDown(time.Now())
+		}
+		return se.Temporary()
+	}
+	return true
+}
+
 // serverArtistArtURL is the server's stored wide background (500, 1200 or
 // 1920 px; the default and 250 ask 1920, for heroes) or logo (1200 PNG).
 func (a *API) serverArtistArtURL(kind, mbid, size string) string {
@@ -420,6 +439,9 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name,
 	if !known || lib == nil || lib.Artwork == nil || (missed && time.Since(missAt) < musicArtMissTTL) {
 		return "", "", false
 	}
+	// temporary: the server's answer said nothing about the picture (rate
+	// limit, trouble, network): never remembered as missing.
+	temporary := false
 	keep := func(src string) bool {
 		if src == "" {
 			return false
@@ -431,8 +453,9 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name,
 		}
 		// A failed fetch may only have lost the race with a warm of the same
 		// picture (the file is then stored): it counts when the file is there.
-		_, _ = lib.Artwork.FetchUnless(ctx, src, serverPlaceholder)
+		_, err := lib.Artwork.FetchUnless(ctx, src, serverPlaceholder)
 		path, ok = lib.Artwork.Path(name)
+		temporary = temporary || !ok && a.artTemporary(err)
 		return ok
 	}
 	// Pictures come only from our metadata server (Luis, 2026-10-24): never
@@ -452,10 +475,11 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name,
 				lib.Artwork.Recheck(src, serverPlaceholder)
 				return n, p, true
 			}
-			_, _ = lib.Artwork.FetchStored(ctx, src, serverPlaceholder)
+			_, err := lib.Artwork.FetchStored(ctx, src, serverPlaceholder)
 			if p, found := lib.Artwork.Path(n); found {
 				return n, p, true
 			}
+			temporary = a.artTemporary(err)
 		}
 	case "album":
 		if src := a.serverAlbumCoverURL(mbid, size); src != "" {
@@ -464,13 +488,14 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name,
 				lib.Artwork.Recheck(src, serverPlaceholder)
 				return n, p, true
 			}
-			_, _ = lib.Artwork.FetchStored(ctx, src, serverPlaceholder)
+			_, err := lib.Artwork.FetchStored(ctx, src, serverPlaceholder)
 			if p, found := lib.Artwork.Path(n); found {
 				return n, p, true
 			}
+			temporary = a.artTemporary(err)
 		}
 	}
-	if ctx.Err() == nil {
+	if ctx.Err() == nil && !temporary {
 		c.mu.Lock()
 		if c.artMiss == nil || len(c.artMiss) > 20000 {
 			c.artMiss = map[string]time.Time{}

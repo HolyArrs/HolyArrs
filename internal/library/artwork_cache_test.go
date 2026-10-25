@@ -10,6 +10,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/CoderLuii/holyarrs/internal/metadata"
 )
 
 // Cache audit 2026-10-23, finding 4: the metadata server's grey stand-in is
@@ -167,5 +169,28 @@ func TestTrimListsOnlyWhenOverTheCap(t *testing.T) {
 	fetch("g") // back to 5000: no listing
 	if n := c.trimCount(); n != 2 {
 		t.Fatalf("%d listings after a download under the cap, want 2", n)
+	}
+}
+
+// A background download (preload or warm: the context is marked ahead)
+// tells the metadata server nobody waits (X-Fetch: ahead), so it never
+// becomes urgent work there; a page's own ask carries no mark.
+func TestBackgroundDownloadIsMarked(t *testing.T) {
+	var marks []string
+	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		marks = append(marks, r.Header.Get("X-Fetch"))
+		w.Header().Set("Content-Type", "image/jpeg")
+		_, _ = w.Write([]byte("cover"))
+	}))
+	defer pics.Close()
+	c := &ArtworkCache{Dir: t.TempDir(), Allowed: []string{pics.URL + "/"}, HTTP: &http.Client{}}
+	if _, err := c.FetchStored(metadata.Ahead(context.Background()), pics.URL+"/v1/img/album/a/250.jpg", nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.FetchStored(context.Background(), pics.URL+"/v1/img/album/b/250.jpg", nil); err != nil {
+		t.Fatal(err)
+	}
+	if len(marks) != 2 || marks[0] != "ahead" || marks[1] != "" {
+		t.Fatalf("marks %q", marks)
 	}
 }

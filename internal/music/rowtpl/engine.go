@@ -157,8 +157,9 @@ type Ctx struct {
 	CountryName func(code string) string
 	// Seen holds item keys already on the page (the Spotlight).
 	Seen map[string]bool
-	// HasArt reports an item whose picture is stored (nil: all are); rows
-	// and the Spotlight show only those, never an item without a picture.
+	// HasArt reports an item whose picture is stored (nil: all are). The
+	// Spotlight shows only those; a row puts them first and needs
+	// MinPictured of them (picturedFirst).
 	HasArt func(i int) bool
 }
 
@@ -178,6 +179,27 @@ func (c *Ctx) pictured(l L) L {
 		return l
 	}
 	return c.where(l, c.HasArt)
+}
+
+// MinPictured is the fewest items with a stored picture a row needs: the
+// first screen of a row always shows pictures; initials only at its tail.
+const MinPictured = 5
+
+// picturedFirst orders a row's items with a stored picture first (each part
+// keeping its order) and reports whether the row has MinPictured of them.
+func (c *Ctx) picturedFirst(l L) (L, bool) {
+	if c.HasArt == nil {
+		return l, true
+	}
+	with, without := make(L, 0, len(l)), L(nil)
+	for _, i := range l {
+		if c.HasArt(i) {
+			with = append(with, i)
+		} else {
+			without = append(without, i)
+		}
+	}
+	return append(with, without...), len(with) >= MinPictured
 }
 
 // Lookup answers a catalog album or artist by its MusicBrainz id.

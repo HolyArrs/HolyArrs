@@ -155,14 +155,18 @@ func TestTplPreloadAsksMissesAgain(t *testing.T) {
 	t.Fatalf("misses not asked again: %+v", r.api.tplPreloadStatus())
 }
 
-// Once the preload has stored pictures, engine rows show only items whose
-// picture is stored: an item the server has no picture for never fills a
-// row, and the page keeps its rows from the rest.
-func TestTplRowsOnlyItemsWithStoredPictures(t *testing.T) {
+// Once the preload has stored pictures, every engine row puts its items
+// with a stored picture first, so initials show only at a row's tail and
+// the page keeps its rows.
+func TestTplRowsPutStoredPicturesFirst(t *testing.T) {
 	r := tplRig(t)
 	on, gap, retry := musicPreloadOn, musicPreloadGap, musicPreloadRetry
 	musicPreloadOn, musicPreloadGap, musicPreloadRetry = true, 0, time.Hour
 	defer func() { musicPreloadOn, musicPreloadGap, musicPreloadRetry = on, gap, retry }()
+	var full tplAnswer
+	if err := json.Unmarshal(r.owner.call("GET", "/api/v1/music/genre/rock?region=US", "", 200), &full); err != nil {
+		t.Fatal(err)
+	}
 	missing := func(k preloadKey) bool { return k.kind == "album" && k.mbid[len(k.mbid)-1]%3 == 0 }
 	r.api.musicPre.warm = func(_ context.Context, k preloadKey) bool { return !missing(k) }
 	r.api.tplPreload(r.api.musicBundle(context.Background(), time.Now().UTC()), "US")
@@ -171,13 +175,16 @@ func TestTplRowsOnlyItemsWithStoredPictures(t *testing.T) {
 	if err := json.Unmarshal(r.owner.call("GET", "/api/v1/music/genre/rock?region=US", "", 200), &p); err != nil {
 		t.Fatal(err)
 	}
-	if len(p.Rows) == 0 {
-		t.Fatal("no rows left")
+	if len(p.Rows) < len(full.Rows)-2 {
+		t.Fatalf("%d rows, %d before: the page must stay full", len(p.Rows), len(full.Rows))
 	}
 	for _, row := range p.Rows {
+		bare := false
 		for _, c := range row.Items {
 			if missing(preloadKey{c.Kind, c.MBID}) {
-				t.Fatalf("%s shows %s without a stored picture", row.ID, c.Name)
+				bare = true
+			} else if bare {
+				t.Fatalf("%s: %s with a picture after one without", row.ID, c.Name)
 			}
 		}
 	}

@@ -415,9 +415,10 @@ func TestPageItemsHoldEveryShownItem(t *testing.T) {
 	}
 }
 
-// Items without a stored picture never fill a row (or the Spotlight): a row
-// that falls under RowMin without them drops.
-func TestRowsShowOnlyItemsWithPictures(t *testing.T) {
+// Items with a stored picture come first in every row (initials only at
+// the tail), a row needs MinPictured of them, and the Spotlight takes only
+// pictured items. Pages stay full.
+func TestRowsPutStoredPicturesFirst(t *testing.T) {
 	b := fakeBundle()
 	c := pageCtx(b, "genre", "genre:rock")
 	all := len(Build(c))
@@ -429,19 +430,22 @@ func TestRowsShowOnlyItemsWithPictures(t *testing.T) {
 		}
 	}
 	rows := Build(c)
+	if len(rows) < all-2 {
+		t.Fatalf("%d rows with most pictures stored, %d with all: pages must stay full", len(rows), all)
+	}
 	for _, r := range rows {
-		if len(r.Items) < RowMin {
-			t.Fatalf("%s: %d items", r.ID, len(r.Items))
-		}
+		seenBare := false
 		for _, i := range r.Items {
 			if i%3 == 0 {
-				t.Fatalf("%s: item %d has no picture", r.ID, i)
+				seenBare = true
+			} else if seenBare {
+				t.Fatalf("%s: a pictured item after one without a picture", r.ID)
 			}
 		}
 	}
 	c = pageCtx(b, "genre", "genre:rock")
 	c.HasArt = func(int) bool { return false }
-	if n := len(Build(c)); n != 0 || all == 0 {
-		t.Fatalf("no pictures at all: %d rows (of %d)", n, all)
+	if n := len(Build(c)); n != 0 {
+		t.Fatalf("no pictures at all: %d rows", n)
 	}
 }

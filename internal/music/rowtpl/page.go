@@ -554,7 +554,10 @@ func Candidates(c *Ctx) []Cand {
 			if !tp.Keep {
 				l = c.notHad(l)
 			}
-			l = c.pictured(l)
+			l, pictured := c.picturedFirst(l)
+			if !pictured {
+				continue
+			}
 			if len(l) > rawMax {
 				l = l[:rawMax]
 			}
@@ -633,7 +636,10 @@ func Build(c *Ctx) []Row {
 			if !tp.Keep {
 				l = c.notHad(l)
 			}
-			l = c.pictured(l)
+			l, pictured := c.picturedFirst(l)
+			if !pictured {
+				continue
+			}
 			if len(l) > rawMax {
 				l = l[:rawMax]
 			}

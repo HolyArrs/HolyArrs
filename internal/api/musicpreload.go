@@ -27,10 +27,37 @@ import (
 var musicPreloadOn = true
 
 // musicPreloadWorkers items are warmed at once; each worker waits
-// musicPreloadGap between items (tests shorten it).
-const musicPreloadWorkers = 4
+// musicPreloadGap between items (tests shorten it): about 4 items (8
+// pictures) a second, under the server's per-install limit. A 429 holds
+// every worker back for musicPreloadPause.
+const musicPreloadWorkers = 2
 
-var musicPreloadGap = 250 * time.Millisecond
+var (
+	musicPreloadGap   = 500 * time.Millisecond
+	musicPreloadPause = 30 * time.Second
+)
+
+// slowDown holds the preload back after a 429 from the server.
+func (p *musicPreload) slowDown(now time.Time) {
+	p.mu.Lock()
+	if until := now.Add(musicPreloadPause); until.After(p.pauseUntil) {
+		p.pauseUntil = until
+	}
+	p.mu.Unlock()
+}
+
+// waitPause sleeps while the preload is held back.
+func (p *musicPreload) waitPause() {
+	for {
+		p.mu.Lock()
+		d := time.Until(p.pauseUntil)
+		p.mu.Unlock()
+		if d <= 0 {
+			return
+		}
+		time.Sleep(d)
+	}
+}
 
 type preloadKey struct{ kind, mbid string }
 
@@ -57,7 +84,9 @@ type musicPreload struct {
 	// haveReady is set when a preload pass first finished: before that
 	// (start, the first pass running) rows are not checked against have.
 	haveReady bool
-	st        musicPreloadStatus
+	// pauseUntil holds the preload back after the server said 429.
+	pauseUntil time.Time
+	st         musicPreloadStatus
 	// warm stores one item's pictures; nil means the real ones (tests
 	// replace it).
 	warm func(ctx context.Context, k preloadKey) bool
@@ -291,6 +320,7 @@ func (a *API) preloadWarm(ver string, todo []preloadKey) {
 		go func() {
 			defer wg.Done()
 			for k := range next {
+				p.waitPause()
 				ctx, cancel := context.WithTimeout(metadata.Ahead(context.Background()), artWarmItem)
 				ok := warm(ctx, k)
 				cancel()

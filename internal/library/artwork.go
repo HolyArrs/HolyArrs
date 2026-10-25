@@ -17,6 +17,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/source"
 )
 
@@ -107,6 +108,15 @@ func (c *ArtworkCache) FetchUnless(ctx context.Context, url string, reject func(
 	return c.fetch(ctx, url, reject, true)
 }
 
+// ArtworkStatusError is a picture address's non-200 answer.
+type ArtworkStatusError struct{ Code int }
+
+func (e *ArtworkStatusError) Error() string { return fmt.Sprintf("picture: answered %d", e.Code) }
+
+// Temporary reports an answer that says nothing about the picture (rate
+// limit, server trouble): ask again later, never treat it as missing.
+func (e *ArtworkStatusError) Temporary() bool { return e.Code == 429 || e.Code >= 500 }
+
 // ErrArtworkMoved means FetchStored's address answered with a redirect.
 var ErrArtworkMoved = errors.New("picture: moved")
 
@@ -194,7 +204,7 @@ func (c *ArtworkCache) Recheck(url string, reject func(http.Header) bool) {
 			delete(c.checking, url)
 			c.mu.Unlock()
 		}()
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(metadata.Ahead(context.Background()), 30*time.Second)
 		defer cancel()
 		etag, _ := os.ReadFile(chk)
 		if _, err := c.download(ctx, url, reject, string(etag), true); err != nil {
@@ -236,6 +246,11 @@ func (c *ArtworkCache) download(ctx context.Context, url string, reject func(htt
 	if etag != "" {
 		req.Header.Set("If-None-Match", etag)
 	}
+	if metadata.IsAhead(ctx) {
+		// A preload or warm: nobody waits, so the metadata server never
+		// treats it as urgent work.
+		req.Header.Set("X-Fetch", "ahead")
+	}
 	resp, err := cl.Do(req)
 	if err != nil {
 		return 0, fmt.Errorf("picture: %w", err)
@@ -250,7 +265,7 @@ func (c *ArtworkCache) download(ctx context.Context, url string, reject func(htt
 		return resp.StatusCode, nil
 	}
 	if resp.StatusCode != http.StatusOK {
-		return resp.StatusCode, fmt.Errorf("picture: answered %d", resp.StatusCode)
+		return resp.StatusCode, &ArtworkStatusError{Code: resp.StatusCode}
 	}
 	if resp.Header.Get("X-Metadata-Placeholder") != "" || (reject != nil && reject(resp.Header)) {
 		return resp.StatusCode, ErrArtworkRejected
