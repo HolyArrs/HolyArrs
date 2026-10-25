@@ -1,0 +1,77 @@
+// Which lines a title page's About section shows, picked per browser in
+// Settings › Appearance. The defaults stay short: what helps decide on a
+// request and is not already in the hero (year, length, age rating, genres).
+
+export type AboutItem = { id: string; group: 'Information' | 'Made by' | 'Ratings' | 'Feel'; name: string; on: boolean };
+
+export const ABOUT_ITEMS: AboutItem[] = [
+	{ id: 'released', group: 'Information', name: 'Released or premiered', on: false },
+	{ id: 'length', group: 'Information', name: 'Run time or seasons', on: false },
+	{ id: 'episodes', group: 'Information', name: 'Episodes', on: true },
+	{ id: 'epLength', group: 'Information', name: 'Episode length', on: true },
+	{ id: 'type', group: 'Information', name: 'Type of show', on: false },
+	{ id: 'rated', group: 'Information', name: 'Age rating', on: false },
+	{ id: 'status', group: 'Information', name: 'Status', on: true },
+	{ id: 'next', group: 'Information', name: 'Next episode', on: true },
+	{ id: 'firstAir', group: 'Information', name: 'First aired', on: false },
+	{ id: 'lastAir', group: 'Information', name: 'Last aired', on: false },
+	{ id: 'theaters', group: 'Information', name: 'In theaters', on: false },
+	{ id: 'digital', group: 'Information', name: 'Digital release', on: true },
+	{ id: 'disc', group: 'Information', name: 'On disc', on: false },
+	{ id: 'region', group: 'Information', name: 'Region of origin', on: false },
+	{ id: 'language', group: 'Information', name: 'Language', on: true },
+	{ id: 'origTitle', group: 'Information', name: 'Original title', on: true },
+	{ id: 'makers', group: 'Made by', name: 'Director or creators', on: true },
+	{ id: 'network', group: 'Made by', name: 'Network', on: true },
+	{ id: 'studios', group: 'Made by', name: 'Studios', on: false },
+	{ id: 'budget', group: 'Made by', name: 'Budget', on: false },
+	{ id: 'boxOffice', group: 'Made by', name: 'Box office', on: false },
+	{ id: 'scores', group: 'Ratings', name: 'Every score', on: false },
+	{ id: 'awards', group: 'Ratings', name: 'Awards', on: true },
+	{ id: 'genres', group: 'Feel', name: 'Genres', on: false },
+	{ id: 'themes', group: 'Feel', name: 'Themes', on: true }
+];
+
+const DEFAULTS = ABOUT_ITEMS.filter((i) => i.on).map((i) => i.id);
+const KEY = 'holyarrs.about';
+
+function stored(): string[] {
+	try {
+		const raw = localStorage.getItem(KEY);
+		return raw ? (JSON.parse(raw) as unknown[]).filter((x): x is string => ABOUT_ITEMS.some((i) => i.id === x)) : DEFAULTS;
+	} catch {
+		return DEFAULTS;
+	}
+}
+
+export const aboutPicks = $state<{ list: string[] }>({ list: typeof window === 'undefined' ? DEFAULTS : stored() });
+export const aboutIsDefault = () => aboutPicks.list.length === DEFAULTS.length && DEFAULTS.every((d) => aboutPicks.list.includes(d));
+
+export function setAboutPick(id: string, on: boolean) {
+	aboutPicks.list = ABOUT_ITEMS.map((i) => i.id).filter((x) => (x === id ? on : aboutPicks.list.includes(x)));
+	try {
+		localStorage.setItem(KEY, JSON.stringify(aboutPicks.list));
+	} catch {
+		/* Kept for this visit only. */
+	}
+}
+
+export function resetAboutPicks() {
+	aboutPicks.list = DEFAULTS;
+	try {
+		localStorage.removeItem(KEY);
+	} catch {
+		/* Nothing kept. */
+	}
+}
+
+const BY_LABEL: Record<string, string> = {
+	Premiered: 'released', Released: 'released', Seasons: 'length', 'Run time': 'length', Episodes: 'episodes', 'Episode length': 'epLength', Type: 'type',
+	Rated: 'rated', Status: 'status', 'Next episode': 'next', 'First aired': 'firstAir', 'Last aired': 'lastAir', 'In theaters': 'theaters', Digital: 'digital',
+	'On disc': 'disc', 'Region of origin': 'region', 'Regions of origin': 'region', 'Original language': 'language', 'Spoken languages': 'language',
+	'Original title': 'origTitle', 'Directed by': 'makers', 'Created by': 'makers', Network: 'network', Studio: 'studios', Studios: 'studios',
+	Budget: 'budget', 'Box office': 'boxOffice', Awards: 'awards', 'Best known for': 'awards', Genre: 'genres', Genres: 'genres', Themes: 'themes'
+};
+
+/** aboutShown says whether a row (by its label) is picked; any other label is a score. */
+export const aboutShown = (label: string, picks: string[]) => picks.includes(BY_LABEL[label] ?? 'scores');

@@ -25,6 +25,7 @@
 	import TitleTrailers from '#lib/TitleTrailers.svelte';
 	import { loadExtras, scoreName, scoreText, type OutsideScore } from '#lib/outside-ratings.ts';
 	import { ratingPicks, shownRatings } from '#lib/rating-picks.svelte.ts';
+	import { aboutPicks, aboutShown } from '#lib/about-picks.svelte.ts';
 	import { awardsTip, loadWikiFacts, type WikiAward } from '#lib/wiki-facts.ts';
 	import TitleLookPicker from '#lib/TitleLookPicker.svelte';
 	import { tagsAt as tagsSpot, titleLook } from '#lib/title-look.svelte.ts';
@@ -327,7 +328,7 @@
 			{ title: 'Ratings', rows: reception },
 			{ title: 'Feel', rows: kinds }
 		];
-		return groups.filter((g) => g.rows.length);
+		return groups.map((g) => ({ ...g, rows: g.rows.filter((f) => aboutShown(f.label, aboutPicks.list)) })).filter((g) => g.rows.length);
 	});
 	// Decide in 5 s: a few key facts beside the ratings; everything else goes to About at the bottom.
 	const keyFacts = $derived(facts.filter((f) => f.kind === 'makers' || f.label === 'Network' || (f.label === 'Language' && info?.originalLanguage !== 'en')).slice(0, 4));
