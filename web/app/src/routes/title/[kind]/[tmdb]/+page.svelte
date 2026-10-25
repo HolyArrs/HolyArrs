@@ -288,7 +288,7 @@
 	});
 	// Decide in 5 s: a few key facts beside the ratings; everything else goes to About at the bottom.
 	const keyFacts = $derived(facts.filter((f) => f.kind === 'makers' || f.label === 'Network' || (f.label === 'Language' && info?.originalLanguage !== 'en')).slice(0, 4));
-	const aboutFacts = $derived(facts.filter((f) => !keyFacts.includes(f)));
+	const aboutFacts = $derived(look === 'decide' ? facts.filter((f) => !keyFacts.includes(f)) : facts);
 	let aboutWidth = $state(0);
 	const aboutCols = $derived(Math.max(2, Math.min(aboutFacts.length, Math.floor((aboutWidth + 28) / ((aboutWidth < 600 ? 130 : 150) + 28)) || 2)));
 	// Columns: as many as fit (150 px each, 130 on a phone), at least two. One item alone on the last
@@ -328,8 +328,8 @@
 			crumbIcon={d.kind === 'show' ? 'tv' : 'compass'}
 			breadcrumb={crumbs}
 			meta={heroFacts(d)}
-			ratings={false}
-			showFacts={look !== 'band'}
+			ratings={look === 'scores'}
+			showFacts={look !== 'band' && look !== 'story'}
 			tagline={info?.tagline}
 			certification={rich?.certification ?? certOf(d.rating)}
 			score={rich?.score ?? scoreOf(d.rating)}
@@ -402,10 +402,14 @@
 				{/each}
 			</dl>
 		{/snippet}
+		{#snippet tagLine()}
+			{#if tags.length}<ul class="tagchips quiet" data-testid="title-tags">{#each tags.slice(0, 5) as t (t)}<li>{t}</li>{/each}</ul>{/if}
+		{/snippet}
+		{#if look !== 'both' && look !== 'band'}
 		{#if look === 'decide'}
-		<!-- Decide in 5 s: the story and where to watch beside the ratings and a few key facts; then seasons, cast, trailers and rows; About at the bottom. -->
+		<!-- V4 · Split: the story and where to watch beside the ratings and a few key facts. -->
 		<div class="decide" data-testid="title-decide">
-			<div class="d-left">{@render story()}{@render where()}</div>
+			<div class="d-left">{@render story()}{@render tagLine()}{@render where()}</div>
 			{#if hasScores || keyFacts.length}
 				<div class="d-right">
 					{#if hasScores}<TitleScores scores={picked.scores} tmdb={picked.tmdb} variant="tiles" />{/if}
@@ -413,15 +417,26 @@
 				</div>
 			{/if}
 		</div>
+		{:else}
+		<!-- V1 Quiet / V2 Scores up top / V3 Story first: one calm column under the hero. -->
+		<div class="calm" data-testid="title-calm">
+			{#if look === 'story'}
+				<p class="calm-meta">{heroFacts(d).join(' · ')}{#if cert}<span class="fb cert">{cert}</span>{/if}</p>
+			{/if}
+			{@render story()}
+			{@render tagLine()}
+			{#if look !== 'scores' && hasScores}<TitleScores scores={picked.scores} tmdb={picked.tmdb} variant={look === 'story' ? 'tiles' : 'chips'} />{/if}
+			{@render where()}
+		</div>
+		{/if}
 		{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
 		{@render castRow()}
 		{@render trailers()}
 		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} />
-		{#if aboutFacts.length || tags.length}
+		{#if aboutFacts.length}
 			<section class="about" bind:clientWidth={aboutWidth} data-testid="title-about">
 				<h2 class="tp-h2">About</h2>
-				{#if aboutFacts.length}{@render grid(aboutFacts, aboutCols)}{/if}
-				{#if tags.length}<ul class="tagchips">{#each tags.slice(0, 5) as t (t)}<li>{t}</li>{/each}</ul>{/if}
+				{@render grid(aboutFacts, aboutCols)}
 			</section>
 		{/if}
 		{:else}
@@ -500,7 +515,10 @@
 	.d-left, .d-right { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 	.d-right .facts-grid { padding: 14px 0 0; border-top: 1px solid var(--line); }
 	.about .facts-grid { padding-top: 0; }
-	.about .tagchips { margin-top: 8px; }
+	.calm { display: flex; flex-direction: column; gap: 16px; max-width: 760px; padding-bottom: 8px; }
+	.calm-meta { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
+	.tagchips.quiet { margin-top: -6px; }
+	.tagchips.quiet li { background: none; border: 1px solid var(--line); color: var(--text-muted); font-size: 12px; }
 	@media (max-width: 899px) { .decide { grid-template-columns: minmax(0, 1fr); } }
 	.facts-grid { display: grid; grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); gap: 16px 28px; margin: 0; padding: 16px 0; }
 	.facts-grid > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
