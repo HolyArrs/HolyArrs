@@ -30,11 +30,19 @@ function stored(): RatingSource[] {
 	}
 }
 
-export const ratingPicks = $state<{ list: RatingSource[] }>({ list: typeof window === 'undefined' ? DEFAULT_RATINGS : stored() });
+let saved = false;
+try {
+	saved = typeof window !== 'undefined' && localStorage.getItem(KEY) !== null;
+} catch {
+	/* No storage: the defaults. */
+}
+// custom: picked here at least once; while false a title fills up to three scores.
+export const ratingPicks = $state<{ list: RatingSource[]; custom: boolean }>({ list: typeof window === 'undefined' ? DEFAULT_RATINGS : stored(), custom: saved });
 
 export function setRatingPick(id: RatingSource, on: boolean) {
 	const next = ORDER.filter((s) => (s === id ? on : ratingPicks.list.includes(s)));
 	ratingPicks.list = next;
+	ratingPicks.custom = true;
 	try {
 		localStorage.setItem(KEY, JSON.stringify(next));
 	} catch {
@@ -44,6 +52,7 @@ export function setRatingPick(id: RatingSource, on: boolean) {
 
 export function resetRatingPicks() {
 	ratingPicks.list = DEFAULT_RATINGS;
+	ratingPicks.custom = false;
 	try {
 		localStorage.removeItem(KEY);
 	} catch {
@@ -55,9 +64,18 @@ export function resetRatingPicks() {
  * shownRatings is what a title shows: the picked outside scores it has and the
  * TMDB score when picked; with none of them, the first score it has in ORDER.
  */
-export function shownRatings(scores: OutsideScore[], tmdb: number | null | undefined, picks: RatingSource[]): { scores: OutsideScore[]; tmdb: number | undefined } {
+export function shownRatings(scores: OutsideScore[], tmdb: number | null | undefined, picks: RatingSource[], fill = false): { scores: OutsideScore[]; tmdb: number | undefined } {
 	const out = scores.filter((s) => picks.includes(s.source as RatingSource));
-	const t = tmdb && picks.includes('tmdb') ? tmdb : undefined;
+	let t = tmdb && picks.includes('tmdb') ? tmdb : undefined;
+	// Still on the default three (never changed here): a title missing one of
+	// them fills up to three with the next scores it has, TMDB last.
+	if (fill) {
+		for (const s of scores.filter((x) => !out.includes(x)).sort((a, b) => ORDER.indexOf(a.source as RatingSource) - ORDER.indexOf(b.source as RatingSource))) {
+			if (out.length >= 3) break;
+			out.push(s);
+		}
+		if (out.length < 3 && tmdb && !t) t = tmdb;
+	}
 	if (out.length || t) return { scores: out, tmdb: t };
 	for (const id of ORDER) {
 		if (id === 'tmdb' && tmdb) return { scores: [], tmdb };

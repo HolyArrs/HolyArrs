@@ -107,7 +107,8 @@
 		actions: actionRow,
 		ratings = true,
 		showFacts = true,
-		tagline
+		tagline,
+		heroStory
 	}: {
 		title: string;
 		/** A movie or show: the muted trailer and the Trailer button. */
@@ -148,6 +149,8 @@
 		showFacts?: boolean;
 		/** A tagline under the logo or title. */
 		tagline?: string | null;
+		/** The story inside the hero (three lines at most), when the page shows it there. */
+		heroStory?: string | null;
 	} = $props();
 
 	let backdropFailed = $state(false);
@@ -193,7 +196,7 @@
 	const stand = $derived(cover ?? (!wide && heroPoster && !posterFailed ? heroPoster : null));
 
 	// Only the ratings this browser picked (Settings › Appearance).
-	const shown = $derived(shownRatings(extras.scores, score, ratingPicks.list));
+	const shown = $derived(shownRatings(extras.scores, score, ratingPicks.list, !ratingPicks.custom));
 	const scoreText = $derived(shown.tmdb ? (Math.round(shown.tmdb * 10) / 10).toFixed(1) : '');
 	// The first crumb is the page you came from (Search, Explore, a person…), stepping back there with its scroll and state; a fresh visit keeps the page's own.
 	const from = $derived.by(() => (void breadcrumb, cameFrom()));
@@ -290,6 +293,7 @@
 				<h1 class="bb-name" class:short={!!cover}>{title}</h1>
 			{/if}
 			{#if tagline}<p class="hero-tagline" data-testid="hero-tagline">{tagline}</p>{/if}
+			{#if heroStory}<p class="hero-story" data-testid="hero-story">{heroStory}</p>{/if}
 		{/snippet}
 		{#snippet meta()}
 			{#if showFacts && facts.length}<p>{facts.join(' · ')}</p>{/if}
@@ -336,6 +340,7 @@
 	.cert { border-width: 1.5px; border-color: rgb(255 255 255 / 80%); }
 	.score { border-radius: 999px; padding: 0 9px 0 7px; background: rgb(255 255 255 / 12%); border-color: rgb(255 255 255 / 30%); }
 	.score svg { color: #f5c518; }
+	.hero-story { margin: 12px 0 0; max-width: 58ch; color: rgb(255 255 255 / 90%); font: 500 clamp(14px, 1.1vw, 16px)/1.5 var(--font-ui); text-shadow: 0 1px 3px rgb(0 0 0 / 55%); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 	.hero-tagline { margin: 10px 0 0; max-width: 40ch; color: rgb(255 255 255 / 88%); font: italic 500 clamp(15px, 1.3vw, 18px)/1.35 var(--font-ui); text-shadow: 0 1px 3px rgb(0 0 0 / 55%); }
 	.story { max-width: 72ch; margin: var(--s-5) 0 0; font: 400 16px/1.55 var(--font-ui); color: var(--text); }
 	.ui-thero :global(.tp-member) { min-height: 44px; display: flex; align-items: center; }

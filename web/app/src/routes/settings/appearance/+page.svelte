@@ -6,7 +6,7 @@
 	import { DEFAULT_RATINGS, RATING_SOURCES, ratingPicks, resetRatingPicks, setRatingPick } from '#lib/rating-picks.svelte.ts';
 	import { ABOUT_ITEMS, aboutIsDefault, aboutPicks, resetAboutPicks, setAboutPick } from '#lib/about-picks.svelte.ts';
 	const aboutGroups = ['Information', 'Made by', 'Ratings', 'Feel'] as const;
-	const isDefault = $derived(ratingPicks.list.length === DEFAULT_RATINGS.length && DEFAULT_RATINGS.every((r) => ratingPicks.list.includes(r)));
+	const isDefault = $derived(!ratingPicks.custom && ratingPicks.list.length === DEFAULT_RATINGS.length && DEFAULT_RATINGS.every((r) => ratingPicks.list.includes(r)));
 
 	let themeChoice = $state<ThemeChoice>(theme.choice);
 	const themes: { value: ThemeChoice; label: string; icon: 'sun' | 'moon' | 'settings' }[] = [
@@ -39,7 +39,7 @@
 			</li>
 		{/each}
 	</ul>
-	<p class="hint">A title with none of these still shows one score, so the page is never without one.</p>
+	<p class="hint">While you keep the default three, a title missing one of them shows the next score it has instead, so there are always three. Once you change them, pages show exactly your picks (and one score when a title has none of them).</p>
 	{#if !isDefault}<button type="button" class="btn ghost" onclick={resetRatingPicks}>Back to the default three</button>{/if}
 </SettingsCard>
 

@@ -17,4 +17,10 @@ describe('shown ratings', () => {
 		expect(shownRatings([], 6.5, ['imdb'])).toEqual({ scores: [], tmdb: 6.5 });
 		expect(shownRatings([], undefined, ['imdb'])).toEqual({ scores: [], tmdb: undefined });
 	});
+	it('fills up to three on the defaults when a title misses one', () => {
+		const some = [s('imdb', 8.5, 10), s('metacritic', 89), s('letterboxd', 4.4, 5), s('trakt', 85)];
+		expect(shownRatings(some, 8.4, DEFAULT_RATINGS, true).scores.map((x) => x.source)).toEqual(['imdb', 'metacritic', 'letterboxd']);
+		expect(shownRatings([s('imdb', 8.5, 10)], 8.4, DEFAULT_RATINGS, true)).toEqual({ scores: [s('imdb', 8.5, 10)], tmdb: 8.4 });
+		expect(shownRatings(some, 8.4, DEFAULT_RATINGS).scores.map((x) => x.source)).toEqual(['imdb']);
+	});
 });
