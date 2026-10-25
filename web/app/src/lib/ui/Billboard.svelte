@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, type Snippet } from 'svelte';
 	import HeroMotion from './HeroMotion.svelte';
+	import ArtPlaceholder from './ArtPlaceholder.svelte';
 	import TrailerPlayer from './TrailerPlayer.svelte';
 	import { autoplayHere, loadUISettings, prefetchTrailer, trailerSources, type TrailerSource } from '../autoplay.svelte.ts';
 	import { dwell, HERO_DELAY, type Video } from '../trailer.ts';
@@ -87,6 +88,8 @@
 	// paint and the hero picture, so it never competes with them or the rows.
 	let painted = $state(false);
 	let artLoaded = $state(false);
+	// The picture could not be read: the placeholder (initials) takes its place.
+	let artFailed = $state(false);
 	const artReady = $derived(artLoaded || !!art || !pictures.length);
 	const trailer = $derived(!!kind && !!tmdb && painted && artReady);
 	const wait = dwell(HERO_DELAY, () => (armed = true));
@@ -174,6 +177,7 @@
 	$effect(() => {
 		void pictures[0];
 		artLoaded = false;
+		artFailed = false;
 	});
 
 	onMount(() => {
@@ -191,10 +195,14 @@
 
 <section class="ui-billboard" class:quiet class:reveal bind:this={box} data-hero aria-label={label} data-testid={testid}>
 	<div class="art" aria-hidden={!sources.length}>
+		{#if !art && (!pictures.length || artFailed || !artLoaded)}
+			<!-- No picture, or not yet: a soft shimmer while it loads, the title's initials when there is none. -->
+			<ArtPlaceholder name={!pictures.length || artFailed ? title : ''} shape="wide" loading={!!pictures.length && !artFailed} />
+		{/if}
 		{#if art}
 			{@render art()}
 		{:else if pictures.length}
-			{#key pictures[0]}<HeroMotion {pictures} {vtName} {position} paused={playing} onerror={onpictureerror} onload={() => (artLoaded = true)} />{/key}
+			{#key pictures[0]}<HeroMotion {pictures} {vtName} {position} paused={playing} onerror={() => ((artFailed = true), onpictureerror?.())} onload={() => (artLoaded = true)} />{/key}
 		{/if}
 		{#if sources.length}
 			{#key resumeRun}

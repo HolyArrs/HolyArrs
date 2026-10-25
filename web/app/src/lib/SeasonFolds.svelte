@@ -3,6 +3,7 @@
 	import { date } from './format.ts';
 	import Skeleton from './ui/Skeleton.svelte';
 	import Shelf from './ui/Shelf.svelte';
+	import ArtPlaceholder from './ui/ArtPlaceholder.svelte';
 	import { sized } from './tmdb-image.ts';
 	import { runtimeWords } from './ui/TitleHero.svelte';
 	import { newSeason, newestSeason, seasonName } from './shows.ts';
@@ -63,6 +64,8 @@
 		});
 	}
 	const cur = $derived(shown === null ? undefined : seasons.find((s) => s.number === shown));
+	// Each episode picture: loaded, or failed (the placeholder then shows its name).
+	let stillState = $state<Record<string, 'ok' | 'bad'>>({});
 </script>
 
 {#if seasons.length}
@@ -82,7 +85,10 @@
 					<Shelf title="{seasonName(shown)} episodes" item="260px" placeholder="wide" whole>
 						{#each cards(shown) as c (c.key)}
 							<article class="ep">
-								<span class="still">{#if c.still}<img src={sized(c.still, 'backdrop', 300)} alt="" loading="lazy" decoding="async" />{/if}</span>
+								<span class="still">
+									{#if !c.still || stillState[`${shown}:${c.key}`] !== 'ok'}<ArtPlaceholder name={!c.still || stillState[`${shown}:${c.key}`] === 'bad' ? c.name.replace(/^\d+\.\s*/, '') : ''} shape="wide" loading={!!c.still && !stillState[`${shown}:${c.key}`]} />{/if}
+									{#if c.still && stillState[`${shown}:${c.key}`] !== 'bad'}<img src={sized(c.still, 'backdrop', 300)} alt="" loading="lazy" decoding="async" onload={() => (stillState[`${shown}:${c.key}`] = 'ok')} onerror={() => (stillState[`${shown}:${c.key}`] = 'bad')} />{/if}
+								</span>
 								<b class="ep-name">{c.name}</b>
 								<span class="xs muted">{c.line}</span>
 								{#if c.overview}<p class="ep-text">{c.overview}</p>{/if}
@@ -110,8 +116,8 @@
 	/* The pills name the row, so its own heading is for screen readers only. */
 	.seasons :global(.ui-shelf header) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 	.ep { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-	.still { display: block; aspect-ratio: 16 / 9; margin-bottom: 6px; border-radius: 10px; overflow: hidden; background: var(--surface-2); }
-	.still img { width: 100%; height: 100%; object-fit: cover; }
+	.still { position: relative; display: block; aspect-ratio: 16 / 9; margin-bottom: 6px; border-radius: 10px; overflow: hidden; background: var(--surface-2); }
+	.still img { position: relative; width: 100%; height: 100%; object-fit: cover; }
 	.ep-name { font: 600 15px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.ep-text { margin: 2px 0 0; color: var(--text-muted); font: 400 13.5px/1.4 var(--font-ui); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
 	.sk { display: flex; gap: 12px; margin-top: 12px; }

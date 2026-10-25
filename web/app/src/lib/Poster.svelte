@@ -1,24 +1,17 @@
 <script lang="ts">
 	import { to } from './paths.ts';
+	import ArtPlaceholder from './ui/ArtPlaceholder.svelte';
 	// A poster, or the title's initials on a quiet tile when there is no picture.
 	let { src, name }: { src?: string | null; name: string } = $props();
 	let broken = $state(false);
 	const usable = $derived(!!src && !broken && (src.startsWith('https://') || src.startsWith('/')));
-	const initials = $derived(
-		name
-			.split(/\s+/)
-			.filter(Boolean)
-			.slice(0, 2)
-			.map((w) => w[0]?.toUpperCase() ?? '')
-			.join('')
-	);
+	let loaded = $state(false);
 </script>
 
 <div class="poster">
+	{#if !usable || !loaded}<ArtPlaceholder name={usable ? '' : name} shape="poster" loading={usable} />{/if}
 	{#if usable}
-		<img src={to(src ?? '')} alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror={() => (broken = true)} />
-	{:else}
-		<span aria-hidden="true">{initials}</span>
+		<img src={to(src ?? '')} alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onload={() => (loaded = true)} onerror={() => (broken = true)} />
 	{/if}
 </div>
 
@@ -51,10 +44,5 @@
 		height: 100%;
 		object-fit: cover;
 		background: var(--surface-2);
-	}
-	span {
-		font: var(--weight-semibold) var(--text-xl) / 1 var(--font-display);
-		color: var(--text-faint);
-		letter-spacing: var(--tracking-display);
 	}
 </style>

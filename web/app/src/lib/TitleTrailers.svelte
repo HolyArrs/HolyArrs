@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Icon from './Icon.svelte';
 	import Shelf from './ui/Shelf.svelte';
+	import ArtPlaceholder from './ui/ArtPlaceholder.svelte';
 	import { sized } from './tmdb-image.ts';
 	import { claimPlayer, pickTrailer, type Video } from './trailer.ts';
 	import { trailerSources, type TrailerSource } from './autoplay.svelte.ts';
@@ -31,6 +32,8 @@
 	const list = $derived(main ? [main, ...videos.filter((v) => v.key !== main.key)] : videos);
 	const pics = $derived(art.filter((u): u is string => !!u));
 	let noCover = $state<Record<string, boolean>>({});
+	// A cover's state per video: loaded, or failed even after the fallback picture.
+	let coverState = $state<Record<string, 'ok' | 'bad'>>({});
 	const coverOf = (v: Video, i: number) => (noCover[v.key] ? (pics.length ? sized(pics[i % pics.length], 'backdrop', 300) : '') : `https://i.ytimg.com/vi/${v.key}/mqdefault.jpg`);
 	const kindWord = (v: Video) => (v.type === 'Teaser' ? 'Teaser' : 'Trailer');
 	const langWord = (v: Video) => {
@@ -67,7 +70,8 @@
 {#snippet card(v: Video, i: number)}
 	<button type="button" class="tcard" onclick={(e) => play(v, e)} aria-busy={busy === v.key || undefined} aria-label="Play {named(v)}">
 		<span class="pic">
-			{#if coverOf(v, i)}<img src={coverOf(v, i)} alt="" loading="lazy" decoding="async" onerror={() => (noCover[v.key] = true)} />{/if}
+			{#if !coverOf(v, i) || coverState[v.key] !== 'ok'}<ArtPlaceholder name={!coverOf(v, i) || coverState[v.key] === 'bad' ? named(v) : ''} shape="wide" loading={!!coverOf(v, i) && !coverState[v.key]} />{/if}
+			{#if coverOf(v, i) && coverState[v.key] !== 'bad'}<img src={coverOf(v, i)} alt="" loading="lazy" decoding="async" onload={() => (coverState[v.key] = 'ok')} onerror={() => (noCover[v.key] ? (coverState[v.key] = 'bad') : (noCover[v.key] = true))} />{/if}
 			<span class="glyph" aria-hidden="true"><Icon name="play" size={14} /></span>
 		</span>
 		<span class="tname">{named(v)}</span>
@@ -87,7 +91,7 @@
 	.trailers { min-width: 0; }
 	.tcard { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 0; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; }
 	.pic { position: relative; display: block; aspect-ratio: 16 / 9; margin-bottom: 5px; border-radius: 9px; overflow: hidden; background: var(--surface-2); }
-	.pic img { width: 100%; height: 100%; object-fit: cover; transition: transform 420ms var(--ease-out); }
+	.pic img { position: relative; width: 100%; height: 100%; object-fit: cover; transition: transform 420ms var(--ease-out); }
 	.tcard:hover img { transform: scale(1.04); }
 	.glyph { position: absolute; left: 8px; bottom: 8px; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: rgb(0 0 0 / 45%); border: 1px solid rgb(255 255 255 / 35%); color: #fff; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1), background 200ms ease; }
 	.tcard:hover .glyph { transform: scale(1.1); background: rgb(0 0 0 / 60%); }
