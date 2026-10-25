@@ -101,3 +101,14 @@ func TestCatalogCoversEveryPageKind(t *testing.T) {
 		}
 	}
 }
+
+// "If you like {genre}, try {genre2}" is gone: the catalog has no listener
+// overlap between a genre's artists and another genre's, so the row showed
+// albums far from the page (rock and pop on the jazz page).
+func TestNoGenreJumpRow(t *testing.T) {
+	for _, tp := range Catalog {
+		if strings.Contains(tp.Title, "try {genre2}") {
+			t.Fatalf("%s %q still in the catalog", tp.ID, tp.Title)
+		}
+	}
+}

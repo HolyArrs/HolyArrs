@@ -614,11 +614,6 @@ var Catalog = []Tpl{
 		fill(crossFill),
 	t("G06", "se", 0.6, "GS", "{season} {genre}", "{genre} albums {basis}", "albums in the genre and the season", "0.6 fit + 0.4 listens", "season on (genre page)", "W").cross(map[byte]string{'G': "season", 'S': "genre"}, 7).
 		fill(crossFill),
-	t("G07", "di", 0.5, "G", "If you like {genre}, try {genre2}", "{genre2} albums by artists close to top {genre} artists", "a neighbour genre's albums by similar artists", "0.5 S + 0.5 listens", "not had", "W").slot("genre2", 1).need("lib").disc().
-		fill(func(c *Ctx, v string) L {
-			l := c.where(kalb(c, v), func(i int) bool { _, in := c.B.byKey[c.Key][i]; return !in && c.simArtist(i) > 0 })
-			return c.by(c.notHad(l), func(i int) float64 { return 0.5*c.simArtist(i) + 0.5*c.lp(i) })
-		}),
 	t("G08", "di", 0.5, "G", "{genre} fans also play", "Artists close to your {genre} artists, outside {genre}", "similar artists outside the genre", "S × popularity", "", "W").round().need("lib").disc().
 		fill(func(c *Ctx, _ string) L {
 			l := c.where(c.artists(c.all()), func(i int) bool { _, in := c.B.byKey[c.Key][i]; return !in && c.simArtist(i) > 0 && !c.had(i) })
