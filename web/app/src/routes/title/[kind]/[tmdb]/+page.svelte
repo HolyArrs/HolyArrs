@@ -23,7 +23,7 @@
 	import SeasonFolds from '#lib/SeasonFolds.svelte';
 	import TitleScores from '#lib/TitleScores.svelte';
 	import TitleTrailers from '#lib/TitleTrailers.svelte';
-	import { loadExtras, type OutsideScore } from '#lib/outside-ratings.ts';
+	import { loadExtras, scoreName, scoreText, type OutsideScore } from '#lib/outside-ratings.ts';
 	import { ratingPicks, shownRatings } from '#lib/rating-picks.svelte.ts';
 	import { awardsTip, loadWikiFacts, type WikiAward } from '#lib/wiki-facts.ts';
 	import TitleLookPicker from '#lib/TitleLookPicker.svelte';
@@ -297,14 +297,27 @@
 		if (cert) info1.push({ label: 'Rated', kind: 'text', value: cert });
 		info1.push(...pick(['Status', 'Next episode', 'First aired', 'Last aired', 'In theaters', 'Digital', 'On disc']));
 		info1.push(...pick(['Country', 'Countries']).map((f) => ({ ...f, label: f.label === 'Countries' ? 'Regions of origin' : 'Region of origin' })));
+		info1.push(...pick(['Language']).map((f) => ({ ...f, label: 'Original language' })), ...pick(['Original title']));
 		const made = pick([madeBy, 'Network', 'Studio', 'Studios', 'Budget', 'Box office']);
-		const language = [...pick(['Language']).map((f) => ({ ...f, label: 'Original language' })), ...pick(['Original title'])];
+		// Reception: every score this title has (not only the picked tiles), then its awards.
+		const t = (label: string, value: string): Fact => ({ label, kind: 'text', value });
+		const reception: Fact[] = [];
+		const tmdbScore = rich?.score ?? scoreOf(d.rating);
+		if (tmdbScore) reception.push(t('TMDB', `${(Math.round(tmdbScore * 10) / 10).toFixed(1)} / 10`));
+		for (const o of outside) reception.push(t(scoreName(o.source), `${scoreText(o)}${o.max !== 100 ? ` / ${o.max}` : ''}${o.votes ? ` · ${o.votes.toLocaleString()} votes` : ''}`));
+		const won = awards.filter((a) => a.won).length;
+		const nominated = awards.length - won;
+		if (awards.length) reception.push(t('Awards', [won ? `${won} ${won === 1 ? 'win' : 'wins'}` : '', nominated ? `${nominated} ${nominated === 1 ? 'nomination' : 'nominations'}` : ''].filter(Boolean).join(' · ')));
+		if (awardBadges.length) reception.push(t('Best known for', awardBadges.join(', ')));
+		const kinds: Fact[] = [];
+		if (d.genres.length) kinds.push(t(d.genres.length > 1 ? 'Genres' : 'Genre', d.genres.join(', ')));
+		if (tagsAt !== 'band' && tags.length) kinds.push(t('Themes', tags.join(', ')));
 		const groups = [
 			{ title: 'Information', rows: info1 },
 			{ title: 'Made by', rows: made },
-			{ title: 'Language', rows: language }
+			{ title: 'Reception', rows: reception },
+			{ title: 'Genres and themes', rows: kinds }
 		];
-		if (tagsAt !== 'band' && tags.length) groups.push({ title: 'Tags', rows: [{ label: 'Themes', kind: 'text', value: tags.join(', ') }] });
 		return groups.filter((g) => g.rows.length);
 	});
 	// Decide in 5 s: a few key facts beside the ratings; everything else goes to About at the bottom.
