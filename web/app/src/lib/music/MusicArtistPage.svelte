@@ -791,7 +791,7 @@
 	/* Top songs: three columns of three rows, hairlines between rows. */
 	.songs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-flow: column; grid-template-rows: repeat(3, auto); gap: 0 24px; margin: 0; padding: 0; list-style: none; }
 	.songs li { display: grid; grid-template-columns: 40px minmax(0, 1fr) 32px; align-items: center; gap: 12px; min-height: 60px; border-bottom: 1px solid var(--line); }
-	.songs img, .songs .ph { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; background: var(--surface-2); }
+	.songs img, .songs .cov { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; background: var(--surface-2); }
 	.s-words, .soon-words { display: flex; flex-direction: column; min-width: 0; }
 	.s-name { font: var(--t-callout); font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.s-album { color: var(--text-muted); font: var(--t-footnote); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
