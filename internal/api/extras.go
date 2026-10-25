@@ -126,7 +126,19 @@ func (a *API) titleExtras(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	// Only settled answers are kept; a server hiccup is asked again.
 	settled := true
-	if a.s.ExtraArt != nil {
+	if kind == "artist" {
+		// An artist's pictures come only from our metadata server: its
+		// stored wide background, logo and photo, through the picture route.
+		if _, _, ok := a.musicTrendArtFile(ctx, "wide", id, "250"); ok {
+			v.Backgrounds = []string{musicArtPrefix + "wide/" + id}
+		}
+		if _, _, ok := a.musicTrendArtFile(ctx, "logo", id, "1200"); ok {
+			v.Logo = musicArtPrefix + "logo/" + id
+		}
+		if _, _, ok := a.musicTrendArtFile(ctx, "artist", id, "250"); ok {
+			v.Thumb = musicArtPrefix + "artist/" + id
+		}
+	} else if a.s.ExtraArt != nil {
 		art, err := a.s.ExtraArt(ctx, kind, id)
 		if err == nil {
 			v.Logo, v.Thumb, v.Banner, v.Backgrounds = art.Logo, art.Thumb, art.Banner, art.Backgrounds

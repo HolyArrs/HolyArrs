@@ -29,6 +29,7 @@
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import ArtPlaceholder from '$lib/ui/ArtPlaceholder.svelte';
 	import Icon from '#lib/Icon.svelte';
 	import AskArtistDialog from '#lib/AskArtistDialog.svelte';
 	import AddArtistDialog from '#lib/AddArtistDialog.svelte';
@@ -83,6 +84,8 @@
 	let heroVideo = $state<HeroVideo | null>(null);
 	let videoEl: HTMLVideoElement | undefined = $state();
 	let videoMuted = $state(true);
+	// Covers that failed to load show the shared placeholder instead.
+	let badArt = $state(new Set<string>());
 	let videoPaused = $state(false);
 	// Sound is one choice for the whole app (shared with trailers): turning it
 	// on or off here carries to every later video and trailer.
@@ -172,6 +175,9 @@
 		const askArt = (left: number[]) => {
 			void api.get<typeof art>(`/extras/artist/${want}`).then((x) => {
 				if (want !== mbid) return;
+				// The server's own picture routes sit under the app's base path.
+				const local = (u?: string) => (u && u.startsWith('/') ? to(u) : u);
+				x = { ...x, logo: local(x.logo), thumb: local(x.thumb), backgrounds: x.backgrounds?.map((u) => local(u) as string) };
 				if ((x.backgrounds?.length ?? 0) > 0 || x.logo || !art.logo) art = x;
 				if (!(x.backgrounds?.length ?? 0) && left.length) setTimeout(() => want === mbid && askArt(left.slice(1)), left[0]);
 			}).catch(() => want === mbid && left.length && setTimeout(() => want === mbid && askArt(left.slice(1)), left[0]));
@@ -548,7 +554,7 @@
 							<div class="latest">
 								<h2>Latest release</h2>
 								<a class="latest-card" href={albumHref(l.mbid, mbid)}>
-									<img src={coverFor(appPicture(l.image), 200).src} srcset={coverFor(appPicture(l.image), 200).srcset} sizes="160px" alt="" width="160" height="160" loading="lazy" decoding="async" />
+									<span class="cov" style="width:160px;height:160px">{#if l.image && !badArt.has(l.mbid)}<img src={coverFor(appPicture(l.image), 200).src} srcset={coverFor(appPicture(l.image), 200).srcset} sizes="160px" alt="" width="160" height="160" loading="lazy" decoding="async" onerror={() => (badArt = new Set([...badArt, l.mbid]))} />{:else}<ArtPlaceholder name={l.name} shape="square" />{/if}</span>
 									<span class="l-meta">
 										<span class="l-date">{l.release_date ? new Date(`${l.release_date.padEnd(10, '-01').slice(0, 10)}T00:00:00Z`).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: l.release_date.length === 10 ? 'numeric' : undefined, timeZone: 'UTC' }) : ''}</span>
 										<span class="l-name">{#if l.explicit}<span class="e" aria-label="Explicit">E</span>{/if}{l.name}</span>
@@ -564,7 +570,7 @@
 								<ol class="songs">
 									{#each data.top.slice(0, 9) as s, i (s.title + i)}
 										<li>
-											{#if s.image}<img src={coverFor(appPicture(s.image), 40).src} alt="" width="40" height="40" loading="lazy" decoding="async" />{:else}<span class="ph"></span>{/if}
+											<span class="cov" style="width:40px;height:40px">{#if s.image && !badArt.has('top:' + s.title)}<img src={coverFor(appPicture(s.image), 40).src} alt="" width="40" height="40" loading="lazy" decoding="async" onerror={() => (badArt = new Set([...badArt, 'top:' + s.title]))} />{:else}<ArtPlaceholder name={s.title} shape="square" />{/if}</span>
 											<span class="s-words">
 												<span class="s-name">{#if s.explicit}<span class="e" aria-label="Explicit">E</span>{/if}{s.title}</span>
 												{#if s.album_mbid}<a class="s-album" href={albumHref(s.album_mbid, mbid)}>{s.album} · {length(s.length_ms)}</a>{:else}<span class="s-album">{s.album}</span>{/if}
@@ -632,7 +638,7 @@
 						<ul class="soon">
 							{#each soon as a (a.mbid)}
 								<li>
-									<a href={albumHref(a.mbid, mbid)}><img src={coverFor(appPicture(a.image), 72).src} alt="" width="72" height="72" loading="lazy" decoding="async" /></a>
+									<a href={albumHref(a.mbid, mbid)}><span class="cov" style="width:72px;height:72px">{#if a.image && !badArt.has(a.mbid)}<img src={coverFor(appPicture(a.image), 72).src} alt="" width="72" height="72" loading="lazy" decoding="async" onerror={() => (badArt = new Set([...badArt, a.mbid]))} />{:else}<ArtPlaceholder name={a.name} shape="square" />{/if}</span></a>
 									<span class="soon-words"><a class="s-name" href={albumHref(a.mbid, mbid)}>{a.name}</a><span class="s-album">{kindWord(a)} · {releaseWords(a.release_date ?? '')}</span></span>
 									{#if !data.kid}<IconButton icon={follows.get(a.mbid) ? 'bellOn' : 'bell'} label={follows.get(a.mbid) ? `Stop following ${a.name}` : `Tell me when ${a.name} is out`} aria-pressed={!!follows.get(a.mbid)} onclick={() => followAlbum(a)} />{/if}
 								</li>
@@ -771,6 +777,8 @@
 	.lead { display: grid; grid-template-columns: minmax(240px, 300px) minmax(0, 1fr); gap: clamp(20px, 4vw, 56px); align-items: start; }
 	.latest, .top { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 	.latest-card { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 16px; align-items: center; color: var(--text); border-radius: var(--r-card); }
+	.cov { position: relative; display: block; flex: none; overflow: hidden; border-radius: var(--r-card); background: var(--surface-2); }
+	.cov img { width: 100%; height: 100%; }
 	.latest-card img { width: 160px; height: 160px; border-radius: var(--r-card); object-fit: cover; box-shadow: var(--shadow-card); transition: transform var(--dur) var(--ease-out); background: var(--surface-2); }
 	.latest-card:hover img { transform: translateY(var(--lift)); }
 	.l-meta { display: flex; flex-direction: column; gap: 4px; min-width: 0; }

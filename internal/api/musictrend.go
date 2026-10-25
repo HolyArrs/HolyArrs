@@ -380,12 +380,28 @@ func (a *API) serverAlbumCoverURL(mbid, size string) string {
 	return strings.TrimRight(a.s.ImageBase, "/") + "/album/" + mbid + "/" + size + ".jpg"
 }
 
+// serverArtistArtURL is the server's stored wide background (500, 1200 or
+// 1920 px; the default and 250 ask 1920, for heroes) or logo (1200 PNG).
+func (a *API) serverArtistArtURL(kind, mbid, size string) string {
+	if a.s.ImageBase == "" || !metadata.ValidMBID(mbid) {
+		return ""
+	}
+	file := "1200.png"
+	if kind == "wide" {
+		file = "1920.jpg"
+		if size == "500" || size == "1200" {
+			file = size + ".jpg"
+		}
+	}
+	return strings.TrimRight(a.s.ImageBase, "/") + "/" + kind + "/" + mbid + "/" + file
+}
+
 func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name, path string, ok bool) {
 	c := &a.music
 	c.mu.Lock()
 	_, listed := c.names[kind+"|"+mbid]
 	// An artist page asks for its own artist by id, listed or not; any other picture is only for a listed id.
-	known := listed || kind == "artist" && metadata.ValidMBID(mbid)
+	known := listed || (kind == "artist" || kind == "wide" || kind == "logo") && metadata.ValidMBID(mbid)
 	missAt, missed := c.artMiss[kind+"|"+mbid]
 	c.mu.Unlock()
 	if !listed {
@@ -410,9 +426,9 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name,
 			lib.Artwork.Recheck(src, serverPlaceholder)
 			return true
 		}
-		if _, err := lib.Artwork.FetchUnless(ctx, src, serverPlaceholder); err != nil {
-			return false
-		}
+		// A failed fetch may only have lost the race with a warm of the same
+		// picture (the file is then stored): it counts when the file is there.
+		_, _ = lib.Artwork.FetchUnless(ctx, src, serverPlaceholder)
 		path, ok = lib.Artwork.Path(name)
 		return ok
 	}
@@ -425,6 +441,19 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name,
 		if keep(a.serverArtistPhotoURL(ctx, mbid, size)) {
 			return name, path, true
 		}
+	case "wide", "logo":
+		// An artist's wide background or logo: only the server's stored one.
+		if src := a.serverArtistArtURL(kind, mbid, size); src != "" {
+			n := library.ArtworkName(src)
+			if p, found := lib.Artwork.Path(n); found {
+				lib.Artwork.Recheck(src, serverPlaceholder)
+				return n, p, true
+			}
+			_, _ = lib.Artwork.FetchStored(ctx, src, serverPlaceholder)
+			if p, found := lib.Artwork.Path(n); found {
+				return n, p, true
+			}
+		}
 	case "album":
 		if src := a.serverAlbumCoverURL(mbid, size); src != "" {
 			n := library.ArtworkName(src)
@@ -432,10 +461,9 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name,
 				lib.Artwork.Recheck(src, serverPlaceholder)
 				return n, p, true
 			}
-			if _, err := lib.Artwork.FetchStored(ctx, src, serverPlaceholder); err == nil {
-				if p, found := lib.Artwork.Path(n); found {
-					return n, p, true
-				}
+			_, _ = lib.Artwork.FetchStored(ctx, src, serverPlaceholder)
+			if p, found := lib.Artwork.Path(n); found {
+				return n, p, true
 			}
 		}
 	}

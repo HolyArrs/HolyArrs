@@ -428,6 +428,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	pictureHosts = append(pictureHosts, moreHosts...)
 	lib := &library.Service{Store: s, Queue: q, Metadata: md, Live: hub, SavePath: c.SavePath, ArtistImages: pictures,
 		AudioDB: audioDB, CoverArtBase: coverArt,
+		ImageServer: hosted.Service.Base() + "/v1/img",
 		Artwork: &library.ArtworkCache{Dir: filepath.Join(c.ConfigDir, "artwork"), Allowed: append([]string{metadata.ImageBase + "/", "https://assets.fanart.tv/", hosted.Service.Base() + "/v1/img/"}, pictureHosts...),
 			HTTP: artworkHTTP}}
 	lib.Shows = showMD

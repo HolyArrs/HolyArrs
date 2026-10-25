@@ -51,6 +51,9 @@ type Service struct {
 	// CoverArtBase is the Cover Art Archive (CoverArtBase), the last artist
 	// picture source; "" asks it nothing.
 	CoverArtBase string
+	// ImageServer is the metadata server's picture store (<base>/v1/img):
+	// the only source of artist photos, wide backgrounds and logos.
+	ImageServer string
 	// SavePath is the Downloader save folder named at start, for health checks.
 	SavePath string
 	// AnimeNames gives an anime's other titles (AniList romaji, English,

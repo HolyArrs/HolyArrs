@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"strings"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/jobs"
+	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
@@ -21,23 +23,19 @@ const KindArtistPictures = "artist_pictures"
 // CoverArtBase is the Cover Art Archive (album covers).
 const CoverArtBase = "https://coverartarchive.org"
 
-// Picture sources, as recorded in the Job result.
-const (
-	SourceAudioDB  = "theaudiodb"
-	SourceDeezer   = "deezer"
-	SourceCoverArt = "coverartarchive"
-)
+// SourceServer is the picture source recorded in the Job result: our
+// metadata server (the only one).
+const SourceServer = "holyarrs"
 
 // emptyArtwork matches a title with no artwork in SQL.
 const emptyArtwork = "(artwork IS NULL OR artwork IN ('', '[]', 'null'))"
 
 // FillArtistPictures fills what is missing of an artist's pictures and
 // returns the source that filled the artwork ("" when none did or it was
-// already there). The sources, in order: TheAudioDB (only with a key set;
-// by MusicBrainz id, then by name), which also gives the wide backdrop
-// and the logo; then the Deezer artist or Wikidata picture the artist's
-// MusicBrainz links name (never a name search, never an album cover). Artwork, backdrop or
-// logo already set is never replaced. A source that is down is skipped.
+// already there). Pictures come only from our metadata server (Luis,
+// 2026-10-24): its stored photo, wide background and logo, by MusicBrainz
+// id. One it has not stored yet fills nothing now; the 6-hour pass asks
+// again. Artwork, backdrop or logo already set is never replaced.
 func (s *Service) FillArtistPictures(ctx context.Context, titleID int64, by domain.Actor) (string, error) {
 	var t domain.Title
 	if err := store.Get(ctx, s.Store.Read(), "titles", titleID, &t); err != nil {
@@ -46,47 +44,58 @@ func (s *Service) FillArtistPictures(ctx context.Context, titleID int64, by doma
 	if t.Kind != "artist" {
 		return "", ErrNotArtist
 	}
-	needArt := len(t.Artwork) == 0 && s.Artwork != nil
-	needWide := (t.Backdrop == "" || t.Logo == "") && s.AudioDB.On(ctx)
-	if !needArt && !needWide {
+	mbid := t.SourceIDs["musicbrainz"]
+	needArt := len(t.Artwork) == 0
+	needWide := t.Backdrop == "" || t.Logo == ""
+	if s.Artwork == nil || s.ImageServer == "" || !metadata.ValidMBID(mbid) || !needArt && !needWide {
 		return "", nil
 	}
-	mbid := t.SourceIDs["musicbrainz"]
-	filled := ""
-	if needWide || needArt && s.AudioDB.On(ctx) {
-		p, err := s.AudioDB.Pictures(ctx, mbid, t.Name)
-		if err != nil {
-			log.Printf("library: TheAudioDB pictures for artist %d: %v", titleID, err)
+	if needWide {
+		wide, logo := "", ""
+		if t.Backdrop == "" {
+			wide = s.serverLink(ctx, titleID, "wide", mbid, "1920.jpg")
 		}
-		// The backdrop and logo are fetched through the artwork cache (its
-		// allowed hosts only) and kept as local links, never as the remote
-		// address TheAudioDB gave.
-		if wide, logo := s.cachedLink(ctx, titleID, p.Fanart), s.cachedLink(ctx, titleID, p.Logo); wide != "" || logo != "" {
+		if t.Logo == "" {
+			logo = s.serverLink(ctx, titleID, "logo", mbid, "1200.png")
+		}
+		if wide != "" || logo != "" {
 			s.fillWide(ctx, titleID, wide, logo, by)
 		}
-		if needArt && p.Thumb != "" && s.fillArt(ctx, titleID, p.Thumb, by) {
-			filled = SourceAudioDB
+	}
+	filled := ""
+	if needArt {
+		if name := s.serverPicture(ctx, titleID, "artist", mbid, "500.jpg"); name != "" && s.fillArt(ctx, titleID, name, by) {
+			filled = SourceServer
 		}
 	}
-	if needArt && filled == "" && s.ArtistImages != nil {
-		if pic := s.artistPictureByIDs(ctx, mbid); pic != "" && s.fillArt(ctx, titleID, pic, by) {
-			filled = SourceDeezer
-		}
-	}
-	// No album cover stands in for the artist: no picture beats a wrong one.
 	return filled, ctx.Err()
 }
 
-// fillArt caches the picture and keeps it as the artwork if the artwork is
-// still empty; it says whether the picture is now the artwork.
-func (s *Service) fillArt(ctx context.Context, titleID int64, pic string, by domain.Actor) bool {
-	name, err := s.Artwork.Fetch(ctx, pic)
+// serverPicture stores one of the metadata server's pictures of an artist
+// and answers its cache name ("" when the server has not stored it yet; a
+// redirect or stand-in is never kept).
+func (s *Service) serverPicture(ctx context.Context, titleID int64, kind, mbid, file string) string {
+	name, err := s.Artwork.FetchStored(ctx, strings.TrimRight(s.ImageServer, "/")+"/"+kind+"/"+mbid+"/"+file, nil)
 	if err != nil {
-		log.Printf("library: picture for artist %d: %v", titleID, err)
-		return false
+		log.Printf("library: %s picture for artist %d: %v", kind, titleID, err)
+		return ""
 	}
+	return name
+}
+
+// serverLink is serverPicture as a local link.
+func (s *Service) serverLink(ctx context.Context, titleID int64, kind, mbid, file string) string {
+	if name := s.serverPicture(ctx, titleID, kind, mbid, file); name != "" {
+		return "/api/v1/artwork/" + url.PathEscape(name)
+	}
+	return ""
+}
+
+// fillArt keeps a stored picture (its cache name) as the artwork if the
+// artwork is still empty; it says whether the picture is now the artwork.
+func (s *Service) fillArt(ctx context.Context, titleID int64, name string, by domain.Actor) bool {
 	var n int64
-	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
+	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		res, err := tx.Exec("UPDATE titles SET artwork = ?, updated_at = ?, updated_by = ? WHERE id = ? AND "+emptyArtwork,
 			`["poster:`+name+`"]`, store.FormatTime(s.now()), actorText(by), titleID)
 		if err == nil {
@@ -98,21 +107,6 @@ func (s *Service) fillArt(ctx context.Context, titleID int64, pic string, by dom
 		log.Printf("library: picture for artist %d: %v", titleID, err)
 	}
 	return n > 0
-}
-
-// cachedLink fetches a picture through the artwork cache, which refuses
-// any host it does not allow, and returns its local link ("" when refused
-// or not there).
-func (s *Service) cachedLink(ctx context.Context, titleID int64, pic string) string {
-	if pic == "" || s.Artwork == nil {
-		return ""
-	}
-	name, err := s.Artwork.Fetch(ctx, pic)
-	if err != nil {
-		log.Printf("library: picture for artist %d: %v", titleID, err)
-		return ""
-	}
-	return "/api/v1/artwork/" + url.PathEscape(name)
 }
 
 // fillWide keeps a backdrop and logo where the artist has none yet.

@@ -17,15 +17,14 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
-// pictureWorld is one fake server for TheAudioDB, Deezer and the Cover Art
-// Archive, each switchable, that records the order of the asks.
+// pictureWorld is a fake metadata server picture store (photo, wide,
+// logo, each switchable) that records every ask; any other address (an
+// outside source) is recorded too and must never be asked.
 type pictureWorld struct {
-	srv                  *httptest.Server
-	audioDB, deezer, caa bool
-	hostile              bool   // TheAudioDB answers with addresses outside the allowed hosts
-	key                  string // TheAudioDB key; "" is off
-	mu                   sync.Mutex
-	asked                []string
+	srv               *httptest.Server
+	photo, wide, logo bool
+	mu                sync.Mutex
+	asked             []string
 }
 
 func (w *pictureWorld) log(s string) {
@@ -41,60 +40,36 @@ func (w *pictureWorld) order() string {
 }
 
 func newPictureWorld(t *testing.T) *pictureWorld {
-	w := &pictureWorld{key: "own-key"}
+	w := &pictureWorld{}
 	w.srv = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		p := r.URL.Path
-		switch {
-		case strings.HasPrefix(p, "/adb/"):
-			w.log("audiodb")
-			rw.Header().Set("Content-Type", "application/json")
-			if !w.audioDB {
-				_, _ = rw.Write([]byte(`{"artists":null}`))
+		for _, k := range []struct {
+			kind, file string
+			on         bool
+		}{{"artist", "500.jpg", w.photo}, {"wide", "1920.jpg", w.wide}, {"logo", "1200.png", w.logo}} {
+			if p == "/v1/img/"+k.kind+"/"+labArtist+"/"+k.file {
+				w.log(k.kind)
+				if !k.on {
+					http.NotFound(rw, r)
+					return
+				}
+				rw.Header().Set("Content-Type", "image/jpeg")
+				_, _ = rw.Write([]byte("\xff\xd8\xff\xe0" + strings.Repeat("x", 200) + p))
 				return
 			}
-			base := w.srv.URL + "/pic"
-			if w.hostile {
-				base = "http://169.254.169.254/latest"
-			}
-			_, _ = rw.Write([]byte(`{"artists":[{"strArtist":"Lab Band","strMusicBrainzID":"` + labArtist + `","strArtistThumb":"` + base +
-				`/adb-thumb.jpg","strArtistFanart":"` + base + `/fanart.jpg","strArtistLogo":"` + base + `/logo.png"}]}`))
-		case p == "/search/artist":
-			// A name search would find a same-named impostor: never asked.
-			w.log("search")
-			rw.Header().Set("Content-Type", "application/json")
-			_, _ = rw.Write([]byte(`{"data":[{"id":99,"name":"Lab Band","picture_xl":"` + w.srv.URL + `/pic/impostor.jpg"}]}`))
-		case p == "/artist/27":
-			w.log("deezer")
-			rw.Header().Set("Content-Type", "application/json")
-			if !w.deezer {
-				_, _ = rw.Write([]byte(`{"error":{"type":"DataException","code":800}}`))
-				return
-			}
-			_, _ = rw.Write([]byte(`{"id":27,"name":"Lab Band","picture_xl":"` + w.srv.URL + `/pic/deezer.jpg"}`))
-		case strings.HasPrefix(p, "/caa/release-group/"):
-			w.log("caa:" + strings.TrimSuffix(strings.TrimPrefix(p, "/caa/release-group/"), "/front-500"))
-			if !w.caa {
-				http.NotFound(rw, r)
-				return
-			}
-			http.Redirect(rw, r, w.srv.URL+"/pic/cover.jpg", http.StatusTemporaryRedirect)
-		case strings.HasPrefix(p, "/pic/"):
-			rw.Header().Set("Content-Type", "image/jpeg")
-			_, _ = rw.Write([]byte("\xff\xd8\xff\xe0" + strings.Repeat("x", 200) + p))
-		default:
-			http.NotFound(rw, r)
 		}
+		w.log("outside:" + p)
+		http.NotFound(rw, r)
 	}))
 	t.Cleanup(w.srv.Close)
 	return w
 }
 
 func withPictureWorld(t *testing.T, svc *Service, w *pictureWorld) {
-	svc.AudioDB = &metadata.AudioDB{BaseURL: w.srv.URL + "/adb", Gap: time.Millisecond, Timeout: time.Second,
-		Key: func(context.Context) (string, error) { return w.key, nil }}
+	svc.ImageServer = w.srv.URL + "/v1/img"
 	svc.ArtistImages = &metadata.ArtistImages{BaseURL: w.srv.URL, Gap: time.Millisecond, Timeout: time.Second}
 	svc.CoverArtBase = w.srv.URL + "/caa"
-	svc.Artwork = &ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{w.srv.URL + "/pic/", w.srv.URL + "/caa/"}, HTTP: &http.Client{}}
+	svc.Artwork = &ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{w.srv.URL + "/"}, HTTP: &http.Client{}}
 }
 
 func titleOf(t *testing.T, s *store.Store, id int64) domain.Title {
@@ -115,73 +90,41 @@ func addBareArtist(t *testing.T, svc *Service) int64 {
 	return id
 }
 
-// TestArtistPicturesOrder: TheAudioDB is asked first and, when it has the
-// artist, fills the poster, backdrop and logo; the Deezer artist its
-// MusicBrainz links name comes next. No name search, no album cover.
-func TestArtistPicturesOrder(t *testing.T) {
+// TestArtistPicturesFromServerOnly: the artist's photo, wide background
+// and logo come only from the metadata server; one it has not stored yet
+// fills nothing, and no outside source is ever asked.
+func TestArtistPicturesFromServerOnly(t *testing.T) {
 	ctx := context.Background()
 	for _, tc := range []struct {
-		name                 string
-		audioDB, deezer, caa bool
-		source, order        string
-		wide                 bool
+		name              string
+		photo, wide, logo bool
+		source            string
 	}{
-		{"audiodb", true, true, true, "theaudiodb", "audiodb", true},
-		{"deezer", false, true, true, "deezer", "audiodb,audiodb,deezer", false},
-		// An album cover never stands in for the artist.
-		{"cover", false, false, true, "", "audiodb,audiodb,deezer", false},
-		{"none", false, false, false, "", "audiodb,audiodb,deezer", false},
+		{"all", true, true, true, SourceServer},
+		{"photo only", true, false, false, SourceServer},
+		{"none stored", false, false, false, ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			svc, s, _, _ := musicService(t)
 			id := addBareArtist(t, svc)
 			w := newPictureWorld(t)
-			w.audioDB, w.deezer, w.caa = tc.audioDB, tc.deezer, tc.caa
+			w.photo, w.wide, w.logo = tc.photo, tc.wide, tc.logo
 			withPictureWorld(t, svc, w)
 			src, err := svc.FillArtistPictures(ctx, id, domain.System)
-			if err != nil {
-				t.Fatal(err)
+			if err != nil || src != tc.source {
+				t.Fatalf("source %q %v (asked %s)", src, err, w.order())
 			}
-			if src != tc.source {
-				t.Fatalf("source %q, want %q (asked %s)", src, tc.source, w.order())
-			}
-			if w.order() != tc.order && !(tc.source == "theaudiodb" && strings.HasPrefix(w.order(), tc.order)) {
-				t.Fatalf("asked %s, want %s", w.order(), tc.order)
+			if strings.Contains(w.order(), "outside") {
+				t.Fatalf("an outside source was asked: %s", w.order())
 			}
 			ti := titleOf(t, s, id)
-			if (src != "") != (len(ti.Artwork) == 1 && strings.HasPrefix(ti.Artwork[0], "poster:")) {
+			if tc.photo != (len(ti.Artwork) == 1 && strings.HasPrefix(ti.Artwork[0], "poster:")) {
 				t.Fatalf("artwork %v", ti.Artwork)
 			}
-			if tc.wide && (!strings.HasPrefix(ti.Backdrop, "/api/v1/artwork/") || !strings.HasPrefix(ti.Logo, "/api/v1/artwork/") || ti.Backdrop == ti.Logo) {
+			if tc.wide != strings.HasPrefix(ti.Backdrop, "/api/v1/artwork/") || tc.logo != strings.HasPrefix(ti.Logo, "/api/v1/artwork/") {
 				t.Fatalf("backdrop %q logo %q", ti.Backdrop, ti.Logo)
 			}
-			if !tc.wide && (ti.Backdrop != "" || ti.Logo != "") {
-				t.Fatalf("only TheAudioDB fills the backdrop and logo: %q %q", ti.Backdrop, ti.Logo)
-			}
 		})
-	}
-}
-
-// TestArtistPicturesNoKey: with no TheAudioDB key it is never asked; the
-// Deezer artist by id is all that is asked.
-func TestArtistPicturesNoKey(t *testing.T) {
-	ctx := context.Background()
-	for _, tc := range []struct {
-		deezer       bool
-		source, want string
-	}{{true, "deezer", "deezer"}, {false, "", "deezer"}} {
-		svc, s, _, _ := musicService(t)
-		id := addBareArtist(t, svc)
-		w := newPictureWorld(t)
-		w.key, w.audioDB, w.deezer, w.caa = "", true, tc.deezer, true
-		withPictureWorld(t, svc, w)
-		src, err := svc.FillArtistPictures(ctx, id, domain.System)
-		if err != nil || src != tc.source || w.order() != tc.want {
-			t.Fatalf("source %q %v, asked %s, want %s", src, err, w.order(), tc.want)
-		}
-		if ti := titleOf(t, s, id); ti.Backdrop != "" || ti.Logo != "" {
-			t.Fatalf("backdrop %q logo %q", ti.Backdrop, ti.Logo)
-		}
 	}
 }
 
@@ -198,7 +141,7 @@ func TestArtistPicturesKeepWhatIsThere(t *testing.T) {
 		t.Fatal(err)
 	}
 	w := newPictureWorld(t)
-	w.audioDB, w.deezer = true, true
+	w.photo, w.wide, w.logo = true, true, true
 	withPictureWorld(t, svc, w)
 	if _, err := svc.FillArtistPictures(ctx, id, domain.System); err != nil {
 		t.Fatal(err)
@@ -223,7 +166,7 @@ func TestArtistPicturesQueuedOnAdd(t *testing.T) {
 	svc, s, fm, _ := musicService(t)
 	ctx := context.Background()
 	w := newPictureWorld(t)
-	w.audioDB = true
+	w.photo = true
 	withPictureWorld(t, svc, w)
 	id := addBareArtist(t, svc)
 	if w.order() != "" {
@@ -249,7 +192,7 @@ func TestArtistPicturesAllMissing(t *testing.T) {
 	ctx := context.Background()
 	id := addBareArtist(t, svc)
 	w := newPictureWorld(t)
-	w.deezer = true
+	w.photo = true
 	withPictureWorld(t, svc, w)
 	res, err := svc.FillAllArtistPictures(ctx, domain.System, nil)
 	if err != nil {
@@ -258,7 +201,7 @@ func TestArtistPicturesAllMissing(t *testing.T) {
 	if ti := titleOf(t, s, id); len(ti.Artwork) != 1 {
 		t.Fatalf("artwork %v", ti.Artwork)
 	}
-	if res.Filled != 1 || res.Sources["deezer"] != 1 || res.By[id] != "deezer" {
+	if res.Filled != 1 || res.Sources[SourceServer] != 1 || res.By[id] != SourceServer {
 		t.Fatalf("result %+v", res)
 	}
 }
@@ -276,30 +219,6 @@ func TestArtworkWildHost(t *testing.T) {
 	} {
 		if got := c.allowed(u); got != want {
 			t.Errorf("%s: %v", u, got)
-		}
-	}
-}
-
-// TestArtistPicturesRefuseHostileHosts: picture, backdrop and logo
-// addresses outside the artwork cache's allowed hosts are skipped, never
-// fetched or stored; the next source fills the picture.
-func TestArtistPicturesRefuseHostileHosts(t *testing.T) {
-	svc, s, _, _ := musicService(t)
-	id := addBareArtist(t, svc)
-	w := newPictureWorld(t)
-	w.audioDB, w.deezer, w.hostile = true, true, true
-	withPictureWorld(t, svc, w)
-	src, err := svc.FillArtistPictures(context.Background(), id, domain.System)
-	if err != nil || src != SourceDeezer {
-		t.Fatalf("source %q %v", src, err)
-	}
-	ti := titleOf(t, s, id)
-	if ti.Backdrop != "" || ti.Logo != "" {
-		t.Fatalf("hostile backdrop %q logo %q kept", ti.Backdrop, ti.Logo)
-	}
-	for _, a := range ti.Artwork {
-		if strings.Contains(a, "169.254") {
-			t.Fatalf("hostile artwork %v", ti.Artwork)
 		}
 	}
 }

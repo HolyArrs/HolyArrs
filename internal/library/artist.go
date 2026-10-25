@@ -288,11 +288,12 @@ func (s *Service) AddArtist(ctx context.Context, id string, opt ArtistAddOptions
 // artwork. Nothing found, or the picture source down, changes nothing and
 // fails nothing.
 func (s *Service) artistPicture(ctx context.Context, titleID int64, mbid string, by domain.Actor) {
-	if s.ArtistImages == nil || s.Artwork == nil {
+	if s.Artwork == nil || s.ImageServer == "" || !metadata.ValidMBID(mbid) {
 		return
 	}
-	if pic := s.artistPictureByIDs(ctx, mbid); pic != "" {
-		s.cachePoster(ctx, titleID, pic, by)
+	// Only the metadata server's stored photo (never Deezer or Wikidata).
+	if name := s.serverPicture(ctx, titleID, "artist", mbid, "500.jpg"); name != "" {
+		s.fillArt(ctx, titleID, name, by)
 	}
 }
 

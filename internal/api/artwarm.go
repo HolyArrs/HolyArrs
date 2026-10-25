@@ -2,12 +2,10 @@ package api
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/CoderLuii/holyarrs/internal/library"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/parts"
 )
@@ -131,42 +129,10 @@ func (a *API) warmArtItem(ctx context.Context, k artWarmKey) {
 	}
 }
 
-// warmArtistExtras reads the artist's art list into the extras cache (what
-// the artist page asks first) and stores its logo and wide photo.
+// warmArtistExtras stores the artist's wide background and logo from the
+// metadata server (the artist page asks for them first); one the server
+// has not stored yet is asked again on a later warm.
 func (a *API) warmArtistExtras(ctx context.Context, mbid string) {
-	if a.s.ExtraArt == nil {
-		return
-	}
-	c := titleExtrasCache
-	key := "artist:" + mbid
-	c.mu.Lock()
-	e, ok := c.seen[key]
-	c.mu.Unlock()
-	if ok && time.Since(e.at) < 6*time.Hour {
-		return
-	}
-	art, err := a.s.ExtraArt(ctx, "artist", mbid)
-	if err != nil && !errors.Is(err, metadata.ErrNotFound) {
-		return
-	}
-	if len(art.Backgrounds) > 0 {
-		c.mu.Lock()
-		keepUnder(c.seen, 5000, func(e extrasEntry) time.Time { return e.at })
-		c.seen[key] = extrasEntry{v: TitleExtras{Logo: art.Logo, Thumb: art.Thumb, Banner: art.Banner, Backgrounds: art.Backgrounds, Scores: []OutsideScore{}}, at: time.Now()}
-		c.mu.Unlock()
-	}
-	if lib := a.s.Library; lib != nil && lib.Artwork != nil {
-		srcs := []string{art.Logo}
-		if len(art.Backgrounds) > 0 {
-			srcs = append(srcs, art.Backgrounds[0])
-		}
-		for _, src := range srcs {
-			if src == "" {
-				continue
-			}
-			if _, ok := lib.Artwork.Path(library.ArtworkName(src)); !ok {
-				_, _ = lib.Artwork.FetchUnless(ctx, src, serverPlaceholder)
-			}
-		}
-	}
+	a.musicTrendArtFile(ctx, "wide", mbid, "250")
+	a.musicTrendArtFile(ctx, "logo", mbid, "1200")
 }

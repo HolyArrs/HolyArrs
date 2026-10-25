@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"sync/atomic"
 	"testing"
 
 	"github.com/CoderLuii/holyarrs/internal/auth"
-
+	"github.com/CoderLuii/holyarrs/internal/library"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 )
 
@@ -118,67 +119,50 @@ func TestTitleExtrasKidGate(t *testing.T) {
 }
 
 // route: GET /api/v1/extras/{kind}/{id}
-// A cold artist through the real metadata client: the server first answers
-// 404 (or 429, its install limit), then 200. The first app answer is empty
-// and never cached; the next ask gets the wide photo and the logo.
-func TestTitleExtrasColdArtistThenArt(t *testing.T) {
-	for _, first := range []int{404, 429, 503} {
-		titleExtrasCache.seen = map[string]extrasEntry{}
-		var n atomic.Int32
-		md := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if n.Add(1) == 1 {
-				w.Header().Set("Retry-After", "1")
-				w.WriteHeader(first)
-				return
-			}
-			_, _ = w.Write([]byte(`{"logo":"https://assets.fanart.tv/l.png","backgrounds":["https://assets.fanart.tv/b.jpg"]}`))
-		}))
-		svc, err := metadata.NewService(metadata.ServiceOptions{URL: md.URL, AllowLocal: true, HTTP: &http.Client{}, Access: func(context.Context) (string, error) { return "t", nil }})
-		if err != nil {
-			t.Fatal(err)
-		}
-		srv := httptest.NewServer(New(Server{Version: "test", ExtraArt: svc.Art}).Handler())
-		const p = "/api/v1/extras/artist/c8b03190-306c-4120-bb0b-6f2ebfc06ea9"
-		res, err := http.Get(srv.URL + p)
-		if err != nil {
-			t.Fatal(err)
-		}
-		var v TitleExtras
-		_ = json.NewDecoder(res.Body).Decode(&v)
-		res.Body.Close()
-		if len(v.Backgrounds) != 0 || res.Header.Get("Cache-Control") != "no-store" {
-			t.Fatalf("%d: cold answer %+v %q", first, v, res.Header.Get("Cache-Control"))
-		}
-		v = TitleExtras{}
-		_ = json.Unmarshal(do(t, "GET", srv.URL+p, "", 200), &v)
-		if v.Logo == "" || len(v.Backgrounds) != 1 {
-			t.Fatalf("%d: second answer %+v", first, v)
-		}
-		srv.Close()
-		md.Close()
-	}
-}
-
-// The server's 202 (art fetch still running) is waited on inside the same
-// answer: the first view already gets the art.
-func TestTitleExtrasWaitsOnPendingArt(t *testing.T) {
+// An artist's wide photo and logo come only from the metadata server's
+// stored pictures, through the picture route. Not stored yet: the answer
+// is empty and never cached; once stored, the next ask gets both. No
+// outside address is ever passed on.
+func TestTitleExtrasArtistFromServerOnly(t *testing.T) {
 	titleExtrasCache.seen = map[string]extrasEntry{}
-	var n atomic.Int32
-	md := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if n.Add(1) == 1 {
-			w.Header().Set("Retry-After", "1")
-			w.WriteHeader(202)
+	const id = "c8b03190-306c-4120-bb0b-6f2ebfc06ea9"
+	var stored atomic.Bool
+	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if stored.Load() && (r.URL.Path == "/v1/img/wide/"+id+"/1920.jpg" || r.URL.Path == "/v1/img/logo/"+id+"/1200.png") {
+			w.Header().Set("Content-Type", "image/jpeg")
+			_, _ = w.Write([]byte("\xff\xd8\xff art"))
 			return
 		}
-		_, _ = w.Write([]byte(`{"logo":"https://assets.fanart.tv/l.png","backgrounds":["https://assets.fanart.tv/b.jpg"]}`))
+		w.Header().Set("Cache-Control", "no-store")
+		http.NotFound(w, r)
 	}))
-	defer md.Close()
-	svc, _ := metadata.NewService(metadata.ServiceOptions{URL: md.URL, AllowLocal: true, HTTP: &http.Client{}, Access: func(context.Context) (string, error) { return "t", nil }})
-	srv := httptest.NewServer(New(Server{Version: "test", ExtraArt: svc.Art}).Handler())
+	defer pics.Close()
+	_, st := discoverRig(t, newDiscoverTMDB(t).provider())
+	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{pics.URL + "/"}, HTTP: pics.Client()}
+	outside := func(context.Context, string, string) (metadata.ServerArt, error) {
+		return metadata.ServerArt{Logo: "https://assets.fanart.tv/l.png", Backgrounds: []string{"https://assets.fanart.tv/b.jpg"}}, nil
+	}
+	a := New(Server{Store: st, Version: "test", ExtraArt: outside, ImageBase: pics.URL + "/v1/img", Library: &library.Service{Store: st, Artwork: art}})
+	srv := httptest.NewServer(a.Handler())
 	defer srv.Close()
+	const p = "/api/v1/extras/artist/" + id
+	res, err := http.Get(srv.URL + p)
+	if err != nil {
+		t.Fatal(err)
+	}
 	var v TitleExtras
-	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/extras/artist/c8b03190-306c-4120-bb0b-6f2ebfc06ea9", "", 200), &v)
-	if len(v.Backgrounds) != 1 {
-		t.Fatalf("%+v", v)
+	_ = json.NewDecoder(res.Body).Decode(&v)
+	res.Body.Close()
+	if len(v.Backgrounds) != 0 || v.Logo != "" || res.Header.Get("Cache-Control") != "no-store" {
+		t.Fatalf("not stored yet: %+v %q", v, res.Header.Get("Cache-Control"))
+	}
+	stored.Store(true)
+	a.music.mu.Lock()
+	a.music.artMiss = nil // the miss time has passed
+	a.music.mu.Unlock()
+	v = TitleExtras{}
+	_ = json.Unmarshal(do(t, "GET", srv.URL+p, "", 200), &v)
+	if v.Logo != musicArtPrefix+"logo/"+id || len(v.Backgrounds) != 1 || v.Backgrounds[0] != musicArtPrefix+"wide/"+id {
+		t.Fatalf("stored: %+v", v)
 	}
 }
