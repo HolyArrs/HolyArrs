@@ -41,9 +41,7 @@ export function setTitleLook(v: TitleLook) {
 export type TagsAt = 'band' | 'row' | 'text' | 'top';
 export const TAG_SPOTS: { value: TagsAt; label: string }[] = [
 	{ value: 'band', label: 'T1 · Under story' },
-	{ value: 'row', label: 'T2 · About row' },
-	{ value: 'text', label: 'T3 · About text' },
-	{ value: 'top', label: 'T4 · About top' }
+	{ value: 'row', label: 'T2 · In About' }
 ];
 const TAGS_KEY = 'holyarrs.tags-at';
 const knownTags = (v: string | null): v is TagsAt => v === 'band' || v === 'row' || v === 'text' || v === 'top';

@@ -286,6 +286,27 @@
 		for (const [k, v] of moreFacts) t(k, v);
 		return out;
 	});
+	// About, grouped in columns: Information, Made by, Language (and the tags when they live here).
+	const aboutGroups = $derived.by(() => {
+		if (!details) return [];
+		const d = details;
+		const pick = (labels: string[]) => facts.filter((f) => labels.includes(f.label) && f.kind !== 'cert' && f.kind !== 'awards');
+		const info1: Fact[] = [];
+		if (d.year) info1.push({ label: d.kind === 'show' ? 'Premiered' : 'Released', kind: 'text', value: String(d.year) });
+		if (lengthWord) info1.push({ label: d.kind === 'show' ? 'Seasons' : 'Run time', kind: 'text', value: lengthWord });
+		if (cert) info1.push({ label: 'Rated', kind: 'text', value: cert });
+		info1.push(...pick(['Status', 'Next episode', 'First aired', 'Last aired', 'In theaters', 'Digital', 'On disc']));
+		info1.push(...pick(['Country', 'Countries']).map((f) => ({ ...f, label: f.label === 'Countries' ? 'Regions of origin' : 'Region of origin' })));
+		const made = pick([madeBy, 'Network', 'Studio', 'Studios', 'Budget', 'Box office']);
+		const language = [...pick(['Language']).map((f) => ({ ...f, label: 'Original language' })), ...pick(['Original title'])];
+		const groups = [
+			{ title: 'Information', rows: info1 },
+			{ title: 'Made by', rows: made },
+			{ title: 'Language', rows: language }
+		];
+		if (tagsAt !== 'band' && tags.length) groups.push({ title: 'Tags', rows: [{ label: 'Themes', kind: 'text', value: tags.join(', ') }] });
+		return groups.filter((g) => g.rows.length);
+	});
 	// Decide in 5 s: a few key facts beside the ratings; everything else goes to About at the bottom.
 	const keyFacts = $derived(facts.filter((f) => f.kind === 'makers' || f.label === 'Network' || (f.label === 'Language' && info?.originalLanguage !== 'en')).slice(0, 4));
 	const aboutFacts = $derived(look === 'decide' ? facts.filter((f) => !keyFacts.includes(f)) : facts);
@@ -434,13 +455,24 @@
 		{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
 		{@render castRow()}
 		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} />
-		{#if aboutFacts.length || (tagsAt !== 'band' && tags.length)}
-			<section class="about" bind:clientWidth={aboutWidth} data-testid="title-about">
+		{#if aboutGroups.length}
+			<section class="about" data-testid="title-about">
 				<h2 class="tp-h2">About</h2>
-				{#if tagsAt === 'top' && tags.length}<ul class="tagchips quiet about-top">{#each tags.slice(0, 8) as t (t)}<li>{t}</li>{/each}</ul>{/if}
-				{#if aboutFacts.length}{@render grid(aboutFacts, aboutCols)}{/if}
-				{#if tagsAt === 'row' && tags.length}<div class="about-tags"><span class="about-lbl">Tags</span><ul class="tagchips quiet">{#each tags.slice(0, 8) as t (t)}<li>{t}</li>{/each}</ul></div>{/if}
-				{#if tagsAt === 'text' && tags.length}<p class="about-text"><span class="about-lbl">Tags</span>{tags.slice(0, 8).join(' · ')}</p>{/if}
+				<div class="about-cols">
+					{#each aboutGroups as g (g.title)}
+						<div class="about-col">
+							<h3>{g.title}</h3>
+							<dl>
+								{#each g.rows as f (f.label)}
+									<div>
+										<dt>{f.label}</dt>
+										<dd>{#if f.kind === 'makers'}{@render names(makers, 4)}{:else}{f.value}{/if}</dd>
+									</div>
+								{/each}
+							</dl>
+						</div>
+					{/each}
+				</div>
 			</section>
 		{/if}
 		{:else}
@@ -518,14 +550,14 @@
 	.decide { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px 48px; align-items: start; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
 	.d-left, .d-right { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 	.d-right .facts-grid { padding: 14px 0 0; border-top: 1px solid var(--line); }
-	.about .facts-grid { padding-top: 0; }
 	.calm { display: flex; flex-direction: column; gap: 16px; max-width: 760px; padding-bottom: 8px; }
 	.calm-meta { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
 	.calm .tagchips.quiet, .d-left .tagchips.quiet { margin-top: -6px; }
-	.about-top { margin-bottom: 14px; }
-	.about-tags, .about-text { display: grid; gap: 6px; margin: 14px 0 0; padding-top: 14px; border-top: 1px solid var(--line); }
-	.about-text { color: var(--text); font: 500 14px/1.5 var(--font-ui); }
-	.about-lbl { display: block; color: var(--text-muted); font: 600 11.5px/1.2 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
+	.about-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 28px 40px; }
+	.about-col h3 { margin: 0 0 12px; color: var(--text); font: 700 17px/1.2 var(--font-ui); }
+	.about-col dl { display: grid; gap: 14px; margin: 0; }
+	.about-col dt { color: var(--text); font: 500 14px/1.3 var(--font-ui); }
+	.about-col dd { margin: 3px 0 0; color: var(--text-muted); font: 400 14px/1.45 var(--font-ui); }
 	.tagchips.quiet li { background: none; border: 1px solid var(--line); color: var(--text-muted); font-size: 12px; }
 	@media (max-width: 899px) { .decide { grid-template-columns: minmax(0, 1fr); } }
 	.facts-grid { display: grid; grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); gap: 16px 28px; margin: 0; padding: 16px 0; }
