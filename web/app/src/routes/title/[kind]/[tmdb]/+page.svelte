@@ -290,6 +290,8 @@
 	const keyFacts = $derived(facts.filter((f) => f.kind === 'makers' || f.label === 'Network' || (f.label === 'Language' && info?.originalLanguage !== 'en')).slice(0, 4));
 	const aboutFacts = $derived(look === 'decide' ? facts.filter((f) => !keyFacts.includes(f)) : facts);
 	let aboutWidth = $state(0);
+	// Where the tags sit while Luis compares (?tags=band|top|row|text): under the story, or in About.
+	const tagsAt = typeof location === 'undefined' ? 'row' : (['band', 'top', 'row', 'text'].find((v) => v === new URLSearchParams(location.search).get('tags')) ?? 'row');
 	const aboutCols = $derived(Math.max(2, Math.min(aboutFacts.length, Math.floor((aboutWidth + 28) / ((aboutWidth < 600 ? 130 : 150) + 28)) || 2)));
 	// Columns: as many as fit (150 px each, 130 on a phone), at least two. One item alone on the last
 	// row is avoided with one column fewer; when that does not help it spans two columns (factSpan).
@@ -403,7 +405,7 @@
 			</dl>
 		{/snippet}
 		{#snippet tagLine()}
-			{#if tags.length}<ul class="tagchips quiet" data-testid="title-tags">{#each tags.slice(0, 5) as t (t)}<li>{t}</li>{/each}</ul>{/if}
+			{#if tagsAt === 'band' && tags.length}<ul class="tagchips quiet" data-testid="title-tags">{#each tags.slice(0, 5) as t (t)}<li>{t}</li>{/each}</ul>{/if}
 		{/snippet}
 		{#if look !== 'both' && look !== 'band'}
 		{#if look === 'decide'}
@@ -429,14 +431,17 @@
 			{@render where()}
 		</div>
 		{/if}
+		{@render trailers()}
 		{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
 		{@render castRow()}
-		{@render trailers()}
 		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} />
-		{#if aboutFacts.length}
+		{#if aboutFacts.length || (tagsAt !== 'band' && tags.length)}
 			<section class="about" bind:clientWidth={aboutWidth} data-testid="title-about">
 				<h2 class="tp-h2">About</h2>
-				{@render grid(aboutFacts, aboutCols)}
+				{#if tagsAt === 'top' && tags.length}<ul class="tagchips quiet about-top">{#each tags.slice(0, 8) as t (t)}<li>{t}</li>{/each}</ul>{/if}
+				{#if aboutFacts.length}{@render grid(aboutFacts, aboutCols)}{/if}
+				{#if tagsAt === 'row' && tags.length}<div class="about-tags"><span class="about-lbl">Tags</span><ul class="tagchips quiet">{#each tags.slice(0, 8) as t (t)}<li>{t}</li>{/each}</ul></div>{/if}
+				{#if tagsAt === 'text' && tags.length}<p class="about-text"><span class="about-lbl">Tags</span>{tags.slice(0, 8).join(' · ')}</p>{/if}
 			</section>
 		{/if}
 		{:else}
@@ -517,7 +522,11 @@
 	.about .facts-grid { padding-top: 0; }
 	.calm { display: flex; flex-direction: column; gap: 16px; max-width: 760px; padding-bottom: 8px; }
 	.calm-meta { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
-	.tagchips.quiet { margin-top: -6px; }
+	.calm .tagchips.quiet, .d-left .tagchips.quiet { margin-top: -6px; }
+	.about-top { margin-bottom: 14px; }
+	.about-tags, .about-text { display: grid; gap: 6px; margin: 14px 0 0; padding-top: 14px; border-top: 1px solid var(--line); }
+	.about-text { color: var(--text); font: 500 14px/1.5 var(--font-ui); }
+	.about-lbl { display: block; color: var(--text-muted); font: 600 11.5px/1.2 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
 	.tagchips.quiet li { background: none; border: 1px solid var(--line); color: var(--text-muted); font-size: 12px; }
 	@media (max-width: 899px) { .decide { grid-template-columns: minmax(0, 1fr); } }
 	.facts-grid { display: grid; grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); gap: 16px 28px; margin: 0; padding: 16px 0; }
