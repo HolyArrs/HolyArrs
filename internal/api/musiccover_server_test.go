@@ -11,9 +11,9 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/music/rowtpl"
 )
 
-// An album cover comes first from the metadata server's stored copy; an
-// album it has not stored (a redirect) takes the other sources, and any
-// catalog album answers at once, listed by a page or not.
+// An album cover comes only from the metadata server's stored copy; one it
+// has not stored (a redirect) is a miss, never an outside fetch; any
+// catalog album is asked for at once, listed by a page or not.
 func TestAlbumCoverServerCopyFirstAndCatalogAlbums(t *testing.T) {
 	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
 	const stored, cold, stranger = "11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222", "33333333-3333-4333-8333-333333333333"
@@ -42,8 +42,8 @@ func TestAlbumCoverServerCopyFirstAndCatalogAlbums(t *testing.T) {
 	if name, _, ok := a.fetchMusicArt(ctx, "album", stored, "250"); !ok || name != library.ArtworkName(srv.URL+"/v1/img/album/"+stored+"/250.jpg") {
 		t.Fatalf("stored album %q %v, want the server copy", name, ok)
 	}
-	if name, _, ok := a.fetchMusicArt(ctx, "album", cold, "250"); !ok || name != library.ArtworkName(srv.URL+"/release-group/"+cold+"/front-250") {
-		t.Fatalf("cold album %q %v, want the archive cover", name, ok)
+	if name, _, ok := a.fetchMusicArt(ctx, "album", cold, "250"); ok {
+		t.Fatalf("cold album %q, want none until the server stores it", name)
 	}
 	if _, ok := art.Path(library.ArtworkName(srv.URL + "/v1/img/album/" + cold + "/250.jpg")); ok {
 		t.Fatal("the redirect was kept as the server copy")

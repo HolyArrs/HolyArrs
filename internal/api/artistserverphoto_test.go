@@ -43,8 +43,8 @@ func TestArtistServerPhotoFirst(t *testing.T) {
 	if name, _, ok := a.fetchMusicArt(ctx, "artist", sharp, "250"); !ok || name != library.ArtworkName(srv.URL+"/v1/img/artist/"+sharp+"/500.jpg") {
 		t.Fatalf("sharp artist picture %q %v, want the server photo", name, ok)
 	}
-	if name, _, ok := a.fetchMusicArt(ctx, "artist", cold, "250"); !ok || name != library.ArtworkName(srv.URL+"/chart/cold.jpg") {
-		t.Fatalf("cold artist picture %q %v, want the chart picture after a placeholder", name, ok)
+	if name, _, ok := a.fetchMusicArt(ctx, "artist", cold, "250"); ok {
+		t.Fatalf("cold artist picture %q, want none: pictures come only from the server", name)
 	}
 	if _, ok := art.Path(library.ArtworkName(srv.URL + "/v1/img/artist/" + cold + "/500.jpg")); ok {
 		t.Fatal("a placeholder was stored as the artist photo")

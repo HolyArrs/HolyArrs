@@ -48,6 +48,9 @@ type musicPreload struct {
 	queue   []string
 	running bool
 	seen    map[preloadKey]bool
+	// missed holds the items the server had no picture for yet; they are
+	// asked again musicPreloadRetry later (the server stores them meanwhile).
+	missed  []preloadKey
 	st      musicPreloadStatus
 	// warm stores one item's pictures; nil means the real ones (tests
 	// replace it).
@@ -88,7 +91,7 @@ func (a *API) tplPreload(b *rowtpl.Bundle, region string) {
 	}
 	if p.version != b.Version {
 		p.bundle, p.version = b, b.Version
-		p.done, p.queue, p.seen = map[string]bool{}, nil, map[preloadKey]bool{}
+		p.done, p.queue, p.seen, p.missed = map[string]bool{}, nil, map[preloadKey]bool{}, nil
 		p.st = musicPreloadStatus{Version: b.Version}
 	}
 	for x := range p.asked {
@@ -122,6 +125,10 @@ func (a *API) runPreload() {
 		if len(p.queue) == 0 {
 			p.running, p.st.Running = false, false
 			p.st.Finished = time.Now().UTC()
+			if len(p.missed) > 0 {
+				ver := p.version
+				time.AfterFunc(musicPreloadRetry, func() { a.retryPreload(ver) })
+			}
 			p.mu.Unlock()
 			return
 		}
@@ -245,6 +252,7 @@ func (a *API) preloadWarm(ver string, todo []preloadKey) {
 						p.st.Warmed++
 					} else {
 						p.st.Failed++
+						p.missed = append(p.missed, k)
 					}
 				}
 				p.mu.Unlock()
@@ -262,6 +270,30 @@ func (a *API) preloadWarm(ver string, todo []preloadKey) {
 	}
 	close(next)
 	wg.Wait()
+}
+
+// musicPreloadRetry is when the pictures the server had not stored yet are
+// asked again (past the picture route's miss time).
+var musicPreloadRetry = musicArtMissTTL + time.Minute
+
+// retryPreload asks again for the items the last pass missed, while the
+// bundle is the same; misses again are retried again later.
+func (a *API) retryPreload(ver string) {
+	p := &a.musicPre
+	p.mu.Lock()
+	if p.version != ver || p.running || len(p.missed) == 0 {
+		p.mu.Unlock()
+		return
+	}
+	todo := p.missed
+	p.missed = nil
+	p.st.Failed -= len(todo)
+	p.running, p.st.Running = true, true
+	p.mu.Unlock()
+	go supervisor.Guard("music-cover-preload-retry", func() {
+		a.preloadWarm(ver, todo)
+		a.runPreload() // closes the run (and schedules the next retry)
+	})
 }
 
 // preloadOne stores an album's covers at the card sizes (250 and 500) or an

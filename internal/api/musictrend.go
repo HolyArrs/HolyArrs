@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strings"
 	"sync"
@@ -384,7 +383,7 @@ func (a *API) serverAlbumCoverURL(mbid, size string) string {
 func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name, path string, ok bool) {
 	c := &a.music
 	c.mu.Lock()
-	it, listed := c.names[kind+"|"+mbid]
+	_, listed := c.names[kind+"|"+mbid]
 	// An artist page asks for its own artist by id, listed or not; any other picture is only for a listed id.
 	known := listed || kind == "artist" && metadata.ValidMBID(mbid)
 	missAt, missed := c.artMiss[kind+"|"+mbid]
@@ -393,8 +392,8 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name,
 		// Any catalog album or artist answers at once, listed by a page yet
 		// or not (no race with the page that lists it).
 		if b := a.musicPre.catalog.Load(); b != nil {
-			if ci, ok := b.Lookup(kind, mbid); ok {
-				it, known = metadata.MusicTrendItem{MBID: mbid, Name: ci.Title, Title: ci.Title, Artist: ci.Artist}, true
+			if _, ok := b.Lookup(kind, mbid); ok {
+				known = true
 			}
 		}
 	}
@@ -417,54 +416,16 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name,
 		path, ok = lib.Artwork.Path(name)
 		return ok
 	}
-	artist := func(n string) bool {
-		if lib.ArtistImages == nil || n == "" {
-			return false
-		}
-		src, _ := lib.ArtistImages.Image(ctx, n)
-		return keep(src)
-	}
+	// Pictures come only from our metadata server (Luis, 2026-10-24): never
+	// straight from an outside source. One the server has not stored yet is
+	// a miss (the card shows its placeholder); the server queues it, and the
+	// picture is asked again after musicArtMissTTL or on the next preload.
 	switch kind {
 	case "artist":
-		// The artist is known by its id, never by its name alone (two
-		// artists can share a name): the chart's own picture, fanart.tv's
-		// thumb by MusicBrainz id, the Deezer artist and Wikidata picture
-		// its MusicBrainz links name, then fanart.tv's wide photo (the
-		// circle crops it). No album cover, and no picture beats a wrong one.
 		if keep(a.serverArtistPhotoURL(ctx, mbid, size)) {
 			return name, path, true
 		}
-		if keep(it.Image) {
-			return name, path, true
-		}
-		var art metadata.ServerArt
-		if a.s.ExtraArt != nil {
-			art, _ = a.s.ExtraArt(ctx, "artist", mbid)
-			if keep(art.Thumb) {
-				return name, path, true
-			}
-			for _, th := range art.Thumbs {
-				if keep(th) {
-					return name, path, true
-				}
-			}
-		}
-		if lib.ArtistImages != nil && metadata.ValidMBID(mbid) {
-			if keep(lib.ArtistImages.PictureByIDs(ctx, a.artistIDs(ctx, mbid))) {
-				return name, path, true
-			}
-		}
-		for _, bg := range art.Backgrounds {
-			if keep(bg) {
-				return name, path, true
-			}
-		}
 	case "album":
-		// The metadata server's stored copy first (fast, kept at the edge);
-		// an album it has not stored yet answers with a redirect, and every
-		// other source runs before the name tile: the chart's cover link,
-		// the server's cover chain, the Cover Art Archive, then the artist's
-		// picture.
 		if src := a.serverAlbumCoverURL(mbid, size); src != "" {
 			n := library.ArtworkName(src)
 			if p, found := lib.Artwork.Path(n); found {
@@ -476,37 +437,6 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name,
 					return n, p, true
 				}
 			}
-		}
-		base := lib.CoverArtBase
-		if base == "" {
-			base = library.CoverArtBase
-		}
-		caa := strings.TrimRight(base, "/") + "/release-group/" + url.PathEscape(mbid) + "/front-250"
-		tried := map[string]bool{}
-		try := func(src string) bool {
-			if src == "" {
-				return false
-			}
-			src = sizedCover(src, size)
-			if tried[src] {
-				return false
-			}
-			tried[src] = true
-			return keep(src)
-		}
-		if try(it.Cover) {
-			return name, path, true
-		}
-		// A top song's release without a MusicBrainz id has only its own
-		// cover link and the artist's picture.
-		isMBID := metadata.ValidMBID(mbid)
-		if isMBID {
-			if src, found := a.albumCover(ctx, mbid, it); found && try(src) {
-				return name, path, true
-			}
-		}
-		if (isMBID && try(caa)) || artist(it.Artist) {
-			return name, path, true
 		}
 	}
 	if ctx.Err() == nil {

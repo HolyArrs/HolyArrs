@@ -24,18 +24,20 @@ func TestAlbumCoverServesTheCachedCover(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = s.Close() })
 	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/release-group/"+apiAlbum+"/front-250" {
-			w.WriteHeader(http.StatusNotFound)
+		if r.URL.Path != "/v1/img/album/"+apiAlbum+"/250.jpg" {
+			// Not stored on the server: it redirects to the archive, which
+			// the app never follows.
+			http.Redirect(w, r, "/release-group/x/front-250", http.StatusFound)
 			return
 		}
 		w.Header().Set("Content-Type", "image/jpeg")
 		_, _ = w.Write([]byte("\xff\xd8\xff synthetic"))
 	}))
 	defer pics.Close()
-	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{pics.URL + "/release-group/"}, HTTP: pics.Client()}
+	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{pics.URL + "/"}, HTTP: pics.Client()}
 	q := jobs.New(s, jobs.Options{})
 	lib := &library.Service{Store: s, Queue: q, Artists: apiMusic(), Artwork: art, CoverArtBase: pics.URL}
-	srv := httptest.NewServer(New(Server{Store: s, Queue: q, Library: lib, Metadata: &metadata.Static{}}).Handler())
+	srv := httptest.NewServer(New(Server{Store: s, Queue: q, Library: lib, Metadata: &metadata.Static{}, ImageBase: pics.URL + "/v1/img"}).Handler())
 	defer srv.Close()
 	u := srv.URL + "/api/v1"
 	do(t, "POST", u+"/library-folders", fmt.Sprintf(`{"path":%q,"kind":"music","label":"Music"}`, t.TempDir()), 201)
@@ -68,7 +70,7 @@ func TestAlbumCoverServesTheCachedCover(t *testing.T) {
 		t.Fatalf("cover %v %d", err, resp.StatusCode)
 	}
 	resp.Body.Close()
-	// No cover anywhere, a season id and an unknown id are all 404.
+	// Not stored on the server yet, a season id and an unknown id are all 404.
 	do(t, "GET", fmt.Sprintf("%s/albums/%d/cover", u, without), "", 404)
 	do(t, "GET", u+"/albums/999999/cover", "", 404)
 }

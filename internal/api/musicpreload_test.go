@@ -128,3 +128,29 @@ func TestTplPreloadWarmsEveryShownCover(t *testing.T) {
 		t.Fatalf("the same region and bundle preloaded again: %+v", again)
 	}
 }
+
+// A picture the server has not stored yet is a miss, asked again later in
+// the background (never from an outside source).
+func TestTplPreloadAsksMissesAgain(t *testing.T) {
+	r := tplRig(t)
+	on, gap, retry := musicPreloadOn, musicPreloadGap, musicPreloadRetry
+	musicPreloadOn, musicPreloadGap, musicPreloadRetry = true, 0, 50*time.Millisecond
+	defer func() { musicPreloadOn, musicPreloadGap, musicPreloadRetry = on, gap, retry }()
+	var mu sync.Mutex
+	tries := map[preloadKey]int{}
+	r.api.musicPre.warm = func(_ context.Context, k preloadKey) bool {
+		mu.Lock()
+		defer mu.Unlock()
+		tries[k]++
+		return tries[k] > 1 // stored by the second ask
+	}
+	r.api.tplPreload(r.api.musicBundle(context.Background(), time.Now().UTC()), "US")
+	deadline := time.Now().Add(20 * time.Second)
+	for time.Now().Before(deadline) {
+		if st := r.api.tplPreloadStatus(); !st.Running && st.Total > 0 && st.Warmed == st.Total && st.Failed == 0 {
+			return
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	t.Fatalf("misses not asked again: %+v", r.api.tplPreloadStatus())
+}

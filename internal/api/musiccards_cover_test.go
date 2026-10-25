@@ -15,32 +15,34 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 )
 
-// Explore's personal rows (New from your artists, Finish the set) point at
-// the picture route; their albums must be known to it, with the artist, so
-// the cover chain's name searches run, and their art is prefetched.
-func TestMusicCardsUseCoverChain(t *testing.T) {
+// Music pictures come only from our metadata server (Luis, 2026-10-24):
+// a card's album the server stored is prefetched from it; one it has not
+// stored yet (it redirects) is a miss, and no outside source is ever asked.
+func TestMusicCardsPicturesFromServerOnly(t *testing.T) {
 	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
 	const fresh, soundtrack = "54be6365-1bc0-4825-b87e-505a2b48fade", "192a95dc-d993-4768-9f77-4496b6460400"
+	var outside atomic.Int32
 	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !strings.HasPrefix(r.URL.Path, "/dz/") {
-			w.WriteHeader(404)
+		if strings.HasPrefix(r.URL.Path, "/v1/img/album/"+fresh+"/") {
+			w.Header().Set("Content-Type", "image/jpeg")
+			_, _ = w.Write([]byte("ÿØÿ stored " + r.URL.Path))
 			return
 		}
+		if strings.HasPrefix(r.URL.Path, "/v1/img/") {
+			http.Redirect(w, r, "/release-group/x/front-250", http.StatusFound)
+			return
+		}
+		outside.Add(1)
 		w.Header().Set("Content-Type", "image/jpeg")
-		_, _ = w.Write([]byte("\xff\xd8\xff synthetic " + r.URL.Path))
+		_, _ = w.Write([]byte("ÿØÿ outside"))
 	}))
 	defer pics.Close()
-	var withNames, bare atomic.Int32
 	cover := func(_ context.Context, mbid, artist, title string) (string, error) {
-		if artist == "" || title == "" {
-			bare.Add(1)
-			return "", metadata.ErrNotFound // only the Cover Art Archive, which has none
-		}
-		withNames.Add(1)
+		outside.Add(1)
 		return pics.URL + "/dz/" + mbid + ".jpg", nil
 	}
 	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{pics.URL + "/"}, HTTP: pics.Client()}
-	api := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), Library: &library.Service{Store: s, Artwork: art, CoverArtBase: pics.URL}, Version: "test", Deps: music.Deps{MusicCover: cover}})
+	api := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), Library: &library.Service{Store: s, Artwork: art, CoverArtBase: pics.URL}, ImageBase: pics.URL + "/v1/img", Version: "test", Deps: music.Deps{MusicCover: cover}})
 	srv := httptest.NewServer(api.Handler())
 	defer srv.Close()
 	code := func(id string) int {
@@ -51,41 +53,23 @@ func TestMusicCardsUseCoverChain(t *testing.T) {
 		resp.Body.Close()
 		return resp.StatusCode
 	}
-
-	// A soundtrack row names the album first, without its artist: no
-	// answer is kept, and the artist given later is used.
-	api.rememberMusicNames([]nameKey{{kind: "album", mbid: soundtrack, name: "Man’s Best Friend"}})
-	if c := code(soundtrack); c != 404 {
-		t.Fatalf("no names, no cover: %d", c)
-	}
-	api.music.mu.Lock()
-	delete(api.music.artMiss, "album|"+soundtrack)
-	api.music.mu.Unlock()
-
 	rows := []MusicRow{{ID: "new_from", Items: []MusicCard{
-		{Kind: "album", MBID: fresh, Name: "No Bad Memories", Artist: "The Avalanches", ArtistMBID: "0d79fe8e-ba27-4859-bb8c-2f255f346853", Image: musicArtPrefix + "album/" + fresh},
-	}}, {ID: "finish_set", Items: []MusicCard{
+		{Kind: "album", MBID: fresh, Name: "No Bad Memories", Artist: "The Avalanches", Image: musicArtPrefix + "album/" + fresh},
 		{Kind: "album", MBID: soundtrack, Name: "Man’s Best Friend", Artist: "Sabrina Carpenter", Image: musicArtPrefix + "album/" + soundtrack},
 	}}}
 	api.rememberMusicCards(rows)
 	api.music.prefetching.Wait()
-	for _, id := range []string{fresh, soundtrack} {
-		if _, ok := art.Path(library.ArtworkName(pics.URL + "/dz/" + id + ".jpg")); !ok {
-			t.Fatalf("%s not prefetched", id)
-		}
-		if c := code(id); c != 200 {
-			t.Fatalf("%s: %d", id, c)
-		}
+	if _, ok := art.Path(library.ArtworkName(pics.URL + "/v1/img/album/" + fresh + "/250.jpg")); !ok {
+		t.Fatal("stored album not prefetched from the server")
 	}
-	if api.music.names["album|"+soundtrack].Artist != "Sabrina Carpenter" {
-		t.Fatalf("artist not filled in: %+v", api.music.names["album|"+soundtrack])
+	if c := code(fresh); c != 200 {
+		t.Fatalf("stored album: %d", c)
 	}
-	// Shown again within minutes: not queued again.
-	n := withNames.Load()
-	api.rememberMusicCards(rows)
-	api.music.prefetching.Wait()
-	if withNames.Load() != n {
-		t.Fatal("prefetched twice")
+	if c := code(soundtrack); c != 404 {
+		t.Fatalf("album the server has not stored: %d, want 404 (the card shows its placeholder)", c)
+	}
+	if n := outside.Load(); n != 0 {
+		t.Fatalf("%d outside source asks", n)
 	}
 }
 
@@ -117,13 +101,15 @@ func TestMusicCoverMissIsShort(t *testing.T) {
 	}
 }
 
-// A top song whose release is not in the discography gets its picture
-// through the picture route, from its own cover link.
-func TestTopSongArtThroughRoute(t *testing.T) {
+// A top song without a MusicBrainz release has no server copy: its chart
+// cover link is never fetched, the picture route answers 404 (placeholder).
+func TestTopSongArtNotFetchedFromChart(t *testing.T) {
 	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
+	var asked atomic.Int32
 	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		asked.Add(1)
 		w.Header().Set("Content-Type", "image/jpeg")
-		_, _ = w.Write([]byte("\xff\xd8\xff synthetic"))
+		_, _ = w.Write([]byte("ÿØÿ synthetic"))
 	}))
 	defer pics.Close()
 	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{pics.URL + "/"}, HTTP: pics.Client()}
@@ -131,13 +117,10 @@ func TestTopSongArtThroughRoute(t *testing.T) {
 	srv := httptest.NewServer(api.Handler())
 	defer srv.Close()
 	id := songArtID("Bruno Mars", "Uptown Special", pics.URL+"/images/cover/abc/250x250-000000-80-0-0.jpg")
-	if !strings.HasPrefix(id, "song-") || metadata.ValidMBID(id) {
-		t.Fatalf("id %q", id)
-	}
 	api.rememberMusicNames([]nameKey{{kind: "album", mbid: id, name: "Uptown Special", artist: "Bruno Mars", cover: pics.URL + "/images/cover/abc/250x250-000000-80-0-0.jpg"}})
 	resp, err := http.Get(srv.URL + artPath("album", id))
-	if err != nil || resp.StatusCode != 200 {
-		t.Fatalf("song art %v %d", err, resp.StatusCode)
+	if err != nil || resp.StatusCode != 404 || asked.Load() != 0 {
+		t.Fatalf("song art %v %d, outside asks %d", err, resp.StatusCode, asked.Load())
 	}
 	resp.Body.Close()
 }

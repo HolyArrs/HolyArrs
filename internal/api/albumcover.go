@@ -2,19 +2,16 @@ package api
 
 import (
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/library"
-	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
 // albumCoverArt serves a Library album's cover for the title pages (the
 // album hero and the artist's discography cards): the metadata server's
-// cover chain by release group, artist and name, else the Cover Art
-// Archive. The picture is kept in the artwork cache, like every other
+// stored copy by release group, nothing else. The picture is kept in the artwork cache, like every other
 // picture, so the browser never fetches it from outside. A Kid gets 404
 // (kidGuard), and an album with no cover anywhere is 404 too.
 func (a *API) albumCoverArt(w http.ResponseWriter, r *http.Request) {
@@ -33,15 +30,9 @@ func (a *API) albumCoverArt(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	src, found := a.albumCover(r.Context(), mbid, metadata.MusicTrendItem{MBID: mbid, Title: p.Name, Artist: t.Name})
-	if !found {
-		base := lib.CoverArtBase
-		if base == "" {
-			base = library.CoverArtBase
-		}
-		src = strings.TrimRight(base, "/") + "/release-group/" + url.PathEscape(mbid) + "/front-250"
-	}
-	src = sizedCover(src, coverSize(r))
+	// Only the metadata server's stored copy (Luis, 2026-10-24): an album it
+	// has not stored yet is 404 (the page shows its placeholder) until it has.
+	src := a.serverAlbumCoverURL(mbid, coverSize(r))
 	if src == "" {
 		http.NotFound(w, r)
 		return
@@ -49,9 +40,9 @@ func (a *API) albumCoverArt(w http.ResponseWriter, r *http.Request) {
 	name := library.ArtworkName(src)
 	path, ok := lib.Artwork.Path(name)
 	if ok {
-		lib.Artwork.Recheck(src, nil)
+		lib.Artwork.Recheck(src, serverPlaceholder)
 	} else {
-		if _, err := lib.Artwork.Fetch(r.Context(), src); err != nil {
+		if _, err := lib.Artwork.FetchStored(r.Context(), src, serverPlaceholder); err != nil {
 			http.Error(w, "picture unavailable", http.StatusNotFound)
 			return
 		}

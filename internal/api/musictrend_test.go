@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"path/filepath"
 	"sync/atomic"
+	"strings"
 	"testing"
 
 	"github.com/CoderLuii/holyarrs/internal/library"
@@ -33,7 +34,7 @@ func TestMusicTrendingListsAndPictures(t *testing.T) {
 		return metadata.MusicTrend{Kind: kind, Region: region, Source: "deezer", Items: []metadata.MusicTrendItem{{Rank: 1, MBID: "0d79fe8e-ba27-4859-bb8c-2f255f346853", Name: "BTS"}}}, nil
 	}
 	cover := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/release-group/"+trendGroup+"/front-250" {
+		if r.URL.Path != "/v1/img/album/"+trendGroup+"/250.jpg" {
 			w.WriteHeader(404)
 			return
 		}
@@ -41,8 +42,8 @@ func TestMusicTrendingListsAndPictures(t *testing.T) {
 		_, _ = w.Write([]byte("\xff\xd8\xff synthetic"))
 	}))
 	defer cover.Close()
-	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{cover.URL + "/release-group/"}, HTTP: cover.Client()}
-	srv := httptest.NewServer(New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), Library: &library.Service{Store: s, Artwork: art, CoverArtBase: cover.URL}, Version: "test", Deps: music.Deps{MusicTrending: trend}}).Handler())
+	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{cover.URL + "/"}, HTTP: cover.Client()}
+	srv := httptest.NewServer(New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), Library: &library.Service{Store: s, Artwork: art, CoverArtBase: cover.URL}, ImageBase: cover.URL + "/v1/img", Version: "test", Deps: music.Deps{MusicTrending: trend}}).Handler())
 	defer srv.Close()
 	get := func(q string, want int) map[string]any {
 		t.Helper()
@@ -86,41 +87,30 @@ func TestMusicTrendingListsAndPictures(t *testing.T) {
 	}
 }
 
-func TestMusicTrendArtUsesCoverChain(t *testing.T) {
+// A trending list's covers come only from the server's stored copies: an
+// album it has not stored is a miss, and the cover chain is never asked.
+func TestMusicTrendArtServerOnly(t *testing.T) {
 	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
-	const none, down = "11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222"
+	const none = "11111111-1111-4111-8111-111111111111"
 	trend := func(_ context.Context, kind, region string) (metadata.MusicTrend, error) {
 		return metadata.MusicTrend{Kind: kind, Region: region, Items: []metadata.MusicTrendItem{
-			{Rank: 1, MBID: trendGroup, Title: "ARIRANG", Artist: "BTS", ArtistMBID: "0d79fe8e-ba27-4859-bb8c-2f255f346853"},
-			{Rank: 2, MBID: none, Title: "Nothing", Artist: "BTS", ArtistMBID: "0d79fe8e-ba27-4859-bb8c-2f255f346853"},
-			{Rank: 3, MBID: down, Title: "Down", Artist: "BTS", ArtistMBID: "0d79fe8e-ba27-4859-bb8c-2f255f346853"},
+			{Rank: 1, MBID: trendGroup, Title: "ARIRANG", Artist: "BTS", Cover: "https://elsewhere.test/a.jpg"},
+			{Rank: 2, MBID: none, Title: "Nothing", Artist: "BTS"},
 		}}, nil
 	}
 	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/apple/600x600bb.jpg" && r.URL.Path != "/release-group/"+down+"/front-250" {
-			w.WriteHeader(404)
+		if strings.HasPrefix(r.URL.Path, "/v1/img/album/"+trendGroup+"/") {
+			w.Header().Set("Content-Type", "image/jpeg")
+			_, _ = w.Write([]byte("\xff\xd8\xff synthetic"))
 			return
 		}
-		w.Header().Set("Content-Type", "image/jpeg")
-		_, _ = w.Write([]byte("\xff\xd8\xff synthetic"))
+		http.Redirect(w, r, "/release-group/x/front-250", http.StatusFound)
 	}))
 	defer pics.Close()
 	var asked atomic.Int32
-	cover := func(_ context.Context, mbid, artist, title string) (string, error) {
-		asked.Add(1)
-		switch mbid {
-		case trendGroup:
-			if artist != "BTS" || title != "ARIRANG" {
-				t.Errorf("asked %q %q", artist, title)
-			}
-			return pics.URL + "/apple/600x600bb.jpg", nil
-		case down:
-			return "", metadata.ErrServiceUnavailable
-		}
-		return "", metadata.ErrNotFound
-	}
+	cover := func(context.Context, string, string, string) (string, error) { asked.Add(1); return "", metadata.ErrNotFound }
 	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{pics.URL + "/"}, HTTP: pics.Client()}
-	api := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), Library: &library.Service{Store: s, Artwork: art, CoverArtBase: pics.URL}, Version: "test", Deps: music.Deps{MusicTrending: trend, MusicCover: cover}})
+	api := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), Library: &library.Service{Store: s, Artwork: art, CoverArtBase: pics.URL}, ImageBase: pics.URL + "/v1/img", Version: "test", Deps: music.Deps{MusicTrending: trend, MusicCover: cover}})
 	srv := httptest.NewServer(api.Handler())
 	defer srv.Close()
 	code := func(id string) int {
@@ -134,25 +124,18 @@ func TestMusicTrendArtUsesCoverChain(t *testing.T) {
 	if resp, err := http.Get(srv.URL + "/api/v1/music-trending?kind=album"); err != nil || resp.StatusCode != 200 {
 		t.Fatalf("list %v", err)
 	}
-	// The fresh list's covers are fetched in the background.
 	api.music.prefetching.Wait()
-	if _, ok := art.Path(library.ArtworkName(pics.URL + "/apple/600x600bb.jpg")); !ok {
-		t.Fatal("cover not prefetched")
+	if _, ok := art.Path(library.ArtworkName(pics.URL + "/v1/img/album/" + trendGroup + "/250.jpg")); !ok {
+		t.Fatal("stored cover not prefetched")
 	}
 	if c := code(trendGroup); c != 200 {
-		t.Fatalf("chain cover %d", c)
+		t.Fatalf("stored cover %d", c)
 	}
 	if c := code(none); c != 404 {
-		t.Fatalf("no cover anywhere %d", c)
+		t.Fatalf("not stored %d", c)
 	}
-	if c := code(down); c != 200 {
-		t.Fatalf("server down falls back to the archive %d", c)
-	}
-	n := asked.Load()
-	code(trendGroup)
-	code(none)
-	if asked.Load() != n {
-		t.Fatal("covers not kept")
+	if asked.Load() != 0 {
+		t.Fatalf("cover chain asked %d times", asked.Load())
 	}
 }
 
@@ -168,8 +151,9 @@ func TestMusicTrendingKidLimited(t *testing.T) {
 		_, _ = w.Write([]byte("\xff\xd8\xff synthetic"))
 	}))
 	defer cover.Close()
-	k.api.s.Library.Artwork = &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{cover.URL + "/release-group/"}, HTTP: cover.Client()}
+	k.api.s.Library.Artwork = &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{cover.URL + "/"}, HTTP: cover.Client()}
 	k.api.s.Library.CoverArtBase = cover.URL
+	k.api.s.ImageBase = cover.URL + "/v1/img"
 	items := func(b []byte) int {
 		var out struct {
 			Items []any `json:"items"`
@@ -185,38 +169,4 @@ func TestMusicTrendingKidLimited(t *testing.T) {
 	}
 	k.kai.call("GET", "/api/v1/music-trending/art/album/"+trendGroup, "", 404)
 	k.ana.call("GET", "/api/v1/music-trending/art/album/"+trendGroup, "", 200)
-}
-
-func TestMusicTrendArtPrefersChartCover(t *testing.T) {
-	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
-	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/chart.jpg" {
-			w.WriteHeader(404)
-			return
-		}
-		w.Header().Set("Content-Type", "image/jpeg")
-		_, _ = w.Write([]byte("ÿØÿ synthetic"))
-	}))
-	defer pics.Close()
-	trend := func(_ context.Context, kind, region string) (metadata.MusicTrend, error) {
-		return metadata.MusicTrend{Kind: kind, Region: region, Items: []metadata.MusicTrendItem{{Rank: 1, MBID: trendGroup, Title: "ARIRANG", Artist: "BTS", Cover: pics.URL + "/chart.jpg"}}}, nil
-	}
-	var asked atomic.Int32
-	cover := func(context.Context, string, string, string) (string, error) {
-		asked.Add(1)
-		return "", metadata.ErrNotFound
-	}
-	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{pics.URL + "/"}, HTTP: pics.Client()}
-	api := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), Library: &library.Service{Store: s, Artwork: art, CoverArtBase: pics.URL}, Version: "test", Deps: music.Deps{MusicTrending: trend, MusicCover: cover}})
-	srv := httptest.NewServer(api.Handler())
-	defer srv.Close()
-	if resp, err := http.Get(srv.URL + "/api/v1/music-trending?kind=album"); err != nil || resp.StatusCode != 200 {
-		t.Fatalf("list %v", err)
-	}
-	api.music.prefetching.Wait()
-	resp, err := http.Get(srv.URL + "/api/v1/music-trending/art/album/" + trendGroup + "?size=500")
-	if err != nil || resp.StatusCode != 200 || asked.Load() != 0 {
-		t.Fatalf("chart cover not used: %v %d asked %d", err, resp.StatusCode, asked.Load())
-	}
-	resp.Body.Close()
 }
