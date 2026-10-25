@@ -27,6 +27,7 @@
 
 <script lang="ts">
 	import Icon, { type IconName } from '../Icon.svelte';
+	import ArtPlaceholder from './ArtPlaceholder.svelte';
 	import { reducedMotion, viewTransitionName } from '../motion.ts';
 	import { sized } from '../tmdb-image.ts';
 	import { whenLoaded } from '../lazy-art.ts';
@@ -123,7 +124,7 @@
 	<div class="frame" bind:this={frame} onpointermove={move} onpointerleave={reset}>
 		<a class="art" {href} aria-label={name} use:viewTransitionName={vtName}>
 			{#if !image || failed || !loaded}
-				<span class="ph" class:sk={!!image && !failed && !loaded} aria-hidden="true"><Icon name={kindIcon} size={22} /><span class="ph-t">{title}</span></span>
+				<ArtPlaceholder name={title} shape="poster" loading={!!image && !failed && !loaded} />
 			{/if}
 			{#if image && !failed}
 				<img src={pic} class:in={loaded} alt="" loading="lazy" decoding="async" use:whenLoaded={() => (loaded = true)} onerror={() => (failed = true)} />
@@ -159,8 +160,6 @@
 	.art:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 220ms var(--ease-out); }
 	img.in { opacity: 1; }
-	.ph { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; padding: 12px; color: var(--text-muted); background: linear-gradient(160deg, var(--surface-2), var(--surface-3)); }
-	.ph-t { color: var(--text); font: var(--t-subhead); font-weight: 600; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 
 	/* Corner badge: only when the title needs a look. */
 	.badge { position: absolute; top: 7px; right: 7px; display: inline-flex; align-items: center; gap: 3px; height: 22px; min-width: 22px; padding: 0 6px; box-sizing: border-box; justify-content: center; border-radius: 99px; font: 600 11px/1 var(--font-text, inherit); font-variant-numeric: tabular-nums; color: #fff; background: rgb(20 20 22 / 72%); backdrop-filter: blur(8px) saturate(160%); -webkit-backdrop-filter: blur(8px) saturate(160%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 14%); }

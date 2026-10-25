@@ -3,6 +3,7 @@
 	import { to } from '../paths.ts';
 	import { genreTintToken } from '../music/genre-tint.ts';
 	import { RETRY_MS, retried } from '../lazy-art.ts';
+	import ArtPlaceholder from './ArtPlaceholder.svelte';
 
 	// Explore → Music's Browse grid (flag music_lists_v1): one solid colour tile per
 	// genre from our own palette, the name top left, and the genre's top charted album
@@ -35,6 +36,8 @@
 					{#key tries[t.key] ?? 0}
 						<img class="cover" src={retried(to(t.cover), tries[t.key] ?? 0)} alt="" loading="lazy" decoding="async" draggable="false" onerror={() => failed(t.key)} />
 					{/key}
+				{:else}
+					<span class="cover ph"><ArtPlaceholder name={t.name} shape="square" /></span>
 				{/if}
 			</a>
 		{/each}
@@ -71,4 +74,5 @@
 		.tile { transition: none; }
 		.tile:is(:hover, :focus-visible), .tile:active { transform: none; }
 	}
+	.cover.ph { overflow: hidden; }
 </style>

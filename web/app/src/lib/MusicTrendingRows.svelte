@@ -8,6 +8,7 @@
 	import { defaultRegion } from './region.ts';
 	import { coverFor } from './music/music-pages.ts';
 	import { heroArtists, heroLine } from './music/page-hero.ts';
+	import ArtPlaceholder from './ui/ArtPlaceholder.svelte';
 	import { isNewRelease } from './music/music-new.ts';
 	import { fetchMusicExplore, fetchMusicExploreMore, fetchMusicPage, genreHref, musicCardHref, musicCardNote, musicImage, musicStatus, releaseWords, songAskHref, type MusicCardData, type MusicExploreAnswer, type MusicPageKind } from './music/music-trending.ts';
 	import MusicGenreTiles from './ui/MusicGenreTiles.svelte';
@@ -302,6 +303,7 @@
 							<strong class="ftitle">{c.name}</strong>
 							<span class="fsub">{c.artist ?? ''}</span>
 							<span class="frame">
+								{#if !cv.src || noCover[c.key]}<ArtPlaceholder name={c.name} shape="wide" />{/if}
 								{#if cv.src && !noCover[c.key]}
 									<!-- The square cover on a blurred, darker copy of itself fills the wide frame. -->
 									<img class="blur" src={coverFor(musicImage(c), 120).src} alt="" aria-hidden="true" loading="lazy" decoding="async" />

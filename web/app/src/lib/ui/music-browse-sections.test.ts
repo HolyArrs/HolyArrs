@@ -15,10 +15,11 @@ describe('MusicBrowseSections', () => {
 		expect(body).toMatch(/href="[^"]*\/music\/genre\/pop"/);
 		expect(body).toMatch(/href="[^"]*\/music\/mood\/sleep"/);
 	});
-	it('shows the first cover, and a drawn sleeve when a tile has none', () => {
+	it('shows the first cover, and the placeholder when a tile has none', () => {
 		const { body } = render(MusicBrowseSections, { props: { sections } });
 		expect(body).toContain('art/album/a');
 		expect(body).not.toContain('art/album/b');
-		expect(body).toMatch(/class="cover drawn/);
+		expect(body).toContain('data-testid="art-placeholder"');
+		expect(body).toContain('>S</span>');
 	});
 });

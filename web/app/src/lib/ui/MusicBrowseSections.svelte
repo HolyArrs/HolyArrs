@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { to } from '../paths.ts';
 	import { RETRY_MS, retried } from '../lazy-art.ts';
+	import ArtPlaceholder from './ArtPlaceholder.svelte';
 
 	// Search > Music Browse (music_lists_v1 row templates): titled sections of
 	// colour tiles, the name top left and one album cover turned in the
@@ -40,7 +41,7 @@
 								<img class="cover" src={retried(to(coverOf(t)), tries[t.key] ?? 0)} alt="" loading="lazy" decoding="async" draggable="false" onerror={() => next(t)} />
 							{/key}
 						{:else}
-							<span class="cover drawn" aria-hidden="true"></span>
+							<span class="cover ph"><ArtPlaceholder name={t.name} shape="square" /></span>
 						{/if}
 					</a>
 				{/each}
@@ -62,12 +63,7 @@
 		position: absolute; right: -9%; bottom: -12%; width: 40%; aspect-ratio: 1; object-fit: cover; border-radius: 4px;
 		transform: rotate(25deg); box-shadow: 0 6px 16px rgba(0, 0, 0, .45);
 	}
-	/* The drawn sleeve: a darker square of the tile colour with a record ring, no network. */
-	.drawn {
-		background:
-			radial-gradient(circle at 50% 50%, rgba(255, 255, 255, .5) 0 7%, rgba(0, 0, 0, .55) 7.5% 9%, transparent 9.5% 30%, rgba(255, 255, 255, .14) 30.5% 31.5%, transparent 32% 44%, rgba(255, 255, 255, .1) 44.5% 45.5%, transparent 46%),
-			color-mix(in srgb, var(--g) 70%, #000);
-	}
+	.cover.ph { overflow: hidden; }
 	.tile:is(:hover, :focus-visible) { transform: translateY(-2px); box-shadow: 0 10px 22px -12px rgba(0, 0, 0, .6); }
 	.tile:active { transform: scale(.98); }
 	.tile:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--bg, #0b0708), 0 0 0 4px #d0202a; }
