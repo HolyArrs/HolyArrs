@@ -386,7 +386,7 @@
 			meta={heroFacts(d)}
 			ratings={look === 'scores' || look === 'herostory'}
 			heroStory={look === 'herostory' ? d.overview : undefined}
-			showFacts={look !== 'band' && look !== 'story'}
+			showFacts={look !== 'band' && look !== 'story' && look !== 'side'}
 			tagline={info?.tagline}
 			certification={rich?.certification ?? certOf(d.rating)}
 			score={rich?.score ?? scoreOf(d.rating)}
@@ -459,6 +459,9 @@
 				{/each}
 			</dl>
 		{/snippet}
+		{#snippet factsLine()}
+			<p class="calm-meta">{heroFacts(d).join(' · ')}{#if cert}<span class="fb cert">{cert}</span>{/if}</p>
+		{/snippet}
 		{#snippet credits()}
 			{#if makers.length || stars.length}
 				<p class="credits" data-testid="title-credits">
@@ -488,19 +491,16 @@
 		{:else if look === 'side'}
 		<!-- Netflix-like: the story and scores left, short credits right. -->
 		<div class="side" data-testid="title-side">
-			<div class="d-left">{@render story()}{@render tagLine()}{#if hasScores}<TitleScores scores={picked.scores} tmdb={picked.tmdb} variant="chips" />{/if}{@render where()}</div>
+			<div class="d-left">{@render factsLine()}{@render story()}{@render tagLine()}{#if hasScores}<TitleScores scores={picked.scores} tmdb={picked.tmdb} variant="chips" />{/if}{@render where()}</div>
 			<dl class="side-credits">
 				{#if makers.length}<div><dt>{madeBy}</dt><dd>{@render names(makers, 2)}</dd></div>{/if}
 				{#if stars.length}<div><dt>Starring</dt><dd>{@render names(stars, 3)}</dd></div>{/if}
-				{#if d.genres.length}<div><dt>Genres</dt><dd>{d.genres.slice(0, 3).join(', ')}</dd></div>{/if}
 			</dl>
 		</div>
 		{:else}
 		<!-- One calm column under the hero: Quiet, Story + credits, Scores in hero, Story first. -->
 		<div class="calm" data-testid="title-calm">
-			{#if look === 'story'}
-				<p class="calm-meta">{heroFacts(d).join(' · ')}{#if cert}<span class="fb cert">{cert}</span>{/if}</p>
-			{/if}
+			{#if look === 'story'}{@render factsLine()}{/if}
 			{@render story()}
 			{@render tagLine()}
 			{#if look === 'credits' || look === 'scores'}{@render credits()}{/if}
