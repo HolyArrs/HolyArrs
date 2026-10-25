@@ -29,7 +29,7 @@
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import ArtPlaceholder from '$lib/ui/ArtPlaceholder.svelte';
+	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import Icon from '#lib/Icon.svelte';
 	import AskArtistDialog from '#lib/AskArtistDialog.svelte';
 	import AddArtistDialog from '#lib/AddArtistDialog.svelte';
