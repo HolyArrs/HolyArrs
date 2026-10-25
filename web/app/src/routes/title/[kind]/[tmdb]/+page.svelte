@@ -315,8 +315,8 @@
 		const groups = [
 			{ title: 'Information', rows: info1 },
 			{ title: 'Made by', rows: made },
-			{ title: 'Reception', rows: reception },
-			{ title: 'Genres and themes', rows: kinds }
+			{ title: 'Ratings', rows: reception },
+			{ title: 'Feel', rows: kinds }
 		];
 		return groups.filter((g) => g.rows.length);
 	});
