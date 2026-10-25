@@ -119,14 +119,19 @@ export async function loadDetails(get: Get, kind: DetailKind, tmdb: string, sign
 	}
 	const term = encodeURIComponent(`tmdb:${tmdb}`);
 	let found: TitleDetails | null = null;
-	if (kind === 'movie') {
-		const r = await get<{ movies: LookupMovie[] }>(`/titles/lookup?term=${term}`, signal);
-		const m = r.movies.find((x) => x.ids.tmdb === tmdb) ?? r.movies[0];
-		if (m) found = fromMovie(m);
-	} else {
-		const r = await get<{ shows: LookupShow[] }>(`/shows/lookup?term=${term}`, signal);
-		const s = r.shows.find((x) => x.ids.tmdb === tmdb) ?? r.shows[0];
-		if (s) found = fromShow(s);
+	try {
+		if (kind === 'movie') {
+			const r = await get<{ movies: LookupMovie[] }>(`/titles/lookup?term=${term}`, signal);
+			const m = r.movies.find((x) => x.ids.tmdb === tmdb) ?? r.movies[0];
+			if (m) found = fromMovie(m);
+		} else {
+			const r = await get<{ shows: LookupShow[] }>(`/shows/lookup?term=${term}`, signal);
+			const s = r.shows.find((x) => x.ids.tmdb === tmdb) ?? r.shows[0];
+			if (s) found = fromShow(s);
+		}
+	} catch (e) {
+		// A busy or rate-limited lookup still shows the page from the cached details.
+		if (!meta || signal?.aborted) throw e;
 	}
 	if (!meta) return found;
 	if (!found) return meta;
