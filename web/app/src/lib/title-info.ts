@@ -55,7 +55,7 @@ export interface InfoDetails {
 	originalLanguage?: string;
 	/** ISO 3166-1 codes of the countries it comes from. */
 	originCountry: string[];
-	/** TMDB's status word: Released, In Production, Returning Series, Ended… */
+	/** TMDB's status word: Released, In Production, Ended, Canceled… */
 	status?: string;
 	tagline?: string;
 	/** The title in its own language, only when it differs. */
