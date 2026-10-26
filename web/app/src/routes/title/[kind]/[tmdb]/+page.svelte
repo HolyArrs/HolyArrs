@@ -358,16 +358,45 @@
 	const tagsAt = 'band' as TagsAt;
 	// Bottom section while Luis compares: the About columns (default) or Details tiles (?about=details).
 	// Bottom section while Luis compares (?about=card|netflix|line|table); the About columns otherwise.
-	const BOTTOMS = ['about', 'card', 'netflix', 'line', 'table'] as const;
+	const BOTTOMS = ['c2', 'c1', 'c3', 'c4', 'c5'] as const;
 	type Bottom = (typeof BOTTOMS)[number];
-	let bottom = $state<Bottom>((typeof location !== 'undefined' && BOTTOMS.find((b) => b === new URLSearchParams(location.search).get('about'))) || 'about');
+	let bottom = $state<Bottom>((typeof location !== 'undefined' && BOTTOMS.find((b) => b === new URLSearchParams(location.search).get('about'))) || 'c2');
 	const BOTTOM_OPTIONS: { value: Bottom; label: string }[] = [
-		{ value: 'about', label: 'B1 · Columns' },
-		{ value: 'card', label: 'B2 · Apple card' },
-		{ value: 'netflix', label: 'B3 · Netflix' },
-		{ value: 'line', label: 'B4 · One line' },
-		{ value: 'table', label: 'B5 · Table' }
+		{ value: 'c1', label: 'C1 · Small cards' },
+		{ value: 'c2', label: 'C2 · Card + rating' },
+		{ value: 'c3', label: 'C3 · Rating + grid' },
+		{ value: 'c4', label: 'C4 · One bar' },
+		{ value: 'c5', label: 'C5 · Grouped' }
 	];
+	// The short facts for the cards: one label, one value each.
+	const parts = $derived.by((): { label: string; value: string }[] => {
+		if (!details || !info) return [];
+		const i = info;
+		const out: { label: string; value: string }[] = [];
+		if (details.kind === 'movie') {
+			if (i.dates.theaters) out.push({ label: 'Released', value: fmtMonth(i.dates.theaters) });
+			else if (details.year) out.push({ label: 'Released', value: String(details.year) });
+			if (i.dates.digital) out.push({ label: 'Digital', value: fmtMonth(i.dates.digital) });
+			if (i.budget) out.push({ label: 'Budget', value: money(i.budget) });
+			if (i.revenue) out.push({ label: 'Box office', value: money(i.revenue) });
+		} else {
+			const eps = seasons.filter((x) => x.number > 0).reduce((n, x) => n + (x.episodes ?? 0), 0);
+			if (eps) out.push({ label: 'Episodes', value: String(eps) });
+			const y1 = i.dates.firstAir?.slice(0, 4);
+			const ended = i.status === 'Ended' || i.status === 'Canceled';
+			if (y1) out.push({ label: 'Aired', value: ended && i.dates.lastAir ? `${y1}–${i.dates.lastAir.slice(0, 4)}` : `${y1}–now` });
+			if (i.nextEpisode) out.push({ label: 'Next', value: `${fmtDay(i.nextEpisode.airDate)}` });
+			else if (i.status) out.push({ label: 'Status', value: statusWord(i.status) || i.status });
+		}
+		return out;
+	});
+	// C5 groups: when it came out, and the money or the run.
+	const groupsC5 = $derived.by(() => {
+		const by = (labels: string[]) => parts.filter((p) => labels.includes(p.label));
+		return details?.kind === 'movie'
+			? [{ title: 'Release', rows: by(['Released', 'Digital']) }, { title: 'Money', rows: by(['Budget', 'Box office']) }].filter((g) => g.rows.length)
+			: [{ title: 'Run', rows: by(['Episodes', 'Aired']) }, { title: 'Now', rows: by(['Status', 'Next']) }].filter((g) => g.rows.length);
+	});
 	// Themes as words for "This movie is:" (story keywords only, first four).
 	const moods = $derived(tags.filter((k) => !/stinger|^based on|sequel|remake|woman director|duringcredits|aftercredits/i.test(k)).slice(0, 4));
 	type Tile = { value: string; label: string };
@@ -606,85 +635,53 @@
 		{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
 		{@render castRow()}
 		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} />
-		{#if bottom === 'card'}
-			<!-- B2 · Apple cards: the details card (short label and value rows) beside the age rating on its own; links under them. -->
-			<section class="b-card" data-testid="title-details">
-				<h2 class="tp-h2">About</h2>
-				<div class="cards">
-					<div class="card wide">
+		{#snippet ratingCard()}
+			{#if cert}<div class="ac rating-card"><span class="fb cert big">{cert}</span><span class="cap">Rated</span></div>{/if}
+		{/snippet}
+		{#snippet linksLine()}
+			<p class="card-links">{#each outLinks as l, i (l.name)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name} ↗</a>{/each}{#if langLine}<span class="sep" aria-hidden="true">·</span><span>{langLine}</span>{/if}</p>
+		{/snippet}
+		<section class="ab" data-testid="title-details">
+			<h2 class="tp-h2">About</h2>
+			{#if bottom === 'c1'}
+				<!-- C1: every fact its own small card, the age rating first. -->
+				<div class="ac-row">
+					{@render ratingCard()}
+					{#each parts as p (p.label)}<div class="ac small"><b>{p.value}</b><span class="cap">{p.label}</span></div>{/each}
+				</div>
+			{:else if bottom === 'c2'}
+				<!-- C2: one card with the title and the facts in a row; the age rating in its own card. -->
+				<div class="ac-split">
+					<div class="ac">
 						<h3>{d.name}</h3>
-						<p class="caps">{[d.kind === 'show' ? 'TV show' : 'Movie', ...d.genres.slice(0, 2)].join(', ')}</p>
-						<dl class="card-rows">
-							{#each tiles as t (t.label)}<div><dt>{t.label.charAt(0).toUpperCase() + t.label.slice(1)}</dt><dd>{t.value}</dd></div>{/each}
-							{#if langLine}<div><dt>Language</dt><dd>{langLine}</dd></div>{/if}
-						</dl>
+						<p class="cap">{[d.kind === 'show' ? 'TV show' : 'Movie', ...d.genres.slice(0, 2)].join(', ')}</p>
+						<dl class="facts-row">{#each parts as p (p.label)}<div><dt>{p.label}</dt><dd>{p.value}</dd></div>{/each}</dl>
 					</div>
-					{#if cert}
-						<div class="card">
-							<h3 class="rating"><span class="fb cert big">{cert}</span></h3>
-							<p class="caps">Age rating</p>
-							{#if certMeaning(cert)}<p class="sum">{certMeaning(cert)}</p>{/if}
-						</div>
-					{/if}
+					{@render ratingCard()}
 				</div>
-				<p class="card-links">{#each outLinks as l, i (l.name)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name} ↗</a>{/each}</p>
-			</section>
-		{:else if bottom === 'netflix'}
-			<!-- B3 · Netflix "About": plain labeled lines, one column, the mood words included. -->
-			<section class="b-netflix" data-testid="title-details">
-				<h2 class="tp-h2">About {d.name}</h2>
-				<dl>
-					{#each tiles as t (t.label)}<div><dt>{t.label.charAt(0).toUpperCase() + t.label.slice(1)}:</dt><dd>{t.value}</dd></div>{/each}
-					{#if moods.length}<div><dt>This {d.kind === 'show' ? 'show' : 'movie'} is:</dt><dd>{moods.join(', ')}</dd></div>{/if}
-					{#if cert}<div><dt>Maturity rating:</dt><dd><span class="fb cert">{cert}</span></dd></div>{/if}
-					{#if langLine}<div><dt>Language:</dt><dd>{langLine}</dd></div>{/if}
-					<div><dt>More at:</dt><dd>{#each outLinks as l, i (l.name)}{#if i}, {/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name}</a>{/each}</dd></div>
-				</dl>
-			</section>
-		{:else if bottom === 'line'}
-			<!-- B4 · One line: the numbers as a quiet facts row, links as text after it. -->
-			<section class="b-line" data-testid="title-details">
-				<p class="calm-meta">
-					{#each tiles as t, i (t.label)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<span><b>{t.value}</b> {t.label}</span>{/each}
-				</p>
-				<p class="calm-meta links">
-					{#each outLinks as l, i (l.name)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name} ↗</a>{/each}
-				</p>
-			</section>
-		{:else if bottom === 'table'}
-			<!-- B5 · Apple TV on iPhone: label left, value right, hairlines between rows. -->
-			<section class="b-table" data-testid="title-details">
-				<h2 class="tp-h2">Information</h2>
-				<dl>
-					{#each tiles as t (t.label)}<div><dt>{t.label.charAt(0).toUpperCase() + t.label.slice(1)}</dt><dd>{t.value}</dd></div>{/each}
-					{#if langLine}<div><dt>Language</dt><dd>{langLine}</dd></div>{/if}
-					<div><dt>More at</dt><dd>{#each outLinks as l, i (l.name)}{#if i} · {/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name}</a>{/each}</dd></div>
-				</dl>
-			</section>
-		{:else if aboutGroups.length}
-			<section class="about" data-testid="title-about">
-				<h2 class="tp-h2">About</h2>
-				<div class="about-cols">
-					{#each aboutGroups as g (g.title)}
-						<div class="about-col">
-							<h3>{g.title}</h3>
-							<dl>
-								{#each g.rows as f (f.label)}
-									<div>
-										{#if f.kind === 'link'}
-											<dd><a href={f.value} target="_blank" rel="noopener noreferrer" class="about-link">{f.label.slice(5)} ↗</a></dd>
-										{:else}
-											<dt>{f.label}</dt>
-											<dd>{#if f.kind === 'makers'}{@render names(makers, 4)}{:else}{f.value}{/if}</dd>
-										{/if}
-									</div>
-								{/each}
-							</dl>
-						</div>
+			{:else if bottom === 'c3'}
+				<!-- C3: the age rating as a square card, then one card with the facts two by two. -->
+				<div class="ac-split left">
+					{@render ratingCard()}
+					<div class="ac"><dl class="facts-grid2">{#each parts as p (p.label)}<div><dt>{p.label}</dt><dd>{p.value}</dd></div>{/each}</dl></div>
+				</div>
+			{:else if bottom === 'c4'}
+				<!-- C4: one bar, the facts apart by thin dividers, the age rating at the end. -->
+				<div class="ac bar">
+					{#each parts as p (p.label)}<div><b>{p.value}</b><span class="cap">{p.label}</span></div>{/each}
+					{#if cert}<div><span class="fb cert">{cert}</span><span class="cap">Rated</span></div>{/if}
+				</div>
+			{:else}
+				<!-- C5: grouped cards (release and money, or run and now), the age rating alone. -->
+				<div class="ac-row">
+					{#each groupsC5 as g (g.title)}
+						<div class="ac group"><span class="cap">{g.title}</span><dl>{#each g.rows as p (p.label)}<div><dt>{p.label}</dt><dd>{p.value}</dd></div>{/each}</dl></div>
 					{/each}
+					{@render ratingCard()}
 				</div>
-			</section>
-		{/if}
+			{/if}
+			{@render linksLine()}
+		</section>
 		{:else}
 		<!-- The story; the ratings on their own row, then every detail in one even grid; where to watch; tags; then the trailers. -->
 		<div class="strip">
@@ -774,42 +771,42 @@
 	@media (max-width: 899px) { .side { grid-template-columns: minmax(0, 1fr); } }
 	.calm-meta { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 0; color: var(--text-muted); font: 500 15.5px/1.4 var(--font-ui); }
 	.calm .tagchips.quiet, .d-left .tagchips.quiet { margin-top: -6px; }
-	.about-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 28px 40px; }
-	.about-col h3 { margin: 0 0 12px; color: var(--text); font: 700 17px/1.2 var(--font-ui); }
-	.about-col dl { display: grid; gap: 14px; margin: 0; }
-	.about-col dt { color: var(--text); font: 500 14px/1.3 var(--font-ui); }
-	.cards { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 16px; }
-	.card { padding: 20px 22px; border-radius: 16px; background: var(--surface-1); }
-	.card h3 { margin: 0; color: var(--text); font: 700 20px/1.2 var(--font-ui); }
-	.card .caps { margin: 4px 0 10px; color: var(--text-muted); font: 700 12px/1.2 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
-	.card-rows { display: grid; gap: 10px; margin: 0; }
-	.card-rows div { display: flex; justify-content: space-between; gap: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--line); font: 500 15px/1.4 var(--font-ui); }
-	.card-rows div:last-child { border-bottom: 0; padding-bottom: 0; }
-	.card-rows dt { color: var(--text-muted); }
-	.card-rows dd { margin: 0; color: var(--text); text-align: right; }
-	.card .rating { margin: 0; }
 	.fb.cert.big { height: 34px; padding: 0 12px; font-size: 17px; border-radius: 7px; }
 	.card-links { display: flex; flex-wrap: wrap; align-items: center; margin: 14px 0 0; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
+	.card-links a { color: var(--text); text-decoration: none; }
+	.card-links a:hover { text-decoration: underline; }
 	.card-links .sep { margin: 0 8px; color: var(--text-faint); }
-	.card .sum { margin: 0; color: var(--text-muted); font: 500 15px/1.5 var(--font-ui); }
-	.card-links a, .b-netflix a, .b-table a, .b-line a { color: var(--text); text-decoration: none; }
-	.card-links a:hover, .b-netflix a:hover, .b-table a:hover, .b-line a:hover { text-decoration: underline; }
-	@media (max-width: 699px) { .cards { grid-template-columns: minmax(0, 1fr); } }
-	.b-netflix dl { display: grid; gap: 8px; margin: 0; max-width: 760px; font: 400 15px/1.45 var(--font-ui); }
-	.b-netflix dl div { display: flex; flex-wrap: wrap; gap: 0 6px; }
-	.b-netflix dt { color: var(--text-muted); }
-	.b-netflix dd { margin: 0; color: var(--text); }
-	.b-line { display: grid; gap: 10px; padding-top: 4px; }
-	.b-line b { color: var(--text); font-weight: 700; }
-	.b-table dl { margin: 0; max-width: 760px; }
-	.b-table dl div { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); font: 500 15px/1.4 var(--font-ui); }
-	.b-table dt { color: var(--text-muted); }
-	.b-table dd { margin: 0; color: var(--text); text-align: right; }
+	.card-links a { color: var(--text); text-decoration: none; }
+	.card-links a:hover { text-decoration: underline; }
 	.bottom-pick { position: fixed; z-index: 30; left: 0; right: 0; bottom: 20px; width: max-content; max-width: calc(100vw - 24px); overflow-x: auto; margin-inline: auto; padding: 5px; border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow-lift); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); }
 	@media (max-width: 767px) { .bottom-pick { bottom: calc(var(--tabbar, 56px) + env(safe-area-inset-bottom) + 16px); } }
-	.about-link { color: var(--text); text-decoration: none; }
-	.about-link:hover { text-decoration: underline; }
-	.about-col dd { margin: 3px 0 0; color: var(--text-muted); font: 400 14px/1.45 var(--font-ui); }
+	/* About cards (C1–C5): Apple TV-like, no borders, one surface, small caps labels. */
+	.ab .ac { padding: 18px 20px; border-radius: 16px; background: var(--surface-1); min-width: 0; }
+	.ab .cap { color: var(--text-muted); font: 700 11.5px/1.2 var(--font-ui); letter-spacing: .07em; text-transform: uppercase; }
+	.ab h3 { margin: 0; color: var(--text); font: 700 20px/1.2 var(--font-ui); }
+	.ab h3 + .cap { display: block; margin: 4px 0 16px; }
+	.ab dl { margin: 0; }
+	.ab dt { color: var(--text-muted); font: 700 11.5px/1.2 var(--font-ui); letter-spacing: .07em; text-transform: uppercase; }
+	.ab dd { margin: 4px 0 0; color: var(--text); font: 600 17px/1.25 var(--font-ui); }
+	.ac-row { display: flex; flex-wrap: wrap; gap: 12px; }
+	.ac.small { display: flex; flex-direction: column; gap: 6px; flex: 1 1 130px; max-width: 200px; padding: 16px 18px; }
+	.ac.small b { color: var(--text); font: 700 20px/1.15 var(--font-ui); }
+	.rating-card { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 8px; flex: 0 0 auto; min-width: 110px; }
+	.ac-split { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: stretch; }
+	.ac-split.left { grid-template-columns: auto minmax(0, 1fr); }
+	.facts-row { display: flex; flex-wrap: wrap; gap: 14px 36px; }
+	.facts-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 28px; }
+	.ac.bar { display: flex; flex-wrap: wrap; padding: 0; }
+	.ac.bar > div { display: flex; flex-direction: column; gap: 6px; flex: 1 1 120px; padding: 16px 20px; }
+	.ac.bar > div + div { border-left: 1px solid var(--line); }
+	.ac.bar b { color: var(--text); font: 700 18px/1.2 var(--font-ui); }
+	.ac.bar .fb.cert { align-self: flex-start; }
+	.ac.group { display: flex; flex-direction: column; gap: 12px; flex: 1 1 200px; }
+	.ac.group dl { display: grid; gap: 10px; }
+	.ac.group dl div { display: flex; justify-content: space-between; gap: 12px; }
+	.ac.group dt { text-transform: none; letter-spacing: 0; font: 500 15px/1.3 var(--font-ui); }
+	.ac.group dd { margin: 0; font-size: 15px; }
+	@media (max-width: 599px) { .ac-split, .ac-split.left { grid-template-columns: minmax(0, 1fr); } .ac.small { max-width: none; } .ac.bar > div + div { border-left: 0; } }
 	.tagchips.quiet li { background: none; border: 1px solid var(--line); color: var(--text-muted); font-size: 12px; }
 	@media (max-width: 899px) { .decide { grid-template-columns: minmax(0, 1fr); } }
 	.facts-grid { display: grid; grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); gap: 16px 28px; margin: 0; padding: 16px 0; }
