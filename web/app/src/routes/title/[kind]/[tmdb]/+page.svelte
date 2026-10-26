@@ -28,7 +28,6 @@
 	import { aboutPicks, aboutShown } from '#lib/about-picks.svelte.ts';
 	import { awardsTip, loadWikiFacts, type WikiAward } from '#lib/wiki-facts.ts';
 	import type { TagsAt, TitleLook } from '#lib/title-look.svelte.ts';
-	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -242,12 +241,8 @@
 	// The chosen layout (V5: facts row and story left, credits right; tags under the story).
 	// The chosen layout (E): facts row and story left, credits right; Information at the bottom. Desktop first.
 	const look = 'side' as TitleLook;
-	// About cards while Luis compares (?cards=two): three cards (title, ratings, awards) or two wide ones.
-	const CARD_LOOKS = [
-		{ value: 'three', label: 'Three cards' },
-		{ value: 'two', label: 'Two wide cards' }
-	];
-	let cardLook = $state((typeof location !== 'undefined' && new URLSearchParams(location.search).get('cards') === 'two' && 'two') || 'three');
+	// About cards: two wide ones (ratings, awards); no title card, the story is already at the top.
+	const cardLook: string = 'two';
 	// The facts row shows the 3 picked scores (Settings › Appearance); the Ratings card at the bottom lists every source.
 	const top: string = 'r1';
 	const topScores = $derived(picked.scores);
@@ -416,6 +411,24 @@
 			{ title: d.kind === 'show' ? 'Schedule' : 'Release & Box Office', rows: release }
 		].filter((c) => c.rows.length);
 	});
+	// One quiet line under the buttons: where a request stands, then how big or how available the title is.
+	const requestLine = $derived.by(() => {
+		if (!details) return '';
+		const d = details;
+		const i = info;
+		const out: string[] = [];
+		if (d.ask) out.push(d.ask.mine ? `You requested this · ${d.ask.state_label}` : `Requested by ${d.ask.people} ${d.ask.people === 1 ? 'person' : 'people'} · ${d.ask.state_label}`);
+		if (d.kind === 'show') {
+			const eps = seasons.filter((x) => x.number > 0).reduce((n, x) => n + (x.episodes ?? 0), 0);
+			const status = statusWord(i?.status) || i?.status || '';
+			out.push([status, eps ? `${eps} episodes` : ''].filter(Boolean).join(' · '));
+		} else if (i) {
+			const now = Date.now();
+			const past = (x?: string) => !!x && Date.parse(x) <= now;
+			out.push(past(i.dates.digital) || past(i.dates.physical) ? 'Out on digital and disc' : past(i.dates.theaters) ? 'In theaters, not on digital yet' : i.dates.theaters ? `In theaters ${fmtDay(i.dates.theaters)}` : '');
+		}
+		return out.filter(Boolean).join('  ·  ');
+	});
 	// The short facts: one label, one value each.
 	const parts = $derived.by((): { label: string; value: string }[] => {
 		if (!details || !info) return [];
@@ -560,18 +573,19 @@
 			statusLabel={d.neverAdd || d.ask ? heroPill(d).label : undefined}
 			vtName={tmdbArtName(d.kind, d.tmdb)}
 		>
+			{#snippet byline()}{#if requestLine}<p class="request-line" data-testid="request-line">{requestLine}</p>{/if}{/snippet}
 			{#snippet actions()}
 				{#if manage && !d.neverAdd}
 					{#if d.kind === 'movie' && d.movie}
-						<ActionButton icon="plus" label="Add {d.name}" caption="Add" primary onclick={() => addMovie?.open(d.movie as LookupMovie)} />
+						<ActionButton icon="plus" label="Add {d.name} to the library" caption="Add to library" primary onclick={() => addMovie?.open(d.movie as LookupMovie)} />
 					{:else if d.kind === 'show' && d.show}
-						<ActionButton icon="plus" label="Add {d.name}" caption="Add" primary onclick={() => addShow?.open(d.show as LookupShow)} />
+						<ActionButton icon="plus" label="Add {d.name} to the library" caption="Add to library" primary onclick={() => addShow?.open(d.show as LookupShow)} />
 					{/if}
 				{:else if mayAsk && !d.neverAdd}
 					{#if d.kind === 'movie'}
-						<ActionButton icon="wish" label={d.ask ? `Ask for ${d.name} too` : `Ask for ${d.name}`} caption={d.ask?.mine ? 'Asked' : d.ask ? 'Ask too' : 'Ask'} primary disabled={!!d.ask?.mine} onclick={() => askMovieDialog?.open({ tmdb: d.tmdb, name: d.name, year: d.year, ask: d.ask })} />
+						<ActionButton icon="wish" label={d.ask ? `Ask for ${d.name} too` : `Ask for ${d.name}`} caption={d.ask?.mine ? 'Requested' : d.ask ? 'Request too' : 'Request'} primary disabled={!!d.ask?.mine} onclick={() => askMovieDialog?.open({ tmdb: d.tmdb, name: d.name, year: d.year, ask: d.ask })} />
 					{:else if d.show}
-						<ActionButton icon="wish" label={d.ask ? `Ask for ${d.name} too` : `Ask for ${d.name}`} caption={d.ask ? 'Ask too' : 'Ask'} primary onclick={() => askShow?.open(d.show as LookupShow)} />
+						<ActionButton icon="wish" label={d.ask ? `Ask for ${d.name} too` : `Ask for ${d.name}`} caption={d.ask ? 'Request too' : 'Request'} primary onclick={() => askShow?.open(d.show as LookupShow)} />
 					{/if}
 				{/if}
 				{#if d.kind === 'show'}<FollowButton tmdb={d.tmdb} kind="show" />{/if}
@@ -724,7 +738,7 @@
 						<article class="atv-card">
 							<h3 id="ratings">Ratings</h3>
 							<p class="atv-cap">Out of 10</p>
-							<div class="atv-scores" class:cols={cardLook === 'two'}><TitleScores scores={outside} tmdb={rich?.score ?? scoreOf(d.rating)} variant="list" outOf10 showMissing /></div>
+							<div class="atv-scores" class:cols={cardLook === 'two'}><TitleScores scores={outside} tmdb={rich?.score ?? scoreOf(d.rating)} variant="list" outOf10 /></div>
 						</article>
 					{/if}
 					{#if awards.length}
@@ -751,7 +765,6 @@
 				<p class="atv-links">{#each outLinks as l, i (l.name)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name} ↗</a>{/each}</p>
 			</section>
 		{/if}
-		<div class="cards-pick" data-testid="cards-pick"><SegmentedControl options={CARD_LOOKS} bind:value={cardLook} label="About cards" size="sm" /></div>
 		{#snippet ratingCard()}
 			{#if cert}<div class="ac rating-card"><span class="fb cert big">{cert}</span><span class="cap">Rated</span></div>{/if}
 		{/snippet}
@@ -837,6 +850,7 @@
 	.top-scores { display: contents; color: inherit; text-decoration: none; }
 	.top-scores.grey :global(.mark) { filter: grayscale(1); opacity: .75; }
 	#ratings { scroll-margin-top: 90px; }
+	.request-line { margin: 0; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
 	.calm-meta .sep { margin: 0 8px; color: var(--text-faint); }
 	.credits { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: -4px 0 0; color: var(--text); font: 500 14px/1.45 var(--font-ui); }
 	.credits .cl, .side-credits dt { color: var(--text-muted); font-weight: 500; }
@@ -868,7 +882,6 @@
 	.atv-scores.cols :global(.list) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 36px; }
 	.atv-awards { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; color: var(--text); font: 500 14.5px/1.4 var(--font-ui); }
 	.atv-more { margin: 10px 0 0; color: var(--text-muted); font: 500 13px/1.4 var(--font-ui); }
-	.cards-pick { position: fixed; z-index: 30; left: 0; right: 0; bottom: 20px; width: max-content; max-width: calc(100vw - 24px); margin-inline: auto; padding: 5px; border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow-lift); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); }
 	.atv-card h3 { margin: 0; color: var(--text); font: 700 17px/1.25 var(--font-ui); }
 	.atv-cap { margin: 4px 0 8px; color: var(--text-muted); font: 600 11px/1.2 var(--font-ui); letter-spacing: .02em; text-transform: uppercase; }
 	.atv-text { margin: 0; color: var(--text-muted); font: 500 14.5px/1.4 var(--font-ui); }

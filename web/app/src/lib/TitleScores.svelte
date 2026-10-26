@@ -78,7 +78,8 @@
 	.mono li + li { margin-left: 8px; }
 	.mono li + li::before { content: '·'; margin-right: 3px; color: var(--text-faint); }
 	.mono .v { font-size: 15.5px; font-weight: 600; color: var(--text); }
-	.mono .n { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+	.mono .n { order: 3; color: var(--text-muted); font: 500 13.5px/1 var(--font-ui); }
+	.mono li:has(.mark.imdb) .n, .mono li:has(.mark.tmdb) .n { display: none; }
 
 	/* tiles: big numbers with the name under them. */
 	.tiles { display: flex; flex-wrap: wrap; gap: 14px 28px; }
