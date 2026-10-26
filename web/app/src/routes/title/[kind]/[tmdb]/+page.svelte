@@ -28,7 +28,6 @@
 	import { aboutPicks, aboutShown } from '#lib/about-picks.svelte.ts';
 	import { awardsTip, loadWikiFacts, type WikiAward } from '#lib/wiki-facts.ts';
 	import type { TagsAt, TitleLook } from '#lib/title-look.svelte.ts';
-	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -240,15 +239,8 @@
 	});
 	// Where the facts line and tagline go while the options are compared (title-look.svelte.ts).
 	// The chosen layout (V5: facts row and story left, credits right; tags under the story).
-	// Five layouts from the Apple TV / Netflix / MUBI / Google TV research, on a switch while Luis compares (?look=).
-	const LOOKS: { value: TitleLook; label: string }[] = [
-		{ value: 'ledger', label: 'A · Calm + ledger' },
-		{ value: 'mubi', label: 'B · MUBI' },
-		{ value: 'google', label: 'C · Score first' },
-		{ value: 'netflix1', label: 'D · Netflix column' },
-		{ value: 'side', label: 'E · Two columns' }
-	];
-	let look = $state<TitleLook>((typeof location !== 'undefined' && LOOKS.find((l) => l.value === new URLSearchParams(location.search).get('look'))?.value) || 'ledger');
+	// The chosen layout (E): facts row and story left, credits right; Information at the bottom. Desktop first.
+	const look = 'side' as TitleLook;
 	const moreFacts = $derived.by((): [string, string][] => {
 		if (!info) return [];
 		const i = info;
@@ -670,7 +662,6 @@
 				<p class="ledger-links">{#each outLinks as l, i (l.name)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name}</a>{/each}</p>
 			</section>
 		{/if}
-		<div class="look-pick" data-testid="look-pick"><SegmentedControl options={LOOKS} bind:value={look} label="Title layout" size="sm" /></div>
 		{#snippet ratingCard()}
 			{#if cert}<div class="ac rating-card"><span class="fb cert big">{cert}</span><span class="cap">Rated</span></div>{/if}
 		{/snippet}
@@ -779,8 +770,6 @@
 	.ledger-links a { color: var(--text-muted); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
 	.ledger-links a:hover { color: var(--text); }
 	@media (max-width: 899px) { .ledger dl { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-	.look-pick { position: fixed; z-index: 30; left: 0; right: 0; bottom: 20px; width: max-content; max-width: calc(100vw - 24px); overflow-x: auto; margin-inline: auto; padding: 5px; border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow-lift); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); }
-	@media (max-width: 767px) { .look-pick { bottom: calc(var(--tabbar, 56px) + env(safe-area-inset-bottom) + 16px); } }
 	.card-links { display: flex; flex-wrap: wrap; align-items: center; margin: 14px 0 0; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
 	.card-links a { color: var(--text); text-decoration: none; }
 	.card-links a:hover { text-decoration: underline; }
