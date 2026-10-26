@@ -24,7 +24,6 @@
 
 	const ps = $derived(pillState(answer?.sources, picked));
 	const orders = $derived(ordersOf(answer?.sources, ps.active));
-	const sourceName = $derived(ps.pills.find((p) => p.id === ps.active)?.name ?? 'TMDB');
 	const moreToRead = $derived(!!answer && answer.page < answer.pages);
 
 	function load(page: number, ctl?: AbortController) {
@@ -87,9 +86,9 @@
 					<p class="sum" data-testid="review-score">
 						{#if answer && shownScore(answer.score, answer.votes) !== undefined}
 							<span class="star" aria-hidden="true">★</span><b>{scoreText(answer.score)}</b><span class="of">/10</span>
-							<span class="muted">{votesText(answer.votes)} on {sourceName}{typeof answer.watching === 'number' ? ` · ${answer.watching.toLocaleString()} watching now` : ''}</span>
+							<span class="muted">{votesText(answer.votes)}{typeof answer.watching === 'number' ? ` · ${answer.watching.toLocaleString()} watching now` : ''}</span>
 						{:else}
-							<span class="muted">No score on {sourceName} yet.</span>
+							<span class="muted">No score yet.</span>
 						{/if}
 					</p>
 					{#if ps.pills.length > 1}
@@ -131,8 +130,8 @@
 				{/if}
 			{/if}
 		</Shelf>
-		{#if !answer.reviews_hidden && !reviews.length && !loading}<p class="muted">No written reviews on {sourceName} yet.</p>{/if}
-		{#if failed}<p class="muted">{sourceName} did not answer; try again shortly.</p>{/if}
+		{#if !answer.reviews_hidden && !reviews.length && !loading}<p class="muted">No written reviews yet.</p>{/if}
+		{#if failed}<p class="muted">Reviews could not be loaded; try again shortly.</p>{/if}
 	</div>
 	<Sheet bind:open={sheet} title={reading ? `Review by ${reading.author || 'Someone'}` : 'Review'} size="md">
 		{#if reading}
