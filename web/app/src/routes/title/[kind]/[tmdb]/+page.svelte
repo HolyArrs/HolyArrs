@@ -425,24 +425,6 @@
 			{ title: d.kind === 'show' ? 'Schedule' : 'Release & Box Office', rows: release }
 		].filter((c) => c.rows.length);
 	});
-	// One quiet line under the buttons: where a request stands, then how big or how available the title is.
-	const requestLine = $derived.by(() => {
-		if (!details) return '';
-		const d = details;
-		const i = info;
-		const out: string[] = [];
-		if (d.ask) out.push(d.ask.mine ? `You requested this · ${d.ask.state_label}` : `Requested by ${d.ask.people} ${d.ask.people === 1 ? 'person' : 'people'} · ${d.ask.state_label}`);
-		if (d.kind === 'show') {
-			const eps = seasons.filter((x) => x.number > 0).reduce((n, x) => n + (x.episodes ?? 0), 0);
-			const status = statusWord(i?.status) || i?.status || '';
-			out.push([status, eps ? `${eps} episodes` : ''].filter(Boolean).join(' · '));
-		} else if (i) {
-			const now = Date.now();
-			const past = (x?: string) => !!x && Date.parse(x) <= now;
-			out.push(past(i.dates.digital) || past(i.dates.physical) ? 'Out on digital and disc' : past(i.dates.theaters) ? 'In theaters, not on digital yet' : i.dates.theaters ? `In theaters ${fmtDay(i.dates.theaters)}` : '');
-		}
-		return out.filter(Boolean).join('  ·  ');
-	});
 	// The short facts: one label, one value each.
 	const parts = $derived.by((): { label: string; value: string }[] => {
 		if (!details || !info) return [];
@@ -587,7 +569,6 @@
 			statusLabel={d.neverAdd || d.ask ? heroPill(d).label : undefined}
 			vtName={tmdbArtName(d.kind, d.tmdb)}
 		>
-			{#snippet byline()}{#if view.status && requestLine}<p class="request-line" data-testid="request-line">{requestLine}</p>{/if}{/snippet}
 			{#snippet actions()}
 				{#if manage && !d.neverAdd}
 					{#if d.kind === 'movie' && d.movie}
@@ -877,7 +858,6 @@
 	.top-scores { display: contents; color: inherit; text-decoration: none; }
 	.top-scores.grey :global(.mark) { filter: grayscale(1); opacity: .75; }
 	#ratings { scroll-margin-top: 90px; }
-	.request-line { margin: 0; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
 	.tp.old-gap { --tp-gap: clamp(24px, 3.4vw, 38px); }
 	.tp.no-names :global(.mono .n) { display: none; }
 	.view-pick { position: fixed; z-index: 30; left: 0; right: 0; bottom: 20px; width: max-content; max-width: calc(100vw - 24px); overflow-x: auto; margin-inline: auto; padding: 5px; border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow-lift); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); }
