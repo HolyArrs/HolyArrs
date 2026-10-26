@@ -129,7 +129,7 @@ func TestTMDBBadTokenNotLeaked(t *testing.T) {
 func TestTMDBRateLimitAndTimeout(t *testing.T) {
 	var hits atomic.Int32
 	p := newTMDB(fakeTMDB(t, &hits), fakeCred)
-	if _, err := p.Movie(context.Background(), "tmdb:429"); err == nil || !strings.Contains(err.Error(), "rate") {
+	if _, err := p.Movie(context.Background(), "tmdb:429"); err == nil || !strings.Contains(err.Error(), "busy") {
 		t.Fatalf("429: %v", err)
 	}
 	if hits.Load() != 2 {
