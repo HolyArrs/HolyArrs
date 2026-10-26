@@ -882,29 +882,31 @@
 	.grey-credits p { margin: 0; }
 	.grey-credits a { color: var(--text); text-decoration: none; }
 	/* About band, Apple TV-like: lighter strip edge to edge, cards, then label/value columns. */
-	.atv { position: relative; margin-top: 32px; padding: 40px 0 44px; border-top: 1px solid var(--line); background: var(--atv-band); box-shadow: 0 0 0 100vmax var(--atv-band); clip-path: inset(0 -100vmax); --atv-band: color-mix(in srgb, var(--text) 4%, var(--bg)); --atv-card: color-mix(in srgb, var(--text) 11%, var(--bg)); }
+	/* About band, measured on tv.apple.com (1440-1650 px desktop): band one step lighter than the page (#2b2b2b on #1f1f1f),
+	   cards white 10% with 12 px corners and 14/16/16 padding, 20 px gaps; 17 px bold titles, 11 px caps, 15/20 text, 12 px facts. */
+	.atv { position: relative; margin-top: 32px; padding: 32px 0 40px; background: var(--atv-band); box-shadow: 0 0 0 100vmax var(--atv-band); clip-path: inset(0 -100vmax); --atv-band: color-mix(in srgb, var(--text) 7%, var(--bg)); --atv-card: rgb(255 255 255 / 10%); }
 	:global([data-theme='light']) .atv { --atv-band: color-mix(in srgb, var(--text) 5%, var(--bg)); --atv-card: var(--bg); }
-	.atv-scores :global(.list li) { padding: 3px 0; border-top: 0; font-size: 14.5px; }
-	.atv-scores :global(.list .n) { color: var(--text-muted); font-size: 14.5px; }
-	.atv-scores :global(.list .v) { color: var(--text-muted); font: 500 14.5px/1.4 var(--font-ui); font-variant-numeric: tabular-nums; }
-	.atv-h { margin: 0 0 14px; color: var(--text); font: 700 20px/1.2 var(--font-ui); }
+	.atv-scores :global(.list li) { padding: 0; border-top: 0; font-size: 15px; line-height: 20px; }
+	.atv-scores :global(.list .n) { color: var(--text-muted); font: 400 15px/20px var(--font-ui); }
+	.atv-scores :global(.list .v) { color: var(--text-muted); font: 400 15px/20px var(--font-ui); font-variant-numeric: tabular-nums; }
+	.atv-h { margin: 0 0 13px; color: var(--text); font: 700 17px/21px var(--font-ui); }
 	.atv-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
-	.atv-card { min-width: 0; padding: 16px 18px 18px; border-radius: 12px; background: var(--atv-card); box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%); }
+	.atv-card { min-width: 0; padding: 14px 16px 16px; border-radius: 12px; background: var(--atv-card); }
 	/* Cards keep a third of the width each, however many there are (never one stretched card). */
-	.atv-awards { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; color: var(--text); font: 500 14.5px/1.4 var(--font-ui); }
-	.atv-more { margin: 10px 0 0; color: var(--text-muted); font: 500 13px/1.4 var(--font-ui); }
-	.atv-card h3 { margin: 0; color: var(--text); font: 700 17px/1.25 var(--font-ui); }
-	.atv-cap { margin: 4px 0 8px; color: var(--text-muted); font: 600 11px/1.2 var(--font-ui); letter-spacing: .02em; text-transform: uppercase; }
-	.atv-text { margin: 0; color: var(--text-muted); font: 500 14.5px/1.4 var(--font-ui); }
+	.atv-awards { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; color: var(--text-muted); font: 400 15px/20px var(--font-ui); }
+	.atv-more { margin: 6px 0 0; color: var(--text-muted); font: 400 13px/16px var(--font-ui); }
+	.atv-card h3 { margin: 0; padding-bottom: 5px; color: var(--text); font: 700 17px/21px var(--font-ui); }
+	.atv-cap { margin: 0; padding-bottom: 5px; color: var(--text-muted); font: 400 11px/14px var(--font-ui); text-transform: uppercase; }
+	.atv-text { margin: 0; color: var(--text-muted); font: 400 15px/20px var(--font-ui); }
 	.atv-text.clamp { display: -webkit-box; -webkit-line-clamp: 4; line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 	.atv-rows { display: grid; gap: 2px; margin: 0; }
-	.atv-rows div { display: flex; justify-content: space-between; gap: 12px; color: var(--text-muted); font: 500 14.5px/1.4 var(--font-ui); }
+	.atv-rows div { display: flex; justify-content: space-between; gap: 12px; color: var(--text-muted); font: 400 15px/20px var(--font-ui); }
 	.atv-rows dd { margin: 0; color: var(--text-muted); font-variant-numeric: tabular-nums; }
-	.atv-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 20px; margin: 0; }
-	.atv-grid dt { color: var(--text); font: 600 13px/1.3 var(--font-ui); }
-	.atv-grid dd { margin: 1px 0 0; color: var(--text-muted); font: 500 13px/1.35 var(--font-ui); }
-	.atv-h3 { margin: 24px 0 14px; color: var(--text); font: 700 18px/1.2 var(--font-ui); }
-	.atv-links { display: flex; flex-wrap: wrap; align-items: center; margin: 22px 0 0; color: var(--text-muted); font: 500 13px/1.4 var(--font-ui); }
+	.atv-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin: 0; }
+	.atv-grid dt { color: var(--text); font: 400 12px/16px var(--font-ui); }
+	.atv-grid dd { margin: 0; color: var(--text-muted); font: 400 12px/16px var(--font-ui); }
+	.atv-h3 { margin: 22px 0 13px; color: var(--text); font: 700 17px/21px var(--font-ui); }
+	.atv-links { display: flex; flex-wrap: wrap; align-items: center; margin: 20px 0 0; color: var(--text-muted); font: 400 12px/16px var(--font-ui); }
 	.atv-links .sep { margin: 0 8px; color: var(--text-faint); }
 	.atv-links a { color: var(--text-muted); text-decoration: none; }
 	.atv-links a:hover { color: var(--text); }
