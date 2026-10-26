@@ -16,7 +16,7 @@
 	// then the outside ratings. chips: one line of marks and numbers; tiles:
 	// big numbers with a short name under each; list: name left, score right;
 	// mono: the chips line in one quiet color, for a facts row.
-	let { scores = [], tmdb, variant = 'chips', outOf10 = false }: { scores?: OutsideScore[]; tmdb?: number | null; variant?: 'chips' | 'tiles' | 'list' | 'mono'; outOf10?: boolean } = $props();
+	let { scores = [], tmdb, variant = 'chips', outOf10 = false, showMissing = false }: { scores?: OutsideScore[]; tmdb?: number | null; variant?: 'chips' | 'tiles' | 'list' | 'mono'; outOf10?: boolean; showMissing?: boolean } = $props();
 	const marks: Record<string, string> = { imdb: 'IMDb', metacritic: 'MC', letterboxd: 'LB', trakt: 'Trakt' };
 	const short: Record<string, string> = { imdb: 'IMDb', rt_critics: 'Critics', rt_audience: 'Audience', metacritic: 'Metacritic', letterboxd: 'Letterboxd', trakt: 'Trakt' };
 	const tmdbText = $derived(tmdb ? (Math.round(tmdb * 10) / 10).toFixed(1) : '');
@@ -41,12 +41,17 @@
 		{#each scores as s (s.source)}
 			<li title={`${scoreName(s.source)}: ${scoreText(s)}${s.votes ? ` (${s.votes.toLocaleString()} votes)` : ''}`}>{@render mark(s.source)}<span class="v">{outOf10 ? ((Math.round((s.value / s.max) * 100) / 10).toFixed(1)) : scoreText(s)}</span><span class="n">{variant === 'list' ? scoreName(s.source) : short[s.source]}</span></li>
 		{/each}
+		<!-- Every source the app reads, even when this title has no score there yet. -->
+		{#each showMissing ? ['imdb', 'rt_critics', 'rt_audience', 'metacritic', 'letterboxd', 'trakt'].filter((x) => !scores.some((s) => s.source === x)) : [] as source (source)}
+			<li class="missing" title="{scoreName(source)}: no score yet">{@render mark(source)}<span class="v">-</span><span class="n">{scoreName(source)}</span></li>
+		{/each}
 	</ul>
 {/if}
 
 <style>
 	.scores { margin: 0; padding: 0; list-style: none; }
 	li { color: var(--text); font-variant-numeric: tabular-nums; }
+	li.missing { opacity: .45; }
 	.mark { display: inline-flex; align-items: center; justify-content: center; flex: none; height: 18px; min-width: 18px; padding: 0 4px; border-radius: 4px; font: 800 10.5px/1 var(--font-ui); letter-spacing: .01em; }
 	.mark.imdb { background: #f5c518; color: #000; }
 	.mark.metacritic { background: #333; color: #ffcc34; }

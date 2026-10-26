@@ -23,4 +23,7 @@ describe('shown ratings', () => {
 		expect(shownRatings([s('imdb', 8.5, 10)], 8.4, DEFAULT_RATINGS, true)).toEqual({ scores: [s('imdb', 8.5, 10)], tmdb: 8.4 });
 		expect(shownRatings(some, 8.4, DEFAULT_RATINGS).scores.map((x) => x.source)).toEqual(['imdb']);
 	});
+	it('shows no scores when every source is turned off', () => {
+		expect(shownRatings([s('imdb', 8.5, 10)], 8.4, [])).toEqual({ scores: [], tmdb: undefined });
+	});
 });

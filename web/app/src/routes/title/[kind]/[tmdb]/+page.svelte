@@ -28,7 +28,6 @@
 	import { aboutPicks, aboutShown } from '#lib/about-picks.svelte.ts';
 	import { awardsTip, loadWikiFacts, type WikiAward } from '#lib/wiki-facts.ts';
 	import type { TagsAt, TitleLook } from '#lib/title-look.svelte.ts';
-	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -242,19 +241,10 @@
 	// The chosen layout (V5: facts row and story left, credits right; tags under the story).
 	// The chosen layout (E): facts row and story left, credits right; Information at the bottom. Desktop first.
 	const look = 'side' as TitleLook;
-	// Scores in the facts row, while Luis compares (?top=): R1 the 3 picked, R2 IMDb + RT critics, R3 IMDb only,
-	// R4 the two in grey, R5 none (only the Ratings card at the bottom).
-	const TOPS = [
-		{ value: 'r2', label: 'R2 · IMDb + RT' },
-		{ value: 'r1', label: 'R1 · 3 picked' },
-		{ value: 'r3', label: 'R3 · IMDb only' },
-		{ value: 'r4', label: 'R4 · Two in grey' },
-		{ value: 'r5', label: 'R5 · None' }
-	];
-	let top = $state((typeof location !== 'undefined' && TOPS.find((t) => t.value === new URLSearchParams(location.search).get('top'))?.value) || 'r2');
-	// The best-known audience score (IMDb, else TMDB below) and the best-known critics score (RT critics).
-	const topScores = $derived(top === 'r1' ? picked.scores : outside.filter((o) => o.source === 'imdb' || (top !== 'r3' && o.source === 'rt_critics')));
-	const topTmdb = $derived(top === 'r1' ? picked.tmdb : !outside.some((o) => o.source === 'imdb') ? (rich?.score ?? scoreOf(details?.rating)) || undefined : undefined);
+	// The facts row shows the 3 picked scores (Settings › Appearance); the Ratings card at the bottom lists every source.
+	const top: string = 'r1';
+	const topScores = $derived(picked.scores);
+	const topTmdb = $derived(picked.tmdb);
 	const moreFacts = $derived.by((): [string, string][] => {
 		if (!info) return [];
 		const i = info;
@@ -722,7 +712,7 @@
 						<article class="atv-card">
 							<h3 id="ratings">Ratings</h3>
 							<p class="atv-cap">Out of 10</p>
-							<div class="atv-scores"><TitleScores scores={outside} tmdb={rich?.score ?? scoreOf(d.rating)} variant="list" outOf10 /></div>
+							<div class="atv-scores"><TitleScores scores={outside} tmdb={rich?.score ?? scoreOf(d.rating)} variant="list" outOf10 showMissing /></div>
 						</article>
 					{/if}
 					{#if awards.length}
@@ -741,7 +731,6 @@
 				<p class="atv-links">{#each outLinks as l, i (l.name)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name} ↗</a>{/each}</p>
 			</section>
 		{/if}
-		<div class="top-pick" data-testid="top-pick"><SegmentedControl options={TOPS} bind:value={top} label="Scores at the top" size="sm" /></div>
 		{#snippet ratingCard()}
 			{#if cert}<div class="ac rating-card"><span class="fb cert big">{cert}</span><span class="cap">Rated</span></div>{/if}
 		{/snippet}
@@ -827,7 +816,6 @@
 	.top-scores { display: contents; color: inherit; text-decoration: none; }
 	.top-scores.grey :global(.mark) { filter: grayscale(1); opacity: .75; }
 	#ratings { scroll-margin-top: 90px; }
-	.top-pick { position: fixed; z-index: 30; left: 0; right: 0; bottom: 20px; width: max-content; max-width: calc(100vw - 24px); overflow-x: auto; margin-inline: auto; padding: 5px; border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow-lift); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); }
 	.calm-meta .sep { margin: 0 8px; color: var(--text-faint); }
 	.credits { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: -4px 0 0; color: var(--text); font: 500 14px/1.45 var(--font-ui); }
 	.credits .cl, .side-credits dt { color: var(--text-muted); font-weight: 500; }

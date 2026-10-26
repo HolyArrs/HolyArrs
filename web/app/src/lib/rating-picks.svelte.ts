@@ -39,7 +39,11 @@ try {
 // custom: picked here at least once; while false a title fills up to three scores.
 export const ratingPicks = $state<{ list: RatingSource[]; custom: boolean }>({ list: typeof window === 'undefined' ? DEFAULT_RATINGS : stored(), custom: saved });
 
+/** At most three scores at the top of a title page. */
+export const MAX_RATINGS = 3;
+
 export function setRatingPick(id: RatingSource, on: boolean) {
+	if (on && !ratingPicks.list.includes(id) && ratingPicks.list.length >= MAX_RATINGS) return;
 	const next = ORDER.filter((s) => (s === id ? on : ratingPicks.list.includes(s)));
 	ratingPicks.list = next;
 	ratingPicks.custom = true;
@@ -65,6 +69,8 @@ export function resetRatingPicks() {
  * TMDB score when picked; with none of them, the first score it has in ORDER.
  */
 export function shownRatings(scores: OutsideScore[], tmdb: number | null | undefined, picks: RatingSource[], fill = false): { scores: OutsideScore[]; tmdb: number | undefined } {
+	// None picked on purpose: no scores at the top (the full list stays at the bottom of the page).
+	if (!fill && picks.length === 0) return { scores: [], tmdb: undefined };
 	const out = scores.filter((s) => picks.includes(s.source as RatingSource));
 	let t = tmdb && picks.includes('tmdb') ? tmdb : undefined;
 	// Still on the default three (never changed here): a title missing one of

@@ -3,7 +3,7 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
-	import { DEFAULT_RATINGS, RATING_SOURCES, ratingPicks, resetRatingPicks, setRatingPick } from '#lib/rating-picks.svelte.ts';
+	import { DEFAULT_RATINGS, MAX_RATINGS, RATING_SOURCES, ratingPicks, resetRatingPicks, setRatingPick } from '#lib/rating-picks.svelte.ts';
 	import { ABOUT_ITEMS, aboutIsDefault, aboutPicks, resetAboutPicks, setAboutPick } from '#lib/about-picks.svelte.ts';
 	const aboutGroups = ['Information', 'Production', 'Links', 'Ratings', 'Feel'] as const;
 	const isDefault = $derived(!ratingPicks.custom && ratingPicks.list.length === DEFAULT_RATINGS.length && DEFAULT_RATINGS.every((r) => ratingPicks.list.includes(r)));
@@ -32,14 +32,14 @@
 		{#each RATING_SOURCES as r (r.id)}
 			<li>
 				<label class="switch" data-testid="rating-pick-{r.id}">
-					<input type="checkbox" checked={ratingPicks.list.includes(r.id)} onchange={(e) => setRatingPick(r.id, e.currentTarget.checked)} />
+					<input type="checkbox" checked={ratingPicks.list.includes(r.id)} disabled={!ratingPicks.list.includes(r.id) && ratingPicks.list.length >= MAX_RATINGS} onchange={(e) => setRatingPick(r.id, e.currentTarget.checked)} />
 					<span class="sw" aria-hidden="true"></span>
 					<span><b>{r.name}</b><br /><span class="hint">{r.about}</span></span>
 				</label>
 			</li>
 		{/each}
 	</ul>
-	<p class="hint">While you keep the default three, a title missing one of them shows the next score it has instead, so there are always three. Once you change them, pages show exactly your picks (and one score when a title has none of them).</p>
+	<p class="hint">Up to three, shown next to the year at the top of a title page; every source is listed in Ratings at the bottom. Turn them all off for no scores at the top. While you keep the default three, a title missing one shows the next score it has instead.</p>
 	{#if !isDefault}<button type="button" class="btn ghost" onclick={resetRatingPicks}>Back to the default three</button>{/if}
 </SettingsCard>
 
