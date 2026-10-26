@@ -355,6 +355,52 @@
 	const aboutFacts = $derived(look === 'decide' ? facts.filter((f) => !keyFacts.includes(f)) : facts);
 	let aboutWidth = $state(0);
 	const tagsAt = 'band' as TagsAt;
+	// Bottom section while Luis compares: the About columns (default) or Details tiles (?about=details).
+	const bottom = typeof location !== 'undefined' && new URLSearchParams(location.search).get('about') === 'details' ? 'details' : 'about';
+	type Tile = { value: string; label: string };
+	// Details: a few big numbers that are not already at the top, then links out.
+	const tiles = $derived.by((): Tile[] => {
+		if (!details || !info) return [];
+		const d = details;
+		const i = info;
+		const out: Tile[] = [];
+		const ended = i.status === 'Ended' || i.status === 'Canceled';
+		if (d.kind === 'show') {
+			const eps = seasons.filter((x) => x.number > 0).reduce((n, x) => n + (x.episodes ?? 0), 0);
+			if (eps) out.push({ value: String(eps), label: eps === 1 ? 'episode' : 'episodes' });
+			const per = i.episodeRuntime ?? 0;
+			if (eps && per) out.push({ value: `~${Math.round((eps * per) / 60)} h`, label: `to watch it all, ~${per} min each` });
+			// How long it ran (or has been running): 9 years on air, 2011–2019.
+			const y1 = i.dates.firstAir ? Number(i.dates.firstAir.slice(0, 4)) : 0;
+			const y2 = ended && i.dates.lastAir ? Number(i.dates.lastAir.slice(0, 4)) : new Date().getFullYear();
+			if (y1 && y2 > y1) out.push({ value: `${y2 - y1 + 1} years`, label: ended ? `on air, ${y1}–${y2}` : `on air since ${y1}` });
+			if (i.nextEpisode) out.push({ value: fmtDay(i.nextEpisode.airDate), label: `next: S${i.nextEpisode.season} E${i.nextEpisode.episode}` });
+			else if (ended && i.dates.lastAir && !(y1 && y2 > y1)) out.push({ value: fmtMonth(i.dates.lastAir), label: i.status === 'Canceled' ? 'canceled' : 'last episode' });
+			else if (i.status) out.push({ value: statusWord(i.status) || i.status, label: 'status' });
+		} else {
+			if (i.revenue) out.push({ value: money(i.revenue), label: i.budget ? `box office, ${Math.round(i.revenue / i.budget)}× its budget` : 'box office' });
+			if (i.budget) out.push({ value: money(i.budget), label: 'budget' });
+			if (i.dates.theaters) out.push({ value: fmtMonth(i.dates.theaters), label: 'in theaters' });
+			if (i.dates.digital) out.push({ value: fmtMonth(i.dates.digital), label: 'digital release' });
+			else if (i.dates.theaters && Date.parse(i.dates.theaters) > Date.now() - 120 * 864e5) out.push({ value: 'Not yet', label: 'digital release' });
+		}
+		return out.slice(0, 4);
+	});
+	// One quiet line, only when it says something: not in English, or known by another title.
+	const langLine = $derived(
+		[info?.originalLanguage && info.originalLanguage !== 'en' ? `In ${lang}` : '', info?.originalTitle ? `Original title: ${info.originalTitle}` : ''].filter(Boolean).join(' · ')
+	);
+	const outLinks = $derived.by(() => {
+		if (!details) return [];
+		const d = details;
+		const ids = (d.kind === 'movie' ? d.movie?.ids : d.show?.ids) as Record<string, string | undefined> | undefined;
+		return [
+			ids?.imdb ? { name: 'IMDb', href: `https://www.imdb.com/title/${ids.imdb}/` } : null,
+			{ name: 'TMDB', href: `https://www.themoviedb.org/${d.kind === 'show' ? 'tv' : 'movie'}/${d.tmdb}` },
+			{ name: 'Trakt', href: `https://trakt.tv/search/tmdb/${d.tmdb}?id_type=${d.kind}` },
+			d.kind === 'movie' ? { name: 'Letterboxd', href: `https://letterboxd.com/tmdb/${d.tmdb}/` } : null
+		].filter((x): x is { name: string; href: string } => !!x);
+	});
 	const aboutCols = $derived(Math.max(2, Math.min(aboutFacts.length, Math.floor((aboutWidth + 28) / ((aboutWidth < 600 ? 130 : 150) + 28)) || 2)));
 	// Columns: as many as fit (150 px each, 130 on a phone), at least two. One item alone on the last
 	// row is avoided with one column fewer; when that does not help it spans two columns (factSpan).
@@ -530,7 +576,20 @@
 		{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
 		{@render castRow()}
 		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} />
-		{#if aboutGroups.length}
+		{#if bottom === 'details'}
+			<section class="details" data-testid="title-details">
+				<h2 class="tp-h2">Details</h2>
+				{#if tiles.length}
+					<ul class="tiles">
+						{#each tiles as t (t.label)}<li><b>{t.value}</b><span>{t.label}</span></li>{/each}
+					</ul>
+				{/if}
+				{#if langLine}<p class="lang-line">{langLine}</p>{/if}
+				<ul class="out-links">
+					{#each outLinks as l (l.name)}<li><a href={l.href} target="_blank" rel="noopener noreferrer">{l.name}<span aria-hidden="true">↗</span></a></li>{/each}
+				</ul>
+			</section>
+		{:else if aboutGroups.length}
 			<section class="about" data-testid="title-about">
 				<h2 class="tp-h2">About</h2>
 				<div class="about-cols">
@@ -644,6 +703,16 @@
 	.about-col h3 { margin: 0 0 12px; color: var(--text); font: 700 17px/1.2 var(--font-ui); }
 	.about-col dl { display: grid; gap: 14px; margin: 0; }
 	.about-col dt { color: var(--text); font: 500 14px/1.3 var(--font-ui); }
+	.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+	.tiles li { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; border-radius: 14px; background: var(--surface-1); border: 1px solid var(--line); }
+	.tiles b { color: var(--text); font: 700 clamp(22px, 2vw, 28px)/1.1 var(--font-ui); letter-spacing: -0.01em; }
+	.tiles span { color: var(--text-muted); font: 500 13px/1.35 var(--font-ui); }
+	.lang-line { margin: 14px 0 0; color: var(--text-muted); font: 500 14px/1.45 var(--font-ui); }
+	.out-links { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 0; padding: 0; list-style: none; }
+	.out-links a { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); color: var(--text); font: 600 13.5px/1 var(--font-ui); text-decoration: none; transition: background var(--dur-fast) var(--ease-out); }
+	.out-links a:hover { background: var(--surface-2); }
+	.out-links a span { color: var(--text-muted); font-size: 12px; }
+	@media (max-width: 599px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .tiles li { padding: 14px; } }
 	.about-link { color: var(--text); text-decoration: none; }
 	.about-link:hover { text-decoration: underline; }
 	.about-col dd { margin: 3px 0 0; color: var(--text-muted); font: 400 14px/1.45 var(--font-ui); }
