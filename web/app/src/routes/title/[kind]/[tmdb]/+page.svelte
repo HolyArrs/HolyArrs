@@ -96,14 +96,14 @@
 		{ value: 't5', label: 'T5 · Side tabs' }
 	];
 	let ownView = $state((typeof location !== 'undefined' && OWN_VIEWS.find((v) => v.value === new URLSearchParams(location.search).get('own'))?.value) || 't1');
-	let ownTab = $state<'overview' | 'episodes' | 'library'>('overview');
-	// The tabs of an owned title: Overview (this page), Episodes (shows) and Your copy (files, actions, history in one place).
+	let ownTab = $state<'overview' | 'episodes' | 'library'>((typeof location !== 'undefined' && (['episodes', 'library'] as const).find((t) => t === new URLSearchParams(location.search).get('tab'))) || 'overview');
+	// The tabs of an owned title: Overview (this page), Episodes (shows) and Library (status, files, activity, settings in one place).
 	const ownTabs = $derived.by(() => {
 		const o = owned;
 		if (!o) return [];
 		const out: { v: typeof ownTab; label: string; count?: string; alert?: boolean }[] = [{ v: 'overview', label: 'Overview' }];
 		if (o.show) out.push({ v: 'episodes', label: 'Episodes', count: `${o.show.in_library}/${o.show.episodes}`, alert: (o.show.failed ?? 0) > 0 });
-		out.push({ v: 'library', label: 'Your copy', alert: ownState.kind === 'failed' });
+		out.push({ v: 'library', label: 'Library', alert: ownState.kind === 'failed' });
 		return out;
 	});
 	// Episodes tab: the chosen season's episodes with their file state.
@@ -186,6 +186,32 @@
 		];
 	});
 	const ownMenu = $derived<MenuItem[]>(ownTools.flatMap((g, i) => [...(i ? [{ kind: 'separator' as const }] : []), ...g.items.map((t) => ({ label: t.label, icon: t.icon, href: t.href, onselect: t.run, destructive: t.danger, disabled: t.busy }))]));
+	// Library tab: one status card, the files as cards, recent activity, then settings with delete last.
+	const libHead = $derived.by(() => {
+		const o = owned;
+		if (!o) return null;
+		const k = ownState.kind;
+		const pct = !o.show && ownDownload?.download ? Math.round(Math.min(Math.max(ownDownload.download.progress, 0), 1) * 100) : null;
+		const main = ownFiles[0]?.file;
+		const sub =
+			k === 'have' && o.show ? [`${o.show.seasons.filter((x) => x.number > 0 && x.episodes && x.in_library >= x.episodes).length} full seasons`, o.size_bytes ? bytes(o.size_bytes) : '', o.keep_up_to_date ? 'the rest are grabbed when found' : ''].filter(Boolean).join(' · ')
+			: k === 'have' ? [ownBadges.join(' · '), main?.Size ? bytes(main.Size) : '', o.added_at ? `added ${ago(o.added_at)}` : ''].filter(Boolean).join(' · ')
+			: k === 'downloading' ? 'On its way to your library'
+			: k === 'failed' ? 'The last try did not work. It will try another release.'
+			: o.keep_up_to_date ? 'It will be grabbed as soon as a good release shows up.' : 'Not kept up to date, so nothing will be grabbed.';
+		const action = !manage ? null : k === 'failed' ? { label: 'Try again', icon: 'refresh' as const } : k === 'missing' ? { label: 'Search now', icon: 'search' as const } : null;
+		return { kind: k, title: k === 'have' ? (o.show ? ownState.label : 'In your library') : ownState.label, sub, pct, action };
+	});
+	const libFiles = $derived(ownFiles.map((x) => {
+		const f = x.file as Record<string, any>;
+		const m = (f?.MediaInfo ?? {}) as Record<string, any>;
+		const langs = (v: unknown) => (Array.isArray(v) ? v : typeof v === 'string' && v ? v.split(/[\/,]/) : []).map((s) => String(s).trim().toUpperCase()).filter(Boolean).slice(0, 6);
+		const name = String(f?.RelativePath ?? '').split(/[\\/]/).pop() ?? '';
+		return { id: x.id, label: x.version && x.version !== 'Main' ? x.version : 'Main copy', badges: qualityBadges([f]), codec: [m.video_codec, m.resolution ?? (f?.Quality?.resolution ? `${f.Quality.resolution}p` : ''), m.audio_codec].filter(Boolean).join(' · '), size: f?.Size ? bytes(f.Size) : '', name, added: f?.AddedAt ? ago(f.AddedAt) : '', audio: langs(m.audio_languages), subs: langs(m.subtitle_languages ?? m.subtitles) };
+	}));
+	const evIcon = (k = ''): 'check' | 'search' | 'clock' | 'refresh' | 'copy' | 'trash' | 'plus' => (/import|got|done|adopt/.test(k) ? 'check' : /grab|sent|chose|search/.test(k) ? 'search' : /fail|stall|missing/.test(k) ? 'clock' : /rename/.test(k) ? 'copy' : /delete/.test(k) ? 'trash' : /add/.test(k) ? 'plus' : 'refresh');
+	const evTone = (k = '', s = '') => (/fail|stall|not on disk|missing/.test(`${k} ${s}`.toLowerCase()) ? 'failed' : /import|adopt/.test(k) ? 'have' : '');
+	let libAll = $state(false);
 	const mayAsk = $derived(session.can('ask') && !manage);
 
 	let folders = $state<LibraryFolder[]>([]);
@@ -804,6 +830,75 @@
 				</ul>
 			{:else}<p class="muted">No file yet.</p>{/if}
 		{/snippet}
+		{#snippet libPane()}
+			{#if owned && libHead}
+				{@const o = owned}
+				<div class="lib" data-testid="lib-pane">
+					<section class="lib-status {libHead.kind}">
+						<div class="lib-st-text">
+							<p class="lib-st-title"><span class="own-dot {libHead.kind}" aria-hidden="true"></span>{libHead.title}</p>
+							{#if libHead.sub}<p class="lib-st-sub">{libHead.sub}</p>{/if}
+							{#if libHead.pct != null}<div class="lib-bar" role="progressbar" aria-valuenow={libHead.pct} aria-valuemin="0" aria-valuemax="100"><span style:width="{libHead.pct}%"></span></div>{/if}
+						</div>
+						{#if libHead.action}<button type="button" class="lib-btn primary" disabled={busyAction === 'search'} onclick={() => ownRun('search')}><Icon name={libHead.action.icon} size={16} />{libHead.action.label}</button>{/if}
+						{#if manage}<a class="lib-btn" href={to(`/library/${o.id}?tools=releases`)}><Icon name="grid" size={16} />Pick a release</a>{/if}
+					</section>
+
+					{#if o.show}
+						<h3 class="lib-h">Seasons</h3>
+						<div class="lib-seasons">
+							{#each [...o.show.seasons].filter((x) => x.number > 0).sort((x, y) => x.number - y.number) as se (se.number)}
+								{@const p = se.episodes ? se.in_library / se.episodes : 0}
+								<button type="button" class="lib-season" onclick={() => { epSeason = se.number; ownTab = 'episodes'; }}>
+									<svg viewBox="0 0 36 36" class="ring" aria-hidden="true"><circle cx="18" cy="18" r="15" />{#if p > 0}<circle cx="18" cy="18" r="15" class="fill" class:full={p >= 1} stroke-dasharray="{(p * 94.25).toFixed(1)} 94.25" />{/if}</svg>
+									<span><b>Season {se.number}</b><small>{se.in_library} of {se.episodes}</small></span>
+								</button>
+							{/each}
+						</div>
+					{:else if libFiles.length}
+						<h3 class="lib-h">{libFiles.length > 1 ? 'Versions' : 'File'}</h3>
+						<div class="lib-files">
+							{#each libFiles as f (f.id)}
+								<article class="lib-file">
+									<p class="lib-file-top"><b>{f.label}</b>{#each f.badges as b (b)}<span class="lib-badge">{b}</span>{/each}</p>
+									<p class="lib-file-meta">{[f.codec, f.size, f.added && `added ${f.added}`].filter(Boolean).join(' · ')}</p>
+									{#if f.audio.length || f.subs.length}
+										<p class="lib-langs">{#if f.audio.length}<span class="muted">Audio</span>{#each f.audio as l (l)}<span class="lib-lang">{l}</span>{/each}{/if}{#if f.subs.length}<span class="muted">Subtitles</span>{#each f.subs as l (l)}<span class="lib-lang">{l}</span>{/each}{/if}</p>
+									{/if}
+									<p class="lib-file-name" title={f.name}>{f.name}</p>
+								</article>
+							{/each}
+							{#if manage}<a class="lib-file add" href={to(`/library/${o.id}?tools=version`)}><Icon name="plus" size={18} />Add another version<small>Keep a 4K and an HD copy side by side</small></a>{/if}
+						</div>
+					{/if}
+
+					<h3 class="lib-h">Activity</h3>
+					<ol class="lib-tl">
+						{#each libAll ? ownedEvents : ownedEvents.slice(0, 5) as e (e.ID)}
+							<li class={evTone(e.Kind, e.Summary)}><span class="lib-tl-ico"><Icon name={evIcon(e.Kind)} size={14} /></span><span class="lib-tl-text">{e.Summary ?? e.Kind}</span><span class="muted">{e.At ? ago(e.At) : ''}</span></li>
+						{:else}<li class="muted">Nothing has happened yet.</li>{/each}
+					</ol>
+					{#if ownedEvents.length > 5}<button type="button" class="lib-link" onclick={() => (libAll = !libAll)}>{libAll ? 'Show less' : `Show all ${ownedEvents.length}`}</button>{/if}
+
+					{#if manage}
+						<h3 class="lib-h">Settings</h3>
+						<div class="lib-rows">
+							<button type="button" class="lib-row" disabled={busyAction === 'keep'} onclick={() => ownRun('keep')}>
+								<span><b>Keep up to date</b><small>Grab it when it comes out and upgrade when a better copy shows up</small></span>
+								<span class="lib-switch" class:on={o.keep_up_to_date} aria-hidden="true"></span>
+							</button>
+							<a class="lib-row" href={to(`/library/${o.id}?tools=edit`)}><span><b>Quality</b><small>{o.pick_rules_name ?? 'Default'}</small></span><Icon name="chevronRight" size={16} /></a>
+							<a class="lib-row" href={to(`/library/${o.id}?tools=edit`)}><span><b>Folder</b><small class="path">{o.folder_path ?? ''}</small></span><Icon name="chevronRight" size={16} /></a>
+							<a class="lib-row" href={to(`/library/${o.id}?tools=rename`)}><span><b>Rename files</b><small>See the new names before anything changes</small></span><Icon name="chevronRight" size={16} /></a>
+							<button type="button" class="lib-row" disabled={busyAction === 'refresh'} onclick={() => ownRun('refresh')}><span><b>Refresh details</b><small>Names, dates and pictures</small></span><Icon name="refresh" size={16} /></button>
+						</div>
+						<div class="lib-rows danger">
+							<a class="lib-row" href={to(`/library/${o.id}?tools=delete`)}><span><b>{o.kind === 'show' ? 'Delete show' : 'Delete movie'}</b><small>Choose whether the files go too</small></span><Icon name="trash" size={16} /></a>
+						</div>
+					{/if}
+				</div>
+			{/if}
+		{/snippet}
 		{#snippet ownTabBar()}
 			<div class="own-tabs {ownView}" role="tablist" data-testid="own-tabs">
 				{#each ownTabs as t (t.v)}
@@ -827,10 +922,7 @@
 					{:else}<li class="muted">Loading episodes…</li>{/each}
 				</ul>
 			{:else if ownTab === 'library'}
-				{@render ownChipRow()}{@render ownFilesList()}
-				{#if manage}<h3 class="own-h">Actions</h3>{@render ownToolList(true)}{/if}
-				<h3 class="own-h">History</h3>
-				<ul class="own-history">{#each ownedEvents as e (e.ID)}<li><span>{e.Summary ?? e.Kind}</span><span class="muted">{e.At ? ago(e.At) : ''}</span></li>{:else}<li class="muted">Nothing yet.</li>{/each}</ul>
+				{@render libPane()}
 			{/if}
 		{/snippet}
 		{#if owned && ownView === 't5'}
@@ -1118,6 +1210,64 @@
 	.own-files { display: grid; gap: 10px; margin: 8px 0 0; padding: 0; list-style: none; }
 	.own-files li { display: grid; grid-template-columns: auto auto auto 1fr; gap: 4px 16px; align-items: baseline; font: 500 14px/1.4 var(--font-ui); }
 	.own-files .path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	/* Library tab */
+	.lib { display: grid; gap: 0; max-width: 980px; }
+	.lib-h { margin: 36px 0 14px; font: 700 20px/1.2 var(--font-ui); letter-spacing: -.01em; }
+	.lib-status { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 22px 24px; border-radius: 18px; background: var(--surface-2); box-shadow: inset 0 0 0 .5px color-mix(in srgb, var(--text) 10%, transparent); }
+	.lib-status.failed { background: color-mix(in srgb, var(--danger, #e5484d) 10%, var(--surface-2)); }
+	.lib-st-text { flex: 1 1 320px; min-width: 0; }
+	.lib-st-title { display: flex; align-items: center; gap: 10px; margin: 0; font: 700 22px/1.2 var(--font-ui); letter-spacing: -.01em; }
+	.lib-st-sub { margin: 6px 0 0 20px; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
+	.lib-bar { height: 6px; margin: 12px 0 0 20px; border-radius: 99px; background: color-mix(in srgb, var(--text) 10%, transparent); overflow: hidden; }
+	.lib-bar span { display: block; height: 100%; border-radius: 99px; background: #3e8ef7; transition: width .6s ease; }
+	.lib-btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 14px/1 var(--font-ui); white-space: nowrap; text-decoration: none; cursor: pointer; }
+	.lib-btn.primary { background: var(--text); color: var(--bg); }
+	.lib-btn:hover { filter: brightness(1.08); }
+	.lib-seasons { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+	.lib-season { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 0; border-radius: 14px; background: var(--surface-2); color: var(--text); text-align: left; cursor: pointer; transition: transform .2s ease; }
+	.lib-season:hover { transform: translateY(-2px); }
+	.lib-season span { display: grid; gap: 2px; font: 600 15px/1.2 var(--font-ui); }
+	.lib-season small { color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); }
+	.ring { width: 36px; height: 36px; flex: none; transform: rotate(-90deg); }
+	.ring circle { fill: none; stroke: color-mix(in srgb, var(--text) 12%, transparent); stroke-width: 4; }
+	.ring .fill { stroke: var(--accent); stroke-linecap: round; }
+	.ring .fill.full { stroke: #30a46c; }
+	.lib-files { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+	.lib-file { display: grid; gap: 8px; align-content: start; padding: 18px 20px; border-radius: 16px; background: var(--surface-2); min-width: 0; }
+	.lib-file p { margin: 0; }
+	.lib-file-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font: 700 16px/1.2 var(--font-ui); }
+	.lib-file-top b { margin-right: 4px; }
+	.lib-badge, .lib-lang { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 5px; border: 1px solid color-mix(in srgb, var(--text) 30%, transparent); font: 700 11px/1 var(--font-ui); letter-spacing: .03em; color: var(--text-muted); }
+	.lib-lang { border-radius: 99px; }
+	.lib-file-meta { color: var(--text-muted); font: 500 13px/1.4 var(--font-ui); }
+	.lib-langs { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; font: 500 12px/1 var(--font-ui); }
+	.lib-langs .muted:not(:first-child) { margin-left: 8px; }
+	.lib-file-name { color: var(--text-muted); font: 500 12px/1.4 var(--font-mono, ui-monospace, monospace); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .8; }
+	.lib-file.add { place-items: center; place-content: center; gap: 6px; min-height: 120px; background: none; border: 1.5px dashed color-mix(in srgb, var(--text) 18%, transparent); color: var(--text); font: 600 14px/1.2 var(--font-ui); text-decoration: none; text-align: center; }
+	.lib-file.add small { color: var(--text-muted); font-weight: 500; }
+	.lib-tl { position: relative; display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+	.lib-tl li { position: relative; display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 12px; padding: 9px 0; font: 500 14px/1.35 var(--font-ui); }
+	.lib-tl li:not(:last-child)::after { content: ''; position: absolute; left: 13.5px; top: 34px; bottom: -8px; width: 1px; background: color-mix(in srgb, var(--text) 12%, transparent); }
+	.lib-tl-ico { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 99px; background: var(--surface-2); color: var(--text-muted); }
+	.lib-tl li.have .lib-tl-ico { color: #30a46c; }
+	.lib-tl li.failed .lib-tl-ico { color: var(--danger, #e5484d); }
+	.lib-tl-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.lib-link { justify-self: start; margin-top: 6px; padding: 0; border: 0; background: none; color: var(--accent); font: 600 14px/1 var(--font-ui); cursor: pointer; }
+	.lib-rows { display: grid; border-radius: 16px; background: var(--surface-2); overflow: hidden; }
+	.lib-rows.danger { margin-top: 16px; }
+	.lib-rows.danger b, .lib-rows.danger :global(svg) { color: var(--danger, #e5484d); }
+	.lib-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 14px 20px; border: 0; background: none; color: var(--text); text-align: left; text-decoration: none; cursor: pointer; font: inherit; }
+	.lib-row + .lib-row { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }
+	.lib-row:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
+	.lib-row span { display: grid; gap: 3px; min-width: 0; }
+	.lib-row b { font: 600 15px/1.2 var(--font-ui); }
+	.lib-row small { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.lib-row :global(svg) { flex: none; color: var(--text-muted); }
+	.lib-switch { position: relative; flex: none; width: 44px; height: 26px; border-radius: 99px; background: color-mix(in srgb, var(--text) 18%, transparent); transition: background .2s ease; }
+	.lib-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 99px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 25%); transition: transform .2s ease; }
+	.lib-switch.on { background: #30a46c; }
+	.lib-switch.on::after { transform: translateX(18px); }
+	@media (max-width: 600px) { .lib-status { padding: 18px; } .lib-btn { flex: 1; justify-content: center; } .lib-files { grid-template-columns: 1fr; } .lib-seasons { grid-template-columns: 1fr 1fr; } }
 	.own-h { margin: 28px 0 12px; font: 600 13px/1.2 var(--font-ui); color: var(--text-dim, #8a8a8a); }
 	.own-history { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; font: 500 14px/1.4 var(--font-ui); }
 	.own-history li { display: flex; justify-content: space-between; gap: 16px; }
