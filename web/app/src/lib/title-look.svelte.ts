@@ -1,7 +1,7 @@
 // Where a title page puts its facts line and tagline while Luis compares the
 // options (?look=both|band). The choice is kept per browser so every
 // title opens with the same option.
-export type TitleLook = 'quiet' | 'credits' | 'scores' | 'herostory' | 'side' | 'story' | 'decide' | 'both' | 'band';
+export type TitleLook = 'ledger' | 'mubi' | 'google' | 'netflix1' | 'quiet' | 'credits' | 'scores' | 'herostory' | 'side' | 'story' | 'decide' | 'both' | 'band';
 
 export const TITLE_LOOKS: { value: TitleLook; label: string }[] = [
 	{ value: 'quiet', label: 'V1 · Quiet' },

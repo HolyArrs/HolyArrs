@@ -28,6 +28,7 @@
 	import { aboutPicks, aboutShown } from '#lib/about-picks.svelte.ts';
 	import { awardsTip, loadWikiFacts, type WikiAward } from '#lib/wiki-facts.ts';
 	import type { TagsAt, TitleLook } from '#lib/title-look.svelte.ts';
+	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -239,7 +240,15 @@
 	});
 	// Where the facts line and tagline go while the options are compared (title-look.svelte.ts).
 	// The chosen layout (V5: facts row and story left, credits right; tags under the story).
-	const look = 'side' as TitleLook;
+	// Five layouts from the Apple TV / Netflix / MUBI / Google TV research, on a switch while Luis compares (?look=).
+	const LOOKS: { value: TitleLook; label: string }[] = [
+		{ value: 'ledger', label: 'A · Calm + ledger' },
+		{ value: 'mubi', label: 'B · MUBI' },
+		{ value: 'google', label: 'C · Score first' },
+		{ value: 'netflix1', label: 'D · Netflix column' },
+		{ value: 'side', label: 'E · Two columns' }
+	];
+	let look = $state<TitleLook>((typeof location !== 'undefined' && LOOKS.find((l) => l.value === new URLSearchParams(location.search).get('look'))?.value) || 'ledger');
 	const moreFacts = $derived.by((): [string, string][] => {
 		if (!info) return [];
 		const i = info;
@@ -355,6 +364,8 @@
 	const aboutFacts = $derived(look === 'decide' ? facts.filter((f) => !keyFacts.includes(f)) : facts);
 	let aboutWidth = $state(0);
 	const tagsAt = 'band' as TagsAt;
+	// MUBI line: director · country · minutes.
+	const mubiCaps = $derived([makers[0]?.name ?? '', countries[0] ?? '', details?.kind === 'movie' && details.runtime ? `${details.runtime}′` : lengthWord].filter(Boolean).join(' · '));
 	// The short facts: one label, one value each.
 	const parts = $derived.by((): { label: string; value: string }[] => {
 		if (!details || !info) return [];
@@ -488,9 +499,10 @@
 			crumbIcon={d.kind === 'show' ? 'tv' : 'compass'}
 			breadcrumb={crumbs}
 			meta={heroFacts(d)}
-			ratings={look === 'scores' || look === 'herostory'}
-			heroStory={look === 'herostory' ? d.overview : undefined}
-			showFacts={look !== 'band' && look !== 'story' && look !== 'side'}
+			ratings={look === 'google' || look === 'netflix1' || look === 'mubi'}
+			heroStory={look === 'mubi' || look === 'google' ? d.overview : undefined}
+			heroCaps={look === 'mubi' ? mubiCaps : undefined}
+			showFacts={look === 'ledger' || look === 'google' || look === 'netflix1'}
 			tagline={info?.tagline}
 			certification={rich?.certification ?? certOf(d.rating)}
 			score={rich?.score ?? scoreOf(d.rating)}
@@ -572,6 +584,14 @@
 				{#if !withGenres && hasScores}<span class="sep" aria-hidden="true">·</span><TitleScores scores={picked.scores} tmdb={picked.tmdb} variant="mono" />{/if}
 			</div>
 		{/snippet}
+		{#snippet greyCredits()}
+			{#if makers.length || stars.length}
+				<div class="grey-credits" data-testid="title-credits">
+					{#if makers.length}<p>{madeBy} {@render names(makers, 2)}</p>{/if}
+					{#if stars.length}<p>Starring {@render names(stars, 3)}</p>{/if}
+				</div>
+			{/if}
+		{/snippet}
 		{#snippet credits()}
 			{#if makers.length || stars.length}
 				<p class="credits" data-testid="title-credits">
@@ -584,7 +604,18 @@
 			{#if tagsAt === 'band' && tags.length}<ul class="tagchips quiet" data-testid="title-tags">{#each tags.slice(0, 5) as t (t)}<li>{t}</li>{/each}</ul>{/if}
 		{/snippet}
 		{#if look !== 'both' && look !== 'band'}
-		{#if look === 'decide'}
+		{#if look === 'ledger' || look === 'netflix1' || look === 'google'}
+		<!-- A / D / C: one calm column. A: two scores, story, grey credits, where to watch. D: story, credits (scores are in the hero). C: credits, where (story and score are in the hero). -->
+		<div class="calm one" data-testid="title-calm">
+			{#if look === 'ledger' && hasScores}<TitleScores scores={picked.scores.slice(0, 2)} tmdb={picked.scores.length ? undefined : picked.tmdb} variant="mono" />{/if}
+			{#if look !== 'google'}{@render story()}{/if}
+			{@render greyCredits()}
+			{@render where()}
+		</div>
+		{:else if look === 'mubi'}
+		<!-- B: everything is in the hero; only where to watch under it. -->
+		{#if info?.streaming.length}<div class="calm one" data-testid="title-calm">{@render where()}</div>{/if}
+		{:else if look === 'decide'}
 		<!-- V4 · Split: the story and where to watch beside the ratings and a few key facts. -->
 		<div class="decide" data-testid="title-decide">
 			<div class="d-left">{@render story()}{@render tagLine()}{@render where()}</div>
@@ -609,13 +640,6 @@
 				{#if network}<div><dt>Network</dt><dd>{network}</dd></div>
 				{:else if info?.studios.length}<div><dt>Studio</dt><dd>{info.studios[0]}</dd></div>{/if}
 			</dl>
-			<!-- The small print: the rest worth knowing (not shown above), then links out; one quiet line. -->
-			{#if fine.length || outLinks.length}
-				<p class="fine" data-testid="title-fine">
-					{#each fine as f, i (f)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<span>{f}</span>{/each}
-					{#each outLinks as l, i (l.name)}{#if i || fine.length}<span class="sep" aria-hidden="true">·</span>{/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name}</a>{/each}
-				</p>
-			{/if}
 		</div>
 		{:else}
 		<!-- One calm column under the hero: Quiet, Story + credits, Scores in hero, Story first. -->
@@ -632,6 +656,21 @@
 		{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
 		{@render castRow()}
 		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} />
+		{#if parts.length || outLinks.length}
+			<section class="ledger" data-testid="title-ledger">
+				<h2 class="tp-h2">Information</h2>
+				{#if look === 'netflix1'}
+					<p class="prose">{fine.join('. ')}.</p>
+				{:else}
+					<dl>
+						{#if network && look !== 'side'}<div><dt>Network</dt><dd>{network}</dd></div>{/if}
+						{#each parts as p (p.label)}<div><dt>{p.label}</dt><dd>{p.value}</dd></div>{/each}
+					</dl>
+				{/if}
+				<p class="ledger-links">{#each outLinks as l, i (l.name)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name}</a>{/each}</p>
+			</section>
+		{/if}
+		<div class="look-pick" data-testid="look-pick"><SegmentedControl options={LOOKS} bind:value={look} label="Title layout" size="sm" /></div>
 		{#snippet ratingCard()}
 			{#if cert}<div class="ac rating-card"><span class="fb cert big">{cert}</span><span class="cap">Rated</span></div>{/if}
 		{/snippet}
@@ -726,10 +765,22 @@
 	.calm-meta { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 0; color: var(--text-muted); font: 500 15.5px/1.4 var(--font-ui); }
 	.calm .tagchips.quiet, .d-left .tagchips.quiet { margin-top: -6px; }
 	.fb.cert.big { height: 30px; padding: 0 10px; font-size: 16px; border-radius: 7px; }
-	.fine { display: flex; flex-wrap: wrap; align-items: center; row-gap: 2px; margin: 4px 0 0; color: var(--text-muted); font: 500 13px/1.5 var(--font-ui); }
-	.fine .sep { margin: 0 6px; color: var(--text-faint); }
-	.fine a { color: var(--text-muted); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
-	.fine a:hover { color: var(--text); }
+	.calm.one { max-width: 680px; gap: 14px; }
+	.calm.one .lead { font-size: 17px; line-height: 1.5; }
+	.grey-credits { display: grid; gap: 2px; color: var(--text-muted); font: 400 14px/1.5 var(--font-ui); }
+	.grey-credits p { margin: 0; }
+	.grey-credits a { color: var(--text); text-decoration: none; }
+	.ledger dl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 28px; margin: 0; }
+	.ledger dt { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); }
+	.ledger dd { margin: 3px 0 0; color: var(--text); font: 500 14px/1.4 var(--font-ui); }
+	.ledger .prose { margin: 0; max-width: 680px; color: var(--text-muted); font: 400 15px/1.6 var(--font-ui); }
+	.ledger-links { display: flex; flex-wrap: wrap; align-items: center; margin: 16px 0 0; color: var(--text-muted); font: 500 13px/1.5 var(--font-ui); }
+	.ledger-links .sep { margin: 0 8px; color: var(--text-faint); }
+	.ledger-links a { color: var(--text-muted); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+	.ledger-links a:hover { color: var(--text); }
+	@media (max-width: 899px) { .ledger dl { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+	.look-pick { position: fixed; z-index: 30; left: 0; right: 0; bottom: 20px; width: max-content; max-width: calc(100vw - 24px); overflow-x: auto; margin-inline: auto; padding: 5px; border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow-lift); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); }
+	@media (max-width: 767px) { .look-pick { bottom: calc(var(--tabbar, 56px) + env(safe-area-inset-bottom) + 16px); } }
 	.card-links { display: flex; flex-wrap: wrap; align-items: center; margin: 14px 0 0; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
 	.card-links a { color: var(--text); text-decoration: none; }
 	.card-links a:hover { text-decoration: underline; }
