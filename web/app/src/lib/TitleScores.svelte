@@ -1,15 +1,12 @@
 <script lang="ts">
 	import { scoreName, scoreText, type OutsideScore } from './outside-ratings.ts';
-	import { siImdb, siLetterboxd, siMetacritic, siRottentomatoes, siThemoviedatabase, siTrakt } from 'simple-icons';
-	// Real brand logos (Simple Icons, one path each) for the list; dark brand colours fall back to the text colour.
+	import { siMetacritic, siRottentomatoes, siTrakt } from 'simple-icons';
+	// Real brand logos (Simple Icons, one path each), the same everywhere a score shows; RT audience keeps the
+	// popcorn bucket (Simple Icons has no audience mark); dark brand colours fall back to the text colour.
 	const LOGOS: Record<string, { path: string; color: string }> = {
-		imdb: { path: siImdb.path, color: `#${siImdb.hex}` },
 		rt_critics: { path: siRottentomatoes.path, color: `#${siRottentomatoes.hex}` },
-		rt_audience: { path: siRottentomatoes.path, color: `#${siRottentomatoes.hex}` },
 		metacritic: { path: siMetacritic.path, color: 'currentColor' },
-		letterboxd: { path: siLetterboxd.path, color: 'currentColor' },
-		trakt: { path: siTrakt.path, color: `#${siTrakt.hex}` },
-		tmdb: { path: siThemoviedatabase.path, color: `#${siThemoviedatabase.hex}` }
+		trakt: { path: siTrakt.path, color: `#${siTrakt.hex}` }
 	};
 
 	// A title's scores on the page (not over art): TMDB's star score first,
@@ -24,10 +21,13 @@
 </script>
 
 {#snippet mark(source: string)}
-	<span class="mark {source}" class:logo={variant === 'list' && !!LOGOS[source]} aria-hidden="true">
-		{#if variant === 'list' && LOGOS[source]}<svg width="18" height="18" viewBox="0 0 24 24"><path d={LOGOS[source].path} fill={LOGOS[source].color} /></svg>
+	<span class="mark {source}" class:logo={!!LOGOS[source]} aria-hidden="true">
+		{#if source === 'imdb'}<span class="badge imdb-badge">IMDb</span>
+		{:else if source === 'tmdb'}<span class="badge tmdb-badge">TMDB</span>
+		{:else if source === 'letterboxd'}<svg width="20" height="16" viewBox="0 0 30 12"><circle cx="6" cy="6" r="5" fill="#FF8000" /><circle cx="15" cy="6" r="5" fill="#00E054" /><circle cx="24" cy="6" r="5" fill="#40BCF4" /></svg>
+		{:else if LOGOS[source]}<svg width="16" height="16" viewBox="0 0 24 24"><path d={LOGOS[source].path} fill={LOGOS[source].color} /></svg>
 		{:else if source === 'rt_critics'}<svg width="14" height="14" viewBox="0 0 12 12"><circle cx="6" cy="6.6" r="4.8" fill="#fa320a" /><path d="M5 1.4c.6.6 1 .9 1.8.7" stroke="#00912d" stroke-width="1.4" fill="none" stroke-linecap="round" /></svg>
-		{:else if source === 'rt_audience'}<svg width="14" height="14" viewBox="0 0 12 12"><path d="M2.2 4.6h7.6l-1 6.4H3.2z" fill="#fa320a" /><circle cx="4" cy="3.6" r="1.6" fill="#f5e6c8" /><circle cx="6" cy="3" r="1.6" fill="#f5e6c8" /><circle cx="8" cy="3.6" r="1.6" fill="#f5e6c8" /></svg>
+		{:else if source === 'rt_audience'}<svg width="17" height="17" viewBox="0 0 12 12"><path d="M2.2 4.6h7.6l-1 6.4H3.2z" fill="#fa320a" /><circle cx="4" cy="3.6" r="1.6" fill="#f5e6c8" /><circle cx="6" cy="3" r="1.6" fill="#f5e6c8" /><circle cx="8" cy="3.6" r="1.6" fill="#f5e6c8" /></svg>
 		{:else if source === 'tmdb'}<svg width="14" height="14" viewBox="0 0 12 12"><path d="M6 .8l1.6 3.3 3.6.5-2.6 2.5.6 3.6L6 9l-3.2 1.7.6-3.6L.8 4.6l3.6-.5z" fill="#f5c518" /></svg>
 		{:else}{marks[source]}{/if}
 	</span>
@@ -59,6 +59,10 @@
 	.mark.trakt { background: #ed1c24; color: #fff; }
 	.mark.rt_critics, .mark.rt_audience, .mark.tmdb { padding: 0; }
 	.mark.logo { padding: 0; background: none; color: var(--text); }
+	.mark.imdb, .mark.tmdb, .mark.letterboxd { padding: 0; background: none; }
+	.badge { display: inline-flex; align-items: center; height: 16px; padding: 0 4px; border-radius: 3px; font: 800 10px/1 var(--font-ui); letter-spacing: 0; }
+	.imdb-badge { background: #f5c518; color: #000; }
+	.tmdb-badge { background: linear-gradient(90deg, #90cea1, #01b4e4); color: #0d253f; }
 	.v { font: 700 15px/1 var(--font-ui); }
 	.n { color: var(--text-muted); font: 500 12px/1.2 var(--font-ui); }
 
@@ -84,7 +88,9 @@
 
 	/* list: name left, score right. */
 	.list { display: flex; flex-direction: column; }
-	.list li { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 9px 0; }
+	.list .mark { width: 40px; justify-content: flex-start; }
+	.list .mark svg { flex: none; }
+	.list li { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 10px; padding: 9px 0; }
 	.list li + li { border-top: 1px solid var(--line); }
 	.list .n { grid-column: 2; grid-row: 1; color: var(--text); font-size: 14px; }
 	.list .v { grid-column: 3; }
