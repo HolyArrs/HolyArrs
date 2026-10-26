@@ -831,7 +831,7 @@
 			{:else if ownTab === 'files'}
 				{@render ownChipRow()}{@render ownFilesList()}
 			{:else if ownTab === 'history'}
-				<ul class="own-history">{#each ownedEvents as e (e.id)}<li><span>{e.summary ?? e.message ?? e.text ?? e.kind}</span><span class="muted">{e.at || e.when ? ago((e.at ?? e.when) as string) : ''}</span></li>{:else}<li class="muted">Nothing yet.</li>{/each}</ul>
+				<ul class="own-history">{#each ownedEvents as e, i (e.ID ?? e.id ?? i)}<li><span>{e.Summary ?? e.summary ?? e.Kind ?? e.kind}</span><span class="muted">{e.At || e.at ? ago((e.At ?? e.at) as string) : ''}</span></li>{:else}<li class="muted">Nothing yet.</li>{/each}</ul>
 			{:else if ownTab === 'manage'}
 				{@render ownToolList(true)}
 			{/if}
