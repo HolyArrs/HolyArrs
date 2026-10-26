@@ -28,6 +28,7 @@
 	import { aboutPicks, aboutShown } from '#lib/about-picks.svelte.ts';
 	import { awardsTip, loadWikiFacts, type WikiAward } from '#lib/wiki-facts.ts';
 	import type { TagsAt, TitleLook } from '#lib/title-look.svelte.ts';
+	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -241,6 +242,12 @@
 	// The chosen layout (V5: facts row and story left, credits right; tags under the story).
 	// The chosen layout (E): facts row and story left, credits right; Information at the bottom. Desktop first.
 	const look = 'side' as TitleLook;
+	// About cards while Luis compares (?cards=two): three cards (title, ratings, awards) or two wide ones.
+	const CARD_LOOKS = [
+		{ value: 'three', label: 'Three cards' },
+		{ value: 'two', label: 'Two wide cards' }
+	];
+	let cardLook = $state((typeof location !== 'undefined' && new URLSearchParams(location.search).get('cards') === 'two' && 'two') || 'three');
 	// The facts row shows the 3 picked scores (Settings › Appearance); the Ratings card at the bottom lists every source.
 	const top: string = 'r1';
 	const topScores = $derived(picked.scores);
@@ -373,6 +380,9 @@
 		return out;
 	});
 	const awardWins = $derived(awards.filter((a) => a.won).length);
+	const awardNames = $derived(
+		[...awards.filter((a) => a.won && a.family), ...awards.filter((a) => a.won && !a.family)].slice(0, 3).map((a) => a.name.replace(/^.*?Awards? for /i, ''))
+	);
 	const atvCols = $derived.by(() => {
 		if (!details) return [];
 		const d = details;
@@ -701,28 +711,38 @@
 			     awards), then three columns of plain label/value facts, then links out. -->
 			<section class="atv" data-testid="title-ledger">
 				<h2 class="atv-h">About</h2>
-				<div class="atv-cards">
+				<div class="atv-cards" class:two={cardLook === 'two'} class:solo={cardLook === 'two' && !awards.length}>
+					{#if cardLook === 'three'}
 					<article class="atv-card">
 						<h3>{d.name}</h3>
 						<p class="atv-cap">{d.genres.slice(0, 2).join(', ') || (d.kind === 'show' ? 'TV show' : 'Movie')}</p>
 						{#if d.overview}<p class="atv-text clamp">{d.overview}</p>{/if}
 					</article>
+					{/if}
 					{#if allScores.length}
 						<!-- Every score as one row: colored mark and name left, the score out of 10 right. -->
 						<article class="atv-card">
 							<h3 id="ratings">Ratings</h3>
 							<p class="atv-cap">Out of 10</p>
-							<div class="atv-scores"><TitleScores scores={outside} tmdb={rich?.score ?? scoreOf(d.rating)} variant="list" outOf10 showMissing /></div>
+							<div class="atv-scores" class:cols={cardLook === 'two'}><TitleScores scores={outside} tmdb={rich?.score ?? scoreOf(d.rating)} variant="list" outOf10 showMissing /></div>
 						</article>
 					{/if}
 					{#if awards.length}
 						<article class="atv-card">
 							<h3>{awardBadges[0] ?? `${awardWins} wins`}</h3>
 							<p class="atv-cap">Awards</p>
-							<dl class="atv-rows">
-								<div><dt>Wins</dt><dd>{awardWins}</dd></div>
-								<div><dt>Nominations</dt><dd>{awards.length - awardWins}</dd></div>
-							</dl>
+							{#if cardLook === 'two'}
+								<!-- The awards it won, by name (major ones first), then the count of the rest. -->
+								<ul class="atv-awards">
+									{#each awardNames as a (a)}<li>{a}</li>{/each}
+								</ul>
+								<p class="atv-more">{awardWins} {awardWins === 1 ? 'win' : 'wins'} · {awards.length - awardWins} {awards.length - awardWins === 1 ? 'nomination' : 'nominations'}</p>
+							{:else}
+								<dl class="atv-rows">
+									<div><dt>Wins</dt><dd>{awardWins}</dd></div>
+									<div><dt>Nominations</dt><dd>{awards.length - awardWins}</dd></div>
+								</dl>
+							{/if}
 						</article>
 					{/if}
 				</div>
@@ -731,6 +751,7 @@
 				<p class="atv-links">{#each outLinks as l, i (l.name)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name} ↗</a>{/each}</p>
 			</section>
 		{/if}
+		<div class="cards-pick" data-testid="cards-pick"><SegmentedControl options={CARD_LOOKS} bind:value={cardLook} label="About cards" size="sm" /></div>
 		{#snippet ratingCard()}
 			{#if cert}<div class="ac rating-card"><span class="fb cert big">{cert}</span><span class="cap">Rated</span></div>{/if}
 		{/snippet}
@@ -834,14 +855,20 @@
 	.grey-credits p { margin: 0; }
 	.grey-credits a { color: var(--text); text-decoration: none; }
 	/* About band, Apple TV-like: lighter strip edge to edge, cards, then label/value columns. */
-	.atv { position: relative; margin-top: 12px; padding: 28px 0 32px; background: var(--atv-band); box-shadow: 0 0 0 100vmax var(--atv-band); clip-path: inset(0 -100vmax); --atv-band: color-mix(in srgb, var(--text) 4%, var(--bg)); --atv-card: color-mix(in srgb, var(--text) 11%, var(--bg)); }
+	.atv { position: relative; margin-top: 32px; padding: 40px 0 44px; border-top: 1px solid var(--line); background: var(--atv-band); box-shadow: 0 0 0 100vmax var(--atv-band); clip-path: inset(0 -100vmax); --atv-band: color-mix(in srgb, var(--text) 4%, var(--bg)); --atv-card: color-mix(in srgb, var(--text) 11%, var(--bg)); }
 	:global([data-theme='light']) .atv { --atv-band: color-mix(in srgb, var(--text) 5%, var(--bg)); --atv-card: var(--bg); }
 	.atv-scores :global(.list li) { padding: 3px 0; border-top: 0; font-size: 14.5px; }
 	.atv-scores :global(.list .n) { color: var(--text-muted); font-size: 14.5px; }
 	.atv-scores :global(.list .v) { color: var(--text-muted); font: 500 14.5px/1.4 var(--font-ui); font-variant-numeric: tabular-nums; }
 	.atv-h { margin: 0 0 14px; color: var(--text); font: 700 20px/1.2 var(--font-ui); }
 	.atv-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
-	.atv-card { min-width: 0; padding: 14px 16px 16px; border-radius: 10px; background: var(--atv-card); }
+	.atv-card { min-width: 0; padding: 16px 18px 18px; border-radius: 12px; background: var(--atv-card); box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%); }
+	.atv-cards.two { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+	.atv-cards.solo { grid-template-columns: minmax(0, 1fr); }
+	.atv-scores.cols :global(.list) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 36px; }
+	.atv-awards { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; color: var(--text); font: 500 14.5px/1.4 var(--font-ui); }
+	.atv-more { margin: 10px 0 0; color: var(--text-muted); font: 500 13px/1.4 var(--font-ui); }
+	.cards-pick { position: fixed; z-index: 30; left: 0; right: 0; bottom: 20px; width: max-content; max-width: calc(100vw - 24px); margin-inline: auto; padding: 5px; border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow-lift); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); }
 	.atv-card h3 { margin: 0; color: var(--text); font: 700 17px/1.25 var(--font-ui); }
 	.atv-cap { margin: 4px 0 8px; color: var(--text-muted); font: 600 11px/1.2 var(--font-ui); letter-spacing: .02em; text-transform: uppercase; }
 	.atv-text { margin: 0; color: var(--text-muted); font: 500 14.5px/1.4 var(--font-ui); }
