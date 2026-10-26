@@ -21,6 +21,16 @@
 	/** The review open in the sheet. */
 	let reading = $state<Review | null>(null);
 	let sheet = $state(false);
+	const hasContent = $derived(!!answer && (answer.score > 0 || reviews.length > 0));
+	let seenContent = $state(false);
+	// A new title starts fresh.
+	$effect.pre(() => {
+		void tmdb;
+		seenContent = false;
+	});
+	$effect(() => {
+		if (hasContent) seenContent = true;
+	});
 
 	const ps = $derived(pillState(answer?.sources, picked));
 	const orders = $derived(ordersOf(answer?.sources, ps.active));
@@ -78,7 +88,9 @@
 	</div>
 {/snippet}
 
-{#if answer && (answer.score > 0 || reviews.length || ps.pills.length > 1)}
+<!-- Like Apple TV: an empty section is not shown. Once a title had something here, switching to an
+     empty source keeps the section (and its switch) with one short line. -->
+{#if answer && (hasContent || (seenContent && ps.pills.length > 1))}
 	<div class="rv" data-testid="title-reviews">
 		<Shelf title="Ratings & reviews" anchor="title-reviews" item="340px" whole>
 			{#snippet tools()}
@@ -88,7 +100,7 @@
 							<span class="star" aria-hidden="true">★</span><b>{scoreText(answer.score)}</b><span class="of">/10</span>
 							<span class="muted">{votesText(answer.votes)}{typeof answer.watching === 'number' ? ` · ${answer.watching.toLocaleString()} watching now` : ''}</span>
 						{:else}
-							<span class="muted">No score yet.</span>
+							<span class="muted">{hasContent ? 'No score yet.' : 'Nothing here yet.'}</span>
 						{/if}
 					</p>
 					{#if ps.pills.length > 1}
@@ -130,7 +142,7 @@
 				{/if}
 			{/if}
 		</Shelf>
-		{#if !answer.reviews_hidden && !reviews.length && !loading}<p class="muted">No written reviews yet.</p>{/if}
+		{#if hasContent && !answer.reviews_hidden && !reviews.length && !loading}<p class="muted">No written reviews yet.</p>{/if}
 		{#if failed}<p class="muted">Reviews could not be loaded; try again shortly.</p>{/if}
 	</div>
 	<Sheet bind:open={sheet} title={reading ? `Review by ${reading.author || 'Someone'}` : 'Review'} size="md">
