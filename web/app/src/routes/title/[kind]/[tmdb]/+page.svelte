@@ -89,16 +89,36 @@
 	}
 	// Five ways to show an owned title, while Luis compares (?own=a..e).
 	const OWN_VIEWS = [
-		{ value: 'a', label: 'A · Manage sheet' },
-		{ value: 'b', label: 'B · Library band' },
-		{ value: 'c', label: 'C · Tabs' },
-		{ value: 'd', label: 'D · Inline panel' },
-		{ value: 'e', label: 'E · Quiet menu' }
+		{ value: 't1', label: 'T1 · Underline' },
+		{ value: 't2', label: 'T2 · Centered pills' },
+		{ value: 't3', label: 'T3 · On the art' },
+		{ value: 't4', label: 'T4 · Sticky bar' },
+		{ value: 't5', label: 'T5 · Side tabs' }
 	];
-	let ownView = $state((typeof location !== 'undefined' && OWN_VIEWS.find((v) => v.value === new URLSearchParams(location.search).get('own'))?.value) || 'a');
-	let ownTab = $state<'overview' | 'files' | 'history' | 'manage'>('overview');
-	let manageOpen = $state(false);
-	let panelOpen = $state(false);
+	let ownView = $state((typeof location !== 'undefined' && OWN_VIEWS.find((v) => v.value === new URLSearchParams(location.search).get('own'))?.value) || 't1');
+	let ownTab = $state<'overview' | 'episodes' | 'files' | 'history' | 'manage'>('overview');
+	// The tabs of an owned title: Overview (this page), Episodes (shows), Files, History, Manage (admins), with counts.
+	const ownTabs = $derived.by(() => {
+		const o = owned;
+		if (!o) return [];
+		const out: { v: typeof ownTab; label: string; count?: string; alert?: boolean }[] = [{ v: 'overview', label: 'Overview' }];
+		if (o.show) out.push({ v: 'episodes', label: 'Episodes', count: `${o.show.in_library}/${o.show.episodes}`, alert: (o.show.failed ?? 0) > 0 });
+		out.push({ v: 'files', label: 'Files', count: String(ownFiles.length || (o.show?.in_library ?? 0)) });
+		out.push({ v: 'history', label: 'History', count: ownedEvents.length ? String(ownedEvents.length) : undefined });
+		if (manage) out.push({ v: 'manage', label: 'Manage', alert: ownState.kind === 'failed' });
+		return out;
+	});
+	// Episodes tab: the chosen season's episodes with their file state.
+	let epSeason = $state<number | null>(null);
+	let episodes = $state<{ id: number; episode: number; name?: string; air_date?: string; slots: { state: string; state_label: string }[] }[]>([]);
+	$effect(() => {
+		const o = owned;
+		if (!o?.show || ownTab !== 'episodes') return;
+		const n = epSeason ?? [...o.show.seasons].filter((x) => x.number > 0).sort((a, b) => b.number - a.number)[0]?.number ?? 1;
+		if (epSeason === null) epSeason = n;
+		void api.get<{ episodes: typeof episodes }>(`/titles/${o.id}/episodes?season=${n}`).then((r) => (episodes = r.episodes ?? []), () => (episodes = []));
+	});
+	const epTone = (st: string) => (st === 'have' || st === 'imported' || st === 'in_library' || st === 'kept' ? 'have' : st === 'downloading' || st === 'importing' || st === 'searching' ? 'downloading' : st === 'failed' ? 'failed' : 'missing');
 	let busyAction = $state('');
 	const ownFiles = $derived((owned?.slots ?? []).filter((x) => x.file));
 	const ownBadges = $derived(qualityBadges(ownFiles.map((x) => x.file)));
@@ -669,9 +689,6 @@
 			{#snippet actions()}
 				{#if owned}
 					<ActionButton icon={ownState.kind === 'have' ? 'check' : ownState.kind === 'failed' ? 'refresh' : ownState.kind === 'downloading' ? 'download' : 'search'} label={ownState.label} caption={ownState.kind === 'failed' && manage ? 'Retry' : ownState.kind === 'missing' && manage ? 'Search now' : ownState.label} primary onclick={() => (manage && (ownState.kind === 'failed' || ownState.kind === 'missing') ? ownRun('search') : undefined)} />
-					{#if manage && ownView === 'a'}<ActionButton icon="tools" label="Manage {d.name}" caption="Manage" onclick={() => (manageOpen = true)} />{/if}
-					{#if manage && ownView === 'd'}<ActionButton icon="tools" label="Show the tools" caption={panelOpen ? 'Hide tools' : 'Manage'} onclick={() => (panelOpen = !panelOpen)} />{/if}
-					{#if manage && ownView === 'e'}<ActionMenu label="Manage {d.name}" items={ownMenu} />{/if}
 				{:else if manage && !d.neverAdd}
 					{#if d.kind === 'movie' && d.movie}
 						<ActionButton icon="plus" label="Add {d.name} to the library" caption={view.newWords ? 'Add to library' : 'Add'} primary onclick={() => addMovie?.open(d.movie as LookupMovie)} />
@@ -789,39 +806,48 @@
 				</ul>
 			{:else}<p class="muted">No file yet.</p>{/if}
 		{/snippet}
-		{#if owned && ownView === 'b'}
-			<!-- B · Library band: status, quality and size, added; admin buttons on the right. -->
-			<div class="own-band {ownState.kind}" data-testid="own-band">
-				<div><span class="own-cap">Status</span><b>{ownState.label}</b></div>
-				<div><span class="own-cap">Copy</span><b>{[ownBadges.join(' '), owned.size_bytes ? bytes(owned.size_bytes) : ''].filter(Boolean).join(' · ') || 'None yet'}</b></div>
-				<div><span class="own-cap">Added</span><b>{owned.added_at ? ago(owned.added_at) : '-'}</b></div>
-				{#if manage}
-					<div class="own-band-actions">
-						<button type="button" class="own-pill" onclick={() => ownRun('search')} disabled={busyAction === 'search'}>Search</button>
-						<a class="own-pill" href={to(`/library/${owned.id}?tools=releases`)}>Releases</a>
-						<ActionMenu label="More tools" items={ownMenu} />
-					</div>
-				{/if}
-			</div>
-		{:else if owned && ownView === 'c'}
-			<!-- C · Tabs: Overview (this page), Files, History, Manage (admins). -->
-			<div class="own-tabs" role="tablist" data-testid="own-tabs">
-				{#each [['overview', 'Overview'], ['files', 'Files'], ['history', 'History'], ...(manage ? [['manage', 'Manage']] : [])] as [v, l] (v)}
-					<button type="button" role="tab" aria-selected={ownTab === v} class:on={ownTab === v} onclick={() => (ownTab = v as typeof ownTab)}>{l}{#if v === 'manage' && ownState.kind === 'failed'}<span class="own-badge">!</span>{/if}</button>
+		{#snippet ownTabBar()}
+			<div class="own-tabs {ownView}" role="tablist" data-testid="own-tabs">
+				{#each ownTabs as t (t.v)}
+					<button type="button" role="tab" aria-selected={ownTab === t.v} class:on={ownTab === t.v} onclick={() => (ownTab = t.v)}>
+						{t.label}{#if t.count}<span class="own-count">{t.count}</span>{/if}{#if t.alert}<span class="own-badge" aria-label="Needs attention">!</span>{/if}
+					</button>
 				{/each}
 			</div>
-			{#if ownTab === 'files'}<section class="own-pane">{@render ownChipRow()}{@render ownFilesList()}</section>
-			{:else if ownTab === 'history'}<section class="own-pane"><ul class="own-history">{#each ownedEvents as e (e.id)}<li><span>{e.summary ?? e.message ?? e.text ?? e.kind}</span><span class="muted">{e.at || e.when ? ago((e.at ?? e.when) as string) : ''}</span></li>{:else}<li class="muted">Nothing yet.</li>{/each}</ul></section>
-			{:else if ownTab === 'manage'}<section class="own-pane">{@render ownToolList(true)}</section>{/if}
-		{:else if owned && ownView === 'd'}
-			<!-- D · Inline panel: a status strip; admins open the tools right here. -->
-			{@render ownChipRow()}
-			{#if manage && panelOpen}<section class="own-panel" data-testid="own-panel">{@render ownToolList(true)}</section>{/if}
+		{/snippet}
+		{#snippet ownPane()}
+			{#if ownTab === 'episodes' && owned?.show}
+				<div class="own-seasons">
+					{#each [...owned.show.seasons].filter((x) => x.number > 0).sort((x, y) => y.number - x.number) as se (se.number)}
+						<button type="button" class="own-pill" class:on={epSeason === se.number} onclick={() => (epSeason = se.number)}>Season {se.number} <span class="own-count">{se.in_library}/{se.episodes}</span></button>
+					{/each}
+				</div>
+				<ul class="own-eps">
+					{#each episodes as e (e.id)}
+						{@const st = e.slots[0]}
+						<li><span class="own-dot {epTone(st?.state ?? '')}" aria-hidden="true"></span><b>{e.episode}. {e.name ?? `Episode ${e.episode}`}</b><span class="muted">{e.air_date ?? ''}</span><span class="own-st {epTone(st?.state ?? '')}">{st?.state_label ?? 'Missing'}</span></li>
+					{:else}<li class="muted">Loading episodes…</li>{/each}
+				</ul>
+			{:else if ownTab === 'files'}
+				{@render ownChipRow()}{@render ownFilesList()}
+			{:else if ownTab === 'history'}
+				<ul class="own-history">{#each ownedEvents as e (e.id)}<li><span>{e.summary ?? e.message ?? e.text ?? e.kind}</span><span class="muted">{e.at || e.when ? ago((e.at ?? e.when) as string) : ''}</span></li>{:else}<li class="muted">Nothing yet.</li>{/each}</ul>
+			{:else if ownTab === 'manage'}
+				{@render ownToolList(true)}
+			{/if}
+		{/snippet}
+		{#if owned && ownView === 't5'}
+			<!-- T5 · Side tabs: a list on the left; Overview is the full page, the others open beside the list. -->
+			<div class="own-side" class:full={ownTab === 'overview'}>
+				{@render ownTabBar()}
+				{#if ownTab !== 'overview'}<section class="own-pane">{@render ownPane()}</section>{/if}
+			</div>
 		{:else if owned}
-			<!-- A and E: one quiet status line under the hero. -->
-			{@render ownChipRow()}
+			<!-- T1 underline · T2 centered pills · T3 on the art · T4 sticky bar with counts -->
+			{@render ownTabBar()}
+			{#if ownTab !== 'overview'}<section class="own-pane" data-testid="own-pane">{@render ownPane()}</section>{/if}
 		{/if}
-		{#if !(owned && ownView === 'c' && ownTab !== 'overview')}
+		{#if !(owned && ownTab !== 'overview')}
 		{#if look !== 'both' && look !== 'band'}
 		{#if view.band === 'netflix'}
 		<!-- Mix 2 · Netflix: left the facts row, story and where to watch; right the credits and the tags. -->
@@ -985,11 +1011,6 @@
 
 		{/if}
 		{#if owned && manage}
-			<Sheet bind:open={manageOpen} title="Manage {d.name}" size="md">
-				{@render ownChipRow()}
-				{@render ownFilesList()}
-				{@render ownToolList(false)}
-			</Sheet>
 			<div class="own-pick" data-testid="own-pick"><SegmentedControl options={OWN_VIEWS} bind:value={ownView} label="Owned title view" size="sm" /></div>
 		{/if}
 		<Sheet bind:open={allCast} title="Cast and crew" size="lg">
@@ -1044,20 +1065,53 @@
 	.own-state.have { background: color-mix(in srgb, #34c759 18%, var(--surface-2)); }
 	.own-state.downloading { background: color-mix(in srgb, #0a84ff 18%, var(--surface-2)); }
 	.own-state.failed { background: color-mix(in srgb, #ff453a 22%, var(--surface-2)); }
-	.own-band { display: grid; grid-template-columns: repeat(3, auto) 1fr; align-items: center; gap: 12px 36px; padding: 16px 20px; border-radius: 16px; background: var(--surface-1); border: 1px solid var(--line); }
-	.own-band.failed { border-color: color-mix(in srgb, #ff453a 50%, var(--line)); }
-	.own-band > div { display: grid; gap: 4px; }
-	.own-band b { color: var(--text); font: 600 15px/1.3 var(--font-ui); }
 	.own-cap, .own-glabel { color: var(--text-muted); font: 600 11px/1.2 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
-	.own-band-actions { display: flex !important; grid-auto-flow: column; justify-content: end; align-items: center; gap: 8px; }
 	.own-pill { display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: none; color: var(--text); font: 600 13.5px/1 var(--font-ui); text-decoration: none; cursor: pointer; }
 	.own-pill:hover { background: var(--surface-2); }
-	.own-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--line); }
-	.own-tabs button { position: relative; height: 40px; padding: 0 14px; border: 0; background: none; color: var(--text-muted); font: 600 14px/1 var(--font-ui); cursor: pointer; border-bottom: 2px solid transparent; }
-	.own-tabs button.on { color: var(--text); border-bottom-color: var(--text); }
+	.own-tabs { display: flex; gap: 6px; }
+	.own-tabs button { position: relative; display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border: 0; background: none; color: var(--text-muted); font: 600 14px/1 var(--font-ui); cursor: pointer; }
+	.own-tabs button.on { color: var(--text); }
+	.own-count { color: var(--text-muted); font: 600 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
+	/* T1: underline tabs, left. */
+	.own-tabs.t1 { border-bottom: 1px solid var(--line); }
+	.own-tabs.t1 button { border-bottom: 2px solid transparent; }
+	.own-tabs.t1 button.on { border-bottom-color: var(--text); }
+	/* T2: centered segmented pills. */
+	.own-tabs.t2 { align-self: center; padding: 4px; border-radius: 999px; background: var(--surface-2); }
+	.own-tabs.t2 button { height: 34px; border-radius: 999px; }
+	.own-tabs.t2 button.on { background: var(--surface-1); box-shadow: var(--shadow-card); }
+	/* T3: glass pills sitting on the bottom edge of the art. */
+	.own-tabs.t3 { position: relative; z-index: 2; align-self: flex-end; margin-top: -78px; margin-right: 24px; padding: 4px; border-radius: 999px; background: rgb(0 0 0 / 38%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); }
+	.own-tabs.t3 button { height: 32px; border-radius: 999px; color: rgb(255 255 255 / 75%); }
+	.own-tabs.t3 button.on { color: #fff; background: rgb(255 255 255 / 18%); }
+	.own-tabs.t3 .own-count { color: rgb(255 255 255 / 60%); }
+	/* T4: a full-width bar that sticks under the top bar while scrolling. */
+	.own-tabs.t4 { position: sticky; top: calc(var(--topbar, 56px) + 6px); z-index: 20; padding: 6px; border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 86%, transparent); border: 1px solid var(--line); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+	.own-tabs.t4 button { flex: 1; justify-content: center; border-radius: 10px; }
+	.own-tabs.t4 button.on { background: var(--surface-2); }
+	/* T5: a vertical list beside the content. */
+	.own-side { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 28px; align-items: start; }
+	.own-side.full { grid-template-columns: minmax(0, 1fr); }
+	.own-side .own-tabs { flex-direction: column; gap: 2px; }
+	.own-side.full .own-tabs { flex-direction: row; border-bottom: 1px solid var(--line); }
+	.own-side .own-tabs button { justify-content: space-between; border-radius: 10px; }
+	.own-side .own-tabs button.on { background: var(--surface-2); }
+	.own-seasons { display: flex; flex-wrap: wrap; gap: 8px; }
+	.own-pill.on { background: var(--text); color: var(--bg); }
+	.own-eps { display: grid; gap: 2px; margin: 4px 0 0; padding: 0; list-style: none; }
+	.own-eps li { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 10px 4px; border-bottom: 1px solid var(--line); font: 500 14.5px/1.3 var(--font-ui); }
+	.own-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--text-faint); }
+	.own-dot.have { background: #34c759; }
+	.own-dot.downloading { background: #0a84ff; animation: own-pulse 1.4s ease-in-out infinite; }
+	.own-dot.failed { background: #ff453a; }
+	@keyframes own-pulse { 50% { opacity: .35; } }
+	@media (prefers-reduced-motion: reduce) { .own-dot.downloading { animation: none; } }
+	.own-st { font: 600 12.5px/1 var(--font-ui); color: var(--text-muted); }
+	.own-st.failed { color: #ff453a; }
+	.own-st.have { color: #34c759; }
+	@media (max-width: 899px) { .own-side { grid-template-columns: minmax(0, 1fr); } .own-side .own-tabs { flex-direction: row; overflow-x: auto; } .own-tabs.t3 { align-self: stretch; margin: 0; } }
 	.own-badge { margin-left: 6px; display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: #ff453a; color: #fff; font-size: 11px; }
 	.own-pane { display: grid; gap: 16px; padding-top: 4px; }
-	.own-panel { padding: 18px 20px; border-radius: 16px; background: var(--surface-1); border: 1px solid var(--line); }
 	.own-tools { display: grid; gap: 18px; margin-top: 12px; }
 	.own-tools.cols { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 0; }
 	.own-group { display: grid; gap: 4px; align-content: start; }
@@ -1070,7 +1124,7 @@
 	.own-history { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; font: 500 14px/1.4 var(--font-ui); }
 	.own-history li { display: flex; justify-content: space-between; gap: 16px; }
 	.own-pick { position: fixed; z-index: 30; left: 0; right: 0; bottom: 20px; width: max-content; max-width: calc(100vw - 24px); overflow-x: auto; margin-inline: auto; padding: 5px; border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow-lift); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); }
-	@media (max-width: 899px) { .own-band { grid-template-columns: 1fr 1fr; } .own-band-actions { grid-column: 1 / -1; justify-content: start; } .own-tools.cols { grid-template-columns: minmax(0, 1fr); } .own-files li { grid-template-columns: 1fr; } }
+	@media (max-width: 899px) { .own-tools.cols { grid-template-columns: minmax(0, 1fr); } .own-files li { grid-template-columns: 1fr; } }
 	.calm-meta .sep { margin: 0 8px; color: var(--text-faint); }
 	.credits { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: -4px 0 0; color: var(--text); font: 500 14px/1.45 var(--font-ui); }
 	.credits .cl, .side-credits dt { color: var(--text-muted); font-weight: 500; }
