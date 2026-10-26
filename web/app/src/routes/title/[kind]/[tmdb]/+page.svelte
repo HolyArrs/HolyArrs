@@ -358,6 +358,49 @@
 	const tagsAt = 'band' as TagsAt;
 	// MUBI line: director · country · minutes.
 	const mubiCaps = $derived([makers[0]?.name ?? '', countries[0] ?? '', details?.kind === 'movie' && details.runtime ? `${details.runtime}′` : lengthWord].filter(Boolean).join(' · '));
+	// About band: every score this title has (first is the big one), the award count, and three fact columns.
+	const allScores = $derived.by(() => {
+		const out: { name: string; value: string; votes: string }[] = [];
+		for (const o of outside) out.push({ name: scoreName(o.source), value: `${scoreText(o)}${o.max !== 100 ? ` / ${o.max}` : ''}`, votes: o.votes ? o.votes.toLocaleString() : '' });
+		const t = rich?.score ?? scoreOf(details?.rating);
+		if (t) out.push({ name: 'TMDB', value: `${(Math.round(t * 10) / 10).toFixed(1)} / 10`, votes: '' });
+		return out;
+	});
+	const awardWins = $derived(awards.filter((a) => a.won).length);
+	const atvCols = $derived.by(() => {
+		if (!details) return [];
+		const d = details;
+		const i = info;
+		const row = (label: string, value: string | number | undefined | null) => (value ? [{ label, value: String(value) }] : []);
+		const ended = i?.status === 'Ended' || i?.status === 'Canceled';
+		const eps = seasons.filter((x) => x.number > 0).reduce((n, x) => n + (x.episodes ?? 0), 0);
+		const information = [
+			...row(network ? 'Network' : i?.studios.length ? 'Studio' : '', network || i?.studios.slice(0, 2).join(', ')),
+			...row(d.kind === 'show' ? 'Aired' : 'Released', d.kind === 'show' ? (i?.dates.firstAir ? `${i.dates.firstAir.slice(0, 4)}–${ended && i.dates.lastAir ? i.dates.lastAir.slice(0, 4) : 'now'}` : d.year) : i?.dates.theaters ? fmtDay(i.dates.theaters) : d.year),
+			...row(d.kind === 'show' ? 'Seasons' : 'Run Time', d.kind === 'show' ? (regular ? `${regular} · ${eps} episodes` : '') : runtimeWords(d.runtime)),
+			...row('Rated', cert),
+			...row('Status', d.kind === 'show' ? statusWord(i?.status) || i?.status : ''),
+			...row(countries.length > 1 ? 'Regions of Origin' : 'Region of Origin', countries.join(', '))
+		].filter((r) => r.label);
+		const languages = [
+			...row('Original Language', lang),
+			...row('Spoken Languages', (i?.spokenLanguages.length ?? 0) > 1 ? i?.spokenLanguages.join(', ') : ''),
+			...row('Original Title', i?.originalTitle)
+		];
+		const release = [
+			...row('In Theaters', d.kind === 'movie' && i?.dates.theaters ? fmtDay(i.dates.theaters) : ''),
+			...row('Digital', i?.dates.digital ? fmtDay(i.dates.digital) : ''),
+			...row('On Disc', i?.dates.physical ? fmtDay(i.dates.physical) : ''),
+			...row('Next Episode', i?.nextEpisode ? `${fmtDay(i.nextEpisode.airDate)} · S${i.nextEpisode.season} E${i.nextEpisode.episode}` : ''),
+			...row('Budget', money(i?.budget)),
+			...row('Box Office', money(i?.revenue))
+		];
+		return [
+			{ title: 'Information', rows: information },
+			{ title: 'Languages', rows: languages },
+			{ title: d.kind === 'show' ? 'Schedule' : 'Release & Box Office', rows: release }
+		].filter((c) => c.rows.length);
+	});
 	// The short facts: one label, one value each.
 	const parts = $derived.by((): { label: string; value: string }[] => {
 		if (!details || !info) return [];
@@ -648,18 +691,44 @@
 		{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
 		{@render castRow()}
 		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} />
-		{#if parts.length || outLinks.length}
-			<section class="ledger" data-testid="title-ledger">
-				<h2 class="tp-h2">Information</h2>
-				{#if look === 'netflix1'}
-					<p class="prose">{fine.join('. ')}.</p>
-				{:else}
-					<dl>
-						{#if network && look !== 'side'}<div><dt>Network</dt><dd>{network}</dd></div>{/if}
-						{#each parts as p (p.label)}<div><dt>{p.label}</dt><dd>{p.value}</dd></div>{/each}
-					</dl>
-				{/if}
-				<p class="ledger-links">{#each outLinks as l, i (l.name)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name}</a>{/each}</p>
+		{#if d}
+			<!-- Apple TV-like About band: a lighter strip to the page edges; a row of cards (the title, every score,
+			     awards), then three columns of plain label/value facts, then links out. -->
+			<section class="atv" data-testid="title-ledger">
+				<h2 class="atv-h">About</h2>
+				<div class="atv-cards">
+					<article class="atv-card">
+						<h3>{d.name}</h3>
+						<p class="atv-cap">{d.genres.slice(0, 2).join(', ') || (d.kind === 'show' ? 'TV show' : 'Movie')}</p>
+						{#if d.overview}<p class="atv-text clamp">{d.overview}</p>{/if}
+					</article>
+					{#if allScores.length}
+						<article class="atv-card">
+							<h3 class="atv-score">{#if outside.length}<TitleScores scores={outside.slice(0, 1)} variant="mono" />{:else}{allScores[0].value}{/if}</h3>
+							<p class="atv-cap">{allScores[0].name}{allScores[0].votes ? ` · ${allScores[0].votes} votes` : ''}</p>
+							<dl class="atv-rows">{#each allScores.slice(1, 5) as r (r.name)}<div><dt>{r.name}</dt><dd>{r.value}</dd></div>{/each}</dl>
+						</article>
+					{/if}
+					{#if awards.length}
+						<article class="atv-card">
+							<h3>{awardBadges[0] ?? `${awardWins} wins`}</h3>
+							<p class="atv-cap">Awards</p>
+							<dl class="atv-rows">
+								<div><dt>Wins</dt><dd>{awardWins}</dd></div>
+								<div><dt>Nominations</dt><dd>{awards.length - awardWins}</dd></div>
+							</dl>
+						</article>
+					{/if}
+				</div>
+				<div class="atv-cols">
+					{#each atvCols as c (c.title)}
+						<div>
+							<h3 class="atv-h3">{c.title}</h3>
+							<dl class="atv-list">{#each c.rows as r (r.label)}<div><dt>{r.label}</dt><dd>{r.value}</dd></div>{/each}</dl>
+						</div>
+					{/each}
+				</div>
+				<p class="atv-links">{#each outLinks as l, i (l.name)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name} ↗</a>{/each}</p>
 			</section>
 		{/if}
 		{#snippet ratingCard()}
@@ -761,15 +830,31 @@
 	.grey-credits { display: grid; gap: 2px; color: var(--text-muted); font: 400 14px/1.5 var(--font-ui); }
 	.grey-credits p { margin: 0; }
 	.grey-credits a { color: var(--text); text-decoration: none; }
-	.ledger dl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 28px; margin: 0; }
-	.ledger dt { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); }
-	.ledger dd { margin: 3px 0 0; color: var(--text); font: 500 14px/1.4 var(--font-ui); }
-	.ledger .prose { margin: 0; max-width: 680px; color: var(--text-muted); font: 400 15px/1.6 var(--font-ui); }
-	.ledger-links { display: flex; flex-wrap: wrap; align-items: center; margin: 16px 0 0; color: var(--text-muted); font: 500 13px/1.5 var(--font-ui); }
-	.ledger-links .sep { margin: 0 8px; color: var(--text-faint); }
-	.ledger-links a { color: var(--text-muted); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
-	.ledger-links a:hover { color: var(--text); }
-	@media (max-width: 899px) { .ledger dl { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+	/* About band, Apple TV-like: lighter strip edge to edge, cards, then label/value columns. */
+	.atv { position: relative; margin-top: 12px; padding: 28px 0 32px; background: var(--atv-band); box-shadow: 0 0 0 100vmax var(--atv-band); clip-path: inset(0 -100vmax); --atv-band: color-mix(in srgb, var(--text) 4%, var(--bg)); --atv-card: color-mix(in srgb, var(--text) 11%, var(--bg)); }
+	:global([data-theme='light']) .atv { --atv-band: color-mix(in srgb, var(--text) 5%, var(--bg)); --atv-card: var(--bg); }
+	.atv-score :global(.v) { font-size: 17px !important; font-weight: 700 !important; }
+	.atv-score :global(.mark) { height: 18px !important; }
+	.atv-h { margin: 0 0 14px; color: var(--text); font: 700 20px/1.2 var(--font-ui); }
+	.atv-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+	.atv-card { min-width: 0; padding: 14px 16px 16px; border-radius: 10px; background: var(--atv-card); }
+	.atv-card h3 { margin: 0; color: var(--text); font: 700 17px/1.25 var(--font-ui); }
+	.atv-cap { margin: 4px 0 8px; color: var(--text-muted); font: 600 11px/1.2 var(--font-ui); letter-spacing: .02em; text-transform: uppercase; }
+	.atv-text { margin: 0; color: var(--text-muted); font: 500 14.5px/1.4 var(--font-ui); }
+	.atv-text.clamp { display: -webkit-box; -webkit-line-clamp: 4; line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+	.atv-rows { display: grid; gap: 2px; margin: 0; }
+	.atv-rows div { display: flex; justify-content: space-between; gap: 12px; color: var(--text-muted); font: 500 14.5px/1.4 var(--font-ui); }
+	.atv-rows dd { margin: 0; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+	.atv-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: 22px; }
+	.atv-h3 { margin: 0 0 12px; color: var(--text); font: 700 18px/1.2 var(--font-ui); }
+	.atv-list { display: grid; gap: 14px; margin: 0; }
+	.atv-list dt { color: var(--text); font: 600 13px/1.3 var(--font-ui); }
+	.atv-list dd { margin: 1px 0 0; color: var(--text-muted); font: 500 13px/1.35 var(--font-ui); }
+	.atv-links { display: flex; flex-wrap: wrap; align-items: center; margin: 22px 0 0; color: var(--text-muted); font: 500 13px/1.4 var(--font-ui); }
+	.atv-links .sep { margin: 0 8px; color: var(--text-faint); }
+	.atv-links a { color: var(--text-muted); text-decoration: none; }
+	.atv-links a:hover { color: var(--text); }
+	@media (max-width: 899px) { .atv-cards, .atv-cols { grid-template-columns: minmax(0, 1fr); } }
 	.card-links { display: flex; flex-wrap: wrap; align-items: center; margin: 14px 0 0; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
 	.card-links a { color: var(--text); text-decoration: none; }
 	.card-links a:hover { text-decoration: underline; }
