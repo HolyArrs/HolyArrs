@@ -240,8 +240,10 @@
 	.shade {
 		position: absolute; inset: 0; pointer-events: none;
 		background:
+			/* A soft dark pool behind the logo, tagline and buttons, so they read on bright frames. */
+			radial-gradient(70% 75% at 0% 100%, rgb(0 0 0 / 72%) 0%, rgb(0 0 0 / 45%) 40%, rgb(0 0 0 / 0%) 75%),
 			linear-gradient(to right, rgb(0 0 0 / 60%) 0%, rgb(0 0 0 / 0%) 60%),
-			linear-gradient(to top, rgb(0 0 0 / 50%) 0%, rgb(0 0 0 / 10%) 35%, rgb(0 0 0 / 0%) 70%),
+			linear-gradient(to top, rgb(0 0 0 / 62%) 0%, rgb(0 0 0 / 18%) 35%, rgb(0 0 0 / 0%) 70%),
 			/* Behind the breadcrumb and chips at the top: bright frames kept them under 3:1. */
 			linear-gradient(to bottom, rgb(0 0 0 / 45%) 0%, rgb(0 0 0 / 0%) 22%);
 		transition: opacity var(--dur-slow) var(--ease-out);

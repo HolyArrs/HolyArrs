@@ -317,7 +317,7 @@
 	.score svg { color: #f5c518; }
 	.hero-caps { margin: 12px 0 0; color: rgb(255 255 255 / 92%); font: 600 13px/1.3 var(--font-ui); letter-spacing: .08em; text-transform: uppercase; text-shadow: 0 1px 3px rgb(0 0 0 / 55%); }
 	.hero-story { margin: 12px 0 0; max-width: 58ch; color: rgb(255 255 255 / 90%); font: 500 clamp(14px, 1.1vw, 16px)/1.5 var(--font-ui); text-shadow: 0 1px 3px rgb(0 0 0 / 55%); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-	.hero-tagline { margin: 10px 0 0; max-width: 40ch; color: rgb(255 255 255 / 88%); font: italic 500 clamp(15px, 1.3vw, 18px)/1.35 var(--font-ui); text-shadow: 0 1px 3px rgb(0 0 0 / 55%); }
+	.hero-tagline { margin: 10px 0 0; max-width: 40ch; color: rgb(255 255 255 / 88%); font: italic 500 clamp(15px, 1.3vw, 18px)/1.35 var(--font-ui); text-shadow: 0 1px 3px rgb(0 0 0 / 55%), 0 0 18px rgb(0 0 0 / 45%); }
 	.story { max-width: 72ch; margin: var(--s-5) 0 0; font: 400 16px/1.55 var(--font-ui); color: var(--text); }
 	.ui-thero :global(.tp-member) { min-height: 44px; display: flex; align-items: center; }
 	.status-line { margin-top: var(--s-4); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; font: 500 15px/1.4 var(--font-ui); color: var(--text-muted); }
