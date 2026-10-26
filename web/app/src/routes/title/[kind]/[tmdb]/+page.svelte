@@ -401,6 +401,21 @@
 	});
 	// The details as one sentence (the Apple-like card).
 	const summary = $derived(tiles.map((t) => `${t.value} ${t.label}`).join(' · '));
+	// What a US age rating means, in a few words (the age-rating card).
+	const certMeaning = (c: string) =>
+		({
+			G: 'For all ages',
+			PG: 'Some parts may not suit young children',
+			'PG-13': 'Some parts may not suit children under 13',
+			R: 'Under 17 only with a parent or guardian',
+			'NC-17': 'Adults only, 18 and over',
+			'TV-Y': 'Made for young children',
+			'TV-Y7': 'For children 7 and over',
+			'TV-G': 'For all ages',
+			'TV-PG': 'Parents may want to watch with children',
+			'TV-14': 'May not suit children under 14',
+			'TV-MA': 'For adults; may not suit anyone under 17'
+		})[c] ?? '';
 	// One quiet line, only when it says something: not in English, or known by another title.
 	const langLine = $derived(
 		[info?.originalLanguage && info.originalLanguage !== 'en' ? `In ${lang}` : '', info?.originalTitle ? `Original title: ${info.originalTitle}` : ''].filter(Boolean).join(' · ')
@@ -592,21 +607,27 @@
 		{@render castRow()}
 		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} />
 		{#if bottom === 'card'}
-			<!-- B2 · Apple card: one wide rounded card with the title, a caps line and the details as a sentence; a second card with the links. -->
+			<!-- B2 · Apple cards: the details card (short label and value rows) beside the age rating on its own; links under them. -->
 			<section class="b-card" data-testid="title-details">
 				<h2 class="tp-h2">About</h2>
 				<div class="cards">
 					<div class="card wide">
 						<h3>{d.name}</h3>
 						<p class="caps">{[d.kind === 'show' ? 'TV show' : 'Movie', ...d.genres.slice(0, 2)].join(', ')}</p>
-						<p class="sum">{summary}{#if langLine}<br />{langLine}{/if}</p>
+						<dl class="card-rows">
+							{#each tiles as t (t.label)}<div><dt>{t.label.charAt(0).toUpperCase() + t.label.slice(1)}</dt><dd>{t.value}</dd></div>{/each}
+							{#if langLine}<div><dt>Language</dt><dd>{langLine}</dd></div>{/if}
+						</dl>
 					</div>
-					<div class="card">
-						<h3>{cert || 'Not rated'}</h3>
-						<p class="caps">Age rating</p>
-						<p class="sum">{#each outLinks as l, i (l.name)}{#if i} · {/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name}</a>{/each}</p>
-					</div>
+					{#if cert}
+						<div class="card">
+							<h3 class="rating"><span class="fb cert big">{cert}</span></h3>
+							<p class="caps">Age rating</p>
+							{#if certMeaning(cert)}<p class="sum">{certMeaning(cert)}</p>{/if}
+						</div>
+					{/if}
 				</div>
+				<p class="card-links">{#each outLinks as l, i (l.name)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name} ↗</a>{/each}</p>
 			</section>
 		{:else if bottom === 'netflix'}
 			<!-- B3 · Netflix "About": plain labeled lines, one column, the mood words included. -->
@@ -761,9 +782,18 @@
 	.card { padding: 20px 22px; border-radius: 16px; background: var(--surface-1); }
 	.card h3 { margin: 0; color: var(--text); font: 700 20px/1.2 var(--font-ui); }
 	.card .caps { margin: 4px 0 10px; color: var(--text-muted); font: 700 12px/1.2 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
+	.card-rows { display: grid; gap: 10px; margin: 0; }
+	.card-rows div { display: flex; justify-content: space-between; gap: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--line); font: 500 15px/1.4 var(--font-ui); }
+	.card-rows div:last-child { border-bottom: 0; padding-bottom: 0; }
+	.card-rows dt { color: var(--text-muted); }
+	.card-rows dd { margin: 0; color: var(--text); text-align: right; }
+	.card .rating { margin: 0; }
+	.fb.cert.big { height: 34px; padding: 0 12px; font-size: 17px; border-radius: 7px; }
+	.card-links { display: flex; flex-wrap: wrap; align-items: center; margin: 14px 0 0; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
+	.card-links .sep { margin: 0 8px; color: var(--text-faint); }
 	.card .sum { margin: 0; color: var(--text-muted); font: 500 15px/1.5 var(--font-ui); }
-	.card a, .b-netflix a, .b-table a, .b-line a { color: var(--text); text-decoration: none; }
-	.card a:hover, .b-netflix a:hover, .b-table a:hover, .b-line a:hover { text-decoration: underline; }
+	.card-links a, .b-netflix a, .b-table a, .b-line a { color: var(--text); text-decoration: none; }
+	.card-links a:hover, .b-netflix a:hover, .b-table a:hover, .b-line a:hover { text-decoration: underline; }
 	@media (max-width: 699px) { .cards { grid-template-columns: minmax(0, 1fr); } }
 	.b-netflix dl { display: grid; gap: 8px; margin: 0; max-width: 760px; font: 400 15px/1.45 var(--font-ui); }
 	.b-netflix dl div { display: flex; flex-wrap: wrap; gap: 0 6px; }
