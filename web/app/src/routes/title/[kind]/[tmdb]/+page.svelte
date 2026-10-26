@@ -704,10 +704,11 @@
 						{#if d.overview}<p class="atv-text clamp">{d.overview}</p>{/if}
 					</article>
 					{#if allScores.length}
+						<!-- Every score as one row: colored mark and name left, the score out of 10 right. -->
 						<article class="atv-card">
-							<h3 class="atv-score">{#if outside.length}<TitleScores scores={outside.slice(0, 1)} variant="mono" />{:else}{allScores[0].value}{/if}</h3>
-							<p class="atv-cap">{allScores[0].votes ? `${allScores[0].votes} votes · ` : ''}scores out of 10</p>
-							<dl class="atv-rows">{#each allScores.slice(1, 5) as r (r.name)}<div><dt>{r.name}</dt><dd>{r.value}</dd></div>{/each}</dl>
+							<h3>Ratings</h3>
+							<p class="atv-cap">Out of 10</p>
+							<div class="atv-scores"><TitleScores scores={outside} tmdb={rich?.score ?? scoreOf(d.rating)} variant="list" outOf10 /></div>
 						</article>
 					{/if}
 					{#if awards.length}
@@ -828,8 +829,9 @@
 	/* About band, Apple TV-like: lighter strip edge to edge, cards, then label/value columns. */
 	.atv { position: relative; margin-top: 12px; padding: 28px 0 32px; background: var(--atv-band); box-shadow: 0 0 0 100vmax var(--atv-band); clip-path: inset(0 -100vmax); --atv-band: color-mix(in srgb, var(--text) 4%, var(--bg)); --atv-card: color-mix(in srgb, var(--text) 11%, var(--bg)); }
 	:global([data-theme='light']) .atv { --atv-band: color-mix(in srgb, var(--text) 5%, var(--bg)); --atv-card: var(--bg); }
-	.atv-score :global(.v) { font-size: 17px !important; font-weight: 700 !important; }
-	.atv-score :global(.mark) { height: 18px !important; }
+	.atv-scores :global(.list li) { padding: 3px 0; border-top: 0; font-size: 14.5px; }
+	.atv-scores :global(.list .n) { color: var(--text-muted); font-size: 14.5px; }
+	.atv-scores :global(.list .v) { color: var(--text-muted); font: 500 14.5px/1.4 var(--font-ui); font-variant-numeric: tabular-nums; }
 	.atv-h { margin: 0 0 14px; color: var(--text); font: 700 20px/1.2 var(--font-ui); }
 	.atv-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
 	.atv-card { min-width: 0; padding: 14px 16px 16px; border-radius: 10px; background: var(--atv-card); }
