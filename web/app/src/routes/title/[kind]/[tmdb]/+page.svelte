@@ -77,7 +77,7 @@
 	const manage = $derived(session.can('manage_library'));
 	// An owned title: its library record (files, versions, status), shown on this same page.
 	let owned = $state<TitleView | null>(null);
-	let ownedEvents = $state<{ id: number; at?: string; when?: string; kind?: string; summary?: string; message?: string; text?: string }[]>([]);
+	let ownedEvents = $state<{ ID: number; At?: string; Kind?: string; Summary?: string }[]>([]);
 	async function loadOwned(id: number) {
 		try {
 			owned = await api.get<TitleView>(`/titles/${id}`);
@@ -96,16 +96,14 @@
 		{ value: 't5', label: 'T5 · Side tabs' }
 	];
 	let ownView = $state((typeof location !== 'undefined' && OWN_VIEWS.find((v) => v.value === new URLSearchParams(location.search).get('own'))?.value) || 't1');
-	let ownTab = $state<'overview' | 'episodes' | 'files' | 'history' | 'manage'>('overview');
-	// The tabs of an owned title: Overview (this page), Episodes (shows), Files, History, Manage (admins), with counts.
+	let ownTab = $state<'overview' | 'episodes' | 'library'>('overview');
+	// The tabs of an owned title: Overview (this page), Episodes (shows) and Your copy (files, actions, history in one place).
 	const ownTabs = $derived.by(() => {
 		const o = owned;
 		if (!o) return [];
 		const out: { v: typeof ownTab; label: string; count?: string; alert?: boolean }[] = [{ v: 'overview', label: 'Overview' }];
 		if (o.show) out.push({ v: 'episodes', label: 'Episodes', count: `${o.show.in_library}/${o.show.episodes}`, alert: (o.show.failed ?? 0) > 0 });
-		out.push({ v: 'files', label: 'Files', count: String(ownFiles.length || (o.show?.in_library ?? 0)) });
-		out.push({ v: 'history', label: 'History', count: ownedEvents.length ? String(ownedEvents.length) : undefined });
-		if (manage) out.push({ v: 'manage', label: 'Manage', alert: ownState.kind === 'failed' });
+		out.push({ v: 'library', label: 'Your copy', alert: ownState.kind === 'failed' });
 		return out;
 	});
 	// Episodes tab: the chosen season's episodes with their file state.
@@ -825,15 +823,14 @@
 				<ul class="own-eps">
 					{#each episodes as e (e.id)}
 						{@const st = e.slots[0]}
-						<li><span class="own-dot {epTone(st?.state ?? '')}" aria-hidden="true"></span><b>{e.episode}. {e.name ?? `Episode ${e.episode}`}</b><span class="muted">{e.air_date ?? ''}</span><span class="own-st {epTone(st?.state ?? '')}">{st?.state_label ?? 'Missing'}</span></li>
+						<li><span class="own-dot {epTone(st?.state ?? '')}" aria-hidden="true"></span><b>{e.episode}. {e.name ?? `Episode ${e.episode}`}</b><span class="muted">{e.air_date ? new Date(e.air_date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : ''}</span><span class="own-st {epTone(st?.state ?? '')}">{st?.state_label ?? 'Missing'}</span></li>
 					{:else}<li class="muted">Loading episodes…</li>{/each}
 				</ul>
-			{:else if ownTab === 'files'}
+			{:else if ownTab === 'library'}
 				{@render ownChipRow()}{@render ownFilesList()}
-			{:else if ownTab === 'history'}
-				<ul class="own-history">{#each ownedEvents as e, i (e.ID ?? e.id ?? i)}<li><span>{e.Summary ?? e.summary ?? e.Kind ?? e.kind}</span><span class="muted">{e.At || e.at ? ago((e.At ?? e.at) as string) : ''}</span></li>{:else}<li class="muted">Nothing yet.</li>{/each}</ul>
-			{:else if ownTab === 'manage'}
-				{@render ownToolList(true)}
+				{#if manage}<h3 class="own-h">Actions</h3>{@render ownToolList(true)}{/if}
+				<h3 class="own-h">History</h3>
+				<ul class="own-history">{#each ownedEvents as e (e.ID)}<li><span>{e.Summary ?? e.Kind}</span><span class="muted">{e.At ? ago(e.At) : ''}</span></li>{:else}<li class="muted">Nothing yet.</li>{/each}</ul>
 			{/if}
 		{/snippet}
 		{#if owned && ownView === 't5'}
@@ -1121,6 +1118,7 @@
 	.own-files { display: grid; gap: 10px; margin: 8px 0 0; padding: 0; list-style: none; }
 	.own-files li { display: grid; grid-template-columns: auto auto auto 1fr; gap: 4px 16px; align-items: baseline; font: 500 14px/1.4 var(--font-ui); }
 	.own-files .path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.own-h { margin: 28px 0 12px; font: 600 13px/1.2 var(--font-ui); color: var(--text-dim, #8a8a8a); }
 	.own-history { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; font: 500 14px/1.4 var(--font-ui); }
 	.own-history li { display: flex; justify-content: space-between; gap: 16px; }
 	.own-pick { position: fixed; z-index: 30; left: 0; right: 0; bottom: 20px; width: max-content; max-width: calc(100vw - 24px); overflow-x: auto; margin-inline: auto; padding: 5px; border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow-lift); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); }
