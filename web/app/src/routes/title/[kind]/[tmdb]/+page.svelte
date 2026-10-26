@@ -245,10 +245,10 @@
 	// Whole-page views while Luis compares (?view=): Now, Before (the page before the reviewers' fixes) and three mixes.
 	type View = { value: string; label: string; newWords: boolean; status: boolean; names: boolean; cards: 'two' | 'three'; missing: boolean; wide: boolean; heroFacts: boolean; band: 'side' | 'apple' | 'netflix' | 'compact' };
 	const VIEWS: View[] = [
-		{ value: 'now', label: 'Now', newWords: true, status: true, names: true, cards: 'two', missing: false, wide: true, heroFacts: false, band: 'side' },
+		{ value: 'now', label: 'Now', newWords: true, status: true, names: true, cards: 'three', missing: false, wide: true, heroFacts: false, band: 'side' },
 		{ value: 'before', label: 'Before', newWords: false, status: false, names: false, cards: 'three', missing: true, wide: false, heroFacts: false, band: 'side' },
-		{ value: 'm1', label: 'Mix 1 · Apple TV', newWords: true, status: true, names: true, cards: 'two', missing: false, wide: true, heroFacts: true, band: 'apple' },
-		{ value: 'm2', label: 'Mix 2 · Netflix', newWords: true, status: true, names: true, cards: 'two', missing: false, wide: true, heroFacts: false, band: 'netflix' },
+		{ value: 'm1', label: 'Mix 1 · Apple TV', newWords: true, status: true, names: true, cards: 'three', missing: false, wide: true, heroFacts: true, band: 'apple' },
+		{ value: 'm2', label: 'Mix 2 · Netflix', newWords: true, status: true, names: true, cards: 'three', missing: false, wide: true, heroFacts: false, band: 'netflix' },
 		{ value: 'm3', label: 'Mix 3 · One column', newWords: true, status: true, names: true, cards: 'three', missing: false, wide: true, heroFacts: false, band: 'compact' }
 	];
 	const VIEW_OPTIONS = VIEWS.map((v) => ({ value: v.value, label: v.label }));
