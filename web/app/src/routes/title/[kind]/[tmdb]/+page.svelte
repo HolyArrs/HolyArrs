@@ -29,6 +29,7 @@
 	import { awardsTip, loadWikiFacts, type WikiAward } from '#lib/wiki-facts.ts';
 	import type { TagsAt, TitleLook } from '#lib/title-look.svelte.ts';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
+	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
@@ -358,7 +359,15 @@
 	// Bottom section while Luis compares: the About columns (default) or Details tiles (?about=details).
 	// Bottom section while Luis compares (?about=card|netflix|line|table); the About columns otherwise.
 	const BOTTOMS = ['about', 'card', 'netflix', 'line', 'table'] as const;
-	const bottom: (typeof BOTTOMS)[number] = (typeof location !== 'undefined' && BOTTOMS.find((b) => b === new URLSearchParams(location.search).get('about'))) || 'about';
+	type Bottom = (typeof BOTTOMS)[number];
+	let bottom = $state<Bottom>((typeof location !== 'undefined' && BOTTOMS.find((b) => b === new URLSearchParams(location.search).get('about'))) || 'about');
+	const BOTTOM_OPTIONS: { value: Bottom; label: string }[] = [
+		{ value: 'about', label: 'B1 · Columns' },
+		{ value: 'card', label: 'B2 · Apple card' },
+		{ value: 'netflix', label: 'B3 · Netflix' },
+		{ value: 'line', label: 'B4 · One line' },
+		{ value: 'table', label: 'B5 · Table' }
+	];
 	// Themes as words for "This movie is:" (story keywords only, first four).
 	const moods = $derived(tags.filter((k) => !/stinger|^based on|sequel|remake|woman director|duringcredits|aftercredits/i.test(k)).slice(0, 4));
 	type Tile = { value: string; label: string };
@@ -690,6 +699,9 @@
 		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} />
 		{/if}
 
+		<!-- While the bottom section is being chosen: a floating switch between the options. -->
+		<div class="bottom-pick" data-testid="bottom-pick"><SegmentedControl options={BOTTOM_OPTIONS} bind:value={bottom} label="Bottom section" size="sm" /></div>
+
 		<Sheet bind:open={allCast} title="Cast and crew" size="lg">
 			<ul class="all-grid people">
 				{#each d.cast as p, i (p.name + i)}
@@ -763,6 +775,8 @@
 	.b-table dl div { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); font: 500 15px/1.4 var(--font-ui); }
 	.b-table dt { color: var(--text-muted); }
 	.b-table dd { margin: 0; color: var(--text); text-align: right; }
+	.bottom-pick { position: fixed; z-index: 30; left: 0; right: 0; bottom: 20px; width: max-content; max-width: calc(100vw - 24px); overflow-x: auto; margin-inline: auto; padding: 5px; border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow-lift); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); }
+	@media (max-width: 767px) { .bottom-pick { bottom: calc(var(--tabbar, 56px) + env(safe-area-inset-bottom) + 16px); } }
 	.about-link { color: var(--text); text-decoration: none; }
 	.about-link:hover { text-decoration: underline; }
 	.about-col dd { margin: 3px 0 0; color: var(--text-muted); font: 400 14px/1.45 var(--font-ui); }
