@@ -28,6 +28,12 @@
 	import { aboutPicks, aboutShown } from '#lib/about-picks.svelte.ts';
 	import { awardsTip, loadWikiFacts, type WikiAward } from '#lib/wiki-facts.ts';
 	import type { TagsAt, TitleLook } from '#lib/title-look.svelte.ts';
+	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
+	import Icon from '#lib/Icon.svelte';
+	import ActionMenu from '#lib/ui/ActionMenu.svelte';
+	import type { MenuItem } from '#lib/ui/Menu.svelte';
+	import { qualityBadges } from '#lib/title-page.ts';
+	import { bytes, ago } from '#lib/format.ts';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -69,6 +75,99 @@
 	let blocked = $state(false);
 
 	const manage = $derived(session.can('manage_library'));
+	// An owned title: its library record (files, versions, status), shown on this same page.
+	let owned = $state<TitleView | null>(null);
+	let ownedEvents = $state<{ id: number; at?: string; when?: string; kind?: string; summary?: string; message?: string; text?: string }[]>([]);
+	async function loadOwned(id: number) {
+		try {
+			owned = await api.get<TitleView>(`/titles/${id}`);
+			const h = await api.get<{ events?: typeof ownedEvents }>(`/events?title=${id}&limit=8`).catch(() => ({ events: [] }));
+			ownedEvents = h.events ?? [];
+		} catch {
+			owned = null;
+		}
+	}
+	// Five ways to show an owned title, while Luis compares (?own=a..e).
+	const OWN_VIEWS = [
+		{ value: 'a', label: 'A · Manage sheet' },
+		{ value: 'b', label: 'B · Library band' },
+		{ value: 'c', label: 'C · Tabs' },
+		{ value: 'd', label: 'D · Inline panel' },
+		{ value: 'e', label: 'E · Quiet menu' }
+	];
+	let ownView = $state((typeof location !== 'undefined' && OWN_VIEWS.find((v) => v.value === new URLSearchParams(location.search).get('own'))?.value) || 'a');
+	let ownTab = $state<'overview' | 'files' | 'history' | 'manage'>('overview');
+	let manageOpen = $state(false);
+	let panelOpen = $state(false);
+	let busyAction = $state('');
+	const ownFiles = $derived((owned?.slots ?? []).filter((x) => x.file));
+	const ownBadges = $derived(qualityBadges(ownFiles.map((x) => x.file)));
+	const ownDownload = $derived((owned?.slots ?? []).find((x) => x.download?.active || x.state === 'downloading' || x.state === 'importing'));
+	const ownFailed = $derived((owned?.slots ?? []).some((x) => x.state === 'failed') || (owned?.show?.failed ?? 0) > 0);
+	// One state for the hero button and the status line: have, downloading, failed, missing.
+	const ownState = $derived.by((): { kind: 'have' | 'downloading' | 'failed' | 'missing'; label: string } => {
+		const o = owned;
+		if (!o) return { kind: 'missing', label: '' };
+		if (o.show) {
+			const sh = o.show;
+			if ((sh.downloading ?? 0) > 0) return { kind: 'downloading', label: `Downloading ${sh.downloading} ${sh.downloading === 1 ? 'episode' : 'episodes'}` };
+			if ((sh.failed ?? 0) > 0) return { kind: 'failed', label: `${sh.failed} failed` };
+			if (sh.episodes && sh.in_library >= sh.episodes - (sh.not_out_yet ?? 0)) return { kind: 'have', label: 'In library' };
+			return { kind: sh.in_library ? 'have' : 'missing', label: `${sh.in_library} of ${sh.episodes} episodes` };
+		}
+		if (ownDownload) return { kind: 'downloading', label: ownDownload.download ? `Downloading ${Math.floor(Math.min(Math.max(ownDownload.download.progress, 0), 1) * 100)}%` : 'Downloading' };
+		if (ownFiles.length) return { kind: 'have', label: 'In library' };
+		if (ownFailed) return { kind: 'failed', label: 'Download failed' };
+		return { kind: 'missing', label: 'Not downloaded yet' };
+	});
+	// The short facts about the copy you have: quality, size, kept up to date.
+	const ownChips = $derived([...ownBadges, owned?.size_bytes ? bytes(owned.size_bytes) : '', owned ? (owned.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date') : ''].filter(Boolean));
+	async function ownRun(what: 'search' | 'refresh' | 'keep') {
+		const o = owned;
+		if (!o) return;
+		busyAction = what;
+		try {
+			if (what === 'search') {
+				await api.post(`/titles/${o.id}/search`, {});
+				toasts.push('Searching for it now.', 'ok');
+			} else if (what === 'refresh') {
+				await api.post(`/titles/${o.id}/refresh`);
+				toasts.push('Refreshing names, dates and posters.', 'ok');
+			} else {
+				const r = await api.put<{ title: TitleView }>(`/titles/${o.id}`, { keep_up_to_date: !o.keep_up_to_date });
+				owned = r.title;
+			}
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		} finally {
+			busyAction = '';
+		}
+	}
+	// Every admin tool, grouped; the deep ones (releases, rename, versions, edit, delete) open the full tools page for now.
+	type OwnTool = { label: string; icon: 'search' | 'grid' | 'copy' | 'plus' | 'tools' | 'check' | 'refresh' | 'clock' | 'trash'; href?: string; run?: () => void; busy?: boolean; danger?: boolean };
+	const ownTools = $derived.by((): { group: string; items: OwnTool[] }[] => {
+		const o = owned;
+		if (!o) return [];
+		const full = (hash = '') => to(`/library/${o.id}${hash}`);
+		return [
+			{ group: 'Find', items: [
+				{ label: 'Search now', icon: 'search', run: () => ownRun('search'), busy: busyAction === 'search' },
+				{ label: 'Choose a release', icon: 'grid', href: full('?tools=releases') }
+			] },
+			{ group: 'Files', items: [
+				{ label: 'Rename files', icon: 'copy', href: full('?tools=rename') },
+				{ label: 'Add a Version', icon: 'plus', href: full('?tools=version') },
+				{ label: 'Edit', icon: 'tools', href: full('?tools=edit') }
+			] },
+			{ group: 'Keep', items: [
+				{ label: o.keep_up_to_date ? 'Stop keeping up to date' : 'Keep up to date', icon: 'check', run: () => ownRun('keep'), busy: busyAction === 'keep' },
+				{ label: 'Refresh details', icon: 'refresh', run: () => ownRun('refresh'), busy: busyAction === 'refresh' },
+				{ label: 'All history', icon: 'clock', href: to(`/downloads/history?title=${o.id}`) },
+				{ label: o.kind === 'show' ? 'Delete show' : 'Delete movie', icon: 'trash', href: full('?tools=delete'), danger: true }
+			] }
+		];
+	});
+	const ownMenu = $derived<MenuItem[]>(ownTools.flatMap((g, i) => [...(i ? [{ kind: 'separator' as const }] : []), ...g.items.map((t) => ({ label: t.label, icon: t.icon, href: t.href, onselect: t.run, destructive: t.danger, disabled: t.busy }))]));
 	const mayAsk = $derived(session.can('ask') && !manage);
 
 	let folders = $state<LibraryFolder[]>([]);
@@ -106,11 +205,9 @@
 				missing = !details;
 				return;
 			}
-			if (d.titleId) {
-				void goto(to(`/library/${d.titleId}`), { replaceState: true });
-				return;
-			}
 			details = d;
+			owned = null;
+			if (d.titleId) void loadOwned(d.titleId);
 		} catch (e) {
 			if (e instanceof ApiError && e.status === 403) {
 				blocked = true;
@@ -570,7 +667,12 @@
 			vtName={tmdbArtName(d.kind, d.tmdb)}
 		>
 			{#snippet actions()}
-				{#if manage && !d.neverAdd}
+				{#if owned}
+					<ActionButton icon={ownState.kind === 'have' ? 'check' : ownState.kind === 'failed' ? 'refresh' : ownState.kind === 'downloading' ? 'download' : 'search'} label={ownState.label} caption={ownState.kind === 'failed' && manage ? 'Retry' : ownState.kind === 'missing' && manage ? 'Search now' : ownState.label} primary onclick={() => (manage && (ownState.kind === 'failed' || ownState.kind === 'missing') ? ownRun('search') : undefined)} />
+					{#if manage && ownView === 'a'}<ActionButton icon="tools" label="Manage {d.name}" caption="Manage" onclick={() => (manageOpen = true)} />{/if}
+					{#if manage && ownView === 'd'}<ActionButton icon="tools" label="Show the tools" caption={panelOpen ? 'Hide tools' : 'Manage'} onclick={() => (panelOpen = !panelOpen)} />{/if}
+					{#if manage && ownView === 'e'}<ActionMenu label="Manage {d.name}" items={ownMenu} />{/if}
+				{:else if manage && !d.neverAdd}
 					{#if d.kind === 'movie' && d.movie}
 						<ActionButton icon="plus" label="Add {d.name} to the library" caption={view.newWords ? 'Add to library' : 'Add'} primary onclick={() => addMovie?.open(d.movie as LookupMovie)} />
 					{:else if d.kind === 'show' && d.show}
@@ -657,6 +759,69 @@
 		{#snippet tagLine()}
 			{#if tagsAt === 'band' && tags.length}<ul class="tagchips quiet" data-testid="title-tags">{#each tags.slice(0, 5) as t (t)}<li>{t}</li>{/each}</ul>{/if}
 		{/snippet}
+		{#snippet ownChipRow()}
+			{#if owned}
+				<div class="own-chips" data-testid="own-chips">
+					<span class="own-state {ownState.kind}">{ownState.label}</span>
+					{#each ownChips as c (c)}<span class="own-chip">{c}</span>{/each}
+				</div>
+			{/if}
+		{/snippet}
+		{#snippet ownToolList(cols: boolean)}
+			<div class="own-tools" class:cols>
+				{#each ownTools as g (g.group)}
+					<div class="own-group">
+						<p class="own-glabel">{g.group}</p>
+						{#each g.items as t (t.label)}
+							{#if t.href}<a class="own-tool" class:danger={t.danger} href={t.href}><Icon name={t.icon} size={16} />{t.label}</a>
+							{:else}<button type="button" class="own-tool" disabled={t.busy} onclick={t.run}><Icon name={t.icon} size={16} />{t.label}</button>{/if}
+						{/each}
+					</div>
+				{/each}
+			</div>
+		{/snippet}
+		{#snippet ownFilesList()}
+			{#if ownFiles.length}
+				<ul class="own-files">
+					{#each ownFiles as f (f.id)}
+						<li><b>{f.version || 'Main copy'}</b><span>{qualityBadges([f.file]).join(' · ')}</span><span class="muted">{f.file?.Size ? bytes(f.file.Size) : ''}</span><span class="muted path">{f.file?.RelativePath ?? ''}</span></li>
+					{/each}
+				</ul>
+			{:else}<p class="muted">No file yet.</p>{/if}
+		{/snippet}
+		{#if owned && ownView === 'b'}
+			<!-- B · Library band: status, quality and size, added; admin buttons on the right. -->
+			<div class="own-band {ownState.kind}" data-testid="own-band">
+				<div><span class="own-cap">Status</span><b>{ownState.label}</b></div>
+				<div><span class="own-cap">Copy</span><b>{[ownBadges.join(' '), owned.size_bytes ? bytes(owned.size_bytes) : ''].filter(Boolean).join(' · ') || 'None yet'}</b></div>
+				<div><span class="own-cap">Added</span><b>{owned.added_at ? ago(owned.added_at) : '-'}</b></div>
+				{#if manage}
+					<div class="own-band-actions">
+						<button type="button" class="own-pill" onclick={() => ownRun('search')} disabled={busyAction === 'search'}>Search</button>
+						<a class="own-pill" href={to(`/library/${owned.id}?tools=releases`)}>Releases</a>
+						<ActionMenu label="More tools" items={ownMenu} />
+					</div>
+				{/if}
+			</div>
+		{:else if owned && ownView === 'c'}
+			<!-- C · Tabs: Overview (this page), Files, History, Manage (admins). -->
+			<div class="own-tabs" role="tablist" data-testid="own-tabs">
+				{#each [['overview', 'Overview'], ['files', 'Files'], ['history', 'History'], ...(manage ? [['manage', 'Manage']] : [])] as [v, l] (v)}
+					<button type="button" role="tab" aria-selected={ownTab === v} class:on={ownTab === v} onclick={() => (ownTab = v as typeof ownTab)}>{l}{#if v === 'manage' && ownState.kind === 'failed'}<span class="own-badge">!</span>{/if}</button>
+				{/each}
+			</div>
+			{#if ownTab === 'files'}<section class="own-pane">{@render ownChipRow()}{@render ownFilesList()}</section>
+			{:else if ownTab === 'history'}<section class="own-pane"><ul class="own-history">{#each ownedEvents as e (e.id)}<li><span>{e.summary ?? e.message ?? e.text ?? e.kind}</span><span class="muted">{e.at || e.when ? ago((e.at ?? e.when) as string) : ''}</span></li>{:else}<li class="muted">Nothing yet.</li>{/each}</ul></section>
+			{:else if ownTab === 'manage'}<section class="own-pane">{@render ownToolList(true)}</section>{/if}
+		{:else if owned && ownView === 'd'}
+			<!-- D · Inline panel: a status strip; admins open the tools right here. -->
+			{@render ownChipRow()}
+			{#if manage && panelOpen}<section class="own-panel" data-testid="own-panel">{@render ownToolList(true)}</section>{/if}
+		{:else if owned}
+			<!-- A and E: one quiet status line under the hero. -->
+			{@render ownChipRow()}
+		{/if}
+		{#if !(owned && ownView === 'c' && ownTab !== 'overview')}
 		{#if look !== 'both' && look !== 'band'}
 		{#if view.band === 'netflix'}
 		<!-- Mix 2 · Netflix: left the facts row, story and where to watch; right the credits and the tags. -->
@@ -726,7 +891,18 @@
 			<section class="atv" data-testid="title-ledger">
 				<h2 class="atv-h">About</h2>
 				<div class="atv-cards" class:two={cardLook === 'two'} class:solo={cardLook === 'two' && !awards.length}>
-					{#if cardLook === 'three'}
+					{#if owned}
+						<article class="atv-card" data-testid="own-file-card">
+							<h3>{ownState.label}</h3>
+							<p class="atv-cap">In your library</p>
+							<dl class="atv-rows">
+								{#if ownBadges.length}<div><dt>Quality</dt><dd>{ownBadges.join(' · ')}</dd></div>{/if}
+								{#if owned.size_bytes}<div><dt>Size</dt><dd>{bytes(owned.size_bytes)}</dd></div>{/if}
+								{#if owned.added_at}<div><dt>Added</dt><dd>{ago(owned.added_at)}</dd></div>{/if}
+								<div><dt>Kept up to date</dt><dd>{owned.keep_up_to_date ? 'Yes' : 'No'}</dd></div>
+							</dl>
+						</article>
+					{:else if cardLook === 'three'}
 					<article class="atv-card">
 						<h3>{d.name}</h3>
 						<p class="atv-cap">{d.genres.slice(0, 2).join(', ') || (d.kind === 'show' ? 'TV show' : 'Movie')}</p>
@@ -807,6 +983,15 @@
 		{/if}
 
 
+		{/if}
+		{#if owned && manage}
+			<Sheet bind:open={manageOpen} title="Manage {d.name}" size="md">
+				{@render ownChipRow()}
+				{@render ownFilesList()}
+				{@render ownToolList(false)}
+			</Sheet>
+			<div class="own-pick" data-testid="own-pick"><SegmentedControl options={OWN_VIEWS} bind:value={ownView} label="Owned title view" size="sm" /></div>
+		{/if}
 		<Sheet bind:open={allCast} title="Cast and crew" size="lg">
 			<ul class="all-grid people">
 				{#each d.cast as p, i (p.name + i)}
@@ -852,6 +1037,40 @@
 	#ratings { scroll-margin-top: 90px; }
 	.tp.old-gap { --tp-gap: clamp(24px, 3.4vw, 38px); }
 	.tp.no-names :global(.mono .n) { display: none; }
+	/* Owned title (A–E): status chips, band, tabs, inline panel, tools. */
+	.own-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: -4px 0 4px; }
+	.own-chip, .own-state { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 999px; background: var(--surface-2); color: var(--text-muted); font: 600 13px/1 var(--font-ui); }
+	.own-state { color: var(--text); }
+	.own-state.have { background: color-mix(in srgb, #34c759 18%, var(--surface-2)); }
+	.own-state.downloading { background: color-mix(in srgb, #0a84ff 18%, var(--surface-2)); }
+	.own-state.failed { background: color-mix(in srgb, #ff453a 22%, var(--surface-2)); }
+	.own-band { display: grid; grid-template-columns: repeat(3, auto) 1fr; align-items: center; gap: 12px 36px; padding: 16px 20px; border-radius: 16px; background: var(--surface-1); border: 1px solid var(--line); }
+	.own-band.failed { border-color: color-mix(in srgb, #ff453a 50%, var(--line)); }
+	.own-band > div { display: grid; gap: 4px; }
+	.own-band b { color: var(--text); font: 600 15px/1.3 var(--font-ui); }
+	.own-cap, .own-glabel { color: var(--text-muted); font: 600 11px/1.2 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
+	.own-band-actions { display: flex !important; grid-auto-flow: column; justify-content: end; align-items: center; gap: 8px; }
+	.own-pill { display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: none; color: var(--text); font: 600 13.5px/1 var(--font-ui); text-decoration: none; cursor: pointer; }
+	.own-pill:hover { background: var(--surface-2); }
+	.own-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--line); }
+	.own-tabs button { position: relative; height: 40px; padding: 0 14px; border: 0; background: none; color: var(--text-muted); font: 600 14px/1 var(--font-ui); cursor: pointer; border-bottom: 2px solid transparent; }
+	.own-tabs button.on { color: var(--text); border-bottom-color: var(--text); }
+	.own-badge { margin-left: 6px; display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: #ff453a; color: #fff; font-size: 11px; }
+	.own-pane { display: grid; gap: 16px; padding-top: 4px; }
+	.own-panel { padding: 18px 20px; border-radius: 16px; background: var(--surface-1); border: 1px solid var(--line); }
+	.own-tools { display: grid; gap: 18px; margin-top: 12px; }
+	.own-tools.cols { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 0; }
+	.own-group { display: grid; gap: 4px; align-content: start; }
+	.own-tool { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 10px; border-radius: 10px; border: 0; background: none; color: var(--text); font: 500 14.5px/1 var(--font-ui); text-decoration: none; text-align: left; cursor: pointer; }
+	.own-tool:hover { background: var(--surface-2); }
+	.own-tool.danger { color: #ff453a; }
+	.own-files { display: grid; gap: 10px; margin: 8px 0 0; padding: 0; list-style: none; }
+	.own-files li { display: grid; grid-template-columns: auto auto auto 1fr; gap: 4px 16px; align-items: baseline; font: 500 14px/1.4 var(--font-ui); }
+	.own-files .path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.own-history { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; font: 500 14px/1.4 var(--font-ui); }
+	.own-history li { display: flex; justify-content: space-between; gap: 16px; }
+	.own-pick { position: fixed; z-index: 30; left: 0; right: 0; bottom: 20px; width: max-content; max-width: calc(100vw - 24px); overflow-x: auto; margin-inline: auto; padding: 5px; border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow-lift); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); }
+	@media (max-width: 899px) { .own-band { grid-template-columns: 1fr 1fr; } .own-band-actions { grid-column: 1 / -1; justify-content: start; } .own-tools.cols { grid-template-columns: minmax(0, 1fr); } .own-files li { grid-template-columns: 1fr; } }
 	.calm-meta .sep { margin: 0 8px; color: var(--text-faint); }
 	.credits { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: -4px 0 0; color: var(--text); font: 500 14px/1.45 var(--font-ui); }
 	.credits .cl, .side-credits dt { color: var(--text-muted); font-weight: 500; }
