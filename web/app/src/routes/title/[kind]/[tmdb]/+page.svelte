@@ -38,6 +38,7 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
+	import ReleaseSheet from '#lib/ReleaseSheet.svelte';
 	import AddMovieDialog from '#lib/AddMovieDialog.svelte';
 	import { savedDefaults } from '#lib/title-defaults.svelte.ts';
 	import AddShowDialog from '#lib/AddShowDialog.svelte';
@@ -212,6 +213,7 @@
 	const evIcon = (k = ''): 'check' | 'search' | 'clock' | 'refresh' | 'copy' | 'trash' | 'plus' => (/import|got|done|adopt/.test(k) ? 'check' : /grab|sent|chose|search/.test(k) ? 'search' : /fail|stall|missing/.test(k) ? 'clock' : /rename/.test(k) ? 'copy' : /delete/.test(k) ? 'trash' : /add/.test(k) ? 'plus' : 'refresh');
 	const evTone = (k = '', s = '') => (/fail|stall|not on disk|missing/.test(`${k} ${s}`.toLowerCase()) ? 'failed' : /import|adopt/.test(k) ? 'have' : '');
 	let libAll = $state(false);
+	let pickOpen = $state(typeof location !== 'undefined' && new URLSearchParams(location.search).has('pick'));
 	const mayAsk = $derived(session.can('ask') && !manage);
 
 	let folders = $state<LibraryFolder[]>([]);
@@ -841,7 +843,7 @@
 							{#if libHead.pct != null}<div class="lib-bar" role="progressbar" aria-valuenow={libHead.pct} aria-valuemin="0" aria-valuemax="100"><span style:width="{libHead.pct}%"></span></div>{/if}
 						</div>
 						{#if libHead.action}<button type="button" class="lib-btn primary" disabled={busyAction === 'search'} onclick={() => ownRun('search')}><Icon name={libHead.action.icon} size={16} />{libHead.action.label}</button>{/if}
-						{#if manage}<a class="lib-btn" href={to(`/library/${o.id}?tools=releases`)}><Icon name="grid" size={16} />Pick a release</a>{/if}
+						{#if manage}<button type="button" class="lib-btn" onclick={() => (pickOpen = true)}><Icon name="grid" size={16} />Pick a release</button>{/if}
 					</section>
 
 					{#if o.show}
@@ -897,6 +899,7 @@
 						</div>
 					{/if}
 				</div>
+				{#if manage}<ReleaseSheet bind:open={pickOpen} titleId={o.id} name={o.name} onchosen={() => loadOwned(o.id)} />{/if}
 			{/if}
 		{/snippet}
 		{#snippet ownTabBar()}

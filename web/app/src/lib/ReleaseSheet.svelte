@@ -1,0 +1,242 @@
+<script lang="ts">
+	import Sheet from '#lib/ui/Sheet.svelte';
+	import Icon from '#lib/Icon.svelte';
+	import { toasts } from '#lib/toasts.svelte.ts';
+	import { api, message, ApiError } from '#lib/api.ts';
+	import { bytes } from '#lib/format.ts';
+	import { keyReasons, verdict, verdictTone } from '#lib/releases.ts';
+	import type { Choice, ReleasePage, ReleaseView } from '#lib/types.ts';
+
+	// Pick a release, as a side sheet on the title page: the releases the last
+	// search found, best first, with the reason each would or would not be picked.
+	let { open = $bindable(false), titleId, name, onchosen }: { open?: boolean; titleId: number; name: string; onchosen?: () => void } = $props();
+
+	let releases = $state<ReleaseView[]>([]);
+	let total = $state(0);
+	let running = $state<number[]>([]);
+	let loading = $state(false);
+	let busyId = $state(0);
+	let confirmId = $state(0);
+	let filter = $state<'good' | 'all'>('good');
+	let startedAt = 0;
+
+	async function load() {
+		loading = true;
+		try {
+			const p = import.meta.env.DEV && new URLSearchParams(location.search).get('releases') === 'demo' ? demoPage(name) : await api.get<ReleasePage>(`/titles/${titleId}/releases?limit=60&offset=0`);
+			releases = p.releases;
+			total = p.total;
+			// Keep a search we just started as running until it shows releases or a minute passes.
+			const mine = Date.now() - startedAt < 60_000 && !p.releases.length ? running : [];
+			running = [...new Set([...(p.running_job_ids ?? []), ...mine])];
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		} finally {
+			loading = false;
+		}
+	}
+	async function search() {
+		try {
+			startedAt = Date.now();
+			const r = await api.post<{ job_ids: number[] }>(`/titles/${titleId}/search`, { choose: false });
+			running = [...new Set([...running, ...r.job_ids])];
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		}
+	}
+	// Opening loads the list; while a search runs, check again every few seconds.
+	$effect(() => {
+		if (open) void load();
+	});
+	$effect(() => {
+		if (!open || !running.length) return;
+		const t = setInterval(load, 3000);
+		return () => clearInterval(t);
+	});
+
+	async function choose(r: ReleaseView) {
+		if (r.needs_force && confirmId !== r.id) return void (confirmId = r.id);
+		busyId = r.id;
+		try {
+			const ch = await api.post<Choice>(`/releases/${r.id}/choose`, { force: r.needs_force });
+			toasts.push(`Sent ${r.name} to download.`, 'ok');
+			for (const w of ch.warnings) toasts.push(w, 'info');
+			open = false;
+			onchosen?.();
+		} catch (e) {
+			if (e instanceof ApiError && e.status === 409 && e.body.needs_force) {
+				r.needs_force = true;
+				confirmId = r.id;
+			} else toasts.push(message(e), 'fail');
+		} finally {
+			busyId = 0;
+		}
+	}
+	async function turnDown(r: ReleaseView) {
+		busyId = r.id;
+		try {
+			await api.post(`/releases/${r.id}/turn-down`);
+			toasts.push('It will never be picked for this title.', 'ok');
+			await load();
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		} finally {
+			busyId = 0;
+		}
+	}
+
+	// Dev preview only (?releases=demo): a realistic list, since the preview has no sources to search.
+	function demoPage(t: string): ReleasePage {
+		const n = t.replace(/[^A-Za-z0-9]+/g, '.');
+		const day = 864e5;
+		const mk = (id: number, name: string, gb: number, seeders: number, src: string, days: number, o: Partial<ReleaseView>, why: { effect: string; text: string }[] = []): ReleaseView =>
+			({ id: -id, name, size: gb * 1024 ** 3, seeders, protocol: 'torrent', state: 'judged', found_by: 'search', source_id: 1, source_name: src, published_at: new Date(Date.now() - days * day).toISOString(), outcome: 'passed_over', passed: true, rank: id, points: 100 - id * 7, good_enough: true, needs_force: false, reasons: why, ...o }) as ReleaseView;
+		const releases = [
+			mk(1, `${n}.1979.2160p.UHD.BluRay.REMUX.DV.HDR.HEVC.Atmos-FGT`, 68.4, 41, 'Torrent Hub', 210, { outcome: 'chosen' }, [{ effect: 'rank', text: 'Best match for your quality: 4K Remux with Dolby Vision' }]),
+			mk(2, `${n}.1979.2160p.BluRay.x265.10bit.HDR.DTS-HD.MA-SWTYBLZ`, 22.1, 118, 'Torrent Hub', 340, {}, [{ effect: 'rank', text: 'Smaller 4K copy, ranked second' }]),
+			mk(3, `${n}.1979.1080p.BluRay.x264-SPARKS`, 12.3, 402, 'Usenet One', 1900, {}, [{ effect: 'rank', text: 'HD, ranked below the 4K copies' }]),
+			mk(4, `${n}.1979.1080p.WEB-DL.DDP5.1.H.264-NTb`, 7.9, 66, 'Usenet One', 820, {}),
+			mk(5, `${n}.1979.720p.BluRay.x264-AMIABLE`, 4.4, 3, 'Torrent Hub', 3100, {}, [{ effect: 'warn', text: 'Only 3 seeders, may be slow' }]),
+			mk(6, `${n}.1979.2160p.WEB.H265-NAISU`, 15.2, 0, 'Torrent Hub', 2, { outcome: 'held', passed: true }, [{ effect: 'hold', text: 'Waiting 2 more days in case a better copy shows up' }]),
+			mk(7, `${n}.1979.1080p.HDCAM.x264-RARBG`, 2.1, 950, 'Torrent Hub', 400, { outcome: 'refused', passed: false, needs_force: true }, [{ effect: 'fail', text: 'Camera recording, never picked' }]),
+			mk(8, `${n}.1979.MULTi.1080p.BluRay.x264-UKDHD`, 14.6, 12, 'Usenet One', 1200, { outcome: 'refused', passed: false, needs_force: true }, [{ effect: 'fail', text: 'Audio is French first, you asked for English' }])
+		];
+		return { releases, total: releases.length, limit: 60, offset: 0, running_job_ids: [] };
+	}
+
+	// How old a release is, in the largest unit that fits.
+	function age(iso: string): string {
+		const d = Math.max(0, (Date.now() - Date.parse(iso)) / 864e5);
+		return d < 1 ? 'today' : d < 60 ? `${Math.round(d)} days` : d < 365 ? `${Math.round(d / 30)} months` : `${Math.round(d / 365)} yrs`;
+	}
+
+	// Quality words read from the release name, shown as badges.
+	function tags(n: string): string[] {
+		const s = n.toLowerCase();
+		const out: string[] = [];
+		if (/2160p|\b4k\b|uhd/.test(s)) out.push('4K');
+		else if (/1080p/.test(s)) out.push('1080p');
+		else if (/720p/.test(s)) out.push('720p');
+		if (/dolby.?vision|\bdv\b|dovi/.test(s)) out.push('Dolby Vision');
+		else if (/hdr/.test(s)) out.push('HDR');
+		if (/remux/.test(s)) out.push('Remux');
+		else if (/blu-?ray|bdrip/.test(s)) out.push('BluRay');
+		else if (/web-?dl|webrip|\bweb\b/.test(s)) out.push('WEB');
+		if (/x265|h\.?265|hevc/.test(s)) out.push('x265');
+		if (/atmos/.test(s)) out.push('Atmos');
+		return out;
+	}
+	const sorted = $derived(
+		[...releases]
+			.filter((r) => filter === 'all' || (r.passed && r.state !== 'turned_down'))
+			.sort((a, b) => Number(b.outcome === 'chosen') - Number(a.outcome === 'chosen') || Number(b.passed) - Number(a.passed) || (a.rank || 999) - (b.rank || 999) || b.points - a.points)
+	);
+	const hidden = $derived(releases.length - releases.filter((r) => r.passed && r.state !== 'turned_down').length);
+</script>
+
+<Sheet bind:open title="Pick a release" description={name} placement="right" size="md">
+	<div class="rs" data-testid="release-sheet">
+		<div class="rs-bar">
+			<div class="rs-seg" role="tablist">
+				<button type="button" role="tab" class:on={filter === 'good'} aria-selected={filter === 'good'} onclick={() => (filter = 'good')}>Good matches</button>
+				<button type="button" role="tab" class:on={filter === 'all'} aria-selected={filter === 'all'} onclick={() => (filter = 'all')}>All {total || ''}</button>
+			</div>
+			<button type="button" class="rs-search" disabled={running.length > 0} onclick={search}><Icon name="search" size={15} />{running.length ? 'Searching…' : 'Search again'}</button>
+		</div>
+		{#if running.length}<div class="rs-run" aria-live="polite"><span class="rs-spin" aria-hidden="true"></span>Asking your sources. The list fills in as they answer.</div>{/if}
+
+		{#if loading && !releases.length}
+			<ul class="rs-list">{#each [0, 1, 2, 3] as i (i)}<li class="rs-row skel"></li>{/each}</ul>
+		{:else if !releases.length && !running.length}
+			<div class="rs-empty">
+				<Icon name="grid" size={28} />
+				<p><b>No search yet</b></p>
+				<p class="muted">Search your sources to see every release, with why each one would be picked or not.</p>
+				<button type="button" class="rs-primary" onclick={search}><Icon name="search" size={16} />Search now</button>
+			</div>
+		{:else}
+			<ul class="rs-list">
+				{#each sorted as r (r.id)}
+					{@const why = keyReasons(r.reasons)[0]}
+					{@const best = r.outcome === 'chosen' && r.state !== 'chosen'}
+					<li class="rs-row" class:best class:off={!r.passed || r.state === 'turned_down'} data-testid="release">
+						<div class="rs-main">
+							<p class="rs-tags">
+								{#if best}<span class="rs-rec">Recommended</span>{/if}
+								{#each tags(r.name) as t (t)}<span class="rs-tag">{t}</span>{/each}
+								{#if !best && !(r.passed && r.outcome === 'passed_over' && r.state !== 'turned_down')}<span class="rs-verdict {verdictTone(r)}">{verdict(r)}</span>{/if}
+							</p>
+							<p class="rs-name" title={r.name}>{r.name}</p>
+							<p class="rs-facts">
+								<span>{bytes(r.size)}</span>
+								{#if r.seeders != null}<span class:low={r.seeders < 5}>{r.seeders} seeders</span>{/if}
+								<span>{r.source_name}</span>
+								{#if r.published_at}<span>{age(r.published_at)}</span>{/if}
+							</p>
+							{#if why}<p class="rs-why {why.effect}">{why.text}</p>{/if}
+						</div>
+						<div class="rs-act">
+							{#if r.state === 'chosen'}
+								<span class="rs-sent"><Icon name="check" size={15} />Sent</span>
+							{:else}
+								<button type="button" class="rs-choose" class:quiet={!best} class:warn={confirmId === r.id} disabled={busyId === r.id} onclick={() => choose(r)}>{confirmId === r.id ? 'Pick anyway' : 'Pick'}</button>
+								{#if r.state !== 'turned_down'}<button type="button" class="rs-x" aria-label="Never pick {r.name}" title="Never pick this one" disabled={busyId === r.id} onclick={() => turnDown(r)}><Icon name="x" size={14} /></button>{/if}
+							{/if}
+						</div>
+					</li>
+				{:else}
+					<li class="rs-none muted">No good matches.{#if hidden} <button type="button" class="rs-link" onclick={() => (filter = 'all')}>Show the {hidden} that did not pass</button>{/if}</li>
+				{/each}
+			</ul>
+		{/if}
+	</div>
+</Sheet>
+
+<style>
+	.rs { display: grid; gap: 14px; }
+	.rs-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+	.rs-seg { display: inline-flex; padding: 3px; border-radius: 999px; background: color-mix(in srgb, var(--text) 7%, transparent); }
+	.rs-seg button { height: 30px; padding: 0 14px; border: 0; border-radius: 999px; background: none; color: var(--text-muted); font: 600 13px/1 var(--font-ui); cursor: pointer; white-space: nowrap; }
+	.rs-seg button.on { background: var(--surface-1, var(--bg)); color: var(--text); box-shadow: 0 1px 3px rgb(0 0 0 / 18%); }
+	.rs-search, .rs-primary { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 13px/1 var(--font-ui); cursor: pointer; white-space: nowrap; }
+	.rs-primary { height: 40px; padding: 0 18px; background: var(--text); color: var(--bg); font-size: 14px; }
+	.rs-run { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; background: color-mix(in srgb, #3e8ef7 12%, transparent); font: 500 13px/1.3 var(--font-ui); }
+	.rs-spin { width: 14px; height: 14px; border-radius: 99px; border: 2px solid color-mix(in srgb, #3e8ef7 30%, transparent); border-top-color: #3e8ef7; animation: spin .8s linear infinite; }
+	@keyframes spin { to { transform: rotate(360deg); } }
+	.rs-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+	.rs-row { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 14px; background: var(--surface-2); }
+	.rs-row.best { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, #30a46c 70%, transparent); }
+	.rs-row.off { opacity: .62; }
+	.rs-row.skel { height: 92px; animation: pulse 1.2s ease-in-out infinite alternate; }
+	@keyframes pulse { to { opacity: .5; } }
+	.rs-main { flex: 1; min-width: 0; display: grid; gap: 6px; }
+	.rs-main p { margin: 0; }
+	.rs-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+	.rs-tag, .rs-rec, .rs-verdict { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 5px; font: 700 11px/1 var(--font-ui); letter-spacing: .03em; }
+	.rs-tag { border: 1px solid color-mix(in srgb, var(--text) 28%, transparent); color: var(--text-muted); }
+	.rs-rec { background: #30a46c; color: #fff; }
+	.rs-verdict { color: var(--text-muted); background: color-mix(in srgb, var(--text) 7%, transparent); }
+	.rs-verdict.fail { color: var(--danger, #e5484d); background: color-mix(in srgb, var(--danger, #e5484d) 12%, transparent); }
+	.rs-verdict.wait { color: #d4a72c; background: color-mix(in srgb, #d4a72c 14%, transparent); }
+	.rs-verdict.red { color: #fff; background: var(--accent); }
+	.rs-name { font: 600 14px/1.35 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.rs-facts { display: flex; flex-wrap: wrap; gap: 4px 12px; color: var(--text-muted); font: 500 12.5px/1.2 var(--font-ui); }
+	.rs-facts .low { color: #d4a72c; }
+	.rs-why { color: var(--text-muted); font: 500 12.5px/1.35 var(--font-ui); }
+	.rs-why.fail { color: var(--danger, #e5484d); }
+	.rs-why.hold, .rs-why.warn { color: #d4a72c; }
+	.rs-act { display: flex; align-items: center; gap: 6px; flex: none; }
+	.rs-choose { height: 34px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--text); color: var(--bg); font: 600 13px/1 var(--font-ui); cursor: pointer; white-space: nowrap; }
+	.rs-choose.quiet { background: color-mix(in srgb, var(--text) 10%, transparent); color: var(--text); }
+	.rs-choose.warn { background: #d4a72c; color: #111; }
+	.rs-x { display: grid; place-items: center; width: 30px; height: 30px; border: 0; border-radius: 999px; background: none; color: var(--text-muted); cursor: pointer; }
+	.rs-x:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }
+	.rs-sent { display: inline-flex; align-items: center; gap: 5px; color: #30a46c; font: 600 13px/1 var(--font-ui); }
+	.rs-empty { display: grid; justify-items: center; gap: 6px; padding: 48px 16px; text-align: center; color: var(--text); }
+	.rs-empty p { margin: 0; max-width: 34ch; }
+	.rs-empty .rs-primary { margin-top: 12px; }
+	.rs-none { padding: 24px 4px; font: 500 14px/1.4 var(--font-ui); }
+	.rs-link { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; cursor: pointer; }
+	@media (max-width: 600px) { .rs-row { padding: 12px 12px 12px 14px; gap: 10px; } .rs-choose { padding: 0 14px; } .rs-x { width: 26px; } }
+	@media (prefers-reduced-motion: reduce) { .rs-spin, .rs-row.skel { animation: none; } }
+</style>

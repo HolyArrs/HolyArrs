@@ -23,7 +23,7 @@
 		title: string;
 		description?: string;
 		size?: 'sm' | 'md' | 'lg';
-		placement?: 'auto' | 'center' | 'bottom' | 'top' | 'side' | 'full';
+		placement?: 'auto' | 'center' | 'bottom' | 'top' | 'side' | 'right' | 'full';
 		hideTitle?: boolean;
 		closeLabel?: string;
 		children: Snippet;
@@ -147,4 +147,16 @@
 	.at-side.closing { animation: slide-out var(--dur-fast) var(--ease-in) both; }
 	@keyframes slide-in { from { transform: translateX(-100%); } }
 	@keyframes slide-out { to { transform: translateX(-100%); } }
+	/* A wide panel from the right edge (Pick a release); a bottom sheet on phones. */
+	.at-right { margin: 0 0 0 auto; height: 100dvh; max-height: 100dvh; width: min(var(--w), 100vw); border-radius: var(--r-panel) 0 0 var(--r-panel); }
+	.at-right .inner { height: 100%; }
+	.at-right[open] { animation: slide-from-right var(--dur) var(--ease-out) both; }
+	.at-right.closing { animation: slide-to-right var(--dur-fast) var(--ease-in) both; }
+	@keyframes slide-from-right { from { transform: translateX(100%); } }
+	@keyframes slide-to-right { to { transform: translateX(100%); } }
+	@media (max-width: 767px) {
+		.at-right { width: 100vw; height: auto; max-height: 92dvh; margin: auto 0 0; border-radius: var(--r-modal) var(--r-modal) 0 0; }
+		.at-right[open] { animation: rise-in var(--dur) var(--ease-out) both; }
+		.at-right.closing { animation: sink-out var(--dur-fast) var(--ease-in) both; }
+	}
 </style>
