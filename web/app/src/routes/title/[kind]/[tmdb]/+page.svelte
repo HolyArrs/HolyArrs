@@ -29,7 +29,6 @@
 	import { awardsTip, loadWikiFacts, type WikiAward } from '#lib/wiki-facts.ts';
 	import type { TagsAt, TitleLook } from '#lib/title-look.svelte.ts';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
-	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
@@ -356,16 +355,6 @@
 	const aboutFacts = $derived(look === 'decide' ? facts.filter((f) => !keyFacts.includes(f)) : facts);
 	let aboutWidth = $state(0);
 	const tagsAt = 'band' as TagsAt;
-	// Bottom section while Luis compares: the About columns (default) or Details tiles (?about=details).
-	// Bottom section while Luis compares (?about=card|netflix|line|table); the About columns otherwise.
-	const BOTTOMS = ['geist', 'system', 'mono'] as const;
-	type Bottom = (typeof BOTTOMS)[number];
-	let bottom = $state<Bottom>((typeof location !== 'undefined' && BOTTOMS.find((b) => b === new URLSearchParams(location.search).get('font'))) || 'geist');
-	const BOTTOM_OPTIONS: { value: Bottom; label: string }[] = [
-		{ value: 'geist', label: 'F1 · App font' },
-		{ value: 'system', label: 'F2 · Apple system font' },
-		{ value: 'mono', label: 'F3 · Mono numbers' }
-	];
 	// The short facts for the cards: one label, one value each.
 	const parts = $derived.by((): { label: string; value: string }[] => {
 		if (!details || !info) return [];
@@ -636,8 +625,8 @@
 		{#snippet linksLine()}
 			<p class="card-links">{#each outLinks as l, i (l.name)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name} ↗</a>{/each}</p>
 		{/snippet}
-		<section class="ab font-{bottom}" data-testid="title-details">
-			<h2 class="tp-h2">About</h2>
+		<section class="ab" data-testid="title-details">
+			<h2 class="tp-h2">At a glance</h2>
 			<!-- Every fact its own small card, sized to its content and centered; the age rating first. -->
 			<div class="ac-row">
 				{@render ratingCard()}
@@ -680,8 +669,6 @@
 		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} />
 		{/if}
 
-		<!-- While the bottom section is being chosen: a floating switch between the options. -->
-		<div class="bottom-pick" data-testid="bottom-pick"><SegmentedControl options={BOTTOM_OPTIONS} bind:value={bottom} label="About font" size="sm" /></div>
 
 		<Sheet bind:open={allCast} title="Cast and crew" size="lg">
 			<ul class="all-grid people">
@@ -734,24 +721,20 @@
 	@media (max-width: 899px) { .side { grid-template-columns: minmax(0, 1fr); } }
 	.calm-meta { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 0; color: var(--text-muted); font: 500 15.5px/1.4 var(--font-ui); }
 	.calm .tagchips.quiet, .d-left .tagchips.quiet { margin-top: -6px; }
-	.fb.cert.big { height: 34px; padding: 0 12px; font-size: 17px; border-radius: 7px; }
+	.fb.cert.big { height: 30px; padding: 0 10px; font-size: 16px; border-radius: 7px; }
 	.card-links { display: flex; flex-wrap: wrap; align-items: center; margin: 14px 0 0; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
 	.card-links a { color: var(--text); text-decoration: none; }
 	.card-links a:hover { text-decoration: underline; }
 	.card-links .sep { margin: 0 8px; color: var(--text-faint); }
 	.card-links a { color: var(--text); text-decoration: none; }
 	.card-links a:hover { text-decoration: underline; }
-	.bottom-pick { position: fixed; z-index: 30; left: 0; right: 0; bottom: 20px; width: max-content; max-width: calc(100vw - 24px); overflow-x: auto; margin-inline: auto; padding: 5px; border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow-lift); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); }
-	@media (max-width: 767px) { .bottom-pick { bottom: calc(var(--tabbar, 56px) + env(safe-area-inset-bottom) + 16px); } }
 	/* About cards: Apple TV-like, one surface, no borders; each card snug around its value and centered. */
 	.ab .ac { border-radius: 14px; background: var(--surface-1); }
-	.ab .cap { color: var(--text-muted); font: 600 11px/1.2 var(--font-ab, var(--font-ui)); letter-spacing: .07em; text-transform: uppercase; }
-	.ac-row { display: flex; flex-wrap: wrap; gap: 10px; }
-	.ac.small, .rating-card { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-width: 96px; padding: 12px 18px; text-align: center; }
-	.ac.small b { color: var(--text); font: 700 18px/1.15 var(--font-ab, var(--font-ui)); font-variant-numeric: tabular-nums; white-space: nowrap; }
-	.ab.font-system { --font-ab: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif; }
-	.ab.font-mono .ac.small b { font-family: var(--font-mono); font-weight: 600; letter-spacing: -0.01em; }
-	@media (max-width: 599px) { .ac.small, .rating-card { flex: 1 1 calc(33% - 10px); min-width: 0; padding: 10px 8px; } .ac.small b { font-size: 16px; white-space: normal; } }
+	.ab .cap { color: var(--text-muted); font: 600 12px/1.2 var(--font-ui); letter-spacing: .07em; text-transform: uppercase; }
+	.ac-row { display: flex; flex-wrap: wrap; gap: 12px; }
+	.ac.small, .rating-card { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-width: 120px; padding: 16px 24px; text-align: center; }
+	.ac.small b { color: var(--text); font: 700 22px/1.15 var(--font-ui); font-variant-numeric: tabular-nums; white-space: nowrap; }
+	@media (max-width: 599px) { .ac.small, .rating-card { flex: 1 1 calc(33% - 10px); min-width: 0; padding: 10px 8px; } .ac.small b { font-size: 18px; white-space: normal; } }
 	.tagchips.quiet li { background: none; border: 1px solid var(--line); color: var(--text-muted); font-size: 12px; }
 	@media (max-width: 899px) { .decide { grid-template-columns: minmax(0, 1fr); } }
 	.facts-grid { display: grid; grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); gap: 16px 28px; margin: 0; padding: 16px 0; }
