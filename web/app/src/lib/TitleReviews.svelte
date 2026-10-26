@@ -21,7 +21,8 @@
 	/** The review open in the sheet. */
 	let reading = $state<Review | null>(null);
 	let sheet = $state(false);
-	const hasContent = $derived(!!answer && (shownScore(answer.score, answer.votes) !== undefined || reviews.length > 0));
+	// Shown only with written reviews: a score alone is already in the Ratings card at the bottom.
+	const hasContent = $derived(!!answer && reviews.length > 0);
 	let seenContent = $state(false);
 	// A new title starts fresh.
 	$effect.pre(() => {
@@ -142,7 +143,7 @@
 				{/if}
 			{/if}
 		</Shelf>
-		{#if hasContent && !answer.reviews_hidden && !reviews.length && !loading}<p class="muted">No written reviews yet.</p>{/if}
+		{#if seenContent && !hasContent && !loading}<p class="muted">No written reviews here yet.</p>{/if}
 		{#if failed}<p class="muted">Reviews could not be loaded; try again shortly.</p>{/if}
 	</div>
 	<Sheet bind:open={sheet} title={reading ? `Review by ${reading.author || 'Someone'}` : 'Review'} size="md">
