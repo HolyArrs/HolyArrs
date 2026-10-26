@@ -2,6 +2,7 @@
 	import IconButton from './IconButton.svelte';
 	import SearchField from './SearchField.svelte';
 	import { topBar } from '#lib/scroll-bar.svelte.ts';
+	import { topCrumbs } from '#lib/top-crumbs.svelte.ts';
 
 	// The 56px translucent bar above the content (tablet and desktop):
 	// sidebar toggle when collapsed, back/forward on detail pages, the one
@@ -30,6 +31,14 @@
 			<IconButton icon="chevronLeft" label="Back" onclick={() => window.history.back()} />
 			<IconButton icon="chevronRight" label="Forward" onclick={() => window.history.forward()} />
 		{/if}
+		{#if topCrumbs.items.length}
+			<nav class="crumbs" aria-label="Breadcrumb" data-testid="top-crumbs">
+				{#each topCrumbs.items as c, i (i)}
+					{#if i}<span class="sep" aria-hidden="true">›</span>{/if}
+					{#if c.href}<a href={c.href}>{c.label}</a>{:else}<span class="here" aria-current="page">{c.label}</span>{/if}
+				{/each}
+			</nav>
+		{/if}
 	</div>
 	<div class="centre"><SearchField {searchKey} /></div>
 	<div class="trail"></div>
@@ -54,5 +63,12 @@
 	:global(html.over-hero) .ui-topbar { background-color: transparent; border-bottom-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
 	@media (prefers-reduced-motion: reduce) { .ui-topbar { transition: none; } }
 	.lead, .trail { display: flex; align-items: center; gap: 4px; min-width: 0; }
+	/* Where you are, in quiet text after the arrows; hidden where the bar is narrow. */
+	.crumbs { display: flex; align-items: center; min-width: 0; margin-left: 12px; font: 500 13px/1 var(--font-ui); color: var(--text-muted); white-space: nowrap; }
+	.crumbs a { color: var(--text-muted); text-decoration: none; transition: color 150ms ease; }
+	.crumbs a:hover { color: var(--text); }
+	.crumbs .sep { margin: 0 6px; opacity: .5; }
+	.crumbs .here { overflow: hidden; text-overflow: ellipsis; max-width: 28vw; color: color-mix(in srgb, var(--text) 78%, transparent); }
+	@media (max-width: 1099px) { .crumbs { display: none; } }
 	@media (max-width: 767px) { .ui-topbar { display: none; } }
 </style>
