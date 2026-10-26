@@ -355,7 +355,7 @@
 	const aboutFacts = $derived(look === 'decide' ? facts.filter((f) => !keyFacts.includes(f)) : facts);
 	let aboutWidth = $state(0);
 	const tagsAt = 'band' as TagsAt;
-	// The short facts for the cards: one label, one value each.
+	// The short facts: one label, one value each.
 	const parts = $derived.by((): { label: string; value: string }[] => {
 		if (!details || !info) return [];
 		const i = info;
@@ -381,6 +381,12 @@
 		if (i.originalTitle) out.push({ label: 'Original title', value: i.originalTitle });
 		return out;
 	});
+	// The small print under the credits: each fact as "value label", rating left out (it is in the facts row).
+	const fine = $derived(
+		parts.map((p) =>
+			['Released', 'Aired', 'Digital', 'Next'].includes(p.label) ? `${p.label} ${p.value}` : ['Status', 'Awards', 'Language', 'Original title'].includes(p.label) ? p.value : `${p.value} ${p.label.toLowerCase()}`
+		)
+	);
 	// Themes as words for "This movie is:" (story keywords only, first four).
 	const moods = $derived(tags.filter((k) => !/stinger|^based on|sequel|remake|woman director|duringcredits|aftercredits/i.test(k)).slice(0, 4));
 	type Tile = { value: string; label: string };
@@ -603,6 +609,13 @@
 				{#if network}<div><dt>Network</dt><dd>{network}</dd></div>
 				{:else if info?.studios.length}<div><dt>Studio</dt><dd>{info.studios[0]}</dd></div>{/if}
 			</dl>
+			<!-- The small print: the rest worth knowing (not shown above), then links out; one quiet line. -->
+			{#if fine.length || outLinks.length}
+				<p class="fine" data-testid="title-fine">
+					{#each fine as f, i (f)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<span>{f}</span>{/each}
+					{#each outLinks as l, i (l.name)}{#if i || fine.length}<span class="sep" aria-hidden="true">·</span>{/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name}</a>{/each}
+				</p>
+			{/if}
 		</div>
 		{:else}
 		<!-- One calm column under the hero: Quiet, Story + credits, Scores in hero, Story first. -->
@@ -625,15 +638,6 @@
 		{#snippet linksLine()}
 			<p class="card-links">{#each outLinks as l, i (l.name)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name} ↗</a>{/each}</p>
 		{/snippet}
-		<section class="ab" data-testid="title-details">
-			<h2 class="tp-h2">At a glance</h2>
-			<!-- Every fact its own small card, sized to its content and centered; the age rating first. -->
-			<div class="ac-row">
-				{@render ratingCard()}
-				{#each parts as p (p.label)}<div class="ac small"><b>{p.value}</b><span class="cap">{p.label}</span></div>{/each}
-			</div>
-			{@render linksLine()}
-		</section>
 		{:else}
 		<!-- The story; the ratings on their own row, then every detail in one even grid; where to watch; tags; then the trailers. -->
 		<div class="strip">
@@ -722,19 +726,16 @@
 	.calm-meta { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 0; color: var(--text-muted); font: 500 15.5px/1.4 var(--font-ui); }
 	.calm .tagchips.quiet, .d-left .tagchips.quiet { margin-top: -6px; }
 	.fb.cert.big { height: 30px; padding: 0 10px; font-size: 16px; border-radius: 7px; }
+	.fine { display: flex; flex-wrap: wrap; align-items: center; row-gap: 2px; margin: 4px 0 0; color: var(--text-muted); font: 500 13px/1.5 var(--font-ui); }
+	.fine .sep { margin: 0 6px; color: var(--text-faint); }
+	.fine a { color: var(--text-muted); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+	.fine a:hover { color: var(--text); }
 	.card-links { display: flex; flex-wrap: wrap; align-items: center; margin: 14px 0 0; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
 	.card-links a { color: var(--text); text-decoration: none; }
 	.card-links a:hover { text-decoration: underline; }
 	.card-links .sep { margin: 0 8px; color: var(--text-faint); }
 	.card-links a { color: var(--text); text-decoration: none; }
 	.card-links a:hover { text-decoration: underline; }
-	/* About cards: Apple TV-like, one surface, no borders; each card snug around its value and centered. */
-	.ab .ac { border-radius: 14px; background: var(--surface-1); }
-	.ab .cap { color: var(--text-muted); font: 600 12px/1.2 var(--font-ui); letter-spacing: .07em; text-transform: uppercase; }
-	.ac-row { display: flex; flex-wrap: wrap; gap: 12px; }
-	.ac.small, .rating-card { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-width: 120px; padding: 16px 24px; text-align: center; }
-	.ac.small b { color: var(--text); font: 700 22px/1.15 var(--font-ui); font-variant-numeric: tabular-nums; white-space: nowrap; }
-	@media (max-width: 599px) { .ac.small, .rating-card { flex: 1 1 calc(33% - 10px); min-width: 0; padding: 10px 8px; } .ac.small b { font-size: 18px; white-space: normal; } }
 	.tagchips.quiet li { background: none; border: 1px solid var(--line); color: var(--text-muted); font-size: 12px; }
 	@media (max-width: 899px) { .decide { grid-template-columns: minmax(0, 1fr); } }
 	.facts-grid { display: grid; grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); gap: 16px 28px; margin: 0; padding: 16px 0; }
