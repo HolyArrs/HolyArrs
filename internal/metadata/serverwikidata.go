@@ -50,6 +50,8 @@ type WikiEntity struct {
 	DeathPlace string       `json:"death_place"`
 	Wikipedia  string       `json:"wikipedia"`
 	Summary    *WikiSummary `json:"summary"`
+	// Image is a person's Wikimedia Commons photo (a thumbnail URL), for when TMDB has none.
+	Image string `json:"image"`
 }
 
 // AwardWinner is one title on the server's award-winner list.

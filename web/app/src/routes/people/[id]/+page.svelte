@@ -166,7 +166,7 @@
 		{#if hero}<img class="art" class:in={heroIn} src={hero} alt="" decoding="async" fetchpriority="high" onload={() => (heroIn = true)} onerror={() => (heroIn = false)} />{/if}
 		<div class="shade" aria-hidden="true"></div>
 		<div class="hero-in">
-			<div class="portrait"><Poster src={data.person.profile} name={data.person.name} /></div>
+			<div class="portrait"><Poster src={data.person.profile || wiki.image} name={data.person.name} /></div>
 			<div class="who">
 				<h1>{data.person.name}</h1>
 				{#if facts.length}<p class="facts">{facts.join(' · ')}</p>{/if}

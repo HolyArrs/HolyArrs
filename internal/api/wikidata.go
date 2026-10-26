@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -25,6 +26,8 @@ type WikiFacts struct {
 	BirthPlace string                `json:"birth_place,omitempty"`
 	DeathPlace string                `json:"death_place,omitempty"`
 	Bio        *metadata.WikiSummary `json:"bio"`
+	// Image is a person's backup photo (Wikimedia Commons), used when TMDB has none.
+	Image string `json:"image,omitempty"`
 }
 
 // wikiAwardsMax is how many awards the page lists (wins first).
@@ -87,6 +90,9 @@ func (a *API) wikiFacts(w http.ResponseWriter, r *http.Request) {
 		v.Born, v.Died, v.BirthPlace, v.DeathPlace = ent.Born, ent.Died, ent.BirthPlace, ent.DeathPlace
 		if kind == "person" {
 			v.Bio = ent.Summary
+			if strings.HasPrefix(ent.Image, "https://upload.wikimedia.org/") {
+				v.Image = ent.Image
+			}
 		}
 	}
 	// Only settled answers are kept; a server hiccup is asked again.

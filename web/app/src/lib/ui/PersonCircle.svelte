@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { press } from '../motion.ts';
 	import ArtPlaceholder from './ArtPlaceholder.svelte';
+	import { api } from '../api.ts';
+	import { loadWikiFacts } from '../wiki-facts.ts';
 
 	// A person in a cast and crew shelf: round photo (initials fallback), name, role.
 	let { name, role, image, href, size = 96 }: { name: string; role?: string; image?: string | null; href?: string; size?: number } = $props();
@@ -8,12 +10,24 @@
 	let loaded = $state(false);
 	// A link reads as one name: "Harold Perrineau, Boyd Stevens".
 	const label = $derived(role ? `${name}, ${role}` : name);
+	// No TMDB photo (or it failed): ask for the backup photo (Wikimedia Commons, through the metadata server) once.
+	let backup = $state('');
+	let backupFailed = $state(false);
+	const personId = $derived(href?.match(/\/people\/(\d+)/)?.[1] ?? '');
+	$effect(() => {
+		if ((image && !failed) || !personId || backup) return;
+		const id = personId;
+		void loadWikiFacts(api.get, 'person', id).then((f) => {
+			if (id === personId && f.image) backup = f.image;
+		});
+	});
+	const shown = $derived(image && !failed ? image : backup && !backupFailed ? backup : '');
 </script>
 
 <svelte:element this={href ? 'a' : 'div'} class="ui-person" href={href} aria-label={href ? label : undefined} style="--size: {size}px" use:press={'card'}>
-	<span class="ph" class:sk={!!image && !failed && !loaded}>
-		{#if !image || failed || !loaded}<ArtPlaceholder {name} shape="circle" loading={!!image && !failed && !loaded} />{/if}
-		{#if image && !failed}<img src={image} class:in={loaded} alt="" loading="lazy" decoding="async" onload={() => (loaded = true)} onerror={() => (failed = true)} />{/if}
+	<span class="ph" class:sk={!!shown && !loaded}>
+		{#if !shown || !loaded}<ArtPlaceholder {name} shape="circle" loading={!!shown && !loaded} />{/if}
+		{#if shown}{#key shown}<img src={shown} class:in={loaded} alt="" loading="lazy" decoding="async" onload={() => (loaded = true)} onerror={() => (shown === backup ? (backupFailed = true) : (failed = true), (loaded = false))} />{/key}{/if}
 	</span>
 	<span class="n" aria-hidden={href ? 'true' : undefined}>{name}</span>
 	{#if role}<span class="r" aria-hidden={href ? 'true' : undefined}>{role}</span>{/if}

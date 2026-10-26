@@ -4,7 +4,7 @@
 
 export type WikiAward = { name: string; family: string; won: boolean; year: number; for_work: string };
 export type WikiBio = { title: string; extract: string; url: string; license: string; license_url: string; attribution: string };
-export type WikiFacts = { badges: string[]; awards: WikiAward[]; born?: string; died?: string; birth_place?: string; death_place?: string; bio: WikiBio | null };
+export type WikiFacts = { badges: string[]; awards: WikiAward[]; born?: string; died?: string; birth_place?: string; death_place?: string; bio: WikiBio | null; image?: string };
 
 const EMPTY: WikiFacts = { badges: [], awards: [], bio: null };
 
@@ -37,7 +37,7 @@ export function cleanWikiFacts(raw: unknown): WikiFacts {
 	const bio = b && typeof b === 'object' && str(b.extract) && wikipediaURL(b.url) && str(b.license)
 		? { title: str(b.title), extract: str(b.extract), url: wikipediaURL(b.url), license: str(b.license), license_url: licenseURL(b.license_url), attribution: str(b.attribution) }
 		: null;
-	return { badges, awards, born: str(r.born) || undefined, died: str(r.died) || undefined, birth_place: str(r.birth_place) || undefined, death_place: str(r.death_place) || undefined, bio };
+	return { badges, awards, born: str(r.born) || undefined, died: str(r.died) || undefined, birth_place: str(r.birth_place) || undefined, death_place: str(r.death_place) || undefined, bio, image: str(r.image).startsWith('https://upload.wikimedia.org/') ? str(r.image) : undefined };
 }
 
 /** awardsTip lists the awards for the badge's hover: wins first, a few lines. */

@@ -37,7 +37,7 @@ func IsAsset(p string) bool {
 // fanart.tv (logos and artist art from the metadata server), YouTube's
 // thumbnails (the covers of trailer and music video cards),
 // or a stand-in TMDB in the browser tests (set once at start).
-var ImageHosts = "https://image.tmdb.org https://assets.fanart.tv https://i.ytimg.com"
+var ImageHosts = "https://image.tmdb.org https://assets.fanart.tv https://i.ytimg.com https://upload.wikimedia.org"
 
 // policy is the Content-Security-Policy of every answer; script-src gets
 // the hashes of the page's own inline scripts (theme, app start).
