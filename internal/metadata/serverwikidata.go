@@ -71,12 +71,17 @@ func (s *Service) WikiTitle(ctx context.Context, kind, id string) (WikiEntity, e
 	return s.wikiEntity(ctx, "/v1/wikidata/title/"+kind+"/"+id)
 }
 
-// WikiPerson reads awards, life facts and the Wikipedia bio for a TMDB person.
-func (s *Service) WikiPerson(ctx context.Context, id string) (WikiEntity, error) {
+// WikiPerson reads awards, life facts and the Wikipedia bio for a TMDB person;
+// with the person's name, the server also looks for a photo on TVmaze when Wikidata has none.
+func (s *Service) WikiPerson(ctx context.Context, id, name string) (WikiEntity, error) {
 	if !serviceID("tmdb", id) {
 		return WikiEntity{}, ErrServiceInvalid
 	}
-	return s.wikiEntity(ctx, "/v1/wikidata/person/"+id)
+	path := "/v1/wikidata/person/" + id
+	if name = strings.TrimSpace(name); name != "" && len(name) <= 100 {
+		path += "?name=" + url.QueryEscape(name)
+	}
+	return s.wikiEntity(ctx, path)
 }
 
 func (s *Service) wikiEntity(ctx context.Context, path string) (WikiEntity, error) {

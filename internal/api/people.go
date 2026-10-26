@@ -498,7 +498,7 @@ func (a *API) titlePeople(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if (title.Kind != "movie" && title.Kind != "show") || title.SourceIDs["tmdb"] == "" {
-		fail(w, http.StatusConflict, "this title has no TMDB identity")
+		fail(w, http.StatusConflict, "this title has no id to look it up by")
 		return
 	}
 	var people []metadata.MoviePersonCredit

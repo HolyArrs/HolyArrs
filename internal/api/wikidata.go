@@ -26,7 +26,7 @@ type WikiFacts struct {
 	BirthPlace string                `json:"birth_place,omitempty"`
 	DeathPlace string                `json:"death_place,omitempty"`
 	Bio        *metadata.WikiSummary `json:"bio"`
-	// Image is a person's backup photo (Wikimedia Commons), used when TMDB has none.
+	// Image is a person's backup photo (Wikimedia Commons, else TVmaze), used when TMDB has none.
 	Image string `json:"image,omitempty"`
 }
 
@@ -60,7 +60,12 @@ func (a *API) wikiFacts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.exploreCaching(w, r, "")
-	key := kind + ":" + id
+	// A person's name lets the server look for a TVmaze photo; it is part of the cache key.
+	name := strings.TrimSpace(r.URL.Query().Get("name"))
+	if len(name) > 100 {
+		name = ""
+	}
+	key := kind + ":" + id + ":" + name
 	c := wikiFactsCache
 	c.mu.Lock()
 	e, ok := c.seen[key]
@@ -75,7 +80,7 @@ func (a *API) wikiFacts(w http.ResponseWriter, r *http.Request) {
 	var ent metadata.WikiEntity
 	err := metadata.ErrNotFound
 	if kind == "person" && a.s.WikiPerson != nil {
-		ent, err = a.s.WikiPerson(ctx, id)
+		ent, err = a.s.WikiPerson(ctx, id, name)
 	} else if kind != "person" && a.s.WikiTitle != nil {
 		ent, err = a.s.WikiTitle(ctx, kind, id)
 	}
@@ -90,7 +95,7 @@ func (a *API) wikiFacts(w http.ResponseWriter, r *http.Request) {
 		v.Born, v.Died, v.BirthPlace, v.DeathPlace = ent.Born, ent.Died, ent.BirthPlace, ent.DeathPlace
 		if kind == "person" {
 			v.Bio = ent.Summary
-			if strings.HasPrefix(ent.Image, "https://upload.wikimedia.org/") {
+			if strings.HasPrefix(ent.Image, "https://upload.wikimedia.org/") || strings.HasPrefix(ent.Image, "https://static.tvmaze.com/") {
 				v.Image = ent.Image
 			}
 		}

@@ -89,7 +89,7 @@ type Server struct {
 	// metadata server; AwardWinners its award-winning TMDB IDs (the Award
 	// winners collection). nil hides them.
 	WikiTitle    func(ctx context.Context, kind, id string) (metadata.WikiEntity, error)
-	WikiPerson   func(ctx context.Context, id string) (metadata.WikiEntity, error)
+	WikiPerson   func(ctx context.Context, id, name string) (metadata.WikiEntity, error)
 	AwardWinners func(ctx context.Context, kind string) ([]metadata.AwardWinner, error)
 	// MusicControl reads the metadata server's switch for fetch-ahead
 	// (on, slow, off); ArtistVideos an artist's official music videos.

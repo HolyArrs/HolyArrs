@@ -10,6 +10,7 @@ HolyArrs is free software under the GPL-3.0 (see `LICENSE`). It shows informatio
 | [Wikipedia](https://www.wikipedia.org/) | Short bios for people and artists (text may be shortened) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
 | [Wikidata](https://www.wikidata.org/) | Awards, death dates, ID links | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) |
 | [Wikimedia Commons](https://commons.wikimedia.org/) | People's photos when TMDB has none (each photo's author and licence are on its Commons page) | Per file, mostly [CC BY-SA](https://creativecommons.org/licenses/by-sa/4.0/), [CC BY](https://creativecommons.org/licenses/by/4.0/) or public domain |
+| [TVmaze](https://www.tvmaze.com/) | People's photos when TMDB and Wikimedia Commons have none | [TVmaze API licence (CC BY-SA)](https://www.tvmaze.com/api#licensing) |
 | [MusicBrainz](https://musicbrainz.org/) | Artists, albums, editions, tracks | [MusicBrainz data licence](https://musicbrainz.org/doc/About/Data_License) (CC0 core data) |
 | [Cover Art Archive](https://coverartarchive.org/) | Album covers | Each image keeps its uploader's terms |
 | [ListenBrainz](https://listenbrainz.org/) | Music popularity, similar artists | CC0 |

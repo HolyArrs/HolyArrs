@@ -361,7 +361,7 @@ func (a *API) trailerManifest(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	res, err := proxyFetch(ctx, s.manifest, "")
 	if err != nil {
-		fail(w, http.StatusBadGateway, "YouTube refused the trailer")
+		fail(w, http.StatusBadGateway, "The trailer could not be played")
 		return
 	}
 	defer res.Body.Close()
@@ -387,7 +387,7 @@ func (a *API) trailerSegment(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	res, err := proxyFetch(ctx, raw, r.Header.Get("Range"))
 	if err != nil {
-		fail(w, http.StatusBadGateway, "YouTube refused the trailer")
+		fail(w, http.StatusBadGateway, "The trailer could not be played")
 		return
 	}
 	defer res.Body.Close()

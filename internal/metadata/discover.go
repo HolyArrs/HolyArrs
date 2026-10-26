@@ -15,7 +15,7 @@ import (
 )
 
 // ErrRateLimited means TMDB kept answering "too many requests".
-var ErrRateLimited = errors.New("TMDB: rate limited; try again shortly")
+var ErrRateLimited = errors.New("the movie and show details are busy; try again shortly")
 
 // DiscoverItem is one movie or show in a discover row.
 type DiscoverItem struct {

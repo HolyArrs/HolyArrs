@@ -27,7 +27,7 @@ func TestWikiFactsBadgesBioAndFallback(t *testing.T) {
 				Awards: []metadata.WikiAward{{Name: "Academy Award for Best Picture", Family: "oscar", Won: true, Year: 1995}},
 				Summary: &metadata.WikiSummary{Extract: "x", URL: "https://en.wikipedia.org/wiki/X"}}, nil
 		},
-		WikiPerson: func(_ context.Context, id string) (metadata.WikiEntity, error) {
+		WikiPerson: func(_ context.Context, id, _ string) (metadata.WikiEntity, error) {
 			return metadata.WikiEntity{Died: "2020-01-02", Summary: &metadata.WikiSummary{Extract: "An actor.", URL: "https://en.wikipedia.org/wiki/A", License: "CC BY-SA 4.0"}}, nil
 		}}).Handler())
 	defer srv.Close()

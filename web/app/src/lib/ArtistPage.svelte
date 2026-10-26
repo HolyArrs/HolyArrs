@@ -244,7 +244,7 @@
 		try {
 			await api.post(`/titles/${title.id}/refresh`);
 			polls = 0;
-			toasts.push('Refreshing albums, Pressings and tracks from MusicBrainz.', 'ok');
+			toasts.push('Refreshing albums, Pressings and tracks.', 'ok');
 		} catch (e) {
 			toasts.push(message(e), 'fail');
 		} finally {

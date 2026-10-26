@@ -10,14 +10,14 @@
 	let loaded = $state(false);
 	// A link reads as one name: "Harold Perrineau, Boyd Stevens".
 	const label = $derived(role ? `${name}, ${role}` : name);
-	// No TMDB photo (or it failed): ask for the backup photo (Wikimedia Commons, through the metadata server) once.
+	// No TMDB photo (or it failed): ask for the backup photo (Wikimedia Commons, else TVmaze, through the metadata server) once.
 	let backup = $state('');
 	let backupFailed = $state(false);
 	const personId = $derived(href?.match(/\/people\/(\d+)/)?.[1] ?? '');
 	$effect(() => {
 		if ((image && !failed) || !personId || backup) return;
 		const id = personId;
-		void loadWikiFacts(api.get, 'person', id).then((f) => {
+		void loadWikiFacts(api.get, 'person', id, name).then((f) => {
 			if (id === personId && f.image) backup = f.image;
 		});
 	});

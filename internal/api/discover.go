@@ -154,11 +154,11 @@ func discoverFail(w http.ResponseWriter, err error) {
 		fail(w, http.StatusNotImplemented, "Explore is not available here")
 	case errors.Is(err, metadata.ErrRateLimited):
 		w.Header().Set("Retry-After", "60")
-		fail(w, http.StatusServiceUnavailable, "TMDB is busy; try again in a minute")
+		fail(w, http.StatusServiceUnavailable, "The movie and show details are busy; try again in a minute")
 	case errors.Is(err, metadata.ErrNotFound):
-		fail(w, http.StatusNotFound, "TMDB does not know that title")
+		fail(w, http.StatusNotFound, "That title could not be found")
 	default:
-		fail(w, http.StatusBadGateway, "TMDB did not answer; try again shortly")
+		fail(w, http.StatusBadGateway, "The movie and show details did not answer; try again shortly")
 	}
 }
 

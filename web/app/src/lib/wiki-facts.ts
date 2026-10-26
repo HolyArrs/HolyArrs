@@ -37,7 +37,7 @@ export function cleanWikiFacts(raw: unknown): WikiFacts {
 	const bio = b && typeof b === 'object' && str(b.extract) && wikipediaURL(b.url) && str(b.license)
 		? { title: str(b.title), extract: str(b.extract), url: wikipediaURL(b.url), license: str(b.license), license_url: licenseURL(b.license_url), attribution: str(b.attribution) }
 		: null;
-	return { badges, awards, born: str(r.born) || undefined, died: str(r.died) || undefined, birth_place: str(r.birth_place) || undefined, death_place: str(r.death_place) || undefined, bio, image: str(r.image).startsWith('https://upload.wikimedia.org/') ? str(r.image) : undefined };
+	return { badges, awards, born: str(r.born) || undefined, died: str(r.died) || undefined, birth_place: str(r.birth_place) || undefined, death_place: str(r.death_place) || undefined, bio, image: /^https:\/\/(upload\.wikimedia\.org|static\.tvmaze\.com)\//.test(str(r.image)) ? str(r.image) : undefined };
 }
 
 /** awardsTip lists the awards for the badge's hover: wins first, a few lines. */
@@ -52,12 +52,14 @@ export function awardsTip(awards: WikiAward[], max = 6): string {
 const cache = new Map<string, Promise<WikiFacts>>();
 
 /** loadWikiFacts asks once per title or person (TMDB id); failures answer empty. */
-export function loadWikiFacts(get: <T>(path: string) => Promise<T>, kind: 'movie' | 'show' | 'person', id: string | null | undefined): Promise<WikiFacts> {
+/** A person's name (optional) lets the server look for a backup photo by name. */
+export function loadWikiFacts(get: <T>(path: string) => Promise<T>, kind: 'movie' | 'show' | 'person', id: string | null | undefined, name = ''): Promise<WikiFacts> {
 	if (!id || !/^[1-9][0-9]*$/.test(id)) return Promise.resolve(EMPTY);
-	const key = `${kind}:${id}`;
+	const q = kind === 'person' && name ? `?name=${encodeURIComponent(name.slice(0, 100))}` : '';
+	const key = `${kind}:${id}${q}`;
 	let p = cache.get(key);
 	if (!p) {
-		p = get<unknown>(`/wiki/${kind}/${id}`).then(cleanWikiFacts, () => EMPTY);
+		p = get<unknown>(`/wiki/${kind}/${id}${q}`).then(cleanWikiFacts, () => EMPTY);
 		cache.set(key, p);
 	}
 	return p;

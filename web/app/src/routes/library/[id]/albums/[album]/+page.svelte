@@ -199,7 +199,7 @@
 {#if notFound}
 	<h1 class="sr-only">Album</h1>
 	<EmptyState icon="music" title="This album is not in your Library">
-		<p>MusicBrainz may no longer list it.</p>
+		<p>It may no longer be listed.</p>
 		{#snippet actions()}<Button href={to(`/library/${titleId}`)}>Back to the artist</Button>{/snippet}
 	</EmptyState>
 {:else if error}

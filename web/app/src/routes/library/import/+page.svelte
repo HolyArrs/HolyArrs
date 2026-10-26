@@ -174,7 +174,7 @@
 		if (!id) return `No ${word} picked yet`;
 		if (named[id]) return named[id];
 		const m = [f.match, ...f.others].find((x) => x && matchKey(x) === id);
-		return m ? `${m.name}${m.year ? ` (${m.year})` : ''}` : kind === 'movie' ? `TMDB ${id}` : id;
+		return m ? `${m.name}${m.year ? ` (${m.year})` : ''}` : kind === 'movie' ? `Movie ${id}` : id;
 	}
 
 	async function adopt() {

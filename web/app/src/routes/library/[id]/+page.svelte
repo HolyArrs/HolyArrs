@@ -408,7 +408,7 @@
 		refreshing = true;
 		try {
 			await api.post(`/titles/${id}/refresh`);
-			toasts.push('Refreshing names, dates and posters from TMDB.', 'ok');
+			toasts.push('Refreshing names, dates and posters.', 'ok');
 		} catch (e) {
 			toasts.push(message(e), 'fail');
 		} finally {
@@ -481,7 +481,7 @@
 		{ label: 'Edit', icon: 'tools', onselect: openEdit },
 		{ label: 'Rename files', icon: 'copy', onselect: openRename },
 		{ label: 'Add a Version', icon: 'plus', onselect: openVersion },
-		{ label: 'Refresh from TMDB', icon: 'refresh', onselect: refresh, disabled: refreshing },
+		{ label: 'Refresh details', icon: 'refresh', onselect: refresh, disabled: refreshing },
 		{ label: 'All history', icon: 'clock', href: to(`/downloads/history?title=${id}`) },
 		{ kind: 'separator' },
 		{ label: 'Delete movie', icon: 'trash', destructive: true, onselect: openDelete }

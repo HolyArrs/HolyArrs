@@ -32,17 +32,17 @@ func TestWikidataReadsServer(t *testing.T) {
 	if err != nil || e.QID != "Q1079" || e.Tallies[0].Wins != 15 || len(e.Awards) != 1 {
 		t.Fatalf("%+v %v", e, err)
 	}
-	p, err := s.WikiPerson(ctx, "31")
+	p, err := s.WikiPerson(ctx, "31", "")
 	if err != nil || p.Summary == nil || p.Born != "1956-07-09" {
 		t.Fatalf("%+v %v", p, err)
 	}
-	if p, _ := s.WikiPerson(ctx, "32"); p.Summary != nil {
+	if p, _ := s.WikiPerson(ctx, "32", ""); p.Summary != nil {
 		t.Fatal("kept a bio that is not from Wikipedia")
 	}
-	if p, _ := s.WikiPerson(ctx, "33"); p.Summary == nil || p.Summary.LicenseURL != "https://creativecommons.org/licenses/by-sa/4.0/" {
+	if p, _ := s.WikiPerson(ctx, "33", ""); p.Summary == nil || p.Summary.LicenseURL != "https://creativecommons.org/licenses/by-sa/4.0/" {
 		t.Fatalf("license link not replaced: %+v", p.Summary)
 	}
-	if p, _ := s.WikiPerson(ctx, "34"); p.Summary != nil {
+	if p, _ := s.WikiPerson(ctx, "34", ""); p.Summary != nil {
 		t.Fatal("kept a javascript: page link")
 	}
 	if _, err := s.WikiTitle(ctx, "movie", "1"); !errors.Is(err, ErrNotFound) {

@@ -264,7 +264,7 @@
 			</label>
 			<label class="checkline" data-testid="signin-art-setting">
 				<input type="checkbox" checked={signinArt} disabled={autoplayBusy} onchange={(e) => saveSigninArt(e.currentTarget.checked)} />
-				<span><b>Show Library art on the sign-in page</b><br /><span class="hint">The sign-in page shows trending movies and shows from TMDB. On, it shows wide pictures from your Library first. Anyone who opens the page can see them, and no rating filter applies.</span></span>
+				<span><b>Show Library art on the sign-in page</b><br /><span class="hint">The sign-in page shows trending movies and shows. On, it shows wide pictures from your Library first. Anyone who opens the page can see them, and no rating filter applies.</span></span>
 			</label>
 			<label class="checkline" data-testid="artwork-cache-setting">
 				<select aria-label="Picture storage" value={cacheGB} disabled={autoplayBusy} onchange={(e) => saveCacheGB(Number(e.currentTarget.value))}>

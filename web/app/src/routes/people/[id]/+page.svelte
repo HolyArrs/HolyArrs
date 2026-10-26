@@ -126,6 +126,14 @@
 		return g.sort((a, b) => (a.label === 'Coming soon' ? 1 : b.label === 'Coming soon' ? -1 : b.label.localeCompare(a.label)));
 	});
 
+	// No TMDB photo: ask again with the name, so the server can look for a backup photo by name too.
+	$effect(() => {
+		const n = data?.person.name;
+		if (!n || data?.person.profile || wiki.image) return;
+		void loadWikiFacts(api.get, 'person', id, n).then((f) => {
+			if (f.image) wiki = { ...wiki, image: f.image };
+		});
+	});
 	onMount(() => {
 		void load();
 		void loadWikiFacts(api.get, 'person', id).then((f) => (wiki = f));
