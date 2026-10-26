@@ -66,10 +66,14 @@
 
 <header class="ui-topbar" class:away={topBar.hidden}>
 	<div class="lead">
-		{#if showToggle}<IconButton bind:node={toggle} icon="sidebar" label="Show sidebar" aria-expanded={false} aria-controls={controls} onclick={ontoggle} />{/if}
-		{#if history}
-			<IconButton icon="chevronLeft" label="Back" onclick={() => window.history.back()} />
-			<IconButton icon="chevronRight" label="Forward" onclick={() => window.history.forward()} />
+		{#if showToggle || history}
+			<div class="glass nav">
+				{#if showToggle}<IconButton bind:node={toggle} icon="sidebar" label="Show sidebar" aria-expanded={false} aria-controls={controls} onclick={ontoggle} />{/if}
+				{#if history}
+					<IconButton icon="chevronLeft" label="Back" onclick={() => window.history.back()} />
+					<IconButton icon="chevronRight" label="Forward" onclick={() => window.history.forward()} />
+				{/if}
+			</div>
 		{/if}
 		{#if history && (first || here)}
 			<nav class="crumbs" aria-label="Breadcrumb" data-testid="top-crumbs">
@@ -103,7 +107,11 @@
 	.lead, .trail { display: flex; align-items: center; gap: 4px; min-width: 0; }
 	/* Where you are, in quiet text after the arrows; hidden where the bar is narrow. */
 	/* A glass pill, so the trail stays readable over any hero frame, bright or black, in both themes. */
-	.crumbs { display: flex; align-items: center; min-width: 0; margin-left: 12px; height: 30px; padding: 0 12px; border-radius: 999px; background: color-mix(in srgb, var(--bg, #fff) 72%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent), 0 1px 3px rgb(0 0 0 / 10%); -webkit-backdrop-filter: blur(16px) saturate(1.4); backdrop-filter: blur(16px) saturate(1.4); font: 500 13px/1 var(--font-ui); color: var(--text-muted); white-space: nowrap; }
+	/* Same glass as the search field: translucent, blurred, soft shadow. */
+	.glass, .crumbs { border-radius: 999px; background: color-mix(in srgb, var(--surface-2) 70%, transparent); box-shadow: 0 8px 24px rgb(0 0 0 / 0.18), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); }
+	.nav { display: flex; align-items: center; height: 44px; padding: 0 2px; }
+	.nav :global(button) { width: 38px; height: 38px; border-radius: 999px; }
+	.crumbs { display: flex; align-items: center; min-width: 0; margin-left: 8px; height: 44px; padding: 0 18px; font: 500 13px/1 var(--font-ui); color: var(--text-muted); white-space: nowrap; }
 	.crumbs a { color: var(--text-muted); text-decoration: none; transition: color 150ms ease; }
 	.crumbs a:hover { color: var(--text); }
 	.crumbs .sep { margin: 0 6px; opacity: .5; }
