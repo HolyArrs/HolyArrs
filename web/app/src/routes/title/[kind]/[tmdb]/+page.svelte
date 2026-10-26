@@ -358,15 +358,13 @@
 	const tagsAt = 'band' as TagsAt;
 	// Bottom section while Luis compares: the About columns (default) or Details tiles (?about=details).
 	// Bottom section while Luis compares (?about=card|netflix|line|table); the About columns otherwise.
-	const BOTTOMS = ['c2', 'c1', 'c3', 'c4', 'c5'] as const;
+	const BOTTOMS = ['geist', 'system', 'mono'] as const;
 	type Bottom = (typeof BOTTOMS)[number];
-	let bottom = $state<Bottom>((typeof location !== 'undefined' && BOTTOMS.find((b) => b === new URLSearchParams(location.search).get('about'))) || 'c2');
+	let bottom = $state<Bottom>((typeof location !== 'undefined' && BOTTOMS.find((b) => b === new URLSearchParams(location.search).get('font'))) || 'geist');
 	const BOTTOM_OPTIONS: { value: Bottom; label: string }[] = [
-		{ value: 'c1', label: 'C1 · Small cards' },
-		{ value: 'c2', label: 'C2 · Card + rating' },
-		{ value: 'c3', label: 'C3 · Rating + grid' },
-		{ value: 'c4', label: 'C4 · One bar' },
-		{ value: 'c5', label: 'C5 · Grouped' }
+		{ value: 'geist', label: 'F1 · App font' },
+		{ value: 'system', label: 'F2 · Apple system font' },
+		{ value: 'mono', label: 'F3 · Mono numbers' }
 	];
 	// The short facts for the cards: one label, one value each.
 	const parts = $derived.by((): { label: string; value: string }[] => {
@@ -380,6 +378,7 @@
 			if (i.budget) out.push({ label: 'Budget', value: money(i.budget) });
 			if (i.revenue) out.push({ label: 'Box office', value: money(i.revenue) });
 		} else {
+			if (i.episodeRuntime) out.push({ label: 'Per episode', value: `${i.episodeRuntime} min` });
 			const eps = seasons.filter((x) => x.number > 0).reduce((n, x) => n + (x.episodes ?? 0), 0);
 			if (eps) out.push({ label: 'Episodes', value: String(eps) });
 			const y1 = i.dates.firstAir?.slice(0, 4);
@@ -388,14 +387,10 @@
 			if (i.nextEpisode) out.push({ label: 'Next', value: `${fmtDay(i.nextEpisode.airDate)}` });
 			else if (i.status) out.push({ label: 'Status', value: statusWord(i.status) || i.status });
 		}
+		if (awardBadges.length) out.push({ label: 'Awards', value: awardBadges[0] });
+		if (i.originalLanguage && i.originalLanguage !== 'en') out.push({ label: 'Language', value: lang });
+		if (i.originalTitle) out.push({ label: 'Original title', value: i.originalTitle });
 		return out;
-	});
-	// C5 groups: when it came out, and the money or the run.
-	const groupsC5 = $derived.by(() => {
-		const by = (labels: string[]) => parts.filter((p) => labels.includes(p.label));
-		return details?.kind === 'movie'
-			? [{ title: 'Release', rows: by(['Released', 'Digital']) }, { title: 'Money', rows: by(['Budget', 'Box office']) }].filter((g) => g.rows.length)
-			: [{ title: 'Run', rows: by(['Episodes', 'Aired']) }, { title: 'Now', rows: by(['Status', 'Next']) }].filter((g) => g.rows.length);
 	});
 	// Themes as words for "This movie is:" (story keywords only, first four).
 	const moods = $derived(tags.filter((k) => !/stinger|^based on|sequel|remake|woman director|duringcredits|aftercredits/i.test(k)).slice(0, 4));
@@ -639,47 +634,15 @@
 			{#if cert}<div class="ac rating-card"><span class="fb cert big">{cert}</span><span class="cap">Rated</span></div>{/if}
 		{/snippet}
 		{#snippet linksLine()}
-			<p class="card-links">{#each outLinks as l, i (l.name)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name} ↗</a>{/each}{#if langLine}<span class="sep" aria-hidden="true">·</span><span>{langLine}</span>{/if}</p>
+			<p class="card-links">{#each outLinks as l, i (l.name)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name} ↗</a>{/each}</p>
 		{/snippet}
-		<section class="ab" data-testid="title-details">
+		<section class="ab font-{bottom}" data-testid="title-details">
 			<h2 class="tp-h2">About</h2>
-			{#if bottom === 'c1'}
-				<!-- C1: every fact its own small card, the age rating first. -->
-				<div class="ac-row">
-					{@render ratingCard()}
-					{#each parts as p (p.label)}<div class="ac small"><b>{p.value}</b><span class="cap">{p.label}</span></div>{/each}
-				</div>
-			{:else if bottom === 'c2'}
-				<!-- C2: one card with the title and the facts in a row; the age rating in its own card. -->
-				<div class="ac-split">
-					<div class="ac">
-						<h3>{d.name}</h3>
-						<p class="cap">{[d.kind === 'show' ? 'TV show' : 'Movie', ...d.genres.slice(0, 2)].join(', ')}</p>
-						<dl class="facts-row">{#each parts as p (p.label)}<div><dt>{p.label}</dt><dd>{p.value}</dd></div>{/each}</dl>
-					</div>
-					{@render ratingCard()}
-				</div>
-			{:else if bottom === 'c3'}
-				<!-- C3: the age rating as a square card, then one card with the facts two by two. -->
-				<div class="ac-split left">
-					{@render ratingCard()}
-					<div class="ac"><dl class="facts-grid2">{#each parts as p (p.label)}<div><dt>{p.label}</dt><dd>{p.value}</dd></div>{/each}</dl></div>
-				</div>
-			{:else if bottom === 'c4'}
-				<!-- C4: one bar, the facts apart by thin dividers, the age rating at the end. -->
-				<div class="ac bar">
-					{#each parts as p (p.label)}<div><b>{p.value}</b><span class="cap">{p.label}</span></div>{/each}
-					{#if cert}<div><span class="fb cert">{cert}</span><span class="cap">Rated</span></div>{/if}
-				</div>
-			{:else}
-				<!-- C5: grouped cards (release and money, or run and now), the age rating alone. -->
-				<div class="ac-row">
-					{#each groupsC5 as g (g.title)}
-						<div class="ac group"><span class="cap">{g.title}</span><dl>{#each g.rows as p (p.label)}<div><dt>{p.label}</dt><dd>{p.value}</dd></div>{/each}</dl></div>
-					{/each}
-					{@render ratingCard()}
-				</div>
-			{/if}
+			<!-- Every fact its own small card, sized to its content and centered; the age rating first. -->
+			<div class="ac-row">
+				{@render ratingCard()}
+				{#each parts as p (p.label)}<div class="ac small"><b>{p.value}</b><span class="cap">{p.label}</span></div>{/each}
+			</div>
 			{@render linksLine()}
 		</section>
 		{:else}
@@ -718,7 +681,7 @@
 		{/if}
 
 		<!-- While the bottom section is being chosen: a floating switch between the options. -->
-		<div class="bottom-pick" data-testid="bottom-pick"><SegmentedControl options={BOTTOM_OPTIONS} bind:value={bottom} label="Bottom section" size="sm" /></div>
+		<div class="bottom-pick" data-testid="bottom-pick"><SegmentedControl options={BOTTOM_OPTIONS} bind:value={bottom} label="About font" size="sm" /></div>
 
 		<Sheet bind:open={allCast} title="Cast and crew" size="lg">
 			<ul class="all-grid people">
@@ -780,33 +743,15 @@
 	.card-links a:hover { text-decoration: underline; }
 	.bottom-pick { position: fixed; z-index: 30; left: 0; right: 0; bottom: 20px; width: max-content; max-width: calc(100vw - 24px); overflow-x: auto; margin-inline: auto; padding: 5px; border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow-lift); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); }
 	@media (max-width: 767px) { .bottom-pick { bottom: calc(var(--tabbar, 56px) + env(safe-area-inset-bottom) + 16px); } }
-	/* About cards (C1–C5): Apple TV-like, no borders, one surface, small caps labels. */
-	.ab .ac { padding: 18px 20px; border-radius: 16px; background: var(--surface-1); min-width: 0; }
-	.ab .cap { color: var(--text-muted); font: 700 11.5px/1.2 var(--font-ui); letter-spacing: .07em; text-transform: uppercase; }
-	.ab h3 { margin: 0; color: var(--text); font: 700 20px/1.2 var(--font-ui); }
-	.ab h3 + .cap { display: block; margin: 4px 0 16px; }
-	.ab dl { margin: 0; }
-	.ab dt { color: var(--text-muted); font: 700 11.5px/1.2 var(--font-ui); letter-spacing: .07em; text-transform: uppercase; }
-	.ab dd { margin: 4px 0 0; color: var(--text); font: 600 17px/1.25 var(--font-ui); }
-	.ac-row { display: flex; flex-wrap: wrap; gap: 12px; }
-	.ac.small { display: flex; flex-direction: column; gap: 6px; flex: 1 1 130px; max-width: 200px; padding: 16px 18px; }
-	.ac.small b { color: var(--text); font: 700 20px/1.15 var(--font-ui); }
-	.rating-card { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 8px; flex: 0 0 auto; min-width: 110px; }
-	.ac-split { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: stretch; }
-	.ac-split.left { grid-template-columns: auto minmax(0, 1fr); }
-	.facts-row { display: flex; flex-wrap: wrap; gap: 14px 36px; }
-	.facts-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 28px; }
-	.ac.bar { display: flex; flex-wrap: wrap; padding: 0; }
-	.ac.bar > div { display: flex; flex-direction: column; gap: 6px; flex: 1 1 120px; padding: 16px 20px; }
-	.ac.bar > div + div { border-left: 1px solid var(--line); }
-	.ac.bar b { color: var(--text); font: 700 18px/1.2 var(--font-ui); }
-	.ac.bar .fb.cert { align-self: flex-start; }
-	.ac.group { display: flex; flex-direction: column; gap: 12px; flex: 1 1 200px; }
-	.ac.group dl { display: grid; gap: 10px; }
-	.ac.group dl div { display: flex; justify-content: space-between; gap: 12px; }
-	.ac.group dt { text-transform: none; letter-spacing: 0; font: 500 15px/1.3 var(--font-ui); }
-	.ac.group dd { margin: 0; font-size: 15px; }
-	@media (max-width: 599px) { .ac-split, .ac-split.left { grid-template-columns: minmax(0, 1fr); } .ac.small { max-width: none; } .ac.bar > div + div { border-left: 0; } }
+	/* About cards: Apple TV-like, one surface, no borders; each card snug around its value and centered. */
+	.ab .ac { border-radius: 14px; background: var(--surface-1); }
+	.ab .cap { color: var(--text-muted); font: 600 11px/1.2 var(--font-ab, var(--font-ui)); letter-spacing: .07em; text-transform: uppercase; }
+	.ac-row { display: flex; flex-wrap: wrap; gap: 10px; }
+	.ac.small, .rating-card { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-width: 96px; padding: 12px 18px; text-align: center; }
+	.ac.small b { color: var(--text); font: 700 18px/1.15 var(--font-ab, var(--font-ui)); font-variant-numeric: tabular-nums; white-space: nowrap; }
+	.ab.font-system { --font-ab: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif; }
+	.ab.font-mono .ac.small b { font-family: var(--font-mono); font-weight: 600; letter-spacing: -0.01em; }
+	@media (max-width: 599px) { .ac.small, .rating-card { flex: 1 1 calc(33% - 10px); min-width: 0; padding: 10px 8px; } .ac.small b { font-size: 16px; white-space: normal; } }
 	.tagchips.quiet li { background: none; border: 1px solid var(--line); color: var(--text-muted); font-size: 12px; }
 	@media (max-width: 899px) { .decide { grid-template-columns: minmax(0, 1fr); } }
 	.facts-grid { display: grid; grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); gap: 16px 28px; margin: 0; padding: 16px 0; }
