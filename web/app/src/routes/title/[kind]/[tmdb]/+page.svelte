@@ -241,21 +241,22 @@
 	// Where the facts line and tagline go while the options are compared (title-look.svelte.ts).
 	// The chosen layout (V5: facts row and story left, credits right; tags under the story).
 	// The chosen layout (E): facts row and story left, credits right; Information at the bottom. Desktop first.
-	const look = 'side' as TitleLook;
 	// About cards: two wide ones (ratings, awards); no title card, the story is already at the top.
 	// Whole-page views while Luis compares (?view=): Now, Before (the page before the reviewers' fixes) and three mixes.
-	type View = { value: string; label: string; newWords: boolean; status: boolean; names: boolean; cards: 'two' | 'three'; missing: boolean; wide: boolean; heroFacts: boolean };
+	type View = { value: string; label: string; newWords: boolean; status: boolean; names: boolean; cards: 'two' | 'three'; missing: boolean; wide: boolean; heroFacts: boolean; band: 'side' | 'apple' | 'netflix' | 'compact' };
 	const VIEWS: View[] = [
-		{ value: 'now', label: 'Now', newWords: true, status: true, names: true, cards: 'two', missing: false, wide: true, heroFacts: false },
-		{ value: 'before', label: 'Before', newWords: false, status: false, names: false, cards: 'three', missing: true, wide: false, heroFacts: false },
-		{ value: 'm1', label: 'Mix 1 · Now + 3 cards', newWords: true, status: true, names: true, cards: 'three', missing: false, wide: true, heroFacts: false },
-		{ value: 'm2', label: 'Mix 2 · Quiet', newWords: true, status: false, names: false, cards: 'two', missing: false, wide: true, heroFacts: false },
-		{ value: 'm3', label: 'Mix 3 · Facts in hero', newWords: true, status: true, names: true, cards: 'two', missing: false, wide: true, heroFacts: true }
+		{ value: 'now', label: 'Now', newWords: true, status: true, names: true, cards: 'two', missing: false, wide: true, heroFacts: false, band: 'side' },
+		{ value: 'before', label: 'Before', newWords: false, status: false, names: false, cards: 'three', missing: true, wide: false, heroFacts: false, band: 'side' },
+		{ value: 'm1', label: 'Mix 1 · Apple TV', newWords: true, status: true, names: true, cards: 'two', missing: false, wide: true, heroFacts: true, band: 'apple' },
+		{ value: 'm2', label: 'Mix 2 · Netflix', newWords: true, status: true, names: true, cards: 'two', missing: false, wide: true, heroFacts: false, band: 'netflix' },
+		{ value: 'm3', label: 'Mix 3 · One column', newWords: true, status: true, names: true, cards: 'three', missing: false, wide: true, heroFacts: false, band: 'compact' }
 	];
 	const VIEW_OPTIONS = VIEWS.map((v) => ({ value: v.value, label: v.label }));
 	let viewName = $state((typeof location !== 'undefined' && VIEWS.find((v) => v.value === new URLSearchParams(location.search).get('view'))?.value) || 'now');
 	const view = $derived(VIEWS.find((v) => v.value === viewName) ?? VIEWS[0]);
 	const cardLook = $derived(view.cards);
+	// The band under the hero: two columns (side), or one calm column (apple / compact, as the 'ledger' layout), or Netflix's split.
+	const look = $derived<TitleLook>(view.band === 'side' ? 'side' : view.band === 'netflix' ? 'netflix1' : 'ledger');
 	// The facts row shows the 3 picked scores (Settings › Appearance); the Ratings card at the bottom lists every source.
 	const top: string = 'r1';
 	const topScores = $derived(picked.scores);
@@ -681,12 +682,24 @@
 			{#if tagsAt === 'band' && tags.length}<ul class="tagchips quiet" data-testid="title-tags">{#each tags.slice(0, 5) as t (t)}<li>{t}</li>{/each}</ul>{/if}
 		{/snippet}
 		{#if look !== 'both' && look !== 'band'}
-		{#if look === 'ledger' || look === 'netflix1' || look === 'google'}
+		{#if view.band === 'netflix'}
+		<!-- Mix 2 · Netflix: left the facts row, story and where to watch; right the credits and the tags. -->
+		<div class="side nf" data-testid="title-side">
+			<div class="d-left">{@render factsLine(false)}{@render story()}{@render where()}</div>
+			<div class="nf-right">
+				{@render greyCredits()}
+				{#if d.genres.length}<p class="nf-line">Genres <span>{d.genres.slice(0, 3).join(', ')}</span></p>{/if}
+				{#if network}<p class="nf-line">Network <span>{network}</span></p>{/if}
+				{#if tags.length}<p class="nf-line">This {d.kind === 'show' ? 'show' : 'movie'} is <span>{tags.slice(0, 4).join(', ')}</span></p>{/if}
+			</div>
+		</div>
+		{:else if look === 'ledger' || look === 'netflix1' || look === 'google'}
 		<!-- A / D / C: one calm column. A: two scores, story, grey credits, where to watch. D: story, credits (scores are in the hero). C: credits, where (story and score are in the hero). -->
 		<div class="calm one" data-testid="title-calm">
-			{#if look === 'ledger' && hasScores}<TitleScores scores={picked.scores.slice(0, 2)} tmdb={picked.scores.length ? undefined : picked.tmdb} variant="mono" />{/if}
+			{#if !view.heroFacts}{@render factsLine(false)}{/if}
 			{#if look !== 'google'}{@render story()}{/if}
 			{@render greyCredits()}
+			{@render tagLine()}
 			{@render where()}
 		</div>
 		{:else if look === 'mubi'}
@@ -751,7 +764,7 @@
 						<article class="atv-card">
 							<h3 id="ratings">Ratings</h3>
 							<p class="atv-cap">Out of 10</p>
-							<div class="atv-scores" class:cols={cardLook === 'two'}><TitleScores scores={outside} tmdb={rich?.score ?? scoreOf(d.rating)} variant="list" outOf10 showMissing={view.missing} /></div>
+							<div class="atv-scores" ><TitleScores scores={outside} tmdb={rich?.score ?? scoreOf(d.rating)} variant="list" outOf10 showMissing={view.missing} /></div>
 						</article>
 					{/if}
 					{#if awards.length}
@@ -880,7 +893,10 @@
 	.calm-meta { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 0; color: var(--text-muted); font: 500 15.5px/1.4 var(--font-ui); }
 	.calm .tagchips.quiet, .d-left .tagchips.quiet { margin-top: -6px; }
 	.fb.cert.big { height: 30px; padding: 0 10px; font-size: 16px; border-radius: 7px; }
-	.calm.one { max-width: 680px; gap: 14px; }
+	.calm.one { max-width: 820px; gap: 14px; }
+	.nf-right { display: grid; gap: 8px; align-content: start; }
+	.nf-line { margin: 0; color: var(--text-muted); font: 400 14px/1.5 var(--font-ui); }
+	.nf-line span { color: var(--text); }
 	.calm.one .lead { font-size: 17px; line-height: 1.5; }
 	.grey-credits { display: grid; gap: 2px; color: var(--text-muted); font: 400 14px/1.5 var(--font-ui); }
 	.grey-credits p { margin: 0; }
@@ -894,9 +910,7 @@
 	.atv-h { margin: 0 0 14px; color: var(--text); font: 700 20px/1.2 var(--font-ui); }
 	.atv-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
 	.atv-card { min-width: 0; padding: 16px 18px 18px; border-radius: 12px; background: var(--atv-card); box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%); }
-	.atv-cards.two { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
-	.atv-cards.solo { grid-template-columns: minmax(0, 1fr); }
-	.atv-scores.cols :global(.list) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 36px; }
+	/* Cards keep a third of the width each, however many there are (never one stretched card). */
 	.atv-awards { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; color: var(--text); font: 500 14.5px/1.4 var(--font-ui); }
 	.atv-more { margin: 10px 0 0; color: var(--text-muted); font: 500 13px/1.4 var(--font-ui); }
 	.atv-card h3 { margin: 0; color: var(--text); font: 700 17px/1.25 var(--font-ui); }
