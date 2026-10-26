@@ -21,7 +21,7 @@
 	/** The review open in the sheet. */
 	let reading = $state<Review | null>(null);
 	let sheet = $state(false);
-	const hasContent = $derived(!!answer && (answer.score > 0 || reviews.length > 0));
+	const hasContent = $derived(!!answer && (shownScore(answer.score, answer.votes) !== undefined || reviews.length > 0));
 	let seenContent = $state(false);
 	// A new title starts fresh.
 	$effect.pre(() => {
