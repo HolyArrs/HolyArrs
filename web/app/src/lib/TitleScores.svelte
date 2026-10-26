@@ -67,9 +67,9 @@
 	.mono li { display: inline-flex; align-items: center; gap: 5px; color: var(--text-muted); }
 	.mono li + li { margin-left: 8px; }
 	.mono li + li::before { content: '·'; margin-right: 3px; color: var(--text-faint); }
-	.mono .v { font-size: 14px; font-weight: 600; color: var(--text); }
+	.mono .v { font-size: 15.5px; font-weight: 600; color: var(--text); }
 	.mono .n { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-	.mono .mark { height: 16px; min-width: 0; padding: 0; background: none; color: var(--text-muted); }
+	.mono .mark { height: 17px; min-width: 0; padding: 0; background: none; color: var(--text-muted); }
 	.mono .mark.imdb { padding: 0 4px; border-radius: 3px; background: var(--text-muted); color: var(--bg); font-size: 9.5px; letter-spacing: 0; }
 	.mono .mark.trakt:not(:has(svg)) { padding: 0 4px; border-radius: 3px; box-shadow: inset 0 0 0 1px currentColor; }
 

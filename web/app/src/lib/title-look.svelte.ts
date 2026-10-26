@@ -17,7 +17,7 @@ const KEY = 'holyarrs.hero-look-3';
 const known = (v: string | null): v is TitleLook => v === 'quiet' || v === 'credits' || v === 'herostory' || v === 'side' || v === 'scores' || v === 'story' || v === 'decide' || v === 'both' || v === 'band';
 
 function first(): TitleLook {
-	if (typeof window === 'undefined') return 'quiet';
+	if (typeof window === 'undefined') return 'side';
 	const q = new URLSearchParams(location.search).get('look');
 	if (known(q)) return q;
 	try {
@@ -26,7 +26,7 @@ function first(): TitleLook {
 	} catch {
 		/* No storage: the default option. */
 	}
-	return 'quiet';
+	return 'side';
 }
 
 export const titleLook = $state({ value: first() });

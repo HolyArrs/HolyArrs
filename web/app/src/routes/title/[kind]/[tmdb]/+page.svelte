@@ -624,7 +624,7 @@
 	.side-credits div { display: flex; flex-wrap: wrap; gap: 0 6px; }
 	.side-credits dd { margin: 0; color: var(--text); }
 	@media (max-width: 899px) { .side { grid-template-columns: minmax(0, 1fr); } }
-	.calm-meta { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 0; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
+	.calm-meta { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 0; color: var(--text-muted); font: 500 15.5px/1.4 var(--font-ui); }
 	.calm .tagchips.quiet, .d-left .tagchips.quiet { margin-top: -6px; }
 	.about-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 28px 40px; }
 	.about-col h3 { margin: 0 0 12px; color: var(--text); font: 700 17px/1.2 var(--font-ui); }
