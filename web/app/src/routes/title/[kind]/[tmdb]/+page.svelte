@@ -28,6 +28,7 @@
 	import { aboutPicks, aboutShown } from '#lib/about-picks.svelte.ts';
 	import { awardsTip, loadWikiFacts, type WikiAward } from '#lib/wiki-facts.ts';
 	import type { TagsAt, TitleLook } from '#lib/title-look.svelte.ts';
+	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -242,7 +243,19 @@
 	// The chosen layout (E): facts row and story left, credits right; Information at the bottom. Desktop first.
 	const look = 'side' as TitleLook;
 	// About cards: two wide ones (ratings, awards); no title card, the story is already at the top.
-	const cardLook: string = 'two';
+	// Whole-page views while Luis compares (?view=): Now, Before (the page before the reviewers' fixes) and three mixes.
+	type View = { value: string; label: string; newWords: boolean; status: boolean; names: boolean; cards: 'two' | 'three'; missing: boolean; wide: boolean; heroFacts: boolean };
+	const VIEWS: View[] = [
+		{ value: 'now', label: 'Now', newWords: true, status: true, names: true, cards: 'two', missing: false, wide: true, heroFacts: false },
+		{ value: 'before', label: 'Before', newWords: false, status: false, names: false, cards: 'three', missing: true, wide: false, heroFacts: false },
+		{ value: 'm1', label: 'Mix 1 · Now + 3 cards', newWords: true, status: true, names: true, cards: 'three', missing: false, wide: true, heroFacts: false },
+		{ value: 'm2', label: 'Mix 2 · Quiet', newWords: true, status: false, names: false, cards: 'two', missing: false, wide: true, heroFacts: false },
+		{ value: 'm3', label: 'Mix 3 · Facts in hero', newWords: true, status: true, names: true, cards: 'two', missing: false, wide: true, heroFacts: true }
+	];
+	const VIEW_OPTIONS = VIEWS.map((v) => ({ value: v.value, label: v.label }));
+	let viewName = $state((typeof location !== 'undefined' && VIEWS.find((v) => v.value === new URLSearchParams(location.search).get('view'))?.value) || 'now');
+	const view = $derived(VIEWS.find((v) => v.value === viewName) ?? VIEWS[0]);
+	const cardLook = $derived(view.cards);
 	// The facts row shows the 3 picked scores (Settings › Appearance); the Ratings card at the bottom lists every source.
 	const top: string = 'r1';
 	const topScores = $derived(picked.scores);
@@ -550,7 +563,7 @@
 <PageLoader loading={!details || !details.name} label="Loading the title" onretry={() => void load(kind, tmdb)}>
 {#if details}
 	{@const d = details}
-	<article class="tp" data-testid="title-detail">
+	<article class="tp" class:old-gap={!view.wide} class:no-names={!view.names} data-testid="title-detail">
 		<TitleHero
 			title={d.name}
 			kind={d.kind}
@@ -562,10 +575,10 @@
 			crumbIcon={d.kind === 'show' ? 'tv' : 'compass'}
 			breadcrumb={crumbs}
 			meta={heroFacts(d)}
-			ratings={look === 'google' || look === 'netflix1' || look === 'mubi'}
 			heroStory={look === 'mubi' || look === 'google' ? d.overview : undefined}
 			heroCaps={look === 'mubi' ? mubiCaps : undefined}
-			showFacts={look === 'ledger' || look === 'google' || look === 'netflix1'}
+			showFacts={view.heroFacts}
+			ratings={view.heroFacts}
 			tagline={info?.tagline}
 			certification={rich?.certification ?? certOf(d.rating)}
 			score={rich?.score ?? scoreOf(d.rating)}
@@ -573,19 +586,19 @@
 			statusLabel={d.neverAdd || d.ask ? heroPill(d).label : undefined}
 			vtName={tmdbArtName(d.kind, d.tmdb)}
 		>
-			{#snippet byline()}{#if requestLine}<p class="request-line" data-testid="request-line">{requestLine}</p>{/if}{/snippet}
+			{#snippet byline()}{#if view.status && requestLine}<p class="request-line" data-testid="request-line">{requestLine}</p>{/if}{/snippet}
 			{#snippet actions()}
 				{#if manage && !d.neverAdd}
 					{#if d.kind === 'movie' && d.movie}
-						<ActionButton icon="plus" label="Add {d.name} to the library" caption="Add to library" primary onclick={() => addMovie?.open(d.movie as LookupMovie)} />
+						<ActionButton icon="plus" label="Add {d.name} to the library" caption={view.newWords ? 'Add to library' : 'Add'} primary onclick={() => addMovie?.open(d.movie as LookupMovie)} />
 					{:else if d.kind === 'show' && d.show}
-						<ActionButton icon="plus" label="Add {d.name} to the library" caption="Add to library" primary onclick={() => addShow?.open(d.show as LookupShow)} />
+						<ActionButton icon="plus" label="Add {d.name} to the library" caption={view.newWords ? 'Add to library' : 'Add'} primary onclick={() => addShow?.open(d.show as LookupShow)} />
 					{/if}
 				{:else if mayAsk && !d.neverAdd}
 					{#if d.kind === 'movie'}
-						<ActionButton icon="wish" label={d.ask ? `Ask for ${d.name} too` : `Ask for ${d.name}`} caption={d.ask?.mine ? 'Requested' : d.ask ? 'Request too' : 'Request'} primary disabled={!!d.ask?.mine} onclick={() => askMovieDialog?.open({ tmdb: d.tmdb, name: d.name, year: d.year, ask: d.ask })} />
+						<ActionButton icon="wish" label={d.ask ? `Ask for ${d.name} too` : `Ask for ${d.name}`} caption={view.newWords ? (d.ask?.mine ? 'Requested' : d.ask ? 'Request too' : 'Request') : d.ask?.mine ? 'Asked' : d.ask ? 'Ask too' : 'Ask'} primary disabled={!!d.ask?.mine} onclick={() => askMovieDialog?.open({ tmdb: d.tmdb, name: d.name, year: d.year, ask: d.ask })} />
 					{:else if d.show}
-						<ActionButton icon="wish" label={d.ask ? `Ask for ${d.name} too` : `Ask for ${d.name}`} caption={d.ask ? 'Request too' : 'Request'} primary onclick={() => askShow?.open(d.show as LookupShow)} />
+						<ActionButton icon="wish" label={d.ask ? `Ask for ${d.name} too` : `Ask for ${d.name}`} caption={view.newWords ? (d.ask ? 'Request too' : 'Request') : d.ask ? 'Ask too' : 'Ask'} primary onclick={() => askShow?.open(d.show as LookupShow)} />
 					{/if}
 				{/if}
 				{#if d.kind === 'show'}<FollowButton tmdb={d.tmdb} kind="show" />{/if}
@@ -696,7 +709,7 @@
 		{:else if look === 'side'}
 		<!-- Netflix-like: the story and scores left, short credits right. -->
 		<div class="side" data-testid="title-side">
-			<div class="d-left">{@render factsLine(false)}{@render story()}{@render tagLine()}{@render where()}</div>
+			<div class="d-left">{#if !view.heroFacts}{@render factsLine(false)}{/if}{@render story()}{@render tagLine()}{@render where()}</div>
 			<dl class="side-credits">
 				{#if makers.length}<div><dt>{madeBy}</dt><dd>{@render names(makers, 2)}</dd></div>{/if}
 				{#if stars.length}<div><dt>Starring</dt><dd>{@render names(stars, 3)}</dd></div>{/if}
@@ -738,7 +751,7 @@
 						<article class="atv-card">
 							<h3 id="ratings">Ratings</h3>
 							<p class="atv-cap">Out of 10</p>
-							<div class="atv-scores" class:cols={cardLook === 'two'}><TitleScores scores={outside} tmdb={rich?.score ?? scoreOf(d.rating)} variant="list" outOf10 /></div>
+							<div class="atv-scores" class:cols={cardLook === 'two'}><TitleScores scores={outside} tmdb={rich?.score ?? scoreOf(d.rating)} variant="list" outOf10 showMissing={view.missing} /></div>
 						</article>
 					{/if}
 					{#if awards.length}
@@ -765,6 +778,7 @@
 				<p class="atv-links">{#each outLinks as l, i (l.name)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name} ↗</a>{/each}</p>
 			</section>
 		{/if}
+		<div class="view-pick" data-testid="view-pick"><SegmentedControl options={VIEW_OPTIONS} bind:value={viewName} label="Page view" size="sm" /></div>
 		{#snippet ratingCard()}
 			{#if cert}<div class="ac rating-card"><span class="fb cert big">{cert}</span><span class="cap">Rated</span></div>{/if}
 		{/snippet}
@@ -851,6 +865,9 @@
 	.top-scores.grey :global(.mark) { filter: grayscale(1); opacity: .75; }
 	#ratings { scroll-margin-top: 90px; }
 	.request-line { margin: 0; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
+	.tp.old-gap { --tp-gap: clamp(24px, 3.4vw, 38px); }
+	.tp.no-names :global(.mono .n) { display: none; }
+	.view-pick { position: fixed; z-index: 30; left: 0; right: 0; bottom: 20px; width: max-content; max-width: calc(100vw - 24px); overflow-x: auto; margin-inline: auto; padding: 5px; border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow-lift); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); }
 	.calm-meta .sep { margin: 0 8px; color: var(--text-faint); }
 	.credits { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: -4px 0 0; color: var(--text); font: 500 14px/1.45 var(--font-ui); }
 	.credits .cl, .side-credits dt { color: var(--text-muted); font-weight: 500; }
