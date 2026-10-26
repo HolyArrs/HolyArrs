@@ -55,7 +55,7 @@
 
 <script lang="ts">
 	import { onMount, type Snippet } from 'svelte';
-	import { cameFrom, fromIcon } from '../came-from.svelte.ts';
+	import { setTopCrumbs } from '../top-crumbs.svelte.ts';
 	import Icon, { type IconName } from '../Icon.svelte';
 	import StatusPill, { type StatusKind } from './StatusPill.svelte';
 	import { viewTransitionName } from '../motion.ts';
@@ -201,17 +201,11 @@
 	// Only the ratings this browser picked (Settings › Appearance).
 	const shown = $derived(shownRatings(extras.scores, score, ratingPicks.list, !ratingPicks.custom));
 	const scoreText = $derived(shown.tmdb ? (Math.round(shown.tmdb * 10) / 10).toFixed(1) : '');
-	// The first crumb is the page you came from (Search, Explore, a person…), stepping back there with its scroll and state; a fresh visit keeps the page's own.
-	const from = $derived.by(() => (void breadcrumb, cameFrom()));
-	const fromSelf = $derived(!!from && !!breadcrumb.at(-1)?.href && from.path.split('?')[0] === breadcrumb.at(-1)!.href.split('?')[0]);
-	const crumbHome = $derived(from && !fromSelf && from.label ? { href: from.path, label: from.label } : breadcrumb[0]);
-	const homeIcon = $derived(from && !fromSelf && from.label ? (fromIcon(from.path) ?? crumbIcon) : crumbIcon);
-	function stepBack(e: MouseEvent) {
-		if (!from || fromSelf || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-		e.preventDefault();
-		history.back();
-	}
-	const crumbRest = $derived(breadcrumb.slice(1));
+	// The breadcrumb lives in the top bar (one pattern on every page): the page's parent for a fresh visit, and its name.
+	$effect(() => {
+		setTopCrumbs(breadcrumb[0] ?? null, breadcrumb.length > 1 ? (breadcrumb.at(-1)?.label ?? title) : title);
+		return () => setTopCrumbs(null);
+	});
 
 	// The Trailer button shows once the title has a trailer; it opens the theater.
 	let videos = $state<Video[] | undefined>();
@@ -271,21 +265,6 @@
 
 <div class="ui-thero" class:square>
 	<Billboard label={title} testid="title-hero" {kind} {tmdb} {title} {videos} {pictures} {vtName} {settled} once position="70% 30%" onpictureerror={() => (backdropFailed = true)} art={stand ? standArt : undefined}>
-		{#snippet top()}
-			{#if crumbHome}
-				<nav class="crumbs" aria-label="Breadcrumb">
-					<ol>
-						<li><a class="chip" href={crumbHome.href} onclick={stepBack} aria-current={crumbRest.length ? undefined : 'page'}><Icon name={homeIcon} size={14} />{crumbHome.label}</a></li>
-						{#each crumbRest as c, i (i)}
-							<li>
-								<span class="sep" aria-hidden="true">›</span>
-								<a class="here" href={c.href} aria-current={i === crumbRest.length - 1 ? 'page' : undefined}>{c.label}</a>
-							</li>
-						{/each}
-					</ol>
-				</nav>
-			{/if}
-		{/snippet}
 		{#snippet heading()}
 			{#if cover}
 				<img class="cover" src={cover} alt="" decoding="async" use:viewTransitionName={vtName} />
@@ -331,14 +310,6 @@
 	.bd.blur { filter: blur(40px) saturate(1.3) brightness(.6); transform: scale(1.2); }
 	.cover { display: block; width: clamp(120px, 14vw, 220px); aspect-ratio: 1; object-fit: cover; border-radius: 12px; box-shadow: 0 12px 40px rgb(0 0 0 / 50%); margin-bottom: 12px; }
 	.ui-thero :global(.bb-name.short) { min-height: 0; }
-	.crumbs ol { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; list-style: none; margin: 0; padding: 0; font: 600 13px/1.2 var(--font-ui); }
-	.crumbs li { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
-	.chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 10px; border-radius: 999px; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); color: #fff; transition: background var(--dur-fast) var(--ease-out); }
-	.chip:hover { background: rgb(255 255 255 / 24%); }
-	.sep { color: rgb(255 255 255 / 60%); }
-	.here { color: rgb(255 255 255 / 86%); min-height: 30px; display: inline-flex; align-items: center; overflow-wrap: anywhere; text-shadow: 0 1px 2px rgb(0 0 0 / 60%); }
-	.here:hover { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
-	.chip:focus-visible, .here:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff; border-radius: 999px; }
 	.b { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 7px; border-radius: 5px; border: 1px solid rgb(255 255 255 / 55%); color: rgb(255 255 255 / 92%); font: 700 11.5px/1 var(--font-ui); letter-spacing: .03em; white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.b.award { border-color: rgb(245 197 24 / 75%); color: #f5c518; }
 	.cert { border-width: 1.5px; border-color: rgb(255 255 255 / 80%); }

@@ -21,7 +21,7 @@
 	import { byDecade, personChips, runReviewed, type FilmSort, type FilmographyPage, type PersonMovie, type PersonRole } from '#lib/people.ts';
 	import type { AskLimit } from '#lib/types.ts';
 	import { loadWikiFacts, type WikiFacts } from '#lib/wiki-facts.ts';
-	import { cameFrom, fromIcon } from '#lib/came-from.svelte.ts';
+	import { setTopCrumbs } from '#lib/top-crumbs.svelte.ts';
 	import { peopleSort, takePrefetched } from '#lib/person-prefetch.ts';
 
 	const id = page.params.id ?? '';
@@ -132,13 +132,8 @@
 		if (session.can('ask') && !session.can('manage_library')) void api.get<AskLimit>('/asks/limit').then((r) => (limit = r)).catch(() => {});
 	});
 
-	// Back to the page this person was opened from (a title's cast, Search…), with its scroll.
-	const from = $derived.by(() => (void page.url.pathname, cameFrom()));
-	function stepBack(e: MouseEvent) {
-		if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-		e.preventDefault();
-		history.back();
-	}
+	// Where this person was opened from is in the top bar (layout), like every page.
+	setTopCrumbs(null);
 </script>
 
 <svelte:head><title>{data?.person.name ?? 'Person'} · HolyArrs</title>{#if hero}<link rel="preload" as="image" href={hero} />{/if}</svelte:head>
@@ -170,7 +165,6 @@
 	<header class="hero" data-hero>
 		{#if hero}<img class="art" class:in={heroIn} src={hero} alt="" decoding="async" fetchpriority="high" onload={() => (heroIn = true)} onerror={() => (heroIn = false)} />{/if}
 		<div class="shade" aria-hidden="true"></div>
-		{#if from?.label}<nav class="crumbs" aria-label="Breadcrumb"><a class="chip" href={from.path} onclick={stepBack} data-testid="person-back"><Icon name={fromIcon(from.path) ?? 'chevronLeft'} size={14} />{from.label}</a></nav>{/if}
 		<div class="hero-in">
 			<div class="portrait"><Poster src={data.person.profile} name={data.person.name} /></div>
 			<div class="who">
@@ -238,10 +232,6 @@
 	.shade { position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, var(--on-art-scrim) 0%, var(--on-art-scrim-mid) 38%, var(--on-art-scrim-none) 72%), linear-gradient(to right, var(--on-art-scrim-mid) 0%, var(--on-art-scrim-none) 60%); }
 	.hero-in { width: 100%; display: grid; grid-template-columns: clamp(120px, 14vw, 200px) minmax(0, 720px); gap: clamp(18px, 3vw, 36px); align-items: end; padding: clamp(20px, 4vw, 48px); }
 	.portrait { border-radius: var(--r-card); overflow: hidden; box-shadow: 0 18px 48px rgb(0 0 0 / .5); }
-	.crumbs { position: absolute; top: clamp(14px, 2vw, 22px); left: clamp(20px, 4vw, 48px); z-index: 1; }
-	.chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 10px; border-radius: 999px; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); color: #fff; font: 600 13px/1.2 var(--font-ui); transition: background var(--dur-fast) var(--ease-out); }
-	.chip:hover { background: rgb(255 255 255 / 24%); }
-	.chip:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff; }
 	.who { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
 	h1 { margin: 0; font: var(--t-large-title); font-family: var(--font-display); font-size: clamp(32px, 5vw, 60px); letter-spacing: var(--t-large-title-track); text-wrap: balance; }
 	.facts { margin: 0; color: var(--on-art-muted); font: var(--t-subhead); }

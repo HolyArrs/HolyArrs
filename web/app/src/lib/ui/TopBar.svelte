@@ -3,6 +3,8 @@
 	import SearchField from './SearchField.svelte';
 	import { topBar } from '#lib/scroll-bar.svelte.ts';
 	import { topCrumbs } from '#lib/top-crumbs.svelte.ts';
+	import { afterNavigate } from '$app/navigation';
+	import { cameFrom, pageLabel, type CameFrom } from '#lib/came-from.svelte.ts';
 
 	// The 56px translucent bar above the content (tablet and desktop):
 	// sidebar toggle when collapsed, back/forward on detail pages, the one
@@ -22,6 +24,44 @@
 		searchKey: string;
 		toggle?: HTMLElement;
 	} = $props();
+
+	// Where you came from (read after each move, once the layout has noted it) and this page's name.
+	let from = $state<CameFrom | null>(null);
+	let titleName = $state('');
+	// After stepping back: the scroll to return to, kept until the page has grown tall enough
+	// (rows that load late would otherwise leave you higher up than where you were).
+	let pendingY: number | null = null;
+	afterNavigate(() => {
+		from = cameFrom();
+		titleName = pageLabel(document.title);
+		const y = pendingY;
+		pendingY = null;
+		if (y === null) return;
+		const until = performance.now() + 4000;
+		const step = () => {
+			if (document.documentElement.scrollHeight >= y + window.innerHeight || performance.now() > until) {
+				window.scrollTo(0, y);
+				return;
+			}
+			window.scrollTo(0, y);
+			requestAnimationFrame(step);
+		};
+		requestAnimationFrame(step);
+	});
+	$effect(() => {
+		const mo = new MutationObserver(() => (titleName = pageLabel(document.title)));
+		mo.observe(document.head, { childList: true, characterData: true, subtree: true });
+		return () => mo.disconnect();
+	});
+	const first = $derived(from?.label ? { label: from.label, href: from.path, back: true } : topCrumbs.parent ? { ...topCrumbs.parent, back: false } : null);
+	const here = $derived(topCrumbs.here || titleName);
+	// The first link steps back (scroll and filters come back with it); a page opened fresh goes to its parent.
+	function stepBack(e: MouseEvent) {
+		if (!first?.back || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+		e.preventDefault();
+		pendingY = from?.y ?? null;
+		window.history.back();
+	}
 </script>
 
 <header class="ui-topbar" class:away={topBar.hidden}>
@@ -31,12 +71,10 @@
 			<IconButton icon="chevronLeft" label="Back" onclick={() => window.history.back()} />
 			<IconButton icon="chevronRight" label="Forward" onclick={() => window.history.forward()} />
 		{/if}
-		{#if topCrumbs.items.length}
+		{#if history && (first || here)}
 			<nav class="crumbs" aria-label="Breadcrumb" data-testid="top-crumbs">
-				{#each topCrumbs.items as c, i (i)}
-					{#if i}<span class="sep" aria-hidden="true">›</span>{/if}
-					{#if c.href}<a href={c.href}>{c.label}</a>{:else}<span class="here" aria-current="page">{c.label}</span>{/if}
-				{/each}
+				{#if first}<a href={first.href} onclick={stepBack}>{first.label}</a><span class="sep" aria-hidden="true">›</span>{/if}
+				{#if here}<span class="here" aria-current="page">{here}</span>{/if}
 			</nav>
 		{/if}
 	</div>

@@ -28,9 +28,6 @@
 	import { aboutPicks, aboutShown } from '#lib/about-picks.svelte.ts';
 	import { awardsTip, loadWikiFacts, type WikiAward } from '#lib/wiki-facts.ts';
 	import type { TagsAt, TitleLook } from '#lib/title-look.svelte.ts';
-	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
-	import { setTopCrumbs } from '#lib/top-crumbs.svelte.ts';
-	import { cameFrom } from '#lib/came-from.svelte.ts';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -533,25 +530,8 @@
 		return factFit;
 	});
 	const crumbs = $derived(details ? [{ href: to('/explore'), label: 'Explore' }, { href: to(detailPath(details.kind, details.tmdb)), label: details.year ? `${details.name} (${details.year})` : details.name }] : []);
-	// Where the breadcrumb goes while Luis compares (?crumb=): in the hero, or in the top bar as the title's section,
-	// the page you came from, or only a link back; or nowhere.
-	const CRUMB_LOOKS = [
-		{ value: 'section', label: 'Top bar · Movies ›' },
-		{ value: 'hero', label: 'In the hero' },
-		{ value: 'from', label: 'Top bar · came from' },
-		{ value: 'back', label: 'Top bar · link only' },
-		{ value: 'none', label: 'None' }
-	];
-	let crumbLook = $state((typeof location !== 'undefined' && CRUMB_LOOKS.find((c) => c.value === new URLSearchParams(location.search).get('crumb'))?.value) || 'section');
+	// The breadcrumb's parent for a page opened fresh: the title's section (Movies or TV shows).
 	const sectionCrumb = $derived(details?.kind === 'show' ? { label: 'TV shows', href: to('/library?kind=show') } : { label: 'Movies', href: to('/library?kind=movie') });
-	$effect(() => {
-		const d = details;
-		const name = d ? (d.year ? `${d.name} (${d.year})` : d.name) : '';
-		const from = cameFrom();
-		const back = from?.label ? { label: from.label, href: from.path } : { label: 'Explore', href: to('/explore') };
-		setTopCrumbs(!d ? [] : crumbLook === 'section' ? [sectionCrumb, { label: name }] : crumbLook === 'from' ? [back, { label: name }] : crumbLook === 'back' ? [sectionCrumb] : []);
-	});
-	$effect(() => () => setTopCrumbs([]));
 </script>
 
 <svelte:head><title>{details?.name ? `${details.name} · HolyArrs` : `${kindWord} · HolyArrs`}</title></svelte:head>
@@ -576,7 +556,7 @@
 			backdrops={rich?.backdrops}
 			logo={rich?.logo}
 			crumbIcon={d.kind === 'show' ? 'tv' : 'compass'}
-			breadcrumb={crumbLook === 'hero' ? crumbs : []}
+			breadcrumb={[sectionCrumb, ...crumbs.slice(1)]}
 			meta={heroFacts(d)}
 			heroStory={look === 'mubi' || look === 'google' ? d.overview : undefined}
 			heroCaps={look === 'mubi' ? mubiCaps : undefined}
@@ -792,7 +772,6 @@
 				<p class="atv-links">{#each outLinks as l, i (l.name)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name} ↗</a>{/each}</p>
 			</section>
 		{/if}
-		<div class="crumb-pick" data-testid="crumb-pick"><SegmentedControl options={CRUMB_LOOKS} bind:value={crumbLook} label="Breadcrumb" size="sm" /></div>
 		{#snippet ratingCard()}
 			{#if cert}<div class="ac rating-card"><span class="fb cert big">{cert}</span><span class="cap">Rated</span></div>{/if}
 		{/snippet}
@@ -880,7 +859,6 @@
 	#ratings { scroll-margin-top: 90px; }
 	.tp.old-gap { --tp-gap: clamp(24px, 3.4vw, 38px); }
 	.tp.no-names :global(.mono .n) { display: none; }
-	.crumb-pick { position: fixed; z-index: 30; left: 0; right: 0; bottom: 20px; width: max-content; max-width: calc(100vw - 24px); overflow-x: auto; margin-inline: auto; padding: 5px; border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow-lift); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); }
 	.calm-meta .sep { margin: 0 8px; color: var(--text-faint); }
 	.credits { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: -4px 0 0; color: var(--text); font: 500 14px/1.45 var(--font-ui); }
 	.credits .cl, .side-credits dt { color: var(--text-muted); font-weight: 500; }

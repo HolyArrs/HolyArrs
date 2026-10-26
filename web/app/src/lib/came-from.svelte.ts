@@ -3,7 +3,7 @@
 // scroll and state) instead of always pointing at the Library.
 // Kept per tab in sessionStorage, keyed by SvelteKit's history index.
 
-export type CameFrom = { path: string; label: string };
+export type CameFrom = { path: string; label: string; y?: number };
 
 const KEY = 'holyarrs:came-from';
 let before: CameFrom | null = null;
@@ -41,7 +41,7 @@ export function leaving() {
 		before = null;
 		return;
 	}
-	before = { path: location.pathname + location.search, label: pageLabel(document.title) };
+	before = { path: location.pathname + location.search, label: pageLabel(document.title), y: typeof window === 'undefined' ? 0 : Math.round(window.scrollY) };
 }
 
 /** arrived records where this new entry came from; going back and forth reads it again. */

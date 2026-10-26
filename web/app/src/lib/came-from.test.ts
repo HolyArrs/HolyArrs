@@ -23,7 +23,7 @@ describe('came-from history index', () => {
 		const { arrived, cameFrom, leaving } = await import('./came-from.svelte.ts');
 		leaving();
 		arrived('link');
-		expect(cameFrom()).toEqual({ path: '/title/show/124364', label: 'FROM' });
+		expect(cameFrom()).toEqual({ path: '/title/show/124364', label: 'FROM', y: 0 });
 		for (const k of ['sessionStorage', 'document', 'location', 'history']) delete g[k];
 	});
 });
