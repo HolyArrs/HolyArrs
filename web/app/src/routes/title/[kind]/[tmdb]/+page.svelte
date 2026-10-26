@@ -617,7 +617,6 @@
 			<div class="calm-meta">
 				{#each parts as f, i (i)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<span>{f}</span>{/each}
 				{#if cert}<span class="sep" aria-hidden="true">·</span><span class="fb cert">{cert}</span>{/if}
-				{#if !withGenres && hasScores}<span class="sep" aria-hidden="true">·</span><TitleScores scores={picked.scores} tmdb={picked.tmdb} variant="mono" />{/if}
 			</div>
 		{/snippet}
 		{#snippet greyCredits()}
