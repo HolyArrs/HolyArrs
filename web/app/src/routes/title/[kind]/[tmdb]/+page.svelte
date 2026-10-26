@@ -356,7 +356,11 @@
 	let aboutWidth = $state(0);
 	const tagsAt = 'band' as TagsAt;
 	// Bottom section while Luis compares: the About columns (default) or Details tiles (?about=details).
-	const bottom = typeof location !== 'undefined' && new URLSearchParams(location.search).get('about') === 'details' ? 'details' : 'about';
+	// Bottom section while Luis compares (?about=card|netflix|line|table); the About columns otherwise.
+	const BOTTOMS = ['about', 'card', 'netflix', 'line', 'table'] as const;
+	const bottom: (typeof BOTTOMS)[number] = (typeof location !== 'undefined' && BOTTOMS.find((b) => b === new URLSearchParams(location.search).get('about'))) || 'about';
+	// Themes as words for "This movie is:" (story keywords only, first four).
+	const moods = $derived(tags.filter((k) => !/stinger|^based on|sequel|remake|woman director|duringcredits|aftercredits/i.test(k)).slice(0, 4));
 	type Tile = { value: string; label: string };
 	// Details: a few big numbers that are not already at the top, then links out.
 	const tiles = $derived.by((): Tile[] => {
@@ -386,6 +390,8 @@
 		}
 		return out.slice(0, 4);
 	});
+	// The details as one sentence (the Apple-like card).
+	const summary = $derived(tiles.map((t) => `${t.value} ${t.label}`).join(' · '));
 	// One quiet line, only when it says something: not in English, or known by another title.
 	const langLine = $derived(
 		[info?.originalLanguage && info.originalLanguage !== 'en' ? `In ${lang}` : '', info?.originalTitle ? `Original title: ${info.originalTitle}` : ''].filter(Boolean).join(' · ')
@@ -576,18 +582,54 @@
 		{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
 		{@render castRow()}
 		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} />
-		{#if bottom === 'details'}
-			<section class="details" data-testid="title-details">
-				<h2 class="tp-h2">Details</h2>
-				{#if tiles.length}
-					<ul class="tiles">
-						{#each tiles as t (t.label)}<li><b>{t.value}</b><span>{t.label}</span></li>{/each}
-					</ul>
-				{/if}
-				{#if langLine}<p class="lang-line">{langLine}</p>{/if}
-				<ul class="out-links">
-					{#each outLinks as l (l.name)}<li><a href={l.href} target="_blank" rel="noopener noreferrer">{l.name}<span aria-hidden="true">↗</span></a></li>{/each}
-				</ul>
+		{#if bottom === 'card'}
+			<!-- B2 · Apple card: one wide rounded card with the title, a caps line and the details as a sentence; a second card with the links. -->
+			<section class="b-card" data-testid="title-details">
+				<h2 class="tp-h2">About</h2>
+				<div class="cards">
+					<div class="card wide">
+						<h3>{d.name}</h3>
+						<p class="caps">{[d.kind === 'show' ? 'TV show' : 'Movie', ...d.genres.slice(0, 2)].join(', ')}</p>
+						<p class="sum">{summary}{#if langLine}<br />{langLine}{/if}</p>
+					</div>
+					<div class="card">
+						<h3>{cert || 'Not rated'}</h3>
+						<p class="caps">Age rating</p>
+						<p class="sum">{#each outLinks as l, i (l.name)}{#if i} · {/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name}</a>{/each}</p>
+					</div>
+				</div>
+			</section>
+		{:else if bottom === 'netflix'}
+			<!-- B3 · Netflix "About": plain labeled lines, one column, the mood words included. -->
+			<section class="b-netflix" data-testid="title-details">
+				<h2 class="tp-h2">About {d.name}</h2>
+				<dl>
+					{#each tiles as t (t.label)}<div><dt>{t.label.charAt(0).toUpperCase() + t.label.slice(1)}:</dt><dd>{t.value}</dd></div>{/each}
+					{#if moods.length}<div><dt>This {d.kind === 'show' ? 'show' : 'movie'} is:</dt><dd>{moods.join(', ')}</dd></div>{/if}
+					{#if cert}<div><dt>Maturity rating:</dt><dd><span class="fb cert">{cert}</span></dd></div>{/if}
+					{#if langLine}<div><dt>Language:</dt><dd>{langLine}</dd></div>{/if}
+					<div><dt>More at:</dt><dd>{#each outLinks as l, i (l.name)}{#if i}, {/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name}</a>{/each}</dd></div>
+				</dl>
+			</section>
+		{:else if bottom === 'line'}
+			<!-- B4 · One line: the numbers as a quiet facts row, links as text after it. -->
+			<section class="b-line" data-testid="title-details">
+				<p class="calm-meta">
+					{#each tiles as t, i (t.label)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<span><b>{t.value}</b> {t.label}</span>{/each}
+				</p>
+				<p class="calm-meta links">
+					{#each outLinks as l, i (l.name)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name} ↗</a>{/each}
+				</p>
+			</section>
+		{:else if bottom === 'table'}
+			<!-- B5 · Apple TV on iPhone: label left, value right, hairlines between rows. -->
+			<section class="b-table" data-testid="title-details">
+				<h2 class="tp-h2">Information</h2>
+				<dl>
+					{#each tiles as t (t.label)}<div><dt>{t.label.charAt(0).toUpperCase() + t.label.slice(1)}</dt><dd>{t.value}</dd></div>{/each}
+					{#if langLine}<div><dt>Language</dt><dd>{langLine}</dd></div>{/if}
+					<div><dt>More at</dt><dd>{#each outLinks as l, i (l.name)}{#if i} · {/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name}</a>{/each}</dd></div>
+				</dl>
 			</section>
 		{:else if aboutGroups.length}
 			<section class="about" data-testid="title-about">
@@ -703,16 +745,24 @@
 	.about-col h3 { margin: 0 0 12px; color: var(--text); font: 700 17px/1.2 var(--font-ui); }
 	.about-col dl { display: grid; gap: 14px; margin: 0; }
 	.about-col dt { color: var(--text); font: 500 14px/1.3 var(--font-ui); }
-	.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
-	.tiles li { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; border-radius: 14px; background: var(--surface-1); border: 1px solid var(--line); }
-	.tiles b { color: var(--text); font: 700 clamp(22px, 2vw, 28px)/1.1 var(--font-ui); letter-spacing: -0.01em; }
-	.tiles span { color: var(--text-muted); font: 500 13px/1.35 var(--font-ui); }
-	.lang-line { margin: 14px 0 0; color: var(--text-muted); font: 500 14px/1.45 var(--font-ui); }
-	.out-links { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 0; padding: 0; list-style: none; }
-	.out-links a { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); color: var(--text); font: 600 13.5px/1 var(--font-ui); text-decoration: none; transition: background var(--dur-fast) var(--ease-out); }
-	.out-links a:hover { background: var(--surface-2); }
-	.out-links a span { color: var(--text-muted); font-size: 12px; }
-	@media (max-width: 599px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .tiles li { padding: 14px; } }
+	.cards { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 16px; }
+	.card { padding: 20px 22px; border-radius: 16px; background: var(--surface-1); }
+	.card h3 { margin: 0; color: var(--text); font: 700 20px/1.2 var(--font-ui); }
+	.card .caps { margin: 4px 0 10px; color: var(--text-muted); font: 700 12px/1.2 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
+	.card .sum { margin: 0; color: var(--text-muted); font: 500 15px/1.5 var(--font-ui); }
+	.card a, .b-netflix a, .b-table a, .b-line a { color: var(--text); text-decoration: none; }
+	.card a:hover, .b-netflix a:hover, .b-table a:hover, .b-line a:hover { text-decoration: underline; }
+	@media (max-width: 699px) { .cards { grid-template-columns: minmax(0, 1fr); } }
+	.b-netflix dl { display: grid; gap: 8px; margin: 0; max-width: 760px; font: 400 15px/1.45 var(--font-ui); }
+	.b-netflix dl div { display: flex; flex-wrap: wrap; gap: 0 6px; }
+	.b-netflix dt { color: var(--text-muted); }
+	.b-netflix dd { margin: 0; color: var(--text); }
+	.b-line { display: grid; gap: 10px; padding-top: 4px; }
+	.b-line b { color: var(--text); font-weight: 700; }
+	.b-table dl { margin: 0; max-width: 760px; }
+	.b-table dl div { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); font: 500 15px/1.4 var(--font-ui); }
+	.b-table dt { color: var(--text-muted); }
+	.b-table dd { margin: 0; color: var(--text); text-align: right; }
 	.about-link { color: var(--text); text-decoration: none; }
 	.about-link:hover { text-decoration: underline; }
 	.about-col dd { margin: 3px 0 0; color: var(--text-muted); font: 400 14px/1.45 var(--font-ui); }
