@@ -28,7 +28,6 @@
 	import { aboutPicks, aboutShown } from '#lib/about-picks.svelte.ts';
 	import { awardsTip, loadWikiFacts, type WikiAward } from '#lib/wiki-facts.ts';
 	import type { TagsAt, TitleLook } from '#lib/title-look.svelte.ts';
-	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -251,8 +250,7 @@
 		{ value: 'm2', label: 'Mix 2 · Netflix', newWords: true, status: true, names: true, cards: 'three', missing: false, wide: true, heroFacts: false, band: 'netflix' },
 		{ value: 'm3', label: 'Mix 3 · One column', newWords: true, status: true, names: true, cards: 'three', missing: false, wide: true, heroFacts: false, band: 'compact' }
 	];
-	const VIEW_OPTIONS = VIEWS.map((v) => ({ value: v.value, label: v.label }));
-	let viewName = $state((typeof location !== 'undefined' && VIEWS.find((v) => v.value === new URLSearchParams(location.search).get('view'))?.value) || 'now');
+	const viewName: string = 'now';
 	const view = $derived(VIEWS.find((v) => v.value === viewName) ?? VIEWS[0]);
 	const cardLook = $derived(view.cards);
 	// The band under the hero: two columns (side), or one calm column (apple / compact, as the 'ledger' layout), or Netflix's split.
@@ -772,7 +770,6 @@
 				<p class="atv-links">{#each outLinks as l, i (l.name)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name} ↗</a>{/each}</p>
 			</section>
 		{/if}
-		<div class="view-pick" data-testid="view-pick"><SegmentedControl options={VIEW_OPTIONS} bind:value={viewName} label="Page view" size="sm" /></div>
 		{#snippet ratingCard()}
 			{#if cert}<div class="ac rating-card"><span class="fb cert big">{cert}</span><span class="cap">Rated</span></div>{/if}
 		{/snippet}
@@ -860,7 +857,6 @@
 	#ratings { scroll-margin-top: 90px; }
 	.tp.old-gap { --tp-gap: clamp(24px, 3.4vw, 38px); }
 	.tp.no-names :global(.mono .n) { display: none; }
-	.view-pick { position: fixed; z-index: 30; left: 0; right: 0; bottom: 20px; width: max-content; max-width: calc(100vw - 24px); overflow-x: auto; margin-inline: auto; padding: 5px; border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow-lift); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); }
 	.calm-meta .sep { margin: 0 8px; color: var(--text-faint); }
 	.credits { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: -4px 0 0; color: var(--text); font: 500 14px/1.45 var(--font-ui); }
 	.credits .cl, .side-credits dt { color: var(--text-muted); font-weight: 500; }
