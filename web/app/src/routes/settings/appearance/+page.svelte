@@ -5,7 +5,7 @@
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import { DEFAULT_RATINGS, RATING_SOURCES, ratingPicks, resetRatingPicks, setRatingPick } from '#lib/rating-picks.svelte.ts';
 	import { ABOUT_ITEMS, aboutIsDefault, aboutPicks, resetAboutPicks, setAboutPick } from '#lib/about-picks.svelte.ts';
-	const aboutGroups = ['Information', 'Made by', 'Ratings', 'Feel'] as const;
+	const aboutGroups = ['Information', 'Production', 'Links', 'Ratings', 'Feel'] as const;
 	const isDefault = $derived(!ratingPicks.custom && ratingPicks.list.length === DEFAULT_RATINGS.length && DEFAULT_RATINGS.every((r) => ratingPicks.list.includes(r)));
 
 	let themeChoice = $state<ThemeChoice>(theme.choice);

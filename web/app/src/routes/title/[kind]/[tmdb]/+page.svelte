@@ -27,8 +27,7 @@
 	import { ratingPicks, shownRatings } from '#lib/rating-picks.svelte.ts';
 	import { aboutPicks, aboutShown } from '#lib/about-picks.svelte.ts';
 	import { awardsTip, loadWikiFacts, type WikiAward } from '#lib/wiki-facts.ts';
-	import TitleLookPicker from '#lib/TitleLookPicker.svelte';
-	import { tagsAt as tagsSpot, titleLook } from '#lib/title-look.svelte.ts';
+	import type { TagsAt, TitleLook } from '#lib/title-look.svelte.ts';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -239,7 +238,8 @@
 		return () => (live = false);
 	});
 	// Where the facts line and tagline go while the options are compared (title-look.svelte.ts).
-	const look = $derived(titleLook.value);
+	// The chosen layout (V5: facts row and story left, credits right; tags under the story).
+	const look = 'side' as TitleLook;
 	const moreFacts = $derived.by((): [string, string][] => {
 		if (!info) return [];
 		const i = info;
@@ -269,7 +269,7 @@
 	const cert = $derived(details ? (rich?.certification ?? certOf(details.rating) ?? '') : '');
 	const lengthWord = $derived(details ? (details.kind === 'show' ? (regular ? `${regular} ${regular === 1 ? 'season' : 'seasons'}` : '') : runtimeWords(details.runtime)) : '');
  	// Every detail in one list, in reading order; the grid lays them out in even columns.
-	type Fact = { label: string; kind: 'text' | 'makers' | 'cert' | 'awards'; value: string };
+	type Fact = { label: string; kind: 'text' | 'makers' | 'cert' | 'awards' | 'link'; value: string };
 	const facts = $derived.by((): Fact[] => {
 		if (!details) return [];
 		const d = details;
@@ -317,7 +317,15 @@
 		if (spoken.length > 1) info1.push({ label: 'Spoken languages', kind: 'text', value: spoken.join(', ') });
 		else info1.push(...pick(['Language']).map((f) => ({ ...f, label: 'Original language' })));
 		info1.push(...pick(['Original title']));
-		const made = pick([madeBy, 'Network', 'Studio', 'Studios', 'Budget', 'Box office']).map((f) => (f.label === 'Studios' ? { ...f, value: f.value.split(', ').slice(0, 2).join(', ') } : f));
+		// Who made it is in the credits beside the story (director or creators, network or studio); here the rest.
+		const made = pick(d.kind === 'show' ? ['Studio', 'Studios', 'Budget', 'Box office'] : ['Budget', 'Box office']).map((f) => (f.label === 'Studios' ? { ...f, value: f.value.split(', ').slice(0, 3).join(', ') } : f));
+		// Links out, for reading more before asking.
+		const ids = (d.kind === 'movie' ? d.movie?.ids : d.show?.ids) as Record<string, string | undefined> | undefined;
+		const links: Fact[] = [];
+		if (ids?.imdb) links.push({ label: 'link:IMDb', kind: 'link', value: `https://www.imdb.com/title/${ids.imdb}/` });
+		links.push({ label: 'link:TMDB', kind: 'link', value: `https://www.themoviedb.org/${d.kind === 'show' ? 'tv' : 'movie'}/${d.tmdb}` });
+		links.push({ label: 'link:Trakt', kind: 'link', value: `https://trakt.tv/search/tmdb/${d.tmdb}?id_type=${d.kind}` });
+		if (d.kind === 'movie') links.push({ label: 'link:Letterboxd', kind: 'link', value: `https://letterboxd.com/tmdb/${d.tmdb}/` });
 		// Reception: every score this title has (not only the picked tiles), then its awards.
 		const t = (label: string, value: string): Fact => ({ label, kind: 'text', value });
 		const reception: Fact[] = [];
@@ -335,7 +343,8 @@
 		if (tagsAt !== 'band' && story.length) kinds.push(t('Themes', story.join(', ')));
 		const groups = [
 			{ title: 'Information', rows: info1 },
-			{ title: 'Made by', rows: made },
+			{ title: 'Production', rows: made },
+			{ title: 'Links', rows: links },
 			{ title: 'Ratings', rows: reception },
 			{ title: 'Feel', rows: kinds }
 		];
@@ -345,7 +354,7 @@
 	const keyFacts = $derived(facts.filter((f) => f.kind === 'makers' || f.label === 'Network' || (f.label === 'Language' && info?.originalLanguage !== 'en')).slice(0, 4));
 	const aboutFacts = $derived(look === 'decide' ? facts.filter((f) => !keyFacts.includes(f)) : facts);
 	let aboutWidth = $state(0);
-	const tagsAt = $derived(tagsSpot.value);
+	const tagsAt = 'band' as TagsAt;
 	const aboutCols = $derived(Math.max(2, Math.min(aboutFacts.length, Math.floor((aboutWidth + 28) / ((aboutWidth < 600 ? 130 : 150) + 28)) || 2)));
 	// Columns: as many as fit (150 px each, 130 on a phone), at least two. One item alone on the last
 	// row is avoided with one column fewer; when that does not help it spans two columns (factSpan).
@@ -502,6 +511,8 @@
 				{#if makers.length}<div><dt>{madeBy}</dt><dd>{@render names(makers, 2)}</dd></div>{/if}
 				{#if stars.length}<div><dt>Starring</dt><dd>{@render names(stars, 3)}</dd></div>{/if}
 				{#if d.genres.length}<div><dt>Genres</dt><dd>{d.genres.slice(0, 3).join(', ')}</dd></div>{/if}
+				{#if network}<div><dt>Network</dt><dd>{network}</dd></div>
+				{:else if info?.studios.length}<div><dt>Studio</dt><dd>{info.studios[0]}</dd></div>{/if}
 			</dl>
 		</div>
 		{:else}
@@ -529,8 +540,12 @@
 							<dl>
 								{#each g.rows as f (f.label)}
 									<div>
-										<dt>{f.label}</dt>
-										<dd>{#if f.kind === 'makers'}{@render names(makers, 4)}{:else}{f.value}{/if}</dd>
+										{#if f.kind === 'link'}
+											<dd><a href={f.value} target="_blank" rel="noopener noreferrer" class="about-link">{f.label.slice(5)} ↗</a></dd>
+										{:else}
+											<dt>{f.label}</dt>
+											<dd>{#if f.kind === 'makers'}{@render names(makers, 4)}{:else}{f.value}{/if}</dd>
+										{/if}
 									</div>
 								{/each}
 							</dl>
@@ -587,7 +602,6 @@
 </PageLoader>
 {/if}
 
-<TitleLookPicker />
 
 {#if manage}
 	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} onadded={(_m, t) => added(t)} />
@@ -630,6 +644,8 @@
 	.about-col h3 { margin: 0 0 12px; color: var(--text); font: 700 17px/1.2 var(--font-ui); }
 	.about-col dl { display: grid; gap: 14px; margin: 0; }
 	.about-col dt { color: var(--text); font: 500 14px/1.3 var(--font-ui); }
+	.about-link { color: var(--text); text-decoration: none; }
+	.about-link:hover { text-decoration: underline; }
 	.about-col dd { margin: 3px 0 0; color: var(--text-muted); font: 400 14px/1.45 var(--font-ui); }
 	.tagchips.quiet li { background: none; border: 1px solid var(--line); color: var(--text-muted); font-size: 12px; }
 	@media (max-width: 899px) { .decide { grid-template-columns: minmax(0, 1fr); } }

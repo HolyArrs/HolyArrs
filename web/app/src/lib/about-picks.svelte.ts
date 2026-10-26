@@ -2,7 +2,7 @@
 // Settings › Appearance. The defaults stay short: what helps decide on a
 // request and is not already in the hero (year, length, age rating, genres).
 
-export type AboutItem = { id: string; group: 'Information' | 'Made by' | 'Ratings' | 'Feel'; name: string; on: boolean };
+export type AboutItem = { id: string; group: 'Information' | 'Production' | 'Links' | 'Ratings' | 'Feel'; name: string; on: boolean };
 
 export const ABOUT_ITEMS: AboutItem[] = [
 	{ id: 'released', group: 'Information', name: 'Released or premiered', on: false },
@@ -18,11 +18,10 @@ export const ABOUT_ITEMS: AboutItem[] = [
 	{ id: 'region', group: 'Information', name: 'Region of origin', on: false },
 	{ id: 'language', group: 'Information', name: 'Language', on: true },
 	{ id: 'origTitle', group: 'Information', name: 'Original title', on: true },
-	{ id: 'makers', group: 'Made by', name: 'Director or creators', on: true },
-	{ id: 'network', group: 'Made by', name: 'Network', on: true },
-	{ id: 'studios', group: 'Made by', name: 'Studios', on: true },
-	{ id: 'budget', group: 'Made by', name: 'Budget', on: false },
-	{ id: 'boxOffice', group: 'Made by', name: 'Box office', on: false },
+	{ id: 'studios', group: 'Production', name: 'Studios (shows; a movie’s studio is beside the story)', on: true },
+	{ id: 'budget', group: 'Production', name: 'Budget', on: true },
+	{ id: 'boxOffice', group: 'Production', name: 'Box office', on: true },
+	{ id: 'links', group: 'Links', name: 'Links to IMDb, TMDB, Trakt and Letterboxd', on: true },
 	{ id: 'scores', group: 'Ratings', name: 'Every score', on: false },
 	{ id: 'awards', group: 'Ratings', name: 'Awards', on: false },
 	{ id: 'genres', group: 'Feel', name: 'Genres', on: false },
@@ -30,7 +29,7 @@ export const ABOUT_ITEMS: AboutItem[] = [
 ];
 
 const DEFAULTS = ABOUT_ITEMS.filter((i) => i.on).map((i) => i.id);
-const KEY = 'holyarrs.about-2';
+const KEY = 'holyarrs.about-3';
 
 function stored(): string[] {
 	try {
@@ -71,4 +70,4 @@ const BY_LABEL: Record<string, string> = {
 };
 
 /** aboutShown says whether a row (by its label) is picked; any other label is a score. */
-export const aboutShown = (label: string, picks: string[]) => picks.includes(BY_LABEL[label] ?? 'scores');
+export const aboutShown = (label: string, picks: string[]) => picks.includes(label.startsWith('link:') ? 'links' : (BY_LABEL[label] ?? 'scores'));
