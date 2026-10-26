@@ -159,13 +159,13 @@
 {/if}
 
 {#if more.length >= 4}
-	<Shelf title={kind === 'show' ? 'More from the creator' : 'More from the director'} subtitle={moreFrom?.person || undefined} item="var(--title-item)" anchor="title-more-from" placeholder="wide" lines={1} whole>
+	<Shelf title={moreFrom?.person ? `More from ${moreFrom.person}` : kind === 'show' ? 'More from the creator' : 'More from the director'} subtitle={moreFrom?.person ? (kind === 'show' ? 'Creator' : 'Director') : undefined} item="var(--title-item)" anchor="title-more-from" placeholder="wide" lines={1} whole>
 		{#each more.slice(0, 18) as p (p.c.key)}{@render card(p)}{/each}
 	</Shelf>
 {/if}
 
 {#if lead && withLeadCards.length >= 4}
-	<Shelf title="More with {lead.name}" item="var(--title-item)" anchor="title-more-with" placeholder="wide" lines={1} whole>
+	<Shelf title="More with {lead.name}" subtitle={lead.character ? `Lead actor · plays ${lead.character}` : 'Lead actor'} item="var(--title-item)" anchor="title-more-with" placeholder="wide" lines={1} whole>
 		{#each withLeadCards.slice(0, 18) as p (p.c.key)}{@render card(p)}{/each}
 	</Shelf>
 {/if}
