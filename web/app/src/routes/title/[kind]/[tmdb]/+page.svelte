@@ -875,8 +875,8 @@
 	/* About band, Apple TV-like: lighter strip edge to edge, cards, then label/value columns. */
 	/* About band, measured on tv.apple.com (1440-1650 px desktop): band one step lighter than the page (#2b2b2b on #1f1f1f),
 	   cards white 10% with 12 px corners and 14/16/16 padding, 20 px gaps; 17 px bold titles, 11 px caps, 15/20 text, 12 px facts. */
-	.atv { position: relative; margin-top: 32px; padding: 32px 0 40px; background: var(--atv-band); box-shadow: 0 0 0 100vmax var(--atv-band); clip-path: inset(0 -100vmax); --atv-band: color-mix(in srgb, var(--text) 7%, var(--bg)); --atv-card: rgb(255 255 255 / 10%); }
-	:global([data-theme='light']) .atv { --atv-band: color-mix(in srgb, var(--text) 5%, var(--bg)); --atv-card: var(--bg); }
+	/* About: on the page's own background like every other section (no separate strip), cards in the app's card surface. */
+	.atv { position: relative; margin-top: 16px; padding: 8px 0 24px; --atv-card: var(--surface-2); }
 	.atv-scores :global(.list li) { padding: 0; border-top: 0; font-size: 15px; line-height: 20px; }
 	.atv-scores :global(.list .n) { color: var(--text-muted); font: 400 15px/20px var(--font-ui); }
 	.atv-scores :global(.list .v) { color: var(--text-muted); font: 400 15px/20px var(--font-ui); font-variant-numeric: tabular-nums; }
