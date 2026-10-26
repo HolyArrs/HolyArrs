@@ -102,11 +102,12 @@
 	@media (prefers-reduced-motion: reduce) { .ui-topbar { transition: none; } }
 	.lead, .trail { display: flex; align-items: center; gap: 4px; min-width: 0; }
 	/* Where you are, in quiet text after the arrows; hidden where the bar is narrow. */
-	.crumbs { display: flex; align-items: center; min-width: 0; margin-left: 12px; font: 500 13px/1 var(--font-ui); color: var(--text-muted); white-space: nowrap; }
+	/* A glass pill, so the trail stays readable over any hero frame, bright or black, in both themes. */
+	.crumbs { display: flex; align-items: center; min-width: 0; margin-left: 12px; height: 30px; padding: 0 12px; border-radius: 999px; background: color-mix(in srgb, var(--bg, #fff) 72%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent), 0 1px 3px rgb(0 0 0 / 10%); -webkit-backdrop-filter: blur(16px) saturate(1.4); backdrop-filter: blur(16px) saturate(1.4); font: 500 13px/1 var(--font-ui); color: var(--text-muted); white-space: nowrap; }
 	.crumbs a { color: var(--text-muted); text-decoration: none; transition: color 150ms ease; }
 	.crumbs a:hover { color: var(--text); }
 	.crumbs .sep { margin: 0 6px; opacity: .5; }
-	.crumbs .here { overflow: hidden; text-overflow: ellipsis; max-width: 28vw; color: color-mix(in srgb, var(--text) 78%, transparent); }
+	.crumbs .here { overflow: hidden; text-overflow: ellipsis; max-width: 28vw; color: var(--text); font-weight: 600; }
 	@media (max-width: 1099px) { .crumbs { display: none; } }
 	@media (max-width: 767px) { .ui-topbar { display: none; } }
 </style>
