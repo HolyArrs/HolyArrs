@@ -361,9 +361,11 @@
 	// About band: every score this title has (first is the big one), the award count, and three fact columns.
 	const allScores = $derived.by(() => {
 		const out: { name: string; value: string; votes: string }[] = [];
-		for (const o of outside) out.push({ name: scoreName(o.source), value: `${scoreText(o)}${o.max !== 100 ? ` / ${o.max}` : ''}`, votes: o.votes ? o.votes.toLocaleString() : '' });
+		// Every score on one scale (out of 10, one decimal) so the rows line up and compare at a glance.
+		const ten = (v: number, max: number) => ((Math.round((v / max) * 100) / 10).toFixed(1));
+		for (const o of outside) out.push({ name: scoreName(o.source), value: ten(o.value, o.max), votes: o.votes ? o.votes.toLocaleString() : '' });
 		const t = rich?.score ?? scoreOf(details?.rating);
-		if (t) out.push({ name: 'TMDB', value: `${(Math.round(t * 10) / 10).toFixed(1)} / 10`, votes: '' });
+		if (t) out.push({ name: 'TMDB', value: ten(t, 10), votes: '' });
 		return out;
 	});
 	const awardWins = $derived(awards.filter((a) => a.won).length);
@@ -388,7 +390,6 @@
 			...row('Original Title', i?.originalTitle)
 		];
 		const release = [
-			...row('In Theaters', d.kind === 'movie' && i?.dates.theaters ? fmtDay(i.dates.theaters) : ''),
 			...row('Digital', i?.dates.digital ? fmtDay(i.dates.digital) : ''),
 			...row('On Disc', i?.dates.physical ? fmtDay(i.dates.physical) : ''),
 			...row('Next Episode', i?.nextEpisode ? `${fmtDay(i.nextEpisode.airDate)} · S${i.nextEpisode.season} E${i.nextEpisode.episode}` : ''),
@@ -705,7 +706,7 @@
 					{#if allScores.length}
 						<article class="atv-card">
 							<h3 class="atv-score">{#if outside.length}<TitleScores scores={outside.slice(0, 1)} variant="mono" />{:else}{allScores[0].value}{/if}</h3>
-							<p class="atv-cap">{allScores[0].name}{allScores[0].votes ? ` · ${allScores[0].votes} votes` : ''}</p>
+							<p class="atv-cap">{allScores[0].votes ? `${allScores[0].votes} votes · ` : ''}scores out of 10</p>
 							<dl class="atv-rows">{#each allScores.slice(1, 5) as r (r.name)}<div><dt>{r.name}</dt><dd>{r.value}</dd></div>{/each}</dl>
 						</article>
 					{/if}
@@ -720,14 +721,8 @@
 						</article>
 					{/if}
 				</div>
-				<div class="atv-cols">
-					{#each atvCols as c (c.title)}
-						<div>
-							<h3 class="atv-h3">{c.title}</h3>
-							<dl class="atv-list">{#each c.rows as r (r.label)}<div><dt>{r.label}</dt><dd>{r.value}</dd></div>{/each}</dl>
-						</div>
-					{/each}
-				</div>
+				<h3 class="atv-h3">Information</h3>
+				<dl class="atv-grid">{#each atvCols.flatMap((c) => c.rows) as r (r.label)}<div><dt>{r.label}</dt><dd>{r.value}</dd></div>{/each}</dl>
 				<p class="atv-links">{#each outLinks as l, i (l.name)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name} ↗</a>{/each}</p>
 			</section>
 		{/if}
@@ -845,16 +840,15 @@
 	.atv-rows { display: grid; gap: 2px; margin: 0; }
 	.atv-rows div { display: flex; justify-content: space-between; gap: 12px; color: var(--text-muted); font: 500 14.5px/1.4 var(--font-ui); }
 	.atv-rows dd { margin: 0; color: var(--text-muted); font-variant-numeric: tabular-nums; }
-	.atv-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: 22px; }
-	.atv-h3 { margin: 0 0 12px; color: var(--text); font: 700 18px/1.2 var(--font-ui); }
-	.atv-list { display: grid; gap: 14px; margin: 0; }
-	.atv-list dt { color: var(--text); font: 600 13px/1.3 var(--font-ui); }
-	.atv-list dd { margin: 1px 0 0; color: var(--text-muted); font: 500 13px/1.35 var(--font-ui); }
+	.atv-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 20px; margin: 0; }
+	.atv-grid dt { color: var(--text); font: 600 13px/1.3 var(--font-ui); }
+	.atv-grid dd { margin: 1px 0 0; color: var(--text-muted); font: 500 13px/1.35 var(--font-ui); }
+	.atv-h3 { margin: 24px 0 14px; color: var(--text); font: 700 18px/1.2 var(--font-ui); }
 	.atv-links { display: flex; flex-wrap: wrap; align-items: center; margin: 22px 0 0; color: var(--text-muted); font: 500 13px/1.4 var(--font-ui); }
 	.atv-links .sep { margin: 0 8px; color: var(--text-faint); }
 	.atv-links a { color: var(--text-muted); text-decoration: none; }
 	.atv-links a:hover { color: var(--text); }
-	@media (max-width: 899px) { .atv-cards, .atv-cols { grid-template-columns: minmax(0, 1fr); } }
+	@media (max-width: 899px) { .atv-cards, .atv-grid { grid-template-columns: minmax(0, 1fr); } }
 	.card-links { display: flex; flex-wrap: wrap; align-items: center; margin: 14px 0 0; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
 	.card-links a { color: var(--text); text-decoration: none; }
 	.card-links a:hover { text-decoration: underline; }
