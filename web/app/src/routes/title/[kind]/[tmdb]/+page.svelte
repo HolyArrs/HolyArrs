@@ -614,11 +614,6 @@
 		{#snippet trailers()}
 			<TitleTrailers kind={d.kind} tmdb={d.tmdb} title={d.name} videos={rich?.videos ?? []} art={[d.backdrop, ...(rich?.backdrops ?? [])]} />
 		{/snippet}
-		{#snippet where()}
-			{#if info?.streaming.length}
-				<div class="where-row" id="title-where"><span class="lbl">Where to watch</span>{@render services()}</div>
-			{/if}
-		{/snippet}
 
 		{#snippet grid(list: Fact[], cols: number)}
 			<dl class="facts-grid" style="--cols: {cols}">
@@ -666,7 +661,7 @@
 		{#if view.band === 'netflix'}
 		<!-- Mix 2 · Netflix: left the facts row, story and where to watch; right the credits and the tags. -->
 		<div class="side nf" data-testid="title-side">
-			<div class="d-left">{@render factsLine(false)}{@render story()}{@render where()}</div>
+			<div class="d-left">{@render factsLine(false)}{@render story()}</div>
 			<div class="nf-right">
 				{@render greyCredits()}
 				{#if d.genres.length}<p class="nf-line">Genres <span>{d.genres.slice(0, 3).join(', ')}</span></p>{/if}
@@ -681,15 +676,14 @@
 			{#if look !== 'google'}{@render story()}{/if}
 			{@render greyCredits()}
 			{@render tagLine()}
-			{@render where()}
+			
 		</div>
 		{:else if look === 'mubi'}
 		<!-- B: everything is in the hero; only where to watch under it. -->
-		{#if info?.streaming.length}<div class="calm one" data-testid="title-calm">{@render where()}</div>{/if}
 		{:else if look === 'decide'}
 		<!-- V4 · Split: the story and where to watch beside the ratings and a few key facts. -->
 		<div class="decide" data-testid="title-decide">
-			<div class="d-left">{@render story()}{@render tagLine()}{@render where()}</div>
+			<div class="d-left">{@render story()}{@render tagLine()}</div>
 			{#if hasScores || keyFacts.length}
 				<div class="d-right">
 					{#if hasScores}<TitleScores scores={picked.scores} tmdb={picked.tmdb} variant="tiles" />{/if}
@@ -699,11 +693,10 @@
 		</div>
 		{:else if look === 'herostory'}
 		<!-- Story in the hero: under it only where to watch. -->
-		{#if info?.streaming.length}<div class="calm" data-testid="title-calm">{@render where()}</div>{/if}
 		{:else if look === 'side'}
 		<!-- Netflix-like: the story and scores left, short credits right. -->
 		<div class="side" data-testid="title-side">
-			<div class="d-left">{#if !view.heroFacts}{@render factsLine(false)}{/if}{@render story()}{@render tagLine()}{@render where()}</div>
+			<div class="d-left">{#if !view.heroFacts}{@render factsLine(false)}{/if}{@render story()}{@render tagLine()}</div>
 			<dl class="side-credits">
 				{#if makers.length}<div><dt>{madeBy}</dt><dd>{@render names(makers, 2)}</dd></div>{/if}
 				{#if stars.length}<div><dt>Starring</dt><dd>{@render names(stars, 3)}</dd></div>{/if}
@@ -720,7 +713,7 @@
 			{@render tagLine()}
 			{#if look === 'credits' || look === 'scores'}{@render credits()}{/if}
 			{#if look !== 'scores' && hasScores}<TitleScores scores={picked.scores} tmdb={picked.tmdb} variant={look === 'story' ? 'tiles' : 'chips'} />{/if}
-			{@render where()}
+			
 		</div>
 		{/if}
 		{@render trailers()}
@@ -802,7 +795,7 @@
 					{/if}
 				</div>
 			{/if}
-			{@render where()}
+			
 			{#if tags.length}
 				<div class="where-row" data-testid="title-tags"><span class="lbl">Tags</span><ul class="tagchips">{#each tags as t (t)}<li>{t}</li>{/each}</ul></div>
 			{/if}
