@@ -15,11 +15,15 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
-// serverPlaceholders are the SHA-256 sums of the metadata server's grey
-// stand-in picture (the same bytes at every size), which older versions
-// stored as if it were the artist's picture.
+// serverPlaceholders are the SHA-256 sums of pictures known to be only a
+// stand-in for an artist's photo, which older versions stored as if it were
+// the picture: the metadata server's grey stand-in (the same bytes at every
+// size) and the generic grey person outline an old source sent (1000x1000,
+// the one Coldplay, Ed Sheeran and Radiohead all had). StandInReason adds
+// the rules that need no list (one flat colour, a flat outline).
 var serverPlaceholders = map[string]bool{
 	"8a121a4e3a859172c696d72ef2dc7a559ec68d1c1347422a929e4811afc06001": true,
+	"0d659e802c2d9c13e8cf4e0fab3f85b176173a649b60d9ddc03af2397fb43275": true,
 }
 
 // healedSetting records that the placeholder clean-up has run.

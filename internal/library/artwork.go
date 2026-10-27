@@ -132,7 +132,8 @@ func (c *ArtworkCache) Fetch(ctx context.Context, url string) (string, error) {
 	return c.FetchUnless(ctx, url, nil)
 }
 
-// ErrArtworkRejected means reject said the answer was not a real picture.
+// ErrArtworkRejected means the answer was not a real picture: reject said so,
+// or (for an artist's photo) it is only a stand-in (see StandInReason).
 var ErrArtworkRejected = errors.New("picture: rejected")
 
 // FetchUnless is Fetch, but nothing is stored when reject (given the
@@ -308,6 +309,16 @@ func (c *ArtworkCache) download(ctx context.Context, url string, reject func(htt
 	if err != nil {
 		_ = os.Remove(tmp.Name())
 		return resp.StatusCode, err
+	}
+	// An artist's photo that is only a stand-in (a known one, one flat colour,
+	// a grey person outline) is never kept.
+	if isArtistPhotoURL(url) {
+		if b, rerr := os.ReadFile(tmp.Name()); rerr == nil {
+			if why := StandInReason(b); why != "" {
+				_ = os.Remove(tmp.Name())
+				return resp.StatusCode, fmt.Errorf("%w: %s", ErrArtworkRejected, why)
+			}
+		}
 	}
 	if err := os.Rename(tmp.Name(), path); err != nil {
 		_ = os.Remove(tmp.Name())

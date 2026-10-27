@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"slices"
 	"time"
 
@@ -93,6 +94,12 @@ func (s *Service) RefreshArtist(ctx context.Context, titleID int64, by domain.Ac
 	}
 	if len(t.Artwork) == 0 {
 		s.artistPicture(ctx, titleID, t.SourceIDs["musicbrainz"], by)
+	} else if s.artworkHasStandIn(t.Artwork) {
+		// A stand-in saved earlier (a grey person, one flat colour) is swapped
+		// for the server's photo now, or removed when it has none.
+		if _, err := s.healArtistArt(ctx, titleID, t.Name, t.SourceIDs["musicbrainz"], t.Artwork, by); err != nil {
+			log.Printf("library: stand-in picture for artist %d: %v", titleID, err)
+		}
 	}
 	albums, err := store.Select[domain.Part](ctx, s.Store.Read(), "parts", "title_id = ? AND kind = 'album' AND included = 1 AND dropped_at IS NULL ORDER BY release_date, id", titleID)
 	if err != nil {

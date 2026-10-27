@@ -45,7 +45,20 @@ func (s *Service) FillArtistPictures(ctx context.Context, titleID int64, by doma
 		return "", ErrNotArtist
 	}
 	mbid := t.SourceIDs["musicbrainz"]
-	needArt := len(t.Artwork) == 0
+	// Artwork that is only a stand-in (a grey person, one flat colour) is
+	// swapped for the server's photo, or removed when it has none.
+	healed := StandInNone
+	if s.artworkHasStandIn(t.Artwork) {
+		var err error
+		if healed, err = s.healArtistArt(ctx, titleID, t.Name, mbid, t.Artwork, by); err != nil {
+			return "", err
+		}
+		if err := store.Get(ctx, s.Store.Read(), "titles", titleID, &t); err != nil {
+			return "", err
+		}
+	}
+	// A photo the server was just asked for is not asked for again in this run.
+	needArt := len(t.Artwork) == 0 && healed != StandInEmptied
 	needWide := t.Backdrop == "" || t.Logo == ""
 	if s.Artwork == nil || s.ImageServer == "" || !metadata.ValidMBID(mbid) || !needArt && !needWide {
 		return "", nil
@@ -63,6 +76,9 @@ func (s *Service) FillArtistPictures(ctx context.Context, titleID int64, by doma
 		}
 	}
 	filled := ""
+	if healed == StandInReplaced {
+		filled = SourceServer
+	}
 	if needArt {
 		if name := s.serverPicture(ctx, titleID, "artist", mbid, "500.webp"); name != "" && s.fillArt(ctx, titleID, name, by) {
 			filled = SourceServer
@@ -124,12 +140,14 @@ func (s *Service) fillWide(ctx context.Context, titleID int64, backdrop, logo st
 }
 
 // ArtistPictures says what one picture run did: how many artists got
-// artwork, from which source, and which artist from which source.
+// artwork, from which source, and which artist from which source; and what
+// the one-time stand-in repair did before it.
 type ArtistPictures struct {
 	Looked  int              `json:"looked"`
 	Filled  int              `json:"filled"`
 	Sources map[string]int   `json:"sources"`
 	By      map[int64]string `json:"by_title"`
+	StandIn StandInRepair    `json:"stand_in_repair"`
 }
 
 // FillAllArtistPictures fills every artist missing artwork (and its
@@ -139,6 +157,13 @@ func (s *Service) FillAllArtistPictures(ctx context.Context, by domain.Actor, r 
 	if s.Artwork == nil {
 		return out, nil
 	}
+	// Once per install, before the empty ones are filled: an artist whose
+	// picture is only a stand-in is given the real photo, or none.
+	repair, err := s.RepairArtistStandIns(ctx, by)
+	if err != nil {
+		return out, err
+	}
+	out.StandIn = repair
 	ts, err := store.Select[domain.Title](ctx, s.Store.Read(), "titles", "kind = 'artist' AND state != 'removed' AND "+emptyArtwork+" ORDER BY sort_name, id")
 	if err != nil {
 		return out, err
@@ -178,6 +203,6 @@ func (s *Service) handleArtistPictures(ctx context.Context, r *jobs.Run) error {
 	if err != nil {
 		return err
 	}
-	r.SetResult(map[string]any{"looked": out.Looked, "filled": out.Filled, "sources": out.Sources, "by_title": out.By})
+	r.SetResult(map[string]any{"looked": out.Looked, "filled": out.Filled, "sources": out.Sources, "by_title": out.By, "stand_in_repair": out.StandIn})
 	return nil
 }
