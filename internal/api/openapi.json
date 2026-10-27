@@ -854,6 +854,10 @@
           "better_wanted": {
             "type": "integer"
           },
+          "bio": {
+            "description": "The start of the artist's kept Wikipedia summary (Library list only; empty when none is kept).",
+            "type": "string"
+          },
           "disambiguation": {
             "type": "string"
           },

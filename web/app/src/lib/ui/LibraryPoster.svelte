@@ -119,12 +119,12 @@
 	$effect(() => () => cancelAnimationFrame(raf));
 </script>
 
-<div class="lp" class:shown class:selecting class:selected class:attention bind:this={root} bind:clientWidth={cw}>
+<div class="lp" class:square={kind === 'artist'} class:shown class:selecting class:selected class:attention bind:this={root} bind:clientWidth={cw}>
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="frame" bind:this={frame} onpointermove={move} onpointerleave={reset}>
 		<a class="art" {href} aria-label={name} use:viewTransitionName={vtName}>
 			{#if !image || failed || !loaded}
-				<ArtPlaceholder name={title} shape="poster" loading={!!image && !failed && !loaded} />
+				<ArtPlaceholder name={title} shape={kind === 'artist' ? 'square' : 'poster'} loading={!!image && !failed && !loaded} />
 			{/if}
 			{#if image && !failed}
 				<img src={pic} class:in={loaded} alt="" loading="lazy" decoding="async" use:whenLoaded={() => (loaded = true)} onerror={() => (failed = true)} />
@@ -155,6 +155,8 @@
 	.lp { --rx: 0deg; --ry: 0deg; position: relative; min-width: 0; display: flex; flex-direction: column; gap: 3px; opacity: 0; transform: translateY(12px); }
 	.lp.shown { opacity: 1; transform: none; transition: opacity 220ms var(--ease-out) var(--rise-delay, 0ms), transform 220ms var(--ease-out) var(--rise-delay, 0ms); }
 
+	/* Music is square art (artist photos); movies and shows keep the 2:3 poster. */
+	.lp.square { --poster-ratio: 1 / 1; }
 	.frame { container-type: inline-size; position: relative; aspect-ratio: var(--poster-ratio); margin-bottom: 6px; border-radius: var(--r-card); transform: perspective(800px) translateY(var(--ty, 0)) scale(var(--s, 1)) rotateX(var(--rx)) rotateY(var(--ry)); transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out); box-shadow: var(--shadow-card); will-change: transform; }
 	.art { position: absolute; inset: 0; display: block; overflow: hidden; border-radius: inherit; background: var(--surface-2); color: var(--text); }
 	.art:focus-visible { outline: none; box-shadow: var(--focus-ring); }
@@ -192,6 +194,8 @@
 	.g-state.fail::before { background: var(--fail-text); }
 	.g-state.idle::before { background: var(--gp-fg2); }
 	.g-fact { margin: 0; font-weight: 400; font-size: clamp(9.5px, 6.8cqi, 11px); line-height: 1.35; font-family: var(--font-text, inherit); color: var(--gp-fg2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	/* A small square card has less height for the panel: the state and two facts, then the buttons. */
+	@container (max-width: 200px) { .lp.square .g-fact:nth-child(n + 4) { display: none; } }
 	.g-acts { display: flex; align-items: center; gap: clamp(4px, 3.6cqi, 6px); margin-top: clamp(4px, 3.6cqi, 6px); min-width: 0; }
 	.g-btn, .g-open { display: inline-grid; place-items: center; height: clamp(24px, 18cqi, 28px); border: 0; border-radius: 99px; color: var(--gp-fg); background: var(--gp-btn); cursor: pointer; transition: background 150ms var(--ease-out), transform 150ms var(--ease-out); }
 	.g-btn { width: clamp(24px, 18cqi, 28px); flex: none; padding: 0; }

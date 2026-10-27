@@ -318,6 +318,9 @@ type ArtistInfo struct {
 	Downloading     int        `json:"downloading"`
 	Failed          int        `json:"failed"`
 	NextRelease     *time.Time `json:"next_release,omitempty"`
+	// Bio is the start of the artist's kept Wikipedia summary (Library list
+	// only, read from what is already stored; empty when none is kept).
+	Bio string `json:"bio,omitempty"`
 }
 
 func listOr(v []string) []string {

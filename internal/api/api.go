@@ -788,6 +788,9 @@ func (a *API) listTitles(w http.ResponseWriter, r *http.Request) {
 			internal(w, err)
 			return
 		}
+		if v.Artist != nil {
+			v.Artist.Bio = a.keptArtistBio(r.Context(), v.Artist.MBID, t.Name)
+		}
 		out = append(out, v)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"titles": out})

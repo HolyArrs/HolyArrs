@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bannerHeight, bannerSrc, bannerWidth, loadDensity, loadPosterSize, saveDensity, savePosterSize, posterSrc, tmdbFor } from './library-art.ts';
+import { bannerHeight, bannerRatio, posterMinFor, posterRatio, bannerSrc, bannerWidth, loadDensity, loadPosterSize, saveDensity, savePosterSize, posterSrc, tmdbFor } from './library-art.ts';
 
 function mem() {
 	const m = new Map<string, string>();
@@ -18,6 +18,26 @@ describe('banner width', () => {
 	});
 	it('takes its height from the 1000x185 shape', () => {
 		expect(bannerHeight(540)).toBe(100);
+		expect(bannerHeight(540, 'movie')).toBe(100);
+		expect(bannerHeight(540, 'show')).toBe(100);
+	});
+	it('is taller for Music (1000x400)', () => {
+		expect(bannerHeight(500, 'artist')).toBe(200);
+		expect(bannerRatio('artist')).toBeCloseTo(1000 / 400);
+		expect(bannerRatio('movie')).toBeCloseTo(1000 / 185);
+	});
+});
+
+describe('poster shape', () => {
+	it('is square for Music and 2:3 for movies and shows', () => {
+		expect(posterRatio('artist')).toBe('1 / 1');
+		expect(posterRatio('movie')).toBe('2 / 3');
+		expect(posterRatio('show')).toBe('2 / 3');
+	});
+	it('packs Music a little tighter and keeps the rest', () => {
+		expect(posterMinFor('m', 'movie')).toBe(172);
+		expect(posterMinFor('m', 'artist')).toBeLessThan(172);
+		expect(posterMinFor('s', 'artist')).toBeLessThan(posterMinFor('l', 'artist'));
 	});
 });
 

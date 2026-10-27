@@ -47,7 +47,7 @@
 	import { ownedMark, type ExploreCard } from '#lib/explore.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { deleteBody } from '#lib/organise.ts';
-	import { bannerHeight, bannerWidth, densityLabels, loadDensity, loadPosterSize, posterLabels, posterMin, posterSrc, saveDensity, savePosterSize, type Density, type PosterSize } from '#lib/library-art.ts';
+	import { bannerHeight, bannerRatio, bannerWidth, densityLabels, loadDensity, loadPosterSize, posterLabels, posterMinFor, posterRatio, posterSrc, saveDensity, savePosterSize, squarePhoneMin, type Density, type PosterSize } from '#lib/library-art.ts';
 
 	type View = 'table' | 'posters' | 'overview';
 
@@ -166,7 +166,8 @@
 	// Columns that do not fit the width wait until the window is wider (the
 	// banner and the title always stay); the header says how many wait.
 	// The art is the hero of each row: the banner column takes its share of
-	// the width (by density) and its 1000x185 shape sets the row height.
+	// the width (by density) and its shape sets the row height: 1000x185 for
+	// movies and shows, 1000x400 for Music (square artist photos need height).
 	// Columns that do not fit scroll sideways rather than squeeze the art.
 	let density = $state<Density>('large');
 	let posterSize = $state<PosterSize>('m');
@@ -205,7 +206,10 @@
 	}
 	const flipMs = () => (reducedMotion() ? 0 : 240);
 	const bannerW = $derived(bannerWidth(listWidth, density));
-	const bannerH = $derived(bannerHeight(bannerW));
+	/** A row's banner height for its title's kind (Music rows are taller). */
+	const rowH = (k: string) => bannerHeight(bannerW, k);
+	// Music's square art packs a little tighter; the All view keeps the 2:3 columns.
+	const gridMin = $derived(posterMinFor(posterSize, kind === 'artist' ? 'artist' : 'movie'));
 	const shownCols = $derived(chosenCols);
 	const colWidths = $derived([`${bannerW}px`, '28px', 'minmax(180px, 1fr)', ...(kind === 'all' ? [] : shownCols.map((c) => c.width))]);
 	const gridCols = $derived(colWidths.join(' '));
@@ -382,11 +386,12 @@
 	let listTop = $state(0);
 	const heights = new SvelteMap<string, number>();
 	const phone = $derived(listWidth < 640);
-	const guess = $derived(view === 'overview' ? 168 : phone ? Math.round((listWidth - 24) * 185 / 1000) + 92 : bannerH);
+	/** Height guess for a row not yet measured, from its kind's banner shape. */
+	const guessFor = (k: string) => (view === 'overview' ? 168 : phone ? Math.round((listWidth - 24) / bannerRatio(k)) + 92 : rowH(k));
 	const offsets = $derived.by(() => {
 		const out = new Array<number>(entries.length + 1);
 		out[0] = 0;
-		for (let i = 0; i < entries.length; i++) out[i + 1] = out[i] + (heights.get(entries[i].key) ?? (entries[i].type === 'head' ? 52 : guess));
+		for (let i = 0; i < entries.length; i++) out[i + 1] = out[i] + (heights.get(entries[i].key) ?? (entries[i].type === 'head' ? 52 : guessFor((entries[i] as Extract<Entry, { type: 'row' }>).t.kind)));
 		return out;
 	});
 	const virtual = $derived(entries.length > 80);
@@ -846,12 +851,12 @@
 				<EmptyState compact icon="search" title="Nothing matches this filter." action={filtersOn || q ? { label: 'Clear', onclick: clearFilters } : undefined} />
 			{:else if view === 'posters'}
 				{#if grouped}<p class="group-note">Grouped by series in the Banners and Overview views.</p>{/if}
-				<ul class="grid" class:selecting style="--poster-min: {posterMin[posterSize]}px" aria-label="{kindTitle} titles" bind:this={gridEl}>
+				<ul class="grid" class:selecting style="--poster-min: {gridMin}px" style:--poster-min-phone={kind === 'artist' ? `${squarePhoneMin[posterSize]}px` : undefined} aria-label="{kindTitle} titles" bind:this={gridEl}>
 					{#each shown as t (t.id)}
 						{@const p = progressOf(t)}
 						{@const ls = who === 'staff' ? libraryState(t) : null}
-						<li class="item" animate:flip={{ duration: flipMs, easing: (x) => 1 - Math.pow(1 - x, 3) }} data-testid="library-card" data-title-id={t.id} data-letter={letterOf(sortName(t.name))} class:selected={picked.has(t.id)} class:last-opened={lastOpenedId === t.id}>
-							<LibraryPoster title={t.name} year={t.year} href={t.kind === 'artist' && t.ids?.musicbrainz ? artistHref(t.ids.musicbrainz) : titleLink(t.id)} image={posterSrc(t.artwork[0], posterMin[posterSize])} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} vtName={artName(t.id)} status={ls} attention={needsAttention(ls)} bar={barOf(ls, p.have, p.total)} detail={posterDetail} extra={posterExtra(t)} facts={posterFacts(t)} kept={t.keep_up_to_date} canManage={session.can('manage_library')} {selecting} selected={picked.has(t.id)} onsearch={() => searchTitles([t.id])} onkeep={(k) => setKeep([t.id], k)} />
+						<li class="item" style:--poster-ratio={posterRatio(t.kind)} animate:flip={{ duration: flipMs, easing: (x) => 1 - Math.pow(1 - x, 3) }} data-testid="library-card" data-title-id={t.id} data-letter={letterOf(sortName(t.name))} class:selected={picked.has(t.id)} class:last-opened={lastOpenedId === t.id}>
+							<LibraryPoster title={t.name} year={t.year} href={t.kind === 'artist' && t.ids?.musicbrainz ? artistHref(t.ids.musicbrainz) : titleLink(t.id)} image={posterSrc(t.artwork[0], gridMin)} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} vtName={artName(t.id)} status={ls} attention={needsAttention(ls)} bar={barOf(ls, p.have, p.total)} detail={posterDetail} extra={posterExtra(t)} facts={posterFacts(t)} kept={t.keep_up_to_date} canManage={session.can('manage_library')} {selecting} selected={picked.has(t.id)} onsearch={() => searchTitles([t.id])} onkeep={(k) => setKeep([t.id], k)} />
 							{#if selecting}
 								<button type="button" class="pick" aria-pressed={picked.has(t.id)} aria-label="Select {t.name}" onclick={() => togglePick(t.id)} data-testid="library-pick"><span class="pick-dot" aria-hidden="true">{#if picked.has(t.id)}<Icon name="check" size={14} stroke={3} />{/if}</span></button>
 							{/if}
@@ -913,7 +918,7 @@
 										onclick={(ev) => rowClick(ev, t)}
 									>
 										{#if view === 'table'}
-											<div class="row" style:--row-h="{bannerH}px">
+											<div class="row" style:--row-h="{rowH(t.kind)}px">
 												<span class="art"><BannerArt title={t} width={phone ? listWidth : bannerW} /></span>
 												<span class="state" title={t.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date'}>
 													{#if selecting}<input type="checkbox" class="pick-box" checked={picked.has(t.id)} aria-label="Select {t.name}" tabindex="-1" onchange={() => togglePick(t.id)} data-testid="library-pick" />
@@ -959,11 +964,15 @@
 												{#if kind === 'all' || phone}<span class="sr-only">{progressText(t)}</span>{/if}
 											</div>
 										{:else}
-											<div class="ov">
-												<a class="ov-poster" href={titleLink(t.id)} tabindex="-1" aria-hidden="true"><Poster src={t.artwork[0]} name={t.name} /></a>
+											<div class="ov" class:music={t.kind === 'artist'}>
+												<a class="ov-poster" style:--poster-ratio={posterRatio(t.kind)} href={titleLink(t.id)} tabindex="-1" aria-hidden="true"><Poster src={t.artwork[0]} name={t.name} /></a>
 												<div class="ov-main">
 													<h2><a href={titleLink(t.id)} tabindex="-1" title={t.name}>{t.name}</a>{#if t.year}<span class="yr">{t.year}</span>{/if}</h2>
-													<p class="ov-text">{t.overview || 'No description yet.'}</p>
+													{#if t.kind === 'artist'}
+														{#if t.artist?.bio}<p class="ov-text ov-bio">{t.artist.bio}</p>{/if}
+													{:else}
+														<p class="ov-text">{t.overview || 'No description yet.'}</p>
+													{/if}
 													<span class="meter {tone(t)}" aria-hidden="true"><i style="width: {p.total ? (p.have / p.total) * 100 : 0}%"></i></span>
 													<span class="sr-only">{progressText(t)}</span>
 												</div>
@@ -1160,10 +1169,12 @@
 	.ov-facts dt { color: var(--text-muted); }
 	.ov-facts dd { margin: 0; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.ov-pick { position: absolute; right: 14px; top: 14px; }
+	/* Music: a square photo that keeps its shape, and two or three lines of bio. */
+	.ov.music .ov-poster { align-self: start; }
 
 	/* Loading rows match the banner shape */
 	.sk-row { display: grid; grid-template-columns: var(--bw, 420px) 1fr 1fr; align-items: center; gap: 16px 60px; padding: 0 20px 0 0; }
-	.sk-banner { display: block; aspect-ratio: 1000 / 185; }
+	.sk-banner { display: block; aspect-ratio: var(--banner-ratio, 1000 / 185); }
 	.sk-banner :global(.ui-sk) { height: 100%; border-radius: 0; }
 
 	/* Posters */
@@ -1173,7 +1184,7 @@
 	.grid > li:hover, .grid > li:focus-within { z-index: 2; }
 	.grid > li.last-opened { outline: 2px solid var(--text-muted); outline-offset: 4px; border-radius: var(--r-card); }
 	.grid > li.selected { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: var(--r-card); }
-	.pick { position: absolute; inset: 0 0 auto 0; aspect-ratio: 2 / 3; z-index: 3; display: block; padding: 0; border: 0; border-radius: var(--r-card); background: transparent; cursor: pointer; }
+	.pick { position: absolute; inset: 0 0 auto 0; aspect-ratio: var(--poster-ratio, 2 / 3); z-index: 3; display: block; padding: 0; border: 0; border-radius: var(--r-card); background: transparent; cursor: pointer; }
 	.pick[aria-pressed='true'] { background: rgb(0 0 0 / 30%); box-shadow: inset 0 0 0 3px var(--accent); }
 	.pick:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.pick-dot { position: absolute; left: 8px; top: 8px; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; border: 2px solid #fff; background: rgb(0 0 0 / 35%); color: #fff; }
@@ -1236,7 +1247,8 @@
 		.row > .c { display: none; }
 		.ov { grid-template-columns: 72px minmax(0, 1fr); }
 		.ov-facts { grid-column: 1 / -1; }
-		.grid { grid-template-columns: repeat(auto-fill, minmax(calc(var(--poster-min, 172px) * 0.66), 1fr)); gap: 18px 12px; }
+		.ov-bio { -webkit-line-clamp: 2; line-clamp: 2; }
+		.grid { grid-template-columns: repeat(auto-fill, minmax(var(--poster-min-phone, calc(var(--poster-min, 172px) * 0.66)), 1fr)); gap: 18px 12px; }
 		.fold, .row-notes { padding-left: 12px; }
 		.sk-row { grid-template-columns: 1fr; padding: 0 0 12px; }
 		.sk-row > :global(.stack), .sk-row > :global(.line) { display: none; }

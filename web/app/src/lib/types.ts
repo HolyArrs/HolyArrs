@@ -89,6 +89,8 @@ export interface ArtistInfo {
 	downloading?: number;
 	failed?: number;
 	next_release?: string;
+	/** The start of the artist's kept Wikipedia summary (Library list only). */
+	bio?: string;
 }
 
 /** AlbumSummary is one album of an artist with its track counts. */
