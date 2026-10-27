@@ -385,7 +385,8 @@
 		return [artistKind(hero.type), countryName(hero.country), hero.status === 'ended' ? 'Disbanded or retired' : '', (data?.genres ?? []).slice(0, 3).join(', ')].filter(Boolean) as string[];
 	});
 	const storeKind = (t: string) => ({ single: 'Single', ep: 'EP', compilation: 'Compilation' })[t] ?? '';
-	const released = $derived(data?.albums.filter((a) => !a.upcoming) ?? []);
+	// The full answer's albums, else the core answer's stored list (drawn with the hero).
+	const released = $derived((data?.albums ?? core?.albums ?? []).filter((a) => !a.upcoming));
 	// The band under the hero: what this artist has put out, in big numbers.
 	const stats = $derived.by(() => {
 		if (!data) return [];
@@ -413,7 +414,7 @@
 	// Albums first when the artist has any; a long list shows 18 until Show all.
 	const shown = $derived(discoAll ? disco : disco.slice(0, 18));
 	$effect(() => {
-		if (data && shelfPick !== 'all' && !kinds.some((k) => k.shelf === shelfPick)) shelfPick = 'all';
+		if (released.length && shelfPick !== 'all' && !kinds.some((k) => k.shelf === shelfPick)) shelfPick = 'all';
 	});
 	const essential = $derived.by(() => {
 		if (!data || !more) return [];
@@ -494,6 +495,40 @@
 </script>
 
 <svelte:head><title>{hero?.name ?? 'Artist'} · HolyArrs</title></svelte:head>
+
+{#snippet discography()}
+	{#if released.length}
+		<section class="block" data-testid="discography">
+			<div class="row-head">
+				<h2>Discography</h2>
+				{#if missing?.count && mayAsk && !manage && !titleId && !allAsked}
+					{#if confirmAll}
+						<span class="confirm" role="group" aria-label="Confirm asking for all missing">
+							<span>Ask for {missing.count} {missing.count === 1 ? 'release' : 'releases'}, {aboutSize(missing.size_bytes)}?</span>
+							<Button variant="primary" onclick={askAllMissing} disabled={askingAll}>Ask</Button>
+							<Button onclick={() => (confirmAll = false)}>Cancel</Button>
+						</span>
+					{:else}
+						<Button icon="plus" onclick={() => (confirmAll = true)} data-testid="ask-all-missing">Ask for all missing ({missing.count})</Button>
+					{/if}
+				{/if}
+			</div>
+			<div class="chips" role="toolbar" aria-label="Filter the discography">
+				<Chip label="All" selected={shelfPick === 'all'} onclick={() => (shelfPick = 'all')} />
+				{#each kinds as k (k.shelf)}<Chip label={k.title} selected={shelfPick === k.shelf} onclick={() => (shelfPick = k.shelf)} />{/each}
+				<span class="sep" aria-hidden="true"></span>
+				<Chip label="Have" icon="owned" selected={havePick === 'have'} onclick={() => (havePick = havePick === 'have' ? 'all' : 'have')} />
+				<Chip label="Missing" icon="dash" selected={havePick === 'missing'} onclick={() => (havePick = havePick === 'missing' ? 'all' : 'missing')} />
+			</div>
+			{#if disco.length}
+				<ul class="grid">{#each shown as a, i (a.mbid)}<li>{@render albumCard(a, i < 6)}</li>{/each}</ul>
+				{#if disco.length > shown.length}<div><Button onclick={() => (discoAll = true)}>Show all {disco.length}</Button></div>{/if}
+			{:else}
+				<p class="quiet">Nothing here with these filters.</p>
+			{/if}
+		</section>
+	{/if}
+{/snippet}
 
 {#snippet albumCard(a: PageAlbum, eager = false)}
 	{@const c = coverFor(appPicture(a.image), 200)}
@@ -607,7 +642,7 @@
 						<div class="latest"><SkRowTitle width="140px" /><div class="latest-card sk-latest"><span class="sk sq"></span><span class="sk-lines"><span class="sk sk-line"></span><span class="sk sk-line"></span><span class="sk sk-line short"></span></span></div></div>
 						<div class="top"><SkRowTitle width="120px" /><div class="sk-songs">{#each Array.from({ length: 9 }, (_, i) => i) as i (i)}<SkTrackRow height={60} />{/each}</div></div>
 					</section>
-					<div class="sq-rail"><SkRail item="var(--music-item)" titleWidth="160px" /></div>
+					{#if released.length}{@render discography()}{:else}<div class="sq-rail"><SkRail item="var(--music-item)" titleWidth="160px" /></div>{/if}
 				{:else}
 					<LoadError hasData={true} message={plainReason(error).text} onretry={load} {busy} />
 				{/if}
@@ -665,37 +700,7 @@
 					</section>
 				{/if}
 
-				{#if released.length}
-					<section class="block" data-testid="discography">
-						<div class="row-head">
-							<h2>Discography</h2>
-							{#if missing?.count && mayAsk && !manage && !titleId && !allAsked}
-								{#if confirmAll}
-									<span class="confirm" role="group" aria-label="Confirm asking for all missing">
-										<span>Ask for {missing.count} {missing.count === 1 ? 'release' : 'releases'}, {aboutSize(missing.size_bytes)}?</span>
-										<Button variant="primary" onclick={askAllMissing} disabled={askingAll}>Ask</Button>
-										<Button onclick={() => (confirmAll = false)}>Cancel</Button>
-									</span>
-								{:else}
-									<Button icon="plus" onclick={() => (confirmAll = true)} data-testid="ask-all-missing">Ask for all missing ({missing.count})</Button>
-								{/if}
-							{/if}
-						</div>
-						<div class="chips" role="toolbar" aria-label="Filter the discography">
-							<Chip label="All" selected={shelfPick === 'all'} onclick={() => (shelfPick = 'all')} />
-							{#each kinds as k (k.shelf)}<Chip label={k.title} selected={shelfPick === k.shelf} onclick={() => (shelfPick = k.shelf)} />{/each}
-							<span class="sep" aria-hidden="true"></span>
-							<Chip label="Have" icon="owned" selected={havePick === 'have'} onclick={() => (havePick = havePick === 'have' ? 'all' : 'have')} />
-							<Chip label="Missing" icon="dash" selected={havePick === 'missing'} onclick={() => (havePick = havePick === 'missing' ? 'all' : 'missing')} />
-						</div>
-						{#if disco.length}
-							<ul class="grid">{#each shown as a, i (a.mbid)}<li>{@render albumCard(a, i < 6)}</li>{/each}</ul>
-							{#if disco.length > shown.length}<div><Button onclick={() => (discoAll = true)}>Show all {disco.length}</Button></div>{/if}
-						{:else}
-							<p class="quiet">Nothing here with these filters.</p>
-						{/if}
-					</section>
-				{/if}
+				{@render discography()}
 
 				{#if !released.length && data.store_albums?.length}
 					<!-- MusicBrainz lists nothing for this artist: what a store knows, so the page is not empty. No ask control (a request needs a MusicBrainz id). -->

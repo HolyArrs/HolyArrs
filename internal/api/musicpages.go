@@ -1157,6 +1157,31 @@ type ArtistCoreView struct {
 	TitleID        int64                 `json:"title_id,omitempty"`
 	Bio            *metadata.WikiSummary `json:"bio"`
 	Kid            bool                  `json:"kid"`
+	// Albums is the metadata server's complete stored discography (names,
+	// kinds, dates, covers), so the shelves draw with the hero; the full
+	// answer adds Library state and explicit marks. None when the list is
+	// not complete there.
+	Albums []PageAlbum `json:"albums,omitempty"`
+}
+
+// coreAlbums lists a complete stored discography for the core answer, newest first.
+func coreAlbums(art metadata.Artist) []PageAlbum {
+	if art.Partial || len(art.Albums) == 0 {
+		return nil
+	}
+	today := time.Now().UTC().Format("2006-01-02")
+	out := make([]PageAlbum, 0, len(art.Albums))
+	for _, al := range art.Albums {
+		if isVideo(al) {
+			continue
+		}
+		id := strings.ToLower(al.MBID)
+		out = append(out, PageAlbum{MBID: id, Name: al.Name, Type: al.PrimaryType, SecondaryTypes: listOr(al.SecondaryTypes), ReleaseDate: al.ReleaseDate,
+			Disambiguation: al.Disambiguation, Shelf: shelfOf(al), Image: artPath("album", id),
+			Upcoming: len(al.ReleaseDate) == 10 && al.ReleaseDate > today})
+	}
+	sort.SliceStable(out, func(i, j int) bool { return out[i].ReleaseDate > out[j].ReleaseDate })
+	return out
 }
 
 // coreBioWait is how long, from the request, the hero waits for a bio not
@@ -1260,6 +1285,16 @@ func (a *API) artistCore(w http.ResponseWriter, r *http.Request) {
 			startBio(art.Name)
 		}
 		v.Name, v.Type, v.Country, v.Disambiguation, v.Status = art.Name, art.Type, art.Country, art.Disambiguation, art.Status
+		if v.Albums = coreAlbums(art); len(v.Albums) > 0 {
+			names := make([]nameKey, 0, len(v.Albums))
+			imgs := make([]string, 0, len(v.Albums))
+			for _, al := range v.Albums {
+				names = append(names, nameKey{kind: "album", mbid: al.MBID, name: al.Name, artist: art.Name})
+				imgs = append(imgs, al.Image)
+			}
+			a.rememberMusicNames(names)
+			a.warmArtPaths(imgs...)
+		}
 	}
 	select {
 	case v.Bio = <-bioDone:

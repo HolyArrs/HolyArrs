@@ -55,6 +55,8 @@ export interface ArtistCoreData {
 	title_id?: number;
 	bio: WikiBio | null;
 	kid: boolean;
+	/** The stored complete discography, so the shelves draw with the hero (no Library state yet). */
+	albums?: PageAlbum[];
 }
 
 export interface ArtistPopularity {
