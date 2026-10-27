@@ -50,6 +50,7 @@
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import ArtistVideos from '#lib/ArtistVideos.svelte';
+	import ArtistLibraryTab from '#lib/music/ArtistLibrary.svelte';
 	import type { Snippet } from 'svelte';
 
 
@@ -144,6 +145,8 @@
 	const mayAsk = $derived(session.can('ask'));
 	const hero = $derived<ArtistCoreData | null>(data ?? core);
 	const titleId = $derived(lib?.titleId || hero?.title_id || lookup?.title_id || 0);
+	// Overview or Library, for an artist in the Library (?tab=library opens it there).
+	let artistTab = $state<'overview' | 'library'>(typeof location !== 'undefined' && new URLSearchParams(location.search).get('tab') === 'library' ? 'library' : 'overview');
 
 	function load() {
 		const want = mbid;
@@ -529,7 +532,7 @@
 						{:else if lib}
 							<span></span>
 						{:else if titleId}
-							<a class="rb main pill" href={to(`/library/${titleId}`)}><Icon name="library" size={18} /><span>Open in Library</span></a>
+							{#if manage}<button class="rb main pill" type="button" onclick={() => (artistTab = 'library')}><Icon name="library" size={18} /><span>In Library</span></button>{:else}<a class="rb main pill" href={to(`/library/${titleId}`)}><Icon name="library" size={18} /><span>Open in Library</span></a>{/if}
 						{:else if manage || mayAsk}
 							<button class="rb main pill" type="button" disabled={!!lookup?.ask || !lookup} onclick={() => askAlbum()} data-testid="artist-ask"><Icon name={lookup?.ask ? 'check' : 'plus'} size={18} /><span>{cta}</span></button>
 						{/if}
@@ -550,6 +553,16 @@
 					{#if data?.total}<p class="have" data-testid="artist-have"><Icon name="music" size={14} />{haveLine(data.have, data.total)}</p>{/if}
 			</div>
 
+			{#if titleId && manage}
+				<!-- An artist in the Library: Overview (this page) and Library (releases, tracks, settings). -->
+				<div class="ar-tabs" role="tablist" data-testid="artist-tabs">
+					<button type="button" role="tab" class:on={artistTab === 'overview'} aria-selected={artistTab === 'overview'} onclick={() => (artistTab = 'overview')}>Overview</button>
+					<button type="button" role="tab" class:on={artistTab === 'library'} aria-selected={artistTab === 'library'} onclick={() => (artistTab = 'library')}>Library</button>
+				</div>
+			{/if}
+			{#if titleId && manage && artistTab === 'library'}
+				<ArtistLibraryTab {titleId} {manage} ondeleted={() => location.reload()} />
+			{:else}
 			<!-- Music videos sit under the artist's facts, where a title page has its trailers. -->
 			{#if hero}<ArtistVideos {mbid} artist={hero.name} {picture} />{/if}
 
@@ -712,6 +725,7 @@
 					</dl>
 				</div>
 			</section>
+			{/if}
 
 			{#if below}{@render below()}{/if}
 
@@ -857,4 +871,8 @@
 		.grid, .essential { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 		.about-in { grid-template-columns: minmax(0, 1fr); }
 	}
+	/* Overview / Library tabs for an artist in the Library: the same underline tabs as a title page. */
+	.ar-tabs { display: flex; gap: 6px; margin: 8px 0 4px; border-bottom: 1px solid var(--line); }
+	.ar-tabs button { height: 40px; padding: 0 14px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--text-muted); font: 600 14px/1 var(--font-ui); cursor: pointer; }
+	.ar-tabs button.on { color: var(--text); border-bottom-color: var(--text); }
 </style>
