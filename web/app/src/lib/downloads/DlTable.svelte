@@ -157,7 +157,7 @@
 	.tools { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 	.phone-sort { display: none; align-items: center; gap: 4px; }
 	.dirbtn { display: grid; place-items: center; width: 40px; height: 40px; border: 0; border-radius: 10px; background: var(--surface-2); color: var(--text-muted); cursor: pointer; }
-	.dirarr { display: grid; transition: transform var(--dur-fast); }
+	.dirarr { display: grid; transition: transform var(--dur-fast) var(--ease-out); }
 	.dirarr.up { transform: rotate(180deg); }
 	.dirbtn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -170,14 +170,14 @@
 	.sort { display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 0 4px; margin: 0 -4px; border: 0; border-radius: 6px; background: none; color: var(--text-muted); font: var(--t-footnote); font-weight: 600; letter-spacing: 0.02em; cursor: pointer; white-space: nowrap; }
 	.sort:hover, .sort.on { color: var(--text); }
 	.sort:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.arrow { display: inline-grid; opacity: 0; transform: rotate(180deg); transition: transform var(--dur-fast), opacity var(--dur-fast); }
+	.arrow { display: inline-grid; opacity: 0; transform: rotate(180deg); transition: transform var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out); }
 	.sort.on .arrow { opacity: 1; }
 	.sort:hover .arrow { opacity: 0.5; }
 	.sort.on:hover .arrow { opacity: 1; }
 	.arrow.desc { transform: none; }
 	td { height: 52px; padding: 0 12px; vertical-align: middle; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	td.num { text-align: right; color: var(--text-muted); }
-	tbody tr { cursor: pointer; transition: background var(--dur-instant); }
+	tbody tr { cursor: pointer; transition: background var(--dur-instant) var(--ease-out); }
 	tbody tr + tr { border-top: 1px solid var(--line); }
 	tbody tr:hover { background: var(--surface-2); }
 	tbody tr:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }

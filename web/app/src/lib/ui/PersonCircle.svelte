@@ -42,7 +42,7 @@
 	.ui-person { display: flex; flex-direction: column; align-items: center; gap: 2px; width: calc(var(--size) + 16px); text-align: center; color: var(--text); border-radius: var(--r-card); }
 	.ph { position: relative; width: var(--size); height: var(--size); margin-bottom: 6px; display: grid; place-items: center; border-radius: 50%; overflow: hidden; background: linear-gradient(160deg, var(--surface-2), var(--surface-3)); color: var(--text-muted); font: var(--t-title3); box-shadow: var(--shadow-card); transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out); }
 	/* Photos come from many shoots: a little less saturation and light evens the row; full colour and a small zoom on hover. */
-	img { width: 100%; height: 100%; object-fit: cover; opacity: 0; filter: saturate(.85) brightness(.94); transition: opacity 240ms ease-out, filter var(--dur) var(--ease-out), transform var(--dur) var(--ease-out); }
+	img { width: 100%; height: 100%; object-fit: cover; opacity: 0; filter: saturate(.85) brightness(.94); transition: opacity var(--dur) var(--ease-out), filter var(--dur) var(--ease-out), transform var(--dur) var(--ease-out); }
 	a.ui-person:hover img, a.ui-person:focus-visible img { filter: none; transform: scale(1.03); }
 	@media (prefers-reduced-motion: reduce) { a.ui-person:hover img { transform: none; } }
 	img.in { opacity: 1; }

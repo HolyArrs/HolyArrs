@@ -80,7 +80,7 @@
 	.tile {
 		position: relative; display: block; aspect-ratio: 16 / 9; overflow: clip; border-radius: 10px; color: #fff; text-decoration: none;
 		background: var(--tile); isolation: isolate;
-		transition: transform .3s cubic-bezier(.16, 1, .3, 1), box-shadow .3s;
+		transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out);
 	}
 	/* The name sizes from the tile's own width, so every tile on every page reads the same. */
 	strong {
@@ -91,7 +91,7 @@
 	.cover {
 		position: absolute; right: -7%; bottom: -9%; width: 50%; aspect-ratio: 1; object-fit: cover; border-radius: 4px;
 		background: rgb(0 0 0 / .25); transform: rotate(25deg); transform-origin: center; box-shadow: 0 6px 16px rgb(0 0 0 / .4);
-		transition: transform .3s cubic-bezier(.16, 1, .3, 1);
+		transition: transform var(--dur) var(--ease-out);
 	}
 	.tile:is(:hover, :focus-visible) { transform: translateY(-2px); box-shadow: 0 10px 22px -12px rgb(0 0 0 / .6); }
 	.tile:is(:hover, :focus-visible) .cover { transform: rotate(22deg) scale(1.04); }

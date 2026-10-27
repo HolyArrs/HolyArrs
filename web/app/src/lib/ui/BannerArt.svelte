@@ -110,7 +110,7 @@
 
 <style>
 	.banner { position: relative; display: block; width: 100%; aspect-ratio: var(--banner-ratio, 1000 / 185); overflow: hidden; border-radius: var(--banner-r, 6px); background: var(--surface-2); isolation: isolate; }
-	img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 30%; opacity: 0; transition: opacity 240ms var(--ease-out), filter var(--dur-fast, 160ms) var(--ease-out); }
+	img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 30%; opacity: 0; transition: opacity var(--dur) var(--ease-out), filter var(--dur-fast, 160ms) var(--ease-out); }
 	.ready img { opacity: 1; }
 	/* Music: artist art is a square photo; the taller shape, cropped just below the top third, keeps the face and shoulders in view. */
 	.music img:not(.logo) { object-position: center 35%; }

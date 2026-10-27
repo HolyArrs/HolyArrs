@@ -158,7 +158,7 @@
 <style>
 	.wrap { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 	.tiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; scroll-margin-top: calc(var(--topbar, 0px) + 12px); }
-	.tab { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'label count' 'hint hint'; gap: 2px 10px; padding: 14px 16px; border-radius: 16px; background: var(--surface-1); text-align: left; box-shadow: 0 0 0 1px var(--line); transition: box-shadow var(--dur-fast), background var(--dur-fast); }
+	.tab { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'label count' 'hint hint'; gap: 2px 10px; padding: 14px 16px; border-radius: 16px; background: var(--surface-1); text-align: left; box-shadow: 0 0 0 1px var(--line); transition: box-shadow var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
 	.tab:hover { background: var(--surface-2); }
 	.tab[aria-selected='true'] { box-shadow: 0 0 0 2px var(--text), var(--shadow-card); background: var(--surface-1); }
 	.tab:focus-visible { outline: none; box-shadow: var(--focus-ring); }

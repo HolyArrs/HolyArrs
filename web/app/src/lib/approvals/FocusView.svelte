@@ -155,7 +155,7 @@
 
 <style>
 	.stage { display: flex; flex-direction: column; gap: 10px; }
-	.hero { position: relative; isolation: isolate; overflow: hidden; min-height: 460px; display: flex; flex-direction: column; justify-content: flex-end; border-radius: 22px; background: #111214; color: var(--on-art); box-shadow: var(--shadow-lift); animation: arrive 420ms var(--ease-out) both; }
+	.hero { position: relative; isolation: isolate; overflow: hidden; min-height: 460px; display: flex; flex-direction: column; justify-content: flex-end; border-radius: 22px; background: #111214; color: var(--on-art); box-shadow: var(--shadow-lift); animation: arrive var(--dur-slow) var(--ease-out) both; }
 	.hero.sending { opacity: 0.65; }
 	@keyframes arrive { from { opacity: 0; transform: translateY(10px) scale(0.99); } }
 	.bd { position: absolute; inset: 0; z-index: -2; background-size: cover; background-position: center 22%; animation: drift 14s var(--ease-out) both; }
@@ -176,7 +176,7 @@
 	.story { max-width: 62ch; color: rgb(255 255 255 / 80%); font: var(--t-callout); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 	.pill { align-self: flex-start; }
 	.decide { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 12px 32px 26px; }
-	.act { min-height: 50px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 22px; border-radius: 14px; font: var(--t-headline); font-size: 16px; white-space: nowrap; transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast); }
+	.act { min-height: 50px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 22px; border-radius: 14px; font: var(--t-headline); font-size: 16px; white-space: nowrap; transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
 	.act:active { transform: scale(0.97); }
 	.yes { background: #fff; color: #111; }
 	.yes:hover { background: rgb(255 255 255 / 88%); }
@@ -201,7 +201,7 @@
 	.queue { position: relative; display: flex; gap: 12px; overflow-x: auto; padding: 6px 4px 12px; scroll-snap-type: x proximity; scrollbar-width: thin; }
 	.q { position: relative; flex: none; width: 104px; scroll-snap-align: center; }
 	.q-btn { display: flex; flex-direction: column; gap: 6px; width: 100%; text-align: left; border-radius: 10px; }
-	.q-art { display: block; border-radius: 10px; overflow: hidden; opacity: 0.6; transition: opacity var(--dur-fast), transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast); }
+	.q-art { display: block; border-radius: 10px; overflow: hidden; opacity: 0.6; transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
 	.q-btn:hover .q-art { opacity: 0.9; }
 	.q-btn[aria-current='true'] .q-art { opacity: 1; transform: translateY(-3px); box-shadow: 0 0 0 3px var(--text), var(--shadow-lift); }
 	.q-name { font: var(--t-footnote); color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

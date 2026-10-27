@@ -12,7 +12,7 @@
 </label>
 
 <style>
-	.ops-chip { position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 14px; border-radius: var(--r-pill); background: var(--surface-2); color: var(--text); font: var(--t-subhead); font-size: 14px; cursor: pointer; transition: background var(--dur-fast), color var(--dur-fast); user-select: none; }
+	.ops-chip { position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 14px; border-radius: var(--r-pill); background: var(--surface-2); color: var(--text); font: var(--t-subhead); font-size: 14px; cursor: pointer; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); user-select: none; }
 	.ops-chip:hover { background: var(--surface-3); }
 	.on, .on:hover { background: var(--text); color: var(--bg); }
 	input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }

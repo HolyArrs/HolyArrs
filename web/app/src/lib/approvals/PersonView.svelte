@@ -100,7 +100,7 @@
 	.chosen .art { box-shadow: 0 0 0 3px var(--accent), var(--shadow-lift); }
 	.sending { opacity: 0.6; }
 	.tick { position: absolute; top: 8px; left: 8px; z-index: 2; }
-	.part { position: absolute; left: 8px; right: 8px; bottom: 8px; padding: 3px 8px; border-radius: var(--r-pill); background: rgb(0 0 0 / 62%); color: #fff; font: var(--t-caption); font-weight: 600; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); pointer-events: none; transition: opacity var(--dur-fast); }
+	.part { position: absolute; left: 8px; right: 8px; bottom: 8px; padding: 3px 8px; border-radius: var(--r-pill); background: rgb(0 0 0 / 62%); color: #fff; font: var(--t-caption); font-weight: 600; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); pointer-events: none; transition: opacity var(--dur-fast) var(--ease-out); }
 	.over { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; padding: 10px; background: linear-gradient(180deg, rgb(0 0 0 / 10%) 0%, rgb(0 0 0 / 82%) 55%); opacity: 0; visibility: hidden; transition: opacity var(--dur-fast) var(--ease-out), visibility 0s linear var(--dur-fast); }
 	/* Mouse: hover shows the actions. Touch: only a tap (armed) does, so a first tap never lands on a button. */
 	.tile:has(:focus-visible) .over, .armed .over { opacity: 1; visibility: visible; transition: opacity var(--dur-fast) var(--ease-out); }

@@ -114,7 +114,7 @@
 	.count { margin-left: auto; min-width: 24px; height: 22px; padding: 0 7px; display: inline-grid; place-items: center; border-radius: 999px; background: var(--surface-1); color: var(--text-muted); font: var(--t-footnote); font-weight: 700; font-variant-numeric: tabular-nums; }
 	.attention .count:not(:empty) { color: var(--fail-text); }
 	.cards { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-	.lcard { position: relative; display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px; border-radius: var(--r-card); background: var(--surface-1); box-shadow: var(--shadow-card); transition: box-shadow var(--dur-fast), transform var(--dur-fast) var(--ease-out); }
+	.lcard { position: relative; display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px; border-radius: var(--r-card); background: var(--surface-1); box-shadow: var(--shadow-card); transition: box-shadow var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
 	.lcard:hover { box-shadow: var(--shadow-lift); transform: translateY(-1px); }
 	.lcard.fail { box-shadow: inset 3px 0 0 var(--fail), var(--shadow-card); }
 	.lcard.idle { box-shadow: inset 3px 0 0 var(--text-faint), var(--shadow-card); }

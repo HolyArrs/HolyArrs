@@ -141,7 +141,7 @@
 	.meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; min-width: 0; color: var(--on-art-muted); font: var(--t-subhead); font-variant-numeric: tabular-nums; }
 	.meta b { color: var(--on-art); font: var(--t-headline); font-size: 17px; font-variant-numeric: tabular-nums; }
 	.acts { display: inline-flex; gap: 6px; flex: none; }
-	.glass { display: inline-flex; align-items: center; min-height: 32px; padding: 0 13px; border: 0; border-radius: var(--r-pill); background: var(--on-art-fill); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); color: var(--on-art); font: var(--t-subhead); font-weight: 600; cursor: pointer; white-space: nowrap; transition: background var(--dur-fast); }
+	.glass { display: inline-flex; align-items: center; min-height: 32px; padding: 0 13px; border: 0; border-radius: var(--r-pill); background: var(--on-art-fill); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); color: var(--on-art); font: var(--t-subhead); font-weight: 600; cursor: pointer; white-space: nowrap; transition: background var(--dur-fast) var(--ease-out); }
 	.glass:hover { background: var(--on-art-fill-hover); }
 	.glass:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.glass.strong { background: var(--on-art-fill-strong); color: var(--on-art-ink); }

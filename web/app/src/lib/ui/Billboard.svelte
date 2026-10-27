@@ -260,16 +260,16 @@
 	.content { position: relative; width: clamp(320px, max(40%, min(500px, 60%)), 600px); padding: 0 clamp(20px, 2vw, 40px) clamp(24px, 2.6vw, 50px); display: flex; flex-direction: column; gap: 10px; transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out); }
 	/* About 6 s into the trailer the overview folds (height and opacity, ~1 s ease) and
 	   the logo glides down with it; it unfolds the same way. */
-	.fold { display: grid; min-height: 0; grid-template-rows: minmax(0, 1fr); opacity: 1; transition: grid-template-rows 1100ms var(--ease-hero, cubic-bezier(.4, 0, .2, 1)), opacity 650ms var(--ease-hero, cubic-bezier(.4, 0, .2, 1)); }
+	.fold { display: grid; min-height: 0; grid-template-rows: minmax(0, 1fr); opacity: 1; transition: grid-template-rows var(--dur-hero) var(--ease-in-out), opacity var(--dur-slow) var(--ease-in-out); }
 	.fold-in { min-height: 0; overflow: hidden; }
 	.quiet .fold { grid-template-rows: minmax(0, 0fr); opacity: 0; pointer-events: none; }
 	.quiet.reveal:hover .fold, .quiet.reveal:focus-within .fold { grid-template-rows: minmax(0, 1fr); opacity: 1; pointer-events: auto; }
 	.content { --title-h: clamp(80px, 10vw, 140px); min-height: 0; }
 	.ui-billboard:has(> .top) .content { --title-h: clamp(64px, 8vw, 130px); }
-	.heading { transform-origin: left bottom; transition: transform 1100ms var(--ease-hero, cubic-bezier(.4, 0, .2, 1)); }
+	.heading { transform-origin: left bottom; transition: transform var(--dur-hero) var(--ease-in-out); }
 	.quiet .heading { transform: scale(.8); }
 	/* The facts line shrinks with the title, in the same motion. */
-	.meta { transform-origin: left center; transition: transform 1100ms var(--ease-hero, cubic-bezier(.4, 0, .2, 1)); }
+	.meta { transform-origin: left center; transition: transform var(--dur-hero) var(--ease-in-out); }
 	.quiet .meta { transform: scale(.8); }
 	.quiet.reveal:hover .heading, .quiet.reveal:focus-within .heading, .quiet.reveal:hover .meta, .quiet.reveal:focus-within .meta { transform: none; }
 	.heading :global(h1), .heading :global(h2) { margin: 0; min-height: var(--title-h); display: flex; align-items: flex-end; }
@@ -297,7 +297,7 @@
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.shade, .content { transition: none; }
-		.fold { transition: opacity 400ms linear; }
+		.fold { transition: opacity var(--dur-slow) linear; }
 		.quiet .fold { grid-template-rows: minmax(0, 0fr); }
 		.heading, .quiet .heading, .meta, .quiet .meta { transition: none; transform: none; }
 	}

@@ -93,13 +93,13 @@
 		padding: 10px 10px 10px; background: var(--sidebar-bg); border-right: 1px solid var(--line);
 		backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
 		/* Expand: width grows first, labels fade in after. */
-		transition: width var(--dur) var(--ease-out) 0ms, box-shadow var(--dur) ease;
+		transition: width var(--dur) var(--ease-out) 0ms, box-shadow var(--dur) var(--ease-out);
 		--label-delay: var(--dur-fast);
 	}
 	.ui-sidebar.collapsed {
 		--w: var(--sidebar-collapsed);
 		/* Collapse: labels fade out first, then width shrinks. */
-		transition: width var(--dur) var(--ease-out) var(--dur-fast), box-shadow var(--dur) ease;
+		transition: width var(--dur) var(--ease-out) var(--dur-fast), box-shadow var(--dur) var(--ease-out);
 		--label-delay: 0ms;
 	}
 	@supports not (backdrop-filter: blur(1px)) { .ui-sidebar { background: var(--sidebar-solid); } }
@@ -108,7 +108,7 @@
 	.brand { display: flex; align-items: center; gap: 10px; min-width: 0; height: 40px; border-radius: 8px; font: var(--t-headline); font-size: 17px; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; }
 	.brand img { flex: none; }
 	.brand:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.word { transition: opacity var(--dur-fast) ease var(--label-delay); }
+	.word { transition: opacity var(--dur-fast) var(--ease-out) var(--label-delay); }
 	.collapsed .word { opacity: 0; }
 	.collapsed .top { flex-direction: column; align-items: center; padding: 0; gap: 4px; }
 	.collapsed .brand { width: 40px; justify-content: center; }
@@ -116,14 +116,14 @@
 	.collapsed .brand .word { display: none; }
 	.scroll { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; margin: 0 -4px; padding: 0 4px; scrollbar-width: thin; }
 	.list { position: relative; }
-	.pill { position: absolute; z-index: 0; left: 0; right: 0; top: 0; border-radius: 9px; background: var(--surface-3); opacity: 0; transition: transform var(--dur) var(--ease-spring), height var(--dur) var(--ease-spring), opacity var(--dur-fast) ease; }
+	.pill { position: absolute; z-index: 0; left: 0; right: 0; top: 0; border-radius: 9px; background: var(--surface-3); opacity: 0; transition: transform var(--dur) var(--ease-spring), height var(--dur) var(--ease-spring), opacity var(--dur-fast) var(--ease-out); }
 	.pill.on { opacity: 1; }
-	.pill.still { transition: opacity var(--dur-fast) ease; }
+	.pill.still { transition: opacity var(--dur-fast) var(--ease-out); }
 	.section + .section { margin-top: 14px; }
 	.sec { height: 26px; padding: 6px 12px 0; color: var(--text-muted); font: 600 12px/1.3 var(--font-ui); white-space: nowrap; overflow: hidden; position: relative; }
-	.sec .t { transition: opacity var(--dur-fast) ease var(--label-delay); }
+	.sec .t { transition: opacity var(--dur-fast) var(--ease-out) var(--label-delay); }
 	.collapsed .sec .t { opacity: 0; }
-	.div { position: absolute; left: 14px; right: 14px; top: 13px; height: 1px; background: var(--line-strong); opacity: 0; transition: opacity var(--dur-fast) ease; }
+	.div { position: absolute; left: 14px; right: 14px; top: 13px; height: 1px; background: var(--line-strong); opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
 	.collapsed .div { opacity: 1; }
 	.collapsed .section + .section { margin-top: 6px; }
 	ul { display: flex; flex-direction: column; gap: 2px; }

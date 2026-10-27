@@ -388,7 +388,7 @@
 	/* A click on the picture only brings the controls back (pause is the button or Space); focus rings show for the keyboard only. */
 	dialog:focus, dialog :focus:not(:focus-visible) { outline: none; }
 	.catch { position: absolute; inset: 0; border: 0; background: transparent; padding: 0; }
-	.top, .bar { position: absolute; left: 0; right: 0; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 20px clamp(16px, 3vw, 40px); transition: opacity 240ms var(--ease-out), transform 240ms var(--ease-out); }
+	.top, .bar { position: absolute; left: 0; right: 0; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 20px clamp(16px, 3vw, 40px); transition: opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out); }
 	.top { top: 0; justify-content: space-between; background: linear-gradient(to bottom, var(--on-art-scrim-mid), var(--on-art-scrim-none)); }
 	.bar { bottom: 0; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); overflow: visible; background: linear-gradient(to top, var(--on-art-scrim), var(--on-art-scrim-none)); }
 	.ui-theater:not(.chrome) .top, .ui-theater:not(.chrome) .bar { opacity: 0; pointer-events: none; transition-duration: 150ms; }
@@ -406,5 +406,5 @@
 	.seek:focus-visible { outline: none; }
 	.seek:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--on-art-fill-strong); }
 	@media (max-width: 767px) { .t { display: none; } .bar { gap: 8px; } }
-	@media (prefers-reduced-motion: reduce) { .top, .bar { transition: opacity 200ms linear; } .idle .top, .idle .bar { transform: none; } }
+	@media (prefers-reduced-motion: reduce) { .top, .bar { transition: opacity var(--dur-fast) linear; } .idle .top, .idle .bar { transform: none; } }
 </style>

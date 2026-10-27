@@ -1366,7 +1366,7 @@
 	.lib-fact { display: inline-flex; align-items: center; gap: 6px; max-width: 260px; height: 26px; padding: 0 10px; border-radius: 8px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text-muted); font: 600 12.5px/1 var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.lib-st-sub { margin: 6px 0 0 20px; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
 	.lib-bar { height: 6px; margin: 12px 0 0 20px; border-radius: 99px; background: color-mix(in srgb, var(--text) 10%, transparent); overflow: hidden; }
-	.lib-bar span { display: block; height: 100%; border-radius: 99px; background: #3e8ef7; transition: width .6s ease; }
+	.lib-bar span { display: block; height: 100%; border-radius: 99px; background: #3e8ef7; transition: width var(--dur-slow) var(--ease-out); }
 	.lib-btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 14px/1 var(--font-ui); white-space: nowrap; text-decoration: none; cursor: pointer; }
 	.lib-btn.primary { background: var(--text); color: var(--bg); }
 	.lib-btn:hover { filter: brightness(1.08); }
@@ -1384,7 +1384,7 @@
 	.lib-sr-note { color: var(--text-muted); font: 500 13px/1 var(--font-ui); white-space: nowrap; }
 	.lib-sr-note.dl { color: #3e8ef7; }
 	.lib-sr-note.fail { color: var(--danger, #e5484d); }
-	.lib-chev { margin-left: auto; display: grid; color: var(--text-muted); transition: transform .2s ease; }
+	.lib-chev { margin-left: auto; display: grid; color: var(--text-muted); transition: transform var(--dur-fast) var(--ease-out); }
 	.lib-sr.open .lib-chev { transform: rotate(180deg); }
 	.lib-sr-acts, .lib-ep-acts { display: flex; gap: 2px; }
 	.lib-ico { display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 99px; background: none; color: var(--text-muted); cursor: pointer; }
@@ -1410,7 +1410,7 @@
 	.lib-eps-head .lib-h { margin-bottom: 14px; }
 	.lib-btn.sm { height: 34px; padding: 0 14px; font-size: 13px; margin-top: 22px; }
 	.lib-eps { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
-	.lib-ep { display: grid; grid-template-columns: 112px minmax(0, 1fr) auto 34px; align-items: center; gap: 14px; padding: 6px; border-radius: 12px; transition: background .15s ease; }
+	.lib-ep { display: grid; grid-template-columns: 112px minmax(0, 1fr) auto 34px; align-items: center; gap: 14px; padding: 6px; border-radius: 12px; transition: background var(--dur-fast) var(--ease-out); }
 	.lib-ep { cursor: pointer; }
 	.lib-ep:hover, .lib-ep:focus-visible { background: var(--surface-2); outline: none; }
 	.lib-ep.skel { height: 75px; background: var(--surface-2); animation: pulse 1.2s ease-in-out infinite alternate; }
@@ -1426,7 +1426,7 @@
 	.lib-ep-st.have { color: #30a46c; background: color-mix(in srgb, #30a46c 12%, transparent); }
 	.lib-ep-st.downloading { color: #3e8ef7; background: color-mix(in srgb, #3e8ef7 12%, transparent); }
 	.lib-ep-st.failed { color: var(--danger, #e5484d); background: color-mix(in srgb, var(--danger, #e5484d) 12%, transparent); }
-	.lib-ep-go { grid-column: 4; display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 99px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); cursor: pointer; opacity: .6; transition: opacity .15s ease; }
+	.lib-ep-go { grid-column: 4; display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 99px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); cursor: pointer; opacity: .6; transition: opacity var(--dur-fast) var(--ease-out); }
 	.lib-ep:hover .lib-ep-go, .lib-ep-go:focus-visible { opacity: 1; }
 	@media (max-width: 600px) {
 					.lib-btn.sm { flex: none; margin-top: 22px; }
@@ -1466,8 +1466,8 @@
 	.lib-row b { font: 600 15px/1.2 var(--font-ui); }
 	.lib-row small { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.lib-row :global(svg) { flex: none; color: var(--text-muted); }
-	.lib-switch { position: relative; flex: none; width: 44px; height: 26px; border-radius: 99px; background: color-mix(in srgb, var(--text) 18%, transparent); transition: background .2s ease; }
-	.lib-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 99px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 25%); transition: transform .2s ease; }
+	.lib-switch { position: relative; flex: none; width: 44px; height: 26px; border-radius: 99px; background: color-mix(in srgb, var(--text) 18%, transparent); transition: background var(--dur-fast) var(--ease-out); }
+	.lib-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 99px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 25%); transition: transform var(--dur-fast) var(--ease-out); }
 	.lib-switch.on { background: #30a46c; }
 	.lib-switch.on::after { transform: translateX(18px); }
 	@media (max-width: 600px) { .lib-status { padding: 18px; } .lib-btn { flex: 1; justify-content: center; } .lib-files { grid-template-columns: 1fr; } .lib-seasons { grid-template-columns: 1fr 1fr; } }

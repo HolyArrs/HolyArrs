@@ -451,7 +451,7 @@
 	.lib-top h3 { flex: 1; min-width: 0; font: var(--t-headline); color: var(--text); }
 	.stretch { color: inherit; outline: none; }
 	.stretch::after { content: ''; position: absolute; inset: 0; z-index: 0; border-radius: inherit; }
-	.lib-go { color: var(--text-faint); display: inline-grid; transition: transform var(--dur) var(--ease-out), color var(--dur-fast); }
+	.lib-go { color: var(--text-faint); display: inline-grid; transition: transform var(--dur) var(--ease-out), color var(--dur-fast) var(--ease-out); }
 	.lib-card:hover .lib-go { color: var(--text-muted); transform: translateX(2px); }
 	.lib-big { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 8px; font-variant-numeric: tabular-nums; }
 	.lib-big .num { font: 700 44px / 1 var(--font-display); letter-spacing: -0.035em; color: var(--text); }

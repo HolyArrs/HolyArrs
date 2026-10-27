@@ -22,7 +22,7 @@
 </span>
 
 <style>
-	.ui-chip { display: inline-flex; align-items: center; border-radius: var(--r-pill); background: var(--surface-2); color: var(--text); transition: background var(--dur-fast); }
+	.ui-chip { display: inline-flex; align-items: center; border-radius: var(--r-pill); background: var(--surface-2); color: var(--text); transition: background var(--dur-fast) var(--ease-out); }
 	.ui-chip:hover { background: var(--surface-3); }
 	.on { background: var(--text); color: var(--bg); }
 	.on:hover { background: var(--text); }

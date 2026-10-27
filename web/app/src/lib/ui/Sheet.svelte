@@ -119,9 +119,9 @@
 	footer { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; padding: 14px 22px calc(18px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); }
 	.ui-sheet::backdrop { background: var(--scrim); }
 	.ui-sheet[open] { animation: sheet-in var(--dur) var(--ease-spring) both; }
-	.ui-sheet[open]::backdrop { animation: fade-in var(--dur-fast) ease both; }
+	.ui-sheet[open]::backdrop { animation: fade-in var(--dur-fast) var(--ease-out) both; }
 	.ui-sheet.closing { animation: sheet-out var(--dur-fast) var(--ease-in) both; }
-	.ui-sheet.closing::backdrop { animation: fade-out var(--dur-fast) ease both; }
+	.ui-sheet.closing::backdrop { animation: fade-out var(--dur-fast) var(--ease-out) both; }
 	.at-top, .at-full { margin-top: min(12vh, 120px); }
 	@keyframes sheet-in { from { opacity: 0; transform: scale(.96); } }
 	@keyframes sheet-out { to { opacity: 0; transform: scale(.97); } }

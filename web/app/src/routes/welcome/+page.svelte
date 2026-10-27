@@ -181,7 +181,7 @@
 	}
 	.brand { display: flex; align-items: center; justify-content: center; gap: 10px; font: var(--t-headline); color: var(--text-muted); }
 	.dots { display: flex; justify-content: center; gap: 8px; margin: 20px 0 0; }
-	.dots li { width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); transition: width var(--dur) var(--ease-out), background var(--dur); }
+	.dots li { width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); transition: width var(--dur) var(--ease-out), background var(--dur) var(--ease-out); }
 	.dots li.done { background: var(--ok); }
 	.dots li.now { width: 24px; border-radius: 4px; background: var(--accent-fill); }
 	.head { margin: 24px 0; text-align: center; }

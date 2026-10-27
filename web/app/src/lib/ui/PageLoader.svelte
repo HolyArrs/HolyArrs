@@ -101,7 +101,7 @@
 		display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
 		padding: 24px 16px; text-align: center; color: var(--text-muted);
 	}
-	.pl.on { animation: pl-in 200ms ease-out both; }
+	.pl.on { animation: pl-in var(--dur-fast) var(--ease-out) both; }
 	.pl-in { display: contents; }
 	.ow { position: relative; width: 64px; height: 64px; }
 	.ow svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }

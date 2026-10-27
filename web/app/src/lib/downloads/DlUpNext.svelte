@@ -177,7 +177,7 @@
 	.hfacts dd { margin: 0; font: var(--t-headline); font-variant-numeric: tabular-nums; }
 	.hnote { color: var(--on-art-soft); font: var(--t-callout); }
 	.hacts { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
-	.hbtn { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 20px; border: 0; border-radius: var(--r-pill); background: var(--on-art-fill); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); color: var(--on-art); font: var(--t-headline); font-size: 15px; cursor: pointer; transition: background var(--dur-fast), transform var(--dur-fast); }
+	.hbtn { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 20px; border: 0; border-radius: var(--r-pill); background: var(--on-art-fill); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); color: var(--on-art); font: var(--t-headline); font-size: 15px; cursor: pointer; transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
 	.hbtn:hover { background: var(--on-art-fill-hover); }
 	.hbtn.strong { background: var(--on-art-fill-strong); color: var(--on-art-ink); }
 	.hbtn.strong:hover { background: var(--on-art); }

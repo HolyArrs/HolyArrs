@@ -330,7 +330,7 @@
 	.chip:hover { background: color-mix(in srgb, var(--text) 14%, transparent); }
 	.hero-in { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 32px; align-items: center; padding: 8px 0 8px; }
 	.cover { position: relative; width: 240px; aspect-ratio: 1; display: grid; place-items: center; border-radius: 10px; overflow: hidden; background: var(--surface-1); box-shadow: 0 10px 30px rgb(0 0 0 / .35), 0 2px 6px rgb(0 0 0 / .2); }
-	.cover img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 400ms ease-out; }
+	.cover img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); }
 	.cover.in img { opacity: 1; }
 	.words { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 	.kind { margin: 0; color: var(--text-muted); font: 600 12px/1.3 var(--font-ui); text-transform: uppercase; letter-spacing: .08em; }

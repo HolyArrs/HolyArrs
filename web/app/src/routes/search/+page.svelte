@@ -1127,7 +1127,7 @@
 	.results-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; margin-bottom: -12px; }
 	.results-head .count { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.results-head :global(.ui-seg) { flex: none; }
-	.results { display: flex; flex-direction: column; gap: 32px; min-width: 0; transition: opacity 160ms ease-out; }
+	.results { display: flex; flex-direction: column; gap: 32px; min-width: 0; transition: opacity var(--dur-fast) var(--ease-out); }
 	.results.holding { opacity: 0.6; }
 	.h2 { margin: 0; font: var(--t-title3); }
 	.sec { margin: 0; font: var(--t-title2); letter-spacing: var(--t-title2-track); }

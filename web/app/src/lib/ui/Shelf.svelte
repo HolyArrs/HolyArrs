@@ -171,7 +171,7 @@
 	.sk.wide { --art: calc(var(--w) * 9 / 16); --text-h: 0px; }
 	@media (max-width: 767px) { .sk { --w: calc(var(--item) * .78); } }
 	.row > :global(*) { scroll-snap-align: start; }
-	.arrow { position: absolute; top: calc(50% - 26px); opacity: 0; transition: opacity var(--dur-fast) ease; }
+	.arrow { position: absolute; top: calc(50% - 26px); opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
 	.arrow :global(.ui-ibtn) { width: 40px; height: 40px; box-shadow: var(--shadow-lift); background: var(--surface-1); color: var(--text); }
 	.left { left: -12px; }
 	.right { right: -12px; }

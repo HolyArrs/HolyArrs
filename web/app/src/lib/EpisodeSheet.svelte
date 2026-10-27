@@ -180,8 +180,8 @@
 	.es-row span:first-child { display: grid; gap: 3px; }
 	.es-row b { font: 600 15px/1.2 var(--font-ui); }
 	.es-row small { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); }
-	.es-switch { position: relative; flex: none; width: 44px; height: 26px; border-radius: 99px; background: color-mix(in srgb, var(--text) 18%, transparent); transition: background .2s ease; }
-	.es-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 99px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 25%); transition: transform .2s ease; }
+	.es-switch { position: relative; flex: none; width: 44px; height: 26px; border-radius: 99px; background: color-mix(in srgb, var(--text) 18%, transparent); transition: background var(--dur-fast) var(--ease-out); }
+	.es-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 99px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 25%); transition: transform var(--dur-fast) var(--ease-out); }
 	.es-switch.on { background: #30a46c; }
 	.es-switch.on::after { transform: translateX(18px); }
 	.es-tl { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; font: 500 14px/1.35 var(--font-ui); }

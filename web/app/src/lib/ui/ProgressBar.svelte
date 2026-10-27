@@ -30,7 +30,7 @@
 	.track { position: relative; flex: 1; height: 6px; border-radius: 3px; background: var(--surface-3); overflow: hidden; }
 	.sm .track { height: 4px; border-radius: 2px; }
 	.art .track { background: rgb(255 255 255 / 28%); }
-	i { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: var(--accent); transition: width var(--dur-slow) var(--ease-out), background var(--dur); }
+	i { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: var(--accent); transition: width var(--dur-slow) var(--ease-out), background var(--dur) var(--ease-out); }
 	i.info { background: var(--info); }
 	i.ok { background: var(--ok); }
 	.tick { width: 18px; height: 18px; display: grid; place-items: center; border-radius: 50%; background: var(--ok); color: var(--on-art); animation: pulse var(--dur-slow) var(--ease-out) 1; }

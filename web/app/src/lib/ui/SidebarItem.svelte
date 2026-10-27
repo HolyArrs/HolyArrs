@@ -76,16 +76,16 @@
 	}
 	.ui-sbi:hover:not(.current) { background: color-mix(in srgb, var(--surface-3) 70%, transparent); }
 	.ui-sbi:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
-	.ic { position: relative; flex: none; width: 24px; display: grid; place-items: center; color: var(--text-muted); transition: color var(--dur-fast); }
+	.ic { position: relative; flex: none; width: 24px; display: grid; place-items: center; color: var(--text-muted); transition: color var(--dur-fast) var(--ease-out); }
 	.ring { position: absolute; inset: -2px; width: 28px; height: 28px; transform: rotate(-90deg); fill: none; stroke-width: 2; pointer-events: none; }
 	.ring .track { stroke: var(--line); }
-	.ring .arc { stroke: var(--accent); stroke-linecap: round; transition: stroke-dasharray var(--dur) ease; }
+	.ring .arc { stroke: var(--accent); stroke-linecap: round; transition: stroke-dasharray var(--dur) var(--ease-out); }
 	@media (prefers-reduced-motion: reduce) { .ring .arc { transition: none; } }
 	.current { font-weight: 600; }
 	.current .ic { color: var(--accent); }
-	.label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; transition: opacity var(--dur-fast) ease var(--label-delay, 0ms); }
+	.label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; transition: opacity var(--dur-fast) var(--ease-out) var(--label-delay, 0ms); }
 	kbd.label { flex: none; color: var(--text-muted); font: var(--t-footnote); }
-	.count { min-width: 22px; height: 20px; padding: 0 7px; display: grid; place-items: center; flex: none; border-radius: 999px; background: var(--surface-3); color: var(--text); font: 600 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; transition: opacity var(--dur-fast); }
+	.count { min-width: 22px; height: 20px; padding: 0 7px; display: grid; place-items: center; flex: none; border-radius: 999px; background: var(--surface-3); color: var(--text); font: 600 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; transition: opacity var(--dur-fast) var(--ease-out); }
 	.current .count { background: var(--surface-1); }
 	:global(.ui-sidebar.collapsed) .ui-sbi .label { opacity: 0; }
 	:global(.ui-sidebar.collapsed) .ui-sbi .count { position: absolute; top: 2px; left: 34px; min-width: 16px; height: 16px; padding: 0 4px; font-size: 10px; background: var(--accent-fill); color: var(--text-on-red); }

@@ -52,7 +52,7 @@
 		content: attr(data-tip); position: absolute; z-index: 60; left: 50%; top: calc(100% + 6px);
 		translate: -50% -2px; padding: 4px 8px; border-radius: 6px; white-space: nowrap; pointer-events: none;
 		background: var(--text); color: var(--bg); font: var(--t-footnote); opacity: 0;
-		transition: opacity var(--dur-fast) ease 0ms, translate var(--dur-fast) var(--ease-out) 0ms;
+		transition: opacity var(--dur-fast) var(--ease-out) 0ms, translate var(--dur-fast) var(--ease-out) 0ms;
 	}
 	.tip-above[data-tip]::after { top: auto; bottom: calc(100% + 6px); }
 	/* At the right edge of the screen: the tip lines up with the button's right side. */

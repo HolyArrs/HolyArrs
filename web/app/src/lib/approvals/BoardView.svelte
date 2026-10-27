@@ -122,7 +122,7 @@
 
 <style>
 	.board { display: grid; grid-template-columns: repeat(5, minmax(192px, 1fr)); gap: 10px; align-items: start; overflow-x: auto; padding-bottom: 8px; }
-	.col { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 10px; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); transition: box-shadow var(--dur-fast), background var(--dur-fast); }
+	.col { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 10px; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); transition: box-shadow var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
 	.col-waiting { --c: var(--mark-ask); }
 	.col-looking { --c: var(--accent); }
 	.col-downloading { --c: var(--mark-dl); }
@@ -139,7 +139,7 @@
 	.mini-all:hover { background: var(--accent-soft); }
 	.drop-hint { padding: 10px; border-radius: var(--r-card); border: 1.5px dashed var(--c); color: var(--text-muted); font: var(--t-footnote); text-align: center; }
 	.cards { display: flex; flex-direction: column; gap: 8px; }
-	.bcard { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: var(--r-card); background: var(--bg); box-shadow: 0 0 0 1px var(--line), 0 1px 2px rgb(0 0 0 / 6%); border-left: 3px solid var(--c); transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast); }
+	.bcard { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: var(--r-card); background: var(--bg); box-shadow: 0 0 0 1px var(--line), 0 1px 2px rgb(0 0 0 / 6%); border-left: 3px solid var(--c); transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
 	.bcard[draggable='true'] { cursor: grab; }
 	.bcard:hover { box-shadow: 0 0 0 1px var(--line-strong), var(--shadow-card); }
 	.bcard.lifted { opacity: 0.5; transform: rotate(-1.5deg) scale(0.98); }

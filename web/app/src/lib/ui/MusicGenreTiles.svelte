@@ -175,11 +175,11 @@
 	.tile {
 		position: relative; isolation: isolate; display: block; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 12px; color: #fff;
 		background: linear-gradient(135deg, var(--g, var(--mg-charcoal)), color-mix(in srgb, var(--g, var(--mg-charcoal)) 55%, #000));
-		transition: transform .35s cubic-bezier(.16, 1, .3, 1), box-shadow .35s;
+		transition: transform var(--dur-slow) var(--ease-out), box-shadow var(--dur-slow) var(--ease-out);
 	}
 	.show { position: absolute; inset: 0; z-index: -2; }
 	/* The server's photos are already grey; they sit over the colour at .55 and trade places by opacity. */
-	.ph { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.2s ease; }
+	.ph { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--dur-hero) var(--ease-out); }
 	.ph.on { opacity: .55; }
 	/* A scrim from the bottom keeps the label at AA contrast over any photo. */
 	.tile::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, rgba(0, 0, 0, .62), rgba(0, 0, 0, .12) 55%, transparent); }

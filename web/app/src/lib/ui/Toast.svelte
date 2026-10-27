@@ -90,7 +90,7 @@
 	.ok { --tint: var(--ok); }
 	.fail { --tint: var(--fail); }
 	.warn { --tint: var(--wait); }
-	.card { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 8px 10px 12px; border-radius: 22px; touch-action: pan-x; transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.2), opacity 0.25s; }
+	.card { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 8px 10px 12px; border-radius: 22px; touch-action: pan-x; transition: transform var(--dur) var(--ease-spring), opacity var(--dur) var(--ease-out); }
 	.card.drag { transition: none; }
 	.tile { width: 38px; height: 38px; flex: none; display: grid; place-items: center; border-radius: 10px; color: var(--tint); background: color-mix(in srgb, var(--tint) 18%, var(--surface-1)); box-shadow: inset 0 0 0 0.5px color-mix(in srgb, var(--tint) 30%, transparent); }
 	.tile.sm { width: 22px; height: 22px; border-radius: 7px; }
@@ -108,5 +108,5 @@
 	.act:hover, .x:hover { background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); }
 	.act:focus-visible, .x:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	@media (pointer: coarse) { .x { width: 44px; height: 44px; margin: -7px -4px -7px 0; } }
-	@media (prefers-reduced-motion: reduce) { .card { transition: opacity 0.2s; } }
+	@media (prefers-reduced-motion: reduce) { .card { transition: opacity var(--dur-fast) var(--ease-out); } }
 </style>

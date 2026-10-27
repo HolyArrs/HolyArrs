@@ -497,9 +497,9 @@
 	   before; the logo settles from a hair smaller instead. Opacity and
 	   transform only, so it stays on the compositor. */
 	@media (prefers-reduced-motion: no-preference) {
-		.intro .brand { animation: brand-in 520ms cubic-bezier(0.16, 1, 0.3, 1) 60ms both; }
+		.intro .brand { animation: brand-in var(--dur-slow) var(--ease-out) 60ms both; }
 		.intro :is(.title, .lead, .provs, .or, .field, .submit, .step .link, .help) {
-			animation: part-in 460ms cubic-bezier(0.22, 1, 0.36, 1) calc(90ms + var(--i, 1) * 70ms) both;
+			animation: part-in var(--dur-slow) var(--ease-out) calc(90ms + var(--i, 1) * 70ms) both;
 		}
 	}
 	.gl-wait .brand,
@@ -594,7 +594,7 @@
 		color: rgb(255 255 255 / 0.78);
 		font: 500 12px/1.2 var(--font-ui);
 		cursor: pointer;
-		transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease, color 160ms ease;
+		transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 	}
 	.prov svg { width: 26px; height: 26px; flex: none; }
 	.provs[data-n='1'] .prov { flex-direction: row; min-height: 50px; gap: 10px; font-size: 16px; color: #fff; }
@@ -607,7 +607,7 @@
 	/* Hover lives on the buttons only: a 1 px lift, a soft glow and the
 	   site's pixel trail inside the button (pixelTrail.ts paints a canvas
 	   clipped to the button's radius). Focus rings come from :focus-visible. */
-	.submit :global(.ui-btn) { position: relative; overflow: hidden; isolation: isolate; transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease; }
+	.submit :global(.ui-btn) { position: relative; overflow: hidden; isolation: isolate; transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
 	.prov { isolation: isolate; }
 	.prov > :global(:not(canvas)),
 	.submit :global(.ui-btn > :not(canvas)) { position: relative; z-index: 1; }
@@ -685,7 +685,7 @@
 			padding: 14px 16px 4px;
 			border-radius: 24px;
 			transform: translateY(calc(-1 * var(--kb, 0px)));
-			transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+			transition: transform var(--dur) var(--ease-out);
 		}
 		.brand { gap: 12px; margin-bottom: 16px; font-size: 18px; }
 		.brand img { width: 26px; height: 26px; }

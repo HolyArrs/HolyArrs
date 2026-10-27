@@ -76,7 +76,7 @@
 		display: flex; flex-direction: column; align-items: center; gap: 8px; max-width: min(360px, calc(100% - 32px));
 		padding: 12px 18px; border-radius: var(--r-panel); text-align: center;
 		background: color-mix(in srgb, var(--surface-1) 88%, transparent); backdrop-filter: blur(12px); box-shadow: var(--shadow-card);
-		animation: sil-pop var(--dur, 200ms) ease-out both;
+		animation: sil-pop var(--dur, 200ms) var(--ease-out) both;
 	}
 	p { margin: 0; color: var(--text-muted); font: var(--t-footnote); }
 	.retry { min-height: 36px; padding: 0 14px; border-radius: var(--r-btn); background: var(--accent-fill); color: var(--text-on-red); font: var(--t-callout); font-weight: 600; }

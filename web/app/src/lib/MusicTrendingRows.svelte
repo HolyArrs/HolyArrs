@@ -475,11 +475,11 @@
 	.kicker { font: 700 11px/1.2 var(--font-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); }
 	.ftitle { margin-top: 4px; font-size: 20px; line-height: 1.2; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.fsub { font-size: 15px; line-height: 1.3; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	.frame { position: relative; display: block; margin-top: 10px; aspect-ratio: 4 / 3; border-radius: 14px; overflow: hidden; isolation: isolate; background: var(--surface-2); transition: transform .35s cubic-bezier(.16, 1, .3, 1), box-shadow .35s; }
+	.frame { position: relative; display: block; margin-top: 10px; aspect-ratio: 4 / 3; border-radius: 14px; overflow: hidden; isolation: isolate; background: var(--surface-2); transition: transform var(--dur-slow) var(--ease-out), box-shadow var(--dur-slow) var(--ease-out); }
 	.feature:hover .frame { transform: translateY(-2px); box-shadow: 0 14px 28px -16px rgb(0 0 0 / .7); }
 	.blur { position: absolute; inset: 0; width: 100%; height: 100%; transform: scale(1.35); object-fit: cover; filter: blur(28px) saturate(1.3) brightness(.7); z-index: -1; }
 	.sq { position: absolute; top: 50%; left: 50%; height: 78%; aspect-ratio: 1; translate: -50% -50%; object-fit: cover; border-radius: 8px; box-shadow: 0 12px 30px -8px rgb(0 0 0 / .65); }
-	.photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; opacity: 0; transition: opacity .3s ease; }
+	.photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; opacity: 0; transition: opacity var(--dur) var(--ease-out); }
 	.photo.in { opacity: 1; }
 	.mini { position: absolute; right: 12px; bottom: 10px; z-index: 1; width: 56px; height: 56px; border-radius: 4px; object-fit: cover; box-shadow: 0 2px 10px rgb(0 0 0 / .45); }
 	.cap-below { display: block; margin-top: 8px; color: var(--text-muted); font-size: 13px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

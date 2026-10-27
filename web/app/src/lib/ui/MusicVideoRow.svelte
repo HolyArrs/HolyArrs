@@ -108,7 +108,7 @@
 	.vcard { display: grid; gap: 8px; color: inherit; text-decoration: none; }
 	.frame { position: relative; display: block; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; background: var(--surface-2, #1c1c1e); }
 	.frame img, .frame video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
-	.frame video { opacity: 0; transition: opacity 0.3s ease; }
+	.frame video { opacity: 0; transition: opacity var(--dur) var(--ease-out); }
 	.frame video.in { opacity: 1; }
 	.badge { position: absolute; left: 8px; bottom: 8px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: rgb(0 0 0 / 0.55); color: #fff; }
 	.name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

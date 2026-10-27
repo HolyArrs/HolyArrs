@@ -146,7 +146,7 @@
 	.list, .kids { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 	.list { gap: 4px; }
 	.nrow, .ghead { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 8px; border-radius: var(--r-card); }
-	.nrow { transition: background var(--dur-fast); }
+	.nrow { transition: background var(--dur-fast) var(--ease-out); }
 	.nrow:hover, .ghead:hover { background: var(--surface-2); }
 	.ghead { width: 100%; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; font: inherit; }
 	.ghead:focus-visible { outline: none; box-shadow: var(--focus-ring); }
@@ -158,7 +158,7 @@
 	.thumb.big { width: 168px; }
 	.thumb.static { cursor: inherit; }
 	button.thumb:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.dim { position: absolute; inset: 0; background: rgb(0 0 0 / 38%); transition: background var(--dur-fast); }
+	.dim { position: absolute; inset: 0; background: rgb(0 0 0 / 38%); transition: background var(--dur-fast) var(--ease-out); }
 	button.thumb:hover .dim { background: rgb(0 0 0 / 20%); }
 	.ring-at { position: absolute; inset: 0; display: grid; place-items: center; }
 	.ring-at :global(.ring) { border-radius: 50%; background: rgb(0 0 0 / 45%); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }

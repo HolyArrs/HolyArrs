@@ -158,8 +158,8 @@
 	.et-row span:first-child, .et-field > span { display: grid; gap: 3px; }
 	.et-row b, .et-field b { font: 600 15px/1.2 var(--font-ui); }
 	.et-row small, .et-field small { color: var(--text-muted); font: 500 13px/1.35 var(--font-ui); }
-	.et-switch { position: relative; flex: none; width: 44px; height: 26px; border-radius: 99px; background: color-mix(in srgb, var(--text) 18%, transparent); transition: background .2s ease; }
-	.et-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 99px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 25%); transition: transform .2s ease; }
+	.et-switch { position: relative; flex: none; width: 44px; height: 26px; border-radius: 99px; background: color-mix(in srgb, var(--text) 18%, transparent); transition: background var(--dur-fast) var(--ease-out); }
+	.et-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 99px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 25%); transition: transform var(--dur-fast) var(--ease-out); }
 	.et-switch.on { background: #30a46c; }
 	.et-switch.on::after { transform: translateX(18px); }
 	.et-field { display: grid; gap: 8px; padding: 14px 16px; border-radius: 14px; background: var(--surface-2); }

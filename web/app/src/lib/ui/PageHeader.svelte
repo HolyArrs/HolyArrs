@@ -48,7 +48,7 @@
 			line-height: 44px; text-align: center; font: var(--t-headline); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 			background: var(--sidebar-bg); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
 			color: var(--text); border-bottom: 1px solid var(--line); opacity: 0; visibility: hidden; translate: 0 -6px; pointer-events: none;
-			transition: opacity var(--dur-fast) ease, translate var(--dur-fast) var(--ease-out), visibility 0s linear var(--dur-fast);
+			transition: opacity var(--dur-fast) var(--ease-out), translate var(--dur-fast) var(--ease-out), visibility 0s linear var(--dur-fast);
 		}
 		.mini.show { opacity: 1; visibility: visible; translate: 0 0; transition-delay: 0s; }
 		h1 { font-size: 30px; }

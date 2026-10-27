@@ -528,7 +528,7 @@
 	.cell.out .num { color: var(--text-muted); }
 	.num { align-self: flex-start; display: inline-grid; place-items: center; min-width: 26px; height: 26px; padding: 0 4px; border-radius: 999px; color: var(--text-muted); font: var(--t-subhead); font-variant-numeric: tabular-nums; }
 	.today .num { background: var(--text); color: var(--bg); font-weight: 700; }
-	.ev { display: flex; align-items: center; gap: 6px; min-height: 26px; padding: 2px 6px; border-radius: 6px; background: var(--surface-2); color: var(--text); font: var(--t-footnote); font-weight: 500; min-width: 0; transition: background var(--dur-fast); }
+	.ev { display: flex; align-items: center; gap: 6px; min-height: 26px; padding: 2px 6px; border-radius: 6px; background: var(--surface-2); color: var(--text); font: var(--t-footnote); font-weight: 500; min-width: 0; transition: background var(--dur-fast) var(--ease-out); }
 	.ev:hover { background: var(--surface-3); }
 	.ev:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.ev-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

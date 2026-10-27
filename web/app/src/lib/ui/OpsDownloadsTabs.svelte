@@ -20,8 +20,8 @@
 
 <style>
 	.tabs { display: flex; gap: 4px; margin: -8px 0 24px; max-width: 100%; border-bottom: 1px solid var(--line); }
-	a { position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border-radius: 8px 8px 0 0; color: var(--text-muted); font: var(--t-subhead); font-size: 15px; white-space: nowrap; transition: color var(--dur-fast); }
-	a::after { content: ''; position: absolute; left: 12px; right: 12px; bottom: -1px; height: 2px; border-radius: 2px; background: transparent; transition: background var(--dur-fast); }
+	a { position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border-radius: 8px 8px 0 0; color: var(--text-muted); font: var(--t-subhead); font-size: 15px; white-space: nowrap; transition: color var(--dur-fast) var(--ease-out); }
+	a::after { content: ''; position: absolute; left: 12px; right: 12px; bottom: -1px; height: 2px; border-radius: 2px; background: transparent; transition: background var(--dur-fast) var(--ease-out); }
 	a:hover { color: var(--text); }
 	a[aria-current='page'] { color: var(--text); font-weight: 600; }
 	a[aria-current='page']::after { background: var(--accent); }

@@ -61,19 +61,19 @@
 	.cat {
 		position: relative; isolation: isolate; container-type: inline-size; display: block; height: 84px; overflow: hidden;
 		border-radius: 14px; color: #fff; background: #120a0b; border: 1px solid rgba(255, 255, 255, .07);
-		transition: transform .45s var(--ease-tile), box-shadow .45s var(--ease-tile), border-color .45s var(--ease-tile);
+		transition: transform var(--dur-slow) var(--ease-tile), box-shadow var(--dur-slow) var(--ease-tile), border-color var(--dur-slow) var(--ease-tile);
 	}
 	/* At rest a grey, dim still; on hover it comes up in its own colour. */
-	.art { position: absolute; inset: 0; z-index: -3; width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.2); opacity: .3; transition: opacity .5s var(--ease-tile), filter .5s var(--ease-tile), transform .7s var(--ease-tile); }
+	.art { position: absolute; inset: 0; z-index: -3; width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.2); opacity: .3; transition: opacity var(--dur-slow) var(--ease-tile), filter var(--dur-slow) var(--ease-tile), transform var(--dur-slow) var(--ease-tile); }
 	/* The dark glass from the left keeps the wordmark legible. */
-	.cat::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, #0b0708 22%, rgba(11, 7, 8, .35) 70%, transparent); transition: opacity .5s var(--ease-tile); }
+	.cat::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, #0b0708 22%, rgba(11, 7, 8, .35) 70%, transparent); transition: opacity var(--dur-slow) var(--ease-tile); }
 	.txt { position: absolute; left: 14px; right: 12px; bottom: 10px; display: flex; flex-direction: column; gap: 4px; }
 	small { font: 600 10px/1 var(--font-ui); letter-spacing: .14em; text-transform: uppercase; color: #ff4a52; }
 	/* One line always: the size shrinks to the tile width by name length (Anton caps run about .5em). */
 	strong {
 		display: flex; align-items: center; gap: 2px; white-space: nowrap; text-transform: uppercase;
 		font: 400 min(34px, calc((100cqi - 30px) / (var(--chars) * .52))) / .9 Anton, var(--font-ui), sans-serif;
-		letter-spacing: .005em; transform-origin: left bottom; transition: transform .5s var(--ease-tile), letter-spacing .5s var(--ease-tile);
+		letter-spacing: .005em; transform-origin: left bottom; transition: transform var(--dur-slow) var(--ease-tile), letter-spacing var(--dur-slow) var(--ease-tile);
 	}
 	.cat:is(:hover, :focus-visible) .art { opacity: .6; filter: none; transform: scale(1.08); }
 	.cat:is(:hover, :focus-visible) strong { transform: scale(1.02); }

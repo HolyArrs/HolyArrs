@@ -199,8 +199,8 @@
 		border-radius: var(--r-btn);
 		cursor: pointer;
 		transition:
-			border-color var(--dur),
-			background var(--dur-fast);
+			border-color var(--dur) var(--ease-out),
+			background var(--dur-fast) var(--ease-out);
 	}
 	.preset:hover {
 		background: var(--surface-3);

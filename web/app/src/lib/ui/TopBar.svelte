@@ -101,7 +101,7 @@
 	.ui-topbar { will-change: transform; }
 	.ui-topbar.away { transform: translateY(-100%); pointer-events: none; }
 	/* Over a page hero the bar is see-through (no glass, no line); the glass fades in once the hero has scrolled by. */
-	.ui-topbar { transition: transform var(--bar-glide), background-color 400ms ease, border-color 400ms ease; }
+	.ui-topbar { transition: transform var(--bar-glide), background-color var(--dur-slow) var(--ease-out), border-color var(--dur-slow) var(--ease-out); }
 	:global(html.over-hero) .ui-topbar { background-color: transparent; border-bottom-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
 	@media (prefers-reduced-motion: reduce) { .ui-topbar { transition: none; } }
 	.lead, .trail { display: flex; align-items: center; gap: 4px; min-width: 0; }
@@ -112,7 +112,7 @@
 	.nav { display: flex; align-items: center; height: 44px; padding: 0 2px; }
 	.nav :global(button) { width: 38px; height: 38px; border-radius: 999px; }
 	.crumbs { display: flex; align-items: center; min-width: 0; margin-left: 8px; height: 44px; padding: 0 18px; font: 500 13px/1 var(--font-ui); color: var(--text-muted); white-space: nowrap; }
-	.crumbs a { color: var(--text-muted); text-decoration: none; transition: color 150ms ease; }
+	.crumbs a { color: var(--text-muted); text-decoration: none; transition: color var(--dur-fast) var(--ease-out); }
 	.crumbs a:hover { color: var(--text); }
 	.crumbs .sep { margin: 0 6px; opacity: .5; }
 	.crumbs .here { overflow: hidden; text-overflow: ellipsis; max-width: 28vw; color: var(--text); font-weight: 600; }

@@ -308,16 +308,16 @@
 	.eyebrow { font: 600 11px/1.3 var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
 	.h-title { margin-top: 2px; font-size: 17px; line-height: 1.3; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.h-artist { font-size: 17px; line-height: 1.3; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 8px; }
-	.art { position: relative; display: block; aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden; background: var(--surface-2); transition: transform 0.25s ease, filter 0.25s ease, box-shadow 0.25s ease; }
+	.art { position: relative; display: block; aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden; background: var(--surface-2); transition: transform var(--dur) var(--ease-out), filter var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out); }
 	.wide { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
 	.shade { position: absolute; inset: 0; background: linear-gradient(to top, rgb(0 0 0 / 0.6), transparent 45%); }
 	.note-below { display: block; margin-top: 8px; color: var(--text-muted); font-size: 13px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.cover { position: absolute; right: 64px; bottom: 10px; width: 60px; height: 60px; border-radius: 4px; object-fit: cover; box-shadow: 0 2px 10px rgb(0 0 0 / 0.4); }
 	.h-card:hover .art, .h-link:focus-visible .art { transform: translateY(-3px); filter: brightness(1.08); box-shadow: 0 10px 24px rgb(0 0 0 / 0.22); }
 	/* Ask/Add: a round glyph at the art's bottom-right, on hover or focus; the cover sits to its left. */
-	.h-act { position: absolute; bottom: 16px; right: 12px; opacity: 0; transition: opacity 0.2s ease; }
+	.h-act { position: absolute; bottom: 16px; right: 12px; opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
 	.h-card:hover .h-act, .h-card:focus-within .h-act { opacity: 1; }
-	.paddle { position: absolute; top: calc(50% + 2.3em); transform: translateY(-50%); width: 36px; height: 36px; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer; background: color-mix(in srgb, var(--surface-1, var(--bg)) 86%, transparent); color: var(--text); box-shadow: 0 2px 10px rgb(0 0 0 / 0.25); opacity: 0; pointer-events: none; transition: opacity 0.25s ease; z-index: 2; }
+	.paddle { position: absolute; top: calc(50% + 2.3em); transform: translateY(-50%); width: 36px; height: 36px; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer; background: color-mix(in srgb, var(--surface-1, var(--bg)) 86%, transparent); color: var(--text); box-shadow: 0 2px 10px rgb(0 0 0 / 0.25); opacity: 0; pointer-events: none; transition: opacity var(--dur) var(--ease-out); z-index: 2; }
 	.paddle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 	.paddle.prev { left: -10px; }
 	.paddle.next { right: -10px; }

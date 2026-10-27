@@ -47,7 +47,7 @@
 		.content { transition: margin-left var(--dur) var(--ease-out); }
 		.collapsed .content { transition-delay: var(--dur-fast); }
 	}
-	.scrim { position: fixed; inset: 0; z-index: 39; background: var(--scrim); border: 0; animation: fade var(--dur-fast) ease both; }
+	.scrim { position: fixed; inset: 0; z-index: 39; background: var(--scrim); border: 0; animation: fade var(--dur-fast) var(--ease-out) both; }
 	@keyframes fade { from { opacity: 0; } }
 	@media (min-width: 768px) and (max-width: 1023px) { .ui-shell { --space: var(--sidebar-collapsed); } }
 	@media (max-width: 767px) { .content { margin-left: 0; } .scrim { display: none; } }

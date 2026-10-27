@@ -153,14 +153,14 @@
 
 <style>
 	.lp { --rx: 0deg; --ry: 0deg; position: relative; min-width: 0; display: flex; flex-direction: column; gap: 3px; opacity: 0; transform: translateY(12px); }
-	.lp.shown { opacity: 1; transform: none; transition: opacity 220ms var(--ease-out) var(--rise-delay, 0ms), transform 220ms var(--ease-out) var(--rise-delay, 0ms); }
+	.lp.shown { opacity: 1; transform: none; transition: opacity var(--dur) var(--ease-out) var(--rise-delay, 0ms), transform var(--dur) var(--ease-out) var(--rise-delay, 0ms); }
 
 	/* Music is square art (artist photos); movies and shows keep the 2:3 poster. */
 	.lp.square { --poster-ratio: 1 / 1; }
-	.frame { container-type: inline-size; position: relative; aspect-ratio: var(--poster-ratio); margin-bottom: 6px; border-radius: var(--r-card); transform: perspective(800px) translateY(var(--ty, 0)) scale(var(--s, 1)) rotateX(var(--rx)) rotateY(var(--ry)); transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out); box-shadow: var(--shadow-card); will-change: transform; }
+	.frame { container-type: inline-size; position: relative; aspect-ratio: var(--poster-ratio); margin-bottom: 6px; border-radius: var(--r-card); transform: perspective(800px) translateY(var(--ty, 0)) scale(var(--s, 1)) rotateX(var(--rx)) rotateY(var(--ry)); transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); box-shadow: var(--shadow-card); will-change: transform; }
 	.art { position: absolute; inset: 0; display: block; overflow: hidden; border-radius: inherit; background: var(--surface-2); color: var(--text); }
 	.art:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 220ms var(--ease-out); }
+	img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--dur) var(--ease-out); }
 	img.in { opacity: 1; }
 
 	/* Corner badge: only when the title needs a look. */
@@ -173,7 +173,7 @@
 
 	/* Health line on every poster's foot (scaled, never resized). */
 	.line { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgb(0 0 0 / 38%); }
-	.line i { position: absolute; inset: 0; transform-origin: left; background: var(--ok-on-art); transition: transform 240ms var(--ease-out); }
+	.line i { position: absolute; inset: 0; transform-origin: left; background: var(--ok-on-art); transition: transform var(--dur) var(--ease-out); }
 	.line.busy i { background: var(--info-on-art); }
 	.line.gap i { background: var(--wait-on-art, #ffb340); }
 	.line.gap { background: color-mix(in srgb, var(--fail-on-art) 45%, rgb(0 0 0 / 40%)); }
@@ -182,7 +182,7 @@
 
 	/* Frosted panel over the lower third, Apple TV style: a strong blur under a near-solid tint, so the text never sits on raw picture
 	   and reads at 4.5:1 or better over white and busy posters alike. Only the panel fades; the text never moves. */
-	.glass { --gp-bg: rgb(244 244 246 / 86%); --gp-fg: #1d1d1f; --gp-fg2: rgb(60 60 67); --gp-btn: rgb(0 0 0 / 8%); --gp-btn-hi: rgb(0 0 0 / 14%); --gp-edge: rgb(255 255 255 / 60%); position: absolute; left: 0; right: 0; bottom: 0; min-height: 34%; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; padding: clamp(7px, 6cqi, 10px) clamp(7px, 6cqi, 10px) clamp(6px, 5.5cqi, 9px); box-sizing: border-box; border-radius: 0 0 var(--r-card) var(--r-card); color: var(--gp-fg); background: var(--gp-bg); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); box-shadow: inset 0 1px 0 var(--gp-edge); opacity: 0; pointer-events: none; transition: opacity 150ms var(--ease-in); }
+	.glass { --gp-bg: rgb(244 244 246 / 86%); --gp-fg: #1d1d1f; --gp-fg2: rgb(60 60 67); --gp-btn: rgb(0 0 0 / 8%); --gp-btn-hi: rgb(0 0 0 / 14%); --gp-edge: rgb(255 255 255 / 60%); position: absolute; left: 0; right: 0; bottom: 0; min-height: 34%; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; padding: clamp(7px, 6cqi, 10px) clamp(7px, 6cqi, 10px) clamp(6px, 5.5cqi, 9px); box-sizing: border-box; border-radius: 0 0 var(--r-card) var(--r-card); color: var(--gp-fg); background: var(--gp-bg); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); box-shadow: inset 0 1px 0 var(--gp-edge); opacity: 0; pointer-events: none; transition: opacity var(--dur-fast) var(--ease-in); }
 	@media (prefers-color-scheme: dark) { :global(:root:not([data-theme='light'])) .glass { --gp-bg: rgb(28 28 30 / 80%); --gp-fg: #fff; --gp-fg2: rgb(235 235 245 / 82%); --gp-btn: rgb(255 255 255 / 14%); --gp-btn-hi: rgb(255 255 255 / 24%); --gp-edge: rgb(255 255 255 / 12%); } }
 	:global([data-theme='dark']) .glass { --gp-bg: rgb(28 28 30 / 80%); --gp-fg: #fff; --gp-fg2: rgb(235 235 245 / 82%); --gp-btn: rgb(255 255 255 / 14%); --gp-btn-hi: rgb(255 255 255 / 24%); --gp-edge: rgb(255 255 255 / 12%); }
 	/* The panel's text and buttons follow the poster's width (container query units), so every line fits on the smallest posters. */
@@ -197,7 +197,7 @@
 	/* A small square card has less height for the panel: the state and two facts, then the buttons. */
 	@container (max-width: 200px) { .lp.square .g-fact:nth-child(n + 4) { display: none; } }
 	.g-acts { display: flex; align-items: center; gap: clamp(4px, 3.6cqi, 6px); margin-top: clamp(4px, 3.6cqi, 6px); min-width: 0; }
-	.g-btn, .g-open { display: inline-grid; place-items: center; height: clamp(24px, 18cqi, 28px); border: 0; border-radius: 99px; color: var(--gp-fg); background: var(--gp-btn); cursor: pointer; transition: background 150ms var(--ease-out), transform 150ms var(--ease-out); }
+	.g-btn, .g-open { display: inline-grid; place-items: center; height: clamp(24px, 18cqi, 28px); border: 0; border-radius: 99px; color: var(--gp-fg); background: var(--gp-btn); cursor: pointer; transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
 	.g-btn { width: clamp(24px, 18cqi, 28px); flex: none; padding: 0; }
 	.g-btn.on { color: var(--ok-text); }
 	.g-open { margin-left: auto; display: inline-flex; gap: 2px; padding: 0 clamp(5px, 4.5cqi, 8px) 0 clamp(7px, 6.5cqi, 11px); font-weight: 600; font-size: clamp(10px, 7.4cqi, 12px); line-height: 1; font-family: var(--font-text, inherit); text-decoration: none; flex: none; }
@@ -207,12 +207,12 @@
 
 	@media (hover: hover) and (pointer: fine) {
 		.frame:hover, .frame:focus-within { --ty: -4px; --s: 1.03; box-shadow: var(--shadow-lift); z-index: 2; }
-		.frame:hover .glass, .frame:focus-within .glass { opacity: 1; pointer-events: auto; transition: opacity 220ms var(--ease-out); }
-		.frame:hover .badge, .frame:focus-within .badge { opacity: 0; transition: opacity 150ms var(--ease-out); }
+		.frame:hover .glass, .frame:focus-within .glass { opacity: 1; pointer-events: auto; transition: opacity var(--dur) var(--ease-out); }
+		.frame:hover .badge, .frame:focus-within .badge { opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
 	}
 	/* Keyboard focus shows the panel with no tilt. */
 	.frame:focus-within:not(:hover) { --rx: 0deg !important; --ry: 0deg !important; }
-	.badge { transition: opacity 200ms var(--ease-out); }
+	.badge { transition: opacity var(--dur-fast) var(--ease-out); }
 
 	/* Select mode: posters step back a little; the page's check springs in. */
 	.lp.selecting .frame { --s: 0.95; }

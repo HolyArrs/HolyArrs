@@ -108,8 +108,8 @@
 	.ds-row span:first-child { display: grid; gap: 3px; }
 	.ds-row b { font: 600 15px/1.2 var(--font-ui); }
 	.ds-row small { color: var(--text-muted); font: 500 13px/1.35 var(--font-ui); }
-	.ds-switch { position: relative; flex: none; width: 44px; height: 26px; border-radius: 99px; background: color-mix(in srgb, var(--text) 18%, transparent); transition: background .2s ease; }
-	.ds-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 99px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 25%); transition: transform .2s ease; }
+	.ds-switch { position: relative; flex: none; width: 44px; height: 26px; border-radius: 99px; background: color-mix(in srgb, var(--text) 18%, transparent); transition: background var(--dur-fast) var(--ease-out); }
+	.ds-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 99px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 25%); transition: transform var(--dur-fast) var(--ease-out); }
 	.ds-switch.on { background: var(--danger, #e5484d); }
 	.ds-switch.on::after { transform: translateX(18px); }
 	.ds-plan { padding: 14px 16px; border-radius: 14px; background: color-mix(in srgb, var(--text) 5%, transparent); }

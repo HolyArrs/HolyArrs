@@ -810,7 +810,7 @@ void main() {
 		z-index: 1;
 		isolation: isolate;
 		opacity: 0;
-		animation: fade-in 1.6s ease-in-out forwards;
+		animation: fade-in 1.6s var(--ease-in-out) forwards;
 	}
 	/* The first picture is there at once, as its own mosaic (no fade from
 	   dark); later ones crossfade slowly. */
@@ -845,7 +845,7 @@ void main() {
 	/* Until the mosaic has its first frame, nothing sharp peeks through. */
 	.kb:not(:global(.mosaic)):not(:global(.sharp)) .pic { opacity: 0; }
 	/* The full-size picture over the lighter one: a crossfade once decoded, no jump. */
-	.hi { opacity: 0; transition: opacity 0.9s ease-in-out; }
+	.hi { opacity: 0; transition: opacity var(--dur-hero) var(--ease-in-out); }
 	.kb .hi:global(.in) { opacity: 1; }
 	.kb:global(.sharp) .mz { display: none; }
 	/* A change: the old picture stays sharp underneath until the wave is done;
@@ -867,9 +867,9 @@ void main() {
 		object-position: left bottom;
 		filter: drop-shadow(0 2px 14px rgb(0 0 0 / 0.65));
 		opacity: 0;
-		animation: logo-out 1.6s ease-in-out forwards;
+		animation: logo-out 1.6s var(--ease-in-out) forwards;
 	}
-	.logo.top { animation: logo-in 1.6s ease-in-out forwards; }
+	.logo.top { animation: logo-in 1.6s var(--ease-in-out) forwards; }
 	/* The scrim: a soft vignette, a darker pool behind the centred card so it
 	   reads on bright frames, and a floor for the logo. */
 	.shade {
@@ -885,7 +885,7 @@ void main() {
 	@keyframes logo-in { from { opacity: 0; } to { opacity: 0.92; } }
 	@keyframes logo-out { from { opacity: 0.92; } to { opacity: 0; } }
 	.still .kb { animation: none; transform: none; }
-	.still .layer:not(.first) { animation: fade-in 2.4s ease-in-out forwards; }
+	.still .layer:not(.first) { animation: fade-in 2.4s var(--ease-in-out) forwards; }
 	.still .layer:not(.top) { animation: none; opacity: 1; }
 	.still .logo { animation: none; opacity: 0; }
 	.still .logo.top { opacity: 0.92; }

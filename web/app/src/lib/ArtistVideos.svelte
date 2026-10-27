@@ -90,9 +90,9 @@
 	.videos { min-width: 0; }
 	.vcard { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 0; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; }
 	.pic { position: relative; display: block; aspect-ratio: 16 / 9; margin-bottom: 5px; border-radius: 9px; overflow: hidden; background: var(--surface-2); }
-	.pic img { width: 100%; height: 100%; object-fit: cover; transition: transform 420ms var(--ease-out); }
+	.pic img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--dur-slow) var(--ease-out); }
 	.vcard:hover img { transform: scale(1.04); }
-	.glyph { position: absolute; left: 8px; bottom: 8px; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: rgb(0 0 0 / 45%); border: 1px solid rgb(255 255 255 / 35%); color: #fff; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1), background 200ms ease; }
+	.glyph { position: absolute; left: 8px; bottom: 8px; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: rgb(0 0 0 / 45%); border: 1px solid rgb(255 255 255 / 35%); color: #fff; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: transform var(--dur) var(--ease-spring), background var(--dur-fast) var(--ease-out); }
 	.vcard:hover .glyph { transform: scale(1.1); background: rgb(0 0 0 / 60%); }
 	.len { position: absolute; right: 8px; bottom: 8px; padding: 2px 6px; border-radius: 6px; background: rgb(0 0 0 / 60%); color: #fff; font: 600 11.5px/1.3 var(--font-ui); font-variant-numeric: tabular-nums; }
 	.vcard:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 10px; }

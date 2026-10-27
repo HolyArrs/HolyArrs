@@ -35,7 +35,7 @@
 		background: color-mix(in srgb, var(--hue) 70%, #000); box-shadow: var(--shadow-card);
 		transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out);
 	}
-	img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.25) brightness(1.1); opacity: 0; transition: opacity var(--dur) ease, transform var(--dur-slow) var(--ease-out); }
+	img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.25) brightness(1.1); opacity: 0; transition: opacity var(--dur) var(--ease-out), transform var(--dur-slow) var(--ease-out); }
 	img.in { opacity: 1; }
 	/* Cinematic duotone: the grey picture under the category's colour fading into near-black (strong top, deep bottom). */
 	.wash { position: absolute; inset: 0; background: linear-gradient(160deg, var(--hue) 0%, color-mix(in srgb, var(--hue) 18%, #050505) 100%); mix-blend-mode: multiply; opacity: 0.95; }
@@ -65,7 +65,7 @@
 	}
 	/* Hover or keyboard focus: the picture in its own full colour at once, no tint and no fade. */
 	.ui-btile:hover img, .ui-btile:focus-visible img { filter: none; }
-	.plain img { transition: opacity var(--dur) ease, transform var(--dur-slow) var(--ease-out); }
+	.plain img { transition: opacity var(--dur) var(--ease-out), transform var(--dur-slow) var(--ease-out); }
 	.ui-btile:hover .wash, .ui-btile:focus-visible .wash { opacity: 0; }
 	.ui-btile:hover .shade, .ui-btile:focus-visible .shade { background: linear-gradient(to top, rgb(0 0 0 / 0.7) 0%, transparent 55%); }
 </style>

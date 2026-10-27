@@ -168,7 +168,7 @@
 	.pill { min-height: 32px; padding: 4px 14px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--text); font: var(--t-subhead); font-weight: 600; cursor: pointer; }
 	.pill[aria-pressed='true'] { background: var(--text); color: var(--bg); border-color: var(--text); }
 	/* One card size for the whole row: reviews and More reviews. */
-	.rcard { position: relative; display: flex; flex-direction: column; gap: 10px; height: 236px; padding: 16px 18px; border-radius: var(--r-card); background: var(--surface-1); border: 1px solid var(--line); min-width: 0; transition: transform var(--dur) cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow var(--dur) var(--ease-out); }
+	.rcard { position: relative; display: flex; flex-direction: column; gap: 10px; height: 236px; padding: 16px 18px; border-radius: var(--r-card); background: var(--surface-1); border: 1px solid var(--line); min-width: 0; transition: transform var(--dur) var(--ease-spring), box-shadow var(--dur) var(--ease-out); }
 	.review:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift); }
 	.rcard p { margin: 0; }
 	.star, .their [aria-hidden] { color: #f5c518; }

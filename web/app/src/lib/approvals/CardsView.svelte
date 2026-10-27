@@ -77,11 +77,11 @@
 
 <style>
 	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 16px; }
-	.rcard { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: var(--r-panel); background: #16171a; color: var(--on-art); box-shadow: var(--shadow-card); transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), opacity var(--dur-fast); }
+	.rcard { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: var(--r-panel); background: #16171a; color: var(--on-art); box-shadow: var(--shadow-card); transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out); }
 	.rcard:hover { box-shadow: var(--shadow-lift); }
 	.rcard.chosen { box-shadow: 0 0 0 2px var(--accent), var(--shadow-lift); }
 	.rcard.sending { opacity: 0.6; }
-	.bd { position: absolute; inset: 0; z-index: -2; background-size: cover; background-position: center 30%; transition: transform 600ms var(--ease-out); }
+	.bd { position: absolute; inset: 0; z-index: -2; background-size: cover; background-position: center 30%; transition: transform var(--dur-slow) var(--ease-out); }
 	.music .bd { filter: blur(22px) saturate(1.3); transform: scale(1.25); }
 	.rcard:hover .bd { transform: scale(1.04); }
 	.music:hover .bd { transform: scale(1.3); }
@@ -101,7 +101,7 @@
 	.who time::before { content: '· '; }
 	.note { font: var(--t-footnote); color: var(--on-art-muted); overflow-wrap: anywhere; }
 	.acts { display: flex; align-items: center; gap: 8px; margin-top: auto; }
-	.big { flex: 1 1 0; min-width: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: var(--r-btn); font: var(--t-headline); font-size: 15px; white-space: nowrap; transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast); }
+	.big { flex: 1 1 0; min-width: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: var(--r-btn); font: var(--t-headline); font-size: 15px; white-space: nowrap; transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
 	.big:active { transform: scale(0.97); }
 	.yes { background: var(--ok); color: #fff; }
 	.yes:hover { background: color-mix(in srgb, var(--ok) 86%, #fff); }

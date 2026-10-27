@@ -270,7 +270,7 @@
 	.al-count.full { background: color-mix(in srgb, #30a46c 16%, transparent); color: #30a46c; }
 	.al-count.part { background: color-mix(in srgb, #d4a72c 16%, transparent); color: #d4a72c; }
 	.al-count.none { background: color-mix(in srgb, var(--danger, #e5484d) 14%, transparent); color: var(--danger, #e5484d); }
-	.al-chev { margin-left: auto; display: grid; color: var(--text-muted); transition: transform .2s ease; }
+	.al-chev { margin-left: auto; display: grid; color: var(--text-muted); transition: transform var(--dur-fast) var(--ease-out); }
 	.al-row.open .al-chev { transform: rotate(180deg); }
 	.al-acts { display: flex; gap: 2px; }
 	.al-ico { display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 99px; background: none; color: var(--text-muted); cursor: pointer; }
@@ -302,7 +302,7 @@
 	.al-rowbtn small { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); }
 	.al-rowbtn :global(svg) { flex: none; color: var(--text-muted); }
 	.al-switch { position: relative; flex: none; width: 44px; height: 26px; border-radius: 99px; background: color-mix(in srgb, var(--text) 18%, transparent); }
-	.al-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 99px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 25%); transition: transform .2s ease; }
+	.al-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 99px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 25%); transition: transform var(--dur-fast) var(--ease-out); }
 	.al-switch.on { background: #30a46c; }
 	.al-switch.on::after { transform: translateX(18px); }
 	@media (max-width: 600px) {

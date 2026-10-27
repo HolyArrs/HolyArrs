@@ -358,32 +358,32 @@
 	.ui-grow.shown { visibility: visible; }
 	.media { position: relative; display: block; container-type: inline-size; aspect-ratio: var(--wide-ratio, 16 / 9); background: var(--surface-2); overflow: hidden; }
 	.media > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-	.media > img.big { opacity: 0; transition: opacity 200ms ease; }
+	.media > img.big { opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
 	.media > img.big.in { opacity: 1; }
-	.scrim { position: absolute; inset: auto 0 0; height: 55%; background: linear-gradient(to top, rgb(0 0 0 / 0.62), transparent); pointer-events: none; transition: opacity 600ms ease; }
+	.scrim { position: absolute; inset: auto 0 0; height: 55%; background: linear-gradient(to top, rgb(0 0 0 / 0.62), transparent); pointer-events: none; transition: opacity var(--dur-slow) var(--ease-out); }
 	/* The same bottom-left box as the card (WideCard), so the title doesn't grow or move as the card opens; once the trailer plays it settles a little smaller (Netflix). */
-	.name { position: absolute; left: 6%; bottom: 9%; z-index: 2; width: 40%; height: 13cqw; display: flex; align-items: flex-end; justify-content: flex-start; pointer-events: none; transform-origin: left bottom; transition: opacity 300ms ease-out, transform 600ms var(--ease-out); }
+	.name { position: absolute; left: 6%; bottom: 9%; z-index: 2; width: 40%; height: 13cqw; display: flex; align-items: flex-end; justify-content: flex-start; pointer-events: none; transform-origin: left bottom; transition: opacity var(--dur) var(--ease-out), transform var(--dur-slow) var(--ease-out); }
 	.name.lifted { bottom: 9%; }
 	.name.playing { transform: scale(.8); }
 	.badge.playing { opacity: 0; }
-	.tp { position: absolute; inset: 0; transition: opacity 500ms ease-out; }
+	.tp { position: absolute; inset: 0; transition: opacity var(--dur-slow) var(--ease-out); }
 	.tp.held { opacity: 0; }
 	/* The expand button shows while the card is hovered or focused. */
-	.ui-grow :global(.corner) { opacity: 0; transition: opacity var(--dur-fast) ease; }
+	.ui-grow :global(.corner) { opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
 	.ui-grow:hover :global(.corner), .ui-grow:focus-within :global(.corner) { opacity: 1; }
 	.word { font: 700 clamp(14px, 4.4cqw, 26px)/1.05 var(--font-display); letter-spacing: -0.02em; color: #fff; text-shadow: 0 2px 10px rgb(0 0 0 / 0.55); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-	.badge { transition: opacity 300ms ease-out; }
+	.badge { transition: opacity var(--dur) var(--ease-out); }
 	.scrim.playing { opacity: 0.5; }
 	.logo { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 2px 8px rgb(0 0 0 / 0.5)); }
 	/* The badges at their native size on the grown picture (no scale). */
 	.badge { position: absolute; inset: 0; z-index: 3; container: art / inline-size; pointer-events: none; }
 	.panel { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px 14px; opacity: 0; transform: translateY(-6px); }
-	.shown .panel { animation: panel-in 160ms cubic-bezier(.2, .8, .2, 1) 120ms both; }
+	.shown .panel { animation: panel-in var(--dur-fast) var(--ease-out) 120ms both; }
 	@keyframes panel-in { to { opacity: 1; transform: none; } }
 	.buttons { display: flex; align-items: center; gap: 8px; min-width: 0; }
 	.buttons :global(.ui-ibtn.glass) { background: var(--text); color: var(--surface-1); box-shadow: none; }
 	.buttons :global(.ui-ibtn.glass:hover) { background: color-mix(in srgb, var(--text) 85%, var(--surface-1)); }
-	.more { flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; color: var(--text); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--text) 40%, transparent); transition: box-shadow var(--dur-fast) ease, background-color var(--dur-fast) ease; }
+	.more { flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; color: var(--text); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--text) 40%, transparent); transition: box-shadow var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
 	.more:hover { box-shadow: inset 0 0 0 2px var(--text); background: var(--surface-2); }
 	.more:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.more.bell.on { background: var(--text); color: var(--bg); box-shadow: none; }
@@ -407,6 +407,6 @@
 	.tags i { color: var(--text-muted); font-style: normal; font-size: 9px; }
 	@media (prefers-reduced-motion: reduce) {
 		.shown .panel { animation: none; opacity: 1; transform: none; }
-		.name, .scrim { transition: opacity 200ms linear; }
+		.name, .scrim { transition: opacity var(--dur-fast) linear; }
 			}
 </style>

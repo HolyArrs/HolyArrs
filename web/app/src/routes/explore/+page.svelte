@@ -748,7 +748,7 @@
 	/* The type switch: in the page under the title; once scrolled past it floats as a glass pill under the top bar. */
 	.types-mark { height: 0; margin-top: -32px; }
 	.types { position: sticky; top: calc(var(--topbar) + 10px); z-index: 20; display: flex; justify-content: center; margin-top: -12px; pointer-events: none; }
-	.types :global(.ui-seg) { pointer-events: auto; transition: transform 320ms cubic-bezier(.2,.8,.2,1), box-shadow 320ms ease, background-color 320ms ease; transform-origin: top center; }
+	.types :global(.ui-seg) { pointer-events: auto; transition: transform var(--bar-glide), box-shadow var(--bar-glide), background-color var(--bar-glide); transform-origin: top center; }
 	.types.stuck :global(.ui-seg) { transform: scale(0.9); background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
 	.types :global(.ui-seg) { border-radius: 999px; padding: 3px; }
 	.types :global(.ui-seg .thumb) { top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / var(--n)); border-radius: 999px; }
@@ -764,7 +764,7 @@
 	.genre-pick { pointer-events: auto; margin-left: 8px; display: flex; align-items: center; }
 	/* Genres matches the tab pill: same height, type and glass. */
 	.genre-pick :global(.trigger) { min-height: 44px; border-radius: 999px; padding: 0 16px; font: 600 14px/1 var(--font-ui); background: var(--surface-2); color: var(--text); }
-	.genre-pick :global(.trigger) { transition: transform 320ms cubic-bezier(.2,.8,.2,1); transform-origin: top center; }
+	.genre-pick :global(.trigger) { transition: transform var(--bar-glide); transform-origin: top center; }
 	.types.stuck .genre-pick :global(.trigger) { transform: scale(0.9); }
 	.types.stuck .genre-pick :global(.trigger) { background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
 	/* The picker panel is the one scroll: a thin themed bar, never taller than the screen allows. */

@@ -885,7 +885,7 @@
 	/* The hero stays dark in both themes: a centred photo on a slowly panning wash. */
 	.hero { --hero-ink: #07080a; position: relative; isolation: isolate; min-height: clamp(460px, 52vw, 640px); display: flex; align-items: flex-end; justify-content: center; overflow: hidden; margin: calc(var(--s-6) * -1) calc(var(--gutter) * -1) 0; background: var(--hero-ink); color: #fff; }
 	.stage { position: absolute; inset: -6%; z-index: -2; animation: pan 48s ease-in-out infinite alternate; }
-	.art { width: 100%; height: 100%; object-fit: cover; object-position: center 22%; opacity: 0; transition: opacity 600ms ease-out; }
+	.art { width: 100%; height: 100%; object-fit: cover; object-position: center 22%; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); }
 	.art.in { opacity: .45; }
 	.art.soft { filter: blur(56px) saturate(150%); transform: scale(1.3); }
 	.art.soft.in { opacity: .6; }
@@ -895,26 +895,26 @@
 	.clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); pointer-events: none; }
 	@media (prefers-reduced-motion: reduce) { .clip { transition: none; } }
 	.clip.in { opacity: 1; }
-	.hero { transition: min-height 900ms var(--ease-out); }
+	.hero { transition: min-height var(--dur-hero) var(--ease-out); }
 	.hero.vid { min-height: min(56.25vw, 86vh); }
 	/* No photo and no video: a compact header (name and initials), never a tall empty block. */
 	.hero.bare { min-height: 0; background: linear-gradient(180deg, color-mix(in srgb, var(--hero-ink) 60%, var(--surface-2)), var(--hero-ink)); }
 	.hero.bare .hero-in { padding-top: 56px; }
 	.hero.vid .stage { inset: 0; animation: none; }
 	/* Video on: photo and name settle smaller at the bottom so the video leads. */
-	.hero-in { transform-origin: 50% 100%; transition: transform 1100ms cubic-bezier(.22, 1, .36, 1) 250ms, opacity 600ms ease 250ms; will-change: transform; }
+	.hero-in { transform-origin: 50% 100%; transition: transform var(--dur-hero) var(--ease-out) 250ms, opacity var(--dur-slow) var(--ease-out) 250ms; will-change: transform; }
 	.hero.vid .hero-in { transform: scale(.58); opacity: .92; }
 	@media (max-width: 600px) { .hero.vid .hero-in { transform: scale(.7); } }
 	@media (prefers-reduced-motion: reduce) { .hero-in { transition: none; } }
 	.vctl { position: absolute; right: clamp(16px, 4vw, 48px); bottom: clamp(16px, 2.5vw, 28px); z-index: 2; display: flex; gap: 8px; }
-	.vctl button { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); color: #fff; cursor: pointer; transition: background .2s; }
+	.vctl button { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); color: #fff; cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
 	.vctl button:hover { background: rgb(255 255 255 / 26%); }
 	.vctl button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 	@media (max-width: 600px) { .vctl { bottom: 12px; right: 12px; gap: 6px; } .vctl button { width: 34px; height: 34px; } }
 	.art.under, .art.soft.under { opacity: 0; transition-duration: 900ms; }
 	/* The photo gets a vignette and a dark foot; the video stays clear, with only a short foot so the name and photo read. */
 	.shade { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
-	.shade::before, .shade::after { content: ''; position: absolute; inset: 0; transition: opacity 900ms var(--ease-out); }
+	.shade::before, .shade::after { content: ''; position: absolute; inset: 0; transition: opacity var(--dur-hero) var(--ease-out); }
 	.shade::before { background: radial-gradient(ellipse 60% 55% at 50% 42%, rgb(7 8 10 / 0) 0%, rgb(7 8 10 / .55) 70%, var(--hero-ink) 100%), linear-gradient(to top, var(--hero-ink) 0%, rgb(7 8 10 / 0) 45%); }
 	.shade::after { background: linear-gradient(to top, rgb(7 8 10 / .72) 0%, rgb(7 8 10 / .34) 14%, rgb(7 8 10 / 0) 30%); opacity: 0; }
 	.hero.vid .shade::before { opacity: 0; }
@@ -928,7 +928,7 @@
 	.hero.full .clip { object-fit: contain; background: #000; }
 	.hero.full .vctl { right: max(24px, env(safe-area-inset-right)); bottom: max(24px, env(safe-area-inset-bottom)); gap: 10px; }
 	.hero.full .vctl button, .vexit { width: 44px; height: 44px; }
-	.vexit { position: absolute; top: max(20px, env(safe-area-inset-top)); right: max(24px, env(safe-area-inset-right)); z-index: 2; display: grid; place-items: center; border-radius: 50%; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); color: #fff; cursor: pointer; transition: background .2s; }
+	.vexit { position: absolute; top: max(20px, env(safe-area-inset-top)); right: max(24px, env(safe-area-inset-right)); z-index: 2; display: grid; place-items: center; border-radius: 50%; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); color: #fff; cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
 	.vexit:hover { background: rgb(255 255 255 / 26%); }
 	.vexit:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 	.chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 10px; border-radius: 999px; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); color: #fff; font: 600 13px/1.2 var(--font-ui); }
@@ -1028,7 +1028,7 @@
 	@media (max-width: 600px) { .stats div { padding: 4px 12px; } .stats dd { font-size: 18px; } }
 	.facts { margin: 0; color: rgb(255 255 255 / .7); font: var(--t-subhead); }
 	.round { display: flex; align-items: center; gap: 18px; margin-top: 8px; }
-	.rb { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgb(255 255 255 / .2); background: rgb(255 255 255 / .12); color: #fff; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); cursor: pointer; transition: transform 160ms var(--ease-out), background 160ms; }
+	.rb { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgb(255 255 255 / .2); background: rgb(255 255 255 / .12); color: #fff; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); cursor: pointer; transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
 	.rb:hover { background: rgb(255 255 255 / .22); transform: scale(1.05); }
 	.rb:active { transform: scale(.96); }
 	.rb.on { background: #fff; color: var(--hero-ink); }
