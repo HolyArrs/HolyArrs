@@ -162,7 +162,7 @@
 	img.in { opacity: 1; }
 
 	/* Corner badge: only when the title needs a look. */
-	.badge { position: absolute; top: 7px; right: 7px; display: inline-flex; align-items: center; gap: 3px; height: 22px; min-width: 22px; padding: 0 6px; box-sizing: border-box; justify-content: center; border-radius: 99px; font-weight: 600; font-size: 11px; line-height: 1; font-family: var(--font-text, inherit); font-variant-numeric: tabular-nums; color: #fff; background: rgb(20 20 22 / 72%); backdrop-filter: blur(8px) saturate(160%); -webkit-backdrop-filter: blur(8px) saturate(160%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 14%); }
+	.badge { position: absolute; top: 7px; right: 7px; display: inline-flex; align-items: center; gap: 3px; height: 22px; min-width: 22px; padding: 0 6px; box-sizing: border-box; justify-content: center; border-radius: 99px; font-weight: 600; font-size: 11px; line-height: 1; font-family: var(--font-text, inherit); font-variant-numeric: tabular-nums; color: #fff; background: rgb(20 20 22 / 72%); -webkit-backdrop-filter: blur(8px) saturate(160%); backdrop-filter: blur(8px) saturate(160%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 14%); }
 	.badge.fail { color: var(--fail-on-art); }
 	.badge.busy { color: var(--info-on-art); }
 	.badge.gap { color: var(--wait-on-art, #ffb340); }
@@ -178,27 +178,32 @@
 	.line.fail i { background: var(--fail-on-art); }
 	.line.idle i { background: rgb(255 255 255 / 55%); }
 
-	/* Glass panel over the lower third. Enter 220 ms, leave 150 ms. */
-	.glass { position: absolute; left: 0; right: 0; bottom: 0; min-height: 34%; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; padding: clamp(7px, 6cqi, 10px) clamp(7px, 6cqi, 10px) clamp(6px, 5.5cqi, 9px); box-sizing: border-box; border-radius: 0 0 var(--r-card) var(--r-card); color: #fff; background: linear-gradient(to bottom, rgb(18 18 20 / 42%), rgb(18 18 20 / 70%)); backdrop-filter: blur(18px) saturate(170%); -webkit-backdrop-filter: blur(18px) saturate(170%); box-shadow: inset 0 1px 0 rgb(255 255 255 / 16%); opacity: 0; transform: translateY(14px); pointer-events: none; transition: opacity 150ms var(--ease-in), transform 150ms var(--ease-in); }
+	/* Frosted panel over the lower third, Apple TV style: a strong blur under a near-solid tint, so the text never sits on raw picture
+	   and reads at 4.5:1 or better over white and busy posters alike. Only the panel fades; the text never moves. */
+	.glass { --gp-bg: rgb(244 244 246 / 86%); --gp-fg: #1d1d1f; --gp-fg2: rgb(60 60 67); --gp-btn: rgb(0 0 0 / 8%); --gp-btn-hi: rgb(0 0 0 / 14%); --gp-edge: rgb(255 255 255 / 60%); position: absolute; left: 0; right: 0; bottom: 0; min-height: 34%; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; padding: clamp(7px, 6cqi, 10px) clamp(7px, 6cqi, 10px) clamp(6px, 5.5cqi, 9px); box-sizing: border-box; border-radius: 0 0 var(--r-card) var(--r-card); color: var(--gp-fg); background: var(--gp-bg); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); box-shadow: inset 0 1px 0 var(--gp-edge); opacity: 0; pointer-events: none; transition: opacity 150ms var(--ease-in); }
+	@media (prefers-color-scheme: dark) { :global(:root:not([data-theme='light'])) .glass { --gp-bg: rgb(28 28 30 / 80%); --gp-fg: #fff; --gp-fg2: rgb(235 235 245 / 82%); --gp-btn: rgb(255 255 255 / 14%); --gp-btn-hi: rgb(255 255 255 / 24%); --gp-edge: rgb(255 255 255 / 12%); } }
+	:global([data-theme='dark']) .glass { --gp-bg: rgb(28 28 30 / 80%); --gp-fg: #fff; --gp-fg2: rgb(235 235 245 / 82%); --gp-btn: rgb(255 255 255 / 14%); --gp-btn-hi: rgb(255 255 255 / 24%); --gp-edge: rgb(255 255 255 / 12%); }
 	/* The panel's text and buttons follow the poster's width (container query units), so every line fits on the smallest posters. */
-	.g-state { margin: 0; font-weight: 600; font-size: clamp(10px, 7.4cqi, 12px); line-height: 1.3; font-family: var(--font-text, inherit); color: var(--ok-on-art); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	.g-state.busy { color: var(--info-on-art); }
-	.g-state.gap { color: var(--wait-on-art, #ffb340); }
-	.g-state.fail { color: var(--fail-on-art); }
-	.g-state.idle { color: rgb(255 255 255 / 88%); }
-	.g-fact { margin: 0; font-weight: 400; font-size: clamp(9.5px, 6.8cqi, 11px); line-height: 1.35; font-family: var(--font-text, inherit); color: rgb(255 255 255 / 80%); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	/* One clear line (the state, with its colour as a dot), then quiet facts. */
+	.g-state { display: flex; align-items: center; gap: 5px; margin: 0; font-weight: 600; font-size: clamp(10px, 7.4cqi, 12px); line-height: 1.3; font-family: var(--font-text, inherit); color: var(--gp-fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.g-state::before { content: ''; flex: none; width: 6px; height: 6px; border-radius: 99px; background: var(--ok-text); }
+	.g-state.busy::before { background: var(--info-text); }
+	.g-state.gap::before { background: var(--wait-text); }
+	.g-state.fail::before { background: var(--fail-text); }
+	.g-state.idle::before { background: var(--gp-fg2); }
+	.g-fact { margin: 0; font-weight: 400; font-size: clamp(9.5px, 6.8cqi, 11px); line-height: 1.35; font-family: var(--font-text, inherit); color: var(--gp-fg2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.g-acts { display: flex; align-items: center; gap: clamp(4px, 3.6cqi, 6px); margin-top: clamp(4px, 3.6cqi, 6px); min-width: 0; }
-	.g-btn, .g-open { display: inline-grid; place-items: center; height: clamp(24px, 18cqi, 28px); border: 0; border-radius: 99px; color: #fff; background: rgb(255 255 255 / 16%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 18%); cursor: pointer; transition: background 150ms var(--ease-out), transform 150ms var(--ease-out); }
+	.g-btn, .g-open { display: inline-grid; place-items: center; height: clamp(24px, 18cqi, 28px); border: 0; border-radius: 99px; color: var(--gp-fg); background: var(--gp-btn); cursor: pointer; transition: background 150ms var(--ease-out), transform 150ms var(--ease-out); }
 	.g-btn { width: clamp(24px, 18cqi, 28px); flex: none; padding: 0; }
-	.g-btn.on { color: var(--ok-on-art); }
+	.g-btn.on { color: var(--ok-text); }
 	.g-open { margin-left: auto; display: inline-flex; gap: 2px; padding: 0 clamp(5px, 4.5cqi, 8px) 0 clamp(7px, 6.5cqi, 11px); font-weight: 600; font-size: clamp(10px, 7.4cqi, 12px); line-height: 1; font-family: var(--font-text, inherit); text-decoration: none; flex: none; }
-	.g-btn:hover, .g-open:hover { background: rgb(255 255 255 / 26%); }
+	.g-btn:hover, .g-open:hover { background: var(--gp-btn-hi); }
 	.g-btn:active, .g-open:active { transform: scale(0.94); }
 	.g-btn:focus-visible, .g-open:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
 	@media (hover: hover) and (pointer: fine) {
 		.frame:hover, .frame:focus-within { --ty: -4px; --s: 1.03; box-shadow: var(--shadow-lift); z-index: 2; }
-		.frame:hover .glass, .frame:focus-within .glass { opacity: 1; transform: none; pointer-events: auto; transition: opacity 220ms var(--ease-out), transform 220ms var(--ease-out); }
+		.frame:hover .glass, .frame:focus-within .glass { opacity: 1; pointer-events: auto; transition: opacity 220ms var(--ease-out); }
 		.frame:hover .badge, .frame:focus-within .badge { opacity: 0; transition: opacity 150ms var(--ease-out); }
 	}
 	/* Keyboard focus shows the panel with no tilt. */
@@ -219,7 +224,8 @@
 	.sub.gap { color: var(--wait-text); }
 
 	@media (prefers-reduced-transparency: reduce) {
-		.glass, .badge { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgb(24 24 26 / 94%); }
+		.badge { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgb(24 24 26 / 94%); }
+		.glass { backdrop-filter: none; -webkit-backdrop-filter: none; }
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.lp, .lp.shown { opacity: 1; transform: none; transition: none; }
