@@ -16,8 +16,9 @@
 
 	// The page loading screen: the branded Orbit (the same ring as the boot screen in
 	// app.html) centred in the content area while a page's main data loads. It appears only
-	// after 300 ms, stays at least 500 ms once shown, adds a status line at 3 s and a retry
+	// after 300 ms, stays at least 100 ms once shown, adds a status line at 3 s and a retry
 	// at 10 s, then the content fades in over 200 ms. Rules: lib/pageload.ts.
+	// `cached`: the page's answer came from the app's kept answers, so it swaps in at once.
 	// Loading inside an open page (more rows, a tab, a section) keeps the quiet placeholders.
 	let {
 		loading,
@@ -25,8 +26,9 @@
 		status = '',
 		label = 'Loading',
 		immediate = false,
+		cached = false,
 		onretry
-	}: { loading: boolean; children?: Snippet; status?: string; label?: string; immediate?: boolean; onretry?: () => void } = $props();
+	}: { loading: boolean; children?: Snippet; status?: string; label?: string; immediate?: boolean; cached?: boolean; onretry?: () => void } = $props();
 
 	const now = () => (typeof performance === 'undefined' ? Date.now() : performance.now());
 	// `held` keeps a shown Orbit up after the data arrived; `busy` follows `loading` in the same
@@ -47,7 +49,7 @@
 			const timers = pageTimers(0).map((t) => setTimeout(() => (stage = t.stage), t.at));
 			return () => timers.forEach(clearTimeout);
 		}
-		const wait = untrack(() => pageHoldFor(now() - start));
+		const wait = untrack(() => pageHoldFor(now() - start, cached));
 		fade = untrack(() => stage) !== 'hidden';
 		if (!wait) return;
 		held = true;

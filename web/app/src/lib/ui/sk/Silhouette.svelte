@@ -5,7 +5,7 @@
 
 	// A region that loads. While `loading`, it shows `skeleton` (in the layout from the first
 	// frame, visible at 150 ms). After 500 ms an Orbit with `status` sits over it; after 10 s a
-	// reassurance line and a retry. Content swaps in once the skeleton has shown for 400 ms,
+	// reassurance line and a retry. Content swaps in once the skeleton has shown for 100 ms (at once when `cached`),
 	// cross-fading over 200 ms. Timing rules: lib/silhouette.ts.
 	let {
 		loading,
@@ -13,8 +13,9 @@
 		children,
 		status = '',
 		label = 'Loading',
+		cached = false,
 		onretry
-	}: { loading: boolean; skeleton: Snippet; children?: Snippet; status?: string; label?: string; onretry?: () => void } = $props();
+	}: { loading: boolean; skeleton: Snippet; children?: Snippet; status?: string; label?: string; cached?: boolean; onretry?: () => void } = $props();
 
 	const now = () => (typeof performance === 'undefined' ? Date.now() : performance.now());
 	let showSkeleton = $state(true);
@@ -33,7 +34,7 @@
 		}
 		const elapsed = now() - start;
 		fade = elapsed >= 150;
-		const wait = holdFor(elapsed);
+		const wait = holdFor(elapsed, cached);
 		if (!wait) {
 			showSkeleton = false;
 			return;

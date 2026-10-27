@@ -17,11 +17,17 @@ describe('silhouette timing', () => {
 		expect(holdFor(0)).toBe(0);
 		expect(holdFor(149)).toBe(0);
 	});
-	it('keeps a shown skeleton for at least 400 ms', () => {
+	it('keeps a shown skeleton for about 100 ms', () => {
+		expect(MIN_SHOW_MS).toBe(100);
 		expect(holdFor(150)).toBe(MIN_SHOW_MS);
-		expect(holdFor(300)).toBe(SHOW_AFTER_MS + MIN_SHOW_MS - 300);
+		expect(holdFor(200)).toBe(SHOW_AFTER_MS + MIN_SHOW_MS - 200);
+		expect(holdFor(250)).toBe(0);
 		expect(holdFor(550)).toBe(0);
 		expect(holdFor(4000)).toBe(0);
+	});
+	it('swaps an answer from the kept answers in at once', () => {
+		expect(holdFor(150, true)).toBe(0);
+		expect(holdFor(200, true)).toBe(0);
 	});
 	it('lists only the stages still ahead', () => {
 		expect(stageTimers(0).map((t) => t.stage)).toEqual(['skeleton', 'orbit', 'reassure']);

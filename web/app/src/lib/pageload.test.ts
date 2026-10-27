@@ -17,11 +17,15 @@ describe('page loading timing', () => {
 		expect(pageHoldFor(0)).toBe(0);
 		expect(pageHoldFor(299)).toBe(0);
 	});
-	it('keeps a shown Orbit at least 500 ms', () => {
-		expect(pageHoldFor(300)).toBe(500);
-		expect(pageHoldFor(600)).toBe(200);
+	it('keeps a shown Orbit about 100 ms', () => {
+		expect(pageHoldFor(300)).toBe(100);
+		expect(pageHoldFor(350)).toBe(50);
+		expect(pageHoldFor(400)).toBe(0);
 		expect(pageHoldFor(800)).toBe(0);
 		expect(pageHoldFor(5_000)).toBe(0);
+	});
+	it('swaps a kept answer in at once', () => {
+		expect(pageHoldFor(320, true)).toBe(0);
 	});
 	it('schedules only the stages still ahead', () => {
 		expect(pageTimers(0)).toEqual([

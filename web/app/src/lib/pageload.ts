@@ -3,8 +3,8 @@
 
 /** The Orbit shows only when a page takes longer than this; faster pages just appear. */
 export const PAGE_SHOW_AFTER_MS = 300;
-/** Once shown, the Orbit stays at least this long, so it never blinks. */
-export const PAGE_MIN_SHOW_MS = 500;
+/** Once shown, the Orbit stays at least this long, so it never blinks (speed waves 2026-10-27: was 500). */
+export const PAGE_MIN_SHOW_MS = 100;
 /** Content fades in over this long. */
 export const PAGE_FADE_MS = 200;
 /** A status line joins the Orbit after this. */
@@ -22,9 +22,10 @@ export function pageStage(elapsed: number): PageStage {
 	return 'hidden';
 }
 
-/** How long to keep the Orbit after the data arrived `elapsed` ms after the start. */
-export function pageHoldFor(elapsed: number): number {
-	if (elapsed < PAGE_SHOW_AFTER_MS) return 0;
+/** How long to keep the Orbit after the data arrived `elapsed` ms after the start;
+ * nothing when the answer came from the app's kept answers (`cached`). */
+export function pageHoldFor(elapsed: number, cached = false): number {
+	if (cached || elapsed < PAGE_SHOW_AFTER_MS) return 0;
 	return Math.max(0, PAGE_SHOW_AFTER_MS + PAGE_MIN_SHOW_MS - elapsed);
 }
 

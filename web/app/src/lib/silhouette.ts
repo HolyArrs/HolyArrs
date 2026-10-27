@@ -3,8 +3,8 @@
 
 /** The skeleton becomes visible this long after loading starts (it holds its space from frame one). */
 export const SHOW_AFTER_MS = 150;
-/** Once visible, the skeleton stays at least this long, so it never flickers. */
-export const MIN_SHOW_MS = 400;
+/** Once visible, the skeleton stays at least this long, so it never flickers (speed waves 2026-10-27: was 400). */
+export const MIN_SHOW_MS = 100;
 /** Content cross-fades in over this long. */
 export const FADE_MS = 200;
 /** After this, the in-region Orbit and a status line join the skeleton. */
@@ -28,11 +28,11 @@ export function loadStage(elapsed: number): LoadStage {
 
 /**
  * How long to keep the skeleton after the data arrived `elapsed` ms after the start.
- * Data before the skeleton showed swaps in at once; otherwise the skeleton stays
- * until it has been visible for MIN_SHOW_MS.
+ * Data before the skeleton showed, or answered from the app's kept answers (`cached`),
+ * swaps in at once; otherwise the skeleton stays until it has been visible for MIN_SHOW_MS.
  */
-export function holdFor(elapsed: number): number {
-	if (elapsed < SHOW_AFTER_MS) return 0;
+export function holdFor(elapsed: number, cached = false): number {
+	if (cached || elapsed < SHOW_AFTER_MS) return 0;
 	return Math.max(0, SHOW_AFTER_MS + MIN_SHOW_MS - elapsed);
 }
 
