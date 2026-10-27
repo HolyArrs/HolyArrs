@@ -155,14 +155,14 @@
 	.lp { --rx: 0deg; --ry: 0deg; position: relative; min-width: 0; display: flex; flex-direction: column; gap: 3px; opacity: 0; transform: translateY(12px); }
 	.lp.shown { opacity: 1; transform: none; transition: opacity 220ms var(--ease-out) var(--rise-delay, 0ms), transform 220ms var(--ease-out) var(--rise-delay, 0ms); }
 
-	.frame { position: relative; aspect-ratio: var(--poster-ratio); margin-bottom: 6px; border-radius: var(--r-card); transform: perspective(800px) translateY(var(--ty, 0)) scale(var(--s, 1)) rotateX(var(--rx)) rotateY(var(--ry)); transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out); box-shadow: var(--shadow-card); will-change: transform; }
+	.frame { container-type: inline-size; position: relative; aspect-ratio: var(--poster-ratio); margin-bottom: 6px; border-radius: var(--r-card); transform: perspective(800px) translateY(var(--ty, 0)) scale(var(--s, 1)) rotateX(var(--rx)) rotateY(var(--ry)); transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out); box-shadow: var(--shadow-card); will-change: transform; }
 	.art { position: absolute; inset: 0; display: block; overflow: hidden; border-radius: inherit; background: var(--surface-2); color: var(--text); }
 	.art:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 220ms var(--ease-out); }
 	img.in { opacity: 1; }
 
 	/* Corner badge: only when the title needs a look. */
-	.badge { position: absolute; top: 7px; right: 7px; display: inline-flex; align-items: center; gap: 3px; height: 22px; min-width: 22px; padding: 0 6px; box-sizing: border-box; justify-content: center; border-radius: 99px; font: 600 11px/1 var(--font-text, inherit); font-variant-numeric: tabular-nums; color: #fff; background: rgb(20 20 22 / 72%); backdrop-filter: blur(8px) saturate(160%); -webkit-backdrop-filter: blur(8px) saturate(160%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 14%); }
+	.badge { position: absolute; top: 7px; right: 7px; display: inline-flex; align-items: center; gap: 3px; height: 22px; min-width: 22px; padding: 0 6px; box-sizing: border-box; justify-content: center; border-radius: 99px; font-weight: 600; font-size: 11px; line-height: 1; font-family: var(--font-text, inherit); font-variant-numeric: tabular-nums; color: #fff; background: rgb(20 20 22 / 72%); backdrop-filter: blur(8px) saturate(160%); -webkit-backdrop-filter: blur(8px) saturate(160%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 14%); }
 	.badge.fail { color: var(--fail-on-art); }
 	.badge.busy { color: var(--info-on-art); }
 	.badge.gap { color: var(--wait-on-art, #ffb340); }
@@ -179,18 +179,19 @@
 	.line.idle i { background: rgb(255 255 255 / 55%); }
 
 	/* Glass panel over the lower third. Enter 220 ms, leave 150 ms. */
-	.glass { position: absolute; left: 0; right: 0; bottom: 0; min-height: 34%; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; padding: 10px 10px 9px; box-sizing: border-box; border-radius: 0 0 var(--r-card) var(--r-card); color: #fff; background: linear-gradient(to bottom, rgb(18 18 20 / 42%), rgb(18 18 20 / 70%)); backdrop-filter: blur(18px) saturate(170%); -webkit-backdrop-filter: blur(18px) saturate(170%); box-shadow: inset 0 1px 0 rgb(255 255 255 / 16%); opacity: 0; transform: translateY(14px); pointer-events: none; transition: opacity 150ms var(--ease-in), transform 150ms var(--ease-in); }
-	.g-state { margin: 0; font: 600 12px/1.3 var(--font-text, inherit); color: var(--ok-on-art); }
+	.glass { position: absolute; left: 0; right: 0; bottom: 0; min-height: 34%; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; padding: clamp(7px, 6cqi, 10px) clamp(7px, 6cqi, 10px) clamp(6px, 5.5cqi, 9px); box-sizing: border-box; border-radius: 0 0 var(--r-card) var(--r-card); color: #fff; background: linear-gradient(to bottom, rgb(18 18 20 / 42%), rgb(18 18 20 / 70%)); backdrop-filter: blur(18px) saturate(170%); -webkit-backdrop-filter: blur(18px) saturate(170%); box-shadow: inset 0 1px 0 rgb(255 255 255 / 16%); opacity: 0; transform: translateY(14px); pointer-events: none; transition: opacity 150ms var(--ease-in), transform 150ms var(--ease-in); }
+	/* The panel's text and buttons follow the poster's width (container query units), so every line fits on the smallest posters. */
+	.g-state { margin: 0; font-weight: 600; font-size: clamp(10px, 7.4cqi, 12px); line-height: 1.3; font-family: var(--font-text, inherit); color: var(--ok-on-art); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.g-state.busy { color: var(--info-on-art); }
 	.g-state.gap { color: var(--wait-on-art, #ffb340); }
 	.g-state.fail { color: var(--fail-on-art); }
 	.g-state.idle { color: rgb(255 255 255 / 88%); }
-	.g-fact { margin: 0; font: 400 11px/1.35 var(--font-text, inherit); color: rgb(255 255 255 / 80%); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	.g-acts { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
-	.g-btn, .g-open { display: inline-grid; place-items: center; height: 28px; border: 0; border-radius: 99px; color: #fff; background: rgb(255 255 255 / 16%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 18%); cursor: pointer; transition: background 150ms var(--ease-out), transform 150ms var(--ease-out); }
-	.g-btn { width: 28px; padding: 0; }
+	.g-fact { margin: 0; font-weight: 400; font-size: clamp(9.5px, 6.8cqi, 11px); line-height: 1.35; font-family: var(--font-text, inherit); color: rgb(255 255 255 / 80%); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.g-acts { display: flex; align-items: center; gap: clamp(4px, 3.6cqi, 6px); margin-top: clamp(4px, 3.6cqi, 6px); min-width: 0; }
+	.g-btn, .g-open { display: inline-grid; place-items: center; height: clamp(24px, 18cqi, 28px); border: 0; border-radius: 99px; color: #fff; background: rgb(255 255 255 / 16%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 18%); cursor: pointer; transition: background 150ms var(--ease-out), transform 150ms var(--ease-out); }
+	.g-btn { width: clamp(24px, 18cqi, 28px); flex: none; padding: 0; }
 	.g-btn.on { color: var(--ok-on-art); }
-	.g-open { margin-left: auto; display: inline-flex; gap: 2px; padding: 0 8px 0 11px; font: 600 12px/1 var(--font-text, inherit); text-decoration: none; }
+	.g-open { margin-left: auto; display: inline-flex; gap: 2px; padding: 0 clamp(5px, 4.5cqi, 8px) 0 clamp(7px, 6.5cqi, 11px); font-weight: 600; font-size: clamp(10px, 7.4cqi, 12px); line-height: 1; font-family: var(--font-text, inherit); text-decoration: none; flex: none; }
 	.g-btn:hover, .g-open:hover { background: rgb(255 255 255 / 26%); }
 	.g-btn:active, .g-open:active { transform: scale(0.94); }
 	.g-btn:focus-visible, .g-open:focus-visible { outline: none; box-shadow: var(--focus-ring); }
