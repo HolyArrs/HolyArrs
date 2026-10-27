@@ -41,6 +41,8 @@ const (
 	oneColour = 0.95
 	// standInGrid is how many points a side the picture is sampled at.
 	standInGrid = 64
+	// standInMaxPixels is the largest picture judged (4096 × 4096).
+	standInMaxPixels = 4096 * 4096
 )
 
 // StandInReason says why b (a picture file) is only a stand-in for an
@@ -50,6 +52,12 @@ func StandInReason(b []byte) string {
 	sum := sha256.Sum256(b)
 	if serverPlaceholders[hex.EncodeToString(sum[:])] {
 		return "a known stand-in picture"
+	}
+	// Size first: a picture over standInMaxPixels is not decoded (a small
+	// file can claim a huge size), and is left unjudged.
+	cfg, _, err := image.DecodeConfig(bytes.NewReader(b))
+	if err != nil || cfg.Width <= 0 || cfg.Height <= 0 || int64(cfg.Width)*int64(cfg.Height) > standInMaxPixels {
+		return ""
 	}
 	img, _, err := image.Decode(bytes.NewReader(b))
 	if err != nil {

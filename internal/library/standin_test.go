@@ -414,3 +414,14 @@ func TestRefreshReplacesStandIn(t *testing.T) {
 		t.Fatalf("a real picture was touched: %v, asked %d times", a, w.asked(labArtist)-asked)
 	}
 }
+
+// A picture claiming a huge size is never decoded, only left unjudged.
+func TestStandInReasonSkipsHugePictures(t *testing.T) {
+	var buf bytes.Buffer
+	// A PNG header that claims 100000 × 100000 pixels.
+	buf.Write([]byte("\x89PNG\r\n\x1a\n\x00\x00\x00\x0dIHDR\x00\x01\x86\xa0\x00\x01\x86\xa0\x08\x02\x00\x00\x00"))
+	buf.Write(make([]byte, 4))
+	if r := StandInReason(buf.Bytes()); r != "" {
+		t.Fatalf("huge picture judged: %q", r)
+	}
+}
