@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ApiError, createClient, message } from './api.ts';
+import { ApiError, createClient, isIncomplete, keepFor, message } from './api.ts';
 
 function reply(status: number, body?: unknown, headers: Record<string, string> = {}) {
 	return new Response(body === undefined ? null : typeof body === 'string' ? body : JSON.stringify(body), { status, headers });
@@ -95,5 +95,69 @@ describe('api client', () => {
 		const h = f.mock.calls[0][1]?.headers as Record<string, string>;
 		expect(h['Content-Type']).toBe('application/octet-stream');
 		expect(f.mock.calls[0][1]?.body).toBe('zipbytes');
+	});
+
+	describe('kept answers', () => {
+		it('keeps a read as long as its max-age, at most 60 s', async () => {
+			vi.useFakeTimers();
+			try {
+				const f = vi.fn(async () => reply(200, { a: 1 }, { 'Cache-Control': 'private, max-age=60' }));
+				const c = createClient(f);
+				await c.get('/music/artists/x?part=core');
+				vi.advanceTimersByTime(59_000);
+				expect(c.has('/music/artists/x?part=core')).toBe(true);
+				await c.get('/music/artists/x?part=core');
+				expect(f).toHaveBeenCalledTimes(1);
+				vi.advanceTimersByTime(2_000);
+				expect(c.has('/music/artists/x?part=core')).toBe(false);
+				await c.get('/music/artists/x?part=core');
+				expect(f).toHaveBeenCalledTimes(2);
+			} finally {
+				vi.useRealTimers();
+			}
+		});
+
+		it('reads the keep from Cache-Control', () => {
+			expect(keepFor('private, max-age=60')).toBe(60_000);
+			expect(keepFor('private, max-age=3600')).toBe(60_000);
+			expect(keepFor(null)).toBe(1_500);
+			expect(keepFor('no-store')).toBe(0);
+			expect(keepFor('no-cache, max-age=60')).toBe(0);
+		});
+
+		it('never keeps an incomplete answer or a no-store one', async () => {
+			const f = vi.fn(async () => reply(200, { incomplete: true }, { 'Cache-Control': 'private, max-age=60' }));
+			const c = createClient(f);
+			await c.get('/music/albums/x?artist=y');
+			expect(c.has('/music/albums/x?artist=y')).toBe(false);
+			await c.get('/music/albums/x?artist=y');
+			expect(f).toHaveBeenCalledTimes(2);
+			const g = vi.fn(async () => reply(200, { a: 1 }, { 'Cache-Control': 'no-store' }));
+			const d = createClient(g);
+			await d.get('/x');
+			await d.get('/x');
+			expect(g).toHaveBeenCalledTimes(2);
+			expect(isIncomplete({ incomplete: false })).toBe(false);
+			const h = vi.fn(async () => reply(200, { building: true }, { 'Cache-Control': 'private, max-age=60' }));
+			const e = createClient(h);
+			await e.get('/new');
+			expect(e.has('/new')).toBe(false);
+		});
+
+		it('forgets kept answers on a new session token and on a lost sign-in', async () => {
+			let status = 200;
+			const f = vi.fn(async () => reply(status, status === 200 ? { who: 'ana' } : { error: 'sign in' }, { 'Cache-Control': 'private, max-age=60' }));
+			const c = createClient(f);
+			c.setCsrf('t1');
+			await c.get('/x');
+			c.setCsrf('t1');
+			expect(c.has('/x')).toBe(true);
+			c.setCsrf('t2');
+			expect(c.has('/x')).toBe(false);
+			await c.get('/x');
+			status = 401;
+			await expect(c.get('/y')).rejects.toBeInstanceOf(ApiError);
+			expect(c.has('/x')).toBe(false);
+		});
 	});
 });

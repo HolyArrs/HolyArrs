@@ -22,6 +22,7 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { api, message } from '#lib/api.ts';
+	import { keepShown, reaskWhileIncomplete } from '#lib/music/reask.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
@@ -77,6 +78,9 @@
 	let aboutEl: HTMLElement | undefined = $state();
 	let error = $state('');
 	let busy = $state(false);
+	// The answer was already kept by the app (fetched ahead or seen within a minute): no loader hold.
+	let fromCache = $state(false);
+	let leave: AbortController | null = null;
 	let lookup = $state<LookupArtist | null>(null);
 	let art = $state<{ logo?: string; backgrounds?: string[]; thumb?: string }>({});
 	let following = $state<boolean | null>(null);
@@ -165,6 +169,10 @@
 		const want = mbid;
 		busy = true;
 		error = '';
+		leave?.abort();
+		const stop = (leave = new AbortController());
+		const full = `/music/artists/${want}?similar=0`;
+		fromCache = api.has(`/music/artists/${want}?part=core`) || api.has(full);
 		let followAsked = false;
 		const askFollow = (id?: number) => {
 			if (!id || followAsked) return;
@@ -177,11 +185,15 @@
 			if (!data) core = c;
 			askFollow(c.title_id);
 		});
-		const fullAsk = askAgainOnce(() => api.get<ArtistPageData>(`/music/artists/${want}?similar=0`)).then((d) => {
+		const fullAsk = askAgainOnce(() => api.get<ArtistPageData>(full)).then((d) => {
 			if (want !== mbid) return;
-			data = d;
-			follows = new Map(d.albums.filter((a) => a.upcoming).map((a) => [a.mbid, !!a.following]));
-			askFollow(d.title_id);
+			// An incomplete answer (slow source) is shown, then asked again quietly and merged in, keeping what is on screen.
+			void reaskWhileIncomplete(d, () => api.get<ArtistPageData>(full), (v) => {
+				if (want !== mbid || stop.signal.aborted) return;
+				data = keepShown(data, v, ['albums', 'top', 'related']);
+				follows = new Map(data.albums.filter((a) => a.upcoming).map((a) => [a.mbid, !!a.following]));
+				askFollow(data.title_id);
+			}, stop.signal);
 		});
 		void api.get<{ similar: PageArtist[] }>(`/music/artists/${want}?part=similar`).then((r) => want === mbid && (similar = r.similar)).catch(() => want === mbid && (similar = []));
 		void api.get<ArtistMoreData>(`/music/artists/${want}?part=more`).then((r) => want === mbid && (more = r)).catch(() => want === mbid && (more = { essential: [], appears_on: [] }));
@@ -232,6 +244,7 @@
 		logoFailed = false;
 		bioOpen = false;
 		void load();
+		return () => leave?.abort();
 	});
 
 	// As with a trailer hero: the beat (HERO_DELAY) starts when the hero
@@ -502,7 +515,7 @@
 
 <div class="artist">
 	{#if error && !hero}<LoadError hasData={false} message={plainReason(error).text} onretry={load} {busy} />{/if}
-	<PageLoader loading={!hero && !error} label="Loading this artist" onretry={load}>
+	<PageLoader loading={!hero && !error} cached={fromCache} label="Loading this artist" onretry={load}>
 		{#if hero}
 			<header class="hero" class:vid={videoOn} class:bare={!heroSrc && !heroVideo} class:full={heroFull} bind:this={heroBox} data-hero>
 				<div class="stage" aria-hidden="true">

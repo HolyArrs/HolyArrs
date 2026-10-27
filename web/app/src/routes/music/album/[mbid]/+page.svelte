@@ -24,6 +24,7 @@
 	import { SkRail, SkTrackRow } from '#lib/ui/sk/index.ts';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import { pictureOf } from '#lib/pictures.ts';
+	import { keepShown, reaskWhileIncomplete } from '#lib/music/reask.ts';
 	import { albumHref, appPicture, artistHref, askAgainOnce, coverFor, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist, type PageCredit, type PageTrack } from '#lib/music/music-pages.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 
@@ -49,6 +50,11 @@
 	let near = $state<PageCredit[] | null>(null);
 	let edition = $state('');
 	let asking = $state(false);
+	// A slow source: the answer came incomplete and is asked again quietly (lib/music/reask.ts).
+	let reasking = $state(false);
+	// The answer was already kept by the app (fetched ahead or seen within a minute): no loader hold.
+	let fromCache = $state(false);
+	let leave: AbortController | null = null;
 
 	const manage = $derived(session.can('manage_library'));
 	const mayAsk = $derived(session.can('ask'));
@@ -58,10 +64,19 @@
 		const still = () => want === `${mbid}|${artist}`;
 		busy = true;
 		error = '';
+		leave?.abort();
+		const stop = (leave = new AbortController());
+		const full = `/music/albums/${mbid}?artist=${artist}&similar=0`;
+		fromCache = api.has(full) || (!!artist && api.has(`/music/albums/${mbid}?part=core&artist=${artist}`));
 		// All at once: the hero, the tracks, the similar artists and the ask state.
-		void askAgainOnce(() => api.get<AlbumPageData>(`/music/albums/${mbid}?artist=${artist}&similar=0`)).then((d) => {
+		void askAgainOnce(() => api.get<AlbumPageData>(full)).then((d) => {
 			if (!still()) return;
-			data = d;
+			// An incomplete answer is shown, then asked again quietly and merged in, keeping what is on screen.
+			void reaskWhileIncomplete(d, () => api.get<AlbumPageData>(full), (v, pending) => {
+				if (!still() || stop.signal.aborted) return;
+				data = keepShown(data, v, ['tracks', 'editions', 'more_by']);
+				reasking = pending;
+			}, stop.signal);
 			// A bare album link learns its artist from the full answer: ask the nearby albums now.
 			const found = d.artist?.mbid;
 			if (!artist && found) void api.get<{ near: PageCredit[] }>(`/music/albums/${mbid}?part=near&artist=${found}`).then((r) => still() && (near = r.near)).catch(() => still() && (near = []));
@@ -92,7 +107,9 @@
 		lookup = null;
 		coverIn = false;
 		askedHere = false;
+		reasking = false;
 		void load();
+		return () => leave?.abort();
 	});
 
 	onMount(() => {
@@ -198,7 +215,7 @@
 
 <div class="album">
 	{#if error && !data}<LoadError hasData={false} message={plainReason(error).text} onretry={load} {busy} />{/if}
-	<PageLoader loading={!hero && !error} label="Loading this album" onretry={load}>
+	<PageLoader loading={!hero && !error} cached={fromCache} label="Loading this album" onretry={load}>
 		{#if hero && !(error && !data)}
 			<header class="hero" data-hero>
 				{#if from?.label}<nav class="crumbs" aria-label="Breadcrumb"><a class="chip" href={from.path} onclick={stepBack} data-testid="album-back"><Icon name={fromIcon(from.path) ?? 'chevronLeft'} size={14} />{from.label}</a></nav>{/if}
@@ -230,7 +247,8 @@
 				<div class="sq-rail"><SkRail item="var(--music-item)" titleWidth="200px" /></div>
 			{:else}
 			<section class="block">
-								{#if data.incomplete || !data.tracks.length}<p class="note">The tracklist is not known yet.</p>{/if}
+								{#if reasking && !data.tracks.length}<div class="tracks" aria-busy="true" aria-label="Loading the tracks">{#each Array.from({ length: 10 }, (_, i) => i) as i (i)}<SkTrackRow height={48} />{/each}</div>
+								{:else if !reasking && (data.incomplete || !data.tracks.length)}<p class="note">The tracklist is not known yet.</p>{/if}
 				<div class="row-head">
 					<h2>Tracks</h2>
 					{#if data.part_id && list.length}<p class="count" data-testid="album-have">{haveCount} have · {missingCount} missing</p>{/if}

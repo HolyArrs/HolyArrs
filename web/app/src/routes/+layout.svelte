@@ -24,6 +24,7 @@
 	import { offPartName } from '#lib/parts.ts';
 	import { navigateWithTransition } from '#lib/motion.ts';
 	import { installPersonPrefetch } from '#lib/person-prefetch.ts';
+	import { forgetMusicPrefetch, installMusicPrefetch, prefetchMusicOnScreen } from '#lib/music-prefetch.ts';
 	import { installArtistVideoPrefetch } from '#lib/music/artist-video-prefetch.ts';
 	import { installHeroPrefetch } from '#lib/title-details.ts';
 	import { installHeroAhead } from '#lib/hero-prefetch.ts';
@@ -159,6 +160,11 @@
 	onMount(trackInputModality);
 	onMount(installScrollBar);
 	onMount(installPersonPrefetch);
+	// Artist and album data on hover, touch and the first cards on screen (lib/music-prefetch.ts).
+	onMount(installMusicPrefetch);
+	$effect(() => {
+		if (session.s.state !== 'signed_in') forgetMusicPrefetch();
+	});
 	onMount(installArtistVideoPrefetch);
 	onMount(() => installHeroPrefetch(preloadHero));
 	// Music heroes on hover and focus, title heroes on focus, and the next card in a row.
@@ -220,6 +226,7 @@
 	});
 	afterNavigate((nav) => {
 		arrived(nav.type);
+		prefetchMusicOnScreen();
 		// The new page's hero (if any) decides the bar's glass; it may load in a moment after.
 		for (const t of [0, 250, 800, 2000]) setTimeout(checkHero, t);
 
