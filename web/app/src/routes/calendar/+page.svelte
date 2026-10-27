@@ -325,9 +325,9 @@
 
 <section class="tools" class:looked={look > 0} aria-label="Calendar controls">
 	<div class="month-nav">
-		<IconButton icon="chevronLeft" label={look === 5 ? 'Month before' : 'Week before'} variant="glass" onclick={() => go(-1)} />
+		<IconButton icon="chevronLeft" label={look === 5 ? 'Month before' : 'Week before'} variant="tinted" onclick={() => go(-1)} />
 		<h2 class="month" aria-live="polite" data-testid="cal-month">{rangeName}</h2>
-		<IconButton icon="chevronRight" label={look === 5 ? 'Month after' : 'Week after'} variant="glass" onclick={() => go(1)} />
+		<IconButton icon="chevronRight" label={look === 5 ? 'Month after' : 'Week after'} variant="tinted" onclick={() => go(1)} />
 	</div>
 	<div class="segs">
 		<SegmentedControl
@@ -344,7 +344,7 @@
 		/>
 		{#if !look}
 			<SegmentedControl label="View" testid="cal-view" value={view} onchange={(v) => pickView(v as CalendarView)} options={[{ value: 'week', label: 'Weeks' }, { value: 'list', label: 'List' }]} />
-			<IconButton icon="sidebar" label={panelOpen ? 'Hide the month' : 'Show the month'} variant="glass" aria-expanded={panelOpen} aria-controls="cal-side" onclick={() => (panelOpen = !panelOpen)} />
+			<IconButton icon="sidebar" label={panelOpen ? 'Hide the month' : 'Show the month'} variant="tinted" aria-expanded={panelOpen} aria-controls="cal-side" onclick={() => (panelOpen = !panelOpen)} />
 		{/if}
 	</div>
 	<div class="kinds" role="group" aria-label="Filters">
