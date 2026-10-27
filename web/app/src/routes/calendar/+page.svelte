@@ -12,7 +12,7 @@
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { date } from '#lib/format.ts';
 	import { inLibraryWord } from '#lib/library.ts';
-	import { glideScroll } from '#lib/ui/transitions.ts';
+	import { glideScroll, popIn, popOut } from '#lib/ui/transitions.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import OpsCheckChip from '#lib/ui/OpsCheckChip.svelte';
@@ -25,7 +25,6 @@
 	import Badge from '#lib/ui/Badge.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Popover from '#lib/ui/Popover.svelte';
-	import VariantBar from '#lib/ui/VariantBar.svelte';
 	import ComingSoon from '#lib/calendar/ComingSoon.svelte';
 	import MiniMonth from '#lib/calendar/MiniMonth.svelte';
 	import {
@@ -121,34 +120,19 @@
 	let active = $state<string | null>(null);
 	let sheetOpen = $state(false);
 	let filtersOpen = $state(false);
-	let filtersCard = $state(false);
 
-	// Where the controls live (?head=1…4, compared with the pill bar): 1 a right rail,
-	// 2 the rail with a folding Filters card, 3 a slim bar that stays once the controls
-	// scroll away, 4 that bar only while scrolling up.
-	const headLooks = [
-		{ value: 1, label: '1 Right rail' },
-		{ value: 2, label: '2 Rail + filter card' },
-		{ value: 3, label: '3 Sticky top bar' },
-		{ value: 4, label: '4 Comes back on scroll up' }
-	];
-	let look = $state(1);
-	const head = $derived(look || 1);
-	const railed = $derived(head <= 2);
 	const filtersOn = $derived((['cinema', 'digital', 'physical'] as const).filter((k) => !kinds[k]).length + (keptOnly ? 1 : 0) + (haveOnly ? 1 : 0));
 	const filtersWord = $derived(filtersOn ? `Filters · ${filtersOn}` : 'Filters');
 	const rangeShort = $derived(
 		`${start.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${addDays(end, -1).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`
 	);
-	// The slim bar shows once the controls above have scrolled away: always (3), while
-	// scrolling up (4), or on narrow screens where the rail is hidden (1, 2).
+	// The slim bar shows once the controls above have scrolled away, and stays.
 	let headEnd = $state<HTMLElement>();
 	let pastHead = $state(false);
-	let goingUp = $state(false);
 	let narrow = $state(false);
-	const barOn = $derived(pastHead && (head === 3 || (head === 4 && goingUp) || (railed && narrow)));
-	let turnY = 0;
-	let ownScroll = false;
+	const barOn = $derived(pastHead);
+	// Today's button only shows (in red) once today has left the screen.
+	let away = $state(false);
 
 	let asks = 0;
 	async function load() {
@@ -196,10 +180,18 @@
 		void range.to;
 		if (started) untrack(() => void load());
 	});
+	// Today glides to today's row when it is loaded, else reloads from today. Either way no
+	// older weeks load while the page moves, or they would push today away again.
 	function toToday() {
-		jump(new Date());
-		window.scrollTo({ top: 0, behavior: glideScroll() });
+		guard();
+		const row = firstDay <= todayKey ? todayRow() : undefined;
+		if (row) row.scrollIntoView({ block: 'start', behavior: glideScroll() });
+		else {
+			jump(new Date());
+			window.scrollTo({ top: 0, behavior: glideScroll() });
+		}
 	}
+	const todayRow = () => [...document.querySelectorAll<HTMLElement>('.cal-main [data-day]')].find((r) => (r.dataset.day ?? '') >= todayKey);
 
 	// The small month's arrows; a month outside what is loaded gets loaded (within a year).
 	function pickPage(n: number) {
@@ -254,7 +246,6 @@
 		if (!row) return;
 		const moved = row.getBoundingClientRect().top - a.top;
 		if (Math.abs(moved) > 0.5) {
-			ownScroll = true;
 			window.scrollBy({ top: moved, behavior: 'instant' });
 		}
 	}
@@ -330,6 +321,21 @@
 			pickMonth = d.getMonth();
 		}
 	}
+	// Today is on screen when its row (or, on a day with nothing, the next day's row) shows
+	// below the bars. Days loaded from after today, or none loaded yet, count as away.
+	function checkToday() {
+		if (!loaded || firstDay > todayKey) {
+			away = loaded;
+			return;
+		}
+		const row = todayRow();
+		if (!row) {
+			away = !!document.querySelector('.cal-main [data-day]');
+			return;
+		}
+		const b = row.getBoundingClientRect();
+		away = b.bottom < (narrow ? 96 : 120) || b.top > innerHeight;
+	}
 	let ticking = false;
 	let lastY = 0;
 	function onScroll() {
@@ -337,17 +343,6 @@
 		const up = y < lastY;
 		lastY = y;
 		if (gliding) guard();
-		// Which way the person scrolls (8px at least); the page's own moves do not count.
-		if (ownScroll) {
-			ownScroll = false;
-			turnY = y;
-		} else if (y < turnY - 8) {
-			goingUp = true;
-			turnY = y;
-		} else if (y > turnY + 8) {
-			goingUp = false;
-			turnY = y;
-		}
 		if (headEnd) pastHead = headEnd.getBoundingClientRect().top < (narrow ? 44 : 56);
 		if (ticking) return;
 		ticking = true;
@@ -355,6 +350,7 @@
 			ticking = false;
 			if (up && loaded && nearFirst()) back();
 			follow();
+			checkToday();
 		});
 	}
 
@@ -517,7 +513,7 @@
 	$effect(() => {
 		void shown;
 		void view;
-		if (loaded) void tick().then(follow);
+		if (loaded) void tick().then(() => (follow(), checkToday()));
 	});
 </script>
 
@@ -564,6 +560,15 @@
 	</div>
 {/snippet}
 
+{#snippet todayBtn(size: 'sm' | 'md')}
+	<!-- Hidden while today is on screen; once it is not, it pops in red to bring you back. -->
+	{#if away}
+		<span class="today-btn" in:popIn out:popOut data-testid="cal-today">
+			<Button variant="primary" {size} icon="calendar" onclick={toToday} aria-label="Back to today">Today</Button>
+		</span>
+	{/if}
+{/snippet}
+
 {#snippet typeSeg(primary: boolean)}
 	<SegmentedControl
 		label="Movies, shows or music"
@@ -597,8 +602,7 @@
 
 <svelte:head><title>Calendar · HolyArrs</title></svelte:head>
 
-<!-- Rail looks (1, 2) keep only the title and the Cards/List switch up top; the rest sits in the rail. -->
-<PageHeader title="Calendar" subtitle={railed ? undefined : "Cinema, digital and disc dates for your movies, when your episodes air in your own time zone, and the days your artists' albums come out."}>
+<PageHeader title="Calendar" subtitle={"Cinema, digital and disc dates for your movies, when your episodes air in your own time zone, and the days your artists' albums come out."}>
 	{#snippet actions()}
 		<SegmentedControl
 			label="Cards or list"
@@ -610,24 +614,21 @@
 				{ value: 'list', label: 'List' }
 			]}
 		/>
-		{#if !railed}<span class="wide-only"><Button variant="secondary" icon="calendar" onclick={toToday}>Today</Button></span>{/if}
+		<span class="wide-only">{@render todayBtn('md')}</span>
 		<span class="phone-only"><IconButton icon="calendarDay" label="Pick a day" variant="tinted" aria-haspopup="dialog" onclick={() => (sheetOpen = true)} /></span>
-		{#if railed}<span class="phone-only"><Button variant="secondary" aria-haspopup="dialog" onclick={() => (filtersOpen = true)}>{filtersWord}</Button></span>{/if}
 	{/snippet}
 </PageHeader>
 
-{#if !railed}
-	<section class="tools" aria-label="Calendar controls">
+<section class="tools" aria-label="Calendar controls">
 		<div class="month-nav">{@render rangeNav(true, false)}</div>
 		<div class="segs">{@render typeSeg(true)}</div>
 		{@render chipList(false)}
-	</section>
-{/if}
+</section>
 <span class="head-end" bind:this={headEnd} aria-hidden="true"></span>
 
 <!-- The slim bar: under the app's top bar once the controls above have scrolled away
-	(look 3 always, look 4 when scrolling up, the rail looks on phones). -->
-<div class="slim-wrap" class:on={barOn} class:rail-phone={railed} inert={!barOn} data-testid="cal-slim">
+	and stays there; Today shows in it only once today has left the screen. -->
+<div class="slim-wrap" class:on={barOn} inert={!barOn} data-testid="cal-slim">
 	<div class="slim" role="toolbar" aria-label="Calendar controls">
 		{@render rangeNav(false, true)}
 		<span class="wide-only slim-seg">{@render typeSeg(false)}</span>
@@ -636,7 +637,7 @@
 				{#snippet children()}<div class="pop-chips">{@render chipList(true)}</div>{/snippet}
 			</Popover>
 		</span>
-		<span class="wide-only"><Button variant="secondary" size="sm" icon="calendar" onclick={toToday}>Today</Button></span>
+		{@render todayBtn('sm')}
 		<span class="phone-only"><Button variant="secondary" size="sm" aria-haspopup="dialog" onclick={() => (filtersOpen = true)}>{filtersWord}</Button></span>
 	</div>
 </div>
@@ -654,7 +655,7 @@
 	<EmptyState icon="calendar" title="Nothing coming up" text="Add movies, shows and artists to your Library and their dates, episodes and albums show up here." action={{ label: 'Add media', href: to('/search'), icon: 'search' }} />
 {:else}
 	{#if error}<LoadError hasData message="Calendar could not be loaded." onretry={load} />{/if}
-	<div class="cal-body" class:railed class:barred={barOn}>
+	<div class="cal-body" class:barred={barOn}>
 		<div class="cal-main">
 			{#key view}
 				<div class="view-in" data-view={view}>
@@ -686,28 +687,7 @@
 			<div class="endless" use:endless={fetching} aria-hidden="true"></div>
 			{#if fetching}<p class="more-note" role="status">Loading the next weeks…</p>{/if}
 		</div>
-		{#if railed}
-			<aside class="side rail" aria-label="Calendar controls" data-testid="cal-rail">
-				<div class="rail-block">
-					{@render rangeNav(true, false)}
-					<Button variant="secondary" size="sm" full icon="calendar" onclick={toToday}>Today</Button>
-				</div>
-				<div class="rail-block">{@render mini()}</div>
-				<div class="rail-block rail-seg">{@render typeSeg(true)}</div>
-				{#if head === 1}
-					<div class="rail-block">{@render chipList(true)}</div>
-				{:else}
-					<div class="rail-block fcard" class:open={filtersCard}>
-						<button type="button" class="fhead" aria-expanded={filtersCard} aria-controls="cal-fcard" onclick={() => (filtersCard = !filtersCard)}>
-							<span>{filtersWord}</span><Icon name="chevronDown" size={16} />
-						</button>
-						<div class="fbody" id="cal-fcard" inert={!filtersCard}><div class="fin">{@render chipList(true)}</div></div>
-					</div>
-				{/if}
-			</aside>
-		{:else}
-			<aside class="side" aria-label="Pick a day">{@render mini()}</aside>
-		{/if}
+		<aside class="side" aria-label="Pick a day">{@render mini()}</aside>
 	</div>
 {/if}
 
@@ -770,8 +750,6 @@
 {/if}
 
 
-<VariantBar options={headLooks} bind:value={look} param="head" storageKey="holyarrs.calendar-head" label="Calendar controls layout" />
-
 <style>
 	.tools { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-bottom: 18px; }
 	.month-nav { margin-right: auto; }
@@ -791,27 +769,11 @@
 	.phone-only { display: none; }
 	.sheet-mini, .sheet-filters { display: flex; flex-direction: column; gap: 16px; padding: 4px 0 12px; }
 	.sheet-mini .range-nav { justify-content: space-between; }
-	.sheet-mini .range, .rail .range { flex: 1; min-width: 0; font: var(--t-headline); }
-	.sheet-filters > :global(.ui-seg), .rail-seg > :global(.ui-seg) { width: 100%; }
+	.sheet-mini .range { flex: 1; min-width: 0; font: var(--t-headline); }
+	.sheet-filters > :global(.ui-seg) { width: 100%; }
 	.kinds.stacked { flex-direction: column; align-items: flex-start; flex-wrap: nowrap; }
 
-	/* 1 and 2: one sticky rail on the right with every control. */
-	.cal-body.railed { grid-template-columns: minmax(0, 1fr) 336px; }
-	.rail-seg :global(.ui-seg button) { padding: 0 4px; }
-	.rail { display: flex; flex-direction: column; gap: 16px; max-height: calc(100vh - var(--topbar) - 32px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
-	.rail-block { display: flex; flex-direction: column; gap: 12px; }
-	.rail-block + .rail-block { padding-top: 16px; border-top: 1px solid var(--line); }
-	/* 2: the filters fold into a card that opens in place. */
-	.fhead { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 36px; padding: 0 4px; border-radius: var(--r-sm); color: var(--text); font: var(--t-headline); }
-	.fhead:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.fhead :global(svg) { transition: transform var(--dur) var(--ease-out); }
-	.fcard.open .fhead :global(svg) { transform: rotate(180deg); }
-	.fbody { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--dur) var(--ease-out); }
-	.fcard.open .fbody { grid-template-rows: 1fr; }
-	.fin { min-height: 0; overflow: hidden; }
-	.fcard.open .fin { padding-top: 12px; }
-
-	/* 3 and 4 (and 1, 2 on narrow screens): the slim bar under the app's top bar. */
+	/* The slim bar under the app's top bar. */
 	.slim-wrap { position: sticky; top: var(--topbar); z-index: 20; height: 0; margin-inline: calc(-1 * var(--gutter)); transition: transform var(--bar-glide); }
 	:global(html.bar-hidden) .slim-wrap { transform: translateY(calc(-1 * var(--topbar))); }
 	.slim { display: flex; align-items: center; gap: 12px; padding: 8px var(--gutter); background: color-mix(in srgb, var(--bg) 86%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid var(--line);
@@ -823,6 +785,9 @@
 	.range-btn:hover { background: var(--surface-2); }
 	.range-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.pop-chips { padding: 4px; }
+	/* Today, once it shows: a soft ring pulses twice so the eye finds it. */
+	.today-btn { display: inline-flex; border-radius: 999px; animation: today-ping 1.2s var(--ease-out) 2; }
+	@keyframes today-ping { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-fill) 55%, transparent); } to { box-shadow: 0 0 0 10px transparent; } }
 	/* While the bar shows, the small month and picked days sit below it. */
 	.side { transition: top var(--dur) var(--ease-out); }
 	.cal-body.barred .side { top: calc(var(--topbar) + 76px); }
@@ -890,7 +855,7 @@
 		.tools .kinds > :global(*) { flex: none; }
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.view-in { animation: none; }
-		.slim, .slim-wrap.on .slim, .fbody, .fhead :global(svg), .slim-wrap { transition: none; }
+		.view-in, .today-btn { animation: none; }
+		.slim, .slim-wrap.on .slim, .slim-wrap { transition: none; }
 	}
 </style>
