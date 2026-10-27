@@ -15,6 +15,7 @@
 		tableMinWidth
 	} from '#lib/library-table.ts';
 	import { reducedMotion } from '#lib/motion.ts';
+	import { DUR, EASE, easeOut, moveMs } from '#lib/ui/transitions.ts';
 	import { episodeLabel, showProgress } from '#lib/shows.ts';
 	import { artistProgress } from '#lib/music/music.ts';
 	import { artistHref } from '#lib/music/music-pages.ts';
@@ -193,7 +194,7 @@
 		for (const [el, a] of before) {
 			const b = el.getBoundingClientRect();
 			const from = flipFrom(a, b);
-			if (from) el.animate([{ transform: from, transformOrigin: '0 0' }, { transform: 'none', transformOrigin: '0 0' }], { duration: 240, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+			if (from) el.animate([{ transform: from, transformOrigin: '0 0' }, { transform: 'none', transformOrigin: '0 0' }], { duration: DUR.base, easing: EASE.out });
 		}
 	}
 	function setPosterSize(z: PosterSize) {
@@ -204,7 +205,6 @@
 		posterDetail = d;
 		savePosterDetail(myId, d);
 	}
-	const flipMs = () => (reducedMotion() ? 0 : 240);
 	const bannerW = $derived(bannerWidth(listWidth, density));
 	/** A row's banner height for its title's kind (Music rows are taller). */
 	const rowH = (k: string) => bannerHeight(bannerW, k);
@@ -855,7 +855,7 @@
 					{#each shown as t (t.id)}
 						{@const p = progressOf(t)}
 						{@const ls = who === 'staff' ? libraryState(t) : null}
-						<li class="item" style:--poster-ratio={posterRatio(t.kind)} animate:flip={{ duration: flipMs, easing: (x) => 1 - Math.pow(1 - x, 3) }} data-testid="library-card" data-title-id={t.id} data-letter={letterOf(sortName(t.name))} class:selected={picked.has(t.id)} class:last-opened={lastOpenedId === t.id}>
+						<li class="item" style:--poster-ratio={posterRatio(t.kind)} animate:flip={{ duration: moveMs, easing: easeOut }} data-testid="library-card" data-title-id={t.id} data-letter={letterOf(sortName(t.name))} class:selected={picked.has(t.id)} class:last-opened={lastOpenedId === t.id}>
 							<LibraryPoster title={t.name} year={t.year} href={t.kind === 'artist' && t.ids?.musicbrainz ? artistHref(t.ids.musicbrainz) : titleLink(t.id)} image={posterSrc(t.artwork[0], gridMin)} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} vtName={artName(t.id)} status={ls} attention={needsAttention(ls)} bar={barOf(ls, p.have, p.total)} detail={posterDetail} extra={posterExtra(t)} facts={posterFacts(t)} kept={t.keep_up_to_date} canManage={session.can('manage_library')} {selecting} selected={picked.has(t.id)} onsearch={() => searchTitles([t.id])} onkeep={(k) => setKeep([t.id], k)} />
 							{#if selecting}
 								<button type="button" class="pick" aria-pressed={picked.has(t.id)} aria-label="Select {t.name}" onclick={() => togglePick(t.id)} data-testid="library-pick"><span class="pick-dot" aria-hidden="true">{#if picked.has(t.id)}<Icon name="check" size={14} stroke={3} />{/if}</span></button>
@@ -1115,7 +1115,7 @@
 	.keep { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; color: var(--text-muted); }
 	.keep.on { color: var(--ok, #2fa36b); background: color-mix(in srgb, var(--ok, #2fa36b) 14%, transparent); }
 	.art { display: block; min-width: 0; align-self: stretch; --banner-r: 0; }
-	.art :global(img:not(.logo)) { transition: opacity 240ms var(--ease-out), filter var(--dur-fast) var(--ease-out), scale 400ms var(--ease-out); }
+	.art :global(img:not(.logo)) { transition: opacity var(--dur) var(--ease-out), filter var(--dur-fast) var(--ease-out), scale var(--dur-slow) var(--ease-out); }
 	.entry:hover .art :global(img:not(.logo)) { filter: brightness(1.12) saturate(1.05); }
 	@media (prefers-reduced-motion: no-preference) { .entry:hover .art :global(img:not(.logo)) { scale: 1.02; } }
 	.name { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
@@ -1192,8 +1192,8 @@
 	.pick[aria-pressed='true'] { background: rgb(0 0 0 / 30%); box-shadow: inset 0 0 0 3px var(--accent); }
 	.pick:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.pick-dot { position: absolute; left: 8px; top: 8px; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; border: 2px solid #fff; background: rgb(0 0 0 / 35%); color: #fff; }
-	.pick[aria-pressed='true'] .pick-dot { background: var(--accent-fill); border-color: var(--accent-fill); color: var(--accent-ink, #fff); animation: pick-pop 260ms var(--ease-spring); }
-	.grid .pick { animation: pick-in 180ms var(--ease-out); }
+	.pick[aria-pressed='true'] .pick-dot { background: var(--accent-fill); border-color: var(--accent-fill); color: var(--accent-ink, #fff); animation: pick-pop var(--dur) var(--ease-spring); }
+	.grid .pick { animation: pick-in var(--dur-fast) var(--ease-out); }
 	@keyframes pick-pop { from { transform: scale(0.6); } }
 	@keyframes pick-in { from { opacity: 0; } }
 	@media (prefers-reduced-motion: reduce) { .pick[aria-pressed='true'] .pick-dot, .grid .pick { animation: none; } }

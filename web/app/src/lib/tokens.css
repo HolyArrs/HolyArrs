@@ -80,11 +80,29 @@
   --poster-ratio: 2 / 3;
   --wide-ratio: 16 / 9;
 
-  /* Motion. */
+  /* Motion. One set for the whole app; every transition and animation uses
+     these (lib/ui/transitions.ts mirrors them for Svelte transitions).
+       --dur-instant  press down
+       --dur-fast     hover and focus colour, tooltips, every exit
+       --dur          menus, popovers, sheets and toasts entering; switches, chevrons, tab pills, small folds
+       --dur-slow     content and pictures fading in, reveals, card lifts and hover zoom, larger folds
+       --dur-page     page to page
+       --dur-glide    bars that follow the scroll (top bar, pinned pills), with --ease-glide
+       --dur-hero     hero moments: photo to video, a hero folding away, art crossfades
+     Longer loops (Ken Burns, slow pans, loaders) are ambient and keep their own pace.
+     Ease: --ease-out for anything entering or changing state, --ease-in for
+     anything leaving (a move a tap started counts as entering: it starts
+     fast), --ease-in-out for crossfades of big art and moves nobody asked
+     for, --ease-spring for a press letting go and pop-ins.
+     Animate transform and opacity only; a fold that must change height uses
+     grid-template-rows on one element, never on many. Reduced motion turns
+     every duration to 1ms: things appear in place, nothing travels. */
   --dur-instant: 90ms; --dur-fast: 150ms; --dur: 240ms; --dur-slow: 360ms; --dur-page: 300ms;
+  --dur-glide: 420ms; --dur-hero: 900ms;
   --ease-out: cubic-bezier(.22, 1, .36, 1);
   --ease-in-out: cubic-bezier(.65, 0, .35, 1);
   --ease-in: cubic-bezier(.4, 0, 1, 1);
+  --ease-glide: cubic-bezier(.32, .72, 0, 1);
   --ease-spring: var(--ease-out);
   --stagger: 30ms;
   --lift: -3px;
@@ -250,7 +268,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   :root {
-    --dur-instant: 1ms; --dur-fast: 1ms; --dur: 1ms; --dur-slow: 1ms; --dur-page: 1ms;
+    --dur-instant: 1ms; --dur-fast: 1ms; --dur: 1ms; --dur-slow: 1ms; --dur-page: 1ms; --dur-glide: 1ms; --dur-hero: 1ms;
     --stagger: 0ms; --lift: 0px; --press: 1; --press-round: 1; --press-card: 1; --rise: 0px;
   }
   [data-press][data-pressed] { transform: none; }

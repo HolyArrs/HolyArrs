@@ -1,10 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { fly, fade } from 'svelte/transition';
-	import { backOut, cubicOut } from 'svelte/easing';
+	import { dropIn, dropOut } from './ui/transitions.ts';
 	import { toasts } from './toasts.svelte';
 	import Toast from './ui/Toast.svelte';
-	import { reducedMotion } from './motion.ts';
 	import {
 		METADATA_BACK,
 		METADATA_DOWN,
@@ -18,15 +16,9 @@
 	import { session } from './session.svelte.ts';
 
 	// All notifications drop in from the top centre, under the top bar, with a
-	// soft spring; reduced motion fades only.
-	function toastIn(node: Element) {
-		if (reducedMotion()) return fade(node, { duration: 160 });
-		return fly(node, { y: -24, duration: 420, easing: backOut });
-	}
-	function toastOut(node: Element) {
-		if (reducedMotion()) return fade(node, { duration: 120 });
-		return fly(node, { y: -16, duration: 180, easing: cubicOut });
-	}
+	// soft spring and leave upwards, quicker; reduced motion fades only.
+	const toastIn = dropIn;
+	const toastOut = dropOut;
 
 	// Metadata outage: full card, shrinks to a pill after 6 s, tap to open again.
 	const downShown = $derived(metadataDownShown());

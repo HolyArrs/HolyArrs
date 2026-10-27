@@ -1,9 +1,8 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { scale } from 'svelte/transition';
-	import { backOut, cubicIn } from 'svelte/easing';
+	import { popIn, popOut } from './transitions.ts';
 	import Icon, { type IconName } from '../Icon.svelte';
-	import { press, reducedMotion } from '../motion.ts';
+	import { press } from '../motion.ts';
 
 	// A trigger and a floating panel. Closes on Escape, an outside click, or
 	// when content calls close(); focus goes back to the trigger.
@@ -117,12 +116,6 @@
 	});
 
 	const origin = $derived(`${(placement === 'below') !== flip ? 'top' : 'bottom'} ${align === 'start' ? 'left' : 'right'}`);
-	function popIn(node: Element) {
-		return scale(node, { start: 0.96, opacity: 0, duration: reducedMotion() ? 0 : 240, easing: backOut });
-	}
-	function popOut(node: Element) {
-		return scale(node, { start: 0.97, opacity: 0, duration: reducedMotion() ? 0 : 150, easing: cubicIn });
-	}
 </script>
 
 <div class="ui-pop" bind:this={root}>

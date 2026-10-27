@@ -2,6 +2,8 @@
 // Search page, where the top bar is hidden). Its words are shared here so the
 // Search page can follow them as you type on any page.
 
+import { DUR, EASE } from './ui/transitions.ts';
+
 type Hooks = { submit?: () => void; blur?: () => void; exit?: () => void };
 
 export const searchField = $state({ term: '' });
@@ -59,7 +61,7 @@ export function playFieldEntry(calm: boolean) {
 		const form = el.closest('form');
 		if (!form || el.getClientRects().length === 0) continue;
 		form.style.willChange = 'transform, opacity';
-		const a = form.animate([{ opacity: 0.2, transform: calm ? 'none' : 'scale(0.985)' }, { opacity: 1, transform: 'none' }], { duration: 500, easing: 'cubic-bezier(.16,1,.3,1)' });
+		const a = form.animate([{ opacity: 0.2, transform: calm ? 'none' : 'scale(0.985)' }, { opacity: 1, transform: 'none' }], { duration: DUR.slow, easing: EASE.out });
 		a.onfinish = a.oncancel = () => (form.style.willChange = '');
 		form.querySelector('.glow')?.animate([{ opacity: 0 }, { opacity: 1, offset: 0.35 }, { opacity: 0 }], { duration: 1400, easing: 'ease-out' });
 	}
