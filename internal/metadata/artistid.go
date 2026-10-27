@@ -70,15 +70,6 @@ func (m *MusicBrainz) ArtistIDs(ctx context.Context, mbid string) (ArtistIDs, er
 	return parseArtistURLs(links), nil
 }
 
-// ArtistIDs asks the direct MusicBrainz client, when it can.
-func (m *serviceMusic) ArtistIDs(ctx context.Context, mbid string) (ArtistIDs, error) {
-	g, ok := m.direct.(ArtistIDSource)
-	if !ok {
-		return ArtistIDs{}, ErrArtistNotFound
-	}
-	return g.ArtistIDs(ctx, mbid)
-}
-
 // deezerPicture is a usable picture link of a Deezer artist ("" for the
 // empty picture Deezer gives an artist without one).
 func deezerPicture(list ...string) string {

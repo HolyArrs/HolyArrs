@@ -280,6 +280,15 @@ func (a *API) artistIDs(ctx context.Context, mbid string) metadata.ArtistIDs {
 // Fresh 12 hours; no sure match is a miss, asked again after an hour (the
 // artist's links may have come by then).
 func (a *API) deezerProfile(ctx context.Context, mbid string, art metadata.Artist) metadata.DeezerProfile {
+	if a.s.MusicDeezer != nil {
+		// The metadata server's kept match (by the artist's own links, else
+		// a checked name search there); a miss is asked again after an hour.
+		p, _ := sideGet(a, ctx, "deezer2", strings.ToLower(mbid), 12*time.Hour, func(ctx context.Context) (metadata.DeezerProfile, bool, error) {
+			p, err := a.s.MusicDeezer(ctx, mbid)
+			return p, err == nil && p.ID != 0, err
+		})
+		return p
+	}
 	if a.s.Library == nil || a.s.Library.ArtistImages == nil {
 		return metadata.DeezerProfile{}
 	}
@@ -299,8 +308,16 @@ func (a *API) deezerProfile(ctx context.Context, mbid string, art metadata.Artis
 }
 
 // artistBio is the artist's Wikipedia summary, fresh a day (none: a miss,
-// asked again after an hour).
-func (a *API) artistBio(ctx context.Context, name string) *metadata.WikiSummary {
+// asked again after an hour): the metadata server's (the article the
+// artist's Wikidata item links), else the developer stand-in's by name.
+func (a *API) artistBio(ctx context.Context, mbid, name string) *metadata.WikiSummary {
+	if a.s.MusicArtistBio != nil {
+		b, _ := sideGet(a, ctx, "bio2", strings.ToLower(mbid), 24*time.Hour, func(ctx context.Context) (*metadata.WikiSummary, bool, error) {
+			b, err := a.s.MusicArtistBio(ctx, mbid)
+			return b, err == nil && b != nil, err
+		})
+		return b
+	}
 	if a.s.Library == nil || a.s.Library.ArtistImages == nil || strings.TrimSpace(name) == "" {
 		return nil
 	}
@@ -309,6 +326,35 @@ func (a *API) artistBio(ctx context.Context, name string) *metadata.WikiSummary 
 		return b, err == nil && b != nil, err
 	})
 	return b
+}
+
+// deezerAlbum is one Deezer album's label and per-track explicit marks:
+// the metadata server's, kept here 14 days (a miss an hour), else the
+// developer stand-in's.
+func (a *API) deezerAlbum(ctx context.Context, id int64) metadata.DeezerAlbumInfo {
+	if a.s.MusicDeezerAlbum != nil {
+		type kept struct {
+			Label    string          `json:"label"`
+			Explicit bool            `json:"explicit"`
+			Tracks   map[string]bool `json:"tracks"`
+		}
+		k, ok := sideGet(a, ctx, "dzalbum", strconv.FormatInt(id, 10), 14*24*time.Hour, func(ctx context.Context) (kept, bool, error) {
+			info, err := a.s.MusicDeezerAlbum(ctx, id)
+			return kept{info.Label, info.Explicit, info.Tracks}, err == nil && (info.Label != "" || len(info.Tracks) > 0), err
+		})
+		if !ok {
+			return metadata.DeezerAlbumInfo{Tracks: map[string]bool{}}
+		}
+		if k.Tracks == nil {
+			k.Tracks = map[string]bool{}
+		}
+		return metadata.DeezerAlbumInfo{Label: k.Label, Explicit: k.Explicit, Tracks: k.Tracks}
+	}
+	if a.s.Library == nil || a.s.Library.ArtistImages == nil {
+		return metadata.DeezerAlbumInfo{Tracks: map[string]bool{}}
+	}
+	info, _ := a.s.Library.ArtistImages.AlbumInfo(ctx, id)
+	return info
 }
 
 // artistTopSongs is the metadata server's top songs of the artist, fresh 6
@@ -593,7 +639,7 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 	}
 	wg.Add(2)
 	go func() { defer wg.Done(); dz = a.deezerProfile(side, mbid, art) }()
-	go func() { defer wg.Done(); bio = a.artistBio(side, art.Name) }()
+	go func() { defer wg.Done(); bio = a.artistBio(side, mbid, art.Name) }()
 	wg.Wait()
 	albums, t, err := a.pageAlbums(ctx, r, art, dz)
 	if err != nil {
@@ -921,7 +967,7 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if pick != 0 {
-		dzInfo, _ = a.s.Library.ArtistImages.AlbumInfo(ctx, pick)
+		dzInfo = a.deezerAlbum(side, pick)
 	}
 	v.Label = dzInfo.Label
 	have := map[string]string{}
@@ -1186,7 +1232,7 @@ func (a *API) artistCore(w http.ResponseWriter, r *http.Request) {
 		go func() {
 			b, cancel := context.WithTimeout(context.WithoutCancel(ctx), 6*time.Second)
 			defer cancel()
-			bioDone <- a.artistBio(b, name)
+			bioDone <- a.artistBio(b, mbid, name)
 		}()
 	}
 	if v.Name != "" {

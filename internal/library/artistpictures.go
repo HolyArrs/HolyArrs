@@ -20,9 +20,6 @@ import (
 // start and on its 6-hour schedule). It never waits on MusicBrainz.
 const KindArtistPictures = "artist_pictures"
 
-// CoverArtBase is the Cover Art Archive (album covers).
-const CoverArtBase = "https://coverartarchive.org"
-
 // SourceServer is the picture source recorded in the Job result: our
 // metadata server (the only one).
 const SourceServer = "holyarrs"

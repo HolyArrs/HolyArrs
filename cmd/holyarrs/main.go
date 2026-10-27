@@ -411,10 +411,16 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	var md metadata.Provider = hosted.TMDB()
 	showMD := showSources(vault, hosted)
 	var artistMD metadata.ArtistProvider = musicSource(s, version)
-	// Music lookups go through the metadata server, with MusicBrainz itself
-	// for full catalogs; a MusicBrainz stand-in (tests) is asked directly.
+	// Music lookups go through the metadata server only: an install never
+	// asks MusicBrainz itself. A MusicBrainz stand-in (tests) is asked
+	// directly; HOLYARRS_DIRECT_SOURCES=1 (developers only) keeps the real
+	// MusicBrainz behind the server for its fallbacks.
 	if os.Getenv("HOLYARRS_MUSICBRAINZ_URL") == "" {
-		artistMD = hosted.Service.Artists(artistMD)
+		var direct metadata.ArtistProvider
+		if directSources() {
+			direct = artistMD
+		}
+		artistMD = hosted.Service.Artists(direct)
 	}
 	pictures := artistImages()
 	// Pictures come from public addresses only; a picture stand-in named
@@ -621,12 +627,20 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	reg.Set(supervisor.StageKey("events"), "stage", "Event hooks", supervisor.Running, "")
 	defer wish.Wait()
+	// Deezer marks and artist bios come from the metadata server; only the
+	// direct stand-in (a Deezer stand-in in tests, or
+	// HOLYARRS_DIRECT_SOURCES=1) is asked directly.
+	serverDeezer, serverDeezerAlbum, serverBio := hosted.Service.MusicDeezerArtist, hosted.Service.MusicDeezerAlbum, hosted.Service.MusicArtistBio
+	if pictures != nil {
+		serverDeezer, serverDeezerAlbum, serverBio = nil, nil, nil
+	}
 	a := api.New(api.Server{Library: lib, Lists: ol, Store: s, Queue: q, Live: hub, Metadata: md, Version: version, Auth: au, Backups: bm, Restart: restart,
 		Secrets: vault, TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MetadataUp: hosted.Health.Up, ServiceTop: hosted.Service.ServiceTop, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
 			t, err := hosted.Service.TrailerPick(ctx, kind, id, lang)
 			return t.Key, err
 		}, AnimeMap: hosted.Service.AnimeMap, LiveSearch: flagOn("live_search"), ExtraArt: hosted.Service.Art, ImageBase: hosted.Service.Base() + "/v1/img", MusicControl: hosted.Service.Control, ArtistVideos: hosted.Service.ArtistVideos, ExtraRatings: hosted.Service.Ratings, WikiTitle: hosted.Service.WikiTitle, WikiPerson: hosted.Service.WikiPerson, AwardWinners: hosted.Service.AwardWinners, Alerts: sender, Asks: wish, Search: sr, Downloads: dm, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
-		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase, Deps: music.Deps{MusicTrending: hosted.Service.MusicTrending, MusicPictures: hosted.Service.MusicPictures, MusicNew: hosted.Service.MusicNewWindow, MusicSimilar: hosted.Service.MusicSimilar, MusicCharts: hosted.Service.MusicCharts, MusicGenres: hosted.Service.MusicGenreList, MusicGenreTile: hosted.Service.MusicGenreTile, MusicRowsV2: flagOn("music_rows_v2"), MusicRowsV3: flagOn("music_rows_v3"), MusicRowsV6: flagOn("music_rows_v6"), MusicRowsV7: flagOn("music_rows_v7"), MusicListsV1: flagOn("music_lists_v1"), MusicShelves: hosted.Service.MusicShelves, MusicPools: hosted.Service.MusicPools, MusicRowsTplOff: flagOn("music_rows_tpl_off"), MusicListeners: hosted.Service.MusicListeners, MusicSimilarSet: hosted.Service.MusicSimilarSet, MusicArtistData: hosted.Service.MusicArtistData, MusicSuggest: hosted.Service.MusicSuggest, MusicTopSongs: hosted.Service.MusicTopSongs, MusicRising: hosted.Service.MusicRisingToday, MusicDiscography: hosted.Service.MusicDiscography}})
+		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase, Deps: music.Deps{MusicTrending: hosted.Service.MusicTrending, MusicPictures: hosted.Service.MusicPictures, MusicNew: hosted.Service.MusicNewWindow, MusicSimilar: hosted.Service.MusicSimilar, MusicCharts: hosted.Service.MusicCharts, MusicGenres: hosted.Service.MusicGenreList, MusicGenreTile: hosted.Service.MusicGenreTile, MusicRowsV2: flagOn("music_rows_v2"), MusicRowsV3: flagOn("music_rows_v3"), MusicRowsV6: flagOn("music_rows_v6"), MusicRowsV7: flagOn("music_rows_v7"), MusicListsV1: flagOn("music_lists_v1"), MusicShelves: hosted.Service.MusicShelves, MusicPools: hosted.Service.MusicPools, MusicRowsTplOff: flagOn("music_rows_tpl_off"), MusicListeners: hosted.Service.MusicListeners, MusicSimilarSet: hosted.Service.MusicSimilarSet, MusicArtistData: hosted.Service.MusicArtistData, MusicSuggest: hosted.Service.MusicSuggest, MusicTopSongs: hosted.Service.MusicTopSongs, MusicRising: hosted.Service.MusicRisingToday, MusicDiscography: hosted.Service.MusicDiscography,
+			MusicDeezer: serverDeezer, MusicDeezerAlbum: serverDeezerAlbum, MusicArtistBio: serverBio}})
 	if !c.SafeMode {
 		a.StartExplore(ctx)
 	}
@@ -662,27 +676,50 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	return nil
 }
 
-// showSources are the show details sources: TMDB through the metadata
-// server (as movies), TVMaze (no key) and TVDB with the person's own key
-// only. HOLYARRS_TVMAZE_URL and HOLYARRS_TVDB_URL point at stand-ins (tests).
+// showSources are the show details sources: TMDB and TVmaze through the
+// metadata server, and TVDB with the person's own key only.
+// HOLYARRS_TVMAZE_URL and HOLYARRS_TVDB_URL point at stand-ins (tests); a
+// TVmaze stand-in is asked directly, and HOLYARRS_DIRECT_SOURCES=1
+// (developers only) keeps the real TVmaze behind the server for TVDB and
+// IMDb ids.
 func showSources(v *secrets.Vault, hosted *hostedMetadata) metadata.ShowSources {
+	var maze metadata.ShowProvider = &metadata.TVMaze{BaseURL: os.Getenv("HOLYARRS_TVMAZE_URL")}
+	if !standIn("HOLYARRS_TVMAZE_URL") {
+		var direct metadata.ShowProvider
+		if directSources() {
+			direct = maze
+		}
+		maze = hosted.Service.Shows("tvmaze", direct)
+	}
 	return metadata.ShowSources{
 		"tmdb":   hosted.TMDB(),
-		"tvmaze": &metadata.TVMaze{BaseURL: os.Getenv("HOLYARRS_TVMAZE_URL")},
+		"tvmaze": maze,
 		"tvdb": &metadata.TVDB{BaseURL: os.Getenv("HOLYARRS_TVDB_URL"),
 			Key: func(ctx context.Context) (string, error) { return v.Setting(ctx, api.TVDBKeyGroup, api.TVDBKeyName) }},
 	}
 }
 
-// artistImages reads Deezer's public artist profiles (top songs, explicit
-// marks; no key) over public addresses only; it fetches no pictures.
-// HOLYARRS_DEEZER_URL names a stand-in (tests), or "off" turns it off; with
-// a MusicBrainz stand-in and no Deezer stand-in it is off too, so browser
-// tests never reach Deezer.
+// directSources reports HOLYARRS_DIRECT_SOURCES=1: a developer stand-in
+// that lets this install ask Deezer, Wikipedia, MusicBrainz and TVmaze
+// itself. Off by default and never for installs: they ask the metadata
+// server only.
+func directSources() bool { return os.Getenv("HOLYARRS_DIRECT_SOURCES") == "1" }
+
+// standIn reports a stand-in address (tests) named by the variable.
+func standIn(name string) bool {
+	v := strings.TrimSpace(os.Getenv(name))
+	return v != "" && v != "off"
+}
+
+// artistImages is the direct Deezer and Wikipedia client, a stand-in
+// only: HOLYARRS_DEEZER_URL names a stand-in (tests), and
+// HOLYARRS_DIRECT_SOURCES=1 (developers) reaches the real Deezer over
+// public addresses. Off otherwise ("off", or nothing named): the metadata
+// server answers instead.
 func artistImages() *metadata.ArtistImages {
 	env := strings.TrimRight(os.Getenv("HOLYARRS_DEEZER_URL"), "/")
 	switch {
-	case env == "off", env == "" && os.Getenv("HOLYARRS_MUSICBRAINZ_URL") != "":
+	case env == "off", env == "" && (os.Getenv("HOLYARRS_MUSICBRAINZ_URL") != "" || !directSources()):
 		return nil
 	case env != "":
 		return &metadata.ArtistImages{BaseURL: env}

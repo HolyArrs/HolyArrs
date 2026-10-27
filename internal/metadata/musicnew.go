@@ -95,14 +95,3 @@ func parseNewReleases(b []byte) ([]NewRelease, error) {
 	}
 	return out, nil
 }
-
-// ReleasesBetween asks the direct MusicBrainz client, when it can.
-func (m *serviceMusic) ReleasesBetween(ctx context.Context, from, to string, types, artists []string, limit int) ([]NewRelease, error) {
-	g, ok := m.direct.(interface {
-		ReleasesBetween(context.Context, string, string, []string, []string, int) ([]NewRelease, error)
-	})
-	if !ok {
-		return nil, ErrArtistNotFound
-	}
-	return g.ReleasesBetween(ctx, from, to, types, artists, limit)
-}

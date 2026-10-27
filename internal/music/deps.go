@@ -75,6 +75,14 @@ type Deps struct {
 	MusicTopSongs    func(ctx context.Context, mbid string) (metadata.MusicTopSongs, error)
 	MusicRising      func(ctx context.Context) (metadata.MusicRising, error)
 	MusicDiscography func(ctx context.Context, mbid string) (metadata.MusicDiscography, error)
+	// MusicDeezer, MusicDeezerAlbum and MusicArtistBio read the metadata
+	// server's kept Deezer marks (explicit, label, top songs) and an
+	// artist's Wikipedia bio; installs never ask Deezer or Wikipedia
+	// themselves. nil falls back to Library.ArtistImages, a developer
+	// stand-in only (off by default).
+	MusicDeezer      func(ctx context.Context, mbid string) (metadata.DeezerProfile, error)
+	MusicDeezerAlbum func(ctx context.Context, id int64) (metadata.DeezerAlbumInfo, error)
+	MusicArtistBio   func(ctx context.Context, mbid string) (*metadata.WikiSummary, error)
 	// MusicPictures reads the stored picture records (version, size, main
 	// colour) of a row's artists and albums in one call; nil answers none.
 	MusicPictures func(ctx context.Context, artists, albums []string) (metadata.MusicPictures, error)
