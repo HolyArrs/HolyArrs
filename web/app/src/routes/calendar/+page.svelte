@@ -40,8 +40,11 @@
 		entryIcon,
 		albumHave,
 		webcalLink,
-		weekStart,
-		shiftWeek,
+		addDays,
+		entryDay,
+		rangeChunks,
+		titlesFromAddress,
+		monthRange,
 		itemDot,
 		passes,
 		readPresets,
@@ -63,12 +66,15 @@
 	// Cards (big pictures, day by day) or List (compact rows): ?view=cards|list, kept for the
 	// session; the old layout links (?view=2&span=…) land on Cards.
 	let view = $state<CalendarView>(startView(page.url.searchParams.get('view'), readView()));
-	// The first week shown: this week, or the first week of a linked month.
-	let week = $state(weekStart(askedMonth ?? now));
-	// How many weeks are loaded; six more each time the end comes near (a year at most).
+	// The days shown run from `start` (today, or the first of a linked month) to the day before `end`.
+	// Six more weeks load as the end comes near; scrolling up past the first day loads a week
+	// before it. Both stop a year from today.
+	const today0 = addDays(now, 0);
 	const REACH = 6;
-	const MAX_WEEKS = 52;
-	let reach = $state(REACH);
+	const earliest = addDays(today0, -365);
+	const latest = addDays(today0, 366);
+	let start = $state(askedMonth ?? today0);
+	let end = $state(addDays(askedMonth ?? today0, 7 * REACH));
 	let entries = $state<CalendarEntry[]>([]);
 	let libraryEmpty = $state(false);
 	let loaded = $state(false);
@@ -80,7 +86,7 @@
 	let presets = $state<CalFilter[]>([]);
 	// ?titles=shows opens the calendar on one kind of title.
 	const askedTitles = page.url.searchParams.get('titles');
-	let which = $state<TitlesShown>(askedTitles === 'movies' || askedTitles === 'shows' || askedTitles === 'music' ? askedTitles : 'all');
+	let which = $state<TitlesShown>(titlesFromAddress(askedTitles));
 
 	// The phone calendar feed.
 	let feed = $state<{ set: boolean; created_at?: string } | null>(null);
@@ -90,22 +96,26 @@
 	let newLink = $state('');
 	let feedBusy = $state(false);
 
-	// Music turned off while picked falls back to Everything.
+	// Music turned off while picked falls back to All.
 	$effect(() => {
 		if (which === 'music' && partOff('music')) which = 'all';
 	});
-	const shown = $derived(entries.filter((e) => kinds[e.kind] && shows(e, which) && passes(e, { keptOnly, haveOnly })));
+	const firstDay = $derived(ymd(start));
+	const lastDay = $derived(ymd(end));
+	// The query asks a day either side (an episode's local day can differ from the day it is
+	// stored under); those extra days never show as days of their own.
+	const picked = (e: CalendarEntry) => kinds[e.kind] && shows(e, which) && passes(e, { keptOnly, haveOnly });
+	const shown = $derived(entries.filter((e) => entryDay(e) >= firstDay && entryDay(e) < lastDay && picked(e)));
 	const todayKey = ymd(now);
 	const agenda = $derived(byDay(shown));
-	const end = $derived(shiftWeek(week, reach));
-	const range = $derived({ from: ymd(week), to: ymd(end) });
+	const range = $derived({ from: ymd(addDays(start, -1)), to: ymd(addDays(end, 1)) });
 	const rangeName = $derived(
-		`${week.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${new Date(end.getFullYear(), end.getMonth(), end.getDate() - 1).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
+		`${start.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${new Date(end.getFullYear(), end.getMonth(), end.getDate() - 1).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
 	);
 
 	// The small month: starts on the first week's month, pages on its own, and follows the day in view.
-	let pickYear = $state(untrack(() => week.getFullYear()));
-	let pickMonth = $state(untrack(() => week.getMonth()));
+	let pickYear = $state(untrack(() => start.getFullYear()));
+	let pickMonth = $state(untrack(() => start.getMonth()));
 	let active = $state<string | null>(null);
 	let sheetOpen = $state(false);
 
@@ -115,14 +125,23 @@
 		fetching = true;
 		try {
 			const r = range;
-			const [c, t] = await Promise.all([
-				api.get<{ dates: CalendarEntry[] | null }>(`/calendar?from=${r.from}&to=${r.to}`),
+			// The server takes up to a year a query; a longer stretch is asked in pieces.
+			const [parts, t] = await Promise.all([
+				Promise.all(rangeChunks(r.from, r.to).map((c) => api.get<{ dates: CalendarEntry[] | null }>(`/calendar?from=${c.from}&to=${c.to}`))),
 				api.get<{ titles: TitleView[] }>('/titles')
 			]);
 			if (n !== asks) return;
-			entries = c.dates ?? [];
+			const seen = new Set<string>();
+			entries = parts.flatMap((c) => c.dates ?? []).filter((e) => !seen.has(entryKey(e)) && !!seen.add(entryKey(e)));
 			libraryEmpty = t.titles.length === 0;
 			error = '';
+			await tick();
+			holdPlace();
+			if (goTo) {
+				const day = goTo;
+				goTo = null;
+				void pickDay(day);
+			}
 		} catch (e) {
 			error = message(e);
 		} finally {
@@ -132,12 +151,13 @@
 	}
 
 	function jump(d: Date) {
-		week = weekStart(d);
-		reach = REACH;
-		pickYear = week.getFullYear();
-		pickMonth = week.getMonth();
+		start = addDays(d, 0);
+		end = addDays(start, 7 * REACH);
+		anchor = null;
+		pickYear = start.getFullYear();
+		pickMonth = start.getMonth();
 	}
-	const go = (n: number) => jump(shiftWeek(week, n));
+	const go = (n: number) => jump(addDays(start, 7 * n));
 	// Each new range (the arrows, Today, more weeks, the small month) is loaded once.
 	let started = $state(false);
 	$effect(() => {
@@ -151,28 +171,111 @@
 	}
 
 	// The small month's arrows; a month outside what is loaded gets loaded (within a year).
-	const DAY = 86400000;
 	function pickPage(n: number) {
 		({ year: pickYear, month: pickMonth } = shiftMonth(pickYear, pickMonth, n));
-		const first = new Date(pickYear, pickMonth, 1);
-		const after = new Date(pickYear, pickMonth + 1, 1);
-		if (first < week) {
-			const from = weekStart(first);
-			const weeks = Math.ceil((end.getTime() - from.getTime()) / (7 * DAY));
-			week = from;
-			reach = Math.min(MAX_WEEKS, Math.max(REACH, weeks));
-		} else if (after > end) {
-			reach = Math.min(MAX_WEEKS, Math.ceil((after.getTime() - week.getTime()) / (7 * DAY)));
+	}
+	// The small month shows its whole month: dates outside the days loaded are asked for it alone.
+	let monthDates = $state<CalendarEntry[]>([]);
+	$effect(() => {
+		const r = monthRange(pickYear, pickMonth);
+		if (!started || (r.from >= firstDay && r.to <= lastDay)) {
+			monthDates = [];
+			return;
 		}
+		const key = `${r.from}:${r.to}`;
+		untrack(() => {
+			monthAsk = key;
+			api.get<{ dates: CalendarEntry[] | null }>(`/calendar?from=${ymd(addDays(r.start, -1))}&to=${ymd(addDays(new Date(r.to + 'T00:00:00'), 1))}`)
+				.then((c) => {
+					if (monthAsk === key) monthDates = c.dates ?? [];
+				})
+				.catch(() => {});
+		});
+	});
+	let monthAsk = '';
+	const miniDates = $derived.by(() => {
+		const keys = new Set(shown.map(entryKey));
+		return [...shown, ...monthDates.filter((e) => picked(e) && !keys.has(entryKey(e)))];
+	});
+	// A day not loaded yet (from the small month) loads first, then the page glides to it.
+	let goTo: string | null = null;
+
+	// Older days go in above the ones on screen. The row at the top of the screen is noted
+	// before they load and put back where it was after (scrollTop moves by what was added),
+	// so nothing jumps.
+	let anchor: { day: string; top: number } | null = null;
+	function notePlace() {
+		const rows = document.querySelectorAll<HTMLElement>('.cal-main [data-day]');
+		for (const r of rows) {
+			const b = r.getBoundingClientRect();
+			if (b.bottom > 0) {
+				anchor = { day: r.dataset.day ?? '', top: b.top };
+				return;
+			}
+		}
+		anchor = null;
+	}
+	function holdPlace() {
+		if (!anchor) return;
+		const a = anchor;
+		anchor = null;
+		const row = document.querySelector<HTMLElement>(`.cal-main [data-day="${a.day}"]`);
+		if (!row) return;
+		const moved = row.getBoundingClientRect().top - a.top;
+		if (Math.abs(moved) > 0.5) window.scrollBy({ top: moved, behavior: 'instant' });
+	}
+	function earlier(to: Date) {
+		if (to >= start) return;
+		notePlace();
+		start = to;
+	}
+	// gliding stays on until the page has stopped moving for a moment.
+	let gliding = false;
+	let glideTimer: ReturnType<typeof setTimeout> | undefined;
+	function guard() {
+		gliding = true;
+		clearTimeout(glideTimer);
+		glideTimer = setTimeout(() => (gliding = false), 600);
+	}
+	// Scrolling up near the first day loads the week before it.
+	function back() {
+		if (fetching || gliding || start <= earliest) return;
+		const to = addDays(start, -7);
+		earlier(to < earliest ? earliest : to);
+	}
+	const nearFirst = () => {
+		const first = document.querySelector<HTMLElement>('.cal-main [data-day]');
+		return !!first && first.getBoundingClientRect().top > -2 * innerHeight;
+	};
+	// At the very top the page cannot scroll, so an upward wheel or swipe asks instead.
+	function onWheel(e: WheelEvent) {
+		if (e.deltaY < 0 && window.scrollY <= 2 && loaded) back();
+	}
+	let touchY = 0;
+	const onTouchStart = (e: TouchEvent) => (touchY = e.touches[0]?.clientY ?? 0);
+	function onTouchMove(e: TouchEvent) {
+		if (window.scrollY <= 2 && (e.touches[0]?.clientY ?? 0) - touchY > 40 && loaded) back();
 	}
 	// A day picked in the small month: glide to its row (instant under reduced motion).
 	async function pickDay(day: string) {
 		const fromSheet = sheetOpen;
 		sheetOpen = false;
 		if (fromSheet) await tick();
+		const at = new Date(day + 'T00:00:00');
+		if (day < firstDay || day >= lastDay) {
+			goTo = day;
+			if (day < firstDay) earlier(at < earliest ? earliest : at);
+			else {
+				const to = addDays(at, 7);
+				end = to > latest ? latest : to;
+			}
+			return;
+		}
 		const row = document.querySelector<HTMLElement>(`.cal-main [data-day="${day}"]`);
 		if (!row) return;
 		active = day;
+		// No loading above while the page glides to the day, or the rows would move under it.
+		guard();
 		row.scrollIntoView({ block: 'start', behavior: glideScroll() });
 	}
 	// The day at the top of the page, for the small month (which pages along when the month changes).
@@ -194,11 +297,17 @@
 		}
 	}
 	let ticking = false;
+	let lastY = 0;
 	function onScroll() {
+		const y = window.scrollY;
+		const up = y < lastY;
+		lastY = y;
+		if (gliding) guard();
 		if (ticking) return;
 		ticking = true;
 		requestAnimationFrame(() => {
 			ticking = false;
+			if (up && loaded && nearFirst()) back();
 			follow();
 		});
 	}
@@ -217,8 +326,9 @@
 
 	// Near the end, the next six weeks load.
 	function more() {
-		if (fetching || reach >= MAX_WEEKS) return;
-		reach = Math.min(MAX_WEEKS, reach + REACH);
+		if (fetching || end >= latest) return;
+		const to = addDays(end, 7 * REACH);
+		end = to > latest ? latest : to;
 	}
 	function endless(node: HTMLElement, busy: boolean) {
 		const near = () => node.getBoundingClientRect().top < innerHeight + 900;
@@ -358,7 +468,7 @@
 	});
 </script>
 
-<svelte:window onscroll={onScroll} />
+<svelte:window onscroll={onScroll} onwheel={onWheel} ontouchstart={onTouchStart} ontouchmove={onTouchMove} />
 
 {#snippet item(e: CalendarEntry)}
 	{@const dot = itemDot(e, todayKey)}
@@ -383,7 +493,7 @@
 {/snippet}
 
 {#snippet mini()}
-	<MiniMonth year={pickYear} month={pickMonth} entries={shown} today={todayKey} {active} onpick={pickDay} onpage={pickPage} />
+	<MiniMonth year={pickYear} month={pickMonth} entries={miniDates} today={todayKey} {active} onpick={pickDay} onpage={pickPage} />
 {/snippet}
 
 <svelte:head><title>Calendar · HolyArrs</title></svelte:head>
@@ -418,7 +528,7 @@
 			value={which}
 			onchange={(v) => (which = v as TitlesShown)}
 			options={[
-				{ value: 'all', label: 'Everything' },
+				{ value: 'all', label: 'All' },
 				{ value: 'movies', label: 'Movies' },
 				{ value: 'shows', label: 'TV shows' },
 				...(partOn('music') ? [{ value: 'music', label: 'Music' }] : [])

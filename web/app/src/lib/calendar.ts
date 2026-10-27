@@ -263,3 +263,26 @@ export function savePresets(list: CalFilter[], store: Pick<Storage, 'setItem'> |
 		// Not kept; the filters still work for now.
 	}
 }
+
+/** addDays moves a day by n days (local time, midnight). */
+export function addDays(d: Date, n: number): Date {
+	return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+}
+
+/** rangeChunks splits a calendar query into pieces the server takes (at most `max` days each). */
+export function rangeChunks(from: string, to: string, max = 360): { from: string; to: string }[] {
+	const out: { from: string; to: string }[] = [];
+	let a = new Date(from + 'T00:00:00');
+	const end = new Date(to + 'T00:00:00');
+	while (a < end) {
+		const b = addDays(a, max) < end ? addDays(a, max) : end;
+		out.push({ from: ymd(a), to: ymd(b) });
+		a = b;
+	}
+	return out;
+}
+
+/** titlesFromAddress reads ?titles=: all (once called everything), movies, shows or music. */
+export function titlesFromAddress(v: string | null | undefined): TitlesShown {
+	return v === 'movies' || v === 'shows' || v === 'music' ? v : 'all';
+}

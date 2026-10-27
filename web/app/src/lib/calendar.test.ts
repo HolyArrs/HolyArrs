@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { itemDot, passes, readPresets, savePresets, byDay, feedLink, monthGrid, monthRange, shiftMonth, webcalLink, ymd, weekStart, shiftWeek, readView, saveView, startView, viewFromAddress, entryArt, entryIcon } from './calendar.ts';
+import { addDays, rangeChunks, titlesFromAddress, itemDot, passes, readPresets, savePresets, byDay, feedLink, monthGrid, monthRange, shiftMonth, webcalLink, ymd, weekStart, shiftWeek, readView, saveView, startView, viewFromAddress, entryArt, entryIcon } from './calendar.ts';
 import type { CalendarEntry } from './types.ts';
 
 const e = (title_id: number, kind: CalendarEntry['kind'], date: string): CalendarEntry => ({ title_id, name: `Movie ${title_id}`, kind, date });
@@ -104,5 +104,27 @@ describe('status and filters', () => {
 		expect(readPresets(store)).toEqual([p]);
 		m.set('holyarrs.calendar-filters', '{bad');
 		expect(readPresets(store)).toEqual([]);
+	});
+});
+
+describe('calendar range', () => {
+	it('moves by days across months', () => {
+		expect(ymd(addDays(new Date(2026, 9, 27), -30))).toBe('2026-09-27');
+		expect(ymd(addDays(new Date(2026, 11, 31), 1))).toBe('2027-01-01');
+	});
+	it('splits a long query into pieces the server takes', () => {
+		expect(rangeChunks('2026-10-01', '2026-10-08')).toEqual([{ from: '2026-10-01', to: '2026-10-08' }]);
+		const c = rangeChunks('2025-10-27', '2026-12-08');
+		expect(c).toHaveLength(2);
+		expect(c[0].from).toBe('2025-10-27');
+		expect(c[0].to).toBe(c[1].from);
+		expect(c[1].to).toBe('2026-12-08');
+		expect(rangeChunks('2026-10-01', '2026-10-01')).toEqual([]);
+	});
+	it('reads the titles in the address, old and new words', () => {
+		expect(titlesFromAddress('shows')).toBe('shows');
+		expect(titlesFromAddress('all')).toBe('all');
+		expect(titlesFromAddress('everything')).toBe('all');
+		expect(titlesFromAddress(null)).toBe('all');
 	});
 });
