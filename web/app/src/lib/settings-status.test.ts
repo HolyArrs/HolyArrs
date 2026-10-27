@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { fromServer, groupState, pageState, stateWords, type ServerStatus } from './settings-status.ts';
-import { groups, grouped, sectionFor, sections, visible } from './settings.ts';
+import { filterSections, groups, grouped, sectionFor, sections, visible } from './settings.ts';
 import { searchSettings, settingIndex } from './settings-search.ts';
 
 const answer = (over: Partial<ServerStatus> = {}): ServerStatus => ({ items: [], unset: {}, known: [], metadata_up: true, ...over });
@@ -36,7 +36,7 @@ describe('fromServer', () => {
 describe('groupState and pageState', () => {
 	it('says All set when every known page is fine', () => {
 		const a = fromServer(answer({ known: ['/settings/sources', '/settings/downloaders'] }));
-		expect(stateWords(groupState(a, 'copies', ['/settings/sources', '/settings/downloaders']))).toBe('All set');
+		expect(stateWords(groupState(a, ['/settings/sources', '/settings/downloaders']))).toBe('All set');
 	});
 
 	it('counts what needs attention per group and per page', () => {
@@ -49,25 +49,25 @@ describe('groupState and pageState', () => {
 				known: ['/settings/sources']
 			})
 		);
-		expect(groupState(a, 'copies', [])).toEqual({ state: 'attention', count: 2 });
+		expect(groupState(a, ['/settings/sources', '/settings/downloaders'])).toEqual({ state: 'attention', count: 2 });
 		expect(pageState(a, '/settings/sources').state).toBe('ok');
 		expect(stateWords(pageState(a, '/settings/downloaders'))).toBe('2 need attention');
 	});
 
 	it('one item reads in the singular', () => {
 		const a = fromServer(answer({ items: [{ group: 'maintenance', page: '/settings/backups', text: 'No backup yet', severity: 'warning' }] }));
-		expect(stateWords(groupState(a, 'maintenance', ['/settings/backups']))).toBe('1 needs attention');
+		expect(stateWords(groupState(a, ['/settings/backups']))).toBe('1 needs attention');
 	});
 
 	it('says Not set up for pages the server lists as unset', () => {
 		const a = fromServer(answer({ unset: { library: ['/settings/library-folders'], copies: ['/settings/sources', '/settings/downloaders'] } }));
-		expect(stateWords(groupState(a, 'library', ['/settings/library-folders']))).toBe('Not set up');
+		expect(stateWords(groupState(a, ['/settings/library-folders']))).toBe('Not set up');
 		expect(pageState(a, '/settings/downloaders').state).toBe('unset');
 	});
 
 	it('says nothing about pages it knows nothing of', () => {
 		const a = fromServer(answer());
-		expect(stateWords(groupState(a, 'security', ['/settings/sign-in']))).toBe('');
+		expect(stateWords(groupState(a, ['/settings/sign-in']))).toBe('');
 		expect(stateWords({ state: 'attention', count: 2 })).toBe('2 need attention');
 	});
 });
@@ -80,9 +80,17 @@ describe('settings groups', () => {
 		expect(none).toEqual(['/settings/appearance', '/settings/account']);
 	});
 
-	it('puts Danger zone last in Maintenance', () => {
-		const m = grouped(sections).find((g) => g.group.id === 'maintenance')!;
+	it('puts Danger zone last in System, with Schedules there too', () => {
+		const m = grouped(sections).find((g) => g.group.id === 'system')!;
+		expect(m.items.map((i) => i.href)).toContain('/settings/schedules');
 		expect(m.items.at(-1)?.href).toBe('/settings/danger');
+	});
+
+	it('filters the menu by page name, its words or its group', () => {
+		expect(filterSections(sections, 'sched').map((s) => s.label)).toEqual(['Schedules']);
+		expect(filterSections(sections, 'system logs').map((s) => s.label)).toContain('Logs');
+		expect(filterSections(sections, '  ')).toHaveLength(sections.length);
+		expect(filterSections(sections, 'zebra')).toEqual([]);
 	});
 
 	it('finds the page a nested path belongs to', () => {

@@ -3,11 +3,13 @@
 	import type { Snippet } from 'svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import { afterNavigate } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
 	import Icon from '#lib/Icon.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import StatusPill from '#lib/ui/StatusPill.svelte';
-	import { grouped, sectionFor, sections as all, visible } from '#lib/settings.ts';
+	import SettingsTile from '#lib/ui/SettingsTile.svelte';
+	import Avatar from '#lib/ui/Avatar.svelte';
+	import { filterSections, grouped, sectionFor, sections as all, visible } from '#lib/settings.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { partsNow } from '#lib/parts.svelte.ts';
 	import { offPartName } from '#lib/parts.ts';
@@ -16,6 +18,28 @@
 
 	const sections = $derived(visible(all, session.can).filter((section) => !offPartName(partsNow.answer, section.href)));
 	const groups = $derived(grouped(sections));
+	// The side menu: My account sits on top like a profile card; the rest in
+	// grouped, rounded sections. The search box narrows it as you type.
+	let find = $state('');
+	const account = $derived(sections.find((s) => s.group === 'account'));
+	const shown = $derived(grouped(filterSections(sections, find)).filter((g) => g.group.id !== 'account'));
+	const firstShown = $derived(filterSections(sections, find)[0]);
+	const flagged = (href: string) => {
+		const a = settingsNow.answer;
+		if (!a) return false;
+		return pageState(a, href).state === 'attention';
+	};
+	function findKey(e: KeyboardEvent) {
+		if (e.key === 'Escape' && find) {
+			e.preventDefault();
+			find = '';
+		} else if (e.key === 'Enter' && find.trim()) {
+			e.preventDefault();
+			// Enter opens the first page that matches, or searches every setting on Settings home.
+			void goto(firstShown ? to(firstShown.href) : to('/settings') + '?q=' + encodeURIComponent(find.trim()));
+			find = '';
+		}
+	}
 
 	let { children }: { children: Snippet } = $props();
 	const current = $derived(appPath(page.url.pathname));
@@ -74,21 +98,51 @@
 
 <div class="settings-shell" class:home={current === '/settings'}>
 	<nav class="settings-nav" aria-label="Settings sections">
-		<a class="nav-row top" href={to('/settings')} aria-current={current === '/settings' ? 'page' : undefined}>
-			<span class="ic"><Icon name="home" size={16} /></span>
-			<span>All settings</span>
-		</a>
+		<div class="nav-find">
+			<Icon name="search" size={15} />
+			<label class="sr-only" for="settings-nav-find">Find a settings page</label>
+			<input id="settings-nav-find" type="search" placeholder="Search" autocomplete="off" spellcheck="false" bind:value={find} onkeydown={findKey} />
+		</div>
 
-		{#each groups as { group, items } (group.id)}
+		{#if !find.trim()}
+			{#if account}
+				<a class="nav-account" href={to(account.href)} aria-current={currentSection?.href === account.href ? 'page' : undefined}>
+					<Avatar name={session.s.name || 'Me'} src={session.s.avatar} size={30} />
+					<span class="who"><b>{session.s.name || 'My account'}</b><span>My account, password and devices</span></span>
+					<Icon name="chevronRight" size={14} />
+				</a>
+			{/if}
+		{/if}
+
+		{#each shown as { group, items } (group.id)}
 			<div class="nav-group" role="group" aria-labelledby="settings-nav-{group.id}">
-				<h2 id="settings-nav-{group.id}"><Icon name={group.icon} size={14} />{group.label}</h2>
-				{#each items as section (section.href)}
-					<a class="nav-row" href={to(section.href)} aria-current={currentSection?.href === section.href ? 'page' : undefined}>
-						<span>{section.label}</span>
-					</a>
-				{/each}
+				<h2 id="settings-nav-{group.id}">{group.label}</h2>
+				<ul class="nav-section">
+					{#each items as section (section.href)}
+						<li>
+							<a class="nav-row" href={to(section.href)} aria-current={currentSection?.href === section.href ? 'page' : undefined} onclick={() => (find = '')}>
+								<SettingsTile icon={section.icon} tint={section.tint} size="xs" />
+								<span class="label">{section.label}</span>
+								{#if flagged(section.href)}<span class="flag" title="Needs attention"><span class="sr-only">, needs attention</span></span>{/if}
+							</a>
+						</li>
+					{/each}
+				</ul>
 			</div>
 		{/each}
+		{#if find.trim() && account && filterSections([account], find).length}
+			<ul class="nav-section found-account">
+				<li>
+					<a class="nav-row" href={to(account.href)} onclick={() => (find = '')}>
+						<SettingsTile icon="user" tint="gray" size="xs" />
+						<span class="label">My account</span>
+					</a>
+				</li>
+			</ul>
+		{/if}
+		{#if find.trim() && !firstShown}
+			<p class="nav-none">No page is called that. <a href={to('/settings') + '?q=' + encodeURIComponent(find.trim())} onclick={() => (find = '')}>Search every setting</a></p>
+		{/if}
 	</nav>
 
 	<div class="settings-workspace">
@@ -112,55 +166,104 @@
 <style>
 	.settings-shell {
 		display: grid;
-		grid-template-columns: 240px minmax(0, 1fr);
-		gap: clamp(24px, 3vw, 48px);
+		grid-template-columns: 252px minmax(0, 1fr);
+		gap: clamp(24px, 3vw, 44px);
 		align-items: start;
 	}
+	/* The side menu, in the manner of a phone's Settings app: a search box,
+	   a profile card, then rounded grouped sections with colour tiles. */
 	.settings-nav {
 		position: sticky;
 		top: calc(var(--topbar) + 8px);
-		max-height: calc(100dvh - var(--topbar) - 24px);
+		max-height: calc(100dvh - var(--topbar) - 16px);
 		overflow-y: auto;
 		overscroll-behavior: contain;
-		padding: 4px 4px 24px;
+		padding: 2px 4px 6px;
 		scrollbar-width: thin;
+		scrollbar-gutter: stable;
 	}
-	.nav-group { margin-top: 16px; }
-	.nav-group h2 {
+	.nav-find {
+		position: relative;
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		padding: 0 10px 4px;
-		font: var(--t-footnote);
-		font-weight: 600;
-		color: var(--text-muted);
+		margin-bottom: 8px;
 	}
-	.nav-row {
+	.nav-find > :global(.icon) { position: absolute; left: 10px; color: var(--text-muted); pointer-events: none; }
+	.nav-find input {
+		width: 100%;
+		height: 28px;
+		padding: 0 10px 0 31px;
+		border: 0;
+		border-radius: 9px;
+		background: var(--surface-3);
+		color: var(--text);
+		font: var(--t-callout);
+		outline: none;
+		transition: box-shadow var(--dur-fast) var(--ease-out);
+	}
+	.nav-find input::placeholder { color: var(--text-muted); }
+	.nav-find input:focus-visible { box-shadow: 0 0 0 3px var(--accent-soft), 0 0 0 1px var(--accent); }
+	.nav-account {
 		display: flex;
 		align-items: center;
 		gap: 10px;
-		min-height: 34px;
-		padding: 0 10px 0 32px;
-		border-radius: var(--r-btn);
+		margin-bottom: 4px;
+		padding: 4px 8px;
+		border-radius: 12px;
+		background: var(--surface-1);
+		box-shadow: 0 0 0 1px var(--line);
 		color: var(--text);
-		font: var(--t-callout);
-		font-weight: 500;
 		transition: background var(--dur-fast) var(--ease-out);
 	}
-	.nav-row.top { padding-left: 6px; }
-	.nav-row:hover { background: var(--surface-2); }
-	.nav-row[aria-current='page'] { background: var(--surface-3); font-weight: 600; box-shadow: inset 3px 0 0 var(--accent); }
-	.nav-row.top[aria-current='page'] { box-shadow: none; }
-	.nav-row.top[aria-current='page'] .ic { background: var(--accent-fill); color: var(--text-on-red); }
-	.ic {
-		width: 26px;
-		height: 26px;
-		flex: none;
-		display: grid;
-		place-items: center;
-		border-radius: 7px;
-		background: var(--surface-2);
+	.nav-account:hover { background: var(--surface-2); }
+	.nav-account[aria-current='page'] { box-shadow: 0 0 0 2px var(--accent); }
+	.who { flex: 1; min-width: 0; display: grid; }
+	.who b { font: var(--t-headline); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.who span { color: var(--text-muted); font: var(--t-footnote); font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.nav-account > :global(.icon:last-child) { flex: none; color: var(--text-faint); }
+	.nav-group { margin-top: 4px; }
+	.nav-group h2 {
+		padding: 0 10px 1px;
+		font: var(--t-caption);
+		line-height: 13px;
+		font-weight: 600;
+		letter-spacing: 0.01em;
 		color: var(--text-muted);
+	}
+	.nav-section {
+		margin: 0;
+		padding: 2px;
+		list-style: none;
+		border-radius: 10px;
+		background: var(--surface-1);
+		box-shadow: 0 0 0 1px var(--line);
+	}
+	.found-account { margin-top: 8px; }
+	.nav-row {
+		position: relative;
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		min-height: 23px;
+		padding: 1px 8px 1px 3px;
+		border-radius: 7px;
+		color: var(--text);
+		font: var(--t-callout);
+		font-size: 13.5px;
+		font-weight: 500;
+		transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+	}
+	.nav-row .label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.nav-row:hover { background: var(--surface-2); }
+	.nav-row[aria-current='page'] { background: var(--accent-fill); color: var(--text-on-red); font-weight: 600; }
+	.nav-row[aria-current='page'] :global(.tile) { box-shadow: 0 0 0 1px rgb(255 255 255 / 55%); }
+	.nav-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+	.flag { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--fail); box-shadow: 0 0 0 2px var(--surface-1); }
+	.nav-row[aria-current='page'] .flag { background: #fff; box-shadow: none; }
+	.nav-none { padding: 10px 8px; color: var(--text-muted); font: var(--t-footnote); }
+	.nav-none a { color: var(--accent-text); font-weight: 600; }
+	@media (prefers-reduced-motion: reduce) {
+		.nav-row, .nav-account, .nav-find input { transition: none; }
 	}
 	.settings-workspace { min-width: 0; max-width: 820px; }
 	.settings-content { width: 100%; min-width: 0; }
@@ -186,7 +289,8 @@
 	@media (prefers-reduced-motion: reduce) {
 		.settings-content :global(.flash-target) { animation: none; background: var(--accent-soft); box-shadow: 0 0 0 6px var(--accent-soft); }
 	}
-	@media (pointer: coarse) { .nav-row { min-height: 44px; } }
+	@media (min-height: 1000px) { .nav-row { min-height: 28px; } .nav-group { margin-top: 10px; } }
+	@media (pointer: coarse) { .nav-row { min-height: 40px; } }
 	/* Tablets: the list becomes one menu button named after the group. */
 	@media (max-width: 1023px) {
 		.settings-shell { grid-template-columns: minmax(0, 1fr); }

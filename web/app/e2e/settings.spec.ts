@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { noSidewaysScroll, owner, signIn, addFromSearch } from './helpers.ts';
 
-// Settings: the seven groups, setting search with a deep link that scrolls to
+// Settings: the six groups and My account, setting search with a deep link that scrolls to
 // and highlights the field, the save bar and its leave guard, Advanced
 // disclosures that stay as each person left them, and Movies and TV defaults
 // that the add dialog starts from.
@@ -17,7 +17,7 @@ test.afterAll(async () => {
 	await page.context().close();
 });
 
-test('Settings home: seven groups, each with its pages and My account on its own', async () => {
+test('Settings home: six groups, each with its pages, and My account on its own', async () => {
 	await page.goto('/settings');
 	await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
 	const groups = page.getByTestId('settings-group');
@@ -25,14 +25,14 @@ test('Settings home: seven groups, each with its pages and My account on its own
 		'General',
 		'Library',
 		'Getting copies',
-		'Wishlist and people',
-		'Sign-in and security',
+		'People and sign-in',
 		'Linked apps',
-		'Maintenance',
+		'System',
 		'My account'
 	]);
-	const maintenance = groups.filter({ has: page.getByRole('heading', { name: 'Maintenance' }) });
-	await expect(maintenance.getByRole('link').last()).toContainText('Danger zone');
+	const system = groups.filter({ has: page.getByRole('heading', { name: 'System' }) });
+	await expect(system.getByRole('link').last()).toContainText('Danger zone');
+	await expect(system.getByRole('link', { name: /Schedules/ })).toBeVisible();
 	const nav = page.getByRole('navigation', { name: 'Settings sections' });
 	await expect(nav.getByRole('heading', { name: 'Getting copies' })).toBeVisible();
 	await expect(nav.getByRole('link', { name: 'Pick rules' })).toBeVisible();

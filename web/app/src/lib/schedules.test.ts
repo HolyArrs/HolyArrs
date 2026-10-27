@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { every, mayRun, stateTone, unit, until } from './schedules.ts';
+import { busyNow, dot, every, groupSchedules, mayRun, scheduleGroup, stateTone, unit, until } from './schedules.ts';
 
 describe('schedules', () => {
 	it('says intervals in words', () => {
@@ -32,5 +32,20 @@ describe('schedules', () => {
 		expect(mayRun({ state: 'off' })).toBe(true);
 		expect(mayRun({ state: 'part_off' })).toBe(false);
 		expect(mayRun({ state: 'safe_mode' })).toBe(false);
+	});
+	it('sorts rows into four groups in page order, new kinds into Upkeep', () => {
+		expect(scheduleGroup('feed_check')).toBe('copies');
+		expect(scheduleGroup('refresh_titles')).toBe('metadata');
+		expect(scheduleGroup('something_new')).toBe('upkeep');
+		const g = groupSchedules([{ kind: 'health_check' }, { kind: 'feed_check' }, { kind: 'rescan_library' }, { kind: 'grab_held' }]);
+		expect(g.map((x) => x.id)).toEqual(['library', 'copies', 'upkeep']);
+		expect(g[1].rows.map((r) => r.kind)).toEqual(['feed_check', 'grab_held']);
+	});
+	it('finds what is running now and colours the dot', () => {
+		expect(busyNow([{ state: 'running' }, { state: 'waiting' }, { state: 'queued' }])).toHaveLength(2);
+		expect(dot({ state: 'running', last_job: 'failed' })).toBe('busy');
+		expect(dot({ state: 'waiting', last_job: 'failed' })).toBe('fail');
+		expect(dot({ state: 'waiting' })).toBe('ok');
+		expect(dot({ state: 'off' })).toBe('off');
 	});
 });

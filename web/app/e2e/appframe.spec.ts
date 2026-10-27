@@ -93,7 +93,7 @@ test('Schedules: next feed check, run it now, change how often', async () => {
 	await expect(page.getByRole('heading', { name: 'Schedules', level: 1 })).toBeVisible();
 	const feed = page.locator('[data-testid="schedule"][data-kind="feed_check"]');
 	await expect(feed).toContainText('Feed check');
-	await expect(feed.getByTestId('next')).toContainText('Next:');
+	await expect(feed.getByTestId('next')).toContainText('Next run');
 	await feed.getByRole('button', { name: 'Run Feed check now' }).click();
 	await expect(page.getByRole('status').filter({ hasText: /Feed check (started|is already waiting or running)\./ })).toBeVisible();
 	await feed.getByRole('button', { name: 'Change how often Feed check runs' }).click();
@@ -101,14 +101,14 @@ test('Schedules: next feed check, run it now, change how often', async () => {
 	await expect(feed.getByLabel('Every (minutes)')).toHaveAttribute('min', '10');
 	await feed.getByLabel('Every (minutes)').fill('30');
 	await feed.getByRole('button', { name: 'Save' }).click();
-	await expect(feed).toContainText('Runs every 30 minutes');
+	await expect(feed).toContainText('Every 30 minutes');
 	await expect(page.getByTestId('loop').first()).toBeVisible();
 	await axe(page, '/settings/schedules');
 	await phone(page, '/settings/schedules');
 });
 
 test('a newer release shows a notice; off asks nothing', async () => {
-	// The update check settings moved to Maintenance > Health checks; the notice stays on This app.
+	// The update check settings moved to System > Health checks; the notice stays on This app.
 	const saved = async () => {
 		await page.getByRole('button', { name: 'Save' }).click();
 		await expect(page.getByTestId('savebar')).toHaveCount(0);

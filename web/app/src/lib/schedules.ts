@@ -82,3 +82,53 @@ export function stateTone(s: ScheduleRow['state']): string {
 export function mayRun(s: Pick<ScheduleRow, 'state'>): boolean {
 	return s.state !== 'part_off' && s.state !== 'safe_mode';
 }
+
+export type ScheduleGroupId = 'library' | 'copies' | 'metadata' | 'upkeep';
+
+/** The four groups the Schedules page sorts its rows into, in page order. */
+export const scheduleGroups: { id: ScheduleGroupId; label: string }[] = [
+	{ id: 'library', label: 'Library and files' },
+	{ id: 'copies', label: 'Getting copies' },
+	{ id: 'metadata', label: 'Metadata and lists' },
+	{ id: 'upkeep', label: 'Upkeep' }
+];
+
+const groupOfKind: Record<string, ScheduleGroupId> = {
+	check_library_folders: 'library',
+	rescan_library: 'library',
+	clean_holding: 'library',
+	feed_check: 'copies',
+	grab_held: 'copies',
+	search_missing: 'copies',
+	subtitle_missing: 'copies',
+	subtitle_better: 'copies',
+	refresh_titles: 'metadata',
+	refresh_shows: 'metadata',
+	refresh_artists: 'metadata',
+	artist_pictures: 'metadata',
+	sync_outside_lists: 'metadata',
+	health_check: 'upkeep'
+};
+
+/** scheduleGroup says which group a schedule belongs in; anything new lands in Upkeep. */
+export function scheduleGroup(kind: string): ScheduleGroupId {
+	return groupOfKind[kind] ?? 'upkeep';
+}
+
+/** groupSchedules splits rows into the page's groups, keeping the server's order and leaving out empty groups. */
+export function groupSchedules<T extends Pick<ScheduleRow, 'kind'>>(rows: T[]): { id: ScheduleGroupId; label: string; rows: T[] }[] {
+	return scheduleGroups.map((g) => ({ ...g, rows: rows.filter((r) => scheduleGroup(r.kind) === g.id) })).filter((g) => g.rows.length > 0);
+}
+
+/** busyNow lists the schedules running or waiting their turn, for the Running now box. */
+export function busyNow<T extends Pick<ScheduleRow, 'state'>>(rows: T[]): T[] {
+	return rows.filter((r) => r.state === 'running' || r.state === 'queued');
+}
+
+/** dot is the status dot's colour: a failed last run wins over the schedule's state. */
+export function dot(s: Pick<ScheduleRow, 'state' | 'last_job'>): 'ok' | 'busy' | 'fail' | 'off' {
+	if (s.state === 'running' || s.state === 'queued') return 'busy';
+	if (s.last_job === 'failed') return 'fail';
+	if (s.state === 'waiting') return 'ok';
+	return 'off';
+}

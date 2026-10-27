@@ -135,7 +135,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/pick-rules', 'pick-rules-card', 'Release languages', 'pick rules language english french german spanish dubbed original audio'),
 	e('/settings/pick-rules', 'pick-rules-card', 'Fixed copies', 'pick rules proper repack fixed copy re-release'),
 
-	// Wishlist and people
+	// People and sign-in
 	e('/settings/wishlist', 'per-week-movies', 'Movie asks each week', 'wishlist limit request quota movies'),
 	e('/settings/wishlist', 'per-week-shows', 'Show asks each week', 'wishlist limit request quota shows'),
 	e('/settings/wishlist', 'per-week-music', 'Music asks each week', 'wishlist limit request quota music'),
@@ -164,7 +164,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/api', 'api-routes', 'Every API route', 'api routes endpoints openapi'),
 	e('/settings/move', '', 'Move from other apps', 'import migrate radarr sonarr lidarr prowlarr bazarr seerr overseerr'),
 
-	// Maintenance
+	// System
 	e('/settings/backups', 'backup-often', 'How often backups are made', 'backup schedule'),
 	e('/settings/backups', 'backup-list', 'Restore from a backup', 'restore backup download delete', true),
 	e('/settings/logs', 'lg-level', 'Logs', 'log level errors warnings debug download log'),
