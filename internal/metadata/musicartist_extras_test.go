@@ -97,3 +97,17 @@ func TestServiceArtistPopularity(t *testing.T) {
 		t.Fatalf("no object %+v %v", a, err)
 	}
 }
+
+func TestServicePopularityEitherPlace(t *testing.T) {
+	src := []byte(`{"id":"9fff2f8a-21e6-47de-a2b8-7f449929d43f","name":"Drake","popularity":{"monthly_listeners":94742435,"world_rank":7}}`)
+	if p := servicePopularity(serviceItem{Source: "musicbrainz", Kind: "artist", SourceID: "9fff2f8a-21e6-47de-a2b8-7f449929d43f", SourceData: src}); p == nil || p.WorldRank != 7 {
+		t.Fatalf("inside %+v", p)
+	}
+	beside := serviceItem{SourceData: []byte(`{"id":"x"}`), Popularity: &ArtistPopularity{TotalPlays: 5}}
+	if p := servicePopularity(beside); p == nil || p.TotalPlays != 5 {
+		t.Fatalf("beside %+v", p)
+	}
+	if servicePopularity(serviceItem{}) != nil {
+		t.Fatal("none")
+	}
+}

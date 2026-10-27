@@ -101,6 +101,20 @@ func TestServiceArtistStaysPartialUnlessDirectIsComplete(t *testing.T) {
 	}
 }
 
+func TestServiceArtistKeepsPopularityWhenDirectAnswers(t *testing.T) {
+	s := testService(t, func(w http.ResponseWriter, r *http.Request) {
+		serviceReply(w, "musicbrainz", serviceArtistID, musicItem(serviceArtistID, "artist", "Service Artist", map[string]any{
+			"id": serviceArtistID, "name": "Service Artist", "popularity": map[string]any{"monthly_listeners": 94742435, "world_rank": 7, "listeners_change_today": 45004},
+			"release-groups": []any{map[string]any{"id": serviceAlbumID, "title": "Service Album", "primary-type": "Album"}},
+		}))
+	})
+	direct := &serviceDirectMusic{artist: Artist{MBID: serviceArtistID, Name: "Direct Artist", Albums: []Album{{MBID: serviceAlbumID, Name: "Complete Album"}}}}
+	got, err := s.Artists(direct).Artist(context.Background(), serviceArtistID)
+	if err != nil || got.Name != "Direct Artist" || got.Popularity == nil || got.Popularity.MonthlyListeners != 94742435 || got.Popularity.WorldRank != 7 {
+		t.Fatalf("%#v %v", got, err)
+	}
+}
+
 func TestServiceArtistTransientFallsBackButInvalidDoesNot(t *testing.T) {
 	status := http.StatusServiceUnavailable
 	s := testService(t, func(w http.ResponseWriter, r *http.Request) {

@@ -141,10 +141,17 @@ func (m *serviceMusic) Artist(ctx context.Context, mbid string) (Artist, error) 
 		}
 		return Artist{}, serviceMusicError(err)
 	}
+	// The server's figures are kept whichever album list answers: a long
+	// discography falls back to MusicBrainz's own, which has none.
+	pop := servicePopularity(item)
 	artist, err := parseServiceArtist(item, true)
 	if err != nil {
 		if m.direct != nil && serviceFallback(ctx, err) {
-			return m.directArtist(ctx, mbid)
+			a, err := m.directArtist(ctx, mbid)
+			if err == nil && a.Popularity == nil {
+				a.Popularity = pop
+			}
+			return a, err
 		}
 		return Artist{}, err
 	}
@@ -166,7 +173,9 @@ func (m *serviceMusic) Artist(ctx context.Context, mbid string) (Artist, error) 
 		select {
 		case <-done:
 			if f.err == nil && !f.a.Partial && validDirectArtist(f.a, mbid) {
-				return f.a, nil
+				a := f.a
+				a.Popularity = pop
+				return a, nil
 			}
 		case <-t.C:
 		case <-ctx.Done():
@@ -179,9 +188,22 @@ func (m *serviceMusic) Artist(ctx context.Context, mbid string) (Artist, error) 
 		return Artist{}, ctx.Err()
 	}
 	if directErr == nil && !direct.Partial && validDirectArtist(direct, mbid) {
+		direct.Popularity = pop
 		return direct, nil
 	}
 	return artist, nil
+}
+
+// servicePopularity reads an artist answer's figures, inside its data or
+// beside it; nil when there are none.
+func servicePopularity(item serviceItem) *ArtistPopularity {
+	var data struct {
+		Popularity *ArtistPopularity `json:"popularity"`
+	}
+	if item.decode(&data) == nil && data.Popularity.orNil() != nil {
+		return data.Popularity.orNil()
+	}
+	return item.Popularity.orNil()
 }
 
 type quickArtistKey struct{}
