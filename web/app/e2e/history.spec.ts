@@ -102,15 +102,15 @@ test('health: checks run on Health checks, show on Home, and their settings are 
 
 });
 
-test('calendar: month and list views with cinema, digital and disc dates', async () => {
+test('calendar: cards and list views with cinema, digital and disc dates', async () => {
 	const titles = (await (await page.request.get('/api/v1/titles')).json()).titles as TitleRow[];
 	const dated = titles.find((t) => t.cinema_date)!;
 	const month = dated.cinema_date!.slice(0, 7);
 	await page.goto(`/calendar?month=${month}`);
-	// Stacked weeks: the month's weeks, a day per row.
-	const weeks = page.getByTestId('cal-week');
-	await expect(weeks).toBeVisible();
-	await expect(weeks.locator(`[data-day="${dated.cinema_date!.slice(0, 10)}"]`).getByRole('link', { name: new RegExp(dated.name) })).toBeVisible();
+	// Cards: a day per row, from the month's first week.
+	const cards = page.getByTestId('cal-cards');
+	await expect(cards).toBeVisible();
+	await expect(cards.locator(`[data-day="${dated.cinema_date!.slice(0, 10)}"]`).getByRole('link', { name: new RegExp(dated.name) }).first()).toBeVisible();
 	const heading = await page.getByTestId('cal-month').textContent();
 	await page.getByRole('button', { name: 'Week after' }).click();
 	await expect(page.getByTestId('cal-month')).not.toHaveText(heading!);

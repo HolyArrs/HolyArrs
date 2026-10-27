@@ -156,28 +156,12 @@ export function webcalLink(link: string): string {
 	return link.replace(/^https?:\/\//, 'webcal://');
 }
 
-/** The calendar's three views. */
-export type CalendarView = 'week' | 'month' | 'list';
+/** The calendar's two views: big picture cards day by day, or a compact list. */
+export type CalendarView = 'cards' | 'list';
 
 /** weekStart is the Monday of the week a day falls in (local time). */
 export function weekStart(d: Date): Date {
 	return new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7));
-}
-
-/** weekRange is the first day of a week and the day after its last, for the calendar query. */
-export function weekRange(start: Date): { from: string; to: string } {
-	return { from: ymd(start), to: ymd(new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7)) };
-}
-
-/** weekDays lays one week out, Monday first, with each day's dates. */
-export function weekDays(start: Date, entries: CalendarEntry[], today = ymd(new Date())): GridDay[] {
-	const days: GridDay[] = [];
-	for (let i = 0; i < 7; i++) {
-		const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
-		const k = ymd(d);
-		days.push({ day: k, date: d.getDate(), inMonth: true, today: k === today, items: entries.filter((e) => entryDay(e) === k) });
-	}
-	return days;
 }
 
 /** shiftWeek moves a week start by n weeks. */
@@ -187,36 +171,39 @@ export function shiftWeek(start: Date, n: number): Date {
 
 const viewKey = 'holyarrs.calendar-view';
 
-/** readView is the view this browser last picked, if any. */
-export function readView(store: Pick<Storage, 'getItem'> | undefined = globalThis.localStorage): CalendarView | null {
+/**
+ * viewFromAddress reads ?view=: cards or list; the old layout links still
+ * land somewhere sensible (now or 0, the old page, opens List; 1 to 5 open Cards).
+ */
+export function viewFromAddress(v: string | null | undefined): CalendarView | null {
+	if (v === 'cards' || v === 'list') return v;
+	if (v === 'now' || v === '0') return 'list';
+	if (v && /^[1-9]$/.test(v)) return 'cards';
+	return null;
+}
+
+/** readView is the view picked earlier in this session, if any. */
+export function readView(store: Pick<Storage, 'getItem'> | undefined = globalThis.sessionStorage): CalendarView | null {
 	try {
 		const v = store?.getItem(viewKey);
-		return v === 'week' || v === 'month' || v === 'list' ? v : null;
+		return v === 'cards' || v === 'list' ? v : null;
 	} catch {
 		return null;
 	}
 }
 
-/** saveView remembers the view picked; a private window may refuse and that is fine. */
-export function saveView(v: CalendarView, store: Pick<Storage, 'setItem'> | undefined = globalThis.localStorage) {
+/** saveView keeps the view picked for the session; a private window may refuse and that is fine. */
+export function saveView(v: CalendarView, store: Pick<Storage, 'setItem'> | undefined = globalThis.sessionStorage) {
 	try {
 		store?.setItem(viewKey, v);
 	} catch {
-		// Not remembered; the default still works.
+		// Not kept; the address still says.
 	}
 }
 
-/**
- * startView picks the view the calendar opens on: a shared month link opens
- * that month (as a list on phones, unless Month was picked before); else the
- * person's last choice; else a week for shows (or everything) on a screen
- * 768px or wider, a list on phones, a month otherwise.
- */
-export function startView(o: { remembered: CalendarView | null; which: TitlesShown; wide: boolean; monthLink: boolean }): CalendarView {
-	if (o.monthLink) return o.wide || o.remembered === 'month' ? 'month' : 'list';
-	if (o.remembered) return o.remembered;
-	if (!o.wide) return 'list';
-	return o.which === 'shows' || o.which === 'all' ? 'week' : 'month';
+/** startView is the view the calendar opens on: the address, else the session's pick, else Cards. */
+export function startView(address: string | null | undefined, remembered: CalendarView | null): CalendarView {
+	return viewFromAddress(address) ?? remembered ?? 'cards';
 }
 
 /** entryArt is the picture for a calendar entry: the episode still, then the backdrop, then the poster. */
@@ -237,35 +224,6 @@ export function itemDot(e: CalendarEntry, today = ymd(new Date())): ItemDot {
 	const have = e.kind === 'album' ? !!e.tracks && (e.have ?? 0) >= e.tracks : e.state === 'in_library' || !!e.versions?.some((v) => v.state === 'in_library');
 	if (have) return 'have';
 	return entryDay(e) < today ? 'missing' : 'upcoming';
-}
-
-/** How many weeks the stacked view loads: this week, next week, and four weeks of Later. */
-export const stackedWeeks = 6;
-
-/** stackedRange is the query range for the stacked weeks from a week start. */
-export function stackedRange(start: Date): { from: string; to: string } {
-	return { from: ymd(start), to: ymd(shiftWeek(start, stackedWeeks)) };
-}
-
-/** weekLabel names a week row: This week, Next week, or its dates. */
-export function weekLabel(start: Date, today = new Date()): string {
-	const diff = Math.round((weekStart(start).getTime() - weekStart(today).getTime()) / (7 * 86400000));
-	if (diff === 0) return 'This week';
-	if (diff === 1) return 'Next week';
-	if (diff === -1) return 'Last week';
-	const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6);
-	const f = (d: Date) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-	return `${f(start)} – ${f(end)}`;
-}
-
-/** stacked lays out two week rows of seven days and the Later days (only days with items). */
-export function stacked(start: Date, entries: CalendarEntry[], today = ymd(new Date())) {
-	const later = ymd(shiftWeek(start, 2));
-	const end = ymd(shiftWeek(start, stackedWeeks));
-	return {
-		weeks: [0, 1].map((n) => ({ start: shiftWeek(start, n), days: weekDays(shiftWeek(start, n), entries, today) })),
-		later: byDay(entries.filter((e) => entryDay(e) >= later && entryDay(e) < end))
-	};
 }
 
 /** A saved set of calendar filters. */

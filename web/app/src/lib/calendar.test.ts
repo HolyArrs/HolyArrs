@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { itemDot, passes, readPresets, savePresets, stacked, stackedRange, weekLabel, byDay, feedLink, monthGrid, monthRange, shiftMonth, webcalLink, ymd, weekStart, weekRange, weekDays, shiftWeek, readView, saveView, startView, entryArt, entryIcon } from './calendar.ts';
+import { itemDot, passes, readPresets, savePresets, byDay, feedLink, monthGrid, monthRange, shiftMonth, webcalLink, ymd, weekStart, shiftWeek, readView, saveView, startView, viewFromAddress, entryArt, entryIcon } from './calendar.ts';
 import type { CalendarEntry } from './types.ts';
 
 const e = (title_id: number, kind: CalendarEntry['kind'], date: string): CalendarEntry => ({ title_id, name: `Movie ${title_id}`, kind, date });
@@ -44,37 +44,31 @@ describe('calendar', () => {
 });
 
 describe('calendar week', () => {
-	it('starts weeks on Monday and lays out seven days', () => {
+	it('starts weeks on Monday', () => {
 		const s = weekStart(new Date(2026, 9, 18)); // a Sunday
 		expect(ymd(s)).toBe('2026-10-12');
-		expect(weekRange(s)).toEqual({ from: '2026-10-12', to: '2026-10-19' });
-		const days = weekDays(s, [e(1, 'cinema', '2026-10-13T00:00:00Z'), e(2, 'cinema', '2026-10-20T00:00:00Z')], '2026-10-18');
-		expect(days.map((d) => d.date)).toEqual([12, 13, 14, 15, 16, 17, 18]);
-		expect(days[1].items).toHaveLength(1);
-		expect(days[6].today).toBe(true);
 		expect(ymd(shiftWeek(s, -1))).toBe('2026-10-05');
 	});
 
-	it('opens on week for shows on wide screens, and keeps the last choice', () => {
-		expect(startView({ remembered: null, which: 'shows', wide: true, monthLink: false })).toBe('week');
-		expect(startView({ remembered: null, which: 'all', wide: true, monthLink: false })).toBe('week');
-		expect(startView({ remembered: null, which: 'movies', wide: true, monthLink: false })).toBe('month');
-		expect(startView({ remembered: null, which: 'shows', wide: false, monthLink: false })).toBe('list');
-		expect(startView({ remembered: 'month', which: 'shows', wide: true, monthLink: false })).toBe('month');
-		expect(startView({ remembered: 'week', which: 'shows', wide: true, monthLink: true })).toBe('month');
-		expect(startView({ remembered: 'week', which: 'shows', wide: false, monthLink: true })).toBe('list');
-		expect(startView({ remembered: 'month', which: 'shows', wide: false, monthLink: true })).toBe('month');
+	it('opens on Cards, the address first, then the session pick; old layout links still land', () => {
+		expect(startView(null, null)).toBe('cards');
+		expect(startView(null, 'list')).toBe('list');
+		expect(startView('cards', 'list')).toBe('cards');
+		expect(viewFromAddress('2')).toBe('cards');
+		expect(viewFromAddress('5')).toBe('cards');
+		expect(viewFromAddress('now')).toBe('list');
+		expect(viewFromAddress('week')).toBeNull();
 	});
 
 	it('remembers the view, and survives storage that throws', () => {
 		const m = new Map<string, string>();
 		const store = { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v) };
 		expect(readView(store)).toBeNull();
-		saveView('week', store);
-		expect(readView(store)).toBe('week');
+		saveView('list', store);
+		expect(readView(store)).toBe('list');
 		const broken = { getItem: () => { throw new Error('no'); }, setItem: () => { throw new Error('no'); } };
 		expect(readView(broken)).toBeNull();
-		expect(() => saveView('list', broken)).not.toThrow();
+		expect(() => saveView('cards', broken)).not.toThrow();
 	});
 });
 
@@ -92,23 +86,8 @@ describe('calendar artwork', () => {
 	});
 });
 
-describe('stacked weeks', () => {
+describe('status and filters', () => {
 	const ep = (date: string, state?: string): CalendarEntry => ({ title_id: 1, name: 'X', kind: 'episode', date, air_day: date, timed: false, state });
-	it('names the weeks', () => {
-		const today = new Date(2026, 9, 21);
-		expect(weekLabel(weekStart(today), today)).toBe('This week');
-		expect(weekLabel(shiftWeek(weekStart(today), 1), today)).toBe('Next week');
-		expect(weekLabel(shiftWeek(weekStart(today), 3), today)).not.toMatch(/week/);
-	});
-	it('lays out two weeks and Later', () => {
-		const start = new Date(2026, 9, 19);
-		const s = stacked(start, [ep('2026-10-20'), ep('2026-10-28'), ep('2026-11-05'), ep('2026-12-30')], '2026-10-21');
-		expect(s.weeks).toHaveLength(2);
-		expect(s.weeks[0].days[1].items).toHaveLength(1);
-		expect(s.weeks[0].days[2].today).toBe(true);
-		expect(s.later.map((d) => d.day)).toEqual(['2026-11-05']);
-		expect(stackedRange(start)).toEqual({ from: '2026-10-19', to: '2026-11-30' });
-	});
 	it('picks a status dot and filters', () => {
 		expect(itemDot(ep('2026-10-20', 'in_library'), '2026-10-21')).toBe('have');
 		expect(itemDot(ep('2026-10-20'), '2026-10-21')).toBe('missing');

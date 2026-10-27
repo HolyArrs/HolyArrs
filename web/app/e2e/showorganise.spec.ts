@@ -145,8 +145,8 @@ test("the Calendar shows this week's episode, and the movies and shows filter", 
 	await page.getByTestId('cal-titles').getByRole('radio', { name: 'Shows' }).click();
 	await expect(item).toBeVisible();
 	await expect(page.getByRole('checkbox', { name: 'In cinemas' })).toHaveCount(0);
-	await page.getByRole('radio', { name: 'Weeks', exact: true }).click();
-	await expect(page.getByTestId('cal-week').getByTestId('cal-item').filter({ hasText: 'Quarry Bells S02E01' })).toBeVisible();
+	await page.getByRole('radio', { name: 'Cards', exact: true }).click();
+	await expect(page.getByTestId('cal-cards').getByRole('link', { name: 'Quarry Bells' }).first()).toBeVisible();
 	await axe(page, 'calendar with episodes');
 });
 

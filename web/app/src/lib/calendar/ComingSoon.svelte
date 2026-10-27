@@ -11,34 +11,11 @@
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import CalEmpty from './CalEmpty.svelte';
 
-	// 2 · Coming Soon: one date per row. A big date stamp on the left (the
+	// Cards: one day per row. A big date stamp on the left (the
 	// day name over a large number, once per day) and a large backdrop card
 	// beside it with the name on the art, a short line and an Open button.
 	// Month names divide the list.
-	let {
-		entries,
-		today,
-		onlater,
-		focus = null,
-		onfocused
-	}: {
-		entries: CalendarEntry[];
-		today: string;
-		onlater: () => void;
-		/** A day to bring into view once its dates are shown (from Week or Month); the first row on or after it. */
-		focus?: string | null;
-		onfocused?: () => void;
-	} = $props();
-	let list = $state<HTMLDivElement>();
-	$effect(() => {
-		if (!focus || !list) return;
-		const day = focus;
-		const rows = [...list.querySelectorAll<HTMLElement>('.row[data-day]')];
-		const row = rows.find((r) => (r.dataset.day ?? '') >= day) ?? rows.at(-1);
-		const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-		requestAnimationFrame(() => row?.scrollIntoView({ block: 'start', behavior: still ? 'auto' : 'smooth' }));
-		onfocused?.();
-	});
+	let { entries, today, onlater }: { entries: CalendarEntry[]; today: string; onlater: () => void } = $props();
 
 	const months = $derived(monthGroups(entries));
 	const openWord = (e: CalendarEntry) => (e.kind === 'episode' ? 'Open show' : e.kind === 'album' ? 'Open album' : 'Open movie');
@@ -84,7 +61,7 @@
 {#if !months.length}
 	<CalEmpty {onlater} />
 {:else}
-	<div class="cs" data-testid="cal-look-2" bind:this={list}>
+	<div class="cs" data-testid="cal-cards">
 		{#each months as m (m.month)}
 			<section class="month" aria-label={m.name}>
 				<h3 class="divider"><span>{m.name}</span></h3>
@@ -116,12 +93,14 @@
 {/if}
 
 <style>
-	.cs { display: flex; flex-direction: column; gap: 36px; max-width: 980px; }
+	.cs { display: flex; flex-direction: column; gap: 36px; max-width: 1120px; container-type: inline-size; }
 	.divider { display: flex; align-items: center; gap: 14px; margin: 0 0 18px; font: var(--t-title2); letter-spacing: var(--t-title2-track); }
 	.divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
 	.rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 34px; }
 	.row { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 20px; align-items: start; }
 	.many { min-width: 0; }
+	/* The row stops at the column's right edge, so it never runs under the small month beside it. */
+	.many :global(.ui-shelf .row) { margin-right: 0; padding-right: 0; }
 	.many :global(.ui-shelf h2) { font: var(--t-title3); letter-spacing: var(--t-title3-track); color: var(--text-muted); }
 	/* Several episodes of one show: the card sits on a small stack. */
 	.stack { position: relative; }
@@ -129,7 +108,7 @@
 	.layer { position: absolute; border-radius: var(--r-panel); background: var(--surface-3); box-shadow: var(--shadow-card); }
 	.l1 { top: 5px; left: 3%; right: 3%; height: 60px; opacity: 0.9; }
 	.l2 { top: 0; left: 6%; right: 6%; height: 60px; opacity: 0.55; }
-	/* With the page's own scroll padding (the top bar), a focused day lands under the bar like the sticky stamp. */
+	/* With the page's own scroll padding (the top bar), a day picked in the small month lands under the bar like the sticky stamp. */
 	.row { scroll-margin-top: 8px; }
 	.stamp { position: sticky; top: calc(var(--topbar) + 16px); display: flex; flex-direction: column; align-items: flex-start; line-height: 1; }
 	.dow { color: var(--text-muted); font: var(--t-subhead); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
@@ -164,10 +143,9 @@
 	.past .cs-card { opacity: 0.75; }
 
 	/* Wide screens: the art and its words side by side, so two or three rows fit a screen. */
-	@media (min-width: 1100px) {
+	@container (min-width: 760px) {
 		.cs-card { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 26px; align-items: center; }
 		.text { gap: 6px; }
-		.cs { max-width: 1120px; }
 	}
 	@media (max-width: 767px) {
 		.cs { gap: 28px; }
