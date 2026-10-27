@@ -262,9 +262,9 @@
 [data-press] {
   transition-property: transform, background-color, color, border-color, box-shadow, opacity;
   transition-duration: var(--dur), var(--dur-fast), var(--dur-fast), var(--dur-fast), var(--dur-fast), var(--dur-fast);
-  transition-timing-function: var(--ease-spring), ease, ease, ease, ease, ease;
+  transition-timing-function: var(--ease-spring), var(--ease-out), var(--ease-out), var(--ease-out), var(--ease-out), var(--ease-out);
 }
-[data-press][data-pressed] { transform: scale(var(--press-scale, var(--press))); transition-duration: var(--dur-instant), var(--dur-fast); transition-timing-function: var(--ease-out), ease; }
+[data-press][data-pressed] { transform: scale(var(--press-scale, var(--press))); transition-duration: var(--dur-instant), var(--dur-fast); transition-timing-function: var(--ease-out), var(--ease-out); }
 
 @media (prefers-reduced-motion: reduce) {
   :root {
