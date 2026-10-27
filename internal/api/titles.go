@@ -618,6 +618,14 @@ func (a *API) artwork(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	// ?size=250: the small copy for thumbnails (made here once, like album covers).
+	if r.URL.Query().Get("size") == "250" {
+		if n, sp, err := a.s.Library.Artwork.Smaller(name, 250); err == nil && n != name {
+			// A day, not a year: the address stays when the stored picture is replaced.
+			serveArtworkCached(w, r, n, sp, "private, max-age=86400")
+			return
+		}
+	}
 	serveArtwork(w, r, name, p)
 }
 

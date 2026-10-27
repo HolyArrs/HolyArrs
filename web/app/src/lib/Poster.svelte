@@ -6,12 +6,22 @@
 	let broken = $state(false);
 	const usable = $derived(!!src && !broken && (src.startsWith('https://') || src.startsWith('/')));
 	let loaded = $state(false);
+	// A small slot (a History row, a 30 px thumbnail) takes the Library picture's
+	// 250 px copy instead of the stored 1000 px one, by the cover rule in
+	// music-pages.ts coverSize: up to 125 css pixels on screens up to 2x.
+	let width = $state(0);
+	const own = /^\/api\/v1\/artwork\/[0-9a-f]+\.(?:jpg|jpeg|png|webp)$/;
+	const shown = $derived.by(() => {
+		const url = src ?? '';
+		const small = own.test(url) && width <= 125 && width * (globalThis.devicePixelRatio || 1) <= 250;
+		return to(small ? `${url}?size=250` : url);
+	});
 </script>
 
-<div class="poster">
+<div class="poster" bind:clientWidth={width}>
 	{#if !usable || !loaded}<ArtPlaceholder name={usable ? '' : name} shape="poster" loading={usable} />{/if}
-	{#if usable}
-		<img src={to(src ?? '')} alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onload={() => (loaded = true)} onerror={() => (broken = true)} />
+	{#if usable && width > 0}
+		<img src={shown} alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onload={() => (loaded = true)} onerror={() => (broken = true)} />
 	{/if}
 </div>
 
