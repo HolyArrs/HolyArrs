@@ -2,7 +2,7 @@
 	import Shelf from './Shelf.svelte';
 	import Icon from '../Icon.svelte';
 	import { to } from '../paths.ts';
-	import { fitTile } from '../tmdb-image.ts';
+	import { sized } from '../tmdb-image.ts';
 	import { browseHref, type BrowseTile } from '../search-browse.ts';
 	import { SECTION_LABEL } from '../category-strip.ts';
 	import type { ExploreType } from '../explore.ts';
@@ -29,7 +29,8 @@
 			name: t.name,
 			label: SECTION_LABEL[t.section] ?? '',
 			href: to(browseHref(t, type)),
-			art: t.backdrop ? fitTile(t.backdrop, 240, false) : '',
+			// A 142–236 px grey still: w780 through HolyArrs' artwork cache, never TMDB's original.
+			art: t.backdrop ? sized(t.backdrop, 'backdrop', 240) : '',
 			tile: t
 		})),
 		{ key: 'all', name: 'All categories', label: 'Browse', href: to(type === 'movies' ? '/search?kind=movie' : type === 'shows' ? '/search?kind=show' : '/search'), art: '', all: true }

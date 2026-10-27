@@ -298,7 +298,7 @@
 		{#if answer && heroes.length}
 			<div class="spot" data-testid="music-hero">
 				<Shelf title="Spotlight" item="var(--spot-item)">
-					{#each heroes as c (c.key)}
+					{#each heroes as c, hi (c.key)}
 						{@const cv = coverFor(musicImage(c), 430)}
 						{@const art = c.artist_image ? musicImage({ image: c.artist_image }) : null}
 						<a class="feature" href={musicCardHref(c)}>
@@ -309,12 +309,13 @@
 								{#if !cv.src || noCover[c.key]}<ArtPlaceholder name={c.name} shape="wide" />{/if}
 								{#if cv.src && !noCover[c.key]}
 									<!-- The square cover on a blurred, darker copy of itself fills the wide frame. -->
-									<img class="blur" src={coverFor(musicImage(c), 120).src} alt="" aria-hidden="true" decoding="async" />
-									<img class="sq" src={cv.src} alt="" fetchpriority="high" decoding="async" onerror={() => (noCover[c.key] = true)} />
+									<img class="blur" src={coverFor(musicImage(c), 120).src} alt="" aria-hidden="true" loading={hi < 2 ? 'eager' : 'lazy'} decoding="async" />
+									<!-- The first 2 cards are on screen at once; the rest wait until scrolled near. -->
+									<img class="sq" src={cv.src} alt="" fetchpriority={hi < 2 ? 'high' : 'auto'} loading={hi < 2 ? 'eager' : 'lazy'} decoding="async" onerror={() => (noCover[c.key] = true)} />
 								{/if}
 								{#if art}
 									<!-- The artist's photo, when there is one, over all of it; the cover then sits small in the corner (as New & Popular). -->
-									<img class="photo" class:in={photoOk[c.key]} src={art} alt="" decoding="async" onload={(e) => ((e.currentTarget as HTMLImageElement).naturalWidth >= 400 && (photoOk[c.key] = true))} />
+									<img class="photo" class:in={photoOk[c.key]} src={art} alt="" loading={hi < 2 ? 'eager' : 'lazy'} decoding="async" onload={(e) => ((e.currentTarget as HTMLImageElement).naturalWidth >= 400 && (photoOk[c.key] = true))} />
 								{/if}
 								{#if photoOk[c.key] && cv.src && !noCover[c.key]}<img class="mini" src={coverFor(musicImage(c), 60).src} alt="" decoding="async" />{/if}
 							</span>

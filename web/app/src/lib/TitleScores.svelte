@@ -1,12 +1,17 @@
 <script lang="ts">
 	import { scoreName, scoreText, type OutsideScore } from './outside-ratings.ts';
-	import { siMetacritic, siRottentomatoes, siTrakt } from 'simple-icons';
+	// One icon file each: the package's index holds every brand (12.9 MB in dev).
+	import rottentomatoes from 'simple-icons/icons/rottentomatoes.svg?raw';
+	import metacritic from 'simple-icons/icons/metacritic.svg?raw';
+	import trakt from 'simple-icons/icons/trakt.svg?raw';
 	// Real brand logos (Simple Icons, one path each), the same everywhere a score shows; RT audience keeps the
 	// popcorn bucket (Simple Icons has no audience mark); dark brand colours fall back to the text colour.
+	// The colours are Simple Icons' own (its data file), which the icon files do not carry.
+	const path = (svg: string) => / d="([^"]+)"/.exec(svg)?.[1] ?? '';
 	const LOGOS: Record<string, { path: string; color: string }> = {
-		rt_critics: { path: siRottentomatoes.path, color: `#${siRottentomatoes.hex}` },
-		metacritic: { path: siMetacritic.path, color: 'currentColor' },
-		trakt: { path: siTrakt.path, color: `#${siTrakt.hex}` }
+		rt_critics: { path: path(rottentomatoes), color: '#FA320A' },
+		metacritic: { path: path(metacritic), color: 'currentColor' },
+		trakt: { path: path(trakt), color: '#9F42C6' }
 	};
 
 	// A title's scores on the page (not over art): TMDB's star score first,

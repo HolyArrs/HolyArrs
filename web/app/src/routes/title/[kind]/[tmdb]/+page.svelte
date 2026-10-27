@@ -343,7 +343,12 @@
 		missing = false;
 		blocked = false;
 		try {
-			const d = await loadDetails(api.get, k, id);
+			// The metadata answer draws the hero at once; the lookup's Library and ask facts follow.
+			const d = await loadDetails(api.get, k, id, undefined, (m) => {
+				if (k !== kind || id !== tmdb) return;
+				preloadHero(m.backdrop);
+				details = { ...m, titleId: m.titleId ?? details?.titleId };
+			});
 			if (k !== kind || id !== tmdb) return;
 			preloadHero(d?.backdrop);
 			if (!d) {

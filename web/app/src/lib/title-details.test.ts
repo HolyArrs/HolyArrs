@@ -46,6 +46,35 @@ describe('title details', () => {
 		expect(d?.show?.name).toBe('Fargo');
 	});
 
+	it('asks the metadata and the lookup at once and hands the metadata answer over first', async () => {
+		const asked: string[] = [];
+		let answerLookup: (v: unknown) => void = () => {};
+		const get = <T,>(path: string): Promise<T> => {
+			asked.push(path);
+			if (path.startsWith('/metadata/')) return Promise.resolve({ name: 'Dune', backdrop: 'https://x/b.jpg', genres: [] } as T);
+			return new Promise<T>((r) => (answerLookup = r as (v: unknown) => void));
+		};
+		const early: string[] = [];
+		const d = loadDetails(get, 'movie', '438631', undefined, (m) => early.push(m.name));
+		expect(asked).toEqual(['/metadata/movie/438631', '/titles/lookup?term=tmdb%3A438631']);
+		await new Promise((r) => setTimeout(r, 0));
+		expect(early).toEqual(['Dune']);
+		answerLookup({ movies: [{ name: 'Dune', ids: { tmdb: '438631' }, never_add: false, title_id: 7 }] });
+		expect((await d)?.titleId).toBe(7);
+	});
+
+	it('shows the metadata answer when the lookup fails, and fails when both do', async () => {
+		const get = async <T,>(path: string): Promise<T> => {
+			if (path.startsWith('/metadata/')) return { name: 'Dune', genres: [] } as T;
+			throw new ApiError('busy', 503);
+		};
+		expect((await loadDetails(get, 'movie', '1'))?.name).toBe('Dune');
+		const none = async <T,>(path: string): Promise<T> => {
+			throw new ApiError(path.startsWith('/metadata/') ? 'not found' : 'busy', path.startsWith('/metadata/') ? 404 : 503);
+		};
+		await expect(loadDetails(none, 'movie', '1')).rejects.toThrow('busy');
+	});
+
 	it('says year, kind, runtime and genres', () => {
 		expect(metaLine({ kind: 'movie', year: 2021, runtime: 155, genres: ['Drama'] })).toEqual(['2021', 'Movie', '2h 35m', 'Drama']);
 		expect(metaLine({ kind: 'show', genres: [], network: 'FX' })).toEqual(['TV show', 'FX']);

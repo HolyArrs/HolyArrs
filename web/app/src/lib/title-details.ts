@@ -109,30 +109,39 @@ export function fromShow(s: LookupShow): TitleDetails {
 
 type Get = <T>(path: string, signal?: AbortSignal) => Promise<T>;
 
-/** loadDetails asks the metadata endpoint, then the lookup by id; the lookup's Library and ask facts win. */
-export async function loadDetails(get: Get, kind: DetailKind, tmdb: string, signal?: AbortSignal): Promise<TitleDetails | null> {
+/** loadDetails asks the metadata endpoint and the lookup by id at once; the lookup's Library and ask facts win.
+ * onMeta hears the metadata answer as soon as it arrives, so a page can draw its hero before the lookup is in. */
+export async function loadDetails(get: Get, kind: DetailKind, tmdb: string, signal?: AbortSignal, onMeta?: (meta: TitleDetails) => void): Promise<TitleDetails | null> {
+	// The metadata answer is asked first: it draws the hero.
+	const metaAsk = get<Raw>(`/metadata/${kind}/${encodeURIComponent(tmdb)}`, signal);
+	const term = encodeURIComponent(`tmdb:${tmdb}`);
+	const lookup: Promise<TitleDetails | null> =
+		kind === 'movie'
+			? get<{ movies: LookupMovie[] }>(`/titles/lookup?term=${term}`, signal).then((r) => {
+					const m = r.movies.find((x) => x.ids.tmdb === tmdb) ?? r.movies[0];
+					return m ? fromMovie(m) : null;
+				})
+			: get<{ shows: LookupShow[] }>(`/shows/lookup?term=${term}`, signal).then((r) => {
+					const s = r.shows.find((x) => x.ids.tmdb === tmdb) ?? r.shows[0];
+					return s ? fromShow(s) : null;
+				});
+	// Settled here so a lookup failing while the metadata answer is awaited is not an unhandled rejection.
+	const looked = lookup.then(
+		(v) => ({ ok: true as const, v }),
+		(e: unknown) => ({ ok: false as const, e })
+	);
 	let meta: TitleDetails | null = null;
 	try {
-		meta = fromMetadata(kind, tmdb, await get<Raw>(`/metadata/${kind}/${encodeURIComponent(tmdb)}`, signal));
+		meta = fromMetadata(kind, tmdb, await metaAsk);
 	} catch (e) {
 		if (!(e instanceof ApiError) || (e.status !== 404 && e.status !== 405)) throw e;
 	}
-	const term = encodeURIComponent(`tmdb:${tmdb}`);
+	if (meta && meta.name) onMeta?.(meta);
 	let found: TitleDetails | null = null;
-	try {
-		if (kind === 'movie') {
-			const r = await get<{ movies: LookupMovie[] }>(`/titles/lookup?term=${term}`, signal);
-			const m = r.movies.find((x) => x.ids.tmdb === tmdb) ?? r.movies[0];
-			if (m) found = fromMovie(m);
-		} else {
-			const r = await get<{ shows: LookupShow[] }>(`/shows/lookup?term=${term}`, signal);
-			const s = r.shows.find((x) => x.ids.tmdb === tmdb) ?? r.shows[0];
-			if (s) found = fromShow(s);
-		}
-	} catch (e) {
-		// A busy or rate-limited lookup still shows the page from the cached details.
-		if (!meta || signal?.aborted) throw e;
-	}
+	const r = await looked;
+	if (r.ok) found = r.v;
+	// A busy or rate-limited lookup still shows the page from the cached details.
+	else if (!meta || signal?.aborted) throw r.e;
 	if (!meta) return found;
 	if (!found) return meta;
 	return { ...found, ...meta, name: meta.name || found.name, overview: meta.overview ?? found.overview, poster: meta.poster ?? found.poster, year: meta.year ?? found.year, titleId: found.titleId ?? meta.titleId, neverAdd: found.neverAdd, ask: found.ask, movie: found.movie, show: found.show };
