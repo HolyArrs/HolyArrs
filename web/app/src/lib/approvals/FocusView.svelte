@@ -5,6 +5,7 @@
 	import Poster from '../Poster.svelte';
 	import Avatar from '../ui/Avatar.svelte';
 	import Icon from '../Icon.svelte';
+	import { glideScroll } from '../ui/transitions.ts';
 	import StatusPill from '../ui/StatusPill.svelte';
 	import KidMark from './KidMark.svelte';
 	import { to } from '../paths.ts';
@@ -70,7 +71,7 @@
 		void idx;
 		// Only the strip scrolls (scrollIntoView would also slide the page's clipping boxes).
 		const on = strip?.querySelector<HTMLElement>('[aria-current="true"]')?.parentElement;
-		if (strip && on) strip.scrollTo({ left: on.offsetLeft - (strip.clientWidth - on.offsetWidth) / 2, behavior: 'smooth' });
+		if (strip && on) strip.scrollTo({ left: on.offsetLeft - (strip.clientWidth - on.offsetWidth) / 2, behavior: glideScroll() });
 	});
 	const decidedLately = $derived(ctx.viewed.filter((x) => x.state !== 'asked').slice(0, 6));
 </script>

@@ -56,3 +56,8 @@ export function dropOut(node: Element): TransitionConfig {
 export function moveMs(): number {
 	return reducedMotion() ? 0 : DUR.base;
 }
+
+/** The scroll behaviour for a jump within a page: smooth, or instant under reduced motion. */
+export function glideScroll(): ScrollBehavior {
+	return reducedMotion() ? 'auto' : 'smooth';
+}

@@ -33,6 +33,7 @@
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import { pictureFor, ratioOf } from '#lib/pictures.ts';
 	import Icon from '#lib/Icon.svelte';
+	import { glideScroll } from '#lib/ui/transitions.ts';
 	import AskArtistDialog from '#lib/AskArtistDialog.svelte';
 	import AddArtistDialog from '#lib/AddArtistDialog.svelte';
 	import { toasts } from '#lib/toasts.svelte.ts';
@@ -607,7 +608,7 @@
 			</header>
 			<div class="under-hero">
 					{#if facts.length}<p class="facts">{facts.join(' · ')}</p>{/if}
-					{#if bioLine}<p class="bioline">{bioLine} <button type="button" class="more" onclick={() => aboutEl?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>More</button></p>{/if}
+					{#if bioLine}<p class="bioline">{bioLine} <button type="button" class="more" onclick={() => aboutEl?.scrollIntoView({ behavior: glideScroll(), block: 'start' })}>More</button></p>{/if}
 					{#if look && bandOn && catalog}
 						{@const up = (listen?.today ?? 0) > 0}
 						{#if look === 1}
@@ -681,7 +682,7 @@
 						</dl>
 					{/if}
 					<div class="round">
-						<button class="rb" type="button" aria-label="About {hero.name}" title="About" onclick={() => aboutEl?.scrollIntoView({ behavior: 'smooth', block: 'start' })}><Icon name="info" size={20} /></button>
+						<button class="rb" type="button" aria-label="About {hero.name}" title="About" onclick={() => aboutEl?.scrollIntoView({ behavior: glideScroll(), block: 'start' })}><Icon name="info" size={20} /></button>
 						{#if lib?.staff}
 							<button class="rb main pill" type="button" onclick={lib.onLibrary} aria-label="In Library: go to the Library section" data-testid="hero-library"><Icon name="library" size={18} /><span>In Library</span></button>
 						{:else if lib?.onAsk}

@@ -3,6 +3,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Icon from '#lib/Icon.svelte';
+	import { glideScroll } from '#lib/ui/transitions.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { WORDS as ASKED } from '#lib/askedby.ts';
 	import { tick } from 'svelte';
@@ -34,10 +35,10 @@
 	async function open(a: Act) {
 		act = a;
 		await tick();
-		actEl?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		actEl?.scrollIntoView({ behavior: glideScroll(), block: 'start' });
 		actEl?.focus({ preventScroll: true });
 	}
-	const toDevices = () => devicesEl?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	const toDevices = () => devicesEl?.scrollIntoView({ behavior: glideScroll(), block: 'start' });
 
 	const localWay = $derived(session.s.authMethod.startsWith('local_'));
 	const checks = $derived([
