@@ -67,11 +67,23 @@ func poolKey(key string) string {
 	return key
 }
 
+// coversPerTile is how many covers a tile brings to try in order.
+const coversPerTile = 3
+
 // BrowseSections answers the Browse page for a region and day: seasons in
 // their order (on now, then soon, then the rest), genres by the member's
 // genres then the region's, and each tile's covers (the top albums of its
-// pool, the first one not used by an earlier tile). lib may be nil.
+// pool, the first one not used by an earlier tile). lib may be nil. A tile
+// whose pool has no album is left out: a tile never shows without a cover.
 func BrowseSections(b *Bundle, now time.Time, region string, lib *Lib) []BrowseSection {
+	return BrowseSectionsArt(b, now, region, lib, nil)
+}
+
+// BrowseSectionsArt is BrowseSections with the cover rule: a tile's covers
+// are taken only from albums whose picture is stored or known to load
+// (hasArt, by item index; nil checks nothing), and a tile with no such album
+// is left out of its section (a section with no tile is left out too).
+func BrowseSectionsArt(b *Bundle, now time.Time, region string, lib *Lib, hasArt func(int) bool) []BrowseSection {
 	c := &Ctx{B: b, Region: region, Now: now}
 	var out []BrowseSection
 	used := map[int]bool{}
@@ -106,35 +118,54 @@ func BrowseSections(b *Bundle, now time.Time, region string, lib *Lib) []BrowseS
 			}
 			sortTiles(ts, rank)
 		}
-		hues := Hues(len(ts), 4)
-		for i := range ts {
-			ts[i].Href = tileHref(ts[i].Key)
-			ts[i].Hue = hues[i]
-			var covers []string
-			first := -1
-			for _, m := range b.Keys[poolKey(ts[i].Key)] {
-				if b.Items[m.I].Kind != "a" {
-					continue
-				}
-				if first < 0 && !used[m.I] {
-					first = m.I
-					used[m.I] = true
-					covers = append([]string{b.Items[m.I].ID}, covers...)
-				} else if len(covers) < 3 && m.I != first {
-					covers = append(covers, b.Items[m.I].ID)
-				}
-				if first >= 0 && len(covers) >= 3 {
-					break
-				}
+		var kept []BrowseTile
+		for _, t := range ts {
+			covers := tileCovers(b, poolKey(t.Key), used, hasArt)
+			if len(covers) == 0 {
+				continue
 			}
-			for j := range covers {
-				covers[j] = "/api/v1/music-trending/art/album/" + covers[j]
-			}
-			ts[i].Covers = covers
+			t.Href = tileHref(t.Key)
+			t.Covers = covers
+			kept = append(kept, t)
 		}
-		out = append(out, BrowseSection{ID: ls.ID, Title: ls.Title, Tiles: ts})
+		hues := Hues(len(kept), 4)
+		for i := range kept {
+			kept[i].Hue = hues[i]
+		}
+		if len(kept) > 0 {
+			out = append(out, BrowseSection{ID: ls.ID, Title: ls.Title, Tiles: kept})
+		}
 	}
 	return out
+}
+
+// tileCovers answers a pool's cover addresses: up to coversPerTile albums in
+// pool order that have art, the first one not used by an earlier tile (and
+// now used). None when the pool has no album with art.
+func tileCovers(b *Bundle, pool string, used map[int]bool, hasArt func(int) bool) []string {
+	var covers []string
+	first := -1
+	for _, m := range b.Keys[pool] {
+		if b.Items[m.I].Kind != "a" || (hasArt != nil && !hasArt(m.I)) {
+			continue
+		}
+		if first < 0 && !used[m.I] {
+			first = m.I
+			used[m.I] = true
+			covers = append([]string{b.Items[m.I].ID}, covers...)
+		} else if len(covers) < coversPerTile && m.I != first {
+			covers = append(covers, b.Items[m.I].ID)
+		}
+		if first >= 0 && len(covers) >= coversPerTile {
+			break
+		}
+	}
+	// A pool whose albums earlier tiles took first still brings its own top
+	// albums to try, so it is not left out while it has art.
+	for i, id := range covers {
+		covers[i] = "/api/v1/music-trending/art/album/" + id
+	}
+	return covers
 }
 
 func sortTiles(ts []BrowseTile, rank map[string]int) {
@@ -157,26 +188,45 @@ func Hues(n, cols int) []int {
 	return out
 }
 
-// ExploreTiles answers Explore's Browse row: the top 4 genres, the first
-// season (on now, else soon, else next), the top 2 moods and one decade.
+// exploreOrder is how Explore's and New & Popular's tiles alternate, kind by
+// kind, so the first two rows read as a mix: genres lead, moods, a season,
+// decades and activities between them. A kind with no tile left is skipped.
+var exploreOrder = []string{"genres", "genres", "moods", "genres", "seasons", "genres", "decades", "moods", "genres", "activities", "genres", "moods", "decades", "genres", "seasons", "moods", "activities", "genres"}
+
+// exploreDecades is the order decades are offered in: the 90s first (the decade
+// most libraries and charts lean on), then the neighbours.
+var exploreDecades = []string{"decade:1990s", "decade:2000s", "decade:2010s", "decade:1980s", "decade:2020s", "decade:1970s", "decade:1960s"}
+
+// ExploreTiles answers the mix Explore's Browse and New & Popular's Explore
+// more offer: up to 18 tiles (a screen shows two rows of up to 7 and the rest
+// stand in for any that drop out): the top genres, a few moods, the season on
+// now (and the next), two decades and two activities, alternating kinds. A
+// page opens once, so Party in Activities (the mood's page) is left out.
 func ExploreTiles(secs []BrowseSection) []BrowseTile {
-	take := map[string]int{"genres": 4, "seasons": 1, "moods": 2, "decades": 1}
-	var out []BrowseTile
-	for _, id := range []string{"genres", "seasons", "moods", "decades"} {
-		for _, s := range secs {
-			if s.ID != id {
+	queue := map[string][]BrowseTile{}
+	for _, s := range secs {
+		for _, t := range s.Tiles {
+			if t.Key == "activity:party" {
 				continue
 			}
-			for _, t := range s.Tiles {
-				if take[id] == 0 {
-					break
-				}
-				if id == "decades" && t.Key != "decade:1990s" && take[id] == 1 && len(s.Tiles) > 3 {
-					continue // the 90s: the decade most libraries and charts lean on
-				}
-				out = append(out, t)
-				take[id]--
+			queue[s.ID] = append(queue[s.ID], t)
+		}
+	}
+	// Decades in the offered order.
+	var decades []BrowseTile
+	for _, k := range exploreDecades {
+		for _, t := range queue["decades"] {
+			if t.Key == k {
+				decades = append(decades, t)
 			}
+		}
+	}
+	queue["decades"] = decades
+	var out []BrowseTile
+	for _, id := range exploreOrder {
+		if q := queue[id]; len(q) > 0 {
+			out = append(out, q[0])
+			queue[id] = q[1:]
 		}
 	}
 	return out

@@ -161,16 +161,37 @@ func (a *API) tplMarkArt(kind, mbid string) {
 	p.mu.Unlock()
 }
 
+// artKnown reports a picture that is stored: the preload or the picture
+// route stored it, or its file is in the artwork store (then it is noted).
+func (a *API) artKnown(k preloadKey) bool {
+	p := &a.musicPre
+	p.mu.Lock()
+	v := p.have[k]
+	p.mu.Unlock()
+	if !v && a.localArt(k) {
+		v = true
+		p.mu.Lock()
+		p.markLocked(k)
+		p.mu.Unlock()
+	}
+	return v
+}
+
+// artReady reports that a preload has stored a picture, so a missing one means
+// "not stored" and no longer "not looked at yet".
+func (a *API) artReady() bool {
+	p := &a.musicPre
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.haveReady || len(p.have) > 0
+}
+
 // tplHasArt answers the engine's picture check for bundle b: an item whose
 // picture is stored (the preload or the picture route stored it, or its
 // file is in the artwork store). nil (no check) until a preload has stored
 // any picture, so a page never empties before the first one runs.
 func (a *API) tplHasArt(b *rowtpl.Bundle) func(int) bool {
-	p := &a.musicPre
-	p.mu.Lock()
-	ready := p.haveReady || len(p.have) > 0
-	p.mu.Unlock()
-	if !ready {
+	if !a.artReady() {
 		return nil
 	}
 	memo := map[int]bool{}
@@ -183,18 +204,19 @@ func (a *API) tplHasArt(b *rowtpl.Bundle) func(int) bool {
 		if it.Kind == "r" {
 			k.kind = "artist"
 		}
-		p.mu.Lock()
-		v := p.have[k]
-		p.mu.Unlock()
-		if !v && a.localArt(k) {
-			v = true
-			p.mu.Lock()
-			p.markLocked(k)
-			p.mu.Unlock()
-		}
+		v := a.artKnown(k)
 		memo[i] = v
 		return v
 	}
+}
+
+// albumHasArt answers the same check for an album id (a chart's, not in the
+// bundle); nil until a preload has stored any picture.
+func (a *API) albumHasArt() func(mbid string) bool {
+	if !a.artReady() {
+		return nil
+	}
+	return func(mbid string) bool { return a.artKnown(preloadKey{"album", strings.ToLower(mbid)}) }
 }
 
 // localArt reports a picture already in the artwork store (the server's

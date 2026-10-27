@@ -92,7 +92,7 @@ export interface PlainTile {
 	image: string;
 }
 
-/** musicTiles: one tile per music genre the Explore Music answer names, its art an album cover or artist picture of that genre (each picture once). */
+/** musicTiles: one tile per music genre the Explore Music answer names, its picture an album cover of that genre (each cover once). Artist pictures never stand in for a cover. */
 export function musicTiles(a: Pick<MusicExploreAnswer, 'genres' | 'rows' | 'hero'>, open: (genre: string) => string, pic: (c: MusicCardData) => string | null): PlainTile[] {
 	const cards = [...(a.hero ? [a.hero] : []), ...a.rows.flatMap((r) => r.items)];
 	const used = new Set<string>();
@@ -100,7 +100,7 @@ export function musicTiles(a: Pick<MusicExploreAnswer, 'genres' | 'rows' | 'hero
 	for (const g of a.genres ?? []) {
 		const hit = cards.find((c) => {
 			const p = pic(c);
-			return !!p && !used.has(p) && (c.genres ?? []).some((x) => x.toLowerCase() === g.toLowerCase());
+			return c.kind === 'album' && !!p && !used.has(p) && (c.genres ?? []).some((x) => x.toLowerCase() === g.toLowerCase());
 		});
 		const image = hit ? pic(hit) : null;
 		if (!image) continue;

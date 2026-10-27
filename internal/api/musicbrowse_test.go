@@ -17,6 +17,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/auth"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/music/rowtpl"
+	musicscore "github.com/CoderLuii/holyarrs/internal/music/score"
 )
 
 // tplRig is a music_lists_v1 rig whose metadata server answers the catalog
@@ -310,7 +311,7 @@ func TestTplWaiterRespectsItsContext(t *testing.T) {
 }
 
 // route: GET /api/v1/explore/music with the engine: its rows join the day's
-// plan, no album repeats, and the Browse row has the 8 Browse tiles.
+// plan, no album repeats, and the Browse row has at most 18 Browse tiles.
 func TestTplExploreAndNewMusic(t *testing.T) {
 	r := tplRig(t)
 	pages, _ := v7Pages(t, r.owner, "US")
@@ -333,7 +334,7 @@ func TestTplExploreAndNewMusic(t *testing.T) {
 			}
 		}
 	}
-	if tpl < 3 || grid > 8 {
+	if tpl < 3 || grid > 18 {
 		t.Fatalf("explore: %d engine rows, Browse row %d tiles", tpl, grid)
 	}
 	var n struct {
@@ -390,5 +391,200 @@ func TestTplCardsAreListedForPictures(t *testing.T) {
 				}
 			}
 		}
+	}
+}
+
+type tplTilesAnswer struct {
+	Sections []struct {
+		ID    string `json:"id"`
+		Tiles []struct {
+			Key    string   `json:"key"`
+			Covers []string `json:"covers"`
+		} `json:"tiles"`
+	} `json:"sections"`
+	Explore []struct {
+		Key    string   `json:"key"`
+		Name   string   `json:"name"`
+		Href   string   `json:"href"`
+		Covers []string `json:"covers"`
+	} `json:"explore"`
+}
+
+func tplTiles(t *testing.T, r *askRig) (a tplTilesAnswer, n int) {
+	t.Helper()
+	if err := json.Unmarshal(r.owner.call("GET", "/api/v1/music/browse-tiles?region=us", "", 200), &a); err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range a.Sections {
+		n += len(s.Tiles)
+	}
+	return a, n
+}
+
+// The cover rule (Luis, 2026-10-27): a Browse tile shows a real album cover or
+// is left out. Once pictures are being stored, a tile's covers come only from
+// albums whose picture is stored, and a tile with no such album is not sent.
+func TestTplBrowseTilesTakeCoversOnlyFromStoredPictures(t *testing.T) {
+	r := tplRig(t)
+	b := r.api.musicBundle(context.Background(), time.Now().UTC())
+	if b == nil {
+		t.Fatal("no bundle")
+	}
+	first, before := tplTiles(t, r)
+	if before < 2 {
+		t.Fatalf("%d tiles to start with", before)
+	}
+	// Store the pictures that only one tile's pool has: the other tiles have no stored album.
+	pool := func(key string) map[int]bool {
+		out := map[int]bool{}
+		for _, m := range b.Keys[key] {
+			if b.Items[m.I].Kind == "a" {
+				out[m.I] = true
+			}
+		}
+		return out
+	}
+	var keys []string
+	for _, s := range first.Sections {
+		for _, tl := range s.Tiles {
+			keys = append(keys, tl.Key)
+		}
+	}
+	stored := map[string]bool{}
+	only := ""
+	for _, k := range keys {
+		excl := pool(k)
+		for _, other := range keys {
+			if other == k {
+				continue
+			}
+			for i := range pool(other) {
+				delete(excl, i)
+			}
+		}
+		if len(excl) > 0 {
+			only = k
+			for i := range excl {
+				r.api.tplMarkArt("album", b.Items[i].ID)
+				stored[b.Items[i].ID] = true
+			}
+			break
+		}
+	}
+	if only == "" {
+		t.Fatal("no tile has an album of its own in the fixture")
+	}
+	a, after := tplTiles(t, r)
+	if after != 1 || a.Sections[0].Tiles[0].Key != only {
+		t.Fatalf("tiles %d before, %d with only %s's pictures stored: want just that tile", before, after, only)
+	}
+	for _, s := range a.Sections {
+		for _, tl := range s.Tiles {
+			if len(tl.Covers) == 0 {
+				t.Fatalf("%s: sent without a cover", tl.Key)
+			}
+			for _, c := range tl.Covers {
+				if id := strings.TrimPrefix(c, musicArtPrefix+"album/"); !stored[id] {
+					t.Fatalf("%s: cover %s is not a stored picture", tl.Key, id)
+				}
+			}
+		}
+	}
+	// Explore and New & Popular get a mix of the same tiles: at most 18, each with covers that are stored.
+	if len(a.Explore) == 0 || len(a.Explore) > 18 {
+		t.Fatalf("explore mix has %d tiles", len(a.Explore))
+	}
+	shown := map[string]bool{}
+	for _, s := range a.Sections {
+		for _, tl := range s.Tiles {
+			shown[tl.Key] = true
+		}
+	}
+	for _, tl := range a.Explore {
+		if !shown[tl.Key] || len(tl.Covers) == 0 || tl.Href == "" || tl.Name == "" {
+			t.Fatalf("explore tile %+v", tl)
+		}
+		for _, c := range tl.Covers {
+			if id := strings.TrimPrefix(c, musicArtPrefix+"album/"); !stored[id] {
+				t.Fatalf("explore tile %s: cover %s is not stored", tl.Key, id)
+			}
+		}
+	}
+}
+
+// With the check on and nothing stored, no tile is sent (an empty list, not null).
+func TestTplBrowseTilesAreEmptyWhenNoPictureIsStored(t *testing.T) {
+	r := tplRig(t)
+	r.api.musicPre.mu.Lock()
+	r.api.musicPre.haveReady = true
+	r.api.musicPre.mu.Unlock()
+	body := r.owner.call("GET", "/api/v1/music/browse-tiles?region=us", "", 200)
+	var a tplTilesAnswer
+	if err := json.Unmarshal(body, &a); err != nil {
+		t.Fatal(err)
+	}
+	if len(a.Sections) != 0 || len(a.Explore) != 0 {
+		t.Fatalf("tiles with no picture stored: %s", body)
+	}
+	if !strings.Contains(string(body), `"sections":[]`) || !strings.Contains(string(body), `"explore":[]`) {
+		t.Fatalf("want empty lists, not null: %s", body)
+	}
+}
+
+// Explore's Browse row follows the same rule.
+func TestTplExploreBrowseRowTakesCoversOnlyFromStoredPictures(t *testing.T) {
+	r := tplRig(t)
+	b := r.api.musicBundle(context.Background(), time.Now().UTC())
+	stored := map[string]bool{}
+	for i, it := range b.Items {
+		if it.Kind == "a" && i%2 == 0 {
+			r.api.tplMarkArt("album", it.ID)
+			stored[it.ID] = true
+		}
+	}
+	pages, _ := v7Pages(t, r.owner, "US")
+	grid := 0
+	for _, row := range v7Rows(pages) {
+		if row.Shape != "grid" {
+			continue
+		}
+		for _, c := range row.Items {
+			grid++
+			id := strings.TrimPrefix(c.Cover, musicArtPrefix+"album/")
+			if c.Cover == "" || !stored[id] {
+				t.Fatalf("Browse tile %s: cover %q is not a stored picture", c.Key, c.Cover)
+			}
+			if c.Image != "" || len(c.Images) != 0 {
+				t.Fatalf("Browse tile %s carries a picture that is not an album cover", c.Key)
+			}
+		}
+	}
+	if grid == 0 || grid > 18 {
+		t.Fatalf("Browse row has %d tiles", grid)
+	}
+}
+
+func TestCoveredTilesKeepOnlyTilesWithACover(t *testing.T) {
+	cards := []MusicCard{{Key: "genre:a", Cover: "/c1", Image: "/photo", Images: []string{"/photo"}}, {Key: "genre:b", Image: "/photo2"}, {Key: "genre:c", Cover: "/c3"}}
+	sc := []musicscore.Scored{{}, {}, {}}
+	sc[0].Item.Key, sc[1].Item.Key, sc[2].Item.Key = "genre:a", "genre:b", "genre:c"
+	gotCards, gotSc := coveredTiles(cards, sc)
+	if len(gotCards) != 2 || len(gotSc) != 2 || gotCards[0].Key != "genre:a" || gotCards[1].Key != "genre:c" || gotSc[0].Item.Key != "genre:a" || gotSc[1].Item.Key != "genre:c" {
+		t.Fatalf("cards %+v scores %+v", gotCards, gotSc)
+	}
+	if gotCards[0].Image != "" || gotCards[0].Images != nil {
+		t.Fatalf("an artist picture stayed on a Browse tile: %+v", gotCards[0])
+	}
+}
+
+func TestAlbumArtCheckIsOffUntilAPictureIsStored(t *testing.T) {
+	r := tplRig(t)
+	if r.api.albumHasArt() != nil {
+		t.Fatal("a check before any picture is stored")
+	}
+	r.api.tplMarkArt("album", "abc")
+	has := r.api.albumHasArt()
+	if has == nil || !has("ABC") || has("def") {
+		t.Fatal("the check should know abc only")
 	}
 }

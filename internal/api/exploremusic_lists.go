@@ -466,20 +466,42 @@ func listNote(block string, it metadata.MusicShelfItem) string {
 }
 
 // browseCovers gives each Browse tile its genre's top charted album as the
-// tilted cover, never the same album on two tiles; a tile without one
-// keeps its colour alone.
+// tilted cover, never the same album on two tiles. Only an album whose
+// picture is stored or known to load is taken (the check is off until a
+// preload has stored a picture); a tile without one has no cover, and
+// coveredTiles leaves it out.
 func (a *API) browseCovers(ctx context.Context, region string, tiles []MusicCard, now time.Time) {
 	used := map[string]bool{}
+	hasArt := a.albumHasArt()
 	for i := range tiles {
 		for _, it := range a.musicGenreChartOf(ctx, region, tiles[i].MBID, now) {
 			id := strings.ToLower(it.MBID)
-			if metadata.ValidMBID(id) && !used[id] {
+			if metadata.ValidMBID(id) && !used[id] && (hasArt == nil || hasArt(id)) {
 				used[id] = true
 				tiles[i].Cover = "/api/v1/music-trending/art/album/" + id
 				break
 			}
 		}
 	}
+}
+
+// coveredTiles keeps the Browse tiles that have an album cover, with the
+// scores that go with them. A tile shows an album cover or nothing, so the
+// genre's artist pictures are dropped from the ones that stay.
+func coveredTiles(cards []MusicCard, sc []musicscore.Scored) ([]MusicCard, []musicscore.Scored) {
+	var keepCards []MusicCard
+	var keepScores []musicscore.Scored
+	for i, c := range cards {
+		if c.Cover == "" {
+			continue
+		}
+		c.Image, c.Images = "", nil
+		keepCards = append(keepCards, c)
+		if i < len(sc) {
+			keepScores = append(keepScores, sc[i])
+		}
+	}
+	return keepCards, keepScores
 }
 
 // listPrior is the world-list rows' prior on Explore: under the personal

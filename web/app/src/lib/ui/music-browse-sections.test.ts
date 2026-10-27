@@ -8,18 +8,18 @@ const sections = [
 ];
 
 describe('MusicBrowseSections', () => {
-	it('titles each section and links each tile to its page', () => {
+	it('titles each section and links each tile with covers to its page', () => {
 		const { body } = render(MusicBrowseSections, { props: { sections } });
 		expect(body).toContain('>Genres</h2>');
 		expect(body).toContain('>Moods</h2>');
 		expect(body).toMatch(/href="[^"]*\/music\/genre\/pop"/);
-		expect(body).toMatch(/href="[^"]*\/music\/mood\/sleep"/);
 	});
-	it('shows the first cover, and the placeholder when a tile has none', () => {
+	it('shows the first cover, and leaves out a tile that has none (never a placeholder)', () => {
 		const { body } = render(MusicBrowseSections, { props: { sections } });
 		expect(body).toContain('art/album/a');
 		expect(body).not.toContain('art/album/b');
-		expect(body).toContain('data-testid="art-placeholder"');
-		expect(body).toContain('>S</span>');
+		expect(body).not.toContain('/music/mood/sleep');
+		expect(body).not.toContain('art-placeholder');
+		expect(body).not.toContain('>S</span>');
 	});
 });

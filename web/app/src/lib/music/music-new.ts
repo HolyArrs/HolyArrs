@@ -1,6 +1,5 @@
-// New & Popular → Music: the answer, the hero's note and the Explore more links.
+// New & Popular → Music: the answer and the notes over its hero and rows.
 import type { MusicCardData, MusicRowData } from './music-trending.ts';
-import { to } from '../paths.ts';
 
 /** explicit: explicit lyrics (the "E" mark); track: a Fresh tracks song, the card asks for its album. */
 export type NewMusicCard = MusicCardData & { badge?: string; following?: boolean; explicit?: boolean; track?: string };
@@ -15,7 +14,7 @@ export interface NewMusicAnswer {
 	building: boolean;
 	hero: NewMusicCard[];
 	rows: (MusicRowData & { items: NewMusicCard[] })[];
-	/** The new releases' top genres, for Explore more. */
+	/** The new releases' top genres (the page's Explore more now comes from /music/browse-tiles). */
 	genres: string[];
 }
 
@@ -77,19 +76,4 @@ export function rowNote(row: Pick<MusicRowData, 'type'>, c: NewMusicCard, now = 
 	const d = c.date ? daysAgo(c.date, now) : null;
 	const when = d === null || !c.date ? '' : d <= 0 ? 'Today' : d === 1 ? 'Yesterday' : d <= NEW_DAYS ? `${d} days ago` : d <= 365 ? shortDate(c.date) : c.date.slice(0, 4);
 	return [c.artist, row.type === 'np_music_climbing' ? (c.note ?? '') : when].filter(Boolean).join(' · ');
-}
-
-export const MUSIC_DECADES = ['2020s', '2010s', '2000s', '90s', '80s', '70s'];
-export const MUSIC_MOODS = ['chill', 'party', 'workout', 'focus', 'sad', 'romantic'];
-
-/** exploreLinks are the Explore more chips: genres, then decades and moods, into Search → Music. */
-export function exploreLinks(genres: string[]): { label: string; href: string; group: 'genre' | 'decade' | 'mood' | 'chart' }[] {
-	const link = (g: string) => to(`/search?kind=music&mgenre=${encodeURIComponent(g)}`);
-	return [
-		// A decade the server lists as a genre ("80s") shows under Decades only.
-		...genres.filter((g) => !MUSIC_DECADES.includes(g.toLowerCase()) && !/^\d{2,4}s$/.test(g)).slice(0, 8).map((g) => ({ label: g, href: link(g), group: 'genre' as const })),
-		...MUSIC_DECADES.map((g) => ({ label: g, href: link(g), group: 'decade' as const })),
-		...MUSIC_MOODS.map((g) => ({ label: g, href: link(g), group: 'mood' as const })),
-		{ label: 'Top albums', href: to('/explore?type=music'), group: 'chart' as const }
-	];
 }

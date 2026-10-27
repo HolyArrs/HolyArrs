@@ -10,13 +10,12 @@
 	import { refreshInbox } from './wishlist.svelte.ts';
 	import { fetchRisingToday, musicCardHref, musicImage, type MusicCardData, type MusicRowData } from './music/music-trending.ts';
 	import { coverFor } from './music/music-pages.ts';
-	import { cardBadges, exploreLinks, eyebrow, heroNote, newMusicPath, rowNote, type NewMusicAnswer, type NewMusicCard } from './music/music-new.ts';
+	import { cardBadges, eyebrow, heroNote, newMusicPath, rowNote, type NewMusicAnswer, type NewMusicCard } from './music/music-new.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './types.ts';
 	import Shelf from './ui/Shelf.svelte';
 	import MusicVideoRow from './ui/MusicVideoRow.svelte';
-	import MusicGenreTiles from './ui/MusicGenreTiles.svelte';
-	import { fetchMusicExplore } from './music/music-trending.ts';
-	import { tileHue } from './search-browse.ts';
+	import MusicBrowseGrid from './ui/MusicBrowseGrid.svelte';
+	import { fetchBrowseTiles, type BrowseTileData } from './music/browse-tiles.ts';
 	import { defaultRegion } from './region.ts';
 	import { to } from './paths.ts';
 	import PosterCard from './ui/PosterCard.svelte';
@@ -154,35 +153,15 @@
 
 	const tracks = $derived(answer?.rows.find((r) => r.type === 'np_music_tracks'));
 	const rows = $derived((answer?.rows ?? []).filter((r) => r.type !== 'np_music_tracks'));
-	const links = $derived(exploreLinks(answer?.genres ?? []));
-	// Explore more: one row of Explore's genre tiles per kind. A genre Explore knows
-	// brings its photos and colour; decades, moods and charts are colour tiles.
-	type Tile = { key: string; name: string; href: string; art: string; images?: string[]; hue: number; tint?: string };
-	let known = $state<Record<string, { art: string; images?: string[]; hue: number }>>({});
+	// Explore more: the shared Music tile, the same mix as Explore's Browse (genres,
+	// moods, a season, decades, activities), two rows and Browse all. Only tiles with a real album cover come.
+	let more = $state<BrowseTileData[]>([]);
 	onMount(() => {
-		void fetchMusicExplore('', defaultRegion()).then(
-			(a) => {
-				const out: typeof known = {};
-				for (const c of a.rows.find((r) => r.shape === 'tile')?.items ?? []) out[c.name.toLowerCase()] = { art: c.image ?? '', images: c.images, hue: c.hue ?? 0 };
-				known = out;
-			},
+		void fetchBrowseTiles(defaultRegion(), api, gone.signal).then(
+			(a) => (more = (a.explore ?? []).map((t) => ({ ...t, href: to(t.href) }))),
 			() => {}
 		);
 	});
-	const moreRows = $derived(
-		(['genre', 'decade', 'mood', 'chart'] as const)
-			.map((group) => ({
-				group,
-				title: { genre: 'Genres', decade: 'Decades', mood: 'Moods', chart: 'Charts' }[group],
-				tiles: links
-					.filter((l) => l.group === group)
-					.map((l): Tile => {
-						const k = known[l.label.toLowerCase()];
-						return k ? { key: `genre:${l.label}`, name: l.label, href: l.href, ...k } : { key: `${group}:${l.label}`, name: l.label, href: l.href, art: '', hue: 0, tint: tileHue(l.label) };
-					})
-			}))
-			.filter((r) => r.tiles.length)
-	);
 	const actLabel = (c: NewMusicCard) => (manage ? `Add ${c.artist || c.name}` : `Ask for ${c.name}`);
 </script>
 
@@ -297,12 +276,7 @@
 			{/if}
 		{/each}
 
-		<nav class="more" aria-labelledby="np-more-h">
-			<h2 id="np-more-h">Explore more</h2>
-			{#each moreRows as r (r.group)}
-				<MusicGenreTiles title={r.title} genres={r.tiles} allHref={to('/search?kind=music')} all={r.group === 'genre'} />
-			{/each}
-		</nav>
+		{#if more.length}<MusicBrowseGrid title="Explore more" tiles={more} allHref={to('/search?kind=music')} />{/if}
 	</section>
 {/if}
 
@@ -353,7 +327,7 @@
 	@media (max-width: 640px) { .hero-wrap { --h-cols: calc(100% / 1.1 - 10px); } .paddle { display: none; } }
 	@media (prefers-reduced-motion: reduce) { .hero { scroll-behavior: auto; } .art, .paddle, .h-act { transition: none; } .h-card:hover .art { transform: none; } }
 	/* Fresh tracks: song lines (56 tall, 44 art, no dividers), four to a column. */
-	.more h2, .see-all h2 { margin: 0; font: var(--t-title-3, 600 20px/1.3 var(--font-ui)); }
+	.see-all h2 { margin: 0; font: var(--t-title-3, 600 20px/1.3 var(--font-ui)); }
 	.tracks { list-style: none; margin: 0; padding: 0; display: grid; grid-auto-flow: column; grid-template-rows: repeat(4, 56px); grid-auto-columns: calc(25% - 15px); column-gap: 20px; row-gap: 0; height: 224px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; }
 	@media (prefers-reduced-motion: reduce) { .tracks { scroll-behavior: auto; } }
 	.tracks::-webkit-scrollbar { display: none; }
@@ -369,7 +343,6 @@
 	@media (max-width: 1023px) { .tracks { grid-auto-columns: calc(50% - 8px); } }
 	@media (max-width: 640px) { .tracks { grid-auto-columns: 88%; } }
 	.row { position: relative; min-width: 0; }
-	.more { display: flex; flex-direction: column; gap: 24px; }
 	.see-all { display: flex; flex-direction: column; gap: 8px; }
 	.back { align-self: flex-start; display: inline-flex; align-items: center; gap: 2px; padding: 0; border: 0; background: none; color: var(--text-muted); cursor: pointer; font-size: 14px; }
 	.sub { margin: 0 0 12px; color: var(--text-muted); font-size: 14px; }

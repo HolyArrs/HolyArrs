@@ -55,9 +55,11 @@ describe('strict Browse per type', () => {
 		expect(browseHref(t('show', true), 'shows')).toBe('/explore?type=shows&genre=1');
 		expect(browseHref(t('movie'), 'movies')).toBe('/explore?type=movies&genre=1');
 	});
-	it('music tiles use a picture of the genre, each once', () => {
-		const card = (key: string, image: string, genres: string[]) => ({ key, kind: 'artist' as const, mbid: key, name: key, image, genres });
-		const out = musicTiles({ genres: ['rock', 'jazz', 'folk'], hero: null, rows: [{ id: 'r', type: 'x', title: 'x', reason: '', shape: 'round', items: [card('a', '/a.jpg', ['rock']), card('b', '/b.jpg', ['rock', 'jazz'])] }] }, (g) => `/m/${g}`, (c) => c.image ?? null);
+	it('music tiles use an album cover of the genre, each once, never an artist picture', () => {
+		const card = (key: string, kind: 'album' | 'artist', image: string, genres: string[]) => ({ key, kind, mbid: key, name: key, image, genres });
+		const items = [card('p', 'artist', '/photo.jpg', ['rock']), card('a', 'album', '/a.jpg', ['rock']), card('b', 'album', '/b.jpg', ['rock', 'jazz']), card('c', 'artist', '/c.jpg', ['folk'])];
+		const out = musicTiles({ genres: ['rock', 'jazz', 'folk'], hero: null, rows: [{ id: 'r', type: 'x', title: 'x', reason: '', shape: 'square', items }] }, (g) => `/m/${g}`, (c) => c.image ?? null);
+		// Folk has only an artist picture, so it gets no tile.
 		expect(out.map((x) => [x.name, x.image, x.href])).toEqual([['Rock', '/a.jpg', '/m/rock'], ['Jazz', '/b.jpg', '/m/jazz']]);
 	});
 });

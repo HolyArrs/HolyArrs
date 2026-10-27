@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cardBadges, exploreLinks, eyebrow, heroNote, rowNote, type NewMusicCard } from './music-new.ts';
+import { cardBadges, eyebrow, heroNote, rowNote, type NewMusicCard } from './music-new.ts';
 
 const now = new Date(2026, 9, 21, 12);
 const card = (x: Partial<NewMusicCard>): NewMusicCard => ({ key: 'album:a', kind: 'album', mbid: 'a', name: 'A', artist: 'Ann', genres: [], ...x });
@@ -38,16 +38,5 @@ describe('music new', () => {
 	it('marks explicit albums with E', () => {
 		expect(cardBadges(card({ explicit: true }))).toEqual(['E']);
 		expect(cardBadges(card({}))).toEqual([]);
-	});
-	it('links Explore more into Search → Music', () => {
-		const l = exploreLinks(['indie rock']);
-		expect(l[0]).toMatchObject({ label: 'indie rock', group: 'genre' });
-		expect(l[0].href).toContain('/search?kind=music&mgenre=indie%20rock');
-		expect(l.some((x) => x.group === 'decade')).toBe(true);
-		expect(l.some((x) => x.group === 'mood')).toBe(true);
-	});
-	it('keeps a decade out of the genres', () => {
-		const l = exploreLinks(['80s', 'pop']);
-		expect(l.filter((x) => x.label === '80s').map((x) => x.group)).toEqual(['decade']);
 	});
 });

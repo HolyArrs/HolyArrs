@@ -145,6 +145,15 @@ func (a *API) tplVisible(ctx context.Context, b *rowtpl.Bundle, region string, l
 	return rowtpl.VisibleSections(rowtpl.BrowseSections(b, now, r, lib), a.tplCounts(ctx, b, region, now), now, r)
 }
 
+// tplVisibleArt is tplVisible with the cover rule: each tile's covers come
+// only from albums whose picture is stored or known to load, and a tile with
+// no such album is left out. The Browse tiles every page shows come from it;
+// tplVisible (every candidate cover) is for the preload, which stores them.
+func (a *API) tplVisibleArt(ctx context.Context, b *rowtpl.Bundle, region string, lib *rowtpl.Lib, now time.Time) []rowtpl.BrowseSection {
+	r := strings.ToLower(region)
+	return rowtpl.VisibleSections(rowtpl.BrowseSectionsArt(b, now, r, lib, a.tplHasArt(b)), a.tplCounts(ctx, b, region, now), now, r)
+}
+
 // tplKinds are the Browse page kinds the engine serves.
 var tplKinds = map[string]bool{"genre": true, "mood": true, "season": true, "decade": true, "activity": true}
 
@@ -566,7 +575,9 @@ func (a *API) serveTplPage(w http.ResponseWriter, r *http.Request, kind, slug st
 
 // musicBrowseTiles answers GET /api/v1/music/browse-tiles?region=: the
 // Search > Music Browse sections (genres, moods, seasons, decades,
-// activities) with their tiles' pages and covers.
+// activities) with their tiles' pages and covers, and "explore", the mix of
+// them Explore and New & Popular show. A tile has only covers of albums whose
+// picture is stored or known to load; a tile with none is left out.
 func (a *API) musicBrowseTiles(w http.ResponseWriter, r *http.Request) {
 	if !a.musicBrowseGate(w, r, map[string]any{"kid": true, "sections": []rowtpl.BrowseSection{}}) {
 		return
@@ -595,7 +606,14 @@ func (a *API) musicBrowseTiles(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	a.exploreCaching(w, r, "private, no-cache")
-	secs := a.tplVisible(ctx, b, region, lib, now)
+	secs := a.tplVisibleArt(ctx, b, region, lib, now)
+	if secs == nil {
+		secs = []rowtpl.BrowseSection{}
+	}
 	a.tplRememberCovers(b, secs)
-	a.writeMusicJSON(w, r, map[string]any{"sections": secs})
+	explore := rowtpl.ExploreTiles(secs)
+	if explore == nil {
+		explore = []rowtpl.BrowseTile{}
+	}
+	a.writeMusicJSON(w, r, map[string]any{"sections": secs, "explore": explore})
 }

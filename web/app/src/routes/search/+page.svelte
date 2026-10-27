@@ -21,7 +21,7 @@
 	import Icon, { type IconName } from '#lib/Icon.svelte';
 	import { session } from '#lib/session.svelte.ts';
 	import BrowseTile from '#lib/ui/BrowseTile.svelte';
-	import GenreTile from '#lib/ui/GenreTile.svelte';
+	import MusicTileGrid from '#lib/ui/MusicTileGrid.svelte';
 	import MusicBrowseSections from '#lib/ui/MusicBrowseSections.svelte';
 	import MosaicReveal, { ENTER_DELAY, ENTER_SWEEP, passAt } from '#lib/ui/MosaicReveal.svelte';
 	import { browseCategoryPath, browseCols, browseHref, browsePath, browseSectionPath, browseType, BROWSE_ROWS, musicTiles, readCategory, readMood, shownCount, strictTiles, tileHue, type PlainTile, type BrowseAnswer, type BrowseSection, type BrowseSectionAnswer, type BrowseTile as Tile, type CategoryView, type MoodView } from '#lib/search-browse.ts';
@@ -77,6 +77,8 @@
 	let plainTiles = $state<PlainTile[] | null>(null);
 	/** Music scope with the v2 rows: the genre tiles (hue and grey art), each opening its Music genre page. */
 	let musicGenres = $state<MusicCardData[]>([]);
+	/** The same genres as the shared Music tile: an album cover each, and none without one. */
+	const musicGenreTiles = $derived(musicGenres.filter((c) => c.cover).map((c) => ({ key: c.key, name: c.name, href: genreHref(c), covers: [c.cover as string] })));
 	// music_lists_v1 row templates: the Browse sections (genres, moods, seasons, decades, activities).
 	let musicSections = $state<{ id: string; title: string; tiles: { key: string; name: string; href: string; hue: number; covers: string[] }[] }[]>([]);
 	let plainFor = '';
@@ -548,7 +550,7 @@
 				}
 				const r = await fetchMusicExplore('', 'global');
 				if (plainFor === s && r.v2) musicGenres = (r.rows.find((row) => row.shape === 'tile' || row.shape === 'grid')?.items ?? []).map((c) => (c.image || !c.cover ? c : { ...c, image: c.cover }));
-				if (plainFor === s) plainTiles = musicGenres.length ? [] : musicTiles(r, (g) => to(`/search?kind=music&mgenre=${encodeURIComponent(g)}`), musicImage);
+				if (plainFor === s) plainTiles = musicGenres.some((c) => c.cover) ? [] : musicTiles(r, (g) => to(`/search?kind=music&mgenre=${encodeURIComponent(g)}`), musicImage);
 			}
 		} catch {
 			if (plainFor === s) {
@@ -1003,20 +1005,12 @@
 				{:else if scope === 'music'}
 					{#if musicSections.length}
 						<MusicBrowseSections sections={musicSections} />
-					{:else if musicGenres.length}
-						<div class="gtiles" data-testid="music-genre-tiles">
-							{#each musicGenres as c (c.key)}<GenreTile name={c.name} href={genreHref(c)} hue={c.hue ?? 0} art={c.image ? (musicImage(c) ?? '') : ''} />{/each}
-						</div>
+					{:else if musicGenreTiles.length}
+						<MusicTileGrid tiles={musicGenreTiles} />
 					{:else if plainTiles === null}
-						<ul class="tiles" aria-hidden="true">
-							{#each Array(cols * 2) as _, i (i)}<li class="ghost sk" use:landing={{ row: Math.floor(i / cols), col: i % cols }}></li>{/each}
-						</ul>
+						<MusicTileGrid tiles={[]} ghosts={12} />
 					{:else if plainTiles.length}
-						<ul class="tiles">
-							{#each plainTiles as t, i (t.key)}
-								<li use:landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} href={t.href} image={t.image} hue={tileHue(t.name)} row={Math.min(6, Math.floor(i / cols))} /></li>
-							{/each}
-						</ul>
+						<MusicTileGrid tiles={plainTiles.map((t) => ({ key: t.key, name: t.name, href: t.href, covers: [t.image] }))} />
 					{:else}
 						<p class="muted">Music genres show up here once Explore has something to show.</p>
 					{/if}
@@ -1114,10 +1108,6 @@
 <QuickAsk bind:this={flow} />
 
 <style>
-	/* Music genre tiles: 16:9, 5/3/2 columns, as on Explore → Music. */
-	.gtiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
-	@media (max-width: 1023px) { .gtiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-	@media (max-width: 640px) { .gtiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 	.search { --title-item: max(200px, calc((100vw - 96px) / 5.16)); display: flex; flex-direction: column; gap: 24px; padding-bottom: 48px; min-width: 0; }
 	@media (max-width: 1279px) { .search { --title-item: max(180px, calc((100vw - 64px) / 4.2)); } }
 	@media (max-width: 767px) { .search { --title-item: calc((100vw - 40px) / 2.3); } }
