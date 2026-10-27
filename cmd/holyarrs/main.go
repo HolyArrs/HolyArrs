@@ -407,6 +407,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if err != nil {
 		return fmt.Errorf("metadata server: %w", err)
 	}
+	hosted.Disk = store.LookupCache{Store: s}
 	var md metadata.Provider = hosted.TMDB()
 	showMD := showSources(vault, hosted)
 	var artistMD metadata.ArtistProvider = musicSource(s, version)

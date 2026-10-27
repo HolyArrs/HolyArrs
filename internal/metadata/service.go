@@ -273,7 +273,13 @@ func (s *Service) get(ctx context.Context, path, provider, id string, q url.Valu
 		}
 		return out, ErrServiceAccess
 	}
-	op, e := outside.Begin(ctx, outside.Target{Kind: "metadata_service", Identity: []string{s.base, tok}})
+	// Fetch-ahead has its own breaker, so failing warm-ups never hold back
+	// a person's page.
+	lane := "page"
+	if IsAhead(ctx) {
+		lane = "ahead"
+	}
+	op, e := outside.Begin(ctx, outside.Target{Kind: "metadata_service", Identity: []string{s.base, tok, lane}})
 	if e != nil {
 		if errors.Is(e, outside.ErrSuppressed) {
 			return out, ErrServiceUnavailable

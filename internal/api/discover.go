@@ -14,6 +14,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/explore"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/CoderLuii/holyarrs/internal/outside"
 	"github.com/CoderLuii/holyarrs/internal/parts"
 	"github.com/CoderLuii/holyarrs/internal/ratings"
 	"github.com/CoderLuii/holyarrs/internal/store"
@@ -157,9 +158,28 @@ func discoverFail(w http.ResponseWriter, err error) {
 		fail(w, http.StatusServiceUnavailable, "The movie and show details are busy; try again in a minute")
 	case errors.Is(err, metadata.ErrNotFound):
 		fail(w, http.StatusNotFound, "That title could not be found")
+	case detailsBusy(err):
+		// Held back, retrying or not answering for now: the page asks again
+		// on its own after Retry-After.
+		w.Header().Set("Retry-After", "5")
+		fail(w, http.StatusServiceUnavailable, "The movie and show details are busy; try again in a moment")
 	default:
 		fail(w, http.StatusBadGateway, "The movie and show details did not answer; try again shortly")
 	}
+}
+
+// detailsBusy is an error that passes on its own: the service is held,
+// its breaker is waiting, or it did not answer in time.
+func detailsBusy(err error) bool {
+	return errors.Is(err, outside.ErrSuppressed) || errors.Is(err, metadata.ErrServiceUnavailable) ||
+		errors.Is(err, metadata.ErrServiceBusy) || errors.Is(err, metadata.ErrRateLimited) ||
+		errors.Is(err, context.DeadlineExceeded)
+}
+
+// staleOK says whether a kept copy may answer err: anything but a refusal
+// or an unknown title.
+func staleOK(err error) bool {
+	return !errors.Is(err, metadata.ErrNotFound) && !errors.Is(err, metadata.ErrNoAccess)
 }
 
 // cachedRow reads one row of one kind, from the cache while fresh. A
@@ -172,7 +192,7 @@ func (a *API) cachedRow(ctx context.Context, d metadata.Discoverer, row, kind, r
 	}
 	items, err := d.Discover(ctx, row, kind, ref, genre)
 	if err != nil {
-		if ok && errors.Is(err, metadata.ErrRateLimited) {
+		if ok && staleOK(err) {
 			return e.items, nil
 		}
 		return nil, err
@@ -385,7 +405,7 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 		case err == nil:
 			e = discoverEntry{at: time.Now(), details: &det}
 			a.discover.put(key, e)
-		case !(cached && errors.Is(err, metadata.ErrRateLimited)):
+		case !(cached && staleOK(err)):
 			discoverFail(w, err)
 			return
 		}

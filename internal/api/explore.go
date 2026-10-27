@@ -118,10 +118,14 @@ func (a *API) StartExplore(ctx context.Context) {
 	a.s.Store.OnEvent(a.exploreOnEvent)
 	a.s.Store.OnEvent(a.musicOnEvent)
 	go supervisor.Guard("explore", func() { a.exploreLoop(ctx) })
-	go supervisor.Guard("explore-service-top-warm", func() { a.warmServiceTop(ctx) })
-	go supervisor.Guard("explore-genre-warm", func() { a.warmGenres(ctx) })
+	// The warmers fetch ahead of anyone: they carry X-Fetch: ahead, keep to
+	// the slower pace, wait out the server's hold and have their own
+	// breaker, so a restart's warm-up never makes a person's page fail.
+	warm := metadata.Ahead(ctx)
+	go supervisor.Guard("explore-service-top-warm", func() { a.warmServiceTop(warm) })
+	go supervisor.Guard("explore-genre-warm", func() { a.warmGenres(warm) })
 	startBackdropDark(ctx)
-	go supervisor.Guard("explore-browse-warm", func() { a.warmBrowse(ctx) })
+	go supervisor.Guard("explore-browse-warm", func() { a.warmBrowse(warm) })
 	if a.musicTplOn() {
 		// The music catalog bundle is read once at start, so the first music
 		// page does not wait for its download.

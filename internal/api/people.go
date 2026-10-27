@@ -32,6 +32,9 @@ func peopleError(w http.ResponseWriter, err error) {
 		fail(w, http.StatusNotFound, "no such person")
 	case errors.Is(err, metadata.ErrNoAccess):
 		fail(w, http.StatusServiceUnavailable, "people results are unavailable; try again shortly")
+	case detailsBusy(err):
+		w.Header().Set("Retry-After", "5")
+		fail(w, http.StatusServiceUnavailable, "people results are busy; try again in a moment")
 	default:
 		// Provider transport and answer details can contain private search
 		// terms or links, so the public answer remains fixed.

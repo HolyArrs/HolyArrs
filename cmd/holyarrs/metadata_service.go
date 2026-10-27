@@ -39,6 +39,8 @@ type hostedMetadata struct {
 	// Transport is the pooled connection to the server, shared with the
 	// artwork cache for the server's picture addresses.
 	Transport *http.Transport
+	// Disk keeps TMDB answers across restarts (lookup_cache).
+	Disk metadata.Cache
 }
 
 func newHostedMetadata(v *secrets.Vault) (*hostedMetadata, error) {
@@ -93,7 +95,7 @@ func newHostedMetadata(v *secrets.Vault) (*hostedMetadata, error) {
 
 // TMDB is a TMDB client for movies, shows, Explore, people and ratings.
 func (h *hostedMetadata) TMDB() *metadata.TMDB {
-	t := &metadata.TMDB{Access: h.TMDBAccess, BaseURL: h.TMDBBase, Images: h.Images}
+	t := &metadata.TMDB{Access: h.TMDBAccess, BaseURL: h.TMDBBase, Images: h.Images, Disk: h.Disk}
 	if !h.OwnKey {
 		t.HTTP = h.HTTP
 	}
