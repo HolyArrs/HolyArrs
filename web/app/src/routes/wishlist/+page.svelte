@@ -1,5 +1,6 @@
 <script lang="ts">
 	import PageLoader from '#lib/ui/PageLoader.svelte';
+	import { glide } from '#lib/ui/transitions.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import { to } from '#lib/paths.ts';
 	import { onDestroy, onMount, tick } from 'svelte';
@@ -536,7 +537,7 @@
 			{@render bulkBar()}
 			<ul class="asks" aria-label="Wishlist requests">
 				{#each shown as a, i (a.id)}
-					<li class="ask rise" class:selected={selected?.id === a.id} class:chosen={chosen.has(a.id)} class:waiting={!!pending[a.id]} style="--i: {i}" data-testid="ask">
+					<li class="ask rise" animate:glide class:selected={selected?.id === a.id} class:chosen={chosen.has(a.id)} class:waiting={!!pending[a.id]} style="--i: {i}" data-testid="ask">
 						{#if a.poster}<div class="strip" aria-hidden="true" style:background-image={`url("${a.poster}")`}></div>{/if}
 						{#if choosable}
 							<input class="tick" type="checkbox" aria-label="Choose {a.name}" checked={chosen.has(a.id)} onchange={() => toggleChosen(a.id)} />

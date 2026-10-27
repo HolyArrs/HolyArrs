@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { glide } from '../ui/transitions.ts';
 	// 2 By person: one row per person who asked, a sideways shelf of posters.
 	// Hover (or tap on a phone) a poster for Approve / Turn down; a whole row
 	// can be approved at once.
@@ -55,7 +56,7 @@
 				</header>
 				<ul class="shelf" aria-label="Asks from {g.name}">
 					{#each g.asks as a (a.id)}
-						<li class="tile" class:armed={armed === a.id} class:chosen={ctx.isChosen(a.id)} class:sending={ctx.isPending(a.id)} data-testid="ask">
+						<li animate:glide class="tile" class:armed={armed === a.id} class:chosen={ctx.isChosen(a.id)} class:sending={ctx.isPending(a.id)} data-testid="ask">
 							<div class="art" class:square={a.kind === 'artist'}>
 								<button class="art-btn" type="button" aria-label="Show actions for {a.name}" aria-expanded={armed === a.id} onclick={() => (armed = armed === a.id ? 0 : a.id)}><Poster src={a.poster} name={a.name} /></button>
 								{#if ctx.choosable}<input class="tick" type="checkbox" aria-label="Choose {a.name}" checked={ctx.isChosen(a.id)} onchange={() => ctx.toggleChosen(a.id)} />{/if}

@@ -3,6 +3,7 @@
 // Under reduced motion every helper turns into a short crossfade, nothing travels.
 
 import { fade, fly, scale, type TransitionConfig } from 'svelte/transition';
+import { flip } from 'svelte/animate';
 import { reducedMotion } from '../motion.ts';
 
 /** Durations in ms, the same as tokens.css. */
@@ -60,4 +61,13 @@ export function moveMs(): number {
 /** The scroll behaviour for a jump within a page: smooth, or instant under reduced motion. */
 export function glideScroll(): ScrollBehavior {
 	return reducedMotion() ? 'auto' : 'smooth';
+}
+
+/**
+ * glide slides the items of a keyed list into their new places when one is
+ * added, removed or moved (animate:glide), so the rest never jump. Instant
+ * under reduced motion.
+ */
+export function glide(node: Element, rects: { from: DOMRect; to: DOMRect }) {
+	return flip(node, rects, { duration: moveMs(), easing: easeOut });
 }

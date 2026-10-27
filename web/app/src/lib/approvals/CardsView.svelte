@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { glide } from '../ui/transitions.ts';
 	// 1 Cards: a grid of backdrop cards. Poster, title, who asked and when, the
 	// part asked for, and big Approve / Turn down right on the card.
 	import Poster from '../Poster.svelte';
@@ -36,7 +37,7 @@
 			{@const who = ctx.who(a)}
 			{@const d = ctx.details(a)}
 			{@const art = d?.backdrop ?? a.poster ?? ''}
-			<li class="rcard rise" class:chosen={ctx.isChosen(a.id)} class:sending={ctx.isPending(a.id)} class:music={a.kind === 'artist' || !d?.backdrop} style="--i: {i}" data-testid="ask">
+			<li animate:glide class="rcard rise" class:chosen={ctx.isChosen(a.id)} class:sending={ctx.isPending(a.id)} class:music={a.kind === 'artist' || !d?.backdrop} style="--i: {i}" data-testid="ask">
 				{#if art}<div class="bd" style:background-image={`url("${to(art)}")`} aria-hidden="true"></div>{/if}
 				<div class="top">
 					{#if ctx.choosable}

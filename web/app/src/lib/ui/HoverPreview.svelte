@@ -8,6 +8,7 @@
 	import { placeCard } from '../trailer.ts';
 	import { sized } from '../tmdb-image.ts';
 	import { GROW_WIDTH } from '../grow.ts';
+	import { popOut } from './transitions.ts';
 
 	// The Netflix-style expanded card: opened over a poster after a hover or
 	// keyboard-focus delay (PosterCard decides when), a scaled-up card with a
@@ -100,6 +101,7 @@
 	class="ui-hover"
 	bind:this={card}
 	use:portal
+	out:popOut
 	role="group"
 	aria-label="{title} preview"
 	style:left="{pos.left}px"

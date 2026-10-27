@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { glide } from '../ui/transitions.ts';
 	// 5 Board: every ask on one board, a column per state. Drag a waiting card
 	// to Approved or Turned down, or use its ✓ / ✕. On a phone a segmented
 	// switch shows one column at a time.
@@ -80,7 +81,7 @@
 				{#each c.asks as a (a.id)}
 					{@const who = ctx.who(a)}
 					{@const canAct = ctx.approver && a.state === 'asked' && !ctx.isPending(a.id)}
-					<li class="bcard" class:chosen={ctx.isChosen(a.id)} class:sending={ctx.isPending(a.id)} class:lifted={dragId === a.id} draggable={canAct ? 'true' : undefined} ondragstart={(e) => start(e, a)} ondragend={() => ((dragId = 0), (over = ''))} data-testid="ask">
+					<li animate:glide class="bcard" class:chosen={ctx.isChosen(a.id)} class:sending={ctx.isPending(a.id)} class:lifted={dragId === a.id} draggable={canAct ? 'true' : undefined} ondragstart={(e) => start(e, a)} ondragend={() => ((dragId = 0), (over = ''))} data-testid="ask">
 						<div class="c-top">
 							{#if c.col === 'waiting' && ctx.choosable}<input class="tick" type="checkbox" aria-label="Choose {a.name}" checked={ctx.isChosen(a.id)} onchange={() => ctx.toggleChosen(a.id)} />{/if}
 							<span class="thumb"><Poster src={a.poster} name={a.name} /></span>

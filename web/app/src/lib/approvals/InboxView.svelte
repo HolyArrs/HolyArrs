@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { glide } from '../ui/transitions.ts';
 	// 4 Inbox: a compact list on the left, the chosen ask in full on the right
 	// with its options (Library folder, Pick rules), a note to the asker and the
 	// decision. On a phone the list opens the ask full screen.
@@ -70,7 +71,7 @@
 			<ul class="list" aria-label="Asks">
 				{#each ctx.shown as x, i (x.id)}
 					{@const who = ctx.who(x)}
-					<li class="item" class:on={a?.id === x.id} class:chosen={ctx.isChosen(x.id)} class:sending={ctx.isPending(x.id)} data-testid="ask">
+					<li animate:glide class="item" class:on={a?.id === x.id} class:chosen={ctx.isChosen(x.id)} class:sending={ctx.isPending(x.id)} data-testid="ask">
 						{#if ctx.choosable}<input class="tick" type="checkbox" aria-label="Choose {x.name}" checked={ctx.isChosen(x.id)} onchange={() => ctx.toggleChosen(x.id)} />{/if}
 						<button class="row-btn" type="button" aria-current={a?.id === x.id} onkeydown={listKeys} onclick={(e) => void pick(i, e.currentTarget)}>
 							<span class="thumb"><Poster src={x.poster} name={x.name} /></span>
