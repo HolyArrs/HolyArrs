@@ -120,12 +120,14 @@ func (a *API) writeMusicAnswer(w http.ResponseWriter, key string, v any, complet
 		internal(w, err)
 		return
 	}
+	// The answer carries its pictures' records (box, colour, version).
+	b := a.withPictures(context.Background(), buf.Bytes())
 	if complete {
-		a.keepMusicAnswer(key, buf.Bytes(), now)
+		a.keepMusicAnswer(key, b, now)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(buf.Bytes())
+	_, _ = w.Write(b)
 }
 
 // genresWaiting answers the known genres of ids, waiting up to wait for the
@@ -233,7 +235,7 @@ func (a *API) warmMusic(ctx context.Context) {
 		if ctx.Err() != nil {
 			return
 		}
-		_, _, _ = a.musicTrendArtFile(ctx, k[0], k[1], "250")
+		_, _, _ = a.musicTrendArtFile(ctx, k[0], k[1], "500")
 		select {
 		case <-ctx.Done():
 			return

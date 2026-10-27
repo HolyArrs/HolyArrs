@@ -235,7 +235,7 @@ func (a *API) musicGenrePage(w http.ResponseWriter, r *http.Request) {
 	a.rememberMusicNames(names)
 	hue := tile.Hue
 	a.exploreCaching(w, r, "private, no-cache")
-	writeJSON(w, http.StatusOK, map[string]any{"v2": true, "kid": false, "cold": false, "genres": []string{}, "genre": slug, "region": region, "regions": []string{},
+	a.writeMusicJSON(w, r, map[string]any{"v2": true, "kid": false, "cold": false, "genres": []string{}, "genre": slug, "region": region, "regions": []string{},
 		"tile": MusicCard{Key: "genre:" + slug, Kind: "genre", MBID: slug, Name: tile.Name, Hue: &hue, Image: musicGenreArt(*tile), Images: musicGenreArts(*tile), Genres: []string{slug}},
 		"hero": hero, "hero_alts": alts, "rows": rows})
 }

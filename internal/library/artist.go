@@ -292,7 +292,7 @@ func (s *Service) artistPicture(ctx context.Context, titleID int64, mbid string,
 		return
 	}
 	// Only the metadata server's stored photo (never Deezer or Wikidata).
-	if name := s.serverPicture(ctx, titleID, "artist", mbid, "500.jpg"); name != "" {
+	if name := s.serverPicture(ctx, titleID, "artist", mbid, "500.webp"); name != "" {
 		s.fillArt(ctx, titleID, name, by)
 	}
 }

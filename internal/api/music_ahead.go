@@ -331,7 +331,7 @@ func (a *API) fetchAhead(ctx context.Context, items []aheadItem) {
 				return
 			}
 		}
-		_, _, _ = a.musicTrendArtFile(ctx, it.kind, it.mbid, "250")
+		_, _, _ = a.musicTrendArtFile(ctx, it.kind, it.mbid, "500")
 		if !aheadSleep(ctx, artGap) {
 			return
 		}

@@ -547,7 +547,7 @@ func (a *API) serveTplPage(w http.ResponseWriter, r *http.Request, kind, slug st
 	if rows == nil {
 		// Not enough music for this page yet: a short note and similar pages.
 		a.exploreCaching(w, r, "private, no-cache")
-		writeJSON(w, http.StatusOK, map[string]any{"v2": true, "kid": false, "cold": false, "genres": []string{}, "genre": slug, "kind": kind, "region": region, "regions": []string{},
+		a.writeMusicJSON(w, r, map[string]any{"v2": true, "kid": false, "cold": false, "genres": []string{}, "genre": slug, "kind": kind, "region": region, "regions": []string{},
 			"tile": tile, "hero": nil, "rows": []MusicRow{}, "thin": true, "similar": a.tplThin(ctx, tile.Key, region, now)})
 		return true
 	}
@@ -559,7 +559,7 @@ func (a *API) serveTplPage(w http.ResponseWriter, r *http.Request, kind, slug st
 	}
 	a.rememberMusicCards(rows, extra...)
 	a.exploreCaching(w, r, "private, no-cache")
-	writeJSON(w, http.StatusOK, map[string]any{"v2": true, "kid": false, "cold": false, "genres": []string{}, "genre": slug, "kind": kind, "region": region, "regions": []string{},
+	a.writeMusicJSON(w, r, map[string]any{"v2": true, "kid": false, "cold": false, "genres": []string{}, "genre": slug, "kind": kind, "region": region, "regions": []string{},
 		"tile": tile, "hero": hero, "hero_alts": alts, "rows": rows})
 	return true
 }
@@ -597,5 +597,5 @@ func (a *API) musicBrowseTiles(w http.ResponseWriter, r *http.Request) {
 	a.exploreCaching(w, r, "private, no-cache")
 	secs := a.tplVisible(ctx, b, region, lib, now)
 	a.tplRememberCovers(b, secs)
-	writeJSON(w, http.StatusOK, map[string]any{"sections": secs})
+	a.writeMusicJSON(w, r, map[string]any{"sections": secs})
 }

@@ -32,7 +32,7 @@ func fakePictures(t *testing.T, down *atomic.Bool, asked ...*atomic.Int32) *http
 			return
 		}
 		switch r.URL.Path {
-		case "/v1/img/artist/" + labArtist + "/500.jpg":
+		case "/v1/img/artist/" + labArtist + "/500.webp":
 			w.Header().Set("Content-Type", "image/jpeg")
 			_, _ = w.Write([]byte("ÿØÿà" + strings.Repeat("s", 200)))
 		case "/search/artist":
@@ -94,7 +94,7 @@ func TestArtistImageOnAdd(t *testing.T) {
 	if len(art) != 1 || !strings.HasPrefix(art[0], "poster:") {
 		t.Fatalf("artwork %v", art)
 	}
-	if want := "poster:" + ArtworkName(svc.ImageServer+"/artist/"+labArtist+"/500.jpg"); art[0] != want {
+	if want := "poster:" + ArtworkName(svc.ImageServer+"/artist/"+labArtist+"/500.webp"); art[0] != want {
 		t.Fatalf("artwork %v, want the server's stored photo %s", art, want)
 	}
 }

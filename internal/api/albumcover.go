@@ -32,7 +32,12 @@ func (a *API) albumCoverArt(w http.ResponseWriter, r *http.Request) {
 	}
 	// Only the metadata server's stored copy (Luis, 2026-10-24): an album it
 	// has not stored yet is 404 (the page shows its placeholder) until it has.
-	src := a.serverAlbumCoverURL(mbid, coverSize(r))
+	size := coverSize(r)
+	want := size
+	if size == "250" {
+		want = "500" // 250 is made here from the 500
+	}
+	src := a.musicArtSrc("album", mbid, want, a.pictureVersion("album", mbid))
 	if src == "" {
 		http.NotFound(w, r)
 		return
@@ -40,14 +45,20 @@ func (a *API) albumCoverArt(w http.ResponseWriter, r *http.Request) {
 	name := library.ArtworkName(src)
 	path, ok := lib.Artwork.Path(name)
 	if ok {
-		lib.Artwork.Recheck(src, serverPlaceholder)
+		lib.Artwork.Recheck(src, serverStandIn)
 	} else {
-		if _, err := lib.Artwork.FetchStored(r.Context(), src, serverPlaceholder); err != nil {
+		if _, err := lib.Artwork.FetchStored(r.Context(), src, serverStandIn); err != nil {
 			http.Error(w, "picture unavailable", http.StatusNotFound)
 			return
 		}
 		if path, ok = lib.Artwork.Path(name); !ok {
 			http.NotFound(w, r)
+			return
+		}
+	}
+	if size == "250" {
+		if n, p, err := lib.Artwork.Smaller(name, 250); err == nil && n != name {
+			serveArtworkCached(w, r, n, p, "private, max-age=86400")
 			return
 		}
 	}

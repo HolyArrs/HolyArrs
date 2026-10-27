@@ -46,7 +46,7 @@ func newPictureWorld(t *testing.T) *pictureWorld {
 		for _, k := range []struct {
 			kind, file string
 			on         bool
-		}{{"artist", "500.jpg", w.photo}, {"wide", "1920.jpg", w.wide}, {"logo", "1200.png", w.logo}} {
+		}{{"artist", "500.webp", w.photo}, {"wide", "1920.webp", w.wide}, {"logo", "1200.png", w.logo}} {
 			if p == "/v1/img/"+k.kind+"/"+labArtist+"/"+k.file {
 				w.log(k.kind)
 				if !k.on {

@@ -47,9 +47,8 @@ type musicTrendCache struct {
 }
 
 type artFetch struct {
-	done       chan struct{}
-	name, path string
-	ok         bool
+	done chan struct{}
+	file artFile
 }
 
 // musicTrendView is one card of the row.
@@ -119,7 +118,11 @@ func (a *API) musicTrending(w http.ResponseWriter, r *http.Request) {
 	}
 	a.warmArtItems(warm)
 	a.exploreCaching(w, r, "private, max-age=300")
-	writeJSON(w, http.StatusOK, map[string]any{"kind": kind, "region": list.Region, "source": list.Source, "regions": list.Regions, "items": out})
+	paths := make([]string, 0, len(warm))
+	for _, k := range warm {
+		paths = append(paths, musicArtPrefix+k.kind+"/"+k.mbid)
+	}
+	a.writeMusicJSON(w, r, map[string]any{"kind": kind, "region": list.Region, "source": list.Source, "regions": list.Regions, "items": out}, paths...)
 }
 
 // cachedMusicTrend keeps lists an hour, and missing lists or failures five
@@ -173,8 +176,9 @@ func (a *API) cachedMusicTrend(ctx context.Context, kind, region string) (metada
 }
 
 // prefetchMusicArt fetches a fresh list's pictures into the artwork cache
-// in the background, in the sizes the cards ask for (albums 250 and 500,
-// artists the default), two at a time.
+// in the background, at the card size (500), two at a time, after their
+// records (one batch call), so the versioned copies the cards ask for are
+// the ones stored.
 func (a *API) prefetchMusicArt(kind string, items []metadata.MusicTrendItem) {
 	if !a.partIsOn(parts.Music) || a.s.Library == nil || a.s.Library.Artwork == nil {
 		return
@@ -182,13 +186,17 @@ func (a *API) prefetchMusicArt(kind string, items []metadata.MusicTrendItem) {
 	// Nobody waits on a prefetch: marked ahead, never urgent at the server.
 	ctx, cancel := context.WithTimeout(metadata.Ahead(context.Background()), 15*time.Minute)
 	defer cancel()
-	sizes := []string{"250"}
+	ids := make([]string, 0, len(items))
+	for _, it := range items {
+		ids = append(ids, it.MBID)
+	}
 	if kind == "album" {
-		sizes = []string{"250", "500"}
+		a.pictureRecords(ctx, nil, ids, 5*time.Second)
+	} else {
+		a.pictureRecords(ctx, ids, nil, 5*time.Second)
 	}
 	sem := make(chan struct{}, 2)
 	var wg sync.WaitGroup
-	// One item's sizes in turn: sizes can share a picture file.
 	for _, it := range items {
 		if ctx.Err() != nil {
 			break
@@ -197,76 +205,103 @@ func (a *API) prefetchMusicArt(kind string, items []metadata.MusicTrendItem) {
 		wg.Add(1)
 		go func(mbid string) {
 			defer func() { <-sem; wg.Done() }()
-			for _, size := range sizes {
-				a.musicTrendArtFile(ctx, kind, mbid, size)
-			}
+			a.musicTrendArtFile(ctx, kind, mbid, "500")
 		}(it.MBID)
 	}
 	wg.Wait()
 }
 
-// musicTrendArt answers GET /api/v1/music-trending/art/{kind}/{mbid}: the
-// picture of an artist or album from a cached trending list, through the
-// artwork cache. Artists are found by their MusicBrainz id;
-// albums the Cover Art Archive's release group front cover.
+// musicTrendArt answers GET /api/v1/music-trending/art/{kind}/{mbid}
+// [?size=][&pv=]: an album cover, artist photo, wide background or logo,
+// through the artwork cache, only from the metadata server's store. size
+// is the slot (250, 500 or 1200 for covers and photos; 960 or 1920 for
+// wide); pv is the stored version from the answer's picture records, which
+// makes the answer keep a year. 250 is made here from the 500.
 func (a *API) musicTrendArt(w http.ResponseWriter, r *http.Request) {
 	if a.kidMax(r) != "" {
 		fail(w, http.StatusNotFound, "no picture here")
 		return
 	}
 	kind, mbid := r.PathValue("kind"), strings.ToLower(r.PathValue("mbid"))
-	if r.URL.Query().Get("fresh") != "" {
+	q := r.URL.Query()
+	if q.Get("fresh") != "" {
 		// An open page asks again for a picture the server was still
 		// storing: the remembered miss does not hold it back.
 		a.music.mu.Lock()
 		delete(a.music.artMiss, kind+"|"+mbid)
 		a.music.mu.Unlock()
 	}
-	name, p, ok := a.musicTrendArtFile(r.Context(), kind, mbid, coverSize(r))
-	if ok {
+	v := q.Get("pv")
+	if !metadata.ValidPictureVersion(v) {
+		v = ""
+	}
+	f := a.musicArt(r.Context(), kind, mbid, q.Get("size"), v)
+	if f.ok {
 		a.tplMarkArt(kind, mbid)
 	}
-	if !ok {
+	if !f.ok {
 		// A library artist's saved picture stands in when no source has one.
-		if fb := r.URL.Query().Get("fallback"); kind == "artist" && strings.HasPrefix(fb, "/api/v1/artwork/") && !strings.Contains(fb, "//") && !strings.Contains(fb, "..") {
+		if fb := q.Get("fallback"); kind == "artist" && strings.HasPrefix(fb, "/api/v1/artwork/") && !strings.Contains(fb, "//") && !strings.Contains(fb, "..") {
 			http.Redirect(w, r, fb, http.StatusFound)
 			return
 		}
 		http.NotFound(w, r)
 		return
 	}
-	if kind == "artist" {
-		// Artist photos used to be cached as immutable; they now revalidate
-		// (the ETag is the file name), so a sharper photo replaces an old one.
-		serveArtworkCached(w, r, name, p, "private, max-age=600, must-revalidate")
-		return
+	switch {
+	case !f.exact:
+		// A smaller size stands in until the asked one is made: asked again soon.
+		serveArtworkCached(w, r, f.name, f.path, "private, max-age=60")
+	case v != "" && f.v == v:
+		serveArtworkCached(w, r, f.name, f.path, "private, max-age=31536000, immutable")
+	case kind == "artist":
+		// An unversioned photo revalidates (the ETag is the file name), so a
+		// sharper photo replaces an old one.
+		serveArtworkCached(w, r, f.name, f.path, "private, max-age=600, must-revalidate")
+	case f.small:
+		serveArtworkCached(w, r, f.name, f.path, "private, max-age=86400")
+	default:
+		serveArtwork(w, r, f.name, f.path)
 	}
-	serveArtwork(w, r, name, p)
 }
 
 // musicArtMissTTL is how long a picture no source has is not asked again:
 // minutes, so a brand-new release's cover shows once a source has it.
 const musicArtMissTTL = 10 * time.Minute
 
-// musicTrendArtFile finds and keeps the picture of a named artist or
-// album. An album no cover source has shows its artist's picture, so the
-// card is never blank. Misses are remembered a while (each costs outside
-// calls).
+// artFile is one picture the route can serve: exact is false when a
+// smaller size stands in for the one asked (not made yet), small when it is
+// the copy made here, v the version it was fetched at.
+type artFile struct {
+	name, path, v    string
+	ok, exact, small bool
+}
+
+// musicTrendArtFile finds and keeps the picture of an artist or album at a
+// size (the record's version when known). Misses are remembered a while.
 func (a *API) musicTrendArtFile(ctx context.Context, kind, mbid, size string) (name, path string, ok bool) {
+	f := a.musicArt(ctx, kind, mbid, size, "")
+	return f.name, f.path, f.ok
+}
+
+// musicArt is musicTrendArtFile at a version; one fetch per picture at a
+// time (a second ask waits for the first).
+func (a *API) musicArt(ctx context.Context, kind, mbid, size, v string) artFile {
+	size = artSize(kind, size)
 	c := &a.music
-	key := kind + "|" + mbid + "|" + size
+	key := kind + "|" + mbid + "|" + size + "|" + v
 	c.mu.Lock()
 	if f := c.artBusy[key]; f != nil {
 		c.mu.Unlock()
 		select {
 		case <-f.done:
-			if f.ok {
-				return f.name, f.path, true
+			if f.file.ok {
+				return f.file
 			}
 		case <-ctx.Done():
-			return "", "", false
+			return artFile{}
 		}
-		return a.fetchMusicArt(ctx, kind, mbid, size)
+		return a.fetchMusicArt(ctx, kind, mbid, size, v)
 	}
 	if c.artBusy == nil {
 		c.artBusy = map[string]*artFetch{}
@@ -274,13 +309,36 @@ func (a *API) musicTrendArtFile(ctx context.Context, kind, mbid, size string) (n
 	f := &artFetch{done: make(chan struct{})}
 	c.artBusy[key] = f
 	c.mu.Unlock()
-	f.name, f.path, f.ok = a.fetchMusicArt(ctx, kind, mbid, size)
+	f.file = a.fetchMusicArt(ctx, kind, mbid, size, v)
 	c.mu.Lock()
 	delete(c.artBusy, key)
 	c.mu.Unlock()
 	close(f.done)
-	return f.name, f.path, f.ok
+	return f.file
 }
+
+// artSize is the slot size asked for a kind: covers and photos 250, 500
+// (the default, every card) or 1200 (heroes); wide backgrounds 960 (rows) or
+// 1920 (heroes, the default); logos as stored.
+func artSize(kind, size string) string {
+	switch kind {
+	case "wide":
+		if size == "500" || size == "960" {
+			return "960"
+		}
+		return "1920"
+	case "logo":
+		return "1200"
+	}
+	if size == "250" || size == "1200" {
+		return size
+	}
+	return "500"
+}
+
+// standIn is the smaller stored size that stands in for a big one not made
+// yet.
+var standIn = map[string]string{"1200": "500", "1920": "960"}
 
 // serverPlaceholder says a metadata server picture answer is only its
 // stand-in for a photo it does not have yet.
@@ -288,27 +346,40 @@ func serverPlaceholder(h http.Header) bool {
 	return h.Get("X-Metadata-Placeholder") != ""
 }
 
-// serverArtistPhotoURL is the metadata server's sharp, scored photo of an
-// artist: 500 for circles and cards, 1200 when the big size is asked. A miss
-// answers a placeholder, which keep refuses, so the other sources run.
-func (a *API) serverArtistPhotoURL(_ context.Context, mbid, size string) string {
-	if a.s.ImageBase == "" || !metadata.ValidMBID(mbid) {
-		return ""
-	}
-	px := "500"
-	if size == "1200" {
-		px = "1200"
-	}
-	return strings.TrimRight(a.s.ImageBase, "/") + "/artist/" + mbid + "/" + px + ".jpg"
+// serverStandIn says a picture answer is not the picture asked for: the
+// server's placeholder, or a smaller size sent until the big one is made
+// (X-Metadata-Partial); neither is ever kept.
+func serverStandIn(h http.Header) bool {
+	return serverPlaceholder(h) || h.Get("X-Metadata-Partial") != ""
 }
 
-// serverAlbumCoverURL is the metadata server's stored cover of an album at
-// the size asked (250, 500 or 1200).
-func (a *API) serverAlbumCoverURL(mbid, size string) string {
+// musicArtSrc is the metadata server's address of a stored music picture
+// (WebP covers and photos at 500 or 1200, wide at 960 or 1920, PNG logos)
+// at version v ("" when not known: the address then answers a copy kept a
+// day). There is no stored 250: it is made here from the 500.
+func (a *API) musicArtSrc(kind, mbid, size, v string) string {
 	if a.s.ImageBase == "" || !metadata.ValidMBID(mbid) {
 		return ""
 	}
-	return strings.TrimRight(a.s.ImageBase, "/") + "/album/" + mbid + "/" + size + ".jpg"
+	var file string
+	switch kind {
+	case "album", "artist":
+		file = "500.webp"
+		if size == "1200" {
+			file = "1200.webp"
+		}
+	case "wide":
+		file = artSize("wide", size) + ".webp"
+	case "logo":
+		file = "1200.png"
+	default:
+		return ""
+	}
+	u := strings.TrimRight(a.s.ImageBase, "/") + "/" + kind + "/" + mbid + "/" + file
+	if v != "" {
+		u += "?v=" + v
+	}
+	return u
 }
 
 // artTemporary reports a picture fetch error that says nothing about the
@@ -329,23 +400,7 @@ func (a *API) artTemporary(err error) bool {
 	return true
 }
 
-// serverArtistArtURL is the server's stored wide background (500, 1200 or
-// 1920 px; the default and 250 ask 1920, for heroes) or logo (1200 PNG).
-func (a *API) serverArtistArtURL(kind, mbid, size string) string {
-	if a.s.ImageBase == "" || !metadata.ValidMBID(mbid) {
-		return ""
-	}
-	file := "1200.png"
-	if kind == "wide" {
-		file = "1920.jpg"
-		if size == "500" || size == "1200" {
-			file = size + ".jpg"
-		}
-	}
-	return strings.TrimRight(a.s.ImageBase, "/") + "/" + kind + "/" + mbid + "/" + file
-}
-
-func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name, path string, ok bool) {
+func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size, v string) artFile {
 	c := &a.music
 	c.mu.Lock()
 	_, listed := c.names[kind+"|"+mbid]
@@ -364,62 +419,52 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name,
 	}
 	lib := a.s.Library
 	if !known || lib == nil || lib.Artwork == nil || (missed && time.Since(missAt) < musicArtMissTTL) {
-		return "", "", false
+		return artFile{}
+	}
+	if v == "" {
+		v = a.pictureVersion(kind, mbid)
 	}
 	// temporary: the server's answer said nothing about the picture (rate
 	// limit, trouble, network): never remembered as missing.
 	temporary := false
-	keep := func(src string) bool {
+	stored := func(src string) (string, string, bool) {
 		if src == "" {
-			return false
+			return "", "", false
 		}
-		name = library.ArtworkName(src)
-		if path, ok = lib.Artwork.Path(name); ok {
-			lib.Artwork.Recheck(src, serverPlaceholder)
-			return true
+		n := library.ArtworkName(src)
+		if p, ok := lib.Artwork.Path(n); ok {
+			lib.Artwork.Recheck(src, serverStandIn)
+			return n, p, true
 		}
 		// A failed fetch may only have lost the race with a warm of the same
 		// picture (the file is then stored): it counts when the file is there.
-		_, err := lib.Artwork.FetchUnless(ctx, src, serverPlaceholder)
-		path, ok = lib.Artwork.Path(name)
-		temporary = temporary || !ok && a.artTemporary(err)
-		return ok
+		_, err := lib.Artwork.FetchStored(ctx, src, serverStandIn)
+		if p, ok := lib.Artwork.Path(n); ok {
+			return n, p, true
+		}
+		temporary = temporary || a.artTemporary(err)
+		return "", "", false
 	}
 	// Pictures come only from our metadata server (Luis, 2026-10-24): never
 	// straight from an outside source. One the server has not stored yet is
 	// a miss (the card shows its placeholder); the server queues it, and the
 	// picture is asked again after musicArtMissTTL or on the next preload.
-	switch kind {
-	case "artist":
-		if keep(a.serverArtistPhotoURL(ctx, mbid, size)) {
-			return name, path, true
+	want := size
+	if size == "250" {
+		want = "500"
+	}
+	if n, p, ok := stored(a.musicArtSrc(kind, mbid, want, v)); ok {
+		if size != "250" {
+			return artFile{name: n, path: p, v: v, ok: true, exact: true}
 		}
-	case "wide", "logo":
-		// An artist's wide background or logo: only the server's stored one.
-		if src := a.serverArtistArtURL(kind, mbid, size); src != "" {
-			n := library.ArtworkName(src)
-			if p, found := lib.Artwork.Path(n); found {
-				lib.Artwork.Recheck(src, serverPlaceholder)
-				return n, p, true
-			}
-			_, err := lib.Artwork.FetchStored(ctx, src, serverPlaceholder)
-			if p, found := lib.Artwork.Path(n); found {
-				return n, p, true
-			}
-			temporary = a.artTemporary(err)
+		if sn, sp, err := lib.Artwork.Smaller(n, 250); err == nil {
+			return artFile{name: sn, path: sp, v: v, ok: true, exact: true, small: sn != n}
 		}
-	case "album":
-		if src := a.serverAlbumCoverURL(mbid, size); src != "" {
-			n := library.ArtworkName(src)
-			if p, found := lib.Artwork.Path(n); found {
-				lib.Artwork.Recheck(src, serverPlaceholder)
-				return n, p, true
-			}
-			_, err := lib.Artwork.FetchStored(ctx, src, serverPlaceholder)
-			if p, found := lib.Artwork.Path(n); found {
-				return n, p, true
-			}
-			temporary = a.artTemporary(err)
+		return artFile{name: n, path: p, v: v, ok: true}
+	}
+	if small := standIn[size]; small != "" && kind != "logo" {
+		if n, p, ok := stored(a.musicArtSrc(kind, mbid, small, v)); ok {
+			return artFile{name: n, path: p, v: v, ok: true}
 		}
 	}
 	if ctx.Err() == nil && !temporary {
@@ -430,15 +475,9 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size string) (name,
 		c.artMiss[kind+"|"+mbid] = time.Now()
 		c.mu.Unlock()
 	}
-	return "", "", false
+	return artFile{}
 }
 
-// coverSize reads the ?size= a cover is asked at: 250 (the default), 500
-// for sharp tiles, 1200 for heroes.
-func coverSize(r *http.Request) string {
-	switch s := r.URL.Query().Get("size"); s {
-	case "500", "1200":
-		return s
-	}
-	return "250"
-}
+// coverSize reads the ?size= a cover is asked at: 500 (the default, every
+// card), 250 for small thumbnails, 1200 for heroes.
+func coverSize(r *http.Request) string { return artSize("album", r.URL.Query().Get("size")) }

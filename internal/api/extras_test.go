@@ -133,7 +133,7 @@ func TestTitleExtrasArtistFromServerOnly(t *testing.T) {
 	const id = "c8b03190-306c-4120-bb0b-6f2ebfc06ea9"
 	var stored atomic.Bool
 	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if stored.Load() && (r.URL.Path == "/v1/img/wide/"+id+"/1920.jpg" || r.URL.Path == "/v1/img/logo/"+id+"/1200.png") {
+		if stored.Load() && (r.URL.Path == "/v1/img/wide/"+id+"/1920.webp" || r.URL.Path == "/v1/img/logo/"+id+"/1200.png") {
 			w.Header().Set("Content-Type", "image/jpeg")
 			_, _ = w.Write([]byte("\xff\xd8\xff art"))
 			return

@@ -674,7 +674,7 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 	a.rememberMusicNames(names)
 	a.warmMusicArt(v)
 	w.Header().Set("Cache-Control", "private, max-age=60")
-	writeJSON(w, http.StatusOK, v)
+	a.writeMusicJSON(w, r, v)
 }
 
 // warmArtMax caps the pictures one page view warms: each cold one is a
@@ -747,7 +747,7 @@ func (a *API) warmMusicArt(v ArtistPageView) {
 			sem <- struct{}{}
 			go func() {
 				defer func() { <-sem; wg.Done() }()
-				a.musicTrendArtFile(ctx, kind, mbid, "250")
+				a.musicTrendArtFile(ctx, kind, mbid, "500")
 			}()
 		}
 		wg.Wait()
@@ -897,7 +897,7 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 	<-simDone
 	v.Similar = similar
 	w.Header().Set("Cache-Control", "private, max-age=60")
-	writeJSON(w, http.StatusOK, v)
+	a.writeMusicJSON(w, r, v)
 }
 
 // mainPressing picks the edition to list: the earliest official one with
@@ -1154,7 +1154,7 @@ func (a *API) artistCore(w http.ResponseWriter, r *http.Request) {
 	}
 	a.rememberMusicNames([]nameKey{{kind: "artist", mbid: mbid, name: v.Name}})
 	w.Header().Set("Cache-Control", "private, max-age=60")
-	writeJSON(w, http.StatusOK, v)
+	a.writeMusicJSON(w, r, v)
 }
 
 // artistSimilar answers GET /api/v1/music/artists/{mbid}?part=similar[&n=14].
@@ -1170,7 +1170,7 @@ func (a *API) artistSimilar(w http.ResponseWriter, r *http.Request) {
 	list := a.similarArtists(metadata.MemberLookup(r.Context()), mbid, n)
 	a.warmMusicArt(ArtistPageView{Similar: list})
 	w.Header().Set("Cache-Control", "private, max-age=300")
-	writeJSON(w, http.StatusOK, map[string]any{"similar": list})
+	a.writeMusicJSON(w, r, map[string]any{"similar": list})
 }
 
 // AlbumCoreView answers GET /api/v1/music/albums/{mbid}?part=core&artist=: the
@@ -1236,7 +1236,7 @@ func (a *API) albumCore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Cache-Control", "private, max-age=60")
-	writeJSON(w, http.StatusOK, v)
+	a.writeMusicJSON(w, r, v)
 }
 
 // editionTracks lists one edition's tracks with the Library's have per
@@ -1326,7 +1326,7 @@ func (a *API) artistMore(w http.ResponseWriter, r *http.Request) {
 		a.warmCredits(warm)
 	}
 	w.Header().Set("Cache-Control", "private, max-age=300")
-	writeJSON(w, http.StatusOK, map[string]any{"essential": essential, "appears_on": appears})
+	a.writeMusicJSON(w, r, map[string]any{"essential": essential, "appears_on": appears})
 }
 
 // warmCredits lets the picture route serve these albums (their names and
@@ -1397,5 +1397,5 @@ func (a *API) albumNear(w http.ResponseWriter, r *http.Request) {
 	}
 	a.warmCredits(near)
 	w.Header().Set("Cache-Control", "private, max-age=300")
-	writeJSON(w, http.StatusOK, map[string]any{"near": near})
+	a.writeMusicJSON(w, r, map[string]any{"near": near})
 }

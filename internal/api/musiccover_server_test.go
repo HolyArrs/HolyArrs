@@ -20,10 +20,10 @@ func TestAlbumCoverServerCopyFirstAndCatalogAlbums(t *testing.T) {
 	const stored, cold, stranger = "11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222", "33333333-3333-4333-8333-333333333333"
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case "/v1/img/album/" + stored + "/250.jpg":
+		case "/v1/img/album/" + stored + "/500.webp":
 			w.Header().Set("Content-Type", "image/jpeg")
 			_, _ = w.Write([]byte("\xff\xd8\xff stored"))
-		case "/v1/img/album/" + cold + "/250.jpg", "/v1/img/album/" + stranger + "/250.jpg":
+		case "/v1/img/album/" + cold + "/500.webp", "/v1/img/album/" + stranger + "/500.webp":
 			http.Redirect(w, r, "/release-group/x/front-250", http.StatusFound)
 		default:
 			w.Header().Set("Content-Type", "image/jpeg")
@@ -40,16 +40,16 @@ func TestAlbumCoverServerCopyFirstAndCatalogAlbums(t *testing.T) {
 	}
 	a.musicPre.catalog.Store(b)
 	ctx := context.Background()
-	if name, _, ok := a.fetchMusicArt(ctx, "album", stored, "250"); !ok || name != library.ArtworkName(srv.URL+"/v1/img/album/"+stored+"/250.jpg") {
+	if name, _, ok := a.musicTrendArtFile(ctx, "album", stored, "500"); !ok || name != library.ArtworkName(srv.URL+"/v1/img/album/"+stored+"/500.webp") {
 		t.Fatalf("stored album %q %v, want the server copy", name, ok)
 	}
-	if name, _, ok := a.fetchMusicArt(ctx, "album", cold, "250"); ok {
+	if name, _, ok := a.musicTrendArtFile(ctx, "album", cold, "500"); ok {
 		t.Fatalf("cold album %q, want none until the server stores it", name)
 	}
-	if _, ok := art.Path(library.ArtworkName(srv.URL + "/v1/img/album/" + cold + "/250.jpg")); ok {
+	if _, ok := art.Path(library.ArtworkName(srv.URL + "/v1/img/album/" + cold + "/500.webp")); ok {
 		t.Fatal("the redirect was kept as the server copy")
 	}
-	if _, _, ok := a.fetchMusicArt(ctx, "album", stranger, "250"); ok {
+	if _, _, ok := a.musicTrendArtFile(ctx, "album", stranger, "500"); ok {
 		t.Fatal("an album neither listed nor in the catalog was fetched")
 	}
 }
@@ -75,7 +75,7 @@ func TestTemporaryPictureErrorIsNotAMiss(t *testing.T) {
 	b, _ := rowtpl.ParseBundle([]byte(`{"version":"t","items":[{"id":"` + busy + `","k":"a","t":"Busy","ar":"B"}],"keys":{},"names":{}}`))
 	a.musicPre.catalog.Store(b)
 	ctx := context.Background()
-	if _, _, ok := a.fetchMusicArt(ctx, "album", busy, "250"); ok {
+	if _, _, ok := a.musicTrendArtFile(ctx, "album", busy, "500"); ok {
 		t.Fatal("a 429 answered a picture")
 	}
 	a.music.mu.Lock()
@@ -91,7 +91,7 @@ func TestTemporaryPictureErrorIsNotAMiss(t *testing.T) {
 		t.Fatal("a 429 did not hold the preload back")
 	}
 	limited = false
-	if _, _, ok := a.fetchMusicArt(ctx, "album", busy, "250"); !ok {
+	if _, _, ok := a.musicTrendArtFile(ctx, "album", busy, "500"); !ok {
 		t.Fatal("the next ask did not try again")
 	}
 }

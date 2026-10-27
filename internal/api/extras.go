@@ -113,13 +113,22 @@ func (a *API) titleExtras(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	a.exploreCaching(w, r, "")
+	// An artist's answer carries its pictures' records (the logo's shape, the
+	// wide background's colour), like every music answer.
+	write := func(v TitleExtras) {
+		if kind == "artist" {
+			a.writeMusicJSON(w, r, v)
+			return
+		}
+		writeJSON(w, http.StatusOK, v)
+	}
 	key := kind + ":" + id
 	c := titleExtrasCache
 	c.mu.Lock()
 	e, ok := c.seen[key]
 	c.mu.Unlock()
 	if ok && time.Since(e.at) < 6*time.Hour {
-		writeJSON(w, http.StatusOK, e.v)
+		write(e.v)
 		return
 	}
 	v := TitleExtras{Scores: []OutsideScore{}}
@@ -130,13 +139,13 @@ func (a *API) titleExtras(w http.ResponseWriter, r *http.Request) {
 	if kind == "artist" {
 		// An artist's pictures come only from our metadata server: its
 		// stored wide background, logo and photo, through the picture route.
-		if _, _, ok := a.musicTrendArtFile(ctx, "wide", id, "250"); ok {
+		if _, _, ok := a.musicTrendArtFile(ctx, "wide", id, "1920"); ok {
 			v.Backgrounds = []string{musicArtPrefix + "wide/" + id}
 		}
 		if _, _, ok := a.musicTrendArtFile(ctx, "logo", id, "1200"); ok {
 			v.Logo = musicArtPrefix + "logo/" + id
 		}
-		if _, _, ok := a.musicTrendArtFile(ctx, "artist", id, "250"); ok {
+		if _, _, ok := a.musicTrendArtFile(ctx, "artist", id, "500"); ok {
 			v.Thumb = musicArtPrefix + "artist/" + id
 		}
 	} else if a.s.ExtraArt != nil {
@@ -167,14 +176,14 @@ func (a *API) titleExtras(w http.ResponseWriter, r *http.Request) {
 		// A hiccup's empty answer is never kept, not even by the browser:
 		// the artist hero would stay without its wide photo.
 		w.Header().Set("Cache-Control", "no-store")
-		writeJSON(w, http.StatusOK, v)
+		write(v)
 		return
 	}
 	c.mu.Lock()
 	keepUnder(c.seen, 5000, func(e extrasEntry) time.Time { return e.at })
 	c.seen[key] = extrasEntry{v: v, at: time.Now()}
 	c.mu.Unlock()
-	writeJSON(w, http.StatusOK, v)
+	write(v)
 }
 
 func digitsOnly(s string) bool {

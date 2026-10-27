@@ -20,9 +20,9 @@ func TestArtistServerPhotoFirst(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "image/jpeg")
 		switch r.URL.Path {
-		case "/v1/img/artist/" + sharp + "/500.jpg":
+		case "/v1/img/artist/" + sharp + "/500.webp":
 			_, _ = w.Write([]byte("\xff\xd8\xff sharp"))
-		case "/v1/img/artist/" + cold + "/500.jpg":
+		case "/v1/img/artist/" + cold + "/500.webp":
 			w.Header().Set("X-Metadata-Placeholder", "true")
 			_, _ = w.Write([]byte("\xff\xd8\xff placeholder"))
 		default:
@@ -40,13 +40,13 @@ func TestArtistServerPhotoFirst(t *testing.T) {
 	}
 	a.music.mu.Unlock()
 	ctx := context.Background()
-	if name, _, ok := a.fetchMusicArt(ctx, "artist", sharp, "250"); !ok || name != library.ArtworkName(srv.URL+"/v1/img/artist/"+sharp+"/500.jpg") {
+	if name, _, ok := a.musicTrendArtFile(ctx, "artist", sharp, "500"); !ok || name != library.ArtworkName(srv.URL+"/v1/img/artist/"+sharp+"/500.webp") {
 		t.Fatalf("sharp artist picture %q %v, want the server photo", name, ok)
 	}
-	if name, _, ok := a.fetchMusicArt(ctx, "artist", cold, "250"); ok {
+	if name, _, ok := a.musicTrendArtFile(ctx, "artist", cold, "500"); ok {
 		t.Fatalf("cold artist picture %q, want none: pictures come only from the server", name)
 	}
-	if _, ok := art.Path(library.ArtworkName(srv.URL + "/v1/img/artist/" + cold + "/500.jpg")); ok {
+	if _, ok := art.Path(library.ArtworkName(srv.URL + "/v1/img/artist/" + cold + "/500.webp")); ok {
 		t.Fatal("a placeholder was stored as the artist photo")
 	}
 }

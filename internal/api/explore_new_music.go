@@ -625,7 +625,7 @@ func (a *API) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
 	if a.musicTplOn() {
 		if hero, rows, ok := a.buildTplWorld(ctx, r, "new", now); ok {
 			a.exploreCaching(w, r, "private, no-cache")
-			writeJSON(w, http.StatusOK, map[string]any{"kid": false, "building": false, "hero": hero, "rows": rows, "genres": musicNewTopics(rows, hero)})
+			a.writeMusicJSON(w, r, map[string]any{"kid": false, "building": false, "hero": hero, "rows": rows, "genres": musicNewTopics(rows, hero)})
 			return
 		}
 	}
@@ -701,7 +701,7 @@ func (a *API) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
 	}
 	a.rememberMusicNames(names)
 	a.exploreCaching(w, r, "private, no-cache")
-	writeJSON(w, http.StatusOK, map[string]any{"kid": false, "building": false, "hero": hero, "rows": rows, "genres": musicNewTopics(rows, hero)})
+	a.writeMusicJSON(w, r, map[string]any{"kid": false, "building": false, "hero": hero, "rows": rows, "genres": musicNewTopics(rows, hero)})
 }
 
 // landAlbumFollows tells people waiting for an album that it is out (an

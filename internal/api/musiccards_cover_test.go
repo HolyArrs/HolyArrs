@@ -51,7 +51,7 @@ func TestMusicCardsPicturesFromServerOnly(t *testing.T) {
 	}}}
 	api.rememberMusicCards(rows)
 	api.music.prefetching.Wait()
-	if _, ok := art.Path(library.ArtworkName(pics.URL + "/v1/img/album/" + fresh + "/250.jpg")); !ok {
+	if _, ok := art.Path(library.ArtworkName(pics.URL + "/v1/img/album/" + fresh + "/500.webp")); !ok {
 		t.Fatal("stored album not prefetched from the server")
 	}
 	if c := code(fresh); c != 200 {

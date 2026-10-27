@@ -39,7 +39,7 @@ func TestArtistCircleNameCollision(t *testing.T) {
 		case "/artist/246791":
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`{"id":246791,"name":"Drake","picture_xl":"` + srv.URL + `/pic/drake.jpg"}`))
-		case "/v1/img/artist/" + drake + "/500.jpg":
+		case "/v1/img/artist/" + drake + "/500.webp":
 			w.Header().Set("Content-Type", "image/jpeg")
 			_, _ = w.Write([]byte("\xff\xd8\xff server " + r.URL.Path))
 		default:
@@ -66,11 +66,11 @@ func TestArtistCircleNameCollision(t *testing.T) {
 		{kind: "artist", mbid: wide, name: "Drake"}, {kind: "artist", mbid: none, name: "Drake"}})
 	ctx := context.Background()
 	for _, tc := range []struct{ mbid, want string }{
-		{drake, srv.URL + "/v1/img/artist/" + drake + "/500.jpg"},
+		{drake, srv.URL + "/v1/img/artist/" + drake + "/500.webp"},
 		{wide, ""}, // only the server's pictures: no outside wide photo
 		{none, ""},
 	} {
-		name, _, ok := a.fetchMusicArt(ctx, "artist", tc.mbid, "250")
+		name, _, ok := a.musicTrendArtFile(ctx, "artist", tc.mbid, "500")
 		if tc.want == "" {
 			if ok {
 				t.Fatalf("%s: a picture %s, want none over a wrong one", tc.mbid, name)

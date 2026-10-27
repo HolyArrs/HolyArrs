@@ -42,11 +42,13 @@ type artWarmer struct {
 }
 
 // warmArtItems queues albums and artists (kind, MusicBrainz id) for the
-// background pool.
+// background pool, after asking their picture records (a batch call per
+// hundred) so the warm stores the versioned copies pages ask for.
 func (a *API) warmArtItems(list []nameKey) {
 	if len(list) == 0 || !a.partIsOn(parts.Music) {
 		return
 	}
+	go a.warmPictureRecords(list)
 	w := &a.artWarm
 	if w.do == nil && (a.s.Library == nil || a.s.Library.Artwork == nil) {
 		return
@@ -106,6 +108,8 @@ func (a *API) artWarmWorker() {
 			do = a.warmArtItem
 		}
 		ctx, cancel := context.WithTimeout(metadata.Ahead(context.Background()), artWarmItem)
+		// The item's records may still be on their way (asked with the list).
+		a.pictureRecords(ctx, artistIDs(k), albumIDs(k), 2*time.Second)
 		do(ctx, k)
 		cancel()
 		w.mu.Lock()
@@ -121,10 +125,9 @@ func (a *API) artWarmWorker() {
 func (a *API) warmArtItem(ctx context.Context, k artWarmKey) {
 	switch k.kind {
 	case "album":
-		a.musicTrendArtFile(ctx, "album", k.mbid, "250")
 		a.musicTrendArtFile(ctx, "album", k.mbid, "500")
 	case "artist":
-		a.musicTrendArtFile(ctx, "artist", k.mbid, "250")
+		a.musicTrendArtFile(ctx, "artist", k.mbid, "500")
 		a.warmArtistExtras(ctx, k.mbid)
 	}
 }
@@ -133,6 +136,20 @@ func (a *API) warmArtItem(ctx context.Context, k artWarmKey) {
 // metadata server (the artist page asks for them first); one the server
 // has not stored yet is asked again on a later warm.
 func (a *API) warmArtistExtras(ctx context.Context, mbid string) {
-	a.musicTrendArtFile(ctx, "wide", mbid, "250")
+	a.musicTrendArtFile(ctx, "wide", mbid, "1920")
 	a.musicTrendArtFile(ctx, "logo", mbid, "1200")
+}
+
+func artistIDs(k artWarmKey) []string {
+	if k.kind == "artist" {
+		return []string{k.mbid}
+	}
+	return nil
+}
+
+func albumIDs(k artWarmKey) []string {
+	if k.kind == "album" {
+		return []string{k.mbid}
+	}
+	return nil
 }

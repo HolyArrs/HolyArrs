@@ -69,4 +69,7 @@ type Deps struct {
 	// artists, albums and songs); nil leaves the dropdown to the Library
 	// and TMDB.
 	MusicSuggest func(ctx context.Context, q string) ([]metadata.MusicSuggestion, error)
+	// MusicPictures reads the stored picture records (version, size, main
+	// colour) of a row's artists and albums in one call; nil answers none.
+	MusicPictures func(ctx context.Context, artists, albums []string) (metadata.MusicPictures, error)
 }

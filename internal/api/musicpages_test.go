@@ -177,7 +177,7 @@ func TestSimilarArtistArtPrefetched(t *testing.T) {
 		t.Fatalf("similar %+v", list)
 	}
 	a.music.prefetching.Wait()
-	if _, ok := art.Path(library.ArtworkName(pics.URL + "/v1/img/artist/" + like + "/500.jpg")); !ok {
+	if _, ok := art.Path(library.ArtworkName(pics.URL + "/v1/img/artist/" + like + "/500.webp")); !ok {
 		t.Fatal("similar artist picture not prefetched from the server")
 	}
 	if _, ok := art.Path(library.ArtworkName(pics.URL + "/thumb.jpg")); ok {
@@ -203,7 +203,7 @@ func TestCreditCoversPrefetched(t *testing.T) {
 	c.ArtistName = "Radiohead"
 	a.warmCredits([]PageCredit{c})
 	a.music.prefetching.Wait()
-	if _, ok := art.Path(library.ArtworkName(pics.URL + "/v1/img/album/" + al + "/250.jpg")); !ok {
+	if _, ok := art.Path(library.ArtworkName(pics.URL + "/v1/img/album/" + al + "/500.webp")); !ok {
 		t.Fatal("credit cover not prefetched from the server")
 	}
 }

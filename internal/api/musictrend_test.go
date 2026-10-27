@@ -34,7 +34,7 @@ func TestMusicTrendingListsAndPictures(t *testing.T) {
 		return metadata.MusicTrend{Kind: kind, Region: region, Source: "deezer", Items: []metadata.MusicTrendItem{{Rank: 1, MBID: "0d79fe8e-ba27-4859-bb8c-2f255f346853", Name: "BTS"}}}, nil
 	}
 	cover := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/img/album/"+trendGroup+"/250.jpg" {
+		if r.URL.Path != "/v1/img/album/"+trendGroup+"/500.webp" {
 			w.WriteHeader(404)
 			return
 		}
@@ -123,7 +123,7 @@ func TestMusicTrendArtServerOnly(t *testing.T) {
 		t.Fatalf("list %v", err)
 	}
 	api.music.prefetching.Wait()
-	if _, ok := art.Path(library.ArtworkName(pics.URL + "/v1/img/album/" + trendGroup + "/250.jpg")); !ok {
+	if _, ok := art.Path(library.ArtworkName(pics.URL + "/v1/img/album/" + trendGroup + "/500.webp")); !ok {
 		t.Fatal("stored cover not prefetched")
 	}
 	if c := code(trendGroup); c != 200 {

@@ -164,6 +164,8 @@ type API struct {
 	watchOn watchOnCache
 	// music keeps the music trending lists for an hour.
 	music musicTrendCache
+	// pics are the metadata server's music picture records (musicpictures.go).
+	pics picRecords
 	// musicx keeps artist genres and similar artists for Explore → Music.
 	musicx musicExplore
 	// musicAns keeps each member's Explore → Music answers a minute.

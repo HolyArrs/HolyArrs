@@ -24,7 +24,7 @@ func TestAlbumCoverServesTheCachedCover(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = s.Close() })
 	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/img/album/"+apiAlbum+"/250.jpg" {
+		if r.URL.Path != "/v1/img/album/"+apiAlbum+"/500.webp" {
 			// Not stored on the server: it redirects to the archive, which
 			// the app never follows.
 			http.Redirect(w, r, "/release-group/x/front-250", http.StatusFound)

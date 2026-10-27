@@ -53,7 +53,7 @@ func (s *Service) FillArtistPictures(ctx context.Context, titleID int64, by doma
 	if needWide {
 		wide, logo := "", ""
 		if t.Backdrop == "" {
-			wide = s.serverLink(ctx, titleID, "wide", mbid, "1920.jpg")
+			wide = s.serverLink(ctx, titleID, "wide", mbid, "1920.webp")
 		}
 		if t.Logo == "" {
 			logo = s.serverLink(ctx, titleID, "logo", mbid, "1200.png")
@@ -64,7 +64,7 @@ func (s *Service) FillArtistPictures(ctx context.Context, titleID int64, by doma
 	}
 	filled := ""
 	if needArt {
-		if name := s.serverPicture(ctx, titleID, "artist", mbid, "500.jpg"); name != "" && s.fillArt(ctx, titleID, name, by) {
+		if name := s.serverPicture(ctx, titleID, "artist", mbid, "500.webp"); name != "" && s.fillArt(ctx, titleID, name, by) {
 			filled = SourceServer
 		}
 	}

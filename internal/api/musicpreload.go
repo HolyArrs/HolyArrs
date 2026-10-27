@@ -204,18 +204,16 @@ func (a *API) localArt(k preloadKey) bool {
 	if lib == nil || lib.Artwork == nil {
 		return false
 	}
-	var srcs []string
+	kind := "album"
 	if k.kind == "artist" {
-		srcs = []string{a.serverArtistPhotoURL(context.Background(), k.mbid, "250")}
-	} else {
-		srcs = []string{a.serverAlbumCoverURL(k.mbid, "250"), a.serverAlbumCoverURL(k.mbid, "500")}
+		kind = "artist"
 	}
-	for _, src := range srcs {
-		if src == "" {
-			continue
-		}
-		if _, ok := lib.Artwork.Path(library.ArtworkName(src)); ok {
-			return true
+	// The card copy: at the known version, or the unversioned one.
+	for _, v := range []string{a.pictureVersion(kind, k.mbid), ""} {
+		if src := a.musicArtSrc(kind, k.mbid, "500", v); src != "" {
+			if _, ok := lib.Artwork.Path(library.ArtworkName(src)); ok {
+				return true
+			}
 		}
 	}
 	return false
@@ -413,14 +411,14 @@ func (a *API) retryPreload(ver string) {
 	})
 }
 
-// preloadOne stores an album's covers at the card sizes (250 and 500) or an
-// artist's photo, through the picture route's own chain.
+// preloadOne stores an album's cover or an artist's photo at the card size
+// (500; a 250 thumbnail is made here from it), through the picture route's
+// own chain.
 func (a *API) preloadOne(ctx context.Context, k preloadKey) bool {
-	if k.kind == "album" {
-		_, _, small := a.musicTrendArtFile(ctx, "album", k.mbid, "250")
-		_, _, big := a.musicTrendArtFile(ctx, "album", k.mbid, "500")
-		return small && big
+	kind := "album"
+	if k.kind != "album" {
+		kind = "artist"
 	}
-	_, _, ok := a.musicTrendArtFile(ctx, "artist", k.mbid, "250")
+	_, _, ok := a.musicTrendArtFile(ctx, kind, k.mbid, "500")
 	return ok
 }
