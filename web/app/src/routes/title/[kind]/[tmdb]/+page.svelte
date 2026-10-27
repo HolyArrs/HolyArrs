@@ -108,10 +108,9 @@
 	$effect(() => {
 		const o = owned;
 		if (!o?.show || ownTab !== 'library') return;
-		// Start on the newest season you have something of, else the newest season.
-		const ss = [...o.show.seasons].filter((x) => x.number > 0).sort((a, b) => b.number - a.number);
-		const n = epSeason ?? (ss.find((x) => x.in_library > 0) ?? ss[0])?.number ?? 1;
-		if (epSeason === null) epSeason = n;
+		// Seasons start closed; picking one loads its episodes.
+		const n = epSeason;
+		if (n === null) return void (episodes = []);
 		epLoading = true;
 		void api.get<{ episodes: typeof episodes }>(`/titles/${o.id}/episodes?season=${n}&files=1`).then((r) => (episodes = r.episodes ?? []), () => (episodes = [])).finally(() => (epLoading = false));
 	});
@@ -849,6 +848,7 @@
 			{#if owned && libHead}
 				{@const o = owned}
 				<div class="lib" data-testid="lib-pane">
+					<div class="lib-main">
 					<section class="lib-status {libHead.kind}">
 						<div class="lib-st-text">
 							<p class="lib-st-title"><span class="own-dot {libHead.kind}" aria-hidden="true"></span>{libHead.title}</p>
@@ -864,13 +864,14 @@
 						<div class="lib-seasons">
 							{#each [...o.show.seasons].filter((x) => x.number > 0).sort((x, y) => x.number - y.number) as se (se.number)}
 								{@const p = se.episodes ? se.in_library / se.episodes : 0}
-								<button type="button" class="lib-season" class:on={epSeason === se.number} aria-pressed={epSeason === se.number} onclick={() => (epSeason = se.number)}>
+								<button type="button" class="lib-season" class:on={epSeason === se.number} aria-expanded={epSeason === se.number} onclick={() => (epSeason = epSeason === se.number ? null : se.number)}>
 									<svg viewBox="0 0 36 36" class="ring" aria-hidden="true"><circle cx="18" cy="18" r="15" />{#if p > 0}<circle cx="18" cy="18" r="15" class="fill" class:full={p >= 1} stroke-dasharray="{(p * 94.25).toFixed(1)} 94.25" />{/if}</svg>
 									<span><b>Season {se.number}</b><small>{se.in_library} of {se.episodes}</small></span>
 								</button>
 							{/each}
 						</div>
 						{@const cur = o.show.seasons.find((x) => x.number === epSeason)}
+						{#if epSeason !== null}
 						<div class="lib-eps-head">
 							<h3 class="lib-h">Season {epSeason}</h3>
 							{#if manage && cur && cur.in_library < cur.episodes}<button type="button" class="lib-btn sm" disabled={busyAction === `s${epSeason}`} onclick={() => epSearch({ season: epSeason }, `s${epSeason}`, `Looking for the missing episodes of season ${epSeason}.`)}><Icon name="search" size={15} />Get missing episodes</button>{/if}
@@ -892,6 +893,7 @@
 								{#each [0, 1, 2, 3] as i (i)}<li class="lib-ep skel"></li>{/each}
 							{/each}
 						</ol>
+						{/if}
 					{:else if libFiles.length}
 						<h3 class="lib-h">{libFiles.length > 1 ? 'Versions' : 'File'}</h3>
 						<div class="lib-files">
@@ -908,7 +910,8 @@
 							{#if manage}<a class="lib-file add" href={to(`/library/${o.id}?tools=version`)}><Icon name="plus" size={18} />Add another version<small>Keep a 4K and an HD copy side by side</small></a>{/if}
 						</div>
 					{/if}
-
+					</div>
+					<aside class="lib-side">
 					<h3 class="lib-h">Activity</h3>
 					<ol class="lib-tl">
 						{#each libAll ? ownedEvents : ownedEvents.slice(0, 5) as e (e.ID)}
@@ -933,6 +936,7 @@
 							<button type="button" class="lib-row" onclick={() => (deleteOpen = true)}><span><b>{o.kind === 'show' ? 'Delete show' : 'Delete movie'}</b><small>Choose whether the files go too</small></span><Icon name="trash" size={16} /></button>
 						</div>
 					{/if}
+					</aside>
 				</div>
 				{#if manage}
 					{#if o.show}<EpisodeSheet bind:open={epOpen} ep={epPicked} titleId={o.id} tmdb={o.ids?.tmdb} {manage} />{/if}
@@ -1219,8 +1223,15 @@
 	.own-files li { display: grid; grid-template-columns: auto auto auto 1fr; gap: 4px 16px; align-items: baseline; font: 500 14px/1.4 var(--font-ui); }
 	.own-files .path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	/* Library tab */
-	.lib { display: grid; gap: 0; max-width: 980px; }
-	.lib-h { margin: 36px 0 14px; font: 700 20px/1.2 var(--font-ui); letter-spacing: -.01em; }
+	/* Wide screens: status, seasons and files on the left; activity and settings beside them, so less scrolling. */
+	.lib { display: grid; gap: 0 40px; grid-template-columns: minmax(0, 1fr); }
+	.lib-main, .lib-side { display: grid; align-content: start; min-width: 0; }
+	@media (min-width: 1100px) {
+		.lib { grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); }
+		.lib-side { position: sticky; top: calc(var(--topbar, 56px) + 16px); }
+		.lib-side > .lib-h:first-child { margin-top: 0; }
+	}
+	.lib-h { margin: 28px 0 12px; font: 700 20px/1.2 var(--font-ui); letter-spacing: -.01em; }
 	.lib-status { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 22px 24px; border-radius: 18px; background: var(--surface-2); box-shadow: inset 0 0 0 .5px color-mix(in srgb, var(--text) 10%, transparent); }
 	.lib-status.failed { background: color-mix(in srgb, var(--danger, #e5484d) 10%, var(--surface-2)); }
 	.lib-st-text { flex: 1 1 320px; min-width: 0; }
@@ -1242,11 +1253,11 @@
 	.lib-eps-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 	.lib-eps-head .lib-h { margin-bottom: 14px; }
 	.lib-btn.sm { height: 34px; padding: 0 14px; font-size: 13px; margin-top: 22px; }
-	.lib-eps { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
-	.lib-ep { display: grid; grid-template-columns: 160px minmax(0, 1fr) auto 34px; align-items: center; gap: 16px; padding: 8px; border-radius: 14px; transition: background .15s ease; }
+	.lib-eps { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+	.lib-ep { display: grid; grid-template-columns: 112px minmax(0, 1fr) auto 34px; align-items: center; gap: 14px; padding: 6px; border-radius: 12px; transition: background .15s ease; }
 	.lib-ep { cursor: pointer; }
 	.lib-ep:hover, .lib-ep:focus-visible { background: var(--surface-2); outline: none; }
-	.lib-ep.skel { height: 106px; background: var(--surface-2); animation: pulse 1.2s ease-in-out infinite alternate; }
+	.lib-ep.skel { height: 75px; background: var(--surface-2); animation: pulse 1.2s ease-in-out infinite alternate; }
 	@keyframes pulse { to { opacity: .5; } }
 	.lib-ep-still { position: relative; display: block; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; background: var(--surface-2); }
 	.lib-ep-still img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -1296,7 +1307,7 @@
 	.lib-tl-ico { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 99px; background: var(--surface-2); color: var(--text-muted); }
 	.lib-tl li.have .lib-tl-ico { color: #30a46c; }
 	.lib-tl li.failed .lib-tl-ico { color: var(--danger, #e5484d); }
-	.lib-tl-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.lib-tl-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
 	.lib-link { justify-self: start; margin-top: 6px; padding: 0; border: 0; background: none; color: var(--accent); font: 600 14px/1 var(--font-ui); cursor: pointer; }
 	.lib-rows { display: grid; border-radius: 16px; background: var(--surface-2); overflow: hidden; }
 	.lib-rows.danger { margin-top: 16px; }
