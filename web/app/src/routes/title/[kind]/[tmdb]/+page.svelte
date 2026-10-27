@@ -38,6 +38,7 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import ReleaseSheet from '#lib/ReleaseSheet.svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import DeleteSheet from '#lib/DeleteSheet.svelte';
 	import EpisodeSheet, { type SheetEpisode } from '#lib/EpisodeSheet.svelte';
 	import RenamePreview from '#lib/RenamePreview.svelte';
@@ -105,16 +106,75 @@
 	let epOpen = $state(false);
 	let epPicked = $state<SheetEpisode | null>(null);
 	let epLoading = $state(false);
-	$effect(() => {
-		const o = owned;
-		if (!o?.show || ownTab !== 'library') return;
-		// Seasons start closed; picking one loads its episodes.
-		const n = epSeason;
-		if (n === null) return void (episodes = []);
-		epLoading = true;
-		void api.get<{ episodes: typeof episodes }>(`/titles/${o.id}/episodes?season=${n}&files=1`).then((r) => (episodes = r.episodes ?? []), () => (episodes = [])).finally(() => (epLoading = false));
-	});
-	const epTone = (st: string) => (st === 'have' || st === 'imported' || st === 'in_library' || st === 'kept' ? 'have' : st === 'downloading' || st === 'importing' || st === 'searching' ? 'downloading' : st === 'failed' ? 'failed' : 'missing');
+	// Seasons start closed; each one you open loads its episodes (with files) once.
+	const openSeasons = new SvelteSet<number>();
+	let seasonEps = $state<Record<number, SheetEpisode[]>>({});
+	async function loadSeason(id: number, n: number) {
+		try {
+			const r = await api.get<{ episodes: SheetEpisode[] }>(`/titles/${id}/episodes?season=${n}&files=1`);
+			seasonEps = { ...seasonEps, [n]: r.episodes ?? [] };
+		} catch {
+			seasonEps = { ...seasonEps, [n]: [] };
+		}
+	}
+	function toggleSeason(id: number, n: number) {
+		if (openSeasons.has(n)) return void openSeasons.delete(n);
+		openSeasons.add(n);
+		if (!seasonEps[n]) void loadSeason(id, n);
+	}
+	function toggleAll(o: TitleView) {
+		if (openSeasons.size) return openSeasons.clear();
+		for (const se of o.show?.seasons ?? []) toggleSeason(o.id, se.number);
+	}
+	async function keepSeason(id: number, n: number, keep: boolean) {
+		busyAction = `k${n}`;
+		try {
+			await api.put(`/titles/${id}/seasons/${n}`, { keep_up_to_date: keep });
+			await loadOwned(id);
+			if (seasonEps[n]) await loadSeason(id, n);
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		} finally {
+			busyAction = '';
+		}
+	}
+	async function keepEpisode(e: SheetEpisode, n: number) {
+		const keep = e.keep_up_to_date === false;
+		try {
+			await api.put(`/episodes/${e.id}`, { keep_up_to_date: keep });
+			seasonEps = { ...seasonEps, [n]: (seasonEps[n] ?? []).map((x) => (x.id === e.id ? { ...x, keep_up_to_date: keep } : x)) };
+		} catch (err) {
+			toasts.push(message(err), 'fail');
+		}
+	}
+	// "Yesterday", "Tomorrow", "Sat, Oct 31" this year, else "Oct 31, 2024".
+	function dayWords(iso: string): string {
+		const d = new Date(iso);
+		const day = (x: Date) => Date.UTC(x.getUTCFullYear(), x.getUTCMonth(), x.getUTCDate());
+		const now = new Date();
+		const diff = Math.round((day(d) - Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())) / 864e5);
+		if (diff === 0) return 'Today';
+		if (diff === -1) return 'Yesterday';
+		if (diff === 1) return 'Tomorrow';
+		const same = d.getUTCFullYear() === now.getFullYear();
+		return d.toLocaleDateString(undefined, same ? { weekday: Math.abs(diff) < 7 ? 'short' : undefined, month: 'short', day: 'numeric', timeZone: 'UTC' } : { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+	}
+	const epSources: Record<string, string> = { web_dl: 'WEB', webrip: 'WEB', bluray: 'BluRay', remux: 'Remux', hdtv: 'TV', dvd: 'DVD' };
+	// The quality of the file you have, as the status: "1080p WEB".
+	function epQuality(e: SheetEpisode): string {
+		const q = (e.slots[0]?.file?.Quality ?? null) as { resolution?: number; source?: string } | null;
+		return q ? [q.resolution ? `${q.resolution}p` : '', epSources[q.source ?? ''] ?? ''].filter(Boolean).join(' ') : '';
+	}
+	function epFile(e: SheetEpisode): string {
+		const f = e.slots[0]?.file;
+		return f?.Size ? bytes(f.Size as number) : '';
+	}
+	// Pick a release for the whole title, one season or one episode.
+	let pickScope = $state<{ label: string; query: string; body: Record<string, unknown> } | null>(null);
+	function openPick(scope: { label: string; query: string; body: Record<string, unknown> } | null) {
+		pickScope = scope;
+		pickOpen = true;
+	}	const epTone = (st: string) => (st === 'have' || st === 'imported' || st === 'in_library' || st === 'kept' ? 'have' : st === 'downloading' || st === 'importing' || st === 'searching' ? 'downloading' : st === 'failed' ? 'failed' : 'missing');
 	let busyAction = $state('');
 	// Library tab (shows): look for one episode or a whole season's missing ones.
 	async function epSearch(body: Record<string, unknown>, key: string, done: string) {
@@ -221,7 +281,7 @@
 		return { id: x.id, label: x.version && x.version !== 'Main' ? x.version : 'Main copy', badges: qualityBadges([f]), codec: [m.video_codec, m.resolution ?? (f?.Quality?.resolution ? `${f.Quality.resolution}p` : ''), m.audio_codec].filter(Boolean).join(' · '), size: f?.Size ? bytes(f.Size) : '', name, added: f?.AddedAt ? ago(f.AddedAt) : '', audio: langs(m.audio_languages), subs: langs(m.subtitle_languages ?? m.subtitles) };
 	}));
 	const evIcon = (k = ''): 'check' | 'search' | 'clock' | 'refresh' | 'copy' | 'trash' | 'plus' => (/import|got|done|adopt/.test(k) ? 'check' : /grab|sent|chose|search/.test(k) ? 'search' : /fail|stall|missing/.test(k) ? 'clock' : /rename/.test(k) ? 'copy' : /delete/.test(k) ? 'trash' : /add/.test(k) ? 'plus' : 'refresh');
-	const evTone = (k = '', s = '') => (/fail|stall|not on disk|missing/.test(`${k} ${s}`.toLowerCase()) ? 'failed' : /import|adopt/.test(k) ? 'have' : '');
+	const evTone = (k = '', s = '') => (/fail|stall|not on disk|missing|^no release|0 found/.test(`${k} ${s}`.toLowerCase().trim()) || /^no release/i.test(s) ? 'failed' : /import|adopt/.test(k) ? 'have' : '');
 	let libAll = $state(false);
 	let renameOpen = $state(false);
 	let deleteOpen = $state(false);
@@ -856,46 +916,69 @@
 							{#if libHead.pct != null}<div class="lib-bar" role="progressbar" aria-valuenow={libHead.pct} aria-valuemin="0" aria-valuemax="100"><span style:width="{libHead.pct}%"></span></div>{/if}
 						</div>
 						{#if libHead.action}<button type="button" class="lib-btn primary" disabled={busyAction === 'search'} onclick={() => ownRun('search')}><Icon name={libHead.action.icon} size={16} />{libHead.action.label}</button>{/if}
-						{#if manage}<button type="button" class="lib-btn" onclick={() => (pickOpen = true)}><Icon name="grid" size={16} />Pick a release</button>{/if}
+						{#if manage}<button type="button" class="lib-btn" onclick={() => openPick(null)}><Icon name="grid" size={16} />Pick a release</button>{/if}
 					</section>
 
 					{#if o.show}
-						<h3 class="lib-h">Seasons</h3>
-						<div class="lib-seasons">
-							{#each [...o.show.seasons].filter((x) => x.number > 0).sort((x, y) => x.number - y.number) as se (se.number)}
-								{@const p = se.episodes ? se.in_library / se.episodes : 0}
-								<button type="button" class="lib-season" class:on={epSeason === se.number} aria-expanded={epSeason === se.number} onclick={() => (epSeason = epSeason === se.number ? null : se.number)}>
-									<svg viewBox="0 0 36 36" class="ring" aria-hidden="true"><circle cx="18" cy="18" r="15" />{#if p > 0}<circle cx="18" cy="18" r="15" class="fill" class:full={p >= 1} stroke-dasharray="{(p * 94.25).toFixed(1)} 94.25" />{/if}</svg>
-									<span><b>Season {se.number}</b><small>{se.in_library} of {se.episodes}</small></span>
-								</button>
-							{/each}
-						</div>
-						{@const cur = o.show.seasons.find((x) => x.number === epSeason)}
-						{#if epSeason !== null}
 						<div class="lib-eps-head">
-							<h3 class="lib-h">Season {epSeason}</h3>
-							{#if manage && cur && cur.in_library < cur.episodes}<button type="button" class="lib-btn sm" disabled={busyAction === `s${epSeason}`} onclick={() => epSearch({ season: epSeason }, `s${epSeason}`, `Looking for the missing episodes of season ${epSeason}.`)}><Icon name="search" size={15} />Get missing episodes</button>{/if}
+							<h3 class="lib-h">Seasons</h3>
+							<span class="lib-head-acts">
+								{#if manage && o.show.in_library < o.show.episodes - (o.show.not_out_yet ?? 0)}<button type="button" class="lib-btn sm" disabled={busyAction === 'all'} onclick={() => epSearch({}, 'all', 'Looking for every missing episode.')}><Icon name="search" size={15} />Get all missing</button>{/if}
+								<button type="button" class="lib-btn sm" onclick={() => toggleAll(o)}>{openSeasons.size ? 'Collapse all' : 'Expand all'}</button>
+							</span>
 						</div>
-						<ol class="lib-eps" aria-busy={epLoading}>
-							{#each episodes as e (e.id)}
-								{@const st = e.slots[0]}
-								{@const tone = epTone(st?.state ?? '')}
-								<li class="lib-ep {tone}" onclick={() => { epPicked = e; epOpen = true; }} onkeydown={(ev) => { if (ev.key === 'Enter' && ev.target === ev.currentTarget) { epPicked = e; epOpen = true; } }} role="button" tabindex="0" aria-label="Episode {e.episode}: {e.name ?? ''}">
-									<span class="lib-ep-still">{#if e.still}<img src={e.still.replace('/w780/', '/w300/')} alt="" loading="lazy" decoding="async" />{/if}<span class="lib-ep-n">{e.episode}</span></span>
-									<span class="lib-ep-text">
-										<b>{e.name ?? `Episode ${e.episode}`}</b>
-										<small>{[e.air_date ? new Date(e.air_date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '', e.runtime_minutes ? `${e.runtime_minutes} min` : ''].filter(Boolean).join(' · ')}</small>
-									</span>
-									<span class="lib-ep-st {tone}"><span class="own-dot {tone}" aria-hidden="true"></span>{st?.state_label ?? 'Missing'}</span>
-									{#if manage && st && tone !== 'have' && tone !== 'downloading'}<button type="button" class="lib-ep-go" aria-label="Look for episode {e.episode}" title="Look for it now" disabled={busyAction === `e${e.id}`} onclick={(ev) => { ev.stopPropagation(); void epSearch({ slot_id: st.id }, `e${e.id}`, `Looking for episode ${e.episode}.`); }}><Icon name="search" size={15} /></button>{/if}
-								</li>
-							{:else}
-								{#each [0, 1, 2, 3] as i (i)}<li class="lib-ep skel"></li>{/each}
+						<div class="lib-sl">
+							{#each [...o.show.seasons].sort((x, y) => y.number - x.number) as se (se.number)}
+								{@const isOpen = openSeasons.has(se.number)}
+								{@const full = se.episodes > 0 && se.in_library >= se.episodes}
+								<section class="lib-sr" class:open={isOpen}>
+									<div class="lib-sr-head">
+										{#if manage}<button type="button" class="lib-keep" class:on={se.keep_up_to_date} aria-pressed={se.keep_up_to_date} title={se.keep_up_to_date ? 'Kept up to date. Click to stop' : 'Not kept up to date. Click to keep'} disabled={busyAction === `k${se.number}`} onclick={() => keepSeason(o.id, se.number, !se.keep_up_to_date)}><Icon name="check" size={13} /></button>{/if}
+										<button type="button" class="lib-sr-main" aria-expanded={isOpen} onclick={() => toggleSeason(o.id, se.number)}>
+											<b>{se.number === 0 ? 'Specials' : `Season ${se.number}`}</b>
+											<span class="lib-count" class:full class:part={!full && se.in_library > 0} class:none={!se.in_library && se.missing > 0}>{se.in_library} / {se.episodes}</span>
+											{#if se.downloading}<span class="lib-sr-note dl">{se.downloading} downloading</span>{/if}
+											{#if se.failed}<span class="lib-sr-note fail">{se.failed} failed</span>{/if}
+											{#if se.next_air_date}<span class="lib-sr-note">Next {dayWords(se.next_air_date)}</span>{/if}
+											<span class="lib-chev" aria-hidden="true"><Icon name="chevronDown" size={16} /></span>
+										</button>
+										{#if manage}
+											<span class="lib-sr-acts">
+												<button type="button" class="lib-ico" title="Get the missing episodes" aria-label="Get the missing episodes of season {se.number}" disabled={!se.missing || busyAction === `s${se.number}`} onclick={() => epSearch({ season: se.number }, `s${se.number}`, `Looking for the missing episodes of season ${se.number}.`)}><Icon name="search" size={15} /></button>
+												<button type="button" class="lib-ico" title="Pick a release for this season" aria-label="Pick a release for season {se.number}" onclick={() => openPick({ label: se.number === 0 ? 'Specials' : `Season ${se.number}`, query: `season=${se.number}`, body: { season: se.number } })}><Icon name="grid" size={15} /></button>
+											</span>
+										{/if}
+									</div>
+									{#if isOpen}
+										<div class="lib-eps">
+											{#each seasonEps[se.number] ?? [] as e (e.id)}
+												{@const st = e.slots[0]}
+												{@const tone = epTone(st?.state ?? '')}
+												{@const aired = !e.air_date || Date.parse(e.air_date) <= Date.now()}
+												<div class="lib-ep {tone}" class:future={!aired} onclick={() => { epPicked = e; epOpen = true; }} onkeydown={(ev) => { if (ev.key === 'Enter' && ev.target === ev.currentTarget) { epPicked = e; epOpen = true; } }} role="button" tabindex="0" aria-label="Episode {e.episode}: {e.name ?? ''}">
+													{#if manage}<button type="button" class="lib-keep sm" class:on={e.keep_up_to_date !== false} aria-pressed={e.keep_up_to_date !== false} title={e.keep_up_to_date !== false ? 'Kept up to date. Click to stop' : 'Not kept up to date. Click to keep'} onclick={(ev) => { ev.stopPropagation(); void keepEpisode(e, se.number); }}><Icon name="check" size={11} /></button>{/if}
+													<span class="lib-ep-still">{#if e.still}<img src={e.still.replace('/w780/', '/w300/')} alt="" loading="lazy" decoding="async" />{/if}<span class="lib-ep-n">{e.episode}</span></span>
+													<span class="lib-ep-text">
+														<b>{e.name ?? `Episode ${e.episode}`}{#if e.episode === (seasonEps[se.number]?.length ?? 0) && se.episodes > 1}<span class="lib-tag">Finale</span>{/if}</b>
+														<small>{[e.air_date ? dayWords(e.air_date) : '', e.runtime_minutes ? `${e.runtime_minutes} min` : '', epFile(e)].filter(Boolean).join(' · ')}</small>
+													</span>
+													<span class="lib-ep-st {aired ? tone : 'future'}"><span class="own-dot {tone}" aria-hidden="true"></span>{aired ? epQuality(e) || st?.state_label || 'Missing' : 'Not out yet'}</span>
+													{#if manage && st}
+														<span class="lib-ep-acts">
+															<button type="button" class="lib-ico" title="Look for it now" aria-label="Look for episode {e.episode}" disabled={!aired || tone === 'downloading' || busyAction === `e${e.id}`} onclick={(ev) => { ev.stopPropagation(); void epSearch({ slot_id: st.id }, `e${e.id}`, `Looking for episode ${e.episode}.`); }}><Icon name="search" size={14} /></button>
+															<button type="button" class="lib-ico" title="Pick a release for this episode" aria-label="Pick a release for episode {e.episode}" disabled={!aired} onclick={(ev) => { ev.stopPropagation(); openPick({ label: `S${se.number} E${e.episode}`, query: `item_id=${e.id}`, body: { slot_id: st.id } }); }}><Icon name="grid" size={14} /></button>
+														</span>
+													{/if}
+												</div>
+											{:else}
+												{#each [0, 1, 2] as i (i)}<div class="lib-ep skel"></div>{/each}
+											{/each}
+										</div>
+									{/if}
+								</section>
 							{/each}
-						</ol>
-						{/if}
-					{:else if libFiles.length}
-						<h3 class="lib-h">{libFiles.length > 1 ? 'Versions' : 'File'}</h3>
+						</div>
+					{:else if libFiles.length}						<h3 class="lib-h">{libFiles.length > 1 ? 'Versions' : 'File'}</h3>
 						<div class="lib-files">
 							{#each libFiles as f (f.id)}
 								<article class="lib-file">
@@ -915,7 +998,7 @@
 					<h3 class="lib-h">Activity</h3>
 					<ol class="lib-tl">
 						{#each libAll ? ownedEvents : ownedEvents.slice(0, 5) as e (e.ID)}
-							<li class={evTone(e.Kind, e.Summary)}><span class="lib-tl-ico"><Icon name={evIcon(e.Kind)} size={14} /></span><span class="lib-tl-text">{e.Summary ?? e.Kind}</span><span class="muted">{e.At ? ago(e.At) : ''}</span></li>
+							<li class={evTone(e.Kind, e.Summary)}><span class="lib-tl-ico"><Icon name={/^no release/i.test(e.Summary ?? '') ? 'search' : evIcon(e.Kind)} size={14} /></span><span class="lib-tl-text">{(e.Summary ?? e.Kind ?? '').replace(/^./, (c) => c.toUpperCase())}</span><span class="muted">{e.At ? ago(e.At) : ''}</span></li>
 						{:else}<li class="muted">Nothing has happened yet.</li>{/each}
 					</ol>
 					{#if ownedEvents.length > 5}<button type="button" class="lib-link" onclick={() => (libAll = !libAll)}>{libAll ? 'Show less' : `Show all ${ownedEvents.length}`}</button>{/if}
@@ -940,7 +1023,7 @@
 				</div>
 				{#if manage}
 					{#if o.show}<EpisodeSheet bind:open={epOpen} ep={epPicked} titleId={o.id} tmdb={o.ids?.tmdb} {manage} />{/if}
-					<ReleaseSheet bind:open={pickOpen} titleId={o.id} name={o.name} onchosen={() => loadOwned(o.id)} />
+					<ReleaseSheet bind:open={pickOpen} titleId={o.id} name={o.name} scope={pickScope} onchosen={() => loadOwned(o.id)} />
 					<Sheet bind:open={renameOpen} title="Rename files" description={o.name} placement="right" size="md">
 						{#if renameOpen}<RenamePreview titleId={o.id} onDone={() => { renameOpen = false; void loadOwned(o.id); }} />{/if}
 					</Sheet>
@@ -1242,15 +1325,43 @@
 	.lib-btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 14px/1 var(--font-ui); white-space: nowrap; text-decoration: none; cursor: pointer; }
 	.lib-btn.primary { background: var(--text); color: var(--bg); }
 	.lib-btn:hover { filter: brightness(1.08); }
-	.lib-seasons { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
-	.lib-season { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 0; border-radius: 14px; background: var(--surface-2); color: var(--text); text-align: left; cursor: pointer; transition: transform .2s ease; }
-	.lib-season:hover { transform: translateY(-2px); }
-	.lib-season.on { background: var(--text); color: var(--bg); }
-	.lib-season.on small { color: color-mix(in srgb, var(--bg) 65%, transparent); }
-	.lib-season.on .ring circle { stroke: color-mix(in srgb, var(--bg) 18%, transparent); }
-	.lib-season.on .ring .fill { stroke: var(--accent); }
-	.lib-season.on .ring .fill.full { stroke: #30a46c; }
-	.lib-eps-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+	/* Seasons as a list, closed until opened (like the classic season rows, without the clutter). */
+	.lib-head-acts { display: flex; gap: 8px; }
+	.lib-sl { display: grid; gap: 8px; }
+	.lib-sr { border-radius: 14px; background: var(--surface-2); overflow: hidden; }
+	.lib-sr-head { display: flex; align-items: center; gap: 8px; padding: 0 10px 0 12px; min-height: 52px; }
+	.lib-sr-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 4px; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+	.lib-sr-main b { font: 650 16px/1 var(--font-ui); white-space: nowrap; }
+	.lib-count { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 99px; background: color-mix(in srgb, var(--text) 9%, transparent); color: var(--text-muted); font: 700 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
+	.lib-count.full { background: color-mix(in srgb, #30a46c 16%, transparent); color: #30a46c; }
+	.lib-count.part { background: color-mix(in srgb, #d4a72c 16%, transparent); color: #d4a72c; }
+	.lib-count.none { background: color-mix(in srgb, var(--danger, #e5484d) 14%, transparent); color: var(--danger, #e5484d); }
+	.lib-sr-note { color: var(--text-muted); font: 500 13px/1 var(--font-ui); white-space: nowrap; }
+	.lib-sr-note.dl { color: #3e8ef7; }
+	.lib-sr-note.fail { color: var(--danger, #e5484d); }
+	.lib-chev { margin-left: auto; display: grid; color: var(--text-muted); transition: transform .2s ease; }
+	.lib-sr.open .lib-chev { transform: rotate(180deg); }
+	.lib-sr-acts, .lib-ep-acts { display: flex; gap: 2px; }
+	.lib-ico { display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 99px; background: none; color: var(--text-muted); cursor: pointer; }
+	.lib-ico:hover:not(:disabled) { background: color-mix(in srgb, var(--text) 9%, transparent); color: var(--text); }
+	.lib-ico:disabled { opacity: .3; cursor: default; }
+	.lib-keep { flex: none; display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 1.5px solid color-mix(in srgb, var(--text) 30%, transparent); border-radius: 6px; background: none; color: transparent; cursor: pointer; }
+	.lib-keep.on { border-color: #30a46c; background: #30a46c; color: #fff; }
+	.lib-keep.sm { width: 18px; height: 18px; border-radius: 5px; }
+	.lib-sr .lib-eps { padding: 0 6px 8px; border-top: .5px solid color-mix(in srgb, var(--text) 8%, transparent); }
+	.lib-sr .lib-ep { grid-template-columns: 18px 96px minmax(0, 1fr) auto auto; }
+	.lib-sr .lib-ep:hover, .lib-sr .lib-ep:focus-visible { background: color-mix(in srgb, var(--text) 5%, transparent); }
+	.lib-ep.future .lib-ep-still img { filter: grayscale(.8) brightness(.55); }
+	.lib-ep-st.future { color: var(--text-muted); background: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 14%, transparent); }
+	.lib-tag { margin-left: 8px; display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 5px; background: color-mix(in srgb, #3e8ef7 18%, transparent); color: #3e8ef7; font: 700 10.5px/1 var(--font-ui); letter-spacing: .04em; text-transform: uppercase; vertical-align: 2px; }
+	@media (max-width: 600px) {
+		.lib-sr-note { display: none; }
+		.lib-sr .lib-ep { grid-template-columns: 18px 84px minmax(0, 1fr) auto; }
+		.lib-sr .lib-ep-st { grid-column: 3; grid-row: 2; }
+		.lib-sr .lib-ep-still { grid-row: span 2; grid-column: 2; }
+		.lib-sr .lib-ep-acts { grid-column: 4; grid-row: 1 / span 2; flex-direction: column; }
+		.lib-head-acts .lib-btn.sm { padding: 0 10px; }
+	}	.lib-eps-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 	.lib-eps-head .lib-h { margin-bottom: 14px; }
 	.lib-btn.sm { height: 34px; padding: 0 14px; font-size: 13px; margin-top: 22px; }
 	.lib-eps { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
@@ -1273,21 +1384,12 @@
 	.lib-ep-go { grid-column: 4; display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 99px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); cursor: pointer; opacity: .6; transition: opacity .15s ease; }
 	.lib-ep:hover .lib-ep-go, .lib-ep-go:focus-visible { opacity: 1; }
 	@media (max-width: 600px) {
-		.lib-seasons { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -16px; padding: 0 16px 4px; scrollbar-width: none; }
-		.lib-seasons::-webkit-scrollbar { display: none; }
-		.lib-season { flex: 0 0 auto; scroll-snap-align: start; white-space: nowrap; }
-		.lib-btn.sm { flex: none; margin-top: 22px; }
+					.lib-btn.sm { flex: none; margin-top: 22px; }
 		.lib-ep { grid-template-columns: 112px minmax(0, 1fr) 34px; gap: 12px; }
 		.lib-ep-st { grid-column: 2; grid-row: 2; justify-self: start; height: 22px; margin-top: -6px; }
 		.lib-ep-still { grid-row: span 2; }
 		.lib-ep-go { grid-column: 3; grid-row: 1 / span 2; }
 	}
-	.lib-season span { display: grid; gap: 2px; font: 600 15px/1.2 var(--font-ui); }
-	.lib-season small { color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); }
-	.ring { width: 36px; height: 36px; flex: none; transform: rotate(-90deg); }
-	.ring circle { fill: none; stroke: color-mix(in srgb, var(--text) 12%, transparent); stroke-width: 4; }
-	.ring .fill { stroke: var(--accent); stroke-linecap: round; }
-	.ring .fill.full { stroke: #30a46c; }
 	.lib-files { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
 	.lib-file { display: grid; gap: 8px; align-content: start; padding: 18px 20px; border-radius: 16px; background: var(--surface-2); min-width: 0; }
 	.lib-file p { margin: 0; }
