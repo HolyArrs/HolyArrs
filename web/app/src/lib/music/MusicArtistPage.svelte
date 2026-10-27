@@ -39,7 +39,6 @@
 	import { refreshInbox } from '#lib/wishlist.svelte.ts';
 	import { to } from '#lib/paths.ts';
 	import { plainReason } from '#lib/plain.ts';
-	import { cameFrom, fromIcon } from '#lib/came-from.svelte.ts';
 	import { albumYear } from '#lib/music/music.ts';
 	import { releaseWords } from '#lib/music/music-trending.ts';
 	import { SkRail, SkRowTitle, SkTrackRow } from '#lib/ui/sk/index.ts';
@@ -486,12 +485,6 @@
 	const albumAsked = (a: PageAlbum) => asked.has(a.mbid) || (!!lookup?.ask && !lookup.ask.albums?.length);
 	const cta = $derived(titleId ? 'Open in Library' : lookup?.ask ? 'Asked' : manage ? 'Add artist' : 'Ask for discography');
 
-	const from = $derived.by(() => (void page.url.pathname, cameFrom()));
-	function stepBack(e: MouseEvent) {
-		if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-		e.preventDefault();
-		history.back();
-	}
 </script>
 
 <svelte:head><title>{hero?.name ?? 'Artist'} · HolyArrs</title></svelte:head>
@@ -575,7 +568,6 @@
 					</div>
 					{#if heroFull}<button type="button" class="vexit" onclick={fullScreen} aria-label="Exit full screen" data-testid="artist-hero-video-exit" {@attach (n) => n.focus()}><Icon name="x" size={20} /></button>{/if}
 				{/if}
-				{#if from?.label}<nav class="crumbs" aria-label="Breadcrumb"><a class="chip" href={from.path} onclick={stepBack} data-testid="artist-back"><Icon name={fromIcon(from.path) ?? 'chevronLeft'} size={14} />{from.label}</a></nav>{/if}
 				<div class="hero-in">
 					{#if picture && !photoFailed}<img class="photo" src={picture} alt="" width="184" height="184" onerror={() => (photoFailed = true)} />{:else if wideFace && !wideFailed}<img class="photo crop" src={wideFace} alt="" width="184" height="184" onerror={() => (wideFailed = true)} />{:else}<div class="photo initials" aria-hidden="true">{initialsOf(hero.name)}</div>{/if}
 					{#if art.logo && !logoFailed}
@@ -839,14 +831,13 @@
 	/* Full screen: the video alone, fit whole on black, with exit, pause and sound. */
 	.hero.full { background: #000; }
 	.hero.full .stage { inset: 0; animation: none; transform: none; }
-	.hero.full .art, .hero.full .shade, .hero.full .crumbs, .hero.full .hero-in { display: none; }
+	.hero.full .art, .hero.full .shade, .hero.full .hero-in { display: none; }
 	.hero.full .clip { object-fit: contain; background: #000; }
 	.hero.full .vctl { right: max(24px, env(safe-area-inset-right)); bottom: max(24px, env(safe-area-inset-bottom)); gap: 10px; }
 	.hero.full .vctl button, .vexit { width: 44px; height: 44px; }
 	.vexit { position: absolute; top: max(20px, env(safe-area-inset-top)); right: max(24px, env(safe-area-inset-right)); z-index: 2; display: grid; place-items: center; border-radius: 50%; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); color: #fff; cursor: pointer; transition: background .2s; }
 	.vexit:hover { background: rgb(255 255 255 / 26%); }
 	.vexit:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-	.crumbs { position: absolute; top: clamp(14px, 2vw, 22px); left: clamp(20px, 4vw, 48px); z-index: 1; }
 	.chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 10px; border-radius: 999px; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); color: #fff; font: 600 13px/1.2 var(--font-ui); }
 	.chip:hover { background: rgb(255 255 255 / 24%); }
 	.hero-in { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 72px 20px clamp(16px, 2vw, 24px); text-align: center; max-width: 900px; }

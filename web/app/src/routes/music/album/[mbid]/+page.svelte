@@ -19,7 +19,6 @@
 	import { refreshInbox } from '#lib/wishlist.svelte.ts';
 	import { to } from '#lib/paths.ts';
 	import { plainReason } from '#lib/plain.ts';
-	import { cameFrom, fromIcon } from '#lib/came-from.svelte.ts';
 	import { albumYear } from '#lib/music/music.ts';
 	import { SkRail, SkTrackRow } from '#lib/ui/sk/index.ts';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
@@ -197,12 +196,6 @@
 
 	const cta = $derived(titleId ? (data?.state && data.state !== 'not_included' ? 'Open in Library' : 'Manage in Library') : asked ? 'Asked' : manage ? 'Add artist' : 'Ask for this album');
 
-	const from = $derived.by(() => (void page.url.pathname, cameFrom()));
-	function stepBack(e: MouseEvent) {
-		if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-		e.preventDefault();
-		history.back();
-	}
 </script>
 
 <svelte:head><title>{hero?.name ?? 'Album'} · HolyArrs</title>{#if heroCover}<link rel="preload" as="image" href={heroCover} />{/if}</svelte:head>
@@ -218,7 +211,6 @@
 	<PageLoader loading={!hero && !error} cached={fromCache} label="Loading this album" onretry={load}>
 		{#if hero && !(error && !data)}
 			<header class="hero" data-hero>
-				{#if from?.label}<nav class="crumbs" aria-label="Breadcrumb"><a class="chip" href={from.path} onclick={stepBack} data-testid="album-back"><Icon name={fromIcon(from.path) ?? 'chevronLeft'} size={14} />{from.label}</a></nav>{/if}
 				<div class="hero-in">
 					<div class="cover" class:in={coverIn} style:background-color={coverTint}>
 						{#if cover && !coverFailed}<img src={heroCover} alt={`${hero.name} cover`} width="320" height="320" decoding="async" fetchpriority="high" onload={() => (coverIn = true)} onerror={() => { coverIn = false; coverFailed = true; }} />{:else}<ArtPlaceholder name={hero.name} shape="square" color={coverTint} />{/if}
