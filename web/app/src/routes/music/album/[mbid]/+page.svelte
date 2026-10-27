@@ -24,7 +24,7 @@
 	import { SkRail, SkTrackRow } from '#lib/ui/sk/index.ts';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import { pictureOf } from '#lib/pictures.ts';
-	import { albumHref, appPicture, artistHref, coverFor, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist, type PageCredit, type PageTrack } from '#lib/music/music-pages.ts';
+	import { albumHref, appPicture, artistHref, askAgainOnce, coverFor, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist, type PageCredit, type PageTrack } from '#lib/music/music-pages.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 
 	// An album's page: the cover beside its title and actions, the tracklist
@@ -59,7 +59,7 @@
 		busy = true;
 		error = '';
 		// All at once: the hero, the tracks, the similar artists and the ask state.
-		void api.get<AlbumPageData>(`/music/albums/${mbid}?artist=${artist}&similar=0`).then((d) => {
+		void askAgainOnce(() => api.get<AlbumPageData>(`/music/albums/${mbid}?artist=${artist}&similar=0`)).then((d) => {
 			if (!still()) return;
 			data = d;
 			// A bare album link learns its artist from the full answer: ask the nearby albums now.

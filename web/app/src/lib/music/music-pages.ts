@@ -74,6 +74,14 @@ export interface StoreAlbum {
 	image?: string;
 }
 
+/** askAgainOnce asks once more after a pause when the first ask fails, so a slow first load never shows an error. */
+export function askAgainOnce<T>(ask: () => Promise<T>, pause = 1500, wait: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms))): Promise<T> {
+	return ask().catch(async () => {
+		await wait(pause);
+		return ask();
+	});
+}
+
 /** shortCount writes 1234 as 1.2K and 81500000 as 81.5M. */
 export function shortCount(n: number): string {
 	const a = Math.abs(n);

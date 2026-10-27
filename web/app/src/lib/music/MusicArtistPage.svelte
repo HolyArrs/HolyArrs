@@ -46,8 +46,8 @@
 	import { attachHLS, screenTarget } from '#lib/hls-player.ts';
 	import { HERO_DELAY, setSoundOn, soundOn } from '#lib/trailer.ts';
 	import { artistVideo, autoplayHere, loadUISettings, nativeHLS } from '#lib/autoplay.svelte.ts';
-	import { heroVideoStart, type HeroVideo } from '#lib/music/hero-video.ts';
-	import { aboutSize, albumHref, appPicture, artistHref, artistKind, countryName, initialsOf, coverFor, haveLine, kindWord, length, owned, popularityStats, SHELVES, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
+	import { heroFullscreen, heroVideoStart, type HeroVideo } from '#lib/music/hero-video.ts';
+	import { aboutSize, albumHref, appPicture, artistHref, artistKind, countryName, initialsOf, coverFor, haveLine, kindWord, length, owned, popularityStats, askAgainOnce, SHELVES, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import ArtistVideos from '#lib/ArtistVideos.svelte';
@@ -125,12 +125,22 @@
 		if (videoEl.paused) void videoEl.play().catch(() => {});
 		else videoEl.pause();
 	}
+	// Full screen is the browser's own, on the hero: the video fit whole (black
+	// bars, never stretched or cut) with exit, pause and sound. iPhone Safari
+	// lets only the video itself go full screen, in its own player. Esc or the
+	// exit button leave it.
+	let heroBox: HTMLElement | undefined = $state();
+	let heroFull = $state(false);
 	function fullScreen() {
 		const el = videoEl as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | undefined;
 		if (!el) return;
-		if (el.requestFullscreen) void el.requestFullscreen().catch(() => {});
+		if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+		else if (heroFullscreen(document.fullscreenEnabled, heroBox, el) === 'page') void heroBox?.requestFullscreen().catch(() => {});
 		else el.webkitEnterFullscreen?.();
 	}
+	$effect(() => {
+		if (heroFull && !heroVideo) void document.exitFullscreen().catch(() => {});
+	});
 	let videoIn = $state(false);
 	const videoOn = $derived(videoIn && !videoPaused);
 	let logoFailed = $state(false);
@@ -167,7 +177,7 @@
 			if (!data) core = c;
 			askFollow(c.title_id);
 		});
-		const fullAsk = api.get<ArtistPageData>(`/music/artists/${want}?similar=0`).then((d) => {
+		const fullAsk = askAgainOnce(() => api.get<ArtistPageData>(`/music/artists/${want}?similar=0`)).then((d) => {
 			if (want !== mbid) return;
 			data = d;
 			follows = new Map(d.albums.filter((a) => a.upcoming).map((a) => [a.mbid, !!a.following]));
@@ -488,11 +498,13 @@
 		subtitle={a.artist_name || undefined} badges={a.explicit ? ['E'] : undefined} />
 {/snippet}
 
+<svelte:document onfullscreenchange={() => (heroFull = !!heroBox && document.fullscreenElement === heroBox)} />
+
 <div class="artist">
 	{#if error && !hero}<LoadError hasData={false} message={plainReason(error).text} onretry={load} {busy} />{/if}
 	<PageLoader loading={!hero && !error} label="Loading this artist" onretry={load}>
 		{#if hero}
-			<header class="hero" class:vid={videoOn} class:bare={!heroSrc && !heroVideo} data-hero>
+			<header class="hero" class:vid={videoOn} class:bare={!heroSrc && !heroVideo} class:full={heroFull} bind:this={heroBox} data-hero>
 				<div class="stage" aria-hidden="true">
 					{#if heroSrc}
 						{#key heroSrc}
@@ -500,7 +512,7 @@
 						{/key}
 					{/if}
 					{#if heroVideo}
-						<video class="clip" class:in={videoOn} bind:this={videoEl} muted playsinline disablepictureinpicture preload="auto" onplaying={() => { videoIn = true; videoPaused = false; }} onpause={() => (videoPaused = true)} onended={() => void nextVideo()} onplay={() => (videoPaused = false)} onvolumechange={() => videoEl && (videoMuted = videoEl.muted)} data-testid="artist-hero-video"></video>
+						<video class="clip" class:in={videoOn || heroFull} bind:this={videoEl} muted playsinline disablepictureinpicture preload="auto" onplaying={() => { videoIn = true; videoPaused = false; }} onpause={() => (videoPaused = true)} onended={() => void nextVideo()} onplay={() => (videoPaused = false)} onvolumechange={() => videoEl && (videoMuted = videoEl.muted)} data-testid="artist-hero-video"></video>
 					{/if}
 				</div>
 				<div class="shade" aria-hidden="true"></div>
@@ -508,8 +520,9 @@
 					<div class="vctl" data-testid="artist-hero-video-controls">
 						<button type="button" onclick={togglePause} aria-label={videoPaused ? 'Play video' : 'Pause video'}><Icon name={videoPaused ? 'play' : 'pause'} size={16} /></button>
 						<button type="button" onclick={toggleMute} aria-label={videoMuted ? 'Turn sound on' : 'Turn sound off'}><Icon name={videoMuted ? 'soundOff' : 'sound'} size={16} /></button>
-						<button type="button" onclick={fullScreen} aria-label="Full screen"><Icon name="expand" size={16} /></button>
+						{#if !heroFull}<button type="button" onclick={fullScreen} aria-label="Full screen"><Icon name="expand" size={16} /></button>{/if}
 					</div>
+					{#if heroFull}<button type="button" class="vexit" onclick={fullScreen} aria-label="Exit full screen" data-testid="artist-hero-video-exit" {@attach (n) => n.focus()}><Icon name="x" size={20} /></button>{/if}
 				{/if}
 				{#if from?.label}<nav class="crumbs" aria-label="Breadcrumb"><a class="chip" href={from.path} onclick={stepBack} data-testid="artist-back"><Icon name={fromIcon(from.path) ?? 'chevronLeft'} size={14} />{from.label}</a></nav>{/if}
 				<div class="hero-in">
@@ -793,7 +806,25 @@
 	.vctl button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 	@media (max-width: 600px) { .vctl { bottom: 12px; right: 12px; gap: 6px; } .vctl button { width: 34px; height: 34px; } }
 	.art.under, .art.soft.under { opacity: 0; transition-duration: 900ms; }
-	.shade { position: absolute; inset: 0; z-index: -1; background: radial-gradient(ellipse 60% 55% at 50% 42%, rgb(7 8 10 / 0) 0%, rgb(7 8 10 / .55) 70%, var(--hero-ink) 100%), linear-gradient(to top, var(--hero-ink) 0%, rgb(7 8 10 / 0) 45%); }
+	/* The photo gets a vignette and a dark foot; the video stays clear, with only a short foot so the name and photo read. */
+	.shade { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+	.shade::before, .shade::after { content: ''; position: absolute; inset: 0; transition: opacity 900ms var(--ease-out); }
+	.shade::before { background: radial-gradient(ellipse 60% 55% at 50% 42%, rgb(7 8 10 / 0) 0%, rgb(7 8 10 / .55) 70%, var(--hero-ink) 100%), linear-gradient(to top, var(--hero-ink) 0%, rgb(7 8 10 / 0) 45%); }
+	.shade::after { background: linear-gradient(to top, rgb(7 8 10 / .72) 0%, rgb(7 8 10 / .34) 14%, rgb(7 8 10 / 0) 30%); opacity: 0; }
+	.hero.vid .shade::before { opacity: 0; }
+	.hero.vid .shade::after { opacity: 1; }
+	.hero.vid h1 { text-shadow: 0 2px 14px rgb(0 0 0 / .55); }
+	@media (prefers-reduced-motion: reduce) { .shade::before, .shade::after { transition: none; } }
+	/* Full screen: the video alone, fit whole on black, with exit, pause and sound. */
+	.hero.full { background: #000; }
+	.hero.full .stage { inset: 0; animation: none; transform: none; }
+	.hero.full .art, .hero.full .shade, .hero.full .crumbs, .hero.full .hero-in { display: none; }
+	.hero.full .clip { object-fit: contain; background: #000; }
+	.hero.full .vctl { right: max(24px, env(safe-area-inset-right)); bottom: max(24px, env(safe-area-inset-bottom)); gap: 10px; }
+	.hero.full .vctl button, .vexit { width: 44px; height: 44px; }
+	.vexit { position: absolute; top: max(20px, env(safe-area-inset-top)); right: max(24px, env(safe-area-inset-right)); z-index: 2; display: grid; place-items: center; border-radius: 50%; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); color: #fff; cursor: pointer; transition: background .2s; }
+	.vexit:hover { background: rgb(255 255 255 / 26%); }
+	.vexit:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 	.crumbs { position: absolute; top: clamp(14px, 2vw, 22px); left: clamp(20px, 4vw, 48px); z-index: 1; }
 	.chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 10px; border-radius: 999px; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); color: #fff; font: 600 13px/1.2 var(--font-ui); }
 	.chip:hover { background: rgb(255 255 255 / 24%); }

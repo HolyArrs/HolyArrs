@@ -36,3 +36,15 @@ describe('rising today', () => {
 		expect(await fetchRisingToday({ get: async () => ({ id: 'rising_today', items: [] }) } as never)).toBeNull();
 	});
 });
+
+import { askAgainOnce } from './music-pages.ts';
+describe('askAgainOnce', () => {
+	it('asks once more after a failure, then gives up', async () => {
+		let n = 0;
+		const now = async () => {};
+		expect(await askAgainOnce(async () => (++n === 1 ? Promise.reject(new Error('slow')) : 'ok'), 0, now)).toBe('ok');
+		n = 0;
+		await expect(askAgainOnce(async () => { n++; throw new Error('down'); }, 0, now)).rejects.toThrow('down');
+		expect(n).toBe(2);
+	});
+});
