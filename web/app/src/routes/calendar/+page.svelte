@@ -679,7 +679,7 @@
 
 <VariantBar options={filterLooks} bind:value={look} param="filters" storageKey="holyarrs.calendar-filters-look" label="Calendar filters" />
 
-<PageHeader title="Calendar" subtitle={"When the movies, shows and artists in your Library have something new: the day a movie comes out, each episode at its air time in your time zone, and new albums."}>
+<PageHeader title="Calendar">
 	{#snippet actions()}
 		<SegmentedControl
 			label="Cards or list"
