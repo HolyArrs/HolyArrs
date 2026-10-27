@@ -2,7 +2,7 @@
 	import { sized } from '#lib/tmdb-image.ts';
 	import { getBase } from '#lib/paths.ts';
 	import { to } from '#lib/paths.ts';
-	import { onMount, untrack } from 'svelte';
+	import { onMount, tick, untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { replaceState } from '$app/navigation';
 	import { api, message, ApiError } from '#lib/api.ts';
@@ -83,6 +83,9 @@
 	// A day to bring into view in the day-by-day list once its dates have loaded.
 	let focusDay = $state<string | null>(null);
 	let fetching = $state(false);
+	// Day and Week in Coming Soon load this many weeks, six more each time the end comes near.
+	const REACH = 6;
+	let reach = $state(REACH);
 	const byMonth = $derived(look === 5 || (look === 2 && span === 'month'));
 	// The week shown in Week view: this week, or the first week of a linked month.
 	let week = $state(weekStart(asked ? new Date(Number(asked[1]), Number(asked[2]) - 1, 1) : now));
@@ -119,12 +122,12 @@
 	const padded = (r: { from: string; to: string }) => ({ from: ymd(new Date(new Date(r.from + 'T00:00:00').getTime() - 86400000)), to: ymd(new Date(new Date(r.to + 'T00:00:00').getTime() + 86400000)) });
 	// Month (5, and 2 by month) loads and pages a whole month; 2 by week one week; the others the six weeks from the week shown.
 	const range = $derived(
-		look === 2 && span === 'month' ? padded(monthRange(year, month)) : look === 2 && span === 'week' ? padded(weekRange(week)) : look === 5 ? monthRange(year, month) : stackedRange(week)
+		look === 2 && span === 'month' ? padded(monthRange(year, month)) : look === 2 ? { from: ymd(week), to: ymd(shiftWeek(week, reach)) } : look === 5 ? monthRange(year, month) : stackedRange(week)
 	);
 	const rangeName = $derived(
 		look === 2 && span !== 'day' ? spanName(span, week, year, month) :
 		look === 5 ? new Date(year, month, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) :
-		`${week.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${new Date(week.getFullYear(), week.getMonth(), week.getDate() + 7 * 6 - 1).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
+		`${week.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${new Date(week.getFullYear(), week.getMonth(), week.getDate() + 7 * (look === 2 ? reach : 6) - 1).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
 	);
 	// The mini month picker starts on the month of the first week shown, and can page on its own.
 	let pickYear = $state(now.getFullYear());
@@ -160,6 +163,7 @@
 
 	function jump(d: Date) {
 		week = weekStart(d);
+		reach = REACH;
 		year = d.getFullYear();
 		month = d.getMonth();
 		pickYear = week.getFullYear();
@@ -195,6 +199,24 @@
 		const u = new URL(page.url.href);
 		u.searchParams.set('span', s);
 		replaceState(u, page.state);
+	}
+	// Day and Week go on as you scroll: near the end, the next six weeks load (a year at most).
+	function more() {
+		if (fetching || reach >= 52) return;
+		reach = Math.min(52, reach + REACH);
+	}
+	function endless(node: HTMLElement, busy: boolean) {
+		const near = () => node.getBoundingClientRect().top < innerHeight + 900;
+		const io = new IntersectionObserver((es) => es.some((e) => e.isIntersecting) && more(), { rootMargin: '0px 0px 900px 0px' });
+		io.observe(node);
+		return {
+			// When a load ends with the end still near, ask for the next weeks.
+			update(now: boolean) {
+				if (!now && busy && near()) void tick().then(more);
+				busy = now;
+			},
+			destroy: () => io.disconnect()
+		};
 	}
 	// A day picked in Week or Month opens the day-by-day list at that day.
 	function openDay(day: string) {
@@ -385,7 +407,7 @@
 </PageHeader>
 
 <section class="tools" class:looked={look > 0} aria-label="Calendar controls">
-	<div class="month-nav">
+	<div class="month-nav" class:still={look === 2 && span === 'week'}>
 		<IconButton icon="chevronLeft" label={byMonth ? 'Month before' : 'Week before'} variant="tinted" onclick={() => go(-1)} />
 		<h2 class="month" aria-live="polite" data-testid="cal-month">{rangeName}</h2>
 		<IconButton icon="chevronRight" label={byMonth ? 'Month after' : 'Week after'} variant="tinted" onclick={() => go(1)} />
@@ -446,7 +468,7 @@
 		{#key span}
 			<div class="span-in" data-span={span}>
 				{#if span === 'week'}
-					<ComingWeek entries={shown} today={todayKey} start={week} {dir} onday={openDay} />
+					<ComingWeek entries={shown} today={todayKey} start={week} weeks={reach} />
 				{:else if span === 'month'}
 					<ComingMonth entries={shown} today={todayKey} {year} {month} {dir} onday={openDay} />
 				{:else}
@@ -454,6 +476,11 @@
 				{/if}
 			</div>
 		{/key}
+		{#if span !== 'month'}
+			<!-- Reaching the end loads the next weeks, up to a year. -->
+			<div class="endless" use:endless={fetching} aria-hidden="true"></div>
+			{#if fetching}<p class="more-note" role="status">Loading the next weeks…</p>{/if}
+		{/if}
 	{:else if look === 3}
 		<WeekStrip entries={shown} today={todayKey} start={week} days={7 * 6} onlater={() => go(6)} />
 	{:else if look === 4}
@@ -685,6 +712,10 @@
 		.looked .kinds::-webkit-scrollbar { display: none; }
 		.looked .kinds > :global(*) { flex: none; }
 	}
+	.endless { height: 1px; }
+	.more-note { margin-top: 18px; color: var(--text-muted); font: var(--t-callout); }
+	/* Week scrolls week after week: no arrows. */
+	.month-nav.still > :global(.ui-ibtn) { display: none; }
 	.weeks-sk { display: flex; flex-direction: column; gap: 16px; }
 	/* Day, Week and Month in Coming Soon fade in when switched. */
 	.span-in { animation: span-in var(--dur-slow) var(--ease-out) both; }

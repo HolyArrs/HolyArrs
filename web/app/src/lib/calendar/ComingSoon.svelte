@@ -1,8 +1,10 @@
 <script lang="ts">
 	import type { CalendarEntry } from '#lib/types.ts';
 	import { to } from '#lib/paths.ts';
-	import { entryArt, entryDay, entryHref, entryKey, itemDot } from '#lib/calendar.ts';
-	import { entryFacts, entryLine, entryTag, entryTitle, monthGroups, movieDates } from '#lib/calendar-looks.ts';
+	import { entryArt, entryHref, entryKey, itemDot } from '#lib/calendar.ts';
+	import { entryLine, entryTitle, groupDates, groupFacts, groupTag, monthGroups, movieDates, thingCount, type CalGroup } from '#lib/calendar-looks.ts';
+	import Shelf from '#lib/ui/Shelf.svelte';
+	import CalTile from './CalTile.svelte';
 	import { sized } from '#lib/tmdb-image.ts';
 	import Badge from '#lib/ui/Badge.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -44,13 +46,17 @@
 	let failed = $state<Record<string, boolean>>({});
 </script>
 
-{#snippet card(e: CalendarEntry)}
+{#snippet card(g: CalGroup)}
+	{@const e = g.lead}
+	{@const n = g.entries.length}
 	{@const src = e.kind === 'album' ? e.poster : entryArt(e)}
 	{@const k = entryKey(e)}
-	{@const line = entryLine(e)}
+	{@const line = n === 1 ? entryLine(e) : ''}
 	{@const others = movieDates(e, entries)}
-	{@const have = itemDot(e, today) === 'have'}
-	<article class="cs-card" class:album={e.kind === 'album'}>
+	{@const have = g.entries.every((x) => itemDot(x, today) === 'have')}
+	<article class="cs-card" class:album={e.kind === 'album'} class:stacked={n > 1}>
+		<div class="stack">
+		{#if n > 1}<span class="layer l2" aria-hidden="true"></span><span class="layer l1" aria-hidden="true"></span>{/if}
 		<a class="art" href={to(entryHref(e))} aria-label={entryTitle(e)}>
 			{#if src && !failed[k]}
 				<img class="bg" src={sized(src, e.kind === 'album' ? 'poster' : 'backdrop', 780)} alt="" loading="lazy" decoding="async" onerror={() => (failed[k] = true)} />
@@ -60,13 +66,14 @@
 			{/if}
 			<span class="scrim" aria-hidden="true"></span>
 			<span class="on-art" aria-hidden="true">
-				<span class="tag"><Badge label={entryTag(e)} on="art" /></span>
+				<span class="tag"><Badge label={groupTag(g)} on="art" /></span>
 				<span class="name">{entryTitle(e)}</span>
 			</span>
 		</a>
+		</div>
 		<div class="text">
 			<h4><a href={to(entryHref(e))}>{entryTitle(e)}</a></h4>
-			<p class="facts">{entryFacts(e)}{#if have}<span class="have"> · In the Library</span>{/if}</p>
+			<p class="facts">{groupFacts(g)}{#if have}<span class="have"> · In the Library</span>{/if}</p>
 			{#if line}<p class="line">{line}</p>{/if}
 			{#if others}<p class="also">Also {others}</p>{/if}
 			<span class="open"><Button variant="secondary" size="sm" href={to(entryHref(e))} iconAfter="chevronRight">{openWord(e)}</Button></span>
@@ -83,18 +90,24 @@
 				<h3 class="divider"><span>{m.name}</span></h3>
 				<ol class="rows">
 					{#each m.days as d (d.day)}
-						{#each d.items as e, i (entryKey(e))}
-							<li class="row" data-day={d.day} class:today={d.day === today} class:past={entryDay(e) < today} class:more={i > 0}>
-								<div class="stamp" aria-hidden={i > 0}>
-									{#if i === 0}
-										<span class="dow">{d.day === today ? 'Today' : at(d.day).toLocaleDateString(undefined, { weekday: 'short' })}</span>
-										<span class="big">{at(d.day).getDate()}</span>
-										<span class="mon">{at(d.day).toLocaleDateString(undefined, { month: 'short' })}</span>
-									{/if}
+						{@const gs = groupDates(d.items)}
+						<li class="row" class:busy={gs.length > 1} data-day={d.day} class:today={d.day === today} class:past={d.day < today}>
+							<div class="stamp">
+								<span class="dow">{d.day === today ? 'Today' : at(d.day).toLocaleDateString(undefined, { weekday: 'short' })}</span>
+								<span class="big">{at(d.day).getDate()}</span>
+								<span class="mon">{at(d.day).toLocaleDateString(undefined, { month: 'short' })}</span>
+							</div>
+							{#if gs.length > 1}
+								<!-- A busy day: one row of cards that scrolls sideways, its count on top. -->
+								<div class="many">
+									<Shelf title={thingCount(d.items.length)} item="clamp(260px, 24vw, 320px)" items={gs} key={(g: CalGroup) => g.key} placeholder="wide" lines={2}>
+										{#snippet card(g: CalGroup)}<CalTile {g} {today} />{/snippet}
+									</Shelf>
 								</div>
-								{@render card(e)}
-							</li>
-						{/each}
+							{:else}
+								{@render card(gs[0])}
+							{/if}
+						</li>
 					{/each}
 				</ol>
 			</section>
@@ -108,7 +121,14 @@
 	.divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
 	.rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 34px; }
 	.row { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 20px; align-items: start; }
-	.row.more { margin-top: -14px; }
+	.many { min-width: 0; }
+	.many :global(.ui-shelf h2) { font: var(--t-title3); letter-spacing: var(--t-title3-track); color: var(--text-muted); }
+	/* Several episodes of one show: the card sits on a small stack. */
+	.stack { position: relative; }
+	.stacked .stack { padding-top: 10px; }
+	.layer { position: absolute; border-radius: var(--r-panel); background: var(--surface-3); box-shadow: var(--shadow-card); }
+	.l1 { top: 5px; left: 3%; right: 3%; height: 60px; opacity: 0.9; }
+	.l2 { top: 0; left: 6%; right: 6%; height: 60px; opacity: 0.55; }
 	/* With the page's own scroll padding (the top bar), a focused day lands under the bar like the sticky stamp. */
 	.row { scroll-margin-top: 8px; }
 	.stamp { position: sticky; top: calc(var(--topbar) + 16px); display: flex; flex-direction: column; align-items: flex-start; line-height: 1; }
@@ -153,7 +173,6 @@
 		.cs { gap: 28px; }
 		.rows { gap: 26px; }
 		.row { grid-template-columns: 46px minmax(0, 1fr); gap: 12px; }
-		.row.more { margin-top: -10px; }
 		.stamp { top: calc(var(--topbar) + 8px); align-items: center; }
 		.dow { font-size: 11px; letter-spacing: 0.04em; }
 		.big { font-size: 36px; }

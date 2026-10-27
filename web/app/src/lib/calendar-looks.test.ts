@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CalendarEntry } from './types.ts';
-import { dayChip, dayDots, dayName, entryFacts, entryLine, entryTag, entryTitle, fitThumbs, monthGroups, movieDates, nextBusy, readSpan, shelves, spanName, startDay, stripDays } from './calendar-looks.ts';
+import { dayChip, dayDots, dayName, entryFacts, entryLine, entryTag, entryTitle, fitThumbs, groupDates, groupFacts, groupTag, monthGroups, movieDates, nextBusy, readSpan, shelves, spanName, startDay, stripDays, thingCount, weekTitle } from './calendar-looks.ts';
 
 const ep = (o: Partial<CalendarEntry> = {}): CalendarEntry => ({ title_id: 1, name: "Grey's Anatomy", kind: 'episode', item_id: 9, season: 23, episode: 3, episode_name: 'Collide', air_day: '2026-10-29', date: '2026-10-29T00:00:00Z', network: 'ABC', ...o });
 const movie = (kind: CalendarEntry['kind'], date: string, o: Partial<CalendarEntry> = {}): CalendarEntry => ({ title_id: 7, name: 'Dune: Part Three', year: 2026, kind, date: `${date}T00:00:00Z`, ...o });
@@ -106,5 +106,33 @@ describe('Coming Soon spans', () => {
 		expect(fitThumbs([30, 30, 30, 30], 60, 4, 28)).toBe(0);
 		expect(fitThumbs([], 60, 4, 28)).toBe(0);
 		expect(fitThumbs([45, 30], 80, 4, 28)).toBe(2);
+	});
+});
+
+describe('busy days', () => {
+	it('counts things', () => {
+		expect(thingCount(1)).toBe('1 thing');
+		expect(thingCount(10)).toBe('10 things');
+	});
+	it('folds a show episodes on one day into one card, keeping other shows apart', () => {
+		const a = ep({ title_id: 2, name: 'Home and Away', season: 39, episode: 194, air_day: '2026-10-29' });
+		const b = ep({ title_id: 2, name: 'Home and Away', season: 39, episode: 196, air_day: '2026-10-29' });
+		const c = ep({ title_id: 2, name: 'Home and Away', season: 39, episode: 195, air_day: '2026-10-29' });
+		const d = ep({ title_id: 2, name: 'Home and Away', season: 39, episode: 197, air_day: '2026-10-30' });
+		const g = groupDates([a, ep(), b, c, d]);
+		expect(g.map((x) => x.entries.length)).toEqual([3, 1, 1]);
+		expect(groupTag(g[0])).toBe('3 episodes');
+		expect(groupFacts(g[0])).toMatch(/^S39E194–E196/);
+		expect(groupTag(g[1])).toBe('New episode');
+	});
+	it('folds a movie dates on one day, and names them', () => {
+		const g = groupDates([movie('digital', '2026-11-17'), movie('physical', '2026-11-17'), album('2026-11-17')]);
+		expect(g).toHaveLength(2);
+		expect(groupTag(g[0])).toBe('Digital and disc');
+	});
+	it('heads week rows', () => {
+		expect(weekTitle(new Date(2026, 9, 26), '2026-10-27')).toMatch(/^This week · /);
+		expect(weekTitle(new Date(2026, 10, 2), '2026-10-27')).toMatch(/^Next week · /);
+		expect(weekTitle(new Date(2026, 10, 9), '2026-10-27')).not.toMatch(/week/);
 	});
 });

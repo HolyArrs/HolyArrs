@@ -235,3 +235,68 @@ export function fitThumbs(widths: number[], room: number, gap: number, more: num
 	}
 	return n;
 }
+
+/** thingCount is a day's or a week's count: "1 thing", "10 things". */
+export function thingCount(n: number): string {
+	return n === 1 ? '1 thing' : `${n} things`;
+}
+
+/** A card's worth of dates: one, or several of one show (or one movie) on the same day. */
+export interface CalGroup {
+	key: string;
+	day: string;
+	lead: CalendarEntry;
+	entries: CalendarEntry[];
+}
+
+/**
+ * groupDates folds dates into cards: a show's episodes on one day become one
+ * card ("3 episodes"), as do one movie's dates on one day (digital and disc);
+ * albums stay one card each. Order is the order of each card's first date.
+ */
+export function groupDates(entries: CalendarEntry[]): CalGroup[] {
+	const out = new Map<string, CalGroup>();
+	for (const e of entries) {
+		const day = entryDay(e);
+		const who = e.kind === 'album' ? `al${e.part_id ?? e.album ?? e.name}` : e.kind === 'episode' ? `ep${e.title_id}` : `mv${e.title_id}`;
+		const key = `${day}:${who}`;
+		const g = out.get(key);
+		if (g) g.entries.push(e);
+		else out.set(key, { key, day, lead: e, entries: [e] });
+	}
+	return [...out.values()];
+}
+
+const p2 = (n = 0) => String(n).padStart(2, '0');
+
+/** groupTag is a card's badge: "3 episodes", "Digital and disc", else the date's own tag. */
+export function groupTag(g: CalGroup): string {
+	const n = g.entries.length;
+	if (n === 1) return entryTag(g.lead);
+	if (g.lead.kind === 'episode') return `${n} episodes`;
+	if (g.lead.kind === 'album') return `${n} albums`;
+	const words = [...new Set(g.entries.map((e) => shortKind[e.kind]))].map((w, i) => (i ? w.toLowerCase() : w));
+	return words.length > 1 ? `${words.slice(0, -1).join(', ')} and ${words.at(-1)}` : words[0];
+}
+
+/** groupFacts is a card's facts line; several episodes show their span: "S39E194–E196 · 19:00 · Seven". */
+export function groupFacts(g: CalGroup): string {
+	if (g.entries.length === 1 || g.lead.kind !== 'episode') return entryFacts(g.lead);
+	const eps = [...g.entries].sort((a, b) => (a.season ?? 0) - (b.season ?? 0) || (a.episode ?? 0) - (b.episode ?? 0));
+	const first = eps[0];
+	const last = eps.at(-1)!;
+	const span = first.season === last.season ? `${episodeCode(first)}–E${p2(last.episode)}` : `${episodeCode(first)}–${episodeCode(last)}`;
+	return [span, entryTime(first), first.network].filter(Boolean).join(' · ');
+}
+
+/** weekTitle heads a week's row: "This week · Oct 26 – Nov 1", "Next week · …", else the dates alone. */
+export function weekTitle(start: Date, today: string): string {
+	const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6);
+	const f = (d: Date) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+	const range = `${f(start)} – ${f(end)}`;
+	const n = Math.round(daysBetween(ymd(weekStart(at(today))), ymd(weekStart(start))) / 7);
+	if (n === 0) return `This week · ${range}`;
+	if (n === 1) return `Next week · ${range}`;
+	if (n === -1) return `Last week · ${range}`;
+	return range;
+}

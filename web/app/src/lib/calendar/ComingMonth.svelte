@@ -2,10 +2,10 @@
 	import { onMount, tick } from 'svelte';
 	import type { CalendarEntry } from '#lib/types.ts';
 	import { to } from '#lib/paths.ts';
-	import { entryHref, entryKey, monthGrid } from '#lib/calendar.ts';
-	import { dayDots, dayName, entryFacts, entryTitle, fitThumbs } from '#lib/calendar-looks.ts';
+	import { entryHref, monthGrid } from '#lib/calendar.ts';
+	import { dayDots, dayName, entryTitle, fitThumbs, groupDates, groupFacts, groupTag, thingCount } from '#lib/calendar-looks.ts';
 	import { sized } from '#lib/tmdb-image.ts';
-	import CalCard from './CalCard.svelte';
+	import CalTile from './CalTile.svelte';
 
 	// 2 · Coming Soon, Month: the whole month on one screen. Each day holds as
 	// many small posters (album covers square) as its tile fits, then "+N",
@@ -37,7 +37,7 @@
 	const monthKey = $derived(`${year}-${String(month + 1).padStart(2, '0')}`);
 	const title = $derived(new Date(year, month, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }));
 	const busy = $derived(cells.some((c) => c.inMonth && c.items.length));
-	const count = (k: number) => (k === 1 ? '1 date' : `${k} dates`);
+	const count = thingCount;
 	const thumb = (e: CalendarEntry) => e.poster || e.backdrop || e.still || null;
 
 	// The wrapper's width picks the layout; the first tile's size sets the poster height.
@@ -56,7 +56,7 @@
 	const MORE = 30;
 	const posterH = $derived(Math.max(26, Math.min(132, tileH - PAD * 2 - NUM - GAP)));
 	function shownCount(items: CalendarEntry[]): number {
-		const widths = items.map((e) => (e.kind === 'album' ? posterH : Math.round((posterH * 2) / 3)));
+		const widths = groupDates(items).map(({ lead: e }) => (e.kind === 'album' ? posterH : Math.round((posterH * 2) / 3)));
 		return fitThumbs(widths, tileW - PAD * 2, GAP, MORE);
 	}
 
@@ -165,15 +165,20 @@
 {#snippet tileBody(c: { day: string; date: number; items: CalendarEntry[] }, n: number)}
 	<button type="button" class="num" aria-label="{dayName(c.day, today)}{c.items.length ? `, ${count(c.items.length)}` : ''}: show it in the day-by-day list" onclick={() => onday(c.day)}>{c.date}</button>
 	{#if c.items.length}
+		{@const gs = groupDates(c.items)}
+		{@const hidden = gs.slice(n).reduce((k, g) => k + g.entries.length, 0)}
+		<!-- One poster per show (its episodes that day fold into it); +N counts the dates left over. -->
 		<div class="thumbs">
-			{#each c.items.slice(0, n) as e (entryKey(e))}
+			{#each gs.slice(0, n) as g (g.key)}
+				{@const e = g.lead}
 				{@const src = thumb(e)}
-				<a class="p" class:sq={e.kind === 'album'} href={to(entryHref(e))} title={entryTitle(e)} aria-label="{entryTitle(e)}, {entryFacts(e)}">
+				<a class="p" class:sq={e.kind === 'album'} href={to(entryHref(e))} title={entryTitle(e)} aria-label="{entryTitle(e)}, {groupTag(g)}, {groupFacts(g)}">
 					{#if src}<img src={sized(src, 'poster', Math.round((posterH * 2) / 3))} alt="" loading="lazy" decoding="async" />{:else}<span class="ini" aria-hidden="true">{entryTitle(e).slice(0, 1)}</span>{/if}
+					{#if g.entries.length > 1}<span class="x" aria-hidden="true">{g.entries.length}</span>{/if}
 				</a>
 			{/each}
-			{#if n < c.items.length}
-				<button type="button" class="more" aria-label="{c.items.length - n} more on {dayName(c.day, today)}: show the day" onclick={() => onday(c.day)}>+{c.items.length - n}</button>
+			{#if hidden}
+				<button type="button" class="more" aria-label="{hidden} more on {dayName(c.day, today)}: show the day" onclick={() => onday(c.day)}>+{hidden}</button>
 			{/if}
 		</div>
 	{/if}
@@ -186,7 +191,7 @@
 		<header><h3>{dayName(day.day, today)}</h3>{#if day.items.length}<span class="n">{count(day.items.length)}</span>{/if}</header>
 		{#if day.items.length}
 			<ul class="cards">
-				{#each day.items as e (entryKey(e))}<li><CalCard {e} {today} all={entries} /></li>{/each}
+				{#each groupDates(day.items) as g (g.key)}<li><CalTile {g} {today} /></li>{/each}
 			</ul>
 		{:else}
 			<p class="quiet">Nothing on this day.</p>
@@ -214,6 +219,7 @@
 	.thumbs { flex: 1; min-height: 0; display: flex; align-items: flex-end; gap: 4px; }
 	.p { position: relative; flex: none; height: var(--ph); aspect-ratio: 2 / 3; border-radius: 6px; overflow: hidden; background: var(--surface-3); box-shadow: 0 2px 8px rgb(0 0 0 / 0.28); transition: transform var(--dur-slow) var(--ease-out); }
 	.p.sq { aspect-ratio: 1; }
+	.x { position: absolute; right: 2px; bottom: 2px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; background: rgb(0 0 0 / 0.72); color: #fff; font: 700 10px/16px var(--font-text, inherit); text-align: center; font-variant-numeric: tabular-nums; }
 	.p img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 	.ini { position: absolute; inset: 0; display: grid; place-items: center; color: var(--text-muted); font: var(--t-headline); }
 	.past:not(.today) .p { opacity: 0.55; filter: saturate(0.6); }
