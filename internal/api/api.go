@@ -899,6 +899,46 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	// season=<n> with title=<id>: the history of one season's episodes.
+	if v := q.Get("season"); v != "" && f.TitleID > 0 {
+		n, err := strconv.Atoi(v)
+		if err != nil || n < 0 {
+			fail(w, http.StatusBadRequest, "season must be a number")
+			return
+		}
+		rows, err := a.s.Store.Read().QueryContext(r.Context(), "SELECT i.id, s.id FROM items i LEFT JOIN slots s ON s.item_id = i.id WHERE i.title_id = ? AND i.kind = 'episode' AND json_extract(i.numbers, '$.season') = ?", f.TitleID, n)
+		if err != nil {
+			internal(w, err)
+			return
+		}
+		f.ItemIDs, f.SlotIDs = []int64{}, []int64{}
+		seen := map[int64]bool{}
+		for rows.Next() {
+			var iid int64
+			var sid *int64
+			if err := rows.Scan(&iid, &sid); err != nil {
+				rows.Close()
+				internal(w, err)
+				return
+			}
+			if !seen[iid] {
+				seen[iid] = true
+				f.ItemIDs = append(f.ItemIDs, iid)
+			}
+			if sid != nil {
+				f.SlotIDs = append(f.SlotIDs, *sid)
+			}
+		}
+		err = rows.Err()
+		rows.Close()
+		if err != nil {
+			internal(w, err)
+			return
+		}
+		if len(f.ItemIDs) == 0 {
+			f.ItemIDs = []int64{-1}
+		}
+	}
 	if v := q.Get("album"); v != "" {
 		id, err := strconv.ParseInt(v, 10, 64)
 		if err != nil || id <= 0 {

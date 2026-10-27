@@ -40,6 +40,8 @@
 	import ReleaseSheet from '#lib/ReleaseSheet.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import DeleteSheet from '#lib/DeleteSheet.svelte';
+	import SeasonToolsSheet from '#lib/SeasonToolsSheet.svelte';
+	import EditTitleSheet from '#lib/EditTitleSheet.svelte';
 	import EpisodeSheet, { type SheetEpisode } from '#lib/EpisodeSheet.svelte';
 	import RenamePreview from '#lib/RenamePreview.svelte';
 	import AddMovieDialog from '#lib/AddMovieDialog.svelte';
@@ -169,7 +171,17 @@
 		const f = e.slots[0]?.file;
 		return f?.Size ? bytes(f.Size as number) : '';
 	}
-	// Pick a release for the whole title, one season or one episode.
+	// One season's files, rename and history; and the title's Edit panel.
+	let toolsOpen = $state(false);
+	let toolsSeason = $state(0);
+	let toolsMode = $state<'files' | 'rename' | 'history'>('files');
+	function openTools(id: number, n: number) {
+		toolsSeason = n;
+		toolsMode = 'files';
+		toolsOpen = true;
+		if (!seasonEps[n]) void loadSeason(id, n);
+	}
+	let editOpen = $state(false);	// Pick a release for the whole title, one season or one episode.
 	let pickScope = $state<{ label: string; query: string; body: Record<string, unknown> } | null>(null);
 	function openPick(scope: { label: string; query: string; body: Record<string, unknown> } | null) {
 		pickScope = scope;
@@ -273,7 +285,22 @@
 		const action = !manage ? null : k === 'failed' ? { label: 'Try again', icon: 'refresh' as const } : k === 'missing' ? { label: 'Search now', icon: 'search' as const } : null;
 		return { kind: k, title: k === 'have' ? (o.show ? ownState.label : 'In your library') : ownState.label, sub, pct, action };
 	});
-	const libFiles = $derived(ownFiles.map((x) => {
+	// The facts row under the status: folder, size, quality, keep, status, network, language.
+	const libFacts = $derived.by(() => {
+		const o = owned;
+		if (!o) return [];
+		const folderName = String(o.folder_path ?? '').split(/[\\/]/).filter(Boolean).pop() ?? '';
+		const lang = o.original_language ? new Intl.DisplayNames(undefined, { type: 'language' }).of(o.original_language) : '';
+		const out: { k: string; icon: 'folder' | 'archive' | 'star' | 'check' | 'x' | 'play' | 'tv' | 'sound'; v: string; title?: string }[] = [];
+		if (folderName) out.push({ k: 'folder', icon: 'folder', v: folderName, title: o.folder_path ?? '' });
+		if (o.size_bytes) out.push({ k: 'size', icon: 'archive', v: bytes(o.size_bytes) });
+		if (o.pick_rules_name) out.push({ k: 'rules', icon: 'star', v: o.pick_rules_name });
+		out.push({ k: 'keep', icon: o.keep_up_to_date ? 'check' : 'x', v: o.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date' });
+		if (o.show?.status) out.push({ k: 'status', icon: 'play', v: o.show.status.replace(/^./, (c) => c.toUpperCase()) });
+		if (o.show?.network) out.push({ k: 'net', icon: 'tv', v: o.show.network });
+		if (lang) out.push({ k: 'lang', icon: 'sound', v: lang });
+		return out;
+	});	const libFiles = $derived(ownFiles.map((x) => {
 		const f = x.file as Record<string, any>;
 		const m = (f?.MediaInfo ?? {}) as Record<string, any>;
 		const langs = (v: unknown) => (Array.isArray(v) ? v : typeof v === 'string' && v ? v.split(/[\/,]/) : []).map((s) => String(s).trim().toUpperCase()).filter(Boolean).slice(0, 6);
@@ -913,6 +940,7 @@
 						<div class="lib-st-text">
 							<p class="lib-st-title"><span class="own-dot {libHead.kind}" aria-hidden="true"></span>{libHead.title}</p>
 							{#if libHead.sub}<p class="lib-st-sub">{libHead.sub}</p>{/if}
+								<p class="lib-facts">{#each libFacts as f (f.k)}<span class="lib-fact" title={f.title ?? f.v}><Icon name={f.icon} size={13} />{f.v}</span>{/each}</p>
 							{#if libHead.pct != null}<div class="lib-bar" role="progressbar" aria-valuenow={libHead.pct} aria-valuemin="0" aria-valuemax="100"><span style:width="{libHead.pct}%"></span></div>{/if}
 						</div>
 						{#if libHead.action}<button type="button" class="lib-btn primary" disabled={busyAction === 'search'} onclick={() => ownRun('search')}><Icon name={libHead.action.icon} size={16} />{libHead.action.label}</button>{/if}
@@ -946,6 +974,7 @@
 											<span class="lib-sr-acts">
 												<button type="button" class="lib-ico" title="Get the missing episodes" aria-label="Get the missing episodes of season {se.number}" disabled={!se.missing || busyAction === `s${se.number}`} onclick={() => epSearch({ season: se.number }, `s${se.number}`, `Looking for the missing episodes of season ${se.number}.`)}><Icon name="search" size={15} /></button>
 												<button type="button" class="lib-ico" title="Pick a release for this season" aria-label="Pick a release for season {se.number}" onclick={() => openPick({ label: se.number === 0 ? 'Specials' : `Season ${se.number}`, query: `season=${se.number}`, body: { season: se.number } })}><Icon name="grid" size={15} /></button>
+												<button type="button" class="lib-ico" title="Files, rename and history" aria-label="Files, rename and history of season {se.number}" onclick={() => openTools(o.id, se.number)}><Icon name="more" size={15} /></button>
 											</span>
 										{/if}
 									</div>
@@ -1010,8 +1039,9 @@
 								<span><b>Keep up to date</b><small>Grab it when it comes out and upgrade when a better copy shows up</small></span>
 								<span class="lib-switch" class:on={o.keep_up_to_date} aria-hidden="true"></span>
 							</button>
-							<a class="lib-row" href={to(`/library/${o.id}?tools=edit`)}><span><b>Quality</b><small>{o.pick_rules_name ?? 'Default'}</small></span><Icon name="chevronRight" size={16} /></a>
-							<a class="lib-row" href={to(`/library/${o.id}?tools=edit`)}><span><b>Folder</b><small class="path">{o.folder_path ?? ''}</small></span><Icon name="chevronRight" size={16} /></a>
+							<button type="button" class="lib-row" onclick={() => (editOpen = true)}><span><b>Quality</b><small>{o.pick_rules_name ?? 'Default'}</small></span><Icon name="chevronRight" size={16} /></button>
+							<button type="button" class="lib-row" onclick={() => (editOpen = true)}><span><b>Folder</b><small class="path">{o.folder_path ?? ''}</small></span><Icon name="chevronRight" size={16} /></button>
+								<button type="button" class="lib-row" onclick={() => (editOpen = true)}><span><b>Edit</b><small>{o.show ? 'Seasons to keep, new seasons, quality, episode order, folder' : 'Quality and folder'}</small></span><Icon name="tools" size={16} /></button>
 							<button type="button" class="lib-row" onclick={() => (renameOpen = true)}><span><b>Rename files</b><small>See the new names before anything changes</small></span><Icon name="chevronRight" size={16} /></button>
 							<button type="button" class="lib-row" disabled={busyAction === 'refresh'} onclick={() => ownRun('refresh')}><span><b>Refresh details</b><small>Names, dates and pictures</small></span><Icon name="refresh" size={16} /></button>
 						</div>
@@ -1022,6 +1052,8 @@
 					</aside>
 				</div>
 				{#if manage}
+					<EditTitleSheet bind:open={editOpen} title={o} onsaved={() => { seasonEps = {}; openSeasons.clear(); void loadOwned(o.id); }} />
+					{#if o.show}<SeasonToolsSheet bind:open={toolsOpen} bind:mode={toolsMode} titleId={o.id} season={toolsSeason} episodes={seasonEps[toolsSeason] ?? []} onchange={() => loadSeason(o.id, toolsSeason)} />{/if}
 					{#if o.show}<EpisodeSheet bind:open={epOpen} ep={epPicked} titleId={o.id} tmdb={o.ids?.tmdb} {manage} />{/if}
 					<ReleaseSheet bind:open={pickOpen} titleId={o.id} name={o.name} scope={pickScope} onchosen={() => loadOwned(o.id)} />
 					<Sheet bind:open={renameOpen} title="Rename files" description={o.name} placement="right" size="md">
@@ -1319,6 +1351,8 @@
 	.lib-status.failed { background: color-mix(in srgb, var(--danger, #e5484d) 10%, var(--surface-2)); }
 	.lib-st-text { flex: 1 1 320px; min-width: 0; }
 	.lib-st-title { display: flex; align-items: center; gap: 10px; margin: 0; font: 700 22px/1.2 var(--font-ui); letter-spacing: -.01em; }
+	.lib-facts { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0 20px; }
+	.lib-fact { display: inline-flex; align-items: center; gap: 6px; max-width: 260px; height: 26px; padding: 0 10px; border-radius: 8px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text-muted); font: 600 12.5px/1 var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.lib-st-sub { margin: 6px 0 0 20px; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
 	.lib-bar { height: 6px; margin: 12px 0 0 20px; border-radius: 99px; background: color-mix(in srgb, var(--text) 10%, transparent); overflow: hidden; }
 	.lib-bar span { display: block; height: 100%; border-radius: 99px; background: #3e8ef7; transition: width .6s ease; }
