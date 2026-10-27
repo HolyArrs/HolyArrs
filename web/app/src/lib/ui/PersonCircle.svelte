@@ -3,6 +3,7 @@
 	import ArtPlaceholder from './ArtPlaceholder.svelte';
 	import { api } from '../api.ts';
 	import { loadWikiFacts } from '../wiki-facts.ts';
+	import { pictureOf } from '../pictures.ts';
 
 	// A person in a cast and crew shelf: round photo (initials fallback), name, role.
 	let { name, role, image, href, size = 96 }: { name: string; role?: string; image?: string | null; href?: string; size?: number } = $props();
@@ -22,11 +23,13 @@
 		});
 	});
 	const shown = $derived(image && !failed ? image : backup && !backupFailed ? backup : '');
+	// An artist's photo record gives its main colour, shown until the photo arrives.
+	const tint = $derived(pictureOf(image)?.color || null);
 </script>
 
 <svelte:element this={href ? 'a' : 'div'} class="ui-person" href={href} aria-label={href ? label : undefined} style="--size: {size}px" use:press={'card'}>
-	<span class="ph" class:sk={!!shown && !loaded}>
-		{#if !shown || !loaded}<ArtPlaceholder {name} shape="circle" loading={!!shown && !loaded} />{/if}
+	<span class="ph" class:sk={!!shown && !loaded} style:background={tint}>
+		{#if !shown || !loaded}<ArtPlaceholder {name} shape="circle" loading={!!shown && !loaded} color={tint} />{/if}
 		{#if shown}{#key shown}<img src={shown} class:in={loaded} alt="" loading="lazy" decoding="async" onload={() => (loaded = true)} onerror={() => (shown === backup ? (backupFailed = true) : (failed = true), (loaded = false))} />{/key}{/if}
 	</span>
 	<span class="n" aria-hidden={href ? 'true' : undefined}>{name}</span>

@@ -307,7 +307,7 @@
 								{#if cv.src && !noCover[c.key]}
 									<!-- The square cover on a blurred, darker copy of itself fills the wide frame. -->
 									<img class="blur" src={coverFor(musicImage(c), 120).src} alt="" aria-hidden="true" decoding="async" />
-									<img class="sq" src={cv.src} srcset={cv.srcset} sizes="240px" alt="" fetchpriority="high" decoding="async" onerror={() => (noCover[c.key] = true)} />
+									<img class="sq" src={cv.src} alt="" fetchpriority="high" decoding="async" onerror={() => (noCover[c.key] = true)} />
 								{/if}
 								{#if art}
 									<!-- The artist's photo, when there is one, over all of it; the cover then sits small in the corner (as New & Popular). -->
@@ -357,7 +357,6 @@
 						title={c.name}
 						href={musicCardHref(c)}
 						image={cv.src}
-						srcset={cv.srcset}
 						fallback={c.kind === 'album' && c.artist_image ? musicImage({ image: c.artist_image }) : null}
 						eager
 						high={ri < 2}

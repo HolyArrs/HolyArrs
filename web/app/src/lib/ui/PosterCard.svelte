@@ -9,6 +9,7 @@
 	import Icon, { type IconName } from '../Icon.svelte';
 	import { press, viewTransitionName } from '../motion.ts';
 	import { sized } from '../tmdb-image.ts';
+	import { pictureOf } from '../pictures.ts';
 	import { shelfNear, whenLoaded } from '../lazy-art.ts';
 	import GrowCard from './GrowCard.svelte';
 	import { prefetchTrailer, watchTrailer } from '../autoplay.svelte.ts';
@@ -40,17 +41,15 @@
 		action,
 		growAction,
 		followTmdb = false,
-		srcset,
-		sizes,
+		color = null,
 		eager = false,
 		high = false,
 		fallback
 	}: {
-		/** Sized alternatives for image (music covers), with the display sizes. */
-		srcset?: string;
 		/** Music: the next picture when image keeps failing (an album's artist photo). */
 		fallback?: string | null;
-		sizes?: string;
+		/** The picture's main colour (#rrggbb); music cards read it from the picture's record. */
+		color?: string | null;
 		/** Above the fold (the first row): load at once. */
 		eager?: boolean;
 		/** Ask for the picture at high priority (the first screen). */
@@ -188,24 +187,24 @@
 	}
 	const pic = $derived(second ? (fallback ?? null) : sized(image, 'poster', cw));
 	const shownPic = $derived(pic);
-	const shownSet = $derived(second ? undefined : srcset);
-	// Sized covers: the measured width is the display size, so big tiles pick 500 or 1200.
-	const asking = $derived(!!image && !failed && near() && (!srcset || cw > 0));
-	const shownSizes = $derived(shownSet && cw ? `${cw}px` : sizes);
+	const asking = $derived(!!image && !failed && near());
+	// The box and colour come before the picture: the record's main colour
+	// (music) under the initials, so the picture never fades in over grey.
+	const tint = $derived(color ?? pictureOf(pic)?.color ?? null);
 	const kindIcon = $derived<IconName>(kind === 'show' || kind === 'episode' ? 'tv' : kind === 'artist' ? 'music' : 'film');
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="ui-poster" class:square={shape === 'square'} class:round={shape === 'round'} style:width bind:this={root} bind:clientWidth={cw} onpointerenter={() => ((byKey = false), enter())} onpointermove={(e) => (e.movementX || e.movementY) && !open && !opener.pending && ((byKey = false), enter())} onpointerleave={leave} onfocusin={focusIn} onfocusout={focusOut} onpointerdown={() => opener.cancel()}>
 	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} bind:this={hit} use:press={'card'}>
-		<span class="art" use:viewTransitionName={vtName} bind:this={artEl}>
+		<span class="art" use:viewTransitionName={vtName} bind:this={artEl} style:background-color={tint}>
 			{#if !image || failed || !loaded}
 				<!-- The shimmer only while a picture is really on its way; else the still initials. -->
-				<ArtPlaceholder name={title} shape={shape === 'round' ? 'circle' : shape} loading={asking && !loaded} />
+				<ArtPlaceholder name={title} shape={shape === 'round' ? 'circle' : shape} loading={asking && !loaded} color={tint} />
 			{/if}
 			{#if asking}
 				{#key shownPic}
-					<img src={shownPic} srcset={shownSet} sizes={shownSizes} class:in={loaded} alt="" loading={eager ? 'eager' : 'lazy'} fetchpriority={high ? 'high' : 'auto'} decoding="async" use:whenLoaded={() => (loaded = true)} onerror={broken} />
+					<img src={shownPic} class:in={loaded} alt="" loading={eager ? 'eager' : 'lazy'} fetchpriority={high ? 'high' : 'auto'} decoding="async" use:whenLoaded={() => (loaded = true)} onerror={broken} />
 				{/key}
 			{/if}
 			{#if badges.length || status}

@@ -183,7 +183,7 @@
 
 {#snippet albumCard(row: { type: string }, c: NewMusicCard)}
 	{@const cv = coverFor(musicImage(c), 200)}
-	<PosterCard title={c.name} href={musicCardHref(c)} image={cv.src} srcset={cv.srcset} kind="artist" subtitle={rowNote(row, c) || undefined} badges={cardBadges(c)} shape="square" music actionOnHover
+	<PosterCard title={c.name} href={musicCardHref(c)} image={cv.src} kind="artist" subtitle={rowNote(row, c) || undefined} badges={cardBadges(c)} shape="square" music actionOnHover
 		status={c.title_id && row.type === 'np_music_library' ? 'in_library' : undefined}>
 		{#snippet action()}
 			{#if c.upcoming}

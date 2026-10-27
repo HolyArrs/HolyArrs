@@ -151,8 +151,9 @@ const proxied = /\/api\/v1\/(?:music-trending\/art\/album\/[^/?]+|albums\/\d+\/c
 const deezer = /^(https?:\/\/[a-z0-9-]+\.dzcdn\.net\/images\/(?:cover|artist)\/[0-9a-f]+\/)\d+x\d+(-.*)?$/;
 const itunes = /^(https?:\/\/[a-z0-9-]+\.mzstatic\.com\/image\/thumb\/.+\/)\d+x\d+(bb|cc)?(\.(?:jpg|png|webp))$/;
 
-/** coverAt points a sized cover link (Cover Art Archive, Deezer, iTunes, our
- * cover proxies) at s px, or null when the link has no size form. */
+/** coverAt points a sized cover link (our cover routes, or a chart's own
+ * Cover Art Archive, Deezer or Apple link) at s px, or null when the link
+ * has no size form. */
 function coverAt(src: string): ((s: number) => string) | null {
 	let m = caa.exec(src);
 	if (m) return (s) => `${m![1]}-${s}`;
@@ -163,15 +164,22 @@ function coverAt(src: string): ((s: number) => string) | null {
 	return null;
 }
 
-/** coverFor sizes a cover for a tile css pixels wide: the smallest of 250,
- * 500 and 1200 that is sharp at this pixel ratio, with a srcset of all three
- * (the card's measured width is its sizes). Other pictures stay as they are. */
-export function coverFor(src: string | null | undefined, css: number, ratio = globalThis.devicePixelRatio || 1): { src: string | null; srcset?: string } {
+/** coverSize is the slot size of a cover css pixels wide (Luis, 2026-10-26:
+ * one size per slot): 500 for every card, 250 only for small thumbnails (up
+ * to 125 css pixels, on screens up to 2x), 1200 only for a hero on a sharp
+ * screen. */
+export function coverSize(css: number, ratio = globalThis.devicePixelRatio || 1, hero = false): 250 | 500 | 1200 {
 	const px = css * ratio;
-	const size = px <= 250 ? 250 : px <= 500 ? 500 : 1200;
+	if (hero) return px > 500 ? 1200 : 500;
+	return css <= 125 && px <= 250 ? 250 : 500;
+}
+
+/** coverFor sizes a cover for its slot (coverSize). No srcset: one address
+ * per slot, so a row's cover is the next page's cached copy. Other pictures
+ * stay as they are. */
+export function coverFor(src: string | null | undefined, css: number, ratio = globalThis.devicePixelRatio || 1, hero = false): { src: string | null } {
 	const at = src ? coverAt(src) : null;
-	if (!at) return { src: src ?? null };
-	return { src: at(size), srcset: [250, 500, 1200].map((s) => `${at(s)} ${s}w`).join(', ') };
+	return { src: at ? at(coverSize(css, ratio, hero)) : (src ?? null) };
 }
 
 /** owned is the card's status pill for an album's Library state. */

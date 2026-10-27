@@ -1,5 +1,7 @@
 // The one picture placeholder (Luis, 2026-10-24): an item's initials or
-// short name on a calm tint whose hue comes from the name.
+// short name on the picture's own main colour when its record is known
+// (so the picture fades in over its own colour), else on a calm tint whose
+// hue comes from the name.
 
 /** placeholderText is up to two initials (letters or digits), or the name's
  * first characters when it has no words (a number like "1989"). */
@@ -24,4 +26,16 @@ export function placeholderHue(name: string): number {
 		h = Math.imul(h, 16777619);
 	}
 	return (h >>> 0) % 360;
+}
+
+/** inkOn is the initials' ink on a main colour (#rrggbb): dark on a light
+ * colour, light on a dark one; '' for anything that is not a colour. */
+export function inkOn(color: string | null | undefined): 'dark' | 'light' | '' {
+	const m = color ? /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(color) : null;
+	if (!m) return '';
+	const [r, g, b] = m.slice(1).map((h) => {
+		const c = parseInt(h, 16) / 255;
+		return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+	});
+	return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.36 ? 'dark' : 'light';
 }

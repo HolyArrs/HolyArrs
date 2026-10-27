@@ -23,6 +23,7 @@
 	import { albumYear } from '#lib/music/music.ts';
 	import { SkRail, SkTrackRow } from '#lib/ui/sk/index.ts';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
+	import { pictureOf } from '#lib/pictures.ts';
 	import { albumHref, appPicture, artistHref, coverFor, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist, type PageCredit, type PageTrack } from '#lib/music/music-pages.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 
@@ -108,6 +109,10 @@
 		const p = appPicture(hero?.image);
 		return p && coverTry ? `${p}${p.includes('?') ? '&' : '?'}fresh=${coverTry}` : p;
 	});
+	// The hero cover at its slot (the big size only on sharp screens), on
+	// its main colour until it arrives; the preload asks the same address.
+	const heroCover = $derived(coverFor(cover, 260, undefined, true).src);
+	const coverTint = $derived(pictureOf(cover)?.color || null);
 	$effect(() => {
 		void hero?.mbid;
 		coverTry = 0;
@@ -178,11 +183,11 @@
 	}
 </script>
 
-<svelte:head><title>{hero?.name ?? 'Album'} · HolyArrs</title>{#if cover}<link rel="preload" as="image" href={cover} />{/if}</svelte:head>
+<svelte:head><title>{hero?.name ?? 'Album'} · HolyArrs</title>{#if heroCover}<link rel="preload" as="image" href={heroCover} />{/if}</svelte:head>
 
 {#snippet albumCard(a: PageAlbum)}
 	{@const c = coverFor(appPicture(a.image), 200)}
-	<PosterCard title={a.name} href={albumHref(a.mbid, artist)} image={c.src} srcset={c.srcset} kind="artist" shape="square" music
+	<PosterCard title={a.name} href={albumHref(a.mbid, artist)} image={c.src} kind="artist" shape="square" music
 		subtitle={[albumYear(a.release_date), kindWord(a)].filter(Boolean).join(' · ')} badges={a.explicit ? ['E'] : undefined} owned={owned(a)} />
 {/snippet}
 
@@ -193,8 +198,8 @@
 			<header class="hero" data-hero>
 				{#if from?.label}<nav class="crumbs" aria-label="Breadcrumb"><a class="chip" href={from.path} onclick={stepBack} data-testid="album-back"><Icon name={fromIcon(from.path) ?? 'chevronLeft'} size={14} />{from.label}</a></nav>{/if}
 				<div class="hero-in">
-					<div class="cover" class:in={coverIn}>
-						{#if cover && !coverFailed}<img src={coverFor(cover, 320).src} srcset={coverFor(cover, 320).srcset} sizes="320px" alt={`${hero.name} cover`} width="320" height="320" decoding="async" fetchpriority="high" onload={() => (coverIn = true)} onerror={() => { coverIn = false; coverFailed = true; }} />{:else}<ArtPlaceholder name={hero.name} shape="square" />{/if}
+					<div class="cover" class:in={coverIn} style:background-color={coverTint}>
+						{#if cover && !coverFailed}<img src={heroCover} alt={`${hero.name} cover`} width="320" height="320" decoding="async" fetchpriority="high" onload={() => (coverIn = true)} onerror={() => { coverIn = false; coverFailed = true; }} />{:else}<ArtPlaceholder name={hero.name} shape="square" color={coverTint} />{/if}
 					</div>
 					<div class="words">
 						<p class="kind">{kindWord(hero)}</p>
@@ -277,7 +282,7 @@
 				<Shelf title="Fans also like" item="var(--music-item)" items={near} key={(a) => a.mbid} placeholder="square" lines={2}>
 					{#snippet card(a: PageCredit)}
 						{@const c = coverFor(appPicture(a.image), 200)}
-						<PosterCard title={a.name} href={albumHref(a.mbid, a.artist_mbid)} image={c.src} srcset={c.srcset} kind="artist" shape="square" music subtitle={a.artist_name} badges={a.explicit ? ['E'] : undefined} />
+						<PosterCard title={a.name} href={albumHref(a.mbid, a.artist_mbid)} image={c.src} kind="artist" shape="square" music subtitle={a.artist_name} badges={a.explicit ? ['E'] : undefined} />
 					{/snippet}
 				</Shelf>
 			{/if}

@@ -1,6 +1,7 @@
 // The one way the app talks to HolyArrs: /api/v1, JSON, the CSRF header on
 // every change, and one place that notices a lost sign-in.
 import { to } from './paths.ts';
+import { registerPictures } from './pictures.ts';
 
 export class ApiError extends Error {
 	status: number;
@@ -80,6 +81,8 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o)) {
 			const msg = typeof data.error === 'string' && data.error ? data.error : `Request failed (${res.status})`;
 			throw new ApiError(msg, res.status, data, Number.isFinite(ra) && ra > 0 ? ra : null);
 		}
+		// Music answers carry their pictures' records (box, colour, version).
+		if (data && typeof data === 'object' && 'pictures' in data) registerPictures(data.pictures);
 		return data as T;
 	}
 

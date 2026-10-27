@@ -26,6 +26,7 @@
 	import { installPersonPrefetch } from '#lib/person-prefetch.ts';
 	import { installArtistVideoPrefetch } from '#lib/music/artist-video-prefetch.ts';
 	import { installHeroPrefetch } from '#lib/title-details.ts';
+	import { installHeroAhead } from '#lib/hero-prefetch.ts';
 	import { preloadHero } from '#lib/tmdb-image.ts';
 	import AppShell from '#lib/ui/AppShell.svelte';
 	import Sidebar from '#lib/ui/Sidebar.svelte';
@@ -160,6 +161,8 @@
 	onMount(installPersonPrefetch);
 	onMount(installArtistVideoPrefetch);
 	onMount(() => installHeroPrefetch(preloadHero));
+	// Music heroes on hover and focus, title heroes on focus, and the next card in a row.
+	onMount(() => installHeroAhead(preloadHero));
 	onMount(() => {
 		void session.load();
 		readLibraryResumeLinks();

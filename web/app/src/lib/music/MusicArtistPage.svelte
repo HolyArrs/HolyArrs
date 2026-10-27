@@ -30,6 +30,7 @@
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
+	import { pictureFor, ratioOf } from '#lib/pictures.ts';
 	import Icon from '#lib/Icon.svelte';
 	import AskArtistDialog from '#lib/AskArtistDialog.svelte';
 	import AddArtistDialog from '#lib/AddArtistDialog.svelte';
@@ -132,6 +133,8 @@
 	let videoIn = $state(false);
 	const videoOn = $derived(videoIn && !videoPaused);
 	let logoFailed = $state(false);
+	// The logo's box comes from its stored size, so the hero never jumps when it lands.
+	const logoRatio = $derived(art.logo ? ratioOf(pictureFor('logo', mbid))?.toFixed(4) : undefined);
 	let folders = $state<LibraryFolder[]>([]);
 	let rules = $state<PickRulesView[]>([]);
 	let defaults = $state<MusicSettings | null>(null);
@@ -175,8 +178,8 @@
 		const askArt = (left: number[]) => {
 			void api.get<typeof art>(`/extras/artist/${want}`).then((x) => {
 				if (want !== mbid) return;
-				// The server's own picture routes sit under the app's base path.
-				const local = (u?: string) => (u && u.startsWith('/') ? to(u) : u);
+				// The server's own picture routes sit under the app's base path, at their stored version.
+				const local = (u?: string) => (u && u.startsWith('/') ? (appPicture(u) ?? undefined) : u);
 				x = { ...x, logo: local(x.logo), thumb: local(x.thumb), backgrounds: x.backgrounds?.map((u) => local(u) as string) };
 				if ((x.backgrounds?.length ?? 0) > 0 || x.logo || !art.logo) art = x;
 				if (!(x.backgrounds?.length ?? 0) && left.length) setTimeout(() => want === mbid && askArt(left.slice(1)), left[0]);
@@ -462,7 +465,7 @@
 
 {#snippet albumCard(a: PageAlbum, eager = false)}
 	{@const c = coverFor(appPicture(a.image), 200)}
-	<PosterCard title={a.name} href={albumHref(a.mbid, mbid)} image={c.src} srcset={c.srcset} {eager} kind="artist" shape="square" music actionOnHover
+	<PosterCard title={a.name} href={albumHref(a.mbid, mbid)} image={c.src} {eager} kind="artist" shape="square" music actionOnHover
 		subtitle={[albumYear(a.release_date), a.shelf === 'albums' ? '' : kindWord(a)].filter(Boolean).join(' · ') || undefined}
 		badges={a.explicit ? ['E'] : undefined} owned={owned(a, albumAsked(a))}>
 		{#snippet action()}
@@ -475,7 +478,7 @@
 
 {#snippet creditCard(a: PageCredit)}
 	{@const c = coverFor(appPicture(a.image), 200)}
-	<PosterCard title={a.name} href={albumHref(a.mbid, a.artist_mbid || mbid)} image={c.src} srcset={c.srcset} kind="artist" shape="square" music
+	<PosterCard title={a.name} href={albumHref(a.mbid, a.artist_mbid || mbid)} image={c.src} kind="artist" shape="square" music
 		subtitle={a.artist_name || undefined} badges={a.explicit ? ['E'] : undefined} />
 {/snippet}
 
@@ -506,7 +509,7 @@
 				<div class="hero-in">
 					{#if picture && !photoFailed}<img class="photo" src={picture} alt="" width="184" height="184" onerror={() => (photoFailed = true)} />{:else if wideFace && !wideFailed}<img class="photo crop" src={wideFace} alt="" width="184" height="184" onerror={() => (wideFailed = true)} />{:else}<div class="photo initials" aria-hidden="true">{initialsOf(hero.name)}</div>{/if}
 					{#if art.logo && !logoFailed}
-						<h1 class="logo"><img src={art.logo} alt={hero.name} onerror={() => (logoFailed = true)} /></h1>
+						<h1 class="logo"><img src={art.logo} alt={hero.name} class:sized={!!logoRatio} style:--logo-r={logoRatio} onerror={() => (logoFailed = true)} /></h1>
 					{:else}
 						<h1>{hero.name}</h1>
 					{/if}
@@ -571,7 +574,7 @@
 							<div class="latest">
 								<h2>Latest release</h2>
 								<a class="latest-card" href={albumHref(l.mbid, mbid)}>
-									<span class="cov" style="width:160px;height:160px">{#if l.image && !badArt.has(l.mbid)}<img src={coverFor(appPicture(l.image), 200).src} srcset={coverFor(appPicture(l.image), 200).srcset} sizes="160px" alt="" width="160" height="160" loading="lazy" decoding="async" onerror={() => (badArt = new Set([...badArt, l.mbid]))} />{:else}<ArtPlaceholder name={l.name} shape="square" />{/if}</span>
+									<span class="cov" style="width:160px;height:160px">{#if l.image && !badArt.has(l.mbid)}<img src={coverFor(appPicture(l.image), 200).src} sizes="160px" alt="" width="160" height="160" loading="lazy" decoding="async" onerror={() => (badArt = new Set([...badArt, l.mbid]))} />{:else}<ArtPlaceholder name={l.name} shape="square" />{/if}</span>
 									<span class="l-meta">
 										<span class="l-date">{l.release_date ? new Date(`${l.release_date.padEnd(10, '-01').slice(0, 10)}T00:00:00Z`).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: l.release_date.length === 10 ? 'numeric' : undefined, timeZone: 'UTC' }) : ''}</span>
 										<span class="l-name">{#if l.explicit}<span class="e" aria-label="Explicit">E</span>{/if}{l.name}</span>
@@ -767,6 +770,8 @@
 	.photo.initials { display: grid; place-items: center; background: rgb(255 255 255 / .08); backdrop-filter: blur(12px); color: rgb(255 255 255 / .9); font-size: 64px; font-weight: 700; letter-spacing: .02em; }
 	h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: clamp(34px, 4.6vw, 56px); line-height: 1.05; letter-spacing: -.02em; text-wrap: balance; }
 	h1.logo img { display: block; max-width: min(440px, 80vw); max-height: 120px; object-fit: contain; filter: drop-shadow(0 4px 18px rgb(0 0 0 / .45)); }
+	/* Its stored shape known: the box is drawn before the logo arrives. */
+	h1.logo img.sized { width: min(440px, 80vw, calc(120px * var(--logo-r))); height: auto; aspect-ratio: var(--logo-r); }
 	.under-hero { --hero-ink: #07080a; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 2px 20px 0; margin-bottom: calc(var(--s-6) * -.5); text-align: center; }
 	.under-hero .round { margin-top: 2px; }
 	.bioline { margin: 2px 0 0; max-width: 64ch; color: rgb(255 255 255 / .78); font: var(--t-callout); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }

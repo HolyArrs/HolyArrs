@@ -257,8 +257,16 @@ func (a *API) answerPictures(ctx context.Context, b []byte, extra ...string) map
 	a.pictureRecords(ctx, artists, albums, picWait)
 	out := map[string]*metadata.PictureRecord{}
 	for _, it := range items {
-		if r := a.pictureRecord(it.kind, it.mbid); r != nil {
-			out[it.kind+":"+it.mbid] = r
+		kinds := []string{it.kind}
+		if it.kind != "album" {
+			// An artist's wide background and logo too: the page a card opens
+			// (its hero) is preloaded at the versioned address.
+			kinds = []string{"artist", "wide", "logo"}
+		}
+		for _, k := range kinds {
+			if r := a.pictureRecord(k, it.mbid); r != nil {
+				out[k+":"+it.mbid] = r
+			}
 		}
 	}
 	return out
