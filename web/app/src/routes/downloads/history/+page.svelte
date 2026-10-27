@@ -1,7 +1,7 @@
 <script lang="ts">
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { to } from '#lib/paths.ts';
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { api, message } from '#lib/api.ts';
@@ -18,6 +18,27 @@
 	import Poster from '#lib/Poster.svelte';
 	import { createLatestOnly, dateRangeProblem, details, filterParams, groupDownloads, groupLabel, historyQuery, kindGroups, kindTone, pageLine, readFilter, type HistoryFilter } from '#lib/history.ts';
 	import type { EventPage, EventRecord, TitleView } from '#lib/types.ts';
+	import VariantBar from '#lib/ui/VariantBar.svelte';
+	import Feed from '#lib/history-designs/Feed.svelte';
+	import ByTitle from '#lib/history-designs/ByTitle.svelte';
+	import Landed from '#lib/history-designs/Landed.svelte';
+	import Importance from '#lib/history-designs/Importance.svelte';
+	import EventTable from '#lib/history-designs/EventTable.svelte';
+
+	// The History designs Luis is comparing (?view=1…5, kept for the session); 0 is today's page.
+	const VIEWS = [
+		{ value: 0, label: 'Now' },
+		{ value: 1, label: '1 Feed' },
+		{ value: 2, label: '2 By title' },
+		{ value: 3, label: '3 Recently added' },
+		{ value: 4, label: '4 Important' },
+		{ value: 5, label: '5 Table' }
+	];
+	let view = $state(0);
+	// Today's list loads only while it is the one shown (also when switched back to Now).
+	$effect(() => {
+		if (!view) untrack(() => void load());
+	});
 
 	const limit = 50;
 	let filter = $state<HistoryFilter>(readFilter(page.url.searchParams, limit));
@@ -31,6 +52,7 @@
 	const beginLoad = createLatestOnly();
 
 	async function load() {
+		if (view) return;
 		const isLatest = beginLoad();
 		if (dateRangeProblem(filter)) {
 			error = '';
@@ -55,7 +77,9 @@
 	// The filters live in the address, so a filtered view can be shared and Back works.
 	function apply(change: Partial<HistoryFilter>) {
 		filter = { ...filter, offset: 0, ...change };
-		void goto(to('/downloads/history') + filterParams(filter), { replace: true, reset: false });
+		const params = filterParams(filter);
+		const pick = page.url.searchParams.get('view');
+		void goto(to('/downloads/history') + params + (pick ? `${params ? '&' : '?'}view=${pick}` : ''), { replace: true, reset: false });
 		void load();
 	}
 
@@ -87,12 +111,11 @@
 		const fit = () => (phone = mq.matches);
 		fit();
 		mq.addEventListener('change', fit);
-		void load();
 		void api
 			.get<{ titles: TitleView[] }>('/titles')
 			.then((r) => (titles = r.titles))
 			.catch(() => {});
-		const offs = [live.on('event', () => filter.offset === 0 && load()), live.on('resync', load)];
+		const offs = [live.on('event', () => !view && filter.offset === 0 && load()), live.on('resync', load)];
 		return () => {
 			offs.forEach((off) => off());
 			mq.removeEventListener('change', fit);
@@ -105,6 +128,13 @@
 <PageHeader title="History" subtitle="Everything HolyArrs did, newest first: what it added, searched, chose, sent, imported, renamed and deleted, and why." />
 <OpsDownloadsTabs />
 
+{#if view}
+	{#if view === 1}<Feed {filter} {titles} {titleById} onfilter={apply} {phone} />
+	{:else if view === 2}<ByTitle {filter} {titles} {titleById} onfilter={apply} {phone} />
+	{:else if view === 3}<Landed {filter} {titles} {titleById} onfilter={apply} {phone} />
+	{:else if view === 4}<Importance {filter} {titles} {titleById} onfilter={apply} {phone} />
+	{:else}<EventTable {filter} {titles} {titleById} onfilter={apply} {phone} />{/if}
+{:else}
 {#snippet filterForm()}
 	<form class="filters" aria-label="Filter the history" onsubmit={(e) => e.preventDefault()}>
 		<div class="fields">
@@ -233,6 +263,9 @@
 	</PageLoader>
 	{/if}
 {/if}
+{/if}
+
+<VariantBar options={VIEWS} bind:value={view} storageKey="holyarrs.history-view" label="History design" />
 
 <style>
 	.filterbar { margin-bottom: 24px; padding: 16px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
