@@ -12112,6 +12112,15 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/explore/music/rising": {
+      "get": {
+        "responses": {},
+        "summary": "",
+        "x-holyarrs-part": "music",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/explore/new": {
       "get": {
         "description": "New & Popular, newness first: every title is new in one way inside its window (added to a service 14 days, released 45, new season 30, new episode 14, new series 60) and ranked by freshness, then popularity, then the household's suit. Rows: fresh on your services, hot and new shows and movies, your shows' new episodes, made for you, first seasons, in cinemas, just out in the household's genre, critics' new favourites, new from abroad; each title once, rows under 6 left out; 5 rows on page 0, then 4 a page. Page 0 also carries rail (This week: days -3 to +7, each {day, items} with what, following and upcoming). services_set says the member picked services; building says lists are still on their way.",
