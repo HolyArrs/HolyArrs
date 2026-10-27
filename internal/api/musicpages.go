@@ -233,6 +233,24 @@ func isVideo(al metadata.Album) bool {
 	return false
 }
 
+// songAlbum finds a top song's release in the discography by name, also
+// without an edition after a dash ("Born To Die – Paradise Edition" is
+// "Born To Die").
+func songAlbum[T any](byName map[string]T, album string) (T, bool) {
+	if al, ok := byName[metadata.SongKey(album)]; ok {
+		return al, true
+	}
+	for _, dash := range []string{" – ", " — ", " - "} {
+		if i := strings.Index(album, dash); i > 0 {
+			if al, ok := byName[metadata.SongKey(album[:i])]; ok {
+				return al, true
+			}
+		}
+	}
+	var zero T
+	return zero, false
+}
+
 func artPath(kind, mbid string) string { return "/api/v1/music-trending/art/" + kind + "/" + mbid }
 
 // songArtID names the release of a top song that has no MusicBrainz id in
@@ -720,15 +738,13 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		song := PageSong{Title: s.Title, LengthMS: s.LengthMS, Explicit: s.Explicit, Album: s.Album, Image: s.Cover}
-		if al, ok := byName[metadata.SongKey(s.Album)]; ok {
+		if al, ok := songAlbum(byName, s.Album); ok {
 			song.AlbumMBID, song.Image = al.MBID, al.Image
-		} else if s.Album != "" || s.Cover != "" {
+		} else {
 			// A song whose release is not in the discography (a feature, a
-			// single) still gets its release's art through the picture
-			// route: its own cover link first, then the artist's picture.
-			id := songArtID(art.Name, s.Album, s.Cover)
-			song.Image = artPath("album", id)
-			songNames = append(songNames, nameKey{kind: "album", mbid: id, name: s.Album, artist: art.Name, cover: s.Cover})
+			// single on someone else's record): the artist's photo, never a
+			// letter tile.
+			song.Image = artPath("artist", mbid)
 		}
 		v.Top = append(v.Top, song)
 	}
