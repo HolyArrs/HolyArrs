@@ -112,7 +112,8 @@
 		mq.addEventListener('change', fit);
 		void load();
 		void api.get<{ titles: TitleView[] }>('/titles').then((r) => (titles = r.titles)).catch(() => {});
-		api.get<DownloaderSettings>('/settings/downloaders').then((s) => (settings = s)).catch(() => {});
+		// The remove defaults are a settings read; without that permission the server's own defaults stand (no 403 in the console).
+		if (session.can('settings')) api.get<DownloaderSettings>('/settings/downloaders').then((s) => (settings = s)).catch(() => {});
 		const offs = ['download', 'slot', 'import', 'resync'].map((t) => live.on(t, soon));
 		return () => {
 			offs.forEach((off) => off());
