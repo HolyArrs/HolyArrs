@@ -54,7 +54,7 @@
 <style>
 	/* The heading stays for screen readers only; the strip reads as part of the hero. */
 	.cat-strip :global(.ui-shelf > header) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; margin: 0; }
-	.cat-strip { margin-top: -12px; --ease-tile: cubic-bezier(.16, 1, .3, 1); }
+	.cat-strip { margin-top: -12px; --ease-tile: var(--ease-out); }
 	.cat-strip :global(.ui-shelf .row) { padding-block: 4px 8px; }
 	.cat-strip :global(.ui-shelf .arrow) { top: calc(50% - 22px); }
 	/* Tiles stay dark in both modes: their own near-black glass, white type. */
