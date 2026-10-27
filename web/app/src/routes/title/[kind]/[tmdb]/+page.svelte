@@ -39,6 +39,8 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import ReleaseSheet from '#lib/ReleaseSheet.svelte';
+	import DeleteSheet from '#lib/DeleteSheet.svelte';
+	import RenamePreview from '#lib/RenamePreview.svelte';
 	import AddMovieDialog from '#lib/AddMovieDialog.svelte';
 	import { savedDefaults } from '#lib/title-defaults.svelte.ts';
 	import AddShowDialog from '#lib/AddShowDialog.svelte';
@@ -171,10 +173,10 @@
 		return [
 			{ group: 'Find', items: [
 				{ label: 'Search now', icon: 'search', run: () => ownRun('search'), busy: busyAction === 'search' },
-				{ label: 'Choose a release', icon: 'grid', href: full('?tools=releases') }
+				{ label: 'Choose a release', icon: 'grid', run: () => (pickOpen = true) }
 			] },
 			{ group: 'Files', items: [
-				{ label: 'Rename files', icon: 'copy', href: full('?tools=rename') },
+				{ label: 'Rename files', icon: 'copy', run: () => (renameOpen = true) },
 				{ label: 'Add a Version', icon: 'plus', href: full('?tools=version') },
 				{ label: 'Edit', icon: 'tools', href: full('?tools=edit') }
 			] },
@@ -182,7 +184,7 @@
 				{ label: o.keep_up_to_date ? 'Stop keeping up to date' : 'Keep up to date', icon: 'check', run: () => ownRun('keep'), busy: busyAction === 'keep' },
 				{ label: 'Refresh details', icon: 'refresh', run: () => ownRun('refresh'), busy: busyAction === 'refresh' },
 				{ label: 'All history', icon: 'clock', href: to(`/downloads/history?title=${o.id}`) },
-				{ label: o.kind === 'show' ? 'Delete show' : 'Delete movie', icon: 'trash', href: full('?tools=delete'), danger: true }
+				{ label: o.kind === 'show' ? 'Delete show' : 'Delete movie', icon: 'trash', run: () => (deleteOpen = true), danger: true }
 			] }
 		];
 	});
@@ -213,6 +215,8 @@
 	const evIcon = (k = ''): 'check' | 'search' | 'clock' | 'refresh' | 'copy' | 'trash' | 'plus' => (/import|got|done|adopt/.test(k) ? 'check' : /grab|sent|chose|search/.test(k) ? 'search' : /fail|stall|missing/.test(k) ? 'clock' : /rename/.test(k) ? 'copy' : /delete/.test(k) ? 'trash' : /add/.test(k) ? 'plus' : 'refresh');
 	const evTone = (k = '', s = '') => (/fail|stall|not on disk|missing/.test(`${k} ${s}`.toLowerCase()) ? 'failed' : /import|adopt/.test(k) ? 'have' : '');
 	let libAll = $state(false);
+	let renameOpen = $state(false);
+	let deleteOpen = $state(false);
 	let pickOpen = $state(typeof location !== 'undefined' && new URLSearchParams(location.search).has('pick'));
 	const mayAsk = $derived(session.can('ask') && !manage);
 
@@ -891,15 +895,21 @@
 							</button>
 							<a class="lib-row" href={to(`/library/${o.id}?tools=edit`)}><span><b>Quality</b><small>{o.pick_rules_name ?? 'Default'}</small></span><Icon name="chevronRight" size={16} /></a>
 							<a class="lib-row" href={to(`/library/${o.id}?tools=edit`)}><span><b>Folder</b><small class="path">{o.folder_path ?? ''}</small></span><Icon name="chevronRight" size={16} /></a>
-							<a class="lib-row" href={to(`/library/${o.id}?tools=rename`)}><span><b>Rename files</b><small>See the new names before anything changes</small></span><Icon name="chevronRight" size={16} /></a>
+							<button type="button" class="lib-row" onclick={() => (renameOpen = true)}><span><b>Rename files</b><small>See the new names before anything changes</small></span><Icon name="chevronRight" size={16} /></button>
 							<button type="button" class="lib-row" disabled={busyAction === 'refresh'} onclick={() => ownRun('refresh')}><span><b>Refresh details</b><small>Names, dates and pictures</small></span><Icon name="refresh" size={16} /></button>
 						</div>
 						<div class="lib-rows danger">
-							<a class="lib-row" href={to(`/library/${o.id}?tools=delete`)}><span><b>{o.kind === 'show' ? 'Delete show' : 'Delete movie'}</b><small>Choose whether the files go too</small></span><Icon name="trash" size={16} /></a>
+							<button type="button" class="lib-row" onclick={() => (deleteOpen = true)}><span><b>{o.kind === 'show' ? 'Delete show' : 'Delete movie'}</b><small>Choose whether the files go too</small></span><Icon name="trash" size={16} /></button>
 						</div>
 					{/if}
 				</div>
-				{#if manage}<ReleaseSheet bind:open={pickOpen} titleId={o.id} name={o.name} onchosen={() => loadOwned(o.id)} />{/if}
+				{#if manage}
+					<ReleaseSheet bind:open={pickOpen} titleId={o.id} name={o.name} onchosen={() => loadOwned(o.id)} />
+					<Sheet bind:open={renameOpen} title="Rename files" description={o.name} placement="right" size="md">
+						{#if renameOpen}<RenamePreview titleId={o.id} onDone={() => { renameOpen = false; void loadOwned(o.id); }} />{/if}
+					</Sheet>
+					<DeleteSheet bind:open={deleteOpen} titleId={o.id} name={o.name} kind={o.kind === 'show' ? 'show' : 'movie'} ondone={() => { owned = null; ownedEvents = []; ownTab = 'overview'; }} />
+				{/if}
 			{/if}
 		{/snippet}
 		{#snippet ownTabBar()}
