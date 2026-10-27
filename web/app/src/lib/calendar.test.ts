@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, rangeChunks, titlesFromAddress, itemDot, passes, readPresets, savePresets, byDay, feedLink, monthGrid, monthRange, shiftMonth, webcalLink, ymd, weekStart, shiftWeek, readView, saveView, startView, viewFromAddress, entryArt, entryIcon } from './calendar.ts';
+import { addDays, rangeChunks, titlesFromAddress, itemDot, oneMovieDate, movieFacts, mineOf, whoseOk, scopeOk, statusOk, showingOk, filtersFromAddress, type MovieFacts, byDay, feedLink, monthGrid, monthRange, shiftMonth, webcalLink, ymd, weekStart, shiftWeek, readView, saveView, startView, viewFromAddress, entryArt, entryIcon } from './calendar.ts';
 import type { CalendarEntry } from './types.ts';
 
 const e = (title_id: number, kind: CalendarEntry['kind'], date: string): CalendarEntry => ({ title_id, name: `Movie ${title_id}`, kind, date });
@@ -92,18 +92,56 @@ describe('status and filters', () => {
 		expect(itemDot(ep('2026-10-20', 'in_library'), '2026-10-21')).toBe('have');
 		expect(itemDot(ep('2026-10-20'), '2026-10-21')).toBe('missing');
 		expect(itemDot(ep('2026-10-22'), '2026-10-21')).toBe('upcoming');
-		expect(passes({ ...ep('2026-10-22'), keep_up_to_date: false }, { keptOnly: true, haveOnly: false })).toBe(false);
-		expect(passes(ep('2026-10-22'), { keptOnly: false, haveOnly: true })).toBe(false);
 	});
-	it('saves and reads filter presets', () => {
-		const m = new Map<string, string>();
-		const store = { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v) };
-		expect(readPresets(store)).toEqual([]);
-		const p = { name: 'Shows I keep', which: 'shows' as const, off: [], keptOnly: true, haveOnly: false };
-		savePresets([p], store);
-		expect(readPresets(store)).toEqual([p]);
-		m.set('holyarrs.calendar-filters', '{bad');
-		expect(readPresets(store)).toEqual([]);
+});
+
+describe('one date per movie', () => {
+	const mv = (id: number, kind: CalendarEntry['kind'], day: string): CalendarEntry => ({ title_id: id, name: `Movie ${id}`, kind, date: `${day}T00:00:00Z` });
+	it('keeps the home date (the earlier of digital and disc), else the cinema date', () => {
+		const out = oneMovieDate([mv(1, 'cinema', '2026-11-01'), mv(1, 'digital', '2026-12-01'), mv(1, 'physical', '2026-12-20'), mv(2, 'cinema', '2026-11-05')]);
+		expect(out.map((x) => [x.title_id, x.kind])).toEqual([
+			[1, 'digital'],
+			[2, 'cinema']
+		]);
+		// Digital and disc on one day: one date.
+		expect(oneMovieDate([mv(3, 'digital', '2026-12-01'), mv(3, 'physical', '2026-12-01')])).toHaveLength(1);
+	});
+	it('lets the title decide when its home date is outside the days loaded, and marks a movie in the Library', () => {
+		const facts = new Map<number, MovieFacts>([[1, { cinema: '2026-11-01', digital: '2027-01-10', have: false }], [2, { cinema: '2026-11-05', have: true }]]);
+		const out = oneMovieDate([mv(1, 'cinema', '2026-11-01'), mv(2, 'cinema', '2026-11-05'), { title_id: 9, name: 'Show', kind: 'episode', date: '2026-11-02', air_day: '2026-11-02' }], facts);
+		// Movie 1 is out at home in January: its cinema date in view is dropped.
+		expect(out.map((x) => x.title_id)).toEqual([2, 9]);
+		expect(out[0].state).toBe('in_library');
+		expect(itemDot(out[0], '2026-11-10')).toBe('have');
+		expect(movieFacts({ cinema_date: '2026-11-01T00:00:00Z', slots: [{ state: 'in_library' } as never] })).toMatchObject({ cinema: '2026-11-01', have: true });
+	});
+});
+
+describe('filters tied to the app', () => {
+	const ep = (id: number, date: string, state?: string): CalendarEntry => ({ title_id: id, name: 'X', kind: 'episode', date, air_day: date, timed: false, state });
+	const mine = { asked: new Set([1]), followed: new Set([2]) };
+	it('reads mine, scope and status', () => {
+		expect(mineOf(ep(1, '2026-10-20'), mine)).toBe('asked');
+		expect(mineOf(ep(2, '2026-10-20'), mine)).toBe('followed');
+		expect(whoseOk(ep(3, '2026-10-20'), 'mine', mine)).toBe(false);
+		expect(whoseOk(ep(3, '2026-10-20'), 'everyone', mine)).toBe(true);
+		expect(scopeOk(ep(2, '2026-10-20'), 'asked', mine)).toBe(false);
+		expect(scopeOk(ep(2, '2026-10-20'), 'followed', mine)).toBe(true);
+		expect(statusOk(ep(3, '2026-10-20'), new Set(), '2026-10-21')).toBe(true);
+		expect(statusOk(ep(3, '2026-10-20'), new Set(['upcoming']), '2026-10-21')).toBe(false);
+		expect(statusOk(ep(3, '2026-10-20'), new Set(['missing']), '2026-10-21')).toBe(true);
+	});
+	it('hides past dates already in the Library by default', () => {
+		expect(showingOk(ep(3, '2026-10-20', 'in_library'), 'matters', mine, '2026-10-21')).toBe(false);
+		expect(showingOk(ep(3, '2026-10-20'), 'matters', mine, '2026-10-21')).toBe(true);
+		expect(showingOk(ep(3, '2026-10-22', 'in_library'), 'matters', mine, '2026-10-21')).toBe(true);
+		expect(showingOk(ep(3, '2026-10-20', 'in_library'), 'all', mine, '2026-10-21')).toBe(true);
+		expect(showingOk(ep(3, '2026-10-22'), 'mine', mine, '2026-10-21')).toBe(false);
+	});
+	it('reads the filter layout in the address', () => {
+		expect(filtersFromAddress('2')).toBe(2);
+		expect(filtersFromAddress('9')).toBe(4);
+		expect(filtersFromAddress(null, 1)).toBe(1);
 	});
 });
 

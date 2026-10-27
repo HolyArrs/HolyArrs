@@ -1,11 +1,11 @@
 // Calendar: the month grid and list for movie dates and episodes, and the
 // feed link.
-import type { CalendarEntry } from './types.ts';
+import type { CalendarEntry, TitleView } from './types.ts';
 
 export const kindWord: Record<CalendarEntry['kind'], string> = {
 	cinema: 'In cinemas',
-	digital: 'Digital release',
-	physical: 'Disc release',
+	digital: 'Movie release',
+	physical: 'Movie release',
 	episode: 'Episode',
 	album: 'Album release'
 };
@@ -226,42 +226,107 @@ export function itemDot(e: CalendarEntry, today = ymd(new Date())): ItemDot {
 	return entryDay(e) < today ? 'missing' : 'upcoming';
 }
 
-/** A saved set of calendar filters. */
-export interface CalFilter {
-	name: string;
-	which: TitlesShown;
-	/** Hidden movie date kinds. */
-	off: CalendarEntry['kind'][];
-	keptOnly: boolean;
-	haveOnly: boolean;
+/** A movie's dates and whether a copy is in the Library, read from its title. */
+export interface MovieFacts {
+	cinema?: string;
+	digital?: string;
+	physical?: string;
+	have: boolean;
 }
 
-/** passes says whether an entry gets past the extra filters (kept up to date, in the Library). */
-export function passes(e: CalendarEntry, f: Pick<CalFilter, 'keptOnly' | 'haveOnly'>): boolean {
-	if (f.keptOnly && e.keep_up_to_date === false) return false;
-	if (f.haveOnly && itemDot(e) !== 'have') return false;
+/** movieFacts reads a movie title's dates and whether any of its copies is in the Library. */
+export function movieFacts(t: Pick<TitleView, 'cinema_date' | 'digital_date' | 'physical_date' | 'slots'>): MovieFacts {
+	return {
+		cinema: t.cinema_date ? dayOf(t.cinema_date) : undefined,
+		digital: t.digital_date ? dayOf(t.digital_date) : undefined,
+		physical: t.physical_date ? dayOf(t.physical_date) : undefined,
+		have: !!t.slots?.some((s) => s.state === 'in_library')
+	};
+}
+
+const homeKinds = new Set<CalendarEntry['kind']>(['digital', 'physical']);
+const isMovie = (e: Pick<CalendarEntry, 'kind'>) => e.kind === 'cinema' || homeKinds.has(e.kind);
+
+/**
+ * oneMovieDate keeps one date per movie: the day it can be watched at home
+ * (the earlier of its digital and disc dates), else its cinema date. The
+ * title's own dates decide when known, so a cinema date in view is dropped
+ * when the home date is later; without them the loaded dates decide. A movie
+ * with a copy in the Library is marked so (the server sends no state for movies).
+ */
+export function oneMovieDate(entries: CalendarEntry[], movies: Map<number, MovieFacts> = new Map()): CalendarEntry[] {
+	const home = new Map<number, string>();
+	for (const e of entries) {
+		if (!homeKinds.has(e.kind)) continue;
+		const d = dayOf(e.date);
+		const was = home.get(e.title_id);
+		if (!was || d < was) home.set(e.title_id, d);
+	}
+	const kept = new Set<number>();
+	const out: CalendarEntry[] = [];
+	for (const e of entries) {
+		if (!isMovie(e)) {
+			out.push(e);
+			continue;
+		}
+		if (kept.has(e.title_id)) continue;
+		const f = movies.get(e.title_id);
+		const homeDays = f ? [f.digital, f.physical].filter((d): d is string => !!d).sort() : [];
+		const homeDay = f ? homeDays[0] : home.get(e.title_id);
+		const keep = homeDay ? homeKinds.has(e.kind) && dayOf(e.date) === homeDay : e.kind === 'cinema';
+		if (!keep) continue;
+		kept.add(e.title_id);
+		out.push(f?.have ? { ...e, state: 'in_library' } : e);
+	}
+	return out;
+}
+
+/** What the calendar knows about the person reading it: the titles they asked for and the ones they follow. */
+export interface Mine {
+	asked: Set<number>;
+	followed: Set<number>;
+}
+export const noMine = (): Mine => ({ asked: new Set(), followed: new Set() });
+
+/** mineOf says how an entry is the reader's own: asked for, followed, or not (''). */
+export function mineOf(e: Pick<CalendarEntry, 'title_id'>, m: Mine): 'asked' | 'followed' | '' {
+	return m.asked.has(e.title_id) ? 'asked' : m.followed.has(e.title_id) ? 'followed' : '';
+}
+
+/** Option 1: Mine (asked for or followed) or Everyone (the whole Library). */
+export type Whose = 'mine' | 'everyone';
+export function whoseOk(e: CalendarEntry, w: Whose, m: Mine): boolean {
+	return w === 'everyone' || mineOf(e, m) !== '';
+}
+
+/** Option 2: the whole Library, what I asked for, or what I follow. */
+export type Scope = 'library' | 'asked' | 'followed';
+export function scopeOk(e: CalendarEntry, s: Scope, m: Mine): boolean {
+	if (s === 'asked') return m.asked.has(e.title_id);
+	if (s === 'followed') return m.followed.has(e.title_id);
 	return true;
 }
 
-const presetKey = 'holyarrs.calendar-filters';
-
-/** readPresets is this browser's saved calendar filters. */
-export function readPresets(store: Pick<Storage, 'getItem'> | undefined = globalThis.localStorage): CalFilter[] {
-	try {
-		const v = JSON.parse(store?.getItem(presetKey) ?? '[]');
-		return Array.isArray(v) ? v.filter((p) => p && typeof p.name === 'string' && Array.isArray(p.off)) : [];
-	} catch {
-		return [];
-	}
+/** Option 3: status chips; none picked shows every status. */
+export function statusOk(e: CalendarEntry, picked: ReadonlySet<ItemDot>, today = ymd(new Date())): boolean {
+	return picked.size === 0 || picked.has(itemDot(e, today));
 }
 
-/** savePresets keeps the saved filters; a private window may refuse and that is fine. */
-export function savePresets(list: CalFilter[], store: Pick<Storage, 'setItem'> | undefined = globalThis.localStorage) {
-	try {
-		store?.setItem(presetKey, JSON.stringify(list));
-	} catch {
-		// Not kept; the filters still work for now.
-	}
+/**
+ * Option 4: one smart default and a small menu. What matters is everything
+ * still to come plus past dates still missing (past ones already in the
+ * Library go quiet); Mine is what was asked for or followed; Everything is all.
+ */
+export type Showing = 'matters' | 'mine' | 'all';
+export function showingOk(e: CalendarEntry, s: Showing, m: Mine, today = ymd(new Date())): boolean {
+	if (s === 'all') return true;
+	if (s === 'mine') return mineOf(e, m) !== '';
+	return !(entryDay(e) < today && itemDot(e, today) === 'have');
+}
+
+/** filtersFromAddress reads ?filters=1…4 (the filter layouts being compared); anything else is the default. */
+export function filtersFromAddress(v: string | null | undefined, fallback = 4): number {
+	return v && /^[1-4]$/.test(v) ? Number(v) : fallback;
 }
 
 /** addDays moves a day by n days (local time, midnight). */

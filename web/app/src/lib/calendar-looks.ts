@@ -41,7 +41,8 @@ export function entryTag(e: CalendarEntry): string {
 		return 'New episode';
 	}
 	if (e.kind === 'album') return `New ${albumWord(e.album_type)}`;
-	return kindWord[e.kind];
+	// A movie shows one date: the day it is out to watch, or its cinema date as a small tag.
+	return e.kind === 'cinema' ? kindWord.cinema : 'New movie';
 }
 
 /** entryTitle is the big name on a card: the show, the movie, or the album. */
@@ -56,7 +57,7 @@ export function entryLine(e: CalendarEntry): string {
 	return e.year ? String(e.year) : '';
 }
 
-/** entryFacts is the small facts line: "S23E03 · 20:00 · ABC", "EP · 6 tracks", "Digital release". */
+/** entryFacts is the small facts line: "S23E03 · 20:00 · ABC", "EP · 6 tracks", "Movie release". */
 export function entryFacts(e: CalendarEntry): string {
 	if (e.kind === 'episode') return [episodeCode(e), entryTime(e), e.network].filter(Boolean).join(' · ');
 	if (e.kind === 'album') return [albumWord(e.album_type) === 'EP' ? 'EP' : albumWord(e.album_type).replace(/^./, (c) => c.toUpperCase()), e.tracks ? `${e.tracks} tracks` : ''].filter(Boolean).join(' · ');

@@ -16,6 +16,7 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import OpsCheckChip from '#lib/ui/OpsCheckChip.svelte';
+	import VariantBar from '#lib/ui/VariantBar.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import Icon from '#lib/Icon.svelte';
@@ -47,14 +48,25 @@
 		titlesFromAddress,
 		monthRange,
 		itemDot,
-		passes,
-		readPresets,
-		savePresets,
+		oneMovieDate,
+		movieFacts,
+		mineOf,
+		noMine,
+		whoseOk,
+		scopeOk,
+		statusOk,
+		showingOk,
+		filtersFromAddress,
+		type ItemDot,
+		type Mine,
+		type MovieFacts,
+		type Scope,
+		type Showing,
+		type Whose,
 		ymd,
 		readView,
 		saveView,
 		startView,
-		type CalFilter,
 		type CalendarView,
 		type TitlesShown
 	} from '#lib/calendar.ts';
@@ -81,10 +93,25 @@
 	let loaded = $state(false);
 	let fetching = $state(false);
 	let error = $state('');
-	let kinds = $state({ cinema: true, digital: true, physical: true, episode: true, album: true });
-	let keptOnly = $state(false);
-	let haveOnly = $state(false);
-	let presets = $state<CalFilter[]>([]);
+	// The filters tie the calendar to the app: what you asked for, what you follow, and
+	// what is in the Library. Four ways to filter are compared (?filters=1…4, the pill bar):
+	// 1 Mine or Everyone; 2 Whole Library, I asked for, I follow; 3 Missing, In the Library,
+	// Coming up; 4 no filters, one smart default and a small Showing menu.
+	const filterLooks = [
+		{ value: 1, label: '1 Mine or everyone' },
+		{ value: 2, label: '2 Library · asked · follow' },
+		{ value: 3, label: '3 Missing · have · coming' },
+		{ value: 4, label: '4 Smart default + menu' }
+	];
+	let look = $state(filtersFromAddress(page.url.searchParams.get('filters'), 4));
+	// An owner or admin runs the whole Library, so Everyone first; a member starts on Mine.
+	let whose = $state<Whose>(session.can('manage_library') ? 'everyone' : 'mine');
+	let scope = $state<Scope>('library');
+	let statuses = $state<ItemDot[]>([]);
+	let showing = $state<Showing>('matters');
+	// What you asked for (Wishlist) and follow, and each movie's dates and copies.
+	let mine = $state<Mine>(noMine());
+	let movies = $state(new Map<number, MovieFacts>());
 	// ?titles=shows opens the calendar on one kind of title.
 	const askedTitles = page.url.searchParams.get('titles');
 	let which = $state<TitlesShown>(titlesFromAddress(askedTitles));
@@ -105,9 +132,24 @@
 	const lastDay = $derived(ymd(end));
 	// The query asks a day either side (an episode's local day can differ from the day it is
 	// stored under); those extra days never show as days of their own.
-	const picked = (e: CalendarEntry) => kinds[e.kind] && shows(e, which) && passes(e, { keptOnly, haveOnly });
-	const shown = $derived(entries.filter((e) => entryDay(e) >= firstDay && entryDay(e) < lastDay && picked(e)));
+	// A movie shows one date: the day it is out to watch, else its cinema date.
+	const pool = $derived(oneMovieDate(entries, movies));
 	const todayKey = ymd(now);
+	const filterOk = (e: CalendarEntry) =>
+		look === 1 ? whoseOk(e, whose, mine) : look === 2 ? scopeOk(e, scope, mine) : look === 3 ? statusOk(e, new Set(statuses), todayKey) : showingOk(e, showing, mine, todayKey);
+	const picked = (e: CalendarEntry) => shows(e, which) && filterOk(e);
+	// The days in view for the type picked, before the filters (what the counts count).
+	const base = $derived(pool.filter((e) => entryDay(e) >= firstDay && entryDay(e) < lastDay && shows(e, which)));
+	const shown = $derived(base.filter(filterOk));
+	const filteredOut = $derived(shown.length === 0 && base.length > 0);
+	const counts = $derived({
+		library: base.length,
+		asked: base.filter((e) => mine.asked.has(e.title_id)).length,
+		followed: base.filter((e) => mine.followed.has(e.title_id)).length,
+		have: base.filter((e) => itemDot(e, todayKey) === 'have').length,
+		missing: base.filter((e) => itemDot(e, todayKey) === 'missing').length,
+		upcoming: base.filter((e) => itemDot(e, todayKey) === 'upcoming').length
+	});
 	const agenda = $derived(byDay(shown));
 	const range = $derived({ from: ymd(addDays(start, -1)), to: ymd(addDays(end, 1)) });
 	const rangeName = $derived(
@@ -121,8 +163,22 @@
 	let sheetOpen = $state(false);
 	let filtersOpen = $state(false);
 
-	const filtersOn = $derived((['cinema', 'digital', 'physical'] as const).filter((k) => !kinds[k]).length + (keptOnly ? 1 : 0) + (haveOnly ? 1 : 0));
-	const filtersWord = $derived(filtersOn ? `Filters · ${filtersOn}` : 'Filters');
+	const showingWords: Record<Showing, { label: string; text: string }> = {
+		matters: { label: 'What matters', text: 'Everything coming up, and past dates still missing. What you already have from past days stays out of the way.' },
+		mine: { label: 'Just mine', text: 'Only what you asked for or follow.' },
+		all: { label: 'Everything', text: 'Every date in the Library, even ones you already have.' }
+	};
+	const filtersOn = $derived(look === 1 ? (whose === 'mine' ? 1 : 0) : look === 2 ? (scope === 'library' ? 0 : 1) : look === 3 ? statuses.length : showing === 'matters' ? 0 : 1);
+	const filtersWord = $derived(look === 4 ? showingWords[showing].label : filtersOn ? `Filters · ${filtersOn}` : 'Filters');
+	function clearFilters() {
+		whose = 'everyone';
+		scope = 'library';
+		statuses = [];
+		showing = 'all';
+	}
+	function flipStatus(k: ItemDot, on: boolean) {
+		statuses = on ? [...statuses.filter((x) => x !== k), k] : statuses.filter((x) => x !== k);
+	}
 	const rangeShort = $derived(
 		`${start.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${addDays(end, -1).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`
 	);
@@ -146,6 +202,7 @@
 				api.get<{ titles: TitleView[] }>('/titles')
 			]);
 			if (n !== asks) return;
+			movies = new Map(t.titles.filter((x) => x.kind === 'movie').map((x) => [x.id, movieFacts(x)]));
 			const seen = new Set<string>();
 			entries = parts.flatMap((c) => c.dates ?? []).filter((e) => !seen.has(entryKey(e)) && !!seen.add(entryKey(e)));
 			libraryEmpty = t.titles.length === 0;
@@ -218,7 +275,7 @@
 	let monthAsk = '';
 	const miniDates = $derived.by(() => {
 		const keys = new Set(shown.map(entryKey));
-		return [...shown, ...monthDates.filter((e) => picked(e) && !keys.has(entryKey(e)))];
+		return [...shown, ...oneMovieDate(monthDates, movies).filter((e) => picked(e) && !keys.has(entryKey(e)))];
 	});
 	// A day not loaded yet (from the small month) loads first, then the page glides to it.
 	let goTo: string | null = null;
@@ -386,26 +443,13 @@
 		};
 	}
 
-	// Saved filters live on this browser.
-	const kindKeys = Object.keys(kinds) as (keyof typeof kinds)[];
-	const current = (name: string): CalFilter => ({ name, which, off: kindKeys.filter((k) => !kinds[k]), keptOnly, haveOnly });
-	const isOn = (p: CalFilter) => p.which === which && p.keptOnly === keptOnly && p.haveOnly === haveOnly && kindKeys.every((k) => kinds[k] === !p.off.includes(k));
-	function applyPreset(p: CalFilter) {
-		which = p.which;
-		for (const k of kindKeys) kinds[k] = !p.off.includes(k);
-		keptOnly = p.keptOnly;
-		haveOnly = p.haveOnly;
-	}
-	function savePreset() {
-		const name = prompt('Name these filters', 'My filters')?.trim();
-		if (!name) return;
-		presets = [...presets.filter((p) => p.name !== name), current(name)];
-		savePresets(presets);
-		toasts.push(`Saved the filters as ${name}.`, 'ok');
-	}
-	function dropPreset(p: CalFilter) {
-		presets = presets.filter((x) => x.name !== p.name);
-		savePresets(presets);
+	// What you asked for and follow; with the Wishlist off (or no answer) both stay empty.
+	async function loadMine() {
+		const [asked, followed] = await Promise.all([
+			api.get<{ asks: { title_id?: number }[] }>('/asks?mine=1&limit=500').then((r) => r.asks, () => []),
+			api.get<{ follows: { title_id: number }[] }>('/my/follows').then((r) => r.follows, () => [])
+		]);
+		mine = { asked: new Set(asked.flatMap((a) => (a.title_id ? [a.title_id] : []))), followed: new Set(followed.map((f) => f.title_id)) };
 	}
 
 	async function loadFeed() {
@@ -486,14 +530,15 @@
 	}
 
 	const dotWord = { have: 'In the Library', missing: 'Missing', upcoming: 'Coming up' } as const;
+	const mineWord = { asked: ' · You asked for it', followed: ' · You follow it', '': '' } as const;
 
 	onMount(() => {
 		const mq = matchMedia('(max-width: 1023px)');
 		const fit = () => (narrow = mq.matches);
 		fit();
 		mq.addEventListener('change', fit);
-		presets = readPresets();
 		started = true;
+		void loadMine();
 		saveView(view);
 		// The address always names the view; old layout parameters go.
 		const u = new URL(page.url.href);
@@ -503,7 +548,7 @@
 			replaceState(u, page.state);
 		}
 		void loadFeed();
-		const offs = [live.on('title', load), live.on('resync', load)];
+		const offs = [live.on('title', load), live.on('resync', load), live.on('title', loadMine)];
 		return () => {
 			offs.forEach((off) => off());
 			mq.removeEventListener('change', fit);
@@ -526,7 +571,7 @@
 		<div class="it">
 			<a href={to(entryHref(e))}>{entryName(e)}</a>
 			<span class="sub"
-				><span class="sdot {dot}" title={dotWord[dot]} aria-hidden="true"></span><span class="sr-only">{dotWord[dot]}. </span>{kindWord[e.kind]}{#if entryTime(e)}{' at '}{entryTime(e)}{/if}{#if e.network}{' on '}{e.network}{/if}{inLibraryWord(e.state, e.versions)}{#if e.kind === 'album' && albumHave(e)}{' · '}{albumHave(e)}{/if}</span
+				><span class="sdot {dot}" title={dotWord[dot]} aria-hidden="true"></span><span class="sr-only">{dotWord[dot]}. </span>{kindWord[e.kind]}{#if entryTime(e)}{' at '}{entryTime(e)}{/if}{#if e.network}{' on '}{e.network}{/if}{inLibraryWord(e.state, e.versions)}{#if e.kind === 'album' && albumHave(e)}{' · '}{albumHave(e)}{/if}{mineWord[mineOf(e, mine)]}</span
 			>
 		</div>
 	</li>
@@ -584,25 +629,57 @@
 	/>
 {/snippet}
 
-{#snippet chipList(stacked: boolean)}
-	<div class="kinds" class:stacked role="group" aria-label="Filters">
-		{#if which === 'all' || which === 'movies'}
-			{#each ['cinema', 'digital', 'physical'] as const as k (k)}
-				<OpsCheckChip label={kindWord[k]} bind:checked={kinds[k]} dot={k === 'physical' ? 'var(--wait)' : 'var(--info)'} />
-			{/each}
-		{/if}
-		<Chip label="Kept up to date" selected={keptOnly} onclick={() => (keptOnly = !keptOnly)} />
-		<Chip label="In the Library" selected={haveOnly} onclick={() => (haveOnly = !haveOnly)} />
-		{#each presets as p (p.name)}
-			<span data-testid="cal-preset"><Chip label={p.name} icon="star" selected={isOn(p)} onclick={() => applyPreset(p)} onremove={() => dropPreset(p)} /></span>
+{#snippet whoseSeg(primary: boolean)}
+	<SegmentedControl
+		label="Mine or everyone"
+		testid={primary ? 'cal-whose' : undefined}
+		value={whose}
+		onchange={(v) => (whose = v as Whose)}
+		options={[
+			{ value: 'mine', label: 'Mine' },
+			{ value: 'everyone', label: 'Everyone' }
+		]}
+	/>
+{/snippet}
+
+{#snippet showingList()}
+	<div class="showing" role="radiogroup" aria-label="Showing">
+		{#each ['matters', 'mine', 'all'] as const as k (k)}
+			<button type="button" role="radio" aria-checked={showing === k} class:on={showing === k} onclick={() => (showing = k)} data-testid="cal-showing-{k}">
+				<span class="tick" aria-hidden="true">{#if showing === k}<Icon name="check" size={16} />{/if}</span>
+				<span class="sw"><b>{showingWords[k].label}</b><span>{showingWords[k].text}</span></span>
+			</button>
 		{/each}
-		<Chip label="Save filters" icon="plus" onclick={savePreset} />
 	</div>
+{/snippet}
+
+<!-- The filters for the layout picked (?filters=1…4). `stacked` lays them out in a column (the slim bar's popover, the phone sheet). -->
+{#snippet filterControls(stacked: boolean)}
+	{#if look === 1}
+		<div class="kinds" class:stacked>{@render whoseSeg(false)}</div>
+		{#if stacked}<p class="f-note">Mine is what you asked for or follow.</p>{/if}
+	{:else if look === 2}
+		<div class="kinds" class:stacked role="group" aria-label="Whose dates">
+			<Chip label="Whole Library" count={counts.library} selected={scope === 'library'} onclick={() => (scope = 'library')} />
+			<Chip label="I asked for" icon="wish" count={counts.asked} selected={scope === 'asked'} onclick={() => (scope = scope === 'asked' ? 'library' : 'asked')} />
+			<Chip label="I follow" icon="bell" count={counts.followed} selected={scope === 'followed'} onclick={() => (scope = scope === 'followed' ? 'library' : 'followed')} />
+		</div>
+	{:else if look === 3}
+		<div class="kinds" class:stacked role="group" aria-label="Status">
+			{#each [['missing', 'var(--fail)'], ['have', 'var(--ok)'], ['upcoming', 'var(--info)']] as const as [k, dot] (k)}
+				<OpsCheckChip label="{dotWord[k]} · {counts[k]}" checked={statuses.includes(k)} {dot} onchange={(on) => flipStatus(k, on)} />
+			{/each}
+		</div>
+	{:else}
+		{@render showingList()}
+	{/if}
 {/snippet}
 
 <svelte:head><title>Calendar · HolyArrs</title></svelte:head>
 
-<PageHeader title="Calendar" subtitle={"Cinema, digital and disc dates for your movies, when your episodes air in your own time zone, and the days your artists' albums come out."}>
+<VariantBar options={filterLooks} bind:value={look} param="filters" storageKey="holyarrs.calendar-filters-look" label="Calendar filters" />
+
+<PageHeader title="Calendar" subtitle={"When the movies, shows and artists in your Library have something new: the day a movie comes out, each episode at its air time in your time zone, and new albums."}>
 	{#snippet actions()}
 		<SegmentedControl
 			label="Cards or list"
@@ -621,8 +698,19 @@
 
 <section class="tools" aria-label="Calendar controls">
 		<div class="month-nav">{@render rangeNav(true, false)}</div>
-		<div class="segs">{@render typeSeg(true)}</div>
-		{@render chipList(false)}
+		<div class="segs">
+			{@render typeSeg(true)}
+			{#if look === 1}{@render whoseSeg(true)}{/if}
+		</div>
+		{#if look === 2 || look === 3}{@render filterControls(false)}{/if}
+		{#if look === 4}
+			<span class="wide-only">
+				<Popover label="Showing" variant="button" text="Showing: {showingWords[showing].label}" width={300} align="end">
+					{#snippet children()}<div class="pop-chips">{@render showingList()}</div>{/snippet}
+				</Popover>
+			</span>
+			<span class="phone-only"><Button variant="secondary" size="sm" aria-haspopup="dialog" onclick={() => (filtersOpen = true)}>Showing: {showingWords[showing].label}</Button></span>
+		{/if}
 </section>
 <span class="head-end" bind:this={headEnd} aria-hidden="true"></span>
 
@@ -633,8 +721,8 @@
 		{@render rangeNav(false, true)}
 		<span class="wide-only slim-seg">{@render typeSeg(false)}</span>
 		<span class="wide-only">
-			<Popover label="Filters" variant="button" text={filtersWord} width={260} align="end">
-				{#snippet children()}<div class="pop-chips">{@render chipList(true)}</div>{/snippet}
+			<Popover label={look === 4 ? 'Showing' : 'Filters'} variant="button" text={filtersWord} width={look === 4 ? 300 : 260} align="end">
+				{#snippet children()}<div class="pop-chips">{@render filterControls(true)}</div>{/snippet}
 			</Popover>
 		</span>
 		{@render todayBtn('sm')}
@@ -659,7 +747,12 @@
 		<div class="cal-main">
 			{#key view}
 				<div class="view-in" data-view={view}>
-					{#if view === 'cards'}
+					{#if filteredOut}
+						<!-- The filters hide every date in these weeks: say so, and offer them all. -->
+						<div class="filtered-out" data-testid="cal-filtered-out">
+							<EmptyState compact icon="calendar" title="Nothing here with these filters" text="{base.length === 1 ? 'One date is' : `${base.length} dates are`} hidden from {rangeName}." action={{ label: 'Show everything', onclick: clearFilters }} />
+						</div>
+					{:else if view === 'cards'}
 						<ComingSoon entries={shown} today={todayKey} onlater={more} />
 					{:else if agenda.length === 0}
 						<EmptyState compact icon="calendar" title="No dates from {rangeName}" />
@@ -699,10 +792,10 @@
 	</div>
 </Sheet>
 
-<Sheet bind:open={filtersOpen} title="Filters" placement="bottom">
+<Sheet bind:open={filtersOpen} title={look === 4 ? 'Showing' : 'Filters'} placement="bottom">
 	<div class="sheet-filters">
 		{@render typeSeg(false)}
-		{@render chipList(false)}
+		{@render filterControls(true)}
 	</div>
 </Sheet>
 
@@ -785,6 +878,17 @@
 	.range-btn:hover { background: var(--surface-2); }
 	.range-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.pop-chips { padding: 4px; }
+	.f-note { margin-top: 8px; color: var(--text-muted); font: var(--t-footnote); }
+	.filtered-out { margin-bottom: 24px; }
+	/* The Showing menu (layout 4): three rows, one picked. */
+	.showing { display: flex; flex-direction: column; gap: 2px; }
+	.showing button { display: flex; align-items: flex-start; gap: 10px; width: 100%; padding: 10px; border: 0; border-radius: var(--r-sm); background: none; color: var(--text); text-align: left; cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
+	.showing button:hover, .showing button.on { background: var(--surface-2); }
+	.showing button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.showing .tick { flex: none; width: 16px; height: 20px; display: grid; place-items: center; color: var(--accent-text); }
+	.showing .sw { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+	.showing .sw b { font: var(--t-headline); font-size: 15px; }
+	.showing .sw span { color: var(--text-muted); font: var(--t-footnote); }
 	/* Today, once it shows: a soft ring pulses twice so the eye finds it. */
 	.today-btn { display: inline-flex; border-radius: 999px; animation: today-ping 1.2s var(--ease-out) 2; }
 	@keyframes today-ping { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-fill) 55%, transparent); } to { box-shadow: 0 0 0 10px transparent; } }
@@ -856,6 +960,7 @@
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.view-in, .today-btn { animation: none; }
+		.showing button { transition: none; }
 		.slim, .slim-wrap.on .slim, .slim-wrap { transition: none; }
 	}
 </style>

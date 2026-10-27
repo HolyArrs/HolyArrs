@@ -22,7 +22,8 @@ describe('card words', () => {
 		expect(entryTag(ep({ episode: 1 }))).toBe('Season premiere');
 		expect(entryTag(ep({ season: 1, episode: 1 }))).toBe('Show premiere');
 		expect(entryTag(movie('cinema', '2026-12-18'))).toBe('In cinemas');
-		expect(entryTag(movie('physical', '2026-12-18'))).toBe('Disc release');
+		expect(entryTag(movie('physical', '2026-12-18'))).toBe('New movie');
+		expect(entryFacts(movie('digital', '2026-12-18'))).toBe('Movie release');
 		expect(entryTag(album('2026-10-09', { album_type: 'EP' }))).toBe('New EP');
 		expect(entryTag(album('2026-10-09', { album_type: 'Single' }))).toBe('New single');
 	});
