@@ -379,7 +379,7 @@
 	.logo-wrap { position: relative; }
 	.svc-logo { position: absolute; top: 8px; left: 8px; width: 28px; height: 28px; border-radius: 7px; object-fit: cover; box-shadow: 0 2px 8px rgb(0 0 0 / 0.35); pointer-events: none; z-index: 2; }
 	.ranked { position: relative; container-type: inline-size; }
-	.rank { position: absolute; left: 0; top: 0; width: 37%; height: 102cqw; display: flex; align-items: flex-end; justify-content: flex-end; font-size: 50cqw; font-weight: 800; line-height: 0.76; letter-spacing: -0.06em; color: var(--bg, #000); -webkit-text-stroke: 3px var(--text-2, #9a9a9a); paint-order: stroke; user-select: none; z-index: 0; }
+	.rank { position: absolute; left: 0; top: 0; width: 37%; height: 102cqw; display: flex; align-items: flex-end; justify-content: flex-end; font-size: 50cqw; font-weight: 800; line-height: 0.76; letter-spacing: -0.06em; color: var(--bg, #000); -webkit-text-stroke: 3px var(--text-muted); paint-order: stroke; user-select: none; z-index: 0; }
 	.rank.two { font-size: 36cqw; letter-spacing: -0.12em; }
 	.pc { position: relative; z-index: 1; margin-left: 32%; width: 68%; min-width: 0; }
 	.sentinel { height: 1px; }

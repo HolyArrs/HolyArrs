@@ -503,7 +503,7 @@
 	@media (max-width: 767px) { .music { gap: 26px; } }
 	.thin { display: flex; flex-direction: column; gap: 8px; padding: 24px 0; }
 	.thin-title { font: var(--t-title3); margin: 0; }
-	.thin-text { margin: 0; color: var(--text-2, inherit); }
+	.thin-text { margin: 0; color: var(--text-muted); }
 	.thin ul { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
 	.thin a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px; background: var(--surface-2, rgba(127, 127, 127, .15)); color: inherit; text-decoration: none; }
 	.thin a:hover { text-decoration: underline; }

@@ -50,7 +50,7 @@
 		box-shadow: 0 0 0 0.5px var(--rail-line), 0 18px 40px rgb(0 0 0 / 0.18);
 		padding: 16px 0 14px;
 	}
-	.rail-title { margin: 0 0 10px; padding: 0 20px; font: var(--weight-semibold, 600) 13px/1 var(--font-ui); letter-spacing: .14em; text-transform: uppercase; color: var(--text-2, #9a9a9a); }
+	.rail-title { margin: 0 0 10px; padding: 0 20px; font: var(--weight-semibold, 600) 13px/1 var(--font-ui); letter-spacing: .14em; text-transform: uppercase; color: var(--text-muted); }
 	.track { display: flex; overflow-x: auto; scroll-snap-type: x proximity; overscroll-behavior-x: contain; scrollbar-width: none; padding: 0 12px; }
 	.track::-webkit-scrollbar { display: none; }
 	.day { flex: none; display: flex; gap: 14px; padding: 4px 16px 4px 8px; scroll-snap-align: start; border-right: 0.5px solid var(--rail-line); }
@@ -59,11 +59,11 @@
 	.big { font: 400 30px/.92 Anton, var(--font-display, var(--font-ui)), sans-serif; letter-spacing: .01em; color: var(--text, #fff); text-transform: uppercase; }
 	.now .big { color: #ff4a52; }
 	.past .big { color: color-mix(in srgb, var(--text, #fff) 62%, transparent); }
-	.small { font: 600 11px/1.2 var(--font-ui); color: var(--text-2, #9a9a9a); letter-spacing: .02em; }
+	.small { font: 600 11px/1.2 var(--font-ui); color: var(--text-muted); letter-spacing: .02em; }
 	.titles { list-style: none; margin: 0; padding: 0; display: flex; gap: var(--shelf-gap, 12px); }
 	/* The same width as a Hot and new card. */
 	.t { width: var(--rail-item, 240px); flex: none; display: flex; flex-direction: column; gap: 6px; }
-	.what { font: 500 12px/1.25 var(--font-ui); color: var(--text-2, #9a9a9a); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.what { font: 500 12px/1.25 var(--font-ui); color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	@media (max-width: 767px) {
 		.rail { border-radius: 16px; padding: 12px 0 10px; }
 		.rail-title { padding: 0 16px; }
