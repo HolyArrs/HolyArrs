@@ -222,7 +222,7 @@
 			{#if inset}<img class="inset" src={inset} alt="" loading="lazy" decoding="async" />{/if}
 			{#if marked}<CardBadges fresh={strip} owned={owned ?? null} />{/if}
 			{#if pct !== undefined}
-				<span class="line" role="progressbar" aria-label="{title} progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)} class:done={pct >= 100}><i style="width: {pct}%"></i></span>
+				<span class="line" role="progressbar" aria-label="{title} progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)} class:done={pct >= 100}><i style="transform: translateX({pct - 100}%)"></i></span>
 			{/if}
 		</span>
 		{#if !cover}
@@ -265,8 +265,8 @@
 	.over.bottom { top: auto; bottom: 8px; }
 	.over.pushed { top: 42px; }
 	.over.lifted { bottom: 30px; }
-	.line { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgb(0 0 0 / 35%); }
-	.line i { display: block; height: 100%; background: var(--accent); transition: width var(--dur-slow) var(--ease-out); }
+	.line { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgb(0 0 0 / 35%); overflow: hidden; }
+	.line i { display: block; width: 100%; height: 100%; background: var(--accent); transition: transform var(--dur-slow) var(--ease-out); }
 	.line.done i { background: var(--ok); }
 	.t { font: var(--t-subhead); font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.s .dot { opacity: 0.7; margin: 0 0.3em; }

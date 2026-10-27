@@ -57,7 +57,7 @@
 			</span>
 		</div>
 		{#if moving(r) && r.phase !== 'done'}
-			<span class="edge" aria-hidden="true"><i style="width: {pct}%"></i></span>
+			<span class="edge" aria-hidden="true"><i style="transform: translateX({pct - 100}%)"></i></span>
 		{/if}
 	</article>
 {/snippet}
@@ -146,8 +146,8 @@
 	.glass:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.glass.strong { background: var(--on-art-fill-strong); color: var(--on-art-ink); }
 
-	.edge { position: absolute !important; z-index: 2 !important; left: 0; right: 0; bottom: 0; height: 4px; background: rgb(255 255 255 / 18%); }
-	.edge i { display: block; height: 100%; background: var(--info-on-art); border-radius: 0 2px 2px 0; transition: width var(--dur-slow) var(--ease-out); }
+	.edge { position: absolute !important; z-index: 2 !important; left: 0; right: 0; bottom: 0; height: 4px; background: rgb(255 255 255 / 18%); overflow: hidden; }
+	.edge i { display: block; width: 100%; height: 100%; background: var(--info-on-art); border-radius: 0 2px 2px 0; transition: transform var(--dur-slow) var(--ease-out); }
 	.fail .edge i { background: var(--fail-on-art); }
 	.idle .edge i { background: var(--on-art-muted); }
 	.wait .edge i { background: var(--wait-on-art); }

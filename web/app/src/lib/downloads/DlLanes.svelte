@@ -57,7 +57,7 @@
 			<p class="nm">{rowName(r)}</p>
 			{#if manyWords(r.kind) && r.covers}<p class="sub">{r.covers}</p>{/if}
 			{#if r.phase === 'downloading' || r.phase === 'importing' || r.phase === 'waiting_to_import' || r.phase === 'paused' || r.phase === 'stalled'}
-				<span class="lbar" aria-hidden="true"><i style="width: {pct}%"></i></span>
+				<span class="lbar" aria-hidden="true"><i style="transform: translateX({pct - 100}%)"></i></span>
 			{/if}
 			<p class="line" data-testid="row-state">
 				{#if r.phase === 'downloading'}<b data-testid="row-percent">{pct}%</b>{#if r.eta}{' · '}{duration(r.eta)} left{/if}{#if r.speed}{' · '}{bytes(r.speed)}/s{/if}
@@ -128,7 +128,7 @@
 	.nm { color: var(--text); font: var(--t-callout); font-weight: 600; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 	.sub { color: var(--text-muted); font: var(--t-footnote); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.lbar { display: block; height: 4px; margin: 4px 0 1px; border-radius: 2px; background: var(--surface-3); overflow: hidden; }
-	.lbar i { display: block; height: 100%; border-radius: 2px; background: var(--info); transition: width var(--dur-slow) var(--ease-out); }
+	.lbar i { display: block; width: 100%; height: 100%; border-radius: 2px; background: var(--info); transition: transform var(--dur-slow) var(--ease-out); }
 	.fail .lbar i { background: var(--fail); }
 	.idle .lbar i { background: var(--text-faint); }
 	.line { color: var(--text-muted); font: var(--t-footnote); font-weight: 400; font-variant-numeric: tabular-nums; }

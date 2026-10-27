@@ -73,7 +73,7 @@
 				{#if manyWords(hero.kind) && hero.covers}<p class="hsub">{hero.covers}</p>{/if}
 				<div class="hprog">
 					<p class="big" data-testid="row-percent">{pct}<small>%</small></p>
-					<div class="hbar" role="progressbar" aria-label="Progress of {who(hero)}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}><i style="width: {pct}%"></i></div>
+					<div class="hbar" role="progressbar" aria-label="Progress of {who(hero)}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}><i style="transform: translateX({pct - 100}%)"></i></div>
 				</div>
 				<dl class="hfacts">
 					{#if hero.active && hero.eta}<div><dt>Time left</dt><dd data-testid="row-eta">{duration(hero.eta)}</dd></div>{/if}
@@ -170,7 +170,7 @@
 	.big { font: 700 52px / 1 var(--font-display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
 	.big small { font-size: 0.45em; margin-left: 2px; color: var(--on-art-muted); letter-spacing: 0; }
 	.hbar { flex: 1; height: 8px; border-radius: 4px; background: rgb(255 255 255 / 22%); overflow: hidden; }
-	.hbar i { display: block; height: 100%; border-radius: 4px; background: var(--on-art); transition: width var(--dur-slow) var(--ease-out); }
+	.hbar i { display: block; width: 100%; height: 100%; border-radius: 4px; background: var(--on-art); transition: transform var(--dur-slow) var(--ease-out); }
 	.hfacts { display: flex; flex-wrap: wrap; gap: 6px 28px; margin: 0; }
 	.hfacts div { display: flex; flex-direction: column; }
 	.hfacts dt { color: var(--on-art-muted); font: var(--t-caption); letter-spacing: 0.04em; text-transform: uppercase; }

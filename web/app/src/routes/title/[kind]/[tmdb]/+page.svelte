@@ -952,7 +952,7 @@
 							<p class="lib-st-title"><span class="own-dot {libHead.kind}" aria-hidden="true"></span>{libHead.title}</p>
 							{#if libHead.sub}<p class="lib-st-sub">{libHead.sub}</p>{/if}
 								<p class="lib-facts">{#each libFacts as f (f.k)}<span class="lib-fact" title={f.title ?? f.v}><Icon name={f.icon} size={13} />{f.v}</span>{/each}</p>
-							{#if libHead.pct != null}<div class="lib-bar" role="progressbar" aria-valuenow={libHead.pct} aria-valuemin="0" aria-valuemax="100"><span style:width="{libHead.pct}%"></span></div>{/if}
+							{#if libHead.pct != null}<div class="lib-bar" role="progressbar" aria-valuenow={libHead.pct} aria-valuemin="0" aria-valuemax="100"><span style:transform="translateX({libHead.pct - 100}%)"></span></div>{/if}
 						</div>
 						{#if libHead.action}<button type="button" class="lib-btn primary" disabled={busyAction === 'search'} onclick={() => ownRun('search')}><Icon name={libHead.action.icon} size={16} />{libHead.action.label}</button>{/if}
 						{#if manage}<button type="button" class="lib-btn" onclick={() => openPick(null)}><Icon name="grid" size={16} />Pick a release</button>{/if}
@@ -1366,7 +1366,7 @@
 	.lib-fact { display: inline-flex; align-items: center; gap: 6px; max-width: 260px; height: 26px; padding: 0 10px; border-radius: 8px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text-muted); font: 600 12.5px/1 var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.lib-st-sub { margin: 6px 0 0 20px; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
 	.lib-bar { height: 6px; margin: 12px 0 0 20px; border-radius: 99px; background: color-mix(in srgb, var(--text) 10%, transparent); overflow: hidden; }
-	.lib-bar span { display: block; height: 100%; border-radius: 99px; background: #3e8ef7; transition: width var(--dur-slow) var(--ease-out); }
+	.lib-bar span { display: block; width: 100%; height: 100%; border-radius: 99px; background: #3e8ef7; transition: transform var(--dur-slow) var(--ease-out); }
 	.lib-btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 14px/1 var(--font-ui); white-space: nowrap; text-decoration: none; cursor: pointer; }
 	.lib-btn.primary { background: var(--text); color: var(--bg); }
 	.lib-btn:hover { filter: brightness(1.08); }
