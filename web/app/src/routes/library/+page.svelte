@@ -884,7 +884,7 @@
 						</div>
 					{/if}
 					<div class="body" style:height={virtual ? `${offsets[entries.length]}px` : undefined}>
-						<div style:transform={virtual ? `translateY(${offsets[range.start]}px)` : undefined} role="list" aria-label="{kindTitle} titles">
+						<div style:padding-top={virtual ? `${offsets[range.start]}px` : undefined} role="list" aria-label="{kindTitle} titles">
 							{#each slice as e (e.key)}
 								{#if e.type === 'head'}
 									<div class="series-head" use:measure={e.key} data-key={e.key}>
@@ -912,6 +912,7 @@
 										data-letter={letterOf(sortName(t.name))}
 										class:selected={picked.has(t.id)}
 										class:last-opened={lastOpenedId === t.id}
+										class:first={e.key === entries[0]?.key}
 										use:measure={e.key}
 										onkeydown={(ev) => rowKey(ev, t)}
 										onfocus={() => (active = ri)}
@@ -1102,7 +1103,10 @@
 	.sort:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 6px; }
 	.dir { color: var(--accent); }
 	.entry { position: relative; outline: none; cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
-	.entry + .entry, .series-head + .entry { border-top: 1px solid var(--line); }
+	/* Every row carries its top line, so a row's height never changes when the
+	   virtual window drops the row above it (that would nudge the list 1px). */
+	.entry { border-top: 1px solid var(--line); }
+	.entry.first { border-top-color: transparent; }
 	.entry:hover { background: color-mix(in srgb, var(--surface-2) 70%, transparent); }
 	.entry:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
 	.entry.selected { background: color-mix(in srgb, var(--accent) 12%, var(--surface-1)); }
