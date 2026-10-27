@@ -10,6 +10,7 @@
 		icon,
 		count,
 		note,
+		describedby,
 		onclick,
 		onremove
 	}: {
@@ -19,13 +20,15 @@
 		count?: number;
 		/** A short line after the count, e.g. "4 seeding". */
 		note?: string;
+		/** The id of an element that describes the chip (a hint). */
+		describedby?: string;
 		onclick?: () => void;
 		onremove?: () => void;
 	} = $props();
 </script>
 
 <span class="ui-chip" class:on={selected}>
-	<button class="main" type="button" aria-pressed={selected === undefined ? undefined : selected} {onclick} use:press={'button'}>
+	<button class="main" type="button" aria-pressed={selected === undefined ? undefined : selected} aria-describedby={describedby} {onclick} use:press={'button'}>
 		{#if icon}<Icon name={icon} size={15} />{/if}{label}{#if count !== undefined}<span class="n">{count}</span>{/if}{#if note}<span class="n">· {note}</span>{/if}
 	</button>
 	{#if onremove}<button class="rm" type="button" aria-label="Remove {label}" onclick={onremove}><Icon name="x" size={14} /></button>{/if}

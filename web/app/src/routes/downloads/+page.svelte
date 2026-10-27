@@ -25,7 +25,7 @@
 	import { SETS, SET_IDS, setOf, statusWord } from '#lib/downloads/status-sets.ts';
 	import { byDownload, failReason, placed, statusDetail } from '#lib/downloads/imports.ts';
 
-	// The status-chip sets Luis is comparing on the table (?set=1…5, kept for the session).
+	// The status-chip sets Luis is comparing on the table (?set=1…7, kept for the session; 6 when none is picked).
 	const SET_OPTIONS = SET_IDS.map((id) => ({ value: id, label: SETS[id].label }));
 	let setPick = $state<number>(setOf(page.url.searchParams.get('set')));
 	const set = $derived(setOf(setPick));

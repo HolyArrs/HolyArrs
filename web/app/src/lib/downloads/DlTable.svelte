@@ -19,7 +19,7 @@
 	import { DUR, easeIn, easeOut } from '../ui/transitions.ts';
 	import { rowName, manyWords, type DownloadRow } from '../downloaders.ts';
 	import { sortRows, tone, type SortKey } from './layouts.ts';
-	import { ALL, SETS, chipsFor, counts, pick, seedTag, showOf, statusWord, subCounts, type SetId } from './status-sets.ts';
+	import { ALL, ALL_HINT, SETS, chipsFor, counts, pick, seedTag, showOf, statusWord, subCounts, type SetId } from './status-sets.ts';
 	import { byDownload, statusDetail } from './imports.ts';
 	import { poster, who, type LayoutProps } from './shared.ts';
 
@@ -101,26 +101,32 @@
 		return fade(node, { duration: reducedMotion() ? 0 : DUR.fast, easing: easeOut });
 	}
 
-	// What an empty chip says.
-	const EMPTY: Record<string, { title: string; text: string; icon: IconName }> = {
-		all: { title: 'Nothing is downloading.', text: 'New picks from HolyArrs appear here as rows, with speed and time left.', icon: 'download' },
-		waiting: { title: 'Nothing is waiting.', text: 'Downloads the Downloader has not started yet show here.', icon: 'download' },
-		queued: { title: 'Nothing is queued.', text: 'Downloads the Downloader has not started yet show here.', icon: 'download' },
-		downloading: { title: 'Nothing is downloading.', text: 'Downloads taking in data show here, with speed and time left.', icon: 'download' },
-		importing: { title: 'Nothing is importing.', text: 'Finished downloads show here while they are checked, unpacked and moved into the Library.', icon: 'folder' },
-		done: { title: 'Nothing finished yet.', text: 'Downloads that reached the Library show here.', icon: 'check' },
-		finished: { title: 'Nothing finished yet.', text: 'Downloads that reached the Library show here.', icon: 'check' },
-		seeding: { title: 'Nothing is seeding.', text: 'Finished torrents your Downloader still shares show here.', icon: 'check' },
-		active: { title: 'Nothing is active.', text: 'Downloads your Downloader is working on right now show here.', icon: 'download' },
-		paused: { title: 'Nothing is paused.', text: 'Downloads paused in the Downloader show here.', icon: 'check' },
-		stalled: { title: 'Nothing is stalled.', text: 'Downloads that stopped taking in data show here.', icon: 'check' },
-		failed: { title: 'Nothing failed.', text: 'Downloads that failed or wait for a decision show here.', icon: 'check' },
-		problems: { title: 'No problems.', text: 'Stalled, paused and failed downloads show here.', icon: 'check' },
-		needs: { title: 'Nothing needs you.', text: 'Paused, stalled and failed downloads show here.', icon: 'check' },
-		stopped: { title: 'Nothing is stopped.', text: 'Waiting, paused, stalled and failed downloads show here.', icon: 'check' },
-		progress: { title: 'Nothing is in progress.', text: 'Downloads that are waiting, downloading or importing show here.', icon: 'download' }
+	// What an empty chip says: a title, and the chip's own hint as its line.
+	const EMPTY: Record<string, { title: string; icon: IconName }> = {
+		all: { title: 'Nothing is downloading.', icon: 'download' },
+		waiting: { title: 'Nothing is waiting.', icon: 'download' },
+		queued: { title: 'Nothing is queued.', icon: 'download' },
+		downloading: { title: 'Nothing is downloading.', icon: 'download' },
+		importing: { title: 'Nothing is importing.', icon: 'folder' },
+		working: { title: 'Nothing is downloading or importing.', icon: 'download' },
+		done: { title: 'Nothing finished yet.', icon: 'check' },
+		finished: { title: 'Nothing finished yet.', icon: 'check' },
+		seeding: { title: 'Nothing is seeding.', icon: 'check' },
+		active: { title: 'Nothing is active.', icon: 'download' },
+		paused: { title: 'Nothing is paused.', icon: 'check' },
+		stalled: { title: 'Nothing is stalled.', icon: 'check' },
+		failed: { title: 'Nothing failed.', icon: 'check' },
+		problems: { title: 'No problems.', icon: 'check' },
+		needs: { title: 'Nothing needs you.', icon: 'check' },
+		stopped: { title: 'Nothing is stopped.', icon: 'check' },
+		progress: { title: 'Nothing is in progress.', icon: 'download' }
 	};
-	const empty = $derived(EMPTY[subOn || on] ?? EMPTY.all);
+	const empty = $derived.by(() => {
+		const k = subOn || on;
+		const e = EMPTY[k] ?? EMPTY.all;
+		const hint = (subOn ? subs.find((x) => x.key === subOn)?.hint : tally.find((x) => x.key === on)?.hint) ?? ALL_HINT;
+		return { ...e, text: hint };
+	});
 
 	const COLS: { key: SortKey; label: string; num?: boolean; cls: string }[] = [
 		{ key: 'title', label: 'Title', cls: 'c-title' },
@@ -162,8 +168,9 @@
 	<div class="tools">
 		<div class="chips" role="group" aria-label="Show" data-testid="table-filter" data-set={set}>
 			{#each tally as c (c.key)}
-				<span class="cw" class:zero={c.count === 0} data-testid="status-chip" data-key={c.key} data-count={c.count}>
-					<Chip label={c.label} count={c.count} note={c.seeding ? `${c.seeding} seeding` : undefined} selected={on === c.key} onclick={() => choose(c.key)} />
+				<span class="cw" class:zero={c.count === 0} data-testid="status-chip" data-key={c.key} data-count={c.count} data-tip={c.hint}>
+					<Chip label={c.label} count={c.count} note={c.seeding ? `${c.seeding} seeding` : undefined} selected={on === c.key} describedby="dl-hint-{c.key}" onclick={() => choose(c.key)} />
+					<span class="sr-only" id="dl-hint-{c.key}">{c.hint}</span>
 				</span>
 			{/each}
 		</div>
@@ -177,12 +184,14 @@
 		<div class="subrow" in:subIn out:subOut>
 			{#key on}
 				<div class="subs" role="group" aria-label="{onChip?.label ?? ''}: show" data-testid="table-subfilter" in:swapIn>
-					<span class="cw sm" data-testid="status-subchip" data-key="all" data-count={tally.find((t) => t.key === on)?.count ?? 0}>
-						<Chip label="All" selected={subOn === ''} onclick={() => chooseSub('')} />
+					<span class="cw sm" data-testid="status-subchip" data-key="all" data-count={tally.find((t) => t.key === on)?.count ?? 0} data-tip={onChip?.hint}>
+						<Chip label="All" selected={subOn === ''} describedby="dl-subhint-all" onclick={() => chooseSub('')} />
+						<span class="sr-only" id="dl-subhint-all">{onChip?.hint}</span>
 					</span>
 					{#each subs as s (s.key)}
-						<span class="cw sm" class:zero={s.count === 0} data-testid="status-subchip" data-key={s.key} data-count={s.count}>
-							<Chip label={s.label} count={s.count} selected={subOn === s.key} onclick={() => chooseSub(s.key)} />
+						<span class="cw sm" class:zero={s.count === 0} data-testid="status-subchip" data-key={s.key} data-count={s.count} data-tip={s.hint}>
+							<Chip label={s.label} count={s.count} selected={subOn === s.key} describedby="dl-subhint-{s.key}" onclick={() => chooseSub(s.key)} />
+							<span class="sr-only" id="dl-subhint-{s.key}">{s.hint}</span>
 						</span>
 					{/each}
 				</div>
@@ -279,7 +288,20 @@
 	.subrow { margin-top: -6px; }
 	.subs { gap: 6px; }
 	/* A chip with nothing under it stays in place, quieter. */
-	.cw { display: inline-flex; transition: opacity var(--dur-fast) var(--ease-out); }
+	.cw { position: relative; display: inline-flex; transition: opacity var(--dur-fast) var(--ease-out); }
+	/* The chip's hint: a tooltip on hover or keyboard focus, after a short wait
+	   (the same look as the icon buttons' tips). Not drawn at rest, so it never
+	   widens the page; touch screens read it as the empty-state line instead. */
+	.cw[data-tip]::after {
+		content: attr(data-tip); position: absolute; z-index: 60; left: 0; top: calc(100% + 6px);
+		display: none; width: max-content; max-width: min(280px, calc(100vw - 32px)); padding: 6px 10px; border-radius: 8px;
+		background: var(--text); color: var(--bg); font: var(--t-footnote); white-space: normal; pointer-events: none;
+	}
+	.cw[data-tip]:hover::after, .cw[data-tip]:has(:focus-visible)::after { display: block; animation: tip-in var(--dur-fast) var(--ease-out) 500ms backwards; }
+	/* Chips on the right half open their tip towards the left. */
+	.chips .cw:nth-last-child(-n + 2)[data-tip]::after { left: auto; right: 0; }
+	@keyframes tip-in { from { opacity: 0; translate: 0 -2px; } }
+	@media (hover: none) { .cw[data-tip]:hover::after { display: none; } }
 	.cw.zero { opacity: 0.5; }
 	.cw.zero:hover, .cw.zero:focus-within { opacity: 0.8; }
 	.cw.sm :global(.main) { min-height: 28px; padding: 0 11px; font-size: 13px; }
@@ -380,5 +402,5 @@
 		.phone-sort { display: inline-flex; }
 		.chips { width: 100%; }
 	}
-	@media (prefers-reduced-motion: reduce) { .arrow, tbody tr, .cw { transition: none; } }
+	@media (prefers-reduced-motion: reduce) { .arrow, tbody tr, .cw { transition: none; } .cw[data-tip]::after { animation-name: none; } }
 </style>

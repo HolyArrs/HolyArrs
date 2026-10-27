@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ALL, SETS, SET_IDS, chipsFor, counts, pick, seedTag, setOf, showOf, stageOf, statusWord, subCounts, type SetId } from './status-sets.ts';
+import { ALL, ALL_HINT, SETS, SET_IDS, chipsFor, counts, pick, seedTag, setOf, showOf, stageOf, statusWord, subCounts, type SetId } from './status-sets.ts';
 
 type R = { id: number; phase: string; state: string; progress: number; label: string };
 const r = (id: number, phase: string, state = phase, progress = 0): R => ({ id, phase, state, progress, label: phase });
@@ -46,8 +46,8 @@ describe('stageOf', () => {
 });
 
 describe('the five sets', () => {
-	it('put All first, and the other chips split the rows with none left over or counted twice (sets 1, 2, 3, 5)', () => {
-		for (const id of [1, 2, 3, 5] as SetId[]) {
+	it('put All first, and the other chips split the rows with none left over or counted twice (sets 1, 2, 3, 5, 6, 7)', () => {
+		for (const id of [1, 2, 3, 5, 6, 7] as SetId[]) {
 			const chips = chipsFor(id, rows, true);
 			const c = counts(rows, chips);
 			expect(c[0]).toMatchObject({ key: ALL, label: 'All', count: rows.length });
@@ -97,7 +97,7 @@ describe('the five sets', () => {
 		expect(noSeed.find((c) => c.key === 'done')?.stages).toEqual(['done', 'seeding']);
 	});
 	it('every set has a VariantBar label', () => {
-		expect(SET_IDS.map((id) => SETS[id].label)).toEqual(['1 Path', '2 Moving', '3 Active', '4 Two-level', '5 Downloader words']);
+		expect(SET_IDS.map((id) => SETS[id].label)).toEqual(['1 Path', '2 Moving', '3 Active', '4 Two-level', '5 Downloader words', '6 Six tabs', '7 Five tabs']);
 	});
 });
 
@@ -125,13 +125,42 @@ describe('statusWord and seedTag', () => {
 describe('setOf and showOf', () => {
 	it('read the address safely', () => {
 		expect(setOf('3')).toBe(3);
-		expect(setOf('now')).toBe(1);
-		expect(setOf(null)).toBe(1);
-		expect(setOf(9)).toBe(1);
+		expect(setOf('now')).toBe(6);
+		expect(setOf(null)).toBe(6);
+		expect(setOf(9)).toBe(6);
+		expect(setOf('7')).toBe(7);
 		expect(showOf('done', SETS[1].chips)).toEqual({ show: 'done', sub: '' });
 		expect(showOf('nope', SETS[1].chips)).toEqual({ show: ALL, sub: '' });
 		expect(showOf('progress.importing', SETS[4].chips)).toEqual({ show: 'progress', sub: 'importing' });
 		expect(showOf('progress.nope', SETS[4].chips)).toEqual({ show: 'progress', sub: '' });
 		expect(showOf(null, SETS[2].chips)).toEqual({ show: ALL, sub: '' });
+	});
+});
+
+describe('sets 6 and 7', () => {
+	it('set 6: Waiting is queued and paused, Downloading keeps stalled ones, Problems is what failed', () => {
+		const chips = chipsFor(6, rows, true);
+		expect(counts(rows, chips).map((c) => `${c.label} ${c.count}`)).toEqual(['All 14', 'Waiting 2', 'Downloading 2', 'Importing 3', 'Done 3', 'Problems 4']);
+		expect(ids(pick(rows, chips, 'waiting'))).toEqual([1, 5]);
+		expect(ids(pick(rows, chips, 'downloading'))).toEqual([2, 4]);
+		expect(ids(pick(rows, chips, 'problems'))).toEqual([10, 12, 13, 14]);
+		expect(counts(rows, chips).find((c) => c.key === 'done')).toMatchObject({ count: 3, seeding: 1 });
+		expect(statusWord(rows[3], 6)).toBe('Stalled');
+		expect(seedTag(rows[8], 6)).toBe(true);
+	});
+	it('set 7: Working is downloading and importing; the status says which', () => {
+		const chips = chipsFor(7, rows, true);
+		expect(counts(rows, chips).map((c) => `${c.label} ${c.count}`)).toEqual(['All 14', 'Waiting 2', 'Working 5', 'Done 3', 'Problems 4']);
+		expect(ids(pick(rows, chips, 'working'))).toEqual([2, 3, 4, 6, 7]);
+		expect(['Downloading', 'Importing', 'Stalled']).toContain(statusWord(rows[1], 7));
+		expect(statusWord(rows[2], 7)).toBe('Importing');
+	});
+	it('every chip and sub-chip in every set has a short hint', () => {
+		expect(ALL_HINT.length).toBeGreaterThan(0);
+		for (const id of SET_IDS) {
+			for (const c of counts(rows, chipsFor(id, rows, true)).concat(SETS[id].chips.flatMap((c) => subCounts(rows, c)))) {
+				expect(c.hint, `${id} ${c.key}`).toMatch(/^[A-Z].{8,90}\.$/);
+			}
+		}
 	});
 });

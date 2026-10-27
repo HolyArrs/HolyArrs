@@ -1,5 +1,5 @@
-// The five sets of status chips Luis is comparing on the Downloads table
-// (?set=1…5). Every row lands on one fine-grained stage first; each set then
+// The sets of status chips Luis is comparing on the Downloads table
+// (?set=1…7; 6 when none is picked). Every row lands on one fine-grained stage first; each set then
 // groups stages into its chips. Pure, so it can be tested.
 //
 // The words mean the same thing for a torrent and a Usenet download:
@@ -41,18 +41,22 @@ export function stageOf(r: RowBits): Stage {
 	return 'done';
 }
 
-export type SetId = 1 | 2 | 3 | 4 | 5;
+export type SetId = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export interface Sub {
 	key: string;
 	label: string;
 	stages: Stage[];
+	/** One plain sentence: the chip's tooltip and its empty-state line. */
+	hint: string;
 }
 
 export interface Chip {
 	key: string;
 	label: string;
 	stages: Stage[];
+	/** One plain sentence: the chip's tooltip and its empty-state line. */
+	hint: string;
 	/** Show the seeding sub-count on this chip ("Done 12 · 4 seeding"). */
 	seedCount?: boolean;
 	/** Set 4: the small second row under this chip. */
@@ -81,11 +85,11 @@ export const SETS: Record<SetId, StatusSet> = {
 		seedWord: 'Done',
 		queuedWord: 'Waiting',
 		chips: [
-			{ key: 'waiting', label: 'Waiting', stages: ['queued'] },
-			{ key: 'downloading', label: 'Downloading', stages: ['downloading'] },
-			{ key: 'importing', label: 'Importing', stages: ['importing'] },
-			{ key: 'done', label: 'Done', stages: ['done', 'seeding'], seedCount: true },
-			{ key: 'problems', label: 'Problems', stages: problems }
+			{ key: 'waiting', label: 'Waiting', stages: ['queued'], hint: 'Not started yet; the Downloader starts it when there is room.' },
+			{ key: 'downloading', label: 'Downloading', stages: ['downloading'], hint: 'Taking in data right now.' },
+			{ key: 'importing', label: 'Importing', stages: ['importing'], hint: 'Finished downloading; being checked and moved into your Library.' },
+			{ key: 'done', label: 'Done', stages: ['done', 'seeding'], seedCount: true, hint: 'Finished and in your Library.' },
+			{ key: 'problems', label: 'Problems', stages: problems, hint: 'Stalled, paused or failed; it may need you.' }
 		]
 	},
 	2: {
@@ -94,10 +98,10 @@ export const SETS: Record<SetId, StatusSet> = {
 		seedWord: 'Done',
 		queuedWord: 'Waiting',
 		chips: [
-			{ key: 'downloading', label: 'Downloading', stages: ['downloading'] },
-			{ key: 'importing', label: 'Importing', stages: ['importing'] },
-			{ key: 'done', label: 'Done', stages: ['done', 'seeding'], seedCount: true },
-			{ key: 'stopped', label: 'Stopped', stages: ['queued', 'paused', 'stalled', 'failed'] }
+			{ key: 'downloading', label: 'Downloading', stages: ['downloading'], hint: 'Taking in data right now.' },
+			{ key: 'importing', label: 'Importing', stages: ['importing'], hint: 'Finished downloading; being checked and moved into your Library.' },
+			{ key: 'done', label: 'Done', stages: ['done', 'seeding'], seedCount: true, hint: 'Finished and in your Library.' },
+			{ key: 'stopped', label: 'Stopped', stages: ['queued', 'paused', 'stalled', 'failed'], hint: 'Not moving: waiting, paused, stalled or failed.' }
 		]
 	},
 	3: {
@@ -106,11 +110,11 @@ export const SETS: Record<SetId, StatusSet> = {
 		seedWord: 'Seeding',
 		queuedWord: 'Waiting',
 		chips: [
-			{ key: 'active', label: 'Active', stages: ['downloading', 'importing', 'seeding'] },
-			{ key: 'waiting', label: 'Waiting', stages: ['queued'] },
-			{ key: 'paused', label: 'Paused', stages: ['paused'] },
-			{ key: 'done', label: 'Done', stages: ['done'] },
-			{ key: 'problems', label: 'Problems', stages: ['stalled', 'failed'] }
+			{ key: 'active', label: 'Active', stages: ['downloading', 'importing', 'seeding'], hint: 'Your Downloader is working on it now: downloading, importing or seeding.' },
+			{ key: 'waiting', label: 'Waiting', stages: ['queued'], hint: 'Not started yet; the Downloader starts it when there is room.' },
+			{ key: 'paused', label: 'Paused', stages: ['paused'], hint: 'Paused in the Downloader.' },
+			{ key: 'done', label: 'Done', stages: ['done'], hint: 'Finished, in your Library and no longer shared.' },
+			{ key: 'problems', label: 'Problems', stages: ['stalled', 'failed'], hint: 'Stalled or failed; it may need you.' }
 		]
 	},
 	4: {
@@ -123,30 +127,33 @@ export const SETS: Record<SetId, StatusSet> = {
 				key: 'progress',
 				label: 'In progress',
 				stages: ['queued', 'downloading', 'importing'],
+				hint: 'Waiting, downloading or being moved into your Library.',
 				subs: [
-					{ key: 'waiting', label: 'Waiting', stages: ['queued'] },
-					{ key: 'downloading', label: 'Downloading', stages: ['downloading'] },
-					{ key: 'importing', label: 'Importing', stages: ['importing'] }
+					{ key: 'waiting', label: 'Waiting', stages: ['queued'], hint: 'Not started yet; the Downloader starts it when there is room.' },
+					{ key: 'downloading', label: 'Downloading', stages: ['downloading'], hint: 'Taking in data right now.' },
+					{ key: 'importing', label: 'Importing', stages: ['importing'], hint: 'Finished downloading; being checked and moved into your Library.' }
 				]
 			},
 			{
 				key: 'finished',
 				label: 'Finished',
 				stages: ['done', 'seeding'],
+				hint: 'In your Library, still shared or not.',
 				seedCount: true,
 				subs: [
-					{ key: 'done', label: 'Done', stages: ['done'] },
-					{ key: 'seeding', label: 'Seeding', stages: ['seeding'] }
+					{ key: 'done', label: 'Done', stages: ['done'], hint: 'Finished and in your Library.' },
+					{ key: 'seeding', label: 'Seeding', stages: ['seeding'], hint: 'In your Library; the torrent is still being shared.' }
 				]
 			},
 			{
 				key: 'needs',
 				label: 'Needs you',
 				stages: problems,
+				hint: 'Paused, stalled or failed; it waits for you.',
 				subs: [
-					{ key: 'paused', label: 'Paused', stages: ['paused'] },
-					{ key: 'stalled', label: 'Stalled', stages: ['stalled'] },
-					{ key: 'failed', label: 'Failed', stages: ['failed'] }
+					{ key: 'paused', label: 'Paused', stages: ['paused'], hint: 'Paused in the Downloader.' },
+					{ key: 'stalled', label: 'Stalled', stages: ['stalled'], hint: 'No data coming in for a while.' },
+					{ key: 'failed', label: 'Failed', stages: ['failed'], hint: 'Failed, vanished or waiting for your decision.' }
 				]
 			}
 		]
@@ -157,20 +164,51 @@ export const SETS: Record<SetId, StatusSet> = {
 		seedWord: 'Seeding',
 		queuedWord: 'Queued',
 		chips: [
-			{ key: 'queued', label: 'Queued', stages: ['queued'] },
+			{ key: 'queued', label: 'Queued', stages: ['queued'], hint: 'Not started yet; the Downloader starts it when there is room.' },
 			// Like the Downloaders' own lists, a stalled download stays under
 			// Downloading; its status reads Stalled.
-			{ key: 'downloading', label: 'Downloading', stages: ['downloading', 'stalled'] },
-			{ key: 'importing', label: 'Importing', stages: ['importing'] },
-			{ key: 'seeding', label: 'Seeding', stages: ['seeding'] },
-			{ key: 'done', label: 'Done', stages: ['done'] },
-			{ key: 'paused', label: 'Paused', stages: ['paused'] },
-			{ key: 'failed', label: 'Failed', stages: ['failed'] }
+			{ key: 'downloading', label: 'Downloading', stages: ['downloading', 'stalled'], hint: 'Taking in data, or stalled while it keeps trying.' },
+			{ key: 'importing', label: 'Importing', stages: ['importing'], hint: 'Finished downloading; being checked and moved into your Library.' },
+			{ key: 'seeding', label: 'Seeding', stages: ['seeding'], hint: 'In your Library; the torrent is still being shared.' },
+			{ key: 'done', label: 'Done', stages: ['done'], hint: 'Finished and in your Library.' },
+			{ key: 'paused', label: 'Paused', stages: ['paused'], hint: 'Paused in the Downloader.' },
+			{ key: 'failed', label: 'Failed', stages: ['failed'], hint: 'Failed, vanished or waiting for your decision.' }
+		]
+	},
+	6: {
+		id: 6,
+		label: '6 Six tabs',
+		seedWord: 'Done',
+		queuedWord: 'Waiting',
+		chips: [
+			{ key: 'waiting', label: 'Waiting', stages: ['queued', 'paused'], hint: 'Not started yet, or paused by you.' },
+			// Stalled downloads are still trying; their status reads Stalled.
+			{ key: 'downloading', label: 'Downloading', stages: ['downloading', 'stalled'], hint: 'Taking in data, or stalled while it keeps trying.' },
+			{ key: 'importing', label: 'Importing', stages: ['importing'], hint: 'Finished downloading; being checked and moved into your Library.' },
+			{ key: 'done', label: 'Done', stages: ['done', 'seeding'], seedCount: true, hint: 'Finished and in your Library.' },
+			{ key: 'problems', label: 'Problems', stages: ['failed'], hint: 'Failed, vanished or waiting for your decision.' }
+		]
+	},
+	7: {
+		id: 7,
+		label: '7 Five tabs',
+		seedWord: 'Done',
+		queuedWord: 'Waiting',
+		chips: [
+			{ key: 'waiting', label: 'Waiting', stages: ['queued', 'paused'], hint: 'Not started yet, or paused by you.' },
+			// The status column says which: Downloading, Stalled, or Importing with its step.
+			{ key: 'working', label: 'Working', stages: ['downloading', 'stalled', 'importing'], hint: 'Downloading, or being moved into your Library.' },
+			{ key: 'done', label: 'Done', stages: ['done', 'seeding'], seedCount: true, hint: 'Finished and in your Library.' },
+			{ key: 'problems', label: 'Problems', stages: ['failed'], hint: 'Failed, vanished or waiting for your decision.' }
 		]
 	}
 };
 
-export const SET_IDS: SetId[] = [1, 2, 3, 4, 5];
+export const SET_IDS: SetId[] = [1, 2, 3, 4, 5, 6, 7];
+/** The set shown when none is picked. */
+export const DEFAULT_SET: SetId = 6;
+/** All's hint. */
+export const ALL_HINT = 'Every download, whatever its state.';
 
 /** chipsFor is a set's chips as shown: set 5 drops Seeding (and Done takes
  *  seeding rows) unless a torrent Downloader is set up or a row is seeding. */
@@ -193,6 +231,7 @@ export interface Counted {
 	key: string;
 	label: string;
 	count: number;
+	hint: string;
 	/** Rows of this chip that are seeding, when the chip shows that sub-count. */
 	seeding?: number;
 }
@@ -200,10 +239,10 @@ export interface Counted {
 /** counts gives All plus every chip with its row count. */
 export function counts(rows: RowBits[], chips: Chip[]): Counted[] {
 	const stages = rows.map(stageOf);
-	const out: Counted[] = [{ key: ALL, label: 'All', count: rows.length }];
+	const out: Counted[] = [{ key: ALL, label: 'All', count: rows.length, hint: ALL_HINT }];
 	for (const c of chips) {
 		const n = stages.filter((s) => c.stages.includes(s)).length;
-		const k: Counted = { key: c.key, label: c.label, count: n };
+		const k: Counted = { key: c.key, label: c.label, count: n, hint: c.hint };
 		if (c.seedCount) k.seeding = stages.filter((s) => s === 'seeding').length;
 		out.push(k);
 	}
@@ -214,7 +253,7 @@ export function counts(rows: RowBits[], chips: Chip[]): Counted[] {
 export function subCounts(rows: RowBits[], chip: Chip | undefined): Counted[] {
 	if (!chip?.subs) return [];
 	const stages = rows.map(stageOf);
-	return chip.subs.map((s) => ({ key: s.key, label: s.label, count: stages.filter((x) => s.stages.includes(x)).length }));
+	return chip.subs.map((s) => ({ key: s.key, label: s.label, count: stages.filter((x) => s.stages.includes(x)).length, hint: s.hint }));
 }
 
 /** statusWord is the row's word in the status column, matching the chip
@@ -255,10 +294,10 @@ export function seedTag(r: RowBits, set: SetId): boolean {
 	return stageOf(r) === 'seeding' && SETS[set].seedWord === 'Done';
 }
 
-/** setOf reads ?set= (1…5); anything else is set 1. */
+/** setOf reads ?set= (1…7); anything else is the default set (6). */
 export function setOf(v: string | number | null | undefined): SetId {
 	const n = Number(v);
-	return (SET_IDS as number[]).includes(n) ? (n as SetId) : 1;
+	return (SET_IDS as number[]).includes(n) ? (n as SetId) : DEFAULT_SET;
 }
 
 /** showOf reads ?show= for a set: a chip key (or chip.sub in set 4), else All. */
