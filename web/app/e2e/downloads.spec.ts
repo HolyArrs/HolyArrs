@@ -18,6 +18,10 @@ test.beforeAll(async ({ browser }) => {
 
 // The Downloads table: the copy still downloading is the one to act on.
 const iron = () => page.locator('[data-testid="dl-table-row"][data-phase="downloading"]').filter({ hasText: 'Iron Lullaby' });
+// Needs a decision lives on the rows: Problems › Needs a decision, and the
+// row's details sheet holds the choices.
+const decideChip = () => page.locator('[data-testid="status-subchip"][data-key="decide"]');
+const showProblems = () => page.locator('[data-testid="status-chip"][data-key="problems"] button').click();
 // Mark failed and Remove live in the row's ⋯ menu.
 async function rowAction(r: ReturnType<typeof iron>, name: string) {
 	await r.getByRole('button', { name: /^More for / }).click();
@@ -61,7 +65,8 @@ test('Remove asks first, starts from the settings and can turn the Release down 
 	await dialog.getByRole('button', { name: 'Remove', exact: true }).click();
 	await expect(page.getByText('Removed. HolyArrs looks for the next Release.')).toBeVisible();
 	await expect.poll(async () => (await (await fetch(`${qbit}/state`)).json()).deleted.length).toBe(before + 1);
-	const gone = page.getByTestId('dl-table-row').filter({ hasText: 'Iron Lullaby' }).filter({ has: page.getByTestId('row-state').getByText('Removed', { exact: true }) });
+	// The removed row (it turns into Needs a decision once the search runs out).
+	const gone = page.locator('[data-testid="dl-table-row"][data-phase="removed"], [data-testid="dl-table-row"][data-phase="needs_a_decision"]').filter({ hasText: 'Iron Lullaby' });
 	await expect(gone).toHaveCount(1);
 	// Why it was removed reads in the row's details.
 	await gone.locator('.nm').click();
@@ -70,14 +75,16 @@ test('Remove asks first, starts from the settings and can turn the Release down 
 	await page.keyboard.press('Escape');
 	await expect(details).toBeHidden();
 	// The cam copy is the only one left and the Pick rules refuse it: the
-	// movie now needs a decision, and the menu says so.
-	await expect(page.getByTestId('decide-count')).toHaveText('1', { timeout: 30_000 });
+	// movie now needs a decision, and Problems › Needs a decision says so.
+	await showProblems();
+	await expect(decideChip()).toHaveAttribute('data-count', '1', { timeout: 30_000 });
 });
 
-test('Needs a decision says why and offers every choice; stopping clears the badge', async () => {
-	await page.locator('main').getByRole('link', { name: /Needs a decision/ }).click();
-	await expect(page.getByRole('heading', { level: 1, name: 'Needs a decision' })).toBeVisible();
-	const card = page.getByTestId('decision').filter({ hasText: 'Iron Lullaby' });
+test('Needs a decision says why and offers every choice in the row\'s sheet; stopping clears it', async () => {
+	await decideChip().locator('button').click();
+	const r = page.getByTestId('dl-table-row').filter({ hasText: 'Iron Lullaby' }).filter({ hasText: 'Needs a decision' });
+	await r.locator('.nm').click();
+	const card = page.getByRole('dialog', { name: 'Download details' }).getByTestId('decision');
 	await expect(card.getByTestId('decision-why')).toHaveText('HolyArrs ran out of Releases that pass the Pick rules.');
 	await expect(card.getByTestId('decision-reason')).toContainText('no other Release passed the Pick rules');
 	for (const name of ['Search again', 'Add to Turned down', 'Stop looking']) await expect(card.getByRole('button', { name })).toBeVisible();
@@ -88,13 +95,13 @@ test('Needs a decision says why and offers every choice; stopping clears the bad
 	await card.getByRole('button', { name: 'Search again' }).click();
 	await expect(page.getByText('Searching again for Iron Lullaby.')).toBeVisible();
 	await expect(card).toBeVisible({ timeout: 30_000 });
-	await expect(page.getByTestId('decide-count')).toHaveText('1', { timeout: 30_000 });
+	await expect(decideChip()).toHaveAttribute('data-count', '1', { timeout: 30_000 });
 
 	page.once('dialog', (d) => d.accept());
 	await card.getByRole('button', { name: 'Stop looking' }).click();
 	await expect(page.getByText('Stopped looking for Iron Lullaby.')).toBeVisible();
-	await expect(page.getByText('Nothing needs you')).toBeVisible();
-	await expect(page.getByTestId('decide-count')).toBeHidden();
+	await expect(card).toHaveCount(0, { timeout: 30_000 });
+	await expect(decideChip()).toHaveAttribute('data-count', '0', { timeout: 30_000 });
 });
 
 test('both screens pass the accessibility scan and fit a phone', async ({ browser }) => {
@@ -103,7 +110,7 @@ test('both screens pass the accessibility scan and fit a phone', async ({ browse
 		await ctx.addInitScript((t) => localStorage.setItem('holyarrs-theme', t), scheme);
 		const p = await ctx.newPage();
 		await signIn(p, owner());
-		for (const where of ['/downloads', '/downloads/decide']) {
+		for (const where of ['/downloads', '/downloads?show=problems.decide']) {
 			await p.goto(where);
 			await expect(p.getByRole('heading', { level: 1 })).toBeVisible();
 			await expect(p.locator('.sk')).toHaveCount(0);
@@ -120,8 +127,10 @@ test('both screens pass the accessibility scan and fit a phone', async ({ browse
 	await p.goto('/downloads');
 	await expect(p.getByTestId('dl-table-list').locator('li').first()).toBeVisible();
 	await noSidewaysScroll(p);
+	// The old Needs a decision address lands on Problems › Needs a decision.
 	await p.goto('/downloads/decide');
-	await expect(p.getByRole('heading', { level: 1, name: 'Needs a decision' })).toBeVisible();
+	await expect(p).toHaveURL(/\/downloads\?show=problems\.decide$/);
+	await expect(p.getByRole('heading', { level: 1, name: 'Downloads' })).toBeVisible();
 	await noSidewaysScroll(p);
 	await phone.close();
 });

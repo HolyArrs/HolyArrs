@@ -85,11 +85,10 @@ test('a pack whose files cannot be placed waits on Needs a decision as one card'
 	await expect(pack.getByTestId('row-state')).toHaveText(/^Needs a decision/, { timeout: 30_000 });
 	await open(pack);
 	await expect(details().getByTestId('row-text')).toHaveText('0 of 2 episodes in the library; S01E01, S01E02 need a decision.');
-	await close();
-
-	await page.locator('main').getByRole('link', { name: /Needs a decision/ }).click();
-	const card = page.getByTestId('decision-pack').filter({ hasText: 'Moss Parade' });
+	// The choices are in the same sheet; the sheet stays open for the next test.
+	const card = details().getByTestId('decision-pack');
 	await expect(card).toContainText('Season pack · 2 of the 2 episodes in this download need a decision');
+	await card.locator('details.raw summary').click();
 	await expect(card).toContainText('Pack: Moss.Parade.S01.1080p.WEB-DL.H264-HOLYARRS');
 	await expect(card.getByTestId('decision')).toHaveCount(2);
 	await expect(card.getByTestId('decision').first()).toContainText('Moss Parade S01E01 Green Start');
@@ -103,10 +102,14 @@ test('Needs a decision works from a phone', async ({ browser }) => {
 	const ctx = await browser.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
 	const phone = await ctx.newPage();
 	await signIn(phone, owner());
-	await phone.goto('/downloads/decide');
-	await expect(phone.getByTestId('decision-pack').filter({ hasText: 'Moss Parade' })).toBeVisible();
+	await phone.goto('/downloads?show=problems.decide');
+	await phone.getByTestId('dl-table-list').locator('li').filter({ hasText: 'Moss Parade' }).locator('.phit').click();
+	const sheet = phone.getByRole('dialog', { name: 'Download details' });
+	await expect(sheet.getByTestId('decision-pack')).toBeVisible();
 	await noSidewaysScroll(phone);
 	await axe(phone, 'needs a decision on a phone');
+	await phone.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
 	await phone.goto('/downloads');
 	await expect(phone.getByTestId('dl-table-list').locator('.cv').first()).toBeVisible();
 	await noSidewaysScroll(phone);
@@ -114,7 +117,7 @@ test('Needs a decision works from a phone', async ({ browser }) => {
 });
 
 test('one choice settles the whole pack: Add the pack to Turned down searches each episode again', async () => {
-	const card = page.getByTestId('decision-pack').filter({ hasText: 'Moss Parade' });
+	const card = details().getByTestId('decision-pack');
 	page.once('dialog', (d) => d.accept());
 	await card.getByRole('button', { name: 'Add the pack to Turned down' }).click();
 	await expect(page.getByText('Turned down. Searching again for these episodes.')).toBeVisible();
