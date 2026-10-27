@@ -28,7 +28,6 @@
 	import { aboutPicks, aboutShown } from '#lib/about-picks.svelte.ts';
 	import { awardsTip, loadWikiFacts, type WikiAward } from '#lib/wiki-facts.ts';
 	import type { TagsAt, TitleLook } from '#lib/title-look.svelte.ts';
-	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Icon from '#lib/Icon.svelte';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import type { MenuItem } from '#lib/ui/Menu.svelte';
@@ -39,6 +38,9 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import ReleaseSheet from '#lib/ReleaseSheet.svelte';
+	import DeleteSheet from '#lib/DeleteSheet.svelte';
+	import EpisodeSheet, { type SheetEpisode } from '#lib/EpisodeSheet.svelte';
+	import RenamePreview from '#lib/RenamePreview.svelte';
 	import AddMovieDialog from '#lib/AddMovieDialog.svelte';
 	import { savedDefaults } from '#lib/title-defaults.svelte.ts';
 	import AddShowDialog from '#lib/AddShowDialog.svelte';
@@ -88,38 +90,46 @@
 			owned = null;
 		}
 	}
-	// Five ways to show an owned title, while Luis compares (?own=a..e).
-	const OWN_VIEWS = [
-		{ value: 't1', label: 'T1 · Underline' },
-		{ value: 't2', label: 'T2 · Centered pills' },
-		{ value: 't3', label: 'T3 · On the art' },
-		{ value: 't4', label: 'T4 · Sticky bar' },
-		{ value: 't5', label: 'T5 · Side tabs' }
-	];
-	let ownView = $state((typeof location !== 'undefined' && OWN_VIEWS.find((v) => v.value === new URLSearchParams(location.search).get('own'))?.value) || 't1');
-	let ownTab = $state<'overview' | 'episodes' | 'library'>((typeof location !== 'undefined' && (['episodes', 'library'] as const).find((t) => t === new URLSearchParams(location.search).get('tab'))) || 'overview');
-	// The tabs of an owned title: Overview (this page), Episodes (shows) and Library (status, files, activity, settings in one place).
+	let ownTab = $state<'overview' | 'library'>(typeof location !== 'undefined' && ['episodes', 'library'].includes(new URLSearchParams(location.search).get('tab') ?? '') ? 'library' : 'overview');
+	// The tabs of an owned title: Overview (this page) and Library (status, seasons and episodes, files, activity, settings).
 	const ownTabs = $derived.by(() => {
 		const o = owned;
 		if (!o) return [];
 		const out: { v: typeof ownTab; label: string; count?: string; alert?: boolean }[] = [{ v: 'overview', label: 'Overview' }];
-		if (o.show) out.push({ v: 'episodes', label: 'Episodes', count: `${o.show.in_library}/${o.show.episodes}`, alert: (o.show.failed ?? 0) > 0 });
-		out.push({ v: 'library', label: 'Library', alert: ownState.kind === 'failed' });
+		out.push({ v: 'library', label: 'Library', alert: ownState.kind === 'failed' || (o.show?.failed ?? 0) > 0 });
 		return out;
 	});
-	// Episodes tab: the chosen season's episodes with their file state.
+	// Library tab (shows): the chosen season's episodes with their file state.
 	let epSeason = $state<number | null>(null);
-	let episodes = $state<{ id: number; episode: number; name?: string; air_date?: string; slots: { state: string; state_label: string }[] }[]>([]);
+	let episodes = $state<SheetEpisode[]>([]);
+	let epOpen = $state(false);
+	let epPicked = $state<SheetEpisode | null>(null);
+	let epLoading = $state(false);
 	$effect(() => {
 		const o = owned;
-		if (!o?.show || ownTab !== 'episodes') return;
-		const n = epSeason ?? [...o.show.seasons].filter((x) => x.number > 0).sort((a, b) => b.number - a.number)[0]?.number ?? 1;
-		if (epSeason === null) epSeason = n;
-		void api.get<{ episodes: typeof episodes }>(`/titles/${o.id}/episodes?season=${n}`).then((r) => (episodes = r.episodes ?? []), () => (episodes = []));
+		if (!o?.show || ownTab !== 'library') return;
+		// Seasons start closed; picking one loads its episodes.
+		const n = epSeason;
+		if (n === null) return void (episodes = []);
+		epLoading = true;
+		void api.get<{ episodes: typeof episodes }>(`/titles/${o.id}/episodes?season=${n}&files=1`).then((r) => (episodes = r.episodes ?? []), () => (episodes = [])).finally(() => (epLoading = false));
 	});
 	const epTone = (st: string) => (st === 'have' || st === 'imported' || st === 'in_library' || st === 'kept' ? 'have' : st === 'downloading' || st === 'importing' || st === 'searching' ? 'downloading' : st === 'failed' ? 'failed' : 'missing');
 	let busyAction = $state('');
-	const ownFiles = $derived((owned?.slots ?? []).filter((x) => x.file));
+	// Library tab (shows): look for one episode or a whole season's missing ones.
+	async function epSearch(body: Record<string, unknown>, key: string, done: string) {
+		const o = owned;
+		if (!o) return;
+		busyAction = key;
+		try {
+			await api.post(`/titles/${o.id}/search`, body);
+			toasts.push(done, 'ok');
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		} finally {
+			busyAction = '';
+		}
+	}	const ownFiles = $derived((owned?.slots ?? []).filter((x) => x.file));
 	const ownBadges = $derived(qualityBadges(ownFiles.map((x) => x.file)));
 	const ownDownload = $derived((owned?.slots ?? []).find((x) => x.download?.active || x.state === 'downloading' || x.state === 'importing'));
 	const ownFailed = $derived((owned?.slots ?? []).some((x) => x.state === 'failed') || (owned?.show?.failed ?? 0) > 0);
@@ -171,10 +181,10 @@
 		return [
 			{ group: 'Find', items: [
 				{ label: 'Search now', icon: 'search', run: () => ownRun('search'), busy: busyAction === 'search' },
-				{ label: 'Choose a release', icon: 'grid', href: full('?tools=releases') }
+				{ label: 'Choose a release', icon: 'grid', run: () => (pickOpen = true) }
 			] },
 			{ group: 'Files', items: [
-				{ label: 'Rename files', icon: 'copy', href: full('?tools=rename') },
+				{ label: 'Rename files', icon: 'copy', run: () => (renameOpen = true) },
 				{ label: 'Add a Version', icon: 'plus', href: full('?tools=version') },
 				{ label: 'Edit', icon: 'tools', href: full('?tools=edit') }
 			] },
@@ -182,7 +192,7 @@
 				{ label: o.keep_up_to_date ? 'Stop keeping up to date' : 'Keep up to date', icon: 'check', run: () => ownRun('keep'), busy: busyAction === 'keep' },
 				{ label: 'Refresh details', icon: 'refresh', run: () => ownRun('refresh'), busy: busyAction === 'refresh' },
 				{ label: 'All history', icon: 'clock', href: to(`/downloads/history?title=${o.id}`) },
-				{ label: o.kind === 'show' ? 'Delete show' : 'Delete movie', icon: 'trash', href: full('?tools=delete'), danger: true }
+				{ label: o.kind === 'show' ? 'Delete show' : 'Delete movie', icon: 'trash', run: () => (deleteOpen = true), danger: true }
 			] }
 		];
 	});
@@ -213,6 +223,8 @@
 	const evIcon = (k = ''): 'check' | 'search' | 'clock' | 'refresh' | 'copy' | 'trash' | 'plus' => (/import|got|done|adopt/.test(k) ? 'check' : /grab|sent|chose|search/.test(k) ? 'search' : /fail|stall|missing/.test(k) ? 'clock' : /rename/.test(k) ? 'copy' : /delete/.test(k) ? 'trash' : /add/.test(k) ? 'plus' : 'refresh');
 	const evTone = (k = '', s = '') => (/fail|stall|not on disk|missing/.test(`${k} ${s}`.toLowerCase()) ? 'failed' : /import|adopt/.test(k) ? 'have' : '');
 	let libAll = $state(false);
+	let renameOpen = $state(false);
+	let deleteOpen = $state(false);
 	let pickOpen = $state(typeof location !== 'undefined' && new URLSearchParams(location.search).has('pick'));
 	const mayAsk = $derived(session.can('ask') && !manage);
 
@@ -836,6 +848,7 @@
 			{#if owned && libHead}
 				{@const o = owned}
 				<div class="lib" data-testid="lib-pane">
+					<div class="lib-main">
 					<section class="lib-status {libHead.kind}">
 						<div class="lib-st-text">
 							<p class="lib-st-title"><span class="own-dot {libHead.kind}" aria-hidden="true"></span>{libHead.title}</p>
@@ -851,12 +864,36 @@
 						<div class="lib-seasons">
 							{#each [...o.show.seasons].filter((x) => x.number > 0).sort((x, y) => x.number - y.number) as se (se.number)}
 								{@const p = se.episodes ? se.in_library / se.episodes : 0}
-								<button type="button" class="lib-season" onclick={() => { epSeason = se.number; ownTab = 'episodes'; }}>
+								<button type="button" class="lib-season" class:on={epSeason === se.number} aria-expanded={epSeason === se.number} onclick={() => (epSeason = epSeason === se.number ? null : se.number)}>
 									<svg viewBox="0 0 36 36" class="ring" aria-hidden="true"><circle cx="18" cy="18" r="15" />{#if p > 0}<circle cx="18" cy="18" r="15" class="fill" class:full={p >= 1} stroke-dasharray="{(p * 94.25).toFixed(1)} 94.25" />{/if}</svg>
 									<span><b>Season {se.number}</b><small>{se.in_library} of {se.episodes}</small></span>
 								</button>
 							{/each}
 						</div>
+						{@const cur = o.show.seasons.find((x) => x.number === epSeason)}
+						{#if epSeason !== null}
+						<div class="lib-eps-head">
+							<h3 class="lib-h">Season {epSeason}</h3>
+							{#if manage && cur && cur.in_library < cur.episodes}<button type="button" class="lib-btn sm" disabled={busyAction === `s${epSeason}`} onclick={() => epSearch({ season: epSeason }, `s${epSeason}`, `Looking for the missing episodes of season ${epSeason}.`)}><Icon name="search" size={15} />Get missing episodes</button>{/if}
+						</div>
+						<ol class="lib-eps" aria-busy={epLoading}>
+							{#each episodes as e (e.id)}
+								{@const st = e.slots[0]}
+								{@const tone = epTone(st?.state ?? '')}
+								<li class="lib-ep {tone}" onclick={() => { epPicked = e; epOpen = true; }} onkeydown={(ev) => { if (ev.key === 'Enter' && ev.target === ev.currentTarget) { epPicked = e; epOpen = true; } }} role="button" tabindex="0" aria-label="Episode {e.episode}: {e.name ?? ''}">
+									<span class="lib-ep-still">{#if e.still}<img src={e.still.replace('/w780/', '/w300/')} alt="" loading="lazy" decoding="async" />{/if}<span class="lib-ep-n">{e.episode}</span></span>
+									<span class="lib-ep-text">
+										<b>{e.name ?? `Episode ${e.episode}`}</b>
+										<small>{[e.air_date ? new Date(e.air_date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '', e.runtime_minutes ? `${e.runtime_minutes} min` : ''].filter(Boolean).join(' · ')}</small>
+									</span>
+									<span class="lib-ep-st {tone}"><span class="own-dot {tone}" aria-hidden="true"></span>{st?.state_label ?? 'Missing'}</span>
+									{#if manage && st && tone !== 'have' && tone !== 'downloading'}<button type="button" class="lib-ep-go" aria-label="Look for episode {e.episode}" title="Look for it now" disabled={busyAction === `e${e.id}`} onclick={(ev) => { ev.stopPropagation(); void epSearch({ slot_id: st.id }, `e${e.id}`, `Looking for episode ${e.episode}.`); }}><Icon name="search" size={15} /></button>{/if}
+								</li>
+							{:else}
+								{#each [0, 1, 2, 3] as i (i)}<li class="lib-ep skel"></li>{/each}
+							{/each}
+						</ol>
+						{/if}
 					{:else if libFiles.length}
 						<h3 class="lib-h">{libFiles.length > 1 ? 'Versions' : 'File'}</h3>
 						<div class="lib-files">
@@ -873,7 +910,8 @@
 							{#if manage}<a class="lib-file add" href={to(`/library/${o.id}?tools=version`)}><Icon name="plus" size={18} />Add another version<small>Keep a 4K and an HD copy side by side</small></a>{/if}
 						</div>
 					{/if}
-
+					</div>
+					<aside class="lib-side">
 					<h3 class="lib-h">Activity</h3>
 					<ol class="lib-tl">
 						{#each libAll ? ownedEvents : ownedEvents.slice(0, 5) as e (e.ID)}
@@ -891,19 +929,27 @@
 							</button>
 							<a class="lib-row" href={to(`/library/${o.id}?tools=edit`)}><span><b>Quality</b><small>{o.pick_rules_name ?? 'Default'}</small></span><Icon name="chevronRight" size={16} /></a>
 							<a class="lib-row" href={to(`/library/${o.id}?tools=edit`)}><span><b>Folder</b><small class="path">{o.folder_path ?? ''}</small></span><Icon name="chevronRight" size={16} /></a>
-							<a class="lib-row" href={to(`/library/${o.id}?tools=rename`)}><span><b>Rename files</b><small>See the new names before anything changes</small></span><Icon name="chevronRight" size={16} /></a>
+							<button type="button" class="lib-row" onclick={() => (renameOpen = true)}><span><b>Rename files</b><small>See the new names before anything changes</small></span><Icon name="chevronRight" size={16} /></button>
 							<button type="button" class="lib-row" disabled={busyAction === 'refresh'} onclick={() => ownRun('refresh')}><span><b>Refresh details</b><small>Names, dates and pictures</small></span><Icon name="refresh" size={16} /></button>
 						</div>
 						<div class="lib-rows danger">
-							<a class="lib-row" href={to(`/library/${o.id}?tools=delete`)}><span><b>{o.kind === 'show' ? 'Delete show' : 'Delete movie'}</b><small>Choose whether the files go too</small></span><Icon name="trash" size={16} /></a>
+							<button type="button" class="lib-row" onclick={() => (deleteOpen = true)}><span><b>{o.kind === 'show' ? 'Delete show' : 'Delete movie'}</b><small>Choose whether the files go too</small></span><Icon name="trash" size={16} /></button>
 						</div>
 					{/if}
+					</aside>
 				</div>
-				{#if manage}<ReleaseSheet bind:open={pickOpen} titleId={o.id} name={o.name} onchosen={() => loadOwned(o.id)} />{/if}
+				{#if manage}
+					{#if o.show}<EpisodeSheet bind:open={epOpen} ep={epPicked} titleId={o.id} tmdb={o.ids?.tmdb} {manage} />{/if}
+					<ReleaseSheet bind:open={pickOpen} titleId={o.id} name={o.name} onchosen={() => loadOwned(o.id)} />
+					<Sheet bind:open={renameOpen} title="Rename files" description={o.name} placement="right" size="md">
+						{#if renameOpen}<RenamePreview titleId={o.id} onDone={() => { renameOpen = false; void loadOwned(o.id); }} />{/if}
+					</Sheet>
+					<DeleteSheet bind:open={deleteOpen} titleId={o.id} name={o.name} kind={o.kind === 'show' ? 'show' : 'movie'} ondone={() => { owned = null; ownedEvents = []; ownTab = 'overview'; }} />
+				{/if}
 			{/if}
 		{/snippet}
 		{#snippet ownTabBar()}
-			<div class="own-tabs {ownView}" role="tablist" data-testid="own-tabs">
+			<div class="own-tabs" role="tablist" data-testid="own-tabs">
 				{#each ownTabs as t (t.v)}
 					<button type="button" role="tab" aria-selected={ownTab === t.v} class:on={ownTab === t.v} onclick={() => (ownTab = t.v)}>
 						{t.label}{#if t.count}<span class="own-count">{t.count}</span>{/if}{#if t.alert}<span class="own-badge" aria-label="Needs attention">!</span>{/if}
@@ -912,30 +958,12 @@
 			</div>
 		{/snippet}
 		{#snippet ownPane()}
-			{#if ownTab === 'episodes' && owned?.show}
-				<div class="own-seasons">
-					{#each [...owned.show.seasons].filter((x) => x.number > 0).sort((x, y) => y.number - x.number) as se (se.number)}
-						<button type="button" class="own-pill" class:on={epSeason === se.number} onclick={() => (epSeason = se.number)}>Season {se.number} <span class="own-count">{se.in_library}/{se.episodes}</span></button>
-					{/each}
-				</div>
-				<ul class="own-eps">
-					{#each episodes as e (e.id)}
-						{@const st = e.slots[0]}
-						<li><span class="own-dot {epTone(st?.state ?? '')}" aria-hidden="true"></span><b>{e.episode}. {e.name ?? `Episode ${e.episode}`}</b><span class="muted">{e.air_date ? new Date(e.air_date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : ''}</span><span class="own-st {epTone(st?.state ?? '')}">{st?.state_label ?? 'Missing'}</span></li>
-					{:else}<li class="muted">Loading episodes…</li>{/each}
-				</ul>
-			{:else if ownTab === 'library'}
+			{#if ownTab === 'library'}
 				{@render libPane()}
 			{/if}
 		{/snippet}
-		{#if owned && ownView === 't5'}
-			<!-- T5 · Side tabs: a list on the left; Overview is the full page, the others open beside the list. -->
-			<div class="own-side" class:full={ownTab === 'overview'}>
-				{@render ownTabBar()}
-				{#if ownTab !== 'overview'}<section class="own-pane">{@render ownPane()}</section>{/if}
-			</div>
-		{:else if owned}
-			<!-- T1 underline · T2 centered pills · T3 on the art · T4 sticky bar with counts -->
+		{#if owned}
+			<!-- Underline tabs under the hero: Overview, Episodes (shows), Library. -->
 			{@render ownTabBar()}
 			{#if ownTab !== 'overview'}<section class="own-pane" data-testid="own-pane">{@render ownPane()}</section>{/if}
 		{/if}
@@ -1102,9 +1130,6 @@
 
 
 		{/if}
-		{#if owned && manage}
-			<div class="own-pick" data-testid="own-pick"><SegmentedControl options={OWN_VIEWS} bind:value={ownView} label="Owned title view" size="sm" /></div>
-		{/if}
 		<Sheet bind:open={allCast} title="Cast and crew" size="lg">
 			<ul class="all-grid people">
 				{#each d.cast as p, i (p.name + i)}
@@ -1165,29 +1190,13 @@
 	.own-tabs button.on { color: var(--text); }
 	.own-count { color: var(--text-muted); font: 600 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
 	/* T1: underline tabs, left. */
-	.own-tabs.t1 { border-bottom: 1px solid var(--line); }
-	.own-tabs.t1 button { border-bottom: 2px solid transparent; }
-	.own-tabs.t1 button.on { border-bottom-color: var(--text); }
+	.own-tabs { border-bottom: 1px solid var(--line); }
+	.own-tabs button { border-bottom: 2px solid transparent; }
+	.own-tabs button.on { border-bottom-color: var(--text); }
 	/* T2: centered segmented pills. */
-	.own-tabs.t2 { align-self: center; padding: 4px; border-radius: 999px; background: var(--surface-2); }
-	.own-tabs.t2 button { height: 34px; border-radius: 999px; }
-	.own-tabs.t2 button.on { background: var(--surface-1); box-shadow: var(--shadow-card); }
 	/* T3: glass pills sitting on the bottom edge of the art. */
-	.own-tabs.t3 { position: relative; z-index: 2; align-self: flex-end; margin-top: -78px; margin-right: 24px; padding: 4px; border-radius: 999px; background: rgb(0 0 0 / 38%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); }
-	.own-tabs.t3 button { height: 32px; border-radius: 999px; color: rgb(255 255 255 / 75%); }
-	.own-tabs.t3 button.on { color: #fff; background: rgb(255 255 255 / 18%); }
-	.own-tabs.t3 .own-count { color: rgb(255 255 255 / 60%); }
 	/* T4: a full-width bar that sticks under the top bar while scrolling. */
-	.own-tabs.t4 { position: sticky; top: calc(var(--topbar, 56px) + 6px); z-index: 20; padding: 6px; border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 86%, transparent); border: 1px solid var(--line); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
-	.own-tabs.t4 button { flex: 1; justify-content: center; border-radius: 10px; }
-	.own-tabs.t4 button.on { background: var(--surface-2); }
 	/* T5: a vertical list beside the content. */
-	.own-side { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 28px; align-items: start; }
-	.own-side.full { grid-template-columns: minmax(0, 1fr); }
-	.own-side .own-tabs { flex-direction: column; gap: 2px; }
-	.own-side.full .own-tabs { flex-direction: row; border-bottom: 1px solid var(--line); }
-	.own-side .own-tabs button { justify-content: space-between; border-radius: 10px; }
-	.own-side .own-tabs button.on { background: var(--surface-2); }
 	.own-seasons { display: flex; flex-wrap: wrap; gap: 8px; }
 	.own-pill.on { background: var(--text); color: var(--bg); }
 	.own-eps { display: grid; gap: 2px; margin: 4px 0 0; padding: 0; list-style: none; }
@@ -1201,7 +1210,7 @@
 	.own-st { font: 600 12.5px/1 var(--font-ui); color: var(--text-muted); }
 	.own-st.failed { color: #ff453a; }
 	.own-st.have { color: #34c759; }
-	@media (max-width: 899px) { .own-side { grid-template-columns: minmax(0, 1fr); } .own-side .own-tabs { flex-direction: row; overflow-x: auto; } .own-tabs.t3 { align-self: stretch; margin: 0; } }
+	
 	.own-badge { margin-left: 6px; display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: #ff453a; color: #fff; font-size: 11px; }
 	.own-pane { display: grid; gap: 16px; padding-top: 4px; }
 	.own-tools { display: grid; gap: 18px; margin-top: 12px; }
@@ -1214,8 +1223,15 @@
 	.own-files li { display: grid; grid-template-columns: auto auto auto 1fr; gap: 4px 16px; align-items: baseline; font: 500 14px/1.4 var(--font-ui); }
 	.own-files .path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	/* Library tab */
-	.lib { display: grid; gap: 0; max-width: 980px; }
-	.lib-h { margin: 36px 0 14px; font: 700 20px/1.2 var(--font-ui); letter-spacing: -.01em; }
+	/* Wide screens: status, seasons and files on the left; activity and settings beside them, so less scrolling. */
+	.lib { display: grid; gap: 0 40px; grid-template-columns: minmax(0, 1fr); }
+	.lib-main, .lib-side { display: grid; align-content: start; min-width: 0; }
+	@media (min-width: 1100px) {
+		.lib { grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); }
+		.lib-side { position: sticky; top: calc(var(--topbar, 56px) + 16px); }
+		.lib-side > .lib-h:first-child { margin-top: 0; }
+	}
+	.lib-h { margin: 28px 0 12px; font: 700 20px/1.2 var(--font-ui); letter-spacing: -.01em; }
 	.lib-status { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 22px 24px; border-radius: 18px; background: var(--surface-2); box-shadow: inset 0 0 0 .5px color-mix(in srgb, var(--text) 10%, transparent); }
 	.lib-status.failed { background: color-mix(in srgb, var(--danger, #e5484d) 10%, var(--surface-2)); }
 	.lib-st-text { flex: 1 1 320px; min-width: 0; }
@@ -1229,6 +1245,43 @@
 	.lib-seasons { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
 	.lib-season { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 0; border-radius: 14px; background: var(--surface-2); color: var(--text); text-align: left; cursor: pointer; transition: transform .2s ease; }
 	.lib-season:hover { transform: translateY(-2px); }
+	.lib-season.on { background: var(--text); color: var(--bg); }
+	.lib-season.on small { color: color-mix(in srgb, var(--bg) 65%, transparent); }
+	.lib-season.on .ring circle { stroke: color-mix(in srgb, var(--bg) 18%, transparent); }
+	.lib-season.on .ring .fill { stroke: var(--accent); }
+	.lib-season.on .ring .fill.full { stroke: #30a46c; }
+	.lib-eps-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+	.lib-eps-head .lib-h { margin-bottom: 14px; }
+	.lib-btn.sm { height: 34px; padding: 0 14px; font-size: 13px; margin-top: 22px; }
+	.lib-eps { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+	.lib-ep { display: grid; grid-template-columns: 112px minmax(0, 1fr) auto 34px; align-items: center; gap: 14px; padding: 6px; border-radius: 12px; transition: background .15s ease; }
+	.lib-ep { cursor: pointer; }
+	.lib-ep:hover, .lib-ep:focus-visible { background: var(--surface-2); outline: none; }
+	.lib-ep.skel { height: 75px; background: var(--surface-2); animation: pulse 1.2s ease-in-out infinite alternate; }
+	@keyframes pulse { to { opacity: .5; } }
+	.lib-ep-still { position: relative; display: block; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; background: var(--surface-2); }
+	.lib-ep-still img { width: 100%; height: 100%; object-fit: cover; display: block; }
+	.lib-ep.missing .lib-ep-still img { filter: grayscale(.7) brightness(.7); }
+	.lib-ep-n { position: absolute; left: 6px; bottom: 6px; min-width: 22px; height: 22px; padding: 0 6px; display: grid; place-items: center; border-radius: 6px; background: rgb(0 0 0 / 62%); color: #fff; font: 700 12px/1 var(--font-ui); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+	.lib-ep-text { display: grid; gap: 4px; min-width: 0; }
+	.lib-ep-text b { font: 600 15px/1.25 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.lib-ep-text small { color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); }
+	.lib-ep-st { display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 10px; border-radius: 99px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text-muted); font: 600 12px/1 var(--font-ui); white-space: nowrap; }
+	.lib-ep-st.have { color: #30a46c; background: color-mix(in srgb, #30a46c 12%, transparent); }
+	.lib-ep-st.downloading { color: #3e8ef7; background: color-mix(in srgb, #3e8ef7 12%, transparent); }
+	.lib-ep-st.failed { color: var(--danger, #e5484d); background: color-mix(in srgb, var(--danger, #e5484d) 12%, transparent); }
+	.lib-ep-go { grid-column: 4; display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 99px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); cursor: pointer; opacity: .6; transition: opacity .15s ease; }
+	.lib-ep:hover .lib-ep-go, .lib-ep-go:focus-visible { opacity: 1; }
+	@media (max-width: 600px) {
+		.lib-seasons { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -16px; padding: 0 16px 4px; scrollbar-width: none; }
+		.lib-seasons::-webkit-scrollbar { display: none; }
+		.lib-season { flex: 0 0 auto; scroll-snap-align: start; white-space: nowrap; }
+		.lib-btn.sm { flex: none; margin-top: 22px; }
+		.lib-ep { grid-template-columns: 112px minmax(0, 1fr) 34px; gap: 12px; }
+		.lib-ep-st { grid-column: 2; grid-row: 2; justify-self: start; height: 22px; margin-top: -6px; }
+		.lib-ep-still { grid-row: span 2; }
+		.lib-ep-go { grid-column: 3; grid-row: 1 / span 2; }
+	}
 	.lib-season span { display: grid; gap: 2px; font: 600 15px/1.2 var(--font-ui); }
 	.lib-season small { color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); }
 	.ring { width: 36px; height: 36px; flex: none; transform: rotate(-90deg); }
@@ -1254,7 +1307,7 @@
 	.lib-tl-ico { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 99px; background: var(--surface-2); color: var(--text-muted); }
 	.lib-tl li.have .lib-tl-ico { color: #30a46c; }
 	.lib-tl li.failed .lib-tl-ico { color: var(--danger, #e5484d); }
-	.lib-tl-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.lib-tl-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
 	.lib-link { justify-self: start; margin-top: 6px; padding: 0; border: 0; background: none; color: var(--accent); font: 600 14px/1 var(--font-ui); cursor: pointer; }
 	.lib-rows { display: grid; border-radius: 16px; background: var(--surface-2); overflow: hidden; }
 	.lib-rows.danger { margin-top: 16px; }
@@ -1274,7 +1327,6 @@
 	.own-h { margin: 28px 0 12px; font: 600 13px/1.2 var(--font-ui); color: var(--text-dim, #8a8a8a); }
 	.own-history { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; font: 500 14px/1.4 var(--font-ui); }
 	.own-history li { display: flex; justify-content: space-between; gap: 16px; }
-	.own-pick { position: fixed; z-index: 30; left: 0; right: 0; bottom: 20px; width: max-content; max-width: calc(100vw - 24px); overflow-x: auto; margin-inline: auto; padding: 5px; border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow-lift); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); }
 	@media (max-width: 899px) { .own-tools.cols { grid-template-columns: minmax(0, 1fr); } .own-files li { grid-template-columns: 1fr; } }
 	.calm-meta .sep { margin: 0 8px; color: var(--text-faint); }
 	.credits { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: -4px 0 0; color: var(--text); font: 500 14px/1.45 var(--font-ui); }
