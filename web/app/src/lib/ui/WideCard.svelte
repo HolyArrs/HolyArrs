@@ -48,8 +48,11 @@
 		art: pick,
 		growContext = null,
 		growService = null,
-		followTmdb = false
+		followTmdb = false,
+		needsArt = false
 	}: {
+		/** Rows: no cover, no card. A card with no picture, or whose picture fails, is left out (its list item too). */
+		needsArt?: boolean;
 		/** Title cards: the server's picture pick (card-art.ts). */
 		art?: CardArtPick;
 		/** The server's one freshness strip (bottom centre of the art). */
@@ -202,7 +205,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="ui-wide" class:cover class:big class:grown={cover && open} style:width bind:this={root} onpointerenter={() => ((byKey = false), enter())} onpointermove={(e) => (e.movementX || e.movementY) && !open && !opener.pending && ((byKey = false), enter())} onpointerleave={leave} onfocusin={(e) => (e.target as HTMLElement)?.matches?.(':focus-visible') && ((byKey = true), enter())} onfocusout={(e) => !root?.contains(e.relatedTarget as Node) && leave()} onpointerdown={() => opener.cancel()}>
+<div class="ui-wide" class:gone={needsArt && (!src || failed)} class:cover class:big class:grown={cover && open} style:width bind:this={root} onpointerenter={() => ((byKey = false), enter())} onpointermove={(e) => (e.movementX || e.movementY) && !open && !opener.pending && ((byKey = false), enter())} onpointerleave={leave} onfocusin={(e) => (e.target as HTMLElement)?.matches?.(':focus-visible') && ((byKey = true), enter())} onfocusout={(e) => !root?.contains(e.relatedTarget as Node) && leave()} onpointerdown={() => opener.cancel()}>
 	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} role={href ? undefined : 'group'} bind:this={hit} use:press={'card'} aria-label={cover ? [title, typedWord, sub, strip && freshLabel(strip)].filter(Boolean).join(', ') : undefined} title={cover ? title : undefined}>
 		<span class="art" class:low={badgesAt === 'bottom' && (badges.length || status)} use:viewTransitionName={vtName} bind:this={artEl}>
 			{#if !src || failed || !loaded}<ArtPlaceholder name={title} shape="wide" loading={!!src && !failed && near() && !loaded} />{/if}
@@ -249,6 +252,7 @@
 {/if}
 
 <style>
+	.ui-wide.gone, :global(li:has(> .ui-wide.gone)) { display: none; }
 	.ui-wide { position: relative; min-width: 0; }
 	.hit { display: flex; flex-direction: column; gap: 2px; color: var(--text); border-radius: var(--r-card); }
 	.hit:focus-visible { outline: none; }

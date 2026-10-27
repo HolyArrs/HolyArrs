@@ -147,6 +147,8 @@
 
 <style>
 	.ui-shelf { min-width: 0; }
+	/* No cover, no card: a row whose every card was left out goes too (no title over nothing). */
+	.ui-shelf:has(.row > :global(.gone)):not(:has(.row > :global(:not(.gone)))) { display: none; }
 	header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 	/* A name with no line under it: See all sits level with the name. */
 	header.bare { align-items: center; }

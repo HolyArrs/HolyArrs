@@ -249,7 +249,7 @@
 								{#each t.slots as sl (sl.id)}
 									<span class="chip {tone(sl.state)}" data-testid="track-state">{t.slots.length > 1 ? `${sl.version}: ` : ''}{sl.state_label}</span>
 								{/each}
-								<IconButton icon="trash" size="sm" label="Delete {trackLabel(t)}" onclick={() => deleter?.open({ trackIds: [t.id], label: trackLabel(t) })} data-testid="delete-track" />
+								<IconButton icon="trash" size="sm" tipSide="below-end" label="Delete {trackLabel(t)}" onclick={() => deleter?.open({ trackIds: [t.id], label: trackLabel(t) })} data-testid="delete-track" />
 							{:else}
 								<span class="mark" class:here data-testid="track-state">{here ? 'In your Library' : 'Not here yet'}</span>
 							{/if}
@@ -262,7 +262,7 @@
 		{#if more.length}
 			<Shelf title="More by {artist?.name ?? 'the artist'}" item="var(--title-item)" anchor="title-similar" placeholder="wide" lines={1}>
 				{#each more as a (a.id)}
-					<WideCard title={a.name} href={to(`/library/${titleId}/albums/${a.id}`)} image={albumCover(a.id)} kind="artist" subtitle={[albumYear(a.release_date), albumKind(a)].filter(Boolean).join(' · ')} owned={a.in_library > 0 ? { state: a.missing ? 'partial' : 'available', label: a.missing ? `${a.in_library} of ${a.tracks} tracks here` : 'In your Library' } : null} />
+					<WideCard title={a.name} href={to(`/library/${titleId}/albums/${a.id}`)} image={albumCover(a.id)} needsArt kind="artist" subtitle={[albumYear(a.release_date), albumKind(a)].filter(Boolean).join(' · ')} owned={a.in_library > 0 ? { state: a.missing ? 'partial' : 'available', label: a.missing ? `${a.in_library} of ${a.tracks} tracks here` : 'In your Library' } : null} />
 				{/each}
 			</Shelf>
 		{/if}
