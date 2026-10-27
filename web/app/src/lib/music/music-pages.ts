@@ -108,6 +108,60 @@ export function popularityStats(p: ArtistPopularity | undefined | null): { v: st
 	return [];
 }
 
+/** Listening is the one headline figure an artist has: monthly listeners (with rank and today's change) for the most played, else total plays; null when none is known. */
+export interface Listening {
+	n: number;
+	unit: 'monthly listeners' | 'total plays';
+	rank?: number;
+	today?: number;
+}
+export function listening(p: ArtistPopularity | undefined | null): Listening | null {
+	if (!p) return null;
+	if (p.monthly_listeners && p.monthly_listeners > 0) {
+		const out: Listening = { n: p.monthly_listeners, unit: 'monthly listeners' };
+		if (p.world_rank && p.world_rank > 0) out.rank = p.world_rank;
+		if (p.listeners_change_today) out.today = p.listeners_change_today;
+		return out;
+	}
+	if (p.total_plays && p.total_plays > 0) return { n: p.total_plays, unit: 'total plays' };
+	return null;
+}
+
+/** changeWords writes today's listener change as "▲ 387K today" or "▼ 12K today"; empty when there is none. */
+export function changeWords(d: number | undefined | null, tail = ' today'): string {
+	if (!d) return '';
+	return `${d > 0 ? '▲' : '▼'} ${shortCount(d)}${tail}`;
+}
+
+/** fullCount writes 72785924 as 72,785,924. */
+export function fullCount(n: number): string {
+	return Math.round(n).toLocaleString('en-US');
+}
+
+/** What an artist has put out, for the stats band. */
+export interface Catalog {
+	albums: number;
+	eps: number;
+	singles: number;
+	/** First release year, e.g. "2005". */
+	since: string;
+	/** "2005–2026", or one year when all came out the same year. */
+	span: string;
+}
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+/** catalogParts lists the catalog in words: ["16 albums", "5 EPs", "89 singles", "since 2005"], leaving out what is zero. */
+export function catalogParts(c: Catalog): string[] {
+	return [c.albums ? plural(c.albums, 'album', 'albums') : '', c.eps ? plural(c.eps, 'EP', 'EPs') : '', c.singles ? plural(c.singles, 'single', 'singles') : '', c.since ? `since ${c.since}` : ''].filter(Boolean);
+}
+
+/** smallReleasesWord names singles and EPs counted together: "Singles & EPs", or only the kind there is. */
+export function smallReleasesWord(c: Pick<Catalog, 'eps' | 'singles'>): string {
+	if (c.eps && c.singles) return 'Singles & EPs';
+	if (c.eps) return c.eps === 1 ? 'EP' : 'EPs';
+	return c.singles === 1 ? 'Single' : 'Singles';
+}
+
 export interface ArtistPageData {
 	mbid: string;
 	name: string;
