@@ -1,11 +1,10 @@
 <script lang="ts">
 	import Menu, { type MenuItem } from '../ui/Menu.svelte';
-	import { to } from '../paths.ts';
 	import type { DownloadRow } from '../downloaders.ts';
 
-	// The ⋯ menu every Downloads layout shares: Details, then Mark failed and
-	// Remove when HolyArrs can still act on the download, and the way to Needs
-	// a decision when the download waits for one.
+	// The ⋯ menu on a Downloads row: Details, then Mark failed and Remove when
+	// HolyArrs can still act on the download, and Decide (the details sheet's
+	// choices) when the download waits for one.
 	let {
 		r,
 		name,
@@ -30,7 +29,8 @@
 	const items = $derived.by((): MenuItem[] => {
 		const out: MenuItem[] = [];
 		if (details) out.push({ label: 'Details', icon: 'info', onselect: () => ondetails(r) });
-		if (r.phase === 'needs_a_decision') out.push({ label: 'Open Needs a decision', icon: 'arrow', href: to('/downloads/decide') });
+		// The choices for a download that needs a decision are in its details sheet.
+		if (r.phase === 'needs_a_decision') out.push({ label: 'Decide', icon: 'arrow', onselect: () => ondetails(r) });
 		if (r.can_act) {
 			if (out.length) out.push({ kind: 'separator' });
 			out.push({ label: 'Mark failed', icon: 'alert', disabled: busy === r.id, onselect: () => onfail(r) });

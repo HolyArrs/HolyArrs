@@ -8,7 +8,6 @@
 	import { live } from '#lib/live.svelte.ts';
 	import { ago, dateTime } from '#lib/format.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
-	import OpsDownloadsTabs from '#lib/ui/OpsDownloadsTabs.svelte';
 	import OpsCheckChip from '#lib/ui/OpsCheckChip.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import StatusPill, { type StatusKind } from '#lib/ui/StatusPill.svelte';
@@ -126,7 +125,6 @@
 <svelte:head><title>History · HolyArrs</title></svelte:head>
 
 <PageHeader title="History" subtitle="Everything HolyArrs did, newest first: what it added, searched, chose, sent, imported, renamed and deleted, and why." />
-<OpsDownloadsTabs />
 
 {#if view}
 	{#if view === 1}<Feed {filter} {titles} {titleById} onfilter={apply} {phone} />

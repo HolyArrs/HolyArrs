@@ -4,7 +4,7 @@
 // Imports with no download row in the list stay in History. Pure, so it can be tested.
 import type { DownloadRow } from '../downloaders.ts';
 import type { ImportRecord } from '../types.ts';
-import { stageOf } from './status-sets.ts';
+import { stageOf } from './status-tabs.ts';
 
 /** byDownload keeps the newest import of every download. */
 export function byDownload(imports: ImportRecord[]): Map<number, ImportRecord> {
@@ -55,8 +55,9 @@ export function failReason(im: ImportRecord | undefined): string | null {
 }
 
 /** statusDetail is the short line after a row's status word: what an import
- *  in progress is doing, or why an import failed. Empty when the word says it all. */
-export function statusDetail(r: Pick<DownloadRow, 'phase' | 'state' | 'progress'>, im: ImportRecord | undefined): string {
+ *  in progress is doing, why it failed, or a seeding torrent's ratio. Empty
+ *  when the word says it all. */
+export function statusDetail(r: Pick<DownloadRow, 'phase' | 'state' | 'progress' | 'ratio'>, im: ImportRecord | undefined): string {
 	const stage = stageOf(r);
 	if (stage === 'importing') {
 		// Bytes are in; the Downloader verifies, repairs and unpacks (Usenet).
@@ -64,9 +65,13 @@ export function statusDetail(r: Pick<DownloadRow, 'phase' | 'state' | 'progress'
 		if (r.phase === 'waiting_to_import') return 'up next';
 		return 'placing files';
 	}
-	if (stage === 'failed') {
+	if (stage === 'failed' || stage === 'decide') {
 		const why = failReason(im);
 		if (why) return `import failed: ${why}`;
+		// Failed also holds these two; the line says which.
+		if (r.phase === 'vanished') return 'removed outside HolyArrs';
+		if (r.phase === 'import_refused') return 'the files did not match';
 	}
+	if (stage === 'seeding' && typeof r.ratio === 'number') return `ratio ${r.ratio.toFixed(2)}`;
 	return '';
 }

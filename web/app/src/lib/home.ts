@@ -100,12 +100,12 @@ export function attention(input: {
 	for (const c of input.health.filter((h) => h.state === 'error')) out.push(healthItem(c, 'fail', 'Problem', 'Fix'));
 	for (const d of input.failed) {
 		const r = plainReason(d.text || 'The download failed.');
-		out.push({ key: `f${d.id}`, tone: 'fail', word: 'Failed', text: `${d.title}: ${r.text}`, title: d.title, reason: 'download failed', cause: 'download_failed', note: d.text ? r.text : undefined, detail: r.detail, href: '/downloads', action: 'Downloads' });
+		out.push({ key: `f${d.id}`, tone: 'fail', word: 'Failed', text: `${d.title}: ${r.text}`, title: d.title, reason: 'download failed', cause: 'download_failed', note: d.text ? r.text : undefined, detail: r.detail, href: `/downloads?show=problems.failed&open=${d.id}`, action: 'Downloads' });
 	}
 	for (const d of input.decisions) {
 		const r = plainReason(d.reason || 'HolyArrs needs you to choose.');
 		const title = `${d.title}${d.episode ? ` ${d.episode.label}` : ''}`;
-		out.push({ key: `d${d.slot_id}`, tone: 'wait', word: 'Your call', text: `${title}: ${r.text}`, title, reason: 'needs a decision', cause: 'decision', note: d.reason ? r.text : undefined, detail: r.detail, href: '/downloads/decide', action: 'Decide' });
+		out.push({ key: `d${d.slot_id}`, tone: 'wait', word: 'Your call', text: `${title}: ${r.text}`, title, reason: 'needs a decision', cause: 'decision', note: d.reason ? r.text : undefined, detail: r.detail, href: `/downloads?show=problems.decide&slot=${d.slot_id}`, action: 'Decide' });
 	}
 	for (const c of input.health.filter((h) => h.state === 'warning')) out.push(healthItem(c, 'wait', 'Warning', 'Look'));
 	return out;
@@ -137,7 +137,9 @@ export function groupAttention(items: Attention[]): AttentionGroup[] {
 	for (const [cause, list] of byCause) {
 		const first = list[0];
 		const n = list.length;
-		const base = { tone: first.tone, word: first.word, href: first.href, action: first.action, items: list };
+		// Several downloads together link to their tab on Downloads, not to the first one's sheet.
+		const href = n > 1 ? first.href.replace(/&(?:open|slot)=-?\d+$/, '') : first.href;
+		const base = { tone: first.tone, word: first.word, href, action: first.action, items: list };
 		if (n === 1) {
 			out.push({ ...base, key: first.key, title: first.title, reason: first.reason });
 			continue;

@@ -7,12 +7,12 @@
 	import { live } from '#lib/live.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { bytes, duration, percent } from '#lib/format.ts';
-	import { episodeStateWords, manyWords, phaseTone, removeBody, removeStart, rowName, type DownloaderSettings, type DownloaderView, type DownloadRow, type RemoveChoice } from '#lib/downloaders.ts';
+	import { decisionName, episodeStateWords, manyWords, phaseTone, removeBody, removeStart, rowName, type Decision, type DownloaderSettings, type DownloaderView, type DownloadRow, type RemoveChoice } from '#lib/downloaders.ts';
+	import { decisions, refreshDecisions } from '#lib/decisions.svelte.ts';
 	import Poster from '#lib/Poster.svelte';
 	import { session } from '#lib/session.svelte.ts';
 	import { plainReason } from '#lib/plain.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
-	import OpsDownloadsTabs from '#lib/ui/OpsDownloadsTabs.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import StatusPill, { type StatusKind } from '#lib/ui/StatusPill.svelte';
 	import ProgressBar from '#lib/ui/ProgressBar.svelte';
@@ -20,16 +20,12 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import type { ImportRecord, TitleView } from '#lib/types.ts';
-	import VariantBar from '#lib/ui/VariantBar.svelte';
 	import DlTable from '#lib/downloads/DlTable.svelte';
-	import { SETS, SET_IDS, setOf, statusWord } from '#lib/downloads/status-sets.ts';
+	import DecisionPanel from '#lib/downloads/DecisionPanel.svelte';
+	import { statusWord } from '#lib/downloads/status-tabs.ts';
 	import { byDownload, failReason, placed, statusDetail } from '#lib/downloads/imports.ts';
 
-	// The status-chip sets Luis is comparing on the table (?set=1…7, kept for the session; 6 when none is picked).
-	const SET_OPTIONS = SET_IDS.map((id) => ({ value: id, label: SETS[id].label }));
-	let setPick = $state<number>(setOf(page.url.searchParams.get('set')));
-	const set = $derived(setOf(setPick));
-	// A torrent Downloader brings the Seeding chip in set 5.
+	// A torrent Downloader brings the Seeding sub-tab under Done.
 	let torrent = $state(false);
 
 	let rows = $state<DownloadRow[]>([]);
@@ -39,10 +35,53 @@
 	let error = $state('');
 	let settings = $state<DownloaderSettings | null>(null);
 	let selectedId = $state(0);
-	const selected = $derived(rows.find((r) => r.id === selectedId) ?? null);
 	const titleById = $derived(new Map(titles.map((title) => [title.id, title])));
 	// Imports belong to their download's row; one with no row here stays in History.
 	const importOf = $derived(byDownload(imports));
+
+	// Needs a decision lives on the rows: a download whose Slots wait for a
+	// person counts under Problems and its sheet holds the choices. A decision
+	// with no download in the list (HolyArrs ran out of Releases before any
+	// download, or the download is older than the list) gets a row of its own.
+	const rowIds = $derived(new Set(rows.map((r) => r.id)));
+	const decisionsByDownload = $derived.by(() => {
+		const m = new Map<number, Decision[]>();
+		for (const d of decisions.items) if (d.download_id && rowIds.has(d.download_id)) m.set(d.download_id, [...(m.get(d.download_id) ?? []), d]);
+		return m;
+	});
+	function decisionRow(d: Decision): DownloadRow {
+		return {
+			id: -d.slot_id,
+			phase: 'needs_a_decision',
+			state: '',
+			label: 'Needs a decision',
+			text: '',
+			progress: 0,
+			speed: 0,
+			active: false,
+			name: d.release_name ?? decisionName(d),
+			title: d.title,
+			title_id: d.title_id,
+			year: d.year,
+			version: d.version,
+			downloader: '',
+			size: 0,
+			updated_at: d.since,
+			can_act: false,
+			kind: d.kind,
+			album: d.album,
+			covers: d.episode ? `${d.episode.label}${d.episode.name ? ` ${d.episode.name}` : ''}` : undefined,
+			artwork: d.artwork
+		};
+	}
+	const allRows = $derived([
+		...rows.map((r) => (decisionsByDownload.has(r.id) && !r.active && r.phase !== 'needs_a_decision' ? { ...r, phase: 'needs_a_decision', label: 'Needs a decision' } : r)),
+		...decisions.items.filter((d) => !(d.download_id && rowIds.has(d.download_id))).map(decisionRow)
+	]);
+	const selected = $derived(allRows.find((r) => r.id === selectedId) ?? null);
+	function decisionsOf(r: DownloadRow): Decision[] {
+		return r.id < 0 ? decisions.items.filter((d) => d.slot_id === -r.id) : (decisionsByDownload.get(r.id) ?? []);
+	}
 
 	// A row opens its details in a Sheet (from the right; a bottom sheet on phones).
 	let detailOpen = $state(false);
@@ -60,6 +99,29 @@
 	}
 	const moving = (r: DownloadRow) => r.phase !== 'removed' && r.phase !== 'failed' && r.phase !== 'vanished';
 	const admin = $derived(session.can('settings'));
+
+	// When the open row goes away (its decision was settled), the sheet closes.
+	$effect(() => {
+		if (detailOpen && loaded && !selected) detailOpen = false;
+	});
+
+	// &open=<download id> or &slot=<slot id> (Home's Needs attention) opens that row's sheet once.
+	let opened = false;
+	$effect(() => {
+		if (opened || !loaded) return;
+		const q = page.url.searchParams;
+		const dl = Number(q.get('open'));
+		const slot = Number(q.get('slot'));
+		if (!dl && !slot) {
+			opened = true;
+			return;
+		}
+		const d = slot ? decisions.items.find((x) => x.slot_id === slot) : undefined;
+		if (slot && !d && decisions.items.length === 0) return; // the decisions are still loading
+		opened = true;
+		const id = dl || (d?.download_id && rowIds.has(d.download_id) ? d.download_id : -slot);
+		if (allRows.some((r) => r.id === id)) selectDownload(id);
+	});
 
 	async function load() {
 		try {
@@ -98,9 +160,12 @@
 				.get<{ downloaders: DownloaderView[] }>('/downloaders')
 				.then((r) => (torrent = r.downloaders.some((d) => d.protocol === 'torrent')))
 				.catch(() => {});
+		void refreshDecisions();
 		const offs = ['download', 'slot', 'import', 'resync'].map((t) => live.on(t, soon));
+		const decOffs = ['slot', 'releases', 'resync'].map((t) => live.on(t, () => void refreshDecisions()));
 		return () => {
 			offs.forEach((off) => off());
+			decOffs.forEach((off) => off());
 			clearTimeout(timer);
 		};
 	});
@@ -158,7 +223,6 @@
 <svelte:head><title>Downloads · HolyArrs</title></svelte:head>
 
 <PageHeader title="Downloads" subtitle="What your Downloaders are fetching right now, and what HolyArrs moved into the Library." />
-<OpsDownloadsTabs />
 
 {#snippet detail(s: DownloadRow)}
 	{@const p = s.text ? plainReason(s.text) : null}
@@ -171,12 +235,12 @@
 		<div class="d-names">
 			<p class="d-title">{rowName(s)}</p>
 			{#if manyWords(s.kind) && s.covers}<p class="d-sub">{s.covers}</p>{/if}
-			<StatusPill kind={pill(s)} label={more ? `${statusWord(s, set)} · ${more}` : statusWord(s, set)} />
+			<StatusPill kind={pill(s)} label={more ? `${statusWord(s)} · ${more}` : statusWord(s)} />
 		</div>
 	</div>
-	{#if moving(s)}<ProgressBar value={percent(s.progress)} label="Progress of {who(s)}" showValue tone={s.progress >= 1 ? 'ok' : 'info'} />{/if}
+	{#if s.id > 0 && moving(s)}<ProgressBar value={percent(s.progress)} label="Progress of {who(s)}" showValue tone={s.progress >= 1 ? 'ok' : 'info'} />{/if}
 	<dl class="facts">
-		<dt>Progress</dt><dd>{percent(s.progress)}%</dd>
+		{#if s.id > 0}<dt>Progress</dt><dd>{percent(s.progress)}%</dd>{/if}
 		{#if s.active && s.eta}<dt>Time left</dt><dd>{duration(s.eta)}</dd>{/if}
 		{#if s.active && s.speed}<dt>Speed</dt><dd>{bytes(s.speed)}/s</dd>{/if}
 		{#if s.size}<dt>Size</dt><dd>{bytes(s.size)}</dd>{/if}
@@ -206,9 +270,8 @@
 		<p>{s.name}</p>
 		{#if admin && p?.detail}<p>{p.detail}</p>{/if}
 	</details>
-	{#if s.phase === 'needs_a_decision'}
-		<Button variant="primary" full href={to('/downloads/decide')}>Open Needs a decision</Button>
-	{/if}
+	{@const ds = decisionsOf(s)}
+	{#if ds.length}<DecisionPanel items={ds} ondone={() => void load()} />{/if}
 	{#if s.can_act}
 		<div class="d-acts">
 			<Button variant="secondary" full onclick={() => markFailed(s)} disabled={busy === s.id}>Mark failed</Button>
@@ -218,22 +281,20 @@
 {/snippet}
 
 <PageLoader loading={!loaded} label="Loading Downloads">
-{#if error && rows.length === 0}
+{#if error && allRows.length === 0}
 	<LoadError hasData={false} message="Downloads could not be loaded." onretry={load} />
-{:else if rows.length === 0}
+{:else if allRows.length === 0}
 	<EmptyState icon="download" title="No downloads yet" text="When HolyArrs chooses a Release for a movie or an episode, it sends it to a Downloader and you can watch it here, live." action={{ label: 'Add media', href: to('/search'), icon: 'search' }} />
 	<p class="aside-link"><a href={to('/settings/downloaders')}>Downloaders</a></p>
 {:else}
 	{#if error}<LoadError hasData message="Downloads could not be loaded." onretry={load} />{/if}
-	<DlTable {rows} {imports} titles={titleById} {busy} {set} {torrent} ondetails={(r: DownloadRow) => selectDownload(r.id)} onfail={markFailed} onremove={askRemove} />
+	<DlTable rows={allRows} {imports} titles={titleById} {busy} {torrent} ondetails={(r: DownloadRow) => selectDownload(r.id)} onfail={markFailed} onremove={askRemove} />
 {/if}
 </PageLoader>
 
 <Sheet bind:open={detailOpen} title="Download details" size="md" placement="right">
 	{#if selected}{@render detail(selected)}{/if}
 </Sheet>
-
-<VariantBar options={SET_OPTIONS} bind:value={setPick} param="set" storageKey="holyarrs.downloads-set" label="Downloads status chips" />
 
 <Sheet bind:open={removeOpen} title="Remove this download?" size="sm">
 	{#if target}

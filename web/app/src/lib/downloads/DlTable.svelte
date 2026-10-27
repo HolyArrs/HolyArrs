@@ -1,12 +1,13 @@
 <script lang="ts">
 	// The Downloads table, like a Downloader's own list: every download in one
 	// sortable table with tight rows, small posters and a mini progress bar.
-	// Status chips on top filter it; five chip sets are being compared
-	// (?set=1…5, see status-sets.ts). A row opens its details in a side sheet
-	// (a bottom sheet on phones).
+	// Five status tabs on top filter it (All · Waiting · In progress · Done ·
+	// Problems), with small toggle sub-tabs under the picked one (see
+	// status-tabs.ts). A row opens its details in a side sheet (a bottom
+	// sheet on phones).
 	import { page } from '$app/state';
 	import { replaceState } from '$app/navigation';
-	import { untrack } from 'svelte';
+	import { onMount } from 'svelte';
 	import { fade, slide, type TransitionConfig } from 'svelte/transition';
 	import Poster from '../Poster.svelte';
 	import Icon, { type IconName } from '../Icon.svelte';
@@ -19,63 +20,48 @@
 	import { DUR, easeIn, easeOut } from '../ui/transitions.ts';
 	import { rowName, manyWords, type DownloadRow } from '../downloaders.ts';
 	import { sortRows, tone, type SortKey } from './layouts.ts';
-	import { ALL, ALL_HINT, SETS, chipsFor, counts, pick, seedTag, showOf, statusWord, subCounts, type SetId } from './status-sets.ts';
+	import { ALL, ALL_HINT, counts, pick, showOf, statusWord, subCounts, tabsFor } from './status-tabs.ts';
 	import { byDownload, statusDetail } from './imports.ts';
 	import { poster, who, type LayoutProps } from './shared.ts';
 
-	let { rows, imports, titles, busy, ondetails, onfail, onremove, set, torrent }: LayoutProps & { set: SetId; torrent: boolean } = $props();
+	let { rows, imports, titles, busy, ondetails, onfail, onremove, torrent }: LayoutProps & { torrent: boolean } = $props();
 	let key = $state<SortKey>('state');
 	let dir = $state<'asc' | 'desc'>('asc');
 
-	// The picked chip, kept per set for the session and in the address (&show=).
-	const KEEP = 'holyarrs.downloads-show';
-	let show = $state(ALL);
-	let sub = $state('');
-	function kept(): Record<string, string> {
-		try {
-			return JSON.parse(sessionStorage.getItem(KEEP) ?? '{}') ?? {};
-		} catch {
-			return {};
-		}
-	}
+	// The picked tab (and sub-tab) lives in the address: &show=tab or tab.sub.
+	const start = showOf(page.url.searchParams.get('show'));
+	let show = $state(start.show);
+	let sub = $state(start.sub);
 	function remember() {
-		const v = sub ? `${show}.${sub}` : show;
-		try {
-			sessionStorage.setItem(KEEP, JSON.stringify({ ...kept(), [set]: v }));
-		} catch {
-			/* storage blocked: the address alone keeps it */
-		}
 		try {
 			const u = new URL(page.url.href);
 			if (show === ALL) u.searchParams.delete('show');
-			else u.searchParams.set('show', v);
+			else u.searchParams.set('show', sub ? `${show}.${sub}` : show);
 			if (u.href !== page.url.href) replaceState(u, page.state);
 		} catch {
 			/* the router is not ready yet; the next pick writes it */
 		}
 	}
-	let first = true;
-	$effect(() => {
-		const s = set;
-		untrack(() => {
-			// The address decides on the first visit; after that each set
-			// comes back to the chip last picked in it.
-			const wasFirst = first;
-			first = false;
-			const v = wasFirst ? (page.url.searchParams.get('show') ?? kept()[s]) : kept()[s];
-			({ show, sub } = showOf(v, SETS[s].chips));
-			remember();
-		});
+	// Old links with ?set= (the word sets that were compared) land here too; the parameter is dropped.
+	onMount(() => {
+		if (!page.url.searchParams.has('set')) return;
+		try {
+			const u = new URL(page.url.href);
+			u.searchParams.delete('set');
+			replaceState(u, page.state);
+		} catch {
+			/* harmless: the parameter is ignored */
+		}
 	});
 
-	const chips = $derived(chipsFor(set, rows, torrent));
-	const tally = $derived(counts(rows, chips));
-	// A chip that is hidden (Seeding without a torrent Downloader) reads as All.
-	const on = $derived(chips.some((c) => c.key === show) ? show : ALL);
-	const onChip = $derived(chips.find((c) => c.key === on));
-	const subs = $derived(subCounts(rows, onChip));
+	const tabs = $derived(tabsFor(rows, torrent));
+	const tally = $derived(counts(rows, tabs));
+	const on = $derived(tabs.some((c) => c.key === show) ? show : ALL);
+	const onTab = $derived(tabs.find((c) => c.key === on));
+	const subs = $derived(subCounts(rows, onTab));
+	// A sub-tab that is hidden (Seeding without a torrent Downloader) reads as none.
 	const subOn = $derived(subs.some((x) => x.key === sub) ? sub : '');
-	const base = $derived(on === ALL ? rows : pick(rows, chips, on, subOn));
+	const base = $derived(on === ALL ? rows : pick(rows, tabs, on, subOn));
 	const shown = $derived(sortRows(base, key, dir, rowName));
 
 	function choose(k: string) {
@@ -83,12 +69,14 @@
 		sub = '';
 		remember();
 	}
+	// A sub-tab is a toggle: it narrows the big tab's list, and a second click
+	// (or a click on the big tab) clears it.
 	function chooseSub(k: string) {
-		sub = k;
+		sub = sub === k ? '' : k;
 		remember();
 	}
 
-	// The sub-row slides open under the chips and folds away quicker than it came.
+	// The sub-row slides open under the tabs and folds away quicker than it came.
 	function subIn(node: Element): TransitionConfig {
 		if (reducedMotion()) return fade(node, { duration: DUR.fast });
 		return slide(node, { duration: DUR.base, easing: easeOut });
@@ -101,31 +89,16 @@
 		return fade(node, { duration: reducedMotion() ? 0 : DUR.fast, easing: easeOut });
 	}
 
-	// What an empty chip says: a title, and the chip's own hint as its line.
-	const EMPTY: Record<string, { title: string; icon: IconName }> = {
-		all: { title: 'Nothing is downloading.', icon: 'download' },
-		waiting: { title: 'Nothing is waiting.', icon: 'download' },
-		queued: { title: 'Nothing is queued.', icon: 'download' },
-		downloading: { title: 'Nothing is downloading.', icon: 'download' },
-		importing: { title: 'Nothing is importing.', icon: 'folder' },
-		working: { title: 'Nothing is downloading or importing.', icon: 'download' },
-		done: { title: 'Nothing finished yet.', icon: 'check' },
-		finished: { title: 'Nothing finished yet.', icon: 'check' },
-		seeding: { title: 'Nothing is seeding.', icon: 'check' },
-		active: { title: 'Nothing is active.', icon: 'download' },
-		paused: { title: 'Nothing is paused.', icon: 'check' },
-		stalled: { title: 'Nothing is stalled.', icon: 'check' },
-		failed: { title: 'Nothing failed.', icon: 'check' },
-		problems: { title: 'No problems.', icon: 'check' },
-		needs: { title: 'Nothing needs you.', icon: 'check' },
-		stopped: { title: 'Nothing is stopped.', icon: 'check' },
-		progress: { title: 'Nothing is in progress.', icon: 'download' }
-	};
+	// What an empty tab says: its title, and its hint as the line under it.
+	const ICON: Record<string, IconName> = { all: 'download', waiting: 'download', queued: 'download', progress: 'download', downloading: 'download', importing: 'folder' };
 	const empty = $derived.by(() => {
-		const k = subOn || on;
-		const e = EMPTY[k] ?? EMPTY.all;
-		const hint = (subOn ? subs.find((x) => x.key === subOn)?.hint : tally.find((x) => x.key === on)?.hint) ?? ALL_HINT;
-		return { ...e, text: hint };
+		const s = subOn ? onTab?.subs.find((x) => x.key === subOn) : undefined;
+		const item = s ?? onTab;
+		return {
+			title: item?.empty ?? 'Nothing is downloading.',
+			text: item?.hint ?? ALL_HINT,
+			icon: ICON[subOn || on] ?? 'check'
+		};
 	});
 
 	const COLS: { key: SortKey; label: string; num?: boolean; cls: string }[] = [
@@ -157,16 +130,11 @@
 	// Each row carries what its import is doing or why it failed; there is no separate Imports list.
 	const importOf = $derived(byDownload(imports));
 	const going = (r: DownloadRow) => r.active && r.phase === 'downloading';
-	const ratio = (r: DownloadRow) => (typeof r.ratio === 'number' ? r.ratio.toFixed(2) : '');
 </script>
-
-{#snippet seed(r: DownloadRow)}
-	{#if seedTag(r, set)}<span class="seed" data-testid="row-seeding">Seeding{#if ratio(r)}<span class="ratio"> · {ratio(r)}</span>{/if}</span>{/if}
-{/snippet}
 
 <div class="tbl-view">
 	<div class="tools">
-		<div class="chips" role="group" aria-label="Show" data-testid="table-filter" data-set={set}>
+		<div class="chips" role="group" aria-label="Show" data-testid="table-filter">
 			{#each tally as c (c.key)}
 				<span class="cw" class:zero={c.count === 0} data-testid="status-chip" data-key={c.key} data-count={c.count} data-tip={c.hint}>
 					<Chip label={c.label} count={c.count} note={c.seeding ? `${c.seeding} seeding` : undefined} selected={on === c.key} describedby="dl-hint-{c.key}" onclick={() => choose(c.key)} />
@@ -183,11 +151,7 @@
 	{#if subs.length}
 		<div class="subrow" in:subIn out:subOut>
 			{#key on}
-				<div class="subs" role="group" aria-label="{onChip?.label ?? ''}: show" data-testid="table-subfilter" in:swapIn>
-					<span class="cw sm" data-testid="status-subchip" data-key="all" data-count={tally.find((t) => t.key === on)?.count ?? 0} data-tip={onChip?.hint}>
-						<Chip label="All" selected={subOn === ''} describedby="dl-subhint-all" onclick={() => chooseSub('')} />
-						<span class="sr-only" id="dl-subhint-all">{onChip?.hint}</span>
-					</span>
+				<div class="subs" role="group" aria-label="{onTab?.label ?? ''}: show" data-testid="table-subfilter" in:swapIn>
 					{#each subs as s (s.key)}
 						<span class="cw sm" class:zero={s.count === 0} data-testid="status-subchip" data-key={s.key} data-count={s.count} data-tip={s.hint}>
 							<Chip label={s.label} count={s.count} selected={subOn === s.key} describedby="dl-subhint-{s.key}" onclick={() => chooseSub(s.key)} />
@@ -225,7 +189,7 @@
 					{#each shown as r (r.id)}
 						{@const pct = percent(r.progress)}
 						{@const t = tone(r)}
-						{@const word = statusWord(r, set)}
+						{@const word = statusWord(r)}
 						{@const more = statusDetail(r, importOf.get(r.id))}
 						<tr class={t} data-testid="dl-table-row" data-phase={r.phase} tabindex="0" aria-label="{who(r)}, {word}{more ? `, ${more}` : ''}. Open details" onclick={() => ondetails(r)} onkeydown={(e) => rowKey(e, r)}>
 							<td class="c-title">
@@ -237,7 +201,7 @@
 									</span>
 								</span>
 							</td>
-							<td class="c-state"><span class="st {t}" data-testid="row-state" title={more ? `${word} · ${more}` : word}><i aria-hidden="true"></i><span class="sw">{word}{#if more}<span class="sd">{` · ${more}`}</span>{/if}</span></span>{@render seed(r)}</td>
+							<td class="c-state"><span class="st {t}" data-testid="row-state" title={more ? `${word} · ${more}` : word}><i aria-hidden="true"></i><span class="sw">{word}{#if more}<span class="sd">{` · ${more}`}</span>{/if}</span></span></td>
 							<td class="c-prog">
 								{#if r.phase !== 'failed' && r.phase !== 'removed' && r.phase !== 'vanished'}
 									<span class="pg"><span class="mini" aria-hidden="true"><i style="width: {pct}%"></i></span><span class="pv" data-testid="row-percent">{Math.floor(pct)}%</span></span>
@@ -266,7 +230,7 @@
 						<span class="post"><Poster src={poster(r, titles)} name={r.title || r.name} /></span>
 						<span class="tn">
 							<span class="nm">{rowName(r)}</span>
-							<span class="pl"><span class="st {t}"><i aria-hidden="true"></i><span class="sw">{statusWord(r, set)}{#if more}<span class="sd">{` · ${more}`}</span>{/if}</span></span>{@render seed(r)}{#if manyWords(r.kind) && r.covers}<span class="cv">{r.covers}</span>{/if}</span>
+							<span class="pl"><span class="st {t}"><i aria-hidden="true"></i><span class="sw">{statusWord(r)}{#if more}<span class="sd">{` · ${more}`}</span>{/if}</span></span>{#if manyWords(r.kind) && r.covers}<span class="cv">{r.covers}</span>{/if}</span>
 							{#if r.phase !== 'failed' && r.phase !== 'removed' && r.phase !== 'vanished' && r.phase !== 'done'}<span class="mini" aria-hidden="true"><i style="width: {pct}%"></i></span>{/if}
 						</span>
 						<span class="pr">
@@ -358,9 +322,6 @@
 	.st.wait i { background: var(--wait); }
 	.st.idle i { background: var(--text-faint); }
 	.st.idle { color: var(--text-muted); }
-	.seed { display: inline-flex; align-items: center; flex: none; margin-left: 8px; padding: 1px 6px; border-radius: 4px; background: var(--surface-2); color: var(--text-muted); font: var(--t-caption); font-weight: 600; white-space: nowrap; }
-	.ratio { font-weight: 400; font-variant-numeric: tabular-nums; }
-	.pl .seed { margin-left: 0; }
 	.pg { display: flex; align-items: center; gap: 8px; }
 	.mini { position: relative; display: block; flex: 1; height: 4px; border-radius: 2px; background: var(--surface-3); overflow: hidden; }
 	.mini i { display: block; height: 100%; border-radius: 2px; background: var(--info); }
@@ -400,7 +361,14 @@
 		.scroller { display: none; }
 		.plist { display: block; }
 		.phone-sort { display: inline-flex; }
-		.chips { width: 100%; }
+		/* The five tabs share one row: the word above its count, smaller,
+		   wrapping onto two lines when a word needs it. */
+		.chips { width: 100%; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: stretch; gap: 4px; }
+		.chips .cw, .chips .cw :global(.ui-chip) { width: 100%; min-width: 0; }
+		.chips .cw :global(.ui-chip), .chips .cw :global(.main) { height: 100%; }
+		.chips .cw :global(.main) { width: 100%; flex-direction: column; justify-content: center; gap: 1px; min-height: 48px; padding: 4px 2px; font-size: 12.5px; line-height: 1.15; text-align: center; white-space: normal; overflow-wrap: anywhere; }
+		/* The seeding sub-count lives on the Seeding sub-tab here. */
+		.chips .cw :global(.n + .n) { display: none; }
 	}
 	@media (prefers-reduced-motion: reduce) { .arrow, tbody tr, .cw { transition: none; } .cw[data-tip]::after { animation-name: none; } }
 </style>

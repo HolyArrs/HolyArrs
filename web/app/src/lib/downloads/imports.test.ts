@@ -56,5 +56,8 @@ describe('failReason and statusDetail', () => {
 		const failed = im(1, 8, 'failed', { Result: [{ source_file: 'a', outcome: 'skipped' }] });
 		expect(statusDetail({ phase: 'needs_a_decision', state: 'finished', progress: 1 }, failed)).toBe('import failed: no file could be placed');
 		expect(statusDetail({ phase: 'done', state: 'finished', progress: 1 }, im(2, 9, 'done'))).toBe('');
+		expect(statusDetail({ phase: 'vanished', state: 'vanished', progress: 0 }, undefined)).toBe('removed outside HolyArrs');
+		expect(statusDetail({ phase: 'import_refused', state: 'finished', progress: 1 }, undefined)).toBe('the files did not match');
+		expect(statusDetail({ phase: 'done', state: 'seeding', progress: 1, ratio: 1.5 }, undefined)).toBe('ratio 1.50');
 	});
 });

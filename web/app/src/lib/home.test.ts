@@ -25,7 +25,8 @@ describe('home', () => {
 		expect(items.map((i) => i.word)).toEqual(['Problem', 'Failed', 'Your call', 'Warning']);
 		expect(items[0].href).toBe('/settings/downloaders');
 		expect(items[1].text).toBe('Barbie: The download failed.');
-		expect(items[2]).toMatchObject({ text: 'Harbour Lights S02E01: Ran out.', href: '/downloads/decide' });
+		expect(items[2]).toMatchObject({ text: 'Harbour Lights S02E01: Ran out.', href: '/downloads?show=problems.decide&slot=7' });
+		expect(items[1].href).toBe('/downloads?show=problems.failed&open=3');
 		expect(items[3].href).toBe('/settings/library-folders');
 		expect(healthFix('update')).toBe('/settings/this-app');
 	});
@@ -52,7 +53,7 @@ describe('home', () => {
 		const rows = groupAttention(items);
 		expect(rows.map((r) => `${r.title} · ${r.reason}`)).toEqual(['2 Sources · not answering', 'Downloader · not answering', '2 downloads failed · Gladiator, Everything Everywhere All at Once', 'Source · answered with a problem']);
 		expect(rows.map((r) => r.items.length)).toEqual([2, 1, 2, 1]);
-		expect(rows[2]).toMatchObject({ tone: 'fail', word: 'Failed', href: '/downloads', action: 'Downloads' });
+		expect(rows[2]).toMatchObject({ tone: 'fail', word: 'Failed', href: '/downloads?show=problems.failed', action: 'Downloads' });
 		expect(rows.reduce((n, r) => n + r.items.length, 0)).toBe(items.length);
 		// A lone item keeps its own key, so its row does not jump when another joins it.
 		expect(rows[1].key).toBe(items[2].key);
