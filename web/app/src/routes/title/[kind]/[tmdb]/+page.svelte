@@ -1156,9 +1156,9 @@
 	.own-tabs button.on { color: var(--text); }
 	.own-count { color: var(--text-muted); font: 600 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
 	/* T1: underline tabs, left. */
-	.own-tabs.t1 { border-bottom: 1px solid var(--line); }
-	.own-tabs.t1 button { border-bottom: 2px solid transparent; }
-	.own-tabs.t1 button.on { border-bottom-color: var(--text); }
+	.own-tabs { border-bottom: 1px solid var(--line); }
+	.own-tabs button { border-bottom: 2px solid transparent; }
+	.own-tabs button.on { border-bottom-color: var(--text); }
 	/* T2: centered segmented pills. */
 	/* T3: glass pills sitting on the bottom edge of the art. */
 	/* T4: a full-width bar that sticks under the top bar while scrolling. */
