@@ -727,7 +727,7 @@
 			{/if}
 
 			{#if similar === null}
-				<SkRail kind="person" item="104px" titleWidth="150px" />
+				<SkRail kind="person" item="168px" titleWidth="150px" />
 			{:else if similar.length}
 				<section class="block">
 					<h2>Fans also like</h2>
