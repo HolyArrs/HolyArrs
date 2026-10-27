@@ -3,7 +3,7 @@
 	import { to } from '#lib/paths.ts';
 	import { onMount, untrack } from 'svelte';
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
+	import { goto, replaceState } from '$app/navigation';
 	import { api, message } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { ago, dateTime } from '#lib/format.ts';
@@ -18,22 +18,31 @@
 	import { createLatestOnly, dateRangeProblem, details, filterParams, groupDownloads, groupLabel, historyQuery, kindGroups, kindTone, pageLine, readFilter, type HistoryFilter } from '#lib/history.ts';
 	import type { EventPage, EventRecord, TitleView } from '#lib/types.ts';
 	import VariantBar from '#lib/ui/VariantBar.svelte';
-	import Feed from '#lib/history-designs/Feed.svelte';
-	import ByTitle from '#lib/history-designs/ByTitle.svelte';
-	import Landed from '#lib/history-designs/Landed.svelte';
-	import Importance from '#lib/history-designs/Importance.svelte';
-	import EventTable from '#lib/history-designs/EventTable.svelte';
+	import LookBar from '#lib/history-looks/LookBar.svelte';
+	import LookTable from '#lib/history-looks/LookTable.svelte';
+	import LookDays from '#lib/history-looks/LookDays.svelte';
+	import LookTitles from '#lib/history-looks/LookTitles.svelte';
+	import LookCards from '#lib/history-looks/LookCards.svelte';
+	import LookSplit from '#lib/history-looks/LookSplit.svelte';
+	import { TabCounts } from '#lib/history-looks/feed.svelte.ts';
+	import { ALL, lookTabs, showOf, tabKinds } from '#lib/history-looks.ts';
 
-	// The History designs Luis is comparing (?view=1…5, kept for the session); 0 is today's page.
-	const VIEWS = [
+	// The History looks Luis is comparing (?look=1…5, kept for the session); 0 is today's page.
+	// Every look shares the Downloads-style tab bar; only the rows differ.
+	const LOOKS = [
 		{ value: 0, label: 'Now' },
-		{ value: 1, label: '1 Feed' },
-		{ value: 2, label: '2 By title' },
-		{ value: 3, label: '3 Recently added' },
-		{ value: 4, label: '4 Important' },
-		{ value: 5, label: '5 Table' }
+		{ value: 1, label: '1 Table' },
+		{ value: 2, label: '2 Days' },
+		{ value: 3, label: '3 By title' },
+		{ value: 4, label: '4 Cards' },
+		{ value: 5, label: '5 Split' }
 	];
 	let view = $state(0);
+	const start = showOf(page.url.searchParams.get('show'));
+	let show = $state(start.show);
+	let sub = $state(start.sub);
+	const kinds = $derived(tabKinds(show, sub));
+	const tabNow = $derived(lookTabs.find((t) => t.key === show) ?? lookTabs[0]);
 	// Today's list loads only while it is the one shown (also when switched back to Now).
 	$effect(() => {
 		if (!view) untrack(() => void load());
@@ -41,6 +50,26 @@
 
 	const limit = 50;
 	let filter = $state<HistoryFilter>(readFilter(page.url.searchParams, limit));
+	const tabEmpty = $derived.by(() => {
+		const s = tabNow.subs.find((x) => x.key === sub);
+		return { title: filter.title || filter.from || filter.to ? 'Nothing matches' : tabNow.empty, text: s?.hint ?? tabNow.hint };
+	});
+	// The looks read every kind through their tabs; the old ?kinds= filter does not apply to them.
+	const lookFilter = $derived({ ...filter, groups: [] });
+	function showAll() {
+		show = ALL;
+		sub = '';
+		const u = new URL(page.url.href);
+		u.searchParams.delete('show');
+		replaceState(u, page.state);
+	}
+	const counts = new TabCounts();
+	$effect(() => {
+		if (!view) return;
+		const f = lookFilter;
+		const open = show;
+		untrack(() => void counts.load(f, open));
+	});
 	let events = $state<EventRecord[]>([]);
 	let total = $state(0);
 	let titles = $state<TitleView[]>([]);
@@ -77,8 +106,13 @@
 	function apply(change: Partial<HistoryFilter>) {
 		filter = { ...filter, offset: 0, ...change };
 		const params = filterParams(filter);
-		const pick = page.url.searchParams.get('view');
-		void goto(to('/downloads/history') + params + (pick ? `${params ? '&' : '?'}view=${pick}` : ''), { replace: true, reset: false });
+		const keep = new URLSearchParams(params);
+		for (const k of ['look', 'show']) {
+			const v = page.url.searchParams.get(k);
+			if (v) keep.set(k, v);
+		}
+		const q = keep.toString();
+		void goto(to('/downloads/history') + (q ? '?' + q : ''), { replace: true, reset: false });
 		void load();
 	}
 
@@ -127,11 +161,12 @@
 <PageHeader title="History" subtitle="Everything HolyArrs did, newest first: what it added, searched, chose, sent, imported, renamed and deleted, and why." />
 
 {#if view}
-	{#if view === 1}<Feed {filter} {titles} {titleById} onfilter={apply} {phone} />
-	{:else if view === 2}<ByTitle {filter} {titles} {titleById} onfilter={apply} {phone} />
-	{:else if view === 3}<Landed {filter} {titles} {titleById} onfilter={apply} {phone} />
-	{:else if view === 4}<Importance {filter} {titles} {titleById} onfilter={apply} {phone} />
-	{:else}<EventTable {filter} {titles} {titleById} onfilter={apply} {phone} />{/if}
+	<LookBar bind:show bind:sub counts={counts.tabs} subCounts={counts.subs} filter={lookFilter} {titles} {episodeName} onfilter={apply} />
+	{#if view === 1}<LookTable filter={lookFilter} {kinds} {titleById} empty={tabEmpty} onall={show !== ALL ? showAll : undefined} />
+	{:else if view === 2}<LookDays filter={lookFilter} {kinds} {titleById} empty={tabEmpty} onall={show !== ALL ? showAll : undefined} />
+	{:else if view === 3}<LookTitles filter={lookFilter} {kinds} {titleById} empty={tabEmpty} onall={show !== ALL ? showAll : undefined} onfilter={apply} />
+	{:else if view === 4}<LookCards filter={lookFilter} {kinds} {titleById} empty={tabEmpty} onall={show !== ALL ? showAll : undefined} />
+	{:else}<LookSplit filter={lookFilter} {kinds} {titleById} empty={tabEmpty} onall={show !== ALL ? showAll : undefined} {phone} />{/if}
 {:else}
 {#snippet filterForm()}
 	<form class="filters" aria-label="Filter the history" onsubmit={(e) => e.preventDefault()}>
@@ -263,7 +298,7 @@
 {/if}
 {/if}
 
-<VariantBar options={VIEWS} bind:value={view} storageKey="holyarrs.history-view" label="History design" />
+<VariantBar options={LOOKS} bind:value={view} param="look" storageKey="holyarrs.history-look" label="History look" />
 
 <style>
 	.filterbar { margin-bottom: 24px; padding: 16px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }

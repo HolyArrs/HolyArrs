@@ -1,0 +1,231 @@
+// History looks (Downloads > History, ?look=1…5): the status tabs every look
+// shares, like the Downloads table's. Five big tabs answer what a person
+// opens History for (what came in, what went wrong, what changed, what ran
+// in the background); each has small toggle sub-tabs. The kinds a tab asks
+// the server for come from here, and so do the day and title folds the
+// looks lay their rows out with.
+import { details, groupDownloads, type HistoryRow } from './history.ts';
+import { clock, dayKey, dayLabel, rowTier, type Tier } from './history-views.ts';
+import type { EventRecord } from './types.ts';
+
+export interface LookSub {
+	key: string;
+	label: string;
+	hint: string;
+	/** Event kinds; a kind ending in * is a prefix. */
+	kinds: string[];
+}
+
+export interface LookTab {
+	key: string;
+	label: string;
+	hint: string;
+	/** What the tab says when it is empty. */
+	empty: string;
+	subs: LookSub[];
+}
+
+export const ALL = 'all';
+
+const download = ['release_chosen', 'release_chosen_by_hand', 'release_turned_down', 'turned_down_removed', 'release_held', 'held_removed', 'download_sent', 'download_queued', 'download_downloading', 'download_stalled', 'download_paused', 'download_finished', 'download_seeding', 'download_removed'];
+
+export const lookTabs: LookTab[] = [
+	{ key: ALL, label: 'All', hint: 'Every Event, newest first.', empty: 'No history yet.', subs: [] },
+	{
+		key: 'came',
+		label: 'Came in',
+		hint: 'Files that reached the Library: imported, upgraded or found on disk.',
+		empty: 'Nothing came in.',
+		subs: [
+			{ key: 'imported', label: 'Imported', hint: 'Downloads moved into the Library.', kinds: ['import_done', 'import_partly_done'] },
+			{ key: 'upgraded', label: 'Upgraded', hint: 'A better file replaced the one you had.', kinds: ['file_replaced'] },
+			{ key: 'found', label: 'Found on disk', hint: 'Files already in a Library folder that HolyArrs took on.', kinds: ['adopted'] }
+		]
+	},
+	{
+		key: 'problems',
+		label: 'Problems',
+		hint: 'Failed downloads and imports, decisions waiting for you, and health.',
+		empty: 'Nothing went wrong.',
+		subs: [
+			{ key: 'downloads', label: 'Downloads', hint: 'Downloads that failed or went missing from the Downloader.', kinds: ['download_failed', 'download_vanished', 'download_not_removed'] },
+			{ key: 'imports', label: 'Imports', hint: 'Finished downloads HolyArrs could not move into the Library.', kinds: ['import_failed', 'import_rejected', 'file_hold_failed', 'free_space_low'] },
+			{ key: 'decide', label: 'Needs a decision', hint: 'HolyArrs stopped and waits for you to pick.', kinds: ['needs_decision', 'stopped_looking'] },
+			{ key: 'health', label: 'Health', hint: 'Checks that broke, folders out of reach, missing files, alerts that failed.', kinds: ['health_broken', 'library_folder_*', 'file_missing', 'search_failed', 'alert_failed', 'media_server_failed'] }
+		]
+	},
+	{
+		key: 'changes',
+		label: 'Changes',
+		hint: 'What was added, sent to download, renamed or deleted, subtitles and asks.',
+		empty: 'Nothing changed.',
+		subs: [
+			{ key: 'added', label: 'Added', hint: 'Movies, shows and artists added, by hand, from a list or as they came out.', kinds: ['title_added', 'list_synced', 'version_changed', 'gate_opened'] },
+			{ key: 'downloads', label: 'Downloads', hint: 'Releases chosen, held or turned down, and their downloads.', kinds: download },
+			{ key: 'renamed', label: 'Renamed', hint: 'Files and folders renamed.', kinds: ['renamed', 'rename_planned'] },
+			{ key: 'deleted', label: 'Deleted', hint: 'Titles, episodes and files deleted or held.', kinds: ['title_removed', 'episodes_removed', 'file_held', 'holding_cleaned'] },
+			{ key: 'subtitles', label: 'Subtitles', hint: 'Subtitles saved, upgraded, synced or not found.', kinds: ['subtitle_*'] },
+			{ key: 'asks', label: 'Asks', hint: 'Asks made, approved or turned down.', kinds: ['ask_*'] }
+		]
+	},
+	{
+		key: 'routine',
+		label: 'Routine',
+		hint: 'Searches, refreshed details and folder scans HolyArrs runs on its own.',
+		empty: 'No routine work yet.',
+		subs: [
+			{ key: 'searches', label: 'Searches', hint: 'Searches for Releases and feed checks.', kinds: ['search_done', 'feed_checked'] },
+			{ key: 'refreshes', label: 'Refreshed', hint: 'Details, albums and episodes read again from their source.', kinds: ['title_refreshed', 'albums_changed', 'album_changed', 'episodes_changed', 'details_source_changed', 'season_changed', 'title_edited'] },
+			{ key: 'scans', label: 'Scans', hint: 'Library folders looked at again.', kinds: ['library_scanned', 'library_rescanned', 'folder_scanned', 'file_back', 'media_server_told'] }
+		]
+	}
+];
+
+/** tabKinds is what a tab (and sub-tab) asks the server for; undefined is every Event. */
+export function tabKinds(tab: string, sub = ''): string[] | undefined {
+	const t = lookTabs.find((x) => x.key === tab);
+	if (!t || t.key === ALL) return undefined;
+	const s = t.subs.find((x) => x.key === sub);
+	return s ? [...s.kinds] : t.subs.flatMap((x) => x.kinds);
+}
+
+/** showOf reads &show=tab or tab.sub (unknown parts fall back to All and no sub-tab). */
+export function showOf(v: string | null): { show: string; sub: string } {
+	const [tab = '', sub = ''] = (v ?? '').split('.');
+	const t = lookTabs.find((x) => x.key === tab);
+	if (!t) return { show: ALL, sub: '' };
+	return { show: t.key, sub: t.subs.some((s) => s.key === sub) ? sub : '' };
+}
+
+/** showParam is the &show= value for a tab and sub-tab ('' for All). */
+export function showParam(show: string, sub: string): string {
+	if (show === ALL || !lookTabs.some((t) => t.key === show)) return '';
+	return sub ? `${show}.${sub}` : show;
+}
+
+const matches = (kind: string, list: string[]) => list.some((k) => (k.endsWith('*') ? kind.startsWith(k.slice(0, -1)) : k === kind));
+
+/** tabOf names the big tab an Event kind is counted under ('' when only All has it). */
+export function tabOf(kind: string): string {
+	for (const t of lookTabs) for (const s of t.subs) if (matches(kind, s.kinds)) return t.key;
+	return '';
+}
+
+/** One day of rows: its key, label and a count of what mattered. */
+export interface DayGroup {
+	key: string;
+	rows: HistoryRow[];
+	/** Rows per big tab, for the day's summary line. */
+	tally: Record<string, number>;
+}
+
+/** byDay folds a page of Events into download rows, then into local days (newest first, order kept). */
+export function byDay(events: EventRecord[]): DayGroup[] {
+	const out: DayGroup[] = [];
+	for (const row of groupDownloads(events)) {
+		const k = dayKey(row.head.At);
+		let d = out[out.length - 1];
+		if (!d || d.key !== k) {
+			d = { key: k, rows: [], tally: {} };
+			out.push(d);
+		}
+		d.rows.push(row);
+		const tab = rowTab(row);
+		d.tally[tab] = (d.tally[tab] ?? 0) + 1;
+	}
+	return out;
+}
+
+/** rowTab is the tab a row counts under: a folded download by how far it got. */
+export function rowTab(row: HistoryRow): string {
+	if (row.steps.some((s) => s.state === 'failed')) return 'problems';
+	if (row.steps.length && row.steps[2]?.state === 'done') return 'came';
+	if (row.steps.length) return 'changes';
+	return tabOf(row.head.Kind) || 'changes';
+}
+
+/** dayLine says what a day held, important first ("2 came in · 1 problem · 40 routine"). */
+export function dayLine(tally: Record<string, number>): string {
+	const parts: string[] = [];
+	const n = (k: string) => tally[k] ?? 0;
+	if (n('came')) parts.push(`${n('came')} came in`);
+	if (n('problems')) parts.push(`${n('problems')} ${n('problems') === 1 ? 'problem' : 'problems'}`);
+	if (n('changes')) parts.push(`${n('changes')} ${n('changes') === 1 ? 'change' : 'changes'}`);
+	if (n('routine')) parts.push(`${n('routine')} routine`);
+	return parts.join(' · ');
+}
+
+/** A run of rows on a day: one row that matters, or a fold of quiet routine rows next to each other. */
+export type DayItem = { type: 'row'; key: string; row: HistoryRow; tier: Tier } | { type: 'quiet'; key: string; rows: HistoryRow[] };
+
+/** dayItems folds two or more routine rows in a row into one quiet line. */
+export function dayItems(rows: HistoryRow[]): DayItem[] {
+	const out: DayItem[] = [];
+	let run: HistoryRow[] = [];
+	const flush = () => {
+		if (run.length >= 2) out.push({ type: 'quiet', key: `q${run[0].key}`, rows: run });
+		else for (const r of run) out.push({ type: 'row', key: r.key, row: r, tier: 'routine' });
+		run = [];
+	};
+	for (const r of rows) {
+		const tier = rowTier(r);
+		if (tier === 'routine') {
+			run.push(r);
+			continue;
+		}
+		flush();
+		out.push({ type: 'row', key: r.key, row: r, tier });
+	}
+	flush();
+	return out;
+}
+
+const WHY = new Set(['Why', 'Error', 'Message']);
+
+/** rowWhy is the one line a row is explained by: a reason or error first, then a path. */
+export function rowWhy(row: HistoryRow): string {
+	let first = '';
+	for (const e of row.events) {
+		for (const [k, v] of details(e)) {
+			if (WHY.has(k)) return v;
+			first ||= v;
+		}
+	}
+	return first;
+}
+
+/** whenShort is a row's time: the clock today, the day and clock before. */
+export function whenShort(at: string, now = new Date()): string {
+	const k = dayKey(at);
+	return k === dayKey(now.toISOString()) ? clock(at) : `${dayLabel(k, now)}, ${clock(at)}`;
+}
+
+/** A title's thread: every row about it on the page, newest first. */
+export interface Thread {
+	key: string;
+	titleId: number | null;
+	name: string;
+	rows: HistoryRow[];
+	/** How many rows per tab, for the thread's small counts. */
+	tally: Record<string, number>;
+}
+
+/** threads groups a page's rows by title (rows with no title share "HolyArrs itself"), newest thread first. */
+export function threads(events: EventRecord[]): Thread[] {
+	const by = new Map<string, Thread>();
+	const out: Thread[] = [];
+	for (const row of groupDownloads(events)) {
+		const id = row.head.TitleID ?? null;
+		const key = id ? `t${id}` : 'none';
+		let t = by.get(key);
+		if (!t) {
+			t = { key, titleId: id, name: row.head.title_name ?? 'HolyArrs itself', rows: [], tally: {} };
+			by.set(key, t);
+			out.push(t);
+		}
+		t.rows.push(row);
+		const tab = rowTab(row);
+		t.tally[tab] = (t.tally[tab] ?? 0) + 1;
+	}
+	return out;
+}

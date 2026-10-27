@@ -1,0 +1,62 @@
+<script lang="ts">
+	import type { Snippet } from 'svelte';
+	import Icon from '../Icon.svelte';
+	import Skeleton from '../ui/Skeleton.svelte';
+	import LoadError from '../ui/LoadError.svelte';
+	import Button from '../ui/Button.svelte';
+	import { pageLine } from '../history.ts';
+	import type { EventFeed } from './feed.svelte.ts';
+
+	// What every History look shows around its rows: a placeholder while the
+	// first page loads, the error, the empty tab (the same box as an empty
+	// Downloads tab), the count line, and "Show more" under the rows.
+	let {
+		feed,
+		empty,
+		onretry,
+		onmore,
+		onall,
+		children
+	}: {
+		feed: EventFeed;
+		empty: { title: string; text: string };
+		onretry: () => void;
+		onmore: () => void;
+		/** Shown on an empty tab: back to every Event. */
+		onall?: () => void;
+		children: Snippet;
+	} = $props();
+</script>
+
+{#if feed.error && !feed.events.length}
+	<LoadError hasData={false} message="History could not be loaded." onretry={onretry} />
+{:else if !feed.loaded}
+	<div class="sk" aria-busy="true" aria-label="Loading history">{#each Array(8) as _, i (i)}<Skeleton height="44px" />{/each}</div>
+{:else if !feed.events.length}
+	<div class="empty" data-testid="look-empty">
+		<span class="eic"><Icon name="clock" size={22} stroke={2} /></span>
+		<p class="et">{empty.title}</p>
+		<p class="es">{empty.text}</p>
+		{#if onall}<button type="button" class="elink" onclick={onall}>Show every Event</button>{/if}
+	</div>
+{:else}
+	{#if feed.error}<LoadError hasData message="History could not be loaded." onretry={onretry} />{/if}
+	<p class="count" aria-live="polite" data-testid="history-count">{pageLine(feed.total, 0, feed.events.length)} Events</p>
+	{@render children()}
+	{#if feed.events.length < feed.total}
+		<div class="more"><Button variant="secondary" busy={feed.busy} disabled={feed.busy} onclick={onmore}>Show more</Button></div>
+	{/if}
+{/if}
+
+<style>
+	.sk { display: grid; gap: 6px; }
+	.count { margin: 0 0 8px; color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
+	.more { display: flex; justify-content: center; margin-top: 16px; }
+	.empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 40px 20px; text-align: center; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); }
+	.eic { display: grid; place-items: center; width: 44px; height: 44px; margin-bottom: 4px; border-radius: 12px; background: var(--surface-2); color: var(--text-muted); }
+	.et { font: var(--t-headline); }
+	.es { color: var(--text-muted); font: var(--t-callout); max-width: 360px; }
+	.elink { display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; border: 0; background: none; color: var(--accent-text); font: var(--t-callout); font-weight: 600; cursor: pointer; border-radius: 6px; }
+	.elink:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	@media (max-width: 767px) { .more > :global(*) { flex: 1; min-height: 44px; } }
+</style>
