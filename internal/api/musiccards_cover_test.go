@@ -42,7 +42,7 @@ func TestMusicCardsPicturesFromServerOnly(t *testing.T) {
 		return pics.URL + "/dz/" + mbid + ".jpg", nil
 	}
 	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{pics.URL + "/"}, HTTP: pics.Client()}
-	api := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), Library: &library.Service{Store: s, Artwork: art, CoverArtBase: pics.URL}, ImageBase: pics.URL + "/v1/img", Version: "test", Deps: music.Deps{MusicCover: cover}})
+	api := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), Library: &library.Service{Store: s, Artwork: art}, ImageBase: pics.URL + "/v1/img", Version: "test", Deps: music.Deps{MusicCover: cover}})
 	srv := httptest.NewServer(api.Handler())
 	defer srv.Close()
 	code := func(id string) int {
@@ -113,7 +113,7 @@ func TestTopSongArtNotFetchedFromChart(t *testing.T) {
 	}))
 	defer pics.Close()
 	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{pics.URL + "/"}, HTTP: pics.Client()}
-	api := New(Server{Store: s, Library: &library.Service{Store: s, Artwork: art, CoverArtBase: pics.URL}, Version: "test"})
+	api := New(Server{Store: s, Library: &library.Service{Store: s, Artwork: art}, Version: "test"})
 	srv := httptest.NewServer(api.Handler())
 	defer srv.Close()
 	id := songArtID("Bruno Mars", "Uptown Special", pics.URL+"/images/cover/abc/250x250-000000-80-0-0.jpg")

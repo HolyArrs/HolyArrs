@@ -36,7 +36,7 @@ func TestAlbumCoverServesTheCachedCover(t *testing.T) {
 	defer pics.Close()
 	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{pics.URL + "/"}, HTTP: pics.Client()}
 	q := jobs.New(s, jobs.Options{})
-	lib := &library.Service{Store: s, Queue: q, Artists: apiMusic(), Artwork: art, CoverArtBase: pics.URL}
+	lib := &library.Service{Store: s, Queue: q, Artists: apiMusic(), Artwork: art}
 	srv := httptest.NewServer(New(Server{Store: s, Queue: q, Library: lib, Metadata: &metadata.Static{}, ImageBase: pics.URL + "/v1/img"}).Handler())
 	defer srv.Close()
 	u := srv.URL + "/api/v1"

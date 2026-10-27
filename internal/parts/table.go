@@ -216,8 +216,6 @@ var Routes = map[string]Owner{
 	"PUT /api/v1/settings/trakt-token":     Core,
 	"GET /api/v1/settings/tvdb-key":        Core,
 	"PUT /api/v1/settings/tvdb-key":        Core,
-	"GET /api/v1/settings/theaudiodb-key":  Core,
-	"PUT /api/v1/settings/theaudiodb-key":  Core,
 
 	// Library folders.
 	"GET /api/v1/library-folders":             Core,

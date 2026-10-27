@@ -429,10 +429,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if pictures != nil {
 		pictures.UserAgent = metadata.UserAgentFor(version)
 	}
-	audioDB, coverArt, moreHosts := artistPictureSources(vault, version)
-	pictureHosts = append(pictureHosts, moreHosts...)
 	lib := &library.Service{Store: s, Queue: q, Metadata: md, Live: hub, SavePath: c.SavePath, ArtistImages: pictures,
-		AudioDB: audioDB, CoverArtBase: coverArt,
 		ImageServer: hosted.Service.Base() + "/v1/img",
 		Artwork: &library.ArtworkCache{Dir: filepath.Join(c.ConfigDir, "artwork"), Allowed: append([]string{metadata.ImageBase + "/", "https://assets.fanart.tv/", hosted.Service.Base() + "/v1/img/"}, pictureHosts...),
 			HTTP: artworkHTTP}}
@@ -692,58 +689,6 @@ func artistImages() (*metadata.ArtistImages, []string) {
 	t.DialContext = source.PolicyDialer(source.PublicOnly).DialContext
 	return &metadata.ArtistImages{BaseURL: metadata.DeezerBase, HTTP: &http.Client{Transport: t}},
 		[]string{"https://cdn-images.dzcdn.net/images/artist/", "https://e-cdns-images.dzcdn.net/images/artist/", metadata.CommonsThumbBase + "/"}
-}
-
-// artistPictureSources are TheAudioDB and the Cover Art Archive, the first
-// and last artist picture sources, and the picture addresses they add.
-// TheAudioDB is asked only with a key: HOLYARRS_THEAUDIODB_KEY (labs) or
-// the person's own key in the vault; HolyArrs ships none. Both follow the
-// Deezer switch: off with HOLYARRS_DEEZER_URL=off or with a MusicBrainz
-// stand-in, so tests never reach them; HOLYARRS_THEAUDIODB_URL and
-// HOLYARRS_COVERART_URL name stand-ins.
-func artistPictureSources(v *secrets.Vault, version string) (*metadata.AudioDB, string, []string) {
-	deezer := os.Getenv("HOLYARRS_DEEZER_URL")
-	adbEnv := strings.TrimRight(os.Getenv("HOLYARRS_THEAUDIODB_URL"), "/")
-	caaEnv := strings.TrimRight(os.Getenv("HOLYARRS_COVERART_URL"), "/")
-	key := func(ctx context.Context) (string, error) {
-		if k := strings.TrimSpace(os.Getenv("HOLYARRS_THEAUDIODB_KEY")); k != "" {
-			return k, nil
-		}
-		if v == nil {
-			return "", nil
-		}
-		return v.Setting(ctx, api.AudioDBKeyGroup, api.AudioDBKeyName)
-	}
-	ua := metadata.UserAgentFor(version)
-	if deezer == "off" || deezer == "" && os.Getenv("HOLYARRS_MUSICBRAINZ_URL") != "" {
-		var adb *metadata.AudioDB
-		var hosts []string
-		if adbEnv != "" {
-			adb, hosts = &metadata.AudioDB{BaseURL: adbEnv, Key: key, UserAgent: ua}, append(hosts, adbEnv+"/")
-		}
-		if caaEnv != "" {
-			hosts = append(hosts, caaEnv+"/")
-		}
-		return adb, caaEnv, hosts
-	}
-	t := http.DefaultTransport.(*http.Transport).Clone()
-	t.Proxy = nil // the policy must see the real address
-	t.DialContext = source.PolicyDialer(source.PublicOnly).DialContext
-	adb := &metadata.AudioDB{BaseURL: metadata.AudioDBBase, Key: key, HTTP: &http.Client{Transport: t}, UserAgent: ua}
-	hosts := []string{"https://r2.theaudiodb.com/images/", "https://www.theaudiodb.com/images/",
-		library.CoverArtBase + "/release-group/", "https://archive.org/download/", "https://*.archive.org/",
-		// Album covers the metadata server's cover chain names.
-		library.CoverArtBase + "/release/", "https://cdn-images.dzcdn.net/images/cover/", "https://e-cdns-images.dzcdn.net/images/cover/", "https://*.mzstatic.com/"}
-	caa := library.CoverArtBase
-	if adbEnv != "" {
-		adb.BaseURL, adb.HTTP = adbEnv, nil
-		hosts = append(hosts, adbEnv+"/")
-	}
-	if caaEnv != "" {
-		caa = caaEnv
-		hosts = append(hosts, caaEnv+"/")
-	}
-	return adb, caa, hosts
 }
 
 // musicSource is MusicBrainz at no more than one request a second (one

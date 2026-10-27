@@ -42,15 +42,9 @@ type Service struct {
 	Live    *live.Hub
 	// Artwork caches posters; nil keeps no pictures.
 	Artwork *ArtworkCache
-	// ArtistImages finds artist pictures (music has no TMDB poster); nil
-	// finds none.
+	// ArtistImages reads Deezer's artist profiles (top songs, explicit
+	// marks) and Wikipedia bios; nil reads none.
 	ArtistImages *metadata.ArtistImages
-	// AudioDB is TheAudioDB, the first artist picture source (also the
-	// backdrop and logo); nil asks it nothing.
-	AudioDB *metadata.AudioDB
-	// CoverArtBase is the Cover Art Archive (CoverArtBase), the last artist
-	// picture source; "" asks it nothing.
-	CoverArtBase string
 	// ImageServer is the metadata server's picture store (<base>/v1/img):
 	// the only source of artist photos, wide backgrounds and logos.
 	ImageServer string

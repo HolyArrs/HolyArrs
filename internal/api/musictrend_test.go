@@ -43,7 +43,7 @@ func TestMusicTrendingListsAndPictures(t *testing.T) {
 	}))
 	defer cover.Close()
 	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{cover.URL + "/"}, HTTP: cover.Client()}
-	srv := httptest.NewServer(New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), Library: &library.Service{Store: s, Artwork: art, CoverArtBase: cover.URL}, ImageBase: cover.URL + "/v1/img", Version: "test", Deps: music.Deps{MusicTrending: trend}}).Handler())
+	srv := httptest.NewServer(New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), Library: &library.Service{Store: s, Artwork: art}, ImageBase: cover.URL + "/v1/img", Version: "test", Deps: music.Deps{MusicTrending: trend}}).Handler())
 	defer srv.Close()
 	get := func(q string, want int) map[string]any {
 		t.Helper()
@@ -110,7 +110,7 @@ func TestMusicTrendArtServerOnly(t *testing.T) {
 	var asked atomic.Int32
 	cover := func(context.Context, string, string, string) (string, error) { asked.Add(1); return "", metadata.ErrNotFound }
 	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{pics.URL + "/"}, HTTP: pics.Client()}
-	api := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), Library: &library.Service{Store: s, Artwork: art, CoverArtBase: pics.URL}, ImageBase: pics.URL + "/v1/img", Version: "test", Deps: music.Deps{MusicTrending: trend, MusicCover: cover}})
+	api := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), Library: &library.Service{Store: s, Artwork: art}, ImageBase: pics.URL + "/v1/img", Version: "test", Deps: music.Deps{MusicTrending: trend, MusicCover: cover}})
 	srv := httptest.NewServer(api.Handler())
 	defer srv.Close()
 	code := func(id string) int {
@@ -152,7 +152,6 @@ func TestMusicTrendingKidLimited(t *testing.T) {
 	}))
 	defer cover.Close()
 	k.api.s.Library.Artwork = &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{cover.URL + "/"}, HTTP: cover.Client()}
-	k.api.s.Library.CoverArtBase = cover.URL
 	k.api.s.ImageBase = cover.URL + "/v1/img"
 	items := func(b []byte) int {
 		var out struct {

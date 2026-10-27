@@ -32,7 +32,7 @@ func TestAlbumCoverServerCopyFirstAndCatalogAlbums(t *testing.T) {
 	}))
 	defer srv.Close()
 	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{srv.URL + "/"}, HTTP: srv.Client()}
-	lib := &library.Service{Store: s, Artwork: art, CoverArtBase: srv.URL}
+	lib := &library.Service{Store: s, Artwork: art}
 	a := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), Library: lib, ImageBase: srv.URL + "/v1/img", Version: "test"})
 	b, err := rowtpl.ParseBundle([]byte(`{"version":"t","items":[{"id":"` + stored + `","k":"a","t":"Kept","ar":"A"},{"id":"` + cold + `","k":"a","t":"Cold","ar":"B"}],"keys":{},"names":{}}`))
 	if err != nil {

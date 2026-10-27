@@ -68,7 +68,6 @@ func newPictureWorld(t *testing.T) *pictureWorld {
 func withPictureWorld(t *testing.T, svc *Service, w *pictureWorld) {
 	svc.ImageServer = w.srv.URL + "/v1/img"
 	svc.ArtistImages = &metadata.ArtistImages{BaseURL: w.srv.URL, Gap: time.Millisecond, Timeout: time.Second}
-	svc.CoverArtBase = w.srv.URL + "/caa"
 	svc.Artwork = &ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{w.srv.URL + "/"}, HTTP: &http.Client{}}
 }
 
