@@ -247,7 +247,8 @@ func (a *API) aheadDetails(ctx context.Context, it aheadItem) error {
 		_, err := ar.Artist(metadata.QuickArtist(ctx, aheadArtistWait), it.mbid)
 		return err
 	case "album":
-		_, err := ar.Pressings(ctx, it.mbid)
+		// The page's own one-call album answer, never a fan-out over editions.
+		_, err := ar.Pressings(metadata.MemberLookup(ctx), it.mbid)
 		if errors.Is(err, metadata.ErrListCut) {
 			return nil
 		}

@@ -107,6 +107,8 @@ func (a *API) artWarmWorker() {
 		if do == nil {
 			do = a.warmArtItem
 		}
+		// While the metadata server refuses, background warms wait.
+		metadata.WaitAhead(context.Background())
 		ctx, cancel := context.WithTimeout(metadata.Ahead(context.Background()), artWarmItem)
 		// The item's records may still be on their way (asked with the list).
 		a.awaitPictureRecords(ctx, k.kind, k.mbid, 2*time.Second)

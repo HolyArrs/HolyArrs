@@ -364,13 +364,19 @@ func (m *serviceMusic) Pressings(ctx context.Context, albumMBID string) ([]Press
 	// A page view takes the chosen edition's tracks in one call; the Library
 	// (which keeps track ids) reads every edition below.
 	if IsMemberLookup(ctx) {
-		if p, err := m.service.MusicAlbum(ctx, albumMBID); err == nil {
+		p, err := m.service.MusicAlbum(ctx, albumMBID)
+		if err == nil {
 			if ps, ok := p.pressings(); ok {
 				if p.EditionCount <= 1 && p.EditionsComplete {
 					return ps, nil
 				}
 				return ps, ErrListCut
 			}
+		}
+		// A refusing or unreachable server is asked again later, never
+		// through the per-edition fan-out (many requests into a refusal).
+		if errors.Is(err, ErrServiceBusy) || errors.Is(err, ErrServiceUnavailable) || ctx.Err() != nil {
+			return nil, err
 		}
 	}
 	item, err := m.service.detail(ctx, "musicbrainz", "release-group", albumMBID)

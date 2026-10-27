@@ -376,7 +376,7 @@ func (a *API) prefetchArtistVideos(r *http.Request, mbids []string) {
 	if _, _, ok := ytdlpRun(); !ok {
 		return
 	}
-	ctx := metadata.MemberLookup(context.WithoutCancel(r.Context()))
+	ctx := metadata.Ahead(metadata.MemberLookup(context.WithoutCancel(r.Context())))
 	go func() {
 		for _, mbid := range mbids {
 			vids := a.videosOf(ctx, mbid)

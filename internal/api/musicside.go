@@ -3,9 +3,11 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"sync"
 	"time"
 
+	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
@@ -84,7 +86,8 @@ func pageFlight[T any](a *API, ctx context.Context, key string, f func(context.C
 		v, err := f(lctx)
 		fl.v, fl.err = v, err
 		close(fl.done)
-		if err != nil {
+		// A cut list (one edition of several) is a full answer: kept to join.
+		if err != nil && !errors.Is(err, metadata.ErrListCut) {
 			drop()
 			return
 		}
@@ -100,11 +103,9 @@ func waitFlight[T any](ctx context.Context, fl *sideFlight, by time.Time) (v T, 
 	defer t.Stop()
 	select {
 	case <-fl.done:
-		if fl.err != nil {
-			return v, fl.err, true
-		}
+		// The value goes with its error: a cut list still has its tracks.
 		got, _ := fl.v.(T)
-		return got, nil, true
+		return got, fl.err, true
 	case <-t.C:
 		return v, nil, false
 	case <-ctx.Done():

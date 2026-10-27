@@ -184,7 +184,8 @@ func (a *API) fillGenres(src genreSource) {
 		c.queue = c.queue[1:]
 		c.lookups = append(c.lookups, now)
 		c.mu.Unlock()
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		// A background fill: paced and paused by the metadata server gate.
+		ctx, cancel := context.WithTimeout(metadata.Ahead(context.Background()), time.Minute)
 		var g []string
 		var links []metadata.ArtistLink
 		var err error
