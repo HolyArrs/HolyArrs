@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { sized } from '#lib/tmdb-image.ts';
 	import { getBase } from '#lib/paths.ts';
 	import { to } from '#lib/paths.ts';
 	import { onMount, untrack } from 'svelte';
@@ -310,7 +311,8 @@
 {/snippet}
 
 {#snippet art(e: CalendarEntry)}
-	{@const src = entryArt(e)}
+	<!-- A 64 px thumbnail: the row size from the artwork cache, not TMDB's full-size still. -->
+	{@const src = entryArt(e) ? sized(entryArt(e), 'backdrop', 64) : null}
 	<span class="thumb" aria-hidden="true">
 		{#if src}<img {src} alt="" loading="lazy" decoding="async" />{:else}<Icon name={entryIcon(e.kind)} size={16} />{/if}
 		<span class="dot"></span>

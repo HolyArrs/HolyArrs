@@ -15,8 +15,21 @@
 	let backup = $state('');
 	let backupFailed = $state(false);
 	const personId = $derived(href?.match(/\/people\/(\d+)/)?.[1] ?? '');
+	// Asked only once the circle is near the screen: a long cast row (60 people
+	// on a big show) no longer sends 60 asks at once ahead of the page's own.
+	let near = $state(false);
+	function nearView(node: HTMLElement) {
+		const io = new IntersectionObserver((seen) => {
+			if (seen.some((e) => e.isIntersecting)) {
+				near = true;
+				io.disconnect();
+			}
+		}, { rootMargin: '200px' });
+		io.observe(node);
+		return { destroy: () => io.disconnect() };
+	}
 	$effect(() => {
-		if ((image && !failed) || !personId || backup) return;
+		if ((image && !failed) || !personId || backup || !near) return;
 		const id = personId;
 		void loadWikiFacts(api.get, 'person', id, name).then((f) => {
 			if (id === personId && f.image) backup = f.image;
@@ -29,7 +42,7 @@
 </script>
 
 <svelte:element this={href ? 'a' : 'div'} class="ui-person" class:gone href={href} aria-label={href ? label : undefined} style="--size: {size}px" use:press={'card'}>
-	<span class="ph" class:sk={!!shown && !loaded} style:background={tint}>
+	<span class="ph" class:sk={!!shown && !loaded} style:background={tint} use:nearView>
 		{#if !shown || !loaded}<ArtPlaceholder {name} shape="circle" loading={!!shown && !loaded} color={tint} />{/if}
 		{#if shown}{#key shown}<img src={shown} class:in={loaded} alt="" loading="lazy" decoding="async" onload={() => (loaded = true)} onerror={() => (shown === backup ? (backupFailed = true) : (failed = true), (loaded = false))} />{/key}{/if}
 	</span>
