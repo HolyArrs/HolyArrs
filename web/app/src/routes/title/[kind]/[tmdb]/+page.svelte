@@ -39,6 +39,7 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import ReleaseSheet from '#lib/ReleaseSheet.svelte';
 	import DeleteSheet from '#lib/DeleteSheet.svelte';
+	import EpisodeSheet, { type SheetEpisode } from '#lib/EpisodeSheet.svelte';
 	import RenamePreview from '#lib/RenamePreview.svelte';
 	import AddMovieDialog from '#lib/AddMovieDialog.svelte';
 	import { savedDefaults } from '#lib/title-defaults.svelte.ts';
@@ -100,7 +101,9 @@
 	});
 	// Library tab (shows): the chosen season's episodes with their file state.
 	let epSeason = $state<number | null>(null);
-	let episodes = $state<{ id: number; episode: number; name?: string; air_date?: string; runtime_minutes?: number; still?: string; slots: { id: number; state: string; state_label: string }[] }[]>([]);
+	let episodes = $state<SheetEpisode[]>([]);
+	let epOpen = $state(false);
+	let epPicked = $state<SheetEpisode | null>(null);
 	let epLoading = $state(false);
 	$effect(() => {
 		const o = owned;
@@ -110,7 +113,7 @@
 		const n = epSeason ?? (ss.find((x) => x.in_library > 0) ?? ss[0])?.number ?? 1;
 		if (epSeason === null) epSeason = n;
 		epLoading = true;
-		void api.get<{ episodes: typeof episodes }>(`/titles/${o.id}/episodes?season=${n}`).then((r) => (episodes = r.episodes ?? []), () => (episodes = [])).finally(() => (epLoading = false));
+		void api.get<{ episodes: typeof episodes }>(`/titles/${o.id}/episodes?season=${n}&files=1`).then((r) => (episodes = r.episodes ?? []), () => (episodes = [])).finally(() => (epLoading = false));
 	});
 	const epTone = (st: string) => (st === 'have' || st === 'imported' || st === 'in_library' || st === 'kept' ? 'have' : st === 'downloading' || st === 'importing' || st === 'searching' ? 'downloading' : st === 'failed' ? 'failed' : 'missing');
 	let busyAction = $state('');
@@ -876,14 +879,14 @@
 							{#each episodes as e (e.id)}
 								{@const st = e.slots[0]}
 								{@const tone = epTone(st?.state ?? '')}
-								<li class="lib-ep {tone}">
+								<li class="lib-ep {tone}" onclick={() => { epPicked = e; epOpen = true; }} onkeydown={(ev) => { if (ev.key === 'Enter' && ev.target === ev.currentTarget) { epPicked = e; epOpen = true; } }} role="button" tabindex="0" aria-label="Episode {e.episode}: {e.name ?? ''}">
 									<span class="lib-ep-still">{#if e.still}<img src={e.still.replace('/w780/', '/w300/')} alt="" loading="lazy" decoding="async" />{/if}<span class="lib-ep-n">{e.episode}</span></span>
 									<span class="lib-ep-text">
 										<b>{e.name ?? `Episode ${e.episode}`}</b>
 										<small>{[e.air_date ? new Date(e.air_date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '', e.runtime_minutes ? `${e.runtime_minutes} min` : ''].filter(Boolean).join(' · ')}</small>
 									</span>
 									<span class="lib-ep-st {tone}"><span class="own-dot {tone}" aria-hidden="true"></span>{st?.state_label ?? 'Missing'}</span>
-									{#if manage && st && tone !== 'have' && tone !== 'downloading'}<button type="button" class="lib-ep-go" aria-label="Look for episode {e.episode}" title="Look for it now" disabled={busyAction === `e${e.id}`} onclick={() => epSearch({ slot_id: st.id }, `e${e.id}`, `Looking for episode ${e.episode}.`)}><Icon name="search" size={15} /></button>{/if}
+									{#if manage && st && tone !== 'have' && tone !== 'downloading'}<button type="button" class="lib-ep-go" aria-label="Look for episode {e.episode}" title="Look for it now" disabled={busyAction === `e${e.id}`} onclick={(ev) => { ev.stopPropagation(); void epSearch({ slot_id: st.id }, `e${e.id}`, `Looking for episode ${e.episode}.`); }}><Icon name="search" size={15} /></button>{/if}
 								</li>
 							{:else}
 								{#each [0, 1, 2, 3] as i (i)}<li class="lib-ep skel"></li>{/each}
@@ -932,6 +935,7 @@
 					{/if}
 				</div>
 				{#if manage}
+					{#if o.show}<EpisodeSheet bind:open={epOpen} ep={epPicked} titleId={o.id} tmdb={o.ids?.tmdb} {manage} />{/if}
 					<ReleaseSheet bind:open={pickOpen} titleId={o.id} name={o.name} onchosen={() => loadOwned(o.id)} />
 					<Sheet bind:open={renameOpen} title="Rename files" description={o.name} placement="right" size="md">
 						{#if renameOpen}<RenamePreview titleId={o.id} onDone={() => { renameOpen = false; void loadOwned(o.id); }} />{/if}
@@ -1240,7 +1244,8 @@
 	.lib-btn.sm { height: 34px; padding: 0 14px; font-size: 13px; margin-top: 22px; }
 	.lib-eps { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
 	.lib-ep { display: grid; grid-template-columns: 160px minmax(0, 1fr) auto 34px; align-items: center; gap: 16px; padding: 8px; border-radius: 14px; transition: background .15s ease; }
-	.lib-ep:hover { background: var(--surface-2); }
+	.lib-ep { cursor: pointer; }
+	.lib-ep:hover, .lib-ep:focus-visible { background: var(--surface-2); outline: none; }
 	.lib-ep.skel { height: 106px; background: var(--surface-2); animation: pulse 1.2s ease-in-out infinite alternate; }
 	@keyframes pulse { to { opacity: .5; } }
 	.lib-ep-still { position: relative; display: block; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; background: var(--surface-2); }

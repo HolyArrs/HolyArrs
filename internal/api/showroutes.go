@@ -251,6 +251,8 @@ type EpisodeSlot struct {
 	StateLabel string `json:"state_label"`
 	Reason     string `json:"reason,omitempty"`
 	FileID     *int64 `json:"file_id,omitempty"`
+	// File is the episode's file (path, size, quality, media info), asked for with files=1.
+	File *domain.File `json:"file,omitempty"`
 }
 
 // EpisodeView is one episode with its Slots.
@@ -330,9 +332,24 @@ func (a *API) listEpisodes(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
+	// files=1 adds each episode's file, for the episode details on the title page.
+	files := map[int64]*domain.File{}
+	if r.URL.Query().Get("files") == "1" {
+		fs, err := store.Select[domain.File](r.Context(), db, "files", `id IN (SELECT file_id FROM slots WHERE file_id IS NOT NULL AND item_id IN (SELECT id FROM items WHERE title_id = ? AND kind = 'episode'))`, t.ID)
+		if err != nil {
+			internal(w, err)
+			return
+		}
+		for i := range fs {
+			files[fs[i].ID] = &fs[i]
+		}
+	}
 	byItem := map[int64][]EpisodeSlot{}
 	for _, s := range slots {
 		es := EpisodeSlot{ID: s.ID, Version: label[s.VersionID], VersionID: s.VersionID, State: string(s.State), StateLabel: StateLabels[s.State], FileID: s.FileID}
+		if s.FileID != nil {
+			es.File = files[*s.FileID]
+		}
 		if s.LastReason != nil {
 			es.Reason = *s.LastReason
 		}
