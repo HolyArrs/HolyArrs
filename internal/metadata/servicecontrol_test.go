@@ -75,22 +75,22 @@ func TestAheadHeaderAndRetryAfterHold(t *testing.T) {
 		w.WriteHeader(http.StatusTooManyRequests)
 	})
 	ctx := Ahead(context.Background())
-	if _, err := s.Art(ctx, "artist", "5b11f4ce-a62d-471e-81fc-a69a8278c7da"); !errors.Is(err, ErrServiceBusy) {
+	if _, err := s.Art(ctx, "movie", "603"); !errors.Is(err, ErrServiceBusy) {
 		t.Fatalf("art = %v", err)
 	}
 	if ahead.Load() != 1 {
 		t.Fatalf("fetch-ahead requests carry X-Fetch: ahead")
 	}
-	_, _ = s.Art(ctx, "artist", "5b11f4ce-a62d-471e-81fc-a69a8278c7da")
+	_, _ = s.Art(ctx, "movie", "603")
 	n := calls.Load()
 	if until := s.HeldUntil(); time.Until(until) < 100*time.Second {
 		t.Fatalf("Retry-After 120 must hold fetch-ahead, until %v", until)
 	}
-	if _, err := s.Art(ctx, "artist", "5b11f4ce-a62d-471e-81fc-a69a8278c7da"); !errors.Is(err, ErrServiceBusy) || calls.Load() != n {
+	if _, err := s.Art(ctx, "movie", "603"); !errors.Is(err, ErrServiceBusy) || calls.Load() != n {
 		t.Fatalf("held fetch-ahead must not reach the server: %v, calls %d→%d", err, n, calls.Load())
 	}
 	// A person's own request is never held.
-	_, _ = s.Art(context.Background(), "artist", "5b11f4ce-a62d-471e-81fc-a69a8278c7da")
+	_, _ = s.Art(context.Background(), "movie", "603")
 	if calls.Load() != n+1 {
 		t.Fatalf("a person's request must still be sent")
 	}
