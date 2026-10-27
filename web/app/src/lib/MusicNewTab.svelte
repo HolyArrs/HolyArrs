@@ -322,6 +322,7 @@
 	.paddle.prev { left: -10px; }
 	.paddle.next { right: -10px; }
 	.hero-wrap:hover .paddle.show, .paddle.show:focus-visible { opacity: 1; pointer-events: auto; }
+	.paddle:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	@media (hover: none) { .h-act { opacity: 1; } }
 	@media (max-width: 1023px) { .hero-wrap { --h-cols: calc(48% - 10px); } }
 	@media (max-width: 640px) { .hero-wrap { --h-cols: calc(100% / 1.1 - 10px); } .paddle { display: none; } }
