@@ -382,8 +382,6 @@
 				{@render wideRow(home?.following ?? [], 'home_following', { title: 'Following', subtitle: 'Shows and artists you follow' })}
 			{:else if row === 'soon'}
 				{@render wideRow(home?.soon ?? [], 'home_soon', { title: 'Coming soon', subtitle: 'The next 30 days', href: owner ? to('/calendar') : undefined })}
-			{:else if row === 'discover'}
-				<a class="discover" href={to('/explore')}>Find more to ask for <span aria-hidden="true">→</span></a>
 			{/if}
 		{/each}
 		</PageLoader>
@@ -419,7 +417,7 @@
 
 	/* The top of Home, Apple TV style: Your Library on the left, Needs attention on the right. Soft lifted
 	   surfaces, a big number per card, quiet labels; no hard borders (dark mode keeps the token hairline). */
-	.overview { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr); gap: 28px; align-items: stretch; }
+	.overview { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; align-items: stretch; }
 	.overview > section { display: flex; flex-direction: column; min-width: 0; }
 	.overview.solo { grid-template-columns: minmax(0, 1fr); }
 	.col-head { display: flex; align-items: center; gap: 10px; min-height: 32px; margin-bottom: 14px; }
@@ -433,7 +431,7 @@
 	.k-show { --kc: var(--info); }
 	.k-artist { --kc: var(--mark-dl); }
 	.k-disk { --kc: var(--text-muted); }
-	.lib-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 14px; }
+	.lib-grid { flex: 1; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 14px; }
 	.solo .lib-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
 	.lib-card {
 		--glow: color-mix(in oklab, var(--kc) 16%, transparent);
@@ -475,7 +473,7 @@
 	a.leg:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
 	/* Needs attention: one lifted card; each cause is one row, title over reason, the action at the right edge. */
-	.att-card { display: flex; flex-direction: column; border-radius: 22px; background: var(--surface-1); box-shadow: var(--shadow-card), inset 0 1px 0 rgb(255 255 255 / 5%); padding: 6px; animation: lib-in var(--dur-slow) var(--ease-out) both; }
+	.att-card { flex: 1; display: flex; flex-direction: column; border-radius: 22px; background: var(--surface-1); box-shadow: var(--shadow-card), inset 0 1px 0 rgb(255 255 255 / 5%); padding: 6px; animation: lib-in var(--dur-slow) var(--ease-out) both; }
 	.att-card.calm { flex: 1; background: radial-gradient(120% 90% at 100% 0%, color-mix(in oklab, var(--ok) 14%, transparent), transparent 60%), var(--surface-1); }
 	.att-wait { display: flex; flex-direction: column; gap: 10px; padding: 18px 16px; }
 	.att-wait i { display: block; height: 14px; border-radius: 7px; background: var(--sk-base); }
@@ -553,9 +551,6 @@
 
 
 	.welcome-acts { display: flex; flex-wrap: wrap; gap: 8px; }
-	.discover:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.discover { align-self: center; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border-radius: var(--r-btn); color: var(--accent-text); font: var(--t-headline); }
-	.discover:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 	@media (max-width: 900px) { .setup { grid-template-columns: 1fr; } }
 	@media (max-width: 767px) { .home { --home-gap: 26px; --poster-item: 54vw; --title-item: calc((100cqi - var(--shelf-gap)) / 1.6 / .78); } }

@@ -73,7 +73,6 @@ test('a member sees Home, the Library, Search, Wishlist and My account only', as
 		await expect(ana).toHaveURL(/\/$/);
 	}
 	await expect(ana.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible();
-	await expect(ana.getByRole('link', { name: 'Find more to ask for' })).toBeVisible();
 	await ana.goto('/wishlist');
 	await expect(ana.getByRole('heading', { name: 'Nothing on the Wishlist yet' })).toBeVisible();
 	await ana.goto('/search?q=Dune');
