@@ -32,19 +32,34 @@ test.beforeAll(async ({ browser }) => {
 	await signIn(page, owner());
 });
 
-const row = () => page.getByTestId('download-row').filter({ hasText: 'Harbour Songs (2019) [FLAC]' }).first();
+// The album's table row (the second line shows the tracks; the Release name is
+// its tooltip), and the row's details sheet.
+const row = () => page.getByTestId('dl-table-row').filter({ has: page.locator('.rel[title*="Harbour Songs (2019) [FLAC]"]') }).first();
+const details = () => page.getByRole('dialog', { name: 'Download details' });
+async function open() {
+	await row().locator('.nm').click();
+	await expect(details()).toBeVisible();
+}
+async function close() {
+	await page.keyboard.press('Escape');
+	await expect(details()).toBeHidden();
+}
 
 test('the Downloads screen names Artist – Album and the tracks the download covers', async () => {
 	await page.goto('/downloads');
 	const r = row();
-	await expect(r.getByRole('link', { name: 'Tin Lanterns – Harbour Songs (2019)' })).toBeVisible();
-	await expect(r.getByTestId('row-covers')).toHaveText('4 tracks');
-	await r.getByTestId('row-episodes').locator('summary').click();
-	await expect(r.getByTestId('row-episodes').locator('summary')).toHaveText('The 4 tracks it covers');
-	await expect(r.getByTestId('row-episode')).toHaveCount(4);
-	await expect(r.getByTestId('row-episode').first()).toContainText('Track 01');
-	await expect(r.getByTestId('row-episode').first()).toContainText('Song 1.1');
-	await expect(r.getByTestId('row-episode').first()).toContainText('Downloading');
+	await expect(r.locator('.nm')).toHaveText('Tin Lanterns – Harbour Songs (2019)');
+	await expect(r.locator('.rel')).toHaveText('4 tracks');
+	// The tracks it covers, each with where it is, in the row's details.
+	await open();
+	const d = details();
+	await d.getByTestId('row-episodes').locator('summary').click();
+	await expect(d.getByTestId('row-episodes').locator('summary')).toHaveText('The 4 tracks it covers');
+	await expect(d.getByTestId('row-episode')).toHaveCount(4);
+	await expect(d.getByTestId('row-episode').first()).toContainText('Track 01');
+	await expect(d.getByTestId('row-episode').first()).toContainText('Song 1.1');
+	await expect(d.getByTestId('row-episode').first()).toContainText('Downloading');
+	await close();
 	await axe(page, 'downloads with an album');
 });
 
@@ -57,8 +72,10 @@ test('a finished album is placed track by track; a track whose file cannot be pl
 	const files = [1, 2, 3, 4].map((i) => `${name}/0${i} - Song 1.${i}.flac`).concat(`${name}/cover.jpg`).join('|');
 	await fetch(`${qbit}/set?hash=${hashOf(name)}&progress=1&state=stalledUP&save_path=${encodeURIComponent(dl)}&files=${encodeURIComponent(files)}`);
 	const r = row();
-	await expect(r.getByTestId('row-state')).toHaveText('Needs a decision', { timeout: 30_000 });
-	await expect(r.getByTestId('row-text')).toHaveText('3 of 4 tracks in the library; Track 04 needs a decision.');
+	await expect(r.getByTestId('row-state')).toHaveText(/^Needs a decision/, { timeout: 30_000 });
+	await open();
+	await expect(details().getByTestId('row-text')).toHaveText('3 of 4 tracks in the library; Track 04 needs a decision.');
+	await close();
 
 	await page.locator('main').getByRole('link', { name: /Needs a decision/ }).click();
 	const card = page.getByTestId('decision').filter({ hasText: 'Harbour Songs' });
@@ -78,7 +95,7 @@ test('stuck tracks on a phone', async ({ browser }) => {
 	await noSidewaysScroll(phone);
 	await axe(phone, 'needs a decision with a track on a phone');
 	await phone.goto('/downloads');
-	await expect(phone.getByTestId('download-row').filter({ hasText: 'Harbour Songs (2019) [FLAC]' }).getByTestId('row-covers')).toBeVisible();
+	await expect(phone.getByTestId('dl-table-list').locator('li').filter({ hasText: 'Tin Lanterns – Harbour Songs (2019)' }).locator('.cv')).toHaveText('4 tracks');
 	await noSidewaysScroll(phone);
 	await ctx.close();
 });

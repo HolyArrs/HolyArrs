@@ -32,19 +32,33 @@ test.beforeAll(async ({ browser }) => {
 	await signIn(page, owner());
 });
 
-const row = (name: string) => page.getByTestId('download-row').filter({ hasText: name }).first();
+// A table row by its Release name (the second line shows the episodes; the
+// Release name is its tooltip), and the row's details sheet.
+const row = (name: string) => page.getByTestId('dl-table-row').filter({ has: page.locator(`.rel[title*="${name}"]`) }).first();
+const details = () => page.getByRole('dialog', { name: 'Download details' });
+async function open(r: ReturnType<typeof row>) {
+	await r.locator('.nm').click();
+	await expect(details()).toBeVisible();
+}
+async function close() {
+	await page.keyboard.press('Escape');
+	await expect(details()).toBeHidden();
+}
 
 test('the Downloads screen names the show and the episodes each download covers', async () => {
 	await page.goto('/downloads');
 	const pack = row('Moss.Parade.S01.1080p');
-	await expect(pack.getByRole('link', { name: 'Moss Parade', exact: true })).toBeVisible();
-	await expect(pack.getByTestId('row-covers')).toHaveText('S01E01-E02, 2 episodes');
-	await pack.getByTestId('row-episodes').locator('summary').click();
-	await expect(pack.getByTestId('row-episode')).toHaveCount(2);
-	await expect(pack.getByTestId('row-episode').first()).toContainText('S01E01');
-	await expect(pack.getByTestId('row-episode').first()).toContainText('Green Start');
-	await expect(pack.getByTestId('row-episode').nth(1)).toContainText('Downloading');
-	await expect(row('Harbour.Lights.S02E01.720p').getByTestId('row-covers')).toHaveText('S02E01 Return of the Fog');
+	await expect(pack.locator('.nm')).toHaveText('Moss Parade');
+	await expect(pack.locator('.rel')).toHaveText('S01E01-E02, 2 episodes');
+	await expect(row('Harbour.Lights.S02E01.720p').locator('.rel')).toHaveText('S02E01 Return of the Fog');
+	// The episodes it covers, each with where it is, in the row's details.
+	await open(pack);
+	await details().getByTestId('row-episodes').locator('summary').click();
+	await expect(details().getByTestId('row-episode')).toHaveCount(2);
+	await expect(details().getByTestId('row-episode').first()).toContainText('S01E01');
+	await expect(details().getByTestId('row-episode').first()).toContainText('Green Start');
+	await expect(details().getByTestId('row-episode').nth(1)).toContainText('Downloading');
+	await close();
 	await axe(page, 'downloads with shows');
 });
 
@@ -55,7 +69,9 @@ test('a finished episode is imported into its episode and the row says so', asyn
 	await fetch(`${qbit}/set?hash=${hashOf(name)}&progress=1&state=stalledUP&save_path=${encodeURIComponent(dl)}&files=${encodeURIComponent(`${name}/${name}.mkv`)}`);
 	const r = row('Harbour.Lights.S02E01.720p');
 	await expect(r.getByTestId('row-state')).toHaveText('Done', { timeout: 30_000 });
-	await expect(r.getByTestId('row-text')).toHaveText('In the library.');
+	await open(r);
+	await expect(details().getByTestId('row-text')).toHaveText('In the library.');
+	await close();
 });
 
 test('a pack whose files cannot be placed waits on Needs a decision as one card', async () => {
@@ -65,8 +81,11 @@ test('a pack whose files cannot be placed waits on Needs a decision as one card'
 	const files = ['S01E01', 'S01E02'].map((e) => `${name}/Moss.Parade.${e}.1080p.WEB-DL.H264-HOLYARRS.mkv`).join('|');
 	await fetch(`${qbit}/set?hash=${hashOf(name)}&progress=1&state=stalledUP&save_path=${encodeURIComponent(dl)}&files=${encodeURIComponent(files)}`);
 	const pack = row('Moss.Parade.S01.1080p');
-	await expect(pack.getByTestId('row-state')).toHaveText('Needs a decision', { timeout: 30_000 });
-	await expect(pack.getByTestId('row-text')).toHaveText('0 of 2 episodes in the library; S01E01, S01E02 need a decision.');
+	// The state may carry the failed import's reason after it ("Needs a decision · import failed: …").
+	await expect(pack.getByTestId('row-state')).toHaveText(/^Needs a decision/, { timeout: 30_000 });
+	await open(pack);
+	await expect(details().getByTestId('row-text')).toHaveText('0 of 2 episodes in the library; S01E01, S01E02 need a decision.');
+	await close();
 
 	await page.locator('main').getByRole('link', { name: /Needs a decision/ }).click();
 	const card = page.getByTestId('decision-pack').filter({ hasText: 'Moss Parade' });
@@ -89,7 +108,7 @@ test('Needs a decision works from a phone', async ({ browser }) => {
 	await noSidewaysScroll(phone);
 	await axe(phone, 'needs a decision on a phone');
 	await phone.goto('/downloads');
-	await expect(phone.getByTestId('row-covers').first()).toBeVisible();
+	await expect(phone.getByTestId('dl-table-list').locator('.cv').first()).toBeVisible();
 	await noSidewaysScroll(phone);
 	await ctx.close();
 });

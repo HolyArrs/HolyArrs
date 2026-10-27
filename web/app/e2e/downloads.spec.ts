@@ -16,7 +16,8 @@ test.beforeAll(async ({ browser }) => {
 	await signIn(page, owner());
 });
 
-const iron = () => page.getByTestId('download-row').filter({ hasText: 'Iron Lullaby' }).filter({ has: page.getByRole('button', { name: /^More for / }) });
+// The Downloads table: the copy still downloading is the one to act on.
+const iron = () => page.locator('[data-testid="dl-table-row"][data-phase="downloading"]').filter({ hasText: 'Iron Lullaby' });
 // Mark failed and Remove live in the row's ⋯ menu.
 async function rowAction(r: ReturnType<typeof iron>, name: string) {
 	await r.getByRole('button', { name: /^More for / }).click();
@@ -29,8 +30,8 @@ test('the Downloads screen shows progress, speed and time left, and follows it l
 	const r = iron();
 	await expect(r.getByTestId('row-state')).toHaveText('Downloading');
 	await expect(r.getByTestId('row-percent')).toHaveText('40%');
-	await expect(r.getByTestId('row-speed')).toContainText('/s');
-	await expect(r.getByTestId('row-eta')).toContainText('left');
+	await expect(r.locator('td.c-speed')).toContainText('/s');
+	await expect(r.locator('td.c-eta')).not.toHaveText('–');
 	await r.getByRole('button', { name: /^More for / }).click();
 	await expect(r.getByRole('menuitem', { name: 'Mark failed' })).toBeVisible();
 	await expect(r.getByRole('menuitem', { name: 'Remove' })).toBeVisible();
@@ -39,7 +40,7 @@ test('the Downloads screen shows progress, speed and time left, and follows it l
 	// The Downloader moves on; the row follows without a reload.
 	await fetch(`${qbit}/set?progress=0.7&eta=120`);
 	await expect(r.getByTestId('row-percent')).toHaveText('70%', { timeout: 15_000 });
-	await expect(r.getByTestId('row-eta')).toHaveText('2m left');
+	await expect(r.locator('td.c-eta')).toHaveText('2m');
 });
 
 test('Remove asks first, starts from the settings and can turn the Release down and search again', async () => {
@@ -60,8 +61,14 @@ test('Remove asks first, starts from the settings and can turn the Release down 
 	await dialog.getByRole('button', { name: 'Remove', exact: true }).click();
 	await expect(page.getByText('Removed. HolyArrs looks for the next Release.')).toBeVisible();
 	await expect.poll(async () => (await (await fetch(`${qbit}/state`)).json()).deleted.length).toBe(before + 1);
-	const gone = page.getByTestId('download-row').filter({ hasText: 'Iron Lullaby' }).filter({ hasText: 'Removed by' });
-	await expect(gone.getByTestId('row-state')).toHaveText('Removed');
+	const gone = page.getByTestId('dl-table-row').filter({ hasText: 'Iron Lullaby' }).filter({ has: page.getByTestId('row-state').getByText('Removed', { exact: true }) });
+	await expect(gone).toHaveCount(1);
+	// Why it was removed reads in the row's details.
+	await gone.locator('.nm').click();
+	const details = page.getByRole('dialog', { name: 'Download details' });
+	await expect(details.getByTestId('row-text')).toContainText('Removed by');
+	await page.keyboard.press('Escape');
+	await expect(details).toBeHidden();
 	// The cam copy is the only one left and the Pick rules refuse it: the
 	// movie now needs a decision, and the menu says so.
 	await expect(page.getByTestId('decide-count')).toHaveText('1', { timeout: 30_000 });
@@ -111,7 +118,7 @@ test('both screens pass the accessibility scan and fit a phone', async ({ browse
 	const p = await phone.newPage();
 	await signIn(p, owner());
 	await p.goto('/downloads');
-	await expect(p.getByTestId('download-row').first()).toBeVisible();
+	await expect(p.getByTestId('dl-table-list').locator('li').first()).toBeVisible();
 	await noSidewaysScroll(p);
 	await p.goto('/downloads/decide');
 	await expect(p.getByRole('heading', { level: 1, name: 'Needs a decision' })).toBeVisible();
