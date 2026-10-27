@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getBase } from '#lib/paths.ts';
 	import { to } from '#lib/paths.ts';
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { api, message, ApiError } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
@@ -19,6 +19,13 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
+	import VariantBar from '#lib/ui/VariantBar.svelte';
+	import UpNext from '#lib/calendar/UpNext.svelte';
+	import ComingSoon from '#lib/calendar/ComingSoon.svelte';
+	import WeekStrip from '#lib/calendar/WeekStrip.svelte';
+	import Shelves from '#lib/calendar/Shelves.svelte';
+	import MonthGrid from '#lib/calendar/MonthGrid.svelte';
+	import { calendarLooks } from '#lib/calendar-looks.ts';
 	import {
 		byDay,
 		entryDay,
@@ -63,6 +70,8 @@
 	let year = $state(asked ? Number(asked[1]) : now.getFullYear());
 	let month = $state(asked && Number(asked[2]) >= 1 && Number(asked[2]) <= 12 ? Number(asked[2]) - 1 : now.getMonth());
 	let view = $state<CalendarView>('week');
+	// The layouts being compared (?view=1…5, kept for the session); 0 is the page as it is.
+	let look = $state(0);
 	// The week shown in Week view: this week, or the first week of a linked month.
 	let week = $state(weekStart(asked ? new Date(Number(asked[1]), Number(asked[2]) - 1, 1) : now));
 	let entries = $state<CalendarEntry[]>([]);
@@ -94,7 +103,10 @@
 	const todayKey = ymd(now);
 	const layout = $derived(stacked(week, shown, todayKey));
 	const agenda = $derived(byDay(shown));
+	// Month (5) loads and pages a whole month; the others the six weeks from the week shown.
+	const range = $derived(look === 5 ? monthRange(year, month) : stackedRange(week));
 	const rangeName = $derived(
+		look === 5 ? new Date(year, month, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) :
 		`${week.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${new Date(week.getFullYear(), week.getMonth(), week.getDate() + 7 * 6 - 1).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
 	);
 	// The mini month picker starts on the month of the first week shown, and can page on its own.
@@ -107,13 +119,16 @@
 	const weekdays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 	const dotWord = { have: 'In the Library', missing: 'Missing', upcoming: 'Coming up' } as const;
 
+	let asks = 0;
 	async function load() {
+		const n = ++asks;
 		try {
-			const r = stackedRange(week);
+			const r = range;
 			const [c, t] = await Promise.all([
 				api.get<{ dates: CalendarEntry[] | null }>(`/calendar?from=${r.from}&to=${r.to}`),
 				api.get<{ titles: TitleView[] }>('/titles')
 			]);
+			if (n !== asks) return;
 			entries = c.dates ?? [];
 			libraryEmpty = t.titles.length === 0;
 			error = '';
@@ -126,11 +141,23 @@
 
 	function jump(d: Date) {
 		week = weekStart(d);
+		year = d.getFullYear();
+		month = d.getMonth();
 		pickYear = week.getFullYear();
 		pickMonth = week.getMonth();
-		void load();
 	}
-	const go = (n: number) => jump(shiftWeek(week, n));
+	const go = (n: number) => {
+		if (look !== 5) return jump(shiftWeek(week, n));
+		({ year, month } = shiftMonth(year, month, n));
+		week = weekStart(new Date(year, month, 1));
+	};
+	// Each new range (the arrows, Today, a switch to or from Month) is loaded once.
+	let started = $state(false);
+	$effect(() => {
+		void range.from;
+		void range.to;
+		if (started) untrack(() => void load());
+	});
 	const thisMonth = () => jump(new Date());
 	function pickPage(n: number) {
 		({ year: pickYear, month: pickMonth } = shiftMonth(pickYear, pickMonth, n));
@@ -248,7 +275,7 @@
 		pickYear = week.getFullYear();
 		pickMonth = week.getMonth();
 		panelOpen = !window.matchMedia('(max-width: 1023px)').matches;
-		void load();
+		started = true;
 		void loadFeed();
 		const offs = [live.on('title', load), live.on('resync', load)];
 		return () => offs.forEach((off) => off());
@@ -296,11 +323,11 @@
 	{#snippet actions()}<Button variant="secondary" icon="calendar" onclick={thisMonth}>Today</Button>{/snippet}
 </PageHeader>
 
-<section class="tools" aria-label="Calendar controls">
+<section class="tools" class:looked={look > 0} aria-label="Calendar controls">
 	<div class="month-nav">
-		<IconButton icon="chevronLeft" label="Week before" variant="glass" onclick={() => go(-1)} />
+		<IconButton icon="chevronLeft" label={look === 5 ? 'Month before' : 'Week before'} variant="glass" onclick={() => go(-1)} />
 		<h2 class="month" aria-live="polite" data-testid="cal-month">{rangeName}</h2>
-		<IconButton icon="chevronRight" label="Week after" variant="glass" onclick={() => go(1)} />
+		<IconButton icon="chevronRight" label={look === 5 ? 'Month after' : 'Week after'} variant="glass" onclick={() => go(1)} />
 	</div>
 	<div class="segs">
 		<SegmentedControl
@@ -315,8 +342,10 @@
 				...(partOn('music') ? [{ value: 'music', label: 'Music' }] : [])
 			]}
 		/>
-		<SegmentedControl label="View" testid="cal-view" value={view} onchange={(v) => pickView(v as CalendarView)} options={[{ value: 'week', label: 'Weeks' }, { value: 'list', label: 'List' }]} />
-		<IconButton icon="sidebar" label={panelOpen ? 'Hide the month' : 'Show the month'} variant="glass" aria-expanded={panelOpen} aria-controls="cal-side" onclick={() => (panelOpen = !panelOpen)} />
+		{#if !look}
+			<SegmentedControl label="View" testid="cal-view" value={view} onchange={(v) => pickView(v as CalendarView)} options={[{ value: 'week', label: 'Weeks' }, { value: 'list', label: 'List' }]} />
+			<IconButton icon="sidebar" label={panelOpen ? 'Hide the month' : 'Show the month'} variant="glass" aria-expanded={panelOpen} aria-controls="cal-side" onclick={() => (panelOpen = !panelOpen)} />
+		{/if}
 	</div>
 	<div class="kinds" role="group" aria-label="Filters">
 		{#if which === 'all' || which === 'movies'}
@@ -350,6 +379,17 @@
 	<EmptyState icon="calendar" title="Nothing coming up" text="Add movies, shows and artists to your Library and their dates, episodes and albums show up here." action={{ label: 'Add media', href: to('/search'), icon: 'search' }} />
 {:else}
 	{#if error}<LoadError hasData message="Calendar could not be loaded." onretry={load} />{/if}
+	{#if look === 1}
+		<UpNext entries={shown} today={todayKey} from={range.from} to={range.to} onlater={() => go(6)} />
+	{:else if look === 2}
+		<ComingSoon entries={shown} today={todayKey} onlater={() => go(6)} />
+	{:else if look === 3}
+		<WeekStrip entries={shown} today={todayKey} start={week} days={7 * 6} onlater={() => go(6)} />
+	{:else if look === 4}
+		<Shelves entries={shown} today={todayKey} onlater={() => go(6)} />
+	{:else if look === 5}
+		<MonthGrid entries={shown} today={todayKey} {year} {month} />
+	{:else}
 	<div class="cal-body" class:with-side={panelOpen}>
 		<div class="cal-main">
 			{#if view === 'week'}
@@ -416,6 +456,7 @@
 			</aside>
 		{/if}
 	</div>
+	{/if}
 {/if}
 
 {#if loaded && feedLoaded && feedError}
@@ -460,6 +501,8 @@
 		{/if}
 	</section>
 {/if}
+
+<VariantBar options={calendarLooks} bind:value={look} param="view" storageKey="holyarrs.calendar-look" label="Calendar layout" />
 
 <style>
 	.tools { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-bottom: 18px; }
@@ -566,6 +609,10 @@
 		.month-nav { width: 100%; justify-content: space-between; margin-right: 0; }
 		.segs, .segs > :global(.ui-seg) { width: 100%; }
 		.acts > :global(*) { flex: 1 1 100%; }
+		/* The layouts being compared: the filter chips are one sideways row on phones. */
+		.looked .kinds { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 calc(-1 * var(--gutter)); padding: 2px var(--gutter); }
+		.looked .kinds::-webkit-scrollbar { display: none; }
+		.looked .kinds > :global(*) { flex: none; }
 	}
 	.weeks-sk { display: flex; flex-direction: column; gap: 16px; }
 </style>

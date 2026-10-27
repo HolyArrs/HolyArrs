@@ -1,0 +1,82 @@
+import { describe, expect, it } from 'vitest';
+import type { CalendarEntry } from './types.ts';
+import { dayChip, dayDots, dayName, entryFacts, entryLine, entryTag, entryTitle, monthGroups, movieDates, nextBusy, shelves, startDay, stripDays } from './calendar-looks.ts';
+
+const ep = (o: Partial<CalendarEntry> = {}): CalendarEntry => ({ title_id: 1, name: "Grey's Anatomy", kind: 'episode', item_id: 9, season: 23, episode: 3, episode_name: 'Collide', air_day: '2026-10-29', date: '2026-10-29T00:00:00Z', network: 'ABC', ...o });
+const movie = (kind: CalendarEntry['kind'], date: string, o: Partial<CalendarEntry> = {}): CalendarEntry => ({ title_id: 7, name: 'Dune: Part Three', year: 2026, kind, date: `${date}T00:00:00Z`, ...o });
+const album = (date: string, o: Partial<CalendarEntry> = {}): CalendarEntry => ({ title_id: 3, part_id: 4, name: 'Remi Wolf', album: 'Mud', album_type: 'Album', tracks: 12, kind: 'album', date: `${date}T00:00:00Z`, ...o });
+
+describe('day words', () => {
+	it('names today, tomorrow and yesterday, else the date', () => {
+		expect(dayName('2026-10-27', '2026-10-27')).toBe('Today');
+		expect(dayName('2026-10-28', '2026-10-27')).toBe('Tomorrow');
+		expect(dayName('2026-10-26', '2026-10-27')).toBe('Yesterday');
+		expect(dayName('2026-10-29', '2026-10-27')).toMatch(/29/);
+		expect(dayChip('2026-10-29', '2026-10-27')).toMatch(/ 29$/);
+	});
+});
+
+describe('card words', () => {
+	it('tags new episodes, premieres, movie dates and albums', () => {
+		expect(entryTag(ep())).toBe('New episode');
+		expect(entryTag(ep({ episode: 1 }))).toBe('Season premiere');
+		expect(entryTag(ep({ season: 1, episode: 1 }))).toBe('Show premiere');
+		expect(entryTag(movie('cinema', '2026-12-18'))).toBe('In cinemas');
+		expect(entryTag(movie('physical', '2026-12-18'))).toBe('Disc release');
+		expect(entryTag(album('2026-10-09', { album_type: 'EP' }))).toBe('New EP');
+		expect(entryTag(album('2026-10-09', { album_type: 'Single' }))).toBe('New single');
+	});
+	it('puts the code, time and network on one facts line, and skips generic episode names', () => {
+		expect(entryFacts(ep())).toBe('S23E03 · ABC');
+		expect(entryFacts(ep({ timed: true, date: new Date(2026, 9, 29, 20, 0).toISOString() }))).toBe('S23E03 · 20:00 · ABC');
+		expect(entryLine(ep({ episode_name: 'Episode 4' }))).toBe('');
+		expect(entryLine(ep())).toBe('Collide');
+		expect(entryTitle(album('2026-10-09'))).toBe('Mud');
+		expect(entryLine(album('2026-10-09'))).toBe('Remi Wolf');
+		expect(entryFacts(album('2026-10-09'))).toBe('Album · 12 tracks');
+	});
+	it('lists a movie’s other loaded dates', () => {
+		const all = [movie('cinema', '2026-12-18'), movie('digital', '2027-02-02'), movie('physical', '2027-03-09'), ep()];
+		const s = movieDates(all[0], all);
+		expect(s).toMatch(/^Digital .* · Disc /);
+		expect(movieDates(ep(), all)).toBe('');
+	});
+});
+
+describe('groupings', () => {
+	it('splits days by month in order', () => {
+		const g = monthGroups([ep({ air_day: '2026-11-02', date: '2026-11-02T00:00:00Z', item_id: 2 }), ep()]);
+		expect(g.map((m) => m.month)).toEqual(['2026-10', '2026-11']);
+	});
+	it('builds the strip with items, today and the next busy day', () => {
+		const days = stripDays(new Date(2026, 9, 26), 14, [ep()], '2026-10-27');
+		expect(days).toHaveLength(14);
+		expect(days[1].today).toBe(true);
+		expect(days[0].past).toBe(true);
+		expect(days[3].items).toHaveLength(1);
+		expect(startDay(days)).toBe('2026-10-27');
+		expect(nextBusy('2026-10-27', days)).toBe('2026-10-29');
+		expect(nextBusy('2026-10-29', days)).toBeNull();
+		expect(startDay(stripDays(new Date(2027, 2, 1), 7, [], '2026-10-27'))).toBe('2027-03-01');
+	});
+	it('fills shelves by when and by kind, leaving empty rows out', () => {
+		const rows = shelves(
+			[
+				ep({ air_day: '2026-10-27', item_id: 1 }),
+				ep({ air_day: '2026-10-29', item_id: 2 }),
+				ep({ air_day: '2026-11-03', item_id: 3 }),
+				ep({ air_day: '2026-12-07', item_id: 4 }),
+				movie('digital', '2026-11-05'),
+				album('2026-10-30')
+			],
+			'2026-10-27'
+		);
+		expect(rows.map((r) => r.title)).toEqual(['Today', 'This week', 'Next week', 'In December', 'Coming to digital', 'New albums']);
+		expect(rows.find((r) => r.key === 'albums')?.shape).toBe('square');
+		expect(shelves([], '2026-10-27')).toEqual([]);
+	});
+	it('gives one dot per kind of date', () => {
+		expect(dayDots([ep(), movie('cinema', '2026-10-29'), movie('digital', '2026-10-29')])).toEqual(['episode', 'movie']);
+		expect(dayDots([])).toEqual([]);
+	});
+});
