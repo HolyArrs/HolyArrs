@@ -6,7 +6,6 @@
 	import { shownFresh, typeWord, type Fresh } from '../fresh.ts';
 	import StatusPill, { type StatusKind } from './StatusPill.svelte';
 	import ProgressBar from './ProgressBar.svelte';
-	import Icon, { type IconName } from '../Icon.svelte';
 	import { press, viewTransitionName } from '../motion.ts';
 	import { sized } from '../tmdb-image.ts';
 	import { pictureOf } from '../pictures.ts';
@@ -193,7 +192,6 @@
 	// The box and colour come before the picture: the record's main colour
 	// (music) under the initials, so the picture never fades in over grey.
 	const tint = $derived(color ?? pictureOf(pic)?.color ?? null);
-	const kindIcon = $derived<IconName>(kind === 'show' || kind === 'episode' ? 'tv' : kind === 'artist' ? 'music' : 'film');
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->

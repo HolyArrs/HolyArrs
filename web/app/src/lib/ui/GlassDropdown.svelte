@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { roundArt, stateWord, subline, suggestHref, type SuggestAnswer } from '../live-search.ts';
-	import { appPicture } from '../music/music-pages.ts';
-	import Icon, { type IconName } from '../Icon.svelte';
-	// No art yet: the row shows its kind's glyph, the same stand-in the posters use.
-	const glyph: Record<string, IconName> = { movie: 'film', show: 'tv', person: 'user', artist: 'user', album: 'music', song: 'music' };
+	import { appPicture, coverFor } from '../music/music-pages.ts';
+	import { pictureOf } from '../pictures.ts';
+	import ArtPlaceholder from './ArtPlaceholder.svelte';
+	// No art yet, or it failed: the row shows the one placeholder every
+	// picture uses (initials, on the picture's own colour when known).
+	let failed = $state<string[]>([]);
 
 	// The live search dropdown (music plan Phase 4): a glass panel under the
 	// field. Word completions first, then rich rows with 44 px art (round for
@@ -20,8 +22,11 @@
 	{#if words.length && answer.items.length}<div class="rule" role="presentation"></div>{/if}
 	{#each answer.items as r, j (r.kind + r.name + (r.sub ?? '') + j)}
 		{@const i = words.length + j}
+		{@const src = r.art ? coverFor(appPicture(r.art), 44).src : null}
 		<a id="{id}-{i}" role="option" aria-selected={active === i} class="row" class:on={active === i} href={suggestHref(r)} data-testid="suggest-row" data-kind={r.kind} tabindex="-1" onpointerdown={(e) => e.preventDefault()} onclick={(e) => { e.preventDefault(); onpick(suggestHref(r)); }}>
-			<span class="art" class:round={roundArt(r.kind)}>{#if r.art}<img src={appPicture(r.art)} alt="" loading="lazy" decoding="async" />{:else}<span class="ph" aria-hidden="true"><Icon name={glyph[r.kind] ?? 'music'} size={18} /></span>{/if}</span>
+			<span class="art" class:round={roundArt(r.kind)}>
+				{#if !src || failed.includes(src)}<ArtPlaceholder name={r.name} shape={roundArt(r.kind) ? 'circle' : 'square'} color={pictureOf(src)?.color} />{:else}<img {src} alt="" loading="lazy" decoding="async" onerror={() => (failed = [...failed, src])} />{/if}
+			</span>
 			<span class="text"><span class="name">{r.name}</span><span class="sub">{subline(r)}</span></span>
 			{#if r.state}<span class="chip {r.state}">{stateWord[r.state]}</span>{/if}
 		</a>
@@ -39,10 +44,9 @@
 	@media (hover: hover) { .word:not(.on):hover, .row:not(.on):hover { background: color-mix(in srgb, var(--text) 7%, transparent); } }
 	.on { background: var(--accent-fill); color: var(--text-on-red, #fff); }
 	.on .sub { color: inherit; opacity: 1; }
-	.art { flex: none; width: 44px; height: 44px; border-radius: 4px; overflow: hidden; background: var(--surface-3); }
+	.art { position: relative; flex: none; width: 44px; height: 44px; border-radius: 4px; overflow: hidden; background: var(--surface-3); }
 	.art.round { border-radius: 999px; }
 	.art img { width: 100%; height: 100%; object-fit: cover; }
-	.ph { width: 100%; height: 100%; display: grid; place-items: center; color: var(--text-muted); }
 	.text { display: grid; min-width: 0; flex: 1; }
 	.name { font: 600 14px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.sub { font-size: 13px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
