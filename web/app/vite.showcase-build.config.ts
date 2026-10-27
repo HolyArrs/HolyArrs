@@ -1,5 +1,6 @@
 import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
+import { fewerChunks } from './build-chunks.ts';
 import { defineConfig } from 'vite';
 
 // The built showcase app for 18729 (vite.showcase-preview.config.ts serves it).
@@ -18,6 +19,8 @@ export default defineConfig({
 			output: { bundleStrategy: 'split' },
 			version: { name: 'holyarrs' }
 		}),
+		// The same script files as the real build (build-chunks.ts).
+		fewerChunks(),
 		// The page template is not a module, so the watching build would miss its edits.
 		{ name: 'holyarrs-watch-template', buildStart() { this.addWatchFile('src/app.html'); } }
 	],
