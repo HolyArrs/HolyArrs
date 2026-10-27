@@ -147,7 +147,10 @@
 		if (heroFull && !heroVideo) void document.exitFullscreen().catch(() => {});
 	});
 	let videoIn = $state(false);
-	const videoOn = $derived(videoIn && !videoPaused);
+	// The video keeps the stage while it is paused or between two videos (a
+	// video that ends also fires pause): the paused frame stays, and the hero
+	// never shrinks and grows again under the page.
+	const videoOn = $derived(videoIn);
 	let logoFailed = $state(false);
 	// The logo's box comes from its stored size, so the hero never jumps when it lands.
 	const logoRatio = $derived(art.logo ? ratioOf(pictureFor('logo', mbid))?.toFixed(4) : undefined);
