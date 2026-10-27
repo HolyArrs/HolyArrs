@@ -346,7 +346,7 @@ func listCard(it metadata.MusicShelfItem) MusicCard {
 		return c
 	}
 	c := MusicCard{Key: "album:" + id, Kind: "album", MBID: id, Name: it.Title, Artist: it.Artist, ArtistMBID: strings.ToLower(it.ArtistMBID), Date: it.Date, Image: "/api/v1/music-trending/art/album/" + id, Genres: []string{}}
-	c.ArtistImage = "/api/v1/music-trending/art/artist/" + c.ArtistMBID
+	c.ArtistImage = heroArtistImage(c.ArtistMBID)
 	return c
 }
 

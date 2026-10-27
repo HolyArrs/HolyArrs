@@ -503,7 +503,7 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 		if len(heroes) >= heroMax || c.MBID == "" || inHero[c.Key] || inHero[fold] || byArtist[strings.ToLower(c.Artist)] {
 			return
 		}
-		c.ArtistImage = "/api/v1/music-trending/art/artist/" + c.ArtistMBID
+		c.ArtistImage = heroArtistImage(c.ArtistMBID)
 		c.Kicker = kicker
 		inHero[c.Key], inHero[fold], byArtist[strings.ToLower(c.Artist)] = true, true, true
 		heroes = append(heroes, c)

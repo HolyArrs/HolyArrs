@@ -16,6 +16,7 @@ import (
 
 	"github.com/CoderLuii/holyarrs/internal/auth"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/CoderLuii/holyarrs/internal/music/rowtpl"
 )
 
 // tplRig is a music_lists_v1 rig whose metadata server answers the catalog
@@ -83,7 +84,7 @@ func TestTplGenrePage(t *testing.T) {
 		t.Fatal(err)
 	}
 	checkTplRows(t, a, 12)
-	if a.Tile.Name != "Rock" || a.Hero == nil || len(a.Alts) != 2 {
+	if a.Tile.Name != "Rock" || a.Hero == nil || len(a.Alts) != rowtpl.SpotlightMax-1 {
 		t.Fatalf("tile %q hero %v alts %d", a.Tile.Name, a.Hero, len(a.Alts))
 	}
 	// An old chart slug reaches the same page.

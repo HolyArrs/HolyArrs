@@ -460,9 +460,17 @@ func LibraryKeys(b *Bundle, l *Lib) ([]string, string) {
 	return g, d
 }
 
-// Spotlight answers the page's hero albums: the top 3 albums by different
-// artists of the first head template that has them, not had. They are
-// marked seen, so no row repeats them.
+// SpotlightMax is how many albums the Spotlight shows at most; with fewer
+// than SpotlightMin the page has none.
+const (
+	SpotlightMax = 10
+	SpotlightMin = 3
+)
+
+// Spotlight answers the page's hero albums: up to SpotlightMax albums by
+// different artists, not had, from the head templates in order (the
+// most-listened albums last). They are marked seen, so no row repeats
+// them.
 func Spotlight(c *Ctx) []int {
 	letter := pageLetter[c.Kind]
 	type src struct {
@@ -486,35 +494,35 @@ func Spotlight(c *Ctx) []int {
 		}
 		return c.byLP(palb(c))
 	}}, ""})
+	var out []int
+	artists := map[string]bool{}
 	for _, sv := range srcs {
-		tp, v := sv.tp, sv.v
-		{
-			var out []int
-			artists := map[string]bool{}
-			for _, i := range c.pictured(c.notHad(c.albums(tp.Fill(c, v)))) {
-				if a := c.artistOf(i); !artists[a] {
-					artists[a] = true
-					out = append(out, i)
-				}
-				if len(out) == 3 {
-					break
-				}
+		for _, i := range c.pictured(c.notHad(c.albums(sv.tp.Fill(c, sv.v)))) {
+			if len(out) == SpotlightMax {
+				break
 			}
-			if len(out) == 3 {
-				if c.Seen == nil {
-					c.Seen = map[string]bool{}
-				}
-				for _, i := range out {
-					it := c.it(i)
-					c.Seen["a:"+it.ID] = true
-					c.Seen["rg:"+it.ID] = true
-					c.Seen["fold:"+foldKey(it)] = true
-				}
-				return out
+			if a := c.artistOf(i); !artists[a] {
+				artists[a] = true
+				out = append(out, i)
 			}
 		}
+		if len(out) == SpotlightMax {
+			break
+		}
 	}
-	return nil
+	if len(out) < SpotlightMin {
+		return nil
+	}
+	if c.Seen == nil {
+		c.Seen = map[string]bool{}
+	}
+	for _, i := range out {
+		it := c.it(i)
+		c.Seen["a:"+it.ID] = true
+		c.Seen["rg:"+it.ID] = true
+		c.Seen["fold:"+foldKey(it)] = true
+	}
+	return out
 }
 
 // indexOf answers a template's place in the catalog.

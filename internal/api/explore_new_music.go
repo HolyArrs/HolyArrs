@@ -262,7 +262,7 @@ func composeMusicNew(in musicNewInput, now time.Time) ([]MusicCard, []MusicRow) 
 		if img := in.images[artistMBID]; img != "" {
 			c.ArtistImage = img
 		} else {
-			c.ArtistImage = "/api/v1/music-trending/art/artist/" + artistMBID
+			c.ArtistImage = heroArtistImage(artistMBID)
 		}
 		days, _ := daysFrom(date, now)
 		c.Upcoming = days < 0

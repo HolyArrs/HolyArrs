@@ -325,6 +325,12 @@ func (a *API) musicArt(ctx context.Context, kind, mbid, size, v string) artFile 
 	return f.file
 }
 
+// heroArtistImage is an artist's photo for a wide Spotlight card: the
+// 1200 px copy (the 500 one goes soft once cropped to 16:9).
+func heroArtistImage(mbid string) string {
+	return "/api/v1/music-trending/art/artist/" + mbid + "?size=1200"
+}
+
 // artSize is the slot size asked for a kind: covers and photos 250, 500
 // (the default, every card) or 1200 (heroes); wide backgrounds 960 (rows) or
 // 1920 (heroes, the default); logos as stored.

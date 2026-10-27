@@ -536,7 +536,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 	if hero == nil && len(trendAlbums) > 0 {
 		for i, c := range trendAlbums[:min(len(trendAlbums), 6)] {
 			c = tag(c)
-			c.ArtistImage = "/api/v1/music-trending/art/artist/" + c.ArtistMBID
+			c.ArtistImage = heroArtistImage(c.ArtistMBID)
 			names = append(names, nameKey{"artist", c.ArtistMBID, c.Artist, "", ""})
 			if i == 0 {
 				hero = &c

@@ -167,7 +167,7 @@ func composeMusicTrending(in musicTrendingInput, now time.Time) ([]MusicCard, []
 		if c.MBID == "" {
 			continue
 		}
-		c.ArtistImage = "/api/v1/music-trending/art/artist/" + c.ArtistMBID
+		c.ArtistImage = heroArtistImage(c.ArtistMBID)
 		if img := in.ownedImages[c.ArtistMBID]; img != "" {
 			c.ArtistImage = img
 		}

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/CoderLuii/holyarrs/internal/music/rowtpl"
 	musicscore "github.com/CoderLuii/holyarrs/internal/music/score"
 )
 
@@ -543,35 +544,33 @@ func (a *API) buildMusicV2(ctx context.Context, member int64, region string, lib
 		}
 		return c
 	}
+	// The Spotlight: up to rowtpl.SpotlightMax albums, one per artist: new
+	// from your artists first, then the region's new albums, then its top.
 	var heroes []MusicCard
+	heroArtists := map[string]bool{}
+	addHero := func(c MusicCard) {
+		if len(heroes) < rowtpl.SpotlightMax && c.MBID != "" && !heroArtists[c.ArtistMBID] {
+			heroArtists[c.ArtistMBID] = true
+			heroes = append(heroes, c)
+		}
+	}
 	if !ord.Cold {
 		for _, c := range fresh {
-			if !c.Upcoming && len(heroes) < 6 {
+			if !c.Upcoming {
 				h := c
 				h.ArtistImage = artistOf[c.TitleID].image
-				heroes = append(heroes, h)
+				addHero(h)
 			}
 		}
 	}
-	if len(heroes) == 0 {
-		// The region's top three new albums, else its top three.
-		var recent, top []MusicCard
+	for _, recent := range []bool{true, false} {
 		for _, it := range albums {
-			c := chartCard(it)
-			if c.MBID == "" {
+			if recent && it.Date < from {
 				continue
 			}
-			c.ArtistImage = "/api/v1/music-trending/art/artist/" + c.ArtistMBID
-			if it.Date >= from && len(recent) < 3 {
-				recent = append(recent, c)
-			}
-			if len(top) < 3 {
-				top = append(top, c)
-			}
-		}
-		heroes = recent
-		if len(heroes) == 0 {
-			heroes = top
+			c := chartCard(it)
+			c.ArtistImage = heroArtistImage(c.ArtistMBID)
+			addHero(c)
 		}
 	}
 	if len(heroes) > 0 {

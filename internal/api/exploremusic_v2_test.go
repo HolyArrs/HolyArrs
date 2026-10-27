@@ -142,6 +142,11 @@ func stripState(t *testing.T, b []byte) string {
 	if h, ok := m["hero"].(map[string]any); ok {
 		delete(h, "state")
 	}
+	if alts, ok := m["hero_alts"].([]any); ok {
+		for _, c := range alts {
+			delete(c.(map[string]any), "state")
+		}
+	}
 	out, _ := json.Marshal(m)
 	return string(out)
 }

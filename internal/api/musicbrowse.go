@@ -268,7 +268,7 @@ func tplCard(it rowtpl.Item) MusicCard {
 	}
 	c := MusicCard{Key: "album:" + it.ID, Kind: "album", MBID: it.ID, Name: it.Title, Artist: it.Artist, ArtistMBID: it.ArtistID, Date: it.Date, Image: "/api/v1/music-trending/art/album/" + it.ID, Genres: []string{}}
 	if it.ArtistID != "" {
-		c.ArtistImage = "/api/v1/music-trending/art/artist/" + it.ArtistID
+		c.ArtistImage = heroArtistImage(it.ArtistID)
 	}
 	return c
 }

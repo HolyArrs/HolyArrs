@@ -126,12 +126,18 @@ func TestGenrePageRowsKeepTheRules(t *testing.T) {
 func TestSpotlightItemsStayOffTheRows(t *testing.T) {
 	c := pageCtx(fakeBundle(), "genre", "genre:rock")
 	spot := Spotlight(c)
-	if len(spot) != 3 {
-		t.Fatalf("spotlight = %d items, want 3", len(spot))
+	if len(spot) != SpotlightMax {
+		t.Fatalf("spotlight = %d items, want %d", len(spot), SpotlightMax)
 	}
 	in := map[int]bool{}
+	artists := map[string]bool{}
 	for _, i := range spot {
 		in[i] = true
+		if a := c.artistOf(i); artists[a] {
+			t.Fatalf("spotlight has artist %s twice", a)
+		} else {
+			artists[a] = true
+		}
 	}
 	for _, r := range Build(c) {
 		for _, i := range r.Items {

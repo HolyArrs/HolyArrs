@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/metadata"
+	"github.com/CoderLuii/holyarrs/internal/music/rowtpl"
 	musicscore "github.com/CoderLuii/holyarrs/internal/music/score"
 )
 
@@ -385,7 +386,8 @@ func (a *API) buildMusicGenre(ctx context.Context, member int64, region string, 
 		return out
 	}
 
-	// Spotlight: the top three by F14 · P, as the page's hero.
+	// Spotlight: the top ten by F14 · P, one per artist, as the page's hero
+	// (the same count as the template pages); no row repeats the first.
 	var spot []scored
 	for _, it := range albums {
 		if it.MBID == "" {
@@ -393,25 +395,30 @@ func (a *API) buildMusicGenre(ctx context.Context, member int64, region string, 
 		}
 		if s := it.F14 * it.P; s > 0 {
 			c := chartCard(it)
-			c.ArtistImage = "/api/v1/music-trending/art/artist/" + c.ArtistMBID
+			c.ArtistImage = heroArtistImage(c.ArtistMBID)
 			spot = append(spot, scored{c, s})
 		}
 	}
 	if len(spot) == 0 {
 		for _, it := range albums {
-			if it.MBID != "" && len(spot) < 3 {
+			if it.MBID != "" {
 				c := chartCard(it)
-				c.ArtistImage = "/api/v1/music-trending/art/artist/" + c.ArtistMBID
+				c.ArtistImage = heroArtistImage(c.ArtistMBID)
 				spot = append(spot, scored{c, it.P})
 			}
 		}
 	}
 	var hero *MusicCard
 	var alts []MusicCard
-	if top := byScore(spot); len(top) > 0 {
-		if len(top) > 3 {
-			top = top[:3]
+	var top []MusicCard
+	artists := map[string]bool{}
+	for _, c := range byScore(spot) {
+		if len(top) < rowtpl.SpotlightMax && !artists[c.ArtistMBID] {
+			artists[c.ArtistMBID] = true
+			top = append(top, c)
 		}
+	}
+	if len(top) > 0 {
 		hero, alts = &top[0], append([]MusicCard{}, top[1:]...)
 		seen[top[0].Key] = true
 	}
