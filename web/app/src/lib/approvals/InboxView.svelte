@@ -123,7 +123,7 @@
 	.age { flex: none; color: var(--text-muted); font: var(--t-caption); }
 	.r2 { display: flex; align-items: center; gap: 6px; min-width: 0; font: var(--t-footnote); color: var(--text-muted); }
 	.who { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	.r3 { color: var(--text-faint); font: var(--t-caption); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.r3 { color: var(--text-muted); font: var(--t-caption); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.chev { display: none; transform: scaleX(-1); color: var(--text-faint); }
 	.detail-pane { min-width: 0; padding: 18px; overflow-y: auto; max-height: calc(100dvh - var(--topbar) - 196px); }
 	.phone-bar { display: none; }
