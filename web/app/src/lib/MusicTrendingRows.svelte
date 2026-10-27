@@ -247,6 +247,8 @@
 		return ['From an artist you have', c.date ? releaseWords(c.date) : ''].filter(Boolean).join(' · ');
 	}
 	const regions = $derived(answer?.regions ?? []);
+	// The band's covers: 1 loaded (fades in), 2 failed (keeps its slot, hidden).
+	let coverState = $state<Record<string, 1 | 2>>({});
 	/** The row whose header carries the chart region: Popular in <country>, else Top albums. */
 	const pickRow = $derived(regions.length > 1 ? ((answer?.rows.find((r) => r.type === 'popular_country') ?? answer?.rows.find((r) => r.type === 'top_albums'))?.id ?? '') : '');
 </script>
@@ -260,7 +262,7 @@
 			<!-- The page hero: the tile's hue as a gradient behind a tilted collage of the page's top covers (preloaded), its words and leading artists, one stat line. -->
 			<div class="band" style:--hue={`hsl(${bandHue} 52% 36%)`} style:--hue2={`hsl(${(bandHue + 40) % 360} 60% 18%)`} data-testid="music-genre-band">
 				<div class="collage" aria-hidden="true">
-					{#each heroCovers as src (src)}<img {src} alt="" decoding="async" onerror={(e) => ((e.currentTarget as HTMLImageElement).hidden = true)} />{/each}
+					{#each heroCovers as src (src)}<img {src} alt="" decoding="async" class:in={coverState[src] === 1} class:bad={coverState[src] === 2} onload={() => (coverState[src] = 1)} onerror={() => (coverState[src] = 2)} />{/each}
 				</div>
 				<div class="btext">
 					<span class="bkind">{bandKind}</span>
@@ -449,7 +451,10 @@
 	.band { position: relative; display: flex; align-items: flex-end; min-height: 260px; padding: 28px 32px; border-radius: 14px; overflow: hidden; background: linear-gradient(135deg, var(--hue), var(--hue2)); color: #fff; isolation: isolate; }
 	.band::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgb(0 0 0 / .55) 0%, rgb(0 0 0 / .2) 55%, transparent 100%), linear-gradient(0deg, rgb(0 0 0 / .45), transparent 60%); }
 	.collage { position: absolute; z-index: -2; top: 50%; left: 45%; right: -6%; display: flex; justify-content: flex-end; gap: 14px; overflow: hidden; transform: translateY(-50%) rotate(-8deg); -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 30%); mask-image: linear-gradient(90deg, transparent 0%, #000 30%); padding: 30px 0; }
-	.collage img { width: clamp(110px, 14vw, 190px); aspect-ratio: 1; object-fit: cover; border-radius: 8px; box-shadow: 0 12px 30px rgb(0 0 0 / .45); opacity: .9; }
+	.collage img { width: clamp(110px, 14vw, 190px); aspect-ratio: 1; object-fit: cover; border-radius: 8px; box-shadow: 0 12px 30px rgb(0 0 0 / .45); opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); }
+	/* A cover that fails keeps its slot, so the others never slide over. */
+	.collage img.in { opacity: .9; }
+	.collage img.bad { visibility: hidden; }
 	.collage img:nth-child(even) { transform: translateY(26px); }
 	.btext { position: relative; max-width: min(640px, 44%); display: flex; flex-direction: column; gap: 6px; }
 	.bkind { font: 600 12px/1 var(--font-ui); letter-spacing: .08em; text-transform: uppercase; opacity: .8; }
