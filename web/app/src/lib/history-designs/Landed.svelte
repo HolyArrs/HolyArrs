@@ -132,7 +132,7 @@
 				{#if list.length}
 					<Shelf title={s.title} subtitle="{list.length} {list.length === 1 ? 'title' : 'titles'}{list[0] ? `, newest ${ago(list[0].e.At)}` : ''}" item={phone ? '42vw' : '156px'}>
 						{#each list as l (l.e.ID)}
-							<PosterCard title={l.title.name} href={to(`/library/${l.title.id}`)} image={artOf(l.e, titleById)} shape={l.title.kind === 'artist' ? 'square' : 'poster'} subtitle="{headVerb({ key: '', head: l.e, events: [l.e], steps: [] }).word} {ago(l.e.At)}" status={s.status} statusLabel={s.word} kind={l.title.kind === 'artist' ? 'artist' : l.title.kind === 'show' ? 'show' : 'movie'} />
+							<PosterCard title={l.title.name} href={to(`/library/${l.title.id}`)} image={artOf(l.e, titleById)} needsArt={l.title.kind === 'artist'} shape={l.title.kind === 'artist' ? 'square' : 'poster'} subtitle="{headVerb({ key: '', head: l.e, events: [l.e], steps: [] }).word} {ago(l.e.At)}" status={s.status} statusLabel={s.word} kind={l.title.kind === 'artist' ? 'artist' : l.title.kind === 'show' ? 'show' : 'movie'} />
 						{/each}
 					</Shelf>
 				{/if}
