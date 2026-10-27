@@ -5,7 +5,8 @@
 	import { afterHandoff } from '#lib/loader.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
-	import { askProgressLine, attention, fallbackRows, groupAttention, homeStrip, type Attention, type HomeAnswer, type HomeCard, type HomeRow } from '#lib/home.ts';
+	import { askProgressLine, attention, fallbackRows, groupAttention, homeStrip, libraryCards, n, type Attention, type HomeAnswer, type HomeCard, type HomeRow } from '#lib/home.ts';
+	import { bytes } from '#lib/format.ts';
 	import { homeFacts, homeLine } from '#lib/home-line.ts';
 	import { personName } from '#lib/plain.ts';
 	import type { Fresh } from '#lib/fresh.ts';
@@ -62,6 +63,11 @@
 	function fixMore(i: Attention): string[] {
 		return [i.note, admin ? i.detail : undefined].filter((t): t is string => !!t && t !== i.title);
 	}
+	// Your Library: one card per kind that is on, and for owners what it all takes on disk.
+	const libCards = $derived(libraryCards(home?.library));
+	const diskTotal = $derived(libCards.reduce((t, c) => t + c.size, 0));
+	const showDisk = $derived(owner && libCards.length > 0);
+	const showOverview = $derived(!rows.includes('welcome') && (libCards.length > 0 || owner));
 	const waiting = $derived(asks.filter((a) => a.state === 'asked'));
 	const mine = $derived(asks.filter((a) => a.mine && a.state !== 'available').slice(0, 20));
 	const progress = $derived(home?.ask_progress ?? {});
@@ -188,6 +194,129 @@
 		{/snippet}
 
 		<PageLoader loading={!loaded} label="Loading Home" onretry={retry}>
+		{#if showOverview}
+			<div class="overview" class:solo={!owner} data-testid="home-overview">
+				{#if libCards.length}
+					<section class="library" aria-labelledby="h-lib" data-testid="home-library">
+						<header class="col-head">
+							<h2 id="h-lib">Your Library</h2>
+							<a class="col-link" href={to('/library')}>See all<Icon name="chevronRight" size={14} /></a>
+						</header>
+						<ul class="lib-grid">
+							{#each libCards as c, i (c.kind)}
+								<li class="lib-card k-{c.kind}" style="--i: {i}">
+									<div class="lib-top">
+										<span class="lib-icon" aria-hidden="true"><Icon name={c.icon} size={20} /></span>
+										<h3><a class="stretch" href={to(c.href)}>{c.label}</a></h3>
+										<span class="lib-go" aria-hidden="true"><Icon name="chevronRight" size={16} /></span>
+									</div>
+									<p class="lib-big"><span class="num">{n(c.big)}</span> <span class="unit">{c.unit}</span></p>
+									{#if c.detail}<p class="lib-detail">{c.detail}</p>{/if}
+									<div class="bar" role="img" aria-label={c.segments.map((s) => `${n(s.count)} ${s.label}`).join(', ')}>
+										{#each c.segments as s (s.key)}{#if s.count}<i class="seg {s.key}" style="flex-grow: {s.share}"></i>{/if}{/each}
+										<i class="rest" style="flex-grow: {Math.max(0, 1 - c.segments.reduce((t, s) => t + s.share, 0))}"></i>
+									</div>
+									<ul class="legend">
+										{#each c.segments as s (s.key)}
+											{#if s.count || s.key === 'on_disk'}
+												<li>
+													{#if s.href}
+														<a class="leg {s.key}" href={to(s.href)}><i aria-hidden="true"></i><strong>{n(s.count)}</strong> {s.label}</a>
+													{:else}
+														<span class="leg {s.key}"><i aria-hidden="true"></i><strong>{n(s.count)}</strong> {s.label}</span>
+													{/if}
+												</li>
+											{/if}
+										{/each}
+									</ul>
+								</li>
+							{/each}
+							{#if showDisk}
+								<li class="lib-card k-disk" class:wide={libCards.length % 2 === 0} style="--i: {libCards.length}">
+									<div class="lib-top">
+										<span class="lib-icon" aria-hidden="true"><Icon name="archive" size={20} /></span>
+										<h3>On disk</h3>
+									</div>
+									<p class="lib-big"><span class="num">{bytes(diskTotal)}</span></p>
+									<p class="lib-detail">Across your Library folders</p>
+									<div class="bar" role="img" aria-label={libCards.map((c) => `${c.label} ${bytes(c.size)}`).join(', ')}>
+										{#each libCards as c (c.kind)}{#if c.size}<i class="seg k-{c.kind}" style="flex-grow: {c.size / Math.max(diskTotal, 1)}"></i>{/if}{/each}
+										{#if !diskTotal}<i class="rest" style="flex-grow: 1"></i>{/if}
+									</div>
+									<ul class="legend">
+										{#each libCards as c (c.kind)}
+											<li><span class="leg k-{c.kind}"><i aria-hidden="true"></i><strong>{bytes(c.size)}</strong> {c.label}</span></li>
+										{/each}
+									</ul>
+								</li>
+							{/if}
+						</ul>
+					</section>
+				{/if}
+				{#if owner}
+					<section class="attention" aria-labelledby="h-fix" data-testid="home-attention">
+						<header class="col-head">
+							<h2 id="h-fix">Needs attention</h2>
+						</header>
+						<div class="att-card" class:calm={settled && !fixes.length}>
+							{#if !settled}
+								<div class="att-wait" aria-hidden="true"><i></i><i></i><i></i></div>
+								<span class="sr-only">Checking</span>
+							{:else if !fixes.length}
+								<div class="all-good">
+									<span class="good-mark" aria-hidden="true"><Icon name="check" size={22} /></span>
+									<p class="good-title">All good</p>
+									<p class="good-line">{admin ? 'Downloads, imports and checks are running fine.' : 'Downloads and imports are running fine.'}</p>
+								</div>
+							{:else}
+								<div class="att-sum">
+									<span class="att-icon" aria-hidden="true"><Icon name="alert" size={20} /></span>
+									<p class="lib-big"><span class="num">{n(fixes.length)}</span> <span class="unit">{fixes.length === 1 ? 'thing needs a look' : 'things need a look'}</span></p>
+								</div>
+								<ul class="list">
+									{#each fixShown as g (g.key)}
+										{@const many = g.items.length > 1}
+										{@const more = many ? [] : fixMore(g.items[0])}
+										<li class="fix">
+											<span class="tone {g.tone}" aria-hidden="true"></span>
+											<div class="body">
+												{#if many}
+													<button class="lead" type="button" aria-expanded={!!fixOpen[g.key]} aria-controls="fix-{g.key}" onclick={() => (fixOpen[g.key] = !fixOpen[g.key])}>
+														<span class="ltxt"><span class="sr-only">{g.word}: </span><strong class="tt">{g.title}</strong><span class="why">{g.reason}</span></span>
+														<span class="caret" class:up={fixOpen[g.key]}><Icon name="chevronDown" size={14} /></span>
+													</button>
+												{:else}
+													<span class="lead"><span class="ltxt"><span class="sr-only">{g.word}: </span><strong class="tt">{g.title}</strong><span class="why">{g.reason}</span></span></span>
+												{/if}
+												<span class="acts">
+													{#if more.length}<button class="link" type="button" aria-expanded={!!fixOpen[g.key]} aria-controls="fix-{g.key}" onclick={() => (fixOpen[g.key] = !fixOpen[g.key])}>Details</button>{/if}
+													<a class="go link" href={to(g.href)} aria-label="{g.action} ({g.title})">{g.action}<Icon name="chevronRight" size={13} /></a>
+												</span>
+												{#if many && fixOpen[g.key]}
+													<ul class="members" id="fix-{g.key}">
+														{#each g.items as it (it.key)}
+															{@const sub = fixMore(it)}
+															<li>
+																<span class="mt">{it.title}</span>
+																{#if sub.length}<button class="link" type="button" aria-expanded={!!fixOpen[it.key]} aria-controls="fix-{it.key}" onclick={() => (fixOpen[it.key] = !fixOpen[it.key])}>Details</button>{/if}
+																{#if sub.length && fixOpen[it.key]}<p class="raw" id="fix-{it.key}">{sub.join(' ')}</p>{/if}
+															</li>
+														{/each}
+													</ul>
+												{:else if more.length && fixOpen[g.key]}
+													<p class="raw" id="fix-{g.key}">{more.join(' ')}</p>
+												{/if}
+											</div>
+										</li>
+									{/each}
+								</ul>
+								{#if fixHidden}<a class="more" href={to('/downloads')}>{fixHidden} more in Downloads<Icon name="chevronRight" size={13} /></a>{/if}
+							{/if}
+						</div>
+					</section>
+				{/if}
+			</div>
+		{/if}
 		{#each rows as row (row)}
 			{#if row === 'welcome'}
 				{#if owner}
@@ -225,51 +354,6 @@
 						<Button variant="primary" size="lg" icon="compass" href={to('/explore')}>Start asking</Button>
 					</section>
 				{/if}
-			{:else if row === 'attention' && fixes.length}
-				<section class="attention" aria-labelledby="h-fix" data-testid="home-attention">
-					<header>
-						<h2 id="h-fix">Needs attention</h2>
-						<span class="count">{fixes.length}</span>
-					</header>
-					<ul class="list">
-						{#each fixShown as g (g.key)}
-							{@const many = g.items.length > 1}
-							{@const more = many ? [] : fixMore(g.items[0])}
-							<li class="fix">
-								<span class="dot {g.tone}" aria-hidden="true"></span>
-								<div class="body">
-									{#if many}
-										<button class="lead" type="button" aria-expanded={!!fixOpen[g.key]} aria-controls="fix-{g.key}" onclick={() => (fixOpen[g.key] = !fixOpen[g.key])}>
-											<span class="ltxt many"><span class="sr-only">{g.word}: </span><strong class="tt">{g.title}</strong><span class="why">· {g.reason}</span></span>
-											<span class="caret" class:up={fixOpen[g.key]}><Icon name="chevronDown" size={14} /></span>
-										</button>
-									{:else}
-										<span class="lead"><span class="ltxt"><span class="sr-only">{g.word}: </span><strong class="tt">{g.title}</strong><span class="why">· {g.reason}</span></span></span>
-									{/if}
-									<span class="acts">
-										{#if more.length}<button class="link" type="button" aria-expanded={!!fixOpen[g.key]} aria-controls="fix-{g.key}" onclick={() => (fixOpen[g.key] = !fixOpen[g.key])}>Details</button>{/if}
-										<a class="go link" href={to(g.href)} aria-label="{g.action} ({g.title})">{g.action}<Icon name="chevronRight" size={13} /></a>
-									</span>
-									{#if many && fixOpen[g.key]}
-										<ul class="members" id="fix-{g.key}">
-											{#each g.items as it (it.key)}
-												{@const sub = fixMore(it)}
-												<li>
-													<span class="mt">{it.title}</span>
-													{#if sub.length}<button class="link" type="button" aria-expanded={!!fixOpen[it.key]} aria-controls="fix-{it.key}" onclick={() => (fixOpen[it.key] = !fixOpen[it.key])}>Details</button>{/if}
-													{#if sub.length && fixOpen[it.key]}<p class="raw" id="fix-{it.key}">{sub.join(' ')}</p>{/if}
-												</li>
-											{/each}
-										</ul>
-									{:else if more.length && fixOpen[g.key]}
-										<p class="raw" id="fix-{g.key}">{more.join(' ')}</p>
-									{/if}
-								</div>
-							</li>
-						{/each}
-					</ul>
-					{#if fixHidden}<a class="more" href={to('/downloads')}>{fixHidden} more in Downloads</a>{/if}
-				</section>
 			{:else if row === 'arrived'}
 				{@render wideRow(home?.arrived ?? [], 'home_arrived', { title: 'Just arrived', subtitle: 'New in the last two weeks', href: to('/library') })}
 			{:else if row === 'approval' && waiting.length}
@@ -333,49 +417,135 @@
 	.done .dot { background: var(--ok); color: var(--on-art); outline: none; }
 	.grow { flex: 1; min-width: 0; }
 
-	.attention header { display: flex; align-items: baseline; justify-content: flex-start; gap: 12px; margin-bottom: 12px; }
-	.attention h2 { font: var(--t-title2); letter-spacing: var(--t-title2-track); }
-	.count { min-width: 24px; height: 24px; padding: 0 8px; display: inline-grid; place-items: center; border-radius: 999px; background: var(--accent-soft); color: var(--accent-text); font: var(--t-subhead); font-weight: 600; font-variant-numeric: tabular-nums; }
-	/* Management widgets: calm grouped lists, a hairline and no lift, like Settings. One 40px row per cause: a dot, "Title · why", Details and the action at the right edge. */
-	.attention .list { list-style: none; margin: 0; padding: 2px 6px; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: inset 0 0 0 1px var(--line); }
-	.fix { display: flex; align-items: flex-start; gap: 10px; padding: 0 8px; border-radius: var(--r-btn); }
+	/* The top of Home, Apple TV style: Your Library on the left, Needs attention on the right. Soft lifted
+	   surfaces, a big number per card, quiet labels; no hard borders (dark mode keeps the token hairline). */
+	.overview { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr); gap: 28px; align-items: stretch; }
+	.overview > section { display: flex; flex-direction: column; min-width: 0; }
+	.overview.solo { grid-template-columns: minmax(0, 1fr); }
+	.col-head { display: flex; align-items: center; gap: 10px; min-height: 32px; margin-bottom: 14px; }
+	.col-head h2 { font: var(--t-title2); letter-spacing: var(--t-title2-track); }
+	.col-link { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; min-height: 32px; padding: 0 4px 0 8px; border-radius: var(--r-sm); color: var(--accent-text); font: var(--t-subhead); font-weight: 600; }
+	.col-link:hover { background: var(--accent-soft); }
+	.col-link:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+	/* Each kind has its own hue: Movies the app's red, TV shows blue, Music indigo, On disk neutral. */
+	.k-movie { --kc: var(--accent); }
+	.k-show { --kc: var(--info); }
+	.k-artist { --kc: var(--mark-dl); }
+	.k-disk { --kc: var(--text-muted); }
+	.lib-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 14px; }
+	.solo .lib-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+	.lib-card {
+		--glow: color-mix(in oklab, var(--kc) 16%, transparent);
+		position: relative; isolation: isolate; display: flex; flex-direction: column; min-width: 0; padding: 18px 20px 18px;
+		border-radius: 22px; overflow: hidden;
+		background: radial-gradient(120% 90% at 0% 0%, var(--glow), transparent 62%), var(--surface-1);
+		box-shadow: var(--shadow-card), inset 0 1px 0 rgb(255 255 255 / 5%);
+		transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out);
+		animation: lib-in var(--dur-slow) var(--ease-out) both; animation-delay: calc(var(--i, 0) * var(--stagger) * 2);
+	}
+	.lib-card.wide { grid-column: 1 / -1; }
+	.lib-card:has(.stretch):hover { transform: translateY(var(--lift)); box-shadow: var(--shadow-lift), inset 0 1px 0 rgb(255 255 255 / 6%); }
+	.lib-card:has(.stretch:focus-visible) { box-shadow: var(--focus-ring); }
+	@keyframes lib-in { from { opacity: 0; transform: translateY(var(--rise)); } }
+	.lib-top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+	.lib-icon { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 11px; background: color-mix(in oklab, var(--kc) 16%, var(--surface-2)); color: var(--kc); }
+	.lib-top h3 { flex: 1; min-width: 0; font: var(--t-headline); color: var(--text); }
+	.stretch { color: inherit; outline: none; }
+	.stretch::after { content: ''; position: absolute; inset: 0; z-index: 0; border-radius: inherit; }
+	.lib-go { color: var(--text-faint); display: inline-grid; transition: transform var(--dur) var(--ease-out), color var(--dur-fast); }
+	.lib-card:hover .lib-go { color: var(--text-muted); transform: translateX(2px); }
+	.lib-big { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 8px; font-variant-numeric: tabular-nums; }
+	.lib-big .num { font: 700 44px / 1 var(--font-display); letter-spacing: -0.035em; color: var(--text); }
+	.lib-big .unit { font: var(--t-callout); color: var(--text-muted); }
+	.lib-detail { margin-top: 6px; font: var(--t-subhead); color: var(--text-muted); font-variant-numeric: tabular-nums; }
+	.bar { display: flex; gap: 2px; height: 6px; margin-top: 16px; border-radius: 999px; overflow: hidden; background: var(--surface-3); }
+	.bar i { display: block; min-width: 3px; flex-basis: 0; }
+	.bar .rest { min-width: 0; background: transparent; }
+	.seg.on_disk, .leg.on_disk i { background: var(--ok); }
+	.seg.downloading, .leg.downloading i { background: var(--info); }
+	.seg.missing, .leg.missing i { background: var(--wait); }
+	.seg.k-movie, .seg.k-show, .seg.k-artist, .leg.k-movie i, .leg.k-show i, .leg.k-artist i { background: var(--kc); }
+	.legend { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 2px 14px; }
+	.leg { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 6px; min-height: 28px; color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; }
+	.leg strong { color: var(--text); font-weight: 600; }
+	.leg i { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+	a.leg { border-radius: var(--r-sm); margin: 0 -4px; padding: 0 4px; }
+	a.leg:hover { color: var(--text); background: var(--surface-2); }
+	a.leg:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+	/* Needs attention: one lifted card; each cause is one row, title over reason, the action at the right edge. */
+	.att-card { display: flex; flex-direction: column; border-radius: 22px; background: var(--surface-1); box-shadow: var(--shadow-card), inset 0 1px 0 rgb(255 255 255 / 5%); padding: 6px; animation: lib-in var(--dur-slow) var(--ease-out) both; }
+	.att-card.calm { flex: 1; background: radial-gradient(120% 90% at 100% 0%, color-mix(in oklab, var(--ok) 14%, transparent), transparent 60%), var(--surface-1); }
+	.att-wait { display: flex; flex-direction: column; gap: 10px; padding: 18px 16px; }
+	.att-wait i { display: block; height: 14px; border-radius: 7px; background: var(--sk-base); }
+	.att-wait i:nth-child(2) { width: 72%; }
+	.att-wait i:nth-child(3) { width: 48%; }
+	.all-good { flex: 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; padding: 22px 20px 24px; }
+	.att-sum { display: flex; flex-direction: column; gap: 14px; padding: 12px 14px 14px; }
+	.att-icon { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 11px; background: color-mix(in oklab, var(--fail) 16%, var(--surface-2)); color: var(--fail); }
+	.att-card .list { box-shadow: inset 0 1px 0 var(--line); margin: 0 6px; }
+	.att-card .fix { padding-left: 6px; padding-right: 4px; }
+	.good-mark { width: 44px; height: 44px; display: grid; place-items: center; margin-bottom: 10px; border-radius: 50%; background: color-mix(in oklab, var(--ok) 18%, var(--surface-2)); color: var(--ok); }
+	.good-title { font: var(--t-title3); letter-spacing: var(--t-title3-track); color: var(--text); }
+	.good-line { font: var(--t-callout); color: var(--text-muted); max-width: 34ch; }
+	.list { list-style: none; margin: 0; padding: 0; }
+	.fix { display: flex; align-items: flex-start; gap: 12px; padding: 10px 12px; border-radius: 14px; }
 	.fix + .fix { box-shadow: inset 0 1px 0 var(--line); border-radius: 0; }
-	.dot { flex: none; width: 8px; height: 8px; margin-top: 16px; border-radius: 50%; background: var(--text-faint); }
-	.dot.fail { background: var(--fail); }
-	.dot.wait { background: var(--wait); }
-	/* The title and the action share a line; when they do not fit (a phone), the action wraps under the title instead of squeezing it. */
-	.body { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; column-gap: 12px; }
-	.lead { flex: 1 1 auto; min-width: 0; max-width: 100%; display: flex; align-items: center; gap: 2px; height: 40px; padding: 0; border: 0; background: none; color: var(--text); font: var(--t-callout); text-align: left; }
-	/* A lone item cuts its long title short and keeps the reason; a merged row keeps its lead and cuts the list of titles. */
-	.ltxt { min-width: 0; display: flex; gap: 0.4em; white-space: nowrap; }
-	.tt { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-	.why { flex: none; }
-	.many .tt { flex: none; }
-	.many .why { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-	button.lead { cursor: pointer; border-radius: 6px; }
+	.tone { flex: none; width: 8px; height: 8px; margin-top: 8px; border-radius: 50%; background: var(--text-faint); }
+	.tone.fail { background: var(--fail); box-shadow: 0 0 0 4px color-mix(in oklab, var(--fail) 18%, transparent); }
+	.tone.wait { background: var(--wait); box-shadow: 0 0 0 4px color-mix(in oklab, var(--wait) 18%, transparent); }
+	/* The title and its reason stack; the action sits right of them and wraps under on a narrow column. */
+	.body { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; }
+	.lead { flex: 1 1 210px; min-width: 0; display: flex; align-items: center; gap: 4px; min-height: 40px; padding: 0; border: 0; background: none; color: var(--text); font: var(--t-callout); text-align: left; }
+	.ltxt { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+	.tt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+	.why { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: var(--t-subhead); font-weight: 400; }
+	button.lead { cursor: pointer; border-radius: 8px; }
 	button.lead:hover .why { color: var(--text); }
-	.lead strong { font-weight: 600; }
-	.why { color: var(--text-muted); }
 	.caret { flex: none; display: inline-grid; place-items: center; width: 24px; height: 24px; color: var(--text-muted); transition: rotate var(--dur-fast) var(--ease-out); }
 	.caret.up { rotate: 180deg; }
-	.acts { flex: none; margin-left: auto; display: flex; align-items: center; gap: 4px; }
-	.link { display: inline-flex; align-items: center; gap: 2px; min-height: 32px; padding: 0 6px; border: 0; border-radius: 6px; background: none; color: var(--text-muted); font: var(--t-subhead); cursor: pointer; }
+	.acts { flex: none; margin-left: auto; display: flex; align-items: center; gap: 2px; }
+	.link { display: inline-flex; align-items: center; gap: 2px; min-height: 32px; padding: 0 8px; border: 0; border-radius: 8px; background: none; color: var(--text-muted); font: var(--t-subhead); cursor: pointer; }
 	.link:hover { color: var(--text); background: var(--surface-2); }
 	.go { color: var(--accent-text); font-weight: 600; }
-	.go:hover { color: var(--accent-text); }
-	.lead:focus-visible, .link:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.go:hover { color: var(--accent-text); background: var(--accent-soft); }
+	.lead:focus-visible, .link:focus-visible, .more:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.raw { flex-basis: 100%; margin: 0 0 8px; color: var(--text-muted); font: var(--t-footnote); overflow-wrap: anywhere; }
-	.members { flex-basis: 100%; list-style: none; margin: 0 0 6px; padding: 0 0 0 2px; }
+	.members { flex-basis: 100%; list-style: none; margin: 2px 0 6px; padding: 0; }
 	.members li { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; min-height: 32px; font: var(--t-callout); }
 	.members .mt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.members .link { min-height: 28px; }
+	.more { display: flex; align-items: center; gap: 2px; min-height: 44px; margin: 0 6px; padding: 0 6px; box-shadow: inset 0 1px 0 var(--line); color: var(--accent-text); font: var(--t-subhead); font-weight: 600; }
+	.more:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+	/* Narrow: the columns stack, Library first. */
+	@container home (max-width: 900px) {
+		.overview { grid-template-columns: minmax(0, 1fr); gap: 26px; }
+	}
+	/* Phones: Library cards as a two-column mini grid, a size that fits two numbers side by side. */
 	@media (max-width: 599px) {
-		.acts { margin-left: -6px; }
-		.link { min-height: 36px; padding: 0 8px; }
+		.lib-grid, .solo .lib-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+		.lib-card { padding: 14px 14px 12px; border-radius: 18px; }
+		.lib-top { margin-bottom: 10px; gap: 8px; }
+		.lib-icon { width: 30px; height: 30px; border-radius: 9px; }
+		.lib-top h3 { font: var(--t-subhead); font-weight: 600; }
+		.lib-go { display: none; }
+		.lib-big { flex-direction: column; align-items: flex-start; }
+		.lib-big .num { font-size: 32px; }
+		.lib-big .unit { font: var(--t-footnote); }
+		.lib-detail { font: var(--t-footnote); margin-top: 4px; }
+		.bar { margin-top: 12px; height: 5px; }
+		.legend { flex-direction: column; gap: 0; margin-top: 6px; }
+		.leg { min-height: 24px; }
+		.att-card { border-radius: 18px; }
+		.att-sum { flex-direction: row; align-items: center; gap: 12px; padding: 10px 10px 12px; }
+		.att-icon { width: 30px; height: 30px; border-radius: 9px; }
+		.att-sum .lib-big { flex-direction: row; align-items: baseline; }
+		.acts { margin-left: -8px; }
+		.link { min-height: 36px; }
 		.members li { min-height: 36px; }
 	}
-	.more { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent-text); font: var(--t-callout); font-weight: 500; }
-	.more:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 	.prompt { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: clamp(16px, 3vw, 24px); border-radius: var(--r-panel); background: var(--surface-2); }
 	.prompt h2 { font: var(--t-title3); }

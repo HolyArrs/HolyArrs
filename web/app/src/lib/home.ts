@@ -257,6 +257,91 @@ export interface HomeAnswer {
 	soon: HomeCard[];
 	missing_count: number;
 	ask_progress: Record<string, AskProgress>;
+	/** What the Library holds per kind that is on (GET /home library). */
+	library?: Partial<Record<LibraryKind, LibraryCount>>;
+}
+
+export type LibraryKind = 'movie' | 'show' | 'artist';
+
+/** LibraryCount is one kind's share of the Library: titles, seasons or albums, items, and the main copy's state. */
+export interface LibraryCount {
+	titles: number;
+	parts: number;
+	items: number;
+	on_disk: number;
+	missing: number;
+	downloading: number;
+	size: number;
+}
+
+/** LibrarySegment is one part of a card's bar: its share of the items, and where it leads. */
+export interface LibrarySegment {
+	key: 'on_disk' | 'downloading' | 'missing';
+	label: string;
+	count: number;
+	share: number;
+	href?: string;
+}
+
+/** LibraryCardView is one Your Library card on Home. */
+export interface LibraryCardView {
+	kind: LibraryKind;
+	label: string;
+	icon: 'film' | 'tv' | 'music';
+	href: string;
+	big: number;
+	/** The big number's word: "movies", "shows", "artists". */
+	unit: string;
+	/** Seasons and episodes, or albums and tracks; empty for movies. */
+	detail: string;
+	segments: LibrarySegment[];
+	size: number;
+}
+
+const count = new Intl.NumberFormat('en');
+/** n formats a count with thousands separators. */
+export function n(v: number): string {
+	return count.format(v);
+}
+
+function plural(v: number, one: string, many: string): string {
+	return `${n(v)} ${v === 1 ? one : many}`;
+}
+
+/**
+ * libraryCards turns the Home answer's counts into the Your Library cards,
+ * in sidebar order (Movies, TV shows, Music), for the kinds that are on.
+ * Each bar is on disk, downloading and missing as shares of all items;
+ * the rest (not out yet, not kept up to date) stays the bar's track.
+ */
+export function libraryCards(lib: HomeAnswer['library']): LibraryCardView[] {
+	if (!lib) return [];
+	const meta: [LibraryKind, string, LibraryCardView['icon'], string, string][] = [
+		['movie', 'Movies', 'film', 'movie', 'movies'],
+		['show', 'TV shows', 'tv', 'show', 'shows'],
+		['artist', 'Music', 'music', 'artist', 'artists']
+	];
+	const out: LibraryCardView[] = [];
+	for (const [kind, label, icon, one, many] of meta) {
+		const c = lib[kind];
+		if (!c) continue;
+		const base = `/library?kind=${kind}`;
+		const all = Math.max(c.items, c.on_disk + c.downloading + c.missing, 1);
+		const seg = (key: LibrarySegment['key'], text: string, v: number, href?: string): LibrarySegment => ({ key, label: text, count: v, share: v / all, href });
+		const detail = kind === 'show' ? `${plural(c.parts, 'season', 'seasons')} · ${plural(c.items, 'episode', 'episodes')}` : kind === 'artist' ? `${plural(c.parts, 'album', 'albums')} · ${plural(c.items, 'track', 'tracks')}` : '';
+		out.push({
+			kind,
+			label,
+			icon,
+			href: base,
+			big: c.titles,
+			unit: c.titles === 1 ? one : many,
+			detail,
+			segments: [seg('on_disk', 'on disk', c.on_disk, `${base}&show=have`), seg('downloading', 'downloading', c.downloading), seg('missing', 'missing', c.missing, `${base}&show=missing`)],
+			size: c.size
+		});
+	}
+	return out;
 }
 
 /** fallbackRows is the order used while GET /home is unreachable: only the rows the page can fill itself. */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { arrivedAt, arrivedTitle, askProgressLine, attention, fallbackRows, groupAttention, homeStrip, downloadLine, downloadSubtitle, healthFix, homeFresh, isActive, mixLine, soonLine, splitArrivals } from './home.ts';
+import { arrivedAt, libraryCards, n, arrivedTitle, askProgressLine, attention, fallbackRows, groupAttention, homeStrip, downloadLine, downloadSubtitle, healthFix, homeFresh, isActive, mixLine, soonLine, splitArrivals } from './home.ts';
 import type { HealthCheck } from './types.ts';
 
 const check = (key: string, state: HealthCheck['state'], kind: HealthCheck['kind'] = 'source'): HealthCheck => ({ id: 1, key, kind, subject: 'S', state, message: `${key} broke`, since: '', checked_at: '' });
@@ -102,5 +102,27 @@ describe('home rows', () => {
 	it('keeps members off the owner rows while Home is unreachable', () => {
 		expect(fallbackRows(false)).toEqual(['asks', 'soon', 'discover']);
 		expect(fallbackRows(true)[0]).toBe('attention');
+	});
+});
+
+describe('Your Library cards', () => {
+	it('keeps sidebar order, names seasons and tracks, and splits the bar', () => {
+		const cards = libraryCards({
+			artist: { titles: 1, parts: 3, items: 40, on_disk: 30, missing: 10, downloading: 0, size: 900 },
+			movie: { titles: 1200, parts: 0, items: 1200, on_disk: 1100, missing: 60, downloading: 40, size: 5e12 },
+			show: { titles: 12, parts: 1, items: 1, on_disk: 1, missing: 0, downloading: 0, size: 2 }
+		});
+		expect(cards.map((c) => c.kind)).toEqual(['movie', 'show', 'artist']);
+		expect(cards[0]).toMatchObject({ big: 1200, unit: 'movies', detail: '', href: '/library?kind=movie' });
+		expect(cards[0].segments.map((s) => [s.key, s.count, s.share])).toEqual([['on_disk', 1100, 1100 / 1200], ['downloading', 40, 40 / 1200], ['missing', 60, 60 / 1200]]);
+		expect(cards[0].segments[2].href).toBe('/library?kind=movie&show=missing');
+		expect(cards[1].detail).toBe('1 season · 1 episode');
+		expect(cards[2]).toMatchObject({ unit: 'artist', detail: '3 albums · 40 tracks' });
+	});
+	it('leaves out kinds that are off and copes with an empty kind', () => {
+		expect(libraryCards(undefined)).toEqual([]);
+		const [m] = libraryCards({ movie: { titles: 0, parts: 0, items: 0, on_disk: 0, missing: 0, downloading: 0, size: 0 } });
+		expect(m.segments.every((s) => s.share === 0)).toBe(true);
+		expect(n(12345)).toBe('12,345');
 	});
 });
