@@ -8,7 +8,7 @@
 	// Delete a whole movie or show from the title page. The plan below is asked
 	// again whenever a switch changes, and the delete carries out that same plan.
 	// Deleting files too asks for the name typed, so it is never one stray click.
-	let { open = $bindable(false), titleId, name, kind, ondone }: { open?: boolean; titleId: number; name: string; kind: 'movie' | 'show'; ondone?: (p: RemovePlan) => void } = $props();
+	let { open = $bindable(false), titleId, name, kind, ondone }: { open?: boolean; titleId: number; name: string; kind: 'movie' | 'show' | 'artist'; ondone?: (p: RemovePlan) => void } = $props();
 
 	let files = $state(false);
 	let never = $state(false);
