@@ -1161,7 +1161,7 @@
 	.series-head { display: flex; align-items: baseline; gap: 12px; padding: 18px 16px 10px; background: var(--surface-2); border-top: 1px solid var(--line); }
 	.series-head h2 { margin: 0; font: var(--t-headline); }
 	.series-head span { color: var(--text-muted); font: var(--t-footnote); }
-	.series-head a { margin-left: auto; color: var(--accent); font: var(--t-footnote); font-weight: 600; }
+	.series-head a { margin-left: auto; color: var(--accent-text); font: var(--t-footnote); font-weight: 600; }
 
 	/* Overview list */
 	.ov { display: grid; grid-template-columns: 92px minmax(0, 1fr) 240px; gap: 18px; padding: 14px 16px; }

@@ -188,7 +188,7 @@
 	.side button.on :global(.icon) { color: var(--accent-text); }
 	.l { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.warn-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--wait); flex: none; }
-	.v { color: var(--text-faint); font: var(--t-callout); max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.v { color: var(--text-muted); font: var(--t-callout); max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 	.panel { min-width: 0; padding: var(--s-6); border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); animation: fade var(--dur) var(--ease-out); }
 	@keyframes fade { from { opacity: 0; transform: translateX(6px); } }

@@ -250,7 +250,7 @@
 	.pc-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; color: var(--text-muted); font: var(--t-footnote); }
 	.pc-title { font: var(--t-callout); font-weight: 600; overflow-wrap: anywhere; }
 	.pc-sum { color: var(--text-muted); font: var(--t-footnote); overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-	.pc-by { color: var(--text-faint); font: var(--t-caption); }
+	.pc-by { color: var(--text-muted); font: var(--t-caption); }
 	.pc.quiet .pc-title { color: var(--text-muted); font-weight: 500; }
 	@media (max-width: 1100px) { .c-by { width: 0; } .by, thead th:last-child { display: none; } thead th:nth-last-child(2) { border-top-right-radius: var(--r-panel); } }
 	@media (max-width: 767px) {
