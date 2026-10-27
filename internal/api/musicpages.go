@@ -1164,6 +1164,11 @@ type ArtistCoreView struct {
 	Albums []PageAlbum `json:"albums,omitempty"`
 }
 
+// coreWarmMax caps the covers the core answer warms: the first grid (18)
+// only, so the install's allowance at the metadata server goes to what is
+// on screen.
+const coreWarmMax = 18
+
 // coreAlbums lists a complete stored discography for the core answer, newest first.
 func coreAlbums(art metadata.Artist) []PageAlbum {
 	if art.Partial || len(art.Albums) == 0 {
@@ -1290,7 +1295,9 @@ func (a *API) artistCore(w http.ResponseWriter, r *http.Request) {
 			imgs := make([]string, 0, len(v.Albums))
 			for _, al := range v.Albums {
 				names = append(names, nameKey{kind: "album", mbid: al.MBID, name: al.Name, artist: art.Name})
-				imgs = append(imgs, al.Image)
+				if len(imgs) < coreWarmMax {
+					imgs = append(imgs, al.Image)
+				}
 			}
 			a.rememberMusicNames(names)
 			a.warmArtPaths(imgs...)
