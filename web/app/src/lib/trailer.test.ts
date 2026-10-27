@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { claimPlayer, dwell, embedUrl, heroPictures, mayAutoplay, pickTrailer, placeCard, playerBusy, type Video } from './trailer.ts';
+import { claimPlayer, dwell, embedUrl, heroPictures, mayAutoplay, pickTrailer, placeCard, playerBusy, playingWord, type Video } from './trailer.ts';
 
 const vs: Video[] = [
 	{ key: 'teaserEN01', type: 'Teaser', official: true, language: 'en' },
@@ -90,5 +90,13 @@ describe('helpers', () => {
 		expect(placeCard({ left: 950, top: 700, width: 50, height: 100 }, 300, 300, view)).toEqual({ left: 692, top: 492 });
 		expect(placeCard({ left: 820, top: 300, width: 170, height: 255 }, 300, 300, view, 8, { left: 160, right: 1000 }).left).toBe(690);
 		expect(placeCard({ left: 400, top: 300, width: 200, height: 200 }, 300, 300, view)).toEqual({ left: 350, top: 250 });
+	});
+});
+
+describe('playingWord', () => {
+	it('names what the big player plays', () => {
+		expect(playingWord('artist')).toBe('music video');
+		expect(playingWord('movie')).toBe('trailer');
+		expect(playingWord('show', 'teaser')).toBe('teaser');
 	});
 });

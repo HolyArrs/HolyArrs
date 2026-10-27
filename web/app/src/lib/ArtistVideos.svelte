@@ -4,11 +4,13 @@
 	import { api } from './api.ts';
 	import { claimPlayer } from './trailer.ts';
 	import { openTheater } from './theater.svelte.ts';
+	import { pickedSources, type HeroVideo } from './music/hero-video.ts';
 
 	// An artist's music videos (GET /music/artists/{mbid}?part=videos) as one row
 	// of small cards, the same row as a title page's trailers: whole cards, each
 	// with the video's own cover (the artist's picture when it cannot load).
-	// Playing one opens the big player on the YouTube embed.
+	// Playing one opens the big player on HolyArrs' relay of that video (label
+	// videos refuse YouTube's embedded player), the embed only when there is none.
 	let { mbid, artist, picture }: { mbid: string; artist: string; picture?: string | null } = $props();
 
 	type Item = { id: string; title?: string; duration?: number };
@@ -31,12 +33,38 @@
 	const named = (v: Item) => (v.title ?? '').replace(new RegExp(`^${artist.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*[-–—:|]\\s*`, 'i'), '').trim() || `${artist} music video`;
 	const length = (s?: number) => (s ? `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}` : '');
 
-	function play(v: Item, e: MouseEvent) {
+	// The server looks a video's stream up once; pointing at a card starts that
+	// lookup, so the click mostly finds it done. A miss is asked again next time,
+	// and so is a relayed stream past its end.
+	const streams = new Map<string, Promise<HeroVideo | null>>();
+	function stream(id: string): Promise<HeroVideo | null> {
+		const k = `${mbid}|${id}`;
+		let p = streams.get(k);
+		if (!p) {
+			p = api.get<HeroVideo>(`/music/artists/${encodeURIComponent(mbid)}?part=video&id=${encodeURIComponent(id)}`).catch(() => null);
+			streams.set(k, p);
+			void p.then((s) => {
+				if (!s) streams.delete(k);
+				else if (s.expires_at) setTimeout(() => streams.delete(k), Math.max(0, Date.parse(s.expires_at) - Date.now() - 60_000));
+			});
+		}
+		return p;
+	}
+
+	let busy = $state('');
+	async function play(v: Item, e: MouseEvent) {
 		const el = e.currentTarget as HTMLElement;
-		// One video at a time: the hero's own video stops for this one.
-		claimPlayer(() => {})();
-		const r = el.getBoundingClientRect();
-		openTheater({ kind: 'artist', tmdb: mbid, title: named(v), source: { kind: 'embed', key: v.id }, time: 0, rect: { left: r.left, top: r.top, width: r.width, height: r.height }, from: 'panel', returnTo: el });
+		if (busy) return;
+		busy = v.id;
+		try {
+			const [source, ...fallbacks] = pickedSources(v.id, await stream(v.id));
+			// One video at a time: the hero's own video stops for this one.
+			claimPlayer(() => {})();
+			const r = el.getBoundingClientRect();
+			openTheater({ kind: 'artist', tmdb: mbid, title: named(v), source, fallbacks, time: 0, rect: { left: r.left, top: r.top, width: r.width, height: r.height }, from: 'panel', returnTo: el });
+		} finally {
+			busy = '';
+		}
 	}
 </script>
 
@@ -44,7 +72,7 @@
 	<div class="videos" data-testid="artist-videos">
 		<Shelf title="Music videos" anchor="artist-videos" item="260px" placeholder="wide" whole>
 			{#each list as v (v.id)}
-				<button type="button" class="vcard" onclick={(e) => play(v, e)} aria-label="Play {named(v)}">
+				<button type="button" class="vcard" onclick={(e) => play(v, e)} onpointerenter={() => void stream(v.id)} onfocus={() => void stream(v.id)} aria-busy={busy === v.id || undefined} aria-label="Play {named(v)}">
 					<span class="pic">
 						{#if coverOf(v)}<img src={coverOf(v)} alt="" loading="lazy" decoding="async" onerror={() => (noCover[v.id] = true)} />{/if}
 						<span class="glyph" aria-hidden="true"><Icon name="play" size={14} /></span>

@@ -47,6 +47,12 @@ export function embedUrl(key: string, origin?: string, repeat = false): string {
 	return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(key)}?${q}`;
 }
 
+/** playingWord names what the big player plays: an artist's music video, else the video's own kind (teaser), else a trailer. */
+export function playingWord(kind: 'movie' | 'show' | 'artist', what?: string): string {
+	if (kind === 'artist') return 'music video';
+	return what || 'trailer';
+}
+
 /** The hero's pictures: the main backdrop first, then up to 3 more, no repeats. */
 export function heroPictures(main: string | null | undefined, more: string[] | null | undefined, max = 4): string[] {
 	const out: string[] = [];

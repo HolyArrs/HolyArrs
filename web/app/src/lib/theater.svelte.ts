@@ -10,6 +10,8 @@ export interface TheaterOpen {
 	kind: 'movie' | 'show' | 'artist';
 	tmdb: string;
 	title: string;
+	/** What plays, in the player's words ("teaser"); playingWord fills in music video or trailer. */
+	what?: string;
 	source: TrailerSource;
 	/** Tried in order when the source cannot play (the relayed stream refused, say), before the player gives up. */
 	fallbacks?: TrailerSource[];

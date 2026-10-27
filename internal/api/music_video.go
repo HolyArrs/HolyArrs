@@ -211,6 +211,11 @@ func (a *API) artistVideo(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	// ?id= is a card in the Music videos row: a click, not autoplay.
+	if id := r.URL.Query().Get("id"); id != "" {
+		a.pickedVideo(w, r, mbid, id)
+		return
+	}
 	if !a.uiSettings(r.Context()).AutoplayTrailers {
 		fail(w, http.StatusNotFound, "trailers are turned off")
 		return
@@ -268,6 +273,49 @@ func (a *API) artistVideo(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		vids = a.dropVideo(r.Context(), mbid, v.ID)
+	}
+	view, ok := a.videoView(r, v, s)
+	if !ok {
+		fail(w, http.StatusNotFound, "no direct stream")
+		return
+	}
+	w.Header().Set("Cache-Control", "private, no-store")
+	writeJSON(w, http.StatusOK, view)
+}
+
+// pickedVideo answers ?id=: that one of the artist's videos, relayed. Label
+// videos refuse YouTube's embedded player (error 150), so the row plays
+// them through the relay. One that will not play answers 404 and stays in
+// the list (the row's embed may still play it).
+func (a *API) pickedVideo(w http.ResponseWriter, r *http.Request, mbid, id string) {
+	var v metadata.ArtistVideo
+	if a.s.ArtistVideos != nil {
+		for _, k := range a.videosOf(metadata.MemberLookup(r.Context()), mbid) {
+			if k.ID == id && metadata.ValidYouTubeID(k.ID) {
+				v = k
+				break
+			}
+		}
+	}
+	if v.ID == "" {
+		fail(w, http.StatusNotFound, "no such video")
+		return
+	}
+	if _, known := a.videoKnown(r.Context(), v.ID); !known && !a.trailers.inFlight("musicvideo|"+v.ID) {
+		if _, _, found := ytdlpRun(); !found {
+			fail(w, http.StatusNotFound, "no direct stream")
+			return
+		}
+		if !a.trailers.allow(a.person(r).UserID, time.Now()) {
+			w.Header().Set("Retry-After", "60")
+			fail(w, http.StatusTooManyRequests, "too many videos; try again in a minute")
+			return
+		}
+	}
+	s, err := a.resolveMusicVideo(r.Context(), v.ID)
+	if err != nil || s.Type != "hls" {
+		fail(w, http.StatusNotFound, "no direct stream")
+		return
 	}
 	view, ok := a.videoView(r, v, s)
 	if !ok {

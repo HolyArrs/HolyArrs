@@ -60,7 +60,7 @@
 			// One video at a time: the hero's muted trailer stops for this one.
 			claimPlayer(() => {})();
 			const r = el.getBoundingClientRect();
-			openTheater({ kind, tmdb, title, source, fallbacks, time: 0, rect: { left: r.left, top: r.top, width: r.width, height: r.height }, from: 'panel', returnTo: el });
+			openTheater({ kind, tmdb, title, what: kindWord(v).toLowerCase(), source, fallbacks, time: 0, rect: { left: r.left, top: r.top, width: r.width, height: r.height }, from: 'panel', returnTo: el });
 		} finally {
 			busy = '';
 		}

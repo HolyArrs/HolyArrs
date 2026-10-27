@@ -2,7 +2,7 @@
 	import { onDestroy } from 'svelte';
 	import IconButton from './IconButton.svelte';
 	import { closeTheater, holdScroll, runExit, theater, waitForResume } from '../theater.svelte.ts';
-	import { embedUrl, setSoundOn } from '../trailer.ts';
+	import { embedUrl, playingWord, setSoundOn } from '../trailer.ts';
 	import { flipFrames, reducedMotion, THEATER_CHROME_MS, THEATER_EASE, THEATER_FADE_MS, THEATER_GROW_MS, THEATER_SHRINK_MS, type Box } from '../motion.ts';
 	import { nativeHLS } from '../autoplay.svelte.ts';
 	import { attachHLS, screenTarget } from '../hls-player.ts';
@@ -33,7 +33,7 @@
 	let time = $state(0);
 	let duration = $state(0);
 	let idle = $state(false);
-	// YouTube refused this trailer (removed, private or not allowed outside YouTube).
+	// Every source refused (removed, private or not allowed outside YouTube).
 	let unavailable = $state(false);
 	let leaving = false;
 	let release: (() => void) | null = null;
@@ -41,6 +41,8 @@
 	let tick: ReturnType<typeof setInterval> | undefined;
 	const origin = typeof location !== 'undefined' ? location.origin : '';
 	const now = $derived(theater.now);
+	// What plays, in its own word: music video, teaser, trailer.
+	const word = $derived(now ? playingWord(now.kind, now.what) : 'trailer');
 	// The source, then its fallbacks one by one while they fail; "can't play here" only after the last.
 	let tried = $state(0);
 	const list = $derived(now ? [now.source, ...(now.fallbacks ?? [])] : []);
@@ -288,7 +290,7 @@
 	class="ui-theater"
 	class:idle
 	class:chrome
-	aria-label={now ? `${now.title} trailer` : 'Trailer'}
+	aria-label={now ? `${now.title} ${word}` : 'Trailer'}
 	data-testid="theater"
 	oncancel={(e) => {
 		e.preventDefault();
@@ -330,7 +332,7 @@
 				<iframe
 					bind:this={frame}
 					src={embedUrl(src.key, origin, false)}
-					title="{now.title} trailer"
+					title="{now.title} {word}"
 					allow="autoplay; encrypted-media; fullscreen"
 					referrerpolicy="strict-origin-when-cross-origin"
 					sandbox="allow-scripts allow-same-origin allow-presentation"
@@ -347,13 +349,13 @@
 			{/if}
 			{#if unavailable}
 				<div class="gone" role="status">
-					<p>This trailer can't play here.</p>
+					<p>This {word} can't play here.</p>
 					<button type="button" class="gone-close" onclick={() => void close()}>Close</button>
 				</div>
 			{/if}
 			<div class="top">
 				<p class="name">{now.title}</p>
-				<IconButton icon="x" label="Close the trailer" variant="glass" size="lg" tipSide="below-end" onclick={() => void close()} />
+				<IconButton icon="x" label="Close the {word}" variant="glass" size="lg" tipSide="below-end" onclick={() => void close()} />
 			</div>
 			<div class="bar">
 				<IconButton icon={paused ? 'play' : 'pause'} label={paused ? 'Play' : 'Pause'} variant="glass" size="lg" tipSide="above" onclick={togglePlay} />
