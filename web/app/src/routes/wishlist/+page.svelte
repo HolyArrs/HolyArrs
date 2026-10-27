@@ -25,6 +25,17 @@
 	import { seasonWords } from '#lib/shows.ts';
 	import { albumWords } from '#lib/music/music.ts';
 	import { titleStatus } from '#lib/title-status.ts';
+	import VariantBar from '#lib/ui/VariantBar.svelte';
+	import { approvalViews, askHref, viewKey, type ApprovalsCtx, type Member } from '#lib/approvals/approvals.ts';
+	import { askDetails, wantDetails } from '#lib/approvals/details.svelte.ts';
+	import { kidLabel } from '#lib/kid.ts';
+	import { nowPhases, type DownloadRow } from '#lib/downloaders.ts';
+	import CardsView from '#lib/approvals/CardsView.svelte';
+	import PersonView from '#lib/approvals/PersonView.svelte';
+	import FocusView from '#lib/approvals/FocusView.svelte';
+	import InboxView from '#lib/approvals/InboxView.svelte';
+	import BoardView from '#lib/approvals/BoardView.svelte';
+	import AskDetail from '#lib/approvals/AskDetail.svelte';
 
 	const approver = $derived(session.can('approve'));
 	let asks = $state<Ask[]>([]);
@@ -187,7 +198,8 @@
 
 	onMount(() => {
 		void load().then(() => {
-			tab = firstTab(asks);
+			// The layouts open on Waiting for approvers, so an empty queue shows its calm state.
+			tab = view > 0 && approver ? 'waiting' : firstTab(asks);
 		});
 		void refreshInbox();
 		if (session.can('manage_library')) {
@@ -225,14 +237,19 @@
 		e.preventDefault();
 		if (!picked) return;
 		busy = true;
-		dialogError = '';
+		dialogError = await decideNow(picked, mode, note, folderId, rulesId);
+		if (!dialogError) decideOpen = false;
+		busy = false;
+	}
+
+	/** decideNow approves (with a Library folder and Pick rules) or turns down one ask straight away; '' when done, else the error. */
+	async function decideNow(a: Ask, mode: 'approve' | 'turn_down', note: string, folderId: number, rulesId: number): Promise<string> {
 		try {
-			const path = `/asks/${picked.id}/${mode === 'approve' ? 'approve' : 'turn-down'}`;
+			const path = `/asks/${a.id}/${mode === 'approve' ? 'approve' : 'turn-down'}`;
 			const body = mode === 'approve' ? { note, library_folder_id: folderId, pick_rules_id: rulesId } : { note };
 			const r = await api.post<{ ask: Ask }>(path, body);
 			const i = asks.findIndex((x) => x.id === r.ask.id);
 			if (i >= 0) asks[i] = r.ask;
-			decideOpen = false;
 			const added =
 				r.ask.kind === 'show'
 					? `${r.ask.name} is approved and added; HolyArrs keeps ${seasonWords(r.ask.seasons)} up to date.`
@@ -241,10 +258,9 @@
 						: `${r.ask.name} is approved and added; HolyArrs is looking for it.`;
 			toasts.push(mode === 'approve' ? added : `${r.ask.name} is turned down.`, 'ok');
 			void refreshInbox();
+			return '';
 		} catch (err) {
-			dialogError = message(err);
-		} finally {
-			busy = false;
+			return message(err);
 		}
 	}
 
@@ -330,19 +346,113 @@
 		if (a.kind === 'artist') return `HolyArrs keeps ${what(a)} up to date. Looking for music Releases comes in a later version.`;
 		return 'HolyArrs is looking for it.';
 	}
+
+	// The layouts Luis compares (?view=1…5); 0 is the page above as it is today.
+	let view = $state(0);
+	// The board shows every state as a column, and chooses from Waiting.
+	$effect(() => {
+		if (view === 5 && tab !== 'waiting') tab = 'waiting';
+	});
+	// Who asked: picture and age limit, for the approvers' layouts.
+	let members = $state<Record<number, Member>>({});
+	let membersAsked = false;
+	$effect(() => {
+		if (!view || !approver || membersAsked) return;
+		membersAsked = true;
+		api
+			.get<{ users: Member[] }>('/users')
+			.then((r) => (members = Object.fromEntries(r.users.map((u) => [u.id, u]))))
+			.catch(() => {});
+	});
+	// Library ids with a download running, for the board's Downloading column.
+	let downloading = $state<ReadonlySet<number>>(new Set());
+	$effect(() => {
+		if (view !== 5 || !session.can('manage_library')) return;
+		const read = () =>
+			api
+				.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=100')
+				.then((r) => (downloading = new Set(r.downloads.filter((d) => nowPhases.has(d.phase) && d.title_id).map((d) => d.title_id as number))))
+				.catch(() => {});
+		void read();
+		const t = setInterval(read, 15000);
+		return () => clearInterval(t);
+	});
+	// The review sheet the layouts open (the Now page keeps its side panel).
+	let sheetOpen = $state(false);
+	let sheetId = $state(0);
+	let sheetTrigger: HTMLElement | undefined;
+	const sheetAsk = $derived(viewed.find((a) => a.id === sheetId) ?? null);
+	function sheetClosed() {
+		const t = sheetTrigger;
+		sheetTrigger = undefined;
+		if (t?.isConnected) setTimeout(() => t.focus(), 0);
+	}
+	const foldersOf = (a: Ask) => {
+		const k = a.kind === 'show' ? 'show' : a.kind === 'artist' ? 'music' : 'movie';
+		return folders.filter((f) => f.kind === k);
+	};
+	const rulesOf = (a: Ask) => {
+		const k = a.kind === 'show' ? 'show' : a.kind === 'artist' ? 'music' : 'movie';
+		return rules.filter((r) => !r.kinds.length || r.kinds.includes(k));
+	};
+	const ctx: ApprovalsCtx = {
+		get shown() { return shown; },
+		get viewed() { return viewed; },
+		get tab() { return tab; },
+		get counts() { return counts; },
+		setTab: (t) => ((tab = t), (chosen = new Set())),
+		get approver() { return approver; },
+		get choosable() { return choosable; },
+		isChosen: (id) => chosen.has(id),
+		toggleChosen,
+		chooseAll: (list) => {
+			const all = list.length > 0 && list.every((a) => chosen.has(a.id));
+			const next = new Set(chosen);
+			for (const a of list) {
+				if (all) next.delete(a.id);
+				else if (a.state === 'asked') next.add(a.id);
+			}
+			chosen = next;
+		},
+		isPending: (id) => !!pending[id],
+		approve: (list) => act(list, 'approve'),
+		turnDown: (list) => askDecline(list),
+		withOptions: (a) => open(a, 'approve'),
+		review: (a, trigger) => ((sheetId = a.id), (sheetTrigger = trigger), (sheetOpen = true)),
+		takeBack: (a) => ((sheetOpen = false), askTakeBack(a)),
+		decideNow,
+		foldersFor: foldersOf,
+		rulesFor: rulesOf,
+		who: (a) => {
+			const p = a.people[0] ?? a.asked_by;
+			const m = members[p.id];
+			return { id: p.id, name: plain(p.name), avatar: m?.avatar ?? null, kid: kidLabel(m?.max_rating) };
+		},
+		what,
+		year,
+		askedBy,
+		decided,
+		pill: askPill,
+		approvedLine,
+		href: askHref,
+		details: askDetails,
+		want: wantDetails,
+		get downloading() { return downloading; }
+	};
 </script>
 
 <svelte:head><title>{approver ? 'Approvals' : 'Your Wishlist'} · HolyArrs</title></svelte:head>
 
+<div class="ap-top" class:compact={view > 0}>
 <PageHeader
 	title={approver ? 'Approvals' : 'Your Wishlist'}
 	subtitle={approver ? 'What people asked for. Approve to add, or turn down with a note.' : 'The movies, shows and music you asked for, and where each one is.'}
 >
 	{#snippet actions()}
 		{#if session.can('ask')}
-			<Button icon="film" variant="primary" href={to(`/search`)}>Ask for a movie</Button>
-			<Button icon="tv" href={to(`/search?kind=show`)}>Ask for a show</Button>
-			<Button icon="music" href={to(`/search?kind=music`)}>Ask for music</Button>
+			<Button icon="film" variant="primary" href={to(`/search`)}><span class="ask-d">Ask for a movie</span><span class="ask-m"><span class="sr-only">Ask for a </span>Movie</span></Button>
+			<Button icon="tv" href={to(`/search?kind=show`)}><span class="ask-d">Ask for a show</span><span class="ask-m"><span class="sr-only">Ask for a </span>Show</span></Button>
+			<Button icon="music" href={to(`/search?kind=music`)}><span class="ask-d">Ask for music</span><span class="ask-m"><span class="sr-only">Ask for </span>Music</span></Button>
 		{/if}
 	{/snippet}
 </PageHeader>
@@ -355,7 +465,11 @@
 
 {#if bothKinds || asks.length}
 	<div class="toolbar">
-		{#if asks.length}
+		{#if asks.length && view === 5 && approver}
+			<div class="chips" role="group" aria-label="Show">
+				<Chip label="Mine" icon="user" selected={mineOnly} onclick={() => (mineOnly = !mineOnly)} />
+			</div>
+		{:else if asks.length}
 			<div class="chips tabs" role="group" aria-label="Show" data-testid="ask-tabs">
 				{#each tabs as t (t.tab)}
 					<Chip label={t.label} count={t.tab === 'waiting' && counts.waiting ? counts.waiting : undefined} selected={tab === t.tab} onclick={() => ((tab = t.tab), (chosen = new Set()))} />
@@ -371,10 +485,32 @@
 				<Chip label="Music" selected={kind === 'artist'} onclick={() => (kind = 'artist')} />
 			</div>
 		{/if}
-		{#if asks.length}<p class="count">{shown.length} {shown.length === 1 ? 'request' : 'requests'}</p>{/if}
+		{#if asks.length}<p class="count">{view === 5 ? viewed.length : shown.length} {(view === 5 ? viewed.length : shown.length) === 1 ? 'request' : 'requests'}</p>{/if}
 	</div>
 {/if}
+</div>
 
+{#snippet bulkBar()}
+			{#if choosable}
+				<div class="bulk" class:on={chosenAsks.length > 0} data-testid="ask-bulk">
+					<label class="tick-all">
+						<input
+							type="checkbox"
+							checked={chosenAsks.length === shown.length}
+							indeterminate={chosenAsks.length > 0 && chosenAsks.length < shown.length}
+							onchange={(e) => (chosen = e.currentTarget.checked ? new Set(shown.map((a) => a.id)) : new Set())}
+						/>
+						{chosenAsks.length ? `${chosenAsks.length} chosen` : 'Choose all'}
+					</label>
+					{#if chosenAsks.length}
+						<Button size="sm" variant="primary" icon="check" type="button" onclick={() => act(chosenAsks, 'approve')}>Approve {chosenAsks.length}</Button>
+						<Button size="sm" icon="x" type="button" onclick={() => askDecline(chosenAsks)}>Turn down {chosenAsks.length}</Button>
+					{/if}
+				</div>
+			{/if}
+{/snippet}
+
+{#if view === 0}
 <div class="workspace">
 	<div class="main-col">
 		{#if error}
@@ -397,23 +533,7 @@
 				title={tab === 'waiting' ? 'Nothing waits for approval.' : tab === 'failed' ? 'Nothing failed.' : `Nothing ${askTabs.find((t) => t.tab === tab)?.label.toLowerCase()} yet.`}
 			/>
 		{:else}
-			{#if choosable}
-				<div class="bulk" class:on={chosenAsks.length > 0} data-testid="ask-bulk">
-					<label class="tick-all">
-						<input
-							type="checkbox"
-							checked={chosenAsks.length === shown.length}
-							indeterminate={chosenAsks.length > 0 && chosenAsks.length < shown.length}
-							onchange={(e) => (chosen = e.currentTarget.checked ? new Set(shown.map((a) => a.id)) : new Set())}
-						/>
-						{chosenAsks.length ? `${chosenAsks.length} chosen` : 'Choose all'}
-					</label>
-					{#if chosenAsks.length}
-						<Button size="sm" variant="primary" icon="check" type="button" onclick={() => act(chosenAsks, 'approve')}>Approve {chosenAsks.length}</Button>
-						<Button size="sm" icon="x" type="button" onclick={() => askDecline(chosenAsks)}>Turn down {chosenAsks.length}</Button>
-					{/if}
-				</div>
-			{/if}
+			{@render bulkBar()}
 			<ul class="asks" aria-label="Wishlist requests">
 				{#each shown as a, i (a.id)}
 					<li class="ask rise" class:selected={selected?.id === a.id} class:chosen={chosen.has(a.id)} class:waiting={!!pending[a.id]} style="--i: {i}" data-testid="ask">
@@ -508,6 +628,39 @@
 			</aside>
 		{/if}
 
+		{@render messages()}
+	</div>
+</div>
+{:else}
+	<div class="variant" data-view={view}>
+		{#if error}
+			<LoadError hasData={false} message="Your Wishlist could not be loaded. {error}" onretry={load} />
+		{:else}
+			<PageLoader loading={!loaded} label="Loading Wishlist">
+				{#if asks.length === 0}
+					<EmptyState
+						icon="wish"
+						title="Nothing on the Wishlist yet"
+						text={session.can('ask')
+							? 'Find a movie, a show or an artist in Search and press Ask. It shows up here, and you hear when it is approved and when it is ready.'
+							: 'Your account may not ask for movies, shows or music yet; ask the owner.'}
+						action={{ label: 'Search', href: to('/search') }}
+					/>
+				{:else}
+					{#if shown.length}{@render bulkBar()}{/if}
+					{#if view === 1}<CardsView {ctx} />
+					{:else if view === 2}<PersonView {ctx} />
+					{:else if view === 3}<FocusView {ctx} />
+					{:else if view === 4}<InboxView {ctx} />
+					{:else}<BoardView {ctx} />{/if}
+				{/if}
+			</PageLoader>
+		{/if}
+		{#if inbox.messages.length}<div class="variant-messages">{@render messages()}</div>{/if}
+	</div>
+{/if}
+
+{#snippet messages()}
 		{#if inbox.messages.length}
 			<section class="messages" aria-labelledby="h-msg">
 				<div class="msg-head">
@@ -528,8 +681,13 @@
 				</details>
 			</section>
 		{/if}
-	</div>
-</div>
+{/snippet}
+
+<Sheet bind:open={sheetOpen} onclose={sheetClosed} size="md" title={sheetAsk ? `${sheetAsk.name}${year(sheetAsk)}` : 'Review'} hideTitle>
+	{#if sheetAsk}<AskDetail {ctx} a={sheetAsk} />{/if}
+</Sheet>
+
+<VariantBar options={approvalViews} bind:value={view} storageKey={viewKey} label="Approvals layout" />
 
 <Sheet
 	bind:open={decideOpen}
@@ -673,6 +831,20 @@
 	textarea.input { height: auto; padding-top: 10px; resize: vertical; }
 	.decide-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
 	@media (pointer: coarse) { .inspect, summary { min-height: 44px; } }
+	.variant { min-width: 0; }
+	.ask-m { display: none; }
+	/* The layouts' phone design: one row of Ask buttons and sideways chip rows. */
+	@media (max-width: 767px) {
+		.compact .ask-d { display: none; }
+		.compact .ask-m { display: inline; }
+		.compact :global(.ui-head .actions) { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; gap: 6px; }
+		.compact :global(.ui-head .actions .ui-btn) { min-width: 0; padding: 0 10px; }
+		.compact .toolbar { gap: 8px; }
+		.compact .chips { flex-wrap: nowrap; width: calc(100% + 2 * var(--gutter)); margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter); overflow-x: auto; scrollbar-width: none; }
+		.compact .chips::-webkit-scrollbar { display: none; }
+		.compact .chips > :global(*) { flex: none; }
+	}
+	.variant-messages { max-width: 560px; margin-top: 24px; }
 	@media (max-width: 1023px) {
 		.workspace { grid-template-columns: minmax(0, 1fr); }
 		.side-col { position: static; }
