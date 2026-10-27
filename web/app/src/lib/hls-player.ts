@@ -77,6 +77,48 @@ export async function attachHLS(video: HTMLVideoElement, url: string, native: bo
 	};
 }
 
+/**
+ * holdStart keeps a video meant to start at start (seconds) from playing its
+ * opening instead: whenever it plays more than slack seconds before the start,
+ * it jumps there. Safari's own HLS can drop the seek made at loadedmetadata,
+ * and a stream that starts over can land at 0. A seek made in the video's own
+ * player (iPhone full screen, native controls) is the person's: from then on
+ * it is left alone. Three jumps that do not hold (a start the stream cannot
+ * reach) and it gives up until the video gets past the start again. The
+ * answer stops it.
+ */
+export function holdStart(video: HTMLVideoElement, start: number, slack = 2): () => void {
+	if (!(start > slack)) return () => {};
+	let theirs = false;
+	let jumping = false;
+	let tries = 0;
+	const ownPlayer = () =>
+		video.controls ||
+		!!(video as HTMLVideoElement & { webkitDisplayingFullscreen?: boolean }).webkitDisplayingFullscreen ||
+		(typeof document !== 'undefined' && document.fullscreenElement === video);
+	const seeking = () => {
+		if (jumping) jumping = false;
+		else if (ownPlayer()) theirs = true;
+	};
+	const check = () => {
+		if (theirs || video.paused || video.seeking) return;
+		if (video.currentTime >= start - slack) tries = 0;
+		else if (tries < 3) {
+			tries++;
+			jumping = true;
+			video.currentTime = start;
+		}
+	};
+	video.addEventListener('seeking', seeking);
+	video.addEventListener('playing', check);
+	video.addEventListener('timeupdate', check);
+	return () => {
+		video.removeEventListener('seeking', seeking);
+		video.removeEventListener('playing', check);
+		video.removeEventListener('timeupdate', check);
+	};
+}
+
 /** playerTarget is the picture height a player of w×h css pixels needs at
  * the pixel ratio: cover fills the box (a hero), contain fits in it (full
  * screen). Capped at 1080: never 4K. */
