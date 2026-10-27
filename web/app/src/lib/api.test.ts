@@ -117,6 +117,28 @@ describe('api client', () => {
 			}
 		});
 
+		it('keeps an answer fetched ahead (warm) longer, but never a no-store or incomplete one', async () => {
+			vi.useFakeTimers();
+			try {
+				const f = vi.fn(async (u: string) => (u.endsWith('/no') ? reply(200, { a: 1 }, { 'Cache-Control': 'no-store' }) : u.endsWith('/part') ? reply(200, { incomplete: true }) : reply(200, { a: 1 })));
+				const c = createClient(f);
+				await c.warm('/metadata/movie/1', 30_000);
+				await c.warm('/no', 30_000);
+				await c.warm('/part', 30_000);
+				await Promise.resolve();
+				vi.advanceTimersByTime(20_000);
+				expect(c.has('/metadata/movie/1')).toBe(true);
+				expect(c.has('/no')).toBe(false);
+				expect(c.has('/part')).toBe(false);
+				await c.get('/metadata/movie/1');
+				expect(f).toHaveBeenCalledTimes(3);
+				vi.advanceTimersByTime(11_000);
+				expect(c.has('/metadata/movie/1')).toBe(false);
+			} finally {
+				vi.useRealTimers();
+			}
+		});
+
 		it('reads the keep from Cache-Control', () => {
 			expect(keepFor('private, max-age=60')).toBe(60_000);
 			expect(keepFor('private, max-age=3600')).toBe(60_000);

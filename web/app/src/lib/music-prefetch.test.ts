@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('./api.ts', () => ({ api: { get: vi.fn() } }));
-const { createMusicPrefetch, IN_FLIGHT, musicPrefetchURLs, PER_MINUTE, VIEW_CARDS } = await import('./music-prefetch.ts');
+const { createMusicPrefetch, IN_FLIGHT, musicPrefetchURLs, pagePrefetchURLs, PER_MINUTE, VIEW_CARDS } = await import('./music-prefetch.ts');
+const { loadDetails } = await import('./title-details.ts');
 
 const A = 'f9133869-f87c-459c-9aa7-2f176cda7e06';
 const B = '9fff2f8a-21e6-47de-a2b8-7f449929d43f';
@@ -23,6 +24,25 @@ describe('musicPrefetchURLs', () => {
 		expect(musicPrefetchURLs('/title/movie/1')).toEqual([]);
 		expect(musicPrefetchURLs('/music/artist/not-an-id')).toEqual([]);
 		expect(musicPrefetchURLs(null)).toEqual([]);
+	});
+});
+
+describe('pagePrefetchURLs', () => {
+	it('names the metadata and lookup, as loadDetails asks them', async () => {
+		const asked: string[] = [];
+		const get = <T,>(p: string) => (asked.push(p), Promise.resolve({ movies: [], shows: [] } as T));
+		await loadDetails(get, 'movie', '693134').catch(() => {});
+		await loadDetails(get, 'show', '1396').catch(() => {});
+		expect(pagePrefetchURLs('/title/movie/693134')).toEqual(asked.slice(0, 2));
+		expect(pagePrefetchURLs('/title/show/1396?view=2')).toEqual(asked.slice(2, 4));
+	});
+	it('names a Library title, and keeps music links as before', () => {
+		expect(pagePrefetchURLs('/library/294')).toEqual(['/titles/294']);
+		expect(pagePrefetchURLs('/library/294?season=2')).toEqual(['/titles/294']);
+		expect(pagePrefetchURLs(`/music/artist/${A}`)).toEqual(musicPrefetchURLs(`/music/artist/${A}`));
+	});
+	it('ignores other links', () => {
+		for (const h of ['/library', '/library/held', '/library/3/albums/9', '/title/tv/1', '/people/287', null]) expect(pagePrefetchURLs(h)).toEqual([]);
 	});
 });
 

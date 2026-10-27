@@ -4,6 +4,8 @@ import { createClient, EARLY_MAX, type EarlyAsks } from './api.ts';
 import { headPath, readServices, serviceRegion } from './explore.ts';
 import { fetchMusicExplore } from './music/music-trending.ts';
 import { musicPrefetchURLs } from './music-prefetch.ts';
+import { firstPageURL } from './person-prefetch.ts';
+import { loadDetails } from './title-details.ts';
 
 // app.html's boot-request script, run as the browser would, with a stand-in page.
 const html = readFileSync(new URL('../app.html', import.meta.url), 'utf8');
@@ -83,7 +85,7 @@ describe('app.html boot requests', () => {
 	it('asks nothing on the sign-in pages and only who is signed in elsewhere', () => {
 		expect(boot({ url: '/login' }).asked).toEqual([]);
 		expect(boot({ url: '/invite/abc' }).asked).toEqual([]);
-		expect(boot({ url: '/title/movie/1' }).asked).toEqual(['/api/v1/auth/me']);
+		expect(boot({ url: '/settings/schedules' }).asked).toEqual(['/api/v1/auth/me']);
 		expect(boot({ url: '/music/artist/not-an-id' }).asked).toEqual(['/api/v1/auth/me']);
 	});
 
@@ -98,6 +100,30 @@ describe('app.html boot requests', () => {
 		};
 		new Function('window', 'location', 'document', 'localStorage', 'navigator', 'fetch', 'Intl', script!)(win, u, { querySelector: () => null }, localStorage, { languages: [] }, fetch, globalThis.Intl);
 		expect(fetch).toHaveBeenCalledTimes(2);
+	});
+
+	it('asks a title page exactly as loadDetails does', async () => {
+		const asked: string[] = [];
+		const get = <T,>(p: string) => (asked.push(p), Promise.resolve({ movies: [], shows: [] } as T));
+		await loadDetails(get, 'movie', '693134').catch(() => {});
+		await loadDetails(get, 'show', '1396').catch(() => {});
+		expect(boot({ url: '/title/movie/693134' }).asked).toEqual(['/api/v1/auth/me', ...asked.slice(0, 2).map((p) => '/api/v1' + p)]);
+		expect(boot({ url: '/title/show/1396' }).asked).toEqual(['/api/v1/auth/me', ...asked.slice(2, 4).map((p) => '/api/v1' + p)]);
+		// Old "tv" links are sent on to /title/show/ first: nothing early.
+		expect(boot({ url: '/title/tv/1396' }).asked).toEqual(['/api/v1/auth/me']);
+	});
+
+	it('asks a person page as person-prefetch does, in the saved order', () => {
+		expect(boot({ url: '/people/287' }).asked).toEqual(['/api/v1/auth/me', '/api/v1' + firstPageURL('287', 'oldest')]);
+		expect(boot({ url: '/people/287', stored: { 'holyarrs.people.sort': 'popular' } }).asked).toEqual(['/api/v1/auth/me', '/api/v1' + firstPageURL('287', 'popular')]);
+	});
+
+	it('asks Library, a Library title, Approvals and Downloads', () => {
+		expect(boot({ url: '/library' }).asked).toEqual(['/api/v1/auth/me', '/api/v1/titles', '/api/v1/collections']);
+		expect(boot({ url: '/library/294' }).asked).toEqual(['/api/v1/auth/me', '/api/v1/titles/294']);
+		expect(boot({ url: '/library/held' }).asked).toEqual(['/api/v1/auth/me']);
+		expect(boot({ url: '/wishlist' }).asked).toEqual(['/api/v1/auth/me', '/api/v1/asks']);
+		expect(boot({ url: '/downloads' }).asked).toEqual(['/api/v1/auth/me', '/api/v1/downloads/view?limit=100']);
 	});
 });
 

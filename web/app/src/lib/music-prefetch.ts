@@ -4,13 +4,20 @@
 // a page opens. The answers wait in api.get's shared answers (kept as long as
 // the server's max-age, 60 s), at the exact address the page asks, so the
 // page finds them there. A few at a time, with a cap per page and per minute.
+// Title pages and Library titles are fetched ahead the same way (speed audit,
+// 2026-10-27): a title's metadata and lookup, a Library title and then its
+// metadata, kept 30 s even when the server sends no max-age.
 import { api } from './api.ts';
 
 const ID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 const ARTIST = new RegExp(`/music/artist/(${ID})(?:[/?#]|$)`, 'i');
 const ALBUM = new RegExp(`/music/album/(${ID})(?:[/?#]|$)`, 'i');
-const LINKS = 'a[href*="/music/artist/"], a[href*="/music/album/"]';
+const TITLE = /\/title\/(movie|show)\/([1-9][0-9]*)(?:[/?#]|$)/;
+const LIBRARY = /\/library\/([1-9][0-9]*)(?:[?#]|$)/;
+const LINKS = 'a[href*="/music/artist/"], a[href*="/music/album/"], a[href*="/title/"], a[href*="/library/"]';
 
+/** An answer fetched ahead is kept at least this long for its page. */
+export const KEEP = 30_000;
 /** A mouse rests this long on a link before its page is fetched. */
 export const DWELL = 80;
 /** Cards on screen fetched ahead after a page opens. */
@@ -35,10 +42,37 @@ export function musicPrefetchURLs(href: string | null | undefined): string[] {
 	return artist ? [`/music/albums/${m[1].toLowerCase()}?part=core&artist=${artist}`] : [];
 }
 
+/** The addresses any page link's page asks first: music pages as above, a
+ * title page's metadata and lookup (lib/title-details.ts loadDetails), a
+ * Library title's own answer. Others: none. */
+export function pagePrefetchURLs(href: string | null | undefined): string[] {
+	if (!href) return [];
+	const music = musicPrefetchURLs(href);
+	if (music.length) return music;
+	let m = TITLE.exec(href);
+	if (m) return [`/metadata/${m[1]}/${m[2]}`, `${m[1] === 'movie' ? '/titles' : '/shows'}/lookup?term=${encodeURIComponent(`tmdb:${m[2]}`)}`];
+	m = LIBRARY.exec(href);
+	return m ? [`/titles/${m[1]}`] : [];
+}
+
 type Get = (path: string) => Promise<unknown>;
 
+/** Fetch one address ahead; a Library title then fetches its metadata too, as its page will. */
+function warmPage(path: string): Promise<unknown> {
+	const answer = api.warm<{ kind?: string; ids?: { tmdb?: string } }>(path, KEEP);
+	if (/^\/titles\/[0-9]+$/.test(path))
+		answer.then(
+			(t) => {
+				const id = t?.ids?.tmdb;
+				if ((t?.kind === 'movie' || t?.kind === 'show') && id) api.warm(`/metadata/${t.kind}/${encodeURIComponent(id)}`, KEEP).catch(() => {});
+			},
+			() => {}
+		);
+	return answer;
+}
+
 /** The fetch-ahead queue, on its own for tests; installMusicPrefetch uses one for the app. */
-export function createMusicPrefetch(get: Get = (p) => api.get(p), now: () => number = () => Date.now()) {
+export function createMusicPrefetch(get: Get = warmPage, now: () => number = () => Date.now()) {
 	const asked = new Map<string, number>();
 	const started: number[] = [];
 	const queue: string[] = [];
@@ -63,7 +97,7 @@ export function createMusicPrefetch(get: Get = (p) => api.get(p), now: () => num
 		const t = now();
 		while (started.length && t - started[0] >= 60_000) started.shift();
 		const fresh: string[] = [];
-		for (const url of musicPrefetchURLs(href)) {
+		for (const url of pagePrefetchURLs(href)) {
 			const at = asked.get(url);
 			if (at !== undefined && t - at < FRESH) {
 				// Still waiting its turn: a hover moves it to the front.
@@ -89,7 +123,7 @@ export function createMusicPrefetch(get: Get = (p) => api.get(p), now: () => num
 		view(hrefs: (string | null | undefined)[]) {
 			for (const href of hrefs) {
 				if (viewed >= VIEW_CARDS) return;
-				if (!musicPrefetchURLs(href).length) continue;
+				if (!pagePrefetchURLs(href).length) continue;
 				viewed++;
 				want(href, false);
 			}
@@ -145,7 +179,7 @@ export function installMusicPrefetch(): () => void {
 		if (e.pointerType !== 'mouse') return;
 		clearTimeout(timer);
 		const href = link(e);
-		if (href && musicPrefetchURLs(href).length) timer = setTimeout(() => ahead.hover(href), DWELL);
+		if (href && pagePrefetchURLs(href).length) timer = setTimeout(() => ahead.hover(href), DWELL);
 	};
 	const touch = (e: TouchEvent) => ahead.hover(link(e));
 	window.addEventListener('pointerover', over, { capture: true, passive: true });

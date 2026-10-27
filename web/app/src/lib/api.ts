@@ -198,6 +198,20 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 			shared.clear();
 			dropEarly();
 		},
+		/** warm fetches path ahead of a page and keeps its answer at least keep ms, so the
+		 * page finds it even when the server sent no max-age. Never when the server said
+		 * no-store or the answer is incomplete; any change forgets it as usual. */
+		warm<T>(path: string, keep: number): Promise<T> {
+			const answer = get<T>(path);
+			const hit = shared.get(path);
+			hit?.p.then(
+				() => {
+					if (hit.keep > 0 && hit.keep < keep) hit.keep = Math.min(keep, KEEP_MAX);
+				},
+				() => {}
+			);
+			return answer;
+		},
 		/** has says whether a kept answer for path is ready now (a page draws it without waiting). */
 		has(path: string): boolean {
 			const hit = shared.get(path);
