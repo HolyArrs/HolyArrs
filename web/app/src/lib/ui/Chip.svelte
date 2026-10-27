@@ -9,14 +9,24 @@
 		selected,
 		icon,
 		count,
+		note,
 		onclick,
 		onremove
-	}: { label: string; selected?: boolean; icon?: IconName; count?: number; onclick?: () => void; onremove?: () => void } = $props();
+	}: {
+		label: string;
+		selected?: boolean;
+		icon?: IconName;
+		count?: number;
+		/** A short line after the count, e.g. "4 seeding". */
+		note?: string;
+		onclick?: () => void;
+		onremove?: () => void;
+	} = $props();
 </script>
 
 <span class="ui-chip" class:on={selected}>
 	<button class="main" type="button" aria-pressed={selected === undefined ? undefined : selected} {onclick} use:press={'button'}>
-		{#if icon}<Icon name={icon} size={15} />{/if}{label}{#if count !== undefined}<span class="n">{count}</span>{/if}
+		{#if icon}<Icon name={icon} size={15} />{/if}{label}{#if count !== undefined}<span class="n">{count}</span>{/if}{#if note}<span class="n">· {note}</span>{/if}
 	</button>
 	{#if onremove}<button class="rm" type="button" aria-label="Remove {label}" onclick={onremove}><Icon name="x" size={14} /></button>{/if}
 </span>

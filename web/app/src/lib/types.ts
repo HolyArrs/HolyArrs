@@ -626,6 +626,8 @@ export interface Download {
 export interface ImportRecord {
 	ID: number;
 	State: string;
+	/** The download it imported (none for a by-hand import of a folder). */
+	DownloadID?: number | null;
 	CreatedAt: string;
 	Plan?: { source_file: string; target_path?: string; confidence?: number }[] | null;
 	Result?: { source_file: string; outcome: string; placed_by?: string; error?: string }[] | null;

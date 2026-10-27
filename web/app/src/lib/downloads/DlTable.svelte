@@ -1,37 +1,126 @@
 <script lang="ts">
-	// Layout 5 · Table: every download in one sortable table with tight rows,
-	// small posters and a mini progress bar. A row opens its details in a side
-	// sheet (a bottom sheet on phones). For people with many downloads.
+	// The Downloads table, like a Downloader's own list: every download in one
+	// sortable table with tight rows, small posters and a mini progress bar.
+	// Status chips on top filter it; five chip sets are being compared
+	// (?set=1…5, see status-sets.ts). A row opens its details in a side sheet
+	// (a bottom sheet on phones).
+	import { page } from '$app/state';
+	import { replaceState } from '$app/navigation';
+	import { untrack } from 'svelte';
+	import { fade, slide, type TransitionConfig } from 'svelte/transition';
 	import Poster from '../Poster.svelte';
-	import Icon from '../Icon.svelte';
+	import Icon, { type IconName } from '../Icon.svelte';
 	import Menu from '../ui/Menu.svelte';
-	import SegmentedControl from '../ui/SegmentedControl.svelte';
+	import Chip from '../ui/Chip.svelte';
 	import DlMore from './DlMore.svelte';
-	import DlImports from './DlImports.svelte';
 	import { to } from '../paths.ts';
 	import { bytes, duration, percent } from '../format.ts';
+	import { reducedMotion } from '../motion.ts';
+	import { DUR, easeIn, easeOut } from '../ui/transitions.ts';
 	import { rowName, manyWords, type DownloadRow } from '../downloaders.ts';
-	import { finished, needsAttention, queue, sortRows, tone, type SortKey } from './layouts.ts';
+	import { sortRows, tone, type SortKey } from './layouts.ts';
+	import { ALL, SETS, chipsFor, counts, pick, seedTag, showOf, statusWord, subCounts, type SetId } from './status-sets.ts';
+	import { byDownload, statusDetail } from './imports.ts';
 	import { poster, who, type LayoutProps } from './shared.ts';
 
-	let { rows, imports, titles, busy, ondetails, onfail, onremove }: LayoutProps = $props();
-	type Filter = 'now' | 'attention' | 'done' | 'all';
-	let filter = $state<Filter>('now');
+	let { rows, imports, titles, busy, ondetails, onfail, onremove, set, torrent }: LayoutProps & { set: SetId; torrent: boolean } = $props();
 	let key = $state<SortKey>('state');
 	let dir = $state<'asc' | 'desc'>('asc');
 
-	const now = $derived(queue(rows));
-	const attention = $derived(now.filter(needsAttention));
-	const done = $derived(finished(rows));
-	const everything = $derived([...now, ...done]);
-	const base = $derived(filter === 'now' ? now : filter === 'attention' ? attention : filter === 'done' ? done : everything);
+	// The picked chip, kept per set for the session and in the address (&show=).
+	const KEEP = 'holyarrs.downloads-show';
+	let show = $state(ALL);
+	let sub = $state('');
+	function kept(): Record<string, string> {
+		try {
+			return JSON.parse(sessionStorage.getItem(KEEP) ?? '{}') ?? {};
+		} catch {
+			return {};
+		}
+	}
+	function remember() {
+		const v = sub ? `${show}.${sub}` : show;
+		try {
+			sessionStorage.setItem(KEEP, JSON.stringify({ ...kept(), [set]: v }));
+		} catch {
+			/* storage blocked: the address alone keeps it */
+		}
+		try {
+			const u = new URL(page.url.href);
+			if (show === ALL) u.searchParams.delete('show');
+			else u.searchParams.set('show', v);
+			if (u.href !== page.url.href) replaceState(u, page.state);
+		} catch {
+			/* the router is not ready yet; the next pick writes it */
+		}
+	}
+	let first = true;
+	$effect(() => {
+		const s = set;
+		untrack(() => {
+			// The address decides on the first visit; after that each set
+			// comes back to the chip last picked in it.
+			const wasFirst = first;
+			first = false;
+			const v = wasFirst ? (page.url.searchParams.get('show') ?? kept()[s]) : kept()[s];
+			({ show, sub } = showOf(v, SETS[s].chips));
+			remember();
+		});
+	});
+
+	const chips = $derived(chipsFor(set, rows, torrent));
+	const tally = $derived(counts(rows, chips));
+	// A chip that is hidden (Seeding without a torrent Downloader) reads as All.
+	const on = $derived(chips.some((c) => c.key === show) ? show : ALL);
+	const onChip = $derived(chips.find((c) => c.key === on));
+	const subs = $derived(subCounts(rows, onChip));
+	const subOn = $derived(subs.some((x) => x.key === sub) ? sub : '');
+	const base = $derived(on === ALL ? rows : pick(rows, chips, on, subOn));
 	const shown = $derived(sortRows(base, key, dir, rowName));
-	const filters = $derived([
-		{ value: 'now' as const, label: `Now ${now.length}` },
-		{ value: 'attention' as const, label: `Attention ${attention.length}` },
-		{ value: 'done' as const, label: `Done ${done.length}` },
-		{ value: 'all' as const, label: `All ${everything.length}` }
-	]);
+
+	function choose(k: string) {
+		show = k;
+		sub = '';
+		remember();
+	}
+	function chooseSub(k: string) {
+		sub = k;
+		remember();
+	}
+
+	// The sub-row slides open under the chips and folds away quicker than it came.
+	function subIn(node: Element): TransitionConfig {
+		if (reducedMotion()) return fade(node, { duration: DUR.fast });
+		return slide(node, { duration: DUR.base, easing: easeOut });
+	}
+	function subOut(node: Element): TransitionConfig {
+		if (reducedMotion()) return fade(node, { duration: DUR.fast });
+		return slide(node, { duration: DUR.fast, easing: easeIn });
+	}
+	function swapIn(node: Element): TransitionConfig {
+		return fade(node, { duration: reducedMotion() ? 0 : DUR.fast, easing: easeOut });
+	}
+
+	// What an empty chip says.
+	const EMPTY: Record<string, { title: string; text: string; icon: IconName }> = {
+		all: { title: 'Nothing is downloading.', text: 'New picks from HolyArrs appear here as rows, with speed and time left.', icon: 'download' },
+		waiting: { title: 'Nothing is waiting.', text: 'Downloads the Downloader has not started yet show here.', icon: 'download' },
+		queued: { title: 'Nothing is queued.', text: 'Downloads the Downloader has not started yet show here.', icon: 'download' },
+		downloading: { title: 'Nothing is downloading.', text: 'Downloads taking in data show here, with speed and time left.', icon: 'download' },
+		importing: { title: 'Nothing is importing.', text: 'Finished downloads show here while they are checked, unpacked and moved into the Library.', icon: 'folder' },
+		done: { title: 'Nothing finished yet.', text: 'Downloads that reached the Library show here.', icon: 'check' },
+		finished: { title: 'Nothing finished yet.', text: 'Downloads that reached the Library show here.', icon: 'check' },
+		seeding: { title: 'Nothing is seeding.', text: 'Finished torrents your Downloader still shares show here.', icon: 'check' },
+		active: { title: 'Nothing is active.', text: 'Downloads your Downloader is working on right now show here.', icon: 'download' },
+		paused: { title: 'Nothing is paused.', text: 'Downloads paused in the Downloader show here.', icon: 'check' },
+		stalled: { title: 'Nothing is stalled.', text: 'Downloads that stopped taking in data show here.', icon: 'check' },
+		failed: { title: 'Nothing failed.', text: 'Downloads that failed or wait for a decision show here.', icon: 'check' },
+		problems: { title: 'No problems.', text: 'Stalled, paused and failed downloads show here.', icon: 'check' },
+		needs: { title: 'Nothing needs you.', text: 'Paused, stalled and failed downloads show here.', icon: 'check' },
+		stopped: { title: 'Nothing is stopped.', text: 'Waiting, paused, stalled and failed downloads show here.', icon: 'check' },
+		progress: { title: 'Nothing is in progress.', text: 'Downloads that are waiting, downloading or importing show here.', icon: 'download' }
+	};
+	const empty = $derived(EMPTY[subOn || on] ?? EMPTY.all);
 
 	const COLS: { key: SortKey; label: string; num?: boolean; cls: string }[] = [
 		{ key: 'title', label: 'Title', cls: 'c-title' },
@@ -59,24 +148,54 @@
 			ondetails(r);
 		}
 	}
+	// Each row carries what its import is doing or why it failed; there is no separate Imports list.
+	const importOf = $derived(byDownload(imports));
 	const going = (r: DownloadRow) => r.active && r.phase === 'downloading';
+	const ratio = (r: DownloadRow) => (typeof r.ratio === 'number' ? r.ratio.toFixed(2) : '');
 </script>
+
+{#snippet seed(r: DownloadRow)}
+	{#if seedTag(r, set)}<span class="seed" data-testid="row-seeding">Seeding{#if ratio(r)}<span class="ratio"> · {ratio(r)}</span>{/if}</span>{/if}
+{/snippet}
 
 <div class="tbl-view">
 	<div class="tools">
-		<SegmentedControl options={filters} bind:value={filter} label="Show" size="sm" testid="table-filter" />
+		<div class="chips" role="group" aria-label="Show" data-testid="table-filter" data-set={set}>
+			{#each tally as c (c.key)}
+				<span class="cw" class:zero={c.count === 0} data-testid="status-chip" data-key={c.key} data-count={c.count}>
+					<Chip label={c.label} count={c.count} note={c.seeding ? `${c.seeding} seeding` : undefined} selected={on === c.key} onclick={() => choose(c.key)} />
+				</span>
+			{/each}
+		</div>
 		<span class="phone-sort">
 			<Menu label="Sort by" items={sortItems} variant="button" text="Sort: {sortLabel}" icon="chevronUpDown" />
 			<button type="button" class="dirbtn" aria-label={dir === 'asc' ? 'Ascending, switch to descending' : 'Descending, switch to ascending'} onclick={() => (dir = dir === 'asc' ? 'desc' : 'asc')}><span class="dirarr" class:up={dir === 'asc'}><Icon name="chevronDown" size={18} /></span></button>
 		</span>
 	</div>
 
+	{#if subs.length}
+		<div class="subrow" in:subIn out:subOut>
+			{#key on}
+				<div class="subs" role="group" aria-label="{onChip?.label ?? ''}: show" data-testid="table-subfilter" in:swapIn>
+					<span class="cw sm" data-testid="status-subchip" data-key="all" data-count={tally.find((t) => t.key === on)?.count ?? 0}>
+						<Chip label="All" selected={subOn === ''} onclick={() => chooseSub('')} />
+					</span>
+					{#each subs as s (s.key)}
+						<span class="cw sm" class:zero={s.count === 0} data-testid="status-subchip" data-key={s.key} data-count={s.count}>
+							<Chip label={s.label} count={s.count} selected={subOn === s.key} onclick={() => chooseSub(s.key)} />
+						</span>
+					{/each}
+				</div>
+			{/key}
+		</div>
+	{/if}
+
 	{#if shown.length === 0}
 		<div class="empty" data-testid="dl-empty">
-			<span class="eic"><Icon name={filter === 'attention' ? 'check' : 'download'} size={22} stroke={2} /></span>
-			<p class="et">{filter === 'attention' ? 'Nothing needs attention.' : filter === 'done' ? 'Nothing finished yet.' : 'Nothing is downloading.'}</p>
-			<p class="es">{filter === 'now' ? 'New picks from HolyArrs appear here as rows, with speed and time left.' : 'Switch to All to see every download.'}</p>
-			{#if filter === 'now'}<a class="elink" href={to('/search')}>Add media</a>{/if}
+			<span class="eic"><Icon name={empty.icon} size={22} stroke={2} /></span>
+			<p class="et">{empty.title}</p>
+			<p class="es">{empty.text}</p>
+			{#if on === ALL}<a class="elink" href={to('/search')}>Add media</a>{:else if rows.length}<button type="button" class="elink" onclick={() => choose(ALL)}>Show all {rows.length}</button>{/if}
 		</div>
 	{:else}
 		<div class="scroller">
@@ -97,7 +216,9 @@
 					{#each shown as r (r.id)}
 						{@const pct = percent(r.progress)}
 						{@const t = tone(r)}
-						<tr class={t} data-testid="dl-table-row" data-phase={r.phase} tabindex="0" aria-label="{who(r)}, {r.label}. Open details" onclick={() => ondetails(r)} onkeydown={(e) => rowKey(e, r)}>
+						{@const word = statusWord(r, set)}
+						{@const more = statusDetail(r, importOf.get(r.id))}
+						<tr class={t} data-testid="dl-table-row" data-phase={r.phase} tabindex="0" aria-label="{who(r)}, {word}{more ? `, ${more}` : ''}. Open details" onclick={() => ondetails(r)} onkeydown={(e) => rowKey(e, r)}>
 							<td class="c-title">
 								<span class="tc">
 									<span class="post"><Poster src={poster(r, titles)} name={r.title || r.name} /></span>
@@ -107,7 +228,7 @@
 									</span>
 								</span>
 							</td>
-							<td class="c-state"><span class="st {t}" data-testid="row-state"><i aria-hidden="true"></i>{r.label}</span></td>
+							<td class="c-state"><span class="st {t}" data-testid="row-state" title={more ? `${word} · ${more}` : word}><i aria-hidden="true"></i><span class="sw">{word}{#if more}<span class="sd">{` · ${more}`}</span>{/if}</span></span>{@render seed(r)}</td>
 							<td class="c-prog">
 								{#if r.phase !== 'failed' && r.phase !== 'removed' && r.phase !== 'vanished'}
 									<span class="pg"><span class="mini" aria-hidden="true"><i style="width: {pct}%"></i></span><span class="pv" data-testid="row-percent">{Math.floor(pct)}%</span></span>
@@ -130,12 +251,13 @@
 			{#each shown as r (r.id)}
 				{@const pct = percent(r.progress)}
 				{@const t = tone(r)}
+				{@const more = statusDetail(r, importOf.get(r.id))}
 				<li class="prow {t}" data-phase={r.phase}>
 					<button type="button" class="phit" aria-label="Details for {who(r)}" onclick={() => ondetails(r)}>
 						<span class="post"><Poster src={poster(r, titles)} name={r.title || r.name} /></span>
 						<span class="tn">
 							<span class="nm">{rowName(r)}</span>
-							<span class="pl"><span class="st {t}"><i aria-hidden="true"></i>{r.label}</span>{#if manyWords(r.kind) && r.covers}<span class="cv">{r.covers}</span>{/if}</span>
+							<span class="pl"><span class="st {t}"><i aria-hidden="true"></i><span class="sw">{statusWord(r, set)}{#if more}<span class="sd">{` · ${more}`}</span>{/if}</span></span>{@render seed(r)}{#if manyWords(r.kind) && r.covers}<span class="cv">{r.covers}</span>{/if}</span>
 							{#if r.phase !== 'failed' && r.phase !== 'removed' && r.phase !== 'vanished' && r.phase !== 'done'}<span class="mini" aria-hidden="true"><i style="width: {pct}%"></i></span>{/if}
 						</span>
 						<span class="pr">
@@ -148,13 +270,19 @@
 			{/each}
 		</ul>
 	{/if}
-
-	<DlImports {imports} compact />
 </div>
 
 <style>
 	.tbl-view { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-	.tools { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+	.tools { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+	.chips, .subs { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+	.subrow { margin-top: -6px; }
+	.subs { gap: 6px; }
+	/* A chip with nothing under it stays in place, quieter. */
+	.cw { display: inline-flex; transition: opacity var(--dur-fast) var(--ease-out); }
+	.cw.zero { opacity: 0.5; }
+	.cw.zero:hover, .cw.zero:focus-within { opacity: 0.8; }
+	.cw.sm :global(.main) { min-height: 28px; padding: 0 11px; font-size: 13px; }
 	.phone-sort { display: none; align-items: center; gap: 4px; }
 	.dirbtn { display: grid; place-items: center; width: 40px; height: 40px; border: 0; border-radius: 10px; background: var(--surface-2); color: var(--text-muted); cursor: pointer; }
 	.dirarr { display: grid; transition: transform var(--dur-fast) var(--ease-out); }
@@ -199,6 +327,8 @@
 	.ver { margin-left: 6px; padding: 0 5px; border-radius: 4px; background: var(--surface-2); color: var(--text-muted); font: var(--t-caption); }
 	.rel { color: var(--text-faint); font: var(--t-footnote); font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.st { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; color: var(--text); font-weight: 500; }
+	.sw { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.sd { color: var(--text-muted); font-weight: 400; }
 	.st i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--info); }
 	.st.fail { color: var(--fail-text); }
 	.st.fail i { background: var(--fail); }
@@ -206,6 +336,9 @@
 	.st.wait i { background: var(--wait); }
 	.st.idle i { background: var(--text-faint); }
 	.st.idle { color: var(--text-muted); }
+	.seed { display: inline-flex; align-items: center; flex: none; margin-left: 8px; padding: 1px 6px; border-radius: 4px; background: var(--surface-2); color: var(--text-muted); font: var(--t-caption); font-weight: 600; white-space: nowrap; }
+	.ratio { font-weight: 400; font-variant-numeric: tabular-nums; }
+	.pl .seed { margin-left: 0; }
 	.pg { display: flex; align-items: center; gap: 8px; }
 	.mini { position: relative; display: block; flex: 1; height: 4px; border-radius: 2px; background: var(--surface-3); overflow: hidden; }
 	.mini i { display: block; height: 100%; border-radius: 2px; background: var(--info); }
@@ -236,7 +369,8 @@
 	.eic { display: grid; place-items: center; width: 44px; height: 44px; margin-bottom: 4px; border-radius: 12px; background: var(--surface-2); color: var(--text-muted); }
 	.et { font: var(--t-headline); }
 	.es { color: var(--text-muted); font: var(--t-callout); max-width: 360px; }
-	.elink { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent-text); font: var(--t-callout); font-weight: 600; }
+	.elink { display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; border: 0; background: none; color: var(--accent-text); font: var(--t-callout); font-weight: 600; cursor: pointer; border-radius: 6px; }
+	.elink:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
 	@media (max-width: 1199px) { .c-dl { display: none; } .c-state { width: 150px; } }
 	@media (max-width: 960px) { .c-size, .c-speed { display: none; } }
@@ -244,8 +378,7 @@
 		.scroller { display: none; }
 		.plist { display: block; }
 		.phone-sort { display: inline-flex; }
-		.tools :global(.ui-seg) { display: grid; width: 100%; }
-		.tools :global(.ui-seg button) { padding: 0 4px; }
+		.chips { width: 100%; }
 	}
-	@media (prefers-reduced-motion: reduce) { .arrow, tbody tr { transition: none; } }
+	@media (prefers-reduced-motion: reduce) { .arrow, tbody tr, .cw { transition: none; } }
 </style>

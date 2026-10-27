@@ -1,12 +1,13 @@
 <script lang="ts">
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { to } from '#lib/paths.ts';
-	import { onMount, tick } from 'svelte';
+	import { onMount } from 'svelte';
+	import { page } from '$app/state';
 	import { api, message } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
-	import { ago, bytes, duration, percent, tone, words } from '#lib/format.ts';
-	import { episodeStateWords, manyWords, phaseTone, removeBody, removeStart, rowName, split, type DownloaderSettings, type DownloadRow, type RemoveChoice } from '#lib/downloaders.ts';
+	import { bytes, duration, percent } from '#lib/format.ts';
+	import { manyWords, phaseTone, removeBody, removeStart, rowName, type DownloaderSettings, type DownloaderView, type DownloadRow, type RemoveChoice } from '#lib/downloaders.ts';
 	import Poster from '#lib/Poster.svelte';
 	import { session } from '#lib/session.svelte.ts';
 	import { plainReason } from '#lib/plain.ts';
@@ -15,29 +16,21 @@
 	import Button from '#lib/ui/Button.svelte';
 	import StatusPill, { type StatusKind } from '#lib/ui/StatusPill.svelte';
 	import ProgressBar from '#lib/ui/ProgressBar.svelte';
-	import ListRow from '#lib/ui/ListRow.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
-	import Menu from '#lib/ui/Menu.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import type { ImportRecord, TitleView } from '#lib/types.ts';
 	import VariantBar from '#lib/ui/VariantBar.svelte';
-	import DlCards from '#lib/downloads/DlCards.svelte';
-	import DlNetflix from '#lib/downloads/DlNetflix.svelte';
-	import DlUpNext from '#lib/downloads/DlUpNext.svelte';
-	import DlLanes from '#lib/downloads/DlLanes.svelte';
 	import DlTable from '#lib/downloads/DlTable.svelte';
+	import { SETS, SET_IDS, setOf, statusWord } from '#lib/downloads/status-sets.ts';
+	import { byDownload, failReason, placed, statusDetail } from '#lib/downloads/imports.ts';
 
-	// The layouts Luis is comparing (?view=1…5, kept for the session); 0 is today's page.
-	const VIEWS = [
-		{ value: 0, label: 'Now' },
-		{ value: 1, label: '1 Cards' },
-		{ value: 2, label: '2 Netflix' },
-		{ value: 3, label: '3 Up Next' },
-		{ value: 4, label: '4 Lanes' },
-		{ value: 5, label: '5 Table' }
-	];
-	let view = $state(0);
+	// The status-chip sets Luis is comparing on the table (?set=1…5, kept for the session).
+	const SET_OPTIONS = SET_IDS.map((id) => ({ value: id, label: SETS[id].label }));
+	let setPick = $state<number>(setOf(page.url.searchParams.get('set')));
+	const set = $derived(setOf(setPick));
+	// A torrent Downloader brings the Seeding chip in set 5.
+	let torrent = $state(false);
 
 	let rows = $state<DownloadRow[]>([]);
 	let imports = $state<ImportRecord[]>([]);
@@ -45,24 +38,17 @@
 	let loaded = $state(false);
 	let error = $state('');
 	let settings = $state<DownloaderSettings | null>(null);
-	const parts = $derived(split(rows));
 	let selectedId = $state(0);
-	const selected = $derived(rows.find((r) => r.id === selectedId) ?? parts.now[0] ?? parts.past[0] ?? null);
+	const selected = $derived(rows.find((r) => r.id === selectedId) ?? null);
 	const titleById = $derived(new Map(titles.map((title) => [title.id, title])));
-	let detailHeading: HTMLHeadingElement | undefined = $state();
+	// Imports belong to their download's row; one with no row here stays in History.
+	const importOf = $derived(byDownload(imports));
 
-	// Wide screens show the selected download in a side panel; narrower ones
-	// keep the list first and open the details in a Sheet.
-	let wide = $state(true);
+	// A row opens its details in a Sheet (from the right; a bottom sheet on phones).
 	let detailOpen = $state(false);
-	async function selectDownload(id: number) {
+	function selectDownload(id: number) {
 		selectedId = id;
-		if (!wide || view) {
-			detailOpen = true;
-			return;
-		}
-		await tick();
-		detailHeading?.focus({ preventScroll: true });
+		detailOpen = true;
 	}
 
 	/** toneKind picks the kit status colour for a tone; the word stays the row's own. */
@@ -79,7 +65,7 @@
 		try {
 			const [d, i] = await Promise.all([
 				api.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=100'),
-				api.get<{ imports: ImportRecord[] }>('/imports?limit=20')
+				api.get<{ imports: ImportRecord[] }>('/imports?limit=100')
 			]);
 			rows = d.downloads;
 			imports = i.imports;
@@ -103,21 +89,18 @@
 	}
 
 	onMount(() => {
-		const mq = window.matchMedia('(min-width: 1200px)');
-		const fit = () => {
-			wide = mq.matches;
-			if (wide && !view) detailOpen = false;
-		};
-		fit();
-		mq.addEventListener('change', fit);
 		void load();
 		void api.get<{ titles: TitleView[] }>('/titles').then((r) => (titles = r.titles)).catch(() => {});
 		// The remove defaults are a settings read; without that permission the server's own defaults stand (no 403 in the console).
 		if (session.can('settings')) api.get<DownloaderSettings>('/settings/downloaders').then((s) => (settings = s)).catch(() => {});
+		if (session.can('manage_library'))
+			api
+				.get<{ downloaders: DownloaderView[] }>('/downloaders')
+				.then((r) => (torrent = r.downloaders.some((d) => d.protocol === 'torrent')))
+				.catch(() => {});
 		const offs = ['download', 'slot', 'import', 'resync'].map((t) => live.on(t, soon));
 		return () => {
 			offs.forEach((off) => off());
-			mq.removeEventListener('change', fit);
 			clearTimeout(timer);
 		};
 	});
@@ -177,83 +160,18 @@
 <PageHeader title="Downloads" subtitle="What your Downloaders are fetching right now, and what HolyArrs moved into the Library." />
 <OpsDownloadsTabs />
 
-{#snippet note(r: DownloadRow)}
-	{#if r.text}
-		{@const p = plainReason(r.text)}
-		<div class="note" class:bad={phaseTone(r.phase) === 'fail'}>
-			<p data-testid="row-text">{p.text}</p>
-			{#if p.detail && admin}<details class="raw"><summary>Details</summary><p>{p.detail}</p></details>{/if}
-		</div>
-	{/if}
-{/snippet}
-
-{#snippet dlRow(r: DownloadRow)}
-	{@const pct = percent(r.progress)}
-	<li class="dl" class:selected={wide && selected?.id === r.id} data-testid="download-row" data-phase={r.phase}>
-		<span class="art" class:square={r.kind === 'artist'} aria-hidden="true"><Poster src={r.artwork ?? titleById.get(r.title_id ?? 0)?.artwork[0]} name={r.title || r.name} /></span>
-		<div class="body">
-			<div class="top">
-				<div class="names">
-					{#if r.title_id}
-						<a class="nm" href={to(`/library/${r.title_id}`)}>{rowName(r)}</a>
-					{:else}
-						<span class="nm">{rowName(r)}</span>
-					{/if}
-					{#if manyWords(r.kind) && r.covers}<span class="covers" data-testid="row-covers">{r.covers}</span>{/if}
-					<span class="rel" title={r.name}>{r.name}</span>
-				</div>
-				<StatusPill kind={pill(r)} label={r.label} testid="row-state" />
-			</div>
-			{#if moving(r)}
-				<div class="prog"><ProgressBar value={pct} label="Progress of {who(r)}" size="sm" tone={r.progress >= 1 ? 'ok' : 'info'} /></div>
-			{/if}
-			<p class="meta">
-				<span data-testid="row-percent">{pct}%</span>
-				{#if r.active && r.eta}<span data-testid="row-eta">{duration(r.eta)} left</span>{/if}
-				{#if r.active && r.speed}<span data-testid="row-speed">{bytes(r.speed)}/s</span>{/if}
-				{#if r.size}<span>{bytes(r.size)}</span>{/if}
-				{#if !r.active}<span>{ago(r.updated_at)}</span>{/if}
-			</p>
-			{@render note(r)}
-			{#if manyWords(r.kind) && r.episodes && r.episodes.length > 1}
-				<details class="eps" data-testid="row-episodes">
-					<summary>The {r.episodes.length} {manyWords(r.kind)?.many} it covers</summary>
-					<ul class="eplist">
-						{#each r.episodes as e (e.slot_id)}
-							{@const st = episodeStateWords(e.state)}
-							<li data-testid="row-episode">
-								<span class="eplabel">{e.label}</span>
-								<span class="epname">{e.name ?? ''}</span>
-								<StatusPill kind={toneKind(st.tone)} label={st.text} />
-							</li>
-						{/each}
-					</ul>
-				</details>
-			{/if}
-		</div>
-		<div class="acts">
-			<Button variant={wide && selected?.id === r.id ? 'secondary' : 'plain'} aria-label="Details for {who(r)}" aria-pressed={wide ? selected?.id === r.id : undefined} onclick={() => void selectDownload(r.id)}>Details</Button>
-			{#if r.can_act}
-				<Menu
-					label="More for {who(r)}"
-					items={[
-						{ label: 'Mark failed', icon: 'alert', disabled: busy === r.id, onselect: () => markFailed(r) },
-						{ label: 'Remove', icon: 'trash', destructive: true, disabled: busy === r.id, onselect: () => askRemove(r) }
-					]}
-				/>
-			{/if}
-		</div>
-	</li>
-{/snippet}
-
 {#snippet detail(s: DownloadRow)}
 	{@const p = s.text ? plainReason(s.text) : null}
+	{@const im = importOf.get(s.id)}
+	{@const put = placed(im)}
+	{@const why = failReason(im)}
+	{@const more = statusDetail(s, im)}
 	<div class="d-head">
 		<span class="d-art" class:square={s.kind === 'artist'} aria-hidden="true"><Poster src={s.artwork ?? titleById.get(s.title_id ?? 0)?.artwork[0]} name={s.title || s.name} /></span>
 		<div class="d-names">
-			{#if wide && !view}<h2 class="d-title" bind:this={detailHeading} tabindex="-1">{rowName(s)}</h2>{:else}<p class="d-title">{rowName(s)}</p>{/if}
+			<p class="d-title">{rowName(s)}</p>
 			{#if manyWords(s.kind) && s.covers}<p class="d-sub">{s.covers}</p>{/if}
-			<StatusPill kind={pill(s)} label={s.label} />
+			<StatusPill kind={pill(s)} label={more ? `${statusWord(s, set)} · ${more}` : statusWord(s, set)} />
 		</div>
 	</div>
 	{#if moving(s)}<ProgressBar value={percent(s.progress)} label="Progress of {who(s)}" showValue tone={s.progress >= 1 ? 'ok' : 'info'} />{/if}
@@ -264,6 +182,8 @@
 		{#if s.size}<dt>Size</dt><dd>{bytes(s.size)}</dd>{/if}
 		{#if s.downloader}<dt>Downloader</dt><dd>{s.downloader}</dd>{/if}
 		{#if s.version}<dt>Version</dt><dd>{s.version}</dd>{/if}
+		{#if put}<dt>Import</dt><dd data-testid="import-how">{put.how}</dd>{#if put.where}<dt>Folder</dt><dd data-testid="import-where">{put.where}</dd>{/if}{/if}
+		{#if why}<dt>Import</dt><dd data-testid="import-failed">Failed: {why}</dd>{/if}
 	</dl>
 	{#if p}<div class="note" class:bad={phaseTone(s.phase) === 'fail'}><p>{p.text}</p></div>{/if}
 	<details class="raw">
@@ -271,7 +191,7 @@
 		<p>{s.name}</p>
 		{#if admin && p?.detail}<p>{p.detail}</p>{/if}
 	</details>
-	{#if view && s.phase === 'needs_a_decision'}
+	{#if s.phase === 'needs_a_decision'}
 		<Button variant="primary" full href={to('/downloads/decide')}>Open Needs a decision</Button>
 	{/if}
 	{#if s.can_act}
@@ -283,72 +203,22 @@
 {/snippet}
 
 <PageLoader loading={!loaded} label="Loading Downloads">
-{#if error && rows.length === 0 && imports.length === 0}
+{#if error && rows.length === 0}
 	<LoadError hasData={false} message="Downloads could not be loaded." onretry={load} />
-{:else if rows.length === 0 && imports.length === 0}
+{:else if rows.length === 0}
 	<EmptyState icon="download" title="No downloads yet" text="When HolyArrs chooses a Release for a movie or an episode, it sends it to a Downloader and you can watch it here, live." action={{ label: 'Add media', href: to('/search'), icon: 'search' }} />
 	<p class="aside-link"><a href={to('/settings/downloaders')}>Downloaders</a></p>
-{:else if view}
-	{#if error}<LoadError hasData message="Downloads could not be loaded." onretry={load} />{/if}
-	{@const lp = { rows, imports, titles: titleById, busy, ondetails: (r: DownloadRow) => void selectDownload(r.id), onfail: markFailed, onremove: askRemove }}
-	<div class="variant" data-testid="dl-variant" data-view={view}>
-		{#if view === 1}<DlCards {...lp} />{:else if view === 2}<DlNetflix {...lp} />{:else if view === 3}<DlUpNext {...lp} />{:else if view === 4}<DlLanes {...lp} />{:else}<DlTable {...lp} />{/if}
-	</div>
 {:else}
 	{#if error}<LoadError hasData message="Downloads could not be loaded." onretry={load} />{/if}
-	<div class="work" class:wide>
-		<div class="lists">
-			<section aria-labelledby="h-d">
-				<header class="sec"><h2 id="h-d">Now</h2><span class="count">{parts.now.length}</span></header>
-				{#if parts.now.length === 0}
-					<p class="panel empty-line">Nothing is downloading.</p>
-				{:else}
-					<ul class="panel rows">{#each parts.now as r (r.id)}{@render dlRow(r)}{/each}</ul>
-				{/if}
-			</section>
-
-			{#if parts.past.length}
-				<section aria-labelledby="h-p">
-					<header class="sec"><h2 id="h-p">Finished and stopped</h2><span class="count">{parts.past.length}</span></header>
-					<ul class="panel rows">{#each parts.past as r (r.id)}{@render dlRow(r)}{/each}</ul>
-				</section>
-			{/if}
-
-			<section aria-labelledby="h-i">
-				<header class="sec"><h2 id="h-i">Imports</h2><span class="count">{imports.length}</span></header>
-				{#if imports.length === 0}
-					<p class="panel empty-line">No imports yet. A finished download is moved into the Library here.</p>
-				{:else}
-					<ul class="panel imports">
-						{#each imports as im (im.ID)}
-							{@const placed = im.Result?.find((r) => r.outcome === 'placed')}
-							<li>
-								<ListRow icon="folder" title={placed?.source_file ?? im.Plan?.[0]?.source_file ?? `Import ${im.ID}`} subtitle={placed?.placed_by ? `Placed by ${placed.placed_by}` : undefined} meta={ago(im.CreatedAt)}>
-									{#snippet trailing()}<StatusPill kind={toneKind(tone(im.State))} label={words(im.State)} />{/snippet}
-								</ListRow>
-							</li>
-						{/each}
-					</ul>
-				{/if}
-			</section>
-		</div>
-
-		{#if wide}
-			<aside class="side panel" aria-label="Selected download details">
-				{#if selected}{@render detail(selected)}{:else}<p class="muted">Choose a download to see its details.</p>{/if}
-			</aside>
-		{/if}
-	</div>
+	<DlTable {rows} {imports} titles={titleById} {busy} {set} {torrent} ondetails={(r: DownloadRow) => selectDownload(r.id)} onfail={markFailed} onremove={askRemove} />
 {/if}
 </PageLoader>
 
-{#if !wide || view}
-	<Sheet bind:open={detailOpen} title="Download details" size="md" placement={view ? 'right' : 'auto'}>
-		{#if selected}{@render detail(selected)}{/if}
-	</Sheet>
-{/if}
+<Sheet bind:open={detailOpen} title="Download details" size="md" placement="right">
+	{#if selected}{@render detail(selected)}{/if}
+</Sheet>
 
-<VariantBar options={VIEWS} bind:value={view} storageKey="holyarrs.downloads-view" label="Downloads layout" />
+<VariantBar options={SET_OPTIONS} bind:value={setPick} param="set" storageKey="holyarrs.downloads-set" label="Downloads status chips" />
 
 <Sheet bind:open={removeOpen} title="Remove this download?" size="sm">
 	{#if target}
@@ -379,55 +249,17 @@
 <style>
 	.aside-link { text-align: center; margin-top: -24px; }
 	.aside-link a { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent-text); font: var(--t-callout); font-weight: 500; }
-	.work { display: grid; gap: 24px; align-items: start; }
-	.work.wide { grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); }
-	.lists { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
-	.sec { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-	.sec h2 { font: var(--t-title3); letter-spacing: var(--t-title3-track); }
-	.count { min-width: 24px; height: 24px; padding: 0 8px; display: inline-grid; place-items: center; border-radius: 999px; background: var(--surface-2); color: var(--text-muted); font: var(--t-subhead); font-weight: 600; font-variant-numeric: tabular-nums; }
-	.panel { margin: 0; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
-	.rows, .imports { list-style: none; padding: 6px; }
-	.empty-line { padding: 16px; color: var(--text-muted); font: var(--t-callout); }
-	.dl { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 14px; padding: 12px 10px; border-radius: var(--r-btn); transition: background var(--dur-fast) var(--ease-out); }
-	.dl + .dl { box-shadow: 0 -1px 0 var(--line); }
-	.dl.selected { background: var(--surface-2); box-shadow: inset 3px 0 0 var(--accent); }
-	.art { width: 44px; --poster-ratio: 2 / 3; }
-	.art.square, .d-art.square { --poster-ratio: 1; }
-	.body { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
-	.top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-	.names { display: flex; flex-direction: column; min-width: 0; flex: 1 1 12rem; }
-	.top { flex-wrap: wrap; }
-	/* The state reads in full; the long release name gives way first. */
-	.top > :global(.ui-pill) { flex-shrink: 0; }
-	.nm { color: var(--text); font: var(--t-headline); font-size: 15px; overflow-wrap: anywhere; }
-	a.nm:hover { text-decoration: underline; text-underline-offset: 3px; }
-	.covers { font: var(--t-callout); color: var(--text); }
-	.rel { color: var(--text-muted); font: var(--t-footnote); font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.prog { max-width: 520px; }
-	.meta { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--text-muted); font: var(--t-subhead); font-weight: 400; font-variant-numeric: tabular-nums; }
 	.note { padding: 8px 12px; border-radius: var(--r-btn); background: var(--surface-2); font: var(--t-callout); overflow-wrap: anywhere; }
 	.note.bad { box-shadow: inset 3px 0 0 var(--fail); }
 	.raw { color: var(--text-muted); font: var(--t-footnote); }
 	.raw summary { width: max-content; min-height: 24px; cursor: pointer; border-radius: 6px; }
 	.raw summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.raw p { margin-top: 4px; font-family: var(--font-mono); overflow-wrap: anywhere; }
-	.note .raw { margin-top: 4px; }
-	.eps summary { width: max-content; max-width: 100%; min-height: 32px; display: flex; align-items: center; cursor: pointer; color: var(--accent-text); font: var(--t-subhead); border-radius: 6px; }
-	.eps summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.eplist { list-style: none; padding: 0; margin: 6px 0 0; display: grid; gap: 6px; }
-	.eplist li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; font: var(--t-callout); }
-	.eplabel { color: var(--text-muted); font-variant-numeric: tabular-nums; }
-	.epname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.acts { display: flex; align-items: center; gap: 4px; }
-	.acts > :global(.ui-btn) { color: var(--text-muted); font-weight: 500; }
-	.acts > :global(.ui-btn:hover) { color: var(--text); }
-	.side { position: sticky; top: calc(var(--topbar, 56px) + 16px); padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-	.side .muted { color: var(--text-muted); font: var(--t-callout); }
 	.d-head { display: flex; gap: 14px; align-items: flex-start; }
 	.d-art { flex: none; width: 64px; --poster-ratio: 2 / 3; }
+	.d-art.square { --poster-ratio: 1; }
 	.d-names { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
-	.d-title { font: var(--t-title3); overflow-wrap: anywhere; border-radius: 6px; }
-	.d-title:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.d-title { font: var(--t-title3); overflow-wrap: anywhere; }
 	.d-sub { font: var(--t-callout); color: var(--text-muted); }
 	.facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 12px; margin: 0; padding-top: 12px; border-top: 1px solid var(--line); font: var(--t-callout); }
 	.facts dt { color: var(--text-muted); }
@@ -440,15 +272,4 @@
 	.hint { color: var(--text-muted); font: var(--t-subhead); font-weight: 400; }
 	.off { opacity: 0.6; }
 	.form-error { color: var(--fail); font: var(--t-callout); }
-	@media (max-width: 640px) {
-		.dl { grid-template-columns: 40px minmax(0, 1fr); gap: 12px; }
-		.art { width: 40px; }
-		.top { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 6px; }
-		.top > :global(.ui-pill) { align-self: flex-start; }
-		.acts { grid-column: 1 / -1; justify-content: space-between; gap: 6px; }
-		.acts > :global(.ui-btn) { flex: 1 1 auto; min-height: 44px; }
-		.eplist li { grid-template-columns: auto minmax(0, 1fr); }
-		.eplist li > :global(.ui-pill) { grid-column: 2; justify-self: start; }
-		.epname { white-space: normal; overflow-wrap: anywhere; }
-	}
 </style>

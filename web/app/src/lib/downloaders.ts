@@ -189,6 +189,8 @@ export interface DownloadRow extends DownloadView {
 	album?: string;
 	/** Optional artwork supplied with an activity row; Library metadata remains the fallback. */
 	artwork?: string;
+	/** A seeding torrent's share ratio, when the Downloader reports one. */
+	ratio?: number;
 }
 
 /** EpisodeLine is one episode (or track) a download covers, with where its
