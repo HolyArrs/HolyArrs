@@ -28,7 +28,6 @@
 	import { aboutPicks, aboutShown } from '#lib/about-picks.svelte.ts';
 	import { awardsTip, loadWikiFacts, type WikiAward } from '#lib/wiki-facts.ts';
 	import type { TagsAt, TitleLook } from '#lib/title-look.svelte.ts';
-	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Icon from '#lib/Icon.svelte';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import type { MenuItem } from '#lib/ui/Menu.svelte';
@@ -90,15 +89,6 @@
 			owned = null;
 		}
 	}
-	// Five ways to show an owned title, while Luis compares (?own=a..e).
-	const OWN_VIEWS = [
-		{ value: 't1', label: 'T1 · Underline' },
-		{ value: 't2', label: 'T2 · Centered pills' },
-		{ value: 't3', label: 'T3 · On the art' },
-		{ value: 't4', label: 'T4 · Sticky bar' },
-		{ value: 't5', label: 'T5 · Side tabs' }
-	];
-	let ownView = $state((typeof location !== 'undefined' && OWN_VIEWS.find((v) => v.value === new URLSearchParams(location.search).get('own'))?.value) || 't1');
 	let ownTab = $state<'overview' | 'episodes' | 'library'>((typeof location !== 'undefined' && (['episodes', 'library'] as const).find((t) => t === new URLSearchParams(location.search).get('tab'))) || 'overview');
 	// The tabs of an owned title: Overview (this page), Episodes (shows) and Library (status, files, activity, settings in one place).
 	const ownTabs = $derived.by(() => {
@@ -913,7 +903,7 @@
 			{/if}
 		{/snippet}
 		{#snippet ownTabBar()}
-			<div class="own-tabs {ownView}" role="tablist" data-testid="own-tabs">
+			<div class="own-tabs" role="tablist" data-testid="own-tabs">
 				{#each ownTabs as t (t.v)}
 					<button type="button" role="tab" aria-selected={ownTab === t.v} class:on={ownTab === t.v} onclick={() => (ownTab = t.v)}>
 						{t.label}{#if t.count}<span class="own-count">{t.count}</span>{/if}{#if t.alert}<span class="own-badge" aria-label="Needs attention">!</span>{/if}
@@ -938,14 +928,8 @@
 				{@render libPane()}
 			{/if}
 		{/snippet}
-		{#if owned && ownView === 't5'}
-			<!-- T5 · Side tabs: a list on the left; Overview is the full page, the others open beside the list. -->
-			<div class="own-side" class:full={ownTab === 'overview'}>
-				{@render ownTabBar()}
-				{#if ownTab !== 'overview'}<section class="own-pane">{@render ownPane()}</section>{/if}
-			</div>
-		{:else if owned}
-			<!-- T1 underline · T2 centered pills · T3 on the art · T4 sticky bar with counts -->
+		{#if owned}
+			<!-- Underline tabs under the hero: Overview, Episodes (shows), Library. -->
 			{@render ownTabBar()}
 			{#if ownTab !== 'overview'}<section class="own-pane" data-testid="own-pane">{@render ownPane()}</section>{/if}
 		{/if}
@@ -1112,9 +1096,6 @@
 
 
 		{/if}
-		{#if owned && manage}
-			<div class="own-pick" data-testid="own-pick"><SegmentedControl options={OWN_VIEWS} bind:value={ownView} label="Owned title view" size="sm" /></div>
-		{/if}
 		<Sheet bind:open={allCast} title="Cast and crew" size="lg">
 			<ul class="all-grid people">
 				{#each d.cast as p, i (p.name + i)}
@@ -1179,25 +1160,9 @@
 	.own-tabs.t1 button { border-bottom: 2px solid transparent; }
 	.own-tabs.t1 button.on { border-bottom-color: var(--text); }
 	/* T2: centered segmented pills. */
-	.own-tabs.t2 { align-self: center; padding: 4px; border-radius: 999px; background: var(--surface-2); }
-	.own-tabs.t2 button { height: 34px; border-radius: 999px; }
-	.own-tabs.t2 button.on { background: var(--surface-1); box-shadow: var(--shadow-card); }
 	/* T3: glass pills sitting on the bottom edge of the art. */
-	.own-tabs.t3 { position: relative; z-index: 2; align-self: flex-end; margin-top: -78px; margin-right: 24px; padding: 4px; border-radius: 999px; background: rgb(0 0 0 / 38%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); }
-	.own-tabs.t3 button { height: 32px; border-radius: 999px; color: rgb(255 255 255 / 75%); }
-	.own-tabs.t3 button.on { color: #fff; background: rgb(255 255 255 / 18%); }
-	.own-tabs.t3 .own-count { color: rgb(255 255 255 / 60%); }
 	/* T4: a full-width bar that sticks under the top bar while scrolling. */
-	.own-tabs.t4 { position: sticky; top: calc(var(--topbar, 56px) + 6px); z-index: 20; padding: 6px; border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 86%, transparent); border: 1px solid var(--line); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
-	.own-tabs.t4 button { flex: 1; justify-content: center; border-radius: 10px; }
-	.own-tabs.t4 button.on { background: var(--surface-2); }
 	/* T5: a vertical list beside the content. */
-	.own-side { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 28px; align-items: start; }
-	.own-side.full { grid-template-columns: minmax(0, 1fr); }
-	.own-side .own-tabs { flex-direction: column; gap: 2px; }
-	.own-side.full .own-tabs { flex-direction: row; border-bottom: 1px solid var(--line); }
-	.own-side .own-tabs button { justify-content: space-between; border-radius: 10px; }
-	.own-side .own-tabs button.on { background: var(--surface-2); }
 	.own-seasons { display: flex; flex-wrap: wrap; gap: 8px; }
 	.own-pill.on { background: var(--text); color: var(--bg); }
 	.own-eps { display: grid; gap: 2px; margin: 4px 0 0; padding: 0; list-style: none; }
@@ -1211,7 +1176,7 @@
 	.own-st { font: 600 12.5px/1 var(--font-ui); color: var(--text-muted); }
 	.own-st.failed { color: #ff453a; }
 	.own-st.have { color: #34c759; }
-	@media (max-width: 899px) { .own-side { grid-template-columns: minmax(0, 1fr); } .own-side .own-tabs { flex-direction: row; overflow-x: auto; } .own-tabs.t3 { align-self: stretch; margin: 0; } }
+	
 	.own-badge { margin-left: 6px; display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: #ff453a; color: #fff; font-size: 11px; }
 	.own-pane { display: grid; gap: 16px; padding-top: 4px; }
 	.own-tools { display: grid; gap: 18px; margin-top: 12px; }
@@ -1284,7 +1249,6 @@
 	.own-h { margin: 28px 0 12px; font: 600 13px/1.2 var(--font-ui); color: var(--text-dim, #8a8a8a); }
 	.own-history { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; font: 500 14px/1.4 var(--font-ui); }
 	.own-history li { display: flex; justify-content: space-between; gap: 16px; }
-	.own-pick { position: fixed; z-index: 30; left: 0; right: 0; bottom: 20px; width: max-content; max-width: calc(100vw - 24px); overflow-x: auto; margin-inline: auto; padding: 5px; border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow-lift); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); }
 	@media (max-width: 899px) { .own-tools.cols { grid-template-columns: minmax(0, 1fr); } .own-files li { grid-template-columns: 1fr; } }
 	.calm-meta .sep { margin: 0 8px; color: var(--text-faint); }
 	.credits { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: -4px 0 0; color: var(--text); font: 500 14px/1.45 var(--font-ui); }
