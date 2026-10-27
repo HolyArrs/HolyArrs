@@ -187,7 +187,9 @@
 	}
 	const pic = $derived(second ? (fallback ?? null) : sized(image, 'poster', cw));
 	const shownPic = $derived(pic);
-	const asking = $derived(!!image && !failed && near());
+	// Asked once the card has its width, so the slot size is picked once
+	// (never a first default size, then the measured one).
+	const asking = $derived(!!image && !failed && near() && cw > 0);
 	// The box and colour come before the picture: the record's main colour
 	// (music) under the initials, so the picture never fades in over grey.
 	const tint = $derived(color ?? pictureOf(pic)?.color ?? null);
