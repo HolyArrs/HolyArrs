@@ -2,16 +2,15 @@
 	import type { Snippet } from 'svelte';
 	import Icon from '../Icon.svelte';
 
-	// One page header for every screen: large title, optional subtitle, back
-	// link and actions. On phones a compact title appears in a sticky bar once
+	// One page header for every screen: large title, optional subtitle and
+	// actions (no back link: the top bar's breadcrumb shows where you came from). On phones a compact title appears in a sticky bar once
 	// the large title scrolls away.
 	let {
 		title,
 		subtitle,
-		back,
 		actions,
 		size = 'large'
-	}: { title: string; subtitle?: string; back?: { href: string; label: string }; actions?: Snippet; size?: 'large' | 'title1' } = $props();
+	}: { title: string; subtitle?: string; /** Ignored: the top bar's breadcrumb leads back. */ back?: { href: string; label: string }; actions?: Snippet; size?: 'large' | 'title1' } = $props();
 
 	let head = $state<HTMLElement>();
 	let shrunk = $state(false);
@@ -25,7 +24,6 @@
 
 <div class="mini" class:show={shrunk} aria-hidden="true">{title}</div>
 <header class="ui-head {size}">
-	{#if back}<a class="back" href={back.href}><Icon name="chevronLeft" size={17} />{back.label}</a>{/if}
 	<div class="row">
 		<div class="titles">
 			<h1 bind:this={head}>{title}</h1>
@@ -37,8 +35,6 @@
 
 <style>
 	.ui-head { margin-bottom: 24px; }
-	.back { display: inline-flex; align-items: center; gap: 2px; min-height: 32px; margin: 0 0 4px -4px; padding-right: 6px; color: var(--accent-text); font: var(--t-callout); font-weight: 500; border-radius: 6px; }
-	.back:hover { text-decoration: underline; text-underline-offset: 3px; }
 	.row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 16px; }
 	.titles { min-width: 0; }
 	h1 { font: var(--t-large-title); letter-spacing: var(--t-large-title-track); text-wrap: balance; }
