@@ -217,6 +217,7 @@
 	}
 	.nav-account:hover { background: var(--surface-2); }
 	.nav-account[aria-current='page'] { box-shadow: 0 0 0 2px var(--accent); }
+	.nav-account:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.who { flex: 1; min-width: 0; display: grid; }
 	.who b { font: var(--t-headline); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.who span { color: var(--text-muted); font: var(--t-footnote); font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

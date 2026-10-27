@@ -113,6 +113,8 @@
 	.d[aria-pressed='true'] { background: var(--text); color: var(--bg); box-shadow: none; }
 	.d[aria-pressed='true'] .dow, .d[aria-pressed='true'] .mon { color: var(--bg); }
 	.d[aria-pressed='true'] i { box-shadow: 0 0 0 1.5px var(--text); }
+	/* Today's and the picked day's own rings never hide the keyboard ring. */
+	.d.d:focus-visible { box-shadow: var(--focus-ring); }
 	.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--text-muted); font: var(--t-caption); margin-top: -6px; }
 	.legend span { display: inline-flex; align-items: center; gap: 6px; }
 

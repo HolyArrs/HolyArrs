@@ -169,6 +169,7 @@
 	.switch-list a:hover { color: var(--text); }
 	.switch-list a:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.switch-list a[aria-current='page'] { background: var(--surface-1); color: var(--text); font-weight: 600; box-shadow: var(--shadow-card); }
+	.switch-list a[aria-current='page']:focus-visible { box-shadow: var(--focus-ring); }
 	@media (pointer: coarse) { .switch-list a { min-height: 44px; } }
 	.list-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 	.count { color: var(--text-muted); font: var(--t-subhead); font-variant-numeric: tabular-nums; }
