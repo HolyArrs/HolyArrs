@@ -24,7 +24,6 @@ const (
 	homeNewSeason = "new_season"
 	homeFollowing = "following"
 	homeSoon      = "soon"
-	homeMissing   = "missing"
 	homeDiscover  = "discover"
 )
 
@@ -44,8 +43,8 @@ type homeViewer struct {
 // server does not fill (asks, approval) is listed and the web
 // app hides it when it has nothing.
 type homeHas struct {
-	Empty                                                   bool // nothing in the Library and nobody asked yet
-	Attention, Arrived, NewSeason, Following, Soon, Missing bool
+	Empty                                          bool // nothing in the Library and nobody asked yet
+	Attention, Arrived, NewSeason, Following, Soon bool
 }
 
 // homeRows is Home's row order for one viewer. Members never get the
@@ -74,7 +73,6 @@ func homeRows(v homeViewer, has homeHas) []string {
 	add(homeNewSeason, has.NewSeason)
 	add(homeFollowing, has.Following)
 	add(homeSoon, has.Soon)
-	add(homeMissing, v.Owner && has.Missing)
 	add(homeDiscover, true)
 	return out
 }
@@ -120,7 +118,7 @@ func homeArtOf(backdrop, logo string, artwork sql.NullString) homeArt {
 
 // home answers GET /api/v1/home: the row order for the signed-in person
 // and the rows only the server can fill (Just arrived, New season,
-// Following, the Missing count).
+// Following, Coming soon).
 func (a *API) home(w http.ResponseWriter, r *http.Request) {
 	who, signed := auth.From(r.Context())
 	v := homeViewer{Owner: !signed || who.Has(auth.PermManageLibrary), Approver: !signed || who.Has(auth.PermApprove), Kid: a.kidMax(r) != ""}
@@ -180,13 +178,8 @@ func (a *API) home(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
-	missing, failed := 0, 0
+	failed := 0
 	if v.Owner {
-		if err := db.QueryRowContext(ctx, `SELECT count(DISTINCT t.id) FROM slots s JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id
-			WHERE s.state IN ('wanted', 'searching') AND `+where, args...).Scan(&missing); err != nil {
-			internal(w, err)
-			return
-		}
 		if err := db.QueryRowContext(ctx, "SELECT count(*) FROM slots WHERE state = 'failed'").Scan(&failed); err != nil {
 			internal(w, err)
 			return
@@ -200,10 +193,10 @@ func (a *API) home(w http.ResponseWriter, r *http.Request) {
 			failed += sick
 		}
 	}
-	has := homeHas{Empty: titles == 0 && asked == 0, Attention: failed > 0, Arrived: len(arrived) > 0, NewSeason: len(seasons) > 0, Following: len(following) > 0, Soon: len(soon) > 0, Missing: missing > 0}
+	has := homeHas{Empty: titles == 0 && asked == 0, Attention: failed > 0, Arrived: len(arrived) > 0, NewSeason: len(seasons) > 0, Following: len(following) > 0, Soon: len(soon) > 0}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"rows": homeRows(v, has), "owner": v.Owner, "kid": v.Kid,
-		"arrived": arrived, "new_seasons": seasons, "following": following, "soon": soon, "missing_count": missing,
+		"arrived": arrived, "new_seasons": seasons, "following": following, "soon": soon,
 		"ask_progress": progress,
 	})
 }

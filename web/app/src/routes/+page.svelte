@@ -5,8 +5,8 @@
 	import { afterHandoff } from '#lib/loader.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
-	import { greeting } from '#lib/format.ts';
-	import { askProgressLine, attention, fallbackRows, greetName, homeStrip, missingLine, type HomeAnswer, type HomeCard, type HomeRow } from '#lib/home.ts';
+	import { askProgressLine, attention, fallbackRows, groupAttention, homeStrip, type Attention, type HomeAnswer, type HomeCard, type HomeRow } from '#lib/home.ts';
+	import { homeFacts, homeLine } from '#lib/home-line.ts';
 	import { personName } from '#lib/plain.ts';
 	import type { Fresh } from '#lib/fresh.ts';
 	import type { DownloadRow } from '#lib/downloaders.ts';
@@ -17,8 +17,6 @@
 	import PosterCard from '#lib/ui/PosterCard.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import ListRow from '#lib/ui/ListRow.svelte';
-	import StatusPill from '#lib/ui/StatusPill.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Icon from '#lib/Icon.svelte';
@@ -26,6 +24,9 @@
 	// Home is "my stuff": the server sends the row order per person (GET /home);
 	// every row hides when it has nothing.
 	let loaded = $state(false);
+	// The bigger asks (asks, downloads) have answered: the greeting waits for them so it does not change under your eyes.
+	let settled = $state(false);
+	let now = $state(new Date());
 	let failed = $state(false);
 	let retrying = $state(false);
 	let home = $state<HomeAnswer | null>(null);
@@ -38,7 +39,6 @@
 	const admin = $derived(session.can('settings'));
 	const manager = $derived(session.can('manage_library'));
 	const approver = $derived(session.can('approve'));
-	const name = $derived(greetName(session.s.name));
 	const owner = $derived(home ? home.owner : manager);
 
 	const steps = $derived([
@@ -53,10 +53,28 @@
 	const rows = $derived<HomeRow[]>(home?.rows ?? (loaded ? fallbackRows(owner) : []));
 	// Needs attention is only for failures: failed downloads or imports and health problems.
 	const fixes = $derived(owner ? attention({ failed: downloads.filter((d) => d.state === 'failed'), decisions: [], health: admin ? (checks?.checks ?? []) : [] }) : []);
+	// Items that share a cause are one row ("2 downloads failed"); six rows show, the rest wait in Downloads.
+	const fixRows = $derived(groupAttention(fixes));
+	const fixShown = $derived(fixRows.slice(0, 6));
+	const fixHidden = $derived(fixRows.slice(6).reduce((n, g) => n + g.items.length, 0));
+	let fixOpen = $state<Record<string, boolean>>({});
+	/** The plain note and, for admins, the raw text: what the Details link shows. */
+	function fixMore(i: Attention): string[] {
+		return [i.note, admin ? i.detail : undefined].filter((t): t is string => !!t && t !== i.title);
+	}
 	const waiting = $derived(asks.filter((a) => a.state === 'asked'));
 	const mine = $derived(asks.filter((a) => a.mine && a.state !== 'available').slice(0, 20));
 	const progress = $derived(home?.ask_progress ?? {});
 	const busy = $derived(Object.keys(progress).length > 0);
+	// The line under Home: your name, the time and day, and what is going on, from what this page already loaded.
+	const line = $derived(
+		homeLine({
+			name: session.s.name,
+			now,
+			kid: home?.kid ?? session.kid,
+			facts: homeFacts({ home, asks, downloads, approver, manager, kid: home?.kid ?? session.kid, now })
+		})
+	);
 
 	/** The ask's one round status mark: live progress first. */
 	function askMark(a: Ask): { state: 'available' | 'requested' | 'declined' | 'downloading'; label: string } | null {
@@ -104,7 +122,9 @@
 		if (he.status === 'fulfilled' && he.value) health = he.value;
 		if (ch.status === 'fulfilled' && ch.value) checks = ch.value;
 		if (as.status === 'fulfilled' && as.value) asks = as.value.asks ?? [];
+		now = new Date();
 		loaded = true;
+		settled = true;
 	}
 
 	async function retry() {
@@ -141,7 +161,7 @@
 <svelte:head><title>Home · HolyArrs</title></svelte:head>
 
 <div class="home">
-	<PageHeader title="Home" subtitle="{greeting()}{name ? `, ${name}` : ''}.">
+	<PageHeader title="Home" subtitle={settled ? line : '\u00a0'}>
 		{#snippet actions()}
 			<Button variant="secondary" icon="search" href={to('/search')}>Search</Button>
 			<Button variant="secondary" icon="compass" href={to('/explore')}>Explore</Button>
@@ -206,25 +226,49 @@
 					</section>
 				{/if}
 			{:else if row === 'attention' && fixes.length}
-				<section class="attention" aria-labelledby="h-fix">
+				<section class="attention" aria-labelledby="h-fix" data-testid="home-attention">
 					<header>
 						<h2 id="h-fix">Needs attention</h2>
 						<span class="count">{fixes.length}</span>
 					</header>
-					<div class="list">
-						{#each fixes.slice(0, 6) as f (f.key)}
-							<ListRow title={f.text} href={to(f.href)} icon={f.tone === 'fail' ? 'alert' : 'clock'}>
-								{#snippet trailing()}
-									<StatusPill kind={f.tone === 'fail' ? 'failed' : 'missing'} label={f.word} />
-									<span class="go">{f.action}<Icon name="chevronRight" size={14} /></span>
-								{/snippet}
-							</ListRow>
-							{#if admin && f.detail}
-								<details class="detail"><summary>Details</summary><p>{f.detail}</p></details>
-							{/if}
+					<ul class="list">
+						{#each fixShown as g (g.key)}
+							{@const many = g.items.length > 1}
+							{@const more = many ? [] : fixMore(g.items[0])}
+							<li class="fix">
+								<span class="dot {g.tone}" aria-hidden="true"></span>
+								<div class="body">
+									{#if many}
+										<button class="lead" type="button" aria-expanded={!!fixOpen[g.key]} aria-controls="fix-{g.key}" onclick={() => (fixOpen[g.key] = !fixOpen[g.key])}>
+											<span class="ltxt many"><span class="sr-only">{g.word}: </span><strong class="tt">{g.title}</strong><span class="why">· {g.reason}</span></span>
+											<span class="caret" class:up={fixOpen[g.key]}><Icon name="chevronDown" size={14} /></span>
+										</button>
+									{:else}
+										<span class="lead"><span class="ltxt"><span class="sr-only">{g.word}: </span><strong class="tt">{g.title}</strong><span class="why">· {g.reason}</span></span></span>
+									{/if}
+									<span class="acts">
+										{#if more.length}<button class="link" type="button" aria-expanded={!!fixOpen[g.key]} aria-controls="fix-{g.key}" onclick={() => (fixOpen[g.key] = !fixOpen[g.key])}>Details</button>{/if}
+										<a class="go link" href={to(g.href)} aria-label="{g.action} ({g.title})">{g.action}<Icon name="chevronRight" size={13} /></a>
+									</span>
+									{#if many && fixOpen[g.key]}
+										<ul class="members" id="fix-{g.key}">
+											{#each g.items as it (it.key)}
+												{@const sub = fixMore(it)}
+												<li>
+													<span class="mt">{it.title}</span>
+													{#if sub.length}<button class="link" type="button" aria-expanded={!!fixOpen[it.key]} aria-controls="fix-{it.key}" onclick={() => (fixOpen[it.key] = !fixOpen[it.key])}>Details</button>{/if}
+													{#if sub.length && fixOpen[it.key]}<p class="raw" id="fix-{it.key}">{sub.join(' ')}</p>{/if}
+												</li>
+											{/each}
+										</ul>
+									{:else if more.length && fixOpen[g.key]}
+										<p class="raw" id="fix-{g.key}">{more.join(' ')}</p>
+									{/if}
+								</div>
+							</li>
 						{/each}
-					</div>
-					{#if fixes.length > 6}<a class="more" href={to('/downloads')}>{fixes.length - 6} more in Downloads</a>{/if}
+					</ul>
+					{#if fixHidden}<a class="more" href={to('/downloads')}>{fixHidden} more in Downloads</a>{/if}
 				</section>
 			{:else if row === 'arrived'}
 				{@render wideRow(home?.arrived ?? [], 'home_arrived', { title: 'Just arrived', subtitle: 'New in the last two weeks', href: to('/library') })}
@@ -254,12 +298,6 @@
 				{@render wideRow(home?.following ?? [], 'home_following', { title: 'Following', subtitle: 'Shows and artists you follow' })}
 			{:else if row === 'soon'}
 				{@render wideRow(home?.soon ?? [], 'home_soon', { title: 'Coming soon', subtitle: 'The next 30 days', href: owner ? to('/calendar') : undefined })}
-			{:else if row === 'missing' && home?.missing_count}
-				<a class="missing" href={to('/library?show=missing&layout=list')} data-testid="home-missing">
-					<Icon name="alert" size={16} />
-					<span class="grow"><strong>Missing</strong> · {missingLine(home.missing_count)}</span>
-					<Icon name="chevronRight" size={15} />
-				</a>
 			{:else if row === 'discover'}
 				<a class="discover" href={to('/explore')}>Find more to ask for <span aria-hidden="true">→</span></a>
 			{/if}
@@ -295,23 +333,47 @@
 	.done .dot { background: var(--ok); color: var(--on-art); outline: none; }
 	.grow { flex: 1; min-width: 0; }
 
-	.attention header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-	.attention header { justify-content: flex-start; }
+	.attention header { display: flex; align-items: baseline; justify-content: flex-start; gap: 12px; margin-bottom: 12px; }
 	.attention h2 { font: var(--t-title2); letter-spacing: var(--t-title2-track); }
 	.count { min-width: 24px; height: 24px; padding: 0 8px; display: inline-grid; place-items: center; border-radius: 999px; background: var(--accent-soft); color: var(--accent-text); font: var(--t-subhead); font-weight: 600; font-variant-numeric: tabular-nums; }
-	.detail { margin: -2px 12px 6px 52px; color: var(--text-muted); font: var(--t-footnote); }
-	.detail summary { width: max-content; min-height: 24px; cursor: pointer; border-radius: 6px; }
-	.detail summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.detail p { margin-top: 4px; font-family: var(--font-mono); overflow-wrap: anywhere; }
-	/* Management widgets: calm grouped lists, a hairline and no lift, like Settings. */
-	.attention .list { border-radius: var(--r-panel); background: var(--surface-1); box-shadow: inset 0 0 0 1px var(--line); padding: 4px; }
-	/* On a phone the pill and action left the title one letter wide: put them on their own line under it. */
+	/* Management widgets: calm grouped lists, a hairline and no lift, like Settings. One 40px row per cause: a dot, "Title · why", Details and the action at the right edge. */
+	.attention .list { list-style: none; margin: 0; padding: 2px 6px; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: inset 0 0 0 1px var(--line); }
+	.fix { display: flex; align-items: flex-start; gap: 10px; padding: 0 8px; border-radius: var(--r-btn); }
+	.fix + .fix { box-shadow: inset 0 1px 0 var(--line); border-radius: 0; }
+	.dot { flex: none; width: 8px; height: 8px; margin-top: 16px; border-radius: 50%; background: var(--text-faint); }
+	.dot.fail { background: var(--fail); }
+	.dot.wait { background: var(--wait); }
+	/* The title and the action share a line; when they do not fit (a phone), the action wraps under the title instead of squeezing it. */
+	.body { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; column-gap: 12px; }
+	.lead { flex: 1 1 auto; min-width: 0; max-width: 100%; display: flex; align-items: center; gap: 2px; height: 40px; padding: 0; border: 0; background: none; color: var(--text); font: var(--t-callout); text-align: left; }
+	/* A lone item cuts its long title short and keeps the reason; a merged row keeps its lead and cuts the list of titles. */
+	.ltxt { min-width: 0; display: flex; gap: 0.4em; white-space: nowrap; }
+	.tt { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+	.why { flex: none; }
+	.many .tt { flex: none; }
+	.many .why { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+	button.lead { cursor: pointer; border-radius: 6px; }
+	button.lead:hover .why { color: var(--text); }
+	.lead strong { font-weight: 600; }
+	.why { color: var(--text-muted); }
+	.caret { flex: none; display: inline-grid; place-items: center; width: 24px; height: 24px; color: var(--text-muted); transition: rotate var(--dur-fast) var(--ease-out); }
+	.caret.up { rotate: 180deg; }
+	.acts { flex: none; margin-left: auto; display: flex; align-items: center; gap: 4px; }
+	.link { display: inline-flex; align-items: center; gap: 2px; min-height: 32px; padding: 0 6px; border: 0; border-radius: 6px; background: none; color: var(--text-muted); font: var(--t-subhead); cursor: pointer; }
+	.link:hover { color: var(--text); background: var(--surface-2); }
+	.go { color: var(--accent-text); font-weight: 600; }
+	.go:hover { color: var(--accent-text); }
+	.lead:focus-visible, .link:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.raw { flex-basis: 100%; margin: 0 0 8px; color: var(--text-muted); font: var(--t-footnote); overflow-wrap: anywhere; }
+	.members { flex-basis: 100%; list-style: none; margin: 0 0 6px; padding: 0 0 0 2px; }
+	.members li { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; min-height: 32px; font: var(--t-callout); }
+	.members .mt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.members .link { min-height: 28px; }
 	@media (max-width: 599px) {
-		.attention :global(.ui-row) { flex-wrap: wrap; row-gap: 0; }
-		.attention :global(.ui-row > .main) { flex-basis: 100%; }
-		.attention :global(.ui-row > .trail) { padding: 0 0 4px 52px; }
+		.acts { margin-left: -6px; }
+		.link { min-height: 36px; padding: 0 8px; }
+		.members li { min-height: 36px; }
 	}
-	.go { display: inline-flex; align-items: center; gap: 2px; color: var(--accent-text); font: var(--t-subhead); font-weight: 600; }
 	.more { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent-text); font: var(--t-callout); font-weight: 500; }
 	.more:hover { text-decoration: underline; text-underline-offset: 3px; }
 
@@ -321,9 +383,7 @@
 
 
 	.welcome-acts { display: flex; flex-wrap: wrap; gap: 8px; }
-	.missing { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 16px; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: inset 0 0 0 1px var(--line); color: var(--text); font: var(--t-callout); }
-	.missing:hover { background: var(--surface-2); }
-	.missing:focus-visible, .discover:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.discover:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.discover { align-self: center; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border-radius: var(--r-btn); color: var(--accent-text); font: var(--t-headline); }
 	.discover:hover { text-decoration: underline; text-underline-offset: 3px; }
 

@@ -231,7 +231,9 @@ test('Home reads its rows from one bounded answer', async () => {
 		const home = await (await response).json();
 		expect(Array.isArray(home.rows)).toBe(true);
 		await expect(page.getByRole('heading', { level: 1 })).toContainText('Home');
-		if (home.rows.includes('missing') && home.missing_count) await expect(page.getByTestId('home-missing')).toBeVisible();
+		// Missing is not on Home: it has its own page and a sidebar link.
+		expect(home.rows).not.toContain('missing');
+		await expect(page.getByTestId('home-missing')).toHaveCount(0);
 		expect(fullLibrary).toEqual([]);
 	} finally {
 		page.off('request', record);

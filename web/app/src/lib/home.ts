@@ -1,17 +1,9 @@
 // Home: small pure helpers so the page stays a layout.
 import { duration } from './format.ts';
-import { healthSentence, looksLikeId, plainReason } from './plain.ts';
+import { healthSentence, plainReason } from './plain.ts';
 import type { DownloadRow } from './downloaders.ts';
 import type { CalendarEntry, HealthCheck, TitleView } from './types.ts';
 import type { Fresh } from './fresh.ts';
-
-/**
- * greetName is the name to greet someone by, or '' when the name looks like
- * an id (preview-…, e2e-…, a long hex or number string) and not a person.
- */
-export function greetName(name: string | null | undefined): string {
-	return looksLikeId(name) ? '' : (name ?? '').trim();
-}
 
 /** downloadLine is the meta line under a download card: percent and time left. */
 export function downloadLine(d: Pick<DownloadRow, 'progress' | 'eta' | 'state' | 'label'>): string {
@@ -36,8 +28,18 @@ export function isActive(d: Pick<DownloadRow, 'active' | 'state'>): boolean {
 export interface Attention {
 	key: string;
 	tone: 'fail' | 'wait';
+	/** The tone in a word, for screen readers: Failed, Problem, Your call, Warning. */
 	word: string;
+	/** The whole thing as one sentence. */
 	text: string;
+	/** What it is about: a title, or the part that has the problem. */
+	title: string;
+	/** Why, in a few words: "download failed". */
+	reason: string;
+	/** Items with the same cause merge into one row. */
+	cause: string;
+	/** What the Downloader said, in plain words. Shown to everyone who sees the row. */
+	note?: string;
 	/** Raw text for admins, shown inside a Details disclosure. */
 	detail?: string;
 	href: string;
@@ -61,6 +63,33 @@ export function healthFix(kind: HealthCheck['kind']): string {
 	}
 }
 
+// A health problem in a few words: what it is about (one, many) and why (one, many), by state.
+const healthWords: Record<HealthCheck['kind'], { one: string; many: string; error: [string, string]; warning: [string, string] }> = {
+	library_folder: { one: 'Library folder', many: 'Library folders', error: ["can't be reached", "can't be reached"], warning: ['needs a look', 'need a look'] },
+	disk_space: { one: 'Library folder', many: 'Library folders', error: ['out of space', 'out of space'], warning: ['running low on space', 'running low on space'] },
+	source: { one: 'Source', many: 'Sources', error: ['not answering', 'not answering'], warning: ['answered with a problem', 'answered with a problem'] },
+	downloader: { one: 'Downloader', many: 'Downloaders', error: ['not answering', 'not answering'], warning: ['answered with a problem', 'answered with a problem'] },
+	backups: { one: 'Backups', many: 'Backups', error: ['not being made', 'not being made'], warning: ['getting old', 'getting old'] },
+	update: { one: 'HolyArrs update', many: 'HolyArrs updates', error: ['check failed', 'check failed'], warning: ['waiting', 'waiting'] }
+};
+
+function healthItem(c: HealthCheck, tone: 'fail' | 'wait', word: string, action: string): Attention {
+	const w = healthWords[c.kind];
+	const level = c.state === 'error' ? 'error' : 'warning';
+	return {
+		key: `h${c.key}`,
+		tone,
+		word,
+		text: healthSentence(c),
+		title: w?.one ?? 'HolyArrs',
+		reason: w ? w[level][0] : level === 'error' ? 'not working' : 'needs a look',
+		cause: `health:${c.kind}:${level}`,
+		detail: [c.subject, c.message].filter(Boolean).join(': ') || undefined,
+		href: healthFix(c.kind),
+		action
+	};
+}
+
 /** attention puts failed downloads, decisions and health problems in one list, worst first. */
 export function attention(input: {
 	failed: Pick<DownloadRow, 'id' | 'title' | 'title_id' | 'text'>[];
@@ -68,18 +97,58 @@ export function attention(input: {
 	health: HealthCheck[];
 }): Attention[] {
 	const out: Attention[] = [];
-	for (const c of input.health.filter((h) => h.state === 'error'))
-		out.push({ key: `h${c.key}`, tone: 'fail', word: 'Problem', text: healthSentence(c), detail: [c.subject, c.message].filter(Boolean).join(': ') || undefined, href: healthFix(c.kind), action: 'Fix' });
+	for (const c of input.health.filter((h) => h.state === 'error')) out.push(healthItem(c, 'fail', 'Problem', 'Fix'));
 	for (const d of input.failed) {
 		const r = plainReason(d.text || 'The download failed.');
-		out.push({ key: `f${d.id}`, tone: 'fail', word: 'Failed', text: `${d.title}: ${r.text}`, detail: r.detail, href: '/downloads', action: 'Open Downloads' });
+		out.push({ key: `f${d.id}`, tone: 'fail', word: 'Failed', text: `${d.title}: ${r.text}`, title: d.title, reason: 'download failed', cause: 'download_failed', note: d.text ? r.text : undefined, detail: r.detail, href: '/downloads', action: 'Downloads' });
 	}
 	for (const d of input.decisions) {
 		const r = plainReason(d.reason || 'HolyArrs needs you to choose.');
-		out.push({ key: `d${d.slot_id}`, tone: 'wait', word: 'Your call', text: `${d.title}${d.episode ? ` ${d.episode.label}` : ''}: ${r.text}`, detail: r.detail, href: '/downloads/decide', action: 'Decide' });
+		const title = `${d.title}${d.episode ? ` ${d.episode.label}` : ''}`;
+		out.push({ key: `d${d.slot_id}`, tone: 'wait', word: 'Your call', text: `${title}: ${r.text}`, title, reason: 'needs a decision', cause: 'decision', note: d.reason ? r.text : undefined, detail: r.detail, href: '/downloads/decide', action: 'Decide' });
 	}
-	for (const c of input.health.filter((h) => h.state === 'warning'))
-		out.push({ key: `h${c.key}`, tone: 'wait', word: 'Warning', text: healthSentence(c), detail: [c.subject, c.message].filter(Boolean).join(': ') || undefined, href: healthFix(c.kind), action: 'Look' });
+	for (const c of input.health.filter((h) => h.state === 'warning')) out.push(healthItem(c, 'wait', 'Warning', 'Look'));
+	return out;
+}
+
+/** One row of Needs attention: a single item, or several that share a cause. */
+export interface AttentionGroup {
+	key: string;
+	tone: Attention['tone'];
+	word: string;
+	/** The row's lead: a title, or "2 downloads failed". */
+	title: string;
+	/** After the lead: why, or (for several) which ones. */
+	reason: string;
+	href: string;
+	action: string;
+	items: Attention[];
+}
+
+/**
+ * groupAttention merges items that share a cause ("2 downloads failed") into
+ * one row that lists its titles; a single item stays a row of its own.
+ * Rows keep the order of their first item, so the worst still comes first.
+ */
+export function groupAttention(items: Attention[]): AttentionGroup[] {
+	const byCause = new Map<string, Attention[]>();
+	for (const i of items) byCause.set(i.cause, [...(byCause.get(i.cause) ?? []), i]);
+	const out: AttentionGroup[] = [];
+	for (const [cause, list] of byCause) {
+		const first = list[0];
+		const n = list.length;
+		const base = { tone: first.tone, word: first.word, href: first.href, action: first.action, items: list };
+		if (n === 1) {
+			out.push({ ...base, key: first.key, title: first.title, reason: first.reason });
+			continue;
+		}
+		const kind = cause.startsWith('health:') ? (cause.split(':')[1] as HealthCheck['kind']) : undefined;
+		const w = kind ? healthWords[kind] : undefined;
+		const level = cause.endsWith(':error') ? 'error' : 'warning';
+		if (w) out.push({ ...base, key: `g${cause}`, title: `${n} ${w.many}`, reason: w[level][1] });
+		else if (cause === 'decision') out.push({ ...base, key: `g${cause}`, title: `${n} need a decision`, reason: list.map((i) => i.title).join(', ') });
+		else out.push({ ...base, key: `g${cause}`, title: `${n} downloads failed`, reason: list.map((i) => i.title).join(', ') });
+	}
 	return out;
 }
 
@@ -153,7 +222,7 @@ export function soonLine(first: { name: string; subtitle?: string } | undefined)
 // ---- GET /home: the server's row order and the rows it fills ----
 
 /** HomeRow is one Home row, in the order the server sends. */
-export type HomeRow = 'welcome' | 'attention' | 'arrived' | 'approval' | 'asks' | 'new_season' | 'following' | 'soon' | 'missing' | 'discover';
+export type HomeRow = 'welcome' | 'attention' | 'arrived' | 'approval' | 'asks' | 'new_season' | 'following' | 'soon' | 'discover';
 
 export interface HomeCard {
 	key: string;
@@ -209,9 +278,4 @@ export function askProgressLine(p: AskProgress | undefined): string {
 	if (p.state === 'queued') return 'Waiting to start';
 	const pct = Math.round(Math.max(0, Math.min(1, p.progress)) * 100);
 	return p.eta ? `Downloading ${pct}% · ${duration(p.eta)} left` : `Downloading ${pct}%`;
-}
-
-/** missingLine is the owner's compact Missing count. */
-export function missingLine(n: number): string {
-	return `${n} released ${n === 1 ? 'title has' : 'titles have'} no file yet`;
 }

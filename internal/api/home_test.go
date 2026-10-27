@@ -13,7 +13,7 @@ import (
 )
 
 func TestHomeRowOrderPerRole(t *testing.T) {
-	full := homeHas{Attention: true, Arrived: true, NewSeason: true, Following: true, Soon: true, Missing: true}
+	full := homeHas{Attention: true, Arrived: true, NewSeason: true, Following: true, Soon: true}
 	cases := []struct {
 		name string
 		v    homeViewer
@@ -21,11 +21,11 @@ func TestHomeRowOrderPerRole(t *testing.T) {
 		want []string
 	}{
 		{"member", homeViewer{}, full, []string{"arrived", "asks", "new_season", "following", "soon", "discover"}},
-		{"owner", homeViewer{Owner: true, Approver: true}, full, []string{"attention", "arrived", "approval", "asks", "new_season", "following", "soon", "missing", "discover"}},
+		{"owner", homeViewer{Owner: true, Approver: true}, full, []string{"attention", "arrived", "approval", "asks", "new_season", "following", "soon", "discover"}},
 		{"kid", homeViewer{Kid: true}, full, []string{"arrived", "asks", "new_season"}},
 		{"empty member", homeViewer{}, homeHas{Empty: true}, []string{"welcome"}},
 		{"empty owner", homeViewer{Owner: true, Approver: true}, homeHas{Empty: true, Attention: true}, []string{"welcome"}},
-		{"owner, nothing failed or missing", homeViewer{Owner: true, Approver: true}, homeHas{Arrived: true}, []string{"arrived", "approval", "asks", "discover"}},
+		{"owner, nothing failed", homeViewer{Owner: true, Approver: true}, homeHas{Arrived: true}, []string{"arrived", "approval", "asks", "discover"}},
 		{"member, no follows", homeViewer{}, homeHas{Arrived: true, NewSeason: true, Soon: true}, []string{"arrived", "asks", "new_season", "soon", "discover"}},
 	}
 	for _, c := range cases {
@@ -59,11 +59,10 @@ func TestHomeShowLine(t *testing.T) {
 func TestHomeRowsOverHTTP(t *testing.T) {
 	srv, s, _ := setup(t)
 	type answer struct {
-		Rows         []string   `json:"rows"`
-		Owner        bool       `json:"owner"`
-		Arrived      []homeCard `json:"arrived"`
-		NewSeasons   []homeCard `json:"new_seasons"`
-		MissingCount int        `json:"missing_count"`
+		Rows       []string   `json:"rows"`
+		Owner      bool       `json:"owner"`
+		Arrived    []homeCard `json:"arrived"`
+		NewSeasons []homeCard `json:"new_seasons"`
 	}
 	get := func() answer {
 		var a answer
@@ -111,10 +110,10 @@ func TestHomeRowsOverHTTP(t *testing.T) {
 		t.Fatal(err)
 	}
 	a := get()
-	if !slices.Equal(a.Rows, []string{"arrived", "approval", "asks", "missing", "discover"}) {
+	if !slices.Equal(a.Rows, []string{"arrived", "approval", "asks", "discover"}) {
 		t.Fatalf("owner rows: %v", a.Rows)
 	}
-	if len(a.Arrived) != 1 || a.Arrived[0].Name != "Fresh Movie" || a.Arrived[0].Line != "New movie" || a.MissingCount != 1 || !a.Owner {
+	if len(a.Arrived) != 1 || a.Arrived[0].Name != "Fresh Movie" || a.Arrived[0].Line != "New movie" || !a.Owner {
 		t.Fatalf("home answer: %+v", a)
 	}
 }

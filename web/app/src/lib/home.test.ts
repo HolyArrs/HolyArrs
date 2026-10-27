@@ -1,20 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { arrivedAt, arrivedTitle, askProgressLine, attention, fallbackRows, homeStrip, missingLine, downloadLine, downloadSubtitle, greetName, healthFix, homeFresh, isActive, mixLine, soonLine, splitArrivals } from './home.ts';
+import { arrivedAt, arrivedTitle, askProgressLine, attention, fallbackRows, groupAttention, homeStrip, downloadLine, downloadSubtitle, healthFix, homeFresh, isActive, mixLine, soonLine, splitArrivals } from './home.ts';
 import type { HealthCheck } from './types.ts';
 
 const check = (key: string, state: HealthCheck['state'], kind: HealthCheck['kind'] = 'source'): HealthCheck => ({ id: 1, key, kind, subject: 'S', state, message: `${key} broke`, since: '', checked_at: '' });
 
 describe('home', () => {
-	it('greets people, not ids', () => {
-		expect(greetName('Luis')).toBe('Luis');
-		expect(greetName('  Ana María ')).toBe('Ana María');
-		expect(greetName('preview-e34f0722f7')).toBe('');
-		expect(greetName('e2e-owner')).toBe('');
-		expect(greetName('1234567')).toBe('');
-		expect(greetName('d41d8cd98f00b204')).toBe('');
-		expect(greetName(undefined)).toBe('');
-	});
-
 	it('writes the download meta line', () => {
 		expect(downloadLine({ progress: 0.4, eta: 600, state: 'downloading', label: '' })).toBe('40% · 10m left');
 		expect(downloadLine({ progress: 1.4, state: 'downloading', label: '' })).toBe('100%');
@@ -38,6 +28,34 @@ describe('home', () => {
 		expect(items[2]).toMatchObject({ text: 'Harbour Lights S02E01: Ran out.', href: '/downloads/decide' });
 		expect(items[3].href).toBe('/settings/library-folders');
 		expect(healthFix('update')).toBe('/settings/this-app');
+	});
+
+	it('puts the title and the reason on one line, in the glossary words', () => {
+		const items = attention({
+			failed: [{ id: 1, title: 'Gladiator', title_id: 2, text: 'The Downloader says error.' }, { id: 2, title: 'Alien', title_id: 3, text: '' }],
+			decisions: [{ slot_id: 7, title: 'Harbour Lights', reason: 'Ran out.', episode: { label: 'S02E01' } }],
+			health: [check('s', 'error', 'source'), check('b', 'warning', 'backups')]
+		});
+		expect(items.map((i) => `${i.title} · ${i.reason}`)).toEqual(['Source · not answering', 'Gladiator · download failed', 'Alien · download failed', 'Harbour Lights S02E01 · needs a decision', 'Backups · getting old']);
+		// What the Downloader said stays one tap away; an empty reason adds nothing.
+		expect(items[1].note).toBe('The Downloader says error.');
+		expect(items[2].note).toBeUndefined();
+		expect(items.map((i) => i.action)).toEqual(['Fix', 'Downloads', 'Downloads', 'Decide', 'Look']);
+	});
+
+	it('merges rows that share a cause and keeps the rest apart', () => {
+		const items = attention({
+			failed: [{ id: 1, title: 'Gladiator', title_id: 2, text: 'x' }, { id: 2, title: 'Everything Everywhere All at Once', title_id: 3, text: 'y' }],
+			decisions: [],
+			health: [check('s1', 'error', 'source'), check('s2', 'error', 'source'), check('d', 'error', 'downloader'), check('w', 'warning', 'source')]
+		});
+		const rows = groupAttention(items);
+		expect(rows.map((r) => `${r.title} · ${r.reason}`)).toEqual(['2 Sources · not answering', 'Downloader · not answering', '2 downloads failed · Gladiator, Everything Everywhere All at Once', 'Source · answered with a problem']);
+		expect(rows.map((r) => r.items.length)).toEqual([2, 1, 2, 1]);
+		expect(rows[2]).toMatchObject({ tone: 'fail', word: 'Failed', href: '/downloads', action: 'Downloads' });
+		expect(rows.reduce((n, r) => n + r.items.length, 0)).toBe(items.length);
+		// A lone item keeps its own key, so its row does not jump when another joins it.
+		expect(rows[1].key).toBe(items[2].key);
 	});
 });
 
@@ -75,12 +93,10 @@ describe('home rows', () => {
 		expect(homeStrip({ kind: 'movie', name: 'Dune', line: 'New movie' })).toBeNull();
 	});
 
-	it('writes live ask progress and the Missing count', () => {
+	it('writes live ask progress', () => {
 		expect(askProgressLine({ progress: 0.42, state: 'downloading', eta: 600 })).toBe('Downloading 42% · 10m left');
 		expect(askProgressLine({ progress: 0, state: 'queued' })).toBe('Waiting to start');
 		expect(askProgressLine(undefined)).toBe('');
-		expect(missingLine(1)).toBe('1 released title has no file yet');
-		expect(missingLine(4)).toBe('4 released titles have no file yet');
 	});
 
 	it('keeps members off the owner rows while Home is unreachable', () => {
