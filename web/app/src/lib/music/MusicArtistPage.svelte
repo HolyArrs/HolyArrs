@@ -19,7 +19,6 @@
 	import { dragScroll } from '#lib/drag-scroll.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { onMount } from 'svelte';
-	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { api, message } from '#lib/api.ts';
 	import { keepShown, reaskWhileIncomplete } from '#lib/music/reask.ts';
@@ -32,9 +31,10 @@
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
-	import { pictureFor, ratioOf } from '#lib/pictures.ts';
+	import Menu from '#lib/ui/Menu.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
+	import { pictureFor, pictureOf } from '#lib/pictures.ts';
 	import Icon from '#lib/Icon.svelte';
-	import { glideScroll } from '#lib/ui/transitions.ts';
 	import AskArtistDialog from '#lib/AskArtistDialog.svelte';
 	import AddArtistDialog from '#lib/AddArtistDialog.svelte';
 	import { toasts } from '#lib/toasts.svelte.ts';
@@ -49,7 +49,7 @@
 	import { HERO_DELAY, setSoundOn, soundOn } from '#lib/trailer.ts';
 	import { artistVideo, autoplayHere, loadUISettings, nativeHLS } from '#lib/autoplay.svelte.ts';
 	import { heroFullscreen, heroVideoStart, type HeroVideo } from '#lib/music/hero-video.ts';
-	import { aboutSize, albumHref, appPicture, artistHref, artistKind, countryName, initialsOf, coverFor, haveLine, kindWord, length, owned, popularityStats, listening, changeWords, fullCount, catalogParts, smallReleasesWord, shortCount, type Catalog, askAgainOnce, withCover, SHELVES, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
+	import { aboutSize, albumHref, appPicture, artistHref, artistKind, countryName, initialsOf, coverFor, kindWord, length, owned, listening, changeWords, fullCount, smallReleasesWord, shortCount, type Catalog, askAgainOnce, withCover, shelves as shelvesOf, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type PageSong, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import VariantBar from '#lib/ui/VariantBar.svelte';
@@ -57,11 +57,11 @@
 	import ArtistLibraryTab from '#lib/music/ArtistLibrary.svelte';
 	import type { Snippet } from 'svelte';
 
-
 	// The one artist page: any MusicBrainz artist, in the Library or not. The
 	// Library route passes `library` (its menu, progress and ask) and `below`
 	// (albums to keep, how HolyArrs keeps it, history, wishlist). HolyArrs asks
-	// for music; it does not play it, so songs lead to asking for their album.
+	// for music; it does not play it, so songs lead to their album and to asking for it.
+	// Five page designs are being compared (?look=1…5, design/artist-page-study-20261027.md).
 	// Waits between re-asks of an artist's art when it has no wide photo yet (about 20 s in all).
 	const ART_RETRY = [1500, 3000, 5000, 10000];
 	let { mbid: rawId, library: lib, below }: { mbid: string; library?: ArtistLibrary; below?: Snippet } = $props();
@@ -73,12 +73,12 @@
 	let similar = $state<PageArtist[] | null>(null);
 	let more = $state<ArtistMoreData | null>(null);
 	const related = $derived(withCover(data?.related));
-	let shelfPick = $state<ShelfKind | 'all'>('albums');
-	let havePick = $state<'all' | 'have' | 'missing'>('all');
+	let shelfPick = $state<ShelfKind | 'all'>('all');
 	let confirmAll = $state(false);
 	let discoAll = $state(false);
+	let songsAll = $state(false);
 	let askingAll = $state(false);
-	let aboutEl: HTMLElement | undefined = $state();
+	let aboutOpen = $state(false);
 	let error = $state('');
 	let busy = $state(false);
 	// The answer was already kept by the app (fetched ahead or seen within a minute): no loader hold.
@@ -87,7 +87,6 @@
 	let lookup = $state<LookupArtist | null>(null);
 	let art = $state<{ logo?: string; backgrounds?: string[]; thumb?: string }>({});
 	let following = $state<boolean | null>(null);
-	let bioOpen = $state(false);
 	let heroIn = $state(false);
 	// The hero's music video (muted, looping, relayed); none keeps the photo.
 	let heroVideo = $state<HeroVideo | null>(null);
@@ -148,14 +147,9 @@
 	$effect(() => {
 		if (heroFull && !heroVideo) void document.exitFullscreen().catch(() => {});
 	});
-	let videoIn = $state(false);
 	// The video keeps the stage while it is paused or between two videos (a
-	// video that ends also fires pause): the paused frame stays, and the hero
-	// never shrinks and grows again under the page.
-	const videoOn = $derived(videoIn);
-	let logoFailed = $state(false);
-	// The logo's box comes from its stored size, so the hero never jumps when it lands.
-	const logoRatio = $derived(art.logo ? ratioOf(pictureFor('logo', mbid))?.toFixed(4) : undefined);
+	// video that ends also fires pause): the banner keeps its size either way.
+	let videoIn = $state(false);
 	let folders = $state<LibraryFolder[]>([]);
 	let rules = $state<PickRulesView[]>([]);
 	let defaults = $state<MusicSettings | null>(null);
@@ -170,6 +164,19 @@
 	const titleId = $derived(lib?.titleId || hero?.title_id || lookup?.title_id || 0);
 	// Overview or Library, for an artist in the Library (?tab=library opens it there).
 	let artistTab = $state<'overview' | 'library'>(typeof location !== 'undefined' && new URLSearchParams(location.search).get('tab') === 'library' ? 'library' : 'overview');
+
+	// The five page designs (?look=1…5, kept for the session); 1 when none is picked.
+	const LOOKS = [
+		{ value: 1, label: '1 Banner' },
+		{ value: 2, label: '2 Circle' },
+		{ value: 3, label: '3 Banner + grid' },
+		{ value: 4, label: '4 Compact' },
+		{ value: 5, label: '5 Side panel' }
+	];
+	let picked = $state(0);
+	const look = $derived(picked >= 1 && picked <= 5 ? picked : 1);
+	// The designs with a banner (and so the hero video); 2 is the round photo on a wash.
+	const banner = $derived(look !== 2);
 
 	function load() {
 		const want = mbid;
@@ -237,18 +244,17 @@
 		data = null;
 		similar = null;
 		more = null;
-		shelfPick = 'albums';
+		shelfPick = 'all';
 		discoAll = false;
-		havePick = 'all';
+		songsAll = false;
 		confirmAll = false;
+		aboutOpen = false;
 		lookup = null;
 		art = {};
 		following = null;
 		heroIn = false;
 		heroVideo = null;
 		videoIn = false;
-		logoFailed = false;
-		bioOpen = false;
 		void load();
 		return () => leave?.abort();
 	});
@@ -275,7 +281,8 @@
 		return () => ctl.abort();
 	});
 
-	// Play it on the stage; an error drops back to the photo.
+	// Play it on the banner; an error drops back to the photo.
+	let attached = $state(false);
 	$effect(() => {
 		const v = heroVideo;
 		const el = videoEl;
@@ -308,7 +315,6 @@
 	});
 
 	// The photo and name hold for the beat; then the video takes over.
-	let attached = $state(false);
 	$effect(() => {
 		if (!(attached && beatDone && videoEl && heroVideo)) return;
 		const el = videoEl;
@@ -332,12 +338,62 @@
 			});
 	});
 
+	// Screen width: the side panel needs 1280 px; phones get their own sizes.
+	let wide = $state(false);
+	let phone = $state(false);
+	// How far the banner has scrolled away (0…1), and whether the name has left the screen.
+	let gone = $state(0);
+	let slimOn = $state(false);
+	let nameEl: HTMLElement | undefined = $state();
+	function measure() {
+		const box = heroBox;
+		if (box) {
+			const r = box.getBoundingClientRect();
+			gone = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height)));
+		}
+		const bar = document.querySelector('.ui-topbar');
+		const barBottom = bar && !document.documentElement.classList.contains('bar-hidden') ? Math.max(0, bar.getBoundingClientRect().bottom) : 0;
+		slimOn = !!nameEl && nameEl.getBoundingClientRect().bottom < barBottom + 4;
+	}
 	onMount(() => {
 		if (session.can('manage_library')) {
 			void api.get<{ library_folders: LibraryFolder[] }>('/library-folders').then((r) => (folders = r.library_folders)).catch(() => {});
 			void api.get<{ pick_rules: PickRulesView[] }>('/pick-rules').then((r) => (rules = r.pick_rules)).catch(() => {});
 			void api.get<MusicSettings>('/settings/music').then((r) => (defaults = r)).catch(() => {});
 		}
+		const wq = matchMedia('(min-width: 1280px)');
+		const pq = matchMedia('(max-width: 767px)');
+		const sizes = () => {
+			wide = wq.matches;
+			phone = pq.matches;
+		};
+		sizes();
+		wq.addEventListener('change', sizes);
+		pq.addEventListener('change', sizes);
+		let frame = 0;
+		const onScroll = () => {
+			if (frame) return;
+			frame = requestAnimationFrame(() => {
+				frame = 0;
+				measure();
+			});
+		};
+		addEventListener('scroll', onScroll, { passive: true });
+		addEventListener('resize', onScroll, { passive: true });
+		return () => {
+			wq.removeEventListener('change', sizes);
+			pq.removeEventListener('change', sizes);
+			removeEventListener('scroll', onScroll);
+			removeEventListener('resize', onScroll);
+			cancelAnimationFrame(frame);
+		};
+	});
+	// A new design or artist: measure again (the name sits elsewhere).
+	$effect(() => {
+		void look;
+		void nameEl;
+		void heroBox;
+		measure();
 	});
 
 	// The artist's photo. One the server has not stored yet is asked for
@@ -349,7 +405,7 @@
 		const p = appPicture(hero?.image);
 		return p && photoTry ? `${p}${p.includes('?') ? '&' : '?'}fresh=${photoTry}` : p;
 	});
-	// The hero never stays empty: each wide photo in turn, then a soft crop of the artist's photo.
+	// The banner never stays empty: each wide photo in turn, then a soft crop of the artist's photo.
 	const heroList = $derived([...(art.backgrounds ?? []), ...(picture ? [picture] : [])]);
 	let heroTry = $state(0);
 	$effect(() => {
@@ -386,47 +442,11 @@
 		void wideFace;
 		wideFailed = false;
 	});
-	const facts = $derived.by(() => {
-		if (!hero) return [];
-		return [artistKind(hero.type), countryName(hero.country), hero.status === 'ended' ? 'Disbanded or retired' : '', (data?.genres ?? []).slice(0, 3).join(', ')].filter(Boolean) as string[];
-	});
-	const storeKind = (t: string) => ({ single: 'Single', ep: 'EP', compilation: 'Compilation' })[t] ?? '';
+	// The banner's main colour tints the slim bar and the round photo's wash.
+	const tint = $derived(pictureFor('wide', mbid)?.color || pictureFor('artist', mbid)?.color || pictureOf(hero?.image)?.color || '');
 	// The full answer's albums, else the core answer's stored list (drawn with the hero).
 	const released = $derived((data?.albums ?? core?.albums ?? []).filter((a) => !a.upcoming));
-	// The band under the hero: what this artist has put out, in big numbers.
-	const stats = $derived.by(() => {
-		if (!data) return [];
-		const plain = (t: string) => released.filter((a) => a.type?.toLowerCase() === t && !a.secondary_types?.length).length;
-		const years = released.map((a) => a.release_date?.slice(0, 4)).filter((y): y is string => !!y).sort();
-		const span = years.length ? (years[0] === years[years.length - 1] ? years[0] : `${years[0]}–${years[years.length - 1]}`) : '';
-		return [
-			...popularityStats(data.popularity),
-			// The same count as "On HolyArrs: x of N" and About (albums, EPs and singles), not every listed extra.
-			{ v: String(data.total || released.length), l: (data.total || released.length) === 1 ? 'Release' : 'Releases' },
-			{ v: String(plain('album')), l: 'Albums' },
-			{ v: String(plain('ep')), l: 'EPs' },
-			{ v: String(plain('single')), l: 'Singles' },
-			{ v: span, l: 'Years active' }
-		].filter((x) => x.v && x.v !== '0');
-	});
-	// The stats band designs being compared (?stats=1…5, remembered for the session); 0 is today's band.
-	const LOOKS = [
-		{ value: 0, label: 'Now' },
-		{ value: 1, label: '1 Pills' },
-		{ value: 2, label: '2 Buttons up' },
-		{ value: 3, label: '3 Edge pills' },
-		{ value: 4, label: '4 Capsule' },
-		{ value: 5, label: '5 Flanked' },
-		{ value: 6, label: '6 Cards' },
-		{ value: 7, label: '7 Dock' },
-		{ value: 8, label: '8 Icons' },
-		{ value: 9, label: '9 Line' },
-		{ value: 10, label: '10 Tiles' }
-	];
-	let look = $state(0);
-	// The designs that sit across the hero's bottom edge.
-	const onEdge = $derived(look === 3 || look === 4 || look === 7 || look === 9);
-	// The figures the stats band designs draw from.
+	// The figures of the stats band, the About card and its sheet.
 	const listen = $derived(listening(data?.popularity));
 	const catalog = $derived.by((): Catalog | null => {
 		if (!data) return null;
@@ -436,24 +456,29 @@
 		const last = years[years.length - 1] ?? '';
 		return { albums: plain('album'), eps: plain('ep'), singles: plain('single'), since, span: since && last !== since ? `${since}–${last}` : since };
 	});
-	const catLine = $derived(catalog ? catalogParts(catalog) : []);
-	// The new designs put "since 2005" with the facts in the hero, so the stats split evenly: three listening, three catalog.
-	const heroFacts = $derived(catalog?.since ? [...facts, `since ${catalog.since}`] : facts);
 	const smallCount = $derived(catalog ? catalog.eps + catalog.singles : 0);
-	const bandOn = $derived(!!data && (!!listen || catLine.length > 0));
-	// One sentence or two of the bio, under the facts; the full text is in About.
+	const listenWords = $derived(listen ? `${shortCount(listen.n)} ${listen.unit}` : '');
+	// One sentence or two of the bio for the About card; the full text is in its sheet.
 	const bioLine = $derived(hero?.bio?.extract ? hero.bio.extract.split(/(?<=[.!?])\s+/).slice(0, 2).join(' ') : '');
+	const genres = $derived((data?.genres ?? []).slice(0, 4).join(', '));
 	// "0 of 113 tracks · 48 missing" said once, even when progress and status repeat a part.
 	const libLine = $derived(lib?.staff ? [...new Set([lib.progress, lib.status].filter(Boolean).flatMap((x) => String(x).split(' · ')))].join(' · ') : '');
 	const haveShare = $derived(data?.total ? Math.round((100 * (data.have ?? 0)) / data.total) : 0);
-	// The discography chips: only kinds this artist has; have/missing by Library state.
-	const kinds = $derived(SHELVES.filter((s) => released.some((a) => a.shelf === s.shelf)));
-	const disco = $derived(released.filter((a) => (shelfPick === 'all' || a.shelf === shelfPick) && (havePick === 'all' || (havePick === 'have' ? a.state === 'complete' || a.state === 'partial' : !(a.state === 'complete' || a.state === 'partial')))));
-	// Albums first when the artist has any; a long list shows 18 until Show all.
-	const shown = $derived(discoAll ? disco : disco.slice(0, 18));
+	// The discography chips: All, then only the kinds this artist has (live and other releases show under All).
+	const CHIP_KINDS: { shelf: ShelfKind; title: string }[] = [
+		{ shelf: 'albums', title: 'Albums' },
+		{ shelf: 'singles', title: 'Singles & EPs' },
+		{ shelf: 'compilations', title: 'Compilations' }
+	];
+	const kinds = $derived(CHIP_KINDS.filter((s) => released.some((a) => a.shelf === s.shelf)));
+	const disco = $derived(released.filter((a) => shelfPick === 'all' || a.shelf === shelfPick));
+	const shown = $derived(discoAll ? disco : disco.slice(0, 12));
 	$effect(() => {
 		if (released.length && shelfPick !== 'all' && !kinds.some((k) => k.shelf === shelfPick)) shelfPick = 'all';
 	});
+	// The rows of designs 2 to 5: one row per kind, with the row words of the chips.
+	const ROW_WORDS: Record<ShelfKind, string> = { albums: 'Albums', singles: 'Singles & EPs', compilations: 'Compilations', live: 'Live', other: 'Soundtracks, remixes and more' };
+	const rows = $derived(shelvesOf(released).map((s) => ({ ...s, title: ROW_WORDS[s.shelf] ?? s.title })));
 	const essential = $derived.by(() => {
 		if (!data || !more) return [];
 		const by = new Map(data.albums.map((a) => [a.mbid, a]));
@@ -462,6 +487,13 @@
 	const missing = $derived(data?.missing);
 	const allAsked = $derived(!!lookup?.ask && !lookup.ask.albums?.length);
 	const soon = $derived(data?.albums.filter((a) => a.upcoming) ?? []);
+	// Top songs: 5 (or 10) in the numbered list, 9 in the grid, 10 in two columns.
+	const songMode = $derived<'list' | 'grid' | 'two'>(look === 1 ? 'list' : look === 4 ? 'two' : 'grid');
+	const songs = $derived((data?.top ?? []).slice(0, songMode === 'list' ? (songsAll ? 10 : 5) : songMode === 'two' ? 10 : 9));
+	// Similar artists: the 200 px artist circle; smaller on phones so more than one shows.
+	const circle = $derived(phone ? 136 : 200);
+	// Design 5 on a wide screen: About, the stats and Similar artists sit in a right panel.
+	const panel = $derived(look === 5 && wide);
 
 	/** The person's ask, or what they may do: ask (members) or add (managers). */
 	function askAlbum(a?: PageAlbum) {
@@ -524,43 +556,33 @@
 	const albumAsked = (a: PageAlbum) => asked.has(a.mbid) || (!!lookup?.ask && !lookup.ask.albums?.length);
 	const cta = $derived(titleId ? 'Open in Library' : lookup?.ask ? 'Asked' : manage ? 'Add artist' : 'Ask for discography');
 
+	async function copyLink(href: string) {
+		try {
+			await navigator.clipboard.writeText(new URL(href, location.href).href);
+			toasts.push('Link copied.', 'ok');
+		} catch {
+			toasts.push('Could not copy the link.', 'fail');
+		}
+	}
+	/** The "…" menu of a top song: open its album, ask for it (add, for managers), copy its link. */
+	function songItems(s: PageSong): MenuItem[] {
+		if (!s.album_mbid) return [];
+		const href = albumHref(s.album_mbid, mbid);
+		const al = data?.albums.find((x) => x.mbid === s.album_mbid);
+		const items: MenuItem[] = [{ label: 'Open album', icon: 'music', href }];
+		if (titleId) items.push({ label: 'Open in Library', icon: 'library', onselect: () => askAlbum(al) });
+		else if (al && manage) items.push({ label: `Add ${hero?.name ?? 'artist'}`, icon: 'plus', onselect: () => askAlbum(al) });
+		else if (al && mayAsk) items.push(albumAsked(al) ? { label: 'Asked', icon: 'check', disabled: true } : { label: 'Ask for the album', icon: 'plus', onselect: () => askAlbum(al) });
+		items.push({ label: 'Copy link', icon: 'copy', onselect: () => void copyLink(href) });
+		return items;
+	}
+	const yearOf = (s: PageSong) => {
+		const a = s.album_mbid ? data?.albums.find((x) => x.mbid === s.album_mbid) : undefined;
+		return a ? albumYear(a.release_date) : '';
+	};
 </script>
 
 <svelte:head><title>{hero?.name ?? 'Artist'} · HolyArrs</title></svelte:head>
-
-{#snippet discography()}
-	{#if released.length}
-		<section class="block" data-testid="discography">
-			<div class="row-head">
-				<h2>Discography</h2>
-				{#if missing?.count && mayAsk && !manage && !titleId && !allAsked}
-					{#if confirmAll}
-						<span class="confirm" role="group" aria-label="Confirm asking for all missing">
-							<span>Ask for {missing.count} {missing.count === 1 ? 'release' : 'releases'}, {aboutSize(missing.size_bytes)}?</span>
-							<Button variant="primary" onclick={askAllMissing} disabled={askingAll}>Ask</Button>
-							<Button onclick={() => (confirmAll = false)}>Cancel</Button>
-						</span>
-					{:else}
-						<Button icon="plus" onclick={() => (confirmAll = true)} data-testid="ask-all-missing">Ask for all missing ({missing.count})</Button>
-					{/if}
-				{/if}
-			</div>
-			<div class="chips" role="toolbar" aria-label="Filter the discography">
-				<Chip label="All" selected={shelfPick === 'all'} onclick={() => (shelfPick = 'all')} />
-				{#each kinds as k (k.shelf)}<Chip label={k.title} selected={shelfPick === k.shelf} onclick={() => (shelfPick = k.shelf)} />{/each}
-				<span class="sep" aria-hidden="true"></span>
-				<Chip label="Have" icon="owned" selected={havePick === 'have'} onclick={() => (havePick = havePick === 'have' ? 'all' : 'have')} />
-				<Chip label="Missing" icon="dash" selected={havePick === 'missing'} onclick={() => (havePick = havePick === 'missing' ? 'all' : 'missing')} />
-			</div>
-			{#if disco.length}
-				<ul class="grid">{#each shown as a, i (a.mbid)}<li>{@render albumCard(a, i < 6)}</li>{/each}</ul>
-				{#if disco.length > shown.length}<div><Button onclick={() => (discoAll = true)}>Show all {disco.length}</Button></div>{/if}
-			{:else}
-				<p class="quiet">Nothing here with these filters.</p>
-			{/if}
-		</section>
-	{/if}
-{/snippet}
 
 {#snippet albumCard(a: PageAlbum, eager = false, row = false)}
 	{@const c = coverFor(appPicture(a.image), 200)}
@@ -581,214 +603,417 @@
 		subtitle={a.artist_name || undefined} badges={a.explicit ? ['E'] : undefined} />
 {/snippet}
 
-{#snippet pills(side: '' | 'l' | 'r' = '', tagged = true)}
-	{@const up = (listen?.today ?? 0) > 0}
-	{#if bandOn && catalog}
-		<!-- Even pills: three for listening, three for the catalog (with what is on HolyArrs). -->
-		<ul class="pl" class:icons={look === 8} class:l={side === 'l'} class:r={side === 'r'} data-testid={tagged && side !== 'r' ? 'artist-stats' : undefined} data-variant={tagged && side !== 'r' ? look : undefined}>
-			{#if side !== 'r' && listen}
-				<li class="hot">{#if look === 8}<Icon name="people" size={15} />{/if}<b>{shortCount(listen.n)}</b> <span class="wide">{listen.unit}</span><span class="narrow">{listen.unit === 'total plays' ? 'plays' : 'listeners'}</span></li>
-				{#if listen.rank}<li>{#if look === 8}<Icon name="star" size={15} />{/if}<b>#{listen.rank}</b> <span class="wide">in the world</span><span class="narrow">world</span></li>{/if}
-				{#if listen.today}<li class="chg" class:up class:down={!up}>{changeWords(listen.today, '')}<span class="wide">{' today'}</span></li>{/if}
-			{/if}
-			{#if side !== 'l'}
-				{#if catalog.albums}<li>{#if look === 8}<Icon name="music" size={15} />{/if}<b>{catalog.albums}</b> {catalog.albums === 1 ? 'album' : 'albums'}</li>{/if}
-				{#if smallCount}<li>{#if look === 8}<Icon name="grid" size={15} />{/if}<b>{smallCount}</b> {smallReleasesWord(catalog).replace('Single', 'single')}</li>{/if}
-				{#if data?.total}<li class="own"><Icon name={look === 8 ? 'owned' : 'library'} size={14} /><b>{data.have ?? 0}</b>{' of '}{data.total}<span class="wide">{' on HolyArrs'}</span></li>{/if}
-			{/if}
-		</ul>
+{#snippet mainAct()}
+	<!-- The main button sits where a player puts play: In Library, Ask or Add. -->
+	{#if lib?.staff}
+		<ActionButton icon="library" label="In Library: go to the Library section" caption="In Library" primary onclick={lib.onLibrary} data-testid="hero-library" />
+	{:else if lib?.onAsk}
+		<ActionButton icon="plus" label="Ask for albums" primary onclick={lib.onAsk} data-testid="ask-albums" />
+	{:else if lib}
+		<!-- In the Library, nothing to ask: no main button. -->
+	{:else if titleId}
+		{#if manage}<ActionButton icon="library" label="In Library" primary onclick={() => (artistTab = 'library')} />{:else}<ActionButton icon="library" label="Open in Library" primary href={to(`/library/${titleId}`)} />{/if}
+	{:else if manage || mayAsk}
+		<ActionButton icon={lookup?.ask ? 'check' : 'plus'} label={cta} primary disabled={!!lookup?.ask || !lookup} onclick={() => askAlbum()} data-testid="artist-ask" />
 	{/if}
 {/snippet}
 
-{#snippet capsule()}
-	{@const up = (listen?.today ?? 0) > 0}
-	{#if bandOn && catalog}
-		<!-- One glass capsule across the hero's edge, in even segments. -->
-		<dl class="cap" data-testid="artist-stats" data-variant="4">
-			{#if listen}
-				<div><dd>{shortCount(listen.n)}</dd><dt>{listen.unit === 'total plays' ? 'Plays' : 'Listeners'}</dt></div>
-				{#if listen.rank}<div><dd>#{listen.rank}</dd><dt>World</dt></div>{/if}
-				{#if listen.today}<div><dd class="chg" class:up class:down={!up}>{changeWords(listen.today, '')}</dd><dt>Today</dt></div>{/if}
-			{/if}
-			{#if catalog.albums}<div><dd>{catalog.albums}</dd><dt>{catalog.albums === 1 ? 'Album' : 'Albums'}</dt></div>{/if}
-			{#if smallCount}<div><dd>{smallCount}</dd><dt>{smallReleasesWord(catalog)}</dt></div>{/if}
-			{#if data?.total}<div><dd>{data.have ?? 0}<small>/{data.total}</small></dd><dt>On HolyArrs</dt></div>{/if}
-		</dl>
+{#snippet aboutAct()}
+	<ActionButton icon="info" label="About {hero?.name ?? 'this artist'}" caption="About" aria-haspopup="dialog" onclick={() => (aboutOpen = true)} data-testid="artist-about-open" />
+{/snippet}
+
+{#snippet followAct()}
+	{#if titleId && following !== null}
+		<ActionButton icon={following ? 'bellOn' : 'bell'} label={following ? 'Following' : 'Follow'} pressed={!!following} onclick={toggleFollow} />
 	{/if}
 {/snippet}
 
-{#snippet card(side: 'l' | 'r')}
-	{@const up = (listen?.today ?? 0) > 0}
-	{#if bandOn && catalog}
-		<!-- Two even cards: the same size, the same three rows, mirrored either side of the buttons. -->
-		<dl class="ec" class:l={side === 'l'} class:r={side === 'r'} data-testid={side === 'l' ? 'artist-stats' : undefined} data-variant={side === 'l' ? 6 : undefined}>
-			{#if side === 'l'}
-				<div><dt>{listen?.unit === 'total plays' ? 'Total plays' : 'Monthly listeners'}</dt><dd>{listen ? shortCount(listen.n) : '—'}</dd></div>
-				<div><dt>World rank</dt><dd>{listen?.rank ? `#${listen.rank}` : '—'}</dd></div>
-				<div><dt>Today</dt><dd class="chg" class:up={!!listen?.today && up} class:down={!!listen?.today && !up}>{listen?.today ? changeWords(listen.today, '') : '—'}</dd></div>
-			{:else}
-				<div><dt>{catalog.albums === 1 ? 'Album' : 'Albums'}</dt><dd>{catalog.albums || '—'}</dd></div>
-				<div><dt>{smallCount ? smallReleasesWord(catalog) : 'Singles & EPs'}</dt><dd>{smallCount || '—'}</dd></div>
-				<div><dt>On HolyArrs</dt><dd>{data?.total ? `${data.have ?? 0} of ${data.total}` : '—'}</dd></div>
-			{/if}
-		</dl>
-	{/if}
-{/snippet}
-
-{#snippet line()}
-	{@const up = (listen?.today ?? 0) > 0}
-	{#if bandOn && catalog}
-		<!-- One line on a glass strip across the hero's edge: listening, a divider, the catalog. -->
-		<p class="ln" data-testid="artist-stats" data-variant="9">
-			{#if listen}<span class="seg"><b>{shortCount(listen.n)}</b> <span class="wide">{listen.unit}</span><span class="narrow">listeners</span></span>{#if listen.rank}<span class="seg"><span class="dot" aria-hidden="true">·</span><b>#{listen.rank}</b><span class="wide">{' worldwide'}</span></span>{/if}{#if listen.today}<span class="seg chg" class:up class:down={!up}><span class="dot" aria-hidden="true">·</span>{changeWords(listen.today, '')}</span>{/if}<span class="div" aria-hidden="true"></span>{/if}{#if catalog.albums}<span class="seg"><b>{catalog.albums}</b> {catalog.albums === 1 ? 'album' : 'albums'}</span>{/if}{#if smallCount}<span class="seg"><span class="dot" aria-hidden="true">·</span><b>{smallCount}</b><span class="wide">{' ' + smallReleasesWord(catalog).replace('Single', 'single')}</span><span class="narrow">{' more'}</span></span>{/if}{#if data?.total}<span class="seg"><span class="dot" aria-hidden="true">·</span><b>{data.have ?? 0}/{data.total}</b><span class="wide">{' on HolyArrs'}</span></span>{/if}
-		</p>
-	{/if}
-{/snippet}
-
-{#snippet tiles()}
-	{@const up = (listen?.today ?? 0) > 0}
-	{#if bandOn && catalog}
-		<!-- Six even tiles, number over word, like the facts on a title page. -->
-		<dl class="tl" data-testid="artist-stats" data-variant="10">
-			<div><dd>{listen ? shortCount(listen.n) : '—'}</dd><dt>{listen?.unit === 'total plays' ? 'Plays' : 'Listeners'}</dt></div>
-			<div><dd>{listen?.rank ? `#${listen.rank}` : '—'}</dd><dt>World rank</dt></div>
-			<div><dd class="chg" class:up={!!listen?.today && up} class:down={!!listen?.today && !up}>{listen?.today ? changeWords(listen.today, '') : '—'}</dd><dt>Today</dt></div>
-			<div><dd>{catalog.albums || '—'}</dd><dt>{catalog.albums === 1 ? 'Album' : 'Albums'}</dt></div>
-			<div><dd>{smallCount || '—'}</dd><dt>{smallCount ? smallReleasesWord(catalog) : 'Singles & EPs'}</dt></div>
-			<div><dd>{data?.total ? `${data.have ?? 0}/${data.total}` : '—'}</dd><dt>On HolyArrs</dt></div>
-		</dl>
-	{/if}
-{/snippet}
-
-{#snippet acts()}
-	<!-- The app's own hero buttons (ActionButton), the same as on movie and show pages. -->
-	<div class="acts">
-		<ActionButton icon="info" label="About {hero?.name ?? 'this artist'}" caption="About" onclick={() => aboutEl?.scrollIntoView({ behavior: glideScroll(), block: 'start' })} />
-		{#if lib?.staff}
-			<ActionButton icon="library" label="In Library: go to the Library section" caption="In Library" primary onclick={lib.onLibrary} data-testid="hero-library" />
-		{:else if lib?.onAsk}
-			<ActionButton icon="plus" label="Ask for albums" primary onclick={lib.onAsk} data-testid="ask-albums" />
-		{:else if lib}
-			<span></span>
-		{:else if titleId}
-			{#if manage}<ActionButton icon="library" label="In Library" primary onclick={() => (artistTab = 'library')} />{:else}<ActionButton icon="library" label="Open in Library" primary href={to(`/library/${titleId}`)} />{/if}
-		{:else if manage || mayAsk}
-			<ActionButton icon={lookup?.ask ? 'check' : 'plus'} label={cta} primary disabled={!!lookup?.ask || !lookup} onclick={() => askAlbum()} data-testid="artist-ask" />
-		{/if}
-		{#if titleId && following !== null}
-			<ActionButton icon={following ? 'bellOn' : 'bell'} label={following ? 'Following' : 'Follow'} pressed={!!following} onclick={toggleFollow} />
-		{/if}
+{#snippet acts(centred = false)}
+	<!-- The app's own hero buttons (ActionButton): the main one first, as a player puts play; centred on the round photo, About first. -->
+	<div class="acts" class:centred>
+		{#if centred}{@render aboutAct()}{@render mainAct()}{:else}{@render mainAct()}{@render aboutAct()}{/if}
+		{@render followAct()}
 		{#if lib?.staff}<ActionMenu label="More actions" caption="More" icon="more" items={lib.menu} />{/if}
 	</div>
 {/snippet}
 
-{#snippet heroActions()}
-	<div class="round">
-		<button class="rb" type="button" aria-label="About {hero?.name}" title="About" onclick={() => aboutEl?.scrollIntoView({ behavior: glideScroll(), block: 'start' })}><Icon name="info" size={20} /></button>
-		{#if lib?.staff}
-			<button class="rb main pill" type="button" onclick={lib.onLibrary} aria-label="In Library: go to the Library section" data-testid="hero-library"><Icon name="library" size={18} /><span>In Library</span></button>
-		{:else if lib?.onAsk}
-			<button class="rb main pill" type="button" onclick={lib.onAsk} data-testid="ask-albums"><Icon name="plus" size={18} /><span>Ask for albums</span></button>
-		{:else if lib}
-			<span></span>
-		{:else if titleId}
-			{#if manage}<button class="rb main pill" type="button" onclick={() => (artistTab = 'library')}><Icon name="library" size={18} /><span>In Library</span></button>{:else}<a class="rb main pill" href={to(`/library/${titleId}`)}><Icon name="library" size={18} /><span>Open in Library</span></a>{/if}
-		{:else if manage || mayAsk}
-			<button class="rb main pill" type="button" disabled={!!lookup?.ask || !lookup} onclick={() => askAlbum()} data-testid="artist-ask"><Icon name={lookup?.ask ? 'check' : 'plus'} size={18} /><span>{cta}</span></button>
+{#snippet photo(size: number)}
+	{#if picture && !photoFailed}<img class="photo" src={picture} alt="" width={size} height={size} fetchpriority="high" onerror={() => (photoFailed = true)} />{:else if wideFace && !wideFailed}<img class="photo crop" src={wideFace} alt="" width={size} height={size} onerror={() => (wideFailed = true)} />{:else}<div class="photo initials" aria-hidden="true">{initialsOf(hero?.name ?? '')}</div>{/if}
+{/snippet}
+
+{#snippet stageArt()}
+	{#if heroSrc}
+		{#key heroSrc}
+			<img class="art" class:soft={heroSoft} class:in={heroIn} class:under={videoIn} src={heroSrc} alt="" decoding="async" fetchpriority="high" onload={() => (heroIn = true)} onerror={() => { heroIn = false; heroTry++; }} />
+		{/key}
+	{/if}
+{/snippet}
+
+{#snippet bannerHero(short: boolean)}
+	<!-- The banner: the wide photo (or the music video) across the content width; it zooms out and darkens as it scrolls away. -->
+	<header class="hero banner" class:short class:paused={videoIn && videoPaused && !heroFull} class:vid={videoIn} class:bare={!heroSrc && !heroVideo} class:full={heroFull} style:--gone={gone.toFixed(3)} bind:this={heroBox} data-hero data-testid="artist-hero">
+		<div class="stage" aria-hidden="true">
+			{@render stageArt()}
+			{#if heroVideo}
+				<video class="clip" class:in={videoIn || heroFull} bind:this={videoEl} muted playsinline disablepictureinpicture preload="auto" onplaying={() => { videoIn = true; videoPaused = false; }} onpause={() => (videoPaused = true)} onended={() => void nextVideo()} onplay={() => (videoPaused = false)} onvolumechange={() => videoEl && (videoMuted = videoEl.muted)} data-testid="artist-hero-video"></video>
+			{/if}
+		</div>
+		<div class="shade" aria-hidden="true"></div>
+		<div class="dim" aria-hidden="true"></div>
+		{#if heroVideo && videoIn}
+			<div class="vctl" data-testid="artist-hero-video-controls">
+				<button type="button" onclick={togglePause} aria-label={videoPaused ? 'Play video' : 'Pause video'}><Icon name={videoPaused ? 'play' : 'pause'} size={16} /></button>
+				<button type="button" onclick={toggleMute} aria-label={videoMuted ? 'Turn sound on' : 'Turn sound off'}><Icon name={videoMuted ? 'soundOff' : 'sound'} size={16} /></button>
+				{#if !heroFull}<button type="button" onclick={fullScreen} aria-label="Full screen"><Icon name="expand" size={16} /></button>{/if}
+			</div>
+			{#if heroFull}<button type="button" class="vexit" onclick={fullScreen} aria-label="Exit full screen" data-testid="artist-hero-video-exit" {@attach (n) => n.focus()}><Icon name="x" size={20} /></button>{/if}
 		{/if}
-		{#if titleId && following !== null}
-			<button class="rb" type="button" class:on={following} aria-pressed={following} aria-label={following ? 'Following' : 'Follow'} title={following ? 'Following' : 'Follow'} onclick={toggleFollow}><Icon name={following ? 'bellOn' : 'bell'} size={20} /></button>
+		{#if !short}
+			<div class="b-name">
+				<h1 bind:this={nameEl}>{hero?.name}</h1>
+				{#if listenWords}<p class="b-line">{listenWords}</p>{/if}
+			</div>
 		{/if}
-		{#if lib?.staff}<ActionMenu label="More actions" caption="More" icon="more" items={lib.menu} />{/if}
+	</header>
+{/snippet}
+
+{#snippet circleHero()}
+	<!-- The round photo on a soft wash of the artist's colours, the name and three round buttons centred. -->
+	<header class="hero circle" data-hero data-testid="artist-hero" style:--tint={tint || undefined}>
+		<div class="stage" aria-hidden="true">
+			{#if picture && !photoFailed}<img class="art soft in" src={picture} alt="" decoding="async" />{:else if heroSrc}{@render stageArt()}{/if}
+		</div>
+		<div class="shade" aria-hidden="true"></div>
+		<div class="c-in">
+			{@render photo(184)}
+			<h1 bind:this={nameEl}>{hero?.name}</h1>
+			{#if listenWords}<p class="b-line">{listenWords}</p>{/if}
+			{@render acts(true)}
+		</div>
+	</header>
+{/snippet}
+
+{#snippet compactLine()}
+	<!-- Under the short banner: the round photo over its edge, the name beside it, the buttons at the end of the same line. -->
+	<div class="cline">
+		<span class="c-photo">{@render photo(136)}</span>
+		<div class="c-words">
+			<h1 bind:this={nameEl}>{hero?.name}</h1>
+			{#if listenWords}<p class="c-line">{listenWords}</p>{/if}
+		</div>
+		{@render acts()}
+	</div>
+{/snippet}
+
+{#snippet slimBar()}
+	<!-- The slim bar: the main button and the name, tinted from the banner, once the name has scrolled away. -->
+	<div class="slimwrap">
+		<div class="slim" class:on={slimOn} style:--tint={tint || undefined} data-testid="artist-slim-bar" aria-hidden={!slimOn} inert={!slimOn}>
+			{@render mainAct()}
+			<span class="slim-name">{hero?.name}</span>
+		</div>
 	</div>
 {/snippet}
 
 {#snippet libBits()}
-	{#if lib?.note}<p class="facts">{lib.note}</p>{/if}
-	{#if libLine}
-		<div class="libline" data-testid="artist-progress">
-			<span class="libword">Your Library</span>
-			<span class="bar" aria-hidden="true"><i style="width: {haveShare}%"></i></span>
-			<span>{libLine}</span>
+	{#if lib?.note || libLine || lib?.nextRelease}
+		<div class="libbits">
+			{#if lib?.note}<p class="quiet">{lib.note}</p>{/if}
+			{#if libLine}
+				<div class="libline" data-testid="artist-progress">
+					<span class="libword">Your Library</span>
+					<span class="bar" aria-hidden="true"><i style="width: {haveShare}%"></i></span>
+					<span>{libLine}</span>
+				</div>
+			{/if}
+			{#if lib?.nextRelease}<p class="quiet" data-testid="artist-next">Next album: {lib.nextRelease}</p>{/if}
 		</div>
 	{/if}
-	{#if lib?.nextRelease}<p class="have" data-testid="artist-next">Next album: {lib.nextRelease}</p>{/if}
-	{#if data?.total && !look}<p class="have" data-testid="artist-have"><Icon name="music" size={14} />{haveLine(data.have, data.total)}</p>{/if}
+{/snippet}
+
+{#snippet topSongs(mode: 'list' | 'grid' | 'two')}
+	{#if data?.top.length}
+		<section class="block top" data-testid="top-songs">
+			<h2>Top songs</h2>
+			<ol class="songs s-{mode}">
+				{#each songs as s, i (s.title + i)}
+					{@const year = yearOf(s)}
+					<li class="song">
+						{#if s.album_mbid}
+							<a class="num" href={albumHref(s.album_mbid, mbid)} aria-label="Open {s.album}"><span class="n">{i + 1}</span><span class="go" aria-hidden="true"><Icon name="arrow" size={16} /></span></a>
+						{:else}
+							<span class="num"><span class="n">{i + 1}</span></span>
+						{/if}
+						<span class="cov">{#if s.image && !badArt.has('top:' + s.title)}<img src={coverFor(appPicture(s.image), 48).src} alt="" width="48" height="48" loading={i < 5 ? 'eager' : 'lazy'} decoding="async" onerror={() => (badArt = new Set([...badArt, 'top:' + s.title]))} />{:else}<ArtPlaceholder name={s.title} shape="square" />{/if}</span>
+						<span class="s-words">
+							<span class="s-name">{#if s.explicit}<span class="e" aria-label="Explicit">E</span>{/if}{s.title}</span>
+							<span class="s-album">{[s.album, year].filter(Boolean).join(' · ')}</span>
+						</span>
+						<span class="s-len">{length(s.length_ms)}</span>
+						{#if s.album_mbid}<span class="s-more"><Menu label="More for {s.title}" items={songItems(s)} width={240} /></span>{:else}<span></span>{/if}
+					</li>
+				{/each}
+			</ol>
+			{#if mode === 'list' && data.top.length > 5}
+				<div><Button onclick={() => (songsAll = !songsAll)} aria-expanded={songsAll}>{songsAll ? 'Show less' : 'Show more'}</Button></div>
+			{/if}
+		</section>
+	{/if}
+{/snippet}
+
+{#snippet latest()}
+	{#if data?.latest}
+		{@const l = data.latest}
+		<div class="latest" data-testid="artist-latest">
+			<h2>Latest release</h2>
+			<a class="latest-card" href={albumHref(l.mbid, mbid)}>
+				<span class="cov big">{#if l.image && !badArt.has(l.mbid)}<img src={coverFor(appPicture(l.image), 200).src} alt="" width="160" height="160" decoding="async" onerror={() => (badArt = new Set([...badArt, l.mbid]))} />{:else}<ArtPlaceholder name={l.name} shape="square" />{/if}</span>
+				<span class="l-meta">
+					<span class="l-date">{l.release_date ? new Date(`${l.release_date.padEnd(10, '-01').slice(0, 10)}T00:00:00Z`).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: l.release_date.length === 10 ? 'numeric' : undefined, timeZone: 'UTC' }) : ''}</span>
+					<span class="l-name">{#if l.explicit}<span class="e" aria-label="Explicit">E</span>{/if}{l.name}</span>
+					<span class="l-kind">{kindWord(l)}</span>
+					{#if owned(l, albumAsked(l))}{@const o = owned(l, albumAsked(l))}<span class="pill {o?.state}">{o?.label}</span>{/if}
+				</span>
+			</a>
+		</div>
+	{/if}
+{/snippet}
+
+{#snippet band()}
+	<!-- The first band of designs 2, 3 and 5: the latest release beside the Top songs grid. -->
+	{#if data?.latest || data?.top.length}
+		<div class="lead" class:solo={!data?.latest} class:stack={panel}>
+			{@render latest()}
+			{@render topSongs('grid')}
+		</div>
+	{/if}
+{/snippet}
+
+{#snippet discography()}
+	{#if released.length}
+		<section class="block" data-testid="discography">
+			<h2>Discography</h2>
+			<div class="chips" role="toolbar" aria-label="Filter the discography">
+				<Chip label="All" selected={shelfPick === 'all'} onclick={() => (shelfPick = 'all')} />
+				{#each kinds as k (k.shelf)}<Chip label={k.title} selected={shelfPick === k.shelf} onclick={() => (shelfPick = k.shelf)} />{/each}
+			</div>
+			<ul class="grid">{#each shown as a, i (a.mbid)}<li>{@render albumCard(a, i < 6)}</li>{/each}</ul>
+			{#if disco.length > shown.length}<div><Button onclick={() => (discoAll = true)}>Show all {disco.length}</Button></div>{/if}
+		</section>
+	{/if}
+{/snippet}
+
+{#snippet kindRows()}
+	<!-- Designs 2 to 5: one row per kind of release. -->
+	{#if rows.length}
+		<div class="rows" data-testid="discography">
+			{#each rows as r (r.shelf)}
+				<Shelf title={r.title} item="var(--music-item)" items={r.albums} key={(a) => a.mbid} placeholder="square" lines={2}>
+					{#snippet card(a: PageAlbum, i: number)}{@render albumCard(a, i < 6)}{/snippet}
+				</Shelf>
+			{/each}
+		</div>
+	{/if}
+{/snippet}
+
+{#snippet storeDisco()}
+	{#if !released.length && data?.store_albums?.length}
+		<!-- MusicBrainz lists nothing for this artist: what a store knows, so the page is not empty. No ask control (a request needs a MusicBrainz id). -->
+		<section class="block" data-testid="store-discography">
+			<h2>Discography</h2>
+			<ul class="grid">
+				{#each data.store_albums as a, i (a.title + i)}
+					<li>
+						<PosterCard title={a.title} image={a.image ? coverFor(appPicture(a.image), 200).src : null} eager={i < 6} kind="artist" shape="square" music
+							subtitle={[albumYear(a.release_date), a.type === 'album' ? '' : ({ single: 'Single', ep: 'EP', compilation: 'Compilation' } as Record<string, string>)[a.type] ?? '', a.track_count ? `${a.track_count} ${a.track_count === 1 ? 'track' : 'tracks'}` : ''].filter(Boolean).join(' · ') || undefined}
+							badges={a.explicit ? ['E'] : undefined} />
+					</li>
+				{/each}
+			</ul>
+		</section>
+	{/if}
+{/snippet}
+
+{#snippet essentialRow()}
+	{#if essential.length}
+		<section class="block">
+			<h2>Essential albums</h2>
+			<ul class="grid">{#each essential as a (a.mbid)}<li>{@render albumCard(a, false, true)}</li>{/each}</ul>
+		</section>
+	{/if}
+{/snippet}
+
+{#snippet soonRow()}
+	{#if soon.length}
+		<section class="block">
+			<h2>Coming soon</h2>
+			<ul class="soon">
+				{#each soon as a (a.mbid)}
+					<li>
+						<a href={albumHref(a.mbid, mbid)}><span class="cov small">{#if a.image && !badArt.has(a.mbid)}<img src={coverFor(appPicture(a.image), 72).src} alt="" width="72" height="72" loading="lazy" decoding="async" onerror={() => (badArt = new Set([...badArt, a.mbid]))} />{:else}<ArtPlaceholder name={a.name} shape="square" />{/if}</span></a>
+						<span class="soon-words"><a class="s-name" href={albumHref(a.mbid, mbid)}>{a.name}</a><span class="s-album">{kindWord(a)} · {releaseWords(a.release_date ?? '')}</span></span>
+						{#if !data?.kid}<IconButton icon={follows.get(a.mbid) ? 'bellOn' : 'bell'} label={follows.get(a.mbid) ? `Stop following ${a.name}` : `Tell me when ${a.name} is out`} aria-pressed={!!follows.get(a.mbid)} onclick={() => followAlbum(a)} />{/if}
+					</li>
+				{/each}
+			</ul>
+		</section>
+	{/if}
+{/snippet}
+
+{#snippet videos()}
+	{#if hero}<ArtistVideos {mbid} artist={hero.name} {picture} />{/if}
+{/snippet}
+
+{#snippet appearsOn()}
+	{#if more?.appears_on.length}
+		<Shelf title="Appears on" item="var(--music-item)" items={more.appears_on} key={(a) => a.mbid} placeholder="square" lines={2}>
+			{#snippet card(a: PageCredit)}{@render creditCard(a)}{/snippet}
+		</Shelf>
+	{/if}
+{/snippet}
+
+{#snippet relatedRow()}
+	{#if related.length}
+		<section class="block">
+			<h2>Bands and collaborators</h2>
+			<ul class="circles" use:dragScroll>{#each related as p (p.mbid)}<li><PersonCircle name={p.name} role={p.note} image={appPicture(p.image)} href={artistHref(p.mbid)} size={circle} needsArt /></li>{/each}</ul>
+		</section>
+	{/if}
+{/snippet}
+
+{#snippet statsBand(side = false)}
+	<!-- Where concerts would be: line one is listening, line two the releases and what is on HolyArrs. -->
+	{#if data && (listen || catalog?.albums || smallCount || data.total)}
+		{@const up = (listen?.today ?? 0) > 0}
+		<section class="stats" class:side data-testid="artist-stats" aria-label="Listening and releases">
+			{#if listen}
+				<p class="st1">
+					<span><b>{shortCount(listen.n)}</b> {listen.unit}</span>
+					{#if listen.rank}<span><b>#{listen.rank}</b> in the world</span>{/if}
+					{#if listen.today}<span class="chg" class:up class:down={!up}>{changeWords(listen.today)}</span>{/if}
+				</p>
+			{/if}
+			<p class="st2">
+				{#if catalog?.albums}<span>{catalog.albums} {catalog.albums === 1 ? 'album' : 'albums'}</span>{/if}
+				{#if catalog && smallCount}<span>{smallCount} {smallReleasesWord(catalog).replace('Single', 'single')}</span>{/if}
+				{#if catalog?.since}<span>since {catalog.since}</span>{/if}
+				{#if data.total}<span class="own"><Icon name="library" size={14} />{data.have ?? 0} of {data.total} on HolyArrs</span>{/if}
+			</p>
+			{#if missing?.count && mayAsk && !manage && !titleId && !allAsked}
+				<div class="st-ask">
+					{#if confirmAll}
+						<span class="confirm" role="group" aria-label="Confirm asking for all missing">
+							<span>Ask for {missing.count} {missing.count === 1 ? 'release' : 'releases'}, {aboutSize(missing.size_bytes)}?</span>
+							<Button variant="primary" onclick={askAllMissing} disabled={askingAll}>Ask</Button>
+							<Button onclick={() => (confirmAll = false)}>Cancel</Button>
+						</span>
+					{:else}
+						<Button icon="plus" onclick={() => (confirmAll = true)} data-testid="ask-all-missing">Ask for all missing ({missing.count})</Button>
+					{/if}
+				</div>
+			{/if}
+		</section>
+	{/if}
+{/snippet}
+
+{#snippet aboutCard(side = false)}
+	{@const img = side ? picture && !photoFailed ? picture : wideFace : wideFace && !wideFailed ? wideFace : picture}
+	<section class="block about" class:side>
+		<h2>About</h2>
+		<button type="button" class="acard" aria-haspopup="dialog" aria-label="About {hero?.name}: read more" onclick={() => (aboutOpen = true)} data-testid="artist-about">
+			{#if img}<img src={img} alt="" loading="lazy" decoding="async" />{:else}<span class="a-none" aria-hidden="true">{initialsOf(hero?.name ?? '')}</span>{/if}
+			{#if listen?.rank}<span class="disc" aria-hidden="true"><b>#{listen.rank}</b><small>in the world</small></span>{/if}
+			<span class="a-foot">
+				{#if listenWords}<span class="a-lis">{listenWords}</span>{/if}
+				{#if bioLine}<span class="a-bio">{bioLine}</span>{:else}<span class="a-bio">{hero?.name}</span>{/if}
+			</span>
+		</button>
+	</section>
+{/snippet}
+
+{#snippet similarRow()}
+	{#if similar === null}
+		<SkRail kind="person" item="{circle + 16}px" titleWidth="150px" />
+	{:else if similar.length}
+		<section class="block" data-testid="similar-artists">
+			<h2>Similar artists</h2>
+			<ul class="circles" use:dragScroll>{#each similar as p (p.mbid)}<li><PersonCircle name={p.name} image={appPicture(p.image)} href={artistHref(p.mbid)} size={circle} needsArt /></li>{/each}</ul>
+		</section>
+	{/if}
+{/snippet}
+
+{#snippet similarList()}
+	{#if similar?.length}
+		<section class="block side" data-testid="similar-artists">
+			<h2>Similar artists</h2>
+			<ul class="slist">
+				{#each similar.slice(0, 8) as p (p.mbid)}
+					<li><a href={artistHref(p.mbid)}>{#if p.image}<img src={appPicture(p.image)} alt="" width="48" height="48" loading="lazy" decoding="async" />{:else}<span class="ini" aria-hidden="true">{initialsOf(p.name)}</span>{/if}<span>{p.name}</span></a></li>
+				{/each}
+			</ul>
+		</section>
+	{/if}
+{/snippet}
+
+{#snippet loading()}
+	{#if !error}
+		<section class="lead" aria-busy="true" aria-label="Loading albums and songs">
+			<div class="latest"><SkRowTitle width="140px" /><div class="latest-card sk-latest"><span class="sk sq"></span><span class="sk-lines"><span class="sk sk-line"></span><span class="sk sk-line"></span><span class="sk sk-line short"></span></span></div></div>
+			<div class="top"><SkRowTitle width="120px" /><div class="sk-songs">{#each Array.from({ length: 6 }, (_, i) => i) as i (i)}<SkTrackRow height={64} />{/each}</div></div>
+		</section>
+		<div class="sq-rail"><SkRail item="var(--music-item)" titleWidth="160px" /></div>
+	{:else}
+		<LoadError hasData={true} message={plainReason(error).text} onretry={load} {busy} />
+	{/if}
+{/snippet}
+
+{#snippet sections()}
+	<!-- The page under the hero, in the order of each design. -->
+	{#if !data}
+		{@render loading()}
+	{:else if look === 1}
+		{@render topSongs('list')}
+		{@render discography()}
+		{@render storeDisco()}
+		{@render soonRow()}
+		{@render videos()}
+		{@render statsBand()}
+		{@render appearsOn()}
+		{@render relatedRow()}
+		{@render aboutCard()}
+	{:else}
+		{#if look === 4}{@render topSongs('two')}{:else}{@render band()}{/if}
+		{@render essentialRow()}
+		{@render kindRows()}
+		{@render storeDisco()}
+		{@render soonRow()}
+		{@render videos()}
+		{#if !panel}{@render statsBand()}{/if}
+		{@render appearsOn()}
+		{@render relatedRow()}
+		{#if !panel}{@render aboutCard()}{/if}
+	{/if}
+	{#if !panel}{@render similarRow()}{/if}
 {/snippet}
 
 <svelte:document onfullscreenchange={() => (heroFull = !!heroBox && document.fullscreenElement === heroBox)} />
 
-<div class="artist">
+<div class="artist" data-look={look}>
 	{#if error && !hero}<LoadError hasData={false} message={plainReason(error).text} onretry={load} {busy} />{/if}
 	<PageLoader loading={!hero && !error} cached={fromCache} label="Loading this artist" onretry={load}>
 		{#if hero}
-			<header class="hero" class:edge={onEdge} class:paused={videoOn && videoPaused && !heroFull} class:vid={videoOn} class:bare={!heroSrc && !heroVideo} class:full={heroFull} bind:this={heroBox} data-hero>
-				<div class="stage" aria-hidden="true">
-					{#if heroSrc}
-						{#key heroSrc}
-							<img class="art" class:soft={heroSoft} class:in={heroIn} class:under={videoOn} src={heroSrc} alt="" decoding="async" fetchpriority="high" onload={() => (heroIn = true)} onerror={() => { heroIn = false; heroTry++; }} />
-						{/key}
-					{/if}
-					{#if heroVideo}
-						<video class="clip" class:in={videoOn || heroFull} bind:this={videoEl} muted playsinline disablepictureinpicture preload="auto" onplaying={() => { videoIn = true; videoPaused = false; }} onpause={() => (videoPaused = true)} onended={() => void nextVideo()} onplay={() => (videoPaused = false)} onvolumechange={() => videoEl && (videoMuted = videoEl.muted)} data-testid="artist-hero-video"></video>
-					{/if}
-				</div>
-				<div class="shade" aria-hidden="true"></div>
-				{#if heroVideo && videoIn}
-					<div class="vctl" data-testid="artist-hero-video-controls">
-						<button type="button" onclick={togglePause} aria-label={videoPaused ? 'Play video' : 'Pause video'}><Icon name={videoPaused ? 'play' : 'pause'} size={16} /></button>
-						<button type="button" onclick={toggleMute} aria-label={videoMuted ? 'Turn sound on' : 'Turn sound off'}><Icon name={videoMuted ? 'soundOff' : 'sound'} size={16} /></button>
-						{#if !heroFull}<button type="button" onclick={fullScreen} aria-label="Full screen"><Icon name="expand" size={16} /></button>{/if}
-					</div>
-					{#if heroFull}<button type="button" class="vexit" onclick={fullScreen} aria-label="Exit full screen" data-testid="artist-hero-video-exit" {@attach (n) => n.focus()}><Icon name="x" size={20} /></button>{/if}
-				{/if}
-				<div class="hero-in" class:rich={look > 0}>
-					{#if picture && !photoFailed}<img class="photo" src={picture} alt="" width="184" height="184" onerror={() => (photoFailed = true)} />{:else if wideFace && !wideFailed}<img class="photo crop" src={wideFace} alt="" width="184" height="184" onerror={() => (wideFailed = true)} />{:else}<div class="photo initials" aria-hidden="true">{initialsOf(hero.name)}</div>{/if}
-					{#if art.logo && !logoFailed}
-						<h1 class="logo"><img src={art.logo} alt={hero.name} class:sized={!!logoRatio} style:--logo-r={logoRatio} onerror={() => (logoFailed = true)} /></h1>
-					{:else}
-						<h1>{hero.name}</h1>
-					{/if}
-						{#if look}
-							{#if heroFacts.length}<p class="facts hf">{heroFacts.join(' · ')}</p>{/if}
-							{#if bioLine}<p class="bioline hb">{bioLine} <button type="button" class="more" onclick={() => aboutEl?.scrollIntoView({ behavior: glideScroll(), block: 'start' })}>More</button></p>{/if}
-						{/if}
-				</div>
-			</header>
-			<div class="under-hero" class:v={look > 0} data-look={look || undefined}>
-				{#if !look}
-					{#if facts.length}<p class="facts">{facts.join(' · ')}</p>{/if}
-					{#if bioLine}<p class="bioline">{bioLine} <button type="button" class="more" onclick={() => aboutEl?.scrollIntoView({ behavior: glideScroll(), block: 'start' })}>More</button></p>{/if}
-					{#if stats.length}
-						<dl class="stats" data-testid="artist-stats">
-							{#each stats as x (x.l)}<div><dt>{x.l}</dt><dd>{x.v}</dd></div>{/each}
-						</dl>
-					{/if}
-					{@render heroActions()}
-				{:else if look === 2}
-					{@render acts()}
-					{@render pills()}
-				{:else if look === 4}
-					{@render capsule()}
-					{@render acts()}
-				{:else if look === 5}
-					<div class="flank">{@render pills('l')}{@render acts()}{@render pills('r')}</div>
-				{:else if look === 6}
-					<div class="flank cards">{@render card('l')}{@render acts()}{@render card('r')}</div>
-				{:else if look === 7}
-					<div class="flank dock" data-testid="artist-stats" data-variant="7">{@render pills('l', false)}{@render acts()}{@render pills('r', false)}</div>
-				{:else if look === 9}
-					{@render line()}
-					{@render acts()}
-				{:else if look === 10}
-					{@render tiles()}
-					{@render acts()}
-				{:else}
-					{@render pills()}
-					{@render acts()}
-				{/if}
-				{@render libBits()}
-			</div>
+			{#if look === 2}
+				{@render circleHero()}
+			{:else}
+				{@render bannerHero(look === 4)}
+			{/if}
+			{@render slimBar()}
+			{#if look === 4}
+				{@render compactLine()}
+			{:else if banner}
+				<div class="onpage">{@render acts()}</div>
+			{/if}
+			{@render libBits()}
 
 			{#if titleId && manage}
 				<!-- An artist in the Library: Overview (this page) and Library (releases, tracks, settings). -->
@@ -799,163 +1024,54 @@
 			{/if}
 			{#if titleId && manage && artistTab === 'library'}
 				<ArtistLibraryTab {titleId} {manage} ondeleted={() => location.reload()} />
+			{:else if panel}
+				<div class="split">
+					<div class="col">{@render sections()}</div>
+					<aside class="panel" aria-label="About {hero.name}" data-testid="artist-panel">
+						{@render aboutCard(true)}
+						{@render statsBand(true)}
+						{@render similarList()}
+					</aside>
+				</div>
 			{:else}
-			<!-- Music videos sit under the artist's facts, where a title page has its trailers. -->
-			{#if hero}<ArtistVideos {mbid} artist={hero.name} {picture} />{/if}
-
-			{#if !data}
-				{#if !error}
-					<section class="lead" aria-busy="true" aria-label="Loading albums and songs">
-						<div class="latest"><SkRowTitle width="140px" /><div class="latest-card sk-latest"><span class="sk sq"></span><span class="sk-lines"><span class="sk sk-line"></span><span class="sk sk-line"></span><span class="sk sk-line short"></span></span></div></div>
-						<div class="top"><SkRowTitle width="120px" /><div class="sk-songs">{#each Array.from({ length: 9 }, (_, i) => i) as i (i)}<SkTrackRow height={60} />{/each}</div></div>
-					</section>
-					{#if released.length}{@render discography()}{:else}<div class="sq-rail"><SkRail item="var(--music-item)" titleWidth="160px" /></div>{/if}
-				{:else}
-					<LoadError hasData={true} message={plainReason(error).text} onretry={load} {busy} />
-				{/if}
-			{:else}
-				{#if data.latest || data.top.length}
-					<section class="lead">
-						{#if data.latest}
-							{@const l = data.latest}
-							<div class="latest">
-								<h2>Latest release</h2>
-								<a class="latest-card" href={albumHref(l.mbid, mbid)}>
-									<span class="cov" style="width:160px;height:160px">{#if l.image && !badArt.has(l.mbid)}<img src={coverFor(appPicture(l.image), 200).src} sizes="160px" alt="" width="160" height="160" loading="lazy" decoding="async" onerror={() => (badArt = new Set([...badArt, l.mbid]))} />{:else}<ArtPlaceholder name={l.name} shape="square" />{/if}</span>
-									<span class="l-meta">
-										<span class="l-date">{l.release_date ? new Date(`${l.release_date.padEnd(10, '-01').slice(0, 10)}T00:00:00Z`).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: l.release_date.length === 10 ? 'numeric' : undefined, timeZone: 'UTC' }) : ''}</span>
-										<span class="l-name">{#if l.explicit}<span class="e" aria-label="Explicit">E</span>{/if}{l.name}</span>
-										<span class="l-kind">{kindWord(l)}</span>
-										{#if owned(l, albumAsked(l))}{@const o = owned(l, albumAsked(l))}<span class="pill {o?.state}">{o?.label}</span>{/if}
-									</span>
-								</a>
-							</div>
-						{/if}
-						{#if data.top.length}
-							<div class="top">
-								<h2>Top songs</h2>
-								<ol class="songs">
-									{#each data.top.slice(0, 9) as s, i (s.title + i)}
-										<li>
-											<span class="cov" style="width:40px;height:40px">{#if s.image && !badArt.has('top:' + s.title)}<img src={coverFor(appPicture(s.image), 40).src} alt="" width="40" height="40" loading="lazy" decoding="async" onerror={() => (badArt = new Set([...badArt, 'top:' + s.title]))} />{:else}<ArtPlaceholder name={s.title} shape="square" />{/if}</span>
-											<span class="s-words">
-												<span class="s-name">{#if s.explicit}<span class="e" aria-label="Explicit">E</span>{/if}{s.title}</span>
-												{#if s.album_mbid}<a class="s-album" href={albumHref(s.album_mbid, mbid)}>{s.album} · {length(s.length_ms)}</a>{:else}<span class="s-album">{s.album}</span>{/if}
-											</span>
-											{#if s.album_mbid && !titleId && (manage || mayAsk)}
-												{@const al = data.albums.find((x) => x.mbid === s.album_mbid)}
-												{#if al && !albumAsked(al)}
-													<IconButton icon="plus" size="sm" tooltip={false} label={`Ask for the album ${s.album}`} onclick={() => askAlbum(al)} />
-												{:else}
-													<span class="s-done" title="Asked"><Icon name="check" size={14} /></span>
-												{/if}
-											{:else}
-												<span></span>
-											{/if}
-										</li>
-									{/each}
-								</ol>
-							</div>
-						{/if}
-					</section>
-				{/if}
-
-				{#if essential.length}
-					<section class="block">
-						<h2>Essential albums</h2>
-						<ul class="essential">{#each essential as a (a.mbid)}<li>{@render albumCard(a, true, true)}</li>{/each}</ul>
-					</section>
-				{/if}
-
-				{@render discography()}
-
-				{#if !released.length && data.store_albums?.length}
-					<!-- MusicBrainz lists nothing for this artist: what a store knows, so the page is not empty. No ask control (a request needs a MusicBrainz id). -->
-					<section class="block" data-testid="store-discography">
-						<div class="row-head"><h2>Discography</h2></div>
-						<ul class="grid">
-							{#each data.store_albums as a, i (a.title + i)}
-								<li>
-									<PosterCard title={a.title} image={a.image ? coverFor(appPicture(a.image), 200).src : null} eager={i < 6} kind="artist" shape="square" music
-										subtitle={[albumYear(a.release_date), a.type === 'album' ? '' : storeKind(a.type), a.track_count ? `${a.track_count} ${a.track_count === 1 ? 'track' : 'tracks'}` : ''].filter(Boolean).join(' · ') || undefined}
-										badges={a.explicit ? ['E'] : undefined} />
-								</li>
-							{/each}
-						</ul>
-					</section>
-				{/if}
-
-				{#if soon.length}
-					<section class="block">
-						<h2>Coming soon</h2>
-						<ul class="soon">
-							{#each soon as a (a.mbid)}
-								<li>
-									<a href={albumHref(a.mbid, mbid)}><span class="cov" style="width:72px;height:72px">{#if a.image && !badArt.has(a.mbid)}<img src={coverFor(appPicture(a.image), 72).src} alt="" width="72" height="72" loading="lazy" decoding="async" onerror={() => (badArt = new Set([...badArt, a.mbid]))} />{:else}<ArtPlaceholder name={a.name} shape="square" />{/if}</span></a>
-									<span class="soon-words"><a class="s-name" href={albumHref(a.mbid, mbid)}>{a.name}</a><span class="s-album">{kindWord(a)} · {releaseWords(a.release_date ?? '')}</span></span>
-									{#if !data.kid}<IconButton icon={follows.get(a.mbid) ? 'bellOn' : 'bell'} label={follows.get(a.mbid) ? `Stop following ${a.name}` : `Tell me when ${a.name} is out`} aria-pressed={!!follows.get(a.mbid)} onclick={() => followAlbum(a)} />{/if}
-								</li>
-							{/each}
-						</ul>
-					</section>
-				{/if}
+				{@render sections()}
 			{/if}
 
-			{#if similar === null}
-				<SkRail kind="person" item="168px" titleWidth="150px" />
-			{:else if similar.length}
-				<section class="block">
-					<h2>Fans also like</h2>
-					<ul class="circles" use:dragScroll>{#each similar as p (p.mbid)}<li><PersonCircle name={p.name} image={appPicture(p.image)} href={artistHref(p.mbid)} size={152} needsArt /></li>{/each}</ul>
-				</section>
-			{/if}
+			{#if below}{@render below()}{/if}
+		{/if}
+	</PageLoader>
+	<VariantBar options={LOOKS} bind:value={picked} param="look" storageKey="holyarrs.artist-look" label="Artist page design" />
+</div>
 
-			{#if more?.appears_on.length}
-				<Shelf title="Appears on" item="var(--music-item)" items={more.appears_on} key={(a) => a.mbid} placeholder="square" lines={2}>
-					{#snippet card(a: PageCredit)}{@render creditCard(a)}{/snippet}
-				</Shelf>
-			{/if}
-
-			{#if related.length}
-				<section class="block">
-					<h2>Bands and collaborators</h2>
-					<ul class="circles" use:dragScroll>{#each related as p (p.mbid)}<li><PersonCircle name={p.name} role={p.note} image={appPicture(p.image)} href={artistHref(p.mbid)} size={152} needsArt /></li>{/each}</ul>
-				</section>
-			{/if}
-
-			<section class="block about" bind:this={aboutEl} data-testid="artist-about">
-				<h2>About {hero.name}</h2>
-				<div class="about-in">
-					{#if hero.bio}
-						<div>
-							<p class="bio" class:open={bioOpen}>{hero.bio.extract}</p>
-							<div class="bio-foot">
-								<button class="more" type="button" onclick={() => (bioOpen = !bioOpen)} aria-expanded={bioOpen}>{bioOpen ? 'Less' : 'More'}</button>
-							</div>
-						</div>
-					{:else if !data}
-						<span class="bio-sk" aria-hidden="true"><span class="sk sk-line"></span><span class="sk sk-line"></span><span class="sk sk-line short"></span></span>
-					{:else}
-						<p class="quiet">No write-up for this artist yet.</p>
+{#if hero}
+	<Sheet bind:open={aboutOpen} title="About {hero.name}" size="lg">
+		<div class="sheet" data-testid="artist-about-sheet">
+			{#if wideFace && !wideFailed}<img class="sh-photo" src={wideFace} alt="" decoding="async" />{:else if picture && !photoFailed}<img class="sh-photo" src={picture} alt="" decoding="async" />{/if}
+			<div class="sh-cols">
+				<div class="sh-figs">
+					{#if listen}
+						<p class="fig"><b>{fullCount(listen.n)}</b><span>{listen.unit}</span></p>
+						{#if listen.rank}<p class="fig"><b>#{listen.rank}</b><span>in the world</span></p>{/if}
+						{#if listen.today}<p class="fig"><b class="chg" class:up={listen.today > 0} class:down={listen.today < 0}>{changeWords(listen.today, '')}</b><span>today</span></p>{/if}
 					{/if}
+					{#if catalog?.albums || smallCount}<p class="fig"><b>{catalog?.albums ?? 0} · {smallCount}</b><span>{catalog?.albums === 1 ? 'album' : 'albums'} · singles & EPs</span></p>{/if}
+					{#if data?.total}<p class="fig"><b>{data.have ?? 0} of {data.total}</b><span>on HolyArrs</span></p>{/if}
+				</div>
+				<div class="sh-words">
+					{#if hero.bio?.extract}<p class="sh-bio">{hero.bio.extract}</p>{:else}<p class="quiet">No write-up for this artist yet.</p>{/if}
 					<dl class="kv">
-						{#if hero.type}<div><dt>Kind</dt><dd>{artistKind(hero.type)}</dd></div>{/if}
 						{#if hero.country}<div><dt>From</dt><dd>{countryName(hero.country)}</dd></div>{/if}
-						{#if data?.genres.length}<div><dt>Genres</dt><dd>{data.genres.slice(0, 4).join(', ')}</dd></div>{/if}
-						{#if data?.total}<div><dt>Releases</dt><dd>{data.total}</dd></div>{/if}
+						{#if genres}<div><dt>Genres</dt><dd>{genres}</dd></div>{/if}
+						{#if catalog?.since}<div><dt>Since</dt><dd>{catalog.since}</dd></div>{/if}
+						{#if hero.type}<div><dt>Kind</dt><dd>{artistKind(hero.type)}</dd></div>{/if}
 						{#if hero.status}<div><dt>Active</dt><dd>{hero.status === 'ended' ? 'No longer active' : 'Still active'}</dd></div>{/if}
 						{#if lib?.nextRelease}<div><dt>Next album</dt><dd>{lib.nextRelease}</dd></div>{/if}
 					</dl>
 				</div>
-			</section>
-			{/if}
-
-			{#if below}{@render below()}{/if}
-
-		{/if}
-	</PageLoader>
-	<VariantBar options={LOOKS} bind:value={look} param="stats" storageKey="holyarrs.artist-stats" label="Stats band design" />
-</div>
+			</div>
+		</div>
+	</Sheet>
+{/if}
 
 {#if manage}
 	<AddArtistDialog bind:this={addDialog} {folders} {rules} {defaults} onadded={(_a, t) => { toasts.push(`${t.name} is in your Library. Albums and tracks are being filled in.`, 'ok'); void load(); }} />
@@ -964,229 +1080,144 @@
 {/if}
 
 <style>
-	.artist { --music-item: max(168px, calc((100vw - 96px) / 7.2)); display: flex; flex-direction: column; gap: 40px; padding-bottom: 48px; min-width: 0; }
-	/* The hero stays dark in both themes: a centred photo on a slowly panning wash. */
-	.hero { --hero-ink: #07080a; position: relative; isolation: isolate; min-height: clamp(460px, 52vw, 640px); display: flex; align-items: flex-end; justify-content: center; overflow: hidden; margin: calc(var(--s-6) * -1) calc(var(--gutter) * -1) 0; background: var(--hero-ink); color: #fff; }
-	.stage { position: absolute; inset: -6%; z-index: -2; animation: pan 48s ease-in-out infinite alternate; }
+	.artist { --music-item: max(168px, calc((100vw - 96px) / 7.2)); --gap: 40px; display: flex; flex-direction: column; gap: var(--gap); padding-bottom: 48px; min-width: 0; }
+	h1 { margin: 0; font-family: var(--font-display); font-weight: 800; line-height: 1; letter-spacing: -.03em; text-wrap: balance; overflow-wrap: anywhere; }
+	h2 { margin: 0; font: var(--t-title2); }
+	.quiet { margin: 0; color: var(--text-muted); font: var(--t-subhead); }
+
+	/* Every hero stays dark in both themes. */
+	.hero { --hero-ink: #07080a; position: relative; isolation: isolate; overflow: hidden; margin: calc(var(--s-6) * -1) calc(var(--gutter) * -1) 0; background: var(--hero-ink); color: #fff; }
+	.stage { position: absolute; inset: 0; z-index: -2; }
 	.art { width: 100%; height: 100%; object-fit: cover; object-position: center 22%; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); }
-	.art.in { opacity: .45; }
+	.art.in { opacity: .82; }
 	.art.soft { filter: blur(56px) saturate(150%); transform: scale(1.3); }
 	.art.soft.in { opacity: .6; }
-	@keyframes pan { from { transform: scale(1.04) translate3d(-2%, -1%, 0); } to { transform: scale(1.12) translate3d(2%, 1.5%, 0); } }
-	@media (prefers-reduced-motion: reduce) { .stage { animation: none; } }
-	/* The music video sits over the photo and fades in once it plays. */
-	.clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); pointer-events: none; }
-	@media (prefers-reduced-motion: reduce) { .clip { transition: none; } }
-	.clip.in { opacity: 1; }
-	.hero { transition: min-height var(--dur-hero) var(--ease-out); }
-	.hero.vid { min-height: min(56.25vw, 86vh); }
-	/* No photo and no video: a compact header (name and initials), never a tall empty block. */
-	.hero.bare { min-height: 0; background: linear-gradient(180deg, color-mix(in srgb, var(--hero-ink) 60%, var(--surface-2)), var(--hero-ink)); }
-	.hero.bare .hero-in { padding-top: 56px; }
-	.hero.vid .stage { inset: 0; animation: none; }
-	/* Video on: photo and name settle smaller at the bottom so the video leads. */
-	.hero-in { transform-origin: 50% 100%; transition: transform var(--dur-hero) var(--ease-out) 250ms, opacity var(--dur-slow) var(--ease-out) 250ms; will-change: transform; }
-	.hero.vid .hero-in { transform: scale(.58); opacity: .92; }
-	@media (max-width: 600px) { .hero.vid .hero-in { transform: scale(.7); } }
-	@media (prefers-reduced-motion: reduce) { .hero-in { transition: none; } }
-	.vctl { position: absolute; right: clamp(16px, 4vw, 48px); bottom: clamp(16px, 2.5vw, 28px); z-index: 2; display: flex; gap: 8px; }
-	.vctl button { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); color: #fff; cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
-	.vctl button:hover { background: rgb(255 255 255 / 26%); }
-	.vctl button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-	@media (max-width: 600px) { .vctl { bottom: 12px; right: 12px; gap: 6px; } .vctl button { width: 34px; height: 34px; } }
-	.art.under, .art.soft.under { opacity: 0; transition-duration: 900ms; }
-	/* The photo gets a vignette and a dark foot; the video stays clear, with only a short foot so the name and photo read. */
 	.shade { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
-	.shade::before, .shade::after { content: ''; position: absolute; inset: 0; transition: opacity var(--dur-hero) var(--ease-out); }
-	.shade::before { background: radial-gradient(ellipse 60% 55% at 50% 42%, rgb(7 8 10 / 0) 0%, rgb(7 8 10 / .55) 70%, var(--hero-ink) 100%), linear-gradient(to top, var(--hero-ink) 0%, rgb(7 8 10 / 0) 45%); }
-	.shade::after { background: linear-gradient(to top, rgb(7 8 10 / .72) 0%, rgb(7 8 10 / .34) 14%, rgb(7 8 10 / 0) 30%); opacity: 0; }
-	.hero.vid .shade::before { opacity: 0; }
-	.hero.vid .shade::after { opacity: 1; }
-	.hero.vid h1 { text-shadow: 0 2px 14px rgb(0 0 0 / .55); }
-	@media (prefers-reduced-motion: reduce) { .shade::before, .shade::after { transition: none; } }
-	/* Full screen: the video alone, fit whole on black, with exit, pause and sound. */
-	.hero.full { background: #000; }
-	.hero.full .stage { inset: 0; animation: none; transform: none; }
-	.hero.full .art, .hero.full .shade, .hero.full .hero-in { display: none; }
-	.hero.full .clip { object-fit: contain; background: #000; }
-	.hero.full .vctl { right: max(24px, env(safe-area-inset-right)); bottom: max(24px, env(safe-area-inset-bottom)); gap: 10px; }
-	.hero.full .vctl button, .vexit { width: 44px; height: 44px; }
-	.vexit { position: absolute; top: max(20px, env(safe-area-inset-top)); right: max(24px, env(safe-area-inset-right)); z-index: 2; display: grid; place-items: center; border-radius: 50%; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); color: #fff; cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
-	.vexit:hover { background: rgb(255 255 255 / 26%); }
-	.vexit:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-	.chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 10px; border-radius: 999px; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); color: #fff; font: 600 13px/1.2 var(--font-ui); }
-	.chip:hover { background: rgb(255 255 255 / 24%); }
-	.hero-in { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 72px 20px clamp(16px, 2vw, 24px); text-align: center; max-width: 900px; }
-	.photo { width: 184px; height: 184px; border-radius: 50%; object-fit: cover; box-shadow: 0 30px 80px rgb(0 0 0 / .6), 0 0 0 1px rgb(255 255 255 / .14); margin-bottom: 6px; }
-	.photo.crop { object-position: 50% 22%; }
-	.photo.initials { display: grid; place-items: center; background: rgb(255 255 255 / .08); backdrop-filter: blur(12px); color: rgb(255 255 255 / .9); font-size: 64px; font-weight: 700; letter-spacing: .02em; }
-	h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: clamp(34px, 4.6vw, 56px); line-height: 1.05; letter-spacing: -.02em; text-wrap: balance; }
-	h1.logo img { display: block; max-width: min(440px, 80vw); max-height: 120px; object-fit: contain; filter: drop-shadow(0 4px 18px rgb(0 0 0 / .45)); }
-	/* Its stored shape known: the box is drawn before the logo arrives. */
-	h1.logo img.sized { width: min(440px, 80vw, calc(120px * var(--logo-r))); height: auto; aspect-ratio: var(--logo-r); }
-	.under-hero { --hero-ink: #07080a; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 2px 20px 0; margin-bottom: calc(var(--s-6) * -.5); text-align: center; }
-	.under-hero .round { margin-top: 2px; }
-	/* Under the hero sits on the page, not the dark hero: in light mode its words, stats and round buttons use the page's colours. */
-	:global(html:not([data-theme='dark'])) .under-hero .facts, :global(html:not([data-theme='dark'])) .under-hero .bioline { color: var(--text-muted); }
-	:global(html:not([data-theme='dark'])) .under-hero .bioline .more { color: var(--text); }
-	:global(html:not([data-theme='dark'])) .under-hero .stats { border-color: var(--line); }
-	:global(html:not([data-theme='dark'])) .under-hero .stats div { border-left-color: var(--line); }
-	:global(html:not([data-theme='dark'])) .under-hero .stats div:first-child { border-left: 0; }
-	:global(html:not([data-theme='dark'])) .under-hero .stats dt { color: var(--text-muted); }
-	:global(html:not([data-theme='dark'])) .under-hero .stats dd { color: var(--text); }
-	:global(html:not([data-theme='dark'])) .under-hero { --sb-ink: var(--text); --sb-soft: color-mix(in srgb, var(--text) 78%, transparent); --sb-muted: var(--text-muted); --sb-line: var(--line); --sb-fill: color-mix(in srgb, var(--text) 5%, transparent); --sb-up: var(--ok-text); --sb-down: color-mix(in srgb, var(--fail-text) 72%, var(--text-muted)); --sb-hot: var(--wait-text); }
-	:global(html:not([data-theme='dark'])) .under-hero .rb { border-color: var(--line); background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); }
-	:global(html:not([data-theme='dark'])) .under-hero .rb.on, :global(html:not([data-theme='dark'])) .under-hero .rb.main { background: var(--text); color: var(--bg); box-shadow: 0 8px 24px rgb(0 0 0 / .15); }
-	:global(html:not([data-theme='dark'])) .under-hero .rb:focus-visible { outline-color: var(--text); }
-	/* Your Library progress line: dark ink on the light page (it was white on white). */
-	:global(html:not([data-theme='dark'])) .under-hero .libline { color: var(--text-muted); }
-	:global(html:not([data-theme='dark'])) .under-hero .libword { color: var(--text); }
-	:global(html:not([data-theme='dark'])) .under-hero .bar { background: var(--line); }
-	:global(html:not([data-theme='dark'])) .under-hero .bar i { background: var(--text); }
-	.bioline { margin: 2px 0 0; max-width: 64ch; color: rgb(255 255 255 / .78); font: var(--t-callout); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-	.bioline .more { color: #fff; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
-	.stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 0; margin: 10px 0 4px; padding: 12px 0; border-block: 1px solid rgb(255 255 255 / .12); width: min(720px, 100%); }
-	.stats div { display: flex; flex-direction: column-reverse; align-items: center; gap: 2px; padding: 0 22px; border-left: 1px solid rgb(255 255 255 / .1); }
-	.stats div:first-child { border-left: 0; }
-	.stats dt { color: rgb(255 255 255 / .55); font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
-	.stats dd { margin: 0; color: #fff; font: 700 22px/1.1 var(--font-ui); font-variant-numeric: tabular-nums; }
-	.under-hero { --sb-ink: #fff; --sb-soft: rgb(255 255 255 / .78); --sb-muted: rgb(255 255 255 / .58); --sb-line: rgb(255 255 255 / .12); --sb-fill: rgb(255 255 255 / .07); --sb-up: var(--ok-on-art); --sb-down: color-mix(in srgb, var(--fail-on-art) 70%, #b9b9be); --sb-hot: var(--wait-on-art); }
-	@media (max-width: 600px) {
-	}
-	/* The new designs (?stats=1…10): photo, name, facts and two lines of story stay in the hero, as on a title page;
-	   under it only the stats and the buttons, centred and even, in about one pill row and one button row. */
-	.hero-in.rich { gap: 8px; max-width: min(900px, 100% - 360px); }
-	.hero-in.rich .photo { transition: width var(--dur-hero) var(--ease-out), height var(--dur-hero) var(--ease-out); }
-	.hero-in .hf { margin-top: 2px; text-shadow: 0 1px 3px rgb(0 0 0 / .55); }
-	.hero-in .hb { margin: 0; color: rgb(255 255 255 / .86); max-width: 62ch; text-shadow: 0 1px 3px rgb(0 0 0 / .55); }
-	/* With a video the words stay full size; only the photo steps back, and the foot darkens so they read. */
-	.hero.vid .hero-in.rich { transform: none; opacity: 1; }
-	.hero.vid .hero-in.rich .photo { width: 96px; height: 96px; margin-bottom: 0; }
-	.hero.vid:has(.hero-in.rich) .shade::after { background: linear-gradient(to top, rgb(7 8 10 / .86) 0%, rgb(7 8 10 / .5) 22%, rgb(7 8 10 / 0) 46%); }
-	/* Paused: the banner comes back behind the words; the hero keeps its size. */
+
+	/* 1, 3, 4, 5 · The banner: about 36% of the window (240 px for 4). It zooms out from 1.1 and darkens as it leaves. */
+	.banner { height: clamp(280px, 36vh, 420px); display: flex; align-items: flex-end; }
+	.banner.short { height: 240px; }
+	.banner .stage { scale: calc(1.1 - .1 * var(--gone, 0)); transform-origin: 50% 40%; will-change: scale; }
+	.banner .shade { background: linear-gradient(to top, rgb(7 8 10 / .78) 0%, rgb(7 8 10 / .28) 38%, rgb(7 8 10 / 0) 62%), linear-gradient(to bottom, rgb(7 8 10 / .4), rgb(7 8 10 / 0) 30%); }
+	.banner .dim { position: absolute; inset: 0; z-index: -1; background: #000; opacity: calc(var(--gone, 0) * .7); pointer-events: none; }
+	.banner.bare { background: linear-gradient(180deg, color-mix(in srgb, var(--hero-ink) 60%, #3a3d44), var(--hero-ink)); }
+	@media (prefers-reduced-motion: reduce) { .banner .stage { scale: 1; } }
+	.b-name { display: flex; flex-direction: column; gap: 8px; padding: 0 var(--gutter) clamp(18px, 2.4vw, 28px); max-width: min(1100px, 100%); }
+	.b-name h1 { font-size: clamp(44px, 7vw, 96px); text-shadow: 0 2px 18px rgb(0 0 0 / .35); }
+	.b-line { margin: 0; color: rgb(255 255 255 / .86); font: 600 15px/1.3 var(--font-ui); font-variant-numeric: tabular-nums; text-shadow: 0 1px 3px rgb(0 0 0 / .5); }
+	/* The video covers the banner at the same size; paused, it hides and the banner shows again. */
+	.clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); pointer-events: none; }
+	.clip.in { opacity: 1; }
+	.art.under { opacity: 0; transition-duration: 900ms; }
 	.hero.paused .clip { opacity: 0; }
-	.hero.paused .art.in.under { opacity: .45; }
+	.hero.paused .art.in.under { opacity: .82; }
 	.hero.paused .art.soft.in.under { opacity: .6; }
-	.hero.paused .shade::before { opacity: 1; }
-	.hero.paused .shade::after { opacity: 0; }
-	/* Designs across the edge: room in the hero's foot for the strip's top half. */
-	.hero.edge .hero-in { padding-bottom: 46px; }
-	.under-hero.v { position: relative; z-index: 1; gap: 14px; margin-top: -22px; padding: 0; }
-	.under-hero.v[data-look='3'] { margin-top: -58px; }
-	.under-hero.v[data-look='4'], .under-hero.v[data-look='7'] { margin-top: -70px; }
-	.under-hero.v[data-look='9'] { margin-top: -63px; }
-	.under-hero { --sb-solid: rgb(26 27 31 / .88); }
-	:global(html:not([data-theme='dark'])) .under-hero { --sb-solid: color-mix(in srgb, var(--bg) 94%, transparent); }
-	.under-hero.v .narrow { display: none; }
-	.under-hero.v .chg.up { color: var(--sb-up); }
-	.under-hero.v .chg.down { color: var(--sb-down); }
-	/* The app's own buttons; on the light page they take the page's ink. */
-	.acts { display: flex; align-items: center; justify-content: center; gap: 12px; }
-	:global(html:not([data-theme='dark'])) .under-hero .acts :global(.ui-act) { background: color-mix(in srgb, var(--text) 7%, transparent); border-color: var(--line); color: var(--text); backdrop-filter: none; -webkit-backdrop-filter: none; }
-	:global(html:not([data-theme='dark'])) .under-hero .acts :global(.ui-act.primary), :global(html:not([data-theme='dark'])) .under-hero .acts :global(.ui-act[aria-pressed='true']) { background: var(--text); border-color: var(--text); color: var(--bg); }
-	:global(html:not([data-theme='dark'])) .under-hero .acts :global(.ui-act:focus-visible) { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--text); }
-	/* 1, 2, 3, 5, 8 · Pills, all one height. */
-	.pl { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 0; padding: 0; font-variant-numeric: tabular-nums; }
-	.pl li { display: inline-flex; align-items: center; gap: .35em; height: 36px; padding: 0 14px; border-radius: 999px; background: var(--sb-fill); box-shadow: inset 0 0 0 1px var(--sb-line); font: 500 14px/1 var(--font-ui); color: var(--sb-soft); white-space: nowrap; }
-	.pl b { font-weight: 700; color: var(--sb-ink); }
-	.pl li.hot { background: color-mix(in srgb, var(--sb-hot) 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sb-hot) 42%, transparent); }
-	.pl li.hot b { color: var(--sb-hot); }
-	.pl li.up { background: color-mix(in srgb, var(--sb-up) 13%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sb-up) 32%, transparent); font-weight: 600; }
-	.pl li.down { background: color-mix(in srgb, var(--sb-down) 13%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sb-down) 32%, transparent); font-weight: 600; }
-	.pl li.own { color: var(--sb-soft); }
-	.pl :global(svg) { color: var(--sb-muted); flex: none; }
-	.pl li.hot :global(svg) { color: var(--sb-hot); }
-	.pl.icons li { gap: .45em; padding-left: 12px; }
-	/* 3 · Pills on the edge: solid glass, so they read over the art and the page alike. */
-	.under-hero[data-look='3'] .pl li { background: var(--sb-solid); backdrop-filter: blur(16px) saturate(150%); -webkit-backdrop-filter: blur(16px) saturate(150%); box-shadow: 0 8px 22px rgb(0 0 0 / .32), inset 0 0 0 1px var(--sb-line); }
-	.under-hero[data-look='3'] .pl li.hot { background: color-mix(in srgb, var(--sb-hot) 16%, var(--sb-solid)); }
-	.under-hero[data-look='3'] .pl li.up { background: color-mix(in srgb, var(--sb-up) 14%, var(--sb-solid)); }
-	/* 4 · One capsule of even segments across the edge. */
-	.cap { display: flex; width: min(780px, 100%); margin: 0; padding: 8px 4px; border-radius: 22px; background: var(--sb-solid); backdrop-filter: blur(18px) saturate(150%); -webkit-backdrop-filter: blur(18px) saturate(150%); box-shadow: 0 12px 32px rgb(0 0 0 / .34), inset 0 0 0 1px var(--sb-line); font-variant-numeric: tabular-nums; }
-	.cap div { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 6px; border-left: 1px solid var(--sb-line); }
-	.cap div:first-child { border-left: 0; }
-	.cap dd { margin: 0; font: 700 19px/1.15 var(--font-ui); color: var(--sb-ink); white-space: nowrap; }
-	.cap dd small { font-size: .68em; font-weight: 600; color: var(--sb-muted); }
-	.cap dt { font: 600 10.5px/1.2 var(--font-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--sb-muted); white-space: nowrap; }
-	/* 5, 6, 7 · Flanked: listening on the left, catalog on the right, the buttons dead centre. */
-	.flank { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px 22px; width: 100%; }
-	.flank .pl.l { justify-content: flex-end; }
-	.flank .pl.r { justify-content: flex-start; }
-	/* 6 · Two even cards: one width, three rows each. */
-	.ec { display: grid; gap: 6px; width: min(300px, 100%); margin: 0; padding: 12px 18px; border-radius: 16px; background: var(--sb-fill); box-shadow: inset 0 0 0 1px var(--sb-line); font-variant-numeric: tabular-nums; }
-	.ec.l { justify-self: end; }
-	.ec.r { justify-self: start; }
-	.ec div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-	.ec dt { font: 500 13.5px/1.35 var(--font-ui); color: var(--sb-soft); white-space: nowrap; }
-	.ec dd { margin: 0; font: 700 16px/1.35 var(--font-ui); color: var(--sb-ink); white-space: nowrap; }
-	/* 7 · One dock across the edge: the stats inside, the buttons in its middle. */
-	.flank.dock { width: min(1100px, 100%); margin-inline: auto; padding: 8px 10px; border-radius: 999px; background: var(--sb-solid); backdrop-filter: blur(18px) saturate(150%); -webkit-backdrop-filter: blur(18px) saturate(150%); box-shadow: 0 12px 32px rgb(0 0 0 / .34), inset 0 0 0 1px var(--sb-line); box-sizing: border-box; gap: 8px 14px; }
-	.dock .pl { gap: 4px; flex-wrap: nowrap; min-width: 0; }
-	.dock .pl li { background: transparent; box-shadow: none; padding: 0 8px; }
-	.dock .pl li.hot, .dock .pl li.up { background: transparent; box-shadow: none; }
-	/* Flanked and in the dock: the short words, so each side stays one row beside the buttons. */
-	.under-hero .flank .wide { display: none; }
-	.under-hero .flank .narrow { display: inline; }
-	/* 9 · One line on a glass strip across the edge. */
-	.ln { display: inline-flex; flex-wrap: wrap; justify-content: center; align-items: center; row-gap: 4px; margin: 0; padding: 11px 24px; border-radius: 999px; background: var(--sb-solid); backdrop-filter: blur(18px) saturate(150%); -webkit-backdrop-filter: blur(18px) saturate(150%); box-shadow: 0 12px 32px rgb(0 0 0 / .34), inset 0 0 0 1px var(--sb-line); font: 500 15px/1.4 var(--font-ui); color: var(--sb-soft); font-variant-numeric: tabular-nums; }
-	.ln b { font-weight: 700; color: var(--sb-ink); }
-	.ln .seg { white-space: nowrap; }
-	.ln .dot { margin: 0 .45em; color: var(--sb-muted); }
-	.ln .div { width: 1px; height: 18px; margin: 0 16px; background: var(--sb-line); }
-	/* 10 · Six even tiles. */
-	.tl { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; width: min(860px, 100%); margin: 0; font-variant-numeric: tabular-nums; }
-	.tl div { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 11px 6px; border-radius: 14px; background: var(--sb-fill); box-shadow: inset 0 0 0 1px var(--sb-line); }
-	.tl dd { margin: 0; font: 700 19px/1.15 var(--font-ui); color: var(--sb-ink); white-space: nowrap; }
-	.tl dt { font: 600 10.5px/1.2 var(--font-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--sb-muted); text-align: center; }
-	@media (max-width: 760px) {
-		.hero-in.rich { max-width: 100%; }
-		.hero.vid .hero-in.rich { padding-bottom: 56px; }
-		.hero.vid.edge .hero-in.rich { padding-bottom: 64px; }
-		.under-hero.v .wide { display: none; }
-		.under-hero.v .narrow { display: inline; }
-		.pl { gap: 6px; }
-		.pl li { height: 34px; padding: 0 12px; font-size: 13px; }
-		.flank { grid-template-columns: minmax(0, 1fr); justify-items: center; }
-		.flank .pl.l, .flank .pl.r { justify-content: center; }
-		.flank .acts { order: 3; }
-		.flank.cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-		.flank.cards .acts { grid-column: 1 / -1; }
-		.ec, .ec.l, .ec.r { width: 100%; justify-self: stretch; padding: 10px 12px; box-sizing: border-box; }
-		.ec div { flex-direction: column; align-items: flex-start; gap: 0; }
-		.ec dt { font-size: 12px; }
-		.flank.dock { border-radius: 26px; }
-		.dock .pl { flex-wrap: wrap; }
-		.cap { flex-wrap: wrap; row-gap: 6px; }
-		.cap div { flex: 1 1 30%; border-left: 0; }
-		.ln { padding: 10px 16px; font-size: 14px; }
-		.ln .div { flex-basis: 100%; height: 0; margin: 0; }
-		.tl { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-	}
-	.rb.main.pill { display: inline-flex; align-items: center; gap: 8px; width: auto; height: 48px; padding: 0 22px; border-radius: 999px; font: 600 15px/1 var(--font-ui); white-space: nowrap; }
-	.libline { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; color: rgb(255 255 255 / .75); font: var(--t-footnote); }
-	.libword { color: #fff; font-weight: 600; }
-	.bar { width: 120px; height: 4px; border-radius: 99px; background: rgb(255 255 255 / .15); overflow: hidden; }
-	.bar i { display: block; height: 100%; background: #fff; border-radius: inherit; }
-	@media (max-width: 600px) { .stats div { padding: 4px 12px; } .stats dd { font-size: 18px; } }
-	.facts { margin: 0; color: rgb(255 255 255 / .7); font: var(--t-subhead); }
-	.round { display: flex; align-items: center; gap: 18px; margin-top: 8px; }
-	.rb { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgb(255 255 255 / .2); background: rgb(255 255 255 / .12); color: #fff; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); cursor: pointer; transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
-	.rb:hover { background: rgb(255 255 255 / .22); transform: scale(1.05); }
-	.rb:active { transform: scale(.96); }
-	.rb.on { background: #fff; color: var(--hero-ink); }
-	.rb.main { width: 60px; height: 60px; background: #fff; color: var(--hero-ink); border: 0; box-shadow: 0 10px 30px rgb(0 0 0 / .4); }
-	.rb.main:disabled { background: rgb(255 255 255 / .3); color: #fff; cursor: default; transform: none; }
-	.rb:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
-	.cta-word { margin: -4px 0 0; font: var(--t-footnote); color: rgb(255 255 255 / .75); }
-	.have { display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 5px 12px; border-radius: 999px; background: rgb(255 255 255 / .12); font: var(--t-footnote); font-weight: 600; font-variant-numeric: tabular-nums; }
-	h2 { margin: 0; font: var(--t-title2); }
+	@media (prefers-reduced-motion: reduce) { .clip, .art { transition: none; } }
+	.vctl { position: absolute; right: var(--gutter); bottom: clamp(18px, 2.4vw, 28px); z-index: 2; display: flex; gap: 8px; }
+	.short .vctl { top: 16px; bottom: auto; }
+	.vctl button, .vexit { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); color: #fff; cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
+	.vctl button:hover, .vexit:hover { background: rgb(255 255 255 / 26%); }
+	.vctl button:focus-visible, .vexit:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+	/* Full screen: the video alone, fit whole on black, with exit, pause and sound. */
+	.hero.full { height: auto; background: #000; }
+	.hero.full .stage { scale: 1; }
+	.hero.full .art, .hero.full .shade, .hero.full .dim, .hero.full .b-name { display: none; }
+	.hero.full .clip { object-fit: contain; background: #000; }
+	.hero.full .vctl { right: max(24px, env(safe-area-inset-right)); bottom: max(24px, env(safe-area-inset-bottom)); top: auto; gap: 10px; }
+	.hero.full .vctl button, .vexit { width: 44px; height: 44px; }
+	.vexit { position: absolute; top: max(20px, env(safe-area-inset-top)); right: max(24px, env(safe-area-inset-right)); z-index: 2; }
+
+	/* 2 · The round photo on a soft wash of the artist's colours. */
+	.circle { --tint: #3a3d44; display: grid; place-items: center; padding: 40px var(--gutter) 32px; background: radial-gradient(ellipse 70% 90% at 50% 0%, color-mix(in srgb, var(--tint) 55%, transparent), transparent 70%), var(--hero-ink); }
+	.circle .art.in { opacity: .35; }
+	.circle .shade { background: linear-gradient(to top, var(--hero-ink), rgb(7 8 10 / 0) 60%); }
+	.c-in { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; max-width: 900px; }
+	.c-in h1 { margin-top: 6px; font-size: clamp(34px, 4.4vw, 52px); }
+	.photo { width: var(--photo, 184px); height: var(--photo, 184px); border-radius: 50%; object-fit: cover; flex: none; box-shadow: 0 24px 64px rgb(0 0 0 / .5), 0 0 0 1px rgb(255 255 255 / .14); background: #1c1d21; }
+	.photo.crop { object-position: 50% 22%; }
+	.photo.initials { display: grid; place-items: center; color: rgb(255 255 255 / .9); font-size: 56px; font-weight: 700; }
+	.c-in .acts { margin-top: 8px; }
+
+	/* 4 · Under the short banner: photo over its edge, name beside, buttons at the end. */
+	.cline { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: end; gap: 20px; margin-top: calc(var(--gap) * -1 - 52px); position: relative; z-index: 1; }
+	.c-photo { --photo: 136px; display: block; }
+	.c-photo .photo { box-shadow: 0 12px 32px rgb(0 0 0 / .35), 0 0 0 4px var(--bg); }
+	.c-words { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding-bottom: 8px; }
+	.c-words h1 { font-size: clamp(30px, 3vw, 40px); color: var(--text); }
+	.c-line { margin: 0; color: var(--text-muted); font: 600 15px/1.3 var(--font-ui); font-variant-numeric: tabular-nums; }
+	.cline .acts { padding-bottom: 8px; }
+
+	/* The buttons. On the page (not the dark hero) they take the page's ink in light mode. */
+	.acts { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+	.acts.centred { justify-content: center; }
+	.onpage { margin-top: calc(var(--gap) * -1 + 20px); }
+	:global(html:not([data-theme='dark'])) .onpage .acts :global(.ui-act), :global(html:not([data-theme='dark'])) .cline .acts :global(.ui-act), :global(html:not([data-theme='dark'])) .onpage .acts :global(.ui-pop > .trigger), :global(html:not([data-theme='dark'])) .cline .acts :global(.ui-pop > .trigger) { background: color-mix(in srgb, var(--text) 7%, transparent); border-color: var(--line); color: var(--text); backdrop-filter: none; -webkit-backdrop-filter: none; }
+	:global(html:not([data-theme='dark'])) .onpage .acts :global(.ui-act.primary), :global(html:not([data-theme='dark'])) .cline .acts :global(.ui-act.primary), :global(html:not([data-theme='dark'])) .onpage .acts :global(.ui-act[aria-pressed='true']), :global(html:not([data-theme='dark'])) .cline .acts :global(.ui-act[aria-pressed='true']) { background: var(--text); border-color: var(--text); color: var(--bg); }
+	:global(html:not([data-theme='dark'])) .onpage .acts :global(.ui-act:focus-visible), :global(html:not([data-theme='dark'])) .cline .acts :global(.ui-act:focus-visible) { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--text); }
+
+	/* The slim bar: sticky under the top bar (in its space when it hides), tinted from the banner, dark in both themes. */
+	.slimwrap { position: sticky; top: var(--topbar); z-index: 25; height: 0; margin-bottom: calc(var(--gap) * -1); transition: transform var(--bar-glide); }
+	:global(html.bar-hidden) .slimwrap { transform: translateY(calc(-1 * var(--topbar))); }
+	.slim { --tint: #3a3d44; position: absolute; top: 0; left: calc(var(--gutter) * -1); right: calc(var(--gutter) * -1); display: flex; align-items: center; gap: 14px; height: 64px; padding: 0 var(--gutter); box-sizing: border-box; background: color-mix(in srgb, var(--tint) 45%, #0b0c0f); color: #fff; box-shadow: 0 8px 24px rgb(0 0 0 / .22); opacity: 0; translate: 0 -8px; pointer-events: none; transition: opacity var(--dur) var(--ease-out), translate var(--dur) var(--ease-out); }
+	.slim.on { opacity: 1; translate: 0 0; pointer-events: auto; }
+	.slim-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 22px/1.1 var(--font-display); letter-spacing: -.01em; }
+	@media (prefers-reduced-motion: reduce) { .slim, .slimwrap { transition: none; translate: none; } }
+
+	.libbits { display: flex; flex-direction: column; gap: 8px; margin-top: calc(var(--gap) * -1 + 16px); }
+	.libline { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; color: var(--text-muted); font: var(--t-footnote); }
+	.libword { color: var(--text); font-weight: 600; }
+	.bar { width: 120px; height: 4px; border-radius: 99px; background: var(--line); overflow: hidden; }
+	.bar i { display: block; height: 100%; background: var(--text); border-radius: inherit; }
+
+	/* Top songs: one row pattern in every design (number, cover, words, length, …). */
+	.block { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+	.songs { display: grid; gap: 0 24px; margin: 0; padding: 0; list-style: none; }
+	.songs.s-list { grid-template-columns: minmax(0, 1fr); }
+	.songs.s-grid { grid-auto-flow: column; }
+	.songs.s-two { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(5, auto); grid-auto-flow: column; }
+	.song { display: grid; grid-template-columns: 32px 48px minmax(0, 1fr) auto 36px; align-items: center; gap: 12px; height: 64px; padding: 0 8px; border-radius: 10px; transition: background var(--dur-fast) var(--ease-out), translate var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out); }
+	.song:hover, .song:focus-within { background: var(--surface-2); translate: 0 -1px; box-shadow: var(--shadow-card); }
+	.num { position: relative; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: var(--text-muted); font: 600 15px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
+	.num .go { position: absolute; inset: 0; display: grid; place-items: center; opacity: 0; color: var(--text); transition: opacity var(--dur-fast) var(--ease-out); }
+	.song:hover a.num .n, .song:focus-within a.num .n { opacity: 0; }
+	.song:hover a.num .go, .song:focus-within a.num .go { opacity: 1; }
+	a.num:hover { background: var(--surface-3); }
+	a.num:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.cov { position: relative; display: block; flex: none; width: 48px; height: 48px; overflow: hidden; border-radius: 6px; background: var(--surface-2); }
+	.cov img { width: 100%; height: 100%; object-fit: cover; }
+	.cov.big { width: 160px; height: 160px; border-radius: var(--r-card); box-shadow: var(--shadow-card); transition: translate var(--dur-slow) var(--ease-out); }
+	.cov.small { width: 72px; height: 72px; border-radius: 8px; }
+	.s-words, .soon-words { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+	.s-name { font: var(--t-callout); font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.s-album { color: var(--text-muted); font: var(--t-footnote); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.s-len { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
+	.s-more { display: grid; place-items: center; opacity: .6; transition: opacity var(--dur-fast) var(--ease-out); }
+	.song:hover .s-more, .song:focus-within .s-more { opacity: 1; }
+	@media (hover: none) { .s-more { opacity: 1; } }
+	.e { display: inline-grid; place-items: center; width: 15px; height: 15px; margin-right: 6px; border-radius: 3px; background: var(--text-muted); color: var(--bg); font: 700 10px/1 var(--font-ui); vertical-align: 1px; }
+
+	/* The first band of 2, 3 and 5: the latest release beside the grid of songs. */
 	.lead { display: grid; grid-template-columns: minmax(240px, 300px) minmax(0, 1fr); gap: clamp(20px, 4vw, 56px); align-items: start; }
-	.latest, .top { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+	.lead.solo, .lead.stack { grid-template-columns: minmax(0, 1fr); }
+	/* In the side panel's narrower column the songs come first, the latest release under them. */
+	.lead.stack .top { order: -1; }
+	.latest, .top { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+	.top { container: songs / inline-size; }
+	/* The grid: three columns of three where there is room, else two of four; no length (as on a compact song row). */
+	.songs.s-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(4, auto); }
+	.songs.s-grid .song:nth-child(n + 9) { display: none; }
+	.songs.s-grid .song { grid-template-columns: 32px 48px minmax(0, 1fr) 36px; }
+	.songs.s-grid .s-len { display: none; }
+	@container songs (min-width: 960px) {
+		.songs.s-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(3, auto); }
+		.songs.s-grid .song:nth-child(n + 9) { display: grid; }
+	}
+	@container songs (max-width: 620px) {
+		.songs.s-grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-auto-flow: row; }
+		.songs.s-grid .song:nth-child(n + 9) { display: grid; }
+	}
 	.latest-card { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 16px; align-items: center; color: var(--text); border-radius: var(--r-card); }
-	.cov { position: relative; display: block; flex: none; overflow: hidden; border-radius: var(--r-card); background: var(--surface-2); }
-	.cov img { width: 100%; height: 100%; }
-	.latest-card img { width: 160px; height: 160px; border-radius: var(--r-card); object-fit: cover; box-shadow: var(--shadow-card); transition: transform var(--dur) var(--ease-out); background: var(--surface-2); }
-	.latest-card:hover img { transform: translateY(var(--lift)); }
+	.latest-card:hover .cov.big { translate: 0 var(--lift); }
 	.l-meta { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 	.l-date { color: var(--text-muted); font: var(--t-footnote); text-transform: uppercase; letter-spacing: .04em; }
 	.l-name { font: var(--t-headline); overflow-wrap: anywhere; }
@@ -1194,57 +1225,140 @@
 	.pill { align-self: flex-start; margin-top: 4px; padding: 3px 10px; border-radius: 999px; background: var(--surface-2); font: var(--t-footnote); font-weight: 600; }
 	.pill.available { color: var(--ok); }
 	.pill.downloading { color: var(--accent); }
-	/* Top songs: three columns of three rows, hairlines between rows. */
-	.songs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-flow: column; grid-template-rows: repeat(3, auto); gap: 0 24px; margin: 0; padding: 0; list-style: none; }
-	.songs li { display: grid; grid-template-columns: 40px minmax(0, 1fr) 32px; align-items: center; gap: 12px; min-height: 60px; border-bottom: 1px solid var(--line); }
-	.songs img, .songs .cov { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; background: var(--surface-2); }
-	.s-words, .soon-words { display: flex; flex-direction: column; min-width: 0; }
-	.s-name { font: var(--t-callout); font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	.s-album { color: var(--text-muted); font: var(--t-footnote); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	a.s-album:hover { text-decoration: underline; }
-	.s-done { display: grid; place-items: center; color: var(--text-muted); }
-	.e { display: inline-grid; place-items: center; width: 15px; height: 15px; margin-right: 6px; border-radius: 3px; background: var(--text-muted); color: var(--bg); font: 700 10px/1 var(--font-ui); vertical-align: 1px; }
-	.block { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-	.row-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-	.confirm { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; font: var(--t-subhead); }
+
+	/* Discography: kind chips and one grid of covers that lift on hover (PosterCard). */
 	.chips { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-	.sep { width: 1px; height: 20px; background: var(--line); margin: 0 4px; }
-	.essential, .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--music-item), 1fr)); gap: 24px 16px; margin: 0; padding: 0; list-style: none; --poster-ratio: 1; }
-	.quiet { margin: 0; color: var(--text-muted); font: var(--t-subhead); }
+	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--music-item), 1fr)); gap: 24px 16px; margin: 0; padding: 0; list-style: none; --poster-ratio: 1; }
+	.rows { display: flex; flex-direction: column; gap: var(--gap); }
 	.soon { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
 	.soon li { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 10px; border-radius: var(--r-card); background: var(--surface-1, var(--surface-2)); }
-	.soon img { width: 72px; height: 72px; border-radius: 8px; object-fit: cover; background: var(--surface-2); }
-	.circles { display: flex; gap: 18px; overflow-x: auto; margin: 0; padding: 4px 2px 8px; list-style: none; scrollbar-width: none; }
+	.circles { display: flex; gap: 20px; overflow-x: auto; margin: 0; padding: 4px 2px 8px; list-style: none; scrollbar-width: none; }
+
+	/* The stats band, where concerts would be: two centred lines between two hairlines. */
+	.stats { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 28px 16px; border-block: 1px solid var(--line); text-align: center; font-variant-numeric: tabular-nums; }
+	.stats p { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; margin: 0; }
+	.stats p > span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+	.stats p > span + span::before { content: '·'; margin: 0 14px; color: var(--text-faint); }
+	.st1 { font: 500 20px/1.35 var(--font-ui); color: var(--text-muted); }
+	.st1 b { color: var(--text); font-weight: 700; }
+	.st2 { font: var(--t-subhead); color: var(--text-muted); }
+	.st2 :global(svg) { color: var(--text-muted); }
+	.chg.up { color: var(--ok-text); font-weight: 600; }
+	.chg.down { color: var(--fail-text); font-weight: 600; }
+	.st-ask { margin-top: 6px; }
+	.confirm { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; font: var(--t-subhead); }
+	.stats.side { align-items: flex-start; text-align: left; padding: 20px 0; }
+	.stats.side p { justify-content: flex-start; flex-direction: column; align-items: flex-start; gap: 4px; }
+	.stats.side p > span + span::before { content: none; }
+	.stats.side .st1 { font-size: 16px; }
+
+	/* About: the photo card with its "#N in the world" disc and two lines of the bio; it opens the sheet. */
 	.about { scroll-margin-top: 80px; }
-	.about-in { display: grid; grid-template-columns: minmax(0, 1fr) minmax(200px, 280px); gap: clamp(20px, 4vw, 56px); align-items: start; }
-	.bio { margin: 0; max-width: 72ch; font: var(--t-body); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 5; line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
-	.bio.open { display: block; }
-	.bio-foot { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-top: 8px; }
-	.more { padding: 0; border: 0; background: none; color: var(--text); font: var(--t-subhead); font-weight: 600; cursor: pointer; text-decoration: underline; }
-	.kv { margin: 0; display: flex; flex-direction: column; gap: 12px; }
+	.acard { position: relative; display: block; width: 100%; height: clamp(280px, 30vw, 420px); padding: 0; border: 0; border-radius: var(--r-card); overflow: hidden; background: #1c1d21; color: #fff; text-align: left; cursor: pointer; isolation: isolate; box-shadow: var(--shadow-card); transition: translate var(--dur-slow) var(--ease-out), box-shadow var(--dur-slow) var(--ease-out); }
+	.acard:hover { translate: 0 var(--lift); }
+	.acard:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.acard img { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; transition: scale var(--dur-slow) var(--ease-out); }
+	.acard:hover img { scale: 1.03; }
+	.acard::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, rgb(7 8 10 / .86) 0%, rgb(7 8 10 / .4) 36%, rgb(7 8 10 / 0) 60%); }
+	.a-none { position: absolute; inset: 0; z-index: -2; display: grid; place-items: center; font-size: 64px; font-weight: 700; color: rgb(255 255 255 / .5); }
+	.disc { position: absolute; top: 20px; left: 20px; display: grid; place-content: center; justify-items: center; width: 92px; height: 92px; border-radius: 50%; background: var(--accent-fill); color: var(--text-on-red); box-shadow: 0 8px 24px rgb(0 0 0 / .3); text-align: center; }
+	.disc b { font: 800 26px/1 var(--font-display); }
+	.disc small { margin-top: 3px; font: 600 11px/1.1 var(--font-ui); }
+	.a-foot { position: absolute; left: 24px; right: 24px; bottom: 22px; display: flex; flex-direction: column; gap: 6px; }
+	.a-lis { font: 700 17px/1.3 var(--font-ui); font-variant-numeric: tabular-nums; }
+	.a-bio { max-width: 72ch; color: rgb(255 255 255 / .86); font: var(--t-callout); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+	@media (prefers-reduced-motion: reduce) { .acard:hover, .acard:hover img, .song:hover, .latest-card:hover .cov.big { translate: none; scale: none; } }
+
+	/* 5 · The side panel from 1280 px: About, the stats and Similar artists in a sticky right column. */
+	.split { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 40px; align-items: start; }
+	.col { display: flex; flex-direction: column; gap: var(--gap); min-width: 0; overflow-x: clip; overflow-clip-margin: 24px; }
+	.panel { position: sticky; top: calc(var(--topbar) + 80px); display: flex; flex-direction: column; gap: 24px; transition: top var(--bar-glide); }
+	:global(html.bar-hidden) .panel { top: 80px; }
+	.about.side .acard { height: auto; aspect-ratio: 1; }
+	.about.side .disc { width: 72px; height: 72px; top: 14px; left: 14px; }
+	.about.side .disc b { font-size: 20px; }
+	.about.side .disc small { font-size: 9.5px; }
+	.about.side .a-foot { left: 18px; right: 18px; bottom: 16px; }
+	.slist { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }
+	.slist a { display: flex; align-items: center; gap: 12px; padding: 6px 8px; border-radius: 10px; color: var(--text); font: var(--t-callout); font-weight: 600; transition: background var(--dur-fast) var(--ease-out); }
+	.slist a:hover { background: var(--surface-2); }
+	.slist img, .slist .ini { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; flex: none; background: var(--surface-2); }
+	.slist .ini { display: grid; place-items: center; color: var(--text-muted); font: 700 15px/1 var(--font-ui); }
+
+	/* The About sheet: the photo on top, then the figures beside the full bio and facts. */
+	.sheet { display: flex; flex-direction: column; gap: 22px; }
+	.sh-photo { width: 100%; height: clamp(180px, 34vh, 320px); object-fit: cover; object-position: center 25%; border-radius: var(--r-card); background: var(--surface-2); }
+	.sh-cols { display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); gap: 32px; align-items: start; }
+	.sh-figs { display: flex; flex-direction: column; gap: 16px; }
+	.fig { display: flex; flex-direction: column; gap: 2px; margin: 0; font-variant-numeric: tabular-nums; }
+	.fig b { font: 700 26px/1.1 var(--font-display); color: var(--text); }
+	.fig span { color: var(--text-muted); font: var(--t-footnote); }
+	.sh-words { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+	.sh-bio { margin: 0; font: var(--t-body); line-height: 1.6; white-space: pre-line; }
+	.kv { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px 24px; }
 	.kv dt { color: var(--text-muted); font: var(--t-footnote); text-transform: uppercase; letter-spacing: .05em; }
 	.kv dd { margin: 2px 0 0; font: var(--t-callout); }
-	.bio-sk { display: flex; flex-direction: column; gap: 8px; max-width: 72ch; }
-	.bio-sk .sk-line { height: 14px; width: 100%; }
-	.bio-sk .short { width: 55%; }
+
+	/* Loading. */
 	.sk-latest .sq { width: 160px; height: 160px; border-radius: var(--r-card); }
 	.sk-lines { display: flex; flex-direction: column; gap: 8px; }
 	.sk-lines .sk-line { height: 13px; width: 80%; }
 	.sk-lines .short { width: 45%; }
-	.sk-songs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 24px; }
+	.sk-songs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; }
 	.sq-rail { --poster-ratio: 1; }
-	@media (max-width: 1280px) { .songs { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-flow: row; grid-template-rows: none; } .sk-songs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-	@media (max-width: 1000px) { .lead { grid-template-columns: minmax(0, 1fr); } }
-	@media (max-width: 767px) {
-		.artist { --music-item: calc((100cqi - var(--shelf-gap, 12px)) / 2.3); gap: 32px; }
-		.hero { min-height: 440px; }
-		.photo { width: 136px; height: 136px; }
-		.songs, .sk-songs { grid-template-columns: minmax(0, 1fr); }
-		.grid, .essential { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-		.about-in { grid-template-columns: minmax(0, 1fr); }
-	}
+
 	/* Overview / Library tabs for an artist in the Library: the same underline tabs as a title page. */
-	.ar-tabs { display: flex; gap: 6px; margin: 8px 0 4px; border-bottom: 1px solid var(--line); }
+	.ar-tabs { display: flex; gap: 6px; margin-top: calc(var(--gap) * -1 + 16px); border-bottom: 1px solid var(--line); }
 	.ar-tabs button { height: 40px; padding: 0 14px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--text-muted); font: 600 14px/1 var(--font-ui); cursor: pointer; }
 	.ar-tabs button.on { color: var(--text); border-bottom-color: var(--text); }
+
+	@media (max-width: 1000px) {
+		.lead { grid-template-columns: minmax(0, 1fr); }
+		.songs.s-two { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-auto-flow: row; }
+	}
+	/* Phones: designed for 390 and 360, not squeezed. */
+	@media (max-width: 767px) {
+		.artist { --music-item: calc((100cqi - var(--shelf-gap, 12px)) / 2.3); --gap: 32px; }
+		.hero { margin-top: calc(var(--s-4) * -1); }
+		.banner { height: 300px; }
+		.banner.short { height: 180px; }
+		.b-name { padding-bottom: 18px; }
+		.b-name h1 { font-size: clamp(38px, 11vw, 52px); }
+		.vctl { right: 12px; bottom: 12px; gap: 6px; }
+		.short .vctl { top: 12px; }
+		.vctl button { width: 34px; height: 34px; }
+		.circle { padding: 28px 16px 24px; }
+		.c-in { --photo: 148px; }
+		.c-in h1 { font-size: clamp(30px, 9vw, 40px); }
+		.cline { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; gap: 12px; margin-top: calc(var(--gap) * -1 - 56px); }
+		.c-photo { --photo: 112px; }
+		.c-words { align-items: center; padding: 0; }
+		.c-words h1 { font-size: clamp(28px, 8.4vw, 36px); }
+		.cline .acts { justify-content: center; padding: 0; }
+		.onpage { margin-top: calc(var(--gap) * -1 + 16px); }
+		.slimwrap { top: 0; }
+		:global(html.bar-hidden) .slimwrap { transform: none; }
+		.slim { height: 56px; gap: 12px; }
+		.slim-name { font-size: 18px; }
+		.slim :global(.ui-act.primary) { height: 38px; padding: 0 14px 0 12px; font-size: 14px; }
+		.songs.s-two { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-auto-flow: row; }
+		.song, .songs.s-grid .song { grid-template-columns: 24px 48px minmax(0, 1fr) 36px; gap: 10px; padding: 0 4px; }
+		.s-len { display: none; }
+		.num { width: 24px; }
+		.grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+		.latest-card { grid-template-columns: 120px minmax(0, 1fr); }
+		.cov.big { width: 120px; height: 120px; }
+		.stats { padding: 22px 8px; }
+		.st1 { font-size: 17px; }
+		.stats p > span + span::before { margin: 0 8px; }
+		.acard { height: 360px; }
+		.disc { width: 76px; height: 76px; top: 14px; left: 14px; }
+		.disc b { font-size: 21px; }
+		.disc small { font-size: 10px; }
+		.a-foot { left: 16px; right: 16px; bottom: 16px; }
+		.sh-cols { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+		.sh-figs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+		.fig b { font-size: 21px; }
+		.sk-songs { grid-template-columns: minmax(0, 1fr); }
+	}
 </style>
