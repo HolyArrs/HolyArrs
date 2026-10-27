@@ -92,7 +92,6 @@ export function buildNav(input: NavInput): NavSection[] {
 						{ href: '/downloads', label: 'Downloads', icon: 'download', need: 'manage_library', also: ['/downloads/decide'], ...downloadsBadge(input) },
 						{ href: '/wishlist', label: 'Approvals', icon: 'inbox', need: 'approve', badge: input.approvals, badgeLabel: `${input.approvals} waiting` },
 						{ href: '/downloads/history', label: 'History', icon: 'clock', need: 'manage_library' },
-						{ href: '/library/held', label: 'Library tools', icon: 'tools', need: 'manage_library', also: ['/library/turned-down', '/library/rename', '/library/import', '/library/missing-subtitles', '/library/copies'] },
 						{ href: '/settings', label: 'Settings', icon: 'settings', need: 'staff' }
 					]
 				: []
