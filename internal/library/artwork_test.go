@@ -2,10 +2,12 @@ package library
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"sync/atomic"
 	"testing"
+	"time"
 )
 
 // TestArtworkRedirectToOtherHostRefused: a picture host that redirects
@@ -59,5 +61,45 @@ func TestTMDBArtworkURL(t *testing.T) {
 		if _, ok := TMDBArtworkURL(base, c[0], c[1]); ok {
 			t.Errorf("%v accepted", c)
 		}
+	}
+}
+
+// TestArtworkSameFetchOnce: many asks at once for a picture not stored yet
+// all get it, and it is downloaded once (two writers to one file broke
+// pictures on Windows).
+func TestArtworkSameFetchOnce(t *testing.T) {
+	var hit atomic.Int32
+	release := make(chan struct{})
+	pics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hit.Add(1)
+		<-release
+		w.Header().Set("Content-Type", "image/jpeg")
+		_, _ = w.Write([]byte("jpeg"))
+	}))
+	defer pics.Close()
+	c := &ArtworkCache{Dir: t.TempDir(), Allowed: []string{pics.URL + "/img/"}, HTTP: &http.Client{}}
+	url := pics.URL + "/img/a.jpg"
+	const n = 8
+	errs := make(chan error, n)
+	for range n {
+		go func() {
+			name, err := c.Fetch(context.Background(), url)
+			if err == nil {
+				if _, ok := c.Path(name); !ok {
+					err = errors.New("stored picture missing")
+				}
+			}
+			errs <- err
+		}()
+	}
+	time.Sleep(100 * time.Millisecond)
+	close(release)
+	for range n {
+		if err := <-errs; err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := hit.Load(); got != 1 {
+		t.Fatalf("downloaded %d times, want once", got)
 	}
 }

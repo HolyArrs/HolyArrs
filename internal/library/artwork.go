@@ -47,6 +47,11 @@ type ArtworkCache struct {
 	mu       sync.Mutex
 	// checking holds the addresses being re-checked in the background.
 	checking map[string]bool
+	// fetching holds the downloads under way by cache name: a second ask for
+	// the same picture waits for the first instead of downloading it again
+	// (two writers renaming onto one file fail on Windows, and the page got
+	// a broken picture).
+	fetching map[string]chan struct{}
 	// size is the cache's bytes, counted by the first trim and kept up by
 	// each download (listing a large cache takes seconds, so it is listed
 	// only when the count goes over the cap); trims counts the listings.
@@ -172,6 +177,33 @@ func (c *ArtworkCache) fetch(ctx context.Context, url string, reject func(http.H
 	// another picture is re-checked in the background.
 	if _, err := os.Stat(path); err == nil {
 		c.Recheck(url, reject)
+		return name, nil
+	}
+	c.mu.Lock()
+	if c.fetching == nil {
+		c.fetching = map[string]chan struct{}{}
+	}
+	if ch, busy := c.fetching[name]; busy {
+		c.mu.Unlock()
+		select {
+		case <-ch:
+		case <-ctx.Done():
+			return "", ctx.Err()
+		}
+		// The first download is done: its picture answers, or (it failed)
+		// this ask tries on its own.
+		return c.fetch(ctx, url, reject, follow)
+	}
+	ch := make(chan struct{})
+	c.fetching[name] = ch
+	c.mu.Unlock()
+	defer func() {
+		c.mu.Lock()
+		delete(c.fetching, name)
+		c.mu.Unlock()
+		close(ch)
+	}()
+	if _, err := os.Stat(path); err == nil {
 		return name, nil
 	}
 	if err := os.MkdirAll(c.Dir, 0o750); err != nil {
@@ -322,6 +354,12 @@ func (c *ArtworkCache) download(ctx context.Context, url string, reject func(htt
 	}
 	if err := os.Rename(tmp.Name(), path); err != nil {
 		_ = os.Remove(tmp.Name())
+		// A new picture another download stored first (it may be open
+		// for a reader, so it cannot be replaced on Windows) is the same
+		// picture: that is a success.
+		if _, serr := os.Stat(path); serr == nil && etag == "" {
+			return resp.StatusCode, nil
+		}
 		return resp.StatusCode, err
 	}
 	if StableArtworkURL(url) {
