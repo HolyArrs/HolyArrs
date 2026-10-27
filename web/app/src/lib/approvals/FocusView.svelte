@@ -173,6 +173,7 @@
 	.name a:hover { text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 2px; }
 	.ask-line { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font: var(--t-callout); color: var(--on-art-muted); }
 	.ask-line b { color: var(--on-art); }
+	.ask-line :global(.kid) { color: var(--on-art); }
 	.part { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; padding: 5px 12px; border-radius: var(--r-pill); background: rgb(255 255 255 / 14%); font: var(--t-subhead); font-weight: 600; overflow-wrap: anywhere; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
 	.story { max-width: 62ch; color: rgb(255 255 255 / 80%); font: var(--t-callout); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 	.pill { align-self: flex-start; }

@@ -99,6 +99,8 @@
 	.part { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; padding: 3px 10px; border-radius: var(--r-pill); background: rgb(255 255 255 / 12%); font: var(--t-footnote); font-weight: 600; overflow-wrap: anywhere; }
 	.who { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; color: var(--on-art-muted); font: var(--t-footnote); }
 	.who-name { color: var(--on-art); font-weight: 600; }
+	/* The card is dark in both themes: the age-limit mark keeps light ink. */
+	.who :global(.kid) { color: var(--on-art); }
 	.who time::before { content: '· '; }
 	.note { font: var(--t-footnote); color: var(--on-art-muted); overflow-wrap: anywhere; }
 	.acts { display: flex; align-items: center; gap: 8px; margin-top: auto; }
