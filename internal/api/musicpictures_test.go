@@ -177,3 +177,38 @@ func TestArtSize(t *testing.T) {
 		}
 	}
 }
+
+// A page's warm asks its records in one batch call, and each warmed item
+// waits for that answer instead of asking for itself.
+func TestWarmAsksRecordsOncePerRow(t *testing.T) {
+	var calls atomic.Int32
+	a := New(Server{Version: "test", ImageBase: "https://api.example.test/v1/img"})
+	release := make(chan struct{})
+	a.s.MusicPictures = func(_ context.Context, artists, albums []string) (metadata.MusicPictures, error) {
+		calls.Add(1)
+		<-release
+		return metadata.MusicPictures{Albums: map[string]metadata.AlbumPictures{picAlbum: {Cover: &metadata.PictureRecord{V: "c1", W: 500, H: 500}}}}, nil
+	}
+	var mu sync.Mutex
+	var seen []string
+	done := make(chan struct{}, 3)
+	a.artWarm.do = func(_ context.Context, k artWarmKey) {
+		mu.Lock()
+		seen = append(seen, k.mbid+"="+a.pictureVersion("album", k.mbid))
+		mu.Unlock()
+		done <- struct{}{}
+	}
+	a.warmArtItems([]nameKey{{kind: "album", mbid: picAlbum}, {kind: "album", mbid: picAlbum2}, {kind: "artist", mbid: picArtist}})
+	close(release)
+	for range 3 {
+		<-done
+	}
+	if calls.Load() != 1 {
+		t.Fatalf("%d record calls for one row, want 1", calls.Load())
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	if !strings.Contains(strings.Join(seen, " "), picAlbum+"=c1") {
+		t.Fatalf("the warm ran before its records: %v", seen)
+	}
+}

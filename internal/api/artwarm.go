@@ -48,7 +48,7 @@ func (a *API) warmArtItems(list []nameKey) {
 	if len(list) == 0 || !a.partIsOn(parts.Music) {
 		return
 	}
-	go a.warmPictureRecords(list)
+	a.warmPictureRecords(list)
 	w := &a.artWarm
 	if w.do == nil && (a.s.Library == nil || a.s.Library.Artwork == nil) {
 		return
@@ -109,7 +109,7 @@ func (a *API) artWarmWorker() {
 		}
 		ctx, cancel := context.WithTimeout(metadata.Ahead(context.Background()), artWarmItem)
 		// The item's records may still be on their way (asked with the list).
-		a.pictureRecords(ctx, artistIDs(k), albumIDs(k), 2*time.Second)
+		a.awaitPictureRecords(ctx, k.kind, k.mbid, 2*time.Second)
 		do(ctx, k)
 		cancel()
 		w.mu.Lock()
@@ -138,18 +138,4 @@ func (a *API) warmArtItem(ctx context.Context, k artWarmKey) {
 func (a *API) warmArtistExtras(ctx context.Context, mbid string) {
 	a.musicTrendArtFile(ctx, "wide", mbid, "1920")
 	a.musicTrendArtFile(ctx, "logo", mbid, "1200")
-}
-
-func artistIDs(k artWarmKey) []string {
-	if k.kind == "artist" {
-		return []string{k.mbid}
-	}
-	return nil
-}
-
-func albumIDs(k artWarmKey) []string {
-	if k.kind == "album" {
-		return []string{k.mbid}
-	}
-	return nil
 }

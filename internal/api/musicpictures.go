@@ -204,8 +204,8 @@ func (a *API) pictureVersion(kind, mbid string) string {
 }
 
 // warmPictureRecords asks the records of a page's items ahead (one batch per
-// hundred), so the pictures warmed next are the versioned ones the page asks
-// for.
+// hundred) without waiting, so the pictures warmed next are the versioned
+// ones the page asks for (the warm waits for them: awaitPictureRecords).
 func (a *API) warmPictureRecords(list []nameKey) {
 	var ar, al []string
 	for _, n := range list {
@@ -218,6 +218,30 @@ func (a *API) warmPictureRecords(list []nameKey) {
 	}
 	if len(ar)+len(al) > 0 {
 		a.pictureRecords(metadata.Ahead(context.Background()), ar, al, 0)
+	}
+}
+
+// awaitPictureRecords waits up to wait for an item's records that are being
+// asked now; it never asks the server itself (one call per row, never one
+// per card).
+func (a *API) awaitPictureRecords(ctx context.Context, kind, mbid string, wait time.Duration) {
+	owner := "artist"
+	if kind == "album" {
+		owner = "album"
+	}
+	c := &a.pics
+	c.mu.Lock()
+	ch := c.busy[owner+"|"+strings.ToLower(mbid)]
+	c.mu.Unlock()
+	if ch == nil {
+		return
+	}
+	t := time.NewTimer(wait)
+	defer t.Stop()
+	select {
+	case <-ch:
+	case <-t.C:
+	case <-ctx.Done():
 	}
 }
 
