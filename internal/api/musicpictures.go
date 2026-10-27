@@ -57,6 +57,10 @@ type picRecords struct {
 	// busy are the items being asked now: each channel closes when its
 	// batch has answered.
 	busy map[string]chan struct{}
+	// aheadBusy marks the busy items asked by a background warm: those
+	// may wait for the gate's background budget, so a person's answer
+	// asks them again itself instead of waiting.
+	aheadBusy map[string]bool
 }
 
 // pictureRecords answers the records of these artists and albums, asking
@@ -65,7 +69,11 @@ type picRecords struct {
 func (a *API) pictureRecords(ctx context.Context, artists, albums []string, wait time.Duration) map[string]picEntry {
 	c := &a.pics
 	now := time.Now()
-	type ask struct{ kind, id string }
+	type ask struct {
+		kind, id string
+		known    bool
+	}
+	person := !metadata.IsAhead(ctx)
 	var need []ask
 	var waits []chan struct{}
 	seen := map[string]bool{}
@@ -73,8 +81,8 @@ func (a *API) pictureRecords(ctx context.Context, artists, albums []string, wait
 	if c.m == nil || len(c.m) > picMax {
 		c.m = map[string]picEntry{}
 	}
-	if c.busy == nil {
-		c.busy = map[string]chan struct{}{}
+	if c.busy == nil || c.aheadBusy == nil {
+		c.busy, c.aheadBusy = map[string]chan struct{}{}, map[string]bool{}
 	}
 	for _, l := range []struct {
 		kind string
@@ -87,14 +95,19 @@ func (a *API) pictureRecords(ctx context.Context, artists, albums []string, wait
 				continue
 			}
 			seen[k] = true
-			if e, ok := c.m[k]; ok && e.fresh(l.kind, now) {
+			e, known := c.m[k]
+			if known && e.fresh(l.kind, now) {
 				continue
 			}
-			if ch := c.busy[k]; ch != nil {
-				waits = append(waits, ch)
+			// A kept record past its time is served as it is and asked again
+			// without waiting: only records not known at all hold an answer.
+			if ch := c.busy[k]; ch != nil && !(person && c.aheadBusy[k]) {
+				if !known {
+					waits = append(waits, ch)
+				}
 				continue
 			}
-			need = append(need, ask{l.kind, id})
+			need = append(need, ask{l.kind, id, known})
 		}
 	}
 	if a.s.MusicPictures == nil {
@@ -106,15 +119,20 @@ func (a *API) pictureRecords(ctx context.Context, artists, albums []string, wait
 		need = need[n:]
 		done := make(chan struct{})
 		var ar, al []string
+		hold := false
 		for _, x := range batch {
+			hold = hold || !x.known
 			c.busy[x.kind+"|"+x.id] = done
+			c.aheadBusy[x.kind+"|"+x.id] = !person
 			if x.kind == "artist" {
 				ar = append(ar, x.id)
 			} else {
 				al = append(al, x.id)
 			}
 		}
-		waits = append(waits, done)
+		if hold {
+			waits = append(waits, done)
+		}
 		go a.askPictureRecords(context.WithoutCancel(ctx), ar, al, done)
 	}
 	c.mu.Unlock()
@@ -156,13 +174,19 @@ func (a *API) askPictureRecords(ctx context.Context, artists, albums []string, d
 		if err == nil {
 			c.m["artist|"+id] = picEntry{artist: got.Artists[id], at: now}
 		}
-		delete(c.busy, "artist|"+id)
+		if c.busy["artist|"+id] == done {
+			delete(c.busy, "artist|"+id)
+			delete(c.aheadBusy, "artist|"+id)
+		}
 	}
 	for _, id := range albums {
 		if err == nil {
 			c.m["album|"+id] = picEntry{album: got.Albums[id], at: now}
 		}
-		delete(c.busy, "album|"+id)
+		if c.busy["album|"+id] == done {
+			delete(c.busy, "album|"+id)
+			delete(c.aheadBusy, "album|"+id)
+		}
 	}
 	c.mu.Unlock()
 	close(done)

@@ -182,7 +182,9 @@ func (g *Gate) refused(code int, retryAfter string) {
 
 func (g *Gate) RoundTrip(req *http.Request) (*http.Response, error) {
 	ahead := gateAhead(req)
+	t0 := time.Now()
 	held, err := g.take(req.Context(), ahead)
+	t1 := time.Now()
 	if err != nil {
 		return nil, err
 	}
@@ -203,6 +205,9 @@ func (g *Gate) RoundTrip(req *http.Request) (*http.Response, error) {
 		return resp, err
 	}
 	g.count(req, ahead, strconv.Itoa(resp.StatusCode))
+	if os.Getenv(EnvCountRequests) != "" && time.Since(t0) > 150*time.Millisecond {
+		log.Printf("metaslow: %s wait=%v headers=%v", req.URL.Path, t1.Sub(t0).Round(time.Millisecond), time.Since(t1).Round(time.Millisecond))
+	}
 	if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode == http.StatusServiceUnavailable {
 		g.refused(resp.StatusCode, resp.Header.Get("Retry-After"))
 	}
