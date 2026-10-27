@@ -25,9 +25,13 @@ import (
 const (
 	musicAnswerTTL = time.Minute
 	musicAnswerMax = 200
-	// musicGenreWait is how long a request waits for genres being read
-	// (mostly from the lookup cache, which answers at once).
-	musicGenreWait = 1500 * time.Millisecond
+	// musicGenreWait is how long a request waits for genres being read:
+	// none. The page answers with the genres known now; the rest are read
+	// in the background and the kept (older) answer stands in meanwhile.
+	musicGenreWait = 0
+	// musicAnswerStale is how long a kept answer may stand in for one that
+	// is still missing genres or similar lists.
+	musicAnswerStale = 30 * time.Minute
 	// musicWarmDelay lets the program finish starting before the read-ahead.
 	musicWarmDelay = 5 * time.Second
 	// musicV7WarmDelay is the wait before the v7 prewarm at start.
@@ -55,6 +59,18 @@ func (a *API) cachedMusicAnswer(key string, now time.Time) ([]byte, bool) {
 	defer c.mu.Unlock()
 	e, ok := c.m[key]
 	if !ok || now.Sub(e.at) >= musicAnswerTTL || now.Before(e.at) {
+		return nil, false
+	}
+	return e.body, true
+}
+
+// staleMusicAnswer answers a kept answer younger than musicAnswerStale.
+func (a *API) staleMusicAnswer(key string, now time.Time) ([]byte, bool) {
+	c := &a.musicAns
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	e, ok := c.m[key]
+	if !ok || now.Sub(e.at) >= musicAnswerStale || now.Before(e.at) {
 		return nil, false
 	}
 	return e.body, true
@@ -124,6 +140,9 @@ func (a *API) writeMusicAnswer(w http.ResponseWriter, key string, v any, complet
 	b := a.withPictures(context.Background(), buf.Bytes())
 	if complete {
 		a.keepMusicAnswer(key, b, now)
+	} else if old, ok := a.staleMusicAnswer(key, now); ok {
+		// Still reading genres or similar lists: the last full answer stands in.
+		b = old
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -131,7 +150,8 @@ func (a *API) writeMusicAnswer(w http.ResponseWriter, key string, v any, complet
 }
 
 // genresWaiting answers the known genres of ids, waiting up to wait for the
-// ones being read; complete says every id has its genres.
+// ones being read (the missing ones are queued); complete says every id
+// has its genres.
 func (a *API) genresWaiting(ids []string, wait time.Duration) (map[string][]string, bool) {
 	want := 0
 	seen := map[string]bool{}

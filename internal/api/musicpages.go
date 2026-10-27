@@ -97,6 +97,9 @@ type ArtistPageView struct {
 	Similar     []PageArtist     `json:"similar"`
 	Related        []PageArtist          `json:"related"`
 	Kid            bool                  `json:"kid"`
+	// Incomplete: the music source did not answer in time; the page shows
+	// what is known and asks again.
+	Incomplete bool `json:"incomplete,omitempty"`
 	// Missing is what "Ask for all missing" asks: the released albums,
 	// EPs and singles the Library does not keep, and about how big.
 	Missing PageMissing `json:"missing"`
@@ -162,64 +165,31 @@ type AlbumPageView struct {
 	Incomplete bool          `json:"incomplete,omitempty"`
 }
 
-type pageCache struct {
-	mu   sync.Mutex
-	bios map[string]pageBio
-	dz   map[string]pageDeezer
-	ids  map[string]pageIDs
-	tags map[string]pageTags
-}
-
 // pageTags are an artist's genres and linked artists (one MusicBrainz call,
-// which its limiter spaces a second apart), kept so a page seen again is quick.
+// which its limiter spaces a second apart).
 type pageTags struct {
-	genres []string
-	links  []metadata.ArtistLink
-	at     time.Time
+	Genres []string              `json:"genres,omitempty"`
+	Links  []metadata.ArtistLink `json:"links,omitempty"`
 }
 
-type pageBio struct {
-	v  *metadata.WikiSummary
-	at time.Time
-}
-
-type pageDeezer struct {
-	v  metadata.DeezerProfile
-	at time.Time
-}
-
-var musicPages = &pageCache{bios: map[string]pageBio{}, dz: map[string]pageDeezer{}, tags: map[string]pageTags{}}
-
-// artistTags looks up an artist's genres and links, kept 12 hours.
+// artistTags looks up an artist's genres and links, fresh 12 hours (kept
+// on disk, served stale while asked again).
 func (a *API) artistTags(ctx context.Context, mbid string) ([]string, []metadata.ArtistLink) {
 	src, ok := a.genreProvider()
 	if !ok {
 		return nil, nil
 	}
-	c := musicPages
-	c.mu.Lock()
-	e, hit := c.tags[mbid]
-	c.mu.Unlock()
-	if hit && time.Since(e.at) < 12*time.Hour {
-		return e.genres, e.links
-	}
-	var genres []string
-	var links []metadata.ArtistLink
-	var err error
-	if gl, ok := src.(genreLinkSource); ok {
-		genres, links, err = gl.ArtistGenresLinks(ctx, mbid)
-	} else {
-		genres, err = src.ArtistGenres(ctx, mbid)
-	}
-	if err == nil && ctx.Err() == nil {
-		c.mu.Lock()
-		if len(c.tags) > 2000 {
-			c.tags = map[string]pageTags{}
+	t, _ := sideGet(a, ctx, "tags", strings.ToLower(mbid), 12*time.Hour, func(ctx context.Context) (pageTags, bool, error) {
+		var t pageTags
+		var err error
+		if gl, ok := src.(genreLinkSource); ok {
+			t.Genres, t.Links, err = gl.ArtistGenresLinks(ctx, mbid)
+		} else {
+			t.Genres, err = src.ArtistGenres(ctx, mbid)
 		}
-		c.tags[mbid] = pageTags{genres: genres, links: links, at: time.Now()}
-		c.mu.Unlock()
-	}
-	return genres, links
+		return t, true, err
+	})
+	return t.Genres, t.Links
 }
 
 func (a *API) musicPageRoutes(m *http.ServeMux) {
@@ -285,16 +255,9 @@ func (a *API) musicPageOpen(w http.ResponseWriter) bool {
 }
 
 // artistIDs reads an artist's Deezer and Wikidata ids from its MusicBrainz
-// links, kept a day (misses an hour).
+// links, fresh a day (misses an hour).
 func (a *API) artistIDs(ctx context.Context, mbid string) metadata.ArtistIDs {
 	mbid = strings.ToLower(mbid)
-	c := musicPages
-	c.mu.Lock()
-	e, ok := c.ids[mbid]
-	c.mu.Unlock()
-	if ok && (time.Since(e.at) < time.Hour || (e.v != metadata.ArtistIDs{} && time.Since(e.at) < 24*time.Hour)) {
-		return e.v
-	}
 	if a.s.Library == nil {
 		return metadata.ArtistIDs{}
 	}
@@ -302,77 +265,66 @@ func (a *API) artistIDs(ctx context.Context, mbid string) metadata.ArtistIDs {
 	if !ok {
 		return metadata.ArtistIDs{}
 	}
-	ids, err := src.ArtistIDs(ctx, mbid)
-	if err == nil || errors.Is(err, metadata.ErrArtistNotFound) {
-		c.mu.Lock()
-		if c.ids == nil || len(c.ids) > 5000 {
-			c.ids = map[string]pageIDs{}
+	ids, _ := sideGet(a, ctx, "ids", mbid, 24*time.Hour, func(ctx context.Context) (metadata.ArtistIDs, bool, error) {
+		ids, err := src.ArtistIDs(ctx, mbid)
+		if errors.Is(err, metadata.ErrArtistNotFound) {
+			return ids, false, nil
 		}
-		c.ids[mbid] = pageIDs{v: ids, at: time.Now()}
-		c.mu.Unlock()
-	}
+		return ids, err == nil && ids != (metadata.ArtistIDs{}), err
+	})
 	return ids
-}
-
-type pageIDs struct {
-	v  metadata.ArtistIDs
-	at time.Time
 }
 
 // deezerProfile is the artist's Deezer profile: by the Deezer id from its
 // MusicBrainz links, else by exact name with album titles that agree.
+// Fresh 12 hours; no sure match is a miss, asked again after an hour (the
+// artist's links may have come by then).
 func (a *API) deezerProfile(ctx context.Context, mbid string, art metadata.Artist) metadata.DeezerProfile {
-	name := art.Name
-	key := strings.ToLower(mbid)
-	c := musicPages
-	c.mu.Lock()
-	e, ok := c.dz[key]
-	c.mu.Unlock()
-	if ok && time.Since(e.at) < 12*time.Hour {
-		return e.v
-	}
 	if a.s.Library == nil || a.s.Library.ArtistImages == nil {
 		return metadata.DeezerProfile{}
 	}
+	name := art.Name
 	albums := make([]string, 0, len(art.Albums))
 	for _, al := range art.Albums {
 		albums = append(albums, al.Name)
 	}
-	p, err := a.s.Library.ArtistImages.ProfileFor(ctx, name, a.artistIDs(ctx, mbid).Deezer, albums)
-	// No sure match is not kept: the artist's links may come on the next view.
-	if err == nil && p.ID != 0 {
-		c.mu.Lock()
-		if len(c.dz) > 2000 {
-			c.dz = map[string]pageDeezer{}
+	p, _ := sideGet(a, ctx, "deezer", strings.ToLower(mbid), 12*time.Hour, func(ctx context.Context) (metadata.DeezerProfile, bool, error) {
+		if name == "" {
+			return metadata.DeezerProfile{}, false, errors.New("no artist name yet")
 		}
-		c.dz[key] = pageDeezer{v: p, at: time.Now()}
-		c.mu.Unlock()
-	}
+		p, err := a.s.Library.ArtistImages.ProfileFor(ctx, name, a.artistIDs(ctx, mbid).Deezer, albums)
+		return p, err == nil && p.ID != 0, err
+	})
 	return p
 }
 
+// artistBio is the artist's Wikipedia summary, fresh a day (none: a miss,
+// asked again after an hour).
 func (a *API) artistBio(ctx context.Context, name string) *metadata.WikiSummary {
-	key := strings.ToLower(name)
-	c := musicPages
-	c.mu.Lock()
-	e, ok := c.bios[key]
-	c.mu.Unlock()
-	if ok && time.Since(e.at) < 24*time.Hour {
-		return e.v
-	}
-	if a.s.Library == nil || a.s.Library.ArtistImages == nil {
+	if a.s.Library == nil || a.s.Library.ArtistImages == nil || strings.TrimSpace(name) == "" {
 		return nil
 	}
-	b, err := a.s.Library.ArtistImages.ArtistBio(ctx, name)
-	if err == nil && ctx.Err() == nil {
-		c.mu.Lock()
-		if len(c.bios) > 2000 {
-			c.bios = map[string]pageBio{}
-		}
-		c.bios[key] = pageBio{v: b, at: time.Now()}
-		c.mu.Unlock()
-	}
+	b, _ := sideGet(a, ctx, "bio", strings.ToLower(name), 24*time.Hour, func(ctx context.Context) (*metadata.WikiSummary, bool, error) {
+		b, err := a.s.Library.ArtistImages.ArtistBio(ctx, name)
+		return b, err == nil && b != nil, err
+	})
 	return b
+}
+
+// artistTopSongs is the metadata server's top songs of the artist, fresh 6
+// hours; nil when it has none or did not answer (the Deezer list stands in).
+func (a *API) artistTopSongs(ctx context.Context, mbid string) *metadata.MusicTopSongs {
+	if a.s.MusicTopSongs == nil {
+		return nil
+	}
+	t, ok := sideGet(a, ctx, "top", strings.ToLower(mbid), 6*time.Hour, func(ctx context.Context) (metadata.MusicTopSongs, bool, error) {
+		t, err := a.s.MusicTopSongs(ctx, mbid)
+		return t, err == nil && len(t.Songs) > 0, err
+	})
+	if !ok {
+		return nil
+	}
+	return &t
 }
 
 // libraryArtist finds the Library's artist with this MusicBrainz id.
@@ -589,44 +541,47 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 	}
 	kid := a.kidMax(r) != ""
 	ctx := metadata.MemberLookup(r.Context())
-	// Genres, links and similar artists need only the id: ask them while
-	// the artist itself is looked up.
+	by := time.Now().Add(musicPageWait)
+	// Genres, links, similar artists and top songs need only the id: each
+	// starts now, with its own time limit, while the artist is looked up.
 	var genres []string
 	var links []metadata.ArtistLink
+	var top *metadata.MusicTopSongs
 	similar := []PageArtist{}
 	var wg sync.WaitGroup
-	side, cancel := context.WithTimeout(ctx, 6*time.Second)
-	defer cancel()
-	wg.Add(2)
+	wg.Add(3)
 	go func() {
 		defer wg.Done()
+		side, cancel := context.WithTimeout(ctx, musicSideWait)
+		defer cancel()
 		genres, links = a.artistTags(side, mbid)
 	}()
 	go func() { defer wg.Done(); similar = a.similarArtists(ctx, mbid, 18) }()
-	art, err := a.s.Library.Artists.Artist(metadata.QuickArtist(ctx, 1500*time.Millisecond), mbid)
+	go func() {
+		defer wg.Done()
+		side, cancel := context.WithTimeout(ctx, musicSideWait)
+		defer cancel()
+		top = a.artistTopSongs(side, mbid)
+	}()
+	art, err, answered := waitFlight[metadata.Artist](ctx, pageFlight(a, ctx, "artist:"+mbid, func(ctx context.Context) (metadata.Artist, error) {
+		return a.s.Library.Artists.Artist(metadata.QuickArtist(ctx, 1500*time.Millisecond), mbid)
+	}), by)
 	if errors.Is(err, metadata.ErrArtistNotFound) {
+		wg.Wait()
 		fail(w, http.StatusNotFound, "no artist with that id")
 		return
 	}
-	if err != nil {
-		fail(w, http.StatusBadGateway, "the music source did not answer; try again shortly")
-		return
+	// A slow or failing source never fails the page: it answers with what
+	// it has (incomplete) and the lookup goes on, kept for the next ask.
+	incomplete := !answered || err != nil
+	if incomplete {
+		art = metadata.Artist{MBID: mbid, Name: a.knownName("artist", mbid)}
 	}
 	var dz metadata.DeezerProfile
 	var bio *metadata.WikiSummary
-	var top *metadata.MusicTopSongs
 	var store []metadata.MusicStoreAlbum
-	if a.s.MusicTopSongs != nil {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			if t, err := a.s.MusicTopSongs(side, mbid); err == nil {
-				top = &t
-			} else {
-				top = &metadata.MusicTopSongs{}
-			}
-		}()
-	}
+	side, cancel := context.WithTimeout(ctx, max(time.Until(by), time.Second))
+	defer cancel()
 	if a.s.MusicDiscography != nil && len(art.Albums) == 0 {
 		wg.Add(1)
 		go func() {
@@ -653,7 +608,11 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 		if img := artistImage(*t); img != "" {
 			v.Image = img
 		}
+		if v.Name == "" {
+			v.Name = t.Name
+		}
 	}
+	v.Incomplete = incomplete
 	byName := map[string]PageAlbum{}
 	kept := albums[:0]
 	for _, al := range albums {
@@ -688,7 +647,7 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 	v.Popularity = art.Popularity
 	var songNames []nameKey
 	// The metadata server's top songs feed the shelf; with none known (or it
-	// not answering) the shelf stays hidden.
+	// not answering in time) Deezer's list stands in.
 	songs := dz.Top
 	if top != nil {
 		songs = songs[:0:0]
@@ -735,8 +694,31 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 	}
 	a.rememberMusicNames(names)
 	a.warmMusicArt(v)
-	w.Header().Set("Cache-Control", "private, max-age=60")
+	musicPageCaching(w, v.Incomplete)
 	a.writeMusicJSON(w, r, v)
+}
+
+const (
+	// musicSideWait caps each optional part of a page (tags, top songs).
+	musicSideWait = 3 * time.Second
+	// musicLookupMax bounds a lookup that goes on after the page answered
+	// (pageFlight).
+	musicLookupMax = time.Minute
+)
+
+// musicPageWait caps the essential lookup of an artist or album page: past
+// it the page answers with what it has (incomplete:true) and the lookup goes
+// on in the background, joined by the next ask (tests shorten it).
+var musicPageWait = 3 * time.Second
+
+// musicPageCaching lets the browser keep a full page a minute; an
+// incomplete one is asked again.
+func musicPageCaching(w http.ResponseWriter, incomplete bool) {
+	if incomplete {
+		w.Header().Set("Cache-Control", "no-store")
+		return
+	}
+	w.Header().Set("Cache-Control", "private, max-age=60")
 }
 
 // warmArtMax caps the pictures one page view warms: each cold one is a
@@ -848,44 +830,58 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	// The pressings need only the album id: ask them while the artist is looked up.
-	var ps []metadata.Pressing
-	var psErr error
-	psDone := make(chan struct{})
-	go func() { defer close(psDone); ps, psErr = a.s.Library.Artists.Pressings(ctx, mbid) }()
-	defer func() { <-psDone }()
-	similar := []PageArtist{}
-	simDone := make(chan struct{})
+	by := time.Now().Add(musicPageWait)
+	// The pressings need only the album id: ask them while the artist is
+	// looked up. Both go on after the page stopped waiting (kept for the
+	// next ask).
+	psFlight := pageFlight(a, ctx, "pressings:"+mbid, func(ctx context.Context) ([]metadata.Pressing, error) {
+		return a.s.Library.Artists.Pressings(ctx, mbid)
+	})
+	simDone := make(chan []PageArtist, 1)
 	go func() {
-		defer close(simDone)
-		if r.URL.Query().Get("similar") != "0" {
-			similar = a.similarArtists(ctx, artist, 14)
-		}
-	}()
-	defer func() { <-simDone }()
-	art, err := a.s.Library.Artists.Artist(metadata.QuickArtist(ctx, 1500*time.Millisecond), artist)
-	if err == nil && art.Partial && !hasAlbum(art, mbid) {
-		art, err = a.s.Library.Artists.Artist(ctx, artist)
-	}
-	if err != nil {
-		if errors.Is(err, metadata.ErrArtistNotFound) {
-			fail(w, http.StatusNotFound, "no artist with that id")
+		if r.URL.Query().Get("similar") == "0" {
+			simDone <- []PageArtist{}
 			return
 		}
-		fail(w, http.StatusBadGateway, "the music source did not answer; try again shortly")
+		simDone <- a.similarArtists(ctx, artist, 14)
+	}()
+	art, err, answered := waitFlight[metadata.Artist](ctx, pageFlight(a, ctx, "album-artist:"+artist+"|"+mbid, func(ctx context.Context) (metadata.Artist, error) {
+		art, err := a.s.Library.Artists.Artist(metadata.QuickArtist(ctx, 1500*time.Millisecond), artist)
+		if err == nil && art.Partial && !hasAlbum(art, mbid) {
+			art, err = a.s.Library.Artists.Artist(ctx, artist)
+		}
+		return art, err
+	}), by)
+	if errors.Is(err, metadata.ErrArtistNotFound) {
+		fail(w, http.StatusNotFound, "no artist with that id")
 		return
 	}
-	dz := a.deezerProfile(ctx, artist, art)
+	// A slow or failing source never fails the page: the album is drawn
+	// from the names already kept and the page says it is incomplete.
+	incomplete := !answered || err != nil
+	if incomplete {
+		art = metadata.Artist{MBID: artist, Name: a.knownName("artist", artist)}
+	}
+	side, cancel := context.WithTimeout(ctx, max(time.Until(by), time.Second))
+	defer cancel()
+	dz := a.deezerProfile(side, artist, art)
 	albums, t, err := a.pageAlbums(ctx, r, art, dz)
 	if err != nil {
 		internal(w, err)
 		return
+	}
+	if incomplete && t != nil && art.Name == "" {
+		art.Name = t.Name
 	}
 	var me *PageAlbum
 	for i := range albums {
 		if albums[i].MBID == mbid {
 			me = &albums[i]
 		}
+	}
+	if me == nil && incomplete {
+		x := PageAlbum{MBID: mbid, Name: a.knownName("album", mbid), SecondaryTypes: []string{}, Image: artPath("album", mbid), Shelf: "albums"}
+		me = &x
 	}
 	if me == nil {
 		fail(w, http.StatusNotFound, "that album is not by that artist")
@@ -903,8 +899,11 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 			v.Artist.Image = img
 		}
 	}
-	<-psDone
-	if psErr != nil && len(ps) == 0 {
+	ps, psErr, psAnswered := waitFlight[[]metadata.Pressing](ctx, psFlight, by)
+	if !psAnswered && psErr == nil {
+		psErr = context.DeadlineExceeded // still asking: the next ask joins it
+	}
+	if incomplete || psErr != nil && len(ps) == 0 {
 		v.Incomplete = true
 	}
 	main := mainPressing(ps)
@@ -956,9 +955,15 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 			v.MoreBy = append(v.MoreBy, al)
 		}
 	}
-	<-simDone
-	v.Similar = similar
-	w.Header().Set("Cache-Control", "private, max-age=60")
+	select {
+	case v.Similar = <-simDone:
+	case <-time.After(max(time.Until(by), 0)):
+		v.Similar = []PageArtist{}
+	}
+	// The lower row's covers (More by, Fans also like) are fetched now, so
+	// they arrive with the page instead of one by one.
+	a.warmMusicArt(ArtistPageView{Image: v.Artist.Image, Albums: v.MoreBy, Similar: v.Similar})
+	musicPageCaching(w, v.Incomplete)
 	a.writeMusicJSON(w, r, v)
 }
 

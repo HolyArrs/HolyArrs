@@ -164,6 +164,8 @@ type API struct {
 	watchOn watchOnCache
 	// music keeps the music trending lists for an hour.
 	music musicTrendCache
+	// side keeps music page side data, also in lookup_cache (musicside.go).
+	side   sideStore
 	rising risingCache
 	// pics are the metadata server's music picture records (musicpictures.go).
 	pics picRecords
