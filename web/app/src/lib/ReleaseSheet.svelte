@@ -9,7 +9,8 @@
 
 	// Pick a release, as a side sheet on the title page: the releases the last
 	// search found, best first, with the reason each would or would not be picked.
-	let { open = $bindable(false), titleId, name, onchosen }: { open?: boolean; titleId: number; name: string; onchosen?: () => void } = $props();
+	// scope narrows it to one season or episode: its query for the list and its body for a search.
+	let { open = $bindable(false), titleId, name, scope = null, onchosen }: { open?: boolean; titleId: number; name: string; scope?: { label: string; query: string; body: Record<string, unknown> } | null; onchosen?: () => void } = $props();
 
 	let releases = $state<ReleaseView[]>([]);
 	let total = $state(0);
@@ -23,7 +24,7 @@
 	async function load() {
 		loading = true;
 		try {
-			const p = import.meta.env.DEV && new URLSearchParams(location.search).get('releases') === 'demo' ? demoPage(name) : await api.get<ReleasePage>(`/titles/${titleId}/releases?limit=60&offset=0`);
+			const p = import.meta.env.DEV && new URLSearchParams(location.search).get('releases') === 'demo' ? demoPage(name) : await api.get<ReleasePage>(`/titles/${titleId}/releases?${scope ? scope.query + '&' : ''}limit=60&offset=0`);
 			releases = p.releases;
 			total = p.total;
 			// Keep a search we just started as running until it shows releases or a minute passes.
@@ -38,7 +39,7 @@
 	async function search() {
 		try {
 			startedAt = Date.now();
-			const r = await api.post<{ job_ids: number[] }>(`/titles/${titleId}/search`, { choose: false });
+			const r = await api.post<{ job_ids: number[] }>(`/titles/${titleId}/search`, { ...(scope?.body ?? {}), choose: false });
 			running = [...new Set([...running, ...r.job_ids])];
 		} catch (e) {
 			toasts.push(message(e), 'fail');
@@ -134,7 +135,7 @@
 	const hidden = $derived(releases.length - releases.filter((r) => r.passed && r.state !== 'turned_down').length);
 </script>
 
-<Sheet bind:open title="Pick a release" description={name} placement="right" size="md">
+<Sheet bind:open title="Pick a release" description={scope ? `{name} · ${scope.label}` : name} placement="right" size="md">
 	<div class="rs" data-testid="release-sheet">
 		<div class="rs-bar">
 			<div class="rs-seg" role="tablist">

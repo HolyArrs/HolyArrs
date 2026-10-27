@@ -12,7 +12,8 @@
 	import ProgressBar from './ui/ProgressBar.svelte';
 	import Skeleton from './ui/Skeleton.svelte';
 
-	let { titleId, albumId, onDone }: { titleId?: number; albumId?: number; onDone?: () => void } = $props();
+	// season narrows a show's preview to that season's files (read from the SxxEyy in their names).
+	let { titleId, albumId, season, onDone }: { titleId?: number; albumId?: number; season?: number; onDone?: () => void } = $props();
 
 	let steps = $state<RenameStep[]>([]);
 	// The hash of what this preview shows: the rename does only that, and
@@ -28,7 +29,7 @@
 	async function load() {
 		try {
 			const p = await api.get<{ steps: RenameStep[]; plan_hash: string }>(titleId === undefined ? '/rename' : `/titles/${titleId}/rename`);
-			steps = albumSteps(p.steps, albumId);
+			steps = albumSteps(p.steps, albumId).filter((s) => season === undefined || Number(/S(\d{1,3})E\d+/i.exec(s.from)?.[1] ?? -1) === season);
 			planHash = p.plan_hash;
 		} catch (e) {
 			error = message(e);
