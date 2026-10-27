@@ -57,6 +57,47 @@ export interface ArtistCoreData {
 	kid: boolean;
 }
 
+export interface ArtistPopularity {
+	monthly_listeners?: number;
+	world_rank?: number;
+	listeners_change_today?: number;
+	total_plays?: number;
+	as_of?: string;
+}
+
+export interface StoreAlbum {
+	title: string;
+	release_date?: string;
+	type: string;
+	track_count?: number;
+	explicit?: boolean;
+	image?: string;
+}
+
+/** shortCount writes 1234 as 1.2K and 81500000 as 81.5M. */
+export function shortCount(n: number): string {
+	const a = Math.abs(n);
+	const f = (v: number, u: string) => `${v >= 100 ? Math.round(v) : Number(v.toFixed(1))}${u}`;
+	if (a >= 1e9) return f(a / 1e9, 'B');
+	if (a >= 1e6) return f(a / 1e6, 'M');
+	if (a >= 1e3) return f(a / 1e3, 'K');
+	return String(Math.round(a));
+}
+
+/** popularityStats turns an artist's listening figures into stat-band entries; none when nothing is known. */
+export function popularityStats(p: ArtistPopularity | undefined | null): { v: string; l: string }[] {
+	if (!p) return [];
+	if (p.monthly_listeners && p.monthly_listeners > 0) {
+		const out = [{ v: shortCount(p.monthly_listeners), l: 'Monthly listeners' }];
+		if (p.world_rank && p.world_rank > 0) out.push({ v: `#${p.world_rank}`, l: 'World rank' });
+		const d = p.listeners_change_today ?? 0;
+		if (d) out.push({ v: `${d > 0 ? '+' : '−'}${shortCount(d)}`, l: 'Listeners today' });
+		return out;
+	}
+	if (p.total_plays && p.total_plays > 0) return [{ v: shortCount(p.total_plays), l: 'Total plays' }];
+	return [];
+}
+
 export interface ArtistPageData {
 	mbid: string;
 	name: string;
@@ -73,6 +114,10 @@ export interface ArtistPageData {
 	albums: PageAlbum[];
 	latest: PageAlbum | null;
 	top: PageSong[];
+	/** Listening figures: listeners, rank and today's change for the most played artists, else total plays; absent when none is known. */
+	popularity?: ArtistPopularity;
+	/** The releases a store knows when MusicBrainz lists none: shown, never asked for. */
+	store_albums?: StoreAlbum[];
 	similar: PageArtist[];
 	related: PageArtist[];
 	kid: boolean;

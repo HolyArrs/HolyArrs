@@ -8,7 +8,7 @@
 	import { api, message } from './api.ts';
 	import { toasts } from './toasts.svelte.ts';
 	import { refreshInbox } from './wishlist.svelte.ts';
-	import { musicCardHref, musicImage } from './music/music-trending.ts';
+	import { fetchRisingToday, musicCardHref, musicImage, type MusicCardData, type MusicRowData } from './music/music-trending.ts';
 	import { coverFor } from './music/music-pages.ts';
 	import { cardBadges, exploreLinks, eyebrow, heroNote, newMusicPath, rowNote, type NewMusicAnswer, type NewMusicCard } from './music/music-new.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView, TitleView } from './types.ts';
@@ -38,9 +38,14 @@
 	const gone = new AbortController();
 	let poll: ReturnType<typeof setTimeout> | undefined;
 
+	// Rising today: asked with the page's rows and shown with them.
+	let rising = $state<MusicRowData | null>(null);
+	const risingAsk = fetchRisingToday(api, gone.signal);
+
 	async function load(tries = 0) {
 		try {
 			const a = await api.get<NewMusicAnswer>(`${newMusicPath}?region=${encodeURIComponent(defaultRegion())}`, gone.signal);
+			if (!tries) rising = await risingAsk;
 			answer = a;
 			failed = false;
 			if (a.building && tries < 30) poll = setTimeout(() => void load(tries + 1), 3000);
@@ -268,7 +273,17 @@
 			</section>
 		{/if}
 
-		{#each rows as row (row.id)}
+		{#each rows as row, ri (row.id)}
+			{#if ri === 1 && rising}
+				<div class="row" data-row="rising_today">
+					<Shelf title={rising.title} subtitle={rising.reason} item="var(--music-circle, 152px)" items={rising.items} key={(c) => c.key} placeholder="round" lines={2}>
+						{#snippet card(c: MusicCardData)}
+							<PosterCard title={c.name} href={musicCardHref(c)} image={coverFor(musicImage(c), 200).src} kind="artist" subtitle={c.note || undefined} shape="round" music
+								status={c.title_id ? 'in_library' : undefined} />
+						{/snippet}
+					</Shelf>
+				</div>
+			{/if}
 			{#if row.shape === 'wide'}
 			<MusicVideoRow title={row.title} reason={row.reason} items={row.items} />
 			{:else}

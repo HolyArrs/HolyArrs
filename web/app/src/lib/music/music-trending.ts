@@ -207,6 +207,24 @@ export async function fetchMusicExplore(genre: string, region: string, client: P
 	return client.get<MusicExploreAnswer>(`/explore/music?${q}`, signal);
 }
 
+/** fetchRisingToday reads the "Rising today" row (round artist cards); null when there is none today or the server did not answer. */
+export async function fetchRisingToday(client: Pick<Client, 'get'> = api, signal?: AbortSignal): Promise<MusicRowData | null> {
+	try {
+		const r = await client.get<MusicRowData>('/explore/music/rising', signal);
+		return r?.items?.length ? r : null;
+	} catch {
+		return null;
+	}
+}
+
+/** withRising puts the rising row after the trending artists (else third), once. */
+export function withRising<T extends { id: string; type: string }>(rows: T[], rising: T | null): T[] {
+	if (!rising || rows.some((r) => r.id === rising.id)) return rows;
+	const at = rows.findIndex((r) => r.type === 'trending_artists');
+	const i = at >= 0 ? at + 1 : Math.min(2, rows.length);
+	return [...rows.slice(0, i), rising, ...rows.slice(i)];
+}
+
 /** fetchMusicExploreMore reads the next 6 Music rows of the day's plan (music_rows_v7). */
 export async function fetchMusicExploreMore(cursor: string, region: string, client: Pick<Client, 'get'> = api, signal?: AbortSignal): Promise<MusicExploreAnswer> {
 	return client.get<MusicExploreAnswer>(`/explore/music?${new URLSearchParams({ region, cursor })}`, signal);

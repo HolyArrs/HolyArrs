@@ -164,6 +164,7 @@ type API struct {
 	watchOn watchOnCache
 	// music keeps the music trending lists for an hour.
 	music musicTrendCache
+	rising risingCache
 	// pics are the metadata server's music picture records (musicpictures.go).
 	pics picRecords
 	// musicx keeps artist genres and similar artists for Explore → Music.
@@ -381,6 +382,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/explore/title-stats", a.exploreTitleStats)
 	m.HandleFunc("GET /api/v1/music-trending", a.musicTrending)
 	m.HandleFunc("GET /api/v1/explore/music", a.exploreMusic)
+	m.HandleFunc("GET /api/v1/explore/music/rising", a.risingToday)
 	m.HandleFunc("GET /api/v1/music-trending/art/{kind}/{mbid}", a.musicTrendArt)
 	m.HandleFunc("GET /api/v1/music/genre/{slug}", a.musicGenrePage)
 	m.HandleFunc("GET /api/v1/music/browse/{kind}/{slug}", a.musicBrowsePage)

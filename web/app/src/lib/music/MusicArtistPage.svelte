@@ -47,7 +47,7 @@
 	import { HERO_DELAY, setSoundOn, soundOn } from '#lib/trailer.ts';
 	import { artistVideo, autoplayHere, loadUISettings, nativeHLS } from '#lib/autoplay.svelte.ts';
 	import { heroVideoStart, type HeroVideo } from '#lib/music/hero-video.ts';
-	import { aboutSize, albumHref, appPicture, artistHref, artistKind, countryName, initialsOf, coverFor, haveLine, kindWord, length, owned, SHELVES, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
+	import { aboutSize, albumHref, appPicture, artistHref, artistKind, countryName, initialsOf, coverFor, haveLine, kindWord, length, owned, popularityStats, SHELVES, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import ArtistVideos from '#lib/ArtistVideos.svelte';
@@ -358,6 +358,7 @@
 		if (!hero) return [];
 		return [artistKind(hero.type), countryName(hero.country), hero.status === 'ended' ? 'Disbanded or retired' : '', (data?.genres ?? []).slice(0, 3).join(', ')].filter(Boolean) as string[];
 	});
+	const storeKind = (t: string) => ({ single: 'Single', ep: 'EP', compilation: 'Compilation' })[t] ?? '';
 	const released = $derived(data?.albums.filter((a) => !a.upcoming) ?? []);
 	// The band under the hero: what this artist has put out, in big numbers.
 	const stats = $derived.by(() => {
@@ -366,6 +367,7 @@
 		const years = released.map((a) => a.release_date?.slice(0, 4)).filter((y): y is string => !!y).sort();
 		const span = years.length ? (years[0] === years[years.length - 1] ? years[0] : `${years[0]}–${years[years.length - 1]}`) : '';
 		return [
+			...popularityStats(data.popularity),
 			// The same count as "On HolyArrs: x of N" and About (albums, EPs and singles), not every listed extra.
 			{ v: String(data.total || released.length), l: (data.total || released.length) === 1 ? 'Release' : 'Releases' },
 			{ v: String(plain('album')), l: 'Albums' },
@@ -663,6 +665,22 @@
 						{:else}
 							<p class="quiet">Nothing here with these filters.</p>
 						{/if}
+					</section>
+				{/if}
+
+				{#if !released.length && data.store_albums?.length}
+					<!-- MusicBrainz lists nothing for this artist: what a store knows, so the page is not empty. No ask control (a request needs a MusicBrainz id). -->
+					<section class="block" data-testid="store-discography">
+						<div class="row-head"><h2>Discography</h2></div>
+						<ul class="grid">
+							{#each data.store_albums as a, i (a.title + i)}
+								<li>
+									<PosterCard title={a.title} image={a.image ? coverFor(appPicture(a.image), 200).src : null} eager={i < 6} kind="artist" shape="square" music
+										subtitle={[albumYear(a.release_date), a.type === 'album' ? '' : storeKind(a.type), a.track_count ? `${a.track_count} ${a.track_count === 1 ? 'track' : 'tracks'}` : ''].filter(Boolean).join(' · ') || undefined}
+										badges={a.explicit ? ['E'] : undefined} />
+								</li>
+							{/each}
+						</ul>
 					</section>
 				{/if}
 

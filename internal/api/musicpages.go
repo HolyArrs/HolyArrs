@@ -53,6 +53,17 @@ type PageSong struct {
 	Image     string `json:"image,omitempty"`
 }
 
+// PageStoreAlbum is one release of the discography fallback; Image goes
+// through the picture route like a top song's release.
+type PageStoreAlbum struct {
+	Title       string `json:"title"`
+	ReleaseDate string `json:"release_date,omitempty"`
+	Type        string `json:"type"`
+	TrackCount  int    `json:"track_count,omitempty"`
+	Explicit    bool   `json:"explicit,omitempty"`
+	Image       string `json:"image,omitempty"`
+}
+
 // PageArtist is a round artist link.
 type PageArtist struct {
 	MBID  string `json:"mbid"`
@@ -78,7 +89,12 @@ type ArtistPageView struct {
 	Albums         []PageAlbum           `json:"albums"`
 	Latest         *PageAlbum            `json:"latest"`
 	Top            []PageSong            `json:"top"`
-	Similar        []PageArtist          `json:"similar"`
+	// Popularity is the artist's listening figures, nil when none is known.
+	Popularity *metadata.ArtistPopularity `json:"popularity,omitempty"`
+	// StoreAlbums is the discography a store knows when MusicBrainz has no
+	// release groups: shown, never asked for (no MusicBrainz id).
+	StoreAlbums []PageStoreAlbum `json:"store_albums,omitempty"`
+	Similar     []PageArtist     `json:"similar"`
 	Related        []PageArtist          `json:"related"`
 	Kid            bool                  `json:"kid"`
 	// Missing is what "Ask for all missing" asks: the released albums,
@@ -598,6 +614,28 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 	}
 	var dz metadata.DeezerProfile
 	var bio *metadata.WikiSummary
+	var top *metadata.MusicTopSongs
+	var store []metadata.MusicStoreAlbum
+	if a.s.MusicTopSongs != nil {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if t, err := a.s.MusicTopSongs(side, mbid); err == nil {
+				top = &t
+			} else {
+				top = &metadata.MusicTopSongs{}
+			}
+		}()
+	}
+	if a.s.MusicDiscography != nil && len(art.Albums) == 0 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if d, err := a.s.MusicDiscography(side, mbid); err == nil {
+				store = d.Albums
+			}
+		}()
+	}
 	wg.Add(2)
 	go func() { defer wg.Done(); dz = a.deezerProfile(side, mbid, art) }()
 	go func() { defer wg.Done(); bio = a.artistBio(side, art.Name) }()
@@ -647,8 +685,32 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	v.Albums = kept
+	v.Popularity = art.Popularity
 	var songNames []nameKey
-	for _, s := range dz.Top {
+	// The metadata server's top songs feed the shelf; with none known (or it
+	// not answering) the shelf stays hidden.
+	songs := dz.Top
+	if top != nil {
+		songs = songs[:0:0]
+		for _, s := range top.Songs {
+			songs = append(songs, metadata.DeezerTrack{Title: s.Title, LengthMS: s.LengthMS, Explicit: s.Explicit, Album: s.Album, Cover: s.Cover})
+		}
+	}
+	if len(kept) == 0 {
+		for _, al := range store {
+			if (kid && al.Explicit) || strings.TrimSpace(al.Title) == "" {
+				continue
+			}
+			x := PageStoreAlbum{Title: al.Title, ReleaseDate: al.ReleaseDate, Type: al.Type, TrackCount: al.TrackCount, Explicit: al.Explicit}
+			if al.Cover != "" {
+				id := songArtID(art.Name, al.Title, al.Cover)
+				x.Image = artPath("album", id)
+				songNames = append(songNames, nameKey{kind: "album", mbid: id, name: al.Title, artist: art.Name, cover: al.Cover})
+			}
+			v.StoreAlbums = append(v.StoreAlbums, x)
+		}
+	}
+	for _, s := range songs {
 		if kid && s.Explicit {
 			continue
 		}

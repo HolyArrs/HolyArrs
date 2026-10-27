@@ -10,7 +10,7 @@
 	import { heroArtists, heroLine } from './music/page-hero.ts';
 	import ArtPlaceholder from './ui/ArtPlaceholder.svelte';
 	import { isNewRelease } from './music/music-new.ts';
-	import { fetchMusicExplore, fetchMusicExploreMore, fetchMusicPage, genreHref, musicCardHref, musicCardNote, musicImage, musicStatus, releaseWords, songAskHref, type MusicCardData, type MusicExploreAnswer, type MusicPageKind } from './music/music-trending.ts';
+	import { fetchMusicExplore, fetchMusicExploreMore, fetchRisingToday, withRising, fetchMusicPage, genreHref, musicCardHref, musicCardNote, musicImage, musicStatus, releaseWords, songAskHref, type MusicCardData, type MusicExploreAnswer, type MusicPageKind } from './music/music-trending.ts';
 	import MusicGenreTiles from './ui/MusicGenreTiles.svelte';
 	import MusicBrowseGrid from './ui/MusicBrowseGrid.svelte';
 	import MusicVideoRow from './ui/MusicVideoRow.svelte';
@@ -86,7 +86,10 @@
 		gone = new AbortController();
 		const signal = gone.signal;
 		try {
+			// Rising today is asked with the rows and shown with them (all music, not a genre or chart page).
+			const risingAsk = slug || genre ? Promise.resolve(null) : fetchRisingToday(api, signal);
 			const a = slug ? await fetchMusicPage(kind, slug, region, api, signal) : await fetchMusicExplore(genre, region, api, signal);
+			a.rows = withRising(a.rows, await risingAsk);
 			if (signal.aborted) return;
 			const at = `${kind}|${slug}|${genre}|${region}`;
 			if (at !== orderFor) {

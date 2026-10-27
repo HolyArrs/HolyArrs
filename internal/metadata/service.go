@@ -104,6 +104,8 @@ type serviceItem struct {
 	Title      string          `json:"title"`
 	Summary    string          `json:"summary"`
 	SourceData json.RawMessage `json:"source_data"`
+	// Popularity rides beside an artist's data (the metadata server adds it).
+	Popularity *ArtistPopularity `json:"popularity,omitempty"`
 }
 
 func (i serviceItem) decode(out any) error {

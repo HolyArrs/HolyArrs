@@ -69,6 +69,12 @@ type Deps struct {
 	// artists, albums and songs); nil leaves the dropdown to the Library
 	// and TMDB.
 	MusicSuggest func(ctx context.Context, q string) ([]metadata.MusicSuggestion, error)
+	// MusicTopSongs, MusicRising and MusicDiscography read an artist's top
+	// songs, the day's rising artists and the discography a store knows when
+	// MusicBrainz has none; nil leaves today's top songs and hides the rest.
+	MusicTopSongs    func(ctx context.Context, mbid string) (metadata.MusicTopSongs, error)
+	MusicRising      func(ctx context.Context) (metadata.MusicRising, error)
+	MusicDiscography func(ctx context.Context, mbid string) (metadata.MusicDiscography, error)
 	// MusicPictures reads the stored picture records (version, size, main
 	// colour) of a row's artists and albums in one call; nil answers none.
 	MusicPictures func(ctx context.Context, artists, albums []string) (metadata.MusicPictures, error)

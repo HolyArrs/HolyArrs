@@ -59,6 +59,9 @@ type Artist struct {
 	Status         string  `json:"status"`          // running, ended
 	Score          int     `json:"score,omitempty"` // search match, 0 to 100
 	Albums         []Album `json:"albums,omitempty"`
+	// Popularity is the metadata server's listening figures; nil when it
+	// has none (the page then shows nothing).
+	Popularity *ArtistPopularity `json:"popularity,omitempty"`
 	// Partial says Albums is not the whole list (more pages than one
 	// lookup reads): use what came, remove nothing.
 	Partial bool `json:"-"`

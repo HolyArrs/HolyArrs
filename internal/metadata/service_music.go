@@ -88,6 +88,7 @@ type serviceArtistData struct {
 		Ended bool `json:"ended"`
 	} `json:"life-span"`
 	ReleaseGroups *[]serviceAlbumData `json:"release-groups"`
+	Popularity    *ArtistPopularity   `json:"popularity"`
 }
 
 type serviceAlbumData struct {
@@ -211,7 +212,10 @@ func parseServiceArtist(item serviceItem, albums bool) (Artist, error) {
 		return Artist{}, ErrServiceInvalid
 	}
 	out := Artist{MBID: strings.ToLower(data.ID), Name: data.Name, SortName: data.SortName, Type: strings.ToLower(data.Type),
-		Disambiguation: data.Disambiguation, Country: data.Country, Score: data.Score, Status: "running"}
+		Disambiguation: data.Disambiguation, Country: data.Country, Score: data.Score, Status: "running", Popularity: data.Popularity.orNil()}
+	if out.Popularity == nil {
+		out.Popularity = item.Popularity.orNil()
+	}
 	if data.LifeSpan.Ended {
 		out.Status = "ended"
 	}
