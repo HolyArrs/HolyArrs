@@ -136,6 +136,9 @@
   --accent-fill: #d42d24;
   --accent-fill-hover: #c42a21;
   --text-on-red: #ffffff;
+  /* A green button under white words (Approve): dark enough in both themes (5.4:1). */
+  --ok-fill: #1f7a35;
+  --ok-fill-hover: #1a6e2e;
   --ok: #248a3d; --wait: #b25000; --fail: #d70015; --info: #0071e3;
   --ok-text: #1a6e2e; --wait-text: #8f4000; --fail-text: #b3000f; --info-text: #0068d1;
   --scrim: rgb(0 0 0 / 40%);
@@ -167,6 +170,9 @@
     --accent-fill: #d42d24;
     --accent-fill-hover: #c42a21;
     --text-on-red: #ffffff;
+    /* A green button under white words (Approve): dark enough in both themes (5.4:1). */
+    --ok-fill: #1f7a35;
+    --ok-fill-hover: #1a6e2e;
     --ok: #30d158; --wait: #ffb340; --fail: #ff6961; --info: #409cff;
   --ok-text: #30d158; --wait-text: #ffb340; --fail-text: #ff6961; --info-text: #409cff;
     --scrim: rgb(0 0 0 / 60%);
@@ -197,6 +203,9 @@
   --accent-fill: #d42d24;
   --accent-fill-hover: #c42a21;
   --text-on-red: #ffffff;
+  /* A green button under white words (Approve): dark enough in both themes (5.4:1). */
+  --ok-fill: #1f7a35;
+  --ok-fill-hover: #1a6e2e;
   --ok: #30d158; --wait: #ffb340; --fail: #ff6961; --info: #409cff;
   --ok-text: #30d158; --wait-text: #ffb340; --fail-text: #ff6961; --info-text: #409cff;
   --scrim: rgb(0 0 0 / 60%);

@@ -106,8 +106,8 @@
 	.acts { display: flex; align-items: center; gap: 8px; margin-top: auto; }
 	.big { flex: 1 1 0; min-width: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: var(--r-btn); font: var(--t-headline); font-size: 15px; white-space: nowrap; transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
 	.big:active { transform: scale(0.97); }
-	.yes { background: var(--ok); color: #fff; }
-	.yes:hover { background: color-mix(in srgb, var(--ok) 86%, #fff); }
+	.yes { background: var(--ok-fill); color: #fff; }
+	.yes:hover { background: var(--ok-fill-hover); }
 	.no { background: rgb(255 255 255 / 12%); color: var(--on-art); }
 	.no:hover { background: color-mix(in srgb, var(--ha-red) 70%, transparent); }
 	.opts { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border-radius: var(--r-btn); background: rgb(255 255 255 / 12%); color: var(--on-art); }

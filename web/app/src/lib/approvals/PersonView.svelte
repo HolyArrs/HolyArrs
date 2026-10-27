@@ -112,7 +112,7 @@
 		.tile:hover .part { opacity: 0; }
 	}
 	.o { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: var(--r-btn); font: var(--t-subhead); font-weight: 600; color: #fff; }
-	.o.yes { background: var(--ok); }
+	.o.yes { background: var(--ok-fill); }
 	.o.no { background: rgb(255 255 255 / 18%); }
 	.o.no:hover { background: var(--ha-red); }
 	.o.plain { min-height: 30px; background: transparent; color: rgb(255 255 255 / 86%); }
