@@ -570,8 +570,8 @@
 							<div class="actions">
 								{#if approver && a.state === 'asked'}
 									<span class="quick">
-										<IconButton icon="check" variant="glass" label="Approve {a.name}" data-testid="ask-approve" onclick={() => act([a], 'approve')} />
-										<IconButton icon="x" variant="glass" label="Turn down {a.name}" data-testid="ask-decline" onclick={() => askDecline([a])} />
+										<IconButton icon="check" variant="tinted" label="Approve {a.name}" data-testid="ask-approve" onclick={() => act([a], 'approve')} />
+										<IconButton icon="x" variant="tinted" label="Turn down {a.name}" data-testid="ask-decline" onclick={() => askDecline([a])} />
 									</span>
 								{/if}
 								{#if pending[a.id]}<span class="muted pending">Sending in a moment…</span>{/if}
