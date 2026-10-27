@@ -29,6 +29,7 @@
 	import PosterCard from '#lib/ui/PosterCard.svelte';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
+	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import { pictureFor, ratioOf } from '#lib/pictures.ts';
@@ -411,13 +412,20 @@
 	// The stats band designs being compared (?stats=1…5, remembered for the session); 0 is today's band.
 	const LOOKS = [
 		{ value: 0, label: 'Now' },
-		{ value: 1, label: '1 Line in hero' },
-		{ value: 2, label: '2 Split' },
-		{ value: 3, label: '3 Like a movie' },
-		{ value: 4, label: '4 Pills in hero' },
-		{ value: 5, label: '5 Split + cards' }
+		{ value: 1, label: '1 Pills' },
+		{ value: 2, label: '2 Buttons up' },
+		{ value: 3, label: '3 Edge pills' },
+		{ value: 4, label: '4 Capsule' },
+		{ value: 5, label: '5 Flanked' },
+		{ value: 6, label: '6 Cards' },
+		{ value: 7, label: '7 Dock' },
+		{ value: 8, label: '8 Icons' },
+		{ value: 9, label: '9 Line' },
+		{ value: 10, label: '10 Tiles' }
 	];
 	let look = $state(0);
+	// The designs that sit across the hero's bottom edge.
+	const onEdge = $derived(look === 3 || look === 4 || look === 7 || look === 9);
 	// The figures the stats band designs draw from.
 	const listen = $derived(listening(data?.popularity));
 	const catalog = $derived.by((): Catalog | null => {
@@ -429,6 +437,8 @@
 		return { albums: plain('album'), eps: plain('ep'), singles: plain('single'), since, span: since && last !== since ? `${since}–${last}` : since };
 	});
 	const catLine = $derived(catalog ? catalogParts(catalog) : []);
+	// The new designs put "since 2005" with the facts in the hero, so the stats split evenly: three listening, three catalog.
+	const heroFacts = $derived(catalog?.since ? [...facts, `since ${catalog.since}`] : facts);
 	const smallCount = $derived(catalog ? catalog.eps + catalog.singles : 0);
 	const bandOn = $derived(!!data && (!!listen || catLine.length > 0));
 	// One sentence or two of the bio, under the facts; the full text is in About.
@@ -571,49 +581,105 @@
 		subtitle={a.artist_name || undefined} badges={a.explicit ? ['E'] : undefined} />
 {/snippet}
 
-{#snippet statLine()}
+{#snippet pills(side: '' | 'l' | 'r' = '', tagged = true)}
 	{@const up = (listen?.today ?? 0) > 0}
-	<!-- The listening figures, then the catalog on a quieter line under them. -->
-	<p class="sb sl" data-testid="artist-stats" data-variant={look}>
-		{#if listen}<span class="seg">{shortCount(listen.n)} <span class="wide">{listen.unit}</span><span class="narrow">{listen.unit === 'total plays' ? 'plays' : 'listeners'}</span></span>{#if listen.rank}<span class="seg"><span class="dot" aria-hidden="true">·</span>#{listen.rank}<span class="wide">{' worldwide'}</span><span class="narrow">{' world'}</span></span>{/if}{#if listen.today}<span class="seg chg" class:up class:down={!up}><span class="dot" aria-hidden="true">·</span>{changeWords(listen.today, '')}<span class="wide">{' today'}</span></span>{/if}{/if}{#each catLine as part, i (part)}<span class="seg cat" class:cat0={i === 0}>{#if i || listen}<span class="dot" aria-hidden="true">·</span>{/if}{part}</span>{/each}
-	</p>
-{/snippet}
-
-{#snippet statPills()}
-	{@const up = (listen?.today ?? 0) > 0}
-	{#if catalog}
-		<ul class="sb sb5" data-testid="artist-stats" data-variant="4">
-			{#if listen}
-				<li class="pill hot"><b>{shortCount(listen.n)}</b> <span class="wide">{listen.unit}</span><span class="narrow">{listen.unit === 'total plays' ? 'plays' : 'listeners'}</span></li>
-				{#if listen.rank}<li class="pill"><b>#{listen.rank}</b> <span class="wide">in the world</span><span class="narrow">world</span></li>{/if}
-				{#if listen.today}<li class="pill chg" class:up class:down={!up}>{changeWords(listen.today, '')}<span class="wide">{' today'}</span></li>{/if}
+	{#if bandOn && catalog}
+		<!-- Even pills: three for listening, three for the catalog (with what is on HolyArrs). -->
+		<ul class="pl" class:icons={look === 8} class:l={side === 'l'} class:r={side === 'r'} data-testid={tagged && side !== 'r' ? 'artist-stats' : undefined} data-variant={tagged && side !== 'r' ? look : undefined}>
+			{#if side !== 'r' && listen}
+				<li class="hot">{#if look === 8}<Icon name="people" size={15} />{/if}<b>{shortCount(listen.n)}</b> <span class="wide">{listen.unit}</span><span class="narrow">{listen.unit === 'total plays' ? 'plays' : 'listeners'}</span></li>
+				{#if listen.rank}<li>{#if look === 8}<Icon name="star" size={15} />{/if}<b>#{listen.rank}</b> <span class="wide">in the world</span><span class="narrow">world</span></li>{/if}
+				{#if listen.today}<li class="chg" class:up class:down={!up}>{changeWords(listen.today, '')}<span class="wide">{' today'}</span></li>{/if}
 			{/if}
-			{#if catalog.albums}<li class="pill"><b>{catalog.albums}</b> {catalog.albums === 1 ? 'album' : 'albums'}</li>{/if}
-			{#if smallCount}<li class="pill"><b>{smallCount}</b> {smallReleasesWord(catalog).replace('Single', 'single')}</li>{/if}
-			{#if catalog.since}<li class="pill">since <b>{catalog.since}</b></li>{/if}
+			{#if side !== 'l'}
+				{#if catalog.albums}<li>{#if look === 8}<Icon name="music" size={15} />{/if}<b>{catalog.albums}</b> {catalog.albums === 1 ? 'album' : 'albums'}</li>{/if}
+				{#if smallCount}<li>{#if look === 8}<Icon name="grid" size={15} />{/if}<b>{smallCount}</b> {smallReleasesWord(catalog).replace('Single', 'single')}</li>{/if}
+				{#if data?.total}<li class="own"><Icon name={look === 8 ? 'owned' : 'library'} size={14} /><b>{data.have ?? 0}</b>{' of '}{data.total}<span class="wide">{' on HolyArrs'}</span></li>{/if}
+			{/if}
 		</ul>
 	{/if}
 {/snippet}
 
-{#snippet statCards()}
+{#snippet capsule()}
 	{@const up = (listen?.today ?? 0) > 0}
-	{#if catalog}
-		<div class="sb sb3" class:solo={!listen} data-testid="artist-stats" data-variant="5">
+	{#if bandOn && catalog}
+		<!-- One glass capsule across the hero's edge, in even segments. -->
+		<dl class="cap" data-testid="artist-stats" data-variant="4">
 			{#if listen}
-				<div class="card"><p class="ch">Listening</p><dl>
-					<div class="row"><dt>{listen.unit === 'total plays' ? 'Total plays' : 'Monthly listeners'}</dt><dd>{shortCount(listen.n)}</dd></div>
-					{#if listen.rank}<div class="row"><dt>World rank</dt><dd>#{listen.rank}</dd></div>{:else}<div class="row"><dt>World rank</dt><dd class="quiet">outside top 2,500</dd></div>{/if}
-					{#if listen.today}<div class="row"><dt>Today</dt><dd class="chg" class:up class:down={!up}>{changeWords(listen.today, '')}</dd></div>{/if}
-				</dl></div>
+				<div><dd>{shortCount(listen.n)}</dd><dt>{listen.unit === 'total plays' ? 'Plays' : 'Listeners'}</dt></div>
+				{#if listen.rank}<div><dd>#{listen.rank}</dd><dt>World</dt></div>{/if}
+				{#if listen.today}<div><dd class="chg" class:up class:down={!up}>{changeWords(listen.today, '')}</dd><dt>Today</dt></div>{/if}
 			{/if}
-			<div class="card"><p class="ch">Catalog</p><dl>
-				{#if catalog.albums}<div class="row"><dt>{catalog.albums === 1 ? 'Album' : 'Albums'}</dt><dd>{catalog.albums}</dd></div>{/if}
-				{#if catalog.eps && catalog.singles}<div class="row"><dt>EPs · Singles</dt><dd>{catalog.eps} · {catalog.singles}</dd></div>{:else if smallCount}<div class="row"><dt>{smallReleasesWord(catalog)}</dt><dd>{smallCount}</dd></div>{/if}
-				{#if catalog.span}<div class="row"><dt>Active</dt><dd>{catalog.span}</dd></div>{/if}
-				{#if !catalog.albums && !smallCount && !catalog.span}<div class="row"><dt>Releases</dt><dd class="quiet">none listed yet</dd></div>{/if}
-			</dl></div>
-		</div>
+			{#if catalog.albums}<div><dd>{catalog.albums}</dd><dt>{catalog.albums === 1 ? 'Album' : 'Albums'}</dt></div>{/if}
+			{#if smallCount}<div><dd>{smallCount}</dd><dt>{smallReleasesWord(catalog)}</dt></div>{/if}
+			{#if data?.total}<div><dd>{data.have ?? 0}<small>/{data.total}</small></dd><dt>On HolyArrs</dt></div>{/if}
+		</dl>
 	{/if}
+{/snippet}
+
+{#snippet card(side: 'l' | 'r')}
+	{@const up = (listen?.today ?? 0) > 0}
+	{#if bandOn && catalog}
+		<!-- Two even cards: the same size, the same three rows, mirrored either side of the buttons. -->
+		<dl class="ec" class:l={side === 'l'} class:r={side === 'r'} data-testid={side === 'l' ? 'artist-stats' : undefined} data-variant={side === 'l' ? 6 : undefined}>
+			{#if side === 'l'}
+				<div><dt>{listen?.unit === 'total plays' ? 'Total plays' : 'Monthly listeners'}</dt><dd>{listen ? shortCount(listen.n) : '—'}</dd></div>
+				<div><dt>World rank</dt><dd>{listen?.rank ? `#${listen.rank}` : '—'}</dd></div>
+				<div><dt>Today</dt><dd class="chg" class:up={!!listen?.today && up} class:down={!!listen?.today && !up}>{listen?.today ? changeWords(listen.today, '') : '—'}</dd></div>
+			{:else}
+				<div><dt>{catalog.albums === 1 ? 'Album' : 'Albums'}</dt><dd>{catalog.albums || '—'}</dd></div>
+				<div><dt>{smallCount ? smallReleasesWord(catalog) : 'Singles & EPs'}</dt><dd>{smallCount || '—'}</dd></div>
+				<div><dt>On HolyArrs</dt><dd>{data?.total ? `${data.have ?? 0} of ${data.total}` : '—'}</dd></div>
+			{/if}
+		</dl>
+	{/if}
+{/snippet}
+
+{#snippet line()}
+	{@const up = (listen?.today ?? 0) > 0}
+	{#if bandOn && catalog}
+		<!-- One line on a glass strip across the hero's edge: listening, a divider, the catalog. -->
+		<p class="ln" data-testid="artist-stats" data-variant="9">
+			{#if listen}<span class="seg"><b>{shortCount(listen.n)}</b> <span class="wide">{listen.unit}</span><span class="narrow">listeners</span></span>{#if listen.rank}<span class="seg"><span class="dot" aria-hidden="true">·</span><b>#{listen.rank}</b><span class="wide">{' worldwide'}</span></span>{/if}{#if listen.today}<span class="seg chg" class:up class:down={!up}><span class="dot" aria-hidden="true">·</span>{changeWords(listen.today, '')}</span>{/if}<span class="div" aria-hidden="true"></span>{/if}{#if catalog.albums}<span class="seg"><b>{catalog.albums}</b> {catalog.albums === 1 ? 'album' : 'albums'}</span>{/if}{#if smallCount}<span class="seg"><span class="dot" aria-hidden="true">·</span><b>{smallCount}</b><span class="wide">{' ' + smallReleasesWord(catalog).replace('Single', 'single')}</span><span class="narrow">{' more'}</span></span>{/if}{#if data?.total}<span class="seg"><span class="dot" aria-hidden="true">·</span><b>{data.have ?? 0}/{data.total}</b><span class="wide">{' on HolyArrs'}</span></span>{/if}
+		</p>
+	{/if}
+{/snippet}
+
+{#snippet tiles()}
+	{@const up = (listen?.today ?? 0) > 0}
+	{#if bandOn && catalog}
+		<!-- Six even tiles, number over word, like the facts on a title page. -->
+		<dl class="tl" data-testid="artist-stats" data-variant="10">
+			<div><dd>{listen ? shortCount(listen.n) : '—'}</dd><dt>{listen?.unit === 'total plays' ? 'Plays' : 'Listeners'}</dt></div>
+			<div><dd>{listen?.rank ? `#${listen.rank}` : '—'}</dd><dt>World rank</dt></div>
+			<div><dd class="chg" class:up={!!listen?.today && up} class:down={!!listen?.today && !up}>{listen?.today ? changeWords(listen.today, '') : '—'}</dd><dt>Today</dt></div>
+			<div><dd>{catalog.albums || '—'}</dd><dt>{catalog.albums === 1 ? 'Album' : 'Albums'}</dt></div>
+			<div><dd>{smallCount || '—'}</dd><dt>{smallCount ? smallReleasesWord(catalog) : 'Singles & EPs'}</dt></div>
+			<div><dd>{data?.total ? `${data.have ?? 0}/${data.total}` : '—'}</dd><dt>On HolyArrs</dt></div>
+		</dl>
+	{/if}
+{/snippet}
+
+{#snippet acts()}
+	<!-- The app's own hero buttons (ActionButton), the same as on movie and show pages. -->
+	<div class="acts">
+		<ActionButton icon="info" label="About {hero?.name ?? 'this artist'}" caption="About" onclick={() => aboutEl?.scrollIntoView({ behavior: glideScroll(), block: 'start' })} />
+		{#if lib?.staff}
+			<ActionButton icon="library" label="In Library: go to the Library section" caption="In Library" primary onclick={lib.onLibrary} data-testid="hero-library" />
+		{:else if lib?.onAsk}
+			<ActionButton icon="plus" label="Ask for albums" primary onclick={lib.onAsk} data-testid="ask-albums" />
+		{:else if lib}
+			<span></span>
+		{:else if titleId}
+			{#if manage}<ActionButton icon="library" label="In Library" primary onclick={() => (artistTab = 'library')} />{:else}<ActionButton icon="library" label="Open in Library" primary href={to(`/library/${titleId}`)} />{/if}
+		{:else if manage || mayAsk}
+			<ActionButton icon={lookup?.ask ? 'check' : 'plus'} label={cta} primary disabled={!!lookup?.ask || !lookup} onclick={() => askAlbum()} data-testid="artist-ask" />
+		{/if}
+		{#if titleId && following !== null}
+			<ActionButton icon={following ? 'bellOn' : 'bell'} label={following ? 'Following' : 'Follow'} pressed={!!following} onclick={toggleFollow} />
+		{/if}
+		{#if lib?.staff}<ActionMenu label="More actions" caption="More" icon="more" items={lib.menu} />{/if}
+	</div>
 {/snippet}
 
 {#snippet heroActions()}
@@ -647,7 +713,7 @@
 		</div>
 	{/if}
 	{#if lib?.nextRelease}<p class="have" data-testid="artist-next">Next album: {lib.nextRelease}</p>{/if}
-	{#if data?.total}<p class="have" data-testid="artist-have"><Icon name="music" size={14} />{haveLine(data.have, data.total)}</p>{/if}
+	{#if data?.total && !look}<p class="have" data-testid="artist-have"><Icon name="music" size={14} />{haveLine(data.have, data.total)}</p>{/if}
 {/snippet}
 
 <svelte:document onfullscreenchange={() => (heroFull = !!heroBox && document.fullscreenElement === heroBox)} />
@@ -656,7 +722,7 @@
 	{#if error && !hero}<LoadError hasData={false} message={plainReason(error).text} onretry={load} {busy} />{/if}
 	<PageLoader loading={!hero && !error} cached={fromCache} label="Loading this artist" onretry={load}>
 		{#if hero}
-			<header class="hero" class:lf={look === 3} class:vid={videoOn} class:bare={!heroSrc && !heroVideo} class:full={heroFull} bind:this={heroBox} data-hero>
+			<header class="hero" class:edge={onEdge} class:paused={videoOn && videoPaused && !heroFull} class:vid={videoOn} class:bare={!heroSrc && !heroVideo} class:full={heroFull} bind:this={heroBox} data-hero>
 				<div class="stage" aria-hidden="true">
 					{#if heroSrc}
 						{#key heroSrc}
@@ -683,13 +749,13 @@
 					{:else}
 						<h1>{hero.name}</h1>
 					{/if}
-						{#if look && bandOn && catalog}
-							{#if look === 4}{@render statPills()}{:else if look !== 5}{@render statLine()}{/if}
+						{#if look}
+							{#if heroFacts.length}<p class="facts hf">{heroFacts.join(' · ')}</p>{/if}
+							{#if bioLine}<p class="bioline hb">{bioLine} <button type="button" class="more" onclick={() => aboutEl?.scrollIntoView({ behavior: glideScroll(), block: 'start' })}>More</button></p>{/if}
 						{/if}
-						{#if look === 3}{@render heroActions()}{/if}
 				</div>
 			</header>
-			<div class="under-hero" class:v={look > 0} class:split={look === 2 || look === 4 || look === 5} class:left={look === 3}>
+			<div class="under-hero" class:v={look > 0} data-look={look || undefined}>
 				{#if !look}
 					{#if facts.length}<p class="facts">{facts.join(' · ')}</p>{/if}
 					{#if bioLine}<p class="bioline">{bioLine} <button type="button" class="more" onclick={() => aboutEl?.scrollIntoView({ behavior: glideScroll(), block: 'start' })}>More</button></p>{/if}
@@ -699,22 +765,29 @@
 						</dl>
 					{/if}
 					{@render heroActions()}
-					{@render libBits()}
+				{:else if look === 2}
+					{@render acts()}
+					{@render pills()}
+				{:else if look === 4}
+					{@render capsule()}
+					{@render acts()}
+				{:else if look === 5}
+					<div class="flank">{@render pills('l')}{@render acts()}{@render pills('r')}</div>
+				{:else if look === 6}
+					<div class="flank cards">{@render card('l')}{@render acts()}{@render card('r')}</div>
+				{:else if look === 7}
+					<div class="flank dock" data-testid="artist-stats" data-variant="7">{@render pills('l', false)}{@render acts()}{@render pills('r', false)}</div>
+				{:else if look === 9}
+					{@render line()}
+					{@render acts()}
+				{:else if look === 10}
+					{@render tiles()}
+					{@render acts()}
 				{:else}
-					<div class="uh-text">
-						{#if facts.length}<p class="facts">{facts.join(' · ')}</p>{/if}
-						{#if bioLine}<p class="bioline">{bioLine} <button type="button" class="more" onclick={() => aboutEl?.scrollIntoView({ behavior: glideScroll(), block: 'start' })}>More</button></p>{/if}
-						{#if look === 5}{@render heroActions()}{/if}
-						{#if look === 3}<div class="uh-lib">{@render libBits()}</div>{/if}
-					</div>
-					{#if look !== 3}
-						<div class="uh-act">
-							{#if look === 5}{#if bandOn && catalog}{@render statCards()}{/if}{:else}{@render heroActions()}{/if}
-							{#if look !== 5}{@render libBits()}{/if}
-						</div>
-						{#if look === 5}<div class="uh-lib">{@render libBits()}</div>{/if}
-					{/if}
+					{@render pills()}
+					{@render acts()}
 				{/if}
+				{@render libBits()}
 			</div>
 
 			{#if titleId && manage}
@@ -977,87 +1050,117 @@
 	.stats div:first-child { border-left: 0; }
 	.stats dt { color: rgb(255 255 255 / .55); font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
 	.stats dd { margin: 0; color: #fff; font: 700 22px/1.1 var(--font-ui); font-variant-numeric: tabular-nums; }
-	/* The stats band designs being compared (?stats=1…5). Colours come from the hero ink in dark mode and the page's in light mode. */
 	.under-hero { --sb-ink: #fff; --sb-soft: rgb(255 255 255 / .78); --sb-muted: rgb(255 255 255 / .58); --sb-line: rgb(255 255 255 / .12); --sb-fill: rgb(255 255 255 / .07); --sb-up: var(--ok-on-art); --sb-down: color-mix(in srgb, var(--fail-on-art) 70%, #b9b9be); --sb-hot: var(--wait-on-art); }
-	.sb { width: min(720px, 100%); margin: 10px 0 4px; color: var(--sb-ink); font-variant-numeric: tabular-nums; }
-	.sb .seg { white-space: nowrap; }
-	.sb .dot { margin: 0 .45em; color: var(--sb-muted); }
-	.sb .narrow { display: none; }
-	.sb .chg.up { color: var(--sb-up); }
-	.sb .chg.down { color: var(--sb-down); }
-	/* In the hero's foot: the listening figures, then the catalog, quieter. */
-	.sl { width: auto; max-width: 860px; margin: 0; font: 600 17px/1.45 var(--font-ui); letter-spacing: -.01em; text-wrap: balance; }
-	.sl .cat { color: var(--sb-soft); font-weight: 500; }
-	/* The catalog always starts its own, quieter line: never a wrapped line that opens on a dot. */
-	.sl .cat0 .dot { display: none; }
-	.sl .cat0::before { content: '\A'; white-space: pre; }
-	.sl .cat { font-size: .88em; }
-	.hero-in .sl, .hero-in .sb5 { text-shadow: 0 1px 3px rgb(0 0 0 / .55); }
-	.sb3 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; width: min(560px, 100%); text-align: left; }
-	.sb3.solo { grid-template-columns: minmax(0, 1fr); width: min(280px, 100%); }
-	.sb3 .card { display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; border-radius: 16px; background: var(--sb-fill); box-shadow: inset 0 0 0 1px var(--sb-line); }
-	.sb3 .ch { margin: 0; font: var(--t-caption); letter-spacing: .12em; text-transform: uppercase; color: var(--sb-muted); }
-	.sb3 dl { display: grid; gap: 10px; margin: 0; }
-	.sb3 .row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-	.sb3 dt { font: 500 14px/1.3 var(--font-ui); color: var(--sb-soft); }
-	.sb3 dd { margin: 0; font: 700 18px/1.2 var(--font-ui); white-space: nowrap; }
-	.sb3 dd.quiet { font: 500 13px/1.3 var(--font-ui); color: var(--sb-muted); }
-	.sb5 { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: min(620px, 100%); padding: 0; }
-	.sb5 .pill { display: inline-flex; align-items: center; gap: .3em; min-height: 34px; padding: 0 14px; border-radius: 999px; background: var(--sb-fill); box-shadow: inset 0 0 0 1px var(--sb-line); font: 500 14px/1 var(--font-ui); color: var(--sb-soft); white-space: nowrap; }
-	.sb5 .pill b { font-weight: 700; color: var(--sb-ink); }
-	.sb5 .pill.hot { background: color-mix(in srgb, var(--sb-hot) 15%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sb-hot) 45%, transparent); }
-	.sb5 .pill.hot b { color: var(--sb-hot); }
-	.sb5 .pill.up { background: color-mix(in srgb, var(--sb-up) 13%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sb-up) 32%, transparent); font-weight: 600; }
-	.sb5 .pill.down { background: color-mix(in srgb, var(--sb-down) 13%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sb-down) 32%, transparent); font-weight: 600; }
 	@media (max-width: 600px) {
-		.sb .wide { display: none; }
-		.sb .narrow { display: inline; }
-		.sb3 { grid-template-columns: minmax(0, 1fr); gap: 10px; }
-		.sb5 { gap: 6px; }
-		.sb5 .pill { padding: 0 12px; font-size: 13px; }
-		.sl { font-size: 15px; }
 	}
-	/* The new designs (?stats=1…5): the stats sit in the hero's foot, the words and buttons hug it, nothing shrinks. */
-	.hero-in { --sb-ink: #fff; --sb-soft: rgb(255 255 255 / .78); --sb-muted: rgb(255 255 255 / .58); --sb-line: rgb(255 255 255 / .16); --sb-fill: rgb(255 255 255 / .1); --sb-up: var(--ok-on-art); --sb-down: color-mix(in srgb, var(--fail-on-art) 70%, #b9b9be); --sb-hot: var(--wait-on-art); }
-	/* Centred designs keep clear of the video buttons in the hero's bottom right corner. */
-	.hero-in.rich { gap: 10px; max-width: min(900px, 100% - 360px); }
-	.under-hero .sb3 { align-items: stretch; }
+	/* The new designs (?stats=1…10): photo, name, facts and two lines of story stay in the hero, as on a title page;
+	   under it only the stats and the buttons, centred and even, in about one pill row and one button row. */
+	.hero-in.rich { gap: 8px; max-width: min(900px, 100% - 360px); }
 	.hero-in.rich .photo { transition: width var(--dur-hero) var(--ease-out), height var(--dur-hero) var(--ease-out); }
-	.hero-in .sb5 { margin: 4px 0 0; }
-	.hero-in .sb5 .pill { backdrop-filter: blur(14px) saturate(150%); -webkit-backdrop-filter: blur(14px) saturate(150%); }
-	.hero-in .round { margin-top: 6px; }
-	/* With a video the stats stay full size; only the photo steps back. */
+	.hero-in .hf { margin-top: 2px; text-shadow: 0 1px 3px rgb(0 0 0 / .55); }
+	.hero-in .hb { margin: 0; color: rgb(255 255 255 / .86); max-width: 62ch; text-shadow: 0 1px 3px rgb(0 0 0 / .55); }
+	/* With a video the words stay full size; only the photo steps back, and the foot darkens so they read. */
 	.hero.vid .hero-in.rich { transform: none; opacity: 1; }
 	.hero.vid .hero-in.rich .photo { width: 96px; height: 96px; margin-bottom: 0; }
-	/* 3 · Like a movie: everything sits bottom left in the hero, as on a title page. */
-	.hero.lf { justify-content: flex-start; }
-	.hero.lf .hero-in { align-items: flex-start; text-align: left; max-width: none; padding-inline: var(--gutter); padding-right: 200px; }
-	.hero.lf .photo { width: 120px; height: 120px; margin-bottom: 2px; }
-	.hero.lf .sb5, .hero.lf .sl { text-align: left; }
-	.under-hero.v { gap: 10px; margin-top: -18px; }
-	.uh-text { display: grid; gap: 6px; justify-items: center; }
-	.uh-act { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 18px; }
-	.uh-act .round, .uh-text .round { margin-top: 0; }
-	.uh-lib { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
-	/* 2, 4 and 5 · Split: the words on the left like a title page's story, the buttons (or the cards) on the right. */
-	.under-hero.split { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px 48px; padding: 0; text-align: left; }
-	.under-hero.split .uh-text { justify-items: start; }
-	.under-hero.split .bioline, .under-hero.left .bioline { -webkit-line-clamp: 3; line-clamp: 3; max-width: 76ch; }
-	.under-hero.split .uh-act { flex-direction: column; align-items: flex-end; }
-	.under-hero.split .uh-act .sb3 { margin: 0; width: min(520px, 42vw); }
-	.under-hero.split .uh-text .round { margin-top: 6px; }
-	.under-hero.split .uh-lib { grid-column: 1 / -1; }
-	.under-hero.left { align-items: flex-start; padding: 0; text-align: left; }
-	.under-hero.left .uh-text { justify-items: start; }
+	.hero.vid:has(.hero-in.rich) .shade::after { background: linear-gradient(to top, rgb(7 8 10 / .86) 0%, rgb(7 8 10 / .5) 22%, rgb(7 8 10 / 0) 46%); }
+	/* Paused: the banner comes back behind the words; the hero keeps its size. */
+	.hero.paused .clip { opacity: 0; }
+	.hero.paused .art.in.under { opacity: .45; }
+	.hero.paused .art.soft.in.under { opacity: .6; }
+	.hero.paused .shade::before { opacity: 1; }
+	.hero.paused .shade::after { opacity: 0; }
+	/* Designs across the edge: room in the hero's foot for the strip's top half. */
+	.hero.edge .hero-in { padding-bottom: 46px; }
+	.under-hero.v { position: relative; z-index: 1; gap: 14px; margin-top: -22px; padding: 0; }
+	.under-hero.v[data-look='3'] { margin-top: -58px; }
+	.under-hero.v[data-look='4'], .under-hero.v[data-look='7'] { margin-top: -70px; }
+	.under-hero.v[data-look='9'] { margin-top: -63px; }
+	.under-hero { --sb-solid: rgb(26 27 31 / .88); }
+	:global(html:not([data-theme='dark'])) .under-hero { --sb-solid: color-mix(in srgb, var(--bg) 94%, transparent); }
+	.under-hero.v .narrow { display: none; }
+	.under-hero.v .chg.up { color: var(--sb-up); }
+	.under-hero.v .chg.down { color: var(--sb-down); }
+	/* The app's own buttons; on the light page they take the page's ink. */
+	.acts { display: flex; align-items: center; justify-content: center; gap: 12px; }
+	:global(html:not([data-theme='dark'])) .under-hero .acts :global(.ui-act) { background: color-mix(in srgb, var(--text) 7%, transparent); border-color: var(--line); color: var(--text); backdrop-filter: none; -webkit-backdrop-filter: none; }
+	:global(html:not([data-theme='dark'])) .under-hero .acts :global(.ui-act.primary), :global(html:not([data-theme='dark'])) .under-hero .acts :global(.ui-act[aria-pressed='true']) { background: var(--text); border-color: var(--text); color: var(--bg); }
+	:global(html:not([data-theme='dark'])) .under-hero .acts :global(.ui-act:focus-visible) { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--text); }
+	/* 1, 2, 3, 5, 8 · Pills, all one height. */
+	.pl { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 0; padding: 0; font-variant-numeric: tabular-nums; }
+	.pl li { display: inline-flex; align-items: center; gap: .35em; height: 36px; padding: 0 14px; border-radius: 999px; background: var(--sb-fill); box-shadow: inset 0 0 0 1px var(--sb-line); font: 500 14px/1 var(--font-ui); color: var(--sb-soft); white-space: nowrap; }
+	.pl b { font-weight: 700; color: var(--sb-ink); }
+	.pl li.hot { background: color-mix(in srgb, var(--sb-hot) 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sb-hot) 42%, transparent); }
+	.pl li.hot b { color: var(--sb-hot); }
+	.pl li.up { background: color-mix(in srgb, var(--sb-up) 13%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sb-up) 32%, transparent); font-weight: 600; }
+	.pl li.down { background: color-mix(in srgb, var(--sb-down) 13%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sb-down) 32%, transparent); font-weight: 600; }
+	.pl li.own { color: var(--sb-soft); }
+	.pl :global(svg) { color: var(--sb-muted); flex: none; }
+	.pl li.hot :global(svg) { color: var(--sb-hot); }
+	.pl.icons li { gap: .45em; padding-left: 12px; }
+	/* 3 · Pills on the edge: solid glass, so they read over the art and the page alike. */
+	.under-hero[data-look='3'] .pl li { background: var(--sb-solid); backdrop-filter: blur(16px) saturate(150%); -webkit-backdrop-filter: blur(16px) saturate(150%); box-shadow: 0 8px 22px rgb(0 0 0 / .32), inset 0 0 0 1px var(--sb-line); }
+	.under-hero[data-look='3'] .pl li.hot { background: color-mix(in srgb, var(--sb-hot) 16%, var(--sb-solid)); }
+	.under-hero[data-look='3'] .pl li.up { background: color-mix(in srgb, var(--sb-up) 14%, var(--sb-solid)); }
+	/* 4 · One capsule of even segments across the edge. */
+	.cap { display: flex; width: min(780px, 100%); margin: 0; padding: 8px 4px; border-radius: 22px; background: var(--sb-solid); backdrop-filter: blur(18px) saturate(150%); -webkit-backdrop-filter: blur(18px) saturate(150%); box-shadow: 0 12px 32px rgb(0 0 0 / .34), inset 0 0 0 1px var(--sb-line); font-variant-numeric: tabular-nums; }
+	.cap div { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 6px; border-left: 1px solid var(--sb-line); }
+	.cap div:first-child { border-left: 0; }
+	.cap dd { margin: 0; font: 700 19px/1.15 var(--font-ui); color: var(--sb-ink); white-space: nowrap; }
+	.cap dd small { font-size: .68em; font-weight: 600; color: var(--sb-muted); }
+	.cap dt { font: 600 10.5px/1.2 var(--font-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--sb-muted); white-space: nowrap; }
+	/* 5, 6, 7 · Flanked: listening on the left, catalog on the right, the buttons dead centre. */
+	.flank { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px 22px; width: 100%; }
+	.flank .pl.l { justify-content: flex-end; }
+	.flank .pl.r { justify-content: flex-start; }
+	/* 6 · Two even cards: one width, three rows each. */
+	.ec { display: grid; gap: 6px; width: min(300px, 100%); margin: 0; padding: 12px 18px; border-radius: 16px; background: var(--sb-fill); box-shadow: inset 0 0 0 1px var(--sb-line); font-variant-numeric: tabular-nums; }
+	.ec.l { justify-self: end; }
+	.ec.r { justify-self: start; }
+	.ec div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+	.ec dt { font: 500 13.5px/1.35 var(--font-ui); color: var(--sb-soft); white-space: nowrap; }
+	.ec dd { margin: 0; font: 700 16px/1.35 var(--font-ui); color: var(--sb-ink); white-space: nowrap; }
+	/* 7 · One dock across the edge: the stats inside, the buttons in its middle. */
+	.flank.dock { width: min(1100px, 100%); margin-inline: auto; padding: 8px 10px; border-radius: 999px; background: var(--sb-solid); backdrop-filter: blur(18px) saturate(150%); -webkit-backdrop-filter: blur(18px) saturate(150%); box-shadow: 0 12px 32px rgb(0 0 0 / .34), inset 0 0 0 1px var(--sb-line); box-sizing: border-box; gap: 8px 14px; }
+	.dock .pl { gap: 4px; flex-wrap: nowrap; min-width: 0; }
+	.dock .pl li { background: transparent; box-shadow: none; padding: 0 8px; }
+	.dock .pl li.hot, .dock .pl li.up { background: transparent; box-shadow: none; }
+	/* Flanked and in the dock: the short words, so each side stays one row beside the buttons. */
+	.under-hero .flank .wide { display: none; }
+	.under-hero .flank .narrow { display: inline; }
+	/* 9 · One line on a glass strip across the edge. */
+	.ln { display: inline-flex; flex-wrap: wrap; justify-content: center; align-items: center; row-gap: 4px; margin: 0; padding: 11px 24px; border-radius: 999px; background: var(--sb-solid); backdrop-filter: blur(18px) saturate(150%); -webkit-backdrop-filter: blur(18px) saturate(150%); box-shadow: 0 12px 32px rgb(0 0 0 / .34), inset 0 0 0 1px var(--sb-line); font: 500 15px/1.4 var(--font-ui); color: var(--sb-soft); font-variant-numeric: tabular-nums; }
+	.ln b { font-weight: 700; color: var(--sb-ink); }
+	.ln .seg { white-space: nowrap; }
+	.ln .dot { margin: 0 .45em; color: var(--sb-muted); }
+	.ln .div { width: 1px; height: 18px; margin: 0 16px; background: var(--sb-line); }
+	/* 10 · Six even tiles. */
+	.tl { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; width: min(860px, 100%); margin: 0; font-variant-numeric: tabular-nums; }
+	.tl div { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 11px 6px; border-radius: 14px; background: var(--sb-fill); box-shadow: inset 0 0 0 1px var(--sb-line); }
+	.tl dd { margin: 0; font: 700 19px/1.15 var(--font-ui); color: var(--sb-ink); white-space: nowrap; }
+	.tl dt { font: 600 10.5px/1.2 var(--font-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--sb-muted); text-align: center; }
 	@media (max-width: 760px) {
 		.hero-in.rich { max-width: 100%; }
 		.hero.vid .hero-in.rich { padding-bottom: 56px; }
-		.hero.lf .hero-in { padding-right: var(--gutter); }
-		.under-hero.split { grid-template-columns: minmax(0, 1fr); text-align: center; }
-		.under-hero.split .uh-text { justify-items: center; }
-		.under-hero.split .uh-act { align-items: center; }
-		.under-hero.split .uh-act .sb3 { width: 100%; }
-		.under-hero.split .uh-lib { justify-content: center; }
+		.hero.vid.edge .hero-in.rich { padding-bottom: 64px; }
+		.under-hero.v .wide { display: none; }
+		.under-hero.v .narrow { display: inline; }
+		.pl { gap: 6px; }
+		.pl li { height: 34px; padding: 0 12px; font-size: 13px; }
+		.flank { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+		.flank .pl.l, .flank .pl.r { justify-content: center; }
+		.flank .acts { order: 3; }
+		.flank.cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+		.flank.cards .acts { grid-column: 1 / -1; }
+		.ec, .ec.l, .ec.r { width: 100%; justify-self: stretch; padding: 10px 12px; box-sizing: border-box; }
+		.ec div { flex-direction: column; align-items: flex-start; gap: 0; }
+		.ec dt { font-size: 12px; }
+		.flank.dock { border-radius: 26px; }
+		.dock .pl { flex-wrap: wrap; }
+		.cap { flex-wrap: wrap; row-gap: 6px; }
+		.cap div { flex: 1 1 30%; border-left: 0; }
+		.ln { padding: 10px 16px; font-size: 14px; }
+		.ln .div { flex-basis: 100%; height: 0; margin: 0; }
+		.tl { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 	}
 	.rb.main.pill { display: inline-flex; align-items: center; gap: 8px; width: auto; height: 48px; padding: 0 22px; border-radius: 999px; font: 600 15px/1 var(--font-ui); white-space: nowrap; }
 	.libline { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; color: rgb(255 255 255 / .75); font: var(--t-footnote); }
