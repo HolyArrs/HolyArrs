@@ -457,9 +457,10 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 		}
 	}
 	// The Spotlight row (Apple "New" style): your artists' new releases
-	// first, then chart new releases, climbers and the top, 8 at most,
-	// one card per album and per artist.
-	const heroMax = 8
+	// first, then chart new releases, climbers and the top (the region's
+	// biggest last), rowtpl.SpotlightMax at most, one card per album and
+	// per artist.
+	const heroMax = rowtpl.SpotlightMax
 	kindOf := map[string]string{}
 	for _, al := range lib.albums {
 		if al.mbid != "" {
@@ -521,6 +522,16 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 	for _, it := range albums {
 		addHero(it, "Top album")
 	}
+	// With the chart lists on, the album charts can be empty: the region's
+	// biggest albums fill what is left.
+	for _, c := range listHero(shelves, func(id string) bool { return hadAlbum[id] }, heroMax) {
+		fold := fullAlbumKey(c.Name) + "|" + fullAlbumKey(c.Artist)
+		if len(heroes) >= heroMax || inHero[c.Key] || inHero[fold] || byArtist[strings.ToLower(c.Artist)] {
+			continue
+		}
+		inHero[c.Key], inHero[fold], byArtist[strings.ToLower(c.Artist)] = true, true, true
+		heroes = append(heroes, c)
+	}
 	// "New" only within 60 days of release; older cards say why they show.
 	honestLabels(heroes, now)
 	if len(heroes) > 0 {
@@ -566,13 +577,15 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 		if shelves != nil {
 			meta.Title, meta.Shape = "Browse", "grid"
 			a.browseCovers(ctx, region, cards, now)
+			cards, sc = coveredTiles(cards, sc)
 		}
-		// Row templates: Explore's Browse row is 4 genres, the season, 2 moods
-		// and a decade from the Browse page, with their covers.
+		// Row templates: Explore's Browse row is the mix of the Browse page (genres,
+		// moods, the season, decades, activities), with covers of albums whose
+		// picture is stored; a tile with none is left out.
 		if a.musicTplOn() {
 			if b := a.musicBundle(ctx, now); b != nil {
 				cards, sc = nil, nil
-				tiles := rowtpl.ExploreTiles(a.tplVisible(ctx, b, region, nil, now))
+				tiles := rowtpl.ExploreTiles(a.tplVisibleArt(ctx, b, region, nil, now))
 				a.tplRememberCovers(b, []rowtpl.BrowseSection{{Tiles: tiles}})
 				for _, t := range tiles {
 					hue := t.Hue
