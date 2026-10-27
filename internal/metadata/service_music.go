@@ -155,8 +155,9 @@ func (m *serviceMusic) Artist(ctx context.Context, mbid string) (Artist, error) 
 		}
 		return Artist{}, err
 	}
-	artist.Partial = true
-	if m.direct == nil {
+	// A complete stored list is the whole discography: no MusicBrainz walk.
+	artist.Partial = !item.ReleaseGroupsComplete
+	if m.direct == nil || !artist.Partial {
 		return artist, nil
 	}
 	if wait, ok := ctx.Value(quickArtistKey{}).(time.Duration); ok {
@@ -247,7 +248,7 @@ func parseServiceArtist(item serviceItem, albums bool) (Artist, error) {
 	if data.ReleaseGroups == nil {
 		return Artist{}, ErrServiceIncomplete
 	}
-	if len(*data.ReleaseGroups) > serviceReleaseLimit {
+	if len(*data.ReleaseGroups) > serviceReleaseLimit && !item.ReleaseGroupsComplete {
 		return Artist{}, ErrServiceIncomplete
 	}
 	seen := make(map[string]bool, len(*data.ReleaseGroups))
@@ -360,6 +361,18 @@ func (m *serviceMusic) Pressings(ctx context.Context, albumMBID string) ([]Press
 	albumMBID = strings.ToLower(albumMBID)
 	ctx, cancel := serviceContext(ctx)
 	defer cancel()
+	// A page view takes the chosen edition's tracks in one call; the Library
+	// (which keeps track ids) reads every edition below.
+	if IsMemberLookup(ctx) {
+		if p, err := m.service.MusicAlbum(ctx, albumMBID); err == nil {
+			if ps, ok := p.pressings(); ok {
+				if p.EditionCount <= 1 && p.EditionsComplete {
+					return ps, nil
+				}
+				return ps, ErrListCut
+			}
+		}
+	}
 	item, err := m.service.detail(ctx, "musicbrainz", "release-group", albumMBID)
 	if err != nil {
 		return m.fallbackPressings(ctx, albumMBID, nil, err)

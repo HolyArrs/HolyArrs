@@ -106,6 +106,9 @@ type serviceItem struct {
 	SourceData json.RawMessage `json:"source_data"`
 	// Popularity rides beside an artist's data (the metadata server adds it).
 	Popularity *ArtistPopularity `json:"popularity,omitempty"`
+	// ReleaseGroupsComplete: the artist's stored list holds every release
+	// group, so no MusicBrainz walk is needed.
+	ReleaseGroupsComplete bool `json:"release_groups_complete,omitempty"`
 }
 
 func (i serviceItem) decode(out any) error {

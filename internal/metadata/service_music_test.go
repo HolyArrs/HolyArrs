@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 )
 
 const (
@@ -427,5 +428,39 @@ func TestServicePressingsTrackCapStopsFetchingRest(t *testing.T) {
 	}
 	if hits := releaseHits.Load(); hits > 10+servicePressingFetches {
 		t.Fatalf("asked for %d releases after the cap; want at most %d", hits, 10+servicePressingFetches)
+	}
+}
+
+func TestServiceArtistCompleteListSkipsMusicBrainz(t *testing.T) {
+	groups := []any{}
+	for i := 0; i < 150; i++ {
+		groups = append(groups, map[string]any{"id": fmt.Sprintf("%08x-0000-4000-8000-000000000000", i+1), "title": fmt.Sprint("Album ", i), "primary-type": "Album"})
+	}
+	s := testService(t, func(w http.ResponseWriter, r *http.Request) {
+		item := musicItem(serviceArtistID, "artist", "Service Artist", map[string]any{"id": serviceArtistID, "name": "Service Artist", "release-groups": groups})
+		item["release_groups_complete"] = true
+		serviceReply(w, "musicbrainz", serviceArtistID, item)
+	})
+	direct := &serviceDirectMusic{artist: Artist{MBID: serviceArtistID, Name: "Direct Artist"}}
+	got, err := s.Artists(direct).Artist(QuickArtist(context.Background(), time.Second), serviceArtistID)
+	if err != nil || got.Partial || len(got.Albums) != 150 || direct.artistHits.Load() != 0 {
+		t.Fatalf("%v partial=%v albums=%d hits=%d", err, got.Partial, len(got.Albums), direct.artistHits.Load())
+	}
+}
+
+func TestServiceAlbumOneCallForPageViews(t *testing.T) {
+	const ed = "aaaaaaaa-0000-4000-8000-000000000001"
+	s := testService(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/music/album/"+serviceAlbumID {
+			t.Errorf("asked %s", r.URL.Path)
+			w.WriteHeader(404)
+			return
+		}
+		_, _ = w.Write([]byte(`{"schema_version":1,"mbid":"` + serviceAlbumID + `","title":"True","edition":{"id":"` + ed + `","title":"True","status":"Official","formats":["CD"]},"tracks":[{"disc":1,"position":1,"number":"1","title":"Wake Me Up","length_ms":247000,"recording":"BBBBBBBB-0000-4000-8000-000000000001"},{"disc":1,"position":2,"number":"2","title":"You Make Me","length_ms":233000}],"edition_count":12,"editions_complete":true}`))
+	})
+	direct := &serviceDirectMusic{}
+	ps, err := s.Artists(direct).Pressings(MemberLookup(context.Background()), serviceAlbumID)
+	if !errors.Is(err, ErrListCut) || len(ps) != 1 || ps[0].MBID != ed || len(ps[0].Tracks) != 2 || ps[0].Tracks[0].Name != "Wake Me Up" || ps[0].Tracks[0].RecordingID != "bbbbbbbb-0000-4000-8000-000000000001" || ps[0].Tracks[1].Position != 2 {
+		t.Fatalf("%+v %v", ps, err)
 	}
 }

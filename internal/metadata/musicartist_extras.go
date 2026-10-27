@@ -3,6 +3,7 @@ package metadata
 import (
 	"context"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -138,4 +139,79 @@ func (p *ArtistPopularity) orNil() *ArtistPopularity {
 		return nil
 	}
 	return &x
+}
+
+// MusicAlbumTrack is one track of the chosen edition.
+type MusicAlbumTrack struct {
+	Disc      int    `json:"disc"`
+	Position  int    `json:"position"`
+	Number    string `json:"number"`
+	Title     string `json:"title"`
+	LengthMS  int    `json:"length_ms"`
+	Recording string `json:"recording"`
+}
+
+// MusicAlbumEdition is one edition (a MusicBrainz release).
+type MusicAlbumEdition struct {
+	ID             string   `json:"id"`
+	Title          string   `json:"title"`
+	Status         string   `json:"status"`
+	Date           string   `json:"date"`
+	Country        string   `json:"country"`
+	Formats        []string `json:"formats"`
+	TrackCount     int      `json:"track_count"`
+	Disambiguation string   `json:"disambiguation"`
+}
+
+// MusicAlbum is GET /v1/music/album/{release group}: the album with its
+// chosen edition's tracks, in one call.
+type MusicAlbum struct {
+	MBID             string              `json:"mbid"`
+	Title            string              `json:"title"`
+	Edition          *MusicAlbumEdition  `json:"edition"`
+	Tracks           []MusicAlbumTrack   `json:"tracks"`
+	Editions         []MusicAlbumEdition `json:"editions"`
+	EditionCount     int                 `json:"edition_count"`
+	EditionsComplete bool                `json:"editions_complete"`
+}
+
+// MusicAlbum reads an album with its chosen edition's tracks. A 202 (not
+// stored yet) is ErrServicePending.
+func (s *Service) MusicAlbum(ctx context.Context, mbid string) (MusicAlbum, error) {
+	if !ValidMBID(mbid) {
+		return MusicAlbum{}, ErrNotFound
+	}
+	var out MusicAlbum
+	if err := s.musicGet(ctx, "/v1/music/album/"+strings.ToLower(mbid), url.Values{}, &out); err != nil {
+		return MusicAlbum{}, err
+	}
+	return out, nil
+}
+
+// pressings turns the answer into the chosen edition with its tracks (the
+// page asks the rest when picked); false when it has none.
+func (a MusicAlbum) pressings() ([]Pressing, bool) {
+	if a.Edition == nil || !ValidMBID(a.Edition.ID) || len(a.Tracks) == 0 {
+		return nil, false
+	}
+	one := func(e MusicAlbumEdition) Pressing {
+		return Pressing{MBID: strings.ToLower(e.ID), Name: e.Title, Status: strings.ToLower(e.Status), Country: e.Country, Date: e.Date,
+			Disambiguation: e.Disambiguation, Formats: append([]string{}, e.Formats...), Tracks: []Track{}}
+	}
+	first := one(*a.Edition)
+	for _, t := range a.Tracks {
+		if strings.TrimSpace(t.Title) == "" {
+			return nil, false
+		}
+		n, _ := strconv.Atoi(t.Number)
+		if n == 0 {
+			n = t.Position
+		}
+		disc := t.Disc
+		if disc == 0 {
+			disc = 1
+		}
+		first.Tracks = append(first.Tracks, Track{RecordingID: strings.ToLower(t.Recording), Disc: disc, Number: n, Position: len(first.Tracks) + 1, Name: t.Title, LengthMS: t.LengthMS})
+	}
+	return []Pressing{first}, true
 }
