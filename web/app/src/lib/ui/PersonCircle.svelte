@@ -6,7 +6,7 @@
 	import { pictureOf } from '../pictures.ts';
 
 	// A person in a cast and crew shelf: round photo (initials fallback), name, role.
-	let { name, role, image, href, size = 96 }: { name: string; role?: string; image?: string | null; href?: string; size?: number } = $props();
+	let { name, role, image, href, size = 96, needsArt = false }: { name: string; role?: string; image?: string | null; href?: string; size?: number; /** Artist rows: no photo, no circle (its list item is left out too). */ needsArt?: boolean } = $props();
 	let failed = $state(false);
 	let loaded = $state(false);
 	// A link reads as one name: "Harold Perrineau, Boyd Stevens".
@@ -25,9 +25,10 @@
 	const shown = $derived(image && !failed ? image : backup && !backupFailed ? backup : '');
 	// An artist's photo record gives its main colour, shown until the photo arrives.
 	const tint = $derived(pictureOf(image)?.color || null);
+	const gone = $derived(needsArt && !shown);
 </script>
 
-<svelte:element this={href ? 'a' : 'div'} class="ui-person" href={href} aria-label={href ? label : undefined} style="--size: {size}px" use:press={'card'}>
+<svelte:element this={href ? 'a' : 'div'} class="ui-person" class:gone href={href} aria-label={href ? label : undefined} style="--size: {size}px" use:press={'card'}>
 	<span class="ph" class:sk={!!shown && !loaded} style:background={tint}>
 		{#if !shown || !loaded}<ArtPlaceholder {name} shape="circle" loading={!!shown && !loaded} color={tint} />{/if}
 		{#if shown}{#key shown}<img src={shown} class:in={loaded} alt="" loading="lazy" decoding="async" onload={() => (loaded = true)} onerror={() => (shown === backup ? (backupFailed = true) : (failed = true), (loaded = false))} />{/key}{/if}
@@ -37,6 +38,7 @@
 </svelte:element>
 
 <style>
+	.ui-person.gone, :global(li:has(> .ui-person.gone)) { display: none; }
 	.ui-person { display: flex; flex-direction: column; align-items: center; gap: 2px; width: calc(var(--size) + 16px); text-align: center; color: var(--text); border-radius: var(--r-card); }
 	.ph { position: relative; width: var(--size); height: var(--size); margin-bottom: 6px; display: grid; place-items: center; border-radius: 50%; overflow: hidden; background: linear-gradient(160deg, var(--surface-2), var(--surface-3)); color: var(--text-muted); font: var(--t-title3); box-shadow: var(--shadow-card); transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out); }
 	/* Photos come from many shoots: a little less saturation and light evens the row; full colour and a small zoom on hover. */

@@ -43,8 +43,11 @@
 		color = null,
 		eager = false,
 		high = false,
-		fallback
+		fallback,
+		needsArt = false
 	}: {
+		/** Rows: no cover, no card. A card with no picture, or whose pictures all fail, is left out (its list item too). */
+		needsArt?: boolean;
 		/** Music: the next picture when image keeps failing (an album's artist photo). */
 		fallback?: string | null;
 		/** The picture's main colour (#rrggbb); music cards read it from the picture's record. */
@@ -192,10 +195,11 @@
 	// The box and colour come before the picture: the record's main colour
 	// (music) under the initials, so the picture never fades in over grey.
 	const tint = $derived(color ?? pictureOf(pic)?.color ?? null);
+	const gone = $derived(needsArt && (!image || failed));
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="ui-poster" class:square={shape === 'square'} class:round={shape === 'round'} style:width bind:this={root} bind:clientWidth={cw} onpointerenter={() => ((byKey = false), enter())} onpointermove={(e) => (e.movementX || e.movementY) && !open && !opener.pending && ((byKey = false), enter())} onpointerleave={leave} onfocusin={focusIn} onfocusout={focusOut} onpointerdown={() => opener.cancel()}>
+<div class="ui-poster" class:gone class:square={shape === 'square'} class:round={shape === 'round'} style:width bind:this={root} bind:clientWidth={cw} onpointerenter={() => ((byKey = false), enter())} onpointermove={(e) => (e.movementX || e.movementY) && !open && !opener.pending && ((byKey = false), enter())} onpointerleave={leave} onfocusin={focusIn} onfocusout={focusOut} onpointerdown={() => opener.cancel()}>
 	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} bind:this={hit} use:press={'card'}>
 		<span class="art" use:viewTransitionName={vtName} bind:this={artEl} style:background-color={tint}>
 			{#if !image || failed || !loaded}
@@ -231,6 +235,7 @@
 {/if}
 
 <style>
+	.ui-poster.gone, :global(li:has(> .ui-poster.gone)) { display: none; }
 	.ui-poster { position: relative; min-width: 0; }
 	.hit { display: flex; flex-direction: column; gap: 2px; color: var(--text); border-radius: var(--r-card); }
 	.hit:focus-visible { outline: none; }

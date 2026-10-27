@@ -713,6 +713,7 @@
 							row={row.type}
 							owned={mark}
 							fresh={c.fresh}
+							needsArt={c.kind === 'artist'}
 							actionOnHover
 							vtName={c.vtName}
 							preview={cardTmdb(c) && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb: cardTmdb(c), year: c.year, titleId: c.titleId } : undefined}

@@ -167,7 +167,7 @@
 
 {#snippet albumCard(row: { type: string }, c: NewMusicCard)}
 	{@const cv = coverFor(musicImage(c), 200)}
-	<PosterCard title={c.name} href={musicCardHref(c)} image={cv.src} kind="artist" subtitle={rowNote(row, c) || undefined} badges={cardBadges(c)} shape="square" music actionOnHover
+	<PosterCard title={c.name} href={musicCardHref(c)} image={cv.src} kind="artist" subtitle={rowNote(row, c) || undefined} badges={cardBadges(c)} shape="square" music needsArt actionOnHover
 		status={c.title_id && row.type === 'np_music_library' ? 'in_library' : undefined}>
 		{#snippet action()}
 			{#if c.upcoming}
@@ -257,7 +257,7 @@
 				<div class="row" data-row="rising_today">
 					<Shelf title={rising.title} subtitle={rising.reason} item="var(--music-circle, var(--album-item))" items={rising.items} key={(c) => c.key} placeholder="round" lines={2}>
 						{#snippet card(c: MusicCardData)}
-							<PosterCard title={c.name} href={musicCardHref(c)} image={coverFor(musicImage(c), 200).src} kind="artist" subtitle={c.note || undefined} shape="round" music
+							<PosterCard title={c.name} href={musicCardHref(c)} image={coverFor(musicImage(c), 200).src} kind="artist" subtitle={c.note || undefined} shape="round" music needsArt
 								status={c.title_id ? 'in_library' : undefined} />
 						{/snippet}
 					</Shelf>

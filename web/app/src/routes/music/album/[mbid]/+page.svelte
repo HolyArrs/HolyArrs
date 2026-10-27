@@ -203,7 +203,7 @@
 
 {#snippet albumCard(a: PageAlbum)}
 	{@const c = coverFor(appPicture(a.image), 200)}
-	<PosterCard title={a.name} href={albumHref(a.mbid, artist)} image={c.src} kind="artist" shape="square" music
+	<PosterCard title={a.name} href={albumHref(a.mbid, artist)} image={c.src} kind="artist" shape="square" music needsArt
 		subtitle={[albumYear(a.release_date), kindWord(a)].filter(Boolean).join(' · ')} badges={a.explicit ? ['E'] : undefined} owned={owned(a)} />
 {/snippet}
 
@@ -298,7 +298,7 @@
 				<Shelf title="Fans also like" item="var(--music-item)" items={near} key={(a) => a.mbid} placeholder="square" lines={2}>
 					{#snippet card(a: PageCredit)}
 						{@const c = coverFor(appPicture(a.image), 200)}
-						<PosterCard title={a.name} href={albumHref(a.mbid, a.artist_mbid)} image={c.src} kind="artist" shape="square" music subtitle={a.artist_name} badges={a.explicit ? ['E'] : undefined} />
+						<PosterCard title={a.name} href={albumHref(a.mbid, a.artist_mbid)} image={c.src} kind="artist" shape="square" music needsArt subtitle={a.artist_name} badges={a.explicit ? ['E'] : undefined} />
 					{/snippet}
 				</Shelf>
 			{/if}
@@ -308,7 +308,7 @@
 			{:else if similar.length}
 				<section class="block">
 					<h2>If you like {hero.artist.name}</h2>
-					<ul class="circles" use:dragScroll>{#each similar as p (p.mbid)}<li><PersonCircle name={p.name} image={appPicture(p.image)} href={artistHref(p.mbid)} size={152} /></li>{/each}</ul>
+					<ul class="circles" use:dragScroll>{#each similar as p (p.mbid)}<li><PersonCircle name={p.name} image={appPicture(p.image)} href={artistHref(p.mbid)} size={152} needsArt /></li>{/each}</ul>
 				</section>
 			{/if}
 

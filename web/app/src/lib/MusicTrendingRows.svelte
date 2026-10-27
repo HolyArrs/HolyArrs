@@ -371,6 +371,7 @@
 						shape={c.kind === 'album' ? 'square' : 'round'}
 						fresh={c.fresh}
 						music
+						needsArt
 						actionOnHover
 					>
 						{#snippet action()}

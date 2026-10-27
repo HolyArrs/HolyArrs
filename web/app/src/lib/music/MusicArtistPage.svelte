@@ -548,9 +548,9 @@
 	{/if}
 {/snippet}
 
-{#snippet albumCard(a: PageAlbum, eager = false)}
+{#snippet albumCard(a: PageAlbum, eager = false, row = false)}
 	{@const c = coverFor(appPicture(a.image), 200)}
-	<PosterCard title={a.name} href={albumHref(a.mbid, mbid)} image={c.src} {eager} kind="artist" shape="square" music actionOnHover
+	<PosterCard title={a.name} href={albumHref(a.mbid, mbid)} image={c.src} {eager} kind="artist" shape="square" music needsArt={row} actionOnHover
 		subtitle={[albumYear(a.release_date), a.shelf === 'albums' ? '' : kindWord(a)].filter(Boolean).join(' · ') || undefined}
 		badges={a.explicit ? ['E'] : undefined} owned={owned(a, albumAsked(a))}>
 		{#snippet action()}
@@ -563,7 +563,7 @@
 
 {#snippet creditCard(a: PageCredit)}
 	{@const c = coverFor(appPicture(a.image), 200)}
-	<PosterCard title={a.name} href={albumHref(a.mbid, a.artist_mbid || mbid)} image={c.src} kind="artist" shape="square" music
+	<PosterCard title={a.name} href={albumHref(a.mbid, a.artist_mbid || mbid)} image={c.src} kind="artist" shape="square" music needsArt
 		subtitle={a.artist_name || undefined} badges={a.explicit ? ['E'] : undefined} />
 {/snippet}
 
@@ -780,7 +780,7 @@
 				{#if essential.length}
 					<section class="block">
 						<h2>Essential albums</h2>
-						<ul class="essential">{#each essential as a (a.mbid)}<li>{@render albumCard(a, true)}</li>{/each}</ul>
+						<ul class="essential">{#each essential as a (a.mbid)}<li>{@render albumCard(a, true, true)}</li>{/each}</ul>
 					</section>
 				{/if}
 
@@ -823,7 +823,7 @@
 			{:else if similar.length}
 				<section class="block">
 					<h2>Fans also like</h2>
-					<ul class="circles" use:dragScroll>{#each similar as p (p.mbid)}<li><PersonCircle name={p.name} image={appPicture(p.image)} href={artistHref(p.mbid)} size={152} /></li>{/each}</ul>
+					<ul class="circles" use:dragScroll>{#each similar as p (p.mbid)}<li><PersonCircle name={p.name} image={appPicture(p.image)} href={artistHref(p.mbid)} size={152} needsArt /></li>{/each}</ul>
 				</section>
 			{/if}
 
@@ -836,7 +836,7 @@
 			{#if related.length}
 				<section class="block">
 					<h2>Bands and collaborators</h2>
-					<ul class="circles" use:dragScroll>{#each related as p (p.mbid)}<li><PersonCircle name={p.name} role={p.note} image={appPicture(p.image)} href={artistHref(p.mbid)} size={152} /></li>{/each}</ul>
+					<ul class="circles" use:dragScroll>{#each related as p (p.mbid)}<li><PersonCircle name={p.name} role={p.note} image={appPicture(p.image)} href={artistHref(p.mbid)} size={152} needsArt /></li>{/each}</ul>
 				</section>
 			{/if}
 
