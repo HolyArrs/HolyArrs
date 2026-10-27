@@ -13,7 +13,9 @@ import (
 // album hero and the artist's discography cards): the metadata server's
 // stored copy by release group, nothing else. The picture is kept in the artwork cache, like every other
 // picture, so the browser never fetches it from outside. A Kid gets 404
-// (kidGuard), and an album with no cover anywhere is 404 too.
+// (kidGuard). An album with no cover stored (yet) answers 204, like the
+// other picture routes, so the page shows its placeholder without a failed
+// request in the console.
 func (a *API) albumCoverArt(w http.ResponseWriter, r *http.Request) {
 	p, ok := a.albumID(w, r)
 	if !ok {
@@ -21,8 +23,12 @@ func (a *API) albumCoverArt(w http.ResponseWriter, r *http.Request) {
 	}
 	lib := a.s.Library
 	mbid := strings.ToLower(p.SourceIDs["musicbrainz"])
-	if lib == nil || lib.Artwork == nil || mbid == "" {
+	if lib == nil || lib.Artwork == nil {
 		http.NotFound(w, r)
+		return
+	}
+	if mbid == "" {
+		noPicture(w)
 		return
 	}
 	var t domain.Title
@@ -31,7 +37,7 @@ func (a *API) albumCoverArt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Only the metadata server's stored copy (Luis, 2026-10-24): an album it
-	// has not stored yet is 404 (the page shows its placeholder) until it has.
+	// has not stored yet is 204 (the page shows its placeholder) until it has.
 	size := coverSize(r)
 	want := size
 	if size == "250" {
@@ -39,7 +45,7 @@ func (a *API) albumCoverArt(w http.ResponseWriter, r *http.Request) {
 	}
 	src := a.musicArtSrc("album", mbid, want, a.pictureVersion("album", mbid))
 	if src == "" {
-		http.NotFound(w, r)
+		noPicture(w)
 		return
 	}
 	name := library.ArtworkName(src)
@@ -48,7 +54,7 @@ func (a *API) albumCoverArt(w http.ResponseWriter, r *http.Request) {
 		lib.Artwork.Recheck(src, serverStandIn)
 	} else {
 		if _, err := lib.Artwork.FetchStored(r.Context(), src, serverStandIn); err != nil {
-			http.Error(w, "picture unavailable", http.StatusNotFound)
+			noPicture(w)
 			return
 		}
 		if path, ok = lib.Artwork.Path(name); !ok {

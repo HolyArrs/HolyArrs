@@ -70,7 +70,7 @@ func TestAlbumCoverServesTheCachedCover(t *testing.T) {
 		t.Fatalf("cover %v %d", err, resp.StatusCode)
 	}
 	resp.Body.Close()
-	// Not stored on the server yet, a season id and an unknown id are all 404.
-	do(t, "GET", fmt.Sprintf("%s/albums/%d/cover", u, without), "", 404)
+	// Not stored on the server yet: nothing to show (204); an unknown id is 404.
+	do(t, "GET", fmt.Sprintf("%s/albums/%d/cover", u, without), "", 204)
 	do(t, "GET", u+"/albums/999999/cover", "", 404)
 }
