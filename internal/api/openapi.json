@@ -12114,8 +12114,19 @@
     },
     "/api/v1/explore/music/rising": {
       "get": {
-        "responses": {},
-        "summary": "",
+        "description": "The Rising today row for Explore and New & Popular: today's biggest gainers in monthly listeners, matched to MusicBrainz, biggest gain first (up to 20), from the metadata server's kept figures. Kept for an hour. Hidden when the server has no list.",
+        "responses": {
+          "200": {
+            "description": "as_of and items (artist cards with listeners and today's gain)."
+          },
+          "401": {
+            "description": "Sign-in is required."
+          },
+          "404": {
+            "description": "Music is turned off, or the server has no Rising list today."
+          }
+        },
+        "summary": "Rising today: artists gaining the most listeners",
         "x-holyarrs-part": "music",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "read"
