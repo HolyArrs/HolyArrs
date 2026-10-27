@@ -38,19 +38,22 @@ Neither needs a key.
 MusicBrainz is used for music details and does not have a key field in
 HolyArrs. Its rate and contact settings are under **Settings > Music**.
 
-## Artist pictures (Deezer)
+## Pictures
 
-MusicBrainz has no pictures, so an artist's picture comes from Deezer's
-public artist search (`https://api.deezer.com/search/artist?q=<name>`), which
-needs no key. HolyArrs looks once when an artist is added, and again on a
-refresh while the artist still has no picture. Only an artist with the very
-same name (case aside) counts. The picture is kept in the artwork cache like
-a movie poster; answers are kept for 24 hours. When Deezer does not answer,
-nothing fails: the artist simply has no picture until a later refresh.
+Every music picture (album covers, artist photos, wide backgrounds, logos)
+and the stored title and person pictures come from the HolyArrs metadata
+server, through the install's artwork cache; HolyArrs itself never asks a
+picture site, so no picture key is needed. TMDB posters and backdrops are
+fetched from TMDB's picture host (with no Referer, kept at most six months),
+and through the metadata server only when TMDB cannot be reached.
 
-`HOLYARRS_DEEZER_URL` names a stand-in (tests), and `off` turns the source
-off. When `HOLYARRS_MUSICBRAINZ_URL` names a MusicBrainz stand-in and no
-Deezer stand-in is named, the source is off, so tests never reach Deezer.
+## Artist profiles (Deezer)
+
+The artist page's top songs and explicit marks come from Deezer's public
+API, which needs no key. `HOLYARRS_DEEZER_URL` names a stand-in (tests), and
+`off` turns the source off. When `HOLYARRS_MUSICBRAINZ_URL` names a
+MusicBrainz stand-in and no Deezer stand-in is named, the source is off, so
+tests never reach Deezer.
 
 ## Moving keys from other apps
 
