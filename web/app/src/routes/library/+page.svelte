@@ -1092,6 +1092,9 @@
 	.rows.table { overflow-x: auto; }
 	.row { display: grid; grid-template-columns: var(--cols); align-items: center; gap: 0 16px; min-height: var(--row-h, 100px); padding: 0 20px 0 0; width: 100%; box-sizing: border-box; }
 	.rows.table > .row.head, .rows.table > .body { min-width: var(--table-min); }
+	/* The virtual list moves its own rows (a top spacer); the browser's scroll
+	   anchoring must not also correct for them, or the two chase each other. */
+	.body { overflow-anchor: none; }
 	.row.head { position: sticky; top: 0; z-index: 2; min-height: 38px; padding-top: 0; padding-bottom: 0; padding-left: 0; background: var(--surface-1); border-bottom: 1px solid var(--line); }
 	.h { color: var(--text-muted); font: var(--t-footnote); font-weight: 600; text-align: left; white-space: nowrap; }
 	.h.num, .c.num { text-align: right; justify-self: end; }

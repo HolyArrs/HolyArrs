@@ -277,5 +277,9 @@
   .sk { background-image: none !important; animation: none !important; }
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
   /* The loader (#hl) is exempt: its ring always spins (Luis, 2026-10-20). */
-  :not(#hl, #hl *), :not(#hl, #hl *)::before, :not(#hl, #hl *)::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; scroll-behavior: auto !important; }
+  /* 0s, not 1ms: every element's transition-property defaults to all, so a
+     1ms duration would turn every layout change into a transition and paint
+     one stale frame first (the Library list flickered by a screen on scroll).
+     At 0s the end state lands in the same frame and end events still fire. */
+  :not(#hl, #hl *), :not(#hl, #hl *)::before, :not(#hl, #hl *)::after { animation-duration: 0s !important; animation-iteration-count: 1 !important; transition-duration: 0s !important; scroll-behavior: auto !important; }
 }
