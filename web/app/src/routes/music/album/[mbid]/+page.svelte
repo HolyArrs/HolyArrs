@@ -24,7 +24,7 @@
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import { pictureOf } from '#lib/pictures.ts';
 	import { keepShown, reaskWhileIncomplete } from '#lib/music/reask.ts';
-	import { albumHref, appPicture, artistHref, askAgainOnce, coverFor, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist, type PageCredit, type PageTrack } from '#lib/music/music-pages.ts';
+	import { albumHref, appPicture, artistHref, askAgainOnce, coverFor, withCover, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist, type PageCredit, type PageTrack } from '#lib/music/music-pages.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 
 	// An album's page: the cover beside its title and actions, the tracklist
@@ -47,6 +47,7 @@
 	let addDialog: ReturnType<typeof AddArtistDialog> | undefined = $state();
 	let askedHere = $state(false);
 	let near = $state<PageCredit[] | null>(null);
+	const moreBy = $derived(withCover(data?.more_by));
 	let edition = $state('');
 	let asking = $state(false);
 	// A slow source: the answer came incomplete and is asked again quietly (lib/music/reask.ts).
@@ -78,7 +79,7 @@
 			}, stop.signal);
 			// A bare album link learns its artist from the full answer: ask the nearby albums now.
 			const found = d.artist?.mbid;
-			if (!artist && found) void api.get<{ near: PageCredit[] }>(`/music/albums/${mbid}?part=near&artist=${found}`).then((r) => still() && (near = r.near)).catch(() => still() && (near = []));
+			if (!artist && found) void api.get<{ near: PageCredit[] }>(`/music/albums/${mbid}?part=near&artist=${found}`).then((r) => still() && (near = withCover(r.near))).catch(() => still() && (near = []));
 		}).catch((e) => {
 			if (still()) error = message(e);
 		}).finally(() => {
@@ -88,8 +89,8 @@
 		if (artist) void api.get<AlbumCoreData>(`/music/albums/${mbid}?part=core&artist=${artist}`).then((c) => still() && !data && (core = c)).catch(() => {});
 		// A bare album link has no artist: skip the artist calls instead of asking for /music/artists/.
 		if (!artist) similar = [];
-		else void api.get<{ similar: PageArtist[] }>(`/music/artists/${artist}?part=similar&n=14`).then((r) => still() && (similar = r.similar)).catch(() => still() && (similar = []));
-		if (artist) void api.get<{ near: PageCredit[] }>(`/music/albums/${mbid}?part=near&artist=${artist}`).then((r) => still() && (near = r.near)).catch(() => still() && (near = []));
+		else void api.get<{ similar: PageArtist[] }>(`/music/artists/${artist}?part=similar&n=14`).then((r) => still() && (similar = withCover(r.similar))).catch(() => still() && (similar = []));
+		if (artist) void api.get<{ near: PageCredit[] }>(`/music/albums/${mbid}?part=near&artist=${artist}`).then((r) => still() && (near = withCover(r.near))).catch(() => still() && (near = []));
 		if (artist) void api.get<{ artists: LookupArtist[] }>(`/artists/lookup?term=${encodeURIComponent(`mbid:${artist}`)}`).then((r) => {
 			if (still()) lookup = r.artists[0] ?? null;
 		}).catch(() => {});
@@ -285,8 +286,8 @@
 			</section>
 			{/if}
 
-			{#if data.more_by.length}
-				<Shelf title={`More from ${data.artist.name}`} href={artistHref(data.artist.mbid)} item="var(--music-item)" items={data.more_by} key={(a) => a.mbid} placeholder="square" lines={1}>
+			{#if moreBy.length}
+				<Shelf title={`More from ${data.artist.name}`} href={artistHref(data.artist.mbid)} item="var(--music-item)" items={moreBy} key={(a) => a.mbid} placeholder="square" lines={1}>
 					{#snippet card(a: PageAlbum)}{@render albumCard(a)}{/snippet}
 				</Shelf>
 			{/if}

@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { albumHref, artistHref, artistKind, countryName, initialsOf, coverFor, haveLine, kindWord, length, owned, shelves, type PageAlbum } from './music-pages.ts';
+import { albumHref, artistHref, artistKind, countryName, initialsOf, coverFor, haveLine, kindWord, length, owned, shelves, withCover, type PageAlbum } from './music-pages.ts';
 
 const al = (over: Partial<PageAlbum>): PageAlbum => ({ mbid: 'm', name: 'N', type: 'album', secondary_types: [], shelf: 'albums', image: '', ...over });
 
 describe('music pages', () => {
+	it('keeps only albums and artists with a real picture in a row', () => {
+		const row = [al({ mbid: 'a', image: '/api/v1/x' }), al({ mbid: 'b', image: '' }), al({ mbid: 'c', image: '  ' })];
+		expect(withCover(row).map((a) => a.mbid)).toEqual(['a']);
+		expect(withCover(null)).toEqual([]);
+	});
 	it('asks one size per slot: 500 for cards, 250 for thumbnails, 1200 only for heroes', () => {
 		const p = '/api/v1/music-trending/art/album/abc';
 		expect(coverFor(p, 200, 1)).toEqual({ src: `${p}?size=500` });

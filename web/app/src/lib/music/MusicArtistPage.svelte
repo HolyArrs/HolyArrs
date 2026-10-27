@@ -47,7 +47,7 @@
 	import { HERO_DELAY, setSoundOn, soundOn } from '#lib/trailer.ts';
 	import { artistVideo, autoplayHere, loadUISettings, nativeHLS } from '#lib/autoplay.svelte.ts';
 	import { heroFullscreen, heroVideoStart, type HeroVideo } from '#lib/music/hero-video.ts';
-	import { aboutSize, albumHref, appPicture, artistHref, artistKind, countryName, initialsOf, coverFor, haveLine, kindWord, length, owned, popularityStats, listening, changeWords, fullCount, catalogParts, smallReleasesWord, shortCount, type Catalog, askAgainOnce, SHELVES, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
+	import { aboutSize, albumHref, appPicture, artistHref, artistKind, countryName, initialsOf, coverFor, haveLine, kindWord, length, owned, popularityStats, listening, changeWords, fullCount, catalogParts, smallReleasesWord, shortCount, type Catalog, askAgainOnce, withCover, SHELVES, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type Shelf as ShelfKind } from '#lib/music/music-pages.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import VariantBar from '#lib/ui/VariantBar.svelte';
@@ -70,6 +70,7 @@
 	let data = $state<ArtistPageData | null>(null);
 	let similar = $state<PageArtist[] | null>(null);
 	let more = $state<ArtistMoreData | null>(null);
+	const related = $derived(withCover(data?.related));
 	let shelfPick = $state<ShelfKind | 'all'>('albums');
 	let havePick = $state<'all' | 'have' | 'missing'>('all');
 	let confirmAll = $state(false);
@@ -195,8 +196,8 @@
 				askFollow(data.title_id);
 			}, stop.signal);
 		});
-		void api.get<{ similar: PageArtist[] }>(`/music/artists/${want}?part=similar`).then((r) => want === mbid && (similar = r.similar)).catch(() => want === mbid && (similar = []));
-		void api.get<ArtistMoreData>(`/music/artists/${want}?part=more`).then((r) => want === mbid && (more = r)).catch(() => want === mbid && (more = { essential: [], appears_on: [] }));
+		void api.get<{ similar: PageArtist[] }>(`/music/artists/${want}?part=similar`).then((r) => want === mbid && (similar = withCover(r.similar))).catch(() => want === mbid && (similar = []));
+		void api.get<ArtistMoreData>(`/music/artists/${want}?part=more`).then((r) => want === mbid && (more = { ...r, appears_on: withCover(r.appears_on) })).catch(() => want === mbid && (more = { essential: [], appears_on: [] }));
 		// A cold artist's art may still be on its way (the server fetches it
 		// right then): an answer with no wide photo is asked again over about
 		// 20 s, and the photo fades in when it lands.
@@ -442,7 +443,7 @@
 	const essential = $derived.by(() => {
 		if (!data || !more) return [];
 		const by = new Map(data.albums.map((a) => [a.mbid, a]));
-		return more.essential.map((id) => by.get(id)).filter((a): a is PageAlbum => !!a);
+		return withCover(more.essential.map((id) => by.get(id)).filter((a): a is PageAlbum => !!a));
 	});
 	const missing = $derived(data?.missing);
 	const allAsked = $derived(!!lookup?.ask && !lookup.ask.albums?.length);
@@ -832,10 +833,10 @@
 				</Shelf>
 			{/if}
 
-			{#if data?.related.length}
+			{#if related.length}
 				<section class="block">
 					<h2>Bands and collaborators</h2>
-					<ul class="circles" use:dragScroll>{#each data.related as p (p.mbid)}<li><PersonCircle name={p.name} role={p.note} image={appPicture(p.image)} href={artistHref(p.mbid)} size={152} /></li>{/each}</ul>
+					<ul class="circles" use:dragScroll>{#each related as p (p.mbid)}<li><PersonCircle name={p.name} role={p.note} image={appPicture(p.image)} href={artistHref(p.mbid)} size={152} /></li>{/each}</ul>
 				</section>
 			{/if}
 

@@ -254,6 +254,9 @@ export const albumHref = (mbid: string, artist: string) => to(`/music/album/${mb
 import { versioned } from './photo-version.ts';
 export const appPicture = (src: string | undefined | null) => (!src ? null : src.startsWith('/') ? to(versioned(src)) : src);
 
+/** withCover keeps the albums and artists that have a real picture: a row never shows a letter tile. */
+export const withCover = <T extends { image?: string | null }>(list: readonly T[] | null | undefined): T[] => (list ?? []).filter((x) => !!x.image?.trim());
+
 const caa = /^(https?:\/\/(?:www\.)?coverartarchive\.org\/release(?:-group)?\/[^/]+\/(?:front|back|\d+))(?:-(?:250|500|1200))?(?:\.jpg)?$/;
 const proxied = /\/api\/v1\/(?:music-trending\/art\/album\/[^/?]+|albums\/\d+\/cover)(?:\?.*)?$/;
 
