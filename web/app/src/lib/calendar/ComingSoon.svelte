@@ -70,9 +70,10 @@
 						{@const gs = groupDates(d.items)}
 						<li class="row" class:busy={gs.length > 1} data-day={d.day} class:today={d.day === today} class:past={d.day < today}>
 							<div class="stamp">
-								<span class="dow">{d.day === today ? 'Today' : at(d.day).toLocaleDateString(undefined, { weekday: 'short' })}</span>
+								<span class="dow">{at(d.day).toLocaleDateString(undefined, { weekday: 'short' })}</span>
 								<span class="big">{at(d.day).getDate()}</span>
 								<span class="mon">{at(d.day).toLocaleDateString(undefined, { month: 'short' })}</span>
+								{#if d.day === today}<span class="today-tag"><Badge label="Today" /></span>{/if}
 							</div>
 							{#if gs.length > 1}
 								<!-- A busy day: one row of cards that scrolls sideways, its count on top. -->
@@ -114,7 +115,8 @@
 	.dow { color: var(--text-muted); font: var(--t-subhead); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
 	.big { margin-top: 4px; font: 700 64px/0.95 var(--font-display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
 	.mon { margin-top: 4px; color: var(--text-muted); font: var(--t-footnote); }
-	.today .dow { color: var(--accent-text); }
+	/* Today is told by a small tag under the date, not by colour. */
+	.today-tag { margin-top: 6px; display: inline-flex; }
 	.past .big { color: var(--text-muted); }
 
 	.cs-card { display: flex; flex-direction: column; gap: 14px; min-width: 0; }

@@ -22,6 +22,7 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
+	import Badge from '#lib/ui/Badge.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import ComingSoon from '#lib/calendar/ComingSoon.svelte';
 	import MiniMonth from '#lib/calendar/MiniMonth.svelte';
@@ -468,9 +469,10 @@
 									<div class="when" aria-hidden="true">
 										<span class="dow">{at.toLocaleDateString(undefined, { weekday: 'short' })}</span>
 										<b>{at.getDate()}</b>
+										{#if d.day === todayKey}<span class="today-tag"><Badge label="Today" /></span>{/if}
 									</div>
 									<div class="items">
-										<p class="sr-only">{date(d.day + 'T12:00:00')}</p>
+										<p class="sr-only">{date(d.day + 'T12:00:00')}{d.day === todayKey ? ', today' : ''}</p>
 										<ul>{#each d.items as e (entryKey(e))}{@render item(e)}{/each}</ul>
 									</div>
 								</li>
@@ -560,7 +562,8 @@
 
 	.days { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; max-width: 860px; }
 	.day { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 14px; padding: 12px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); scroll-margin-top: 8px; }
-	.day.today { outline-color: var(--accent-fill); }
+	/* Today is told by a small tag under the date, not by colour. */
+	.today-tag { margin-top: 6px; display: inline-flex; }
 	.when { display: flex; flex-direction: column; align-items: center; padding-top: 2px; }
 	.dow { color: var(--accent-text); font: var(--t-caption); text-transform: none; }
 	.when b { font: var(--t-title2); font-variant-numeric: tabular-nums; }
