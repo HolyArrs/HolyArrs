@@ -959,6 +959,11 @@
 	:global(html:not([data-theme='dark'])) .under-hero .rb { border-color: var(--line); background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); }
 	:global(html:not([data-theme='dark'])) .under-hero .rb.on, :global(html:not([data-theme='dark'])) .under-hero .rb.main { background: var(--text); color: var(--bg); box-shadow: 0 8px 24px rgb(0 0 0 / .15); }
 	:global(html:not([data-theme='dark'])) .under-hero .rb:focus-visible { outline-color: var(--text); }
+	/* Your Library progress line: dark ink on the light page (it was white on white). */
+	:global(html:not([data-theme='dark'])) .under-hero .libline { color: var(--text-muted); }
+	:global(html:not([data-theme='dark'])) .under-hero .libword { color: var(--text); }
+	:global(html:not([data-theme='dark'])) .under-hero .bar { background: var(--line); }
+	:global(html:not([data-theme='dark'])) .under-hero .bar i { background: var(--text); }
 	.bioline { margin: 2px 0 0; max-width: 64ch; color: rgb(255 255 255 / .78); font: var(--t-callout); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 	.bioline .more { color: #fff; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 	.stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 0; margin: 10px 0 4px; padding: 12px 0; border-block: 1px solid rgb(255 255 255 / .12); width: min(720px, 100%); }
