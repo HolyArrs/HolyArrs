@@ -88,7 +88,7 @@ func TestMusicTrendingListsAndPictures(t *testing.T) {
 }
 
 // A trending list's covers come only from the server's stored copies: an
-// album it has not stored is a miss, and the cover chain is never asked.
+// album it has not stored is a miss.
 func TestMusicTrendArtServerOnly(t *testing.T) {
 	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
 	const none = "11111111-1111-4111-8111-111111111111"
@@ -107,10 +107,8 @@ func TestMusicTrendArtServerOnly(t *testing.T) {
 		http.Redirect(w, r, "/release-group/x/front-250", http.StatusFound)
 	}))
 	defer pics.Close()
-	var asked atomic.Int32
-	cover := func(context.Context, string, string, string) (string, error) { asked.Add(1); return "", metadata.ErrNotFound }
 	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{pics.URL + "/"}, HTTP: pics.Client()}
-	api := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), Library: &library.Service{Store: s, Artwork: art}, ImageBase: pics.URL + "/v1/img", Version: "test", Deps: music.Deps{MusicTrending: trend, MusicCover: cover}})
+	api := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), Library: &library.Service{Store: s, Artwork: art}, ImageBase: pics.URL + "/v1/img", Version: "test", Deps: music.Deps{MusicTrending: trend}})
 	srv := httptest.NewServer(api.Handler())
 	defer srv.Close()
 	code := func(id string) int {
@@ -133,9 +131,6 @@ func TestMusicTrendArtServerOnly(t *testing.T) {
 	}
 	if c := code(none); c != 404 {
 		t.Fatalf("not stored %d", c)
-	}
-	if asked.Load() != 0 {
-		t.Fatalf("cover chain asked %d times", asked.Load())
 	}
 }
 

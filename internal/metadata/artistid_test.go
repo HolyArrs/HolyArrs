@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 )
@@ -54,37 +53,6 @@ func TestParseArtistURLs(t *testing.T) {
 	}
 	if ids := parseArtistURLs([]string{"https://www.deezer.com/en/artist/12/"}); ids.Deezer != 12 {
 		t.Fatalf("ids %+v", ids)
-	}
-}
-
-// TestPictureByIDsNameCollision: the picture comes from the Deezer id the
-// MusicBrainz links name, never from another artist with the same name.
-func TestPictureByIDsNameCollision(t *testing.T) {
-	srv := collisionDeezer(t)
-	d := &ArtistImages{BaseURL: srv.URL, WikidataBase: srv.URL + "/w/api.php", Gap: time.Millisecond, Timeout: time.Second}
-	ctx := context.Background()
-	if p := d.PictureByIDs(ctx, ArtistIDs{Deezer: 246791}); p != "https://img.test/drake.jpg" {
-		t.Fatalf("picture %q", p)
-	}
-	// No Deezer picture: Wikidata's.
-	p := d.PictureByIDs(ctx, ArtistIDs{Deezer: 7, Wikidata: "Q33240"})
-	if !strings.HasPrefix(p, CommonsThumbBase+"/") || !strings.HasSuffix(p, "/600px-Drake_July_2016.jpg") {
-		t.Fatalf("wikidata picture %q", p)
-	}
-	// Nothing by id: nothing, never a name search.
-	if p := d.PictureByIDs(ctx, ArtistIDs{}); p != "" {
-		t.Fatalf("picture without ids %q", p)
-	}
-}
-
-func TestCommonsThumb(t *testing.T) {
-	// md5("Drake_July_2016.jpg") starts with the folder letters.
-	got := commonsThumb("Drake July 2016.jpg", 600)
-	if !strings.HasPrefix(got, CommonsThumbBase+"/") || strings.Count(got, "Drake_July_2016.jpg") != 2 {
-		t.Fatalf("thumb %q", got)
-	}
-	if commonsThumb("Logo.svg", 600) != "" || commonsThumb("", 600) != "" {
-		t.Fatal("only photos")
 	}
 }
 

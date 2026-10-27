@@ -47,9 +47,6 @@ func TestMusicWarmUpDoesNotRunWhenMusicIsOff(t *testing.T) {
 		}, MusicCharts: func(context.Context, string, string, string) (metadata.MusicChart, error) {
 			calls.Add(1)
 			return metadata.MusicChart{}, nil
-		}, MusicCover: func(context.Context, string, string, string) (string, error) {
-			calls.Add(1)
-			return "", nil
 		}},
 	})
 	pc := a.s.Parts

@@ -69,7 +69,4 @@ type Deps struct {
 	// artists, albums and songs); nil leaves the dropdown to the Library
 	// and TMDB.
 	MusicSuggest func(ctx context.Context, q string) ([]metadata.MusicSuggestion, error)
-	// MusicCover reads an album cover URL from the metadata server; nil uses
-	// only the Cover Art Archive.
-	MusicCover func(ctx context.Context, mbid, artist, title string) (string, error)
 }

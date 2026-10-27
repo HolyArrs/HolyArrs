@@ -196,21 +196,13 @@ func TestCreditCoversPrefetched(t *testing.T) {
 		_, _ = w.Write([]byte("\xff\xd8\xff synthetic"))
 	}))
 	defer pics.Close()
-	var gotArtist, gotTitle string
-	cover := func(_ context.Context, mbid, artist, title string) (string, error) {
-		gotArtist, gotTitle = artist, title
-		return pics.URL + "/cover.jpg", nil
-	}
 	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{pics.URL + "/"}, HTTP: pics.Client()}
 	a := New(Server{Store: s, Metadata: newDiscoverTMDB(t).provider(), ImageBase: pics.URL + "/v1/img",
-		Library: &library.Service{Store: s, Artwork: art}, Version: "test", Deps: music.Deps{MusicCover: cover}})
+		Library: &library.Service{Store: s, Artwork: art}, Version: "test"})
 	c := creditOf(metadata.MusicTopAlbum{MBID: al, Title: "OK Computer", Type: "album"})
 	c.ArtistName = "Radiohead"
 	a.warmCredits([]PageCredit{c})
 	a.music.prefetching.Wait()
-	if gotArtist != "" || gotTitle != "" {
-		t.Fatalf("the cover chain was asked %q %q", gotArtist, gotTitle)
-	}
 	if _, ok := art.Path(library.ArtworkName(pics.URL + "/v1/img/album/" + al + "/250.jpg")); !ok {
 		t.Fatal("credit cover not prefetched from the server")
 	}

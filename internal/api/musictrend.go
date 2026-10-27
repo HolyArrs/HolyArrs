@@ -2,10 +2,8 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -13,7 +11,6 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/library"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/parts"
-	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
 // musicTrendTTL is how long a music trending list is kept; the metadata
@@ -37,8 +34,6 @@ type musicTrendCache struct {
 	// names are the artists and albums of the cached lists by MusicBrainz
 	// id, so only those pictures are fetched.
 	names map[string]metadata.MusicTrendItem
-	// covers are album cover URLs by release group ("" when none has one).
-	covers map[string]musicCover
 	// artMiss is when a picture was last not found, by "kind|mbid".
 	artMiss map[string]time.Time
 	// artBusy are pictures being fetched now, so a second ask waits for
@@ -55,11 +50,6 @@ type artFetch struct {
 	done       chan struct{}
 	name, path string
 	ok         bool
-}
-
-type musicCover struct {
-	src string
-	at  time.Time
 }
 
 // musicTrendView is one card of the row.
@@ -253,76 +243,6 @@ func (a *API) musicTrendArt(w http.ResponseWriter, r *http.Request) {
 	}
 	serveArtwork(w, r, name, p)
 }
-
-// albumCover asks the metadata server's cover chain for an album, kept a
-// week when found (memory and disk) and minutes (musicArtMissTTL) when no source has one. found is false when
-// the server could not answer, so the caller tries the Cover Art Archive.
-func (a *API) albumCover(ctx context.Context, mbid string, it metadata.MusicTrendItem) (src string, found bool) {
-	if a.s.MusicCover == nil {
-		return "", false
-	}
-	c := &a.music
-	c.mu.Lock()
-	e, ok := c.covers[mbid]
-	c.mu.Unlock()
-	if !ok && a.s.Store != nil {
-		if b, found, _ := (store.LookupCache{Store: a.s.Store}).Get(ctx, "musiccover|"+mbid, time.Now()); found {
-			var d musicCoverDisk
-			if json.Unmarshal(b, &d) == nil && d.Src != "" {
-				e, ok = musicCover{src: d.Src, at: d.At}, true
-				c.mu.Lock()
-				a.keepCoverLocked(mbid, e)
-				c.mu.Unlock()
-			}
-		}
-	}
-	if ok && ((e.src != "" && time.Since(e.at) < musicCoverKeep) || (e.src == "" && time.Since(e.at) < musicArtMissTTL)) {
-		return e.src, true
-	}
-	title := it.Title
-	if title == "" {
-		title = it.Name
-	}
-	src, err := a.s.MusicCover(ctx, mbid, it.Artist, title)
-	if err != nil && !errors.Is(err, metadata.ErrNotFound) {
-		return "", false
-	}
-	if src == "" && (it.Artist == "" || title == "") {
-		// Without names the server only asks the Cover Art Archive; keep
-		// no answer, so a later ask with names runs the whole chain.
-		return "", true
-	}
-	now := time.Now()
-	c.mu.Lock()
-	a.keepCoverLocked(mbid, musicCover{src: src, at: now})
-	c.mu.Unlock()
-	if src != "" && a.s.Store != nil {
-		if b, err := json.Marshal(musicCoverDisk{Src: src, At: now}); err == nil {
-			_ = store.LookupCache{Store: a.s.Store}.Put(context.WithoutCancel(ctx), "musiccover|"+mbid, b, now, now.Add(musicCoverKeep))
-		}
-	}
-	return src, true
-}
-
-type musicCoverDisk struct {
-	Src string    `json:"src"`
-	At  time.Time `json:"at"`
-}
-
-func (a *API) keepCoverLocked(mbid string, e musicCover) {
-	c := &a.music
-	if c.covers == nil {
-		c.covers = map[string]musicCover{}
-	}
-	if _, has := c.covers[mbid]; !has {
-		keepUnder(c.covers, 20000, func(m musicCover) time.Time { return m.at })
-	}
-	c.covers[mbid] = e
-}
-
-// musicCoverKeep is how long a found album cover is used before it is
-// asked again; found covers are kept on disk too, so a restart keeps them.
-const musicCoverKeep = 7 * 24 * time.Hour
 
 // musicArtMissTTL is how long a picture no source has is not asked again:
 // minutes, so a brand-new release's cover shows once a source has it.
@@ -521,33 +441,4 @@ func coverSize(r *http.Request) string {
 		return s
 	}
 	return "250"
-}
-
-// caaThumb matches a Cover Art Archive picture with or without its
-// thumbnail suffix.
-var caaThumb = regexp.MustCompile(`^(https?://(?:www\.)?coverartarchive\.org/release(?:-group)?/[^/]+/(?:front|back|\d+))(?:-(?:250|500|1200))?(?:\.jpg)?$`)
-
-// Deezer CDN and iTunes covers carry their size in the path.
-var (
-	dzThumb = regexp.MustCompile(`^(https?://[a-z0-9-]+\.dzcdn\.net/images/(?:cover|artist)/[0-9a-f]+/)\d+x\d+(-.*)?$`)
-	itThumb = regexp.MustCompile(`^(https?://[a-z0-9-]+\.mzstatic\.com/image/thumb/.+/)\d+x\d+(bb|cc)?(\.(?:jpg|png|webp))$`)
-)
-
-// sizedCover points a Cover Art Archive, Deezer or iTunes cover at the size
-// asked for; each size is its own artwork cache file. Other sources stay as they are.
-func sizedCover(src, size string) string {
-	if m := caaThumb.FindStringSubmatch(src); m != nil {
-		return m[1] + "-" + size
-	}
-	if m := dzThumb.FindStringSubmatch(src); m != nil {
-		return m[1] + size + "x" + size + m[2]
-	}
-	if m := itThumb.FindStringSubmatch(src); m != nil {
-		bb := m[2]
-		if bb == "" {
-			bb = "bb"
-		}
-		return m[1] + size + "x" + size + bb + m[3]
-	}
-	return src
 }

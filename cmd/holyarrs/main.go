@@ -415,7 +415,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if os.Getenv("HOLYARRS_MUSICBRAINZ_URL") == "" {
 		artistMD = hosted.Service.Artists(artistMD)
 	}
-	pictures, pictureHosts := artistImages()
+	pictures := artistImages()
 	// Pictures come from public addresses only; a picture stand-in named
 	// by HOLYARRS_DEEZER_URL (tests) may be on this machine.
 	artworkHTTP := library.ArtworkClient()
@@ -431,7 +431,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	lib := &library.Service{Store: s, Queue: q, Metadata: md, Live: hub, SavePath: c.SavePath, ArtistImages: pictures,
 		ImageServer: hosted.Service.Base() + "/v1/img",
-		Artwork: &library.ArtworkCache{Dir: filepath.Join(c.ConfigDir, "artwork"), Allowed: append([]string{metadata.ImageBase + "/", "https://assets.fanart.tv/", hosted.Service.Base() + "/v1/img/"}, pictureHosts...),
+		Artwork: &library.ArtworkCache{Dir: filepath.Join(c.ConfigDir, "artwork"), Allowed: []string{metadata.ImageBase + "/", "https://assets.fanart.tv/", hosted.Service.Base() + "/v1/img/"},
 			HTTP: artworkHTTP}}
 	lib.Shows = showMD
 	lib.AnimeNames = func(ctx context.Context, kind, tmdbID, name string) []string {
@@ -623,7 +623,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 			t, err := hosted.Service.TrailerPick(ctx, kind, id, lang)
 			return t.Key, err
 		}, AnimeMap: hosted.Service.AnimeMap, LiveSearch: flagOn("live_search"), ExtraArt: hosted.Service.Art, ImageBase: hosted.Service.Base() + "/v1/img", MusicControl: hosted.Service.Control, ArtistVideos: hosted.Service.ArtistVideos, ExtraRatings: hosted.Service.Ratings, WikiTitle: hosted.Service.WikiTitle, WikiPerson: hosted.Service.WikiPerson, AwardWinners: hosted.Service.AwardWinners, Alerts: sender, Asks: wish, Search: sr, Downloads: dm, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
-		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase, Deps: music.Deps{MusicTrending: hosted.Service.MusicTrending, MusicNew: hosted.Service.MusicNewWindow, MusicSimilar: hosted.Service.MusicSimilar, MusicCharts: hosted.Service.MusicCharts, MusicGenres: hosted.Service.MusicGenreList, MusicGenreTile: hosted.Service.MusicGenreTile, MusicRowsV2: flagOn("music_rows_v2"), MusicRowsV3: flagOn("music_rows_v3"), MusicRowsV6: flagOn("music_rows_v6"), MusicRowsV7: flagOn("music_rows_v7"), MusicListsV1: flagOn("music_lists_v1"), MusicShelves: hosted.Service.MusicShelves, MusicPools: hosted.Service.MusicPools, MusicRowsTplOff: flagOn("music_rows_tpl_off"), MusicListeners: hosted.Service.MusicListeners, MusicSimilarSet: hosted.Service.MusicSimilarSet, MusicArtistData: hosted.Service.MusicArtistData, MusicSuggest: hosted.Service.MusicSuggest, MusicCover: hosted.Service.MusicCover}})
+		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase, Deps: music.Deps{MusicTrending: hosted.Service.MusicTrending, MusicNew: hosted.Service.MusicNewWindow, MusicSimilar: hosted.Service.MusicSimilar, MusicCharts: hosted.Service.MusicCharts, MusicGenres: hosted.Service.MusicGenreList, MusicGenreTile: hosted.Service.MusicGenreTile, MusicRowsV2: flagOn("music_rows_v2"), MusicRowsV3: flagOn("music_rows_v3"), MusicRowsV6: flagOn("music_rows_v6"), MusicRowsV7: flagOn("music_rows_v7"), MusicListsV1: flagOn("music_lists_v1"), MusicShelves: hosted.Service.MusicShelves, MusicPools: hosted.Service.MusicPools, MusicRowsTplOff: flagOn("music_rows_tpl_off"), MusicListeners: hosted.Service.MusicListeners, MusicSimilarSet: hosted.Service.MusicSimilarSet, MusicArtistData: hosted.Service.MusicArtistData, MusicSuggest: hosted.Service.MusicSuggest}})
 	if !c.SafeMode {
 		a.StartExplore(ctx)
 	}
@@ -671,24 +671,23 @@ func showSources(v *secrets.Vault, hosted *hostedMetadata) metadata.ShowSources 
 	}
 }
 
-// artistImages is the artist picture source and the picture addresses the
-// artwork cache may fetch from it. By default it is Deezer's public artist
-// search (no key) over public addresses only. HOLYARRS_DEEZER_URL names a
-// stand-in (tests), or "off" turns it off; with a MusicBrainz stand-in and
-// no Deezer stand-in it is off too, so browser tests never reach Deezer.
-func artistImages() (*metadata.ArtistImages, []string) {
+// artistImages reads Deezer's public artist profiles (top songs, explicit
+// marks; no key) over public addresses only; it fetches no pictures.
+// HOLYARRS_DEEZER_URL names a stand-in (tests), or "off" turns it off; with
+// a MusicBrainz stand-in and no Deezer stand-in it is off too, so browser
+// tests never reach Deezer.
+func artistImages() *metadata.ArtistImages {
 	env := strings.TrimRight(os.Getenv("HOLYARRS_DEEZER_URL"), "/")
 	switch {
 	case env == "off", env == "" && os.Getenv("HOLYARRS_MUSICBRAINZ_URL") != "":
-		return nil, nil
+		return nil
 	case env != "":
-		return &metadata.ArtistImages{BaseURL: env}, []string{env + "/"}
+		return &metadata.ArtistImages{BaseURL: env}
 	}
 	t := http.DefaultTransport.(*http.Transport).Clone()
 	t.Proxy = nil // the policy must see the real address
 	t.DialContext = source.PolicyDialer(source.PublicOnly).DialContext
-	return &metadata.ArtistImages{BaseURL: metadata.DeezerBase, HTTP: &http.Client{Transport: t}},
-		[]string{"https://cdn-images.dzcdn.net/images/artist/", "https://e-cdns-images.dzcdn.net/images/artist/", metadata.CommonsThumbBase + "/"}
+	return &metadata.ArtistImages{BaseURL: metadata.DeezerBase, HTTP: &http.Client{Transport: t}}
 }
 
 // musicSource is MusicBrainz at no more than one request a second (one

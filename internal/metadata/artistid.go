@@ -2,17 +2,12 @@ package metadata
 
 import (
 	"context"
-	"crypto/md5"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
-	"time"
 )
 
 // ArtistIDs are an artist's ids at other sites, read from its MusicBrainz
@@ -93,110 +88,6 @@ func deezerPicture(list ...string) string {
 		}
 	}
 	return ""
-}
-
-// DeezerPicture is the picture of the Deezer artist with this id.
-func (d *ArtistImages) DeezerPicture(ctx context.Context, id int64) (string, error) {
-	if d == nil || id <= 0 {
-		return "", nil
-	}
-	var a struct {
-		ID     int64  `json:"id"`
-		XL     string `json:"picture_xl"`
-		Big    string `json:"picture_big"`
-		Medium string `json:"picture_medium"`
-	}
-	if err := d.json(ctx, d.base()+"/artist/"+strconv.FormatInt(id, 10), &a); err != nil {
-		return "", fmt.Errorf("Deezer artist: %w", err)
-	}
-	if a.ID != id {
-		return "", nil
-	}
-	return deezerPicture(a.XL, a.Big, a.Medium), nil
-}
-
-// WikidataBase is Wikidata's API; CommonsThumbBase serves its pictures.
-const (
-	WikidataBase     = "https://www.wikidata.org/w/api.php"
-	CommonsThumbBase = "https://upload.wikimedia.org/wikipedia/commons/thumb"
-)
-
-var (
-	wdOnce sync.Once
-	wdGet  *getter
-)
-
-// WikidataPicture is the picture (P18) of the Wikidata item, as a 600
-// pixel wide Wikimedia Commons thumbnail ("" when it has none).
-func (d *ArtistImages) WikidataPicture(ctx context.Context, qid string) (string, error) {
-	if d == nil || !regexp.MustCompile(`^Q\d+$`).MatchString(qid) {
-		return "", nil
-	}
-	wdOnce.Do(func() {
-		wdGet = &getter{name: "Wikidata", http: d.HTTP, timeout: d.Timeout, gap: 200 * time.Millisecond, ttl: 7 * 24 * time.Hour, agent: d.UserAgent}
-	})
-	base := WikidataBase
-	if d.WikidataBase != "" {
-		base = strings.TrimRight(d.WikidataBase, "/")
-	}
-	u := base + "?" + url.Values{"action": {"wbgetclaims"}, "entity": {qid}, "property": {"P18"}, "format": {"json"}}.Encode()
-	b, err := wdGet.do(ctx, []string{base}, func(ctx context.Context) (*http.Request, error) {
-		return http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
-	})
-	if err != nil {
-		return "", fmt.Errorf("Wikidata: %w", err)
-	}
-	var out struct {
-		Claims map[string][]struct {
-			Rank     string `json:"rank"`
-			Mainsnak struct {
-				Datavalue struct {
-					Value any `json:"value"`
-				} `json:"datavalue"`
-			} `json:"mainsnak"`
-		} `json:"claims"`
-	}
-	if err := json.Unmarshal(b, &out); err != nil {
-		return "", fmt.Errorf("Wikidata: odd answer")
-	}
-	for _, c := range out.Claims["P18"] {
-		if c.Rank == "deprecated" {
-			continue
-		}
-		if file, ok := c.Mainsnak.Datavalue.Value.(string); ok {
-			if t := commonsThumb(file, 600); t != "" {
-				return t, nil
-			}
-		}
-	}
-	return "", nil
-}
-
-// commonsThumb is the Wikimedia Commons thumbnail link of a file (photos
-// only: jpg, png, webp).
-func commonsThumb(file string, width int) string {
-	file = strings.ReplaceAll(strings.TrimSpace(file), " ", "_")
-	low := strings.ToLower(file)
-	if file == "" || !(strings.HasSuffix(low, ".jpg") || strings.HasSuffix(low, ".jpeg") || strings.HasSuffix(low, ".png") || strings.HasSuffix(low, ".webp")) {
-		return ""
-	}
-	sum := md5.Sum([]byte(file))
-	h := hex.EncodeToString(sum[:])
-	enc := url.PathEscape(file)
-	return CommonsThumbBase + "/" + h[:1] + "/" + h[:2] + "/" + enc + "/" + strconv.Itoa(width) + "px-" + enc
-}
-
-// PictureByIDs is the artist's picture from its own ids: Deezer's artist,
-// else Wikidata's picture. Never a name search, never an album cover.
-func (d *ArtistImages) PictureByIDs(ctx context.Context, ids ArtistIDs) string {
-	if d == nil {
-		return ""
-	}
-	if p, _ := d.DeezerPicture(ctx, ids.Deezer); p != "" {
-		return p
-	}
-	p, _ := d.WikidataPicture(ctx, ids.Wikidata)
-	return p
 }
 
 // ProfileFor reads the Deezer profile of the artist: by the Deezer id from

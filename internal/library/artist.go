@@ -297,22 +297,6 @@ func (s *Service) artistPicture(ctx context.Context, titleID int64, mbid string,
 	}
 }
 
-// artistPictureByIDs is the artist's picture from the Deezer artist or
-// Wikidata item its MusicBrainz links name: by id, never by name, as two
-// artists can share a name.
-func (s *Service) artistPictureByIDs(ctx context.Context, mbid string) string {
-	src, ok := s.Artists.(metadata.ArtistIDSource)
-	if !ok || s.ArtistImages == nil || !metadata.ValidMBID(mbid) {
-		return ""
-	}
-	ids, err := src.ArtistIDs(ctx, mbid)
-	if err != nil {
-		log.Printf("library: links of artist %s: %v", mbid, err)
-		return ""
-	}
-	return s.ArtistImages.PictureByIDs(ctx, ids)
-}
-
 // ArtistSync says what one sync of an artist's albums, Pressings and
 // tracks did.
 type ArtistSync struct {

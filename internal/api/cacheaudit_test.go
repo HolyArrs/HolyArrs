@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/metadata"
-	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
 // Cache audit 2026-10-23, finding 7: a genre tile without a content version
@@ -100,32 +99,6 @@ func TestMusicBatchEmptyNotKeptLong(t *testing.T) {
 	a.musicBatch(context.Background(), "lb:s:", []string{"a", "b"}, 12, now.Add(11*time.Minute), fetch)
 	if calls != 2 {
 		t.Fatalf("empty kept: calls %d", calls)
-	}
-}
-
-// Finding 11: a found album cover survives a restart (disk) and is kept 7
-// days, not 30.
-func TestAlbumCoverOnDiskSevenDays(t *testing.T) {
-	st, err := store.Open(t.TempDir(), store.Options{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = st.Close() })
-	a := New(Server{Store: st, MusicCover: func(context.Context, string, string, string) (string, error) { return "https://c/1.jpg", nil }})
-	it := metadata.MusicTrendItem{Title: "T", Artist: "A"}
-	if src, ok := a.albumCover(context.Background(), apiAlbum, it); !ok || src != "https://c/1.jpg" {
-		t.Fatalf("first %q %v", src, ok)
-	}
-	calls := 0
-	b := New(Server{Store: st, MusicCover: func(context.Context, string, string, string) (string, error) {
-		calls++
-		return "https://c/2.jpg", nil
-	}})
-	if src, ok := b.albumCover(context.Background(), apiAlbum, it); !ok || src != "https://c/1.jpg" || calls != 0 {
-		t.Fatalf("after restart %q %v calls %d", src, ok, calls)
-	}
-	if musicCoverKeep != 7*24*time.Hour {
-		t.Fatalf("keep %v", musicCoverKeep)
 	}
 }
 
