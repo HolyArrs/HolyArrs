@@ -13,7 +13,30 @@
 	// day name over a large number, once per day) and a large backdrop card
 	// beside it with the name on the art, a short line and an Open button.
 	// Month names divide the list.
-	let { entries, today, onlater }: { entries: CalendarEntry[]; today: string; onlater: () => void } = $props();
+	let {
+		entries,
+		today,
+		onlater,
+		focus = null,
+		onfocused
+	}: {
+		entries: CalendarEntry[];
+		today: string;
+		onlater: () => void;
+		/** A day to bring into view once its dates are shown (from Week or Month); the first row on or after it. */
+		focus?: string | null;
+		onfocused?: () => void;
+	} = $props();
+	let list = $state<HTMLDivElement>();
+	$effect(() => {
+		if (!focus || !list) return;
+		const day = focus;
+		const rows = [...list.querySelectorAll<HTMLElement>('.row[data-day]')];
+		const row = rows.find((r) => (r.dataset.day ?? '') >= day) ?? rows.at(-1);
+		const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+		requestAnimationFrame(() => row?.scrollIntoView({ block: 'start', behavior: still ? 'auto' : 'smooth' }));
+		onfocused?.();
+	});
 
 	const months = $derived(monthGroups(entries));
 	const openWord = (e: CalendarEntry) => (e.kind === 'episode' ? 'Open show' : e.kind === 'album' ? 'Open album' : 'Open movie');
@@ -54,14 +77,14 @@
 {#if !months.length}
 	<CalEmpty {onlater} />
 {:else}
-	<div class="cs" data-testid="cal-look-2">
+	<div class="cs" data-testid="cal-look-2" bind:this={list}>
 		{#each months as m (m.month)}
 			<section class="month" aria-label={m.name}>
 				<h3 class="divider"><span>{m.name}</span></h3>
 				<ol class="rows">
 					{#each m.days as d (d.day)}
 						{#each d.items as e, i (entryKey(e))}
-							<li class="row" class:today={d.day === today} class:past={entryDay(e) < today} class:more={i > 0}>
+							<li class="row" data-day={d.day} class:today={d.day === today} class:past={entryDay(e) < today} class:more={i > 0}>
 								<div class="stamp" aria-hidden={i > 0}>
 									{#if i === 0}
 										<span class="dow">{d.day === today ? 'Today' : at(d.day).toLocaleDateString(undefined, { weekday: 'short' })}</span>
@@ -86,6 +109,8 @@
 	.rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 34px; }
 	.row { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 20px; align-items: start; }
 	.row.more { margin-top: -14px; }
+	/* With the page's own scroll padding (the top bar), a focused day lands under the bar like the sticky stamp. */
+	.row { scroll-margin-top: 8px; }
 	.stamp { position: sticky; top: calc(var(--topbar) + 16px); display: flex; flex-direction: column; align-items: flex-start; line-height: 1; }
 	.dow { color: var(--text-muted); font: var(--t-subhead); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
 	.big { margin-top: 4px; font: 700 64px/0.95 var(--font-display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }

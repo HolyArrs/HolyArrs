@@ -4,6 +4,7 @@
 	import { to } from '#lib/paths.ts';
 	import { onMount, untrack } from 'svelte';
 	import { page } from '$app/state';
+	import { replaceState } from '$app/navigation';
 	import { api, message, ApiError } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
@@ -26,7 +27,9 @@
 	import WeekStrip from '#lib/calendar/WeekStrip.svelte';
 	import Shelves from '#lib/calendar/Shelves.svelte';
 	import MonthGrid from '#lib/calendar/MonthGrid.svelte';
-	import { calendarLooks } from '#lib/calendar-looks.ts';
+	import ComingWeek from '#lib/calendar/ComingWeek.svelte';
+	import ComingMonth from '#lib/calendar/ComingMonth.svelte';
+	import { calendarLooks, readSpan, spanName, type Span } from '#lib/calendar-looks.ts';
 	import {
 		byDay,
 		entryDay,
@@ -73,6 +76,14 @@
 	let view = $state<CalendarView>('week');
 	// The layouts being compared (?view=1…5, kept for the session); 0 is the page as it is.
 	let look = $state(0);
+	// Coming Soon (2) looks a day, a week or a month at a time (?span=day|week|month).
+	let span = $state<Span>(readSpan(page.url.searchParams.get('span')));
+	// The last step's direction, so the next week or month slides in from that side.
+	let dir = $state(0);
+	// A day to bring into view in the day-by-day list once its dates have loaded.
+	let focusDay = $state<string | null>(null);
+	let fetching = $state(false);
+	const byMonth = $derived(look === 5 || (look === 2 && span === 'month'));
 	// The week shown in Week view: this week, or the first week of a linked month.
 	let week = $state(weekStart(asked ? new Date(Number(asked[1]), Number(asked[2]) - 1, 1) : now));
 	let entries = $state<CalendarEntry[]>([]);
@@ -104,9 +115,14 @@
 	const todayKey = ymd(now);
 	const layout = $derived(stacked(week, shown, todayKey));
 	const agenda = $derived(byDay(shown));
-	// Month (5) loads and pages a whole month; the others the six weeks from the week shown.
-	const range = $derived(look === 5 ? monthRange(year, month) : stackedRange(week));
+	// A day either side: an episode's local day can differ from the day it is stored under.
+	const padded = (r: { from: string; to: string }) => ({ from: ymd(new Date(new Date(r.from + 'T00:00:00').getTime() - 86400000)), to: ymd(new Date(new Date(r.to + 'T00:00:00').getTime() + 86400000)) });
+	// Month (5, and 2 by month) loads and pages a whole month; 2 by week one week; the others the six weeks from the week shown.
+	const range = $derived(
+		look === 2 && span === 'month' ? padded(monthRange(year, month)) : look === 2 && span === 'week' ? padded(weekRange(week)) : look === 5 ? monthRange(year, month) : stackedRange(week)
+	);
 	const rangeName = $derived(
+		look === 2 && span !== 'day' ? spanName(span, week, year, month) :
 		look === 5 ? new Date(year, month, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) :
 		`${week.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${new Date(week.getFullYear(), week.getMonth(), week.getDate() + 7 * 6 - 1).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
 	);
@@ -123,6 +139,7 @@
 	let asks = 0;
 	async function load() {
 		const n = ++asks;
+		fetching = true;
 		try {
 			const r = range;
 			const [c, t] = await Promise.all([
@@ -137,6 +154,7 @@
 			error = message(e);
 		} finally {
 			loaded = true;
+			if (n === asks) fetching = false;
 		}
 	}
 
@@ -148,7 +166,8 @@
 		pickMonth = week.getMonth();
 	}
 	const go = (n: number) => {
-		if (look !== 5) return jump(shiftWeek(week, n));
+		dir = Math.sign(n);
+		if (!byMonth) return jump(shiftWeek(week, n));
 		({ year, month } = shiftMonth(year, month, n));
 		week = weekStart(new Date(year, month, 1));
 	};
@@ -159,7 +178,31 @@
 		void range.to;
 		if (started) untrack(() => void load());
 	});
-	const thisMonth = () => jump(new Date());
+	const thisMonth = () => {
+		dir = 0;
+		jump(new Date());
+	};
+
+	// Day, Week or Month in Coming Soon; the pick goes in the address.
+	function pickSpan(s: Span, keepWeek = false) {
+		if (s !== 'month' && span === 'month' && !keepWeek) {
+			// Leaving a month: this week when today is in it, else its first week.
+			const t = new Date();
+			week = weekStart(t.getFullYear() === year && t.getMonth() === month ? t : new Date(year, month, 1));
+		}
+		dir = 0;
+		span = s;
+		const u = new URL(page.url.href);
+		u.searchParams.set('span', s);
+		replaceState(u, page.state);
+	}
+	// A day picked in Week or Month opens the day-by-day list at that day.
+	function openDay(day: string) {
+		jump(new Date(day + 'T00:00:00'));
+		fetching = true;
+		focusDay = day;
+		pickSpan('day', true);
+	}
 	function pickPage(n: number) {
 		({ year: pickYear, month: pickMonth } = shiftMonth(pickYear, pickMonth, n));
 	}
@@ -321,15 +364,31 @@
 
 <svelte:head><title>Calendar · HolyArrs</title></svelte:head>
 
-<PageHeader title="Calendar" subtitle="Cinema, digital and disc dates for your movies, when your episodes air in your own time zone, and the days your artists' albums come out.">
-	{#snippet actions()}<Button variant="secondary" icon="calendar" onclick={thisMonth}>Today</Button>{/snippet}
+<!-- By month the grid needs the window's height, so the header keeps to its title. -->
+<PageHeader title="Calendar" subtitle={look === 2 && span === 'month' ? undefined : "Cinema, digital and disc dates for your movies, when your episodes air in your own time zone, and the days your artists' albums come out."}>
+	{#snippet actions()}
+		{#if look === 2}
+			<SegmentedControl
+				label="Day, week or month"
+				testid="cal-span"
+				value={span}
+				onchange={(v) => pickSpan(v as Span)}
+				options={[
+					{ value: 'day', label: 'Day' },
+					{ value: 'week', label: 'Week' },
+					{ value: 'month', label: 'Month' }
+				]}
+			/>
+		{/if}
+		<Button variant="secondary" icon="calendar" onclick={thisMonth}>Today</Button>
+	{/snippet}
 </PageHeader>
 
 <section class="tools" class:looked={look > 0} aria-label="Calendar controls">
 	<div class="month-nav">
-		<IconButton icon="chevronLeft" label={look === 5 ? 'Month before' : 'Week before'} variant="tinted" onclick={() => go(-1)} />
+		<IconButton icon="chevronLeft" label={byMonth ? 'Month before' : 'Week before'} variant="tinted" onclick={() => go(-1)} />
 		<h2 class="month" aria-live="polite" data-testid="cal-month">{rangeName}</h2>
-		<IconButton icon="chevronRight" label={look === 5 ? 'Month after' : 'Week after'} variant="tinted" onclick={() => go(1)} />
+		<IconButton icon="chevronRight" label={byMonth ? 'Month after' : 'Week after'} variant="tinted" onclick={() => go(1)} />
 	</div>
 	<div class="segs">
 		<SegmentedControl
@@ -384,7 +443,17 @@
 	{#if look === 1}
 		<UpNext entries={shown} today={todayKey} from={range.from} to={range.to} onlater={() => go(6)} />
 	{:else if look === 2}
-		<ComingSoon entries={shown} today={todayKey} onlater={() => go(6)} />
+		{#key span}
+			<div class="span-in" data-span={span}>
+				{#if span === 'week'}
+					<ComingWeek entries={shown} today={todayKey} start={week} {dir} onday={openDay} />
+				{:else if span === 'month'}
+					<ComingMonth entries={shown} today={todayKey} {year} {month} {dir} onday={openDay} />
+				{:else}
+					<ComingSoon entries={shown} today={todayKey} onlater={() => go(6)} focus={fetching ? null : focusDay} onfocused={() => (focusDay = null)} />
+				{/if}
+			</div>
+		{/key}
 	{:else if look === 3}
 		<WeekStrip entries={shown} today={todayKey} start={week} days={7 * 6} onlater={() => go(6)} />
 	{:else if look === 4}
@@ -461,11 +530,11 @@
 	{/if}
 {/if}
 
-{#if loaded && feedLoaded && feedError}
+{#if loaded && feedLoaded && feedError && !(look === 2 && span === 'month')}
 	<div class="feed-gap"><LoadError hasData message="Phone calendar could not be loaded." onretry={loadFeed} /></div>
 {/if}
 
-{#if loaded && feedLoaded && feedNeedsProof}
+{#if loaded && feedLoaded && feedNeedsProof && !(look === 2 && span === 'month')}
 	<section class="feed" aria-labelledby="h-feed-proof">
 		<h2 id="h-feed-proof">Confirm your password to manage the phone calendar</h2>
 		<p class="muted">The feed status and its controls are protected. Confirm your HolyArrs password in My account, then return here.</p>
@@ -473,7 +542,7 @@
 	</section>
 {/if}
 
-{#if loaded && feed}
+{#if loaded && feed && !(look === 2 && span === 'month')}
 	<section class="feed" aria-labelledby="h-feed" data-testid="cal-feed">
 		<h2 id="h-feed">Phone calendar</h2>
 		<p class="muted">
@@ -617,4 +686,10 @@
 		.looked .kinds > :global(*) { flex: none; }
 	}
 	.weeks-sk { display: flex; flex-direction: column; gap: 16px; }
+	/* Day, Week and Month in Coming Soon fade in when switched. */
+	.span-in { animation: span-in var(--dur-slow) var(--ease-out) both; }
+	@keyframes span-in { from { opacity: 0; transform: translateY(8px); } }
+	@media (prefers-reduced-motion: reduce) {
+		.span-in { animation: none; }
+	}
 </style>

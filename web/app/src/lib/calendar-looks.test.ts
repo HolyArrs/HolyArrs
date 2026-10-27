@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CalendarEntry } from './types.ts';
-import { dayChip, dayDots, dayName, entryFacts, entryLine, entryTag, entryTitle, monthGroups, movieDates, nextBusy, shelves, startDay, stripDays } from './calendar-looks.ts';
+import { dayChip, dayDots, dayName, entryFacts, entryLine, entryTag, entryTitle, fitThumbs, monthGroups, movieDates, nextBusy, readSpan, shelves, spanName, startDay, stripDays } from './calendar-looks.ts';
 
 const ep = (o: Partial<CalendarEntry> = {}): CalendarEntry => ({ title_id: 1, name: "Grey's Anatomy", kind: 'episode', item_id: 9, season: 23, episode: 3, episode_name: 'Collide', air_day: '2026-10-29', date: '2026-10-29T00:00:00Z', network: 'ABC', ...o });
 const movie = (kind: CalendarEntry['kind'], date: string, o: Partial<CalendarEntry> = {}): CalendarEntry => ({ title_id: 7, name: 'Dune: Part Three', year: 2026, kind, date: `${date}T00:00:00Z`, ...o });
@@ -78,5 +78,33 @@ describe('groupings', () => {
 	it('gives one dot per kind of date', () => {
 		expect(dayDots([ep(), movie('cinema', '2026-10-29'), movie('digital', '2026-10-29')])).toEqual(['episode', 'movie']);
 		expect(dayDots([])).toEqual([]);
+	});
+});
+
+describe('Coming Soon spans', () => {
+	it('reads the span from the address, day when missing or unknown', () => {
+		expect(readSpan('week')).toBe('week');
+		expect(readSpan('month')).toBe('month');
+		expect(readSpan('day')).toBe('day');
+		expect(readSpan(null)).toBe('day');
+		expect(readSpan('year')).toBe('day');
+	});
+	it('names a week by its first and last day, a month by its name', () => {
+		const w = spanName('week', new Date(2026, 9, 26), 2026, 9);
+		expect(w).toMatch(/26/);
+		expect(w).toMatch(/1/);
+		expect(w).toMatch(/2026/);
+		expect(spanName('month', new Date(2026, 9, 26), 2026, 10)).toMatch(/2026/);
+		expect(spanName('month', new Date(2026, 9, 26), 2026, 10)).not.toBe(spanName('month', new Date(2026, 9, 26), 2026, 9));
+	});
+	it('fits as many pictures as the room holds, keeping room for +N', () => {
+		expect(fitThumbs([30, 30], 100, 4, 28)).toBe(2);
+		expect(fitThumbs([30, 30, 30], 98, 4, 28)).toBe(3);
+		expect(fitThumbs([30, 30, 30], 97, 4, 28)).toBe(2);
+		// Four do not fit: two pictures and the chip do (30+4+30+4+28 = 96).
+		expect(fitThumbs([30, 30, 30, 30], 98, 4, 28)).toBe(2);
+		expect(fitThumbs([30, 30, 30, 30], 60, 4, 28)).toBe(0);
+		expect(fitThumbs([], 60, 4, 28)).toBe(0);
+		expect(fitThumbs([45, 30], 80, 4, 28)).toBe(2);
 	});
 });

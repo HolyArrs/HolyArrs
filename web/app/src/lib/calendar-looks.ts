@@ -196,3 +196,42 @@ export function dayDots(items: Pick<CalendarEntry, 'kind'>[]): ('episode' | 'mov
 	const has = (k: 'episode' | 'movie' | 'album') => items.some((e) => (k === 'movie' ? movieKinds.has(e.kind) : e.kind === k));
 	return (['episode', 'movie', 'album'] as const).filter(has);
 }
+
+/** How far Coming Soon (2) looks at once: the day-by-day list, one week, or a month grid. */
+export type Span = 'day' | 'week' | 'month';
+
+/** readSpan reads ?span=; anything else is the day-by-day list. */
+export function readSpan(v: string | null | undefined): Span {
+	return v === 'week' || v === 'month' ? v : 'day';
+}
+
+/** spanName is the heading between the arrows: "Oct 26 – Nov 1, 2026" for a week, "October 2026" for a month. */
+export function spanName(span: 'week' | 'month', start: Date, year: number, month: number): string {
+	if (span === 'month') return new Date(year, month, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+	const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6);
+	return `${start.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${end.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`;
+}
+
+/**
+ * fitThumbs is how many pictures of the given widths fit side by side in
+ * `room` pixels with `gap` between them. When not all fit, room is kept for a
+ * "+N" chip `more` pixels wide, so the count shown plus the chip always fit.
+ */
+export function fitThumbs(widths: number[], room: number, gap: number, more: number): number {
+	let used = 0;
+	let n = 0;
+	for (const w of widths) {
+		const next = used + (n ? gap : 0) + w;
+		if (next > room) break;
+		used = next;
+		n++;
+	}
+	if (n === widths.length) return n;
+	while (n > 0) {
+		let total = 0;
+		for (let i = 0; i < n; i++) total += widths[i] + (i ? gap : 0);
+		if (total + gap + more <= room) break;
+		n--;
+	}
+	return n;
+}
