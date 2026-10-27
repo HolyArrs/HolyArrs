@@ -7,7 +7,7 @@
 	import { live } from '#lib/live.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { bytes, duration, percent } from '#lib/format.ts';
-	import { manyWords, phaseTone, removeBody, removeStart, rowName, type DownloaderSettings, type DownloaderView, type DownloadRow, type RemoveChoice } from '#lib/downloaders.ts';
+	import { episodeStateWords, manyWords, phaseTone, removeBody, removeStart, rowName, type DownloaderSettings, type DownloaderView, type DownloadRow, type RemoveChoice } from '#lib/downloaders.ts';
 	import Poster from '#lib/Poster.svelte';
 	import { session } from '#lib/session.svelte.ts';
 	import { plainReason } from '#lib/plain.ts';
@@ -185,7 +185,22 @@
 		{#if put}<dt>Import</dt><dd data-testid="import-how">{put.how}</dd>{#if put.where}<dt>Folder</dt><dd data-testid="import-where">{put.where}</dd>{/if}{/if}
 		{#if why}<dt>Import</dt><dd data-testid="import-failed">Failed: {why}</dd>{/if}
 	</dl>
-	{#if p}<div class="note" class:bad={phaseTone(s.phase) === 'fail'}><p>{p.text}</p></div>{/if}
+	{#if p}<div class="note" class:bad={phaseTone(s.phase) === 'fail'}><p data-testid="row-text">{p.text}</p></div>{/if}
+	{#if manyWords(s.kind) && s.episodes && s.episodes.length > 1}
+		<details class="eps" data-testid="row-episodes">
+			<summary>The {s.episodes.length} {manyWords(s.kind)?.many} it covers</summary>
+			<ul class="eplist">
+				{#each s.episodes as e (e.slot_id)}
+					{@const st = episodeStateWords(e.state)}
+					<li data-testid="row-episode">
+						<span class="eplabel">{e.label}</span>
+						<span class="epname">{e.name ?? ''}</span>
+						<StatusPill kind={toneKind(st.tone)} label={st.text} />
+					</li>
+				{/each}
+			</ul>
+		</details>
+	{/if}
 	<details class="raw">
 		<summary>Details</summary>
 		<p>{s.name}</p>
@@ -265,6 +280,12 @@
 	.facts dt { color: var(--text-muted); }
 	.facts dd { margin: 0; font-family: inherit; text-align: right; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 	.d-acts { display: grid; gap: 8px; }
+	.eps summary { width: max-content; max-width: 100%; min-height: 32px; display: flex; align-items: center; cursor: pointer; color: var(--accent-text); font: var(--t-subhead); border-radius: 6px; }
+	.eps summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.eplist { list-style: none; padding: 0; margin: 6px 0 0; display: grid; gap: 6px; }
+	.eplist li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; font: var(--t-callout); }
+	.eplabel { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+	.epname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.who { font: var(--t-headline); margin-bottom: 4px; }
 	form { display: flex; flex-direction: column; gap: 14px; }
 	.checkline { display: flex; gap: 12px; align-items: flex-start; font: var(--t-callout); cursor: pointer; }
