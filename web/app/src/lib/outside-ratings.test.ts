@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { cleanExtras, loadExtras, scoreText } from './outside-ratings.ts';
 
 describe('outside ratings', () => {
-	it('keeps fanart pictures and known scores in strip order', () => {
+	it('keeps artwork cache pictures and known scores in strip order', () => {
 		const e = cleanExtras({
-			logo: 'https://assets.fanart.tv/l.png',
+			logo: '/api/v1/artwork/img/title-logo/movie-603/1200.png',
 			thumb: 'https://evil.test/t.jpg',
-			backgrounds: ['https://assets.fanart.tv/b.jpg', 'http://assets.fanart.tv/x.jpg'],
+			backgrounds: ['/api/v1/artwork/img/title-wide/movie-603/1600.webp?v=a1', 'https://assets.fanart.tv/x.jpg', '/api/v1/artwork/img/../x.jpg'],
 			scores: [
 				{ source: 'metacritic', value: 73, max: 100, votes: 40 },
 				{ source: 'imdb', value: 8.7, max: 10, votes: 2000000 },
@@ -14,9 +14,9 @@ describe('outside ratings', () => {
 				{ source: 'rt_critics', value: 120, max: 100, votes: 50 }
 			]
 		});
-		expect(e.logo).toBe('https://assets.fanart.tv/l.png');
+		expect(e.logo).toBe('/api/v1/artwork/img/title-logo/movie-603/1200.png');
 		expect(e.thumb).toBeUndefined();
-		expect(e.backgrounds).toEqual(['https://assets.fanart.tv/b.jpg']);
+		expect(e.backgrounds).toEqual(['/api/v1/artwork/img/title-wide/movie-603/1600.webp?v=a1']);
 		expect(e.scores.map((s) => s.source)).toEqual(['imdb', 'metacritic']);
 	});
 	it('reads each score its own way', () => {

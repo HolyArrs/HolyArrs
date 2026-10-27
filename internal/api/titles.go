@@ -622,8 +622,10 @@ func (a *API) artwork(w http.ResponseWriter, r *http.Request) {
 }
 
 // tmdbArtwork serves a TMDB picture (search results, Explore rows, title
-// pages) through the artwork cache: fetched once at TMDB's own size, kept
-// on disk, then sent from here, so the browser never calls TMDB itself.
+// pages) through the artwork cache: fetched once at TMDB's own size (with
+// no Referer, through the metadata server's pass-through when TMDB cannot
+// be reached), kept on disk at most six months, then sent from here, so
+// the browser never calls TMDB itself.
 func (a *API) tmdbArtwork(w http.ResponseWriter, r *http.Request) {
 	if a.s.Library == nil || a.s.Library.Artwork == nil {
 		http.NotFound(w, r)
@@ -637,7 +639,9 @@ func (a *API) tmdbArtwork(w http.ResponseWriter, r *http.Request) {
 	c := a.s.Library.Artwork
 	name := library.ArtworkName(src)
 	p, ok := c.Path(name)
-	if !ok {
+	if ok {
+		c.Recheck(src, nil) // a copy past TMDB's six months is fetched again
+	} else {
 		if _, err := c.Fetch(r.Context(), src); err != nil {
 			http.Error(w, "picture unavailable", http.StatusBadGateway)
 			return
@@ -652,9 +656,9 @@ func (a *API) tmdbArtwork(w http.ResponseWriter, r *http.Request) {
 
 // serveArtwork sends a cached picture as it is stored (no re-compression).
 // Cache names come from the picture's address. Where the address names
-// the bytes (TMDB, fanart.tv, Deezer) browsers keep it a year; a picture
-// from a stable address (a cover that may change in place) is kept a day
-// and then revalidated with an ETag that follows the file.
+// the bytes (TMDB, a versioned server address) browsers keep it a year; a
+// picture from a stable address (one that may change in place) is kept a
+// day and then revalidated with an ETag that follows the file.
 func serveArtwork(w http.ResponseWriter, r *http.Request, name, p string) {
 	if library.StableFile(p) {
 		if st, err := os.Stat(p); err == nil {

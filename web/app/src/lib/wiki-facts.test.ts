@@ -30,6 +30,12 @@ describe('wiki facts', () => {
 		expect(licenseURL('https://creativecommons.org.evil.test/')).toBe('https://creativecommons.org/licenses/by-sa/4.0/');
 	});
 
+	it('keeps a person photo from the artwork cache or TVmaze only', () => {
+		expect(cleanWikiFacts({ image: '/api/v1/artwork/img/person/287/500.webp?v=3f' }).image).toBe('/api/v1/artwork/img/person/287/500.webp?v=3f');
+		expect(cleanWikiFacts({ image: 'https://static.tvmaze.com/uploads/images/medium_portrait/1/1.jpg' }).image).toContain('static.tvmaze.com');
+		expect(cleanWikiFacts({ image: 'https://holyarrs-api.coderluii.dev/v1/img/person/287/500.webp' }).image).toBeUndefined();
+		expect(cleanWikiFacts({ image: '/api/v1/artwork/img/person/../x.webp' }).image).toBeUndefined();
+	});
 	it('lists major awards first for the hover', () => {
 		const tip = awardsTip([
 			{ name: 'Academy Award for Best Picture', family: 'oscar', won: true, year: 1995, for_work: '' },

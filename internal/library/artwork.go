@@ -40,7 +40,11 @@ type ArtworkCache struct {
 	// HTTP is the client to fetch with (tests); nil means ArtworkClient.
 	// Redirects are checked against Allowed either way.
 	HTTP *http.Client
-	mu   sync.Mutex
+	// Fallback names a second address for a picture whose own host could
+	// not be reached (TMDB down: the metadata server passes the picture
+	// through); nil or "" has none.
+	Fallback func(url string) string
+	mu       sync.Mutex
 	// checking holds the addresses being re-checked in the background.
 	checking map[string]bool
 	// size is the cache's bytes, counted by the first trim and kept up by
@@ -59,10 +63,40 @@ var ErrArtworkURL = errors.New("picture URL is not from an allowed host")
 // serverPictureKeep is how long a picture at a stable address is used before it is checked again.
 const serverPictureKeep = 24 * time.Hour
 
+// TMDBKeep is the longest a copy of a TMDB picture is kept (TMDB's rule:
+// six months); an older copy is fetched again, or dropped when unused.
+const TMDBKeep = 182 * 24 * time.Hour
+
+// tmdbIdle is how long an old TMDB copy may go unshown before the sweep
+// drops it instead of fetching it again.
+const tmdbIdle = 30 * 24 * time.Hour
+
+// IsTMDBPicture says url is a picture on TMDB's own picture host.
+func IsTMDBPicture(url string) bool { return strings.HasPrefix(url, metadata.ImageBase+"/") }
+
+// TMDBPassThrough maps a TMDB picture to the metadata server's pass-through
+// address ({server}/v1/img/tmdb/{size}/{file}), asked only when TMDB's own
+// network fails; the server stores nothing.
+func TMDBPassThrough(server string) func(string) string {
+	server = strings.TrimRight(server, "/")
+	return func(u string) string {
+		rest, ok := strings.CutPrefix(u, metadata.ImageBase+"/")
+		size, file, ok2 := strings.Cut(rest, "/")
+		if !ok || !ok2 || server == "" {
+			return ""
+		}
+		if _, ok := TMDBArtworkURL(metadata.ImageBase, size, file); !ok {
+			return ""
+		}
+		return server + "/v1/img/tmdb/" + size + "/" + file
+	}
+}
+
 // ArtworkName is the cache file name for a picture URL.
 func ArtworkName(url string) string {
 	h := sha256.Sum256([]byte(url))
-	ext := strings.ToLower(filepath.Ext(url))
+	path, _, _ := strings.Cut(url, "?")
+	ext := strings.ToLower(filepath.Ext(path))
 	if ext != ".png" && ext != ".webp" {
 		ext = ".jpg"
 	}
@@ -149,9 +183,8 @@ func (c *ArtworkCache) fetch(ctx context.Context, url string, reject func(http.H
 }
 
 // StableArtworkURL says the picture at url may change while its address
-// stays the same (Cover Art Archive fronts, the metadata server's cover
-// and unversioned picture routes). TMDB, fanart.tv and Deezer names change
-// with the picture.
+// stays the same (the metadata server's unversioned picture addresses).
+// TMDB names and versioned (?v=) addresses change with the picture.
 func StableArtworkURL(url string) bool {
 	u, err := neturl.Parse(url)
 	if err != nil {
@@ -177,10 +210,19 @@ func StableFile(path string) bool {
 // time is when the picture was last checked.
 func checkName(name string) string { return ".chk-" + name }
 
+// tmdbName is the hidden file beside a TMDB picture that keeps its address;
+// its time is when the copy was fetched.
+func tmdbName(name string) string { return ".tmdb-" + name }
+
 // Recheck asks the source again, in the background and at most daily, for a
 // stored picture whose address is stable: the ETag is sent, so an unchanged
-// picture costs a 304 and no download. Pages never wait on it.
+// picture costs a 304 and no download. A TMDB copy older than TMDBKeep (or
+// of unknown age) is fetched again. Pages never wait on it.
 func (c *ArtworkCache) Recheck(url string, reject func(http.Header) bool) {
+	if IsTMDBPicture(url) && c.allowed(url) {
+		c.refreshTMDB(url, false)
+		return
+	}
 	if !StableArtworkURL(url) || !c.allowed(url) {
 		return
 	}
@@ -220,42 +262,23 @@ func (c *ArtworkCache) Recheck(url string, reject func(http.Header) bool) {
 
 // download fetches url into the cache (with If-None-Match when etag is
 // set) and records its ETag and check time; a 304 only marks the check.
-// Without follow a redirect answers ErrArtworkMoved.
+// Without follow a redirect answers ErrArtworkMoved. A picture whose host
+// cannot be reached (no answer, or server trouble) comes through Fallback.
 func (c *ArtworkCache) download(ctx context.Context, url string, reject func(http.Header) bool, etag string, follow bool) (int, error) {
-	name := ArtworkName(url)
-	path := filepath.Join(c.Dir, name)
-	base := c.HTTP
-	if base == nil {
-		base = ArtworkClient()
-	}
-	// Every redirect must stay on an allowed place too.
-	cl := *base
-	cl.CheckRedirect = func(req *http.Request, via []*http.Request) error {
-		if !follow {
-			return ErrArtworkMoved
+	resp, err := c.get(ctx, url, etag, follow)
+	down := err != nil && !errors.Is(err, ErrArtworkMoved) && !errors.Is(err, ErrArtworkURL) && ctx.Err() == nil
+	if fb := c.fallback(url); fb != "" && (down || err == nil && resp.StatusCode >= 500) {
+		if resp != nil {
+			_ = resp.Body.Close()
 		}
-		if len(via) >= 5 || !c.allowed(req.URL.String()) {
-			return ErrArtworkURL
-		}
-		return nil
+		resp, err = c.get(ctx, fb, "", follow)
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return 0, err
 	}
-	if etag != "" {
-		req.Header.Set("If-None-Match", etag)
-	}
-	if metadata.IsAhead(ctx) {
-		// A preload or warm: nobody waits, so the metadata server never
-		// treats it as urgent work.
-		req.Header.Set("X-Fetch", "ahead")
-	}
-	resp, err := cl.Do(req)
-	if err != nil {
-		return 0, fmt.Errorf("picture: %w", err)
-	}
 	defer resp.Body.Close()
+	name := ArtworkName(url)
+	path := filepath.Join(c.Dir, name)
 	chk := filepath.Join(c.Dir, checkName(name))
 	if resp.StatusCode == http.StatusNotModified && etag != "" {
 		now := time.Now()
@@ -293,8 +316,155 @@ func (c *ArtworkCache) download(ctx context.Context, url string, reject func(htt
 	if StableArtworkURL(url) {
 		_ = os.WriteFile(chk, []byte(resp.Header.Get("ETag")), 0o640)
 	}
+	if IsTMDBPicture(url) {
+		_ = os.WriteFile(filepath.Join(c.Dir, tmdbName(name)), []byte(url), 0o640)
+	}
 	c.added(n)
 	return resp.StatusCode, nil
+}
+
+// fallback is the second address for url, when it is allowed.
+func (c *ArtworkCache) fallback(url string) string {
+	if c.Fallback == nil {
+		return ""
+	}
+	if fb := c.Fallback(url); fb != "" && c.allowed(fb) {
+		return fb
+	}
+	return ""
+}
+
+// get asks url once. Every redirect must stay on an allowed place, and no
+// Referer is ever sent (TMDB's rule; Go adds one on a redirect).
+func (c *ArtworkCache) get(ctx context.Context, url, etag string, follow bool) (*http.Response, error) {
+	base := c.HTTP
+	if base == nil {
+		base = ArtworkClient()
+	}
+	cl := *base
+	cl.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		if !follow {
+			return ErrArtworkMoved
+		}
+		if len(via) >= 5 || !c.allowed(req.URL.String()) {
+			return ErrArtworkURL
+		}
+		req.Header.Del("Referer")
+		return nil
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	if etag != "" {
+		req.Header.Set("If-None-Match", etag)
+	}
+	if metadata.IsAhead(ctx) {
+		// A preload or warm: nobody waits, so the metadata server never
+		// treats it as urgent work.
+		req.Header.Set("X-Fetch", "ahead")
+	}
+	resp, err := cl.Do(req)
+	if err != nil {
+		if errors.Is(err, ErrArtworkMoved) || errors.Is(err, ErrArtworkURL) {
+			return nil, err
+		}
+		return nil, fmt.Errorf("picture: %w", err)
+	}
+	return resp, nil
+}
+
+// refreshTMDB fetches a TMDB copy again when it is older than TMDBKeep or
+// its age is unknown (stored before ages were kept): in the background for
+// a page, at once for the sweep, which drops a copy unshown for tmdbIdle
+// instead. A picture TMDB no longer has is dropped; any other failure keeps
+// the copy until the next try.
+func (c *ArtworkCache) refreshTMDB(url string, sweep bool) {
+	name := ArtworkName(url)
+	pic := filepath.Join(c.Dir, name)
+	mark := filepath.Join(c.Dir, tmdbName(name))
+	if st, err := os.Stat(mark); err == nil && time.Since(st.ModTime()) < TMDBKeep {
+		return
+	}
+	if sweep {
+		if st, err := os.Stat(pic); err != nil || time.Since(st.ModTime()) > tmdbIdle {
+			_ = os.Remove(pic)
+			_ = os.Remove(mark)
+			return
+		}
+	}
+	c.mu.Lock()
+	if c.checking == nil {
+		c.checking = map[string]bool{}
+	}
+	if c.checking[url] {
+		c.mu.Unlock()
+		return
+	}
+	c.checking[url] = true
+	c.mu.Unlock()
+	run := func() {
+		defer func() {
+			c.mu.Lock()
+			delete(c.checking, url)
+			c.mu.Unlock()
+		}()
+		ctx, cancel := context.WithTimeout(metadata.Ahead(context.Background()), 30*time.Second)
+		defer cancel()
+		_, err := c.download(ctx, url, nil, "", true)
+		var se *ArtworkStatusError
+		if errors.As(err, &se) && (se.Code == http.StatusNotFound || se.Code == http.StatusGone) {
+			_ = os.Remove(pic)
+			_ = os.Remove(mark)
+		}
+	}
+	if sweep {
+		run()
+		return
+	}
+	go run()
+}
+
+// SweepTMDB walks the TMDB copies once: each older than TMDBKeep is fetched
+// again, or dropped when nobody has shown it for a month. It runs at start
+// and then daily (KeepTMDBFresh); nothing waits on it.
+func (c *ArtworkCache) SweepTMDB() {
+	es, err := os.ReadDir(c.Dir)
+	if err != nil {
+		return
+	}
+	for _, e := range es {
+		name, ok := strings.CutPrefix(e.Name(), ".tmdb-")
+		if !ok {
+			continue
+		}
+		in, err := e.Info()
+		if err != nil || time.Since(in.ModTime()) < TMDBKeep {
+			continue
+		}
+		mark := filepath.Join(c.Dir, e.Name())
+		b, _ := os.ReadFile(mark)
+		if url := string(b); IsTMDBPicture(url) && ArtworkName(url) == name {
+			c.refreshTMDB(url, true)
+			continue
+		}
+		_ = os.Remove(filepath.Join(c.Dir, name))
+		_ = os.Remove(mark)
+	}
+}
+
+// KeepTMDBFresh runs SweepTMDB now and then once a day until ctx ends.
+func (c *ArtworkCache) KeepTMDBFresh(ctx context.Context) {
+	t := time.NewTicker(24 * time.Hour)
+	defer t.Stop()
+	for {
+		c.SweepTMDB()
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+		}
+	}
 }
 
 // added counts a stored picture's bytes; the cache is listed and trimmed
@@ -389,6 +559,9 @@ func (c *ArtworkCache) trim() {
 			}
 			if os.Remove(x.path) == nil {
 				total -= x.size
+				base := filepath.Base(x.path)
+				_ = os.Remove(filepath.Join(c.Dir, checkName(base)))
+				_ = os.Remove(filepath.Join(c.Dir, tmdbName(base)))
 			}
 		}
 	}

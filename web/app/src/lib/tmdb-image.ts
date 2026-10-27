@@ -1,12 +1,14 @@
 import { to } from './paths.ts';
 
-// TMDB pictures in the size a row or hero shows: w342 posters and w780
-// backdrops, loaded through HolyArrs' artwork cache
-// (/api/v1/artwork/tmdb/<size>/<file>): the server fetches each picture
-// once at TMDB's own size, keeps it on disk and serves it with a year-long
-// cache header. Full-size pictures in long rows are what made Explore heavy.
-// Other pictures (HolyArrs' own artwork cache, other sites) are left as
-// they are.
+// TMDB pictures at the size each slot shows (Luis, 2026-10-26): posters
+// w342, or w500 on phone and sharp screens; backdrops in rows w780; heroes
+// w1280, or original past 1600 pixels. They load through HolyArrs' artwork
+// cache (/api/v1/artwork/tmdb/<size>/<file>): the server fetches each
+// picture once at TMDB's own size, with no Referer, keeps it on disk (at
+// most six months, TMDB's rule) and serves it with a year-long cache
+// header. Few sizes per slot means one row's poster is the next row's
+// cached copy. Other pictures (HolyArrs' own artwork cache, other sites)
+// are left as they are.
 //
 // No srcset on purpose: Chrome keeps every picture with a srcset in a
 // viewport listener after its page is gone, and with it that whole page
@@ -15,15 +17,16 @@ const tmdb = /^https:\/\/image\.tmdb\.org\/t\/p\/(?:w\d+|original)\/([A-Za-z0-9_
 
 const width = { poster: 342, backdrop: 780, large: 1280 } as const;
 
-// TMDB's own sizes up to each default: a card that knows its rendered width
-// takes the smallest one that still covers it at the screen's pixel ratio.
-const steps = { poster: [92, 154, 185, 342], backdrop: [300, 780], large: [1280] } as const;
+// The slot sizes: a card that knows its rendered width takes the smallest
+// that still covers it at the screen's pixel ratio (w185 only for small
+// thumbnails, w500 for phone cards and sharp screens).
+const steps = { poster: [185, 342, 500], backdrop: [780], large: [1280] } as const;
 
-/** pick is the TMDB width for css pixels shown (0: the default size); never above the default. */
+/** pick is the TMDB width for css pixels shown (0: the default size); never above the slot's largest. */
 export function pick(as: 'poster' | 'backdrop' | 'large', css = 0, ratio = globalThis.devicePixelRatio || 1): number {
 	if (!(css > 0)) return width[as];
 	const need = css * ratio;
-	return steps[as].find((w) => w >= need) ?? width[as];
+	return steps[as].find((w) => w >= need) ?? steps[as][steps[as].length - 1];
 }
 
 export function sized(url: string | null | undefined, as: 'poster' | 'backdrop' | 'large', css = 0): string {
@@ -32,10 +35,10 @@ export function sized(url: string | null | undefined, as: 'poster' | 'backdrop' 
 }
 
 /** heroSize is the TMDB size a hero backdrop css pixels wide needs at the
- * pixel ratio: w780, w1280, else original past 1600 pixels. */
+ * pixel ratio: w1280, else original past 1600 pixels (a phone hero crops a
+ * wide backdrop by height, so it never gets less than w1280). */
 export function heroSize(css: number, ratio = globalThis.devicePixelRatio || 1): string {
-	const need = css * ratio;
-	return need <= 780 ? 'w780' : need <= 1600 ? 'w1280' : 'original';
+	return css * ratio <= 1600 ? 'w1280' : 'original';
 }
 
 /** sharpen moves an artwork-cache TMDB address (from sized) to heroSize; other addresses stay. */

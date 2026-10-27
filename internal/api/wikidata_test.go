@@ -14,7 +14,7 @@ import (
 func TestWikiFactsBadgesBioAndFallback(t *testing.T) {
 	wikiFactsCache.seen = map[string]wikiEntry{}
 	asked := 0
-	srv := httptest.NewServer(New(Server{Version: "test",
+	srv := httptest.NewServer(New(Server{Version: "test", ImageBase: "https://api.example.test/v1/img",
 		WikiTitle: func(_ context.Context, kind, id string) (metadata.WikiEntity, error) {
 			asked++
 			if id == "3" {
@@ -28,7 +28,9 @@ func TestWikiFactsBadgesBioAndFallback(t *testing.T) {
 				Summary: &metadata.WikiSummary{Extract: "x", URL: "https://en.wikipedia.org/wiki/X"}}, nil
 		},
 		WikiPerson: func(_ context.Context, id, _ string) (metadata.WikiEntity, error) {
-			return metadata.WikiEntity{Died: "2020-01-02", Summary: &metadata.WikiSummary{Extract: "An actor.", URL: "https://en.wikipedia.org/wiki/A", License: "CC BY-SA 4.0"}}, nil
+			// The server's stored photo of a Wikimedia picture comes through the artwork cache.
+			return metadata.WikiEntity{Died: "2020-01-02", Image: "https://api.example.test/v1/img/person/" + id + "/500.webp?v=3f",
+				Summary: &metadata.WikiSummary{Extract: "An actor.", URL: "https://en.wikipedia.org/wiki/A", License: "CC BY-SA 4.0"}}, nil
 		}}).Handler())
 	defer srv.Close()
 	var v WikiFacts
@@ -41,7 +43,7 @@ func TestWikiFactsBadgesBioAndFallback(t *testing.T) {
 		t.Fatalf("not kept: %d asks", asked)
 	}
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/wiki/person/31", "", 200), &v)
-	if v.Bio == nil || v.Bio.Extract != "An actor." || v.Died != "2020-01-02" {
+	if v.Bio == nil || v.Bio.Extract != "An actor." || v.Died != "2020-01-02" || v.Image != "/api/v1/artwork/img/person/31/500.webp?v=3f" {
 		t.Fatalf("person %+v", v)
 	}
 	// A server hiccup answers empty and is asked again; not found is kept.

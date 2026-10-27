@@ -77,7 +77,7 @@ type Server struct {
 	// field's dropdown, GET /api/v1/search/suggest; off answers 404 and
 	// the field shows no dropdown.
 	LiveSearch bool
-	// ExtraArt and ExtraRatings read fanart.tv artwork and outside ratings
+	// ExtraArt and ExtraRatings read the server's stored title art and outside ratings
 	// from the metadata server; nil (or a source off there) shows neither.
 	ExtraArt     func(ctx context.Context, kind, id string) (metadata.ServerArt, error)
 	// ImageBase is the metadata server's picture origin ("<server>/v1/img");
@@ -273,6 +273,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/calendar", a.calendar)
 	m.HandleFunc("GET /api/v1/artwork/{name}", a.artwork)
 	m.HandleFunc("GET /api/v1/artwork/tmdb/{size}/{file}", a.tmdbArtwork)
+	m.HandleFunc("GET /api/v1/artwork/img/{kind}/{id}/{file}", a.serverArtwork)
 	m.HandleFunc("GET /api/v1/settings/status", a.settingsStatusRoute)
 	m.HandleFunc("GET /api/v1/settings/title-defaults", a.getTitleDefaults)
 	m.HandleFunc("PUT /api/v1/settings/title-defaults", a.putTitleDefaults)

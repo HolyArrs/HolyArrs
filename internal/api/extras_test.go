@@ -18,11 +18,12 @@ import (
 func TestTitleExtrasFiltersScoresAndFallsBack(t *testing.T) {
 	titleExtrasCache.seen = map[string]extrasEntry{}
 	asked := 0
-	srv := httptest.NewServer(New(Server{Version: "test",
+	const img = "https://api.example.test/v1/img"
+	srv := httptest.NewServer(New(Server{Version: "test", ImageBase: img,
 		ExtraArt: func(_ context.Context, kind, id string) (metadata.ServerArt, error) {
 			asked++
 			if id == "1" {
-				return metadata.ServerArt{Logo: "https://assets.fanart.tv/l.png"}, nil
+				return metadata.ServerArt{Logo: img + "/title-logo/movie-1/1200.png", Backgrounds: []string{img + "/title-wide/movie-1/1600.webp?v=a1", "https://assets.fanart.tv/b.jpg", img + "/title-wide/movie-1/../x.jpg"}}, nil
 			}
 			return metadata.ServerArt{}, metadata.ErrNotFound
 		},
@@ -41,7 +42,11 @@ func TestTitleExtrasFiltersScoresAndFallsBack(t *testing.T) {
 	defer srv.Close()
 	var v TitleExtras
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/extras/movie/1", "", 200), &v)
-	if v.Logo != "https://assets.fanart.tv/l.png" || len(v.Scores) != 2 || v.Scores[0].Source != "imdb" || v.Scores[1].Source != "rt_audience" {
+	// The server's pictures come back as artwork cache links; others are dropped.
+	if v.Logo != "/api/v1/artwork/img/title-logo/movie-1/1200.png" || len(v.Backgrounds) != 1 || v.Backgrounds[0] != "/api/v1/artwork/img/title-wide/movie-1/1600.webp?v=a1" {
+		t.Fatalf("pictures %+v", v)
+	}
+	if len(v.Scores) != 2 || v.Scores[0].Source != "imdb" || v.Scores[1].Source != "rt_audience" {
 		t.Fatalf("%+v", v)
 	}
 	do(t, "GET", srv.URL+"/api/v1/extras/movie/1", "", 200)
@@ -83,7 +88,7 @@ func TestTitleExtrasKidGate(t *testing.T) {
 	a := New(Server{Store: st, Metadata: md, Version: "test",
 		ExtraArt: func(_ context.Context, kind, id string) (metadata.ServerArt, error) {
 			asked++
-			return metadata.ServerArt{Logo: "https://assets.fanart.tv/l.png"}, nil
+			return metadata.ServerArt{Logo: "https://api.example.test/v1/img/title-logo/movie-1/1200.png"}, nil
 		}})
 	call := func(who *auth.Who, kind, id string) int {
 		r := httptest.NewRequest("GET", "/api/v1/extras/"+kind+"/"+id, nil)
@@ -140,7 +145,7 @@ func TestTitleExtrasArtistFromServerOnly(t *testing.T) {
 	_, st := discoverRig(t, newDiscoverTMDB(t).provider())
 	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{pics.URL + "/"}, HTTP: pics.Client()}
 	outside := func(context.Context, string, string) (metadata.ServerArt, error) {
-		return metadata.ServerArt{Logo: "https://assets.fanart.tv/l.png", Backgrounds: []string{"https://assets.fanart.tv/b.jpg"}}, nil
+		return metadata.ServerArt{Logo: pics.URL + "/v1/img/title-logo/movie-1/1200.png", Backgrounds: []string{pics.URL + "/v1/img/title-wide/movie-1/1600.webp"}}, nil
 	}
 	a := New(Server{Store: st, Version: "test", ExtraArt: outside, ImageBase: pics.URL + "/v1/img", Library: &library.Service{Store: st, Artwork: art}})
 	srv := httptest.NewServer(a.Handler())

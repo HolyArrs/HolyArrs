@@ -95,7 +95,9 @@ func (a *API) wikiFacts(w http.ResponseWriter, r *http.Request) {
 		v.Born, v.Died, v.BirthPlace, v.DeathPlace = ent.Born, ent.Died, ent.BirthPlace, ent.DeathPlace
 		if kind == "person" {
 			v.Bio = ent.Summary
-			if strings.HasPrefix(ent.Image, "https://upload.wikimedia.org/") || strings.HasPrefix(ent.Image, "https://static.tvmaze.com/") {
+			if l := a.serverArtLink(ent.Image); l != "" {
+				v.Image = l
+			} else if strings.HasPrefix(ent.Image, "https://upload.wikimedia.org/") || strings.HasPrefix(ent.Image, "https://static.tvmaze.com/") {
 				v.Image = ent.Image
 			}
 		}

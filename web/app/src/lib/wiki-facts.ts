@@ -2,6 +2,8 @@
 // or person, from GET /api/v1/wiki/{kind}/{id}. Anything missing comes
 // back empty, so the page hides the badge and keeps TMDB's biography.
 
+import { to } from './paths.ts';
+
 export type WikiAward = { name: string; family: string; won: boolean; year: number; for_work: string };
 export type WikiBio = { title: string; extract: string; url: string; license: string; license_url: string; attribution: string };
 export type WikiFacts = { badges: string[]; awards: WikiAward[]; born?: string; died?: string; birth_place?: string; death_place?: string; bio: WikiBio | null; image?: string };
@@ -9,6 +11,14 @@ export type WikiFacts = { badges: string[]; awards: WikiAward[]; born?: string; 
 const EMPTY: WikiFacts = { badges: [], awards: [], bio: null };
 
 const str = (v: unknown) => (typeof v === 'string' ? v : '');
+
+// A person's backup photo: the metadata server's stored copy through the
+// artwork cache, or a TVmaze (or older Wikimedia) link.
+const ownPhoto = /^\/api\/v1\/artwork\/img\/person\/\d+\/\d+\.(?:webp|jpg)(?:\?v=[A-Za-z0-9_-]+)?$/;
+function personImage(v: string): string | undefined {
+	if (ownPhoto.test(v)) return to(v);
+	return /^https:\/\/(upload\.wikimedia\.org|static\.tvmaze\.com)\//.test(v) ? v : undefined;
+}
 
 export const CC_BY_SA = 'https://creativecommons.org/licenses/by-sa/4.0/';
 
@@ -37,7 +47,7 @@ export function cleanWikiFacts(raw: unknown): WikiFacts {
 	const bio = b && typeof b === 'object' && str(b.extract) && wikipediaURL(b.url) && str(b.license)
 		? { title: str(b.title), extract: str(b.extract), url: wikipediaURL(b.url), license: str(b.license), license_url: licenseURL(b.license_url), attribution: str(b.attribution) }
 		: null;
-	return { badges, awards, born: str(r.born) || undefined, died: str(r.died) || undefined, birth_place: str(r.birth_place) || undefined, death_place: str(r.death_place) || undefined, bio, image: /^https:\/\/(upload\.wikimedia\.org|static\.tvmaze\.com)\//.test(str(r.image)) ? str(r.image) : undefined };
+	return { badges, awards, born: str(r.born) || undefined, died: str(r.died) || undefined, birth_place: str(r.birth_place) || undefined, death_place: str(r.death_place) || undefined, bio, image: personImage(str(r.image)) };
 }
 
 /** awardsTip lists the awards for the badge's hover: wins first, a few lines. */

@@ -7451,9 +7451,79 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/artwork/img/{kind}/{id}/{file}": {
+      "get": {
+        "description": "A picture the metadata server stores for a movie, show or person (title logo, banner, wide background, person photo), fetched once into the artwork cache and served from there. With ?v= (the stored version) it is kept a year.",
+        "operationId": "serverArtwork",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "title-logo",
+                "title-banner",
+                "title-wide",
+                "person"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "movie-<tmdb> or tv-<tmdb> for title art; the TMDB person id for a person.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The stored size, such as 1200.png or 1600.webp.",
+            "in": "path",
+            "name": "file",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The stored version.",
+            "in": "query",
+            "name": "v",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "image/*": {}
+            },
+            "description": "The picture."
+          },
+          "404": {
+            "description": "Not a stored picture, or the server has none."
+          },
+          "502": {
+            "description": "TMDB did not give the picture."
+          }
+        },
+        "summary": "A stored title or person picture",
+        "tags": [
+          "Library"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/artwork/tmdb/{size}/{file}": {
       "get": {
-        "description": "A TMDB picture at one of TMDB's own sizes (w342 posters, w780 backdrops), fetched once into the artwork cache and served from there.",
+        "description": "A TMDB picture at one of TMDB's own sizes (w185 to w500 posters, w780 backdrops, w1280 or original heroes), fetched once into the artwork cache (with no Referer; through the metadata server when TMDB cannot be reached) and served from there. Copies are kept at most six months.",
         "operationId": "tmdbArtwork",
         "parameters": [
           {

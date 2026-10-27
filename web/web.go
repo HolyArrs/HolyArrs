@@ -34,10 +34,11 @@ func IsAsset(p string) bool {
 }
 
 // ImageHosts are where the app loads pictures from besides itself: TMDB,
-// fanart.tv (logos and artist art from the metadata server), YouTube's
-// thumbnails (the covers of trailer and music video cards),
-// or a stand-in TMDB in the browser tests (set once at start).
-var ImageHosts = "https://image.tmdb.org https://assets.fanart.tv https://i.ytimg.com https://upload.wikimedia.org https://static.tvmaze.com"
+// YouTube's thumbnails (the covers of trailer and music video cards),
+// person photos from Wikimedia Commons and TVmaze, or a stand-in TMDB in
+// the browser tests (set once at start). The metadata server's stored
+// pictures come through HolyArrs' own artwork cache.
+var ImageHosts = "https://image.tmdb.org https://i.ytimg.com https://upload.wikimedia.org https://static.tvmaze.com"
 
 // policy is the Content-Security-Policy of every answer; script-src gets
 // the hashes of the page's own inline scripts (theme, app start).

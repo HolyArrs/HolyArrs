@@ -50,7 +50,9 @@ type WikiEntity struct {
 	DeathPlace string       `json:"death_place"`
 	Wikipedia  string       `json:"wikipedia"`
 	Summary    *WikiSummary `json:"summary"`
-	// Image is a person's Wikimedia Commons photo (a thumbnail URL), for when TMDB has none.
+	// Image is a person's photo for when TMDB has none: the server's stored
+	// copy of the Wikimedia Commons photo ({server}/v1/img/person/...), or a
+	// TVmaze link.
 	Image string `json:"image"`
 }
 

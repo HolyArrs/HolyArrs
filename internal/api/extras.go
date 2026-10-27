@@ -13,14 +13,15 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/ratings"
 )
 
-// TitleExtras is the optional extra artwork (fanart.tv) and outside
+// TitleExtras is the optional extra artwork (the metadata server's stored
+// logo, banner and wide backgrounds, as artwork cache links) and outside
 // ratings (MDBList) for a title page. Empty fields mean none: the page
 // keeps TMDB's art and hides the ratings strip.
 type TitleExtras struct {
 	Logo  string `json:"logo,omitempty"`
 	Thumb string `json:"thumb,omitempty"`
-	// Banner is the wide fanart.tv banner (about 1000x185) the Library
-	// table shows per row; empty when fanart has none.
+	// Banner is the wide title banner (about 1000x185) the Library table
+	// shows per row; empty when the server has none.
 	Banner      string         `json:"banner,omitempty"`
 	Backgrounds []string       `json:"backgrounds,omitempty"`
 	Scores      []OutsideScore `json:"scores"`
@@ -141,7 +142,12 @@ func (a *API) titleExtras(w http.ResponseWriter, r *http.Request) {
 	} else if a.s.ExtraArt != nil {
 		art, err := a.s.ExtraArt(ctx, kind, id)
 		if err == nil {
-			v.Logo, v.Thumb, v.Banner, v.Backgrounds = art.Logo, art.Thumb, art.Banner, art.Backgrounds
+			v.Logo, v.Thumb, v.Banner = a.serverArtLink(art.Logo), a.serverArtLink(art.Thumb), a.serverArtLink(art.Banner)
+			for _, b := range art.Backgrounds {
+				if l := a.serverArtLink(b); l != "" {
+					v.Backgrounds = append(v.Backgrounds, l)
+				}
+			}
 		}
 		settled = settled && (err == nil || errors.Is(err, metadata.ErrNotFound))
 	}

@@ -23,23 +23,29 @@ describe('sized', () => {
 });
 
 describe('pick', () => {
-	it('takes the smallest size that covers the card at the pixel ratio', () => {
-		expect(pick('backdrop', 260, 1)).toBe(300);
+	it('takes the smallest slot size that covers the card at the pixel ratio', () => {
+		expect(pick('backdrop', 260, 1)).toBe(780);
 		expect(pick('backdrop', 260, 2)).toBe(780);
 		expect(pick('poster', 168, 1)).toBe(185);
 		expect(pick('poster', 168, 2)).toBe(342);
-		expect(pick('poster', 80, 1)).toBe(92);
+		expect(pick('poster', 80, 1)).toBe(185);
 	});
-	it('never goes above the default size', () => {
+	it('gives phone cards w500', () => {
+		expect(pick('poster', 128, 3)).toBe(500);
+		expect(pick('poster', 150, 2.75)).toBe(500);
+	});
+	it('never goes above the slot', () => {
 		expect(pick('backdrop', 900, 2)).toBe(780);
-		expect(pick('poster', 400, 3)).toBe(342);
+		expect(pick('poster', 400, 3)).toBe(500);
 		expect(pick('backdrop')).toBe(780);
+		expect(pick('poster')).toBe(342);
 	});
 });
 
 describe('hero backdrops', () => {
 	it('size to the rendered width at the pixel ratio', () => {
-		expect(heroSize(700, 1)).toBe('w780');
+		expect(heroSize(700, 1)).toBe('w1280');
+		expect(heroSize(390, 3)).toBe('w1280');
 		expect(heroSize(1536, 1)).toBe('w1280');
 		expect(heroSize(1000, 2)).toBe('original');
 		expect(heroSize(3440, 1)).toBe('original');

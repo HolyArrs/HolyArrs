@@ -5,7 +5,7 @@
 export type Density = 'large' | 'comfortable' | 'compact';
 export type PosterSize = 's' | 'm' | 'l';
 
-/** The banner's own shape: fanart.tv banners are 1000x185. */
+/** The banner's own shape: title banners are 1000x185. */
 export const BANNER_RATIO = 1000 / 185;
 
 const bands: Record<Density, { share: number; min: number; max: number }> = {
@@ -39,14 +39,12 @@ export function tmdbFor(css: number, ratio = 1): 'w780' | 'w1280' | 'original' {
 }
 
 /**
- * bannerSrc sizes a banner picture for a cell css pixels wide. A backdrop
- * shown as a banner fills by width (the crop only trims top and bottom), so
- * it needs css x ratio pixels across. Fanart previews become the full file.
- * Other pictures are left as they are.
+ * bannerSrc sizes a TMDB backdrop shown as a banner for a cell css pixels
+ * wide: it fills by width (the crop only trims top and bottom), so it needs
+ * css x ratio pixels across. Other pictures are left as they are.
  */
 export function bannerSrc(url: string, css: number, ratio = globalThis.devicePixelRatio || 1): string {
 	if (!url) return url;
-	if (url.includes('assets.fanart.tv/preview/')) return url.replace('assets.fanart.tv/preview/', 'assets.fanart.tv/fanart/');
 	const m = anyTmdb.exec(url);
 	if (!m || !(css > 0)) return url;
 	return `${m[1]}/${tmdbFor(css, ratio)}/${m[2]}`;

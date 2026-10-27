@@ -5,19 +5,20 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 )
 
-// ServerArt is the metadata server's fanart.tv artwork for a title or
-// artist. Every URL is on assets.fanart.tv; anything else is dropped.
+// ServerArt is the artwork the metadata server stores for a movie or
+// show (title logo, banner, wide backgrounds). Every address is on the
+// server's own picture store ({server}/v1/img/...); anything else is
+// dropped.
 type ServerArt struct {
 	Logo        string   `json:"logo"`
-	ClearArt    string   `json:"clearart"`
 	Banner      string   `json:"banner"`
 	Thumb       string   `json:"thumb"`
 	Backgrounds []string `json:"backgrounds"`
-	Thumbs      []string `json:"thumbs"`
 }
 
 // ServerScore is one outside rating from the metadata server.
@@ -35,43 +36,39 @@ type ServerRatings struct {
 	Scores []ServerScore `json:"scores"`
 }
 
-const fanartAssets = "https://assets.fanart.tv/"
+// storedPicture matches the rest of a picture address on the server's
+// store: {kind}/{id}/{size}.{ext}, with an optional version.
+var storedPicture = regexp.MustCompile(`^[a-z-]{2,20}/[A-Za-z0-9-]{1,40}/\d{2,4}\.(?:png|webp|jpg)(?:\?v=[A-Za-z0-9_-]{1,64})?$`)
 
-func fanartURL(u string) string {
-	if strings.HasPrefix(u, fanartAssets) && !strings.ContainsAny(u, "\"'<> \r\n") && len(u) < 512 {
+// ownPicture keeps u when it is a picture on the server's own store.
+func (s *Service) ownPicture(u string) string {
+	if rest, ok := strings.CutPrefix(u, s.base+"/v1/img/"); ok && storedPicture.MatchString(rest) {
 		return u
 	}
 	return ""
 }
 
-// Art reads fanart.tv artwork (kind movie or show: TMDB id; artist:
-// MusicBrainz id). ErrNotFound when the server has none or the source is
-// off.
+// Art reads the stored artwork of a movie or show (TMDB id). ErrNotFound
+// when the server has none.
 func (s *Service) Art(ctx context.Context, kind, id string) (ServerArt, error) {
 	var out ServerArt
-	switch kind {
-	case "show":
+	if kind == "show" {
 		kind = "tv"
-	case "artist":
-		kind = "music"
 	}
-	if (kind == "movie" || kind == "tv") && !serviceID("tmdb", id) || kind == "music" && !ValidMBID(id) || kind != "movie" && kind != "tv" && kind != "music" {
+	if (kind != "movie" && kind != "tv") || !serviceID("tmdb", id) {
 		return out, ErrServiceInvalid
 	}
 	if err := s.extra(ctx, "/v1/art/"+kind+"/"+id, &out); err != nil {
 		return ServerArt{}, err
 	}
-	out.Logo, out.ClearArt, out.Banner, out.Thumb = fanartURL(out.Logo), fanartURL(out.ClearArt), fanartURL(out.Banner), fanartURL(out.Thumb)
-	keep := func(l []string) []string {
-		var k []string
-		for _, u := range l {
-			if u = fanartURL(u); u != "" {
-				k = append(k, u)
-			}
+	out.Logo, out.Banner, out.Thumb = s.ownPicture(out.Logo), s.ownPicture(out.Banner), s.ownPicture(out.Thumb)
+	var keep []string
+	for _, u := range out.Backgrounds {
+		if u = s.ownPicture(u); u != "" {
+			keep = append(keep, u)
 		}
-		return k
 	}
-	out.Backgrounds, out.Thumbs = keep(out.Backgrounds), keep(out.Thumbs)
+	out.Backgrounds = keep
 	return out, nil
 }
 

@@ -30,9 +30,8 @@ describe('banner picture size', () => {
 		expect(bannerSrc(u, 700, 2)).toBe('https://image.tmdb.org/t/p/original/abc.jpg');
 		expect(bannerSrc('/api/v1/artwork/tmdb/w300/abc.jpg', 600, 2)).toBe('/api/v1/artwork/tmdb/w1280/abc.jpg');
 	});
-	it('uses the full fanart file, never the preview', () => {
-		expect(bannerSrc('https://assets.fanart.tv/preview/tv/1/tvbanner/x.jpg', 600)).toBe('https://assets.fanart.tv/fanart/tv/1/tvbanner/x.jpg');
-		expect(bannerSrc('https://assets.fanart.tv/fanart/tv/1/tvbanner/x.jpg', 600)).toBe('https://assets.fanart.tv/fanart/tv/1/tvbanner/x.jpg');
+	it('leaves a stored banner as it is', () => {
+		expect(bannerSrc('/api/v1/artwork/img/title-banner/tv-1/1000.webp', 600)).toBe('/api/v1/artwork/img/title-banner/tv-1/1000.webp');
 	});
 });
 

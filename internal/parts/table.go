@@ -349,6 +349,9 @@ var Routes = map[string]Owner{
 	"POST /api/v1/library-folders/{id}/adopt": Media,
 	"POST /api/v1/library/rescan":             Media,
 
+	// The metadata server's stored title and person pictures.
+	"GET /api/v1/artwork/img/{kind}/{id}/{file}": Media,
+
 	// One title: its kind decides.
 	"GET /api/v1/titles/{id}":                   ByTitle,
 	"PUT /api/v1/titles/{id}":                   ByTitle,

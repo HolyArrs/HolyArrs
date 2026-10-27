@@ -172,6 +172,7 @@ var RoutePerms = map[string]Perm{
 	"GET /api/v1/titles/{id}":                              needSignedIn,
 	"GET /api/v1/artwork/{name}":                           needSignedIn,
 	"GET /api/v1/artwork/tmdb/{size}/{file}":               needSignedIn,
+	"GET /api/v1/artwork/img/{kind}/{id}/{file}":           needSignedIn,
 	"GET /api/v1/metadata/search":                          needSignedIn,
 	"GET /api/v1/metadata/{kind}/{tmdb_id}":                needSignedIn,
 	"GET /api/v1/metadata/{kind}/{tmdb_id}/more-from":      needSignedIn,
@@ -631,7 +632,7 @@ func init() {
 
 		"GET /", "GET /login", "GET /live",
 		"GET /api/v1/albums/{id}", "GET /api/v1/albums/{id}/tracks", "GET /api/v1/albums/{id}/cover", "GET /api/v1/alerts",
-		"GET /api/v1/artists/lookup", "GET /api/v1/artwork/{name}", "GET /api/v1/artwork/tmdb/{size}/{file}", "GET /api/v1/asks",
+		"GET /api/v1/artists/lookup", "GET /api/v1/artwork/{name}", "GET /api/v1/artwork/tmdb/{size}/{file}", "GET /api/v1/artwork/img/{kind}/{id}/{file}", "GET /api/v1/asks",
 		"GET /api/v1/asks/limit", "GET /api/v1/asks/{id}", "GET /api/v1/auth/me",
 		"GET /api/v1/calendar", "GET /api/v1/calendar/feed.ics", "GET /api/v1/downloaders",
 		"GET /api/v1/downloads", "GET /api/v1/downloads/view", "GET /api/v1/events",
