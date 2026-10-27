@@ -45,6 +45,7 @@ type showcaseOptions struct {
 	Reset   bool   // wipe the showcase Library, then seed again
 	Live    bool   // music part only, while the backend runs (no stop check, no config lock)
 	Init    bool   // mark the runtime folder as the showcase's and stop
+	Agent   bool   // add or update the agents' test account from stdin, while the backend runs
 }
 
 func parseShowcase(args []string) (showcaseOptions, error) {
@@ -59,6 +60,7 @@ func parseShowcase(args []string) (showcaseOptions, error) {
 	fs.BoolVar(&o.Reset, "reset", false, "wipe every title, ask and stand-in download in the showcase, then seed again")
 	fs.BoolVar(&o.Live, "live", false, "seed only the music part (folders, members, artists, activity, asks) while the showcase backend runs; not with -reset or -init")
 	fs.BoolVar(&o.Init, "init", false, "mark the runtime folder as the showcase's ("+showcaseMarker+") and stop")
+	fs.BoolVar(&o.Agent, "agent", false, "add or update the agents' test account (an admin) from \"name:\" and \"password:\" lines on stdin, then stop; the backend may run")
 	if err := fs.Parse(args); err != nil {
 		return o, err
 	}
@@ -102,6 +104,20 @@ func checkShowcase(o showcaseOptions) error {
 func showcaseCommand(ctx context.Context, o showcaseOptions, out io.Writer) error {
 	if o.Live && (o.Reset || o.Init) {
 		return errors.New("-live cannot be combined with -reset or -init; stop the backend for those")
+	}
+	if o.Agent {
+		if o.Reset || o.Init || o.Live {
+			return errors.New("-agent runs on its own")
+		}
+		if err := checkShowcase(o); err != nil {
+			return err
+		}
+		w, err := openWorld(ctx, options{ConfigDir: filepath.Join(o.Runtime, "config"), MediaRoot: o.Runtime, DownloadsDir: filepath.Join(o.Runtime, "downloads")}, providers{}, out)
+		if err != nil {
+			return err
+		}
+		defer w.Close()
+		return w.showcaseAgent(ctx, os.Stdin)
 	}
 	if !o.Live {
 		if err := checkStopped(ctx, o.AppURL, false); err != nil {
@@ -403,6 +419,43 @@ func (w *world) members(ctx context.Context) error {
 		w.say("   added member %s (age limit %q, no password)", m.Name, m.MaxRating)
 	}
 	return nil
+}
+
+// showcaseAgent adds or updates the agents' test account: an admin with a
+// password, so agents can check signed-in pages on the showcase. The name
+// and password come from stdin, never from flags, so they stay out of
+// process lists and shell history. It never touches the owner.
+func (w *world) showcaseAgent(ctx context.Context, in io.Reader) error {
+	name, pw, err := auth.ReadNewOwner(in)
+	if err != nil {
+		return err
+	}
+	h, err := auth.HashPassword(pw)
+	if err != nil {
+		return err
+	}
+	perms, _ := json.Marshal(auth.DefaultPerms(auth.RoleAdmin))
+	err = w.s.Write(ctx, func(tx *sql.Tx) error {
+		var id int64
+		var role string
+		err := tx.QueryRow("SELECT id, role FROM users WHERE name = ?", name).Scan(&id, &role)
+		if errors.Is(err, sql.ErrNoRows) {
+			_, err = store.Insert(tx, "users", &domain.User{Name: name, Role: auth.RoleAdmin, PasswordHash: h, State: "active", Perms: string(perms), RatingCountry: "US"}, w.by)
+			return err
+		}
+		if err != nil {
+			return err
+		}
+		if role == auth.RoleOwner {
+			return fmt.Errorf("%q is the owner; pick another name for the agents' account", name)
+		}
+		_, err = tx.Exec("UPDATE users SET password_hash = ?, state = 'active' WHERE id = ?", h, id)
+		return err
+	})
+	if err == nil {
+		w.say("   agents' test account %q ready (admin)", name)
+	}
+	return err
 }
 
 func (w *world) member(ctx context.Context, name string) (asks.Person, error) {
