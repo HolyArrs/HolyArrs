@@ -89,29 +89,45 @@
 			owned = null;
 		}
 	}
-	let ownTab = $state<'overview' | 'episodes' | 'library'>((typeof location !== 'undefined' && (['episodes', 'library'] as const).find((t) => t === new URLSearchParams(location.search).get('tab'))) || 'overview');
-	// The tabs of an owned title: Overview (this page), Episodes (shows) and Library (status, files, activity, settings in one place).
+	let ownTab = $state<'overview' | 'library'>(typeof location !== 'undefined' && ['episodes', 'library'].includes(new URLSearchParams(location.search).get('tab') ?? '') ? 'library' : 'overview');
+	// The tabs of an owned title: Overview (this page) and Library (status, seasons and episodes, files, activity, settings).
 	const ownTabs = $derived.by(() => {
 		const o = owned;
 		if (!o) return [];
 		const out: { v: typeof ownTab; label: string; count?: string; alert?: boolean }[] = [{ v: 'overview', label: 'Overview' }];
-		if (o.show) out.push({ v: 'episodes', label: 'Episodes', count: `${o.show.in_library}/${o.show.episodes}`, alert: (o.show.failed ?? 0) > 0 });
-		out.push({ v: 'library', label: 'Library', alert: ownState.kind === 'failed' });
+		out.push({ v: 'library', label: 'Library', alert: ownState.kind === 'failed' || (o.show?.failed ?? 0) > 0 });
 		return out;
 	});
-	// Episodes tab: the chosen season's episodes with their file state.
+	// Library tab (shows): the chosen season's episodes with their file state.
 	let epSeason = $state<number | null>(null);
-	let episodes = $state<{ id: number; episode: number; name?: string; air_date?: string; slots: { state: string; state_label: string }[] }[]>([]);
+	let episodes = $state<{ id: number; episode: number; name?: string; air_date?: string; runtime_minutes?: number; still?: string; slots: { id: number; state: string; state_label: string }[] }[]>([]);
+	let epLoading = $state(false);
 	$effect(() => {
 		const o = owned;
-		if (!o?.show || ownTab !== 'episodes') return;
-		const n = epSeason ?? [...o.show.seasons].filter((x) => x.number > 0).sort((a, b) => b.number - a.number)[0]?.number ?? 1;
+		if (!o?.show || ownTab !== 'library') return;
+		// Start on the newest season you have something of, else the newest season.
+		const ss = [...o.show.seasons].filter((x) => x.number > 0).sort((a, b) => b.number - a.number);
+		const n = epSeason ?? (ss.find((x) => x.in_library > 0) ?? ss[0])?.number ?? 1;
 		if (epSeason === null) epSeason = n;
-		void api.get<{ episodes: typeof episodes }>(`/titles/${o.id}/episodes?season=${n}`).then((r) => (episodes = r.episodes ?? []), () => (episodes = []));
+		epLoading = true;
+		void api.get<{ episodes: typeof episodes }>(`/titles/${o.id}/episodes?season=${n}`).then((r) => (episodes = r.episodes ?? []), () => (episodes = [])).finally(() => (epLoading = false));
 	});
 	const epTone = (st: string) => (st === 'have' || st === 'imported' || st === 'in_library' || st === 'kept' ? 'have' : st === 'downloading' || st === 'importing' || st === 'searching' ? 'downloading' : st === 'failed' ? 'failed' : 'missing');
 	let busyAction = $state('');
-	const ownFiles = $derived((owned?.slots ?? []).filter((x) => x.file));
+	// Library tab (shows): look for one episode or a whole season's missing ones.
+	async function epSearch(body: Record<string, unknown>, key: string, done: string) {
+		const o = owned;
+		if (!o) return;
+		busyAction = key;
+		try {
+			await api.post(`/titles/${o.id}/search`, body);
+			toasts.push(done, 'ok');
+		} catch (e) {
+			toasts.push(message(e), 'fail');
+		} finally {
+			busyAction = '';
+		}
+	}	const ownFiles = $derived((owned?.slots ?? []).filter((x) => x.file));
 	const ownBadges = $derived(qualityBadges(ownFiles.map((x) => x.file)));
 	const ownDownload = $derived((owned?.slots ?? []).find((x) => x.download?.active || x.state === 'downloading' || x.state === 'importing'));
 	const ownFailed = $derived((owned?.slots ?? []).some((x) => x.state === 'failed') || (owned?.show?.failed ?? 0) > 0);
@@ -845,12 +861,34 @@
 						<div class="lib-seasons">
 							{#each [...o.show.seasons].filter((x) => x.number > 0).sort((x, y) => x.number - y.number) as se (se.number)}
 								{@const p = se.episodes ? se.in_library / se.episodes : 0}
-								<button type="button" class="lib-season" onclick={() => { epSeason = se.number; ownTab = 'episodes'; }}>
+								<button type="button" class="lib-season" class:on={epSeason === se.number} aria-pressed={epSeason === se.number} onclick={() => (epSeason = se.number)}>
 									<svg viewBox="0 0 36 36" class="ring" aria-hidden="true"><circle cx="18" cy="18" r="15" />{#if p > 0}<circle cx="18" cy="18" r="15" class="fill" class:full={p >= 1} stroke-dasharray="{(p * 94.25).toFixed(1)} 94.25" />{/if}</svg>
 									<span><b>Season {se.number}</b><small>{se.in_library} of {se.episodes}</small></span>
 								</button>
 							{/each}
 						</div>
+						{@const cur = o.show.seasons.find((x) => x.number === epSeason)}
+						<div class="lib-eps-head">
+							<h3 class="lib-h">Season {epSeason}</h3>
+							{#if manage && cur && cur.in_library < cur.episodes}<button type="button" class="lib-btn sm" disabled={busyAction === `s${epSeason}`} onclick={() => epSearch({ season: epSeason }, `s${epSeason}`, `Looking for the missing episodes of season ${epSeason}.`)}><Icon name="search" size={15} />Get missing episodes</button>{/if}
+						</div>
+						<ol class="lib-eps" aria-busy={epLoading}>
+							{#each episodes as e (e.id)}
+								{@const st = e.slots[0]}
+								{@const tone = epTone(st?.state ?? '')}
+								<li class="lib-ep {tone}">
+									<span class="lib-ep-still">{#if e.still}<img src={e.still.replace('/w780/', '/w300/')} alt="" loading="lazy" decoding="async" />{/if}<span class="lib-ep-n">{e.episode}</span></span>
+									<span class="lib-ep-text">
+										<b>{e.name ?? `Episode ${e.episode}`}</b>
+										<small>{[e.air_date ? new Date(e.air_date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '', e.runtime_minutes ? `${e.runtime_minutes} min` : ''].filter(Boolean).join(' · ')}</small>
+									</span>
+									<span class="lib-ep-st {tone}"><span class="own-dot {tone}" aria-hidden="true"></span>{st?.state_label ?? 'Missing'}</span>
+									{#if manage && st && tone !== 'have' && tone !== 'downloading'}<button type="button" class="lib-ep-go" aria-label="Look for episode {e.episode}" title="Look for it now" disabled={busyAction === `e${e.id}`} onclick={() => epSearch({ slot_id: st.id }, `e${e.id}`, `Looking for episode ${e.episode}.`)}><Icon name="search" size={15} /></button>{/if}
+								</li>
+							{:else}
+								{#each [0, 1, 2, 3] as i (i)}<li class="lib-ep skel"></li>{/each}
+							{/each}
+						</ol>
 					{:else if libFiles.length}
 						<h3 class="lib-h">{libFiles.length > 1 ? 'Versions' : 'File'}</h3>
 						<div class="lib-files">
@@ -912,19 +950,7 @@
 			</div>
 		{/snippet}
 		{#snippet ownPane()}
-			{#if ownTab === 'episodes' && owned?.show}
-				<div class="own-seasons">
-					{#each [...owned.show.seasons].filter((x) => x.number > 0).sort((x, y) => y.number - x.number) as se (se.number)}
-						<button type="button" class="own-pill" class:on={epSeason === se.number} onclick={() => (epSeason = se.number)}>Season {se.number} <span class="own-count">{se.in_library}/{se.episodes}</span></button>
-					{/each}
-				</div>
-				<ul class="own-eps">
-					{#each episodes as e (e.id)}
-						{@const st = e.slots[0]}
-						<li><span class="own-dot {epTone(st?.state ?? '')}" aria-hidden="true"></span><b>{e.episode}. {e.name ?? `Episode ${e.episode}`}</b><span class="muted">{e.air_date ? new Date(e.air_date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : ''}</span><span class="own-st {epTone(st?.state ?? '')}">{st?.state_label ?? 'Missing'}</span></li>
-					{:else}<li class="muted">Loading episodes…</li>{/each}
-				</ul>
-			{:else if ownTab === 'library'}
+			{#if ownTab === 'library'}
 				{@render libPane()}
 			{/if}
 		{/snippet}
@@ -1204,6 +1230,42 @@
 	.lib-seasons { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
 	.lib-season { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 0; border-radius: 14px; background: var(--surface-2); color: var(--text); text-align: left; cursor: pointer; transition: transform .2s ease; }
 	.lib-season:hover { transform: translateY(-2px); }
+	.lib-season.on { background: var(--text); color: var(--bg); }
+	.lib-season.on small { color: color-mix(in srgb, var(--bg) 65%, transparent); }
+	.lib-season.on .ring circle { stroke: color-mix(in srgb, var(--bg) 18%, transparent); }
+	.lib-season.on .ring .fill { stroke: var(--accent); }
+	.lib-season.on .ring .fill.full { stroke: #30a46c; }
+	.lib-eps-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+	.lib-eps-head .lib-h { margin-bottom: 14px; }
+	.lib-btn.sm { height: 34px; padding: 0 14px; font-size: 13px; margin-top: 22px; }
+	.lib-eps { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+	.lib-ep { display: grid; grid-template-columns: 160px minmax(0, 1fr) auto 34px; align-items: center; gap: 16px; padding: 8px; border-radius: 14px; transition: background .15s ease; }
+	.lib-ep:hover { background: var(--surface-2); }
+	.lib-ep.skel { height: 106px; background: var(--surface-2); animation: pulse 1.2s ease-in-out infinite alternate; }
+	@keyframes pulse { to { opacity: .5; } }
+	.lib-ep-still { position: relative; display: block; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; background: var(--surface-2); }
+	.lib-ep-still img { width: 100%; height: 100%; object-fit: cover; display: block; }
+	.lib-ep.missing .lib-ep-still img { filter: grayscale(.7) brightness(.7); }
+	.lib-ep-n { position: absolute; left: 6px; bottom: 6px; min-width: 22px; height: 22px; padding: 0 6px; display: grid; place-items: center; border-radius: 6px; background: rgb(0 0 0 / 62%); color: #fff; font: 700 12px/1 var(--font-ui); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+	.lib-ep-text { display: grid; gap: 4px; min-width: 0; }
+	.lib-ep-text b { font: 600 15px/1.25 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.lib-ep-text small { color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); }
+	.lib-ep-st { display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 10px; border-radius: 99px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text-muted); font: 600 12px/1 var(--font-ui); white-space: nowrap; }
+	.lib-ep-st.have { color: #30a46c; background: color-mix(in srgb, #30a46c 12%, transparent); }
+	.lib-ep-st.downloading { color: #3e8ef7; background: color-mix(in srgb, #3e8ef7 12%, transparent); }
+	.lib-ep-st.failed { color: var(--danger, #e5484d); background: color-mix(in srgb, var(--danger, #e5484d) 12%, transparent); }
+	.lib-ep-go { grid-column: 4; display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 99px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); cursor: pointer; opacity: .6; transition: opacity .15s ease; }
+	.lib-ep:hover .lib-ep-go, .lib-ep-go:focus-visible { opacity: 1; }
+	@media (max-width: 600px) {
+		.lib-seasons { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -16px; padding: 0 16px 4px; scrollbar-width: none; }
+		.lib-seasons::-webkit-scrollbar { display: none; }
+		.lib-season { flex: 0 0 auto; scroll-snap-align: start; white-space: nowrap; }
+		.lib-btn.sm { flex: none; margin-top: 22px; }
+		.lib-ep { grid-template-columns: 112px minmax(0, 1fr) 34px; gap: 12px; }
+		.lib-ep-st { grid-column: 2; grid-row: 2; justify-self: start; height: 22px; margin-top: -6px; }
+		.lib-ep-still { grid-row: span 2; }
+		.lib-ep-go { grid-column: 3; grid-row: 1 / span 2; }
+	}
 	.lib-season span { display: grid; gap: 2px; font: 600 15px/1.2 var(--font-ui); }
 	.lib-season small { color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); }
 	.ring { width: 36px; height: 36px; flex: none; transform: rotate(-90deg); }
