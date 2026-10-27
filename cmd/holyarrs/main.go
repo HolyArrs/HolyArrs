@@ -12,6 +12,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -419,7 +420,11 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// by HOLYARRS_DEEZER_URL (tests) may be on this machine.
 	artworkHTTP := library.ArtworkClient()
 	if env := os.Getenv("HOLYARRS_DEEZER_URL"); env != "" && env != "off" {
-		artworkHTTP = &http.Client{Timeout: 20 * time.Second}
+		artworkHTTP = &http.Client{Timeout: 20 * time.Second, Transport: http.DefaultTransport}
+	}
+	// The metadata server's picture addresses ride its pooled connection.
+	if u, err := url.Parse(hosted.Service.Base()); err == nil {
+		artworkHTTP.Transport = metadata.HostRoute{Host: u.Host, Via: hosted.Transport, Rest: artworkHTTP.Transport}
 	}
 	if pictures != nil {
 		pictures.UserAgent = metadata.UserAgentFor(version)

@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
@@ -37,6 +36,9 @@ type hostedMetadata struct {
 	Images     string
 	OwnKey     bool
 	HTTP       *http.Client
+	// Transport is the pooled connection to the server, shared with the
+	// artwork cache for the server's picture addresses.
+	Transport *http.Transport
 }
 
 func newHostedMetadata(v *secrets.Vault) (*hostedMetadata, error) {
@@ -53,9 +55,11 @@ func newHostedMetadata(v *secrets.Vault) (*hostedMetadata, error) {
 		allow = metadataServiceLocal
 	}
 	d := source.PolicyDialer(allow)
-	cl := &http.Client{Transport: &http.Transport{Proxy: nil, DialContext: d.DialContext, TLSHandshakeTimeout: 10 * time.Second, ResponseHeaderTimeout: 16 * time.Second, MaxResponseHeaderBytes: 32 << 10, MaxConnsPerHost: 8, MaxIdleConnsPerHost: 4, IdleConnTimeout: 30 * time.Second},
-		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	h := &hostedMetadata{HTTP: cl}
+	// One pooled HTTP/2 transport for every call to the server: text
+	// answers here, and the server's pictures through the artwork client.
+	tr := metadata.NewServerTransport(d.DialContext)
+	cl := &http.Client{Transport: tr, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	h := &hostedMetadata{HTTP: cl, Transport: tr}
 	access := installationAccess(v, func(ctx context.Context) (string, error) { return h.Service.Register(ctx) })
 	service, err := metadata.NewService(metadata.ServiceOptions{URL: metadata.ServiceURL(), HTTP: cl, Access: access, AllowLocal: local})
 	if err != nil {

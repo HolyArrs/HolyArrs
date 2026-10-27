@@ -399,10 +399,12 @@ func (c *ArtworkCache) trim() {
 }
 
 // ArtworkClient is the client pictures are fetched with: public addresses
-// only, no proxy.
+// only, no proxy, HTTP/2 with connections kept between pictures (a row's
+// posters share one connection to TMDB's picture host).
 func ArtworkClient() *http.Client {
 	d := source.PolicyDialer(source.PublicOnly)
-	return &http.Client{Timeout: 20 * time.Second, Transport: &http.Transport{Proxy: nil, DialContext: d.DialContext,
+	return &http.Client{Timeout: 20 * time.Second, Transport: &http.Transport{Proxy: nil, DialContext: d.DialContext, ForceAttemptHTTP2: true,
+		MaxIdleConns: 32, MaxIdleConnsPerHost: 8, IdleConnTimeout: 90 * time.Second,
 		TLSHandshakeTimeout: 10 * time.Second, ResponseHeaderTimeout: 20 * time.Second}}
 }
 
