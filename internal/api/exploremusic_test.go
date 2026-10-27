@@ -255,7 +255,7 @@ func TestExploreMusicRows(t *testing.T) {
 		t.Fatalf("similar lists not cached: %d", similarCalls.Load())
 	}
 	// A picture for an album on the page is served (no artwork cache here: 404, not a panic).
-	if resp, err := http.Get(srv.URL + "/api/v1/music-trending/art/album/" + mid('c', 2)); err != nil || resp.StatusCode != 404 {
+	if resp, err := http.Get(srv.URL + "/api/v1/music-trending/art/album/" + mid('c', 2)); err != nil || resp.StatusCode != 204 {
 		t.Fatalf("art %v", err)
 	}
 }

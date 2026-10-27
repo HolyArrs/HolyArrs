@@ -60,17 +60,22 @@
 		error = '';
 		// All at once: the hero, the tracks, the similar artists and the ask state.
 		void api.get<AlbumPageData>(`/music/albums/${mbid}?artist=${artist}&similar=0`).then((d) => {
-			if (still()) data = d;
+			if (!still()) return;
+			data = d;
+			// A bare album link learns its artist from the full answer: ask the nearby albums now.
+			const found = d.artist?.mbid;
+			if (!artist && found) void api.get<{ near: PageCredit[] }>(`/music/albums/${mbid}?part=near&artist=${found}`).then((r) => still() && (near = r.near)).catch(() => still() && (near = []));
 		}).catch((e) => {
 			if (still()) error = message(e);
 		}).finally(() => {
 			if (still()) busy = false;
 		});
-		void api.get<AlbumCoreData>(`/music/albums/${mbid}?part=core&artist=${artist}`).then((c) => still() && !data && (core = c)).catch(() => {});
+		// The quick core and nearby parts need the artist; a bare album link waits for the full answer instead.
+		if (artist) void api.get<AlbumCoreData>(`/music/albums/${mbid}?part=core&artist=${artist}`).then((c) => still() && !data && (core = c)).catch(() => {});
 		// A bare album link has no artist: skip the artist calls instead of asking for /music/artists/.
 		if (!artist) similar = [];
 		else void api.get<{ similar: PageArtist[] }>(`/music/artists/${artist}?part=similar&n=14`).then((r) => still() && (similar = r.similar)).catch(() => still() && (similar = []));
-		void api.get<{ near: PageCredit[] }>(`/music/albums/${mbid}?part=near&artist=${artist}`).then((r) => still() && (near = r.near)).catch(() => still() && (near = []));
+		if (artist) void api.get<{ near: PageCredit[] }>(`/music/albums/${mbid}?part=near&artist=${artist}`).then((r) => still() && (near = r.near)).catch(() => still() && (near = []));
 		if (artist) void api.get<{ artists: LookupArtist[] }>(`/artists/lookup?term=${encodeURIComponent(`mbid:${artist}`)}`).then((r) => {
 			if (still()) lookup = r.artists[0] ?? null;
 		}).catch(() => {});

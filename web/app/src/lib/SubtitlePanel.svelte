@@ -8,6 +8,7 @@
 	// with every result's score and reasons.
 	import { onMount } from 'svelte';
 	import { api, message } from './api.ts';
+	import { session } from './session.svelte.ts';
 	import { dateTime } from './format.ts';
 	import Icon from './Icon.svelte';
 	import { live } from './live.svelte.ts';
@@ -101,8 +102,8 @@
 		void load();
 		api.get<{ languages: Language[] }>('/subtitles/languages').then((r) => (langs = r.languages), () => {});
 		// The settings need the settings permission; without it the panel
-		// still works, with the usual sync defaults.
-		api.get<SubtitleSettings>('/settings/subtitles').then(
+		// still works, with the usual sync defaults (and asks nothing that would be refused).
+		if (session.can('settings')) api.get<SubtitleSettings>('/settings/subtitles').then(
 			(s) => {
 				set = s;
 				fps = { on: false, from: s.sync_from_fps, to: s.sync_to_fps };

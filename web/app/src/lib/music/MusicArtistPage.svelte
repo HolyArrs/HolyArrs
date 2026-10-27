@@ -366,7 +366,8 @@
 		const years = released.map((a) => a.release_date?.slice(0, 4)).filter((y): y is string => !!y).sort();
 		const span = years.length ? (years[0] === years[years.length - 1] ? years[0] : `${years[0]}–${years[years.length - 1]}`) : '';
 		return [
-			{ v: String(released.length), l: released.length === 1 ? 'Release' : 'Releases' },
+			// The same count as "On HolyArrs: x of N" and About (albums, EPs and singles), not every listed extra.
+			{ v: String(data.total || released.length), l: (data.total || released.length) === 1 ? 'Release' : 'Releases' },
 			{ v: String(plain('album')), l: 'Albums' },
 			{ v: String(plain('ep')), l: 'EPs' },
 			{ v: String(plain('single')), l: 'Singles' },
@@ -611,7 +612,7 @@
 											{#if s.album_mbid && !titleId && (manage || mayAsk)}
 												{@const al = data.albums.find((x) => x.mbid === s.album_mbid)}
 												{#if al && !albumAsked(al)}
-													<IconButton icon="plus" size="sm" label={`Ask for the album ${s.album}`} onclick={() => askAlbum(al)} />
+													<IconButton icon="plus" size="sm" tooltip={false} label={`Ask for the album ${s.album}`} onclick={() => askAlbum(al)} />
 												{:else}
 													<span class="s-done" title="Asked"><Icon name="check" size={14} /></span>
 												{/if}
@@ -788,6 +789,17 @@
 	h1.logo img.sized { width: min(440px, 80vw, calc(120px * var(--logo-r))); height: auto; aspect-ratio: var(--logo-r); }
 	.under-hero { --hero-ink: #07080a; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 2px 20px 0; margin-bottom: calc(var(--s-6) * -.5); text-align: center; }
 	.under-hero .round { margin-top: 2px; }
+	/* Under the hero sits on the page, not the dark hero: in light mode its words, stats and round buttons use the page's colours. */
+	:global(html:not([data-theme='dark'])) .under-hero .facts, :global(html:not([data-theme='dark'])) .under-hero .bioline { color: var(--text-muted); }
+	:global(html:not([data-theme='dark'])) .under-hero .bioline .more { color: var(--text); }
+	:global(html:not([data-theme='dark'])) .under-hero .stats { border-color: var(--line); }
+	:global(html:not([data-theme='dark'])) .under-hero .stats div { border-left-color: var(--line); }
+	:global(html:not([data-theme='dark'])) .under-hero .stats div:first-child { border-left: 0; }
+	:global(html:not([data-theme='dark'])) .under-hero .stats dt { color: var(--text-muted); }
+	:global(html:not([data-theme='dark'])) .under-hero .stats dd { color: var(--text); }
+	:global(html:not([data-theme='dark'])) .under-hero .rb { border-color: var(--line); background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); }
+	:global(html:not([data-theme='dark'])) .under-hero .rb.on, :global(html:not([data-theme='dark'])) .under-hero .rb.main { background: var(--text); color: var(--bg); box-shadow: 0 8px 24px rgb(0 0 0 / .15); }
+	:global(html:not([data-theme='dark'])) .under-hero .rb:focus-visible { outline-color: var(--text); }
 	.bioline { margin: 2px 0 0; max-width: 64ch; color: rgb(255 255 255 / .78); font: var(--t-callout); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 	.bioline .more { color: #fff; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 	.stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 0; margin: 10px 0 4px; padding: 12px 0; border-block: 1px solid rgb(255 255 255 / .12); width: min(720px, 100%); }

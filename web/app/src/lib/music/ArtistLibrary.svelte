@@ -193,7 +193,7 @@
 		</div>
 
 		<aside class="al-side">
-			<h3 class="al-h">Activity</h3>
+			<h3 class="al-h">History</h3>
 			<ol class="al-tl">
 				{#each allEvents ? events : events.slice(0, 6) as e (e.ID)}<li><span>{(e.Summary ?? e.Kind ?? '').replace(/\s+(from|on|via) (MusicBrainz|TMDB|TVmaze|TheTVDB|Wikipedia|Wikidata|fanart\.tv)\b/gi, '').replace(/^./, (c) => c.toUpperCase())}</span><span class="muted">{e.At ? ago(e.At) : ''}</span></li>
 				{:else}<li class="muted">Nothing has happened yet.</li>{/each}

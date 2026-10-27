@@ -57,8 +57,8 @@ func TestMusicCardsPicturesFromServerOnly(t *testing.T) {
 	if c := code(fresh); c != 200 {
 		t.Fatalf("stored album: %d", c)
 	}
-	if c := code(soundtrack); c != 404 {
-		t.Fatalf("album the server has not stored: %d, want 404 (the card shows its placeholder)", c)
+	if c := code(soundtrack); c != 204 {
+		t.Fatalf("album the server has not stored: %d, want 204 (the card shows its placeholder)", c)
 	}
 	if n := outside.Load(); n != 0 {
 		t.Fatalf("%d outside source asks", n)
@@ -83,7 +83,7 @@ func TestTopSongArtNotFetchedFromChart(t *testing.T) {
 	id := songArtID("Bruno Mars", "Uptown Special", pics.URL+"/images/cover/abc/250x250-000000-80-0-0.jpg")
 	api.rememberMusicNames([]nameKey{{kind: "album", mbid: id, name: "Uptown Special", artist: "Bruno Mars", cover: pics.URL + "/images/cover/abc/250x250-000000-80-0-0.jpg"}})
 	resp, err := http.Get(srv.URL + artPath("album", id))
-	if err != nil || resp.StatusCode != 404 || asked.Load() != 0 {
+	if err != nil || resp.StatusCode != 204 || asked.Load() != 0 {
 		t.Fatalf("song art %v %d, outside asks %d", err, resp.StatusCode, asked.Load())
 	}
 	resp.Body.Close()

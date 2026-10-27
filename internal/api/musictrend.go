@@ -217,9 +217,15 @@ func (a *API) prefetchMusicArt(kind string, items []metadata.MusicTrendItem) {
 // is the slot (250, 500 or 1200 for covers and photos; 960 or 1920 for
 // wide); pv is the stored version from the answer's picture records, which
 // makes the answer keep a year. 250 is made here from the 500.
+// noPicture answers a picture route that has nothing to show: 204, kept briefly.
+func noPicture(w http.ResponseWriter) {
+	w.Header().Set("Cache-Control", "private, max-age=300")
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (a *API) musicTrendArt(w http.ResponseWriter, r *http.Request) {
 	if a.kidMax(r) != "" {
-		fail(w, http.StatusNotFound, "no picture here")
+		noPicture(w)
 		return
 	}
 	kind, mbid := r.PathValue("kind"), strings.ToLower(r.PathValue("mbid"))
@@ -245,7 +251,9 @@ func (a *API) musicTrendArt(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, fb, http.StatusFound)
 			return
 		}
-		http.NotFound(w, r)
+		// No picture anywhere: an empty answer. The page's image falls back to its
+		// placeholder the same way, but the browser does not log it as a failed load.
+		noPicture(w)
 		return
 	}
 	switch {

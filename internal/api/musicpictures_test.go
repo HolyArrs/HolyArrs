@@ -151,8 +151,8 @@ func TestMusicPictureRouteVersionsSizes(t *testing.T) {
 	if _, ok := art.Path(library.ArtworkName(srv.URL + "/v1/img/album/" + picAlbum + "/1200.webp?v=c1")); ok {
 		t.Fatal("a partial answer was kept as the big size")
 	}
-	if code, _, _ := get("artist/" + picArtist); code != 404 {
-		t.Fatalf("artist placeholder: %d, want 404", code)
+	if code, _, _ := get("artist/" + picArtist); code != 204 {
+		t.Fatalf("artist placeholder: %d, want 204", code)
 	}
 	mu.Lock()
 	defer mu.Unlock()

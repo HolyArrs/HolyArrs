@@ -137,7 +137,7 @@
 				</div>
 			{/if}
 
-			<p class="es-h">Activity</p>
+			<p class="es-h">History</p>
 			<ol class="es-tl">
 				{#each events as e (e.ID)}<li><span>{e.Summary ?? e.Kind}</span><span class="muted">{e.At ? ago(e.At) : ''}</span></li>
 				{:else}<li class="muted">Nothing has happened to this episode yet.</li>{/each}

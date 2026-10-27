@@ -402,7 +402,13 @@
 		void refreshInbox();
 	}
 
-	const kindWord = $derived(kind === 'show' ? 'TV shows' : 'Movies');
+	const kindWord = $derived(kind === 'show' ? 'TV shows' : kind === 'movie' ? 'Movies' : 'Not found');
+	// Other apps and old links say "tv" or "series" for a show and "film" for a movie: go to the one address this page uses.
+	const KIND_ALIASES: Record<string, string> = { tv: 'show', series: 'show', shows: 'show', film: 'movie', movies: 'movie' };
+	$effect(() => {
+		const alias = KIND_ALIASES[kind.toLowerCase()];
+		if (alias && typeof location !== 'undefined') void goto(location.pathname.replace(`/title/${kind}/`, `/title/${alias}/`) + location.search, { replaceState: true });
+	});
 	// The logo and age rating, when the metadata endpoint has them (cached, shared with loadDetails' answer).
 	let rich = $state<RichMeta | null>(null);
 	$effect(() => {
@@ -798,7 +804,7 @@
 			backdrops={rich?.backdrops}
 			logo={rich?.logo}
 			crumbIcon={d.kind === 'show' ? 'tv' : 'compass'}
-			breadcrumb={[sectionCrumb, ...crumbs.slice(1)]}
+			breadcrumb={isDetailKind(kind) ? [sectionCrumb, ...crumbs.slice(1)] : []}
 			meta={heroFacts(d)}
 			heroStory={look === 'mubi' || look === 'google' ? d.overview : undefined}
 			heroCaps={look === 'mubi' ? mubiCaps : undefined}
@@ -1024,7 +1030,7 @@
 					{/if}
 					</div>
 					<aside class="lib-side">
-					<h3 class="lib-h">Activity</h3>
+					<h3 class="lib-h">History</h3>
 					<ol class="lib-tl">
 						{#each libAll ? ownedEvents : ownedEvents.slice(0, 5) as e (e.ID)}
 							<li class={evTone(e.Kind, e.Summary)}><span class="lib-tl-ico"><Icon name={/^no release/i.test(e.Summary ?? '') ? 'search' : evIcon(e.Kind)} size={14} /></span><span class="lib-tl-text">{(e.Summary ?? e.Kind ?? '').replace(/^./, (c) => c.toUpperCase())}</span><span class="muted">{e.At ? ago(e.At) : ''}</span></li>

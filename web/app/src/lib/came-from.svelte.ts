@@ -62,7 +62,8 @@ export function cameFrom(): CameFrom | null {
 	if (typeof history === 'undefined') return null;
 	const i = index();
 	const found = i === null ? null : (read()[i] ?? null);
-	return found && isAuthPath(found.path) ? null : found;
+	// A sign-in page or a not-found page (such as an old /title/tv/ link that moved on) is no place to step back to.
+	return found && (isAuthPath(found.path) || found.label === 'Not found') ? null : found;
 }
 
 /** fromIcon picks the breadcrumb icon for a page path. */

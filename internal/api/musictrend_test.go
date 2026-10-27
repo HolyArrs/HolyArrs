@@ -57,7 +57,7 @@ func TestMusicTrendingListsAndPictures(t *testing.T) {
 		return out
 	}
 	// A picture is only served for an id on a list read earlier.
-	get("/api/v1/music-trending/art/album/"+trendGroup, 404)
+	get("/api/v1/music-trending/art/album/"+trendGroup, 204)
 	a := get("/api/v1/music-trending?kind=album", 200)
 	items := a["items"].([]any)
 	first := items[0].(map[string]any)
@@ -76,7 +76,7 @@ func TestMusicTrendingListsAndPictures(t *testing.T) {
 		t.Fatalf("cover %v %d", err, resp.StatusCode)
 	}
 	resp.Body.Close()
-	get("/api/v1/music-trending/art/artist/0d79fe8e-ba27-4859-bb8c-2f255f346853", 404) // no artist picture source here
+	get("/api/v1/music-trending/art/artist/0d79fe8e-ba27-4859-bb8c-2f255f346853", 204) // no artist picture source here
 	get("/api/v1/music-trending?kind=album&region=ZZ", 404)
 	get("/api/v1/music-trending?kind=track", 400)
 	get("/api/v1/music-trending?kind=artist&region=1A", 400)
@@ -129,7 +129,7 @@ func TestMusicTrendArtServerOnly(t *testing.T) {
 	if c := code(trendGroup); c != 200 {
 		t.Fatalf("stored cover %d", c)
 	}
-	if c := code(none); c != 404 {
+	if c := code(none); c != 204 {
 		t.Fatalf("not stored %d", c)
 	}
 }
@@ -161,6 +161,6 @@ func TestMusicTrendingKidLimited(t *testing.T) {
 	if n := items(k.kai.call("GET", "/api/v1/music-trending?kind=album", "", 200)); n != 0 {
 		t.Fatalf("Kid sees %d items", n)
 	}
-	k.kai.call("GET", "/api/v1/music-trending/art/album/"+trendGroup, "", 404)
+	k.kai.call("GET", "/api/v1/music-trending/art/album/"+trendGroup, "", 204)
 	k.ana.call("GET", "/api/v1/music-trending/art/album/"+trendGroup, "", 200)
 }
