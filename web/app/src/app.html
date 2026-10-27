@@ -9,7 +9,63 @@
 		<link rel="icon" href="/favicon.ico" sizes="any" />
 		<link rel="apple-touch-icon" href="/brand/apple-touch-icon-180.png" />
 		<title>HolyArrs</title>
+		<!--holyarrs-font-preload-->
 		<!--holyarrs-signin-seed-->
+		<script>
+			// holyarrs-early: the first data requests start now, beside the app's
+			// scripts, not after them: who is signed in, and the page's main answer
+			// (Home, Explore, an artist, an album). lib/api.ts takes each one once,
+			// for the same address, within 30 s, and drops them all on any change,
+			// a 401 or another session. lib/early.test.ts runs this script.
+			(function () {
+				try {
+					var path = location.pathname, icon = document.querySelector('link[rel=icon]'), href = (icon && icon.getAttribute('href')) || '';
+					// The URL base (behind a proxy at /holyarrs) is what the server put before /brand/.
+					var base = href.indexOf('/brand/') > 0 ? href.slice(0, href.indexOf('/brand/')) : '';
+					if (base && path.indexOf(base) === 0) path = path.slice(base.length);
+					path = path.replace(/\/+$/, '') || '/';
+					if (/^\/(login|welcome|invite)(\/|$)/.test(path)) return;
+					var q = new URLSearchParams(location.search), m;
+					var saved = function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } };
+					// lib/region.ts defaultRegion.
+					var country = function () { var l = navigator.languages || []; for (var i = 0; i < l.length; i++) { var c = /^[a-z]{2,3}-([A-Za-z]{2})$/.exec(l[i]); if (c) return c[1].toUpperCase(); } return 'global'; };
+					var id = '([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})';
+					var asks = ['/auth/me'];
+					if (path === '/') asks.push('/home');
+					else if (path === '/explore') {
+						var type = q.has('type') ? q.get('type') : saved('holyarrs.explore.type');
+						if (type === 'music') {
+							// lib/music/music-trending.ts fetchMusicExplore and fetchRisingToday.
+							asks.push('/explore/music?' + new URLSearchParams({ region: saved('holyarrs.music-trending') || country(), hour: String(new Date().getHours()) }), '/explore/music/rising');
+						} else {
+							// lib/explore.ts headPath with readServices and serviceRegion.
+							var head = new URLSearchParams({ type: type === 'movies' || type === 'shows' ? type : 'all' }), tz;
+							try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) {}
+							if (tz) head.set('tz', tz);
+							var region = /^[A-Z]{2}$/.test(country()) ? country() : 'US', picked = [];
+							try { var all = JSON.parse(saved('holyarrs.explore.services') || 'null'); if (all && Array.isArray(all[region])) picked = all[region].filter(function (x) { return typeof x === 'number' && x > 0 && x % 1 === 0; }); } catch (e) {}
+							head.set('services', picked.join('|'));
+							head.set('region', region);
+							asks.push('/explore/head?' + head);
+						}
+					} else if ((m = new RegExp('^/music/artist/' + id + '$').exec(path))) {
+						var artist = m[1].toLowerCase();
+						asks.push('/music/artists/' + artist + '?part=core', '/music/artists/' + artist + '?similar=0');
+					} else if ((m = new RegExp('^/music/album/' + id + '$').exec(path))) {
+						var album = m[1].toLowerCase(), by = (q.get('artist') || '').toLowerCase();
+						if (by) asks.push('/music/albums/' + album + '?part=core&artist=' + by);
+						asks.push('/music/albums/' + album + '?artist=' + by + '&similar=0');
+					}
+					var early = (window.__holyarrsEarly = { at: Date.now(), asks: {} });
+					for (var i = 0; i < asks.length; i++) {
+						var url = base + '/api/v1' + asks[i];
+						early.asks[url] = fetch(url, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+						// Not taken: no "unhandled rejection" if the network fails.
+						early.asks[url].catch(function () {});
+					}
+				} catch (e) {}
+			})();
+		</script>
 		<script>
 			try {
 				var requested = new URLSearchParams(location.search).get('theme');

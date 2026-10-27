@@ -61,9 +61,35 @@ export function isIncomplete(v: unknown): boolean {
 	return !!v && typeof v === 'object' && (v as { incomplete?: unknown }).incomplete === true;
 }
 
-export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o)) {
+/** The boot requests app.html started beside the app's scripts (window.__holyarrsEarly): address -> answer. */
+export interface EarlyAsks {
+	at: number;
+	asks: Record<string, Promise<Response>>;
+}
+
+/** A boot request is used only this long after it started; later the page asks again. */
+export const EARLY_MAX = 30_000;
+
+const bootAsks = () => (globalThis as { __holyarrsEarly?: EarlyAsks }).__holyarrsEarly;
+
+export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: () => EarlyAsks | undefined = bootAsks) {
 	let csrf = '';
 	let signedOut: (() => void) | null = null;
+
+	// A boot request answers the first read of the same address once, made
+	// with the cookies the page opened with. Any change (signing in or out
+	// is one), a 401, another session or news of a change drops them all.
+	function takeEarly(url: string): Promise<Response> | undefined {
+		const e = early();
+		if (!e) return undefined;
+		const p: Promise<Response> | undefined = e.asks[url];
+		delete e.asks[url];
+		return Date.now() - e.at <= EARLY_MAX ? p : undefined;
+	}
+	function dropEarly() {
+		const e = early();
+		if (e) e.asks = {};
+	}
 
 	async function request<T>(path: string, opts: RequestOptions = {}, seen?: (res: Response) => void): Promise<T> {
 		const method = opts.method ?? 'GET';
@@ -77,9 +103,13 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o)) {
 			headers['Content-Type'] = 'application/json';
 		}
 		if (method !== 'GET' && csrf) headers['X-CSRF-Token'] = csrf;
+		const url = to('/api/v1' + path);
+		const ahead = method === 'GET' && body === undefined ? takeEarly(url) : undefined;
+		const ask = () => fetchFn(url, { method, headers, body, signal: opts.signal, credentials: 'same-origin' });
 		let res: Response;
 		try {
-			res = await fetchFn(to('/api/v1' + path), { method, headers, body, signal: opts.signal, credentials: 'same-origin' });
+			// A boot request that failed on the network is asked again.
+			res = ahead ? await ahead.catch(ask) : await ask();
 		} catch (e) {
 			if (e instanceof DOMException && e.name === 'AbortError') throw e;
 			throw new ApiError('HolyArrs is not answering. Check that it is running.', 0);
@@ -96,6 +126,7 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o)) {
 			}
 		}
 		if (!res.ok) {
+			if (res.status === 401) dropEarly();
 			if (res.status === 401 && !quiet401.some((p) => path.startsWith(p))) {
 				shared.clear();
 				signedOut?.();
@@ -145,6 +176,7 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o)) {
 
 	function change<T>(path: string, opts: RequestOptions): Promise<T> {
 		shared.clear();
+		dropEarly();
 		return request<T>(path, opts).finally(() => shared.clear());
 	}
 
@@ -157,11 +189,15 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o)) {
 		setCsrf(v: string) {
 			// A new token is a new session, maybe another account: nothing kept carries over.
 			if (v !== csrf) shared.clear();
+			if (csrf && v !== csrf) dropEarly();
 			csrf = v;
 		},
 		csrf: () => csrf,
 		/** forget drops shared reads, for news of a change made somewhere else (the live stream). */
-		forget: () => shared.clear(),
+		forget: () => {
+			shared.clear();
+			dropEarly();
+		},
 		/** has says whether a kept answer for path is ready now (a page draws it without waiting). */
 		has(path: string): boolean {
 			const hit = shared.get(path);
