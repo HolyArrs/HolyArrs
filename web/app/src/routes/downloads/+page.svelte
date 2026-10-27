@@ -21,6 +21,23 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import type { ImportRecord, TitleView } from '#lib/types.ts';
+	import VariantBar from '#lib/ui/VariantBar.svelte';
+	import DlCards from '#lib/downloads/DlCards.svelte';
+	import DlNetflix from '#lib/downloads/DlNetflix.svelte';
+	import DlUpNext from '#lib/downloads/DlUpNext.svelte';
+	import DlLanes from '#lib/downloads/DlLanes.svelte';
+	import DlTable from '#lib/downloads/DlTable.svelte';
+
+	// The layouts Luis is comparing (?view=1…5, kept for the session); 0 is today's page.
+	const VIEWS = [
+		{ value: 0, label: 'Now' },
+		{ value: 1, label: '1 Cards' },
+		{ value: 2, label: '2 Netflix' },
+		{ value: 3, label: '3 Up Next' },
+		{ value: 4, label: '4 Lanes' },
+		{ value: 5, label: '5 Table' }
+	];
+	let view = $state(0);
 
 	let rows = $state<DownloadRow[]>([]);
 	let imports = $state<ImportRecord[]>([]);
@@ -40,7 +57,7 @@
 	let detailOpen = $state(false);
 	async function selectDownload(id: number) {
 		selectedId = id;
-		if (!wide) {
+		if (!wide || view) {
 			detailOpen = true;
 			return;
 		}
@@ -89,7 +106,7 @@
 		const mq = window.matchMedia('(min-width: 1200px)');
 		const fit = () => {
 			wide = mq.matches;
-			if (wide) detailOpen = false;
+			if (wide && !view) detailOpen = false;
 		};
 		fit();
 		mq.addEventListener('change', fit);
@@ -233,7 +250,7 @@
 	<div class="d-head">
 		<span class="d-art" class:square={s.kind === 'artist'} aria-hidden="true"><Poster src={s.artwork ?? titleById.get(s.title_id ?? 0)?.artwork[0]} name={s.title || s.name} /></span>
 		<div class="d-names">
-			{#if wide}<h2 class="d-title" bind:this={detailHeading} tabindex="-1">{rowName(s)}</h2>{:else}<p class="d-title">{rowName(s)}</p>{/if}
+			{#if wide && !view}<h2 class="d-title" bind:this={detailHeading} tabindex="-1">{rowName(s)}</h2>{:else}<p class="d-title">{rowName(s)}</p>{/if}
 			{#if manyWords(s.kind) && s.covers}<p class="d-sub">{s.covers}</p>{/if}
 			<StatusPill kind={pill(s)} label={s.label} />
 		</div>
@@ -253,6 +270,9 @@
 		<p>{s.name}</p>
 		{#if admin && p?.detail}<p>{p.detail}</p>{/if}
 	</details>
+	{#if view && s.phase === 'needs_a_decision'}
+		<Button variant="primary" full href={to('/downloads/decide')}>Open Needs a decision</Button>
+	{/if}
 	{#if s.can_act}
 		<div class="d-acts">
 			<Button variant="secondary" full onclick={() => markFailed(s)} disabled={busy === s.id}>Mark failed</Button>
@@ -267,6 +287,12 @@
 {:else if rows.length === 0 && imports.length === 0}
 	<EmptyState icon="download" title="No downloads yet" text="When HolyArrs chooses a Release for a movie or an episode, it sends it to a Downloader and you can watch it here, live." action={{ label: 'Add media', href: to('/search'), icon: 'search' }} />
 	<p class="aside-link"><a href={to('/settings/downloaders')}>Downloaders</a></p>
+{:else if view}
+	{#if error}<LoadError hasData message="Downloads could not be loaded." onretry={load} />{/if}
+	{@const lp = { rows, imports, titles: titleById, busy, ondetails: (r: DownloadRow) => void selectDownload(r.id), onfail: markFailed, onremove: askRemove }}
+	<div class="variant" data-testid="dl-variant" data-view={view}>
+		{#if view === 1}<DlCards {...lp} />{:else if view === 2}<DlNetflix {...lp} />{:else if view === 3}<DlUpNext {...lp} />{:else if view === 4}<DlLanes {...lp} />{:else}<DlTable {...lp} />{/if}
+	</div>
 {:else}
 	{#if error}<LoadError hasData message="Downloads could not be loaded." onretry={load} />{/if}
 	<div class="work" class:wide>
@@ -315,11 +341,13 @@
 {/if}
 </PageLoader>
 
-{#if !wide}
-	<Sheet bind:open={detailOpen} title="Download details" size="md">
+{#if !wide || view}
+	<Sheet bind:open={detailOpen} title="Download details" size="md" placement={view ? 'right' : 'auto'}>
 		{#if selected}{@render detail(selected)}{/if}
 	</Sheet>
 {/if}
+
+<VariantBar options={VIEWS} bind:value={view} storageKey="holyarrs.downloads-view" label="Downloads layout" />
 
 <Sheet bind:open={removeOpen} title="Remove this download?" size="sm">
 	{#if target}
