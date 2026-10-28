@@ -100,7 +100,7 @@
 						</span>
 						{#if r.preset}<span class="chip">Ready-made</span>{/if}
 						<span class="acts">
-							<Button variant="plain" size="sm" href={to(`/settings/pick-rules/${r.id}`)}>{mayEdit ? 'Change' : 'Open'}</Button>
+							<Button variant="plain" href={to(`/settings/pick-rules/${r.id}`)}>{mayEdit ? 'Change' : 'Open'}</Button>
 							{#if mayEdit}<Menu
 								label="More for {r.name}"
 								items={[

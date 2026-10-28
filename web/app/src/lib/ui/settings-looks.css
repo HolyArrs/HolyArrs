@@ -53,6 +53,8 @@
 .settings-content .ui-settings .value { font: var(--t-callout); font-weight: 400; color: var(--text); }
 .settings-content .ui-btn.md { min-height: 32px; padding-inline: 12px; font-size: 14px; }
 .settings-content .ui-btn.full { width: auto; }
+/* Round icon buttons match the 32px button height (40px on phones, like the buttons). */
+.settings-content .ui-ibtn.ui-ibtn.md { width: 32px; height: 32px; }
 
 /* Lists of switches (Appearance's ratings, About lines): name left, switch right. */
 .settings-content .ui-settings ul:has(> li > label.switch) { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
@@ -94,6 +96,7 @@
 @media (max-width: 600px) {
 	.settings-content .srow > .ctl > .input { width: min(260px, 46vw); }
 	.settings-content .ui-btn.md { min-height: 40px; }
+	.settings-content .ui-ibtn.ui-ibtn.md { width: 40px; height: 40px; }
 }
 @media (prefers-reduced-motion: reduce) {
 	.settings-content .ui-settings { transition: none; }

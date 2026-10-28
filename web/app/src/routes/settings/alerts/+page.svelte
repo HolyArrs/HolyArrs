@@ -237,7 +237,7 @@
 				<fieldset class="moments" data-testid="moments-{g.label.toLowerCase()}">
 					<legend class="label">When to send: {g.label}</legend>
 					<p class="hint">{g.hint}</p>
-					<Button variant="plain" size="sm" type="button" onclick={() => toggleGroup(g.moments, !all)}>{all ? 'None of these' : 'All of these'}</Button>
+					<Button variant="plain" type="button" onclick={() => toggleGroup(g.moments, !all)}>{all ? 'None of these' : 'All of these'}</Button>
 					{#each g.moments as m (m)}
 						<label class="checkline">
 							<input type="checkbox" checked={form.moments.includes(m)} onchange={(e) => toggle(m, e.currentTarget.checked)} />
@@ -313,7 +313,6 @@
 <style>
 	.packs {
 		margin-top: var(--s-6);
-		max-width: 720px;
 	}
 	.pack-choice {
 		border: 0;

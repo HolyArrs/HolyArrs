@@ -297,7 +297,7 @@
 			width: 100%;
 		}
 		.list .acts > :global(.ui-btn) {
-			min-height: var(--tap);
+			min-height: 40px;
 		}
 	}
 </style>

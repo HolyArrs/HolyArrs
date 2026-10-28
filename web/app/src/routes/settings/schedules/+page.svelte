@@ -179,10 +179,10 @@
 									</div>
 									<div class="acts">
 										{#if canRun && mayRun(s)}
-											<Button size="sm" type="button" busy={busy === s.kind && editing !== s.kind} disabled={busy === s.kind} onclick={() => runNow(s)} aria-label="Run {s.label} now">Run now</Button>
+											<Button type="button" busy={busy === s.kind && editing !== s.kind} disabled={busy === s.kind} onclick={() => runNow(s)} aria-label="Run {s.label} now">Run now</Button>
 										{/if}
 										{#if canChange && editing !== s.kind}
-											<Button size="sm" variant="plain" type="button" id="change-{s.kind}" onclick={() => edit(s)} aria-label="Change how often {s.label} runs" aria-expanded="false" aria-controls="ed-{s.kind}">Change</Button>
+											<Button variant="plain" type="button" id="change-{s.kind}" onclick={() => edit(s)} aria-label="Change how often {s.label} runs" aria-expanded="false" aria-controls="ed-{s.kind}">Change</Button>
 										{/if}
 									</div>
 								</div>
@@ -214,14 +214,14 @@
 													<b>Automatic refresh</b>
 													<span class="hint">{s.enabled ? 'On. Movie details are read again on this timer.' : 'Off. Movie details stay as they are until you refresh by hand.'}</span>
 												</div>
-												<Button size="sm" variant={s.enabled ? 'destructive' : 'secondary'} type="button" disabled={busy === s.kind} onclick={() => setEnabled(s, !s.enabled)}>{s.enabled ? 'Turn off automatic refresh' : 'Turn on automatic refresh'}</Button>
+												<Button variant={s.enabled ? 'destructive' : 'secondary'} type="button" disabled={busy === s.kind} onclick={() => setEnabled(s, !s.enabled)}>{s.enabled ? 'Turn off automatic refresh' : 'Turn on automatic refresh'}</Button>
 											</div>
 										{/if}
 										{#if editError}<p class="form-error" role="alert">{editError}</p>{/if}
 										<div class="ed-acts">
 											{#if s.settings}<a class="its" href={to(s.settings)}>Its settings<Icon name="chevronRight" size={14} /></a>{/if}
-											<Button size="sm" variant="plain" type="button" onclick={() => closeEditor(s)}>Cancel</Button>
-											<Button size="sm" variant="primary" type="submit" busy={busy === s.kind} disabled={busy === s.kind}>Save</Button>
+											<Button variant="plain" type="button" onclick={() => closeEditor(s)}>Cancel</Button>
+											<Button variant="primary" type="submit" busy={busy === s.kind} disabled={busy === s.kind}>Save</Button>
 										</div>
 									</form>
 								{/if}

@@ -53,6 +53,7 @@
 	{/snippet}
 </PageHeader>
 
+<div class="sc-form">
 <SettingsCard id="api-start" title="Start here">
 	<ol class="steps small">
 		<li>Make a key in <a href={to(`/settings/sign-in`)}>Settings > Sign-in > API keys</a>. Give it only the scopes it needs. The key is shown once; copy it then.</li>
@@ -68,18 +69,18 @@
 </SettingsCard>
 
 {#if spec?.['x-holyarrs-scopes']}
-	<div data-testid="api-scopes">
 		<SettingsCard title="Scopes">
-			<dl class="facts">
+			<dl class="facts" data-testid="api-scopes">
 				{#each Object.entries(spec['x-holyarrs-scopes']) as [name, note] (name)}
 					<dt><code>{name}</code></dt>
 					<dd class="small">{note}</dd>
 				{/each}
 			</dl>
 		</SettingsCard>
-	</div>
 {/if}
+</div>
 
+<div>
 <SettingsCard title="Example calls">
 	<p class="small muted">Set <code>HOLYARRS_KEY</code> to your key in your shell first.</p>
 	<ul class="examples">
@@ -94,6 +95,7 @@
 		{/each}
 	</ul>
 </SettingsCard>
+</div>
 
 <div data-testid="api-routes">
 	<SettingsCard id="api-routes" title="Every route">
