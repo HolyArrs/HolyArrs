@@ -1,9 +1,9 @@
 <script lang="ts">
-	// The choices for a download that needs a decision, shown in its details
-	// sheet on Downloads: why it waits, and Search again, Choose a release by
-	// hand, another Version, Turned down or Stop looking (a whole season pack
-	// or album at once, or one episode or track). The same choices and calls
-	// the separate Needs a decision page had.
+	// The choices for a download that needs a decision, about two lines when
+	// closed: one reason line, one primary fix (Set edition, Search again or
+	// Choose a release by hand), every other choice under More, and the plan
+	// behind Why?. A season pack or album gets the same shape for the whole
+	// pack, with each stuck episode or track below it.
 	import { to } from '../paths.ts';
 	import { api, message } from '../api.ts';
 	import { toasts } from '../toasts.svelte.ts';
@@ -12,13 +12,12 @@
 	import { refreshDecisions } from '../decisions.svelte.ts';
 	import { session } from '../session.svelte.ts';
 	import { plainReason } from '../plain.ts';
+	import { editionDecisionBody } from '../copy-controls.ts';
 	import Button from '../ui/Button.svelte';
-	import EditionDecision from '../EditionDecision.svelte';
+	import Menu, { type MenuItem } from '../ui/Menu.svelte';
 
-	// `compact`: the Download details views put the choices in one wrapping row
-	// of small buttons instead of a full-width stack.
+	// `compact`: in the Download details the title is already in the header.
 	let { items, ondone, compact = false }: { items: Decision[]; ondone?: () => void; compact?: boolean } = $props();
-	const sz = $derived(compact ? 'sm' : 'md');
 	const groups = $derived(groupDecisions(items));
 	const admin = $derived(session.can('settings'));
 
@@ -54,6 +53,62 @@
 		}
 	}
 
+	type Fix = 'edition' | 'hand' | 'search';
+	const isEdition = (d: Decision) => d.kind === 'movie' && !!d.download_id && (d.why === 'conflict' || /edition/i.test(d.reason ?? ''));
+	function primary(d: Decision): Fix {
+		if (isEdition(d)) return 'edition';
+		if (d.why === 'conflict') return 'hand';
+		return 'search';
+	}
+	function reasonLine(d: Decision): string {
+		if (isEdition(d)) return "Edition unknown, so the file couldn't be placed.";
+		const r = d.reason ? plainReason(d.reason).text : '';
+		return r || whyWords(d);
+	}
+	function more(d: Decision, key: string, fix: Fix): MenuItem[] {
+		const out: MenuItem[] = [];
+		if (fix !== 'search') out.push({ label: 'Search again', onselect: () => act(d, 'search', false, key) });
+		if (fix !== 'hand') out.push({ label: 'Choose a release by hand', href: to(`/library/${d.title_id}#h-rel`) });
+		if (!manyWords(d.kind)) out.push({ label: d.versions > 1 ? 'Try another Version' : 'Add another Version', href: to(`/library/${d.title_id}#h-versions`) });
+		if (d.release_id) out.push({ label: 'Add to Turned down', onselect: () => act(d, 'turn_down', false, key) });
+		out.push({ label: 'Stop looking', destructive: true, onselect: () => act(d, 'stop', false, key) });
+		out.push({ kind: 'separator' }, { label: 'Open title', href: to(`/library/${d.title_id}`) });
+		return out;
+	}
+	function packMore(d: Decision, key: string): MenuItem[] {
+		const w = manyWords(d.kind);
+		return [
+			...(d.release_id ? [{ label: `Add the ${w?.pack === 'album' ? 'album' : 'pack'} to Turned down`, onselect: () => act(d, 'turn_down', true, key) }] : []),
+			{ label: `Stop looking for these ${w?.many}`, destructive: true, onselect: () => act(d, 'stop', true, key) },
+			{ kind: 'separator' },
+			{ label: 'Open title', href: to(`/library/${d.title_id}`) }
+		];
+	}
+
+	let whyOpen = $state<Record<string, boolean>>({});
+	let editOpen = $state<Record<string, boolean>>({});
+	let edition = $state<Record<string, string>>({});
+	let edError = $state<Record<string, string>>({});
+	let done = $state<Record<string, string>>({});
+	// Saving is the confirmation. The server has no undo for an edition, so only the status shows.
+	async function saveEdition(e: SubmitEvent, d: Decision, key: string) {
+		e.preventDefault();
+		const v = edition[key]?.trim();
+		if (!v || !d.download_id) return;
+		busy = key;
+		edError[key] = '';
+		try {
+			await api.put(`/downloads/${d.download_id}/edition`, editionDecisionBody(v));
+			done[key] = 'Edition set · trying again';
+			await refreshDecisions();
+			ondone?.();
+		} catch (err) {
+			edError[key] = plainReason(message(err)).text;
+		} finally {
+			busy = '';
+		}
+	}
+
 	function packLine(g: DecisionGroup): string {
 		const all = g.lead.pack ?? [];
 		const w = manyWords(g.lead.kind);
@@ -61,33 +116,53 @@
 	}
 </script>
 
-{#snippet cause(d: Decision, bold: boolean)}
+{#snippet whyBtn(key: string)}
+	<button class="whyb" type="button" aria-expanded={!!whyOpen[key]} aria-controls="why-{key}" onclick={() => (whyOpen[key] = !whyOpen[key])} data-testid="decision-why">Why?</button>
+{/snippet}
+
+{#snippet why(d: Decision, key: string)}
 	{@const r = d.reason ? plainReason(d.reason) : null}
-	<div class="cause">
-		<p class="why" data-testid="decision-why">{#if bold}<b>{whyWords(d)}</b>{:else}{whyWords(d)}{/if}</p>
-		{#if r}<p class="reason" data-testid="decision-reason">{r.text}</p>{/if}
-		{#if admin && (r?.detail || d.release_name)}
-			<details class="raw">
-				<summary>Details</summary>
-				{#if d.release_name}<p>Last Release: {d.release_name}</p>{/if}
-				{#if r?.detail}<p>{r.detail}</p>{/if}
-			</details>
-		{/if}
+	<div class="raw" id="why-{key}" hidden={!whyOpen[key]} data-testid="decision-why-box">
+		<p>{whyWords(d)}</p>
+		{#if r && r.text !== reasonLine(d)}<p>{r.text}</p>{/if}
+		{#if d.has_copy}<p>A copy is already in the Library.</p>{/if}
+		{#if admin && d.release_name}<p class="mono">Release: {d.release_name}</p>{/if}
+		{#if admin && r?.detail}<p class="mono">{r.detail}</p>{/if}
 	</div>
 {/snippet}
 
-{#snippet choices(d: Decision, key: string)}
-	{#if d.kind === 'movie' && d.download_id}<EditionDecision downloadId={d.download_id} onchange={refreshDecisions} />{/if}
-	<div class="acts">
-		<Button size={sz} variant="primary" onclick={() => act(d, 'search', false, key)} disabled={busy === key} busy={busy === key}>Search again</Button>
-		<Button size={sz} variant="secondary" href={to(`/library/${d.title_id}#h-rel`)}>Choose a release by hand</Button>
-		{#if !manyWords(d.kind)}
-			<Button size={sz} variant="secondary" href={to(`/library/${d.title_id}#h-versions`)}>{d.versions > 1 ? 'Try another Version' : 'Add another Version'}</Button>
+{#snippet one(d: Decision, key: string, showName: boolean)}
+	{@const fix = primary(d)}
+	<div class="dec" data-testid="decision">
+		<p class="line">
+			{#if showName}<span class="one">{decisionName(d)}</span>{/if}
+			<span class="why" data-testid="decision-reason">{reasonLine(d)}</span>
+			<span class="sub">· {d.version} · {ago(d.since)}</span>
+		</p>
+		{#if done[key]}
+			<p class="state" role="status" data-testid="decision-done">{done[key]}</p>
+		{:else}
+			<div class="acts">
+				{#if fix === 'edition'}
+					<Button size="sm" variant="primary" aria-expanded={!!editOpen[key]} aria-controls="ed-form-{key}" onclick={() => (editOpen[key] = !editOpen[key])} data-testid="decision-fix">Set edition</Button>
+				{:else if fix === 'hand'}
+					<Button size="sm" variant="primary" href={to(`/library/${d.title_id}#h-rel`)} data-testid="decision-fix">Choose a release by hand</Button>
+				{:else}
+					<Button size="sm" variant="primary" onclick={() => act(d, 'search', false, key)} disabled={busy === key} busy={busy === key} data-testid="decision-fix">Search again</Button>
+				{/if}
+				<Menu label="More choices" variant="button" text="More" icon="chevronDown" items={more(d, key, fix)} width={240} align="start" />
+				{@render whyBtn(key)}
+			</div>
+			{#if fix === 'edition' && editOpen[key]}
+				<form class="ed" id="ed-form-{key}" onsubmit={(e) => saveEdition(e, d, key)} data-testid="edition-decision">
+					<label class="sr-only" for="ed-{key}">Edition</label>
+					<input id="ed-{key}" class="input" bind:value={edition[key]} maxlength="80" required placeholder="Edition, e.g. Theatrical" />
+					<Button size="sm" variant="primary" type="submit" disabled={!edition[key]?.trim() || busy === key} busy={busy === key}>Save and try again</Button>
+				</form>
+				{#if edError[key]}<p class="err" role="alert">{edError[key]}</p>{/if}
+			{/if}
 		{/if}
-		{#if d.release_id}
-			<Button size={sz} variant="plain" onclick={() => act(d, 'turn_down', false, key)} disabled={busy === key}>Add to Turned down</Button>
-		{/if}
-		<Button size={sz} variant="plain" onclick={() => act(d, 'stop', false, key)} disabled={busy === key}>Stop looking</Button>
+		{@render why(d, key)}
 	</div>
 {/snippet}
 
@@ -97,57 +172,44 @@
 		{#if g.pack}
 			{@const w = manyWords(d.kind)}
 			<div class="dec" data-testid="decision-pack">
-				<p class="sub">{d.kind === 'artist' ? 'Album' : 'Season pack'} · {packLine(g)} · waiting {ago(d.since)}</p>
-				{#if admin && d.release_name}<details class="raw"><summary>Details</summary><p>{d.kind === 'artist' ? 'Album' : 'Pack'}: {d.release_name}</p></details>{/if}
+				<p class="line"><span class="why">{packLine(g)}.</span> <span class="sub">· {d.kind === 'artist' ? 'Album' : 'Season pack'} · {ago(d.since)}</span></p>
 				<div class="acts">
-					<Button size={sz} variant="primary" onclick={() => act(d, 'search', true, g.key)} disabled={busy === g.key} busy={busy === g.key}>Search again for these {w?.many}</Button>
-					{#if d.release_id}
-						<Button size={sz} variant="plain" onclick={() => act(d, 'turn_down', true, g.key)} disabled={busy === g.key}>Add the {w?.pack === 'album' ? 'album' : 'pack'} to Turned down</Button>
-					{/if}
-					<Button size={sz} variant="plain" onclick={() => act(d, 'stop', true, g.key)} disabled={busy === g.key}>Stop looking for these {w?.many}</Button>
+					<Button size="sm" variant="primary" onclick={() => act(d, 'search', true, g.key)} disabled={busy === g.key} busy={busy === g.key}>Search again for these {w?.many}</Button>
+					<Menu label="More choices" variant="button" text="More" icon="chevronDown" items={packMore(d, g.key)} width={260} align="start" />
+					{@render whyBtn(g.key)}
 				</div>
+				{@render why(d, g.key)}
 				<ul class="subs">
-					{#each g.items as one (one.slot_id)}
-						<li data-testid="decision">
-							<p class="one">{decisionName(one)}</p>
-							{@render cause(one, false)}
-							{@render choices(one, `slot-${one.slot_id}`)}
-						</li>
-					{/each}
+					{#each g.items as x (x.slot_id)}<li>{@render one(x, `slot-${x.slot_id}`, true)}</li>{/each}
 				</ul>
 			</div>
 		{:else}
-			<div class="dec" data-testid="decision">
-				<!-- In the compact details the title is already in the header above. -->
-				{#if !compact}<a class="one" href={to(`/library/${d.title_id}`)}>{decisionName(d)}</a>{/if}
-				<p class="sub">{d.version} Version · waiting {ago(d.since)}{#if d.has_copy} · a copy is already in the Library{/if}</p>
-				{@render cause(d, true)}
-				{@render choices(d, g.key)}
-			</div>
+			{@render one(d, g.key, !compact)}
 		{/if}
 	{/each}
 </section>
 
 <style>
-	.decide { display: flex; flex-direction: column; gap: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
-	.dec { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-	.sub { color: var(--text-muted); font: var(--t-subhead); font-weight: 400; }
-	.cause { padding: 12px 14px; border-radius: var(--r-btn); background: var(--surface-2); box-shadow: inset 3px 0 0 var(--wait); display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; }
-	.why { font: var(--t-callout); }
-	.reason { color: var(--text-muted); font: var(--t-callout); }
-	.raw { color: var(--text-muted); font: var(--t-footnote); }
-	.raw summary { width: max-content; min-height: 24px; cursor: pointer; border-radius: 6px; }
-	.raw summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.raw p { margin-top: 4px; font-family: var(--font-mono); overflow-wrap: anywhere; }
-	/* In a sheet the buttons stack full width. */
-	.acts { display: grid; gap: 8px; }
+	.decide { display: flex; flex-direction: column; gap: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 	.compact { gap: 10px; padding-top: 0; border-top: 0; }
-	.compact .dec { gap: 8px; }
-	.compact .acts { display: flex; flex-wrap: wrap; gap: 6px; }
-	.compact .cause { padding: 8px 12px; }
-	.compact .why, .compact .reason { font: var(--t-subhead); }
-	.subs { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
-	.subs > li { display: flex; flex-direction: column; gap: 8px; padding-top: 14px; border-top: 1px solid var(--line); min-width: 0; }
-	.one { color: var(--text); font: var(--t-headline); font-size: 15px; overflow-wrap: anywhere; }
-	a.one:hover { text-decoration: underline; text-underline-offset: 3px; }
+	.dec { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding-left: 10px; box-shadow: inset 3px 0 0 var(--wait); }
+	.line { font: var(--t-subhead); overflow-wrap: anywhere; }
+	.one { font-weight: 600; margin-right: 6px; }
+	.sub { color: var(--text-muted); }
+	.acts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+	.whyb { min-height: 32px; padding: 0 8px; border: 0; background: none; color: var(--text-muted); font: var(--t-footnote); cursor: pointer; border-radius: 6px; }
+	.whyb:hover, .whyb[aria-expanded='true'] { color: var(--text); }
+	.whyb:hover { text-decoration: underline; text-underline-offset: 3px; }
+	.whyb:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.raw { display: grid; gap: 4px; padding: 8px 10px; border-radius: var(--r-btn); background: var(--surface-2); color: var(--text-muted); font: var(--t-footnote); overflow-wrap: anywhere; }
+	.raw[hidden] { display: none; }
+	.mono { font-family: var(--font-mono); }
+	.ed { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+	.ed .input { flex: 1 1 180px; min-width: 0; height: 32px; }
+	.err { color: var(--fail); font: var(--t-footnote); }
+	.state { color: var(--text-muted); font: var(--t-subhead); font-weight: 600; }
+	.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+	.subs { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+	.subs > li { padding-top: 10px; border-top: 1px solid var(--line); min-width: 0; }
+	.subs .dec { box-shadow: none; padding-left: 0; }
 </style>

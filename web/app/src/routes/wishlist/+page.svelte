@@ -26,10 +26,9 @@
 	import { seasonWords } from '#lib/shows.ts';
 	import { albumWords } from '#lib/music/music.ts';
 	import { titleStatus } from '#lib/title-status.ts';
-	import VariantBar from '#lib/ui/VariantBar.svelte';
 	import { askHref, type ApprovalsCtx, type DecideOptions, type Member } from '#lib/approvals/approvals.ts';
 	import { askDetails, askInfo, seasonEpisodes, wantDetails } from '#lib/approvals/details.svelte.ts';
-	import { askedByOne, askers, stageKey, stageLooks } from '#lib/approvals/inbox.ts';
+	import { askedByOne, askers } from '#lib/approvals/inbox.ts';
 	import { kidLabel } from '#lib/kid.ts';
 	import StageViews from '#lib/approvals/StageViews.svelte';
 
@@ -357,8 +356,8 @@
 		return 'HolyArrs is looking for it.';
 	}
 
-	// The Stage views Luis compares (?stage=1…5); 0 is the page above as it is today.
-	let stageLook = $state(0);
+	// Approvers get the grouped list beside the large ask; members keep their Wishlist.
+	const stageLook = $derived(approver ? 5 : 0);
 	// Who asked: picture and age limit, for the Inbox looks.
 	let members = $state<Record<number, Member>>({});
 	let membersAsked = false;
@@ -456,7 +455,7 @@
 	subtitle={approver ? 'What people asked for. Approve to add, or turn down with a note.' : 'The movies, shows and music you asked for, and where each one is.'}
 >
 	{#snippet actions()}
-		{#if session.can('ask')}
+		{#if session.can('ask') && !approver}
 			<Button icon="film" variant="primary" href={to(`/search`)}><span class="ask-d">Ask for a movie</span><span class="ask-m"><span class="sr-only">Ask for a </span>Movie</span></Button>
 			<Button icon="tv" href={to(`/search?kind=show`)}><span class="ask-d">Ask for a show</span><span class="ask-m"><span class="sr-only">Ask for a </span>Show</span></Button>
 			<Button icon="music" href={to(`/search?kind=music`)}><span class="ask-d">Ask for music</span><span class="ask-m"><span class="sr-only">Ask for </span>Music</span></Button>
@@ -650,7 +649,7 @@
 						action={{ label: 'Search', href: to('/search') }}
 					/>
 				{:else}
-					<StageViews {ctx} look={stageLook} />
+					<StageViews {ctx} />
 				{/if}
 			</PageLoader>
 		{/if}
@@ -681,7 +680,6 @@
 		{/if}
 {/snippet}
 
-<VariantBar options={stageLooks} bind:value={stageLook} param="stage" storageKey={stageKey} label="Approvals Stage view" />
 
 <Sheet
 	bind:open={decideOpen}

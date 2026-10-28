@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { askedByOne, askers, inboxTabs, stageLooks, loadPanel, loadSize, movieRelease, readInfo, runtimeShort, savePanel, saveSize, seasonRange, showNotOut, showSummary, watchSeason } from './inbox.ts';
+import { askedByOne, askers, inboxTabs, dateGroups, loadGroupBy, saveGroupBy, loadPanel, loadSize, movieRelease, readInfo, runtimeShort, savePanel, saveSize, seasonRange, showNotOut, showSummary, watchSeason } from './inbox.ts';
 
 const seasons = [
 	{ number: 0, episode_count: 2 },
@@ -13,8 +13,17 @@ const seasons = [
 const now = new Date('2026-10-27T12:00:00Z');
 
 describe('approvals inbox', () => {
-	it('has Now plus five arrangements and the glossary words on the tabs', () => {
-		expect(stageLooks.map((l) => l.value)).toEqual([0, 1, 2, 3, 4, 5]);
+	it('groups by date, newest first, and remembers Group by per member', () => {
+		const g = dateGroups([{ asked_at: '2026-10-01T10:00:00Z' }, { asked_at: '2026-10-27T11:00:00Z' }, { asked_at: '2026-10-24T10:00:00Z' }], now);
+		expect(g.map((x) => x.name)).toEqual(['Today', 'This week', 'Older']);
+		const m = new Map<string, string>();
+		const store = { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v) };
+		expect(loadGroupBy(3, store)).toBe('type');
+		saveGroupBy(3, 'date', store);
+		expect(loadGroupBy(3, store)).toBe('date');
+		expect(loadGroupBy(4, store)).toBe('type');
+	});
+	it('uses the glossary words on the tabs', () => {
 		expect(inboxTabs.map((t) => t.label)).toEqual(['Waiting', 'Approved', 'Turned down', 'Done', 'Failed']);
 	});
 

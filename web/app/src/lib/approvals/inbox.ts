@@ -7,15 +7,6 @@ import type { Ask } from '../types.ts';
 import type { AskTab } from '../wishlist.ts';
 
 /** The Stage views on the bottom bar (?stage=1…5): the picked ask large, the list roomier in each. */
-export const stageLooks: { value: number; label: string }[] = [
-	{ value: 0, label: 'Now' },
-	{ value: 1, label: '1 Wide list' },
-	{ value: 2, label: '2 By person' },
-	{ value: 3, label: '3 Poster strip' },
-	{ value: 4, label: '4 Cards' },
-	{ value: 5, label: '5 Queue' }
-];
-export const stageKey = 'holyarrs.view.approvals-stage';
 
 /** The status tabs, in the words the app uses (Downloads-style, each with its count). */
 export const inboxTabs: { tab: AskTab; label: string }[] = [
@@ -248,6 +239,34 @@ export function savePanel(member: number | undefined, open: boolean, store: Stor
 	try {
 		store?.setItem(key('panel', member), open ? 'shown' : 'hidden');
 	} catch { /* Private windows may refuse. */ }
+}
+
+export type GroupBy = 'type' | 'person' | 'date';
+export const groupByWords: Record<GroupBy, string> = { type: 'Type', person: 'Person', date: 'Date' };
+/** loadGroupBy reads how a member groups the Approvals list (by type when none is kept). */
+export function loadGroupBy(member: number | undefined, store: Store = globalThis.localStorage): GroupBy {
+	try {
+		const v = store?.getItem(key('group', member));
+		return v === 'person' || v === 'date' ? v : 'type';
+	} catch {
+		return 'type';
+	}
+}
+export function saveGroupBy(member: number | undefined, g: GroupBy, store: Store = globalThis.localStorage) {
+	try {
+		store?.setItem(key('group', member), g);
+	} catch { /* Private windows may refuse. */ }
+}
+/** dateGroups splits asks into Today, This week and Older, newest first in each. */
+export function dateGroups<T extends { asked_at: string }>(asks: T[], now = new Date()): { id: string; name: string; asks: T[] }[] {
+	const day = new Date(now); day.setHours(0, 0, 0, 0);
+	const week = day.getTime() - 6 * 864e5;
+	const g = [{ id: 'today', name: 'Today', asks: [] as T[] }, { id: 'week', name: 'This week', asks: [] as T[] }, { id: 'older', name: 'Older', asks: [] as T[] }];
+	for (const a of [...asks].sort((x, y) => Date.parse(y.asked_at) - Date.parse(x.asked_at))) {
+		const t = Date.parse(a.asked_at);
+		g[t >= day.getTime() ? 0 : t >= week ? 1 : 2].asks.push(a);
+	}
+	return g.filter((x) => x.asks.length);
 }
 
 /** askers lists the people with asks, by name, for the Asked by filter. */

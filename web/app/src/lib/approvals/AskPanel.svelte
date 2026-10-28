@@ -143,7 +143,12 @@
 	.bd.soft { filter: blur(26px) saturate(1.3); transform: scale(1.2); opacity: 0.75; }
 	.hero::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, var(--on-art-scrim-none) 0%, var(--on-art-scrim-mid) 45%, var(--on-art-scrim) 100%); pointer-events: none; }
 	.banner { position: absolute; inset: 0; z-index: 0; cursor: pointer; }
-	.hero:has(.banner:hover) .bd:not(.soft) { transform: scale(1.02); }
+	.hero:has(a:hover) .bd:not(.soft) { transform: scale(1.03); }
+	.hero:has(a:hover)::after { opacity: 0.85; }
+	.hero:has(a:hover) .open { text-decoration: underline; text-underline-offset: 3px; }
+	.hero:has(a:hover) .poster { transform: scale(1.03); }
+	.hero:has(a:active) .poster { transform: scale(0.99); }
+	.poster { transition: transform var(--dur-fast) var(--ease-out); }
 	.hero-in { position: relative; z-index: 1; display: flex; align-items: flex-end; gap: 16px; padding: 16px; width: 100%; color: var(--on-art); pointer-events: none; }
 	.hero-in a { pointer-events: auto; }
 	.poster { display: block; width: 84px; flex: none; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgb(0 0 0 / 40%); }
@@ -160,7 +165,7 @@
 	/* The picture, the banner and an Open link lead to the title's own page. */
 	a.pic { display: block; flex: none; border-radius: var(--r-sm); transition: transform var(--dur-fast) var(--ease-out); }
 	.music a.pic { border-radius: 50%; }
-	a.pic:hover { transform: scale(1.03); }
+	.slim-head a.pic:hover { transform: scale(1.03); }
 	a.pic:focus-visible, .open:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.open { display: inline-flex; align-items: center; gap: 2px; margin-top: 6px; font: var(--t-subhead); font-weight: 600; color: var(--accent-text); border-radius: var(--r-sm); }
 	.hero .open { color: #fff; }
