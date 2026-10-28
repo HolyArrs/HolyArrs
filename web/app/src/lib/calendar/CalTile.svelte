@@ -42,7 +42,6 @@
 	let failed = $state(false);
 	// A click anywhere on the card opens a window with the details (an
 	// episode's description, a movie's or album's facts) and a way to the page.
-	// The episode number sits beside the time.
 	const isEp = $derived(e.kind === 'episode');
 	const code = $derived(isEp ? epCode(g.entries) : '');
 	const epLines = $derived(isEp ? [[lines[0], code].filter(Boolean).join(' · '), n > 1 ? `${n} episodes` : e.episode_name || lines[1] || ''] : lines);
@@ -81,7 +80,7 @@
 		{/if}
 	</div>
 	{#snippet capLines()}
-		{#each epLines as l, i (i)}<p class="cap" class:when={i === 0} data-testid="cal-cap">{l}{#if have && i === epLines.length - 1}<span class="have"> · In the Library</span>{/if}</p>{/each}
+		{#each lines as l, i (i)}<p class="cap" class:when={i === 0} data-testid="cal-cap">{l}{#if have && i === lines.length - 1}<span class="have"> · In the Library</span>{/if}</p>{/each}
 	{/snippet}
 	<button type="button" class="caps tap" onclick={() => (open = true)} aria-haspopup="dialog" data-testid="cal-open">{@render capLines()}</button>
 	<Sheet bind:open title={entryTitle(e)} size="md">
