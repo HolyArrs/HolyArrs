@@ -153,9 +153,9 @@
 	.hero-in a { pointer-events: auto; }
 	.poster { display: block; width: 84px; flex: none; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgb(0 0 0 / 40%); }
 	.stage .poster { width: 132px; }
-	.round { aspect-ratio: 1; border-radius: 50%; overflow: hidden; background: var(--surface-3); --poster-ratio: 1; }
-	.round img { width: 100%; height: 100%; object-fit: cover; display: block; }
-	.poster.round { box-shadow: 0 10px 30px rgb(0 0 0 / 40%), 0 0 0 3px rgb(255 255 255 / 14%); }
+	/* The artist photo sits in the same frame as a poster: same size and shape for every kind. */
+	.round { aspect-ratio: 2 / 3; overflow: hidden; background: var(--surface-3); }
+	.round img { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; display: block; }
 	.head { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 	.tag { padding: 1px 8px; border-radius: var(--r-sm); background: var(--surface-2); color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
 	.tag.on-art { background: rgb(255 255 255 / 18%); color: var(--on-art); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
