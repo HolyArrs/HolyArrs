@@ -243,3 +243,33 @@ func TestPlanSeedOnceAndMixGate(t *testing.T) {
 		t.Fatalf("seed x used by %d rows", seeds)
 	}
 }
+
+func TestPlanStoreNewestServesStaleAndOld(t *testing.T) {
+	var s PlanStore
+	// 02:00: yesterday's plans are kept until 04:00.
+	now := time.Date(2026, 10, 28, 2, 0, 0, 0, time.UTC)
+	y := PlanKey{Member: 3, Date: "2026-10-27", View: "US"}
+	p := &Plan{}
+	s.Put(y, p, now.Add(-10*time.Hour))
+	if _, ok := s.Current(PlanKey{Member: 3, Date: "2026-10-28", View: "US"}, now); ok {
+		t.Fatal("no plan for today expected")
+	}
+	if got, ok := s.Newest(3, "US", now); !ok || got != p {
+		t.Fatal("yesterday's plan not served as the last good plan")
+	}
+	s.MarkStaleKey(y)
+	if _, ok := s.Current(y, now); ok {
+		t.Fatal("stale plan answered as current")
+	}
+	if got, ok := s.Newest(3, "US", now); !ok || got != p {
+		t.Fatal("stale plan not kept for serving")
+	}
+	q := &Plan{Partial: true}
+	s.Put(y, q, now.Add(-time.Hour))
+	if got, ok := s.Newest(3, "US", now); !ok || got != q {
+		t.Fatal("partial plan past PartialTTL not served while it is retried")
+	}
+	if _, ok := s.Newest(4, "US", now); ok {
+		t.Fatal("another member's plan served")
+	}
+}

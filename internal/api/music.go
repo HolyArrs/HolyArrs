@@ -179,6 +179,13 @@ func (a *API) lookupArtists(w http.ResponseWriter, r *http.Request) {
 		ctx = metadata.MemberLookup(ctx)
 	}
 	found, err := a.s.Library.LookupArtists(ctx, term)
+	if errors.Is(err, library.ErrSearchFilling) {
+		// An unseen name: the search keeps running behind and is kept, so
+		// the next ask is answered from the store.
+		w.Header().Set("Retry-After", "2")
+		writeJSON(w, http.StatusOK, map[string]any{"artists": []ArtistResult{}, "source": "musicbrainz", "pending": true})
+		return
+	}
 	if err != nil {
 		musicError(w, err)
 		return

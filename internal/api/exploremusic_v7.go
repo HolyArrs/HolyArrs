@@ -1,12 +1,14 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -642,32 +644,26 @@ func (a *API) exploreMusicV7(w http.ResponseWriter, r *http.Request) {
 	var p *musicscore.Plan
 	if cur := r.URL.Query().Get("cursor"); cur != "" {
 		c, ok := a.musicCursorOpen(ctx, cur)
-		if ok && c.Member == member && c.Date == key.Date && c.Region == region {
-			p, ok = a.musicv2.plans.Get(key, c.Version, now)
+		if ok && c.Member == member && c.Region == region {
+			// The plan's own day: a last good plan of yesterday pages on.
+			p, ok = a.musicv2.plans.Get(musicscore.PlanKey{Member: member, Date: c.Date, View: region}, c.Version, now)
 		}
 		if !ok || p == nil {
 			fail(w, http.StatusBadRequest, "these rows expired; load Music again")
 			return
 		}
 		offset = c.Offset
-	} else if cp, ok := a.musicv2.plans.Current(key, now); ok {
-		p = cp
-	} else if snap, ok := a.loadMusicV7Snap(ctx, member, region, key.Date, lib, now); ok {
-		// Kept on disk (a restart): served at once, rebuilt behind when old.
-		ord := snap.order()
-		p = musicscore.NewPlan(ord.v7.rows, a.musicV7HeadRows(), musicV7Max, member, key.Date, ord.v7.seen)
-		p.Meta = ord
-		a.musicv2.plans.Put(key, p, now)
-		if now.Sub(snap.Built) >= musicV7SnapFresh || now.Before(snap.Built) {
-			a.refreshMusicV7(member, region, key, now)
-		}
 	} else {
-		p = a.buildMusicV7Plan(ctx, member, region, key, lib, acts, now)
+		a.rememberMusicV7Ask(member, region, now)
+		p = a.musicV7PlanFor(ctx, member, region, key, lib, acts, now)
 	}
 	ord := p.Meta.(*musicV2Order)
 	var rows []musicscore.Row
 	more := false
-	if offset == 0 && p.Total() <= musicV7Few {
+	if p.Version == 0 {
+		// A plan cut short at the visitor's deadline is not kept: no cursor.
+		rows = p.All(nil)
+	} else if offset == 0 && p.Total() <= musicV7Few {
 		rows = p.All(nil)
 	} else {
 		rows, more = p.Page(offset/musicscore.PlanBatch, nil)
@@ -723,7 +719,7 @@ func (a *API) exploreMusicV7(w http.ResponseWriter, r *http.Request) {
 	sinkAsked(out)
 	next := ""
 	if more {
-		next, err = a.musicCursorSign(ctx, musicV7Cursor{Member: member, Date: key.Date, Region: region, Version: p.Version, Offset: offset + musicscore.PlanBatch})
+		next, err = a.musicCursorSign(ctx, musicV7Cursor{Member: member, Date: p.Date, Region: region, Version: p.Version, Offset: offset + musicscore.PlanBatch})
 		if err != nil {
 			internal(w, err)
 			return
@@ -738,7 +734,7 @@ func (a *API) exploreMusicV7(w http.ResponseWriter, r *http.Request) {
 	}
 	a.exploreCaching(w, r, "private, no-cache")
 	if offset > 0 {
-		writeJSON(w, http.StatusOK, map[string]any{"v2": true, "v7": true, "rows": out, "next": next, "total": p.Total()})
+		writeJSONTagged(w, r, map[string]any{"v2": true, "v7": true, "rows": out, "next": next, "total": p.Total()})
 		return
 	}
 	var hero *MusicCard
@@ -757,7 +753,7 @@ func (a *API) exploreMusicV7(w http.ResponseWriter, r *http.Request) {
 	if hero != nil {
 		a.rememberMusicCards(nil, append([]MusicCard{*hero}, alts...)...)
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"v2": true, "v7": true, "kid": false, "cold": ord.Cold, "genres": []string{}, "genre": "", "region": region, "regions": regions, "hero": hero, "hero_alts": alts, "rows": out, "next": next, "total": p.Total()})
+	writeJSONTagged(w, r, map[string]any{"v2": true, "v7": true, "kid": false, "cold": ord.Cold, "partial": p.Partial, "genres": []string{}, "genre": "", "region": region, "regions": regions, "hero": hero, "hero_alts": alts, "rows": out, "next": next, "total": p.Total()})
 }
 
 // prewarmMusicV7 runs a second after Music starts and after each Music
@@ -780,6 +776,9 @@ func (a *API) prewarmMusicV7(ctx context.Context) {
 	}
 	key := musicscore.PlanKey{Member: 0, Date: musicscore.Day(now), View: "global"}
 	p := a.buildMusicV7Plan(ctx, 0, "global", key, lib, acts, now)
+	// The member and region pairs actually asked for lately are built ahead
+	// too, so their first visit of the day reads a ready plan.
+	defer a.prewarmMusicV7Asked(ctx, key.Date, lib, now)
 	if p != nil && p.Meta != nil {
 		// The first pages' albums and artists: details and pictures ahead.
 		pages := musicV7AheadPages
@@ -793,3 +792,189 @@ func (a *API) prewarmMusicV7(ctx context.Context) {
 
 // musicV7AheadPages is how many v7 pages the prewarm fetches ahead.
 const musicV7AheadPages = 3
+
+// prewarmMusicV7Asked builds today's plan of each recently asked member and
+// region that has none yet.
+func (a *API) prewarmMusicV7Asked(ctx context.Context, date string, lib *musicLib, now time.Time) {
+	for _, k := range a.musicV7Asked(now) {
+		if ctx.Err() != nil {
+			return
+		}
+		pk := musicscore.PlanKey{Member: k.member, Date: date, View: k.region}
+		if _, ok := a.musicv2.plans.Current(pk, now); ok || (k.member == 0 && k.region == "global") {
+			continue
+		}
+		if acts, err := a.musicActsOf(ctx, k.member); err == nil {
+			a.buildMusicV7Plan(ctx, k.member, k.region, pk, lib, acts, now)
+		}
+	}
+}
+
+// musicV7Wait is the longest a visitor waits for a plan build; past it the
+// last good plan (or, with none, what the build has so far) is answered.
+var musicV7Wait = 1500 * time.Millisecond
+
+// musicV7PartialRetry is how soon a plan that lost a source is rebuilt
+// behind while it keeps being served.
+const musicV7PartialRetry = time.Minute
+
+// musicV7PlanFor answers page 1's plan without building inline while any
+// earlier plan exists: the current plan; else the last good plan (stale,
+// partial or yesterday's, in memory or on disk) with a rebuild behind;
+// else a build cut at musicV7Wait.
+func (a *API) musicV7PlanFor(ctx context.Context, member int64, region string, key musicscore.PlanKey, lib *musicLib, acts *musicActs, now time.Time) *musicscore.Plan {
+	if p, ok := a.musicv2.plans.Current(key, now); ok {
+		if p.Partial && now.Sub(p.Built) >= musicV7PartialRetry {
+			a.refreshMusicV7(member, region, key, now)
+		}
+		return p
+	}
+	if old, ok := a.musicv2.plans.Newest(member, region, now); ok {
+		done := a.refreshMusicV7(member, region, key, now)
+		if p := a.waitMusicV7(done, key, now); p != nil {
+			return p
+		}
+		return old
+	}
+	if snap, current, ok := a.loadMusicV7Snap(ctx, member, region, key.Date, lib, now); ok {
+		// Kept on disk (a restart): served at once, rebuilt behind when old
+		// (the rebuild is answered when it is done within the deadline).
+		if !current {
+			if p := a.waitMusicV7(a.refreshMusicV7(member, region, key, now), key, now); p != nil {
+				return p
+			}
+		}
+		ord := snap.order()
+		p := musicscore.NewPlan(ord.v7.rows, a.musicV7HeadRows(), musicV7Max, member, key.Date, ord.v7.seen)
+		p.Meta = ord
+		a.musicv2.plans.Put(key, p, now)
+		if !current {
+			a.musicv2.plans.MarkStaleKey(key)
+			a.refreshMusicV7(member, region, key, now)
+		}
+		return p
+	}
+	// Nothing kept at all: the full build runs behind; the visitor gets it
+	// if it is done in time, else a build cut at the deadline.
+	done := a.refreshMusicV7(member, region, key, now)
+	dctx, cancel := context.WithTimeout(ctx, musicV7Wait)
+	defer cancel()
+	// Most builds read kept data and are done well within the deadline; only
+	// a slow one gets a second, cut build beside it.
+	grace := time.NewTimer(musicV7Wait / 3)
+	defer grace.Stop()
+	select {
+	case <-done:
+		if p, ok := a.musicv2.plans.Current(key, now); ok {
+			return p
+		}
+	case <-grace.C:
+	}
+	cut := make(chan *musicscore.Plan, 1)
+	go func() {
+		ord := a.buildMusicV3(context.WithValue(dctx, musicMissKey{}, &musicMiss{}), member, region, lib, acts, now)
+		if ord.v7 == nil {
+			ord.v7 = &musicV7Cand{metas: map[string]MusicRow{}, cards: map[string]map[string]MusicCard{}}
+		}
+		p := musicscore.NewPlan(ord.v7.rows, a.musicV7HeadRows(), musicV7Max, member, key.Date, ord.v7.seen)
+		p.Meta = ord
+		p.Partial = true
+		cut <- p
+	}()
+	// The full build is preferred while the deadline lasts.
+	select {
+	case <-done:
+		if p, ok := a.musicv2.plans.Current(key, now); ok {
+			return p
+		}
+	case <-dctx.Done():
+	}
+	t := time.NewTimer(300 * time.Millisecond)
+	defer t.Stop()
+	select {
+	case p := <-cut:
+		return p
+	case <-t.C:
+		p := musicscore.NewPlan(nil, nil, musicV7Max, member, key.Date, nil)
+		p.Meta = &musicV2Order{v7: &musicV7Cand{metas: map[string]MusicRow{}, cards: map[string]map[string]MusicCard{}}}
+		p.Partial = true
+		return p
+	}
+}
+
+// waitMusicV7 waits up to musicV7Wait for a rebuild and answers its plan.
+func (a *API) waitMusicV7(done <-chan struct{}, key musicscore.PlanKey, now time.Time) *musicscore.Plan {
+	t := time.NewTimer(musicV7Wait)
+	defer t.Stop()
+	select {
+	case <-done:
+		if p, ok := a.musicv2.plans.Current(key, now); ok {
+			return p
+		}
+	case <-t.C:
+	}
+	return nil
+}
+
+// musicV7Recent is how long an asked member and region stay prewarmed.
+const (
+	musicV7Recent    = 7 * 24 * time.Hour
+	musicV7RecentMax = 16
+)
+
+type musicV7AskKey struct {
+	member int64
+	region string
+}
+
+// rememberMusicV7Ask notes that member asked for region's rows, so the
+// prewarm builds that plan ahead next time.
+func (a *API) rememberMusicV7Ask(member int64, region string, now time.Time) {
+	a.musicv2.asked.Store(musicV7AskKey{member, region}, now)
+}
+
+// musicV7Asked answers the recently asked member and region pairs, newest
+// first, at most musicV7RecentMax.
+func (a *API) musicV7Asked(now time.Time) []musicV7AskKey {
+	type at struct {
+		k musicV7AskKey
+		t time.Time
+	}
+	var l []at
+	a.musicv2.asked.Range(func(k, v any) bool {
+		if t := v.(time.Time); now.Sub(t) < musicV7Recent {
+			l = append(l, at{k.(musicV7AskKey), t})
+		} else {
+			a.musicv2.asked.Delete(k)
+		}
+		return true
+	})
+	sort.Slice(l, func(i, j int) bool { return l[i].t.After(l[j].t) })
+	out := make([]musicV7AskKey, 0, min(len(l), musicV7RecentMax))
+	for _, e := range l[:min(len(l), musicV7RecentMax)] {
+		out = append(out, e.k)
+	}
+	return out
+}
+
+// writeJSONTagged writes v with a content ETag and answers 304 when the
+// visitor already has it.
+func writeJSONTagged(w http.ResponseWriter, r *http.Request, v any) {
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(v); err != nil {
+		internal(w, err)
+		return
+	}
+	sum := sha256.Sum256(buf.Bytes())
+	tag := `"` + hex.EncodeToString(sum[:12]) + `"`
+	w.Header().Set("ETag", tag)
+	for _, t := range strings.Split(r.Header.Get("If-None-Match"), ",") {
+		if t = strings.TrimPrefix(strings.TrimSpace(t), "W/"); t == tag || t == "*" {
+			w.WriteHeader(http.StatusNotModified)
+			return
+		}
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(buf.Bytes())
+}

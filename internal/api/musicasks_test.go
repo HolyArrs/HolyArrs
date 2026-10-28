@@ -152,11 +152,12 @@ func TestMemberLookupsAreCapped(t *testing.T) {
 	fa.block, fa.entered = make(chan struct{}), make(chan struct{}, 4)
 	fa.mu.Unlock()
 	var wg sync.WaitGroup
-	for i := 0; i < 2; i++ {
+	// Two different names (one name asked twice shares one search).
+	for _, term := range []string{"lab", "band"} {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			r.ana.call("GET", "/api/v1/artists/lookup?term=lab", "", 200)
+			r.ana.call("GET", "/api/v1/artists/lookup?term="+term, "", 200)
 		}()
 	}
 	<-fa.entered
@@ -171,8 +172,9 @@ func TestMemberLookupsAreCapped(t *testing.T) {
 	fa.block = nil
 	fa.members = nil
 	fa.mu.Unlock()
-	r.ana.call("GET", "/api/v1/artists/lookup?term=lab", "", 200)
-	r.owner.call("GET", "/api/v1/artists/lookup?term=lab", "", 200)
+	// Names not searched yet (searched ones are answered from the store).
+	r.ana.call("GET", "/api/v1/artists/lookup?term=lab+one", "", 200)
+	r.owner.call("GET", "/api/v1/artists/lookup?term=lab+two", "", 200)
 	fa.mu.Lock()
 	defer fa.mu.Unlock()
 	if len(fa.members) != 2 || !fa.members[0] || fa.members[1] {

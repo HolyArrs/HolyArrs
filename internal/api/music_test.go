@@ -300,13 +300,14 @@ func TestMusicAPI(t *testing.T) {
 	fa.mu.Lock()
 	fa.err = metadata.ErrMusicBusy
 	fa.mu.Unlock()
-	do(t, "GET", u+"/artists/lookup?term=lab", "", 503)
+	// (A name searched before is answered from the store: a new one is asked.)
+	do(t, "GET", u+"/artists/lookup?term=lab+busy", "", 503)
 
 	// MusicBrainz answering oddly: plain words, no status code.
 	fa.mu.Lock()
 	fa.err = &metadata.MusicStatusError{Code: 500}
 	fa.mu.Unlock()
-	if b := do(t, "GET", u+"/artists/lookup?term=lab", "", 502); strings.Contains(string(b), "500") || !strings.Contains(string(b), "could not answer") {
+	if b := do(t, "GET", u+"/artists/lookup?term=lab+odd", "", 502); strings.Contains(string(b), "500") || !strings.Contains(string(b), "could not answer") {
 		t.Fatalf("502 words %s", b)
 	}
 }

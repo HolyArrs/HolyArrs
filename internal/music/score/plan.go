@@ -454,3 +454,33 @@ func (s *PlanStore) MarkStale(member int64) {
 		}
 	}
 }
+
+// MarkStaleKey marks one key's plans stale.
+func (s *PlanStore) MarkStaleKey(k PlanKey) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.stale == nil {
+		return
+	}
+	if _, ok := s.m[k]; ok {
+		s.stale[k] = true
+	}
+}
+
+// Newest answers the member's newest kept plan for view, of any kept day,
+// stale or past PartialTTL included: the last good plan, served while a new
+// one is built behind.
+func (s *PlanStore) Newest(member int64, view string, now time.Time) (*Plan, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.sweep(now)
+	var best *Plan
+	bestDate := ""
+	for k, l := range s.m {
+		if k.Member != member || k.View != view || len(l) == 0 || k.Date < bestDate {
+			continue
+		}
+		best, bestDate = l[len(l)-1], k.Date
+	}
+	return best, best != nil
+}

@@ -43,6 +43,8 @@ type musicV2State struct {
 	clearing atomic.Bool
 	// refreshing holds the plans being rebuilt behind a plan read from disk.
 	refreshing sync.Map
+	// asked holds the member and region pairs asked for lately (prewarm).
+	asked sync.Map
 	// now is the clock (tests); nil is time.Now.
 	now func() time.Time
 }

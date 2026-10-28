@@ -344,8 +344,9 @@ func TestListTileOfSlug(t *testing.T) {
 	}
 }
 
-// After a restart, kept plans built from older shelves are dropped so the
-// day's plan picks up the new list rows; unchanged shelves keep them.
+// After a restart, kept plans built from older shelves are marked stale so
+// the day's plan picks up the new list rows (the stale plan is still served
+// while it is rebuilt); unchanged shelves keep them current.
 func TestListShelvesChangeWhileDownDropsKeptPlans(t *testing.T) {
 	r := listRig(t, "household_indie.json")
 	a := r.api
@@ -357,7 +358,12 @@ func TestListShelvesChangeWhileDownDropsKeptPlans(t *testing.T) {
 	}
 	kept := func() bool {
 		_, ok, _ := store.LookupCache{Store: a.s.Store}.Get(ctx, snap, now)
-		return ok
+		clock := now
+		if a.musicv2.now != nil {
+			clock = a.musicv2.now()
+		}
+		_, stale, _ := store.LookupCache{Store: a.s.Store}.Get(ctx, musicStalePrefix+"all", clock)
+		return ok && !stale
 	}
 	wait := func(want bool) {
 		for i := 0; i < 50 && kept() != want; i++ {
@@ -378,7 +384,7 @@ func TestListShelvesChangeWhileDownDropsKeptPlans(t *testing.T) {
 	}
 	time.Sleep(100 * time.Millisecond)
 	wait(true)
-	// Shelves changed while down: the kept plan goes.
+	// Shelves changed while down: the kept plan is no longer current.
 	_ = store.LookupCache{Store: a.s.Store}.Put(ctx, listSigPrefix+"shelves:us", []byte("2026-10-23|5"), now, now.Add(time.Hour))
 	a.listSeen = nil
 	a.musicv2.cand = musicscore.Candidates{}

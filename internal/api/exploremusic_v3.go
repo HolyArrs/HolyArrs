@@ -305,10 +305,18 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 		}
 	}
 	// World-list shelves (music_lists_v1); nil when off.
-	shelves := a.musicShelvesOf(ctx, region, now)
-
+	// These metadata reads are independent: they run at once.
+	var shelves *metadata.MusicShelves
+	var data map[string]*metadata.MusicArtistData
+	var albums, songs []metadata.MusicChartItem
+	var reads sync.WaitGroup
+	reads.Add(4)
+	go func() { defer reads.Done(); shelves = a.musicShelvesOf(ctx, region, now) }()
 	// Server data (layer 1): genre votes and top albums of library artists.
-	data := a.musicArtistDataOf(ctx, libIDs, now)
+	go func() { defer reads.Done(); data = a.musicArtistDataOf(ctx, libIDs, now) }()
+	go func() { defer reads.Done(); albums = a.musicChartOf(ctx, region, "albums", now) }()
+	go func() { defer reads.Done(); songs = a.musicChartOf(ctx, region, "songs", now) }()
+	reads.Wait()
 	shares := map[string]map[string]float64{}
 	primary := map[string]string{} // artist mbid → top-vote genre key
 	sharesOf := func(d *metadata.MusicArtistData) (map[string]float64, string) {
@@ -341,8 +349,6 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 	}
 
 	// Charts: P per album, best chart P per artist.
-	albums := a.musicChartOf(ctx, region, "albums", now)
-	songs := a.musicChartOf(ctx, region, "songs", now)
 	chartP := map[string]float64{}
 	pcBest := map[string]float64{}
 	for _, l := range [][]metadata.MusicChartItem{albums, songs} {

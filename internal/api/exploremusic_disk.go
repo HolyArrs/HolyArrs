@@ -25,7 +25,7 @@ const (
 	musicDiskPrefix = "music_l1:"
 	musicSnapPrefix = "music_v7_plan:"
 	// musicBatchParallel is how many metadata chunks are fetched at once.
-	musicBatchParallel = 4
+	musicBatchParallel = 6
 	// musicV7SnapKeep is how long a plan stays on disk.
 	musicV7SnapKeep = 48 * time.Hour
 	// musicV7SnapFresh is the age after which a plan read from disk is rebuilt.
@@ -167,20 +167,36 @@ func (a *API) saveMusicV7Snap(ctx context.Context, member int64, region, date st
 	_ = store.LookupCache{Store: a.s.Store}.Put(ctx, musicSnapKey(member, region), b, now, now.Add(musicV7SnapKeep))
 }
 
-// loadMusicV7Snap reads a member's kept plan of date for this Library.
-func (a *API) loadMusicV7Snap(ctx context.Context, member int64, region, date string, lib *musicLib, now time.Time) (*musicV7Snap, bool) {
+// musicStalePrefix marks kept plans stale (a follow, a Library or list
+// change) instead of deleting them: a stale plan is still served while its
+// replacement is built.
+const musicStalePrefix = "music_v7_stale:"
+
+// loadMusicV7Snap reads a member's last kept plan. current says it is of
+// date, of this Library, not marked stale since and not older than
+// musicV7SnapFresh; any other kept plan is still the last good one.
+func (a *API) loadMusicV7Snap(ctx context.Context, member int64, region, date string, lib *musicLib, now time.Time) (s *musicV7Snap, current, ok bool) {
 	if a.s.Store == nil {
-		return nil, false
+		return nil, false, false
 	}
-	b, ok, err := store.LookupCache{Store: a.s.Store}.Get(ctx, musicSnapKey(member, region), now)
+	lc := store.LookupCache{Store: a.s.Store}
+	b, ok, err := lc.Get(ctx, musicSnapKey(member, region), now)
 	if err != nil || !ok {
-		return nil, false
+		return nil, false, false
 	}
-	var s musicV7Snap
-	if json.Unmarshal(b, &s) != nil || s.Date != date || s.Lib != musicLibPrint(lib) {
-		return nil, false
+	s = &musicV7Snap{}
+	if json.Unmarshal(b, s) != nil {
+		return nil, false, false
 	}
-	return &s, true
+	current = s.Date == date && s.Lib == musicLibPrint(lib) && now.Sub(s.Built) < musicV7SnapFresh && !now.Before(s.Built)
+	for _, who := range []string{"all", strconv.FormatInt(member, 10)} {
+		if m, ok, err := lc.Get(ctx, musicStalePrefix+who, now); err == nil && ok {
+			if at, err := time.Parse(time.RFC3339Nano, string(m)); err == nil && !s.Built.After(at) {
+				current = false
+			}
+		}
+	}
+	return s, current, true
 }
 
 // order turns a kept plan back into the build the handler renders.
@@ -208,22 +224,27 @@ func (a *API) buildMusicV7Plan(ctx context.Context, member int64, region string,
 	p.Meta = ord
 	p.Partial = miss.failed.Load()
 	if ctx.Err() == nil {
-		a.musicv2.plans.Put(key, p, now)
+		// On disk first: a visitor waiting on the memory copy then finds
+		// the disk copy in place too.
 		if !p.Partial {
 			a.saveMusicV7Snap(ctx, member, region, key.Date, lib, ord, now)
 		}
+		a.musicv2.plans.Put(key, p, now)
 	}
 	return p
 }
 
 // refreshMusicV7 rebuilds a member's plan in the background (one at a time
-// per plan key); the new plan replaces the one read from disk.
-func (a *API) refreshMusicV7(member int64, region string, key musicscore.PlanKey, now time.Time) {
+// per plan key); the new plan replaces the one being served. The channel
+// closes when the build is done.
+func (a *API) refreshMusicV7(member int64, region string, key musicscore.PlanKey, now time.Time) <-chan struct{} {
 	k := musicSnapKey(member, region) + "|" + key.Date
-	if _, busy := a.musicv2.refreshing.LoadOrStore(k, true); busy {
-		return
+	done := make(chan struct{})
+	if v, busy := a.musicv2.refreshing.LoadOrStore(k, done); busy {
+		return v.(chan struct{})
 	}
 	go func() {
+		defer close(done)
 		defer a.musicv2.refreshing.Delete(k)
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()
@@ -237,21 +258,24 @@ func (a *API) refreshMusicV7(member int64, region string, key musicscore.PlanKey
 		}
 		a.buildMusicV7Plan(ctx, member, region, key, lib, acts, now)
 	}()
+	return done
 }
 
-// forgetMusicV7Snaps drops a member's kept plans (-1: everyone's), with
-// the in-memory ones marked stale (a follow, a Library change).
+// forgetMusicV7Snaps marks a member's plans stale (-1: everyone's), in
+// memory and on disk (a follow, a Library change). Nothing is deleted: the
+// stale plan is served while the next visit's rebuild runs behind.
 func (a *API) forgetMusicV7Snaps(member int64) {
 	a.musicv2.plans.MarkStale(member)
 	if a.s.Store == nil {
 		return
 	}
-	like := musicSnapPrefix + "%"
+	who := "all"
 	if member >= 0 {
-		like = musicSnapPrefix + strconv.FormatInt(member, 10) + "|%"
+		who = strconv.FormatInt(member, 10)
 	}
-	_ = a.s.Store.Write(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec("DELETE FROM lookup_cache WHERE key LIKE ?", like)
-		return err
-	})
+	now := time.Now().UTC()
+	if a.musicv2.now != nil {
+		now = a.musicv2.now().UTC()
+	}
+	_ = store.LookupCache{Store: a.s.Store}.Put(context.Background(), musicStalePrefix+who, []byte(now.Format(time.RFC3339Nano)), now, now.Add(musicV7SnapKeep))
 }

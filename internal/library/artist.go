@@ -3,12 +3,14 @@ package library
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
@@ -100,7 +102,106 @@ func (s *Service) LookupArtists(ctx context.Context, term string) ([]metadata.Ar
 		}
 		return []metadata.Artist{a}, nil
 	}
-	return p.SearchArtists(ctx, term)
+	return s.searchArtistsKept(ctx, p, term)
+}
+
+// Name search keeps every answer (lookup_cache), so a name asked before is
+// answered from disk at once and refreshed behind when old; an unseen name
+// waits at most ArtistSearchWait for the outside search, which then keeps
+// running in the background and fills the store for the next ask.
+const (
+	artistSearchPrefix = "artist_search:"
+	artistSearchFresh  = 24 * time.Hour
+	artistSearchKeep   = 30 * 24 * time.Hour
+	artistSearchLimit  = 4
+	artistSearchTotal  = 45 * time.Second
+)
+
+// ArtistSearchWait is how long a visitor waits for an unseen name.
+var ArtistSearchWait = 2 * time.Second
+
+// ErrSearchFilling says an unseen name is still being searched; ask again.
+var ErrSearchFilling = errors.New("name search still running")
+
+type keptSearch struct {
+	At      time.Time         `json:"at"`
+	Artists []metadata.Artist `json:"artists"`
+}
+
+type searchFlight struct {
+	done chan struct{}
+	out  []metadata.Artist
+	err  error
+}
+
+var artistSearches = struct {
+	sync.Mutex
+	m     map[string]*searchFlight
+	slots chan struct{}
+}{m: map[string]*searchFlight{}, slots: make(chan struct{}, artistSearchLimit)}
+
+func (s *Service) searchArtistsKept(ctx context.Context, p metadata.ArtistProvider, term string) ([]metadata.Artist, error) {
+	key := artistSearchPrefix + strings.Join(strings.Fields(strings.ToLower(term)), " ")
+	now := s.now()
+	if s.Store != nil {
+		if b, ok, err := (store.LookupCache{Store: s.Store}).Get(ctx, key, now); err == nil && ok {
+			var k keptSearch
+			if json.Unmarshal(b, &k) == nil && k.Artists != nil {
+				if now.Sub(k.At) >= artistSearchFresh {
+					s.artistSearch(ctx, p, key, term)
+				}
+				return k.Artists, nil
+			}
+		}
+	}
+	f := s.artistSearch(ctx, p, key, term)
+	if f == nil {
+		return nil, ErrSearchFilling
+	}
+	t := time.NewTimer(ArtistSearchWait)
+	defer t.Stop()
+	select {
+	case <-f.done:
+		return f.out, f.err
+	case <-t.C:
+		return nil, ErrSearchFilling
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+
+// artistSearch joins or starts the background search of term (nil when
+// every slot is busy); a found answer is kept.
+func (s *Service) artistSearch(ctx context.Context, p metadata.ArtistProvider, key, term string) *searchFlight {
+	artistSearches.Lock()
+	defer artistSearches.Unlock()
+	if f, ok := artistSearches.m[key]; ok {
+		return f
+	}
+	select {
+	case artistSearches.slots <- struct{}{}:
+	default:
+		return nil
+	}
+	f := &searchFlight{done: make(chan struct{})}
+	artistSearches.m[key] = f
+	bg, cancel := context.WithTimeout(context.WithoutCancel(ctx), artistSearchTotal)
+	go func() {
+		defer cancel()
+		f.out, f.err = p.SearchArtists(bg, term)
+		if f.err == nil && f.out != nil && s.Store != nil {
+			now := s.now()
+			if b, err := json.Marshal(keptSearch{At: now, Artists: f.out}); err == nil {
+				_ = store.LookupCache{Store: s.Store}.Put(bg, key, b, now, now.Add(artistSearchKeep))
+			}
+		}
+		artistSearches.Lock()
+		delete(artistSearches.m, key)
+		artistSearches.Unlock()
+		<-artistSearches.slots
+		close(f.done)
+	}()
+	return f
 }
 
 // applyArtist copies looked-up details onto an artist Title.
