@@ -9,11 +9,14 @@
 	import { ago, dateTime } from './format.ts';
 	import { endedWords, order, others, type SessionRow } from './sessions.ts';
 
-	let { path, name = '' }: { path: string; name?: string } = $props();
+	// first: how many rows show before Show all (long lists stay short).
+	let { path, name = '', first = Infinity }: { path: string; name?: string; first?: number } = $props();
 	const mine = $derived(path === '/auth/sessions');
 	let rows = $state<SessionRow[] | null>(null);
 	let error = $state('');
 	let busy = $state(false);
+	let all = $state(false);
+	const shown = $derived(rows ? (all ? rows : rows.slice(0, first)) : []);
 
 	async function load() {
 		try {
@@ -65,7 +68,7 @@
 		</div>
 	{:else}
 		<ul class="rows">
-			{#each rows as s (s.id)}
+			{#each shown as s (s.id)}
 				<li data-testid="session" data-current={s.current}>
 					<span class="grow small">
 						<b>{s.device}</b>
@@ -81,6 +84,9 @@
 				</li>
 			{/each}
 		</ul>
+		{#if rows.length > shown.length}
+			<button type="button" class="more" onclick={() => (all = true)} data-testid="sessions-all">Show all {rows.length} devices</button>
+		{/if}
 		{#if mine ? others(rows) > 0 : rows.length > 0}
 			<div class="row" style="margin-top: var(--s-3)">
 				<Button type="button" disabled={busy} aria-busy={busy} onclick={endOthers}
@@ -91,6 +97,8 @@
 </div>
 
 <style>
+	.more { min-height: 40px; color: var(--accent-text); font: var(--t-callout); font-weight: 600; }
+	.more:hover { text-decoration: underline; }
 	.sessions li {
 		display: flex;
 		align-items: center;

@@ -15,6 +15,12 @@
 	import { offPartName } from '#lib/parts.ts';
 	import { settingsNow, refreshSettingsStatus } from '#lib/settings-status.svelte.ts';
 	import { pageState, stateWords } from '#lib/settings-status.ts';
+	import VariantBar from '#lib/ui/VariantBar.svelte';
+	import { LOOKS } from '#lib/ui/settings-looks.ts';
+	import '#lib/ui/settings-looks.css';
+
+	// ?look=1…5 restyles every settings page's content (Luis is comparing compact styles); 0 is today's.
+	let look = $state(0);
 
 	const sections = $derived(visible(all, session.can).filter((section) => !offPartName(partsNow.answer, section.href)));
 	const groups = $derived(grouped(sections));
@@ -159,9 +165,10 @@
 				{/if}
 			</div>
 		{/if}
-		<div class="settings-content">{@render children()}</div>
+		<div class="settings-content" data-look={look || undefined}>{@render children()}</div>
 	</div>
 </div>
+<VariantBar options={LOOKS} bind:value={look} param="look" storageKey="holyarrs.settings.look" label="Settings content styles" />
 
 <style>
 	.settings-shell {

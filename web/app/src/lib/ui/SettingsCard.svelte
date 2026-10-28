@@ -68,7 +68,7 @@
 		{#if icon}<span class="ic"><Icon name={icon} size={18} /></span>{/if}
 		<div>
 			<h2 id="{uid}-t">{title}</h2>
-			{#if description}<p>{description}</p>{/if}
+			{#if description}<p title={description}>{description}</p>{/if}
 		</div>
 	</header>
 	<div class="body">{@render children()}</div>

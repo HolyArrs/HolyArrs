@@ -1,0 +1,173 @@
+/*
+ * Compact settings content (?look=1…5 on any settings page). Every look keys
+ * on .settings-content[data-look] and restyles the shared pieces only:
+ * SettingsCard (.ui-settings), kit fields (.field, .label, .hint) and buttons.
+ * Rows: label and a one-line hint on the left, the control on the right.
+ */
+
+/* ---------- shared by every look ---------- */
+.settings-content[data-look] .ui-settings > header > div { flex: 1; min-width: 0; }
+.settings-content[data-look] .ui-settings > header p {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	font: var(--t-footnote);
+}
+.settings-content[data-look] .ui-settings h2 { font: var(--t-headline); font-size: 15px; }
+.settings-content[data-look] .hint { font: var(--t-footnote); }
+.settings-content[data-look] .ui-btn.md { min-height: 32px; padding-inline: 12px; font-size: 14px; }
+.settings-content[data-look] .ui-btn.full { width: auto; }
+.settings-content[data-look] .field + .field { margin-top: 0; }
+.settings-content[data-look] .ui-settings { transition: box-shadow var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
+
+
+/* Lists of switches (Appearance's ratings and About lines): name left, switch right, two per row. */
+.settings-content[data-look] .ui-settings ul:has(> li > label.switch) {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	column-gap: 24px;
+	gap: 0 24px;
+}
+.settings-content[data-look] .ui-settings ul > li > label.switch { display: flex; width: 100%; min-height: 40px; padding: 6px 0; }
+.settings-content[data-look] .ui-settings ul > li > label.switch > .sw { order: 2; margin-left: auto; }
+.settings-content[data-look] .ui-settings ul > li > label.switch > input { left: auto; right: 0; }
+.settings-content[data-look] .ui-settings ul > li > label.switch .hint { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.settings-content[data-look] .ui-settings ul > li > label.switch > span:not(.sw) { min-width: 0; }
+.settings-content[data-look] .ui-settings ul > li > label.switch br { display: none; }
+.settings-content:not([data-look='4'])[data-look] .ui-settings ul > li:has(> label.switch) { border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+.settings-content[data-look='4'] .ui-settings ul:has(> li > label.switch) { grid-template-columns: minmax(0, 1fr); }
+
+/* Tile off (1, 3, 4) or a quiet glyph (2, 5). */
+.settings-content:is([data-look='1'], [data-look='3'], [data-look='4']) .ui-settings > header .ic { display: none; }
+.settings-content:is([data-look='2'], [data-look='5']) .ui-settings > header .ic {
+	width: 18px;
+	height: 22px;
+	background: none;
+	border-radius: 0;
+	color: var(--text-muted);
+}
+.settings-content:is([data-look='2'], [data-look='5']) .ui-settings > header .ic svg { width: 16px; height: 16px; }
+.settings-content:is([data-look='2'], [data-look='5']) .ui-settings > header { align-items: center; }
+
+/* ---------- rows: label + hint left, control right (1, 2, 3, 5) ---------- */
+.settings-content:not([data-look='4'])[data-look] .ui-settings :is(.body, .adv-body) .field {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+	column-gap: 24px;
+	row-gap: 2px;
+	align-items: center;
+}
+.settings-content[data-look] .ui-settings :is(.body, .adv-body) .field > :is(label:first-child, .label, legend) { grid-column: 1; grid-row: 1; }
+.settings-content[data-look] .ui-settings :is(.body, .adv-body) .field > .hint { grid-column: 1; grid-row: 2; }
+.settings-content[data-look] .ui-settings :is(.body, .adv-body) .field > .form-error { grid-column: 1 / -1; }
+.settings-content:not([data-look='4'])[data-look] .ui-settings :is(.body, .adv-body) .field > :not(label:first-child, .label, legend, .hint, .form-error) {
+	grid-column: 2;
+	grid-row: 1 / span 2;
+	justify-self: end;
+	min-width: 0;
+	max-width: 100%;
+}
+.settings-content[data-look] .ui-settings :is(.body, .adv-body) .field > .input { width: 100%; justify-self: stretch; }
+
+/* ---------- 1 · Panels (Clerk-like): narrow column, one quiet bordered panel per group ---------- */
+.settings-content[data-look='1'] { max-width: 680px; margin-inline: auto; }
+.settings-content[data-look='1'] .ui-head { padding-bottom: 12px; margin-bottom: 20px; border-bottom: 1px solid var(--line); }
+.settings-content[data-look='1'] .ui-settings { border-radius: 12px; box-shadow: 0 0 0 1px var(--line); background: var(--surface-1); }
+.settings-content[data-look='1'] .ui-settings > header { padding: 12px 18px; border-bottom: 1px solid var(--line); }
+.settings-content[data-look='1'] .ui-settings .body { padding: 0 18px; gap: 0; }
+.settings-content[data-look='1'] .ui-settings .body > *,
+.settings-content[data-look='1'] .ui-settings .body > :is(form, .rows) > * { padding: 12px 0; margin: 0; }
+.settings-content[data-look='1'] .ui-settings .body > * + *,
+.settings-content[data-look='1'] .ui-settings .body > :is(form, .rows) > * + *,
+.settings-content[data-look='1'] .ui-settings .body > :is(form, .rows) + * { border-top: 1px solid var(--line); }
+.settings-content[data-look='1'] .ui-settings .body > :is(form, .rows) { padding: 0; }
+.settings-content[data-look='1'] .ui-settings .adv-body { padding: 0 18px 12px; }
+.settings-content[data-look='1'] .ui-settings footer { padding: 10px 18px; }
+
+/* ---------- 2 · Rows (Framer-like): no cards, thin dividers between rows and groups ---------- */
+.settings-content[data-look='2'] { max-width: 760px; }
+.settings-content[data-look='2'] .ui-settings { background: none; box-shadow: none; border-radius: 0; border-top: 1px solid var(--line); overflow: visible; }
+.settings-content[data-look='2'] .ui-settings.danger { border-top-color: var(--fail); }
+.settings-content[data-look='2'] .ui-settings > header { padding: 18px 0 4px; gap: 8px; }
+.settings-content[data-look='2'] .ui-settings .body { padding: 0 0 8px; gap: 0; }
+.settings-content[data-look='2'] .ui-settings .body > *,
+.settings-content[data-look='2'] .ui-settings .body > :is(form, .rows) > * { padding: 10px 0; margin: 0; }
+.settings-content[data-look='2'] .ui-settings .body > * + *,
+.settings-content[data-look='2'] .ui-settings .body > :is(form, .rows) > * + *,
+.settings-content[data-look='2'] .ui-settings .body > :is(form, .rows) + * { border-top: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+.settings-content[data-look='2'] .ui-settings .body > :is(form, .rows) { padding: 0; }
+.settings-content[data-look='2'] .ui-settings :is(summary, .adv-body) { padding-inline: 0; }
+.settings-content[data-look='2'] .ui-settings footer { background: none; padding-inline: 0; }
+.settings-content[data-look='2'] .ui-settings + .ui-settings,
+.settings-content[data-look='2'] .acct { margin-top: 8px; }
+
+/* ---------- 3 · Form (Overseerr-like): slim headed sections, fixed label column, no dividers ---------- */
+.settings-content[data-look='3'] { max-width: 900px; }
+.settings-content[data-look='3'] .ui-settings { background: none; box-shadow: none; border-radius: 0; overflow: visible; }
+.settings-content[data-look='3'] .ui-settings > header { padding: 8px 0 8px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.settings-content[data-look='3'] .ui-settings > header > div { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+.settings-content[data-look='3'] .ui-settings > header p { margin: 0; }
+.settings-content[data-look='3'] .ui-settings .body { padding: 0 0 12px; gap: 6px; }
+.settings-content[data-look='3'] .ui-settings :is(.body, .adv-body) .field { grid-template-columns: 220px minmax(0, 1fr); padding: 6px 0; }
+.settings-content[data-look='3'] .ui-settings :is(.body, .adv-body) .field > :not(label:first-child, .label, legend, .hint, .form-error) { justify-self: start; }
+.settings-content[data-look='3'] .ui-settings .field > .input { max-width: 360px; }
+.settings-content[data-look='3'] .ui-settings :is(summary, .adv-body) { padding-inline: 0; }
+.settings-content[data-look='3'] .ui-settings footer { background: none; border-top: 0; padding-inline: 0; justify-content: flex-start; }
+
+/* ---------- 4 · Grid: dense two-column grid of small cards ---------- */
+.settings-content[data-look='4'] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.settings-content[data-look='4'] > :not(.ui-settings) { grid-column: 1 / -1; }
+.settings-content[data-look='4'] .acct { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.settings-content[data-look='4'] .acct > :not(.ui-settings) { grid-column: 1 / -1; }
+.settings-content[data-look='4'] > .ui-settings + .ui-settings { margin-top: 0 !important; }
+.settings-content[data-look='4'] .ui-settings { border-radius: 12px; }
+.settings-content[data-look='4'] .ui-settings > header { padding: 12px 14px 2px; }
+.settings-content[data-look='4'] .ui-settings .body { padding: 6px 14px 12px; gap: 8px; }
+.settings-content[data-look='4'] .ui-settings .field { gap: 4px; }
+.settings-content[data-look='4'] .ui-settings .field + .field,
+.settings-content[data-look='4'] .ui-settings .rows > .field + .field { margin-top: 6px; }
+.settings-content[data-look='4'] .ui-settings :is(summary) { padding-inline: 14px; min-height: 38px; }
+.settings-content[data-look='4'] .ui-settings .adv-body { padding: 0 14px 12px; }
+.settings-content[data-look='4'] .ui-settings footer { padding: 8px 14px; }
+
+/* ---------- 5 · Groups: the group title sits above a quiet panel of rows ---------- */
+.settings-content[data-look='5'] { max-width: 720px; margin-inline: auto; }
+.settings-content[data-look='5'] .ui-head { margin-bottom: 12px; }
+.settings-content[data-look='5'] .ui-settings { background: none; box-shadow: none; border-radius: 0; overflow: visible; }
+.settings-content[data-look='5'] .ui-settings > header { padding: 14px 4px 6px; gap: 8px; }
+.settings-content[data-look='5'] .ui-settings .body,
+.settings-content[data-look='5'] .ui-settings .advanced {
+	background: var(--surface-1);
+	box-shadow: 0 0 0 1px var(--line);
+	border-radius: 12px;
+}
+.settings-content[data-look='5'] .ui-settings .advanced { margin-top: 8px; border-top: 0; }
+.settings-content[data-look='5'] .ui-settings.danger .body { box-shadow: 0 0 0 1px var(--fail); }
+.settings-content[data-look='5'] .ui-settings .body { padding: 0 16px; gap: 0; }
+.settings-content[data-look='5'] .ui-settings .body > *,
+.settings-content[data-look='5'] .ui-settings .body > :is(form, .rows) > * { padding: 11px 0; margin: 0; }
+.settings-content[data-look='5'] .ui-settings .body > * + *,
+.settings-content[data-look='5'] .ui-settings .body > :is(form, .rows) > * + *,
+.settings-content[data-look='5'] .ui-settings .body > :is(form, .rows) + * { border-top: 1px solid var(--line); }
+.settings-content[data-look='5'] .ui-settings .body > :is(form, .rows) { padding: 0; }
+.settings-content[data-look='5'] .ui-settings footer { background: none; border-top: 0; padding: 8px 4px 0; }
+.settings-content[data-look='5'] .ui-settings .field > :is(label:first-child, .label) { font-weight: 500; }
+
+/* ---------- phones and narrow panes: rows stack, controls keep their own width ---------- */
+@media (max-width: 760px) {
+	.settings-content[data-look='4'],
+	.settings-content[data-look='4'] .acct { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+	.settings-content[data-look] .ui-settings ul:has(> li > label.switch) { grid-template-columns: minmax(0, 1fr); }
+	.settings-content[data-look] .ui-settings :is(.body, .adv-body) .field { display: flex !important; flex-direction: column; align-items: stretch !important; gap: 4px; }
+	.settings-content[data-look] .ui-settings :is(.body, .adv-body) .field > .hint { order: 3; }
+	.settings-content[data-look] .ui-settings :is(.body, .adv-body) .field > :not(label:first-child, .label, legend, .hint, .form-error) { align-self: flex-start; max-width: 100%; }
+	.settings-content[data-look] .ui-settings :is(.body, .adv-body) .field > :is(.input, form, .pw, .tf) { align-self: stretch; }
+	.settings-content[data-look] .ui-btn.md { min-height: 40px; }
+	.settings-content[data-look='1'] .ui-settings > header,
+	.settings-content[data-look='1'] .ui-settings .body { padding-inline: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.settings-content[data-look] .ui-settings { transition: none; }
+}
