@@ -18,7 +18,7 @@ export const MOVIE_LOOKS = [
 	{ value: 2, label: 'Director' },
 	{ value: 3, label: 'Where it is out' },
 	{ value: 4, label: 'Star · genre' },
-	{ value: 5, label: 'Series' },
+	{ value: 5, label: 'Part of a set' },
 	{ value: 6, label: 'Director · length' }
 ];
 export const MUSIC_LOOKS = [
