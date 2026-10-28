@@ -132,7 +132,6 @@
 				{:else}
 					<button type="button" class="add-note" onclick={() => (noteOpen = true)} data-testid="ask-add-note">+ Add a note</button>
 				{/if}
-				{#if !parts.empty}<p class="muted small">Approves with {ruleWords}. You can undo for 6 seconds.</p>{/if}
 			</form>
 		{/if}
 		{#if a.mine && a.state === 'asked'}
