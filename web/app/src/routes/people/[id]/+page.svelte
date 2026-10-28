@@ -26,7 +26,11 @@
 	import VariantBar from '#lib/ui/VariantBar.svelte';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
+	import HeroMotion from '#lib/ui/HeroMotion.svelte';
+	import TrailerPlayer from '#lib/ui/TrailerPlayer.svelte';
 	import { paintWindow, sampleCover, tintOf, unpaintWindow } from '#lib/music/album-tint.ts';
+	import { autoplayHere, loadUISettings, trailerSources, type TrailerSource } from '#lib/autoplay.svelte.ts';
+	import { HERO_DELAY } from '#lib/trailer.ts';
 
 	const id = page.params.id ?? '';
 	const SORT_KEY = 'holyarrs.people.sort';
@@ -150,52 +154,81 @@
 		return () => clearTimeout(waited);
 	});
 
-	// Three layouts Luis is comparing (?look=1|2|3, 0 = today's page): 1 a movie-like
-	// billboard, 2 the artist-like banner with a tinted page, 3 a credits list.
-	const VIEWS = [{ value: 0, label: 'Now' }, { value: 1, label: 'P1 · Billboard' }, { value: 2, label: 'P2 · Round' }, { value: 4, label: 'P2 · Square' }, { value: 5, label: 'P2 · Portrait' }, { value: 3, label: 'P3 · Credits' }];
+
+	// Three layouts Luis is comparing (?look=1|2|3, 0 = today's page). All three
+	// follow the music artist page (short banner fading into a tinted page,
+	// photo line, slim bar, figures, numbered list, About card), made for movies:
+	// 1 the Known-for still, 2 the Known-for trailers playing muted, 3 a slow reel of Known-for stills.
+	const VIEWS = [{ value: 0, label: 'Now' }, { value: 1, label: 'A1 · Still' }, { value: 2, label: 'A2 · Trailers' }, { value: 3, label: 'A3 · Reel' }];
 	let view = $state(0);
-	// P2 comes in three photo shapes (round, square, 2:3 portrait); 4 and 5 are P2 too.
-	const mix = $derived(view === 2 || view === 4 || view === 5);
-	const shape = $derived(view === 4 ? 'square' : view === 5 ? 'portrait' : 'round');
 	const photo = $derived(data?.person.profile || wiki.image || '');
 	const yearsLine = $derived.by(() => {
 		const st = data?.stats;
 		return st?.first_year ? `${st.first_year}–${st.active ? 'now' : st.last_year}` : '';
 	});
-	// One line under the name: what they do, then born and from.
 	const lead = $derived([data?.person.department, ...facts.filter((f) => !f.startsWith('Known for'))].filter(Boolean).join(' · '));
+	const top = $derived((data?.known_for ?? []).slice(0, 10));
+	const reel = $derived((data?.known_for ?? []).map((m) => m.backdrop).filter((b): b is string => !!b).slice(0, 6));
 	let aboutOpen = $state(false);
 	let allDecade = $state<{ label: string; movies: PersonMovie[] } | null>(null);
 
-	// View 2: the banner zooms out and darkens as it leaves; the page takes its colour.
+	// The banner zooms out and darkens as it leaves; the slim bar shows once the name has gone.
 	let heroBox: HTMLElement | undefined = $state();
+	let nameEl: HTMLElement | undefined = $state();
 	let gone = $state(0);
+	let slimOn = $state(false);
 	function measure() {
-		if (!heroBox) return;
-		const r = heroBox.getBoundingClientRect();
-		gone = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height)));
+		if (heroBox) {
+			const r = heroBox.getBoundingClientRect();
+			gone = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height)));
+		}
+		const bar = document.querySelector('.ui-topbar');
+		const barBottom = bar && !document.documentElement.classList.contains('bar-hidden') ? Math.max(0, bar.getBoundingClientRect().bottom) : 0;
+		slimOn = !!nameEl && nameEl.getBoundingClientRect().bottom < barBottom + 4;
 	}
 	$effect(() => {
-		if (!mix) return;
+		if (!view) return;
 		measure();
 		addEventListener('scroll', measure, { passive: true, capture: true });
 		return () => removeEventListener('scroll', measure, { capture: true });
 	});
+
+	// The page takes its colour from the person's photo (the banner when there is none), as artist pages do.
 	let sampled = $state<string | null>(null);
 	$effect(() => {
 		const src = photo || hero;
-		if (!mix || !src || sampled) return;
+		if (!view || !src || sampled) return;
 		const img = new Image();
 		img.onload = () => (sampled = sampleCover(img));
 		img.src = src;
 	});
-	const pageTint = $derived(mix && sampled ? tintOf(sampled) : null);
+	const tint = $derived(view && sampled ? tintOf(sampled) : null);
 	$effect(() => {
-		if (pageTint) {
-			paintWindow(pageTint);
+		if (tint) {
+			paintWindow(tint);
 			return () => unpaintWindow();
 		}
 	});
+
+	// A2: the Known-for trailers play muted in the banner, one after another, after the usual dwell.
+	let clip = $state(0);
+	let sources = $state<TrailerSource[]>([]);
+	let clipOn = $state(false);
+	$effect(() => {
+		const m = top[clip % Math.max(1, top.length)];
+		sources = [];
+		clipOn = false;
+		if (view !== 2 || !m) return;
+		const ctl = new AbortController();
+		const t = setTimeout(() => {
+			if (!autoplayHere()) return;
+			void trailerSources('movie', m.ids.tmdb, undefined, ctl.signal).then((s) => !ctl.signal.aborted && (sources = s)).catch(() => {});
+		}, HERO_DELAY);
+		return () => (clearTimeout(t), ctl.abort());
+	});
+	const nextClip = () => top.length > 1 && (clip = (clip + 1) % top.length);
+	const nowShowing = $derived(top[clip % Math.max(1, top.length)]);
+	onMount(() => void loadUISettings());
 
 	// Where this person was opened from is in the top bar (layout), like every page.
 	setTopCrumbs(null);
@@ -226,192 +259,189 @@
 {#if error && !data}<LoadError hasData={false} message={plainReason(error).text} onretry={load} {busy} />
 {:else if error}<p class="notice bad" role="alert"><Icon name="alert" size={17} /><span>{plainReason(error).text}</span></p>{/if}
 <PageLoader loading={(!data || !(wikiDone || wikiWaited)) && !error} label="Loading this person" onretry={load}>
-{#if data && (wikiDone || wikiWaited)}
-	{#if view === 0}
-		<header class="hero" data-hero>
-			{#if hero}<img class="art" class:in={heroIn} src={hero} alt="" decoding="async" fetchpriority="high" onload={() => (heroIn = true)} onerror={() => (heroIn = false)} />{/if}
-			<div class="shade" aria-hidden="true"></div>
-			<div class="hero-in">
-				<div class="portrait"><Poster src={data.person.profile || wiki.image} name={data.person.name} /></div>
-				<div class="who">
-					<h1>{data.person.name}</h1>
-					{#if facts.length}<p class="facts">{facts.join(' · ')}</p>{/if}
-					{#if chips.length || wiki.badges.length}<ul class="chips" aria-label="At a glance">{#each wiki.badges.slice(0, 3) as c (c)}<li class="award" data-testid="award-badge">{c}</li>{/each}{#each chips as c (c)}<li>{c}</li>{/each}</ul>{/if}
-					{#if bio}
-						<p class="bio" class:open={bioOpen}>{bio}</p>
-						<button class="more" type="button" onclick={() => (bioOpen = !bioOpen)}>{bioOpen ? 'Less' : 'More'}</button>
-					{/if}
-				</div>
-			</div>
-		</header>
-	{:else if mix}
-		<header class="mix" bind:this={heroBox} style:--gone={gone.toFixed(3)} data-hero data-testid="person-banner">
-			<div class="stage" aria-hidden="true">{#if hero}<img class="art" class:in={heroIn} src={hero} alt="" decoding="async" fetchpriority="high" onload={() => (heroIn = true)} />{/if}</div>
-			<div class="m-shade" aria-hidden="true"></div>
-			<div class="dim" aria-hidden="true"></div>
-		</header>
-		<div class="cline">
-			<span class="round {shape}">{#if photo}<img src={photo} alt="" />{:else}<span>{data.person.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</span>{/if}</span>
-			<div class="c-words">
-				<h1>{data.person.name}</h1>
-				{#if lead}<p class="c-line">{lead}</p>{/if}
-			</div>
-		</div>
-		<section class="stats" aria-label="At a glance" data-testid="person-stats">
-			<p class="st1">
-				{#if data.stats?.films}<span><b>{data.stats.films}</b> {data.stats.films === 1 ? 'film' : 'films'}</span>{/if}
-				{#if data.stats?.shows}<span><b>{data.stats.shows}</b> {data.stats.shows === 1 ? 'show' : 'shows'}</span>{/if}
-				{#if yearsLine}<span><b>{yearsLine}</b></span>{/if}
-			</p>
-			{#if data.library?.length || data.asked?.length || wiki.badges.length}
-				<p class="st2">
-					{#if data.library?.length}<span class="own"><Icon name="library" size={14} />{data.library.length} in your Library</span>{/if}
-					{#if data.asked?.length}<span>{data.asked.length} asked for</span>{/if}
-					{#each wiki.badges.slice(0, 2) as c (c)}<span class="award">{c}</span>{/each}
-				</p>
+{#if data && (wikiDone || wikiWaited) && view}
+	<div class="ap" class:tinted={!!tint} style={tint ? `--ap-bg:${tint.bg};--ap-soft:${tint.soft}` : undefined}>
+	<header class="banner" bind:this={heroBox} style:--gone={gone.toFixed(3)} class:playing={clipOn} data-hero data-testid="person-banner">
+		<div class="stage" aria-hidden="true">
+			{#if view === 3 && reel.length}
+				<HeroMotion pictures={reel} position="center 25%" onload={() => (heroIn = true)} />
+			{:else if hero}
+				<img class="art" class:in={heroIn} src={hero} alt="" decoding="async" fetchpriority="high" onload={() => (heroIn = true)} />
 			{/if}
-		</section>
-	{:else}
-		<header class="bill" class:short={view === 3} data-hero data-testid="person-billboard">
-			{#if hero}<img class="art" class:in={heroIn} src={hero} alt="" decoding="async" fetchpriority="high" onload={() => (heroIn = true)} />{/if}
-			<div class="b-shade" aria-hidden="true"></div>
-			<div class="b-in">
-				{#if photo}<span class="face"><img src={photo} alt="" /></span>{/if}
-				<h1>{data.person.name}</h1>
-				{#if lead}<p class="b-line">{lead}</p>{/if}
-				{#if view === 1}
-					{#if chips.length || wiki.badges.length}<p class="b-facts">{#each wiki.badges.slice(0, 3) as c (c)}<span class="award">{c}</span>{/each}{#each chips as c (c)}<span>{c}</span>{/each}</p>{/if}
-					{#if bio}
-						<p class="bio" class:open={bioOpen}>{bio}</p>
-						<button class="more b-more" type="button" onclick={() => (bioOpen = !bioOpen)}>{bioOpen ? 'LESS' : 'MORE'}</button>
-					{/if}
-				{/if}
-			</div>
-		</header>
-	{/if}
+		</div>
+		{#if view === 2 && sources.length && nowShowing}
+			{#key nowShowing.ids.tmdb}
+				<div class="clip"><TrailerPlayer {sources} title={nowShowing.name} sharp pausable onplaying={() => (clipOn = true)} onended={() => ((clipOn = false), nextClip())} onfail={() => ((clipOn = false), nextClip())} /></div>
+			{/key}
+		{/if}
+		<div class="b-shade" aria-hidden="true"></div>
+		<div class="dim" aria-hidden="true"></div>
+		{#if view === 2 && clipOn && nowShowing}<a class="showing" href={href(nowShowing)}>{nowShowing.name}{nowShowing.year ? ` · ${nowShowing.year}` : ''}</a>{/if}
+	</header>
 
+	<div class="cline">
+		<span class="photo">{#if photo}<img src={photo} alt="" fetchpriority="high" />{:else}<span class="initials">{data.person.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</span>{/if}</span>
+		<div class="c-words">
+			<h1 bind:this={nameEl}>{data.person.name}</h1>
+			{#if lead}<p class="c-line">{lead}</p>{/if}
+		</div>
+		<div class="acts"><a class="go" href="#films-title">Filmography</a></div>
+	</div>
+
+	<div class="slimwrap">
+		<div class="slim" class:on={slimOn} style:--tint={tint?.bg} aria-hidden={!slimOn} inert={!slimOn} data-testid="person-slim-bar">
+			{#if photo}<img class="s-photo" src={photo} alt="" />{/if}
+			<span class="slim-name">{data.person.name}</span>
+		</div>
+	</div>
+
+	<section class="stats" aria-label="At a glance" data-testid="person-stats">
+		<p class="st1">
+			{#if data.stats?.films}<span><b>{data.stats.films}</b> {data.stats.films === 1 ? 'film' : 'films'}</span>{/if}
+			{#if data.stats?.shows}<span><b>{data.stats.shows}</b> {data.stats.shows === 1 ? 'show' : 'shows'}</span>{/if}
+			{#if yearsLine}<span><b>{yearsLine}</b></span>{/if}
+		</p>
+		{#if data.library?.length || data.asked?.length || wiki.badges.length}
+			<p class="st2">
+				{#each wiki.badges.slice(0, 2) as c (c)}<span class="award">{c}</span>{/each}
+				{#if data.library?.length}<span class="own"><Icon name="library" size={14} />{data.library.length} in your Library</span>{/if}
+				{#if data.asked?.length}<span>{data.asked.length} asked for</span>{/if}
+			</p>
+		{/if}
+	</section>
 
 	{#if limit && action === 'ask' && !limit.no_limit && !limit.movies.no_limit}
 		<p class="note">Movie asks this rolling week: {limit.movies.used} used, {limit.movies.left} left.</p>
 	{/if}
 
-	{#if view === 3}
-		{@render row('Known for', data.known_for, 'person-known')}
-		{@render row('Coming soon', data.coming_soon, 'person-soon')}
-	{:else}
-		{@render row('Coming soon', data.coming_soon, 'person-soon')}
-		{@render row('Known for', data.known_for, 'person-known')}
-	{/if}
-	{@render row('In your Library', data.library, 'person-library')}
-	{@render row('You asked for', data.asked, 'person-asked')}
-
-	{#if view === 0}
-		{#if data.often_with?.length}
-			<section class="block" aria-labelledby="with-title">
-				<h2 id="with-title">Often works with</h2>
-				<ul class="tiles">
-					{#each data.often_with as p (p.id)}
-						<li><BrowseTile name={p.name} href={to(`/people/${p.id.replace(/^tmdb:/, '')}`)} image={p.profile ?? ''} hue="#555b66" plain /></li>
-					{/each}
-				</ul>
-			</section>
-		{/if}
-
-	{:else if data.often_with?.length}
-		<section class="block" aria-labelledby="with-title">
-			<h2 id="with-title">Often works with</h2>
-			<ul class="circles">{#each data.often_with as p (p.id)}<li><PersonCircle name={p.name} image={p.profile ?? ''} href={to(`/people/${p.id.replace(/^tmdb:/, '')}`)} size={112} /></li>{/each}</ul>
-		</section>
-	{/if}
-
-	{#snippet controls()}
-		<div class="controls">
-			<SegmentedControl label="Credit role" value={role} options={[{ value: 'all', label: 'All' }, { value: 'actor', label: 'Actor' }, { value: 'director', label: 'Director' }]} onchange={(v) => changeRole(v as PersonRole)} />
-			<SegmentedControl label="Sort" value={sort} options={[{ value: 'oldest', label: 'Oldest first' }, { value: 'newest', label: 'Newest first' }, { value: 'popular', label: 'Popular' }]} onchange={(v) => changeSort(v as FilmSort)} />
-		</div>
-	{/snippet}
-
-	{#if mix}
-		<section class="block" aria-labelledby="films-title">
-			<div class="toolbar"><h2 id="films-title">Filmography</h2>{@render controls()}</div>
-		</section>
-		{#each decades as g (g.label)}
-			<Shelf title={g.label} item="var(--title-item)" items={g.movies.slice(0, 12)} key={(m) => m.ids.tmdb} placeholder="wide" lines={1} onseeall={g.movies.length > 12 ? () => (allDecade = g) : undefined}>
-				{#snippet card(m: PersonMovie)}{@render filmCard(m)}{/snippet}
-			</Shelf>
-		{/each}
-		{#if !movies.length && !busy}<EmptyState compact icon="film" title="No movies match this role." />{/if}
-	{:else if view === 3}
-		<section class="block" aria-labelledby="films-title">
-			<div class="toolbar"><h2 id="films-title">Filmography</h2>{@render controls()}</div>
-			<ol class="credits" aria-busy={busy || undefined} data-testid="person-credits">
-				{#each movies as m (m.ids.tmdb)}
+	{#if top.length}
+		<section class="block" data-testid="person-top">
+			<h2>Known for</h2>
+			<ol class="songs">
+				{#each top as m, i (m.ids.tmdb)}
 					{@const o = owned(m)}
-					<li>
-						<span class="cy">{m.year || 'Soon'}</span>
-						<a class="ct" href={href(m)}>{m.name}</a>
-						<span class="cr">{m.characters?.length ? m.characters.join(' / ') : (m.roles ?? []).join(', ')}</span>
-						<span class="cs">{#if o}<span class="state" class:have={o.state === 'available'}>{o.state === 'available' ? 'In Library' : 'Requested'}</span>{:else if action && !m.never_add && !done[m.ids.tmdb]}<IconButton icon="plus" label={action === 'add' ? `Add ${m.name}` : `Ask for ${m.name}`} size="sm" aria-busy={asking === m.ids.tmdb || undefined} onclick={() => quick(m)} />{/if}</span>
+					<li class="song">
+						<span class="num">{i + 1}</span>
+						<a class="thumb" href={href(m)} tabindex="-1" aria-hidden="true">{#if m.poster || m.backdrop}<img src={m.poster || m.backdrop} alt="" loading="lazy" />{/if}</a>
+						<span class="s-words"><a class="s-name" href={href(m)}>{m.name}</a><span class="s-sub">{roleLine(m)}</span></span>
+						<span class="s-end">{#if o}<span class="state" class:have={o.state === 'available'}>{o.state === 'available' ? 'In Library' : 'Requested'}</span>{:else if action && !m.never_add && !done[m.ids.tmdb]}<IconButton icon="plus" label={action === 'add' ? `Add ${m.name}` : `Ask for ${m.name}`} size="sm" aria-busy={asking === m.ids.tmdb || undefined} onclick={() => quick(m)} />{/if}</span>
 					</li>
 				{/each}
 			</ol>
-			{#if !movies.length && !busy}<EmptyState compact icon="film" title="No movies match this role." />{/if}
 		</section>
-	{:else}
-		<section class="block" aria-labelledby="films-title">
-			<div class="toolbar">
-				<h2 id="films-title">Filmography</h2>
-				<div class="controls">
-					<SegmentedControl label="Credit role" value={role} options={[{ value: 'all', label: 'All' }, { value: 'actor', label: 'Actor' }, { value: 'director', label: 'Director' }]} onchange={(v) => changeRole(v as PersonRole)} />
-					<SegmentedControl label="Sort" value={sort} options={[{ value: 'oldest', label: 'Oldest first' }, { value: 'newest', label: 'Newest first' }, { value: 'popular', label: 'Popular' }]} onchange={(v) => changeSort(v as FilmSort)} />
-				</div>
-			</div>
-			{#each decades as g (g.label)}
-				<h3 class="decade">{g.label}</h3>
-				<ul class="grid" aria-busy={busy || undefined}>
-					{#each g.movies as m (m.ids.tmdb)}<li>{@render filmCard(m)}</li>{/each}
-				</ul>
-			{/each}
-			{#if !movies.length && !busy}<EmptyState compact icon="film" title="No movies match this role." />{/if}
-		</section>
-
 	{/if}
 
-	{#if view >= 2 && (bio || facts.length)}
-		<section class="block about" aria-labelledby="about-title">
-			<h2 id="about-title">About</h2>
-			{#if mix}
-				<button type="button" class="acard" aria-haspopup="dialog" aria-label="About {data.person.name}: read more" onclick={() => (aboutOpen = true)} data-testid="person-about">
-					{#if photo || hero}<img src={hero || photo} alt="" loading="lazy" decoding="async" />{/if}
-					<span class="a-foot"><b>{data.person.name}</b>{#if bio}<span class="a-bio">{bio}</span>{/if}</span>
-				</button>
-			{:else}
-				<div class="info" data-testid="person-info">
-					{#if bio}<p class="i-bio">{bio}</p>{/if}
-					<dl>
-						{#if data.known_for?.[0]}<div><dt>Known for</dt><dd>{data.known_for[0].name}</dd></div>{/if}
-						{#each facts.filter((f) => !f.startsWith('Known for')) as f (f)}<div><dt>{f.split(' ')[0]}</dt><dd>{f.slice(f.indexOf(' ') + 1)}</dd></div>{/each}
-						{#if yearsLine}<div><dt>Active</dt><dd>{yearsLine}</dd></div>{/if}
-						{#if wiki.badges.length}<div><dt>Awards</dt><dd>{wiki.badges.slice(0, 3).join(' · ')}</dd></div>{/if}
-					</dl>
-				</div>
-			{/if}
+	{@render row('Coming soon', data.coming_soon, 'person-soon')}
+	{@render row('In your Library', data.library, 'person-library')}
+	{@render row('You asked for', data.asked, 'person-asked')}
+
+	<section class="block" aria-labelledby="films-title">
+		<div class="toolbar">
+			<h2 id="films-title">Filmography</h2>
+			<div class="controls">
+				<SegmentedControl label="Credit role" value={role} options={[{ value: 'all', label: 'All' }, { value: 'actor', label: 'Actor' }, { value: 'director', label: 'Director' }]} onchange={(v) => changeRole(v as PersonRole)} />
+				<SegmentedControl label="Sort" value={sort} options={[{ value: 'oldest', label: 'Oldest first' }, { value: 'newest', label: 'Newest first' }, { value: 'popular', label: 'Popular' }]} onchange={(v) => changeSort(v as FilmSort)} />
+			</div>
+		</div>
+		{#if !movies.length && !busy}<EmptyState compact icon="film" title="No movies match this role." />{/if}
+	</section>
+	{#each decades as g (g.label)}
+		<Shelf title={g.label} item="var(--title-item)" items={g.movies.slice(0, 12)} key={(m) => m.ids.tmdb} placeholder="wide" lines={1} onseeall={g.movies.length > 12 ? () => (allDecade = g) : undefined}>
+			{#snippet card(m: PersonMovie)}{@render filmCard(m)}{/snippet}
+		</Shelf>
+	{/each}
+
+	{#if bio || facts.length}
+		<section class="block">
+			<h2>About</h2>
+			<button type="button" class="acard" aria-haspopup="dialog" aria-label="About {data.person.name}: read more" onclick={() => (aboutOpen = true)} data-testid="person-about">
+				{#if reel[1] || hero}<img src={reel[1] || hero} alt="" loading="lazy" decoding="async" />{/if}
+				{#if wiki.badges[0]}<span class="disc" aria-hidden="true"><b>{wiki.badges[0].split(' ')[0]}</b><small>{wiki.badges[0].split(' ').slice(1).join(' ')}</small></span>{/if}
+				<span class="a-foot">
+					<span class="a-lis">{[data.stats?.films ? `${data.stats.films} films` : '', yearsLine].filter(Boolean).join(' · ')}</span>
+					<span class="a-bio">{bio || data.person.name}</span>
+				</span>
+			</button>
 		</section>
 		<Sheet bind:open={aboutOpen} title="About {data.person.name}" size="lg">
 			{#if facts.length}<p class="s-facts">{facts.join(' · ')}</p>{/if}
 			<p class="s-bio">{bio}</p>
 		</Sheet>
 	{/if}
+
+	{#if data.often_with?.length}
+		<section class="block">
+			<h2>Often works with</h2>
+			<ul class="circles">{#each data.often_with as p (p.id)}<li><PersonCircle name={p.name} image={p.profile ?? ''} href={to(`/people/${p.id.replace(/^tmdb:/, '')}`)} size={128} /></li>{/each}</ul>
+		</section>
+	{/if}
+
 	{#if allDecade}
 		<Sheet open={true} onclose={() => (allDecade = null)} title={allDecade.label} size="lg">
 			<ul class="grid">{#each allDecade.movies as m (m.ids.tmdb)}<li>{@render filmCard(m)}</li>{/each}</ul>
 		</Sheet>
 	{/if}
+	{#if !data.complete}<p class="attribution">This list may not be complete.</p>{/if}
+	</div>
+{:else if data && (wikiDone || wikiWaited)}
+	<header class="hero" data-hero>
+		{#if hero}<img class="art" class:in={heroIn} src={hero} alt="" decoding="async" fetchpriority="high" onload={() => (heroIn = true)} onerror={() => (heroIn = false)} />{/if}
+		<div class="shade" aria-hidden="true"></div>
+		<div class="hero-in">
+			<div class="portrait"><Poster src={data.person.profile || wiki.image} name={data.person.name} /></div>
+			<div class="who">
+				<h1>{data.person.name}</h1>
+				{#if facts.length}<p class="facts">{facts.join(' · ')}</p>{/if}
+				{#if chips.length || wiki.badges.length}<ul class="chips" aria-label="At a glance">{#each wiki.badges.slice(0, 3) as c (c)}<li class="award" data-testid="award-badge">{c}</li>{/each}{#each chips as c (c)}<li>{c}</li>{/each}</ul>{/if}
+				{#if bio}
+					<p class="bio" class:open={bioOpen}>{bio}</p>
+					<button class="more" type="button" onclick={() => (bioOpen = !bioOpen)}>{bioOpen ? 'Less' : 'More'}</button>
+				{/if}
+			</div>
+		</div>
+	</header>
+
+	{#if limit && action === 'ask' && !limit.no_limit && !limit.movies.no_limit}
+		<p class="note">Movie asks this rolling week: {limit.movies.used} used, {limit.movies.left} left.</p>
+	{/if}
+
+	{@render row('Coming soon', data.coming_soon, 'person-soon')}
+	{@render row('Known for', data.known_for, 'person-known')}
+	{@render row('In your Library', data.library, 'person-library')}
+	{@render row('You asked for', data.asked, 'person-asked')}
+
+	{#if data.often_with?.length}
+		<section class="block" aria-labelledby="with-title">
+			<h2 id="with-title">Often works with</h2>
+			<ul class="tiles">
+				{#each data.often_with as p (p.id)}
+					<li><BrowseTile name={p.name} href={to(`/people/${p.id.replace(/^tmdb:/, '')}`)} image={p.profile ?? ''} hue="#555b66" plain /></li>
+				{/each}
+			</ul>
+		</section>
+	{/if}
+
+	<section class="block" aria-labelledby="films-title">
+		<div class="toolbar">
+			<h2 id="films-title">Filmography</h2>
+			<div class="controls">
+				<SegmentedControl label="Credit role" value={role} options={[{ value: 'all', label: 'All' }, { value: 'actor', label: 'Actor' }, { value: 'director', label: 'Director' }]} onchange={(v) => changeRole(v as PersonRole)} />
+				<SegmentedControl label="Sort" value={sort} options={[{ value: 'oldest', label: 'Oldest first' }, { value: 'newest', label: 'Newest first' }, { value: 'popular', label: 'Popular' }]} onchange={(v) => changeSort(v as FilmSort)} />
+			</div>
+		</div>
+		{#each decades as g (g.label)}
+			<h3 class="decade">{g.label}</h3>
+			<ul class="grid" aria-busy={busy || undefined}>
+				{#each g.movies as m (m.ids.tmdb)}<li>{@render filmCard(m)}</li>{/each}
+			</ul>
+		{/each}
+		{#if !movies.length && !busy}<EmptyState compact icon="film" title="No movies match this role." />{/if}
+	</section>
 
 	{#if !data.complete}<p class="attribution">This list may not be complete.</p>{/if}
 {/if}
 </PageLoader>
-<VariantBar options={VIEWS} bind:value={view} param="look" storageKey="holyarrs.people-look" label="People page layout" />
+<VariantBar options={VIEWS} bind:value={view} param="look" storageKey="holyarrs.people-look-2" label="People page layout" />
 </div>
 
 <style>
@@ -445,92 +475,98 @@
 	.notice { display: flex; align-items: center; gap: 8px; margin: 0; padding: 10px 12px; border-radius: var(--r-btn); background: var(--surface-2); font: var(--t-callout); }
 	.notice.bad { color: var(--fail); }
 	.attribution { margin: 0; color: var(--text-muted); font: var(--t-footnote); }
-	.award { color: #f5c518; }
-	/* P1/P3 · Billboard: the movie page hero, name as the title in the left 40 %. */
-	.bill { position: relative; isolation: isolate; min-height: clamp(460px, 52vw, 720px); display: flex; align-items: flex-end; overflow: hidden; margin: calc(var(--s-6) * -1) calc(var(--gutter) * -1) 0; background: var(--on-art-ink); color: var(--on-art); }
-	.bill.short { min-height: clamp(340px, 34vw, 480px); }
-	.bill .art, .mix .art { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
-	.b-shade { position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, var(--on-art-scrim) 0%, var(--on-art-scrim-mid) 30%, var(--on-art-scrim-none) 62%), linear-gradient(to right, var(--on-art-scrim) 0%, var(--on-art-scrim-mid) 30%, var(--on-art-scrim-none) 58%); }
-	.b-in { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; width: min(44%, 620px); padding: 0 var(--gutter) clamp(28px, 4vw, 56px); }
-	.face { width: 64px; height: 64px; border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 2px rgb(255 255 255 / .5), 0 8px 24px rgb(0 0 0 / .4); }
-	.face img, .round img { width: 100%; height: 100%; object-fit: cover; }
-	.bill h1 { font-size: clamp(36px, 5.4vw, 72px); line-height: 1; letter-spacing: -.03em; }
-	.b-line { margin: 0; color: var(--on-art-muted); font: var(--t-subhead); font-weight: 600; }
-	.b-facts { display: flex; flex-wrap: wrap; gap: 0; margin: 0; color: var(--on-art-muted); font: var(--t-footnote); font-weight: 600; font-variant-numeric: tabular-nums; }
-	.b-facts span + span::before, .st1 span + span::before, .st2 span + span::before { content: '·'; margin: 0 10px; opacity: .6; }
-	.b-more { text-decoration: none; font-family: var(--font-pixel, inherit); letter-spacing: .16em; font-size: 12px; padding: 4px 2px; }
-	/* P2 · Mixture: the artist page's short banner fading into a tinted page. */
-	.mix { position: relative; isolation: isolate; overflow: hidden; height: clamp(280px, 44vh, 520px); margin: calc(var(--s-6) * -1) calc(var(--gutter) * -1) 0; background: var(--tint-bg, #07080a); -webkit-mask-image: linear-gradient(to bottom, #000 55%, rgb(0 0 0 / .5) 80%, transparent 100%); mask-image: linear-gradient(to bottom, #000 55%, rgb(0 0 0 / .5) 80%, transparent 100%); }
-	.stage { position: absolute; inset: 0; z-index: -2; scale: calc(1.1 - .1 * var(--gone, 0)); transform-origin: 50% 40%; }
-	.mix .art { opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); }
-	.mix .art.in { opacity: .85; }
-	.m-shade { position: absolute; inset: 0; z-index: -1; background: linear-gradient(to bottom, rgb(7 8 10 / .4), rgb(7 8 10 / 0) 30%); }
-	.dim { position: absolute; inset: 0; z-index: -1; background: var(--tint-bg, #07080a); opacity: calc(var(--gone, 0) * .85); }
+	/* A1–A3: the music artist page, made for movies. */
+	.ap { --gap: 40px; display: flex; flex-direction: column; gap: var(--gap); min-width: 0; }
+	.ap.tinted { --text: #fff; --bg: var(--ap-bg); --text-muted: var(--ap-soft); --surface-1: rgb(255 255 255 / 8%); --surface-2: rgb(255 255 255 / 12%); --border: rgb(255 255 255 / 14%); --line: rgb(255 255 255 / 14%); color: #fff; color-scheme: dark; }
+	.ap h1 { font-family: var(--font-display); font-weight: 800; line-height: 1; letter-spacing: -.03em; text-wrap: balance; overflow-wrap: anywhere; }
+	.banner { --ink: var(--ap-bg, #07080a); position: relative; isolation: isolate; overflow: hidden; height: clamp(300px, 48vh, 560px); margin: calc(var(--s-6) * -1) calc(var(--gutter) * -1) 0; background: var(--ink); color: #fff; -webkit-mask-image: linear-gradient(to bottom, #000 55%, rgb(0 0 0 / .82) 68%, rgb(0 0 0 / .5) 80%, rgb(0 0 0 / .18) 91%, transparent 100%); mask-image: linear-gradient(to bottom, #000 55%, rgb(0 0 0 / .82) 68%, rgb(0 0 0 / .5) 80%, rgb(0 0 0 / .18) 91%, transparent 100%); }
+	.stage { position: absolute; inset: 0; z-index: -2; scale: calc(1.1 - .1 * var(--gone, 0)); transform-origin: 50% 40%; will-change: scale; }
+	.stage .art { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); }
+	.stage .art.in { opacity: .85; }
+	.clip { position: absolute; inset: 0; z-index: -1; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); }
+	.banner.playing .clip { opacity: 1; }
+	.clip :global(video), .clip :global(iframe) { width: 100%; height: 100%; object-fit: cover; }
+	.b-shade { position: absolute; inset: 0; z-index: 0; pointer-events: none; background: linear-gradient(to top, color-mix(in srgb, var(--ink) 60%, transparent) 0%, color-mix(in srgb, var(--ink) 25%, transparent) 35%, transparent 60%), linear-gradient(to bottom, rgb(7 8 10 / .4), rgb(7 8 10 / 0) 30%); }
+	.dim { position: absolute; inset: 0; z-index: 0; background: var(--ink); opacity: calc(var(--gone, 0) * .85); pointer-events: none; }
+	.showing { position: absolute; z-index: 1; top: 18px; left: var(--gutter); padding: 6px 12px; border-radius: 999px; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); color: #fff; font: var(--t-footnote); font-weight: 600; text-decoration: none; }
 	@media (prefers-reduced-motion: reduce) { .stage { scale: 1; } }
-	/* One centre line from the photo down to the figures (symmetry). */
-	.cline { display: flex; flex-direction: column; align-items: center; gap: 14px; margin-top: calc(-32px - 96px); position: relative; z-index: 1; text-align: center; }
-	.round { flex: none; display: grid; place-items: center; width: 168px; height: 168px; border-radius: 50%; overflow: hidden; background: var(--surface-2); box-shadow: 0 0 0 1px rgb(255 255 255 / .14), 0 18px 44px rgb(0 0 0 / .45); font: var(--t-title2); transition: border-radius var(--dur) var(--ease-out); }
-	.round.square { border-radius: 22px; }
-	.round.portrait { width: 152px; height: 228px; border-radius: 16px; }
-	.c-words { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
-	.cline h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(34px, 4vw, 52px); line-height: 1; letter-spacing: -.03em; color: var(--text); text-wrap: balance; }
+	.cline { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: end; gap: 20px; margin-top: calc(var(--gap) * -1 - 52px); position: relative; z-index: 1; }
+	.photo { display: grid; place-items: center; width: 136px; height: 136px; border-radius: 50%; overflow: hidden; background: #1c1d21; box-shadow: 0 12px 32px rgb(0 0 0 / .35), 0 0 0 4px var(--bg); }
+	.photo img { width: 100%; height: 100%; object-fit: cover; }
+	.initials { color: #fff; font: 700 40px/1 var(--font-display); }
+	.c-words { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding-bottom: 8px; }
+	.c-words h1 { margin: 0; font-size: clamp(30px, 3vw, 40px); color: var(--text); }
 	.c-line { margin: 0; color: var(--text-muted); font: 600 15px/1.3 var(--font-ui); font-variant-numeric: tabular-nums; }
-	.stats { display: flex; flex-direction: column; align-items: center; gap: 8px; width: min(100%, 720px); margin-inline: auto; padding: 24px 16px; border-radius: var(--r-card); background: var(--surface-1); text-align: center; font-variant-numeric: tabular-nums; }
+	.acts { padding-bottom: 8px; }
+	.go { display: inline-flex; align-items: center; height: 44px; padding: 0 20px; border-radius: 999px; background: var(--text); color: var(--bg); font: 600 15px/1 var(--font-ui); text-decoration: none; }
+	.go:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.slimwrap { position: sticky; top: var(--topbar); z-index: 25; height: 0; margin-bottom: calc(var(--gap) * -1); transition: transform var(--bar-glide); }
+	:global(html.bar-hidden) .slimwrap { transform: translateY(calc(-1 * var(--topbar))); }
+	.slim { --tint: #3a3d44; position: absolute; top: 0; left: calc(var(--gutter) * -1); right: calc(var(--gutter) * -1); display: flex; align-items: center; gap: 14px; height: 64px; padding: 0 var(--gutter); box-sizing: border-box; background: color-mix(in srgb, var(--tint) 45%, #0b0c0f); color: #fff; box-shadow: 0 8px 24px rgb(0 0 0 / .22); opacity: 0; translate: 0 -8px; pointer-events: none; transition: opacity var(--dur) var(--ease-out), translate var(--dur) var(--ease-out); }
+	.slim.on { opacity: 1; translate: 0 0; pointer-events: auto; }
+	.s-photo { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+	.slim-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 22px/1.1 var(--font-display); letter-spacing: -.01em; }
+	@media (prefers-reduced-motion: reduce) { .slim, .slimwrap { transition: none; translate: none; } }
+	.stats { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 28px 16px; border-block: 1px solid var(--line); text-align: center; font-variant-numeric: tabular-nums; }
 	.stats p { margin: 0; display: flex; flex-wrap: wrap; justify-content: center; }
-	.st1 { font: var(--t-title3); font-weight: 400; }
-	.st1 b { font-weight: 700; }
-	.st2 { color: var(--text-muted); font: var(--t-subhead); }
+	.stats p > span + span::before { content: '·'; margin: 0 12px; opacity: .6; }
+	.st1 { font: 500 20px/1.35 var(--font-ui); color: var(--text-muted); }
+	.st1 b { color: var(--text); font-weight: 700; }
+	.st2 { font: var(--t-subhead); color: var(--text-muted); }
 	.own { display: inline-flex; align-items: center; gap: 6px; }
-	.acard { position: relative; display: block; width: 100%; height: 300px; padding: 0; border: 0; border-radius: var(--r-card); overflow: hidden; background: var(--surface-2); color: #fff; text-align: left; cursor: pointer; }
-	.acard img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: scale var(--dur-slow) var(--ease-out); }
-	.acard::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgb(0 0 0 / .78), rgb(0 0 0 / 0) 70%); }
+	.award { color: #f5c518; }
+	.songs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(5, auto); grid-auto-flow: column; gap: 0 24px; margin: 0; padding: 0; list-style: none; }
+	.song { display: grid; grid-template-columns: 32px 48px minmax(0, 1fr) auto; align-items: center; gap: 12px; height: 80px; padding: 0 8px; border-radius: 10px; transition: background var(--dur-fast) var(--ease-out); }
+	.song:hover { background: var(--surface-1); }
+	.num { display: grid; place-items: center; width: 32px; color: var(--text-muted); font: 600 15px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
+	.thumb { display: block; width: 48px; height: 72px; border-radius: 6px; overflow: hidden; background: var(--surface-2); }
+	.thumb img { width: 100%; height: 100%; object-fit: cover; }
+	.s-words { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+	.s-name { color: var(--text); font: 600 15px/1.3 var(--font-ui); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.s-name:hover { text-decoration: underline; }
+	.s-sub { color: var(--text-muted); font: var(--t-footnote); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.state { color: var(--text-muted); font: var(--t-footnote); font-weight: 600; }
+	.state.have { color: #9df5b4; }
+	.acard { position: relative; display: block; width: 100%; height: clamp(280px, 30vw, 420px); padding: 0; border: 0; border-radius: var(--r-card); overflow: hidden; background: #1c1d21; color: #fff; text-align: left; cursor: pointer; isolation: isolate; box-shadow: var(--shadow-card); transition: translate var(--dur-slow) var(--ease-out); }
+	.acard img { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; object-fit: cover; transition: scale var(--dur-slow) var(--ease-out); }
+	.acard::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, rgb(0 0 0 / .8), rgb(0 0 0 / 0) 65%); }
+	.acard:hover { translate: 0 -2px; }
 	.acard:hover img { scale: 1.03; }
 	.acard:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.a-foot { position: absolute; z-index: 1; left: 24px; right: 24px; bottom: 22px; display: flex; flex-direction: column; gap: 6px; }
-	.a-foot b { font: var(--t-title2); }
-	.a-bio { font: var(--t-callout); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 80ch; }
+	.disc { position: absolute; top: 20px; left: 20px; display: grid; place-content: center; justify-items: center; width: 92px; height: 92px; border-radius: 50%; background: #f5c518; color: #111; box-shadow: 0 8px 24px rgb(0 0 0 / .3); text-align: center; }
+	.disc b { font: 800 26px/1 var(--font-display); }
+	.disc small { font: 600 11px/1.1 var(--font-ui); max-width: 70px; }
+	.a-foot { position: absolute; left: 28px; right: 28px; bottom: 26px; display: flex; flex-direction: column; gap: 8px; }
+	.a-lis { font: 700 13px/1 var(--font-ui); text-transform: uppercase; letter-spacing: .08em; opacity: .8; }
+	.a-bio { font: 600 20px/1.4 var(--font-ui); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; max-width: 72ch; }
 	.s-facts { margin: 0 0 12px; color: var(--text-muted); font: var(--t-subhead); }
 	.s-bio { margin: 0; font: var(--t-body); line-height: 1.6; white-space: pre-line; }
-	.circles { display: flex; gap: 20px; margin: 0; padding: 0 0 4px; list-style: none; overflow-x: auto; scrollbar-width: none; }
+	.circles { display: flex; gap: 20px; overflow-x: auto; margin: 0; padding: 4px 2px 8px; list-style: none; scrollbar-width: none; }
 	.circles li { flex: none; }
-	/* P3 · Credits: one dense list, then About with an Information column. */
-	.credits { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--border); }
-	.credits li { display: grid; grid-template-columns: 64px minmax(0, 2fr) minmax(0, 2fr) 120px; align-items: center; gap: 16px; min-height: 52px; border-bottom: 1px solid var(--border); font: var(--t-callout); }
-	.cy { color: var(--text-muted); font-variant-numeric: tabular-nums; }
-	.ct { color: var(--text); font-weight: 600; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.ct:hover { text-decoration: underline; }
-	.cr { color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.cs { display: flex; justify-content: flex-end; }
-	.state { color: var(--text-muted); font: var(--t-footnote); font-weight: 600; }
-	.state.have { color: var(--ok, #34c759); }
-	.info { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 32px; }
-	.i-bio { margin: 0; font: var(--t-callout); line-height: 1.6; color: var(--text); }
-	.info dl { margin: 0; display: flex; flex-direction: column; gap: 14px; }
-	.info dt { color: var(--text-muted); font: var(--t-footnote); font-weight: 600; }
-	.info dd { margin: 2px 0 0; font: var(--t-callout); }
+	@media (max-width: 1000px) { .songs { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-auto-flow: row; } }
 	@media (max-width: 767px) {
-		.bill { min-height: 440px; margin-top: calc(var(--s-4) * -1); }
-		.bill.short { min-height: 340px; }
-		.b-in { width: 100%; align-items: center; text-align: center; }
-		.b-facts { justify-content: center; }
-		.b-more { align-self: center; }
-		.mix { height: 180px; margin-top: calc(var(--s-4) * -1); }
-		.cline { gap: 12px; margin-top: calc(-26px - 64px); }
-		.round { width: 120px; height: 120px; }
-		.round.portrait { width: 112px; height: 168px; }
+		.ap { --gap: 32px; }
+		.banner { height: 200px; margin-top: calc(var(--s-4) * -1); }
+		.cline { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; gap: 12px; margin-top: calc(var(--gap) * -1 - 56px); }
+		.photo { width: 112px; height: 112px; }
 		.c-words { align-items: center; padding: 0; }
-		.cline h1 { font-size: clamp(28px, 8.4vw, 36px); }
-		.stats { padding: 20px 8px; }
+		.c-words h1 { font-size: clamp(28px, 8.4vw, 36px); }
+		.acts { padding: 0; }
+		.slimwrap { top: 0; }
+		:global(html.bar-hidden) .slimwrap { transform: none; }
+		.slim { height: 56px; gap: 12px; }
+		.slim-name { font-size: 18px; }
+		.stats { padding: 22px 8px; }
 		.st1 { font-size: 17px; }
-		.acard { height: 320px; }
+		.stats p > span + span::before { margin: 0 8px; }
+		.song { grid-template-columns: 24px 40px minmax(0, 1fr) auto; gap: 10px; padding: 0 4px; height: 72px; }
+		.thumb { width: 40px; height: 60px; }
+		.num { width: 24px; }
+		.acard { height: 360px; }
+		.disc { width: 76px; height: 76px; top: 14px; left: 14px; }
+		.disc b { font-size: 21px; }
 		.a-foot { left: 16px; right: 16px; bottom: 16px; }
-		.credits li { grid-template-columns: 44px minmax(0, 1fr) auto; grid-template-rows: auto auto; row-gap: 0; padding: 8px 0; }
-		.cy { grid-row: span 2; }
-		.cr { grid-column: 2; grid-row: 2; font: var(--t-footnote); }
-		.cs { grid-column: 3; grid-row: 1 / span 2; }
-		.info { grid-template-columns: minmax(0, 1fr); gap: 20px; }
-	}
-	@media (max-width: 767px) {
+		.a-bio { font-size: 17px; }
 		.person { --title-item: calc((100cqi - var(--shelf-gap, 12px)) / 1.6 / .78); gap: 26px; }
 		.hero-in { grid-template-columns: 96px minmax(0, 1fr); }
 		.grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); }
