@@ -506,7 +506,7 @@ func TestKidCalendar(t *testing.T) {
 	if !strings.Contains(b, "Gentle Meadow") || mentionsBlocked(b) != "" {
 		t.Fatalf("kid calendar: %s", b)
 	}
-	k.ana.call("GET", "/api/v1/calendar", "", 403) // the calendar needs manage_library
+	k.ana.call("GET", "/api/v1/calendar", "", 200) // every signed-in person may read the calendar
 }
 
 func TestKidExploreRows(t *testing.T) {

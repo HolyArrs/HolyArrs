@@ -81,7 +81,7 @@ export function buildNav(input: NavInput): NavSection[] {
 				...(!approver
 					? [{ href: '/wishlist', label: 'Wishlist', icon: 'wish', need: 'wishlist', badge: input.unread, badgeLabel: `${input.unread} new` } as NavItem]
 					: []),
-				{ href: '/calendar', label: 'Calendar', icon: 'calendar' }
+				{ href: '/calendar', label: 'Calendar', icon: 'calendar', need: null }
 			]
 		},
 		{
