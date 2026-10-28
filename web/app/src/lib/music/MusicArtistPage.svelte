@@ -956,7 +956,7 @@
 {/if}
 
 <style>
-	.artist.tinted { --text: #fff; --text-muted: var(--ar-soft); --surface-1: rgb(255 255 255 / 8%); --surface-2: rgb(255 255 255 / 12%); --border: rgb(255 255 255 / 14%); --line: rgb(255 255 255 / 14%); color: #fff; color-scheme: dark; }
+	.artist.tinted { --text: #fff; --bg: var(--ar-bg); --text-muted: var(--ar-soft); --surface-1: rgb(255 255 255 / 8%); --surface-2: rgb(255 255 255 / 12%); --border: rgb(255 255 255 / 14%); --line: rgb(255 255 255 / 14%); color: #fff; color-scheme: dark; }
 	.artist.tinted .hero { --hero-ink: var(--ar-bg); }
 	.artist { --music-item: max(168px, calc((100vw - 96px) / 7.2)); --gap: 40px; display: flex; flex-direction: column; gap: var(--gap); padding-bottom: 48px; min-width: 0; }
 	h1 { margin: 0; font-family: var(--font-display); font-weight: 800; line-height: 1; letter-spacing: -.03em; text-wrap: balance; overflow-wrap: anywhere; }
