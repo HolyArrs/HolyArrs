@@ -151,7 +151,7 @@
 <svelte:head><title>Missing subtitles · HolyArrs</title></svelte:head>
 
 <div class="page">
-<PageHeader title="Missing subtitles" subtitle="Every movie and episode without a subtitle it should have. HolyArrs keeps looking on its own; search now to look at once." back={{ href: to('/library'), label: 'Library' }}>
+<PageHeader title="Missing subtitles" back={{ href: to('/library'), label: 'Library' }}>
 	{#snippet actions()}
 		<Button variant="primary" icon="search" onclick={searchAll} disabled={total === 0} busy={searchAllBusy} data-testid="search-all-subtitles">Search all</Button>
 	{/snippet}

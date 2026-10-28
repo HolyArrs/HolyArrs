@@ -45,7 +45,7 @@
 <svelte:head><title>People · HolyArrs</title></svelte:head>
 
 <section class="workspace">
-<PageHeader title="People" subtitle="Find an actor or director, then see their movies and which ones are already in your Library." back={{ href: to('/library'), label: 'Library' }} />
+<PageHeader title="People" back={{ href: to('/library'), label: 'Library' }} />
 
 <form class="searchbar" role="search" onsubmit={search}>
 	<span class="search-ic" aria-hidden="true"><Icon name="search" size={18} /></span>

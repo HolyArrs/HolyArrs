@@ -452,7 +452,6 @@
 <div class="ap-top" class:compact={stageLook > 0}>
 <PageHeader
 	title={approver ? 'Approvals' : 'Your Wishlist'}
-	subtitle={approver ? 'What people asked for. Approve to add, or turn down with a note.' : 'The movies, shows and music you asked for, and where each one is.'}
 >
 	{#snippet actions()}
 		{#if session.can('ask') && !approver}

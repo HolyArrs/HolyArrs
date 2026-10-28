@@ -204,7 +204,7 @@
 
 <svelte:head><title>Downloads · HolyArrs</title></svelte:head>
 
-<PageHeader title="Downloads" subtitle="What your Downloaders are fetching right now, and what HolyArrs moved into the Library." />
+<PageHeader title="Downloads" />
 
 <PageLoader loading={!loaded} label="Loading Downloads">
 {#if error && allRows.length === 0}

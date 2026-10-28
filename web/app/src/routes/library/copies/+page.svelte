@@ -92,7 +92,7 @@
 <svelte:head><title>Video codecs · HolyArrs</title></svelte:head>
 
 <div class="page">
-<PageHeader title="Video codecs" subtitle="See the codec read from each movie file and search selected Versions for alternatives." back={{ href: to('/library'), label: 'Library' }} />
+<PageHeader title="Video codecs" back={{ href: to('/library'), label: 'Library' }} />
 
 {#if !session.can('manage_library')}
 	<EmptyState icon="shield" title="You do not have permission to manage the Library." />

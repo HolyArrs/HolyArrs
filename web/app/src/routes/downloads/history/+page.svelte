@@ -109,7 +109,7 @@
 
 <svelte:head><title>History · HolyArrs</title></svelte:head>
 
-<PageHeader title="History" subtitle="Everything HolyArrs did, newest first: what it added, searched, chose, sent, imported, renamed and deleted, and why." />
+<PageHeader title="History" />
 
 <LookBar bind:show bind:sub counts={counts.tabs} subCounts={counts.subs} filter={shownFilter} {titles} {episodeName} onfilter={apply}>
 	{#snippet tools()}

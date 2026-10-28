@@ -30,7 +30,7 @@
 <svelte:head><title>Movie series · HolyArrs</title></svelte:head>
 
 <div class="page">
-	<PageHeader title="Movie series" subtitle="Movies in your Library that belong to the same series." back={{ href: to('/library'), label: 'Library' }} />
+	<PageHeader title="Movie series" back={{ href: to('/library'), label: 'Library' }} />
 
 	{#if error}
 		<LoadError hasData={collections.length > 0} message={plainReason(error).text} onretry={load} />
