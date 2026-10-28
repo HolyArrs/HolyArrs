@@ -156,9 +156,10 @@
 						{#each albumPicks as p (p.row.key)}
 							{@const r = p.row}
 							<li class:off={p.tick === 'none'} data-testid="ask-album" data-tick={p.tick}>
-								<div class="line">
+								<!-- The whole row opens and closes the song list; the tick and the buttons keep their own job. -->
+								<div class="line rowtap" role="button" tabindex="-1" onclick={(e) => { if (!(e.target as HTMLElement).closest('input, button')) openAlbum = openAlbum === r.key ? '' : r.key; }} onkeydown={() => {}}>
 									{#if editable}<input class="tick" type="checkbox" checked={p.tick === 'all'} indeterminate={p.tick === 'some'} aria-label="Keep {r.main.name}" onchange={() => tickAlbum(p)} />{/if}
-									<span class="cover">{#if r.main.image}<img src={r.main.image} alt="" loading="lazy" decoding="async" />{/if}</span>
+									<span class="cover">{#if r.main.image}<img src={r.main.image} alt="" loading="lazy" decoding="async" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />{/if}</span>
 									<span class="t">{r.main.name}</span>
 									{#if r.editions.length}
 										<button type="button" class="more" aria-expanded={openEditions === r.key} onclick={() => (openEditions = openEditions === r.key ? '' : r.key)}>{r.editions.length + 1} editions</button>
@@ -202,7 +203,7 @@
 							{@const list = openSeason === s.number ? listOf(s) : null}
 							{@const words = askedWords(p)}
 							<li class:off={p.tick === 'none'} data-testid="ask-season" data-tick={p.tick}>
-								<div class="line">
+								<div class="line rowtap" role="button" tabindex="-1" onclick={(e) => { if (!(e.target as HTMLElement).closest('input, button')) openSeason = openSeason === s.number ? 0 : s.number; }} onkeydown={() => {}}>
 									{#if editable}<input class="tick" type="checkbox" checked={p.tick === 'all'} indeterminate={p.tick === 'some'} aria-label="Season {s.number}: tick every episode" onchange={() => tickSeason(p)} />{/if}
 									<button type="button" class="season" aria-expanded={openSeason === s.number} onclick={() => (openSeason = openSeason === s.number ? 0 : s.number)}>
 										<span class="t">Season {s.number}{#if words}<span class="sub"> · {words}</span>{/if}</span>
@@ -288,4 +289,6 @@
 	.tag { flex: none; padding: 1px 6px; border-radius: var(--r-pill); background: var(--surface-3); color: var(--text-muted); font: var(--t-caption); white-space: nowrap; }
 	@media (max-width: 420px) { .eps .y { font-size: 11px; } .eps .n { width: 28px; } }
 	@media (prefers-reduced-motion: reduce) { .chev { transition: none; } }
+	.rowtap { cursor: pointer; }
+	.rowtap:hover { background: var(--surface-2); }
 </style>
