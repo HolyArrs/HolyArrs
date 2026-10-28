@@ -1,5 +1,6 @@
 <script lang="ts">
 	import PageLoader from '#lib/ui/PageLoader.svelte';
+	import { reaskWhileFilling } from '#lib/music/reask.ts';
 	import { to } from '#lib/paths.ts';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/api.ts';
@@ -141,7 +142,9 @@
 		lookError = '';
 		try {
 			if (kind === 'music') {
-				const artists = (await api.get<{ artists: LookupArtist[] }>(`/artists/lookup?term=${encodeURIComponent(term.trim())}`)).artists;
+				const ask = () => api.get<{ artists: LookupArtist[]; pending?: boolean }>(`/artists/lookup?term=${encodeURIComponent(term.trim())}`);
+				// A name never searched before answers "pending" while the search runs: ask again quietly.
+				const artists = (await reaskWhileFilling(await ask(), ask, () => {})).artists;
 				found = artists.map((a) => ({ key: `mbid:${a.mbid}`, name: a.disambiguation ? `${a.name} (${a.disambiguation})` : a.name, title_id: a.title_id }));
 				if (!found.length) lookError = 'Nothing found. Try fewer words, or mbid:<id>.';
 			} else if (kind === 'show') {

@@ -11,6 +11,7 @@
 	import ArtPlaceholder from './ui/ArtPlaceholder.svelte';
 	import { isNewRelease } from './music/music-new.ts';
 	import { fetchMusicExplore, fetchMusicExploreMore, fetchRisingToday, withRising, fetchMusicPage, genreHref, musicCardHref, musicCardNote, musicImage, musicStatus, releaseWords, songAskHref, type MusicCardData, type MusicExploreAnswer, type MusicPageKind } from './music/music-trending.ts';
+	import { reaskWhileFilling } from './music/reask.ts';
 	import MusicGenreTiles from './ui/MusicGenreTiles.svelte';
 	import MusicBrowseGrid from './ui/MusicBrowseGrid.svelte';
 	import MusicVideoRow from './ui/MusicVideoRow.svelte';
@@ -88,20 +89,32 @@
 		try {
 			// Rising today is asked with the rows and shown with them (all music, not a genre or chart page).
 			const risingAsk = slug || genre ? Promise.resolve(null) : fetchRisingToday(api, signal);
-			const a = slug ? await fetchMusicPage(kind, slug, region, api, signal) : await fetchMusicExplore(genre, region, api, signal);
-			a.rows = withRising(a.rows, await risingAsk);
+			const ask = () => (slug ? fetchMusicPage(kind, slug, region, api, signal) : fetchMusicExplore(genre, region, api, signal));
+			const a = await ask();
+			const rising = await risingAsk;
+			a.rows = withRising(a.rows, rising);
 			if (signal.aborted) return;
 			const at = `${kind}|${slug}|${genre}|${region}`;
 			if (at !== orderFor) {
 				order = [];
 				orderFor = at;
 			}
-			const kept = stableRows(order, a.rows, (r) => r.id);
-			order = kept.order;
-			if (heroSlot === null) heroSlot = !!a.hero;
-			const keepHero = heroSlot && !a.hero && answer?.hero;
-			answer = { ...a, rows: kept.rows, hero: heroSlot ? (a.hero ?? answer?.hero ?? null) : null, hero_alts: keepHero ? answer?.hero_alts : a.hero_alts };
+			const show = (a: MusicExploreAnswer) => {
+				const kept = stableRows(order, a.rows, (r) => r.id);
+				order = kept.order;
+				if (heroSlot === null) heroSlot = !!a.hero;
+				const keepHero = heroSlot && !a.hero && answer?.hero;
+				answer = { ...a, rows: kept.rows, hero: heroSlot ? (a.hero ?? answer?.hero ?? null) : null, hero_alts: keepHero ? answer?.hero_alts : a.hero_alts };
+			};
+			show(a);
 			failed = false;
+			// Still filling in on the server ("partial"): ask again quietly; rows on screen stay put.
+			if (a.partial)
+				void reaskWhileFilling(a, ask, (b) => {
+					if (signal.aborted) return;
+					b.rows = withRising(b.rows, rising);
+					show(b);
+				}, signal);
 			// music_rows_v7: read again the batches already shown (the plan is fixed for the day).
 			next = a.next ?? '';
 			const had = batches;
@@ -192,7 +205,9 @@
 		if (busy || !c.artist_mbid) return;
 		busy = c.key;
 		try {
-			const r = await api.get<{ artists: LookupArtist[] }>(`/artists/lookup?term=${encodeURIComponent(artist)}`);
+			const ask = () => api.get<{ artists: LookupArtist[]; pending?: boolean }>(`/artists/lookup?term=${encodeURIComponent(artist)}`);
+			// A name never searched before answers "pending" while the search runs: ask again quietly.
+			const r = await reaskWhileFilling(await ask(), ask, () => {});
 			const a = r.artists?.find((x) => x.mbid === c.artist_mbid);
 			if (!a) return void toasts.push(`Could not find ${artist}. Try Search.`, 'fail');
 			if (a.title_id) {

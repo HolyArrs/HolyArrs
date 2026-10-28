@@ -175,6 +175,8 @@ export interface MusicExploreAnswer {
 	/** The hero's stand-ins, next newest first: the page shows the first whose cover loads. */
 	hero_alts?: MusicCardData[];
 	rows: MusicRowData[];
+	/** Still filling in on the server: the page asks again quietly (reaskWhileFilling). */
+	partial?: boolean;
 	/** Row templates: the page has too little music yet (no rows); similar pages to try. */
 	thin?: boolean;
 	similar?: { key: string; name: string; href: string }[];

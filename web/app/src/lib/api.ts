@@ -56,6 +56,13 @@ export function keepFor(cacheControl: string | null): number {
 	return Math.min(KEEP_MAX, Math.max(KEEP_MOMENT, Number(m[1]) * 1000));
 }
 
+/** An answer still filling in on the server (Explore music "partial", artist search "pending"): never kept, asked again quietly. */
+export function isFilling(v: unknown): boolean {
+	if (!v || typeof v !== 'object') return false;
+	const o = v as { partial?: unknown; pending?: unknown };
+	return o.partial === true || o.pending === true;
+}
+
 /** An answer the server marked incomplete (still filling in): never kept. */
 export function isIncomplete(v: unknown): boolean {
 	return !!v && typeof v === 'object' && (v as { incomplete?: unknown }).incomplete === true;
@@ -157,7 +164,7 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 			entry.p.then(
 				(v) => {
 					entry.done = Date.now();
-					if (isIncomplete(v) || (!!v && typeof v === 'object' && (v as { building?: unknown }).building === true)) entry.keep = 0;
+					if (isIncomplete(v) || isFilling(v) || (!!v && typeof v === 'object' && (v as { building?: unknown }).building === true)) entry.keep = 0;
 				},
 				() => shared.get(path) === entry && shared.delete(path)
 			);

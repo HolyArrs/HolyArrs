@@ -4,7 +4,7 @@
 // merges each answer into what is on screen, and stops as soon as an answer
 // is complete. Leaving the page stops it. Incomplete answers carry no-store
 // and are never kept by api.get, so each ask reaches the server.
-import { isIncomplete } from '../api.ts';
+import { isFilling, isIncomplete } from '../api.ts';
 
 /** The pauses before each quiet re-ask. */
 export const REASK_MS = [2500, 3500, 5000, 7000];
@@ -106,4 +106,41 @@ export const NO_SONGS_LINE = 'Songs are not available right now.';
 /** sameTracks: an answer that still holds no songs is never "stuck"; asking goes on until the pauses run out. */
 export function sameTracks<T extends { tracks: unknown[] }>(a: T, b: T): boolean {
 	return a.tracks.length > 0 && a.tracks.length === b.tracks.length;
+}
+
+/** The pauses of the quiet re-asks for an answer still filling in (Explore music, artist search). */
+export const FILLING_REASK_MS = [1500, 2500, 4000, 6000, 9000];
+
+/**
+ * reaskWhileFilling asks again, after each pause, while the last answer is still
+ * filling in ("partial" or "pending"), handing every newer answer to take; what is
+ * shown stays until a newer answer arrives, so nothing jumps. A failed re-ask keeps
+ * what is shown. Leaving (signal) stops it. Answers the last answer.
+ */
+export async function reaskWhileFilling<T>(
+	first: T,
+	ask: () => Promise<T>,
+	take: (v: T) => void,
+	signal?: AbortSignal,
+	waits: number[] = FILLING_REASK_MS,
+	wait: (ms: number, signal: AbortSignal) => Promise<void> = sleep
+): Promise<T> {
+	const sig = signal ?? new AbortController().signal;
+	let last = first;
+	for (let i = 0; isFilling(last) && i < waits.length; i++) {
+		try {
+			await wait(waits[i], sig);
+		} catch {
+			return last;
+		}
+		try {
+			const next = await ask();
+			if (sig.aborted) return last;
+			last = next;
+			take(next);
+		} catch {
+			if (sig.aborted) return last;
+		}
+	}
+	return last;
 }
