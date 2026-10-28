@@ -1,0 +1,67 @@
+import { describe, expect, it } from 'vitest';
+import { addSample, barTone, facts, historyStatus, historyTotals, inHistory, matches, sizeLine, sparkPath, totals } from './sections.ts';
+import type { DownloadRow } from '../downloaders.ts';
+
+const row = (o: Partial<DownloadRow>): DownloadRow => ({
+	id: 1, phase: 'downloading', state: 'downloading', label: '', text: '', progress: 0, speed: 0, active: false,
+	name: 'Some.Release.1080p', title: 'Some', version: 'Main', downloader: 'SABnzbd', size: 0, updated_at: '2026-10-27T10:00:00Z', can_act: true, ...o
+});
+
+describe('sections', () => {
+	it('puts done, seeding, failed and removed in History, the rest in the Queue', () => {
+		const phases = ['waiting', 'paused', 'downloading', 'stalled', 'importing', 'needs_a_decision', 'done', 'failed', 'removed', 'vanished'];
+		expect(phases.map((p) => inHistory(row({ phase: p })))).toEqual([false, false, false, false, false, false, true, true, true, true]);
+	});
+	it('colours bars by state', () => {
+		expect(['downloading', 'waiting', 'paused', 'stalled', 'needs_a_decision'].map((p) => barTone(row({ phase: p })))).toEqual(['go', 'queued', 'held', 'held', 'bad']);
+	});
+	it('writes the size inside the bar in MB', () => {
+		expect(sizeLine(row({ size: 5367 * 1048576, progress: 0.1191 }))).toBe('639 MB / 5367 MB');
+		expect(sizeLine(row({ size: 0 }))).toBe('');
+	});
+});
+
+describe('header strip', () => {
+	it('adds speed and time left for the whole Queue', () => {
+		const t = totals([row({ active: true, speed: 100, size: 1000, progress: 0.5 }), row({ size: 500 })]);
+		expect(t).toEqual({ speed: 100, left: 1000, eta: 10 });
+		expect(totals([row({ size: 10 })]).eta).toBe(0);
+	});
+	it('keeps the last readings and draws them', () => {
+		let s: number[] = [];
+		for (let i = 0; i < 50; i++) s = addSample(s, i);
+		expect(s).toHaveLength(40);
+		expect(s[0]).toBe(10);
+		expect(sparkPath([1], 10, 10)).toBe('');
+		expect(sparkPath([0, 2], 10, 10)).toBe('M0.0 9.0 L10.0 1.0');
+	});
+});
+
+describe('history', () => {
+	it('counts what finished today and this month', () => {
+		const now = new Date(2026, 9, 27, 12);
+		const rows = [
+			row({ phase: 'done', size: 10, finished_at: new Date(2026, 9, 27, 9).toISOString() }),
+			row({ phase: 'done', size: 5, finished_at: new Date(2026, 9, 3).toISOString() }),
+			row({ phase: 'done', size: 7, finished_at: new Date(2026, 8, 3).toISOString() }),
+			row({ phase: 'failed', size: 99, finished_at: new Date(2026, 9, 27).toISOString() })
+		];
+		expect(historyTotals(rows, now)).toEqual({ today: 10, month: 15 });
+	});
+	it('searches the title and the Release name', () => {
+		expect(matches(row({}), 'release')).toBe(true);
+		expect(matches(row({}), 'nope')).toBe(false);
+		expect(matches(row({}), ' ')).toBe(true);
+	});
+	it('reads Completed, or Failed with its reason', () => {
+		expect(historyStatus(row({ phase: 'done' }), undefined)).toEqual({ text: 'Completed', bad: false });
+		expect(historyStatus(row({ phase: 'vanished' }), undefined)).toEqual({ text: 'Failed: removed outside HolyArrs', bad: true });
+	});
+});
+
+describe('facts', () => {
+	it('lists only the fields that have a value', () => {
+		const f = facts(row({ size: 1048576, started_at: '2026-10-27T10:00:00Z' }), { ID: 1, State: 'done', CreatedAt: '', Plan: [{ source_file: '/dl/a.mkv', target_path: '/lib/Some (2020)/a.mkv' }] });
+		expect(f.map((x) => x.label)).toEqual(['Name', 'Status', 'Size', 'Downloader', 'Path', 'Source', 'Added']);
+	});
+});
