@@ -48,13 +48,13 @@ export function lookFrom(q: Pick<URLSearchParams, 'get'>, kept: Partial<CaptionL
 // ---- Episodes ----
 
 /**
- * fakeEpisodeName: names that only repeat the number or the day ("Episode 8827",
+ * fakeEpisodeName: names that only repeat the number or the day ("Episode 8827", "Episode 170 / 8805",
  * "19/10/2026", "2026-10-19", "October 19, 2026", "TBA") say nothing.
  */
 export function fakeEpisodeName(name?: string): boolean {
 	const n = (name ?? '').trim();
 	if (!n) return true;
-	if (/^(episode|ep\.?|chapter|part)\s*#?\d+$/i.test(n) || /^(tba|tbd|untitled)$/i.test(n) || /^#?\d+$/.test(n)) return true;
+	if (/^(episode|ep\.?|chapter|part)\s*#?\d+(\s*\/\s*\d+)?$/i.test(n) || /^\d+\s*\/\s*\d+$/.test(n) || /^(tba|tbd|untitled)$/i.test(n) || /^#?\d+$/.test(n)) return true;
 	if (/^\d{1,4}[/.-]\d{1,2}[/.-]\d{1,4}$/.test(n)) return true;
 	const months = 'jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|june?|july?|aug(ust)?|sep(t(ember)?)?|oct(ober)?|nov(ember)?|dec(ember)?';
 	const day = '(mon|tue|wed|thu|fri|sat|sun)[a-z]*,?\\s+';

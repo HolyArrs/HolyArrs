@@ -129,9 +129,23 @@ export function monthGrid(year: number, month: number, entries: CalendarEntry[],
 }
 
 /** byDay groups dates by calendar day for the list, in day order. */
+// One order inside every day: movies (In theaters, then Streaming), then TV (All day,
+// then by air time), then music; the name breaks ties.
+const kindRank: Record<string, number> = { cinema: 0, digital: 1, physical: 1, episode: 2, album: 3 };
+function dayOrder(a: CalendarEntry, b: CalendarEntry): number {
+	const k = (kindRank[a.kind] ?? 9) - (kindRank[b.kind] ?? 9);
+	if (k) return k;
+	if (a.kind === 'episode') {
+		const at = a.timed ? Date.parse(a.date) : -Infinity;
+		const bt = b.timed ? Date.parse(b.date) : -Infinity;
+		if (at !== bt) return at < bt ? -1 : 1;
+	}
+	return (a.name ?? '').localeCompare(b.name ?? '') || (a.season ?? 0) - (b.season ?? 0) || (a.episode ?? 0) - (b.episode ?? 0);
+}
+
 export function byDay(entries: CalendarEntry[]): { day: string; items: CalendarEntry[] }[] {
 	const out: { day: string; items: CalendarEntry[] }[] = [];
-	const sorted = entries.map((e, i) => ({ e, i, k: entryDay(e) })).sort((a, b) => (a.k === b.k ? a.i - b.i : a.k < b.k ? -1 : 1));
+	const sorted = entries.map((e, i) => ({ e, i, k: entryDay(e) })).sort((a, b) => (a.k === b.k ? dayOrder(a.e, b.e) || a.i - b.i : a.k < b.k ? -1 : 1));
 	for (const { e, k } of sorted) {
 		const g = out.at(-1);
 		if (g && g.day === k) g.items.push(e);
