@@ -2,7 +2,7 @@
 	// One ask in full, for the Inbox panel, the phone's full screen and the
 	// Stage arrangement: type tag and title, what it is for (with season
 	// pills), not out yet, the rule and language, who asked and when, then
-	// the decision: Rule and Language (starting from the person's picks),
+	// the decision: the Rule (starting from the person's pick),
 	// an optional note, Approve and Turn down (both with a 6 s Undo).
 	// `slim` drops the backdrop for a narrow panel; `stage` is the large one.
 	import Poster from '../Poster.svelte';
@@ -14,7 +14,7 @@
 	import { to } from '../paths.ts';
 	import { ago, dateTime } from '../format.ts';
 	import { kindWord, type ApprovalsCtx } from './approvals.ts';
-	import { audioLanguages, languageName } from './inbox.ts';
+	import Icon from '#lib/Icon.svelte';
 	import type { Ask } from '../types.ts';
 
 	let { ctx, a, variant = 'full', headingId }: { ctx: ApprovalsCtx; a: Ask; variant?: 'full' | 'slim' | 'stage'; headingId?: string } = $props();
@@ -30,22 +30,18 @@
 	const music = $derived(a.kind === 'artist');
 	// The decision, starting from the person's own picks (asks carry none yet: the defaults).
 	let rulesId = $state(0);
-	let lang = $state('');
 	let note = $state('');
 	$effect(() => {
 		void a.id;
 		rulesId = 0;
-		lang = '';
 		note = '';
 	});
 	const waiting = $derived(ctx.approver && a.state === 'asked' && !ctx.isPending(a.id));
-	const original = $derived(info?.originalLanguage ?? '');
-	const langList = $derived(original ? [{ code: original, name: `${languageName(original)} (original)` }, ...audioLanguages.filter((l) => l.code !== original)] : audioLanguages);
 	const ruleWords = $derived(rulesId ? (rules.find((r) => r.id === rulesId)?.name ?? 'Default rule') : 'Default rule');
-	const picks = $derived([ruleWords, lang ? languageName(lang) : ''].filter(Boolean).join(' · '));
+	const picks = $derived(ruleWords);
 	function approve(e: SubmitEvent) {
 		e.preventDefault();
-		ctx.approveWith(a, { rulesId, langs: lang && !music ? [lang] : [], note: note.trim() });
+		ctx.approveWith(a, { rulesId, langs: [], note: note.trim() });
 	}
 </script>
 
@@ -54,21 +50,23 @@
 		<div class="hero" class:square={music}>
 			{#if art}<div class="bd" style:background-image={`url("${to(art)}")`} aria-hidden="true"></div>{/if}
 			<div class="hero-in">
-				<div class="poster"><Poster src={a.poster} name={a.name} /></div>
+				{#if ctx.href(a)}<a class="poster" href={to(ctx.href(a))} aria-label="Open {a.name}"><Poster src={a.poster} name={a.name} /></a>{:else}<div class="poster"><Poster src={a.poster} name={a.name} /></div>{/if}
 				<div class="head">
 					<span class="tag on-art">{kindWord(a.kind)}</span>
 					<h2 class="title" id={headingId} tabindex="-1">{#if ctx.href(a)}<a href={to(ctx.href(a))}>{a.name}</a>{:else}{a.name}{/if}</h2>
 					{#if facts.length}<p class="facts">{facts.join(' · ')}</p>{/if}
+					{#if ctx.href(a)}<a class="open" href={to(ctx.href(a))} data-testid="ask-open">Open {a.kind === 'artist' ? 'artist' : a.kind === 'show' ? 'show' : 'movie'} <Icon name="chevronRight" size={14} /></a>{/if}
 				</div>
 			</div>
 		</div>
 	{:else}
 		<div class="slim-head">
-			<div class="sposter"><Poster src={a.poster} name={a.name} /></div>
+			{#if ctx.href(a)}<a class="sposter" href={to(ctx.href(a))} aria-label="Open {a.name}"><Poster src={a.poster} name={a.name} /></a>{:else}<div class="sposter"><Poster src={a.poster} name={a.name} /></div>{/if}
 			<div class="head">
 				<span class="tag">{kindWord(a.kind)}</span>
 				<h2 class="title" id={headingId} tabindex="-1">{#if ctx.href(a)}<a href={to(ctx.href(a))}>{a.name}</a>{:else}{a.name}{/if}</h2>
 				{#if facts.length}<p class="facts">{facts.join(' · ')}</p>{/if}
+					{#if ctx.href(a)}<a class="open" href={to(ctx.href(a))} data-testid="ask-open">Open {a.kind === 'artist' ? 'artist' : a.kind === 'show' ? 'show' : 'movie'} <Icon name="chevronRight" size={14} /></a>{/if}
 			</div>
 		</div>
 	{/if}
@@ -87,11 +85,10 @@
 		{#if a.note}<p class="note">“{a.note}”</p>{/if}
 		{#if a.state === 'approved'}<p class="muted small">{ctx.approvedLine(a)}</p>{/if}
 		{#if ctx.isPending(a.id)}<p class="muted small">Sending in a moment…</p>{/if}
-		{#if variant !== 'slim' && d?.overview}<p class="overview">{d.overview}</p>{/if}
 
 		{#if waiting}
 			<form class="decide" onsubmit={approve}>
-				<div class="two" class:one={music}>
+				<div class="two one">
 					<div class="field">
 						<label for="ap-rule-{a.id}">Rule</label>
 						<select id="ap-rule-{a.id}" class="input" bind:value={rulesId} data-testid="ask-rule-pick">
@@ -99,15 +96,6 @@
 							{#each rules as r (r.id)}<option value={r.id}>{r.name}</option>{/each}
 						</select>
 					</div>
-					{#if !music}
-						<div class="field">
-							<label for="ap-lang-{a.id}">Language</label>
-							<select id="ap-lang-{a.id}" class="input" bind:value={lang} data-testid="ask-lang-pick">
-								<option value="">Any (the rule decides)</option>
-								{#each langList as l (l.code)}<option value={l.code}>{l.name}</option>{/each}
-							</select>
-						</div>
-					{/if}
 				</div>
 				<div class="field">
 					<label for="ap-note-{a.id}">Note to {who.name} <span class="muted">(optional)</span></label>
@@ -143,6 +131,14 @@
 	.title { font: var(--t-title3); letter-spacing: var(--t-title3-track); overflow-wrap: anywhere; scroll-margin-top: calc(var(--topbar) + 16px); }
 	.stage .title { font: var(--t-title1); letter-spacing: var(--t-title1-track); }
 	.title a:hover { text-decoration: underline; text-underline-offset: 4px; }
+	/* The poster and an Open link both lead to the title's own page. */
+	a.poster, a.sposter { display: block; border-radius: var(--r-sm); transition: transform var(--dur-fast) var(--ease-out); }
+	a.poster:hover, a.sposter:hover { transform: scale(1.03); }
+	a.poster:focus-visible, a.sposter:focus-visible, .open:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.open { display: inline-flex; align-items: center; gap: 2px; margin-top: 6px; font: var(--t-subhead); font-weight: 600; color: var(--accent-text); border-radius: var(--r-sm); }
+	.hero .open { color: #fff; }
+	.open:hover { text-decoration: underline; text-underline-offset: 3px; }
+	@media (prefers-reduced-motion: reduce) { a.poster, a.sposter { transition: none; } }
 	.title:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 6px; }
 	.facts { color: var(--on-art-muted); font: var(--t-footnote); overflow-wrap: anywhere; }
 	.slim-head { display: flex; gap: 12px; align-items: flex-start; }
@@ -154,12 +150,10 @@
 	.kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 	.kv .who { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 	.note { padding: 10px 12px; border-radius: 10px; background: var(--surface-2); font: var(--t-callout); overflow-wrap: anywhere; }
-	.overview { font: var(--t-callout); color: var(--text-muted); display: -webkit-box; -webkit-line-clamp: 4; line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 	.decide { display: flex; flex-direction: column; gap: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 	.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 	.two.one { grid-template-columns: 1fr; }
 	.slim .two { grid-template-columns: 1fr; }
-	.decide .field + .field { margin-top: 0; }
 	.decide select { min-width: 0; width: 100%; }
 	textarea.input { height: auto; padding-top: 10px; resize: vertical; }
 	.acts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
