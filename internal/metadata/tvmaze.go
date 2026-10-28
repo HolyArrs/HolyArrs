@@ -85,6 +85,29 @@ type mazeShow struct {
 	} `json:"image"`
 }
 
+// mazeAir reads one TVMaze episode's air day and time. The airstamp is the
+// exact air instant only when TVMaze also knows the local air time (an
+// empty airtime means TVMaze filled the stamp in itself); a missing
+// airtime field is read as known, since the stamp is then all there is.
+// Without a known time the episode gets its day's end and timed false.
+func mazeAir(day string, airtime, stamp *string) (string, *time.Time, bool) {
+	airDay := ""
+	if t, ok := parseDay(day); ok {
+		airDay = t.Format("2006-01-02")
+	}
+	if stamp != nil && (airtime == nil || strings.TrimSpace(*airtime) != "") {
+		if t, err := time.Parse(time.RFC3339, *stamp); err == nil {
+			u := t.UTC()
+			return airDay, &u, true
+		}
+	}
+	if airDay == "" {
+		return "", nil, false
+	}
+	end, _ := dayEnd(airDay)
+	return airDay, end, false
+}
+
 func mazeStatus(s string) string {
 	switch s {
 	case "Ended":
@@ -183,6 +206,7 @@ func (m *TVMaze) Show(ctx context.Context, id string) (Show, error) {
 		Number   *int    `json:"number"`
 		Name     string  `json:"name"`
 		AirDay   string  `json:"airdate"`
+		AirTime  *string `json:"airtime"`
 		AirStamp *string `json:"airstamp"`
 		Runtime  int     `json:"runtime"`
 	}
@@ -192,18 +216,7 @@ func (m *TVMaze) Show(ctx context.Context, id string) (Show, error) {
 	var specials []Episode
 	for _, e := range eps {
 		ep := Episode{Season: e.Season, Name: e.Name, Runtime: e.Runtime, ID: strconv.FormatInt(e.ID, 10)}
-		if t, ok := parseDay(e.AirDay); ok {
-			ep.AirDay = t.Format("2006-01-02")
-		}
-		if e.AirStamp != nil {
-			if t, err := time.Parse(time.RFC3339, *e.AirStamp); err == nil {
-				u := t.UTC()
-				ep.AirDate = &u
-			}
-		}
-		if ep.AirDate == nil && ep.AirDay != "" {
-			ep.AirDate, _ = dayEnd(ep.AirDay)
-		}
+		ep.AirDay, ep.AirDate, ep.Timed = mazeAir(e.AirDay, e.AirTime, e.AirStamp)
 		if e.Number == nil {
 			ep.Season = 0
 			specials = append(specials, ep)

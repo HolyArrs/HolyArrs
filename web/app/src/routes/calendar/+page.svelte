@@ -915,8 +915,9 @@
 	.sub.first { color: var(--text); }
 	/* The time column: one width for every row, so times line up down the page. */
 	/* One size for times and words (8 PM, In theaters, Streaming, Album), wide enough for the longest. */
-	.tcol { flex: none; width: 92px; padding-top: 2px; font: 700 15px/1.3 var(--font-ui); font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--text); }
-	.tcol.quiet { color: var(--text-muted); font-weight: 500; }
+	/* Set like the row's title (same face, weight and size) so it reads as part of the row. */
+	.tcol { flex: none; width: 92px; font: var(--t-headline); font-size: 15px; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--text); }
+	.tcol.quiet { color: var(--text-muted); }
 	.tcol.same { visibility: hidden; }
 	.when-phone { display: none; }
 	/* Phones: the time sits above the title as a small bold line instead of a column. */

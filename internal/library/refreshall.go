@@ -235,7 +235,7 @@ type CalendarEntry struct {
 	Episode     *int   `json:"episode,omitempty"`
 	EpisodeName string `json:"episode_name,omitempty"`
 	AirDay      string `json:"air_day,omitempty"`
-	Timed       bool   `json:"timed,omitempty"`
+	Timed       bool   `json:"timed"`
 	Runtime     int    `json:"runtime,omitempty"` // minutes
 	Network     string `json:"network,omitempty"`
 	// State is the main Version's Slot state of the episode.
@@ -496,7 +496,7 @@ func calendarAlbums(ctx context.Context, db reader, from, to time.Time) ([]Calen
 func calendarEpisodes(ctx context.Context, db reader, from, to time.Time) ([]CalendarEntry, error) {
 	items, err := store.Select[domain.Item](ctx, db, "items", `kind = 'episode' AND dropped_at IS NULL
 		AND title_id IN (SELECT id FROM titles WHERE kind = 'show' AND state != 'removed')
-		AND ((air_date >= ? AND air_date < ?) OR (air_date IS NULL AND air_day >= ? AND air_day <= ?)) ORDER BY id`,
+		AND ((air_timed = 1 AND air_date >= ? AND air_date < ?) OR ((air_timed = 0 OR air_date IS NULL) AND air_day >= ? AND air_day <= ?)) ORDER BY id`,
 		store.FormatTime(from), store.FormatTime(to), from.AddDate(0, 0, -1).Format("2006-01-02"), to.AddDate(0, 0, 1).Format("2006-01-02"))
 	if err != nil {
 		return nil, err
@@ -561,12 +561,17 @@ func calendarEpisodes(ctx context.Context, db reader, from, to time.Time) ([]Cal
 			e.Network = *t.Network
 		}
 		switch {
-		case it.AirDate != nil:
+		case it.AirDate != nil && it.AirTimed:
 			e.Date, e.Timed = it.AirDate.UTC(), true
 			if e.AirDay == "" {
 				e.AirDay = e.Date.Format("2006-01-02")
 			}
 		default:
+			// Only the day is known: an all-day entry on it (an untimed
+			// AirDate is the day's end, never a time to show).
+			if e.AirDay == "" && it.AirDate != nil {
+				e.AirDay = it.AirDate.UTC().Add(-time.Second).Format("2006-01-02")
+			}
 			d, err := time.Parse("2006-01-02", e.AirDay)
 			if err != nil {
 				continue

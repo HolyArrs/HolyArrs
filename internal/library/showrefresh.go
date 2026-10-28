@@ -79,6 +79,12 @@ func (s *Service) refreshShow(ctx context.Context, titleID int64, switchTo strin
 	if err != nil {
 		return out, err
 	}
+	for k, v := range t.SourceIDs {
+		if sh.IDs != nil && sh.IDs[k] == "" {
+			sh.IDs[k] = v // a TVMaze id learnt earlier saves a search
+		}
+	}
+	s.addAirTimes(metadata.NoCache(ctx), &sh)
 	was := t.MetadataSource
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		if err := store.Get(ctx, tx, "titles", titleID, &t); err != nil {

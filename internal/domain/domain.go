@@ -198,8 +198,12 @@ type Item struct {
 	LastSearchedAt *time.Time `db:"last_searched_at"`
 	RecordingID    *string    `db:"recording_id"`
 	// Episodes: the local air day (daily order key; AirDate is the exact
-	// UTC time), per-source ids, and when the source stopped listing it.
-	AirDay    *string           `db:"air_day"`
+	// UTC time when AirTimed), per-source ids, and when the source stopped
+	// listing it.
+	AirDay *string `db:"air_day"`
+	// Episodes: AirDate is the exact air time; false when only the day is
+	// known and AirDate stands in for the day's end.
+	AirTimed  bool              `db:"air_timed"`
 	SourceIDs map[string]string `db:"source_ids,json"`
 	DroppedAt *time.Time        `db:"dropped_at"`
 	// Tracks: the length in milliseconds.

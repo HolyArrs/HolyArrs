@@ -76,11 +76,11 @@ func labShow(source, id string) metadata.Show {
 	return metadata.Show{Source: source, Name: "Lab Show", Year: 2025, Status: "running", Network: "Lab TV", IDs: ids,
 		Seasons: []metadata.Season{{Number: 0, Name: "Specials"}, {Number: 1, Name: "Season 1"}, {Number: 2, Name: "Season 2"}},
 		Episodes: []metadata.Episode{
-			{Season: 0, Number: 1, Name: "Behind the Lab", AirDate: tm("2025-03-01T12:00:00Z"), AirDay: "2025-03-01", ID: source + "-s1"},
-			{Season: 1, Number: 1, Name: "Pilot", AirDate: tm("2025-01-06T02:00:00Z"), AirDay: "2025-01-05", ID: source + "-101"},
-			{Season: 1, Number: 2, Name: "Second", AirDate: tm("2025-01-13T02:00:00Z"), AirDay: "2025-01-12", ID: source + "-102"},
-			{Season: 2, Number: 1, Name: "Return", AirDate: tm("2026-10-12T02:00:00Z"), AirDay: "2026-10-11", ID: source + "-201"},
-			{Season: 2, Number: 2, Name: "Next Week", AirDate: tm("2026-10-19T02:00:00Z"), AirDay: "2026-10-18", ID: source + "-202"},
+			{Season: 0, Number: 1, Name: "Behind the Lab", AirDate: tm("2025-03-01T12:00:00Z"), Timed: true, AirDay: "2025-03-01", ID: source + "-s1"},
+			{Season: 1, Number: 1, Name: "Pilot", AirDate: tm("2025-01-06T02:00:00Z"), Timed: true, AirDay: "2025-01-05", ID: source + "-101"},
+			{Season: 1, Number: 2, Name: "Second", AirDate: tm("2025-01-13T02:00:00Z"), Timed: true, AirDay: "2025-01-12", ID: source + "-102"},
+			{Season: 2, Number: 1, Name: "Return", AirDate: tm("2026-10-12T02:00:00Z"), Timed: true, AirDay: "2026-10-11", ID: source + "-201"},
+			{Season: 2, Number: 2, Name: "Next Week", AirDate: tm("2026-10-19T02:00:00Z"), Timed: true, AirDay: "2026-10-18", ID: source + "-202"},
 			{Season: 2, Number: 3, Name: "TBA", ID: source + "-203"},
 		}}
 }

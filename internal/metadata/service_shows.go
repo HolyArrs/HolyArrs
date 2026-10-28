@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 )
 
 const (
@@ -243,6 +242,7 @@ type serviceMazeEpisode struct {
 	Number   *int    `json:"number"`
 	Name     string  `json:"name"`
 	AirDay   string  `json:"airdate"`
+	AirTime  *string `json:"airtime"`
 	AirStamp *string `json:"airstamp"`
 	Runtime  int     `json:"runtime"`
 }
@@ -308,18 +308,7 @@ func serviceTVMazeDetail(item serviceItem) (Show, error) {
 		}
 		seenIDs[raw.ID] = true
 		ep := Episode{Season: raw.Season, Name: name, Runtime: raw.Runtime, ID: strconv.FormatInt(raw.ID, 10)}
-		if t, ok := parseDay(raw.AirDay); ok {
-			ep.AirDay = t.Format("2006-01-02")
-		}
-		if raw.AirStamp != nil {
-			if stamp, parseErr := time.Parse(time.RFC3339, *raw.AirStamp); parseErr == nil {
-				u := stamp.UTC()
-				ep.AirDate = &u
-			}
-		}
-		if ep.AirDate == nil && ep.AirDay != "" {
-			ep.AirDate, _ = dayEnd(ep.AirDay)
-		}
+		ep.AirDay, ep.AirDate, ep.Timed = mazeAir(raw.AirDay, raw.AirTime, raw.AirStamp)
 		if raw.Number == nil {
 			ep.Season = 0
 			specials = append(specials, ep)

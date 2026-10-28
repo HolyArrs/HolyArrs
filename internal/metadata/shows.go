@@ -57,8 +57,11 @@ type Season struct {
 	Name   string `json:"name,omitempty"`
 }
 
-// Episode is one episode in the source's aired numbering. AirDate is the
-// exact air time in UTC (nil when unknown); AirDay is the local day.
+// Episode is one episode in the source's aired numbering. AirDay is the
+// local day. AirDate is the exact air time in UTC when Timed; when only the
+// day is known it is the end of that day (so the episode never counts as
+// aired early) and Timed is false. AirDate is nil when even the day is
+// unknown.
 type Episode struct {
 	Season   int        `json:"season"`
 	Number   int        `json:"number"`
@@ -66,6 +69,7 @@ type Episode struct {
 	Name     string     `json:"name,omitempty"`
 	AirDate  *time.Time `json:"air_date,omitempty"`
 	AirDay   string     `json:"air_day,omitempty"`
+	Timed    bool       `json:"timed,omitempty"`
 	Runtime  int        `json:"runtime,omitempty"`
 	ID       string     `json:"id,omitempty"`    // the source's episode id
 	Still    string     `json:"still,omitempty"` // still picture URL (w780), "" when none

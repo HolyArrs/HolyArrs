@@ -61,10 +61,10 @@ func apiShow(source, id string) metadata.Show {
 		IDs:     map[string]string{source: id, "tvdb": "200", "imdb": "tt0100"},
 		Seasons: []metadata.Season{{Number: 0, Name: "Specials"}, {Number: 1, Name: "Season 1"}, {Number: 2, Name: "Season 2"}},
 		Episodes: []metadata.Episode{
-			{Season: 0, Number: 1, Name: "Behind the Lab", AirDate: at("2025-03-01T12:00:00Z"), AirDay: "2025-03-01"},
-			{Season: 1, Number: 1, Name: "Pilot", AirDate: at("2025-01-06T02:00:00Z"), AirDay: "2025-01-05", ID: "e101"},
-			{Season: 1, Number: 2, Name: "Second", AirDate: at("2025-01-13T02:00:00Z"), AirDay: "2025-01-12", ID: "e102"},
-			{Season: 2, Number: 1, Name: "Return", AirDate: at("2099-01-05T02:00:00Z"), AirDay: "2099-01-04", ID: "e201"},
+			{Season: 0, Number: 1, Name: "Behind the Lab", AirDate: at("2025-03-01T12:00:00Z"), Timed: true, AirDay: "2025-03-01"},
+			{Season: 1, Number: 1, Name: "Pilot", AirDate: at("2025-01-06T02:00:00Z"), Timed: true, AirDay: "2025-01-05", ID: "e101"},
+			{Season: 1, Number: 2, Name: "Second", AirDate: at("2025-01-13T02:00:00Z"), Timed: true, AirDay: "2025-01-12", ID: "e102"},
+			{Season: 2, Number: 1, Name: "Return", AirDate: at("2099-01-05T02:00:00Z"), Timed: true, AirDay: "2099-01-04", ID: "e201"},
 			{Season: 2, Number: 2, Name: "TBA", ID: "e202"},
 		}}
 }

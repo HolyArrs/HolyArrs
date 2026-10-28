@@ -214,6 +214,7 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 	if err != nil {
 		return 0, 0, err
 	}
+	s.addAirTimes(ctx, &sh)
 	aliases := s.animeAliases(ctx, "show", sh.IDs["tmdb"], sh.Name)
 	ns, err := naming.Read(ctx, db)
 	if err != nil {

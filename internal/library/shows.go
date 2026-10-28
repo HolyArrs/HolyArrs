@@ -184,6 +184,64 @@ func lookupShow(ctx context.Context, p metadata.ShowProvider, source string, ids
 	return metadata.Show{}, metadata.ErrShowNotFound
 }
 
+// addAirTimes gives a show from a source that lists only air days (TMDB,
+// TVDB) the exact air times TVMaze lists for the same show. The TVMaze show
+// is found by its TVMaze id when known, else by the TVDB or IMDb id, else
+// by name with a TVDB or IMDb id that must match. Best effort: when TVMaze
+// is unreachable or does not know the show, the episodes stay untimed.
+func (s *Service) addAirTimes(ctx context.Context, sh *metadata.Show) {
+	if sh.Source == "tvmaze" || len(sh.Episodes) == 0 || s.Shows == nil {
+		return
+	}
+	untimed := false
+	for _, e := range sh.Episodes {
+		if !e.Timed && e.AirDay != "" {
+			untimed = true
+			break
+		}
+	}
+	if !untimed {
+		return
+	}
+	p, err := s.Shows.Get("tvmaze")
+	if err != nil || p == nil {
+		return
+	}
+	var maze metadata.Show
+	found := false
+	for _, k := range []string{"tvmaze", "tvdb", "imdb"} {
+		v := sh.IDs[k]
+		if v == "" {
+			continue
+		}
+		m, err := p.Show(ctx, k+":"+v)
+		if err == nil && (k == "tvmaze" || metadata.SameShow(*sh, m)) {
+			maze, found = m, true
+			break
+		}
+		if err != nil && !errors.Is(err, metadata.ErrShowNotFound) {
+			return // TVMaze is unreachable: try again on the next refresh
+		}
+	}
+	if !found && sh.Name != "" {
+		hits, err := p.SearchShows(ctx, sh.Name)
+		if err != nil {
+			return
+		}
+		for _, h := range hits {
+			if metadata.SameShow(*sh, h) && h.IDs["tvmaze"] != "" {
+				if m, err := p.Show(ctx, "tvmaze:"+h.IDs["tvmaze"]); err == nil {
+					maze, found = m, true
+				}
+				break
+			}
+		}
+	}
+	if found {
+		metadata.AddAirTimes(sh, maze)
+	}
+}
+
 // applyShow copies looked-up details onto a show Title.
 func applyShow(t *domain.Title, sh metadata.Show) {
 	t.Name, t.SortName = sh.Name, sortName(sh.Name)
@@ -501,7 +559,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Sho
 			if e.ID != "" {
 				ids[sh.Source] = e.ID
 			}
-			changed := !eqStr(it.Name, name) || !eqTime(it.AirDate, e.AirDate) || !eqStr(it.AirDay, day) || !eqInt(it.Runtime, runtime) ||
+			changed := !eqStr(it.Name, name) || !eqTime(it.AirDate, e.AirDate) || it.AirTimed != (e.Timed && e.AirDate != nil) || !eqStr(it.AirDay, day) || !eqInt(it.Runtime, runtime) ||
 				!eqInt(it.Numbers.Absolute, absolute) || it.Still != e.Still || it.DroppedAt != nil || len(ids) != len(it.SourceIDs) || ids[sh.Source] != it.SourceIDs[sh.Source] ||
 				it.PartID == nil || *it.PartID != p.ID || *it.Numbers.Season != e.Season || *it.Numbers.Episode != e.Number
 			if !changed {
@@ -510,7 +568,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Sho
 			season, number := e.Season, e.Number
 			it.Numbers.Season, it.Numbers.Episode = &season, &number
 			it.Name, it.AirDate, it.AirDay, it.Runtime, it.Numbers.Absolute, it.DroppedAt, it.SourceIDs, it.PartID = name, e.AirDate, day, runtime, absolute, nil, ids, &p.ID
-			it.Still = e.Still
+			it.Still, it.AirTimed = e.Still, e.Timed && e.AirDate != nil
 			if err := store.Update(tx, "items", it, by); err != nil {
 				return out, err
 			}
@@ -523,7 +581,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Sho
 			keep = false // future: only episodes still to air
 		}
 		it := &domain.Item{TitleID: t.ID, PartID: &p.ID, Kind: "episode", Numbers: domain.Numbers{Season: &season, Episode: &number, Absolute: absolute},
-			Name: name, AirDate: e.AirDate, AirDay: day, Runtime: runtime, KeepUpToDate: keep, SourceIDs: map[string]string{}, Still: e.Still}
+			Name: name, AirDate: e.AirDate, AirDay: day, AirTimed: e.Timed && e.AirDate != nil, Runtime: runtime, KeepUpToDate: keep, SourceIDs: map[string]string{}, Still: e.Still}
 		if e.ID != "" {
 			it.SourceIDs[sh.Source] = e.ID
 		}
