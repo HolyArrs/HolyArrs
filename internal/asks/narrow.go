@@ -102,52 +102,104 @@ func (s *Service) narrow(ctx context.Context, a domain.Ask, opt ApproveOptions) 
 			}
 		}
 		a.Albums = want
-	case len(opt.Seasons) > 0 || len(opt.Albums) > 0 || len(opt.Episodes) > 0 || len(opt.Tracks) > 0 && a.Kind != "artist":
+	case a.Kind == "artist" && len(opt.Songs) > 0 && len(a.Albums) == 0:
+		// Songs are kept per album: name the albums too.
+		return a, ErrNotAlbumTrack
+	case len(opt.Seasons) > 0 || len(opt.Albums) > 0 || len(opt.Episodes) > 0 || len(opt.Songs) > 0 && a.Kind != "artist":
 		return a, ErrNotAskedPart
+	}
+	if a.Kind == "artist" && len(opt.Songs) > 0 {
+		var err error
+		if a.Albums, err = pickSongs(a.Albums, opt.Songs); err != nil {
+			return a, err
+		}
 	}
 	return a, nil
 }
 
-// ErrNotAlbumTrack is a kept song that is not on the album named with it.
-var ErrNotAlbumTrack = errors.New("keep only songs of the album they are on")
+// ErrNotAlbumTrack is a kept song on an album the approval does not keep.
+var ErrNotAlbumTrack = errors.New("keep only songs of albums the approval keeps")
 
-// keepTracks keeps only the picked songs of albums in the artist's Library
-// entry: the album's other songs are switched off (the album itself stays
-// kept). Songs are Library track ids; an album must be on the artist.
-func (s *Service) keepTracks(ctx context.Context, titleID int64, picks []AlbumTracks, by Person) error {
-	if len(picks) == 0 {
+// pickSongs puts the approver's song picks on the kept albums.
+func pickSongs(albums []domain.AskAlbum, picks []AlbumSongs) ([]domain.AskAlbum, error) {
+	out := slices.Clone(albums)
+	for _, p := range picks {
+		id := strings.ToLower(strings.TrimSpace(p.Album))
+		i := slices.IndexFunc(out, func(w domain.AskAlbum) bool { return strings.EqualFold(w.MBID, id) })
+		if i < 0 || len(p.Recordings) == 0 {
+			return nil, ErrNotAlbumTrack
+		}
+		var rs []string
+		for _, r := range p.Recordings {
+			r = strings.ToLower(strings.TrimSpace(r))
+			if r != "" && !slices.Contains(rs, r) {
+				rs = append(rs, r)
+			}
+		}
+		out[i].Songs, out[i].SongsDone = rs, false
+	}
+	return out, nil
+}
+
+// applySongPicks switches off the songs approvers left out, for approved
+// artist asks whose albums' tracks are now in the Library (matched by
+// recording id). Each album's pick is applied once.
+func (s *Service) applySongPicks(ctx context.Context) error {
+	as, err := store.Select[domain.Ask](ctx, s.Store.Read(), "asks", "kind = 'artist' AND state IN ('approved', 'available') AND title_id IS NOT NULL AND albums LIKE '%\"songs\"%' ORDER BY id")
+	if err != nil {
+		return err
+	}
+	for _, a := range as {
+		if err := s.applySongs(ctx, a); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Service) applySongs(ctx context.Context, a domain.Ask) error {
+	if a.TitleID == nil || !slices.ContainsFunc(a.Albums, func(w domain.AskAlbum) bool { return len(w.Songs) > 0 && !w.SongsDone }) {
 		return nil
 	}
 	return s.Store.Write(ctx, func(tx *sql.Tx) error {
-		for _, p := range picks {
+		cur, err := get(ctx, tx, a.ID)
+		if err != nil {
+			return err
+		}
+		changed := false
+		ts := store.FormatTime(s.now())
+		who, _ := json.Marshal(domain.System)
+		for i, al := range cur.Albums {
+			if len(al.Songs) == 0 || al.SongsDone {
+				continue
+			}
 			var partID int64
-			err := tx.QueryRowContext(ctx, "SELECT id FROM parts WHERE title_id = ? AND kind = 'album' AND json_extract(source_ids, '$.musicbrainz') = ?",
-				titleID, strings.ToLower(strings.TrimSpace(p.Album))).Scan(&partID)
+			err := tx.QueryRowContext(ctx, "SELECT id FROM parts WHERE title_id = ? AND kind = 'album' AND json_extract(source_ids, '$.musicbrainz') = ?", *cur.TitleID, al.MBID).Scan(&partID)
 			if errors.Is(err, sql.ErrNoRows) {
-				return ErrNotAlbumTrack
+				continue
 			} else if err != nil {
 				return err
 			}
 			var n int
-			for _, id := range p.Tracks {
-				if err := tx.QueryRowContext(ctx, "SELECT count(*) FROM items WHERE id = ? AND part_id = ? AND kind = 'track'", id, partID).Scan(&n); err != nil {
-					return err
-				}
-				if n == 0 {
-					return ErrNotAlbumTrack
-				}
-			}
-			ts, who := store.FormatTime(s.now()), by.actor()
-			whoText, _ := json.Marshal(who)
-			if _, err := tx.ExecContext(ctx, "UPDATE items SET keep_up_to_date = 0, updated_at = ?, updated_by = ? WHERE part_id = ? AND kind = 'track'", ts, string(whoText), partID); err != nil {
+			if err := tx.QueryRowContext(ctx, "SELECT count(*) FROM items WHERE part_id = ? AND kind = 'track' AND recording_id IS NOT NULL", partID).Scan(&n); err != nil {
 				return err
 			}
-			for _, id := range p.Tracks {
-				if _, err := tx.ExecContext(ctx, "UPDATE items SET keep_up_to_date = 1, updated_at = ?, updated_by = ? WHERE id = ?", ts, string(whoText), id); err != nil {
-					return err
-				}
+			if n == 0 {
+				continue // the tracks come with the album's refresh
 			}
+			marks := strings.TrimSuffix(strings.Repeat("?,", len(al.Songs)), ",")
+			args := []any{ts, string(who), partID}
+			for _, r := range al.Songs {
+				args = append(args, r)
+			}
+			if _, err := tx.ExecContext(ctx, "UPDATE items SET keep_up_to_date = 0, updated_at = ?, updated_by = ? WHERE part_id = ? AND kind = 'track' AND (recording_id IS NULL OR lower(recording_id) NOT IN ("+marks+"))", args...); err != nil {
+				return err
+			}
+			cur.Albums[i].SongsDone, changed = true, true
 		}
-		return nil
+		if !changed {
+			return nil
+		}
+		return store.Update(tx, "asks", &cur, domain.System)
 	})
 }

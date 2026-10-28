@@ -2,6 +2,7 @@ package asks
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"testing"
@@ -207,40 +208,60 @@ func TestApproveDropsAnAskedEpisode(t *testing.T) {
 	}
 }
 
-func TestApproveKeepsSomeSongs(t *testing.T) {
+func TestApproveKeepsSomeSongsOnceTheTracksArrive(t *testing.T) {
 	r := musicRig(t)
 	ctx := context.Background()
-	res, err := r.svc.AskArtist(ctx, r.ana, "mbid:"+mArtist, []string{mFirst})
+	res, err := r.svc.AskArtist(ctx, r.ana, "mbid:"+mArtist, []string{mFirst, mLive})
 	if err != nil {
 		t.Fatal(err)
 	}
-	got, err := r.svc.Approve(ctx, res.Ask.ID, r.luis, ApproveOptions{})
+	// Songs only for albums the approval keeps.
+	if _, err := r.svc.Approve(ctx, res.Ask.ID, r.luis, ApproveOptions{Albums: []string{mFirst}, Songs: []AlbumSongs{{Album: mLive, Recordings: []string{"r1"}}}}); !errors.Is(err, ErrNotAlbumTrack) {
+		t.Fatalf("song of a left-out album: %v", err)
+	}
+	got, err := r.svc.Approve(ctx, res.Ask.ID, r.luis, ApproveOptions{Albums: []string{mFirst, mLive}, Songs: []AlbumSongs{{Album: mFirst, Recordings: []string{"R1", "r3"}}}})
 	if err != nil {
 		t.Fatal(err)
+	}
+	if len(got.Albums) != 2 || len(got.Albums[0].Songs) != 2 || got.Albums[0].Songs[0] != "r1" {
+		t.Fatalf("approved %+v", got.Albums)
 	}
 	tid := *got.TitleID
-	var ids []int64
-	rows, err := r.st.Read().Query(`SELECT i.id FROM items i JOIN parts p ON p.id = i.part_id WHERE i.title_id = ? AND i.kind = 'track' AND json_extract(p.source_ids, '$.musicbrainz') = ? ORDER BY i.id`, tid, mFirst)
+	// No tracks yet: the pick waits for the album's refresh.
+	if _, err := r.svc.CheckReady(ctx); err != nil {
+		t.Fatal(err)
+	}
+	addTracks(t, r.st, tid, "First Light", 3, domain.SlotWanted)
+	addTracks(t, r.st, tid, "Live Night", 2, domain.SlotWanted)
+	if err := r.st.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE items SET recording_id = 'r' || json_extract(numbers, '$.track') WHERE title_id = ? AND kind = 'track'", tid)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.svc.CheckReady(ctx); err != nil {
+		t.Fatal(err)
+	}
+	keep := map[string]bool{}
+	rows, err := r.st.Read().Query("SELECT p.name, i.recording_id, i.keep_up_to_date FROM items i JOIN parts p ON p.id = i.part_id WHERE i.title_id = ? AND i.kind = 'track'", tid)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for rows.Next() {
-		var id int64
-		_ = rows.Scan(&id)
-		ids = append(ids, id)
+		var album, rec string
+		var k bool
+		_ = rows.Scan(&album, &rec, &k)
+		keep[album+"/"+rec] = k
 	}
 	rows.Close()
-	if len(ids) < 2 {
-		t.Skipf("the lab album has %d tracks", len(ids))
+	want := map[string]bool{"First Light/r1": true, "First Light/r2": false, "First Light/r3": true, "Live Night/r1": true, "Live Night/r2": true}
+	for k, v := range want {
+		if keep[k] != v {
+			t.Fatalf("song keeps %v", keep)
+		}
 	}
-	if err := r.svc.keepTracks(ctx, tid, []AlbumTracks{{Album: mFirst, Tracks: []int64{ids[0] + 100000}}}, r.luis); !errors.Is(err, ErrNotAlbumTrack) {
-		t.Fatalf("foreign track: %v", err)
-	}
-	if err := r.svc.keepTracks(ctx, tid, []AlbumTracks{{Album: mFirst, Tracks: ids[:1]}}, r.luis); err != nil {
-		t.Fatal(err)
-	}
-	var on int
-	if err := r.st.Read().QueryRow("SELECT count(*) FROM items WHERE title_id = ? AND kind = 'track' AND keep_up_to_date = 1 AND id IN (?, ?)", tid, ids[0], ids[1]).Scan(&on); err != nil || on != 1 {
-		t.Fatalf("kept %d %v", on, err)
+	a, err := get(ctx, r.st.Read(), got.ID)
+	if err != nil || !a.Albums[0].SongsDone {
+		t.Fatalf("pick not marked applied: %v %+v", err, a.Albums)
 	}
 }

@@ -8308,24 +8308,23 @@
                     },
                     "type": "array"
                   },
-                  "tracks": {
-                    "description": "Artist asks: keep only some songs of albums already in the Library (album MusicBrainz id, Library track ids); the album's other songs are switched off.",
+                  "songs": {
+                    "description": "Artist asks: keep only some songs of kept albums (album MusicBrainz id, recording ids). Applied once the album's tracks are in the Library; its other songs are switched off.",
                     "items": {
                       "properties": {
                         "album": {
                           "type": "string"
                         },
-                        "tracks": {
+                        "recordings": {
                           "items": {
-                            "format": "int64",
-                            "type": "integer"
+                            "type": "string"
                           },
                           "type": "array"
                         }
                       },
                       "required": [
                         "album",
-                        "tracks"
+                        "recordings"
                       ],
                       "type": "object"
                     },

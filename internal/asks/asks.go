@@ -539,15 +539,16 @@ type ApproveOptions struct {
 	// Episodes (show asks) keeps single episodes of seasons the ask is
 	// for, besides the whole Seasons; with Seasons it is the final pick.
 	Episodes []domain.AskEpisodes `json:"episodes"`
-	// Tracks (artist asks) keeps only some songs of albums already in the
-	// Library: album MusicBrainz id and the Library track ids to keep.
-	Tracks []AlbumTracks `json:"tracks"`
+	// Songs (artist asks) keeps only some songs of albums: the album's
+	// MusicBrainz id and the recording ids of the songs to keep. Once the
+	// album's tracks are in the Library the other songs are switched off.
+	Songs []AlbumSongs `json:"songs"`
 }
 
-// AlbumTracks are the songs of one album an approver keeps.
-type AlbumTracks struct {
-	Album  string  `json:"album"`
-	Tracks []int64 `json:"tracks"`
+// AlbumSongs are the songs of one album an approver keeps.
+type AlbumSongs struct {
+	Album      string   `json:"album"`
+	Recordings []string `json:"recordings"`
 }
 
 // Approve says yes to an ask: the movie is added with the chosen Library
@@ -619,7 +620,7 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 		if len(opt.Seasons) > 0 || len(opt.Episodes) > 0 {
 			a.Seasons, a.Episodes = narrowed.Seasons, narrowed.Episodes
 		}
-		if len(opt.Albums) > 0 {
+		if len(opt.Albums) > 0 || len(opt.Songs) > 0 {
 			a.Albums = narrowed.Albums
 		}
 		return store.Update(tx, "asks", &a, by.actor())
@@ -649,9 +650,7 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 	case "show":
 		tid, err = s.addShowForAsk(ctx, a, set, opt, by)
 	case "artist":
-		if tid, err = s.addArtistForAsk(ctx, a, set, opt, by); err == nil {
-			err = s.keepTracks(ctx, tid, opt.Tracks, by)
-		}
+		tid, err = s.addArtistForAsk(ctx, a, set, opt, by)
 	default:
 		tid, err = s.addForAsk(ctx, a, set, opt, by)
 	}
@@ -872,6 +871,9 @@ func (s *Service) CheckReady(ctx context.Context) (int, error) {
 	as, err := store.Select[domain.Ask](ctx, s.Store.Read(), "asks", `kind = 'movie' AND state = 'approved' AND title_id IS NOT NULL AND EXISTS (
 		SELECT 1 FROM slots sl JOIN items i ON i.id = sl.item_id WHERE i.title_id = asks.title_id AND sl.state IN ('in_library', 'better_wanted')) ORDER BY id`)
 	if err != nil {
+		return 0, err
+	}
+	if err := s.applySongPicks(ctx); err != nil {
 		return 0, err
 	}
 	shows, err := s.readyShows(ctx)

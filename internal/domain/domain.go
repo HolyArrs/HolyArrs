@@ -611,6 +611,11 @@ type AskAlbum struct {
 	Year int    `json:"year,omitempty"`
 	// Edition is the release (MusicBrainz id) picked on the album page; empty: the usual choice.
 	Edition string `json:"edition,omitempty"`
+	// Songs are the songs (MusicBrainz recording ids) the approver kept of
+	// the album; empty keeps every song. SongsDone: the pick is applied to
+	// the Library's tracks (they come with the album's refresh).
+	Songs     []string `json:"songs,omitempty"`
+	SongsDone bool     `json:"songs_done,omitempty"`
 }
 
 // Alert is an outgoing message channel: a Discord link or an email server.

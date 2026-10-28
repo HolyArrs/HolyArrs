@@ -35,6 +35,8 @@ type PageAlbum struct {
 	Shelf    string `json:"shelf"`
 	Image    string `json:"image"`
 	Explicit bool   `json:"explicit,omitempty"`
+	// RecordingID is the song's MusicBrainz recording (the same on every edition).
+	RecordingID string `json:"recording_id,omitempty"`
 	Upcoming bool   `json:"upcoming,omitempty"`
 	// State is the Library's: complete, partial, missing, downloading,
 	// not_out_yet, not_included, or "" when the artist is not in the Library.
@@ -136,6 +138,8 @@ type PageTrack struct {
 	Name     string `json:"name"`
 	LengthMS int    `json:"length_ms,omitempty"`
 	Explicit bool   `json:"explicit,omitempty"`
+	// RecordingID is the song's MusicBrainz recording (the same on every edition).
+	RecordingID string `json:"recording_id,omitempty"`
 	// Have: in_library, downloading, missing, or "" when the album is not kept.
 	Have string `json:"have,omitempty"`
 }
@@ -992,7 +996,7 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 	}
 	if main != nil {
 		for _, tr := range main.Tracks {
-			pt := PageTrack{Disc: tr.Disc, Number: tr.Number, Name: tr.Name, LengthMS: tr.LengthMS, Explicit: dzInfo.Tracks[metadata.SongKey(tr.Name)]}
+			pt := PageTrack{Disc: tr.Disc, Number: tr.Number, Name: tr.Name, LengthMS: tr.LengthMS, RecordingID: tr.RecordingID, Explicit: dzInfo.Tracks[metadata.SongKey(tr.Name)]}
 			if me.PartID != 0 {
 				pt.Have = "missing"
 				if s, ok := have[strings.ToLower(tr.RecordingID)]; ok {
