@@ -736,7 +736,6 @@
 	{#if error}<LoadError hasData message="Calendar could not be loaded." onretry={load} />{/if}
 	<div class="cal-body" class:barred={barOn} class:month-off={monthHidden}>
 		<div class="cal-main">
-			{#if followNothing}<p class="follow-note" data-testid="cal-follow-none"><Icon name="bell" size={16} />You're not following anything yet. Press Follow on a title to see it here.</p>{/if}
 			{#key view}
 				<div class="view-in" data-view={view}>
 					{#if filteredOut}
