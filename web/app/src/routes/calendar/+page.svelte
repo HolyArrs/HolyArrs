@@ -25,7 +25,6 @@
 	import FollowWho from '#lib/calendar/FollowWho.svelte';
 	import CalBanner from '#lib/calendar/CalBanner.svelte';
 	import CalListRows from '#lib/calendar/CalListRows.svelte';
-	import VariantBar from '#lib/ui/VariantBar.svelte';
 	import { rowWords, DEFAULT_LOOK, type CaptionLook } from '#lib/calendar-captions.ts';
 	import { setFollow } from '#lib/follow.ts';
 	import {
@@ -67,8 +66,6 @@
 	const askedMonth = asked && Number(asked[2]) >= 1 && Number(asked[2]) <= 12 ? new Date(Number(asked[1]), Number(asked[2]) - 1, 1) : null;
 	// Cards (big pictures, day by day) or List (compact rows): ?view=cards|list, kept for the
 	// session; the old layout links (?view=2&span=…) land on Cards.
-	// ?lv=1-3 compares compact List layouts; 0 is today's list.
-	let lv = $state(0);
 	let view = $state<CalendarView>(startView(page.url.searchParams.get('view'), readView()));
 	// The days shown run from `start` (today, or the first of a linked month) to the day before `end`.
 	// Six more weeks load as the end comes near; scrolling up past the first day loads a week
@@ -603,7 +600,6 @@
 
 <svelte:head><title>Calendar · HolyArrs</title></svelte:head>
 
-<VariantBar param="lv" storageKey="holyarrs.calendar.list-view" label="List layout" bind:value={lv} options={[{ value: 0, label: 'Today' }, { value: 1, label: 'Agenda' }, { value: 2, label: 'Two columns' }, { value: 3, label: 'Table' }]} />
 
 <PageHeader title="Calendar">
 	{#snippet actions()}
@@ -664,25 +660,8 @@
 						<ComingSoon entries={shown} today={todayKey} onlater={more} mode={follows} {look} onfollow={flipFollow} />
 					{:else if agenda.length === 0}
 						<EmptyState compact icon="calendar" title="No dates from {rangeName}" />
-					{:else if lv > 0}
-						<CalListRows days={agenda} layout={lv as 1 | 2 | 3} today={todayKey} {look} {follows} {flipping} onfollow={flipFollow} />
 					{:else}
-						<ol class="days" data-testid="cal-list">
-							{#each agenda as d (d.day)}
-								{@const at = new Date(d.day + 'T00:00:00')}
-								<li class="day" class:today={d.day === todayKey} data-day={d.day}>
-									<div class="when" aria-hidden="true">
-										<span class="dow">{at.toLocaleDateString(undefined, { weekday: 'short' })}</span>
-										<b>{at.getDate()}</b>
-										{#if d.day === todayKey}<span class="today-tag"><Badge label="Today" /></span>{/if}
-									</div>
-									<div class="items">
-										<p class="sr-only">{date(d.day + 'T12:00:00')}{d.day === todayKey ? ', today' : ''}</p>
-										<ul>{#each d.items as e, i (entryKey(e))}{@render item(e, i ? rowWords({ key: entryKey(d.items[i - 1]), day: entryDay(d.items[i - 1]), lead: d.items[i - 1], entries: [d.items[i - 1]] }, look, todayKey).when : '')}{/each}</ul>
-									</div>
-								</li>
-							{/each}
-						</ol>
+						<CalListRows days={agenda} layout={1} today={todayKey} {look} {follows} {flipping} onfollow={flipFollow} />
 					{/if}
 				</div>
 			{/key}
@@ -787,7 +766,6 @@
 	.when { display: flex; flex-direction: column; align-items: center; padding-top: 2px; }
 	.dow { color: var(--accent-text); font: var(--t-caption); text-transform: none; }
 	.when b { font: var(--t-title2); font-variant-numeric: tabular-nums; }
-	.items ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 	.item { display: flex; align-items: center; gap: 10px; padding: 8px 0; min-width: 0; }
 	.item + .item { border-top: 1px solid var(--line); }
 	/* List rows: the banner fills the row's right side, out to the card's edge (the card's corners round it). */

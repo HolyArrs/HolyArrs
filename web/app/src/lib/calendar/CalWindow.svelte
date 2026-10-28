@@ -70,7 +70,6 @@
 	.ep-text.story { color: var(--text); }
 	.ep-text.none { opacity: .7; }
 	.ep-text.have { color: var(--ok-text, var(--ok)); }
-	.ep-go { align-self: flex-start; color: var(--accent-text); font: var(--t-subhead); font-weight: 600; }
 	.have { color: var(--ok-text, var(--ok)); }
 	.have { color: var(--ok-text, var(--ok)); }
 </style>
