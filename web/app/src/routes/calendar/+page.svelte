@@ -571,7 +571,7 @@
 	{@const lines = w.lines.length ? w.lines : ['']}
 	<li class="item k-{e.kind}" data-testid="cal-item">
 		<!-- The time column (TV-guide style): the air time, or Cinema, At home, Out now; a quiet All day without a time. -->
-		<span class="when" class:quiet={w.quiet} data-testid="cal-when">{w.when}</span>
+		<span class="tcol" class:quiet={w.quiet} data-testid="cal-when">{w.when}</span>
 		{@render art(e)}
 		<div class="it">
 			<span class="when-phone" class:quiet={w.quiet} aria-hidden="true">{w.when}</span>
@@ -906,12 +906,15 @@
 	.sub { color: var(--text-muted); font: var(--t-subhead); font-weight: 400; min-height: 1lh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.sub.first { color: var(--text); }
 	/* The time column: one width for every row, so times line up down the page. */
-	.item > .when { flex: none; width: 84px; padding-top: 1px; font: 700 18px/1.2 var(--font-display); letter-spacing: -0.01em; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--text); }
-	.when.quiet { color: var(--text-muted); font-weight: 500; font-size: 15px; }
+	.tcol { flex: none; width: 84px; padding-top: 1px; font: 700 18px/1.2 var(--font-display); letter-spacing: -0.01em; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--text); }
+	.tcol.quiet { color: var(--text-muted); font-weight: 500; font-size: 15px; }
 	.when-phone { display: none; }
 	/* Phones: the time sits above the title as a small bold line instead of a column. */
 	@media (max-width: 640px) {
-		.item > .when { display: none; }
+		.tcol { display: none; }
+		/* A smaller picture leaves the words room on narrow phones. */
+		.thumb { width: 48px; }
+		.item { gap: 8px; }
 		.when-phone { display: block; font: var(--t-footnote); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text); }
 		.when-phone.quiet { color: var(--text-muted); font-weight: 500; }
 	}
