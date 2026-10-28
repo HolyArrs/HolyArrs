@@ -324,3 +324,21 @@ func TestTrailerStoredRechecked(t *testing.T) {
 		}
 	}
 }
+
+// The tests above wait for the lookup; the page itself never does.
+func init() { trailerWait = 30 * time.Second }
+
+func TestTrailerNeverWaitsOnYTDLP(t *testing.T) {
+	old := trailerWait
+	trailerWait = 50 * time.Millisecond
+	t.Cleanup(func() { trailerWait = old })
+	fakeYTDLP(t, "slow")
+	srv, _ := discoverRig(t, trailerTMDB(t))
+	start := time.Now()
+	if b := string(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 404)); !strings.Contains(b, "no trailer yet") {
+		t.Fatal(b)
+	}
+	if d := time.Since(start); d > 2*time.Second {
+		t.Fatalf("waited %v", d)
+	}
+}

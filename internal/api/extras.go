@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/parts"
 	"github.com/CoderLuii/holyarrs/internal/ratings"
+	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
 // TitleExtras is the optional extra artwork (the metadata server's stored
@@ -127,63 +129,167 @@ func (a *API) titleExtras(w http.ResponseWriter, r *http.Request) {
 	c.mu.Lock()
 	e, ok := c.seen[key]
 	c.mu.Unlock()
-	if ok && time.Since(e.at) < 6*time.Hour {
+	if !ok {
+		e, ok = loadKept[TitleExtras](r.Context(), a, "extras|"+key)
+		if ok {
+			c.keep(key, e)
+		}
+	}
+	if ok {
+		// Stored answers are served at once; an old one is refreshed in
+		// the background for the next view.
+		if time.Since(e.at) >= extrasFresh {
+			refreshOnce("extras|"+key, func(ctx context.Context) {
+				if v, settled := a.fetchExtras(ctx, kind, id); settled {
+					c.keep(key, extrasEntry{v: v, at: time.Now()})
+					keepOnDisk(ctx, a, "extras|"+key, v)
+				}
+			})
+		}
 		write(e.v)
 		return
 	}
+	v, settled := a.fetchExtras(r.Context(), kind, id)
+	if settled {
+		c.keep(key, extrasEntry{v: v, at: time.Now()})
+		keepOnDisk(r.Context(), a, "extras|"+key, v)
+	} else {
+		// A hiccup's answer is not kept; the browser asks again next view.
+		w.Header().Set("Cache-Control", "private, no-cache")
+	}
+	write(v)
+}
+
+// extrasFresh is how long kept extras are served before a background refresh.
+const extrasFresh = 6 * time.Hour
+
+func (c *extrasCache) keep(key string, e extrasEntry) {
+	c.mu.Lock()
+	keepUnder(c.seen, 5000, func(e extrasEntry) time.Time { return e.at })
+	c.seen[key] = e
+	c.mu.Unlock()
+}
+
+// fetchExtras asks the metadata server for a title's extras, art and
+// ratings together; settled is false after a server hiccup (not kept).
+func (a *API) fetchExtras(parent context.Context, kind, id string) (TitleExtras, bool) {
 	v := TitleExtras{Scores: []OutsideScore{}}
-	ctx, cancel := context.WithTimeout(r.Context(), 8*time.Second)
+	ctx, cancel := context.WithTimeout(parent, 8*time.Second)
 	defer cancel()
-	// Only settled answers are kept; a server hiccup is asked again.
-	settled := true
+	settledArt, settledRatings := true, true
+	var wg sync.WaitGroup
 	if kind == "artist" {
 		// An artist's pictures come only from our metadata server: its
 		// stored wide background, logo and photo, through the picture route.
-		if _, _, ok := a.musicTrendArtFile(ctx, "wide", id, "1920"); ok {
+		var wide, logo, thumb bool
+		wg.Add(3)
+		go func() { defer wg.Done(); _, _, wide = a.musicTrendArtFile(ctx, "wide", id, "1920") }()
+		go func() { defer wg.Done(); _, _, logo = a.musicTrendArtFile(ctx, "logo", id, "1200") }()
+		go func() { defer wg.Done(); _, _, thumb = a.musicTrendArtFile(ctx, "artist", id, "500") }()
+		wg.Wait()
+		if wide {
 			v.Backgrounds = []string{musicArtPrefix + "wide/" + id}
 		}
-		if _, _, ok := a.musicTrendArtFile(ctx, "logo", id, "1200"); ok {
+		if logo {
 			v.Logo = musicArtPrefix + "logo/" + id
 		}
-		if _, _, ok := a.musicTrendArtFile(ctx, "artist", id, "500"); ok {
+		if thumb {
 			v.Thumb = musicArtPrefix + "artist/" + id
 		}
-	} else if a.s.ExtraArt != nil {
-		art, err := a.s.ExtraArt(ctx, kind, id)
-		if err == nil {
-			v.Logo, v.Thumb, v.Banner = a.serverArtLink(art.Logo), a.serverArtLink(art.Thumb), a.serverArtLink(art.Banner)
-			for _, b := range art.Backgrounds {
-				if l := a.serverArtLink(b); l != "" {
-					v.Backgrounds = append(v.Backgrounds, l)
+		// An artist with no wide photo is asked again: the server's art
+		// source may only have been out of budget for a moment.
+		return v, wide
+	}
+	if a.s.ExtraArt != nil {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			art, err := a.s.ExtraArt(ctx, kind, id)
+			if err == nil {
+				v.Logo, v.Thumb, v.Banner = a.serverArtLink(art.Logo), a.serverArtLink(art.Thumb), a.serverArtLink(art.Banner)
+				for _, b := range art.Backgrounds {
+					if l := a.serverArtLink(b); l != "" {
+						v.Backgrounds = append(v.Backgrounds, l)
+					}
 				}
 			}
-		}
-		settled = settled && (err == nil || errors.Is(err, metadata.ErrNotFound))
+			settledArt = err == nil || errors.Is(err, metadata.ErrNotFound)
+		}()
 	}
-	if a.s.ExtraRatings != nil && kind != "artist" {
-		rt, err := a.s.ExtraRatings(ctx, kind, id)
-		if err == nil {
-			v.Scores = shownScores(rt.Scores)
-		}
-		settled = settled && (err == nil || errors.Is(err, metadata.ErrNotFound))
+	var scores []OutsideScore
+	if a.s.ExtraRatings != nil {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			rt, err := a.s.ExtraRatings(ctx, kind, id)
+			if err == nil {
+				scores = shownScores(rt.Scores)
+			}
+			settledRatings = err == nil || errors.Is(err, metadata.ErrNotFound)
+		}()
 	}
-	// An artist with no wide photo is asked again on the next view: the
-	// server's art source may only have been out of budget for a moment.
-	if kind == "artist" && len(v.Backgrounds) == 0 {
-		settled = false
+	wg.Wait()
+	if scores != nil {
+		v.Scores = scores
 	}
-	if !settled {
-		// A hiccup's empty answer is never kept, not even by the browser:
-		// the artist hero would stay without its wide photo.
-		w.Header().Set("Cache-Control", "no-store")
-		write(v)
+	return v, settledArt && settledRatings
+}
+
+// keptOnDisk is how long a stored outside answer stays in SQLite; it is
+// refreshed long before (in the background, on view).
+const keptOnDisk = 30 * 24 * time.Hour
+
+type keptBody[T any] struct {
+	V  T         `json:"v"`
+	At time.Time `json:"at"`
+}
+
+// keepOnDisk stores v under key in lookup_cache with when it was fetched.
+func keepOnDisk[T any](ctx context.Context, a *API, key string, v T) {
+	if a.s.Store == nil {
 		return
 	}
-	c.mu.Lock()
-	keepUnder(c.seen, 5000, func(e extrasEntry) time.Time { return e.at })
-	c.seen[key] = extrasEntry{v: v, at: time.Now()}
-	c.mu.Unlock()
-	write(v)
+	now := time.Now()
+	if b, err := json.Marshal(keptBody[T]{V: v, At: now}); err == nil {
+		_ = store.LookupCache{Store: a.s.Store}.Put(context.WithoutCancel(ctx), key, b, now, now.Add(keptOnDisk))
+	}
+}
+
+// loadKept reads an answer keepOnDisk stored, as a memory entry.
+func loadKept[T any](ctx context.Context, a *API, key string) (struct {
+	v  T
+	at time.Time
+}, bool) {
+	var out struct {
+		v  T
+		at time.Time
+	}
+	if a.s.Store == nil || a.s.Store.Read() == nil {
+		return out, false
+	}
+	b, ok, err := store.LookupCache{Store: a.s.Store}.Get(ctx, key, time.Now())
+	var k keptBody[T]
+	if err != nil || !ok || json.Unmarshal(b, &k) != nil {
+		return out, false
+	}
+	out.v, out.at = k.V, k.At
+	return out, true
+}
+
+var refreshing sync.Map
+
+// refreshOnce runs fn in the background unless a refresh for key is
+// already running; the visitor never waits for it.
+func refreshOnce(key string, fn func(ctx context.Context)) {
+	if _, busy := refreshing.LoadOrStore(key, true); busy {
+		return
+	}
+	go func() {
+		defer refreshing.Delete(key)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		fn(ctx)
+	}()
 }
 
 func digitsOnly(s string) bool {
@@ -196,4 +302,152 @@ func digitsOnly(s string) bool {
 		}
 	}
 	return true
+}
+
+// titleWarmer fills title details, extras and trailer links ahead, on the
+// server's own schedule, for every title Explore and New & Popular list,
+// so no visitor action makes the first outside call. Two workers at most;
+// trailers stay within the install's ahead-of-time budget.
+type titleWarmer struct {
+	once  sync.Once
+	mu    sync.Mutex
+	queue chan warmJob
+	// listed is when each title was last listed and warmed.
+	listed map[string]warmMark
+}
+
+type warmJob struct{ kind, id, lang string }
+
+type warmMark struct{ listed, warmed time.Time }
+
+const (
+	warmWorkers = 2
+	warmEvery   = time.Hour          // the schedule re-warms what went stale
+	warmListed  = 7 * 24 * time.Hour // titles listed this recently stay warm
+	warmMax     = 5000
+)
+
+// warmTitles queues titles (kind movie or show, TMDB id) to be warmed; a
+// title warmed within extrasFresh is skipped. It never blocks.
+func (a *API) warmTitles(lang string, titles [][2]string) {
+	w := &a.warm
+	w.once.Do(func() {
+		w.queue = make(chan warmJob, 1000)
+		w.listed = map[string]warmMark{}
+		for range warmWorkers {
+			go a.warmWorker()
+		}
+		go a.warmSchedule()
+	})
+	now := time.Now()
+	for _, t := range titles {
+		if (t[0] != "movie" && t[0] != "show") || !digitsOnly(t[1]) {
+			continue
+		}
+		k := t[0] + "|" + t[1] + "|" + lang
+		w.mu.Lock()
+		m := w.listed[k]
+		fresh := now.Sub(m.warmed) < extrasFresh
+		m.listed = now
+		if !fresh {
+			m.warmed = now // queued; a failure is tried again on the schedule
+		}
+		if len(w.listed) < warmMax || w.listed[k] != (warmMark{}) {
+			w.listed[k] = m
+		}
+		w.mu.Unlock()
+		if fresh {
+			continue
+		}
+		select {
+		case w.queue <- warmJob{t[0], t[1], lang}:
+		default: // full: the schedule picks it up later
+		}
+	}
+}
+
+func (a *API) warmSchedule() {
+	tick := time.NewTicker(warmEvery)
+	defer tick.Stop()
+	for range tick.C {
+		now := time.Now()
+		var due []warmJob
+		w := &a.warm
+		w.mu.Lock()
+		for k, m := range w.listed {
+			if now.Sub(m.listed) > warmListed {
+				delete(w.listed, k)
+				continue
+			}
+			if now.Sub(m.warmed) >= extrasFresh {
+				parts := strings.SplitN(k, "|", 3)
+				due = append(due, warmJob{parts[0], parts[1], parts[2]})
+				m.warmed = now
+				w.listed[k] = m
+			}
+		}
+		w.mu.Unlock()
+		for _, j := range due {
+			w.queue <- j
+		}
+	}
+}
+
+func (a *API) warmWorker() {
+	for j := range a.warm.queue {
+		ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
+		a.warmOne(ctx, j)
+		cancel()
+	}
+}
+
+// warmOne stores one title's details and extras (when missing or old) and
+// looks its trailer up within the ahead budget.
+func (a *API) warmOne(ctx context.Context, j warmJob) {
+	if d, ok := metadata.DiscovererFor(ctx, a.s.Metadata); ok {
+		key := "details|" + j.kind + "|" + j.id
+		e, cached := a.discover.get(key)
+		if !cached || e.details == nil {
+			if k, found := loadKept[metadata.Details](ctx, a, key); found {
+				e, cached = discoverEntry{at: k.at, details: &k.v}, true
+				a.discover.put(key, e)
+			}
+		}
+		if !cached || e.details == nil || time.Since(e.at) >= detailsTTL(e) {
+			if det, err := d.Details(ctx, j.kind, j.id); err == nil {
+				a.discover.put(key, discoverEntry{at: time.Now(), details: &det})
+				keepOnDisk(ctx, a, key, det)
+			}
+		}
+	}
+	if a.s.ExtraArt != nil || a.s.ExtraRatings != nil {
+		key := j.kind + ":" + j.id
+		c := titleExtrasCache
+		c.mu.Lock()
+		e, ok := c.seen[key]
+		c.mu.Unlock()
+		if !ok {
+			e, ok = loadKept[TitleExtras](ctx, a, "extras|"+key)
+		}
+		if !ok || time.Since(e.at) >= extrasFresh {
+			if v, settled := a.fetchExtras(ctx, j.kind, j.id); settled {
+				c.keep(key, extrasEntry{v: v, at: time.Now()})
+				keepOnDisk(ctx, a, "extras|"+key, v)
+			}
+		} else {
+			c.keep(key, e)
+		}
+	}
+	if !a.uiSettings(ctx).AutoplayTrailers {
+		return
+	}
+	if _, _, found := ytdlpRun(); !found {
+		return
+	}
+	ckey := j.kind + "|" + j.id + "|" + j.lang
+	now := time.Now()
+	if _, ok := a.trailers.get(ckey, now); ok || a.trailerStored(ctx, ckey, now) || a.trailers.inFlight(ckey) || !a.trailers.allowAhead(now) {
+		return
+	}
+	_, _ = a.resolveTitle(ctx, j.kind, j.id, j.lang)
 }

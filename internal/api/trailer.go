@@ -199,6 +199,10 @@ func trailerLanguage(r *http.Request) string {
 	return "en"
 }
 
+// trailerWait is how long a trailer request waits for a lookup already
+// under way before it answers "no trailer yet"; the lookup keeps going.
+var trailerWait = 150 * time.Millisecond
+
 var (
 	errNoTrailer = errors.New("no trailer")
 	errNoStream  = errors.New("no direct stream")
@@ -241,8 +245,16 @@ func (a *API) trailerStream(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	s, err := a.resolveTitle(r.Context(), kind, id, lang)
+	// yt-dlp never runs while the visitor waits: the lookup carries on in
+	// the background (and is kept), and the page gets "none yet" at once.
+	wctx, cancel := context.WithTimeout(r.Context(), trailerWait)
+	defer cancel()
+	s, err := a.resolveTitle(wctx, kind, id, lang)
 	switch {
+	case errors.Is(err, context.DeadlineExceeded) && r.Context().Err() == nil:
+		w.Header().Set("Retry-After", "30")
+		w.Header().Set("Cache-Control", "private, no-store")
+		fail(w, http.StatusNotFound, "no trailer yet")
 	case errors.Is(err, errNoTrailer):
 		fail(w, http.StatusNotFound, "no trailer")
 	case errors.Is(err, errNoStream):
@@ -409,10 +421,19 @@ func (a *API) keepTrailerKey(ctx context.Context, kind, id, lang, key string) {
 
 // fillTrailerKeys sets trailer_key on Explore cards whose key is kept.
 func (a *API) fillTrailerKeys(r *http.Request, items []discoverItemView) {
+	lang := trailerLanguage(r)
+	// Every listed title is warmed ahead (details, extras, trailer), so
+	// opening or hovering it never makes the first outside call.
+	warm := make([][2]string, 0, len(items))
+	for _, v := range items {
+		if v.Kind == "movie" || v.Kind == "show" {
+			warm = append(warm, [2]string{v.Kind, v.TMDBID})
+		}
+	}
+	a.warmTitles(lang, warm)
 	if a.kidMax(r) != "" {
 		return
 	}
-	lang := trailerLanguage(r)
 	for i := range items {
 		if v := &items[i]; (v.Kind == "movie" || v.Kind == "show") && v.TMDBID != "" {
 			v.TrailerKey = a.knownTrailerKey(r.Context(), v.Kind, v.TMDBID, lang)

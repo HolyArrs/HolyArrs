@@ -294,6 +294,7 @@ var Routes = map[string]Owner{
 
 	// Shared by Movies, TV shows and Music.
 	"GET /api/v1/titles":                      Media,
+	"GET /api/v1/titles/owned":                Media,
 	"GET /api/v1/library/search":              Media,
 	"GET /api/v1/search/suggest":              Media,
 	"GET /api/v1/library-summary":             Media,
@@ -651,6 +652,7 @@ func ScreenOwner(path string) (Owner, bool) {
 // they queue wait for the next normal start.
 var SafeLibrary = map[string]bool{
 	"GET /api/v1/titles":               true,
+	"GET /api/v1/titles/owned":         true,
 	"GET /api/v1/library-summary":      true,
 	"GET /api/v1/home":                 true,
 	"GET /api/v1/artwork/{name}":       true,

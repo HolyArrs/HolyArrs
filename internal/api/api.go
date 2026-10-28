@@ -190,6 +190,8 @@ type API struct {
 	trailerRelay trailerProxy
 	// trailerKeys keeps each title's YouTube key (also in lookup_cache).
 	trailerKeys trailerKeyCache
+	// warm fills listed titles' details, extras and trailers ahead.
+	warm titleWarmer
 	// ahead runs music fetch-ahead; ctl keeps the server's switch.
 	ahead musicAhead
 	artWarm artWarmer
@@ -261,6 +263,7 @@ func actor(r *http.Request) domain.Actor {
 func (a *API) Handler() http.Handler {
 	m := http.NewServeMux()
 	m.HandleFunc("GET /api/v1/titles", a.listTitles)
+	m.HandleFunc("GET /api/v1/titles/owned", a.titlesOwned)
 	m.HandleFunc("GET /api/v1/library/search", a.librarySearch)
 	m.HandleFunc("GET /api/v1/search/suggest", a.searchSuggest)
 	m.HandleFunc("GET /api/v1/library-summary", a.librarySummary)
@@ -677,48 +680,73 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 		m := v.Versions[0]
 		v.LibraryFolderID, v.PickRulesID, v.FolderPath, v.PickRulesName = m.LibraryFolderID, m.PickRulesID, m.FolderPath, m.PickRulesName
 	}
+	batch := batchOf(ctx)
+	titleAsks := func() ([]asks.View, error) {
+		if batch != nil {
+			return batch.asksFor(t.ID), nil
+		}
+		return a.titleAsks(ctx, t.ID)
+	}
 	if t.Kind == "show" {
 		if v.Show, err = a.showInfo(ctx, t); err != nil {
 			return v, err
 		}
-		v.Asks, err = a.titleAsks(ctx, t.ID)
+		v.Asks, err = titleAsks()
 		return v, err
 	}
 	if t.Kind == "artist" {
 		if v.Artist, err = a.artistInfo(ctx, t); err != nil {
 			return v, err
 		}
-		v.Asks, err = a.titleAsks(ctx, t.ID)
+		v.Asks, err = titleAsks()
 		return v, err
 	}
-	slots, err := store.Select[domain.Slot](ctx, db, "slots",
-		"item_id IN (SELECT id FROM items WHERE title_id = ?) ORDER BY id", t.ID)
-	if err != nil {
+	var slots []domain.Slot
+	if batch != nil {
+		slots = batch.slots[t.ID]
+	} else if slots, err = store.Select[domain.Slot](ctx, db, "slots",
+		"item_id IN (SELECT id FROM items WHERE title_id = ?) ORDER BY id", t.ID); err != nil {
 		return v, err
 	}
 	for _, s := range slots {
 		var ver domain.Version
-		_ = store.Get(ctx, db, "versions", s.VersionID, &ver)
+		if batch != nil {
+			ver = batch.labels[s.VersionID]
+		} else {
+			_ = store.Get(ctx, db, "versions", s.VersionID, &ver)
+		}
 		sv := SlotView{ID: s.ID, Version: ver.Label, VersionID: ver.ID, State: string(s.State), StateLabel: StateLabels[s.State], DownloadID: s.ActiveDownloadID}
 		if s.LastReason != nil {
 			sv.Reason = *s.LastReason
 		}
 		if s.ActiveDownloadID != nil {
 			var d domain.Download
-			if store.Get(ctx, db, "downloads", *s.ActiveDownloadID, &d) == nil {
+			var found bool
+			if batch != nil {
+				d, found = batch.downloads[*s.ActiveDownloadID]
+			} else {
+				found = store.Get(ctx, db, "downloads", *s.ActiveDownloadID, &d) == nil
+			}
+			if found {
 				dv := downloadView(d)
 				sv.Download = &dv
 			}
 		}
 		if s.FileID != nil {
 			var f domain.File
-			if store.Get(ctx, db, "files", *s.FileID, &f) == nil {
+			var found bool
+			if batch != nil {
+				f, found = batch.files[*s.FileID]
+			} else {
+				found = store.Get(ctx, db, "files", *s.FileID, &f) == nil
+			}
+			if found {
 				sv.File = &f
 			}
 		}
 		v.Slots = append(v.Slots, sv)
 	}
-	if v.Asks, err = a.titleAsks(ctx, t.ID); err != nil {
+	if v.Asks, err = titleAsks(); err != nil {
 		return v, err
 	}
 	return v, nil
@@ -772,6 +800,9 @@ func (a *API) listTitles(w http.ResponseWriter, r *http.Request) {
 	}
 	out := []TitleView{}
 	ctx, err := withTitleFacts(withLookupMemo(r.Context()), a.s.Store.Read())
+	if err == nil && len(ts) > 0 {
+		ctx, err = a.withTitleBatch(ctx)
+	}
 	if err != nil {
 		internal(w, err)
 		return
@@ -793,7 +824,7 @@ func (a *API) listTitles(w http.ResponseWriter, r *http.Request) {
 		}
 		out = append(out, v)
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"titles": out})
+	writeTaggedJSON(w, r, map[string]any{"titles": out})
 }
 
 func (a *API) titleID(w http.ResponseWriter, r *http.Request) (domain.Title, bool) {

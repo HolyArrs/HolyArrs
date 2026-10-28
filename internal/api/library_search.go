@@ -121,7 +121,8 @@ func (a *API) librarySearch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) libraryAlbums(r *http.Request, words []string, visible func(domain.Title) bool) ([]LibraryAlbum, error) {
-	ps, err := store.Select[domain.Part](r.Context(), a.s.Store.Read(), "parts", "kind = 'album' AND dropped_at IS NULL ORDER BY name, id")
+	pre, args := foldPrefilter("name", words)
+	ps, err := store.Select[domain.Part](r.Context(), a.s.Store.Read(), "parts", "kind = 'album' AND dropped_at IS NULL"+pre+" ORDER BY name, id", args...)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +164,8 @@ func (a *API) libraryAlbums(r *http.Request, words []string, visible func(domain
 }
 
 func (a *API) libraryPeople(r *http.Request, words []string, visible func(domain.Title) bool) ([]LibraryPerson, error) {
-	ts, err := store.Select[domain.Title](r.Context(), a.s.Store.Read(), "titles", "state != 'removed' AND people != '[]' ORDER BY sort_name, id")
+	pre, args := foldPrefilter("people", words)
+	ts, err := store.Select[domain.Title](r.Context(), a.s.Store.Read(), "titles", "state != 'removed' AND people != '[]'"+pre+" ORDER BY sort_name, id", args...)
 	if err != nil {
 		return nil, err
 	}
@@ -206,6 +208,26 @@ func fold(s string) string {
 // foldWords are the folded words of a query.
 func foldWords(s string) []string {
 	return strings.FieldsFunc(fold(s), func(c rune) bool { return !unicode.IsLetter(c) && !unicode.IsNumber(c) })
+}
+
+// foldPrefilter narrows a scan in SQL without changing what foldMatch
+// keeps: a row whose column is plain ASCII must hold every ASCII query word
+// (a word prefix is a substring of the lowercased text); rows with other
+// characters (accents) are left to foldMatch.
+func foldPrefilter(col string, words []string) (string, []any) {
+	var b strings.Builder
+	var args []any
+	for _, w := range words {
+		if strings.IndexFunc(w, func(c rune) bool { return !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9') }) >= 0 {
+			continue
+		}
+		b.WriteString(" AND instr(lower(" + col + "), ?) > 0")
+		args = append(args, w)
+	}
+	if b.Len() == 0 {
+		return "", nil
+	}
+	return " AND (" + col + " GLOB '*[^ -~]*' OR (1 = 1" + b.String() + "))", args
 }
 
 // foldMatch: every query word starts a word of s, accents and case folded.

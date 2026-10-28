@@ -158,7 +158,7 @@ func TestTitleExtrasArtistFromServerOnly(t *testing.T) {
 	var v TitleExtras
 	_ = json.NewDecoder(res.Body).Decode(&v)
 	res.Body.Close()
-	if len(v.Backgrounds) != 0 || v.Logo != "" || res.Header.Get("Cache-Control") != "no-store" {
+	if len(v.Backgrounds) != 0 || v.Logo != "" || res.Header.Get("Cache-Control") != "private, no-cache" {
 		t.Fatalf("not stored yet: %+v %q", v, res.Header.Get("Cache-Control"))
 	}
 	stored.Store(true)

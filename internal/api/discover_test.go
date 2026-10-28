@@ -235,7 +235,7 @@ func TestDiscoverNotSetUpRateLimitedAndPerPersonLimit(t *testing.T) {
 	}
 	f.limited.Store(false)
 	limited := false
-	for i := 0; i < 31; i++ {
+	for i := 0; i <= discoverPerMinute; i++ {
 		resp, err := http.Get(srv2.URL + "/api/v1/discover?row=popular&kind=movie")
 		if err != nil {
 			t.Fatal(err)
@@ -247,7 +247,7 @@ func TestDiscoverNotSetUpRateLimitedAndPerPersonLimit(t *testing.T) {
 		}
 	}
 	if !limited {
-		t.Fatal("no 429 after 30 requests a minute")
+		t.Fatal("no 429 over the minute limit")
 	}
 }
 

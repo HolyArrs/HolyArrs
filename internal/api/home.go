@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/auth"
@@ -127,40 +128,61 @@ func (a *API) home(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, db := r.Context(), a.s.Store.Read()
 	where, args := a.homeWhere(r)
-	var titles, asked int
-	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM titles WHERE state != 'removed'").Scan(&titles); err != nil {
-		internal(w, err)
-		return
-	}
-	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM asks").Scan(&asked); err != nil {
-		internal(w, err)
-		return
-	}
+	// The reads do not depend on each other: they run together.
+	var (
+		titles, asked, failed, sick int
+		arrived, seasons            []homeCard
+		following, soon             = []homeCard{}, []homeCard{}
+		progress                    map[string]homeProgress
+		library                     map[string]homeLibraryKind
+		wg                          sync.WaitGroup
+		errMu                       sync.Mutex
+		firstErr                    error
+	)
 	now := time.Now()
-	arrived, err := homeArrivals(ctx, db, where, args, now)
-	if err != nil {
-		internal(w, err)
-		return
+	me := a.person(r).UserID
+	kinds := a.homeKinds()
+	run := func(f func() error) {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := f(); err != nil {
+				errMu.Lock()
+				if firstErr == nil {
+					firstErr = err
+				}
+				errMu.Unlock()
+			}
+		}()
 	}
-	seasons, err := homeNewSeasons(ctx, db, where, args, now)
-	if err != nil {
-		internal(w, err)
-		return
-	}
-	following := []homeCard{}
+	run(func() error {
+		return db.QueryRowContext(ctx, "SELECT count(*) FROM titles WHERE state != 'removed'").Scan(&titles)
+	})
+	run(func() error { return db.QueryRowContext(ctx, "SELECT count(*) FROM asks").Scan(&asked) })
+	run(func() (err error) { arrived, err = homeArrivals(ctx, db, where, args, now); return })
+	run(func() (err error) { seasons, err = homeNewSeasons(ctx, db, where, args, now); return })
 	if !v.Kid {
-		if following, err = homeFollows(ctx, db, where, args, a.person(r).UserID); err != nil {
-			internal(w, err)
-			return
+		run(func() (err error) { following, err = homeFollows(ctx, db, where, args, me); return })
+		run(func() (err error) { soon, err = homeComingSoon(ctx, db, where, args, now); return })
+	}
+	run(func() (err error) { progress, err = homeAskProgress(ctx, db, me); return })
+	if v.Owner {
+		run(func() error {
+			return db.QueryRowContext(ctx, "SELECT count(*) FROM slots WHERE state = 'failed'").Scan(&failed)
+		})
+		if !signed || who.Has(auth.PermSettings) {
+			run(func() error {
+				return db.QueryRowContext(ctx, "SELECT count(*) FROM health_checks WHERE confirmed != 'ok'").Scan(&sick)
+			})
 		}
 	}
-	soon := []homeCard{}
-	if !v.Kid {
-		if soon, err = homeComingSoon(ctx, db, where, args, now); err != nil {
-			internal(w, err)
-			return
-		}
+	run(func() (err error) { library, err = homeLibraryCounts(ctx, db, where, args, kinds); return })
+	wg.Wait()
+	if firstErr != nil {
+		internal(w, firstErr)
+		return
 	}
+	failed += sick
 	// A show in New season is not repeated in Coming soon.
 	inSeasons := map[int64]bool{}
 	for _, c := range seasons {
@@ -173,33 +195,8 @@ func (a *API) home(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	soon = kept
-	progress, err := homeAskProgress(ctx, db, a.person(r).UserID)
-	if err != nil {
-		internal(w, err)
-		return
-	}
-	failed := 0
-	if v.Owner {
-		if err := db.QueryRowContext(ctx, "SELECT count(*) FROM slots WHERE state = 'failed'").Scan(&failed); err != nil {
-			internal(w, err)
-			return
-		}
-		if !signed || who.Has(auth.PermSettings) {
-			var sick int
-			if err := db.QueryRowContext(ctx, "SELECT count(*) FROM health_checks WHERE confirmed != 'ok'").Scan(&sick); err != nil {
-				internal(w, err)
-				return
-			}
-			failed += sick
-		}
-	}
-	library, err := homeLibraryCounts(ctx, db, where, args, a.homeKinds())
-	if err != nil {
-		internal(w, err)
-		return
-	}
 	has := homeHas{Empty: titles == 0 && asked == 0, Attention: failed > 0, Arrived: len(arrived) > 0, NewSeason: len(seasons) > 0, Following: len(following) > 0, Soon: len(soon) > 0}
-	writeJSON(w, http.StatusOK, map[string]any{
+	writeTaggedJSON(w, r, map[string]any{
 		"rows": homeRows(v, has), "owner": v.Owner, "kid": v.Kid,
 		"arrived": arrived, "new_seasons": seasons, "following": following, "soon": soon,
 		"ask_progress": progress, "library": library,

@@ -70,12 +70,52 @@ func (a *API) wikiFacts(w http.ResponseWriter, r *http.Request) {
 	c.mu.Lock()
 	e, ok := c.seen[key]
 	c.mu.Unlock()
-	if ok && time.Since(e.at) < 6*time.Hour {
+	if !ok {
+		if k, found := loadKept[WikiFacts](r.Context(), a, "wiki|"+key); found {
+			e, ok = wikiEntry(k), true
+			c.mu.Lock()
+			c.seen[key] = e
+			c.mu.Unlock()
+		}
+	}
+	if ok {
+		// Kept answers are served at once; an old one is refreshed in the
+		// background for the next view.
+		if time.Since(e.at) >= 6*time.Hour {
+			refreshOnce("wiki|"+key, func(ctx context.Context) {
+				if v, settled := a.fetchWiki(ctx, kind, id, name); settled {
+					c.mu.Lock()
+					c.seen[key] = wikiEntry{v: v, at: time.Now()}
+					c.mu.Unlock()
+					keepOnDisk(ctx, a, "wiki|"+key, v)
+				}
+			})
+		}
 		writeJSON(w, http.StatusOK, e.v)
 		return
 	}
+	v, settled := a.fetchWiki(r.Context(), kind, id, name)
+	// Only settled answers are kept; a server hiccup is asked again.
+	if !settled {
+		w.Header().Set("Cache-Control", "private, no-cache")
+		writeJSON(w, http.StatusOK, v)
+		return
+	}
+	c.mu.Lock()
+	if len(c.seen) > 5000 {
+		c.seen = map[string]wikiEntry{}
+	}
+	c.seen[key] = wikiEntry{v: v, at: time.Now()}
+	c.mu.Unlock()
+	keepOnDisk(r.Context(), a, "wiki|"+key, v)
+	writeJSON(w, http.StatusOK, v)
+}
+
+// fetchWiki asks the metadata server for a title's or person's facts;
+// settled is false after a server hiccup.
+func (a *API) fetchWiki(parent context.Context, kind, id, name string) (WikiFacts, bool) {
 	v := WikiFacts{Badges: []string{}, Tallies: []metadata.WikiTally{}, Awards: []metadata.WikiAward{}}
-	ctx, cancel := context.WithTimeout(r.Context(), 8*time.Second)
+	ctx, cancel := context.WithTimeout(parent, 8*time.Second)
 	defer cancel()
 	var ent metadata.WikiEntity
 	err := metadata.ErrNotFound
@@ -102,18 +142,7 @@ func (a *API) wikiFacts(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	// Only settled answers are kept; a server hiccup is asked again.
-	if err != nil && !errors.Is(err, metadata.ErrNotFound) {
-		writeJSON(w, http.StatusOK, v)
-		return
-	}
-	c.mu.Lock()
-	if len(c.seen) > 5000 {
-		c.seen = map[string]wikiEntry{}
-	}
-	c.seen[key] = wikiEntry{v: v, at: time.Now()}
-	c.mu.Unlock()
-	writeJSON(w, http.StatusOK, v)
+	return v, err == nil || errors.Is(err, metadata.ErrNotFound)
 }
 
 // wikiKidAllows checks a movie or show against the Kid limit, as extras

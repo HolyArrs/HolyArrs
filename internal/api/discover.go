@@ -33,8 +33,10 @@ var discoverTTL = map[string]time.Duration{
 }
 
 const (
-	discoverMax       = 20
-	discoverPerMinute = 30
+	discoverMax = 20
+	// discoverPerMinute is each person's Explore asks a minute: high enough that
+	// flipping genre pages never hits it, low enough to stop a runaway client.
+	discoverPerMinute = 240
 	maxDiscoverCache  = 500
 )
 
@@ -399,12 +401,29 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 	}
 	key := "details|" + kind + "|" + id
 	e, cached := a.discover.get(key)
-	if !cached || time.Since(e.at) >= detailsTTL(e) {
+	if !cached || e.details == nil {
+		// Details are kept on disk: a restart or a full memory cache does
+		// not send the next view out to TMDB.
+		if k, ok := loadKept[metadata.Details](r.Context(), a, key); ok {
+			e, cached = discoverEntry{at: k.at, details: &k.v}, true
+			a.discover.put(key, e)
+		}
+	}
+	if cached && e.details != nil && time.Since(e.at) >= detailsTTL(e) {
+		// Stale but kept: served now, refreshed in the background.
+		refreshOnce(key, func(ctx context.Context) {
+			if det, err := d.Details(ctx, kind, id); err == nil {
+				a.discover.put(key, discoverEntry{at: time.Now(), details: &det})
+				keepOnDisk(ctx, a, key, det)
+			}
+		})
+	} else if !cached || time.Since(e.at) >= detailsTTL(e) {
 		det, err := d.Details(r.Context(), kind, id)
 		switch {
 		case err == nil:
 			e = discoverEntry{at: time.Now(), details: &det}
 			a.discover.put(key, e)
+			keepOnDisk(r.Context(), a, key, det)
 		case !(cached && staleOK(err)):
 			discoverFail(w, err)
 			return
