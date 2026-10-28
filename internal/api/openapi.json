@@ -10487,7 +10487,7 @@
           "Library"
         ],
         "x-holyarrs-part": "media",
-        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "read"
       }
     },
