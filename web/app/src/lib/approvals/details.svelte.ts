@@ -91,12 +91,22 @@ function nextSongs() {
 export function albumSongs(album: string, artist: string): AlbumSong[] | null {
 	if (album && artist && !askedSongs.has(album)) {
 		askedSongs.add(album);
-		songQueue.push(() =>
+		// The album answer says incomplete while the server still fetches the tracklist: ask again shortly (a few times).
+		const ask = (tries: number): Promise<void> =>
 			api
-				.get<{ tracks?: AlbumSong[] }>(`/music/albums/${encodeURIComponent(album)}?artist=${encodeURIComponent(artist)}`)
-				.then((r) => void (songs[album] = Array.isArray(r.tracks) ? r.tracks : []))
-				.catch(() => void (songs[album] = []))
-		);
+				.get<{ tracks?: AlbumSong[]; incomplete?: boolean }>(`/music/albums/${encodeURIComponent(album)}?artist=${encodeURIComponent(artist)}`)
+				.then((r) => {
+					if (r.incomplete && !r.tracks?.length && tries < 5) {
+						setTimeout(() => {
+							songQueue.push(() => ask(tries + 1));
+							nextSongs();
+						}, 2000);
+						return;
+					}
+					songs[album] = Array.isArray(r.tracks) ? r.tracks : [];
+				})
+				.catch(() => void (songs[album] = []));
+		songQueue.push(() => ask(0));
 		nextSongs();
 	}
 	return songs[album] ?? null;
