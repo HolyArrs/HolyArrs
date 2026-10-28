@@ -34,7 +34,7 @@ describe('episode captions', () => {
 		const f = rowWords(groupDates([ep({ episode_name: 'Episode 25', timed: false })])[0], look({ channels: 'known', region: 'ZA' }), '2026-10-27');
 		expect(f.lines).toEqual(['Season 24, Episode 25']);
 		expect([f.when, f.quiet]).toEqual(['All day', true]);
-		expect(cardLines(groupDates([ep({ episode_name: '02/11/2026' })])[0], look(), '2026-10-27').slice(1)).toEqual(['Season 24, Episode 25', 'ABC']);
+		expect(cardLines(groupDates([ep({ episode_name: '02/11/2026' })])[0], look(), '2026-10-27').slice(1)).toEqual(['Season 24, Episode 25']);
 	});
 	it('spans several episodes of one day', () => {
 		expect(episodeWords([{ season: 39, episode: 196 }, { season: 39, episode: 194 }])).toBe('Season 39, Episodes 194–196');

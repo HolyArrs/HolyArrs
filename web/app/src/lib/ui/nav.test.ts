@@ -23,7 +23,7 @@ describe('buildNav', () => {
 		expect(labels(member)).toEqual([
 			[null, ['Home', 'Explore', 'New & Popular']],
 			['Library', ['Movies', 'TV shows', 'Music']],
-			['Your stuff', ['Wishlist']]
+			['Your stuff', ['Wishlist', 'Calendar']]
 		]);
 	});
 	it('shows each Manage item by its own permission', () => {
