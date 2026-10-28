@@ -213,8 +213,9 @@ func TestMetadataSearchAndAttribution(t *testing.T) {
 	}
 	do(t, "GET", srv.URL+"/api/v1/metadata/search", "", 400)
 	page := string(do(t, "GET", srv.URL+"/", "", 200))
-	if !strings.Contains(page, "This product uses the TMDB API but is not endorsed or certified by TMDB.") {
-		t.Fatal("TMDB notice missing from the page")
+	// Credits live on GitHub, not in the app.
+	if strings.Contains(page, "This product uses the TMDB API") {
+		t.Fatal("TMDB credit line should not be on the page")
 	}
 }
 
