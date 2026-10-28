@@ -853,8 +853,7 @@
 	/* Month hidden: it slides off to the right and the days take its room. */
 	@media (min-width: 1024px) { .cal-body.month-off { grid-template-columns: minmax(0, 1fr) 0px; column-gap: 0px; } }
 	.cal-body .side { transition: top var(--dur) var(--ease-out), opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out); }
-	.cal-body.month-off .side { opacity: 0; transform: translateX(24px); pointer-events: none; overflow: hidden; }
-	.cal-body.month-off .days { max-width: none; }
+	.cal-body.month-off .side { opacity: 0; transform: translateX(24px); pointer-events: none; overflow: hidden; visibility: hidden; width: 0; padding: 0; outline: 0; box-shadow: none; }
 	.month-btn { display: inline-flex; align-items: center; gap: 2px; height: 36px; padding: 0 10px; border: 0; border-radius: 999px; background: var(--surface-2); color: var(--text); cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
 	.month-btn.sm { height: 32px; padding: 0 8px; }
 	.month-btn:hover { background: var(--surface-3); }
@@ -907,7 +906,7 @@
 	.endless { height: 1px; }
 	.more-note { margin-top: 18px; color: var(--text-muted); font: var(--t-callout); }
 
-	.days { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; max-width: 860px; }
+	.days { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 	.day { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 14px; padding: 12px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); scroll-margin-top: 8px; }
 	/* Today is told by a small tag under the date, not by colour. */
 	.today-tag { margin-top: 6px; display: inline-flex; }
@@ -920,7 +919,7 @@
 	/* List rows: the banner fills the row's right side, out to the card's edge (the card's corners round it). */
 	.day { overflow: hidden; }
 	/* The banner is wide and reaches in under the words: its faded left half sits behind the text. */
-	.items { --bw: clamp(220px, 64%, 680px); }
+	.items { --bw: clamp(220px, 72%, 1400px); }
 	/* On hover a row grows a little at top and bottom; the rows below move down with it (no overlap). */
 	.item { position: relative; min-height: 66px; padding-right: calc(var(--bw) * 0.45); transition: padding var(--dur) var(--ease-out); }
 	@media (hover: hover) { .item:hover { padding-top: 14px; padding-bottom: 14px; } }
@@ -977,7 +976,7 @@
 	}
 
 	.feed-gap { margin-top: 24px; }
-	.feed { margin-top: 28px; max-width: 860px; padding: 18px; display: flex; flex-direction: column; gap: 12px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
+	.feed { margin-top: 28px; padding: 18px; display: flex; flex-direction: column; gap: 12px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
 	.feed h2 { font: var(--t-title3); letter-spacing: var(--t-title3-track); }
 	.feed p { font: var(--t-callout); }
 	.muted { color: var(--text-muted); }
