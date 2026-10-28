@@ -145,7 +145,7 @@
 		const decOffs = ['slot', 'releases', 'resync'].map((t) => live.on(t, () => void refreshDecisions()));
 		const poll = setInterval(() => {
 			if (document.visibilityState === 'visible' && rows.some((r) => r.active)) soon();
-		}, 5000);
+		}, 2000);
 		return () => {
 			offs.forEach((off) => off());
 			decOffs.forEach((off) => off());

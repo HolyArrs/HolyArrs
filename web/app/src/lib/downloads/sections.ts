@@ -128,3 +128,15 @@ export function facts(r: DownloadRow, im: ImportRecord | undefined): Fact[] {
 	];
 	return out.filter((x): x is [string, string] => !!x[1]).map(([label, value]) => ({ label, value }));
 }
+
+/** SPAN is the speed graph's window: one reading a second for a minute. */
+export const SPAN = 60;
+
+/** stepToward eases the graph's next one-second reading from the last one
+ *  toward the newest poll, so a 2-second poll still draws a smooth line. */
+export function stepToward(last: number, target: number): number {
+	const t = Math.max(0, target || 0);
+	const l = Math.max(0, last || 0);
+	const next = l + (t - l) * 0.6;
+	return Math.abs(next - t) < 1024 ? t : next;
+}
