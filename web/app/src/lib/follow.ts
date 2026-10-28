@@ -1,5 +1,6 @@
-// Follow: a person follows a show or an artist to hear about new episodes,
-// seasons and albums. Following asks for nothing.
+// Follow: a person follows a movie, a show or an artist to see its dates on
+// their calendar and hear about new episodes, seasons and albums. Following
+// asks for nothing (Kept up to date, which downloads, is separate).
 
 type Client = {
 	put: <T>(p: string, body?: unknown) => Promise<T>;
@@ -11,10 +12,14 @@ export function followLabel(on: boolean): string {
 	return on ? 'Following' : 'Follow';
 }
 
-/** followHint says what following a title tells you. */
+/** followHint says what following a title does: its dates on your calendar, and what you hear about. */
 export function followHint(kind: string, on: boolean, waiting = false): string {
+	if (kind === 'movie') {
+		const what = waiting ? 'when it is in the Library' : 'its dates';
+		return on ? `On your calendar; you hear ${waiting ? what : 'about it'}. Tap to stop.` : `Follow to see ${waiting ? 'it' : what} on your calendar${waiting ? ` and hear ${what}` : ''}. Nothing is asked for.`;
+	}
 	const what = kind === 'artist' ? 'new albums' : waiting ? 'it when it lands and about new seasons' : 'new episodes and seasons';
-	return on ? `You hear about ${what}. Tap to stop.` : `Follow to hear about ${what}. Nothing is asked for.`;
+	return on ? `On your calendar; you hear about ${what}. Tap to stop.` : `Follow to see it on your calendar and hear about ${what}. Nothing is asked for.`;
 }
 
 /** What is followed: a Library title, or a show (or a movie not out yet) by TMDB id. */

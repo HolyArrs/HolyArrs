@@ -838,7 +838,7 @@
 						<ActionButton icon="wish" label={d.ask ? `Ask for ${d.name} too` : `Ask for ${d.name}`} caption={view.newWords ? (d.ask ? 'Request too' : 'Request') : d.ask ? 'Ask too' : 'Ask'} primary onclick={() => askShow?.open(d.show as LookupShow)} />
 					{/if}
 				{/if}
-				{#if d.kind === 'show'}<FollowButton tmdb={d.tmdb} kind="show" />{/if}
+				{#if d.kind === 'show' || d.kind === 'movie'}<FollowButton titleId={owned?.id} tmdb={d.tmdb} kind={d.kind} />{/if}
 			{/snippet}
 		</TitleHero>
 

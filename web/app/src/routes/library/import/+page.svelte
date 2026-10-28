@@ -50,6 +50,8 @@
 	let named = $state<Record<string, string>>({});
 	let ticked = $state<Record<string, boolean>>({});
 	let adopting = $state(false);
+	// Follow what is brought in: it goes on my calendar (ticked by default).
+	let followAll = $state(true);
 	let results = $state<AdoptResult[] | null>(null);
 
 	let lookFor = $state<string | null>(null);
@@ -182,7 +184,7 @@
 		adopting = true;
 		error = '';
 		try {
-			const r = await api.post<{ job_id: number }>(`/library-folders/${plan.library_folder_id}/adopt`, { folders: picks });
+			const r = await api.post<{ job_id: number }>(`/library-folders/${plan.library_folder_id}/adopt`, { folders: picks, follow: followAll });
 			const end = await follow(r.job_id);
 			if (end.State !== 'done') throw new Error(end.Error?.message || 'Adopting did not finish.');
 			results = (end.Result?.results as AdoptResult[]) ?? [];
@@ -393,6 +395,10 @@
 				</div>
 			{/each}
 			<div class="row end">
+				<label class="checkline follow-all" data-testid="follow-box">
+					<input type="checkbox" bind:checked={followAll} />
+					<span><b>Follow</b><br /><span class="hint">Show them on my calendar.</span></span>
+				</label>
 				<span class="small muted">{picks.length} ticked</span>
 				<Button variant="primary" onclick={adopt} disabled={!picks.length} busy={adopting}>
 					{picks.length === 1 ? `Adopt 1 ${word}` : `Adopt ${picks.length} ${word}s`}
@@ -425,6 +431,7 @@
 		flex: 1 1 240px;
 		margin-bottom: 0;
 	}
+	.follow-all { margin-right: auto; }
 	.bar {
 		width: 100%;
 		margin-top: var(--s-4);

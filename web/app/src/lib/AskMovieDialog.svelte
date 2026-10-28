@@ -27,11 +27,14 @@
 
 	let sheetOpen = $state(false);
 	let picked = $state<AskMovie | null>(null);
+	// Follow: put it on my calendar (ticked by default).
+	let follow = $state(true);
 	let busy = $state(false);
 	let error = $state('');
 
 	/** open shows the dialog for one movie. */
 	export function open(m: AskMovie) {
+		follow = true;
 		picked = m;
 		error = '';
 		sheetOpen = true;
@@ -43,7 +46,7 @@
 		busy = true;
 		error = '';
 		try {
-			const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', { id: `tmdb:${picked.tmdb}` });
+			const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', { id: `tmdb:${picked.tmdb}`, follow });
 			sheetOpen = false;
 			onasked(picked, r);
 		} catch (err) {
@@ -63,6 +66,10 @@
 					? `Someone asked for it already (${picked.ask.state_label}). Asking joins their ask, and you hear when it is ready.`
 					: 'It goes on the Wishlist. You hear when it is approved and when it is ready to watch.'}
 			</p>
+			<label class="checkline" data-testid="follow-box">
+				<input type="checkbox" bind:checked={follow} />
+				<span><b>Follow</b><br /><span class="hint">Show it on my calendar.</span></span>
+			</label>
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 		</form>
 	{/if}

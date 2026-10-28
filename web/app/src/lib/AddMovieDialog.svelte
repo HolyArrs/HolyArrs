@@ -28,6 +28,8 @@
 
 	let addOpen = $state(false);
 	let picked = $state<LookupMovie | null>(null);
+	// Follow: put it on my calendar (ticked by default).
+	let follow = $state(true);
 	let folderId = $state(0);
 	let rulesId = $state(0);
 	let gate = $state('released');
@@ -48,6 +50,7 @@
 	const movieRules = $derived(rules.filter((r) => !r.kinds.length || r.kinds.includes('movie')));
 
 	export async function open(m: LookupMovie) {
+		follow = true;
 		picked = m;
 		addError = '';
 		ready = false;
@@ -85,6 +88,7 @@
 		try {
 			const r = await api.post<{ title: TitleView }>('/titles', {
 				id: `tmdb:${picked.ids.tmdb}`,
+				follow,
 				library_folder_id: folderId,
 				pick_rules_id: rulesId,
 				release_gate: gate,
@@ -179,6 +183,10 @@
 					</fieldset>
 				{/if}
 			{/if}
+			<label class="checkline" data-testid="follow-box">
+				<input type="checkbox" bind:checked={follow} />
+				<span><b>Follow</b><br /><span class="hint">Show it on my calendar.</span></span>
+			</label>
 			{#if addError}<p class="form-error" role="alert">{plainReason(addError).text}</p>{/if}
 		</form>
 	{/if}

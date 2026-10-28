@@ -24,6 +24,8 @@
 
 	let sheetOpen = $state(false);
 	let picked = $state<LookupArtist | null>(null);
+	// Follow: put it on my calendar (ticked by default).
+	let follow = $state(true);
 	let folderId = $state(0);
 	let rulesId = $state(0);
 	let albums = $state('all');
@@ -40,6 +42,7 @@
 
 	/** open shows the dialog for one looked-up artist. */
 	export function open(a: LookupArtist) {
+		follow = true;
 		picked = a;
 		error = '';
 		folderId = musicFolders.find((f) => f.health === 'ok')?.id ?? musicFolders[0]?.id ?? 0;
@@ -66,6 +69,7 @@
 		try {
 			const r = await api.post<{ title: TitleView }>('/artists', {
 				id: `mbid:${picked.mbid}`,
+				follow,
 				library_folder_id: folderId,
 				pick_rules_id: rulesId,
 				keep_up_to_date: keep,
@@ -156,6 +160,10 @@
 				</label>
 				<p class="hint note" data-testid="music-search-note">HolyArrs looks for the albums you keep up to date once their tracks are filled in, one Release per album.</p>
 			{/if}
+			<label class="checkline" data-testid="follow-box">
+				<input type="checkbox" bind:checked={follow} />
+				<span><b>Follow</b><br /><span class="hint">Show it on my calendar.</span></span>
+			</label>
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 		</form>
 	{/if}

@@ -17,6 +17,8 @@
 
 	let sheetOpen = $state(false);
 	let picked = $state<LookupShow | null>(null);
+	// Follow: put it on my calendar (ticked by default).
+	let follow = $state(true);
 	let mode = $state<'all' | 'choose' | 'future'>('all');
 	let chosen = $state<number[]>([]);
 	let busy = $state(false);
@@ -26,6 +28,7 @@
 
 	/** open shows the dialog for one looked-up show. */
 	export function open(s: LookupShow) {
+		follow = true;
 		picked = s;
 		mode = 'all';
 		chosen = [];
@@ -48,7 +51,7 @@
 		busy = true;
 		error = '';
 		try {
-			const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', mode === 'future' ? { kind: 'show', id: idOf(picked), future_only: true } : { kind: 'show', id: idOf(picked), seasons: mode === 'all' ? [] : chosen });
+			const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', mode === 'future' ? { kind: 'show', id: idOf(picked), future_only: true, follow } : { kind: 'show', id: idOf(picked), seasons: mode === 'all' ? [] : chosen, follow });
 			(sheetOpen = false);
 			onasked(picked, r);
 		} catch (err) {
@@ -92,6 +95,10 @@
 					{/each}
 				</fieldset>
 			{/if}
+			<label class="checkline" data-testid="follow-box">
+				<input type="checkbox" bind:checked={follow} />
+				<span><b>Follow</b><br /><span class="hint">Show it on my calendar.</span></span>
+			</label>
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 		</form>
 	{/if}

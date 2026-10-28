@@ -27,6 +27,8 @@
 
 	let sheetOpen = $state(false);
 	let picked = $state<LookupShow | null>(null);
+	// Follow: put it on my calendar (ticked by default).
+	let follow = $state(true);
 	let folderId = $state(0);
 	let rulesId = $state(0);
 	let seasons = $state('all');
@@ -51,6 +53,7 @@
 
 	/** open shows the dialog for one looked-up show. */
 	export async function open(s: LookupShow) {
+		follow = true;
 		picked = s;
 		error = '';
 		ready = false;
@@ -95,6 +98,7 @@
 		try {
 			const r = await api.post<{ title: TitleView }>('/shows', {
 				id: idOf(picked),
+				follow,
 				library_folder_id: folderId,
 				pick_rules_id: rulesId,
 				keep_up_to_date: keep,
@@ -208,6 +212,10 @@
 				{/if}
 				{#if !searchOnAdd}<p class="hint" data-testid="no-show-search">HolyArrs looks for missing episodes at the next feed check and each night. To look at once, tick Search when added, or use Search now on the show page.</p>{/if}
 			{/if}
+			<label class="checkline" data-testid="follow-box">
+				<input type="checkbox" bind:checked={follow} />
+				<span><b>Follow</b><br /><span class="hint">Show it on my calendar.</span></span>
+			</label>
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 		</form>
 	{/if}

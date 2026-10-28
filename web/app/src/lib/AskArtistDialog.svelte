@@ -16,6 +16,8 @@
 
 	let sheetOpen = $state(false);
 	let picked = $state<LookupArtist | null>(null);
+	// Follow: put it on my calendar (ticked by default).
+	let follow = $state(true);
 	let albums = $state<AskableAlbum[] | null>(null);
 	let whole = $state(true);
 	let chosen = $state<string[]>([]);
@@ -24,6 +26,7 @@
 
 	/** open shows the dialog for one artist and reads its albums; album (a release group) starts picked when given. */
 	export async function open(a: LookupArtist, album?: string) {
+		follow = true;
 		picked = a;
 		albums = null;
 		whole = true;
@@ -56,7 +59,7 @@
 		busy = true;
 		error = '';
 		try {
-			const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', { kind: 'artist', id: `mbid:${picked.mbid}`, albums: whole ? [] : chosen });
+			const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', { kind: 'artist', id: `mbid:${picked.mbid}`, albums: whole ? [] : chosen, follow });
 			(sheetOpen = false);
 			onasked(picked, r);
 		} catch (err) {
@@ -101,6 +104,10 @@
 			{:else if albums === null}
 				<div class="sk" style="height: 60px; margin-top: var(--s-3)"></div>
 			{/if}
+			<label class="checkline" data-testid="follow-box">
+				<input type="checkbox" bind:checked={follow} />
+				<span><b>Follow</b><br /><span class="hint">Show it on my calendar.</span></span>
+			</label>
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 		</form>
 	{/if}

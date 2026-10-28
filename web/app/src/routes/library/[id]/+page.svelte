@@ -25,6 +25,7 @@
 	import TitleHero, { richMetadata, runtimeWords, shortFolder, type RichMeta } from '#lib/ui/TitleHero.svelte';
 	import { plainReason } from '#lib/plain.ts';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
+	import FollowButton from '#lib/ui/FollowButton.svelte';
 	import AskedByLine from '#lib/ui/AskedByLine.svelte';
 	import { loadAskedBy, type AskedByAnswer } from '#lib/askedby.ts';
 	import { reducedMotion } from '#lib/motion.ts';
@@ -552,6 +553,7 @@
 					<ActionButton icon="library" label="In Library: go to the Library section" caption="In Library" primary onclick={toLibrary} data-testid="hero-library" />
 					<ActionMenu label="More actions" caption="More" icon="more" items={heroItems} />
 				{/if}
+				<FollowButton titleId={title!.id} kind="movie" />
 			{/snippet}
 		</TitleHero>
 

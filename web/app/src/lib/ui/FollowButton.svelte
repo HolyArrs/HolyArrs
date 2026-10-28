@@ -1,14 +1,16 @@
 <script lang="ts">
-	// The title page bell: Follow a show or an artist to hear about new
-	// episodes, seasons or albums. It asks for nothing.
+	// The title page bell: Follow a movie, a show or an artist to see its
+	// dates on your calendar and hear about new episodes, seasons or albums.
+	// It asks for nothing.
 	import ActionButton from './ActionButton.svelte';
 	import { api, message } from '../api.ts';
 	import { followHint, followLabel, followPath, setFollow, type FollowTarget } from '../follow.ts';
 	import { toasts } from '../toasts.svelte.ts';
 
-	// A show not in the Library is followed by its TMDB id: you hear when it lands.
-	let { titleId, tmdb, kind }: { titleId?: number; tmdb?: string; kind: 'show' | 'artist' } = $props();
-	const target = $derived<FollowTarget | null>(titleId ? { titleId } : tmdb ? { tmdb } : null);
+	// A movie or show by its TMDB id: one in the Library is followed as its title; one
+	// not in it yet waits, and you hear when it lands.
+	let { titleId, tmdb, kind }: { titleId?: number; tmdb?: string; kind: 'movie' | 'show' | 'artist' } = $props();
+	const target = $derived<FollowTarget | null>(titleId ? { titleId } : tmdb ? { tmdb, kind: kind === 'movie' ? 'movie' : 'show' } : null);
 
 	let on = $state(false);
 	let busy = $state(false);
