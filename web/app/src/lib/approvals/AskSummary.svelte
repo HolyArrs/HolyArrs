@@ -1,11 +1,11 @@
 <script lang="ts">
 	// What an ask is for in one line ("Seasons 1–2 · 2 of 4 seasons, 22
-	// episodes", "2h 13m · out now"), its season pills (tapping one lists that
+	// episodes"; movies say nothing more), its season pills (tapping one lists that
 	// season's episodes), and "Not out yet · S6 airs Mar 3" when part of it
 	// has not come out. Rows show the line alone; `pills` adds the pills.
 	import { slide } from 'svelte/transition';
 	import { DUR, easeOut } from '../ui/transitions.ts';
-	import { askSummary, movieRelease, showNotOut, watchSeason } from './inbox.ts';
+	import { askSummary, showNotOut, watchSeason } from './inbox.ts';
 	import type { ApprovalsCtx } from './approvals.ts';
 	import type { Ask } from '../types.ts';
 
@@ -13,11 +13,11 @@
 
 	$effect(() => ctx.want(a));
 	const info = $derived(ctx.info(a));
-	const sum = $derived(askSummary(a, info, ctx.details(a)?.runtime));
+	const sum = $derived(askSummary(a, info));
 	const watch = $derived(watchSeason(a, info));
 	const notOutLine = $derived.by(() => {
 		if (!notOut) return '';
-		if (a.kind === 'movie') return movieRelease(info).notOut;
+		if (a.kind !== 'show') return '';
 		return watch ? showNotOut(watch, ctx.episodes(a.tmdb_id, watch)) : '';
 	});
 	let open = $state(0);

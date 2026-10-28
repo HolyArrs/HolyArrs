@@ -366,6 +366,8 @@ export interface Ask {
 	albums?: AskAlbum[];
 	/** For an artist: "every album", or the albums' names. */
 	album_words?: string;
+	/** An artist ask's MusicBrainz id, for its page and photo. */
+	artist_id?: string;
 	name: string;
 	year?: number;
 	poster?: string;

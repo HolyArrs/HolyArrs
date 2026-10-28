@@ -10,6 +10,8 @@ import { fromMetadata, type TitleDetails } from '../title-details.ts';
 import type { Ask } from '../types.ts';
 import { detailKey } from './approvals.ts';
 import { readInfo, type AskInfo, type EpisodeInfo } from './inbox.ts';
+import { musicDefaults, type ArtistAlbum, type MusicKinds } from './ask-parts.ts';
+import { appPicture, type ArtistCoreData } from '../music/music-pages.ts';
 
 const got = $state<Record<string, TitleDetails | null>>({});
 const info = $state<Record<string, AskInfo | null>>({});
@@ -58,4 +60,58 @@ export function seasonEpisodes(tmdb: string, season: number): EpisodeInfo[] | nu
 			.catch(() => (eps[k] = []));
 	}
 	return eps[k] ?? null;
+}
+
+/** What the Approvals panel shows of an artist: the round photo, the banner pictures and the albums (release groups). */
+export interface AskArtist {
+	image: string | null;
+	backgrounds: string[];
+	albums: ArtistAlbum[] | null;
+}
+const artists = $state<Record<string, AskArtist>>({});
+const askedArtists = new Set<string>();
+let kinds = $state<MusicKinds>(musicDefaults);
+let kindsAsked = false;
+
+/** artistIdOf is an artist ask's MusicBrainz id. */
+export function artistIdOf(a: Pick<Ask, 'kind' | 'ref' | 'artist_id'>): string {
+	if (a.kind !== 'artist') return '';
+	return a.artist_id || (a.ref?.startsWith('mbid:') ? a.ref.slice(5) : '');
+}
+
+/** artistPhoto is an artist ask's round photo (the artist's own picture, never an album cover). */
+export function artistPhoto(a: Pick<Ask, 'kind' | 'ref' | 'artist_id' | 'poster'>): string | null {
+	const id = artistIdOf(a);
+	return artists[id]?.image ?? (id ? appPicture(`/api/v1/music-trending/art/artist/${id}`) : appPicture(a.poster));
+}
+
+/** askArtist is what is known of an ask's artist (null until asked); asks once, the same answers the artist page uses. */
+export function askArtist(a: Pick<Ask, 'kind' | 'ref' | 'artist_id'>): AskArtist | null {
+	const id = artistIdOf(a);
+	if (!id) return null;
+	if (!askedArtists.has(id)) {
+		askedArtists.add(id);
+		artists[id] = { image: null, backgrounds: [], albums: null };
+		api
+			.get<ArtistCoreData>(`/music/artists/${encodeURIComponent(id)}?part=core`)
+			.then((c) => (artists[id] = { ...artists[id], image: appPicture(c.image), albums: (c.albums ?? []).map((x) => ({ ...x, image: appPicture(x.image) ?? '' })) }))
+			.catch(() => (artists[id] = { ...artists[id], albums: [] }));
+		api
+			.get<{ backgrounds?: string[] }>(`/extras/artist/${encodeURIComponent(id)}`)
+			.then((x) => (artists[id] = { ...artists[id], backgrounds: (x.backgrounds ?? []).map((u) => (u.startsWith('/') ? (appPicture(u) ?? u) : u)) }))
+			.catch(() => {});
+	}
+	return artists[id] ?? null;
+}
+
+/** musicKinds is the album kinds a whole-artist ask takes (the music add defaults; the built-in ones until known). */
+export function musicKinds(): MusicKinds {
+	if (!kindsAsked) {
+		kindsAsked = true;
+		api
+			.get<MusicKinds>('/settings/music')
+			.then((r) => (kinds = { album_types: r.album_types ?? musicDefaults.album_types, secondary_types: r.secondary_types ?? musicDefaults.secondary_types }))
+			.catch(() => {});
+	}
+	return kinds;
 }

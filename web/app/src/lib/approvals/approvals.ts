@@ -8,11 +8,13 @@ import type { TitleDetails } from '../title-details.ts';
 import type { LibraryFolder, PickRulesView } from '../types.ts';
 import type { AskInfo, EpisodeInfo } from './inbox.ts';
 
-/** The approver's choices for one ask: Pick rules (0: the default), audio languages (empty: any) and a note. */
+/** The approver's choices for one ask: Pick rules (0: the default), audio languages (empty: any), a note, and the seasons or albums kept (absent: all of the ask). */
 export interface DecideOptions {
 	rulesId: number;
 	langs: string[];
 	note?: string;
+	seasons?: number[];
+	albums?: string[];
 }
 import { detailPath } from '../title-details.ts';
 

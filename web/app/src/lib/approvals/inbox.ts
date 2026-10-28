@@ -1,21 +1,21 @@
-// The Inbox look of the Approvals page in five arrangements Luis compares
-// (?inbox=1…5), and the rules they share: what an ask is for in one line
+// The Stage views of the Approvals page Luis compares (?stage=1…5), and
+// the rules they share: what an ask is for in one line
 // (with season pills), whether part of it is not out yet, the status tabs,
 // and the remembered poster size and side panel.
 
 import type { Ask } from '../types.ts';
 import type { AskTab } from '../wishlist.ts';
 
-/** The arrangements on the bottom bar; 0 is the page as it is today. */
-export const inboxLooks: { value: number; label: string }[] = [
+/** The Stage views on the bottom bar (?stage=1…5): the picked ask large, the list roomier in each. */
+export const stageLooks: { value: number; label: string }[] = [
 	{ value: 0, label: 'Now' },
-	{ value: 1, label: '1 Rows' },
-	{ value: 2, label: '2 Table' },
-	{ value: 3, label: '3 By person' },
-	{ value: 4, label: '4 Posters' },
-	{ value: 5, label: '5 Stage' }
+	{ value: 1, label: '1 Wide list' },
+	{ value: 2, label: '2 By person' },
+	{ value: 3, label: '3 Poster strip' },
+	{ value: 4, label: '4 Cards' },
+	{ value: 5, label: '5 Queue' }
 ];
-export const inboxKey = 'holyarrs.view.approvals-inbox';
+export const stageKey = 'holyarrs.view.approvals-stage';
 
 /** The status tabs, in the words the app uses (Downloads-style, each with its count). */
 export const inboxTabs: { tab: AskTab; label: string }[] = [
@@ -157,15 +157,14 @@ export function showSummary(
 	return { line: `${seasonRange(sorted)} · ${sorted.length} of ${plural(regular.length, 'season')}, ${plural(total, 'episode')}`, pills };
 }
 
-/** askSummary is an ask's one-line summary: runtime and release for movies, seasons for shows, albums for music. */
-export function askSummary(a: Ask, info: AskInfo | null | undefined, runtime: number | undefined, now = new Date()): AskSummary {
+/** askSummary is an ask's one-line summary: seasons for shows, albums for music; none for movies (the title page has the rest). */
+export function askSummary(a: Ask, info: AskInfo | null | undefined): AskSummary {
 	if (a.kind === 'artist') {
 		const w = a.album_words ?? (a.albums?.length ? a.albums.map((x) => x.name).join(', ') : 'every album');
 		return { line: w ? w[0].toUpperCase() + w.slice(1) : '', pills: [] };
 	}
 	if (a.kind === 'show') return showSummary(a, info?.seasons ?? []);
-	const r = movieRelease(info, now);
-	return { line: [runtimeShort(runtime), r.words].filter(Boolean).join(' · '), pills: [] };
+	return { line: '', pills: [] };
 }
 
 /** The season whose episodes say whether part of a show ask is not out yet: the last asked one (or the show's last). */

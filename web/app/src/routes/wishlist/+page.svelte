@@ -29,9 +29,9 @@
 	import VariantBar from '#lib/ui/VariantBar.svelte';
 	import { askHref, type ApprovalsCtx, type DecideOptions, type Member } from '#lib/approvals/approvals.ts';
 	import { askDetails, askInfo, seasonEpisodes, wantDetails } from '#lib/approvals/details.svelte.ts';
-	import { askedByOne, askers, inboxKey, inboxLooks } from '#lib/approvals/inbox.ts';
+	import { askedByOne, askers, stageKey, stageLooks } from '#lib/approvals/inbox.ts';
 	import { kidLabel } from '#lib/kid.ts';
-	import InboxLooks from '#lib/approvals/InboxLooks.svelte';
+	import StageViews from '#lib/approvals/StageViews.svelte';
 
 	const approver = $derived(session.can('approve'));
 	let asks = $state<Ask[]>([]);
@@ -48,7 +48,7 @@
 	let person = $state(0);
 	const ofKind = $derived((kind === 'all' ? asks : asks.filter((a) => a.kind === kind)).filter((a) => !person || askedByOne(a, person)));
 	// A decision waiting out its Undo time already shows in its new tab.
-	type Pending = { mode: 'approve' | 'turn_down'; note: string; rulesId: number; langs: string[]; timer: ReturnType<typeof setTimeout> };
+	type Pending = { mode: 'approve' | 'turn_down'; note: string; rulesId: number; langs: string[]; seasons?: number[]; albums?: string[]; timer: ReturnType<typeof setTimeout> };
 	let pending = $state<Record<number, Pending>>({});
 	const viewOf = (a: Ask): Ask => {
 		const p = pending[a.id];
@@ -80,7 +80,7 @@
 		delete pending[id];
 		try {
 			const path = `/asks/${id}/${p.mode === 'approve' ? 'approve' : 'turn-down'}`;
-			const body = p.mode === 'approve' ? { note: p.note, library_folder_id: 0, pick_rules_id: p.rulesId, ...(p.langs.length ? { audio_languages: p.langs } : {}) } : { note: p.note };
+			const body = p.mode === 'approve' ? { note: p.note, library_folder_id: 0, pick_rules_id: p.rulesId, ...(p.langs.length ? { audio_languages: p.langs } : {}), ...(p.seasons?.length ? { seasons: p.seasons } : {}), ...(p.albums?.length ? { albums: p.albums } : {}) } : { note: p.note };
 			const r = await api.post<{ ask: Ask }>(path, body);
 			const i = asks.findIndex((x) => x.id === r.ask.id);
 			if (i >= 0) asks[i] = r.ask;
@@ -95,7 +95,7 @@
 	function act(list: Ask[], mode: 'approve' | 'turn_down', why = '', opt?: DecideOptions) {
 		const ids = list.filter((a) => a.state === 'asked' && !pending[a.id]).map((a) => a.id);
 		if (!ids.length) return;
-		for (const id of ids) pending[id] = { mode, note: why, rulesId: opt?.rulesId ?? 0, langs: opt?.langs ?? [], timer: setTimeout(() => void commit(id), UNDO_MS) };
+		for (const id of ids) pending[id] = { mode, note: why, rulesId: opt?.rulesId ?? 0, langs: opt?.langs ?? [], seasons: opt?.seasons, albums: opt?.albums, timer: setTimeout(() => void commit(id), UNDO_MS) };
 		chosen = new Set();
 		const one = list.length === 1 ? list[0].name : `${ids.length} asks`;
 		const verb = mode === 'approve' ? 'approved' : 'turned down';
@@ -198,7 +198,7 @@
 	onMount(() => {
 		void load().then(() => {
 			// The layouts open on Waiting for approvers, so an empty queue shows its calm state.
-			tab = inboxLook > 0 && approver ? 'waiting' : firstTab(asks);
+			tab = stageLook > 0 && approver ? 'waiting' : firstTab(asks);
 		});
 		void refreshInbox();
 		api
@@ -357,8 +357,8 @@
 		return 'HolyArrs is looking for it.';
 	}
 
-	// The Inbox arrangements Luis compares (?inbox=1…5); 0 is the page above as it is today.
-	let inboxLook = $state(0);
+	// The Stage views Luis compares (?stage=1…5); 0 is the page above as it is today.
+	let stageLook = $state(0);
 	// Who asked: picture and age limit, for the Inbox looks.
 	let members = $state<Record<number, Member>>({});
 	let membersAsked = false;
@@ -366,7 +366,7 @@
 		// The people list is an admin route that wants a recent local password proof
 		// (10 minutes): without one it answers 403, so it is not asked; the rows
 		// then show initials and no age-limit mark.
-		if (!inboxLook || !approver || membersAsked || !session.s.localRecent) return;
+		if (!stageLook || !approver || membersAsked || !session.s.localRecent) return;
 		membersAsked = true;
 		api
 			.get<{ users: Member[] }>('/users')
@@ -450,7 +450,7 @@
 
 <svelte:head><title>{approver ? 'Approvals' : 'Your Wishlist'} · HolyArrs</title></svelte:head>
 
-<div class="ap-top" class:compact={inboxLook > 0}>
+<div class="ap-top" class:compact={stageLook > 0}>
 <PageHeader
 	title={approver ? 'Approvals' : 'Your Wishlist'}
 	subtitle={approver ? 'What people asked for. Approve to add, or turn down with a note.' : 'The movies, shows and music you asked for, and where each one is.'}
@@ -470,7 +470,7 @@
 	</ul>
 {/if}
 
-{#if (bothKinds || asks.length) && !(inboxLook > 0 && approver)}
+{#if (bothKinds || asks.length) && !(stageLook > 0 && approver)}
 	<div class="toolbar">
 		{#if asks.length}
 			<div class="chips tabs" role="group" aria-label="Show" data-testid="ask-tabs">
@@ -513,7 +513,7 @@
 			{/if}
 {/snippet}
 
-{#if inboxLook === 0 || !approver}
+{#if stageLook === 0 || !approver}
 <div class="workspace">
 	<div class="main-col">
 		{#if error}
@@ -635,7 +635,7 @@
 	</div>
 </div>
 {:else}
-	<div class="variant" data-inbox={inboxLook}>
+	<div class="variant" data-inbox={stageLook}>
 		{#if error}
 			<LoadError hasData={false} message="Your Wishlist could not be loaded. {error}" onretry={load} />
 		{:else}
@@ -650,7 +650,7 @@
 						action={{ label: 'Search', href: to('/search') }}
 					/>
 				{:else}
-					<InboxLooks {ctx} look={inboxLook} />
+					<StageViews {ctx} look={stageLook} />
 				{/if}
 			</PageLoader>
 		{/if}
@@ -681,7 +681,7 @@
 		{/if}
 {/snippet}
 
-<VariantBar options={inboxLooks} bind:value={inboxLook} param="inbox" storageKey={inboxKey} label="Approvals Inbox layout" />
+<VariantBar options={stageLooks} bind:value={stageLook} param="stage" storageKey={stageKey} label="Approvals Stage view" />
 
 <Sheet
 	bind:open={decideOpen}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { askedByOne, askers, inboxLooks, inboxTabs, loadPanel, loadSize, movieRelease, readInfo, runtimeShort, savePanel, saveSize, seasonRange, showNotOut, showSummary, watchSeason } from './inbox.ts';
+import { askedByOne, askers, inboxTabs, stageLooks, loadPanel, loadSize, movieRelease, readInfo, runtimeShort, savePanel, saveSize, seasonRange, showNotOut, showSummary, watchSeason } from './inbox.ts';
 
 const seasons = [
 	{ number: 0, episode_count: 2 },
@@ -14,7 +14,7 @@ const now = new Date('2026-10-27T12:00:00Z');
 
 describe('approvals inbox', () => {
 	it('has Now plus five arrangements and the glossary words on the tabs', () => {
-		expect(inboxLooks.map((l) => l.value)).toEqual([0, 1, 2, 3, 4, 5]);
+		expect(stageLooks.map((l) => l.value)).toEqual([0, 1, 2, 3, 4, 5]);
 		expect(inboxTabs.map((t) => t.label)).toEqual(['Waiting', 'Approved', 'Turned down', 'Done', 'Failed']);
 	});
 
