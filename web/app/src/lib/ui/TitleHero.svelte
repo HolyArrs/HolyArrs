@@ -158,6 +158,35 @@
 
 	let backdropFailed = $state(false);
 	let logoFailed = $state(false);
+	// A dark wordmark (black letters made for light posters) vanishes on the
+	// dark picture: it is drawn white instead, its shape unchanged.
+	let darkLogo = $state(false);
+	// The shown logo may come from another site; a CORS copy is read for the check.
+	function checkLogo(src: string) {
+		darkLogo = false;
+		const probe = new Image();
+		probe.crossOrigin = 'anonymous';
+		probe.onload = () => src === shownLogo && (darkLogo = logoIsDark(probe));
+		probe.src = src;
+	}
+	function logoIsDark(img: HTMLImageElement): boolean {
+		try {
+			const c = document.createElement('canvas');
+			c.width = 48; c.height = 24;
+			const g = c.getContext('2d', { willReadFrequently: true });
+			if (!g) return false;
+			g.drawImage(img, 0, 0, 48, 24);
+			const d = g.getImageData(0, 0, 48, 24).data;
+			let n = 0, l = 0;
+			for (let k = 0; k < d.length; k += 4) {
+				if (d[k + 3] < 96) continue;
+				n++; l += (0.2126 * d[k] + 0.7152 * d[k + 1] + 0.0722 * d[k + 2]) / 255;
+			}
+			return n > 20 && l / n < 0.3;
+		} catch {
+			return false;
+		}
+	}
 	// A very wide wordmark (over 6:1) would come out a thin line in the logo box: it gets a floor height and more width.
 	let wideLogo = $state(false);
 	let posterFailed = $state(false);
@@ -270,7 +299,7 @@
 				<img class="cover" src={cover} alt="" decoding="async" use:viewTransitionName={vtName} />
 			{/if}
 			{#if shownLogo}
-				<h1 class="bb-logo" class:wide={wideLogo}><img src={shownLogo} alt={title} onload={(e) => { const i = e.currentTarget as HTMLImageElement; wideLogo = i.naturalHeight > 0 && i.naturalWidth / i.naturalHeight > 6; }} onerror={() => (shownLogo === logo ? (logoFailed = true) : (fanartLogoFailed = true))} /></h1>
+				<h1 class="bb-logo" class:wide={wideLogo} class:dark={darkLogo}><img src={shownLogo} alt={title} onload={(e) => { const i = e.currentTarget as HTMLImageElement; wideLogo = i.naturalHeight > 0 && i.naturalWidth / i.naturalHeight > 6; checkLogo(i.src); }} onerror={() => (shownLogo === logo ? (logoFailed = true) : (fanartLogoFailed = true))} /></h1>
 			{:else}
 				<h1 class="bb-name" class:short={!!cover}>{title}</h1>
 			{/if}
@@ -304,6 +333,7 @@
 {/snippet}
 
 <style>
+	.bb-logo.dark :global(img) { filter: brightness(0) invert(1) drop-shadow(0 2px 10px rgb(0 0 0 / .45)); }
 	.bb-logo.wide :global(img) { min-height: clamp(40px, 3.4vw, 64px); max-width: min(92vw, 760px) !important; }
 	.bd { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 20%; filter: saturate(1.1) brightness(.75); }
 	.bd.square { object-position: center 35%; }
