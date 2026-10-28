@@ -52,7 +52,6 @@ const (
 	EventHealthRecovered  = "health_recovered"    // a failing health check passes again
 	EventMediaRefreshed   = "media_server_told"   // a media server was asked to look at a folder again
 	EventMediaFailed      = "media_server_failed" // a media server could not be told
-	EventFeedKeyChanged   = "calendar_feed_key"   // the calendar feed key was made, changed or turned off
 )
 
 // EventControl is a control used by the owner or an admin (3.7.7): a part

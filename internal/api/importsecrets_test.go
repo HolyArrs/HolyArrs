@@ -157,13 +157,10 @@ func TestImportSecretsSameKeys(t *testing.T) {
 	}
 }
 
-func TestLocalSkipCannotManageFeedOrReadSavedAddresses(t *testing.T) {
+func TestLocalSkipCannotReadSavedAddresses(t *testing.T) {
 	r := newAskRig(t)
-	r.owner.call("POST", "/api/v1/calendar/feed-key", "", 201)
 	r.owner.call("PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true}`, 200)
 	for _, tc := range []struct{ method, path string }{
-		{"POST", "/api/v1/calendar/feed-key"},
-		{"DELETE", "/api/v1/calendar/feed-key"},
 		{"GET", "/api/v1/migrate/saved-keys"},
 	} {
 		req, _ := http.NewRequest(tc.method, r.srv.URL+tc.path, nil)
@@ -175,9 +172,6 @@ func TestLocalSkipCannotManageFeedOrReadSavedAddresses(t *testing.T) {
 		if resp.StatusCode != 403 {
 			t.Fatalf("%s %s: %d", tc.method, tc.path, resp.StatusCode)
 		}
-	}
-	if b := r.owner.call("GET", "/api/v1/calendar/feed-key", "", 200); !strings.Contains(string(b), `"set":true`) {
-		t.Fatal("local skip changed the existing feed key")
 	}
 }
 

@@ -17,7 +17,6 @@ var neverRead = []string{
 	"GET /api/v1/settings/trakt-key",
 	"GET /api/v1/settings/trakt-token",
 	"GET /api/v1/settings/tvdb-key",
-	"GET /api/v1/calendar/feed-key",
 	"GET /api/v1/users",
 	"GET /api/v1/users/invites",
 	"GET /api/v1/ask-limits",

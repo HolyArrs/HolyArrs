@@ -1,5 +1,4 @@
-// Calendar: the month grid and list for movie dates and episodes, and the
-// feed link.
+// Calendar: the month grid and list for movie dates and episodes.
 import type { CalendarEntry, TitleView } from './types.ts';
 
 export const kindWord: Record<CalendarEntry['kind'], string> = {
@@ -158,16 +157,6 @@ export function byDay(entries: CalendarEntry[]): { day: string; items: CalendarE
 export function shiftMonth(year: number, month: number, n: number): { year: number; month: number } {
 	const d = new Date(year, month + n, 1);
 	return { year: d.getFullYear(), month: d.getMonth() };
-}
-
-/** feedLink is the full feed address for a phone, from the page's origin and the path with the key. */
-export function feedLink(origin: string, path: string): string {
-	return origin.replace(/\/$/, '') + path;
-}
-
-/** webcalLink is the same address for phones that open webcal:// links in their calendar app. */
-export function webcalLink(link: string): string {
-	return link.replace(/^https?:\/\//, 'webcal://');
 }
 
 /** The calendar's two views: big picture cards day by day, or a compact list. */

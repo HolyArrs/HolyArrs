@@ -12,7 +12,7 @@ func TestShowOrganiseRoutesClosedToMembers(t *testing.T) {
 	for _, p := range []string{
 		"GET /api/v1/settings/alerts", "PUT /api/v1/settings/alerts", "POST /api/v1/titles/{id}/delete",
 		"POST /api/v1/library-folders/{id}/scan", "POST /api/v1/library-folders/{id}/adopt", "GET /api/v1/events",
-		"GET /api/v1/calendar/feed-key", "GET /live",
+		"GET /live",
 	} {
 		need, ok := RoutePerms[p]
 		if !ok || slices.Contains(member, need) || need == NeedPublic {

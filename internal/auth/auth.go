@@ -302,9 +302,7 @@ func public(r *http.Request) bool {
 		"POST /api/v1/auth/oidc/start", "GET /api/v1/auth/oidc/callback", "POST /api/v1/auth/oidc/finish",
 		"POST /api/v1/auth/forward/login", "GET /api/v1/public/signin-art",
 		"POST /api/v1/auth/plex/start", "POST /api/v1/auth/plex/finish",
-		"POST /api/v1/auth/media-server/jellyfin", "POST /api/v1/auth/media-server/emby",
-		// The calendar feed checks its own key (phones cannot sign in).
-		"GET /api/v1/calendar/feed.ics", "HEAD /api/v1/calendar/feed.ics":
+		"POST /api/v1/auth/media-server/jellyfin", "POST /api/v1/auth/media-server/emby":
 		return true
 	}
 	// The sign-in page's pictures (the handler serves only its own art).

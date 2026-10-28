@@ -128,36 +128,6 @@ test('calendar: cards and list views with cinema, digital and disc dates', async
 	await page.getByRole('checkbox', { name: 'In cinemas' }).check();
 });
 
-test('calendar feed: a link with its own key, shown once, renewed and turned off', async ({ playwright }) => {
-	await page.goto('/calendar');
-	const box = page.getByTestId('cal-feed');
-	await expect(box.getByTestId('feed-state')).toHaveText('The feed is off.');
-	await box.getByRole('button', { name: 'Make a feed link' }).click();
-	const link = await box.getByLabel('Your feed link (shown this once)').inputValue();
-	expect(link).toMatch(/\/api\/v1\/calendar\/feed\.ics\?key=[\w-]{40,}$/);
-	// A phone has no session: the key alone opens the feed.
-	const phone = await playwright.request.newContext();
-	const r = await phone.get(link);
-	expect(r.status()).toBe(200);
-	expect(r.headers()['content-type']).toContain('text/calendar');
-	expect(await r.text()).toContain('BEGIN:VCALENDAR');
-	// Shown once: after a reload only "on" is said.
-	await page.reload();
-	await expect(box.getByTestId('feed-state')).toContainText('A feed link is on');
-	await expect(box.getByLabel('Your feed link (shown this once)')).toHaveCount(0);
-	// A new link ends the old one.
-	page.once('dialog', (d) => d.accept());
-	await box.getByRole('button', { name: 'Make a new link' }).click();
-	await expect(box.getByLabel('Your feed link (shown this once)')).toBeVisible();
-	expect((await phone.get(link)).status()).toBe(401);
-	const second = await box.getByLabel('Your feed link (shown this once)').inputValue();
-	page.once('dialog', (d) => d.accept());
-	await box.getByRole('button', { name: 'Turn the feed off' }).click();
-	await expect(box.getByTestId('feed-state')).toHaveText('The feed is off.');
-	expect((await phone.get(second)).status()).toBe(401);
-	await phone.dispose();
-});
-
 test('alerts: add a webhook with Library moments, send a test, the receiver gets a signed message', async () => {
 	await page.goto('/settings/alerts');
 	await page.getByRole('button', { name: 'Add an Alert' }).click();

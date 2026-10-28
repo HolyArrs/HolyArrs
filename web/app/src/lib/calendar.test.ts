@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, rangeChunks, titlesFromAddress, itemDot, oneMovieDate, movieFacts, followsOk, followerNames, withFollow, startFollows, readFollows, saveFollows, type MovieFacts, byDay, feedLink, monthGrid, monthRange, shiftMonth, webcalLink, ymd, weekStart, shiftWeek, readView, saveView, startView, viewFromAddress, entryArt, entryIcon, bannerArt, type BannerEntry } from './calendar.ts';
+import { addDays, rangeChunks, titlesFromAddress, itemDot, oneMovieDate, movieFacts, followsOk, followerNames, withFollow, startFollows, readFollows, saveFollows, type MovieFacts, byDay, monthGrid, monthRange, shiftMonth, ymd, weekStart, shiftWeek, readView, saveView, startView, viewFromAddress, entryArt, entryIcon, bannerArt, type BannerEntry } from './calendar.ts';
 import type { CalendarEntry } from './types.ts';
 
 const e = (title_id: number, kind: CalendarEntry['kind'], date: string): CalendarEntry => ({ title_id, name: `Movie ${title_id}`, kind, date });
@@ -34,12 +34,6 @@ describe('calendar', () => {
 		expect(shiftMonth(2026, 11, 1)).toEqual({ year: 2027, month: 0 });
 		expect(shiftMonth(2026, 0, -1)).toEqual({ year: 2025, month: 11 });
 		expect(ymd(new Date(2026, 0, 5))).toBe('2026-01-05');
-	});
-
-	it('makes the feed links', () => {
-		const l = feedLink('http://192.0.2.10:8686/', '/api/v1/calendar/feed.ics?key=abc');
-		expect(l).toBe('http://192.0.2.10:8686/api/v1/calendar/feed.ics?key=abc');
-		expect(webcalLink(l)).toBe('webcal://192.0.2.10:8686/api/v1/calendar/feed.ics?key=abc');
 	});
 });
 

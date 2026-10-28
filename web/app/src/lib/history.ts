@@ -26,7 +26,7 @@ export const kindGroups: KindGroup[] = [
 	{ key: 'decide', label: 'Needs a decision', kinds: ['needs_decision', 'stopped_looking'] },
 	{ key: 'health', label: 'Health', kinds: ['health_*'] },
 	{ key: 'wishlist', label: 'Wishlist', kinds: ['ask_*'] },
-	{ key: 'links', label: 'Alerts and media servers', kinds: ['alert_failed', 'media_server_*', 'calendar_feed_key'] }
+	{ key: 'links', label: 'Alerts and media servers', kinds: ['alert_failed', 'media_server_*'] }
 ];
 
 const exact: Record<string, string> = {};

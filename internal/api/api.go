@@ -336,7 +336,6 @@ func (a *API) Handler() http.Handler {
 	a.organiseRoutes(m)
 	a.healthRoutes(m)
 	a.mediaServerRoutes(m)
-	a.feedRoutes(m)
 	a.showRoutes(m)
 	a.musicRoutes(m)
 	a.musicPageRoutes(m)
