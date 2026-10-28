@@ -923,6 +923,15 @@
 	.item { position: relative; aspect-ratio: 6 / 1; min-height: 104px; max-height: 150px; padding-right: 12px; transition: min-height var(--dur) var(--ease-out); }
 	@media (hover: hover) { .item:hover { min-height: 120px; max-height: 166px; } }
 	.bwrap { position: absolute; top: 0; bottom: 0; left: -12px; right: -12px; }
+	/* Each row's picture feathers out at its left, top and bottom, so the rows read as soft cards, not hard tiles. */
+	@media (min-width: 641px) {
+		.bwrap {
+			-webkit-mask-image: linear-gradient(to right, transparent 0, #000 72px), linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+			-webkit-mask-composite: source-in;
+			mask-image: linear-gradient(to right, transparent 0, #000 72px), linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+			mask-composite: intersect;
+		}
+	}
 	.bwrap :global(.cal-banner) { -webkit-mask-image: none; mask-image: none; }
 	/* Behind the words: a frosted, darkened patch (blur + dim + a little grain of colour) that feathers
 	   softly into the picture, plus a faint wash over the rest so the right side keeps its colour. */
