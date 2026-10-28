@@ -22,7 +22,7 @@
 	import { SkRail, SkTrackRow } from '#lib/ui/sk/index.ts';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import { pictureOf } from '#lib/pictures.ts';
-	import { keepShown, reaskWhileIncomplete, sameLists } from '#lib/music/reask.ts';
+	import { keepShown, NO_SONGS_LINE, reaskWhileIncomplete, sameLists, sameTracks, TRACK_REASK_MS, trackListView } from '#lib/music/reask.ts';
 	import { albumHref, appPicture, artistHref, askAgainOnce, coreIfSlow, coverFor, withCover, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist, type PageCredit, type PageTrack } from '#lib/music/music-pages.ts';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import { followHint, followLabel, followPath, setFollow } from '#lib/follow.ts';
@@ -80,7 +80,7 @@
 				if (!still() || stop.signal.aborted) return;
 				data = keepShown(data, v, ['tracks', 'editions', 'more_by']);
 				reasking = pending;
-			}, stop.signal, undefined, undefined, sameLists<AlbumPageData>(['tracks', 'editions', 'more_by']));
+			}, stop.signal, TRACK_REASK_MS, undefined, (a, b) => (a.tracks.length ? sameLists<AlbumPageData>(['tracks', 'editions', 'more_by'])(a, b) : sameTracks(a, b)));
 			// A bare album link learns its artist from the full answer: ask the nearby albums now.
 			const found = d.artist?.mbid;
 			if (!artist && found) void api.get<{ near: PageCredit[] }>(`/music/albums/${mbid}?part=near&artist=${found}`).then((r) => still() && (near = withCover(r.near))).catch(() => still() && (near = []));
@@ -310,8 +310,8 @@
 				</section>
 			{:else}
 				<section class="block" aria-label="Tracks">
-					{#if reasking && !data.tracks.length}<div class="tracks" aria-busy="true" aria-label="Loading the tracks">{#each Array.from({ length: 10 }, (_, i) => i) as i (i)}<SkTrackRow height={48} />{/each}</div>
-					{:else if !reasking && (data.incomplete || !data.tracks.length)}<p class="note">The tracklist is not known yet.</p>{/if}
+					{#if trackListView(data.tracks.length, reasking) === 'skeleton'}<div class="tracks" aria-busy="true" aria-label="Loading the tracks">{#each Array.from({ length: 10 }, (_, i) => i) as i (i)}<SkTrackRow height={48} />{/each}</div>
+					{:else if trackListView(data.tracks.length, reasking) === 'gave-up'}<p class="note">{NO_SONGS_LINE}</p>{/if}
 					{#if data.part_id && list.length}<p class="count" data-testid="album-have">{haveCount} have · {missingCount} missing</p>{/if}
 					{#each discs as [disc, tracks] (disc)}
 						{#if discs.length > 1}<h3 class="disc">Disc {disc}</h3>{/if}

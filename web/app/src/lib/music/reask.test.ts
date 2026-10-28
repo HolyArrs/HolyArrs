@@ -75,3 +75,27 @@ describe('keepShown', () => {
 		expect(keepShown<A>(null, { tracks: [1] }, ['tracks']).tracks).toEqual([1]);
 	});
 });
+
+describe('song list state', () => {
+	it('shows skeleton rows while pending and empty, rows once songs arrive, a neutral line after giving up', async () => {
+		const { trackListView, sameTracks, TRACK_REASK_MS } = await import('./reask.ts');
+		expect(trackListView(0, true)).toBe('skeleton');
+		expect(trackListView(0, false)).toBe('gave-up');
+		expect(trackListView(3, true)).toBe('rows');
+		expect(trackListView(3, false)).toBe('rows');
+		expect(TRACK_REASK_MS.reduce((a, b) => a + b, 0)).toBeGreaterThanOrEqual(55000);
+		expect(TRACK_REASK_MS.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(65000);
+		expect(sameTracks({ tracks: [] }, { tracks: [] })).toBe(false);
+		expect(sameTracks({ tracks: [1] }, { tracks: [2] })).toBe(true);
+	});
+
+	it('keeps asking an empty list until the pauses run out, then stops pending', async () => {
+		const { TRACK_REASK_MS, sameTracks } = await import('./reask.ts');
+		const ask = vi.fn(async () => ({ tracks: [] as number[], incomplete: true }));
+		const seen: boolean[] = [];
+		const n = await reaskWhileIncomplete({ tracks: [] as number[], incomplete: true }, ask, (_v, p) => seen.push(p), new AbortController().signal, TRACK_REASK_MS, now, sameTracks);
+		expect(n).toBe(TRACK_REASK_MS.length);
+		expect(seen[0]).toBe(true);
+		expect(seen[seen.length - 1]).toBe(false);
+	});
+});

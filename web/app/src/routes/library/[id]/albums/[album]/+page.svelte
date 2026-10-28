@@ -29,6 +29,8 @@
 	import ShowReleases from '#lib/ShowReleases.svelte';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { albumCover, albumKind, albumLine, albumStateOf, albumYear, pressingLabel, pressingStatuses, trackLength, word } from '#lib/music/music.ts';
+	import { NO_SONGS_LINE, TRACK_REASK_MS, sleep, trackListView } from '#lib/music/reask.ts';
+	import { SkTrackRow } from '#lib/ui/sk/index.ts';
 	import type { AlbumSummary, EventPage, EventRecord, PressingView, TitleView, TrackView } from '#lib/types.ts';
 
 	const titleId = $derived(Number(page.params.id));
@@ -77,6 +79,34 @@
 		void loadHistory();
 	}
 
+	// No songs yet: ask again quietly with growing pauses, about a minute, then show a neutral line.
+	let askingSongs = $state(false);
+	let songsStop: AbortController | null = null;
+	async function askSongs(id: number) {
+		songsStop?.abort();
+		const stop = (songsStop = new AbortController());
+		askingSongs = true;
+		try {
+			for (const ms of TRACK_REASK_MS) {
+				await sleep(ms, stop.signal);
+				try {
+					const got = (await api.get<{ tracks: TrackView[] }>(`/albums/${id}/tracks`)).tracks;
+					if (id !== albumId || stop.signal.aborted) return;
+					if (got.length) {
+						tracks = got;
+						return;
+					}
+				} catch {
+					/* keep what is shown and try again */
+				}
+			}
+		} catch {
+			return;
+		} finally {
+			if (songsStop === stop) askingSongs = false;
+		}
+	}
+
 	async function load() {
 		try {
 			const r = await api.get<{ album: AlbumSummary; title_id: number; pressings: PressingView[] }>(`/albums/${albumId}`);
@@ -86,6 +116,7 @@
 			tracks = (await api.get<{ tracks: TrackView[] }>(`/albums/${albumId}/tracks`)).tracks;
 			artist = await api.get<TitleView>(`/titles/${r.title_id}`);
 			error = '';
+			if (!tracks.length && r.album.included) void askSongs(albumId);
 		} catch (e) {
 			const m = message(e);
 			if (/no such album/i.test(m)) notFound = true;
@@ -95,8 +126,10 @@
 
 	$effect(() => {
 		void albumId;
+		askingSongs = false;
 		void load();
 		void loadHistory();
+		return () => songsStop?.abort();
 	});
 
 	// The other albums of the artist (More by the artist), newest first.
@@ -235,8 +268,10 @@
 		</TitleHero>
 
 		<TitleSection id="h-tracks" title="Tracks" primary>
-			{#if !tracks?.length}
-				<p class="small muted">{album.included ? 'Tracks come with the next refresh.' : 'This album is left out by the album kinds, so its tracks are not listed.'}</p>
+			{#if !tracks?.length && album.included && trackListView(0, askingSongs || tracks === null) === 'skeleton'}
+				<ol class="tracks" aria-busy="true" aria-label="Loading the tracks">{#each Array.from({ length: 8 }, (_, i) => i) as i (i)}<li><SkTrackRow height={52} /></li>{/each}</ol>
+			{:else if !tracks?.length}
+				<p class="small muted">{album.included ? NO_SONGS_LINE : 'This album is left out by the album kinds, so its tracks are not listed.'}</p>
 			{:else}
 				<ol class="tracks">
 					{#each tracks as t (t.id)}

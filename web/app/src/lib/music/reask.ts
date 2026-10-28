@@ -90,3 +90,20 @@ export function sameLists<T extends object>(lists: (keyof T)[]): (a: T, b: T) =>
 	const n = (v: unknown) => (Array.isArray(v) ? v.length : -1);
 	return (a, b) => lists.every((k) => n(a[k]) === n(b[k]));
 }
+
+/** The pauses of the quiet re-asks for a song list: about 60 s in all, then the page gives up. */
+export const TRACK_REASK_MS = [2500, 3500, 5000, 7000, 8000, 8000, 8000, 8000, 8000];
+
+/** What a song list shows: real rows, skeleton rows while songs are still being fetched, or the neutral line once asking has stopped. */
+export function trackListView(count: number, pending: boolean): 'rows' | 'skeleton' | 'gave-up' {
+	if (count > 0) return 'rows';
+	return pending ? 'skeleton' : 'gave-up';
+}
+
+/** The neutral line shown after the list stayed empty for about a minute. */
+export const NO_SONGS_LINE = 'Songs are not available right now.';
+
+/** sameTracks: an answer that still holds no songs is never "stuck"; asking goes on until the pauses run out. */
+export function sameTracks<T extends { tracks: unknown[] }>(a: T, b: T): boolean {
+	return a.tracks.length > 0 && a.tracks.length === b.tracks.length;
+}
