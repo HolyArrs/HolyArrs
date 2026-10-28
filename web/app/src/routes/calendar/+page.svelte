@@ -920,8 +920,8 @@
 	.day { overflow: hidden; }
 	/* The picture fills the whole row (time, words and all); a dark wash from the left keeps the words readable.
 	   Each row has the picture's own wide shape, so every row is the same size; it grows a little on hover. */
-	.item { position: relative; aspect-ratio: 6 / 1; min-height: 104px; max-height: 150px; padding-right: 12px; transition: min-height var(--dur) var(--ease-out); }
-	@media (hover: hover) { .item:hover { min-height: 120px; max-height: 166px; } }
+	.item { position: relative; min-height: 84px; padding-right: 12px; transition: min-height var(--dur) var(--ease-out); }
+	@media (hover: hover) { .item:hover { min-height: 96px; } }
 	.bwrap { position: absolute; top: 0; bottom: 0; left: -12px; right: -12px; }
 	/* Each row is its own soft card: rounded picture, a small gap between rows (no fades into the page,
 	   which turned white in light mode). */
