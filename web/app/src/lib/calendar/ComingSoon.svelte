@@ -19,9 +19,8 @@
 		onlater,
 		mode = 'library',
 		look = { ...DEFAULT_LOOK, region: 'global' },
-		onfollow,
-		ep = 0
-	}: { ep?: number; entries: CalendarEntry[]; today: string; onlater: () => void; mode?: Follows; look?: CaptionLook; onfollow?: (e: CalendarEntry, on: boolean) => void } = $props();
+		onfollow
+	}: { entries: CalendarEntry[]; today: string; onlater: () => void; mode?: Follows; look?: CaptionLook; onfollow?: (e: CalendarEntry, on: boolean) => void } = $props();
 
 	const months = $derived(monthGroups(entries));
 	const at = (day: string) => new Date(day + 'T00:00:00');
@@ -49,7 +48,7 @@
 							<div class="day">
 								<h4 class="count">{thingCount(d.items.length)}</h4>
 								<div class="grid" data-testid="cal-day-grid">
-									{#each gs as g (g.key)}<CalTile {g} {today} {mode} {look} {onfollow} {ep} />{/each}
+									{#each gs as g (g.key)}<CalTile {g} {today} {mode} {look} {onfollow} />{/each}
 								</div>
 							</div>
 												</li>

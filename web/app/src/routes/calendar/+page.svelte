@@ -22,7 +22,6 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Popover from '#lib/ui/Popover.svelte';
 	import ComingSoon from '#lib/calendar/ComingSoon.svelte';
-	import VariantBar from '#lib/ui/VariantBar.svelte';
 	import MiniMonth from '#lib/calendar/MiniMonth.svelte';
 	import FollowWho from '#lib/calendar/FollowWho.svelte';
 	import CalBanner from '#lib/calendar/CalBanner.svelte';
@@ -62,8 +61,6 @@
 		type TitlesShown
 	} from '#lib/calendar.ts';
 	import type { CalendarEntry, TitleView } from '#lib/types.ts';
-	// Episode words on the cards (two layouts being compared, ?ep=1|2).
-	let epView = $state(0);
 
 	const now = new Date();
 	// ?month=2026-10 opens on that month (a link to a month can be shared).
@@ -747,7 +744,7 @@
 							<EmptyState compact icon="calendar" title={follows === 'mine' ? 'Nothing you follow here' : 'Nothing anyone follows here'} text="{base.length === 1 ? 'One date in the Library falls' : `${base.length} dates in the Library fall`} in {rangeName}." action={{ label: 'Show the Whole Library', onclick: clearFilters }} />
 						</div>
 					{:else if view === 'cards'}
-						<ComingSoon entries={shown} today={todayKey} onlater={more} mode={follows} {look} onfollow={flipFollow} ep={epView} />
+						<ComingSoon entries={shown} today={todayKey} onlater={more} mode={follows} {look} onfollow={flipFollow} />
 					{:else if agenda.length === 0}
 						<EmptyState compact icon="calendar" title="No dates from {rangeName}" />
 					{:else}
@@ -837,8 +834,6 @@
 	</section>
 {/if}
 
-
-<VariantBar options={[{ value: 1, label: 'Description' }, { value: 2, label: 'Window' }]} bind:value={epView} param="ep" storageKey="holyarrs.calendar.ep-view" label="Episode words" />
 
 <style>
 	.tools { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-bottom: 18px; }
