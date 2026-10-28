@@ -23,7 +23,7 @@
 		title: string;
 		description?: string;
 		size?: 'sm' | 'md' | 'lg';
-		placement?: 'auto' | 'center' | 'bottom' | 'top' | 'side' | 'right' | 'full';
+		placement?: 'auto' | 'center' | 'bottom' | 'top' | 'side' | 'right' | 'full' | 'drawer';
 		hideTitle?: boolean;
 		closeLabel?: string;
 		children: Snippet;
@@ -129,7 +129,13 @@
 	@keyframes fade-out { to { opacity: 0; } }
 	@keyframes rise-in { from { transform: translateY(100%); } }
 	@keyframes sink-out { to { transform: translateY(100%); } }
+	/* A wide drawer from the bottom edge on every screen (Download details). */
+	.at-drawer { width: min(1040px, calc(100vw - 32px)); max-height: min(72dvh, 640px); margin: auto auto 0; border-radius: var(--r-modal) var(--r-modal) 0 0; }
+	.at-drawer[open] { animation: rise-in var(--dur) var(--ease-out) both; }
+	.at-drawer.closing { animation: sink-out var(--dur-fast) var(--ease-in) both; }
 	@media (max-width: 767px) {
+		.at-drawer { width: 100vw; max-height: 92dvh; }
+		.at-drawer .inner::before { content: ''; align-self: center; width: 36px; height: 5px; margin-top: 8px; border-radius: 3px; background: var(--line-strong); }
 		.at-auto, .at-bottom {
 			width: 100vw; max-height: 92dvh; margin: auto 0 0; border-radius: var(--r-modal) var(--r-modal) 0 0;
 		}

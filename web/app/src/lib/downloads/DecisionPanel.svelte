@@ -15,7 +15,10 @@
 	import Button from '../ui/Button.svelte';
 	import EditionDecision from '../EditionDecision.svelte';
 
-	let { items, ondone }: { items: Decision[]; ondone?: () => void } = $props();
+	// `compact`: the Download details views put the choices in one wrapping row
+	// of small buttons instead of a full-width stack.
+	let { items, ondone, compact = false }: { items: Decision[]; ondone?: () => void; compact?: boolean } = $props();
+	const sz = $derived(compact ? 'sm' : 'md');
 	const groups = $derived(groupDecisions(items));
 	const admin = $derived(session.can('settings'));
 
@@ -76,19 +79,19 @@
 {#snippet choices(d: Decision, key: string)}
 	{#if d.kind === 'movie' && d.download_id}<EditionDecision downloadId={d.download_id} onchange={refreshDecisions} />{/if}
 	<div class="acts">
-		<Button variant="primary" onclick={() => act(d, 'search', false, key)} disabled={busy === key} busy={busy === key}>Search again</Button>
-		<Button variant="secondary" href={to(`/library/${d.title_id}#h-rel`)}>Choose a release by hand</Button>
+		<Button size={sz} variant="primary" onclick={() => act(d, 'search', false, key)} disabled={busy === key} busy={busy === key}>Search again</Button>
+		<Button size={sz} variant="secondary" href={to(`/library/${d.title_id}#h-rel`)}>Choose a release by hand</Button>
 		{#if !manyWords(d.kind)}
-			<Button variant="secondary" href={to(`/library/${d.title_id}#h-versions`)}>{d.versions > 1 ? 'Try another Version' : 'Add another Version'}</Button>
+			<Button size={sz} variant="secondary" href={to(`/library/${d.title_id}#h-versions`)}>{d.versions > 1 ? 'Try another Version' : 'Add another Version'}</Button>
 		{/if}
 		{#if d.release_id}
-			<Button variant="plain" onclick={() => act(d, 'turn_down', false, key)} disabled={busy === key}>Add to Turned down</Button>
+			<Button size={sz} variant="plain" onclick={() => act(d, 'turn_down', false, key)} disabled={busy === key}>Add to Turned down</Button>
 		{/if}
-		<Button variant="plain" onclick={() => act(d, 'stop', false, key)} disabled={busy === key}>Stop looking</Button>
+		<Button size={sz} variant="plain" onclick={() => act(d, 'stop', false, key)} disabled={busy === key}>Stop looking</Button>
 	</div>
 {/snippet}
 
-<section class="decide" aria-label="Needs a decision" data-testid="decision-panel">
+<section class="decide" class:compact aria-label="Needs a decision" data-testid="decision-panel">
 	{#each groups as g (g.key)}
 		{@const d = g.lead}
 		{#if g.pack}
@@ -97,11 +100,11 @@
 				<p class="sub">{d.kind === 'artist' ? 'Album' : 'Season pack'} · {packLine(g)} · waiting {ago(d.since)}</p>
 				{#if admin && d.release_name}<details class="raw"><summary>Details</summary><p>{d.kind === 'artist' ? 'Album' : 'Pack'}: {d.release_name}</p></details>{/if}
 				<div class="acts">
-					<Button variant="primary" onclick={() => act(d, 'search', true, g.key)} disabled={busy === g.key} busy={busy === g.key}>Search again for these {w?.many}</Button>
+					<Button size={sz} variant="primary" onclick={() => act(d, 'search', true, g.key)} disabled={busy === g.key} busy={busy === g.key}>Search again for these {w?.many}</Button>
 					{#if d.release_id}
-						<Button variant="plain" onclick={() => act(d, 'turn_down', true, g.key)} disabled={busy === g.key}>Add the {w?.pack === 'album' ? 'album' : 'pack'} to Turned down</Button>
+						<Button size={sz} variant="plain" onclick={() => act(d, 'turn_down', true, g.key)} disabled={busy === g.key}>Add the {w?.pack === 'album' ? 'album' : 'pack'} to Turned down</Button>
 					{/if}
-					<Button variant="plain" onclick={() => act(d, 'stop', true, g.key)} disabled={busy === g.key}>Stop looking for these {w?.many}</Button>
+					<Button size={sz} variant="plain" onclick={() => act(d, 'stop', true, g.key)} disabled={busy === g.key}>Stop looking for these {w?.many}</Button>
 				</div>
 				<ul class="subs">
 					{#each g.items as one (one.slot_id)}
@@ -115,7 +118,8 @@
 			</div>
 		{:else}
 			<div class="dec" data-testid="decision">
-				<a class="one" href={to(`/library/${d.title_id}`)}>{decisionName(d)}</a>
+				<!-- In the compact details the title is already in the header above. -->
+				{#if !compact}<a class="one" href={to(`/library/${d.title_id}`)}>{decisionName(d)}</a>{/if}
 				<p class="sub">{d.version} Version · waiting {ago(d.since)}{#if d.has_copy} · a copy is already in the Library{/if}</p>
 				{@render cause(d, true)}
 				{@render choices(d, g.key)}
@@ -137,6 +141,11 @@
 	.raw p { margin-top: 4px; font-family: var(--font-mono); overflow-wrap: anywhere; }
 	/* In a sheet the buttons stack full width. */
 	.acts { display: grid; gap: 8px; }
+	.compact { gap: 10px; padding-top: 0; border-top: 0; }
+	.compact .dec { gap: 8px; }
+	.compact .acts { display: flex; flex-wrap: wrap; gap: 6px; }
+	.compact .cause { padding: 8px 12px; }
+	.compact .why, .compact .reason { font: var(--t-subhead); }
 	.subs { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
 	.subs > li { display: flex; flex-direction: column; gap: 8px; padding-top: 14px; border-top: 1px solid var(--line); min-width: 0; }
 	.one { color: var(--text); font: var(--t-headline); font-size: 15px; overflow-wrap: anywhere; }

@@ -7,7 +7,9 @@
 	// sheet on phones).
 	import { page } from '$app/state';
 	import { replaceState } from '$app/navigation';
-	import { onMount } from 'svelte';
+	import { onMount, type Snippet } from 'svelte';
+	import SlimBar from './SlimBar.svelte';
+	import { iconOf } from './details.ts';
 	import { fade, slide, type TransitionConfig } from 'svelte/transition';
 	import Poster from '../Poster.svelte';
 	import Icon, { type IconName } from '../Icon.svelte';
@@ -24,7 +26,23 @@
 	import { byDownload, statusDetail } from './imports.ts';
 	import { poster, who, type LayoutProps } from './shared.ts';
 
-	let { rows, imports, titles, busy, ondetails, onfail, onremove, torrent }: LayoutProps & { torrent: boolean } = $props();
+	let {
+		rows,
+		imports,
+		titles,
+		busy,
+		ondetails,
+		onfail,
+		onremove,
+		torrent,
+		expandId = 0,
+		expand
+	}: LayoutProps & {
+		torrent: boolean;
+		/** The row whose details open in place under it (?details=2), 0 for none. */
+		expandId?: number;
+		expand?: Snippet<[DownloadRow]>;
+	} = $props();
 	let key = $state<SortKey>('state');
 	let dir = $state<'asc' | 'desc'>('asc');
 
@@ -85,6 +103,9 @@
 		if (reducedMotion()) return fade(node, { duration: DUR.fast });
 		return slide(node, { duration: DUR.fast, easing: easeIn });
 	}
+	// A row's details open in place (?details=2) the same way the sub-row does.
+	const xIn = subIn;
+	const xOut = subOut;
 	function swapIn(node: Element): TransitionConfig {
 		return fade(node, { duration: reducedMotion() ? 0 : DUR.fast, easing: easeOut });
 	}
@@ -191,7 +212,7 @@
 						{@const t = tone(r)}
 						{@const word = statusWord(r)}
 						{@const more = statusDetail(r, importOf.get(r.id))}
-						<tr class={t} data-testid="dl-table-row" data-phase={r.phase} tabindex="0" aria-label="{who(r)}, {word}{more ? `, ${more}` : ''}. Open details" onclick={() => ondetails(r)} onkeydown={(e) => rowKey(e, r)}>
+						<tr class={t} class:open={!!expand && expandId === r.id} data-testid="dl-table-row" data-dl-id={r.id} data-phase={r.phase} tabindex="0" aria-expanded={expand ? expandId === r.id : undefined} aria-label="{who(r)}, {word}{more ? `, ${more}` : ''}. {expand && expandId === r.id ? 'Close details' : 'Open details'}" onclick={() => ondetails(r)} onkeydown={(e) => rowKey(e, r)}>
 							<td class="c-title">
 								<span class="tc">
 									<span class="post"><Poster src={poster(r, titles)} name={r.title || r.name} /></span>
@@ -201,10 +222,10 @@
 									</span>
 								</span>
 							</td>
-							<td class="c-state"><span class="st {t}" data-testid="row-state" title={more ? `${word} · ${more}` : word}><i aria-hidden="true"></i><span class="sw">{word}{#if more}<span class="sd">{` · ${more}`}</span>{/if}</span></span></td>
+							<td class="c-state"><span class="st {t}" data-testid="row-state" title={more ? `${word} · ${more}` : word}><Icon name={iconOf(r)} size={14} stroke={2.2} /><span class="sw">{word}</span></span></td>
 							<td class="c-prog">
 								{#if r.phase !== 'failed' && r.phase !== 'removed' && r.phase !== 'vanished'}
-									<span class="pg"><span class="mini" aria-hidden="true"><i style="width: {pct}%"></i></span><span class="pv" data-testid="row-percent">{Math.floor(pct)}%</span></span>
+									<SlimBar value={pct} tone={t} />
 								{:else}<span class="dash">–</span>{/if}
 							</td>
 							<td class="c-speed num">{going(r) && r.speed ? `${bytes(r.speed)}/s` : '–'}</td>
@@ -214,6 +235,11 @@
 							<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 							<td class="c-act" onclick={(e) => e.stopPropagation()}><DlMore {r} name={who(r)} {busy} {ondetails} {onfail} {onremove} /></td>
 						</tr>
+						{#if expand && expandId === r.id}
+							<tr class="xrow" data-testid="dl-row-expand">
+								<td colspan={COLS.length + 1}><div class="xin" in:xIn out:xOut>{@render expand(r)}</div></td>
+							</tr>
+						{/if}
 					{/each}
 				</tbody>
 			</table>
@@ -279,7 +305,7 @@
 	.scroller { overflow-x: auto; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
 	.t { width: 100%; border-collapse: collapse; table-layout: fixed; font: var(--t-callout); font-variant-numeric: tabular-nums; }
 	thead { position: sticky; top: 0; background: var(--surface-1); }
-	th { height: 38px; padding: 0 12px; text-align: left; border-bottom: 1px solid var(--line); }
+	th { height: 36px; padding: 0 10px; text-align: left; border-bottom: 1px solid var(--line); }
 	th.num { text-align: right; }
 	.sort { display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 0 4px; margin: 0 -4px; border: 0; border-radius: 6px; background: none; color: var(--text-muted); font: var(--t-footnote); font-weight: 600; letter-spacing: 0.02em; cursor: pointer; white-space: nowrap; }
 	.sort:hover, .sort.on { color: var(--text); }
@@ -289,7 +315,7 @@
 	.sort:hover .arrow { opacity: 0.5; }
 	.sort.on:hover .arrow { opacity: 1; }
 	.arrow.desc { transform: none; }
-	td { height: 52px; padding: 0 12px; vertical-align: middle; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	td { height: 52px; padding: 0 10px; vertical-align: middle; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	td.num { text-align: right; color: var(--text-muted); }
 	tbody tr { cursor: pointer; transition: background var(--dur-instant) var(--ease-out); }
 	tbody tr + tr { border-top: 1px solid var(--line); }
@@ -297,14 +323,14 @@
 	tbody tr:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
 	tbody tr.fail { box-shadow: inset 3px 0 0 var(--fail); }
 	tbody tr.fail:focus-visible { box-shadow: inset 3px 0 0 var(--fail), inset 0 0 0 2px var(--accent); }
+	/* Title takes the room; every other column is narrow and the three
+	   number columns share one width. */
 	.c-title { width: auto; }
-	.c-state { width: 206px; }
-	.c-prog { width: 150px; }
-	.c-speed { width: 100px; }
-	.c-eta { width: 92px; }
-	.c-size { width: 86px; }
-	.c-dl { width: 150px; }
-	.c-act { width: 52px; padding: 0 6px; text-align: right; }
+	.c-state { width: 140px; }
+	.c-prog { width: 104px; }
+	.c-speed, .c-eta, .c-size { width: 84px; }
+	.c-dl { width: 132px; }
+	.c-act { width: 44px; padding: 0 4px; text-align: right; }
 	.tc { display: flex; align-items: center; gap: 10px; min-width: 0; }
 	.post { flex: none; width: 26px; }
 	.post :global(.poster) { border-radius: 4px; }
@@ -312,7 +338,7 @@
 	.nm { color: var(--text); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.ver { margin-left: 6px; padding: 0 5px; border-radius: 4px; background: var(--surface-2); color: var(--text-muted); font: var(--t-caption); }
 	.rel { color: var(--text-faint); font: var(--t-footnote); font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.st { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; color: var(--text); font-weight: 500; }
+	.st { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; color: var(--text); font-weight: 500; }
 	.sw { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.sd { color: var(--text-muted); font-weight: 400; }
 	.st i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--info); }
@@ -322,13 +348,24 @@
 	.st.wait i { background: var(--wait); }
 	.st.idle i { background: var(--text-faint); }
 	.st.idle { color: var(--text-muted); }
-	.pg { display: flex; align-items: center; gap: 8px; }
-	.mini { position: relative; display: block; flex: 1; height: 4px; border-radius: 2px; background: var(--surface-3); overflow: hidden; }
+	/* The table's Status: a small symbol and the word in the footnote size. */
+	.c-state .st { font: var(--t-footnote); font-weight: 600; }
+	.c-state .st :global(svg) { flex: none; color: var(--info); }
+	.c-state .st.ok :global(svg) { color: var(--ok); }
+	.c-state .st.fail :global(svg) { color: var(--fail); }
+	.c-state .st.wait :global(svg) { color: var(--wait); }
+	.c-state .st.idle :global(svg) { color: var(--text-faint); }
+	.c-prog :global(.slim) { max-width: 84px; }
+	tbody tr.open { background: var(--surface-2); }
+	tbody tr.xrow { cursor: default; border-top: 0; background: var(--surface-2); }
+	tbody tr.xrow:hover { background: var(--surface-2); }
+	tbody tr.xrow td { height: auto; padding: 0; white-space: normal; overflow: visible; }
+	.xin { padding: 4px 16px 14px 46px; }
+	.mini { position: relative; display: block; flex: 1; height: 3px; border-radius: 2px; background: var(--surface-3); overflow: hidden; }
 	.mini i { display: block; height: 100%; border-radius: 2px; background: var(--info); }
 	.fail .mini i { background: var(--fail); }
 	.ok .mini i { background: var(--ok); }
 	.idle .mini i { background: var(--text-faint); }
-	.pv { width: 34px; text-align: right; color: var(--text-muted); font: var(--t-footnote); }
 	.dash { color: var(--text-faint); }
 	.dl { display: block; overflow: hidden; text-overflow: ellipsis; color: var(--text-muted); }
 
@@ -343,7 +380,7 @@
 	.pl { display: flex; align-items: center; gap: 8px; min-width: 0; font: var(--t-footnote); }
 	.pl .st { font-weight: 600; }
 	.cv { color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.phit .mini { margin-top: 5px; flex: none; }
+	.phit .mini { margin-top: 5px; flex: none; max-width: 140px; }
 	.pr { display: flex; flex-direction: column; align-items: flex-end; font-variant-numeric: tabular-nums; }
 	.pr b { font: var(--t-callout); font-weight: 600; }
 	.pr small { color: var(--text-muted); font: var(--t-footnote); }
@@ -355,7 +392,7 @@
 	.elink { display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; border: 0; background: none; color: var(--accent-text); font: var(--t-callout); font-weight: 600; cursor: pointer; border-radius: 6px; }
 	.elink:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
-	@media (max-width: 1199px) { .c-dl { display: none; } .c-state { width: 150px; } }
+	@media (max-width: 1359px) { .c-dl { display: none; } }
 	@media (max-width: 960px) { .c-size, .c-speed { display: none; } }
 	@media (max-width: 767px) {
 		.scroller { display: none; }

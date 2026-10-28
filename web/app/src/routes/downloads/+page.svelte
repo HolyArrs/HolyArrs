@@ -22,6 +22,10 @@
 	import type { ImportRecord, TitleView } from '#lib/types.ts';
 	import DlTable from '#lib/downloads/DlTable.svelte';
 	import DecisionPanel from '#lib/downloads/DecisionPanel.svelte';
+	import DlDetail, { type DetailLook } from '#lib/downloads/DlDetail.svelte';
+	import VariantBar from '#lib/ui/VariantBar.svelte';
+	import { popIn, popOut } from '#lib/ui/transitions.ts';
+	import { tick } from 'svelte';
 	import { statusWord } from '#lib/downloads/status-tabs.ts';
 	import { byDownload, failReason, placed, statusDetail } from '#lib/downloads/imports.ts';
 
@@ -83,11 +87,106 @@
 		return r.id < 0 ? decisions.items.filter((d) => d.slot_id === -r.id) : (decisionsByDownload.get(r.id) ?? []);
 	}
 
+	// ?details=1…5 picks one of the Download details looks Luis is comparing;
+	// none (or now) keeps today's side sheet. On phones every look opens as a
+	// bottom sheet; on wide screens 2 opens the row in place and 3 is a card at
+	// the row.
+	let details = $state(0);
+	const DETAILS = [
+		{ value: 0, label: 'Now' },
+		{ value: 1, label: '1 Side panel' },
+		{ value: 2, label: '2 In the row' },
+		{ value: 3, label: '3 Card' },
+		{ value: 4, label: '4 Drawer' },
+		{ value: 5, label: '5 Track' }
+	];
+	const LOOK: Record<number, DetailLook> = { 1: 'panel', 2: 'inline', 3: 'card', 4: 'drawer', 5: 'track' };
+	const look = $derived(LOOK[details]);
+	let phone = $state(false);
+	onMount(() => {
+		const mq = matchMedia('(max-width: 767px)');
+		const set = () => (phone = mq.matches);
+		set();
+		mq.addEventListener('change', set);
+		return () => mq.removeEventListener('change', set);
+	});
+	// Which container the details use right now.
+	const holder = $derived(!look || phone ? 'sheet' : look === 'inline' ? 'row' : look === 'card' ? 'card' : 'sheet');
+
 	// A row opens its details in a Sheet (from the right; a bottom sheet on phones).
 	let detailOpen = $state(false);
+	let expandId = $state(0);
+	let cardId = $state(0);
+	let opener: HTMLElement | null = null;
 	function selectDownload(id: number) {
+		if (holder === 'row') {
+			expandId = expandId === id ? 0 : id;
+			selectedId = id;
+			return;
+		}
+		if (holder === 'card') {
+			if (cardId === id) return closeCard();
+			opener = document.querySelector<HTMLElement>(`[data-dl-id="${id}"]`);
+			selectedId = id;
+			cardId = id;
+			void tick().then(() => {
+				place();
+				card?.focus();
+			});
+			return;
+		}
 		selectedId = id;
 		detailOpen = true;
+	}
+	function closeDetails() {
+		detailOpen = false;
+		expandId = 0;
+		closeCard(false);
+	}
+	// Switching looks closes whatever was open.
+	$effect(() => {
+		void holder;
+		detailOpen = false;
+		expandId = 0;
+		cardId = 0;
+	});
+
+	// 3 · the card sits under its row (above it when there is no room below),
+	// follows it while the page scrolls and closes on Escape or a click outside.
+	let card = $state<HTMLElement>();
+	let cardPos = $state({ top: 0, left: 0, up: false });
+	function place() {
+		if (!cardId || !card) return;
+		const row = document.querySelector<HTMLElement>(`[data-dl-id="${cardId}"]`);
+		if (!row) return;
+		const r = row.getBoundingClientRect();
+		const h = card.offsetHeight;
+		const w = card.offsetWidth;
+		const up = r.bottom + 8 + h > innerHeight - 12 && r.top - 8 - h > 12;
+		const left = Math.max(16, Math.min(r.left + 44, innerWidth - w - 16));
+		cardPos = { top: up ? r.top - 8 - h : r.bottom + 8, left, up };
+	}
+	function closeCard(focusBack = true) {
+		if (!cardId) return;
+		cardId = 0;
+		if (focusBack) opener?.focus();
+		opener = null;
+	}
+	function cardKey(e: KeyboardEvent) {
+		if (e.key === 'Escape' && cardId) {
+			e.preventDefault();
+			closeCard();
+		}
+	}
+	function outside(e: PointerEvent) {
+		if (!cardId || !card) return;
+		const t = e.target as Element;
+		if (card.contains(t)) return;
+		// A click on its own row toggles it through the row's handler.
+		if (t.closest?.(`[data-dl-id="${cardId}"]`)) return;
+		// Menus and dialogs opened from the card live outside it.
+		if (t.closest?.('dialog, [role="menu"]')) return;
+		closeCard(false);
 	}
 
 	/** toneKind picks the kit status colour for a tone; the word stays the row's own. */
@@ -102,7 +201,7 @@
 
 	// When the open row goes away (its decision was settled), the sheet closes.
 	$effect(() => {
-		if (detailOpen && loaded && !selected) detailOpen = false;
+		if (loaded && !selected && (detailOpen || expandId || cardId)) closeDetails();
 	});
 
 	// &open=<download id> or &slot=<slot id> (Home's Needs attention) opens that row's sheet once.
@@ -177,7 +276,7 @@
 
 	let busy = $state(0);
 	async function markFailed(r: DownloadRow) {
-		detailOpen = false;
+		closeDetails();
 		if (!confirm(`Mark ${who(r)} failed? Its Release is turned down, it is removed from the Downloader and HolyArrs looks for the next Release.`)) return;
 		busy = r.id;
 		try {
@@ -200,7 +299,7 @@
 		target = r;
 		choice = removeStart(settings);
 		removeError = '';
-		detailOpen = false;
+		closeDetails();
 		removeOpen = true;
 	}
 	async function remove(e: SubmitEvent) {
@@ -288,13 +387,35 @@
 	<p class="aside-link"><a href={to('/settings/downloaders')}>Downloaders</a></p>
 {:else}
 	{#if error}<LoadError hasData message="Downloads could not be loaded." onretry={load} />{/if}
-	<DlTable rows={allRows} {imports} titles={titleById} {busy} {torrent} ondetails={(r: DownloadRow) => selectDownload(r.id)} onfail={markFailed} onremove={askRemove} />
+	<DlTable rows={allRows} {imports} titles={titleById} {busy} {torrent} ondetails={(r: DownloadRow) => selectDownload(r.id)} onfail={markFailed} onremove={askRemove} expandId={holder === 'row' ? expandId : 0} expand={holder === 'row' ? inPlace : undefined} />
 {/if}
 </PageLoader>
 
-<Sheet bind:open={detailOpen} title="Download details" size="md" placement="right">
-	{#if selected}{@render detail(selected)}{/if}
-</Sheet>
+{#snippet looked(s: DownloadRow, l: DetailLook)}
+	<DlDetail r={s} im={importOf.get(s.id)} decisions={decisionsOf(s)} art={s.artwork ?? titleById.get(s.title_id ?? 0)?.artwork[0]} {admin} {busy} look={l} onfail={markFailed} onremove={askRemove} ondone={() => void load()} />
+{/snippet}
+{#snippet inPlace(s: DownloadRow)}{@render looked(s, 'inline')}{/snippet}
+
+{#if !look}
+	<Sheet bind:open={detailOpen} title="Download details" size="md" placement="right">
+		{#if selected}{@render detail(selected)}{/if}
+	</Sheet>
+{:else}
+	<Sheet bind:open={detailOpen} title="Download details" size={look === 'drawer' ? 'lg' : 'sm'} placement={look === 'drawer' ? 'drawer' : look === 'panel' && !phone ? 'right' : 'auto'}>
+		<!-- On phones the in-row look opens as the card's content in the bottom sheet. -->
+		{#if selected}{@render looked(selected, look === 'inline' ? 'card' : look)}{/if}
+	</Sheet>
+{/if}
+
+<svelte:window onkeydown={cardKey} onpointerdown={outside} onscroll={place} onresize={place} />
+{#if holder === 'card' && cardId && selected}
+	<div class="dcard" class:up={cardPos.up} bind:this={card} role="dialog" aria-label="Download details" tabindex="-1" style="top: {cardPos.top}px; left: {cardPos.left}px" data-testid="detail-card" in:popIn out:popOut>
+		<div class="dcard-x"><Button variant="plain" size="sm" icon="x" aria-label="Close details" onclick={() => closeCard()}>Close</Button></div>
+		{@render looked(selected, 'card')}
+	</div>
+{/if}
+
+<VariantBar options={DETAILS} bind:value={details} param="details" storageKey="holyarrs.downloads.details" label="Download details layouts" />
 
 <Sheet bind:open={removeOpen} title="Remove this download?" size="sm">
 	{#if target}
@@ -354,4 +475,10 @@
 	.hint { color: var(--text-muted); font: var(--t-subhead); font-weight: 400; }
 	.off { opacity: 0.6; }
 	.form-error { color: var(--fail); font: var(--t-callout); }
+	.dcard { position: fixed; z-index: 40; width: min(380px, calc(100vw - 32px)); max-height: min(70dvh, 560px); overflow: auto; padding: 14px 16px 16px; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: var(--shadow-modal), 0 0 0 0.5px var(--line-strong); transform-origin: top left; }
+	.dcard.up { transform-origin: bottom left; }
+	.dcard:focus { outline: none; }
+	.dcard:focus-visible { box-shadow: var(--shadow-modal), var(--focus-ring); }
+	.dcard-x { position: absolute; top: 8px; right: 8px; z-index: 1; }
+	.dcard :global([data-testid='detail-title']) { padding-right: 72px; }
 </style>
