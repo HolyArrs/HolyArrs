@@ -12,6 +12,7 @@ export type ColId =
 	| 'quality'
 	| 'added'
 	| 'age'
+	| 'seeds'
 	| 'peers'
 	| 'ratio'
 	| 'requested'
@@ -43,7 +44,8 @@ export const COLUMNS: ColDef[] = [
 	{ id: 'quality', label: 'Quality', on: true, width: 90 },
 	{ id: 'added', label: 'Added', on: false, width: 90, num: true },
 	{ id: 'age', label: 'Age', on: false, width: 70, num: true, missing: true },
-	{ id: 'peers', label: 'Seeds/Peers', on: false, width: 110, num: true, torrent: true, missing: true },
+	{ id: 'seeds', label: 'Seeds', on: false, width: 70, num: true, torrent: true },
+	{ id: 'peers', label: 'Peers', on: false, width: 70, num: true, torrent: true },
 	{ id: 'ratio', label: 'Ratio', on: false, width: 60, num: true, torrent: true, missing: true },
 	{ id: 'requested', label: 'Requested by', on: false, width: 120, missing: true },
 	{ id: 'downloader', label: 'Downloader', on: false, width: 120 },

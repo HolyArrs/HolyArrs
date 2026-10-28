@@ -492,6 +492,9 @@
 		<span class="txt" class:ph data-col="quality" title={r.name}>{quality(r.name) || dash}</span>
 	{:else if id === 'added'}
 		<span class="num" class:ph data-col="added" title={r.started_at ?? ''}>{r.started_at ? ago(r.started_at) : dash}</span>
+	{:else if id === 'seeds' || id === 'peers'}
+		{@const n = id === 'seeds' ? r.seeds : r.peers}
+		<span class="num" class:ph data-col={id}>{!hist && r.protocol === 'torrent' && (r.phase === 'downloading' || r.phase === 'stalled') && n != null ? n : dash}</span>
 	{:else if id === 'downloader'}
 		<span class="txt" class:ph data-col="downloader" title={dlKind(r) || dlName(r)}>{dlName(r)}</span>
 	{:else}
@@ -508,7 +511,7 @@
 {#snippet row(r: DownloadRow, hist: boolean)}
 	<li class="drow" class:open={openId === r.id} data-testid="dl-table-row" data-dl-id={r.id} data-phase={r.phase}>
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
-		<div class="dline" class:hist tabindex="0" aria-expanded={openId === r.id} aria-label="{who(r)}: {openId === r.id ? 'hide' : 'show'} details" data-testid="dl-line" onclick={(e) => rowClick(e, r.id)} onkeydown={(e) => rowKey(e, r.id)}>
+		<div class="dline" class:hist tabindex="0" aria-label="{who(r)}: {openId === r.id ? 'hide' : 'show'} details" data-testid="dl-line" onclick={(e) => rowClick(e, r.id)} onkeydown={(e) => rowKey(e, r.id)}>
 			{@render lead(r)}
 			{#each cells as c (c.id)}{@render cell(r, c.id, c.ph, hist)}{/each}
 			<span class="spare"></span>
@@ -553,7 +556,7 @@
 
 <div class="dlgrid" bind:this={grid} style="--tpl: {tpl}; --c-in: {inner}px">
 <div class="strip" data-testid="dl-strip">
-	<span class="sp"><b data-testid="dl-speed">↓ {bytes(sum.speed)}/s</b><SpeedGraph speed={sum.speed} /></span>
+	<span class="sp"><b data-testid="dl-speed">↓ {bytes(sum.speed)}/s</b><b class="up" data-testid="dl-up">↑ {bytes(sum.up)}/s</b><SpeedGraph speed={sum.speed} up={sum.up} /></span>
 	<span><span class="k">Time left</span><b>{sum.eta ? duration(sum.eta) : '–'}</b></span>
 	<span data-testid="dl-togo"><b>{bytes(sum.left)}</b><span class="k">to go</span></span>
 	{#if problems}<button type="button" class="need" onclick={() => choose('problems')} data-testid="dl-need">⚠ {problems} need{problems === 1 ? 's' : ''} you</button>{/if}
@@ -634,6 +637,7 @@
 	.k { color: var(--text-muted); font: var(--t-footnote); }
 	.strip b { font-weight: 600; }
 	.sp { gap: 8px; }
+	.up { color: var(--info); }
 	.need { min-height: 28px; padding: 0 8px; margin-left: -8px; border: 0; border-radius: var(--r-btn); background: none; color: var(--fail); font: var(--t-callout); font-weight: 600; cursor: pointer; }
 	.need:hover { background: var(--surface-2); }
 	.need:focus-visible { outline: none; box-shadow: var(--focus-ring); }
@@ -644,11 +648,11 @@
 	.ty.on { background: var(--surface-1); color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); }
 	.ty:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.pm { display: inline-grid; place-items: center; width: 14px; height: 14px; margin-right: 6px; vertical-align: 1px; border-radius: 3px; background: var(--surface-3); color: var(--text-muted); font-size: 9px; font-weight: 700; line-height: 1; }
-	.kt { display: inline-block; box-sizing: border-box; height: 16px; margin-right: 6px; padding: 0 5px; vertical-align: 1px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface-3); color: var(--text-muted); font: var(--t-caption); font-size: 11px; line-height: 14px; font-weight: 600; white-space: nowrap; }
+	.kt { display: inline-block; box-sizing: border-box; height: 16px; margin-right: 6px; padding: 0 5px; vertical-align: 1px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface-3); color: var(--text); font: var(--t-caption); font-size: 11px; line-height: 14px; font-weight: 600; white-space: nowrap; }
 	.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
 	.subs { gap: 6px; margin-top: -4px; }
 	.cw { display: inline-flex; transition: opacity var(--dur-fast) var(--ease-out); }
-	.cw.zero { opacity: 0.5; }
+	.cw.zero { opacity: 0.72; }
 	.cw.zero:hover, .cw.zero:focus-within { opacity: 0.8; }
 	.cw.sm :global(.main) { min-height: 28px; padding: 0 11px; font-size: 13px; }
 
@@ -683,7 +687,7 @@
 	.ver { margin-left: 6px; padding: 0 5px; border-radius: 4px; background: var(--surface-3); color: var(--text-muted); font: var(--t-caption); }
 
 	.bar { position: relative; display: flex; align-items: center; height: 14px; white-space: nowrap; padding: 0 6px; border-radius: 4px; overflow: hidden; background: var(--surface-3); color: var(--text); font-size: 10px; line-height: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
-	.bar i { position: absolute; inset: 0; background: var(--ok); opacity: 0.85; transition: transform var(--dur-slow) var(--ease-out); }
+	.bar i { position: absolute; inset: 0; background: var(--ok); opacity: 0.5; transition: transform var(--dur-slow) var(--ease-out); }
 	.bar.queued i { background: var(--info); }
 	.bar.held i { background: var(--wait); }
 	.bar.bad i { background: var(--fail); }

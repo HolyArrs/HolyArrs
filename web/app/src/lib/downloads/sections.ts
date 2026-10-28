@@ -47,6 +47,8 @@ const left = (r: Pick<DownloadRow, 'size' | 'progress'>) => Math.max(0, (r.size 
 export interface Totals {
 	/** Bytes per second across every download. */
 	speed: number;
+	/** Bytes per second sent out across every download. */
+	up: number;
 	/** Seconds until the whole Queue is in at today's speed (0: unknown). */
 	eta: number;
 	/** Bytes the Queue still has to fetch. */
@@ -60,10 +62,11 @@ export function moving(r: Pick<DownloadRow, 'phase' | 'state' | 'progress' | 'sp
 }
 
 /** totals adds up the Queue for the header strip. */
-export function totals(queue: Pick<DownloadRow, 'phase' | 'state' | 'size' | 'progress' | 'speed' | 'active'>[]): Totals {
+export function totals(queue: Pick<DownloadRow, 'phase' | 'state' | 'size' | 'progress' | 'speed' | 'up_speed' | 'active'>[]): Totals {
 	const speed = queue.reduce((n, r) => n + (moving(r) ? r.speed : 0), 0);
 	const rest = queue.reduce((n, r) => n + left(r), 0);
-	return { speed, left: rest, eta: speed > 0 && rest > 0 ? Math.round(rest / speed) : 0 };
+	const up = queue.reduce((n, r) => n + (moving(r) ? (r.up_speed ?? 0) : 0), 0);
+	return { speed, up, left: rest, eta: speed > 0 && rest > 0 ? Math.round(rest / speed) : 0 };
 }
 
 /** addSample keeps the last `keep` speed readings for the graph. */

@@ -37,7 +37,8 @@ describe('header strip', () => {
 	});
 	it('adds speed and time left for the whole Queue', () => {
 		const t = totals([row({ active: true, speed: 100, size: 1000, progress: 0.5 }), row({ size: 500 })]);
-		expect(t).toEqual({ speed: 100, left: 1000, eta: 10 });
+		expect(t).toEqual({ speed: 100, up: 0, left: 1000, eta: 10 });
+		expect(totals([row({ active: true, speed: 100, up_speed: 30, size: 1000, progress: 0.5 })]).up).toBe(30);
 		expect(totals([row({ size: 10 })]).eta).toBe(0);
 	});
 	it('keeps the last readings and draws them', () => {

@@ -11,7 +11,13 @@ describe('columns', () => {
 		const l = defaults();
 		l.hidden = [];
 		expect(visible(l)).not.toContain('ratio');
-		expect(COLUMNS.filter((c) => c.missing).map((c) => c.id)).toEqual(['age', 'peers', 'ratio', 'requested', 'source', 'category']);
+		expect(COLUMNS.filter((c) => c.missing).map((c) => c.id)).toEqual(['age', 'ratio', 'requested', 'source', 'category']);
+	});
+	it('offers Seeds and Peers as optional torrent columns', () => {
+		expect(visible(defaults())).not.toContain('seeds');
+		const l = defaults();
+		l.hidden = toggle({ ...l, hidden: toggle(l, 'seeds') }, 'peers');
+		expect(visible(l)).toEqual(expect.arrayContaining(['seeds', 'peers']));
 	});
 	it('saves and loads order, visibility and widths', () => {
 		const l = defaults();

@@ -33,33 +33,19 @@ test.beforeAll(async ({ browser }) => {
 });
 
 // The album's table row (the second line shows the tracks; the Release name is
-// its tooltip), and the row's details sheet.
+// its tooltip), and the row's details panel (it opens in place under the row).
 const row = () => page.getByTestId('dl-table-row').filter({ has: page.locator('.rel[title*="Harbour Songs (2019) [FLAC]"]') }).first();
-const details = () => page.getByRole('dialog', { name: 'Download details' });
+const details = () => page.getByTestId('dl-panel');
 async function open() {
-	await row().locator('.nm').click();
+	await row().getByTestId('dl-line').click();
 	await expect(details()).toBeVisible();
-}
-async function close() {
-	await page.keyboard.press('Escape');
-	await expect(details()).toBeHidden();
 }
 
 test('the Downloads screen names Artist – Album and the tracks the download covers', async () => {
 	await page.goto('/downloads');
 	const r = row();
-	await expect(r.locator('.nm')).toHaveText('Tin Lanterns – Harbour Songs (2019)');
-	await expect(r.locator('.rel')).toHaveText('4 tracks');
-	// The tracks it covers, each with where it is, in the row's details.
-	await open();
-	const d = details();
-	await d.getByTestId('row-episodes').locator('summary').click();
-	await expect(d.getByTestId('row-episodes').locator('summary')).toHaveText('The 4 tracks it covers');
-	await expect(d.getByTestId('row-episode')).toHaveCount(4);
-	await expect(d.getByTestId('row-episode').first()).toContainText('Track 01');
-	await expect(d.getByTestId('row-episode').first()).toContainText('Song 1.1');
-	await expect(d.getByTestId('row-episode').first()).toContainText('Downloading');
-	await close();
+	await expect(r.locator('.tt')).toContainText('Tin Lanterns – Harbour Songs (2019)');
+	await expect(r.locator('.rel')).toContainText('4 tracks');
 	await axe(page, 'downloads with an album');
 });
 
@@ -72,15 +58,18 @@ test('a finished album is placed track by track; a track whose file cannot be pl
 	const files = [1, 2, 3, 4].map((i) => `${name}/0${i} - Song 1.${i}.flac`).concat(`${name}/cover.jpg`).join('|');
 	await fetch(`${qbit}/set?hash=${hashOf(name)}&progress=1&state=stalledUP&save_path=${encodeURIComponent(dl)}&files=${encodeURIComponent(files)}`);
 	const r = row();
-	await expect(r.getByTestId('row-state')).toHaveText(/^Needs a decision/, { timeout: 30_000 });
+	await expect(r.locator('[data-col="status"]')).toContainText('Needs a decision', { timeout: 30_000 });
 	await open();
-	await expect(details().getByTestId('row-text')).toHaveText('3 of 4 tracks in the library; Track 04 needs a decision.');
-	// The choices are in the same sheet; the sheet stays open for the last test.
+	// The choices are in the same panel; the panel stays open for the last test.
 	const card = details().getByTestId('decision').filter({ hasText: 'Harbour Songs' });
 	await expect(card).toContainText('Tin Lanterns – Harbour Songs Track 04 Song 1.4');
-	await expect(card.getByTestId('decision-why')).toHaveText('The import could not finish on its own.');
-	for (const n of ['Search again', 'Add to Turned down', 'Stop looking']) await expect(card.getByRole('button', { name: n, exact: true })).toBeVisible();
-	await expect(card.getByRole('link', { name: 'Add another Version' })).toHaveCount(0);
+	await card.getByTestId('decision-why').click();
+	await expect(card.getByTestId('decision-why-box')).toContainText('The import could not finish on its own.');
+	// The main choice is a link to the album's Releases; Search again and the rest are under More.
+	await card.getByRole('button', { name: /^More/ }).click();
+	for (const n of ['Search again', 'Add to Turned down', 'Stop looking']) await expect(page.getByRole('menuitem', { name: n, exact: true })).toBeVisible();
+	await expect(page.getByRole('menuitem', { name: 'Add another Version' })).toHaveCount(0);
+	await page.keyboard.press('Escape');
 	await axe(page, 'needs a decision with a track');
 });
 
@@ -89,15 +78,13 @@ test('stuck tracks on a phone', async ({ browser }) => {
 	const phone = await ctx.newPage();
 	await signIn(phone, owner());
 	await phone.goto('/downloads?show=problems.decide');
-	await phone.getByTestId('dl-table-list').locator('li').filter({ hasText: 'Tin Lanterns – Harbour Songs (2019)' }).locator('.phit').click();
-	const sheet = phone.getByRole('dialog', { name: 'Download details' });
+	await phone.getByTestId('dl-list').locator('li').filter({ hasText: 'Tin Lanterns – Harbour Songs (2019)' }).getByTestId('dl-line').click();
+	const sheet = phone.getByTestId('dl-panel');
 	await expect(sheet.getByTestId('decision').filter({ hasText: 'Harbour Songs' })).toBeVisible();
 	await noSidewaysScroll(phone);
 	await axe(phone, 'needs a decision with a track on a phone');
-	await phone.keyboard.press('Escape');
-	await expect(sheet).toBeHidden();
 	await phone.goto('/downloads');
-	await expect(phone.getByTestId('dl-table-list').locator('li').filter({ hasText: 'Tin Lanterns – Harbour Songs (2019)' }).locator('.cv')).toHaveText('4 tracks');
+	await expect(phone.getByTestId('dl-list').locator('li').filter({ hasText: 'Tin Lanterns – Harbour Songs (2019)' }).locator('.rel')).toContainText('4 tracks');
 	await noSidewaysScroll(phone);
 	await ctx.close();
 });
@@ -105,7 +92,8 @@ test('stuck tracks on a phone', async ({ browser }) => {
 test('Stop looking for one track settles it; the rest of the album stays in the library', async () => {
 	const card = details().getByTestId('decision').filter({ hasText: 'Harbour Songs' });
 	page.once('dialog', (d) => d.accept());
-	await card.getByRole('button', { name: 'Stop looking', exact: true }).click();
+	await card.getByRole('button', { name: /^More/ }).click();
+	await page.getByRole('menuitem', { name: 'Stop looking', exact: true }).click();
 	await expect(page.getByText(/Stopped looking for Tin Lanterns – Harbour Songs Track 04/)).toBeVisible();
 	await expect(card).toHaveCount(0, { timeout: 30_000 });
 });

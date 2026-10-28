@@ -33,31 +33,29 @@ test.beforeAll(async ({ browser }) => {
 });
 
 // A table row by its Release name (the second line shows the episodes; the
-// Release name is its tooltip), and the row's details sheet.
+// Release name is its tooltip), and the row's details panel (it opens in
+// place under the row; one panel is open at a time).
 const row = (name: string) => page.getByTestId('dl-table-row').filter({ has: page.locator(`.rel[title*="${name}"]`) }).first();
-const details = () => page.getByRole('dialog', { name: 'Download details' });
+const details = () => page.getByTestId('dl-panel');
+const state = (r: ReturnType<typeof row>) => r.locator('[data-col="status"]');
 async function open(r: ReturnType<typeof row>) {
-	await r.locator('.nm').click();
+	await r.getByTestId('dl-line').click();
 	await expect(details()).toBeVisible();
 }
 async function close() {
-	await page.keyboard.press('Escape');
+	await page.locator('[data-testid="dl-toggle"][aria-expanded="true"]').click();
 	await expect(details()).toBeHidden();
 }
 
 test('the Downloads screen names the show and the episodes each download covers', async () => {
 	await page.goto('/downloads');
 	const pack = row('Moss.Parade.S01.1080p');
-	await expect(pack.locator('.nm')).toHaveText('Moss Parade');
-	await expect(pack.locator('.rel')).toHaveText('S01E01-E02, 2 episodes');
-	await expect(row('Harbour.Lights.S02E01.720p').locator('.rel')).toHaveText('S02E01 Return of the Fog');
-	// The episodes it covers, each with where it is, in the row's details.
+	await expect(pack.locator('.tt')).toContainText('Moss Parade');
+	await expect(pack.locator('.rel')).toContainText('S01E01-E02, 2 episodes');
+	await expect(row('Harbour.Lights.S02E01.720p').locator('.rel')).toContainText('S02E01 Return of the Fog');
+	// The details open in place and name the download.
 	await open(pack);
-	await details().getByTestId('row-episodes').locator('summary').click();
-	await expect(details().getByTestId('row-episode')).toHaveCount(2);
-	await expect(details().getByTestId('row-episode').first()).toContainText('S01E01');
-	await expect(details().getByTestId('row-episode').first()).toContainText('Green Start');
-	await expect(details().getByTestId('row-episode').nth(1)).toContainText('Downloading');
+	await expect(details()).toContainText('Moss.Parade.S01.1080p');
 	await close();
 	await axe(page, 'downloads with shows');
 });
@@ -68,10 +66,9 @@ test('a finished episode is imported into its episode and the row says so', asyn
 	writeFileSync(join(dl, name, `${name}.mkv`), 'episode');
 	await fetch(`${qbit}/set?hash=${hashOf(name)}&progress=1&state=stalledUP&save_path=${encodeURIComponent(dl)}&files=${encodeURIComponent(`${name}/${name}.mkv`)}`);
 	const r = row('Harbour.Lights.S02E01.720p');
-	await expect(r.getByTestId('row-state')).toHaveText('Done', { timeout: 30_000 });
-	await open(r);
-	await expect(details().getByTestId('row-text')).toHaveText('In the library.');
-	await close();
+	// A finished download leaves the Active tab for Done.
+	await page.goto('/downloads?show=done');
+	await expect(state(r)).toContainText('Done', { timeout: 30_000 });
 });
 
 test('a pack whose files cannot be placed waits on Needs a decision as one card', async () => {
@@ -82,18 +79,22 @@ test('a pack whose files cannot be placed waits on Needs a decision as one card'
 	await fetch(`${qbit}/set?hash=${hashOf(name)}&progress=1&state=stalledUP&save_path=${encodeURIComponent(dl)}&files=${encodeURIComponent(files)}`);
 	const pack = row('Moss.Parade.S01.1080p');
 	// The state may carry the failed import's reason after it ("Needs a decision · import failed: …").
-	await expect(pack.getByTestId('row-state')).toHaveText(/^Needs a decision/, { timeout: 30_000 });
+	await expect(state(pack)).toContainText('Needs a decision', { timeout: 30_000 });
 	await open(pack);
-	await expect(details().getByTestId('row-text')).toHaveText('0 of 2 episodes in the library; S01E01, S01E02 need a decision.');
-	// The choices are in the same sheet; the sheet stays open for the next test.
+	// The choices are in the same panel; the panel stays open for the next test.
 	const card = details().getByTestId('decision-pack');
 	await expect(card).toContainText('Season pack · 2 of the 2 episodes in this download need a decision');
-	await card.locator('details.raw summary').click();
-	await expect(card).toContainText('Pack: Moss.Parade.S01.1080p.WEB-DL.H264-HOLYARRS');
+	// The pack's own Why? names the Release.
+	await card.getByTestId('decision-why').first().click();
+	await expect(card.getByTestId('decision-why-box').first()).toContainText('Release: Moss.Parade.S01.1080p.WEB-DL.H264-HOLYARRS');
 	await expect(card.getByTestId('decision')).toHaveCount(2);
 	await expect(card.getByTestId('decision').first()).toContainText('Moss Parade S01E01 Green Start');
-	await expect(card.getByTestId('decision').first().getByTestId('decision-why')).toHaveText('The import could not finish on its own.');
-	for (const name of ['Search again for these episodes', 'Add the pack to Turned down', 'Stop looking for these episodes']) await expect(card.getByRole('button', { name })).toBeVisible();
+	await card.getByTestId('decision').first().getByTestId('decision-why').click();
+	await expect(card.getByTestId('decision').first().getByTestId('decision-why-box')).toContainText('The import could not finish on its own.');
+	await expect(card.getByRole('button', { name: 'Search again for these episodes' })).toBeVisible();
+	await card.getByRole('button', { name: /^More/ }).first().click();
+	for (const name of ['Add the pack to Turned down', 'Stop looking for these episodes']) await expect(page.getByRole('menuitem', { name })).toBeVisible();
+	await page.keyboard.press('Escape');
 	await expect(card.getByTestId('decision').first().getByRole('link', { name: 'Choose a release by hand' })).toHaveAttribute('href', /\/library\/\d+#h-rel$/);
 	await axe(page, 'needs a decision with a pack');
 });
@@ -103,15 +104,13 @@ test('Needs a decision works from a phone', async ({ browser }) => {
 	const phone = await ctx.newPage();
 	await signIn(phone, owner());
 	await phone.goto('/downloads?show=problems.decide');
-	await phone.getByTestId('dl-table-list').locator('li').filter({ hasText: 'Moss Parade' }).locator('.phit').click();
-	const sheet = phone.getByRole('dialog', { name: 'Download details' });
+	await phone.getByTestId('dl-list').locator('li').filter({ hasText: 'Moss Parade' }).getByTestId('dl-line').click();
+	const sheet = phone.getByTestId('dl-panel');
 	await expect(sheet.getByTestId('decision-pack')).toBeVisible();
 	await noSidewaysScroll(phone);
 	await axe(phone, 'needs a decision on a phone');
-	await phone.keyboard.press('Escape');
-	await expect(sheet).toBeHidden();
 	await phone.goto('/downloads');
-	await expect(phone.getByTestId('dl-table-list').locator('.cv').first()).toBeVisible();
+	await expect(phone.getByTestId('dl-list').locator('.rel').first()).toBeVisible();
 	await noSidewaysScroll(phone);
 	await ctx.close();
 });
@@ -119,7 +118,8 @@ test('Needs a decision works from a phone', async ({ browser }) => {
 test('one choice settles the whole pack: Add the pack to Turned down searches each episode again', async () => {
 	const card = details().getByTestId('decision-pack');
 	page.once('dialog', (d) => d.accept());
-	await card.getByRole('button', { name: 'Add the pack to Turned down' }).click();
+	await card.getByRole('button', { name: /^More/ }).first().click();
+	await page.getByRole('menuitem', { name: 'Add the pack to Turned down' }).click();
 	await expect(page.getByText('Turned down. Searching again for these episodes.')).toBeVisible();
 	await expect(card).toHaveCount(0, { timeout: 30_000 });
 	await page.goto('/library/turned-down');

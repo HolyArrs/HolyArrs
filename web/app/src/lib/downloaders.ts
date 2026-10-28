@@ -67,6 +67,10 @@ export interface DownloadView {
 	text: string;
 	progress: number;
 	speed: number;
+	/** Upload speed, seeds and peers (torrents; older servers omit them). */
+	up_speed?: number;
+	seeds?: number;
+	peers?: number;
 	eta?: number;
 	active: boolean;
 }

@@ -97,10 +97,11 @@ test('a movie downloads through qBittorrent; Mark failed sends the next Release 
 	await expect(page).toHaveURL(/\/library\/\d+/);
 	await expect(page.getByRole('heading', { level: 1 })).toContainText('Iron Lullaby');
 
-	const dl = page.getByTestId('download');
-	await expect(dl.getByTestId('download-state')).toHaveText('Downloading', { timeout: 30_000 });
-	await expect(dl).toContainText('40%');
-	await expect(dl.getByTestId('download-text')).toHaveText('40% done.');
+	// The download is on the Downloads screen, in the Active tab.
+	await page.goto('/downloads');
+	const dl = page.locator('[data-testid="dl-table-row"]').filter({ hasText: 'Iron Lullaby' }).first();
+	await expect(dl.locator('[data-col="status"]')).toContainText('Downloading', { timeout: 30_000 });
+	await expect(dl.locator('[data-col="progress"]')).toContainText('40%');
 	const first = movieReleaseHash(900011, 1);
 	const second = movieReleaseHash(900011, 2);
 	await expect.poll(async () => {
@@ -111,6 +112,7 @@ test('a movie downloads through qBittorrent; Mark failed sends the next Release 
 	expect(state.added.filter((hash: string) => hash === first)).toHaveLength(1);
 
 	page.once('dialog', (d) => d.accept());
+	await dl.getByTestId('dl-line').click();
 	await dl.getByRole('button', { name: 'Mark failed' }).click();
 	await expect(page.getByText('Marked failed. HolyArrs looks for the next Release.')).toBeVisible();
 	// The failed one leaves qBittorrent and the 720p copy is sent instead.
@@ -125,7 +127,7 @@ test('a movie downloads through qBittorrent; Mark failed sends the next Release 
 	expect(state.added.filter((hash: string) => hash === first)).toHaveLength(1);
 	expect(state.added.filter((hash: string) => hash === second)).toHaveLength(1);
 	expect(state.deleted).toContain(first);
-	await expect(dl.getByTestId('download-state')).toHaveText('Downloading', { timeout: 30_000 });
+	await expect(dl.locator('[data-col="status"]')).toContainText('Downloading', { timeout: 30_000 });
 
 	// The failed Release is on the Turned down list with the reason.
 	await page.goto('/library/turned-down');
@@ -134,7 +136,7 @@ test('a movie downloads through qBittorrent; Mark failed sends the next Release 
 	await expect(td).toContainText('marked failed by');
 });
 
-test('the Downloaders page and a downloading movie pass the accessibility scan and fit a phone', async ({ browser }) => {
+test('the Downloaders page and the Downloads screen pass the accessibility scan and fit a phone', async ({ browser }) => {
 	for (const scheme of ['light', 'dark'] as const) {
 		const ctx = await browser.newContext({ colorScheme: scheme });
 		await ctx.addInitScript((t) => localStorage.setItem('holyarrs-theme', t), scheme);
@@ -142,9 +144,8 @@ test('the Downloaders page and a downloading movie pass the accessibility scan a
 		await signIn(p, owner());
 		for (const where of ['/settings/downloaders', 'movie']) {
 			if (where === 'movie') {
-				await p.goto('/library');
-				await p.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: 'Iron Lullaby' }).click();
-				await expect(p.getByTestId('download')).toBeVisible();
+				await p.goto('/downloads');
+				await expect(p.getByTestId('dl-line').first()).toBeVisible();
 			} else {
 				await p.goto(where);
 				await expect(p.getByTestId('downloader').first()).toBeVisible();
@@ -164,9 +165,8 @@ test('the Downloaders page and a downloading movie pass the accessibility scan a
 	await noSidewaysScroll(p);
 	await p.getByRole('button', { name: 'Add a Downloader' }).click();
 	await noSidewaysScroll(p);
-	await p.goto('/library');
-	await p.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: 'Iron Lullaby' }).click();
-	await expect(p.getByTestId('download')).toBeVisible();
+	await p.goto('/downloads');
+	await expect(p.getByTestId('dl-line').first()).toBeVisible();
 	await noSidewaysScroll(p);
 	await phone.close();
 });

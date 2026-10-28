@@ -150,9 +150,9 @@ test('edition decision requires the check and retries with the confirmed edition
 		await route.fulfill({ json: { download_id: 800, edition: body.edition, confirmed: true, job_id: 901 } });
 	});
 
-	// Home's link for a decision opens that row's sheet on Downloads.
+	// Home's link for a decision opens that row's panel on Downloads.
 	await page.goto('/downloads?show=problems.decide&slot=900');
-	const form = page.getByRole('dialog', { name: 'Download details' }).getByTestId('edition-decision');
+	const form = page.getByTestId('dl-panel').getByTestId('edition-decision');
 	await form.getByLabel('Edition', { exact: true }).fill('Director cut');
 	await expect(form.getByRole('button', { name: 'Save edition and try import again' })).toBeDisabled();
 	await form.getByLabel(/I checked this download/).check();
