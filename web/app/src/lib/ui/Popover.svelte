@@ -168,5 +168,7 @@
 		padding: 6px; border-radius: 14px; background: var(--surface-1); color: var(--text);
 		box-shadow: var(--shadow-lift), 0 0 0 1px var(--line);
 	}
+	/* On an album or artist colour the surfaces are see-through tints: the panel gets a solid, slightly lifted shade of the colour. */
+	:global(html[data-tint]) .panel { background: color-mix(in srgb, var(--tint-bg, #1d1d22) 86%, #fff); color: #fff; }
 	@media (pointer: coarse) { .icon { width: 44px; height: 44px; } .button { min-height: 44px; } }
 </style>
