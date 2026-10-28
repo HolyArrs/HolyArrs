@@ -40,8 +40,9 @@
 		onadded,
 		slug = '',
 		kind = 'genre',
-		genres = $bindable([])
-	}: { owned: OwnedIndex; manage: boolean; mayAsk: boolean; folders: LibraryFolder[]; rules: PickRulesView[]; onadded?: (t: TitleView) => void; /** A Music genre page: that genre's rows instead of Explore's. */ slug?: string; /** The page kind for slug (genre, mood, season, decade, activity). */ kind?: MusicPageKind; /** The genre tiles, for Explore's Genres button. */ genres?: StripGenre[] } = $props();
+		genres = $bindable([]),
+		ready = $bindable(false)
+	}: { owned: OwnedIndex; manage: boolean; mayAsk: boolean; folders: LibraryFolder[]; rules: PickRulesView[]; onadded?: (t: TitleView) => void; /** A Music genre page: that genre's rows instead of Explore's. */ slug?: string; /** The page kind for slug (genre, mood, season, decade, activity). */ kind?: MusicPageKind; /** The genre tiles, for Explore's Genres button. */ genres?: StripGenre[]; /** The first answer (or a failure) is in: genres says all it will. */ ready?: boolean } = $props();
 	type StripGenre = { key: string; name: string; href: string; art: string; images?: string[]; hue: number };
 
 	let region = $state('global');
@@ -108,13 +109,18 @@
 			};
 			show(a);
 			failed = false;
+			// A partial answer may still bring the genres: ready once it is whole or asking stops.
+			ready = !a.partial;
 			// Still filling in on the server ("partial"): ask again quietly; rows on screen stay put.
 			if (a.partial)
 				void reaskWhileFilling(a, ask, (b) => {
 					if (signal.aborted) return;
 					b.rows = withRising(b.rows, rising);
 					show(b);
-				}, signal);
+					if (!b.partial) ready = true;
+				}, signal).finally(() => {
+					if (!signal.aborted) ready = true;
+				});
 			// music_rows_v7: read again the batches already shown (the plan is fixed for the day).
 			next = a.next ?? '';
 			const had = batches;
@@ -124,7 +130,10 @@
 			if (!genre) chips = a.genres ?? [];
 			if (a.region && a.region !== region) region = a.region;
 		} catch {
-			if (!signal.aborted) failed = true;
+			if (!signal.aborted) {
+				failed = true;
+				ready = true;
+			}
 		}
 	}
 

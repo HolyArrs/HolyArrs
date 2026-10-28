@@ -426,6 +426,32 @@
 	let musicPicksPending = $state(false);
 	let musicPicksFor = '';
 	const musicFav = $derived(type === 'music' ? (musicGenres[0] ?? null) : null);
+	/** The music rows' first answer is in (musicGenres says all it will). */
+	let musicReady = $state(false);
+	/**
+	 * Until the music rows answer, the "Your genre" banner's place is held (the same banner
+	 * with placeholders, so the exact height) when the last visit showed it, so the rows
+	 * never jump down when it arrives. Remembered per browser; first visit holds it.
+	 */
+	let musicBannerHint = $state(true);
+	try {
+		musicBannerHint = localStorage.getItem('holyarrs-music-banner') !== '0';
+	} catch {
+		/* storage off: hold the place */
+	}
+	$effect(() => {
+		if (type !== 'music') musicReady = false;
+	});
+	const musicBannerShown = $derived(type === 'music' && !!musicFav && (musicPicksPending || musicPicks.length >= 4));
+	const musicBannerHold = $derived(type === 'music' && !musicFav && !musicReady && musicBannerHint);
+	$effect(() => {
+		if (type !== 'music' || !musicReady || musicPicksPending) return;
+		try {
+			localStorage.setItem('holyarrs-music-banner', musicBannerShown ? '1' : '0');
+		} catch {
+			/* storage off */
+		}
+	});
 	$effect(() => {
 		const g = musicFav;
 		if (!g) return;
@@ -735,7 +761,15 @@
 		{/if}
 	</div>
 	<MetadataNotice />
-	{#if type === 'music' && musicFav && (musicPicksPending || musicPicks.length >= 4)}
+	{#if musicBannerHold}
+		<div class="music-banner" aria-hidden="true" data-testid="music-banner-hold">
+			<GenreBanner layout={2} name={' '} eyebrow="Picked from your library" line="Albums and artists from it you could ask for." href={to('/explore?type=music')} art={[]} square>
+				{#snippet picks()}
+					{#each Array.from({ length: 7 }, (_, i) => i) as i (i)}<div class="pick-sk"><SkCard /></div>{/each}
+				{/snippet}
+			</GenreBanner>
+		</div>
+	{:else if musicBannerShown && musicFav}
 		<div class="music-banner">
 			<GenreBanner layout={2} name={`Your ${musicFav.name}`} eyebrow="Picked from your library" line="Albums and artists from it you could ask for." href={to(musicFav.href)} art={[musicPicks[0]?.image ?? musicFav.art].filter(Boolean)} square>
 				{#snippet picks()}
@@ -749,7 +783,7 @@
 			</GenreBanner>
 		</div>
 	{/if}
-	{#if type === 'music'}<MusicTrendingRows bind:genres={musicGenres} {owned} {manage} {mayAsk} folders={flow?.addChoices().folders ?? []} rules={flow?.addChoices().rules ?? []} onadded={() => void load()} />{/if}
+	{#if type === 'music'}<MusicTrendingRows bind:genres={musicGenres} bind:ready={musicReady} {owned} {manage} {mayAsk} folders={flow?.addChoices().folders ?? []} rules={flow?.addChoices().rules ?? []} onadded={() => void load()} />{/if}
 
 	{#if type === 'music'}
 		<!-- Music: the music rows above only. -->

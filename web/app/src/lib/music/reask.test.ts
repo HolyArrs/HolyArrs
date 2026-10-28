@@ -85,6 +85,12 @@ describe('song list state', () => {
 		expect(trackListView(3, false)).toBe('rows');
 		expect(TRACK_REASK_MS.reduce((a, b) => a + b, 0)).toBeGreaterThanOrEqual(55000);
 		expect(TRACK_REASK_MS.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(65000);
+		// Quick first re-asks: a list ready at 9 s is asked again by about 9 s (each ask held up to 0.8 s).
+		expect(TRACK_REASK_MS.slice(0, 3)).toEqual([1000, 1500, 2000]);
+		let at = 0.8;
+		let i = 0;
+		while (at < 9) at += TRACK_REASK_MS[i++] / 1000 + 0.8;
+		expect(at).toBeLessThanOrEqual(10.5);
 		expect(sameTracks({ tracks: [] }, { tracks: [] })).toBe(false);
 		expect(sameTracks({ tracks: [1] }, { tracks: [2] })).toBe(true);
 	});

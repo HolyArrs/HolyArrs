@@ -91,8 +91,12 @@ export function sameLists<T extends object>(lists: (keyof T)[]): (a: T, b: T) =>
 	return (a, b) => lists.every((k) => n(a[k]) === n(b[k]));
 }
 
-/** The pauses of the quiet re-asks for a song list: about 60 s in all, then the page gives up. */
-export const TRACK_REASK_MS = [2500, 3500, 5000, 7000, 8000, 8000, 8000, 8000, 8000];
+/**
+ * The pauses of the quiet re-asks for a song list: quick at first (the server fetches
+ * the list the moment the album or its artist opens, so a list ready at 9 s shows at
+ * about 9 s), then backing off; about 60 s in all, then the page gives up.
+ */
+export const TRACK_REASK_MS = [1000, 1500, 2000, 2000, 2500, 3000, 4000, 5000, 6000, 8000, 8000, 8000, 8000];
 
 /** What a song list shows: real rows, skeleton rows while songs are still being fetched, or the neutral line once asking has stopped. */
 export function trackListView(count: number, pending: boolean): 'rows' | 'skeleton' | 'gave-up' {
