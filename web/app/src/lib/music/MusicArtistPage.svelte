@@ -934,7 +934,7 @@
 					{#if data?.total}<p class="fig"><b>{data.have ?? 0} of {data.total}</b><span>on HolyArrs</span></p>{/if}
 				</div>
 				<div class="sh-words">
-					{#if hero.bio?.extract}<p class="sh-bio">{hero.bio.extract}</p>{:else}<p class="quiet">No write-up for this artist yet.</p>{/if}
+					{#if hero.bio?.extract}<p class="sh-bio">{hero.bio.extract}</p>{/if}
 					<dl class="kv">
 						{#if hero.country}<div><dt>From</dt><dd>{countryName(hero.country)}</dd></div>{/if}
 						{#if genres}<div><dt>Genres</dt><dd>{genres}</dd></div>{/if}
