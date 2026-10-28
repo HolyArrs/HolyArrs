@@ -21502,6 +21502,91 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/titles/owned": {
+      "get": {
+        "description": "A light list of what the Library holds, for owned marks: each title (and each included album of a Library artist) with its outside id and one state. Same part and Kid filters as listing the Library; without the right to approve, only the caller's own asks count as requested. Sent with an ETag; a matching If-None-Match answers 304.",
+        "operationId": "titlesOwned",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "genres": {
+                            "description": "Movies and shows only.",
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "id": {
+                            "description": "The Library title id; for an album, its artist's.",
+                            "type": "integer"
+                          },
+                          "kind": {
+                            "enum": [
+                              "movie",
+                              "show",
+                              "artist",
+                              "album"
+                            ],
+                            "type": "string"
+                          },
+                          "mbid": {
+                            "description": "MusicBrainz id (artists and albums).",
+                            "type": "string"
+                          },
+                          "percent": {
+                            "description": "0-100, only while downloading.",
+                            "type": "number"
+                          },
+                          "state": {
+                            "enum": [
+                              "owned",
+                              "partial",
+                              "downloading",
+                              "requested",
+                              "wanted"
+                            ],
+                            "type": "string"
+                          },
+                          "tmdb": {
+                            "description": "TMDB id (movies and shows).",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "id",
+                          "state"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The owned marks."
+          },
+          "304": {
+            "description": "Not changed since the ETag sent."
+          }
+        },
+        "summary": "List owned marks",
+        "tags": [
+          "Library"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/titles/refresh": {
       "post": {
         "description": "With no title_ids, refreshes every movie, every show and every artist (three Jobs); with title_ids, each Title as its kind.",

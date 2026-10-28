@@ -260,7 +260,7 @@ func keepOnDisk[T any](ctx context.Context, a *API, key string, v T) {
 
 // keptPerPrefix caps the rows each kind of kept answer ("extras|",
 // "wiki|", "details|") holds in lookup_cache; the oldest go first.
-const keptPerPrefix = 20000
+var keptPerPrefix = 20000
 
 // capKept drops the oldest rows of key's prefix past keptPerPrefix.
 func capKept(ctx context.Context, a *API, key string) {

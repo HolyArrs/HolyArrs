@@ -114,6 +114,9 @@ func TestTitlesOwnedAsksArePerPerson(t *testing.T) {
 // of kept answer is capped.
 func TestKeptKeysBounded(t *testing.T) {
 	_, st, _ := setup(t)
+	old := keptPerPrefix
+	keptPerPrefix = 40
+	t.Cleanup(func() { keptPerPrefix = old })
 	a := New(Server{Store: st, Version: "test"})
 	ctx := context.Background()
 	for i := range keptPerPrefix + 5 {
