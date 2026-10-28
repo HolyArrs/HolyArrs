@@ -6,7 +6,7 @@
 	import { api, message } from '#lib/api.ts';
 	import { live } from '#lib/live.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
-	import { decisionName, manyWords, removeBody, removeStart, rowName, type Decision, type DownloaderSettings, type DownloadRow, type RemoveChoice } from '#lib/downloaders.ts';
+	import { decisionName, manyWords, removeBody, removeStart, rowName, type Decision, type DownloaderSettings, type DownloaderView, type DownloadRow, type RemoveChoice } from '#lib/downloaders.ts';
 	import { decisions, refreshDecisions } from '#lib/decisions.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
@@ -26,6 +26,8 @@
 	let error = $state('');
 	let settings = $state<DownloaderSettings | null>(null);
 	let openId = $state(0);
+	// A torrent Downloader brings the Seeding sub-tab under Done.
+	let torrent = $state(false);
 	const titleById = $derived(new Map(titles.map((title) => [title.id, title])));
 	// Imports belong to their download's row.
 	const importOf = $derived(byDownload(imports));
@@ -133,6 +135,11 @@
 		void api.get<{ titles: TitleView[] }>('/titles').then((r) => (titles = r.titles)).catch(() => {});
 		// The remove defaults are a settings read; without that permission the server's own defaults stand (no 403 in the console).
 		if (session.can('settings')) api.get<DownloaderSettings>('/settings/downloaders').then((s) => (settings = s)).catch(() => {});
+		if (session.can('manage_library'))
+			api
+				.get<{ downloaders: DownloaderView[] }>('/downloaders')
+				.then((r) => (torrent = r.downloaders.some((d) => d.protocol === 'torrent')))
+				.catch(() => {});
 		void refreshDecisions();
 		const offs = ['download', 'slot', 'import', 'resync'].map((t) => live.on(t, soon));
 		const decOffs = ['slot', 'releases', 'resync'].map((t) => live.on(t, () => void refreshDecisions()));
@@ -207,7 +214,7 @@
 	<p class="aside-link"><a href={to('/settings/downloaders')}>Downloaders</a></p>
 {:else}
 	{#if error}<LoadError hasData message="Downloads could not be loaded." onretry={load} />{/if}
-	<DlSections rows={allRows} {importOf} titles={titleById} {busy} {samples} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} />
+	<DlSections rows={allRows} {importOf} titles={titleById} {busy} {samples} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} />
 {/if}
 </PageLoader>
 
