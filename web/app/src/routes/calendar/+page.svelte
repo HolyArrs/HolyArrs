@@ -923,14 +923,11 @@
 	.item { position: relative; aspect-ratio: 6 / 1; min-height: 104px; max-height: 150px; padding-right: 12px; transition: min-height var(--dur) var(--ease-out); }
 	@media (hover: hover) { .item:hover { min-height: 120px; max-height: 166px; } }
 	.bwrap { position: absolute; top: 0; bottom: 0; left: -12px; right: -12px; }
-	/* Each row's picture feathers out at its left, top and bottom, so the rows read as soft cards, not hard tiles. */
+	/* Each row is its own soft card: rounded picture, a small gap between rows (no fades into the page,
+	   which turned white in light mode). */
 	@media (min-width: 641px) {
-		.bwrap {
-			-webkit-mask-image: linear-gradient(to right, transparent 0, #000 72px), linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
-			-webkit-mask-composite: source-in;
-			mask-image: linear-gradient(to right, transparent 0, #000 72px), linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
-			mask-composite: intersect;
-		}
+		.bwrap { border-radius: 12px; overflow: hidden; }
+		.item + .item { border-top: 0; margin-top: 6px; }
 	}
 	.bwrap :global(.cal-banner) { -webkit-mask-image: none; mask-image: none; }
 	/* Behind the words: a frosted, darkened patch (blur + dim + a little grain of colour) that feathers
@@ -941,12 +938,11 @@
 		-webkit-mask-image: linear-gradient(90deg, #000 0%, #000 68%, rgb(0 0 0 / .6) 84%, transparent 100%); mask-image: linear-gradient(90deg, #000 0%, #000 68%, rgb(0 0 0 / .6) 84%, transparent 100%); }
 	.bwrap::after { content: ''; position: absolute; z-index: 1; inset: 0; pointer-events: none;
 		background: linear-gradient(90deg, rgb(8 8 10 / .25) 0%, rgb(8 8 10 / 0) 70%), linear-gradient(0deg, rgb(8 8 10 / .25), rgb(8 8 10 / 0) 45%); }
-	.item:first-child .bwrap { top: -12px; }
-	.item:last-child .bwrap { bottom: -12px; }
 	/* Over the picture the words are always light, in both themes. */
 	@media (min-width: 641px) {
 		.item .it a, .item .tcol { color: #fff; }
-		.item .sub, .item .tcol.quiet { color: rgb(255 255 255 / .78); }
+		.item .sub, .item .sub.first, .item .tcol.quiet { color: rgb(255 255 255 / .82); }
+		.item .sub.first { color: #fff; }
 	}
 	.it, .tcol, .row-bell { position: relative; z-index: 2; }
 	/* The words take only their own width, so the bell sits right after them. */
