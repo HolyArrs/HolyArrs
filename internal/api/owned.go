@@ -71,7 +71,8 @@ agg AS (SELECT title_id, part_id,
 	SUM(state IN ('downloading', 'importing', 'stalled')) AS dl,
 	AVG(progress) AS pct FROM st GROUP BY title_id, part_id),
 tagg AS (SELECT title_id, SUM(have) AS have, SUM(lack) AS lack, SUM(dl) AS dl, AVG(pct) AS pct FROM agg GROUP BY title_id),
-ask AS (SELECT DISTINCT title_id FROM asks WHERE title_id IS NOT NULL AND state IN ('asked', 'approved'))
+ask AS (SELECT DISTINCT a.title_id FROM asks a WHERE a.title_id IS NOT NULL AND a.state IN ('asked', 'approved')
+	AND (? OR EXISTS (SELECT 1 FROM ask_people p WHERE p.ask_id = a.id AND p.user_id = ?)))
 SELECT t.kind, COALESCE(json_extract(t.source_ids, '$.tmdb'), ''), COALESCE(json_extract(t.source_ids, '$.musicbrainz'), ''), t.id, COALESCE(t.rating, ''),
 	COALESCE(g.have, 0), COALESCE(g.lack, 0), COALESCE(g.dl, 0), g.pct, ask.title_id IS NOT NULL, COALESCE(t.genres, '[]')
 FROM titles t LEFT JOIN tagg g ON g.title_id = t.id LEFT JOIN ask ON ask.title_id = t.id WHERE t.state != 'removed'
@@ -92,7 +93,11 @@ func (a *API) titlesOwned(w http.ResponseWriter, r *http.Request) {
 		return !ok || a.partIsOn(p) || a.s.Parts.SafeMode
 	}
 	max := a.kidMax(r)
-	rows, err := a.s.Store.Read().QueryContext(r.Context(), ownedSQL)
+	// As titleAsks: without the right to approve, only the caller's own
+	// asks mark a title requested (the body, so the ETag, is per person).
+	who, signed := auth.From(r.Context())
+	all := !signed || who.Has(auth.PermApprove)
+	rows, err := a.s.Store.Read().QueryContext(r.Context(), ownedSQL, all, who.UserID)
 	if err != nil {
 		internal(w, err)
 		return

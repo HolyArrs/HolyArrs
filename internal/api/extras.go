@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -251,8 +252,28 @@ func keepOnDisk[T any](ctx context.Context, a *API, key string, v T) {
 	}
 	now := time.Now()
 	if b, err := json.Marshal(keptBody[T]{V: v, At: now}); err == nil {
-		_ = store.LookupCache{Store: a.s.Store}.Put(context.WithoutCancel(ctx), key, b, now, now.Add(keptOnDisk))
+		ctx := context.WithoutCancel(ctx)
+		_ = store.LookupCache{Store: a.s.Store}.Put(ctx, key, b, now, now.Add(keptOnDisk))
+		capKept(ctx, a, key)
 	}
+}
+
+// keptPerPrefix caps the rows each kind of kept answer ("extras|",
+// "wiki|", "details|") holds in lookup_cache; the oldest go first.
+const keptPerPrefix = 20000
+
+// capKept drops the oldest rows of key's prefix past keptPerPrefix.
+func capKept(ctx context.Context, a *API, key string) {
+	prefix, _, ok := strings.Cut(key, "|")
+	if !ok {
+		return
+	}
+	like := prefix + "|%"
+	_ = a.s.Store.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec(`DELETE FROM lookup_cache WHERE key IN (SELECT key FROM lookup_cache WHERE key LIKE ?
+			ORDER BY fetched_at DESC LIMIT -1 OFFSET ?)`, like, keptPerPrefix)
+		return err
+	})
 }
 
 // loadKept reads an answer keepOnDisk stored, as a memory entry.

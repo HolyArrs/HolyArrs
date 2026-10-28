@@ -66,12 +66,14 @@ func (a *API) wikiFacts(w http.ResponseWriter, r *http.Request) {
 		name = ""
 	}
 	key := kind + ":" + id + ":" + name
+	// The kept copy on disk is keyed without the caller's name, so a
+	// caller cannot grow lookup_cache with names.
 	c := wikiFactsCache
 	c.mu.Lock()
 	e, ok := c.seen[key]
 	c.mu.Unlock()
 	if !ok {
-		if k, found := loadKept[WikiFacts](r.Context(), a, "wiki|"+key); found {
+		if k, found := loadKept[WikiFacts](r.Context(), a, "wiki|"+kind+":"+id); found {
 			e, ok = wikiEntry(k), true
 			c.mu.Lock()
 			c.seen[key] = e
@@ -82,12 +84,12 @@ func (a *API) wikiFacts(w http.ResponseWriter, r *http.Request) {
 		// Kept answers are served at once; an old one is refreshed in the
 		// background for the next view.
 		if time.Since(e.at) >= 6*time.Hour {
-			refreshOnce("wiki|"+key, func(ctx context.Context) {
+			refreshOnce("wiki|"+kind+":"+id, func(ctx context.Context) {
 				if v, settled := a.fetchWiki(ctx, kind, id, name); settled {
 					c.mu.Lock()
 					c.seen[key] = wikiEntry{v: v, at: time.Now()}
 					c.mu.Unlock()
-					keepOnDisk(ctx, a, "wiki|"+key, v)
+					keepOnDisk(ctx, a, "wiki|"+kind+":"+id, v)
 				}
 			})
 		}
@@ -107,7 +109,7 @@ func (a *API) wikiFacts(w http.ResponseWriter, r *http.Request) {
 	}
 	c.seen[key] = wikiEntry{v: v, at: time.Now()}
 	c.mu.Unlock()
-	keepOnDisk(r.Context(), a, "wiki|"+key, v)
+	keepOnDisk(r.Context(), a, "wiki|"+kind+":"+id, v)
 	writeJSON(w, http.StatusOK, v)
 }
 

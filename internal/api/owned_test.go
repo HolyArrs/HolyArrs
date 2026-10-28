@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/CoderLuii/holyarrs/internal/auth"
 )
 
 // route: GET /api/v1/titles/owned
@@ -70,5 +73,53 @@ func TestKeptOnDisk(t *testing.T) {
 	k, ok := loadKept[TitleExtras](context.Background(), b, "extras|movie:1")
 	if !ok || k.v.Logo != "x" || time.Since(k.at) > time.Minute {
 		t.Fatalf("%+v %v", k, ok)
+	}
+}
+
+// A member sees "requested" only for their own asks (as titleAsks).
+func TestTitlesOwnedAsksArePerPerson(t *testing.T) {
+	r := newAskRig(t)
+	a := askOf(t, r.ana.call("POST", "/api/v1/asks", `{"id":"tmdb:693134"}`, 201))
+	r.owner.call("POST", "/api/v1/asks/"+itoa(a.ID)+"/approve", `{}`, 200)
+	// Members cannot read the Library; a viewer without the right to approve can.
+	state := func(who auth.Who) string {
+		req := httptest.NewRequest("GET", "/api/v1/titles/owned", nil)
+		req = req.WithContext(auth.ContextWith(req.Context(), who))
+		rec := httptest.NewRecorder()
+		r.api.titlesOwned(rec, req)
+		var got struct {
+			Items []OwnedItem `json:"items"`
+		}
+		_ = json.Unmarshal(rec.Body.Bytes(), &got)
+		for _, it := range got.Items {
+			if it.TMDB == "693134" {
+				return it.State
+			}
+		}
+		return "missing"
+	}
+	if s := state(auth.Who{UserID: r.ana.id}); s != "requested" {
+		t.Fatalf("ana %s", s)
+	}
+	if s := state(auth.Who{UserID: r.bo.id}); s != "wanted" {
+		t.Fatalf("bo %s", s)
+	}
+	if s := state(auth.Who{UserID: r.bo.id, Perms: []auth.Perm{auth.PermApprove}}); s != "requested" {
+		t.Fatalf("approver %s", s)
+	}
+}
+
+// The wiki copy on disk is keyed without the caller's name, and each kind
+// of kept answer is capped.
+func TestKeptKeysBounded(t *testing.T) {
+	_, st, _ := setup(t)
+	a := New(Server{Store: st, Version: "test"})
+	ctx := context.Background()
+	for i := range keptPerPrefix + 5 {
+		keepOnDisk(ctx, a, "extras|movie:"+itoa(int64(i+1)), TitleExtras{Scores: []OutsideScore{}})
+	}
+	var n int
+	if err := st.Read().QueryRow("SELECT count(*) FROM lookup_cache WHERE key LIKE 'extras|%'").Scan(&n); err != nil || n != keptPerPrefix {
+		t.Fatalf("kept %d %v", n, err)
 	}
 }
