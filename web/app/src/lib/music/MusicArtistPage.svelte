@@ -440,6 +440,49 @@
 	onMount(() => () => {
 		if (!toTinted) unpaintWindow();
 	});
+	// Some music videos carry black bars in the picture itself (an old 4:3
+	// video in a wide frame). The frame is read a few times as it plays; when
+	// both sides are black the video is scaled up just enough to hide them.
+	let crop = $state(1);
+	let barTimers: ReturnType<typeof setTimeout>[] = [];
+	function sideBars(v: HTMLVideoElement): number {
+		try {
+			const w = 64, h = 36, c = document.createElement('canvas');
+			c.width = w; c.height = h;
+			const g = c.getContext('2d', { willReadFrequently: true });
+			if (!g || !v.videoWidth) return 0;
+			g.drawImage(v, 0, 0, w, h);
+			const d = g.getImageData(0, 0, w, h).data;
+			const lit = (x: number) => {
+				let l = 0;
+				for (let y = 0; y < h; y++) { const k = (y * w + x) * 4; l += d[k] + d[k + 1] + d[k + 2]; }
+				return l / (h * 3 * 255) > 0.05;
+			};
+			let left = 0, right = 0;
+			while (left < w / 3 && !lit(left)) left++;
+			while (right < w / 3 && !lit(w - 1 - right)) right++;
+			// Only bars on both sides count (a dark scene on one side is not a bar).
+			return left >= 2 && right >= 2 ? Math.min(left, right) / w : 0;
+		} catch {
+			return 0;
+		}
+	}
+	function findBars() {
+		barTimers.forEach(clearTimeout);
+		const v = videoEl;
+		if (!v) return;
+		let least = Infinity;
+		barTimers = [1500, 4000, 8000].map((ms) => setTimeout(() => {
+			// The smallest bar seen wins, so a dark moment never over-crops.
+			least = Math.min(least, sideBars(v));
+			crop = least > 0 && least < 0.3 ? Math.min(1 / (1 - 2 * least), 1.5) : 1;
+		}, ms));
+	}
+	$effect(() => {
+		void heroVideo;
+		crop = 1;
+		return () => barTimers.forEach(clearTimeout);
+	});
 	function heroLoaded(e: Event) {
 		heroIn = true;
 		if (sampledTint) return;
@@ -642,7 +685,7 @@
 		<div class="stage" aria-hidden="true">
 			{@render stageArt()}
 			{#if heroVideo}
-				<video class="clip" class:in={videoIn || heroFull} bind:this={videoEl} muted playsinline disablepictureinpicture preload="auto" onplaying={() => { videoIn = true; videoPaused = false; }} onpause={() => (videoPaused = true)} onended={() => void nextVideo()} onplay={() => (videoPaused = false)} onvolumechange={() => videoEl && (videoMuted = videoEl.muted)} data-testid="artist-hero-video"></video>
+				<video class="clip" class:in={videoIn || heroFull} style:--crop={heroFull ? 1 : crop} bind:this={videoEl} muted playsinline disablepictureinpicture preload="auto" onplaying={() => { videoIn = true; videoPaused = false; findBars(); }} onpause={() => (videoPaused = true)} onended={() => void nextVideo()} onplay={() => (videoPaused = false)} onvolumechange={() => videoEl && (videoMuted = videoEl.muted)} data-testid="artist-hero-video"></video>
 			{/if}
 		</div>
 		<div class="shade" aria-hidden="true"></div>
@@ -984,6 +1027,7 @@
 	/* The video covers the banner at the same size; paused, it hides and the banner shows again. */
 	.clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); pointer-events: none; }
 	.clip.in { opacity: 1; }
+	.clip { scale: var(--crop, 1); transition: opacity var(--dur-slow) var(--ease-out), scale 600ms var(--ease-out); }
 	.art.under { opacity: 0; transition-duration: 900ms; }
 	.hero.paused .clip { opacity: 0; }
 	.hero.paused .art.in.under { opacity: .82; }
