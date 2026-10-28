@@ -62,28 +62,44 @@ export function seasonEpisodes(tmdb: string, season: number): EpisodeInfo[] | nu
 	return eps[k] ?? null;
 }
 
-/** A stored track of an album in the Library. */
-export interface AlbumTrack {
-	id: number;
+/** A song of an album, as the album page lists it. */
+export interface AlbumSong {
 	disc: number;
 	number: number;
-	name?: string;
+	name: string;
 	length_ms?: number;
-	keep_up_to_date: boolean;
+	recording_id?: string;
 }
-const tracks = $state<Record<number, AlbumTrack[] | null>>({});
-const askedTracks = new Set<number>();
-
-/** albumTracks is a Library album's stored tracks (null until known), asked once; only albums in the Library have them. */
-export function albumTracks(partId: number): AlbumTrack[] | null {
-	if (!askedTracks.has(partId) && partId > 0) {
-		askedTracks.add(partId);
-		api
-			.get<{ tracks?: AlbumTrack[] }>(`/albums/${partId}/tracks`)
-			.then((r) => (tracks[partId] = Array.isArray(r.tracks) ? r.tracks.filter((t) => !(t as { dropped?: boolean }).dropped) : []))
-			.catch(() => (tracks[partId] = []));
+/** songKey is a song's id for ticks: its recording, else disc and number. */
+export const songKey = (t: AlbumSong) => t.recording_id || `${t.disc}-${t.number}`;
+const songs = $state<Record<string, AlbumSong[] | null>>({});
+const askedSongs = new Set<string>();
+const songQueue: (() => Promise<void>)[] = [];
+let songsRunning = 0;
+function nextSongs() {
+	while (songsRunning < 3 && songQueue.length) {
+		const job = songQueue.shift()!;
+		songsRunning++;
+		void job().finally(() => {
+			songsRunning--;
+			nextSongs();
+		});
 	}
-	return tracks[partId] ?? null;
+}
+
+/** albumSongs is an album's songs (null until known), asked once through the album page's answer, at most 3 albums at a time. */
+export function albumSongs(album: string, artist: string): AlbumSong[] | null {
+	if (album && artist && !askedSongs.has(album)) {
+		askedSongs.add(album);
+		songQueue.push(() =>
+			api
+				.get<{ tracks?: AlbumSong[] }>(`/music/albums/${encodeURIComponent(album)}?artist=${encodeURIComponent(artist)}`)
+				.then((r) => void (songs[album] = Array.isArray(r.tracks) ? r.tracks : []))
+				.catch(() => void (songs[album] = []))
+		);
+		nextSongs();
+	}
+	return songs[album] ?? null;
 }
 
 /** What the Approvals panel shows of an artist: the round photo, the banner pictures and the albums (release groups). */

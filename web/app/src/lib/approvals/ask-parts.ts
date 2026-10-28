@@ -231,17 +231,20 @@ export interface PartsPick {
 	seasons: number[] | null;
 	/** Single episodes kept in partly ticked seasons (show asks), null when none. */
 	episodes?: { season: number; episodes: number[] }[] | null;
-	/** Songs kept in partly ticked albums (Library track ids), null when none. */
-	tracks?: { album: string; tracks: number[] }[] | null;
+	/** Songs kept in partly ticked albums (recording ids), null when none. */
+	songs?: { album: string; recordings: string[] }[] | null;
 	/** Album ids kept, every edition of each kept album (artist asks), null when all are. */
 	albums: string[] | null;
 	/** Everything was unticked: nothing to approve. */
 	empty: boolean;
 }
 
-/** albumsHead sums the album ticks: "All 3 albums", "2 of 3 albums", "2 albums + 5 songs". */
-export function albumsHead(whole: number, all: number, songs: number, partly: number): string {
-	if (!partly) return keptWords(whole, all, 'album');
-	const s = `${songs} song${songs === 1 ? '' : 's'}`;
-	return whole ? `${whole} album${whole === 1 ? '' : 's'} + ${s}` : `${s} from ${partly === 1 ? '1 album' : `${partly} albums`}`;
+/** songsHead adds the song total to the album counts: "… · 112 songs", "… · 98 of 112 songs" (while lists load: the songs known so far). */
+export function songsHead(albums: string, rows: { all: number | null; ticked: number }[]): string {
+	const known = rows.filter((r) => r.all !== null && r.all > 0);
+	if (!known.length) return albums;
+	const all = known.reduce((n, r) => n + (r.all ?? 0), 0);
+	const kept = known.reduce((n, r) => n + r.ticked, 0);
+	const words = kept === all ? `${all} song${all === 1 ? '' : 's'}` : `${kept} of ${all} songs`;
+	return albums ? `${albums} · ${words}` : words;
 }

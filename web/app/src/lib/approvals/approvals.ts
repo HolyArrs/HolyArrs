@@ -17,8 +17,8 @@ export interface DecideOptions {
 	/** Single episodes kept in partly ticked seasons. */
 	episodes?: { season: number; episodes: number[] }[];
 	albums?: string[];
-	/** Songs kept in partly ticked albums. */
-	tracks?: { album: string; tracks: number[] }[];
+	/** Songs kept in partly ticked albums (recording ids). */
+	songs?: { album: string; recordings: string[] }[];
 }
 import { detailPath } from '../title-details.ts';
 

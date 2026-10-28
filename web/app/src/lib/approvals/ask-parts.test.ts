@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { albumCounts, albumGroups, askAlbums, askSeasons, albumsHead, askedWords, picksChanged, picksHead, seasonPick, baseName, keptByDefault, keptWords, type ArtistAlbum } from './ask-parts.ts';
+import { albumCounts, albumGroups, askAlbums, askSeasons, askedWords, songsHead, picksChanged, picksHead, seasonPick, baseName, keptByDefault, keptWords, type ArtistAlbum } from './ask-parts.ts';
 
 const al = (mbid: string, name: string, date: string, extra: Partial<ArtistAlbum> = {}): ArtistAlbum => ({ mbid, name, type: 'album', secondary_types: [], release_date: date, shelf: 'albums', image: `/art/${mbid}`, ...extra });
 
@@ -79,10 +79,9 @@ describe('episode ticks', () => {
 	});
 });
 describe('song ticks', () => {
-	it('sums albums and songs', () => {
-		expect(albumsHead(3, 3, 0, 0)).toBe('All 3 albums');
-		expect(albumsHead(2, 3, 0, 0)).toBe('2 of 3 albums');
-		expect(albumsHead(2, 3, 5, 1)).toBe('2 albums + 5 songs');
-		expect(albumsHead(0, 3, 4, 1)).toBe('4 songs from 1 album');
+	it('adds song totals', () => {
+		expect(songsHead('6 albums', [{ all: 12, ticked: 12 }, { all: 10, ticked: 10 }])).toBe('6 albums · 22 songs');
+		expect(songsHead('6 albums', [{ all: 12, ticked: 9 }, { all: null, ticked: 0 }])).toBe('6 albums · 9 of 12 songs');
+		expect(songsHead('6 albums', [{ all: null, ticked: 0 }])).toBe('6 albums');
 	});
 });

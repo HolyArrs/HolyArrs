@@ -49,11 +49,11 @@
 	});
 	const waiting = $derived(ctx.approver && a.state === 'asked' && !ctx.isPending(a.id));
 	const ruleWords = $derived(rulesId ? (rules.find((r) => r.id === rulesId)?.name ?? 'Default rule') : 'Default rule');
-	const some = $derived(!!(parts.seasons || parts.episodes || parts.albums || parts.tracks));
+	const some = $derived(!!(parts.seasons || parts.episodes || parts.albums || parts.songs));
 	function approve(e: SubmitEvent) {
 		e.preventDefault();
 		if (parts.empty) return;
-		ctx.approveWith(a, { rulesId, langs: [], note: note.trim(), ...(parts.seasons ? { seasons: parts.seasons } : {}), ...(parts.episodes ? { episodes: parts.episodes } : {}), ...(parts.albums ? { albums: parts.albums } : {}), ...(parts.tracks ? { tracks: parts.tracks } : {}) });
+		ctx.approveWith(a, { rulesId, langs: [], note: note.trim(), ...(parts.seasons ? { seasons: parts.seasons } : {}), ...(parts.episodes ? { episodes: parts.episodes } : {}), ...(parts.albums ? { albums: parts.albums } : {}), ...(parts.songs ? { songs: parts.songs } : {}) });
 	}
 </script>
 

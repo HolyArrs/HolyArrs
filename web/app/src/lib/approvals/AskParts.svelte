@@ -9,8 +9,8 @@
 	import { DUR, easeOut } from '../ui/transitions.ts';
 	import Icon from '#lib/Icon.svelte';
 	import { appPicture } from '../music/music-pages.ts';
-	import { albumCounts, albumGroups, albumsHead, askAlbums, askSeasons, askedWords, picksChanged, picksHead, seasonPick, type PartsPick, type SeasonPick } from './ask-parts.ts';
-	import { albumTracks, askArtist, musicKinds, type AlbumTrack } from './details.svelte.ts';
+	import { albumCounts, albumGroups, songsHead, askAlbums, askSeasons, askedWords, picksChanged, picksHead, seasonPick, type PartsPick, type SeasonPick } from './ask-parts.ts';
+	import { albumSongs, artistIdOf, askArtist, musicKinds, songKey, type AlbumSong } from './details.svelte.ts';
 	import type { ApprovalsCtx } from './approvals.ts';
 	import type { Ask } from '../types.ts';
 
@@ -45,7 +45,7 @@
 			pick = {
 				seasons: null,
 				albums: changed && kept.length ? kept.flatMap((p) => p.row.ids) : null,
-				tracks: partly.length ? partly.map((p) => ({ album: p.row.main.mbid, tracks: p.ticked })) : null,
+				songs: partly.length ? partly.map((p) => ({ album: p.row.main.mbid, recordings: p.ticked })) : null,
 				empty: rows.length > 0 && kept.length === 0
 			};
 		} else {
@@ -62,18 +62,19 @@
 	});
 
 	// The approver's song ticks, by album row (absent: every song); only albums in the Library have stored songs.
-	let songTicks = $state<Record<string, number[]>>({});
+	let songTicks = $state<Record<string, string[]>>({});
 	let openAlbum = $state('');
 	$effect(() => {
 		void a.id;
 		songTicks = {};
 	});
-	type AlbumPick = { row: (typeof rows)[number]; list: AlbumTrack[] | null; ticked: number[]; tick: 'all' | 'some' | 'none' };
+	type AlbumPick = { row: (typeof rows)[number]; list: AlbumSong[] | null; ticked: string[]; tick: 'all' | 'some' | 'none' };
+	// Songs load for every asked album once the panel shows the ask (3 at a time), so the counts are ready.
+	const artistId = $derived(music ? artistIdOf(a) : '');
 	const albumPicks = $derived(
 		rows.map((r): AlbumPick => {
-			const id = r.main.part_id ?? 0;
-			const list = id && (openAlbum === r.key || songTicks[r.key]) ? albumTracks(id) : null;
-			const all = list?.map((t) => t.id) ?? [];
+			const list = albumSongs(r.main.mbid, artistId);
+			const all = list?.map(songKey) ?? [];
 			if (left.has(r.key)) return { row: r, list, ticked: [], tick: 'none' };
 			const t = songTicks[r.key]?.filter((x) => all.includes(x));
 			if (!list || !t) return { row: r, list, ticked: all, tick: 'all' };
@@ -89,7 +90,7 @@
 		else l.delete(p.row.key);
 		left = l;
 	}
-	function tickSong(p: AlbumPick, id: number) {
+	function tickSong(p: AlbumPick, id: string) {
 		const base = p.tick === 'none' ? [] : p.ticked;
 		const t = base.includes(id) ? base.filter((x) => x !== id) : [...base, id];
 		songTicks = { ...songTicks, [p.row.key]: t };
@@ -130,10 +131,8 @@
 		if (music) {
 			if (albumsLoading) return 'Loading the albums…';
 			if (!rows.length) return a.album_words ? a.album_words[0].toUpperCase() + a.album_words.slice(1) : 'Every album';
-			const partly = albumPicks.filter((p) => p.tick === 'some');
-			if (!left.size && !partly.length) return albumCounts(rows);
-			const whole = albumPicks.filter((p) => p.tick === 'all').length;
-			return albumsHead(whole, rows.length, partly.reduce((n, p) => n + p.ticked.length, 0), partly.length);
+			const kept = albumPicks.filter((p) => p.tick !== 'none');
+			return songsHead(albumCounts(left.size ? kept.map((p) => p.row) : rows), albumPicks.map((p) => ({ all: p.list?.length ?? null, ticked: p.ticked.length })));
 		}
 		return picksHead(picks);
 	});
@@ -163,22 +162,22 @@
 									{#if r.editions.length}
 										<button type="button" class="more" aria-expanded={openEditions === r.key} onclick={() => (openEditions = openEditions === r.key ? '' : r.key)}>{r.editions.length + 1} editions</button>
 									{/if}
-									<span class="y">{p.tick === 'some' ? `${p.ticked.length} of ${p.list?.length ?? 0} songs` : (r.main.year ?? '')}</span>
+									<span class="y">{p.list?.length ? (p.tick === 'all' ? `${p.list.length} songs` : `${p.ticked.length} of ${p.list.length}`) + (r.main.year ? ` · ${r.main.year}` : '') : (r.main.year ?? '')}</span>
 									<button type="button" class="open" aria-expanded={openAlbum === r.key} aria-label="Songs of {r.main.name}" onclick={() => (openAlbum = openAlbum === r.key ? '' : r.key)}><span class="chev" class:up={openAlbum === r.key}><Icon name="chevronDown" size={14} /></span></button>
 								</div>
 								{#if openAlbum === r.key}
 									<div transition:slide={slideIn()}>
-										{#if !r.main.part_id || (p.list && !p.list.length)}
-											<p class="hint" data-testid="songs-later">Songs load when the album is added.</p>
-										{:else if p.list === null}
+										{#if p.list === null}
 											<p class="hint">Loading the songs…</p>
+										{:else if !p.list.length}
+											<p class="hint" data-testid="songs-none">No song list for this album yet.</p>
 										{:else}
 											<ol class="eps" aria-label="Songs of {r.main.name}">
-												{#each p.list as t (t.id)}
-													{@const on = p.ticked.includes(t.id)}
+												{#each p.list as t (songKey(t))}
+													{@const on = p.ticked.includes(songKey(t))}
 													<li class:off={!on} data-testid="ask-song">
 														<label class="ep">
-															{#if editable}<input class="tick" type="checkbox" checked={on} aria-label="Song {t.number}" onchange={() => tickSong(p, t.id)} />{/if}
+															{#if editable}<input class="tick" type="checkbox" checked={on} aria-label="Song {t.number}" onchange={() => tickSong(p, songKey(t))} />{/if}
 															<span class="n">{t.disc > 1 ? `${t.disc}-` : ''}{t.number}</span>
 															<span class="t">{t.name || `Track ${t.number}`}</span>
 															<span class="y">{songLen(t.length_ms)}</span>
