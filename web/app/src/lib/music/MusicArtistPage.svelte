@@ -964,21 +964,17 @@
 	.quiet { margin: 0; color: var(--text-muted); font: var(--t-subhead); }
 
 	/* The short banner (dark in both themes): the wide photo or the music video. It zooms out from 1.1 and darkens as it leaves. */
-	.hero { --hero-ink: #07080a; position: relative; isolation: isolate; overflow: hidden; display: flex; align-items: flex-end; height: clamp(280px, 44vh, 520px); transition: background-color var(--dur-slow) var(--ease-out); margin: calc(var(--s-6) * -1) calc(var(--gutter) * -1) 0; background: var(--hero-ink); color: #fff; }
-	.stage { position: absolute; inset: 0; z-index: -2; scale: calc(1.1 - .1 * var(--gone, 0)); transform-origin: 50% 40%; will-change: scale; -webkit-mask-image: linear-gradient(to bottom, #000 35%, rgb(0 0 0 / .7) 50%, rgb(0 0 0 / .3) 65%, rgb(0 0 0 / .08) 75%, transparent 82%); mask-image: linear-gradient(to bottom, #000 35%, rgb(0 0 0 / .7) 50%, rgb(0 0 0 / .3) 65%, rgb(0 0 0 / .08) 75%, transparent 82%); }
-	.hero.full .stage { -webkit-mask-image: none; mask-image: none; }
+	.hero { --hero-ink: #07080a; position: relative; isolation: isolate; overflow: hidden; display: flex; align-items: flex-end; height: clamp(280px, 44vh, 520px); transition: background-color var(--dur-slow) var(--ease-out); -webkit-mask-image: linear-gradient(to bottom, #000 55%, rgb(0 0 0 / .82) 68%, rgb(0 0 0 / .5) 80%, rgb(0 0 0 / .18) 91%, transparent 100%); mask-image: linear-gradient(to bottom, #000 55%, rgb(0 0 0 / .82) 68%, rgb(0 0 0 / .5) 80%, rgb(0 0 0 / .18) 91%, transparent 100%); margin: calc(var(--s-6) * -1) calc(var(--gutter) * -1) 0; background: var(--hero-ink); color: #fff; }
+	.stage { position: absolute; inset: 0; z-index: -2; scale: calc(1.1 - .1 * var(--gone, 0)); transform-origin: 50% 40%; will-change: scale; }
 	.art { width: 100%; height: 100%; object-fit: cover; object-position: center 22%; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); }
 	.art.in { opacity: .82; }
 	.art.soft { filter: blur(56px) saturate(150%); transform: scale(1.3); }
 	.art.soft.in { opacity: .6; }
-	.shade { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(to top, var(--hero-ink) 0%, var(--hero-ink) 12%, color-mix(in srgb, var(--hero-ink) 75%, transparent) 30%, color-mix(in srgb, var(--hero-ink) 35%, transparent) 50%, transparent 72%), linear-gradient(to bottom, rgb(7 8 10 / .4), rgb(7 8 10 / 0) 30%); }
+	.shade { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(to top, color-mix(in srgb, var(--hero-ink) 60%, transparent) 0%, color-mix(in srgb, var(--hero-ink) 25%, transparent) 35%, transparent 60%), linear-gradient(to bottom, rgb(7 8 10 / .4), rgb(7 8 10 / 0) 30%); }
 	.dim { position: absolute; inset: 0; z-index: -1; background: var(--hero-ink); opacity: calc(var(--gone, 0) * .85); pointer-events: none; }
 	.hero.bare { background: linear-gradient(180deg, color-mix(in srgb, var(--hero-ink) 60%, #3a3d44), var(--hero-ink)); }
 	@media (prefers-reduced-motion: reduce) { .stage { scale: 1; } }
 	/* The video covers the banner at the same size; paused, it hides and the banner shows again. */
-	/* The video carries the same bottom fade itself (a playing video can skip its parent's mask). */
-	.clip { -webkit-mask-image: linear-gradient(to bottom, #000 35%, rgb(0 0 0 / .7) 50%, rgb(0 0 0 / .3) 65%, rgb(0 0 0 / .08) 75%, transparent 82%); mask-image: linear-gradient(to bottom, #000 35%, rgb(0 0 0 / .7) 50%, rgb(0 0 0 / .3) 65%, rgb(0 0 0 / .08) 75%, transparent 82%); }
-	.hero.full .clip { -webkit-mask-image: none; mask-image: none; }
 	.clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); pointer-events: none; }
 	.clip.in { opacity: 1; }
 	.art.under { opacity: 0; transition-duration: 900ms; }
@@ -991,7 +987,7 @@
 	.vctl button:hover, .vexit:hover { background: rgb(255 255 255 / 26%); }
 	.vctl button:focus-visible, .vexit:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 	/* Full screen: the video alone, fit whole on black, with exit, pause and sound. */
-	.hero.full { height: auto; background: #000; }
+	.hero.full { height: auto; background: #000; -webkit-mask-image: none; mask-image: none; }
 	.hero.full .stage { scale: 1; }
 	.hero.full .art, .hero.full .shade, .hero.full .dim { display: none; }
 	.hero.full .clip { object-fit: contain; background: #000; }
