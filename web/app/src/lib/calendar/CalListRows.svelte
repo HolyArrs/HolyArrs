@@ -96,6 +96,13 @@
 <style>
 	.lr { --rh: 56px; --stick: var(--topbar); container-type: inline-size; display: flex; flex-direction: column; gap: 14px; }
 	:global(.cal-body.barred) .lr { --stick: calc(var(--topbar) + 56px); }
+	/* When the top bar slides away the slim bar goes up with it, so the day headers follow
+	   (else rows show through the gap above them). Phones keep their bars put. */
+	@media (min-width: 641px) {
+		:global(html.bar-hidden) .lr { --stick: 0px; }
+		:global(html.bar-hidden .cal-body.barred) .lr { --stick: 53px; }
+		.dh { transition: top var(--bar-glide); }
+	}
 	.day { min-width: 0; }
 	.rws { list-style: none; margin: 0; padding: 0; }
 	/* Day header: sticky and slim, shared by all three. */
