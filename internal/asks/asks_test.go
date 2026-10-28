@@ -685,3 +685,32 @@ func TestApproveWithAudioLanguages(t *testing.T) {
 		t.Fatalf("audio %v", v.AudioLanguages)
 	}
 }
+
+func TestApproveLeavesAnExistingTitlesAudioAlone(t *testing.T) {
+	r := newRig(t)
+	ctx := context.Background()
+	res, err := r.svc.Ask(ctx, r.ana, "693134")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Someone adds the movie by hand while the ask waits.
+	tid, _, err := r.svc.Library.Add(ctx, movie("Dune: Part Two", 2024, "693134"), library.AddOptions{}, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := r.svc.Approve(ctx, res.Ask.ID, r.luis, ApproveOptions{AudioLanguages: []string{"ja"}})
+	if err != nil || got.TitleID == nil || *got.TitleID != tid {
+		t.Fatalf("approve %+v %v", got, err)
+	}
+	var v domain.Version
+	if err := r.st.Read().QueryRowContext(ctx, "SELECT id FROM versions WHERE title_id = ? AND is_main = 1", tid).Scan(&v.ID); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Get(ctx, r.st.Read(), "versions", v.ID, &v); err != nil {
+		t.Fatal(err)
+	}
+	// Changing a title already in the Library is a Library edit: the approval leaves it as it was.
+	if len(v.AudioLanguages) != 0 {
+		t.Fatalf("audio %v", v.AudioLanguages)
+	}
+}

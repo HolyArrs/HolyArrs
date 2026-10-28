@@ -604,6 +604,20 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 	if err != nil {
 		return a, err
 	}
+	// The audio languages only go on a title this approval adds: changing a
+	// title already in the Library is a Library edit, not an approval.
+	if len(opt.AudioLanguages) > 0 {
+		var had int64
+		var herr error
+		if a.Kind == "show" {
+			had, herr = library.ShowByIDs(ctx, db, a.SourceIDs)
+		} else {
+			had, herr = library.TitleByTMDB(ctx, db, a.TMDBID)
+		}
+		if herr != nil || had != 0 {
+			opt.AudioLanguages = nil
+		}
+	}
 	var tid int64
 	switch a.Kind {
 	case "show":
@@ -622,7 +636,7 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 		}
 		return before, err
 	}
-	if len(opt.AudioLanguages) > 0 {
+	if len(opt.AudioLanguages) > 0 { // only for a title this approval added (see above)
 		if err := s.setAudio(ctx, tid, opt.AudioLanguages, by); err != nil {
 			log.Printf("asks: audio languages of ask %d: %v", id, err)
 		}
