@@ -70,6 +70,7 @@ export interface AskArtist {
 }
 const artists = $state<Record<string, AskArtist>>({});
 const askedArtists = new Set<string>();
+const empty: AskArtist = { image: null, backgrounds: [], albums: null };
 let kinds = $state<MusicKinds>(musicDefaults);
 let kindsAsked = false;
 
@@ -91,17 +92,18 @@ export function askArtist(a: Pick<Ask, 'kind' | 'ref' | 'artist_id'>): AskArtist
 	if (!id) return null;
 	if (!askedArtists.has(id)) {
 		askedArtists.add(id);
-		artists[id] = { image: null, backgrounds: [], albums: null };
+		// Read inside the page's derived values: the store is only written once an answer lands.
+		const cur = () => artists[id] ?? empty;
 		api
 			.get<ArtistCoreData>(`/music/artists/${encodeURIComponent(id)}?part=core`)
-			.then((c) => (artists[id] = { ...artists[id], image: appPicture(c.image), albums: (c.albums ?? []).map((x) => ({ ...x, image: appPicture(x.image) ?? '' })) }))
-			.catch(() => (artists[id] = { ...artists[id], albums: [] }));
+			.then((c) => (artists[id] = { ...cur(), image: appPicture(c.image), albums: (c.albums ?? []).map((x) => ({ ...x, image: appPicture(x.image) ?? '' })) }))
+			.catch(() => (artists[id] = { ...cur(), albums: [] }));
 		api
 			.get<{ backgrounds?: string[] }>(`/extras/artist/${encodeURIComponent(id)}`)
-			.then((x) => (artists[id] = { ...artists[id], backgrounds: (x.backgrounds ?? []).map((u) => (u.startsWith('/') ? (appPicture(u) ?? u) : u)) }))
+			.then((x) => (artists[id] = { ...cur(), backgrounds: (x.backgrounds ?? []).map((u) => (u.startsWith('/') ? (appPicture(u) ?? u) : u)) }))
 			.catch(() => {});
 	}
-	return artists[id] ?? null;
+	return artists[id] ?? empty;
 }
 
 /** musicKinds is the album kinds a whole-artist ask takes (the music add defaults; the built-in ones until known). */

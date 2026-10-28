@@ -24,6 +24,8 @@ describe('album rows', () => {
 		expect(rows[0].ids).toEqual(['a', 'b', 'c']);
 		expect(rows[0].editions.map((e) => e.year)).toEqual([2013, 2022]);
 		expect(albumCounts(rows)).toBe('2 albums · 1 single or EP · 1 live album');
+		// A live recording without the live mark still counts as live.
+		expect(albumCounts(albumGroups([al('g', 'Live at Lowlands, 2015', '2016'), al('h', 'Night (Live)', '2017')]))).toBe('2 live albums');
 	});
 	it('takes what the music defaults take for a whole-artist ask', () => {
 		expect(keptByDefault({ type: 'album', secondary_types: [] })).toBe(true);
