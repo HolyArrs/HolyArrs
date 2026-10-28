@@ -91,12 +91,14 @@
 					{#if e.kind === 'album' && src}<img class="ep-cover" src={sized(src, 'poster', 300)} alt="" />{/if}
 				</div>
 			{/if}
-			<p class="ep-when">{epLines[0]}{#if isEp && groupTag(g)}{' · '}{groupTag(g)}{/if}</p>
+			<p class="ep-when">{lines[0]}{#if isEp && groupTag(g)}{' · '}{groupTag(g)}{/if}</p>
 			{#if isEp}
 				{#each g.entries as x (x.item_id ?? x.episode)}
 					{@const t = epText(x.tmdb, x.season, x.episode)}
+					{@const named = !!x.episode_name && !/^Episode \d+$/.test(x.episode_name)}
 					<div class="ep-one">
-						<h3 class="ep-name">{epCode([x])}{#if x.episode_name && !/^Episode \d+$/.test(x.episode_name)}{' · '}{x.episode_name}{/if}</h3>
+						<p class="ep-num">Season {x.season}, Episode {x.episode}</p>
+						{#if named}<h3 class="ep-name">{x.episode_name}</h3>{/if}
 						{#if t}<p class="ep-text">{t}</p>{:else}<p class="ep-text none">No description yet.</p>{/if}
 					</div>
 				{/each}
@@ -148,6 +150,7 @@
 	.ep-cover { position: absolute; left: 50%; top: 50%; translate: -50% -50%; height: 76%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; box-shadow: 0 8px 24px rgb(0 0 0 / .5); }
 	.ep-when { margin: 0; color: var(--text); font: var(--t-subhead); font-weight: 700; font-variant-numeric: tabular-nums; }
 	.ep-one { display: flex; flex-direction: column; gap: 4px; }
+	.ep-num { margin: 0; color: var(--text-muted); font: var(--t-footnote); font-weight: 600; }
 	.ep-name { margin: 0; font: var(--t-headline); }
 	.ep-text { margin: 0; color: var(--text-muted); font: var(--t-body); }
 	.ep-text.none { opacity: .7; }
