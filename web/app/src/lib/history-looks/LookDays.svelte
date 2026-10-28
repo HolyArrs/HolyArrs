@@ -23,8 +23,9 @@
 	import { reducedMotion } from '../motion.ts';
 	import { DUR, easeIn, easeOut } from '../ui/transitions.ts';
 	import { details, type HistoryFilter, type HistoryRow } from '../history.ts';
-	import { artOf, burstLine, byWhom, clock, dayLabel, headVerb, rowTier, titleHref, verbOf } from '../history-views.ts';
-	import { byDay, dayItems, dayLine, rowWhy, whenShort, type ArtSize } from '../history-looks.ts';
+	import { artOf, burstLine, byWhom, clock, dayLabel, rowTier, titleHref } from '../history-views.ts';
+	import { byDay, dayItems, dayLine, whenShort, type ArtSize } from '../history-looks.ts';
+	import { eventText, rowText, type LineContext, type RowText } from '../history-lines.ts';
 	import type { EventPage, EventRecord, TitleView } from '../types.ts';
 
 	let {
@@ -37,7 +38,9 @@
 		wide,
 		panel = $bindable(true),
 		panelId,
-		episodeName = $bindable('')
+		episodeName = $bindable(''),
+		people,
+		me
 	}: {
 		filter: HistoryFilter;
 		kinds: string[] | undefined;
@@ -52,7 +55,12 @@
 		panelId: string;
 		/** With an episode filter: the episode, named by the server. */
 		episodeName?: string;
+		/** Member names by id, for "Added to the Library by Maya". */
+		people?: Map<number, string>;
+		/** The signed-in member. */
+		me?: number;
 	} = $props();
+	const ctx = $derived<LineContext>({ titles: titleById, people, me });
 
 	const SIZE = 200;
 	const feed = new EventFeed(SIZE);
@@ -136,19 +144,24 @@
 	}
 </script>
 
+{#snippet words(w: RowText)}
+	<span class="l1">
+		<span class="what"><span class="nm" data-testid="history-title">{w.name}</span>{#each w.bits as b, i (i)}<span class="bit" data-testid={b.kind === 'episode' && i === 0 ? 'history-episode' : b.kind === 'version' ? 'history-version' : undefined}>{` · ${b.text}`}</span>{/each}</span>
+		<StateDot verb={w.tag} />
+	</span>
+	<span class="l2">{w.line}</span>
+{/snippet}
+
 {#snippet line(r: HistoryRow)}
 	{@const e = r.head}
-	{@const v = headVerb(r)}
+	{@const w = rowText(r, ctx)}
 	{@const t = titleById.get(e.TitleID ?? 0)}
 	{@const on = split && picked?.key === r.key}
-	<button type="button" class="hit {v.tone}" class:on data-key={r.key} data-testid="history-row" data-kind={e.Kind} data-steps={r.steps.length ? r.events.length : undefined} aria-current={on ? 'true' : undefined} aria-controls={wide ? panelId : undefined} onclick={() => choose(r)}>
+	<button type="button" class="hit {w.tag.tone}" class:on data-key={r.key} data-testid="history-row" data-kind={e.Kind} data-steps={r.steps.length ? r.events.length : undefined} aria-current={on ? 'true' : undefined} aria-controls={wide ? panelId : undefined} onclick={() => choose(r)}>
 		<time class="clk" datetime={e.At}>{clock(e.At)}</time>
 		<span class="node" aria-hidden="true"><i></i></span>
 		<span class="post" class:square={t?.kind === 'artist'}>{#if e.title_name}<Poster src={artOf(e, titleById)} name={e.title_name} />{:else}<span class="sys"><Icon name="settings" size={14} /></span>{/if}</span>
-		<span class="tx">
-			<span class="top"><span class="nm" data-testid="history-title">{e.title_name ?? 'HolyArrs'}{#if e.episode}<span class="ep" data-testid="history-episode">{` ${e.episode}`}</span>{/if}{#if e.version}<span class="ep" data-testid="history-version">{` · ${e.version}`}</span>{/if}</span><StateDot verb={v} /></span>
-			<span class="sum">{rowWhy(r) || e.Summary}</span>
-		</span>
+		<span class="tx">{@render words(w)}</span>
 	</button>
 {/snippet}
 
@@ -173,7 +186,10 @@
 										<time class="clk" datetime={it.rows[0].head.At}>{clock(it.rows[0].head.At)}</time>
 										<span class="node" aria-hidden="true"><i></i></span>
 										<span class="qn">{it.rows.length}</span>
-										<span class="tx"><span class="sum q">{burstLine(it.rows.flatMap((r) => r.events), titleById)}</span></span>
+										<span class="tx">
+											<span class="l1"><span class="what"><span class="nm">Routine work</span><span class="bit">{` · ${it.rows.length} updates`}</span></span></span>
+											<span class="l2">{burstLine(it.rows.flatMap((r) => r.events), titleById)}</span>
+										</span>
 										<span class="chev" class:on aria-hidden="true"><Icon name="chevronDown" size={16} /></span>
 									</button>
 									{#if on}
@@ -193,7 +209,7 @@
 			<aside class="pane" id={panelId} aria-label="Details" data-testid="look-pane" hidden={!panel ? true : undefined} inert={!panel}>
 				{#if picked}
 					{@const e = picked.head}
-					{@const v = headVerb(picked)}
+					{@const w = rowText(picked, ctx)}
 					{@const t = titleById.get(e.TitleID ?? 0)}
 					{@const href = titleHref(e.TitleID, titleById)}
 					{#key picked.key}
@@ -201,10 +217,10 @@
 							<div class="ph">
 								{#if e.title_name}<span class="part" class:square={t?.kind === 'artist'}><Poster src={artOf(e, titleById)} name={e.title_name} /></span>{/if}
 								<div class="pw">
-									<VerbMark verb={v} />
-									<h2 class="pt">{e.title_name ?? 'HolyArrs'}</h2>
-									{#if e.episode || e.version}<p class="psub">{[e.episode, e.version].filter(Boolean).join(' · ')}</p>{/if}
-									<p class="psum">{e.Summary}</p>
+									<VerbMark verb={w.tag} />
+									<h2 class="pt">{w.name}</h2>
+									{#if w.bits.length}<p class="psub">{w.bits.map((b) => b.text).join(' · ')}</p>{/if}
+									<p class="psum">{w.line}</p>
 								</div>
 							</div>
 							{#if picked.steps.length}
@@ -222,9 +238,10 @@
 								<ol class="trail" data-testid="history-trail">
 									{#each picked.events as s (s.ID)}
 										{@const why = details(s)}
+										{@const sw = eventText(s, ctx)}
 										<li>
-											<div class="tl"><StateDot verb={verbOf(s.Kind)} /><time datetime={s.At} title={dateTime(s.At)}>{whenShort(s.At)}</time></div>
-											<p class="ts">{s.Summary}</p>
+											<div class="tl"><StateDot verb={sw.tag} /><time datetime={s.At} title={dateTime(s.At)}>{whenShort(s.At)}</time></div>
+											<p class="ts">{sw.line}</p>
 											{#if why.length}<dl class="facts small">{#each why as [k, val], i (i)}<dt>{k}</dt><dd class="mono">{val}</dd>{/each}</dl>{/if}
 										</li>
 									{/each}
@@ -234,7 +251,8 @@
 								<h3 class="h">Also for {e.title_name}</h3>
 								<ol class="also">
 									{#each others as o (o.ID)}
-										<li><StateDot verb={verbOf(o.Kind)} /><span class="as">{o.Summary}</span><time datetime={o.At}>{whenShort(o.At)}</time></li>
+										{@const ow = eventText(o, ctx)}
+										<li><StateDot verb={ow.tag} /><span class="as">{ow.line}</span><time datetime={o.At}>{whenShort(o.At)}</time></li>
 									{/each}
 								</ol>
 							{/if}
@@ -248,13 +266,13 @@
 	</div>
 </LookFrame>
 
-{#if !wide}<EventSheet bind:row={sheet} {titleById} />{/if}
+{#if !wide}<EventSheet bind:row={sheet} {titleById} {people} {me} />{/if}
 
 <style>
 	/* Poster size: one set of measures per size, used by every row. */
-	.split { --clk: 64px; --art: 26px; --row: 52px; --pane: 0px; --gap: 0px; }
-	.size-s { --art: 18px; --row: 40px; }
-	.size-l { --art: 56px; --row: 96px; }
+	.split { --clk: 64px; --art: 56px; --row: 96px; --pane: 0px; --gap: 0px; }
+	.size-s { --art: 26px; --row: 52px; }
+	.size-l { --art: 88px; --row: 140px; }
 	.split.wide.on { --pane: 380px; --gap: 16px; }
 	.split { display: grid; grid-template-columns: minmax(0, 1fr) var(--pane); column-gap: var(--gap); align-items: start; transition: grid-template-columns var(--dur-base) var(--ease-out), column-gap var(--dur-base) var(--ease-out); }
 
@@ -282,32 +300,31 @@
 	.post.square { --poster-ratio: 1; }
 	.post :global(.poster) { border-radius: 4px; }
 	.sys { display: grid; place-items: center; width: var(--art); aspect-ratio: 2 / 3; border-radius: 4px; background: var(--surface-2); color: var(--text-muted); }
-	.tx { display: flex; flex-direction: column; gap: 1px; min-width: 0; grid-column: 4 / -1; }
-	.top { display: flex; align-items: center; gap: 10px; min-width: 0; font: var(--t-footnote); }
-	.nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font: var(--t-callout); font-weight: 600; }
-	.top :global(.st) { flex: none; }
-	.ep { color: var(--text-muted); font-weight: 400; }
-	.sum { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: var(--t-footnote); }
+	/* Two lines at every size: what it is (with its tag), then what happened. */
+	.tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; grid-column: 4 / -1; }
+	.l1 { display: flex; align-items: center; gap: 10px; min-width: 0; font: var(--t-footnote); }
+	.what { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: var(--t-callout); }
+	.nm { color: var(--text); font-weight: 600; }
+	.bit { font-variant-numeric: tabular-nums; }
+	.l1 :global(.st) { flex: none; }
+	.l2 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: var(--t-footnote); }
 	.quiet .nm { color: var(--text-muted); font-weight: 500; }
-	/* Small: one line per row, the reason after the name. */
-	.size-s .tx { flex-direction: row; align-items: center; gap: 10px; }
-	.size-s .top { flex: 0 1 auto; }
-	.size-s .sum { flex: 1 1 0; }
-	.size-s .post :global(.poster), .size-s .sys { border-radius: 3px; }
-	.size-s .sys :global(svg) { width: 10px; height: 10px; }
-	/* Large: the poster leads, the reason may take two lines. */
-	.size-l .hit { gap: 14px; padding: 8px 12px; }
-	.size-l .rail::before { left: calc(4px + 12px + var(--clk) + 14px + 5px); }
+	/* Medium and Large: roomier rows, bigger words. */
+	.size-m .hit, .size-l .hit { gap: 14px; padding: 8px 12px; }
+	.size-m .rail::before, .size-l .rail::before { left: calc(4px + 12px + var(--clk) + 14px + 5px); }
+	.size-m .post :global(.poster), .size-m .sys { border-radius: 6px; }
 	.size-l .post :global(.poster), .size-l .sys { border-radius: 8px; }
-	.size-l .tx { gap: 4px; }
-	.size-l .nm { font: var(--t-headline); }
-	.size-l .sum { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; font: var(--t-callout); }
+	.size-m .tx { gap: 4px; }
+	.size-m .what { font: var(--t-headline); }
+	.size-m .l2 { font: var(--t-callout); }
+	.size-l .tx { gap: 6px; }
+	.size-l .what { font: var(--t-title3); letter-spacing: var(--t-title3-track); }
+	.size-l .l1 { font: var(--t-callout); }
+	.size-l .l2 { font: var(--t-body); }
 	/* A folded run: the count where the poster goes, the line, a chevron. */
-	.hit.q { min-height: 44px; }
+	.hit.q { min-height: var(--row); }
 	.hit.q .tx { grid-column: 4; }
 	.qn { display: grid; place-items: center; justify-self: center; min-width: 22px; height: 22px; padding: 0 4px; border-radius: 6px; background: var(--surface-2); color: var(--text-muted); font: var(--t-caption); font-weight: 600; font-variant-numeric: tabular-nums; }
-	.sum.q { color: var(--text-muted); font: var(--t-callout); }
-	.size-l .sum.q { display: block; white-space: nowrap; }
 	.chev { display: grid; color: var(--text-faint); transition: transform var(--dur) var(--ease-out); }
 	.chev.on { transform: rotate(180deg); }
 	.inner { margin: 0 0 4px; padding: 0; list-style: none; }
@@ -357,15 +374,15 @@
 	@media (max-width: 1279px) { .split.wide.on { --pane: 340px; } }
 	@media (max-width: 767px) {
 		.split { --clk: 54px; }
-		.size-l { --art: 44px; --row: 80px; }
+		.size-m { --art: 48px; --row: 84px; }
+		.size-l { --art: 72px; --row: 116px; }
 		.rail::before { left: calc(4px + 8px + var(--clk) + 8px + 5px); }
-		.size-l .rail::before { left: calc(4px + 8px + var(--clk) + 10px + 5px); }
-		.hit { gap: 8px; padding: 6px 8px; min-height: max(var(--row), 48px); }
-		.size-l .hit { gap: 10px; padding: 8px; }
-		.top { flex-direction: column; align-items: stretch; gap: 1px; }
-		.top :global(.st) { align-self: flex-start; flex: initial; }
-		.size-s .top { flex-direction: row; align-items: center; gap: 8px; }
-		.size-s .sum { display: none; }
+		.size-m .rail::before, .size-l .rail::before { left: calc(4px + 8px + var(--clk) + 10px + 5px); }
+		.hit { gap: 8px; padding: 6px 8px; min-height: max(var(--row), 52px); }
+		.size-m .hit, .size-l .hit { gap: 10px; padding: 8px; }
+		.l1 { gap: 8px; }
+		.size-l .what { font: var(--t-headline); }
+		.size-l .l2 { font: var(--t-callout); }
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.split, .hit, .chev, .dh, .pane, .pane[hidden] { transition: none; }

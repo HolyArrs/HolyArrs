@@ -240,8 +240,8 @@ test('the owner approves from a phone: the artist is added with that single and 
 
 	// History names who asked and who approved.
 	await own.goto('/downloads/history');
-	await expect(own.getByText('ivy asked for Moss Choir, Fern Hymns').first()).toBeVisible();
-	await expect(own.getByText(/Moss Choir, Fern Hymns: approved by luis/).first()).toBeVisible();
+	await expect(own.getByTestId('history-row').filter({ hasText: 'Moss Choir' }).filter({ hasText: 'Asked for by ivy' }).first()).toBeVisible();
+	await expect(own.getByTestId('history-row').filter({ hasText: 'Moss Choir' }).filter({ hasText: 'Approved by luis' }).first()).toBeVisible();
 
 	// ivy reads the message; members see no switches on the artist page.
 	await ivy.goto('/wishlist');

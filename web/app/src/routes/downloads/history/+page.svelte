@@ -62,6 +62,7 @@
 
 	// Poster size and the details panel: remembered per member.
 	let myId = $state<number | undefined>();
+	let people = $state<Map<number, string>>(new Map());
 	let size = $state<ArtSize>('m');
 	let panel = $state(true);
 	let ready = false;
@@ -97,6 +98,11 @@
 			.get<{ id?: number }>('/auth/me')
 			.then((me) => (myId = me.id))
 			.catch(() => {});
+		// Member names for "Added to the Library by Maya" (only admins may list them).
+		void api
+			.get<{ users: { id: number; name: string }[] }>('/users')
+			.then((r) => (people = new Map(r.users.map((u) => [u.id, u.name]))))
+			.catch(() => {});
 		return () => mq.removeEventListener('change', fit);
 	});
 </script>
@@ -119,7 +125,7 @@
 	</p>
 {/if}
 
-<LookDays filter={shownFilter} {kinds} {titleById} empty={tabEmpty} onall={show !== ALL ? showAll : undefined} {size} {wide} bind:panel {panelId} bind:episodeName />
+<LookDays filter={shownFilter} {kinds} {titleById} empty={tabEmpty} onall={show !== ALL ? showAll : undefined} {size} {wide} bind:panel {panelId} bind:episodeName {people} me={myId} />
 
 <style>
 	.episode { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: -6px 0 12px; color: var(--text-muted); font: var(--t-callout); }

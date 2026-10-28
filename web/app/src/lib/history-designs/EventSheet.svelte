@@ -6,34 +6,36 @@
 	import { to } from '#lib/paths.ts';
 	import { ago, dateTime } from '#lib/format.ts';
 	import { details, type HistoryRow } from '#lib/history.ts';
-	import { artOf, byWhom, headVerb, titleHref, verbOf } from '#lib/history-views.ts';
+	import { artOf, byWhom, titleHref } from '#lib/history-views.ts';
+	import { eventText, rowText, type LineContext } from '#lib/history-lines.ts';
 	import type { TitleView } from '#lib/types.ts';
 
 	// Everything about one History row in a side sheet (a bottom sheet on
 	// phones): the full text, who did it, the reasons and paths, every step
 	// of a download, and the way to the title.
-	let { row = $bindable(null), titleById }: { row: HistoryRow | null; titleById: Map<number, TitleView> } = $props();
+	let { row = $bindable(null), titleById, people, me }: { row: HistoryRow | null; titleById: Map<number, TitleView>; people?: Map<number, string>; me?: number } = $props();
+	const ctx = $derived<LineContext>({ titles: titleById, people, me });
 	let open = $state(false);
 	$effect(() => {
 		open = !!row;
 	});
 	const e = $derived(row?.head);
-	const verb = $derived(row ? headVerb(row) : null);
+	const words = $derived(row ? rowText(row, ctx) : null);
 	const href = $derived(titleHref(e?.TitleID, titleById));
 	const title = $derived(e?.TitleID ? titleById.get(e.TitleID) : undefined);
 </script>
 
-<Sheet bind:open title={e?.title_name ?? verb?.word ?? 'Event'} placement="right" size="md" onclose={() => (row = null)}>
-	{#if row && e && verb}
+<Sheet bind:open title={words?.name ?? 'Event'} placement="right" size="md" onclose={() => (row = null)}>
+	{#if row && e && words}
 		<div class="es" data-testid="hv-sheet">
 			<div class="head">
 				{#if e.TitleID && e.title_name}
 					<span class="art" class:square={title?.kind === 'artist'}><Poster src={artOf(e, titleById)} name={e.title_name} /></span>
 				{/if}
 				<div class="hw">
-					<VerbMark {verb} />
-					<p class="sum">{e.Summary}</p>
-					{#if e.episode || e.version}<p class="sub">{[e.episode, e.version].filter(Boolean).join(' · ')}</p>{/if}
+					<VerbMark verb={words.tag} />
+					{#if words.bits.length}<p class="sub">{words.bits.map((b) => b.text).join(' · ')}</p>{/if}
+					<p class="sum">{words.line}</p>
 				</div>
 			</div>
 			<dl class="facts">
@@ -46,9 +48,10 @@
 				<ol class="trail">
 					{#each row.events as step (step.ID)}
 						{@const why = details(step)}
+						{@const sw = eventText(step, ctx)}
 						<li>
-							<div class="t-line"><VerbMark verb={verbOf(step.Kind)} size="sm" /><time datetime={step.At} title={dateTime(step.At)}>{ago(step.At)}</time></div>
-							<p class="t-sum">{step.Summary}</p>
+							<div class="t-line"><VerbMark verb={sw.tag} size="sm" /><time datetime={step.At} title={dateTime(step.At)}>{ago(step.At)}</time></div>
+							<p class="t-sum">{sw.line}</p>
 							{#if why.length}<dl class="facts small">{#each why as [k, v], i (i)}<dt>{k}</dt><dd class="mono">{v}</dd>{/each}</dl>{/if}
 						</li>
 					{/each}

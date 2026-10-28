@@ -226,8 +226,8 @@ test('the owner approves from a phone: the show is added with those seasons and 
 
 	// History names who asked and who approved.
 	await own.goto('/downloads/history');
-	await expect(own.getByText('max asked for Lantern Street (2023), seasons 1 and 2').first()).toBeVisible();
-	await expect(own.getByText(/Lantern Street \(2023\), seasons 1 and 2: approved by luis/).first()).toBeVisible();
+	await expect(own.getByTestId('history-row').filter({ hasText: 'Lantern Street' }).filter({ hasText: 'Asked for by max' }).first()).toBeVisible();
+	await expect(own.getByTestId('history-row').filter({ hasText: 'Lantern Street' }).filter({ hasText: 'Approved by luis' }).first()).toBeVisible();
 
 	// max reads the message; members see no switches on the show page.
 	await max.goto('/wishlist');
