@@ -264,5 +264,11 @@ export function rowWords(g: CalGroup, look: CaptionLook, today: string): RowWord
  */
 export function cardLines(g: CalGroup, look: CaptionLook, today: string): string[] {
 	const w = rowWords(g, look, today);
+	// An episode card: the time, then one line "Season 4, Episode 3 · Its name" (two lines on every card, all alike).
+	if (g.lead.kind === 'episode') {
+		const e = g.lead;
+		const name = g.entries.length === 1 && !fakeEpisodeName(e.episode_name) ? (e.episode_name ?? '') : '';
+		return [w.when, [episodeWords(g.entries), name].filter(Boolean).join(' · ')];
+	}
 	return [w.when, ...(g.lead.kind === 'album' ? [w.title, ...w.lines.slice(1)] : w.lines)];
 }
