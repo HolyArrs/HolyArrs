@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, rangeChunks, titlesFromAddress, itemDot, oneMovieDate, movieFacts, mineOf, whoseOk, scopeOk, statusOk, showingOk, filtersFromAddress, type MovieFacts, byDay, feedLink, monthGrid, monthRange, shiftMonth, webcalLink, ymd, weekStart, shiftWeek, readView, saveView, startView, viewFromAddress, entryArt, entryIcon } from './calendar.ts';
+import { addDays, rangeChunks, titlesFromAddress, itemDot, oneMovieDate, movieFacts, followsOk, followerNames, withFollow, startFollows, readFollows, saveFollows, type MovieFacts, byDay, feedLink, monthGrid, monthRange, shiftMonth, webcalLink, ymd, weekStart, shiftWeek, readView, saveView, startView, viewFromAddress, entryArt, entryIcon } from './calendar.ts';
 import type { CalendarEntry } from './types.ts';
 
 const e = (title_id: number, kind: CalendarEntry['kind'], date: string): CalendarEntry => ({ title_id, name: `Movie ${title_id}`, kind, date });
@@ -117,31 +117,45 @@ describe('one date per movie', () => {
 	});
 });
 
-describe('filters tied to the app', () => {
-	const ep = (id: number, date: string, state?: string): CalendarEntry => ({ title_id: id, name: 'X', kind: 'episode', date, air_day: date, timed: false, state });
-	const mine = { asked: new Set([1]), followed: new Set([2]) };
-	it('reads mine, scope and status', () => {
-		expect(mineOf(ep(1, '2026-10-20'), mine)).toBe('asked');
-		expect(mineOf(ep(2, '2026-10-20'), mine)).toBe('followed');
-		expect(whoseOk(ep(3, '2026-10-20'), 'mine', mine)).toBe(false);
-		expect(whoseOk(ep(3, '2026-10-20'), 'everyone', mine)).toBe(true);
-		expect(scopeOk(ep(2, '2026-10-20'), 'asked', mine)).toBe(false);
-		expect(scopeOk(ep(2, '2026-10-20'), 'followed', mine)).toBe(true);
-		expect(statusOk(ep(3, '2026-10-20'), new Set(), '2026-10-21')).toBe(true);
-		expect(statusOk(ep(3, '2026-10-20'), new Set(['upcoming']), '2026-10-21')).toBe(false);
-		expect(statusOk(ep(3, '2026-10-20'), new Set(['missing']), '2026-10-21')).toBe(true);
+describe('follows', () => {
+	const ep = (id: number, extra: Partial<CalendarEntry> = {}): CalendarEntry => ({ title_id: id, name: 'X', kind: 'episode', date: '2026-10-20', air_day: '2026-10-20', ...extra });
+	const mineE = ep(1, { following: true, followers: [{ id: 1, name: 'luis', me: true }] });
+	const anaE = ep(2, { followers: [{ id: 2, name: 'Ana' }] });
+	const hiddenE = ep(3, { followers_hidden: 2 });
+	const noneE = ep(4);
+	it('shows what I follow, what anyone follows, or the whole Library', () => {
+		expect([mineE, anaE, hiddenE, noneE].filter((e) => followsOk(e, 'mine')).map((e) => e.title_id)).toEqual([1]);
+		expect([mineE, anaE, hiddenE, noneE].filter((e) => followsOk(e, 'everyone')).map((e) => e.title_id)).toEqual([1, 2, 3]);
+		expect([mineE, anaE, hiddenE, noneE].filter((e) => followsOk(e, 'library')).map((e) => e.title_id)).toEqual([1, 2, 3, 4]);
 	});
-	it('hides past dates already in the Library by default', () => {
-		expect(showingOk(ep(3, '2026-10-20', 'in_library'), 'matters', mine, '2026-10-21')).toBe(false);
-		expect(showingOk(ep(3, '2026-10-20'), 'matters', mine, '2026-10-21')).toBe(true);
-		expect(showingOk(ep(3, '2026-10-22', 'in_library'), 'matters', mine, '2026-10-21')).toBe(true);
-		expect(showingOk(ep(3, '2026-10-20', 'in_library'), 'all', mine, '2026-10-21')).toBe(true);
-		expect(showingOk(ep(3, '2026-10-22'), 'mine', mine, '2026-10-21')).toBe(false);
+	it('says who follows', () => {
+		expect(followerNames(mineE)).toBe('You');
+		expect(followerNames(hiddenE)).toBe('2 people');
+		expect(followerNames(ep(5, { followers: [{ id: 1, name: 'luis', me: true }, { id: 2, name: 'Ana' }], followers_hidden: 1 }))).toBe('You, Ana and 1 other');
+		expect(followerNames(noneE)).toBe('');
 	});
-	it('reads the filter layout in the address', () => {
-		expect(filtersFromAddress('2')).toBe(2);
-		expect(filtersFromAddress('9')).toBe(4);
-		expect(filtersFromAddress(null, 1)).toBe(1);
+	it('follows and unfollows in place', () => {
+		const on = withFollow(anaE, true, { name: 'luis' });
+		expect(on.following).toBe(true);
+		expect(on.followers?.map((p) => p.name)).toEqual(['Ana', 'luis']);
+		const off = withFollow(on, false, { name: 'luis' });
+		expect(off.following).toBe(false);
+		expect(off.followers?.map((p) => p.name)).toEqual(['Ana']);
+	});
+	it('opens on My follows, else the Whole Library, and keeps the pick for the session', () => {
+		expect(startFollows(null, 3, 2)).toBe('mine');
+		expect(startFollows(null, 0, 2)).toBe('library');
+		expect(startFollows('everyone', 3, 2)).toBe('everyone');
+		expect(startFollows('everyone', 3, 1)).toBe('mine');
+		expect(startFollows('library', 3, 1)).toBe('library');
+		const m = new Map<string, string>();
+		const store = { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v) };
+		expect(readFollows(store)).toBeNull();
+		saveFollows('everyone', store);
+		expect(readFollows(store)).toBe('everyone');
+		const broken = { getItem: () => { throw new Error('no'); }, setItem: () => { throw new Error('no'); } };
+		expect(readFollows(broken)).toBeNull();
+		expect(() => saveFollows('mine', broken)).not.toThrow();
 	});
 });
 

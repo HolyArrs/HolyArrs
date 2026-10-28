@@ -25,6 +25,8 @@
 	import Popover from '#lib/ui/Popover.svelte';
 	import ComingSoon from '#lib/calendar/ComingSoon.svelte';
 	import MiniMonth from '#lib/calendar/MiniMonth.svelte';
+	import FollowWho from '#lib/calendar/FollowWho.svelte';
+	import { setFollow } from '#lib/follow.ts';
 	import {
 		byDay,
 		entryKey,
@@ -47,12 +49,13 @@
 		itemDot,
 		oneMovieDate,
 		movieFacts,
-		mineOf,
-		noMine,
-		showingOk,
-		type Mine,
+		followsOk,
+		withFollow,
+		readFollows,
+		saveFollows,
+		startFollows,
+		type Follows,
 		type MovieFacts,
-		type Showing,
 		ymd,
 		readView,
 		saveView,
@@ -83,11 +86,14 @@
 	let loaded = $state(false);
 	let fetching = $state(false);
 	let error = $state('');
-	// One menu ties the calendar to the app: upcoming and still-missing dates (the default),
-	// only what you asked for or follow, or everything in the Library.
-	let showing = $state<Showing>('matters');
-	// What you asked for (Wishlist) and follow, and each movie's dates and copies.
-	let mine = $state<Mine>(noMine());
+	// One menu ties the calendar to Follow: what you follow (asking for a title follows it),
+	// what anyone on this server follows, or every date in the Library. Picked once the first
+	// dates say how many titles you follow and how many people use the server; kept for the session.
+	let follows = $state<Follows>(readFollows() ?? 'mine');
+	let followsSet = false;
+	let myFollows = $state(0);
+	let people = $state(1);
+	// Each movie's dates and copies.
 	let movies = $state(new Map<number, MovieFacts>());
 	// ?titles=shows opens the calendar on one kind of title.
 	const askedTitles = page.url.searchParams.get('titles');
@@ -112,7 +118,7 @@
 	// A movie shows one date: the day it is out to watch, else its cinema date.
 	const pool = $derived(oneMovieDate(entries, movies));
 	const todayKey = ymd(now);
-	const filterOk = (e: CalendarEntry) => showingOk(e, showing, mine, todayKey);
+	const filterOk = (e: CalendarEntry) => followsOk(e, follows);
 	const picked = (e: CalendarEntry) => shows(e, which) && filterOk(e);
 	// The days in view for the type picked, before the filters (what the counts count).
 	const base = $derived(pool.filter((e) => entryDay(e) >= firstDay && entryDay(e) < lastDay && shows(e, which)));
@@ -131,12 +137,26 @@
 	let sheetOpen = $state(false);
 	let filtersOpen = $state(false);
 
-	const showingWords: Record<Showing, { label: string; text: string }> = {
-		matters: { label: 'Upcoming & missing', text: "New dates coming up, plus past ones you still don't have." },
-		mine: { label: 'Only mine', text: 'Just what you asked for or follow.' },
-		all: { label: 'Everything', text: 'Every date in your Library, including ones you already have.' }
+	const followsWords: Record<Follows, { label: string; text: string }> = {
+		mine: { label: 'My follows', text: 'What you follow, including everything you asked for.' },
+		everyone: { label: "Everyone's follows", text: 'What anyone on this server follows. Each row shows who.' },
+		library: { label: 'Whole Library', text: 'Every date in the Library, followed or not.' }
 	};
-	const clearFilters = () => (showing = 'all');
+	// Everyone's follows only means something with more than one person on the server.
+	const followsChoices = $derived<Follows[]>(people > 1 ? ['mine', 'everyone', 'library'] : ['mine', 'library']);
+	// How many dates each choice shows in the days loaded (for the type picked).
+	const followsCount = $derived({
+		mine: base.filter((e) => followsOk(e, 'mine')).length,
+		everyone: base.filter((e) => followsOk(e, 'everyone')).length,
+		library: base.length
+	});
+	function pickFollows(f: Follows) {
+		follows = f;
+		saveFollows(f);
+	}
+	const clearFilters = () => pickFollows('library');
+	// Following nothing yet: the calendar opens on the Whole Library with one line saying how to follow.
+	const followNothing = $derived(loaded && myFollows === 0 && follows === 'library');
 	const rangeShort = $derived(
 		`${start.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${addDays(end, -1).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`
 	);
@@ -148,6 +168,7 @@
 	// Today's button only shows (in red) once today has left the screen.
 	let away = $state(false);
 
+	type CalendarAnswer = { dates: CalendarEntry[] | null; my_follows?: number; people?: number };
 	let asks = 0;
 	async function load() {
 		const n = ++asks;
@@ -156,13 +177,21 @@
 			const r = range;
 			// The server takes up to a year a query; a longer stretch is asked in pieces.
 			const [parts, t] = await Promise.all([
-				Promise.all(rangeChunks(r.from, r.to).map((c) => api.get<{ dates: CalendarEntry[] | null }>(`/calendar?from=${c.from}&to=${c.to}`))),
+				Promise.all(rangeChunks(r.from, r.to).map((c) => api.get<CalendarAnswer>(`/calendar?from=${c.from}&to=${c.to}`))),
 				api.get<{ titles: TitleView[] }>('/titles')
 			]);
 			if (n !== asks) return;
 			movies = new Map(t.titles.filter((x) => x.kind === 'movie').map((x) => [x.id, movieFacts(x)]));
 			const seen = new Set<string>();
 			entries = parts.flatMap((c) => c.dates ?? []).filter((e) => !seen.has(entryKey(e)) && !!seen.add(entryKey(e)));
+			if (parts[0]) {
+				myFollows = parts[0].my_follows ?? 0;
+				people = parts[0].people ?? 1;
+				if (!followsSet) {
+					followsSet = true;
+					follows = startFollows(readFollows(), myFollows, people);
+				}
+			}
 			libraryEmpty = t.titles.length === 0;
 			error = '';
 			await tick();
@@ -223,7 +252,7 @@
 		const key = `${r.from}:${r.to}`;
 		untrack(() => {
 			monthAsk = key;
-			api.get<{ dates: CalendarEntry[] | null }>(`/calendar?from=${ymd(addDays(r.start, -1))}&to=${ymd(addDays(new Date(r.to + 'T00:00:00'), 1))}`)
+			api.get<CalendarAnswer>(`/calendar?from=${ymd(addDays(r.start, -1))}&to=${ymd(addDays(new Date(r.to + 'T00:00:00'), 1))}`)
 				.then((c) => {
 					if (monthAsk === key) monthDates = c.dates ?? [];
 				})
@@ -401,13 +430,26 @@
 		};
 	}
 
-	// What you asked for and follow; with the Wishlist off (or no answer) both stay empty.
-	async function loadMine() {
-		const [asked, followed] = await Promise.all([
-			api.get<{ asks: { title_id?: number }[] }>('/asks?mine=1&limit=500').then((r) => r.asks, () => []),
-			api.get<{ follows: { title_id: number }[] }>('/my/follows').then((r) => r.follows, () => [])
-		]);
-		mine = { asked: new Set(asked.flatMap((a) => (a.title_id ? [a.title_id] : []))), followed: new Set(followed.map((f) => f.title_id)) };
+	// Follow or stop following a title from its row. The dates stay loaded; only who follows
+	// changes, so the row updates in place (in My follows it leaves the list).
+	let flipping = $state<number | null>(null);
+	async function flipFollow(e: CalendarEntry, on: boolean) {
+		if (flipping !== null) return;
+		flipping = e.title_id;
+		try {
+			const now = await setFollow(api, e.title_id, on);
+			const me = { name: session.s.name, avatar: session.s.avatar };
+			const upd = (x: CalendarEntry) => (x.title_id === e.title_id ? withFollow(x, now, me) : x);
+			const was = entries.some((x) => x.title_id === e.title_id && !!x.following);
+			entries = entries.map(upd);
+			monthDates = monthDates.map(upd);
+			if (now !== was) myFollows = Math.max(0, myFollows + (now ? 1 : -1));
+			toasts.push(now ? `You follow ${e.name}. Its dates are on your calendar.` : `You no longer follow ${e.name}.`, 'ok');
+		} catch (err) {
+			toasts.push(message(err), 'fail');
+		} finally {
+			flipping = null;
+		}
 	}
 
 	async function loadFeed() {
@@ -488,7 +530,6 @@
 	}
 
 	const dotWord = { have: 'In the Library', missing: 'Missing', upcoming: 'Coming up' } as const;
-	const mineWord = { asked: ' · You asked for it', followed: ' · You follow it', '': '' } as const;
 
 	onMount(() => {
 		const mq = matchMedia('(max-width: 1023px)');
@@ -496,7 +537,6 @@
 		fit();
 		mq.addEventListener('change', fit);
 		started = true;
-		void loadMine();
 		saveView(view);
 		// The address always names the view; old layout parameters go.
 		const u = new URL(page.url.href);
@@ -506,7 +546,7 @@
 			replaceState(u, page.state);
 		}
 		void loadFeed();
-		const offs = [live.on('title', load), live.on('resync', load), live.on('title', loadMine)];
+		const offs = [live.on('title', load), live.on('resync', load)];
 		return () => {
 			offs.forEach((off) => off());
 			mq.removeEventListener('change', fit);
@@ -529,9 +569,14 @@
 		<div class="it">
 			<a href={to(entryHref(e))}>{entryName(e)}</a>
 			<span class="sub"
-				><span class="sdot {dot}" title={dotWord[dot]} aria-hidden="true"></span><span class="sr-only">{dotWord[dot]}. </span>{kindWord[e.kind]}{#if entryTime(e)}{' at '}{entryTime(e)}{/if}{#if e.network}{' on '}{e.network}{/if}{inLibraryWord(e.state, e.versions)}{#if e.kind === 'album' && albumHave(e)}{' · '}{albumHave(e)}{/if}{mineWord[mineOf(e, mine)]}</span
+				><span class="sdot {dot}" title={dotWord[dot]} aria-hidden="true"></span><span class="sr-only">{dotWord[dot]}. </span>{kindWord[e.kind]}{#if entryTime(e)}{' at '}{entryTime(e)}{/if}{#if e.network}{' on '}{e.network}{/if}{inLibraryWord(e.state, e.versions)}{#if e.kind === 'album' && albumHave(e)}{' · '}{albumHave(e)}{/if}</span
 			>
+			{#if follows === 'everyone'}<span class="who"><FollowWho {e} /></span>{/if}
 		</div>
+		<!-- The bell follows or stops following the title; lit when you follow it. -->
+		<span class="row-bell" class:on={e.following}>
+			<IconButton icon={e.following ? 'bellOn' : 'bell'} size="sm" tipSide="below-end" label="{e.following ? 'Unfollow' : 'Follow'} {e.name}" aria-pressed={!!e.following} disabled={flipping === e.title_id} onclick={() => flipFollow(e, !e.following)} data-testid="cal-follow" />
+		</span>
 	</li>
 {/snippet}
 
@@ -587,15 +632,26 @@
 	/>
 {/snippet}
 
-{#snippet showingList()}
-	<div class="showing" role="radiogroup" aria-label="Showing">
-		{#each ['matters', 'mine', 'all'] as const as k (k)}
-			<button type="button" role="radio" aria-checked={showing === k} class:on={showing === k} onclick={() => (showing = k)} data-testid="cal-showing-{k}">
-				<span class="tick" aria-hidden="true">{#if showing === k}<Icon name="check" size={16} />{/if}</span>
-				<span class="sw"><b>{showingWords[k].label}</b><span>{showingWords[k].text}</span></span>
+{#snippet followsList()}
+	<div class="showing" role="radiogroup" aria-label="Which dates">
+		{#each followsChoices as k (k)}
+			<button type="button" role="radio" aria-checked={follows === k} class:on={follows === k} onclick={() => pickFollows(k)} data-testid="cal-follows-{k}">
+				<span class="tick" aria-hidden="true">{#if follows === k}<Icon name="check" size={16} />{/if}</span>
+				<span class="sw"><b>{followsWords[k].label}</b><span>{followsWords[k].text}</span></span>
+				<span class="n" aria-label="{followsCount[k]} {followsCount[k] === 1 ? 'date' : 'dates'} in view">{followsCount[k]}</span>
 			</button>
 		{/each}
 	</div>
+{/snippet}
+
+{#snippet followsMenu()}
+	<Popover label="Which dates: {followsWords[follows].label}" variant="button" icon={follows === 'library' ? 'bell' : 'bellOn'} text={followsWords[follows].label} width={320} align="end">
+		{#snippet children()}<div class="pop-chips">{@render followsList()}</div>{/snippet}
+	</Popover>
+{/snippet}
+
+{#snippet followsPhone()}
+	<Button variant="secondary" size="sm" icon={follows === 'library' ? 'bell' : 'bellOn'} iconAfter="chevronDown" aria-haspopup="dialog" aria-label="Which dates: {followsWords[follows].label}" onclick={() => (filtersOpen = true)} data-testid="cal-follows-phone">{followsWords[follows].label}</Button>
 {/snippet}
 
 
@@ -621,12 +677,8 @@
 <section class="tools" aria-label="Calendar controls">
 		<div class="month-nav">{@render rangeNav(true, false)}</div>
 		<div class="segs">{@render typeSeg(true)}</div>
-		<span class="wide-only">
-			<Popover label="Showing" variant="button" text={showingWords[showing].label} width={300} align="end">
-				{#snippet children()}<div class="pop-chips">{@render showingList()}</div>{/snippet}
-			</Popover>
-		</span>
-		<span class="phone-only"><Button variant="secondary" size="sm" aria-haspopup="dialog" onclick={() => (filtersOpen = true)}>{showingWords[showing].label}</Button></span>
+		<span class="wide-only" data-testid="cal-follows">{@render followsMenu()}</span>
+		<span class="phone-only">{@render followsPhone()}</span>
 </section>
 <span class="head-end" bind:this={headEnd} aria-hidden="true"></span>
 
@@ -636,13 +688,9 @@
 	<div class="slim" role="toolbar" aria-label="Calendar controls">
 		{@render rangeNav(false, true)}
 		<span class="wide-only slim-seg">{@render typeSeg(false)}</span>
-		<span class="wide-only">
-			<Popover label="Showing" variant="button" text={showingWords[showing].label} width={300} align="end">
-				{#snippet children()}<div class="pop-chips">{@render showingList()}</div>{/snippet}
-			</Popover>
-		</span>
+		<span class="wide-only">{@render followsMenu()}</span>
 		{@render todayBtn('sm')}
-		<span class="phone-only"><Button variant="secondary" size="sm" aria-haspopup="dialog" onclick={() => (filtersOpen = true)}>{showingWords[showing].label}</Button></span>
+		<span class="phone-only">{@render followsPhone()}</span>
 	</div>
 </div>
 
@@ -661,15 +709,16 @@
 	{#if error}<LoadError hasData message="Calendar could not be loaded." onretry={load} />{/if}
 	<div class="cal-body" class:barred={barOn}>
 		<div class="cal-main">
+			{#if followNothing}<p class="follow-note" data-testid="cal-follow-none"><Icon name="bell" size={16} />You're not following anything yet. Press Follow on a title to see it here.</p>{/if}
 			{#key view}
 				<div class="view-in" data-view={view}>
 					{#if filteredOut}
 						<!-- The filters hide every date in these weeks: say so, and offer them all. -->
 						<div class="filtered-out" data-testid="cal-filtered-out">
-							<EmptyState compact icon="calendar" title="Nothing here with these filters" text="{base.length === 1 ? 'One date is' : `${base.length} dates are`} hidden from {rangeName}." action={{ label: 'Show everything', onclick: clearFilters }} />
+							<EmptyState compact icon="calendar" title={follows === 'mine' ? 'Nothing you follow here' : 'Nothing anyone follows here'} text="{base.length === 1 ? 'One date in the Library falls' : `${base.length} dates in the Library fall`} in {rangeName}." action={{ label: 'Show the Whole Library', onclick: clearFilters }} />
 						</div>
 					{:else if view === 'cards'}
-						<ComingSoon entries={shown} today={todayKey} onlater={more} />
+						<ComingSoon entries={shown} today={todayKey} onlater={more} mode={follows} onfollow={flipFollow} />
 					{:else if agenda.length === 0}
 						<EmptyState compact icon="calendar" title="No dates from {rangeName}" />
 					{:else}
@@ -708,10 +757,10 @@
 	</div>
 </Sheet>
 
-<Sheet bind:open={filtersOpen} title="Showing" placement="bottom">
+<Sheet bind:open={filtersOpen} title="Which dates" placement="bottom">
 	<div class="sheet-filters">
 		{@render typeSeg(false)}
-		{@render showingList()}
+		{@render followsList()}
 	</div>
 </Sheet>
 
@@ -802,7 +851,11 @@
 	.showing .tick { flex: none; width: 16px; height: 20px; display: grid; place-items: center; color: var(--accent-text); }
 	.showing .sw { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 	.showing .sw b { font: var(--t-headline); font-size: 15px; }
+	.showing .sw { flex: 1; }
 	.showing .sw span { color: var(--text-muted); font: var(--t-footnote); }
+	.showing .n { flex: none; min-width: 24px; padding: 1px 7px; border-radius: 999px; background: var(--surface-2); color: var(--text-muted); font: var(--t-caption); font-variant-numeric: tabular-nums; text-align: center; }
+	.showing button.on .n { background: var(--surface-3); color: var(--text); }
+	.follow-note { display: flex; align-items: center; gap: 8px; margin: 0 0 16px; color: var(--text-muted); font: var(--t-callout); animation: view-in var(--dur) var(--ease-out) both; }
 	/* Today, once it shows: a soft ring pulses twice so the eye finds it. */
 	.today-btn { display: inline-flex; border-radius: 999px; animation: today-ping 1.2s var(--ease-out) 2; }
 	@keyframes today-ping { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-fill) 55%, transparent); } to { box-shadow: 0 0 0 10px transparent; } }
@@ -829,7 +882,12 @@
 	.thumb { position: relative; flex: none; width: 64px; aspect-ratio: 16 / 9; border-radius: var(--r-sm); background: var(--surface-2); color: var(--text-muted); display: grid; place-items: center; overflow: hidden; }
 	.thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 	.thumb .dot { position: absolute; left: 4px; bottom: 4px; box-shadow: 0 0 0 2px var(--surface-1); }
-	.it { display: flex; flex-direction: column; min-width: 0; }
+	.it { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+	.who { display: flex; min-width: 0; margin-top: 3px; }
+	.row-bell { flex: none; align-self: center; }
+	.row-bell :global(.ui-ibtn) { color: var(--text-faint); transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
+	.item:hover .row-bell :global(.ui-ibtn), .row-bell :global(.ui-ibtn:focus-visible) { color: var(--text-muted); }
+	.row-bell.on :global(.ui-ibtn) { color: var(--accent-text); }
 	.it a { color: var(--text); font: var(--t-headline); font-size: 15px; overflow-wrap: anywhere; }
 	.it a:hover { text-decoration: underline; text-underline-offset: 3px; }
 	.sub { color: var(--text-muted); font: var(--t-subhead); font-weight: 400; overflow-wrap: anywhere; }
@@ -873,7 +931,8 @@
 		.tools .kinds > :global(*) { flex: none; }
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.view-in, .today-btn { animation: none; }
+		.view-in, .today-btn, .follow-note { animation: none; }
+		.row-bell :global(.ui-ibtn) { transition: none; }
 		.showing button { transition: none; }
 		.slim, .slim-wrap.on .slim, .slim-wrap { transition: none; }
 	}

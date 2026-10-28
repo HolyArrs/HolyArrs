@@ -281,52 +281,74 @@ export function oneMovieDate(entries: CalendarEntry[], movies: Map<number, Movie
 	return out;
 }
 
-/** What the calendar knows about the person reading it: the titles they asked for and the ones they follow. */
-export interface Mine {
-	asked: Set<number>;
-	followed: Set<number>;
-}
-export const noMine = (): Mine => ({ asked: new Set(), followed: new Set() });
+/**
+ * Which dates the calendar shows. Following a title puts its dates on your
+ * calendar (asking for a title follows it too):
+ * - mine: what you follow (the default),
+ * - everyone: what anyone on this server follows, each row saying who,
+ * - library: every date in the Library, followed or not.
+ */
+export type Follows = 'mine' | 'everyone' | 'library';
 
-/** mineOf says how an entry is the reader's own: asked for, followed, or not (''). */
-export function mineOf(e: Pick<CalendarEntry, 'title_id'>, m: Mine): 'asked' | 'followed' | '' {
-	return m.asked.has(e.title_id) ? 'asked' : m.followed.has(e.title_id) ? 'followed' : '';
-}
-
-/** Option 1: Mine (asked for or followed) or Everyone (the whole Library). */
-export type Whose = 'mine' | 'everyone';
-export function whoseOk(e: CalendarEntry, w: Whose, m: Mine): boolean {
-	return w === 'everyone' || mineOf(e, m) !== '';
+/** followedByAnyone says whether anyone (the reader included) follows an entry's title. */
+export function followedByAnyone(e: Pick<CalendarEntry, 'following' | 'followers' | 'followers_hidden'>): boolean {
+	return !!e.following || (e.followers?.length ?? 0) > 0 || (e.followers_hidden ?? 0) > 0;
 }
 
-/** Option 2: the whole Library, what I asked for, or what I follow. */
-export type Scope = 'library' | 'asked' | 'followed';
-export function scopeOk(e: CalendarEntry, s: Scope, m: Mine): boolean {
-	if (s === 'asked') return m.asked.has(e.title_id);
-	if (s === 'followed') return m.followed.has(e.title_id);
-	return true;
+/** followsOk says whether an entry shows for the Follows choice. */
+export function followsOk(e: Pick<CalendarEntry, 'following' | 'followers' | 'followers_hidden'>, f: Follows): boolean {
+	if (f === 'library') return true;
+	if (f === 'mine') return !!e.following;
+	return followedByAnyone(e);
 }
 
-/** Option 3: status chips; none picked shows every status. */
-export function statusOk(e: CalendarEntry, picked: ReadonlySet<ItemDot>, today = ymd(new Date())): boolean {
-	return picked.size === 0 || picked.has(itemDot(e, today));
+/** followerNames says who follows an entry's title: "You, Ana and 2 others". */
+export function followerNames(e: Pick<CalendarEntry, 'followers' | 'followers_hidden'>): string {
+	const names = (e.followers ?? []).map((p) => (p.me ? 'You' : p.name));
+	const hidden = e.followers_hidden ?? 0;
+	if (hidden > 0) names.push(hidden === 1 ? (names.length ? '1 other' : '1 person') : `${hidden} ${names.length ? 'others' : 'people'}`);
+	if (names.length <= 1) return names[0] ?? '';
+	return `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
+}
+
+/** withFollow is an entry after the reader follows (on) or stops following its title. */
+export function withFollow<T extends CalendarEntry>(e: T, on: boolean, me: { name: string; avatar?: string | null }): T {
+	const mine = e.followers?.find((p) => p.me);
+	const others = (e.followers ?? []).filter((p) => !p.me);
+	const self = { id: mine?.id ?? 0, name: me.name, avatar: me.avatar ?? undefined, me: true };
+	return { ...e, following: on, followers: on ? [...others, self] : others };
+}
+
+const followsKey = 'holyarrs.calendar-follows';
+
+/** readFollows is the Follows choice picked earlier in this session, if any. */
+export function readFollows(store: Pick<Storage, 'getItem'> | undefined = globalThis.sessionStorage): Follows | null {
+	try {
+		const v = store?.getItem(followsKey);
+		return v === 'mine' || v === 'everyone' || v === 'library' ? v : null;
+	} catch {
+		return null;
+	}
+}
+
+/** saveFollows keeps the Follows choice for the session; a private window may refuse and that is fine. */
+export function saveFollows(v: Follows, store: Pick<Storage, 'setItem'> | undefined = globalThis.sessionStorage) {
+	try {
+		store?.setItem(followsKey, v);
+	} catch {
+		// Not kept for the session.
+	}
 }
 
 /**
- * Option 4: one smart default and a small menu. What matters is everything
- * still to come plus past dates still missing (past ones already in the
- * Library go quiet); Mine is what was asked for or followed; Everything is all.
+ * startFollows is the choice the calendar opens on: the session's pick, else
+ * My follows; someone who follows nothing opens on the Whole Library, and
+ * Everyone's follows needs more than one person on the server.
  */
-export type Showing = 'matters' | 'mine' | 'all';
-export function showingOk(e: CalendarEntry, s: Showing, m: Mine, today = ymd(new Date())): boolean {
-	if (s === 'all') return true;
-	if (s === 'mine') return mineOf(e, m) !== '';
-	return !(entryDay(e) < today && itemDot(e, today) === 'have');
-}
-
-/** filtersFromAddress reads ?filters=1…4 (the filter layouts being compared); anything else is the default. */
-export function filtersFromAddress(v: string | null | undefined, fallback = 4): number {
-	return v && /^[1-4]$/.test(v) ? Number(v) : fallback;
+export function startFollows(remembered: Follows | null, myFollows: number, people: number): Follows {
+	let f: Follows = remembered ?? (myFollows > 0 ? 'mine' : 'library');
+	if (f === 'everyone' && people < 2) f = myFollows > 0 ? 'mine' : 'library';
+	return f;
 }
 
 /** addDays moves a day by n days (local time, midnight). */

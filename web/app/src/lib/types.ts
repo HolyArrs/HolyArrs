@@ -763,6 +763,18 @@ export interface CalendarEntry {
 	poster?: string;
 	backdrop?: string;
 	still?: string;
+	/** Whether the reader follows the title, and who follows it (the people the reader may see; followers_hidden counts the rest). */
+	following?: boolean;
+	followers?: CalendarFollower[];
+	followers_hidden?: number;
+}
+
+/** One person who follows a calendar title. */
+export interface CalendarFollower {
+	id: number;
+	name: string;
+	avatar?: string;
+	me?: boolean;
 }
 
 export interface Health {

@@ -1,16 +1,30 @@
 <script lang="ts">
 	import type { CalendarEntry } from '#lib/types.ts';
 	import { to } from '#lib/paths.ts';
-	import { entryArt, entryHref, itemDot } from '#lib/calendar.ts';
+	import { entryArt, entryHref, itemDot, type Follows } from '#lib/calendar.ts';
 	import { dayChip, entryLine, entryTitle, groupFacts, groupTag, type CalGroup } from '#lib/calendar-looks.ts';
 	import { sized } from '#lib/tmdb-image.ts';
 	import Badge from '#lib/ui/Badge.svelte';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
+	import IconButton from '#lib/ui/IconButton.svelte';
+	import FollowWho from './FollowWho.svelte';
 
 	// Coming Soon's card for rows: the Day view's big backdrop card made row
 	// size, with the name on the art and its badges. Several episodes of one
 	// show on one day are one card, drawn as a small stack ("3 episodes").
-	let { g, today, chip = false }: { g: CalGroup; today: string; /** Put the day ("Wed 28") on the art. */ chip?: boolean } = $props();
+	let {
+		g,
+		today,
+		chip = false,
+		mode = 'library',
+		onfollow
+	}: {
+		g: CalGroup;
+		today: string;
+		/** Put the day ("Wed 28") on the art. */ chip?: boolean;
+		/** Everyone's follows names who follows the title. */ mode?: Follows;
+		/** Follow or stop following the title (a bell on the art). */ onfollow?: (e: CalendarEntry, on: boolean) => void;
+	} = $props();
 
 	const e = $derived<CalendarEntry>(g.lead);
 	const n = $derived(g.entries.length);
@@ -40,9 +54,15 @@
 				<span class="name">{entryTitle(e)}</span>
 			</span>
 		</a>
+		{#if onfollow}
+			<span class="bell" class:on={e.following}>
+				<IconButton icon={e.following ? 'bellOn' : 'bell'} size="sm" variant="glass" label="{e.following ? 'Unfollow' : 'Follow'} {entryTitle(e)}" aria-pressed={!!e.following} onclick={() => onfollow(e, !e.following)} data-testid="cal-follow" />
+			</span>
+		{/if}
 	</div>
 	<p class="facts">{facts}{#if have}<span class="have"> · In the Library</span>{/if}</p>
 	{#if line}<p class="line">{line}</p>{/if}
+	{#if mode === 'everyone'}<p class="who"><FollowWho {e} size={16} /></p>{/if}
 </article>
 
 <style>
@@ -66,6 +86,9 @@
 	.name { color: #fff; font: 700 clamp(17px, 1.6vw, 22px)/1.08 var(--font-display); letter-spacing: -0.02em; text-shadow: 0 2px 12px rgb(0 0 0 / 0.5); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 	.facts { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.have { color: var(--ok-text, var(--ok)); }
+	.bell { position: absolute; top: 16px; right: 8px; }
+	.bell.on :global(.ui-ibtn) { color: var(--accent-text); background: color-mix(in srgb, var(--surface-1) 88%, transparent); }
+	.who { display: flex; min-width: 0; }
 	.line { margin-top: -4px; color: var(--text); font: var(--t-footnote); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
 		.art:hover { transform: translateY(var(--lift)); box-shadow: var(--shadow-lift); }
