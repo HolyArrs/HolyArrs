@@ -1,9 +1,9 @@
 <script lang="ts">
 	// The Downloads page body, laid out like a Downloader's own web page: a
 	// header strip (speed with a small graph, time left), the status tabs
-	// (All · Waiting · In progress · Done · Problems, with sub-tabs; see
-	// status-tabs.ts), then the Queue and History. Every row of both sections
-	// shares one column grid: ▾ · poster · the picked columns · bin (columns.ts
+	// (Active · Waiting · In progress · Problems · Done, with sub-tabs; see
+	// status-tabs.ts), then one list filtered by them. Every row shares one
+	// column grid: ▾ · poster · the picked columns · bin (columns.ts
 	// holds which columns exist and the saved layout). ▾ opens a row's details in place; the bin removes it
 	// (through the page's Remove dialog).
 	import { tick } from 'svelte';
@@ -60,7 +60,29 @@
 
 	// The Type filter (All, Movies, TV shows, Music) narrows every tab and total.
 	let kindOn = $state<KindKey>('');
-	const rows = $derived(kindOn ? everyRow.filter((r) => (r.kind ?? 'movie') === kindOn) : everyRow);
+	const typed = $derived(kindOn ? everyRow.filter((r) => (r.kind ?? 'movie') === kindOn) : everyRow);
+	// The search narrows every tab too, so the tab counts follow it.
+	let q = $state('');
+	let findEl = $state<HTMLInputElement>();
+	let findOpen = $state(false);
+	const rows = $derived(q.trim() ? typed.filter((r) => matches(r, q)) : typed);
+	function slashKey(e: KeyboardEvent) {
+		if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+		const t = e.target as HTMLElement;
+		if (t.closest('input, textarea, select, [contenteditable="true"]')) return;
+		e.preventDefault();
+		e.stopImmediatePropagation(); // on this page "/" is the Downloads search, not the app search
+		findOpen = true;
+		tick().then(() => findEl?.focus());
+	}
+	$effect(() => {
+		window.addEventListener('keydown', slashKey, true);
+		return () => window.removeEventListener('keydown', slashKey, true);
+	});
+	function clearFind() {
+		q = '';
+		findEl?.focus();
+	}
 
 	// The picked tab (and sub-tab) lives in the address: &show=tab or tab.sub.
 	const start = showOf(page.url.searchParams.get('show'));
@@ -82,7 +104,7 @@
 	const onTab = $derived(tabs.find((c) => c.key === on));
 	const subs = $derived(subCounts(rows, onTab));
 	const subOn = $derived(subs.some((x) => x.key === sub) ? sub : '');
-	const shown = $derived(on === ALL ? rows : pick(rows, tabs, on, subOn));
+	const shown = $derived(pick(rows, tabs, on, subOn));
 	function choose(k: string) {
 		show = k;
 		sub = '';
@@ -95,14 +117,14 @@
 	}
 
 	// The header strip counts the whole Queue, whatever tab is picked.
-	const allQueue = $derived(rows.filter((r) => !inHistory(r)));
-	const queue = $derived(shown.filter((r) => !inHistory(r)));
-	const history = $derived(shown.filter(inHistory).sort((a, b) => (b.finished_at || b.updated_at).localeCompare(a.finished_at || a.updated_at)));
-	let q = $state('');
-	const found = $derived(history.filter((r) => matches(r, q)));
+	const allQueue = $derived(typed.filter((r) => !inHistory(r)));
+	// One list, filtered by the tabs. Done reads newest first and can be searched.
+	const isDone = $derived(on === 'done');
+	const newest = (a: DownloadRow, b: DownloadRow) => (b.finished_at || b.updated_at).localeCompare(a.finished_at || a.updated_at);
+	const list = $derived(isDone ? [...shown].sort(newest) : shown);
 	const sum = $derived(totals(allQueue));
 	const problems = $derived(allQueue.filter((r) => barTone(r) === 'bad').length);
-	const done = $derived(historyTotals(rows.filter(inHistory)));
+	const done = $derived(historyTotals(typed.filter(inHistory)));
 
 	function toggle(id: number) {
 		openId = openId === id ? 0 : id;
@@ -196,7 +218,7 @@
 		ro.observe(g);
 		return () => ro.disconnect();
 	});
-	// Queue and History scroll sideways together, so their columns stay lined up.
+	// Every table box scrolls sideways together, so the columns stay lined up.
 	function sync(e: Event) {
 		const x = (e.currentTarget as HTMLElement).scrollLeft;
 		for (const t of grid?.querySelectorAll<HTMLElement>('.tw') ?? []) if (t.scrollLeft !== x) t.scrollLeft = x;
@@ -545,10 +567,17 @@
 		</span>
 	{/each}
 </div>
+<div class="tr">
 <div class="types" role="group" aria-label="Type" data-testid="dl-type-filter">
 	{#each KIND_TABS as t (t.key)}
 		<button type="button" class="ty" class:on={kindOn === t.key} aria-pressed={kindOn === t.key} data-key={t.key || 'all'} onclick={() => (kindOn = t.key)}>{t.label}</button>
 	{/each}
+</div>
+</div>
+<div class="find" class:open={findOpen || !!q} data-testid="dl-find">
+	<button type="button" class="fi" aria-label="Search downloads" aria-expanded={findOpen || !!q} onclick={() => { findOpen = true; tick().then(() => findEl?.focus()); }}><Icon name="search" size={14} /></button>
+	<input type="search" bind:this={findEl} bind:value={q} placeholder="Search downloads" aria-label="Search downloads" aria-keyshortcuts="/" onblur={() => (findOpen = false)} onkeydown={(e) => { if (e.key === 'Escape' && q) { e.preventDefault(); q = ''; } }} data-testid="dl-search" />
+	{#if q}<button type="button" class="fx" aria-label="Clear search" onclick={clearFind} data-testid="dl-search-clear">✕</button>{:else}<kbd class="kb" aria-hidden="true">/</kbd>{/if}
 </div>
 </div>
 {#if subs.length}
@@ -561,45 +590,20 @@
 	</div>
 {/if}
 
-{#if on === ALL || queue.length}
-	<section class="sec" aria-labelledby="dl-queue">
-		<div class="shr"><h2 id="dl-queue" class="sh">Queue <span class="n">{queue.length}</span></h2>
-			<span class="qs">{#if problems}<span class="qerr" title="Problems"><Icon name="alert" size={13} />{problems}</span>{/if}<span>{bytes(sum.left)} left</span></span></div>
-		{#if queue.length === 0}
-			<p class="none">Nothing in the queue.</p>
-		{:else}
-			<div class="tw" onscroll={sync} data-testid="dl-tablebox"><div class="tin">
-				{@render header()}
-				<ul class="dlrows" data-testid="dl-queue">
-					{#each queue as r (r.id)}{@render row(r, false)}{/each}
-				</ul>
-			</div></div>
-		{/if}
-	</section>
+{#if list.length}
+	<div class="tw" onscroll={sync} data-testid="dl-tablebox"><div class="tin">
+		{@render header()}
+		<ul class="dlrows" data-testid="dl-list" data-tab={on}>
+			{#each list as r (r.id)}{@render row(r, inHistory(r))}{/each}
+		</ul>
+	</div></div>
+{:else}
+	<p class="none" data-testid="dl-empty">{q.trim() ? 'Nothing matches.' : ((subOn ? onTab?.subs.find((x) => x.key === subOn)?.empty : onTab?.empty) ?? 'Nothing here.')}</p>
 {/if}
-
-{#if on === ALL || history.length}
-	<section class="sec" aria-labelledby="dl-history">
-		<h2 id="dl-history" class="sh">History <span class="n">{history.length}</span></h2>
-		{#if found.length === 0}
-			<p class="none">{q.trim() ? 'Nothing matches.' : 'Nothing finished yet.'}</p>
-		{:else}
-			<div class="tw" onscroll={sync}><div class="tin">
-				{#if queue.length === 0}{@render header()}{/if}
-				<ul class="dlrows" data-testid="dl-history">
-					{#each found as r (r.id)}{@render row(r, true)}{/each}
-				</ul>
-			</div></div>
-		{/if}
-		<div class="foot">
-			<label class="find"><Icon name="search" size={14} /><input type="search" placeholder="Search History" aria-label="Search History" bind:value={q} /></label>
-			<span class="tot" data-testid="dl-totals">{bytes(done.today)} today · {bytes(done.month)} this month</span>
-		</div>
-	</section>
-{/if}
-
-{#if queue.length === 0 && history.length === 0 && on !== ALL}
-	<p class="none" data-testid="dl-empty">{(subOn ? onTab?.subs.find((x) => x.key === subOn)?.empty : onTab?.empty) ?? 'Nothing here.'} <button type="button" class="lk" onclick={() => choose(ALL)}>Show all {rows.length}</button></p>
+{#if isDone}
+	<div class="foot">
+		<span class="tot" data-testid="dl-totals">{bytes(done.today)} today · {bytes(done.month)} this month</span>
+	</div>
 {/if}
 
 {#if ghost}<div class="ghost" style="left: {ghost.x}px; top: {ghost.y}px" aria-hidden="true" data-testid="dl-ghost">{COL[ghost.id].label}</div>{/if}
@@ -648,12 +652,6 @@
 	.cw.zero:hover, .cw.zero:focus-within { opacity: 0.8; }
 	.cw.sm :global(.main) { min-height: 28px; padding: 0 11px; font-size: 13px; }
 
-	.sec { margin-bottom: 22px; }
-	.sh { display: flex; align-items: baseline; gap: 8px; margin: 0 0 6px; font: var(--t-headline); }
-	.shr { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-	.qs { display: inline-flex; align-items: center; gap: 12px; color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
-	.qerr { display: inline-flex; align-items: center; gap: 4px; color: var(--fail); font-weight: 600; }
-	.n { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
 	.none { padding: 10px 0; color: var(--text-muted); font: var(--t-callout); }
 
 	/* One column grid for every row of both sections. */
@@ -761,9 +759,17 @@
 	.lk { min-height: 28px; padding: 0 4px; border: 0; border-radius: 6px; background: none; color: var(--accent-text); font: var(--t-footnote); font-weight: 500; cursor: pointer; }
 
 	.foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-top: 10px; }
-	.find { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: var(--r-btn); background: var(--surface-2); color: var(--text-muted); }
+	.tr { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+	.tr .types { margin-bottom: 0; }
+	.find { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px 0 10px; border-radius: var(--r-btn); background: var(--surface-2); color: var(--text-muted); }
 	.find:focus-within { box-shadow: var(--focus-ring); }
-	.find input { width: 180px; border: 0; background: none; color: var(--text); font: var(--t-footnote); outline: none; }
+	.fi { display: grid; place-items: center; width: 18px; height: 24px; padding: 0; border: 0; background: none; color: inherit; cursor: default; }
+	.find input { width: 170px; border: 0; background: none; color: var(--text); font: var(--t-footnote); outline: none; }
+	.find input::-webkit-search-cancel-button { display: none; }
+	.fx { display: grid; place-items: center; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: var(--surface-3); color: var(--text-muted); font-size: 10px; cursor: pointer; }
+	.fx:hover { color: var(--text); }
+	.fx:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.kb { display: grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px; border: 1px solid var(--line); border-radius: 4px; color: var(--text-muted); font: var(--t-caption); }
 	.tot { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
 
 	/* Phones: a fixed card per row (title, then bar, status and time); no picker. */
@@ -785,8 +791,12 @@
 		.x { grid-template-columns: 56px minmax(0, 1fr); gap: 12px; padding: 4px 8px 12px calc(24px + var(--gap)); }
 		.big { width: 56px; height: 84px; }
 		.big.square { height: 56px; }
-		.find { flex: 1; }
-		.find input { width: 100%; }
+		/* Phones: a search icon that opens into the field. */
+		.find:not(.open) { padding: 0 7px; }
+		.find:not(.open) input, .find:not(.open) .kb { display: none; }
+		.find .fi { cursor: pointer; }
+		.find.open input { width: 120px; }
+		.kb { display: none; }
 		.strip { gap: 4px 14px; }
 		.picker { display: none; }
 	}

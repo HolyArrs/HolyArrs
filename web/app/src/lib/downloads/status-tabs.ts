@@ -43,7 +43,7 @@ export function stageOf(r: RowBits): Stage {
 	return 'done';
 }
 
-export type TabKey = 'waiting' | 'progress' | 'done' | 'problems';
+export type TabKey = 'active' | 'waiting' | 'progress' | 'done' | 'problems';
 
 export interface Sub {
 	key: string;
@@ -67,8 +67,9 @@ export interface Tab {
 	subs: Sub[];
 }
 
-export const ALL = 'all';
-export const ALL_HINT = 'Every download, whatever its state.';
+/** ALL is the default tab: everything not yet finished (waiting, in progress and problems). */
+export const ALL = 'active';
+export const ALL_HINT = 'Everything not finished yet: waiting, on its way, or needing you.';
 
 const SUBS: Record<string, Sub> = {
 	queued: { key: 'queued', label: 'Queued', stages: ['queued'], hint: 'Not started yet; the Downloader starts it when there is room.', empty: 'Nothing is queued.' },
@@ -82,6 +83,7 @@ const SUBS: Record<string, Sub> = {
 };
 
 export const TABS: Tab[] = [
+	{ key: 'active', label: 'Active', stages: ['queued', 'paused', 'downloading', 'stalled', 'importing', 'failed', 'decide'], hint: ALL_HINT, empty: 'Nothing is downloading or waiting.', subs: [] },
 	{ key: 'waiting', label: 'Waiting', stages: ['queued', 'paused'], hint: "In your Downloader's line, or paused by you.", empty: 'Nothing waiting.', subs: [SUBS.queued, SUBS.paused] },
 	{
 		key: 'progress',
@@ -91,23 +93,23 @@ export const TABS: Tab[] = [
 		empty: 'Nothing on its way right now.',
 		subs: [SUBS.downloading, SUBS.importing]
 	},
+	{ key: 'problems', label: 'Problems', stages: ['failed', 'decide'], hint: 'Stuck, failed, or waiting for you to decide.', empty: 'No problems. Everything is moving.', subs: [SUBS.failed, SUBS.decide] },
 	{
 		key: 'done',
 		label: 'Done',
-		stages: ['done', 'seeding'],
+		stages: ['done', 'seeding', 'failed'],
 		seedCount: true,
-		hint: 'In your Library. Torrents still sharing with others count here.',
+		hint: 'Finished: in your Library, still sharing, or failed.',
 		empty: 'Nothing finished yet.',
-		subs: [SUBS.done, SUBS.seeding]
-	},
-	{ key: 'problems', label: 'Problems', stages: ['failed', 'decide'], hint: 'Stuck, failed, or waiting for you to decide.', empty: 'No problems. Everything is moving.', subs: [SUBS.failed, SUBS.decide] }
+		subs: [SUBS.done, SUBS.seeding, SUBS.failed]
+	}
 ];
 
 /** tabsFor is the tabs as shown: the Seeding sub-tab only with a torrent
  *  Downloader or a seeding row; without it Done takes any seeding rows. */
 export function tabsFor(rows: RowBits[], torrent: boolean): Tab[] {
 	if (torrent || rows.some((r) => stageOf(r) === 'seeding')) return TABS;
-	return TABS.map((t) => (t.key === 'done' ? { ...t, subs: [{ ...SUBS.done, stages: ['done', 'seeding'] }] } : t));
+	return TABS.map((t) => (t.key === 'done' ? { ...t, subs: [{ ...SUBS.done, stages: ['done', 'seeding'] }, SUBS.failed] } : t));
 }
 
 /** pick filters rows to one tab (and one sub-tab); unknown keys show all. */
@@ -128,10 +130,10 @@ export interface Counted {
 	seeding?: number;
 }
 
-/** counts gives All plus every tab with its row count. */
+/** counts gives every tab with its row count. */
 export function counts(rows: RowBits[], tabs: Tab[]): Counted[] {
 	const stages = rows.map(stageOf);
-	const out: Counted[] = [{ key: ALL, label: 'All', count: rows.length, hint: ALL_HINT }];
+	const out: Counted[] = [];
 	for (const t of tabs) {
 		const k: Counted = { key: t.key, label: t.label, count: stages.filter((s) => t.stages.includes(s)).length, hint: t.hint };
 		if (t.seedCount) k.seeding = stages.filter((s) => s === 'seeding').length;
@@ -171,7 +173,7 @@ export function statusWord(r: RowBits): string {
 	return r.phase === 'removed' ? 'Removed' : 'Done';
 }
 
-/** showOf reads ?show= : a tab key, or tab.sub; anything else is All. */
+/** showOf reads ?show= : a tab key, or tab.sub; anything else (the old "all" too) is Active. */
 export function showOf(v: string | null | undefined, tabs: Tab[] = TABS): { show: string; sub: string } {
 	const [a = '', b = ''] = (v ?? '').split('.');
 	const t = tabs.find((x) => x.key === a);

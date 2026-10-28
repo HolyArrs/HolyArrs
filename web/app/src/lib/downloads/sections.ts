@@ -7,6 +7,7 @@ import { stageOf, statusWord } from './status-tabs.ts';
 import { failReason, statusDetail } from './imports.ts';
 import { dateTime } from '../format.ts';
 import { size, sizePair } from './size.ts';
+import { quality } from './columns.ts';
 
 type Bits = Pick<DownloadRow, 'phase' | 'state' | 'progress'>;
 
@@ -93,11 +94,12 @@ export function historyTotals(rows: Pick<DownloadRow, 'size' | 'finished_at' | '
 	return { today, month };
 }
 
-/** matches is the History search: the title, the episode and the Release name. */
-export function matches(r: Pick<DownloadRow, 'name' | 'title' | 'covers' | 'album'>, q: string): boolean {
+/** matches is the Downloads search: the title, the episode, the Release
+ *  name, the Downloader and the quality read from the name. */
+export function matches(r: Pick<DownloadRow, 'name' | 'title' | 'covers' | 'album' | 'downloader' | 'downloader_kind'>, q: string): boolean {
 	const s = q.trim().toLowerCase();
 	if (!s) return true;
-	return [r.title, r.name, r.covers, r.album].some((v) => v?.toLowerCase().includes(s));
+	return [r.title, r.name, r.covers, r.album, r.downloader, r.downloader_kind, quality(r.name)].some((v) => v?.toLowerCase().includes(s));
 }
 
 /** historyStatus is a History row's text and whether it reads as a failure. */

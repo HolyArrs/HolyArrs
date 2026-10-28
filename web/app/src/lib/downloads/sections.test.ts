@@ -21,6 +21,14 @@ describe('sections', () => {
 	});
 });
 
+describe('search', () => {
+	it('matches title, Release name, Downloader and quality', () => {
+		const x = row({ title: 'Arrival', name: 'Arrival.2016.2160p.DV.mkv', downloader: 'Basement qBit' });
+		expect(['arriv', '2016.2160', 'basement', '2160p dv', ''].map((q) => matches(x, q))).toEqual([true, true, true, true, true]);
+		expect(matches(x, 'nope')).toBe(false);
+	});
+});
+
 describe('header strip', () => {
 	it('gives speed only to rows taking in data', () => {
 		const fast = { active: true, speed: 4194304 };
