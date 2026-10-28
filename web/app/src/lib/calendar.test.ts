@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, rangeChunks, titlesFromAddress, itemDot, oneMovieDate, movieFacts, followsOk, followerNames, withFollow, startFollows, readFollows, saveFollows, type MovieFacts, byDay, feedLink, monthGrid, monthRange, shiftMonth, webcalLink, ymd, weekStart, shiftWeek, readView, saveView, startView, viewFromAddress, entryArt, entryIcon } from './calendar.ts';
+import { addDays, rangeChunks, titlesFromAddress, itemDot, oneMovieDate, movieFacts, followsOk, followerNames, withFollow, startFollows, readFollows, saveFollows, type MovieFacts, byDay, feedLink, monthGrid, monthRange, shiftMonth, webcalLink, ymd, weekStart, shiftWeek, readView, saveView, startView, viewFromAddress, entryArt, entryIcon, bannerArt, type BannerEntry } from './calendar.ts';
 import type { CalendarEntry } from './types.ts';
 
 const e = (title_id: number, kind: CalendarEntry['kind'], date: string): CalendarEntry => ({ title_id, name: `Movie ${title_id}`, kind, date });
@@ -178,5 +178,16 @@ describe('calendar range', () => {
 		expect(titlesFromAddress('all')).toBe('all');
 		expect(titlesFromAddress('everything')).toBe('all');
 		expect(titlesFromAddress(null)).toBe('all');
+	});
+});
+
+describe('bannerArt', () => {
+	it('uses the textless banner and logo, then the backdrop and still', () => {
+		const ep: BannerEntry = { title_id: 1, name: 'X', kind: 'episode', date: '2026-10-20', banner: 'b', logo: 'l', backdrop: 'd', still: 's' };
+		expect(bannerArt(ep)).toEqual({ images: ['b', 'd', 's'], logo: 'l' });
+		expect(bannerArt({ ...ep, banner: undefined, logo: undefined })).toEqual({ images: ['d', 's'], logo: null });
+	});
+	it('music: the artist wide picture, else the cover', () => {
+		expect(bannerArt({ title_id: 2, name: 'A', kind: 'album', date: '2026-10-20', banner: 'w', poster: 'c', still: 's' }).images).toEqual(['w', 'c']);
 	});
 });

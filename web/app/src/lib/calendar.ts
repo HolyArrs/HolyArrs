@@ -387,3 +387,17 @@ export function rangeChunks(from: string, to: string, max = 360): { from: string
 export function titlesFromAddress(v: string | null | undefined): TitlesShown {
 	return v === 'movies' || v === 'shows' || v === 'music' ? v : 'all';
 }
+
+/** The List view's banner: the server's banner and logo (stored picks only), when sent. */
+export type BannerEntry = CalendarEntry & { banner?: string; logo?: string };
+
+/**
+ * bannerArt is a List row's wide picture, best first (the row moves to the
+ * next when one fails to load), and the logo set over it. Movies and shows
+ * use the textless banner under the logo, else the title backdrop, else an
+ * episode's still; music uses the artist's wide picture, else the cover.
+ */
+export function bannerArt(e: BannerEntry): { images: string[]; logo: string | null } {
+	const list = e.kind === 'album' ? [e.banner, e.backdrop, e.poster] : [e.banner, e.backdrop, e.still, e.poster];
+	return { images: [...new Set(list.filter((x): x is string => !!x))], logo: e.logo || null };
+}

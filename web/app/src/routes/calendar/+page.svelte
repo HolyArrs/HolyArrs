@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { sized } from '#lib/tmdb-image.ts';
 	import { getBase } from '#lib/paths.ts';
 	import { to } from '#lib/paths.ts';
 	import { onMount, tick, untrack } from 'svelte';
@@ -25,6 +24,7 @@
 	import ComingSoon from '#lib/calendar/ComingSoon.svelte';
 	import MiniMonth from '#lib/calendar/MiniMonth.svelte';
 	import FollowWho from '#lib/calendar/FollowWho.svelte';
+	import CalBanner from '#lib/calendar/CalBanner.svelte';
 	import { rowWords, DEFAULT_LOOK, type CaptionLook } from '#lib/calendar-captions.ts';
 	import { setFollow } from '#lib/follow.ts';
 	import {
@@ -34,8 +34,6 @@
 		shiftMonth,
 		shows,
 		entryHref,
-		entryArt,
-		entryIcon,
 		weekStart,
 		webcalLink,
 		addDays,
@@ -574,7 +572,6 @@
 		<!-- The time column (TV-guide style): the air time, or Cinema, At home, Out now; a quiet All day without a time. -->
 		<!-- A time repeated from the row above is left blank, TV-guide style, so the eye sees when it changes. -->
 		<span class="tcol" class:quiet={w.quiet} class:same={w.when === prevWhen} data-testid="cal-when">{w.when}</span>
-		{@render art(e)}
 		<div class="it">
 			<span class="when-phone" class:quiet={w.quiet} aria-hidden="true">{w.when}</span>
 			<a href={to(entryHref(e))}>{w.title}</a>
@@ -590,16 +587,9 @@
 		<span class="row-bell" class:on={e.following}>
 			<IconButton icon={e.following ? 'bellOn' : 'bell'} size="sm" tipSide="below-end" label="{e.following ? 'Unfollow' : 'Follow'} {e.name}" aria-pressed={!!e.following} disabled={flipping === e.title_id} onclick={() => flipFollow(e, !e.following)} data-testid="cal-follow" />
 		</span>
+		<!-- The wide banner (title art with its logo) fills the row's right side, edge to edge. -->
+		<span class="bwrap"><CalBanner {e} /></span>
 	</li>
-{/snippet}
-
-{#snippet art(e: CalendarEntry)}
-	<!-- A 64 px thumbnail: the row size from the artwork cache, not TMDB's full-size still. -->
-	{@const src = entryArt(e) ? sized(entryArt(e), 'backdrop', 64) : null}
-	<span class="thumb" aria-hidden="true">
-		{#if src}<img {src} alt="" loading="lazy" decoding="async" />{:else}<Icon name={entryIcon(e.kind)} size={16} />{/if}
-		<span class="dot"></span>
-	</span>
 {/snippet}
 
 {#snippet mini()}
@@ -898,11 +888,16 @@
 	.dow { color: var(--accent-text); font: var(--t-caption); text-transform: none; }
 	.when b { font: var(--t-title2); font-variant-numeric: tabular-nums; }
 	.items ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-	.item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; min-width: 0; }
+	.item { display: flex; align-items: center; gap: 10px; padding: 8px 0; min-width: 0; }
 	.item + .item { border-top: 1px solid var(--line); }
-	.thumb { position: relative; flex: none; width: 64px; aspect-ratio: 16 / 9; border-radius: var(--r-sm); background: var(--surface-2); color: var(--text-muted); display: grid; place-items: center; overflow: hidden; }
-	.thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-	.thumb .dot { position: absolute; left: 4px; bottom: 4px; box-shadow: 0 0 0 2px var(--surface-1); }
+	/* List rows: the banner fills the row's right side, out to the card's edge (the card's corners round it). */
+	.day { overflow: hidden; }
+	.items { --bw: clamp(170px, 38%, 360px); }
+	.item { position: relative; min-height: 66px; padding-right: calc(var(--bw) + 4px); }
+	.bwrap { position: absolute; top: 0; bottom: 0; right: -12px; width: calc(var(--bw) + 12px); }
+	.item:first-child .bwrap { top: -12px; }
+	.item:last-child .bwrap { bottom: -12px; }
+	.it, .tcol, .row-bell { position: relative; z-index: 1; }
 	.it { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 	.who { display: flex; min-width: 0; margin-top: 3px; }
 	.row-bell { flex: none; align-self: center; }
@@ -924,7 +919,10 @@
 	@media (max-width: 640px) {
 		.tcol { display: none; }
 		/* A smaller picture leaves the words room on narrow phones. */
-		.thumb { width: 48px; }
+		/* Phones: the banner becomes a slim strip across the top of the row, the words below it. */
+		.item { flex-wrap: wrap; padding-right: 0; min-height: 0; }
+		.bwrap, .item:first-child .bwrap, .item:last-child .bwrap { position: relative; inset: auto; order: -1; flex: 0 0 100%; width: 100%; height: 56px; border-radius: var(--r-sm); overflow: hidden; }
+		.bwrap :global(.cal-banner) { -webkit-mask-image: none; mask-image: none; }
 		.item { gap: 8px; }
 		.when-phone { display: block; font: var(--t-footnote); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text); }
 		.when-phone.quiet { color: var(--text-muted); font-weight: 500; }

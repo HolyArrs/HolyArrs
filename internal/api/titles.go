@@ -623,6 +623,7 @@ func (a *API) calendar(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
+	a.calendarArt(r, out)
 	writeJSON(w, http.StatusOK, map[string]any{"from": from.Format("2006-01-02"), "to": to.Format("2006-01-02"), "titles": titles, "dates": out,
 		"my_follows": mine, "people": people})
 }
@@ -644,6 +645,78 @@ type calendarRow struct {
 	Following       bool               `json:"following,omitempty"`
 	Followers       []calendarFollower `json:"followers,omitempty"`
 	FollowersHidden int                `json:"followers_hidden,omitempty"`
+	// Banner is the List view's wide picture (textless when a logo goes
+	// over it); Logo is the title or artist logo. Both may be empty.
+	Banner string `json:"banner,omitempty"`
+	Logo   string `json:"logo,omitempty"`
+}
+
+// calendarArt adds the List view's banner pictures. Movies and shows get
+// the stored card pick (a textless backdrop and the title logo, from
+// card_art); albums get the artist's wide picture and logo through our
+// metadata server's picture route. Only stored data is read: no outside
+// call on the request, and a title without a pick keeps its backdrop.
+func (a *API) calendarArt(r *http.Request, rows []calendarRow) {
+	lang := trailerLanguage(r)
+	ids := map[int64]string{}
+	var args []any
+	for _, e := range rows {
+		if e.Kind != "album" {
+			if _, ok := ids[e.TitleID]; !ok {
+				ids[e.TitleID] = ""
+				args = append(args, e.TitleID)
+			}
+		}
+	}
+	db := a.s.Store.Read()
+	for len(args) > 0 {
+		chunk := args[:min(len(args), 500)]
+		args = args[len(chunk):]
+		q, err := db.QueryContext(r.Context(), `SELECT id, kind, COALESCE(CAST(json_extract(source_ids, '$.tmdb') AS TEXT), '') FROM titles
+			WHERE id IN (?`+strings.Repeat(", ?", len(chunk)-1)+`)`, chunk...)
+		if err != nil {
+			return
+		}
+		for q.Next() {
+			var id int64
+			var kind string
+			var tmdb string
+			if q.Scan(&id, &kind, &tmdb) == nil {
+				ids[id] = kind + ":" + tmdb
+			}
+		}
+		_ = q.Close()
+	}
+	var keys [][2]string
+	for _, k := range ids {
+		if kind, id, ok := strings.Cut(k, ":"); ok && id != "" && (kind == "movie" || kind == "show") {
+			keys = append(keys, [2]string{kind, id})
+		}
+	}
+	got := a.readCardArt(r.Context(), keys, lang)
+	for i := range rows {
+		e := &rows[i]
+		if e.Kind == "album" {
+			if e.ArtistMBID != "" {
+				e.Banner = musicArtPrefix + "wide/" + e.ArtistMBID
+				e.Logo = musicArtPrefix + "logo/" + e.ArtistMBID
+			}
+			continue
+		}
+		kind, id, _ := strings.Cut(ids[e.TitleID], ":")
+		row, ok := got[cardKey(kind, id, lang)]
+		if !ok {
+			row, ok = got[cardKey(kind, id, "en")]
+		}
+		if !ok {
+			continue
+		}
+		e.Logo = row.Logo
+		// A backdrop with the title printed on it is never used under a logo.
+		if row.Art != "" && !row.HasTitle {
+			e.Banner = row.Art
+		}
+	}
 }
 
 type calendarFollower struct {
