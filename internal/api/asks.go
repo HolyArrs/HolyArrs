@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"slices"
 	"strconv"
@@ -210,6 +211,8 @@ func (a *API) makeAsk(w http.ResponseWriter, r *http.Request) {
 		Albums     []string `json:"albums"` // an artist's albums (MusicBrainz ids); empty or missing: the whole artist
 		// Editions picks an edition per asked album: album id to release id.
 		Editions map[string]string `json:"editions"`
+		// Follow puts the title on the asker's calendar (default true).
+		Follow *bool `json:"follow"`
 	}
 	if !decode(w, r, &body, askHelp) {
 		return
@@ -277,9 +280,20 @@ func (a *API) makeAsk(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, askHelp)
 		return
 	}
+	follow := body.Follow == nil || *body.Follow
 	if err != nil {
+		// Asking for a title already in the Library still follows it.
+		var in *asks.InLibraryError
+		if follow && errors.As(err, &in) && in.TitleID != 0 {
+			if ferr := a.s.Asks.FollowAdded(r.Context(), a.person(r), in.TitleID); ferr != nil {
+				log.Printf("api: follow on ask: %v", ferr)
+			}
+		}
 		askError(w, err)
 		return
+	}
+	if err := a.s.Asks.FollowAsk(r.Context(), a.person(r), res.Ask.ID, follow); err != nil {
+		log.Printf("api: follow on ask %d: %v", res.Ask.ID, err)
 	}
 	code := http.StatusCreated
 	if res.Joined || res.Already {
@@ -288,7 +302,7 @@ func (a *API) makeAsk(w http.ResponseWriter, r *http.Request) {
 	a.answerAsk(w, r, code, res.Ask.ID, map[string]any{"joined": res.Joined, "already": res.Already})
 }
 
-const askHelp = `send {"id": "tmdb:<number>"} for a movie, {"kind": "show", "id": "tmdb:<n>" (or tvdb:, tvmaze:, imdb:), "seasons": [1, 2]} for a show (no seasons: the whole show; "future_only": true instead of seasons: the future seasons only), or {"kind": "artist", "id": "mbid:<MusicBrainz artist id>", "albums": ["<MusicBrainz album id>"], "editions": {"<album id>": "<release id>"}} for music (no albums: the whole artist; editions optional)`
+const askHelp = `send {"id": "tmdb:<number>"} for a movie, {"kind": "show", "id": "tmdb:<n>" (or tvdb:, tvmaze:, imdb:), "seasons": [1, 2]} for a show (no seasons: the whole show; "future_only": true instead of seasons: the future seasons only), or {"kind": "artist", "id": "mbid:<MusicBrainz artist id>", "albums": ["<MusicBrainz album id>"], "editions": {"<album id>": "<release id>"}} for music (no albums: the whole artist; editions optional); any ask may add "follow": false to leave the title off your calendar`
 
 func (a *API) askLimit(w http.ResponseWriter, r *http.Request) {
 	l, err := a.s.Asks.LimitOf(r.Context(), a.person(r))

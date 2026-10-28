@@ -116,8 +116,11 @@ func TestFollowMovieByTMDBLandsOnce(t *testing.T) {
 		t.Fatalf("told %d %v", n, err)
 	}
 	r.svc.Wait()
-	if on, _ := r.svc.IsFollowingMovieTMDB(ctx, r.ana.UserID, "900002"); on {
-		t.Fatal("the follow should end once the movie lands")
+	if on, _ := r.svc.IsFollowingMovieTMDB(ctx, r.ana.UserID, "900002"); !on {
+		t.Fatal("the follow should go on as the Library title once the movie lands")
+	}
+	if on, _ := r.svc.IsFollowing(ctx, r.ana.UserID, tid); !on {
+		t.Fatal("the landed movie is followed as its Library title")
 	}
 	var msgs int
 	if err := r.st.Read().QueryRow("SELECT count(*) FROM messages WHERE user_id = ? AND kind = 'ready' AND title_id = ?", r.ana.UserID, tid).Scan(&msgs); err != nil || msgs != 1 {
@@ -126,7 +129,17 @@ func TestFollowMovieByTMDBLandsOnce(t *testing.T) {
 	if n, _ := r.svc.LandTMDBFollows(ctx, tid); n != 0 {
 		t.Fatal("told twice")
 	}
-	if err := r.svc.FollowMovieTMDB(ctx, r.ana, "900002"); !errors.Is(err, ErrInLibrary) {
+	if err := r.svc.UnfollowMovieTMDB(ctx, r.ana.UserID, "900002"); err != nil {
+		t.Fatal(err)
+	}
+	if on, _ := r.svc.IsFollowing(ctx, r.ana.UserID, tid); on {
+		t.Fatal("unfollow by TMDB id ends the Library follow")
+	}
+	// A movie in the Library is followed as its title.
+	if err := r.svc.FollowMovieTMDB(ctx, r.luis, "900002"); err != nil {
 		t.Fatalf("in the Library: %v", err)
+	}
+	if on, _ := r.svc.IsFollowing(ctx, r.luis.UserID, tid); !on {
+		t.Fatal("following a Library movie by TMDB id follows the title")
 	}
 }

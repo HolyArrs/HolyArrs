@@ -133,8 +133,49 @@ func TestFollowMovieByTMDBOverHTTP(t *testing.T) {
 	if n, err := r.asks.LandTMDBFollows(context.Background(), tid); err != nil || n != 1 {
 		t.Fatalf("landed %d %v", n, err)
 	}
-	if state(r.ana) {
-		t.Fatal("the follow should end once the movie lands")
+	if !state(r.ana) {
+		t.Fatal("the follow should go on as the Library title once the movie lands")
 	}
-	r.ana.call("PUT", path, "", 409)
+	r.ana.call("DELETE", path, "", 200)
+	if state(r.ana) {
+		t.Fatal("unfollow by TMDB id ends the Library follow")
+	}
+	r.ana.call("PUT", path, "", 200) // a movie in the Library is followed as its title
+	if !state(r.ana) {
+		t.Fatal("not following the Library movie")
+	}
+}
+
+// route: POST /api/v1/asks
+// route: POST /api/v1/titles
+// Asking follows by default (once approved; the asker, not the approver);
+// "follow": false leaves it off. Adding by hand follows the adder.
+func TestAskAndAddFollowByDefault(t *testing.T) {
+	r := newAskRig(t)
+	ctx := context.Background()
+	a := askOf(t, r.ana.call("POST", "/api/v1/asks", `{"id":"tmdb:900002"}`, 201))
+	r.bo.call("POST", "/api/v1/asks", `{"id":"tmdb:900002","follow":false}`, 200)
+	got := askOf(t, r.owner.call("POST", "/api/v1/asks/"+itoa(a.ID)+"/approve", `{}`, 200))
+	if got.TitleID == nil {
+		t.Fatalf("approved ask has no title: %+v", got)
+	}
+	tid := *got.TitleID
+	if on, _ := r.asks.IsFollowing(ctx, r.ana.id, tid); !on {
+		t.Fatal("the asker follows")
+	}
+	if on, _ := r.asks.IsFollowing(ctx, r.bo.id, tid); on {
+		t.Fatal("follow false: no follow")
+	}
+	if on, _ := r.asks.IsFollowing(ctx, 1, tid); on {
+		t.Fatal("the approver does not follow")
+	}
+	var add struct {
+		Title struct {
+			ID int64 `json:"id"`
+		} `json:"title"`
+	}
+	_ = json.Unmarshal(r.owner.call("POST", "/api/v1/titles", `{"id":"tmdb:900003"}`, 201), &add)
+	if on, _ := r.asks.IsFollowing(ctx, 1, add.Title.ID); !on {
+		t.Fatal("adding by hand follows")
+	}
 }

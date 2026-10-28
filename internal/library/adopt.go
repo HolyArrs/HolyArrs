@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/domain"
 	"github.com/CoderLuii/holyarrs/internal/importer"
@@ -22,6 +23,7 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/metadata"
 	"github.com/CoderLuii/holyarrs/internal/naming"
 	"github.com/CoderLuii/holyarrs/internal/parse"
+	"github.com/CoderLuii/holyarrs/internal/ratings"
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
@@ -451,7 +453,8 @@ func (s *Service) ScanFolder(ctx context.Context, folderID int64, after string, 
 }
 
 // AdoptLater queues adopting the chosen folders.
-func (s *Service) AdoptLater(ctx context.Context, folderID int64, choices []AdoptChoice, by domain.Actor) (int64, error) {
+// With follow, the person who started it follows every title brought in.
+func (s *Service) AdoptLater(ctx context.Context, folderID int64, choices []AdoptChoice, follow bool, by domain.Actor) (int64, error) {
 	var lf domain.LibraryFolder
 	if err := store.Get(ctx, s.Store.Read(), "library_folders", folderID, &lf); err != nil {
 		return 0, ErrNoFolder
@@ -460,7 +463,7 @@ func (s *Service) AdoptLater(ctx context.Context, folderID int64, choices []Adop
 	for _, c := range choices {
 		raw = append(raw, map[string]any{"folder": c.Folder, "tmdb_id": c.TMDB, "id": c.ID})
 	}
-	id, _, err := s.Queue.Enqueue(ctx, KindAdopt, &domain.Subject{Type: "library_folder", ID: folderID}, map[string]any{"choices": raw}, "", by)
+	id, _, err := s.Queue.Enqueue(ctx, KindAdopt, &domain.Subject{Type: "library_folder", ID: folderID}, map[string]any{"choices": raw, "follow": follow}, "", by)
 	return id, err
 }
 
@@ -524,8 +527,43 @@ func (s *Service) handleAdopt(ctx context.Context, r *jobs.Run) error {
 			adopted++
 		}
 	}
+	if follow, _ := r.Job.Params["follow"].(bool); follow {
+		if ferr := s.followAdopted(ctx, r.Job.AskedBy, res); ferr != nil && err == nil {
+			err = ferr
+		}
+	}
 	r.SetResult(map[string]any{"adopted": adopted, "results": res})
 	return err
+}
+
+// followAdopted makes the person who imported titles follow them, within a
+// Kid's limit (titles above it are left out).
+func (s *Service) followAdopted(ctx context.Context, by domain.Actor, res []AdoptResult) error {
+	if by.Kind != "user" || by.ID == 0 {
+		return nil
+	}
+	var max string
+	if err := s.Store.Read().QueryRowContext(ctx, "SELECT max_rating FROM users WHERE id = ?", by.ID).Scan(&max); err != nil {
+		return nil // no such person: nothing to follow
+	}
+	now := store.FormatTime(time.Now())
+	return s.Store.Write(ctx, func(tx *sql.Tx) error {
+		for _, x := range res {
+			if x.TitleID == 0 {
+				continue
+			}
+			if max != "" {
+				var kind, rating string
+				if err := tx.QueryRow("SELECT kind, coalesce(rating, '') FROM titles WHERE id = ?", x.TitleID).Scan(&kind, &rating); err != nil || !ratings.Allows(max, kind, rating) {
+					continue
+				}
+			}
+			if _, err := tx.Exec("INSERT OR IGNORE INTO follows (user_id, title_id, created_at) VALUES (?, ?, ?)", by.ID, x.TitleID, now); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 // RescanResult counts what a rescan saw.

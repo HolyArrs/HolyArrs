@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -144,6 +145,7 @@ func (a *API) addShow(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		ID string `json:"id"`
 		library.ShowAddOptions
+		Follow *bool `json:"follow"` // put it on the adder's calendar (default true)
 	}
 	sent, ok := decodeKeys(w, r, &body, addShowHelp)
 	if !ok {
@@ -162,6 +164,11 @@ func (a *API) addShow(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		showError(w, err)
 		return
+	}
+	if (body.Follow == nil || *body.Follow) && a.s.Asks != nil {
+		if err := a.s.Asks.FollowAdded(r.Context(), a.person(r), id); err != nil {
+			log.Printf("api: follow on add: %v", err)
+		}
 	}
 	var t domain.Title
 	if err := store.Get(r.Context(), a.s.Store.Read(), "titles", id, &t); err != nil {

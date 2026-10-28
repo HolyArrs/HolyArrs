@@ -20,8 +20,9 @@ func (a *API) followRoutes(m *http.ServeMux) {
 	m.HandleFunc("DELETE /api/v1/metadata/movie/{tmdb_id}/follow", a.deleteMovieFollow)
 }
 
-// Follow a movie by TMDB id: one not in the Library (often not out yet);
-// the person hears once when it lands, then the follow ends.
+// Follow a movie by TMDB id: one in the Library is followed as its title;
+// one not in the Library (often not out yet) waits, the person hears once
+// when it lands, and the follow moves onto the Library title.
 
 func (a *API) movieFollowState(w http.ResponseWriter, r *http.Request, tmdbID string) {
 	on, err := a.s.Asks.IsFollowingMovieTMDB(r.Context(), a.person(r).UserID, tmdbID)
@@ -45,8 +46,8 @@ func (a *API) putMovieFollow(w http.ResponseWriter, r *http.Request) {
 	switch err := a.s.Asks.FollowMovieTMDB(r.Context(), a.person(r), id); {
 	case errors.Is(err, asks.ErrBadTMDBID):
 		fail(w, http.StatusBadRequest, err.Error())
-	case errors.Is(err, asks.ErrInLibrary):
-		fail(w, http.StatusConflict, err.Error())
+	case errors.Is(err, asks.ErrNotFollowable):
+		fail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, asks.ErrAboveLimit):
 		fail(w, http.StatusForbidden, err.Error())
 	case err != nil:

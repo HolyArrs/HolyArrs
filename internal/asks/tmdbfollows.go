@@ -104,9 +104,6 @@ func (s *Service) IsFollowingShowTMDB(ctx context.Context, userID int64, tmdbID 
 	return n > 0, err
 }
 
-// ErrInLibrary says a movie is in the Library already, so there is nothing to wait for.
-var ErrInLibrary = errors.New("the movie is in the Library already")
-
 // libraryMovie is the Library title of a movie by TMDB id, or 0.
 func (s *Service) libraryMovie(ctx context.Context, tmdbID string) (int64, error) {
 	var id int64
@@ -117,9 +114,11 @@ func (s *Service) libraryMovie(ctx context.Context, tmdbID string) (int64, error
 	return id, err
 }
 
-// FollowMovieTMDB follows a movie that is not in the Library yet (often
-// one not out yet) by its TMDB id; the person hears once when it lands.
-// A Kid follows only movies their limit allows, as when asking.
+// FollowMovieTMDB follows a movie by its TMDB id. A movie in the Library
+// is followed as that title; otherwise the follow waits for the movie
+// (often one not out yet), the person hears once when it lands, and from
+// then on follows the Library title. A Kid follows only movies their limit
+// allows, as when asking.
 func (s *Service) FollowMovieTMDB(ctx context.Context, p Person, tmdbID string) error {
 	if !tmdbIDOK(tmdbID) {
 		return ErrBadTMDBID
@@ -134,11 +133,12 @@ func (s *Service) FollowMovieTMDB(ctx context.Context, p Person, tmdbID string) 
 			return err
 		}
 	}
-	if id, err := s.libraryMovie(ctx, tmdbID); err != nil || id != 0 {
-		if err == nil {
-			err = ErrInLibrary
-		}
+	id, err := s.libraryMovie(ctx, tmdbID)
+	if err != nil {
 		return err
+	}
+	if id != 0 {
+		return s.Follow(ctx, p, id)
 	}
 	now := store.FormatTime(s.now())
 	return s.Store.Write(ctx, func(tx *sql.Tx) error {
@@ -147,30 +147,45 @@ func (s *Service) FollowMovieTMDB(ctx context.Context, p Person, tmdbID string) 
 	})
 }
 
-// UnfollowMovieTMDB stops waiting for a movie.
+// UnfollowMovieTMDB stops a follow of a movie by TMDB id, waiting or of
+// its Library title.
 func (s *Service) UnfollowMovieTMDB(ctx context.Context, userID int64, tmdbID string) error {
 	if !tmdbIDOK(tmdbID) {
 		return ErrBadTMDBID
 	}
-	return s.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("DELETE FROM tmdb_movie_follows WHERE user_id = ? AND tmdb_id = ?", userID, tmdbID)
+	id, err := s.libraryMovie(ctx, tmdbID)
+	if err != nil {
 		return err
+	}
+	return s.Store.Write(ctx, func(tx *sql.Tx) error {
+		if _, err := tx.Exec("DELETE FROM tmdb_movie_follows WHERE user_id = ? AND tmdb_id = ?", userID, tmdbID); err != nil {
+			return err
+		}
+		if id != 0 {
+			_, err := tx.Exec("DELETE FROM follows WHERE user_id = ? AND title_id = ?", userID, id)
+			return err
+		}
+		return nil
 	})
 }
 
-// IsFollowingMovieTMDB says whether a person waits for a movie by TMDB id.
+// IsFollowingMovieTMDB says whether a person follows a movie by TMDB id,
+// waiting for it or as its Library title.
 func (s *Service) IsFollowingMovieTMDB(ctx context.Context, userID int64, tmdbID string) (bool, error) {
 	if !tmdbIDOK(tmdbID) {
 		return false, ErrBadTMDBID
 	}
 	var n int
-	err := s.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM tmdb_movie_follows WHERE user_id = ? AND tmdb_id = ?", userID, tmdbID).Scan(&n)
+	err := s.Store.Read().QueryRowContext(ctx, `SELECT (SELECT count(*) FROM tmdb_movie_follows WHERE user_id = ? AND tmdb_id = ?)
+		+ (SELECT count(*) FROM follows f JOIN titles t ON t.id = f.title_id WHERE f.user_id = ? AND t.kind = 'movie' AND t.state != 'removed' AND json_extract(t.source_ids, '$.tmdb') = ?)`,
+		userID, tmdbID, userID, tmdbID).Scan(&n)
 	return n > 0, err
 }
 
 // landMovieFollows tells the people waiting for a just-added movie that it
-// is in the Library (an in-app message and the Ready alert) and ends their
-// follows. Kids whose limit does not allow it are dropped without a notice.
+// is in the Library (an in-app message and the Ready alert) and moves their
+// follows onto the Library title. Kids whose limit does not allow it are
+// dropped without a notice.
 func (s *Service) landMovieFollows(ctx context.Context, titleID int64, name, tmdbID string) (int, error) {
 	rows, err := s.Store.Read().QueryContext(ctx, `SELECT u.id, u.name, coalesce(x.email, ''), coalesce(x.discord_id, ''), u.max_rating
 		FROM tmdb_movie_follows f JOIN users u ON u.id = f.user_id LEFT JOIN user_ask_settings x ON x.user_id = u.id
@@ -212,6 +227,11 @@ func (s *Service) landMovieFollows(ctx context.Context, titleID int64, name, tmd
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		if _, err := tx.Exec("DELETE FROM tmdb_movie_follows WHERE tmdb_id = ?", tmdbID); err != nil {
 			return err
+		}
+		for _, p := range tell {
+			if _, err := tx.Exec("INSERT INTO follows (user_id, title_id, created_at) VALUES (?, ?, ?) ON CONFLICT DO NOTHING", p.ID, titleID, now); err != nil {
+				return err
+			}
 		}
 		for _, p := range tell {
 			if _, err := tx.Exec("INSERT INTO messages (created_at, user_id, kind, text, title_id) VALUES (?, ?, 'ready', ?, ?)", now, p.ID, text+".", titleID); err != nil {

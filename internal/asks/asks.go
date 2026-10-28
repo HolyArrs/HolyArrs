@@ -620,6 +620,9 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 	}); err != nil {
 		return a, err
 	}
+	if err := s.followAskers(ctx, a.ID, tid); err != nil {
+		log.Printf("asks: follows of ask %d: %v", a.ID, err)
+	}
 	people, _ := s.people(ctx, a.ID)
 	how := "approved by " + by.Name
 	if auto {

@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 	"slices"
 	"strings"
@@ -224,12 +225,13 @@ func (a *API) lookupArtists(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"artists": out, "source": "musicbrainz"})
 }
 
-const addArtistHelp = `send {"id": "mbid:<MusicBrainz artist id>"} with optional library_folder_id, pick_rules_id, keep_up_to_date, albums (all, future, missing, latest, first, none), new_albums (all, new, none), album_types (album, ep, single, broadcast, other), secondary_types (studio, live, compilation, ...), release_statuses (official, promotion, bootleg, pseudo-release)`
+const addArtistHelp = `send {"id": "mbid:<MusicBrainz artist id>"} with optional library_folder_id, pick_rules_id, keep_up_to_date, albums (all, future, missing, latest, first, none), new_albums (all, new, none), album_types (album, ep, single, broadcast, other), secondary_types (studio, live, compilation, ...), release_statuses (official, promotion, bootleg, pseudo-release), follow`
 
 func (a *API) addArtist(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		ID string `json:"id"`
 		library.ArtistAddOptions
+		Follow *bool `json:"follow"` // put it on the adder's calendar (default true)
 	}
 	if !decode(w, r, &body, addArtistHelp) {
 		return
@@ -242,6 +244,11 @@ func (a *API) addArtist(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		musicError(w, err)
 		return
+	}
+	if (body.Follow == nil || *body.Follow) && a.s.Asks != nil {
+		if err := a.s.Asks.FollowAdded(r.Context(), a.person(r), id); err != nil {
+			log.Printf("api: follow on add: %v", err)
+		}
 	}
 	var t domain.Title
 	if err := store.Get(r.Context(), a.s.Store.Read(), "titles", id, &t); err != nil {

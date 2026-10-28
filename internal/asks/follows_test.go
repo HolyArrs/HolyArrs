@@ -141,3 +141,50 @@ func TestFollowArtistGetsNewAlbumNotices(t *testing.T) {
 		t.Fatalf("again %d", n)
 	}
 }
+
+func TestAskersFollowOnceApproved(t *testing.T) {
+	r := newRig(t)
+	ctx := context.Background()
+	res, err := r.svc.Ask(ctx, r.ana, "693134")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := r.svc.FollowAsk(ctx, r.ana, res.Ask.ID, true); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.svc.Ask(ctx, r.bo, "693134"); err != nil {
+		t.Fatal(err)
+	}
+	// Bo unticks Follow.
+	if err := r.svc.FollowAsk(ctx, r.bo, res.Ask.ID, false); err != nil {
+		t.Fatal(err)
+	}
+	a, err := r.svc.Approve(ctx, res.Ask.ID, r.luis, ApproveOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	tid := *a.TitleID
+	if on, _ := r.svc.IsFollowing(ctx, r.ana.UserID, tid); !on {
+		t.Fatal("the asker follows once the ask is approved")
+	}
+	if on, _ := r.svc.IsFollowing(ctx, r.bo.UserID, tid); on {
+		t.Fatal("an asker who unticked Follow does not follow")
+	}
+	if on, _ := r.svc.IsFollowing(ctx, r.luis.UserID, tid); on {
+		t.Fatal("the approver does not follow")
+	}
+	// Ticking Follow later on an approved ask follows straight away.
+	if err := r.svc.FollowAsk(ctx, r.bo, res.Ask.ID, true); err != nil {
+		t.Fatal(err)
+	}
+	if on, _ := r.svc.IsFollowing(ctx, r.bo.UserID, tid); !on {
+		t.Fatal("follow on an approved ask starts now")
+	}
+	// Titles added by hand can be followed too (movies included).
+	if err := r.svc.FollowAdded(ctx, r.luis, tid, 99999); err != nil {
+		t.Fatal(err)
+	}
+	if fs, _ := r.svc.Following(ctx, r.luis.UserID); len(fs) != 1 || fs[0].Kind != "movie" {
+		t.Fatalf("luis follows %+v", fs)
+	}
+}

@@ -283,7 +283,7 @@ func TestScanAndAdoptJobs(t *testing.T) {
 	if _, _, err := q.Enqueue(ctx, KindRescan, nil, nil, "", domain.System); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := svc.AdoptLater(ctx, lf.ID, []AdoptChoice{{Folder: "Dune - Part Two (2024)", TMDB: "693134"}}, domain.System); err != nil {
+	if _, err := svc.AdoptLater(ctx, lf.ID, []AdoptChoice{{Folder: "Dune - Part Two (2024)", TMDB: "693134"}}, false, domain.System); err != nil {
 		t.Fatal(err)
 	}
 	for _, j := range waitJobs(t, s, 3) {

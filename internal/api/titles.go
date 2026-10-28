@@ -1,8 +1,11 @@
 package api
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
+	"log"
 	"mime"
 	"net/http"
 	"os"
@@ -91,8 +94,9 @@ func (a *API) addTitle(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		ID string `json:"id"` // "tmdb:693134" or "imdb:tt15239678"
 		library.AddOptions
+		Follow *bool `json:"follow"` // put it on the adder's calendar (default true)
 	}
-	sent, ok := decodeKeys(w, r, &body, `send {"id": "tmdb:<number>"} with optional library_folder_id, pick_rules_id, keep_up_to_date, release_gate, gate_delay_days, search_on_add, more_versions`)
+	sent, ok := decodeKeys(w, r, &body, `send {"id": "tmdb:<number>"} with optional library_folder_id, pick_rules_id, keep_up_to_date, release_gate, gate_delay_days, search_on_add, more_versions, follow`)
 	if !ok {
 		return
 	}
@@ -114,6 +118,11 @@ func (a *API) addTitle(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		libraryError(w, err)
 		return
+	}
+	if (body.Follow == nil || *body.Follow) && a.s.Asks != nil {
+		if err := a.s.Asks.FollowAdded(r.Context(), a.person(r), id); err != nil {
+			log.Printf("api: follow on add: %v", err)
+		}
 	}
 	var t domain.Title
 	if err := store.Get(r.Context(), a.s.Store.Read(), "titles", id, &t); err != nil {
@@ -604,7 +613,103 @@ func (a *API) calendar(w http.ResponseWriter, r *http.Request) {
 			es[i].Poster = artworkLinks([]string{es[i].Poster})[0]
 		}
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"from": from.Format("2006-01-02"), "to": to.Format("2006-01-02"), "titles": titles, "dates": es})
+	out, mine, people, err := a.calendarFollows(r.Context(), es)
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"from": from.Format("2006-01-02"), "to": to.Format("2006-01-02"), "titles": titles, "dates": out,
+		"my_follows": mine, "people": people})
+}
+
+// calendarRow is a calendar date with who follows its title: following
+// says the viewer does; followers are the people the viewer may see (the
+// "Show who asked" privacy rules), followers_hidden counts the others.
+type calendarRow struct {
+	library.CalendarEntry
+	Following       bool               `json:"following,omitempty"`
+	Followers       []calendarFollower `json:"followers,omitempty"`
+	FollowersHidden int                `json:"followers_hidden,omitempty"`
+}
+
+type calendarFollower struct {
+	ID     int64   `json:"id"`
+	Name   string  `json:"name"`
+	Avatar *string `json:"avatar,omitempty"`
+	Me     bool    `json:"me,omitempty"`
+}
+
+// calendarFollows adds who follows each date's title, and says how many
+// titles the viewer follows in all and how many people use this server.
+func (a *API) calendarFollows(ctx context.Context, es []library.CalendarEntry) ([]calendarRow, int, int, error) {
+	db := a.s.Store.Read()
+	seer, err := a.seer(ctx)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	var mine, people int
+	if err := db.QueryRowContext(ctx, `SELECT count(*) FROM follows f JOIN titles t ON t.id = f.title_id
+		WHERE f.user_id = ? AND t.state != 'removed'`, seer.me).Scan(&mine); err != nil {
+		return nil, 0, 0, err
+	}
+	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM users WHERE state = 'active'").Scan(&people); err != nil {
+		return nil, 0, 0, err
+	}
+	type who struct {
+		seen   []calendarFollower
+		hidden int
+		me     bool
+	}
+	by := map[int64]*who{}
+	var ids []any
+	for _, e := range es {
+		if by[e.TitleID] == nil {
+			by[e.TitleID] = &who{}
+			ids = append(ids, e.TitleID)
+		}
+	}
+	for len(ids) > 0 {
+		chunk := ids[:min(len(ids), 500)]
+		ids = ids[len(chunk):]
+		rows, err := db.QueryContext(ctx, `SELECT f.title_id, u.id, u.name, (SELECT etag FROM user_avatars WHERE user_id = u.id)
+			FROM follows f JOIN users u ON u.id = f.user_id
+			WHERE u.state != 'disabled' AND f.title_id IN (?`+strings.Repeat(", ?", len(chunk)-1)+`) ORDER BY f.created_at, u.id`, chunk...)
+		if err != nil {
+			return nil, 0, 0, err
+		}
+		for rows.Next() {
+			var tid, uid int64
+			var name string
+			var etag sql.NullString
+			if err := rows.Scan(&tid, &uid, &name, &etag); err != nil {
+				rows.Close()
+				return nil, 0, 0, err
+			}
+			w := by[tid]
+			if uid == seer.me {
+				w.me = true
+			}
+			if !seer.sees(uid) {
+				w.hidden++
+				continue
+			}
+			f := calendarFollower{ID: uid, Name: strings.TrimSpace(name), Me: uid == seer.me}
+			if etag.Valid && etag.String != "" {
+				u := "/api/v1/users/" + strconv.FormatInt(uid, 10) + "/avatar?v=" + etag.String
+				f.Avatar = &u
+			}
+			w.seen = append(w.seen, f)
+		}
+		if err := rows.Close(); err != nil {
+			return nil, 0, 0, err
+		}
+	}
+	out := make([]calendarRow, len(es))
+	for i, e := range es {
+		w := by[e.TitleID]
+		out[i] = calendarRow{CalendarEntry: e, Following: w.me, Followers: w.seen, FollowersHidden: w.hidden}
+	}
+	return out, mine, people, nil
 }
 
 func (a *API) artwork(w http.ResponseWriter, r *http.Request) {

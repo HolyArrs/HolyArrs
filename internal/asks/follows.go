@@ -11,27 +11,28 @@ import (
 	"github.com/CoderLuii/holyarrs/internal/store"
 )
 
-// ErrNotFollowable says the title is not a show or an artist in the
-// Library.
-var ErrNotFollowable = errors.New("only a show or an artist in the Library can be followed")
+// ErrNotFollowable says the title is not a movie, a show or an artist in
+// the Library.
+var ErrNotFollowable = errors.New("only a movie, a show or an artist in the Library can be followed")
 
 // Followed is one title a person follows.
 type Followed struct {
 	TitleID    int64  `json:"title_id"`
-	Kind       string `json:"kind"` // show or artist
+	Kind       string `json:"kind"` // movie, show or artist
 	Name       string `json:"name"`
 	Year       *int   `json:"year,omitempty"`
 	FollowedAt string `json:"followed_at"`
 }
 
-// Follow lets p hear about a show's new episodes and seasons or an
-// artist's new albums. It asks for nothing and changes nothing in the
-// Library. A Kid may follow only titles within their limit.
+// Follow puts a title's dates on p's calendar and lets p hear about a
+// show's new episodes and seasons or an artist's new albums. It asks for
+// nothing and changes nothing in the Library (Kept up to date is separate).
+// A Kid may follow only titles within their limit.
 func (s *Service) Follow(ctx context.Context, p Person, titleID int64) error {
 	db := s.Store.Read()
 	var kind string
 	err := db.QueryRowContext(ctx, "SELECT kind FROM titles WHERE id = ? AND state != 'removed'", titleID).Scan(&kind)
-	if errors.Is(err, sql.ErrNoRows) || (err == nil && kind != "show" && kind != "artist") {
+	if errors.Is(err, sql.ErrNoRows) || (err == nil && kind != "movie" && kind != "show" && kind != "artist") {
 		return ErrNotFollowable
 	}
 	if err != nil {
@@ -47,6 +48,58 @@ func (s *Service) Follow(ctx context.Context, p Person, titleID int64) error {
 		_, err := tx.Exec("INSERT INTO follows (user_id, title_id, created_at) VALUES (?, ?, ?) ON CONFLICT DO NOTHING", p.UserID, titleID, now)
 		return err
 	})
+}
+
+// FollowAsk records whether a person who asked follows the asked title,
+// and, when the ask already has its Library title, starts (or ends) the
+// follow now. Approving an ask starts the follows of its askers who chose
+// to follow (followAskers).
+func (s *Service) FollowAsk(ctx context.Context, p Person, askID int64, follow bool) error {
+	var tid sql.NullInt64
+	if err := s.Store.Read().QueryRowContext(ctx, "SELECT title_id FROM asks WHERE id = ?", askID).Scan(&tid); err != nil {
+		return err
+	}
+	on := 0
+	if follow {
+		on = 1
+	}
+	if err := s.Store.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE ask_people SET follow = ? WHERE ask_id = ? AND user_id = ?", on, askID, p.UserID)
+		return err
+	}); err != nil {
+		return err
+	}
+	if !tid.Valid || !follow {
+		return nil
+	}
+	err := s.Follow(ctx, p, tid.Int64)
+	if errors.Is(err, ErrNotFollowable) || errors.Is(err, ErrAboveLimit) {
+		return nil
+	}
+	return err
+}
+
+// followAskers starts the follows of an ask's askers who chose to follow,
+// once the ask has its Library title.
+func (s *Service) followAskers(ctx context.Context, askID, titleID int64) error {
+	now := store.FormatTime(s.now())
+	return s.Store.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec(`INSERT OR IGNORE INTO follows (user_id, title_id, created_at) SELECT user_id, ?, ? FROM ask_people
+			WHERE ask_id = ? AND follow = 1`, titleID, now, askID)
+		return err
+	})
+}
+
+// FollowAdded makes a person follow a title they added by hand or brought
+// in from their own folders. Titles above a Kid's limit are skipped.
+func (s *Service) FollowAdded(ctx context.Context, p Person, titleIDs ...int64) error {
+	for _, id := range titleIDs {
+		err := s.Follow(ctx, p, id)
+		if err != nil && !errors.Is(err, ErrNotFollowable) && !errors.Is(err, ErrAboveLimit) {
+			return err
+		}
+	}
+	return nil
 }
 
 // Unfollow stops a person's follow of a title (no follow: nothing to do).

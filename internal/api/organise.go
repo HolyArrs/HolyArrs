@@ -59,6 +59,7 @@ func (a *API) adoptFolders(w http.ResponseWriter, r *http.Request) {
 	}
 	var body struct {
 		Folders []library.AdoptChoice `json:"folders"`
+		Follow  *bool                 `json:"follow"` // the importer follows what is brought in (default true)
 	}
 	if !decode(w, r, &body, `send {"folders": [{"folder": "<folder name>", "tmdb_id": "<id>"}, ...]}, or "id": "<source>:<id>" for a show folder`) {
 		return
@@ -73,7 +74,7 @@ func (a *API) adoptFolders(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	jobID, err := a.s.Library.AdoptLater(r.Context(), id, body.Folders, actor(r))
+	jobID, err := a.s.Library.AdoptLater(r.Context(), id, body.Folders, body.Follow == nil || *body.Follow, actor(r))
 	if err != nil {
 		libraryError(w, err)
 		return
