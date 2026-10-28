@@ -617,6 +617,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		_, err := wish.SendAlbumNotices(ctx)
 		return err
 	}})
+	wish.PrefetchParts = true
+	go wish.BackfillParts(context.Background())
 	wish.WatchEpisodes()
 	wish.WatchTMDBFollows()
 	reg.Set(supervisor.StageKey("alerts"), "stage", "Alerts", supervisor.Running, "")

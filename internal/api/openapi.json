@@ -8393,6 +8393,87 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/asks/{id}/parts": {
+      "get": {
+        "description": "The lists stored when the ask was made (and backfilled at start): episodes per season number for a show, songs per album MusicBrainz id for an artist. A list not stored yet is missing.",
+        "operationId": "askParts",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "albums": {
+                      "additionalProperties": {
+                        "items": {
+                          "properties": {
+                            "disc": {
+                              "type": "integer"
+                            },
+                            "length_ms": {
+                              "type": "integer"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "number": {
+                              "type": "integer"
+                            },
+                            "recording_id": {
+                              "type": "string"
+                            }
+                          },
+                          "type": "object"
+                        },
+                        "type": "array"
+                      },
+                      "type": "object"
+                    },
+                    "seasons": {
+                      "additionalProperties": {
+                        "items": {
+                          "properties": {
+                            "air_day": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "number": {
+                              "type": "integer"
+                            }
+                          },
+                          "type": "object"
+                        },
+                        "type": "array"
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The stored lists."
+          }
+        },
+        "summary": "An ask's stored episode and song lists",
+        "tags": [],
+        "x-holyarrs-part": "wishlist",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/asks/{id}/turn-down": {
       "post": {
         "description": "With a note for the people who asked; a turned down ask no longer counts against their limit.",

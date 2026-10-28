@@ -15,7 +15,10 @@ import (
 )
 
 // fakeArtists answers one artist with its albums.
-type fakeArtists struct{ artists map[string]metadata.Artist }
+type fakeArtists struct {
+	artists   map[string]metadata.Artist
+	pressings map[string][]metadata.Pressing
+}
 
 func (f *fakeArtists) SearchArtists(context.Context, string) ([]metadata.Artist, error) {
 	return nil, nil
@@ -28,8 +31,8 @@ func (f *fakeArtists) Artist(_ context.Context, mbid string) (metadata.Artist, e
 	return metadata.Artist{}, metadata.ErrArtistNotFound
 }
 
-func (f *fakeArtists) Pressings(context.Context, string) ([]metadata.Pressing, error) {
-	return nil, nil
+func (f *fakeArtists) Pressings(_ context.Context, mbid string) ([]metadata.Pressing, error) {
+	return f.pressings[mbid], nil
 }
 
 const (

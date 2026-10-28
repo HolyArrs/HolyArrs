@@ -235,6 +235,7 @@ var RoutePerms = map[string]Perm{
 	// ask, deciding needs approve.
 	"GET /api/v1/asks":                               needSignedIn,
 	"GET /api/v1/asks/{id}":                          needSignedIn,
+	"GET /api/v1/asks/{id}/parts":                    needSignedIn,
 	"POST /api/v1/asks":                              PermAsk,
 	"GET /api/v1/asks/limit":                         PermAsk,
 	"DELETE /api/v1/asks/{id}":                       PermAsk,
@@ -634,7 +635,7 @@ func init() {
 		"GET /", "GET /login", "GET /live",
 		"GET /api/v1/albums/{id}", "GET /api/v1/albums/{id}/tracks", "GET /api/v1/albums/{id}/cover", "GET /api/v1/alerts",
 		"GET /api/v1/artists/lookup", "GET /api/v1/artwork/{name}", "GET /api/v1/artwork/tmdb/{size}/{file}", "GET /api/v1/artwork/img/{kind}/{id}/{file}", "GET /api/v1/asks",
-		"GET /api/v1/asks/limit", "GET /api/v1/asks/{id}", "GET /api/v1/auth/me",
+		"GET /api/v1/asks/limit", "GET /api/v1/asks/{id}", "GET /api/v1/asks/{id}/parts", "GET /api/v1/auth/me",
 		"GET /api/v1/calendar", "GET /api/v1/calendar/feed.ics", "GET /api/v1/downloaders",
 		"GET /api/v1/downloads", "GET /api/v1/downloads/view", "GET /api/v1/events",
 		"GET /api/v1/health", "GET /api/v1/health/checks",

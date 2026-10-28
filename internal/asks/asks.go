@@ -149,6 +149,9 @@ type Service struct {
 	Live *live.Hub
 	// Now is the clock (time.Now when nil).
 	Now func() time.Time
+	// PrefetchParts stores an ask's episode and song lists in the
+	// background when it is asked for (off in tests).
+	PrefetchParts bool
 
 	sendMu   sync.Mutex
 	sendTail <-chan struct{}
@@ -376,6 +379,7 @@ func (s *Service) event(ctx context.Context, e *domain.Event) {
 }
 
 func (s *Service) changed(ctx context.Context, id int64) {
+	s.storePartsLater(id)
 	if s.Live == nil {
 		return
 	}

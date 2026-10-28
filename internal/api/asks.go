@@ -28,6 +28,7 @@ func (a *API) askRoutes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/asks", a.makeAsk)
 	m.HandleFunc("GET /api/v1/asks/limit", a.askLimit)
 	m.HandleFunc("GET /api/v1/asks/{id}", a.getAsk)
+	m.HandleFunc("GET /api/v1/asks/{id}/parts", a.askParts)
 	m.HandleFunc("DELETE /api/v1/asks/{id}", a.withdrawAsk)
 	m.HandleFunc("POST /api/v1/asks/{id}/approve", a.approveAsk)
 	m.HandleFunc("POST /api/v1/asks/{id}/turn-down", a.turnDownAsk)
@@ -325,6 +326,22 @@ func (a *API) withdrawAsk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// askParts answers an ask's stored lists (season episodes, album songs),
+// stored when it was asked for, so the Approvals panel opens them at once.
+func (a *API) askParts(w http.ResponseWriter, r *http.Request) {
+	v, ok := a.askByID(w, r)
+	if !ok {
+		return
+	}
+	p, err := a.s.Asks.AskParts(r.Context(), v.ID)
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	w.Header().Set("Cache-Control", "private, max-age=60")
+	writeJSON(w, http.StatusOK, p)
 }
 
 func (a *API) approveAsk(w http.ResponseWriter, r *http.Request) {

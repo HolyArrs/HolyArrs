@@ -461,6 +461,7 @@ var Routes = map[string]Owner{
 	// The Wishlist: asks, limits, and the messages about asks.
 	"GET /api/v1/asks":                               wishlist,
 	"GET /api/v1/asks/{id}":                          wishlist,
+	"GET /api/v1/asks/{id}/parts":                    wishlist,
 	"POST /api/v1/asks":                              wishlist,
 	"GET /api/v1/asks/limit":                         wishlist,
 	"DELETE /api/v1/asks/{id}":                       wishlist,
