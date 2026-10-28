@@ -416,7 +416,7 @@ func (d *Deluge) Add(ctx context.Context, r AddRequest) (string, error) {
 
 var delugeStatusKeys = []string{
 	"name", "label", "save_path", "total_wanted", "progress",
-	"download_payload_rate", "eta", "state", "is_finished",
+	"download_payload_rate", "upload_payload_rate", "num_seeds", "num_peers", "eta", "state", "is_finished",
 }
 
 type delugeTorrent struct {
@@ -426,6 +426,9 @@ type delugeTorrent struct {
 	TotalWanted         int64   `json:"total_wanted"`
 	Progress            float64 `json:"progress"`
 	DownloadPayloadRate int64   `json:"download_payload_rate"`
+	UploadPayloadRate   int64   `json:"upload_payload_rate"`
+	NumSeeds            int     `json:"num_seeds"`
+	NumPeers            int     `json:"num_peers"`
 	ETA                 int64   `json:"eta"`
 	State               string  `json:"state"`
 	Finished            bool    `json:"is_finished"`
@@ -449,7 +452,7 @@ func (t delugeTorrent) job(id string) Job {
 	}
 	finished := t.Finished && progress >= 1 && content != ""
 	return Job{ID: strings.ToLower(id), Name: t.Name, Category: t.Label, SavePath: t.SavePath, ContentPath: content,
-		Size: t.TotalWanted, Progress: progress, Speed: max(t.DownloadPayloadRate, 0), ETA: eta,
+		Size: t.TotalWanted, Progress: progress, Speed: max(t.DownloadPayloadRate, 0), UpSpeed: max(t.UploadPayloadRate, 0), Seeds: max(t.NumSeeds, 0), Peers: max(t.NumPeers, 0), ETA: eta,
 		State: delugeState(t.State, finished), Detail: t.State}
 }
 

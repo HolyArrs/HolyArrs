@@ -371,6 +371,9 @@ type Download struct {
 	ExternalID       string     `db:"external_id"`
 	Progress         float64    `db:"progress"`
 	Speed            int64      `db:"speed"`
+	UpSpeed          int64      `db:"up_speed"`
+	Seeds            int        `db:"seeds"`
+	Peers            int        `db:"peers"`
 	ETA              *int64     `db:"eta"`
 	State            string     `db:"state"`
 	StateReason      *string    `db:"state_reason"`

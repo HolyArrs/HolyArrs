@@ -287,10 +287,10 @@ func (s *Sabnzbd) jobs(ctx context.Context, q url.Values) ([]Job, error) {
 		}
 		j := Job{ID: x.ID, Name: x.Filename, Category: x.Cat, Size: int64(mb * 1024 * 1024), Progress: min(max(p, 0), 1),
 			ETA: clock(x.TimeLeft), State: sabQueueState(x.Status), Detail: x.Status}
-		// SABnzbd gives one speed for the whole queue; it belongs to a job
-		// only when that job is the one moving.
-		if j.State == StateDownloading && moving == 1 {
-			j.Speed = int64(num(qu.Queue.KBPerSec) * 1024)
+		// SABnzbd gives one speed for the whole queue; the jobs moving
+		// share it evenly so the total stays the real one.
+		if j.State == StateDownloading && moving > 0 {
+			j.Speed = int64(num(qu.Queue.KBPerSec)*1024) / int64(moving)
 		}
 		out = append(out, j)
 	}

@@ -146,6 +146,16 @@ func TestDownloadsView(t *testing.T) {
 		r.Downloader != "Q" || r.Name != "Salt.Choir.2020.1080p.WEB.H264-HOLYARRS" || r.Speed != 2048 || r.ETA == nil || !r.CanAct {
 		t.Fatalf("row %+v", r)
 	}
+	// Upload speed, seeds and peers come through, and the totals add up what is moving.
+	exec41(t, x.s, "UPDATE downloads SET up_speed = 512, seeds = 40, peers = 7")
+	var rates struct {
+		Downloads []DownloadRow  `json:"downloads"`
+		Totals    DownloadTotals `json:"totals"`
+	}
+	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloads/view", "", 200), &rates)
+	if rr := rates.Downloads[0]; rr.UpSpeed != 512 || rr.Seeds != 40 || rr.Peers != 7 || rates.Totals.Speed != 2048 || rates.Totals.UpSpeed != 512 {
+		t.Fatalf("rates %+v totals %+v", rates.Downloads[0], rates.Totals)
+	}
 	// Once the Downloader is done, the Slot says where it is.
 	for _, c := range []struct{ dl, slot, phase, label string }{
 		{"finished", "downloading", "waiting_to_import", "Waiting to import"},

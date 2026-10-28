@@ -684,13 +684,14 @@ func (m *Manager) apply(ctx context.Context, dr domain.Downloader, d domain.Down
 	case j.State == StateFinished:
 		next.State, next.Progress = "finished", 1
 		next.FinishedAt = &now
-		next.Speed, next.ETA = 0, nil
+		next.Speed, next.UpSpeed, next.ETA = 0, 0, nil
 	case j.State == StateFailed:
 		next.State = "failed"
 		failReason = "the Downloader says " + j.Detail
 		next.StateReason = &failReason
 	default:
 		next.Progress, next.Speed = min(max(j.Progress, 0), 1), j.Speed
+		next.UpSpeed, next.Seeds, next.Peers = j.UpSpeed, j.Seeds, j.Peers
 		if j.ETA > 0 {
 			eta := j.ETA
 			next.ETA = &eta
@@ -755,7 +756,7 @@ func (m *Manager) apply(ctx context.Context, dr domain.Downloader, d domain.Down
 			m.event(ctx, &next, "download_shortcut", "Web shortcut in the download, left alone: "+strings.Join(sc, ", "))
 		}
 	}
-	changed := next.State != d.State || next.Progress != d.Progress || next.Speed != d.Speed || !eqTime(next.ProgressAt, d.ProgressAt) ||
+	changed := next.State != d.State || next.Progress != d.Progress || next.Speed != d.Speed || next.UpSpeed != d.UpSpeed || next.Seeds != d.Seeds || next.Peers != d.Peers || !eqTime(next.ProgressAt, d.ProgressAt) ||
 		!eqPtr(next.ETA, d.ETA) || next.SavePath != d.SavePath || len(next.FilesSeen) != len(d.FilesSeen)
 	if !changed {
 		return isActive(next.State)

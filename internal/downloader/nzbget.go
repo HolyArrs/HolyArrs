@@ -459,7 +459,33 @@ func (n *NZBGet) List(ctx context.Context, category string) ([]Job, error) {
 			out = append(out, match.row.job(match.history))
 		}
 	}
+	n.shareSpeed(ctx, out)
 	return out, nil
+}
+
+// shareSpeed gives the jobs moving NZBGet's one overall rate, evenly, so the
+// total is the real one. Best effort: no reading leaves the speeds at zero.
+func (n *NZBGet) shareSpeed(ctx context.Context, jobs []Job) {
+	moving := 0
+	for _, j := range jobs {
+		if j.State == StateDownloading {
+			moving++
+		}
+	}
+	if moving == 0 {
+		return
+	}
+	var st struct {
+		DownloadRate int64 `json:"DownloadRate"`
+	}
+	if err := n.rpc(ctx, "status", nil, &st); err != nil || st.DownloadRate <= 0 {
+		return
+	}
+	for i := range jobs {
+		if jobs[i].State == StateDownloading {
+			jobs[i].Speed = st.DownloadRate / int64(moving)
+		}
+	}
 }
 
 func (n *NZBGet) Get(ctx context.Context, id string) (Job, error) {

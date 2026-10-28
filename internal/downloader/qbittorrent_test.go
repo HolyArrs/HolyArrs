@@ -231,3 +231,10 @@ var (
 	_ Engine = (*Qbittorrent)(nil)
 	_ Engine = (*Sabnzbd)(nil)
 )
+
+func TestQbitJobCarriesUploadSeedsAndPeers(t *testing.T) {
+	j := qbitTorrent{Hash: "ABC", DLSpeed: 900, UPSpeed: 300, NumSeeds: 12, NumLeechs: 4, State: "downloading"}.job()
+	if j.Speed != 900 || j.UpSpeed != 300 || j.Seeds != 12 || j.Peers != 4 {
+		t.Fatalf("%+v", j)
+	}
+}

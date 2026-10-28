@@ -58,7 +58,7 @@ func NewTransmission(base, user, pass string, h *http.Client) *Transmission {
 var transmissionNames = map[string]string{
 	"rpc-version": "rpc_version", "hashString": "hash_string", "downloadDir": "download_dir", "download-dir": "download_dir",
 	"totalSize": "total_size", "sizeWhenDone": "size_when_done", "percentDone": "percent_done", "leftUntilDone": "left_until_done",
-	"metadataPercentComplete": "metadata_percent_complete", "rateDownload": "rate_download", "bytesCompleted": "bytes_completed",
+	"metadataPercentComplete": "metadata_percent_complete", "rateDownload": "rate_download", "rateUpload": "rate_upload", "peersSendingToUs": "peers_sending_to_us", "peersGettingFromUs": "peers_getting_from_us", "bytesCompleted": "bytes_completed",
 	"isFinished": "is_finished", "errorString": "error_string", "recheckProgress": "recheck_progress",
 	"torrent-added": "torrent_added", "torrent-duplicate": "torrent_duplicate", "delete-local-data": "delete_local_data",
 }
@@ -246,6 +246,9 @@ type transmissionTorrent struct {
 	Metadata    float64  `json:"metadata_percent_complete"`
 	Recheck     float64  `json:"recheck_progress"`
 	Rate        int64    `json:"rate_download"`
+	UpRate      int64    `json:"rate_upload"`
+	SeedsNow    int      `json:"peers_sending_to_us"`
+	PeersNow    int      `json:"peers_getting_from_us"`
 	ETA         int64    `json:"eta"`
 	Status      int      `json:"status"`
 	Error       int      `json:"error"`
@@ -258,7 +261,7 @@ type transmissionTorrent struct {
 }
 
 func (tr *Transmission) torrents(ctx context.Context, id string, files bool) ([]transmissionTorrent, error) {
-	fields := []string{"hashString", "name", "labels", "downloadDir", "totalSize", "percentDone", "leftUntilDone", "metadataPercentComplete", "recheckProgress", "rateDownload", "eta", "status", "error", "errorString"}
+	fields := []string{"hashString", "name", "labels", "downloadDir", "totalSize", "percentDone", "leftUntilDone", "metadataPercentComplete", "recheckProgress", "rateDownload", "rateUpload", "peersSendingToUs", "peersGettingFromUs", "eta", "status", "error", "errorString"}
 	if files {
 		fields = append(fields, "files")
 	}
@@ -288,7 +291,7 @@ func (t transmissionTorrent) job(category string) Job {
 	}
 	progress := max(0, min(1, t.Progress))
 	eta := max(0, t.ETA)
-	j := Job{ID: strings.ToLower(t.Hash), Name: t.Name, Category: category, SavePath: t.Dir, Size: max(0, t.Size), Progress: progress, Speed: max(0, t.Rate), ETA: eta, State: state, Detail: strconv.Itoa(t.Status)}
+	j := Job{ID: strings.ToLower(t.Hash), Name: t.Name, Category: category, SavePath: t.Dir, Size: max(0, t.Size), Progress: progress, Speed: max(0, t.Rate), UpSpeed: max(0, t.UpRate), Seeds: max(0, t.SeedsNow), Peers: max(0, t.PeersNow), ETA: eta, State: state, Detail: strconv.Itoa(t.Status)}
 	if t.Error != 0 {
 		j.Detail = fmt.Sprintf("%d; error %d", t.Status, t.Error)
 		if detail := strings.Join(strings.Fields(t.ErrorString), " "); detail != "" {

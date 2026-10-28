@@ -61,6 +61,9 @@ type Job struct {
 	Size        int64
 	Progress    float64 // 0 to 1
 	Speed       int64   // bytes per second
+	UpSpeed     int64   // upload bytes per second (torrents)
+	Seeds       int     // connected seeds (torrents)
+	Peers       int     // connected peers (torrents)
 	ETA         int64   // seconds, 0 when unknown
 	State       string  // one of the State constants
 	Detail      string  // the engine's own state word, for reasons

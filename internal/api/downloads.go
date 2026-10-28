@@ -57,6 +57,12 @@ type DownloadRow struct {
 	Album    string        `json:"album,omitempty"`
 }
 
+// DownloadTotals are the bytes per second moving across every active download.
+type DownloadTotals struct {
+	Speed   int64 `json:"speed"`
+	UpSpeed int64 `json:"up_speed"`
+}
+
 // EpisodeLine is one episode (or track) a download covers, with where its
 // Slot is. A track carries its disc in Season and its number in Episode.
 type EpisodeLine struct {
@@ -301,7 +307,14 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 		}
 		rows = append(rows, row)
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"downloads": rows})
+	var total DownloadTotals
+	for _, row := range rows {
+		if row.Active && row.State == "downloading" {
+			total.Speed += row.Speed
+			total.UpSpeed += row.UpSpeed
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"downloads": rows, "totals": total})
 }
 
 func upperFirst(s string) string {

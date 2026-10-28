@@ -389,6 +389,9 @@ type DownloadView struct {
 	Text     string  `json:"text"`
 	Progress float64 `json:"progress"`
 	Speed    int64   `json:"speed"`
+	UpSpeed  int64   `json:"up_speed"`
+	Seeds    int     `json:"seeds"`
+	Peers    int     `json:"peers"`
 	ETA      *int64  `json:"eta,omitempty"`
 	Active   bool    `json:"active"`
 }
@@ -400,7 +403,7 @@ var DownloadLabels = map[string]string{
 }
 
 func downloadView(d domain.Download) DownloadView {
-	v := DownloadView{ID: d.ID, State: d.State, Label: DownloadLabels[d.State], Progress: d.Progress, Speed: d.Speed, ETA: d.ETA}
+	v := DownloadView{ID: d.ID, State: d.State, Label: DownloadLabels[d.State], Progress: d.Progress, Speed: d.Speed, UpSpeed: d.UpSpeed, Seeds: d.Seeds, Peers: d.Peers, ETA: d.ETA}
 	switch d.State {
 	case "sent":
 		v.Text = "Sent to the Downloader; waiting for it to start."

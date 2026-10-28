@@ -65,7 +65,7 @@ func oldDownloaderFixture(t *testing.T) (string, [][]any, [][]any) {
 		t.Fatal(err)
 	}
 	before := downloaderRows(t, s.Read(), "SELECT * FROM downloaders ORDER BY id")
-	deps := downloaderRows(t, s.Read(), "SELECT * FROM downloads ORDER BY id")
+	deps := downloaderRows(t, s.Read(), "SELECT id, created_at, created_by, updated_at, updated_by, downloader_id, release_id, slot_ids, external_id, progress, speed, eta, state, state_reason, files_seen, save_path, started_at, finished_at, started_by FROM downloads ORDER BY id")
 	if err := s.Close(); err != nil {
 		t.Fatal(err)
 	}
@@ -88,7 +88,7 @@ func TestOptionalDownloadersMigrationKeepsData(t *testing.T) {
 	if got := downloaderRows(t, s.Read(), "SELECT * FROM downloaders ORDER BY id"); !reflect.DeepEqual(got, before) {
 		t.Fatal("saved Downloader row changed during rebuild")
 	}
-	if got := downloaderRows(t, s.Read(), "SELECT * FROM downloads ORDER BY id"); !reflect.DeepEqual(got, deps) {
+	if got := downloaderRows(t, s.Read(), "SELECT id, created_at, created_by, updated_at, updated_by, downloader_id, release_id, slot_ids, external_id, progress, speed, eta, state, state_reason, files_seen, save_path, started_at, finished_at, started_by FROM downloads ORDER BY id"); !reflect.DeepEqual(got, deps) {
 		t.Fatal("dependent Download changed during rebuild")
 	}
 	var cipher string
@@ -178,7 +178,7 @@ func TestOptionalDownloadersMigrationRollsBack(t *testing.T) {
 	if got := downloaderRows(t, s.Read(), "SELECT * FROM downloaders ORDER BY id"); !reflect.DeepEqual(got, before) {
 		t.Fatal("failed migration changed Downloader")
 	}
-	if got := downloaderRows(t, s.Read(), "SELECT * FROM downloads ORDER BY id"); !reflect.DeepEqual(got, deps) {
+	if got := downloaderRows(t, s.Read(), "SELECT id, created_at, created_by, updated_at, updated_by, downloader_id, release_id, slot_ids, external_id, progress, speed, eta, state, state_reason, files_seen, save_path, started_at, finished_at, started_by FROM downloads ORDER BY id"); !reflect.DeepEqual(got, deps) {
 		t.Fatal("failed migration changed dependencies")
 	}
 	if v, err := version(s.Read()); err != nil || v != 41 {

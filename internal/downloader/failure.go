@@ -168,7 +168,7 @@ func (m *Manager) failed(ctx context.Context, dr domain.Downloader, old, next do
 	if next.StateReason != nil {
 		reason = *next.StateReason
 	}
-	next.Speed, next.ETA = 0, nil
+	next.Speed, next.UpSpeed, next.Seeds, next.Peers, next.ETA = 0, 0, 0, 0, nil
 	replace := next.State == "failed" || st.replaceVanished
 	var moved []int64
 	err := m.Store.Write(ctx, func(tx *sql.Tx) error {
@@ -397,7 +397,7 @@ func (m *Manager) Remove(ctx context.Context, downloadID int64, c RemoveChoice, 
 		reason += " by " + who
 	}
 	next := d
-	next.State, next.StateReason, next.Speed, next.ETA = "cleaned", &reason, 0, nil
+	next.State, next.StateReason, next.Speed, next.UpSpeed, next.Seeds, next.Peers, next.ETA = "cleaned", &reason, 0, 0, 0, 0, nil
 	search := c.TurnDown && c.SearchAgain
 	var moved []int64
 	rest := map[int64]domain.SlotState{}

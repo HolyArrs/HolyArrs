@@ -166,6 +166,9 @@ type qbitTorrent struct {
 	Size        int64   `json:"size"`
 	Progress    float64 `json:"progress"`
 	DLSpeed     int64   `json:"dlspeed"`
+	UPSpeed     int64   `json:"upspeed"`
+	NumSeeds    int     `json:"num_seeds"`
+	NumLeechs   int     `json:"num_leechs"`
 	ETA         int64   `json:"eta"`
 	State       string  `json:"state"`
 }
@@ -176,7 +179,7 @@ func (t qbitTorrent) job() Job {
 		eta = 0
 	}
 	return Job{ID: strings.ToLower(t.Hash), Name: t.Name, Category: t.Category, SavePath: t.SavePath, ContentPath: t.ContentPath,
-		Size: t.Size, Progress: t.Progress, Speed: t.DLSpeed, ETA: eta, State: qbitState(t.State), Detail: t.State}
+		Size: t.Size, Progress: t.Progress, Speed: t.DLSpeed, UpSpeed: max(t.UPSpeed, 0), Seeds: max(t.NumSeeds, 0), Peers: max(t.NumLeechs, 0), ETA: eta, State: qbitState(t.State), Detail: t.State}
 }
 
 // qbitState maps qBittorrent's state words onto ours.

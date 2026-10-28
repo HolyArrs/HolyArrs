@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"sort"
@@ -73,7 +74,17 @@ func (f *fakeEngine) Add(_ context.Context, r downloader.AddRequest) (string, er
 		j.State, j.Progress, j.Detail = downloader.StateFailed, 0.37, "error"
 	}
 	if p.State != "" {
-		j.State, j.Progress, j.Speed, j.Size = p.State, p.Progress, p.Speed, 8<<30
+		// Believable numbers: each release moves at its own pace, near the
+		// speed asked for, with its own swarm.
+		n := int(id[0]) + int(id[1])
+		if p.Speed > 0 {
+			p.Speed = p.Speed * int64(70+n%70) / 100
+			j.UpSpeed = p.Speed * int64(4+n%9) / 100
+			j.Seeds, j.Peers = 6+n%90, 2+n%24
+		} else if p.State == downloader.StateDownloading {
+			j.Peers = n % 2 // stalled: almost nobody to talk to
+		}
+		j.State, j.Progress, j.Speed, j.Size = p.State, p.Progress, p.Speed, int64(2+n%14)<<30
 		if p.Speed > 0 {
 			j.ETA = int64(float64(j.Size) * (1 - p.Progress) / float64(p.Speed))
 		}
@@ -108,7 +119,7 @@ func (f *fakeEngine) List(context.Context, string) ([]downloader.Job, error) {
 	defer f.mu.Unlock()
 	out := make([]downloader.Job, 0, len(f.jobs))
 	for _, j := range f.jobs {
-		out = append(out, j)
+		out = append(out, wobble(j))
 	}
 	return out, nil
 }
@@ -120,7 +131,20 @@ func (f *fakeEngine) Get(_ context.Context, id string) (downloader.Job, error) {
 	if !ok {
 		return j, downloader.ErrNotFound
 	}
-	return j, nil
+	return wobble(j), nil
+}
+
+// wobble moves a downloading job's speeds a little with the clock, so a
+// graph drawn from repeated reads is not a flat line.
+func wobble(j downloader.Job) downloader.Job {
+	if j.State != downloader.StateDownloading || j.Speed == 0 {
+		return j
+	}
+	t := float64(time.Now().UnixMilli())/1000 + float64(j.ID[2])
+	k := 1 + 0.18*math.Sin(t/3.1) + 0.07*math.Sin(t/1.3)
+	j.Speed = int64(float64(j.Speed) * k)
+	j.UpSpeed = int64(float64(j.UpSpeed) * (2 - k))
+	return j
 }
 
 func (f *fakeEngine) Remove(_ context.Context, id string, _ bool) error {
