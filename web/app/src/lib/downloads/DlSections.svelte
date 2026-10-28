@@ -8,6 +8,7 @@
 	// (through the page's Remove dialog).
 	import { page } from '$app/state';
 	import { replaceState } from '$app/navigation';
+	import { tick } from 'svelte';
 	import { slide, fade, type TransitionConfig } from 'svelte/transition';
 	import Poster from '../Poster.svelte';
 	import Icon from '../Icon.svelte';
@@ -112,15 +113,23 @@
 	const LIM: Record<Col, [number, number]> = { bar: [80, 420], st: [80, 240], size: [90, 240], time: [48, 120] };
 	const KEY = 'holyarrs.downloads.columns';
 	const MIN_TITLE = 200;
-	function stored(): Record<Col, number> {
+	const COLS: Col[] = ['bar', 'st', 'size', 'time'];
+	const DATA: Record<Col, string> = { bar: 'bar', st: 'status', size: 'size', time: 'time' };
+	const clamp = (k: Col, v: number) => Math.round(Math.max(LIM[k][0], Math.min(LIM[k][1], v)));
+	/** The saved widths, or null: none saved, so the columns fit their content. */
+	function stored(): Record<Col, number> | null {
 		try {
-			const v = JSON.parse(localStorage.getItem(KEY) ?? '{}');
-			return Object.fromEntries((Object.keys(DEF) as Col[]).map((k) => [k, typeof v[k] === 'number' ? Math.min(LIM[k][1], Math.max(LIM[k][0], v[k])) : DEF[k]])) as Record<Col, number>;
+			const v = JSON.parse(localStorage.getItem(KEY) ?? 'null');
+			if (!v || typeof v !== 'object') return null;
+			return Object.fromEntries(COLS.map((k) => [k, typeof v[k] === 'number' ? clamp(k, v[k]) : DEF[k]])) as Record<Col, number>;
 		} catch {
-			return { ...DEF };
+			return null;
 		}
 	}
-	let widths = $state<Record<Col, number>>(typeof localStorage === 'undefined' ? { ...DEF } : stored());
+	const saved = typeof localStorage === 'undefined' ? null : stored();
+	let widths = $state<Record<Col, number>>(saved ?? { ...DEF });
+	// Auto-fit runs once after the rows render when nothing is saved (and again after Reset columns).
+	let fitted = $state(!!saved);
 	let grid = $state<HTMLElement>();
 	function save() {
 		try {
@@ -129,50 +138,116 @@
 			/* private window: the widths last for this visit */
 		}
 	}
-	function setW(k: Col, v: number) {
-		// Never so wide that the Title gets less than MIN_TITLE: nothing overflows.
-		const others = (Object.keys(widths) as Col[]).filter((x) => x !== k).reduce((n, x) => n + widths[x], 0);
-		const room = (grid?.clientWidth ?? 1200) - (24 + 32 + 32 + 7 * 10) - others - MIN_TITLE;
-		widths[k] = Math.round(Math.max(LIM[k][0], Math.min(LIM[k][1], room, v)));
+	/** room is the most the four columns may add up to, leaving the Title MIN_TITLE. */
+	const room = () => (grid?.querySelector('.dlrows, .chead')?.clientWidth ?? 1200) - (24 + 32 + 32 + 7 * 10) - MIN_TITLE;
+	/** fitOf is the widest cell of a column (the header label too) plus padding. */
+	function fitOf(k: Col): number {
+		if (!grid) return DEF[k];
+		if (k === 'bar') return DEF.bar; // a bar has no content width of its own
+		let w = 0;
+		for (const el of grid.querySelectorAll<HTMLElement>(`.dline [data-col="${DATA[k]}"]`)) {
+			if (el.classList.contains('hs')) continue; // History's status spans two columns
+			const tx = el.classList.contains('ch') ? el.firstChild : el.querySelector('.tx');
+			let cw = el.scrollWidth;
+			if (tx) {
+				const r = document.createRange();
+				r.selectNodeContents(tx);
+				cw = r.getBoundingClientRect().width + (el.classList.contains('st') ? 14 : 0);
+			}
+			w = Math.max(w, cw);
+		}
+		return clamp(k, Math.ceil(w) + 12);
 	}
-	function grab(e: PointerEvent, k: Col, sign: number) {
+	function fitAll() {
+		const next = { ...widths };
+		for (const k of COLS) next[k] = fitOf(k);
+		// Too wide for the Title's minimum: the Size column (the widest) gives way.
+		const over = COLS.reduce((n, k) => n + next[k], 0) - room();
+		if (over > 0) next.size = clamp('size', next.size - over);
+		widths = next;
+		fitted = true;
+	}
+	$effect(() => {
+		if (fitted || !grid || rows.length === 0) return;
+		void tick().then(fitAll);
+	});
+	// A grip sits on the right edge of its column. Dragging it moves that edge
+	// with the pointer: the column grows by what its right-hand neighbour
+	// gives up, so nothing else moves. Time, the last one, grows into the
+	// Title instead (the bin stays at the far right).
+	function resize(k: Col, w0: Record<Col, number>, d: number) {
+		const right = COLS.slice(COLS.indexOf(k) + 1);
+		const w = { ...w0 };
+		if (d >= 0) {
+			// Growing: the columns to the right give up space in turn (down to
+			// their minimum), then the Title (down to MIN_TITLE).
+			let need = Math.min(Math.round(d), LIM[k][1] - w0[k]);
+			let got = 0;
+			for (const x of right) {
+				const take = Math.min(need - got, w[x] - LIM[x][0]);
+				w[x] -= take;
+				got += take;
+			}
+			const used = COLS.reduce((n, x) => n + w[x], 0);
+			got += Math.max(0, Math.min(need - got, room() - used));
+			w[k] = w0[k] + got;
+		} else {
+			// Shrinking: the right-hand neighbour takes the space, so the edges
+			// to its right stay put; the last column gives it to the Title.
+			const give = Math.min(Math.round(-d), w0[k] - LIM[k][0]);
+			w[k] = w0[k] - give;
+			const next = right[0];
+			if (next) w[next] = clamp(next, w0[next] + give);
+		}
+		widths = w;
+	}
+	function grab(e: PointerEvent, k: Col) {
+		if (e.button !== 0) return;
 		e.preventDefault();
 		const x0 = e.clientX;
-		const w0 = widths[k];
+		const w0 = { ...widths };
 		const el = e.currentTarget as HTMLElement;
 		el.setPointerCapture(e.pointerId);
-		const move = (m: PointerEvent) => setW(k, w0 + sign * (m.clientX - x0));
+		el.classList.add('drag');
+		const move = (m: PointerEvent) => resize(k, w0, m.clientX - x0);
 		const up = () => {
 			el.removeEventListener('pointermove', move);
 			el.removeEventListener('pointerup', up);
+			el.removeEventListener('pointercancel', up);
+			el.classList.remove('drag');
 			save();
 		};
 		el.addEventListener('pointermove', move);
 		el.addEventListener('pointerup', up);
+		el.addEventListener('pointercancel', up);
 	}
-	function nudge(e: KeyboardEvent, k: Col, sign: number) {
+	function nudge(e: KeyboardEvent, k: Col) {
 		const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
 		if (!d) return;
 		e.preventDefault();
-		setW(k, widths[k] + sign * d * (e.shiftKey ? 40 : 10));
+		resize(k, { ...widths }, d * (e.shiftKey ? 40 : 10));
 		save();
 	}
-	function resetOne(k: Col) {
-		widths[k] = DEF[k];
+	// Double-click auto-fits that column, as in a spreadsheet.
+	function fitOne(k: Col) {
+		widths[k] = fitOf(k);
 		save();
 	}
 	function resetAll() {
-		widths = { ...DEF };
-		save();
+		try {
+			localStorage.removeItem(KEY);
+		} catch {
+			/* nothing saved */
+		}
+		fitAll();
 	}
-	// Each header's grip sits on its right edge; the Title's grip resizes the
-	// Progress column the other way (the Title takes the rest).
-	const HEADS: { key: string; label: string; size: Col; sign: number; num?: boolean }[] = [
-		{ key: 'title', label: 'Title', size: 'bar', sign: -1 },
-		{ key: 'bar', label: 'Progress', size: 'bar', sign: 1 },
-		{ key: 'status', label: 'Status', size: 'st', sign: 1 },
-		{ key: 'size', label: 'Size', size: 'size', sign: 1, num: true },
-		{ key: 'time', label: 'Time', size: 'time', sign: 1, num: true }
+	// Title is the flexible column and has no grip; it takes what is left.
+	const HEADS: { key: string; label: string; size?: Col; num?: boolean }[] = [
+		{ key: 'title', label: 'Title' },
+		{ key: 'bar', label: 'Progress', size: 'bar' },
+		{ key: 'status', label: 'Status', size: 'st' },
+		{ key: 'size', label: 'Size', size: 'size', num: true },
+		{ key: 'time', label: 'Time', size: 'time', num: true }
 	];
 	const sub2 = (r: DownloadRow) => (manyWords(r.kind) && r.covers ? r.covers : r.name);
 </script>
@@ -244,7 +319,7 @@
 			<div class="dline chead" data-testid="dl-colhead">
 				<span></span><span></span>
 				{#each HEADS as h (h.key)}
-					<span class="ch" class:num={h.num} data-col={h.key}>{h.label}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {h.label}" aria-valuenow={widths[h.size]} aria-valuemin={LIM[h.size][0]} aria-valuemax={LIM[h.size][1]} tabindex="0" title="Drag to resize, double-click to reset" onpointerdown={(e) => grab(e, h.size, h.sign)} ondblclick={() => resetOne(h.size)} onkeydown={(e) => nudge(e, h.size, h.sign)}></span></span>
+					<span class="ch" class:end={h.num} data-col={h.key}>{h.label}{#if h.size}{@const k = h.size}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {h.label}" aria-valuenow={widths[k]} aria-valuemin={LIM[k][0]} aria-valuemax={LIM[k][1]} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={k} onpointerdown={(e) => grab(e, k)} ondblclick={() => fitOne(k)} onkeydown={(e) => nudge(e, k)}></span>{/if}</span>
 				{/each}
 				<span class="cm"><Menu label="Columns" icon="more" width={180} items={[{ label: 'Reset columns', icon: 'refresh', onselect: resetAll }]} /></span>
 			</div>
@@ -329,7 +404,8 @@
 	.none { padding: 10px 0; color: var(--text-muted); font: var(--t-callout); }
 
 	/* One column grid for every row of both sections. */
-	.dlrows { --gap: 10px; --c-time: 64px; container-type: inline-size; list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+	.dlgrid { --gap: 10px; }
+	.dlrows { container-type: inline-size; list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
 	.drow { display: block; border-bottom: 1px solid var(--line); }
 	.drow.open { background: var(--surface-2); }
 	.dline { display: grid; grid-template-columns: 24px 32px minmax(0, 1fr) var(--c-bar) var(--c-st) var(--c-size) var(--c-time) 32px; align-items: center; column-gap: var(--gap); height: 48px; }
@@ -379,10 +455,10 @@
 	.chead + .dlrows { border-top: 0; }
 	.chead:hover { background: none; }
 	.ch { position: relative; align-self: stretch; display: flex; align-items: center; min-width: 0; }
-	.ch.num { justify-content: flex-end; }
-	.grip { position: absolute; top: 4px; bottom: 4px; right: calc(-1 * var(--gap) / 2 - 4px); width: 8px; cursor: col-resize; touch-action: none; border-radius: 3px; z-index: 1; }
+	.ch.end { justify-content: flex-end; }
+	.grip { position: absolute; top: 4px; bottom: 4px; right: calc(-1 * var(--gap) / 2 - 4px); width: 8px; cursor: col-resize; touch-action: none; border-radius: 3px; z-index: 3; }
 	.grip::after { content: ''; position: absolute; left: 3px; top: 0; bottom: 0; width: 1px; background: var(--line-strong); transition: background var(--dur-fast) var(--ease-out); }
-	.grip:hover::after, .grip:focus-visible::after { background: var(--accent); width: 2px; }
+	.grip:hover::after, .grip:focus-visible::after, .grip:global(.drag)::after { background: var(--accent); width: 2px; }
 	.grip:focus-visible { outline: none; }
 	.cm { display: flex; justify-content: flex-end; }
 	.del { display: flex; justify-content: flex-end; }
@@ -407,7 +483,7 @@
 
 	/* Phones: name on top, the bar under it, then status, size and time. */
 	@media (max-width: 767px) {
-		.dlrows { --gap: 8px; }
+		.dlgrid { --gap: 8px; }
 		.chead { display: none; }
 		.dline { grid-template-columns: 24px 28px minmax(0, 1fr) 88px 52px 32px; grid-template-areas: 'tg post nm nm nm del' '. post bar st time del'; row-gap: 4px; height: auto; min-height: 62px; padding: 6px 0; }
 		.tg { grid-area: tg; }
