@@ -75,7 +75,8 @@
 	.l2 .picks { flex-wrap: nowrap; overflow: visible; --pick: calc((100% - 24px) / 4); }
 	.l2 .picks > :global(*:nth-child(n + 5)) { display: none; }
 	/* The pictures carry the names; the captions under them sat on busy art and could not be read. */
-	.l2 .picks :global(.t), .l2 .picks :global(.s) { display: none; }
+	.l2 .picks :global(.t), .l2 .picks :global(.s), .l2 .picks :global(.sk-line) { display: none; }
+	/* (and so the placeholders: a pick's height never changes when the covers arrive) */
 	@container (max-width: 900px) { .l2 { grid-template-columns: 1fr; } .l2 .picks { overflow-x: auto; --pick: 140px; } .l2 .picks > :global(*:nth-child(n + 5)) { display: block; } }
 	@media (max-width: 767px) {
 		.l1 { min-height: 0; padding: 26px 16px 18px; gap: 20px; }

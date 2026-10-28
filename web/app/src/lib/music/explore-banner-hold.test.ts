@@ -16,7 +16,13 @@ describe('Explore Music banner place', () => {
 		expect(hold).toBeGreaterThan(0);
 		expect(real).toBeGreaterThan(hold);
 		// The held banner is the same component with the same words, so the exact height.
+		expect(page.slice(hold, real)).toMatch(/name=\{`Your \$\{musicBannerName \|\| 'Music'\}`\}/);
 		expect(page.slice(hold, real)).toMatch(/<GenreBanner layout=\{2\}[^>]*eyebrow="Picked from your library" line="Albums and artists from it you could ask for\."/);
+	});
+
+	it('placeholder picks are as tall as the captionless covers', () => {
+		const gb = readFileSync(join(__dirname, '..', 'ui', 'GenreBanner.svelte'), 'utf8');
+		expect(gb).toMatch(/\.l2 \.picks :global\(\.sk-line\) \{ display: none; \}/);
 	});
 
 	it('the rows say ready only once the genres are whole', () => {

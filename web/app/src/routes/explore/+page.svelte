@@ -434,8 +434,12 @@
 	 * never jump down when it arrives. Remembered per browser; first visit holds it.
 	 */
 	let musicBannerHint = $state(true);
+	/** The last banner's genre name: the held banner's name wraps the same, so the same height. */
+	let musicBannerName = $state('');
 	try {
-		musicBannerHint = localStorage.getItem('holyarrs-music-banner') !== '0';
+		const kept = localStorage.getItem('holyarrs-music-banner');
+		musicBannerHint = kept !== '0';
+		musicBannerName = kept && kept !== '0' && kept !== '1' ? kept : '';
 	} catch {
 		/* storage off: hold the place */
 	}
@@ -447,7 +451,7 @@
 	$effect(() => {
 		if (type !== 'music' || !musicReady || musicPicksPending) return;
 		try {
-			localStorage.setItem('holyarrs-music-banner', musicBannerShown ? '1' : '0');
+			localStorage.setItem('holyarrs-music-banner', musicBannerShown && musicFav ? musicFav.name : '0');
 		} catch {
 			/* storage off */
 		}
@@ -762,8 +766,8 @@
 	</div>
 	<MetadataNotice />
 	{#if musicBannerHold}
-		<div class="music-banner" aria-hidden="true" data-testid="music-banner-hold">
-			<GenreBanner layout={2} name={' '} eyebrow="Picked from your library" line="Albums and artists from it you could ask for." href={to('/explore?type=music')} art={[]} square>
+		<div class="music-banner hold" aria-hidden="true" data-testid="music-banner-hold">
+			<GenreBanner layout={2} name={`Your ${musicBannerName || 'Music'}`} eyebrow="Picked from your library" line="Albums and artists from it you could ask for." href={to('/explore?type=music')} art={[]} square>
 				{#snippet picks()}
 					{#each Array.from({ length: 7 }, (_, i) => i) as i (i)}<div class="pick-sk"><SkCard /></div>{/each}
 				{/snippet}
@@ -905,6 +909,8 @@
 	.explore { container: explore / inline-size; /* One size for every title row, measured on Netflix (2026-10-20): 279px cards at a 1536px window, sized from the window like Netflix (whose page has no sidebar), so cards match it; never under 200px. */
 		--title-item: max(200px, calc((100vw - 96px) / 5.16)); --explore-item: 168px; display: flex; flex-direction: column; gap: 32px; padding-bottom: 48px; }
 	.explore > :global(.ui-head) { margin-bottom: -8px; }
+	/* The held banner keeps the real one's words for its height, unseen until the real one comes. */
+	.music-banner.hold :global(.name) { visibility: hidden; }
 	/* The type switch: in the page under the title; once scrolled past it floats as a glass pill under the top bar. */
 	.types-mark { height: 0; margin-top: -32px; }
 	.types { position: sticky; top: calc(var(--topbar) + 10px); z-index: 20; display: flex; justify-content: center; margin-top: -12px; pointer-events: none; }
