@@ -109,7 +109,9 @@
 	const listOf = (s: { number: number; episodes: number }) => (open || !s.episodes ? ctx.episodes(a.tmdb_id, s.number) : null);
 	const picks = $derived(seasons.map((s) => seasonPick(s, listOf(s), ticks[s.number])));
 	function tickSeason(p: SeasonPick) {
-		ticks = { ...ticks, [p.number]: p.tick === 'all' ? [] : [...p.all] };
+		const next = { ...ticks, [p.number]: p.tick === 'all' ? [] : [...p.all] };
+		if (!p.all.length && p.tick !== 'all') delete next[p.number];
+		ticks = next;
 	}
 	function tickEpisode(p: SeasonPick, n: number) {
 		const next = p.ticked.includes(n) ? p.ticked.filter((x) => x !== n) : [...p.ticked, n].sort((x, y) => x - y);

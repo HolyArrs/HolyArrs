@@ -190,14 +190,15 @@ export function seasonPick(row: SeasonRow, list: { number: number }[] | null, ti
 	const all = list?.length ? list.map((e) => e.number) : range(row.episodes);
 	const asked = row.asked ? row.asked : all;
 	const t = (ticked ?? asked).filter((n) => !all.length || all.includes(n));
-	const tick: SeasonTick = !t.length ? 'none' : all.length && t.length < all.length ? 'some' : 'all';
+	// A season with no episode list yet is ticked whole unless the approver unticked it.
+	const tick: SeasonTick = !all.length ? (ticked && !ticked.length ? 'none' : 'all') : !t.length ? 'none' : t.length < all.length ? 'some' : 'all';
 	return { number: row.number, all, asked, ticked: t, tick };
 }
 
 /** askedWords says what the person asked of a season: "all 8 episodes", "5 of 8 episodes". */
 export function askedWords(p: Pick<SeasonPick, 'all' | 'asked'>): string {
 	const n = p.all.length;
-	if (!n) return p.asked.length ? `${p.asked.length} episode${p.asked.length === 1 ? '' : 's'}` : '';
+	if (!n) return p.asked.length ? `${p.asked.length} episode${p.asked.length === 1 ? '' : 's'}` : 'episodes not listed yet';
 	if (p.asked.length >= n) return n === 1 ? '1 episode' : `all ${n} episodes`;
 	return `${p.asked.length} of ${n} episodes`;
 }
