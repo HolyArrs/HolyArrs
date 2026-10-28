@@ -27,16 +27,11 @@
 	import { albumWords } from '#lib/music/music.ts';
 	import { titleStatus } from '#lib/title-status.ts';
 	import VariantBar from '#lib/ui/VariantBar.svelte';
-	import { approvalViews, askHref, viewKey, type ApprovalsCtx, type Member } from '#lib/approvals/approvals.ts';
-	import { askDetails, wantDetails } from '#lib/approvals/details.svelte.ts';
+	import { askHref, type ApprovalsCtx, type DecideOptions, type Member } from '#lib/approvals/approvals.ts';
+	import { askDetails, askInfo, seasonEpisodes, wantDetails } from '#lib/approvals/details.svelte.ts';
+	import { askedByOne, askers, inboxKey, inboxLooks } from '#lib/approvals/inbox.ts';
 	import { kidLabel } from '#lib/kid.ts';
-	import { nowPhases, type DownloadRow } from '#lib/downloaders.ts';
-	import CardsView from '#lib/approvals/CardsView.svelte';
-	import PersonView from '#lib/approvals/PersonView.svelte';
-	import FocusView from '#lib/approvals/FocusView.svelte';
-	import InboxView from '#lib/approvals/InboxView.svelte';
-	import BoardView from '#lib/approvals/BoardView.svelte';
-	import AskDetail from '#lib/approvals/AskDetail.svelte';
+	import InboxLooks from '#lib/approvals/InboxLooks.svelte';
 
 	const approver = $derived(session.can('approve'));
 	let asks = $state<Ask[]>([]);
@@ -49,9 +44,11 @@
 	// One line per kind whose part is on.
 	const onKinds = $derived(limitKinds.filter((k) => partsNow.answer?.parts.find((p) => p.part === k)?.on !== false));
 
-	const ofKind = $derived(kind === 'all' ? asks : asks.filter((a) => a.kind === kind));
+	// Asked by: one person's asks (0 is everyone's), for the Inbox looks' filter.
+	let person = $state(0);
+	const ofKind = $derived((kind === 'all' ? asks : asks.filter((a) => a.kind === kind)).filter((a) => !person || askedByOne(a, person)));
 	// A decision waiting out its Undo time already shows in its new tab.
-	type Pending = { mode: 'approve' | 'turn_down'; note: string; timer: ReturnType<typeof setTimeout> };
+	type Pending = { mode: 'approve' | 'turn_down'; note: string; rulesId: number; langs: string[]; timer: ReturnType<typeof setTimeout> };
 	let pending = $state<Record<number, Pending>>({});
 	const viewOf = (a: Ask): Ask => {
 		const p = pending[a.id];
@@ -83,7 +80,8 @@
 		delete pending[id];
 		try {
 			const path = `/asks/${id}/${p.mode === 'approve' ? 'approve' : 'turn-down'}`;
-			const r = await api.post<{ ask: Ask }>(path, p.mode === 'approve' ? { note: p.note, library_folder_id: 0, pick_rules_id: 0 } : { note: p.note });
+			const body = p.mode === 'approve' ? { note: p.note, library_folder_id: 0, pick_rules_id: p.rulesId, ...(p.langs.length ? { audio_languages: p.langs } : {}) } : { note: p.note };
+			const r = await api.post<{ ask: Ask }>(path, body);
 			const i = asks.findIndex((x) => x.id === r.ask.id);
 			if (i >= 0) asks[i] = r.ask;
 			void refreshInbox();
@@ -94,10 +92,10 @@
 	}
 
 	/** act decides a set of asks after an Undo window; the toast's Undo cancels them all. */
-	function act(list: Ask[], mode: 'approve' | 'turn_down', why = '') {
+	function act(list: Ask[], mode: 'approve' | 'turn_down', why = '', opt?: DecideOptions) {
 		const ids = list.filter((a) => a.state === 'asked' && !pending[a.id]).map((a) => a.id);
 		if (!ids.length) return;
-		for (const id of ids) pending[id] = { mode, note: why, timer: setTimeout(() => void commit(id), UNDO_MS) };
+		for (const id of ids) pending[id] = { mode, note: why, rulesId: opt?.rulesId ?? 0, langs: opt?.langs ?? [], timer: setTimeout(() => void commit(id), UNDO_MS) };
 		chosen = new Set();
 		const one = list.length === 1 ? list[0].name : `${ids.length} asks`;
 		const verb = mode === 'approve' ? 'approved' : 'turned down';
@@ -200,9 +198,13 @@
 	onMount(() => {
 		void load().then(() => {
 			// The layouts open on Waiting for approvers, so an empty queue shows its calm state.
-			tab = view > 0 && approver ? 'waiting' : firstTab(asks);
+			tab = inboxLook > 0 && approver ? 'waiting' : firstTab(asks);
 		});
 		void refreshInbox();
+		api
+			.get<{ id?: number }>('/auth/me')
+			.then((me) => (myId = me.id))
+			.catch(() => {});
 		if (session.can('manage_library')) {
 			api
 				.get<{ library_folders: LibraryFolder[] }>('/library-folders')
@@ -211,6 +213,13 @@
 			api
 				.get<{ pick_rules: PickRulesView[] }>('/pick-rules')
 				.then((r) => (rules = r.pick_rules))
+				.catch(() => {});
+		}
+		// The Wishlist's own Pick rules, to name the default rule (settings people only).
+		if (session.can('settings')) {
+			api
+				.get<Record<string, unknown>>('/settings/asks')
+				.then((r) => (askSettings = r))
 				.catch(() => {});
 		}
 		const compactQuery = window.matchMedia('(max-width: 600px)');
@@ -348,49 +357,30 @@
 		return 'HolyArrs is looking for it.';
 	}
 
-	// The layouts Luis compares (?view=1…5); 0 is the page above as it is today.
-	let view = $state(0);
-	// The board shows every state as a column, and chooses from Waiting.
-	$effect(() => {
-		if (view === 5 && tab !== 'waiting') tab = 'waiting';
-	});
-	// Who asked: picture and age limit, for the approvers' layouts.
+	// The Inbox arrangements Luis compares (?inbox=1…5); 0 is the page above as it is today.
+	let inboxLook = $state(0);
+	// Who asked: picture and age limit, for the Inbox looks.
 	let members = $state<Record<number, Member>>({});
 	let membersAsked = false;
 	$effect(() => {
 		// The people list is an admin route that wants a recent local password proof
-		// (10 minutes): without one it answers 403, so it is not asked; the cards
+		// (10 minutes): without one it answers 403, so it is not asked; the rows
 		// then show initials and no age-limit mark.
-		if (!view || !approver || membersAsked || !session.s.localRecent) return;
+		if (!inboxLook || !approver || membersAsked || !session.s.localRecent) return;
 		membersAsked = true;
 		api
 			.get<{ users: Member[] }>('/users')
 			.then((r) => (members = Object.fromEntries(r.users.map((u) => [u.id, u]))))
 			.catch(() => {});
 	});
-	// Library ids with a download running, for the board's Downloading column.
-	let downloading = $state<ReadonlySet<number>>(new Set());
-	$effect(() => {
-		if (view !== 5 || !session.can('manage_library')) return;
-		const read = () =>
-			api
-				.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=100')
-				.then((r) => (downloading = new Set(r.downloads.filter((d) => nowPhases.has(d.phase) && d.title_id).map((d) => d.title_id as number))))
-				.catch(() => {});
-		void read();
-		const t = setInterval(read, 15000);
-		return () => clearInterval(t);
-	});
-	// The review sheet the layouts open (the Now page keeps its side panel).
-	let sheetOpen = $state(false);
-	let sheetId = $state(0);
-	let sheetTrigger: HTMLElement | undefined;
-	const sheetAsk = $derived(viewed.find((a) => a.id === sheetId) ?? null);
-	function sheetClosed() {
-		const t = sheetTrigger;
-		sheetTrigger = undefined;
-		if (t?.isConnected) setTimeout(() => t.focus(), 0);
-	}
+	let askSettings = $state<Record<string, unknown>>({});
+	// The member the poster size and the panel are remembered for.
+	let myId = $state<number | undefined>();
+	const defaultRuleOf = (a: Ask) => {
+		const k = a.kind === 'show' ? 'show_pick_rules_id' : a.kind === 'artist' ? 'music_pick_rules_id' : 'pick_rules_id';
+		const id = Number(askSettings[k] ?? 0);
+		return id ? (rules.find((r) => r.id === id)?.name ?? '') : '';
+	};
 	const foldersOf = (a: Ask) => {
 		const k = a.kind === 'show' ? 'show' : a.kind === 'artist' ? 'music' : 'movie';
 		return folders.filter((f) => f.kind === k);
@@ -399,6 +389,7 @@
 		const k = a.kind === 'show' ? 'show' : a.kind === 'artist' ? 'music' : 'movie';
 		return rules.filter((r) => !r.kinds.length || r.kinds.includes(k));
 	};
+	const people = $derived(askers(asks));
 	const ctx: ApprovalsCtx = {
 		get shown() { return shown; },
 		get viewed() { return viewed; },
@@ -420,10 +411,12 @@
 		},
 		isPending: (id) => !!pending[id],
 		approve: (list) => act(list, 'approve'),
+		approveWith: (a, opt) => act([a], 'approve', opt.note ?? '', opt),
 		turnDown: (list) => askDecline(list),
+		turnDownWith: (a, note) => act([a], 'turn_down', note),
 		withOptions: (a) => open(a, 'approve'),
-		review: (a, trigger) => ((sheetId = a.id), (sheetTrigger = trigger), (sheetOpen = true)),
-		takeBack: (a) => ((sheetOpen = false), askTakeBack(a)),
+		review: () => {},
+		takeBack: (a) => askTakeBack(a),
 		decideNow,
 		foldersFor: foldersOf,
 		rulesFor: rulesOf,
@@ -441,13 +434,23 @@
 		href: askHref,
 		details: askDetails,
 		want: wantDetails,
-		get downloading() { return downloading; }
+		info: askInfo,
+		episodes: seasonEpisodes,
+		defaultRule: defaultRuleOf,
+		get kind() { return kind; },
+		setKind: (k) => ((kind = k), (chosen = new Set())),
+		get mineOnly() { return mineOnly; },
+		setMine: (on) => ((mineOnly = on), (chosen = new Set())),
+		get person() { return person; },
+		setPerson: (id) => ((person = id), (chosen = new Set())),
+		get people() { return people; },
+		get me() { return myId; }
 	};
 </script>
 
 <svelte:head><title>{approver ? 'Approvals' : 'Your Wishlist'} · HolyArrs</title></svelte:head>
 
-<div class="ap-top" class:compact={view > 0}>
+<div class="ap-top" class:compact={inboxLook > 0}>
 <PageHeader
 	title={approver ? 'Approvals' : 'Your Wishlist'}
 	subtitle={approver ? 'What people asked for. Approve to add, or turn down with a note.' : 'The movies, shows and music you asked for, and where each one is.'}
@@ -467,13 +470,9 @@
 	</ul>
 {/if}
 
-{#if bothKinds || asks.length}
+{#if (bothKinds || asks.length) && !(inboxLook > 0 && approver)}
 	<div class="toolbar">
-		{#if asks.length && view === 5 && approver}
-			<div class="chips" role="group" aria-label="Show">
-				<Chip label="Mine" icon="user" selected={mineOnly} onclick={() => (mineOnly = !mineOnly)} />
-			</div>
-		{:else if asks.length}
+		{#if asks.length}
 			<div class="chips tabs" role="group" aria-label="Show" data-testid="ask-tabs">
 				{#each tabs as t (t.tab)}
 					<Chip label={t.label} count={t.tab === 'waiting' && counts.waiting ? counts.waiting : undefined} selected={tab === t.tab} onclick={() => ((tab = t.tab), (chosen = new Set()))} />
@@ -489,7 +488,7 @@
 				<Chip label="Music" selected={kind === 'artist'} onclick={() => (kind = 'artist')} />
 			</div>
 		{/if}
-		{#if asks.length}<p class="count">{view === 5 ? viewed.length : shown.length} {(view === 5 ? viewed.length : shown.length) === 1 ? 'request' : 'requests'}</p>{/if}
+		{#if asks.length}<p class="count">{shown.length} {shown.length === 1 ? 'request' : 'requests'}</p>{/if}
 	</div>
 {/if}
 </div>
@@ -514,7 +513,7 @@
 			{/if}
 {/snippet}
 
-{#if view === 0}
+{#if inboxLook === 0 || !approver}
 <div class="workspace">
 	<div class="main-col">
 		{#if error}
@@ -636,7 +635,7 @@
 	</div>
 </div>
 {:else}
-	<div class="variant" data-view={view}>
+	<div class="variant" data-inbox={inboxLook}>
 		{#if error}
 			<LoadError hasData={false} message="Your Wishlist could not be loaded. {error}" onretry={load} />
 		{:else}
@@ -651,12 +650,7 @@
 						action={{ label: 'Search', href: to('/search') }}
 					/>
 				{:else}
-					{#if shown.length}{@render bulkBar()}{/if}
-					{#if view === 1}<CardsView {ctx} />
-					{:else if view === 2}<PersonView {ctx} />
-					{:else if view === 3}<FocusView {ctx} />
-					{:else if view === 4}<InboxView {ctx} />
-					{:else}<BoardView {ctx} />{/if}
+					<InboxLooks {ctx} look={inboxLook} />
 				{/if}
 			</PageLoader>
 		{/if}
@@ -687,11 +681,7 @@
 		{/if}
 {/snippet}
 
-<Sheet bind:open={sheetOpen} onclose={sheetClosed} size="md" title={sheetAsk ? `${sheetAsk.name}${year(sheetAsk)}` : 'Review'} hideTitle>
-	{#if sheetAsk}<AskDetail {ctx} a={sheetAsk} />{/if}
-</Sheet>
-
-<VariantBar options={approvalViews} bind:value={view} storageKey={viewKey} label="Approvals layout" />
+<VariantBar options={inboxLooks} bind:value={inboxLook} param="inbox" storageKey={inboxKey} label="Approvals Inbox layout" />
 
 <Sheet
 	bind:open={decideOpen}

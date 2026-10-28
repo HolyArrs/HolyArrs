@@ -1,24 +1,20 @@
-// Approvals page looks: the five design variants Luis compares on live data
-// (?view=1…5; no view is the page as it is today) and the small rules they share.
+// Approvals page: the context every Inbox arrangement (inbox.ts) and the
+// one-by-one review get from the page, and the small rules they share.
 
 import type { Ask } from '../types.ts';
 import type { StatusKind } from '../ui/StatusPill.svelte';
 import type { AskTab } from '../wishlist.ts';
 import type { TitleDetails } from '../title-details.ts';
 import type { LibraryFolder, PickRulesView } from '../types.ts';
+import type { AskInfo, EpisodeInfo } from './inbox.ts';
+
+/** The approver's choices for one ask: Pick rules (0: the default), audio languages (empty: any) and a note. */
+export interface DecideOptions {
+	rulesId: number;
+	langs: string[];
+	note?: string;
+}
 import { detailPath } from '../title-details.ts';
-
-/** The variants on the bottom bar; 0 is the page as it is today. */
-export const approvalViews: { value: number; label: string }[] = [
-	{ value: 0, label: 'Now' },
-	{ value: 1, label: '1 Cards' },
-	{ value: 2, label: '2 By person' },
-	{ value: 3, label: '3 Focus' },
-	{ value: 4, label: '4 Inbox' },
-	{ value: 5, label: '5 Board' }
-];
-
-export const viewKey = 'holyarrs.view.approvals';
 
 /** askHref is where a title's name links: the Library page once added, else its title page or artist page. */
 export function askHref(a: Pick<Ask, 'kind' | 'tmdb_id' | 'ref' | 'title_id'>): string {
@@ -33,7 +29,7 @@ export function askHref(a: Pick<Ask, 'kind' | 'tmdb_id' | 'ref' | 'title_id'>): 
 
 /** kindWord names an ask's kind for a small tag. */
 export function kindWord(kind: string): string {
-	return kind === 'show' ? 'Show' : kind === 'artist' ? 'Music' : 'Movie';
+	return kind === 'show' ? 'TV show' : kind === 'artist' ? 'Music' : 'Movie';
 }
 
 /** A person who asked, with what the page knows about them. */
@@ -65,24 +61,6 @@ export function personGroups<T extends Pick<Ask, 'asked_by' | 'people'>>(asks: T
 	return [...by.values()].sort((x, y) => y.asks.length - x.asks.length || x.name.localeCompare(y.name));
 }
 
-/** The board's columns, left to right. */
-export type BoardColumn = 'waiting' | 'looking' | 'downloading' | 'done' | 'turned_down';
-export const boardColumns: { col: BoardColumn; label: string; short: string }[] = [
-	{ col: 'waiting', label: 'Waiting', short: 'Waiting' },
-	{ col: 'looking', label: 'Approved, looking', short: 'Looking' },
-	{ col: 'downloading', label: 'Downloading', short: 'Getting' },
-	{ col: 'done', label: 'Done', short: 'Done' },
-	{ col: 'turned_down', label: 'Turned down', short: 'Turned down' }
-];
-
-/** boardColumn says where an ask sits on the board; downloading holds the Library ids with a download running. */
-export function boardColumn(a: Pick<Ask, 'state' | 'title_id'>, downloading: ReadonlySet<number>): BoardColumn {
-	if (a.state === 'asked') return 'waiting';
-	if (a.state === 'turned_down') return 'turned_down';
-	if (a.state === 'available') return 'done';
-	return a.title_id && downloading.has(a.title_id) ? 'downloading' : 'looking';
-}
-
 /** stepIndex keeps a focus position inside a list of n after a move (wraps). */
 export function stepIndex(i: number, step: number, n: number): number {
 	if (n <= 0) return 0;
@@ -107,7 +85,7 @@ export function runtimeLine(min: number | undefined): string {
 export interface ApprovalsCtx {
 	/** The asks in the chosen tab, kind and Mine filter. */
 	readonly shown: Ask[];
-	/** Every ask in the kind and Mine filter, all tabs (the board). */
+	/** Every ask in the kind, person and Mine filter, all tabs. */
 	readonly viewed: Ask[];
 	readonly tab: AskTab;
 	readonly counts: Record<AskTab, number>;
@@ -121,8 +99,12 @@ export interface ApprovalsCtx {
 	isPending(id: number): boolean;
 	/** Approve with the Undo toast (the quick ✓). */
 	approve(list: Ask[]): void;
+	/** Approve one ask with the approver's rule, language and note (with the Undo toast). */
+	approveWith(a: Ask, opt: DecideOptions): void;
 	/** Turn down with an optional note (the sheet with Undo). */
 	turnDown(list: Ask[]): void;
+	/** Turn down one ask with this note straight into the Undo toast. */
+	turnDownWith(a: Ask, note: string): void;
 	/** The Approve with options dialog. */
 	withOptions(a: Ask): void;
 	/** The review sheet for one ask. */
@@ -143,5 +125,20 @@ export interface ApprovalsCtx {
 	href(a: Ask): string;
 	details(a: Ask): TitleDetails | null | undefined;
 	want(a: Ask): void;
-	readonly downloading: ReadonlySet<number>;
+	/** Seasons and release dates for the summary (null until known, or music). */
+	info(a: Ask): AskInfo | null;
+	/** One season's episodes (null until known); asks once. */
+	episodes(tmdb: string, season: number): EpisodeInfo[] | null;
+	/** The Wishlist's default Pick rules for the ask's kind, by name ('' when unknown). */
+	defaultRule(a: Ask): string;
+	readonly kind: 'all' | 'movie' | 'show' | 'artist';
+	setKind(k: 'all' | 'movie' | 'show' | 'artist'): void;
+	readonly mineOnly: boolean;
+	setMine(on: boolean): void;
+	/** Asked by: a person's id, 0 for everyone. */
+	readonly person: number;
+	setPerson(id: number): void;
+	readonly people: { id: number; name: string; n: number }[];
+	/** The signed-in member (the poster size and panel are kept per member). */
+	readonly me: number | undefined;
 }

@@ -1,13 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { approvalViews, askHref, boardColumn, detailKey, kindWord, personGroups, runtimeLine, stepIndex } from './approvals.ts';
+import { askHref, detailKey, kindWord, personGroups, runtimeLine, stepIndex } from './approvals.ts';
 
 const who = (id: number, name: string) => ({ id, name });
 
-describe('approvals looks', () => {
-	it('has Now plus five numbered layouts', () => {
-		expect(approvalViews.map((v) => v.label)).toEqual(['Now', '1 Cards', '2 By person', '3 Focus', '4 Inbox', '5 Board']);
-	});
-
+describe('approvals', () => {
 	it('links each ask to its Library page, title page or artist page', () => {
 		expect(askHref({ kind: 'movie', tmdb_id: '496243', title_id: 12 })).toBe('/library/12');
 		expect(askHref({ kind: 'movie', tmdb_id: '496243' })).toBe('/title/movie/496243');
@@ -33,16 +29,6 @@ describe('approvals looks', () => {
 		]);
 	});
 
-	it('puts each ask in a board column', () => {
-		const dl = new Set([7]);
-		expect(boardColumn({ state: 'asked' }, dl)).toBe('waiting');
-		expect(boardColumn({ state: 'approved', title_id: 7 }, dl)).toBe('downloading');
-		expect(boardColumn({ state: 'approved', title_id: 8 }, dl)).toBe('looking');
-		expect(boardColumn({ state: 'approved' }, dl)).toBe('looking');
-		expect(boardColumn({ state: 'available', title_id: 7 }, dl)).toBe('done');
-		expect(boardColumn({ state: 'turned_down' }, dl)).toBe('turned_down');
-	});
-
 	it('wraps the focus position', () => {
 		expect(stepIndex(0, -1, 8)).toBe(7);
 		expect(stepIndex(7, 1, 8)).toBe(0);
@@ -50,7 +36,7 @@ describe('approvals looks', () => {
 	});
 
 	it('says small words', () => {
-		expect(kindWord('show')).toBe('Show');
+		expect(kindWord('show')).toBe('TV show');
 		expect(kindWord('artist')).toBe('Music');
 		expect(kindWord('movie')).toBe('Movie');
 		expect(runtimeLine(112)).toBe('1 h 52 min');
