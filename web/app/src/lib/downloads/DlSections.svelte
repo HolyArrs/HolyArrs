@@ -110,6 +110,16 @@
 	function xIn(node: Element): TransitionConfig {
 		return reducedMotion() ? fade(node, { duration: DUR.fast }) : slide(node, { duration: DUR.base, easing: easeOut });
 	}
+	// The open row's poster grows from the row's small one into the details
+	// (FLIP: start at the small poster's box, end at its own).
+	function grow(node: Element, opts: { from: () => Element | null | undefined; dur: number; ease: (t: number) => number }): TransitionConfig {
+		const a = opts.from()?.getBoundingClientRect();
+		const b = node.getBoundingClientRect();
+		if (!a || !b.width || reducedMotion()) return { duration: reducedMotion() ? DUR.fast : 0, css: (t) => `opacity: ${t}` };
+		const dx = a.left - b.left, dy = a.top - b.top, sx = a.width / b.width, sy = a.height / b.height;
+		return { duration: opts.dur, easing: opts.ease, css: (t, u) => `transform-origin: 0 0; transform: translate(${dx * u}px, ${dy * u}px) scale(${sx + (1 - sx) * t}, ${sy + (1 - sy) * t})` };
+	}
+	const small = (id: number) => () => grid?.querySelector(`[data-dl-id="${id}"] > .dline .post`);
 	function xOut(node: Element): TransitionConfig {
 		return reducedMotion() ? fade(node, { duration: DUR.fast }) : slide(node, { duration: DUR.fast, easing: easeIn });
 	}
@@ -405,7 +415,9 @@
 		toggle(id);
 	}
 	const dash = '—';
-	const dlName = (r: DownloadRow) => (r.downloader_kind && kindWords[r.downloader_kind as keyof typeof kindWords]) || r.downloader || dash;
+	/** The Downloader's own configured name (as in the details); its kind goes in the tooltip. */
+	const dlName = (r: DownloadRow) => r.downloader || (r.downloader_kind && kindWords[r.downloader_kind as keyof typeof kindWords]) || dash;
+	const dlKind = (r: DownloadRow) => (r.downloader_kind && kindWords[r.downloader_kind as keyof typeof kindWords]) || '';
 	const sub2 = (r: DownloadRow) => (manyWords(r.kind) && r.covers ? r.covers : r.name);
 </script>
 
@@ -418,7 +430,7 @@
 
 {#snippet proto(r: DownloadRow)}
 	{@const p = protocolOf(r)}
-	{#if p}<span class="pm" data-testid="dl-protocol" data-protocol={p} title="{p === 'torrent' ? 'Torrent' : 'Usenet'} · {dlName(r)}" aria-label="{p === 'torrent' ? 'Torrent' : 'Usenet'} download">{p === 'torrent' ? 'T' : 'U'}</span>{/if}
+	{#if p}<span class="pm" data-testid="dl-protocol" data-protocol={p} title="{p === 'torrent' ? 'Torrent' : 'Usenet'} · {dlName(r)}{dlKind(r) && dlKind(r) !== dlName(r) ? ` (${dlKind(r)})` : ''}" aria-label="{p === 'torrent' ? 'Torrent' : 'Usenet'} download">{p === 'torrent' ? 'T' : 'U'}</span>{/if}
 {/snippet}
 
 {#snippet cell(r: DownloadRow, id: ColId, ph: boolean, hist: boolean)}
@@ -459,7 +471,7 @@
 	{:else if id === 'added'}
 		<span class="num" class:ph data-col="added" title={r.started_at ?? ''}>{r.started_at ? ago(r.started_at) : dash}</span>
 	{:else if id === 'downloader'}
-		<span class="txt" class:ph data-col="downloader" title={r.downloader}>{dlName(r)}</span>
+		<span class="txt" class:ph data-col="downloader" title={dlKind(r) || dlName(r)}>{dlName(r)}</span>
 	{:else}
 		<span class="num" class:ph data-col={id}>{dash}</span>
 	{/if}
@@ -501,7 +513,9 @@
 
 {#snippet panel(r: DownloadRow)}
 	{@const ds = decisionsOf(r)}
-	<div class="x" id="dlx-{r.id}" data-testid="dl-panel" in:xIn out:xOut>
+	<div class="x" id="dlx-{r.id}" data-testid="dl-panel" in:fade={{ duration: DUR.base }} out:fade={{ duration: DUR.fast }}>
+		<span class="big" class:square={r.kind === 'artist'} data-testid="dl-big-poster" in:grow={{ from: small(r.id), dur: DUR.base, ease: easeOut }} out:grow={{ from: small(r.id), dur: DUR.fast, ease: easeIn }}><Poster src={poster(r, titles)} name={r.title || r.name} /></span>
+		<div class="xb">
 		<dl class="kv">
 			{#each facts(r, importOf.get(r.id)) as f (f.label)}<dt>{f.label}</dt><dd>{f.value}</dd>{/each}
 		</dl>
@@ -509,6 +523,7 @@
 		{#if r.can_act && !inHistory(r)}
 			<p class="xa"><button type="button" class="lk" disabled={busy === r.id} onclick={() => onfail(r)}>Mark failed</button></p>
 		{/if}
+		</div>
 	</div>
 {/snippet}
 
@@ -730,7 +745,14 @@
 	.bin:disabled { opacity: 0.35; cursor: not-allowed; }
 
 	/* The panel starts at the Title column: ▾ + poster + two gaps. */
-	.x { padding: 4px 12px 12px calc(24px + 28px + 2 * var(--gap)); }
+	/* Details: the grown poster under the ▾ and poster columns, the facts to its right. */
+	.x { display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: start; gap: 16px; padding: 6px 12px 14px calc(24px + var(--gap)); }
+	.xb { min-width: 0; }
+	.big { width: 72px; height: 108px; overflow: hidden; border-radius: 6px; box-shadow: 0 4px 14px rgb(0 0 0 / 0.18); --poster-ratio: 2 / 3; }
+	.big.square { height: 72px; --poster-ratio: 1; }
+	.big :global(.poster) { border-radius: 6px; }
+	.post { transition: opacity var(--dur-fast) var(--ease-out); }
+	.drow.open > .dline .post { opacity: 0; }
 	.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 16px; margin: 0; font: var(--t-footnote); }
 	.kv dt { color: var(--text-muted); }
 	.kv dd { margin: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
@@ -760,13 +782,15 @@
 		.dline > .spare { display: none; }
 		.tg { grid-area: tg; }
 		.post { grid-area: post; align-self: start; }
-		.x { padding: 4px 8px 12px calc(24px + 28px + 2 * var(--gap)); }
+		.x { grid-template-columns: 56px minmax(0, 1fr); gap: 12px; padding: 4px 8px 12px calc(24px + var(--gap)); }
+		.big { width: 56px; height: 84px; }
+		.big.square { height: 56px; }
 		.find { flex: 1; }
 		.find input { width: 100%; }
 		.strip { gap: 4px 14px; }
 		.picker { display: none; }
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.bar i, .tg :global(svg), .bin, .cw { transition: none; }
+		.bar i, .tg :global(svg), .bin, .cw, .post { transition: none; }
 	}
 </style>
