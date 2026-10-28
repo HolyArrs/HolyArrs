@@ -3,7 +3,7 @@
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
+	import { beforeNavigate, goto } from '$app/navigation';
 	import { api, message } from '#lib/api.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -27,7 +27,7 @@
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import { followHint, followLabel, followPath, setFollow } from '#lib/follow.ts';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
-	import { sampleCover, tintOf } from '#lib/music/album-tint.ts';
+	import { paintWindow, sampleCover, tintOf, unpaintWindow } from '#lib/music/album-tint.ts';
 	import type { Ask, LibraryFolder, LookupArtist, MusicSettings, PickRulesView } from '#lib/types.ts';
 
 	// An album's page: the cover beside its title and actions, the tracklist
@@ -145,6 +145,18 @@
 	let sampled = $state<string | null>(null);
 	const tint = $derived(coverTint || sampled ? tintOf(coverTint || sampled) : null);
 	const tintStyle = $derived(tint ? `--al-bg:${tint.bg};--al-band:${tint.band};--al-soft:${tint.soft}` : '');
+	// The whole window (side menu, top bar, page) takes the colour while the
+	// album shows; between two albums it keeps the last colour until the next
+	// is known, and fades back to the normal look on leaving.
+	$effect(() => {
+		if (tint) paintWindow(tint);
+	});
+	// Going on to another album keeps the colour until that album's is known (no flash between two).
+	let toAlbum = false;
+	beforeNavigate((nav) => (toAlbum = nav.to?.route.id === page.route.id));
+	onMount(() => () => {
+		if (!toAlbum) unpaintWindow();
+	});
 	function coverLoaded(e: Event) {
 		coverIn = true;
 		if (!coverTint) sampled = sampleCover(e.currentTarget as HTMLImageElement);

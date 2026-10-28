@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { contrast, deepen, dominant, FALLBACK, hexRgb, rgbHsl, tintOf } from './album-tint.ts';
+import { contrast, deepen, dominant, FALLBACK, hexRgb, paintWindow, rgbHsl, tintOf, unpaintWindow } from './album-tint.ts';
 
 const covers = ['#3fae2a', '#d62839', '#2a5fe0', '#111111', '#f5f5f5', '#ffd400', '#e0e0ff', '#8a2be2', '#00ffff', '#7a5c3a'];
 
@@ -36,5 +36,35 @@ describe('album tint', () => {
 		const [h] = rgbHsl(hexRgb(dominant(px)!)!);
 		expect(h > 340 || h < 15).toBe(true);
 		expect(dominant([])).toBeNull();
+	});
+});
+
+describe('paintWindow / unpaintWindow', () => {
+	const fakeRoot = () => {
+		const props = new Map<string, string>();
+		return { props, el: { dataset: {} as Record<string, string>, style: { setProperty: (k: string, v: string) => props.set(k, v), removeProperty: (k: string) => props.delete(k) } } as unknown as HTMLElement };
+	};
+	it('sets the tint, then fades back and clears everything', async () => {
+		const { props, el } = fakeRoot();
+		const t = tintOf('#3a7a2a');
+		paintWindow(t, el);
+		expect(el.dataset.tint).toBe('album');
+		expect(props.get('--tint-bg')).toBe(t.bg);
+		expect(props.get('--tint-bg-2')).toBe(t.band);
+		unpaintWindow(el, 5);
+		expect(el.dataset.tint).toBe('leaving');
+		await new Promise((r) => setTimeout(r, 20));
+		expect(el.dataset.tint).toBeUndefined();
+		expect(props.size).toBe(0);
+	});
+	it('a new album during the fade keeps its colour', async () => {
+		const { props, el } = fakeRoot();
+		paintWindow(tintOf('#a02020'), el);
+		unpaintWindow(el, 5);
+		const next = tintOf('#2040a0');
+		paintWindow(next, el);
+		await new Promise((r) => setTimeout(r, 20));
+		expect(el.dataset.tint).toBe('album');
+		expect(props.get('--tint-bg')).toBe(next.bg);
 	});
 });

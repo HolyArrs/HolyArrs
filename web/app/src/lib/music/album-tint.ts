@@ -155,3 +155,29 @@ export function sampleCover(img: HTMLImageElement): string | null {
 		return null;
 	}
 }
+
+let leaving: ReturnType<typeof setTimeout> | undefined;
+
+/** paintWindow puts an album colour on the whole window: <html data-tint="album"> and --tint-* (app.css). */
+export function paintWindow(t: AlbumTint, root: HTMLElement = document.documentElement): void {
+	clearTimeout(leaving);
+	const s = root.style;
+	s.setProperty('--tint-bg', t.bg);
+	s.setProperty('--tint-bg-2', t.band);
+	s.setProperty('--tint-ink', t.text);
+	s.setProperty('--tint-soft', t.soft);
+	s.setProperty('--tint-line', t.rule);
+	root.dataset.tint = 'album';
+}
+
+/** unpaintWindow fades the window back: "leaving" keeps the transitions for one slow beat, then all is removed. */
+export function unpaintWindow(root: HTMLElement = document.documentElement, ms = 400): void {
+	if (root.dataset.tint !== 'album') return;
+	root.dataset.tint = 'leaving';
+	clearTimeout(leaving);
+	leaving = setTimeout(() => {
+		if (root.dataset.tint !== 'leaving') return;
+		delete root.dataset.tint;
+		for (const k of ['--tint-bg', '--tint-bg-2', '--tint-ink', '--tint-soft', '--tint-line']) root.style.removeProperty(k);
+	}, ms);
+}
