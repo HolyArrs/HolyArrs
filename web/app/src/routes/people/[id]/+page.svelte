@@ -152,8 +152,11 @@
 
 	// Three layouts Luis is comparing (?look=1|2|3, 0 = today's page): 1 a movie-like
 	// billboard, 2 the artist-like banner with a tinted page, 3 a credits list.
-	const VIEWS = [{ value: 0, label: 'Now' }, { value: 1, label: 'P1 · Billboard' }, { value: 2, label: 'P2 · Mixture' }, { value: 3, label: 'P3 · Credits' }];
+	const VIEWS = [{ value: 0, label: 'Now' }, { value: 1, label: 'P1 · Billboard' }, { value: 2, label: 'P2 · Round' }, { value: 4, label: 'P2 · Square' }, { value: 5, label: 'P2 · Portrait' }, { value: 3, label: 'P3 · Credits' }];
 	let view = $state(0);
+	// P2 comes in three photo shapes (round, square, 2:3 portrait); 4 and 5 are P2 too.
+	const mix = $derived(view === 2 || view === 4 || view === 5);
+	const shape = $derived(view === 4 ? 'square' : view === 5 ? 'portrait' : 'round');
 	const photo = $derived(data?.person.profile || wiki.image || '');
 	const yearsLine = $derived.by(() => {
 		const st = data?.stats;
@@ -173,7 +176,7 @@
 		gone = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height)));
 	}
 	$effect(() => {
-		if (view !== 2) return;
+		if (!mix) return;
 		measure();
 		addEventListener('scroll', measure, { passive: true, capture: true });
 		return () => removeEventListener('scroll', measure, { capture: true });
@@ -181,12 +184,12 @@
 	let sampled = $state<string | null>(null);
 	$effect(() => {
 		const src = photo || hero;
-		if (view !== 2 || !src || sampled) return;
+		if (!mix || !src || sampled) return;
 		const img = new Image();
 		img.onload = () => (sampled = sampleCover(img));
 		img.src = src;
 	});
-	const pageTint = $derived(view === 2 && sampled ? tintOf(sampled) : null);
+	const pageTint = $derived(mix && sampled ? tintOf(sampled) : null);
 	$effect(() => {
 		if (pageTint) {
 			paintWindow(pageTint);
@@ -241,14 +244,14 @@
 				</div>
 			</div>
 		</header>
-	{:else if view === 2}
+	{:else if mix}
 		<header class="mix" bind:this={heroBox} style:--gone={gone.toFixed(3)} data-hero data-testid="person-banner">
 			<div class="stage" aria-hidden="true">{#if hero}<img class="art" class:in={heroIn} src={hero} alt="" decoding="async" fetchpriority="high" onload={() => (heroIn = true)} />{/if}</div>
 			<div class="m-shade" aria-hidden="true"></div>
 			<div class="dim" aria-hidden="true"></div>
 		</header>
 		<div class="cline">
-			<span class="round">{#if photo}<img src={photo} alt="" />{:else}<span>{data.person.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</span>{/if}</span>
+			<span class="round {shape}">{#if photo}<img src={photo} alt="" />{:else}<span>{data.person.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</span>{/if}</span>
 			<div class="c-words">
 				<h1>{data.person.name}</h1>
 				{#if lead}<p class="c-line">{lead}</p>{/if}
@@ -328,7 +331,7 @@
 		</div>
 	{/snippet}
 
-	{#if view === 2}
+	{#if mix}
 		<section class="block" aria-labelledby="films-title">
 			<div class="toolbar"><h2 id="films-title">Filmography</h2>{@render controls()}</div>
 		</section>
@@ -377,7 +380,7 @@
 	{#if view >= 2 && (bio || facts.length)}
 		<section class="block about" aria-labelledby="about-title">
 			<h2 id="about-title">About</h2>
-			{#if view === 2}
+			{#if mix}
 				<button type="button" class="acard" aria-haspopup="dialog" aria-label="About {data.person.name}: read more" onclick={() => (aboutOpen = true)} data-testid="person-about">
 					{#if photo || hero}<img src={hero || photo} alt="" loading="lazy" decoding="async" />{/if}
 					<span class="a-foot"><b>{data.person.name}</b>{#if bio}<span class="a-bio">{bio}</span>{/if}</span>
@@ -464,12 +467,15 @@
 	.m-shade { position: absolute; inset: 0; z-index: -1; background: linear-gradient(to bottom, rgb(7 8 10 / .4), rgb(7 8 10 / 0) 30%); }
 	.dim { position: absolute; inset: 0; z-index: -1; background: var(--tint-bg, #07080a); opacity: calc(var(--gone, 0) * .85); }
 	@media (prefers-reduced-motion: reduce) { .stage { scale: 1; } }
-	.cline { display: flex; align-items: flex-end; gap: 24px; margin-top: calc(-32px - 72px); position: relative; z-index: 1; }
-	.round { flex: none; display: grid; place-items: center; width: 136px; height: 136px; border-radius: 50%; overflow: hidden; background: var(--surface-2); box-shadow: 0 12px 32px rgb(0 0 0 / .35); font: var(--t-title2); }
-	.c-words { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding-bottom: 10px; }
-	.cline h1 { font-size: clamp(32px, 4.6vw, 60px); line-height: 1; letter-spacing: -.03em; }
-	.c-line { margin: 0; color: var(--text-muted); font: var(--t-subhead); font-weight: 600; }
-	.stats { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 26px 16px; border-block: 1px solid var(--border); text-align: center; font-variant-numeric: tabular-nums; }
+	/* One centre line from the photo down to the figures (symmetry). */
+	.cline { display: flex; flex-direction: column; align-items: center; gap: 14px; margin-top: calc(-32px - 96px); position: relative; z-index: 1; text-align: center; }
+	.round { flex: none; display: grid; place-items: center; width: 168px; height: 168px; border-radius: 50%; overflow: hidden; background: var(--surface-2); box-shadow: 0 0 0 1px rgb(255 255 255 / .14), 0 18px 44px rgb(0 0 0 / .45); font: var(--t-title2); transition: border-radius var(--dur) var(--ease-out); }
+	.round.square { border-radius: 22px; }
+	.round.portrait { width: 152px; height: 228px; border-radius: 16px; }
+	.c-words { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
+	.cline h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(34px, 4vw, 52px); line-height: 1; letter-spacing: -.03em; color: var(--text); text-wrap: balance; }
+	.c-line { margin: 0; color: var(--text-muted); font: 600 15px/1.3 var(--font-ui); font-variant-numeric: tabular-nums; }
+	.stats { display: flex; flex-direction: column; align-items: center; gap: 8px; width: min(100%, 720px); margin-inline: auto; padding: 24px 16px; border-radius: var(--r-card); background: var(--surface-1); text-align: center; font-variant-numeric: tabular-nums; }
 	.stats p { margin: 0; display: flex; flex-wrap: wrap; justify-content: center; }
 	.st1 { font: var(--t-title3); font-weight: 400; }
 	.st1 b { font-weight: 700; }
@@ -509,8 +515,9 @@
 		.b-facts { justify-content: center; }
 		.b-more { align-self: center; }
 		.mix { height: 180px; margin-top: calc(var(--s-4) * -1); }
-		.cline { flex-direction: column; align-items: center; text-align: center; gap: 12px; margin-top: calc(-26px - 56px); }
-		.round { width: 112px; height: 112px; }
+		.cline { gap: 12px; margin-top: calc(-26px - 64px); }
+		.round { width: 120px; height: 120px; }
+		.round.portrait { width: 112px; height: 168px; }
 		.c-words { align-items: center; padding: 0; }
 		.cline h1 { font-size: clamp(28px, 8.4vw, 36px); }
 		.stats { padding: 20px 8px; }
