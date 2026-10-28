@@ -422,8 +422,8 @@
 	// banner sampled once it shows (truer than the stored colour), else the stored one. The banner
 	// fades into it at the bottom, so page and picture read as one.
 	let sampledTint = $state<string | null>(null);
-	// The first colour worked out for an artist is kept (per browser), so the
-	// page opens in the same colour every visit whichever banner loads.
+	// The colour worked out for an artist is kept (per browser), so a return
+	// visit opens in it at once.
 	const tintKey = (id: string) => `holyarrs.artist-tint.${id}`;
 	$effect(() => {
 		const id = mbid;
@@ -483,9 +483,23 @@
 		crop = 1;
 		return () => barTimers.forEach(clearTimeout);
 	});
+	// The colour is read from the artist's round photo (one picture per
+	// artist, so every visitor gets the same colour); the banner only when
+	// there is no photo.
+	$effect(() => {
+		const src = picture, id = mbid;
+		if (!src || sampledTint) return;
+		const img = new Image();
+		img.onload = () => {
+			if (id !== mbid || sampledTint) return;
+			const c = sampleCover(img);
+			if (c) { sampledTint = c; try { localStorage.setItem(tintKey(id), c); } catch {} }
+		};
+		img.src = src;
+	});
 	function heroLoaded(e: Event) {
 		heroIn = true;
-		if (sampledTint) return;
+		if (sampledTint || picture) return;
 		sampledTint = sampleCover(e.currentTarget as HTMLImageElement);
 		if (sampledTint) try { localStorage.setItem(tintKey(mbid), sampledTint); } catch {}
 	}
