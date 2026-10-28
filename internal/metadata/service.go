@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/outside"
@@ -44,6 +45,8 @@ type Service struct {
 	access func(context.Context) (string, error)
 	http   *http.Client
 	hold   serviceHold
+	// local answers music from the packages kept on disk (SetLocalMusic).
+	local atomic.Pointer[localHolder]
 }
 
 func NewService(o ServiceOptions) (*Service, error) {

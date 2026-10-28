@@ -132,6 +132,17 @@ func (m *serviceMusic) Artist(ctx context.Context, mbid string) (Artist, error) 
 		return Artist{}, ErrArtistNotFound
 	}
 	mbid = strings.ToLower(mbid)
+	// A package kept on disk answers at once and in full; an artist no
+	// package covers is asked of the server below and wanted there.
+	if l := m.service.localMusic(); l != nil {
+		// The Library (not a page) wants the whole list: a partial package
+		// is left to the server's walk there.
+		if a, ok := l.LocalArtist(ctx, mbid); ok && (!a.Partial || IsMemberLookup(ctx)) {
+			return a, nil
+		} else if !ok {
+			l.Uncovered(mbid)
+		}
+	}
 	ctx, cancel := serviceContext(ctx)
 	defer cancel()
 	item, err := m.service.detail(ctx, "musicbrainz", "artist", mbid)
@@ -337,6 +348,11 @@ func (m *serviceMusic) AlbumArtist(ctx context.Context, albumMBID string) (strin
 	if !ValidMBID(albumMBID) {
 		return "", ErrArtistNotFound
 	}
+	if l := m.service.localMusic(); l != nil {
+		if id, ok := l.LocalAlbumArtist(ctx, strings.ToLower(albumMBID)); ok {
+			return id, nil
+		}
+	}
 	sctx, cancel := serviceContext(ctx)
 	item, err := m.service.detail(sctx, "musicbrainz", "release-group", strings.ToLower(albumMBID))
 	cancel()
@@ -359,6 +375,12 @@ func (m *serviceMusic) Pressings(ctx context.Context, albumMBID string) ([]Press
 		return nil, ErrArtistNotFound
 	}
 	albumMBID = strings.ToLower(albumMBID)
+	// A page view takes the stored edition kept on disk when a package has it.
+	if l := m.service.localMusic(); l != nil && IsMemberLookup(ctx) {
+		if ps, ok, err := l.LocalPressings(ctx, albumMBID); ok {
+			return ps, err
+		}
+	}
 	ctx, cancel := serviceContext(ctx)
 	defer cancel()
 	// A page view takes the chosen edition's tracks in one call; the Library
