@@ -86,7 +86,7 @@ func askError(w http.ResponseWriter, err error) {
 	case errors.Is(err, asks.ErrNoteLength), errors.Is(err, asks.ErrPerWeek), errors.Is(err, asks.ErrEmail), errors.Is(err, asks.ErrDiscordID),
 		errors.Is(err, asks.ErrNoSuchSeason), errors.Is(err, asks.ErrShowWhoAsked):
 		fail(w, http.StatusBadRequest, err.Error())
-	case errors.Is(err, asks.ErrNoSuchAlbum):
+	case errors.Is(err, asks.ErrNoSuchAlbum), errors.Is(err, library.ErrCopyChoice):
 		fail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, asks.ErrAlbumNotIncluded), errors.Is(err, asks.ErrAlbumNotListedYet):
 		fail(w, http.StatusConflict, err.Error())
@@ -336,7 +336,7 @@ func (a *API) approveAsk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var opt asks.ApproveOptions
-	if r.ContentLength != 0 && !decode(w, r, &opt, `send {} or any of library_folder_id, pick_rules_id, note`) {
+	if r.ContentLength != 0 && !decode(w, r, &opt, `send {} or any of library_folder_id, pick_rules_id, audio_languages, note`) {
 		return
 	}
 	if _, err := a.s.Asks.Approve(r.Context(), v.ID, a.person(r), opt); err != nil {

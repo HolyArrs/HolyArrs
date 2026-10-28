@@ -654,3 +654,34 @@ func TestOpenAskConflict(t *testing.T) {
 		t.Fatal("another UNIQUE was taken for the open-ask index")
 	}
 }
+
+func TestApproveWithAudioLanguages(t *testing.T) {
+	r := newRig(t)
+	ctx := context.Background()
+	res, err := r.svc.Ask(ctx, r.ana, "693134")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// A code that is no language is refused before anything is added.
+	if _, err := r.svc.Approve(ctx, res.Ask.ID, r.luis, ApproveOptions{AudioLanguages: []string{"zz9"}}); !errors.Is(err, library.ErrCopyChoice) {
+		t.Fatalf("bad language: %v", err)
+	}
+	vs, _ := r.svc.Views(ctx, "1=1")
+	if len(vs) != 1 || vs[0].State != domain.AskAsked {
+		t.Fatalf("still waiting %+v", vs)
+	}
+	got, err := r.svc.Approve(ctx, res.Ask.ID, r.luis, ApproveOptions{AudioLanguages: []string{"ja", "EN", "ja"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var v domain.Version
+	if err := r.st.Read().QueryRowContext(ctx, "SELECT id FROM versions WHERE title_id = ? AND is_main = 1", *got.TitleID).Scan(&v.ID); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Get(ctx, r.st.Read(), "versions", v.ID, &v); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Join(v.AudioLanguages, ",") != "ja,en" {
+		t.Fatalf("audio %v", v.AudioLanguages)
+	}
+}

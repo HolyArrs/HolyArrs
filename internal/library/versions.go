@@ -400,6 +400,15 @@ func copyChoices(kind, edition string, audio []string) (string, []string, error)
 	return edition, out, nil
 }
 
+// CheckAudioLanguages checks audio languages wanted on a movie or show
+// before anything is added (the same rules a Version edit uses).
+func CheckAudioLanguages(kind string, audio []string) error {
+	if _, _, err := copyChoices(kind, "", audio); err != nil {
+		return fmt.Errorf("%w: %v", ErrCopyChoice, err)
+	}
+	return nil
+}
+
 // VersionEvent records a change to a title's Versions in History.
 func (s *Service) VersionEvent(ctx context.Context, t domain.Title, summary string, v domain.Version, by domain.Actor) {
 	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventVersionChanged, TitleID: &t.ID, Summary: summary + " of " + t.Name,

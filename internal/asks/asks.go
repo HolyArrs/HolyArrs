@@ -528,6 +528,10 @@ type ApproveOptions struct {
 	LibraryFolderID int64  `json:"library_folder_id"`
 	PickRulesID     int64  `json:"pick_rules_id"`
 	Note            string `json:"note"`
+	// AudioLanguages are the audio languages the approver wants on the
+	// movie or show (base codes such as en or ja); empty leaves the
+	// Version as it is. Music asks ignore them.
+	AudioLanguages []string `json:"audio_languages"`
 }
 
 // Approve says yes to an ask: the movie is added with the chosen Library
@@ -547,6 +551,11 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 	}
 	if a.State != domain.AskAsked && a.State != domain.AskTurnedDown {
 		return a, ErrNotOpen
+	}
+	if a.Kind == "artist" {
+		opt.AudioLanguages = nil
+	} else if err := library.CheckAudioLanguages(a.Kind, opt.AudioLanguages); err != nil {
+		return a, err
 	}
 	set, err := ReadSettings(ctx, db)
 	if err != nil {
@@ -613,6 +622,11 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 		}
 		return before, err
 	}
+	if len(opt.AudioLanguages) > 0 {
+		if err := s.setAudio(ctx, tid, opt.AudioLanguages, by); err != nil {
+			log.Printf("asks: audio languages of ask %d: %v", id, err)
+		}
+	}
 	a.TitleID = &tid
 	if err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE asks SET title_id = ? WHERE id = ?", tid, a.ID)
@@ -651,6 +665,16 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 		log.Printf("asks: check ready: %v", err)
 	}
 	return get(ctx, s.Store.Read(), a.ID)
+}
+
+// setAudio puts the approver's audio languages on the title's main Version.
+func (s *Service) setAudio(ctx context.Context, titleID int64, langs []string, by Person) error {
+	var vid int64
+	if err := s.Store.Read().QueryRowContext(ctx, "SELECT id FROM versions WHERE title_id = ? ORDER BY is_main DESC, id LIMIT 1", titleID).Scan(&vid); err != nil {
+		return err
+	}
+	_, err := library.EditVersion(ctx, s.Store, titleID, vid, library.VersionChange{AudioLanguages: &langs}, by.actor())
+	return err
 }
 
 // addForAsk adds the asked-for movie to the Library, or finds it there.
