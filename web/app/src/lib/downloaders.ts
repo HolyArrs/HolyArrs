@@ -177,6 +177,9 @@ export interface DownloadRow extends DownloadView {
 	year?: number;
 	version: string;
 	downloader: string;
+	/** The Downloader's adapter (qbittorrent, sabnzbd...) and its protocol. */
+	downloader_kind?: string;
+	protocol?: string;
 	size: number;
 	started_at?: string;
 	finished_at?: string;

@@ -5,7 +5,8 @@ import type { DownloadRow } from '../downloaders.ts';
 import type { ImportRecord } from '../types.ts';
 import { stageOf, statusWord } from './status-tabs.ts';
 import { failReason, statusDetail } from './imports.ts';
-import { bytes, dateTime } from '../format.ts';
+import { dateTime } from '../format.ts';
+import { size, sizePair } from './size.ts';
 
 type Bits = Pick<DownloadRow, 'phase' | 'state' | 'progress'>;
 
@@ -33,13 +34,10 @@ export function barTone(r: Bits): BarTone {
 	return 'go';
 }
 
-const MB = 1024 * 1024;
-/** sizeLine is the text inside a bar: "639 MB / 5367 MB" (empty without a size). */
+/** sizeLine is a Queue row's size: "553 MB / 3 GB" (empty without a size). */
 export function sizeLine(r: Pick<DownloadRow, 'size' | 'progress'>): string {
 	if (!r.size) return '';
-	const total = Math.max(1, Math.round(r.size / MB));
-	const got = Math.min(total, Math.round((r.size * Math.max(0, Math.min(1, r.progress || 0))) / MB));
-	return `${got} MB / ${total} MB`;
+	return sizePair(r.size * Math.max(0, Math.min(1, r.progress || 0)), r.size);
 }
 
 /** left is the bytes a download still has to fetch. */
@@ -120,7 +118,7 @@ export function facts(r: DownloadRow, im: ImportRecord | undefined): Fact[] {
 	const out: [string, string | undefined][] = [
 		['Name', r.name],
 		['Status', more ? `${statusWord(r)} · ${more}` : statusWord(r)],
-		['Size', r.size ? bytes(r.size) : ''],
+		['Size', r.size ? size(r.size) : ''],
 		['Downloader', r.downloader],
 		['Path', target],
 		['Source', source],

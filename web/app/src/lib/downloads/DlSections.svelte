@@ -8,14 +8,15 @@
 	// (through the page's Remove dialog).
 	import { page } from '$app/state';
 	import { replaceState } from '$app/navigation';
-	import { tick } from 'svelte';
 	import { slide, fade, type TransitionConfig } from 'svelte/transition';
 	import Poster from '../Poster.svelte';
 	import Icon from '../Icon.svelte';
 	import Chip from '../ui/Chip.svelte';
 	import Menu from '../ui/Menu.svelte';
 	import DecisionPanel from './DecisionPanel.svelte';
-	import { ago, bytes, duration, percent } from '../format.ts';
+	import { ago, duration, percent } from '../format.ts';
+	import { size as bytes, protocolOf, KIND_TABS, KIND_WORD, type KindKey } from './size.ts';
+	import { kindWords } from '../downloaders.ts';
 	import { reducedMotion } from '../motion.ts';
 	import { DUR, easeIn, easeOut } from '../ui/transitions.ts';
 	import { manyWords, rowName, type Decision, type DownloadRow } from '../downloaders.ts';
@@ -26,7 +27,7 @@
 	import { barTone, facts, historyStatus, historyTotals, inHistory, matches, sizeLine, sparkPath, totals } from './sections.ts';
 
 	let {
-		rows,
+		rows: everyRow,
 		importOf,
 		titles,
 		busy,
@@ -53,6 +54,10 @@
 		onremove: (r: DownloadRow) => void;
 		ondone: () => void;
 	} = $props();
+
+	// The Type filter (All, Movies, TV shows, Music) narrows every tab and total.
+	let kindOn = $state<KindKey>('');
+	const rows = $derived(kindOn ? everyRow.filter((r) => (r.kind ?? 'movie') === kindOn) : everyRow);
 
 	// The picked tab (and sub-tab) lives in the address: &show=tab or tab.sub.
 	const start = showOf(page.url.searchParams.get('show'));
@@ -113,7 +118,8 @@
 	// sits before the bin; more than fits scrolls sideways inside the table box.
 	type Col = 'title' | 'bar' | 'st' | 'size' | 'time';
 	const COLS: Col[] = ['title', 'bar', 'st', 'size', 'time'];
-	const DEF: Record<Col, number> = { title: 420, bar: 140, st: 120, size: 150, time: 64 };
+	/** DEF is the factory layout: where Reset columns and a first visit land. */
+	const DEF: Record<Col, number> = { title: 310, bar: 66, st: 130, size: 130, time: 80 };
 	const MAX: Record<Col, number> = { title: 3000, bar: 1200, st: 1200, size: 1200, time: 800 };
 	/** Fallback minimums (the label plus padding) when no header is on the page to measure. */
 	const MINF: Record<Col, number> = { title: 44, bar: 70, st: 56, size: 42, time: 46 };
@@ -148,8 +154,6 @@
 	}
 	const saved = typeof localStorage === 'undefined' ? null : stored();
 	let widths = $state<Record<Col, number>>(saved ?? { ...DEF });
-	// Auto-fit runs once after the rows render when nothing is saved (and again after Reset columns).
-	let fitted = $state(!!saved);
 	/** inner is the full width of the columns; the table box is at least this wide. */
 	const inner = $derived(COLS.reduce((n, k) => n + widths[k], FIXED) + GAPS * gap);
 	function save() {
@@ -159,8 +163,6 @@
 			/* private window: the widths last for this visit */
 		}
 	}
-	/** box is the visible width of the table box. */
-	const box = () => grid?.querySelector<HTMLElement>('.tw')?.clientWidth ?? 1200;
 	/** fitOf is the widest cell of a column (the header label too) plus padding. */
 	function fitOf(k: Col): number {
 		if (!grid) return DEF[k];
@@ -177,19 +179,6 @@
 		}
 		return clamp(k, Math.ceil(w) + 14);
 	}
-	function fitAll() {
-		const next = { ...widths };
-		for (const k of COLS) if (k !== 'title') next[k] = fitOf(k);
-		// The Title starts with the room the others leave.
-		const rest = box() - FIXED - GAPS * gap - (next.bar + next.st + next.size + next.time);
-		next.title = clamp('title', Math.max(rest, Math.min(fitOf('title'), 320)));
-		widths = next;
-		fitted = true;
-	}
-	$effect(() => {
-		if (fitted || !grid || rows.length === 0) return;
-		void tick().then(fitAll);
-	});
 	$effect(() => {
 		if (!grid) return;
 		gap = parseFloat(getComputedStyle(grid).getPropertyValue('--gap')) || 10;
@@ -242,7 +231,7 @@
 		} catch {
 			/* nothing saved */
 		}
-		fitAll();
+		widths = { ...DEF };
 	}
 	const HEADS: { key: string; label: string; size: Col; num?: boolean }[] = [
 		{ key: 'title', label: 'Title', size: 'title' },
@@ -260,9 +249,14 @@
 	</button>
 	<span class="post" class:square={r.kind === 'artist'}><Poster src={poster(r, titles)} name={r.title || r.name} /></span>
 	<span class="nm" data-col="title">
-		<span class="tt" title={rowName(r)}>{rowName(r)}{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}</span>
-		<span class="rel" title={r.name}>{sub2(r)}</span>
+		<span class="tt" title={rowName(r)}>{@render proto(r)}{rowName(r)}{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}</span>
+		<span class="rel" title={r.name}><span class="kt" data-testid="dl-kind">{KIND_WORD[r.kind ?? 'movie']}</span>{sub2(r)}</span>
 	</span>
+{/snippet}
+
+{#snippet proto(r: DownloadRow)}
+	{@const p = protocolOf(r)}
+	{#if p}<span class="pm" data-testid="dl-protocol" data-protocol={p} title="{p === 'torrent' ? 'Torrent' : 'Usenet'} · {(r.downloader_kind && kindWords[r.downloader_kind as keyof typeof kindWords]) || r.downloader}" aria-label="{p === 'torrent' ? 'Torrent' : 'Usenet'} download">{p === 'torrent' ? 'T' : 'U'}</span>{/if}
 {/snippet}
 
 {#snippet bin(r: DownloadRow)}
@@ -294,12 +288,19 @@
 	<span><span class="k">In queue</span><b>{allQueue.length}</b></span>
 </div>
 
+<div class="tops">
 <div class="chips" role="group" aria-label="Show" data-testid="table-filter">
 	{#each tally as c (c.key)}
 		<span class="cw" class:zero={c.count === 0} data-testid="status-chip" data-key={c.key} data-count={c.count} title={c.hint}>
 			<Chip label={c.label} count={c.count} note={c.seeding ? `${c.seeding} seeding` : undefined} selected={on === c.key} onclick={() => choose(c.key)} />
 		</span>
 	{/each}
+</div>
+<div class="types" role="group" aria-label="Type" data-testid="dl-type-filter">
+	{#each KIND_TABS as t (t.key)}
+		<button type="button" class="ty" class:on={kindOn === t.key} aria-pressed={kindOn === t.key} data-key={t.key || 'all'} onclick={() => (kindOn = t.key)}>{t.label}</button>
+	{/each}
+</div>
 </div>
 {#if subs.length}
 	<div class="chips subs" role="group" aria-label="{onTab?.label ?? ''}: show" data-testid="table-subfilter" in:xIn out:xOut>
@@ -395,6 +396,13 @@
 	.spark { flex: none; }
 	.spark path { fill: none; stroke: var(--ok); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
 
+	.tops { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 0 16px; }
+	.types { display: inline-flex; gap: 2px; padding: 2px; margin-bottom: 12px; border-radius: var(--r-btn); background: var(--surface-2); }
+	.ty { min-height: 28px; padding: 0 10px; border: 0; border-radius: calc(var(--r-btn) - 2px); background: none; color: var(--text-muted); font: var(--t-footnote); font-weight: 500; cursor: pointer; }
+	.ty.on { background: var(--surface-1); color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); }
+	.ty:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.pm { display: inline-grid; place-items: center; width: 14px; height: 14px; margin-right: 6px; vertical-align: 1px; border-radius: 3px; background: var(--surface-3); color: var(--text-muted); font-size: 9px; font-weight: 700; line-height: 1; }
+	.kt { margin-right: 6px; padding: 0 5px; border-radius: var(--r-sm); background: var(--surface-2); color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
 	.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
 	.subs { gap: 6px; margin-top: -4px; }
 	.cw { display: inline-flex; transition: opacity var(--dur-fast) var(--ease-out); }

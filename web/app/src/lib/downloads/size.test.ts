@@ -1,0 +1,26 @@
+import { describe, expect, it } from 'vitest';
+import { protocolOf, size, sizePair } from './size.ts';
+
+describe('size', () => {
+	it('uses 1000-based steps', () => {
+		expect(size(0)).toBe('0 B');
+		expect(size(999_000)).toBe('999 KB');
+		expect(size(1_000_000)).toBe('1 MB');
+		expect(size(553_000_000)).toBe('553 MB');
+		expect(size(1_000_000_000)).toBe('1 GB');
+		expect(size(1_690_000_000)).toBe('1.7 GB');
+		expect(size(3_000_000_000)).toBe('3 GB');
+		expect(size(18_400_000_000)).toBe('18 GB');
+		expect(size(1_000_000_000_000)).toBe('1 TB');
+		expect(size(999_960_000)).toBe('1 GB');
+	});
+	it('writes a part of a whole', () => {
+		expect(sizePair(553e6, 3e9)).toBe('553 MB / 3 GB');
+		expect(sizePair(9e9, 9e9)).toBe('9 GB / 9 GB');
+	});
+	it('names the protocol', () => {
+		expect(protocolOf({ protocol: 'usenet' })).toBe('usenet');
+		expect(protocolOf({ downloader_kind: 'qbittorrent' })).toBe('torrent');
+		expect(protocolOf({})).toBe('');
+	});
+});

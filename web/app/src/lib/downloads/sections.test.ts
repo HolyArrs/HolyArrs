@@ -15,8 +15,8 @@ describe('sections', () => {
 	it('colours bars by state', () => {
 		expect(['downloading', 'waiting', 'paused', 'stalled', 'needs_a_decision'].map((p) => barTone(row({ phase: p })))).toEqual(['go', 'queued', 'held', 'held', 'bad']);
 	});
-	it('writes the size inside the bar in MB', () => {
-		expect(sizeLine(row({ size: 5367 * 1048576, progress: 0.1191 }))).toBe('639 MB / 5367 MB');
+	it('writes the size in plain units', () => {
+		expect(sizeLine(row({ size: 3e9, progress: 0.1843 }))).toBe('553 MB / 3 GB');
 		expect(sizeLine(row({ size: 0 }))).toBe('');
 	});
 });

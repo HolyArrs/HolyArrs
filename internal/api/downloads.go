@@ -31,19 +31,23 @@ func (a *API) downloadsRoutes(m *http.ServeMux) {
 // DownloadRow is one row of the Downloads screen, in plain words.
 type DownloadRow struct {
 	DownloadView
-	Phase      string     `json:"phase"` // waiting, downloading, stalled, paused, failed, vanished, removed, waiting_to_import, importing, needs_a_decision, done
-	Name       string     `json:"name"`
-	TitleID    int64      `json:"title_id,omitempty"`
-	Title      string     `json:"title"`
-	Year       *int       `json:"year,omitempty"`
-	Version    string     `json:"version"`
-	Downloader string     `json:"downloader"`
-	Size       int64      `json:"size"`
-	StartedAt  *time.Time `json:"started_at,omitempty"`
-	FinishedAt *time.Time `json:"finished_at,omitempty"`
-	UpdatedAt  time.Time  `json:"updated_at"`
-	SlotState  string     `json:"slot_state,omitempty"`
-	CanAct     bool       `json:"can_act"` // Mark failed and Remove
+	Phase      string `json:"phase"` // waiting, downloading, stalled, paused, failed, vanished, removed, waiting_to_import, importing, needs_a_decision, done
+	Name       string `json:"name"`
+	TitleID    int64  `json:"title_id,omitempty"`
+	Title      string `json:"title"`
+	Year       *int   `json:"year,omitempty"`
+	Version    string `json:"version"`
+	Downloader string `json:"downloader"`
+	// DownloaderKind is the Downloader's adapter (qbittorrent, sabnzbd...) and
+	// Protocol its torrent or usenet.
+	DownloaderKind string     `json:"downloader_kind,omitempty"`
+	Protocol       string     `json:"protocol,omitempty"`
+	Size           int64      `json:"size"`
+	StartedAt      *time.Time `json:"started_at,omitempty"`
+	FinishedAt     *time.Time `json:"finished_at,omitempty"`
+	UpdatedAt      time.Time  `json:"updated_at"`
+	SlotState      string     `json:"slot_state,omitempty"`
+	CanAct         bool       `json:"can_act"` // Mark failed and Remove
 	// Shows: the kind of Title, the episodes the download covers and a
 	// short line naming them ("S01E01-E03, 3 episodes").
 	// Artists: Episodes lists the tracks and Album names the album.
@@ -236,15 +240,16 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rows := make([]DownloadRow, 0, len(ds))
-	names := map[int64]string{}
+	type dlInfo struct{ name, kind, protocol string }
+	names := map[int64]dlInfo{}
 	for _, d := range ds {
 		row := DownloadRow{DownloadView: downloadView(d), StartedAt: d.StartedAt, FinishedAt: d.FinishedAt, UpdatedAt: d.UpdatedAt, Name: d.ExternalID}
-		if n, ok := names[d.DownloaderID]; ok {
-			row.Downloader = n
-		} else {
-			_ = a.s.Store.Read().QueryRowContext(r.Context(), "SELECT name FROM downloaders WHERE id = ?", d.DownloaderID).Scan(&row.Downloader)
-			names[d.DownloaderID] = row.Downloader
+		n, ok := names[d.DownloaderID]
+		if !ok {
+			_ = a.s.Store.Read().QueryRowContext(r.Context(), "SELECT name, adapter, protocol FROM downloaders WHERE id = ?", d.DownloaderID).Scan(&n.name, &n.kind, &n.protocol)
+			names[d.DownloaderID] = n
 		}
+		row.Downloader, row.DownloaderKind, row.Protocol = n.name, n.kind, n.protocol
 		if d.ReleaseID != nil {
 			_ = a.s.Store.Read().QueryRowContext(r.Context(), "SELECT name, size FROM releases WHERE id = ?", *d.ReleaseID).Scan(&row.Name, &row.Size)
 		}
