@@ -918,15 +918,20 @@
 	.item + .item { border-top: 1px solid var(--line); }
 	/* List rows: the banner fills the row's right side, out to the card's edge (the card's corners round it). */
 	.day { overflow: hidden; }
-	/* The banner is wide and reaches in under the words: its faded left half sits behind the text. */
-	.items { --bw: clamp(220px, 72%, 1400px); }
-	/* On hover a row grows a little at top and bottom; the rows below move down with it (no overlap). */
-	/* Every row has one height, tall enough to show the picture well. */
-	.item { position: relative; min-height: 104px; padding-right: calc(var(--bw) * 0.45); transition: min-height var(--dur) var(--ease-out); }
-	@media (hover: hover) { .item:hover { min-height: 116px; } }
-	.bwrap { position: absolute; top: 0; bottom: 0; right: -12px; width: calc(var(--bw) + 12px); }
+	/* The picture fills the whole row (time, words and all); a dark wash from the left keeps the words readable.
+	   Each row has the picture's own wide shape, so every row is the same size; it grows a little on hover. */
+	.item { position: relative; aspect-ratio: 6 / 1; min-height: 104px; max-height: 150px; padding-right: 12px; transition: min-height var(--dur) var(--ease-out); }
+	@media (hover: hover) { .item:hover { min-height: 120px; max-height: 166px; } }
+	.bwrap { position: absolute; top: 0; bottom: 0; left: -12px; right: -12px; }
+	.bwrap :global(.cal-banner) { -webkit-mask-image: none; mask-image: none; }
+	.bwrap::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgb(8 8 10 / .92) 0%, rgb(8 8 10 / .78) 28%, rgb(8 8 10 / .35) 55%, rgb(8 8 10 / 0) 78%); }
 	.item:first-child .bwrap { top: -12px; }
 	.item:last-child .bwrap { bottom: -12px; }
+	/* Over the picture the words are always light, in both themes. */
+	@media (min-width: 641px) {
+		.item .it a, .item .tcol { color: #fff; }
+		.item .sub, .item .tcol.quiet { color: rgb(255 255 255 / .78); }
+	}
 	.it, .tcol, .row-bell { position: relative; z-index: 1; }
 	/* The words take only their own width, so the bell sits right after them. */
 	/* The words have one fixed width, so the bell sits at the same spot on every row. */
