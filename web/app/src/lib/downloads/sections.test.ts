@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addSample, barTone, facts, historyStatus, historyTotals, inHistory, matches, sizeLine, sparkPath, totals } from './sections.ts';
+import { addSample, barTone, facts, historyStatus, historyTotals, inHistory, matches, moving, sizeLine, sparkPath, totals } from './sections.ts';
 import type { DownloadRow } from '../downloaders.ts';
 
 const row = (o: Partial<DownloadRow>): DownloadRow => ({
@@ -22,6 +22,11 @@ describe('sections', () => {
 });
 
 describe('header strip', () => {
+	it('gives speed only to rows taking in data', () => {
+		const fast = { active: true, speed: 4194304 };
+		expect(['downloading', 'waiting', 'paused', 'stalled', 'done'].map((p) => moving(row({ ...fast, phase: p })))).toEqual([true, false, false, false, false]);
+		expect(totals([row({ ...fast, phase: 'waiting' }), row({ ...fast })]).speed).toBe(4194304);
+	});
 	it('adds speed and time left for the whole Queue', () => {
 		const t = totals([row({ active: true, speed: 100, size: 1000, progress: 0.5 }), row({ size: 500 })]);
 		expect(t).toEqual({ speed: 100, left: 1000, eta: 10 });

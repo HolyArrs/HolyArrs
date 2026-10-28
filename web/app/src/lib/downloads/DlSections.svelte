@@ -27,7 +27,7 @@
 	import { ALL, counts, pick, showOf, statusWord, subCounts, tabsFor } from './status-tabs.ts';
 	import { statusDetail } from './imports.ts';
 	import { poster, who } from './shared.ts';
-	import { barTone, facts, historyStatus, historyTotals, inHistory, matches, sizeLine, totals } from './sections.ts';
+	import { barTone, facts, historyStatus, historyTotals, inHistory, matches, moving, sizeLine, totals } from './sections.ts';
 
 	let {
 		rows: everyRow,
@@ -391,6 +391,19 @@
 			grid?.querySelector<HTMLElement>('.cm button')?.focus();
 		}
 	}
+	// A click anywhere on a row opens or closes its details, as the ▾ does;
+	// not on the bin, a link, a control, or while selecting text.
+	function rowClick(e: MouseEvent, id: number) {
+		const t = e.target as HTMLElement;
+		if (t.closest('button, a, input, label, .grip, [data-col="bin"]')) return;
+		if ((getSelection()?.toString() ?? '').length > 0) return;
+		toggle(id);
+	}
+	function rowKey(e: KeyboardEvent, id: number) {
+		if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return;
+		e.preventDefault();
+		toggle(id);
+	}
 	const dash = '—';
 	const dlName = (r: DownloadRow) => (r.downloader_kind && kindWords[r.downloader_kind as keyof typeof kindWords]) || r.downloader || dash;
 	const sub2 = (r: DownloadRow) => (manyWords(r.kind) && r.covers ? r.covers : r.name);
@@ -432,7 +445,7 @@
 			<span class="st {t}" class:ph data-col="status" title={more ? `${statusWord(r)} · ${more}` : statusWord(r)}><span class="dot" aria-hidden="true"></span><span class="tx">{statusWord(r)}</span></span>
 		{/if}
 	{:else if id === 'speed'}
-		<span class="num" class:ph data-col="speed">{!hist && r.active && r.speed > 0 ? `${bytes(r.speed)}/s` : dash}</span>
+		<span class="num" class:ph data-col="speed">{!hist && moving(r) ? `${bytes(r.speed)}/s` : dash}</span>
 	{:else if id === 'time'}
 		{#if hist}
 			<span class="num" class:ph data-col="time" title={r.finished_at || r.updated_at}>{ago(r.finished_at || r.updated_at)}</span>
@@ -460,7 +473,8 @@
 
 {#snippet row(r: DownloadRow, hist: boolean)}
 	<li class="drow" class:open={openId === r.id} data-testid="dl-table-row" data-dl-id={r.id} data-phase={r.phase}>
-		<div class="dline" class:hist>
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
+		<div class="dline" class:hist tabindex="0" aria-expanded={openId === r.id} aria-label="{who(r)}: {openId === r.id ? 'hide' : 'show'} details" data-testid="dl-line" onclick={(e) => rowClick(e, r.id)} onkeydown={(e) => rowKey(e, r.id)}>
 			{@render lead(r)}
 			{#each cells as c (c.id)}{@render cell(r, c.id, c.ph, hist)}{/each}
 			<span class="spare"></span>
@@ -611,7 +625,7 @@
 	.ty.on { background: var(--surface-1); color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); }
 	.ty:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.pm { display: inline-grid; place-items: center; width: 14px; height: 14px; margin-right: 6px; vertical-align: 1px; border-radius: 3px; background: var(--surface-3); color: var(--text-muted); font-size: 9px; font-weight: 700; line-height: 1; }
-	.kt { margin-right: 6px; padding: 0 5px; border-radius: var(--r-sm); background: var(--surface-2); color: var(--text-muted); font: var(--t-caption); font-weight: 600; }
+	.kt { display: inline-block; box-sizing: border-box; height: 16px; margin-right: 6px; padding: 0 5px; vertical-align: 1px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface-3); color: var(--text-muted); font: var(--t-caption); font-size: 11px; line-height: 14px; font-weight: 600; white-space: nowrap; }
 	.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
 	.subs { gap: 6px; margin-top: -4px; }
 	.cw { display: inline-flex; transition: opacity var(--dur-fast) var(--ease-out); }
@@ -635,7 +649,9 @@
 	.drow { display: block; border-bottom: 1px solid var(--line); }
 	.drow.open { background: var(--surface-2); }
 	.dline { display: grid; grid-template-columns: var(--tpl); align-items: center; column-gap: var(--gap); height: 48px; }
-	.dline:hover { background: var(--surface-2); }
+	.drow > .dline { cursor: pointer; }
+	.drow > .dline:hover { background: var(--surface-2); }
+	.drow > .dline:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
 
 	.tg { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text-muted); cursor: pointer; }
 	.tg :global(svg) { transform: rotate(-90deg); transition: transform var(--dur-fast) var(--ease-out); }

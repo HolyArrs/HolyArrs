@@ -52,9 +52,15 @@ export interface Totals {
 	left: number;
 }
 
+/** moving: a row taking in data right now. A queued, paused, stalled or
+ *  finished row has no speed of its own, whatever the Downloader last said. */
+export function moving(r: Pick<DownloadRow, 'phase' | 'state' | 'progress' | 'speed' | 'active'>): boolean {
+	return r.active && r.speed > 0 && stageOf(r) === 'downloading';
+}
+
 /** totals adds up the Queue for the header strip. */
-export function totals(queue: Pick<DownloadRow, 'size' | 'progress' | 'speed' | 'active'>[]): Totals {
-	const speed = queue.reduce((n, r) => n + (r.active && r.speed > 0 ? r.speed : 0), 0);
+export function totals(queue: Pick<DownloadRow, 'phase' | 'state' | 'size' | 'progress' | 'speed' | 'active'>[]): Totals {
+	const speed = queue.reduce((n, r) => n + (moving(r) ? r.speed : 0), 0);
 	const rest = queue.reduce((n, r) => n + left(r), 0);
 	return { speed, left: rest, eta: speed > 0 && rest > 0 ? Math.round(rest / speed) : 0 };
 }
