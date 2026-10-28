@@ -11,7 +11,6 @@
 	import { partOff, partOn } from '#lib/parts.svelte.ts';
 	import { toasts } from '#lib/toasts.svelte.ts';
 	import { date } from '#lib/format.ts';
-	import { inLibraryWord } from '#lib/library.ts';
 	import { glideScroll, popIn, popOut } from '#lib/ui/transitions.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
@@ -37,7 +36,6 @@
 		entryHref,
 		entryArt,
 		entryIcon,
-		albumHave,
 		weekStart,
 		webcalLink,
 		addDays,
@@ -571,7 +569,6 @@
 {#snippet item(e: CalendarEntry)}
 	{@const dot = itemDot(e, todayKey)}
 	{@const w = rowWords({ key: entryKey(e), day: entryDay(e), lead: e, entries: [e] }, look, todayKey)}
-	{@const tail = [inLibraryWord(e.state, e.versions).replace(/^ · /, ''), e.kind === 'album' ? albumHave(e) : ''].filter(Boolean)}
 	{@const lines = w.lines.length ? w.lines : ['']}
 	<li class="item k-{e.kind}" data-testid="cal-item">
 		<!-- The time column (TV-guide style): the air time, or Cinema, At home, Out now; a quiet All day without a time. -->
@@ -583,7 +580,7 @@
 			<!-- Each line only when it has real data; the status dot starts the first. -->
 			{#each lines as l, i (i)}
 				<span class="sub" class:first={i === 0} data-testid="cal-cap"
-					>{#if i === 0}<span class="sdot {dot}" title={dotWord[dot]} aria-hidden="true"></span><span class="sr-only">{dotWord[dot]}. </span>{/if}{[l, ...(i === lines.length - 1 ? tail : [])].filter(Boolean).join(' · ')}</span
+					>{#if i === 0}<span class="sdot {dot}" title={dotWord[dot]} aria-hidden="true"></span><span class="sr-only">{dotWord[dot]}. </span>{/if}{l}</span
 				>
 			{/each}
 			{#if follows === 'everyone'}<span class="who"><FollowWho {e} /></span>{/if}
