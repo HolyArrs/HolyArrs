@@ -924,7 +924,14 @@
 	@media (hover: hover) { .item:hover { min-height: 120px; max-height: 166px; } }
 	.bwrap { position: absolute; top: 0; bottom: 0; left: -12px; right: -12px; }
 	.bwrap :global(.cal-banner) { -webkit-mask-image: none; mask-image: none; }
-	.bwrap::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgb(8 8 10 / .92) 0%, rgb(8 8 10 / .78) 28%, rgb(8 8 10 / .35) 55%, rgb(8 8 10 / 0) 78%); }
+	/* Behind the words: a frosted, darkened patch (blur + dim + a little grain of colour) that feathers
+	   softly into the picture, plus a faint wash over the rest so the right side keeps its colour. */
+	.bwrap::before { content: ''; position: absolute; z-index: 1; top: 0; bottom: 0; left: 0; width: min(520px, 62%); pointer-events: none;
+		background: linear-gradient(90deg, rgb(10 10 12 / .72), rgb(10 10 12 / .55) 60%, rgb(10 10 12 / .35));
+		-webkit-backdrop-filter: blur(16px) saturate(1.25) brightness(.8); backdrop-filter: blur(16px) saturate(1.25) brightness(.8);
+		-webkit-mask-image: linear-gradient(90deg, #000 0%, #000 68%, rgb(0 0 0 / .6) 84%, transparent 100%); mask-image: linear-gradient(90deg, #000 0%, #000 68%, rgb(0 0 0 / .6) 84%, transparent 100%); }
+	.bwrap::after { content: ''; position: absolute; z-index: 1; inset: 0; pointer-events: none;
+		background: linear-gradient(90deg, rgb(8 8 10 / .25) 0%, rgb(8 8 10 / 0) 70%), linear-gradient(0deg, rgb(8 8 10 / .25), rgb(8 8 10 / 0) 45%); }
 	.item:first-child .bwrap { top: -12px; }
 	.item:last-child .bwrap { bottom: -12px; }
 	/* Over the picture the words are always light, in both themes. */
@@ -932,7 +939,7 @@
 		.item .it a, .item .tcol { color: #fff; }
 		.item .sub, .item .tcol.quiet { color: rgb(255 255 255 / .78); }
 	}
-	.it, .tcol, .row-bell { position: relative; z-index: 1; }
+	.it, .tcol, .row-bell { position: relative; z-index: 2; }
 	/* The words take only their own width, so the bell sits right after them. */
 	/* The words have one fixed width, so the bell sits at the same spot on every row. */
 	.it { display: flex; flex-direction: column; min-width: 0; flex: 0 1 260px; }
@@ -963,6 +970,7 @@
 		.item { flex-wrap: wrap; padding-right: 0; min-height: 0; }
 		.bwrap, .item:first-child .bwrap, .item:last-child .bwrap { position: relative; inset: auto; order: -1; flex: 0 0 100%; width: 100%; height: 56px; border-radius: var(--r-sm); overflow: hidden; }
 		.bwrap :global(.cal-banner) { -webkit-mask-image: none; mask-image: none; }
+		.bwrap::before, .bwrap::after { display: none; }
 		.item { gap: 8px; }
 		.when-phone { display: block; font: var(--t-footnote); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text); }
 		.when-phone.quiet { color: var(--text-muted); font-weight: 500; }
