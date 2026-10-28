@@ -229,7 +229,7 @@
 {/snippet}
 
 <div class="stage size-{size}" class:collapsed={split && !listOpen} data-testid="approvals-stage" data-size={size} data-list={split ? (listOpen ? 'open' : 'hidden') : undefined}>
-	<div class="bar">
+	<div class="sbar">
 		<div class="chips" role="group" aria-label="Show" data-testid="ask-tabs">
 			{#each tabs as t (t.tab)}
 				<span class="cw" class:zero={ctx.counts[t.tab] === 0}><Chip label={t.label} count={ctx.counts[t.tab]} selected={ctx.tab === t.tab} onclick={() => ctx.setTab(t.tab)} /></span>
@@ -328,7 +328,7 @@
 	.size-s { --thumb: 36px; --lw: 320px; }
 	.size-l { --thumb: 64px; --lw: 400px; }
 
-	.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 12px; }
+	.sbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 12px; }
 	.chips { display: flex; flex-wrap: wrap; gap: 8px; }
 	.cw { display: inline-flex; transition: opacity var(--dur-fast) var(--ease-out); }
 	.cw.zero { opacity: 0.5; }
