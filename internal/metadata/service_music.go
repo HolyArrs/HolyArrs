@@ -137,7 +137,9 @@ func (m *serviceMusic) Artist(ctx context.Context, mbid string) (Artist, error) 
 	if l := m.service.localMusic(); l != nil {
 		// The Library (not a page) wants the whole list: a partial package
 		// is left to the server's walk there.
-		if a, ok := l.LocalArtist(ctx, mbid); ok && (!a.Partial || IsMemberLookup(ctx)) {
+		// A page that needs an album the partial list lacks asks for the
+		// whole list (WholeArtist).
+		if a, ok := l.LocalArtist(ctx, mbid); ok && (!a.Partial || IsMemberLookup(ctx) && ctx.Value(wholeArtistKey{}) == nil) {
 			return a, nil
 		} else if !ok {
 			l.Uncovered(mbid)
@@ -219,6 +221,26 @@ func servicePopularity(item serviceItem) *ArtistPopularity {
 }
 
 type quickArtistKey struct{}
+
+type wholeArtistKey struct{}
+
+type tracklistOnlyKey struct{}
+
+// TracklistOnly marks a page view's ctx so Pressings asks the metadata
+// server's one-call album answer only, never the per-edition fan-out: a
+// warm-up ask that makes the server fetch the tracklist ahead of a click.
+func TracklistOnly(ctx context.Context) context.Context {
+	return context.WithValue(ctx, tracklistOnlyKey{}, true)
+}
+
+// IsTracklistOnly says ctx was marked by TracklistOnly.
+func IsTracklistOnly(ctx context.Context) bool { return ctx.Value(tracklistOnlyKey{}) != nil }
+
+// WholeArtist marks ctx so Artist never answers with a partial package
+// kept on disk (an album page whose album the package does not list).
+func WholeArtist(ctx context.Context) context.Context {
+	return context.WithValue(ctx, wholeArtistKey{}, true)
+}
 
 // QuickArtist marks ctx so Artist waits at most wait for the full
 // MusicBrainz album list before it answers with the metadata server's.
@@ -396,8 +418,9 @@ func (m *serviceMusic) Pressings(ctx context.Context, albumMBID string) ([]Press
 			}
 		}
 		// A refusing or unreachable server is asked again later, never
-		// through the per-edition fan-out (many requests into a refusal).
-		if errors.Is(err, ErrServiceBusy) || errors.Is(err, ErrServiceUnavailable) || ctx.Err() != nil {
+		// through the per-edition fan-out (many requests into a refusal);
+		// a warm-up ask (TracklistOnly) stops here too.
+		if errors.Is(err, ErrServiceBusy) || errors.Is(err, ErrServiceUnavailable) || ctx.Err() != nil || IsTracklistOnly(ctx) {
 			return nil, err
 		}
 	}

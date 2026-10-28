@@ -539,12 +539,18 @@ func fullAlbumKey(s string) string {
 }
 
 func (a *API) similarArtists(ctx context.Context, mbid string, n int) []PageArtist {
+	return a.similarArtistsWait(ctx, mbid, n, musicSideWait)
+}
+
+// similarArtistsWait is similarArtists waiting up to wait for a list not
+// kept yet.
+func (a *API) similarArtistsWait(ctx context.Context, mbid string, n int, wait time.Duration) []PageArtist {
 	out := []PageArtist{}
 	if a.s.MusicSimilar == nil {
 		return out
 	}
 	// A list not kept yet is looked up behind the answer (similarTo goes on).
-	list := a.similarTo([]string{mbid}, musicSideWait)[mbid]
+	list := a.similarTo([]string{mbid}, wait)[mbid]
 	var names []nameKey
 	for _, s := range list {
 		if len(out) >= n || !metadata.ValidMBID(s.MBID) {
@@ -714,6 +720,7 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 	}
 	v.Albums = kept
 	v.Popularity = art.Popularity
+	a.prefetchTracklists(ctx, firstAlbums(v))
 	var songNames []nameKey
 	// The metadata server's top songs feed the shelf; with none known (or it
 	// not answering in time) Deezer's list stands in.
@@ -763,6 +770,65 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 	a.warmMusicArt(v)
 	musicPageCaching(w, v.Incomplete)
 	a.writeMusicJSON(w, r, v)
+}
+
+// tracklistPrefetchMax caps the albums whose tracklists an artist page asks
+// ahead, and tracklistPrefetchAtOnce how many are asked at a time.
+const (
+	tracklistPrefetchMax    = 8
+	tracklistPrefetchAtOnce = 2
+)
+
+// firstAlbums are the albums an artist page shows first: the latest
+// release, the first albums, then the first singles.
+func firstAlbums(v ArtistPageView) []string {
+	var out []string
+	seen := map[string]bool{}
+	add := func(id string) {
+		if id != "" && !seen[id] && len(out) < tracklistPrefetchMax {
+			seen[id] = true
+			out = append(out, id)
+		}
+	}
+	if v.Latest != nil {
+		add(v.Latest.MBID)
+	}
+	for _, shelf := range []string{"albums", "singles"} {
+		n := 0
+		for _, al := range v.Albums {
+			if al.Shelf == shelf && !al.Upcoming && n < 6 {
+				add(al.MBID)
+				n++
+			}
+		}
+	}
+	return out
+}
+
+// prefetchTracklists asks the tracklists of the given albums in the
+// background (the metadata server's one-call answer only), under the same
+// flight an album page joins, so a click finds the list kept or on its way.
+func (a *API) prefetchTracklists(ctx context.Context, ids []string) {
+	if len(ids) == 0 || a.s.Library == nil || a.s.Library.Artists == nil {
+		return
+	}
+	base := metadata.TracklistOnly(context.WithoutCancel(ctx))
+	go func() {
+		sem := make(chan struct{}, tracklistPrefetchAtOnce)
+		var wg sync.WaitGroup
+		for _, id := range ids {
+			sem <- struct{}{}
+			wg.Add(1)
+			go func() {
+				defer func() { <-sem; wg.Done() }()
+				fl := pageFlight(a, base, "pressings:"+id, func(ctx context.Context) ([]metadata.Pressing, error) {
+					return a.s.Library.Artists.Pressings(ctx, id)
+				})
+				<-fl.done
+			}()
+		}
+		wg.Wait()
+	}()
 }
 
 const (
@@ -895,6 +961,12 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 	}
 	kid := a.kidMax(r) != ""
 	ctx := metadata.MemberLookup(r.Context())
+	// The pressings need only the album id: ask them while the artist is
+	// looked up (a bare link's artist too). Both go on after the page stopped waiting (kept for the
+	// next ask).
+	psFlight := pageFlight(a, ctx, "pressings:"+mbid, func(ctx context.Context) ([]metadata.Pressing, error) {
+		return a.s.Library.Artists.Pressings(ctx, mbid)
+	})
 	if artist == "" {
 		// A bare album link: find the artist from the album itself.
 		if artist = a.albumArtistOf(ctx, mbid); artist == "" {
@@ -903,12 +975,6 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	by := time.Now().Add(musicPageWait)
-	// The pressings need only the album id: ask them while the artist is
-	// looked up. Both go on after the page stopped waiting (kept for the
-	// next ask).
-	psFlight := pageFlight(a, ctx, "pressings:"+mbid, func(ctx context.Context) ([]metadata.Pressing, error) {
-		return a.s.Library.Artists.Pressings(ctx, mbid)
-	})
 	simDone := make(chan []PageArtist, 1)
 	go func() {
 		if r.URL.Query().Get("similar") == "0" {
@@ -920,7 +986,7 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 	art, err, answered := waitFlight[metadata.Artist](ctx, pageFlight(a, ctx, "album-artist:"+artist+"|"+mbid, func(ctx context.Context) (metadata.Artist, error) {
 		art, err := a.s.Library.Artists.Artist(metadata.QuickArtist(ctx, 1500*time.Millisecond), artist)
 		if err == nil && art.Partial && !hasAlbum(art, mbid) {
-			art, err = a.s.Library.Artists.Artist(ctx, artist)
+			art, err = a.s.Library.Artists.Artist(metadata.WholeArtist(ctx), artist)
 		}
 		return art, err
 	}), by)
@@ -1564,22 +1630,20 @@ func (a *API) warmCredits(list []PageCredit) {
 	}()
 }
 
-// albumNear answers GET /api/v1/music/albums/{mbid}?part=near&artist=: the
-// top album (by listeners) of each artist like this one, at most 14.
-func (a *API) albumNear(w http.ResponseWriter, r *http.Request) {
-	mbid, ok := a.musicPageGate(w, r)
-	if !ok {
-		return
-	}
-	artist := strings.ToLower(r.URL.Query().Get("artist"))
-	if !metadata.ValidMBID(artist) {
-		fail(w, http.StatusBadRequest, "send the album's and its artist's MusicBrainz ids (?artist=)")
-		return
-	}
-	ctx, cancel := context.WithTimeout(metadata.MemberLookup(r.Context()), 2*musicSideWait)
-	defer cancel()
+// albumNearFresh is how long an album's "more like this" list (an empty
+// one too) is answered before it is asked again behind the answer.
+const albumNearFresh = 6 * time.Hour
+
+// albumNearOf is the best album of each artist similar to the album's
+// artist (the album itself left out), waiting on the similar list as long
+// as ctx allows.
+func (a *API) albumNearOf(ctx context.Context, mbid, artist string) []PageCredit {
 	near := []PageCredit{}
-	sim := a.similarArtists(ctx, artist, 14)
+	wait := musicSideWait
+	if d, ok := ctx.Deadline(); ok {
+		wait = max(time.Until(d)-time.Second, musicSideWait)
+	}
+	sim := a.similarArtistsWait(ctx, artist, 14, wait)
 	ids := make([]string, 0, len(sim))
 	for _, p := range sim {
 		ids = append(ids, p.MBID)
@@ -1604,6 +1668,32 @@ func (a *API) albumNear(w http.ResponseWriter, r *http.Request) {
 			c.ArtistMBID, c.ArtistName = p.MBID, p.Name
 			near = append(near, c)
 		}
+	}
+	return near
+}
+
+// albumNear answers GET /api/v1/music/albums/{mbid}?part=near&artist=: the
+// top album (by listeners) of each artist like this one, at most 14.
+func (a *API) albumNear(w http.ResponseWriter, r *http.Request) {
+	mbid, ok := a.musicPageGate(w, r)
+	if !ok {
+		return
+	}
+	artist := strings.ToLower(r.URL.Query().Get("artist"))
+	if !metadata.ValidMBID(artist) {
+		fail(w, http.StatusBadRequest, "send the album's and its artist's MusicBrainz ids (?artist=)")
+		return
+	}
+	ctx, cancel := context.WithTimeout(metadata.MemberLookup(r.Context()), 2*musicSideWait)
+	defer cancel()
+	// Kept (an empty list too) and answered at once; refreshed in the
+	// background after albumNearFresh. A cold lookup goes on behind the
+	// answer and is kept for the next visit.
+	near, _ := sideGet(a, ctx, "near", mbid+"|"+artist, albumNearFresh, func(ctx context.Context) ([]PageCredit, bool, error) {
+		return a.albumNearOf(ctx, mbid, artist), true, nil
+	})
+	if near == nil {
+		near = []PageCredit{}
 	}
 	a.warmCredits(near)
 	w.Header().Set("Cache-Control", "private, max-age=300")

@@ -177,3 +177,47 @@ func TestSyncSkipsInvalidPackages(t *testing.T) {
 		t.Fatalf("changed %d err %v", n, err)
 	}
 }
+
+// emptyPkgJSON is a package whose release groups are not built yet.
+func emptyPkgJSON(i int, version int64) json.RawMessage {
+	id := artistID(i)
+	return json.RawMessage(fmt.Sprintf(`{"schema_version":1,"mbid":"%s","version":%d,"hash":"e%d","rank":1,"complete":false,"missing":["release_groups"],
+"artist":{"kind":"artist","source":"musicbrainz","source_id":"%s","title":"A%d","source_data":{"id":"%s","name":"Artist %d","type":"Group","life-span":{"ended":false}}},
+"pictures":{},"release_group_count":0,"release_groups_complete":false,"kinds":{},"release_groups":[],"albums":{}}`, id, version, version, id, i, id, i))
+}
+
+func TestSyncEmptyPackageIsNoAnswerAndIsWanted(t *testing.T) {
+	st := openStore(t)
+	src := &fakeSource{pkgs: []json.RawMessage{pkgJSON(1, 1, 1), emptyPkgJSON(2, 2)}}
+	s := &Sync{Store: st, Source: src}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	s.startWants(ctx)
+	if _, err := s.SyncOnce(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if !s.Covers(artistID(2)) {
+		t.Fatal("the empty package was not kept")
+	}
+	if _, ok := s.LocalArtist(ctx, artistID(2)); ok {
+		t.Fatal("a package with no release groups answered as a full artist")
+	}
+	if a, ok := s.LocalArtist(ctx, artistID(1)); !ok || len(a.Albums) != 1 {
+		t.Fatalf("full package: %+v %v", a, ok)
+	}
+	deadline := time.Now().Add(3 * time.Second)
+	for time.Now().Before(deadline) {
+		src.mu.Lock()
+		n := len(src.wants)
+		src.mu.Unlock()
+		if n > 0 {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	src.mu.Lock()
+	defer src.mu.Unlock()
+	if len(src.wants) != 1 || src.wants[0] != artistID(2) {
+		t.Fatalf("wants %v", src.wants)
+	}
+}

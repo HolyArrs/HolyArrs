@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -488,7 +489,17 @@ func (s *Sync) LocalArtist(ctx context.Context, mbid string) (metadata.Artist, b
 		return metadata.Artist{}, false
 	}
 	a, err := p.PackageArtist()
-	return a, err == nil
+	if err != nil {
+		return metadata.Artist{}, false
+	}
+	// A package whose release groups are not built yet (none listed and
+	// not marked whole) is no answer: the page asks the live path and the
+	// server is asked to finish the package.
+	if len(a.Albums) == 0 && (!p.ReleaseGroupsComplete || slices.Contains(p.Missing, "release_groups")) {
+		s.want(mbid)
+		return metadata.Artist{}, false
+	}
+	return a, true
 }
 
 // LocalPressings answers metadata.LocalMusic.
@@ -521,6 +532,13 @@ func (s *Sync) Uncovered(mbid string) {
 	if !metadata.ValidMBID(mbid) || s.Covers(mbid) {
 		return
 	}
+	s.want(mbid)
+}
+
+// want asks the server (once the copy is whole, at most every wantAgain)
+// to build or finish the artist's package.
+func (s *Sync) want(mbid string) {
+	mbid = strings.ToLower(mbid)
 	s.mu.RLock()
 	synced := s.synced
 	s.mu.RUnlock()

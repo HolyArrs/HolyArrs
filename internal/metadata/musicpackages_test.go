@@ -131,3 +131,54 @@ func TestHostedMusicAnswersFromLocalFirst(t *testing.T) {
 		t.Fatalf("uncovered %v", l.uncovered)
 	}
 }
+
+type partialLocal struct{ fakeLocal }
+
+func (f *partialLocal) LocalArtist(ctx context.Context, mbid string) (Artist, bool) {
+	a, ok := f.fakeLocal.LocalArtist(ctx, mbid)
+	a.Partial = true
+	return a, ok
+}
+
+func TestHostedMusicWholeArtistSkipsPartialPackage(t *testing.T) {
+	asked := 0
+	s := testService(t, func(w http.ResponseWriter, r *http.Request) {
+		asked++
+		w.WriteHeader(http.StatusServiceUnavailable)
+	})
+	s.SetLocalMusic(&partialLocal{})
+	m := s.Artists(nil)
+	if a, err := m.Artist(MemberLookup(context.Background()), pkgArtist); err != nil || a.Name != "Kept" || asked != 0 {
+		t.Fatalf("page view: %+v %v asked %d", a, err, asked)
+	}
+	_, _ = m.Artist(WholeArtist(MemberLookup(context.Background())), pkgArtist)
+	if asked == 0 {
+		t.Fatal("a whole-list ask answered from the partial package")
+	}
+}
+
+func TestTracklistOnlyNeverFansOut(t *testing.T) {
+	var paths []string
+	s := testService(t, func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
+		w.WriteHeader(http.StatusNotFound)
+	})
+	m := s.Artists(nil)
+	_, _ = m.Pressings(TracklistOnly(MemberLookup(context.Background())), pkgAlbum)
+	for _, p := range paths {
+		if !strings.HasPrefix(p, "/v1/music/album/") && !strings.Contains(p, "token") && !strings.Contains(p, "access") {
+			t.Fatalf("a warm-up ask went past the album answer: %v", paths)
+		}
+	}
+	paths = nil
+	_, _ = m.Pressings(MemberLookup(context.Background()), pkgAlbum)
+	fanned := false
+	for _, p := range paths {
+		if !strings.HasPrefix(p, "/v1/music/album/") {
+			fanned = true
+		}
+	}
+	if !fanned {
+		t.Fatalf("a page ask should fall back past the album answer: %v", paths)
+	}
+}
