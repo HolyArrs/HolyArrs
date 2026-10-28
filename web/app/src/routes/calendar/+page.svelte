@@ -30,6 +30,8 @@
 	import {
 		byDay,
 		entryKey,
+		readMonthHidden,
+		saveMonthHidden,
 		feedLink,
 		shiftMonth,
 		shows,
@@ -166,6 +168,12 @@
 	let headEnd = $state<HTMLElement>();
 	let pastHead = $state(false);
 	let narrow = $state(false);
+	// The small month beside the days can be hidden (wide screens; phones use the sheet), kept in this browser.
+	let monthHidden = $state(readMonthHidden());
+	function flipMonth() {
+		monthHidden = !monthHidden;
+		saveMonthHidden(monthHidden);
+	}
 	const barOn = $derived(pastHead);
 	// Today's button only shows (in red) once today has left the screen.
 	let away = $state(false);
@@ -592,6 +600,13 @@
 	</li>
 {/snippet}
 
+{#snippet monthBtn(primary: boolean)}
+	<!-- Hides or shows the small month; the days then take the full width. -->
+	<button type="button" class="month-btn" class:sm={!primary} aria-pressed={!monthHidden} aria-label={monthHidden ? 'Show month' : 'Hide month'} title={monthHidden ? 'Show month' : 'Hide month'} onclick={flipMonth} data-testid={primary ? 'cal-month-toggle' : undefined}>
+		<Icon name="calendar" size={16} /><span class="chev" class:off={monthHidden}><Icon name="chevronRight" size={14} /></span>
+	</button>
+{/snippet}
+
 {#snippet mini()}
 	<MiniMonth year={pickYear} month={pickMonth} entries={miniDates} today={todayKey} {active} onpick={pickDay} onpage={pickPage} />
 {/snippet}
@@ -685,6 +700,7 @@
 		<div class="month-nav">{@render rangeNav(true, false)}</div>
 		<div class="segs">{@render typeSeg(true)}</div>
 		<span class="wide-only" data-testid="cal-follows">{@render followsMenu()}</span>
+		<span class="wide-only">{@render monthBtn(true)}</span>
 		<span class="phone-only">{@render followsPhone()}</span>
 </section>
 <span class="head-end" bind:this={headEnd} aria-hidden="true"></span>
@@ -699,6 +715,7 @@
 		<span class="phone-only"><IconButton icon={view === 'cards' ? 'menu' : 'grid'} label={view === 'cards' ? 'Show as a list' : 'Show as cards'} variant="tinted" onclick={() => pickView(view === 'cards' ? 'list' : 'cards')} data-testid="cal-view-slim" /></span>
 		<span class="wide-only slim-seg">{@render typeSeg(false)}</span>
 		<span class="wide-only">{@render followsMenu()}</span>
+		<span class="wide-only">{@render monthBtn(false)}</span>
 		{@render todayBtn('sm')}
 		<span class="phone-only">{@render followsPhone()}</span>
 	</div>
@@ -717,7 +734,7 @@
 	<EmptyState icon="calendar" title="Nothing coming up" text="Add movies, shows and artists to your Library and their dates, episodes and albums show up here." action={{ label: 'Add media', href: to('/search'), icon: 'search' }} />
 {:else}
 	{#if error}<LoadError hasData message="Calendar could not be loaded." onretry={load} />{/if}
-	<div class="cal-body" class:barred={barOn}>
+	<div class="cal-body" class:barred={barOn} class:month-off={monthHidden}>
 		<div class="cal-main">
 			{#if followNothing}<p class="follow-note" data-testid="cal-follow-none"><Icon name="bell" size={16} />You're not following anything yet. Press Follow on a title to see it here.</p>{/if}
 			{#key view}
@@ -755,7 +772,7 @@
 			<div class="endless" use:endless={fetching} aria-hidden="true"></div>
 			{#if fetching}<p class="more-note" role="status">Loading the next weeks…</p>{/if}
 		</div>
-		<aside class="side" aria-label="Pick a day">{@render mini()}</aside>
+		<aside class="side" aria-label="Pick a day" inert={monthHidden} aria-hidden={monthHidden}>{@render mini()}</aside>
 	</div>
 {/if}
 
@@ -832,7 +849,18 @@
 	.k-episode .dot { background: var(--ok); }
 	.k-album .dot { background: var(--text-muted); }
 
-	.cal-body { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 28px; align-items: start; }
+	.cal-body { display: grid; grid-template-columns: minmax(0, 1fr) 260px; column-gap: 28px; align-items: start; transition: grid-template-columns var(--dur) var(--ease-out), column-gap var(--dur) var(--ease-out); }
+	/* Month hidden: it slides off to the right and the days take its room. */
+	@media (min-width: 1024px) { .cal-body.month-off { grid-template-columns: minmax(0, 1fr) 0px; column-gap: 0px; } }
+	.cal-body .side { transition: top var(--dur) var(--ease-out), opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out); }
+	.cal-body.month-off .side { opacity: 0; transform: translateX(24px); pointer-events: none; overflow: hidden; }
+	.cal-body.month-off .days { max-width: none; }
+	.month-btn { display: inline-flex; align-items: center; gap: 2px; height: 36px; padding: 0 10px; border: 0; border-radius: 999px; background: var(--surface-2); color: var(--text); cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
+	.month-btn.sm { height: 32px; padding: 0 8px; }
+	.month-btn:hover { background: var(--surface-3); }
+	.month-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.month-btn .chev { display: inline-flex; color: var(--text-muted); transition: transform var(--dur) var(--ease-out); }
+	.month-btn .chev.off { transform: rotate(180deg); }
 	.cal-main { min-width: 0; }
 	.side { position: sticky; top: calc(var(--topbar) + 16px); padding: 14px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
 	.phone-only { display: none; }
@@ -871,7 +899,6 @@
 	.today-btn { display: inline-flex; border-radius: 999px; animation: today-ping 1.2s var(--ease-out) 2; }
 	@keyframes today-ping { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-fill) 55%, transparent); } to { box-shadow: 0 0 0 10px transparent; } }
 	/* While the bar shows, the small month and picked days sit below it. */
-	.side { transition: top var(--dur) var(--ease-out); }
 	.cal-body.barred .side { top: calc(var(--topbar) + 76px); }
 	:global(html:has(.slim-wrap.on)) { scroll-padding-top: calc(var(--topbar) + 68px); }
 	/* Cards and List fade in when switched. */
@@ -968,6 +995,7 @@
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.view-in, .today-btn, .follow-note { animation: none; }
+		.cal-body, .cal-body .side, .month-btn .chev { transition: none; }
 		.row-bell :global(.ui-ibtn) { transition: none; }
 		.showing button { transition: none; }
 		.slim, .slim-wrap.on .slim, .slim-wrap { transition: none; }

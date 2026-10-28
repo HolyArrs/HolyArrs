@@ -401,3 +401,21 @@ export function bannerArt(e: BannerEntry): { images: string[]; logo: string | nu
 	const list = e.kind === 'album' ? [e.banner, e.backdrop, e.poster] : [e.banner, e.backdrop, e.still, e.poster];
 	return { images: [...new Set(list.filter((x): x is string => !!x))], logo: e.logo || null };
 }
+
+const MONTH_KEY = 'holyarrs.calendar.month-hidden';
+/** readMonthHidden says whether the small month was hidden last time (false when storage is unavailable). */
+export function readMonthHidden(): boolean {
+	try {
+		return globalThis.localStorage?.getItem(MONTH_KEY) === '1';
+	} catch {
+		return false;
+	}
+}
+/** saveMonthHidden remembers the small month's choice; storage errors are ignored. */
+export function saveMonthHidden(hidden: boolean): void {
+	try {
+		globalThis.localStorage?.setItem(MONTH_KEY, hidden ? '1' : '0');
+	} catch {
+		/* private window or blocked storage: the choice lasts for this page only */
+	}
+}
