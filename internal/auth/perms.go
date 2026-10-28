@@ -345,7 +345,7 @@ var RoutePerms = map[string]Perm{
 	"GET /api/v1/searches":                 PermManageLibrary,
 	"GET /api/v1/settings/search":          PermSettings,
 	"PUT /api/v1/settings/search":          PermSettings,
-	"GET /api/v1/calendar":                 PermManageLibrary,
+	"GET /api/v1/calendar":                 needSignedIn,
 	"GET /api/v1/calendar/feed-key":        PermManageLibrary,
 	"POST /api/v1/calendar/feed-key":       PermSettings,
 	"DELETE /api/v1/calendar/feed-key":     PermSettings,

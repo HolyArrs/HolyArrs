@@ -28,6 +28,10 @@ type Movie struct {
 	Genres           []string          `json:"genres,omitempty"`   // provider genre names, English
 	Rating           string            `json:"rating,omitempty"`   // US certification, "" when unknown
 	People           []string          `json:"people,omitempty"`   // top cast, then directors (names only)
+	// Directors are the directors alone (names only).
+	Directors []string `json:"directors,omitempty"`
+	// Studio is the first production company (a streaming film's is often the service).
+	Studio string `json:"studio,omitempty"`
 	// Release dates (UTC midnight), nil when the source does not know them.
 	CinemaDate   *time.Time `json:"cinema_date,omitempty"`
 	DigitalDate  *time.Time `json:"digital_date,omitempty"`

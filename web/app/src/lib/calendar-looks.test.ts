@@ -53,8 +53,8 @@ describe('groupings', () => {
 
 describe('busy days', () => {
 	it('counts things', () => {
-		expect(thingCount(1)).toBe('1 thing');
-		expect(thingCount(10)).toBe('10 things');
+		expect(thingCount(1)).toBe('1 coming out');
+		expect(thingCount(10)).toBe('10 coming out');
 	});
 	it('folds a show episodes on one day into one card, keeping other shows apart', () => {
 		const a = ep({ title_id: 2, name: 'Home and Away', season: 39, episode: 194, air_day: '2026-10-29' });

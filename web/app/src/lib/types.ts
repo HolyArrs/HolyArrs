@@ -763,6 +763,18 @@ export interface CalendarEntry {
 	poster?: string;
 	backdrop?: string;
 	still?: string;
+	/** A movie: genres, length (runtime), directors, top-billed cast, the series it belongs to, its cinema day and first day at home. */
+	genres?: string[];
+	directors?: string[];
+	cast?: string[];
+	collection?: string;
+	/** A movie's first production company. */
+	studio?: string;
+	cinema_date?: string;
+	home_date?: string;
+	/** An album: length in minutes and its place among the artist's releases of its kind (1 = the first). */
+	length_min?: number;
+	nth?: number;
 	/** Whether the reader follows the title, and who follows it (the people the reader may see; followers_hidden counts the rest). */
 	following?: boolean;
 	followers?: CalendarFollower[];

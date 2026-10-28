@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -255,6 +256,86 @@ type CalendarEntry struct {
 	Poster   string `json:"poster,omitempty"`
 	Backdrop string `json:"backdrop,omitempty"`
 	Still    string `json:"still,omitempty"`
+	// A movie, for the words under its card: genres, length (Runtime),
+	// directors, the top-billed cast, the movie series it belongs to, and
+	// its cinema day and first day out to watch at home (digital or disc).
+	Genres     []string   `json:"genres,omitempty"`
+	Directors  []string   `json:"directors,omitempty"`
+	Cast       []string   `json:"cast,omitempty"`
+	Collection string     `json:"collection,omitempty"`
+	Studio     string     `json:"studio,omitempty"`
+	CinemaDate *time.Time `json:"cinema_date,omitempty"`
+	HomeDate   *time.Time `json:"home_date,omitempty"`
+	// An album: its length in minutes (every track with a known length),
+	// and its place among the artist's releases of the same kind (1 for the
+	// first album; extra kinds such as live or compilation are not counted).
+	LengthMin int `json:"length_min,omitempty"`
+	Nth       int `json:"nth,omitempty"`
+	// ArtistMBID lets the API add the artist's genres it already knows.
+	ArtistMBID string `json:"-"`
+}
+
+// maxCalendarCast is how many top-billed names a movie's date carries.
+const maxCalendarCast = 3
+
+// creditsOf splits a title's people into directors and the top-billed cast.
+// Titles not refreshed since directors were kept on their own still list
+// them after a full cast (the metadata keeps 10 cast names), so names past
+// the tenth are read as directors.
+func creditsOf(t domain.Title) (directors, cast []string) {
+	directors, people := t.Directors, t.People
+	if len(directors) == 0 && len(people) > 10 {
+		directors, people = people[10:], people[:10]
+	}
+	for _, p := range people {
+		if len(cast) == maxCalendarCast {
+			break
+		}
+		if !slices.Contains(directors, p) {
+			cast = append(cast, p)
+		}
+	}
+	return directors, cast
+}
+
+// movieDetails fills a movie date's words from its title and series.
+func movieDetails(e *CalendarEntry, t domain.Title, series map[int64]string) {
+	e.Genres = t.Genres
+	e.Runtime = t.RuntimeMinutes
+	e.Directors, e.Cast = creditsOf(t)
+	e.Collection = series[t.ID]
+	e.Studio = t.Studio
+	e.CinemaDate = t.CinemaDate
+	for _, d := range []*time.Time{t.DigitalDate, t.PhysicalDate} {
+		if d != nil && (e.HomeDate == nil || d.Before(*e.HomeDate)) {
+			e.HomeDate = d
+		}
+	}
+}
+
+// movieSeries names the movie series each title belongs to.
+func movieSeries(ctx context.Context, db reader, ids []any) (map[int64]string, error) {
+	out := map[int64]string{}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	rows, err := db.QueryContext(ctx, `SELECT ct.title_id, c.name FROM movie_collection_titles ct
+		JOIN movie_collections c ON c.id = ct.collection_id WHERE ct.title_id IN (`+marks(len(ids))+`) ORDER BY c.id`, ids...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		var name string
+		if err := rows.Scan(&id, &name); err != nil {
+			return nil, err
+		}
+		if out[id] == "" {
+			out[id] = name
+		}
+	}
+	return out, rows.Err()
 }
 
 // posterOf is a title's first stored picture ("" when it has none).
@@ -316,14 +397,24 @@ func Calendar(ctx context.Context, db reader, from, to time.Time, titles ...stri
 	if err != nil {
 		return nil, err
 	}
+	ids := make([]any, len(ts))
+	for i, ti := range ts {
+		ids[i] = ti.ID
+	}
+	series, err := movieSeries(ctx, db, ids)
+	if err != nil {
+		return nil, err
+	}
 	for _, ti := range ts {
 		for _, d := range []struct {
 			kind string
 			at   *time.Time
 		}{{"cinema", ti.CinemaDate}, {"digital", ti.DigitalDate}, {"physical", ti.PhysicalDate}} {
 			if d.at != nil && !d.at.Before(from) && d.at.Before(to) {
-				out = append(out, CalendarEntry{TitleID: ti.ID, Name: ti.Name, Year: ti.Year, Kind: d.kind, Date: *d.at,
-					Poster: posterOf(ti), Backdrop: ti.Backdrop})
+				e := CalendarEntry{TitleID: ti.ID, Name: ti.Name, Year: ti.Year, Kind: d.kind, Date: *d.at,
+					Poster: posterOf(ti), Backdrop: ti.Backdrop}
+				movieDetails(&e, ti, series)
+				out = append(out, e)
 			}
 		}
 	}
@@ -379,9 +470,19 @@ func calendarAlbums(ctx context.Context, db reader, from, to time.Time) ([]Calen
 		}
 		y := p.ReleaseDate.Year()
 		e.Year = &y
-		_ = db.QueryRowContext(ctx, `SELECT count(*), count(s.file_id) FROM items i LEFT JOIN slots s ON s.item_id = i.id
+		var ms int64
+		_ = db.QueryRowContext(ctx, `SELECT count(*), count(s.file_id), coalesce(sum(i.length_ms), 0) FROM items i LEFT JOIN slots s ON s.item_id = i.id
 			AND s.version_id = (SELECT id FROM versions WHERE title_id = i.title_id AND is_main = 1)
-			WHERE i.part_id = ? AND i.kind = 'track' AND i.dropped_at IS NULL`, p.ID).Scan(&e.Tracks, &e.Have)
+			WHERE i.part_id = ? AND i.kind = 'track' AND i.dropped_at IS NULL`, p.ID).Scan(&e.Tracks, &e.Have, &ms)
+		e.LengthMin = int((ms + 30000) / 60000)
+		e.ArtistMBID = strings.ToLower(t.SourceIDs["musicbrainz"])
+		// Its place among the artist's releases of the same kind, by day
+		// (a plain album, EP or single; live, compilation and the like are not counted).
+		if len(p.SecondaryTypes) == 0 {
+			_ = db.QueryRowContext(ctx, `SELECT 1 + count(*) FROM parts WHERE title_id = ? AND kind = 'album' AND dropped_at IS NULL
+				AND coalesce(release_type, '') = coalesce(?, '') AND coalesce(secondary_types, '[]') = '[]'
+				AND release_date IS NOT NULL AND release_date < ? AND id != ?`, p.TitleID, p.ReleaseType, store.FormatTime(*p.ReleaseDate), p.ID).Scan(&e.Nth)
+		}
 		out = append(out, e)
 	}
 	return out, nil

@@ -96,6 +96,10 @@ type Title struct {
 	RuntimeMinutes int      `db:"runtime_minutes"`
 	Rating         string   `db:"rating"`
 	People         []string `db:"people,json"`
+	// Directors are a movie's directors alone (People mixes them in after the cast).
+	Directors []string `db:"directors,json"`
+	// Studio is a movie's first production company.
+	Studio string `db:"studio"`
 }
 
 // NeverAdd is one entry of the Never-add list.

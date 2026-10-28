@@ -89,9 +89,9 @@ export function monthGroups(entries: CalendarEntry[]): { month: string; name: st
 	return out;
 }
 
-/** thingCount is a day's or a week's count: "1 thing", "10 things". */
+/** thingCount is a day's count: "1 coming out", "10 coming out". */
 export function thingCount(n: number): string {
-	return n === 1 ? '1 thing' : `${n} things`;
+	return `${n} coming out`;
 }
 
 /** A card's worth of dates: one, or several of one show (or one movie) on the same day. */

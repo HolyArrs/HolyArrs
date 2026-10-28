@@ -612,6 +612,11 @@ func (a *API) calendar(w http.ResponseWriter, r *http.Request) {
 		if es[i].Poster != "" {
 			es[i].Poster = artworkLinks([]string{es[i].Poster})[0]
 		}
+		// An album carries its artist's genres when already known (read at
+		// start for every Library artist); the calendar never looks them up.
+		if es[i].Kind == "album" && es[i].ArtistMBID != "" {
+			es[i].Genres = a.knownGenres(es[i].ArtistMBID)
+		}
 	}
 	out, mine, people, err := a.calendarFollows(r.Context(), es)
 	if err != nil {
@@ -620,6 +625,15 @@ func (a *API) calendar(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"from": from.Format("2006-01-02"), "to": to.Format("2006-01-02"), "titles": titles, "dates": out,
 		"my_follows": mine, "people": people})
+}
+
+// knownGenres is an artist's genres from the music genre cache, without
+// queueing a lookup (nil when not known).
+func (a *API) knownGenres(mbid string) []string {
+	c := &a.musicx
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.genres[mbid].genres
 }
 
 // calendarRow is a calendar date with who follows its title: following

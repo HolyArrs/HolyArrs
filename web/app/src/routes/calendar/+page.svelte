@@ -26,14 +26,13 @@
 	import ComingSoon from '#lib/calendar/ComingSoon.svelte';
 	import MiniMonth from '#lib/calendar/MiniMonth.svelte';
 	import FollowWho from '#lib/calendar/FollowWho.svelte';
+	import CaptionBar from '#lib/calendar/CaptionBar.svelte';
+	import { rowWords, DEFAULT_LOOK, type CaptionLook } from '#lib/calendar-captions.ts';
 	import { setFollow } from '#lib/follow.ts';
 	import {
 		byDay,
 		entryKey,
-		entryName,
-		entryTime,
 		feedLink,
-		kindWord,
 		shiftMonth,
 		shows,
 		entryHref,
@@ -98,6 +97,9 @@
 	// ?titles=shows opens the calendar on one kind of title.
 	const askedTitles = page.url.searchParams.get('titles');
 	let which = $state<TitlesShown>(titlesFromAddress(askedTitles));
+
+	// The two caption lines under every card and row (?movie=1-6, ?music=1-5, ?channels=all|known).
+	let look = $state<CaptionLook>({ ...DEFAULT_LOOK, region: 'global' });
 
 	// The phone calendar feed.
 	let feed = $state<{ set: boolean; created_at?: string } | null>(null);
@@ -564,13 +566,22 @@
 
 {#snippet item(e: CalendarEntry)}
 	{@const dot = itemDot(e, todayKey)}
+	{@const w = rowWords({ key: entryKey(e), day: entryDay(e), lead: e, entries: [e] }, look, todayKey)}
+	{@const tail = [inLibraryWord(e.state, e.versions).replace(/^ · /, ''), e.kind === 'album' ? albumHave(e) : ''].filter(Boolean)}
+	{@const lines = w.lines.length ? w.lines : ['']}
 	<li class="item k-{e.kind}" data-testid="cal-item">
+		<!-- The time column (TV-guide style): the air time, or Cinema, At home, Out now; a quiet All day without a time. -->
+		<span class="when" class:quiet={w.quiet} data-testid="cal-when">{w.when}</span>
 		{@render art(e)}
 		<div class="it">
-			<a href={to(entryHref(e))}>{entryName(e)}</a>
-			<span class="sub"
-				><span class="sdot {dot}" title={dotWord[dot]} aria-hidden="true"></span><span class="sr-only">{dotWord[dot]}. </span>{kindWord[e.kind]}{#if entryTime(e)}{' at '}{entryTime(e)}{/if}{#if e.network}{' on '}{e.network}{/if}{inLibraryWord(e.state, e.versions)}{#if e.kind === 'album' && albumHave(e)}{' · '}{albumHave(e)}{/if}</span
-			>
+			<span class="when-phone" class:quiet={w.quiet} aria-hidden="true">{w.when}</span>
+			<a href={to(entryHref(e))}>{w.title}</a>
+			<!-- Each line only when it has real data; the status dot starts the first. -->
+			{#each lines as l, i (i)}
+				<span class="sub" class:first={i === 0} data-testid="cal-cap"
+					>{#if i === 0}<span class="sdot {dot}" title={dotWord[dot]} aria-hidden="true"></span><span class="sr-only">{dotWord[dot]}. </span>{/if}{[l, ...(i === lines.length - 1 ? tail : [])].filter(Boolean).join(' · ')}</span
+				>
+			{/each}
 			{#if follows === 'everyone'}<span class="who"><FollowWho {e} /></span>{/if}
 		</div>
 		<!-- The bell follows or stops following the title; lit when you follow it. -->
@@ -718,7 +729,7 @@
 							<EmptyState compact icon="calendar" title={follows === 'mine' ? 'Nothing you follow here' : 'Nothing anyone follows here'} text="{base.length === 1 ? 'One date in the Library falls' : `${base.length} dates in the Library fall`} in {rangeName}." action={{ label: 'Show the Whole Library', onclick: clearFilters }} />
 						</div>
 					{:else if view === 'cards'}
-						<ComingSoon entries={shown} today={todayKey} onlater={more} mode={follows} onfollow={flipFollow} />
+						<ComingSoon entries={shown} today={todayKey} onlater={more} mode={follows} {look} onfollow={flipFollow} />
 					{:else if agenda.length === 0}
 						<EmptyState compact icon="calendar" title="No dates from {rangeName}" />
 					{:else}
@@ -748,6 +759,8 @@
 		<aside class="side" aria-label="Pick a day">{@render mini()}</aside>
 	</div>
 {/if}
+
+<CaptionBar bind:look />
 
 <Sheet bind:open={sheetOpen} title="Pick a day" placement="bottom">
 	<div class="sheet-mini">
@@ -890,7 +903,18 @@
 	.row-bell.on :global(.ui-ibtn) { color: var(--accent-text); }
 	.it a { color: var(--text); font: var(--t-headline); font-size: 15px; overflow-wrap: anywhere; }
 	.it a:hover { text-decoration: underline; text-underline-offset: 3px; }
-	.sub { color: var(--text-muted); font: var(--t-subhead); font-weight: 400; overflow-wrap: anywhere; }
+	.sub { color: var(--text-muted); font: var(--t-subhead); font-weight: 400; min-height: 1lh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.sub.first { color: var(--text); }
+	/* The time column: one width for every row, so times line up down the page. */
+	.item > .when { flex: none; width: 84px; padding-top: 1px; font: 700 18px/1.2 var(--font-display); letter-spacing: -0.01em; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--text); }
+	.when.quiet { color: var(--text-muted); font-weight: 500; font-size: 15px; }
+	.when-phone { display: none; }
+	/* Phones: the time sits above the title as a small bold line instead of a column. */
+	@media (max-width: 640px) {
+		.item > .when { display: none; }
+		.when-phone { display: block; font: var(--t-footnote); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text); }
+		.when-phone.quiet { color: var(--text-muted); font-weight: 500; }
+	}
 	.sdot { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; vertical-align: 1px; background: var(--text-faint); }
 	.sdot.have { background: var(--ok); }
 	.sdot.missing { background: var(--fail); }

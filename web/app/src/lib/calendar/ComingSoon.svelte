@@ -2,7 +2,8 @@
 	import type { CalendarEntry } from '#lib/types.ts';
 	import { to } from '#lib/paths.ts';
 	import { entryArt, entryHref, entryKey, itemDot, type Follows } from '#lib/calendar.ts';
-	import { entryLine, entryTitle, groupDates, groupFacts, groupTag, monthGroups, movieDates, thingCount, type CalGroup } from '#lib/calendar-looks.ts';
+	import { entryTitle, groupDates, groupTag, monthGroups, thingCount, type CalGroup } from '#lib/calendar-looks.ts';
+	import { cardLines, DEFAULT_LOOK, type CaptionLook } from '#lib/calendar-captions.ts';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import CalTile from './CalTile.svelte';
 	import { sized } from '#lib/tmdb-image.ts';
@@ -17,14 +18,15 @@
 	// beside it with the name on the art, a short line and an Open button.
 	// Month names divide the list.
 	// mode says which follows are shown: Everyone's follows names who follows each title;
-	// onfollow follows or stops following a title from its card.
+	// onfollow follows or stops following a title from its card; look picks the caption lines.
 	let {
 		entries,
 		today,
 		onlater,
 		mode = 'library',
+		look = { ...DEFAULT_LOOK, region: 'global' },
 		onfollow
-	}: { entries: CalendarEntry[]; today: string; onlater: () => void; mode?: Follows; onfollow?: (e: CalendarEntry, on: boolean) => void } = $props();
+	}: { entries: CalendarEntry[]; today: string; onlater: () => void; mode?: Follows; look?: CaptionLook; onfollow?: (e: CalendarEntry, on: boolean) => void } = $props();
 
 	const months = $derived(monthGroups(entries));
 	const openWord = (e: CalendarEntry) => (e.kind === 'episode' ? 'Open show' : e.kind === 'album' ? 'Open album' : 'Open movie');
@@ -37,8 +39,7 @@
 	{@const n = g.entries.length}
 	{@const src = e.kind === 'album' ? e.poster : entryArt(e)}
 	{@const k = entryKey(e)}
-	{@const line = n === 1 ? entryLine(e) : ''}
-	{@const others = movieDates(e, entries)}
+	{@const lines = cardLines(g, look, today)}
 	{@const have = g.entries.every((x) => itemDot(x, today) === 'have')}
 	<article class="cs-card" class:album={e.kind === 'album'} class:stacked={n > 1}>
 		<div class="stack">
@@ -59,9 +60,8 @@
 		</div>
 		<div class="text">
 			<h4><a href={to(entryHref(e))}>{entryTitle(e)}</a></h4>
-			<p class="facts">{groupFacts(g)}{#if have}<span class="have"> · In the Library</span>{/if}</p>
-			{#if line}<p class="line">{line}</p>{/if}
-			{#if others}<p class="also">Also {others}</p>{/if}
+			<!-- The time (or Cinema, At home, Out now) first, then each line with real data; the day is on the left. -->
+			{#each lines as l, i (i)}<p class={i === 0 ? 'when' : 'facts'} data-testid="cal-cap">{l}{#if have && i === lines.length - 1}<span class="have"> · In the Library</span>{/if}</p>{/each}
 			{#if mode === 'everyone'}<p class="who"><FollowWho {e} /></p>{/if}
 			<span class="open">
 				<Button variant="secondary" size="sm" href={to(entryHref(e))} iconAfter="chevronRight">{openWord(e)}</Button>
@@ -92,7 +92,7 @@
 								<!-- A busy day: one row of cards that scrolls sideways, its count on top. -->
 								<div class="many">
 									<Shelf title={thingCount(d.items.length)} item="clamp(260px, 24vw, 320px)" items={gs} key={(g: CalGroup) => g.key} placeholder="wide" lines={2}>
-										{#snippet card(g: CalGroup)}<CalTile {g} {today} {mode} {onfollow} />{/snippet}
+										{#snippet card(g: CalGroup)}<CalTile {g} {today} {mode} {look} {onfollow} />{/snippet}
 									</Shelf>
 								</div>
 							{:else}
@@ -154,10 +154,10 @@
 	h4 { min-width: 0; font: var(--t-title3); letter-spacing: var(--t-title3-track); overflow-wrap: anywhere; }
 	h4 a { color: var(--text); }
 	h4 a:hover { text-decoration: underline; text-underline-offset: 3px; }
+	.when, .facts { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.when { color: var(--text); font: var(--t-callout); font-weight: 700; font-variant-numeric: tabular-nums; }
 	.facts { color: var(--text-muted); font: var(--t-subhead); font-variant-numeric: tabular-nums; }
 	.have { color: var(--ok-text, var(--ok)); }
-	.line { font: var(--t-callout); color: var(--text); overflow-wrap: anywhere; }
-	.also { color: var(--text-muted); font: var(--t-footnote); }
 	.past .cs-card { opacity: 0.75; }
 
 	/* Wide screens: the art and its words side by side, so two or three rows fit a screen. */

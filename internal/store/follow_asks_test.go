@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"strconv"
 	"testing"
-
-	"github.com/CoderLuii/holyarrs/internal/domain"
 )
 
 // TestFollowAsksMigration: people who asked for a title now in the Library
@@ -22,10 +20,15 @@ func TestFollowAsksMigration(t *testing.T) {
 	const meta = `'2026-10-01T00:00:00.000000000Z', '{"kind":"system"}', '2026-10-01T00:00:00.000000000Z', '{"kind":"system"}'`
 	const at = `'2026-10-02T00:00:00.000000000Z'`
 	err = old.Write(ctx, func(tx *sql.Tx) error {
+		// Plain SQL: today's Title has columns schema 60 does not.
 		var ids []int64
 		for _, st := range []string{"active", "removed"} {
-			id, err := Insert(tx, "titles", &domain.Title{Kind: "movie", GateDriver: "none", NewPartsPolicy: "all", ReleaseGate: "released", WhyAdded: "by_hand", Status: "released", Name: "Film " + st, SortName: "film " + st, State: st, MetadataSource: "tmdb",
-				SourceIDs: map[string]string{}, Artwork: []string{}, Genres: []string{}}, domain.System)
+			r, err := tx.Exec(`INSERT INTO titles (created_at, created_by, updated_at, updated_by, kind, gate_driver, new_parts_policy, release_gate, why_added, status, name, sort_name, state, metadata_source)
+				VALUES (`+meta+`, 'movie', 'none', 'all', 'released', 'by_hand', 'released', ?, ?, ?, 'tmdb')`, "Film "+st, "film "+st, st)
+			if err != nil {
+				return err
+			}
+			id, err := r.LastInsertId()
 			if err != nil {
 				return err
 			}

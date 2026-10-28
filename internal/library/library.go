@@ -355,6 +355,7 @@ func applyMovie(t *domain.Title, m metadata.Movie, now time.Time) {
 	t.CinemaDate, t.DigitalDate, t.PhysicalDate = m.CinemaDate, m.DigitalDate, m.PhysicalDate
 	t.Status = titleStatus(Stage(DatesOf(*t), now))
 	applyDetails(t, m.Backdrop, m.Logo, m.Genres, m.Rating, m.People, m.Runtime)
+	t.Directors, t.Studio = append([]string{}, m.Directors...), m.Studio
 }
 
 // applyDetails copies the screen details; a fresh lookup replaces them all.

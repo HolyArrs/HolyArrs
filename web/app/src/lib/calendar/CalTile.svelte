@@ -2,7 +2,8 @@
 	import type { CalendarEntry } from '#lib/types.ts';
 	import { to } from '#lib/paths.ts';
 	import { entryArt, entryHref, itemDot, type Follows } from '#lib/calendar.ts';
-	import { dayChip, entryLine, entryTitle, groupFacts, groupTag, type CalGroup } from '#lib/calendar-looks.ts';
+	import { dayChip, entryTitle, groupTag, type CalGroup } from '#lib/calendar-looks.ts';
+	import { cardLines, DEFAULT_LOOK, type CaptionLook } from '#lib/calendar-captions.ts';
 	import { sized } from '#lib/tmdb-image.ts';
 	import Badge from '#lib/ui/Badge.svelte';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
@@ -17,12 +18,14 @@
 		today,
 		chip = false,
 		mode = 'library',
+		look = { ...DEFAULT_LOOK, region: 'global' },
 		onfollow
 	}: {
 		g: CalGroup;
 		today: string;
 		/** Put the day ("Wed 28") on the art. */ chip?: boolean;
 		/** Everyone's follows names who follows the title. */ mode?: Follows;
+		/** Which caption each kind shows. */ look?: CaptionLook;
 		/** Follow or stop following the title (a bell on the art). */ onfollow?: (e: CalendarEntry, on: boolean) => void;
 	} = $props();
 
@@ -30,10 +33,8 @@
 	const n = $derived(g.entries.length);
 	const src = $derived(e.kind === 'album' ? (e.poster ?? null) : entryArt(e));
 	const badges = $derived([chip ? dayChip(g.day, today) : '', groupTag(g)].filter(Boolean));
-	// A movie's badge already says which date it is, so its facts line is just its year.
-	const movie = $derived(e.kind !== 'episode' && e.kind !== 'album');
-	const facts = $derived(movie ? entryLine(e) : groupFacts(g));
-	const line = $derived(n === 1 && !movie ? entryLine(e) : '');
+	// The time (or Cinema, At home, Out now) first, then each line that has real data; the day is beside the card.
+	const lines = $derived(cardLines(g, look, today));
 	const have = $derived(g.entries.every((x) => itemDot(x, today) === 'have'));
 	let failed = $state(false);
 </script>
@@ -41,7 +42,7 @@
 <article class="ct" class:album={e.kind === 'album'} class:stacked={n > 1} class:past={g.day < today} data-testid="cal-tile">
 	<div class="stack">
 		{#if n > 1}<span class="layer l2" aria-hidden="true"></span><span class="layer l1" aria-hidden="true"></span>{/if}
-		<a class="art" href={to(entryHref(e))} aria-label="{entryTitle(e)}, {groupTag(g)}, {groupFacts(g)}">
+		<a class="art" href={to(entryHref(e))} aria-label={[entryTitle(e), groupTag(g), ...lines].filter(Boolean).join(', ')}>
 			{#if src && !failed}
 				<img class="bg" src={sized(src, e.kind === 'album' ? 'poster' : 'backdrop', 400)} alt="" loading="lazy" decoding="async" onerror={() => (failed = true)} />
 				{#if e.kind === 'album'}<img class="cover" src={sized(src, 'poster', 140)} alt="" loading="lazy" decoding="async" />{/if}
@@ -60,8 +61,9 @@
 			</span>
 		{/if}
 	</div>
-	<p class="facts">{facts}{#if have}<span class="have"> · In the Library</span>{/if}</p>
-	{#if line}<p class="line">{line}</p>{/if}
+	<div class="caps">
+		{#each lines as l, i (i)}<p class="cap" class:when={i === 0} data-testid="cal-cap">{l}{#if have && i === lines.length - 1}<span class="have"> · In the Library</span>{/if}</p>{/each}
+	</div>
 	{#if mode === 'everyone'}<p class="who"><FollowWho {e} size={16} /></p>{/if}
 </article>
 
@@ -84,12 +86,14 @@
 	.album .on-art { right: 46%; }
 	.tags { display: flex; flex-wrap: wrap; gap: 4px; }
 	.name { color: #fff; font: 700 clamp(17px, 1.6vw, 22px)/1.08 var(--font-display); letter-spacing: -0.02em; text-shadow: 0 2px 12px rgb(0 0 0 / 0.5); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-	.facts { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	/* Caption lines, one line each. */
+	.caps { display: flex; flex-direction: column; gap: 1px; min-width: 0; margin-top: -2px; }
+	.cap { color: var(--text-muted); font: var(--t-footnote); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.cap.when { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
 	.have { color: var(--ok-text, var(--ok)); }
 	.bell { position: absolute; top: 16px; right: 8px; }
 	.bell.on :global(.ui-ibtn) { color: var(--accent-text); background: color-mix(in srgb, var(--surface-1) 88%, transparent); }
 	.who { display: flex; min-width: 0; }
-	.line { margin-top: -4px; color: var(--text); font: var(--t-footnote); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
 		.art:hover { transform: translateY(var(--lift)); box-shadow: var(--shadow-lift); }
 	}

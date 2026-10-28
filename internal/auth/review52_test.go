@@ -12,7 +12,7 @@ func TestShowOrganiseRoutesClosedToMembers(t *testing.T) {
 	for _, p := range []string{
 		"GET /api/v1/settings/alerts", "PUT /api/v1/settings/alerts", "POST /api/v1/titles/{id}/delete",
 		"POST /api/v1/library-folders/{id}/scan", "POST /api/v1/library-folders/{id}/adopt", "GET /api/v1/events",
-		"GET /api/v1/calendar", "GET /api/v1/calendar/feed-key", "GET /live",
+		"GET /api/v1/calendar/feed-key", "GET /live",
 	} {
 		need, ok := RoutePerms[p]
 		if !ok || slices.Contains(member, need) || need == NeedPublic {
@@ -21,5 +21,13 @@ func TestShowOrganiseRoutesClosedToMembers(t *testing.T) {
 	}
 	if RoutePerms["GET /live"] != PermManageLibrary {
 		t.Errorf("live stream needs %q, want manage library", RoutePerms["GET /live"])
+	}
+}
+
+// The Calendar is "what's coming for me": every signed-in person may read it
+// (Kid limits still narrow what it returns); its feed key stays closed.
+func TestCalendarOpenToSignedIn(t *testing.T) {
+	if RoutePerms["GET /api/v1/calendar"] != needSignedIn {
+		t.Errorf("calendar needs %q, want signed in", RoutePerms["GET /api/v1/calendar"])
 	}
 }

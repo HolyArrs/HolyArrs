@@ -388,6 +388,9 @@ type tmdbMovie struct {
 		ID   int64  `json:"id"`
 		Name string `json:"name"`
 	} `json:"belongs_to_collection"`
+	ProductionCompanies []struct {
+		Name string `json:"name"`
+	} `json:"production_companies"`
 	ReleaseDates *struct {
 		Results []struct {
 			Country string `json:"iso_3166_1"`
@@ -555,6 +558,22 @@ func (x tmdbExtras) pictures(images string) (backdrop, logo string, genres, peop
 	return backdrop, logo, genres, people
 }
 
+// directors returns the directors' names in credit order (empty without credits).
+func (x tmdbExtras) directors() []string {
+	var out []string
+	if x.Credits == nil {
+		return out
+	}
+	seen := map[string]bool{}
+	for _, c := range x.Credits.Crew {
+		if c.Job == "Director" && c.Name != "" && !seen[c.Name] {
+			seen[c.Name] = true
+			out = append(out, c.Name)
+		}
+	}
+	return out
+}
+
 // parseDay reads "2024-03-01" or a full time, as UTC midnight of that day.
 func parseDay(s string) (time.Time, bool) {
 	if len(s) < 10 {
@@ -585,6 +604,13 @@ func (m tmdbMovie) movieWithCollection(images string, collectionKnown bool) Movi
 	}
 	out.CinemaDate, out.DigitalDate, out.PhysicalDate = m.dates()
 	out.Backdrop, out.Logo, out.Genres, out.People = m.tmdbExtras.pictures(images)
+	out.Directors = m.tmdbExtras.directors()
+	for _, c := range m.ProductionCompanies {
+		if c.Name != "" {
+			out.Studio = c.Name
+			break
+		}
+	}
 	out.Rating = m.certification()
 	return out
 }
