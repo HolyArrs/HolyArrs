@@ -543,7 +543,8 @@ func (a *API) similarArtists(ctx context.Context, mbid string, n int) []PageArti
 	if a.s.MusicSimilar == nil {
 		return out
 	}
-	list := a.similarTo([]string{mbid}, 3*time.Second)[mbid]
+	// A list not kept yet is looked up behind the answer (similarTo goes on).
+	list := a.similarTo([]string{mbid}, musicSideWait)[mbid]
 	var names []nameKey
 	for _, s := range list {
 		if len(out) >= n || !metadata.ValidMBID(s.MBID) {
@@ -648,7 +649,7 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 	var dz metadata.DeezerProfile
 	var bio *metadata.WikiSummary
 	var store []metadata.MusicStoreAlbum
-	side, cancel := context.WithTimeout(ctx, max(time.Until(by), time.Second))
+	side, cancel := context.WithTimeout(ctx, max(time.Until(by), musicSideFloor))
 	defer cancel()
 	if a.s.MusicDiscography != nil && len(art.Albums) == 0 {
 		wg.Add(1)
@@ -766,7 +767,8 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 
 const (
 	// musicSideWait caps each optional part of a page (tags, top songs).
-	musicSideWait = 3 * time.Second
+	// A part kept answers at once; one not kept goes on behind the answer.
+	musicSideWait = 800 * time.Millisecond
 	// musicLookupMax bounds a lookup that goes on after the page answered
 	// (pageFlight).
 	musicLookupMax = time.Minute
@@ -775,7 +777,11 @@ const (
 // musicPageWait caps the essential lookup of an artist or album page: past
 // it the page answers with what it has (incomplete:true) and the lookup goes
 // on in the background, joined by the next ask (tests shorten it).
-var musicPageWait = 3 * time.Second
+var musicPageWait = 800 * time.Millisecond
+
+// musicSideFloor is the least time the page's kept side parts (Deezer,
+// bio, discography) get to answer; ones not kept go on behind the answer.
+const musicSideFloor = 300 * time.Millisecond
 
 // musicPageCaching lets the browser keep a full page a minute; an
 // incomplete one is asked again.
@@ -928,7 +934,7 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 	if incomplete {
 		art = metadata.Artist{MBID: artist, Name: a.knownName("artist", artist)}
 	}
-	side, cancel := context.WithTimeout(ctx, max(time.Until(by), time.Second))
+	side, cancel := context.WithTimeout(ctx, max(time.Until(by), musicSideFloor))
 	defer cancel()
 	dz := a.deezerProfile(side, artist, art)
 	albums, t, err := a.pageAlbums(ctx, r, art, dz)
@@ -1363,6 +1369,31 @@ type AlbumCoreView struct {
 	Kid            bool       `json:"kid"`
 }
 
+// albumCoreWait caps the core's wait for the artist's album list.
+const albumCoreWait = 300 * time.Millisecond
+
+// albumCoreMiss is how long an album core answered 404 answers so again.
+const albumCoreMiss = time.Minute
+
+// coreMissed says the core of mbid (by artist) answered 404 within albumCoreMiss.
+func (a *API) coreMissed(mbid, artist string) bool {
+	c := &a.music
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	at, ok := c.coreMiss[mbid+"|"+artist]
+	return ok && time.Since(at) < albumCoreMiss
+}
+
+func (a *API) rememberCoreMiss(mbid, artist string) {
+	c := &a.music
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.coreMiss == nil || len(c.coreMiss) > 5000 {
+		c.coreMiss = map[string]time.Time{}
+	}
+	c.coreMiss[mbid+"|"+artist] = time.Now()
+}
+
 func (a *API) albumCore(w http.ResponseWriter, r *http.Request) {
 	mbid, ok := a.musicPageGate(w, r)
 	if !ok {
@@ -1374,6 +1405,10 @@ func (a *API) albumCore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := metadata.MemberLookup(r.Context())
+	if a.coreMissed(mbid, artist) {
+		fail(w, http.StatusNotFound, "this album is not kept yet; the full page answers")
+		return
+	}
 	v := AlbumCoreView{MBID: mbid, Image: artPath("album", mbid), SecondaryTypes: []string{}, Artist: PageArtist{MBID: artist, Image: artPath("artist", artist)}}
 	if t, err := a.libraryArtist(ctx, artist); err == nil && t != nil {
 		v.Artist.Name = t.Name
@@ -1382,14 +1417,12 @@ func (a *API) albumCore(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	// The names Explore and the artist page kept answer at once; the
-	// metadata server adds the kind and date when it answers quickly.
-	wait := 3 * time.Second
-	if a.knownName("album", mbid) != "" {
-		wait = 300 * time.Millisecond
-	}
-	quick, cancel := context.WithTimeout(metadata.QuickArtist(ctx, 0), wait)
-	defer cancel()
-	if art, err := a.s.Library.Artists.Artist(quick, artist); err == nil {
+	// metadata server adds the kind and date when it answers quickly, and
+	// a lookup past that goes on behind the answer (the next ask joins it).
+	art, err, answered := waitFlight[metadata.Artist](ctx, pageFlight(a, ctx, "core-artist:"+artist, func(ctx context.Context) (metadata.Artist, error) {
+		return a.s.Library.Artists.Artist(metadata.QuickArtist(ctx, 0), artist)
+	}), time.Now().Add(albumCoreWait))
+	if answered && err == nil {
 		if v.Artist.Name == "" {
 			v.Artist.Name = art.Name
 		}
@@ -1407,6 +1440,8 @@ func (a *API) albumCore(w http.ResponseWriter, r *http.Request) {
 	}
 	if v.Name == "" {
 		// Not in the kept list (a long discography): the full page answers.
+		// Remembered a minute, so a page listing it does not ask each load.
+		a.rememberCoreMiss(mbid, artist)
 		fail(w, http.StatusNotFound, "this album is not kept yet; the full page answers")
 		return
 	}
@@ -1541,7 +1576,7 @@ func (a *API) albumNear(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "send the album's and its artist's MusicBrainz ids (?artist=)")
 		return
 	}
-	ctx, cancel := context.WithTimeout(metadata.MemberLookup(r.Context()), 5*time.Second)
+	ctx, cancel := context.WithTimeout(metadata.MemberLookup(r.Context()), 2*musicSideWait)
 	defer cancel()
 	near := []PageCredit{}
 	sim := a.similarArtists(ctx, artist, 14)

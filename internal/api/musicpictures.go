@@ -3,6 +3,8 @@ package api
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"regexp"
@@ -350,7 +352,27 @@ func (a *API) writeMusicJSON(w http.ResponseWriter, r *http.Request, v any, extr
 		return
 	}
 	b := a.withPictures(r.Context(), buf.Bytes(), extra...)
+	// The answer's hash is its ETag: a revisit with the same answer is a
+	// 304 without the body.
+	sum := sha256.Sum256(b)
+	tag := `"` + hex.EncodeToString(sum[:12]) + `"`
+	w.Header().Set("ETag", tag)
+	if etagMatch(r.Header.Get("If-None-Match"), tag) {
+		w.WriteHeader(http.StatusNotModified)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(b)
+}
+
+// etagMatch says an If-None-Match header names tag (weak or strong, or *).
+func etagMatch(h, tag string) bool {
+	for _, t := range strings.Split(h, ",") {
+		t = strings.TrimPrefix(strings.TrimSpace(t), "W/")
+		if t == tag || t == "*" {
+			return true
+		}
+	}
+	return false
 }

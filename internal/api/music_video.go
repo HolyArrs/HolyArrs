@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"math/rand/v2"
 	"net/http"
 	"strings"
 	"sync"
@@ -238,41 +237,16 @@ func (a *API) artistVideo(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	// A video whose stream was looked up ahead of time answers at once;
-	// else one is picked, and one that will not play is dropped and
-	// another one is tried.
+	// Only a stream already looked up answers: yt-dlp never runs while the
+	// visitor waits. None ready yet answers 404 at once and one is looked up
+	// behind it (the hero keeps its photo; the next view plays).
 	v, s, ready := a.readyVideo(r.Context(), vids)
 	if !ready {
-		if _, _, found := ytdlpRun(); !found {
-			fail(w, http.StatusNotFound, "no direct stream")
-			return
-		}
-	}
-	for tries := 0; !ready; tries++ {
-		if len(vids) == 0 || tries >= 4 {
-			fail(w, http.StatusNotFound, "no direct stream")
-			return
-		}
-		v = vids[rand.IntN(len(vids))]
-		ckey := "musicvideo|" + v.ID
-		now := time.Now()
-		if _, ok := a.trailers.get(ckey, now); !ok && !a.trailerStored(r.Context(), ckey, now) && !a.trailers.inFlight(ckey) {
-			if !a.trailers.allow(a.person(r).UserID, now) {
-				w.Header().Set("Retry-After", "60")
-				fail(w, http.StatusTooManyRequests, "too many videos; try again in a minute")
-				return
-			}
-		}
-		var err error
-		s, err = a.resolveMusicVideo(r.Context(), v.ID)
-		if err == nil && s.Type == "hls" {
-			break
-		}
-		if r.Context().Err() != nil {
-			fail(w, http.StatusNotFound, "no direct stream")
-			return
-		}
-		vids = a.dropVideo(r.Context(), mbid, v.ID)
+		a.resolveVideoBehind(r, mbid, vids, "")
+		w.Header().Set("Cache-Control", "private, no-store")
+		w.Header().Set("Retry-After", "5")
+		fail(w, http.StatusNotFound, "no video ready yet")
+		return
 	}
 	view, ok := a.videoView(r, v, s)
 	if !ok {
@@ -301,19 +275,16 @@ func (a *API) pickedVideo(w http.ResponseWriter, r *http.Request, mbid, id strin
 		fail(w, http.StatusNotFound, "no such video")
 		return
 	}
-	if _, known := a.videoKnown(r.Context(), v.ID); !known && !a.trailers.inFlight("musicvideo|"+v.ID) {
-		if _, _, found := ytdlpRun(); !found {
-			fail(w, http.StatusNotFound, "no direct stream")
-			return
-		}
-		if !a.trailers.allow(a.person(r).UserID, time.Now()) {
-			w.Header().Set("Retry-After", "60")
-			fail(w, http.StatusTooManyRequests, "too many videos; try again in a minute")
-			return
-		}
+	s, known := a.videoKnown(r.Context(), v.ID)
+	if !known {
+		// Looked up behind the answer; the row's embed plays meanwhile.
+		a.resolveVideoBehind(r, mbid, nil, v.ID)
+		w.Header().Set("Cache-Control", "private, no-store")
+		w.Header().Set("Retry-After", "5")
+		fail(w, http.StatusNotFound, "no video ready yet")
+		return
 	}
-	s, err := a.resolveMusicVideo(r.Context(), v.ID)
-	if err != nil || s.Type != "hls" {
+	if s.Type != "hls" {
 		fail(w, http.StatusNotFound, "no direct stream")
 		return
 	}
@@ -363,6 +334,34 @@ func (a *API) readyVideo(ctx context.Context, vids []metadata.ArtistVideo) (meta
 		}
 	}
 	return metadata.ArtistVideo{}, TrailerStream{}, false
+}
+
+// resolveVideoBehind looks one video's stream up after the answer: id, else
+// the first of vids not known yet. It counts against the person's video
+// budget; one that will not play is dropped from the artist's list.
+func (a *API) resolveVideoBehind(r *http.Request, mbid string, vids []metadata.ArtistVideo, id string) {
+	if _, _, found := ytdlpRun(); !found {
+		return
+	}
+	ctx := metadata.MemberLookup(context.WithoutCancel(r.Context()))
+	if id == "" {
+		for _, v := range vids {
+			if _, known := a.videoKnown(ctx, v.ID); !known {
+				id = v.ID
+				break
+			}
+		}
+	}
+	if id == "" || a.trailers.inFlight("musicvideo|"+id) || !a.trailers.allow(a.person(r).UserID, time.Now()) {
+		return
+	}
+	go func() {
+		lctx, cancel := context.WithTimeout(ctx, 40*time.Second)
+		defer cancel()
+		if _, err := a.resolveMusicVideo(lctx, id); err != nil && lctx.Err() == nil && vids != nil {
+			a.dropVideo(ctx, mbid, id)
+		}
+	}()
 }
 
 // prefetchArtistVideos looks artists' music video streams up ahead of time,

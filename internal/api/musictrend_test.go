@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/library"
 	"github.com/CoderLuii/holyarrs/internal/metadata"
@@ -71,7 +72,17 @@ func TestMusicTrendingListsAndPictures(t *testing.T) {
 	if b := get("/api/v1/music-trending?kind=artist&region=fr", 200); b["items"].([]any)[0].(map[string]any)["name"] != "BTS" {
 		t.Fatalf("artists %+v", b)
 	}
-	resp, err := http.Get(srv.URL + "/api/v1/music-trending/art/album/" + trendGroup)
+	// The route answers from disk: the cover is stored behind the list
+	// (or behind a first 204) and then served.
+	var resp *http.Response
+	var err error
+	for deadline := time.Now().Add(5 * time.Second); ; time.Sleep(20 * time.Millisecond) {
+		resp, err = http.Get(srv.URL + "/api/v1/music-trending/art/album/" + trendGroup)
+		if err != nil || resp.StatusCode != 204 || time.Now().After(deadline) {
+			break
+		}
+		resp.Body.Close()
+	}
 	if err != nil || resp.StatusCode != 200 || resp.Header.Get("Cache-Control") != "private, max-age=86400" {
 		t.Fatalf("cover %v %d", err, resp.StatusCode)
 	}
@@ -162,5 +173,7 @@ func TestMusicTrendingKidLimited(t *testing.T) {
 		t.Fatalf("Kid sees %d items", n)
 	}
 	k.kai.call("GET", "/api/v1/music-trending/art/album/"+trendGroup, "", 204)
+	// Stored ahead (the warm does it for every listed id); the route serves disk only.
+	k.api.musicTrendArtFile(context.Background(), "album", trendGroup, "500")
 	k.ana.call("GET", "/api/v1/music-trending/art/album/"+trendGroup, "", 200)
 }

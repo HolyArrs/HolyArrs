@@ -135,6 +135,11 @@ func TestMusicPictureRouteVersionsSizes(t *testing.T) {
 		b, _ := io.ReadAll(res.Body)
 		return res.StatusCode, res.Header.Get("Cache-Control"), b
 	}
+	// Not on disk yet: 204 at once, fetched behind the answer.
+	if code, _, _ := get("album/" + picAlbum + "?size=500&pv=c1"); code != 204 {
+		t.Fatalf("first ask %d, want 204 while it is fetched", code)
+	}
+	a.music.prefetching.Wait()
 	code, cc, body := get("album/" + picAlbum + "?size=500&pv=c1")
 	if code != 200 || !strings.Contains(cc, "immutable") || !bytes.Equal(body, pic) {
 		t.Fatalf("versioned card %d %q", code, cc)
@@ -210,5 +215,29 @@ func TestWarmAsksRecordsOncePerRow(t *testing.T) {
 	defer mu.Unlock()
 	if !strings.Contains(strings.Join(seen, " "), picAlbum+"=c1") {
 		t.Fatalf("the warm ran before its records: %v", seen)
+	}
+}
+
+// A music answer carries an ETag; the same answer asked with it is a 304
+// with no body.
+func TestMusicJSONETag(t *testing.T) {
+	a := New(Server{Version: "test"})
+	w := httptest.NewRecorder()
+	a.writeMusicJSON(w, httptest.NewRequest("GET", "/x", nil), map[string]any{"rows": []int{1, 2, 3}})
+	tag := w.Header().Get("ETag")
+	if w.Code != 200 || tag == "" {
+		t.Fatalf("first answer %d, ETag %q", w.Code, tag)
+	}
+	r := httptest.NewRequest("GET", "/x", nil)
+	r.Header.Set("If-None-Match", "W/"+tag)
+	w = httptest.NewRecorder()
+	a.writeMusicJSON(w, r, map[string]any{"rows": []int{1, 2, 3}})
+	if w.Code != http.StatusNotModified || w.Body.Len() != 0 {
+		t.Fatalf("revisit %d with %d bytes, want 304", w.Code, w.Body.Len())
+	}
+	w = httptest.NewRecorder()
+	a.writeMusicJSON(w, r, map[string]any{"rows": []int{4}})
+	if w.Code != 200 {
+		t.Fatalf("changed answer %d, want 200", w.Code)
 	}
 }

@@ -34,8 +34,14 @@ type musicTrendCache struct {
 	// names are the artists and albums of the cached lists by MusicBrainz
 	// id, so only those pictures are fetched.
 	names map[string]metadata.MusicTrendItem
-	// artMiss is when a picture was last not found, by "kind|mbid".
-	artMiss map[string]time.Time
+	// artMiss is when a picture was last not found and how many times in a
+	// row, by "kind|mbid" (artMissWait spaces the retries).
+	artMiss map[string]artMissAt
+	// artQueued are pictures the route asked to be fetched behind its
+	// answer, by "kind|mbid|size|v".
+	artQueued map[string]bool
+	// coreMiss is when an album core last answered 404, by "album|artist".
+	coreMiss map[string]time.Time
 	// artBusy are pictures being fetched now, so a second ask waits for
 	// the first instead of fetching again.
 	artBusy map[string]*artFetch
@@ -44,6 +50,11 @@ type musicTrendCache struct {
 	warmed map[string]time.Time
 	// prefetching counts background picture fetches (tests wait on it).
 	prefetching sync.WaitGroup
+}
+
+type artMissAt struct {
+	at time.Time
+	n  int
 }
 
 type artFetch struct {
@@ -241,7 +252,13 @@ func (a *API) musicTrendArt(w http.ResponseWriter, r *http.Request) {
 	if !metadata.ValidPictureVersion(v) {
 		v = ""
 	}
-	f := a.musicArt(r.Context(), kind, mbid, q.Get("size"), v)
+	// Only what is on disk answers: a picture not stored yet is fetched
+	// behind the answer, never while the visitor waits.
+	f := a.fetchMusicArt(r.Context(), kind, mbid, artSize(kind, q.Get("size")), v, false)
+	queued := false
+	if !f.ok || !f.exact {
+		queued = a.queueMusicArt(kind, mbid, q.Get("size"), v)
+	}
 	if f.ok {
 		a.tplMarkArt(kind, mbid)
 	}
@@ -253,6 +270,13 @@ func (a *API) musicTrendArt(w http.ResponseWriter, r *http.Request) {
 		}
 		// No picture anywhere: an empty answer. The page's image falls back to its
 		// placeholder the same way, but the browser does not log it as a failed load.
+		if queued {
+			// Being fetched now: worth asking again soon.
+			w.Header().Set("Cache-Control", "private, max-age=20")
+			w.Header().Set("Retry-After", "5")
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
 		noPicture(w)
 		return
 	}
@@ -273,9 +297,71 @@ func (a *API) musicTrendArt(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// musicArtMissTTL is how long a picture no source has is not asked again:
-// minutes, so a brand-new release's cover shows once a source has it.
+// musicArtMissTTL is how long a picture no source has is first not asked
+// again: minutes, so a brand-new release's cover shows once a source has it.
 const musicArtMissTTL = 10 * time.Minute
+
+// artMissSteps space the retries of a picture missed again and again: 10
+// minutes, then 30, 2 hours, and 6 hours from then on.
+var artMissSteps = []time.Duration{musicArtMissTTL, 30 * time.Minute, 2 * time.Hour, 6 * time.Hour}
+
+// artMissWait is how long a picture missed n times in a row is not asked.
+func artMissWait(n int) time.Duration {
+	return artMissSteps[min(max(n, 1), len(artMissSteps))-1]
+}
+
+const (
+	// artQueueMax caps the pictures waiting to be fetched behind answers.
+	artQueueMax = 2000
+	// artQueueWorkers fetch them, a few at a time.
+	artQueueWorkers = 4
+	// artQueueItem bounds one queued fetch.
+	artQueueItem = 40 * time.Second
+)
+
+// artQueueSem holds the queued fetches running now.
+var artQueueSem = make(chan struct{}, artQueueWorkers)
+
+// queueMusicArt fetches a picture behind the route's answer (bounded: a
+// few at a time, at most artQueueMax waiting); false when it is already
+// queued, remembered missing, unknown or the queue is full.
+func (a *API) queueMusicArt(kind, mbid, size, v string) bool {
+	if a.s.Library == nil || a.s.Library.Artwork == nil || !metadata.ValidMBID(mbid) {
+		return false
+	}
+	size = artSize(kind, size)
+	key := kind + "|" + mbid + "|" + size + "|" + v
+	c := &a.music
+	c.mu.Lock()
+	if m, ok := c.artMiss[kind+"|"+mbid]; ok && time.Since(m.at) < artMissWait(m.n) {
+		c.mu.Unlock()
+		return false
+	}
+	if c.artQueued == nil {
+		c.artQueued = map[string]bool{}
+	}
+	if c.artQueued[key] || len(c.artQueued) >= artQueueMax {
+		c.mu.Unlock()
+		return c.artQueued[key]
+	}
+	c.artQueued[key] = true
+	c.mu.Unlock()
+	c.prefetching.Add(1)
+	go func() {
+		defer c.prefetching.Done()
+		defer func() {
+			c.mu.Lock()
+			delete(c.artQueued, key)
+			c.mu.Unlock()
+		}()
+		artQueueSem <- struct{}{}
+		defer func() { <-artQueueSem }()
+		ctx, cancel := context.WithTimeout(context.Background(), artQueueItem)
+		defer cancel()
+		a.musicArt(ctx, kind, mbid, size, v)
+	}()
+	return true
+}
 
 // artFile is one picture the route can serve: exact is false when a
 // smaller size stands in for the one asked (not made yet), small when it is
@@ -309,7 +395,7 @@ func (a *API) musicArt(ctx context.Context, kind, mbid, size, v string) artFile 
 		case <-ctx.Done():
 			return artFile{}
 		}
-		return a.fetchMusicArt(ctx, kind, mbid, size, v)
+		return a.fetchMusicArt(ctx, kind, mbid, size, v, true)
 	}
 	if c.artBusy == nil {
 		c.artBusy = map[string]*artFetch{}
@@ -317,7 +403,7 @@ func (a *API) musicArt(ctx context.Context, kind, mbid, size, v string) artFile 
 	f := &artFetch{done: make(chan struct{})}
 	c.artBusy[key] = f
 	c.mu.Unlock()
-	f.file = a.fetchMusicArt(ctx, kind, mbid, size, v)
+	f.file = a.fetchMusicArt(ctx, kind, mbid, size, v, true)
 	c.mu.Lock()
 	delete(c.artBusy, key)
 	c.mu.Unlock()
@@ -414,13 +500,15 @@ func (a *API) artTemporary(err error) bool {
 	return true
 }
 
-func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size, v string) artFile {
+// fetchMusicArt finds a picture on disk, and with fetch asks the metadata
+// server for one not stored here yet.
+func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size, v string, fetch bool) artFile {
 	c := &a.music
 	c.mu.Lock()
 	_, listed := c.names[kind+"|"+mbid]
 	// An artist page asks for its own artist by id, listed or not; any other picture is only for a listed id.
 	known := listed || (kind == "artist" || kind == "wide" || kind == "logo") && metadata.ValidMBID(mbid)
-	missAt, missed := c.artMiss[kind+"|"+mbid]
+	miss, missed := c.artMiss[kind+"|"+mbid]
 	c.mu.Unlock()
 	if !listed {
 		// Any catalog album or artist answers at once, listed by a page yet
@@ -432,7 +520,7 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size, v string) art
 		}
 	}
 	lib := a.s.Library
-	if !known || lib == nil || lib.Artwork == nil || (missed && time.Since(missAt) < musicArtMissTTL) {
+	if !known || lib == nil || lib.Artwork == nil || (fetch && missed && time.Since(miss.at) < artMissWait(miss.n)) {
 		return artFile{}
 	}
 	if v == "" {
@@ -449,6 +537,9 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size, v string) art
 		if p, ok := lib.Artwork.Path(n); ok {
 			lib.Artwork.Recheck(src, serverStandIn)
 			return n, p, true
+		}
+		if !fetch {
+			return "", "", false
 		}
 		// A failed fetch may only have lost the race with a warm of the same
 		// picture (the file is then stored): it counts when the file is there.
@@ -481,12 +572,13 @@ func (a *API) fetchMusicArt(ctx context.Context, kind, mbid, size, v string) art
 			return artFile{name: n, path: p, v: v, ok: true}
 		}
 	}
-	if ctx.Err() == nil && !temporary {
+	if fetch && ctx.Err() == nil && !temporary {
 		c.mu.Lock()
 		if c.artMiss == nil || len(c.artMiss) > 20000 {
-			c.artMiss = map[string]time.Time{}
+			c.artMiss = map[string]artMissAt{}
 		}
-		c.artMiss[kind+"|"+mbid] = time.Now()
+		k := kind + "|" + mbid
+		c.artMiss[k] = artMissAt{at: time.Now(), n: c.artMiss[k].n + 1}
 		c.mu.Unlock()
 	}
 	return artFile{}

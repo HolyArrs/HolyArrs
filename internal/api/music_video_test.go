@@ -4,9 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/CoderLuii/holyarrs/internal/jobs"
 	"github.com/CoderLuii/holyarrs/internal/library"
@@ -38,7 +41,7 @@ func TestArtistVideoStartPoints(t *testing.T) {
 		return []metadata.ArtistVideo{{ID: "dQw4w9WgXcQ", MostReplayed: 42}}, nil
 	})
 	var v ArtistVideoView
-	_ = json.Unmarshal(do(t, "GET", u, "", 200), &v)
+	_ = json.Unmarshal(videoReady(t, u), &v)
 	if v.Key != "dQw4w9WgXcQ" || v.Start != 42 || !strings.Contains(v.ProxyURL, "/api/v1/trailer/stream/") || !strings.HasSuffix(v.ProxyURL, "/manifest.m3u8") {
 		t.Fatalf("video %+v", v)
 	}
@@ -46,7 +49,7 @@ func TestArtistVideoStartPoints(t *testing.T) {
 	u = videoSetup(t, func(context.Context, string) ([]metadata.ArtistVideo, error) {
 		return []metadata.ArtistVideo{{ID: "dQw4w9WgXcQ"}}, nil
 	})
-	_ = json.Unmarshal(do(t, "GET", u, "", 200), &v)
+	_ = json.Unmarshal(videoReady(t, u), &v)
 	if v.Start != 80 || v.Duration != 200 {
 		t.Fatalf("heatmap start %+v", v)
 	}
@@ -67,7 +70,7 @@ func TestArtistVideoPicked(t *testing.T) {
 	do(t, "PUT", base+"/api/v1/settings/ui", `{"autoplay_trailers":false}`, 200)
 	do(t, "GET", u, "", 404)
 	var v ArtistVideoView
-	_ = json.Unmarshal(do(t, "GET", u+"&id=9bZkp7q19f0", "", 200), &v)
+	_ = json.Unmarshal(videoReady(t, u+"&id=9bZkp7q19f0"), &v)
 	if v.Key != "9bZkp7q19f0" || !strings.Contains(v.ProxyURL, "/api/v1/trailer/stream/") || !strings.HasSuffix(v.ProxyURL, "/manifest.m3u8") {
 		t.Fatalf("picked %+v", v)
 	}
@@ -85,7 +88,7 @@ func TestArtistVideoFallbacks(t *testing.T) {
 		return []metadata.ArtistVideo{{ID: "dQw4w9WgXcQ"}}, nil
 	})
 	var v ArtistVideoView
-	_ = json.Unmarshal(do(t, "GET", u, "", 200), &v)
+	_ = json.Unmarshal(videoReady(t, u), &v)
 	if v.Start != 60 {
 		t.Fatalf("no heatmap: start at 30%% of 200 s, got %+v", v)
 	}
@@ -100,5 +103,48 @@ func TestVideoStart(t *testing.T) {
 	}
 	if got := videoStart(metadata.ArtistVideo{Duration: 100}, TrailerStream{Peak: 150}); got != 30 {
 		t.Fatalf("a peak past the end is ignored: %v", got)
+	}
+}
+
+// videoReady asks u until it answers 200: a stream is looked up behind the
+// first answer (404 at once), never while the request waits.
+func videoReady(t *testing.T, u string) []byte {
+	t.Helper()
+	deadline := time.Now().Add(10 * time.Second)
+	for {
+		resp, err := http.Get(u)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if resp.StatusCode == 200 {
+			return b
+		}
+		if resp.StatusCode != 404 || time.Now().After(deadline) {
+			t.Fatalf("GET %s: %d %s", u, resp.StatusCode, b)
+		}
+		time.Sleep(30 * time.Millisecond)
+	}
+}
+
+// The first ask for an artist whose stream is not looked up answers 404 at
+// once (no yt-dlp in the request) and the lookup runs behind it.
+func TestArtistVideoNeverWaitsOnLookup(t *testing.T) {
+	t.Setenv("FAKE_YTDLP_KEY", "dQw4w9WgXcQ")
+	runs := fakeYTDLP(t, "plain")
+	u := videoSetup(t, func(context.Context, string) ([]metadata.ArtistVideo, error) {
+		return []metadata.ArtistVideo{{ID: "dQw4w9WgXcQ"}}, nil
+	})
+	start := time.Now()
+	do(t, "GET", u, "", 404)
+	if d := time.Since(start); d > 500*time.Millisecond {
+		t.Fatalf("first ask waited %v", d)
+	}
+	videoReady(t, u)
+	before := runs.Load()
+	do(t, "GET", u, "", 200)
+	if runs.Load() != before {
+		t.Fatalf("a ready stream ran yt-dlp again: %d -> %d", before, runs.Load())
 	}
 }

@@ -118,7 +118,7 @@ func TestFailedVideoDroppedAndAnotherPicked(t *testing.T) {
 	})
 	for i := 0; i < 4; i++ {
 		var v ArtistVideoView
-		_ = json.Unmarshal(do(t, "GET", u, "", 200), &v)
+		_ = json.Unmarshal(videoReady(t, u), &v)
 		if v.Key != "dQw4w9WgXcQ" {
 			t.Fatalf("picked %+v", v)
 		}
