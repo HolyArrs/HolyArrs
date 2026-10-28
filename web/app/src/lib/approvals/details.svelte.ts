@@ -62,6 +62,32 @@ export function seasonEpisodes(tmdb: string, season: number): EpisodeInfo[] | nu
 	return eps[k] ?? null;
 }
 
+/** An ask's lists the server stored when it was asked for: episodes by season number, songs by album id. */
+export interface StoredParts {
+	seasons: Record<string, EpisodeInfo[]>;
+	albums: Record<string, AlbumSong[]>;
+}
+const stored = $state<Record<number, StoredParts | null>>({});
+const askedStored = new Set<number>();
+
+/** storedParts is an ask's stored lists (null until known), asked once from the install; TV and music asks only. */
+export function storedParts(a: Pick<Ask, 'id' | 'kind'> | null | undefined): StoredParts | null {
+	if (!a || (a.kind !== 'show' && a.kind !== 'artist')) return null;
+	if (!askedStored.has(a.id)) {
+		askedStored.add(a.id);
+		api
+			.get<StoredParts>(`/asks/${a.id}/parts`)
+			.then((r) => (stored[a.id] = { seasons: r.seasons ?? {}, albums: r.albums ?? {} }))
+			.catch(() => (stored[a.id] = { seasons: {}, albums: {} }));
+	}
+	return stored[a.id] ?? null;
+}
+
+/** prefetchParts asks for the stored lists of the given asks (the picked one and the next) ahead of time. */
+export function prefetchParts(...as: (Pick<Ask, 'id' | 'kind'> | null | undefined)[]): void {
+	for (const a of as) storedParts(a);
+}
+
 /** A song of an album, as the album page lists it. */
 export interface AlbumSong {
 	disc: number;

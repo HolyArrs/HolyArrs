@@ -41,11 +41,13 @@
 	// The decision, starting from the defaults (asks carry no rule of their own yet).
 	let rulesId = $state(0);
 	let note = $state('');
+	let noteOpen = $state(false);
 	let parts = $state<PartsPick>({ seasons: null, albums: null, empty: false });
 	$effect(() => {
 		void a.id;
 		rulesId = 0;
 		note = '';
+		noteOpen = false;
 	});
 	const waiting = $derived(ctx.approver && a.state === 'asked' && !ctx.isPending(a.id));
 	const ruleWords = $derived(rulesId ? (rules.find((r) => r.id === rulesId)?.name ?? 'Default rule') : 'Default rule');
@@ -117,15 +119,20 @@
 						{#each rules as r (r.id)}<option value={r.id}>{r.name}</option>{/each}
 					</select>
 				</div>
-				<div class="field">
-					<label for="ap-note-{a.id}">Note to {who.name} <span class="muted">(optional)</span></label>
-					<textarea id="ap-note-{a.id}" class="input" rows="2" maxlength="500" bind:value={note} placeholder="They see it with the answer"></textarea>
-				</div>
 				<div class="acts">
 					<Button variant="primary" icon="check" type="submit" disabled={parts.empty} data-testid="ask-approve">{some ? 'Approve ticked' : 'Approve'}</Button>
 					<Button icon="x" type="button" data-testid="ask-decline" onclick={() => ctx.turnDownWith(a, note.trim())}>Turn down</Button>
 				</div>
-				<p class="muted small">{parts.empty ? 'Tick at least one to approve, or turn it down.' : `Approves with ${ruleWords}${some ? ', only what is ticked' : ''}. You can undo for 6 seconds.`}</p>
+				{#if noteOpen}
+					<div class="field">
+						<label for="ap-note-{a.id}">Note to {who.name}</label>
+						<!-- svelte-ignore a11y_autofocus -->
+						<textarea id="ap-note-{a.id}" class="input" rows="2" maxlength="500" bind:value={note} placeholder="They see it with the answer" autofocus data-testid="ask-note"></textarea>
+					</div>
+				{:else}
+					<button type="button" class="add-note" onclick={() => (noteOpen = true)} data-testid="ask-add-note">+ Add a note</button>
+				{/if}
+				{#if !parts.empty}<p class="muted small">Approves with {ruleWords}. You can undo for 6 seconds.</p>{/if}
 			</form>
 		{/if}
 		{#if a.mine && a.state === 'asked'}
@@ -182,6 +189,9 @@
 	.note { padding: 10px 12px; border-radius: 10px; background: var(--surface-2); font: var(--t-callout); overflow-wrap: anywhere; }
 	.decide { display: flex; flex-direction: column; gap: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 	.decide select { min-width: 0; width: 100%; }
+	.add-note { align-self: flex-start; min-height: 32px; padding: 0 2px; border: 0; background: none; color: var(--accent-text); font: var(--t-footnote); font-weight: 600; cursor: pointer; border-radius: 6px; }
+	.add-note:hover { text-decoration: underline; }
+	.add-note:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	textarea.input { height: auto; padding-top: 10px; resize: vertical; }
 	.acts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 	.muted { color: var(--text-muted); }

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { prefetchParts } from './details.svelte.ts';
 	// The Approvals page: a grouped list beside the picked ask, large. Status
 	// tabs with counts, one Filter menu, Poster size, a list that hides
 	// (remembered per member, like the Library), Group by (Type, Person or
@@ -72,6 +73,8 @@
 		return i >= 0 ? i : Math.min(lastAt, Math.max(ctx.shown.length - 1, 0));
 	});
 	const picked = $derived(ctx.shown[at] ?? null);
+	// The picked ask's lists and the next one's are fetched ahead, so its seasons and albums open at once.
+	$effect(() => prefetchParts(picked, ctx.shown[at + 1]));
 	$effect(() => {
 		for (const x of ctx.shown) ctx.want(x);
 	});

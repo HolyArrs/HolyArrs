@@ -10,7 +10,7 @@
 	import Icon from '#lib/Icon.svelte';
 	import { appPicture } from '../music/music-pages.ts';
 	import { albumCounts, albumGroups, songsHead, askAlbums, askSeasons, askedWords, picksChanged, picksHead, seasonPick, type PartsPick, type SeasonPick } from './ask-parts.ts';
-	import { albumSongs, artistIdOf, askArtist, musicKinds, songKey, type AlbumSong } from './details.svelte.ts';
+	import { albumSongs, artistIdOf, askArtist, musicKinds, songKey, storedParts, type AlbumSong } from './details.svelte.ts';
 	import type { ApprovalsCtx } from './approvals.ts';
 	import type { Ask } from '../types.ts';
 
@@ -69,11 +69,13 @@
 		songTicks = {};
 	});
 	type AlbumPick = { row: (typeof rows)[number]; list: AlbumSong[] | null; ticked: string[]; tick: 'all' | 'some' | 'none' };
-	// Songs load for every asked album once the panel shows the ask (3 at a time), so the counts are ready.
+	// The lists stored when the ask was made: opening a season or an album shows them at once.
+	const kept = $derived(storedParts(a));
 	const artistId = $derived(music ? artistIdOf(a) : '');
 	const albumPicks = $derived(
 		rows.map((r): AlbumPick => {
-			const list = albumSongs(r.main.mbid, artistId);
+			// Stored songs first; an album not stored yet asks the album page once it is opened.
+			const list = kept?.albums[r.main.mbid] ?? (kept && openAlbum === r.key ? albumSongs(r.main.mbid, artistId) : null);
 			const all = list?.map(songKey) ?? [];
 			if (left.has(r.key)) return { row: r, list, ticked: [], tick: 'none' };
 			const t = songTicks[r.key]?.filter((x) => all.includes(x));
@@ -107,7 +109,7 @@
 		ticks = {};
 	});
 	// A season's episode list: asked when the list opens, or when the season count is missing.
-	const listOf = (s: { number: number; episodes: number }) => (open || !s.episodes ? ctx.episodes(a.tmdb_id, s.number) : null);
+	const listOf = (s: { number: number; episodes: number }) => kept?.seasons[String(s.number)] ?? (kept && (openSeason === s.number || !s.episodes) ? ctx.episodes(a.tmdb_id, s.number) : null);
 	const picks = $derived(seasons.map((s) => seasonPick(s, listOf(s), ticks[s.number])));
 	function tickSeason(p: SeasonPick) {
 		const next = { ...ticks, [p.number]: p.tick === 'all' ? [] : [...p.all] };
@@ -149,7 +151,6 @@
 		</button>
 		{#if open}
 			<div class="list" id={listId} transition:slide={slideIn()}>
-				{#if editable}<p class="hint">{music ? 'Untick what not to approve.' : 'Ticked episodes are added. Tick or untick before approving.'}</p>{/if}
 				<ul>
 					{#if music}
 						{#each albumPicks as p (p.row.key)}
@@ -198,7 +199,7 @@
 					{:else}
 						{#each picks as p, i (p.number)}
 							{@const s = seasons[i]}
-							{@const list = openSeason === s.number ? ctx.episodes(a.tmdb_id, s.number) : null}
+							{@const list = openSeason === s.number ? listOf(s) : null}
 							{@const words = askedWords(p)}
 							<li class:off={p.tick === 'none'} data-testid="ask-season" data-tick={p.tick}>
 								<div class="line">
