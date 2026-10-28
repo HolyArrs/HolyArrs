@@ -241,7 +241,6 @@ export interface RowWords {
 /** rowWords builds a List row (or a Cards caption, see cardLines) for a card's worth of dates. */
 export function rowWords(g: CalGroup, look: CaptionLook, today: string): RowWords {
 	const e = g.lead;
-	const out = (d: string) => day(d) <= today;
 	if (e.kind === 'episode') {
 		const name = g.entries.length === 1 && !fakeEpisodeName(e.episode_name) ? (e.episode_name ?? '') : '';
 		const chan = channelShown(e.network, look) ? (e.network ?? '') : '';
