@@ -1067,6 +1067,9 @@
 	.st2 :global(svg) { color: var(--text-muted); }
 	.chg.up { color: var(--ok-text); font-weight: 600; }
 	.chg.down { color: var(--fail-text); font-weight: 600; }
+	/* On the artist colour, light tones that read on any deep page colour. */
+	.artist.tinted .chg.up { color: #9df5b4; }
+	.artist.tinted .chg.down { color: #ffb3b3; }
 	.st-ask { margin-top: 6px; }
 	.confirm { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; font: var(--t-subhead); }
 
