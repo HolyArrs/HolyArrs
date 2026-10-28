@@ -110,9 +110,9 @@
 	// kept in this browser. The Title takes what is left (at least MIN_TITLE).
 	type Col = 'bar' | 'st' | 'size' | 'time';
 	const DEF: Record<Col, number> = { bar: 140, st: 120, size: 150, time: 64 };
-	const LIM: Record<Col, [number, number]> = { bar: [80, 420], st: [80, 240], size: [90, 240], time: [48, 120] };
+	const LIM: Record<Col, [number, number]> = { bar: [44, 600], st: [28, 400], size: [56, 400], time: [36, 240] };
 	const KEY = 'holyarrs.downloads.columns';
-	const MIN_TITLE = 200;
+	const MIN_TITLE = 120;
 	const COLS: Col[] = ['bar', 'st', 'size', 'time'];
 	const DATA: Record<Col, string> = { bar: 'bar', st: 'status', size: 'size', time: 'time' };
 	const clamp = (k: Col, v: number) => Math.round(Math.max(LIM[k][0], Math.min(LIM[k][1], v)));
@@ -319,7 +319,7 @@
 			<div class="dline chead" data-testid="dl-colhead">
 				<span></span><span></span>
 				{#each HEADS as h (h.key)}
-					<span class="ch" class:end={h.num} data-col={h.key}>{h.label}{#if h.size}{@const k = h.size}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {h.label}" aria-valuenow={widths[RIGHT[k]]} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={k} onpointerdown={(e) => grab(e, k)} ondblclick={() => fitOne(k)} onkeydown={(e) => nudge(e, k)}></span>{/if}</span>
+					<span class="ch" class:end={h.num} data-col={h.key}><span class="lbl" title={h.label}>{h.label}</span>{#if h.size}{@const k = h.size}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {h.label}" aria-valuenow={widths[RIGHT[k]]} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={k} onpointerdown={(e) => grab(e, k)} ondblclick={() => fitOne(k)} onkeydown={(e) => nudge(e, k)}></span>{/if}</span>
 				{/each}
 				<span class="cm"><Menu label="Columns" icon="more" width={180} items={[{ label: 'Reset columns', icon: 'refresh', onselect: resetAll }]} /></span>
 			</div>
@@ -456,6 +456,7 @@
 	.chead:hover { background: none; }
 	.ch { position: relative; align-self: stretch; display: flex; align-items: center; min-width: 0; }
 	.ch.end { justify-content: flex-end; }
+	.lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.grip { position: absolute; top: 4px; bottom: 4px; right: calc(-1 * var(--gap) / 2 - 4px); width: 8px; cursor: col-resize; touch-action: none; border-radius: 3px; z-index: 3; }
 	.grip::after { content: ''; position: absolute; left: 3px; top: 0; bottom: 0; width: 1px; background: var(--line-strong); transition: background var(--dur-fast) var(--ease-out); }
 	.grip:hover::after, .grip:focus-visible::after, .grip:global(.drag)::after { background: var(--accent); width: 2px; }
