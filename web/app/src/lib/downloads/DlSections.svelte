@@ -8,7 +8,7 @@
 	// (through the page's Remove dialog).
 	import { tick } from 'svelte';
 	import { page } from '$app/state';
-	import { COL, KEY, MAX_W, MIN_W, OLD_KEY, defaults, dump, load, move, moveVisible, quality, toggle as toggleCol, visible, type ColId, type Layout } from './columns.ts';
+	import { COL, KEY, MAX_W, MIN_W, OLD_KEY, defaults, dump, load, move, moveVisible, quality, fitTitle, toggle as toggleCol, visible, type ColId, type Layout } from './columns.ts';
 	import { replaceState } from '$app/navigation';
 	import { slide, fade, type TransitionConfig } from 'svelte/transition';
 	import Poster from '../Poster.svelte';
@@ -140,9 +140,14 @@
 	const PHONE: ColId[] = ['title', 'progress', 'status', 'time'];
 	const cells = $derived([...vis.map((id) => ({ id, ph: false })), ...PHONE.filter((id) => !vis.includes(id)).map((id) => ({ id, ph: true }))]);
 	const FIXED = 24 + 32 + 32;
-	const tpl = $derived(`24px 32px ${vis.map((id) => `${layout.widths[id]}px`).join(' ')} minmax(0, 1fr) 32px`);
+	let room = $state(0);
+	let titleMin = $state(MIN_W);
+	/** wOf is a column's width on screen (an unset Title gives way when room is short). */
+	const tW = $derived(vis.includes('title') ? fitTitle(layout, room, FIXED + (vis.length + 3) * gap, titleMin) : 0);
+	const wOf = (id: ColId) => (id === 'title' ? tW : layout.widths[id]);
+	const tpl = $derived(`24px 32px ${vis.map((id) => `${wOf(id)}px`).join(' ')} minmax(0, 1fr) 32px`);
 	/** inner is the full width of the columns; the table box is at least this wide. */
-	const inner = $derived(vis.reduce((n, id) => n + layout.widths[id], FIXED) + (vis.length + 3) * gap);
+	const inner = $derived(vis.reduce((n, id) => n + wOf(id), FIXED) + (vis.length + 3) * gap);
 	const textW = (n: Node) => {
 		const r = document.createRange();
 		r.selectNodeContents(n);
@@ -173,6 +178,13 @@
 	$effect(() => {
 		if (!grid) return;
 		gap = parseFloat(getComputedStyle(grid).getPropertyValue('--gap')) || 10;
+		const g = grid;
+		const ro = new ResizeObserver(() => {
+			room = g.clientWidth;
+			titleMin = minOf('title');
+		});
+		ro.observe(g);
+		return () => ro.disconnect();
 	});
 	// Queue and History scroll sideways together, so their columns stay lined up.
 	function sync(e: Event) {
@@ -180,6 +192,7 @@
 		for (const t of grid?.querySelectorAll<HTMLElement>('.tw') ?? []) if (t.scrollLeft !== x) t.scrollLeft = x;
 	}
 	function resize(id: ColId, w0: number, d: number) {
+		if (id === 'title') layout.titleSet = true;
 		layout.widths[id] = clamp(id, w0 + d);
 	}
 	function grab(e: PointerEvent, id: ColId) {
@@ -187,7 +200,7 @@
 		e.preventDefault();
 		e.stopPropagation();
 		const x0 = e.clientX;
-		const w0 = layout.widths[id];
+		const w0 = wOf(id);
 		const el = e.currentTarget as HTMLElement;
 		el.setPointerCapture(e.pointerId);
 		el.classList.add('drag');
@@ -207,11 +220,12 @@
 		const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
 		if (!d) return;
 		e.preventDefault();
-		resize(id, layout.widths[id], d * (e.shiftKey ? 40 : 10));
+		resize(id, wOf(id), d * (e.shiftKey ? 40 : 10));
 		save();
 	}
 	// Double-click auto-fits that column, as in a spreadsheet.
 	function fitOne(id: ColId) {
+		if (id === 'title') layout.titleSet = true;
 		layout.widths[id] = fitOf(id);
 		save();
 	}
@@ -463,7 +477,7 @@
 		{#each vis as id (id)}
 			{@const c = COL[id]}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<span class="ch" class:end={c.num} class:moving={ghost?.id === id} data-col={id} data-testid="dl-head" onpointerdown={(e) => headDown(e, id)} title="Drag to move · right-click for columns"><span class="lbl">{c.label}</span><!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={layout.widths[id]} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span></span>
+			<span class="ch" class:end={c.num} class:moving={ghost?.id === id} data-col={id} data-testid="dl-head" onpointerdown={(e) => headDown(e, id)} title="Drag to move · right-click for columns"><span class="lbl">{c.label}</span><!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={wOf(id)} tabindex="0" title="Drag to resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => grab(e, id)} ondblclick={() => fitOne(id)} onkeydown={(e) => nudge(e, id)}></span></span>
 		{/each}
 		<span></span>
 		<span class="cm"><Menu label="Columns" icon="more" width={180} items={[{ label: 'Columns…', icon: 'more', onselect: fromMenu }, { label: 'Reset columns', icon: 'refresh', onselect: resetAll }]} /></span>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { COLUMNS, IDS, defaults, dump, load, move, moveVisible, normalize, quality, toggle, visible } from './columns.ts';
+import { COLUMNS, IDS, defaults, fitTitle, dump, load, move, moveVisible, normalize, quality, toggle, visible } from './columns.ts';
 import { stepToward } from './sections.ts';
 
 describe('columns', () => {
@@ -54,5 +54,18 @@ describe('columns', () => {
 	it('stepToward eases to the newest reading', () => {
 		expect(stepToward(0, 1000000)).toBe(600000);
 		expect(stepToward(999500, 1000000)).toBe(1000000);
+	});
+});
+
+describe('fitTitle', () => {
+	it('gives way while unset, never under the minimum, and not once set', () => {
+		const l = defaults();
+		const others = 66 + 130 + 90 + 80 + 130 + 90;
+		expect(fitTitle(l, 2000, 0, 44)).toBe(310);
+		expect(fitTitle(l, others + 200, 0, 44)).toBe(200);
+		expect(fitTitle(l, others + 10, 0, 44)).toBe(44);
+		expect(fitTitle({ ...l, titleSet: true }, others + 200, 0, 44)).toBe(310);
+		expect(load(dump({ ...l, titleSet: true }), null).titleSet).toBe(true);
+		expect(load(null, JSON.stringify({ title: 500 })).titleSet).toBe(true);
 	});
 });
